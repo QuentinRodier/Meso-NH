@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     ###############################################################################
-SUBROUTINE SM10(PZ,PBLD_HEIGHT,PLAMBDA_F,PL)
+SUBROUTINE SM10(PZ, PBLD_HEIGHT, PBLD, PL)
 !     ###############################################################################
 !
 !!****  *SM10* computes the shape for the mixing length according to Santiago and Martilli 2010
@@ -28,8 +28,10 @@ SUBROUTINE SM10(PZ,PBLD_HEIGHT,PLAMBDA_F,PL)
 !!---------------------------------------------------------------
 !
 !
-USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
-USE PARKIND1  ,ONLY : JPRB
+USE YOMHOOK, ONLY : LHOOK, DR_HOOK
+USE PARKIND1, ONLY : JPRB
+!
+USE MODI_ABOR1_SFX
 !
 IMPLICIT NONE
 !
@@ -37,68 +39,78 @@ IMPLICIT NONE
 !
 REAL, DIMENSION(:,:), INTENT(IN)  :: PZ          ! canopy levels        (m)
 REAL, DIMENSION(:),   INTENT(IN)  :: PBLD_HEIGHT ! building height      (m)
-REAL, DIMENSION(:),   INTENT(IN)  :: PLAMBDA_F   ! frontal area density (-)
-REAL, DIMENSION(:,:), INTENT(OUT) :: PL          ! base profile for mixing 
-!                                                ! length computations  (m)
-!
+REAL, DIMENSION(:),   INTENT(IN)  :: PBLD        ! building plane area density (-)
+REAL, DIMENSION(:,:), INTENT(OUT) :: PL          ! base profile for mixing length computations  (m)
 !
 !*      0.2    declarations of local variables
 !
-REAL, DIMENSION(SIZE(PZ,1))           :: ZZ_CAN             ! mixing length generic profile in canopy
-REAL, DIMENSION(SIZE(PZ,1),SIZE(PZ,2)):: ZZ_SURF            ! Mixing length generic profile at mid levels (near the surface)
-REAL, DIMENSION(SIZE(PZ,1),SIZE(PZ,2)):: ZZ_ISBL            ! Mixing length generic profile at mid levels (in the inertial SBL)
-REAL, DIMENSION(SIZE(PZ,1))           :: ZZ_BASE_ISBL       ! Mixing length generic at the base of the ISBL
-REAL, DIMENSION(SIZE(PZ,1))           :: ZDISP_H            ! displacement height
-REAL, PARAMETER                       :: ZALPHA_CAN = 1.12  ! value to compute lengths in the canyon
-
-INTEGER                               :: JLAYER             ! vertical loop counter
-INTEGER                               :: ILVL               ! number of layers
+REAL, PARAMETER :: ZALPHA1 = 2.24 ! Parameter zalpha1 from Santiago and Martilli (2010)
+REAL, PARAMETER :: ZALPHA2 = 1.12 ! Parameter zalpha2 from Santiago and Martilli (2010)
+!
+REAL :: ZD  ! Displacement height (d in Santiago and Martilli, 2010)
+REAL :: ZD2 ! Parameter to make mixing length continuous at 1.5 H (d2 in Santiago and Martilli, 2010)
+!
+INTEGER :: JJ      ! Horizontal loop counter
+INTEGER :: JLAYER  ! vertical loop counter
+!
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !-------------------------------------------------------------------------------------
 !* Preliminaries:
+!
 IF (LHOOK) CALL DR_HOOK('SM10',0,ZHOOK_HANDLE)
-ILVL = SIZE(PZ,2)
 !
-!* Typical uniform value in the canopy (after Santiago and Martilli 2010)
-!  Threshold at 3/4 of hte height of the building is added to avoid unphysical
-!  values for large lambda_f.
+DO JJ = 1, SIZE(PZ,1)
+   !
+   ! Calculation of the displacement height (d) after Santiago and Martilli (2010)
+   !
+   ZD = PBLD_HEIGHT(JJ) * (PBLD(JJ))**0.13
+   !
+   ! Calculation of the d2 parameter required to make the mixing length continuous
+   ! at z = 1.5 * PBLD_HEIGHT
+   !
+   ZD2 = -1.5 * PBLD_HEIGHT(JJ) + 2.0 * ZD
+   !
+   DO JLAYER = 1, SIZE(PZ,2)
+      !
+      IF ( PZ(JJ,JLAYER).LE.PBLD_HEIGHT(JJ) ) THEN
+         !
+         PL(JJ,JLAYER) = ZALPHA1 * ( PBLD_HEIGHT(JJ) - ZD)
+         !
+      ELSE IF ( (PZ(JJ,JLAYER).GT.PBLD_HEIGHT(JJ)).AND.(PZ(JJ,JLAYER).LE.(1.5*PBLD_HEIGHT(JJ))) ) THEN
+         !
+         PL(JJ,JLAYER) = ZALPHA1 * ( PZ(JJ,JLAYER) - ZD )
+         !
+      ELSE IF ( PZ(JJ,JLAYER).GT.(1.5*PBLD_HEIGHT(JJ)) ) THEN     
+         !
+         PL(JJ,JLAYER) = ZALPHA2 * ( PZ(JJ,JLAYER) - ZD2 )
+         !
+      ELSE
+         CALL ABOR1_SFX("SM10: No rule for calculation of mixing length")
+      ENDIF
+      !
+      ! Check whether mixing length increases with height
+      !
+      IF (JLAYER.GT.1) THEN
+         IF (PL(JJ,JLAYER).LT.PL(JJ,JLAYER-1)) THEN
+            CALL ABOR1_SFX("SM10: Urban mixing length decreases with height")
+         ENDIF
+      ENDIF
+      !
+   ENDDO
+   !
+ENDDO
 !
-ZDISP_H(:) = MIN ( PLAMBDA_F(:)**0.13 * PBLD_HEIGHT(:) , 0.75 * PBLD_HEIGHT )
-ZZ_CAN(:)  = ZALPHA_CAN * (PBLD_HEIGHT(:) - ZDISP_H(:))
+! Some checks
 !
-!* Lengths near the surface (road, gardens)
-ZZ_SURF(:,:) = PZ(:,:)
+If (MINVAL(PL).LT. 0.0) THEN
+    CALL ABOR1_SFX("SM10: Negative value for urban mixing length")
+ENDIF
 !
-!* Lengths in the inertial sublayer (z/h>1.5)
-DO JLAYER=1,ILVL
-  ZZ_ISBL(:,JLAYER) = MAX(ZZ_CAN(:), PZ(:,JLAYER) - ZDISP_H(:))
-END DO
-! first point is used to compute the value at the base of the ISBL (z/h=1.5)
-ZZ_BASE_ISBL(:) = MAX (PZ(:,1),  1.5 * PBLD_HEIGHT(:) )
+If (MINVAL(PL).LT. MINVAL(PZ)) THEN
+    CALL ABOR1_SFX("SM10: Too low value for urban mixing length")
+ENDIF
 !
-!* Composition of all these mixing lengths
-DO JLAYER=1,ILVL
-  WHERE (PZ(:,JLAYER)<=PBLD_HEIGHT(:))
-!* inside canopy, lengths are equal to minimum between uniform value and value limited by the surface
-    PL(:,JLAYER) = MIN(ZZ_SURF(:,JLAYER), ZZ_CAN(:))
-  END WHERE
-  WHERE (PZ(:,JLAYER)>ZZ_BASE_ISBL(:) )
-!* in the inertial sublayer
-    PL(:,JLAYER) = ZZ_ISBL(:,JLAYER)
-  END WHERE
-  WHERE (PZ(:,JLAYER)>PBLD_HEIGHT(:) .AND. PZ(:,JLAYER)<=1.5*PBLD_HEIGHT(:))
-!* in the transition sublayer
-    PL(:,JLAYER) = ZZ_CAN(:) + (ZZ_ISBL(:,JLAYER)-ZZ_CAN(:)) &
-                               * (PZ(:,JLAYER)-PBLD_HEIGHT(:)) / (ZZ_BASE_ISBL(:) - PBLD_HEIGHT(:))
-  END WHERE
-END DO
-!
-! check if mixing length scale increases with height
-!
-DO JLAYER=2,ILVL
-  PL(:,JLAYER) = MAX(PL(:,JLAYER-1),PL(:,JLAYER))
-END DO
 IF (LHOOK) CALL DR_HOOK('SM10',1,ZHOOK_HANDLE)
 !
 !-------------------------------------------------------------------------------------

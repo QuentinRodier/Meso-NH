@@ -57,6 +57,7 @@ REAL, DIMENSION(:), INTENT(IN) :: PZS
  CHARACTER(LEN=*), INTENT(IN) :: HBEM
 !
 INTEGER                         :: JL        ! loop counter
+INTEGER                         :: JCOMP     ! loop counter
 REAL, DIMENSION(:), ALLOCATABLE :: ZT0       ! estimated temperature at sea level
 REAL, DIMENSION(:), ALLOCATABLE :: ZP_LS     ! estimated pressure at XZS_LS
 REAL, DIMENSION(:), ALLOCATABLE :: ZT_LS     ! temperature at XZS_LS
@@ -74,11 +75,14 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !*      1.2    Building temperature
 !
 !* nothing done
+DO JL=1,SIZE(T%XT_BLD,2)
+  T%XT_BLD(:,JL) = T%XT_BLD(:,JL) + XT_CLIM_GRAD  * (PZS - XZS_LS)
+END DO
 !
 !*      1.3    Road deep temperature
 !
 IF (LHOOK) CALL DR_HOOK('PREP_VER_TEB',0,ZHOOK_HANDLE)
-T%XTI_ROAD = T%XTI_ROAD  + XT_CLIM_GRAD  * (PZS - XZS_LS)
+T%XTDEEP_TEB = T%XTDEEP_TEB  + XT_CLIM_GRAD  * (PZS - XZS_LS)
 !
 !*      1.4    Road Temperature profile
 !
@@ -156,8 +160,10 @@ IF (HBEM=='BEM') THEN
   !* shift of temperatures within the floor is attenuated
   !* shift is zero from internal floor layer to half of floor
   DO JL=1,SIZE(B%XT_FLOOR,2)
-    B%XT_FLOOR(:,JL) = B%XT_FLOOR(:,JL) + XT_CLIM_GRAD  * (PZS - XZS_LS) &
-                                   * MAX(2.*ZGRID(:,JL)/ZD(:)-1.,0.)
+    DO JCOMP=1,SIZE(B%XT_FLOOR,3)
+      B%XT_FLOOR(:,JL,JCOMP) = B%XT_FLOOR(:,JL,JCOMP) + XT_CLIM_GRAD  * (PZS - XZS_LS) &
+                                     * MAX(2.*ZGRID(:,JL)/ZD(:)-1.,0.)
+    END DO
   END DO
   !
   DEALLOCATE(ZD)
@@ -166,22 +172,24 @@ IF (HBEM=='BEM') THEN
   !*      1.6bis Mass Temperature profile
   !
   !* mass grid
-  ALLOCATE(ZD   (SIZE(B%XD_FLOOR,1)))
-  ALLOCATE(ZGRID(SIZE(B%XD_FLOOR,1),SIZE(B%XD_FLOOR,2)))
+  ALLOCATE(ZD   (SIZE(B%XD_MASS,1)))
+  ALLOCATE(ZGRID(SIZE(B%XD_MASS,1),SIZE(B%XD_MASS,2)))
   ZGRID(:,:) = 0.
   ZD   (:)   = 0.
   !
-  DO JL=1,SIZE(B%XD_FLOOR,2)
-    ZGRID(:,JL) = ZD(:) + B%XD_FLOOR(:,JL)/2.
-    ZD   (:)    = ZD(:) + B%XD_FLOOR(:,JL)
+  DO JL=1,SIZE(B%XD_MASS,2)
+    ZGRID(:,JL) = ZD(:) + B%XD_MASS(:,JL)/2.
+    ZD   (:)    = ZD(:) + B%XD_MASS(:,JL)
   END DO
   !
   !* deep ground temperature shift is given by climatological gradient
   !* shift of temperatures within the floor is attenuated
   !* shift is zero from internal floor layer to half of floor
   DO JL=1,SIZE(B%XT_MASS,2)
-    B%XT_MASS(:,JL) = B%XT_MASS(:,JL) + XT_CLIM_GRAD  * (PZS - XZS_LS) &
-                                   * MAX(2.*ZGRID(:,JL)/ZD(:)-1.,0.)
+    DO JCOMP=1,SIZE(B%XT_MASS,3)
+      B%XT_MASS(:,JL,JCOMP) = B%XT_MASS(:,JL,JCOMP) + XT_CLIM_GRAD  * (PZS - XZS_LS) &
+                                     * MAX(2.*ZGRID(:,JL)/ZD(:)-1.,0.)
+    END DO
   END DO
   !
   DEALLOCATE(ZD)

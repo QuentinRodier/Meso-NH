@@ -4,7 +4,8 @@
 !SFX_LIC for details. version 1.
 !     ###############################################################
       SUBROUTINE GET_MESH_INDEX_LONLAT_REG(KSSO,PGRID_PAR,PLAT,PLON,&
-                        KINDEX,KISSOX,KISSOY,PVALUE,PNODATA)
+                        KINDEX,KISSOX,KISSOY,KFSSO,KFISSOX,KFISSOY, &
+                        PVALUE,PNODATA)
 !     ###############################################################
 !
 !!**** *GET_MESH_INDEX_LONLAT_REG* get the grid mesh where point (lat,lon) is located
@@ -44,12 +45,15 @@ IMPLICIT NONE
 !            ------------------------
 !
 INTEGER,                       INTENT(IN)    :: KSSO      ! number of subgrid mesh in each direction
+INTEGER,                       INTENT(IN)    :: KFSSO     ! number of fractional subgrid mesh in each direction
 REAL,    DIMENSION(:),         INTENT(IN)    :: PGRID_PAR ! grid parameters
 REAL,    DIMENSION(:),         INTENT(IN)    :: PLAT      ! latitude of the point
 REAL,    DIMENSION(:),         INTENT(IN)    :: PLON      ! longitude of the point
 INTEGER, DIMENSION(:,:),       INTENT(OUT)   :: KINDEX    ! index of the grid mesh where the point is
 INTEGER, DIMENSION(:,:),       INTENT(OUT)   :: KISSOX    ! X index of the subgrid mesh
 INTEGER, DIMENSION(:,:),       INTENT(OUT)   :: KISSOY    ! Y index of the subgrid mesh
+INTEGER, DIMENSION(:,:),       INTENT(OUT)   :: KFISSOX   ! X index of the fractional subgrid mesh
+INTEGER, DIMENSION(:,:),       INTENT(OUT)   :: KFISSOY   ! Y index of the fractional subgrid mesh
 !
 REAL, DIMENSION(:), OPTIONAL, INTENT(IN)    :: PVALUE  ! value of the point to add
 REAL, OPTIONAL, INTENT(IN) :: PNODATA
@@ -247,6 +251,10 @@ DO JL=1,SIZE(PLAT)
       KISSOX(1,JL) = 0
       KISSOY(1,JL) = 0
     ENDIF
+    IF (KFSSO/=0) THEN
+      KFISSOX(1,JL) = 0
+      KFISSOY(1,JL) = 0
+    ENDIF
     !
   ELSE
 
@@ -261,6 +269,10 @@ DO JL=1,SIZE(PLAT)
     IF (KSSO/=0) THEN
       KISSOX(1,JL) = 1 + INT( FLOAT(KSSO) * (ZLON(JL)-XLONLIM(JI))/(XLONLIM(JI+1)-XLONLIM(JI)) )
       KISSOY(1,JL) = 1 + INT( FLOAT(KSSO) * (PLAT(JL)-XLATLIM(JJ))/(XLATLIM(JJ+1)-XLATLIM(JJ)) )
+    END IF
+    IF (KFSSO/=0) THEN
+      KFISSOX(1,JL) = 1 + INT( FLOAT(KFSSO) * (ZLON(JL)-XLONLIM(JI))/(XLONLIM(JI+1)-XLONLIM(JI)) )
+      KFISSOY(1,JL) = 1 + INT( FLOAT(KFSSO) * (PLAT(JL)-XLATLIM(JJ))/(XLATLIM(JJ+1)-XLATLIM(JJ)) )
     END IF
 
   ENDIF

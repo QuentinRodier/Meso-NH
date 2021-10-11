@@ -73,6 +73,8 @@ TYPE SURF_ATM_t
 !
   LOGICAL                        :: LWATER_TO_NATURE ! T: Change Wetland treated as inland water into nature 
   LOGICAL                        :: LTOWN_TO_ROCK    ! T: Change Town into Rock
+  LOGICAL                        :: LTOWN_TO_COVER   ! T: Change Town into selected COVER
+  INTEGER                        :: NREPLACE_COVER   ! The COVER number to be used to replace the Town
 !
 !-------------------------------------------------------------------------------
 !
@@ -199,6 +201,8 @@ YSURF_ATM%LECOCLIMAP=.FALSE.
 YSURF_ATM%LECOSG=.FALSE.
 YSURF_ATM%LWATER_TO_NATURE=.FALSE.
 YSURF_ATM%LTOWN_TO_ROCK=.FALSE.
+YSURF_ATM%LTOWN_TO_COVER=.FALSE.
+YSURF_ATM%NREPLACE_COVER=0
 YSURF_ATM%LGARDEN=.FALSE.
 YSURF_ATM%NSIZE_SEA=0
 YSURF_ATM%NDIM_SEA=0

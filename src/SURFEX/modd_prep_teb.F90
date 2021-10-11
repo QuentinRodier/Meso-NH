@@ -53,20 +53,22 @@ REAL              :: XWS_ROOF       ! roof uniform water content (kg/m2)
 REAL              :: XWS_ROAD       ! road uniform water content (kg/m2)
 REAL              :: XTS_ROOF       ! roof uniform temperature   (K)
 REAL              :: XTS_ROAD       ! road uniform temperature   (K)
+REAL              :: XTS_BLD        ! soil below buildings uniform temperature   (K)
 REAL              :: XTS_WALL       ! wall uniform temperature   (K)
 REAL              :: XTI_BLD        ! uniform building interior T(K)
-REAL              :: XTI_ROAD       ! uniform deep road Temp.    (K)
 REAL              :: XHUI_BLD       ! uniform building relative hum (between 0-1)
 !
 REAL              :: XT_CAN         ! uniform canyon air Temp.   (K)
 REAL              :: XQ_CAN         ! uniform canyon air Humidity(kg/kg)
-
 !
 REAL              :: XWS_ROOF_DEF   ! default roof uniform water content (kg/m2)
 REAL              :: XWS_ROAD_DEF   ! default road uniform water content (kg/m2)
 REAL              :: XTI_BLD_DEF    ! default uniform building interior T(K)
+REAL              :: XTS_BLD_DEF    ! default uniform building surface T(K)
 REAL              :: XHUI_BLD_DEF   ! default uniform building interior relative humidity (between 0-1)
 !
+REAL              :: XTDEEP_TEB   ! deep temperature for TEB soil (K)
+!                                   ! supposed deep enough to be identical for all compartments
 ! Snow variables
 !
 LOGICAL :: LSNOW_IDEAL_TEB 
@@ -88,9 +90,11 @@ REAL              :: XASNOW_ROAD      ! snow albedo      for roads
 !* normalized dimensions for interpolation grids for roof, wall, and roads
 REAL, DIMENSION(10) :: XGRID_ROOF  = (/ 0., 0.01, 0.02, 0.05, 0.1, 0.2, 0.4, 0.7, 0.9, 1. /)
 REAL, DIMENSION(10) :: XGRID_WALL  = (/ 0., 0.01, 0.02, 0.05, 0.1, 0.2, 0.4, 0.7, 0.9, 1. /)
-REAL, DIMENSION(10) :: XGRID_ROAD  = (/ 0., 0.01, 0.02, 0.05, 0.1, 0.2, 0.4, 0.7, 0.9, 1. /)
 REAL, DIMENSION(10) :: XGRID_FLOOR = (/ 0., 0.01, 0.02, 0.05, 0.1, 0.2, 0.4, 0.7, 0.9, 1. /)
+REAL, DIMENSION(10) :: XGRID_MASS  = (/ 0., 0.01, 0.02, 0.05, 0.1, 0.2, 0.4, 0.7, 0.9, 1. /)
 !
+REAL, DIMENSION(13) :: XGRID_ROAD  = (/ 0.,  0.001 ,0.01  ,0.05  ,0.10  ,0.15  ,0.20  ,&
+                                        0.30  ,0.60  ,1.00  ,1.50  ,2.00  ,3.00  /)
 !--------------------------------------------------------------------------
 !
 END MODULE MODD_PREP_TEB

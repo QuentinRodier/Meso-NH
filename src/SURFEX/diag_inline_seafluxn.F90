@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-SUBROUTINE DIAG_INLINE_SEAFLUX_n (DGO, D, DC, DI, DIC, DGMSI, S,              &
+SUBROUTINE DIAG_INLINE_SEAFLUX_n (DGO, D, DC, DI, DIC, DGMSI, S,                      &
                                   PTSTEP, PTA, PQA, PPA, PPS, PRHOA, PZONA,           &
                                   PMERA, PHT, PHW, PCD, PCDN, PCH, PCE, PRI, PHU,     &
                                   PZ0H, PQSAT, PSFTH, PSFTQ, PSFZON, PSFMER,          &
@@ -11,7 +11,7 @@ SUBROUTINE DIAG_INLINE_SEAFLUX_n (DGO, D, DC, DI, DIC, DGMSI, S,              &
                                   PEMIS, PTRAD, PRAIN, PSNOW,                         & 
                                   PCD_ICE, PCDN_ICE, PCH_ICE, PCE_ICE, PRI_ICE,       &
                                   PZ0_ICE, PZ0H_ICE, PQSAT_ICE, PSFTH_ICE, PSFTQ_ICE, &
-                                   PSFZON_ICE, PSFMER_ICE )
+                                  PSFZON_ICE, PSFMER_ICE )
                                           
 !     #####################################################################################
 !
@@ -41,6 +41,8 @@ SUBROUTINE DIAG_INLINE_SEAFLUX_n (DGO, D, DC, DI, DIC, DGMSI, S,              &
 !!      B. Decharme 04/2013 : Add EVAP and SUBL diag
 !!      S. Senesi   01/2014 ! introduce fractional seaice and sea-ice model 
 !!      J. Pianezze 08/2016 : Add surface pressure coupling parameter
+!!      C. Lebeaupin01/2020 : in case wave cpl + first atm lev below 10m: 
+!!                                 put PZONA/PMERA in XZON10M/XMER10M
 !!------------------------------------------------------------------
 !
 USE MODD_DIAG_n, ONLY : DIAG_t, DIAG_OPTIONS_t
@@ -49,11 +51,11 @@ USE MODD_SEAFLUX_n, ONLY : SEAFLUX_t
 !
 USE MODD_CSTS,           ONLY : XTTS
 USE MODD_SURF_PAR,       ONLY : XUNDEF
-USE MODD_SFX_OASIS,      ONLY : LCPL_SEA
+USE MODD_SFX_OASIS,      ONLY : LCPL_SEA,LCPL_WAVE
 !
-USE MODD_TYPES_GLT,     ONLY : T_GLT
-USE MODD_GLT_PARAM ,    ONLY : GELATO_DIM=>NX
-USE MODE_GLT_STATS ,    ONLY : GLT_AVHICEM, GLT_AVHSNWM
+USE MODD_TYPES_GLT,      ONLY : T_GLT
+USE MODD_GLT_PARAM ,     ONLY : GELATO_DIM=>NX
+USE MODE_GLT_STATS ,     ONLY : GLT_AVHICEM, GLT_AVHSNWM
 USE MODI_CLS_TQ
 USE MODI_CLS_WIND
 USE MODI_DIAG_SURF_BUDGET_SEA
@@ -150,12 +152,18 @@ ENDIF
 IF (.NOT. S%LSBL) THEN
 !
   IF (DGO%N2M==2) THEN
-    ZH(:)=2.          
+    ZH(:)=2.    
     CALL CLS_TQ(PTA, PQA, PPA, PPS, PHT, PCD, PCH, PRI, &
                 S%XSST, PHU, PZ0H, ZH,D%XT2M, D%XQ2M, D%XHU2M)
     ZH(:)=10.                
     CALL CLS_WIND(PZONA, PMERA, PHW,PCD, PCDN, PRI, ZH,  &
                   D%XZON10M, D%XMER10M)  
+    IF(LCPL_WAVE)THEN
+      WHERE (ZH(:)>PHW(:))
+        D%XZON10M(:)=PZONA(:)
+        D%XMER10M(:)=PMERA(:)
+      END WHERE
+    ENDIF
     IF (S%LHANDLE_SIC) THEN
        ZH(:)=2.          
        CALL CLS_TQ(PTA, PQA, PPA, PPS, PHT, PCD_ICE, PCH_ICE, PRI_ICE,       &
@@ -163,22 +171,26 @@ IF (.NOT. S%LSBL) THEN
        ZH(:)=10.                
        CALL CLS_WIND(PZONA, PMERA, PHW, PCD_ICE, PCDN_ICE, PRI_ICE, ZH,  &
             DI%XZON10M, DI%XMER10M  )  
+       IF(LCPL_WAVE)THEN
+         WHERE (ZH(:)>PHW(:))
+           DI%XZON10M(:)=PZONA(:)
+           DI%XMER10M(:)=PMERA(:)
+         END WHERE
+       ENDIF
     ENDIF 
-  END IF
 !
-  IF (DGO%N2M>=1) THEN
-     IF (S%LHANDLE_SIC) THEN
-        !
-        D%XT2M    = D%XT2M    * (1 - S%XSIC) + DI%XT2M    * S%XSIC
-        D%XQ2M    = D%XQ2M    * (1 - S%XSIC) + DI%XQ2M    * S%XSIC
-        D%XHU2M   = D%XHU2M   * (1 - S%XSIC) + DI%XHU2M   * S%XSIC
-        !
-        D%XZON10M(:) = D%XZON10M(:) * (1 - S%XSIC(:)) + DI%XZON10M(:) * S%XSIC(:)
-        D%XMER10M(:) = D%XMER10M(:) * (1 - S%XSIC(:)) + DI%XMER10M(:) * S%XSIC(:)
-        DI%XWIND10M(:) = SQRT(DI%XZON10M(:)**2+DI%XMER10M(:)**2)
-        !
-        D%XRI    = PRI     * (1 - S%XSIC) + PRI_ICE     * S%XSIC
-        DI%XRI   =PRI_ICE
+    IF (S%LHANDLE_SIC) THEN
+      !
+      D%XT2M    = D%XT2M    * (1 - S%XSIC) + DI%XT2M    * S%XSIC
+      D%XQ2M    = D%XQ2M    * (1 - S%XSIC) + DI%XQ2M    * S%XSIC
+      D%XHU2M   = D%XHU2M   * (1 - S%XSIC) + DI%XHU2M   * S%XSIC
+      !
+      D%XZON10M(:) = D%XZON10M(:) * (1 - S%XSIC(:)) + DI%XZON10M(:) * S%XSIC(:)
+      D%XMER10M(:) = D%XMER10M(:) * (1 - S%XSIC(:)) + DI%XMER10M(:) * S%XSIC(:)
+      DI%XWIND10M(:) = SQRT(DI%XZON10M(:)**2+DI%XMER10M(:)**2)
+      !
+      D%XRI    = PRI     * (1 - S%XSIC) + PRI_ICE     * S%XSIC
+      DI%XRI   =PRI_ICE
      ELSE
         D%XRI    =PRI
      ENDIF
@@ -192,6 +204,14 @@ IF (.NOT. S%LSBL) THEN
     D%XWIND10M(:) = SQRT(D%XZON10M(:)**2+D%XMER10M(:)**2)
     D%XWIND10M_MAX(:) = MAX(D%XWIND10M_MAX(:),D%XWIND10M(:))
     !
+    D%NCOUNT_STEP = D%NCOUNT_STEP + 1
+    !
+    D%XT2M_MEAN    (:) = D%XT2M_MEAN    (:) + D%XT2M(:)
+    D%XQ2M_MEAN    (:) = D%XQ2M_MEAN    (:) + D%XQ2M(:)
+    D%XHU2M_MEAN   (:) = D%XHU2M_MEAN   (:) + D%XHU2M(:)
+    D%XZON10M_MEAN (:) = D%XZON10M_MEAN (:) + D%XZON10M(:)
+    D%XMER10M_MEAN (:) = D%XMER10M_MEAN (:) + D%XMER10M(:)
+    !
   ENDIF
 !
 ELSE
@@ -199,8 +219,13 @@ ELSE
     D%XT2M    = XUNDEF
     D%XQ2M    = XUNDEF
     D%XHU2M   = XUNDEF
-    D%XZON10M = XUNDEF
-    D%XMER10M = XUNDEF
+    IF(LCPL_WAVE)THEN
+      D%XZON10M(:)=PZONA(:)
+      D%XMER10M(:)=PMERA(:)
+    ELSE
+      D%XZON10M = XUNDEF
+      D%XMER10M = XUNDEF
+    ENDIF
     D%XRI     = PRI
   ENDIF
 ENDIF

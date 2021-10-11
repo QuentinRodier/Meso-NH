@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-SUBROUTINE DEALLOC_TOWN_n (TM, GDM, GRM, U)
+SUBROUTINE DEALLOC_TOWN_n (TM, GDM, GRM, HM, U)
 !     ###############################################################################
 !
 !!****  *DEALLOC_TOWN_n * - Deallocate all arrays
@@ -27,7 +27,7 @@ SUBROUTINE DEALLOC_TOWN_n (TM, GDM, GRM, U)
 !!      Original    01/2004
 !!------------------------------------------------------------------
 !
-USE MODD_SURFEX_n, ONLY : TEB_MODEL_t, TEB_GARDEN_MODEL_t, TEB_GREENROOF_MODEL_t
+USE MODD_SURFEX_n, ONLY : TEB_MODEL_t, TEB_GARDEN_MODEL_t, TEB_GREENROOF_MODEL_t, TEB_HYDRO_MODEL_t
 !
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 !
@@ -45,6 +45,7 @@ IMPLICIT NONE
 TYPE(TEB_MODEL_t), INTENT(INOUT) :: TM
 TYPE(TEB_GARDEN_MODEL_t), INTENT(INOUT) :: GDM
 TYPE(TEB_GREENROOF_MODEL_t), INTENT(INOUT) :: GRM
+TYPE(TEB_HYDRO_MODEL_t), INTENT(INOUT) :: HM
 TYPE(SURF_ATM_t), INTENT(INOUT) :: U
 !
 !*      0.2    declarations of local variables
@@ -56,7 +57,7 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 
 IF (LHOOK) CALL DR_HOOK('DEALLOC_TOWN_N',0,ZHOOK_HANDLE)
 IF (U%CTOWN=='TEB   ') THEN
-  CALL DEALLOC_TEB_n(TM, GDM, GRM)
+  CALL DEALLOC_TEB_n(TM, GDM, GRM, HM)
 ELSE IF (U%CTOWN=='FLUX  ') THEN
   CALL DEALLOC_IDEAL_FLUX
 END IF

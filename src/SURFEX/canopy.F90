@@ -3,13 +3,13 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-SUBROUTINE CANOPY(KI, SB, PHEIGHT, PDENSITY, PCDRAG, PAIRVOL, PSV, &
-                  PFORC, PFORC_U, PDFORC_UDU, PFORC_E, PDFORC_EDE   )  
+SUBROUTINE CANOPY(KI, SB, PHEIGHT, PDENSITY, PCDRAG, PDENSITY_HVEG, PCDRAG_HVEG, PAIRVOL, PSV, &
+                  PFORC, PFORC_U, PDFORC_UDU, PFORC_E, PDFORC_EDE                              )  
 !     ###############################################################################
 !
 !!****  *ISBA_CANOPY_n * - prepares forcing for canopy air model
 !!
-!!    SB%XURPOSE
+!!    PURPOSE
 !!    -------
 !
 !!**  METHOD
@@ -26,13 +26,11 @@ SUBROUTINE CANOPY(KI, SB, PHEIGHT, PDENSITY, PCDRAG, PAIRVOL, PSV, &
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    07/2006
+!!     E. Redon & A. Lemonsu  allows addition of 2 sources of drag: buildings & vegetation
 !!---------------------------------------------------------------
 !
 USE MODD_CANOPY_n, ONLY : CANOPY_t
-!
-USE MODD_CSTS,         ONLY : XRD, XCPD, XP00, XG
-USE MODD_SURF_PAR,     ONLY : XUNDEF
-!
+USE MODD_SURF_PAR, ONLY : XUNDEF
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -46,6 +44,8 @@ TYPE(CANOPY_t), INTENT(INOUT) :: SB
 REAL, DIMENSION(KI), INTENT(IN)    :: PHEIGHT   ! canopy height                       (m)
 REAL, DIMENSION(KI,SB%NLVL), INTENT(IN)    :: PDENSITY  ! canopy density                  (-)
 REAL, DIMENSION(KI,SB%NLVL), INTENT(IN)    :: PCDRAG
+REAL, DIMENSION(KI,SB%NLVL), INTENT(IN)    :: PDENSITY_HVEG ! tree foliage density              (-)
+REAL, DIMENSION(KI,SB%NLVL), INTENT(IN)    :: PCDRAG_HVEG
 !
 REAL, DIMENSION(KI,SB%NLVL), INTENT(IN)    :: PAIRVOL   ! Fraction of air for each canopy level total volume
 !
@@ -89,7 +89,8 @@ DO JLAYER = 1,SB%NLVL-1
   !
 END DO
 !
-PFORC(:,:) = PCDRAG(:,:) * SB%XU(:,:) * PSV(:,:)/PAIRVOL(:,:)/SB%XDZ(:,:)
+PFORC(:,:) = PCDRAG(:,:)      * SB%XU(:,:) * PSV(:,:)          /PAIRVOL(:,:)/SB%XDZ(:,:) + &
+             PCDRAG_HVEG(:,:) * SB%XU(:,:) * PDENSITY_HVEG(:,:)/PAIRVOL(:,:)/SB%XDZ(:,:) 
 !
 !-------------------------------------------------------------------------------------
 !

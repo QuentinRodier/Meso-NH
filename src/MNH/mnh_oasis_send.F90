@@ -113,7 +113,6 @@ REAL, DIMENSION(KI)   :: ZSEA_FWSM  ! Cumulated wind stress             (Pa.s)
 REAL, DIMENSION(KI)   :: ZSEA_EVAP  ! Cumulated Evaporation             (kg/m2)
 REAL, DIMENSION(KI)   :: ZSEA_RAIN  ! Cumulated Rainfall rate           (kg/m2)
 REAL, DIMENSION(KI)   :: ZSEA_SNOW  ! Cumulated Snowfall rate           (kg/m2)
-REAL, DIMENSION(KI)   :: ZSEA_EVPR  ! Cumulated Evap-Precip rate        (kg/m2)
 REAL, DIMENSION(KI)   :: ZSEA_WATF  ! Cumulated net freshwater rate     (kg/m2)
 REAL, DIMENSION(KI)   :: ZSEA_PRES  ! Cumulated Surface pressure        (Pa.s)
 !
@@ -175,7 +174,6 @@ IF(GSEND_SEA)THEN
   ZSEA_EVAP (:) = XUNDEF
   ZSEA_RAIN (:) = XUNDEF
   ZSEA_SNOW (:) = XUNDEF
-  ZSEA_EVPR (:) = XUNDEF
   ZSEA_WATF (:) = XUNDEF
   ZSEA_PRES (:) = XUNDEF
   !
@@ -224,7 +222,7 @@ IF(GSEND_SEA)THEN
                     ZSEA_FWSU   (:),ZSEA_FWSV   (:),ZSEA_HEAT   (:),&
                     ZSEA_SNET   (:),ZSEA_WIND   (:),ZSEA_FWSM   (:),&
                     ZSEA_EVAP   (:),ZSEA_RAIN   (:),ZSEA_SNOW   (:),&
-                    ZSEA_EVPR   (:),ZSEA_WATF   (:),ZSEA_PRES   (:),&
+                    ZSEA_WATF   (:),ZSEA_PRES   (:),                &
                     ZSEAICE_HEAT(:),ZSEAICE_SNET(:),ZSEAICE_EVAP(:) )
 !
 ENDIF
@@ -249,7 +247,7 @@ CALL SFX_OASIS_SEND(ILUOUT,KI,IDATE,GSEND_LAND,GSEND_LAKE,GSEND_SEA,GSEND_WAVE, 
                     ZLAKE_EVAP,ZLAKE_RAIN,ZLAKE_SNOW,ZLAKE_WATF,                &
                     ZSEA_FWSU,ZSEA_FWSV,ZSEA_HEAT,ZSEA_SNET,ZSEA_WIND,          &
                     ZSEA_FWSM,ZSEA_EVAP,ZSEA_RAIN,ZSEA_SNOW,                    &
-                    ZSEA_EVPR,ZSEA_WATF,                                        &
+                    ZSEA_WATF,                                                  &
                     ZSEA_PRES,ZSEAICE_HEAT,ZSEAICE_SNET,ZSEAICE_EVAP,           &
                     ZWAVE_U10, ZWAVE_V10      )
 !

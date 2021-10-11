@@ -33,6 +33,9 @@
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    08/2009
+!!
+!!      Modified    
+!!        J. Pianezze 09/2014: add if conditions (NSEA_xx_ID)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS

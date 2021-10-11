@@ -32,6 +32,7 @@ MODULE MODD_DIAG_n
 !!      P. Samuelsson 10/2014 : added min max for XT2M
 !!      Modified    09/2015 : M Lafaysse LSNOWDIMNC
 !!      Modified    06/2016 : M Lafaysse LRESETCUMUL
+!!      M. Goret    08/2017  : add anthropogenic flux diagnostics
 !
 !*       0.   DECLARATIONS
 !             ------------
@@ -40,6 +41,7 @@ USE MODD_TYPE_DATE_SURF
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
+USE MODD_SURF_PAR, ONLY : LEN_HREC
 !
 IMPLICIT NONE
 !
@@ -83,6 +85,8 @@ TYPE DIAG_t
 !
 !* variables for each patch
 !
+  INTEGER :: NCOUNT_STEP  ! Time step counter
+!
 !* averaged variables
 !
   REAL, POINTER, DIMENSION(:)   :: XRI       ! Bulk-Richardson number           (-)
@@ -100,6 +104,7 @@ TYPE DIAG_t
   REAL, POINTER, DIMENSION(:)   :: XLE       ! total latent heat flux           (W/m2) 
   REAL, POINTER, DIMENSION(:)   :: XLEI      ! sublimation latent heat flux     (W/m2) 
   REAL, POINTER, DIMENSION(:)   :: XGFLUX    ! net soil-vegetation flux         (W/m2)
+  REAL, POINTER, DIMENSION(:)   :: XQF       ! anthropogenic flux               (W/m2)
 !
   REAL, POINTER, DIMENSION(:)   :: XEVAP    ! total evaporation                (kg/m2/s)
   REAL, POINTER, DIMENSION(:)   :: XSUBL    ! sublimation                      (kg/m2/s)
@@ -111,16 +116,24 @@ TYPE DIAG_t
 !  
   REAL, POINTER, DIMENSION(:)   :: XT2M      ! temperature at 2 meters          (K)
   REAL, POINTER, DIMENSION(:)   :: XT2M_MIN  ! Minimum temperature at 2 meters          (K)
+  REAL, POINTER, DIMENSION(:)   :: XT2M_MEAN ! Mean air temperature at 2 meters         (K)
   REAL, POINTER, DIMENSION(:)   :: XT2M_MAX  ! Maximum temperature at 2 meters          (K)
   REAL, POINTER, DIMENSION(:)   :: XQ2M      ! humidity    at 2 meters          (kg/kg)
+  REAL, POINTER, DIMENSION(:)   :: XQ2M_MEAN ! Mean air humidity at 2 meters    (kg/kg)
   REAL, POINTER, DIMENSION(:)   :: XHU2M     ! relative humidity at 2 meters    (-)
   REAL, POINTER, DIMENSION(:)   :: XHU2M_MIN ! Minimum relative humidity at 2 meters    (-)
+  REAL, POINTER, DIMENSION(:)   :: XHU2M_MEAN! Mean    relative humidity at 2 meters    (-)
   REAL, POINTER, DIMENSION(:)   :: XHU2M_MAX ! Maximum relative humidity at 2 meters    (-)
   REAL, POINTER, DIMENSION(:)   :: XQS       ! humidity at surface              (kg/kg)
   REAL, POINTER, DIMENSION(:)   :: XZON10M   ! zonal wind at 10 meters          (m/s)
+  REAL, POINTER, DIMENSION(:)   :: XZON10M_MEAN ! Mean zonal wind at 10 meters  (m/s)
   REAL, POINTER, DIMENSION(:)   :: XMER10M   ! meridian wind at 10 meters       (m/s)
+  REAL, POINTER, DIMENSION(:)   :: XMER10M_MEAN  ! Mean meridian wind at 10 meters   (m/s)
   REAL, POINTER, DIMENSION(:)   :: XWIND10M  ! wind at 10 meters                (m/s)
+  REAL, POINTER, DIMENSION(:)   :: XWIND10M_MEAN ! Mean wind at 10 meters       (m/s)
   REAL, POINTER, DIMENSION(:)   :: XWIND10M_MAX  ! Maximum wind at 10 meters    (m/s)
+  REAL, POINTER, DIMENSION(:)   :: XWIFF_MEAN ! Vector average wind speed 10 m (m/s)
+  REAL, POINTER, DIMENSION(:)   :: XWIDD_MEAN ! Vector average wind direction 10 m (°)
 !
   REAL, POINTER, DIMENSION(:)   :: XSFCO2    ! CO2 flux                         (m/s*kg_CO2/kg_air)
 !
@@ -224,6 +237,7 @@ SUBROUTINE DIAG_INIT(D)
 TYPE(DIAG_t), INTENT(INOUT) :: D
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 IF (LHOOK) CALL DR_HOOK("MODD_DIAG_N:DIAG_INIT",0,ZHOOK_HANDLE)
+  D%NCOUNT_STEP=0
   NULLIFY(D%XRI)
   NULLIFY(D%XCD)
   NULLIFY(D%XCDN)
@@ -237,6 +251,7 @@ IF (LHOOK) CALL DR_HOOK("MODD_DIAG_N:DIAG_INIT",0,ZHOOK_HANDLE)
   NULLIFY(D%XLE)
   NULLIFY(D%XLEI)
   NULLIFY(D%XGFLUX)
+  NULLIFY(D%XQF)
   NULLIFY(D%XEVAP)
   NULLIFY(D%XSUBL)  
   NULLIFY(D%XTS)
@@ -245,14 +260,25 @@ IF (LHOOK) CALL DR_HOOK("MODD_DIAG_N:DIAG_INIT",0,ZHOOK_HANDLE)
   NULLIFY(D%XSWE)  
   NULLIFY(D%XT2M)
   NULLIFY(D%XT2M_MIN)
+  NULLIFY(D%XT2M_MEAN)
   NULLIFY(D%XT2M_MAX)
   NULLIFY(D%XQ2M)
+  NULLIFY(D%XQ2M_MEAN)
   NULLIFY(D%XHU2M)
+  NULLIFY(D%XHU2M_MIN)
+  NULLIFY(D%XHU2M_MEAN)
+  NULLIFY(D%XHU2M_MAX)
   NULLIFY(D%XQS)
   NULLIFY(D%XZON10M)
+  NULLIFY(D%XZON10M_MEAN)
   NULLIFY(D%XMER10M)
+  NULLIFY(D%XMER10M_MEAN)
+  NULLIFY(D%XWIFF_MEAN)
+  NULLIFY(D%XWIDD_MEAN)
   NULLIFY(D%XWIND10M)
+  NULLIFY(D%XWIND10M_MEAN)  
   NULLIFY(D%XWIND10M_MAX)  
+  NULLIFY(D%XSFCO2)
   NULLIFY(D%XLWD)
   NULLIFY(D%XLWU)
   NULLIFY(D%XSWD)

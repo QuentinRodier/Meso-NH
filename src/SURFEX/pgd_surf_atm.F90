@@ -42,13 +42,12 @@
 !*    0.     DECLARATION
 !            -----------
 !
-!
+USE MODD_CSTS, ONLY : XSURF_EPSILON
+USE MODD_DATA_COVER_PAR, ONLY : JPCOVER
 USE MODD_SURFEX_n, ONLY : SURFEX_t
-!
 USE MODD_SURFEX_MPI, ONLY : NRANK, NPIO, NSIZE, NINDEX, NNUM
-!
-USE MODD_SURF_CONF,       ONLY : CPROGNAME
-USE MODD_PGD_GRID,        ONLY : NL, LLATLONMASK, NGRID_PAR
+USE MODD_SURF_CONF, ONLY : CPROGNAME
+USE MODD_PGD_GRID, ONLY : NL, LLATLONMASK, NGRID_PAR
 !
 USE MODI_GET_SIZE_FULL_n
 USE MODI_GET_LUOUT
@@ -73,6 +72,7 @@ USE MODI_PGD_SEA
 USE MODI_PGD_DUMMY
 USE MODI_PGD_CHEMISTRY
 USE MODI_PGD_CHEMISTRY_SNAP
+USE MODI_SUM_ON_ALL_PROCS
 USE MODI_WRITE_COVER_TEX_END
 USE MODI_INIT_READ_DATA_COVER
 USE MODI_PGD_MEGAN
@@ -98,8 +98,12 @@ LOGICAL,              INTENT(IN)  :: OZS      ! .true. if orography is imposed b
 !
 LOGICAL :: LRM_RIVER   !delete inland river coverage. Default is false
 !
-INTEGER :: ISIZE_FULL, JI, IDIM_FULL
+INTEGER, DIMENSION(:), ALLOCATABLE :: IMATCHCOVER
+INTEGER :: ICOUNT, JCOVER
+INTEGER :: JI, JJ, IDIM_FULL
 INTEGER :: ILUOUT ! logical unit of output listing file
+!
+REAL :: ZSUM
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
@@ -164,14 +168,131 @@ ENDIF
 !
  CALL PGD_FRAC(YSC%DTCO, YSC%UG, YSC%U, YSC%USS, HPROGRAM)
 !
- CALL READ_PGD_ARRANGE_COVER(HPROGRAM, YSC%U%LWATER_TO_NATURE, YSC%U%LTOWN_TO_ROCK)
+ CALL READ_PGD_ARRANGE_COVER(HPROGRAM, YSC%U%LWATER_TO_NATURE, YSC%U%LTOWN_TO_ROCK, &
+    YSC%U%LTOWN_TO_COVER, YSC%U%NREPLACE_COVER )
 !
  CALL READ_PGD_COVER_GARDEN(HPROGRAM, YSC%U%LGARDEN)
 !
  CALL INIT_READ_DATA_COVER(HPROGRAM)
 !
- CALL INI_DATA_COVER(YSC%DTCO, YSC%U)
-IF (YSC%U%LECOCLIMAP) CALL PGD_COVER(YSC%DTCO, YSC%UG, YSC%U, YSC%USS, HPROGRAM,LRM_RIVER)
+CALL INI_DATA_COVER(YSC%DTCO, YSC%U)
+!
+IF (YSC%U%LECOCLIMAP) THEN
+    !
+    CALL PGD_COVER(YSC%DTCO, YSC%UG, YSC%U, YSC%USS, HPROGRAM,LRM_RIVER)
+    !
+    ! Impose selected replacement COVER on urban mask 
+    !
+    IF (YSC%U%LTOWN_TO_COVER) THEN
+       !
+       ALLOCATE(IMATCHCOVER(JPCOVER))
+       !
+       ! Check whether not both TOWN_TO_ROCK and TOWN_TO_COVER selected
+       !
+       IF (YSC%U%LTOWN_TO_ROCK) THEN
+          CALL ABOR1_SFX("PGD_SURF_ATM: cannot convert TOWN to rock AND other COVER")
+       ENDIF
+       !
+       ! Check whether replace COVER is inside ECOCLIMAP cover range
+       !
+       IF ((YSC%U%NREPLACE_COVER.LT.1).OR.(YSC%U%NREPLACE_COVER.GT.JPCOVER)) THEN
+          CALL ABOR1_SFX("PGD_SURF_ATM: REPLACE COVER does not belong to ECOCLIMAP COVERS")
+       ENDIF
+       !
+       ! Construct an index matching ECOCLIMAP COVER indices with actual indices
+       !
+       IMATCHCOVER(:)=-9999
+       ICOUNT=1
+       !
+       DO JCOVER=1,JPCOVER
+          IF(YSC%U%LCOVER(JCOVER)) THEN
+             IMATCHCOVER(JCOVER)=ICOUNT
+             ICOUNT=ICOUNT+1
+          ENDIF
+       ENDDO
+       !
+       ! Test whether replace cover exists
+       !
+       IF (IMATCHCOVER(YSC%U%NREPLACE_COVER).LT.0) THEN
+          CALL ABOR1_SFX("PGD_SURF_ATM: Selected replacement cover not in domain")
+       ENDIF
+       !
+       DO JJ=1,SIZE(YSC%U%XTOWN)
+          !
+          ! Test sum of COVERS
+          !
+          IF (ABS(1.0-SUM(YSC%U%XCOVER(JJ,:))).GT.XSURF_EPSILON) THEN
+             CALL ABOR1_SFX("PGD_SURF_ATM:Wrong sum of COVERS, before manipulations")
+          ENDIF
+          !
+          IF (YSC%U%XTOWN(JJ)>0) THEN
+             !
+             ! Set urban COVERS to zero (CAUTION: this is hardcoded to ECOCLIMAP COVER numbers
+             !
+             IF (IMATCHCOVER(007).GT.0) YSC%U%XCOVER(JJ,IMATCHCOVER(007))=0.0
+             !
+             DO JCOVER=151,161
+                IF (IMATCHCOVER(JCOVER).GT.0) YSC%U%XCOVER(JJ,IMATCHCOVER(JCOVER))=0.0
+             ENDDO
+             !
+             DO JCOVER=561,571
+                IF (IMATCHCOVER(JCOVER).GT.0) YSC%U%XCOVER(JJ,IMATCHCOVER(JCOVER))=0.0
+             ENDDO
+             !
+             ! Normalise sum of COVERS to 1.0-XTOWN
+             !
+             ZSUM=SUM(YSC%U%XCOVER(JJ,:))
+             IF (ZSUM.GT.XSURF_EPSILON) THEN
+                YSC%U%XCOVER(JJ,:)=(1.0-YSC%U%XTOWN(JJ))*YSC%U%XCOVER(JJ,:)/ZSUM
+             ELSE
+                YSC%U%XCOVER(JJ,:)=0.0
+             ENDIF
+             !
+             ! Increase cover of selected replace type to obtain a sum of 1.0 for all COVERS
+             !
+             ZSUM=SUM(YSC%U%XCOVER(JJ,:))
+             YSC%U%XCOVER(JJ,IMATCHCOVER(YSC%U%NREPLACE_COVER)) = &
+                  YSC%U%XCOVER(JJ,IMATCHCOVER(YSC%U%NREPLACE_COVER)) + 1.0 - ZSUM
+             !
+             ! Shift TOWN to NATURE
+             !
+             YSC%U%XNATURE(JJ)=YSC%U%XNATURE(JJ)+YSC%U%XTOWN(JJ)
+             YSC%U%XTOWN  (JJ)=0.0
+             !
+             ! Check whether sum of fractions and sum of covers = 1
+             !
+             IF (ABS(1.0-YSC%U%XNATURE(JJ)-YSC%U%XTOWN(JJ)-YSC%U%XSEA(JJ)-YSC%U%XWATER(JJ)).GT.XSURF_EPSILON ) THEN
+                CALL ABOR1_SFX("PGD_SURF_ATM: Wrong sum of SURFEX tile fractions")
+             ENDIF
+             !
+             IF (ABS(1.0-SUM(YSC%U%XCOVER(JJ,:))).GT.XSURF_EPSILON ) THEN
+                !
+                WRITE(ILUOUT,*) "JJ                      : ",JJ
+                WRITE(ILUOUT,*) "YSC%U%XCOVER(JJ,:)      : ",YSC%U%XCOVER(JJ,:)           
+                WRITE(ILUOUT,*) "YSC%U%XNATURE(JJ)       : ",YSC%U%XNATURE(JJ)
+                WRITE(ILUOUT,*) "YSC%U%XTOWN(JJ)         : ",YSC%U%XTOWN(JJ)
+                WRITE(ILUOUT,*) "YSC%U%XSEA(JJ)          : ",YSC%U%XSEA(JJ)
+                WRITE(ILUOUT,*) "YSC%U%XWATER(JJ)        : ",YSC%U%XWATER(JJ)
+                WRITE(ILUOUT,*) "SUM(YSC%U%XCOVER(JJ,:)) : ",SUM(YSC%U%XCOVER(JJ,:))
+                !
+                CALL ABOR1_SFX("PGD_SURF_ATM: Wrong sum of COVERS")
+                !
+             ENDIF
+             !
+          ENDIF
+       ENDDO
+       !
+       ! Recalculate dimensions
+       !
+       YSC%U%NSIZE_NATURE = COUNT(YSC%U%XNATURE(:) > 0.0)
+       YSC%U%NSIZE_TOWN   = COUNT(YSC%U%XTOWN  (:) > 0.0)
+       !
+       YSC%U%NDIM_NATURE  = SUM_ON_ALL_PROCS(HPROGRAM,YSC%UG%G%CGRID,YSC%U%XNATURE(:) > 0., 'DIM')
+       YSC%U%NDIM_TOWN    = SUM_ON_ALL_PROCS(HPROGRAM,YSC%UG%G%CGRID,YSC%U%XTOWN  (:) > 0., 'DIM')
+       !
+  ENDIF
+  !
+ENDIF
 !
 IF (NRANK==NPIO) THEN
   CALL WRITE_COVER_TEX_START(HPROGRAM)
@@ -197,7 +318,7 @@ IF (YSC%U%NDIM_NATURE>0) CALL PGD_NATURE(YSC%DTCO, YSC%DTZ, YSC%IM, YSC%UG, YSC%
 !             ----------------------------------
 !
 IF (YSC%U%NDIM_TOWN>0) CALL PGD_TOWN(YSC%DTCO, YSC%UG, YSC%U, YSC%USS, &
-                                     YSC%IM%DTV, YSC%TM, YSC%GDM, YSC%GRM, HPROGRAM)  
+                                     YSC%IM%DTV, YSC%TM, YSC%GDM, YSC%GRM, YSC%HM, HPROGRAM)  
 !_______________________________________________________________________________
 !
 !*    7.      Additionnal fields for inland water scheme

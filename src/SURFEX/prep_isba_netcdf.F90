@@ -145,9 +145,21 @@ IF (NRANK==NPIO) THEN
   IF(ILENDIM/=U%NDIM_NATURE) CALL ABOR1_SFX('PREP_ISBA_NETCDF: incorrect number of points '// &
                                   'in netcdf file for variable '//TRIM(HSURF))
   !
-  ! Read 1D variable
-  IERROR=NF90_GET_VAR(ID_FILE,ID_VAR,ZFIELD)
-   CALL HANDLE_ERR_CDF(IERROR,"can't read variable "//TRIM(HSURF))
+  SELECT CASE (INVARDIMS)
+    CASE (1)
+      ! Read 1D variable
+      IERROR=NF90_GET_VAR(ID_FILE,ID_VAR,ZFIELD)
+       CALL HANDLE_ERR_CDF(IERROR,"can't read variable "//TRIM(HSURF))
+    CASE (2)
+      ! Read 2D variable
+      IERROR=NF90_GET_VAR(ID_FILE,ID_VAR,ZFIELD,count=(/ILENDIM1,ILENDIM2/))
+       CALL HANDLE_ERR_CDF(IERROR,"can't read variable "//TRIM(HSURF))
+  
+    CASE DEFAULT
+      CALL ABOR1_SFX('PREP_ISBA_NETCDF: incorrect number of dimensions for variable (read step) '//TRIM(HSURF))
+  
+  END SELECT  
+
   !
   ! Close netcdf file
   IERROR=NF90_CLOSE(ID_FILE)

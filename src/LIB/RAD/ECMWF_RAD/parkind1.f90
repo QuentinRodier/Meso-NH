@@ -29,7 +29,17 @@ INTEGER, PARAMETER :: JPRT = SELECTED_REAL_KIND(2,1)
 INTEGER, PARAMETER :: JPRS = SELECTED_REAL_KIND(4,2)
 INTEGER, PARAMETER :: JPRM = SELECTED_REAL_KIND(6,37)
 REAL               :: REAL_DEF_JPRB
-INTEGER, PARAMETER :: JPRB = SELECTED_REAL_KIND(13,300) !  KIND(REAL_DEF_JPRB) 
+! This parameter should always be double precision as a few parts of
+! the radiation code require it
+INTEGER, PARAMETER :: JPRD = SELECTED_REAL_KIND(13,300)
+!
+! This parameter governs the precision of most of the code
+#ifdef SINGLE_PRECISION
+INTEGER, PARAMETER :: JPRB = JPRM
+#else
+INTEGER, PARAMETER :: JPRB = JPRD
+#endif
+!
 INTEGER, PARAMETER :: JPRB_DEF = KIND(REAL_DEF_JPRB) 
 !
 !     Logical Kinds

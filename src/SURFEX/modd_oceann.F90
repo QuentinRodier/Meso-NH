@@ -46,7 +46,6 @@ TYPE OCEAN_t
 LOGICAL:: LMERCATOR   !set to .true. to initialize oceanic var. from Mercator
 LOGICAL:: LCURRENT    !set to .true. to make initialize ocean state with current      
 LOGICAL:: LPROGSST    !set to .true. to make SST evolve with tendance
-INTEGER:: NTIME_COUPLING! coupling time frequency 
 INTEGER:: NOCTCOUNT   !oceanic model counter
 REAL :: XOCEAN_TSTEP       ! time step of the oceanic 1D model
 !
@@ -102,7 +101,6 @@ IF (LHOOK) CALL DR_HOOK("MODD_OCEAN_N:OCEAN_INIT",0,ZHOOK_HANDLE)
 YOCEAN%LMERCATOR=.FALSE.
 YOCEAN%LCURRENT=.FALSE.
 YOCEAN%LPROGSST=.FALSE.
-YOCEAN%NTIME_COUPLING=0
 YOCEAN%NOCTCOUNT=0
 YOCEAN%XOCEAN_TSTEP=5*60.
 IF (LHOOK) CALL DR_HOOK("MODD_OCEAN_N:OCEAN_INIT",1,ZHOOK_HANDLE)

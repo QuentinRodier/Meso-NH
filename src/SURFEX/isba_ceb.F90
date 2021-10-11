@@ -6,7 +6,7 @@
 SUBROUTINE ISBA_CEB(IO, KK, PK, PEK, DK, DEK, DMK,      &
                     HIMPLICIT_WIND, PTSTEP, PPEW_A_COEF,   &
                     PPEW_B_COEF, PPET_A_COEF, PPEQ_A_COEF, PPET_B_COEF,&
-                    PPEQ_B_COEF, PSW_RAD, PLW_RAD, PEXNS, PEXNA, PTA,  &
+                    PPEQ_B_COEF, AT, PSW_RAD, PLW_RAD, PEXNS, PEXNA, PTA,  &
                     PVMOD, PQA, PRR, PSR, PPS, PZREF, PUREF, PDIRCOSZW,&
                     PF5, PFFG_NOSNOW, PFFV_NOSNOW, PRHOA, PCS,         &
                     PSOILCONDZ, PSOILHCAPZ, PFROZEN1, PTDEEP_A,        &
@@ -46,6 +46,7 @@ SUBROUTINE ISBA_CEB(IO, KK, PK, PEK, DK, DEK, DMK,      &
 !!      Original    10/03/95 
 !!      (B. Decharme)   03/16 Bug : limitation of Er for Interception reservoir
 !!                                  PTSTEP insted of ZTSTEP in drag.F90
+!!      (E. Redon & A. Lemonsu) 06/2017 : Add net IR rad received by urban trees (0 for ISBA)
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -60,6 +61,7 @@ USE MODD_DIAG_MISC_ISBA_n, ONLY : DIAG_MISC_ISBA_t
 USE MODD_SURF_PAR,   ONLY : XUNDEF
 !
 USE MODD_SURF_ATM,   ONLY : LCPL_ARP
+USE MODD_SURF_ATM_TURB_n, ONLY : SURF_ATM_TURB_t
 !
 USE MODI_DRAG
 USE MODI_E_BUDGET
@@ -97,10 +99,12 @@ REAL, DIMENSION(:),  INTENT(IN)  :: PPEW_A_COEF, PPEW_B_COEF,                   
 !                                  PPEQ_A_COEF = A-air specific humidity coefficient
 !                                  PPEQ_B_COEF = B-air specific humidity coefficient
 !
+TYPE(SURF_ATM_TURB_t), INTENT(IN) :: AT         ! atmospheric turbulence parameters
+!
 REAL, DIMENSION(:), INTENT(IN)   :: PSW_RAD, PLW_RAD
 !                                     PSW_RAD = incoming solar radiation
 !                                     PLW_RAD = atmospheric infrared radiation
-
+!
 REAL, DIMENSION(:), INTENT(IN)   :: PEXNA, PEXNS, PTA, PVMOD, PQA, PRR, PSR, PPS
 !                                     PEXNA= Exner function near surface atmospheric variables
 !                                     PEXNS   = Exner function at the surface
@@ -215,8 +219,7 @@ REAL, DIMENSION(SIZE(PTA)) :: ZDEEP_FLUX, ZLE_FLOOD, ZLEI_FLOOD, &
                               ZRN, ZH, ZLE, ZLEG, ZLEV,  &
                               ZLES, ZLER, ZLETR, ZEVAP,      &
                               ZGFLUX, ZMELTADV, ZMELT,           &
-                              ZRESTORE, ZLEGI, ZUSTAR2,          &
-                              ZAC_AGG, ZHU_AGG
+                              ZRESTORE, ZLEGI, ZAC_AGG, ZHU_AGG
 !
 REAL, DIMENSION(SIZE(PTA)) :: ZDEEP_FLUX_SUM, ZLE_FLOOD_SUM, ZLEI_FLOOD_SUM, &
                               ZRN_SUM, ZH_SUM, ZLE_SUM, ZLEG_SUM, ZLEV_SUM,  &
@@ -397,7 +400,7 @@ DO JSPLIT=1,ITSPLIT
    CALL DRAG(IO%CISBA, PEK%TSNOW%SCHEME, IO%CCPSURF, PTSTEP, PEK%XTG(:,1), PEK%XWG(:,1), &
              PEK%XWGI(:,1), PEXNS, PEXNA, PTA, PVMOD, PQA, PRR, PSR, PPS, DMK%XRS, &
              PEK%XVEG, DK%XZ0, DK%XZ0EFF, DK%XZ0H, KK%XWFC(:,1), KK%XWSAT(:,1),    &
-             PEK%XPSNG, PEK%XPSNV, PZREF, PUREF, PDIRCOSZW, PDELTA, PF5, PEK%XRESA,&
+             PEK%XPSNG, PEK%XPSNV, PZREF, PUREF, PDIRCOSZW, PDELTA, PF5, AT, PEK%XRESA,&
              DK%XCH, DK%XCD, DK%XCDN, DK%XRI, DK%XHUG, PHUGI, DMK%XHV, DK%XHU,     &
              PK%XCPS, DK%XQS, KK%XFFG, KK%XFFV, KK%XFF, PFFG_NOSNOW, PFFV_NOSNOW, &
              ZLEG_DELTA, ZLEGI_DELTA, PEK%XWR, PRHOA, PK%XLVTT, PQSAT=ZQSAT ) 

@@ -35,6 +35,7 @@
 !
 !
 USE MODD_CH_EMIS_FIELD_n, ONLY : CH_EMIS_FIELD_t
+USE MODD_SURF_PAR, ONLY : LEN_HREC
 !
 USE MODI_GET_LUOUT
 USE MODI_BUILD_EMISSTAB_n
@@ -73,7 +74,7 @@ CHARACTER(LEN=28), INTENT(IN)  :: HCHEM_SURF_FILE ! ascii file for chemistry agg
 !
 INTEGER             :: IRESP                 !   File 
 INTEGER             :: ILUOUT                ! output listing logical unit
- CHARACTER (LEN=LEN_HREC) :: YRECFM                ! management
+ CHARACTER (LEN=16) :: YRECFM                ! management
  CHARACTER (LEN=40) :: YCOMMENT              ! variables
 INTEGER             :: JSPEC                 ! Loop index for cover data
 INTEGER             :: IIND1,IIND2           ! Indices counter

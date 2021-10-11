@@ -33,14 +33,16 @@ SUBROUTINE INIT_VEG_n(IO, KK, PK, PEK, DTV, &
 !!    MODIFICATIONS
 !!
 !!      B. Decharme    01/16 : Bug when vegetation veg, z0 and emis are imposed whith interactive vegetation
+!!      A. Druel     02/2019 : Transmit NPAR_VEG_IRR_USE for irrigation (+ small modif)
+!!
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
 USE MODD_ISBA_OPTIONS_n, ONLY : ISBA_OPTIONS_t
-USE MODD_ISBA_n, ONLY : ISBA_K_t, ISBA_P_t, ISBA_PE_t
-USE MODD_DATA_ISBA_n, ONLY : DATA_ISBA_t
+USE MODD_ISBA_n,         ONLY : ISBA_K_t, ISBA_P_t, ISBA_PE_t
+USE MODD_DATA_ISBA_n,    ONLY : DATA_ISBA_t
 !
 USE MODD_TYPE_SNOW
 USE MODD_SNOW_PAR,       ONLY : XEMISSN
@@ -60,17 +62,17 @@ IMPLICIT NONE
 !              -------------------------
 !
 TYPE(ISBA_OPTIONS_t), INTENT(INOUT) :: IO
-TYPE(ISBA_K_t), INTENT(INOUT) :: KK
-TYPE(ISBA_P_t), INTENT(INOUT) :: PK
-TYPE(ISBA_PE_t), INTENT(INOUT) :: PEK
-TYPE(DATA_ISBA_t), INTENT(INOUT) :: DTV
+TYPE(ISBA_K_t),       INTENT(INOUT) :: KK
+TYPE(ISBA_P_t),       INTENT(INOUT) :: PK
+TYPE(ISBA_PE_t),      INTENT(INOUT) :: PEK
+TYPE(DATA_ISBA_t),    INTENT(INOUT) :: DTV
 !
 LOGICAL, INTENT(OUT) :: OSURF_DIAG_ALBEDO
 !
 REAL, DIMENSION(:,:), INTENT(OUT) :: PDIR_ALB
 REAL, DIMENSION(:,:), INTENT(OUT) :: PSCA_ALB
-REAL, DIMENSION(:), INTENT(OUT) :: PEMIS_OUT
-REAL, DIMENSION(:), INTENT(OUT) :: PTSRAD
+REAL, DIMENSION(:),   INTENT(OUT) :: PEMIS_OUT
+REAL, DIMENSION(:),   INTENT(OUT) :: PTSRAD
 !
 !*       0.2   Declarations of local variables
 !              -------------------------------
@@ -92,21 +94,24 @@ IF (LHOOK) CALL DR_HOOK('INIT_VEG_n',0,ZHOOK_HANDLE)
 !
 !* snow long-wave properties (not initialized in read_gr_snow)
 !
- CALL INIT_SNOW_LW(XEMISSN,PEK%TSNOW)
+IF ( PK%NSIZE_P > 0 ) CALL INIT_SNOW_LW(XEMISSN,PEK%TSNOW)
 !
 !-------------------------------------------------------------------------------
 !
 !* z0 and vegetation fraction estimated from LAI if not imposed
-IF (IO%CPHOTO=='NIT' .OR. IO%CPHOTO=='NCB') THEN
+IF ((IO%CPHOTO=='NIT' .OR. IO%CPHOTO=='NCB') .AND. PK%NSIZE_P > 0 ) THEN
   DO JI=1,PK%NSIZE_P    
     IF(PEK%XLAI(JI)/=XUNDEF) THEN
       PEK%XLAI (JI) = MAX(PEK%XLAIMIN(JI),PEK%XLAI(JI))
       IF (.NOT.DTV%LIMP_Z0)   &
-         PEK%XZ0  (JI) = Z0V_FROM_LAI(PEK%XLAI(JI),PK%XH_TREE(JI),PK%XVEGTYPE_PATCH(JI,:),IO%LAGRI_TO_GRASS)
+         PEK%XZ0  (JI) = Z0V_FROM_LAI(PEK%XLAI(JI), PK%XH_TREE(JI), PK%XVEGTYPE_PATCH(JI,:), IO%LAGRI_TO_GRASS, &
+                                      NPAR_VEG_IRR_USE=DTV%NPAR_VEG_IRR_USE)
       IF (.NOT.DTV%LIMP_VEG)  &
-        PEK%XVEG (JI) = VEG_FROM_LAI(PEK%XLAI(JI),PK%XVEGTYPE_PATCH(JI,:),IO%LAGRI_TO_GRASS)
+        PEK%XVEG (JI) = VEG_FROM_LAI(PEK%XLAI(JI), PK%XVEGTYPE_PATCH(JI,:), IO%LAGRI_TO_GRASS, &
+                                      NPAR_VEG_IRR_USE=DTV%NPAR_VEG_IRR_USE)
       IF (.NOT.DTV%LIMP_EMIS) &
-        PEK%XEMIS(JI) = EMIS_FROM_VEG(PEK%XVEG(JI),PK%XVEGTYPE_PATCH(JI,:))
+        PEK%XEMIS(JI) = EMIS_FROM_VEG(PEK%XVEG(JI), PK%XVEGTYPE_PATCH(JI,:), &
+                                      NPAR_VEG_IRR_USE=DTV%NPAR_VEG_IRR_USE)
     END IF  
   END DO
 END IF

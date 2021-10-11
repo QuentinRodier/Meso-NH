@@ -149,6 +149,7 @@ USE MODD_NSV
 USE MODD_GRID,       ONLY : XLON0, XRPK, XBETA
 USE MODD_PARAM_ICE,  ONLY : LSEDIC
 USE MODD_PARAM_C2R2, ONLY : LSEDC
+USE MODD_PREP_SNOW,  ONLY : NIMPUR
 USE MODD_DIAG_IN_RUN
 USE MODD_DUST,       ONLY : LDUST 
 USE MODD_SALT,       ONLY : LSALT
@@ -342,6 +343,9 @@ REAL, DIMENSION(:),   ALLOCATABLE :: ZP_Q2M       ! Air humidity at 2 meters    
 REAL, DIMENSION(:),   ALLOCATABLE :: ZP_HU2M      ! Air relative humidity at 2 meters (-)
 REAL, DIMENSION(:),   ALLOCATABLE :: ZP_ZON10M    ! zonal Wind at 10 meters     (m/s)
 REAL, DIMENSION(:),   ALLOCATABLE :: ZP_MER10M    ! meridian Wind at 10 meters  (m/s)
+REAL, DIMENSION(:,:), ALLOCATABLE :: ZP_ZIMPWET   ! wet deposit coefficient for each impurity type (g)
+REAL, DIMENSION(:,:), ALLOCATABLE :: ZP_ZIMPDRY   ! dry deposit coefficient for each impurity type (g)
+
 TYPE(LIST_ll), POINTER            :: TZFIELDSURF_ll    ! list of fields to exchange
 INTEGER                           :: IINFO_ll       ! return code of parallel routine
 !
@@ -549,6 +553,11 @@ ELSE
     YSV_SURF(:)     = CSV(:)
 ENDIF
 !
+!        1.15   Wet/dry impurity type deposition coefficient (SURFEX offline)
+!
+ZP_ZIMPWET = 0.
+ZP_ZIMPDRY = 0.
+!
 !-------------------------------------------------------------------------------
 !
 !*       2.     Call to surface monitor with 2D variables
@@ -592,7 +601,8 @@ CALL COUPLING_SURF_ATM_n(YSURF_CUR,'MESONH', 'E',ZTIMEC,                        
                XTSTEP, TDTCUR%nyear, TDTCUR%nmonth, TDTCUR%nday, TDTCUR%xtime,                      &
                IDIM1D,KSV_SURF,SIZE(XSW_BANDS),                                                     &
                ZP_TSUN, ZP_ZENITH,ZP_ZENITH, ZP_AZIM,                                               &
-               ZP_ZREF, ZP_ZREF, ZP_ZS, ZP_U, ZP_V, ZP_QA, ZP_TA, ZP_RHOA, ZP_SV, ZP_CO2, YSV_SURF, &
+               ZP_ZREF, ZP_ZREF, ZP_ZS, ZP_U, ZP_V, ZP_QA, ZP_TA, ZP_RHOA, ZP_SV, ZP_CO2,           & 
+               ZP_ZIMPWET, ZP_ZIMPDRY, YSV_SURF,                                                    &
                ZP_RAIN, ZP_SNOW, ZP_LW, ZP_DIR_SW, ZP_SCA_SW, XSW_BANDS, ZP_PS, ZP_PA,              &
                ZP_SFTQ, ZP_SFTH, ZP_SFTS, ZP_SFCO2, ZP_SFU, ZP_SFV,                                 &
                ZP_TSRAD, ZP_DIR_ALB, ZP_SCA_ALB, ZP_EMIS, ZP_TSURF, ZP_Z0, ZP_Z0H, ZP_QSURF,        &
@@ -990,6 +1000,8 @@ DEALLOCATE(ZP_TA      )
 DEALLOCATE(ZP_RHOA    )
 DEALLOCATE(ZP_SV      )
 DEALLOCATE(ZP_CO2     )
+DEALLOCATE(ZP_ZIMPDRY )
+DEALLOCATE(ZP_ZIMPWET )
 DEALLOCATE(ZP_RAIN    )
 DEALLOCATE(ZP_SNOW    )
 DEALLOCATE(ZP_LW      )

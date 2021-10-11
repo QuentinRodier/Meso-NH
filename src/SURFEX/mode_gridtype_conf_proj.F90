@@ -114,9 +114,21 @@ PGRID_PAR(6) = PLONOR
 PGRID_PAR(7) = FLOAT(KIMAX)
 PGRID_PAR(8) = FLOAT(KJMAX)
 IF (IL>0) THEN
-  PGRID_PAR(9) = PDX(1)
-  PGRID_PAR(10)= PDY(1)
-ENDIF
+  PGRID_PAR( 9) = 0.
+  DO JJ = 1, SIZE (PDX)
+    IF (PDX (JJ) > 0. .AND. PDX (JJ) /= XUNDEF) THEN
+      PGRID_PAR( 9) = PDX (JJ)
+      EXIT
+    ENDIF
+  ENDDO
+  PGRID_PAR(10) = 0.
+  DO JJ = 1, SIZE (PDY)
+    IF (PDY (JJ) > 0. .AND. PDY (JJ) /= XUNDEF) THEN
+      PGRID_PAR(10) = PDY (JJ)
+      EXIT
+    ENDIF
+  ENDDO 
+ ENDIF
 !
 #ifdef MNH_PARALLEL
 !get the index of the process with IL>0 that own the southmost and the westmost point
@@ -867,6 +879,7 @@ REAL                              :: ZCLAT0   ! cos(lat0)
 REAL                              :: ZSLAT0   ! sin(lat0)
 REAL                              :: ZRDSDG   ! pi/180
 LOGICAL                           :: GNORTHPROJ! T: projection from north pole
+INTEGER                           :: I
 REAL(KIND=JPRB) :: ZHOOK_HANDLE, ZHOOK_HANDLE_OMP
 INTEGER :: J, ISIZE_OMP
 !
@@ -915,8 +928,10 @@ IF (LHOOK) CALL DR_HOOK('MODE_GRIDTYPE_CONF_PROJ:MAP_FACTOR_CONF_PROJ_2b',0,ZHOO
     IF (ABS(COS(ZRDSDG*ZLAT(J)))>1.E-10) THEN
       PMAP(J) = ((ZCLAT0/COS(ZRDSDG*ZLAT(J)))**(1.-ZRPK))      &
               * ((1.+ZSLAT0)/(1.+SIN(ZRDSDG*ZLAT(J))))**ZRPK  
-    ELSE
+    ELSEIF(SIGN(ZLAT(J),1.) == 1.) THEN
       PMAP(J) = (1.+ZSLAT0)/(1.+SIN(ZRDSDG*ZLAT(J)))
+    ELSE
+      PMAP(J) = (1.+ZSLAT0)/1.E-10
     ENDIF
   ENDDO
 !$OMP ENDDO

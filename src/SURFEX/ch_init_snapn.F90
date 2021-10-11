@@ -74,7 +74,7 @@ INTEGER :: ISNAP
 INTEGER             :: IRESP                 !   File 
 INTEGER             :: ILUOUT                ! output listing logical unit
  CHARACTER (LEN=3)   :: YCONVERSION
- CHARACTER (LEN=LEN_HREC)  :: YRECFM                ! management
+ CHARACTER (LEN=16)  :: YRECFM                ! management
  CHARACTER (LEN=100) :: YCOMMENT              ! variables
 INTEGER             :: JSPEC                 ! Loop index for chemical species
 INTEGER             :: JSNAP                 ! Loop index for SNAP categories

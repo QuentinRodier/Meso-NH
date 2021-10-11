@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     ###############################################################################
-SUBROUTINE COUPLING_WATFLUX_n (CHW, DGO, D, DC, W, DST, SLT, &
+SUBROUTINE COUPLING_WATFLUX_n (CHW, DGO, D, DC, W, AT, DST, SLT, &
                                HPROGRAM, HCOUPLING, PTIMEC, PTSTEP, KYEAR, KMONTH, KDAY, PTIME, &
                                KI, KSV, KSW, PTSUN, PZENITH, PZENITH2, PAZIM, PZREF, PUREF,     &
                                PU, PV, PQA, PTA, PRHOA, PSV, PCO2, HSV, PRAIN, PSNOW, PLW,      &
@@ -57,6 +57,7 @@ USE MODD_SURF_PAR,   ONLY : XUNDEF
 USE MODD_SFX_OASIS,  ONLY : LCPL_SEAICE
 USE MODD_WATER_PAR
 !
+USE MODD_SURF_ATM_TURB_n, ONLY : SURF_ATM_TURB_t
 !
 USE MODI_WATER_FLUX
 USE MODI_ADD_FORECAST_TO_DATE_SURF
@@ -87,6 +88,8 @@ TYPE(DIAG_OPTIONS_t), INTENT(INOUT) :: DGO
 TYPE(DIAG_t), INTENT(INOUT) :: D 
 TYPE(DIAG_t), INTENT(INOUT) :: DC
 TYPE(WATFLUX_t), INTENT(INOUT) :: W 
+!
+TYPE(SURF_ATM_TURB_t), INTENT(IN) :: AT         ! atmospheric turbulence parameters
 !
 TYPE(DST_t), INTENT(INOUT) :: DST
 TYPE(SLT_t), INTENT(INOUT) :: SLT
@@ -257,7 +260,7 @@ CALL ADD_FORECAST_TO_DATE_SURF(W%TTIME%TDATE%YEAR,W%TTIME%TDATE%MONTH,W%TTIME%TD
 !
 CALL WATER_FLUX(W%XZ0, PTA, ZEXNA, PRHOA, W%XTS, ZEXNS, ZQA, PRAIN,  &
                 PSNOW, XTT, ZWIND, PZREF, PUREF, PPS, GHANDLE_SIC,   &
-                ZQSAT, PSFTH, PSFTQ, ZUSTAR, ZCD, ZCDN, ZCH, ZRI,    &
+                ZQSAT, PSFTH, PSFTQ, ZUSTAR, AT, ZCD, ZCDN, ZCH, ZRI,    &
                 ZRESA_WATER, ZZ0H                                  )  
 !
 !-------------------------------------------------------------------------------------
@@ -282,7 +285,7 @@ ZTRAD  = W%XTS
 IF(LCPL_SEAICE)THEN   
   CALL COUPLING_ICEFLUX_n(KI, PTA, ZEXNA, PRHOA, W%XTICE, ZEXNS,  &
                           ZQA, PRAIN, PSNOW, ZWIND, PZREF, PUREF, &
-                          PPS, W%XTS, XTT, ZSFTH_ICE, ZSFTQ_ICE     )  
+                          PPS, W%XTS, XTT, ZSFTH_ICE, ZSFTQ_ICE, AT  )  
 ENDIF
 !
 !-------------------------------------------------------------------------------------

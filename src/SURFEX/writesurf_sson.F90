@@ -35,6 +35,8 @@
 !
 !
 USE MODD_SSO_n, ONLY : SSO_t
+USE MODD_PGDWORK, ONLY : LORORAD
+USE MODD_SURF_PAR, ONLY: LEN_HREC
 !
 USE MODI_WRITE_SURF
 !
@@ -58,6 +60,7 @@ TYPE(SSO_t), INTENT(INOUT) :: USS
 !              -------------------------------
 !
 INTEGER           :: IRESP          ! IRESP  : return-code if a problem appears
+INTEGER           :: JK             ! Loop index
  CHARACTER(LEN=LEN_HREC) :: YRECFM         ! Name of the article to be read
  CHARACTER(LEN=100):: YCOMMENT       ! Comment string
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
@@ -160,6 +163,69 @@ YRECFM='AOSJM'
 YCOMMENT='X_Y_AOSJM (-)'
  CALL WRITE_SURF(HSELECT, &
                  HPROGRAM,YRECFM,USS%XAOSJM(:),IRESP,HCOMMENT=YCOMMENT)
+!
+!-------------------------------------------------------------------------------
+!
+!*       4.     Orographic radiation parameters:
+!               -------------------------------
+!
+YCOMMENT='(-)'
+  CALL WRITE_SURF(HSELECT, &
+                  HPROGRAM,'LORORAD',LORORAD,IRESP,YCOMMENT)
+!
+IF (USS%NSECTORS > 0)THEN
+  YCOMMENT='(-)'
+  CALL WRITE_SURF(HSELECT, &
+                  HPROGRAM,'ASPSECTORS',USS%NSECTORS,IRESP,YCOMMENT)
+
+  YRECFM='AVG_SLO'
+  YCOMMENT='X_Y_AVG_SLO (RAD)'
+  CALL WRITE_SURF(HSELECT, &
+                  HPROGRAM,YRECFM,USS%XAVG_SLO(:),IRESP,HCOMMENT=YCOMMENT)
+  !
+  YRECFM='SLOPE'
+  YCOMMENT='X_Y_SLOPE (RAD)'
+  CALL WRITE_SURF(HSELECT, &
+                  HPROGRAM,YRECFM,USS%XSLOPE(:),IRESP,HCOMMENT=YCOMMENT)
+  !
+  YRECFM='ASPECT'
+  YCOMMENT='X_Y_ASPECT (RAD)'
+  CALL WRITE_SURF(HSELECT, &
+                  HPROGRAM,YRECFM,USS%XASPECT(:),IRESP,HCOMMENT=YCOMMENT)
+  !
+  DO JK=1,USS%NSECTORS
+    WRITE(YRECFM,"(a9,i0.2)") 'SLOPE_DIR',JK
+    WRITE(YCOMMENT,"(a13,i0.2,a6)") 'X_Y_SLOPE_DIR',JK,' (RAD)'
+    CALL WRITE_SURF(HSELECT, &
+                    HPROGRAM,YRECFM,USS%XSLOPE_DIR(:,JK),IRESP,HCOMMENT=YCOMMENT)
+  END DO
+  !
+  DO JK=1,USS%NSECTORS
+    WRITE(YRECFM,"(a8,i0.2)") 'FRAC_DIR',JK
+    WRITE(YCOMMENT,"(a12,i0.2,a4)") 'X_Y_FRAC_DIR',JK,' (%)'
+    CALL WRITE_SURF(HSELECT, &
+                    HPROGRAM,YRECFM,USS%XFRAC_DIR(:,JK),IRESP,HCOMMENT=YCOMMENT)
+  END DO
+  !
+  YRECFM='SVF'
+  YCOMMENT='X_Y_SVF (-)'
+  CALL WRITE_SURF(HSELECT, &
+                  HPROGRAM,YRECFM,USS%XSVF(:),IRESP,HCOMMENT=YCOMMENT)
+  !
+  DO JK=1,USS%NSECTORS
+    WRITE(YRECFM,"(a9,i0.2)") 'HMINS_DIR',JK
+    WRITE(YCOMMENT,"(a13,i0.2,a4)") 'X_Y_HMINS_DIR',JK,' (-)'
+    CALL WRITE_SURF(HSELECT, &
+                    HPROGRAM,YRECFM,USS%XHMINS_DIR(:,JK),IRESP,HCOMMENT=YCOMMENT)
+  END DO
+  !
+  DO JK=1,USS%NSECTORS
+    WRITE(YRECFM,"(a9,i0.2)") 'HMAXS_DIR',JK
+    WRITE(YCOMMENT,"(a13,i0.2,a4)") 'X_Y_HMAXS_DIR',JK,' (-)'
+    CALL WRITE_SURF(HSELECT, &
+                    HPROGRAM,YRECFM,USS%XHMAXS_DIR(:,JK),IRESP,HCOMMENT=YCOMMENT)
+  END DO
+END IF
 IF (LHOOK) CALL DR_HOOK('WRITESURF_SSO_N',1,ZHOOK_HANDLE)
 !
 !-------------------------------------------------------------------------------

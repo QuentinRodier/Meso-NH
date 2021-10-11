@@ -218,7 +218,9 @@ END WHERE
 !
 ! Update values in time:
 !
+! WRITE(*,*) 'PTG before TRIDIAG', PTG(:,1)
 PTG(:,:) = ZTGM(:,:)
+! WRITE(*,*) 'PTG after TRIDIAG', PTG(:,1)
 !
 !* Deep soil Flux
 !

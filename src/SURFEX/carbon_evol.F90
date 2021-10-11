@@ -43,7 +43,7 @@
 !!      S.QUEGUINER 09/2011 Cas 'DEF'- condition si LAI=UNDEF->ZRESP_SOIL_TOT=0
 !!      C.   Delire 04/2012 : spinup soil carbon
 !!      B. Decharme 05/2012 : Optimization and ISBA-DIF coupling
-!!
+!!      M. Goret    07/2017 : Bug fix in PRESP_ECO calculation when RESPSL == 'PRM'
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -253,7 +253,7 @@ ELSE IF (IO%CRESPSL == 'PRM') THEN
    ZWORK(:)=0.0
 !   
    IF(IO%CISBA/='DIF')THEN            
-      ZWORK (:) = PEK%XWG(:,1)  
+      ZWORK (:) = MIN(1.0,PEK%XWG(:,1),KK%XWFC(:,1))
    ELSE
       DO JL=1,INL
          DO JI=1,INI        

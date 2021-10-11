@@ -4,7 +4,7 @@
 !SFX_LIC for details. version 1.
 !   ############################################################################
 !
-SUBROUTINE DRAG_MEB(IO, PEK, DMK, DK, PTG, PTA, PQA, PVMOD, &
+SUBROUTINE DRAG_MEB(IO, PEK, AT, DMK, DK, PTG, PTA, PQA, PVMOD, &
                     PWG, PWGI, PWSAT, PWFC, PEXNS, PEXNA, PPS,  PRR, PSR,   &
                     PRHOA, PZ0G_WITHOUT_SNOW, PZ0_MEBV, PZ0H_MEBV,          &
                     PZ0EFF_MEBV, PZ0_MEBN, PZ0H_MEBN, PZ0EFF_MEBN, PSNOWSWE,&
@@ -71,8 +71,9 @@ USE MODD_ISBA_PAR, ONLY : XWGMIN
 USE MODD_SURF_ATM, ONLY : LDRAG_COEF_ARP, XRIMAX, LRRGUST_ARP, XRRSCALE,   &
                           XRRGAMMA, XUTILGUST, LCPL_ARP
 USE MODD_MEB_PAR,  ONLY : XKDELTA_WR
+USE MODD_SURF_ATM_TURB_n, ONLY : SURF_ATM_TURB_t
 !
-USE MODI_SURFACE_CDCH_1DARP
+!USE MODI_SURFACE_CDCH_1DARP
 USE MODI_WIND_THRESHOLD
 USE MODI_DISPH_FOR_MEB
 USE MODI_PREPS_FOR_MEB_DRAG
@@ -89,6 +90,7 @@ IMPLICIT NONE
 !
 TYPE(ISBA_OPTIONS_t), INTENT(INOUT) :: IO
 TYPE(ISBA_PE_t), INTENT(INOUT) :: PEK
+TYPE(SURF_ATM_TURB_t), INTENT(IN) :: AT         ! atmospheric turbulence parameters
 TYPE(DIAG_t), INTENT(INOUT) :: DK
 TYPE(DIAG_MISC_ISBA_t), INTENT(INOUT) :: DMK
 !
@@ -351,7 +353,7 @@ CALL DISPH_FOR_MEB(ZCHIL,PEK%XLAI,ZLW,PEK%XH_VEG,PZREF,PZ0_MEBV,ZDISPH)
 !
 CALL PREPS_FOR_MEB_DRAG(.TRUE.,IO%LFORC_MEASURE, PZ0_MEBV, PZ0H_MEBV, PZ0EFF_MEBV,  &
                         PEK%XH_VEG, PZREF, PEK%XTC, PTA, PEK%XQC, PQA, PUREF,   &
-                        PVMOD, PEXNA, PEXNS, PDIRCOSZW, ZDISPH, PVELC, ZVMOD, ZRICN,&
+                        PVMOD, PEXNA, PEXNS, PDIRCOSZW, ZDISPH, PVELC, ZVMOD, AT, ZRICN,&
                         ZRA_C_A, ZCHCN, ZCDNCN, ZCDCN                    )
 !
 IF (LRRGUST_ARP) THEN
@@ -408,7 +410,7 @@ CALL PREPS_FOR_MEB_DRAG(.FALSE.,IO%LFORC_MEASURE,                        &
                    PZ0_MEBN, PZ0H_MEBN, PZ0EFF_MEBN, PEK%XH_VEG, PZREF,  &
                    DMK%XSNOWTEMP(:,1), PTA, PQSATN, PQA, PUREF, PVMOD,   &
                    PEXNA, PEXNS, PDIRCOSZW, ZDISPH,                      &
-                   ZVELC, ZVMOD, ZRINN, ZRANN,                           &
+                   ZVELC, ZVMOD, AT, ZRINN, ZRANN,                           &
                    ZCHNN,ZCDNNN,ZCDNN                                    )
 !
 IF (LRRGUST_ARP) THEN
@@ -448,7 +450,7 @@ PRISNOW(:)     = (1.-ZPSNA(:))*PRISNOW(:)     + ZPSNA(:)*ZRINN(:)
 !
 CALL PREPS_FOR_MEB_DRAG(.FALSE.,IO%LFORC_MEASURE, DK%XZ0, DK%XZ0H, DK%XZ0EFF, &
                         PEK%XH_VEG, PZREF, ZTEFF, PTA, DK%XQS, PQA, PUREF, PVMOD, &
-                        PEXNA, PEXNS, PDIRCOSZW, ZDISPH, ZVELC, ZVMOD, DK%XRI,    &
+                        PEXNA, PEXNS, PDIRCOSZW, ZDISPH, ZVELC, ZVMOD, AT, DK%XRI,    &
                         PEK%XRESA(:), DK%XCH,DK%XCDN,DK%XCD               )
 !
 IF (LRRGUST_ARP) THEN

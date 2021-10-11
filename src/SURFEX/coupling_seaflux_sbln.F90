@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     ###############################################################################
-SUBROUTINE COUPLING_SEAFLUX_SBL_n (CHS, DTS, DGS, O, OR, G, S, SB, DST, SLT,                      &
+SUBROUTINE COUPLING_SEAFLUX_SBL_n (CHS, DTS, DGS, O, OR, G, S, SB, AT, DST, SLT,                    &
                                   HPROGRAM, HCOUPLING,  PTIMEC, PTSTEP, KYEAR, KMONTH, KDAY, PTIME, &
                                   KI, KSV, KSW, PTSUN, PZENITH, PZENITH2, PAZIM, PZREF, PUREF,      &
                                   PU, PV, PQA, PTA, PRHOA, PSV, PCO2, HSV,                          &
@@ -57,6 +57,8 @@ USE MODD_SLT_n, ONLY : SLT_t
 USE MODD_SURF_PAR,         ONLY : XUNDEF
 USE MODD_CSTS,             ONLY : XCPD
 ! 
+USE MODD_SURF_ATM_TURB_n, ONLY : SURF_ATM_TURB_t
+!
 USE MODE_COUPLING_CANOPY
 !
 USE MODI_INIT_WATER_SBL
@@ -82,6 +84,7 @@ TYPE(OCEAN_REL_t), INTENT(INOUT) :: OR
 TYPE(GRID_t), INTENT(INOUT) :: G
 TYPE(SEAFLUX_t), INTENT(INOUT) :: S
 TYPE(CANOPY_t), INTENT(INOUT) :: SB
+TYPE(SURF_ATM_TURB_t), INTENT(IN) :: AT         ! atmospheric turbulence parameters
 TYPE(DST_t), INTENT(INOUT) :: DST
 TYPE(SLT_t), INTENT(INOUT) :: SLT
 !
@@ -231,7 +234,7 @@ IF (S%LSBL) THEN
 !              ---------------------------------
 !
   IF(ANY(SB%XT(:,:) == XUNDEF)) THEN
-    CALL INIT_WATER_SBL(SB, PPA, PPS, PTA, PQA, PRHOA, PU, PV, PRAIN, PSNOW,  &
+    CALL INIT_WATER_SBL(SB, AT, PPA, PPS, PTA, PQA, PRHOA, PU, PV, PRAIN, PSNOW,  &
                         PSFTH, PSFTQ, PZREF, PUREF, S%XSST, S%XZ0 )
   ENDIF
 !
@@ -298,7 +301,7 @@ END IF
 !*      2.     Call of SEAFLUX
 !              ------------
 !
-  CALL COUPLING_SEAFLUX_n(CHS, DTS, DGS, O, OR, G, S, DST, SLT, HPROGRAM, GCOUPLING, &
+  CALL COUPLING_SEAFLUX_n(CHS, DTS, DGS, O, OR, G, S, AT, DST, SLT, HPROGRAM, GCOUPLING, &
              PTIMEC, PTSTEP, KYEAR, KMONTH, KDAY, PTIME, KI, KSV, KSW,                &
              PTSUN, PZENITH, PZENITH2, PAZIM, ZZREF, ZUREF, ZU, ZV, ZQA, ZTA, PRHOA,  &
              PSV, PCO2, HSV, PRAIN, PSNOW, PLW, PDIR_SW, PSCA_SW, PSW_BANDS, PPS, ZPA,&

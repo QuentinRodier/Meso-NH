@@ -37,8 +37,8 @@ USE MODI_INTERP_GRID
 !
 USE MODD_PREP,       ONLY : CINTERP_TYPE
 USE MODD_GRID_BUFFER,  ONLY : NNI
-USE MODD_PREP_TEB,   ONLY : XGRID_ROAD, XGRID_WALL, XGRID_ROOF, XGRID_FLOOR, &
-                            XTI_BLD, XTI_ROAD, XHUI_BLD, XTI_BLD_DEF
+USE MODD_PREP_TEB,   ONLY : XGRID_ROAD, XGRID_WALL, XGRID_ROOF, XGRID_FLOOR, XGRID_MASS,&
+                            XTI_BLD, XTDEEP_TEB, XTI_BLD_DEF
 USE MODD_SURF_PAR,   ONLY : XUNDEF
 !
 !
@@ -102,11 +102,23 @@ SELECT CASE(HSURF)
        CASE('ALADIN')
          CALL READ_BUFFER_TG(KLUOUT,YINMODEL,ZFIELD,ZD)
      END SELECT
-     !* if deep road temperature is prescribed
-     IF (XTI_ROAD/=XUNDEF) THEN
-       ZFIELD(:,2:) = XTI_ROAD 
+     !* if TEB deep soil temperature is prescribed
+     IF (XTDEEP_TEB/=XUNDEF) THEN
+       ZFIELD(:,2:) = XTDEEP_TEB 
      END IF
      CALL TEB_PROFILE_BUFFER(XGRID_ROAD)
+!
+!*      3.     Profile of temperatures below the floor
+!              --------------------------------
+!
+  CASE('T_BLD  ')
+     !* reading of the profile and its depth definition
+     SELECT CASE(YINMODEL)
+       CASE('ALADIN')
+         CALL READ_BUFFER_TG(KLUOUT,YINMODEL,ZFIELD,ZD)
+     END SELECT
+     CALL TEB_PROFILE_BUFFER(XGRID_ROAD)
+!
 !
 !*      3.bis     Profile of temperatures in floors
 !                 --------------------------------
@@ -117,9 +129,9 @@ SELECT CASE(HSURF)
        CASE('ALADIN')
          CALL READ_BUFFER_TF_TEB(KLUOUT,YINMODEL,ZTI_BLD,ZFIELD,ZD)
      END SELECT
-     !* if deep road temperature is prescribed
-     IF (XTI_ROAD/=XUNDEF) THEN
-       ZFIELD(:,2:) = XTI_ROAD 
+     !* if TEB deep soil temperature is prescribed
+     IF (XTDEEP_TEB/=XUNDEF) THEN
+       ZFIELD(:,2:) = XTDEEP_TEB 
      END IF
      CALL TEB_PROFILE_BUFFER(XGRID_FLOOR)
 
@@ -152,7 +164,7 @@ SELECT CASE(HSURF)
   CASE('T_MASS ')
      ALLOCATE(PFIELD(NNI,3))
      PFIELD(:,:) = ZTI_BLD
-     CALL TEB_PROFILE_BUFFER(XGRID_FLOOR)
+     CALL TEB_PROFILE_BUFFER(XGRID_MASS)
 !
 !*      6.     Canyon air temperature
 !              ----------------------
@@ -177,18 +189,18 @@ SELECT CASE(HSURF)
     END SELECT
 
 !
-!*      9.     Deep road temperature
-!              ---------------------
+!*      9.     TEB deep soil temperature
+!              -------------------------
 
-  CASE('TI_ROAD')    
-     IF (XTI_ROAD==XUNDEF) THEN
+  CASE('TDEEP_T')    
+     IF (XTDEEP_TEB==XUNDEF) THEN
        CALL READ_BUFFER_T2(KLUOUT,YINMODEL,ZFIELD1D)
        ALLOCATE(PFIELD(NNI,1))
        PFIELD(:,1) = ZFIELD1D(:)
        DEALLOCATE(ZFIELD1D)
      ELSE
        ALLOCATE(PFIELD(NNI,1))
-       PFIELD = XTI_ROAD
+       PFIELD = XTDEEP_TEB
      END IF
 
 
@@ -206,7 +218,21 @@ SELECT CASE(HSURF)
   CASE('QI_BLD ')
      ALLOCATE(PFIELD(NNI,1))
      PFIELD(:,1) = XUNDEF
-
+!
+! These values are hardcoded at the moment
+!
+  CASE('PSOLD  ')    
+     ALLOCATE(PFIELD(NNI,1))
+     PFIELD = 101325.0
+!
+  CASE('VENTNIG')    
+     ALLOCATE(PFIELD(NNI,1))
+     PFIELD = 0.0
+!
+  CASE('SHADVAC')    
+     ALLOCATE(PFIELD(NNI,1))
+     PFIELD = 0.0
+!
 !*     10.     Other quantities (water reservoirs)
 !              ----------------
 

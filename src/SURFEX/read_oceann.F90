@@ -47,7 +47,7 @@ USE MODD_OCEAN_n, ONLY : OCEAN_t
 USE MODD_OCEAN_REL_n, ONLY : OCEAN_REL_t
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 !
-USE MODD_SURF_PAR, ONLY : XUNDEF
+USE MODD_SURF_PAR, ONLY : XUNDEF, LEN_HREC
 USE MODD_OCEAN_GRID, ONLY : NOCKMIN,NOCKMAX,XZHOC
 !
 !
@@ -82,7 +82,7 @@ INTEGER           :: IRESP          ! Error code after redding
 !
  CHARACTER(LEN=4)  :: YLVL
 !
- CHARACTER(LEN=12) :: YRECFM         ! Name of the article to be read
+ CHARACTER(LEN=LEN_HREC) :: YRECFM         ! Name of the article to be read
  CHARACTER(LEN=14) :: YFORM          ! Writing format
 REAL, DIMENSION(:),ALLOCATABLE  :: ZWORK      ! 1D array to write data in file
 !

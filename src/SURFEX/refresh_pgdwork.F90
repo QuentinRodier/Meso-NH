@@ -35,7 +35,8 @@
 !!    Original    09/2008
 !!
 !
-USE MODD_PGDWORK,  ONLY : XSSO_ALL, NSSO_ALL, XSUMVAL, XEXT_ALL, NSIZE_ALL, XALL
+USE MODD_PGDWORK,  ONLY : XSSO_ALL, NSSO_ALL, XSUMVAL, XEXT_ALL, NSIZE_ALL, XALL, &
+                          XFSSO_ALL, NFSSO_ALL
 !
 USE MODD_SURF_PAR, ONLY : XUNDEF
 !
@@ -78,13 +79,14 @@ END IF
 !            --------------
 !
 IF (ALLOCATED(XSSO_ALL) .AND. ALLOCATED(NSSO_ALL)) THEN
-  IF (HSUBROUTINE=='A_OROG') THEN
-    XSSO_ALL(:,:,:) = -XUNDEF
-  ELSE
-    XSSO_ALL(:,:,:) = 0.
-  ENDIF
+  XSSO_ALL(:,:,:) = -XUNDEF
   NSSO_ALL(:,:,:) = 0
 ENDIF
+IF (ALLOCATED(XFSSO_ALL) .AND. ALLOCATED(NFSSO_ALL)) THEN
+  XFSSO_ALL(:,:,:) = 0.
+  NFSSO_ALL(:,:,:) = 0
+ENDIF
+
 IF (LHOOK) CALL DR_HOOK('REFRESH_PGDWORK',1,ZHOOK_HANDLE)
 !
 !----------------------------------------------------------------------------

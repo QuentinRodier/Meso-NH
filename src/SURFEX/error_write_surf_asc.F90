@@ -23,7 +23,6 @@ WRITE(NLUOUT,*) 'WARNING'
 WRITE(NLUOUT,*) '-------'
 WRITE(NLUOUT,*) ' '
 WRITE(NLUOUT,*) 'error when writing article', HREC
-WRITE(NLUOUT,*) "default value may be used; who knows?"
 WRITE(NLUOUT,*) ' '
 IF (LHOOK) CALL DR_HOOK('ERROR_WRITE_SURF_ASC',1,ZHOOK_HANDLE)
 !

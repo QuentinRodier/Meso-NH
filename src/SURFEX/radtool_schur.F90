@@ -1,0 +1,56 @@
+! radtool_schur.f90 - Matrix manipulation using the Schur complement
+!
+! (C) Copyright 2020- ECMWF.
+!
+! This software is licensed under the terms of the Apache Licence Version 2.0
+! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+!
+! In applying this licence, ECMWF does not waive the privileges and immunities
+! granted to it by virtue of its status as an intergovernmental organisation
+! nor does it submit to any jurisdiction.
+!
+! Author:  Robin Hogan
+! Email:   r.j.hogan@ecmwf.int
+!
+
+module radtool_schur
+
+
+contains
+
+  !---------------------------------------------------------------------
+  ! Use the Schur complement method to invert the Gamma matrix
+  ! occurring in the shortwave SPARTACUS method.  If 
+  !        g = [ -g1  -g2  -g3  ]
+  !            [  g2   g1   g3  ]
+  !            [            g0  ]
+  ! then its inverse is
+  !   inv(g) = [ -g1i -g2i -g3i ]
+  !            [  g2i  g1i -g3i ]
+  !            [            g0i ]
+  !
+  subroutine schur_invert_sw(nmat, n0, n1, g0, g1, g2, g3, g0i, g1i, g2i, g3i)
+    
+    use parkind1, only : jprb, jpim
+    use radtool_matrix, only : invert, mat_x_mat, solve_mat, rect_mat_x_mat
+
+    implicit none
+
+    integer(kind=jpim), intent(in)  :: nmat, n0, n1
+    real(kind=jprb),    intent(in)  :: g0(nmat,n0,n0), g1(nmat,n1,n1)
+    real(kind=jprb),    intent(in)  :: g2(nmat,n1,n1), g3(nmat,n1,n0)
+    real(kind=jprb),    intent(out) :: g0i(nmat,n0,n0), g1i(nmat,n1,n1)
+    real(kind=jprb),    intent(out) :: g2i(nmat,n1,n1), g3i(nmat,n1,n0)
+
+    g0i = invert(nmat,nmat,n0,g0)
+    g1i = invert(nmat,nmat,n1,g1 - mat_x_mat(nmat,nmat,n1,g2, &
+         &                           solve_mat(nmat,nmat,n1,g1,g2)))
+    g2i = mat_x_mat(nmat,nmat,n1,g1i,mat_x_mat(nmat,nmat,n1,g2, &
+         &                                  invert(nmat,nmat,n1,g1)))
+    g3i = rect_mat_x_mat(nmat,n1,n1,n0,g1i-g2i, &
+         &               rect_mat_x_mat(nmat,n1,n0,n0,g3,g0i))
+
+  end subroutine schur_invert_sw
+
+
+end module radtool_schur

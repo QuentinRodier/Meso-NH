@@ -108,6 +108,7 @@ ZTHVS(:)=PTG(:)/PEXNS(:)*( 1.+(XRV/XRD-1.)*PQS(:) )
 ZVMOD(:) = WIND_THRESHOLD(PVMOD(:),PUREF(:))
 !
                                                 ! Richardson's number
+!                                                                                
 PRI(:) = XG * PDIRCOSZW(:) * PUREF(:) * PUREF(:)              &
           * (ZTHVA(:)-ZTHVS(:)) / (0.5 * (ZTHVA(:)+ZTHVS(:)) )  &
           / (ZVMOD(:)*ZVMOD(:)) /PZREF(:)  

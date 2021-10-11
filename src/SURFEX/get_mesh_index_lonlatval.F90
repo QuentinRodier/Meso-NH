@@ -3,7 +3,8 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     ###############################################################
-      SUBROUTINE GET_MESH_INDEX_LONLATVAL(KSSO,PGRID_PAR,PLAT,PLON,KINDEX,KISSOX,KISSOY)
+      SUBROUTINE GET_MESH_INDEX_LONLATVAL(KSSO,PGRID_PAR,PLAT,PLON,KINDEX,KISSOX,KISSOY, &
+                                          KFSSO,KFISSOX,KFISSOY)
 !     ###############################################################
 !
 !!**** *GET_MESH_INDEX_LONLATVAL* get the grid mesh where point (lat,lon) is located
@@ -43,12 +44,16 @@ IMPLICIT NONE
 !            ------------------------
 !
 INTEGER,                       INTENT(IN)    :: KSSO      ! number of subgrid mesh in each direction
+INTEGER,                       INTENT(IN)    :: KFSSO     ! number of fractional subgrid mesh in each direction
 REAL,    DIMENSION(:),         INTENT(IN)    :: PGRID_PAR ! grid parameters
 REAL,    DIMENSION(:),         INTENT(IN)    :: PLAT      ! latitude of the point
 REAL,    DIMENSION(:),         INTENT(IN)    :: PLON      ! longitude of the point
 INTEGER, DIMENSION(:,:),       INTENT(OUT)   :: KINDEX    ! index of the grid mesh where the point is
 INTEGER, DIMENSION(:,:),       INTENT(OUT)   :: KISSOX    ! X index of the subgrid mesh
 INTEGER, DIMENSION(:,:),       INTENT(OUT)   :: KISSOY    ! Y index of the subgrid mesh
+INTEGER, DIMENSION(:,:),       INTENT(OUT)   :: KFISSOX   ! X index of the fractional subgrid mesh
+INTEGER, DIMENSION(:,:),       INTENT(OUT)   :: KFISSOY   ! Y index of the fractional subgrid mesh
+
 !
 !*    0.2    Declaration of other local variables
 !            ------------------------------------
@@ -160,6 +165,8 @@ KINDEX(:,:)=0
 !
 KISSOX(:,:) = 0
 KISSOY(:,:) = 0
+KFISSOX(:,:) = 0
+KFISSOY(:,:) = 0
 !
 ICI(:,:) = 0
 !
@@ -221,7 +228,11 @@ DO JL=1,SIZE(PLAT)
       IF (KSSO/=0) THEN
         KISSOX(ICPT,JL) = 1 + INT( FLOAT(KSSO) * (ZLON(JL)-XXLIM(NXIDS(JI)))/XDX(NXIDS(JI)) )   
         KISSOY(ICPT,JL) = 1 + INT( FLOAT(KSSO) * (PLAT(JL)-XYLIM(NXIDS(JI)))/XDY(NXIDS(JI)) ) 
-      ENDIF     
+      ENDIF 
+      IF (KFSSO/=0) THEN
+        KFISSOX(ICPT,JL) = 1 + INT( FLOAT(KFSSO) * (ZLON(JL)-XXLIM(NXIDS(JI)))/XDX(NXIDS(JI)) )   
+        KFISSOY(ICPT,JL) = 1 + INT( FLOAT(KFSSO) * (PLAT(JL)-XYLIM(NXIDS(JI)))/XDY(NXIDS(JI)) ) 
+      ENDIF
       !
       IF (ICPT==NOVMX) EXIT
       !

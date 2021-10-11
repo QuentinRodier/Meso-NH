@@ -70,6 +70,8 @@ TYPE(ISBA_OPTIONS_t), INTENT(INOUT) :: IO
 TYPE(ISBA_NP_t), INTENT(INOUT) :: NP
 TYPE(ISBA_NPE_t), INTENT(INOUT) :: NPE
 !
+!*      0.2    declarations of local variables
+!
 TYPE(DIAG_MISC_ISBA_t), POINTER :: DMK
 TYPE(ISBA_P_t), POINTER :: PK
 TYPE(ISBA_PE_t), POINTER :: PEK
@@ -78,7 +80,7 @@ INTEGER                         :: JP    ! tile loop counter
 INTEGER                         :: JL    ! layer loop counter
 REAL, DIMENSION(SIZE(DM%XHV)) :: ZSUMDG, ZSNOW, ZSUMFRD2, ZSUMFRD3
 REAL                            :: ZWORK
-INTEGER                         :: INI,IDEPTH,IWORK,IMASK
+INTEGER                         :: INI,INP,IDEPTH,IWORK, IMASK, JB
 !
 REAL, DIMENSION(SIZE(DM%XHV),IO%NGROUND_LAYER) :: ZPOND, ZTG, ZDG
 !
@@ -116,52 +118,60 @@ DM%XTWSNOW(:) = 0.
 DM%XTDSNOW(:) = 0.  
 DM%XTTSNOW(:) = 0.
 IF (DM%LPROSNOW .AND. NPE%AL(1)%TSNOW%SCHEME=="CRO") THEN
-  DM%XSNDPT_1DY(:) = 0.
-  DM%XSNDPT_3DY(:) = 0.
-  DM%XSNDPT_5DY(:) = 0.
-  DM%XSNDPT_7DY(:) = 0.
-  DM%XSNSWE_1DY(:) = 0.
-  DM%XSNSWE_3DY(:) = 0.
-  DM%XSNSWE_5DY(:) = 0.
-  DM%XSNSWE_7DY(:) = 0.
-  DM%XSNRAM_SONDE(:) = 0.
-  DM%XSN_WETTHCKN(:) = 0.
+  DM%XSNDPT_1DY     (:) = 0.
+  DM%XSNDPT_3DY     (:) = 0.
+  DM%XSNDPT_5DY     (:) = 0.
+  DM%XSNDPT_7DY     (:) = 0.
+  DM%XSNSWE_1DY     (:) = 0.
+  DM%XSNSWE_3DY     (:) = 0.
+  DM%XSNSWE_5DY     (:) = 0.
+  DM%XSNSWE_7DY     (:) = 0.
+  DM%XSNRAM_SONDE   (:) = 0.
+  DM%XSN_WETTHCKN   (:) = 0.
   DM%XSN_REFRZNTHCKN(:) = 0.
+  DM%XDEP_HIG       (:) = 0.
+  DM%XDEP_MOD       (:) = 0.
+  DM%XACC_LEV       (:) = 0.
+  DM%XPRO_INF_TYP   (:) = 0.
+ IF (DM%LPROBANDS) THEN
+  DM%XSPEC_ALB(:,:)=0.
+  DM%XDIFF_RATIO(:,:)=0.
+ ENDIF 
 ENDIF
-!
+
 ZSNOW   (:)=0.0
-!
+!   
 DO JP=1,IO%NPATCH
   PK => NP%AL(JP)
   DMK => NDM%AL(JP)
   PEK => NPE%AL(JP)
-
+!   
   DO JI=1,PK%NSIZE_P
     IMASK = PK%NR_P(JI)
-
-    !     Halstead coefficient
+!
+!     Halstead coefficient
     DM%XHV  (IMASK) = DM%XHV   (IMASK) + PK%XPATCH(JI) * DMK%XHV(JI)
-    !
-    !     Snow fractions
+!
+!     Snow fractions
     DM%XPSNG(IMASK) = DM%XPSNG (IMASK) + PK%XPATCH(JI) * DMK%XPSNG(JI)
     DM%XPSNV(IMASK) = DM%XPSNV (IMASK) + PK%XPATCH(JI) * DMK%XPSNV(JI)
     DM%XPSN (IMASK) = DM%XPSN  (IMASK) + PK%XPATCH(JI) * DMK%XPSN (JI)
-    !
-    !     Saturated fraction
+!
+!     Saturated fraction
     DM%XFSAT (IMASK) = DM%XFSAT(IMASK) + PK%XPATCH(JI) * DMK%XFSAT(JI)
-    !
-    !     Flood fractions
+!
+!     Flood fractions
     DM%XFFG  (IMASK) = DM%XFFG (IMASK) + PK%XPATCH(JI) * DMK%XFFG(JI)
     DM%XFFV  (IMASK) = DM%XFFV (IMASK) + PK%XPATCH(JI) * DMK%XFFV(JI)
     DM%XFF   (IMASK) = DM%XFF  (IMASK) + PK%XPATCH(JI) * DMK%XFF (JI)
-    !
-    !     Total LAI
+!
+!     Total LAI
     IF (PEK%XLAI(JI)/=XUNDEF) DM%XLAI(IMASK) = DM%XLAI(IMASK) + PK%XPATCH(JI) * PEK%XLAI(JI)
-    !      
-    !     Snow total outputs
+!      
+!     Snow total outputs
     DM%XTWSNOW(IMASK) = DM%XTWSNOW(IMASK) + PK%XPATCH(JI) * DMK%XTWSNOW(JI)
     DM%XTDSNOW(IMASK) = DM%XTDSNOW(IMASK) + PK%XPATCH(JI) * DMK%XTDSNOW(JI)
-    !      
+!      
     IF (DMK%XTWSNOW(JI)>0.0) THEN
       !
       DM%XTTSNOW(IMASK) = DM%XTTSNOW(IMASK) + PK%XPATCH(JI) * DMK%XTTSNOW(JI)
@@ -169,25 +179,39 @@ DO JP=1,IO%NPATCH
       !
       IF (DM%LPROSNOW .AND. NPE%AL(1)%TSNOW%SCHEME=="CRO") THEN
         !
-        DM%XSNDPT_1DY(IMASK) = DM%XSNDPT_1DY(IMASK) + PK%XPATCH(JI) * DMK%XSNDPT_1DY(JI)
-        DM%XSNDPT_3DY(IMASK) = DM%XSNDPT_3DY(IMASK) + PK%XPATCH(JI) * DMK%XSNDPT_3DY(JI)
-        DM%XSNDPT_5DY(IMASK) = DM%XSNDPT_5DY(IMASK) + PK%XPATCH(JI) * DMK%XSNDPT_5DY(JI)
-        DM%XSNDPT_7DY(IMASK) = DM%XSNDPT_7DY(IMASK) + PK%XPATCH(JI) * DMK%XSNDPT_7DY(JI)
-        DM%XSNSWE_1DY(IMASK) = DM%XSNSWE_1DY(IMASK) + PK%XPATCH(JI) * DMK%XSNSWE_1DY(JI)
-        DM%XSNSWE_3DY(IMASK) = DM%XSNSWE_3DY(IMASK) + PK%XPATCH(JI) * DMK%XSNSWE_3DY(JI)
-        DM%XSNSWE_5DY(IMASK) = DM%XSNSWE_5DY(IMASK) + PK%XPATCH(JI) * DMK%XSNSWE_5DY(JI)
-        DM%XSNSWE_7DY(IMASK) = DM%XSNSWE_7DY(IMASK) + PK%XPATCH(JI) * DMK%XSNSWE_7DY(JI)
-        DM%XSNRAM_SONDE(IMASK) = DM%XSNRAM_SONDE(IMASK) + PK%XPATCH(JI) * DMK%XSNRAM_SONDE(JI)
-        DM%XSN_WETTHCKN(IMASK) = DM%XSN_WETTHCKN(IMASK) + PK%XPATCH(JI) * DMK%XSN_WETTHCKN(JI)
+        DM%XSNDPT_1DY     (IMASK) = DM%XSNDPT_1DY     (IMASK) + PK%XPATCH(JI) * DMK%XSNDPT_1DY     (JI)
+        DM%XSNDPT_3DY     (IMASK) = DM%XSNDPT_3DY     (IMASK) + PK%XPATCH(JI) * DMK%XSNDPT_3DY     (JI)
+        DM%XSNDPT_5DY     (IMASK) = DM%XSNDPT_5DY     (IMASK) + PK%XPATCH(JI) * DMK%XSNDPT_5DY     (JI)
+        DM%XSNDPT_7DY     (IMASK) = DM%XSNDPT_7DY     (IMASK) + PK%XPATCH(JI) * DMK%XSNDPT_7DY     (JI)
+        DM%XSNSWE_1DY     (IMASK) = DM%XSNSWE_1DY(     IMASK) + PK%XPATCH(JI) * DMK%XSNSWE_1DY     (JI)
+        DM%XSNSWE_3DY     (IMASK) = DM%XSNSWE_3DY     (IMASK) + PK%XPATCH(JI) * DMK%XSNSWE_3DY     (JI)
+        DM%XSNSWE_5DY     (IMASK) = DM%XSNSWE_5DY     (IMASK) + PK%XPATCH(JI) * DMK%XSNSWE_5DY     (JI)
+        DM%XSNSWE_7DY     (IMASK) = DM%XSNSWE_7DY     (IMASK) + PK%XPATCH(JI) * DMK%XSNSWE_7DY     (JI)
+        DM%XSNRAM_SONDE   (IMASK) = DM%XSNRAM_SONDE   (IMASK) + PK%XPATCH(JI) * DMK%XSNRAM_SONDE   (JI)
+        DM%XSN_WETTHCKN   (IMASK) = DM%XSN_WETTHCKN   (IMASK) + PK%XPATCH(JI) * DMK%XSN_WETTHCKN   (JI)
         DM%XSN_REFRZNTHCKN(IMASK) = DM%XSN_REFRZNTHCKN(IMASK) + PK%XPATCH(JI) * DMK%XSN_REFRZNTHCKN(JI)
+        !The following does not make really sense
+        DM%XDEP_HIG       (IMASK) = DM%XDEP_HIG       (IMASK) + PK%XPATCH(JI) * DMK%XDEP_HIG       (JI)
+        DM%XDEP_MOD       (IMASK) = DM%XDEP_MOD       (IMASK) + PK%XPATCH(JI) * DMK%XDEP_MOD       (JI)
+        DM%XACC_LEV       (IMASK) = DM%XACC_LEV       (IMASK) + PK%XPATCH(JI) * DMK%XACC_LEV       (JI)
+        DM%XPRO_INF_TYP   (IMASK) = DM%XPRO_INF_TYP   (IMASK) + PK%XPATCH(JI) * DMK%XPRO_INF_TYP   (JI)
         !
+         
       ENDIF
-      !      
+!
     ENDIF
-    !
+!
+    ! Ugly way to keep XUNDEF instead of 0 in case of no snow
+    IF ((DMK%XTWSNOW(JI)<=0.0).AND.(DM%LPROSNOW .AND. NPE%AL(1)%TSNOW%SCHEME=="CRO")) THEN
+      DM%XDEP_HIG       (IMASK) = XUNDEF
+      DM%XDEP_MOD       (IMASK) = XUNDEF
+      DM%XACC_LEV       (IMASK) = 4
+      DM%XPRO_INF_TYP   (IMASK) = 6
+    ENDIF
   ENDDO
-  !
+!
 ENDDO
+!
 !
 !-------------------------------------------------------------------------------
 !
@@ -212,7 +236,7 @@ ZSUMDG  (:)=0.0
 !---------------------------------------------
 IF(IO%CISBA=='DIF')THEN ! DIF case
 !---------------------------------------------
-!   
+!
   DM%XALT   (:) = 0. 
   DM%XFLT   (:) = 0. 
 
@@ -228,8 +252,8 @@ IF(IO%CISBA=='DIF')THEN ! DIF case
         IMASK = PK%NR_P(JI)
         ZTG(IMASK,JL) = ZTG(IMASK,JL) + PK%XPATCH(JI) * PEK%XTG(JI,JL)
         ZDG(IMASK,JL) = ZDG(IMASK,JL) + PK%XPATCH(JI) * PK%XDG (JI,JL)
-      ENDDO
-    ENDDO
+        ENDDO
+     ENDDO
 
   ENDDO
   CALL COMPUT_COLD_LAYERS_THICK(ZDG,ZTG,DM%XALT,DM%XFLT)
@@ -249,25 +273,25 @@ IF(IO%CISBA=='DIF')THEN ! DIF case
           IMASK = PK%NR_P(JI)
 
           ZWORK = PK%XDZG(JI,JL)
-          !Soil Wetness Index profile
+               !Soil Wetness Index profile
           DM%XSWI (IMASK,JL) = DM%XSWI (IMASK,JL) + ZWORK*PK%XPATCH(JI) * DMK%XSWI (JI,JL) 
           DM%XTSWI(IMASK,JL) = DM%XTSWI(IMASK,JL) + ZWORK*PK%XPATCH(JI) * DMK%XTSWI(JI,JL)
           ZPOND   (IMASK,JL) = ZPOND   (IMASK,JL) + ZWORK*PK%XPATCH(JI)
-          !Total soil wetness index, total water and ice contents
+               !Total soil wetness index, total water and ice contents
           DM%XSOIL_SWI (IMASK) = DM%XSOIL_SWI (IMASK) + ZWORK * PK%XPATCH(JI) * DMK%XSWI (JI,JL)
           DM%XSOIL_TSWI(IMASK) = DM%XSOIL_TSWI(IMASK) + ZWORK * PK%XPATCH(JI) * DMK%XTSWI(JI,JL)
           ZSUMDG       (IMASK) = ZSUMDG       (IMASK) + ZWORK * PK%XPATCH(JI)
           DM%XSOIL_TWG (IMASK) = DM%XSOIL_TWG (IMASK) + ZWORK * PK%XPATCH(JI) * (PEK%XWG(JI,JL) + PEK%XWGI(JI,JL))
           DM%XSOIL_TWGI(IMASK) = DM%XSOIL_TWGI(IMASK) + ZWORK * PK%XPATCH(JI) * PEK%XWGI(JI,JL)
 
-        ENDIF
+             ENDIF
 
-      ENDDO
+          ENDDO
 
-    ENDDO
+       ENDDO
     !
   ENDDO
-  !
+!  
   WHERE(ZPOND(:,:)> 0.)
     DM%XSWI (:,:) = DM%XSWI (:,:) / ZPOND(:,:)
     DM%XTSWI(:,:) = DM%XTSWI(:,:) / ZPOND(:,:)
@@ -279,14 +303,14 @@ IF(IO%CISBA=='DIF')THEN ! DIF case
 ! ---------------------------------------------
   IF(DM%LSURF_MISC_DIF)THEN ! LSURF_MISC_DIF case
 ! ---------------------------------------------
-!     
+!    
     ZSUMFRD2(:)=0.0
     ZSUMFRD3(:)=0.0
-!
+!  
     DM%XFRD2_TSWI (:) = 0.
     DM%XFRD2_TWG  (:) = 0.
     DM%XFRD2_TWGI (:) = 0.
-!   
+!     
     DM%XFRD3_TSWI (:) = 0.
     DM%XFRD3_TWG  (:) = 0.
     DM%XFRD3_TWGI (:) = 0.
@@ -352,7 +376,7 @@ ELSE ! Force-restore case
     PK => NP%AL(JP)
     PEK => NPE%AL(JP)
     DMK => NDM%AL(JP)
-
+!
     DO JI=1,PK%NSIZE_P
       IMASK = PK%NR_P(JI)    
 !
@@ -360,15 +384,15 @@ ELSE ! Force-restore case
       DM%XSWI (IMASK,2) = DM%XSWI (IMASK,2) + PK%XPATCH(JI) * DMK%XSWI (JI,2)
       DM%XTSWI(IMASK,1) = DM%XTSWI(IMASK,1) + PK%XPATCH(JI) * DMK%XTSWI(JI,1)
       DM%XTSWI(IMASK,2) = DM%XTSWI(IMASK,2) + PK%XPATCH(JI) * DMK%XTSWI(JI,2)
-!
+! 
       DM%XSOIL_SWI (IMASK) = DM%XSOIL_SWI (IMASK) + PK%XPATCH(JI) * PK%XDG (JI,2) * DMK%XSWI (JI,2)
       DM%XSOIL_TSWI(IMASK) = DM%XSOIL_TSWI(IMASK) + PK%XPATCH(JI) * PK%XDG (JI,2) * DMK%XTSWI(JI,2)
       DM%XSOIL_TWG (IMASK) = DM%XSOIL_TWG (IMASK) + PK%XPATCH(JI) * PK%XDG (JI,2) * (PEK%XWG(JI,2) + PEK%XWGI(JI,2))
       DM%XSOIL_TWGI(IMASK) = DM%XSOIL_TWGI(IMASK) + PK%XPATCH(JI) * PK%XDG (JI,2) * PEK%XWGI(JI,2) 
-!        
+!          
       ZSUMDG       (IMASK) = ZSUMDG(IMASK) + PK%XPATCH(JI) * PK%XDG(JI,IO%NGROUND_LAYER)        
 !          
-    ENDDO
+     ENDDO
   ENDDO     
 !     
   IF(IO%CISBA=='3-L')THEN
@@ -378,13 +402,13 @@ ELSE ! Force-restore case
       DMK => NDM%AL(JP)
       PK => NP%AL(JP)
       PEK => NPE%AL(JP)    
-     
+!
       DO JI=1,PK%NSIZE_P
         IMASK = PK%NR_P(JI)       
 !
         ZWORK=MAX(0.0,PK%XDG(JI,3)-PK%XDG(JI,2))
 !
-!       Remenber: no ice in the third layer of 3-L
+!           Remenber: no ice in the third layer of 3-L
         ZPOND         (IMASK,3) = ZPOND        (IMASK,3) + PK%XPATCH(JI) * ZWORK
         DM%XSWI       (IMASK,3) = DM%XSWI      (IMASK,3) + PK%XPATCH(JI) * ZWORK * DMK%XSWI (JI,3)
         DM%XSOIL_SWI  (IMASK  ) = DM%XSOIL_SWI (IMASK  ) + PK%XPATCH(JI) * ZWORK * DMK%XSWI (JI,3)  
@@ -392,7 +416,7 @@ ELSE ! Force-restore case
         DM%XSOIL_TSWI (IMASK  ) = DM%XSOIL_TSWI(IMASK  ) + PK%XPATCH(JI) * ZWORK * DMK%XTSWI(JI,3)  
         DM%XSOIL_TWG  (IMASK  ) = DM%XSOIL_TWG (IMASK  ) + PK%XPATCH(JI) * ZWORK * PEK%XWG  (JI,3)  
 !
-      ENDDO
+       ENDDO
     ENDDO
 !
     WHERE(ZPOND(:,3)>0.0)
@@ -407,11 +431,63 @@ ELSE ! Force-restore case
   
 !
 !---------------------------------------------
-ENDIF ! End ISBA soil scheme case   !
+ENDIF ! End ISBA soil scheme case   
 !
 !---------------------------------------------
 !
-!       3.     Final computation for grid-cell diag
+!       3.     Specific treatement following snow scheme
+!              ------------------------------------------
+!
+IF(NPE%AL(1)%TSNOW%SCHEME=="CRO") THEN
+
+  IF ( IO%LSNOWSYTRON ) THEN
+
+    DM%XSYTMASS(:) = 0.
+    DM%XSYTMASSC(:) = 0.
+
+    DO JP=1,IO%NPATCH
+      PK => NP%AL(JP)
+      DMK => NDM%AL(JP)
+      !   
+      DO JI=1,PK%NSIZE_P
+        IMASK = PK%NR_P(JI)
+        !
+        !     SYTRON total outputs
+        DM%XSYTMASS(IMASK) = DM%XSYTMASS(IMASK) + PK%XPATCH(JI) * DMK%XSYTMASS(JI)
+        DM%XSYTMASSC(IMASK) = DM%XSYTMASSC(IMASK) + PK%XPATCH(JI) * DMK%XSYTMASSC(JI)
+        !
+      ENDDO
+      !
+    ENDDO
+
+  ENDIF
+
+  IF ( IO%LSNOWMAK_BOOL ) THEN
+
+    DM%XPRODCOUNT(:) = 0.
+
+    DO JP=1,IO%NPATCH
+      PK => NP%AL(JP)
+      DMK => NDM%AL(JP)
+      !   
+      DO JI=1,PK%NSIZE_P
+        IMASK = PK%NR_P(JI)
+        !
+        !     Snow production counter output
+        DM%XPRODCOUNT(IMASK) = DM%XPRODCOUNT(IMASK) + PK%XPATCH(JI) * DMK%XPRODCOUNT(JI)
+        !
+      ENDDO
+      !
+    ENDDO
+    !
+  ENDIF
+
+ENDIF
+
+
+!
+!       4.     Final computation for grid-cell diag
+!
 !              ------------------------------------
 !
 !Total Soil Wetness Index and Soil Water Content (m3.m-3)

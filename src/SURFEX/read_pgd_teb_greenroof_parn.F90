@@ -44,20 +44,17 @@
 !
 !
 !
-USE MODD_DATA_ISBA_n, ONLY : DATA_ISBA_t
-USE MODD_ISBA_OPTIONS_n, ONLY : ISBA_OPTIONS_t
-USE MODD_ISBA_n, ONLY : ISBA_S_t, ISBA_K_t
+USE MODD_DATA_ISBA_n,          ONLY : DATA_ISBA_t
+USE MODD_ISBA_OPTIONS_n,       ONLY : ISBA_OPTIONS_t
+USE MODD_ISBA_n,               ONLY : ISBA_S_t, ISBA_K_t
 !
 USE MODD_CSTS,                 ONLY : XDAY
-USE MODD_SURF_PAR,             ONLY : XUNDEF
+USE MODD_SURF_PAR,             ONLY : XUNDEF, LEN_HREC
 USE MODD_DATA_COVER_PAR,       ONLY : NVEGTYPE, NVT_GRAS, NVT_TROG
 !paramètres ci-dessus à initialiser pour les GR (sauf XPAR_OM_GR, XPAR_SAND_GR, XPAR_CLAY_GR qui sont lues) 
 USE MODD_PREP_TEB_GREENROOF,   ONLY : NGRID_LEVEL, XGRID_SOIL
 !
 USE MODI_READ_SURF
-USE MODI_VEG_FROM_LAI
-USE MODI_Z0V_FROM_LAI
-USE MODI_EMIS_FROM_VEG
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -67,11 +64,11 @@ IMPLICIT NONE
 !*       0.1   Declarations of arguments
 !              -------------------------
 !
-TYPE(DATA_ISBA_t), INTENT(INOUT) :: DTV
+TYPE(DATA_ISBA_t),    INTENT(INOUT) :: DTV
 TYPE(ISBA_OPTIONS_t), INTENT(INOUT) :: IO
-TYPE(ISBA_S_t), INTENT(INOUT) :: S
-TYPE(ISBA_K_t), INTENT(INOUT) :: K
-INTEGER, INTENT(IN) :: KDIM
+TYPE(ISBA_S_t),       INTENT(INOUT) :: S
+TYPE(ISBA_K_t),       INTENT(INOUT) :: K
+INTEGER,              INTENT(IN) :: KDIM
 !
  CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM ! program calling
 !
@@ -79,8 +76,8 @@ INTEGER, INTENT(IN) :: KDIM
 !              -------------------------------
 !
 INTEGER                               :: IRESP          ! IRESP  : return-code if a problem appears
- CHARACTER(LEN=LEN_HREC)                     :: YRECFM         ! Name of the article to be read
- CHARACTER(LEN=100)                    :: YCOMMENT       ! Comment string
+ CHARACTER(LEN=LEN_HREC)              :: YRECFM         ! Name of the article to be read
+ CHARACTER(LEN=100)                   :: YCOMMENT       ! Comment string
 INTEGER                               :: JI             ! loop index
 INTEGER                               :: JTIME          ! loop index
 INTEGER                               :: JLAYER         ! loop index

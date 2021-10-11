@@ -22,20 +22,21 @@
 !!
 !!    Original    12/09/95
 !!     V. Masson  03/2004  externalization
+!!                02/2019   A. Druel - Add MA1 and ARV possibilities (without taking into account the zeros)
 !!
 !----------------------------------------------------------------------------
 !
 !*    0.     DECLARATION
 !            -----------
 !
-USE MODD_SURFEX_MPI, ONLY : NRANK
-USE MODD_SURF_PAR, ONLY : XUNDEF
+USE MODD_SURFEX_MPI,     ONLY : NRANK
+USE MODD_SURF_PAR,       ONLY : XUNDEF
 USE MODD_PGDWORK,        ONLY : NSIZE, XSUMVAL, CATYPE, XPREC
 USE MODD_DATA_COVER_PAR, ONLY : XCDREF
 !
 !
-USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
-USE PARKIND1  ,ONLY : JPRB
+USE YOMHOOK   ,          ONLY : LHOOK,   DR_HOOK
+USE PARKIND1  ,          ONLY : JPRB
 !
 IMPLICIT NONE
 !
@@ -47,15 +48,15 @@ REAL,    DIMENSION(:,:), INTENT(INOUT) :: PPGDARRAY ! Mesonh field
 !*    0.2    Declaration of other local variables
 !            ------------------------------------
 !
-REAL :: ZINT
-INTEGER :: JI, JJ
+REAL            :: ZINT
+INTEGER         :: JI, JJ
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('AVERAGE2_MESH',0,ZHOOK_HANDLE)
 SELECT CASE (CATYPE)
 
-  CASE ('ARI')
+  CASE ('ARI', 'ARV')
   WHERE (NSIZE(:,:)/=0)
     PPGDARRAY(:,:) = XSUMVAL(:,:)/NSIZE(:,:)
   ENDWHERE
@@ -70,7 +71,7 @@ SELECT CASE (CATYPE)
     PPGDARRAY(:,:) = XCDREF/EXP(SQRT(NSIZE(:,:)/XSUMVAL(:,:)))
   ENDWHERE
 
-  CASE ('MAJ')
+  CASE ('MAJ', 'MA1')
   WHERE (NSIZE(:,:)/=0)
     PPGDARRAY(:,:) = XSUMVAL(:,:)
   ENDWHERE

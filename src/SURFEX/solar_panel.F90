@@ -3,8 +3,8 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-    SUBROUTINE SOLAR_PANEL(TPN, DMT, PTSTEP, PTSUN, PRESIDENTIAL, PEMIT_LW_ROOF, &
-                           PEMIT_LWDN_PANEL, PLW_RAD, PTA, PN_FLOOR, PPROD_BLD )
+    SUBROUTINE SOLAR_PANEL(TPN, DMT, HPROGRAM, PTSTEP, PTSUN, PRESIDENTIAL, PEMIT_LW_ROOF, &
+                           PEMIT_LWDN_PANEL, PLW_RAD, PTA, PN_FLOOR )
 !   ##########################################################################
 !
 !!****  *SOLAR_PANEL*  
@@ -60,6 +60,7 @@ IMPLICIT NONE
 TYPE(TEB_PANEL_t), INTENT(INOUT) :: TPN
 TYPE(DIAG_MISC_TEB_t), INTENT(INOUT) :: DMT
 !
+CHARACTER(LEN=6),   INTENT(IN)  :: HPROGRAM        ! program calling surf. schemes
 REAL,               INTENT(IN)  :: PTSTEP          ! time step  (s)
 REAL, DIMENSION(:), INTENT(IN)  :: PTSUN           ! solar time (s since solar midnight)
 REAL, DIMENSION(:), INTENT(IN)  :: PRESIDENTIAL    ! Buildings Residential use fraction        (-)
@@ -68,8 +69,6 @@ REAL, DIMENSION(:), INTENT(IN)  :: PEMIT_LWDN_PANEL! Downwards LW flux from pane
 REAL, DIMENSION(:), INTENT(IN)  :: PLW_RAD         ! Incoming Longwave radiation               (W/m2)
 REAL, DIMENSION(:), INTENT(IN)  :: PTA             ! Air temperature                           (K)
 REAL, DIMENSION(:), INTENT(IN)  :: PN_FLOOR        ! number of floors                          (-)
-!
-REAL, DIMENSION(:), INTENT(OUT)  :: PPROD_BLD
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
@@ -113,6 +112,10 @@ REAL, DIMENSION(SIZE(PTA)) :: ZLWU_PANEL  ! Upwards longwave radiation from the 
 REAL, DIMENSION(SIZE(PTA)) :: ZTHER_FRAC  ! Fraction of thermal      panels per m2 of roof  (m2 panel/m2 bld)
 REAL, DIMENSION(SIZE(PTA)) :: ZPHOT_FRAC  ! Fraction of photovoltaic panels per m2 of roof  (m2 panel/m2 bld)
 REAL, DIMENSION(SIZE(PTA)) :: ZTHER_PRODC_DAY ! guess of daily production by thermal panels (J/m2)
+REAL, DIMENSION(SIZE(PTA)) :: ZIMB_PANEL  ! Energy budget imbalance for solar panels (W/m²(panel))
+!
+INTEGER :: JJ      ! Loop index
+INTEGER :: ILUOUT  ! logical unit of output file
 !
 !-------------------------------------------------------------------------------
 IF (LHOOK) CALL DR_HOOK('SOLAR_PANEL',0,ZHOOK_HANDLE)
@@ -129,7 +132,6 @@ DMT%XPHOT_PROD_PANEL= XUNDEF ! Photovoltaic Energy production of the solar panel
 DMT%XPROD_PANEL     = XUNDEF ! Averaged     Energy production of the solar panel      (W/m2)
 DMT%XTHER_PROD_BLD  = 0.     ! Thermal      Energy production of the solar panel      (W/m2)
 DMT%XPHOT_PROD_BLD  = 0.     ! Photovoltaic Energy production of the solar panel      (W/m2)
-PPROD_BLD       = 0.     ! Averaged     Energy production of the solar panel      (W/m2)
 !
 !-------------------------------------------------------------------------------
 !
@@ -150,6 +152,25 @@ ZTHER_DAILY_TARGET = (2.*XTHER_RATE) * XWATER_DT * (1000. / 365. * 3600. ) ! (J/
 ! the factor 2 is to remove the assumption of cloudy days in the annual mean production
 !
 !-------------------------------------------------------------------------------
+!
+!*      7.     Fraction of panel surface types
+!              -------------------------------
+!
+!*      7.1    Panel dedicated to thermal production of hot water 
+!              --------------------------------------------------
+!
+IF (TPN%CSOLAR_PANEL=='MIX') THEN
+  ZTHER_FRAC(:) = MIN( XTHER_FLOOR * PN_FLOOR(:) * PRESIDENTIAL(:), TPN%XFRAC_PANEL(:) )   ! (m2 thermal       panel / m2 roof)
+ELSE
+  ZTHER_FRAC(:) = 0.  
+END IF
+!
+!*      7.2    Photovoltaic panel
+!              ------------------
+!
+ZPHOT_FRAC(:) =  TPN%XFRAC_PANEL(:) - ZTHER_FRAC(:)                      ! (m2 photovoltaic panel / m2 roof)
+! 
+!-------------------------------------------------------------------------------
 !* Note that computations are done only where solar panels are present
 WHERE (TPN%XFRAC_PANEL(:)>0.)
 !-------------------------------------------------------------------------------
@@ -165,6 +186,7 @@ WHERE (TPN%XFRAC_PANEL(:)>0.)
 !              -----------------------
 !
   ZTS_PANEL  (:) = PTA(:) + XKT * ZIRRADIANCE(:)
+  DMT%XTS_PANEL(:) = ZTS_PANEL(:)
 !
 !-------------------------------------------------------------------------------
 !
@@ -188,20 +210,6 @@ WHERE (TPN%XFRAC_PANEL(:)>0.)
 !
   DMT%XRN_PANEL(:)    = DMT%XABS_SW_PANEL(:) + DMT%XABS_LW_PANEL(:)
 !
-!-------------------------------------------------------------------------------
-!
-!*      7.     Fraction of panel surface types
-!              -------------------------------
-!
-!*      7.1    Panel dedicated to thermal production of hot water 
-!              --------------------------------------------------
-!
-  ZTHER_FRAC(:) = MIN( XTHER_FLOOR * PN_FLOOR(:) * PRESIDENTIAL(:), TPN%XFRAC_PANEL(:) )   ! (m2 thermal       panel / m2 roof)
-!
-!*      7.2    Photovoltaic panel
-!              ------------------
-!
-  ZPHOT_FRAC(:) =  TPN%XFRAC_PANEL(:) - ZTHER_FRAC(:)                      ! (m2 photovoltaic panel / m2 roof)
 !
 !-------------------------------------------------------------------------------
 !
@@ -263,11 +271,37 @@ WHERE (TPN%XFRAC_PANEL(:)>0.)
 !
   DMT%XTHER_PROD_BLD(:) = DMT%XTHER_PROD_PANEL(:) * ZTHER_FRAC(:)
   DMT%XPHOT_PROD_BLD(:) = DMT%XPHOT_PROD_PANEL(:) * ZPHOT_FRAC(:)
-  PPROD_BLD     (:) = DMT%XTHER_PROD_BLD  (:) + DMT%XPHOT_PROD_PANEL(:)
 !
 !-------------------------------------------------------------------------------
 END WHERE
 !-------------------------------------------------------------------------------
+!
+! Robert: 
+! Check energy budget for solar panel
+!
+DO JJ=1,SIZE(DMT%XH_PANEL)
+   IF (TPN%XFRAC_PANEL(JJ).GT.0.0) THEN
+      !
+      ZIMB_PANEL(JJ)=DMT%XRN_PANEL(JJ)-DMT%XH_PANEL(JJ)-DMT%XPROD_PANEL(JJ)
+      !
+      IF (ABS(ZIMB_PANEL(JJ)).GT.1.0E-6) THEN
+         !
+         CALL GET_LUOUT(HPROGRAM,ILUOUT)
+         !
+         WRITE(ILUOUT,*) "JJ                                : ",JJ
+         WRITE(ILUOUT,*) "TPN%XFRAC_PANEL(JJ)                 : ",TPN%XFRAC_PANEL(JJ)
+         WRITE(ILUOUT,*) "DMT%XH_PANEL   (JJ) (W/m²(panel)) : ",DMT%XH_PANEL(JJ)
+         WRITE(ILUOUT,*) "DMT%XRN_PANEL  (JJ) (W/m²(panel)) : ",DMT%XRN_PANEL(JJ)
+         WRITE(ILUOUT,*) "DMT%XPROD_PANEL(JJ) (W/m²(panel)) : ",DMT%XPROD_PANEL(JJ)
+         WRITE(ILUOUT,*) "ZIMB_PANEL (JJ) (W/m²(panel))     : ",ZIMB_PANEL(JJ)
+         CALL FLUSH(ILUOUT)
+         !
+         CALL ABOR1_SFX('Too large energy budget imbalance for solar panel')
+         !
+      ENDIF
+      !
+   ENDIF
+ENDDO
 !
 !-------------------------------------------------------------------------------
 IF (LHOOK) CALL DR_HOOK('SOLAR_PANEL',1,ZHOOK_HANDLE)

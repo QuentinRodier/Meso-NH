@@ -42,6 +42,7 @@
 !!      M. Lafaysse 11/2012, possibility to prescribe snow depth instead of snow water equivalent
 !!      M Lafaysse 04/2014 : LSNOW_PREP_PERM
 !      B. Decharme  07/2013 ES snow grid layer can be > to 3 (default 12)
+!!       Modified by F. Tuzet (06/2016): Add of a new dimension for impurity: The type of impurity
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -67,10 +68,10 @@ USE MODD_PREP_ISBA, ONLY : CFILE_SNOW, CTYPE_SNOW, CFILEPGD_SNOW, &
                            XLWCSNOW_p=>XLWCSNOW, &
                            XRSNOW_p=>XRSNOW, XASNOW,            &
                            XSG1SNOW_p=>XSG1SNOW, XSG2SNOW_p=>XSG2SNOW, &
-                           XHISTSNOW_p=>XHISTSNOW, XAGESNOW_p=>XAGESNOW
-                           
+                           XHISTSNOW_p=>XHISTSNOW, XAGESNOW_p=>XAGESNOW, &
+                           XIMPURSNOW_p=>XIMPURSNOW    
 !
-USE MODD_PREP_SNOW, ONLY : LSNOW_FRAC_TOT, NSNOW_LAYER_MAX , LSNOW_PREP_PERM
+USE MODD_PREP_SNOW, ONLY : LSNOW_FRAC_TOT, NSNOW_LAYER_MAX , LSNOW_PREP_PERM, NIMPUR,NIMPUR_MAX
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -82,7 +83,7 @@ IMPLICIT NONE
 !
  CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM ! program calling ISBA
  CHARACTER(LEN=3),  INTENT(OUT) :: HSNOW    ! snow scheme
-INTEGER, INTENT(OUT)           :: KSNOW_LAYER  ! number of snow layers
+ INTEGER, INTENT(OUT)           :: KSNOW_LAYER  ! number of snow layers
  CHARACTER(LEN=28), OPTIONAL, INTENT(OUT) :: HFILE        ! file name
  CHARACTER(LEN=6),  OPTIONAL, INTENT(OUT) :: HFILETYPE    ! file type
  CHARACTER(LEN=28), OPTIONAL, INTENT(OUT) :: HFILEPGD       ! file name
@@ -94,7 +95,10 @@ LOGICAL,           OPTIONAL, INTENT(OUT) :: OUNIF  ! uniform snow
 !
 REAL, DIMENSION(NSNOW_LAYER_MAX) :: XWSNOW, XZSNOW, XRSNOW, XTSNOW, XLWCSNOW, &
                                     XSG1SNOW, XSG2SNOW, XHISTSNOW, XAGESNOW
-INTEGER           :: JLAYER
+                                                    
+REAL,DIMENSION (NSNOW_LAYER_MAX,NIMPUR_MAX)  ::   XIMPURSNOW
+                                    
+INTEGER           :: JLAYER,JIMP
 !
 LOGICAL           :: LFILE
 !
@@ -108,7 +112,7 @@ NAMELIST/NAM_PREP_ISBA_SNOW/CSNOW, NSNOW_LAYER, CFILE_SNOW, CTYPE_SNOW,  &
                             LSNOW_IDEAL, LSNOW_FRAC_TOT,LSNOW_PREP_PERM, &
                             XWSNOW, XZSNOW, XTSNOW, XLWCSNOW, XRSNOW, XASNOW,  &
                             XSG1SNOW, XSG2SNOW, XHISTSNOW, XAGESNOW,     &
-                            LSWEMAX,XSWEMAX
+                            XIMPURSNOW, LSWEMAX,XSWEMAX,NIMPUR
 !-------------------------------------------------------------------------------
 !* default
 !  -------
@@ -117,7 +121,8 @@ IF (LHOOK) CALL DR_HOOK('READ_PREP_ISBA_SNOW',0,ZHOOK_HANDLE)
 IF (LNAM_READ) THEN
   !
   CSNOW = 'D95'
-  NSNOW_LAYER = 1
+  NSNOW_LAYER = 1  
+  NIMPUR = 0   
   !
   CFILE_SNOW = '                         '
   CTYPE_SNOW = '      '
@@ -137,7 +142,8 @@ IF (LNAM_READ) THEN
   XSG1SNOW(:) = XUNDEF
   XSG2SNOW(:) = XUNDEF
   XHISTSNOW(:) = XUNDEF
-  XAGESNOW(:) = XUNDEF  
+  XAGESNOW(:) = XUNDEF    
+  XIMPURSNOW(:,:) = 0.
   !
   LSWEMAX=.FALSE. 
   XSWEMAX=500. 
@@ -207,12 +213,14 @@ IF (LNAM_READ) THEN
   ALLOCATE(XRSNOW_p(NSNOW_LAYER))
   ALLOCATE(XTSNOW_p(NSNOW_LAYER))
   ALLOCATE(XLWCSNOW_p(NSNOW_LAYER))
-  ALLOCATE(XAGESNOW_p(NSNOW_LAYER))
+  ALLOCATE(XAGESNOW_p(NSNOW_LAYER))  
+  ALLOCATE(XIMPURSNOW_p(NSNOW_LAYER,NIMPUR))
   !
   XWSNOW_p  =XWSNOW(1:NSNOW_LAYER)
   XRSNOW_p  =XRSNOW(1:NSNOW_LAYER)
   XTSNOW_p  =XTSNOW(1:NSNOW_LAYER)
   XAGESNOW_p=XAGESNOW(1:NSNOW_LAYER)
+  XIMPURSNOW_p=XIMPURSNOW(1:NSNOW_LAYER,1:NIMPUR)
   XLWCSNOW_p=XLWCSNOW(1:NSNOW_LAYER)
   !
 
@@ -229,16 +237,18 @@ IF (LNAM_READ) THEN
         CALL ABOR1_SFX('READ_PREP_ISBA_SNOW: ERROR IN INITIALISATION OF SNOW PARAMETERS')
     END IF
   END DO
-
+!
   IF (CSNOW=='CRO') THEN
     !
     ALLOCATE(XSG1SNOW_p (NSNOW_LAYER))
     ALLOCATE(XSG2SNOW_p (NSNOW_LAYER))
     ALLOCATE(XHISTSNOW_p(NSNOW_LAYER))
+    ALLOCATE(XIMPURSNOW_p(NSNOW_LAYER,NIMPUR))
     !
     XSG1SNOW_p =XSG1SNOW (1:NSNOW_LAYER)
     XSG2SNOW_p =XSG2SNOW (1:NSNOW_LAYER)
     XHISTSNOW_p=XHISTSNOW(1:NSNOW_LAYER)
+    XIMPURSNOW_p=XIMPURSNOW(1:NSNOW_LAYER,1:NIMPUR)
     !
     DO JLAYER=1,NSNOW_LAYER
       IF ((XSG1SNOW_p (JLAYER)==XUNDEF .OR. XSG2SNOW_p(JLAYER)==XUNDEF .OR. &
@@ -259,6 +269,7 @@ IF (LNAM_READ) THEN
     ALLOCATE(XSG1SNOW_p (0))
     ALLOCATE(XSG2SNOW_p (0))
     ALLOCATE(XHISTSNOW_p(0))
+    ALLOCATE(XIMPURSNOW_p(0,0))
     !
   ENDIF
   !

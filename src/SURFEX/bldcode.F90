@@ -2,30 +2,19 @@
 !SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
-FUNCTION BLDCODE (BDD, KTYPE,KAGE) RESULT(KCODE)
-!
-!
-!
-USE MODD_BLD_DESCRIPTION_n, ONLY : BLD_DESC_t
+SUBROUTINE BLDCODE(KTYPE,KAGE,KUSAGE,KTERRY,KCODE)
 !
 IMPLICIT NONE
 !
-TYPE(BLD_DESC_t), INTENT(INOUT) :: BDD
+INTEGER, INTENT(IN) :: KTYPE   ! Type of building
+INTEGER, INTENT(IN) :: KAGE    ! Date of construction (or total renovation) of building
+INTEGER, INTENT(IN) :: KUSAGE  ! Usage of building
+INTEGER, INTENT(IN) :: KTERRY  ! Territory
 !
-INTEGER, DIMENSION(:), INTENT(IN) :: KTYPE ! Type of building
-INTEGER, DIMENSION(:), INTENT(IN) :: KAGE  ! date of construction (or total renovation) of building
-INTEGER, DIMENSION(SIZE(KTYPE))   :: KCODE ! Building code (merges type & age info).
+INTEGER, INTENT(OUT) :: KCODE  ! Building code
 !
-INTEGER :: JL        ! loop counter on points
-INTEGER :: JAGE      ! loop counter on construction date ranges
-INTEGER :: ICODE_AGE ! code for the adequate construction date range
+KCODE=1000000*KTYPE+10000*KAGE+100*KUSAGE+KTERRY
 !
-DO JL=1,SIZE(KTYPE)
-  ICODE_AGE=BDD%NDESC_AGE_LIST(BDD%NDESC_AGE) ! default value is the more recent building
-  DO JAGE=BDD%NDESC_AGE,1,-1
-    IF (BDD%NDESC_AGE_DATE(JAGE)>=KAGE(JL)) ICODE_AGE = BDD%NDESC_AGE_LIST(JAGE)
-  END DO
-  KCODE(JL) = 100*KTYPE(JL)+ICODE_AGE
-END DO
+RETURN
 !
-END FUNCTION BLDCODE
+END SUBROUTINE BLDCODE

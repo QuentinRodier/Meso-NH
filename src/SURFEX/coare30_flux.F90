@@ -50,12 +50,14 @@
 !!      Original     1/06/2006
 !!      B. Decharme    06/2009 limitation of Ri
 !!      B. Decharme    09/2012 Bug in Ri calculation and limitation of Ri in surface_ri.F90
-!!      B. Decharme    06/2013 bug in z0 (output) computation
-!!      M.N. Bouin     03/2014 possibility of wave parameters from external source
+!!      B. Decharme    06/2013 bug in z0 (output) computation 
+!!      J.Escobar      06/2013  for REAL4/8 add EPSILON management
 !!      C. Lebeaupin   03/2014 bug if PTA=PSST and PEXNA=PEXNS: set a minimum value
-!!	   	       	       add abort if no convergence
-!!      C. Lebeaupin   06/2014 itermax=10 for low wind conditions (ZVMOD<=1)
+!!                             add abort if no convergence
+!!      M.N. Bouin     03/2014 possibility of wave parameters from external source
+!!                             and bounds Z0
 !!      J. Pianezze    11/2014 add coupling wave parameters 
+!!      C. Lebeaupin   02/2020 ZVMOD for wave parameters 
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -328,9 +330,6 @@ DO J=1,SIZE(PTA)
   ELSE
     ITERMAX(J) = 3 !number of iterations
   ENDIF
-  IF (ZVMOD(J)<=1.) THEN
-    ITERMAX(J) = 10
-  ENDIF
   !
   IF (.NOT.LCPL_WAVE) THEN
     !then modify Charnork for high wind speeds Chris Fairall's data
@@ -342,14 +341,14 @@ DO J=1,SIZE(PTA)
   !                -------------------------------------------
   !
   IF (S%LWAVEWIND .AND. .NOT. LCPL_WAVE) THEN
-    ZHWAVE(J) = 0.018*PVMOD(J)*PVMOD(J)*(1.+0.015*PVMOD(J))
-    ZTWAVE(J) = 0.729*PVMOD(J)
+    ZHWAVE(J) = 0.018*ZVMOD(J)*ZVMOD(J)*(1.+0.015*ZVMOD(J))
+    ZTWAVE(J) = 0.729*ZVMOD(J)
   ELSE 
     ZHWAVE(J) = PHS(J)
     ZTWAVE(J) = PTP(J)
     ! to avoid the nullity of HS and TP 
-    IF (ZHWAVE(J) .EQ. 0.0) ZHWAVE(J) = 0.018*PVMOD(J)*PVMOD(J)*(1.+0.015*PVMOD(J))
-    IF (ZTWAVE(J) .EQ. 0.0) ZTWAVE(J) = 0.729*PVMOD(J)
+    IF (ZHWAVE(J) .EQ. 0.0) ZHWAVE(J) = 0.018*ZVMOD(J)*ZVMOD(J)*(1.+0.015*ZVMOD(J))
+    IF (ZTWAVE(J) .EQ. 0.0) ZTWAVE(J) = 0.729*ZVMOD(J)
   ENDIF 
 !
   ZCWAVE(J) = XG*ZTWAVE(J)/(2.*XPI)
@@ -520,7 +519,7 @@ ENDDO
 !             
 !
 ZDIRCOSZW(:) = 1.
- CALL SURFACE_RI(PSST,PQSAT,PEXNS,PEXNA,ZTA,ZQASAT,&
+CALL SURFACE_RI(PSST,PQSAT,PEXNS,PEXNA,ZTA,ZQASAT,&
                 PZREF,PUREF,ZDIRCOSZW,PVMOD,PRI   )  
 !
 !       5.2     Aerodynamical conductance and resistance

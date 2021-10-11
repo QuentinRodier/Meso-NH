@@ -3,7 +3,8 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     ###############################################################
-      SUBROUTINE GET_MESH_INDEX_LONLAT_ROT(KL,PGRID_PAR,PLAT,PLON,KINDEX,KSSO,KISSOX,KISSOY)
+      SUBROUTINE GET_MESH_INDEX_LONLAT_ROT(KL,PGRID_PAR,PLAT,PLON,KINDEX,KSSO,KISSOX,KISSOY, &
+                                           KFSSO,KFISSOX,KFISSOY)
 !     ###############################################################
 !
 !!**** *GET_MESH_INDEX_LONLAT_ROT* get the grid mesh where point (lat,lon) is located
@@ -51,6 +52,10 @@ INTEGER, DIMENSION(KL),        INTENT(OUT)   :: KINDEX    ! index of the grid me
 INTEGER,                       INTENT(IN)    :: KSSO      ! number of subgrid mesh in each direction
 INTEGER, DIMENSION(KL),        INTENT(OUT)   :: KISSOX    ! X index of the subgrid mesh
 INTEGER, DIMENSION(KL),        INTENT(OUT)   :: KISSOY    ! Y index of the subgrid mesh
+INTEGER,                       INTENT(IN)    :: KFSSO     ! number of fractional subgrid mesh in each direction
+INTEGER, DIMENSION(KL),       INTENT(OUT)    :: KFISSOX   ! X index of the fractional subgrid mesh
+INTEGER, DIMENSION(KL),       INTENT(OUT)    :: KFISSOY   ! Y index of the fractional subgrid mesh
+
 !
 !*    0.2    Declaration of other local variables
 !            ------------------------------------
@@ -124,6 +129,8 @@ IF (KL/=NLON*NLAT) THEN
   KINDEX = 0
   KISSOX = 0
   KISSOY = 0
+  KFISSOX = 0
+  KFISSOY = 0
 END IF
 !
 !
@@ -134,6 +141,10 @@ DO JL=1,SIZE(ZLAT)
     IF (KSSO/=0) THEN
       KISSOX(JL) = 0
       KISSOY(JL) = 0
+    END IF
+    IF (KFSSO/=0) THEN
+      KFISSOX(JL) = 0
+      KFISSOY(JL) = 0
     END IF
     CYCLE
   END IF
@@ -148,6 +159,10 @@ DO JL=1,SIZE(ZLAT)
   IF (KSSO/=0) THEN
     KISSOX(JL) = 1 + INT( FLOAT(KSSO) * (ZLON(JL)-XLONLIM(JI))/(XLONLIM(JI+1)-XLONLIM(JI)) )
     KISSOY(JL) = 1 + INT( FLOAT(KSSO) * (ZLAT(JL)-XLATLIM(JJ))/(XLATLIM(JJ+1)-XLATLIM(JJ)) )
+  END IF
+  IF (KFSSO/=0) THEN
+    KFISSOX(JL) = 1 + INT( FLOAT(KFSSO) * (ZLON(JL)-XLONLIM(JI))/(XLONLIM(JI+1)-XLONLIM(JI)) )
+    KFISSOY(JL) = 1 + INT( FLOAT(KFSSO) * (ZLAT(JL)-XLATLIM(JJ))/(XLATLIM(JJ+1)-XLATLIM(JJ)) )
   END IF
 END DO
 IF (LHOOK) CALL DR_HOOK('GET_MESH_INDEX_LONLAT_ROT',1,ZHOOK_HANDLE)

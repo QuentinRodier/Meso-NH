@@ -38,7 +38,9 @@ MODULE MODI_READ_SURF
 !!    -------------
 !!
 !!      original                                                     01/08/03
-!!      J.Escobar      10/06/2013: replace DOUBLE PRECISION by REAL to handle problem for promotion of real on IBM SP
+!!      J. Escobar     10/06/2013: replace DOUBLE PRECISION by REAL to handle problem for promotion of real on IBM SP
+!!      A.Druel           08/2019: Permit to change the size of caracters (write / read) with constant
+!!
 !----------------------------------------------------------------------------
 !
   INTERFACE READ_SURF
@@ -275,7 +277,7 @@ INTEGER, INTENT(OUT) :: KRESP             ! KRESP  : return-code if a problem ap
 !*      0.2   Declarations of local variables
 !
  CHARACTER(LEN=100) :: YCOMMENT
- CHARACTER(LEN=LEN_HREC)  :: YREC
+ CHARACTER(LEN=16)  :: YREC
  CHARACTER(LEN=1)   :: YDIR
 REAL   :: XTIME0
 INTEGER            :: INFOMPI
@@ -415,7 +417,7 @@ INTEGER, INTENT(OUT) :: KRESP             ! KRESP  : return-code if a problem ap
 !*      0.2   Declarations of local variables
 !
  CHARACTER(LEN=100) :: YCOMMENT
- CHARACTER(LEN=LEN_HREC)  :: YREC
+ CHARACTER(LEN=16)  :: YREC
  CHARACTER(LEN=1)   :: YDIR
 INTEGER            :: IL, IOK
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
@@ -544,7 +546,7 @@ INTEGER, INTENT(OUT) :: KRESP               ! KRESP  : return-code if a problem 
 !*      0.2   Declarations of local variables
 !
  CHARACTER(LEN=100) :: YCOMMENT
- CHARACTER(LEN=LEN_HREC)  :: YREC
+ CHARACTER(LEN=16)  :: YREC
  CHARACTER(LEN=1)   :: YDIR
 INTEGER            :: IL1, IL2, IOK
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
@@ -650,7 +652,7 @@ INTEGER, INTENT(OUT) :: KRESP                 ! KRESP  : return-code if a proble
 !*      0.2   Declarations of local variables
 !
  CHARACTER(LEN=100) :: YCOMMENT
- CHARACTER(LEN=LEN_HREC)  :: YREC
+ CHARACTER(LEN=16)  :: YREC
  CHARACTER(LEN=1)   :: YDIR
 INTEGER            :: IL1, IL2, IL3
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
@@ -749,7 +751,7 @@ INTEGER, INTENT(OUT) :: KRESP            ! KRESP  : return-code if a problem app
 !*      0.2   Declarations of local variables
 !
  CHARACTER(LEN=100) :: YCOMMENT
- CHARACTER(LEN=LEN_HREC)  :: YREC
+ CHARACTER(LEN=16)  :: YREC
  CHARACTER(LEN=1)   :: YDIR
 REAL   :: XTIME0
 INTEGER, DIMENSION(6) :: IDIMS
@@ -916,7 +918,7 @@ INTEGER, INTENT(OUT) :: KRESP                ! KRESP  : return-code if a problem
 !*      0.2   Declarations of local variables
 !
  CHARACTER(LEN=100) :: YCOMMENT
- CHARACTER(LEN=LEN_HREC)  :: YREC
+ CHARACTER(LEN=16)  :: YREC
  CHARACTER(LEN=1)   :: YDIR
 INTEGER            :: IL
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
@@ -986,25 +988,26 @@ END SUBROUTINE READ_SURFN1
 !
 !
 !
-USE YOMHOOK ,ONLY : LHOOK, DR_HOOK
-USE PARKIND1 ,ONLY : JPRB
+USE YOMHOOK ,            ONLY : LHOOK, DR_HOOK
+USE PARKIND1 ,           ONLY : JPRB
+USE MODD_DATA_COVER_PAR, ONLY : NCAR_FILES
 !
-USE MODD_SURFEX_MPI, ONLY : NRANK, NPIO, NCOMM, NPROC, XTIME_NPIO_READ, XTIME_COMM_READ
+USE MODD_SURFEX_MPI,     ONLY : NRANK, NPIO, NCOMM, NPROC, XTIME_NPIO_READ, XTIME_COMM_READ
 !
 #ifdef SFX_OL
-USE MODE_READ_SURF_OL, ONLY: READ_SURF0_OL
+USE MODE_READ_SURF_OL,   ONLY: READ_SURF0_OL
 #endif
 #ifdef SFX_LFI
-USE MODE_READ_SURF_LFI, ONLY: READ_SURF0_LFI
+USE MODE_READ_SURF_LFI,  ONLY: READ_SURF0_LFI
 #endif
 #ifdef SFX_NC
-USE MODE_READ_SURF_NC, ONLY: READ_SURF0_NC
+USE MODE_READ_SURF_NC,   ONLY: READ_SURF0_NC
 #endif
 #ifdef SFX_ASC
-USE MODE_READ_SURF_ASC, ONLY: READ_SURF0_ASC
+USE MODE_READ_SURF_ASC,  ONLY: READ_SURF0_ASC
 #endif
 #ifdef SFX_FA
-USE MODE_READ_SURF_FA, ONLY: READ_SURF0_FA
+USE MODE_READ_SURF_FA,   ONLY: READ_SURF0_FA
 #endif
 #ifdef SFX_MNH
 USE MODI_READ_SURFC0_MNH
@@ -1032,13 +1035,13 @@ INTEGER, INTENT(OUT) :: KRESP             ! KRESP  : return-code if a problem ap
 !
 !*      0.2   Declarations of local variables
 !
- CHARACTER(LEN=40) :: YFIELD
- CHARACTER(LEN=100) :: YCOMMENT
- CHARACTER(LEN=LEN_HREC)  :: YREC
- CHARACTER(LEN=1)   :: YDIR
-REAL   :: XTIME0
-INTEGER            :: INFOMPI
-REAL(KIND=JPRB) :: ZHOOK_HANDLE
+ CHARACTER(LEN=NCAR_FILES) :: YFIELD
+ CHARACTER(LEN=100)        :: YCOMMENT
+ CHARACTER(LEN=16)         :: YREC
+ CHARACTER(LEN=1)          :: YDIR
+REAL                       :: XTIME0
+INTEGER                    :: INFOMPI
+REAL(KIND=JPRB)            :: ZHOOK_HANDLE
 !
 IF (LHOOK) CALL DR_HOOK('MODI_READ_SURF:READ_SURFC0',0,ZHOOK_HANDLE)
 !
@@ -1102,7 +1105,7 @@ ELSEIF (HPROGRAM=='OFFLIN' .OR. HPROGRAM=='ASCII ' .OR. &
 #ifdef SFX_MPI
   IF (YDIR/='A' .AND. NPROC>1) THEN
     XTIME0 = MPI_WTIME()
-    CALL MPI_BCAST(YFIELD,40,MPI_CHARACTER,NPIO,NCOMM,INFOMPI)
+    CALL MPI_BCAST(YFIELD,NCAR_FILES,MPI_CHARACTER,NPIO,NCOMM,INFOMPI)
     XTIME_COMM_READ = XTIME_COMM_READ + (MPI_WTIME() - XTIME0)
   ENDIF
 #endif
@@ -1172,7 +1175,7 @@ INTEGER, INTENT(OUT) :: KRESP           ! KRESP  : return-code if a problem appe
 !*      0.2   Declarations of local variables
 !
  CHARACTER(LEN=100) :: YCOMMENT
- CHARACTER(LEN=LEN_HREC)  :: YREC
+ CHARACTER(LEN=16)  :: YREC
  CHARACTER(LEN=1)   :: YDIR
 REAL   :: XTIME0
 INTEGER            :: INFOMPI
@@ -1301,7 +1304,7 @@ INTEGER, INTENT(OUT) :: KRESP                ! KRESP  : return-code if a problem
 !*      0.2   Declarations of local variables
 !
  CHARACTER(LEN=100) :: YCOMMENT
- CHARACTER(LEN=LEN_HREC)  :: YREC
+ CHARACTER(LEN=16)  :: YREC
  CHARACTER(LEN=1)   :: YDIR
 INTEGER            :: IL
 LOGICAL :: GDATA
@@ -1421,7 +1424,7 @@ INTEGER, INTENT(OUT) :: KRESP            ! KRESP  : return-code if a problem app
  CHARACTER(LEN=100) :: YCOMMENT
 REAL :: ZWORK
  INTEGER, DIMENSION(3) :: IWORK
- CHARACTER(LEN=LEN_HREC)  :: YREC
+ CHARACTER(LEN=16)  :: YREC
  CHARACTER(LEN=1)   :: YDIR
 !
 REAL   :: XTIME0
@@ -1576,7 +1579,7 @@ INTEGER, INTENT(OUT) :: KRESP              ! KRESP  : return-code if a problem a
 !
 INTEGER, DIMENSION(:,:), ALLOCATABLE :: IWORK2
 REAL, DIMENSION(:), ALLOCATABLE :: ZWORK2
- CHARACTER(LEN=LEN_HREC)  :: YREC
+ CHARACTER(LEN=16)  :: YREC
  CHARACTER(LEN=1)   :: YDIR
 INTEGER            :: ILUOUT
 INTEGER            :: INFOMPI
@@ -1730,7 +1733,7 @@ INTEGER, INTENT(OUT) :: KRESP            ! KRESP  : return-code if a problem app
 !
 INTEGER, DIMENSION(:,:,:), ALLOCATABLE :: IWORK3
 REAL, DIMENSION(:,:), ALLOCATABLE :: ZWORK3
- CHARACTER(LEN=LEN_HREC)  :: YREC
+ CHARACTER(LEN=16)  :: YREC
  CHARACTER(LEN=1)   :: YDIR
 INTEGER            :: ILUOUT
 INTEGER            :: INFOMPI

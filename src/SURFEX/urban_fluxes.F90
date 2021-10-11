@@ -4,13 +4,13 @@
 !SFX_LIC for details. version 1.
 !     #########
     SUBROUTINE URBAN_FLUXES(TOP, T, B, DMT, HIMPLICIT_WIND, PT_CANYON, PPEW_A_COEF, PPEW_B_COEF,      &
-                            PEXNS, PRHOA, PVMOD, PH_TRAFFIC, PLE_TRAFFIC, PAC_WL, PCD, PDF_RF,        &
+                            PEXNS, PRHOA, PVMOD, PH_TRAFFIC, PLE_TRAFFIC, PTR_SW_WIN, PAC_WIN, PCD, PDF_RF, &
                             PDN_RF, PDF_RD, PDN_RD, PRNSN_RF, PHSN_RF, PLESN_RF, PGSN_RF,             &
                             PRNSN_RD, PHSN_RD, PLESN_RD, PGSN_RD, PMELT_RF, PDQS_RF, PMELT_RD,        &
                             PDQS_RD, PDQS_WL_A, PDQS_WL_B, PFLX_BLD_RF, PFLX_BLD_WL_A,                &
-                            PFLX_BLD_WL_B, PFLX_BLD_FL, PFLX_BLD_MA, PE_SHADING, PLEW_RF,             &
+                            PFLX_BLD_WL_B, PFLX_BLD_FL, PFLX_BLD_MA, PE_SHADING, PAGG_QIN, PLEW_RF,         &
                             PRN_GR, PH_GR, PLE_GR, PGFLUX_GR,                                         &
-                            PLEW_RD, PLE_WL_A, PLE_WL_B, PMELT_BLT, PUSTAR_TWN                        )
+                            PLEW_RD, PMELT_BLT, PUSTAR_TWN                        )
 !   ##########################################################################
 !
 !!****  *URBAN_FLUXES* computes fluxes on urbanized surfaces  
@@ -53,6 +53,8 @@
 !!                     17/10 (G. Pigeon)  computation of anthropogenic heat due
 !!                            to domestic heating
 !!      Modified    09/2012 : B. Decharme New wind implicitation
+!!                  08/2017 : M. Goret bug fix in PGFLUX_WALL calculation
+!!                  08/2017 : M. Goret add anthropogenic flux diagnostics
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -94,9 +96,10 @@ REAL, DIMENSION(:), INTENT(IN)    :: PH_TRAFFIC    ! anthropogenic sensible
 !                                                  ! heat fluxes due to traffic
 REAL, DIMENSION(:), INTENT(IN)    :: PLE_TRAFFIC   ! anthropogenic latent
 !                                                  ! heat fluxes due to traffic
-REAL, DIMENSION(:), INTENT(IN)    :: PAC_WL     ! surface conductance
+REAL, DIMENSION(:), INTENT(IN)    :: PTR_SW_WIN   ! SW transmitted through the windows
+REAL, DIMENSION(:), INTENT(IN)    :: PAC_WIN    ! surface conductance
 !                                                 ! for heat transfer
-!                                                 ! between wall and canyon
+!                                                 ! between window and canyon
 REAL, DIMENSION(:), INTENT(IN)    :: PCD          ! drag coefficient
 REAL, DIMENSION(:), INTENT(IN)    :: PDF_RF     ! snow-free    roof fraction
 REAL, DIMENSION(:), INTENT(IN)    :: PDN_RF     ! snow-covered roof fraction
@@ -124,8 +127,8 @@ REAL, DIMENSION(:), INTENT(IN)    :: PFLX_BLD_WL_B! heat flx from bld to wall B
 REAL, DIMENSION(:), INTENT(IN)    :: PFLX_BLD_FL! heat flx from bld to floor
 REAL, DIMENSION(:), INTENT(IN)    :: PFLX_BLD_MA! heat flx from bld to mass
 REAL, DIMENSION(:), INTENT(IN)    :: PE_SHADING   ! energy not ref., nor absorbed, nor
-                                                  !trans. by glazing [W
-                                                  !m-2(win)]
+                                                  !trans. by glazing [W m-2(win)]
+REAL, DIMENSION(:), INTENT(IN)    :: PAGG_QIN     ! Internal heat release
 !
 REAL, DIMENSION(:), INTENT(IN)   :: PLEW_RF     ! latent heat flux over snow-free roof
 REAL, DIMENSION(:), INTENT(IN)   :: PLEW_RD     ! latent heat flux of snow-free road
@@ -133,9 +136,6 @@ REAL, DIMENSION(:), INTENT(IN)    :: PRN_GR     ! net radiation over greenroof
 REAL, DIMENSION(:), INTENT(IN)    :: PH_GR      ! sensible heat flux over greenroof
 REAL, DIMENSION(:), INTENT(IN)    :: PLE_GR     ! latent heat flux over greenroof
 REAL, DIMENSION(:), INTENT(IN)    :: PGFLUX_GR  ! flux through the greenroof
-!
-REAL, DIMENSION(:), INTENT(OUT)   :: PLE_WL_A   ! latent heat flux over wall
-REAL, DIMENSION(:), INTENT(OUT)   :: PLE_WL_B   ! latent heat flux over wall
 !
 REAL, DIMENSION(:), INTENT(OUT)   :: PMELT_BLT    ! snow melting for town
 !
@@ -180,44 +180,62 @@ DMT%XRN_ROAD(:) = DMT%XABS_SW_ROAD(:) + DMT%XABS_LW_ROAD(:)
 !*      3.     Fluxes at walls
 !              ---------------
 !
+! Robert: The radiation transmitted through the windows needs to be 
+!         considered in the calculation of the net radiation for the walls
+!
+! Robert: The radiation converted to sensible heat flux at the shading
+!         elements needs to be considered in the calculation of the net
+!         radiation for the walls
+!
+!
 !                                            net radiation
 !
 DMT%XRN_WALL_A(:) = DMT%XABS_SW_WALL_A(:) + DMT%XABS_LW_WALL_A(:)
 DMT%XRN_WALL_B(:) = DMT%XABS_SW_WALL_B(:) + DMT%XABS_LW_WALL_B(:)
 !
 IF (TOP%CBEM=="BEM") THEN
-  ZINTER(:) = DMT%XABS_SW_WIN (:) + DMT%XABS_LW_WIN (:)
+  ZINTER(:) = DMT%XABS_SW_WIN (:) + DMT%XABS_LW_WIN (:) + PTR_SW_WIN(:) + PE_SHADING(:)
   DMT%XRN_WALL_A(:) = DMT%XRN_WALL_A(:) * (1.-B%XGR(:))  + ZINTER(:) * B%XGR(:)
   DMT%XRN_WALL_B(:) = DMT%XRN_WALL_B(:) * (1.-B%XGR(:))  + ZINTER(:) * B%XGR(:)
 ENDIF
 !
-!                                            heat flux into the ground
-!
-DMT%XGFLUX_WALL_A(:) = DMT%XRN_WALL_A(:) - DMT%XH_WALL_A(:)            
-DMT%XGFLUX_WALL_B(:) = DMT%XRN_WALL_B(:) - DMT%XH_WALL_B(:)            
-!
 !                                            sensible heat flux
 !
 !before -> PH_WL in [W.m-2(wall)]
-ZINTER(:) = PAC_WL(:)*XCPD*PRHOA(:)/PEXNS(:) * (B%XT_WIN1(:)-PT_CANYON(:)) + PE_SHADING(:)
 !
-DMT%XH_WALL_A(:) = (1. - B%XGR(:)) * DMT%XH_WALL_A(:) + B%XGR(:) * ZINTER(:)
-DMT%XH_WALL_B(:) = (1. - B%XGR(:)) * DMT%XH_WALL_B(:) + B%XGR(:) * ZINTER(:)
-!
+! if BEM, averages with windows 
 IF (TOP%CBEM=="BEM") THEN
-  ZINTER(:) = B%XF_WASTE_CAN(:) * DMT%XH_WASTE(:) / T%XWALL_O_HOR(:)
+  ZINTER(:) = B%XGR(:) * ( PAC_WIN(:)*XCPD*PRHOA(:) * (B%XT_WIN1(:)-PT_CANYON(:)) + PE_SHADING(:) )
+  DMT%XH_WALL_A(:) = (1. - B%XGR(:)) * DMT%XH_WALL_A(:) + ZINTER(:)
+  DMT%XH_WALL_B(:) = (1. - B%XGR(:)) * DMT%XH_WALL_B(:) + ZINTER(:)
+ENDIF
+!after PH_WALL in [W.m-2(facade=wall + win)]
+!
+!
+!                                            heat flux into the ground
+!
+DMT%XGFLUX_WALL_A(:) = DMT%XRN_WALL_A(:) - DMT%XH_WALL_A(:)            
+DMT%XGFLUX_WALL_B(:) = DMT%XRN_WALL_B(:) - DMT%XH_WALL_B(:)   
+!
+! if BEM, anthropogenic fluxes
+IF (TOP%CBEM=="BEM") THEN
+  ZINTER(:) =  DMT%XH_WASTE_CANY(:) / T%XWALL_O_HOR(:)
   DMT%XH_WALL_A(:) = DMT%XH_WALL_A(:) + ZINTER(:)
   DMT%XH_WALL_B(:) = DMT%XH_WALL_B(:) + ZINTER(:)
-ENDIF
-!
-IF (TOP%CBEM=="BEM") THEN
-  !after PH_WALL in [W.m-2(facade=wall + win)]
-  ZINTER(:) = B%XF_WASTE_CAN(:) * DMT%XLE_WASTE(:) / T%XWALL_O_HOR(:)
+
+  ZINTER(:) =   DMT%XLE_WASTE_CANY(:) / T%XWALL_O_HOR(:)
+
+  DMT%XLE_WALL_A(:) = DMT%XLE_WASTE_CANY(:) / T%XWALL_O_HOR(:)
+  DMT%XLE_WALL_B(:) = DMT%XLE_WALL_A(:) 
+
+  DMT%XQF_WALL_A(:) = (DMT%XLE_WASTE_CANY(:) + DMT%XH_WASTE_CANY(:)) /  T%XWALL_O_HOR(:)
+  DMT%XQF_WALL_B(:) =  DMT%XQF_WALL_A(:) 
 ELSE
-  ZINTER(:) = 0.
+  DMT%XLE_WALL_A(:) = 0.
+  DMT%XLE_WALL_B(:) = 0.
+  DMT%XQF_WALL_A(:) = 0.
+  DMT%XQF_WALL_B(:) = 0.
 ENDIF
-PLE_WL_A(:) = ZINTER(:)
-PLE_WL_B(:) = ZINTER(:)
 !
 !-------------------------------------------------------------------------------
 !
@@ -246,6 +264,8 @@ DMT%XH_ROAD  (:) = DMT%XH_ROAD (:) * PDF_RD(:) + PHSN_RD(:) * PDN_RD(:)
 ! total latent heat of evaporation from  the road (snow free + snow)
 !
 DMT%XLE_ROAD (:) = PLEW_RD(:) * PDF_RD(:) + PLESN_RD(:) * PDN_RD(:)
+!
+DMT%XQF_ROAD (:) = 0.
 !
 !*      4.2    Roofs
 !              -----
@@ -276,9 +296,16 @@ DMT%XH_ROOF        (:) = (1.-T%XGREENROOF(:)) * DMT%XH_STRLROOF(:) + T%XGREENROO
 DMT%XLE_STRLROOF   (:) = PLEW_RF(:) * PDF_RF(:)  + PLESN_RF(:) * PDN_RF(:)
 DMT%XLE_ROOF       (:) = (1.-T%XGREENROOF(:)) * DMT%XLE_STRLROOF(:) + T%XGREENROOF(:) * PLE_GR(:) 
 !
+! Add waste heat (and heat due to computation errors 
+!  due to implicitation and water reservoir limits reached)
+DMT%XH_ROOF (:) = DMT%XH_ROOF (:) + DMT%XH_WASTE_ROOF (:)/T%XBLD(:)
+DMT%XLE_ROOF(:) = DMT%XLE_ROOF(:) + DMT%XLE_WASTE_ROOF(:)/T%XBLD(:)
+!
+! Anthropogenic flux
 IF (TOP%CBEM=="BEM") THEN
-  DMT%XH_ROOF (:) = DMT%XH_ROOF (:) + (1 - B%XF_WASTE_CAN(:)) * DMT%XH_WASTE (:)/T%XBLD(:)
-  DMT%XLE_ROOF(:) = DMT%XLE_ROOF(:) + (1 - B%XF_WASTE_CAN(:)) * DMT%XLE_WASTE(:)/T%XBLD(:)
+  DMT%XQF_ROOF(:) = (DMT%XLE_WASTE_ROOF + DMT%XH_WASTE_ROOF) / T%XBLD(:)
+ELSE 
+   DMT%XQF_ROOF(:) = 0.
 ENDIF
 
 !-------------------------------------------------------------------------------
@@ -334,10 +361,10 @@ DMT%XH_BLT  (:)    = ( T%XBLD(:)        * DMT%XH_ROOF(:)         &
                   + 0.5*T%XWALL_O_HOR(:) * DMT%XH_WALL_B(:))      &   
                   / (T%XROAD(:) + T%XBLD(:))
 !
-DMT%XLE_BLT (:)    = ( T%XBLD(:)        * DMT%XLE_ROOF (:)       &
-                  +     T%XROAD(:)       * DMT%XLE_ROAD (:)       &
-                  + 0.5*T%XWALL_O_HOR(:) * PLE_WL_A (:)     & 
-                  + 0.5*T%XWALL_O_HOR(:) * PLE_WL_B (:))    & 
+DMT%XLE_BLT (:)    = ( T%XBLD(:)         * DMT%XLE_ROOF   (:)   &
+                  +     T%XROAD(:)       * DMT%XLE_ROAD   (:)   &
+                  + 0.5*T%XWALL_O_HOR(:) * DMT%XLE_WALL_A (:)   &
+                  + 0.5*T%XWALL_O_HOR(:) * DMT%XLE_WALL_B (:) ) & 
                   / (T%XROAD(:) + T%XBLD(:))
 !
 DMT%XGFLUX_BLT (:) = ( T%XBLD(:)        * DMT%XGFLUX_ROOF (:)    &
@@ -355,16 +382,22 @@ DMT%XDQS_TOWN  (:) = (  T%XBLD(:)         * PDQS_RF (:)      &
                   + 0.5*T%XWALL_O_HOR(:) * PDQS_WL_A (:)    &
                   + 0.5*T%XWALL_O_HOR(:) * PDQS_WL_B (:) )  &
                 / (T%XROAD(:) + T%XBLD(:))
+
+DMT%XQF_BLT (:)= (      T%XBLD(:)        * DMT%XQF_ROOF (:)    &
+                  +     T%XROAD(:)       * DMT%XQF_ROAD (:)    &
+                  + 0.5*T%XWALL_O_HOR(:) * DMT%XQF_WALL_A (:)  &
+                  + 0.5*T%XWALL_O_HOR(:) * DMT%XQF_WALL_B (:)) &
+                  / (T%XROAD(:) + T%XBLD(:))
 !
 IF (TOP%CBEM == "DEF") THEN
   DMT%XQF_BLD(:) = ( ZH_RF_SNFREE(:) + PLEW_RF(:) +          & 
                  PDQS_RF(:) - ZRN_RF_SNFREE(:)  ) * PDF_RF(:) &
              + ( PDQS_RF(:) - PGSN_RF      (:)  ) * PDN_RF(:) &
-             + 0.5*T%XWALL_O_HOR(:)/T%XBLD(:) * ( DMT%XH_WALL_A(:) + PLE_WL_A(:) + PDQS_WL_A(:) - DMT%XRN_WALL_A(:) ) &
-             + 0.5*T%XWALL_O_HOR(:)/T%XBLD(:) * ( DMT%XH_WALL_B(:) + PLE_WL_B(:) + PDQS_WL_B(:) - DMT%XRN_WALL_B(:) )
+             + 0.5*T%XWALL_O_HOR(:)/T%XBLD(:) * ( DMT%XH_WALL_A(:) + DMT%XLE_WALL_A(:) + PDQS_WL_A(:) - DMT%XRN_WALL_A(:) ) &
+             + 0.5*T%XWALL_O_HOR(:)/T%XBLD(:) * ( DMT%XH_WALL_B(:) + DMT%XLE_WALL_B(:) + PDQS_WL_B(:) - DMT%XRN_WALL_B(:) )
   DMT%XFLX_BLD(:)= XUNDEF
 ELSEIF (TOP%CBEM == "BEM") THEN
-  DMT%XQF_BLD(:) = DMT%XQIN(:)*B%XN_FLOOR(:) + DMT%XHVAC_COOL(:) + DMT%XHVAC_HEAT(:)
+  DMT%XQF_BLD(:) = PAGG_QIN(:)*B%XN_FLOOR(:) + DMT%XHVAC_COOL(:) + DMT%XHVAC_HEAT(:)
   DMT%XFLX_BLD(:)=  PFLX_BLD_RF(:) + 0.5*T%XWALL_O_HOR(:)/T%XBLD(:)*PFLX_BLD_WL_A(:) &
                  +                    0.5*T%XWALL_O_HOR(:)/T%XBLD(:)*PFLX_BLD_WL_B(:) &
                  + PFLX_BLD_FL(:) + PFLX_BLD_MA(:)  

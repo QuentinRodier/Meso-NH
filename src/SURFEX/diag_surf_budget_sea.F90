@@ -185,13 +185,16 @@ ELSE
   DI%XFMU =                                  PSFZON_ICE
   D%XFMV  = (1 - S%XSIC) * PSFMER + S%XSIC * PSFMER_ICE
   DI%XFMV =                                  PSFMER_ICE
-!  
+  !
 ENDIF
 !
 !* total storage flux
 !
 D%XGFLUX = D%XRN - D%XH - D%XLE
 !
+!* Anthopogenic flux
+!
+D%XQF = 0.
 !
 IF (LHOOK) CALL DR_HOOK('DIAG_SURF_BUDGET_SEA',1,ZHOOK_HANDLE)
 !

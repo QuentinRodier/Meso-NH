@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #############################################################
-SUBROUTINE WINDOW_SHADING(PSHGC, PSHGC_SH, O_SHADE, PALB_WALL,      &
+SUBROUTINE WINDOW_SHADING(PSHGC_SH, O_SHADE, PALB_WALL,      &
                           PABS_WIN, PABS_WINSH, PALB_WIN, PTRAN_WIN )
 !     #############################################################
 !
@@ -53,35 +53,59 @@ SUBROUTINE WINDOW_SHADING(PSHGC, PSHGC_SH, O_SHADE, PALB_WALL,      &
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
+IMPLICIT NONE
 !
-REAL,    DIMENSION(:), INTENT(IN) :: PSHGC     !Window solar heat gain coefficient
-REAL,    DIMENSION(:), INTENT(IN) :: PSHGC_SH  !Window + shading solar heat gain coefficient
-LOGICAL, DIMENSION(:), INTENT(IN) :: O_SHADE   !use of shadings TRUE -> shadings ;
-                                               !FALSE -> no shading
+! Declaration of arguments
+!
+REAL, DIMENSION(:), INTENT(IN) :: PSHGC_SH  !Window + shading solar heat gain coefficient
+REAL, DIMENSION(:,:), INTENT(IN) :: O_SHADE ! Fraction of shading elements closed
 REAL, DIMENSION(:), INTENT(IN)  :: PALB_WALL !albedo of the wall     
 REAL, DIMENSION(:), INTENT(IN)  :: PABS_WIN  !Window absorptivity
-REAL, DIMENSION(:), INTENT(OUT) :: PABS_WINSH!Window absorptivity after shading
-REAL, DIMENSION(:), INTENT(OUT) :: PALB_WIN  !Albedo of the ensemble window + shading
-REAL, DIMENSION(:), INTENT(INOUT) :: PTRAN_WIN !Window transmitivity
+REAL, DIMENSION(:,:), INTENT(OUT) :: PABS_WINSH!Window absorptivity after shading
+REAL, DIMENSION(:,:), INTENT(OUT) :: PALB_WIN  !Albedo of the ensemble window + shading
+REAL, DIMENSION(:,:), INTENT(INOUT) :: PTRAN_WIN !Window transmitivity
 !
-!local variables
+! Local variables
+!
+REAL, DIMENSION(SIZE(PALB_WIN,1),SIZE(PALB_WIN,2)) :: ZTRAN_WIN_SHADING 
+REAL, DIMENSION(SIZE(PALB_WIN,1),SIZE(PALB_WIN,2)) :: ZABS_WINSH_SHADING
+REAL, DIMENSION(SIZE(PALB_WIN,1),SIZE(PALB_WIN,2)) :: ZALB_WIN_SHADING  
+REAL, DIMENSION(SIZE(PALB_WIN,1),SIZE(PALB_WIN,2)) :: ZTRAN_WIN_NOSHADING 
+REAL, DIMENSION(SIZE(PALB_WIN,1),SIZE(PALB_WIN,2)) :: ZABS_WINSH_NOSHADING
+REAL, DIMENSION(SIZE(PALB_WIN,1),SIZE(PALB_WIN,2)) :: ZALB_WIN_NOSHADING  
+!
+INTEGER         :: JJ
+INTEGER         :: JCOMP
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 IF (LHOOK) CALL DR_HOOK('WINDOW_SHADING',0,ZHOOK_HANDLE)
 !
-WHERE(O_SHADE)
-  PTRAN_WIN (:) = PSHGC_SH (:)
-  PABS_WINSH(:) = PTRAN_WIN(:) * PABS_WIN(:)
-  PALB_WIN  (:) = PALB_WALL(:)
-ELSE WHERE
-  PTRAN_WIN(:) = PTRAN_WIN(:)
-  PABS_WINSH(:) = PABS_WIN(:)                                
-  PALB_WIN  (:) = 1. - PABS_WIN(:) - PTRAN_WIN(:)
-END WHERE
-!
-WHERE ((PABS_WINSH(:) + PTRAN_WIN(:) + PALB_WIN) > 1.)
-  PALB_WIN(:) = 1. - PABS_WINSH(:) - PTRAN_WIN(:)
-END WHERE
+DO JJ=1,SIZE(O_SHADE,1)
+   DO JCOMP=1,SIZE(O_SHADE,2)
+      !
+      ZTRAN_WIN_SHADING (JJ,JCOMP) = PSHGC_SH (JJ)
+      ZABS_WINSH_SHADING(JJ,JCOMP) = ZTRAN_WIN_SHADING(JJ,JCOMP) * PABS_WIN(JJ)
+      ZALB_WIN_SHADING  (JJ,JCOMP) = PALB_WALL(JJ)
+      !
+      ZTRAN_WIN_NOSHADING (JJ,JCOMP) = PTRAN_WIN(JJ,JCOMP)
+      ZABS_WINSH_NOSHADING(JJ,JCOMP) = PABS_WIN(JJ)
+      ZALB_WIN_NOSHADING  (JJ,JCOMP) = 1. - PABS_WIN(JJ) - PTRAN_WIN(JJ,JCOMP)
+      !
+      PTRAN_WIN (JJ,JCOMP) = O_SHADE(JJ,JCOMP) * ZTRAN_WIN_SHADING   (JJ,JCOMP) + &
+                        (1.0-O_SHADE(JJ,JCOMP))* ZTRAN_WIN_NOSHADING (JJ,JCOMP)
+      !
+      PABS_WINSH(JJ,JCOMP) = O_SHADE(JJ,JCOMP) * ZABS_WINSH_SHADING   (JJ,JCOMP) + &
+                        (1.0-O_SHADE(JJ,JCOMP))* ZABS_WINSH_NOSHADING (JJ,JCOMP)
+      !
+      PALB_WIN  (JJ,JCOMP) = O_SHADE(JJ,JCOMP) * ZALB_WIN_SHADING   (JJ,JCOMP) + &
+                        (1.0-O_SHADE(JJ,JCOMP))* ZALB_WIN_NOSHADING (JJ,JCOMP)
+      !
+      IF ((PABS_WINSH(JJ,JCOMP) + PTRAN_WIN(JJ,JCOMP) + PALB_WIN(JJ,JCOMP)) .GT. 1.) THEN
+         PALB_WIN(JJ,JCOMP) = 1. - PABS_WINSH(JJ,JCOMP) - PTRAN_WIN(JJ,JCOMP)
+      ENDIF
+      !
+   ENDDO
+ENDDO
 !
 IF (LHOOK) CALL DR_HOOK('WINDOW_SHADING',1,ZHOOK_HANDLE)
 !

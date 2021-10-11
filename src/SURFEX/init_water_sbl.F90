@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-    SUBROUTINE INIT_WATER_SBL(SB, PPA, PPS, PTA, PQA, PRHOA, PU, PV, PRAIN, PSNOW,     &
+    SUBROUTINE INIT_WATER_SBL(SB, AT, PPA, PPS, PTA, PQA, PRHOA, PU, PV, PRAIN, PSNOW,     &
                               PSFTH, PSFTQ, PZREF, PUREF, PTS, PZ0 )
 !     #################################################################################
 !
@@ -33,6 +33,8 @@ USE MODD_CANOPY_n, ONLY : CANOPY_t
 USE MODD_CSTS,             ONLY : XCPD, XRD, XP00, XTT, XG
 USE MODD_CANOPY_TURB,      ONLY : XALPSBL
 !
+USE MODD_SURF_ATM_TURB_n, ONLY : SURF_ATM_TURB_t
+!
 USE MODI_CLS_WIND
 USE MODI_CLS_TQ
 USE MODI_WATER_FLUX
@@ -45,6 +47,7 @@ IMPLICIT NONE
 !*      0.1    declarations of arguments
 !
 TYPE(CANOPY_t), INTENT(INOUT) :: SB
+TYPE(SURF_ATM_TURB_t), INTENT(IN) :: AT         ! atmospheric turbulence parameters
 !
 REAL, DIMENSION(:), INTENT(IN)  :: PPA       ! pressure at forcing level             (Pa)
 REAL, DIMENSION(:), INTENT(IN)  :: PPS       ! pressure at atmospheric model surface (Pa)
@@ -111,7 +114,7 @@ DO J=1,5
   CALL WATER_FLUX(PZ0, PTA, ZEXNA, PRHOA, PTS, ZEXNS, ZQA, PRAIN, &
                   PSNOW, XTT, ZWIND, PZREF, PUREF,                &
                   PPS, GHANDLE_SIC, ZQSAT,  PSFTH, PSFTQ, ZUSTAR, &
-                  ZCD, ZCDN, ZCH, ZRI, ZRESA_SEA, ZZ0H            )
+                  AT, ZCD, ZCDN, ZCH, ZRI, ZRESA_SEA, ZZ0H        )
 ENDDO
 !
 !Initialisation of T, Q, Wind and TKE on all canopy levels

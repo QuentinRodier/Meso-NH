@@ -195,7 +195,7 @@ ELSE
 !
 ENDIF
 !
- CALL COUPLING_WATFLUX_SBL_n(WM%SB, WM%CHW, WM%DWO, WM%DW, WM%DWC, WM%W, DST, SLT,              &
+ CALL COUPLING_WATFLUX_SBL_n(WM%SB, WM%CHW, WM%DWO, WM%DW, WM%DWC, WM%W, WM%AT, DST, SLT,          &
                              HPROGRAM, HCOUPLING, PTIMEC, PTSTEP, KYEAR, KMONTH, KDAY, PTIME,      &
                              KI, KSV, KSW, PTSUN, PZENITH, PZENITH2, PAZIM, PZREF, PUREF, PU, PV,  &
                              ZQA, ZTA, ZRHOA, PSV, PCO2, HSV, ZRAIN, ZSNOW, ZLW, PDIR_SW, PSCA_SW, &

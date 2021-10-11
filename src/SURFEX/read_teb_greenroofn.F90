@@ -33,25 +33,19 @@
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    07/2011
+!!      M. Goret     08/2017 : add reading of respi for the first biomass compartment
+!!      M. Goret     08/2017 : add RESPSL option
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-!
-!
-!
-!
 USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
-!
 USE MODD_ISBA_OPTIONS_n, ONLY : ISBA_OPTIONS_t
 USE MODD_ISBA_n, ONLY : ISBA_PE_t, ISBA_P_t
-!
-USE MODD_CO2V_PAR,          ONLY : XANFMINIT, XCONDCTMIN
-!                                
-USE MODD_SURF_PAR,          ONLY : XUNDEF
-USE MODD_SNOW_PAR,          ONLY : XZ0SN
+USE MODD_CO2V_PAR, ONLY : XANFMINIT, XCONDCTMIN       
+USE MODD_SURF_PAR, ONLY : XUNDEF
 !
 USE MODI_READ_SURF
 !
@@ -81,6 +75,7 @@ TYPE(ISBA_PE_t), INTENT(INOUT) :: PEK
 !*       0.2   Declarations of local variables
 !              -------------------------------
 INTEGER           :: ILU                        ! 1D physical dimension
+INTEGER           :: IVERSION, IBUGFIX
 INTEGER           :: IRESP                           ! Error code after redding
 INTEGER           :: IWORK                           ! Work integer
 INTEGER           :: JLAYER, JNBIOMASS               ! loop counter on layers
@@ -98,6 +93,10 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 IF (LHOOK) CALL DR_HOOK('READ_TEB_GREENROOF_N',0,ZHOOK_HANDLE)
 YRECFM='SIZE_TOWN'
  CALL GET_TYPE_DIM_n(DTCO, U, 'TOWN  ',ILU)
+YRECFM='VERSION'
+ CALL READ_SURF(HPROGRAM,YRECFM,IVERSION,IRESP)
+YRECFM='BUG'
+ CALL READ_SURF(HPROGRAM,YRECFM,IBUGFIX,IRESP)
 !
 !
 !*       2.     Prognostic fields:
@@ -156,6 +155,17 @@ END IF
 !
  CALL READ_GR_SNOW(HPROGRAM,'GR',HPATCH,ILU,ILU,P%NR_P,0,PEK%TSNOW  )! IOO:GreenROOf 
 !
+!
+!* respiration option
+!
+!IF (IVERSION==8 .AND. IBUGFIX>=2 .OR. IVERSION>8) THEN
+IF (IVERSION>=9) THEN
+  YRECFM=HPATCH//'GR_RESPSL'
+  YRECFM=ADJUSTL(YRECFM)
+  CALL READ_SURF(HPROGRAM,YRECFM,IO%CRESPSL,IRESP,YRECFM,'-')
+ELSE
+  IO%CRESPSL='DEF'
+ENDIF
 !-------------------------------------------------------------------------------
 !
 !*       4.  Semi-prognostic variables
@@ -163,10 +173,15 @@ END IF
 !
 !* aerodynamical resistance
 !
-YRECFM = HPATCH//'GR_RESA'
-YRECFM=ADJUSTL(YRECFM)
-PEK%XRESA(:) = 100.
- CALL READ_SURF(HPROGRAM,YRECFM,PEK%XRESA(:),IRESP)
+!IF (IVERSION==8 .AND. IBUGFIX>=2 .OR. IVERSION>8) THEN
+IF (IVERSION>=9) THEN
+  YRECFM = HPATCH//'GR_RES'
+  YRECFM=ADJUSTL(YRECFM)
+  PEK%XRESA(:) = 100.
+  CALL READ_SURF(HPROGRAM,YRECFM,PEK%XRESA(:),IRESP)
+ELSE
+  PEK%XRESA(:) = 100.
+ENDIF
 !
 PEK%XLE(:) = XUNDEF
 !
@@ -192,7 +207,7 @@ ELSEIF (IO%CPHOTO=='NIT') THEN
   END DO
 
   PEK%XRESP_BIOMASS(:,:) = 0.
-  DO JNBIOMASS=2,IO%NNBIOMASS
+  DO JNBIOMASS=1,IO%NNBIOMASS
     WRITE(YLVL,'(I1)') JNBIOMASS
     YRECFM=HPATCH//'GR_RESPI'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
     YRECFM=ADJUSTL(YRECFM)

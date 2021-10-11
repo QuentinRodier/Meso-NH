@@ -4,7 +4,7 @@
 !SFX_LIC for details. version 1.
 !     #########
       SUBROUTINE HYDRO_SOILDIF(IO, KK, PK, PEK, PTSTEP, PPG, PLETR, PLEG, PEVAPCOR, &
-                               PF2WGHT, PPS, PQSAT, PQSATI, PDRAIN, PHORTON, KMAX_LAYER, PQSB)
+                               PPS, PQSAT, PQSATI, PDRAIN, PHORTON, KMAX_LAYER, PQSB)
 !     ##########################################################################
 !
 !
@@ -98,13 +98,12 @@ TYPE(ISBA_PE_t), INTENT(INOUT) :: PEK
 !
 REAL, INTENT(IN)                    :: PTSTEP ! Model time step (s)
 !
-REAL, DIMENSION(:), INTENT(IN)      :: PPS, PPG, PLETR, PLEG, PEVAPCOR
+REAL, DIMENSION(:), INTENT(IN)      :: PPS, PPG, PLEG, PEVAPCOR
 !                                      PPS    = surface pressure (Pa)
 !                                      PPG    = throughfall rate: 
 !                                               rate at which water reaches the surface
 !                                               of the soil (from snowmelt, rain, canopy
 !                                               drip, etc...) (m/s)
-!                                      PLETR  = transpiration rate (m/s)
 !                                      PLEG   = bare-soil evaporation rate (m/s)
 !                                      PEVAPCOR = correction for any excess evaporation 
 !                                                from snow as it completely ablates (m/s)
@@ -112,8 +111,8 @@ REAL, DIMENSION(:), INTENT(IN)      :: PPS, PPG, PLETR, PLEG, PEVAPCOR
 REAL, DIMENSION(:,:), INTENT(IN)    :: PQSAT,PQSATI
 !                                      specific humidity at saturation
 !
-REAL, DIMENSION(:,:), INTENT(IN)    :: PF2WGHT
-!                                      PF2WGHT      = root-zone transpiration weights (-)
+REAL, DIMENSION(:,:), INTENT(IN)    :: PLETR
+!                                      PLETR      = transpiration rate (in each soil layer)
 !
 INTEGER,               INTENT(IN)   :: KMAX_LAYER  
 !                                      KMAX_LAYER = Max number of soil moisture layers (DIF option)
@@ -435,7 +434,7 @@ ENDDO
 !    -------------------------------------------------
 !     
 !surface layer:
-ZFRC  (:,1) = ZWFLUX(:,1) - PLEG(:) - PF2WGHT(:,1)*PLETR(:) + ZINFNEG(:,1) - ZTOPQS(:,1)
+ZFRC  (:,1) = ZWFLUX(:,1) - PLEG(:) - PLETR(:,1) + ZINFNEG(:,1) - ZTOPQS(:,1)
 ZAMTRX(:,1) = 0.0
 ZBMTRX(:,1) = (PK%XDZG(:,1)/PTSTEP) - ZWGHT*ZDFLUXDT1(:,1)
 ZCMTRX(:,1) = -ZWGHT*ZDFLUXDT2(:,1)
@@ -445,7 +444,7 @@ DO JL=2,INL
   DO JJ=1,INJ   
     IDEPTH=PK%NWG_LAYER(JJ)
     IF(JL<=IDEPTH)THEN
-      ZFRC  (JJ,JL) = ZWFLUX (JJ,JL) - ZWFLUX(JJ,JL-1) - PF2WGHT(JJ,JL)*PLETR(JJ) + ZINFNEG(JJ,JL) - ZTOPQS(JJ,JL)
+      ZFRC  (JJ,JL) = ZWFLUX (JJ,JL) - ZWFLUX(JJ,JL-1) - PLETR(JJ,JL) + ZINFNEG(JJ,JL) - ZTOPQS(JJ,JL)
       ZAMTRX(JJ,JL) = ZWGHT*ZDFLUXDT1(JJ,JL-1)
       ZBMTRX(JJ,JL) = (PK%XDZG(JJ,JL)/PTSTEP) - ZWGHT*(ZDFLUXDT1(JJ,JL)-ZDFLUXDT2(JJ,JL-1))       
       ZCMTRX(JJ,JL) = -ZWGHT*ZDFLUXDT2(JJ,JL)

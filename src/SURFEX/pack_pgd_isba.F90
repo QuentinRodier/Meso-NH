@@ -7,7 +7,7 @@
                                 HPROGRAM,                                    &
                                  PAOSIP, PAOSIM, PAOSJP, PAOSJM,              &
                                  PHO2IP, PHO2IM, PHO2JP, PHO2JM,              &
-                                 PSSO_SLOPE                                   )  
+                                 PSSO_SLOPE , PSSO_DIR                        )  
 !     ##############################################################
 !
 !!**** *PACK_PGD_ISBA* packs ISBA physiographic fields from all surface points to ISBA points
@@ -82,6 +82,7 @@ REAL,    DIMENSION(:),   INTENT(IN) :: PHO2IM    ! h/2 i- on all surface points
 REAL,    DIMENSION(:),   INTENT(IN) :: PHO2JP    ! h/2 j+ on all surface points
 REAL,    DIMENSION(:),   INTENT(IN) :: PHO2JM    ! h/2 j- on all surface points
 REAL,    DIMENSION(:),   INTENT(IN) :: PSSO_SLOPE! subgrid slope on all surface points
+REAL,    DIMENSION(:),   INTENT(IN) :: PSSO_DIR
 !
 !
 !*    0.2    Declaration of local variables
@@ -120,6 +121,7 @@ ALLOCATE(ISS%XHO2IM(KDIM))
 ALLOCATE(ISS%XHO2JP(KDIM))
 ALLOCATE(ISS%XHO2JM(KDIM))
 ALLOCATE(ISS%XSSO_SLOPE(KDIM))
+ALLOCATE(ISS%XSSO_DIR(KDIM))
  CALL PACK_SAME_RANK(IMASK,PAOSIP(:),ISS%XAOSIP(:))
  CALL PACK_SAME_RANK(IMASK,PAOSIM(:),ISS%XAOSIM(:))
  CALL PACK_SAME_RANK(IMASK,PAOSJP(:),ISS%XAOSJP(:))
@@ -129,6 +131,7 @@ ALLOCATE(ISS%XSSO_SLOPE(KDIM))
  CALL PACK_SAME_RANK(IMASK,PHO2JP(:),ISS%XHO2JP(:))
  CALL PACK_SAME_RANK(IMASK,PHO2JM(:),ISS%XHO2JM(:))
  CALL PACK_SAME_RANK(IMASK,PSSO_SLOPE(:),ISS%XSSO_SLOPE(:))
+ CALL PACK_SAME_RANK(IMASK,PSSO_DIR(:),ISS%XSSO_DIR(:))
 !
 IF (LHOOK) CALL DR_HOOK('PACK_PGD_ISBA',1,ZHOOK_HANDLE)
 !

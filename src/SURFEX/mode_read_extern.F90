@@ -7,7 +7,7 @@ MODULE MODE_READ_EXTERN
 !     #####################
 !-------------------------------------------------------------------
 !
-USE MODD_SURF_PAR,       ONLY : NUNDEF, XUNDEF
+USE MODD_SURF_PAR,       ONLY : NUNDEF, XUNDEF, LEN_HREC
 USE MODD_DATA_COVER_PAR, ONLY : NCOVER, NTYPE, NVEGTYPE, JPCOVER, NVEGTYPE_OLD, NVEGTYPE_ECOSG
 !
 USE MODE_READ_SURF_COV, ONLY : READ_SURF_COV
@@ -30,10 +30,10 @@ CONTAINS
 !---------------------------------------------------------------------------------------
 !
 !     #######################
-      SUBROUTINE READ_EXTERN_DEPTH (U, DTCO, GCP, IO, &
+      SUBROUTINE READ_EXTERN_DEPTH (U, DTCO, GCP, IO, NPAR_VEG_IRR_USE,   &
                                     HFILE,HFILETYPE,HFILEPGD,HFILEPGDTYPE,&
-                                    KLUOUT,HISBA,HNAT,HFIELD,KNI,KLAYER, &
-                                   KPATCH,PSOILGRID,PDEPTH,KVERSION,KWG_LAYER          )
+                                    KLUOUT,HISBA,HNAT,HFIELD,KNI,KLAYER,  &
+                                   KPATCH,PSOILGRID,PDEPTH,KVERSION,KWG_LAYER)
 !     #######################
 !
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
@@ -41,6 +41,7 @@ USE MODD_GRID_CONF_PROJ_n, ONLY : GRID_CONF_PROJ_t
 !
 USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
 USE MODD_ISBA_OPTIONS_n, ONLY : ISBA_OPTIONS_t
+USE MODD_SURF_PAR, ONLY : LEN_HREC
 !
 USE MODD_SURFEX_MPI, ONLY : NRANK,NPIO
 !
@@ -55,7 +56,8 @@ USE MODI_READ_ARRANGE_COVER
 !
 ! Modifications :
 ! P.Marguinaud : 11-09-2012 : shorten field name
-! G.Delautier : 24-06-2015 : bug for arome compressed files
+! G.Delautier  : 24-06-2015 : bug for arome compressed files
+! A.Druel      :    02-2019 : add NPAR_VEG_IRR_USE and ECOSG for irrigation
 !
 IMPLICIT NONE
 !
@@ -68,10 +70,11 @@ TYPE(GRID_CONF_PROJ_t),INTENT(INOUT) :: GCP
 TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
 TYPE(ISBA_OPTIONS_t), INTENT(INOUT) :: IO
 !
- CHARACTER(LEN=28),    INTENT(IN)    :: HFILE  ! type of input file
- CHARACTER(LEN=6),     INTENT(IN)    :: HFILETYPE  ! type of input file
- CHARACTER(LEN=28),    INTENT(IN)    :: HFILEPGD  ! type of input file
- CHARACTER(LEN=6),     INTENT(IN)    :: HFILEPGDTYPE  ! type of input file
+INTEGER,DIMENSION(:), INTENT(IN)    :: NPAR_VEG_IRR_USE ! vegtype with irrigation
+ CHARACTER(LEN=28),   INTENT(IN)    :: HFILE     ! type of input file
+ CHARACTER(LEN=6),    INTENT(IN)    :: HFILETYPE ! type of input file
+ CHARACTER(LEN=28),   INTENT(IN)    :: HFILEPGD  ! type of input file
+ CHARACTER(LEN=6),    INTENT(IN)    :: HFILEPGDTYPE  ! type of input file
 INTEGER,              INTENT(IN)    :: KLUOUT    ! logical unit of output listing
 CHARACTER(LEN=3),     INTENT(IN)    :: HISBA     ! type of ISBA soil scheme
 CHARACTER(LEN=3),     INTENT(IN)    :: HNAT      ! type of surface (nature, gardens)
@@ -89,14 +92,13 @@ INTEGER, DIMENSION(:,:), INTENT(OUT):: KWG_LAYER
 !
  CHARACTER(LEN=4 ) :: YLVL
  CHARACTER(LEN=LEN_HREC) :: YRECFM         ! Name of the article to be read
- CHARACTER(LEN=LEN_HREC) :: YRECFMOLD      ! Name of the article to be read
- CHARACTER(LEN=LEN_HREC) :: YRECFM2
+ CHARACTER(LEN=16) :: YRECFM2
  CHARACTER(LEN=100):: YCOMMENT       ! Comment string
  CHARACTER(LEN=6) :: YSURF
 INTEGER           :: IRESP          ! reading return code
 INTEGER           :: JL         ! loop counter
 INTEGER           :: JP         ! loop counter
-INTEGER           :: JJ, JI, IEND
+INTEGER           :: JJ, IEND
 INTEGER           :: IVERSION
 INTEGER           :: IBUGFIX
 !
@@ -113,13 +115,14 @@ REAL,  DIMENSION(KNI)                :: ZPERM  ! permafrost distribution
  CHARACTER(LEN=4)                    :: YNVEG  ! type of no   vegetation
 INTEGER                              :: INVEGTYPE_SAVE, IJPCOVER_SAVE
 LOGICAL                              :: GECOCLIMAP ! T if ecoclimap is used
-LOGICAL                              :: GECOSG
+LOGICAL                              :: GECOSG     ! T if ecoclimap-sg is used
 LOGICAL                              :: GPAR_GARDEN! T if garden data are used
 LOGICAL, DIMENSION(NVEGTYPE_ECOSG)   :: GDATA_DG
 LOGICAL, DIMENSION(NVEGTYPE_ECOSG)   :: GDATA_GROUND_DEPTH, GDATA_ROOT_DEPTH
 LOGICAL                              :: GPERM
 LOGICAL                              :: GREAD_EXT
-LOGICAL      :: GREAD_OK, GDIM, GDIM2, GWATER_TO_NATURE, GTOWN_TO_ROCK, GGARDEN
+LOGICAL :: GREAD_OK, GDIM, GDIM2, GWATER_TO_NATURE, GTOWN_TO_ROCK, GTOWN_TO_COVER, GGARDEN
+INTEGER :: NREPLACE_COVER
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !
@@ -201,7 +204,7 @@ IF (HNAT=='NAT' .AND. (IVERSION>=7 .OR. .NOT.GECOCLIMAP)) THEN
         IF (JL<10)  WRITE(YRECFM,FMT='(A4,I1.1)') 'D_DG',JL
         IF (JL>=10) WRITE(YRECFM,FMT='(A4,I2.2)') 'D_DG',JL
       ENDIF
-      CALL READ_SURF_ISBA_PAR_n(DTCO, U, GCP, KPATCH, HFILEPGDTYPE, YRECFM, KLUOUT, KNI, &
+      CALL READ_SURF_ISBA_PAR_n(DTCO, U, GCP, KPATCH, NPAR_VEG_IRR_USE, HFILEPGDTYPE, YRECFM, KLUOUT, KNI, &
                                 IVERSION, IBUGFIX, GDATA_DG, PDEPTH(:,JL,:),IRESP,HDIR='E')
     END DO
     GREAD_OK = .TRUE.
@@ -224,7 +227,7 @@ IF (HNAT=='NAT' .AND. (IVERSION>=7 .OR. .NOT.GECOCLIMAP)) THEN
         ELSE
           YRECFM2='D_ROOT_DEPTH'
         ENDIF                   
-        CALL READ_SURF_ISBA_PAR_n(DTCO, U, GCP, KPATCH, HFILEPGDTYPE, YRECFM2, KLUOUT, KNI, &
+        CALL READ_SURF_ISBA_PAR_n(DTCO, U, GCP, KPATCH, NPAR_VEG_IRR_USE, HFILEPGDTYPE, YRECFM2, KLUOUT, KNI, &
                                   IVERSION, IBUGFIX, GDATA_ROOT_DEPTH, PDEPTH(:,2,:),IRESP,HDIR='E')
       ENDIF
       !
@@ -234,13 +237,6 @@ IF (HNAT=='NAT' .AND. (IVERSION>=7 .OR. .NOT.GECOCLIMAP)) THEN
     IF (IVERSION>7 .OR. IVERSION==7 .AND. IBUGFIX>=3) YRECFM2='L_GROUND_DPT'
     YCOMMENT=YRECFM2
     CALL READ_SURF(HFILEPGDTYPE,YRECFM2,GDATA_GROUND_DEPTH(1:IEND),IRESP,HCOMMENT=YCOMMENT,HDIR='-')
-    IF (IRESP/=0 .AND. YRECFM2=='L_GROUND_DEPTH' ) THEN
-      WRITE  (KLUOUT,*) ' | ERROR Reading L_GROUND_DEPTH try with L_GROUND_DPT'
-
-      YRECFM2='L_GROUND_DPT'
-      YCOMMENT=YRECFM2
-      CALL READ_SURF(HFILEPGDTYPE,YRECFM2,GDATA_GROUND_DEPTH(1:IEND),IRESP,HCOMMENT=YCOMMENT,HDIR='-')
-    ENDIF
     !
     IF (ANY(GDATA_GROUND_DEPTH(1:IEND))) THEN
       !
@@ -251,7 +247,7 @@ IF (HNAT=='NAT' .AND. (IVERSION>=7 .OR. .NOT.GECOCLIMAP)) THEN
         YRECFM2='D_GROUND_DEPTH'  
         IF (IVERSION>7 .OR. IVERSION==7 .AND. IBUGFIX>=3) YRECFM2='D_GROUND_DPT'
       ENDIF            
-      CALL READ_SURF_ISBA_PAR_n(DTCO, U, GCP, KPATCH, HFILEPGDTYPE, YRECFM2, KLUOUT, KNI, &
+      CALL READ_SURF_ISBA_PAR_n(DTCO, U, GCP, KPATCH, NPAR_VEG_IRR_USE, HFILEPGDTYPE, YRECFM2, KLUOUT, KNI, &
                                 IVERSION, IBUGFIX, GDATA_GROUND_DEPTH, ZGROUND_DEPTH(:,:),IRESP,HDIR='E')
       !
       IF (.NOT.ANY(GDATA_DG(1:IEND))) THEN
@@ -363,8 +359,7 @@ IF (GECOCLIMAP .AND. .NOT.GREAD_OK ) THEN
       ALLOCATE(GCOVER(NCOVER))
     ENDIF
     !
-    YRECFMOLD='COVER_LIST'
-    CALL OLD_NAME(HFILEPGDTYPE,YRECFMOLD,YRECFM,HDIR='-')
+    CALL OLD_NAME(HFILEPGDTYPE,'COVER_LIST      ',YRECFM,HDIR='-')
     CALL READ_SURF(HFILEPGDTYPE,YRECFM,GCOVER(:),IRESP,HDIR='-')
     !
     IF (NRANK==NPIO) THEN 
@@ -398,19 +393,22 @@ IF (GECOCLIMAP .AND. .NOT.GREAD_OK ) THEN
     IF (SIZE(GCOVER)/=JPCOVER) THEN
       CALL OPEN_AUX_IO_SURF(HFILEPGD,HFILEPGDTYPE,'NATURE') 
       CALL READ_PGD_COVER_GARDEN(HFILEPGDTYPE,GGARDEN)
-      CALL READ_ARRANGE_COVER(HFILEPGDTYPE,GWATER_TO_NATURE,GTOWN_TO_ROCK,'A')
+      CALL READ_ARRANGE_COVER(HFILEPGDTYPE,GWATER_TO_NATURE,GTOWN_TO_ROCK, &
+           GTOWN_TO_COVER,NREPLACE_COVER,'A')
       CALL CLOSE_AUX_IO_SURF(HFILEPGD,HFILEPGDTYPE)
     ELSE
       GGARDEN = .FALSE.
       GWATER_TO_NATURE = .FALSE.
       GTOWN_TO_ROCK    = .FALSE.
+      GTOWN_TO_COVER   = .FALSE.
+      NREPLACE_COVER   = NUNDEF
     ENDIF
     !
     IF (NRANK==NPIO) THEN
       CALL CONVERT_COVER_ISBA(DTCO, IO%CALBEDO, &
-                              HISBA,IO%LTR_ML,1,ZCOVER,GCOVER,'   ',HNAT,PSOILGRID=PSOILGRID, &
-                              PPERM=ZPERM,PDG=PDEPTH,KWG_LAYER=KWG_LAYER, &
-                              OWATER_TO_NATURE=GWATER_TO_NATURE, OTOWN_TO_ROCK=GTOWN_TO_ROCK, &
+                              HISBA,IO%LTR_ML,1,ZCOVER,GCOVER,'   ',HNAT,GECOSG,NPAR_VEG_IRR_USE,&
+                              PSOILGRID=PSOILGRID, PPERM=ZPERM,PDG=PDEPTH,KWG_LAYER=KWG_LAYER,   &
+                              OWATER_TO_NATURE=GWATER_TO_NATURE, OTOWN_TO_ROCK=GTOWN_TO_ROCK,    &
                               OGARDEN=GGARDEN )
     ENDIF
     !
@@ -434,8 +432,8 @@ END SUBROUTINE READ_EXTERN_DEPTH
 !---------------------------------------------------------------------------------------
 !
 !     #######################
-      SUBROUTINE READ_EXTERN_ISBA (U, DTCO, GCP, IO, &
-                                   HFILE,HFILETYPE,HFILEPGD,HFILEPGDTYPE,&
+      SUBROUTINE READ_EXTERN_ISBA (U, DTCO, GCP, IO, NPAR_VEG_IRR_USE,    &
+                                   HFILE,HFILETYPE,HFILEPGD,HFILEPGDTYPE, &
                                   KLUOUT,KNI,HFIELD,HNAME,PFIELD,PDEPTH,OKEY)
 !     #######################
 !
@@ -443,14 +441,15 @@ END SUBROUTINE READ_EXTERN_DEPTH
 USE MODD_ISBA_n, ONLY : ISBA_NP_t, ISBA_K_t, ISBA_P_t, ISBA_NP_INIT, ISBA_K_INIT
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 USE MODD_GRID_CONF_PROJ_n, ONLY : GRID_CONF_PROJ_t
-!
 USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
 USE MODD_ISBA_OPTIONS_n, ONLY : ISBA_OPTIONS_t
+USE MODD_SURF_PAR, ONLY : LEN_HREC
 !
-USE MODD_SURFEX_MPI, ONLY : NRANK
 USE MODD_ISBA_PAR,    ONLY : XOPTIMGRID
+USE MODD_COUPLING_TOPD, ONLY : LPERT_PARAM
 !
 USE MODE_SOIL
+USE MODE_SOIL_PERT
 USE MODI_READ_SURF
 USE MODI_ISBA_SOC_PARAMETERS
 USE MODI_PACK_SAME_RANK
@@ -466,6 +465,7 @@ TYPE(GRID_CONF_PROJ_t),INTENT(INOUT) :: GCP
 !
 TYPE(ISBA_OPTIONS_t), INTENT(INOUT) :: IO
 !
+INTEGER,DIMENSION(:), INTENT(IN)  :: NPAR_VEG_IRR_USE ! vegtype with irrigation
 CHARACTER(LEN=28),    INTENT(IN)  :: HFILE     ! name of file
 CHARACTER(LEN=6),     INTENT(IN)  :: HFILETYPE ! type of input file
 CHARACTER(LEN=28),    INTENT(IN)  :: HFILEPGD     ! name of file
@@ -496,7 +496,7 @@ TYPE(ISBA_P_t), POINTER :: PK
  CHARACTER(LEN=3)  :: YNAT           ! type of surface (nature, garden)
 !
 INTEGER           :: IRESP          ! reading return code
-INTEGER           :: ILAYER, ILAYER_SAVE         ! number of layers
+INTEGER           :: ILAYER         ! number of layers
 INTEGER           :: JL         ! loop counter
 INTEGER           :: IPATCH         ! number of patch
 INTEGER           :: JP         ! loop counter
@@ -518,7 +518,6 @@ REAL,  DIMENSION(:),   ALLOCATABLE   :: ZNAT      ! natural surface fraction
 REAL,  DIMENSION(:,:),   ALLOCATABLE :: ZWWILT    ! wilting point
 REAL,  DIMENSION(:,:),   ALLOCATABLE :: ZWFC      ! field capacity
 REAL,  DIMENSION(:,:),   ALLOCATABLE :: ZWSAT     ! saturation
-REAL,  DIMENSION(:,:),   ALLOCATABLE :: ZPATCH
 !
 REAL,  DIMENSION(KNI,2)              :: ZSOC
 !
@@ -534,7 +533,7 @@ REAL, PARAMETER   :: ZMPOT_WWILT   = -150.     ! Matric potential at wilting poi
 REAL, PARAMETER   :: ZHYDCOND_WFC  = 1.157E-9  ! Hydraulic conductivity at field capacity (m/s)
 !
 INTEGER :: IVERSION   ! surface version
-INTEGER :: IBUGFIX, ISIZE
+INTEGER :: IBUGFIX
 LOGICAL :: GDIM, GDIM2
 LOGICAL :: GDATA_WSAT, GDATA_WWILT, GDATA_WFC, GDATA_CONDSAT, GDATA_MPOTSAT, GDATA_BCOEF, GCALC
 !
@@ -576,7 +575,6 @@ ENDIF
 !
 YRECFM='GROUND_LAYER'
 IF (GTEB) THEN 
-  YRECFM='TWN_LAYER'
   IF (IVERSION>7 .OR. IVERSION==7 .AND. IBUGFIX>=3) THEN
     IF (GGD) THEN 
       YRECFM='GD_LAYER'
@@ -777,7 +775,12 @@ IF(YISBA=='DIF') THEN
         WRITE(YLVL,'(I4)') JL
         YRECFM='SOILGRID'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
         IF (GTEB) THEN 
-          YRECFM='GD_SGRID'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
+          IF (IVERSION==8 .AND. IBUGFIX<=1) THEN
+            YRECFM='GD_SGRID'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
+          ELSE
+            WRITE(YLVL,'(I2)') JL
+            YRECFM='TEB_SGRID'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
+          END IF
         ENDIF
         CALL READ_SURF(HFILEPGDTYPE,YRECFM,ZSOILGRID(JL),IRESP,HDIR='A')
       ENDDO
@@ -847,6 +850,11 @@ IF ((HFIELD=='TG    ') .AND. (YISBA=='2-L' .OR. YISBA=='3-L')) THEN
        ENDDO
     ENDIF    
   END DO
+ELSE IF (GTEB .AND. YISBA=='DIF' .AND. (IVERSION>8 .OR. (IVERSION==8 .AND. IBUGFIX>=2))) THEN
+  ALLOCATE(PDEPTH    (KNI,ILAYER,1))
+  DO JL=1,ILAYER
+    PDEPTH(:,JL,1) = ZSOILGRID(JL)
+  END DO
 ELSE
   YNAT='NAT'
   IF (GTEB) THEN
@@ -857,7 +865,7 @@ ELSE
     ENDIF
   ENDIF
   !
-  CALL READ_EXTERN_DEPTH(U, DTCO,  GCP, IO,                      &
+  CALL READ_EXTERN_DEPTH(U, DTCO,  GCP, IO, NPAR_VEG_IRR_USE,    &
                          HFILE,HFILETYPE,HFILEPGD,HFILEPGDTYPE,  &
                          KLUOUT,YISBA,YNAT,HFIELD,KNI,           &
                          ILAYER,IPATCH,ZSOILGRID,PDEPTH,IVERSION,IWG_LAYER)
@@ -939,15 +947,31 @@ IF (HFIELD=='WG    ' .OR. HFIELD=='WGI   ') THEN
     !
     ! Compute ISBA model constants
     !
-    DO JL=1,ILAYER
-      ZWSAT (:,JL) = WSAT_FUNC (ZCLAY(:,JL),ZSAND(:,JL),YPEDOTF)
-      ZWWILT(:,JL) = WWILT_FUNC(ZCLAY(:,JL),ZSAND(:,JL),YPEDOTF)
-      IF(YISBA=='DIF')THEN
-        ZWFC(:,JL) = W33_FUNC(ZCLAY(:,JL),ZSAND(:,JL),YPEDOTF)
-      ELSE
-        ZWFC(:,JL) = WFC_FUNC(ZCLAY(:,JL),ZSAND(:,JL),YPEDOTF)
-      ENDIF
-    ENDDO
+    IF (LPERT_PARAM) THEN
+      !
+      DO JL=1,ILAYER
+        ZWSAT (:,JL) = WSAT_FUNC_PERT (ZCLAY(:,JL),ZSAND(:,JL),YPEDOTF)
+        ZWWILT(:,JL) = WWILT_FUNC_PERT(ZCLAY(:,JL),ZSAND(:,JL),YPEDOTF)
+        IF(YISBA=='DIF')THEN
+          ZWFC(:,JL) = WFC_FUNC_PERT(ZCLAY(:,JL),ZSAND(:,JL),YPEDOTF)
+        ELSE
+          ZWFC(:,JL) = WFC_FUNC_PERT(ZCLAY(:,JL),ZSAND(:,JL),YPEDOTF)
+        ENDIF
+      ENDDO
+      !
+    ELSE
+      !
+      DO JL=1,ILAYER
+        ZWSAT (:,JL) = WSAT_FUNC (ZCLAY(:,JL),ZSAND(:,JL),YPEDOTF)
+        ZWWILT(:,JL) = WWILT_FUNC(ZCLAY(:,JL),ZSAND(:,JL),YPEDOTF)
+        IF(YISBA=='DIF')THEN
+          ZWFC(:,JL) = W33_FUNC(ZCLAY(:,JL),ZSAND(:,JL),YPEDOTF)
+        ELSE
+          ZWFC(:,JL) = WFC_FUNC(ZCLAY(:,JL),ZSAND(:,JL),YPEDOTF)
+        ENDIF
+      ENDDO
+      !
+    ENDIF
     !
     IF (GTEB.AND..NOT.GGD) THEN
       !

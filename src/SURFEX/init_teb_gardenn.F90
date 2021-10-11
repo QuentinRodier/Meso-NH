@@ -3,8 +3,8 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !#############################################################
-SUBROUTINE INIT_TEB_GARDEN_n (DTCO, UG, U, DMTO, TOP, IO, DTV, K, P, PEK, &
-                              DK, DEK, DECK, DMK, HPROGRAM, HINIT, KI, KSW, PSW_BANDS, KPATCH)
+SUBROUTINE INIT_TEB_GARDEN_n (DTCO, UG, U, DMTO, TOP, IO, DTV, K, P, PEK, PHV, PEHV, &
+                              DK, DCK, DEK, DECK, DMK, HPROGRAM, HINIT, KI, KSW, PSW_BANDS, KPATCH)
 !#############################################################
 !
 !!****  *INIT_TEB_GARDEN_n* - routine to initialize ISBA
@@ -33,6 +33,7 @@ SUBROUTINE INIT_TEB_GARDEN_n (DTCO, UG, U, DMTO, TOP, IO, DTV, K, P, PEK, &
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    09/2009
+!!      C. de Munck 10/2019 added initialisation of cumulative diagnostics
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -54,10 +55,8 @@ USE MODD_DIAG_MISC_ISBA_n, ONLY : DIAG_MISC_ISBA_t
 USE MODD_TYPE_DATE_SURF
 USE MODD_TYPE_SNOW
 !
-USE MODD_DATA_COVER_PAR,  ONLY: NVEGTYPE
-USE MODD_SURF_PAR,        ONLY: XUNDEF, NUNDEF
-
-USE MODD_SURF_ATM,        ONLY: LCPL_ARP
+USE MODD_SURF_PAR, ONLY: XUNDEF, NUNDEF
+USE MODD_SURF_ATM, ONLY: LCPL_ARP
 !
 USE MODI_GET_LUOUT
 USE MODI_ALLOCATE_TEB_VEG
@@ -87,9 +86,10 @@ TYPE(TEB_OPTIONS_t), INTENT(INOUT) :: TOP
 TYPE(ISBA_OPTIONS_t), INTENT(INOUT) :: IO
 TYPE(DATA_ISBA_t), INTENT(INOUT) :: DTV
 TYPE(ISBA_K_t), INTENT(INOUT) :: K
-TYPE(ISBA_P_t), INTENT(INOUT) :: P
-TYPE(ISBA_PE_t), INTENT(INOUT) :: PEK
+TYPE(ISBA_P_t), INTENT(INOUT) :: P, PHV
+TYPE(ISBA_PE_t), INTENT(INOUT) :: PEK, PEHV
 TYPE(DIAG_t), INTENT(INOUT) :: DK
+TYPE(DIAG_t), INTENT(INOUT) :: DCK
 TYPE(DIAG_EVAP_ISBA_t), INTENT(INOUT) :: DEK
 TYPE(DIAG_EVAP_ISBA_t), INTENT(INOUT) :: DECK
 TYPE(DIAG_MISC_ISBA_t), INTENT(INOUT) :: DMK
@@ -133,6 +133,7 @@ IO%CRAIN = "DEF"
 !-------------------------------------------------------------------------------
 !
  CALL ALLOCATE_TEB_VEG(PEK, KI, IO%NGROUND_LAYER, IO%NNBIOMASS)  
+ IF (TOP%CURBTREE/='NONE') ALLOCATE(PEHV%XTV(KI))
 !
 !-------------------------------------------------------------------------------
 !
@@ -179,7 +180,7 @@ K%XFSAT(:) = 0.0
 YPATCH='   '
 IF (TOP%NTEB_PATCH>1) WRITE(YPATCH,FMT='(A,I1,A)') 'T',KPATCH,'_'
 !
- CALL READ_TEB_GARDEN_n(DTCO, U, IO, P, PEK, HPROGRAM,YPATCH)
+ CALL READ_TEB_GARDEN_n(TOP,DTCO, U, IO, P, PEK, PEHV, HPROGRAM,YPATCH)
 !
 DTV%LIMP_VEG  = .FALSE.
 DTV%LIMP_Z0   = .FALSE.
@@ -199,10 +200,10 @@ ELSE
   ELSE
     IDECADE = 1
   END IF
-  CALL INIT_FROM_DATA_TEB_VEG_n(DTV, K, P, PEK, IDECADE, .FALSE., .FALSE., .FALSE., .TRUE. )  
+  CALL INIT_FROM_DATA_TEB_VEG_n(DTV, K, P, PEK, IDECADE, .FALSE., .FALSE., .FALSE., .TRUE.,OHG=TOP%LGARDEN, &
+            OHV=TOP%CURBTREE/='NONE')
 END IF
 !
-
 WHERE (PEK%XALBNIR_SOIL(:)==XUNDEF)
   PEK%XALBNIR_SOIL(:)=0.225
   PEK%XALBVIS_SOIL(:)=0.15
@@ -211,7 +212,7 @@ ENDWHERE
 !
  CALL AVG_ALBEDO_EMIS_TEB_VEG(PEK, IO%CALBEDO,  ZTG1, PSW_BANDS, ZDIR_ALB, ZSCA_ALB, ZEMIS,ZTSRAD )  
 !
- CALL DIAG_TEB_VEG_INIT_n(DK, DEK, DECK, DMK, KI, PEK%TSNOW%NLAYER)
+ CALL DIAG_TEB_VEG_INIT_n(DK, DCK, DEK, DECK, DMK, KI, PEK%TSNOW%NLAYER)
 !
 !-------------------------------------------------------------------------------
 !

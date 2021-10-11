@@ -32,10 +32,9 @@ USE MODI_MAKE_CHOICE_ARRAY
 !
 USE MODD_PREP,       ONLY : CINGRID_TYPE, CINTERP_TYPE
 USE MODD_PREP_TEB,   ONLY : XGRID_ROAD, XGRID_WALL, XGRID_ROOF, &
-                            XGRID_FLOOR, XWS_ROOF, XWS_ROAD, &
-                            XTI_BLD_DEF, XWS_ROOF_DEF, XWS_ROAD_DEF, XHUI_BLD_DEF
-USE MODD_DATA_COVER_PAR, ONLY : JPCOVER
-USE MODD_SURF_PAR, ONLY: XUNDEF
+                            XGRID_FLOOR, XGRID_MASS, &
+                            XTI_BLD_DEF, XWS_ROOF_DEF, XWS_ROAD_DEF
+USE MODD_SURF_PAR, ONLY: XUNDEF, LEN_HREC
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -77,6 +76,7 @@ INTEGER           :: JLAYER, JI         ! loop counter
 INTEGER           :: IVERSION_PGD, IVERSION_PREP       ! SURFEX version
 INTEGER           :: IBUGFIX_PGD, IBUGFIX_PREP        ! SURFEX bug version
 LOGICAL           :: GOLD_NAME      ! old name flag for temperatures
+LOGICAL           :: GOLD_NAME2     ! old name flag for temperatures
  CHARACTER(LEN=4)  :: YWALL_OPT      ! option of walls
  CHARACTER(LEN=6)  :: YSURF          ! Surface type
  CHARACTER(LEN=3)  :: YBEM ! key of the building energy model DEF for DEFault (Masson et al. 2002) ,
@@ -86,6 +86,7 @@ INTEGER           :: INI            ! total 1D dimension
 !
 LOGICAL :: GDIM
 LOGICAL                              :: GTEB      ! flag if TEB fields are present
+LOGICAL                              :: GINTERP   ! flag if TEB fields are interpolated from a profile from TEB input
 INTEGER                              :: IPATCH    ! number of soil temperature patches
 INTEGER                              :: ITEB_PATCH! number of TEB patches in file
  CHARACTER(LEN=3)                     :: YPATCH    ! indentificator for TEB patch
@@ -165,6 +166,7 @@ ELSE
 !
     CALL OPEN_AUX_IO_SURF(HFILEPGD,HFILEPGDTYPE,'TOWN  ')
     GOLD_NAME=(IVERSION_PGD<7 .OR. (IVERSION_PGD==7 .AND. IBUGFIX_PGD<3))
+    GOLD_NAME2=(IVERSION_PGD<8 .OR. (IVERSION_PGD==8 .AND. IBUGFIX_PGD<2))
     IF (.NOT.GOLD_NAME.AND.GTEB) THEN
       YRECFM='BEM'
       CALL READ_SURF(HFILEPGDTYPE,YRECFM,YBEM,IRESP,HDIR='-')
@@ -185,21 +187,61 @@ ELSE
 !*     4.1    Profile of temperatures in roads, roofs or walls
 !             ------------------------------------------------
 !
-    CASE('T_ROAD','T_ROOF','T_WALLA','T_WALLB','T_FLOOR','T_MASS')
-      CALL OPEN_AUX_IO_SURF(HFILEPGD,HFILEPGDTYPE,'TOWN  ')
+    CASE('T_ROAD','T_BLD ','T_ROOF','T_WALLA','T_WALLB','T_FLOOR','T_MASS')
+            
+      GINTERP = .TRUE.
+      
       YSURF=HSURF(1:6)
+      !
+      !* interpolation on the fine vertical grid
+      IF (YSURF=='T_ROAD') THEN
+        ALLOCATE(PFIELD(INI,SIZE(XGRID_ROAD)))
+      ELSEIF (YSURF=='T_BLD ') THEN
+        ALLOCATE(PFIELD(INI,SIZE(XGRID_ROAD)))
+      ELSEIF (YSURF=='T_ROOF') THEN
+        ALLOCATE(PFIELD(INI,SIZE(XGRID_ROOF)))
+      ELSEIF (YSURF=='T_WALL') THEN
+        ALLOCATE(PFIELD(INI,SIZE(XGRID_WALL)))
+      ELSEIF (YSURF=='T_FLOO') THEN
+        ALLOCATE(PFIELD(INI,SIZE(XGRID_FLOOR)))
+      ELSEIF (YSURF=='T_MASS') THEN
+        ALLOCATE(PFIELD(INI,SIZE(XGRID_FLOOR)))
+      END IF
+
+      CALL OPEN_AUX_IO_SURF(HFILEPGD,HFILEPGDTYPE,'TOWN  ')
       !* reading of number of layers
-      IF (YSURF=='T_ROAD') YRECFM='ROAD_LAYER'
+      IF (YSURF=='T_ROAD' .OR. YSURF=='T_BLD') THEN
+        IF (GOLD_NAME2) THEN
+          YRECFM='ROAD_LAYER'
+        ELSE
+          YRECFM='TEB_SOIL_LAY'
+        END IF
+      END IF  
       IF (YSURF=='T_ROOF') YRECFM='ROOF_LAYER'
       IF (YSURF=='T_WALL') YRECFM='WALL_LAYER'
-      IF (YSURF=='T_FLOO' .OR. YSURF=='T_MASS') THEN 
+      IF (YSURF=='T_FLOO') THEN 
         IF (YBEM=='DEF') THEN
-          YRECFM='ROAD_LAYER'
+          GINTERP=.FALSE.
         ELSE
           YRECFM='FLOOR_LAYER'
         END IF
       END IF
-      CALL READ_SURF(HFILEPGDTYPE,YRECFM,ILAYER,IRESP,HDIR='-')
+      IF (YSURF=='T_MASS') THEN
+         IF (YBEM=='DEF') THEN
+          GINTERP=.FALSE.
+         ELSE
+            IF (GOLD_NAME2) THEN
+               YRECFM='FLOOR_LAYER'
+            ELSE
+               YRECFM='MASS_LAYER'
+            ENDIF
+         END IF
+      END IF    
+      IF (GINTERP) THEN
+        CALL READ_SURF(HFILEPGDTYPE,YRECFM,ILAYER,IRESP,HDIR='-')
+      ELSE
+        ILAYER=1
+      END IF
       CALL CLOSE_AUX_IO_SURF(HFILEPGD,HFILEPGDTYPE)
       !
       !* reading of version of the file being read
@@ -221,16 +263,80 @@ ELSE
           WRITE(YRECFM,'(A6,I1.1)') HSURF(1:6),JLAYER
         ELSE
           !
+          !---------------------------------------------
+          ! Wall temperature profiles, for two different facing walls case
+          !---------------------------------------------
           IF (YSURF =='T_WALL' .AND. YWALL_OPT/='UNIF') THEN
             WRITE(YRECFM,'(A1,A5,I1.1)') HSURF(1:1),HSURF(3:7),JLAYER
+          !
+          !---------------------------------------------
+          ! Floor or Mass temperature profiles, if no BEM present in input data
+          !---------------------------------------------
           ELSEIF ((YSURF=='T_FLOO' .OR. YSURF=='T_MASS') .AND. YBEM=='DEF') THEN
-            IF (YSURF=='T_FLOO' .AND. JLAYER>1) THEN 
-              WRITE(YRECFM,'(A5,I1.1)') 'TROAD',JLAYER
+              IF (GOLD_NAME2) THEN
+                WRITE(YRECFM,'(A6)') 'TI_BLD'
+              ELSE
+                WRITE(YRECFM,'(A6)') 'TIBLD1'
+              END IF
+          !---------------------------------------------
+          ! Floor or Mass temperature profiles, if BEM is present in input data
+          !---------------------------------------------
+          ELSE IF ((YSURF=='T_FLOO' .OR. YSURF=='T_MASS') .AND. YBEM=='BEM') THEN
+            !
+            ! Only the value for one compartment is read and then
+            ! applied to all compartemts
+            !
+            IF (GOLD_NAME2) THEN
+              IF (YSURF=='T_FLOO') THEN 
+                WRITE(YRECFM,'(A6,I1.1,A1,I1.1)') 'TFLOO',JLAYER
+              ELSE IF (YSURF=='T_MASS') THEN 
+                WRITE(YRECFM,'(A5,I1.1,A1,I1.1)') 'TMASS',JLAYER
+              ENDIF
             ELSE
-              WRITE(YRECFM,'(A6)') 'TI_BLD'
+              IF (YSURF=='T_FLOO') THEN 
+                WRITE(YRECFM,'(A5,I1.1,A1,I1.1)') 'TFLOO',JLAYER,'_',1
+              ELSE IF (YSURF=='T_MASS') THEN 
+                WRITE(YRECFM,'(A5,I1.1,A1,I1.1)') 'TMASS',JLAYER,'_',1
+              ENDIF
             ENDIF
+            !
+          !---------------------------------------------
+          ! Below building soil temperature profiles
+          !---------------------------------------------
+          ELSEIF (YSURF=='T_BLD') THEN
+            IF (GOLD_NAME2) THEN   ! old TEB version without soil below buildings: set a mixing between road and building temp.
+              IF (JLAYER.LT.2) THEN   ! layers near the building set to building internal temperature, to avoid too cold or warm top road layers
+                IF (GOLD_NAME2) THEN
+                  WRITE(YRECFM,'(A6)') 'TI_BLD'
+                ELSE
+                  WRITE(YRECFM,'(A6)') 'TIBLD1'
+                ENDIF
+              ELSE IF (JLAYER.LT.10) THEN
+                 WRITE(YRECFM,'(A5,I1.1)') 'TROAD',JLAYER 
+              ELSE  
+                 WRITE(YRECFM,'(A5,I2.1)') 'TROAD',JLAYER  
+              END IF
+            ELSE               ! TEB version with soil temperature profile below buildings
+              IF (JLAYER.LT.10) THEN
+                WRITE(YRECFM,'(A5,I1.1)') 'TBLD',JLAYER 
+              ELSE  
+                WRITE(YRECFM,'(A5,I2.1)') 'TBLD',JLAYER  
+              END IF
+            END IF
+          !---------------------------------------------
+          ! Road temperature profiles
+          !---------------------------------------------
+          ELSE IF (YSURF =='T_ROAD') THEN
+             IF (JLAYER.LT.10) THEN
+                WRITE(YRECFM,'(A5,I1.1)') 'TROAD',JLAYER 
+             ELSE  
+                WRITE(YRECFM,'(A5,I2.1)') 'TROAD',JLAYER  
+             END IF
           ELSE
-            WRITE(YRECFM,'(A1,A4,I1.1)') HSURF(1:1),HSURF(3:6),JLAYER            
+          !---------------------------------------------
+          ! Others: Roof or uniform Wall temperature profiles
+          !---------------------------------------------
+            WRITE(YRECFM,'(A1,A4,I1.1)') YSURF(1:1),YSURF(3:6),JLAYER            
           END IF
           !
         END IF
@@ -246,11 +352,15 @@ ELSE
         WHERE (ZMASK(:)==0.) ZFIELD(:,JLAYER) = XUNDEF
       ENDDO
       !
+    !-----------------------------------------------------------------------------------------------------
+    IF (GINTERP) THEN ! input data of the corresponding variable is intrepolated from the input profile
+    !-----------------------------------------------------------------------------------------------------
       ALLOCATE(ZD(INI,ILAYER))
       IF (YSURF=='T_ROAD') CALL GET_TEB_DEPTHS(DTCO,HFILE,HFILETYPE,HFILEPGD,HFILEPGDTYPE,PD_ROAD=ZD,HDIR='E')
+      IF (YSURF=='T_BLD ') CALL GET_TEB_DEPTHS(DTCO,HFILE,HFILETYPE,HFILEPGD,HFILEPGDTYPE,PD_ROAD=ZD,HDIR='E')
       IF (YSURF=='T_ROOF') CALL GET_TEB_DEPTHS(DTCO,HFILE,HFILETYPE,HFILEPGD,HFILEPGDTYPE,PD_ROOF=ZD,HDIR='E')
       IF (YSURF=='T_WALL') CALL GET_TEB_DEPTHS(DTCO,HFILE,HFILETYPE,HFILEPGD,HFILEPGDTYPE,PD_WALL=ZD,HDIR='E')
-      IF (YSURF=='T_MASS') CALL GET_TEB_DEPTHS(DTCO,HFILE,HFILETYPE,HFILEPGD,HFILEPGDTYPE,PD_FLOOR=ZD,HDIR='E')
+      IF (YSURF=='T_MASS') CALL GET_TEB_DEPTHS(DTCO,HFILE,HFILETYPE,HFILEPGD,HFILEPGDTYPE,PD_MASS=ZD,HDIR='E')
       IF (YSURF=='T_FLOO') CALL GET_TEB_DEPTHS(DTCO,HFILE,HFILETYPE,HFILEPGD,HFILEPGDTYPE,PD_FLOOR=ZD,HDIR='E')
       !
       IF (NRANK==NPIO) THEN
@@ -277,33 +387,48 @@ ELSE
         !
         !* interpolation on the fine vertical grid
         IF (YSURF=='T_ROAD') THEN
-          ALLOCATE(PFIELD(SIZE(ZFIELD,1),SIZE(XGRID_ROAD)))
+          CALL INTERP_GRID(ZDEPTH,ZFIELD,XGRID_ROAD,PFIELD)
+        ELSEIF (YSURF=='T_BLD ') THEN
           CALL INTERP_GRID(ZDEPTH,ZFIELD,XGRID_ROAD,PFIELD)
         ELSEIF (YSURF=='T_ROOF') THEN
-          ALLOCATE(PFIELD(SIZE(ZFIELD,1),SIZE(XGRID_ROOF)))
           CALL INTERP_GRID(ZDEPTH,ZFIELD,XGRID_ROOF,PFIELD)
         ELSEIF (YSURF=='T_WALL') THEN
-          ALLOCATE(PFIELD(SIZE(ZFIELD,1),SIZE(XGRID_WALL)))
           CALL INTERP_GRID(ZDEPTH,ZFIELD,XGRID_WALL,PFIELD)
-        ELSEIF (YSURF=='T_FLOO' .OR. YSURF=='T_MASS') THEN
-          ALLOCATE(PFIELD(SIZE(ZFIELD,1),SIZE(XGRID_FLOOR)))
+        ELSEIF (YSURF=='T_FLOO') THEN
           CALL INTERP_GRID(ZDEPTH,ZFIELD,XGRID_FLOOR,PFIELD)
+        ELSEIF (YSURF=='T_MASS') THEN
+          CALL INTERP_GRID(ZDEPTH,ZFIELD,XGRID_MASS,PFIELD)
         END IF
         DEALLOCATE(ZDEPTH)        
         !
       ENDIF
       !
       DEALLOCATE(ZD)
+    !-----------------------------------------------------------------------------------------------------
+    ELSE ! no interpolation because input data does not exist. A constant field is applied instead.
+    !-----------------------------------------------------------------------------------------------------
+      DO JLAYER=1,SIZE(PFIELD,2)
+        PFIELD(:,JLAYER)=ZFIELD(:,1)
+      END DO
+    !-----------------------------------------------------------------------------------------------------
+    END IF
+    !-----------------------------------------------------------------------------------------------------
+      !
       DEALLOCATE(ZFIELD)
 !---------------------------------------------------------------------------------------
 !
-!*      4.2    Internal moisture
-!              ---------------
+!*      4.2    Internal moisture and temperature
+!              ---------------------------------
 !
-    CASE('QI_BLD ')
+    CASE('QI_BLD ','TI_BLD ')
       ALLOCATE(PFIELD(INI,1))
-      IF (YBEM=='BEM') THEN
-        YRECFM='QI_BLD'
+      IF (HSURF=='TI_BLD' .OR. YBEM=='BEM') THEN
+        IF (GOLD_NAME2) THEN
+           YRECFM=HSURF
+        ELSE
+           IF (HSURF=='QI_BLD ') YRECFM='QIBLD1'
+           IF (HSURF=='TI_BLD ') YRECFM='TIBLD1'
+        END IF
         YRECFM=YPATCH//YRECFM
         YRECFM=ADJUSTL(YRECFM)
         CALL OPEN_AUX_IO_SURF(HFILE,HFILETYPE,'TOWN  ')
@@ -334,12 +459,51 @@ ELSE
         IF (YBEM=='BEM') THEN
           YRECFM=HSURF
         ELSE
-          YRECFM='TI_BLD'
+          IF (GOLD_NAME2) THEN
+            YRECFM='TI_BLD'
+          ELSE
+            YRECFM='TIBLD1'
+          END IF
         ENDIF
+      ELSEIF (HSURF=='VENTNIG') THEN
+        !
+        ! Only one compartiment is read
+        ! 
+        YRECFM='VENTNIG1'
+        !
+      ELSEIF (HSURF=='SHADVAC') THEN
+        !
+        ! Only one compartiment is read
+        ! 
+        YRECFM='SHADVAC1'
+        !
+      ELSEIF (HSURF=='TDEEP_T') THEN
+        YRECFM='TDEEP_TEB'
+        IF (GOLD_NAME2) YRECFM='TI_ROAD'
       ENDIF
       YRECFM=YPATCH//YRECFM
       YRECFM=ADJUSTL(YRECFM)
-      CALL READ_SURF(HFILETYPE,YRECFM,PFIELD(:,1),IRESP,HDIR='E')
+      IF (HSURF=='PSOLD ') THEN
+         IF (GOLD_NAME2 .OR.  YBEM == 'DEF') THEN
+            PFIELD(:,1) = 101325.0
+         ELSE
+            CALL READ_SURF(HFILETYPE,YRECFM,PFIELD(:,1),IRESP,HDIR='E')
+         ENDIF
+      ELSEIF (HSURF=='VENTNIG') THEN
+         IF (GOLD_NAME2 .OR.  YBEM == 'DEF') THEN
+            PFIELD(:,1) = 0.0
+         ELSE
+            CALL READ_SURF(HFILETYPE,YRECFM,PFIELD(:,1),IRESP,HDIR='E')
+         ENDIF
+      ELSEIF (HSURF=='SHADVAC') THEN
+         IF (GOLD_NAME2 .OR.  YBEM == 'DEF') THEN
+            PFIELD(:,1) = 0.0
+         ELSE
+            CALL READ_SURF(HFILETYPE,YRECFM,PFIELD(:,1),IRESP,HDIR='E')
+         ENDIF
+      ELSE
+         CALL READ_SURF(HFILETYPE,YRECFM,PFIELD(:,1),IRESP,HDIR='E')
+      ENDIF
       CALL CLOSE_AUX_IO_SURF(HFILE,HFILETYPE)
       WHERE (ZMASK(:)==0.) PFIELD(:,1) = XUNDEF      
 !
@@ -355,7 +519,7 @@ ELSE
     SELECT CASE(HSURF)
 
     !* temperature profiles
-    CASE('T_ROAD','T_ROOF','T_WALL','T_WIN1','T_FLOOR','T_CAN','TI_ROAD','T_WALLA','T_WALLB')
+    CASE('T_ROAD','T_BLD ','T_ROOF','T_WALL','T_WIN1','T_CAN','TDEEP_T','T_WALLA','T_WALLB')
       YSURF=HSURF(1:6)
       !
       !* reading of the soil surface temperature
@@ -378,25 +542,22 @@ ELSE
       ENDDO      
       !* fills the whole temperature profile by this soil temperature
       IF (YSURF=='T_ROAD') ILAYER=SIZE(XGRID_ROAD)
+      IF (YSURF=='T_BLD ') ILAYER=SIZE(XGRID_ROAD)
       IF (YSURF=='T_ROOF') ILAYER=SIZE(XGRID_ROOF)
       IF (YSURF=='T_WALL') ILAYER=SIZE(XGRID_WALL)
       IF (YSURF=='T_FLOO') ILAYER=SIZE(XGRID_FLOOR)
-      IF (YSURF=='T_WIN1' .OR. YSURF=='T_CAN ' .OR. YSURF=='TI_ROA') ILAYER=1
+      IF (YSURF=='T_WIN1' .OR. YSURF=='T_CAN ' .OR. YSURF=='TI_ROA' .OR. YSURF=='TDEEP_') ILAYER=1
       ALLOCATE(PFIELD(INI,ILAYER))
-      IF (YSURF=='T_FLOO') THEN
-        !* sets the temperature equal to this deep soil temperature
-        PFIELD(:,1) = XTI_BLD_DEF
-      ELSE
-        PFIELD(:,1) = ZFIELD(:,1)
-      ENDIF
+      PFIELD(:,1) = ZFIELD(:,1)
       DO JLAYER=2,ILAYER
         PFIELD(:,JLAYER) = ZFIELD(:,1)
       END DO
       DEALLOCATE(ZFIELD)
 
-    CASE('T_MASS','TI_BLD','T_WIN2')
+    CASE('T_MASS','TI_BLD','T_WIN2','T_FLOOR')
       YSURF=HSURF(1:6)
-      IF (YSURF=='T_MASS') ILAYER = SIZE(XGRID_FLOOR)
+      IF (YSURF=='T_FLOO') ILAYER = SIZE(XGRID_FLOOR)
+      IF (YSURF=='T_MASS') ILAYER = SIZE(XGRID_MASS)
       IF (YSURF=='TI_BLD'.OR.YSURF=='T_WIN2') ILAYER=1
       ALLOCATE(PFIELD(INI, ILAYER))
       PFIELD(:,:) = XTI_BLD_DEF
@@ -411,6 +572,21 @@ ELSE
       ALLOCATE(PFIELD(INI,1))
       IF (HSURF=='WS_ROOF') PFIELD = XWS_ROOF_DEF
       IF (HSURF=='WS_ROAD') PFIELD = XWS_ROAD_DEF
+   !
+   ! Robert: These values are hardcoded at the moment
+   !
+    CASE('PSOLD ')
+      ALLOCATE(PFIELD(INI,1))
+      PFIELD = 101325.0
+   !
+   CASE('VENTNIG')    
+      ALLOCATE(PFIELD(INI,1))
+      PFIELD = 0.0
+   !
+   CASE('SHADVAC')    
+      ALLOCATE(PFIELD(INI,1))
+      PFIELD = 0.0
+   !
 
    !* other fields
     CASE DEFAULT

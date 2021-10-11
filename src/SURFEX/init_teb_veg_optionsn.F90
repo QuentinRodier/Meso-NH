@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !#############################################################
-SUBROUTINE INIT_TEB_VEG_OPTIONS_n (CHT, OSURF_DIAG_ALBEDO, OGREENROOF, GDO, GRO, HPROGRAM)
+SUBROUTINE INIT_TEB_VEG_OPTIONS_n (CHT, OSURF_DIAG_ALBEDO, OGREENROOF, GDO, GRO, TOP, HPROGRAM, HINIT)
 !#############################################################
 !
 !!****  *INIT_TEB_TEB_VEG_n* - routine to initialize ISBA
@@ -35,6 +35,7 @@ SUBROUTINE INIT_TEB_VEG_OPTIONS_n (CHT, OSURF_DIAG_ALBEDO, OGREENROOF, GDO, GRO,
 !!      B. Decharme 07/2011 : read pgd+prep
 !!      B. Decharme 04/2013 : delete CTOPREG option (never used)
 !!                            water table / surface coupling
+!!      M. Goret    08/2017 : add reading of RESPSL option
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -45,21 +46,15 @@ SUBROUTINE INIT_TEB_VEG_OPTIONS_n (CHT, OSURF_DIAG_ALBEDO, OGREENROOF, GDO, GRO,
 !
 USE MODD_CH_TEB_n, ONLY : CH_TEB_t
 USE MODD_ISBA_OPTIONS_n, ONLY : ISBA_OPTIONS_t
-!
+USE MODD_TEB_OPTION_n, ONLY : TEB_OPTIONS_t
 USE MODD_READ_NAMELIST,   ONLY : LNAM_READ
 !
 USE MODD_TYPE_DATE_SURF
 USE MODD_TYPE_SNOW
 !
-!
-
-
 USE MODD_DATA_COVER_PAR,  ONLY: NVEGTYPE
-USE MODD_SURF_PAR,        ONLY: XUNDEF, NUNDEF
-!
+USE MODD_SURF_PAR,        ONLY: XUNDEF, NUNDEF, LEN_HREC
 USE MODD_ISBA_PAR,        ONLY : XOPTIMGRID
-!
-USE MODN_TEB_n,           ONLY : XTSTEP
 !
 USE MODI_READ_NAM_PGD_ISBA
 USE MODI_DEFAULT_ISBA
@@ -68,6 +63,7 @@ USE MODI_DEFAULT_CH_BIO_FLUX
 USE MODI_DEFAULT_CROCUS
 USE MODI_READ_DEFAULT_TEB_VEG_n
 USE MODI_READ_TEB_VEG_CONF_n
+USE MODI_READ_PREP_ISBA_CARBON
 USE MODI_GET_LUOUT
 USE MODI_READ_SURF
 !
@@ -87,8 +83,10 @@ LOGICAL, INTENT(OUT) :: OSURF_DIAG_ALBEDO
 LOGICAL, INTENT(IN) :: OGREENROOF 
 TYPE(ISBA_OPTIONS_t), INTENT(INOUT) :: GDO
 TYPE(ISBA_OPTIONS_t), INTENT(INOUT) :: GRO
+TYPE(TEB_OPTIONS_t), INTENT(IN) :: TOP
 !
  CHARACTER(LEN=6),                   INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
+ CHARACTER(LEN=3),                   INTENT(IN)  :: HINIT     ! choice of fields to initialize
 !
 !*       0.2   Declarations of local variables
 !              -------------------------------
@@ -99,27 +97,9 @@ INTEGER           :: IRESP    ! Error code after redding
 CHARACTER(LEN=LEN_HREC) :: YRECFM   ! Name of the article to be read
 CHARACTER(LEN=4 ) :: YLVL
 !
-INTEGER :: JLAYER ! loop counter on layers
-!
-REAL                              :: ZOUT_TSTEP
-CHARACTER(LEN=3)                  :: YRAIN 
-LOGICAL                           :: GCANOPY_DRAG
-LOGICAL                           :: GGLACIER
-LOGICAL                           :: GFLOOD
-LOGICAL                           :: GWTD
-LOGICAL                           :: GVEGUPD
-LOGICAL                           :: GSPINUPCARBS
-LOGICAL                           :: GSPINUPCARBW
-REAL                              :: ZSPINMAXS
-REAL                              :: ZSPINMAXW
-REAL                              :: ZCO2_START
-REAL                              :: ZCO2_END
-INTEGER                           :: INBYEARSPINS
-INTEGER                           :: INBYEARSPINW
-!
+REAL:: ZCVHEATF
 INTEGER                  :: IPATCH           ! number of patches
 INTEGER                  :: IGROUND_LAYER    ! number of soil layers
-INTEGER                  :: JVEGTYPE
 CHARACTER(LEN=3)         :: YISBA            ! ISBA option
 CHARACTER(LEN=4)         :: YPEDOTF          ! Pedo transfert function for DIF
 CHARACTER(LEN=3)         :: YPHOTO           ! photosynthesis option
@@ -193,12 +173,15 @@ IF (LNAM_READ) THEN
                    GDO%XCDRAG, GDO%CKSAT, GDO%LSOC, GDO%CRAIN, GDO%CHORT, &
                    GDO%LGLACIER, GDO%LCANOPY_DRAG, GDO%LVEGUPD, GDO%LSPINUPCARBS, &
                    GDO%LSPINUPCARBW, GDO%XSPINMAXS, GDO%XSPINMAXW, GDO%XCO2_START,&
-                   GDO%XCO2_END, GDO%NNBYEARSPINS, GDO%NNBYEARSPINW, GDO%LNITRO_DILU )
+                   GDO%XCO2_END, GDO%NNBYEARSPINS, GDO%NNBYEARSPINW, GDO%LNITRO_DILU,ZCVHEATF )
  !
  CALL DEFAULT_CH_BIO_FLUX(CHT%LCH_BIO_FLUX)
  !
- CALL DEFAULT_CROCUS(GDO%LSNOWDRIFT,GDO%LSNOWDRIFT_SUBLIM,GDO%LSNOW_ABS_ZENITH,&
-                     GDO%CSNOWMETAMO,GDO%CSNOWRAD) 
+ CALL DEFAULT_CROCUS(GDO%CSNOWDRIFT,GDO%LSNOWDRIFT_SUBLIM,GDO%LSNOW_ABS_ZENITH,&
+                     GDO%CSNOWMETAMO,GDO%CSNOWRAD, GDO%LATMORAD, GDO%LSNOWSYTRON, &
+                     GDO%CSNOWFALL, GDO%CSNOWCOND , GDO%CSNOWHOLD, GDO%CSNOWCOMP, &
+                     GDO%CSNOWZREF, GDO%LSNOWCOMPACT_BOOL, GDO%LSNOWMAK_BOOL,     &
+                     GDO%LPRODSNOWMAK, GDO%LSNOWMAK_PROP, GDO%LSNOWTILLER, GDO%LSELF_PROD) 
  !
 ENDIF
 !        1.2. Defaults from file header
@@ -208,9 +191,21 @@ ENDIF
  CALL READ_TEB_VEG_CONF_n(CHT, GDO, HPROGRAM)
 !
 !-------------------------------------------------------------------------------
+IF (HINIT=='PRE') THEN
+ CALL READ_PREP_ISBA_CARBON(HPROGRAM,GDO%CRESPSL)
+  IF (GDO%CRESPSL=='CNT') THEN
+    GDO%CRESPSL = 'PRM'
+    WRITE(ILUOUT,*) '****************************************************************'
+    WRITE(ILUOUT,*) '* FOR GARDENS, RESPSL OPTION HAS BEEN CHANGED FROM "CNT" TO "PRM" *'
+    WRITE(ILUOUT,*) '****************************************************************'
+  END IF
+END IF
+!-------------------------------------------------------------------------------
 GDO%NPATCH = 1
 GDO%CRESPSL = 'DEF'
 GDO%LMEB_GNDRES = .FALSE.
+GDO%CRUNOFF = 'WSAT'
+GDO%CDIFSFCOND = 'MLCH'
 !-------------------------------------------------------------------------------
 !
 !         Initialisation for IO
@@ -246,9 +241,13 @@ YRECFM='TWN_PHOTO'
 IF (IVERSION>7 .OR. IVERSION==7 .AND. IBUGFIX>=3) YRECFM='GD_PHOTO'
  CALL READ_SURF(HPROGRAM,YRECFM,GDO%CPHOTO,IRESP)
 !
-YRECFM='TWN_LAYER'
-IF (IVERSION>7 .OR. IVERSION==7 .AND. IBUGFIX>=3) YRECFM='GD_LAYER'
- CALL READ_SURF(HPROGRAM,YRECFM,GDO%NGROUND_LAYER,IRESP)
+IF (GDO%CISBA=='DIF') THEN
+  GDO%NGROUND_LAYER=TOP%NTEB_SOIL
+ELSE 
+  YRECFM='TWN_LAYER'
+  IF (IVERSION>7 .OR. IVERSION==7 .AND. IBUGFIX>=3) YRECFM='GD_LAYER'
+  CALL READ_SURF(HPROGRAM,YRECFM,GDO%NGROUND_LAYER,IRESP)
+END IF
 !
 ALLOCATE(GDO%LMEB_PATCH(1))
 GDO%LMEB_PATCH(:) = .FALSE.
@@ -285,28 +284,6 @@ ELSE
                        XUNIF_FERT                          )  
   GDO%CALBEDO = YALBEDO
   !
-ENDIF
-!
-!* Reference grid for DIF
-!
-IF(GDO%CISBA=='DIF') THEN
-  ALLOCATE(GDO%XSOILGRID(GDO%NGROUND_LAYER))
-  GDO%XSOILGRID=XUNDEF
-  IF (IVERSION>=8) THEN
-     DO JLAYER=1,GDO%NGROUND_LAYER
-        WRITE(YLVL,'(I4)') JLAYER
-        YRECFM='GD_SGRID'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
-        CALL READ_SURF(HPROGRAM,YRECFM,GDO%XSOILGRID(JLAYER),IRESP)
-     ENDDO
-  ELSEIF (IVERSION==7 .AND. IBUGFIX>=2) THEN
-    YRECFM='TWN_SOILGRID'
-    IF (IVERSION>7 .OR. IVERSION==7 .AND. IBUGFIX>=3) YRECFM='GD_SOILGRID'
-    CALL READ_SURF(HPROGRAM,YRECFM,GDO%XSOILGRID,IRESP,HDIR='-')
-  ELSE
-    GDO%XSOILGRID(1:GDO%NGROUND_LAYER)=XOPTIMGRID(1:GDO%NGROUND_LAYER)
-  ENDIF
-ELSE
-  ALLOCATE(GDO%XSOILGRID(0))
 ENDIF
 !
 !* number of biomass pools
@@ -367,13 +344,14 @@ IF (OGREENROOF) THEN
   GRO%NNBYEARSPINW = GDO%NNBYEARSPINW
   GRO%LNITRO_DILU = GDO%LNITRO_DILU
   !
-  GRO%LSNOWDRIFT = GDO%LSNOWDRIFT
-  GRO%LSNOWDRIFT_SUBLIM = GDO%LSNOWDRIFT_SUBLIM
-  GRO%LSNOW_ABS_ZENITH = GDO%LSNOW_ABS_ZENITH
-  GRO%CSNOWMETAMO = GDO%CSNOWMETAMO
-  GRO%CSNOWRAD = GDO%CSNOWRAD
   !
   GRO%LMEB_GNDRES = GDO%LMEB_GNDRES
+  !
+  CALL DEFAULT_CROCUS(GRO%CSNOWDRIFT,GRO%LSNOWDRIFT_SUBLIM,GRO%LSNOW_ABS_ZENITH,&
+                     GRO%CSNOWMETAMO,GRO%CSNOWRAD, GRO%LATMORAD, GRO%LSNOWSYTRON, &
+		     GRO%CSNOWFALL, GRO%CSNOWCOND , GRO%CSNOWHOLD, GRO%CSNOWCOMP, &
+	             GRO%CSNOWZREF, GRO%LSNOWCOMPACT_BOOL, GRO%LSNOWMAK_BOOL,     &
+                     GRO%LPRODSNOWMAK, GRO%LSNOWMAK_PROP, GRO%LSNOWTILLER, GRO%LSELF_PROD) 
 ENDIF
 !
 !-------------------------------------------------------------------------------

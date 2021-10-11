@@ -6,7 +6,8 @@
       SUBROUTINE E_BUDGET(IO, KK, PK, PEK, DK, DMK, HIMPLICIT_WIND,  &
                           PTSTEP, PUREF, PPEW_A_COEF, PPEW_B_COEF, PPET_A_COEF, &
                           PPEQ_A_COEF, PPET_B_COEF, PPEQ_B_COEF, PVMOD, PTSM, PT2M, &
-                          PSW_RAD, PLW_RAD, PTA, PQA, PPS, PRHOA, PEXNS, PEXNA, &
+                          PSW_RAD, PLW_RAD,                                  &
+                          PTA, PQA, PPS, PRHOA, PEXNS, PEXNA,                &
                           PHUI, PLEG_DELTA, PLEGI_DELTA, PGRNDFLUX, PFLUX_COR, &
                           PSOILCONDZ, PSOILHCAPZ, PALBT, PEMIST, PQSAT, PDQSAT, &
                           PFROZEN1, PTDEEP_A,PTA_IC, PQA_IC, PUSTAR2_IC, PDEEP_FLUX, &
@@ -76,6 +77,7 @@
 !!      (B. Decharme)        10/14 Bug in DIF composite budget
 !!                                 Use harmonic mean to compute interfacial thermal conductivities
 !!                                 "Restore" flux computed here
+!!      (E. Redon & A. Lemonsu) (06/2017) Add net IR rad received by urban trees (0 for ISBA)
 !!      (P. Wautelet)        02/19 Bug in intent of PDEEP_FLUX OUT->INOUT
 !-------------------------------------------------------------------------------
 !
@@ -88,7 +90,7 @@ USE MODD_DIAG_n, ONLY : DIAG_t
 USE MODD_DIAG_MISC_ISBA_n, ONLY : DIAG_MISC_ISBA_t
 !
 USE MODD_CSTS,       ONLY : XLVTT, XLSTT, XSTEFAN, XCPD, XPI, XDAY, &
-                              XTT, XCL, XCPV, XCI  
+                            XCL, XCPV, XCI, XSURF_EPSILON
 USE MODD_SURF_PAR,   ONLY : XUNDEF
 USE MODD_SNOW_PAR,   ONLY : XEMISSN, XEMCRIN
 !
@@ -128,6 +130,7 @@ REAL, DIMENSION(:), INTENT (IN)  :: PSW_RAD, PLW_RAD, PPS, PRHOA, PTA, PQA, PVMO
 !                                     PTA = near-ground air temperature
 !                                     PQA = near-ground air specific humidity
 !                                     PVMOD = wind speed
+!
 !
 ! implicit atmospheric coupling coefficients:
 !
@@ -195,7 +198,7 @@ REAL, DIMENSION(:), INTENT(OUT)    :: PRESTORE
 REAL, DIMENSION(SIZE(PEK%XSNOWFREE_ALB)) :: ZRORA,                        &
 !                                             rhoa / ra
 !
-                                               ZA,ZB,ZC  
+                                  ZA,ZB,ZC  
 !                                             terms for the calculation of Ts(t)
 !
 ! ISBA-DF:
@@ -299,8 +302,8 @@ ZFG(:) = (1.-PEK%XVEG(:))*(1.-PEK%XPSNG(:)-KK%XFFG(:))
 ZFNFRZ(:) = (1.-KK%XFFROZEN(:))*KK%XFF(:) + ZFV + ZFG(:)*(1.-PFROZEN1(:))
 ZFFRZ(:)  = KK%XFFROZEN(:)     *KK%XFF(:) +       ZFG(:)*PFROZEN1(:)      + PEK%XPSN(:)
 !
-ZSNOW      = 1.
-ZFNSNOW(:) = 1.
+ZSNOW=1.
+ZFNSNOW(:)=1.
 ZCPS(:)    = PK%XCPS(:)
 !
 IF (LCPL_ARP) THEN
@@ -310,26 +313,35 @@ IF (LCPL_ARP) THEN
 
   PLEG_DELTA(:)  = 1.0
   PLEGI_DELTA(:) = 1.0
-
-  ZLAVG(:)        = PK%XLVTT(:)*ZFNFRZ(:) + PK%XLSTT(:)*ZFFRZ(:)
-  ZXCPV_XCL_AVG(:)=   (XCPV-XCL)*ZFNFRZ(:) + (XCPV-XCI)  *ZFFRZ(:) 
-
+  !
+  WHERE ( (ZFNFRZ(:)+ZFFRZ(:)).GT.XSURF_EPSILON) 
+    ZLAVG(:)        = PK%XLVTT(:)*ZFNFRZ(:) + PK%XLSTT(:)*ZFFRZ(:)
+    ZXCPV_XCL_AVG(:)=   (XCPV-XCL)*ZFNFRZ(:) + (XCPV-XCI)  *ZFFRZ(:) 
+  ELSEWHERE
+     ZLAVG(:)         = PK%XLVTT(:)
+     ZXCPV_XCL_AVG(:) = (XCPV-XCL)
+  ENDWHERE
+  !    
   ZLVTT(:) = ZLAVG(:)
   ZLSTT(:) = ZLAVG(:)
-
+  !
 ELSE
-
+  !
   IF(PEK%TSNOW%SCHEME == '3-L' .OR. PEK%TSNOW%SCHEME == 'CRO' .OR. IO%CISBA == 'DIF')THEN
     ZSNOW = 0.
     ZFNSNOW(:) = 1. - PEK%XPSN(:)
     ZCPS(:)=XCPD
   ENDIF
-
-  ZLAVG(:)     = XLVTT*ZFNFRZ(:) + XLSTT*ZFFRZ(:)
-
+  !
+  WHERE ( (ZFNFRZ(:)+ZFFRZ(:)).GT.XSURF_EPSILON) 
+     ZLAVG(:) = XLVTT*ZFNFRZ(:) + XLSTT*ZFFRZ(:)
+  ELSEWHERE
+     ZLAVG(:) = PK%XLVTT(:)
+  ENDWHERE
+  !
   ZLVTT(:) = XLVTT
   ZLSTT(:) = XLSTT
-
+  !
 ENDIF
 !
 ZFGNFRZ(:) = ZFG(:) * (1.-PFROZEN1(:)) * PLEG_DELTA(:)

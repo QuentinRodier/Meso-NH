@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE WRITE_GRID (HSELECT,HPROGRAM,HGRID,PGRID_PAR,PLAT,PLON,PMESH_SIZE,KRESP,HDIR)
+      SUBROUTINE WRITE_GRID (HSELECT,HPROGRAM,HGRID,PGRID_PAR,PLAT,PLON,PMESH_SIZE,KRESP,PDIR,HDIR)
 !     #########################################
 !
 !!****  *WRITE_GRID* - routine to write the horizontal grid of a scheme
@@ -71,8 +71,9 @@ REAL, DIMENSION(:), POINTER     :: PGRID_PAR  ! parameters defining this grid
 REAL, DIMENSION(:), INTENT(IN)  :: PLAT       ! latitude  (degrees)
 REAL, DIMENSION(:), INTENT(IN)  :: PLON       ! longitude (degrees)
 REAL, DIMENSION(:), INTENT(IN)  :: PMESH_SIZE ! horizontal mesh size (m2)
-INTEGER,            INTENT(OUT) :: KRESP      ! error return code
- CHARACTER(LEN=1),    INTENT(IN), OPTIONAL :: HDIR ! type of field :
+INTEGER,            INTENT(OUT) :: KRESP      ! error return code 
+REAL, DIMENSION(:), INTENT(IN) , OPTIONAL :: PDIR ! heading of main axis of grid compared to North (degrees)
+CHARACTER(LEN=1),    INTENT(IN), OPTIONAL :: HDIR ! type of field :
                                                   ! 'H' : field with
                                                   !       horizontal spatial dim.
                                                   ! 'A' : (complete) field with
@@ -119,6 +120,15 @@ SELECT CASE (HGRID)
     CALL WRITE_GRIDTYPE_GAUSS(HSELECT, HPROGRAM,SIZE(PLAT),SIZE(PGRID_PAR),PGRID_PAR(:),KRESP)
   CASE("IGN       ")
     CALL WRITE_GRIDTYPE_IGN(HSELECT, HPROGRAM,SIZE(PLAT),SIZE(PGRID_PAR),PGRID_PAR(:),KRESP)
+    !
+    ! Write longitude and latitude
+    !
+    YCOMMENT='LON (DEGREES)'
+    CALL WRITE_SURF(HSELECT,  HPROGRAM, 'LON', PLON, KRESP, YCOMMENT)
+    !
+    YCOMMENT='LAT (DEGREES)'
+    CALL WRITE_SURF(HSELECT,  HPROGRAM, 'LAT', PLAT, KRESP, YCOMMENT)
+    !
   CASE("LONLATVAL ")
     CALL WRITE_GRIDTYPE_LONLATVAL(HSELECT, HPROGRAM,SIZE(PLAT),SIZE(PGRID_PAR),PGRID_PAR(:),KRESP)
   CASE("LONLAT ROT")

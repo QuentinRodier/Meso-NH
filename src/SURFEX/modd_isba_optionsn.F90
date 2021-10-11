@@ -179,6 +179,7 @@ LOGICAL :: LPERTSURF            ! True  = apply random perturbations for ensembl
 !
 ! - Adjustable physical parameters
 !
+REAL    :: XCVHEATF         ! Factor to restore explicit Cv value (DIF option)
 INTEGER :: NLAYER_HORT
 INTEGER :: NLAYER_DUN
 !
@@ -229,16 +230,41 @@ LOGICAL :: LAGRI_TO_GRASS ! During soil carbon spinup with ISBA-CC,
                           ! grass parameters are attributed to all agricultural PFT
 !
 ! * Snow model options
-!                                           
-LOGICAL :: LSNOWDRIFT, LSNOWDRIFT_SUBLIM ! Logicals for snowdrift and sublimation
+!      
+! Snow drift scheme
+ CHARACTER(4) :: CSNOWDRIFT ! 
+                            ! Mechanical transformation of snow grain and compaction + effect of wind 
+                            ! on falling snow properties
+                            !    'NONE': No snowdrift scheme
+                            !    'DFLT': falling snow falls as purely dendritic
+                            !    'GA01': Gallee et al 2001
+                            !    'VI13': Vionnet et al 2013                                     
+LOGICAL :: LSNOWDRIFT_SUBLIM ! Logicals for snowdrift and sublimation
 
 LOGICAL :: LSNOW_ABS_ZENITH  ! if True modify solar absorption as a function of solar zenithal angle
                              ! (physically wrong but better results in polar regions when CSNOWRAD=B92)
+LOGICAL :: LSNOWSYTRON ! Logicals to activate Sytron wind-induced snow redistribution scheme 
+                                                ! Work only in the conceptual representation of the topography of the French
+                                                ! operational chain for avalanche hazard forecasting
+!-------------------------------------------------------------------------------
+! Snow management options	20160211
+ LOGICAL :: LSNOWCOMPACT_BOOL, LSNOWMAK_BOOL, LSNOWMAK_PROP, &
+				    LSNOWTILLER, LSELF_PROD
+ LOGICAL,  DIMENSION(9500) :: LPRODSNOWMAK
+!
 ! Scheme of snow metamorphism (Crocus)
  CHARACTER(3) :: CSNOWMETAMO ! B92 (historical version, Brun et al 92), C13, T07, F06 (see Carmagnola et al 2014)
 !
 ! radiative transfer scheme in snow (Crocus)
  CHARACTER(3) :: CSNOWRAD    ! B92 (historical version, Brun et al 92), TAR, TA1, TA2 (see Libois et al 2013)
+ LOGICAL      :: LATMORAD ! activate atmotartes scheme
+! New multiphysics Crocus options, Cluzet et al 2016
+ CHARACTER(3)                   :: CSNOWFALL ! V12 (Vionnet et al. 2012) , A76 (Anderson 1976), S02 (Lehning and al. 2002), P75 (Pahaut 1975)
+ CHARACTER(3)                   :: CSNOWCOND ! Y81 (Yen 1981), I02 (Boone et al. 2002) C11 (Calonne et al. 2011)
+ CHARACTER(3)                   :: CSNOWHOLD ! B92 (Brun et al. 1992) O04 (Oleson et al., 2004) S02 (SNOWPACK, Lehning et al, 2002) B02 (ISBA_ES, Boone et al. 2002)
+ CHARACTER(3)                   :: CSNOWCOMP ! B92 snow compaction basis version and B93 for slightly different parameters
+ CHARACTER(3)                   :: CSNOWZREF ! CST (constant from snow surface, i.e. Col de Porte) or VAR (variable from snow surface = snow depth has to be removed from reference height)
+!-------------------------------------------------------------------------------
 !
 ! * Other options
 !
@@ -311,6 +337,7 @@ IO%LVEGUPD=.FALSE.
 IO%LPERTSURF=.FALSE.
 IO%NLAYER_HORT=0
 IO%NLAYER_DUN=0
+IO%XCVHEATF=0.2
 IO%CRUNOFF=' '
 IO%CKSAT=' '
 IO%CRAIN=' '
@@ -329,11 +356,26 @@ IO%NNBYEARSOLD=0
 IO%NSPINS=1
 IO%NSPINW=1
 IO%LAGRI_TO_GRASS=.FALSE.
-IO%LSNOWDRIFT=.TRUE.
+IO%CSNOWDRIFT='DFLT'
 IO%LSNOWDRIFT_SUBLIM=.FALSE.
+IO%LSNOWSYTRON=.FALSE.
+!
+! 20160211
+IO%LSNOWCOMPACT_BOOL=.FALSE.
+IO%LSNOWMAK_BOOL=.FALSE.
+IO%LPRODSNOWMAK=.FALSE.
+IO%LSNOWMAK_PROP=.FALSE.
+IO%LSNOWTILLER=.FALSE.
+IO%LSELF_PROD=.FALSE.
 IO%LSNOW_ABS_ZENITH=.FALSE.
 IO%CSNOWMETAMO='B92'
 IO%CSNOWRAD='B92'
+IO%LATMORAD=.FALSE.
+IO%CSNOWFALL='V12'
+IO%CSNOWCOND='Y81'
+IO%CSNOWHOLD='B92'
+IO%CSNOWCOMP='B92'
+IO%CSNOWZREF='CST'
 IO%LFLOOD=.FALSE.
 IO%LWTD=.FALSE.
 IO%LCPL_RRM=.FALSE.

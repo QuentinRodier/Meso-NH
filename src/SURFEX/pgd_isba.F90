@@ -43,7 +43,8 @@
 !!    R. Alkama     05/2012 : npatch must be 12 or 19 if CPHOTO/='NON'
 !!    B. Decharme   11/2013 : groundwater distribution for water table/surface coupling
 !!    P. Samuelsson 02/2012 : MEB
-!!    B. Decharme    10/2016  bug surface/groundwater coupling
+!!    B. Decharme   10/2016 : bug surface/groundwater coupling
+!!    A. Druel      02/2019 : adapt the code to be compatible with irrigation and new patches (add new verification)
 !!
 !----------------------------------------------------------------------------
 !
@@ -69,6 +70,7 @@ USE MODD_PGDWORK,        ONLY : CATYPE
 USE MODD_DATA_COVER_PAR, ONLY : NVEGTYPE, JPCOVER, NVT_TEBD, NVT_BONE, NVT_TRBE, &
                                 NVT_TRBD, NVT_TEBE, NVT_TENE, NVT_BOBD, NVT_BOND
 USE MODD_DATA_COVER,     ONLY : XDATA_VEGTYPE
+USE MODD_AGRI,           ONLY : LAGRIP, LIRRIGMODE, NPATCH_TREE
 !
 USE MODD_ISBA_PAR,       ONLY : NOPTIMLAYER, XOPTIMGRID
 !
@@ -125,16 +127,16 @@ IMPLICIT NONE
 !            ------------------------
 !
 !
-TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
-TYPE(DATA_ISBA_t), INTENT(INOUT) :: DTV
-TYPE(GRID_t), INTENT(INOUT) :: IG
-TYPE(ISBA_OPTIONS_t), INTENT(INOUT) :: IO
-TYPE(ISBA_S_t), INTENT(INOUT) :: S
-TYPE(ISBA_K_t), INTENT(INOUT) :: K
-TYPE(SSO_t), INTENT(INOUT) :: ISS
+TYPE(DATA_COVER_t),    INTENT(INOUT) :: DTCO
+TYPE(DATA_ISBA_t),     INTENT(INOUT) :: DTV
+TYPE(GRID_t),          INTENT(INOUT) :: IG
+TYPE(ISBA_OPTIONS_t),  INTENT(INOUT) :: IO
+TYPE(ISBA_S_t),        INTENT(INOUT) :: S
+TYPE(ISBA_K_t),        INTENT(INOUT) :: K
+TYPE(SSO_t),           INTENT(INOUT) :: ISS
 TYPE(SURF_ATM_GRID_t), INTENT(INOUT) :: UG
-TYPE(SURF_ATM_t), INTENT(INOUT) :: U
-TYPE(SSO_t), INTENT(INOUT) :: USS
+TYPE(SURF_ATM_t),      INTENT(INOUT) :: U
+TYPE(SSO_t),           INTENT(INOUT) :: USS
 !
  CHARACTER(LEN=6), INTENT(IN)  :: HPROGRAM   ! program calling surf. schemes
 !
@@ -155,6 +157,7 @@ REAL, DIMENSION(NL)               :: ZHO2IM    ! h/2 i- on all surface points
 REAL, DIMENSION(NL)               :: ZHO2JP    ! h/2 j+ on all surface points
 REAL, DIMENSION(NL)               :: ZHO2JM    ! h/2 j- on all surface points
 REAL, DIMENSION(NL)               :: ZSSO_SLOPE! subgrid slope on all surface points
+REAL, DIMENSION(NL)               :: ZSSO_DIR
 INTEGER                           :: IRESP     ! error code
 LOGICAL                           :: GMEB      ! Multi-energy balance (MEB)
 LOGICAL                           :: GFOUND    ! flag when namelist is present
@@ -207,7 +210,6 @@ CHARACTER(LEN=6)         :: YFERTFILETYPE ! fertilisation data file type
 REAL                     :: XUNIF_PH      ! uniform value of pH
 REAL                     :: XUNIF_FERT    ! uniform value of fertilisation rate
 LOGICAL, DIMENSION(NVEGTYPE)   :: GMEB_PATCH
-LOGICAL, DIMENSION(NVEGTYPE)   :: GMEB_PATCH_REC ! Recommended MEB patch settings
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
@@ -251,12 +253,12 @@ IO%XRM_PATCH     = MAX(MIN(ZRM_PATCH,1.),0.)
 !*    2.2      Reading of ISBA MEB namelist
 !             -----------------------------
 !
-IF (IO%NPATCH<1 .OR. IO%NPATCH>NVEGTYPE) THEN
+IF (IO%NPATCH<1) THEN
   WRITE(ILUOUT,*) '*****************************************'
-  WRITE(ILUOUT,*) '* Number of patch must be between 1 and ', NVEGTYPE
+  WRITE(ILUOUT,*) '* Number of patch must be superior or equal to 1'
   WRITE(ILUOUT,*) '* You have chosen NPATCH = ', IO%NPATCH
   WRITE(ILUOUT,*) '*****************************************'
-  CALL ABOR1_SFX('PGD_ISBA: NPATCH MUST BE BETWEEN 1 AND NVEGTYPE')
+  CALL ABOR1_SFX('PGD_ISBA: NPATCH MUST BE SUPERIOR OR EQUAL TO 1')
 END IF
 !
 ALLOCATE(IO%LMEB_PATCH(IO%NPATCH))
@@ -266,68 +268,16 @@ IO%LFORC_MEASURE = .FALSE.
 IO%LMEB_LITTER   = .FALSE.
 IO%LMEB_GNDRES   = .FALSE.
 
-IF(GMEB)THEN
-
+IF ( GMEB ) THEN
+  !
   IO%LTR_ML      = .TRUE. ! Always use this SW radiative transfer option with MEB
-
+  !
   CALL READ_NAM_PGD_ISBA_MEB(HPROGRAM,ILUOUT,GMEB_PATCH,IO%LFORC_MEASURE,IO%LMEB_LITTER,IO%LMEB_GNDRES)
-
-  ! Current recommendation is to use MEB for tree patches only.
-  ! Here follows a test in which non-tree patches in LMEB_PATCH are set to FALSE.
-  ! Thus, if you wish to test MEB for non-tree patches you can set 
-  ! GMEB_PATCH_REC(:)=.TRUE.
-  ! in the following line:
-
-  GMEB_PATCH_REC(:)=.FALSE.
-
-  GMEB_PATCH_REC(:)=.TRUE.
-  GMEB_PATCH_REC(1:3)=.FALSE.
-  
-
-  IF(IO%NPATCH==1 .AND. GMEB_PATCH(1))THEN
-    WRITE(ILUOUT,*) '*****************************************'
-    WRITE(ILUOUT,*) '* WARNING!'
-    WRITE(ILUOUT,*) '* Using MEB for one patch only is not recommended.'
-    WRITE(ILUOUT,*) '* LMEB_PATCH(1) has been set to .FALSE.'
-    WRITE(ILUOUT,*) '*****************************************'
-  ELSEIF(IO%NPATCH>=2 .AND. IO%NPATCH<=6)THEN
-    GMEB_PATCH_REC(2)=.TRUE.  ! Only the tree patch (number 2) is allowed to be TRUE
-  ELSEIF(IO%NPATCH>=7 .AND. IO%NPATCH<=8)THEN
-    GMEB_PATCH_REC(3)=.TRUE.  ! Only the tree patch (number 3) is allowed to be TRUE
-  ELSEIF(IO%NPATCH==9)THEN
-    GMEB_PATCH_REC(3:4)=(/.TRUE.,.TRUE./)  ! Only the tree patches (numbers 3-4) are allowed to be TRUE
-  ELSEIF(IO%NPATCH==10)THEN
-    GMEB_PATCH_REC(3:5)=(/.TRUE.,.TRUE.,.TRUE./)  ! Only the tree patches (numbers 3-5) are allowed to be TRUE
-  ELSEIF(IO%NPATCH>=11 .AND. IO%NPATCH<=12)THEN
-    GMEB_PATCH_REC(4:6)=(/.TRUE.,.TRUE.,.TRUE./)  ! Only the tree patches (numbers 4-6) are allowed to be TRUE
-  ELSEIF(IO%NPATCH==NVEGTYPE)THEN
-    ! The "old" tree patches (numbers 4-6) are allowed to be TRUE
-    GMEB_PATCH_REC(NVT_TEBD) = .TRUE.
-    GMEB_PATCH_REC(NVT_BONE) = .TRUE.
-    GMEB_PATCH_REC(NVT_TRBE) = .TRUE.
-    ! The "new" tree patches (numbers 13-17) are allowed to be TRUE
-    GMEB_PATCH_REC(NVT_TRBD) = .TRUE.
-    GMEB_PATCH_REC(NVT_TEBE) = .TRUE.
-    GMEB_PATCH_REC(NVT_TENE) = .TRUE.
-    GMEB_PATCH_REC(NVT_BOBD) = .TRUE.
-    GMEB_PATCH_REC(NVT_BOND) = .TRUE.
-  ENDIF
-
-  IF(COUNT(.NOT.GMEB_PATCH_REC(:) .AND. GMEB_PATCH(:))>0)THEN
-    WRITE(ILUOUT,*) '*****************************************'
-    WRITE(ILUOUT,*) '* WARNING!'
-    WRITE(ILUOUT,*) '* Using MEB for non-tree patches is not yet recommended.'
-    WRITE(ILUOUT,*) '* Therefor, LMEB_PATCH for non-tree patches has been set to .FALSE.'
-    WRITE(ILUOUT,*) '* The final LMEB_PATCH vector becomes:'
-    WRITE(ILUOUT,*) GMEB_PATCH(1:IO%NPATCH).AND.GMEB_PATCH_REC(1:IO%NPATCH)
-    WRITE(ILUOUT,*) '*****************************************'
-  ENDIF
-  GMEB_PATCH(:)=GMEB_PATCH(:).AND.GMEB_PATCH_REC(:)
-
+  !
   IO%LMEB_PATCH(1:IO%NPATCH) = GMEB_PATCH(1:IO%NPATCH)
-
+  !
   IF (IO%LMEB_LITTER) IO%LMEB_GNDRES = .FALSE.
-
+  !
 ENDIF
 !
 !-------------------------------------------------------------------------------
@@ -415,13 +365,32 @@ WRITE(ILUOUT,*) '* With option CPHOTO = ',IO%CPHOTO,'               *'
 WRITE(ILUOUT,*) '* the number of biomass pools is set to ', IO%NNBIOMASS
 WRITE(ILUOUT,*) '*****************************************'
 !
-IF ( IO%CPHOTO/='NON' .AND. IO%NPATCH/=12 .AND. IO%NPATCH/=NVEGTYPE ) THEN
+IF ( IO%CPHOTO/='NIT' .AND. IO%CPHOTO/='NCB' .AND. LIRRIGMODE ) THEN
+  WRITE(ILUOUT,*) '***************************************'
+  WRITE(ILUOUT,*) '*             BE CAREFUL:             *'
+  WRITE(ILUOUT,*) '* You are using the irrigation with   *'
+  WRITE(ILUOUT,*) '* prescribe LAI.                      *'
+  WRITE(ILUOUT,*) '*     Check that it is on purpose !!! *'        
+  WRITE(ILUOUT,*) '***************************************'
+END IF
+IF ( IO%CPHOTO/='NIT' .AND. IO%CPHOTO/='NCB' .AND.  LAGRIP) THEN
+  WRITE(ILUOUT,*) '****************************************'
+  WRITE(ILUOUT,*) '* You are using agricultural practices *'
+  WRITE(ILUOUT,*) '* with prescribe LAI.                  *'
+  WRITE(ILUOUT,*) '*  ==> It is inconsistent !!           *'
+  WRITE(ILUOUT,*) '****************************************'
+  CALL ABOR1_SFX('PGD_ISBA: CPHOTO='//IO%CPHOTO//' IS NOT ALLOWED WITH LAGRIP. USE NIT OR NCB.')
+END IF
+!
+IF ( IO%CPHOTO/='NON' .AND. ( IO%NPATCH < 12 .OR. ( NPATCH_TREE /= 0 .AND. NPATCH_TREE < 12) &
+     .OR. ( U%LECOSG .AND. (LIRRIGMODE.OR.LAGRIP) .AND. IO%NPATCH < 15 .AND. NPATCH_TREE == 0 ) ) ) THEN
   WRITE(ILUOUT,*) '*****************************************'
   WRITE(ILUOUT,*) '* With option CPHOTO = ', IO%CPHOTO
-  WRITE(ILUOUT,*) '* Number of patch must be equal to 12 or NVEGTYPE'
+  WRITE(ILUOUT,*) '* Number of patch must be at least 12   *'
+  WRITE(ILUOUT,*) '* (or 15 if LECOSG AND LIRRIGMODE)      *'
   WRITE(ILUOUT,*) '* But you have chosen NPATCH = ', IO%NPATCH
   WRITE(ILUOUT,*) '*****************************************'
-  CALL ABOR1_SFX('PGD_ISBA: CPHOTO='//IO%CPHOTO//' REQUIRES NPATCH=12 or NVEGTYPE')
+  CALL ABOR1_SFX('PGD_ISBA: CPHOTO='//IO%CPHOTO//' REQUIRES NPATCH>12 (or 15 if LECOSG AND LIRRIGMODE)')
 END IF
 !
 IF ( IO%CPHOTO=='NON' .AND. IO%LTR_ML .AND. .NOT. GMEB) THEN
@@ -461,12 +430,12 @@ ALLOCATE(ISS%XZ0EFFJPDIR(ILU))
 !             -------------------------------
 !
  CALL GET_AOS_n(USS, HPROGRAM,NL,ZAOSIP,ZAOSIM,ZAOSJP,ZAOSJM,ZHO2IP,ZHO2IM,ZHO2JP,ZHO2JM)
- CALL GET_SSO_n(USS, HPROGRAM,NL,ZSSO_SLOPE)
+ CALL GET_SSO_n(USS, HPROGRAM,NL,ZSSO_SLOPE, ZSSO_DIR)
 !
  CALL PACK_PGD_ISBA(DTCO, IG%NDIM, ISS, U, HPROGRAM,              &
                      ZAOSIP, ZAOSIM, ZAOSJP, ZAOSJM,              &
                      ZHO2IP, ZHO2IM, ZHO2JP, ZHO2JM,              &
-                     ZSSO_SLOPE                                   )  
+                     ZSSO_SLOPE, ZSSO_DIR                         )  
 !
 !-------------------------------------------------------------------------------
 !
@@ -475,7 +444,7 @@ ALLOCATE(ISS%XZ0EFFJPDIR(ILU))
 !
 IO%LECOCLIMAP = U%LECOCLIMAP
 !
- CALL PGD_ISBA_PAR(DTCO, UG, U, USS, DTV, IO, S, IG%NDIM, HPROGRAM)
+ CALL PGD_ISBA_PAR(DTCO, UG, U, USS, DTV, IO, S, IG%NDIM, HPROGRAM, GMEB)
 !
 !-------------------------------------------------------------------------------
 !
@@ -633,7 +602,8 @@ ALLOCATE(K%XWDRAIN(ILU))
 IF (U%LECOCLIMAP) THEN
   CALL WRITE_COVER_TEX_ISBA    (IO%NPATCH,IO%NGROUND_LAYER,IO%CISBA)
   CALL WRITE_COVER_TEX_ISBA_PAR(DTCO, IO%CALBEDO, IO%LTR_ML, &
-                                IO%NPATCH,IO%NGROUND_LAYER,IO%CISBA,IO%CPHOTO,IO%XSOILGRID)
+                                IO%NPATCH,IO%NGROUND_LAYER,IO%CISBA,IO%CPHOTO,IO%XSOILGRID, &
+                                U%LECOSG,DTV%NPAR_VEG_IRR_USE)
 END IF
 IF (LHOOK) CALL DR_HOOK('PGD_ISBA',1,ZHOOK_HANDLE)
 !

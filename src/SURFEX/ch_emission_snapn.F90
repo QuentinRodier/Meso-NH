@@ -27,6 +27,8 @@
 !!
 !!    A. Alias     07/2016  gmkpack problem : name of the internal subroutine modified 
 !!                          because exist already (view SURFEX/day_of_week.F90 )
+!!    M. Goret     03/2017  - move part of the code in SWITCH_TIME for reuse by other subroutine
+!!                          - merge day_of_week_ch with day_of_week 
 !!
 !!    EXTERNAL
 !!    --------
@@ -37,11 +39,11 @@
 !
 USE MODD_CH_SNAP_n, ONLY : CH_EMIS_SNAP_t
 !
-USE MODD_CSTS,        ONLY: XDAY
-!
 USE MODI_ADD_FORECAST_TO_DATE_SURF
 USE MODI_SUBSTRACT_TO_DATE_SURF
 USE MODI_CH_CONVERSION_FACTOR
+USE MODI_SWITCH_TIME
+USE MODI_DAY_OF_WEEK
 !------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -71,7 +73,6 @@ REAL, DIMENSION(KSIZE), INTENT(IN)  :: PLON    ! Longitude (deg, from Greenwich)
 !
 !*       0.2  declaration of local variables
 !
-REAL,   DIMENSION(KSIZE) :: ZLON   ! Longitude centered in Greenwich meridian
 REAL,   DIMENSION(KSIZE) :: ZTIME0
 INTEGER,DIMENSION(KSIZE,2) :: IYEAR ! Year        at the begining of current hour
 INTEGER,DIMENSION(KSIZE,2) :: IMONTH! Month       at the begining of current hour
@@ -111,38 +112,13 @@ IDAY  (:,1)=KDAY
 IMONTH(:,1)=KMONTH
 IYEAR (:,1)=KYEAR
 !
-SELECT CASE (CHN%CSNAP_TIME_REF)
-  CASE ('UTC  ')
-    ZTIME0(:)=PSIMTIME
-  CASE ('SOLAR')
-    ZLON(:)=PLON(:)
-    WHERE(PLON(:)>  180.) ZLON(:)=PLON(:)-360.
-    WHERE(PLON(:)<=-180.) ZLON(:)=PLON(:)+360.
-    !*  retrieves solar date and time
-    ZTIME0(:)=PSIMTIME + ZLON(:)*240. ! first guess is approximated solar time.
-                                     ! The suntime should be close to this.
-    DO JI=1,KSIZE
-      IF (ZTIME0(JI)>PSUNTIME(JI)+XDAY/2.) THEN
-        ZTIME0(JI) = PSUNTIME(JI) + XDAY
-      ELSEIF (ZTIME0(JI)<PSUNTIME(JI)-XDAY/2.) THEN
-        ZTIME0(JI) = PSUNTIME(JI) - XDAY
-      ELSE
-        ZTIME0(JI) = PSUNTIME(JI)
-      END IF
-      CALL ADD_FORECAST_TO_DATE_SURF(IYEAR(JI,1),IMONTH(JI,1),IDAY(JI,1),ZTIME0(JI))
-      CALL SUBSTRACT_TO_DATE_SURF   (IYEAR(JI,1),IMONTH(JI,1),IDAY(JI,1),ZTIME0(JI))
-    ENDDO
-    
-  CASE ('LEGAL')
-    ZTIME0(:)=PSIMTIME + CHN%XDELTA_LEGAL_TIME(:) * 3600.
-    DO JI=1,KSIZE
-      CALL ADD_FORECAST_TO_DATE_SURF(IYEAR(JI,1),IMONTH(JI,1),IDAY(JI,1),ZTIME0(JI))
-      CALL SUBSTRACT_TO_DATE_SURF   (IYEAR(JI,1),IMONTH(JI,1),IDAY(JI,1),ZTIME0(JI))
-    ENDDO
-
-END SELECT
 !
- CALL DAY_OF_WEEK_CH(IDAY(:,1), IMONTH(:,1), IYEAR(:,1), IDOW(:,1))
+ CALL SWITCH_TIME (PLON, PSUNTIME, CHN%XDELTA_LEGAL_TIME(:),            &
+                   IYEAR(:,1), IMONTH(:,1), IDAY(:,1),                  &
+                   CHN%CSNAP_TIME_REF, HPROGRAM, PSIMTIME, KSIZE, ZTIME0) 
+!
+!
+ CALL DAY_OF_WEEK(IYEAR(:,1), IMONTH(:,1), IDAY(:,1), IDOW(:,1))
 !
 IHOUR(:,1) = INT((ZTIME0(:)+1.E-10)/3600.)! 1.E-10 and the where condition after are
 WHERE (IHOUR(:,1)==24) IHOUR(:,1)=23      ! set to avoid computer precision problems
@@ -160,7 +136,7 @@ DO JI=1,KSIZE
   CALL ADD_FORECAST_TO_DATE_SURF(IYEAR(JI,2),IMONTH(JI,2),IDAY(JI,2),ZTIME(JI,2))
 ENDDO
 !
- CALL DAY_OF_WEEK_CH(IDAY(:,2), IMONTH(:,2), IYEAR(:,2), IDOW(:,2))
+ CALL DAY_OF_WEEK(IYEAR(:,2), IMONTH(:,2), IDAY(:,2), IDOW(:,2))
 !
 IHOUR(:,2)=NINT(ZTIME(:,2))/3600
 !
@@ -201,47 +177,5 @@ END DO
 !
 IF (LHOOK) CALL DR_HOOK('CH_EMISSION_SNAP_N',1,ZHOOK_HANDLE)
 !
-!-------------------------------------------------------------------------------
-CONTAINS
-!
-SUBROUTINE DAY_OF_WEEK_CH(DATE, MONTH, YEAR, DOW)
-!!    AUTHOR
-!!    ------
-!!    J.Arteta 
-!!    Original   August 2010
-!!
-!!
-!!    MODifICATIONS
-!!    -------------
-!!    S. Queguiner 10/2011  DAY:Monday->Sunday => DOW:1->7
-!!    A. Alias     07/2016  gmkpack problem : name of the internal subroutine modified 
-!!                          because exist already (view SURFEX/day_of_week.F90 )
-!!
-!
-IMPLICIT NONE
-INTEGER, DIMENSION(:), INTENT(IN) :: DATE, MONTH, YEAR
-INTEGER, DIMENSION(:), INTENT(OUT):: DOW
-INTEGER, DIMENSION(SIZE(DOW))     :: DAY, YR, MN, N1, N2
-REAL(KIND=JPRB) :: ZHOOK_HANDLE
-!
-IF (LHOOK) CALL DR_HOOK('CH_EMISSION_SNAP_N:DAY_OF_WEEK_CH',0,ZHOOK_HANDLE)
-!
-YR = YEAR
-MN = MONTH
-!
-WHERE (MN.LE.2)
-  MN = MN + 12
-  YR = YR -1
-END WHERE
-!
-N1 = (26 * (MN + 1)) /10
-N2 = (125 * YR) / 100
-DAY = (DATE + N1 + N2 - (YR / 100) + (YR / 400) - 1)
-!
-DOW = MOD(DAY,7) + 7
-WHERE (DOW.GT.7) DOW = DOW - 7
-!
-IF (LHOOK) CALL DR_HOOK('CH_EMISSION_SNAP_N:DAY_OF_WEEK_CH',1,ZHOOK_HANDLE)
-END SUBROUTINE DAY_OF_WEEK_CH
 !
 END SUBROUTINE CH_EMISSION_SNAP_n

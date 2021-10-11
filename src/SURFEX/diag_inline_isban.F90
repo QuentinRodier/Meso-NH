@@ -34,10 +34,10 @@
 !
 !
 !
-USE MODD_DIAG_n, ONLY : DIAG_t, DIAG_OPTIONS_t
-USE MODD_ISBA_n, ONLY : ISBA_K_t
+USE MODD_DIAG_n,      ONLY : DIAG_t, DIAG_OPTIONS_t
+USE MODD_ISBA_n,      ONLY : ISBA_K_t
 !
-USE MODD_SURF_PAR,         ONLY : XUNDEF
+USE MODD_SURF_PAR,    ONLY : XUNDEF
 !
 USE MODI_CLS_TQ
 USE MODI_CLS_WIND
@@ -51,11 +51,11 @@ IMPLICIT NONE
 !*      0.1    declarations of arguments
 !
 !
-TYPE(DIAG_OPTIONS_t), INTENT(IN) :: DGO
-TYPE(ISBA_K_t), INTENT(INOUT) :: KK
-TYPE(DIAG_t), INTENT(INOUT) :: DK
+TYPE(DIAG_OPTIONS_t), INTENT(IN)     :: DGO
+TYPE(ISBA_K_t),       INTENT(INOUT)  :: KK
+TYPE(DIAG_t),         INTENT(INOUT)  :: DK
 !
-LOGICAL, INTENT(IN) :: OCANOPY
+LOGICAL,              INTENT(IN)     :: OCANOPY
 !
 REAL, DIMENSION(:), INTENT(IN)       :: PTA      ! atmospheric temperature
 REAL, DIMENSION(:), INTENT(IN)       :: PQA      ! atmospheric specific humidity
@@ -94,9 +94,9 @@ IF (.NOT. OCANOPY) THEN
     ZH(:)=10.                
     CALL CLS_WIND(PZONA, PMERA, PHW, DK%XCD, DK%XCDN, DK%XRI, ZH, &
                  DK%XZON10M, DK%XMER10M  )  
-  END IF
-  !
-  IF (DGO%N2M>=1) DK%XWIND10M(:) = SQRT(DK%XZON10M(:)**2 + DK%XMER10M(:)**2)
+    !       
+    DK%XWIND10M(:) = SQRT(DK%XZON10M(:)**2 + DK%XMER10M(:)**2)
+  ENDIF
   !
 ELSE
   !        

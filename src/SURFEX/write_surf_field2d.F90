@@ -48,7 +48,7 @@
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_SURF_PAR, ONLY : NUNDEF
+USE MODD_SURF_PAR, ONLY : NUNDEF, LEN_HREC
 !
 USE MODI_WRITE_SURF
 #ifdef SFX_MNH
@@ -74,14 +74,14 @@ CHARACTER(LEN=100),               INTENT(IN) :: HCOMMENTUNIT ! unit of the datas
 !                                             ! 'H' : field with
 !                                             !       horizontal spatial dim.
 !                                             ! '-' : no horizontal dim.
- CHARACTER(LEN=LEN_HREC), OPTIONAL,  INTENT(IN) :: HNAM_DIM
+ CHARACTER(LEN=16), OPTIONAL,  INTENT(IN) :: HNAM_DIM
  !
 !*       0.2   Declarations of local variables
 !              -------------------------------
 !
 INTEGER           :: IRESP          ! IRESP  : return-code if a problem appears
 INTEGER           :: IPATCH         ! number of patches in PFIELD2D
-CHARACTER(LEN=LEN_HREC) :: YRECFM         ! Name of the article to be read
+CHARACTER(LEN=16) :: YRECFM         ! Name of the article to be read
 CHARACTER(LEN=4 ) :: YPATCH         ! current patch
 CHARACTER(LEN=100):: YCOMMENT       ! Comment string
 INTEGER           :: INB_PROCIO     ! number of processes used for Z-parallel IO with MESO-NH

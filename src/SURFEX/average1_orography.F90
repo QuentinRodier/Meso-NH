@@ -45,7 +45,8 @@
 USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
 USE MODD_SSO_n, ONLY : SSO_t
 !
-USE MODD_PGDWORK,       ONLY : XALL, XEXT_ALL, NSIZE_ALL, XSSO_ALL, NSSO_ALL, NSSO
+USE MODD_PGDWORK,       ONLY : XALL, XEXT_ALL, NSIZE_ALL, XSSO_ALL, NSSO_ALL, NSSO, &
+                               NFSSO_ALL, XFSSO_ALL, NFSSO, LORORAD
 !
 USE MODI_GET_MESH_INDEX
 USE MODD_POINT_OVERLAY, ONLY : NOVMX
@@ -73,10 +74,12 @@ REAL, OPTIONAL, INTENT(IN) :: PNODATA
 !*    0.2    Declaration of other local variables
 !            ------------------------------------
 !
-INTEGER, DIMENSION(NOVMX,SIZE(PLAT)) :: IINDEX ! mesh index of all input points
+INTEGER, DIMENSION(NOVMX,SIZE(PLAT)) :: IINDEX  ! mesh index of all input points
                                          ! 0 indicates the point is out of the domain
-INTEGER, DIMENSION(NOVMX,SIZE(PLAT)) :: ISSOX  ! X submesh index in their mesh of all input points
-INTEGER, DIMENSION(NOVMX,SIZE(PLAT)) :: ISSOY  ! Y submesh index in their mesh of all input points
+INTEGER, DIMENSION(NOVMX,SIZE(PLAT)) :: ISSOX   ! X submesh index in their mesh of all input points
+INTEGER, DIMENSION(NOVMX,SIZE(PLAT)) :: ISSOY   ! Y submesh index in their mesh of all input points
+INTEGER, DIMENSION(NOVMX,SIZE(PLAT)) :: IFSSOX  ! X fractional-submesh index in their mesh of all input points
+INTEGER, DIMENSION(NOVMX,SIZE(PLAT)) :: IFSSOY  ! Y fractional-submesh index in their mesh of all input points
 !
 INTEGER :: JL, JOV        ! loop index on input arrays
 REAL, DIMENSION(SIZE(PLAT)) :: ZVALUE
@@ -93,11 +96,21 @@ IF (LHOOK) CALL DR_HOOK('AVERAGE1_OROGRAPHY',0,ZHOOK_HANDLE)
 IF (PRESENT(PNODATA)) THEN
   ZVALUE(:) = PVALUE(:)
   ZNODATA = PNODATA
-  CALL GET_MESH_INDEX(UG,KLUOUT,KNBLINES,PLAT,PLON,IINDEX,ZVALUE,ZNODATA,NSSO,ISSOX,ISSOY)
+  IF (LORORAD) THEN
+    CALL GET_MESH_INDEX(UG,KLUOUT,KNBLINES,PLAT,PLON,IINDEX,ZVALUE,ZNODATA,NSSO,ISSOX,ISSOY, &
+                        NFSSO,IFSSOX,IFSSOY)
+  ELSE
+    CALL GET_MESH_INDEX(UG,KLUOUT,KNBLINES,PLAT,PLON,IINDEX,ZVALUE,ZNODATA,NSSO,ISSOX,ISSOY)
+  ENDIF
 ELSE
   ZVALUE(:) = 1.
   ZNODATA = 0.
-  CALL GET_MESH_INDEX(UG,KLUOUT,KNBLINES,PLAT,PLON,IINDEX,KSSO=NSSO,KISSOX=ISSOX,KISSOY=ISSOY)
+  IF (LORORAD) THEN
+    CALL GET_MESH_INDEX(UG,KLUOUT,KNBLINES,PLAT,PLON,IINDEX,KSSO=NSSO,KISSOX=ISSOX,KISSOY=ISSOY, & 
+                        KFSSO=NFSSO,KFISSOX=IFSSOX,KFISSOY=IFSSOY)
+  ELSE
+    CALL GET_MESH_INDEX(UG,KLUOUT,KNBLINES,PLAT,PLON,IINDEX,KSSO=NSSO,KISSOX=ISSOX,KISSOY=ISSOY)
+  ENDIF
 ENDIF
 !
 !*    2.     Loop on all input data points
@@ -148,6 +161,15 @@ DO JL = 1 , SIZE(PLAT)
     XEXT_ALL(IINDEX(JOV,JL),2) = MIN(XEXT_ALL(IINDEX(JOV,JL),2),PVALUE(JL))
 !
 !
+!*    10.    Orographic radiation parameters
+!            -------------------------------
+!
+    IF (LORORAD) THEN
+      XFSSO_ALL(IINDEX(JOV,JL),IFSSOX(JOV,JL),IFSSOY(JOV,JL)) = &
+         XFSSO_ALL(IINDEX(JOV,JL),IFSSOX(JOV,JL),IFSSOY(JOV,JL)) + PVALUE(JL)
+      NFSSO_ALL(IINDEX(JOV,JL),IFSSOX(JOV,JL),IFSSOY(JOV,JL)) = &
+         NFSSO_ALL(IINDEX(JOV,JL),IFSSOX(JOV,JL),IFSSOY(JOV,JL)) + 1
+    ENDIF
   END DO
 !
 ENDDO bloop

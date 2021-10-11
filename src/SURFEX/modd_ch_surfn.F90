@@ -51,6 +51,8 @@ TYPE CH_SURF_t
                                                        ! 'MEGA' : activate MEGAN coupling                                               
   CHARACTER(LEN=6), DIMENSION(:), POINTER :: CCH_NAMES ! NAME OF CHEMICAL
   CHARACTER(LEN=6), DIMENSION(:), POINTER :: CAER_NAMES ! NAME OF AEROSOL SPECIES
+  CHARACTER(LEN=6), DIMENSION(:), POINTER :: CDSTNAMES ! NAME OF DUST SPECIES
+  CHARACTER(LEN=6), DIMENSION(:), POINTER :: CSLTNAMES ! NAME OF SEA SALT SPECIES
                                                        ! SPECIES (FOR DIAG ONLY)
   CHARACTER(LEN=28)             :: CCHEM_SURF_FILE     ! name of general 
                                                        ! (chemical) purpose
@@ -77,6 +79,8 @@ IF (LHOOK) CALL DR_HOOK("MODD_CH_SURF_N:CH_SURF_INIT",0,ZHOOK_HANDLE)
   NULLIFY(YCH_SURF%CCH_NAMES)
   NULLIFY(YCH_SURF%CAER_NAMES)
   NULLIFY(YCH_SURF%XCONVERSION)
+  NULLIFY(YCH_SURF%CDSTNAMES)
+  NULLIFY(YCH_SURF%CSLTNAMES)
 YCH_SURF%CCH_EMIS=' '
 YCH_SURF%CCH_BIOEMIS=' '
 YCH_SURF%CCHEM_SURF_FILE=' '

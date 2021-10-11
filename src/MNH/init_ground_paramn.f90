@@ -94,7 +94,8 @@ USE MODD_PARAMETERS, ONLY : XUNDEF, JPVEXT
 !
 USE MODI_INIT_SURF_ATM_N
 !
-USE MODD_MNH_SURFEX_n 
+USE MODD_MNH_SURFEX_n
+USE MODD_SURF_ATM_TURB_n, ONLY : SURF_ATM_TURB_t
 !
 IMPLICIT NONE
 !
@@ -148,6 +149,8 @@ TYPE (DATE_TIME)          :: TZDATE
 !
 CHARACTER(LEN=6), DIMENSION(:), ALLOCATABLE :: YSV_SURF ! name of the scalar variables
                                                         ! sent to SURFEX
+TYPE(SURF_ATM_TURB_t) :: AT         ! atmospheric turbulence parameters
+!
 !-------------------------------------------------------------------------------
 !
 !
@@ -225,7 +228,7 @@ CALL INIT_SURF_ATM_n(YSURF_CUR,'MESONH',HINIT,.FALSE.,                  &
                      ZEMIS,ZTSRAD,ZTSURF,                               &
                      TZTCUR%nyear, TZTCUR%nmonth,                       &
                      TZTCUR%nday, TZTCUR%xtime,                         &
-                     TDATE_END,'                            ','      ', &
+                     TDATE_END,AT,'                            ','      ', &
                      'OK'                                               )
 !
 PDIR_ALB = XUNDEF

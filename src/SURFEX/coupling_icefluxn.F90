@@ -5,7 +5,7 @@
 !     #######################################################################
 SUBROUTINE COUPLING_ICEFLUX_n(KI, PTA, PEXNA, PRHOA, PTICE, PEXNS,       &
                                 PQA, PRAIN, PSNOW, PWIND, PZREF, PUREF,  &
-                                PPS, PTWAT, PTTS, PSFTH, PSFTQ,          &
+                                PPS, PTWAT, PTTS, PSFTH, PSFTQ, AT,      &
                                 OHANDLE_SIC, PMASK, PQSAT, PZ0,          &
                                 PUSTAR, PCD, PCDN, PCH,                  &
                                 PRI, PRESA, PZ0H )
@@ -35,6 +35,7 @@ SUBROUTINE COUPLING_ICEFLUX_n(KI, PTA, PEXNA, PRHOA, PTICE, PEXNS,       &
 !!---------------------------------------------------------------------
 !
 USE MODD_SURF_PAR,   ONLY : XUNDEF
+USE MODD_SURF_ATM_TURB_n, ONLY : SURF_ATM_TURB_t
 !
 USE MODI_ICE_SEA_FLUX
 ! 
@@ -64,6 +65,7 @@ REAL, DIMENSION(KI), INTENT(IN)  :: PTWAT     ! Sea surface temperature
 REAL,                INTENT(IN)  :: PTTS      ! Freezing point for sea water
 REAL, DIMENSION(KI), INTENT(OUT) :: PSFTH     ! flux of heat                          (W/m2)
 REAL, DIMENSION(KI), INTENT(OUT) :: PSFTQ     ! flux of water vapor                   (kg/m2/s)
+TYPE(SURF_ATM_TURB_t), INTENT(IN) :: AT         ! atmospheric turbulence parameters
 !
 LOGICAL, INTENT(IN) , OPTIONAL:: OHANDLE_SIC  ! Should we output extended set of fields
 REAL, DIMENSION(KI), INTENT(IN) , OPTIONAL :: PMASK     ! Where to compute sea-ice fluxes (0./1.)  
@@ -202,7 +204,7 @@ ZSFTQ (:) = XUNDEF
 !
  CALL ICE_SEA_FLUX(ZZ0, ZTA, ZEXNA, ZRHOA, ZTICE, ZEXNS,      &
                     ZQA, ZRR, ZRS, ZWIND, ZZREF, ZUREF, ZPS,  &
-                    ZQSAT, ZSFTH, ZSFTQ, ZUSTAR, ZCD, ZCDN,   &
+                    ZQSAT, ZSFTH, ZSFTQ, ZUSTAR, AT, ZCD, ZCDN,   &
                     ZCH, ZRI, ZRESA, ZZ0H                     )  
 !                
 !-------------------------------------------------------------------------------------

@@ -31,6 +31,8 @@
 !             ------------
 !
 USE MODD_SV_n, ONLY : SV_t, SV_INIT
+USE MODD_SLT_n, ONLY : SLT_t, SLT_INIT
+USE MODD_DST_n, ONLY : DST_t, DST_INIT
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -51,6 +53,8 @@ TYPE CH_TEB_t
                                                             ! biogenic NO fluxes
   CHARACTER(LEN=6)                :: CPARAMBVOC             !  BVOC flux scheme                                                            
   TYPE(SV_t) :: SVT
+  TYPE(SLT_t) :: SLTT 
+  TYPE(DST_t) :: DSTT
   
   CHARACTER(LEN=6), DIMENSION(:), POINTER :: CCH_NAMES      ! NAME OF CHEMICAL SPECIES
                                                             ! (FOR DIAG ONLY)
@@ -87,6 +91,8 @@ YCH_TEB%CPARAMBVOC=' '
 YCH_TEB%LCH_BIO_FLUX=.FALSE.
 YCH_TEB%LCH_NO_FLUX=.FALSE.
 CALL SV_INIT(YCH_TEB%SVT)
+CALL DST_INIT(YCH_TEB%DSTT)
+CALL SLT_INIT(YCH_TEB%SLTT)
 IF (LHOOK) CALL DR_HOOK("MODD_CH_TEB_N:CH_TEB_INIT",1,ZHOOK_HANDLE)
 END SUBROUTINE CH_TEB_INIT
 

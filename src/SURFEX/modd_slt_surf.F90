@@ -7,8 +7,7 @@ MODULE MODD_SLT_SURF
 ! MODIFICATIONS
 !
 !!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
-
-
+!
 IMPLICIT NONE
 !
 REAL, PARAMETER  :: XDENSITY_SLT     = 2.1e3    ! [kg/m3] density of sea salt

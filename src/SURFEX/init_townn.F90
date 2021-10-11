@@ -3,10 +3,10 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #############################################################
-      SUBROUTINE INIT_TOWN_n (DTCO, OREAD_BUDGETC, UG, U, GCP, TM, GDM, GRM, DGO, DL, DLC,  &                        
+      SUBROUTINE INIT_TOWN_n (DTCO, OREAD_BUDGETC, UG, U, GCP, TM, GDM, GRM, HM, DGO, DL, DLC,  &                        
                               HPROGRAM,HINIT,KI,KSV,KSW, HSV,PCO2,PRHOA,       &
                               PZENITH,PAZIM,PSW_BANDS,PDIR_ALB,PSCA_ALB,       &
-                              PEMIS,PTSRAD,PTSURF,KYEAR,KMONTH,KDAY,PTIME,     &
+                              PEMIS,PTSRAD,PTSURF,KYEAR,KMONTH,KDAY,PTIME,AT,  &
                               HATMFILE,HATMFILETYPE,HTEST                      )  
 !     #############################################################
 !
@@ -50,10 +50,12 @@ USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
 USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 USE MODD_GRID_CONF_PROJ_n, ONLY : GRID_CONF_PROJ_t
-USE MODD_SURFEX_n, ONLY : TEB_MODEL_t
+USE MODD_SURFEX_n, ONLY : TEB_MODEL_t, TEB_HYDRO_MODEL_t
 USE MODD_SURFEX_n, ONLY : TEB_GARDEN_MODEL_t
 USE MODD_SURFEX_n, ONLY : TEB_GREENROOF_MODEL_t
 USE MODD_DIAG_n, ONLY : DIAG_OPTIONS_t, DIAG_t
+!
+USE MODD_SURF_ATM_TURB_n, ONLY : SURF_ATM_TURB_t
 !
 USE MODD_CSTS,       ONLY : XTT
 !
@@ -76,6 +78,7 @@ TYPE(SURF_ATM_GRID_t), INTENT(INOUT) :: UG
 TYPE(SURF_ATM_t), INTENT(INOUT) :: U
 TYPE(GRID_CONF_PROJ_t),INTENT(INOUT) :: GCP
 TYPE(TEB_MODEL_t), INTENT(INOUT) :: TM
+TYPE(TEB_HYDRO_MODEL_t), INTENT(INOUT) :: HM
 TYPE(TEB_GARDEN_MODEL_t), INTENT(INOUT) :: GDM
 TYPE(TEB_GREENROOF_MODEL_t), INTENT(INOUT) :: GRM
 TYPE(DIAG_OPTIONS_t), INTENT(INOUT) :: DGO
@@ -104,6 +107,7 @@ INTEGER,                          INTENT(IN)  :: KMONTH    ! current month (UTC)
 INTEGER,                          INTENT(IN)  :: KDAY      ! current day (UTC)
 REAL,                             INTENT(IN)  :: PTIME     ! current time since
                                                           !  midnight (UTC, s)
+TYPE(SURF_ATM_TURB_t), INTENT(IN) :: AT         ! atmospheric turbulence parameters
 !
  CHARACTER(LEN=28),                INTENT(IN)  :: HATMFILE    ! atmospheric file name
  CHARACTER(LEN=6),                 INTENT(IN)  :: HATMFILETYPE! atmospheric file type
@@ -121,6 +125,7 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !               ---------------------------
 !
 IF (LHOOK) CALL DR_HOOK('INIT_TOWN_N',0,ZHOOK_HANDLE)
+IF (U%LTOWN_TO_ROCK) U%CTOWN='NONE  '
 IF (U%CTOWN=='NONE  ') THEN
   PDIR_ALB=0.
   PSCA_ALB=0.
@@ -132,12 +137,12 @@ ELSE IF (U%CTOWN=='FLUX  ') THEN
                        HPROGRAM,HINIT,KI,KSV,KSW,HSV,PDIR_ALB,PSCA_ALB,  &
                        PEMIS,PTSRAD,PTSURF,'OK'                    )  
 ELSE IF (U%CTOWN=='TEB   ') THEN
-  CALL INIT_TEB_n(DTCO, UG, U, GCP, TM%CHT, TM%DTT, TM%SB, TM%G, TM%TOP,        &
+  CALL INIT_TEB_n(DTCO, UG, U, GCP, TM%CHT, TM%DTT, TM%SB, TM%G, TM%SPAOP, TM%TOP, &
                   TM%TPN, TM%TIR, TM%NT, TM%TD, TM%BDD, TM%BOP, TM%DTB, TM%NB,  &
-                  GDM, GRM, HPROGRAM, HINIT, KI, KSV, KSW, HSV, PCO2,           &
+                  TM%AT, GDM, GRM, HM, HPROGRAM, HINIT, KI, KSV, KSW, HSV, PCO2,   &
                   PRHOA, PZENITH, PAZIM, PSW_BANDS, PDIR_ALB,                   &
                   PSCA_ALB, PEMIS, PTSRAD, PTSURF, KYEAR, KMONTH,               &
-                  KDAY, PTIME, HATMFILE, HATMFILETYPE, 'OK'                     )
+                  KDAY, PTIME, AT, HATMFILE, HATMFILETYPE, 'OK'                     )
 END IF
 IF (LHOOK) CALL DR_HOOK('INIT_TOWN_N',1,ZHOOK_HANDLE)
 !

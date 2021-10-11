@@ -106,6 +106,10 @@ IF (DGO%LSURF_BUDGET) THEN
 !
   CALL MAKE_AVERAGE(PFRAC_TILE(:,JT),ND%AL(JT)%XGFLUX,D%XGFLUX,JT)
 !
+! Anthorpogenic flux
+!
+  CALL MAKE_AVERAGE(PFRAC_TILE(:,JT),ND%AL(JT)%XQF,D%XQF,JT)
+!
 ! Downwards short wave radiation
 !
   CALL MAKE_AVERAGE(PFRAC_TILE(:,JT),ND%AL(JT)%XSWD,D%XSWD,JT)
@@ -165,6 +169,10 @@ IF (DGO%LSURF_BUDGETC) THEN
 ! Storage flux
 !
   CALL MAKE_AVERAGE(PFRAC_TILE(:,JT),NDC%AL(JT)%XGFLUX,DC%XGFLUX,JT)
+!
+! Anthropogenic flux
+!
+  CALL MAKE_AVERAGE(PFRAC_TILE(:,JT),NDC%AL(JT)%XQF,DC%XQF,JT)
 !
 ! Total evapotranspiration
 !

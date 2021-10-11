@@ -33,8 +33,10 @@ MODULE MODE_READ_SURF_ASC
 !!    MODIFICATIONS
 !!    -------------
 !!
-!!      original                                                     01/08/03
+!!      original       01/08/2003
 !!      J.Escobar      10/06/2013: replace DOUBLE PRECISION by REAL to handle problem for promotion of real on IBM SP
+!!      A.Druel           08/2019: Permit to change the size of caracters (write / read) with constant
+!!
 !----------------------------------------------------------------------------
 !
 INTERFACE READ_SURF0_ASC
@@ -591,6 +593,7 @@ END SUBROUTINE READ_SURFN1_ASC
 !!****  *READC0* - routine to read a character
 !
 USE MODD_IO_SURF_ASC,        ONLY : NUNIT, NLUOUT, CMASK
+USE MODD_DATA_COVER_PAR,     ONLY : NCAR_FILES
 !
 USE MODE_POS_SURF
 !
@@ -606,16 +609,17 @@ IMPLICIT NONE
 !
 !
 !
- CHARACTER(LEN=*),  INTENT(IN)  :: HREC      ! name of the article to be read
- CHARACTER(LEN=40),  INTENT(OUT) :: HFIELD    ! the integer to be read
-INTEGER,            INTENT(OUT) :: KRESP     ! KRESP  : return-code if a problem appears
- CHARACTER(LEN=100), INTENT(OUT) :: HCOMMENT  ! comment
+ CHARACTER(LEN=*),          INTENT(IN)  :: HREC      ! name of the article to be read
+ CHARACTER(LEN=NCAR_FILES), INTENT(OUT) :: HFIELD    ! the integer to be read
+INTEGER,                    INTENT(OUT) :: KRESP     ! KRESP  : return-code if a problem appears
+ CHARACTER(LEN=100),        INTENT(OUT) :: HCOMMENT  ! comment
 !
 !*      0.2   Declarations of local variables
 !
 INTEGER :: IRESP
  CHARACTER(LEN=50):: YCOMMENT
  CHARACTER(LEN=6) :: YMASK
+ CHARACTER(LEN=3) :: YSIZE_CAR
 LOGICAL          :: GFOUND
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
@@ -631,9 +635,11 @@ IF (GFOUND) YMASK='FULL  '
  CALL POSNAM(NUNIT,YMASK//' '//HREC,GFOUND,NLUOUT)
 IF (.NOT. GFOUND) CALL POSNAM(NUNIT,'FULL  '//' '//HREC,GFOUND,NLUOUT) ! used for auxilliary files
 !
+WRITE(YSIZE_CAR,"(I3.2)") NCAR_FILES
+!
 READ(NUNIT,FMT=*,IOSTAT=IRESP)
 READ(NUNIT,FMT='(A50)',IOSTAT=IRESP) YCOMMENT
-READ(NUNIT,FMT='(A40)',IOSTAT=IRESP) HFIELD
+READ(NUNIT,FMT='(A'//TRIM(ADJUSTL(YSIZE_CAR))//')',IOSTAT=IRESP) HFIELD
 !
 IF (IRESP/=0) CALL ERROR_READ_SURF_ASC(HREC,KRESP)
 

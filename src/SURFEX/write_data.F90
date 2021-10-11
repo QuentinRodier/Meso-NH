@@ -35,6 +35,7 @@
 !!    Original    15/12/97
 !!    F.solmon    01/06/00 adaptation for patch approach
 !!    R. Alkama    05/2012 : add new vegtypes (from 12 to 19)
+!!    A. Druel     01/2019 : Change XDATA_IRRIG to XDATA_IRRIGTYPE
 !----------------------------------------------------------------------------
 !
 !*    0.     DECLARATION
@@ -45,7 +46,7 @@ USE MODD_SURF_PAR,       ONLY : XUNDEF
 USE MODD_DATA_COVER,     ONLY : XDATA_TOWN, XDATA_NATURE, XDATA_SEA, XDATA_WATER, &
                                   XDATA_LAI, XDATA_VEGTYPE, XDATA_H_TREE,           &
                                   XDATA_GROUND_DEPTH, XDATA_ROOT_DEPTH,             &
-                                  TDATA_SEED, TDATA_REAP, XDATA_WATSUP, XDATA_IRRIG,&
+                                  TDATA_SEED, TDATA_REAP, XDATA_WATSUP, XDATA_IRRIGTYPE,&
                                   XDATA_LAI_ALL_YEARS  
 USE MODD_DATA_COVER_PAR, ONLY : CNAMES, NVEGTYPE
 !
@@ -113,12 +114,12 @@ ELSE
   CNVT(9) =  "NVT_BONE"      ! boreal needleleaf evergreen trees 
   CNVT(10)=  "NVT_TENE"      ! temperate needleleaf evergreen trees
   CNVT(11)=  "NVT_BOND"      ! boreal    needleleaf deciduous trees
-  CNVT(12)=  "NVT_GRAS"      ! temperate grassland C3
-  CNVT(13)=  "NVT_TROG"      ! tropical  grassland C4
-  CNVT(14)=  "NVT_BOGR"      ! boreal grassland C3
-  CNVT(15)=  "NVT_SHRB"      ! broadleaf shrub
+  CNVT(12)=  "NVT_SHRB"      ! broadleaf shrub
+  CNVT(13)=  "NVT_BOGR"      ! boreal grassland C3
+  CNVT(14)=  "NVT_GRAS"      ! temperate grassland C3
+  CNVT(15)=  "NVT_TROG"      ! tropical  grassland C4
   CNVT(16)=  "NVT_C3W "      ! winter C3 cultures types
-  CNVT(17)=  "NVT_C3E "      ! summer C3 cultures types
+  CNVT(17)=  "NVT_C3S "      ! summer C3 cultures types
   CNVT(18)=  "NVT_C4  "      ! C4 cultures types
   CNVT(19)=  "NVT_FLTR"      ! flooded trees
   CNVT(20)=  "NVT_FLGR"      ! flooded grassland
@@ -203,7 +204,7 @@ IF (XDATA_VEGTYPE(JCOVER,9)/=0.) THEN
   WRITE(*,FMT='(A20,A8,A3,F4.1)') &
            'XDATA_WATSUP(ICOVER,',CNVT(9),')= ',XDATA_WATSUP(JCOVER,9)  
   WRITE(*,FMT='(A20,A8,A3,F4.1)') &
-           'XDATA_IRRIG (ICOVER,',CNVT(9),')= ',XDATA_IRRIG (JCOVER,9)  
+           'XDATA_IRRIGTYPE (ICOVER,',CNVT(9),')= ',XDATA_IRRIGTYPE (JCOVER,9)  
 END IF
 WRITE(*,FMT='(A20,I3.3)') 'END SUBROUTINE COVER',JCOVER
 END DO

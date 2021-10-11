@@ -43,7 +43,6 @@
 !            -----------
 !
 USE MODD_SURF_PAR,             ONLY : XUNDEF
-USE MODD_TEB_VEG,              ONLY : NTIME_GR_MAX, NLAYER_GR_MAX
 !
 USE MODI_GET_LUOUT
 USE MODI_OPEN_NAMELIST
@@ -78,14 +77,20 @@ REAL,DIMENSION(:),               INTENT(OUT)   :: PUNIF_LAI_GR
  CHARACTER(LEN=6),DIMENSION(:),   INTENT(OUT)   :: HFTYP_SAND_GR
  CHARACTER(LEN=6),DIMENSION(:),   INTENT(OUT)   :: HFTYP_LAI_GR
 
-!*    0.2    Declaration of local variables
+!*    0.2    Declaration of parameters
+!            -------------------------
+!
+INTEGER, PARAMETER   :: NTIME_GR_MAX  = 1         ! Max NTIME for greenroofs
+INTEGER, PARAMETER   :: NLAYER_GR_MAX = 6         ! Max number of soil layers for greenroofs
+!
+!*    0.3    Declaration of local variables
 !            ------------------------------
 !
 INTEGER               :: ILUOUT    ! output listing logical unit
 INTEGER               :: ILUNAM    ! namelist file  logical unit
 LOGICAL               :: GFOUND    ! true if namelist is found
 !
-!*    0.3    Declaration of namelists
+!*    0.4    Declaration of namelists
 !            ------------------------
 !
 INTEGER                                    :: NLAYER_GR      ! 

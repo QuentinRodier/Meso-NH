@@ -7,7 +7,7 @@
                                  HPROGRAM,HINIT,KI,KSV,KSW,                 &
                                  HSV,PCO2,PRHOA,PZENITH,PAZIM,PSW_BANDS,    &
                                  PDIR_ALB,PSCA_ALB, PEMIS,PTSRAD,PTSURF,    &
-                                 KYEAR, KMONTH,KDAY,PTIME,                  &
+                                 KYEAR, KMONTH,KDAY,PTIME,AT,               &
                                  HATMFILE,HATMFILETYPE,HTEST                )  
 !     #############################################################
 !
@@ -45,8 +45,6 @@
 !!      S. Senesi   01/2014 : introduce sea-ice model 
 !!      S. Belamari 03/2014 : add NZ0 (to choose PZ0SEA formulation)
 !!      R. Séférian 01/2015 : introduce interactive ocean surface albedo
-!!      M.N. Bouin  03/2014 : possibility of wave parameters
-!!                          ! from external source
 !!      J. Pianezze 11/2014 : add wave coupling flag for wave parameters
 !-------------------------------------------------------------------------------
 !
@@ -69,6 +67,7 @@ USE MODD_SURF_PAR,       ONLY : XUNDEF, NUNDEF
 USE MODD_CHS_AEROSOL,    ONLY: LVARSIGI, LVARSIGJ
 USE MODD_DST_SURF,       ONLY: LVARSIG_DST, NDSTMDE, NDST_MDEBEG, LRGFIX_DST
 USE MODD_SLT_SURF,       ONLY: LVARSIG_SLT, NSLTMDE, NSLT_MDEBEG, LRGFIX_SLT
+USE MODD_SURF_ATM_TURB_n, ONLY : SURF_ATM_TURB_t
 !
 USE MODI_INIT_IO_SURF_n
 USE MODI_DEFAULT_CH_DEP
@@ -140,6 +139,7 @@ INTEGER,                          INTENT(IN)  :: KDAY      ! current day (UTC)
 REAL,                             INTENT(IN)  :: PTIME     ! current time since
                                                            !  midnight (UTC, s)
 !
+TYPE(SURF_ATM_TURB_t), INTENT(IN) :: AT         ! atmospheric turbulence parameters
 CHARACTER(LEN=28),                INTENT(IN)  :: HATMFILE    ! atmospheric file name
 CHARACTER(LEN=6),                 INTENT(IN)  :: HATMFILETYPE! atmospheric file type
 CHARACTER(LEN=2),                 INTENT(IN)  :: HTEST       ! must be equal to 'OK'
@@ -187,8 +187,8 @@ IF (LNAM_READ) THEN
  
  CALL DEFAULT_SEAFLUX(SM%S%XTSTEP,SM%S%XOUT_TSTEP,SM%S%CSEA_ALB,SM%S%CSEA_FLUX,SM%S%LPWG,  &
                       SM%S%LPRECIP,SM%S%LPWEBB,SM%S%NZ0,SM%S%NGRVWAVES,SM%O%LPROGSST,      &
-                      SM%O%NTIME_COUPLING,SM%O%XOCEAN_TSTEP,SM%S%XICHCE,SM%S%CINTERPOL_SST,&
-                      SM%S%CINTERPOL_SSS,SM%S%LWAVEWIND                            )
+                      SM%O%XOCEAN_TSTEP,SM%S%XICHCE,SM%S%CINTERPOL_SST,SM%S%CINTERPOL_SSS, &
+                      SM%S%LWAVEWIND                            )
  CALL DEFAULT_SEAICE(HPROGRAM,                                                  &
                      SM%S%CINTERPOL_SIC,SM%S%CINTERPOL_SIT, SM%S%XFREEZING_SST, &
                      SM%S%XSEAICE_TSTEP, SM%S%XSIC_EFOLDING_TIME,               &
@@ -413,7 +413,7 @@ ENDIF
 !*       7.     Chemistry /dust
 !               ---------
 !
- CALL INIT_CHEMICAL_n(ILUOUT, KSV, HSV, SM%CHS%SVS,           &
+ CALL INIT_CHEMICAL_n(ILUOUT, KSV, HSV, SM%CHS%SVS, SM%CHS%SLTS, SM%CHS%DSTS, &
                      SM%CHS%CCH_NAMES, SM%CHS%CAER_NAMES,     &
                      HDSTNAMES=SM%CHS%CDSTNAMES, HSLTNAMES=SM%CHS%CSLTNAMES,  &
                      HSNWNAMES=SM%CHS%CSNWNAMES     )
@@ -442,6 +442,13 @@ IF (SM%S%LHANDLE_SIC.OR.LCPL_SEAICE) &
                                OREAD_BUDGETC, SM%S, HPROGRAM,ILU,KSW)
                  
 !
+!-------------------------------------------------------------------------------
+!
+!*       9.     atmospheric turbulence parameters
+!               ---------------------------------
+!
+SM%AT=AT
+
 !-------------------------------------------------------------------------------
 !
 !         End of IO

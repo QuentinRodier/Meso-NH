@@ -43,7 +43,8 @@ USE MODD_SSO_n, ONLY : SSO_t
 !
 USE MODD_SURF_PAR, ONLY : XUNDEF
 USE MODD_SURFEX_MPI, ONLY : NRANK
-USE MODD_PGDWORK,       ONLY : NSIZE, XSUMVAL, LSSQO, XSSQO, NSSO, XPREC
+USE MODD_PGDWORK,       ONLY : NSIZE, XSUMVAL, LSSQO, XSSQO, NSSO, XPREC, &
+                               NFSSQO, XFSSQO, LORORAD
 !
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -103,6 +104,18 @@ DO JL=1,SIZE(USS%XSIL_ZS)
                         + SUM(ZMAXY(:),MASK=GSEGY(:)) / COUNT(GSEGY(:)) )  
   
 END DO
+
+IF (LORORAD) THEN
+!
+!----------------------------------------------------------------------------
+!
+!*    4.     Orographic radiation parameters
+!            -------------------------------
+!
+  WHERE(NFSSQO(:,:,:) /= 0)
+    XFSSQO(:,:,:) = XFSSQO(:,:,:) / NFSSQO(:,:,:)
+  END WHERE
+ENDIF
 !
 !
 DO JI = 1,SIZE(USS%XAVG_ZS)

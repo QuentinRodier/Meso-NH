@@ -3,15 +3,16 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 SUBROUTINE DEFAULT_DATA_COVER(PDATA_TOWN,PDATA_NATURE,PDATA_WATER,PDATA_SEA,&
-         PDATA_Z0_TOWN,PDATA_BLD_HEIGHT,PDATA_WALL_O_HOR,PDATA_BLD,PDATA_GARDEN,&
-         PDATA_ALB_ROOF,PDATA_ALB_ROAD,PDATA_ALB_WALL,PDATA_EMIS_ROOF,&
-         PDATA_EMIS_ROAD,PDATA_EMIS_WALL,PDATA_HC_ROOF,PDATA_TC_ROOF,&
-         PDATA_D_ROOF,PDATA_HC_ROAD,PDATA_TC_ROAD,PDATA_D_ROAD,&
-         PDATA_HC_WALL,PDATA_TC_WALL,PDATA_D_WALL,PDATA_H_TRAFFIC,&
-         PDATA_LE_TRAFFIC,PDATA_H_INDUSTRY,PDATA_LE_INDUSTRY,&
-         PDATA_VEGTYPE,PDATA_H_TREE,PDATA_WATSUP,PDATA_IRRIG,&
-         PDATA_ROOT_DEPTH,PDATA_GROUND_DEPTH,PDATA_DICE,TPDATA_SEED,&
-         TPDATA_REAP)
+         PDATA_Z0_TOWN,PDATA_BLD_HEIGHT,PDATA_WALL_O_HOR,PDATA_BLD,PDATA_ROAD,PDATA_GARDEN,&
+         PDATA_ALB_ROOF,PDATA_ALB_ROAD,PDATA_ALB_WALL,PDATA_EMIS_ROOF,          &
+         PDATA_EMIS_ROAD,PDATA_EMIS_WALL,PDATA_HC_ROOF,PDATA_TC_ROOF,           &
+         PDATA_D_ROOF,PDATA_HC_ROAD,PDATA_TC_ROAD,PDATA_D_ROAD,                 &
+         PDATA_HC_WALL,PDATA_TC_WALL,PDATA_D_WALL,PDATA_H_TRAFFIC,              &
+         PDATA_LE_TRAFFIC,PDATA_H_INDUSTRY,PDATA_LE_INDUSTRY,                   &
+         PDATA_VEGTYPE,PDATA_H_TREE,PDATA_WATSUP,PDATA_IRRIGTYPE,               &
+         PDATA_HTRUNK_HVEG,PDATA_WCROWN_HVEG,&
+         PDATA_ROOT_DEPTH,PDATA_GROUND_DEPTH,PDATA_DICE,TPDATA_SEED,            &
+         TPDATA_REAP,PDATA_IRRIGTIME,PDATA_IRRIGFRAC,PDATA_IRRIGFREQ,PDATA_F2THRESHOLD)
 !
 USE MODD_TYPE_DATE_SURF  
 USE MODD_SURF_PAR
@@ -20,41 +21,48 @@ USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 IMPLICIT NONE
 !
-REAL, DIMENSION(:), INTENT(INOUT), OPTIONAL :: PDATA_TOWN
-REAL, DIMENSION(:), INTENT(INOUT), OPTIONAL :: PDATA_NATURE
-REAL, DIMENSION(:), INTENT(INOUT), OPTIONAL :: PDATA_WATER
-REAL, DIMENSION(:), INTENT(INOUT), OPTIONAL :: PDATA_SEA
-REAL, DIMENSION(:), INTENT(INOUT), OPTIONAL :: PDATA_Z0_TOWN
-REAL, DIMENSION(:), INTENT(INOUT), OPTIONAL :: PDATA_BLD_HEIGHT
-REAL, DIMENSION(:), INTENT(INOUT), OPTIONAL :: PDATA_WALL_O_HOR
-REAL, DIMENSION(:), INTENT(INOUT), OPTIONAL :: PDATA_BLD
-REAL, DIMENSION(:), INTENT(INOUT), OPTIONAL :: PDATA_GARDEN
-REAL, DIMENSION(:), INTENT(INOUT), OPTIONAL :: PDATA_ALB_ROOF
-REAL, DIMENSION(:), INTENT(INOUT), OPTIONAL :: PDATA_ALB_ROAD
-REAL, DIMENSION(:), INTENT(INOUT), OPTIONAL :: PDATA_ALB_WALL
-REAL, DIMENSION(:), INTENT(INOUT), OPTIONAL :: PDATA_EMIS_ROOF
-REAL, DIMENSION(:), INTENT(INOUT), OPTIONAL :: PDATA_EMIS_ROAD
-REAL, DIMENSION(:), INTENT(INOUT), OPTIONAL :: PDATA_EMIS_WALL
-REAL, DIMENSION(:,:), INTENT(INOUT), OPTIONAL :: PDATA_HC_ROOF
-REAL, DIMENSION(:,:), INTENT(INOUT), OPTIONAL :: PDATA_TC_ROOF
-REAL, DIMENSION(:,:), INTENT(INOUT), OPTIONAL :: PDATA_D_ROOF
-REAL, DIMENSION(:,:), INTENT(INOUT), OPTIONAL :: PDATA_HC_ROAD
-REAL, DIMENSION(:,:), INTENT(INOUT), OPTIONAL :: PDATA_TC_ROAD
-REAL, DIMENSION(:,:), INTENT(INOUT), OPTIONAL :: PDATA_D_ROAD
-REAL, DIMENSION(:,:), INTENT(INOUT), OPTIONAL :: PDATA_HC_WALL
-REAL, DIMENSION(:,:), INTENT(INOUT), OPTIONAL :: PDATA_TC_WALL
-REAL, DIMENSION(:,:), INTENT(INOUT), OPTIONAL :: PDATA_D_WALL
-REAL, DIMENSION(:), INTENT(INOUT), OPTIONAL :: PDATA_H_TRAFFIC
-REAL, DIMENSION(:), INTENT(INOUT), OPTIONAL :: PDATA_LE_TRAFFIC
-REAL, DIMENSION(:), INTENT(INOUT), OPTIONAL :: PDATA_H_INDUSTRY
-REAL, DIMENSION(:), INTENT(INOUT), OPTIONAL :: PDATA_LE_INDUSTRY
-REAL, DIMENSION(:,:), INTENT(INOUT), OPTIONAL :: PDATA_VEGTYPE
-REAL, DIMENSION(:,:), INTENT(INOUT), OPTIONAL :: PDATA_H_TREE
-REAL, DIMENSION(:,:), INTENT(INOUT), OPTIONAL :: PDATA_WATSUP
-REAL, DIMENSION(:,:), INTENT(INOUT), OPTIONAL :: PDATA_IRRIG
-REAL, DIMENSION(:,:), INTENT(INOUT), OPTIONAL :: PDATA_ROOT_DEPTH
-REAL, DIMENSION(:,:), INTENT(INOUT), OPTIONAL :: PDATA_GROUND_DEPTH
-REAL, DIMENSION(:,:), INTENT(INOUT), OPTIONAL :: PDATA_DICE
+REAL, DIMENSION(:),     INTENT(INOUT), OPTIONAL :: PDATA_TOWN
+REAL, DIMENSION(:),     INTENT(INOUT), OPTIONAL :: PDATA_NATURE
+REAL, DIMENSION(:),     INTENT(INOUT), OPTIONAL :: PDATA_WATER
+REAL, DIMENSION(:),     INTENT(INOUT), OPTIONAL :: PDATA_SEA
+REAL, DIMENSION(:),     INTENT(INOUT), OPTIONAL :: PDATA_Z0_TOWN
+REAL, DIMENSION(:),     INTENT(INOUT), OPTIONAL :: PDATA_BLD_HEIGHT
+REAL, DIMENSION(:),     INTENT(INOUT), OPTIONAL :: PDATA_WALL_O_HOR
+REAL, DIMENSION(:),     INTENT(INOUT), OPTIONAL :: PDATA_BLD
+REAL, DIMENSION(:),     INTENT(INOUT), OPTIONAL :: PDATA_ROAD
+REAL, DIMENSION(:),     INTENT(INOUT), OPTIONAL :: PDATA_GARDEN
+REAL, DIMENSION(:),     INTENT(INOUT), OPTIONAL :: PDATA_ALB_ROOF
+REAL, DIMENSION(:),     INTENT(INOUT), OPTIONAL :: PDATA_ALB_ROAD
+REAL, DIMENSION(:),     INTENT(INOUT), OPTIONAL :: PDATA_ALB_WALL
+REAL, DIMENSION(:),     INTENT(INOUT), OPTIONAL :: PDATA_EMIS_ROOF
+REAL, DIMENSION(:),     INTENT(INOUT), OPTIONAL :: PDATA_EMIS_ROAD
+REAL, DIMENSION(:),     INTENT(INOUT), OPTIONAL :: PDATA_EMIS_WALL
+REAL, DIMENSION(:,:),   INTENT(INOUT), OPTIONAL :: PDATA_HC_ROOF
+REAL, DIMENSION(:,:),   INTENT(INOUT), OPTIONAL :: PDATA_TC_ROOF
+REAL, DIMENSION(:,:),   INTENT(INOUT), OPTIONAL :: PDATA_D_ROOF
+REAL, DIMENSION(:,:),   INTENT(INOUT), OPTIONAL :: PDATA_HC_ROAD
+REAL, DIMENSION(:,:),   INTENT(INOUT), OPTIONAL :: PDATA_TC_ROAD
+REAL, DIMENSION(:,:),   INTENT(INOUT), OPTIONAL :: PDATA_D_ROAD
+REAL, DIMENSION(:,:),   INTENT(INOUT), OPTIONAL :: PDATA_HC_WALL
+REAL, DIMENSION(:,:),   INTENT(INOUT), OPTIONAL :: PDATA_TC_WALL
+REAL, DIMENSION(:,:),   INTENT(INOUT), OPTIONAL :: PDATA_D_WALL
+REAL, DIMENSION(:),     INTENT(INOUT), OPTIONAL :: PDATA_H_TRAFFIC
+REAL, DIMENSION(:),     INTENT(INOUT), OPTIONAL :: PDATA_LE_TRAFFIC
+REAL, DIMENSION(:),     INTENT(INOUT), OPTIONAL :: PDATA_H_INDUSTRY
+REAL, DIMENSION(:),     INTENT(INOUT), OPTIONAL :: PDATA_LE_INDUSTRY
+REAL, DIMENSION(:,:),   INTENT(INOUT), OPTIONAL :: PDATA_VEGTYPE
+REAL, DIMENSION(:,:),   INTENT(INOUT), OPTIONAL :: PDATA_H_TREE
+REAL, DIMENSION(:,:),   INTENT(INOUT), OPTIONAL :: PDATA_HTRUNK_HVEG
+REAL, DIMENSION(:,:),   INTENT(INOUT), OPTIONAL :: PDATA_WCROWN_HVEG
+REAL, DIMENSION(:,:),   INTENT(INOUT), OPTIONAL :: PDATA_WATSUP
+REAL, DIMENSION(:,:),   INTENT(INOUT), OPTIONAL :: PDATA_IRRIGTYPE
+REAL, DIMENSION(:,:),   INTENT(INOUT), OPTIONAL :: PDATA_IRRIGFRAC
+REAL, DIMENSION(:,:),   INTENT(INOUT), OPTIONAL :: PDATA_IRRIGFREQ
+REAL, DIMENSION(:,:),   INTENT(INOUT), OPTIONAL :: PDATA_IRRIGTIME
+REAL, DIMENSION(:,:,:), INTENT(INOUT), OPTIONAL :: PDATA_F2THRESHOLD
+REAL, DIMENSION(:,:),   INTENT(INOUT), OPTIONAL :: PDATA_ROOT_DEPTH
+REAL, DIMENSION(:,:),   INTENT(INOUT), OPTIONAL :: PDATA_GROUND_DEPTH
+REAL, DIMENSION(:,:),   INTENT(INOUT), OPTIONAL :: PDATA_DICE
 TYPE(DATE_TIME), DIMENSION(:,:), INTENT(INOUT), OPTIONAL :: TPDATA_SEED
 TYPE(DATE_TIME), DIMENSION(:,:), INTENT(INOUT), OPTIONAL :: TPDATA_REAP
 !
@@ -401,7 +409,7 @@ PDATA_BLD(570) =0.25
 PDATA_BLD(571) =0.28
 ENDIF
 !------------------------------------------------------------------- 
-IF (PRESENT(PDATA_TOWN).AND.PRESENT(PDATA_GARDEN)) THEN                                                    
+IF (PRESENT(PDATA_TOWN).AND.PRESENT(PDATA_GARDEN).AND. PRESENT(PDATA_ROAD)) THEN                                                    
 WHERE(PDATA_TOWN>0.) PDATA_GARDEN(:) =0.00
 PDATA_GARDEN(  7) =0.40
 PDATA_GARDEN(151) =0.10
@@ -422,6 +430,8 @@ PDATA_GARDEN(568) =0.49
 PDATA_GARDEN(569) =0.52
 PDATA_GARDEN(570) =0.51
 PDATA_GARDEN(571) =0.44
+!
+WHERE(PDATA_TOWN>0.) PDATA_ROAD(:) = 1. - PDATA_BLD(:) - PDATA_GARDEN(:)
 ENDIF
 !-------------------------------------------------------------------  
 IF (PRESENT(PDATA_TOWN).AND.PRESENT(PDATA_ALB_ROOF)) THEN                                           
@@ -476,24 +486,18 @@ IF (PRESENT(PDATA_TOWN).AND.PRESENT(PDATA_HC_ROAD)) THEN
   WHERE(PDATA_TOWN>0.) PDATA_HC_ROAD(:,  1) =1.94 * 1.E6
 !-------------------------------------------------------------------                                                 
   WHERE(PDATA_TOWN>0.) PDATA_HC_ROAD(:,  2) =1.28 * 1.E6
-!-------------------------------------------------------------------                                                   
-  WHERE(PDATA_TOWN>0.) PDATA_HC_ROAD(:,  3) =1.28 * 1.E6
 ENDIF
 !------------------------------------------------------------------- 
 IF (PRESENT(PDATA_TOWN).AND.PRESENT(PDATA_TC_ROAD)) THEN                                                    
   WHERE(PDATA_TOWN>0.) PDATA_TC_ROAD(:,  1) =0.7454
 !-------------------------------------------------------------------                                               
   WHERE(PDATA_TOWN>0.) PDATA_TC_ROAD(:,  2) =0.2513
-!-------------------------------------------------------------------                                               
-  WHERE(PDATA_TOWN>0.) PDATA_TC_ROAD(:,  3) =0.2513
 ENDIF
 !-------------------------------------------------------------------   
 IF (PRESENT(PDATA_TOWN).AND.PRESENT(PDATA_D_ROAD)) THEN                                                  
-  WHERE(PDATA_TOWN>0.) PDATA_D_ROAD(:,  1) =0.050
-!-------------------------------------------------------------------                                           
-  WHERE(PDATA_TOWN>0.) PDATA_D_ROAD(:,  2) =0.100
+  WHERE(PDATA_TOWN>0.) PDATA_D_ROAD(:,  1) =0.100
 !-------------------------------------------------------------------                                                  
-  WHERE(PDATA_TOWN>0.) PDATA_D_ROAD(:,  3) =1.000
+  WHERE(PDATA_TOWN>0.) PDATA_D_ROAD(:,  2) =1.000
 ENDIF
 !------------------------------------------------------------------- 
 IF (PRESENT(PDATA_TOWN).AND.PRESENT(PDATA_HC_WALL)) THEN                                                    
@@ -1713,7 +1717,14 @@ PDATA_VEGTYPE(:, 19) = (/          &
    0.00,   0.47,   0.48 &
          /)
 ENDIF
-!-------------------------------------------------------------------  
+!------------------------------------------------------------------- 
+!
+IF (PRESENT(PDATA_HTRUNK_HVEG)) PDATA_HTRUNK_HVEG(:,:) = 3.0
+!------------------------------------------------------------------- 
+!
+IF (PRESENT(PDATA_WCROWN_HVEG)) PDATA_WCROWN_HVEG(:,:) = 5.0
+!------------------------------------------------------------------- 
+!
 IF (PRESENT(PDATA_H_TREE)) THEN                                                  
 PDATA_H_TREE(:,  4) = (/          &
  XUNDEF, XUNDEF, XUNDEF, XUNDEF, XUNDEF, XUNDEF,     5., XUNDEF, XUNDEF, XUNDEF, &
@@ -2209,20 +2220,47 @@ PDATA_H_TREE(:, 19) = (/          &
  XUNDEF,     1.,     1. &
          /)
 ENDIF
-!-------------------------------------------------------------------    
-IF (PRESENT(PDATA_VEGTYPE).AND.PRESENT(PDATA_WATSUP)) THEN                                                
-  WHERE(PDATA_VEGTYPE(:, 8)>0.) PDATA_WATSUP(:,  8) =   0.                                
-!-------------------------------------------------------------------                                                    
-  WHERE(PDATA_VEGTYPE(:, 9)>0.) PDATA_WATSUP(:,  9) =  30.  
-ENDIF                                
-!------------------------------------------------------------------- 
-IF (PRESENT(PDATA_VEGTYPE).AND.PRESENT(PDATA_IRRIG)) THEN                                                    
-  WHERE(PDATA_VEGTYPE(:, 8)>0.) PDATA_IRRIG(:,  8) = 0.00                                   
-!-------------------------------------------------------------------                                                
-  WHERE(PDATA_VEGTYPE(:, 9)>0.) PDATA_IRRIG(:,  9) = 1.00       
-ENDIF                            
 !-------------------------------------------------------------------
-IF (PRESENT(PDATA_ROOT_DEPTH)) THEN                                                    
+IF (PRESENT(PDATA_VEGTYPE).AND.PRESENT(PDATA_IRRIGTYPE)) THEN
+!  WHERE(PDATA_VEGTYPE(:, 8)>0.) PDATA_IRRIGTYPE(:,  8) = 0
+!  PDATA_IRRIGTYPE(:,:) = 0
+!-------------------------------------------------------------------
+  WHERE(PDATA_VEGTYPE(:, 9)>0.) PDATA_IRRIGTYPE(:,  9) = 1
+ENDIF
+!-------------------------------------------------------------------
+IF (PRESENT(PDATA_VEGTYPE).AND.PRESENT(PDATA_WATSUP)) THEN
+!  WHERE(PDATA_VEGTYPE(:, 8)>0.) PDATA_WATSUP(:,  8) =   0.
+!  PDATA_WATSUP(:,:) = 0.
+!-------------------------------------------------------------------
+  WHERE(PDATA_VEGTYPE(:, 9)>0.) PDATA_WATSUP(:,  9) =  30.
+ENDIF         
+!-------------------------------------------------------------------
+IF (PRESENT(PDATA_VEGTYPE).AND.PRESENT(PDATA_IRRIGFRAC)) THEN
+!  WHERE(PDATA_VEGTYPE(:, 8)>0.) PDATA_IRRIGFRAC(:,  8) =  0.
+!  PDATA_IRRIGFRAC(:,:) = 0.
+!-------------------------------------------------------------------
+  WHERE(PDATA_VEGTYPE(:, 9)>0.) PDATA_IRRIGFRAC(:,  9) =  1.
+ENDIF
+!------------------------------------------------------------------- 
+IF (PRESENT(PDATA_VEGTYPE).AND.PRESENT(PDATA_IRRIGFREQ)) THEN
+!  WHERE(PDATA_VEGTYPE(:, 8)>0.) PDATA_IRRIGFREQ(:,  8) =       0.
+!  PDATA_IRRIGFREQ(:,0) = 0.
+!-------------------------------------------------------------------
+  WHERE(PDATA_VEGTYPE(:, 9)>0.) PDATA_IRRIGFREQ(:,  9) =  604800.
+ENDIF
+!-------------------------------------------------------------------
+IF (PRESENT(PDATA_VEGTYPE).AND.PRESENT(PDATA_IRRIGTIME)) THEN
+!  WHERE(PDATA_VEGTYPE(:, 8)>0.) PDATA_IRRIGTIME(:,  8) =      0.
+!  PDATA_IRRIGTIME(:,:) = 0.
+!-------------------------------------------------------------------
+  WHERE(PDATA_VEGTYPE(:, 9)>0.) PDATA_IRRIGTIME(:,  9) =  28800.
+ENDIF
+!-------------------------------------------------------------------
+!IF (PRESENT(PDATA_VEGTYPE).AND.PRESENT(PDATA_F2THRESHOLD)) THEN
+!  PDATA_F2THRESHOLD(:,:,:) = XUNDEF
+!ENDIF
+!-------------------------------------------------------------------
+IF (PRESENT(PDATA_ROOT_DEPTH)) THEN
 PDATA_ROOT_DEPTH(:,  1) = (/          &
  XUNDEF, XUNDEF, XUNDEF,   0.50, XUNDEF, XUNDEF, XUNDEF, XUNDEF,   0.50, XUNDEF, &
  XUNDEF, XUNDEF, XUNDEF, XUNDEF, XUNDEF, XUNDEF, XUNDEF, XUNDEF, XUNDEF, XUNDEF, &

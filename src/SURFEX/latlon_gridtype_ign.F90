@@ -121,7 +121,7 @@ ALLOCATE(ZLATDY (SIZE(G%XLAT)))
 ALLOCATE(ZLONDY (SIZE(G%XLAT)))
 ZYDELTY=ZY+XDELTY
  CALL LATLON_IGN(ILAMBERT,ZX,ZYDELTY,ZLATDY,ZLONDY)
-!
+
 PDIR(:)= ATAN( (XA(ILAMBERT)*(ZLONDY(:)-G%XLON(:))*XPI/180.) / XDELTY) * XPI/180.
 !
 !---------------------------------------------------------------------------

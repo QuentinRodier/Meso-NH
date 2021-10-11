@@ -4,8 +4,8 @@
 !SFX_LIC for details. version 1.
 !     #########
 SUBROUTINE REPROJ_DIAG_ISBA_n (DK, DEK, DMK, PEK, OSURF_BUDGET, OSURF_EVAP_BUDGET, &
-                               OWATER_BUDGET, OSURF_MISC_BUDGET, OPROSNOW, &
-                               OMEB_PATCH, PSLOPECOS    )  
+                               OWATER_BUDGET, OSURF_MISC_BUDGET, OPROSNOW, OSNOWSYTRON, &
+                               OMEB_PATCH, PSLOPECOS )  
 !     ###############################################################################
 !
 !!****  *REPROJ_DIAG-ISBA_n * - additional diagnostics for ISBA
@@ -49,6 +49,7 @@ LOGICAL, INTENT(IN) :: OSURF_EVAP_BUDGET
 LOGICAL, INTENT(IN) :: OWATER_BUDGET 
 LOGICAL, INTENT(IN) :: OSURF_MISC_BUDGET
 LOGICAL, INTENT(IN) :: OPROSNOW
+LOGICAL, INTENT(IN) :: OSNOWSYTRON
 !
 LOGICAL, INTENT(IN) :: OMEB_PATCH
 !
@@ -211,6 +212,9 @@ IF ( OPROSNOW ) THEN
     !
   ENDIF
   !
+ENDIF
+IF ( PEK%TSNOW%SCHEME=='CRO' .AND. OSNOWSYTRON ) THEN
+  DMK%XSYTMASS (:)  =  DMK%XSYTMASS (:)  *ZCORR_SLOPE(:)
 ENDIF
 !
 IF (LHOOK) CALL DR_HOOK('REPROJ_DIAG_ISBA_N',1,ZHOOK_HANDLE)

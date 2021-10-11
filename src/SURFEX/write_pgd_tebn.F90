@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE WRITE_PGD_TEB_n (DTCO, HSELECT, U, TM, GDM, GRM, HPROGRAM)
+      SUBROUTINE WRITE_PGD_TEB_n (DTCO, HSELECT, U, TM, GDM, GRM, HM, HPROGRAM)
 !     ####################################
 !
 !!****  *WRITE_PGD_TEB_n* - routine to write pgd surface variables in their respective files
@@ -43,6 +43,7 @@ USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 USE MODD_SURFEX_n, ONLY : TEB_MODEL_t
 USE MODD_SURFEX_n, ONLY : TEB_GARDEN_MODEL_t
 USE MODD_SURFEX_n, ONLY : TEB_GREENROOF_MODEL_t
+USE MODD_SURFEX_n, ONLY : TEB_HYDRO_MODEL_t
 !
 USE MODI_INIT_IO_SURF_n
 USE MODI_WRITESURF_PGD_TEB_n
@@ -63,6 +64,7 @@ TYPE(SURF_ATM_t), INTENT(INOUT) :: U
 TYPE(TEB_MODEL_t), INTENT(INOUT) :: TM
 TYPE(TEB_GARDEN_MODEL_t), INTENT(INOUT) :: GDM
 TYPE(TEB_GREENROOF_MODEL_t), INTENT(INOUT) :: GRM
+TYPE(TEB_HYDRO_MODEL_t), INTENT(INOUT) :: HM
 !
  CHARACTER(LEN=6),    INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
@@ -82,8 +84,8 @@ CALL INIT_IO_SURF_n(DTCO, U, HPROGRAM,'TOWN  ','TEB   ','WRITE')
 !*       1.     Selection of surface scheme
 !               ---------------------------
 !
- CALL WRITESURF_PGD_TEB_n(HSELECT, TM%TOP, TM%BOP, TM%G, TM%BDD, TM%DTB, TM%DTT, TM%NT%AL(1), &
-                          TM%TIR, GDM, GRM, HPROGRAM)
+ CALL WRITESURF_PGD_TEB_n(HSELECT, TM%TOP, TM%SPAOP, TM%BOP, TM%G, TM%BDD, TM%DTB, TM%DTT, TM%NT%AL(1), &
+                          TM%TIR, GDM, GRM, HM, HPROGRAM)
 !
 !-------------------------------------------------------------------------------
 !

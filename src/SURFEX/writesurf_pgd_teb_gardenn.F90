@@ -45,7 +45,7 @@ USE MODD_TEB_n, ONLY : TEB_t
 USE MODD_ISBA_OPTIONS_n, ONLY : ISBA_OPTIONS_t
 USE MODD_ISBA_n, ONLY : ISBA_K_t, ISBA_P_t
 !
-USE MODD_SURF_PAR,          ONLY : XUNDEF, NUNDEF
+USE MODD_SURF_PAR,          ONLY : XUNDEF, NUNDEF, LEN_HREC
 !
 USE MODI_WRITE_SURF
 !
@@ -73,13 +73,9 @@ CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM ! program calling
 !*       0.2   Declarations of local variables
 !              -------------------------------
 !
-INTEGER           :: IRESP          ! IRESP  : return-code if a problem appears
-CHARACTER(LEN=LEN_HREC) :: YRECFM         ! Name of the article to be read
-CHARACTER(LEN=100):: YCOMMENT       ! Comment string
-CHARACTER(LEN=4 ) :: YLVL
-!
-REAL, DIMENSION(:), ALLOCATABLE :: ZWORK
-INTEGER :: JJ, JL
+INTEGER           :: IRESP    ! IRESP  : return-code if a problem appears
+CHARACTER(LEN=LEN_HREC) :: YRECFM   ! Name of the article to be read
+CHARACTER(LEN=100):: YCOMMENT ! Comment string
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
@@ -92,17 +88,6 @@ IF (LHOOK) CALL DR_HOOK('WRITESURF_PGD_TEB_GARDEN_N',0,ZHOOK_HANDLE)
 YRECFM='GD_ISBA'
 YCOMMENT=YRECFM
  CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,IO%CISBA,IRESP,HCOMMENT=YCOMMENT)
-!
-!* Reference grid for DIF
-!
-IF(IO%CISBA=='DIF') THEN
-  DO JL=1,IO%NGROUND_LAYER
-     WRITE(YLVL,'(I4)') JL     
-     YRECFM='GD_SGRID'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
-     YCOMMENT='Depth of TEB Garden soilgrid layer '//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
-     CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,IO%XSOILGRID(JL),IRESP,HCOMMENT=YCOMMENT)
-  END DO 
-ENDIF
 !
 !* number of soil layers
 !

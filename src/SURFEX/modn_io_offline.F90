@@ -35,6 +35,8 @@
 !!      Original    04/2008
 !!      P. Lemoigne 04/2013 Add XDELTA_OROG to fix the maximum difference allowed between
 !!                          forcing and surface file orographies if LSET_FORC_ZS=.F
+!!      M. Dumont 12/2016 spectral calculation for Crocus CSPECSNOW
+!!      Y. Seity  09/2018 add LFAGMAP
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -74,6 +76,7 @@ LOGICAL          :: LRESTART_2M = .FALSE.  ! write restart file
 LOGICAL          :: LINQUIRE    = .FALSE.  ! inquiry mode
 !      
 LOGICAL          :: LWRITE_COORD = .FALSE. ! write lat/lon of the target grid
+LOGICAL          :: LWRITE_TOPO  = .FALSE. ! write topography of the target grid
 !
 LOGICAL          :: LOUT_TIMENAME = .FALSE.! change the name of output file at the end of a day
                                            ! (ex: 19860502_00h00 -> 19860501_24h00)
@@ -129,7 +132,9 @@ LOGICAL          :: LLAND_USE = .FALSE.
 !     ----------
 !
 LOGICAL          :: LADAPT_SW = .FALSE.
-LOGICAL          :: LINTERP_SW = .FALSE.
+CHARACTER(LEN=3) :: CINTERP_SW = 'ZEN'   ! 'LIN' : linear temporal interpolation of SW forcing
+                                         ! 'OLD' : interpolation using simple       zenithal angle dependancy (old method)
+                                         ! 'ZEN' : interpolation using theroretical zenithal angle dependancy (new method)
 !
 !*    General flag to modify direct solar radiation due to slopes and shadows.
 !     ----------
@@ -147,6 +152,20 @@ REAL            :: XIO_FRAC = 1.          ! fraction of ISIZE deduced to I/O
 !
 CHARACTER(LEN=4) :: YALG_MPI = "LIN "     ! type of distribution algorithm for MPI
 !
+
+LOGICAL         :: LFAGMAP = .FALSE.
+
+! * autorize spectral caculation for snow 
+LOGICAL     :: CSPECSNOW=.FALSE.
+
+! * forcing of impurity deposit coefficients
+LOGICAL     :: LFORCIMP=.FALSE.
+!
+INTEGER     :: NIMPUROF=0  !Number of impurity types in the run, similar to nimpur variable but available in Offline
+!
+! * autorize forcing of total aerosol optical depth and ozone column
+LOGICAL     :: LFORCATMOTARTES=.FALSE.
+!
 !-------------------------------------------------------------------------------
 !
 !*       1.    NAMELISTS
@@ -156,11 +175,14 @@ NAMELIST/NAM_IO_OFFLINE/CSURF_FILETYPE, CTIMESERIES_FILETYPE, CFORCING_FILETYPE,
                         CPGDFILE, CPREPFILE, CSURFFILE, LRESTART_2M,             &
                         LPRINT, LRESTART, LINQUIRE, NSCAL, NHALO,                &
                         XTSTEP_SURF, XTSTEP_OUTPUT, LDIAG_FA_NOCOMPACT,          &
-                        LSET_FORC_ZS, LWRITE_COORD, LOUT_TIMENAME, LLIMIT_QAIR,  &
+                        LSET_FORC_ZS, LWRITE_COORD, LWRITE_TOPO,                 &
+                        LOUT_TIMENAME, LLIMIT_QAIR,                              &
                         LSHADOWS_SLOPE,LSHADOWS_OTHER, LWR_VEGTYPE,              &
                         NB_READ_FORC, LLAND_USE, NPROMA, NI, NJ, XIO_FRAC,       &
-                        YALG_MPI, XDELTA_OROG, LADAPT_SW, LINTERP_SW,            &
-                        LALLOW_ADD_DIM, LDELAYEDSTART_NC, NDATESTOP
+                        YALG_MPI, XDELTA_OROG, LADAPT_SW, CINTERP_SW, LFAGMAP,            &
+                        LALLOW_ADD_DIM, LDELAYEDSTART_NC, NDATESTOP, CSPECSNOW,  &
+                        LFORCIMP,NIMPUROF, LFORCATMOTARTES              
+                        
 !
 !-------------------------------------------------------------------------------
 END MODULE MODN_IO_OFFLINE

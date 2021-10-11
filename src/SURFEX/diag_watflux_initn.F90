@@ -33,6 +33,7 @@
 !!    -------------
 !!      Original    01/2004 
 !       B. decharme 04/2013 : Add EVAP and SUBL diag
+!!      C. Lebeaupin 01/2020 : Add surface pressure coupling parameter
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -46,7 +47,7 @@ USE MODD_WATFLUX_n, ONLY : WATFLUX_t
 #ifdef SFX_OL
 USE MODN_IO_OFFLINE,     ONLY : LRESTART
 #endif
-USE MODD_SURF_PAR,       ONLY : XUNDEF
+USE MODD_SURF_PAR,       ONLY : XUNDEF, LEN_HREC
 USE MODD_SFX_OASIS,      ONLY : LCPL_SEA, LCPL_SEAICE
 !
 !
@@ -172,6 +173,7 @@ IF(LCPL_SEA)THEN
   ALLOCATE(W%XCPL_WATER_RAIN(KLU))
   ALLOCATE(W%XCPL_WATER_SNOW(KLU))
   ALLOCATE(W%XCPL_WATER_FWSM(KLU))
+  ALLOCATE(W%XCPL_WATER_PRES(KLU))
   W%XCPL_WATER_WIND(:) = 0.0
   W%XCPL_WATER_FWSU(:) = 0.0
   W%XCPL_WATER_FWSV(:) = 0.0
@@ -181,6 +183,7 @@ IF(LCPL_SEA)THEN
   W%XCPL_WATER_RAIN(:) = 0.0
   W%XCPL_WATER_SNOW(:) = 0.0        
   W%XCPL_WATER_FWSM(:) = 0.0
+  W%XCPL_WATER_PRES(:) = 0.0
 !
 ELSE
   ALLOCATE(W%XCPL_WATER_WIND(0))
@@ -192,6 +195,7 @@ ELSE
   ALLOCATE(W%XCPL_WATER_RAIN(0))
   ALLOCATE(W%XCPL_WATER_SNOW(0))
   ALLOCATE(W%XCPL_WATER_FWSM(0))
+  ALLOCATE(W%XCPL_WATER_PRES(0))
 ENDIF
 !
 IF(LCPL_SEAICE)THEN

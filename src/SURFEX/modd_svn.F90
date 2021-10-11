@@ -46,7 +46,7 @@ TYPE SV_t
   INTEGER    :: NSV_SLTBEG, NSV_SLTEND    ! index of first and last sea salt related scalar variable
   INTEGER    :: NSLTEQ                    ! number of sea salt related species in scalar variables list
   INTEGER    :: NSV_AERBEG, NSV_AEREND    ! index of first and last aerosol related scalar variabl
-  INTEGER    :: NAEREQ                    ! number of aerosols variables$
+  INTEGER    :: NAEREQ                    ! number of aerosols variables
   INTEGER    :: NSV_SNWBEG, NSV_SNWEND    ! index of first and last blowing snow related scalar variable
   INTEGER    :: NSNWEQ                    ! number of blowing snow related species in scalar variables list
   INTEGER    :: N2D_SNWBEG, N2D_SNWEND    ! index of first and last blowing snow 2D variable sent to MNH

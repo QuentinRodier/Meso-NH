@@ -3,9 +3,9 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########################
-      SUBROUTINE ARRANGE_COVER (DTCO, OWATER_TO_NATURE, OTOWN_TO_ROCK, &
+      SUBROUTINE ARRANGE_COVER (DTCO, OECOSG, OWATER_TO_NATURE, OTOWN_TO_ROCK, &
                                 PDATA_NATURE,PDATA_TOWN,PDATA_SEA,PDATA_WATER,PDATA_VEGTYPE, &
-                               PDATA_GARDEN, OGARDEN, PDATA_BLD, PDATA_WALL_O_HOR           )
+                               PDATA_GARDEN, OGARDEN, PDATA_BLD, PDATA_ROAD, PDATA_WALL_O_HOR )
 !     #########################
 !
 !!**** *ARRANGE_COVER*
@@ -39,6 +39,7 @@
 !!    Original    03/2009
 !!                04/2013 (V. Masson) Fusion of Arrange_cover & update_data_frac
 !!                        to allow distinct cover change options between submodels (_n)
+!!                02/2019 (A. Druel) TOWN_TO_ROCK with ECOSG (Fix bug). #rustine
 !----------------------------------------------------------------------------
 !
 !*    0.     DECLARATION
@@ -55,7 +56,8 @@ USE MODD_DATA_COVER,     ONLY : XDATA_ROOT_DEPTH, XDATA_GROUND_DEPTH, XDATA_DICE
                                 XDATA_ALB_VEG_NIR, XDATA_ALB_VEG_VIS,             &
                                 XDATA_ALB_SOIL_NIR, XDATA_ALB_SOIL_VIS
 !
-USE MODD_DATA_COVER_PAR, ONLY : NVEGTYPE, JPCOVER, NROCK, NVT_ROCK
+USE MODD_DATA_COVER_PAR, ONLY : NVEGTYPE, JPCOVER, NROCK, NVT_ROCK, &
+                                NTYPE                                 ! #rustine
 !
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -69,6 +71,7 @@ IMPLICIT NONE
 !
 TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
 !
+LOGICAL, INTENT(IN) :: OECOSG                                         ! #rustine
 LOGICAL, INTENT(IN) :: OWATER_TO_NATURE
 LOGICAL, INTENT(IN) :: OTOWN_TO_ROCK
 REAL, DIMENSION(:), INTENT(IN)  :: PDATA_NATURE
@@ -79,6 +82,7 @@ REAL, DIMENSION(:), INTENT(IN)  :: PDATA_GARDEN
 REAL, DIMENSION(:,:),INTENT(IN) :: PDATA_VEGTYPE
 LOGICAL,            INTENT(IN)  :: OGARDEN
 REAL, DIMENSION(:), INTENT(IN)  :: PDATA_BLD
+REAL, DIMENSION(:), INTENT(IN)  :: PDATA_ROAD
 REAL, DIMENSION(:), INTENT(IN)  :: PDATA_WALL_O_HOR
 !
 !
@@ -147,27 +151,29 @@ ENDIF
 !-------------------------------------------------------------------------------
 !
 IF(OTOWN_TO_ROCK)THEN
-!        
+!
+  IF (OECOSG) DTCO%XDATA_VEGTYPE(SUM(NTYPE(1:3))+1:SUM(NTYPE(1:3))+10,NVT_ROCK)=1. ! #rustine
+  !
   DO JCOVER=1,JPCOVER
      IF(DTCO%XDATA_TOWN(JCOVER)>0.0.OR.DTCO%XDATA_GARDEN(JCOVER)>0.0)THEN
-!
+       !
        DTCO%XDATA_NATURE(JCOVER) = DTCO%XDATA_NATURE(JCOVER) + DTCO%XDATA_GARDEN(JCOVER) * DTCO%XDATA_TOWN(JCOVER)
        DTCO%XDATA_TOWN  (JCOVER) = DTCO%XDATA_TOWN  (JCOVER) * ( 1. - DTCO%XDATA_GARDEN(JCOVER))
        DTCO%XDATA_GARDEN(JCOVER) = 0.0
-!
+       !
        ZWORK=DTCO%XDATA_NATURE(JCOVER)+DTCO%XDATA_TOWN(JCOVER)
-!       
+       !
        DO JVEGTYPE=1,NVEGTYPE
              DTCO%XDATA_VEGTYPE(JCOVER,JVEGTYPE)=DTCO%XDATA_VEGTYPE(JCOVER,JVEGTYPE)*DTCO%XDATA_NATURE(JCOVER)/ZWORK
        ENDDO
-!      
+       !
        DTCO%XDATA_VEGTYPE(JCOVER,NVT_ROCK) = DTCO%XDATA_VEGTYPE(JCOVER,NVT_ROCK)+DTCO%XDATA_TOWN(JCOVER)/ZWORK
-!
+       !
        DTCO%XDATA_NATURE(JCOVER)=DTCO%XDATA_NATURE(JCOVER)+DTCO%XDATA_TOWN(JCOVER)
-!       
-       DTCO%XDATA_TOWN  (JCOVER)=0.0
-!
-!      Initialise some variables
+       !
+       DTCO%XDATA_TOWN(JCOVER)=0.0
+       !
+       ! Initialise some variables
        XDATA_LAI          (JCOVER,:,NVT_ROCK) = 0.0
        XDATA_LAI_ALL_YEARS(JCOVER,:,NVT_ROCK) = 0.0
        XDATA_ROOT_DEPTH   (JCOVER,  NVT_ROCK) = 0.2
@@ -177,16 +183,16 @@ IF(OTOWN_TO_ROCK)THEN
        XDATA_ALB_VEG_VIS  (JCOVER,:,NVT_ROCK) = 0.1
        XDATA_ALB_SOIL_NIR (JCOVER,:,NVT_ROCK) = 0.3
        XDATA_ALB_SOIL_VIS (JCOVER,:,NVT_ROCK) = 0.1
-!
+       !
      ENDIF
   ENDDO
-!
+  !
 ELSE
-!-------------------------------------------------------------------------------
-! Town is kept, but if gardens are not treated specifically, 
-! they are included into nature fraction.
-!-------------------------------------------------------------------------------
-!
+  !-------------------------------------------------------------------------------
+  ! Town is kept, but if gardens are not treated specifically, 
+  ! they are included into nature fraction.
+  !-------------------------------------------------------------------------------
+  !
   IF (.NOT. OGARDEN) THEN
     DTCO%XDATA_NATURE     = DTCO%XDATA_NATURE + DTCO%XDATA_GARDEN * DTCO%XDATA_TOWN
     DTCO%XDATA_TOWN       = DTCO%XDATA_TOWN   * ( 1. - DTCO%XDATA_GARDEN)
@@ -194,7 +200,7 @@ ELSE
     DTCO%XDATA_WALL_O_HOR = DTCO%XDATA_WALL_O_HOR / (1. - DTCO%XDATA_GARDEN)
     DTCO%XDATA_GARDEN     = 0.    
   END IF
-!
+  !
 ENDIF
 !-------------------------------------------------------------------------------
 !-------------------------------------------------------------------------------

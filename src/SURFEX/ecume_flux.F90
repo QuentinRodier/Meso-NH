@@ -54,6 +54,7 @@
 !!      Modified        10/2012  P. Le Moigne: extra inputs for FLake use
 !!      Modified        06/2013  B. Decharme: bug in z0 (output) computation 
 !!      Modified        06/2013  J.Escobar : for REAL4/8 add EPSILON management
+!!      Modified        10/2016  P. Marguinaud : Port to single precision
 !!!
 !-------------------------------------------------------------------------------
 
@@ -147,8 +148,12 @@ REAL, DIMENSION(SIZE(PTA))        :: ZDIRCOSZW ! orography slope cosine
 
 REAL, DIMENSION(SIZE(PTA))        :: ZLV,ZLR   ! vap.heat, sea/atm level (J/kg)
 REAL, DIMENSION(SIZE(PTA))        :: ZDU,ZDTH,ZDQ,ZDUWG
+REAL, DIMENSION(SIZE(PTA))        :: ZTSRODT   ! ZTSR / ZDTH
+REAL, DIMENSION(SIZE(PTA))        :: ZQSRODQ   ! ZQSR /  ZDQ
                                                ! vert. gradients (real atm.)
 REAL, DIMENSION(SIZE(PTA))        :: ZDELTAU10N,ZDELTAT10N,ZDELTAQ10N
+REAL, DIMENSION(SIZE(PTA))        :: ZDELTAT10NODT
+REAL, DIMENSION(SIZE(PTA))        :: ZDELTAQ10NODQ
                                                ! vert. gradients (10-m, neutral)
 REAL, DIMENSION(SIZE(PTA))        :: ZCHN,ZCEN ! neutral coef. for T,Q
 REAL, DIMENSION(SIZE(PTA))        :: ZD0
@@ -163,7 +168,8 @@ REAL    :: ZBETAGUST       ! gustiness factor
 REAL    :: ZZBL            !atm. boundary layer depth (m)
 !
 REAL    :: ZCHIC,ZCHIK,ZEPS,ZLOGHS10,ZLOGTS10,ZPI,ZPIS2,ZPSIC,ZPSIK, &
-             ZSQR3,ZZDQ,ZZDTH  
+             ZSQR3,ZZDQ,ZZDTH
+REAL    :: ZUSR2,ZTSR2,ZQSR2
 !
 REAL    :: ZALFAC,ZCPLW,ZDQSDT,ZDTMP,ZDWAT,ZP00,ZTAC,ZWW
                                 ! to compute rainfall impact & Webb correction
@@ -252,6 +258,8 @@ ENDIF
 ZDELTAU10N(:) = ZDUWG(:)
 ZDELTAT10N(:) = ZDTH (:)*ZD0(:)
 ZDELTAQ10N(:) = ZDQ  (:)
+ZDELTAT10NODT(:) = ZD0(:)
+ZDELTAQ10NODQ(:) = 1.
 !
 !       2.4. Latent heat of vaporisation
 !
@@ -324,9 +332,16 @@ DO JJ=1,NITERFL
 !
 !       3.4. Scaling parameters and roughness lenght
 !
-    ZUSR(JLON) = SQRT(PCDN(JLON))*ZDELTAU10N(JLON)
-    ZTSR(JLON) = ZCHN(JLON)/SQRT(PCDN(JLON))*ZDELTAT10N(JLON)
-    ZQSR(JLON) = ZCEN(JLON)/SQRT(PCDN(JLON))*ZDELTAQ10N(JLON)
+    ZUSR2 = SQRT(PCDN(JLON))
+    ZTSR2 = ZCHN(JLON)/SQRT(PCDN(JLON))
+    ZQSR2 = ZCEN(JLON)/SQRT(PCDN(JLON))
+
+    ZTSRODT(JLON)=ZTSR2*ZDELTAT10NODT(JLON)
+    ZQSRODQ(JLON)=ZQSR2*ZDELTAQ10NODQ(JLON)
+
+    ZUSR     (JLON) = ZUSR2*ZDELTAU10N(JLON)
+    ZTSR     (JLON) = ZTSR2*ZDELTAT10N(JLON)
+    ZQSR     (JLON) = ZQSR2*ZDELTAQ10N(JLON)
 !
 !       3.5. Gustiness factor ZWG following Mondon & Redelsperger (1998)
 !
@@ -391,6 +406,9 @@ DO JJ=1,NITERFL
     ZDELTAT10N(JLON) = ZDTH (JLON)-ZTSR(JLON)*(ZLOGTS10-ZPSI_T)/XKARMAN
     ZDELTAQ10N(JLON) = ZDQ  (JLON)-ZQSR(JLON)*(ZLOGTS10-ZPSI_T)/XKARMAN
 
+    ZDELTAT10NODT(JLON)=1.-ZTSRODT(JLON)*(ZLOGTS10-ZPSI_T)/XKARMAN
+    ZDELTAQ10NODQ(JLON)=1.-ZQSRODQ(JLON)*(ZLOGTS10-ZPSI_T)/XKARMAN
+
   ENDDO
 ENDDO
 !
@@ -403,15 +421,9 @@ DO JLON=1,SIZE(PTA)
 !
 !       4.1. Exchange coefficients PCD, PCH, PCE
 !
-  ZZDTH = 0.5* &
-           ((1.0+SIGN(1.0,ZDTH(JLON)))*MAX(ZDTH(JLON),ZEPS) &
-           +(1.0-SIGN(1.0,ZDTH(JLON)))*MIN(ZDTH(JLON),-ZEPS))  
-  ZZDQ  = 0.5* &
-           ((1.0+SIGN(1.0,ZDQ(JLON)))*MAX(ZDQ(JLON),ZEPS)   &
-           +(1.0-SIGN(1.0,ZDQ(JLON)))*MIN(ZDQ(JLON),-ZEPS))  
   PCD(JLON) = (ZUSR(JLON)/ZDUWG(JLON))**2
-  PCH(JLON) = ZUSR(JLON)*ZTSR(JLON)/(ZDUWG(JLON)*ZZDTH)
-  PCE(JLON) = ZUSR(JLON)*ZQSR(JLON)/(ZDUWG(JLON)*ZZDQ)
+  PCH(JLON) = (ZUSR(JLON)/ZDUWG(JLON))*ZTSRODT(JLON)
+  PCE(JLON) = (ZUSR(JLON)/ZDUWG(JLON))*ZQSRODQ(JLON)
 !
 !       4.2. Surface turbulent fluxes
 !            (ATM CONV.: ZTAU<<0 ; ZHF,ZEF<0 if atm looses heat)

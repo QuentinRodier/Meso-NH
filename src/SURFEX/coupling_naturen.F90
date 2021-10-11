@@ -3,14 +3,15 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     ###############################################################################
-SUBROUTINE COUPLING_NATURE_n (DTCO, UG, U, USS, IM, DTZ, DGO, DL, DLC, NDST, SLT, BLOWSNW, &
+SUBROUTINE COUPLING_NATURE_n (DTCO, UG, U, USS, IM, DTZ, DGO, DL, DLC, NDST, DST, SLT, BLOWSNW, &
                               HPROGRAM, HCOUPLING, PTIMEC, PTSTEP, KYEAR, KMONTH, KDAY, PTIME, &
                               KI, KSV, KSW, PTSUN, PZENITH, PZENITH2, PAZIM, PZREF, PUREF, PZS,&
-                              PU, PV, PQA, PTA, PRHOA, PSV, PCO2, HSV, PRAIN, PSNOW, PLW,      &
-                              PDIR_SW, PSCA_SW, PSW_BANDS, PPS, PPA, PSFTQ, PSFTH, PSFTS,      &
-                              PSFCO2, PSFU, PSFV, PTRAD, PDIR_ALB, PSCA_ALB, PEMIS, PTSURF,    &
+                              PU, PV, PQA, PTA, PRHOA, PSV, PCO2, PIMPWET, PIMPDRY, HSV, PRAIN,&
+                              PSNOW, PLW, PDIR_SW, PSCA_SW, PSW_BANDS, PPS, PPA, PSFTQ, PSFTH, &
+                              PSFTS,PSFCO2, PSFU, PSFV, PTRAD, PDIR_ALB, PSCA_ALB, PEMIS, PTSURF, &
                               PZ0, PZ0H, PQSURF, PPEW_A_COEF, PPEW_B_COEF, PPET_A_COEF,        &
                               PPEQ_A_COEF, PPET_B_COEF, PPEQ_B_COEF, HTEST  )  
+
 !     ###############################################################################
 !
 !!****  *COUPLING_NATURE_n * - Chooses the surface schemes for natural continental parts  
@@ -37,6 +38,9 @@ SUBROUTINE COUPLING_NATURE_n (DTCO, UG, U, USS, IM, DTZ, DGO, DL, DLC, NDST, SLT
 !!      Q. Rodier    11/2018 correction: wrong time variable in call coupling_tsz0  (PTIMEC --> PTIME) 
 !!--------------------------------------------------------------------
 !
+!
+USE MODD_PREP_SNOW, ONLY : NIMPUR
+!
 USE MODD_SURFEX_n, ONLY : ISBA_MODEL_t
 !
 USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
@@ -45,7 +49,7 @@ USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 USE MODD_SSO_n, ONLY : SSO_t
 USE MODD_DATA_TSZ0_n, ONLY : DATA_TSZ0_t
 USE MODD_DIAG_n, ONLY : DIAG_t, DIAG_OPTIONS_t
-USE MODD_DST_n, ONLY : DST_NP_t
+USE MODD_DST_n, ONLY : DST_NP_t, DST_t
 USE MODD_SLT_n, ONLY : SLT_t
 USE MODD_BLOWSNW_n, ONLY : BLOWSNW_t
 !
@@ -74,6 +78,7 @@ TYPE(DIAG_OPTIONS_t), INTENT(IN) :: DGO
 TYPE(DIAG_t), INTENT(INOUT) :: DL
 TYPE(DIAG_t), INTENT(INOUT) :: DLC
 TYPE(DST_NP_t), INTENT(INOUT) :: NDST
+TYPE(DST_t), INTENT(INOUT) :: DST
 TYPE(SLT_t), INTENT(INOUT) :: SLT
 TYPE(BLOWSNW_t), INTENT(INOUT) :: BLOWSNW
 !
@@ -82,9 +87,9 @@ TYPE(BLOWSNW_t), INTENT(INOUT) :: BLOWSNW
                                               ! 'E' : explicit
                                               ! 'I' : implicit
 REAL,                INTENT(IN)  :: PTIMEC    ! cumulated time since beginning of simulation
-INTEGER,             INTENT(IN)  :: KYEAR     ! current year (UTC)
-INTEGER,             INTENT(IN)  :: KMONTH    ! current month (UTC)
-INTEGER,             INTENT(IN)  :: KDAY      ! current day (UTC)
+INTEGER,             INTENT(INOUT)  :: KYEAR     ! current year (UTC)
+INTEGER,             INTENT(INOUT)  :: KMONTH    ! current month (UTC)
+INTEGER,             INTENT(INOUT)  :: KDAY      ! current day (UTC)
 REAL,                INTENT(IN)  :: PTIME     ! current time since midnight (UTC, s)
 INTEGER,             INTENT(IN)  :: KI        ! number of points
 INTEGER,             INTENT(IN)  :: KSV       ! number of scalars
@@ -117,6 +122,8 @@ REAL, DIMENSION(KI), INTENT(IN)  :: PPS       ! pressure at atmospheric model su
 REAL, DIMENSION(KI), INTENT(IN)  :: PPA       ! pressure at forcing level             (Pa)
 REAL, DIMENSION(KI), INTENT(IN)  :: PZS       ! atmospheric model orography           (m)
 REAL, DIMENSION(KI), INTENT(IN)  :: PCO2      ! CO2 concentration in the air          (kg/m3)
+REAL, DIMENSION(KI,NIMPUR), INTENT(IN) :: PIMPWET ! Wet impur deposition
+REAL, DIMENSION(KI,NIMPUR), INTENT(IN) :: PIMPDRY ! Dry impur deposition
 REAL, DIMENSION(KI), INTENT(IN)  :: PSNOW     ! snow precipitation                    (kg/m2/s)
 REAL, DIMENSION(KI), INTENT(IN)  :: PRAIN     ! liquid precipitation                  (kg/m2/s)
 !
@@ -153,18 +160,20 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 IF (LHOOK) CALL DR_HOOK('COUPLING_NATURE_N',0,ZHOOK_HANDLE)
 IF (U%CNATURE=='ISBA  ') THEN
-  CALL COUPLING_ISBA_SVAT_n(DTCO, UG, U, USS, IM, NDST, SLT, BLOWSNW, HPROGRAM, HCOUPLING,  PTSTEP,    &
-                            KYEAR, KMONTH, KDAY, PTIME, KI, KSV, KSW,  PTSUN, PZENITH,&
+  CALL COUPLING_ISBA_SVAT_n(DTCO, UG, U, USS, IM, NDST, DST, SLT, BLOWSNW, HPROGRAM, HCOUPLING, PTSTEP, &
+                            KYEAR, KMONTH, KDAY, PTIME, KI, KSV, KSW,  PTSUN, PZENITH,       &
                             PZENITH2, PAZIM, PZREF, PUREF, PZS, PU, PV, PQA, PTA, PRHOA, PSV,&
-                            PCO2, HSV, PRAIN, PSNOW, PLW, PDIR_SW, PSCA_SW, PSW_BANDS, PPS,  &
+                            PCO2,PIMPWET,PIMPDRY, HSV, PRAIN, PSNOW, PLW, PDIR_SW, PSCA_SW,  &
+                            PSW_BANDS, PPS,  &
                             PPA, PSFTQ, PSFTH, PSFTS, PSFCO2, PSFU, PSFV, PTRAD, PDIR_ALB,   &
                             PSCA_ALB, PEMIS, PTSURF, PZ0, PZ0H, PQSURF, PPEW_A_COEF,         &
                             PPEW_B_COEF, PPET_A_COEF, PPEQ_A_COEF, PPET_B_COEF, PPEQ_B_COEF,'OK')  
 ELSE IF (U%CNATURE=='TSZ0  ') THEN
-  CALL COUPLING_TSZ0_n(DTCO, UG, U, USS, IM, DTZ,  NDST, SLT, BLOWSNW,     &
+  CALL COUPLING_TSZ0_n(DTCO, UG, U, USS, IM, DTZ,  NDST, DST, SLT, BLOWSNW,     &
                        HPROGRAM, HCOUPLING, PTSTEP, KYEAR, KMONTH, KDAY, PTIME, KI,    &
                        KSV, KSW, PTSUN, PZENITH,  PZENITH2, PAZIM, PZREF, PUREF, PZS,   &
-                       PU, PV, PQA, PTA, PRHOA, PSV, PCO2, HSV, PRAIN, PSNOW, PLW,      &
+                       PU, PV, PQA, PTA, PRHOA, PSV, PCO2,PIMPWET,PIMPDRY, HSV, PRAIN,  &
+                       PSNOW, PLW,      &
                        PDIR_SW, PSCA_SW, PSW_BANDS, PPS, PPA, PSFTQ, PSFTH, PSFTS,      &
                        PSFCO2, PSFU, PSFV, PTRAD, PDIR_ALB, PSCA_ALB, PEMIS, PTSURF,    &
                        PZ0, PZ0H, PQSURF, PPEW_A_COEF, PPEW_B_COEF,  PPET_A_COEF,       &

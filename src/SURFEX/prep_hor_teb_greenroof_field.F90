@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-SUBROUTINE PREP_HOR_TEB_GREENROOF_FIELD (DTCO, UG, U, USS, GCP, IO, S, K, P, PEK, TG, TOP,  &
+SUBROUTINE PREP_HOR_TEB_GREENROOF_FIELD (DTCO, UG, U, USS, GCP, IO, S, K, P, PEK, TG, TOP,  NPAR_VEG_IRR_USE, &
                                          HPROGRAM,HSURF,HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE,KPATCH,YDCTL)
 !     #################################################################################################
 !
@@ -27,27 +27,30 @@ SUBROUTINE PREP_HOR_TEB_GREENROOF_FIELD (DTCO, UG, U, USS, GCP, IO, S, K, P, PEK
 !!
 !!    MODIFICATIONS
 !!    -------------
-!!      Original    07/2011
+!!      Original      07/2011
 !!      P. Marguinaud 10/2014, Support for a 2-part PREP
+!!      M. Dumont     02/2016, Prognostic impurity content for Crocus
+!!      A. Druel      02/2019, Adapt the code to be compatible with irrigation and transmit NPAR_VEG_IRR_USE
+!!
 !!------------------------------------------------------------------
 !
 !
-USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
-USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
-USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
-USE MODD_SSO_n, ONLY : SSO_t
-USE MODD_GRID_CONF_PROJ_n, ONLY : GRID_CONF_PROJ_t
+USE MODD_DATA_COVER_n,       ONLY : DATA_COVER_t
+USE MODD_SURF_ATM_GRID_n,    ONLY : SURF_ATM_GRID_t
+USE MODD_SURF_ATM_n,         ONLY : SURF_ATM_t
+USE MODD_SSO_n,              ONLY : SSO_t
+USE MODD_GRID_CONF_PROJ_n,   ONLY : GRID_CONF_PROJ_t
 !
-USE MODD_ISBA_n, ONLY : ISBA_S_t, ISBA_K_t, ISBA_P_t, ISBA_PE_t
-USE MODD_ISBA_OPTIONS_n, ONLY : ISBA_OPTIONS_t
+USE MODD_ISBA_n,             ONLY : ISBA_S_t, ISBA_K_t, ISBA_P_t, ISBA_PE_t
+USE MODD_ISBA_OPTIONS_n,     ONLY : ISBA_OPTIONS_t
 !
-USE MODD_SFX_GRID_n, ONLY : GRID_t
-USE MODD_TEB_OPTION_n, ONLY : TEB_OPTIONS_t
+USE MODD_SFX_GRID_n,         ONLY : GRID_t
+USE MODD_TEB_OPTION_n,       ONLY : TEB_OPTIONS_t
 !
 USE MODD_TYPE_SNOW
-USE MODD_TYPE_DATE_SURF, ONLY : DATE_TIME
-USE MODD_GRID_GRIB, ONLY : CINMODEL
-USE MODD_SURFEX_MPI, ONLY : NRANK, NPIO, NCOMM, NPROC
+USE MODD_TYPE_DATE_SURF,     ONLY : DATE_TIME
+USE MODD_GRID_GRIB,          ONLY : CINMODEL
+USE MODD_SURFEX_MPI,         ONLY : NRANK, NPIO, NCOMM, NPROC
 USE MODD_PREP,               ONLY : CINGRID_TYPE, CINTERP_TYPE, XZS_LS, LINTERP, CMASK
 USE MODD_PREP_TEB_GREENROOF, ONLY : XGRID_SOIL, NGRID_LEVEL,                     &
                                     XWSNOW_GR, XRSNOW_GR, XTSNOW_GR,XLWCSNOW_GR, &
@@ -55,8 +58,10 @@ USE MODD_PREP_TEB_GREENROOF, ONLY : XGRID_SOIL, NGRID_LEVEL,                    
 USE MODD_ISBA_PAR,           ONLY : XWGMIN
 USE MODD_DATA_COVER_PAR,     ONLY : NVEGTYPE
 USE MODD_SURF_PAR,           ONLY : XUNDEF
+USE MODD_AGRI,               ONLY : NVEG_IRR
+USE MODD_PREP_SNOW,          ONLY : NIMPUR
 !
-USE MODE_PREP_CTL, ONLY : PREP_CTL, PREP_CTL_CAN
+USE MODE_PREP_CTL,           ONLY : PREP_CTL, PREP_CTL_CAN
 !
 USE MODI_PREP_GRIB_GRID
 USE MODI_READ_PREP_TEB_GREENROOF_CONF
@@ -87,22 +92,23 @@ INCLUDE "mpif.h"
 !*      0.1    declarations of arguments
 !
 !
-TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
+TYPE(DATA_COVER_t),    INTENT(INOUT) :: DTCO
 TYPE(SURF_ATM_GRID_t), INTENT(INOUT) :: UG
-TYPE(SURF_ATM_t), INTENT(INOUT) :: U
-TYPE(SSO_t), INTENT(INOUT) :: USS
+TYPE(SURF_ATM_t),      INTENT(INOUT) :: U
+TYPE(SSO_t),           INTENT(INOUT) :: USS
 TYPE(GRID_CONF_PROJ_t),INTENT(INOUT) :: GCP
 !
-TYPE(ISBA_OPTIONS_t), INTENT(INOUT) :: IO
-TYPE(ISBA_S_t), INTENT(INOUT) :: S
-TYPE(ISBA_K_t), INTENT(INOUT) :: K
-TYPE(ISBA_P_t), INTENT(INOUT) :: P
-TYPE(ISBA_PE_t), INTENT(INOUT) :: PEK
+TYPE(ISBA_OPTIONS_t),  INTENT(INOUT) :: IO
+TYPE(ISBA_S_t),        INTENT(INOUT) :: S
+TYPE(ISBA_K_t),        INTENT(INOUT) :: K
+TYPE(ISBA_P_t),        INTENT(INOUT) :: P
+TYPE(ISBA_PE_t),       INTENT(INOUT) :: PEK
 !
-TYPE(GRID_t), INTENT(INOUT) :: TG
-TYPE(TEB_OPTIONS_t), INTENT(INOUT) :: TOP
-TYPE (PREP_CTL),    INTENT(INOUT) :: YDCTL
+TYPE(GRID_t),          INTENT(INOUT) :: TG
+TYPE(TEB_OPTIONS_t),   INTENT(INOUT) :: TOP
+TYPE (PREP_CTL),       INTENT(INOUT) :: YDCTL
 !
+INTEGER,DIMENSION(:),INTENT(IN)  :: NPAR_VEG_IRR_USE ! vegtype with irrigation
  CHARACTER(LEN=6),   INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
  CHARACTER(LEN=7),   INTENT(IN)  :: HSURF     ! type of field
  CHARACTER(LEN=28),  INTENT(IN)  :: HATMFILE    ! name of the Atmospheric file
@@ -131,9 +137,11 @@ REAL, ALLOCATABLE, DIMENSION(:,:,:) :: ZFIELDOUTV !
 REAL, ALLOCATABLE, DIMENSION(:,:,:) :: ZVEGTYPE_PATCH ! vegtype for each patch
 REAL, ALLOCATABLE, DIMENSION(:,:)   :: ZW             ! work array (x, fine   soil grid, npatch)
 REAL, ALLOCATABLE, DIMENSION(:,:)   :: ZF             ! work array (x, output soil grid, npatch)
+REAL, ALLOCATABLE, DIMENSION(:,:)   :: ZFILL          ! work array (x, output soil grid, npatch)
 REAL, ALLOCATABLE, DIMENSION(:,:)   :: ZDG            ! out T grid (x, output soil grid, npatch)
 REAL, ALLOCATABLE, DIMENSION(:,:)   :: ZPATCH         ! work array for patches
 REAL, ALLOCATABLE, DIMENSION(:)     :: ZSG1SNOW, ZSG2SNOW, ZHISTSNOW
+REAL, ALLOCATABLE, DIMENSION(:,:)   :: ZIMPURSNOW
 INTEGER                             :: ILUOUT         ! output listing logical unit
 !
 TYPE (DATE_TIME)                :: TZTIME_GRIB    ! current date and time
@@ -187,21 +195,23 @@ IF (HSURF=='SN_VEG ') THEN
   !
   ALLOCATE(ZSG1SNOW(SIZE(XWSNOW_GR)))
   ALLOCATE(ZSG2SNOW(SIZE(XWSNOW_GR)))
+  ALLOCATE(ZIMPURSNOW(SIZE(XWSNOW_GR),NIMPUR))  
   ALLOCATE(ZHISTSNOW(SIZE(XWSNOW_GR)))
   !
   ALLOCATE(TNPSNOW%AL(1))
   TNPSNOW%AL(1)%SCHEME = PEK%TSNOW%SCHEME
   TNPSNOW%AL(1)%NLAYER = PEK%TSNOW%NLAYER
   !
-  CALL PREP_HOR_SNOW_FIELDS(DTCO, TG, U, GCP, HPROGRAM,HSURF, &
-                            YFILE,YFILETYPE,                &
-                            YFILEPGD, YFILEPGDTYPE,         &
-                            ILUOUT,GUNIF_SNOW, 1, KPATCH,   &
-                            INI, TNPSNOW, TOP%TTIME,        &
-                            XWSNOW_GR, XRSNOW_GR, XTSNOW_GR,&
-                            XLWCSNOW_GR, XASNOW_GR,         &
-                            LSNOW_IDEAL_GR, ZSG1SNOW,       &
-                            ZSG2SNOW, ZHISTSNOW, XAGESNOW_GR, YDCTL, &
+  CALL PREP_HOR_SNOW_FIELDS(DTCO, TG, U, GCP, HPROGRAM,HSURF,  &
+                            YFILE,YFILETYPE,                   &
+                            YFILEPGD, YFILEPGDTYPE, ILUOUT,    &
+                            GUNIF_SNOW, 1, NPAR_VEG_IRR_USE,   &
+                            KPATCH, INI, TNPSNOW, TOP%TTIME,   &
+                            XWSNOW_GR, XRSNOW_GR, XTSNOW_GR,   &
+                            XLWCSNOW_GR, XASNOW_GR,            &
+                            LSNOW_IDEAL_GR, ZSG1SNOW,          &
+                            ZSG2SNOW, ZHISTSNOW, XAGESNOW_GR,  &
+                            YDCTL, ZIMPURSNOW,                 &
                             PVEGTYPE_PATCH=S%XVEGTYPE_PATCH, PPATCH=S%XPATCH )
   !
   CALL ALLOCATE_GR_SNOW(PEK%TSNOW,INI)
@@ -216,10 +226,10 @@ IF (HSURF=='SN_VEG ') THEN
     PEK%TSNOW%GRAN2 = TNPSNOW%AL(1)%GRAN2
     PEK%TSNOW%HIST = TNPSNOW%AL(1)%HIST
   ENDIF
-  !                    
   DEALLOCATE(ZSG1SNOW)
   DEALLOCATE(ZSG2SNOW)
   DEALLOCATE(ZHISTSNOW)
+  DEALLOCATE(ZIMPURSNOW)  
   IF (LHOOK) CALL DR_HOOK('PREP_HOR_TEB_GREENROOF_FIELD',1,ZHOOK_HANDLE)
   RETURN
 END IF
@@ -237,7 +247,7 @@ ELSE IF (YFILETYPE=='GRIB  ') THEN
   IF (NRANK==NPIO) CALL PREP_TEB_GREENROOF_GRIB(HPROGRAM,HSURF,YFILE,ILUOUT,ZFIELDIN)        
 ELSE IF (YFILETYPE=='MESONH' .OR. YFILETYPE=='ASCII ' .OR. YFILETYPE=='LFI   '&
         .OR. YFILETYPE=='FA    '.OR. YFILETYPE=='AROME '.OR.YFILETYPE=='NC    ') THEN
-   CALL PREP_TEB_GREENROOF_EXTERN(DTCO, IO, U, GCP, &
+   CALL PREP_TEB_GREENROOF_EXTERN(DTCO, IO, U, GCP, NPAR_VEG_IRR_USE, &
                                   HPROGRAM,HSURF,YFILE,YFILETYPE,YFILEPGD,YFILEPGDTYPE,ILUOUT,KPATCH,ZFIELDIN)
 ELSE IF (YFILETYPE=='BUFFER') THEN
    CALL PREP_TEB_GREENROOF_BUFFER(HPROGRAM,HSURF,ILUOUT,ZFIELDIN)
@@ -278,12 +288,28 @@ ZW = 0.
 !
 IF (1/=INP) THEN
   !
-  ALLOCATE(ZFIELDOUTV(INI,INL,NVEGTYPE))
-  CALL PUT_ON_ALL_VEGTYPES(INI,INL,INP,NVEGTYPE,ZFIELDOUTP,ZFIELDOUTV)
+  ALLOCATE(ZFIELDOUTV(INI,INL,NVEGTYPE+NVEG_IRR))
+  CALL PUT_ON_ALL_VEGTYPES(INI,INL,INP,NVEGTYPE,NPAR_VEG_IRR_USE,ZFIELDOUTP,ZFIELDOUTV)
   !
+  ! in case patches present in input file are not the ones on the greenroof in output file, fills undefined values with one that is.
+  !
+  ALLOCATE(ZFILL(INI,INL))
+  ZFILL(:,:) = XUNDEF
   DO JVEGTYPE=1,NVEGTYPE
+    WHERE (ZFILL(:,:)==XUNDEF .AND. ZFIELDOUTV(:,:,JVEGTYPE)/=XUNDEF)
+      ZFILL(:,:) =  ZFIELDOUTV(:,:,JVEGTYPE)
+    END WHERE
+  END DO
+  DO JVEGTYPE=1,NVEGTYPE
+    WHERE (ZFIELDOUTV(:,:,JVEGTYPE) == XUNDEF) ZFIELDOUTV(:,:,JVEGTYPE) = ZFILL(:,:)
+  END DO
+  DEALLOCATE(ZFILL)
+  !
+  ! aggregates the values from all input tiles (necessary in case of input from ISBA and not from Greenroof; if greenroofs were
+  ! present, number of patch was 1, so no issue here)
+  DO JVEGTYPE=1,NVEGTYPE+NVEG_IRR
     DO JLAYER=1,SIZE(ZW,2)
-      ZW(:,JLAYER) = ZW(:,JLAYER) + S%XVEGTYPE(:,JVEGTYPE) * ZFIELDOUTV(:,JLAYER,JVEGTYPE)
+      ZW(:,JLAYER) = ZW(:,JLAYER) + S%XVEGTYPE2(:,JVEGTYPE) * ZFIELDOUTV(:,JLAYER,JVEGTYPE)
     END DO
   END DO
   DEALLOCATE(ZFIELDOUTV)

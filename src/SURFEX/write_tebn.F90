@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE WRITE_TEB_n (DTCO, HSELECT, OSNOWDIMNC, U, TM, GDM, GRM, HPROGRAM,HWRITE)
+      SUBROUTINE WRITE_TEB_n (DTCO, HSELECT, OSNOWDIMNC, U, TM, GDM, GRM, HM, HPROGRAM,HWRITE)
 !     ####################################
 !
 !!****  *WRITE_TEB_n* - routine to write surface variables in their respective files
@@ -44,14 +44,17 @@ USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 USE MODD_SURFEX_n, ONLY : TEB_MODEL_t
 USE MODD_SURFEX_n, ONLY : TEB_GARDEN_MODEL_t
 USE MODD_SURFEX_n, ONLY : TEB_GREENROOF_MODEL_t
+USE MODD_SURFEX_n, ONLY : TEB_HYDRO_MODEL_t
 !
 USE MODD_WRITE_SURF_ATM, ONLY : LNOWRITE_CANOPY
 !
 USE MODI_END_IO_SURF_n
 USE MODI_INIT_IO_SURF_n
+USE MODI_WRITE_SURF
 USE MODI_WRITESURF_TEB_n
 USE MODI_WRITESURF_TEB_CONF_n
 USE MODI_WRITESURF_SBL_n
+USE MODI_WRITESURF_TEB_VEG
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -69,10 +72,15 @@ TYPE(SURF_ATM_t), INTENT(INOUT) :: U
 TYPE(TEB_MODEL_t), INTENT(INOUT) :: TM
 TYPE(TEB_GARDEN_MODEL_t), INTENT(INOUT) :: GDM
 TYPE(TEB_GREENROOF_MODEL_t), INTENT(INOUT) :: GRM
+TYPE(TEB_HYDRO_MODEL_t),     INTENT(INOUT) :: HM
 !
  CHARACTER(LEN=6),    INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
  CHARACTER(LEN=3),    INTENT(IN)  :: HWRITE    ! 'PREP' : does not write SBL XUNDEF fields
 !                                             ! 'ALL' : all fields are written
+INTEGER           :: IRESP           ! IRESP  : return-code if a problem appears
+ CHARACTER(LEN=100):: YCOMMENT       ! Comment string
+CHARACTER(LEN=3)  :: YPATCH         ! Patch identificator 
+! 
 !*       0.2   Declarations of local variables
 !              -------------------------------
 !
@@ -90,14 +98,57 @@ IF (LHOOK) CALL DR_HOOK('WRITE_TEB_N',0,ZHOOK_HANDLE)
 !*       1.     Selection of surface scheme
 !               ---------------------------
 !
- CALL WRITESURF_TEB_CONF_n(TM%CHT, TM%TD%MTO, TM%TD%O, TM%TD%DUT, TM%NT%AL(1), TM%TOP,HPROGRAM)
+ CALL WRITESURF_TEB_CONF_n(TM%CHT, TM%TD%MTO, TM%TD%O, TM%TD%DU, TM%NT%AL(1), TM%TOP, TM%TPN, HPROGRAM)
+!
+!*       2.     Option for road orientation:
+!               ---------------------------
+!
+YCOMMENT='Option for Road orientation in TEB scheme'
+ CALL WRITE_SURF(HSELECT,HPROGRAM,'ROAD_DIR',TM%TOP%CROAD_DIR,IRESP,YCOMMENT)
+YCOMMENT='Option for Wall representation in TEB scheme'
+ CALL WRITE_SURF(HSELECT,HPROGRAM,'WALL_OPT',TM%TOP%CWALL_OPT,IRESP,YCOMMENT)
+!
+YCOMMENT='Teb patch number'
+ CALL WRITE_SURF(HSELECT,HPROGRAM,'TEB_PATCH',TM%TOP%NTEB_PATCH,IRESP,YCOMMENT)
 !
 DO JP=1,TM%TOP%NTEB_PATCH
   CALL WRITESURF_TEB_n(HSELECT, OSNOWDIMNC, DTCO, U, TM%TOP, TM%BOP, TM%NT%AL(JP), TM%NB%AL(JP), &
                        TM%DTT%LDATA_ROAD_DIR, TM%TPN, GDM%O, GDM%S, GDM%NPE%AL(JP), GRM%O, GRM%S, &
-                       GRM%NPE%AL(JP), HPROGRAM, JP, HWRITE)
+                       GRM%NPE%AL(JP), HM%NTH%AL(JP), HPROGRAM, JP, HWRITE)
 END DO
-!     
+!
+!*       3.  Urban green areas
+!            ------------------
+!
+! Gardens
+IF (TM%TOP%LGARDEN) THEN
+   CALL END_IO_SURF_n(HPROGRAM)
+   CALL INIT_IO_SURF_n(DTCO, U, HPROGRAM,'TOWN  ','TEB   ','WRITE','GARDEN_PROGNOSTIC.OUT.nc')
+   !
+   DO JP=1,TM%TOP%NTEB_PATCH
+      YPATCH='   '
+      IF (TM%TOP%NTEB_PATCH>1) WRITE(YPATCH,FMT='(A1,I1,A)') 'T',JP,'_'
+      CALL WRITESURF_TEB_VEG(HSELECT, OSNOWDIMNC, GDM%O, GDM%S, GDM%NPE%AL(JP),GDM%P, HPROGRAM,'GD',YPATCH)
+      IF (TM%TOP%CURBTREE/='NONE') &
+      CALL WRITESURF_TEB_VEG(HSELECT, OSNOWDIMNC, GDM%O, GDM%S, GDM%NPEHV%AL(JP),GDM%P, HPROGRAM,'GH',YPATCH)
+   END DO
+ENDIF
+!
+! Green roofs
+IF (TM%TOP%LGREENROOF) THEN
+  CALL END_IO_SURF_n(HPROGRAM)
+  CALL INIT_IO_SURF_n(DTCO, U, HPROGRAM,'TOWN  ','TEB   ','WRITE','GREENROOF_PROGNOSTIC.OUT.nc')
+   !
+   DO JP=1,TM%TOP%NTEB_PATCH
+      YPATCH='   '
+      IF (TM%TOP%NTEB_PATCH>1) WRITE(YPATCH,FMT='(A1,I1,A)') 'T',JP,'_'
+      CALL WRITESURF_TEB_VEG(HSELECT, OSNOWDIMNC, GRM%O, GRM%S, GRM%NPE%AL(JP),GRM%P, HPROGRAM,'GR',YPATCH)
+   END DO
+ENDIF
+!
+!*       4.  Teb canopy
+!            ----------
+!
 IF ((.NOT.LNOWRITE_CANOPY).OR.SIZE(HSELECT)>0) THEN
    CALL END_IO_SURF_n(HPROGRAM)      
    CALL INIT_IO_SURF_n(DTCO, U, HPROGRAM,'TOWN  ','TEB   ','WRITE','TEB_CANOPY.OUT.nc')

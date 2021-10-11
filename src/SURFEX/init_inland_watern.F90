@@ -8,7 +8,7 @@
                                       KSW, HSV, PCO2, PRHOA, PZENITH, PAZIM,  &
                                       PSW_BANDS, PDIR_ALB, PSCA_ALB, PEMIS,   &
                                       PTSRAD, PTSURF, KYEAR, KMONTH, KDAY,    &
-                                      PTIME, HATMFILE, HATMFILETYPE, HTEST   )  
+                                      PTIME, AT, HATMFILE, HATMFILETYPE, HTEST   )  
 !     #############################################################
 !
 !!****  *INIT_INLAND_WATER_n* - routine to initialize inland water
@@ -55,6 +55,7 @@ USE MODD_DIAG_n, ONLY : DIAG_OPTIONS_t, DIAG_t
 !
 USE MODD_CSTS,       ONLY : XTT
 !
+USE MODD_SURF_ATM_TURB_n, ONLY : SURF_ATM_TURB_t
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -102,6 +103,7 @@ INTEGER,                          INTENT(IN)  :: KMONTH    ! current month (UTC)
 INTEGER,                          INTENT(IN)  :: KDAY      ! current day (UTC)
 REAL,                             INTENT(IN)  :: PTIME     ! current time since
                                                           !  midnight (UTC, s)
+TYPE(SURF_ATM_TURB_t), INTENT(IN) :: AT         ! atmospheric turbulence parameters
 !
  CHARACTER(LEN=28),                INTENT(IN)  :: HATMFILE    ! atmospheric file name
  CHARACTER(LEN=6),                 INTENT(IN)  :: HATMFILETYPE! atmospheric file type
@@ -132,13 +134,13 @@ ELSE IF (U%CWATER=='WATFLX') THEN
                       HPROGRAM, HINIT, KI, KSV, KSW, HSV, PCO2, PRHOA,&
                       PZENITH, PAZIM, PSW_BANDS, PDIR_ALB, PSCA_ALB,  &
                       PEMIS, PTSRAD, PTSURF, KYEAR, KMONTH, KDAY,     &
-                      PTIME, HATMFILE, HATMFILETYPE, 'OK'  )  
+                      PTIME, AT,HATMFILE, HATMFILETYPE, 'OK'  )  
 ELSE IF (U%CWATER=='FLAKE ') THEN
   CALL INIT_FLAKE_n(DTCO, OREAD_BUDGETC, UG, U, FM, &
                     HPROGRAM, HINIT, KI, KSV, KSW, HSV, PCO2, PRHOA, &
                     PZENITH, PAZIM, PSW_BANDS, PDIR_ALB, PSCA_ALB,   &
                     PEMIS, PTSRAD, PTSURF, KYEAR, KMONTH, KDAY,      &
-                    PTIME, HATMFILE, HATMFILETYPE, 'OK')          
+                    PTIME, AT, HATMFILE, HATMFILETYPE, 'OK')          
 END IF
 IF (LHOOK) CALL DR_HOOK('INIT_INLAND_WATER_N',1,ZHOOK_HANDLE)
 !

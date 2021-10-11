@@ -21,7 +21,7 @@
                 PHPSNOW,PLES3L,PLEL3L,PEVAP,PSNDRIFT,PRI,                 &
                 PEMISNOW,PCDSNOW,PUSTAR,PCHSNOW,PSNOWHMASS,PQS,           &
                 PPERMSNOWFRAC,PFORESTFRAC,PZENITH,PXLAT,PXLON,            &
-                OSNOWDRIFT,OSNOWDRIFT_SUBLIM                              )  
+                HSNOWDRIFT,OSNOWDRIFT_SUBLIM                              )  
 !     ##########################################################################
 !
 !!****  *SNOW3L*
@@ -275,7 +275,13 @@ REAL, DIMENSION(:), INTENT(OUT)   :: PQS
 REAL, DIMENSION(:), INTENT(IN)    :: PZENITH ! solar zenith angle
 REAL, DIMENSION(:), INTENT(IN)    :: PXLAT,PXLON ! LAT/LON after packing
 !
-LOGICAL, INTENT(IN)               :: OSNOWDRIFT, OSNOWDRIFT_SUBLIM ! activate snowdrift, sublimation during drift
+!
+CHARACTER(4), INTENT(IN)            :: HSNOWDRIFT        ! Snowdrift scheme :
+                                      !    'NONE': No snowdrift scheme
+                                      !    'DFLT':  Snowdrift scheme activated
+                                      !  Other options are available in Crocus
+
+LOGICAL, INTENT(IN)               ::  OSNOWDRIFT_SUBLIM ! activate snowdrift, sublimation during drift
 !
 !*      0.2    declarations of local variables
 !
@@ -388,7 +394,7 @@ ZWORK(:)=ZSNOW(:)
 !
 ZWORK2(:)=PSNOWALB(:)
 !
- CALL SNOW3LALB(ZWORK2,ZSPECTRALALBEDO,PSNOWRHO(:,1),PSNOWAGE(:,1),PPERMSNOWFRAC,PPS)
+CALL SNOW3LALB(ZWORK2,ZSPECTRALALBEDO,PSNOWRHO(:,1),PSNOWAGE(:,1),PPERMSNOWFRAC,PPS)
 ZWORK3(:) = PSNOWALB(:)/ZWORK2(:)
 DO JJ=1,SIZE(ZSPECTRALALBEDO,2)
    DO JI=1,INI
@@ -407,7 +413,7 @@ ENDDO
 !
 ! Caluclate new snow albedo at time t if snowfall
 !
- CALL SNOW3LALB(ZWORK2,ZSPECTRALWORK,PSNOWRHO(:,1),PSNOWAGE(:,1),PPERMSNOWFRAC,PPS)
+CALL SNOW3LALB(ZWORK2,ZSPECTRALWORK,PSNOWRHO(:,1),PSNOWAGE(:,1),PPERMSNOWFRAC,PPS)
 !
 DO JJ=1,SIZE(ZSPECTRALALBEDO,2)
    DO JI=1,INI
@@ -428,7 +434,7 @@ ENDWHERE
 !
 ! Mass/Heat redistribution:
 !
- CALL SNOW3LTRANSF(ZSNOW,PSNOWDZ,ZSNOWDZN,PSNOWRHO,PSNOWHEAT,PSNOWAGE)
+CALL SNOW3LTRANSF(ZSNOW,PSNOWDZ,ZSNOWDZN,PSNOWRHO,PSNOWHEAT,PSNOWAGE)
 !
 !
 !*       4.     Liquid water content and snow temperature
@@ -453,12 +459,12 @@ ZSNOWTEMP(:,:) = MIN(XTT,ZSNOWTEMP(:,:))
 !
 ! Calculate snow density: compaction/aging: density increases
 !
- CALL SNOW3LCOMPACTN(PTSTEP,XSNOWDZMIN,PSNOWRHO,PSNOWDZ,ZSNOWTEMP,ZSNOW,PSNOWLIQ)
+CALL SNOW3LCOMPACTN(PTSTEP,XSNOWDZMIN,PSNOWRHO,PSNOWDZ,ZSNOWTEMP,ZSNOW,PSNOWLIQ)
 !
 ! Snow compaction and metamorphism due to drift
 !
 PSNDRIFT(:) = 0.0
-IF (OSNOWDRIFT) THEN
+IF (HSNOWDRIFT == 'DFLT') THEN
    CALL SNOW3LDRIFT(PTSTEP,PFORESTFRAC,PVMOD,PTA,PQA,PPS,PRHOA,&
                     PSNOWRHO,PSNOWDZ,ZSNOW,OSNOWDRIFT_SUBLIM,PSNDRIFT)
 ENDIF
@@ -476,7 +482,7 @@ PSNOWHEAT(:,:) = PSNOWDZ(:,:)*( ZSCAP(:,:)*(ZSNOWTEMP(:,:)-XTT)        &
 ! Heat source (-sink) term due to shortwave
 ! radiation transmission within the snowpack:
 !
- CALL SNOW3LRAD(OMEB,XSNOWDZMIN,PSW_RAD,PSNOWALB,      &
+CALL SNOW3LRAD(OMEB,XSNOWDZMIN,PSW_RAD,PSNOWALB,      &
                ZSPECTRALALBEDO,PSNOWDZ,PSNOWRHO,PALB, &
                PPERMSNOWFRAC,PZENITH,PSWNETSNOW,      &
                PSWNETSNOWS,ZRADSINK,ZRADXS,PSNOWAGE)  
@@ -486,7 +492,7 @@ PSNOWHEAT(:,:) = PSNOWDZ(:,:)*( ZSCAP(:,:)*(ZSNOWTEMP(:,:)-XTT)        &
 !               ---------------------------------------
 ! Snow thermal conductivity:
 !
- CALL SNOW3LTHRM(PSNOWRHO,ZSCOND,ZSNOWTEMP,PPS)
+CALL SNOW3LTHRM(PSNOWRHO,ZSCOND,ZSNOWTEMP,PPS)
 !
 ! Precipitation heating term:
 ! Rainfall renders it's heat to the snow when it enters
@@ -577,14 +583,14 @@ ENDIF
 !
 ! First Test to see if snow pack vanishes during this time step:
 !
- CALL SNOW3LGONE(PTSTEP,PLEL3L,PLES3L,PSNOWRHO,                            &
+CALL SNOW3LGONE(PTSTEP,PLEL3L,PLES3L,PSNOWRHO,                            &
                 PSNOWHEAT,ZRADSINK(:,INLVLS),PEVAPCOR,PTHRUFAL,ZGRNDFLUX, &
                 PGFLUXSNOW,ZGRNDFLUXO,PSNOWDZ,PSNOWLIQ,ZSNOWTEMP,         &
                 PLVTT,PLSTT,ZRADXS   )  
 !
 ! For "normal" melt: transform excess heat content into snow liquid:
 !
- CALL SNOW3LMELT(PTSTEP,ZSCAP,ZSNOWTEMP,PSNOWDZ,PSNOWRHO,PSNOWLIQ,ZMELTXS)  
+CALL SNOW3LMELT(PTSTEP,ZSCAP,ZSNOWTEMP,PSNOWDZ,PSNOWRHO,PSNOWLIQ,ZMELTXS)  
 !
 !
 !*      10.     Snow water flow and refreezing
@@ -592,7 +598,7 @@ ENDIF
 ! Liquid water vertical transfer and possible snowpack runoff
 ! And refreezing/freezing of meltwater/rainfall (ripening of the snow)
 !
- CALL SNOW3LREFRZ(PTSTEP,PRR,PSNOWRHO,ZSNOWTEMP,PSNOWDZ,PSNOWLIQ,PTHRUFAL)
+CALL SNOW3LREFRZ(PTSTEP,PRR,PSNOWRHO,ZSNOWTEMP,PSNOWDZ,PSNOWLIQ,PTHRUFAL)
 !
 ZSCAP(:,:)        = SNOW3LSCAP(PSNOWRHO)
 PSNOWHEAT(:,:)    = PSNOWDZ(:,:)*( ZSCAP(:,:)*(ZSNOWTEMP(:,:)-XTT)        &
@@ -602,7 +608,7 @@ PSNOWHEAT(:,:)    = PSNOWDZ(:,:)*( ZSCAP(:,:)*(ZSNOWTEMP(:,:)-XTT)        &
 !*      11.     Snow Evaporation/Sublimation mass updates:
 !               ------------------------------------------
 !
- CALL SNOW3LEVAPN(ZPSN3L,PLES3L,PLEL3L,PTSTEP,ZSNOWTEMP(:,1),PSNOWRHO(:,1), &
+CALL SNOW3LEVAPN(ZPSN3L,PLES3L,PLEL3L,PTSTEP,ZSNOWTEMP(:,1),PSNOWRHO(:,1), &
                    PSNOWDZ,PSNOWLIQ(:,1),PTA,PLVTT,PLSTT,PSNOWHEAT,PSOILCOR )
 !
 ! Update snow temperatures and liquid
@@ -621,7 +627,7 @@ ZSNOWTEMP(:,:) = MIN(XTT,ZSNOWTEMP(:,:))
 ! If all snow in uppermost layer evaporates/sublimates, re-distribute
 ! grid (below could be evoked for vanishingly thin snowpacks):
 !
- CALL SNOW3LEVAPGONE(PSNOWHEAT,PSNOWDZ,PSNOWRHO,ZSNOWTEMP,PSNOWLIQ)
+CALL SNOW3LEVAPGONE(PSNOWHEAT,PSNOWDZ,PSNOWRHO,ZSNOWTEMP,PSNOWLIQ)
 !
 !
 !*      12.     Update surface albedo:
@@ -770,7 +776,7 @@ PSNOWSFCH(:)     = PDELHEATN_SFC(:) - (PSWNETSNOWS(:) +PLWNETSNOW(:) - PHSNOW(:)
 IF (LHOOK) CALL DR_HOOK('SNOW3L',1,ZHOOK_HANDLE)
 !
 !
- CONTAINS
+CONTAINS
 !
 !
 !
@@ -1293,7 +1299,7 @@ PRI(:)=ZRI(:)
 !
 ! Surface aerodynamic resistance for heat transfers
 !
- CALL SURFACE_AERO_COND(ZRI, PZREF, PUREF, PVMOD, PZ0, PZ0H, ZAC, PRA, PCHSNOW)
+ CALL SURFACE_AERO_COND(ZRI, PZREF, PUREF, PVMOD, PZ0, PZ0H, ZAC, PRA, PCHSNOW, HSNOWRES)
 !
 ! For atmospheric model coupling:
 !

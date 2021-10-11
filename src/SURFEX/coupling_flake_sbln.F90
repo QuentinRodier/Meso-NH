@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     ###############################################################################
-SUBROUTINE COUPLING_FLAKE_SBL_n (SB, CHF, DGO, D, DC, DMF, F, DST, SLT, &
+SUBROUTINE COUPLING_FLAKE_SBL_n (SB, CHF, DGO, D, DC, DMF, F, AT, DST, SLT, &
                                  HPROGRAM, HCOUPLING, PTSTEP, KYEAR, KMONTH, KDAY, PTIME,             &
                                  KI, KSV, KSW, PTSUN, PZENITH, PZENITH2, PAZIM, PZREF, PUREF, PU, PV, &
                                  PQA, PTA, PRHOA, PSV, PCO2, HSV,PRAIN, PSNOW, PLW, PDIR_SW, PSCA_SW, &
@@ -52,6 +52,8 @@ USE MODD_SLT_n, ONLY : SLT_t
 USE MODD_SURF_PAR,         ONLY : XUNDEF
 USE MODD_CSTS,             ONLY : XCPD
 ! 
+USE MODD_SURF_ATM_TURB_n, ONLY : SURF_ATM_TURB_t
+!
 USE MODE_COUPLING_CANOPY
 !
 USE MODI_INIT_WATER_SBL
@@ -76,6 +78,8 @@ TYPE(DIAG_t), INTENT(INOUT) :: D
 TYPE(DIAG_t), INTENT(INOUT) :: DC
 TYPE(DIAG_MISC_FLAKE_t), INTENT(INOUT) :: DMF
 TYPE(FLAKE_t), INTENT(INOUT) :: F
+!
+TYPE(SURF_ATM_TURB_t), INTENT(IN) :: AT         ! atmospheric turbulence parameters
 !
 TYPE(DST_t), INTENT(INOUT) :: DST
 TYPE(SLT_t), INTENT(INOUT) :: SLT
@@ -224,7 +228,7 @@ IF (F%LSBL) THEN
 !              ---------------------------------
 !
   IF(ANY(SB%XT(:,:) == XUNDEF)) THEN
-    CALL INIT_WATER_SBL(SB, PPA, PPS, PTA, PQA, PRHOA, PU, PV, PRAIN, PSNOW,  &
+    CALL INIT_WATER_SBL(SB, AT, PPA, PPS, PTA, PQA, PRHOA, PU, PV, PRAIN, PSNOW,  &
                         PSFTH, PSFTQ, PZREF, PUREF, F%XTS, F%XZ0)
   ENDIF
 !
@@ -292,7 +296,7 @@ END IF
 !*      2.     Call of SEAFLUX
 !              ------------
 !
-  CALL COUPLING_FLAKE_n(CHF, DGO, D, DC, DMF, F, DST, SLT, &
+  CALL COUPLING_FLAKE_n(CHF, DGO, D, DC, DMF, F, AT, DST, SLT, &
                         HPROGRAM, GCOUPLING, PTSTEP, KYEAR, KMONTH, KDAY, PTIME,     &
                         KI, KSV, KSW, PTSUN, PZENITH, PZENITH2, PAZIM, ZZREF, ZUREF, &
                         ZU, ZV, ZQA, ZTA, PRHOA, PSV, PCO2, HSV, PRAIN, PSNOW, PLW,  &

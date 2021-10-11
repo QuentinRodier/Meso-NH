@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE INIT_FROM_DATA_TEB_VEG_n (DTV, K, P, PEK, KDECADE, OUPDATE, OFIX, OTIME, OALB)    
+      SUBROUTINE INIT_FROM_DATA_TEB_VEG_n (DTV, K, P, PEK, KDECADE, OUPDATE, OFIX, OTIME, OALB, OHG, OHV)    
 !     ##############################################################
 !
 !!**** *CONVERT_COVER* convert surface cover classes into secondary 
@@ -66,12 +66,14 @@ LOGICAL, INTENT(IN) :: OALB
 TYPE(ISBA_K_t), INTENT(INOUT) :: K
 TYPE(ISBA_P_t), INTENT(INOUT) :: P
 TYPE(ISBA_PE_t), INTENT(INOUT) :: PEK
+LOGICAL, OPTIONAL, INTENT(IN) :: OHG   ! TRUE --> GARDEN is activated
+LOGICAL, OPTIONAL, INTENT(IN) :: OHV   ! TRUE --> high vegetation scheme activated
 !
 REAL, DIMENSION(:), ALLOCATABLE :: ZWG1
 REAL, DIMENSION(:), ALLOCATABLE   :: ZWGSAT
 !
 INTEGER :: ITIME
-INTEGER :: ILUOUT
+!
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------
 !
@@ -89,8 +91,6 @@ ENDIF
 !
 IF (OFIX) THEN
 !
-
-  IF (SIZE(P%XH_TREE)>0) P%XH_TREE(:) = DTV%XPAR_H_TREE(:,1)
 !
   P%XZ0_O_Z0H(:) = DTV%XPAR_Z0_O_Z0H(:,1)
 !
@@ -113,7 +113,15 @@ IF (OFIX) THEN
 
   IF (SIZE(P%XRE25)>0) P%XRE25(:) = DTV%XPAR_RE25(:,1)
 
-
+!* urban vegetation
+!
+  P%XH_TREE(:)   = DTV%XPAR_H_TREE(:,1)
+  IF (PRESENT(OHV)) THEN 
+    IF (OHV) THEN
+      P%XHTRUNK_HVEG = DTV%XPAR_HTRUNK_HVEG
+      P%XWCROWN_HVEG = DTV%XPAR_WCROWN_HVEG
+    ENDIF
+  ENDIF  
 ENDIF
 !
 !

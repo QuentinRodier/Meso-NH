@@ -40,15 +40,21 @@ IMPLICIT NONE
 TYPE CANOPY_t
 !
   INTEGER                       :: NLVL ! number      of levels in canopy
+  INTEGER                       :: NCOUNT_STEP ! Time step counter
   REAL, POINTER, DIMENSION(:,:) :: XZ   ! height of middle of each level grid   (m)
   REAL, POINTER, DIMENSION(:,:) :: XU   ! wind        at each level in canopy   (m/s)
+  REAL, POINTER, DIMENSION(:,:) :: XU_MEAN ! Mean wind at each level in canopy   (m/s)
   REAL, POINTER, DIMENSION(:,:) :: XT   ! temperature at each level in canopy   (m/s)
+  REAL, POINTER, DIMENSION(:,:) :: XT_MEAN ! Mean temperature at each level in canopy (m/s)
   REAL, POINTER, DIMENSION(:,:) :: XQ   ! humidity    at each level in canopy   (kg/m3)
+  REAL, POINTER, DIMENSION(:,:) :: XQ_MEAN ! Mean humidity at each level in canopy (kg/m3)
   REAL, POINTER, DIMENSION(:,:) :: XTKE ! Tke         at each level in canopy   (m2/s2)
   REAL, POINTER, DIMENSION(:,:) :: XLMO ! Monin-Obhukov length                  (m)
   REAL, POINTER, DIMENSION(:,:) :: XLM  ! Mixing lentgh                         (m)
   REAL, POINTER, DIMENSION(:,:) :: XLEPS! Dissipative length                    (m)
-  REAL, POINTER, DIMENSION(:,:) :: XP   ! pressure    at each level in canopy   (kg/m3)
+  REAL, POINTER, DIMENSION(:,:) :: XP   ! pressure    at each level in canopy   (Pa)
+  REAL, POINTER, DIMENSION(:,:) :: XP_MEAN ! Mean pressure at each level in canopy (Pa)
+  REAL, POINTER, DIMENSION(:,:) :: XRH_MEAN ! Mean relative humidity at each level in canopy (Pa)
   REAL, POINTER, DIMENSION(:,:,:):: XBLOWSNW ! Blowing snow moments at each level in canopy   
                                              ! 1:( #/m3); 2:(kg/m3)    
 !
@@ -66,18 +72,24 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 IF (LHOOK) CALL DR_HOOK("MODD_CANOPY_N:CANOPY_INIT",0,ZHOOK_HANDLE)
   NULLIFY(SB%XZ)
   NULLIFY(SB%XU)
+  NULLIFY(SB%XU_MEAN)
   NULLIFY(SB%XT)
+  NULLIFY(SB%XT_MEAN)
   NULLIFY(SB%XQ)
+  NULLIFY(SB%XQ_MEAN)
+  NULLIFY(SB%XRH_MEAN)
   NULLIFY(SB%XTKE)
   NULLIFY(SB%XLMO)
   NULLIFY(SB%XLM)
   NULLIFY(SB%XLEPS)
   NULLIFY(SB%XP)
+  NULLIFY(SB%XP_MEAN)
   NULLIFY(SB%XDZ)
   NULLIFY(SB%XZF)
   NULLIFY(SB%XDZF)
   NULLIFY(SB%XBLOWSNW)
-SB%NLVL=0
+  SB%NLVL=0
+  SB%NCOUNT_STEP=0
 IF (LHOOK) CALL DR_HOOK("MODD_CANOPY_N:CANOPY_INIT",1,ZHOOK_HANDLE)
 END SUBROUTINE CANOPY_INIT
 

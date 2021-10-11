@@ -32,6 +32,8 @@
 !             ------------
 !
 USE MODD_SV_n, ONLY : SV_t, SV_INIT
+USE MODD_DST_n, ONLY : DST_t, DST_INIT
+USE MODD_SLT_n, ONLY : SLT_t, SLT_INIT
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -44,6 +46,8 @@ TYPE CH_FLAKE_t
   REAL, DIMENSION(:,:), POINTER :: XDEP                     ! final dry deposition  
                                                             ! velocity  for lakes
   TYPE(SV_t) :: SVF                                                
+  TYPE(DST_t) :: DSTF                                                
+  TYPE(SLT_t) :: SLTF                                                
                                                             ! (FOR DIAG ONLY)
   CHARACTER(LEN=6), DIMENSION(:), POINTER :: CCH_NAMES      ! NAME OF CHEMICAL SPECIES
                                                             ! (FOR DIAG ONLY)
@@ -71,6 +75,8 @@ NULLIFY(YCH_FLAKE%CSLTNAMES)
 NULLIFY(YCH_FLAKE%CSNWNAMES)
 YCH_FLAKE%CCH_DRY_DEP=' '
 CALL SV_INIT(YCH_FLAKE%SVF)
+CALL SLT_INIT(YCH_FLAKE%SLTF)
+CALL DST_INIT(YCH_FLAKE%DSTF)
 IF (LHOOK) CALL DR_HOOK("MODD_CH_FLAKE_N:CH_FLAKE_INIT",1,ZHOOK_HANDLE)
 END SUBROUTINE CH_FLAKE_INIT
 

@@ -29,9 +29,7 @@ SUBROUTINE ISBA_CANOPY (PCDRAG, KI, SB, PHEIGHT, PCANOPY_DENSITY, PUW_GROUND, PD
 !!---------------------------------------------------------------
 !
 USE MODD_CANOPY_n, ONLY : CANOPY_t
-!
-USE MODD_CSTS,         ONLY : XRD, XCPD, XP00, XG
-USE MODD_SURF_PAR,     ONLY : XUNDEF
+USE MODD_SURF_PAR, ONLY : XUNDEF
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -69,6 +67,7 @@ REAL, DIMENSION(KI,SB%NLVL) :: ZDENSITY  ! vegetation density for each canopy le
 REAL, DIMENSION(KI,SB%NLVL) :: ZSV       ! vertical surface for each canopy level
 REAL, DIMENSION(KI,SB%NLVL) :: ZFORC
 REAL, DIMENSION(KI,SB%NLVL) :: ZAIRVOL   ! Fraction of air for each canopy level total volume
+REAL, DIMENSION(KI,SB%NLVL) :: ZW1, ZW2  ! vegetation density for each canopy level
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !-------------------------------------------------------------------------------------
@@ -109,7 +108,10 @@ ZAIRVOL(:,:) = 1.
 !
 !*      1.2    Discretization on each canopy level
 !
- CALL CANOPY(KI, SB, PHEIGHT, ZDENSITY, ZCDRAG, ZAIRVOL, ZSV, &
+ZW1=0.
+ZW2=0.
+!
+ CALL CANOPY(KI, SB, PHEIGHT, ZDENSITY, ZCDRAG, ZW1, ZW2, ZAIRVOL, ZSV, &
              ZFORC, PFORC_U, PDFORC_UDU, PFORC_E, PDFORC_EDE )
 !
 !

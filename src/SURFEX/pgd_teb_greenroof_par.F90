@@ -49,12 +49,8 @@ USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 USE MODD_SSO_n, ONLY : SSO_t
 USE MODD_ISBA_OPTIONS_n, ONLY : ISBA_OPTIONS_t
 USE MODD_ISBA_n, ONLY : ISBA_S_t, ISBA_K_t
-!
-USE MODD_DATA_COVER_PAR,       ONLY : NVEGTYPE
-USE MODD_SURF_PAR,             ONLY : XUNDEF
-USE MODD_TEB_VEG,              ONLY : NLAYER_GR_MAX, NTIME_GR_MAX
-!
-USE MODD_PGDWORK,              ONLY : CATYPE
+USE MODD_SURF_PAR, ONLY : XUNDEF
+USE MODD_PGDWORK, ONLY : CATYPE
 !
 USE MODI_READ_NAM_PGD_TEB_GREENROOF
 USE MODI_PGD_FIELD
@@ -62,6 +58,7 @@ USE MODI_TEST_NAM_VAR_SURF
 !
 USE MODE_POS_SURF
 !
+USE MODI_GET_LUOUT
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -86,27 +83,27 @@ INTEGER, INTENT(IN) :: KDIM
  CHARACTER(LEN=6),    INTENT(IN)             :: HPROGRAM     ! Type of program
 !
 !
-!*    0.2    Declaration of local variables
+!*    0.2    Declaration of parameters
+!            -------------------------
+!
+INTEGER, PARAMETER :: NTIME_GR_MAX  = 1         ! Max NTIME for greenroofs
+INTEGER, PARAMETER :: NLAYER_GR_MAX = 6         ! Max number of soil layers for greenroofs
+!
+!*    0.3    Declaration of local variables
 !            ------------------------------
 !
-INTEGER                                     :: ILUOUT    ! output listing logical unit
-INTEGER                                     :: ILUNAM    ! namelist file  logical unit
-LOGICAL                                     :: GFOUND    ! true if namelist is found
+INTEGER :: ILUOUT    ! output listing logical unit
+INTEGER :: JLAYER_GR ! loop counter on green roof layers
+INTEGER :: JTIME     ! loop counter on time
 !
-INTEGER                                     :: JLAYER    ! loop counter on layers
-INTEGER                                     :: JLAYER_GR ! loop counter on green roof layers
-INTEGER                                     :: JTIME     ! loop counter on time
-INTEGER                                     :: JPATCH    ! loop counter on patch
-INTEGER                                     :: JVEGTYPE  ! loop counter on vegtypes
-!
-!
-INTEGER, PARAMETER                          :: JPGROUND_MAX   = 20
-INTEGER, PARAMETER                          :: JPVEGTYPE_MAX  = 12
+INTEGER, PARAMETER :: JPGROUND_MAX   = 20
+INTEGER, PARAMETER :: JPVEGTYPE_MAX  = 12
 !
 ! declaration of namelist variables
-INTEGER                                     :: ILAYER_GR      ! number of green roof physical layers
-INTEGER                                     :: ITIME_GR       ! ntime for green roof parameters
- CHARACTER(LEN=5)                            :: YTYP_GR        ! type of green roof
+!
+INTEGER          :: ILAYER_GR ! number of green roof physical layers
+INTEGER          :: ITIME_GR  ! ntime for green roof parameters
+CHARACTER(LEN=5) :: YTYP_GR   ! type of green roof
 !
 ! uniform value
 !
@@ -129,6 +126,8 @@ REAL,DIMENSION(NTIME_GR_MAX)               :: ZUNIF_LAI_GR     ! LAI of green ro
  CHARACTER(LEN=6 ),DIMENSION(NLAYER_GR_MAX) :: YFTYP_SAND_GR    ! fraction of sand for the non-OM part of the green roof layer
  CHARACTER(LEN=6 ),DIMENSION(NTIME_GR_MAX)  :: YFTYP_LAI_GR     ! LAI  of green roof
 !
+LOGICAL :: GPRESENT ! Flag to check data was correctly provided
+!
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------
 !
@@ -136,6 +135,8 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !             ---------------
 !
 IF (LHOOK) CALL DR_HOOK('PGD_TEB_GREENROOF_PAR',0,ZHOOK_HANDLE)
+!
+CALL GET_LUOUT(HPROGRAM,ILUOUT)
 !
 ILAYER_GR        = 0
 ITIME_GR         = 0
@@ -192,31 +193,47 @@ CATYPE = 'ARI'
 DO JLAYER_GR=1,IO%NGROUND_LAYER
  CALL PGD_FIELD(DTCO, UG, U, USS, &
                 HPROGRAM,'OM_GR: fraction of OM in GR layer','BLD',YFNAM_OM_GR(JLAYER_GR),   &
-               YFTYP_OM_GR(JLAYER_GR), ZUNIF_OM_GR(JLAYER_GR), S%XSOC(:,JLAYER_GR))
+               YFTYP_OM_GR(JLAYER_GR), ZUNIF_OM_GR(JLAYER_GR), S%XSOC(:,JLAYER_GR),GPRESENT)
+ IF (.NOT. GPRESENT) CALL ERROR_GR_PGD('OM_GR: fraction of OM in GR layer')
 ENDDO
 !
 DO JLAYER_GR=1,IO%NGROUND_LAYER
  CALL PGD_FIELD(DTCO, UG, U, USS, &
                 HPROGRAM,'CLAY_GR: fraction of CLAY in the non-OM part of GR layer','BLD',YFNAM_CLAY_GR(JLAYER_GR),   &
-               YFTYP_CLAY_GR(JLAYER_GR), ZUNIF_CLAY_GR(JLAYER_GR), K%XCLAY(:,JLAYER_GR))
+               YFTYP_CLAY_GR(JLAYER_GR), ZUNIF_CLAY_GR(JLAYER_GR), K%XCLAY(:,JLAYER_GR),GPRESENT)
+ IF (.NOT. GPRESENT) CALL ERROR_GR_PGD('CLAY_GR: fraction of CLAY in the non-OM part of GR layer')
 ENDDO
 !
 DO JLAYER_GR=1,IO%NGROUND_LAYER
  CALL PGD_FIELD(DTCO, UG, U, USS, &
                 HPROGRAM,'SAND_GR: fraction of SAND in the non-OM part of GR layer','BLD',YFNAM_SAND_GR(JLAYER_GR),   &
-               YFTYP_SAND_GR(JLAYER_GR), ZUNIF_SAND_GR(JLAYER_GR), K%XSAND(:,JLAYER_GR))
+               YFTYP_SAND_GR(JLAYER_GR), ZUNIF_SAND_GR(JLAYER_GR), K%XSAND(:,JLAYER_GR),GPRESENT)
+ IF (.NOT. GPRESENT) CALL ERROR_GR_PGD('SAND_GR: fraction of SAND in the non-OM part of GR layer')
 ENDDO
 !
 DO JTIME=1,DTV%NTIME
  CALL PGD_FIELD(DTCO, UG, U, USS, &
                 HPROGRAM,'LAI_GR: LAI of green roof','BLD',YFNAM_LAI_GR(JTIME),  &
-                YFTYP_LAI_GR(JTIME),ZUNIF_LAI_GR(JTIME),DTV%XPAR_LAI(:,JTIME,1))
+                YFTYP_LAI_GR(JTIME),ZUNIF_LAI_GR(JTIME),DTV%XPAR_LAI(:,JTIME,1),GPRESENT)
+ IF (.NOT. GPRESENT) CALL ERROR_GR_PGD('LAI_GR: LAI of green roof')
 !
 ENDDO
 !
 !
 IF (LHOOK) CALL DR_HOOK('PGD_TEB_GREENROOF_PAR',1,ZHOOK_HANDLE)
 !
+CONTAINS
+!
+SUBROUTINE ERROR_GR_PGD(HFIELD)
+  CHARACTER(LEN=*), INTENT(IN) :: HFIELD
+  WRITE(ILUOUT,*) ' '
+  WRITE(ILUOUT,*) '***********************************************************'
+  WRITE(ILUOUT,*) '* Error in PGD field preparation of field : ', HFIELD
+  WRITE(ILUOUT,*) '* There is no prescribed value and no input file          *'
+  WRITE(ILUOUT,*) '***********************************************************'
+  WRITE(ILUOUT,*) ' '
+  CALL ABOR1_SFX('PGD_FIELDIN: NO PRESCRIBED VALUE NOR INPUT FILE FOR '//HFIELD)
+END SUBROUTINE ERROR_GR_PGD
 !-------------------------------------------------------------------------------
 !
 END SUBROUTINE PGD_TEB_GREENROOF_PAR

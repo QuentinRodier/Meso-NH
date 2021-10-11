@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     ###############################################################################
-SUBROUTINE COUPLING_FLAKE_n (CHF, DGO, D, DC, DMF, F, DST, SLT, &
+SUBROUTINE COUPLING_FLAKE_n (CHF, DGO, D, DC, DMF, F, AT, DST, SLT, &
                              HPROGRAM, HCOUPLING, PTSTEP, KYEAR, KMONTH, KDAY, PTIME,  &
                              KI, KSV, KSW, PTSUN, PZENITH, PZENITH2, PAZIM, PZREF,     &
                              PUREF, PU, PV, PQA, PTA, PRHOA, PSV, PCO2, HSV, PRAIN,    &
@@ -65,6 +65,8 @@ USE MODD_SURF_PAR, ONLY : XUNDEF
 USE MODD_SLT_SURF
 USE MODD_DST_SURF
 !
+USE MODD_SURF_ATM_TURB_n, ONLY : SURF_ATM_TURB_t
+!
 USE MODE_DSLT_SURF
 USE MODE_THERMOS
 ! 
@@ -95,6 +97,8 @@ TYPE(DIAG_t), INTENT(INOUT) :: D
 TYPE(DIAG_t), INTENT(INOUT) :: DC
 TYPE(DIAG_MISC_FLAKE_t), INTENT(INOUT) :: DMF
 TYPE(FLAKE_t), INTENT(INOUT) :: F
+!
+TYPE(SURF_ATM_TURB_t), INTENT(IN) :: AT         ! atmospheric turbulence parameters
 !
 TYPE(DST_t), INTENT(INOUT) :: DST
 TYPE(SLT_t), INTENT(INOUT) :: SLT
@@ -285,7 +289,7 @@ IF (F%CFLK_FLUX=='DEF  ') THEN
     CALL WATER_FLUX(F%XZ0, PTA, ZEXNA, PRHOA, F%XTS, ZEXNS, PQA, &
                     PRAIN, PSNOW, XTT, ZWIND, PZREF, PUREF,      &
                     PPS, GHANDLE_SIC, ZQSAT, PSFTH, PSFTQ, ZUSTAR,&
-                    ZCD, ZCDN, ZCH, ZRI, ZRESA_WATER, ZZ0H        )  
+                    AT, ZCD, ZCDN, ZCH, ZRI, ZRESA_WATER, ZZ0H        )  
 !                  
     WHERE (F%XTS(:)<XTT)
       ZLE  (:) = PSFTQ(:) * XLSTT

@@ -31,6 +31,8 @@
 !             ------------
 !
 USE MODD_SV_n, ONLY : SV_t, SV_INIT
+USE MODD_SLT_n, ONLY : SLT_t, SLT_INIT
+USE MODD_DST_n, ONLY : DST_t, DST_INIT
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -43,6 +45,8 @@ TYPE CH_WATFLUX_t
   REAL, DIMENSION(:,:), POINTER :: XDEP                     ! final dry deposition  
                                                             ! velocity  for lakes
   TYPE(SV_t) :: SVW
+  TYPE(SLT_t) :: SLTW
+  TYPE(DST_t) :: DSTW
 
   CHARACTER(LEN=6), DIMENSION(:), POINTER :: CCH_NAMES      ! NAME OF CHEMICAL SPECIES
                                                             ! (FOR DIAG ONLY)
@@ -67,6 +71,8 @@ NULLIFY(YCH_WATFLUX%CSLTNAMES)
 NULLIFY(YCH_WATFLUX%CSNWNAMES)
 YCH_WATFLUX%CCH_DRY_DEP=' '
 CALL SV_INIT(YCH_WATFLUX%SVW)
+CALL SLT_INIT(YCH_WATFLUX%SLTW)
+CALL DST_INIT(YCH_WATFLUX%DSTW)
 IF (LHOOK) CALL DR_HOOK("MODD_CH_WATFLUX_N:CH_WATFLUX_INIT",1,ZHOOK_HANDLE)
 END SUBROUTINE CH_WATFLUX_INIT
 

@@ -92,15 +92,15 @@ USE MODD_DIAG_n, ONLY : DIAG_t
 USE MODD_DIAG_EVAP_ISBA_n, ONLY : DIAG_EVAP_ISBA_t
 USE MODD_DIAG_MISC_ISBA_n, ONLY : DIAG_MISC_ISBA_t
 !
-USE MODD_CSTS,                    ONLY : XLVTT, XLSTT, XTT, XCPD, XCPV, XCL,  &
+USE MODD_CSTS,                    ONLY : XLVTT, XLSTT, XTT, XCPD, XCPV, XCL, &
                                          XDAY, XPI, XLMTT, XRHOLW
 USE MODD_SURF_ATM,                ONLY : LCPL_ARP
 USE MODD_SURF_PAR,                ONLY : XUNDEF
 USE MODD_SNOW_METAMO,             ONLY : XSNOWDZMIN
-
+!
 USE MODE_THERMOS
 USE MODE_MEB,                     ONLY : SFC_HEATCAP_VEG, MEBLITTER_THRM
-USE MODE_SNOW3L,                  ONLY : SNOW3LHOLD
+USE MODE_SNOW3L,                  ONLY : SNOW3LHOLD,SNOWCROHOLD
 !
 USE MODI_TRIDIAG_GROUND_RM_COEFS
 USE MODI_TRIDIAG_GROUND_RM_SOLN
@@ -436,7 +436,7 @@ IF(IO%CISBA == 'DIF')THEN
 ! quite robust. Note, this only corresponds to the snow-covered part of grid box,
 ! so it is more accurate as the snow fraction approaches unity.
 ! Starting from snowpack surface downward to base of ground:
-!   
+!
    JL                     = 1
    ZD(:,JL)               = DMK%XSNOWDZ(:,1)
    ZT(:,JL)               = ZTNO(:,1)
@@ -858,7 +858,12 @@ ENDDO
 ! NOTE this mimicks what is assumed to be done in the snow scheme. If a more sophisticated
 ! snow hydrology scheme is used, this code should be adapted.
 !
-ZWHOLDMAX(:,:)        = SNOW3LHOLD(PSNOWRHO,DMK%XSNOWDZ) ! m
+IF (PEK%TSNOW%SCHEME=='CRO') THEN
+  ZWHOLDMAX(:,:)        = SNOWCROHOLD(PSNOWRHO,PSNOWLIQ,DMK%XSNOWDZ) ! m
+ELSE
+  ZWHOLDMAX(:,:)        = SNOW3LHOLD(PSNOWRHO,DMK%XSNOWDZ) ! m
+END IF
+
 ZWORK(:)              = MAX(0., PSNOWLIQ(:,1)-ZWHOLDMAX(:,1))
 PSNOWLIQ(:,1)         = PSNOWLIQ(:,1) - ZWORK(:)
 DO JK=2,JNSNOW

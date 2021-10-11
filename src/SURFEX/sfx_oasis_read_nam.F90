@@ -35,6 +35,7 @@ SUBROUTINE SFX_OASIS_READ_NAM(HPROGRAM,PTSTEP_SURF,HINIT)
 !!    10/2016 B. Decharme : bug surface/groundwater coupling 
 !!      Modified    11/2014 : J. Pianezze - add wave coupling parameters
 !!                                          and surface pressure for ocean coupling
+!!                  01/2020 : C. Lebeaupin - new check options before stopping
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -372,10 +373,6 @@ IF(LCPL_SEA)THEN
   YCOMMENT='Snowfall rate'
   CALL CHECK_FIELD(CSEA_SNOW,YKEY,YCOMMENT,YSEA,KOUT)
 !
-  YKEY  ='CSEA_EVPR'
-  YCOMMENT='Evap. - Precip. rate'
-  CALL CHECK_FIELD(CSEA_EVPR,YKEY,YCOMMENT,YSEA,KOUT)
-!
   YKEY  ='CSEA_WATF'
   YCOMMENT='Freshwater flux'
   CALL CHECK_FIELD(CSEA_WATF,YKEY,YCOMMENT,YSEA,KOUT)
@@ -531,7 +528,7 @@ IF(LEN_TRIM(HFIELD)==0)THEN
      CASE(YSEA)
           YNAMELIST='NAM_SFX_SEA_CPL'
      CASE(YLAKE)
-          YNAMELIST='NAM_SFX_LAKE_CPL' 
+          YNAMELIST='NAM_SFX_LAKE_CPL'          
      CASE(YWAVE)
           YNAMELIST='NAM_SFX_WAVE_CPL'
      CASE DEFAULT
@@ -549,10 +546,14 @@ IF(LEN_TRIM(HFIELD)==0)THEN
 !
   IF((KID==0.OR.KID==1).AND.HTYP/=YLAND)THEN
     LSTOP=.FALSE.
+  ELSEIF((KID==0).AND.(HTYP==YSEA))THEN
+    LSTOP=.FALSE.
+  ELSEIF((KID==1).AND.(HTYP==YWAVE))THEN
+    LSTOP=.FALSE.
   ELSE
     LSTOP=.TRUE.
   ENDIF
-!
+
   IF(LSTOP)THEN
     CALL ABOR1_SFX(YCOMMENT1)
   ENDIF

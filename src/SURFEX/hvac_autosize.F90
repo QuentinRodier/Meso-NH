@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #############################################################
-SUBROUTINE HVAC_AUTOSIZE (B, BOP, G, T, TOP, KI,KLUOUT)
+SUBROUTINE HVAC_AUTOSIZE (B, BOP, G, T, TOP, GDM, KI, KSW, KLUOUT)
 !     #############################################################
 !!
 !!    PURPOSE
@@ -20,34 +20,49 @@ SUBROUTINE HVAC_AUTOSIZE (B, BOP, G, T, TOP, KI,KLUOUT)
 !!    -------------
 !!    Original    05/2011
 !!    modified    08/2013 add solar panels (V. Masson)
+!!                01/2016 add high vegetation (E.Redon/A.Lemonsu)
+!!                01/2016 add urban hydrology (K.Chancibault/A.Lemonsu)
+!!                02/2017 add CO2 fluxes (M. Goret)
+!!                04/2017 suppress eff_heat as arg. of TEB  (M. Goret)
+!!                10/2017 add hot water
 !!                13/02/2018: comment OpenMP include/use if compiled without OpenMP (P. Wautelet)
+!!                04.2020 completes energy check for high vegetation IR exchanges (V. Masson)
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
 !               ------------
 !
-!
-!
+USE MODD_SURFEX_n, ONLY : TEB_GARDEN_MODEL_t, TEB_HYDRO_MODEL_t
+USE MODD_BLD_DESCRIPTION_n, ONLY : BLD_DESC_t
 USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
 USE MODD_BEM_n, ONLY : BEM_t
 USE MODD_BEM_OPTION_n, ONLY : BEM_OPTIONS_t
 USE MODD_SFX_GRID_n, ONLY : GRID_t
+USE MODD_SURF_PAR, ONLY : XUNDEF, XSURF_EPSILON
 USE MODD_TEB_IRRIG_n, ONLY : TEB_IRRIG_t
 USE MODD_TEB_n, ONLY : TEB_t
 USE MODD_TEB_OPTION_n, ONLY : TEB_OPTIONS_t
 USE MODD_TEB_IRRIG_n, ONLY : TEB_IRRIG_t, TEB_IRRIG_INIT
 USE MODD_DIAG_MISC_TEB_n, ONLY : DIAG_MISC_TEB_t, DIAG_MISC_TEB_INIT
+USE MODD_CHECK_TEB, ONLY : CHECK_TEB_t
+USE MODD_LW_COEF, ONLY : LW_COEF_t
 USE MODD_DIAG_MISC_TEB_OPTIONS_n, ONLY : DIAG_MISC_TEB_OPTIONS_t, DIAG_MISC_TEB_OPTIONS_INIT
+USE MODD_TEB_HYDRO_n,       ONLY : TEB_HYDRO_t
+USE MODD_ISBA_n,            ONLY : ISBA_PE_t
+USE MODD_SURF_ATM_TURB_n, ONLY : SURF_ATM_TURB_t
 !
-USE MODD_CSTS,  ONLY : XCPD, XPI, XP00, XRD, XSTEFAN
+USE MODD_CSTS,  ONLY : XCPD, XPI, XP00, XRD
 !
-USE MODI_TEB
+USE MODI_TEB_BLD_ROAD
 USE MODI_SUNPOS
 USE MODI_SW_DAYCYCLE
 USE MODI_URBAN_LW_COEF
 USE MODI_URBAN_SOLAR_ABS
 USE MODI_GET_SIZES_PARALLEL
 USE MODI_DIAG_MISC_TEB_INIT_n
+USE MODI_ALLOC_LW_COEF
+USE MODI_DEALLOC_LW_COEF
+USE MODI_EXPLICIT_LONGWAVE
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -70,7 +85,9 @@ TYPE(BEM_OPTIONS_t), INTENT(INOUT) :: BOP
 TYPE(GRID_t), INTENT(INOUT) :: G
 TYPE(TEB_t), INTENT(INOUT) :: T
 TYPE(TEB_OPTIONS_t), INTENT(INOUT) :: TOP
+TYPE(TEB_GARDEN_MODEL_t), INTENT(INOUT) :: GDM
 !
+INTEGER, INTENT(IN) :: KSW    ! number of short-wave spectral bands
 INTEGER,       INTENT(IN)    :: KI     ! number of points
 INTEGER,       INTENT(IN)    :: KLUOUT ! output listing logical unit
 !
@@ -82,14 +99,29 @@ INTEGER,       INTENT(IN)    :: KLUOUT ! output listing logical unit
 TYPE(DIAG_MISC_TEB_t) :: YDMTC
 TYPE(DIAG_MISC_TEB_t) :: YDMT
 TYPE(DIAG_MISC_TEB_OPTIONS_t) :: YDMTO
-TYPE(TEB_IRRIG_t)     :: YTIR
-!
-! Options TOP
+TYPE(TEB_IRRIG_t)     :: YIR
+TYPE(CHECK_TEB_t)     :: CT
+TYPE(LW_COEF_t)       :: LW
+TYPE(TEB_HYDRO_t)     :: YTH
+TYPE(ISBA_PE_t)       :: YPE
+TYPE(TEB_t)           :: YT
 !
 LOGICAL :: GCANOPY
+LOGICAL :: GPAR_RD_IRRIG
+LOGICAL :: GSURF_MISC_BUDGET
  CHARACTER(LEN=3) :: YBEM
  CHARACTER(LEN=6) :: YZ0H 
  CHARACTER(LEN=5) :: YCH_BEM  
+!-------------------------------------------------------------------------
+!
+REAL, PARAMETER     :: ZTSTEP = 300.
+INTEGER, PARAMETER  :: JPYEAR = 2004   ! Current year (UTC)
+!
+!local variable
+!
+INTEGER             :: IMONTH = 7  ! Current month (UTC)
+INTEGER             :: IDAY   = 12 ! Current day (UTC)
+REAL                :: ZTIME  = 0. ! Time at start of the run (s)
 !
 ! Teb Fields T
 !
@@ -100,29 +132,10 @@ REAL, DIMENSION(KI) :: ZGD
  CHARACTER(LEN=6)    :: YCOOL_COIL
  CHARACTER(LEN=6)    :: YHEAT_COIL
 !
-! Bem!
- CHARACTER(LEN=4),DIMENSION(KI) :: YNATVENT
 REAL, DIMENSION(KI) :: ZF_WATER_COND
 REAL, DIMENSION(KI) :: ZAUX_MAX
-REAL, DIMENSION(KI) :: ZT_WIN2
-LOGICAL, DIMENSION(KI) :: GNATVENT_NIGHT
 !
-! Road irrigation (not used here)
-!
-TYPE(TEB_IRRIG_t) :: YIR
-!
-!-------------------------------------------------------------------------
-!
-REAL, PARAMETER     :: ZTSTEP = 300.
-INTEGER, PARAMETER  :: JPYEAR = 2004   ! Current year (UTC)
-!
-!local variable
-!
-INTEGER             :: IMONTH = 7  ! Current month (UTC)
-INTEGER             :: IDAY   = 12 ! Current day (UTC)
-REAL                :: ZTIME  = 0.  ! Time at start of the run (s)
-!
- CHARACTER(LEN=3)    :: YIMPLICIT_WIND = 'NEW'
+CHARACTER(LEN=3)    :: YIMPLICIT_WIND = 'NEW'
 !
 ! Loop control indexes
 !
@@ -156,6 +169,8 @@ REAL, DIMENSION(KI) :: ZEXNS
 REAL, DIMENSION(KI) :: ZEXNA
 REAL, DIMENSION(KI) :: ZTA
 REAL, DIMENSION(KI) :: ZQA
+REAL, DIMENSION(KI) :: ZTA_RF
+REAL, DIMENSION(KI) :: ZQA_RF
 REAL, DIMENSION(KI) :: ZRHOA
 REAL, DIMENSION(KI) :: ZLW_RAD
 REAL, DIMENSION(KI) :: ZRR
@@ -180,40 +195,48 @@ REAL, DIMENSION(KI) :: ZDELT_RD
  CHARACTER(LEN=4)    :: YSNOW_RF
  CHARACTER(LEN=4)    :: YSNOW_RD
 !
-REAL, DIMENSION(KI) :: ZLW_WA_TO_WB   ! longwave exchange coefficients
-REAL, DIMENSION(KI) :: ZLW_WA_TO_R
-REAL, DIMENSION(KI) :: ZLW_WB_TO_R
-REAL, DIMENSION(KI) :: ZLW_WA_TO_NR
-REAL, DIMENSION(KI) :: ZLW_WB_TO_NR
-REAL, DIMENSION(KI) :: ZLW_R_TO_WA
-REAL, DIMENSION(KI) :: ZLW_R_TO_WB
-REAL, DIMENSION(KI) :: ZLW_G_TO_WA
-REAL, DIMENSION(KI) :: ZLW_G_TO_WB
-REAL, DIMENSION(KI) :: ZLW_S_TO_WA
-REAL, DIMENSION(KI) :: ZLW_S_TO_WB
-REAL, DIMENSION(KI) :: ZLW_S_TO_R
-REAL, DIMENSION(KI) :: ZLW_S_TO_NR
-REAL, DIMENSION(KI) :: ZLW_NR_TO_WA
-REAL, DIMENSION(KI) :: ZLW_NR_TO_WB
-REAL, DIMENSION(KI) :: ZLW_NR_TO_WIN
-REAL, DIMENSION(KI) :: ZLW_WA_TO_WIN
-REAL, DIMENSION(KI) :: ZLW_WB_TO_WIN
-REAL, DIMENSION(KI) :: ZLW_G_TO_WIN
-REAL, DIMENSION(KI) :: ZLW_R_TO_WIN
-REAL, DIMENSION(KI) :: ZLW_S_TO_WIN
-REAL, DIMENSION(KI) :: ZLW_WIN_TO_WA
-REAL, DIMENSION(KI) :: ZLW_WIN_TO_WB
-REAL, DIMENSION(KI) :: ZLW_WIN_TO_R
-REAL, DIMENSION(KI) :: ZLW_WIN_TO_NR
-!
 REAL, DIMENSION(KI) :: ZLEW_RF     ! latent heat flux over roof (snow)
 !
 REAL, DIMENSION(KI) :: ZLEW_RD     ! latent heat flux over road (snow)
 !
-REAL, DIMENSION(KI) :: ZLE_WL_A    ! latent heat flux over wall
-REAL, DIMENSION(KI) :: ZLE_WL_B    ! latent heat flux over wall
- 
+REAL, DIMENSION(KI) :: ZPSOLD
+REAL, DIMENSION(KI,BOP%NBEMCOMP) :: ZAUXQIN
+REAL, DIMENSION(KI,BOP%NBEMCOMP) :: ZAUXFRACOMP
+REAL, DIMENSION(KI,BOP%NBEMCOMP) :: ZAUXVENT_BEHAV_ANYWAY
+REAL, DIMENSION(KI,BOP%NBEMCOMP) :: ZAUXVENT_BEHAV_ADAPTI
+REAL, DIMENSION(KI) :: ZAUXINF
+REAL, DIMENSION(KI) :: AUXU10M
 !
+REAL, DIMENSION(KI) :: ZAC_AGG_GARDEN
+REAL, DIMENSION(KI) :: ZHU_AGG_GARDEN
+!
+REAL, DIMENSION(KI) :: ZFRAC_PANEL
+REAL, DIMENSION(KI) :: ZALB_PANEL
+REAL, DIMENSION(KI) :: ZASNOW_ROOF
+REAL, DIMENSION(KI) :: ZASNOW_ROAD
+REAL, DIMENSION(KI) :: ZEMIS_GARDEN
+REAL, DIMENSION(KI) :: ZESNOW_ROAD
+REAL, DIMENSION(KI) :: ZTSSNOW_ROAD
+REAL, DIMENSION(KI) :: ZWS_ROOF
+REAL, DIMENSION(KI) :: ZWS_ROAD
+ CHARACTER(LEN=4)    :: HSNOW_ROOF
+REAL, DIMENSION(KI,1):: ZWSNOW_ROOF
+REAL, DIMENSION(KI,1) :: ZTSNOW_ROOF
+REAL, DIMENSION(KI,1) :: ZRSNOW_ROOF
+REAL, DIMENSION(KI) :: ZTSSNOW_ROOF
+REAL, DIMENSION(KI) :: ZESNOW_ROOF
+ CHARACTER(LEN=4)    :: HSNOW_ROAD
+REAL, DIMENSION(KI,1) :: ZWSNOW_ROAD
+REAL, DIMENSION(KI,1) :: ZTSNOW_ROAD
+REAL, DIMENSION(KI,1) :: ZRSNOW_ROAD
+REAL, DIMENSION(KI) :: ZDIR_ALB_TWN
+REAL, DIMENSION(KI) :: ZSCA_ALB_TWN
+REAL, DIMENSION(KI) :: ZREC_SW_WIN
+REAL, DIMENSION(KI) :: ZREF_SW_GRND
+REAL, DIMENSION(KI) :: ZREF_SW_FAC
+REAL, DIMENSION(KI) :: ZREF_SW_HVEG
+!
+REAL, DIMENSION(KI) :: ZEMIS_WIN
 REAL, DIMENSION(KI) :: ZRNSNOW_RF  ! net radiation over snow
 REAL, DIMENSION(KI) :: ZHSNOW_RF   ! sensible heat flux over snow
 REAL, DIMENSION(KI) :: ZLESNOW_RF  ! latent heat flux over snow
@@ -230,24 +253,22 @@ REAL, DIMENSION(KI) :: ZUW_RD      ! Momentum flux for roads
 REAL, DIMENSION(KI) :: ZUW_RF      ! Momentum flux for roofs
 REAL, DIMENSION(KI) :: ZDUWDU_RD   !
 REAL, DIMENSION(KI) :: ZDUWDU_RF   !
-REAL, DIMENSION(KI) :: ZUSTAR_TWN   ! friction velocity over town
+REAL, DIMENSION(KI) :: ZUSTAR_TWN  ! friction velocity over town
 !
-REAL, DIMENSION(KI) :: ZCD           ! town averaged drag coefficient
-REAL, DIMENSION(KI) :: ZCDN          ! town averaged neutral drag coefficient
-REAL, DIMENSION(KI) :: ZCH_TWN      ! town averaged heat transfer coefficient
-REAL, DIMENSION(KI) :: ZRI_TWN      ! town averaged Richardson number
-REAL, DIMENSION(KI) :: ZRESA_TWN    ! town aerodynamical resistance
+REAL, DIMENSION(KI) :: ZCD         ! town averaged drag coefficient
+REAL, DIMENSION(KI) :: ZCDN        ! town averaged neutral drag coefficient
+REAL, DIMENSION(KI) :: ZCH_TWN     ! town averaged heat transfer coefficient
+REAL, DIMENSION(KI) :: ZRI_TWN     ! town averaged Richardson number
+REAL, DIMENSION(KI) :: ZRESA_TWN   ! town aerodynamical resistance
 REAL, DIMENSION(KI) :: ZAC_RF      ! roof conductance
-REAL, DIMENSION(KI) :: ZAC_RD       ! road conductance
+REAL, DIMENSION(KI) :: ZAC_RD      ! road conductance
 REAL, DIMENSION(KI) :: ZAC_WL      ! wall conductance
-REAL, DIMENSION(KI) :: ZAC_TOP       ! top conductance
-REAL, DIMENSION(KI) :: ZAC_GD     ! garden conductance
+REAL, DIMENSION(KI) :: ZAC_TOP     ! top conductance
+REAL, DIMENSION(KI) :: ZAC_GD      ! garden conductance
 REAL, DIMENSION(KI) :: ZAC_RF_WAT  ! roof water conductance
 REAL, DIMENSION(KI) :: ZAC_RD_WAT  ! roof water conductance 
 REAL, DIMENSION(KI) :: ZEMIT_LW_FAC
 REAL, DIMENSION(KI) :: ZEMIT_LW_RD
-REAL, DIMENSION(KI) :: ZT_RAD_IND
-REAL, DIMENSION(KI) :: ZHU_BLD
 REAL, DIMENSION(KI) :: ZTSUN
 !
 ! Arguments to urban_solar_abs
@@ -258,44 +279,17 @@ REAL, DIMENSION(KI) :: ZAZIM
 REAL, DIMENSION(KI) :: ZDIR_SW
 REAL, DIMENSION(KI) :: ZSCA_SW
 !
-REAL, DIMENSION(KI) :: ZFRAC_PANEL
-REAL, DIMENSION(KI) :: ZALB_PANEL
 REAL, DIMENSION(KI) :: ZSVF_GD
-!
-REAL, DIMENSION(KI) :: ZREC_SW_RD
-REAL, DIMENSION(KI) :: ZREC_SW_SNOW_RD
-REAL, DIMENSION(KI) :: ZREC_SW_WL_A
-REAL, DIMENSION(KI) :: ZREC_SW_WL_B
-REAL, DIMENSION(KI) :: ZREC_SW_GD
-REAL, DIMENSION(KI) :: ZREC_SW_RF
-!
-REAL, DIMENSION(KI) :: ZDIR_ALB_TWN
-REAL, DIMENSION(KI) :: ZSCA_ALB_TWN
-REAL, DIMENSION(KI) :: ZSW_RAD_GD
-REAL, DIMENSION(KI) :: ZREC_SW_WIN
-REAL, DIMENSION(KI) :: ZREF_SW_GRND
-REAL, DIMENSION(KI) :: ZREF_SW_FAC
 !
 REAL, DIMENSION(KI) :: ZALB_GR
 REAL, DIMENSION(KI) :: ZALB_GD
-!
-! Arguments to urban_lw_coef
-!
-REAL, DIMENSION(KI) :: ZEMIS_GD
-!
-REAL, DIMENSION(KI) :: ZLW_WA_TO_G
-REAL, DIMENSION(KI) :: ZLW_WB_TO_G
-REAL, DIMENSION(KI) :: ZLW_S_TO_G
-REAL, DIMENSION(KI) :: ZLW_WIN_TO_G
-!
-!! GREGOIRE 13/03
-!
+REAL, DIMENSION(KI) :: ZALB_HVEG
+REAL, DIMENSION(KI,BOP%NBEMCOMP) :: ZAUXSHAD_BEHAV_ANYWAY
+REAL, DIMENSION(KI,BOP%NBEMCOMP) :: ZAUXSHAD_BEHAV_ADAPTI
 !
 !new for shading
 REAL, DIMENSION(KI) :: ZE_SHADING
-LOGICAL, DIMENSION(KI) :: GSHAD_DAY
-LOGICAL, DIMENSION(KI) :: GSHADE
-!
+REAL, DIMENSION(KI) :: PSHADE
 !
 ! Case greenroof
 REAL, DIMENSION(KI) :: ZUW_GR
@@ -306,12 +300,45 @@ REAL, DIMENSION(KI) :: ZGFLUX_GR
 REAL, DIMENSION(KI) :: ZRUNOFF_GR 
 REAL, DIMENSION(KI) :: ZDRAIN_GR 
 !
+! Case of high vegetation
+REAL, DIMENSION(KI,2):: ZTRANS_HVEG    ! transmissivity profile
+REAL, DIMENSION(KI) :: ZEMIS_HVEG      ! emissivity for high vegetation
+REAL, DIMENSION(KI) :: ZTS_HVEG        ! surface temperature of urban trees at t
+REAL, DIMENSION(KI) :: ZTRANS_HVCR     ! transmissivity profile through tree crown         
+!
+REAL, DIMENSION(KI,BOP%NBEMCOMP) :: ZAUXTCOOL_TARGET
+REAL, DIMENSION(KI,BOP%NBEMCOMP) :: ZAUXTHEAT_TARGET
+!
+REAL, DIMENSION(KI) :: ZREC_SW_GD
+REAL, DIMENSION(KI) :: ZREC_SW_RF
+REAL, DIMENSION(KI) :: ZEMIS_GD
+!
+REAL, DIMENSION(KI) :: ZCST_H_WASTE_CANY
+REAL, DIMENSION(KI) :: ZCST_LE_WASTE_CANY                          
+REAL, DIMENSION(KI) :: ZCOE_H_WASTE_CANY
+REAL, DIMENSION(KI) :: ZCOE_LE_WASTE_CANY                          
+REAL, DIMENSION(KI) :: ZMUL_H_WASTE_CANY
+REAL, DIMENSION(KI) :: ZMUL_LE_WASTE_CANY
+!
+! Case of urban irrigation
+REAL                :: ZCONNEX         ! impervious surfaces connexion rate to the sewer (-)
+REAL, DIMENSION(KI) :: ZWS_RF_MAX      
+REAL, DIMENSION(KI) :: ZWS_RD_MAX
+!
+TYPE(SURF_ATM_TURB_t) :: AT   ! atmospheric turbulence parameters
+!
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !*      0.     Initialization
 !              --------------
 !
 IF (LHOOK) CALL DR_HOOK('HVAC_AUTOSIZE',0,ZHOOK_HANDLE)
+!
+CT%LCHECK_TEB = TOP%LCHECK_TEB
+CT%XCHECK_PROCESS = TOP%XEPS_BDGT_FAC
+IF (CT%LCHECK_TEB) CALL ALLOC_CHECK_TEB(CT, KI, BOP%NBEMCOMP)
+!
+CALL ALLOC_LW_COEF(LW,KI)
 !
 !    Design parameters
 !
@@ -334,7 +361,9 @@ ZT_CAN(:) = 10.7/2 * SIN(2*XPI/(24*3600) * (ZTIME+16*3600)) + (B%XT_SIZE_MAX(:)-
 ZQ_CAN = 0.011
 ZU_CAN = 2.5 
 ZZ_LOWCAN = ZZREF
-!
+ZAUX_MAX = B%XAUX_MAX
+B%XAUX_MAX = 0.
+ZT_SKY = B%XT_SIZE_MIN-20.0
 !
 ZTS_GD = 300.
 !
@@ -348,10 +377,61 @@ ZQSAT_RD = 0.015
 ZDELT_RF = 0.0 
 ZDELT_RD = 0.0 
 !
+B%XM_SYS_RAT    = 0.
+B%XCAP_SYS_RAT  = 0.
+B%XCAP_SYS_HEAT = 0.
 !
+ZAC_AGG_GARDEN(:) = 0.0
+ZHU_AGG_GARDEN(:) = 0.0 
+INB_STEP_ATM      = 3600*24*4/ZTSTEP
+HSNOW_ROOF        = 'NONE'
+HSNOW_ROAD        = 'NONE'
+ZASNOW_ROOF       = 0.8
+ZASNOW_ROAD       = 0.8
+ZEMIS_WIN         = 1.0
+ZEMIS_GARDEN      = 1.0
+ZESNOW_ROAD       = 1.0
+ZTSSNOW_ROAD      = 273.0
+ZWS_ROOF          = 0.0
+ZWS_ROAD          = 0.0
+ZWSNOW_ROOF       = 0.0
+ZTSNOW_ROOF       = 273.0
+ZRSNOW_ROOF       = 0.0
+ZTSSNOW_ROOF      = 273.0
+ZESNOW_ROOF       = 0.0
+ZWSNOW_ROAD       = 0.0
+ZTSNOW_ROAD       = 273.0
+ZRSNOW_ROAD       = 0.0
+ZE_SHADING(:)     = 0.
+PSHADE    (:)     = 0.
+! solar panels are not taken into account in the building's HVAC equipment sizing process
+ZFRAC_PANEL       = 0.
+ZALB_PANEL        = 0.1
+!
+!
+!
+! Robert: New TEB input variables are hardcoded
+!
+ZAUXVENT_BEHAV_ANYWAY(:,:) = 0.0
+ZAUXVENT_BEHAV_ADAPTI(:,:) = 0.0
+ZAUXSHAD_BEHAV_ANYWAY(:,:) = 0.0
+ZAUXSHAD_BEHAV_ADAPTI(:,:) = 0.0
+ZAUXFRACOMP(:,:)      = 1.0
+ZAUXINF(:)            = 0.5
+ZPSOLD(:)             = 101325
+AUXU10M(:)            = 3.0
+ZAUXQIN(:,:)          = 5.0
+ZAUXTCOOL_TARGET(:,:) = 298.15
+ZAUXTHEAT_TARGET(:,:) = 293.15
 !
 !*      A.     Autosize of the heating system
 !              ---------------------------------
+!
+YCOOL_COIL = 'IDEAL '
+YHEAT_COIL = 'IDEAL '
+ZF_WATER_COND(:) = 0.
+ZRHOA = 1.30
+ZTOUT_EQ(:) = (B%XT_SIZE_MIN(:) + ZT_SKY(:))/2.
 !
 ZU_RF(:) = 0.0
 DO JJ=1,TOP%NROOF_LAYER
@@ -367,26 +447,24 @@ END DO
 ZU_WL(:) = ZU_WL(:) + 1./10. + 1./25.         
 ZU_WL(:) = 1. / ZU_WL(:)
 !
-ZRHOA = 1.30
-ZT_SKY = 253.15
-ZTOUT_EQ(:) = (B%XT_SIZE_MIN(:) + ZT_SKY(:))/2.
-!
 !   Heating Coil Capacity [W m-2(bld)]
-B%XCAP_SYS_HEAT(:) = ZU_WL(:) * T%XWALL_O_BLD(:) * (B%XTHEAT_TARGET(:) - ZTOUT_EQ(:)) &
-               + B%XU_WIN(:)  * B%XGLAZ_O_BLD(:) * (B%XTHEAT_TARGET(:) - ZTOUT_EQ(:)) &
-               + ZU_RF(:)                        * (B%XTHEAT_TARGET(:) - ZTOUT_EQ(:)) &
-               - B%XQIN(:) * T%XBLD_HEIGHT(:) / B%XFLOOR_HEIGHT(:)*          &
-                 (1 - B%XQIN_FLAT(:))                                        &
-               + B%XINF(:)    * T%XBLD_HEIGHT(:) / 3600* ZRHOA(:) * XCPD *   &
-                 (B%XTHEAT_TARGET(:) - B%XT_SIZE_MIN(:))                     &
-               + B%XV_VENT(:) * T%XBLD_HEIGHT(:) / 3600* ZRHOA(:) * XCPD *   &
-                 (B%XTHEAT_TARGET(:) - B%XT_SIZE_MIN(:))
+B%XCAP_SYS_HEAT(:) = ZU_WL(:) * T%XWALL_O_BLD(:) * (ZAUXTHEAT_TARGET(:,1) - ZTOUT_EQ(:)) &
+               + B%XU_WIN(:)  * B%XGLAZ_O_BLD(:) * (ZAUXTHEAT_TARGET(:,1) - ZTOUT_EQ(:)) &
+               + ZU_RF(:)                        * (ZAUXTHEAT_TARGET(:,1) - ZTOUT_EQ(:)) &
+               - ZAUXQIN(:,1) * T%XBLD_HEIGHT(:) / B%XFLOOR_HEIGHT(:)*          &
+                 (1 - B%XQIN_FLAT(:))                                           &
+               + ZAUXINF(:)  * T%XBLD_HEIGHT(:) / 3600* ZRHOA(:) * XCPD *       &
+                 (ZAUXTHEAT_TARGET(:,1) - B%XT_SIZE_MIN(:))                     &
+               + 0.0 * T%XBLD_HEIGHT(:) / 3600* ZRHOA(:) * XCPD *               &
+                 (ZAUXTHEAT_TARGET(:,1) - B%XT_SIZE_MIN(:))
+!
+! Impose a minimum value for the heating system capacity
+!
+WHERE(B%XCAP_SYS_HEAT.LT.10.0) B%XCAP_SYS_HEAT(:)=10.0
 !
 !   Rated air flow rate [kg s-1 m-2(bld)]
-B%XM_SYS_RAT(:) = B%XCAP_SYS_HEAT(:)/XCPD/(323.15 - B%XTHEAT_TARGET(:))
+B%XM_SYS_RAT(:) = B%XCAP_SYS_HEAT(:)/XCPD/(323.15 - ZAUXTHEAT_TARGET(:,1))
 !
-!    Initialization
-B%XCAP_SYS_RAT  = 0.
 !
 !*      B.     Autosize of the cooling system
 !              -----------------------------------
@@ -451,6 +529,36 @@ T%TSNOW_ROAD%ALB    = 0.8
 T%TSNOW_ROAD%TS     = 273.0
 T%TSNOW_ROAD%EMIS   = 1.0
 !
+ALLOCATE(YT%TSNOW_ROOF%WSNOW(KI,1))
+ALLOCATE(YT%TSNOW_ROOF%T    (KI,1))
+ALLOCATE(YT%TSNOW_ROOF%ALB  (KI))
+ALLOCATE(YT%TSNOW_ROOF%RHO  (KI,1))
+ALLOCATE(YT%TSNOW_ROOF%TS   (KI))
+ALLOCATE(YT%TSNOW_ROOF%EMIS (KI))
+!
+YT%TSNOW_ROOF%SCHEME = 'NONE'
+YT%TSNOW_ROOF%WSNOW  = 0.0
+YT%TSNOW_ROOF%T      = 273.0
+YT%TSNOW_ROOF%RHO    = 0.0
+YT%TSNOW_ROOF%ALB    = 0.8
+YT%TSNOW_ROOF%TS     = 273.0
+YT%TSNOW_ROOF%EMIS   = 0.0
+!
+ALLOCATE(YT%TSNOW_ROAD%WSNOW(KI,1))
+ALLOCATE(YT%TSNOW_ROAD%T    (KI,1))
+ALLOCATE(YT%TSNOW_ROAD%ALB  (KI))
+ALLOCATE(YT%TSNOW_ROAD%RHO  (KI,1))
+ALLOCATE(YT%TSNOW_ROAD%TS   (KI))
+ALLOCATE(YT%TSNOW_ROAD%EMIS (KI))
+!
+YT%TSNOW_ROAD%SCHEME = 'NONE'
+YT%TSNOW_ROAD%WSNOW  = 0.0
+YT%TSNOW_ROAD%T      = 273.0
+YT%TSNOW_ROAD%RHO    = 0.0
+YT%TSNOW_ROAD%ALB    = 0.8
+YT%TSNOW_ROAD%TS     = 273.0
+YT%TSNOW_ROAD%EMIS   = 1.0
+!
 ZGD = T%XGARDEN
 T%XGARDEN = 0.
 !
@@ -462,64 +570,48 @@ BOP%CCOOL_COIL = 'IDEAL '
 YHEAT_COIL = BOP%CHEAT_COIL
 BOP%CHEAT_COIL ='IDEAL '
 !
-!!TI_BLD
-ALLOCATE(B%XTI_BLD(KI))
-!! !ZTI_BLD   = 297.16 ! indoor air temperature
+ALLOCATE(B%XTI_BLD(KI,BOP%NBEMCOMP))
 DO JJ=1,KI
-    B%XTI_BLD(JJ) = MAX(B%XTHEAT_TARGET(JJ),ZT_CAN(JJ)) ! indoor air temperature
+   B%XTI_BLD(JJ,:) = MAX(ZAUXTHEAT_TARGET(JJ,1),ZT_CAN(JJ)) ! indoor air temperature
 ENDDO
-!
-!T_FLOOR, T_MASS
-ALLOCATE(B%XT_FLOOR(KI,BOP%NFLOOR_LAYER))
-ALLOCATE(B%XT_MASS (KI,BOP%NFLOOR_LAYER))
-!
-DO JJ=1,BOP%NFLOOR_LAYER
-   B%XT_FLOOR(:,JJ)  = B%XTI_BLD(:) ! building floor temperature
-   B%XT_MASS(:,JJ)   = B%XTI_BLD(:) ! building mass temperature
-ENDDO
-!
-!OUTDOOR WINDOW TEMPERATURE
-ALLOCATE(B%XT_WIN1(KI))
-B%XT_WIN1(:) = ZT_CAN(:)
-!! 
-ALLOCATE(B%XT_WIN2(KI))
-B%XT_WIN2(:) = B%XTI_BLD(:)
-!
-YNATVENT(:) = B%CNATVENT(:)
-B%CNATVENT(:) = 'NONE'
-ZF_WATER_COND(:) = B%XF_WATER_COND(:)
-B%XF_WATER_COND(:) = 0.
-ZAUX_MAX = B%XAUX_MAX
-B%XAUX_MAX = 0.
-!
-ALLOCATE(B%XQI_BLD(KI))
-B%XQI_BLD = 0.011
-!
-GNATVENT_NIGHT(:) = B%LNATVENT_NIGHT(:)
-B%LNATVENT_NIGHT(:) = .FALSE.
-!
-!
-! TEB
 !
 ALLOCATE(T%XT_ROOF  (KI,TOP%NROOF_LAYER))
-ALLOCATE(T%XT_ROAD  (KI,TOP%NROAD_LAYER))
+ALLOCATE(T%XT_ROAD  (KI,TOP%NTEB_SOIL))
 ALLOCATE(T%XT_WALL_A(KI,TOP%NWALL_LAYER))
 ALLOCATE(T%XT_WALL_B(KI,TOP%NWALL_LAYER))
 !
 !RF
-T%XT_ROOF  (:,TOP%NROOF_LAYER)   = B%XTI_BLD(:)   ! roof layers temperatures
+T%XT_ROOF  (:,TOP%NROOF_LAYER)   = B%XTI_BLD(:,1)   ! roof layers temperatures
 T%XT_ROOF(:,1) = ZT_CAN(:)
 ZT1(:) = T%XT_ROOF(:,1)
 ZTN(:) = T%XT_ROOF(:,TOP%NROOF_LAYER)
 IF (TOP%NROOF_LAYER .GT. 2) CALL INTERP_PROFTWL(ZT1, ZTN, T%XD_ROOF, T%XT_ROOF)
 !
 !RD
-DO JJ=1,TOP%NROAD_LAYER
+DO JJ=1,TOP%NTEB_SOIL
    T%XT_ROAD(:,JJ) = ZT_CAN(:)
 ENDDO
 !
+!T_FLOOR, T_MASS
+ALLOCATE(B%XT_FLOOR  (KI,BOP%NFLOOR_LAYER,BOP%NBEMCOMP))
+ALLOCATE(B%XT_MASS   (KI,BOP%NMASS_LAYER,BOP%NBEMCOMP))
+ALLOCATE(T%XT_BLD    (KI,TOP%NTEB_SOIL))
+!
+DO JJ=1,BOP%NFLOOR_LAYER
+   B%XT_FLOOR(:,JJ,:)  = B%XTI_BLD(:,:) ! building floor temperature
+ENDDO
+DO JJ=1,BOP%NMASS_LAYER                                                   
+   B%XT_MASS(:,JJ,:)   = B%XTI_BLD(:,:) ! building mass temperature
+ENDDO
+!
+!BLD
+!
+DO JJ=1,TOP%NTEB_SOIL
+   T%XT_BLD(:,JJ) = T%XT_ROAD(:,JJ)
+ENDDO
+!
 !WL_A
-T%XT_WALL_A(:,TOP%NWALL_LAYER)   = B%XTI_BLD(:)   ! wall layers temperatures
+T%XT_WALL_A(:,TOP%NWALL_LAYER)   = B%XTI_BLD(:,1)   ! wall layers temperatures
 T%XT_WALL_A(:,1) = ZT_CAN(:)
 ZT1(:)=T%XT_WALL_A(:,1)
 ZTN(:)=T%XT_WALL_A(:,TOP%NWALL_LAYER)
@@ -528,25 +620,68 @@ IF (TOP%NWALL_LAYER .GT. 2) CALL INTERP_PROFTWL(ZT1, ZTN, T%XD_WALL, T%XT_WALL_A
 !WL_B
 T%XT_WALL_B = T%XT_WALL_A
 !
+!OUTDOOR WINDOW TEMPERATURE
+ALLOCATE(B%XT_WIN1(KI))
+B%XT_WIN1(:) = ZT_CAN(:)
+!! 
+ALLOCATE(B%XT_WIN2(KI))
+B%XT_WIN2(:) = B%XTI_BLD(:,1)
+!
+ALLOCATE(B%XQI_BLD(KI,BOP%NBEMCOMP))
+B%XQI_BLD = 0.011
+!
+ALLOCATE(YDMT%XT_SYS   (KI,BOP%NBEMCOMP))
+ALLOCATE(YDMT%XQ_SYS   (KI,BOP%NBEMCOMP))
+!
+YDMT%XT_SYS(:,:) = B%XTI_BLD(:,:)
+YDMT%XQ_SYS(:,:) = B%XQI_BLD(:,:)
+!
+ZF_WATER_COND(:) = B%XF_WATER_COND(:)
+B%XF_WATER_COND(:) = 0.
+!
+ZEMIS_HVEG (:) = 0.97
+!
+ZTS_HVEG     (:)   = ZT_CAN(:)
+ZTRANS_HVEG  (:,:) = 1/2.
+
+DO JJ=1,SIZE(T%XROAD)
+  IF (T%XURBTREE(JJ).GT.0.) THEN
+      ZTRANS_HVCR (JJ) = 0.5
+  ELSE
+      ZTRANS_HVCR (JJ) = 1.
+  ENDIF
+ENDDO
+
+! 
+!! Case of urban hydrology
+ZCONNEX            = 1.
+ZWS_RF_MAX(:) = 1.0
+ZWS_RD_MAX(:) = 1.0
+ALLOCATE(YTH%XWG_ROAD  (KI,TOP%NTEB_SOIL))
+ALLOCATE(YTH%XWG_BLD   (KI,TOP%NTEB_SOIL))
+ALLOCATE(YTH%XWGI_ROAD (KI,TOP%NTEB_SOIL))
+ALLOCATE(YTH%XWGI_BLD  (KI,TOP%NTEB_SOIL))
+ALLOCATE(YPE%XWGI      (KI,TOP%NTEB_SOIL))
+ALLOCATE(YPE%XWG       (KI,TOP%NTEB_SOIL))
+ALLOCATE(YPE%TSNOW%WSNOW(KI,SIZE(YDMT%XWSNOW_GARDEN_INI,2)))
+ALLOCATE(YPE%XWR       (KI))
+ALLOCATE(YT%XWS_ROAD   (KI))
+ALLOCATE(YT%XWS_ROOF   (KI))
+YTH%XWG_ROAD(:,:)  = 0
+YTH%XWG_BLD(:,:)   = 0
+YTH%XWGI_ROAD(:,:)  = 0
+YTH%XWGI_BLD(:,:)   = 0
+YPE%XWGI(:,:)      = 0
+YPE%XWG(:,:)       = 0
+YPE%TSNOW%WSNOW(:,:)= 0
+YPE%XWR(:)         = 0
+YT%XWS_ROAD(:)     = 0
+YT%XWS_ROOF(:)     = 0
 !
 !* road watering (not used)
+!
+GPAR_RD_IRRIG = YIR%LPAR_RD_IRRIG
 YIR%LPAR_RD_IRRIG   = .FALSE.
-!
-ALLOCATE(YIR%XRD_START_MONTH(KI))
-ALLOCATE(YIR%XRD_END_MONTH  (KI))
-ALLOCATE(YIR%XRD_START_HOUR (KI))
-ALLOCATE(YIR%XRD_END_HOUR   (KI))
-ALLOCATE(YIR%XRD_24H_IRRIG  (KI))
-!
-YIR%XRD_START_MONTH = 1.
-YIR%XRD_END_MONTH   = 1.
-YIR%XRD_START_HOUR  = 0.
-YIR%XRD_END_HOUR    = 24.
-YIR%XRD_24H_IRRIG   = 0.
-!
-!----------------------------------------------
-!
-! greenroofs   are not taken into account in the building's HVAC equipment sizing process
 !
 ZRN_GR    (:) = 0.
 ZH_GR     (:) = 0.
@@ -566,26 +701,26 @@ ZALB_PANEL   = 0.1
 ZSVF_GD   (:) = 0.
 ZALB_GD   (:) = 0.
 ZALB_GR(:) = 0.
-GSHADE        (:) = .FALSE.
-GSHAD_DAY     (:) = .FALSE.
+ZALB_HVEG(:) = 0.
 ZE_SHADING(:) = 0.
 !
  CALL DIAG_MISC_TEB_OPTIONS_INIT(YDMTO)
  CALL DIAG_MISC_TEB_INIT(YDMTC)
 !
+ GSURF_MISC_BUDGET = YDMTO%LSURF_MISC_BUDGET
  YDMTO%LSURF_MISC_BUDGET = .TRUE.
- CALL DIAG_MISC_TEB_INIT_n(YDMTC, YDMT, YDMTO, TOP, KI, 0)
+!
+ CALL DIAG_MISC_TEB_INIT_n(YDMTC, YDMT, YDMTO, TOP, BOP, KI, KSW, YTH, YPE, YT)
 !
 !* one supposes zero conduction heat flux between the greenroof and the nnroof.
 YDMT%XG_GREENROOF_ROOF(:) = 0.
 !
-YDMT%XQIN(:) = B%XQIN(:)
+! On suppose aucune irrigation sur les routes
+YDMT%XIRRIG_ROAD(:) = 0.
 !
-YDMT%XT_SYS(:) = B%XTI_BLD(:)
-YDMT%XQ_SYS(:) = B%XQI_BLD(:)
-!
-YDMT%XTHEAT_TARGET(:) = B%XTHEAT_TARGET(:)
-YDMT%XTCOOL_TARGET(:) = B%XTCOOL_TARGET(:)
+!* one supposes zero runoff from roofs and roads not connected to sewer
+YDMT%XNOC_ROAD(:) = 0.
+YDMT%XNOC_ROOF(:) = 0.
 !
 INB_STEP_ATM = 3600*24*4/ZTSTEP
 DO JFORC_STEP= 1,INB_STEP_ATM
@@ -595,10 +730,22 @@ DO JFORC_STEP= 1,INB_STEP_ATM
                  + (B%XT_SIZE_MAX(:)-10.7/2)
   ZTA(:) = ZT_CAN(:)
 !
+! No need of fine extrapolation for roof level temperature in hvacautosize
+  ZTA_RF(:) = ZTA(:)
+  ZQA_RF(:) = ZQA(:)
 !
 !*      B.1     Solar radiation
 !               ---------------
-!
+  !
+  ! Take radiation from January instead of July for air conditioning capacity
+  ! calculation on the south hemisphere.
+  !
+  IF (SIZE(G%XLAT).GT.0) THEN
+     IF ( (SUM(G%XLAT)/SIZE(G%XLAT)).LT.0.0 ) THEN
+        IMONTH=1
+     ENDIF
+  ENDIF
+  !
   CALL SUNPOS(JPYEAR, IMONTH, IDAY, ZTIME, G%XLON, G%XLAT, ZTSUN, ZZENITH, ZAZIM)
 !
   CALL SW_DAYCYCLE(KI, ZZENITH, ZTOT_SW)
@@ -612,59 +759,55 @@ DO JFORC_STEP= 1,INB_STEP_ATM
     ZSCA_SW = 0.0
   END WHERE
 !
-!
+
 ! solar panels are not taken into account in the building's HVAC equipment sizing process
-  CALL URBAN_SOLAR_ABS(TOP, T, B, YDMT, ZDIR_SW, ZSCA_SW, ZZENITH, ZAZIM,&
-                       ZFRAC_PANEL, ZALB_PANEL, ZALB_GD, ZSVF_GD,&
-                       ZALB_GR, ZDN_RF, ZDF_RF, ZDN_RD,          &
-                       ZDF_RD, ZREC_SW_RD, ZREC_SW_SNOW_RD,      &
-                       ZREC_SW_WL_A, ZREC_SW_WL_B, ZREC_SW_GD,   &
-                       ZREC_SW_RF, ZDIR_ALB_TWN, ZSCA_ALB_TWN,   &
-                       ZSW_RAD_GD, ZREC_SW_WIN, ZREF_SW_GRND,    &
-                       ZREF_SW_FAC, ZE_SHADING, GSHAD_DAY, GSHADE  )
-!
+  CALL URBAN_SOLAR_ABS(TOP, T, B, YDMT, GDM%P, ZDIR_SW, ZSCA_SW, ZZENITH, ZAZIM,          &
+                       ZFRAC_PANEL, ZALB_PANEL, ZALB_GD, ZALB_GR, ZALB_HVEG, ZDN_RF, ZDF_RF, ZDN_RD, &
+                       ZDF_RD, ZTRANS_HVCR,                  &
+                       ZREC_SW_GD, ZREC_SW_RF, ZDIR_ALB_TWN,  &
+                       ZSCA_ALB_TWN, ZREC_SW_WIN, ZREF_SW_GRND,               &
+                       ZREF_SW_FAC, ZREF_SW_HVEG, ZE_SHADING, ZAUXSHAD_BEHAV_ANYWAY,      &
+                       ZAUXSHAD_BEHAV_ADAPTI)
 !
 !*      B.2     LW properties
 !               -------------
 !
   ZEMIS_GD = 1.0
-  CALL URBAN_LW_COEF(B, T, ZLW_RAD, ZEMIS_GD,                       &
-                     T%TSNOW_ROAD%TS, ZTS_GD,                       &  
-                     ZLW_WA_TO_WB, ZLW_WA_TO_R, ZLW_WB_TO_R,            &
-                     ZLW_WA_TO_NR,ZLW_WB_TO_NR,                         &
-                     ZLW_WA_TO_G, ZLW_WB_TO_G,                          &
-                     ZLW_WA_TO_WIN, ZLW_WB_TO_WIN,                      &
-                     ZLW_R_TO_WA, ZLW_R_TO_WB, ZLW_R_TO_WIN,            &
-                     ZLW_G_TO_WA, ZLW_G_TO_WB, ZLW_G_TO_WIN,            &
-                     ZLW_S_TO_WA, ZLW_S_TO_WB, ZLW_S_TO_R,              &
-                     ZLW_S_TO_NR, ZLW_S_TO_G, ZLW_S_TO_WIN,             &
-                     ZLW_WIN_TO_WA, ZLW_WIN_TO_WB, ZLW_WIN_TO_R,        &
-                     ZLW_WIN_TO_NR, ZLW_WIN_TO_G,                       &
-                     ZLW_NR_TO_WA, ZLW_NR_TO_WB, ZLW_NR_TO_WIN          )
+  CALL URBAN_LW_COEF(B, T, LW, ZLW_RAD, ZEMIS_GD,                       &
+                     T%TSNOW_ROAD%TS, ZTS_GD,                           &
+                     ZEMIS_HVEG, ZTS_HVEG                               )
+  !
+  ! Explicit calculation of longwave exchanges
+  !
+  CALL EXPLICIT_LONGWAVE(TOP, T, B, LW, YDMT, CT, ZLW_RAD, ZTS_GD,   &
+       ZTS_HVEG, ZDN_RD, ZDF_RD, ZDN_RF, ZEMIS_GD, ZEMIS_HVEG, "OK")
 !
 !*      B.3     TEB simulation
 !               -------------
 !
-  CALL TEB  (TOP, T, BOP, B, YIR, YDMT, YIMPLICIT_WIND, ZTSUN,               &
-             ZT_CAN, ZQ_CAN, ZU_CAN, ZT_CAN, ZQ_CAN, ZU_CAN, ZZ_LOWCAN,      &
-             ZPEW_A_COEF, ZPEW_B_COEF, ZPEW_A_COEF, ZPEW_B_COEF, ZPS, ZPA,   &
+  CALL TEB_BLD_ROAD  (TOP, T, BOP, B, YIR, YDMT, CT, LW, "OFFLINE", YIMPLICIT_WIND, ZTSUN,        &
+             ZTA_RF, ZQA_RF, ZT_CAN, ZQ_CAN, ZU_CAN, ZT_CAN, ZQ_CAN, ZU_CAN, ZZ_LOWCAN,  &
+             ZPEW_A_COEF, ZPEW_B_COEF, ZPEW_A_COEF, ZPEW_B_COEF, AT, ZPS, ZPSOLD, ZPA,       &
              ZEXNS, ZEXNA, ZTA, ZQA, ZRHOA, ZLW_RAD, ZRR, ZSR, ZZREF, ZZREF, &
              ZU_CAN, T%XH_TRAFFIC, T%XLE_TRAFFIC, ZTSTEP, ZDF_RF, ZDN_RF,    &
-             ZDF_RD, ZDN_RD, ZQSAT_RF, ZQSAT_RD, ZDELT_RF, ZDELT_RD, ZTS_GD, &
-             ZLEW_RF, ZUW_GR, ZLEW_RD, ZLE_WL_A, ZLE_WL_B,ZRNSNOW_RF,        &
+             ZDF_RD, ZDN_RD, ZQSAT_RF, ZQSAT_RD,                             &
+             ZWS_RF_MAX, ZWS_RD_MAX,                                         &
+             ZDELT_RF, ZDELT_RD, ZTS_GD, ZTS_HVEG,                           &
+             ZLEW_RF, ZUW_GR, ZLEW_RD, ZRNSNOW_RF,                           &
              ZHSNOW_RF, ZLESNOW_RF, ZGSNOW_RF, ZMELT_RF, ZRN_GR, ZH_GR,      &
              ZLE_GR, ZGFLUX_GR, ZDRAIN_GR, ZRUNOFF_GR, ZRNSNOW_RD,           &
              ZHSNOW_RD, ZLESNOW_RD, ZGSNOW_RD, ZMELT_RD, ZUW_RD, ZUW_RF,     &
-             ZDUWDU_RD,  ZDUWDU_RF, ZUSTAR_TWN, ZCD, ZCDN, ZCH_TWN, ZRI_TWN, &
-             ZRESA_TWN, ZAC_RF, ZAC_RD, ZAC_WL, ZAC_TOP, ZAC_GD, ZAC_RF_WAT, &
-             ZAC_RD_WAT, ZLW_WA_TO_WB, ZLW_WA_TO_R, ZLW_WB_TO_R,             &
-             ZLW_WA_TO_NR, ZLW_WB_TO_NR, ZLW_R_TO_WA, ZLW_R_TO_WB,           &
-             ZLW_G_TO_WA, ZLW_G_TO_WB, ZLW_S_TO_WA, ZLW_S_TO_WB, ZLW_S_TO_R, &
-             ZLW_S_TO_NR, ZLW_NR_TO_WA, ZLW_NR_TO_WB, ZLW_NR_TO_WIN,         &
-             ZLW_WA_TO_WIN, ZLW_WB_TO_WIN, ZLW_G_TO_WIN, ZLW_R_TO_WIN,       &
-             ZLW_S_TO_WIN, ZLW_WIN_TO_WA, ZLW_WIN_TO_WB, ZLW_WIN_TO_R,       &
-             ZLW_WIN_TO_NR, IDAY, ZEMIT_LW_FAC, ZEMIT_LW_RD, ZT_RAD_IND,     &
-             ZHU_BLD, ZTIME, ZE_SHADING  )
+             ZDUWDU_RD, ZDUWDU_RF, ZUSTAR_TWN, ZCD, ZCDN, ZCH_TWN, ZRI_TWN,  &
+             ZRESA_TWN,                                                      &
+             ZCST_H_WASTE_CANY, ZCST_LE_WASTE_CANY,                          &
+             ZCOE_H_WASTE_CANY, ZCOE_LE_WASTE_CANY,                          &
+             ZMUL_H_WASTE_CANY, ZMUL_LE_WASTE_CANY,                          &
+             ZAC_RF, ZAC_RD, ZAC_WL, ZAC_TOP, ZAC_GD, ZAC_RF_WAT,            &
+             ZAC_RD_WAT,                                                     &
+             IDAY,                                                           &
+             ZEMIT_LW_FAC, ZEMIT_LW_RD, ZTIME, ZAUXQIN,                      &
+             ZAUXTHEAT_TARGET, ZAUXTCOOL_TARGET,                             &
+             ZAUXVENT_BEHAV_ANYWAY, ZAUXVENT_BEHAV_ADAPTI, ZE_SHADING, "OK"  )
 ! 
 !   Time update
   ZTIME = ZTIME + ZTSTEP
@@ -675,13 +818,17 @@ DO JFORC_STEP= 1,INB_STEP_ATM
 !
 ENDDO
 !
-B%XQIN(:) = YDMT%XQIN(:)
-B%XTHEAT_TARGET(:) = YDMT%XTHEAT_TARGET(:)
-B%XTCOOL_TARGET(:) = YDMT%XTCOOL_TARGET(:)
+! Check results of autosize calculations
 !
- CALL TEB_IRRIG_INIT(YIR)
- CALL DIAG_MISC_TEB_INIT(YDMT)
- CALL DIAG_MISC_TEB_INIT(YDMTC)
+IF (MINVAL(B%XM_SYS_RAT)   .LT.-1.0E-6) CALL ABOR1_SFX("HVAC_AUTOSIZE: Wrong M_SYS_RAT")
+IF (MINVAL(B%XCAP_SYS_HEAT).LT.-1.0E-6) CALL ABOR1_SFX("HVAC_AUTOSIZE: Wrong CAP_SYS_HEAT")
+IF (MINVAL(B%XCAP_SYS_RAT ).LT.-1.0E-6) CALL ABOR1_SFX("HVAC_AUTOSIZE: Wrong CAP_SYS_RAT")
+!
+IF(CT%LCHECK_TEB) CALL DEALLOC_CHECK_TEB(CT)
+CALL DEALLOC_LW_COEF(LW)
+CALL TEB_IRRIG_INIT(YIR)
+CALL DIAG_MISC_TEB_INIT(YDMT)
+CALL DIAG_MISC_TEB_INIT(YDMTC)
 !----------------------------------------------------
 !
 ! Options
@@ -693,6 +840,7 @@ TOP%CCH_BEM = YCH_BEM
 !
 ! Teb Fields T
 !
+DEALLOCATE(T%XT_ROOF,T%XT_ROAD,T%XT_WALL_A,T%XT_WALL_B)
 DEALLOCATE(T%XWS_ROOF,T%XWS_ROAD)
 !
 T%TSNOW_ROOF%SCHEME = YSNOW_RF
@@ -711,7 +859,24 @@ DEALLOCATE(T%TSNOW_ROAD%RHO)
 DEALLOCATE(T%TSNOW_ROAD%TS)
 DEALLOCATE(T%TSNOW_ROAD%EMIS)
 !
+DEALLOCATE(YT%TSNOW_ROOF%WSNOW)
+DEALLOCATE(YT%TSNOW_ROOF%T    )
+DEALLOCATE(YT%TSNOW_ROOF%ALB  )
+DEALLOCATE(YT%TSNOW_ROOF%RHO  )
+DEALLOCATE(YT%TSNOW_ROOF%TS   )
+DEALLOCATE(YT%TSNOW_ROOF%EMIS )
+!
+DEALLOCATE(YT%TSNOW_ROAD%WSNOW)
+DEALLOCATE(YT%TSNOW_ROAD%T    )
+DEALLOCATE(YT%TSNOW_ROAD%ALB  )
+DEALLOCATE(YT%TSNOW_ROAD%RHO  )
+DEALLOCATE(YT%TSNOW_ROAD%TS   )
+DEALLOCATE(YT%TSNOW_ROAD%EMIS )
+!
 T%XGARDEN = ZGD 
+!
+YIR%LPAR_RD_IRRIG = GPAR_RD_IRRIG
+YDMTO%LSURF_MISC_BUDGET = GSURF_MISC_BUDGET
 !
 !------------------------------------------------
 !BEM 
@@ -719,9 +884,9 @@ T%XGARDEN = ZGD
 BOP%CCOOL_COIL = YCOOL_COIL
 BOP%CHEAT_COIL = YHEAT_COIL
 !
-!!TI_BLD
 DEALLOCATE(B%XTI_BLD)
 !
+DEALLOCATE(B%XQI_BLD)
 !T_FLOOR, T_MASS
 DEALLOCATE(B%XT_FLOOR,B%XT_MASS)
 !
@@ -729,22 +894,13 @@ DEALLOCATE(B%XT_FLOOR,B%XT_MASS)
 DEALLOCATE(B%XT_WIN1)
 DEALLOCATE(B%XT_WIN2)
 !
-B%CNATVENT(:) = YNATVENT(:) 
 B%XF_WATER_COND(:) = ZF_WATER_COND(:)
 B%XAUX_MAX = ZAUX_MAX
-!
-DEALLOCATE(B%XQI_BLD)
-!
-B%LNATVENT_NIGHT(:) = GNATVENT_NIGHT(:)
-!
-! TEB
-!
-DEALLOCATE(T%XT_ROOF,T%XT_ROAD,T%XT_WALL_A,T%XT_WALL_B)
 !
 !--------------------------------------------------------
 !
 ! -----------------------------------------------------------
-! Print autosize results
+! Write autosize results
 ! -----------------------------------------------------------
 !
 WRITE(KLUOUT,*) ' '

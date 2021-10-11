@@ -189,6 +189,7 @@ INTEGER                     :: JSV     ! loop on scalar variables
 LOGICAL                     :: GCALL_LMO ! flag in non-neutral case
 !
 INTEGER                     :: ILUOUT  ! output listing logical unit
+CHARACTER(LEN=3) :: YSNOWRES='RIL' ! must be equal to 'RIL'
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !-------------------------------------------------------------------------------------
@@ -346,7 +347,7 @@ ZLWUP(:)=(1.-PEMIS(:))*PLW(:)+PEMIS(:)*XSTEFAN*PTSURF(:)**4
 !
  CALL SURFACE_RI(PTSURF,PQSURF,ZEXNS,ZEXNA,PTA,PQA,PZREF, PUREF, ZDIRCOSZW,ZWIND,ZRI)
 
- CALL SURFACE_AERO_COND(ZRI, PZREF, PUREF, ZWIND, PZ0, PZ0H, ZAC, ZRA, ZCH)
+ CALL SURFACE_AERO_COND(ZRI, PZREF, PUREF, ZWIND, PZ0, PZ0H, ZAC, ZRA, ZCH,YSNOWRES)
 
  CALL SURFACE_CD(ZRI, PZREF, PUREF, PZ0, PZ0H, ZCD, ZCDN)
 

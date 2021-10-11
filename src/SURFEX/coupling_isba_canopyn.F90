@@ -4,11 +4,12 @@
 !SFX_LIC for details. version 1.
 !     ###############################################################################
 SUBROUTINE COUPLING_ISBA_CANOPY_n (DTCO, UG, U, USS, SB, NAG, CHI, NCHI, MGN,MSF, DTV, ID, NGB, GB, &
-                                   ISS, NISS, IG, NIG, IO, S, K, NK, NP, NPE, NDST, SLT,   &
-                                   BLOWSNW, HPROGRAM, HCOUPLING, PTSTEP,                   &
+                                   ISS, NISS, IG, NIG, IO, S, K, NK, NP, NPE, AT, NDST,DST,&
+                                   SLT, BLOWSNW, HPROGRAM, HCOUPLING, PTSTEP,              &
                                    KYEAR, KMONTH, KDAY, PTIME, KI, KSV, KSW, PTSUN,        &
                                    PZENITH, PZENITH2, PAZIM, PZREF, PUREF, PZS, PU, PV,    &
-                                   PQA, PTA, PRHOA, PSV, PCO2, HSV, PRAIN, PSNOW, PLW,     &
+                                   PQA, PTA, PRHOA, PSV, PCO2, PIMPWET,PIMPDRY, HSV,       &
+                                   PRAIN, PSNOW, PLW,                                      &
                                    PDIR_SW, PSCA_SW, PSW_BANDS, PPS, PPA, PSFTQ, PSFTH,    &
                                    PSFTS, PSFCO2, PSFU, PSFV, PTRAD, PDIR_ALB, PSCA_ALB,   &
                                    PEMIS, PTSURF, PZ0,PZ0H, PQSURF, PPEW_A_COEF,           &
@@ -52,9 +53,10 @@ USE MODD_SSO_n, ONLY : SSO_t, SSO_NP_t
 USE MODD_SFX_GRID_n, ONLY : GRID_t, GRID_NP_t
 USE MODD_ISBA_OPTIONS_n, ONLY : ISBA_OPTIONS_t
 USE MODD_ISBA_n, ONLY : ISBA_S_t, ISBA_K_t, ISBA_P_t, ISBA_PE_t, ISBA_NK_t, ISBA_NP_t, ISBA_NPE_t
+USE MODD_PREP_SNOW, ONLY : NIMPUR
 !
-USE MODD_DST_n, ONLY : DST_NP_t
-
+USE MODD_DIAG_UTCI_n, ONLY : DIAG_UTCI_t
+USE MODD_DST_n, ONLY : DST_NP_t, DST_t
 USE MODD_CANOPY_n, ONLY : CANOPY_t
 !
 USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
@@ -68,7 +70,7 @@ USE MODD_BLOWSNW_n, ONLY : BLOWSNW_t
 !
 USE MODD_CSTS,          ONLY : XCPD
 USE MODD_SURF_PAR,      ONLY : XUNDEF
-USE MODD_CANOPY_TURB,   ONLY : XALPSBL
+USE MODD_SURF_ATM_TURB_n, ONLY : SURF_ATM_TURB_t
 !
 USE MODE_COUPLING_CANOPY
 USE MODE_BLOWSNW_CANOPY
@@ -81,9 +83,14 @@ USE MODI_BLOWSNW_DEP
 USE MODI_CANOPY_BLOWSNW
 !
 USE MODI_COUPLING_ISBA_n
+USE MODI_INTERPOL_SBL
 !
 USE MODI_ISBA_CANOPY
 USE MODI_SSO_BELJAARS04
+USE MODI_UTCI_ISBA
+USE MODI_UTCIC_STRESS
+!
+USE MODE_THERMOS,  ONLY : QSAT
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -111,8 +118,10 @@ TYPE(ISBA_K_t), INTENT(INOUT) :: K
 TYPE(ISBA_NK_t), INTENT(INOUT) :: NK
 TYPE(ISBA_NP_t), INTENT(INOUT) :: NP
 TYPE(ISBA_NPE_t), INTENT(INOUT) ::NPE
+TYPE(SURF_ATM_TURB_t), INTENT(IN) :: AT         ! atmospheric turbulence parameters
 !
 TYPE(DST_NP_t), INTENT(INOUT) :: NDST
+TYPE(DST_t), INTENT(INOUT) :: DST
 !
 TYPE(CANOPY_t), INTENT(INOUT) :: SB
 !
@@ -162,6 +171,8 @@ REAL, DIMENSION(KI), INTENT(IN)  :: PPS       ! pressure at atmospheric model su
 REAL, DIMENSION(KI), INTENT(IN)  :: PPA       ! pressure at forcing level             (Pa)
 REAL, DIMENSION(KI), INTENT(IN)  :: PZS       ! atmospheric model CANOPY           (m)
 REAL, DIMENSION(KI), INTENT(IN)  :: PCO2      ! CO2 concentration in the air          (kg/m3)
+REAL, DIMENSION(KI,NIMPUR), INTENT(IN) :: PIMPWET ! Wet impur deposition
+REAL, DIMENSION(KI,NIMPUR), INTENT(IN) :: PIMPDRY ! Dry impur deposition
 REAL, DIMENSION(KI), INTENT(IN)  :: PSNOW     ! snow precipitation                    (kg/m2/s)
 REAL, DIMENSION(KI), INTENT(IN)  :: PRAIN     ! liquid precipitation                  (kg/m2/s)
 !
@@ -262,7 +273,18 @@ REAL, DIMENSION(KI)   ::ZDUWDU_GROUND
 !
 LOGICAL               :: LLOG_GRID
 !
-INTEGER                      :: JJ, JLAYER, IMASK, JP, JI ,JSV
+! For UTCI computation
+!
+REAL, DIMENSION(KI) :: ZDIR_SW_UTCI
+REAL, DIMENSION(KI) :: ZSCA_SW_UTCI
+!
+REAL, DIMENSION(KI,SB%NLVL) :: ZQSPEC_CAN
+REAL, DIMENSION(KI,SB%NLVL) :: ZRELHU_CAN
+!
+REAL, DIMENSION(KI) :: ZT1M
+REAL, DIMENSION(KI) :: ZQ1M
+!
+INTEGER                      :: JJ, JLAYER, IMASK, JP, JI, JSV, JSWB, LVL
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 
 !-------------------------------------------------------------------------------------
@@ -304,7 +326,7 @@ IF (IO%LCANOPY) THEN
 !       1.2.1  First time step canopy initialisation
 !
   IF(ANY(SB%XT(:,:) == XUNDEF)) THEN
-    CALL INIT_ISBA_SBL(IO, K, NP, NPE, SB, &
+    CALL INIT_ISBA_SBL(IO, K, NP, NPE, AT, SB, &
                        PTSTEP, PPA, PPS, PTA, PQA, PRHOA, PU, PV, PDIR_SW,  &
                        PSCA_SW, PSW_BANDS, PRAIN, PSNOW, PZREF, PUREF, ISS%XSSO_SLOPE )
   ENDIF
@@ -404,9 +426,9 @@ ELSE
 !
   CALL INIT_COUPLING(HCOUPLING, PPS, PPA, PTA, PQA, &
                      PU, PV, PUREF, PZREF,          &
-                     PPEW_A_COEF, PPEW_B_COEF,      &
-                     PPET_A_COEF, PPET_B_COEF,      &
-                     PPEQ_A_COEF, PPEQ_B_COEF,      &
+                      PPEW_A_COEF, PPEW_B_COEF,   &
+                      PPET_A_COEF, PPET_B_COEF,   &
+                      PPEQ_A_COEF, PPEQ_B_COEF,   &
                      ZPA, ZTA, ZQA, ZU, ZV, ZUREF,  &
                      ZZREF, ZPEW_A_COEF,            &
                      ZPEW_B_COEF, ZPET_A_COEF,      &
@@ -429,14 +451,15 @@ END IF
 !              ------------
 !
  CALL COUPLING_ISBA_n(DTCO, UG, U, USS, NAG, CHI, NCHI, MGN,MSF, DTV, ID, NGB, GB, ISS,NISS, IG, &
-                      NIG, IO, S, K, NK, NP, NPE, NDST, SLT, HPROGRAM, GCOUPLING,       &
+                      NIG, IO, S, K, NK, NP, NPE, AT, NDST, DST, SLT, HPROGRAM, GCOUPLING,   &
                       PTSTEP, KYEAR, KMONTH, KDAY, PTIME, KI, KSV, KSW, PTSUN, PZENITH, &
-                      PZENITH2, ZZREF, ZUREF, PZS, ZU, ZV, ZQA, ZTA, PRHOA, ZSV, PCO2,  &
+                      PZENITH2,  PAZIM, ZZREF, ZUREF, PZS, ZU, ZV, ZQA, ZTA, PRHOA,   &
+                      ZSV, PCO2,PIMPWET,PIMPDRY,                                        &
                       HSV, PRAIN, PSNOW, PLW, PDIR_SW, PSCA_SW, PSW_BANDS, PPS, ZPA,    &
                       PSFTQ, PSFTH, ZSFTS, PSFCO2, PSFU, PSFV, PTRAD, PDIR_ALB,         &
                       PSCA_ALB, PEMIS, PTSURF, PZ0, PZ0H, PQSURF, ZPEW_A_COEF,          &
                       ZPEW_B_COEF, ZPET_A_COEF, ZPEQ_A_COEF, ZPET_B_COEF, ZPEQ_B_COEF,  &
-                      'OK' )
+                      'OK'                         )
 !
 !-------------------------------------------------------------------------------------
 !
@@ -476,7 +499,7 @@ ZSFLUX_Q(:) = PSFTQ(:)
 IF (IO%LCANOPY_DRAG) THEN
 !
   DO JJ=1,KI
-    ZUW_GROUND   (JJ) = -SQRT(PSFU(JJ)**2+PSFV(JJ)**2)/ PRHOA(JJ)
+    ZUW_GROUND(JJ)    = -SQRT(PSFU(JJ)**2+PSFV(JJ)**2)/ PRHOA(JJ)
     ZDUWDU_GROUND(JJ) = 0.
     IF (SB%XU(JJ,1)/=0.) ZDUWDU_GROUND(JJ) = 2. * ZUW_GROUND(JJ) / SB%XU(JJ,1)
   ENDDO
@@ -542,7 +565,79 @@ END IF
 !*      7.    2m and 10m diagnostics if canopy is used
 !             ----------------------------------------
 !
-IF (ID%O%N2M>=1) CALL INIT_2M_10M(SB, ID%D, PU, PV, ZWIND, PRHOA )
+IF (ID%O%N2M>=1) THEN
+!
+  CALL INIT_2M_10M(SB, ID%D, PU, PV, ZWIND, PRHOA )
+!
+!
+! Calculation of mean values in canopy 
+!
+  SB%NCOUNT_STEP = SB%NCOUNT_STEP + 1
+!
+  DO LVL=1,SIZE(SB%XQ,2)
+    ZQSPEC_CAN(:,LVL) = SB%XQ(:,LVL) / PRHOA(:)
+    ZRELHU_CAN(:,LVL) = MIN( ZQSPEC_CAN(:,LVL) / QSAT(SB%XT(:,LVL),SB%XP(:,LVL)),1.)
+  ENDDO
+!
+  SB%XU_MEAN(:,:)  = SB%XU_MEAN(:,:)  + SB%XU(:,:)
+  SB%XT_MEAN(:,:)  = SB%XT_MEAN(:,:)  + SB%XT(:,:)
+  SB%XQ_MEAN(:,:)  = SB%XQ_MEAN(:,:)  + SB%XQ(:,:)
+  SB%XP_MEAN(:,:)  = SB%XP_MEAN(:,:)  + SB%XP(:,:)
+  SB%XRH_MEAN(:,:) = SB%XRH_MEAN(:,:) + ZRELHU_CAN(:,:)
+!
+! Calculation of mean near surface fields
+!
+END IF
+!
+!-------------------------------------------------------------------------------------
+! Calculation of thermal confort index
+!-------------------------------------------------------------------------------------
+!
+IF ((ID%DU%LUTCI).AND.(ID%O%N2M.GT.0)) THEN
+  !
+  ZDIR_SW_UTCI(:) = 0.
+  ZSCA_SW_UTCI(:) = 0.
+  !
+  DO JSWB=1,SIZE(PDIR_SW,2)
+     ZDIR_SW_UTCI(:) = ZDIR_SW_UTCI(:) + PDIR_SW(:,JSWB)
+     ZSCA_SW_UTCI(:) = ZSCA_SW_UTCI(:) + PSCA_SW(:,JSWB)
+  ENDDO
+  !
+  CALL INTERPOL_SBL(SB%XZ(:,:),SB%XT(:,:),1.0,ZT1M(:))
+  !
+  CALL INTERPOL_SBL(SB%XZ(:,:),SB%XQ(:,:),1.0,ZQ1M(:))
+  ZQ1M(:) = ZQ1M(:) / PRHOA(:)
+  !
+  CALL UTCI_ISBA(HPROGRAM, ZT1M, ZQ1M, ID%D%XWIND10M, PPS, ID%D%XSWU, &
+       ZSCA_SW_UTCI, ZDIR_SW_UTCI, PZENITH, ID%D%XLWU, ID%D%XLWD,     &
+       ID%DU%XUTCI_OUTSUN, ID%DU%XUTCI_OUTSHADE, ID%DU%XTRAD_SUN,     &
+       ID%DU%XTRAD_SHADE )
+  !
+  ! Mean UTCI and TRAD
+  !
+  ID%DU%NCOUNT_UTCI_STEP    = ID%DU%NCOUNT_UTCI_STEP    + 1
+  ID%DU%XUTCI_OUTSUN_MEAN   = ID%DU%XUTCI_OUTSUN_MEAN   + ID%DU%XUTCI_OUTSUN
+  ID%DU%XUTCI_OUTSHADE_MEAN = ID%DU%XUTCI_OUTSHADE_MEAN + ID%DU%XUTCI_OUTSHADE
+  ID%DU%XTRAD_SUN_MEAN      = ID%DU%XTRAD_SUN_MEAN      + ID%DU%XTRAD_SUN
+  ID%DU%XTRAD_SHADE_MEAN    = ID%DU%XTRAD_SHADE_MEAN    + ID%DU%XTRAD_SHADE
+  !
+  CALL UTCIC_STRESS(PTSTEP,ID%DU%XUTCI_OUTSUN  ,ID%DU%XUTCIC_OUTSUN  )
+  CALL UTCIC_STRESS(PTSTEP,ID%DU%XUTCI_OUTSHADE,ID%DU%XUTCIC_OUTSHADE)
+  !
+ELSE
+  !
+  ID%DU%XUTCI_OUTSUN(:) = XUNDEF
+  ID%DU%XUTCI_OUTSHADE(:) = XUNDEF
+  ID%DU%XUTCI_OUTSUN_MEAN(:) = XUNDEF
+  ID%DU%XUTCI_OUTSHADE_MEAN(:) = XUNDEF
+  ID%DU%XTRAD_SUN(:) = XUNDEF
+  ID%DU%XTRAD_SHADE(:) = XUNDEF
+  ID%DU%XTRAD_SUN_MEAN(:) = XUNDEF
+  ID%DU%XTRAD_SHADE_MEAN(:) = XUNDEF
+  ID%DU%XUTCIC_OUTSUN(:,:) = XUNDEF
+  ID%DU%XUTCIC_OUTSHADE(:,:) = XUNDEF
+  !
+ENDIF
 
 !-------------------------------------------------------------------------------------
 !

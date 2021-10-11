@@ -34,6 +34,10 @@
 !!      G. Pigeon      09/2012 add TRAN_WIN
 !!      G. Pigeon      10/2012 add XF_WIN_WIN
 !!      V. Masson      06/2013 splits module in two
+!!      M. Goret       02/2017 add heat source fractions
+!!      M. Goret       04/2017 suppress EFF_HEAT
+!!      M. Goret       10/2017 add hot water
+!--------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
 !             ------------
@@ -53,20 +57,58 @@ TYPE BEM_t
   REAL, POINTER, DIMENSION(:,:) :: XTC_FLOOR     ! floor layers thermal conductivity (W/K/m)
   REAL, POINTER, DIMENSION(:,:) :: XD_FLOOR      ! depth of floor layers             (m)
 !
+! Mass parameters
+!
+  REAL, POINTER, DIMENSION(:,:) :: XHC_MASS     ! mass layers heat capacity        (J/K/m3)
+  REAL, POINTER, DIMENSION(:,:) :: XTC_MASS     ! mass layers thermal conductivity (W/K/m)
+  REAL, POINTER, DIMENSION(:,:) :: XD_MASS      ! depth of mass layers             (m)
+  REAL, POINTER, DIMENSION(:)   :: XISMASS      ! Is mass present (architectural information)
+!
+  REAL, POINTER, DIMENSION(:)   :: XRESIDENTIAL ! Residential fraction (for solar panels)
+  REAL, POINTER, DIMENSION(:,:) :: XFRACOMP     ! Building compartment fraction
+!
 ! HVAC parameters
 !
-  REAL, POINTER, DIMENSION(:)   :: XTCOOL_TARGET ! cooling setpoint of indoor air
-  REAL, POINTER, DIMENSION(:)   :: XTHEAT_TARGET ! heating setpoint of indoor air
   REAL, POINTER, DIMENSION(:)   :: XF_WASTE_CAN  ! fraction of waste heat released into the canyon
-  REAL, POINTER, DIMENSION(:)   :: XEFF_HEAT     ! efficiency of the heating system
+  REAL, POINTER, DIMENSION(:,:) :: XFSNIG  ! Are shades closed during the night?
+  REAL, POINTER, DIMENSION(:,:) :: XFVNIG  ! Is ventilation made during the night?
+  REAL, POINTER, DIMENSION(:,:) :: XTHEAT_OCCD
+  REAL, POINTER, DIMENSION(:,:) :: XTHEAT_OCCN
+  REAL, POINTER, DIMENSION(:,:) :: XTHEAT_VCDD
+  REAL, POINTER, DIMENSION(:,:) :: XTHEAT_VCDN
+  REAL, POINTER, DIMENSION(:,:) :: XTHEAT_VCLD
+  REAL, POINTER, DIMENSION(:,:) :: XTCOOL_OCCD
+  REAL, POINTER, DIMENSION(:,:) :: XTCOOL_OCCN
+  REAL, POINTER, DIMENSION(:,:) :: XTCOOL_VCDD
+  REAL, POINTER, DIMENSION(:,:) :: XTCOOL_VCDN
+  REAL, POINTER, DIMENSION(:,:) :: XTCOOL_VCLD
+  REAL, POINTER, DIMENSION(:,:) :: XMODQIN_VCD ! Modulation factor of ZQIN during occupation
+  REAL, POINTER, DIMENSION(:,:) :: XMODQIN_VLD ! Modulation factor of ZQIN during vacancy
+  REAL, POINTER, DIMENSION(:,:) :: XMODQIN_NIG ! Modulation factor of ZQIN during the night
+  REAL, POINTER, DIMENSION(:)   :: XTDESV   ! Diff. T_CAN T_BLD for onset of MANU and MECH ventilation [K]
+  REAL, POINTER, DIMENSION(:)   :: XWIN_SW_MAX ! Threshold for shortwave radiation on walls (for shading)
+  REAL, POINTER, DIMENSION(:)   :: XFOPEN
+  REAL, POINTER, DIMENSION(:,:) :: XFVSUM
+  REAL, POINTER, DIMENSION(:,:) :: XFVVAC
+  REAL, POINTER, DIMENSION(:,:) :: XFSSUM
+  REAL, POINTER, DIMENSION(:,:) :: XFSVAC
+  REAL, POINTER, DIMENSION(:,:,:) :: XBEG_HOLIDAY
+  REAL, POINTER, DIMENSION(:,:,:) :: XEND_HOLIDAY
+  REAL, POINTER, DIMENSION(:,:)   :: XMOD_HOLIDAY
+  REAL, POINTER, DIMENSION(:,:,:) :: XDAYWBEG_SCHED
+  REAL, POINTER, DIMENSION(:,:,:) :: XHOURBEG_SCHED
+  REAL, POINTER, DIMENSION(:,:,:) :: XPROBOCC
 !
 ! Indoor parameters
 !
-  REAL, POINTER, DIMENSION(:)   :: XTI_BLD       ! building interior temperature    (K)
-  REAL, POINTER, DIMENSION(:,:) :: XT_FLOOR      ! floor layer temperatures         (K)
-  REAL, POINTER, DIMENSION(:,:) :: XT_MASS       ! Air cooled building internal th. mass temperature (K)
+  REAL, POINTER, DIMENSION(:)     :: XPSOLD        ! Pressure at previous time step   (Pa)
+  REAL, POINTER, DIMENSION(:,:)   :: XSHADVACSW    ! Switch for shading during vacancy
+  REAL, POINTER, DIMENSION(:,:)   :: XVENTNIGSW    ! Switch for ventilation during night
+  REAL, POINTER, DIMENSION(:,:)   :: XTI_BLD       ! building interior temperature    (K)
+  REAL, POINTER, DIMENSION(:,:,:) :: XT_FLOOR      ! floor layer temperatures         (K)
+  REAL, POINTER, DIMENSION(:,:,:) :: XT_MASS       ! Air cooled building internal th. mass temperature (K)
 !
-  REAL, POINTER, DIMENSION(:)   :: XQIN          ! internal heat gains [W m-2(floor)]
+  REAL, POINTER, DIMENSION(:,:)   :: XQIN          ! internal heat gains [W m-2(floor)]
   REAL, POINTER, DIMENSION(:)   :: XQIN_FRAD     ! radiant fraction of internal heat gains
   REAL, POINTER, DIMENSION(:)   :: XSHGC         ! solar heat gain coef. of windows
   REAL, POINTER, DIMENSION(:)   :: XSHGC_SH      ! solar heat gain coef. of windows + shading
@@ -74,17 +116,17 @@ TYPE BEM_t
   REAL, POINTER, DIMENSION(:)   :: XTRAN_WIN     ! window transmittance (-)
   REAL, POINTER, DIMENSION(:)   :: XGR           ! glazing ratio
   REAL, POINTER, DIMENSION(:)   :: XFLOOR_HEIGHT ! building floor height [m]
-  REAL, POINTER, DIMENSION(:)   :: XINF          ! infiltration/ventilation flow rate [AC/H]
+  REAL, POINTER, DIMENSION(:)   :: XN50          ! infiltration/ventilation flow rate [AC/H]
 !
 ! New parameters
 !
   REAL, POINTER, DIMENSION(:)   :: XF_WATER_COND  ! fraction of evaporation for condensers (cooling system)
+  REAL, POINTER, DIMENSION(:)   :: X_DCS_AREA     ! district cooling system
   REAL, POINTER, DIMENSION(:)   :: XAUX_MAX      ! Auxiliar variable for autosize calcs
   REAL, POINTER, DIMENSION(:)   :: XQIN_FLAT     ! Latent franction of internal heat gains
   REAL, POINTER, DIMENSION(:)   :: XHR_TARGET    ! Relative humidity setpoint
   REAL, POINTER, DIMENSION(:)   :: XT_WIN2       ! Indoor window temperature [K]
-  REAL, POINTER, DIMENSION(:)   :: XQI_BLD       ! Indoor air specific humidity [kg kg-1]
-  REAL, POINTER, DIMENSION(:)   :: XV_VENT       ! Ventilation flow rate [AC/H]
+  REAL, POINTER, DIMENSION(:,:)   :: XQI_BLD       ! Indoor air specific humidity [kg kg-1]
   REAL, POINTER, DIMENSION(:)   :: XCAP_SYS_HEAT ! Capacity of the heating system 
                                                  ! [W m-2(bld)]
   REAL, POINTER, DIMENSION(:)   :: XCAP_SYS_RAT  ! Rated capacity of the cooling system
@@ -94,6 +136,7 @@ TYPE BEM_t
   REAL, POINTER, DIMENSION(:)   :: XM_SYS_RAT    ! Rated HVAC mass flow rate 
                                                  ! [kg s-1 m-2(bld)]
   REAL, POINTER, DIMENSION(:)   :: XCOP_RAT      ! Rated COP of the cooling system
+  REAL, POINTER, DIMENSION(:)   :: XCOP_DCS      ! Rated COP of the district cooling system  
   REAL, POINTER, DIMENSION(:)   :: XT_WIN1       ! outdoor window temperature [K]
   REAL, POINTER, DIMENSION(:)   :: XALB_WIN      ! window albedo
   REAL, POINTER, DIMENSION(:)   :: XABS_WIN      ! window absortance
@@ -102,13 +145,12 @@ TYPE BEM_t
   REAL, POINTER, DIMENSION(:)   :: XT_SIZE_MIN   ! Minimum outdoor air temperature for
                                                  ! HVAC sizing [K]
   REAL, POINTER, DIMENSION(:)   :: XUGG_WIN      ! Window glass-to-glass U-factor [K m W-2]
-  LOGICAL, POINTER, DIMENSION(:):: LSHADE        ! flag to activate shading devices -> LOGICAL in the code
-  REAL,    POINTER, DIMENSION(:):: XSHADE        ! flag to activate shading devices -> REAL for i/o 0. or 1.
-  CHARACTER(LEN=4), POINTER, DIMENSION(:) :: CNATVENT ! flag to activate natural ventilation 'NONE', 'MANU', 'AUTO'
-  REAL,    POINTER, DIMENSION(:):: XNATVENT      ! flag to describe surventilation system for i/o 
+  REAL, POINTER, DIMENSION(:)   :: XISMECH       ! Presence of mecanical ventilation (Architectural characteristic)
+  REAL, POINTER, DIMENSION(:)   :: XMECHRATE     ! Air exchange rate due to mecanical ventilation [1/h] (Architectural characteristic)
+  REAL, POINTER, DIMENSION(:)   :: XSHADEARCHI   ! Do shades exist? (Architectural characteristic)
+  CHARACTER(LEN=4), POINTER, DIMENSION(:,:) :: CNATVENT ! flag to activate natural ventilation 'NONE', 'MANU', 'AUTO'
+  REAL,    POINTER, DIMENSION(:,:):: XNATVENT      ! flag to describe surventilation system for i/o 
                                                  ! 0 for NONE, 1 for MANU and 2 for AUTO
-  LOGICAL, POINTER, DIMENSION(:):: LSHAD_DAY     !Has shading been necessary this day ?
-  LOGICAL, POINTER, DIMENSION(:):: LNATVENT_NIGHT !Has nocturnal surventilation been necessary and possible this night ?
   !
   !indoor relative surfaces and view factors
   REAL, POINTER, DIMENSION(:) :: XN_FLOOR        ! Number of floors     
@@ -129,8 +171,18 @@ TYPE BEM_t
   REAL, POINTER, DIMENSION(:) :: XF_MASS_FLOOR   ! View factor mass-floor
   REAL, POINTER, DIMENSION(:) :: XF_MASS_WALL    ! View factor mass-wall
   REAL, POINTER, DIMENSION(:) :: XF_MASS_WIN     ! View factor mass-window
-
-
+!
+  !variables for shading
+  REAL, POINTER, DIMENSION(:,:) :: XSHAD_BEHAV_ADAPTI   ! Fraction of shades available for occupants adaptive actions
+  REAL, POINTER, DIMENSION(:,:) :: XSHAD_BEHAV_ANYWAY   ! Fraction of shades closed in any case
+  !
+  !heating fractions for CO2 flux
+  REAL, POINTER, DIMENSION(:)  :: XFRAC_HEAT_ELEC   !Fraction of electric heating
+  REAL, POINTER, DIMENSION(:)  :: XFRAC_HEAT_GAS    !Fraction of gas heating
+  REAL, POINTER, DIMENSION(:)  :: XFRAC_HEAT_FUEL   !Fraction of fuel heating
+  REAL, POINTER, DIMENSION(:)  :: XFRAC_HEAT_OTHER  !Fraction of other heating 
+  REAL, POINTER, DIMENSION(:,:):: XHOTWAT           ! Energy needed for hot water [W m-2(floor)]
+  REAL, POINTER, DIMENSION(:)  :: XF_HW_GAS         ! fraction of water heat by gas
 ! 
 END TYPE BEM_t
 !
@@ -148,13 +200,21 @@ SUBROUTINE BEM_INIT(YBEM)
 TYPE(BEM_t), INTENT(INOUT) :: YBEM
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 IF (LHOOK) CALL DR_HOOK("MODD_BEM_N:BEM_INIT",0,ZHOOK_HANDLE)
+  NULLIFY(YBEM%XRESIDENTIAL)
+  NULLIFY(YBEM%XFRACOMP)
   NULLIFY(YBEM%XF_WATER_COND)
+  NULLIFY(YBEM%X_DCS_AREA)
   NULLIFY(YBEM%XHC_FLOOR)
   NULLIFY(YBEM%XTC_FLOOR)
   NULLIFY(YBEM%XD_FLOOR)
-  NULLIFY(YBEM%XTCOOL_TARGET)
-  NULLIFY(YBEM%XTHEAT_TARGET)
+  NULLIFY(YBEM%XHC_MASS)
+  NULLIFY(YBEM%XTC_MASS)
+  NULLIFY(YBEM%XD_MASS)
+  NULLIFY(YBEM%XISMASS)
   NULLIFY(YBEM%XTI_BLD)
+  NULLIFY(YBEM%XPSOLD)
+  NULLIFY(YBEM%XSHADVACSW)
+  NULLIFY(YBEM%XVENTNIGSW)
   NULLIFY(YBEM%XT_FLOOR)
   NULLIFY(YBEM%XT_MASS)
   NULLIFY(YBEM%XQIN)
@@ -165,30 +225,28 @@ IF (LHOOK) CALL DR_HOOK("MODD_BEM_N:BEM_INIT",0,ZHOOK_HANDLE)
   NULLIFY(YBEM%XTRAN_WIN)
   NULLIFY(YBEM%XGR)
   NULLIFY(YBEM%XFLOOR_HEIGHT)
-  NULLIFY(YBEM%XEFF_HEAT)
-  NULLIFY(YBEM%XINF)
+  NULLIFY(YBEM%XN50)
   NULLIFY(YBEM%XF_WASTE_CAN)
   NULLIFY(YBEM%XAUX_MAX)
   NULLIFY(YBEM%XQIN_FLAT)
   NULLIFY(YBEM%XHR_TARGET)
   NULLIFY(YBEM%XT_WIN2)
   NULLIFY(YBEM%XQI_BLD)
-  NULLIFY(YBEM%XV_VENT)
   NULLIFY(YBEM%XCAP_SYS_HEAT)
   NULLIFY(YBEM%XCAP_SYS_RAT)
   NULLIFY(YBEM%XT_ADP)
   NULLIFY(YBEM%XM_SYS_RAT)
   NULLIFY(YBEM%XCOP_RAT)
+  NULLIFY(YBEM%XCOP_DCS)
   NULLIFY(YBEM%XT_WIN1)
   NULLIFY(YBEM%XALB_WIN)
   NULLIFY(YBEM%XABS_WIN)
   NULLIFY(YBEM%XT_SIZE_MAX)
   NULLIFY(YBEM%XT_SIZE_MIN)
   NULLIFY(YBEM%XUGG_WIN)
-  NULLIFY(YBEM%LSHAD_DAY)
-  NULLIFY(YBEM%LNATVENT_NIGHT)
-  NULLIFY(YBEM%LSHADE)
-  NULLIFY(YBEM%XSHADE)
+  NULLIFY(YBEM%XISMECH)
+  NULLIFY(YBEM%XMECHRATE)
+  NULLIFY(YBEM%XSHADEARCHI)
   NULLIFY(YBEM%CNATVENT)
   NULLIFY(YBEM%XNATVENT)
   NULLIFY(YBEM%XN_FLOOR)
@@ -209,6 +267,42 @@ IF (LHOOK) CALL DR_HOOK("MODD_BEM_N:BEM_INIT",0,ZHOOK_HANDLE)
   NULLIFY(YBEM%XF_MASS_FLOOR)
   NULLIFY(YBEM%XF_MASS_WALL)
   NULLIFY(YBEM%XF_MASS_WIN)
+  NULLIFY(YBEM%XSHAD_BEHAV_ANYWAY)
+  NULLIFY(YBEM%XSHAD_BEHAV_ADAPTI)
+  NULLIFY(YBEM%XFSNIG)
+  NULLIFY(YBEM%XFVNIG)
+  NULLIFY(YBEM%XTHEAT_OCCD)
+  NULLIFY(YBEM%XTHEAT_OCCN)
+  NULLIFY(YBEM%XTHEAT_VCDD)
+  NULLIFY(YBEM%XTHEAT_VCDN)
+  NULLIFY(YBEM%XTHEAT_VCLD)
+  NULLIFY(YBEM%XTCOOL_OCCD)
+  NULLIFY(YBEM%XTCOOL_OCCN)
+  NULLIFY(YBEM%XTCOOL_VCDD)
+  NULLIFY(YBEM%XTCOOL_VCDN)
+  NULLIFY(YBEM%XTCOOL_VCLD)
+  NULLIFY(YBEM%XMODQIN_VCD)
+  NULLIFY(YBEM%XMODQIN_VLD)
+  NULLIFY(YBEM%XMODQIN_NIG)
+  NULLIFY(YBEM%XTDESV)
+  NULLIFY(YBEM%XWIN_SW_MAX)
+  NULLIFY(YBEM%XFOPEN)
+  NULLIFY(YBEM%XFVSUM)
+  NULLIFY(YBEM%XFVVAC)
+  NULLIFY(YBEM%XFSSUM)
+  NULLIFY(YBEM%XFSVAC)
+  NULLIFY(YBEM%XBEG_HOLIDAY)
+  NULLIFY(YBEM%XEND_HOLIDAY)
+  NULLIFY(YBEM%XMOD_HOLIDAY)
+  NULLIFY(YBEM%XDAYWBEG_SCHED)
+  NULLIFY(YBEM%XHOURBEG_SCHED)
+  NULLIFY(YBEM%XPROBOCC)
+  NULLIFY(YBEM%XFRAC_HEAT_ELEC)
+  NULLIFY(YBEM%XFRAC_HEAT_GAS)
+  NULLIFY(YBEM%XFRAC_HEAT_FUEL)
+  NULLIFY(YBEM%XFRAC_HEAT_OTHER)
+  NULLIFY(YBEM%XHOTWAT)
+  NULLIFY(YBEM%XF_HW_GAS )
 IF (LHOOK) CALL DR_HOOK("MODD_BEM_N:BEM_INIT",1,ZHOOK_HANDLE)
 END SUBROUTINE BEM_INIT
 !

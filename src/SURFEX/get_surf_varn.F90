@@ -3,15 +3,17 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE GET_SURF_VAR_n (FM, IM, SM, TM, WM, DGO, D, UG, U, USS,        &
+      SUBROUTINE GET_SURF_VAR_n (FM, IM, SM, TM, GDM, WM, DGO, D, UG, U, USS,   &
                                  HPROGRAM, KI, KS,PSEA, PWATER, PNATURE, PTOWN, &
                                  PT2M, PQ2M, PQS, PZ0, PZ0H, PZ0EFF, PZ0_SEA,   &
                                  PZ0_WATER, PZ0_NATURE, PZ0_TOWN, PZ0H_SEA,     &
                                  PZ0H_WATER, PZ0H_NATURE, PZ0H_TOWN, PQS_SEA,   &
                                  PQS_WATER, PQS_NATURE, PQS_TOWN, PPSNG, PPSNV, &
                                  PZS, PSERIES, PTWSNOW, PSSO_STDEV, PLON, PLAT, &
-                                 PBARE, PLAI_TREE, PH_TREE,                     &
-                                 PWALL_O_HOR, PBUILD_HEIGHT                     )
+                                 PBARE, PLAI_TREE, PH_TREE, PWALL_O_HOR,        &
+                                 PBUILD_HEIGHT, PLAI_HVEG, PH_URBTREE,          &
+                                 PHTRUNK_HVEG, PFRAC_HVEG                      )
+!
 !     #######################################################################
 !
 !!****  *GET_SURF_VAR_n* - gets some surface fields on atmospheric grid
@@ -55,7 +57,7 @@
 !              ------------
 !
 USE MODD_SURFEX_n, ONLY : FLAKE_MODEL_t, ISBA_MODEL_t, SEAFLUX_MODEL_t, &
-                          TEB_MODEL_t, WATFLUX_MODEL_t
+                          TEB_MODEL_t, WATFLUX_MODEL_t, TEB_GARDEN_MODEL_t
 USE MODD_DIAG_n, ONLY : DIAG_t, DIAG_OPTIONS_t
 USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
@@ -93,6 +95,7 @@ TYPE(ISBA_MODEL_t), INTENT(INOUT) :: IM
 TYPE(SEAFLUX_MODEL_t), INTENT(INOUT) :: SM
 TYPE(TEB_MODEL_t), INTENT(INOUT) :: TM
 TYPE(WATFLUX_MODEL_t), INTENT(INOUT) :: WM
+TYPE(TEB_GARDEN_MODEL_t), INTENT(INOUT) :: GDM
 !
 TYPE(DIAG_OPTIONS_t), INTENT(INOUT) :: DGO
 TYPE(DIAG_t), INTENT(INOUT) :: D
@@ -151,6 +154,10 @@ REAL, DIMENSION(:), INTENT(OUT), OPTIONAL :: PH_TREE    ! Height of trees    on 
 !
 REAL, DIMENSION(:), INTENT(OUT), OPTIONAL :: PWALL_O_HOR   ! Facade area density on grid mesh [m^2(fac.)/m^2(town)] 
 REAL, DIMENSION(:), INTENT(OUT), OPTIONAL :: PBUILD_HEIGHT ! Building height on grid mesh [m] 
+REAL, DIMENSION(:), INTENT(OUT), OPTIONAL :: PLAI_HVEG
+REAL, DIMENSION(:), INTENT(OUT), OPTIONAL :: PH_URBTREE
+REAL, DIMENSION(:), INTENT(OUT), OPTIONAL :: PHTRUNK_HVEG
+REAL, DIMENSION(:), INTENT(OUT), OPTIONAL :: PFRAC_HVEG 
 !
 !-------------------------------------------------------------------------------
 !
@@ -159,7 +166,7 @@ REAL, DIMENSION(:), INTENT(OUT), OPTIONAL :: PBUILD_HEIGHT ! Building height on 
 !              -------------------------------
 !
 REAL, DIMENSION(KI)    :: ZFIELD1, ZFIELD2, ZFIELD3, ZFIELD4, ZFIELD5, ZFIELD6
-REAL, DIMENSION(KI)    :: ZFIELD7, ZFIELD8
+REAL, DIMENSION(KI)    :: ZFIELD7, ZFIELD8, ZFIELD9
 REAL, DIMENSION(KI,KS) :: ZSERIES
 INTEGER, DIMENSION(KI) :: IMASK
 !
@@ -407,7 +414,8 @@ IF ( PRESENT(PQS_NATURE) .OR. PRESENT(PPSNG) .OR. PRESENT(PPSNV) .OR.  PRESENT(P
    !
    IF (PRESENT(PLAI_TREE) .OR. PRESENT(PH_TREE) ) THEN
      !
-     CALL GET_VEG_n(HPROGRAM, KI_NATURE, U, IM%O, IM%S, IM%NP, IM%NPE, ZFIELD1(1:KI_NATURE), ZFIELD2(1:KI_NATURE))
+     CALL GET_VEG_n(HPROGRAM, KI_NATURE, U, IM%O, IM%S, IM%NP, IM%NPE, IM%DTV%NPAR_VEG_IRR_USE, & 
+                    ZFIELD1(1:KI_NATURE), ZFIELD2(1:KI_NATURE))
      !
      IF (PRESENT(PLAI_TREE)) THEN
        PLAI_TREE(:) = XUNDEF
@@ -430,8 +438,10 @@ ENDIF
    !
    !-------------------------------------------------------------------------------
    !
-IF ( PRESENT(PQS_TOWN) .OR. PRESENT(PZ0_TOWN) .OR. PRESENT(PZ0H_TOWN)  .OR. &
-     PRESENT(PWALL_O_HOR) .OR. PRESENT (PBUILD_HEIGHT) ) THEN
+IF (U%CTOWN=='TEB') THEN
+ IF ( PRESENT(PQS_TOWN) .OR. PRESENT(PZ0_TOWN) .OR. PRESENT(PZ0H_TOWN) .OR. &
+     PRESENT(PWALL_O_HOR) .OR. PRESENT (PBUILD_HEIGHT) .OR. PRESENT(PLAI_HVEG) .OR. &
+     PRESENT(PH_URBTREE) .OR. PRESENT(PHTRUNK_HVEG) .OR. PRESENT(PFRAC_HVEG) ) THEN
    !
    ! Get parameters over town tile
    !
@@ -446,9 +456,11 @@ IF ( PRESENT(PQS_TOWN) .OR. PRESENT(PZ0_TOWN) .OR. PRESENT(PZ0H_TOWN)  .OR. &
    IMASK(:)=0
    CALL GET_1D_MASK(KI_TOWN, KI, PTOWN, IMASK(1:KI_TOWN))
    !
-   CALL GET_VAR_TOWN_n(TM%TOP, TM%TD%O, TM%TD%D, TM%NT,HPROGRAM, KI_TOWN,         &
+   IF (KI_TOWN>0) &
+   CALL GET_VAR_TOWN_n(TM%TOP, TM%TD%O, TM%TD%D, TM%NT, GDM, HPROGRAM, KI_TOWN,   &
                        ZFIELD1(1:KI_TOWN), ZFIELD2(1:KI_TOWN), ZFIELD3(1:KI_TOWN),&
-                       ZFIELD4(1:KI_TOWN), ZFIELD5(1:KI_TOWN)                     )
+                       ZFIELD4(1:KI_TOWN), ZFIELD5(1:KI_TOWN), ZFIELD6(1:KI_TOWN),&
+                       ZFIELD7(1:KI_TOWN), ZFIELD8(1:KI_TOWN), ZFIELD9(1:KI_TOWN) )
    !
    IF(PRESENT(PQS_TOWN))THEN
       PQS_TOWN    (:) = XUNDEF
@@ -485,6 +497,45 @@ IF ( PRESENT(PQS_TOWN) .OR. PRESENT(PZ0_TOWN) .OR. PRESENT(PZ0H_TOWN)  .OR. &
       END DO
    ENDIF
    !
+   IF(PRESENT(PLAI_HVEG))THEN
+      PLAI_HVEG(:) = XUNDEF
+      DO JI = 1, KI_TOWN
+         PLAI_HVEG(IMASK(JI)) = ZFIELD6(JI)
+      END DO
+   ENDIF
+   !
+   IF(PRESENT(PH_URBTREE))THEN
+      PH_URBTREE(:) = XUNDEF
+      DO JI = 1, KI_TOWN
+         PH_URBTREE(IMASK(JI)) = ZFIELD7(JI)
+      END DO
+   ENDIF
+   !
+   IF(PRESENT(PHTRUNK_HVEG))THEN
+      PHTRUNK_HVEG(:) = XUNDEF
+      DO JI = 1, KI_TOWN
+         PHTRUNK_HVEG(IMASK(JI)) = ZFIELD8(JI)
+      END DO
+   ENDIF
+   !
+   IF(PRESENT(PFRAC_HVEG))THEN
+      PFRAC_HVEG(:) = XUNDEF
+      DO JI = 1, KI_TOWN
+         PFRAC_HVEG(IMASK(JI)) = ZFIELD9(JI)
+      END DO
+   ENDIF
+   !
+ ENDIF
+ELSE
+  IF(PRESENT(PFRAC_HVEG)) PFRAC_HVEG=XUNDEF
+  IF(PRESENT(PHTRUNK_HVEG)) PHTRUNK_HVEG=XUNDEF
+  IF(PRESENT(PH_URBTREE)) PH_URBTREE=XUNDEF
+  IF(PRESENT(PLAI_HVEG)) PLAI_HVEG=XUNDEF
+  IF(PRESENT(PBUILD_HEIGHT)) PBUILD_HEIGHT=XUNDEF
+  IF(PRESENT(PWALL_O_HOR)) PWALL_O_HOR=XUNDEF
+  IF(PRESENT(PZ0H_TOWN)) PZ0H_TOWN=XUNDEF
+  IF(PRESENT(PZ0_TOWN)) PZ0_TOWN=XUNDEF
+  IF(PRESENT(PQS_TOWN)) PQS_TOWN=XUNDEF
 END IF
 !
 !*   5. Orography

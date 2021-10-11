@@ -8,7 +8,7 @@
                               PVMOD, PZREF, PUREF,                            &
                               PPS, PQSAT,                                     &
                               PSFTH, PSFTQ, PUSTAR,                           &
-                              PCD, PCDN, PCH, PRI, PRESA, PZ0HICE             )  
+                              AT, PCD, PCDN, PCH, PRI, PRESA, PZ0HICE             )  
 !     #######################################################################
 !
 !
@@ -60,13 +60,14 @@ USE MODD_CSTS,       ONLY : XG, XCPD
 USE MODD_SURF_PAR,   ONLY : XUNDEF
 USE MODD_SURF_ATM,   ONLY : LDRAG_COEF_ARP, LRRGUST_ARP, XRRSCALE, &
                             XRRGAMMA, XUTILGUST     
+USE MODD_SURF_ATM_TURB_n, ONLY : SURF_ATM_TURB_t
 USE MODD_SNOW_PAR,   ONLY : XZ0SN, XZ0HSN
 USE MODN_SEAFLUX_n,  ONLY : XCD_ICE_CST
 !
 USE MODI_SURFACE_RI
 USE MODI_SURFACE_AERO_COND
 USE MODI_SURFACE_CD
-USE MODI_SURFACE_CDCH_1DARP
+!USE MODI_SURFACE_CDCH_1DARP
 USE MODI_WIND_THRESHOLD
 !
 USE MODE_THERMOS
@@ -95,6 +96,7 @@ REAL, DIMENSION(:), INTENT(IN)       :: PRR   ! rain rate
 REAL, DIMENSION(:), INTENT(IN)       :: PRS   ! snow rate
 !
 REAL, DIMENSION(:), INTENT(INOUT)    :: PZ0ICE! roughness length over the sea ice
+TYPE(SURF_ATM_TURB_t), INTENT(IN) :: AT         ! atmospheric turbulence parameters
 !                                         
 !                                         
 !  surface fluxes : latent heat, sensible heat, friction fluxes
@@ -123,6 +125,7 @@ REAL, DIMENSION(SIZE(PTA)) :: ZDIRCOSZW ! orography slope cosine (=1 on water!)
 REAL, DIMENSION(SIZE(PTA)) :: ZFP       ! working variable
 REAL, DIMENSION(SIZE(PTA)) :: ZRRCOR    ! correction od CD, CH, CDN due to moist-gustiness
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
+CHARACTER(LEN=3)  ::YSNOWRES ='RIL'!<Cluzet defaultvaue for HSNOWRES>
 
 !
 !-------------------------------------------------------------------------------
@@ -180,8 +183,8 @@ IF ( XCD_ICE_CST == 0.0 ) THEN
 !
   IF (LDRAG_COEF_ARP) THEN
 !
-     CALL SURFACE_CDCH_1DARP(PZREF, PZ0ICE, PZ0HICE , ZVMOD, PTA, PTICE, &
-                             PQA, PQSAT, PCD, PCDN, PCH                 )  
+!     CALL SURFACE_CDCH_1DARP(PZREF, PZ0ICE, PZ0HICE , ZVMOD, PTA, PTICE, &
+!                             PQA, PQSAT, AT, PCD, PCDN, PCH ,PRI             )  
 !
      ZRA(:) = 1. / ( PCH(:) * ZVMOD(:) )
 !
@@ -189,7 +192,7 @@ IF ( XCD_ICE_CST == 0.0 ) THEN
 
      CALL SURFACE_CD(PRI, PZREF, PUREF, PZ0ICE, PZ0HICE, PCD, PCDN)
 !
-     CALL SURFACE_AERO_COND(PRI, PZREF, PUREF, ZVMOD, PZ0ICE, PZ0HICE, ZAC, ZRA, PCH)
+     CALL SURFACE_AERO_COND(PRI, PZREF, PUREF, ZVMOD, PZ0ICE, PZ0HICE, ZAC, ZRA, PCH, YSNOWRES)
 !
   ENDIF
 !

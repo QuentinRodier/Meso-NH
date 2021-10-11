@@ -2,9 +2,7 @@
 !SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
-SUBROUTINE INIT_SLT (SLT, &
-                     HPROGRAM  &! Program calling unit
-       )  
+SUBROUTINE INIT_SLT (SLT)
 !     ######################################################################
 !
 !!****  *INIT_SLT* - 
@@ -48,8 +46,6 @@ IMPLICIT NONE
 !PASSED VARIABLES
 !
 TYPE(SLT_t), INTENT(INOUT) :: SLT
-!
- CHARACTER(LEN=6), INTENT(IN) :: HPROGRAM              !Passing unit
 !
 !LOCAL VARIABLES
  CHARACTER(LEN=4)    :: CRGUNITS              ! type of log-normal geometric mean radius

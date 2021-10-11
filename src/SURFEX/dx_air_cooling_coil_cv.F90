@@ -2,12 +2,11 @@
 !SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
-SUBROUTINE DX_AIR_COOLING_COIL_CV(PT_CANYON, PQ_CANYON, PPS, PRHOA,    &
-                             PT_IN, PQ_IN, PCOP_RAT, PCAP_SYS_RAT,     &
-                             PT_ADP, PF_WATER_COND,                    &
-                             PM_SYS, PH_BLD_COOL, PH_WASTE, PLE_WASTE, &
-                             PCOP, PCAP_SYS,  PT_OUT, PQ_OUT,          &
-                             PDX_POWER,  PT_BLD_COOL      )
+SUBROUTINE DX_AIR_COOLING_COIL_CV(PT_CANYON, PQ_CANYON, PPS, PRHOA, &
+                             PT_IN, PQ_IN, PCOP_RAT, PF_WASTE_CAN, PCAP_SYS_RAT, PT_ADP,    &
+                             PF_WATER_COND, PM_SYS, PH_BLD_COOL, PH_WASTE_CANY,             &
+                             PLE_WASTE_CANY, PH_WASTE_ROOF, PLE_WASTE_ROOF, PCOP, PCAP_SYS, &
+                             PT_OUT, PQ_OUT, PDX_POWER)
 !
 USE MODE_THERMOS
 USE MODE_PSYCHRO
@@ -25,20 +24,22 @@ REAL, INTENT(IN) :: PPS              ! Canyon air pressure [Pa]
 REAL, INTENT(IN) :: PRHOA            ! Canyon air density [kg m-3]
 REAL, INTENT(IN) :: PT_IN            ! Actual inlet air temperature [K]
 REAL, INTENT(IN) :: PQ_IN            ! Actual inlet air humidity ratio [kg kg-1]
+REAL, INTENT(IN) :: PF_WASTE_CAN     ! Fraction of waste released into the canyon
 REAL, INTENT(IN) :: PCOP_RAT         ! Rated COP
 REAL, INTENT(IN) :: PCAP_SYS_RAT     ! Rated capacity [W]
 REAL, INTENT(IN) :: PT_ADP           ! Apparatus dewpoint [K]
 REAL, INTENT(IN) :: PF_WATER_COND    ! fraction of evaporation of the condenser
 REAL, INTENT(INOUT) :: PM_SYS        ! HVAC air mass flow rate [kg s-1]
 REAL, INTENT(INOUT) :: PH_BLD_COOL   ! Sensible cooling load
-REAL, INTENT(OUT) :: PH_WASTE        ! Sensible heat rejected by the condenser [W]
-REAL, INTENT(OUT) :: PLE_WASTE       ! Latent heat rejected by the condenser [W]
+REAL, INTENT(OUT) :: PH_WASTE_CANY   ! Sensible heat rejected by the condenser [W] to the canyon
+REAL, INTENT(OUT) :: PLE_WASTE_CANY  ! Latent heat rejected by the condenser [W] to the canyon
+REAL, INTENT(OUT) :: PH_WASTE_ROOF   ! Sensible heat rejected by the condenser [W] at roof level
+REAL, INTENT(OUT) :: PLE_WASTE_ROOF  ! Latent heat rejected by the condenser [W] at roof level
 REAL, INTENT(OUT) :: PCOP            ! Actual COP
 REAL, INTENT(OUT) :: PCAP_SYS        ! Actual capacity [W]
 REAL, INTENT(OUT) :: PT_OUT          ! Actual outlet temperature [K]
 REAL, INTENT(OUT) :: PQ_OUT          ! Actual outlet humidity ratio [kg kg-1]
 REAL, INTENT(OUT) :: PDX_POWER       ! Electrical power consumed by the DX unit [W]
-REAL, INTENT(OUT) :: PT_BLD_COOL     ! Total energy supplied by the DX unit [W]
 !
 REAL :: ZTWB_CANYON   ! Canyon air wet-bulb temperature [ K]
 REAL :: ZCAPTEMP      ! Total cooling capacity modifier curve function of temperature
@@ -51,6 +52,7 @@ REAL :: ZSHR          ! Actual coil sensible heat rate
 REAL :: ZH_ADP        ! Enthalpy of air at ADP conditions [J/kg]
 REAL :: ZH_OUT        ! Enthalpy of air leaving the cooling coil [J/kg]
 REAL :: ZH_IN         ! Enthalpy of air entering the cooling coil [J/kg]
+REAL :: ZT_BLD_COOL   ! Total energy supplied by the DX unit [W]
 ! Performance curves coefficients
 REAL :: ZA1
 REAL :: ZB1
@@ -138,12 +140,10 @@ ZC5 = 0              !- Coefficient3 x**2
 !*      C.     Total cooling capacity 
 !              ----------------------
 ! 
-IF (PM_SYS/PRHOA/PCAP_SYS_RAT < 0.00004027) THEN
+IF (PM_SYS/PRHOA/PCAP_SYS_RAT .LT. 0.00004027) THEN
      PM_SYS = 0.00004027*PCAP_SYS_RAT*PRHOA
-!     PRINT*,'ERROR: HVAC supply air flow rate must be greater than 0.00004027m3/s/W'
-ELSE IF (PM_SYS/PRHOA/PCAP_SYS_RAT > 0.00006041) THEN
+ELSE IF (PM_SYS/PRHOA/PCAP_SYS_RAT .GT. 0.00006041) THEN
      PM_SYS = 0.00006041*PCAP_SYS_RAT*PRHOA
-!     PRINT*,'ERROR: HVAC supply air flow rate must be lower than 0.00006041m3/s/W'
 END IF
 !
 ! Wet-bulb temperature entering the cooling coil
@@ -171,25 +171,25 @@ ZH_IN  = ENTH_FN_T_Q(PT_IN,PQ_IN)
 ZH_ADP = ENTH_FN_T_Q(PT_ADP,QSAT(PT_ADP,PPS))
 !
 ! Cooling coil sensible heat rate
-IF (ZH_IN - ZH_ADP < 10.) THEN
+IF ( (ZH_IN-ZH_ADP) .LT. 10.) THEN
   !
   ZSHR = 1.
   !
   PT_OUT = PT_ADP
   PQ_OUT = PQ_IN
   ZH_OUT = ENTH_FN_T_Q(PT_OUT,PQ_OUT)
-  PT_BLD_COOL = 0.0
+  ZT_BLD_COOL = 0.0
   !
 ELSE
   !
   ZSHR  = MIN(XCPD*(PT_IN - PT_ADP)/(ZH_IN - ZH_ADP), 1.) !
   !
   ! Thermal load limited by the system capacity
-  IF ( PH_BLD_COOL > PCAP_SYS * ZSHR ) PH_BLD_COOL = PCAP_SYS * ZSHR
+  IF ( PH_BLD_COOL .GT. (PCAP_SYS*ZSHR) ) PH_BLD_COOL = PCAP_SYS * ZSHR
   !
   ! Outlet air temperature
   PT_OUT = PT_IN - PH_BLD_COOL / PM_SYS / XCPD
-  IF (PT_OUT < PT_ADP) PT_OUT = PT_ADP
+  IF (PT_OUT .LT. PT_ADP) PT_OUT = PT_ADP
   !
   ! Outlet air enthalpy
   ZH_OUT = ZH_IN - XCPD * (PT_IN - PT_OUT) / ZSHR
@@ -198,7 +198,7 @@ ELSE
   PQ_OUT = Q_FN_T_ENTH(PT_OUT, ZH_OUT)
   !
   ! Total thermal energy supplied by the cooling coil
-  PT_BLD_COOL = PM_SYS*(ZH_IN - ZH_OUT)
+  ZT_BLD_COOL = PM_SYS*(ZH_IN - ZH_OUT)
   !
 END IF
 !
@@ -231,8 +231,11 @@ PDX_POWER = PCAP_SYS / PCOP * ZPLR / ZPARTLOADF
 !          --------------------
 !
 ! Total heat rejected by the condenser
-PLE_WASTE = (PT_BLD_COOL + PDX_POWER) * PF_WATER_COND
-PH_WASTE  = (PT_BLD_COOL + PDX_POWER) * (1. - PF_WATER_COND)
+PLE_WASTE_CANY = PF_WASTE_CAN*((ZT_BLD_COOL + PDX_POWER) * PF_WATER_COND)
+PH_WASTE_CANY  = PF_WASTE_CAN*((ZT_BLD_COOL + PDX_POWER) * (1. - PF_WATER_COND))
+!
+PLE_WASTE_ROOF = (1.0-PF_WASTE_CAN)*((ZT_BLD_COOL + PDX_POWER) * PF_WATER_COND)
+PH_WASTE_ROOF  = (1.0-PF_WASTE_CAN)*((ZT_BLD_COOL + PDX_POWER) * (1. - PF_WATER_COND))
 !
 IF (LHOOK) CALL DR_HOOK('DX_AIR_COOLING_COIL_CV',1,ZHOOK_HANDLE)
 !

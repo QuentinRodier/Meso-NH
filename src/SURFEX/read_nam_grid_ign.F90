@@ -88,10 +88,10 @@ REAL, DIMENSION(:),   ALLOCATABLE :: ZDY, ZDY0      ! Y grid mesh size
 !
  CHARACTER(LEN=3) :: CLAMBERT  ! Lambert type
 INTEGER :: NPOINTS  ! number of points
-REAL, DIMENSION(1000000) :: XX  ! X coordinate of grid mesh center (in meters)
-REAL, DIMENSION(1000000) :: XY  ! Y coordinate of grid mesh center (in meters)
-REAL, DIMENSION(1000000) :: XDX ! X mesh size (in meters)
-REAL, DIMENSION(1000000) :: XDY ! Y mesh size (in meters)
+REAL, DIMENSION(100000) :: XX  ! X coordinate of grid mesh center (in meters)
+REAL, DIMENSION(100000) :: XY  ! Y coordinate of grid mesh center (in meters)
+REAL, DIMENSION(100000) :: XDX ! X mesh size (in meters)
+REAL, DIMENSION(100000) :: XDY ! Y mesh size (in meters)
 !
 REAL :: XX_LLCORNER ! X coordinate of left  side of the domain
 REAL :: XY_LLCORNER ! Y coordinate of lower side of the domain

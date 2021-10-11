@@ -4,8 +4,8 @@
 !SFX_LIC for details. version 1.
 !     #########
 SUBROUTINE URBAN_EXCH_COEF(HZ0H, PZ0_O_Z0H, PTG, PQS, PEXNS, PEXNA, PTA, PQA,   &
-                             PZREF, PUREF, PVMOD, PZ0,                            &
-                             PRI, PCD, PCDN, PAC, PRA, PCH                        )  
+                             PZREF, PUREF, PVMOD, PZ0,                          &
+                             AT, PRI, PCD, PCDN, PAC, PRA, PCH                  )  
 !          #######################################################################
 !
 !!****  *URBAN_DRAG*  
@@ -53,8 +53,11 @@ USE MODI_SURFACE_RI
 USE MODI_SURFACE_CD
 USE MODI_SURFACE_AERO_COND
 USE MODI_WIND_THRESHOLD
+!USE MODI_SURFACE_CDCH_1DARP
 !
-USE MODD_CSTS, ONLY : XKARMAN
+USE MODD_CSTS,            ONLY : XKARMAN
+USE MODD_SURF_ATM,        ONLY : LDRAG_COEF_ARP
+USE MODD_SURF_ATM_TURB_n, ONLY : SURF_ATM_TURB_t
 !
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -64,32 +67,34 @@ USE MODI_FLXSURF3BX
 !
 IMPLICIT NONE
 !
- CHARACTER(LEN=6)                  :: HZ0H     ! TEB option for z0h roof & road
-REAL,               INTENT(IN)    :: PZ0_O_Z0H! z0/z0h ratio used in Mascart (1995)
-REAL, DIMENSION(:), INTENT(IN)    :: PTG      ! surface temperature
-REAL, DIMENSION(:), INTENT(IN)    :: PQS      ! surface specific humidity
-REAL, DIMENSION(:), INTENT(IN)    :: PEXNS    ! surface exner function
-REAL, DIMENSION(:), INTENT(IN)    :: PTA      ! temperature at the lowest level
-REAL, DIMENSION(:), INTENT(IN)    :: PQA      ! specific humidity
-                                              ! at the lowest level
-REAL, DIMENSION(:), INTENT(IN)    :: PEXNA    ! exner function
-                                              ! at the lowest level
-REAL, DIMENSION(:), INTENT(IN)    :: PVMOD    ! module of the horizontal wind
+ CHARACTER(LEN=6)                 :: HZ0H      ! TEB option for z0h roof & road
+REAL,               INTENT(IN)    :: PZ0_O_Z0H ! z0/z0h ratio used in Mascart (1995)
+REAL, DIMENSION(:), INTENT(IN)    :: PTG       ! surface temperature
+REAL, DIMENSION(:), INTENT(IN)    :: PQS       ! surface specific humidity
+REAL, DIMENSION(:), INTENT(IN)    :: PEXNS     ! surface exner function
+REAL, DIMENSION(:), INTENT(IN)    :: PTA       ! temperature at the lowest level
+REAL, DIMENSION(:), INTENT(IN)    :: PQA       ! specific humidity
+                                               ! at the lowest level
+REAL, DIMENSION(:), INTENT(IN)    :: PEXNA     ! exner function
+                                               ! at the lowest level
+REAL, DIMENSION(:), INTENT(IN)    :: PVMOD     ! module of the horizontal wind
 !
-REAL, DIMENSION(:), INTENT(IN)    :: PZ0      ! roughness length for momentum
-REAL, DIMENSION(:), INTENT(IN)    :: PZREF    ! reference height of the first
-                                              ! atmospheric level
-REAL, DIMENSION(:), INTENT(IN)    :: PUREF    ! reference height of the wind
-!                                             ! NOTE this is different from ZZREF
-!                                             ! ONLY in stand-alone/forced mode,
-!                                             ! NOT when coupled to a model (MesoNH)
-REAL, DIMENSION(:), INTENT(OUT)   :: PRI      ! Richardson number
+REAL, DIMENSION(:), INTENT(IN)    :: PZ0       ! roughness length for momentum
+REAL, DIMENSION(:), INTENT(IN)    :: PZREF     ! reference height of the first
+                                               ! atmospheric level
+REAL, DIMENSION(:), INTENT(IN)    :: PUREF     ! reference height of the wind
+!                                              ! NOTE this is different from ZZREF
+!                                              ! ONLY in stand-alone/forced mode,
+!                                              ! NOT when coupled to a model (MesoNH)
+TYPE(SURF_ATM_TURB_t), INTENT(IN) :: AT        ! atmospheric turbulence parameters
 !
-REAL, DIMENSION(:), INTENT(OUT)   :: PCD      ! drag coefficient for momentum
-REAL, DIMENSION(:), INTENT(OUT)   :: PCDN     ! neutral drag coefficient for momentum
-REAL, DIMENSION(:), INTENT(OUT)   :: PAC      ! aerodynamical conductance
-REAL, DIMENSION(:), INTENT(OUT)   :: PRA      ! aerodynamical resistance
-REAL, DIMENSION(:), INTENT(OUT)   :: PCH      ! drag coefficient for heat
+REAL, DIMENSION(:), INTENT(OUT)   :: PRI       ! Richardson number
+!
+REAL, DIMENSION(:), INTENT(OUT)   :: PCD       ! drag coefficient for momentum
+REAL, DIMENSION(:), INTENT(OUT)   :: PCDN      ! neutral drag coefficient for momentum
+REAL, DIMENSION(:), INTENT(OUT)   :: PAC       ! aerodynamical conductance
+REAL, DIMENSION(:), INTENT(OUT)   :: PRA       ! aerodynamical resistance
+REAL, DIMENSION(:), INTENT(OUT)   :: PCH       ! drag coefficient for heat
 !
 !* local variables
 !
@@ -101,6 +106,7 @@ REAL,DIMENSION(SIZE(PTA)) :: z0h_roof,z0h_town,z0h_road     ! local thermal roug
 REAL,DIMENSION(SIZE(PTA)) :: zustar, zta, ztg
 REAL,DIMENSION(SIZE(PTA)) :: ZVMOD                          ! wind
 INTEGER N
+CHARACTER(LEN=3)  ::YSNOWRES ='RIL'!<Cluzet default value for HSNOWRES>
 !
 !* MASC95 case
 REAL,DIMENSION(SIZE(PTA)) :: ZDIRCOSZW     ! orography slope cosine
@@ -111,17 +117,28 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !              ----------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('URBAN_EXCH_COEF',0,ZHOOK_HANDLE)
+!
+! Set a minimum threshold to the wind
+ZVMOD(:) = WIND_THRESHOLD(PVMOD(:),PUREF(:))
+!
 IF (HZ0H=='MASC95') THEN
 ! 
   ZZ0H = PZ0 / PZ0_O_Z0H ! fixed ratio for MASC95
   ZDIRCOSZW=1.           ! no orography slope effect taken into account in TEB
 !
-  CALL SURFACE_RI(PTG, PQS, PEXNS, PEXNA, PTA, PQA,   &
+  IF (LDRAG_COEF_ARP) THEN
+!    CALL SURFACE_CDCH_1DARP(PZREF, PZ0, ZZ0H, ZVMOD, PTA, PTG, &
+!     & PQA, PQS, AT, PCD, PCDN, PCH, PRI              )  
+    PRA(:) = 1. / ( PCH(:) * ZVMOD(:) )
+    PAC(:) = 1. / ( PRA(:) ) 
+  ELSE
+    CALL SURFACE_RI(PTG, PQS, PEXNS, PEXNA, PTA, PQA,   &
                     PZREF, PUREF, ZDIRCOSZW, PVMOD, PRI )  
 !
-  CALL SURFACE_CD(PRI, PZREF, PUREF, PZ0, ZZ0H, PCD, PCDN)
+    CALL SURFACE_CD(PRI, PZREF, PUREF, PZ0, ZZ0H, PCD, PCDN)
 !
-  CALL SURFACE_AERO_COND(PRI, PZREF, PUREF, PVMOD, PZ0, ZZ0H, PAC, PRA, PCH)
+    CALL SURFACE_AERO_COND(PRI, PZREF, PUREF, PVMOD, PZ0, ZZ0H, PAC, PRA, PCH, YSNOWRES)
+  ENDIF
 !
 !
 !*      2.     Brutsaert 1982  or Kanda 2007 exchange coefficients
@@ -132,9 +149,6 @@ ELSEIF(HZ0H=='BRUT82' .OR. HZ0H=='KAND07')THEN
   fcor(:)=1.0372462E-04
 !RJ: can be removed
   N=SIZE(PTA)
-  !
-  ! Set a minimum threshold to the wind
-  ZVMOD(:) = WIND_THRESHOLD(PVMOD(:),PUREF(:))
   !
   ! First guess of u*
   ZUSTAR(:) = 0.4 * ZVMOD(:) / LOG( PUREF/PZ0(:) )

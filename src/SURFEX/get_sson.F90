@@ -4,7 +4,7 @@
 !SFX_LIC for details. version 1.
 !     #########
       SUBROUTINE GET_SSO_n (USS, &
-                            HPROGRAM,KI,PSSO_SLOPE)
+                            HPROGRAM,KI,PSSO_SLOPE, PSSO_DIR)
 !     ########################################
 !
 !!****  *GET_SSO_n* - routine to get some surface fields
@@ -61,6 +61,7 @@ TYPE(SSO_t), INTENT(INOUT) :: USS
  CHARACTER(LEN=6),    INTENT(IN)  :: HPROGRAM
 INTEGER,             INTENT(IN)  :: KI          ! horizontal dim. of cover
 REAL, DIMENSION(KI), INTENT(OUT) :: PSSO_SLOPE  ! subgrid slope
+REAL, DIMENSION(KI), INTENT(OUT) :: PSSO_DIR
 !
 !
 !*       0.2   Declarations of local variables
@@ -82,6 +83,16 @@ IF ( SIZE(PSSO_SLOPE) /= SIZE(USS%XSSO_SLOPE) ) THEN
 ELSE
   PSSO_SLOPE = USS%XSSO_SLOPE
 END IF
+!
+IF ( SIZE(PSSO_DIR) /= SIZE(USS%XSSO_DIR) ) THEN
+  WRITE(ILUOUT,*) 'try to get SSO_DIR fields from atmospheric model, but size is not correct'
+  WRITE(ILUOUT,*) 'size of field expected by the atmospheric model (PSSO_DIR) :', SIZE(PSSO_DIR)
+  WRITE(ILUOUT,*) 'size of field inthe surface                     (XSSO_DIR) :', SIZE(USS%XSSO_DIR)
+  CALL ABOR1_SFX('GET_SSON: SSO_DIR SIZE NOT CORRECT')
+ELSE
+  PSSO_DIR = USS%XSSO_DIR
+END IF
+!
 IF (LHOOK) CALL DR_HOOK('GET_SSO_N',1,ZHOOK_HANDLE)
 !
 !==============================================================================

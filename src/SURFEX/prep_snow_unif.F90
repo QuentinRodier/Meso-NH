@@ -10,6 +10,7 @@ SUBROUTINE PREP_SNOW_UNIF(KLUOUT,HSURF,PFIELD, TPTIME,  &
                           PUNIF_ASNOW,                  &
                           PUNIF_SG1SNOW, PUNIF_SG2SNOW, &
                           PUNIF_HISTSNOW,PUNIF_AGESNOW, &
+                          PUNIF_IMPURSNOW,              &
                           KLAYER                        )  
 !     #################################################################################
 !
@@ -42,7 +43,6 @@ USE MODD_TYPE_DATE_SURF, ONLY : DATE_TIME
 !
 USE MODD_SURF_PAR,       ONLY : XUNDEF
 USE MODD_PREP,           ONLY : CINTERP_TYPE
-USE MODD_DATA_COVER_PAR, ONLY : NVEGTYPE
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -67,15 +67,18 @@ REAL, DIMENSION(:), INTENT(IN)  :: PUNIF_SG1SNOW !
 REAL, DIMENSION(:), INTENT(IN)  :: PUNIF_SG2SNOW ! 
 REAL, DIMENSION(:), INTENT(IN)  :: PUNIF_HISTSNOW ! 
 REAL, DIMENSION(:), INTENT(IN)  :: PUNIF_AGESNOW ! 
+REAL, DIMENSION(:,:), INTENT(IN)  :: PUNIF_IMPURSNOW ! Numbre of impurity type
 INTEGER,            INTENT(IN)  :: KLAYER        ! Number of layer of output snow scheme
 !
 !*      0.2    declarations of local variables
 !
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZTSNOW, ZRSNOW
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZLWCSNOW !(kg/m2)
+REAL, DIMENSION(:,:), ALLOCATABLE :: ZSNOWDZ_OLD
 !
+INTEGER            :: JIMP       ! loop counter on impurity type
 REAL, DIMENSION(1) :: ZD
-INTEGER            :: JVEGTYPE       ! loop counter on vegtypes
+INTEGER :: JLAYER         ! Number of layers
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
@@ -113,7 +116,7 @@ SELECT CASE(HSURF(1:3))
     IF (OSNOW_IDEAL) THEN
       PFIELD(1,:,1) = PUNIF_WSNOW(:)
     ELSE
-      PFIELD(1,:,1) = PUNIF_WSNOW(1)
+      PFIELD(1,1,1) = PUNIF_WSNOW(1)
     ENDIF
 !    
   CASE('DEP')
@@ -125,14 +128,24 @@ SELECT CASE(HSURF(1:3))
        ELSE
          ZD(1)=0.0
        ENDIF
-       CALL SNOW3LGRID(PFIELD(:,:,1),ZD(:))
+       !
+       ! Robert:
+       ! Creation of auxiliary variable for old snow layer depth
+       !
+       ALLOCATE(ZSNOWDZ_OLD(SIZE(ZD),KLAYER))
+       DO JLAYER=1,KLAYER
+         ZSNOWDZ_OLD(:,JLAYER)=ZD(:)/KLAYER
+       ENDDO
+       !
+       CALL SNOW3LGRID(PFIELD(:,:,1),ZD(:),ZSNOWDZ_OLD(:,:))
+       DEALLOCATE(ZSNOWDZ_OLD)
     ENDIF
 !
   CASE('RHO')
     IF (OSNOW_IDEAL) THEN
       PFIELD(1,:,1) = PUNIF_RSNOW(:)
     ELSE
-      PFIELD(1,:,1) = PUNIF_RSNOW(1)
+      PFIELD(1,1,1) = PUNIF_RSNOW(1)
     ENDIF
 !
   CASE('ALB')
@@ -142,37 +155,48 @@ SELECT CASE(HSURF(1:3))
     IF (OSNOW_IDEAL) THEN
       PFIELD(1,:,1) = PUNIF_TSNOW(:)
     ELSE
-      PFIELD(1,:,1) = PUNIF_TSNOW(1)
-    ENDIF          
+      PFIELD(1,1,1) = PUNIF_TSNOW(1)
+    ENDIF
   
 !
   CASE('SG1')
     IF (OSNOW_IDEAL) THEN
       PFIELD(1,:,1) = PUNIF_SG1SNOW(:)
     ELSE
-      PFIELD(1,:,1) = PUNIF_SG1SNOW(1)
+      PFIELD(1,1,1) = PUNIF_SG1SNOW(1)
     ENDIF
 !
   CASE('SG2')
     IF (OSNOW_IDEAL) THEN
       PFIELD(1,:,1) = PUNIF_SG2SNOW(:)
     ELSE
-      PFIELD(1,:,1) = PUNIF_SG2SNOW(1)
+      PFIELD(1,1,1) = PUNIF_SG2SNOW(1)
     ENDIF
+!    
 !
   CASE('HIS')
     IF (OSNOW_IDEAL) THEN
       PFIELD(1,:,1) = PUNIF_HISTSNOW(:)
     ELSE
-      PFIELD(1,:,1) = PUNIF_HISTSNOW(1)
+      PFIELD(1,1,1) = PUNIF_HISTSNOW(1)
     ENDIF    
 !
   CASE('AGE')
     IF (OSNOW_IDEAL) THEN
       PFIELD(1,:,1) = PUNIF_AGESNOW(:)
     ELSE
-      PFIELD(1,:,1) = PUNIF_AGESNOW(1)
-    ENDIF           
+      PFIELD(1,1,1) = PUNIF_AGESNOW(1)
+    ENDIF    
+    ! Impurities in snow François Tuzet, 2018
+  CASE('IM1','IM2','IM3','IM4''IM5')
+    READ(HSURF(3:3),*) JIMP 
+    IF (OSNOW_IDEAL) THEN
+       PFIELD(1,:,1) = PUNIF_IMPURSNOW(:,JIMP)  
+    ELSE
+       PFIELD(1,1,1) = PUNIF_IMPURSNOW(1,JIMP) 
+    ENDIF  
+    
+           
   !
 END SELECT
 !

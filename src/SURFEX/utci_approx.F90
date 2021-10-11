@@ -36,11 +36,17 @@ FUNCTION UTCI_APPROX(PTA,PEHPA,PTMRT,PVA) RESULT(PUTCI_APPROX)
 !~ - Ta       : air temperature, degree Celsius
 !~ - ehPa    : water vapour presure, hPa=hecto Pascal
 !~ - Tmrt   : mean radiant temperature, degree Celsius
-!~ - va10m  : wind speed 10 m above ground level in m)s
+!~ - va10m  : wind speed 10 m above ground level in m/s
 !~ 
 !~  UTCI_approx, Version a 0.002, October 2009
 !~  Copyright (C) 2009  Peter Broede
-!!      
+!
+! Validity of the inpt parameters
+! -- air temperature (-50 to +50 degC)
+! -- mean radiant temperature (30 degC below to 70 degC above air temperature)
+! -- wind speed in 10 m (0.5 to 17 m/s)
+! -- water vapour presuure in hPa (below 50 hPa or 100% relative humidity)
+!!
 !!    AUTHOR
 !!    ------
 !!
@@ -53,7 +59,8 @@ USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
 implicit none
-!~ type of input of the argument list
+!
+! type of input of the argument list
 REAL, DIMENSION(:), INTENT(IN) :: PTA
 REAL, DIMENSION(:), INTENT(IN) :: PEHPA
 REAL, DIMENSION(:), INTENT(IN) :: PTMRT
@@ -61,6 +68,9 @@ REAL, DIMENSION(:), INTENT(IN) :: PVA
 REAL, DIMENSION(SIZE(PTA)) :: PUTCI_APPROX
 !
 !local variables
+REAL, DIMENSION(SIZE(PTA)) :: ZTA
+REAL, DIMENSION(SIZE(PTA)) :: ZVA
+REAL, DIMENSION(SIZE(PTA)) :: ZEHPA
 REAL, DIMENSION(SIZE(PTA)) :: ZPA
 REAL, DIMENSION(SIZE(PTA)) :: ZD_TMRT
 !
@@ -192,8 +202,31 @@ ZZ(6,2,1,1) = 2.47090539D-04
 ! Pa**6
 ZZ(7,1,1,1) = 1.48348065D-03
 !
-ZD_TMRT = PTMRT - PTA
-ZPA = PEHPA / 10.0; !~ use vapour pressure in kPa
+! Robert: Correct input parameters to make sure that they
+!         are whithin the fitted polynom range.
+!         PTA is corrected before calculation and correction
+!         of ZD_TMRT, which might lead to different results
+!         than correcting it a posteriori.
+!         At the moment there is no humidity correction in case of oversaturation
+!
+ZTA(:) = PTA(:)
+WHERE(ZTA(:).GT.+50.0) ZTA(:) = +50.0
+WHERE(ZTA(:).LT.-50.0) ZTA(:) = -50.0
+!
+ZVA(:) = PVA(:)
+WHERE(ZVA(:).GT.17.0) ZVA(:) = 17.0
+WHERE(ZVA(:).LT. 0.5) ZVA(:) = 0.5
+!
+ZEHPA(:) = PEHPA(:)
+WHERE(ZEHPA(:).GT.50.0) ZEHPA(:) = 50.0
+!
+ZD_TMRT = PTMRT - ZTA
+ZPA = ZEHPA / 10.0; !~ use vapour pressure in kPa
+!
+! Robert: Correct ZD_TMRT  to make sure that it lies whithin the fitted polynom range.
+!
+WHERE(ZD_TMRT(:).LT.-30.0) ZD_TMRT(:) = -30.0
+WHERE(ZD_TMRT(:).GT.+70.0) ZD_TMRT(:) = +70.0
 !
 ZC_TA(:,:) = 0.
 ZC_VA(:,:) = 0.
@@ -206,29 +239,21 @@ DO J4 = 1,7
       DO J1 = 1,7
         ZC_TA(:,J1) = ZZ(J4,J3,J2,J1)
       ENDDO
-      DO JJ=1,SIZE(PTA)
-        !ZC_VA(JJ,J2) = ZC_TA(JJ,1)+ZC_TA(JJ,2)*PTA(JJ)+ZC_TA(JJ,3)*PTA(JJ)**2+ZC_TA(JJ,4)*PTA(JJ)**3+ZC_TA(JJ,5)*PTA(JJ)**4 &
-        !               +ZC_TA(JJ,6)*PTA(JJ)**5+ZC_TA(JJ,7)*PTA(JJ)**6
-        ZC_VA(JJ,J2) = ZS(ZC_TA(JJ,1),ZC_TA(JJ,2),ZC_TA(JJ,3),ZC_TA(JJ,4),ZC_TA(JJ,5),ZC_TA(JJ,6),ZC_TA(JJ,7),PTA(JJ))
+      DO JJ=1,SIZE(ZTA)
+        ZC_VA(JJ,J2) = ZS(ZC_TA(JJ,1),ZC_TA(JJ,2),ZC_TA(JJ,3),ZC_TA(JJ,4),ZC_TA(JJ,5),ZC_TA(JJ,6),ZC_TA(JJ,7),ZTA(JJ))
       ENDDO
     ENDDO 
-    DO JJ=1,SIZE(PTA)
-      !ZC_TMRT(JJ,J3) = ZC_VA(JJ,1)+ZC_VA(JJ,2)*PVA(JJ)+ZC_VA(JJ,3)*PVA(JJ)**2+ZC_VA(JJ,4)*PVA(JJ)**3+ZC_VA(JJ,5)*PVA(JJ)**4 &
-      !               +ZC_VA(JJ,6)*PVA(JJ)**5+ZC_VA(JJ,7)*PVA(JJ)**6
-      ZC_TMRT(JJ,J3) = ZS(ZC_VA(JJ,1),ZC_VA(JJ,2),ZC_VA(JJ,3),ZC_VA(JJ,4),ZC_VA(JJ,5),ZC_VA(JJ,6),ZC_VA(JJ,7),PVA(JJ))
+    DO JJ=1,SIZE(ZTA)
+      ZC_TMRT(JJ,J3) = ZS(ZC_VA(JJ,1),ZC_VA(JJ,2),ZC_VA(JJ,3),ZC_VA(JJ,4),ZC_VA(JJ,5),ZC_VA(JJ,6),ZC_VA(JJ,7),ZVA(JJ))
     ENDDO
   ENDDO
-  DO JJ=1,SIZE(PTA)
-    !ZC_PA(JJ,J4) = ZC_TMRT(JJ,1)+ZC_TMRT(JJ,2)*ZD_TMRT(JJ)+ZC_TMRT(JJ,3)*ZD_TMRT(JJ)**2+ZC_TMRT(JJ,4)*ZD_TMRT(JJ)**3 &
-    !               +ZC_TMRT(JJ,5)*ZD_TMRT(JJ)**4 +ZC_TMRT(JJ,6)*ZD_TMRT(JJ)**5+ZC_TMRT(JJ,7)*ZD_TMRT(JJ)**6
+  DO JJ=1,SIZE(ZTA)
     ZC_PA(JJ,J4) = ZS(ZC_TMRT(JJ,1),ZC_TMRT(JJ,2),ZC_TMRT(JJ,3),ZC_TMRT(JJ,4),ZC_TMRT(JJ,5),ZC_TMRT(JJ,6),ZC_TMRT(JJ,7),ZD_TMRT(JJ))
   ENDDO
 ENDDO
 !
-DO JJ=1,SIZE(PTA)
-  !PUTCI_APPROX(JJ) = PTA(JJ) + ZC_PA(JJ,1)+ZC_PA(JJ,2)*ZPA(JJ)+ZC_PA(JJ,3)*ZPA(JJ)**2+ZC_PA(JJ,4)*ZPA(JJ)**3 &
-  !                  +ZC_PA(JJ,5)*ZPA(JJ)**4 + ZC_PA(JJ,6)*ZPA(JJ)**5+ZC_PA(JJ,7)*ZPA(JJ)**6
-  PUTCI_APPROX(JJ) = PTA(JJ) + ZS(ZC_PA(JJ,1),ZC_PA(JJ,2),ZC_PA(JJ,3),ZC_PA(JJ,4),ZC_PA(JJ,5),ZC_PA(JJ,6),ZC_PA(JJ,7),ZPA(JJ))
+DO JJ=1,SIZE(ZTA)
+  PUTCI_APPROX(JJ) = ZTA(JJ) + ZS(ZC_PA(JJ,1),ZC_PA(JJ,2),ZC_PA(JJ,3),ZC_PA(JJ,4),ZC_PA(JJ,5),ZC_PA(JJ,6),ZC_PA(JJ,7),ZPA(JJ))
 ENDDO
 !
 IF (LHOOK) CALL DR_HOOK('UTCI_APPROX',1,ZHOOK_HANDLE)

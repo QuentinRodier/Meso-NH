@@ -83,7 +83,7 @@ REAL, DIMENSION(:),  ALLOCATABLE  :: ZWORK          ! 2D array to write data in 
 !
 INTEGER                           :: IWORK          ! Work integer
 !
-INTEGER                           :: JSV, JNBIOMASS
+INTEGER                           :: JNBIOMASS
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
@@ -170,7 +170,7 @@ IF (IO%CPHOTO=='NIT') THEN
   END DO
   !
   !
-  DO JNBIOMASS=2,IO%NNBIOMASS
+  DO JNBIOMASS=1,IO%NNBIOMASS
     WRITE(YLVL,'(I1)') JNBIOMASS
     YRECFM=HPATCH//'GR_RESPI'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
     YRECFM=ADJUSTL(YRECFM)
@@ -197,7 +197,7 @@ YRECFM='GR'
  CALL WRITESURF_GR_SNOW(OSNOWDIMNC, HSELECT, HPROGRAM, YRECFM, HPATCH, &
                         SIZE(PEK%XTG,1), IMASK_P, 0, PEK%TSNOW, S%XWSN_WR, &
                         S%XRHO_WR, S%XHEA_WR, S%XAGE_WR, S%XSG1_WR, S%XSG2_WR, &
-                        S%XHIS_WR, S%XALB_WR)
+                        S%XHIS_WR, S%XALB_WR, S%XIMP_WR)
 
 !
 IF (LHOOK) CALL DR_HOOK('WRITESURF_TEB_GREENROOF_N',1,ZHOOK_HANDLE)

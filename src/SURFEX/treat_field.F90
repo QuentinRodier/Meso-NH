@@ -44,6 +44,8 @@
 !!    06/2009     (B. Decharme)  call Topographic index statistics calculation
 !!    09/2010     (E. Kourzeneva) call reading of the lake database
 !!    03/2012     (M. Lafaysse) NETCDF
+!!    02/2019     (A. Druel) Add MA1 possibility (to not take into account the zeros) and streamlines MAJ and bug fix
+!!
 !----------------------------------------------------------------------------
 !
 !*    0.     DECLARATION
@@ -53,21 +55,23 @@
 !
 !
 USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
-USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
-USE MODD_SSO_n, ONLY : SSO_t
+USE MODD_SURF_ATM_n,      ONLY : SURF_ATM_t
+USE MODD_SSO_n,           ONLY : SSO_t
 !
-USE MODD_SURF_PAR, ONLY : XUNDEF
-USE MODD_PGDWORK, ONLY : NSIZE, NSIZE_ALL, XALL, NSSO_ALL, XSSO_ALL, &
-                         XSUMVAL, XEXT_ALL, CATYPE, &
-                         XSSQO, LSSQO, NSSO, XMIN_WORK, XMAX_WORK, & 
-                         NVALNBR, NVALCOUNT, XVALLIST, JPVALMAX
+USE MODD_SURF_PAR,        ONLY : XUNDEF
+USE MODD_PGDWORK,         ONLY : NSIZE, NSIZE_ALL, XALL, NSSO_ALL, XSSO_ALL, &
+                                 XSUMVAL, XEXT_ALL, CATYPE, &
+                                 XSSQO, LSSQO, NSSO, XMIN_WORK, XMAX_WORK, & 
+                                 NVALNBR, NVALCOUNT, XVALLIST, JPVALMAX, &
+                                 LORORAD, XFSSO_ALL, NFSSO_ALL, NFSSO, &
+                                 XFSSQO, NFSSQO
 !
-USE MODD_SURFEX_OMP, ONLY : NBLOCKTOT
-USE MODD_SURFEX_MPI, ONLY : NRANK, NPIO, NPROC, NCOMM, NREQ, NINDEX, IDX_R, &
-                                NSIZE_TASK,NREQ, NSIZE_max=>NSIZE
+USE MODD_SURFEX_OMP,      ONLY : NBLOCKTOT
+USE MODD_SURFEX_MPI,      ONLY : NRANK, NPIO, NPROC, NCOMM, NREQ, NINDEX, IDX_R, &
+                                 NSIZE_TASK,NREQ, NSIZE_max=>NSIZE
 !
-USE MODD_DATA_LAKE,      ONLY : NGRADDEPTH_LDB, NGRADSTATUS_LDB 
-USE MODD_DATA_COVER_PAR, ONLY : JPCOVER
+USE MODD_DATA_LAKE,       ONLY : NGRADDEPTH_LDB, NGRADSTATUS_LDB 
+USE MODD_DATA_COVER_PAR,  ONLY : JPCOVER
 !
 USE MODI_INI_SSOWORK
 USE MODI_GET_LUOUT
@@ -101,8 +105,8 @@ INCLUDE "mpif.h"
 !
 !
 TYPE(SURF_ATM_GRID_t), INTENT(INOUT) :: UG
-TYPE(SURF_ATM_t), INTENT(INOUT) :: U
-TYPE(SSO_t), INTENT(INOUT) :: USS
+TYPE(SURF_ATM_t),      INTENT(INOUT) :: U
+TYPE(SSO_t),           INTENT(INOUT) :: USS
 !
  CHARACTER(LEN=6),  INTENT(IN) :: HPROGRAM      ! Type of program
  CHARACTER(LEN=6),  INTENT(IN) :: HSCHEME       ! Scheme treated
@@ -116,18 +120,18 @@ REAL, DIMENSION(:,:), INTENT(INOUT), OPTIONAL :: PPGDARRAY ! field on MESONH gri
 !            ------------------------------
 !
 INTEGER, DIMENSION(:,:,:), ALLOCATABLE :: I3D_ALL
-INTEGER, DIMENSION(:), ALLOCATABLE :: IMASK
-REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZVALLIST, ZVAL
-REAL, DIMENSION(:,:), ALLOCATABLE ::  ZEXTVAL
-INTEGER, DIMENSION(:,:), ALLOCATABLE :: ISIZE0
-INTEGER, DIMENSION(:,:), ALLOCATABLE :: IVALNBR
+INTEGER, DIMENSION(:),     ALLOCATABLE :: IMASK
+REAL,    DIMENSION(:,:,:), ALLOCATABLE :: ZVALLIST, ZVAL
+REAL,    DIMENSION(:,:),   ALLOCATABLE ::  ZEXTVAL
+INTEGER, DIMENSION(:,:),   ALLOCATABLE :: ISIZE0
+INTEGER, DIMENSION(:,:),   ALLOCATABLE :: IVALNBR
 INTEGER, DIMENSION(:,:,:), ALLOCATABLE :: IVALCOUNT
 INTEGER, DIMENSION(:,:,:), ALLOCATABLE :: ISIZE
 !
 INTEGER :: IMAX  ! Maximum of times a value has been encountered in the grid mesh
 INTEGER :: IVAL  ! Index of this value
 #ifdef SFX_MPI
-INTEGER, DIMENSION(MPI_STATUS_SIZE) :: ISTATUS
+INTEGER, DIMENSION(MPI_STATUS_SIZE)         :: ISTATUS
 INTEGER, DIMENSION(MPI_STATUS_SIZE,NPROC-1) :: ISTATUS2
 #endif
 INTEGER, DIMENSION(0:NPROC-1) :: ITCOV
@@ -149,7 +153,7 @@ IF (HFILETYPE=='DIRTYP') GMULTITYPE = .TRUE.
 SELECT CASE (HFILETYPE)
 
   CASE ('DIRECT','DIRTYP')
-    IF(UG%G%CGRID=="GAUSS     " .OR. UG%G%CGRID=="IGN       " .OR. UG%G%CGRID=="LONLAT REG")THEN
+    IF(UG%G%CGRID=="GAUSS     " .OR. UG%G%CGRID=="IGN       " .OR. UG%G%CGRID=="LONLAT REG") THEN
       CALL READ_DIRECT_GAUSS(UG, U, USS, &
                              HPROGRAM,HSCHEME,HSUBROUTINE,HFILENAME,HFIELD,GMULTITYPE)
     ELSE
@@ -343,7 +347,7 @@ SELECT CASE (HSUBROUTINE)
     ENDIF
     !
     !XSUMVAL needs to contain the numbers of times each cover is encountered
-    !for the current task 
+    !for the current task
     ALLOCATE(XSUMVAL(U%NSIZE_FULL,COUNT(U%LCOVER)))
     XSUMVAL(:,:) = 0.
     !
@@ -420,6 +424,7 @@ SELECT CASE (HSUBROUTINE)
         ENDIF
         !
       ELSEIF (HSUBROUTINE=='A_OROG') THEN
+        !
         !max and min
         IF (NPROC>1) THEN
           ALLOCATE(ZEXTVAL(U%NSIZE_FULL,1))
@@ -465,14 +470,51 @@ SELECT CASE (HSUBROUTINE)
           WHERE(NSSO_ALL(:,:,:)==1) LSSQO(:,:,:) = .TRUE.
         ENDIF
         DEALLOCATE(NSSO_ALL)
+
+        !ssqo fields
+        IF ( LORORAD ) THEN
+          !
+          ALLOCATE(XFSSQO(U%NSIZE_FULL,NFSSO,NFSSO))
+          XFSSQO(:,:,:) = 0.
+          IF (NPROC>1) THEN
+            ALLOCATE(ZVAL(U%NSIZE_FULL,NFSSO,NFSSO))
+            DO JP = 0,NPROC-1
+              CALL READ_AND_SEND_MPI(XFSSO_ALL,ZVAL,KPIO=JP)
+              !sum of contributions coming from all tasks
+              XFSSQO(:,:,:) = XFSSQO(:,:,:) + ZVAL(:,:,:)
+            ENDDO
+            DEALLOCATE(ZVAL)
+          ELSE
+            XFSSQO(:,:,:) = XFSSO_ALL(:,:,:)
+          ENDIF
+          DEALLOCATE(XFSSO_ALL)
+          !
+          ALLOCATE(NFSSQO(U%NSIZE_FULL,NFSSO,NFSSO))
+          NFSSQO(:,:,:) = 0.
+          IF (NPROC>1) THEN
+            ALLOCATE(ISIZE(U%NSIZE_FULL,NFSSO,NFSSO))
+            DO JP = 0,NPROC-1
+              CALL READ_AND_SEND_MPI(NFSSO_ALL,ISIZE,KPIO=JP)
+              !sum of contributions coming from all tasks
+              NFSSQO(:,:,:) = NFSSQO(:,:,:) + ISIZE(:,:,:)
+            ENDDO
+            DEALLOCATE(ISIZE)
+          ELSE
+            NFSSQO(:,:,:) = NFSSO_ALL(:,:,:)
+          ENDIF
+          DEALLOCATE(NFSSO_ALL)
+          !          
+        ENDIF
+        !
       ENDIF
+      !
       DEALLOCATE(XEXT_ALL)
       !
     ENDIF
     !
     !
   CASE ('A_MESH')
-   IF (CATYPE/='MAJ') THEN
+   IF (CATYPE/='MAJ' .AND. CATYPE/='MA1') THEN
 
     ALLOCATE(XSUMVAL(U%NSIZE_FULL,SIZE(XALL,2)))
     !most simple case
@@ -492,8 +534,8 @@ SELECT CASE (HSUBROUTINE)
    ELSE
 
      ALLOCATE(XSUMVAL(U%NSIZE_FULL,SIZE(NSIZE,2)))
-     IF (HFILETYPE=='DIRECT' .AND. NPROC>1) THEN
-       CALL ABOR1_SFX("TREAT_FIELD: MAJ is not possible with DIRECT filetype and NPROC>1")
+     IF ( (HFILETYPE=='DIRECT' .OR. HFILETYPE=='DIRTYP') .AND. NPROC>1) THEN ! bug fix
+       CALL ABOR1_SFX("TREAT_FIELD: MAJ or MA1 are not possible with DIRECT or DIRTYP filetype and NPROC>1")
      ELSE
        ALLOCATE(IVALNBR(U%NSIZE_FULL,SIZE(NVALNBR,2)),IVALCOUNT(U%NSIZE_FULL,JPVALMAX,SIZE(NVALNBR,2)),&
                 ZVALLIST(U%NSIZE_FULL,JPVALMAX,SIZE(NVALNBR,2)))
@@ -513,14 +555,19 @@ SELECT CASE (HSUBROUTINE)
              !* determines the index of the value which has been the most encountered
              !  in the grid mesh
              IMAX=0
+             IVAL = 0
              DO JL=1,IVALNBR(JI,JT)
-               IF (IVALCOUNT(JI,JL,JT)>IMAX) THEN
+               IF (IVALCOUNT(JI,JL,JT)>IMAX .AND. (CATYPE=='MAJ' .OR. ZVALLIST(JI,JL,JT)/=0.  ) ) THEN
                  IMAX = IVALCOUNT(JI,JL,JT)
                  IVAL = JL
                END IF
              END DO
              !* sets this value to the PGD field
-             XSUMVAL(JI,JT)=ZVALLIST(JI,IVAL,JT)
+             IF ( IVAL /= 0 ) THEN
+               XSUMVAL(JI,JT)=ZVALLIST(JI,IVAL,JT)
+             ELSE!IF (CATYPE=='MAJ') THEN
+               XSUMVAL(JI,JT)=0.     !! When there is no values, put 0. That mean it's normal to have 0 values with 'MA1' !!!!
+             ENDIF
          END DO
        ENDDO
        DEALLOCATE(IVALNBR,IVALCOUNT,ZVALLIST)

@@ -38,6 +38,8 @@
 !!      Modified    11/2013 by B. Decharme : XPATCH now in writesurf_isban.F90
 !!      Modified    10/2014 by P. Samuelsson: MEB variables
 !!      Modified    06/2014 by B. Decharme : add XVEGTYPE
+!!      Modified    02/2019 by A. Druel    : Add several variables for irrigation (and associated flag)
+!!
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -45,18 +47,18 @@
 !
 USE MODD_TYPE_DATE_SURF
 !
-USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
-USE MODD_SSO_n, ONLY : SSO_t
-USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
-USE MODD_CH_ISBA_n, ONLY : CH_ISBA_t, CH_ISBA_NP_t
+USE MODD_DATA_COVER_n,   ONLY : DATA_COVER_t
+USE MODD_SSO_n,          ONLY : SSO_t
+USE MODD_SURF_ATM_n,     ONLY : SURF_ATM_t
+USE MODD_CH_ISBA_n,      ONLY : CH_ISBA_t, CH_ISBA_NP_t
 USE MODD_ISBA_OPTIONS_n, ONLY : ISBA_OPTIONS_t
-USE MODD_ISBA_n, ONLY : ISBA_S_t, ISBA_K_t, ISBA_NP_t, ISBA_NPE_t, ISBA_P_t, ISBA_PE_t
+USE MODD_ISBA_n,         ONLY : ISBA_S_t, ISBA_K_t, ISBA_NP_t, ISBA_NPE_t, ISBA_P_t, ISBA_PE_t
 !
-USE MODD_SURF_PAR,   ONLY : XUNDEF, NUNDEF
-USE MODD_AGRI,       ONLY : LAGRIP
+USE MODD_SURF_PAR,       ONLY : XUNDEF, NUNDEF, LEN_HREC
+USE MODD_AGRI,           ONLY : LAGRIP, LIRRIGMODE, LMULTI_SEASON
 !
 !
-USE MODD_IO_SURF_FA, ONLY : LFANOCOMPACT, LPREP
+USE MODD_IO_SURF_FA,     ONLY : LFANOCOMPACT, LPREP
 !
 USE MODI_INIT_IO_SURF_n
 USE MODI_WRITE_SURF
@@ -74,30 +76,30 @@ IMPLICIT NONE
 !              -------------------------
 !
 !
-TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
+TYPE(DATA_COVER_t),  INTENT(INOUT) :: DTCO
  CHARACTER(LEN=*), DIMENSION(:), INTENT(IN) :: HSELECT
-TYPE(SURF_ATM_t), INTENT(INOUT) :: U
-TYPE(CH_ISBA_t), INTENT(INOUT) :: CHI
-TYPE(CH_ISBA_NP_t), INTENT(INOUT) :: NCHI
-LOGICAL, INTENT(IN) :: OSURF_DIAG_ALBEDO
+TYPE(SURF_ATM_t),     INTENT(INOUT) :: U
+TYPE(CH_ISBA_t),      INTENT(INOUT) :: CHI
+TYPE(CH_ISBA_NP_t),   INTENT(INOUT) :: NCHI
+LOGICAL,              INTENT(IN)    :: OSURF_DIAG_ALBEDO
 TYPE(ISBA_OPTIONS_t), INTENT(INOUT) :: IO
-TYPE(ISBA_S_t), INTENT(INOUT) :: S
-TYPE(ISBA_K_t), INTENT(INOUT) :: K
-TYPE(ISBA_NP_t), INTENT(INOUT) :: NP
-TYPE(ISBA_NPE_t), INTENT(INOUT) :: NPE
-TYPE(SSO_t), INTENT(INOUT) :: ISS
+TYPE(ISBA_S_t),       INTENT(INOUT) :: S
+TYPE(ISBA_K_t),       INTENT(INOUT) :: K
+TYPE(ISBA_NP_t),      INTENT(INOUT) :: NP
+TYPE(ISBA_NPE_t),     INTENT(INOUT) :: NPE
+TYPE(SSO_t),          INTENT(INOUT) :: ISS
 !
- CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM ! program calling
+ CHARACTER(LEN=6),    INTENT(IN)    :: HPROGRAM ! program calling
 !
 !*       0.2   Declarations of local variables
 !              -------------------------------
 !
-TYPE(ISBA_P_t), POINTER :: PK
+TYPE(ISBA_P_t),  POINTER :: PK
 TYPE(ISBA_PE_t), POINTER :: PEK
 !
 REAL, DIMENSION(U%NSIZE_NATURE,IO%NPATCH) :: ZWORK
 !
-REAL, DIMENSION(:), ALLOCATABLE :: ZWORK1
+REAL, DIMENSION(:),   ALLOCATABLE :: ZWORK1
 REAL, DIMENSION(:,:), ALLOCATABLE :: ZWORK2
 !
 REAL, DIMENSION(U%NSIZE_NATURE,SIZE(NP%AL(1)%XDG,2)) :: ZDG   ! Work array
@@ -112,7 +114,7 @@ CHARACTER(LEN=4)  :: YLVL
  CHARACTER(LEN=2) :: YPAT
 !
 INTEGER         :: JI, JL, JP, ILAYER, ILU, IMASK
-INTEGER           :: ISIZE_LMEB_PATCH   ! Number of patches where multi-energy balance should be applied
+INTEGER         :: ISIZE_LMEB_PATCH   ! Number of patches where multi-energy balance should be applied
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------
 !
@@ -300,7 +302,7 @@ IF(IO%CISBA=='DIF')THEN
   !
   ALLOCATE(ZWORK1(ILU))
   DO JL=1,SIZE(PK%XROOTFRAC,2)
-    DO JP = 1,IO%NPATCH  
+    DO JP = 1,IO%NPATCH
       PK => NP%AL(JP)
       IF (JL<10) THEN
         WRITE(YRECFM,FMT='(A8,I1)') 'ROOTFRAC',JL
@@ -401,13 +403,28 @@ ENDIF
 !
 !* Fraction of each vegetation type in the grid cell
 !
-DO JL=1,SIZE(S%XVEGTYPE_PATCH,2)
+DO JL=1,SIZE(S%XVEGTYPE,2)
   WRITE(YPAS,'(I2)') JL 
   YLVLV=ADJUSTL(YPAS(:LEN_TRIM(YPAS)))
   WRITE(YRECFM,FMT='(A9)') 'VEGTYPE'//YLVLV
   YCOMMENT='fraction of each vegetation type in the grid cell'//' (-)'
   CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,S%XVEGTYPE(:,JL),IRESP,HCOMMENT=YCOMMENT)
 END DO
+!
+!-------------------------------------------------------------------------------
+!
+!* Fraction of each vegetation type, with irrigation in the grid cell
+!
+IF ( U%LECOSG .AND. (LIRRIGMODE .OR. LAGRIP) ) THEN
+  DO JL=1,SIZE(S%XVEGTYPE2,2)
+    WRITE(YPAS,'(I2)') JL
+    YLVLV=ADJUSTL(YPAS(:LEN_TRIM(YPAS)))
+    WRITE(YRECFM,FMT='(A9)') 'VEG_IRR'//YLVLV
+    YCOMMENT='fraction of each vegetation type with (or without) irrigation'//' (-)'
+    CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,S%XVEGTYPE2(:,JL),IRESP,HCOMMENT=YCOMMENT)
+  END DO
+ENDIF
+!
 !-------------------------------------------------------------------------------
 !
 !* Fraction of each vegetation type for each patch
@@ -572,13 +589,12 @@ END IF
 !
 !-------------------------------------------------------------------------------
 !
-IF (LAGRIP .AND. (IO%CPHOTO=='NIT' .OR. IO%CPHOTO=='NCB') ) THEN
-!
 !* seeding and reaping
 !
+IF ( 1==2 .AND. (LAGRIP .OR. LIRRIGMODE)) THEN ! #notused --> probably never read. 1==2 added to reduce the PREP.nc/SURFOUT.nc size
+  !
   YRECFM='TSEED'
   YCOMMENT='date of seeding (-)'
-  !
   DO JP = 1,IO%NPATCH
     CALL  WRITE_TFIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
                 NP%AL(JP)%NR_P,NPE%AL(JP)%TSEED(:),ILU,S%TDATE_WR)
@@ -586,36 +602,107 @@ IF (LAGRIP .AND. (IO%CPHOTO=='NIT' .OR. IO%CPHOTO=='NCB') ) THEN
 !
   YRECFM='TREAP'
   YCOMMENT='date of reaping (-)'
-!
   DO JP = 1,IO%NPATCH
     CALL  WRITE_TFIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
                 NP%AL(JP)%NR_P,NPE%AL(JP)%TREAP(:),ILU,S%TDATE_WR)
   ENDDO
+  !
+  IF ( LMULTI_SEASON ) THEN
+    !
+    YRECFM='TS_S2'
+    YCOMMENT='date of seeding saison 2 (-)'
+    DO JP = 1,IO%NPATCH
+      CALL  WRITE_TFIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+                  NP%AL(JP)%NR_P,NPE%AL(JP)%MULTI_TSEED(:,2),ILU,S%TDATE_WR)
+    ENDDO
+    !
+    YRECFM='TR_S2'
+    YCOMMENT='date of reaping saison 2 (-)'
+    DO JP = 1,IO%NPATCH
+      CALL  WRITE_TFIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+                  NP%AL(JP)%NR_P,NPE%AL(JP)%MULTI_TREAP(:,2),ILU,S%TDATE_WR)
+    ENDDO
+    !
+!    IF ( ANY(NPE%AL(JP)%MULTI_TSEED(:,3)%TDATE%MONTH /= NUNDEF) .AND. &
+!         ANY(NPE%AL(JP)%MULTI_TREAP(:,3)%TDATE%MONTH /= NUNDEF) ) THEN
+      !
+      YRECFM='TS_S3'
+      YCOMMENT='date of seeding saison 3 (-)'
+      DO JP = 1,IO%NPATCH
+        CALL  WRITE_TFIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+                    NP%AL(JP)%NR_P,NPE%AL(JP)%MULTI_TSEED(:,3),ILU,S%TDATE_WR)
+      ENDDO
+      !
+      YRECFM='TR_S3'
+      YCOMMENT='date of reaping saison 3 (-)'
+      DO JP = 1,IO%NPATCH
+        CALL  WRITE_TFIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+                    NP%AL(JP)%NR_P,NPE%AL(JP)%MULTI_TREAP(:,3),ILU,S%TDATE_WR)
+      ENDDO
+      !
+!    ENDIF
+    !
+  ENDIF
+  !
+ENDIF
 !
 !-------------------------------------------------------------------------------
 !
-!* irrigated fraction
-!
-  YRECFM='IRRIG'
-  YCOMMENT='flag for irrigation (irrigation if >0.) (-)'
-!
+IF ( 1==2 .AND. LIRRIGMODE) THEN ! #notused --> probably never read. 1==2 added to reduce the PREP.nc/SURFOUT.nc size
+  !
+  !* irrigation type
+  !
+  YRECFM='IRRIGTYPE'
+  YCOMMENT='flag for irrigation type (0: no, 1: spraying, 2: dripping, 3: flooding) (-)'
   DO JP = 1,IO%NPATCH
     CALL  WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
-                NP%AL(JP)%NR_P,NPE%AL(JP)%XIRRIG(:),ILU,S%XWORK_WR)
+                NP%AL(JP)%NR_P,NPE%AL(JP)%XIRRIGTYPE(:),ILU,S%XWORK_WR)
   ENDDO
-!
-!-------------------------------------------------------------------------------
-!
-!* water supply for irrigation
-!
+  !
+  !-----------------------------------------------------------------------------
+  !
+  !* water supply for irrigation
+  !
   YRECFM='WATSUP'
   YCOMMENT='water supply during irrigation process (mm)'
-!
   DO JP = 1,IO%NPATCH
     CALL  WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
                 NP%AL(JP)%NR_P,NPE%AL(JP)%XWATSUP(:),ILU,S%XWORK_WR)
   ENDDO
-!
+  !
+  !-----------------------------------------------------------------------------
+  !
+  !* Minimal time between two irrigations
+  !
+  YRECFM='IRRIGFREQ'
+  YCOMMENT='Minimal time between two irrigations (s)'
+  DO JP = 1,IO%NPATCH
+    CALL  WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+              NP%AL(JP)%NR_P,NPE%AL(JP)%XIRRIGFREQ(:),ILU,S%XWORK_WR)
+  ENDDO
+  !
+  !-------------------------------------------------------------------------------
+  !
+  !* Irrigation application time
+  !
+  YRECFM='IRRIGTIME'
+  YCOMMENT='irrigation application time (s)'
+  DO JP = 1,IO%NPATCH
+    CALL  WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+              NP%AL(JP)%NR_P,NPE%AL(JP)%XIRRIGTIME(:),ILU,S%XWORK_WR)
+  ENDDO
+  !
+  !-------------------------------------------------------------------------------
+  !
+  !* F2 thresholds for irrigation triggering
+  !
+  YRECFM='F2THRESHD'
+  YCOMMENT='F2 thresholds for irrigation triggering (-)'
+  DO JP = 1,IO%NPATCH
+    CALL  WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+              NP%AL(JP)%NR_P,NPE%AL(JP)%XF2THRESHOLD(:),ILU,S%XWORK_WR)
+  ENDDO
+  !
 ENDIF
 !
 !-------------------------------------------------------------------------------

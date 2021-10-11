@@ -37,6 +37,7 @@ USE MODI_CH_OPEN_INPUTB
 !!    ------------------
 USE MODD_SURFEX_OMP, ONLY : NBLOCK
 USE MODD_TYPE_EFUTIL
+USE MODD_SURF_PAR, ONLY : LEN_HREC
 !------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS

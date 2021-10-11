@@ -8,7 +8,7 @@
                               PTT, PVMOD, PZREF, PUREF,                       &
                               PPS, OHANDLE_SIC, PQSAT,                        &
                               PSFTH, PSFTQ, PUSTAR,                           &
-                              PCD, PCDN, PCH, PRI, PRESA, PZ0HSEA             )  
+                              AT, PCD, PCDN, PCH, PRI, PRESA, PZ0HSEA             )  
 !     #######################################################################
 !
 !
@@ -59,11 +59,12 @@
 USE MODD_CSTS,       ONLY : XG, XCPD, XLSTT
 USE MODD_SURF_PAR,   ONLY : XUNDEF
 USE MODD_SNOW_PAR,   ONLY : XZ0SN, XZ0HSN
+USE MODD_SURF_ATM_TURB_n, ONLY : SURF_ATM_TURB_t
 !
 USE MODI_SURFACE_RI
 USE MODI_SURFACE_AERO_COND
 USE MODI_SURFACE_CD
-USE MODI_SURFACE_CDCH_1DARP
+!USE MODI_SURFACE_CDCH_1DARP
 USE MODI_WIND_THRESHOLD
 !
 USE MODE_THERMOS
@@ -99,6 +100,7 @@ REAL,               INTENT(IN)       :: PTT   ! temperature of freezing point
 !
 REAL, DIMENSION(:), INTENT(INOUT)    :: PZ0SEA! roughness length over the ocean
 !                                         
+TYPE(SURF_ATM_TURB_t), INTENT(IN) :: AT         ! atmospheric turbulence parameters
 !                                         
 !  surface fluxes : latent heat, sensible heat, friction fluxes
 REAL, DIMENSION(:), INTENT(OUT)      :: PSFTH ! heat flux  (W/m2)
@@ -127,6 +129,7 @@ REAL, DIMENSION(SIZE(PTA)) :: ZFP       ! working variable
 REAL, DIMENSION(SIZE(PTA)) :: ZRRCOR    ! correction of CD, CH, CDN due to moist-gustiness
 REAL, DIMENSION(SIZE(PTA)) :: ZCHARN    ! Charnock number
 !
+CHARACTER(LEN=3)  ::YSNOWRES ='RIL'!<Cluzet default value for HSNOWRES>
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !-------------------------------------------------------------------------------
@@ -200,8 +203,8 @@ ENDIF
 !
 IF (LDRAG_COEF_ARP) THEN
  
-  CALL SURFACE_CDCH_1DARP(PZREF, PZ0SEA, PZ0HSEA, ZVMOD, PTA, PSST, &
-                          PQA, PQSAT, PCD, PCDN, PCH                )  
+!  CALL SURFACE_CDCH_1DARP(PZREF, PZ0SEA, PZ0HSEA, ZVMOD, PTA, PSST, &
+!                          PQA, PQSAT, AT, PCD, PCDN, PCH, PRI             )  
 
   ZRA(:) = 1. / ( PCH(:) * ZVMOD(:) )
 !
@@ -240,7 +243,7 @@ ENDIF
 !              -------------------------------------------------------
 !
 IF (.NOT.LDRAG_COEF_ARP) THEN
-   CALL SURFACE_AERO_COND(PRI, PZREF, PUREF, ZVMOD, PZ0SEA, PZ0HSEA, ZAC, ZRA, PCH)
+   CALL SURFACE_AERO_COND(PRI, PZREF, PUREF, ZVMOD, PZ0SEA, PZ0HSEA, ZAC, ZRA, PCH, YSNOWRES)
 ENDIF
 !
 IF (LRRGUST_ARP) THEN

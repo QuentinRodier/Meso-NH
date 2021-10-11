@@ -5,7 +5,7 @@
 !     #########
       SUBROUTINE DEFAULT_SEAFLUX(PTSTEP,POUT_TSTEP,HSEA_ALB,HSEA_FLUX,   &
                                    OPWG, OPRECIP, OPWEBB, KZ0, KGRVWAVES,&
-                                   OPROGSST, KTIME_COUPLING,POCEAN_TSTEP,&
+                                   OPROGSST, POCEAN_TSTEP,               &
                                    PICHCE, HINTERPOL_SST, HINTERPOL_SSS, &
                                    OWAVEWIND     )
 !     ########################################################################
@@ -40,6 +40,7 @@
 !!      S. Belamari 03/2014 : add KZ0 (to choose PZ0SEA formulation)
 !!      Modified    03/2014 : M.N. Bouin  ! possibility of wave parameters
 !!                                        ! from external source
+!!      C. Lebeaupin 01/2020 : new seaflux default ECUME6
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -67,7 +68,6 @@ LOGICAL,           INTENT(OUT) :: OPWEBB        ! Webb correction
 INTEGER,           INTENT(OUT) :: KZ0           ! PZ0SEA formulation
 INTEGER,           INTENT(OUT) :: KGRVWAVES     ! Wave gravity in roughness length
 LOGICAL,           INTENT(OUT) :: OPROGSST      !two-way coupling
-INTEGER,           INTENT(OUT) :: KTIME_COUPLING!coupling frequency
 REAL,              INTENT(OUT) :: PICHCE        !CE coef calculation for ECUME
 REAL,              INTENT(OUT) :: POCEAN_TSTEP  !ocean 1D model time-step
 CHARACTER(LEN=6),  INTENT(OUT) :: HINTERPOL_SST ! Quadratic interpolation of monthly SST
@@ -85,7 +85,7 @@ IF (LHOOK) CALL DR_HOOK('DEFAULT_SEAFLUX',0,ZHOOK_HANDLE)
 PTSTEP     = XUNDEF
 POUT_TSTEP = XUNDEF
 !
-HSEA_FLUX = "ECUME "
+HSEA_FLUX = "ECUME6"
 HSEA_ALB  = "TA96"
 !
 OPWG    = .FALSE.
@@ -97,7 +97,6 @@ KZ0 = 0
 KGRVWAVES = 0
 !
 OPROGSST = .FALSE.
-KTIME_COUPLING = 300
 POCEAN_TSTEP = 300.
 !
 PICHCE = 0.0

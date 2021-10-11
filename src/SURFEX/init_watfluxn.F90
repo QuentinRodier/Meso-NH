@@ -9,7 +9,7 @@
                                   HSV,PCO2,PRHOA,                            &
                                   PZENITH,PAZIM,PSW_BANDS,PDIR_ALB,PSCA_ALB, &
                                   PEMIS,PTSRAD,PTSURF,                       &
-                                  KYEAR, KMONTH,KDAY, PTIME,                 &
+                                  KYEAR, KMONTH,KDAY, PTIME,AT,              &
                                   HATMFILE,HATMFILETYPE,                     &
                                   HTEST                                      )  
 !     #############################################################
@@ -62,6 +62,8 @@ USE MODD_CHS_AEROSOL,    ONLY: LVARSIGI, LVARSIGJ
 USE MODD_DST_SURF,       ONLY: LVARSIG_DST, NDSTMDE, NDST_MDEBEG, LRGFIX_DST
 USE MODD_SLT_SURF,       ONLY: LVARSIG_SLT, NSLTMDE, NSLT_MDEBEG, LRGFIX_SLT
 USE MODD_SURF_PAR,       ONLY : XUNDEF, NUNDEF
+!
+USE MODD_SURF_ATM_TURB_n, ONLY : SURF_ATM_TURB_t
 !
 USE MODI_INIT_IO_SURF_n
 USE MODI_DEFAULT_CH_DEP
@@ -122,6 +124,7 @@ INTEGER,                          INTENT(IN)  :: KMONTH    ! current month (UTC)
 INTEGER,                          INTENT(IN)  :: KDAY      ! current day (UTC)
 REAL,                             INTENT(IN)  :: PTIME     ! current time since
                                                           !  midnight (UTC, s)
+TYPE(SURF_ATM_TURB_t), INTENT(IN) :: AT         ! atmospheric turbulence parameters
 !
  CHARACTER(LEN=28),                INTENT(IN)  :: HATMFILE    ! atmospheric file name
  CHARACTER(LEN=6),                 INTENT(IN)  :: HATMFILETYPE! atmospheric file type
@@ -309,7 +312,7 @@ PTSURF(:) = WM%W%XTS(:)
 !*       6.     Chemistry / dust
 !               ----------------
 !
- CALL INIT_CHEMICAL_n(ILUOUT, KSV, HSV, WM%CHW%SVW,         &
+ CALL INIT_CHEMICAL_n(ILUOUT, KSV, HSV, WM%CHW%SVW, WM%CHW%SLTW,WM%CHW%DSTW,   &
                      WM%CHW%CCH_NAMES, WM%CHW%CAER_NAMES,      &
                      HDSTNAMES=WM%CHW%CDSTNAMES, HSLTNAMES=WM%CHW%CSLTNAMES,   &   
                      HSNWNAMES=WM%CHW%CSNWNAMES)
@@ -330,6 +333,13 @@ END IF
 !
  CALL DIAG_WATFLUX_INIT_n(OREAD_BUDGETC, WM%DWO, WM%DW, WM%DWC, WM%W, &
                           HPROGRAM,ILU,KSW)
+!
+!-------------------------------------------------------------------------------
+!
+!*       8.     atmospheric turbulence parameters
+!               ---------------------------------
+!
+WM%AT=AT
 !
 !-------------------------------------------------------------------------------
 !

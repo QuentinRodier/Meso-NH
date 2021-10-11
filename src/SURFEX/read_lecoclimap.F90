@@ -7,6 +7,7 @@
 !     #######################
 !
 USE MODI_READ_SURF
+USE MODD_SURF_PAR, ONLY : LEN_HREC
 !
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK

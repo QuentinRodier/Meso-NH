@@ -47,7 +47,6 @@ SUBROUTINE SNOW_LOAD_MEB(PK, PEK, DEK, PTSTEP, PSR, PWRVNMAX, PKVN, PCHEATV, PME
 !
 USE MODD_ISBA_n, ONLY : ISBA_PE_t, ISBA_P_t
 USE MODD_DIAG_EVAP_ISBA_n, ONLY : DIAG_EVAP_ISBA_t
-!
 USE MODD_CSTS,     ONLY : XTT, XLMTT
 !
 USE MODD_SNOW_PAR, ONLY : XRHOSMAX_ES
@@ -111,7 +110,7 @@ WHERE(PWRVNMAX(:) == 0.0)
 
    DEK%XMELT_CV(:) = 0.0
    DEK%XFRZ_CV(:)  = 0.0
-   PSUBVCOR(:)     = 0.0
+   PSUBVCOR(:)    = 0.0
 !
 !
 ELSEWHERE
@@ -167,7 +166,7 @@ END WHERE
 
    ZUNLOAD(:)    = MIN(ZWRVN(:), PEK%XWRVN(:)*( PVELC(:)*(PTSTEP/ZUNLOAD_V)          &
                      + MAX(0.0, PEK%XTV(:)-ZUNLOAD_TT)*(PTSTEP/ZUNLOAD_T) ))            ! kg m-2 
-   ZWRVN(:)      = ZWRVN(:) - ZUNLOAD(:)                                           ! kg m-2 
+   ZWRVN(:)       = ZWRVN(:) - ZUNLOAD(:)                                           ! kg m-2 
    DEK%XSR_GN(:) = DEK%XSR_GN(:) + ZUNLOAD(:)/PTSTEP
 
 ! Diagnostic updates:

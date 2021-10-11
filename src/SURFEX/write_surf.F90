@@ -11,6 +11,8 @@ MODULE MODI_WRITE_SURF
 !!    -------------
 !!      Original       
 !!      J.Escobar      10/06/2013: replace DOUBLE PRECISION by REAL to handle problem for promotion of real on IBM SP
+!!      A.Druel           08/2019: Permit to change the size of caracters (write / read) with constant
+!!
 !----------------------------------------------------
 !
   INTERFACE WRITE_SURF
@@ -22,8 +24,8 @@ MODULE MODI_WRITE_SURF
 !
  CHARACTER(LEN=6),  INTENT(IN) :: HPROGRAM ! calling program
  CHARACTER(LEN=*),  INTENT(IN) :: HREC     ! name of the article to be written
-REAL,              INTENT(IN) :: PFIELD   ! real scalar to be written
-INTEGER,           INTENT(OUT):: KRESP    ! KRESP  : return-code if a problem appears 
+REAL,               INTENT(IN) :: PFIELD   ! real scalar to be written
+INTEGER,            INTENT(OUT):: KRESP    ! KRESP  : return-code if a problem appears 
  CHARACTER(LEN=100),INTENT(IN) :: HCOMMENT ! Comment string
 !
 END SUBROUTINE WRITE_SURFX0
@@ -34,8 +36,8 @@ END SUBROUTINE WRITE_SURFX0
 !
  CHARACTER(LEN=6),   INTENT(IN)  :: HPROGRAM ! calling program
  CHARACTER(LEN=*),   INTENT(IN)  :: HREC     ! name of the article to be written
-REAL, DIMENSION(:), INTENT(IN)  :: PFIELD   ! array containing the data field
-INTEGER,            INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem appears
+REAL, DIMENSION(:),  INTENT(IN)  :: PFIELD   ! array containing the data field
+INTEGER,             INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem appears
  CHARACTER(LEN=100), INTENT(IN)  :: HCOMMENT ! Comment string
  CHARACTER(LEN=1),OPTIONAL,INTENT(IN)  :: HDIR ! type of field :
 !                                             ! 'H' : field with
@@ -51,8 +53,8 @@ END SUBROUTINE WRITE_SURFX1
 !
  CHARACTER(LEN=6),     INTENT(IN)  :: HPROGRAM ! calling program
  CHARACTER(LEN=*),     INTENT(IN)  :: HREC     ! name of the article to be written
-REAL, DIMENSION(:,:), INTENT(IN)  :: PFIELD   ! array containing the data field
-INTEGER,              INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem appears
+REAL, DIMENSION(:,:),  INTENT(IN)  :: PFIELD   ! array containing the data field
+INTEGER,               INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem appears
  CHARACTER(LEN=100),   INTENT(IN)  :: HCOMMENT ! Comment string
  CHARACTER(LEN=1),OPTIONAL,INTENT(IN)  :: HDIR ! type of field :
 !                                             ! 'H' : field with
@@ -68,8 +70,8 @@ END SUBROUTINE WRITE_SURFX2
 !
  CHARACTER(LEN=6),     INTENT(IN)  :: HPROGRAM ! calling program
  CHARACTER(LEN=*),     INTENT(IN)  :: HREC     ! name of the article to be written
-REAL, DIMENSION(:,:,:), INTENT(IN)  :: PFIELD   ! array containing the data field
-INTEGER,              INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem appears
+REAL, DIMENSION(:,:,:),INTENT(IN)  :: PFIELD   ! array containing the data field
+INTEGER,               INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem appears
  CHARACTER(LEN=100),   INTENT(IN)  :: HCOMMENT ! Comment string
  CHARACTER(LEN=1),OPTIONAL,INTENT(IN)  :: HDIR ! type of field :
 !                                             ! 'H' : field with
@@ -87,8 +89,8 @@ END SUBROUTINE WRITE_SURFX3
 !
  CHARACTER(LEN=6),   INTENT(IN)  :: HPROGRAM ! calling program
  CHARACTER(LEN=*),   INTENT(IN)  :: HREC     ! name of the article to be written
-INTEGER,            INTENT(IN)  :: KFIELD   ! integer to be written
-INTEGER,            INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem appears
+INTEGER,             INTENT(IN)  :: KFIELD   ! integer to be written
+INTEGER,             INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem appears
  CHARACTER(LEN=100), INTENT(IN)  :: HCOMMENT ! Comment string
 !
 END SUBROUTINE WRITE_SURFN0
@@ -99,8 +101,8 @@ END SUBROUTINE WRITE_SURFN0
 !
  CHARACTER(LEN=6),      INTENT(IN)  :: HPROGRAM ! calling program
  CHARACTER(LEN=*),      INTENT(IN)  :: HREC     ! name of the article to be written
-INTEGER, DIMENSION(:), INTENT(IN)  :: KFIELD   ! integer to be written
-INTEGER,               INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem appears
+INTEGER, DIMENSION(:),  INTENT(IN)  :: KFIELD   ! integer to be written
+INTEGER,                INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem appears
  CHARACTER(LEN=100),    INTENT(IN)  :: HCOMMENT ! Comment string
  CHARACTER(LEN=1),OPTIONAL,INTENT(IN)  :: HDIR ! type of field :
 !                                             ! 'H' : field with
@@ -115,8 +117,8 @@ END SUBROUTINE WRITE_SURFN1
 !
  CHARACTER(LEN=6),   INTENT(IN)  :: HPROGRAM ! calling program
  CHARACTER(LEN=*),   INTENT(IN)  :: HREC     ! name of the article to be written
- CHARACTER(LEN=*),    INTENT(IN)  :: HFIELD   ! caracter to be written
-INTEGER,            INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem appears
+ CHARACTER(LEN=*),   INTENT(IN)  :: HFIELD   ! caracter to be written
+INTEGER,             INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem appears
  CHARACTER(LEN=100), INTENT(IN)  :: HCOMMENT ! Comment string
 !
 END SUBROUTINE WRITE_SURFC0
@@ -127,8 +129,8 @@ END SUBROUTINE WRITE_SURFC0
 !
  CHARACTER(LEN=6),   INTENT(IN)  :: HPROGRAM ! calling program
  CHARACTER(LEN=*),   INTENT(IN)  :: HREC     ! name of the article to be written
-LOGICAL,            INTENT(IN)  :: OFIELD   ! array containing the data field
-INTEGER,            INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem appears
+LOGICAL,             INTENT(IN)  :: OFIELD   ! array containing the data field
+INTEGER,             INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem appears
  CHARACTER(LEN=100), INTENT(IN)  :: HCOMMENT ! Comment string
 !
 END SUBROUTINE WRITE_SURFL0
@@ -139,8 +141,8 @@ END SUBROUTINE WRITE_SURFL0
 !
  CHARACTER(LEN=6),      INTENT(IN)  :: HPROGRAM ! calling program
  CHARACTER(LEN=*),      INTENT(IN)  :: HREC     ! name of the article to be written
-LOGICAL, DIMENSION(:), INTENT(IN)  :: OFIELD   ! array containing the data field
-INTEGER,               INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem appears
+LOGICAL, DIMENSION(:),  INTENT(IN)  :: OFIELD   ! array containing the data field
+INTEGER,                INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem appears
  CHARACTER(LEN=100),    INTENT(IN)  :: HCOMMENT ! Comment string
  CHARACTER(LEN=1),OPTIONAL,INTENT(IN)  :: HDIR ! type of field :
 !                                             ! 'H' : field with
@@ -157,8 +159,8 @@ USE MODD_TYPE_DATE_SURF
 !
  CHARACTER(LEN=6),   INTENT(IN)  :: HPROGRAM ! calling program
  CHARACTER(LEN=*),   INTENT(IN)  :: HREC     ! name of the article to be written
-TYPE (DATE_TIME),   INTENT(IN)  :: TFIELD   ! array containing the data field
-INTEGER,            INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem appears
+TYPE (DATE_TIME),    INTENT(IN)  :: TFIELD   ! array containing the data field
+INTEGER,             INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem appears
  CHARACTER(LEN=100), INTENT(IN)  :: HCOMMENT ! Comment string
 !
 END SUBROUTINE WRITE_SURFT0
@@ -172,7 +174,7 @@ USE MODD_TYPE_DATE_SURF
  CHARACTER(LEN=6),   INTENT(IN)  :: HPROGRAM ! calling program
  CHARACTER(LEN=*),   INTENT(IN)  :: HREC     ! name of the article to be written
 TYPE (DATE_TIME), DIMENSION(:), INTENT(IN)  :: TFIELD   ! array containing the data field
-INTEGER,            INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem appears
+INTEGER,             INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem appears
  CHARACTER(LEN=100), INTENT(IN)  :: HCOMMENT ! Comment string
 !
 END SUBROUTINE WRITE_SURFT1
@@ -187,7 +189,7 @@ USE MODD_TYPE_DATE_SURF
  CHARACTER(LEN=6),   INTENT(IN)  :: HPROGRAM ! calling program
  CHARACTER(LEN=*),   INTENT(IN)  :: HREC     ! name of the article to be written
 TYPE (DATE_TIME), DIMENSION(:,:), INTENT(IN)  :: TFIELD   ! array containing the data field
-INTEGER,            INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem appears
+INTEGER,             INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem appears
  CHARACTER(LEN=100), INTENT(IN)  :: HCOMMENT ! Comment string
 !
 END SUBROUTINE WRITE_SURFT2
@@ -206,6 +208,8 @@ END MODULE MODI_WRITE_SURF
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
+USE MODD_SURF_PAR, ONLY: LEN_HREC
+
 !
 USE MODD_SURFEX_MPI, ONLY : NRANK, NPIO, XTIME_NPIO_WRITE, WLOG_MPI
 !
@@ -262,7 +266,7 @@ INTEGER,           INTENT(OUT):: KRESP    ! KRESP  : return-code if a problem ap
 !
 !*      0.2   Declarations of local variables
 !
- CHARACTER(LEN=LEN_HREC)  :: YREC2
+ CHARACTER(LEN=16)  :: YREC2
  CHARACTER(LEN=LEN_HREC)  :: YREC
 LOGICAL :: GNOWRITE
 REAL   :: XTIME0
@@ -367,6 +371,7 @@ END SUBROUTINE WRITE_SURFX0
 USE MODD_SURFEX_MPI, ONLY : WLOG_MPI, NRANK
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
+USE MODD_SURF_PAR, ONLY: LEN_HREC
 !
 #ifdef SFX_OL
 USE MODE_WRITE_SURF_OL, ONLY: WRITE_SURFX1N1_OL
@@ -421,7 +426,7 @@ INTEGER,            INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem 
  CHARACTER(LEN=*), OPTIONAL,  INTENT(IN) :: HNAM_DIM
 !*      0.2   Declarations of local variables
 !
- CHARACTER(LEN=LEN_HREC)  :: YREC2
+ CHARACTER(LEN=16)  :: YREC2
  CHARACTER(LEN=LEN_HREC)  :: YREC
 INTEGER            :: IL
  CHARACTER(LEN=1)   :: YDIR
@@ -521,6 +526,7 @@ END SUBROUTINE WRITE_SURFX1
 USE MODD_SURFEX_MPI, ONLY : WLOG_MPI
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
+USE MODD_SURF_PAR, ONLY: LEN_HREC
 !
 #ifdef SFX_OL
 USE MODE_WRITE_SURF_OL, ONLY: WRITE_SURFL1X2_OL
@@ -575,7 +581,7 @@ INTEGER,              INTENT(OUT) :: KRESP    ! KRESP  : return-code if a proble
  CHARACTER(LEN=*), OPTIONAL,  INTENT(IN) :: HNAM_DIM
 !*      0.2   Declarations of local variables
 !
- CHARACTER(LEN=LEN_HREC)  :: YREC2
+ CHARACTER(LEN=16)  :: YREC2
  CHARACTER(LEN=LEN_HREC)  :: YREC
 INTEGER            :: IL1
 INTEGER            :: IL2
@@ -686,6 +692,7 @@ END SUBROUTINE WRITE_SURFX2
 USE MODD_SURFEX_MPI, ONLY : WLOG_MPI
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
+USE MODD_SURF_PAR, ONLY: LEN_HREC
 !
 #ifdef SFX_OL
 USE MODE_WRITE_SURF_OL, ONLY: WRITE_SURFL1X2_OL
@@ -852,6 +859,7 @@ USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
 USE MODD_SURFEX_MPI, ONLY : NRANK, NPIO, XTIME_NPIO_WRITE, WLOG_MPI
+USE MODD_SURF_PAR, ONLY: LEN_HREC
 !
 #ifdef SFX_OL
 USE MODE_WRITE_SURF_OL, ONLY: WRITE_SURF0_OL
@@ -907,7 +915,7 @@ INTEGER,            INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem 
 !
 !*      0.2   Declarations of local variables
 !
- CHARACTER(LEN=LEN_HREC)  :: YREC2
+ CHARACTER(LEN=16)  :: YREC2
  CHARACTER(LEN=LEN_HREC)  :: YREC
 LOGICAL :: GNOWRITE
 REAL   :: XTIME0
@@ -1009,6 +1017,7 @@ END SUBROUTINE WRITE_SURFN0
 USE MODD_SURFEX_MPI, ONLY : WLOG_MPI
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
+USE MODD_SURF_PAR, ONLY: LEN_HREC
 !
 #ifdef SFX_OL
 USE MODE_WRITE_SURF_OL, ONLY: WRITE_SURFX1N1_OL
@@ -1063,7 +1072,7 @@ INTEGER,               INTENT(OUT) :: KRESP    ! KRESP  : return-code if a probl
  CHARACTER(LEN=*), OPTIONAL,  INTENT(IN) :: HNAM_DIM
 !*      0.2   Declarations of local variables
 !
- CHARACTER(LEN=LEN_HREC)  :: YREC2
+ CHARACTER(LEN=16)  :: YREC2
  CHARACTER(LEN=LEN_HREC)  :: YREC
 INTEGER            :: IL
  CHARACTER(LEN=1)   :: YDIR
@@ -1160,29 +1169,31 @@ END SUBROUTINE WRITE_SURFN1
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
+USE MODD_SURF_PAR, ONLY: LEN_HREC
 !
-USE MODD_SURFEX_MPI, ONLY : NRANK, NPIO, XTIME_NPIO_WRITE, WLOG_MPI
+USE MODD_SURFEX_MPI,      ONLY : NRANK, NPIO, XTIME_NPIO_WRITE, WLOG_MPI
+USE MODD_DATA_COVER_PAR,  ONLY : NCAR_FILES
 !
 #ifdef SFX_OL
-USE MODE_WRITE_SURF_OL, ONLY: WRITE_SURF0_OL
+USE MODE_WRITE_SURF_OL,   ONLY: WRITE_SURF0_OL
 #endif
 #ifdef SFX_ASC
-USE MODE_WRITE_SURF_ASC, ONLY: WRITE_SURF0_ASC
+USE MODE_WRITE_SURF_ASC,  ONLY: WRITE_SURF0_ASC
 #endif
 #ifdef SFX_TXT
-USE MODE_WRITE_SURF_TXT, ONLY: WRITE_SURF0_TXT
+USE MODE_WRITE_SURF_TXT,  ONLY: WRITE_SURF0_TXT
 #endif
 #ifdef SFX_BIN
-USE MODE_WRITE_SURF_BIN, ONLY: WRITE_SURF0_BIN
+USE MODE_WRITE_SURF_BIN,  ONLY: WRITE_SURF0_BIN
 #endif
 #ifdef SFX_FA
-USE MODE_WRITE_SURF_FA, ONLY: WRITE_SURF0_FA
+USE MODE_WRITE_SURF_FA,   ONLY: WRITE_SURF0_FA
 #endif
 #ifdef SFX_LFI
-USE MODE_WRITE_SURF_LFI, ONLY: WRITE_SURF0_LFI
+USE MODE_WRITE_SURF_LFI,  ONLY: WRITE_SURF0_LFI
 #endif
 #ifdef SFX_NC
-USE MODE_WRITE_SURF_NC, ONLY: WRITE_SURF0_NC
+USE MODE_WRITE_SURF_NC,   ONLY: WRITE_SURF0_NC
 #endif
 #ifdef SFX_MNH
 USE MODI_WRITE_SURFC0_MNH
@@ -1217,9 +1228,9 @@ INTEGER,             INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem
 !
 !*      0.2   Declarations of local variables
 !
- CHARACTER(LEN=LEN_HREC) :: YREC
- CHARACTER(LEN=LEN_HREC) :: YREC2
- CHARACTER(LEN=40) :: YFIELD
+ CHARACTER(LEN=LEN_HREC)         :: YREC
+ CHARACTER(LEN=16)         :: YREC2
+ CHARACTER(LEN=NCAR_FILES) :: YFIELD
 LOGICAL :: GNOWRITE
 REAL   :: XTIME0
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
@@ -1227,7 +1238,7 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 IF (LHOOK) CALL DR_HOOK('MODI_WRITE_SURF:WRITE_SURFC0',0,ZHOOK_HANDLE)
 !
 YREC = HREC
-YFIELD = "                                        "
+YFIELD = " "
 YFIELD(1:LEN(HFIELD)) = HFIELD
 !
  CALL TEST_RECORD_LEN(HPROGRAM,YREC,HSELECT,GNOWRITE)
@@ -1320,6 +1331,7 @@ END SUBROUTINE WRITE_SURFC0
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
+USE MODD_SURF_PAR, ONLY: LEN_HREC
 !
 USE MODD_SURFEX_MPI, ONLY : NRANK, NPIO, XTIME_NPIO_WRITE, WLOG_MPI
 !
@@ -1378,7 +1390,7 @@ INTEGER,            INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem 
 !*      0.2   Declarations of local variables
 !
  CHARACTER(LEN=LEN_HREC)  :: YREC
- CHARACTER(LEN=LEN_HREC)  :: YREC2
+ CHARACTER(LEN=16)  :: YREC2
 LOGICAL :: GNOWRITE
 REAL   :: XTIME0
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
@@ -1483,6 +1495,7 @@ END SUBROUTINE WRITE_SURFL0
 USE MODD_SURFEX_MPI, ONLY : WLOG_MPI
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
+USE MODD_SURF_PAR, ONLY: LEN_HREC
 !
 #ifdef SFX_OL
 USE MODE_WRITE_SURF_OL, ONLY: WRITE_SURFL1X2_OL
@@ -1534,7 +1547,7 @@ INTEGER,               INTENT(OUT) :: KRESP    ! KRESP  : return-code if a probl
 !                                             ! '-' : no horizontal dim.
 !*      0.2   Declarations of local variables
 !
- CHARACTER(LEN=LEN_HREC)  :: YREC2
+ CHARACTER(LEN=16)  :: YREC2
  CHARACTER(LEN=LEN_HREC)  :: YREC
 INTEGER            :: IL
  CHARACTER(LEN=1)   :: YDIR
@@ -1623,6 +1636,7 @@ END SUBROUTINE WRITE_SURFL1
 !!****  *WRITET0* - routine to write a MESO-NH date_time scalar
 !
 USE MODD_TYPE_DATE_SURF
+USE MODD_SURF_PAR, ONLY: LEN_HREC
 !
 USE MODD_SURFEX_MPI, ONLY : NRANK, NPIO, XTIME_NPIO_WRITE, WLOG_MPI
 !
@@ -1680,7 +1694,7 @@ INTEGER,            INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem 
 !
 !*      0.2   Declarations of local variables
 !
- CHARACTER(LEN=LEN_HREC)  :: YREC2
+ CHARACTER(LEN=16)  :: YREC2
  CHARACTER(LEN=LEN_HREC)  :: YREC
 REAL    :: ZTIME
 REAL   :: XTIME0
@@ -1787,6 +1801,7 @@ END SUBROUTINE WRITE_SURFT0
 !
 USE MODD_SURFEX_MPI, ONLY : WLOG_MPI
 USE MODD_TYPE_DATE_SURF
+USE MODD_SURF_PAR, ONLY: LEN_HREC
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -1828,7 +1843,7 @@ INTEGER,            INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem 
 !
 !*      0.2   Declarations of local variables
 !
- CHARACTER(LEN=LEN_HREC)  :: YREC2
+ CHARACTER(LEN=16)  :: YREC2
  CHARACTER(LEN=LEN_HREC)  :: YREC
 INTEGER :: IL1
 REAL ,   DIMENSION(SIZE(TFIELD,1)) :: ZTIME
@@ -1919,6 +1934,7 @@ END SUBROUTINE WRITE_SURFT1
 !
 USE MODD_SURFEX_MPI, ONLY : WLOG_MPI
 USE MODD_TYPE_DATE_SURF
+USE MODD_SURF_PAR, ONLY: LEN_HREC
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB

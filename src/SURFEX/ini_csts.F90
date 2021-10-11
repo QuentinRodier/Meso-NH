@@ -89,7 +89,7 @@ XSURF_TINY    = TINY    (XSURF_TINY    )
 #error "Invalid MNH_REAL"
 #endif
 #else
-XSURF_TINY    = 1.0e-80
+XSURF_TINY    = TINY    (XSURF_TINY    )
 #endif
 XSURF_TINY_12 = SQRT    (XSURF_TINY    )
 XSURF_EPSILON = EPSILON (XSURF_EPSILON ) * 10.0

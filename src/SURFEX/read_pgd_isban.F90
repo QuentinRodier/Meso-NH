@@ -36,41 +36,45 @@
 !!      P. Le Moigne  12/2004 : add type of photosynthesis
 !!      B. Decharme      2008 : add XWDRAIN
 !!      B. Decharme   06/2009 : add topographic index statistics
-!!      A.L. Gibelin 04/2009 : dimension NBIOMASS for ISBA-A-gs
+!!      A.L. Gibelin 04/2009  : dimension NBIOMASS for ISBA-A-gs
 !!      B. Decharme  07/2012  : files of data for permafrost area and for SOC top and sub soil
 !!                   11/2013  : same for groundwater distribution
 !!                   11/2014  : Read XSOILGRID as a series of real 
 !!      P. Samuelsson 10/2014 : MEB
-!!    10/2016 B. Decharme : bug surface/groundwater coupling  
+!!      B. Decharme  10/2016  : bug surface/groundwater coupling
 !!      M. Leriche   06/2017 add SOLMON option for biogenic emissions
 !!                           warning this option do not work anymore -> to be debug
+!!      A. Druel     02/2019  : adapt the code to be compatible with irrigation (and new patches)
+!!
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
 !
-USE MODD_CH_ISBA_n, ONLY : CH_ISBA_t
-USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
-USE MODD_DATA_ISBA_n, ONLY : DATA_ISBA_t
-USE MODD_DATA_TSZ0_n, ONLY : DATA_TSZ0_t
-USE MODD_GR_BIOG_n, ONLY : GR_BIOG_t
-USE MODD_SFX_GRID_n, ONLY : GRID_t
-USE MODD_SSO_n, ONLY : SSO_t
-USE MODD_ISBA_OPTIONS_n, ONLY : ISBA_OPTIONS_t
-USE MODD_ISBA_n, ONLY : ISBA_S_t, ISBA_K_t
+USE MODD_CH_ISBA_n,       ONLY : CH_ISBA_t
+USE MODD_DATA_COVER_n,    ONLY : DATA_COVER_t
+USE MODD_DATA_ISBA_n,     ONLY : DATA_ISBA_t
+USE MODD_DATA_TSZ0_n,     ONLY : DATA_TSZ0_t
+USE MODD_GR_BIOG_n,       ONLY : GR_BIOG_t
+USE MODD_SFX_GRID_n,      ONLY : GRID_t
+USE MODD_SSO_n,           ONLY : SSO_t
+USE MODD_ISBA_OPTIONS_n,  ONLY : ISBA_OPTIONS_t
+USE MODD_ISBA_n,          ONLY : ISBA_S_t, ISBA_K_t
 USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
-USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
-USE MODD_SSO_n, ONLY : SSO_t
-USE MODD_GRID_CONF_PROJ_n, ONLY : GRID_CONF_PROJ_t
-USE MODD_SV_n, ONLY : SV_t
+USE MODD_SURF_ATM_n,      ONLY : SURF_ATM_t
+USE MODD_SSO_n,           ONLY : SSO_t
+USE MODD_GRID_CONF_PROJ_n,ONLY : GRID_CONF_PROJ_t
+USE MODD_SV_n,            ONLY : SV_t
 !
 USE MODD_TYPE_DATE_SURF
 !
-USE MODD_DATA_COVER_PAR, ONLY : JPCOVER
+USE MODD_DATA_COVER,      ONLY : LDATA_IRRIG
+USE MODD_DATA_COVER_PAR,  ONLY : JPCOVER, NCAR_FILES
+USE MODD_AGRI,            ONLY : LIRRIGMODE, XTHRESHOLD_DEFAULT, XTHRESHOLD, NVEG_IRR, NPATCH_TREE
 !
-USE MODD_SURF_PAR,   ONLY : XUNDEF
-USE MODD_ISBA_PAR,    ONLY : XOPTIMGRID
+USE MODD_SURF_PAR,        ONLY : XUNDEF, LEN_HREC
+USE MODD_ISBA_PAR,        ONLY : XOPTIMGRID
 !
 USE MODI_READ_NAM_PGD_ISBA
 !
@@ -101,25 +105,25 @@ IMPLICIT NONE
 !              -------------------------
 !
 !
-TYPE(CH_ISBA_t), INTENT(INOUT) :: CHI
-TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
-TYPE(DATA_ISBA_t), INTENT(INOUT) :: DTV
-TYPE(DATA_TSZ0_t), INTENT(INOUT) :: DTZ
-TYPE(GR_BIOG_t), INTENT(INOUT) :: GB
-TYPE(GRID_t), INTENT(INOUT) :: IG
-TYPE(SSO_t), INTENT(INOUT) :: ISS
-TYPE(ISBA_OPTIONS_t), INTENT(INOUT) :: IO
-TYPE(ISBA_S_t), INTENT(INOUT) :: S
-TYPE(ISBA_K_t), INTENT(INOUT) :: K
+TYPE(CH_ISBA_t),       INTENT(INOUT) :: CHI
+TYPE(DATA_COVER_t),    INTENT(INOUT) :: DTCO
+TYPE(DATA_ISBA_t),     INTENT(INOUT) :: DTV
+TYPE(DATA_TSZ0_t),     INTENT(INOUT) :: DTZ
+TYPE(GR_BIOG_t),       INTENT(INOUT) :: GB
+TYPE(GRID_t),          INTENT(INOUT) :: IG
+TYPE(SSO_t),           INTENT(INOUT) :: ISS
+TYPE(ISBA_OPTIONS_t),  INTENT(INOUT) :: IO
+TYPE(ISBA_S_t),        INTENT(INOUT) :: S
+TYPE(ISBA_K_t),        INTENT(INOUT) :: K
 TYPE(SURF_ATM_GRID_t), INTENT(INOUT) :: UG
-TYPE(SURF_ATM_t), INTENT(INOUT) :: U
-TYPE(SSO_t), INTENT(INOUT) :: USS
+TYPE(SURF_ATM_t),      INTENT(INOUT) :: U
+TYPE(SSO_t),           INTENT(INOUT) :: USS
 TYPE(GRID_CONF_PROJ_t),INTENT(INOUT) :: GCP
-TYPE(SV_t), INTENT(INOUT) :: SV
+TYPE(SV_t),            INTENT(INOUT) :: SV
 !
 CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM ! calling program
 LOGICAL,           INTENT(IN)  :: OLAND_USE ! 
-TYPE(DATE), INTENT(IN) :: TPDATE_END
+TYPE(DATE),        INTENT(IN) :: TPDATE_END
 !
 !*       0.2   Declarations of local variables
 !              -------------------------------
@@ -136,6 +140,7 @@ INTEGER :: ILU    ! expected physical size of full surface array
 INTEGER :: ILUOUT ! output listing logical unit
 INTEGER :: IRESP  ! Error code after redding
 INTEGER :: JLAYER ! loop counter on layers
+INTEGER :: II
 INTEGER :: IVERSION, IBUGFIX   ! surface version
 !
 INTEGER                  :: IPATCH           ! number of patches
@@ -182,6 +187,9 @@ CHARACTER(LEN=6)         :: YFERTFILETYPE ! fertilisation data file type
 REAL                     :: XUNIF_PH      ! uniform value of pH
 REAL                     :: XUNIF_FERT    ! uniform value of fertilisation rate
 LOGICAL                  :: GMEB      ! Multi-energy balance (MEB)
+!
+CHARACTER(LEN=NCAR_FILES):: CWORK
+CHARACTER(LEN=1)         :: YWORK
 !
 LOGICAL :: GECOSG
 !
@@ -315,6 +323,16 @@ ENDIF
 !
 YRECFM='PATCH_NUMBER'
  CALL READ_SURF(HPROGRAM,YRECFM,IO%NPATCH,IRESP)
+!
+!!* Name of eatch tile (patch) #remove with 160character in output
+!!
+!ALLOCATE(DTV%CPATCH_NAME(IO%NPATCH,2))
+!DO JLAYER=1,IO%NPATCH
+!  WRITE(YRECFM,FMT='(A7,I2.2)') 'NPATCH_',JLAYER
+!  CALL READ_SURF(HPROGRAM,YRECFM,CWORK,IRESP)
+!  DTV%CPATCH_NAME(JLAYER,1) = CWORK(1:INDEX(CWORK,'-')-1)
+!  DTV%CPATCH_NAME(JLAYER,2) = CWORK(INDEX(CWORK,'-')+1:LEN_TRIM(CWORK))
+!ENDDO
 !
 !* logical vector indicating for which patches MEB should be applied
 !
@@ -476,9 +494,17 @@ ALLOCATE(ISS%XHO2IM(IG%NDIM))
 ALLOCATE(ISS%XHO2JP(IG%NDIM))
 ALLOCATE(ISS%XHO2JM(IG%NDIM))
 ALLOCATE(ISS%XSSO_SLOPE(IG%NDIM))
+ALLOCATE(ISS%XSSO_DIR(IG%NDIM))
 ALLOCATE(ISS%XSSO_STDEV(IG%NDIM))
 !
  CALL PACK_SSO(USS,HPROGRAM,U%NR_NATURE, ISS)
+!
+!* direction of subgrid-scale orography
+!
+ALLOCATE(USS%XSSO_DIR(IG%NDIM))
+YRECFM='SSO_DIR'
+ CALL READ_SURF(&
+                HPROGRAM,YRECFM,USS%XSSO_DIR(:),IRESP)
 !
 !* orographic runoff coefficient
 !
@@ -581,12 +607,65 @@ END IF
 !
 !-------------------------------------------------------------------------------
 !
-!*       4.     Physiographic data fields not to be computed by ecoclimap
+!*       4.     Physiographic data fields 
 !               ---------------------------------------------------------
+!        4. a. Only for ECOCLIMAP
 !
  CALL READ_LECOCLIMAP(HPROGRAM,IO%LECOCLIMAP,GECOSG)
 !
- CALL READ_PGD_ISBA_PAR_n(DTCO, U, GCP, DTV, IG%NDIM, IO, HPROGRAM,IG%NDIM, OLAND_USE, S%TTIME%TDATE, TPDATE_END)
+!* liste of irrigated vegtype
+IF ( IVERSION>=9 .AND. GECOSG ) THEN
+  YRECFM='NVEG_IRR'
+  CALL READ_SURF(HPROGRAM,YRECFM,NVEG_IRR,IRESP)
+ELSE
+ NVEG_IRR = 0
+ENDIF
+!
+IF ( NVEG_IRR /= 0 ) THEN
+  !
+  !* patch tree (if irrigation with ECOSG)
+  YRECFM='NPATCH_TREE'
+  CALL READ_SURF(HPROGRAM,YRECFM,NPATCH_TREE,IRESP)
+  !
+  !* liste of irrigated vegtype
+  YRECFM='LIST_VEG_IRR'
+  CALL READ_SURF(HPROGRAM,YRECFM,CWORK,IRESP)
+  ALLOCATE(DTV%NPAR_VEG_IRR_USE(NVEG_IRR))
+  DTV%NPAR_VEG_IRR_USE(:)=0
+  II=0
+  DO JLAYER=1,LEN_TRIM(CWORK)
+    READ(CWORK(JLAYER:JLAYER),'(A1)') YWORK
+    IF ( YWORK == 'T' ) THEN
+      II=II+1
+      DTV%NPAR_VEG_IRR_USE(II)=JLAYER
+    ENDIF
+  ENDDO
+  IF ( ANY(DTV%NPAR_VEG_IRR_USE(:)<1 .OR. II/=NVEG_IRR) ) &
+    CALL ABOR1_SFX("READ_PGD_ISBAn: DTV%NPAR_VEG_IRR_USE NOT WELL INITIALIZED")
+  !
+ENDIF
+!
+!        4. b. Only for IRRIGATION
+!
+IF ( IVERSION>=9 .AND. LIRRIGMODE ) THEN
+  ! Threshold on f2 for irrigation
+  YRECFM='XTHRESHOLD'
+  CALL READ_SURF(HPROGRAM,YRECFM,CWORK,IRESP)
+  CWORK = CWORK(3:LEN_TRIM(CWORK))
+  DO JLAYER=1,SIZE(XTHRESHOLD)-1
+    READ(CWORK(1:INDEX(CWORK,',')-1),'(F6.3)') XTHRESHOLD(JLAYER)
+    CWORK = CWORK(INDEX(CWORK,',')+1:LEN_TRIM(CWORK))
+  ENDDO
+  READ(CWORK(1:INDEX(CWORK,'/')-1),'(F6.3)') XTHRESHOLD(JLAYER)
+  !
+ELSEIF ( LIRRIGMODE ) THEN
+  XTHRESHOLD = XTHRESHOLD_DEFAULT
+ENDIF
+!
+!       4. c. Others (Only with DTV)
+!
+CALL READ_PGD_ISBA_PAR_n(DTCO, U, GCP, DTV, IG%NDIM, IO, HPROGRAM,IG%NDIM, OLAND_USE, S%TTIME%TDATE, TPDATE_END)
+!
 IF (U%CNATURE == 'TSZ0') CALL READ_PGD_TSZ0_PAR_n(DTZ, HPROGRAM)
 !
 IF (LHOOK) CALL DR_HOOK('READ_PGD_ISBA_N',1,ZHOOK_HANDLE)

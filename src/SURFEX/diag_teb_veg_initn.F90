@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE DIAG_TEB_VEG_INIT_n(DK, DEK, DECK, DMK, KLU, KSNOW_LAYER)
+      SUBROUTINE DIAG_TEB_VEG_INIT_n(DK, DCK, DEK, DECK, DMK, KLU, KSNOW_LAYER)
               !     #####################
 !
 USE MODD_SURF_PAR, ONLY : XUNDEF
@@ -20,6 +20,7 @@ USE PARKIND1  ,ONLY : JPRB
 IMPLICIT NONE
 !
 TYPE(DIAG_t), INTENT(INOUT) :: DK
+TYPE(DIAG_t), INTENT(INOUT) :: DCK 
 TYPE(DIAG_EVAP_ISBA_t), INTENT(INOUT) :: DEK
 TYPE(DIAG_EVAP_ISBA_t), INTENT(INOUT) :: DECK
 TYPE(DIAG_MISC_ISBA_t), INTENT(INOUT) :: DMK
@@ -87,6 +88,20 @@ DK%XTS   (:) = XUNDEF
 DK%XTSRAD(:) = XUNDEF
 DK%XALBT (:) = XUNDEF
 !
+! cumulative diagnostics
+!
+ALLOCATE(DCK%XRN   (KLU))
+ALLOCATE(DCK%XH    (KLU))
+ALLOCATE(DCK%XLE   (KLU))
+ALLOCATE(DCK%XLEI  (KLU))
+ALLOCATE(DCK%XGFLUX(KLU))
+
+DCK%XRN(:)    = 0.
+DCK%XH(:)     = 0.
+DCK%XLE(:)    = 0.
+DCK%XLEI(:)   = 0.
+DCK%XGFLUX(:) = 0.
+
 !---------------------------
 !
 ! Evaporation diag
@@ -193,9 +208,11 @@ DEK%XLER_SN_FR  (:) = XUNDEF
 !
 ALLOCATE(DECK%XDRAIN (KLU))
 ALLOCATE(DECK%XRUNOFF(KLU))
+ALLOCATE(DECK%XMELT  (KLU))
 !
 DECK%XDRAIN (:) = 0.
 DECK%XRUNOFF(:) = 0.
+DECK%XMELT  (:) = 0.
 !
 !--------------------------------------
 !

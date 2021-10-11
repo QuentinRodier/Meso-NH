@@ -29,9 +29,8 @@
 !!      Original      01/2004
 !!      S. Senesi     01/2014  adapt to fractional seaice, and to seaice scheme
 !!      S. Belamari   03/2014  Include NZ0
-!!      Modified      03/2014 : M.N. Bouin  ! possibility of wave parameters
-!!                                        ! from external source
-!!      Modified      11/2014 : J. Pianezze ! add surface pressure, evap-rain and charnock coefficient
+!!      M.N. Bouin    03/2014  possibility of wave parameters from external source
+!!      J. Pianezze   11/2014  add surface pressure and charnock coefficient
 !
 !*       0.   DECLARATIONS
 !             ------------
@@ -125,7 +124,6 @@ TYPE SEAFLUX_t
   REAL, POINTER, DIMENSION(:) :: XCPL_SEA_HEAT ! Non solar net heat flux
   REAL, POINTER, DIMENSION(:) :: XCPL_SEA_EVAP ! Evaporation for ESM coupling
   REAL, POINTER, DIMENSION(:) :: XCPL_SEA_RAIN ! Rainfall for ESM coupling
-  REAL, POINTER, DIMENSION(:) :: XCPL_SEA_EVPR ! Evaporatrion - Rainfall for ESM coupling
   REAL, POINTER, DIMENSION(:) :: XCPL_SEA_SNOW ! Snowfall for ESM coupling
   REAL, POINTER, DIMENSION(:) :: XCPL_SEA_FWSM ! wind stress for ESM coupling
   REAL, POINTER, DIMENSION(:) :: XCPL_SEA_PRES ! Surface pressure for ESM coupling
@@ -203,7 +201,6 @@ IF (LHOOK) CALL DR_HOOK("MODD_SEAFLUX_N:SEAFLUX_INIT",0,ZHOOK_HANDLE)
   NULLIFY(YSEAFLUX%XCPL_SEA_HEAT)
   NULLIFY(YSEAFLUX%XCPL_SEA_EVAP)
   NULLIFY(YSEAFLUX%XCPL_SEA_RAIN)
-  NULLIFY(YSEAFLUX%XCPL_SEA_EVPR)
   NULLIFY(YSEAFLUX%XCPL_SEA_SNOW)
   NULLIFY(YSEAFLUX%XCPL_SEA_FWSM)
   NULLIFY(YSEAFLUX%XCPL_SEA_PRES)

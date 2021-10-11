@@ -35,14 +35,15 @@
 !!      S. Riette   06/2009 CLS_2M becomes CLS_TQ, CLS_TQ and CLS_WIND have one
 !!                          more argument (height of diagnostic)
 !       B. decharme 04/2013 : Add EVAP and SUBL diag
+!!      C. Lebeaupin 01/2020 : Add surface pressure coupling parameter
 !!------------------------------------------------------------------
 !
 
 !
 !
 !
-USE MODD_DIAG_n, ONLY : DIAG_t, DIAG_OPTIONS_t
-USE MODD_WATFLUX_n, ONLY : WATFLUX_t
+USE MODD_DIAG_n,         ONLY : DIAG_t, DIAG_OPTIONS_t
+USE MODD_WATFLUX_n,      ONLY : WATFLUX_t
 !
 USE MODD_CSTS,           ONLY : XTT
 USE MODD_SURF_PAR,       ONLY : XUNDEF
@@ -64,9 +65,9 @@ IMPLICIT NONE
 !
 !
 TYPE(DIAG_OPTIONS_t), INTENT(INOUT) :: DGO
-TYPE(DIAG_t), INTENT(INOUT) :: D
-TYPE(DIAG_t), INTENT(INOUT) :: DC
-TYPE(WATFLUX_t), INTENT(INOUT) :: W
+TYPE(DIAG_t), INTENT(INOUT)         :: D
+TYPE(DIAG_t), INTENT(INOUT)         :: DC
+TYPE(WATFLUX_t), INTENT(INOUT)      :: W
 !
 REAL,               INTENT(IN) :: PTSTEP ! atmospheric time-step                 (s)
 REAL, DIMENSION(:), INTENT(IN) :: PTA    ! atmospheric temperature
@@ -124,9 +125,6 @@ IF (.NOT. W%LSBL) THEN
                 W%XTS, PHU, PZ0H, ZH, D%XT2M, D%XQ2M, D%XHU2M )  
     ZH(:)=10.                
     CALL CLS_WIND(PZONA, PMERA, PHW, PCD, PCDN, PRI, ZH, D%XZON10M, D%XMER10M )  
-  END IF
-!
-  IF (DGO%N2M>=1) THEN
     !
     D%XT2M_MIN(:) = MIN(D%XT2M_MIN(:),D%XT2M(:))
     D%XT2M_MAX(:) = MAX(D%XT2M_MAX(:),D%XT2M(:))
@@ -139,6 +137,15 @@ IF (.NOT. W%LSBL) THEN
     !
     !* Richardson number
     D%XRI = PRI
+    !
+    !
+    D%NCOUNT_STEP = D%NCOUNT_STEP + 1
+    !
+    D%XT2M_MEAN    (:) = D%XT2M_MEAN    (:) + D%XT2M(:)
+    D%XQ2M_MEAN    (:) = D%XQ2M_MEAN    (:) + D%XQ2M(:)
+    D%XHU2M_MEAN   (:) = D%XHU2M_MEAN   (:) + D%XHU2M(:)
+    D%XZON10M_MEAN (:) = D%XZON10M_MEAN (:) + D%XZON10M(:)
+    D%XMER10M_MEAN (:) = D%XMER10M_MEAN (:) + D%XMER10M(:)
     !
   ENDIF
 !
@@ -190,7 +197,7 @@ ENDIF
 IF (LCPL_SEA) THEN
 !
   CALL DIAG_CPL_ESM_WATER(W, D, LCPL_SEAICE, PTSTEP, PSFTQ, PRAIN, PSNOW, PLW, &
-                          PSFTH_ICE, PSFTQ_ICE, PDIR_SW, PSCA_SW )  
+                          PPS, PSFTH_ICE, PSFTQ_ICE, PDIR_SW, PSCA_SW )  
 ! 
 ENDIF
 IF (LHOOK) CALL DR_HOOK('DIAG_INLINE_WATFLUX_N',1,ZHOOK_HANDLE)

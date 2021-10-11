@@ -3,14 +3,13 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !#####################################################################################
-SUBROUTINE BLD_OCC_CALENDAR(TPTIME, PTSUN, T, B, PQIN_FRAC, PTCOOL_TARGET, PTHEAT_TARGET, PQIN)
-!#####################################################################################
+SUBROUTINE BLD_OCC_CALENDAR(HPROGRAM,KYEAR,KMONTH,KDAY,KTSUN,KDAYWBEG_SCHED,KHOURBEG_SCHED, &
+     KPROBOCC, KBEG_HOLIDAY, KEND_HOLIDAY, KMOD_HOLIDAY, PBLDOCC, PISNIGHT)
+!###################################################################################
 !! **** BLD_OCC_CALENDAR *
 !!
 !!  PURPOSE
 !!  -------
-!! BLD_OCC_CALENDAR defines the parameters relevant for BEM (TCOOL_TARGET, THEAT_TARGET and QIN)
-!! depending on the building use type (hence the DOW and local French TOD) * based on MUSCADE scenarii *
 !!
 !! AUTHOR
 !! ------
@@ -20,12 +19,10 @@ SUBROUTINE BLD_OCC_CALENDAR(TPTIME, PTSUN, T, B, PQIN_FRAC, PTCOOL_TARGET, PTHEA
 !! -------------
 !! Original  02/2013
 !
-USE MODD_TEB_n, ONLY : TEB_t
-USE MODD_BEM_n, ONLY : BEM_t
-!
-USE MODD_TYPE_DATE_SURF, ONLY : DATE_TIME
-!
-USE MODD_CSTS,         ONLY : XTT
+! Robert: 
+! The probability of building occupation is now assigned according to schedules.
+! At the moment no switch between winter and summer time is made.
+! M. Goret 04/2017  change comment for number of the day of the week to be consistent with day_of_week changes.
 !
 USE MODI_DAY_OF_WEEK
 !
@@ -36,110 +33,165 @@ IMPLICIT NONE
 !
 !! 1. declaration of arguments
 !
-TYPE(DATE_TIME), INTENT(INOUT) :: TPTIME
-REAL,   DIMENSION(:) , INTENT(IN) :: PTSUN         ! current solar time  (s, UTC)
+CHARACTER(LEN=6), INTENT(IN)    :: HPROGRAM     ! program calling surf. schemes  
+INTEGER, INTENT(IN)             :: KYEAR        ! current year  (UTC)
+INTEGER, INTENT(IN)             :: KMONTH       ! current month (UTC)
+INTEGER, INTENT(IN)             :: KDAY         ! current day   (UTC)
+REAL, DIMENSION(:), INTENT(IN)  :: KTSUN        ! current solar time  (s, UTC)
 !
-TYPE(TEB_t), INTENT(INOUT) :: T
-TYPE(BEM_t), INTENT(INOUT) :: B
+REAL, DIMENSION(:,:), INTENT(IN) :: KDAYWBEG_SCHED ! Start day of schedule
+REAL, DIMENSION(:,:), INTENT(IN) :: KHOURBEG_SCHED ! Start hour of schedule
+REAL, DIMENSION(:,:), INTENT(IN) :: KPROBOCC       ! Probability of building occupation
+REAL, DIMENSION(:,:), INTENT(IN) :: KBEG_HOLIDAY   ! Julian day of beginning of holiday
+REAL, DIMENSION(:,:), INTENT(IN) :: KEND_HOLIDAY   ! Julian day of end of holiday
+REAL, DIMENSION(:)  , INTENT(IN) :: KMOD_HOLIDAY   ! Factor of modulation of building occuppation during holiday
 !
-REAL,                INTENT(IN)  :: PQIN_FRAC        ! Fraction of internal gains when unoccupied (-)
+REAL, DIMENSION(:), INTENT(OUT) :: PBLDOCC      ! Building occupation status
+REAL, DIMENSION(:), INTENT(OUT) :: PISNIGHT     ! Flag for day and night
 !
-REAL, DIMENSION(:) , INTENT(OUT)  :: PTCOOL_TARGET ! Cooling setpoint of HVAC system [K]
-REAL, DIMENSION(:) , INTENT(OUT)  :: PTHEAT_TARGET ! Heating setpoint of HVAC system [K]
-REAL, DIMENSION(:) , INTENT(OUT)  :: PQIN          ! Internal heat gains [W m-2(floor)]
+! Declaration of local variables
 !
-!! 2. declaration of local variables
+REAL, DIMENSION(13) :: ZBLDOCC_VEC   ! Building occupation status, shifted times
+REAL, DIMENSION(13) :: ZISNIGHT_VEC  ! Flag for day and night, shifted times
+REAL, DIMENSION(SIZE(KTSUN)) :: ZSHIFT_TSUN
 !
-CHARACTER(LEN = 6)                :: CTIME         ! Local time scheme (winter or summer time)
-INTEGER                           :: JDOW          ! day of week
-INTEGER                           :: JJ
+INTEGER :: ILUOUT
+INTEGER, DIMENSION(0:11) :: IBIS, INOBIS ! Cumulative number of days per month
+                                         ! for bissextile and regular years
 !
-REAL, DIMENSION(SIZE(PQIN))       :: ZTOD_BEG      ! first Time Of Day that building unoccupied (UTC, s)
-REAL, DIMENSION(SIZE(PQIN))       :: ZTOD_END      ! last Time Of Day that building unoccupied (UTC, s)
-REAL, DIMENSION(SIZE(PQIN))       :: ZDT           ! Target temperature change when unoccupied (K)
-
-REAL(KIND=JPRB) :: ZTODOOK_HANDLE
+REAL :: ZJULIAN
+INTEGER                      :: JDOW     ! day of week
+INTEGER                      :: NDAY     ! Number of days in schedules
+INTEGER                      :: NCRE     ! Number of time periods in schedules
+INTEGER                      :: NPOS     ! Position in schedule vector
+INTEGER                      :: JJ,LL,MM ! Loop counter
+INTEGER                      :: TSHIFT   ! Loop counter
+INTEGER                      :: NCOUNT   ! Counter
 !
-IF (LHOOK) CALL DR_HOOK('BLD_OCC_CALENDAR',0,ZTODOOK_HANDLE)
+REAL(KIND=JPRB)              :: ZDRDOOK_HANDLE
 !
-!--------------------------------------------------------------------------------------
-!  3. determine the day of the week and the local time scheme in France
-!--------------------------------------------------------------------------------------
-!
-CALL DAY_OF_WEEK(TPTIME%TDATE%YEAR, TPTIME%TDATE%MONTH, TPTIME%TDATE%DAY, JDOW)
-!
-CTIME = 'WINTER'
-IF (TPTIME%TDATE%MONTH >= 4 .AND. TPTIME%TDATE%MONTH <= 10) CTIME = 'SUMMER'
-!
-!--------------------------------------------------------------------------------------
-!  4. initialisation of parameters
-!--------------------------------------------------------------------------------------
-!
-! Parameters assigned to the occupied values - read in namelist via BATI.csv :
-!
-PTHEAT_TARGET(:) = B%XTHEAT_TARGET(:)
-!  
-PTCOOL_TARGET(:) = B%XTCOOL_TARGET(:)
-! 
-PQIN(:)          = B%XQIN(:)
-!
-ZTOD_BEG(:) = 0.
-ZTOD_END(:) = 0.
+IF (LHOOK) CALL DR_HOOK('BLD_OCC_CALENDAR',0,ZDRDOOK_HANDLE)
 !
 !--------------------------------------------------------------------------------------
-!  5. computes beginning and end of unoccupied calendar based on building USE TYPE
+!  Determine the day of the week and the local time scheme in France
 !--------------------------------------------------------------------------------------
 !
-DO JJ =1,SIZE(PTSUN)
+! 1 = Monday
+! 2 = Tuesday
+! ....
+! 7 = Sunday
 !
- IF (T%XRESIDENTIAL(JJ) > 0.5) THEN ! RESIDENTIAL
+CALL DAY_OF_WEEK(KYEAR,KMONTH,KDAY,JDOW)
+!
+! Determine the Julian day
+!
+INOBIS(:) = (/0,31,59,90,120,151,181,212,243,273,304,334/)
+IBIS(0:1) = INOBIS(0:1)
+!
+DO JJ=2,11
+  IBIS(JJ) = INOBIS(JJ)+1
+END DO
+!
+IF( MOD(KYEAR,4).EQ.0 .AND. (MOD(KYEAR,100).NE.0 .OR. MOD(KYEAR,400).EQ.0)) THEN
+   ZJULIAN = FLOAT(KDAY + IBIS(KMONTH-1))   - 1
+ELSE
+   ZJULIAN = FLOAT(KDAY + INOBIS(KMONTH-1)) - 1
+END IF
+!
+!--------------------------------------------------------------------------------------
+! Find the matching schedule (day of week and hour of day)
+! At the moment the schedules for the vacation periods are neglected.
+!--------------------------------------------------------------------------------------
+!
+NDAY=SIZE(KDAYWBEG_SCHED(1,:))
+NCRE=SIZE(KHOURBEG_SCHED(1,:))/NDAY
+!
+ZBLDOCC_VEC (:) = -9999.0
+ZISNIGHT_VEC(:) = -9999.0
+!
+DO JJ=1,SIZE(KTSUN)
    !
-   IF (JDOW >= 2 .AND. JDOW <=6) THEN ! week days
-     ZTOD_BEG(JJ) =  9. * 3600.       !  9 UTC - WINTER time
-     ZTOD_END(JJ) = 17. * 3600.       ! 17 UTC - WINTER time
-   END IF
-   ZDT(JJ) = T%XDT_RES
+   ! Find the day of week
    !
- ELSE
-   !     
-   IF (JDOW >= 2 .AND. JDOW <=7) THEN ! week days
-     ZTOD_BEG(JJ) = 17. * 3600.       ! 17 UTC
-     ZTOD_END(JJ) =  7. * 3600.       !  7 UTC
-   ELSE                               ! week-end
-     ZTOD_BEG(JJ) =  0. * 3600.       !   0 UTC
-     ZTOD_END(JJ) = 24. * 3600.       !  24 UTC
-   END IF
-   ZDT(JJ) = T%XDT_OFF
+   IF ((JDOW.GE.KDAYWBEG_SCHED(JJ,1)).AND.(JDOW.LT.KDAYWBEG_SCHED(JJ,2))) THEN
+      LL=1
+   ELSEIF (JDOW.EQ.KDAYWBEG_SCHED(JJ,2)) THEN
+      LL=2
+   ELSEIF (JDOW.EQ.KDAYWBEG_SCHED(JJ,3)) THEN
+      LL=3
+   ELSE
+      CALL ABOR1_SFX("Day of week not found")
+   ENDIF
    !
- END IF
-! adjustment of unoccupied TOD based on time scheme
- IF (CTIME == 'SUMMER') THEN
-  ZTOD_BEG(JJ) = ZTOD_BEG(JJ) - 3600.   
-  ZTOD_END(JJ) = ZTOD_END(JJ) - 3600.   
- END IF
-!
-ENDDO
-!
-!--------------------------------------------------------------------------------------
-!  6. modulate BEM input values for unoccupied building calendar
-!--------------------------------------------------------------------------------------
-!
-DO JJ =1,SIZE(PTSUN)
-!
-     IF (( (ZTOD_BEG(JJ) < ZTOD_END(JJ)) .AND. (PTSUN(JJ) > ZTOD_BEG(JJ) .AND. PTSUN(JJ) < ZTOD_END(JJ))    )      &
-        .OR.                                                                                         &
-         ( (ZTOD_BEG(JJ) > ZTOD_END(JJ)) .AND. ((PTSUN(JJ) > 0 .AND. PTSUN(JJ) < ZTOD_END(JJ)) .OR.            &
-                                        (PTSUN(JJ) > ZTOD_BEG(JJ) .AND. PTSUN(JJ) < 24 * 3600.)))) THEN             
+   ! Find the values for the ISNIGHT and PROBOCC for a set of 
+   ! times shifted by +- 1 hour around the actual time
+   ! the increment is 10 minutes.
+   ! The day is not changed
+   !
+   NCOUNT = 1
+   !
+   DO TSHIFT=-6,+6,+1
+      !
+      ZSHIFT_TSUN(JJ) = KTSUN(JJ)+600.0*REAL(TSHIFT)
+      !
+      NPOS=-9999
+      !
+      DO MM=1,(NCRE-1)
          !
-            PTHEAT_TARGET(JJ) = B%XTHEAT_TARGET(JJ) - ZDT(JJ)
-            PTCOOL_TARGET(JJ) = B%XTCOOL_TARGET(JJ) + ZDT(JJ)
-            PQIN         (JJ) = PQIN_FRAC * PQIN(JJ)
+         IF ( (ZSHIFT_TSUN(JJ).GE.3600.0*KHOURBEG_SCHED(JJ,MM+NCRE*(LL-1))) .AND. &
+              (ZSHIFT_TSUN(JJ).LT.3600.0*KHOURBEG_SCHED(JJ,MM+1+NCRE*(LL-1))) ) THEN
+            !
+            NPOS=MM+NCRE*(LL-1)
+            ZISNIGHT_VEC(NCOUNT)=0.0
+            EXIT
+            !
+         ENDIF
+         !
+         IF ( (ZSHIFT_TSUN(JJ).LT.3600.0*KHOURBEG_SCHED(JJ,1+NCRE*(LL-1))) .OR. &
+              (ZSHIFT_TSUN(JJ).GE.3600.0*KHOURBEG_SCHED(JJ,NCRE+NCRE*(LL-1))) ) THEN
+            !
+            NPOS=NCRE+NCRE*(LL-1)
+            ZISNIGHT_VEC(NCOUNT)=1.0
+            EXIT
+            !
+         ENDIF
+         !
+      ENDDO
+      !
+      IF (NPOS.LT.1) THEN
+         CALL GET_LUOUT(HPROGRAM,ILUOUT)
+         WRITE(ILUOUT,*) " "
+         WRITE(ILUOUT,*) "In bld_occ_calendar: position not found "
+         WRITE(ILUOUT,*) "NPOS ",NPOS 
+         CALL FLUSH(ILUOUT)
+         CALL ABOR1_SFX ("BLD_OCC_CALENDAR:Position not found")
       ENDIF
+      !
+      ZBLDOCC_VEC(NCOUNT)=KPROBOCC(JJ,NPOS)
+      NCOUNT = NCOUNT+1
+      !
+   ENDDO
+   !
+   ! The variables are averaged over the time window
+   !
+   PISNIGHT(JJ)=SUM(ZISNIGHT_VEC)/SIZE(ZISNIGHT_VEC)
+   PBLDOCC (JJ)=SUM(ZBLDOCC_VEC )/SIZE(ZBLDOCC_VEC )
+   !
+   ! Modulation of building occupation during holidays
+   !
+   DO MM=1,SIZE(KBEG_HOLIDAY,2)
+     !
+     IF ((ZJULIAN.GE.KBEG_HOLIDAY(JJ,MM)).AND.(ZJULIAN.LE.KEND_HOLIDAY(JJ,MM))) THEN
+        PBLDOCC (JJ) = PBLDOCC (JJ) * KMOD_HOLIDAY(JJ)
+        EXIT
+     ENDIF
+     !
+   ENDDO
 !
 ENDDO
 !
 !--------------------------------------------------------------------------------------
 !
-IF (LHOOK) CALL DR_HOOK('BLD_OCC_CALENDAR',1,ZTODOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('BLD_OCC_CALENDAR',1,ZDRDOOK_HANDLE)
 !
 END SUBROUTINE BLD_OCC_CALENDAR

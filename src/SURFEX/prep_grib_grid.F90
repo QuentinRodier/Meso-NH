@@ -66,6 +66,7 @@ USE MODE_GRIDTYPE_CONF_PROJ
 USE MODI_HORIBL_SURF_INIT
 USE MODI_HORIBL_SURF_COEF
 USE MODI_ARPEGE_STRETCH_A
+USE MODI_ADD_FORECAST_TO_DATE_SURF
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -114,8 +115,7 @@ REAL :: ZTIME
 INTEGER                            :: JLOOP1        ! Dummy counter
 !JUAN
 !JUAN
-INTEGER :: INFOMPI, J
-!
+INTEGER :: INFOMPI
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !---------------------------------------------------------------------------------------
@@ -139,6 +139,7 @@ END IF
 IF (IRET /= 0) THEN
   CALL ABOR1_SFX('PREP_GRIB_GRID: Error in reading the grib file')
 END IF
+!
 ! close the grib file
  CALL GRIB_CLOSE_FILE(IUNIT)
 !
@@ -472,7 +473,7 @@ SELECT CASE (HGRIDTYPE)
      !
        HGRIDTYPE = 'GAUSS     '
        IF (NRANK==NPIO) THEN
-! PROBLEME AVEC LES GRIB d'EPYGRAM
+! PROBLEME AVEC LES GRIB 2 d'EPYGRAM
 ! dans longitudeOfLastGridPointInDegrees la longitude du dernier point du
 ! tableau (donc au pole sud)  
 ! dans les GRIB1 on a la valeur max du tableau des longitudes (donc à
@@ -487,17 +488,19 @@ SELECT CASE (HGRIDTYPE)
        CALL GRIB_GET(IGRIB,'stretchingFactor',XCOEF)
        CALL GRIB_GET(IGRIB,'latitudeOfStretchingPoleInDegrees',XLAP)
        CALL GRIB_GET(IGRIB,'longitudeOfStretchingPoleInDegrees',XLOP)
-
-       IF (NRANK==NPIO) THEN
-         ALLOCATE (ININLO_GRIB(NINLA))
-         CALL GRIB_IS_MISSING(IGRIB,'pl',IMISSING,IRET)
-         IF (IRET == 0 .OR. IMISSING/=1)  THEN !  quasi-regular
-           CALL GRIB_GET(IGRIB,'pl',ININLO_GRIB)
-           XILO2=360.-360./(MAXVAL(ININLO_GRIB))
+       IF(NGRIB_VERSIOn == 2) THEN
+         IF (NRANK==NPIO) THEN
+           ALLOCATE (ININLO_GRIB(NINLA))
+           CALL GRIB_IS_MISSING(IGRIB,'pl',IMISSING,IRET)
+           IF (IRET == 0 .OR. IMISSING/=1)  THEN !  quasi-regular
+             CALL GRIB_GET(IGRIB,'pl',ININLO_GRIB)
+             XILO2=360.-360./(MAXVAL(ININLO_GRIB))
+           ENDIF
+           DEALLOCATE(ININLO_GRIB)
+           ENDIF
          ENDIF
-         DEALLOCATE(ININLO_GRIB)
-        ENDIF
-      ENDIF
+       ENDIF
+      
       LROTPOLE = .TRUE.
        IF (NPROC>1) THEN
 #ifdef SFX_MPI                
@@ -570,6 +573,7 @@ IF ( IP1>0 ) THEN
       ZTIME   = ZTIME + IP1*60.
   END SELECT
 ENDIF
+CALL ADD_FORECAST_TO_DATE_SURF(IYEAR,IMONTH,IDAY,ZTIME)
 ENDIF
 !
 IF (NPROC>1) THEN

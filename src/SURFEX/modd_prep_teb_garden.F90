@@ -71,6 +71,7 @@ REAL, DIMENSION(:), POINTER :: XWSNOW_GD         ! Snow reservoir
 REAL, DIMENSION(:), POINTER :: XRSNOW_GD         ! snow density
 REAL, DIMENSION(:), POINTER :: XTSNOW_GD         ! snow temperature
 REAL, DIMENSION(:), POINTER :: XAGESNOW_GD         ! snow age
+REAL, DIMENSION(:,:), POINTER :: XIMPURSNOW_GD        ! snow age
 REAL, DIMENSION(:), POINTER :: XLWCSNOW_GD         ! snow liquid water content
 REAL              :: XASNOW_GD         ! snow albedo
 !

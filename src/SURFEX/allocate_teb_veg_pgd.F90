@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-    SUBROUTINE ALLOCATE_TEB_VEG_PGD (PEK, S, K, P, OALLOC, KLU, KVEGTYPE, KGROUND_LAYER)  
+    SUBROUTINE ALLOCATE_TEB_VEG_PGD (PEK, S, K, P, OALLOC, KLU, KVEGTYPE, KGROUND_LAYER, OHG, OHV)  
 !   ##########################################################################
 !
 !
@@ -23,12 +23,25 @@ LOGICAL, INTENT(IN) :: OALLOC ! True if constant PGD fields must be allocated
 INTEGER, INTENT(IN) :: KLU
 INTEGER, INTENT(IN) :: KVEGTYPE
 INTEGER, INTENT(IN) :: KGROUND_LAYER
+LOGICAL, OPTIONAL, INTENT(IN) :: OHG   ! TRUE --> GARDEN is activated
+LOGICAL, OPTIONAL, INTENT(IN) :: OHV   ! TRUE --> high vegetation scheme activated
+!
+LOGICAL :: GHG, GHV
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !-------------------------------------------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('ALLOCATE_TEB_VEG_PGD',0,ZHOOK_HANDLE)
 !
+!-------------------------------------------------------------------------------
+GHG = .FALSE.
+GHV = .FALSE.
+IF (PRESENT(OHG)) THEN
+  GHG = OHG
+END IF
+IF (PRESENT(OHV)) THEN
+  GHV = OHV
+END IF
 !-------------------------------------------------------------------------------
 !
 ! - Physiographic field that can evolve prognostically
@@ -79,7 +92,7 @@ END IF
 !
 ! - vegetation + bare soil:
 !
-ALLOCATE(P%XZ0_O_Z0H               (KLU)) 
+ALLOCATE(P%XZ0_O_Z0H               (KLU))
 !
 ALLOCATE(P%XROOTFRAC               (KLU,KGROUND_LAYER       ))
 ALLOCATE(P%NWG_LAYER               (KLU))
@@ -110,12 +123,12 @@ ALLOCATE(P%XDMAX               (KLU))
 !
 ! - soil: primary parameters
 !
+IF (GHG) THEN
 ALLOCATE(S%XSOC               (KLU,KGROUND_LAYER       ))  
 !
-ALLOCATE(K%XSAND              (KLU,KGROUND_LAYER       )) 
-ALLOCATE(K%XCLAY              (KLU,KGROUND_LAYER       )) 
 ALLOCATE(K%XRUNOFFB           (KLU                     )) 
 ALLOCATE(K%XWDRAIN            (KLU                     )) 
+END IF
 !
 ALLOCATE(P%XTAUICE            (KLU                    ))
 !
@@ -129,8 +142,24 @@ ALLOCATE(P%XRUNOFFD           (KLU))
 !                                   
 ALLOCATE(P%XD_ICE             (KLU)) 
 !
-ALLOCATE(K%XGAMMAT            (KLU )) 
+IF (GHG) &
+ALLOCATE(K%XGAMMAT            (KLU ))
 !
+ALLOCATE(P%XTOPQS                  (KLU,KGROUND_LAYER       )) 
+!
+!-------------------------------------------------------------------------------
+!
+!  high vegetation variables
+!
+IF (GHV) THEN
+  ALLOCATE(P%XH_LAI_MAX  (KLU))      ! height of maximum height for urban trees                    (m)
+  ALLOCATE(P%XHTRUNK_HVEG(KLU))      ! height of trunk of trees
+  ALLOCATE(P%XWCROWN_HVEG(KLU))      ! width of crown of trees
+ELSE
+  ALLOCATE(P%XH_LAI_MAX  (0))      ! height of maximum height for urban trees                    (m)
+  ALLOCATE(P%XHTRUNK_HVEG(0))      ! height of trunk of trees
+  ALLOCATE(P%XWCROWN_HVEG(0))      ! width of crown of trees
+END IF
 !-------------------------------------------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('ALLOCATE_TEB_VEG_PGD',1,ZHOOK_HANDLE)

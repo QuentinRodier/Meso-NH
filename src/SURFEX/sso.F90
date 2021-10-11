@@ -28,8 +28,6 @@
 !*    0.     DECLARATION
 !            -----------
 !
-USE MODD_SURFEX_MPI, ONLY : NRANK
-!
 USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
 USE MODD_SSO_n, ONLY : SSO_t
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
@@ -468,6 +466,9 @@ IF (NRANK==NPIO) THEN
     !            ----------------------
     !
   END DO    
+  !
+  DEALLOCATE(ZDX,ZDY)
+  DEALLOCATE(ILEFT,IRIGHT,ITOP,IBOTTOM)
   !
 ELSE
   !

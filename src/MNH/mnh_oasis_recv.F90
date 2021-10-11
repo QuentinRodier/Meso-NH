@@ -135,6 +135,7 @@ REAL, DIMENSION(KI) :: ZWAVE_HS      ! Significant wave height (m)
 REAL, DIMENSION(KI) :: ZWAVE_TP      ! Peak period (s)
 !
 INTEGER             :: ILUOUT
+INTEGER             :: IGPTOT ! total number of points on proc (=KI for offline)
 REAL                :: ZTIME_CPL
 !
 LOGICAL             :: GRECV_LAND
@@ -183,7 +184,8 @@ ENDIF
 !*       2.     Receive fields to other models proc by proc:
 !               --------------------------------------------
 !
-CALL SFX_OASIS_RECV(HPROGRAM,KI,KSW,ZTIME_CPL,        &
+IGPTOT=KI
+CALL SFX_OASIS_RECV(HPROGRAM,IGPTOT,KI,KSW,ZTIME_CPL,  &
                     GRECV_LAND, GRECV_SEA, GRECV_WAVE, &
                     ZLAND_WTD    (:),ZLAND_FWTD   (:), &
                     ZLAND_FFLOOD (:),ZLAND_PIFLOOD(:), &
@@ -240,7 +242,8 @@ GRECV_FLOOD=(GRECV_LAND.AND.LCPL_FLOOD)
 !
 IF(GRECV_SEA.OR.GRECV_FLOOD)THEN     
   CALL UPDATE_ESM_SURF_ATM_n(YSURF_CUR%FM%F, YSURF_CUR%IM, YSURF_CUR%SM%S, &
-                             YSURF_CUR%U, YSURF_CUR%WM%W, &
+                             YSURF_CUR%U, YSURF_CUR%WM%W, YSURF_CUR%TM, &
+                             YSURF_CUR%GDM, YSURF_CUR%GRM,             &
                              HPROGRAM, KI, KSW, PZENITH(:), PSW_BANDS, &
                              PTSRAD(:), PDIR_ALB(:,:),     &
                              PSCA_ALB(:,:), PEMIS(:),      &

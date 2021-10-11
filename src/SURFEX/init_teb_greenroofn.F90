@@ -4,7 +4,7 @@
 !SFX_LIC for details. version 1.
 !#############################################################
 SUBROUTINE INIT_TEB_GREENROOF_n (DTCO, U, DMTO, TOP, IO, DTV, K, P, PEK, &
-                                 DK, DEK, DECK, DMK, HPROGRAM,HINIT,KI,KSW,PSW_BANDS,KPATCH)
+                                 DK, DCK, DEK, DECK, DMK, HPROGRAM,HINIT,KI,KSW,PSW_BANDS,KPATCH)
 !#############################################################
 !
 !!****  *INIT_TEB_GREENROOF_n* - routine to initialize ISBA
@@ -33,6 +33,7 @@ SUBROUTINE INIT_TEB_GREENROOF_n (DTCO, U, DMTO, TOP, IO, DTV, K, P, PEK, &
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    09/2009
+!!      C. de Munck 10/2019 added initialisation of cumulative diagnostics  
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -54,10 +55,8 @@ USE MODD_DIAG_MISC_ISBA_n, ONLY : DIAG_MISC_ISBA_t
 USE MODD_TYPE_DATE_SURF
 USE MODD_TYPE_SNOW
 !
-USE MODD_DATA_COVER_PAR,       ONLY: NVEGTYPE
-USE MODD_SURF_PAR,             ONLY: XUNDEF, NUNDEF
-!
-USE MODD_SURF_ATM,             ONLY: LCPL_ARP
+USE MODD_SURF_PAR, ONLY: XUNDEF, NUNDEF
+USE MODD_SURF_ATM, ONLY: LCPL_ARP
 !
 USE MODI_GET_LUOUT
 USE MODI_ALLOCATE_TEB_VEG
@@ -89,6 +88,7 @@ TYPE(ISBA_K_t), INTENT(INOUT) :: K
 TYPE(ISBA_P_t), INTENT(INOUT) :: P
 TYPE(ISBA_PE_t), INTENT(INOUT) :: PEK
 TYPE(DIAG_t), INTENT(INOUT) :: DK
+TYPE(DIAG_t), INTENT(INOUT) :: DCK
 TYPE(DIAG_EVAP_ISBA_t), INTENT(INOUT) :: DEK
 TYPE(DIAG_EVAP_ISBA_t), INTENT(INOUT) :: DECK
 TYPE(DIAG_MISC_ISBA_t), INTENT(INOUT) :: DMK
@@ -205,7 +205,7 @@ ENDWHERE
 !
  CALL AVG_ALBEDO_EMIS_TEB_VEG(PEK, IO%CALBEDO,  ZTG1, PSW_BANDS, ZDIR_ALB, ZSCA_ALB, ZEMIS,ZTSRAD  )  
 !
- CALL DIAG_TEB_VEG_INIT_n(DK, DEK, DECK, DMK, KI, PEK%TSNOW%NLAYER)
+ CALL DIAG_TEB_VEG_INIT_n(DK, DCK, DEK, DECK, DMK, KI, PEK%TSNOW%NLAYER)
 !
 !-------------------------------------------------------------------------------
 !

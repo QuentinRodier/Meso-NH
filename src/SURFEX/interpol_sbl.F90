@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-       SUBROUTINE INTERPOL_SBL( PZ, PIN, PH, POUT)
+SUBROUTINE INTERPOL_SBL(PZ, PIN, PH, POUT)
 !     #####################################################################
 !
 !!
@@ -41,14 +41,15 @@
 !!    -------------
 !!
 !!      Original    14/01/2010
+!!      R. Schoetter 05/05/2017 : Use value of last level if above heighest level
+!!      R. Schoetter 15/11/2020 : No longer hardcoding 10 m
+!!      R. Schoetter 15/11/2020 : Use value of first level if below first level
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
 !               ------------
 !
 USE MODD_SURF_PAR, ONLY : XUNDEF
-!
-!
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -57,13 +58,11 @@ IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
 !
+REAL, DIMENSION(:,:), INTENT(IN)  :: PZ   ! Height of canopy levels
+REAL, DIMENSION(:,:), INTENT(IN)  :: PIN  ! Filed values on canopy levels
+REAL,                 INTENT(IN)  :: PH   ! Height of interpolation
 !
-!
-REAL, DIMENSION(:,:), INTENT(IN)       :: PZ     ! Height of canopy levels
-REAL, DIMENSION(:,:), INTENT(IN)       :: PIN    ! Filed values on canopy levels
-REAL,                 INTENT(IN)       :: PH     ! Height of interpolation
-!
-REAL, DIMENSION(:)  , INTENT(OUT)      :: POUT   ! Interpolated value
+REAL, DIMENSION(:)  , INTENT(OUT) :: POUT ! Interpolated value
 !
 !*      0.2    declarations of local variables
 !
@@ -72,28 +71,45 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !-------------------------------------------------------------------------------
 !
-! Starting from the bottom, we look for the canopy level just below 10m and
-! we interpolate linearly the canopy wind field if we're not on last level. If
-! we are on last level, we do nothing and XUNDEF is left in POUT.
+! Starting from the bottom, we look for the canopy level just
+! below PH and we interpolate linearly the canopy field.
+!
 IF (LHOOK) CALL DR_HOOK('INTERPOL_SBL',0,ZHOOK_HANDLE)
+!
 POUT(:) = XUNDEF
 ILEVEL=1
-
-!While there are XUNDEF values and we aren't at canopy's top
-DO WHILE(ANY(POUT(:)==XUNDEF) .AND. ILEVEL/=SIZE(PZ,2))
-
-  !Where interpolation is needed and possible
-  !(10m is between ILEVEL and ILEVEL+1)
-  WHERE(POUT(:)==XUNDEF .AND. PZ(:,ILEVEL+1)>=10.)
-
-    !Interpolation between ILEVEL and ILEVEL+1
-    POUT(:)=PIN(:,ILEVEL) + &
-              (PIN(:,ILEVEL+1)-PIN(:,ILEVEL)) * &
-              (PH-PZ(:,ILEVEL)) / (PZ(:,ILEVEL+1)-PZ(:,ILEVEL))  
-
-  END WHERE
-  ILEVEL=ILEVEL+1
+!
+! If PH is below the first level, take the first level
+!
+WHERE (PZ(:,1).GT.PH) POUT(:)=PIN(:,1)
+!
+! While there are XUNDEF values and we aren't at canopy's top
+!
+DO WHILE(ANY(POUT(:)==XUNDEF))
+   !
+   !Where interpolation is needed and possible
+   !(PH is between ILEVEL and ILEVEL+1)
+   !
+   WHERE(POUT(:)==XUNDEF .AND. PZ(:,ILEVEL+1).GE.PH)
+      !
+      !Interpolation between ILEVEL and ILEVEL+1
+      !
+      POUT(:)=PIN(:,ILEVEL) + &
+             (PIN(:,ILEVEL+1)-PIN(:,ILEVEL)) * &
+             (PH-PZ(:,ILEVEL)) / (PZ(:,ILEVEL+1)-PZ(:,ILEVEL))
+      !
+   END WHERE 
+   !
+   ILEVEL=ILEVEL+1
+   !
+   ! At the last level, the value of the last level is taken
+   !
+   IF (ILEVEL.EQ.SIZE(PZ,2)) THEN
+       WHERE(POUT(:)==XUNDEF) POUT(:)=PIN(:,ILEVEL)
+   ENDIF
+   !
 END DO
+!
 IF (LHOOK) CALL DR_HOOK('INTERPOL_SBL',1,ZHOOK_HANDLE)
 !
 !-------------------------------------------------------------------------------

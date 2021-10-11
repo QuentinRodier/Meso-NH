@@ -3,8 +3,9 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE GET_VAR_TOWN_n (TOP, DGO, D, NT, HPROGRAM,KI,PQS,PZ0,PZ0H, &
-                   PWALL_O_HOR,PBUILD_HEIGHT   )
+      SUBROUTINE GET_VAR_TOWN_n (TOP, DGO, D, NT, GDM, HPROGRAM, KI, PQS, &
+                   PZ0, PZ0H, PWALL_O_HOR, PBUILD_HEIGHT, PLAI_HVEG,      &
+                   PH_URBTREE, PHTRUNK_HVEG, PFRAC_HVEG )
 !     ###################################################
 !
 !!****  *GET_VAR_TOWN_n* - routine to get variables defined only over town
@@ -43,6 +44,7 @@
 !
 USE MODD_DIAG_n, ONLY : DIAG_t, DIAG_OPTIONS_t
 USE MODD_TEB_n,  ONLY : TEB_NP_t
+USE MODD_SURFEX_n, ONLY : TEB_GARDEN_MODEL_t
 USE MODD_TEB_OPTION_n, ONLY : TEB_OPTIONS_t
 !
 USE MODI_GET_LUOUT
@@ -62,6 +64,7 @@ TYPE(TEB_OPTIONS_t),  INTENT(IN) :: TOP
 TYPE(DIAG_OPTIONS_t), INTENT(IN) :: DGO
 TYPE(DIAG_t),         INTENT(IN) :: D
 TYPE(TEB_NP_t),       INTENT(IN) :: NT
+TYPE(TEB_GARDEN_MODEL_t), INTENT(INOUT) :: GDM
 !
  CHARACTER(LEN=6),     INTENT(IN)     :: HPROGRAM
 INTEGER,              INTENT(IN)     :: KI      ! Number of points
@@ -70,6 +73,10 @@ REAL, DIMENSION(KI),  INTENT(OUT)    :: PZ0     ! surface roughness length
 REAL, DIMENSION(KI),  INTENT(OUT)    :: PZ0H    ! surface roughness length for heat
 REAL, DIMENSION(KI),  INTENT(OUT)    :: PWALL_O_HOR   ! Facade surface density [m^2(fac.)/m^2(town)]
 REAL, DIMENSION(KI),  INTENT(OUT)    :: PBUILD_HEIGHT ! Building height [m]
+REAL, DIMENSION(KI),  INTENT(OUT)    :: PLAI_HVEG
+REAL, DIMENSION(KI),  INTENT(OUT)    :: PH_URBTREE
+REAL, DIMENSION(KI),  INTENT(OUT)    :: PHTRUNK_HVEG
+REAL, DIMENSION(KI),  INTENT(OUT)    :: PFRAC_HVEG
 !
 !
 !*       0.2   Declarations of local variables
@@ -101,12 +108,31 @@ ENDIF
 !
 PWALL_O_HOR   = 0.
 PBUILD_HEIGHT = 0.
-
+!
 DO JP=1,TOP%NTEB_PATCH
   PWALL_O_HOR  (:) = PWALL_O_HOR  (:) + TOP%XTEB_PATCH(:,JP) * NT%AL(JP)%XWALL_O_HOR(:)
   PBUILD_HEIGHT(:) = PBUILD_HEIGHT(:) + TOP%XTEB_PATCH(:,JP) * NT%AL(JP)%XBLD_HEIGHT(:)
 END DO
-
+!
+! New parameters for vegetation drag
+!
+PLAI_HVEG   (:) = 0.0
+PFRAC_HVEG  (:) = 0.0
+PH_URBTREE  (:) = 0.0
+PHTRUNK_HVEG(:) = 0.0
+!
+IF (TOP%CURBTREE/='NONE') THEN
+   !
+   DO JP=1,TOP%NTEB_PATCH
+      PLAI_HVEG   (:) = PLAI_HVEG   (:) + TOP%XTEB_PATCH(:,JP) * GDM%NPEHV%AL(JP)%XLAI(:)
+      PFRAC_HVEG  (:) = PFRAC_HVEG  (:) + TOP%XTEB_PATCH(:,JP) * NT%AL(JP)%XFRAC_HVEG(:)
+   END DO
+   !
+   PH_URBTREE  (:) = GDM%PHV%XH_TREE(:)
+   PHTRUNK_HVEG(:) = GDM%PHV%XHTRUNK_HVEG(:)
+   !
+ENDIF
+!
 IF (LHOOK) CALL DR_HOOK('GET_VAR_TOWN_N',1,ZHOOK_HANDLE)
 !
 !==============================================================================

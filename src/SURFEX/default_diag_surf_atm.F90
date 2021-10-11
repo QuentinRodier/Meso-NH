@@ -43,7 +43,7 @@
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_SURF_PAR,   ONLY : XUNDEF
+USE MODD_SURF_PAR,   ONLY : XUNDEF, LEN_HREC
 !
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK

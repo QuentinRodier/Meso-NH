@@ -26,9 +26,9 @@ MODULE MODN_SFX_OASIS
 !!    MODIFICATIONS
 !!    -------------
 !!      Original       10/13
-!!    10/2016 B. Decharme : bug surface/groundwater coupling
 !!      Modified       11/2014 : J. Pianezze - add wave coupling parameters
 !!                                             and surface pressure parameter for ocean coupling
+!!    10/2016 B. Decharme : bug surface/groundwater coupling
 !
 !*       0.   DECLARATIONS
 !             ------------
@@ -93,7 +93,6 @@ CHARACTER(LEN=8) :: CSEA_FWSM = '        '   ! module of wind stress
 CHARACTER(LEN=8) :: CSEA_EVAP = '        '   ! Evaporation 
 CHARACTER(LEN=8) :: CSEA_RAIN = '        '   ! Rainfall 
 CHARACTER(LEN=8) :: CSEA_SNOW = '        '   ! Snowfall 
-CHARACTER(LEN=8) :: CSEA_EVPR = '        '   ! Evaporation - Preci.
 CHARACTER(LEN=8) :: CSEA_WATF = '        '   ! Net freshwater flux
 CHARACTER(LEN=8) :: CSEA_PRES = '        '   ! Surface pressure 
 !
@@ -159,7 +158,7 @@ NAMELIST/NAM_SFX_LAKE_CPL/XTSTEP_CPL_LAKE,                              &
 !
 NAMELIST/NAM_SFX_SEA_CPL/XTSTEP_CPL_SEA, LWATER,                               &
                           CSEA_FWSU,CSEA_FWSV,CSEA_HEAT,CSEA_SNET,CSEA_WIND,   &
-                          CSEA_FWSM,CSEA_EVAP,CSEA_RAIN,CSEA_SNOW,CSEA_EVPR,   &
+                          CSEA_FWSM,CSEA_EVAP,CSEA_RAIN,CSEA_SNOW,             &
                           CSEA_WATF,CSEA_PRES,CSEAICE_HEAT,CSEAICE_SNET,       &
                           CSEAICE_EVAP,CSEA_SST,CSEA_UCU,CSEA_VCU,             &
                           CSEAICE_SIT,CSEAICE_CVR,CSEAICE_ALB

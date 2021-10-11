@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-SUBROUTINE PREP_HOR_ISBA_FIELD (DTCO, UG, U, USS, GCP, IG, IO, S, NK, NP, NPE, TPTIME,  &
+SUBROUTINE PREP_HOR_ISBA_FIELD (DTCO, UG, U, USS, GCP, IG, IO, S, NK, NP, NPE, TPTIME, NPAR_VEG_IRR_USE, &
                                 HPROGRAM,HSURF,HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE,YDCTL,OKEY)
 !     #################################################################################
 !
@@ -31,42 +31,45 @@ SUBROUTINE PREP_HOR_ISBA_FIELD (DTCO, UG, U, USS, GCP, IG, IO, S, NK, NP, NPE, T
 !!      B. Decharme  01/2009, Optional Arpege deep soil temperature initialization
 !!      M. Lafaysse  07/2012, allow netcdf input files
 !!      B. Decharme  07/2012, Bug init uniform snow
-!!      M. Lafaysse 11/2012,  snow liquid water content
+!!      M. Lafaysse  11/2012, snow liquid water content
 !!      B. Decharme  03/2014, external init with FA files
 !!                            new vertical interpolation
 !!      P Samuelsson 10/2014, MEB
 !!      P. Marguinaud10/2014, Support for a 2-part PREP
+!!      M. Dumont    02/2016  Snow impurity content
+!!      A. Druel     02/2019, Adapt the code and transmit NPAR_VEG_IRR_USE for irrigation
+!!
 !!------------------------------------------------------------------
 !
 USE MODD_TYPE_SNOW
-USE MODD_TYPE_DATE_SURF, ONLY : DATE_TIME
-USE MODD_SURFEX_MPI, ONLY : NRANK, NPIO, NCOMM, NPROC
+USE MODD_TYPE_DATE_SURF,   ONLY : DATE_TIME
+USE MODD_SURFEX_MPI,       ONLY : NRANK, NPIO, NCOMM, NPROC
 !
-USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
+USE MODD_DATA_COVER_n,     ONLY : DATA_COVER_t
 !
-USE MODD_SFX_GRID_n, ONLY : GRID_t
-USE MODD_ISBA_OPTIONS_n, ONLY : ISBA_OPTIONS_t
-USE MODD_ISBA_n, ONLY : ISBA_NK_t, ISBA_NP_t, ISBA_NPE_t, ISBA_K_t, ISBA_S_t, &
-                        ISBA_PE_t, ISBA_P_t
+USE MODD_SFX_GRID_n,       ONLY : GRID_t
+USE MODD_ISBA_OPTIONS_n,   ONLY : ISBA_OPTIONS_t
+USE MODD_ISBA_n,           ONLY : ISBA_NK_t, ISBA_NP_t, ISBA_NPE_t, ISBA_K_t, ISBA_S_t, &
+                                  ISBA_PE_t, ISBA_P_t
 !
-USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
-USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
-USE MODD_SSO_n, ONLY : SSO_t
+USE MODD_SURF_ATM_GRID_n,  ONLY : SURF_ATM_GRID_t
+USE MODD_SURF_ATM_n,       ONLY : SURF_ATM_t
+USE MODD_SSO_n,            ONLY : SSO_t
 USE MODD_GRID_CONF_PROJ_n, ONLY : GRID_CONF_PROJ_t
 !
-USE MODD_PREP,     ONLY : CINGRID_TYPE, CINTERP_TYPE, XZS_LS, LINTERP, CMASK
-USE MODD_GRID_GRIB, ONLY : CINMODEL  
+USE MODD_PREP,             ONLY : CINGRID_TYPE, CINTERP_TYPE, XZS_LS, LINTERP, CMASK
+USE MODD_GRID_GRIB,        ONLY : CINMODEL  
 !
-USE MODD_PREP_ISBA, ONLY : XGRID_SOIL, NGRID_LEVEL, LSNOW_IDEAL,    &
-                           XWSNOW, XRSNOW, XTSNOW, XLWCSNOW, XASNOW,  &
-                           XSG1SNOW, XSG2SNOW, XHISTSNOW, XAGESNOW
-
-
-USE MODD_ISBA_PAR,       ONLY : XWGMIN
-USE MODD_DATA_COVER_PAR, ONLY : NVEGTYPE
-USE MODD_SURF_PAR,       ONLY : XUNDEF,NUNDEF
+USE MODD_PREP_ISBA,        ONLY : XGRID_SOIL, NGRID_LEVEL, LSNOW_IDEAL,    &
+                                  XWSNOW, XRSNOW, XTSNOW, XLWCSNOW, XASNOW,          &
+                                  XSG1SNOW, XSG2SNOW, XHISTSNOW, XAGESNOW, XIMPURSNOW
 !
-USE MODE_PREP_CTL, ONLY : PREP_CTL, PREP_CTL_INT_PART2, PREP_CTL_INT_PART4
+USE MODD_ISBA_PAR,         ONLY : XWGMIN
+USE MODD_DATA_COVER_PAR,   ONLY : NVEGTYPE
+USE MODD_SURF_PAR,         ONLY : XUNDEF,NUNDEF
+USE MODD_AGRI,             ONLY : NVEG_IRR
+!
+USE MODE_PREP_CTL,         ONLY : PREP_CTL, PREP_CTL_INT_PART2, PREP_CTL_INT_PART4
 !
 USE MODI_PREP_GRIB_GRID
 USE MODI_READ_PREP_ISBA_CONF
@@ -116,8 +119,9 @@ TYPE(GRID_CONF_PROJ_t),INTENT(INOUT) :: GCP
 !
 TYPE (PREP_CTL),    INTENT(INOUT) :: YDCTL
 !
- CHARACTER(LEN=6),   INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
- CHARACTER(LEN=7),   INTENT(IN)  :: HSURF     ! type of field
+INTEGER,DIMENSION(:), INTENT(IN) :: NPAR_VEG_IRR_USE ! vegtype with irrigation
+ CHARACTER(LEN=6),   INTENT(IN)  :: HPROGRAM    ! program calling surf. schemes
+ CHARACTER(LEN=7),   INTENT(IN)  :: HSURF       ! type of field
  CHARACTER(LEN=28),  INTENT(IN)  :: HATMFILE    ! name of the Atmospheric file
  CHARACTER(LEN=6),   INTENT(IN)  :: HATMFILETYPE! type of the Atmospheric file
  CHARACTER(LEN=28),  INTENT(IN)  :: HPGDFILE    ! name of the Atmospheric file
@@ -127,22 +131,22 @@ LOGICAL, OPTIONAL,  INTENT(INOUT):: OKEY
 !
 !*      0.2    declarations of local variables
 !
- CHARACTER(LEN=6)              :: YFILETYPE ! type of input file
- CHARACTER(LEN=28)             :: YFILE     ! name of file
- CHARACTER(LEN=6)              :: YFILETYPE_SNOW ! type of input file
- CHARACTER(LEN=28)             :: YFILE_SNOW     ! name of file
- CHARACTER(LEN=6)              :: YFILEPGDTYPE_SNOW ! type of input file
- CHARACTER(LEN=28)             :: YFILEPGD_SNOW     ! name of file 
- CHARACTER(LEN=6)              :: YFILEPGDTYPE ! type of input file
- CHARACTER(LEN=28)             :: YFILEPGD     ! name of file
-REAL, POINTER, DIMENSION(:,:,:) :: ZFIELDIN   ! field to interpolate horizontally
-REAL, POINTER, DIMENSION(:,:,:) :: ZFIELDOUTP ! field interpolated   horizontally
-REAL, POINTER, DIMENSION(:,:,:) :: ZFIELDOUTV !
+ CHARACTER(LEN=6)               :: YFILETYPE          ! type of input file
+ CHARACTER(LEN=28)              :: YFILE              ! name of file
+ CHARACTER(LEN=6)                :: YFILETYPE_SNOW    ! type of input file
+ CHARACTER(LEN=28)               :: YFILE_SNOW        ! name of file
+ CHARACTER(LEN=6)                :: YFILEPGDTYPE_SNOW ! type of input file
+ CHARACTER(LEN=28)               :: YFILEPGD_SNOW     ! name of file 
+ CHARACTER(LEN=6)                :: YFILEPGDTYPE      ! type of input file
+ CHARACTER(LEN=28)               :: YFILEPGD          ! name of file
+REAL, POINTER, DIMENSION(:,:,:)  :: ZFIELDIN          ! field to interpolate horizontally
+REAL, POINTER, DIMENSION(:,:,:)  :: ZFIELDOUTP        ! field interpolated   horizontally
+REAL, POINTER, DIMENSION(:,:,:)  :: ZFIELDOUTV        !
 !
 TYPE(NSURF_SNOW) :: TNPSNOW
 !
-TYPE(ISBA_K_t), POINTER :: KK
-TYPE(ISBA_P_t), POINTER :: PK
+TYPE(ISBA_K_t),  POINTER :: KK
+TYPE(ISBA_P_t),  POINTER :: PK
 TYPE(ISBA_PE_t), POINTER :: PEK
 !
 TYPE FOUT
@@ -198,7 +202,7 @@ INI=SIZE(IG%XLAT)
 !
 IF (HSURF=='SN_VEG ') THEN
   CALL READ_PREP_ISBA_SNOW(HPROGRAM, YSNOW_SCHEME, ISNOW_NLAYER, YFILE_SNOW, YFILETYPE_SNOW,&
-                           YFILEPGD_SNOW, YFILEPGDTYPE_SNOW, GUNIF_SNOW)
+                                YFILEPGD_SNOW,YFILEPGDTYPE_SNOW,GUNIF_SNOW)
   !
   DO JP = 1,IO%NPATCH
     NPE%AL(JP)%TSNOW%SCHEME = YSNOW_SCHEME
@@ -215,7 +219,7 @@ IF (HSURF=='SN_VEG ') THEN
       YFILEPGD_SNOW     = YFILEPGD
       YFILEPGDTYPE_SNOW = YFILEPGDTYPE       
     ELSE
-      GUNIF_SNOW=.TRUE.
+      GUNIF_SNOW = .TRUE.
       IF(ALL(XWSNOW==XUNDEF))XWSNOW=0.0
     ENDIF
   ENDIF
@@ -232,16 +236,17 @@ IF (HSURF=='SN_VEG ') THEN
     TNPSNOW%AL(JP)%NLAYER = NPE%AL(JP)%TSNOW%NLAYER
   ENDDO
   !
-  CALL PREP_HOR_SNOW_FIELDS(DTCO, IG, U, GCP, HPROGRAM, HSURF,   &
-                            YFILE_SNOW, YFILETYPE_SNOW,          &
-                            YFILEPGD_SNOW, YFILEPGDTYPE_SNOW,    &
-                            ILUOUT, GUNIF_SNOW, IO%NPATCH, 1,    &
-                            INI,TNPSNOW, TPTIME,                 &
-                            XWSNOW, XRSNOW, XTSNOW, XLWCSNOW,    &
-                            XASNOW, LSNOW_IDEAL, XSG1SNOW,       &
-                            XSG2SNOW, XHISTSNOW, XAGESNOW, YDCTL,&
-                            PVEGTYPE_PATCH=ZVEGTYPE_PATCH,       &
-                            PPATCH=ZPATCH, KSIZE_P=ISIZE_P,      &
+  CALL PREP_HOR_SNOW_FIELDS(DTCO, IG, U, GCP, HPROGRAM, HSURF,    &
+                            YFILE_SNOW, YFILETYPE_SNOW,           &
+                            YFILEPGD_SNOW, YFILEPGDTYPE_SNOW,     &
+                            ILUOUT, GUNIF_SNOW, IO%NPATCH,        &
+                            NPAR_VEG_IRR_USE,1,INI,TNPSNOW,TPTIME,&
+                            XWSNOW, XRSNOW, XTSNOW, XLWCSNOW,     &
+                            XASNOW, LSNOW_IDEAL, XSG1SNOW,        &
+                            XSG2SNOW, XHISTSNOW, XAGESNOW,        &
+                            YDCTL,XIMPURSNOW,                     &
+                            PVEGTYPE_PATCH=ZVEGTYPE_PATCH,        &
+                            PPATCH=ZPATCH, KSIZE_P=ISIZE_P,       &
                             KR_P=IR_P, OKEY=OKEY   )
   !
   DEALLOCATE(ZPATCH)
@@ -260,12 +265,12 @@ IF (HSURF=='SN_VEG ') THEN
       PEK%TSNOW%GRAN1 = TNPSNOW%AL(JP)%GRAN1
       PEK%TSNOW%GRAN2 = TNPSNOW%AL(JP)%GRAN2
       PEK%TSNOW%HIST = TNPSNOW%AL(JP)%HIST
+      PEK%TSNOW%IMPUR = TNPSNOW%AL(JP)%IMPUR
     ENDIF
     !
     CALL TYPE_SNOW_INIT(TNPSNOW%AL(JP))
   ENDDO
   DEALLOCATE(TNPSNOW%AL)
-  !
   DEALLOCATE(XWSNOW)
   DEALLOCATE(XRSNOW)
   DEALLOCATE(XTSNOW)
@@ -273,6 +278,7 @@ IF (HSURF=='SN_VEG ') THEN
   DEALLOCATE(XSG1SNOW)
   DEALLOCATE(XSG2SNOW)
   DEALLOCATE(XHISTSNOW)
+  DEALLOCATE(XIMPURSNOW)
   DEALLOCATE(XAGESNOW)
   IF (LHOOK) CALL DR_HOOK('PREP_HOR_ISBA_FIELD',1,ZHOOK_HANDLE)
   RETURN
@@ -295,7 +301,8 @@ IF (YDCTL%LPART1) THEN
     IF (NRANK==NPIO) CALL PREP_ISBA_GRIB(HPROGRAM,HSURF,YFILE,ILUOUT,ZFIELDIN)        
   ELSE IF (YFILETYPE=='MESONH' .OR. YFILETYPE=='ASCII ' .OR. YFILETYPE=='LFI   '&
           .OR.YFILETYPE=='FA    '.OR. YFILETYPE=='AROME '.OR.YFILETYPE=='NC    ') THEN
-    CALL PREP_ISBA_EXTERN(DTCO, IO, U, GCP, HPROGRAM,HSURF,YFILE,YFILETYPE,YFILEPGD,YFILEPGDTYPE,ILUOUT,ZFIELDIN,OKEY)
+    CALL PREP_ISBA_EXTERN(DTCO, IO, U, GCP, NPAR_VEG_IRR_USE, &
+                          HPROGRAM,HSURF,YFILE,YFILETYPE,YFILEPGD,YFILEPGDTYPE,ILUOUT,ZFIELDIN,OKEY)
   ELSE IF (YFILETYPE=='BUFFER') THEN
     CALL PREP_ISBA_BUFFER(IG, U, HPROGRAM,HSURF,ILUOUT,ZFIELDIN)
   ELSE IF (YFILETYPE=='NETCDF') THEN
@@ -336,7 +343,7 @@ IF (YDCTL%LPART3) THEN
   ALLOCATE(ZPATCH(INI,INP))
   ZPATCH(:,:) = 0.
 !
-  CALL GET_PREP_INTERP(INP,IO%NPATCH,S%XVEGTYPE,S%XPATCH,ZPATCH)
+  CALL GET_PREP_INTERP(INP,IO%NPATCH,S%XVEGTYPE2,S%XPATCH,ZPATCH,NPAR_VEG_IRR_USE)
 !
   DO JP = 1, INP
   ! we interpolate each point the output patch is present
@@ -361,21 +368,21 @@ IF (YDCTL%LPART5) THEN
     ALLOCATE(ZW%AL(IO%NPATCH))
   !
     IF (IO%NPATCH/=INP) THEN
-    !
-      ALLOCATE(ZFIELDOUTV(INI,INL,NVEGTYPE))
-      CALL PUT_ON_ALL_VEGTYPES(INI,INL,INP,NVEGTYPE,ZFIELDOUTP,ZFIELDOUTV)
-    !
-    !*      6.     Transformation from vegtype grid to patch grid
-    !
+      !
+      ALLOCATE(ZFIELDOUTV(INI,INL,NVEGTYPE+NVEG_IRR))
+      CALL PUT_ON_ALL_VEGTYPES(INI,INL,INP,NVEGTYPE,NPAR_VEG_IRR_USE,ZFIELDOUTP,ZFIELDOUTV)
+      !
+      !*      6.     Transformation from vegtype grid to patch grid
+      !
       DEALLOCATE(ZFIELDOUTP)
-    !
+      !
       DO JP = 1,IO%NPATCH
         PK => NP%AL(JP)
         !
         ALLOCATE(ZW%AL(JP)%ZOUT(PK%NSIZE_P,INL))
         !
         CALL VEGTYPE_GRID_TO_PATCH_GRID(JP, IO%NPATCH, PK%XVEGTYPE_PATCH, PK%XPATCH,&
-                                      PK%NR_P, ZFIELDOUTV, ZW%AL(JP)%ZOUT)
+                                      PK%NR_P, ZFIELDOUTV, ZW%AL(JP)%ZOUT,NPAR_VEG_IRR_USE)
       ENDDO
       !
       DEALLOCATE(ZFIELDOUTV)
@@ -405,9 +412,9 @@ IF (YDCTL%LPART5) THEN
 !
 !
   SELECT CASE (HSURF)
-  !
-  !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  !
+    !
+    !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    !
     CASE('ZS     ') 
       ALLOCATE(XZS_LS(INI))
       XZS_LS(:) = ZFIELDOUTP(:,1,1)
@@ -416,20 +423,20 @@ IF (YDCTL%LPART5) THEN
     !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     !
     CASE('WG     ')
-    !
+      !
       ALLOCATE(ZF%AL(IO%NPATCH))
-    !
+      !
       DO JP = 1,IO%NPATCH
         KK => NK%AL(JP)
         PK => NP%AL(JP)
         PEK => NPE%AL(JP)
-      !
+        !
         ALLOCATE(ZF%AL(JP)%ZOUT(PK%NSIZE_P,IO%NGROUND_LAYER))
-      !
-      !* interpolates on output levels
+        !
+        !* interpolates on output levels
         CALL INIT_FROM_REF_GRID(XGRID_SOIL,ZW%AL(JP)%ZOUT,PK%XDG,ZF%AL(JP)%ZOUT)
-      !
-      !* retrieves soil water content from soil relative humidity
+        !
+        !* retrieves soil water content from soil relative humidity
         ALLOCATE(PEK%XWG(PK%NSIZE_P,IO%NGROUND_LAYER))
         PEK%XWG(:,:)=XUNDEF
         IF(IO%CISBA=='DIF')THEN
@@ -483,7 +490,7 @@ IF (YDCTL%LPART5) THEN
             PEK%XWGI(JI,JL) = ZF%AL(JP)%ZOUT(JI,JL) * KK%XWSAT(JI,JL)
             PEK%XWGI(JI,JL) = MAX(MIN(PEK%XWGI(JI,JL),KK%XWSAT(JI,JL)),0.)
           ENDDO
-        END DO
+        ENDDO
         !
         WHERE(ZF%AL(JP)%ZOUT(:,:)==XUNDEF ) PEK%XWGI(:,:)=XUNDEF
         WHERE(PEK%XWGI(:,:)<=1.0E-10)PEK%XWGI(:,:)=0.0
@@ -496,7 +503,7 @@ IF (YDCTL%LPART5) THEN
     !
     !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     !
-    CASE('TG     ') 
+    CASE('TG     ')
       IF(IO%LTEMP_ARP)THEN
         INL=IO%NTEMPLAYER_ARP
       ELSE
@@ -524,14 +531,13 @@ IF (YDCTL%LPART5) THEN
         ELSE
           !* diffusion method, the soil grid is the same as for humidity
           ZDG(:,:) = PK%XDG(:,:)
-        END IF
+        ENDIF
         CALL INIT_FROM_REF_GRID(XGRID_SOIL,ZW%AL(JP)%ZOUT,ZDG,PEK%XTG)
-        DEALLOCATE(ZDG)        
+        DEALLOCATE(ZDG)
         !
       ENDDO
-      !
-      !
-      !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    !
+    !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     !
     CASE('WR     ')
       DO JP = 1,IO%NPATCH
@@ -547,7 +553,7 @@ IF (YDCTL%LPART5) THEN
         ALLOCATE(NPE%AL(JP)%XWRL(NP%AL(JP)%NSIZE_P))
         NPE%AL(JP)%XWRL(:) = ZW%AL(JP)%ZOUT(:,1)
       ENDDO
-     !
+    !
     !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     !
     CASE('WRLI   ') 

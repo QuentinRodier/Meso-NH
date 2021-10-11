@@ -34,26 +34,28 @@
 !!
 !!    Original    11/09/95
 !!
-!! V. Masson, March 2010     Optimization of some lat/lon boundaries computations
-!!      J.Escobar     06/2013  for REAL4/8 add EPSILON management
-!! P. Wautelet 16/02/2018: initialize ILINE_COMPRESS to prevent crash with XLF
+!!    V. Masson,    03/2010  Optimization of some lat/lon boundaries computations
+!!    J. Escobar,   06/2013  for REAL4/8 add EPSILON management
+!!    P. Wautelet   02/2018  initialize ILINE_COMPRESS to prevent crash with XLF
+!!    A. Druel,     02/2019  Add MA1 possibility (without taking into account the zeros)
+!!
 !----------------------------------------------------------------------------
 !
 !*    0.     DECLARATION
 !            -----------
 !
-USE MODD_SURF_PAR, ONLY : XUNDEF
-USE MODD_SURFEX_MPI, ONLY : NRANK, NPROC, NPIO
+USE MODD_SURF_PAR,        ONLY : XUNDEF
+USE MODD_SURFEX_MPI,      ONLY : NRANK, NPROC, NPIO
 !
 USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
-USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
-USE MODD_SSO_n, ONLY : SSO_t
+USE MODD_SURF_ATM_n,      ONLY : SURF_ATM_t
+USE MODD_SSO_n,           ONLY : SSO_t
 !
-USE MODD_PGD_GRID,   ONLY : LLATLONMASK, XMESHLENGTH
+USE MODD_PGD_GRID,        ONLY : LLATLONMASK, XMESHLENGTH
 !
-USE MODD_ARCH, ONLY : LITTLE_ENDIAN_ARCH
+USE MODD_ARCH,            ONLY : LITTLE_ENDIAN_ARCH
 !
-USE MODD_DATA_COVER_PAR, ONLY : JPCOVER, NTYPE
+USE MODD_DATA_COVER_PAR,  ONLY : JPCOVER, NTYPE
 !
 USE MODI_GET_LUOUT
 USE MODI_OPEN_NAMELIST
@@ -84,8 +86,8 @@ IMPLICIT NONE
 !            ------------------------
 !
 TYPE(SURF_ATM_GRID_t), INTENT(INOUT) :: UG
-TYPE(SURF_ATM_t), INTENT(INOUT) :: U
-TYPE(SSO_t), INTENT(INOUT) :: USS
+TYPE(SURF_ATM_t),      INTENT(INOUT) :: U
+TYPE(SSO_t),           INTENT(INOUT) :: USS
 !
  CHARACTER(LEN=6),  INTENT(IN) :: HPROGRAM      ! Type of program
  CHARACTER(LEN=6),  INTENT(IN) :: HSCHEME       ! Scheme treated
@@ -243,7 +245,7 @@ IF (GMULTITYPE) THEN
   DEALLOCATE(NSIZE_ALL)
   ALLOCATE(NSIZE_ALL(U%NDIM_FULL,SUM(NTYPE)))  
   NSIZE_ALL(:,:) = 0
-  IF (CATYPE=='MAJ') THEN
+  IF (CATYPE=='MAJ' .OR. CATYPE=='MA1') THEN
     DEALLOCATE(NVALNBR,NVALCOUNT,XVALLIST)
     ALLOCATE(NVALNBR  (U%NDIM_FULL,SUM(NTYPE)))
     ALLOCATE(NVALCOUNT(U%NDIM_FULL,JPVALMAX,SUM(NTYPE)))
@@ -648,7 +650,7 @@ DO
           CALL PT_BY_PT_TREATMENT(UG, U, USS, &
                                   ILUOUT, ZLAT_WORK(1:IWORK),ZLON_WORK(1:IWORK), &
                                   ZVALUE_WORK(1:IWORK),                          &
-                                  HSUBROUTINE, OMULTITYPE=GMULTITYPE, KFACT=IFACT)  
+                                  HSUBROUTINE, OMULTITYPE=GMULTITYPE, KFACT=IFACT)
 !
 !-------------------------------------------------------------------------------
       END DO

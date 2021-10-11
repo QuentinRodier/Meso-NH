@@ -32,7 +32,7 @@ TYPE(CH_EMIS_SNAP_t), INTENT(INOUT) :: CHN
 !
 !*       0.2   declarations of local variables
 !
- CHARACTER(LEN=LEN_HREC)  :: YRECFM   ! article name
+ CHARACTER(LEN=16)  :: YRECFM   ! article name
  CHARACTER(LEN=100) :: YCOMMENT ! comment
  CHARACTER(LEN=100) :: YCOMMENTUNIT   ! Comment string : unit of the datas in the field to write
 !

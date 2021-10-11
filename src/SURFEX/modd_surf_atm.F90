@@ -50,6 +50,7 @@ LOGICAL    :: LDRAG_COEF_ARP ! activate aladin formulation for Cd and Ch
 LOGICAL    :: LALDZ0H
 !
 LOGICAL    :: LNOSOF   ! No parameterization of Subgrid Orography effects on atmospheric Forcing  
+LOGICAL    :: LSLOPE   ! Parameterization of homogeneous slope effect on atmospheric Forcing
 LOGICAL    :: LVERTSHIFT ! vertical shift from atmospheric orography to surface orography
 LOGICAL    :: LVSHIFT_LW ! vertical shift for LW
 LOGICAL    :: LVSHIFT_PRCP ! vertical shift for Precip
@@ -57,6 +58,7 @@ LOGICAL    :: LVSHIFT_PRCP ! vertical shift for Precip
 LOGICAL    :: LVZIUSTAR0_ARP   ! activate aladin formulation for zoh over sea
 LOGICAL    :: LRRGUST_ARP      ! activate aladin formulation for CD CH, CDN, correction due to moist gustiness
 LOGICAL    :: LCPL_ARP         ! activate aladin formulation for Cp and L
+LOGICAL    :: LARP_PN          ! Activate ARPEGE PN values for Cv and TAU_ICE
 LOGICAL    :: LQVNPLUS         ! An option for the resolution of the surface temperature equation
 !
 LOGICAL    :: LCPL_GCM         ! Flag used to Read/Write some field from/into the restart file for coupling with ARPEGE/ALADIN

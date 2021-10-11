@@ -11,7 +11,7 @@
                               OVEGUPD, OSPINUPCARBS, OSPINUPCARBW,       &
                               PSPINMAXS, PSPINMAXW, PCO2_START, PCO2_END,&
                               KNBYEARSPINS, KNBYEARSPINW,                &
-                              ONITRO_DILU                                )
+                              ONITRO_DILU, PCVHEATF                      )
 !     ########################################################################
 !
 !!****  *DEFAULT_ISBA* - routine to set default values for the configuration for ISBA
@@ -140,6 +140,8 @@ INTEGER, INTENT(OUT)          :: KNBYEARSPINW ! nbr years needed to reaches wood
 !
 LOGICAL, INTENT(OUT)          :: ONITRO_DILU ! nitrogen dilution fct of CO2 (Calvet et al. 2008)
 !
+REAL, INTENT(OUT) :: PCVHEATF
+!
 !*       0.2   Declarations of local variables
 !              -------------------------------
 !
@@ -164,6 +166,8 @@ HKSAT      = 'DEF'
 OSOC       = .FALSE.
 HRAIN      = 'DEF'
 HHORT      = 'DEF'
+!
+PCVHEATF = 0.2
 !
 PCGMAX   = 2.0E-5
 !

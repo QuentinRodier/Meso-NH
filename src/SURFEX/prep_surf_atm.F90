@@ -27,6 +27,8 @@ SUBROUTINE PREP_SURF_ATM (YSC, HPROGRAM,HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILET
 !!      Original    01/2004
 !!      P. Le Moigne 10/2005, Phasage Arome
 !!      P. Marguinaud10/2014, Support for a 2-part PREP
+!!      A. Druel     02/2019, Transmit NPAR_VEG_IRR_USE for irrigation
+!!
 !!------------------------------------------------------------------
 !
 USE MODD_SURFEX_n, ONLY : SURFEX_t
@@ -49,7 +51,7 @@ IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
 !
-TYPE(SURFEX_t), INTENT(INOUT) :: YSC
+TYPE(SURFEX_t),    INTENT(INOUT) :: YSC
 TYPE (PREP_CTL),   INTENT(INOUT) :: YDCTL
 !
  CHARACTER(LEN=6),  INTENT(IN) :: HPROGRAM    ! program calling surf. schemes
@@ -122,7 +124,8 @@ IF(YSC%U%NDIM_NATURE>0) CALL PREP_NATURE(YSC%DTCO, YSC%IM, YSC%UG, YSC%U, YSC%US
 ! URBAN Tile calculations:
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 !
-IF(YSC%U%NDIM_TOWN>0) CALL PREP_TOWN(YSC%DTCO, YSC%UG, YSC%U, YSC%USS, YSC%GCP, YSC%TM, YSC%GDM, YSC%GRM, &
+IF(YSC%U%NDIM_TOWN>0) CALL PREP_TOWN(YSC%DTCO, YSC%UG, YSC%U, YSC%USS, YSC%GCP, YSC%TM, YSC%GDM, YSC%GRM, YSC%HM, &
+                                     YSC%IM%DTV%NPAR_VEG_IRR_USE,                                         &
                                      HPROGRAM,YATMFILE,YATMFILETYPE,YPGDFILE,YPGDFILETYPE,YDCTL)
 !
  CALL CLEAR_GRIB_INDEX

@@ -39,7 +39,7 @@ INTEGER :: NNI ! total number of physical points
 INTEGER :: NGRIB_VERSION ! GRIB-API version (1 or 2)
 
 !
- CHARACTER(LEN=6)  :: CINMODEL !
+ CHARACTER(LEN=6)  :: CINMODEL
  CHARACTER(LEN=28) :: CGRIB_FILE
 INTEGER(KIND=kindOfInt) :: NIDX
 !

@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE PGD_TOWN (DTCO, UG, U, USS, DTV, TM, GDM, GRM, HPROGRAM)
+      SUBROUTINE PGD_TOWN (DTCO, UG, U, USS, DTV, TM, GDM, GRM, HM, HPROGRAM)
 !     #############################################################
 !
 !!****  *PGD_TOWN* - routine to choose initialization of urban scheme
@@ -47,6 +47,7 @@ USE MODD_DATA_ISBA_n, ONLY : DATA_ISBA_t
 USE MODD_SURFEX_n, ONLY : TEB_MODEL_t
 USE MODD_SURFEX_n, ONLY : TEB_GARDEN_MODEL_t
 USE MODD_SURFEX_n, ONLY : TEB_GREENROOF_MODEL_t
+USE MODD_SURFEX_n, ONLY : TEB_HYDRO_MODEL_t
 !
 USE MODI_PGD_TEB
 !
@@ -68,6 +69,7 @@ TYPE(DATA_ISBA_t), INTENT(INOUT) :: DTV
 TYPE(TEB_MODEL_t), INTENT(INOUT) :: TM
 TYPE(TEB_GARDEN_MODEL_t), INTENT(INOUT) :: GDM
 TYPE(TEB_GREENROOF_MODEL_t), INTENT(INOUT) :: GRM
+TYPE(TEB_HYDRO_MODEL_t), INTENT(INOUT) :: HM
 !
  CHARACTER(LEN=6), INTENT(IN)  :: HPROGRAM   ! program calling surf. schemes
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
@@ -89,9 +91,9 @@ ELSE IF (U%CTOWN=='FLUX  ') THEN
   IF (LHOOK) CALL DR_HOOK('PGD_TOWN',1,ZHOOK_HANDLE)
   RETURN
 ELSE IF (U%CTOWN=='TEB   ') THEN
-  CALL PGD_TEB(DTCO, UG, U, USS, TM%TOP, TM%BOP, TM%G, TM%BDD, TM%DTT, TM%DTB, &
+  CALL PGD_TEB(DTCO, UG, U, USS, TM%TOP, TM%BOP, TM%SPAOP, TM%G, TM%BDD, TM%DTT, TM%DTB, &
                           GDM%O, GDM%K, GDM%DTV, TM%TIR, &
-                          GRM%O, GRM%S, GRM%K, GRM%DTV, HPROGRAM)
+                          GRM%O, GRM%S, GRM%K, GRM%DTV, HM%DTH, HPROGRAM)
 END IF
 IF (LHOOK) CALL DR_HOOK('PGD_TOWN',1,ZHOOK_HANDLE)
 !

@@ -60,29 +60,29 @@ REAL, DIMENSION(SIZE(PZENITH)) :: ZELEV
 INTEGER :: JJ
 !-------------------------------------------------------------------------------
 IF (LHOOK) CALL DR_HOOK('MODE_CONV_DOE:CHTC_VERT_DOE',0,ZHOOK_HANDLE)
-
+!
 ZELEV = XPI/2. - PZENITH
-
+!
 PF1_o_B = 0.
 WHERE(PSCA_SW > 0)
    ZE = ((PSCA_SW + PDIR_SW) / PSCA_SW + ZK * ZELEV**3) / (1 + ZK * ZELEV**3)
 ELSEWHERE
    ZE = -1
 ENDWHERE
-
+!
 DO JJ=1,SIZE(ZELEV)
    ZB(JJ) = MAX(ZBMIN, cos(ZELEV(JJ)))
 ENDDO
-
+!
  CALL FIJ(ZE, ZF11, ZF13)
 ZF1 = ZF11 + ZF13 * ZELEV
-   
+!   
 PF1_o_B = ZF1 / ZB
 DO JJ=1,SIZE(PF1_o_B)
    PF1_o_B(JJ) = MIN(PF1_o_B(JJ), 1.)
    PF1_o_B(JJ) = MAX(PF1_o_B(JJ), 0.)
 ENDDO
-
+!
 IF (LHOOK) CALL DR_HOOK('MODE_CONV_DOE:CHTC_VERT_DOE',1,ZHOOK_HANDLE)
 !-------------------------------------------------------------------------------
 CONTAINS

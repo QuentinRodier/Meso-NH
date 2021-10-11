@@ -38,6 +38,7 @@
 !!                               active layer thickness over permafrost area
 !!                               frozen layer thickness over non-permafrost area
 !!       M. Lafaysse 09/2015 : new Crocus-MEPRA outputs
+!!    P. Hagenmuller 09/2017 : complete MEPRA outputs
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -57,6 +58,7 @@ TYPE DIAG_MISC_ISBA_t
   LOGICAL :: LSURF_DIAG_ALBEDO   ! flag to write out diagnostic albedo
   LOGICAL :: LSURF_MISC_DIF      ! flag for miscellaneous terms of isba-dif scheme
   LOGICAL :: LPROSNOW            ! flag for Crocus-MEPRA outputs
+  LOGICAL :: LPROBANDS           ! flag for Crocus spectral ouputs
   LOGICAL :: LVOLUMETRIC_SNOWLIQ ! volumetric snow liquid water content (kg m-3)  
 !
 !* variables for each patch
@@ -66,13 +68,14 @@ TYPE DIAG_MISC_ISBA_t
 !      
   REAL, POINTER, DIMENSION(:,:) :: XSWI        ! Soil wetness index
   REAL, POINTER, DIMENSION(:,:) :: XTSWI       ! Total soil wetness index
-  REAL, POINTER, DIMENSION(:)   :: XSOIL_SWI     ! Soil wetness index
-  REAL, POINTER, DIMENSION(:)   :: XSOIL_TSWI    ! Total Soil wetness index
-  REAL, POINTER, DIMENSION(:)   :: XSOIL_TWG     ! Soil water content (liquid+ice) (kg.m-2)
-  REAL, POINTER, DIMENSION(:)   :: XSOIL_TWGI    ! Soil ice content (kg.m-2)
-  REAL, POINTER, DIMENSION(:)   :: XSOIL_WG     ! Soil water content (liquid+ice) (m3.m-3)
-  REAL, POINTER, DIMENSION(:)   :: XSOIL_WGI    ! Soil ice content (m3.m-3)  
+  REAL, POINTER, DIMENSION(:)     :: XSOIL_SWI     ! Soil wetness index
+  REAL, POINTER, DIMENSION(:)     :: XSOIL_TSWI    ! Total Soil wetness index
+  REAL, POINTER, DIMENSION(:)     :: XSOIL_TWG     ! Soil water content (liquid+ice) (kg.m-2)
+  REAL, POINTER, DIMENSION(:)     :: XSOIL_TWGI    ! Soil ice content (kg.m-2)
+  REAL, POINTER, DIMENSION(:)     :: XSOIL_WG     ! Soil water content (liquid+ice) (m3.m-3)
+  REAL, POINTER, DIMENSION(:)     :: XSOIL_WGI    ! Soil ice content (m3.m-3)  
 !     
+!
   REAL, POINTER, DIMENSION(:) :: XFRD2_TSWI      ! ISBA-FR-DG2 comparable soil wetness index (DIF option)
   REAL, POINTER, DIMENSION(:) :: XFRD2_TWG       ! ISBA-FR-DG2 comparable soil water content (liquid+ice) (DIF option)
   REAL, POINTER, DIMENSION(:) :: XFRD2_TWGI      ! ISBA-FR-DG2 comparable soil ice content (DIF option)  
@@ -96,29 +99,35 @@ TYPE DIAG_MISC_ISBA_t
   REAL, POINTER, DIMENSION(:) :: XCDSNOW    ! snow drag coefficient (ISBA-ES:3-L)           (-)
   REAL, POINTER, DIMENSION(:) :: XCHSNOW    ! heat turbulent transfer coefficient 
 !                                               ! (ISBA-ES:3-L)                                 (-)
-  REAL, POINTER, DIMENSION(:,:) :: XSNOWDZ     ! snow layer thicknesses                        (m)
-  REAL, POINTER, DIMENSION(:,:) :: XSNOWDEND   ! dendricity (Crocus)
-  REAL, POINTER, DIMENSION(:,:) :: XSNOWSPHER  ! sphericity (Crocus)
-  REAL, POINTER, DIMENSION(:,:) :: XSNOWSIZE   ! grain size (Crocus)
-  REAL, POINTER, DIMENSION(:,:) :: XSNOWSSA    ! snow specific surface area (Crocus)
+  REAL, POINTER, DIMENSION(:,:) :: XSNOWDZ        ! snow layer thicknesses                        (m)
+  REAL, POINTER, DIMENSION(:,:) :: XSNOWDEND      ! dendricity (Crocus)
+  REAL, POINTER, DIMENSION(:,:) :: XSNOWSPHER     ! sphericity (Crocus)
+  REAL, POINTER, DIMENSION(:,:) :: XSNOWSIZE      ! grain size (Crocus)
+  REAL, POINTER, DIMENSION(:,:) :: XSNOWSSA       ! snow specific surface area (Crocus)
   REAL, POINTER, DIMENSION(:,:) :: XSNOWTYPEMEPRA ! snow grain type (Crocus-MEPRA)
-  REAL, POINTER, DIMENSION(:,:) :: XSNOWRAM    ! snow ram resistance (Crocus-MEPRA)
-  REAL, POINTER, DIMENSION(:,:) :: XSNOWSHEAR  ! snow shear resistance (Crocus-MEPRA)  
+  REAL, POINTER, DIMENSION(:,:) :: XSNOWRAM       ! snow ram resistance (Crocus-MEPRA)
+  REAL, POINTER, DIMENSION(:,:) :: XSNOWSHEAR     ! snow shear resistance (Crocus-MEPRA)
+  REAL, POINTER, DIMENSION(:,:) :: XACC_RAT       ! accidental ratio strength/stress
+  REAL, POINTER, DIMENSION(:,:) :: XNAT_RAT       ! natural ratio strength/stress
 !
-  REAL, POINTER, DIMENSION(:) :: XSNOWHMASS ! heat content change due to mass
+  REAL, POINTER, DIMENSION(:)   :: XSNOWHMASS ! heat content change due to mass
 !                                           ! changes in snowpack: for budget
   REAL, POINTER, DIMENSION(:,:) :: XSNOWLIQ    ! snow liquid water profile (ISBA-ES:3-L)
   REAL, POINTER, DIMENSION(:,:) :: XSNOWTEMP   ! snow temperature profile  (ISBA-ES:3-L)
 !     
-  REAL, POINTER, DIMENSION(:) :: XTWSNOW       ! Total snow reservoir
-  REAL, POINTER, DIMENSION(:) :: XTDSNOW       ! Total snow height
-  REAL, POINTER, DIMENSION(:) :: XTTSNOW       ! Total snow temperature
+  REAL, POINTER, DIMENSION(:)   :: XTWSNOW       ! Total snow reservoir
+  REAL, POINTER, DIMENSION(:)   :: XTDSNOW       ! Total snow height
+  REAL, POINTER, DIMENSION(:)   :: XTTSNOW       ! Total snow temperature
 !
-  REAL, POINTER, DIMENSION(:) :: XSNDPT_1DY, XSNDPT_3DY, XSNDPT_5DY, XSNDPT_7DY ! fresh snow depth in 1, 3, 5, 7 days
-  REAL, POINTER, DIMENSION(:) :: XSNSWE_1DY, XSNSWE_3DY, XSNSWE_5DY, XSNSWE_7DY! fresh snow water equivalent in 1, 3, 5, 7 days
-  REAL, POINTER, DIMENSION(:) :: XSNRAM_SONDE ! penetration depth of the ram resistance sensor (2 DaN)
-  REAL, POINTER, DIMENSION(:) :: XSN_WETTHCKN ! Thickness of wet snow at the top of the snowpack
-  REAL, POINTER, DIMENSION(:) :: XSN_REFRZNTHCKN  ! Thickness of refrozen snow at the top of the snowpack
+  REAL, POINTER, DIMENSION(:)   :: XSNDPT_1DY, XSNDPT_3DY, XSNDPT_5DY, XSNDPT_7DY ! fresh snow depth in 1, 3, 5, 7 days
+  REAL, POINTER, DIMENSION(:)   :: XSNSWE_1DY, XSNSWE_3DY, XSNSWE_5DY, XSNSWE_7DY! fresh snow water equivalent in 1, 3, 5, 7 days
+  REAL, POINTER, DIMENSION(:)   :: XSNRAM_SONDE       ! Penetration depth of the ram resistance sensor (2 DaN)
+  REAL, POINTER, DIMENSION(:)   :: XSN_WETTHCKN       ! Thickness of wet snow at the top of the snowpack
+  REAL, POINTER, DIMENSION(:)   :: XSN_REFRZNTHCKN    ! Thickness of refrozen snow at the top of the snowpack
+  REAL, POINTER, DIMENSION(:)   :: XDEP_HIG           ! Depth of high instability (m)
+  REAL, POINTER, DIMENSION(:)   :: XDEP_MOD           ! Depth of moderate instability (m)
+  REAL, POINTER, DIMENSION(:)   :: XACC_LEV           ! Accidental risk index (0-4)
+  REAL, POINTER, DIMENSION(:)   :: XPRO_INF_TYP       ! Type of inferior profile (0, 1, 6)
 
   REAL, POINTER, DIMENSION(:) :: XPSNG         ! Snow fraction over ground, diag at time t
   REAL, POINTER, DIMENSION(:) :: XPSNV         ! Snow fraction over vegetation, diag at time t
@@ -147,6 +156,18 @@ TYPE DIAG_MISC_ISBA_t
 !                                               ! content
   REAL, POINTER, DIMENSION(:) :: XCT        ! area-averaged heat capacity
   REAL, POINTER, DIMENSION(:) :: XRS        ! stomatal resistance                            (s/m)
+!
+  REAL, POINTER, DIMENSION(:,:) :: XSPEC_ALB ! spectral snow albedo
+
+  REAL, POINTER, DIMENSION(:,:) :: XDIFF_RATIO ! spectral diffuse to total ratio
+!
+  REAL, POINTER, DIMENSION(:,:,:) :: XIMPUR_CONC ! Impurity concentration in g/g
+!
+  REAL, POINTER, DIMENSION(:) :: XSYTMASS    ! Eroded/accumulated snow mass (Crocus/SYTRON) (kg/m2/s)
+  REAL, POINTER, DIMENSION(:) :: XSYTMASSC   ! Eroded/accumulated snow mass (Crocus/SYTRON) (kg/m2)
+  
+  REAL, POINTER, DIMENSION(:) :: XPRODCOUNT    ! Snow production counter (s)
+!
 !
 !------------------------------------------------------------------------------
 !
@@ -198,7 +219,7 @@ IF (LHOOK) CALL DR_HOOK("MODD_DIAG_MISC_ISBA_N:DIAG_MISC_ISBA_INIT",0,ZHOOK_HAND
   NULLIFY(DMI%XFRD2_TWGI)
   NULLIFY(DMI%XFRD3_TSWI)
   NULLIFY(DMI%XFRD3_TWG)
-  NULLIFY(DMI%XFRD3_TWGI)    
+  NULLIFY(DMI%XFRD3_TWGI)
   NULLIFY(DMI%XALT)
   NULLIFY(DMI%XFLT)
   NULLIFY(DMI%XRNSNOW)
@@ -219,18 +240,24 @@ IF (LHOOK) CALL DR_HOOK("MODD_DIAG_MISC_ISBA_N:DIAG_MISC_ISBA_INIT",0,ZHOOK_HAND
   NULLIFY(DMI%XSNOWSSA)
   NULLIFY(DMI%XSNOWRAM)
   NULLIFY(DMI%XSNOWSHEAR)
+  NULLIFY(DMI%XACC_RAT)
+  NULLIFY(DMI%XNAT_RAT)
   NULLIFY(DMI%XSNDPT_1DY)
   NULLIFY(DMI%XSNDPT_3DY)
   NULLIFY(DMI%XSNDPT_5DY)
-  NULLIFY(DMI%XSNDPT_7DY) 
+  NULLIFY(DMI%XSNDPT_7DY)
   NULLIFY(DMI%XSNSWE_1DY)
   NULLIFY(DMI%XSNSWE_3DY)
   NULLIFY(DMI%XSNSWE_5DY)
   NULLIFY(DMI%XSNSWE_7DY)
   NULLIFY(DMI%XSNRAM_SONDE)
   NULLIFY(DMI%XSN_REFRZNTHCKN)
-  NULLIFY(DMI%XSN_WETTHCKN)  
-  NULLIFY(DMI%XSNOWHMASS)  
+  NULLIFY(DMI%XSN_WETTHCKN)
+  NULLIFY(DMI%XDEP_HIG)
+  NULLIFY(DMI%XDEP_MOD)
+  NULLIFY(DMI%XACC_LEV)
+  NULLIFY(DMI%XPRO_INF_TYP)
+  NULLIFY(DMI%XSNOWHMASS)
   NULLIFY(DMI%XSNOWLIQ)
   NULLIFY(DMI%XSNOWTEMP)
   NULLIFY(DMI%XTWSNOW)
@@ -255,12 +282,17 @@ IF (LHOOK) CALL DR_HOOK("MODD_DIAG_MISC_ISBA_N:DIAG_MISC_ISBA_INIT",0,ZHOOK_HAND
   NULLIFY(DMI%XC2)
   NULLIFY(DMI%XWGEQ)
   NULLIFY(DMI%XCT)
-  NULLIFY(DMI%XRS)  
+  NULLIFY(DMI%XRS)
+  NULLIFY(DMI%XSPEC_ALB)
+  NULLIFY(DMI%XDIFF_RATIO)
+  NULLIFY(DMI%XIMPUR_CONC)
+  NULLIFY(DMI%XSYTMASS)
+  NULLIFY(DMI%XSYTMASSC)
+  NULLIFY(DMI%XPRODCOUNT)
 DMI%LSURF_MISC_BUDGET=.FALSE.
 DMI%LSURF_DIAG_ALBEDO=.FALSE.
 DMI%LSURF_MISC_DIF=.FALSE.
 IF (LHOOK) CALL DR_HOOK("MODD_DIAG_MISC_ISBA_N:DIAG_MISC_ISBA_INIT",1,ZHOOK_HANDLE)
 END SUBROUTINE DIAG_MISC_ISBA_INIT
-
 
 END MODULE MODD_DIAG_MISC_ISBA_n

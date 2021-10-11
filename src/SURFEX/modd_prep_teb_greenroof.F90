@@ -71,6 +71,7 @@ REAL, DIMENSION(:), POINTER :: XRSNOW_GR         ! snow density
 REAL, DIMENSION(:), POINTER :: XTSNOW_GR         ! snow temperature
 REAL, DIMENSION(:), POINTER :: XLWCSNOW_GR         ! snow liquid water conten
 REAL, DIMENSION(:), POINTER :: XAGESNOW_GR         ! snow age
+REAL, DIMENSION(:,:), POINTER :: XIMPURSNOW_GR        ! snow age
 REAL                        :: XASNOW_GR         ! snow albedo
 !
 REAL                        :: XWR_DEF        ! default for leaves interception reservoir

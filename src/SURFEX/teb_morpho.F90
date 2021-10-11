@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     ###########################################################################################################
-      SUBROUTINE TEB_MORPHO(HPROGRAM, T   )
+      SUBROUTINE TEB_MORPHO(HPROGRAM, T, TG)
 !     ###########################################################################################################
 !
 !!****  *TEB_MORPHO* 
@@ -19,7 +19,7 @@
 !!    - in the case of high building fraction (higher than 0.9999)
 !!    - building height
 !!    - in the case of low road fraction
-!!    - in the case of low/hight wall surface ratio 
+!!    - in the case of low/high wall surface ratio 
 !!
 !!    EXTERNAL
 !!    --------
@@ -44,6 +44,8 @@
 !*       0.    DECLARATIONS
 !              ------------
 !
+USE MODD_CSTS, ONLY : XSURF_EPSILON
+USE MODD_SFX_GRID_n, ONLY : GRID_t  
 USE MODD_TEB_n, ONLY : TEB_t
 !
 USE MODI_GET_LUOUT
@@ -54,7 +56,9 @@ IMPLICIT NONE
 !*       0.1   Declarations of arguments
 !              -------------------------
 !
-CHARACTER(LEN=6),     INTENT(IN)  :: HPROGRAM    ! program calling surf. schemes
+CHARACTER(LEN=6), INTENT(IN)  :: HPROGRAM    ! program calling surf. schemes
+!
+TYPE(GRID_t), INTENT(IN) :: TG
 !
 TYPE(TEB_t), INTENT(INOUT) :: T
 !
@@ -62,24 +66,19 @@ TYPE(TEB_t), INTENT(INOUT) :: T
 !
 INTEGER :: JJ
 INTEGER :: ILUOUT
-!
-REAL, DIMENSION(SIZE(T%XBLD)) :: ZWALL_O_BLD   ! Initial wall to built surface ratio
-REAL, DIMENSION(SIZE(T%XBLD)) :: ZWALL_O_HOR   ! Initial wall to horizontal surface ratio
+REAL :: ZMESH_LENGTH
 !
 REAL, DIMENSION(2) :: ZRANGE_BLD        = (/ 0.0001  ,   0.9999 /) ! Range allowed for T%XBLD variation
 REAL, DIMENSION(2) :: ZRANGE_ROAD       = (/ 0.0001  ,   0.9999 /) ! Range allowed for T%XROAD variation
 REAL, DIMENSION(2) :: ZRANGE_BLD_HEIGHT = (/ 3.      , 829.84   /) ! Range allowed for T%XBLD_HEIGHT variation
 REAL, DIMENSION(2) :: ZRANGE_WALL_O_HOR = (/ 0.00012 , 322.     /) ! Range allowed for T%XWALL_O_HOR variation
 !
+REAL :: ZSIDE_MIN = 5 ! Minimum length of square building for the calculation of the maximum possible WALL_O_HOR/WALL_O_BLD
 !
 !*       1.   Get listing file for warnings
 !
 CALL GET_LUOUT(HPROGRAM, ILUOUT)
 !
-
-ZWALL_O_BLD(:) = 0.
-ZWALL_O_HOR(:) = 0.
-
 DO JJ=1,SIZE(T%XBLD)
    !
    !*    2.   Control building height no lower than 3.m and no higher than 829.84m
@@ -116,25 +115,28 @@ DO JJ=1,SIZE(T%XBLD)
    ENDIF
    !
    !*    5.   Control wall surface low respective to building density and building height: pb of the input
-   !          Evaluation of the minimum woh is done for mesh size of 1000. m
-   !          wall surface of the building evaluated considering 1 square building
+   !          Evaluation of the minimum woh is done considering a square building.
    !
-   IF (T%XWALL_O_HOR(JJ) < 4. * SQRT(T%XBLD(JJ))*T%XBLD_HEIGHT(JJ)/1000.) THEN
-      T%XWALL_O_HOR(JJ) = 4. * SQRT(T%XBLD(JJ))*T%XBLD_HEIGHT(JJ)/1000. 
+   IF (TG%XMESH_SIZE(JJ).GT.XSURF_EPSILON) THEN
+      ZMESH_LENGTH = SQRT(TG%XMESH_SIZE(JJ))
+   ELSE
+      ZMESH_LENGTH = 1000.0      
+   ENDIF
+   !
+   IF ( T%XWALL_O_HOR(JJ) .LT. (4. * SQRT(T%XBLD(JJ))*T%XBLD_HEIGHT(JJ)/ZMESH_LENGTH ) ) THEN
+      T%XWALL_O_HOR(JJ) = 4. * SQRT(T%XBLD(JJ))*T%XBLD_HEIGHT(JJ)/ZMESH_LENGTH
    ENDIF
    !
    !*    6.   Control facade surface vs building height, case of too high WALL_O_HOR
+   !          assuming square buildings with minimum side length ZSIDE_MIN
    !
    T%XWALL_O_BLD(JJ) = T%XWALL_O_HOR(JJ)/T%XBLD(JJ)
    !
-   IF (T%XWALL_O_BLD(JJ) > (0.4 * T%XBLD_HEIGHT(JJ))) THEN ! <=> side_of_building < 10 m
-      !     
-      ZWALL_O_HOR(JJ) = T%XWALL_O_HOR(JJ)
-      ZWALL_O_BLD(JJ) = T%XWALL_O_BLD(JJ)
+   IF (T%XWALL_O_BLD(JJ) > ( 4.0 * T%XBLD_HEIGHT(JJ) / ZSIDE_MIN )) THEN
       !
-      T%XWALL_O_HOR(JJ) = 0.4 * T%XBLD (JJ) * T%XBLD_HEIGHT(JJ) ! correction WOHOR v2.1
-      T%XWALL_O_BLD(JJ) = T%XWALL_O_HOR(JJ) / T%XBLD       (JJ) ! correction WOHOR v2.1
-
+      T%XWALL_O_HOR(JJ) = 4.0 * T%XBLD (JJ) * T%XBLD_HEIGHT(JJ) / ZSIDE_MIN
+      T%XWALL_O_BLD(JJ) = T%XWALL_O_HOR(JJ) / T%XBLD       (JJ)
+      !
    ENDIF
    !
    !*    7.   Verify road
@@ -152,23 +154,20 @@ DO JJ=1,SIZE(T%XBLD)
    !*    8.   Final check of parameters range
    !
    IF ( T%XBLD(JJ) < ZRANGE_BLD(1) .OR. T%XBLD(JJ) > ZRANGE_BLD(2) ) THEN
-        WRITE(ILUOUT,*) 'WARNING : T%XBLD is still out of range after final corrections &
-        &for grid mesh',JJ,' : ',T%XBLD(JJ)
+      CALL ABOR1_SFX('TEB_MORPHO: PBLD out of range')
    ENDIF
    !
    IF ( T%XBLD_HEIGHT(JJ) < ZRANGE_BLD_HEIGHT(1) .OR. T%XBLD_HEIGHT(JJ) > ZRANGE_BLD_HEIGHT(2) ) THEN
-        WRITE(ILUOUT,*) 'WARNING : T%XBLD_HEIGHT is still out of range after final corrections &
-        &for grid mesh',JJ,' : ',T%XBLD_HEIGHT(JJ)
+      CALL ABOR1_SFX('TEB_MORPHO: PBLD_HEIGHT out of range')
+   ENDIF
+   !
+   IF (T%XWALL_O_HOR(JJ) .LT. ZRANGE_WALL_O_HOR(1) ) THEN
+      T%XWALL_O_HOR(JJ) = ZRANGE_WALL_O_HOR(1)
+      T%XWALL_O_BLD(JJ) = T%XWALL_O_HOR(JJ)/T%XBLD(JJ)
    ENDIF
    !
    IF ( T%XWALL_O_HOR(JJ) < ZRANGE_WALL_O_HOR(1) .OR. T%XWALL_O_HOR(JJ) > ZRANGE_WALL_O_HOR(2) ) THEN
-        WRITE(ILUOUT,*) 'WARNING : T%XWALL_O_HOR is still out of range after final corrections &
-        &for grid mesh',JJ,' : ',T%XWALL_O_HOR(JJ)
-   ENDIF
-   !
-   IF ( T%XWALL_O_BLD(JJ) - (0.4 * T%XBLD_HEIGHT(JJ)) > 10E-16 ) THEN
-        WRITE(ILUOUT,*) 'WARNING : T%XWALL_O_BLD is still too high after final corrections &
-        &for grid mesh',JJ,' : ',T%XWALL_O_BLD(JJ)
+      CALL ABOR1_SFX('TEB_MORPHO: PWALL_O_HOR out of range')
    ENDIF
    !
 ENDDO
@@ -186,8 +185,9 @@ T%XWALL_O_GRND(:)   = T%XWALL_O_HOR(:) / (T%XROAD(:) + T%XGARDEN(:))
 !
 !* Sky-view-factors:
 !
-T%XSVF_ROAD  (:) = (SQRT(T%XCAN_HW_RATIO(:)**2+1.) - T%XCAN_HW_RATIO(:))
-T%XSVF_GARDEN(:) = T%XSVF_ROAD(:)
-T%XSVF_WALL  (:) =  0.5*(T%XCAN_HW_RATIO(:)+1.-SQRT(T%XCAN_HW_RATIO(:)**2+1.))/T%XCAN_HW_RATIO(:)
+T%XSVF_RS  (:) = SQRT( T%XCAN_HW_RATIO(:)**2+1. ) - T%XCAN_HW_RATIO(:)
+T%XSVF_WS  (:) = 0.5*( T%XCAN_HW_RATIO(:)+1.       &
+                -SQRT( T%XCAN_HW_RATIO(:)**2+1.) ) &
+                /T%XCAN_HW_RATIO(:)
 !
 END SUBROUTINE TEB_MORPHO

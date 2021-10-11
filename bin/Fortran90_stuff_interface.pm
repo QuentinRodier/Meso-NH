@@ -266,6 +266,12 @@ CRACK:    {
 	  $content='type_def';
 	  $type_def=0;
 	}
+        elsif(/^ASSOCIATE\b/) {
+          $content='ASSOCIATE';
+        }
+	elsif(/^END ASSOCIATE\b/){
+          $content='END ASSOCIATE';
+        }
         elsif( $in_interface ) {
           if(/^MODULE PROCEDURE\b/) {
             $content='MODULE PROCEDURE';

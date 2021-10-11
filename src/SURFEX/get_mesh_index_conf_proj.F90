@@ -3,7 +3,8 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     ###############################################################
-      SUBROUTINE GET_MESH_INDEX_CONF_PROJ(KSSO,PGRID_PAR,PLAT,PLON,KINDEX,KISSOX,KISSOY)
+      SUBROUTINE GET_MESH_INDEX_CONF_PROJ(KSSO,PGRID_PAR,PLAT,PLON,KINDEX,KISSOX,KISSOY, &
+                                          KFSSO,KFISSOX,KFISSOY)
 !     ###############################################################
 !
 !!**** *GET_MESH_INDEX_CONF_PROJ* get the grid mesh where point (lat,lon) is located
@@ -44,6 +45,7 @@ IMPLICIT NONE
 !            ------------------------
 !
 INTEGER,                       INTENT(IN)    :: KSSO      ! number of subgrid mesh in each direction
+INTEGER,                       INTENT(IN)    :: KFSSO     ! number of fractional subgrid mesh in each direction
 !
 REAL,    DIMENSION(:),         INTENT(IN)    :: PGRID_PAR ! grid parameters
 REAL,    DIMENSION(:),         INTENT(IN)    :: PLAT      ! latitude of the point
@@ -51,6 +53,9 @@ REAL,    DIMENSION(:),         INTENT(IN)    :: PLON      ! longitude of the poi
 INTEGER, DIMENSION(:,:),       INTENT(OUT)   :: KINDEX    ! index of the grid mesh where the point is
 INTEGER, DIMENSION(:,:),       INTENT(OUT)   :: KISSOX    ! X index of the subgrid mesh
 INTEGER, DIMENSION(:,:),       INTENT(OUT)   :: KISSOY    ! Y index of the subgrid mesh
+INTEGER, DIMENSION(:,:),       INTENT(OUT)   :: KFISSOX   ! X index of the fractional subgrid mesh
+INTEGER, DIMENSION(:,:),       INTENT(OUT)   :: KFISSOY   ! Y index of the fractional subgrid mesh
+
 !
 !*    0.2    Declaration of other local variables
 !            ------------------------------------
@@ -145,6 +150,10 @@ DO JL=1,SIZE(PLON)
       KISSOX(1,JL) = 0
       KISSOY(1,JL) = 0
     END IF
+    IF (KFSSO/=0) THEN
+      KFISSOX(1,JL) = 0
+      KFISSOY(1,JL) = 0
+    END IF
     CYCLE
   END IF
   JI = MIN(INT( (ZX(JL) - XXLIM(1))/ZDXLIM+1),NIMAX)
@@ -159,6 +168,10 @@ DO JL=1,SIZE(PLON)
   IF (KSSO/=0) THEN
     KISSOX(1,JL) = 1 + INT( FLOAT(KSSO) * (ZX(JL)-XXLIM(JI))/(XXLIM(JI+1)-XXLIM(JI)) )
     KISSOY(1,JL) = 1 + INT( FLOAT(KSSO) * (ZY(JL)-XYLIM(JJ))/(XYLIM(JJ+1)-XYLIM(JJ)) )
+  END IF
+  IF (KFSSO/=0) THEN
+    KFISSOX(1,JL) = 1 + INT( FLOAT(KFSSO) * (ZX(JL)-XXLIM(JI))/(XXLIM(JI+1)-XXLIM(JI)) )
+    KFISSOY(1,JL) = 1 + INT( FLOAT(KFSSO) * (ZY(JL)-XYLIM(JJ))/(XYLIM(JJ+1)-XYLIM(JJ)) )
   END IF
 END DO
 !

@@ -32,6 +32,8 @@
 !             ------------
 !
 USE MODD_SV_n, ONLY : SV_t, SV_INIT
+USE MODD_SLT_n, ONLY : SLT_t, SLT_INIT
+USE MODD_DST_n, ONLY : DST_t, DST_INIT
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -53,6 +55,8 @@ TYPE CH_ISBA_t
                                                             ! biogenic NO fluxes
   LOGICAL                         :: LSOILNOX               ! flag for the MEGAN SOILNOX parameterization                                                            
   TYPE(SV_t) :: SVI
+  TYPE(DST_t) :: DSTI
+  TYPE(SLT_t) :: SLTI
 
   CHARACTER(LEN=6), DIMENSION(:), POINTER :: CCH_NAMES      ! NAME OF CHEMICAL SPECIES
                                                             ! (FOR DIAG ONLY)
@@ -90,6 +94,8 @@ YCH_ISBA%LCH_BIO_FLUX=.FALSE.
 YCH_ISBA%LCH_NO_FLUX=.FALSE.
 YCH_ISBA%LSOILNOX=.FALSE.
 CALL SV_INIT(YCH_ISBA%SVI)
+CALL DST_INIT(YCH_ISBA%DSTI)
+CALL SLT_INIT(YCH_ISBA%SLTI)
 IF (LHOOK) CALL DR_HOOK("MODD_CH_ISBA_N:CH_ISBA_INIT",1,ZHOOK_HANDLE)
 END SUBROUTINE CH_ISBA_INIT
 !

@@ -49,7 +49,7 @@
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_SURF_PAR, ONLY : NUNDEF
+USE MODD_SURF_PAR, ONLY : NUNDEF, LEN_HREC
 !
 USE MODI_READ_SURF
 #ifdef SFX_MNH
@@ -82,7 +82,7 @@ REAL, DIMENSION(SIZE(PFIELD2D,1)) :: ZWORK
 INTEGER           :: IRESP          ! IRESP  : return-code if a problem appears
 INTEGER           :: IPATCH         ! number of patches in PFIELD2D
 CHARACTER(LEN=100):: YCOMMENT       ! Comment string
-CHARACTER(LEN=LEN_HREC) :: YRECFM         ! Name of the article to be read
+CHARACTER(LEN=16) :: YRECFM         ! Name of the article to be read
 CHARACTER(LEN=4 ) :: YPATCH         ! current patch
 INTEGER           :: INB_PROCIO     ! number of processes used for Z-parallel IO with MESO-NH
 !

@@ -3,8 +3,9 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-    SUBROUTINE BLD_E_BUDGET( OTI_EVOL, PTSTEP, PBLD, PWALL_O_HOR,      &
-                             PRHOA, PT_ROOF, PT_WALL, PTI_BLD, PTS_FLOOR )  
+    SUBROUTINE BLD_E_BUDGET(HPROGRAM, OTI_EVOL, PTSTEP, PBLD, PWALL_O_HOR,  &
+                             PRHOA, PT_ROOF, PT_WALL, PTI_BLD,           &
+                             PTS_FLOOR, PT_BLD, PG_FLOOR           )  
 !   ##########################################################################
 !
 !!****  *BLD_E_BUDGET*  
@@ -65,8 +66,11 @@
 !*       0.     DECLARATIONS
 !               ------------
 !
-USE MODD_CSTS,ONLY : XTT, XCPD, XDAY
-USE MODD_SURF_PAR,ONLY : XUNDEF
+USE MODD_CSTS,     ONLY : XDAY
+USE MODD_SURF_PAR, ONLY : XUNDEF
+USE MODD_TEB_PAR,  ONLY : XD_FLOOR_DEF, XHC_FLOOR_DEF, XTC_FLOOR_DEF
+!
+USE MODI_BLDSOIL_LAYER_E_BUDGET
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -75,6 +79,7 @@ IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
 !
+CHARACTER(LEN=6), INTENT(IN)       :: HPROGRAM     ! program calling surf. schemes
 LOGICAL,              INTENT(IN)   :: OTI_EVOL      ! true --> internal temp. of
 !                                                   !      of buildings evolves
 !                                                   ! false--> it is fixed
@@ -87,16 +92,18 @@ REAL, DIMENSION(:,:), INTENT(IN)   :: PT_ROOF       ! roof layers temperatures
 REAL, DIMENSION(:,:), INTENT(IN)   :: PT_WALL       ! wall layers temperatures
 REAL, DIMENSION(:),   INTENT(INOUT):: PTI_BLD       ! building air temperature
                                                     ! computed with its equation evolution
-REAL, DIMENSION(:),   INTENT(IN)  :: PTS_FLOOR     ! floor surface temperature
+REAL, DIMENSION(:), INTENT(IN)  :: PTS_FLOOR  ! floor surface temperature
+REAL, DIMENSION(:), INTENT(IN)  :: PT_BLD     ! uppest soil temperatures under buildings
+REAL, DIMENSION(:), INTENT(OUT) :: PG_FLOOR   ! Heat flux into the floor (W/m²(bld))
 !
 !*      0.2    declarations of local variables
 !
+REAL    :: ZTAU  ! temporal filter period
+INTEGER :: IROOF ! number of roof layers
+INTEGER :: IWALL ! number of wall layers
 !
-REAL                           :: ZTAU         ! temporal filter period
-!
-INTEGER                        :: IROOF        ! number of roof layers
-INTEGER                        :: IWALL        ! number of wall layers
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
+!
 !-------------------------------------------------------------------------------
 IF (LHOOK) CALL DR_HOOK('BLD_E_BUDGET',0,ZHOOK_HANDLE)
 !
@@ -106,9 +113,6 @@ IF (LHOOK) CALL DR_HOOK('BLD_E_BUDGET',0,ZHOOK_HANDLE)
 IROOF = SIZE(PT_ROOF,2)
 IWALL = SIZE(PT_WALL,2)
 !
-!!! 27/01/2012 passé dans TEB
-!! PTS_FLOOR(:)= 19. + XTT
-!!! 27/01/2012 passé dans TEB
 !
 !*      2.   no evolution of interior temperature if OTI_EVOL=.FALSE.
 !            --------------------------------------------------------
@@ -136,6 +140,12 @@ ENDWHERE
 !            -----------------------------------------------------
 ! 
 PTI_BLD(:) = MAX( PTI_BLD(:) , PTS_FLOOR (:) )
+!
+!
+!*      6.   evolution equation of soil temperature under buildings
+!            ------------------------------------------------------
+!
+PG_FLOOR(:) = XTC_FLOOR_DEF/XD_FLOOR_DEF*(PTS_FLOOR(:)-PT_BLD(:))
 !
 IF (LHOOK) CALL DR_HOOK('BLD_E_BUDGET',1,ZHOOK_HANDLE)
 !-------------------------------------------------------------------------------

@@ -3,7 +3,8 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE SOILDIF(IO, KK, PK, PEK, DMI, PVEG, PFROZEN1, PFFG, PFFV, PSOILCONDZ, PSOILHCAPZ   )
+      SUBROUTINE SOILDIF(IO, KK, PK, PEK, DMI, PVEG, PFROZEN1, PFFG, PFFV, PSOILCONDZ, &
+                         PSOILHCAPZ , PCVHEATF   )
 !     ##########################################################################
 !
 !!****  *SOIL*  
@@ -65,11 +66,12 @@ USE MODD_ISBA_OPTIONS_n, ONLY : ISBA_OPTIONS_t
 USE MODD_ISBA_n, ONLY : ISBA_K_t, ISBA_P_t, ISBA_PE_t
 USE MODD_DIAG_MISC_ISBA_n, ONLY : DIAG_MISC_ISBA_t
 !
-USE MODD_CSTS,       ONLY : XCL, XCI, XRHOLW, XRHOLI, XPI, XDAY, XCONDI, XTT, XLMTT, XG
+USE MODD_CSTS,       ONLY : XCL, XRHOLW, XPI, XDAY, XTT, XLMTT, XG
 USE MODD_ISBA_PAR,   ONLY : XCONDWTR, XWGMIN, XWTD_MAXDEPTH, & 
                             XOMRHO, XOMSPH, XOMCONDDRY,      &
-                            XOMCONDSLD, XCVHEATF
+                            XOMCONDSLD
 USE MODD_SURF_PAR,   ONLY : XUNDEF
+USE MODI_UPDATE_THERMALPROP
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -88,7 +90,6 @@ TYPE(DIAG_MISC_ISBA_t), INTENT(INOUT) :: DMI
 REAL, DIMENSION(:), INTENT(IN)    :: PVEG
 !                                      Soil and vegetation parameters
 !                                      PVEG = fraction of vegetation
-
 !
 REAL, DIMENSION(:), INTENT(OUT)   :: PFROZEN1
 !                                      PFROZEN1 = fraction of ice in superficial soil
@@ -103,13 +104,13 @@ REAL, DIMENSION(:,:), INTENT(OUT) :: PSOILCONDZ, PSOILHCAPZ
 !                                    PSOILHCAP = soil heat capacity        (J m-3 K-1)
 !                                    PSOILCOND = soil thermal conductivity (W m-1 K-1)
 !
+REAL, INTENT(IN)                 :: PCVHEATF
 !*      0.2    declarations of local variables
 !
 REAL, DIMENSION(SIZE(PEK%XTG,1),SIZE(PEK%XTG,2)) :: ZMATPOT, ZCONDDRYZ, ZCONDSLDZ, ZVEGMULCH
 !                                           ZMATPOT    = soil matric potential (m)
 !
-REAL                         :: ZFROZEN2DF, ZUNFROZEN2DF, ZCONDSATDF, ZLOG_CONDI, ZLOG_CONDWTR,  &
-                                ZSATDEGDF, ZKERSTENDF, ZWORK1, ZWORK2, ZWORK3, ZLOG, ZWTOT, ZWL
+REAL                         :: ZWORK1, ZWORK2, ZWORK3, ZLOG, ZWTOT, ZWL
 !    
 REAL, PARAMETER              :: ZCTMAX = 1.E-4 ! Maximum thermal inertia
 !
@@ -237,48 +238,12 @@ ENDIF
 !*       5.     THE THERMAL CONDUCTIVITY OF BARE-GROUND
 !               ---------------------------------------
 !
-! Calculate thermal conductivity using PL98 :
+! Calculate thermal conductivity using PL98 and soil heat capacity [J/(m3 K)]:
 !
-ZLOG_CONDI   = LOG(XCONDI)
-ZLOG_CONDWTR = LOG(XCONDWTR)
-!
-DO JL=1,INL
-   DO JJ=1,INI
-!     
-      ZFROZEN2DF   = PEK%XWGI(JJ,JL)/(PEK%XWGI(JJ,JL) + MAX(PEK%XWG(JJ,JL),XWGMIN))
-      ZUNFROZEN2DF = (1.0-ZFROZEN2DF)*KK%XWSAT(JJ,JL)
-!
-!Old: CONDSATDF=(CONDSLDZ**(1.0-WSAT))*(CONDI**(WSAT-UNFROZEN2DF))*(CONDWTR**UNFROZEN2DF)  
-      ZWORK1      = LOG(ZCONDSLDZ(JJ,JL))*(1.0-KK%XWSAT(JJ,JL))
-      ZWORK2      = ZLOG_CONDI*(KK%XWSAT(JJ,JL)-ZUNFROZEN2DF)
-      ZWORK3      = ZLOG_CONDWTR*ZUNFROZEN2DF
-      ZCONDSATDF  = EXP(ZWORK1+ZWORK2+ZWORK3)
-!
-      ZSATDEGDF   = MAX(0.1, (PEK%XWGI(JJ,JL)+PEK%XWG(JJ,JL))/KK%XWSAT(JJ,JL))
-      ZSATDEGDF   = MIN(1.0,ZSATDEGDF)
-      ZKERSTENDF  = LOG10(ZSATDEGDF) + 1.0
-      ZKERSTENDF  = (1.0-ZFROZEN2DF)*ZKERSTENDF + ZFROZEN2DF *ZSATDEGDF  
-!
-! Thermal conductivity of soil:
-!
-      PSOILCONDZ(JJ,JL) = ZKERSTENDF*(ZCONDSATDF-ZCONDDRYZ(JJ,JL)) + ZCONDDRYZ(JJ,JL)  
-!
-   ENDDO
-ENDDO
-!
-!-------------------------------------------------------------------------------
-!
-!*       6.     THE HEAT CAPACITY OF BARE-GROUND
-!               --------------------------------
-!
-! Soil Heat capacity [J/(m3 K)]
-!
-DO JL=1,INL
-   DO JJ=1,INI
-      PSOILHCAPZ(JJ,JL) = (1.0-KK%XWSAT(JJ,JL))*KK%XHCAPSOIL(JJ,JL) +       &
-                           PEK%XWG  (JJ,JL) *XCL*XRHOLW + PEK%XWGI (JJ,JL) *XCI*XRHOLI    
-   ENDDO
-ENDDO
+CALL UPDATE_THERMALPROP(PEK%XWG,PEK%XWGI,          &
+                        KK%XHCAPSOIL, ZCONDDRYZ,   &
+                        ZCONDSLDZ, KK%XWSAT,       &
+                        PSOILCONDZ, PSOILHCAPZ    )
 !
 ! Surface soil thermal inertia [(m2 K)/J]
 !
@@ -293,7 +258,7 @@ DMI%XCG(:) = MIN(ZCTMAX,DMI%XCG(:))
 !
 ! Vegetation thermal inertia [(m2 K)/J]
 !
-ZCV(:) = 1.0 / ( XCVHEATF/PEK%XCV(:) +  XCL * PEK%XWR(:) )
+ZCV(:) = 1.0 / ( PCVHEATF/PEK%XCV(:) +  XCL * PEK%XWR(:) )
 !
 ZCV(:) = MIN(ZCTMAX,ZCV(:))
 !

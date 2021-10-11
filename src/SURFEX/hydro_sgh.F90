@@ -40,7 +40,10 @@ USE MODD_SURF_PAR,  ONLY : XUNDEF
 USE MODD_SGH_PAR,   ONLY : XHORT_DEPTH
 !
 #ifdef TOPD
-USE MODD_COUPLING_TOPD, ONLY : LCOUPL_TOPD, XAS_NATURE, XATOP, NMASKT_PATCH
+USE MODD_COUPLING_TOPD, ONLY : LCOUPL_TOPD, XAS_NATURE, XAS_IBV_P,NNBV_IN_MESH,&
+                               XATOP_NATURE, XRUNOFF_IBV_P,NNB_TOPD,&
+                               NNPIX, XWOVSATI_P, NMASKT_PATCH
+USE MODD_TOPODYN,        ONLY   : NNCAT
 #endif
 !
 USE MODI_HYDRO_DT92
@@ -91,7 +94,7 @@ REAL, DIMENSION(SIZE(PK%XDG,1),SIZE(PK%XDG,2)) :: ZWSAT, ZWFC, ZFRZ
 !
 REAL, DIMENSION(SIZE(PPG))                 :: ZPG_WORK, ZRUISDT, ZNL_HORT, ZDEPTH
 !
-REAL, DIMENSION(SIZE(PPG))                 :: ZRUNOFF_TOPD
+REAL, DIMENSION(SIZE(PPG))                 :: ZRUNOFF_TOPD_P
 !
 REAL                                       :: ZEFFICE, ZLOG10, ZLOG, ZS, ZD_H
 !
@@ -99,7 +102,7 @@ REAL                                       :: ZTDIURN, ZSOILHEATCAP
 !                                             ZTDIURN      = thermal penetration depth for restore (m)
 !                                             ZSOILHEATCAP = Total soil volumetric heat capacity [J/(m3 K)]
 !
-INTEGER                                    :: INJ, INL, JJ, JL, IDEPTH
+INTEGER                                    :: INJ, INL, JJ, JL, IDEPTH,JCAT,ICOUNT
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !-------------------------------------------------------------------------------
@@ -139,7 +142,7 @@ ZPG_WORK(:)   = 0.0
 ZRUISDT(:)    = 0.0
 !
 !IO%CRUNOFF = TOPD DUNNE calculation
-ZRUNOFF_TOPD(:) = 0.0
+ZRUNOFF_TOPD_P(:) = 0.0
 !
 !to limit numerical artifacts
 ZPG_INI(:) = PPG(:) + PPG_MELT(:)
@@ -346,19 +349,6 @@ ELSEIF (IO%CRUNOFF=='DT92' .OR. IO%CRUNOFF=='TOPD')THEN
 !
   ZPG_WORK(:) = PPG(:) - DEK%XHORT(:) - DEK%XPFLOOD(:)
 !
-#ifdef TOPD
-  IF ( LCOUPL_TOPD.AND.IO%CRUNOFF == 'TOPD' )THEN
-    !
-    DO JJ=1,SIZE(NMASKT_PATCH)
-      IF (NMASKT_PATCH(JJ)/=0) THEN
-        IF ( XATOP(NMASKT_PATCH(JJ))/=0. .AND. XAS_NATURE(NMASKT_PATCH(JJ))/=XUNDEF ) THEN
-          ZRUNOFF_TOPD(JJ) = MAX(PPG(JJ),0.0) * MAX(XAS_NATURE(NMASKT_PATCH(JJ)),0.0)
-        ENDIF
-      ENDIF 
-    ENDDO
-    !
-  ENDIF
-#endif
   !
   CALL HYDRO_DT92(PTSTEP, KK%XRUNOFFB, ZWWILT_AVG,  PK%XRUNOFFD, ZWSAT_AVG, &
                   ZWG2_AVG, ZWGI2_AVG, ZPG_WORK, ZRUISDT           )
@@ -367,7 +357,18 @@ ELSEIF (IO%CRUNOFF=='DT92' .OR. IO%CRUNOFF=='TOPD')THEN
   !
 #ifdef TOPD
   IF (LCOUPL_TOPD.AND.IO%CRUNOFF == 'TOPD') THEN
-    PDUNNE(:) = ZRUNOFF_TOPD(:) +  PDUNNE(:)*(1-XATOP(NMASKT_PATCH(:)))
+    ICOUNT=1
+    DO JL=1,SIZE(NMASKT_PATCH) !
+      IF (NMASKT_PATCH(JL)/=0) THEN !   
+        ZRUNOFF_TOPD_P(JL)=XWOVSATI_P(JL)
+        XWOVSATI_P(JL)=0. !(hydro_sgh more frequent than coupling) !
+        DO JJ=1,NNCAT
+          ZRUNOFF_TOPD_P(ICOUNT)=ZRUNOFF_TOPD_P(ICOUNT)+XRUNOFF_IBV_P(ICOUNT,JJ)/NNB_TOPD
+        ENDDO
+        PDUNNE(ICOUNT) = ZRUNOFF_TOPD_P(ICOUNT)*XATOP_NATURE(JL) /PTSTEP +  PDUNNE(ICOUNT)*(1-XATOP_NATURE(JL))
+      END IF !
+    END DO
+    ICOUNT=ICOUNT+1
   ENDIF
 #endif
   !

@@ -3,7 +3,8 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !#############################################################
-SUBROUTINE INIT_CHEMICAL_n(KLUOUT, KSV, HSV, SV, HCH_NAMES, HAER_NAMES, &
+SUBROUTINE INIT_CHEMICAL_n(KLUOUT, KSV, HSV, SV, SLT, DST,&
+                           HCH_NAMES, HAER_NAMES, &
                            HDSTNAMES, HSLTNAMES,HSNWNAMES    )  
 !#############################################################
 !
@@ -40,6 +41,8 @@ SUBROUTINE INIT_CHEMICAL_n(KLUOUT, KSV, HSV, SV, HCH_NAMES, HAER_NAMES, &
 !              ------------
 !
 USE MODD_SV_n, ONLY : SV_t
+USE MODD_DST_n, ONLY : DST_t
+USE MODD_SLT_n, ONLY : SLT_t
 !
 USE MODD_CHS_AEROSOL,    ONLY: LVARSIGI, LVARSIGJ
 USE MODD_DST_SURF,       ONLY: LVARSIG_DST, NDSTMDE,  NDST_MDEBEG, LRGFIX_DST, JPMODE_DST
@@ -49,6 +52,8 @@ USE MODI_CH_INIT_NAMES
 USE MODI_DSLT_INIT_NAMES
 USE MODI_DSLT_INIT_MODES
 USE MODI_BLOWSNW_INIT_NAMES
+USE MODI_INIT_DST
+USE MODI_INIT_SLT
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -61,7 +66,9 @@ IMPLICIT NONE
 INTEGER,                          INTENT(IN) :: KLUOUT
 INTEGER,                          INTENT(IN) :: KSV      ! number of scalars
  CHARACTER(LEN=6), DIMENSION(KSV), INTENT(IN) :: HSV      ! name of all scalar variables
- TYPE(SV_t), INTENT(INOUT) :: SV
+ TYPE(SV_t),  INTENT(INOUT) :: SV
+ TYPE(DST_t), INTENT(INOUT) :: DST
+ TYPE(SLT_t), INTENT(INOUT) :: SLT
  CHARACTER(LEN=6), DIMENSION(:), POINTER :: HCH_NAMES
  CHARACTER(LEN=6), DIMENSION(:), POINTER :: HAER_NAMES     
 
@@ -123,6 +130,8 @@ IF (KSV /= 0) THEN
             NDST_MDEBEG,          &!O [idx] index of mass for first mode in scalar list
             NDSTMDE               &!O [nbr] number of modes to be transported
             )
+      CALL INIT_DST(DST)
+       
 
       IF(.NOT. ASSOCIATED(HDSTNAMES)) ALLOCATE (HDSTNAMES(SV%NDSTEQ))
       HDSTNAMES(:) = SV%CSV(SV%NSV_DSTBEG:SV%NSV_DSTEND)
@@ -153,6 +162,7 @@ IF (KSV /= 0) THEN
             NSLT_MDEBEG,          &!O [idx] index of mass for first mode in scalar list
             NSLTMDE               &!O [nbr] number of modes to be transported
             )  
+      CALL INIT_SLT(SLT)
       IF(.NOT. ASSOCIATED(HSLTNAMES)) ALLOCATE (HSLTNAMES(SV%NSLTEQ))
       HSLTNAMES(:) = SV%CSV(SV%NSV_SLTBEG:SV%NSV_SLTEND)
     ENDIF

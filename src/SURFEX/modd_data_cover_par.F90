@@ -34,6 +34,9 @@
 !!      (V.Masson)     15/03/99 add number of layers
 !!      (A.Boone)      02/05/02 add ISBA-ES parameters
 !!      (R.Alkama)     05/2012  add 7 new vegtypes (19 rather than 12)
+!!      (A.Druel)      02/2019  double NPATCH_MAX (for irrigation patch duplication with ECOCLIMAP-SG).
+!!                              Add NCAR_FILES for size of output character variables (before fix at each line)
+!!
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -52,6 +55,7 @@ INTEGER, PARAMETER    :: NCOVER_ECO2_START  = 301
 !
 INTEGER, PARAMETER :: NVEGTYPE_OLD = 19
 INTEGER, PARAMETER :: NVEGTYPE_ECOSG = 20
+INTEGER, PARAMETER :: NPATCH_MAX = NVEGTYPE_ECOSG * 2
 !
 INTEGER, PARAMETER :: NWATTYPE = 2
 INTEGER, PARAMETER :: NSEATYPE = 1
@@ -61,6 +65,8 @@ INTEGER, DIMENSION(4) :: NTYPE = (/NSEATYPE,NWATTYPE,NVEGTYPE_ECOSG,NTWNTYPE/)
 LOGICAL, DIMENSION(NVEGTYPE_ECOSG) :: LVEG_PRES
 !
 INTEGER, PARAMETER :: NCOVER = 573
+!
+INTEGER, PARAMETER :: NCAR_FILES = 40
 !
 INTEGER :: NVEGTYPE
 !
@@ -135,6 +141,7 @@ INTEGER                                :: NDATA_ROOF_LAYER
 INTEGER                                :: NDATA_ROAD_LAYER
 INTEGER                                :: NDATA_WALL_LAYER
 INTEGER                                :: NDATA_FLOOR_LAYER
+INTEGER                                :: NDATA_MASS_LAYER
 !
 !---------------------------------------------------------------------------------
 !* names of all ecosystems

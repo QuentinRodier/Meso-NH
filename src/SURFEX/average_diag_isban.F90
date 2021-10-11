@@ -194,6 +194,16 @@ IF (.NOT. OCANOPY .AND. DGO%N2M>=1) THEN
   !
   D%XWIND10M_MAX(:) = MAX(D%XWIND10M_MAX(:),D%XWIND10M(:))
   !
+  ! Calculation of mean fields
+  !
+  D%NCOUNT_STEP = D%NCOUNT_STEP + 1
+  !
+  D%XT2M_MEAN    (:) = D%XT2M_MEAN    (:) + D%XT2M(:)
+  D%XQ2M_MEAN    (:) = D%XQ2M_MEAN    (:) + D%XQ2M(:)
+  D%XHU2M_MEAN   (:) = D%XHU2M_MEAN   (:) + D%XHU2M(:)
+  D%XZON10M_MEAN (:) = D%XZON10M_MEAN (:) + D%XZON10M(:)
+  D%XMER10M_MEAN (:) = D%XMER10M_MEAN (:) + D%XMER10M(:)
+  !
 END IF
 !
 ! Richardson number
@@ -280,6 +290,7 @@ DA%XH    (:) = 0.
 DA%XLE   (:) = 0.
 DA%XLEI  (:) = 0.
 DA%XGFLUX(:) = 0.
+DA%XQF   (:) = 0.
 !
 DA%XSWD(:) = 0.
 DA%XSWU(:) = 0.

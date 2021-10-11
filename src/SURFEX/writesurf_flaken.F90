@@ -38,6 +38,7 @@
 !              ------------
 !
 USE MODD_FLAKE_n, ONLY : FLAKE_t
+USE MODD_SURF_PAR, ONLY: LEN_HREC
 !
 USE MODI_WRITE_SURF
 !

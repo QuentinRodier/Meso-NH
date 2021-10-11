@@ -109,10 +109,6 @@ S%XCPL_SEA_EVAP(:) = S%XCPL_SEA_EVAP(:) + PTSTEP * PSFTQ(:)
 S%XCPL_SEA_RAIN(:) = S%XCPL_SEA_RAIN(:) + PTSTEP * PRAIN(:)
 S%XCPL_SEA_SNOW(:) = S%XCPL_SEA_SNOW(:) + PTSTEP * PSNOW(:)
 !
-!* Evaporation - Precip (kg/m2)
-! 
-S%XCPL_SEA_EVPR(:) = S%XCPL_SEA_EVPR(:) + S%XCPL_SEA_EVAP(:) - S%XCPL_SEA_RAIN(:) - S%XCPL_SEA_SNOW(:)
-!
 !* Cumulated surface pressure (Pa.s)
 ! 
 S%XCPL_SEA_PRES(:) = S%XCPL_SEA_PRES(:) + PTSTEP * PPS(:)

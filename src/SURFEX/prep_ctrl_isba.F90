@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-SUBROUTINE PREP_CTRL_ISBA(DGO,OSURF_EVAP_BUDGET,OSURF_MISC_BUDGET,OSURF_MISC_DIF,KLUOUT )  
+SUBROUTINE PREP_CTRL_ISBA(DGO,OSURF_EVAP_BUDGET,OSURF_MISC_BUDGET,OSURF_MISC_DIF,OUTCI,KLUOUT )  
 !     #################################################################################################################
 !
 !!****  *PREP_CTRL_ISBA* - routine to check that diagnostics are switched off
@@ -56,6 +56,7 @@ TYPE(DIAG_OPTIONS_t), INTENT(INOUT) :: DGO
 LOGICAL,  INTENT(INOUT) :: OSURF_EVAP_BUDGET  ! flag for surface evaporation budget
 LOGICAL,  INTENT(INOUT) :: OSURF_MISC_BUDGET  ! flag for surface miscellaneous budget
 LOGICAL,  INTENT(INOUT) :: OSURF_MISC_DIF     ! flag for surface miscellaneous dif variables
+LOGICAL,  INTENT(INOUT) :: OUTCI              ! flag for UTCI confort index
 INTEGER,  INTENT(IN)    :: KLUOUT             ! unit number
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
@@ -75,6 +76,7 @@ DGO%LPATCH_BUDGET     = .FALSE.
 OSURF_EVAP_BUDGET = .FALSE.
 OSURF_MISC_BUDGET = .FALSE.
 OSURF_MISC_DIF    = .FALSE.
+OUTCI             = .FALSE.
 !
 WRITE(KLUOUT,*)'ISBA DIAGNOSTICS DESACTIVATED'
 IF (LHOOK) CALL DR_HOOK('PREP_CTRL_ISBA',1,ZHOOK_HANDLE)

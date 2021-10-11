@@ -27,11 +27,13 @@ MODULE MODD_CONST_TARTES
 !!    -------------
 !!      Original    19/07/2013
 !!      M Lafaysse  22/08/2013 Spectral distribution of radiation
+!!       Modified by F. Tuzet (06/2016): Add of a new dimension for impurity: The type of impurity
 !--------------------------------------------------------------------------------
+USE MODD_PREP_SNOW, ONLY: NIMPUR_MAX
 !
 IMPLICIT NONE
 !
-INTEGER, PARAMETER :: NPNIMP = 1 ! number of impurities types
+
 !
 ! INTEGER,PARAMETER::JPNBANDS=106 ! number of bands
 !Wavelength of each band (nanometers)
@@ -108,7 +110,7 @@ REAL, PARAMETER :: XPCOEFNIR_DIF = 0.01216941
 !
 REAL, PARAMETER :: XP_MUDIFF = 0.601815023 ! =cos(53./180.*XPI) : diffuse incident flux is treated as direct flux at incident angle 53deg
 !
-REAL, PARAMETER :: XPMAX_OPTICALDEPTH = 200. !maximum optical depth per layer
+REAL, PARAMETER :: XPMAX_OPTICALDEPTH = 200. !maximum optical depth per layer,200 by default
 REAL, PARAMETER :: XPTAUMAX = 30. !above this optical depth, absorbed energy can be neglected
 !
 ! Real and imaginary components of ice refractive index in the chosen bands
@@ -120,7 +122,18 @@ REAL, DIMENSION(NPNBANDS) :: XGINF ! parameter used for assymetry parameter, fun
 REAL, DIMENSION(NPNBANDS) :: XCONST_C ! constant used for assymetry parameter
 !
 ! Imaginary component of impurities refractive index
-REAL, DIMENSION(NPNBANDS,NPNIMP) :: XREFIMP_I
+REAL, DIMENSION(NPNBANDS,NIMPUR_MAX) :: XREFIMP_I
+
+! Boolean that indicate if the impurity type concerned is treated regarding it's refractive index or concerning its mass absobtion efficiency (MAE).
+LOGICAL, DIMENSION(NIMPUR_MAX) :: L_IS_MAE 
+
+
+! Those values are taken from Caponi et al. 2017 (https://www.atmos-chem-phys.net/17/7175/2017/acp-17-7175-2017.pdf) The default values for now are the ones of Table 4 of this reference. And for now the one of " Lybia; PM2.5 "
+
+REAL, PARAMETER :: XDUST_MAE_400 = 110. ! Dust mass absorptinoefficiency at 400nm
+
+REAL, PARAMETER :: XDUST_AAE = 4.1 ! Dust angstorm exponent 
+
 
 INTEGER, PARAMETER :: NPNBANDS_REF = 191 ! number of reference bands
 
@@ -206,4 +219,41 @@ REAL, PARAMETER :: XPSNOWY0 = 0.728 ! Value of y of snow grains at nr=1.3 (no un
 REAL, PARAMETER :: XPSNOWW0 = 0.0611 ! Value of W of snow grains at nr=1.3 (no unit)
 REAL, PARAMETER :: XPSNOWB0 = 1.225 ! absorption enhancement parameter of snow grains at nr=1.3 and at non absorbing wavelengths (no unit)
 !
+!######################## Empirical parameterization of ice layers in TARTES (added by F.Tuzet). This is just a preliminary version of TARTES+ICE #############################
+
+REAL, PARAMETER :: XIMPUR_ICE = 100E-9   !BC and SSA values of a layer that simulate, it is simulating dirty ice 
+REAL, PARAMETER :: XSSA_ICE = 0.05   !a consistent albedo for ice layers (not perfect but better than nothing),it is simulating dirty ice 
+!
+!######################## Implementation of a threshold on the effective illumination angle (added by F.Tuzet) to avoid numerical instability. #############################
+
+REAL, PARAMETER :: COSILLUMMIN = 0.0017  !Minimum value of the cosine of effective illumination angle corresponding to a maximum value of effective illumination angle of 89.9°
+
+!######################## VALUES FOR DUST ACCORDING TO SKILLES 2016(LOW ABSORPTION) OR MULLER 2011(HIGH ABSORPTION) #############################
+!
+LOGICAL, PARAMETER :: ISMULLER= .TRUE. ! Boolean to determine if we use skilles or muller model
+!
+INTEGER, PARAMETER :: NPNBANDS_SKILLES = 21 ! number of reference bands
+
+! wl in nm corresponding to the refractive index below
+REAL, DIMENSION(NPNBANDS_SKILLES), PARAMETER :: XPWAVELENGTHS_SKILLES= &
+       (/ 299., 350., 400., 450., 500., 550., 600., 650.,&  
+       700., 750., 800., 900., 1000. , 1100., 1200., 1300., 1400., 1500.,&
+       1600.,1700., 2501./)
+
+! Made assumption than the imaginary part of the index coefficient remains constant before 350 nm and after 1700 nm wavelength
+REAL, DIMENSION(NPNBANDS_SKILLES), SAVE:: XPDUSTSKILLES_I= &
+       (/ 0.0019, 0.0018,0.0016,0.0013,0.0011,0.0009,0.0008,&
+       0.0007,0.00067,0.00064,0.00062,0.00063,0.00059,0.00057,&
+       0.00054,0.00052,0.00055,0.00052,0.0005,0.00048,0.00048/)
+
+!######################## VALUES FOR DUST ACCORDING MULLER 2011 #############################
+       
+REAL, DIMENSION(NPNBANDS_SKILLES), SAVE:: XPDUSTMULLER_I= &
+       (/ 0.038, 0.0312,0.0193,0.011,0.0076,0.0048,0.003,&
+       0.0025,0.0021,0.002,0.0018,0.0017,0.0016,0.0016,&
+       0.0016,0.0015,0.0015,0.0015,0.0014,0.0014,0.0014/)
+
+!!BC : properly setting setting soot and BC densities 
+REAL,DIMENSION(3), PARAMETER :: XSNOWIMP_DENSITY = (/1270.,2600.,2000./)!Soot density according to Flanner et.al 2012 (set to 1500 for the paper) and !Dust Density (hess1995)
+
 END MODULE MODD_CONST_TARTES

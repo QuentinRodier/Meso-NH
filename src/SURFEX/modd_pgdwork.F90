@@ -55,10 +55,16 @@ REAL, DIMENSION(:,:,:), ALLOCATABLE :: XALL
                             ! Sum of each cover type data in each mesh                           
 !  
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: XSSO_ALL
-                            ! Sum of each cover type data in each mesh
+                            ! max of orography in a SSO subgrid square
 !
 INTEGER, DIMENSION(:,:,:), ALLOCATABLE :: NSSO_ALL
-                            ! Sum of each cover type data in each mesh     
+                            ! presence of data in a SSO subgrid square
+!  
+REAL, DIMENSION(:,:,:), ALLOCATABLE :: XFSSO_ALL
+                            ! mean of orography in a fractional SSO subgrid square
+!
+INTEGER, DIMENSION(:,:,:), ALLOCATABLE :: NFSSO_ALL
+                            ! number of data in a fractional SSO subgrid square      
 !
 INTEGER, DIMENSION(:,:), ALLOCATABLE:: NSIZE
 !                          ! Number of points inside each mesh of the domain
@@ -74,7 +80,7 @@ INTEGER, DIMENSION(:,:), ALLOCATABLE:: NSIZE_ALL
 !*        0.2    variables for SSO computations
 !                ------------------------------
 !
-REAL,    DIMENSION(:,:,:), ALLOCATABLE :: XSSQO ! mean of orography in a
+REAL,    DIMENSION(:,:,:), ALLOCATABLE :: XSSQO ! max of orography in a
 !                                               ! SSO subgrid square from
 !                                               ! ZMAXSSQ averaged values
 !                                               ! 1st dim: NSSO (x direc.)
@@ -84,6 +90,25 @@ LOGICAL, DIMENSION(:,:,:), ALLOCATABLE :: LSSQO ! presence of data in a SSO
 !                                               ! subgrid square
 INTEGER :: NSSO                                 ! number of SSO subgrid squares
 !                                               ! in each direction in grid mesh
+!
+! Fractional SSO
+!
+LOGICAL                                :: LORORAD     ! activate orographic radiation parameters
+REAL, DIMENSION(:,:,:), ALLOCATABLE    :: XFSSQO      ! mean of orography in a
+!                                                     ! SSO subgrid square from
+!                                                     ! NFSSQO averaged values
+!                                                     ! 1st dim: NFSSO (x direc.)
+!                                                     ! 2st dim: NFSSO (y direc.)
+!                                                     ! 3nd dim: number of grid meshes
+INTEGER, DIMENSION(:,:,:), ALLOCATABLE :: NFSSQO      ! number of contributors to a
+!                                                     ! NFSSO subgrid square
+INTEGER                                :: NFSSO       ! number of FSSO subgrid squares
+!                                                     ! in each direction in grid mesh
+REAL                                   :: XRFSSO      ! reduction factor for computing NFSSO
+INTEGER                                :: NFSSOMAX    ! max for NFSSO (limit for memory reasons)
+REAL                                   :: XHALORADIUS ! radius of the halo in which the horizon is computed (m)
+REAL, PARAMETER                        :: XFLATRAD=0.0! slope angle (rad) under which mesh (or submesh) is considered flat
+!
 !
 !*        0.3    variables for topographic index statistics computations
 !                -------------------------------------------------------

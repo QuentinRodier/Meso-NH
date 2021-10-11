@@ -258,22 +258,23 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !*       3.     LATITUDE
 !               --------
       ZLATISO(:)=-1./XN(KLAMBERT) * ALOG(ABS(ZR(:)/XC(KLAMBERT)))
-!   
+!      
 !$OMP PARALLEL DO PRIVATE(JJ,J,ZLAT0)
       DO JJ=1,SIZE(PLAT)
         ZLAT0  =2. * ATAN (EXP(ZLATISO(JJ))) - XPI/2.
-        DO J=1, 1000
+      DO J=1, 1000
          PLAT(JJ) = 2. * ATAN(                                               &
            ( (1+XECC(KLAMBERT)*SIN(ZLAT0))/(1-XECC(KLAMBERT)*SIN(ZLAT0)) )**(XECC(KLAMBERT)/2.)       &
              *EXP(ZLATISO(JJ)) )  -XPI/2.  
 !
          IF (ABS(PLAT(JJ) - ZLAT0) < XCVGLAT ) EXIT
          ZLAT0=PLAT(JJ)
-        ENDDO
+      ENDDO
       ENDDO
 !$OMP END PARALLEL DO
 !      
       PLAT(:)=PLAT(:) *180./XPI
+!
 IF (LHOOK) CALL DR_HOOK('MODE_GRIDTYPE_IGN:LATLON_IGN',1,ZHOOK_HANDLE)
 !---------------------------------------------------------------------------------
 END SUBROUTINE LATLON_IGN

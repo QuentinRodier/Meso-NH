@@ -6,7 +6,7 @@
     SUBROUTINE ECUME_SEAFLUX(S,PMASK,KSIZE_WATER,KSIZE_ICE,       &
                               PTA,PEXNA,PRHOA,PSST,PEXNS,PQA,     &
                               PRAIN,PSNOW,PVMOD,PZREF,PUREF,PPS,PPA,   &
-                              PQSAT,PSFTH,PSFTQ,PUSTAR,PCD,       &
+                              PQSAT,PSFTH,PSFTQ,PUSTAR,AT,PCD,       &
                               PCDN,PCH,PCE,PRI,PRESA,PZ0HSEA      ) 
 !     #######################################################################
 !
@@ -56,6 +56,7 @@
 USE MODD_SEAFLUX_n, ONLY : SEAFLUX_t
 !
 USE MODD_SURF_PAR,   ONLY : XUNDEF
+USE MODD_SURF_ATM_TURB_n, ONLY : SURF_ATM_TURB_t
 !!
 USE MODI_ICE_SEA_FLUX
 USE MODI_ECUMEV6_FLUX
@@ -87,6 +88,7 @@ REAL, DIMENSION(:), INTENT(IN)    :: PPS   ! air pressure at sea surface (Pa)
 REAL, DIMENSION(:), INTENT(IN)    :: PPA   ! air pressure at atm. level (Pa)
 REAL, DIMENSION(:), INTENT(IN)    :: PRAIN ! precipitation rate (kg/s/m2)
 REAL, DIMENSION(:), INTENT(IN)    :: PSNOW ! snow rate (kg/s/m2)
+TYPE(SURF_ATM_TURB_t), INTENT(IN) :: AT         ! atmospheric turbulence parameters
 !                                                                                 
 !  surface fluxes : latent heat, sensible heat, friction fluxes
 REAL, DIMENSION(:), INTENT(OUT)      :: PSFTH ! heat flux (W/m2)
@@ -253,7 +255,7 @@ IF (YTYPE=='W') THEN
 ELSEIF ( (YTYPE=='I') .AND. (.NOT. S%LHANDLE_SIC)) THEN
   !
   CALL ICE_SEA_FLUX(ZW_Z0SEA,ZW_TA,ZW_EXNA,ZW_RHOA,ZW_SST,ZW_EXNS,ZW_QA,ZW_RAIN,ZW_SNOW,  &
-          ZW_VMOD,ZW_ZREF,ZW_UREF,ZW_PS,ZW_QSAT,ZW_SFTH,ZW_SFTQ,ZW_USTAR,ZW_CD, &
+          ZW_VMOD,ZW_ZREF,ZW_UREF,ZW_PS,ZW_QSAT,ZW_SFTH,ZW_SFTQ,ZW_USTAR,AT,ZW_CD, &
           ZW_CDN,ZW_CH,ZW_RI,ZW_RESA,ZW_Z0HSEA)   
   !
 ENDIF

@@ -2,7 +2,7 @@ SUBROUTINE SNOWPACK_EVOL(HSNOWRES,PBLOWSNW_FLUX,PSNOWHEAT,PSNOWSWE,PSNOWRHO,   &
                         PSNOWGRAN1,PSNOWGRAN2,PSNOWHIST,PSNOWAGE,              &
                         PTSTEP,PRHOA,PTA,PBLOWSNW_CONC,                        &
                         PVMOD,PQA,PPS,PUREF,PEXNS,PDIRCOSZW,PZREF,             &
-                        PZ0EFF,PZ0H,PBLOWSNW_DEP,PTG)
+                        PZ0EFF,PZ0H,PBLOWSNW,PTG)
 !     ######################################################################
 !     ##########################################################################
 !
@@ -111,8 +111,12 @@ IMPLICIT NONE
 !                                      OUT: emitted turbulent flux + streamwise saltation flux
 !                                                   1: number (#/m2/s); 2: mass (kg/m2/s), 3: kg/m/s
 !
-    REAL, DIMENSION(:)   , INTENT(OUT)   :: PBLOWSNW_DEP
-!                                      PBLOWSNW_DEP    = deposion flux of blowing snow particles (sent to Crocus)
+    REAL, DIMENSION(:,:)   , INTENT(OUT)   :: PBLOWSNW
+!                                      PBLOWSNW    =   Properties of deposited blowing snow (sent to Crocus)
+                                      !    1 : Deposition flux (kg/m2/s)
+                                      !    2 : Density of deposited snow (kg/m3)
+                                      !    3 : SGRA1 of deposited snow
+                                      !    4 : SGRA2 of deposited snow
 !
     REAL, INTENT(IN)               :: PTSTEP
 !                                      PTSTEP    = time step of the integration
@@ -177,6 +181,7 @@ INLVLS       = SIZE(PSNOWSWE(:,:),2)
 
 ZSEDFLUX(:,:)= -PBLOWSNW_FLUX(:,1:2)
 ZSALT_CONTR(:) = -PBLOWSNW_FLUX(:,3)
+ZTURBFLUX(:,:) = 0.
 
 ZTOTFLUX_TURB(:,:)=0.
 
@@ -191,13 +196,17 @@ ZSNOWGRAN1(:,:)=PSNOWGRAN1(:,:)
 ZSNOWGRAN2(:,:)=PSNOWGRAN2(:,:)
 ZSNOWHIST(:,:) =PSNOWHIST(:,:)
 ZSNOWAGE(:,:)  =PSNOWAGE(:,:)
-ZSNOWHEAT(:,:) =PSNOWHEAT(:,:)
 ZSNOWRHO(:,:)  =PSNOWRHO(:,:)
 ZSNOWSWE(:,:)  =PSNOWSWE(:,:)
 
+ZSNOWHEAT(:,:) = 0.
+! Conversion of snow heat from J/m3 into J/m2
+WHERE(ZSNOWSWE(:,:)>0.) &
+  ZSNOWHEAT(:,:) = PSNOWHEAT(:,:) / ZSNOWRHO (:,:) * ZSNOWSWE (:,:)  
+
 
 ! Initially : no deposition of blowing snow particles
-PBLOWSNW_DEP(:) = 0.
+PBLOWSNW(:,:) = 0.
 
 
 WHERE (PSNOWSWE(:,:)>0.) 
@@ -214,7 +223,7 @@ ZSNOWTEMP(:,:)= 0.
 WHERE (LAYER_USE(:,:))
 ZSCAP(:,:)     = SNOW3LSCAP(PSNOWRHO)
 !
-ZSNOWTEMP(:,:) = XTT + ( ((PSNOWHEAT(:,:)/ZSNOWDZ(:,:))                   &
+ZSNOWTEMP(:,:) = XTT + ( ((ZSNOWHEAT(:,:)/ZSNOWDZ(:,:))                   &
                  + XLMTT*PSNOWRHO(:,:))/ZSCAP(:,:) )
 !
 ZSNOWLIQ(:,:)  = MAX(0.0,ZSNOWTEMP(:,:)-XTT)*ZSCAP(:,:)*                  &
@@ -300,7 +309,7 @@ LAYER_USE_TMP(:,:)=LAYER_USE(:,:)
               ! Negative net flux : snow deposition
               IF(ZTURBFLUX(JWRK,2)+ZSEDFLUX(JWRK,2)+ZSALT_CONTR(JWRK)<=0.) THEN
                   SWE_DEP=-(ZTURBFLUX(JWRK,2)+ZSEDFLUX(JWRK,2)+ZSALT_CONTR(JWRK))*T_EROSION(JWRK)
-                  PBLOWSNW_DEP(JWRK) = SWE_DEP / PTSTEP
+                  PBLOWSNW(JWRK,1) = SWE_DEP / PTSTEP  ! Flux of deposited blowing snow
                   ZTOTFLUX_TURB(JWRK,:)=ZTOTFLUX_TURB(JWRK,:)+T_EROSION(JWRK)/PTSTEP*ZTURBFLUX(JWRK,:)
                   ZTOTFLUX_SALT(JWRK)=ZTOTFLUX_SALT(JWRK)+T_EROSION(JWRK)/PTSTEP*ZSALTFLUX(JWRK)
                   ZEMIMOB(JWRK) = ZEMIMOB(JWRK)+T_EROSION(JWRK)/PTSTEP*ZMOB
@@ -349,7 +358,7 @@ LAYER_USE_TMP(:,:)=LAYER_USE(:,:)
               !write(*,*) 'Deposition en excedent'   
 
              SWE_DEP=-(ZSEDFLUX(JWRK,2)+ZSALT_CONTR(JWRK))*T_EROSION(JWRK)
-             PBLOWSNW_DEP(JWRK) = SWE_DEP / PTSTEP
+             PBLOWSNW(JWRK,1) = SWE_DEP / PTSTEP
                  write(*,*)'pb T_EROSION',T_EROSION(JWRK),JWRK
                  write(*,*)'pb INLVLS_OLD',SWE_DEP
                  write(*,*) ZTURBFLUX(JWRK,2)
@@ -377,15 +386,26 @@ LAYER_USE_TMP(:,:)=LAYER_USE(:,:)
         PSNOWGRAN2(:,:)=ZSNOWGRAN2(:,:)
         PSNOWHIST (:,:)=ZSNOWHIST (:,:)
         PSNOWAGE  (:,:)=ZSNOWAGE  (:,:)
-        PSNOWHEAT (:,:)=ZSNOWHEAT (:,:)
         PSNOWRHO  (:,:)=ZSNOWRHO  (:,:)
         PSNOWSWE  (:,:)=ZSNOWDZ(:,:)*PSNOWRHO(:,:)
+
+        PSNOWHEAT (:,:)= 0.
+ 
+       !conversion of snow heat from J/m2 into J/m3
+        WHERE(ZSNOWSWE(:,:)>0.)
+            PSNOWHEAT(:,:)=ZSNOWHEAT(:,:)*ZSNOWRHO(:,:)/ZSNOWSWE(:,:)  
+        ENDWHERE        
 
 ! Snow fluxes sent to Canopy or directly to Meso-NH if Canopy is activated
 
         PBLOWSNW_FLUX(:,1)=ZTOTFLUX_TURB(:,1)          ! Save total number turbulent flux
         PBLOWSNW_FLUX(:,2)=ZTOTFLUX_TURB(:,2)          ! Save total mass turbulent flux
         PBLOWSNW_FLUX(:,3)=ZTOTFLUX_SALT(:)            ! Save streamwise saltation flux
+
+! Get properties of deposited blowing snow sent to Crocus
+
+CALL GET_BLOWSNWDEP_PROP(PVMOD,PTA,PUREF,PZ0EFF,PBLOWSNW)
+
 
 IF (LHOOK) CALL DR_HOOK('SNOWPACK_EVOL',1,ZHOOK_HANDLE)
 
@@ -599,7 +619,72 @@ END DO
        IF (LHOOK) CALL DR_HOOK('SNOWPACK_EVOL:SNOWFLUX_GET_TURB',1,ZHOOK_HANDLE)
 
         END SUBROUTINE SNOWFLUX_GET_TURB 
-       
+
+SUBROUTINE GET_BLOWSNWDEP_PROP(PVMOD,PTA,PUREF,PZ0EFF,PBLOWSNW_DEP)
+
+USE MODD_SNOW_PAR        
+
+REAL, DIMENSION(:), INTENT(IN)       :: PTA, PVMOD 
+REAL, DIMENSION(:),INTENT(IN)       :: PZ0EFF,PUREF
+REAL, DIMENSION(:,:), INTENT(INOUT) :: PBLOWSNW_DEP
+
+REAL, DIMENSION(SIZE(PTA))      :: ZSNOWRHOBS
+REAL, DIMENSION(SIZE(PTA))      :: ZSNOWGRAN1BS, ZSNOWGRAN2BS
+
+! Coefficient to adjust wind speed at the height used in the parameterization
+! for:
+!         - density of new snow
+!         - sphericity and dendricity of new snow
+! Default values : 10 m for new snow (Pahaut, 1976) and 5 m for characteristics
+! of snow grains (Guyomarc'h et Merindol, 1998)
+REAL, PARAMETER                    :: PPHREF_WIND_RHO   = 10.
+REAL, PARAMETER                    :: PPHREF_WIND_GRAIN = 5.
+REAL, PARAMETER                    :: PPHREF_WIND_MIN = MIN(PPHREF_WIND_RHO,PPHREF_WIND_GRAIN)*0.5
+REAL, DIMENSION(SIZE(PTA))         :: ZWIND_RHO
+REAL, DIMENSION(SIZE(PTA))         :: ZWIND_GRAIN
+
+REAL ZZ0EFF
+
+ZSNOWRHOBS(:)   = 0.
+ZSNOWGRAN1BS(:) = 0.
+ZSNOWGRAN2BS(:) = 0.
+
+DO JJ = 1,SIZE(PTA(:))
+
+   IF(PBLOWSNW_DEP(JJ,1) > XUEPSI) THEN
+
+    !
+    ! Wind speeds at reference heights for new snow density and charactristics of
+    ! grains of new snow 
+    ! Computed from PVMOD at PUREF (m) assuming a log profile in the SBL 
+    ! and a roughness length equal to PZ0EFF
+    !
+    ZZ0EFF=MIN(PZ0EFF(JJ),PUREF(JJ)*0.5,PPHREF_WIND_MIN)
+    
+    ZWIND_RHO(JJ)   = PVMOD(JJ)*LOG(PPHREF_WIND_RHO/ZZ0EFF)/          &
+                               LOG(PUREF(JJ)/ZZ0EFF)
+    ZWIND_GRAIN(JJ) = PVMOD(JJ)*LOG(PPHREF_WIND_GRAIN/ZZ0EFF)/        &
+                               LOG(PUREF(JJ)/ZZ0EFF)              
+
+    ! Crocus original law for falling snow density                       
+    ZSNOWRHOBS (JJ) = MAX( XRHOSMIN_ES, XSNOWFALL_A_SN + &
+                                   XSNOWFALL_B_SN * ( PTA(JJ)-XTT ) + &
+                                   XSNOWFALL_C_SN * MIN( PVMOD(JJ), SQRT(ZWIND_RHO(JJ) ) ) ) 
+
+!   Parameterization of Vionnet et al (2013) that allows
+!   simulatneous snow transport and snowfall for wind speed higher than 6 m/s
+     ZSNOWGRAN1BS(JJ) = -XGRAN* MAX(MIN(-0.07*(ZWIND_GRAIN(JJ)-2.)+1.,1.),0.2)
+     ZSNOWGRAN2BS(JJ) = XGRAN * MIN(MAX(0.14/4.*(ZWIND_GRAIN(JJ)-2.)+0.5,0.5),0.9)                           
+   ENDIF
+   IF(PBLOWSNW_DEP(JJ,1)<=XUEPSI) PBLOWSNW_DEP(JJ,1)=0.
+
+ENDDO
+
+PBLOWSNW_DEP(:,2) = ZSNOWRHOBS(:)
+PBLOWSNW_DEP(:,3) = ZSNOWGRAN1BS(:)
+PBLOWSNW_DEP(:,4) = ZSNOWGRAN1BS(:)
+
+END SUBROUTINE
 
        SUBROUTINE SNOWEROSION(PSWE_REM,PSNOWHEAT,PSNOWDZ,PSNOWSWE,       &
                                 PSNOWRHO,PSNOWGRAN1,PSNOWGRAN2,PSNOWHIST,&

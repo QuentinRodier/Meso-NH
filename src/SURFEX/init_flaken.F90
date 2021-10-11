@@ -9,7 +9,7 @@ SUBROUTINE INIT_FLAKE_n ( DTCO, OREAD_BUDGETC, UG, U, FM,            &
                           HSV,PCO2,PRHOA,                            &
                           PZENITH,PAZIM,PSW_BANDS,PDIR_ALB,PSCA_ALB, &
                           PEMIS,PTSRAD,PTSURF,                       &
-                          KYEAR, KMONTH,KDAY, PTIME,                 &
+                          KYEAR, KMONTH,KDAY, PTIME,AT,              &
                           HATMFILE,HATMFILETYPE,                     &
                           HTEST                                     )   
 !     #############################################################
@@ -70,6 +70,8 @@ USE MODD_SLT_SURF,       ONLY: LVARSIG_SLT, NSLTMDE, NSLT_MDEBEG, LRGFIX_SLT
 !
 USE MODD_READ_NAMELIST,  ONLY : LNAM_READ
 USE MODD_SURF_PAR,       ONLY : XUNDEF, NUNDEF
+!
+USE MODD_SURF_ATM_TURB_n, ONLY : SURF_ATM_TURB_t
 !
 USE MODI_INIT_IO_SURF_n
 USE MODI_DEFAULT_CH_DEP
@@ -132,6 +134,7 @@ INTEGER,                          INTENT(IN)  :: KMONTH    ! current month (UTC)
 INTEGER,                          INTENT(IN)  :: KDAY      ! current day (UTC)
 REAL,                             INTENT(IN)  :: PTIME     ! current time since
                                                           !  midnight (UTC, s)
+TYPE(SURF_ATM_TURB_t), INTENT(IN) :: AT         ! atmospheric turbulence parameters
 !
  CHARACTER(LEN=28),                INTENT(IN)  :: HATMFILE    ! atmospheric file name
  CHARACTER(LEN=6),                 INTENT(IN)  :: HATMFILETYPE! atmospheric file type
@@ -303,11 +306,11 @@ PTSURF(:) = FM%F%XTS(:)
 !
 !-------------------------------------------------------------------------------
 !
-!*       6.     Chemistry / dust
-!               ----------------
+!*       6.     Chemistry / dust /sea salts
+!               ---------------------------
 !
 !
- CALL INIT_CHEMICAL_n(ILUOUT, KSV, HSV, FM%CHF%SVF,    &      
+ CALL INIT_CHEMICAL_n(ILUOUT, KSV, HSV, FM%CHF%SVF, FM%CHF%SLTF, FM%CHF%DSTF, &      
                      FM%CHF%CCH_NAMES, FM%CHF%CAER_NAMES,      &
                      HDSTNAMES=FM%CHF%CDSTNAMES, HSLTNAMES=FM%CHF%CSLTNAMES  , &
                      HSNWNAMES=FM%CHF%CSNWNAMES  )
@@ -327,8 +330,15 @@ END IF
 !
  CALL DIAG_FLAKE_INIT_n(OREAD_BUDGETC, FM%DFO, FM%DF, FM%DFC, FM%DMF, FM%F, &
                         HPROGRAM,ILU,KSW)
+
 !
 !-------------------------------------------------------------------------------
+!
+!*       8.     atmospheric turbulence parameters
+!               ---------------------------------
+!
+FM%AT=AT
+!
 !-------------------------------------------------------------------------------
 !
 !         End of IO

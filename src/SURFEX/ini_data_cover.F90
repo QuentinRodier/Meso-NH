@@ -38,17 +38,19 @@
 !!    Original    15/12/97
 !!    F.solmon    01/06/00 adaptation for patch approach
 !!    B.Decharme  01/03/09 Arrange cover by user
-!!    G.Pigeon      08/12 add ROUGH_WALL/ROUGH_ROOF
-!!    V. Masson     04/13 merges Arrange cover & garden use option in arrange_cover routine
-!!    R.Alkama      05/15 Add 7 new vegtype (19 rather than 12)
+!!    G.Pigeon     08/2012 add ROUGH_WALL/ROUGH_ROOF
+!!    V. Masson    04/2013 merges Arrange cover & garden use option in arrange_cover routine
+!!    R.Alkama     05/2015 Add 7 new vegtype (19 rather than 12)
+!!    A. Druel     02/2019 Change default values and add new parameter for irrigation
+!!
 !----------------------------------------------------------------------------
 !
 !*    0.     DECLARATION
 !            -----------
 !
 !
-USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
-USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
+USE MODD_DATA_COVER_n,   ONLY : DATA_COVER_t
+USE MODD_SURF_ATM_n,     ONLY : SURF_ATM_t
 !
 USE MODD_TYPE_DATE_SURF
 !
@@ -61,6 +63,7 @@ USE MODD_SURF_PAR,       ONLY : XUNDEF, NUNDEF
 !
 USE MODD_DATA_COVER,     ONLY : XDATA_TOWN, XDATA_NATURE, XDATA_SEA, XDATA_WATER, &
                                   XDATA_LAI, XDATA_VEGTYPE, XDATA_H_TREE,           &
+                                  XDATA_HTRUNK_HVEG, XDATA_WCROWN_HVEG,             &
                                   XDATA_ALB_VEG_VIS, XDATA_ALB_VEG_NIR,             &
                                   XDATA_ALB_SOIL_VIS, XDATA_ALB_SOIL_NIR,           &
                                   XDATA_ALBNIR_VEG, XDATA_ALBVIS_VEG,               &
@@ -74,34 +77,55 @@ USE MODD_DATA_COVER,     ONLY : XDATA_TOWN, XDATA_NATURE, XDATA_SEA, XDATA_WATER
                                   XDATA_GROUND_DEPTH, XDATA_ROOT_DEPTH,             &
                                   XDATA_ROOT_EXTINCTION, XDATA_ROOT_LIN,            &
                                   XDATA_SOILRC_SO2, XDATA_SOILRC_O3,                &
-                                  XDATA_Z0_TOWN, XDATA_Z0H_TOWN, XDATA_ALB_ROOF,    &
+                                  XDATA_Z0_TOWN, XDATA_ALB_ROOF,                    &
                                   XDATA_EMIS_ROOF, XDATA_HC_ROOF, XDATA_TC_ROOF,    &
                                   XDATA_D_ROOF, XDATA_ALB_ROAD, XDATA_EMIS_ROAD,    &
                                   XDATA_HC_ROAD, XDATA_TC_ROAD, XDATA_D_ROAD,       &
                                   XDATA_ALB_WALL, XDATA_EMIS_WALL, XDATA_HC_WALL,   &
                                   XDATA_TC_WALL, XDATA_D_WALL, XDATA_BLD_HEIGHT,    &
                                   XDATA_WALL_O_HOR, XDATA_BLD, XDATA_CAN_HW_RATIO,  &
-                                  XDATA_GARDEN, XDATA_DICE,                         &
+                                  XDATA_ROAD, XDATA_GARDEN, XDATA_DICE,             &
+                                  XDATA_FRAC_HVEG, XDATA_FRAC_LVEG, XDATA_FRAC_NVEG,&
                                   XDATA_H_TRAFFIC, XDATA_LE_TRAFFIC,                &
                                   XDATA_H_INDUSTRY, XDATA_LE_INDUSTRY, XDATA_RE25,  &
                                   XDATA_GMES_ST, XDATA_BSLAI_ST, XDATA_SEFOLD_ST,   &
                                   XDATA_GC_ST, XDATA_DMAX_ST, TDATA_SEED,           &
-                                  TDATA_REAP, XDATA_WATSUP, XDATA_IRRIG,            &
+                                  TDATA_REAP, XDATA_WATSUP, XDATA_IRRIGTYPE,        &
+                                  XDATA_IRRIGTIME,XDATA_IRRIGFRAC,XDATA_IRRIGFREQ,XDATA_F2THRESHOLD,&
                                   XDATA_LAI_ALL_YEARS, LREAD_DATA_COVER,            &
                                   XDATA_HC_FLOOR, XDATA_TC_FLOOR, XDATA_D_FLOOR,    & 
-                                  XDATA_TCOOL_TARGET, XDATA_THEAT_TARGET,           &
-                                  XDATA_F_WASTE_CAN, XDATA_EFF_HEAT, XDATA_QIN,     &
+                                  XDATA_HC_MASS, XDATA_TC_MASS, XDATA_D_MASS,       & 
+                                  XDATA_D_MASS,                                     &
+                                  XDATA_F_WASTE_CAN, XDATA_QIN,                     &
                                   XDATA_QIN_FRAD, XDATA_SHGC, XDATA_U_WIN, XDATA_GR,&
-                                  XDATA_SHGC_SH, XDATA_FLOOR_HEIGHT, XDATA_INF,     &
-                                  XDATA_F_WATER_COND, XDATA_QIN_FLAT,               &
-                                  XDATA_HR_TARGET, XDATA_V_VENT, XDATA_CAP_SYS_HEAT,&
+                                  XDATA_SHGC_SH, XDATA_FLOOR_HEIGHT, XDATA_ISMASS,  &
+                                  XDATA_N50, XDATA_MODQIN_VCD, XDATA_MODQIN_VLD,    &
+                                  XDATA_MODQIN_NIG, XDATA_ISMECH, XDATA_MECHRATE,   &
+                                  XDATA_SHADEARCHI, XDATA_TDESV,                    &
+                                  XDATA_F_WATER_COND,XDATA_DCS_AREA,XDATA_QIN_FLAT, &
+                                  XDATA_HR_TARGET, XDATA_CAP_SYS_HEAT,              &
                                   XDATA_CAP_SYS_RAT, XDATA_T_ADP, XDATA_M_SYS_RAT,  &
-                                  XDATA_COP_RAT, XDATA_T_SIZE_MAX, XDATA_T_SIZE_MIN,&
-                                  XDATA_SHADE, XDATA_NATVENT, XDATA_ROUGH_ROOF,     &
+                                  XDATA_COP_RAT, XDATA_COP_DCS, XDATA_T_SIZE_MAX, XDATA_T_SIZE_MIN,&
+                                  XDATA_NATVENT, XDATA_ROUGH_ROOF,                  &
                                   XDATA_ROUGH_WALL, XDATA_FRAC_GR,XDATA_RESIDENTIAL,&
                                   XDATA_EMIS_PANEL, XDATA_ALB_PANEL,                &
                                   XDATA_EFF_PANEL, XDATA_FRAC_PANEL,                &
-                                  XDATA_GNDLITTER, XDATA_Z0LITTER, XDATA_H_VEG
+                                  XDATA_GNDLITTER, XDATA_Z0LITTER, XDATA_H_VEG,     &
+                                  XDATA_FRACOMP, XDATA_RESIDENTIAL,                 &
+                                  XDATA_THEAT_OCCD, XDATA_THEAT_OCCN,               &
+                                  XDATA_THEAT_VCDD, XDATA_THEAT_VCDN, XDATA_THEAT_VCLD, &
+                                  XDATA_TCOOL_OCCD, XDATA_TCOOL_OCCN, XDATA_TCOOL_VCDD, &
+                                  XDATA_TCOOL_VCDN, XDATA_TCOOL_VCLD, XDATA_FVSUM,      &
+                                  XDATA_FVVAC, XDATA_FSSUM, XDATA_FSVAC, XDATA_FVNIG,   &
+                                  XDATA_FSNIG, XDATA_FOPEN, XDATA_WIN_SW_MAX,           &
+                                  XDATA_DAYWBEG_SCHED, XDATA_HOURBEG_SCHED,         &
+                                  XDATA_BEG_HOLIDAY, XDATA_END_HOLIDAY,             &
+                                  XDATA_MOD_HOLIDAY,                                &
+                                  XDATA_PROBOCC,                                    &
+                                  XDATA_FRAC_HEAT_ELEC, XDATA_FRAC_HEAT_GAS,        &
+                                  XDATA_FRAC_HEAT_FUEL, XDATA_FRAC_HEAT_OTHER,      &
+                                  XDATA_NB_POP, XDATA_SFCO2_RD,                     &
+                                  XDATA_F_HW_GAS, XDATA_HOTWAT
 !
 USE MODD_DATA_COVER_PAR, ONLY : NVEGTYPE, NVEGTYPE_OLD, NVEGTYPE_ECOSG,   &
                                   NVT_NO, NVT_ROCK, NVT_SNOW,             &
@@ -111,7 +135,8 @@ USE MODD_DATA_COVER_PAR, ONLY : NVEGTYPE, NVEGTYPE_OLD, NVEGTYPE_ECOSG,   &
                                   NVT_BOBD, NVT_BOND, NVT_BOGR, NVT_SHRB, &
                                   JPCOVER, NCOVER, NTYPE, NDATA_ROAD_LAYER,  &
                                   NDATA_WALL_LAYER, NDATA_ROOF_LAYER,     &
-                                  NDATA_FLOOR_LAYER, CNAMES, NBARE_SOIL,  &
+                                  NDATA_FLOOR_LAYER, NDATA_MASS_LAYER, &
+                                  CNAMES, NBARE_SOIL,                    &
                                   NROCK, NSEA, NWATER, NPERMSNOW, NUT_CPHR, &
                                   NUT_CPMR, NUT_CPLR, NUT_OPHR, NUT_OPMR, &
                                   NUT_OPLR, NUT_LWLR, NUT_LALR, NUT_SPAR, &
@@ -128,6 +153,7 @@ USE MODI_INIT_TYPES_PARAM
 USE MODI_ABOR1_SFX
 !
 USE MODI_DEFAULT_DATA_COVER
+USE MODI_DEFAULT_URBAN_FRAC_VEG
 !
 USE MODI_DEFAULT_LAI_ECO1_01
 USE MODI_DEFAULT_LAI_ECO1_02
@@ -186,7 +212,7 @@ IMPLICIT NONE
 !            ------------------------
 !
 TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
-TYPE(SURF_ATM_t), INTENT(INOUT) :: U
+TYPE(SURF_ATM_t),   INTENT(INOUT) :: U
 !
 !
 !*    0.2    Declaration of local variables
@@ -216,6 +242,7 @@ IF (ALLOCATED(XDATA_TOWN)) THEN
     DEALLOCATE(XDATA_TOWN,XDATA_GARDEN,XDATA_NATURE,XDATA_WATER,XDATA_SEA)
     DEALLOCATE(XDATA_LAI,XDATA_LAI_ALL_YEARS,XDATA_VEGTYPE)
     DEALLOCATE(XDATA_H_TREE,XDATA_GROUND_DEPTH,XDATA_ROOT_DEPTH,XDATA_DICE)
+    DEALLOCATE(XDATA_HTRUNK_HVEG,XDATA_WCROWN_HVEG)
     DEALLOCATE(XDATA_ROOT_EXTINCTION,XDATA_ROOT_LIN)
     DEALLOCATE(XDATA_ALBNIR_VEG,XDATA_ALBVIS_VEG,XDATA_ALBUV_VEG)
     DEALLOCATE(XDATA_ALB_VEG_VIS,XDATA_ALB_VEG_NIR,XDATA_ALB_SOIL_VIS,XDATA_ALB_SOIL_NIR)
@@ -225,7 +252,8 @@ IF (ALLOCATED(XDATA_TOWN)) THEN
     DEALLOCATE(XDATA_SEFOLD,XDATA_SEFOLD_ST,XDATA_LAIMIN,XDATA_VEG,XDATA_GREEN)
     DEALLOCATE(XDATA_Z0,XDATA_Z0_O_Z0H,XDATA_EMIS_ECO,XDATA_SOILRC_SO2,XDATA_SOILRC_O3)
     DEALLOCATE(XDATA_CE_NITRO,XDATA_CF_NITRO,XDATA_CNA_NITRO,TDATA_SEED,TDATA_REAP)
-    DEALLOCATE(XDATA_IRRIG,XDATA_WATSUP,XDATA_GNDLITTER,XDATA_Z0LITTER,XDATA_H_VEG)
+    DEALLOCATE(XDATA_IRRIGTYPE,XDATA_IRRIGFRAC,XDATA_IRRIGFREQ, XDATA_IRRIGTIME,XDATA_F2THRESHOLD)
+    DEALLOCATE(XDATA_WATSUP,XDATA_GNDLITTER,XDATA_Z0LITTER,XDATA_H_VEG)
     DEALLOCATE(XDATA_Z0_TOWN,XDATA_ALB_ROOF,XDATA_ALB_ROAD,XDATA_ALB_WALL)
     DEALLOCATE(XDATA_EMIS_ROOF,XDATA_EMIS_ROAD,XDATA_EMIS_WALL)
     DEALLOCATE(XDATA_HC_ROOF,XDATA_HC_ROAD,XDATA_HC_WALL,XDATA_HC_FLOOR)
@@ -233,15 +261,36 @@ IF (ALLOCATED(XDATA_TOWN)) THEN
     DEALLOCATE(XDATA_D_ROOF,XDATA_D_ROAD,XDATA_D_WALL,XDATA_D_FLOOR)
     DEALLOCATE(XDATA_BLD_HEIGHT,XDATA_WALL_O_HOR,XDATA_BLD,XDATA_CAN_HW_RATIO)
     DEALLOCATE(XDATA_H_TRAFFIC,XDATA_LE_TRAFFIC,XDATA_H_INDUSTRY,XDATA_LE_INDUSTRY)
-    DEALLOCATE(XDATA_TCOOL_TARGET,XDATA_THEAT_TARGET,XDATA_F_WASTE_CAN)
-    DEALLOCATE(XDATA_EFF_HEAT,XDATA_QIN,XDATA_QIN_FRAD,XDATA_SHGC,XDATA_U_WIN,XDATA_GR)
-    DEALLOCATE(XDATA_SHGC_SH,XDATA_FLOOR_HEIGHT,XDATA_INF,XDATA_F_WATER_COND)
-    DEALLOCATE(XDATA_QIN_FLAT,XDATA_HR_TARGET,XDATA_V_VENT,XDATA_CAP_SYS_HEAT)
-    DEALLOCATE(XDATA_CAP_SYS_RAT,XDATA_T_ADP,XDATA_M_SYS_RAT,XDATA_COP_RAT)
-    DEALLOCATE(XDATA_T_SIZE_MAX,XDATA_T_SIZE_MIN,XDATA_SHADE,XDATA_NATVENT)
+    DEALLOCATE(XDATA_F_WASTE_CAN)
+    DEALLOCATE(XDATA_QIN,XDATA_QIN_FRAD,XDATA_SHGC,XDATA_U_WIN,XDATA_GR)
+    DEALLOCATE(XDATA_SHGC_SH,XDATA_FLOOR_HEIGHT,XDATA_F_WATER_COND,XDATA_DCS_AREA)
+    DEALLOCATE(XDATA_QIN_FLAT,XDATA_HR_TARGET,XDATA_CAP_SYS_HEAT)
+    DEALLOCATE(XDATA_CAP_SYS_RAT,XDATA_T_ADP,XDATA_M_SYS_RAT,XDATA_COP_RAT,XDATA_COP_DCS)
+    DEALLOCATE(XDATA_T_SIZE_MAX,XDATA_T_SIZE_MIN,XDATA_NATVENT)
     DEALLOCATE(XDATA_ROUGH_ROOF,XDATA_ROUGH_WALL,XDATA_RESIDENTIAL,XDATA_FRAC_GR)
     DEALLOCATE(XDATA_EMIS_PANEL,XDATA_ALB_PANEL,XDATA_EFF_PANEL,XDATA_FRAC_PANEL)
     DEALLOCATE(NSEA,NWATER,CNAMES,CNAME)
+    DEALLOCATE(XDATA_FRACOMP, XDATA_RESIDENTIAL)
+    DEALLOCATE(XDATA_THEAT_OCCD, XDATA_THEAT_OCCN)
+    DEALLOCATE(XDATA_THEAT_VCDD, XDATA_THEAT_VCDN, XDATA_THEAT_VCLD)
+    DEALLOCATE(XDATA_TCOOL_OCCD, XDATA_TCOOL_OCCN, XDATA_TCOOL_VCDD)
+    DEALLOCATE(XDATA_TCOOL_VCDN, XDATA_TCOOL_VCLD, XDATA_FVSUM)
+    DEALLOCATE(XDATA_FVVAC, XDATA_FSSUM, XDATA_FSVAC, XDATA_FVNIG)
+    DEALLOCATE(XDATA_FSNIG, XDATA_FOPEN, XDATA_WIN_SW_MAX)
+    DEALLOCATE(XDATA_DAYWBEG_SCHED, XDATA_HOURBEG_SCHED)
+    DEALLOCATE(XDATA_BEG_HOLIDAY, XDATA_END_HOLIDAY)
+    DEALLOCATE(XDATA_PROBOCC)
+    DEALLOCATE(XDATA_FRAC_HEAT_ELEC, XDATA_FRAC_HEAT_GAS)
+    DEALLOCATE(XDATA_FRAC_HEAT_FUEL, XDATA_FRAC_HEAT_OTHER)
+    DEALLOCATE(XDATA_NB_POP, XDATA_SFCO2_RD)
+    DEALLOCATE(XDATA_F_HW_GAS, XDATA_HOTWAT)
+    DEALLOCATE(XDATA_HC_MASS, XDATA_TC_MASS, XDATA_D_MASS)
+    DEALLOCATE(XDATA_D_MASS)
+    DEALLOCATE(XDATA_ISMASS)
+    DEALLOCATE(XDATA_N50, XDATA_MODQIN_VCD, XDATA_MODQIN_VLD)
+    DEALLOCATE(XDATA_MODQIN_NIG, XDATA_ISMECH, XDATA_MECHRATE)
+    DEALLOCATE(XDATA_SHADEARCHI, XDATA_TDESV)
+    DEALLOCATE(XDATA_FRAC_HVEG, XDATA_FRAC_LVEG, XDATA_FRAC_NVEG)
   ENDIF
 ENDIF
 !
@@ -373,6 +422,24 @@ XDATA_VEGTYPE(:,:) = 0.
 ALLOCATE(XDATA_H_TREE(JPCOVER,NVEGTYPE))
 !
 XDATA_H_TREE (:,:) = XUNDEF
+!
+!-------------------------------------------------------------------------------
+!
+!*    2.3.1   height of TRUNK of trees (m)
+!            ---------------
+!
+ALLOCATE(XDATA_HTRUNK_HVEG(JPCOVER,NVEGTYPE))
+!
+XDATA_HTRUNK_HVEG (:,:) = XUNDEF
+!
+!-------------------------------------------------------------------------------
+!
+!*    2.3.2   width of crown of trees
+!            ---------------
+!
+ALLOCATE(XDATA_WCROWN_HVEG(JPCOVER,NVEGTYPE))
+!
+XDATA_WCROWN_HVEG (:,:) = XUNDEF
 !
 !-------------------------------------------------------------------------------
 !
@@ -712,9 +779,25 @@ TDATA_REAP (:,:)%TIME        = 0.
 !*    2.25   irrigated fraction
 !            ------------------
 !
-ALLOCATE(XDATA_IRRIG(JPCOVER,NVEGTYPE))
+ALLOCATE(XDATA_IRRIGTYPE(JPCOVER,NVEGTYPE))
 !
-XDATA_IRRIG (:,:) = 0.                                
+XDATA_IRRIGTYPE (:,:) = 0.
+!
+ALLOCATE(XDATA_IRRIGFRAC(JPCOVER,NVEGTYPE))
+!
+XDATA_IRRIGFRAC(:,:) = 0.05
+!
+ALLOCATE(XDATA_IRRIGFREQ(JPCOVER,NVEGTYPE))
+!
+XDATA_IRRIGFREQ(:,:) = 604800.
+!
+ALLOCATE(XDATA_IRRIGTIME(JPCOVER,NVEGTYPE))
+!
+XDATA_IRRIGTIME(:,:) = 28800.
+!
+ALLOCATE(XDATA_F2THRESHOLD(JPCOVER,36,NVEGTYPE))
+!
+XDATA_F2THRESHOLD(:,:,:) = XUNDEF!0.45
 !
 !-------------------------------------------------------------------------------
 !
@@ -723,7 +806,7 @@ XDATA_IRRIG (:,:) = 0.
 !
 ALLOCATE(XDATA_WATSUP(JPCOVER,NVEGTYPE))
 !
-XDATA_WATSUP (:,:) = 0.                                
+XDATA_WATSUP (:,:) = 30.                                
 !
 !-------------------------------------------------------------------------------
 !
@@ -795,9 +878,10 @@ XDATA_EMIS_WALL (:) = XUNDEF
 !
 !-------------------------------------------------------------------------------
 NDATA_ROOF_LAYER=3
-NDATA_ROAD_LAYER=3
+NDATA_ROAD_LAYER=2
 NDATA_WALL_LAYER=3
 NDATA_FLOOR_LAYER=3
+NDATA_MASS_LAYER=3
 !-------------------------------------------------------------------------------
 !
 !*    3.5    heat capacity for artificial surfaces
@@ -818,6 +902,11 @@ XDATA_HC_WALL (:,:) = XUNDEF
 ALLOCATE(XDATA_HC_FLOOR(JPCOVER,NDATA_FLOOR_LAYER))
 !
 XDATA_HC_FLOOR (:,:) = XUNDEF
+!
+ALLOCATE(XDATA_HC_MASS(JPCOVER,NDATA_MASS_LAYER))
+!
+XDATA_HC_MASS (:,:) = XUNDEF
+!
 !
 !-------------------------------------------------------------------------------
 !
@@ -840,6 +929,10 @@ ALLOCATE(XDATA_TC_FLOOR(JPCOVER,NDATA_FLOOR_LAYER))
 !
 XDATA_TC_FLOOR (:,:) = XUNDEF
 !
+ALLOCATE(XDATA_TC_MASS(JPCOVER,NDATA_MASS_LAYER))
+!
+XDATA_TC_MASS (:,:) = XUNDEF
+!
 !-------------------------------------------------------------------------------
 !
 !*    3.7    depth for artificial surfaces layers
@@ -861,6 +954,10 @@ ALLOCATE(XDATA_D_FLOOR(JPCOVER,NDATA_FLOOR_LAYER))
 !
 XDATA_D_FLOOR (:,:) = XUNDEF
 !
+ALLOCATE(XDATA_D_MASS(JPCOVER,NDATA_MASS_LAYER))
+!
+XDATA_D_MASS (:,:) = XUNDEF
+!
 !-------------------------------------------------------------------------------
 !
 !*    3.8    building height
@@ -881,12 +978,23 @@ XDATA_WALL_O_HOR (:) = XUNDEF
 !
 !-------------------------------------------------------------------------------
 !
-!*    3.10   building fraction
-!            -----------------
+!*    3.10   land over fractions of town
+!            ---------------------------
 !
 ALLOCATE(XDATA_BLD(JPCOVER))
+XDATA_BLD  (:) = XUNDEF
 !
-XDATA_BLD (:) = XUNDEF
+ALLOCATE(XDATA_ROAD(JPCOVER))
+XDATA_ROAD(:) = XUNDEF
+!
+ALLOCATE(XDATA_FRAC_HVEG(JPCOVER))
+XDATA_FRAC_HVEG(:) = XUNDEF
+!
+ALLOCATE(XDATA_FRAC_LVEG(JPCOVER))
+XDATA_FRAC_LVEG(:) = XUNDEF
+!
+ALLOCATE(XDATA_FRAC_NVEG(JPCOVER))
+XDATA_FRAC_NVEG(:) = XUNDEF
 !
 !-------------------------------------------------------------------------------
 !
@@ -917,69 +1025,73 @@ XDATA_LE_INDUSTRY(:) = XUNDEF
 !*    3.13   For TEB-BEM
 !            ------------
 !
-ALLOCATE(XDATA_TCOOL_TARGET (JPCOVER))
-ALLOCATE(XDATA_THEAT_TARGET (JPCOVER))
-!
-XDATA_TCOOL_TARGET (:) = XUNDEF
-XDATA_THEAT_TARGET (:) = XUNDEF
-!
 ALLOCATE(XDATA_F_WASTE_CAN (JPCOVER))
-ALLOCATE(XDATA_EFF_HEAT    (JPCOVER))
 ALLOCATE(XDATA_QIN         (JPCOVER))
 ALLOCATE(XDATA_QIN_FRAD    (JPCOVER))
+ALLOCATE(XDATA_QIN_FLAT    (JPCOVER))
+ALLOCATE(XDATA_MODQIN_VCD  (JPCOVER))
+ALLOCATE(XDATA_MODQIN_VLD  (JPCOVER))
+ALLOCATE(XDATA_MODQIN_NIG  (JPCOVER))
 ALLOCATE(XDATA_SHGC        (JPCOVER))
 ALLOCATE(XDATA_U_WIN       (JPCOVER))
 ALLOCATE(XDATA_GR          (JPCOVER))
 ALLOCATE(XDATA_SHGC_SH     (JPCOVER))
 ALLOCATE(XDATA_FLOOR_HEIGHT(JPCOVER))
-ALLOCATE(XDATA_INF         (JPCOVER))
+ALLOCATE(XDATA_ISMASS      (JPCOVER))
+ALLOCATE(XDATA_N50         (JPCOVER))
 !
 XDATA_F_WASTE_CAN (:) = XUNDEF
-XDATA_EFF_HEAT    (:) = XUNDEF
 XDATA_QIN         (:) = XUNDEF
 XDATA_QIN_FRAD    (:) = XUNDEF
+XDATA_QIN_FLAT    (:) = XUNDEF
+XDATA_MODQIN_VCD  (:) = XUNDEF
+XDATA_MODQIN_VLD  (:) = XUNDEF
+XDATA_MODQIN_NIG  (:) = XUNDEF
 XDATA_SHGC        (:) = XUNDEF
 XDATA_U_WIN       (:) = XUNDEF
 XDATA_GR          (:) = XUNDEF
 XDATA_SHGC_SH     (:) = XUNDEF
 XDATA_FLOOR_HEIGHT(:) = XUNDEF
-XDATA_INF         (:) = XUNDEF
+XDATA_ISMASS      (:) = XUNDEF
 !
 ALLOCATE(XDATA_F_WATER_COND(JPCOVER))
-ALLOCATE(XDATA_QIN_FLAT    (JPCOVER))
+ALLOCATE(XDATA_DCS_AREA    (JPCOVER))
 ALLOCATE(XDATA_HR_TARGET   (JPCOVER))
-ALLOCATE(XDATA_V_VENT      (JPCOVER))
 ALLOCATE(XDATA_CAP_SYS_HEAT(JPCOVER))
 ALLOCATE(XDATA_CAP_SYS_RAT (JPCOVER))
 ALLOCATE(XDATA_T_ADP       (JPCOVER))
 ALLOCATE(XDATA_M_SYS_RAT   (JPCOVER))
 ALLOCATE(XDATA_COP_RAT     (JPCOVER))
+ALLOCATE(XDATA_COP_DCS     (JPCOVER))
 ALLOCATE(XDATA_T_SIZE_MAX  (JPCOVER))
 ALLOCATE(XDATA_T_SIZE_MIN  (JPCOVER))
-ALLOCATE(XDATA_SHADE       (JPCOVER))
+ALLOCATE(XDATA_ISMECH      (JPCOVER))
+ALLOCATE(XDATA_MECHRATE    (JPCOVER))
+ALLOCATE(XDATA_SHADEARCHI  (JPCOVER))
 ALLOCATE(XDATA_NATVENT     (JPCOVER))
+ALLOCATE(XDATA_TDESV       (JPCOVER))
 !
 XDATA_F_WATER_COND(:) = XUNDEF
-XDATA_QIN_FLAT    (:) = XUNDEF
+XDATA_DCS_AREA    (:) = XUNDEF
 XDATA_HR_TARGET   (:) = XUNDEF
-XDATA_V_VENT      (:) = XUNDEF
 XDATA_CAP_SYS_HEAT(:) = XUNDEF
 XDATA_CAP_SYS_RAT (:) = XUNDEF
 XDATA_T_ADP       (:) = XUNDEF
 XDATA_M_SYS_RAT   (:) = XUNDEF
 XDATA_COP_RAT     (:) = XUNDEF
+XDATA_COP_DCS     (:) = XUNDEF
 XDATA_T_SIZE_MAX  (:) = XUNDEF
 XDATA_T_SIZE_MIN  (:) = XUNDEF
-XDATA_SHADE       (:) = 0.
-XDATA_NATVENT     (:) = 0.
+XDATA_ISMECH      (:) = XUNDEF
+XDATA_MECHRATE    (:) = XUNDEF
+XDATA_SHADEARCHI  (:) = XUNDEF
+XDATA_NATVENT     (:) = XUNDEF
+XDATA_TDESV       (:) = XUNDEF
 !
 ALLOCATE(XDATA_ROUGH_ROOF (JPCOVER))
 ALLOCATE(XDATA_ROUGH_WALL (JPCOVER))
 XDATA_ROUGH_ROOF(:) = XUNDEF 
 XDATA_ROUGH_WALL(:) = XUNDEF
-!
-ALLOCATE(XDATA_RESIDENTIAL (JPCOVER))
-XDATA_RESIDENTIAL(:) = XUNDEF
 !
 !-------------------------------------------------------------------------------
 !
@@ -1006,6 +1118,88 @@ XDATA_EFF_PANEL  (:) = XUNDEF
 XDATA_FRAC_PANEL (:) = XUNDEF
 !
 !-------------------------------------------------------------------------------
+!
+!*    3.16   For Human behaviour 
+!            -------------------
+!
+ALLOCATE(XDATA_FRACOMP   (JPCOVER))
+ALLOCATE(XDATA_RESIDENTIAL(JPCOVER))
+ALLOCATE(XDATA_THEAT_OCCD(JPCOVER))
+ALLOCATE(XDATA_THEAT_OCCN(JPCOVER))
+ALLOCATE(XDATA_THEAT_VCDD(JPCOVER))
+ALLOCATE(XDATA_THEAT_VCDN(JPCOVER))
+ALLOCATE(XDATA_THEAT_VCLD(JPCOVER))
+ALLOCATE(XDATA_TCOOL_OCCD(JPCOVER))
+ALLOCATE(XDATA_TCOOL_OCCN(JPCOVER))
+ALLOCATE(XDATA_TCOOL_VCDD(JPCOVER))
+ALLOCATE(XDATA_TCOOL_VCDN(JPCOVER))
+ALLOCATE(XDATA_TCOOL_VCLD(JPCOVER))
+ALLOCATE(XDATA_FVSUM(JPCOVER))
+ALLOCATE(XDATA_FVVAC(JPCOVER))
+ALLOCATE(XDATA_FSSUM(JPCOVER))
+ALLOCATE(XDATA_FSVAC(JPCOVER))
+ALLOCATE(XDATA_FVNIG(JPCOVER))
+ALLOCATE(XDATA_FSNIG(JPCOVER))
+ALLOCATE(XDATA_FOPEN(JPCOVER))
+ALLOCATE(XDATA_WIN_SW_MAX(JPCOVER))
+ALLOCATE(XDATA_DAYWBEG_SCHED(JPCOVER,3))
+ALLOCATE(XDATA_HOURBEG_SCHED(JPCOVER,4))
+ALLOCATE(XDATA_BEG_HOLIDAY(JPCOVER,1))
+ALLOCATE(XDATA_END_HOLIDAY(JPCOVER,1))
+ALLOCATE(XDATA_MOD_HOLIDAY(JPCOVER))
+ALLOCATE(XDATA_PROBOCC(JPCOVER,12))
+!
+XDATA_FRACOMP    (:) = XUNDEF
+XDATA_RESIDENTIAL(:) = XUNDEF
+XDATA_THEAT_OCCD (:) = XUNDEF
+XDATA_THEAT_OCCN (:) = XUNDEF
+XDATA_THEAT_VCDD (:) = XUNDEF
+XDATA_THEAT_VCDN (:) = XUNDEF
+XDATA_THEAT_VCLD (:) = XUNDEF
+XDATA_TCOOL_OCCD (:) = XUNDEF
+XDATA_TCOOL_OCCN (:) = XUNDEF
+XDATA_TCOOL_VCDD (:) = XUNDEF
+XDATA_TCOOL_VCDN (:) = XUNDEF
+XDATA_TCOOL_VCLD (:) = XUNDEF
+XDATA_FVSUM (:) = XUNDEF
+XDATA_FVVAC (:) = XUNDEF
+XDATA_FSSUM (:) = XUNDEF
+XDATA_FSVAC (:) = XUNDEF
+XDATA_FVNIG (:) = XUNDEF
+XDATA_FSNIG (:) = XUNDEF
+XDATA_FOPEN (:) = XUNDEF
+XDATA_WIN_SW_MAX(:) = XUNDEF
+XDATA_DAYWBEG_SCHED(:,:) = XUNDEF
+XDATA_HOURBEG_SCHED(:,:) = XUNDEF
+XDATA_BEG_HOLIDAY(:,:) = XUNDEF
+XDATA_BEG_HOLIDAY(:,:) = XUNDEF
+XDATA_PROBOCC (:,:) = XUNDEF
+!
+!
+!-------------------------------------------------------------------------------
+!
+!*    3.17   For CO2 fluxes 
+!            --------------
+!
+ALLOCATE(XDATA_FRAC_HEAT_ELEC (JPCOVER))
+ALLOCATE(XDATA_FRAC_HEAT_GAS  (JPCOVER))
+ALLOCATE(XDATA_FRAC_HEAT_FUEL (JPCOVER))
+ALLOCATE(XDATA_FRAC_HEAT_OTHER(JPCOVER))
+ALLOCATE(XDATA_NB_POP         (JPCOVER))
+ALLOCATE(XDATA_SFCO2_RD       (JPCOVER))
+ALLOCATE(XDATA_F_HW_GAS       (JPCOVER))
+ALLOCATE(XDATA_HOTWAT         (JPCOVER))
+!
+XDATA_FRAC_HEAT_ELEC  (:) = XUNDEF
+XDATA_FRAC_HEAT_GAS   (:) = XUNDEF
+XDATA_FRAC_HEAT_FUEL  (:) = XUNDEF
+XDATA_FRAC_HEAT_OTHER (:) = XUNDEF
+XDATA_NB_POP          (:) = XUNDEF
+XDATA_SFCO2_RD        (:) = XUNDEF
+XDATA_F_HW_GAS        (:) = XUNDEF
+XDATA_HOTWAT          (:) = XUNDEF
+!
+!-------------------------------------------------------------------------------
 !-------------------------------------------------------------------------------
 !-------------------------------------------------------------------------------
 !
@@ -1025,15 +1219,16 @@ ELSEIF (LREAD_DATA_COVER) THEN
   CALL READ_COVERS_PARAM(1)
 ELSE
   CALL DEFAULT_DATA_COVER(XDATA_TOWN,XDATA_NATURE,XDATA_WATER,XDATA_SEA,        &
-         XDATA_Z0_TOWN,XDATA_BLD_HEIGHT,XDATA_WALL_O_HOR,XDATA_BLD,XDATA_GARDEN,&
+         XDATA_Z0_TOWN,XDATA_BLD_HEIGHT,XDATA_WALL_O_HOR,XDATA_BLD,XDATA_ROAD,XDATA_GARDEN,&
          XDATA_ALB_ROOF,XDATA_ALB_ROAD,XDATA_ALB_WALL,XDATA_EMIS_ROOF,          &
          XDATA_EMIS_ROAD,XDATA_EMIS_WALL,XDATA_HC_ROOF,XDATA_TC_ROOF,           &
          XDATA_D_ROOF,XDATA_HC_ROAD,XDATA_TC_ROAD,XDATA_D_ROAD,                 &
          XDATA_HC_WALL,XDATA_TC_WALL,XDATA_D_WALL,XDATA_H_TRAFFIC,              &
          XDATA_LE_TRAFFIC,XDATA_H_INDUSTRY,XDATA_LE_INDUSTRY,                   &
-         XDATA_VEGTYPE,XDATA_H_TREE,XDATA_WATSUP,XDATA_IRRIG,                   &
+         XDATA_VEGTYPE,XDATA_H_TREE,XDATA_WATSUP,XDATA_IRRIGTYPE,               &
+         XDATA_HTRUNK_HVEG,XDATA_WCROWN_HVEG,&
          XDATA_ROOT_DEPTH,XDATA_GROUND_DEPTH,XDATA_DICE,TDATA_SEED,             &
-         TDATA_REAP)
+         TDATA_REAP,XDATA_IRRIGTIME,XDATA_IRRIGFRAC,XDATA_IRRIGFREQ,XDATA_F2THRESHOLD)
   !
   CALL DEFAULT_LAI_ECO1_01
   CALL DEFAULT_LAI_ECO1_02
@@ -1081,6 +1276,10 @@ ENDIF
 !
 IF (.NOT.U%LECOSG) CALL COVER301_573
 !
+!-------------------------------------------------------------------------------
+! new definition of vegetation fractions
+CALL DEFAULT_URBAN_FRAC_VEG(XDATA_TOWN, XDATA_GARDEN,XDATA_VEGTYPE,          &
+                            XDATA_FRAC_HVEG, XDATA_FRAC_LVEG, XDATA_FRAC_NVEG)
 !-------------------------------------------------------------------------------
 !
 !default values for ECOSG
@@ -1164,7 +1363,14 @@ IF (U%LECOSG) THEN
   WHERE(XDATA_VEGTYPE(:,10)>0.) XDATA_H_TREE(:,10) = 10.0
   WHERE(XDATA_VEGTYPE(:,11)>0.) XDATA_H_TREE(:,11) = 15.0
   WHERE(XDATA_VEGTYPE(:,12)>0.) XDATA_H_TREE(:,12) = 1.0
-    
+  WHERE(XDATA_VEGTYPE(:,19)>0.) XDATA_H_TREE(:,19) = 10.0
+
+  !height_trunk_trees
+  WHERE(XDATA_VEGTYPE(:,:)>0.) XDATA_HTRUNK_HVEG(:,:) = 3.0
+
+  !width_crown_trees
+  WHERE(XDATA_VEGTYPE(:,:)>0) XDATA_WCROWN_HVEG(:,:) = 5.0
+
   !ice_depth
   WHERE(XDATA_VEGTYPE(:,1)>0.) XDATA_DICE(:,1) = 0.5
   WHERE(XDATA_VEGTYPE(:,2)>0.) XDATA_DICE(:,2) = 0.2
@@ -1220,13 +1426,10 @@ IF (U%LECOSG) THEN
     XDATA_D_ROOF  (:,3) = 0.100                                      
     XDATA_HC_ROAD (:,1) = 1.94 * 1.E6                                    
     XDATA_HC_ROAD (:,2) = 1.28 * 1.E6                                  
-    XDATA_HC_ROAD (:,3) = 1.28 * 1.E6                                 
     XDATA_TC_ROAD (:,1) = 0.7454                                 
     XDATA_TC_ROAD (:,2) = 0.2513                                
-    XDATA_TC_ROAD (:,3) = 0.2513                              
-    XDATA_D_ROAD  (:,1) = 0.050                            
-    XDATA_D_ROAD  (:,2) = 0.100                            
-    XDATA_D_ROAD  (:,3) = 1.000                         
+    XDATA_D_ROAD  (:,1) = 0.100                            
+    XDATA_D_ROAD  (:,2) = 1.000                         
     XDATA_HC_WALL (:,1) = 1.55 * 1.E6                        
     XDATA_HC_WALL (:,2) = 1.55 * 1.E6                         
     XDATA_HC_WALL (:,3) = 0.29 * 1.E6                   
@@ -1238,20 +1441,6 @@ IF (U%LECOSG) THEN
     XDATA_D_WALL  (:,3) = 0.050
     XDATA_LE_TRAFFIC(:) = 0.
     XDATA_LE_INDUSTRY(:)= 0.
-  END WHERE
-  !
-  WHERE(XDATA_VEGTYPE(:,8)>0.) 
-    XDATA_WATSUP(:,8) = 0.   
-    XDATA_IRRIG (:,8) = 0.00
-  END WHERE
-  !                                               
-  WHERE(XDATA_VEGTYPE(:,9)>0.) 
-    XDATA_WATSUP(:,9) = 30.   
-    XDATA_IRRIG (:,9) = 1.00  
-    TDATA_SEED  (:,9)%TDATE%DAY   = 10
-    TDATA_SEED  (:,9)%TDATE%MONTH = 05
-    TDATA_REAP  (:,9)%TDATE%DAY   = 01                                                
-    TDATA_REAP  (:,9)%TDATE%MONTH = 08
   END WHERE
   !
 ELSE
@@ -1318,40 +1507,95 @@ DO JCOV = 1, JPCOVER
   XDATA_D_FLOOR(JCOV,2) = 0.04
   XDATA_D_FLOOR(JCOV,3) = 0.10
   !
-  XDATA_TCOOL_TARGET(JCOV) = 297.16
-  XDATA_THEAT_TARGET(JCOV) = 292.16
+  XDATA_HC_MASS(JCOV,:) = 2016000.
+  XDATA_TC_MASS(JCOV,:) = 1.95
+  XDATA_D_MASS(JCOV,1) = 0.01
+  XDATA_D_MASS(JCOV,2) = 0.10
+  XDATA_D_MASS(JCOV,3) = 0.01
+  !
   XDATA_F_WASTE_CAN(JCOV)  = 1.0
-  XDATA_EFF_HEAT(JCOV)     = 0.9
   XDATA_QIN(JCOV)          = 5.8
   XDATA_QIN_FRAD(JCOV)     = 0.2
-  XDATA_QIN_FLAT(JCOV)     = 0.2
+  XDATA_QIN_FLAT(JCOV)     = 0.
+  XDATA_MODQIN_VCD  (JCOV) = 1.0
+  XDATA_MODQIN_VLD  (JCOV) = 1.0
+  XDATA_MODQIN_NIG  (JCOV) = 1.0
   XDATA_SHGC(JCOV)         = 0.763
   XDATA_U_WIN(JCOV)        = 2.716
   XDATA_GR(JCOV)           = 0.3
   XDATA_SHGC_SH(JCOV)      = 0.763
   XDATA_FLOOR_HEIGHT(JCOV) = 3.0
-  XDATA_INF(JCOV)          = 0.5
+  XDATA_ISMASS(JCOV)       = 1.0
+  XDATA_N50(JCOV)          = 8.0
   XDATA_F_WATER_COND(JCOV) = 0.
-  XDATA_QIN_FLAT(JCOV)     = 0.2
+  XDATA_DCS_AREA(JCOV)     = 0.  
   XDATA_HR_TARGET(JCOV)    = 0.5
-  XDATA_V_VENT(JCOV)       = 0.0
   XDATA_CAP_SYS_HEAT(JCOV) = 100.
   XDATA_CAP_SYS_RAT(JCOV)  = 90.
   XDATA_T_ADP(JCOV)        = 285.66
   XDATA_M_SYS_RAT(JCOV)    = 0.0067
   XDATA_COP_RAT(JCOV)      = 2.5
+  XDATA_COP_DCS(JCOV)      = 3.5
   XDATA_T_SIZE_MAX(JCOV)   = 301.95
   XDATA_T_SIZE_MIN(JCOV)   = 268.96
-  XDATA_SHADE(JCOV)        = 0.0
-  XDATA_NATVENT(JCOV)      = 0.0  
-  XDATA_ROUGH_ROOF(JCOV)   = 1.52  
-  XDATA_ROUGH_WALL(JCOV)   = 1.52  
-  XDATA_RESIDENTIAL(JCOV)  = 1.
+  XDATA_ISMECH  (JCOV)     = 0.0
+  XDATA_MECHRATE(JCOV)     = 0.0
+  XDATA_SHADEARCHI(JCOV)   = 0.0
+  XDATA_NATVENT(JCOV)      = 0.0
+  XDATA_TDESV(JCOV)        = 295.16
+  XDATA_ROUGH_ROOF(JCOV)   = 1.52
+  XDATA_ROUGH_WALL(JCOV)   = 1.52
   !
   XDATA_EMIS_PANEL (JCOV) = 0.9
   XDATA_ALB_PANEL  (JCOV) = 0.1
   XDATA_EFF_PANEL  (JCOV) = 0.14
   XDATA_FRAC_PANEL (JCOV) = 0.
+  !
+  XDATA_THEAT_OCCD (JCOV) = 293.16
+  XDATA_THEAT_OCCN (JCOV) = 293.16
+  XDATA_THEAT_VCDD (JCOV) = 293.16
+  XDATA_THEAT_VCDN (JCOV) = 293.16
+  XDATA_THEAT_VCLD (JCOV) = 293.16
+  XDATA_TCOOL_OCCD (JCOV) = 300.16
+  XDATA_TCOOL_OCCN (JCOV) = 300.16
+  XDATA_TCOOL_VCDD (JCOV) = 300.16
+  XDATA_TCOOL_VCDN (JCOV) = 300.16
+  XDATA_TCOOL_VCLD (JCOV) = 300.16
+  XDATA_FVSUM (JCOV) = 0.0 
+  XDATA_FVVAC (JCOV) = 0.0
+  XDATA_FSSUM (JCOV) = 0.0
+  XDATA_FSVAC (JCOV) = 0.0
+  XDATA_FVNIG (JCOV) = 0.0
+  XDATA_FSNIG (JCOV) = 0.0
+  XDATA_FOPEN (JCOV) = 0.0
+  XDATA_WIN_SW_MAX (JCOV) = 150.0
+  !
+  XDATA_DAYWBEG_SCHED (JCOV,1) = 1
+  XDATA_DAYWBEG_SCHED (JCOV,2) = 6
+  XDATA_DAYWBEG_SCHED (JCOV,3) = 7
+  !
+  XDATA_HOURBEG_SCHED (JCOV,1) = 5
+  XDATA_HOURBEG_SCHED (JCOV,2) = 7
+  XDATA_HOURBEG_SCHED (JCOV,3) = 16
+  XDATA_HOURBEG_SCHED (JCOV,4) = 23
+  !
+  XDATA_BEG_HOLIDAY (JCOV,1) = 400.0
+  XDATA_END_HOLIDAY (JCOV,1) = 400.0
+  XDATA_MOD_HOLIDAY (JCOV)   = 1.0  
+  !
+  XDATA_PROBOCC (JCOV,:) = 1.0
+  !
+  XDATA_FRAC_HEAT_ELEC(JCOV) =    0.5
+  XDATA_FRAC_HEAT_GAS(JCOV) =    0.25
+  XDATA_FRAC_HEAT_FUEL(JCOV) =    0.25
+  XDATA_FRAC_HEAT_OTHER(JCOV) =    0.
+  XDATA_NB_POP(JCOV) =    0.  ! Number of people per square kilometer
+  XDATA_SFCO2_RD(JCOV) =    0. !(kg/m2 of town/s)
+  XDATA_F_HW_GAS (JCOV) =    0. ! fraction of water heat by gas
+  XDATA_HOTWAT(JCOV) =    0. ! Energy needed for hot water [W m-2(floor)]
+  XDATA_FRACOMP(JCOV) =   1. ! Fractions of compartments in BEM
+  XDATA_RESIDENTIAL(JCOV) =   1. ! Residential fraction
+  !
   !  
   IF (XDATA_GARDEN(JCOV)/=0.) THEN
     DO JVEG=1,NVEGTYPE
@@ -2532,9 +2776,9 @@ ENDIF
 !*    9.     Arrange cover (optional nam_pgd_arrange_cover & option to use !gardens or not)
 !            ------------------------------------------------------------------------------
 !
- CALL ARRANGE_COVER(DTCO, U%LWATER_TO_NATURE, U%LTOWN_TO_ROCK,                   &
-                    XDATA_NATURE,XDATA_TOWN,XDATA_SEA,XDATA_WATER,XDATA_VEGTYPE, &
-                    XDATA_GARDEN,U%LGARDEN, XDATA_BLD, XDATA_WALL_O_HOR            )
+ CALL ARRANGE_COVER(DTCO, U%LECOSG, U%LWATER_TO_NATURE, U%LTOWN_TO_ROCK,            &
+                   XDATA_NATURE,XDATA_TOWN,XDATA_SEA,XDATA_WATER,XDATA_VEGTYPE,    &
+                   XDATA_GARDEN,U%LGARDEN, XDATA_BLD, XDATA_ROAD, XDATA_WALL_O_HOR )
 !
 !-------------------------------------------------------------------------------
 !
@@ -2548,6 +2792,7 @@ IF (.NOT.U%LECOSG) CALL ECOCLIMAP2_LAI(DTCO%NYEAR)
 !*    11.    Secondary variables on natural covers
 !            -------------------------------------
 !
+IF (IDC == 0) THEN
  CALL INI_DATA_PARAM(PH_TREE=XDATA_H_TREE,PLAI=XDATA_LAI, &
                      PALBNIR_VEG=XDATA_ALBNIR_VEG, PALBVIS_VEG=XDATA_ALBVIS_VEG,                    &
                      PALBUV_VEG=XDATA_ALBUV_VEG, PRSMIN=XDATA_RSMIN,                                &
@@ -2563,6 +2808,7 @@ IF (.NOT.U%LECOSG) CALL ECOCLIMAP2_LAI(DTCO%NYEAR)
                      PGMES_ST=XDATA_GMES_ST, PGC_ST=XDATA_GC_ST, PBSLAI_ST=XDATA_BSLAI_ST,          &
                      PSEFOLD_ST=XDATA_SEFOLD_ST, PDMAX_ST=XDATA_DMAX_ST,                            &
                      PGNDLITTER=XDATA_GNDLITTER, PH_VEG=XDATA_H_VEG, PZ0LITTER=XDATA_Z0LITTER      )
+ENDIF
 !
 IDC = 1
 !

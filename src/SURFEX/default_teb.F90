@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE DEFAULT_TEB(HZ0H,PTSTEP,POUT_TSTEP, HCH_BEM, PDT_RES, PDT_OFF)
+      SUBROUTINE DEFAULT_TEB(HZ0H,HZ0EFF_GD,PTSTEP,POUT_TSTEP, HCH_BEM, HURB_LM, HSOLAR_PANEL)
 !     ########################################################################
 !
 !!****  *DEFAULT_TEB* - routine to set default values for the configuration for TEB scheme
@@ -50,12 +50,13 @@ IMPLICIT NONE
 !              -------------------------
 !
 !
- CHARACTER(LEN=6),  INTENT(OUT) :: HZ0H       ! TEB option for z0h roof & road
- CHARACTER(LEN=5),  INTENT(OUT) :: HCH_BEM    ! TEB option building conv. coef.
+CHARACTER(LEN=6),  INTENT(OUT) :: HZ0H       ! TEB option for z0h roof & road
+CHARACTER(LEN=4),  INTENT(OUT) :: HZ0EFF_GD  ! TEB option for effective roughness length for low urban vegetation
+CHARACTER(LEN=5),  INTENT(OUT) :: HCH_BEM    ! TEB option building conv. coef.
+CHARACTER(LEN=4),  INTENT(OUT) :: HURB_LM    ! TEB option for urban mixing length
+CHARACTER(LEN=3),  INTENT(OUT) :: HSOLAR_PANEL ! TEB solar panel option
 REAL,              INTENT(OUT) :: PTSTEP     ! time step for run
 REAL,              INTENT(OUT) :: POUT_TSTEP ! time step for writing
-REAL,              INTENT(OUT) :: PDT_RES    ! target temperature change when unoccupied (K) (residential buildings)
-REAL,              INTENT(OUT) :: PDT_OFF    ! target temperature change when unoccupied (K) (offices buildings)
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !*       0.2   Declarations of local variables
@@ -64,12 +65,15 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('DEFAULT_TEB',0,ZHOOK_HANDLE)
+!
 HZ0H       = 'KAND07'
+HZ0EFF_GD  = 'LR21'     ! Lemonsu Redon et al 2021
 PTSTEP     = XUNDEF
 POUT_TSTEP = XUNDEF
-HCH_BEM    = 'DOE-2'
-PDT_RES    = 0.
-PDT_OFF    = 0.
+HCH_BEM    = 'ROW30'
+HURB_LM    = 'LMEZ'
+HSOLAR_PANEL='PV '
+!
 IF (LHOOK) CALL DR_HOOK('DEFAULT_TEB',1,ZHOOK_HANDLE)
 !
 !-------------------------------------------------------------------------------

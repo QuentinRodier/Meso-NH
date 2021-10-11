@@ -3,22 +3,25 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE ISBA_MEB(IO, KK, PK, PEK, DK, DEK, DMK, G, AG,                     &
-                          TPTIME, OMEB, OSHADE, HIMPLICIT_WIND, PTSTEP,             &
-                          PSOILHCAPZ, PSOILCONDZ, PFROZEN1, PPS, PZENITH,           &
-                          PSCA_SW, PSW_RAD, PVMOD, PRR, PSR, PRHOA, PTA, PQA,       &
-                          PDIRCOSZW, PEXNS, PEXNA, PPET_A_COEF, PPET_B_COEF,        &
-                          PPEQ_A_COEF, PPEQ_B_COEF, PPEW_A_COEF, PPEW_B_COEF,       &
-                          PZREF, PUREF, PZ0G_WITHOUT_SNOW, PZ0_MEBV, PZ0H_MEBV,     &
-                          PZ0EFF_MEBV, PZ0_MEBN, PZ0H_MEBN, PZ0EFF_MEBN,            &
-                          PALBNIR_TVEG, PALBVIS_TVEG, PALBNIR_TSOIL, PALBVIS_TSOIL, &
-                          PABC, PIACAN, PPOI, PCSP, PRESP_BIOMASS_INST, PPALPHAN,   &
-                          PF2, PLW_RAD, PGRNDFLUX, PFLSN_COR, PUSTAR, PEMIST,       &
-                          PHU_AGG, PAC_AGG, PDELHEATV_SFC, PDELHEATG_SFC, PDELHEATG,&
-                          PDELHEATN, PDELHEATN_SFC, PRESTOREN, PTDEEP_A, PDEEP_FLUX,&
-                          PRISNOW, PSNOW_THRUFAL, PSNOW_THRUFAL_SOIL, PEVAPCOR,     &
-                          PSUBVCOR, PLITCOR, PSNOWSFCH, PQSNOW,                     &
-                          PRN_SHADE, PRN_SUNLIT,PBLOWSNW_FLUX, PBLOWSNW_CONC )
+      SUBROUTINE ISBA_MEB(IO, KK, PK, PEK, DK, DEK, DMK, G, AG,                &
+                          TPTIME, OMEB, OSHADE, HIMPLICIT_WIND, PTSTEP,        &
+                          PSOILHCAPZ, PSOILCONDZ, PFROZEN1, PPS, PZENITH,      &
+                          PANGL_ILLUM,PSCA_SW, PSW_RAD, PVMOD, PVDIR, PRR,     &
+                          PSR,PRHOA, PTA, PQA,PDIRCOSZW, PSLOPE_DIR,PEXNS,     &
+                          PEXNA, PPET_A_COEF, PPET_B_COEF,PPEQ_A_COEF,         &
+                          PPEQ_B_COEF, PPEW_A_COEF, PPEW_B_COEF, AT, PZREF,    &
+                          PUREF, PZ0G_WITHOUT_SNOW, PZ0_MEBV, PZ0H_MEBV,       &
+                          PZ0EFF_MEBV, PZ0_MEBN, PZ0H_MEBN, PZ0EFF_MEBN,       &
+                          PALBNIR_TVEG, PALBVIS_TVEG, PALBNIR_TSOIL,           &
+                          PALBVIS_TSOIL,PABC,PIACAN,PPOI,NPAR_VEG_IRR_USE,PCSP,&
+                          PRESP_BIOMASS_INST,PPALPHAN,PF2,PLW_RAD,             &
+                          PGRNDFLUX,PFLSN_COR,PUSTAR,PEMIST,PHU_AGG,PAC_AGG,   &
+                          PDELHEATV_SFC, PDELHEATG_SFC, PDELHEATG,PDELHEATN,   &
+                          PDELHEATN_SFC, PRESTOREN, PTDEEP_A, PDEEP_FLUX,      &
+                          PRISNOW,PSNOW_THRUFAL,PSNOW_THRUFAL_SOIL,PEVAPCOR,   &
+                          PSUBVCOR, PLITCOR, PSNOWSFCH, PQSNOW, KTAB_SYT,      &
+                          P_DIR_SW, P_SCA_SW, PIMPWET, PIMPDRY,                &
+                          PRN_SHADE, PRN_SUNLIT,PBLOWSNW_FLUX, PBLOWSNW_CONC ) 
 !     ##########################################################################
 !
 !                             
@@ -62,30 +65,35 @@
 !!      (A. Boone)     02/2017  Owing to fix to FAPAIR.F90 routine (called by
 !!                              RAIDATIVE_TRANSFERT.F90 herein), edited slightly        
 !!                              SWnet computations to be compatible.
+!!      (A. Druel)     02/2019  Streamlines the code and adapt it to be compatible with irrigation (and new patches)
 !!
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
 !               ------------
+USE MODD_PREP_SNOW,      ONLY : NIMPUR
 !
-USE MODD_ISBA_OPTIONS_n, ONLY : ISBA_OPTIONS_t
-USE MODD_ISBA_n, ONLY : ISBA_K_t, ISBA_P_t, ISBA_PE_t
-USE MODD_SFX_GRID_n, ONLY : GRID_t
-USE MODD_AGRI_n, ONLY : AGRI_t
-USE MODD_DIAG_n, ONLY : DIAG_t
+USE MODD_ISBA_OPTIONS_n,   ONLY : ISBA_OPTIONS_t
+USE MODD_ISBA_n,           ONLY : ISBA_K_t, ISBA_P_t, ISBA_PE_t
+USE MODD_SFX_GRID_n,       ONLY : GRID_t
+USE MODD_AGRI_n,           ONLY : AGRI_t
+USE MODD_DIAG_n,           ONLY : DIAG_t
 USE MODD_DIAG_EVAP_ISBA_n, ONLY : DIAG_EVAP_ISBA_t
 USE MODD_DIAG_MISC_ISBA_n, ONLY : DIAG_MISC_ISBA_t
 !
-USE MODD_SURF_PAR,       ONLY : XUNDEF
-USE MODD_CSTS,           ONLY : XCPD, XDAY, XRHOLW, XLVTT, XLSTT 
-USE MODD_MEB_PAR,        ONLY : XSW_WGHT_VIS, XSW_WGHT_NIR
-USE MODD_ISBA_PAR,       ONLY : XRS_MAX, XLIMH
-USE MODD_DATA_COVER_PAR, ONLY : NVT_SNOW
+USE MODD_SURF_PAR,         ONLY : XUNDEF
+USE MODD_CSTS,             ONLY : XCPD, XRHOLW, XLVTT, XLSTT
+USE MODD_MEB_PAR,          ONLY : XSW_WGHT_VIS, XSW_WGHT_NIR
+USE MODD_ISBA_PAR,         ONLY : XRS_MAX, XLIMH
+USE MODD_DATA_COVER_PAR,   ONLY : NVT_SNOW, NVEGTYPE 
+USE MODD_AGRI,             ONLY : NVEG_IRR
 !
-USE MODD_TYPE_DATE_SURF, ONLY : DATE_TIME
+USE MODD_TYPE_DATE_SURF,   ONLY : DATE_TIME
+!
+USE MODD_SURF_ATM_TURB_n,  ONLY : SURF_ATM_TURB_t
 !
 USE MODE_THERMOS
-USE MODE_MEB,            ONLY : SNOW_INTERCEPT_EFF
+USE MODE_MEB,              ONLY : SNOW_INTERCEPT_EFF
 !
 USE MODI_WET_LEAVES_FRAC
 USE MODI_VEG
@@ -100,6 +108,9 @@ USE MODI_HYDRO_VEG
 USE MODI_SNOW3L_ISBA
 USE MODI_RADIATIVE_TRANSFERT
 USE MODI_COTWORES
+USE MODN_IO_OFFLINE ,      ONLY : XTSTEP_SURF    ! time step of the surface
+!
+USE MODD_AGRI,             ONLY : LIRRIGMODE
 !
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -136,6 +147,7 @@ REAL,                 INTENT(IN)    :: PTSTEP        ! Model time step (s)
 !
 REAL, DIMENSION(:),   INTENT(IN)    :: PPS           ! Pressure [Pa]
 REAL, DIMENSION(:),   INTENT(IN)    :: PZENITH       ! solar zenith angle
+REAL, DIMENSION(:),   INTENT(IN)    :: PANGL_ILLUM   !BC
 REAL, DIMENSION(:),   INTENT(IN)    :: PSW_RAD       ! solar (shortwave) incoming radiation [W/m2]
 REAL, DIMENSION(:),   INTENT(IN)    :: PLW_RAD       ! thermal (longwave) incoming radiation [W/m2]
 REAL, DIMENSION(:),   INTENT(IN)    :: PSCA_SW       ! solar diffuse incoming radiation [W/m2]
@@ -146,6 +158,7 @@ REAL, DIMENSION(:),   INTENT(IN)    :: PSR           ! Snow rate (kg/m2/s)
 REAL, DIMENSION(:),   INTENT(IN)    :: PRHOA         ! air density (kg/m3)
 REAL, DIMENSION(:),   INTENT(IN)    :: PVMOD         ! modulus of the wind
 !                                                    ! parallel to the orography (m/s)
+REAL, DIMENSION(:), INTENT(IN)      :: PVDIR         ! wind direction
 REAL, DIMENSION(:),   INTENT(IN)    :: PTA           ! Temperature of atmosphere (K)
 REAL, DIMENSION(:),   INTENT(IN)    :: PQA           ! specific humidity of atmosphere (kg/kg)
 REAL, DIMENSION(:),   INTENT(IN)    :: PZREF         ! normal distance of the first
@@ -157,6 +170,7 @@ REAL, DIMENSION(:),   INTENT(IN)    :: PUREF         ! reference height of the w
 !                                                    ! NOT when coupled to a model (MesoNH)
 REAL, DIMENSION(:),   INTENT(IN)    :: PDIRCOSZW     ! Director Cosinus along the z
 !                                                    ! direction at the surface w-point
+REAL, DIMENSION(:),   INTENT(IN)    :: PSLOPE_DIR    ! Slope direction
 REAL, DIMENSION(:,:), INTENT(IN)    :: PSOILHCAPZ    ! ISBA-DF Soil heat capacity 
 !                                                    ! profile [J/(m3 K)]
 REAL, DIMENSION(:,:), INTENT(IN)    :: PSOILCONDZ    ! ISBA-DF Soil conductivity  
@@ -179,6 +193,7 @@ REAL, DIMENSION(:),   INTENT(IN)    :: PZ0EFF_MEBV   ! roughness length for mome
 REAL, DIMENSION(:),   INTENT(IN)    :: PZ0_MEBN      ! roughness length for momentum over MEB snow part of patch (m)
 REAL, DIMENSION(:),   INTENT(IN)    :: PZ0H_MEBN     ! roughness length for heat over MEB snow part of path (m)
 REAL, DIMENSION(:),   INTENT(IN)    :: PZ0EFF_MEBN   ! roughness length for momentum over MEB snow part of patch (m)
+REAL, DIMENSION(:,:), INTENT(IN )   :: P_DIR_SW, P_SCA_SW ! direct and diffuse spectral irradiance (W/m2/um)
 !
 ! implicit atmospheric coupling coefficients:
 !
@@ -191,18 +206,27 @@ REAL, DIMENSION(:),   INTENT(IN)    :: PPET_A_COEF, PPET_B_COEF, &
 !                                                    ! PPET_B_COEF  B-air temperature coefficient
 !                                                    ! PPEQ_A_COEF  A-air specific humidity coefficient
 !                                                    ! PPEQ_B_COEF  B-air specific humidity coefficient
-REAL, DIMENSION(:),   INTENT(IN)    :: PTDEEP_A          ! Deep soil temperature boundary condition 
-!                                                         ! (prescribed)     
+!
+TYPE(SURF_ATM_TURB_t), INTENT(IN)   :: AT            ! atmospheric turbulence parameters
+!
+REAL, DIMENSION(:),   INTENT(IN)    :: PTDEEP_A      ! Deep soil temperature boundary condition 
+!                                                    ! (prescribed)     
 !                                      PTDEEP_A = Deep soil temperature
 !                                                 coefficient depending on flux
 !
 ! ISBA-Ags parameters
 ! (see also parameters with 'Ags:' in comments)
 !
-REAL, DIMENSION(:),   INTENT(IN) :: PCSP       ! atmospheric CO2 concentration
-!                                                 [ppmm]=[kg CO2 / kg air]
-REAL, DIMENSION(:),   INTENT(IN) :: PPOI       ! Gaussian weights (as above)
-!                                              ! temperature
+REAL, DIMENSION(:),   INTENT(IN)   :: PCSP           ! atmospheric CO2 concentration
+!                                                    ! [ppmm]=[kg CO2 / kg air]
+REAL, DIMENSION(:,:),   INTENT(IN) :: PIMPWET
+REAL, DIMENSION(:,:),   INTENT(IN) :: PIMPDRY
+!
+REAL, DIMENSION(:),     INTENT(IN) :: PPOI       ! Gaussian weights (as above)
+!                                                ! temperature
+INTEGER, DIMENSION(:),  INTENT(IN) :: NPAR_VEG_IRR_USE ! vegtype with irrigation
+!
+INTEGER, DIMENSION(:),  INTENT(IN) :: KTAB_SYT   ! Array of index defining opposite points for Sytron
 ! - - - - - - - - - - - - - - - - - - - - 
 !
 REAL, DIMENSION(:),   INTENT(INOUT) :: PABC          ! Ags: abscissa needed for integration
@@ -286,6 +310,7 @@ REAL, DIMENSION(SIZE(PEK%TSNOW%WSNOW,1),SIZE(PEK%TSNOW%WSNOW,2)) :: ZSNOWLIQ    
 REAL, DIMENSION(SIZE(PEK%TSNOW%WSNOW,1),SIZE(PEK%TSNOW%WSNOW,2)) :: ZTAU_N               ! snow rad transmission coef at layer base (-)
 REAL, DIMENSION(SIZE(PPS))                         :: ZCHIP                ! 
 REAL, DIMENSION(SIZE(PPS))                         :: ZALBS                ! Effective surface (ground) albedo
+REAL, DIMENSION(SIZE(PPS))                         :: ZSOILALB             ! Effective surface (ground) albedo for Tartes
 REAL, DIMENSION(SIZE(PPS))                         :: ZSIGMA_F             ! LW transmission factor
 REAL, DIMENSION(SIZE(PPS))                         :: ZSIGMA_FN            ! LW transmission factor - including buried (snow) 
 !                                                                          ! vegetation effect
@@ -458,7 +483,7 @@ REAL, DIMENSION(SIZE(PEK%XWR,1))         :: ZPHASEL  ! Phase changement in litte
 REAL, DIMENSION(SIZE(PEK%XWR,1))         :: ZCTSFC 
 REAL, DIMENSION(SIZE(PEK%XWR,1))         :: ZFROZEN1SFC
 !
-INTEGER :: INJ, INL, JJ, JL
+INTEGER :: INJ, INL, JJ, JL, JTYPE, JTYPE2
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------
@@ -525,7 +550,17 @@ CALL PREP_MEB_SOIL(IO%LMEB_LITTER, PSOILHCAPZ, PSOILCONDZ, KK, PK, PEK, &
 !*      2.0    Preliminaries for energy and radiation budget
 !              ---------------------------------------------
 !
-ZPERMSNOWFRAC(:) = PK%XVEGTYPE_PATCH(:,NVT_SNOW)
+IF ( NVEG_IRR == 0 ) THEN
+  ZPERMSNOWFRAC(:) = PK%XVEGTYPE_PATCH(:,NVT_SNOW)
+ELSE
+  ZPERMSNOWFRAC(:) = 0.
+  DO JTYPE = 1, SIZE(PK%XVEGTYPE_PATCH,2) ! = NVEG_IRR + NVEGTYPE
+    JTYPE2 = JTYPE
+    IF ( JTYPE > NVEGTYPE) JTYPE2 = NPAR_VEG_IRR_USE( JTYPE - NVEGTYPE )
+    IF ( JTYPE2 == NVT_SNOW ) ZPERMSNOWFRAC(:) = ZPERMSNOWFRAC(:) + PK%XVEGTYPE_PATCH(:,JTYPE)
+  ENDDO
+ENDIF
+!
 !
 ! Local working:
 ! - possibly adjust these prognostic variables locally, but do not save
@@ -534,10 +569,11 @@ ZSNOWRHO(:,:)    = PEK%TSNOW%RHO (:,:)
 ZSNOWAGE(:,:)    = PEK%TSNOW%AGE (:,:)
 ZSNOWSWE(:,:)    = PEK%TSNOW%WSNOW(:,:)
 !
-CALL PREPS_FOR_MEB_EBUD_RAD(PPS, PEK%XLAI, ZSNOWRHO, ZSNOWSWE, PEK%TSNOW%HEAT, ZSNOWLIQ, &
-                            DMK%XSNOWTEMP, DMK%XSNOWDZ, ZSNOWCOND, ZSNOWHCAP,  &
-                            PEK%TSNOW%EMIS, ZSIGMA_F, ZCHIP, PTSTEP, PSR, PTA, &
-                            PVMOD, ZSNOWAGE, ZPERMSNOWFRAC  )
+CALL PREPS_FOR_MEB_EBUD_RAD(PPS, PEK%XLAI, ZSNOWRHO, ZSNOWSWE, PEK%TSNOW%HEAT, &
+                            ZSNOWLIQ, DMK%XSNOWTEMP, DMK%XSNOWDZ, ZSNOWCOND,   &
+                            ZSNOWHCAP, PEK%TSNOW%EMIS, ZSIGMA_F, ZCHIP, PTSTEP,&
+                            PSR, PTA, PVMOD, ZSNOWAGE, ZPERMSNOWFRAC,          &
+                            PEK%TSNOW%SCHEME, IO%CSNOWCOND )
 !
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 !
@@ -546,9 +582,20 @@ CALL PREPS_FOR_MEB_EBUD_RAD(PPS, PEK%XLAI, ZSNOWRHO, ZSNOWSWE, PEK%TSNOW%HEAT, Z
 !
 ! Calculate snow albedo: split into spectral bands:
 !
-CALL SNOWALB_SPECTRAL_BANDS_MEB(PK%XVEGTYPE_PATCH, PEK, ZSNOWRHO, ZSNOWAGE, PPS,&
+ZSOILALB(:)=PALBVIS_TSOIL(:)*XSW_WGHT_VIS+PALBNIR_TSOIL(:)*XSW_WGHT_NIR
+IF (PEK%TSNOW%SCHEME=="CRO") THEN
+  CALL SNOWCROALB_SPECTRAL_BANDS_MEB(ZPERMSNOWFRAC, PEK%TSNOW%ALB, ZSNOWRHO,   &
+                                     ZSNOWAGE,PEK%TSNOW%GRAN1,PEK%TSNOW%GRAN2, &
+                                     PEK%TSNOW%IMPUR,PPS,PSW_RAD,PEK%XPSN,     &
+                                     DMK%XSNOWDZ,PZENITH, ZSOILALB,            &
+                                     PEK%TSNOW%ALBVIS,PEK%TSNOW%ALBNIR,        &
+                                     PEK%TSNOW%ALBFIR,ZTAU_N,IO%CSNOWMETAMO,   &
+                                     IO%CSNOWRAD,IO%LATMORAD)
+
+ELSE
+  CALL SNOWALB_SPECTRAL_BANDS_MEB(ZPERMSNOWFRAC, PEK, ZSNOWRHO, ZSNOWAGE, PPS, &
                                 DMK%XSNOWDZ,PZENITH, ZTAU_N)
-!
+ENDIF
 !
 ! NOTE, currently MEB only uses 2 of 3 potential snow albedo spectral bands
 !
@@ -568,7 +615,8 @@ END WHERE
                           PSW_RAD, ZLAI, PZENITH, PABC, PEK%XFAPARC, PEK%XFAPIRC,    &
                           PEK%XMUS, PEK%XLAI_EFFC, OSHADE, ZIACAN,  ZIACAN_SUNLIT,   &
                           ZIACAN_SHADE, ZFRAC_SUN, DMK%XFAPAR, DMK%XFAPIR,           &
-                          DMK%XFAPAR_BS, DMK%XFAPIR_BS, PRN_SHADE, PRN_SUNLIT )    
+                          DMK%XFAPAR_BS, DMK%XFAPIR_BS, NPAR_VEG_IRR_USE,            &
+                          PRN_SHADE, PRN_SUNLIT)    
 
 ! Compute all-wavelength effective ground (soil+snow) surface,
 ! soil and veg albedos, respectively:
@@ -697,8 +745,8 @@ ELSE IF (MAXVAL(PEK%XGMES) /= XUNDEF .OR. MINVAL(PEK%XGMES) /= XUNDEF) THEN
                          ! so no need for LE correction (only required for composite ISBA) 
    CALL COTWORES(PTSTEP, IO, OSHADE,  PK, PEK, PK%XDMAX, PPOI, PCSP, PEK%XTV, &
                  PF2, PSW_RAD, PEK%XQC, ZQSAT, PPALPHAN, ZDELTA, PRHOA,       &
-                 PZENITH, ZFFV, ZIACAN_SUNLIT, ZIACAN_SHADE, ZFRAC_SUN,       &
-                 ZIACAN, PABC, ZRS, DEK%XGPP, PRESP_BIOMASS_INST(:,1))
+                 PZENITH, ZFFV, NPAR_VEG_IRR_USE, ZIACAN_SUNLIT, ZIACAN_SHADE,&
+                 ZFRAC_SUN, ZIACAN, PABC, ZRS, DEK%XGPP, PRESP_BIOMASS_INST(:,1))
    PEK%XLE(:) = ZWORK(:)
 !
    PIACAN(:,:) = ZIACAN(:,:)
@@ -807,7 +855,7 @@ LOOP_TIME_SPLIT_EB: DO JDT=1,JTSPLIT_EB
 !*      7.1    Aerodynamic drag and heat transfer coefficients
 !              -----------------------------------------------
 !
-   CALL DRAG_MEB(IO, PEK, DMK, DK,  &
+   CALL DRAG_MEB(IO, PEK, AT, DMK, DK,                               &
                  ZTGL(:,1), ZTA_IC,  ZQA_IC, ZVMOD, ZWSFC, ZWISFC,   &
                  ZWSAT(:,1), ZWFC(:,1), PEXNS, PEXNA, PPS, PRR, PSR, &
                  PRHOA, PZ0G_WITHOUT_SNOW, PZ0_MEBV, PZ0H_MEBV,      &
@@ -900,12 +948,14 @@ DEK%XIRRIG_FLUX(:) = 0.0
 !* add irrigation over vegetation to liquid precipitation (rr)
 !  Water "need" treated as if sprayed from above (over vegetation and soil):
 !
-IF (SIZE(AG%LIRRIGATE,1)>0) THEN
-  WHERE (AG%LIRRIGATE(:) .AND. PEK%XIRRIG(:)>0. .AND. PEK%XIRRIG(:) /= XUNDEF .AND. (PF2(:)<AG%XTHRESHOLDSPT(:)) )
-    DEK%XIRRIG_FLUX(:) = PEK%XWATSUP(:) / XDAY           
-    ZRR            (:) = PRR(:) + PEK%XWATSUP(:)/XDAY
-    AG%LIRRIDAY    (:) = .TRUE.           
-  END WHERE
+! Spraying irrigation
+IF ( LIRRIGMODE ) THEN
+  IF (SIZE(AG%LIRRIGATE)>0) THEN
+    WHERE (AG%LIRRIGATE(:) .AND. PEK%XIRRIGTYPE(:) == 1 )
+      DEK%XIRRIG_FLUX(:) = PEK%XWATSUP / PEK%XIRRIGTIME(:)
+      ZRR   (:) = ZRR(:) + PEK%XWATSUP(:) / PEK%XIRRIGTIME(:)
+    ENDWHERE
+  ENDIF
 ENDIF
 !
 ! Call canopy interception...here because meltwater should be allowed to fall
@@ -930,28 +980,30 @@ ZVEGFACT(:) = ZSIGMA_F(:)*(1.0-PPALPHAN(:)*PEK%XPSN(:))
 !              ----------------------------------------------------------------
 !
  IF (PRESENT(PBLOWSNW_FLUX)) THEN
-   CALL SNOW3L_ISBA(IO, G, PK, PEK, DK, DEK, DMK, OMEB, HIMPLICIT_WIND,       &
-                  TPTIME, PTSTEP, PK%XVEGTYPE_PATCH,  ZTGL, ZCTSFC,         &
-                  ZSOILHCAPZ, ZSOILCONDZ(:,1), PPS, PEK%XTC, DEK%XSWDOWN_GN, PEK%XQC,&
-                  PVMOD, PLW_RAD, ZRRSFC, DEK%XSR_GN, PRHOA, ZUREF, PEXNS,  &
-                  PEXNA, PDIRCOSZW, ZZREF, ZALBG, ZD_G, ZDZG, PPEW_A_COEF,  &
-                  PPEW_B_COEF, PPET_A_COEF, PPEQ_A_COEF, PPET_B_COEF,       &
-                  PPEQ_B_COEF, PSNOW_THRUFAL, PGRNDFLUX, PFLSN_COR,         &
-                  PRESTOREN, PEVAPCOR, DEK%XLES, DEK%XLESL, ZEVAP3L, PSNOWSFCH, &
-                  PDELHEATN, PDELHEATN_SFC, PRISNOW, PZENITH, PDELHEATG,    &
-                  PDELHEATG_SFC, PQSNOW,PBLOWSNW_FLUX,PBLOWSNW_CONC      ) 
+   CALL SNOW3L_ISBA(IO, G, PK, PEK, DK, DEK, DMK, OMEB, HIMPLICIT_WIND,        &
+                  TPTIME, PTSTEP, PK%XVEGTYPE_PATCH,  ZTGL, ZCTSFC,          &
+                  ZSOILHCAPZ, ZSOILCONDZ(:,1), PPS, PEK%XTC, DEK%XSWDOWN_GN, &
+                  PEK%XQC, PVMOD, PVDIR, PLW_RAD, ZRRSFC, DEK%XSR_GN, PRHOA, &
+                  ZUREF, PEXNS, PEXNA, PDIRCOSZW, PSLOPE_DIR, ZZREF, ZALBG,  &
+                  ZD_G, ZDZG, PPEW_A_COEF, PPEW_B_COEF, PPET_A_COEF,         &
+                  PPEQ_A_COEF, PPET_B_COEF, PPEQ_B_COEF, PSNOW_THRUFAL,      &
+                  PGRNDFLUX, PFLSN_COR, PRESTOREN, PEVAPCOR, DEK%XLES,       &
+                  DEK%XLESL, ZEVAP3L, PSNOWSFCH, PDELHEATN, PDELHEATN_SFC,   &
+                  PRISNOW, PZENITH, PANGL_ILLUM, PDELHEATG, PDELHEATG_SFC,   &
+                  PQSNOW, NPAR_VEG_IRR_USE, KTAB_SYT,P_DIR_SW,P_SCA_SW,PIMPWET,&
+                  PIMPDRY, PBLOWSNW_FLUX,PBLOWSNW_CONC) 
  ELSE
-   CALL SNOW3L_ISBA(IO, G, PK, PEK, DK, DEK, DMK, OMEB, HIMPLICIT_WIND,       &
-                  TPTIME, PTSTEP, PK%XVEGTYPE_PATCH,  ZTGL, ZCTSFC,         &
-                  ZSOILHCAPZ, ZSOILCONDZ(:,1), PPS, PEK%XTC, DEK%XSWDOWN_GN, PEK%XQC, &
-                  PVMOD, PLW_RAD, ZRRSFC, DEK%XSR_GN, PRHOA, ZUREF, PEXNS,  &
-                  PEXNA, PDIRCOSZW, ZZREF, ZALBG, ZD_G, ZDZG, PPEW_A_COEF,  &
-                  PPEW_B_COEF, PPET_A_COEF, PPEQ_A_COEF, PPET_B_COEF,       &
-                  PPEQ_B_COEF, PSNOW_THRUFAL, PGRNDFLUX, PFLSN_COR,         &
-                  PRESTOREN, PEVAPCOR, DEK%XLES, DEK%XLESL, ZEVAP3L, PSNOWSFCH, &
-                  PDELHEATN, PDELHEATN_SFC, PRISNOW, PZENITH, PDELHEATG,    &
-                  PDELHEATG_SFC, PQSNOW      ) 
-
+   CALL SNOW3L_ISBA(IO, G, PK, PEK, DK, DEK, DMK, OMEB, HIMPLICIT_WIND,        &
+                  TPTIME, PTSTEP, PK%XVEGTYPE_PATCH,  ZTGL, ZCTSFC,          &
+                  ZSOILHCAPZ, ZSOILCONDZ(:,1), PPS, PEK%XTC, DEK%XSWDOWN_GN, &
+                  PEK%XQC, PVMOD, PVDIR, PLW_RAD, ZRRSFC, DEK%XSR_GN, PRHOA, &
+                  ZUREF, PEXNS, PEXNA, PDIRCOSZW, PSLOPE_DIR, ZZREF, ZALBG,  &
+                  ZD_G, ZDZG, PPEW_A_COEF, PPEW_B_COEF, PPET_A_COEF,         &
+                  PPEQ_A_COEF, PPET_B_COEF, PPEQ_B_COEF, PSNOW_THRUFAL,      &
+                  PGRNDFLUX, PFLSN_COR, PRESTOREN, PEVAPCOR, DEK%XLES,       &
+                  DEK%XLESL, ZEVAP3L, PSNOWSFCH, PDELHEATN, PDELHEATN_SFC,   &
+                  PRISNOW, PZENITH, PANGL_ILLUM, PDELHEATG, PDELHEATG_SFC,   &
+                  PQSNOW, NPAR_VEG_IRR_USE, KTAB_SYT,P_DIR_SW,P_SCA_SW,PIMPWET, PIMPDRY) 
  ENDIF
 !
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -1313,7 +1365,7 @@ IF (LHOOK) CALL DR_HOOK('ISBA_MEB:AVG_FLUXES_MEB_TSPLIT ',1,ZHOOK_HANDLE)
 END SUBROUTINE AVG_FLUXES_MEB_TSPLIT 
 !
 !===============================================================================
-SUBROUTINE SNOWALB_SPECTRAL_BANDS_MEB(PVEGTYPE,PEK,PSNOWRHO,PSNOWAGE,PPS, &
+SUBROUTINE SNOWALB_SPECTRAL_BANDS_MEB(ZPERMSNOWFRAC,PEK,PSNOWRHO,PSNOWAGE,PPS, &
                                       PSNOWDZ,PZENITH,PTAU_N)
 !
 ! Split Total snow albedo into N-spectral bands
@@ -1331,8 +1383,8 @@ IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
 !
-TYPE(ISBA_PE_t), INTENT(INOUT) :: PEK
-REAL, DIMENSION(:,:), INTENT(IN)    :: PVEGTYPE      ! fraction of each vegetation (-)
+TYPE(ISBA_PE_t),      INTENT(INOUT) :: PEK
+REAL, DIMENSION(:),   INTENT(IN)    :: ZPERMSNOWFRAC ! fraction of snow (-)
 REAL, DIMENSION(:,:), INTENT(IN)    :: PSNOWRHO      ! Snow layer average density (kg/m3)
 REAL, DIMENSION(:,:), INTENT(IN)    :: PSNOWDZ       ! Snow layer thickness (m)
 REAL, DIMENSION(:),   INTENT(IN)    :: PZENITH       ! Zenith angle (rad)
@@ -1346,7 +1398,6 @@ INTEGER                             :: JJ, JI, INJ, INLVLS
 REAL, DIMENSION(SIZE(PPS))          :: ZWORK, ZWORKA, ZAGE
 REAL, DIMENSION(SIZE(PPS))          :: ZPROJLAT, ZDSGRAIN, ZBETA1, ZBETA2, ZBETA3, &
                                        ZOPTICALPATH1, ZOPTICALPATH2, ZOPTICALPATH3
-REAL, DIMENSION(SIZE(PPS))          :: ZPERMSNOWFRAC
 REAL, DIMENSION(SIZE(PSNOWDZ,1),SIZE(PSNOWDZ,2)) :: ZSNOWDZ
 REAL, DIMENSION(SIZE(PPS),NSPEC_BAND_SNOW)       :: ZSPECTRALALBEDO
 !                                      ZSPECTRALALBEDO = spectral albedo (3 bands in algo: 
@@ -1367,7 +1418,6 @@ INLVLS = SIZE(PSNOWDZ,2)
 !
 ZWORK(:)         = 0.0
 ZWORKA(:)        = PEK%TSNOW%ALB(:)
-ZPERMSNOWFRAC(:) = PVEGTYPE(:,NVT_SNOW)
 !
 CALL SNOW3LALB(ZWORKA,ZSPECTRALALBEDO,PSNOWRHO(:,1),PSNOWAGE(:,1),ZPERMSNOWFRAC,PPS)
 !
@@ -1434,6 +1484,452 @@ PTAU_N(:,:) = MAX(0., PTAU_N(:,:))
 IF (LHOOK) CALL DR_HOOK('ISBA_MEB:SNOWALB_SPECTRAL_BANDS_MEB',1,ZHOOK_HANDLE)
 !
 END SUBROUTINE SNOWALB_SPECTRAL_BANDS_MEB
+
+!===============================================================================
+SUBROUTINE SNOWCROALB_SPECTRAL_BANDS_MEB(ZPERMSNOWFRAC,PSNOWALB,PSNOWRHO,PSNOWAGE, &
+                                      PSNOWGRAN1,PSNOWGRAN2,PSNOWIMPUR, PPS,       &
+                                      PSW_RAD,PPSN,PSNOWDZ,PZENITH,PSOILALB,       &
+                                      PSNOWALBVIS,PSNOWALBNIR,PSNOWALBFIR,         &
+                                      PTAU_N,HSNOWMETAMO,HSNOWRAD,OATMORAD)
+!
+! Split Total snow albedo into N-spectral bands
+! NOTE currently MEB only uses 2 bands of the 3 possible.
+!
+USE MODD_SURF_PAR,       ONLY : XUNDEF
+USE MODD_DATA_COVER_PAR, ONLY : NVT_SNOW
+USE MODD_MEB_PAR,        ONLY : XSW_WGHT_VIS, XSW_WGHT_NIR
+USE MODD_SNOW_PAR,       ONLY : NSPEC_BAND_SNOW
+USE MODD_SNOW_METAMO,    ONLY : XSNOWDZMIN
+!
+USE MODE_SNOW3L,         ONLY : SNOW3LALB, SNOW3LDOPT 
+USE MODE_TARTES,         ONLY : SNOWCRO_TARTES
+USE MODD_CONST_TARTES,   ONLY :  XPSNOWG0, XPSNOWY0, XPSNOWW0, XPSNOWB0
+USE MODD_CONST_ATM,      ONLY : JPNBANDS_ATM  !BC
+!
+IMPLICIT NONE
+!
+!*      0.1    declarations of arguments
+!
+REAL, DIMENSION(:),   INTENT(IN)    :: ZPERMSNOWFRAC ! snow fraction (-)
+REAL, DIMENSION(:),   INTENT(IN)    :: PSNOWALB      ! Snow albedo (total)
+REAL, DIMENSION(:,:), INTENT(IN)    :: PSNOWRHO      ! Snow layer average density (kg/m3)
+REAL, DIMENSION(:,:), INTENT(IN)    :: PSNOWDZ       ! Snow layer thickness (m)
+REAL, DIMENSION(:,:), INTENT(IN)    :: PSNOWGRAN1
+REAL, DIMENSION(:,:), INTENT(IN)    :: PSNOWGRAN2
+REAL, DIMENSION(:,:,:), INTENT(IN)  :: PSNOWIMPUR
+REAL, DIMENSION(:),   INTENT(IN)    :: PZENITH       ! Zenith angle (rad)
+REAL, DIMENSION(:),   INTENT(IN)    :: PSOILALB
+REAL, DIMENSION(:),   INTENT(IN)    :: PPSN          ! snow fraction (-)
+REAL, DIMENSION(:,:), INTENT(IN)    :: PSNOWAGE      ! Snow grain age
+REAL, DIMENSION(:),   INTENT(IN)    :: PPS           ! Pressure [Pa]
+REAL, DIMENSION(:),   INTENT(IN)    :: PSW_RAD
+CHARACTER(3),         INTENT(IN)    :: HSNOWMETAMO
+CHARACTER(3),         INTENT(IN)    :: HSNOWRAD
+REAL, DIMENSION(:),   INTENT(OUT)   :: PSNOWALBVIS   ! Snow VIS albedo
+
+REAL, DIMENSION(:),   INTENT(OUT)   :: PSNOWALBNIR   ! Snow NIR albedo
+REAL, DIMENSION(:),   INTENT(OUT)   :: PSNOWALBFIR   ! Snow FIR (UV) albedo
+REAL, DIMENSION(:,:), INTENT(OUT)   :: PTAU_N        ! SW absorption (coef) in uppermost snow layer (-)
+LOGICAL, INTENT(IN)                 :: OATMORAD  ! activate atmotartes scheme
+!
+!*      0.2    declarations of local variables
+!
+INTEGER                             :: JJ, JI, INI, INLVLS
+INTEGER, DIMENSION(SIZE(PZENITH))   :: INLVLS_USE
+REAL, DIMENSION(SIZE(PPS))          :: ZWORK, ZWORKA, ZAGE
+REAL, DIMENSION(SIZE(PPS))          :: ZPROJLAT, ZDSGRAIN, ZBETA1, ZBETA2, ZBETA3, &
+                                       ZOPTICALPATH1, ZOPTICALPATH2, ZOPTICALPATH3
+REAL, DIMENSION(SIZE(PSNOWDZ,1),SIZE(PSNOWDZ,2)) :: ZSNOWDZ,ZSNOWRHO,ZSNOWGRAN1,ZSNOWGRAN2,ZSNOWAGE
+REAL, DIMENSION(SIZE(PPS),NSPEC_BAND_SNOW)       :: ZSPECTRALALBEDO
+!                                      ZSPECTRALALBEDO = spectral albedo (3 bands in algo: 
+!                                                        MEB currently uses 2)
+!                                                        1=VIS, 2=NIR, 3=UV
+REAL:: ZDEFAULTG1,ZDEFAULTG2
+!
+!For now these values are constant
+REAL, DIMENSION(SIZE(PSNOWRHO,1),SIZE(PSNOWRHO,2)) :: ZSNOWG0 ! asymmetry parameter of snow grains at nr=1.3 and at non absorbing wavelengths (no unit) (npoints,nlayer)
+REAL, DIMENSION(SIZE(PSNOWRHO,1),SIZE(PSNOWRHO,2)) :: ZSNOWY0 ! Value of y of snow grains at nr=1.3 (no unit
+REAL, DIMENSION(SIZE(PSNOWRHO,1),SIZE(PSNOWRHO,2)) :: ZSNOWW0 ! Value of W of snow grains at nr=1.3 (no unit)
+REAL, DIMENSION(SIZE(PSNOWRHO,1),SIZE(PSNOWRHO,2)) :: ZSNOWB0 ! absorption enhancement parameter of snow grains at nr=1.3 and at non absorbing wavelengths 
+!REAL, DIMENSION(SIZE(PSNOWRHO,1),SIZE(PSNOWRHO,2),NIMPUR) :: ZSNOWIMP_DENSITY !impurities density (kg/m^3) (npoints,nlayer,ntypes_impurities)
+REAL, DIMENSION(SIZE(PSNOWRHO,1),SIZE(PSNOWRHO,2)) :: ZRADSINK
+REAL, DIMENSION(SIZE(PSNOWRHO,1)) :: ZRADXS,ZZENITH,ZSW_RAD,ZSNOWALB
+!
+REAL, DIMENSION(SIZE(PSNOWRHO,1),JPNBANDS_ATM)  :: ZSPEC_DIR, ZSPEC_DIF,ZSNOWALB_SP ! BC : new output par. from SNOWCRO_TARTES ! BC : new output par. from SNOWCRO_TARTES
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+!
+!-------------------------------------------------------------------------------
+!
+IF (LHOOK) CALL DR_HOOK('ISBA_MEB:SNOWCROALB_SPECTRAL_BANDS_MEB',0,ZHOOK_HANDLE)
+!
+INI    = SIZE(PSNOWDZ,1)
+INLVLS = SIZE(PSNOWDZ,2)
+!
+IF (HSNOWMETAMO=='B92') THEN
+ZDEFAULTG1=-99
+ZDEFAULTG2=50
+ELSE
+ZDEFAULTG1=0.5
+ZDEFAULTG2=0.5  
+ENDIF
+
+INLVLS_USE(:) = 0
+DO JJ = 1,SIZE(PSNOWDZ(:,:),2)
+  DO JI = 1,SIZE(PSNOWDZ(:,:),1)
+    IF ( PSNOWDZ(JI,JJ)>0. ) THEN 
+      INLVLS_USE(JI) = JJ
+      ZSNOWRHO(JI,JJ)=PSNOWRHO(JI,JJ)
+      ZSNOWAGE(JI,JJ)=PSNOWAGE(JI,JJ)
+      ZSNOWGRAN1(JI,JJ)=PSNOWGRAN1(JI,JJ)
+      ZSNOWGRAN2(JI,JJ)=PSNOWGRAN2(JI,JJ)
+    ELSE
+      ! default values to avoid numerical problems in case of no snow
+      ZSNOWRHO(JI,JJ)=400.
+      ZSNOWAGE(JI,JJ)=10.
+      ZSNOWGRAN1(JI,JJ)=ZDEFAULTG1
+      ZSNOWGRAN2(JI,JJ)=ZDEFAULTG2
+    ENDIF
+  ENDDO  !  end loop snow layers
+ENDDO    ! end loop grid points
+
+
+
+IF ( (HSNOWRAD=="T17")) THEN
+
+  ! Partie codée à l'arrache pour faire du ESCROC-MEB sur les sites forêts de ESM-SnowMIP
+  ! A vérifier...
+  ! BC : actualisation du code lors du merge avec Tuzet
+
+  ZSNOWG0 = XPSNOWG0
+  ZSNOWY0 = XPSNOWY0
+  ZSNOWW0 = XPSNOWW0  
+  ZSNOWB0 = XPSNOWB0
+  !ZSNOWIMP_DENSITY(:,:,1) = 1270.                         !
+  !ZSNOWIMP_DENSITY(:,:,2) = 2600.						  !BC actualized this portion of code duplicating Tuzet's values of impuritiens 
+  ! now as an output
+
+
+    DO JI = 1,INI
+        ! To not compute anything in Tartes if there is no snow, we tell Tartes that we are overnight.
+        IF ( PSNOWDZ(JI,1)>0. .AND. PSNOWDZ(JI,2)>0. .AND. PSNOWDZ(JI,3)>0. ) THEN
+            ZSW_RAD(JI)=PSW_RAD(JI)
+            ZZENITH(JI)=PZENITH(JI)
+        ELSE
+            ZSW_RAD(JI)=0.
+            ZZENITH(JI)=0.
+        ENDIF
+    END DO
+    
+    ZSNOWALB=PSNOWALB
+    CALL SNOWCRO_TARTES(PSNOWGRAN1,PSNOWGRAN2,PSNOWRHO,PSNOWDZ,&
+                        ZSNOWG0,ZSNOWY0,ZSNOWW0,ZSNOWB0,&
+                        PSNOWIMPUR,PSOILALB,ZSW_RAD,PZENITH, &
+                        PANGL_ILLUM, PDIRCOSZW, INLVLS_USE,ZSNOWALB,& !BC
+                        ZRADSINK,ZRADXS,.FALSE.,HSNOWMETAMO, P_DIR_SW, &    
+                        P_SCA_SW, ZSNOWALB_SP,ZSPEC_DIR,               &
+                        ZSPEC_DIF, OATMORAD, PSNOWALBVIS)
+
+                        
+    ! We diagnose NIR albedo such that total albedo is conserved
+    ! (using just 2 spectral bands in MEB)
+    !
+    WHERE(PSNOWALB(:)/=XUNDEF)
+      PSNOWALBNIR(:) = (PSNOWALB(:) - XSW_WGHT_VIS*PSNOWALBVIS(:))/XSW_WGHT_NIR
+    ELSEWHERE
+      PSNOWALBVIS(:) = XUNDEF
+      PSNOWALBNIR(:) = XUNDEF
+    ENDWHERE
+    !
+    ! currently NOT used by MEB
+    !
+    PSNOWALBFIR(:) = XUNDEF
+    
+    PTAU_N(:,:)=0.
+    DO JI = 1,INI
+      IF ((PSW_RAD(JI)>0.).AND.(PSNOWALB(JI)<1.)) THEN
+        PTAU_N(JI,1)=-ZRADSINK(JI,1)/((1.-PSNOWALB(JI))*PSW_RAD(JI))
+        DO JJ = 2,INLVLS_USE(JI)   
+          PTAU_N(JI,JJ)=ZRADSINK(JI,JJ)/ZRADSINK(JI,JJ-1)      
+        ENDDO
+      ENDIF
+    ENDDO
+ELSE
+    ! 1) Spectral albedo
+    ! ------------------
+    !
+    ZWORK(:)         = 0.0
+    ZWORKA(:)        = PSNOWALB(:)
+    !
+    CALL SNOWCROALB(.FALSE.,                                             &
+                    ZWORKA,ZSPECTRALALBEDO,PSNOWDZ(:,1),ZSNOWRHO(:,1:2),       &
+                    ZPERMSNOWFRAC,ZSNOWGRAN1(:,1),ZSNOWGRAN2(:,1),               &
+                    ZSNOWAGE(:,1),ZSNOWGRAN1(:,2),ZSNOWGRAN2(:,2),ZSNOWAGE(:,2), &
+                    PPS, PZENITH, INLVLS_USE, HSNOWMETAMO) 
+
+    !
+    ! Since we only consider VIS and NIR bands for soil and veg in MEB currently:
+    ! (also note, here PSNOWALB doesn't evolve...we just diagnose spectral components).
+    !
+    WHERE(PSNOWALB(:)/=XUNDEF)
+    !
+    PSNOWALBVIS(:) = ZSPECTRALALBEDO(:,1)
+    !
+    ! We diagnose NIR albedo such that total albedo is conserved
+    ! (using just 2 spectral bands in MEB)
+    !
+    PSNOWALBNIR(:) = (PSNOWALB(:) - XSW_WGHT_VIS*PSNOWALBVIS(:))/XSW_WGHT_NIR
+    !
+    ! currently NOT used by MEB
+    !
+    PSNOWALBFIR(:) = XUNDEF                                     
+    !
+    ! For the surface layer absorbtion computation:
+    !
+    ZSPECTRALALBEDO(:,1) = PSNOWALBVIS(:)
+    ZSPECTRALALBEDO(:,2) = PSNOWALBNIR(:)
+    ZSPECTRALALBEDO(:,3) = PSNOWALBFIR(:)
+    !
+    ELSEWHERE
+    !
+    PSNOWALBVIS(:) = XUNDEF
+    PSNOWALBNIR(:) = XUNDEF
+    PSNOWALBFIR(:) = XUNDEF
+    !
+    END WHERE
+    !
+    ! Snow optical grain diameter (no age dependency over polar regions):
+    !
+    ! 2) SW absorption in uppermost snow layer 
+    ! ----------------------------------------
+    ! For now, consider just 2 bands with MEB, so renormalize:
+
+    ZSPECTRALALBEDO(:,1) = ZSPECTRALALBEDO(:,1)
+    ZSPECTRALALBEDO(:,2) = (PSNOWALB(:) - XSW_WGHT_VIS*ZSPECTRALALBEDO(:,1))/XSW_WGHT_NIR
+    !
+    ! Adjust thickness to be as in snow computations:
+    !
+    DO JJ=1,INLVLS
+    DO JI=1,INI
+        ZSNOWDZ(JI,JJ) = PSNOWDZ(JI,JJ)/MAX(1.E-4,PPSN(JI))
+    ENDDO
+    ENDDO
+    !
+    !PRINT*,"DEBUG"
+    !print*,ZSNOWDZ
+    !print*,PSNOWRHO
+    !print*,PSNOWGRAN1
+    !print*,PSNOWGRAN2
+    CALL SNOWCRORADTRANS(XSNOWDZMIN, ZSPECTRALALBEDO, ZSNOWDZ, ZSNOWRHO, &
+                            ZPERMSNOWFRAC, PZENITH,  ZSNOWAGE,         &
+                            ZSNOWGRAN1, ZSNOWGRAN2, HSNOWMETAMO,       &
+                            INLVLS_USE, PTAU_N)
+    !
+    ! Note that because we force a snow thickness to compute tramission, 
+    ! a bogus value ( < 0) can be computed despite the non-existence of snow.
+    ! To check/prevent any problems, make a simple check:
+    !
+    PTAU_N(:,:) = MAX(0., PTAU_N(:,:))
+!
+END IF
+!
+IF (LHOOK) CALL DR_HOOK('ISBA_MEB:SNOWCROALB_SPECTRAL_BANDS_MEB',1,ZHOOK_HANDLE)
+!
+END SUBROUTINE SNOWCROALB_SPECTRAL_BANDS_MEB
+!===============================================================================
+
+!####################################################################
+!####################################################################
+!####################################################################
+!
+SUBROUTINE SNOWCROALB(OGLACIER,                            &
+                      PALBEDOSC,PSPECTRALALBEDO,PSNOWDZ,          &
+                      PSNOWRHO,PPERMSNOWFRAC,                     &
+                      PSNOWGRAN1_TOP,PSNOWGRAN2_TOP,PSNOWAGE_TOP, &
+                      PSNOWGRAN1_BOT,PSNOWGRAN2_BOT,PSNOWAGE_BOT, &
+                      PPS, PZENITH, KNLVLS_USE ,HSNOWMETAMO       ) 
+!
+!!    PURPOSE
+!!    -------
+!     Calculate the snow surface albedo. Use the method of original
+!     Crocus which considers a specified spectral distribution of solar 
+!     solar radiation (to be replaced by an input forcing when available)
+!     In addition to original crocus, the top 2 surface snow layers are
+!     considered in the calculation, using an arbitrary weighting, in order
+!     to avoid time discontinuities due to layers agregation
+!     Ageing depends on the presence of permanent snow cover 
+!
+USE MODD_SNOW_PAR, ONLY : XANSMAX, XANSMIN,XAGLAMIN, XAGLAMAX, &
+                          XVRPRE1,XVRPRE2,XVAGING_NOGLACIER,   &
+                          XVAGING_GLACIER, XVSPEC1,XVSPEC2,    &
+                          XVSPEC3, XVW1,XVW2,XVD1,XVD2
+!
+USE MODE_SNOW3L
+!
+IMPLICIT NONE
+!
+!*      0.1    declarations of arguments
+!
+LOGICAL, INTENT(IN)               :: OGLACIER    ! True = Over permanent snow and ice, 
+!                                                   initialise WGI=WSAT,
+!                                                   Hsnow>=10m and allow 0.8<SNOALB<0.85
+                                                 ! False = No specific treatment
+REAL, DIMENSION(:), INTENT(IN)    :: PSNOWDZ,PPERMSNOWFRAC
+!
+REAL,DIMENSION(:,:), INTENT(IN)   :: PSNOWRHO ! For now only the 2 first layers are required
+!
+REAL, DIMENSION(:), INTENT(INOUT) :: PALBEDOSC
+!  
+REAL, DIMENSION(:,:), INTENT(OUT) :: PSPECTRALALBEDO   ! Albedo in the different spectral bands
+!
+REAL, DIMENSION(:), INTENT(IN)    :: PSNOWGRAN1_TOP,PSNOWGRAN2_TOP,PSNOWAGE_TOP, &
+                                     PSNOWGRAN1_BOT,PSNOWGRAN2_BOT,PSNOWAGE_BOT, PPS 
+INTEGER, DIMENSION(:), INTENT(IN) :: KNLVLS_USE                
+! 
+REAL, DIMENSION(:), INTENT(IN)    :: PZENITH ! solar zenith angle for future use
+!
+CHARACTER(3),INTENT(IN)           :: HSNOWMETAMO ! metamorphism scheme
+!
+!*      0.2    declarations of local variables
+!
+REAL, DIMENSION(3,SIZE(PSNOWRHO,1)) :: ZALB_TOP, ZALB_BOT
+!
+REAL, DIMENSION(SIZE(PSNOWRHO,1))   :: ZANSMIN, ZANSMAX, ZMIN, ZMAX
+REAL, DIMENSION(SIZE(PSNOWRHO,1))   :: ZFAC_TOP, ZFAC_BOT
+!
+REAL, DIMENSION(SIZE(PALBEDOSC))  :: ZVAGE1   
+!
+!REAL            :: ZAGE_NOW
+!
+INTEGER         :: JJ   ! looping indexes
+!
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+!-------------------------------------------------------------------------------
+!
+IF (LHOOK) CALL DR_HOOK('SNOWCROALB',0,ZHOOK_HANDLE)
+!
+! 0. Initialize:
+! ------------------
+!
+! PRINT*,XVAGING_NOGLACIER,XVAGING_GLACIER
+IF ( OGLACIER ) THEN
+  ZANSMIN(:) = XAGLAMIN * PPERMSNOWFRAC(:) + XANSMIN * (1.0-PPERMSNOWFRAC(:))
+  ZANSMAX(:) = XAGLAMAX * PPERMSNOWFRAC(:) + XANSMAX * (1.0-PPERMSNOWFRAC(:))  
+  ZVAGE1(:)  = XVAGING_GLACIER * PPERMSNOWFRAC(:) + XVAGING_NOGLACIER * (1.0-PPERMSNOWFRAC(:)) 
+ELSE
+  ZANSMIN(:) = XANSMIN
+  ZANSMAX(:) = XANSMAX   
+  ZVAGE1(:)  = XVAGING_NOGLACIER
+ENDIF
+
+! coherence control
+! to remove when initialization routines will be updated
+IF ( MINVAL(PSNOWAGE_BOT)<0. ) THEN
+  CALL ABOR1_SFX('FATAL ERROR in SNOWCRO: Snow layer age inconsistent : check initialization routine. !')
+END IF
+!
+DO JJ=1, SIZE(PALBEDOSC)
+  !
+  IF ( KNLVLS_USE(JJ)==0 ) THEN
+    ! case with no snow on the ground 
+    PALBEDOSC(JJ) = ZANSMIN(JJ)
+  ELSE
+    !
+    CALL GET_ALB(JJ,PSNOWRHO(JJ,1),PPS(JJ),ZVAGE1(JJ),PSNOWGRAN1_TOP(JJ),&
+                 PSNOWGRAN2_TOP(JJ),PSNOWAGE_TOP(JJ),ZALB_TOP(:,JJ),HSNOWMETAMO)
+    !                  
+!      IF (KNLVLS_USE(JJ)>=1) THEN
+    IF ( KNLVLS_USE(JJ)>=2 ) THEN !modif ML
+      ! second surface layer when it exists 
+      !
+      CALL GET_ALB(JJ,PSNOWRHO(JJ,2),PPS(JJ),ZVAGE1(JJ),PSNOWGRAN1_BOT(JJ),&
+                   PSNOWGRAN2_BOT(JJ),MIN(365.,PSNOWAGE_BOT(JJ)),ZALB_BOT(:,JJ),HSNOWMETAMO)
+      !
+    ELSE
+      ! when it does not exist, the second surface layer gets top layer albedo   
+      ZALB_BOT(:,JJ) = ZALB_TOP(:,JJ)
+    ENDIF
+    ! 
+    ! computation of spectral albedo over 3 bands taking into account the respective
+    ! depths of top layers 
+    ZMIN(JJ) = MIN( 1., PSNOWDZ(JJ)/XVD1 )
+    ZMAX(JJ) = MAX( 0., (PSNOWDZ(JJ)-XVD1)/XVD2 )
+    ZFAC_TOP(JJ) = XVW1 * ZMIN(JJ) + XVW2 * MIN( 1., ZMAX(JJ) )
+    ZFAC_BOT(JJ) = XVW1 * ( 1. - ZMIN(JJ) ) + XVW2 * ( 1. - MIN( 1., ZMAX(JJ) ) )
+    PSPECTRALALBEDO(JJ,1) = ZFAC_TOP(JJ) * ZALB_TOP(1,JJ) + ZFAC_BOT(JJ) * ZALB_BOT(1,JJ) 
+    PSPECTRALALBEDO(JJ,2) = ZFAC_TOP(JJ) * ZALB_TOP(2,JJ) + ZFAC_BOT(JJ) * ZALB_BOT(2,JJ)
+    PSPECTRALALBEDO(JJ,3) = ZFAC_TOP(JJ) * ZALB_TOP(3,JJ) + ZFAC_BOT(JJ) * ZALB_BOT(3,JJ)
+    !
+    ! arbitrarily specified spectral distribution  
+    ! to be changed when solar radiation distribution is an input variable 
+    PALBEDOSC(JJ) = XVSPEC1 * PSPECTRALALBEDO(JJ,1) + &
+                    XVSPEC2 * PSPECTRALALBEDO(JJ,2) + &
+                    XVSPEC3 * PSPECTRALALBEDO(JJ,3) 
+    !    
+  ENDIF ! end case with snow on the ground
+  !
+ENDDO ! end loop grid points
+!
+IF (LHOOK) CALL DR_HOOK('SNOWCROALB',1,ZHOOK_HANDLE)
+!-------------------------------------------------------------------------------
+!
+END SUBROUTINE SNOWCROALB
+!####################################################################
+!####################################################################
+SUBROUTINE GET_ALB(KJ,PSNOWRHO_IN,PPS_IN,PVAGE1,PSNOWGRAN1,PSNOWGRAN2,PSNOWAGE,PALB,&
+                   HSNOWMETAMO)
+!
+USE MODD_SNOW_PAR, ONLY : XALBICE1, XALBICE2, XALBICE3,   &
+                          XRHOTHRESHOLD_ICE,              &
+                          XVALB2, XVALB3, XVALB4, XVALB5, &
+                          XVALB6, XVALB7, XVALB8, XVALB9, &
+                          XVALB10, XVALB11, XVDIOP1,      &
+                          XVRPRE1, XVRPRE2, XVPRES1
+!
+USE MODE_SNOW3L, ONLY : GET_DIAM
+!
+IMPLICIT NONE
+!
+INTEGER, INTENT(IN) :: KJ
+REAL, INTENT(IN) :: PSNOWRHO_IN, PPS_IN
+REAL, INTENT(IN) :: PVAGE1
+REAL, INTENT(IN) :: PSNOWGRAN1, PSNOWGRAN2, PSNOWAGE
+REAL, DIMENSION(3), INTENT(OUT) :: PALB
+!
+CHARACTER(3),INTENT(IN)::HSNOWMETAMO
+!
+REAL :: ZDIAM, ZDIAM_SQRT
+!
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+!
+IF (LHOOK) CALL DR_HOOK('SNOWCRO:GET_ALB',0,ZHOOK_HANDLE)
+!
+IF ( PSNOWRHO_IN<XRHOTHRESHOLD_ICE ) THEN
+  ! Normal case (snow)
+  CALL GET_DIAM(PSNOWGRAN1,PSNOWGRAN2,ZDIAM,HSNOWMETAMO)
+  ZDIAM_SQRT = SQRT(ZDIAM)
+  PALB(1) = MIN( XVALB2 - XVALB3*ZDIAM_SQRT, XVALB4 )
+  PALB(2) = MAX( 0.3, XVALB5 - XVALB6*ZDIAM_SQRT )
+  ZDIAM   = MIN( ZDIAM, XVDIOP1 )
+  ZDIAM_SQRT = SQRT(ZDIAM)  
+  PALB(3) = MAX( 0., XVALB7*ZDIAM - XVALB8*ZDIAM_SQRT + XVALB9 ) 
+ ! AGE CORRECTION ONLY FOR VISIBLE BAND
+ 
+! ! ! ! !               PALB(1)=MAX(XVALB11,PALB(1)-MIN(MAX(PPS_IN/XVPRES1,XVRPRE1), &
+! ! ! ! !                       XVRPRE2)*XVALB10*MIN(365.,ZAGE_NOW-PSNOWAGE)/PVAGE1)
+
+  PALB(1) = MAX( XVALB11, PALB(1) - MIN( MAX(PPS_IN/XVPRES1,XVRPRE1), XVRPRE2 ) * &
+                   XVALB10 * PSNOWAGE / PVAGE1 )
+ELSE
+  ! Prescribed spectral albedo for surface ice
+  PALB(1) = XALBICE1
+  PALB(2) = XALBICE2
+  PALB(3) = XALBICE3
+ENDIF
+!
+IF (LHOOK) CALL DR_HOOK('SNOWCRO:GET_ALB',1,ZHOOK_HANDLE)
+!
+END SUBROUTINE GET_ALB
+
 !===============================================================================
       SUBROUTINE SNOW3LRADTRANS(PSNOWDZMIN, PSPECTRALALBEDO, PSNOWDZ, PSNOWRHO, &
                                 PPERMSNOWFRAC, PZENITH,  PSNOWAGE, PRADTRANS)
@@ -1528,6 +2024,142 @@ IF (LHOOK) CALL DR_HOOK('SNOW3LRADTRANS',1,ZHOOK_HANDLE)
 !-------------------------------------------------------------------------------
 !
 END SUBROUTINE SNOW3LRADTRANS
+!===============================================================================
+!===============================================================================
+      SUBROUTINE SNOWCRORADTRANS(PSNOWDZMIN, PSPECTRALALBEDO, PSNOWDZ, PSNOWRHO, &
+                                 PPERMSNOWFRAC, PZENITH,  PSNOWAGE, PSNOWGRAN1, &
+                                 PSNOWGRAN2, HSNOWMETAMO, KNLVLS_USE, PRADTRANS)
+!
+!!    PURPOSE
+!!    -------
+!     Calculate the transmission of shortwave (solar) radiation
+!     through the snowpack (using a form of Beer's Law: exponential
+!     decay of radiation with increasing snow depth).
+!
+USE MODD_SURF_PAR, ONLY : XUNDEF
+USE MODD_SNOW_PAR, ONLY : XVSPEC1,XVSPEC2,XVSPEC3,XVBETA1,XVBETA2, &
+                          XVBETA4,XVBETA3,XVBETA5, XMINCOSZEN
+USE MODD_MEB_PAR,  ONLY : XSW_WGHT_VIS, XSW_WGHT_NIR
+!
+USE MODE_SNOW3L,   ONLY : GET_DIAM
+!
+IMPLICIT NONE
+!
+!*      0.1    declarations of arguments
+!
+REAL,                 INTENT(IN)    :: PSNOWDZMIN
+!
+REAL, DIMENSION(:),   INTENT(IN)    :: PPERMSNOWFRAC
+REAL, DIMENSION(:),   INTENT(IN)    :: PZENITH
+REAL, DIMENSION(:,:), INTENT(IN)    :: PSNOWRHO, PSNOWDZ, PSNOWAGE, PSNOWGRAN1, PSNOWGRAN2
+REAL, DIMENSION(:,:), INTENT(IN)    :: PSPECTRALALBEDO
+CHARACTER(3),         INTENT(IN)    :: HSNOWMETAMO
+INTEGER,DIMENSION(:), INTENT(IN)    :: KNLVLS_USE
+!
+REAL, DIMENSION(:,:), INTENT(OUT)   :: PRADTRANS
+!
+!
+!*      0.2    declarations of local variables
+!
+INTEGER                              :: JJ, JI
+!
+INTEGER                              :: INI
+INTEGER                              :: INLVLS
+!
+REAL, DIMENSION(SIZE(PSNOWRHO,1))    :: ZRADTOT, ZPROJLAT, ZCOSZEN
+REAL, DIMENSION(SIZE(PSNOWRHO,1))    :: ZOPTICALPATH1, ZOPTICALPATH2, ZOPTICALPATH3
+!
+REAL, DIMENSION(SIZE(PSNOWRHO,1),SIZE(PSNOWRHO,2)) :: ZDSGRAIN, ZCOEF, ZSNOWDZ, ZAGE
+REAL, DIMENSION(SIZE(PSNOWRHO,1),SIZE(PSNOWRHO,2)) :: ZBETA1, ZBETA2, ZBETA3, ZWORK
+!
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+!-------------------------------------------------------------------------------
+!
+! 0. Initialization:
+! ------------------
+!
+IF (LHOOK) CALL DR_HOOK('SNOWCRORADTRANS',0,ZHOOK_HANDLE)
+!
+INI    = SIZE(PSNOWDZ(:,:),1)
+INLVLS = SIZE(PSNOWDZ(:,:),2)
+!
+!
+! 1. Vanishingly thin snowpack check:
+! -----------------------------------
+!    For vanishingly thin snowpacks, much of the radiation
+!    can pass through snowpack into underlying soil, making
+!    a large (albeit temporary) thermal gradient: by imposing
+!    a minimum thickness, this increases the radiation absorbtion
+!    for vanishingly thin snowpacks.
+!
+ZSNOWDZ(:,:) = MAX(PSNOWDZMIN, PSNOWDZ(:,:))
+!
+!
+! 2. Extinction of net shortwave radiation
+! ----------------------------------------
+! Fn of snow depth and density (Loth and Graf 1993:
+! SNOWCVEXT => from Bohren and Barkstrom 1974
+! SNOWAGRAIN and SNOWBGRAIN=> from Jordan 1976)
+!
+! Coefficient for taking into account the increase of path length of rays
+! in snow due to zenithal angle
+!
+ZCOSZEN(:)=MAX(XMINCOSZEN,COS(PZENITH(:)))
+!
+! This formulation is incorrect but it compensate partly the fact that 
+! the albedo formulation does not account for zenithal angle.
+! Only for polar or glacier regions
+!
+ZPROJLAT(:)=(1.0-PPERMSNOWFRAC(:))+PPERMSNOWFRAC(:)/ZCOSZEN(:)
+!
+!
+DO JJ = 1,INLVLS
+  DO JI= 1,INI
+    CALL GET_DIAM(PSNOWGRAN1(JI,JJ),PSNOWGRAN2(JI,JJ),ZDSGRAIN(JI,JJ),HSNOWMETAMO)
+  ENDDO    ! end loop snow layers
+ENDDO
+
+!PRINT*,PSNOWGRAN1(:,:),PSNOWGRAN2(:,:),ZDSGRAIN(:,:)
+!
+! Extinction coefficient from Brun et al. (1989):
+!
+ZWORK(:,:)=SQRT(ZDSGRAIN(:,:))
+!
+ZBETA1(:,:)=MAX(XVBETA1*PSNOWRHO(:,:)/ZWORK(:,:),XVBETA2)
+ZBETA2(:,:)=MAX(XVBETA3*PSNOWRHO(:,:)/ZWORK(:,:),XVBETA4)
+ZBETA3(:,:)=XVBETA5
+!
+ZOPTICALPATH1(:) = 0.0
+ZOPTICALPATH2(:) = 0.0
+ZOPTICALPATH3(:) = 0.0
+!
+DO JJ=1,INLVLS
+   DO JI=1,INI
+     IF (JJ<=KNLVLS_USE(JI)) THEN
+      !
+         ZOPTICALPATH1(JI) = ZOPTICALPATH1(JI) + ZBETA1(JI,JJ)*ZSNOWDZ(JI,JJ)
+         ZOPTICALPATH2(JI) = ZOPTICALPATH2(JI) + ZBETA2(JI,JJ)*ZSNOWDZ(JI,JJ)
+
+         ZCOEF (JI,JJ) = XSW_WGHT_VIS*(1.0-PSPECTRALALBEDO(JI,1))*EXP(-ZOPTICALPATH1(JI)*ZPROJLAT(JI)) &
+                       + XSW_WGHT_NIR*(1.0-PSPECTRALALBEDO(JI,2))*EXP(-ZOPTICALPATH2(JI)*ZPROJLAT(JI)) 
+     ELSE
+         ZCOEF(JI,JJ)=0.
+     ENDIF
+
+   ENDDO
+ENDDO
+!
+! 3. Radiation trans at base of each layer
+! ----------------------------------
+! NOTE, at level=0, rad = Swnet*(1-alb)  so radcoef(0)=1 implicitly
+!
+PRADTRANS(:,:)  = ZCOEF(:,:)
+!
+IF (LHOOK) CALL DR_HOOK('SNOW3LRADTRANS',1,ZHOOK_HANDLE)
+!
+!-------------------------------------------------------------------------------
+!
+END SUBROUTINE SNOWCRORADTRANS
 !===============================================================================
 
 SUBROUTINE ALLOCATE_LOCAL_VARS_PREP_GRID_SOIL

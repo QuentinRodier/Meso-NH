@@ -27,6 +27,12 @@ MODULE MODD_TEB_PAR
 !!    MODIFICATIONS
 !!    -------------
 !!      Original       11/2011
+!!
+!!      01/2016     K.Chancibault/A.Lemonsu    Default floor temperature for coupling with subsoil
+!!      03/2017     M.Goret                    add CO2 emitted by on person
+!!                                             add traffic cycle
+!!      05/2017     M.Goret                    move traffic cycle to modd_teb_optionn    
+!!
 !
 !*       0.   DECLARATIONS
 !             ------------
@@ -36,6 +42,14 @@ IMPLICIT NONE
 !
 !-----------------------------------------------------------------------------------------------------
 INTEGER, PARAMETER :: NTEB_PATCH_MAX = 9  ! maximum number of patches
+REAL   , PARAMETER :: XD_FLOOR_DEF   = 0.15     ! Default floor layer thickness (m)
+REAL   , PARAMETER :: XHC_FLOOR_DEF  = 2016000. ! Default heat capacity of floor layer (J/m3/K)
+REAL   , PARAMETER :: XTC_FLOOR_DEF  = 1.95     ! Default thermal conductivity of floor layer (W/m/s)
+REAL   , PARAMETER :: XTS_FLOOR      = 292.16   ! Default floor surface temperature (=19°C)
+REAL,    PARAMETER :: XEMIS_WIN_CST  = 0.84     ! Emissivity of windows
+!                                               ! from Energy Plus Engineering Reference, p219
+!                                               ! see http://apps1.eere.energy.gov/buildings/energyplus/
+REAL,    PARAMETER :: XHUM_CO2       =8.87E-6   ! CO2 emitted by one person (Kg/s) (Moriwaki and Kanda 2004)   
 !-----------------------------------------------------------------------------------------------------
 !
 END MODULE MODD_TEB_PAR

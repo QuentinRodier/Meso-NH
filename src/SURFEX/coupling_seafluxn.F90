@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !SFX_LIC for details. version 1.
 !     ###############################################################################
-SUBROUTINE COUPLING_SEAFLUX_n (CHS, DTS, DGS, O, OR, G, S, DST, SLT, &
+SUBROUTINE COUPLING_SEAFLUX_n (CHS, DTS, DGS, O, OR, G, S, AT, DST, SLT, &
                                HPROGRAM, HCOUPLING, PTIMEC, PTSTEP, KYEAR, KMONTH, KDAY, PTIME, &
                                KI, KSV, KSW, PTSUN, PZENITH, PZENITH2, PAZIM, PZREF, PUREF,     &
                                PU, PV, PQA, PTA, PRHOA, PSV, PCO2, HSV, PRAIN, PSNOW, PLW,      &
@@ -47,8 +47,7 @@ SUBROUTINE COUPLING_SEAFLUX_n (CHS, DTS, DGS, O, OR, G, S, DST, SLT, &
 !!      Modified    01/2014 : S. Belamari Remove MODE_THERMOS and XLVTT
 !!      Modified    05/2014 : S. Belamari New ECUME : Include salinity & atm. pressure impact 
 !!      Modified    01/2015 : R. Séférian interactive ocaen surface albedo
-!!      Modified    03/2014 : M.N. Bouin possibility of wave parameters from external source
-!!      Modified    11/2014 : J. Pianezze : add currents for wave coupling
+!!      Modified    11/2014 : J. Pianezze : add wave coupling, modifications of sea_momentum_fluxes
 !!      Modified    02/2019 : S. Bielli Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !!      Modified    03/2019 : P. Wautelet: correct ZWS when variable not present in file
 !!      Modified    03/2019 : P. Wautelet: missing use MODI_GET_LUOUT
@@ -79,11 +78,13 @@ USE MODD_WATER_PAR, ONLY : XALBSEAICE
 USE MODD_FIELD_n, only: XZWS_DEFAULT
 #endif
 !
+USE MODD_SURF_ATM_TURB_n, ONLY : SURF_ATM_TURB_t
 !
 USE MODI_WATER_FLUX
 USE MODI_MR98
 USE MODI_ECUME_SEAFLUX
 USE MODI_COARE30_SEAFLUX
+USE MODI_WASP_SEAFLUX
 USE MODI_ADD_FORECAST_TO_DATE_SURF
 USE MODI_MOD1D_n
 USE MODI_DIAG_INLINE_SEAFLUX_n
@@ -123,6 +124,7 @@ TYPE(OCEAN_t), INTENT(INOUT) :: O
 TYPE(OCEAN_REL_t), INTENT(INOUT) :: OR
 TYPE(GRID_t), INTENT(INOUT) :: G
 TYPE(SEAFLUX_t), INTENT(INOUT) :: S 
+TYPE(SURF_ATM_TURB_t), INTENT(IN) :: AT         ! atmospheric turbulence parameters
 TYPE(DST_t), INTENT(INOUT) :: DST
 TYPE(SLT_t), INTENT(INOUT) :: SLT
 !
@@ -394,7 +396,7 @@ CASE ('DIRECT')
 CALL WATER_FLUX(S%XZ0, PTA, ZEXNA, PRHOA, ZSST, ZEXNS, ZQA, &
                 PRAIN, PSNOW, XTTS, ZWIND, PZREF, PUREF,    &
                 PPS, S%LHANDLE_SIC, ZQSAT,  ZSFTH, ZSFTQ,   &
-                ZUSTAR, ZCD, ZCDN, ZCH, ZRI, ZRESA_SEA, ZZ0H )  
+                ZUSTAR, AT, ZCD, ZCDN, ZCH, ZRI, ZRESA_SEA, ZZ0H )  
 CASE ('ITERAT')
 CALL MR98     (S%XZ0, PTA, ZEXNA, PRHOA, S%XSST, ZEXNS, ZQA,  &
                XTTS, ZWIND, PZREF, PUREF, PPS, ZQSAT,         &
@@ -406,13 +408,19 @@ CALL ECUME_SEAFLUX(S, ZMASK, ISIZE_WATER, ISIZE_ICE,       &
               PTA, ZEXNA ,PRHOA, ZSST, ZEXNS, ZQA,         &
               PRAIN, PSNOW, ZWIND, PZREF, PUREF, PPS, PPA, &
               ZQSAT, ZSFTH, ZSFTQ, ZUSTAR,                 &
-              ZCD, ZCDN, ZCH, ZCE, ZRI, ZRESA_SEA, ZZ0H    )
+              AT, ZCD, ZCDN, ZCH, ZCE, ZRI, ZRESA_SEA, ZZ0H    )
 CASE ('COARE3')
 CALL COARE30_SEAFLUX(S, ZMASK, ISIZE_WATER, ISIZE_ICE,        &
               PTA, ZEXNA ,PRHOA, ZSST, ZEXNS, ZQA, PRAIN,     &
               PSNOW, ZWIND, PZREF, PUREF, PPS, ZQSAT,         &
               ZSFTH, ZSFTQ, ZUSTAR,                           &
-              ZCD, ZCDN, ZCH, ZCE, ZRI, ZRESA_SEA, ZZ0H     )
+              AT, ZCD, ZCDN, ZCH, ZCE, ZRI, ZRESA_SEA, ZZ0H       ) 
+CASE ('WASPV1')
+CALL WASP_SEAFLUX(S, ZMASK, ISIZE_WATER, ISIZE_ICE,        &
+              PTA, ZEXNA ,PRHOA, ZSST, ZEXNS, ZQA, PRAIN,     &
+              PSNOW, ZWIND, PZREF, PUREF, PPS, ZQSAT,         &
+              ZSFTH, ZSFTQ, ZUSTAR,                           &
+              AT, ZCD, ZCDN, ZCH, ZCE, ZRI, ZRESA_SEA, ZZ0H       )  
 END SELECT
 
 #ifdef CPLOASIS
@@ -451,7 +459,7 @@ END IF
 IF(LCPL_SEAICE.OR.S%LHANDLE_SIC)THEN
 CALL COUPLING_ICEFLUX_n(KI, PTA, ZEXNA, PRHOA, S%XTICE, ZEXNS, &
              ZQA, PRAIN, PSNOW, ZWIND, PZREF, PUREF,     &
-             PPS, S%XSST, XTTS, ZSFTH_ICE, ZSFTQ_ICE,    &  
+             PPS, S%XSST, XTTS, ZSFTH_ICE, ZSFTQ_ICE,AT, &  
              S%LHANDLE_SIC, ZMASK, ZQSAT_ICE, ZZ0_ICE,   &
              ZUSTAR_ICE, ZCD_ICE, ZCDN_ICE, ZCH_ICE,   &
              ZRI_ICE, ZRESA_SEA_ICE, ZZ0H_ICE          )

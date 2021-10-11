@@ -4,7 +4,7 @@
 !SFX_LIC for details. version 1.
 !     #########
        SUBROUTINE DIAG_CPL_ESM_WATER (W, D, OCPL_SEAICE, PTSTEP, PSFTQ, PRAIN, PSNOW, PLW,   &
-                                      PSFTH_ICE, PSFTQ_ICE, PDIR_SW, PSCA_SW    )  
+                                      PPS, PSFTH_ICE, PSFTQ_ICE, PDIR_SW, PSCA_SW    )  
 !     #####################################################################
 !
 !!****  *DIAG_CPL_ESM_WATER * - Computes diagnostics over sea for 
@@ -27,6 +27,7 @@
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    08/2009
+!!      Modified    01/2020 : C. Lebeaupin : Add surface pressure coupling parameter
 !!------------------------------------------------------------------
 !
 !
@@ -55,6 +56,7 @@ REAL, DIMENSION(:), INTENT(IN) :: PSFTQ     ! water flux
 REAL, DIMENSION(:), INTENT(IN) :: PRAIN     ! Rainfall
 REAL, DIMENSION(:), INTENT(IN) :: PSNOW     ! Snowfall
 REAL, DIMENSION(:), INTENT(IN) :: PLW       ! longwave radiation (on horizontal surf.)
+REAL, DIMENSION(:), INTENT(IN) :: PPS       ! Surface pressure (Pa)
 REAL, DIMENSION(:), INTENT(IN) :: PSFTH_ICE ! heat flux  (W/m2)
 REAL, DIMENSION(:), INTENT(IN) :: PSFTQ_ICE ! water flux (kg/m2/s)
 REAL, DIMENSION(:,:),INTENT(IN):: PDIR_SW   ! direct  solar radiation (on horizontal surf.)
@@ -103,6 +105,10 @@ W%XCPL_WATER_EVAP(:) = W%XCPL_WATER_EVAP(:) + PTSTEP * PSFTQ(:)
 ! 
 W%XCPL_WATER_RAIN(:) = W%XCPL_WATER_RAIN(:) + PTSTEP * PRAIN(:) 
 W%XCPL_WATER_SNOW(:) = W%XCPL_WATER_SNOW(:) + PTSTEP * PSNOW(:)
+!
+!* Cumulated surface pressure (Pa.s)
+! 
+W%XCPL_WATER_PRES(:) = W%XCPL_WATER_PRES(:) + PTSTEP * PPS(:)
 !
 !-------------------------------------------------------------------------------------
 ! Ice flux

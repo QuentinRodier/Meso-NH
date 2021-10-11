@@ -6,7 +6,7 @@
 SUBROUTINE PREPS_FOR_MEB_EBUD_RAD(PPS,                                         &
      PLAICV,PSNOWRHO,PSNOWSWE,PSNOWHEAT,PSNOWLIQ,                              &
      PSNOWTEMP,PSNOWDZ,PSCOND,PHEATCAPS,PEMISNOW,PSIGMA_F,PCHIP,               &
-     PTSTEP,PSR,PTA,PVMOD,PSNOWAGE,PPERMSNOWFRAC                               )
+     PTSTEP,PSR,PTA,PVMOD,PSNOWAGE,PPERMSNOWFRAC,HSNOW_ISBA,HSNOWCOND          )
 !   ############################################################################
 !
 !!****  *PREPS_FOR_MEB_EBUD_RAD*
@@ -52,14 +52,15 @@ SUBROUTINE PREPS_FOR_MEB_EBUD_RAD(PPS,                                         &
 USE MODD_SNOW_PAR,            ONLY : XRHOSMAX_ES, XRHOSMIN_ES, XEMISSN, XSNOWDMIN, &
                                      XSNOWTHRMCOND1
 !
-USE MODD_CSTS,                ONLY : XTT, XLMTT, XRHOLW
+USE MODD_CSTS,                ONLY : XTT, XLMTT, XRHOLW, XCI
 !
 USE MODD_SURF_PAR,            ONLY : XUNDEF
 !
 USE MODD_SNOW_METAMO,         ONLY : XSNOWDZMIN
 !
 USE MODE_SNOW3L,              ONLY : SNOW3LTHRM, SNOW3LSCAP, SNOW3LFALL,         &
-                                     SNOW3LTRANSF, SNOW3LGRID, SNOW3LCOMPACTN
+                                     SNOW3LTRANSF, SNOW3LGRID, SNOW3LCOMPACTN,   &
+                                     SNOWCROTHRM
 !
 USE MODE_MEB,                 ONLY : MEB_SHIELD_FACTOR
 !
@@ -79,7 +80,8 @@ REAL, DIMENSION(:),   INTENT(IN)    :: PTA
 REAL, DIMENSION(:),   INTENT(IN)    :: PVMOD
 REAL, DIMENSION(:),   INTENT(IN)    :: PPERMSNOWFRAC 
 REAL, DIMENSION(:,:), INTENT(IN)    :: PSNOWHEAT
-
+CHARACTER(LEN=*),     INTENT(IN)    :: HSNOW_ISBA
+CHARACTER(LEN=*),     INTENT(IN)    :: HSNOWCOND
 REAL, DIMENSION(:,:), INTENT(INOUT) :: PSNOWSWE, PSNOWAGE, PSNOWRHO
 
 REAL, DIMENSION(:),   INTENT(OUT)   :: PSIGMA_F, PCHIP
@@ -103,20 +105,24 @@ IF (LHOOK) CALL DR_HOOK('PREPS_FOR_MEB_EBUD_RAD',0,ZHOOK_HANDLE)
 INI             = SIZE(PSNOWRHO,1)
 INLVLS          = SIZE(PSNOWRHO,2)
 !
-WHERE(PSNOWRHO(:,:)==XUNDEF)
-   PSNOWRHO(:,:) = XRHOSMIN_ES           ! arbitrary...will be correctly set if snow present
-ENDWHERE
+! Initialize some output variables: 
+! where snow depth below threshold, set to non-snow values
 !
-PSNOWDZ(:,:)     = PSNOWSWE(:,:)/PSNOWRHO(:,:)
-PHEATCAPS(:,:)   = SNOW3LSCAP(PSNOWRHO)
-PSCOND(:,:)      = XSNOWTHRMCOND1        ! arbitrary...will be correctly set if snow present
-PSNOWTEMP(:,:)   = XTT
-PSNOWLIQ(:,:)    = 0.0
+PSNOWTEMP(:,:)      = XTT
+PSNOWLIQ (:,:)      = 0.0
+PSCOND   (:,:)      = XSNOWTHRMCOND1 
+PHEATCAPS(:,:)      = XRHOSMIN_ES*XCI
 !
 ! Test variables to check for existance of snow:
 !
-ZSNOWFALL(:)     = PSR(:)*PTSTEP/XRHOSMAX_ES
+WHERE(PSNOWRHO(:,:)==XUNDEF)
+   PSNOWDZ(:,:)     = 0.
+ELSEWHERE
+   PSNOWDZ(:,:)     = PSNOWSWE(:,:)/PSNOWRHO(:,:)
+ENDWHERE
 !
+ZSNOWFALL(:)     = PSR(:)*PTSTEP/XRHOSMAX_ES
+
 ZSNOW(:)         = 0.0
 DO JK=1,INLVLS
    DO JI=1,INI
@@ -124,18 +130,20 @@ DO JK=1,INLVLS
    ENDDO
 ENDDO
 !
+
 ! Here, as in snow3l (ISBA-ES), we account for several processes
 ! on the snowpack before surface energy budget computations
 ! (i.e. snowfall on albedo, density, thickness, and compaction etc...)
-!
+
 ! ===============================================================
 ! === Packing: Only call snow model routines when there is snow on the surface
 !              exceeding a minimum threshold OR if the equivalent
 !              snow depth falling during the current time step exceeds 
 !              this limit.
-!
+
 ! counts the number of points where the computations will be made
-!
+
+
 !
 ISIZE_SNOW = 0
 NMASK(:)   = 0
@@ -146,13 +154,13 @@ DO JJ=1,INI
       NMASK(ISIZE_SNOW) = JJ
    ENDIF
 ENDDO
-!  
+!
 IF (ISIZE_SNOW>0) THEN
-   CALL CALL_SNOW_ROUTINES(ISIZE_SNOW,INLVLS,NMASK)
+   CALL CALL_SNOW_ROUTINES(ISIZE_SNOW,INLVLS,NMASK, HSNOWCOND)
 ENDIF
 !
 ! ===============================================================
-!
+
 !
 ! View factor: (1 - shielding factor)
 !
@@ -169,7 +177,7 @@ IF (LHOOK) CALL DR_HOOK('PREPS_FOR_MEB_EBUD_RAD',1,ZHOOK_HANDLE)
 !
 CONTAINS
 !================================================================
-SUBROUTINE CALL_SNOW_ROUTINES(KSIZE1,KSIZE2,KMASK)
+SUBROUTINE CALL_SNOW_ROUTINES(KSIZE1,KSIZE2,KMASK,HSNOWCOND)
 !
 ! Make some snow computations only over regions with snow cover or snow falling
 !
@@ -178,6 +186,7 @@ IMPLICIT NONE
 INTEGER, INTENT(IN) :: KSIZE1
 INTEGER, INTENT(IN) :: KSIZE2
 INTEGER, DIMENSION(:), INTENT(IN) :: KMASK
+CHARACTER(LEN=*),     INTENT(IN)    :: HSNOWCOND
 !
 REAL, DIMENSION(KSIZE1,KSIZE2) :: ZP_SNOWSWE
 REAL, DIMENSION(KSIZE1,KSIZE2) :: ZP_SNOWRHO
@@ -196,13 +205,13 @@ REAL, DIMENSION(KSIZE1)        :: ZP_PS
 REAL, DIMENSION(KSIZE1)        :: ZP_SR
 REAL, DIMENSION(KSIZE1)        :: ZP_TA
 REAL, DIMENSION(KSIZE1)        :: ZP_VMOD
-
+!
 INTEGER         :: JWRK, JJ, JI
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !----------------------------------------------------------------
 !
-IF (LHOOK) CALL DR_HOOK('SNOW3L_ISBA:CALL_MODEL',0,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('PREPS_FOR_MEB_EBUD_RAD:CALL_SNOW_ROUTINES',0,ZHOOK_HANDLE)
 !
 ! pack the variables
 !
@@ -227,22 +236,28 @@ DO JJ=1,KSIZE1
    ZP_PERMSNOWFRAC(JJ) = PPERMSNOWFRAC(JI)
 ENDDO
 !
-!---------------------------------------------------------------
+! ---------------------------------------------------------------
 !
 ! Local working:
 !
 ZP_SNOWHEAT(:,:)   = ZP_SNOWHEAT(:,:)*ZP_SNOWDZ(:,:) ! J/m3 to J/m2
 !
 !
-CALL SNOW3LFALL(PTSTEP,ZP_SR,ZP_TA,ZP_VMOD,ZP_SNOW,ZP_SNOWRHO,ZP_SNOWDZ,          &
-                 ZP_SNOWHEAT,ZP_SNOWHMASS,ZP_SNOWAGE,ZP_PERMSNOWFRAC)
-!
-CALL SNOW3LGRID(ZP_SNOWDZN,ZP_SNOW,PSNOWDZ_OLD=ZP_SNOWDZ)
-!
-CALL SNOW3LTRANSF(ZP_SNOW,ZP_SNOWDZ,ZP_SNOWDZN,ZP_SNOWRHO,ZP_SNOWHEAT,ZP_SNOWAGE)
+IF (HSNOW_ISBA =="CRO") THEN
+
+ ! à voir ce qu'on garde ici
+
+ELSE
+	CALL SNOW3LFALL(PTSTEP,ZP_SR,ZP_TA,ZP_VMOD,ZP_SNOW,ZP_SNOWRHO,ZP_SNOWDZ,          &
+		               ZP_SNOWHEAT,ZP_SNOWHMASS,ZP_SNOWAGE,ZP_PERMSNOWFRAC)
+	!
+	CALL SNOW3LGRID(ZP_SNOWDZN,ZP_SNOW,PSNOWDZ_OLD=ZP_SNOWDZ)
+	!
+	CALL SNOW3LTRANSF(ZP_SNOW,ZP_SNOWDZ,ZP_SNOWDZN,ZP_SNOWRHO,ZP_SNOWHEAT,ZP_SNOWAGE)
+END IF
 !
 ! Snow heat capacity:
-!
+! 
 ZP_HEATCAPS(:,:)   = SNOW3LSCAP(ZP_SNOWRHO)                    ! J m-3 K-1
 !
 ! Snow temperature (K) 
@@ -252,21 +267,29 @@ ZP_SNOWTEMP(:,:)   = XTT + ( ((ZP_SNOWHEAT(:,:)/MAX(1.E-10,ZP_SNOWDZ(:,:)))  &
 !
 ZP_SNOWLIQ(:,:)    = MAX(0.0,ZP_SNOWTEMP(:,:)-XTT)*ZP_HEATCAPS(:,:)*         &
                      ZP_SNOWDZ(:,:)/(XLMTT*XRHOLW) 
-
+!
 ZP_SNOWTEMP(:,:)   = MIN(XTT,ZP_SNOWTEMP(:,:))
-
+!
 ! SWE:
-
+!
 ZP_SNOWSWE(:,:)  = ZP_SNOWDZ(:,:)*ZP_SNOWRHO(:,:)             
-
-CALL SNOW3LCOMPACTN(PTSTEP,XSNOWDZMIN,ZP_SNOWRHO,ZP_SNOWDZ,ZP_SNOWTEMP,ZP_SNOW,ZP_SNOWLIQ)
-
+!
+IF (HSNOW_ISBA=="CRO") THEN
+  ! à voir ce qu'on garde ici
+  CALL SNOWCROTHRM(ZP_SNOWRHO,ZP_SCOND,ZP_SNOWTEMP,ZP_PS,ZP_SNOWLIQ, &
+                       HSNOWCOND                  )
+ELSE
+!
+	CALL SNOW3LCOMPACTN(PTSTEP,XSNOWDZMIN,ZP_SNOWRHO,ZP_SNOWDZ,ZP_SNOWTEMP,ZP_SNOW,ZP_SNOWLIQ)
+!
 ! Snow thermal conductivity:
 !
-CALL SNOW3LTHRM(ZP_SNOWRHO,ZP_SCOND,ZP_SNOWTEMP,ZP_PS)
+	CALL SNOW3LTHRM(ZP_SNOWRHO,ZP_SCOND,ZP_SNOWTEMP,ZP_PS)
 !
+ENDIF
+
 !----------------------------------------------------------------
-!
+!             
 ! Unpack:
 !
 DO JWRK=1,KSIZE2
@@ -280,10 +303,12 @@ DO JWRK=1,KSIZE2
       PSNOWLIQ (JI,JWRK) = ZP_SNOWLIQ (JJ,JWRK)
       PSCOND   (JI,JWRK) = ZP_SCOND   (JJ,JWRK)
       PHEATCAPS(JI,JWRK) = ZP_HEATCAPS(JJ,JWRK)
-   ENDDO
-ENDDO
+     ENDDO
+  ENDDO
+!
+IF (LHOOK) CALL DR_HOOK('PREPS_FOR_MEB_EBUD_RAD:CALL_SNOW_ROUTINES',1,ZHOOK_HANDLE)
 !
 END SUBROUTINE CALL_SNOW_ROUTINES
 !================================================================  
-!
+
 END SUBROUTINE PREPS_FOR_MEB_EBUD_RAD

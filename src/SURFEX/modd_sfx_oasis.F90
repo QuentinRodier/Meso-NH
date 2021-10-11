@@ -28,7 +28,7 @@ MODULE MODD_SFX_OASIS
 !!      Original       10/13
 !!      Modified       11/2014 : J. Pianezze - add wave coupling and creation of OASIS grids
 !!      S.Senesi       08/2015 : add CMODEL_NAME
-!!    10/2016 B. Decharme : bug surface/groundwater coupling
+!!    10/2016 B. Decharme : bug surface/groundwater coupling 
 !
 !*       0.   DECLARATIONS
 !             ------------
@@ -110,7 +110,6 @@ INTEGER             :: NSEA_FWSM_ID ! wind stress id
 INTEGER             :: NSEA_EVAP_ID ! Evaporation id
 INTEGER             :: NSEA_RAIN_ID ! Rainfall id
 INTEGER             :: NSEA_SNOW_ID ! Snowfall id
-INTEGER             :: NSEA_EVPR_ID ! Evap.-Precip. id
 INTEGER             :: NSEA_WATF_ID ! Freshwater id
 INTEGER             :: NSEA_PRES_ID ! Surface pressure id
 !

@@ -25,7 +25,6 @@ WRITE(NLUOUT,*) 'WARNING'
 WRITE(NLUOUT,*) '-------'
 WRITE(NLUOUT,*) ' '
 WRITE(NLUOUT,*) 'error when reading article', HREC
-WRITE(NLUOUT,*) "default value may be used; who knows?"
 WRITE(NLUOUT,*) ' '
 !
  CALL ABOR1_SFX('READ_SURF_ASC: ERROR WHEN READING ARTICLE '//HREC)

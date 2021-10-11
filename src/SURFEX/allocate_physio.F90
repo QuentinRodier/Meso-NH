@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-    SUBROUTINE ALLOCATE_PHYSIO (IO, KK, PK, PEK, KVEGTYPE )
+    SUBROUTINE ALLOCATE_PHYSIO (IO, KK, PK, PEK, KVEGTYPE, LECOSG)
 !   ##########################################################################
 !
 !!****  *ALLOCATE_PHYSIO* - 
@@ -33,33 +33,36 @@
 !!    -------------
 !!      Original    xx/xxxx
 !!      Modified 10/2014 P. Samuelsson  MEB
+!!               01/2018 J. Etchanchu : irrigation parameters
+!!               02/2019 A. Druel     : irrigation parameters with ECOCLIMAP-SG
 !!               11/2019 C.Lac correction in the drag formula and application to building in addition to tree
 !
 !
 USE MODD_ISBA_OPTIONS_n, ONLY : ISBA_OPTIONS_t
-USE MODD_ISBA_n, ONLY : ISBA_K_t, ISBA_P_t, ISBA_PE_t
+USE MODD_ISBA_n,         ONLY : ISBA_K_t, ISBA_P_t, ISBA_PE_t
 !
 USE MODD_TYPE_DATE_SURF
 !
-USE MODD_AGRI,        ONLY : LAGRIP
+USE MODD_AGRI,           ONLY : LAGRIP, LIRRIGMODE
 !
 USE MODD_TREEDRAG,       ONLY : LTREEDRAG
 !
-USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
-USE PARKIND1  ,ONLY : JPRB
+USE YOMHOOK   ,          ONLY : LHOOK,   DR_HOOK
+USE PARKIND1  ,          ONLY : JPRB
 !
 IMPLICIT NONE
 !
 !
 TYPE(ISBA_OPTIONS_t), INTENT(INOUT) :: IO
-TYPE(ISBA_K_t), INTENT(INOUT) :: KK
-TYPE(ISBA_P_t), INTENT(INOUT) :: PK
+TYPE(ISBA_K_t), INTENT(INOUT)  :: KK
+TYPE(ISBA_P_t), INTENT(INOUT)  :: PK
 TYPE(ISBA_PE_t), INTENT(INOUT) :: PEK
 !
 INTEGER, INTENT(IN) :: KVEGTYPE
+LOGICAL, INTENT(IN) :: LECOSG
 !
-INTEGER :: ISIZE
-INTEGER               :: ISIZE_LMEB_PATCH  ! Number of patches with MEB=true
+INTEGER             :: ISIZE
+INTEGER             :: ISIZE_LMEB_PATCH  ! Number of patches with MEB=true
 !
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
@@ -136,16 +139,29 @@ ENDIF
 !
 ! - Irrigation, seeding and reaping
 !
-IF (LAGRIP .AND. (IO%CPHOTO == 'NIT' .OR. IO%CPHOTO == 'NCB'))  THEN
-  ALLOCATE(PEK%TSEED                  (ISIZE              )) 
-  ALLOCATE(PEK%TREAP                  (ISIZE              )) 
-  ALLOCATE(PEK%XWATSUP                (ISIZE              )) 
-  ALLOCATE(PEK%XIRRIG                 (ISIZE              ))
+IF ( LAGRIP .OR. LIRRIGMODE ) THEN 
+  ALLOCATE(PEK%TSEED           (ISIZE              ))
+  ALLOCATE(PEK%TREAP           (ISIZE              ))
+  ALLOCATE(PEK%MULTI_TSEED     (ISIZE, 3           ))
+  ALLOCATE(PEK%MULTI_TREAP     (ISIZE, 3           ))
 ELSE
-  ALLOCATE(PEK%TSEED     (0))
-  ALLOCATE(PEK%TREAP     (0))
-  ALLOCATE(PEK%XWATSUP   (0))
-  ALLOCATE(PEK%XIRRIG    (0))        
+  ALLOCATE(PEK%TSEED           (0))
+  ALLOCATE(PEK%TREAP           (0))
+  ALLOCATE(PEK%MULTI_TSEED     (0,0))
+  ALLOCATE(PEK%MULTI_TREAP     (0,0))
+ENDIF
+IF ( LIRRIGMODE ) THEN
+  ALLOCATE(PEK%XWATSUP         (ISIZE              )) 
+  ALLOCATE(PEK%XIRRIGTYPE      (ISIZE              ))
+  ALLOCATE(PEK%XIRRIGFREQ      (ISIZE              )) 
+  ALLOCATE(PEK%XIRRIGTIME      (ISIZE              )) 
+  ALLOCATE(PEK%XF2THRESHOLD    (ISIZE              )) 
+ELSE
+  ALLOCATE(PEK%XWATSUP         (0))
+  ALLOCATE(PEK%XIRRIGTYPE      (0))
+  ALLOCATE(PEK%XIRRIGFREQ      (0)) 
+  ALLOCATE(PEK%XIRRIGTIME      (0)) 
+  ALLOCATE(PEK%XF2THRESHOLD    (0)) 
 ENDIF
 !
 ! - ISBA-DF scheme

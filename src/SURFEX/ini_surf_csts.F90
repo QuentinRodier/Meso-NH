@@ -54,14 +54,19 @@ USE MODD_MEB_PAR,   ONLY : XTAU_LW,                            &
 USE MODD_SNOW_PAR,  ONLY : XEMISSN, XANSMIN, XANSMAX,          &
                            XAGLAMIN, XAGLAMAX, XHGLA,          &
                            XWSNV, XZ0SN, XZ0HSN,               &
+                           X_RI_MAX,                           &
                            XTAU_SMELT,                         &
                            XALBICE1, XALBICE2, XALBICE3,       &
                            XRHOTHRESHOLD_ICE, XZ0ICEZ0SNOW,    &
                            XVAGING_NOGLACIER, XVAGING_GLACIER, &
                            XPERCENTAGEPORE,                    &
                            LMEBREC,                            &
-                           XANSFRACMEL, XTEMPANS,              &
-                           XANSMINMEB
+                           XANSFRACMEL, XTEMPANS, XANSMINMEB,  &
+                           XIMPUR_INIT, XIMPUR_COEFF,          &
+                           XPSR_SNOWMAK, XRHO_SNOWMAK,         &
+                           XPTA_SEUIL, XTIMESNOWMAK,           &
+                           XPROD_SCHEME, XSM_END, XFREQ_GRO !Grooming and Snowmaking option by P.Spandre 20160211
+USE MODD_SNOW_METAMO, ONLY : XVVISC3
 !
 USE MODI_GET_LUOUT
 USE MODI_OPEN_NAMELIST
@@ -98,7 +103,10 @@ NAMELIST/NAM_SURF_CSTS/ XEMISSN, XANSMIN, XANSMAX, XAGLAMIN, XAGLAMAX, &
 NAMELIST/NAM_SURF_SNOW_CSTS/ XZ0ICEZ0SNOW, XRHOTHRESHOLD_ICE,          &
                              XALBICE1, XALBICE2, XALBICE3,             &
                              XVAGING_NOGLACIER, XVAGING_GLACIER,       &
-                             XPERCENTAGEPORE
+                             XPERCENTAGEPORE,XVVISC3,X_RI_MAX,         &
+                             XIMPUR_INIT, XIMPUR_COEFF, XPSR_SNOWMAK,  &
+                             XRHO_SNOWMAK, XPTA_SEUIL, XTIMESNOWMAK,   &
+                             XPROD_SCHEME, XSM_END, XFREQ_GRO
 !
 NAMELIST/NAM_REPROD_OPER/ LREPROD_OPER, XEVERG_RSMIN, XEVERG_VEG, &
                           CDGAVG, CDGDIF, CIMPLICIT_WIND, CQSAT,  &
@@ -177,6 +185,9 @@ XZ0SN = 0.001
 !
 XZ0HSN = 0.0001
 !
+! Maximum Richardson number limit for very stable conditions over snow using the 'RIL' option
+X_RI_MAX = 0.2
+!
 ! Snow Melt timescale with D95 (s): needed to prevent time step 
 ! dependence of melt when snow fraction < unity.
 !
@@ -214,6 +225,15 @@ XALBICE3 = 0.08
 ! PALBICE2=0.16
 ! PALBICE3=0.05
 !
+! Options for MM snow production and grooming p.s 20160211
+XPSR_SNOWMAK = 0.0012
+XRHO_SNOWMAK = 600.
+XPTA_SEUIL = 268.
+XTIMESNOWMAK = 0.
+XPROD_SCHEME = (/2500,5000,4000,2500,1000/)
+XSM_END = (/4,15,4,15/)
+XFREQ_GRO = 1
+!
 ! Density threshold for ice detection kg.m-3
 XRHOTHRESHOLD_ICE = 850.
 !
@@ -224,9 +244,21 @@ XVAGING_GLACIER   = 900.
 ! percentage of the total pore volume to compute the max liquid water holding capacity   !Pahaut 1976
 XPERCENTAGEPORE = 0.05
 !
+! Snow viscosity coefficient
+XVVISC3= 0.023
+!
 ! Roughness length for flood (m)
 !
 XZ0FLOOD = 0.0002
+
+!!! impurity value 
+XIMPUR_COEFF(1)=5.E-9 ! BC deposition at top of snowpack 
+XIMPUR_INIT(1)=4.E-9 ! BC initial content (g/g) of impurity for fresh snow
+
+XIMPUR_COEFF(2:5)=10.E-6 ! Dust deposition at top of snowpack
+XIMPUR_INIT(2:5)=5.E-6 ! Dust initial content (g/g) of impurity for fresh snow
+
+
 !-------------------------------------------------------------------------------
 !
 ! * Reproductibility for SURFEX OPER

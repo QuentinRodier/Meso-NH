@@ -8,7 +8,7 @@
                              HSV,PCO2,PRHOA,                            &
                              PZENITH,PAZIM,PSW_BANDS,PDIR_ALB,PSCA_ALB, &
                              PEMIS,PTSRAD,PTSURF,                       &
-                             KYEAR, KMONTH,KDAY, PTIME,                 &
+                             KYEAR, KMONTH,KDAY, PTIME, AT,             &
                              HATMFILE,HATMFILETYPE,                     &
                              HTEST                                      )  
 !     #############################################################
@@ -53,6 +53,8 @@ USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 USE MODD_GRID_CONF_PROJ_n, ONLY : GRID_CONF_PROJ_t
 !
 USE MODD_DIAG_n, ONLY : DIAG_t, DIAG_OPTIONS_t
+!
+USE MODD_SURF_ATM_TURB_n, ONLY : SURF_ATM_TURB_t
 !
 USE MODD_CSTS,       ONLY : XTT
 !
@@ -101,6 +103,7 @@ INTEGER,                          INTENT(IN)  :: KMONTH    ! current month (UTC)
 INTEGER,                          INTENT(IN)  :: KDAY      ! current day (UTC)
 REAL,                             INTENT(IN)  :: PTIME     ! current time since
                                                           !  midnight (UTC, s)
+TYPE(SURF_ATM_TURB_t), INTENT(IN) :: AT         ! atmospheric turbulence parameters
 !
  CHARACTER(LEN=28),                INTENT(IN)  :: HATMFILE    ! atmospheric file name
  CHARACTER(LEN=6),                 INTENT(IN)  :: HATMFILETYPE! atmospheric file type
@@ -132,7 +135,7 @@ ELSE IF (U%CSEA=='SEAFLX') THEN
                      HPROGRAM,HINIT,KI,KSV,KSW,HSV,PCO2,PRHOA,     &
                      PZENITH,PAZIM,PSW_BANDS,PDIR_ALB,PSCA_ALB,    &
                      PEMIS,PTSRAD,PTSURF,                          &
-                     KYEAR,KMONTH,KDAY,PTIME,HATMFILE,HATMFILETYPE,&
+                     KYEAR,KMONTH,KDAY,PTIME,AT,HATMFILE,HATMFILETYPE,&
                      'OK'                                          )  
 END IF
 IF (LHOOK) CALL DR_HOOK('INIT_SEA_N',1,ZHOOK_HANDLE)

@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
   !     ########################################################################
-      SUBROUTINE DEFAULT_SSO(HROUGH,PFRACZ0,PCOEFBE)
+      SUBROUTINE DEFAULT_SSO(HROUGH,PFRACZ0,PCOEFBE,ODSV,ODSH,ODSL)
 !     ########################################################################
 !
 !!****  *DEFAULT_ISBA* - routine to set default values for 
@@ -33,6 +33,8 @@
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    10/2010
+!!      A. Mary     04/2015    Ororad rewriting
+!!      A. Mary     04/2016    Ororad phasing
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -45,6 +47,7 @@ IMPLICIT NONE
  CHARACTER(LEN=4), INTENT(OUT) :: HROUGH
 REAL, INTENT(OUT) :: PFRACZ0
 REAL, INTENT(OUT) :: PCOEFBE
+LOGICAL, INTENT(OUT) :: ODSV, ODSH, ODSL
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !*       0.1   Declarations of arguments
@@ -56,6 +59,9 @@ IF (LHOOK) CALL DR_HOOK('DEFAULT_SSO',0,ZHOOK_HANDLE)
 HROUGH = "BE04"
 PFRACZ0 = 2.
 PCOEFBE = 2.
+ODSV = .FALSE.
+ODSH = .FALSE.
+ODSL = .FALSE.
 IF (LHOOK) CALL DR_HOOK('DEFAULT_SSO',1,ZHOOK_HANDLE)
 !
 END SUBROUTINE DEFAULT_SSO

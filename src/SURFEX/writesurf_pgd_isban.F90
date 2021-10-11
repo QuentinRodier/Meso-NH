@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE WRITESURF_PGD_ISBA_n (HSELECT, HNATURE, DTV, DTZ, G, ISS, IO, S, K, HPROGRAM)
+      SUBROUTINE WRITESURF_PGD_ISBA_n (HSELECT, HNATURE, OECOSG, DTV, DTZ, G, ISS, IO, S, K, HPROGRAM)
 !     ################################################
 !
 !!****  *WRITESURF_PGD_ISBA_n* - writes ISBA physiographic fields
@@ -40,27 +40,31 @@
 !!      B. Decharme  07/2012 : files of data for permafrost area and for SOC top and sub soil
 !!                   11/2013 : same for groundwater distribution
 !!                   11/2014 : Write XSOILGRID as a series of real 
-!!      P. Samuelsson 10/2014 : MEB
-!!      M. Moge      02/2015 parallelization using WRITE_LCOVER
-!!    10/2016 B. Decharme : bug surface/groundwater coupling   
+!!      P. Samuelsson 10/2014: MEB
+!!      M. Moge      02/2015   parallelization using WRITE_LCOVER
+!!      B. Decharme  10/2016 : bug surface/groundwater coupling   
+!!      A. Druel     02/2019 : Add variables for irrigation
+!!
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
 #ifdef SFX_OL
-USE MODN_IO_OFFLINE, ONLY : LWR_VEGTYPE
+USE MODN_IO_OFFLINE,     ONLY : LWR_VEGTYPE
 #endif
 !
-USE MODD_DATA_ISBA_n, ONLY : DATA_ISBA_t
-USE MODD_DATA_TSZ0_n, ONLY : DATA_TSZ0_t
-USE MODD_SFX_GRID_n, ONLY : GRID_t
-USE MODD_SSO_n, ONLY : SSO_t
+USE MODD_DATA_ISBA_n,    ONLY : DATA_ISBA_t
+USE MODD_DATA_TSZ0_n,    ONLY : DATA_TSZ0_t
+USE MODD_SFX_GRID_n,     ONLY : GRID_t
+USE MODD_SSO_n,          ONLY : SSO_t
 USE MODD_ISBA_OPTIONS_n, ONLY : ISBA_OPTIONS_t
-USE MODD_ISBA_n, ONLY : ISBA_S_t, ISBA_K_t
+USE MODD_ISBA_n,         ONLY : ISBA_S_t, ISBA_K_t
 !
-USE MODD_SURF_PAR, ONLY : XUNDEF
-USE MODD_DATA_COVER_PAR, ONLY : JPCOVER
+USE MODD_SURF_PAR,       ONLY : XUNDEF, LEN_HREC
+USE MODD_DATA_COVER,     ONLY : LDATA_IRRIG
+USE MODD_DATA_COVER_PAR, ONLY : JPCOVER, NCAR_FILES, NVEGTYPE
+USE MODD_AGRI,           ONLY : LIRRIGMODE, XTHRESHOLD, NVEG_IRR, NPATCH_TREE
 !
 USE MODE_WRITE_SURF_COV, ONLY : WRITE_SURF_COV
 !
@@ -79,15 +83,16 @@ IMPLICIT NONE
 !              -------------------------
 !
  CHARACTER(LEN=*), DIMENSION(:), INTENT(IN) :: HSELECT
- CHARACTER(LEN=*), INTENT(IN) :: HNATURE
+ CHARACTER(LEN=*),               INTENT(IN) :: HNATURE
+ LOGICAL,                        INTENT(IN) :: OECOSG
 !
-TYPE(DATA_ISBA_t), INTENT(INOUT) :: DTV
-TYPE(DATA_TSZ0_t), INTENT(INOUT) :: DTZ
-TYPE(GRID_t), INTENT(INOUT) :: G
-TYPE(SSO_t), INTENT(INOUT) :: ISS
+TYPE(DATA_ISBA_t),    INTENT(INOUT) :: DTV
+TYPE(DATA_TSZ0_t),    INTENT(INOUT) :: DTZ
+TYPE(GRID_t),         INTENT(INOUT) :: G
+TYPE(SSO_t),          INTENT(INOUT) :: ISS
 TYPE(ISBA_OPTIONS_t), INTENT(INOUT) :: IO
-TYPE(ISBA_S_t), INTENT(INOUT) :: S
-TYPE(ISBA_K_t), INTENT(INOUT) :: K
+TYPE(ISBA_S_t),       INTENT(INOUT) :: S
+TYPE(ISBA_K_t),       INTENT(INOUT) :: K
 !
  CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM ! program calling
 !
@@ -98,9 +103,11 @@ INTEGER           :: IRESP          ! IRESP  : return-code if a problem appears
 CHARACTER(LEN=LEN_HREC) :: YRECFM         ! Name of the article to be read
 CHARACTER(LEN=100):: YCOMMENT       ! Comment string
 CHARACTER(LEN=4 ) :: YLVL
+CHARACTER(LEN=6 ) :: YLVL2
 !
-INTEGER :: JJ, JLAYER
-INTEGER :: ISIZE_LMEB_PATCH  ! Number of patches with MEB=true
+INTEGER                   :: JJ, JLAYER
+INTEGER                   :: ISIZE_LMEB_PATCH  ! Number of patches with MEB=true
+CHARACTER(LEN=NCAR_FILES) :: CWORK
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
@@ -174,11 +181,76 @@ YRECFM='PATCH_NUMBER'
 YCOMMENT=YRECFM
  CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,IO%NPATCH,IRESP,HCOMMENT=YCOMMENT)
 !
+!* Name of eatch tile (patch) 
+!
+YCOMMENT='npatch name'
+DO JJ=1,IO%NPATCH
+  WRITE(YRECFM,FMT='(A10,I2.2)') 'NPATCH_NAM',JJ
+  YCOMMENT=YRECFM
+  CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DTV%CPATCH_NAME(JJ,1),IRESP,HCOMMENT=YCOMMENT)
+ENDDO
+!
+!* Compoistion of each patch (True / False liste + if ecosg and irrigated 'IRRIG ')
+!
+YCOMMENT='npatch vegtype composition (T/F)'
+DO JJ=1,IO%NPATCH
+  WRITE(YRECFM,FMT='(A10,I2.2)') 'NPATCH_VEG',JJ
+  YCOMMENT=YRECFM
+  CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DTV%CPATCH_NAME(JJ,2),IRESP,HCOMMENT=YCOMMENT)
+ENDDO
+!
 !* flag indicating if fields are computed from ecoclimap or not
 !
 YRECFM='ECOCLIMAP'
 YCOMMENT=YRECFM
  CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,IO%LECOCLIMAP,IRESP,HCOMMENT=YCOMMENT)
+!
+!* number of irrigated vegtype 
+!
+IF ( OECOSG ) THEN
+  YRECFM='NVEG_IRR'
+  YCOMMENT='Number of irrigated vegtype (with ECOSG)'
+   CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,NVEG_IRR,IRESP,HCOMMENT=YCOMMENT)
+ENDIF
+!
+!* liste of irrigated vegtype 
+!
+IF ( NVEG_IRR /= 0 .AND. OECOSG ) THEN
+  YRECFM='LIST_VEG_IRR'
+  YCOMMENT='Irrigated vegtype in True'
+  CWORK=''
+  DO JJ=1, NVEGTYPE
+    IF ( ANY(DTV%NPAR_VEG_IRR_USE==JJ) ) THEN
+      CWORK=TRIM(CWORK)//'T'
+    ELSE
+      CWORK=TRIM(CWORK)//'F'
+    ENDIF
+  ENDDO
+  CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,CWORK,IRESP,HCOMMENT=YCOMMENT)
+ENDIF
+!
+!* patch tree (if irrigation with ECOSG)
+!
+IF ( NVEG_IRR /= 0 .AND. OECOSG ) THEN
+  YRECFM='NPATCH_TREE'
+  YCOMMENT='Corresponding NPATCH tree without irrigation'
+  CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,NPATCH_TREE,IRESP,HCOMMENT=YCOMMENT)
+ENDIF
+!
+!* Threshold on f2 for irrigation
+!
+IF ( LIRRIGMODE .OR. LDATA_IRRIG ) THEN
+  YRECFM='XTHRESHOLD'
+  YCOMMENT='Threshold on f2 for irrigation'
+  CWORK='(/'
+  DO JJ=1,SIZE(XTHRESHOLD)
+    IF ( JJ /= 1 ) CWORK = TRIM(CWORK)//','
+    WRITE(YLVL2,'(F6.3)') XTHRESHOLD(JJ)
+    CWORK = TRIM(CWORK)//ADJUSTL(YLVL2(:LEN_TRIM(YLVL2)))
+  ENDDO
+  CWORK = TRIM(CWORK)//'/)'
+  CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,CWORK,IRESP,HCOMMENT=YCOMMENT)
+ENDIF
 !
 !* logical vector indicating for which patches MEB should be applied
 !
@@ -333,6 +405,10 @@ YRECFM='SSO_SLOPE'
 YCOMMENT='X_Y_SSO_SLOPE (-)'
  CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,ISS%XSSO_SLOPE,IRESP,HCOMMENT=YCOMMENT)
 !
+YRECFM='SSO_DIR'
+YCOMMENT='X_Y_SSO_DIR (-)'
+ CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,ISS%XSSO_DIR,IRESP,HCOMMENT=YCOMMENT)
+!
 !* orographic runoff coefficient
 !
 YRECFM='RUNOFFB'
@@ -376,7 +452,7 @@ YCOMMENT='X_Y_TI_SKEW'
 ENDIF
 !
 !-------------------------------------------------------------------------------
- CALL WRITESURF_PGD_ISBA_PAR_n(HSELECT, DTV, HPROGRAM)
+ CALL WRITESURF_PGD_ISBA_PAR_n(HSELECT, OECOSG, DTV, HPROGRAM)
 IF (HNATURE=='TSZ0') CALL WRITESURF_PGD_TSZ0_PAR_n(HSELECT, DTZ, HPROGRAM)
 !
 IF (LHOOK) CALL DR_HOOK('WRITESURF_PGD_ISBA_N',1,ZHOOK_HANDLE)

@@ -108,7 +108,7 @@ IF (YSC%U%NDIM_WATER  >0) CALL DEALLOC_INLAND_WATER_n(YSC%WM, YSC%FM, YSC%U)
 !
 IF (YSC%U%NDIM_NATURE >0) CALL DEALLOC_NATURE_n(YSC%IM, YSC%U)
 !
-IF (YSC%U%NDIM_TOWN   >0) CALL DEALLOC_TOWN_n(YSC%TM, YSC%GDM, YSC%GRM, YSC%U)
+IF (YSC%U%NDIM_TOWN   >0) CALL DEALLOC_TOWN_n(YSC%TM, YSC%GDM, YSC%GRM, YSC%HM, YSC%U)
 !
 !-------------------------------------------------------------------------------------
 !

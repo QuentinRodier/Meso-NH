@@ -38,6 +38,10 @@
 !!      G Pigeon    08/2012 ROUGH_ROOF, ROUGH_WALL
 !!      V. Masson   08/2013  Adds solar panel variables
 !!      P Samuelsson 10/2014 Multi-energy balance (MEB)
+!!      M. Goret     01/2017 Add CO2 fluxes
+!!      M. Goret     01/2017 suppress EFF_HEAT
+!!      M. Goret     10/2017 add hot water
+!!      J.Etchanchu 01/2018 Add irrigation variables (A. Druel 02/2019 Add IRRIGFRAC + change dim)
 !!----------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -121,7 +125,9 @@ REAL, DIMENSION(:,:),   ALLOCATABLE :: XDATA_DMAX_ST   ! maximum air saturation 
 !
 REAL, DIMENSION(:,:),   ALLOCATABLE :: XDATA_LAIMIN  ! minimum LAI
 REAL, DIMENSION(:,:),   ALLOCATABLE :: XDATA_H_TREE  ! height of vegetation
-REAL, DIMENSION(:,:),   ALLOCATABLE :: XDATA_RE25    ! Ecosystem Respiration parameter (kg.m2.s-1)
+REAL, DIMENSION(:,:),   ALLOCATABLE :: XDATA_HTRUNK_HVEG ! height of TRUNK of trees
+REAL, DIMENSION(:,:),   ALLOCATABLE :: XDATA_WCROWN_HVEG ! width of crown of trees
+REAL, DIMENSION(:,:),   ALLOCATABLE :: XDATA_RE25    ! Ecosystem Respiration parameter (kg.m-2.s-1)
 !
 REAL, DIMENSION(:,:),   ALLOCATABLE :: XDATA_STRESS  !  defensive/offensive strategy (1/0)
 REAL, DIMENSION(:,:),   ALLOCATABLE :: XDATA_F2I     ! critical normilized soil water 
@@ -153,8 +159,14 @@ REAL, DIMENSION(:,:,:), ALLOCATABLE :: XDATA_LAI_ALL_YEARS ! leaf area index fro
 TYPE (DATE_TIME), POINTER, DIMENSION(:,:)   :: TDATA_SEED     ! seeding date      
 TYPE (DATE_TIME), POINTER, DIMENSION(:,:)   :: TDATA_REAP     ! reaping date      
 !      
-REAL, DIMENSION(:,:), ALLOCATABLE :: XDATA_WATSUP   ! water supply quantity
-REAL, DIMENSION(:,:), ALLOCATABLE :: XDATA_IRRIG    ! flag for irrigation
+REAL, DIMENSION(:,:), ALLOCATABLE :: XDATA_WATSUP      ! water supply quantity
+REAL, DIMENSION(:,:), ALLOCATABLE :: XDATA_IRRIGTYPE   ! irrigation type
+!
+REAL, DIMENSION(:,:), ALLOCATABLE :: XDATA_IRRIGFRAC   ! irrigation maximal frequency
+REAL, DIMENSION(:,:), ALLOCATABLE :: XDATA_IRRIGFREQ   ! irrigation maximal frequency
+REAL, DIMENSION(:,:), ALLOCATABLE :: XDATA_IRRIGTIME   ! irrigation amount application time
+!
+REAL, DIMENSION(:,:,:), ALLOCATABLE :: XDATA_F2THRESHOLD    ! f2 threshold for irrigation triggering
 !
 REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_TOWN   ! artificial surfaces fraction
 REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_NATURE ! natural and cul. fraction
@@ -171,6 +183,11 @@ REAL, DIMENSION(:,:),  ALLOCATABLE :: XDATA_SOILRC_O3  ! for O3  deposition
 REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_GARDEN      ! garden fraction
 REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_BLD         ! building fraction in
                                                        ! artificial areas
+REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_ROAD        ! road fraction
+REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_FRAC_HVEG   ! fraction of high vegetation
+REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_FRAC_LVEG   ! fraction of low  vegetation
+REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_FRAC_NVEG   ! fraction of no   vegetation
+!
 REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_BLD_HEIGHT  ! buildings height h
 REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_WALL_O_HOR  ! ratio of vert. surf.
 !                                                      ! over hor. surf.
@@ -224,15 +241,39 @@ REAL, DIMENSION(:,:), ALLOCATABLE :: XDATA_HC_FLOOR     ! heat capacity of floor
 REAL, DIMENSION(:,:), ALLOCATABLE :: XDATA_TC_FLOOR     ! thermal conductivity of floor layers [W m-1 K-1]
 REAL, DIMENSION(:,:), ALLOCATABLE :: XDATA_D_FLOOR      ! thickness of floor layers [m]
 !
+REAL, DIMENSION(:,:), ALLOCATABLE :: XDATA_HC_MASS     ! heat capacity of mass layers [J m-3 K-1]
+REAL, DIMENSION(:,:), ALLOCATABLE :: XDATA_TC_MASS     ! thermal conductivity of mass layers [W m-1 K-1]
+REAL, DIMENSION(:,:), ALLOCATABLE :: XDATA_D_MASS      ! thickness of mass layers [m]
+!
 ! For multi-energy balance (MEB)
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: XDATA_GNDLITTER          ! Ground litter coverage
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: XDATA_Z0LITTER           ! Ground litter roughness length
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: XDATA_H_VEG              ! Height of canopy vegetation
 !
-REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_TCOOL_TARGET ! cooling setpoint of indoor air
-REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_THEAT_TARGET ! heating setpoint of indoor air
+! For Building Energy Module (BEM)
+REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_FRACOMP              ! Fraction of compartments in bem
+REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_RESIDENTIAL          ! Fraction of residential use
+REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_THEAT_OCCD
+REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_THEAT_OCCN
+REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_THEAT_VCDD
+REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_THEAT_VCDN
+REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_THEAT_VCLD
+REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_TCOOL_OCCD
+REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_TCOOL_OCCN
+REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_TCOOL_VCDD
+REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_TCOOL_VCDN
+REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_TCOOL_VCLD
+REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_FVSUM
+REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_FVVAC
+REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_FSSUM
+REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_FSVAC
+REAL, DIMENSION(:,:), ALLOCATABLE :: XDATA_PROBOCC
+REAL, DIMENSION(:,:), ALLOCATABLE :: XDATA_DAYWBEG_SCHED
+REAL, DIMENSION(:,:), ALLOCATABLE :: XDATA_HOURBEG_SCHED
+REAL, DIMENSION(:,:), ALLOCATABLE :: XDATA_BEG_HOLIDAY
+REAL, DIMENSION(:,:), ALLOCATABLE :: XDATA_END_HOLIDAY
+REAL, DIMENSION(:)  , ALLOCATABLE :: XDATA_MOD_HOLIDAY
 REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_F_WASTE_CAN  ! fraction of waste heat released into the canyon
-REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_EFF_HEAT     ! efficiency of the heating system
 !
 REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_QIN          ! internal heat gains [W m-2(floor)]
 REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_QIN_FRAD     ! radiant fraction of internal heat gains
@@ -241,29 +282,50 @@ REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_U_WIN        ! glazing thermal resist
 REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_GR           ! glazing ratio
 REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_SHGC_SH      ! solar transmitance of windows
 REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_FLOOR_HEIGHT ! building floor height [m]
-REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_INF          ! infiltration/ventilation flow rate [AC/H]
+REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_ISMASS       ! Presence of internal mass ?
+REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_N50          ! infiltration/ventilation flow rate [AC/H]
 !
 REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_F_WATER_COND
+REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_DCS_AREA
 REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_QIN_FLAT
 REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_HR_TARGET
-REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_V_VENT
 REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_CAP_SYS_HEAT
 REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_CAP_SYS_RAT
 REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_T_ADP
 REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_M_SYS_RAT
 REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_COP_RAT      ! COP of the cooling system
+REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_COP_DCS      ! COP of the district cooling system
 REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_T_SIZE_MAX
 REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_T_SIZE_MIN
-REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_SHADE
+REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_ISMECH
+REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_MECHRATE
+REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_SHADEARCHI
 REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_NATVENT
 REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_ROUGH_ROOF
 REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_ROUGH_WALL
-REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_RESIDENTIAL ! residential use fraction
-
+REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_FSNIG
+REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_FVNIG
+REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_MODQIN_VCD
+REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_MODQIN_VLD     
+REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_MODQIN_NIG
+REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_TDESV
+REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_WIN_SW_MAX
+REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_FOPEN
 REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_EMIS_PANEL  ! emissivity of solar panels
 REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_ALB_PANEL   ! albedo     of solar panels
 REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_EFF_PANEL   ! efficiency of solar panels
 REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_FRAC_PANEL  ! fraction   of solar panels on roofs
+!
+! For CO2 fluxes
+REAL, DIMENSION(:), ALLOCATABLE :: XDATA_FRAC_HEAT_ELEC  ! Fraction of electric heating
+REAL, DIMENSION(:), ALLOCATABLE :: XDATA_FRAC_HEAT_GAS   ! Fraction of town gas heating
+REAL, DIMENSION(:), ALLOCATABLE :: XDATA_FRAC_HEAT_FUEL  ! Fraction of fuel heating
+REAL, DIMENSION(:), ALLOCATABLE :: XDATA_FRAC_HEAT_OTHER ! Fraction of other heating
+REAL, DIMENSION(:), ALLOCATABLE :: XDATA_NB_POP          ! Number of people per square kilometer
+REAL, DIMENSION(:), ALLOCATABLE :: XDATA_SFCO2_RD        ! CO2 flux link to traffic (roads) (kg/m2 of town/s)
+REAL, DIMENSION(:), ALLOCATABLE :: XDATA_HOTWAT          ! Energy needed for hot water [W m-2(floor)]
+REAL, DIMENSION(:), ALLOCATABLE :: XDATA_F_HW_GAS        ! Fraction of water heat by gas
+!
 !
 ! urban vegetation parameters
 !

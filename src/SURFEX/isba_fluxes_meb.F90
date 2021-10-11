@@ -245,16 +245,16 @@ IF (LHOOK) CALL DR_HOOK('ISBA_FLUXES_MEB',0,ZHOOK_HANDLE)
 ! LWnet: transform from explicit to implicit (i.e. at time t+dt)
 !
 DEK%XLWNET_V(:)  = DEK%XLWNET_V(:) + PLWNET_V_DTV(:)*PDELTAT_V(:)   &
-                                   + PLWNET_V_DTG(:)*PDELTAT_G(:)   &
-                                   + PLWNET_V_DTN(:)*PDELTAT_N(:)
+                           + PLWNET_V_DTG(:)*PDELTAT_G(:)   &
+                           + PLWNET_V_DTN(:)*PDELTAT_N(:)
 
 DEK%XLWNET_G(:)  = DEK%XLWNET_G(:) + PLWNET_G_DTV(:)*PDELTAT_V(:)   &
-                                   + PLWNET_G_DTG(:)*PDELTAT_G(:)   &
-                                   + PLWNET_G_DTN(:)*PDELTAT_N(:)
+                           + PLWNET_G_DTG(:)*PDELTAT_G(:)   &
+                           + PLWNET_G_DTN(:)*PDELTAT_N(:)
 
 DEK%XLWNET_N(:)  = DEK%XLWNET_N(:) + PLWNET_N_DTV(:)*PDELTAT_V(:)   &
-                                   + PLWNET_N_DTG(:)*PDELTAT_G(:)   &
-                                   + PLWNET_N_DTN(:)*PDELTAT_N(:)
+                           + PLWNET_N_DTG(:)*PDELTAT_G(:)   &
+                           + PLWNET_N_DTN(:)*PDELTAT_N(:)
 !
 ! LWup at t+dt
 !
@@ -298,7 +298,7 @@ DK%XRN(:)    = PRN_G(:) + PRN_V(:) + DMK%XRNSNOW(:)
 
 ! First get input thermo variable (could be enthalpy (air heat capacity x potential temperature or dry static energy)
 
-ZSAIR(:)  = PTHRMB_TA(:) + PTHRMA_TA(:)*PTA_IC(:)
+ZSAIR(:)  = PTHRMB_TA(:)    + PTHRMA_TA(:)   *PTA_IC(:)
 ZSAIRC(:) = PTHRMB_TC(:) + PTHRMA_TC(:)*PEK%XTC(:)
 
 ! Sensible heat fluxes (W m-2):
@@ -360,7 +360,7 @@ DEK%XLER_CV(:) = ( (1.-PPSNA(:))*PEK%XPSN(:) * PFLXC_VN_C(:)    +              &
 !   *without* sublimation (for TOTAL evapotranspiration and sublimation, add PLESC here)
 
 DEK%XLEV_CV(:)  = PLTT(:) * ZEVAP_CV(:)
-!
+
 ! - latent heat flux from transpiration from the canopy (W m-2)
 
 DEK%XLETR_CV(:) = DEK%XLEV_CV(:) - DEK%XLER_CV(:) 
@@ -368,7 +368,6 @@ DEK%XLETR_CV(:) = DEK%XLEV_CV(:) - DEK%XLER_CV(:)
 ! Snow sublimation and evaporation latent heat flux from canopy-intercepted snow (W m-2)
 
 DEK%XLES_CV(:)  =  PPSNCV(:) * XLSTT * PHVNS(:) * PFLXC_CV(:)*( ZQSATN_V(:) - PEK%XQC(:) )
-
 ! - Total latent heat flux from vegetation canopy overstory to canopy air space
 !   (including transpiration, liquid water store, canopy snow sublimation):
 

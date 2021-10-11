@@ -6,7 +6,7 @@
       SUBROUTINE ISBA_SNOW_AGR(KK, PK, PEK, DMK, DK, DEK, &
                                OMEB, OMEB_LITTER, PEXNS, PEXNA, PTA, PQA,  &
                                PZREF, PUREF, PDIRCOSZW, PVMOD, PRR, PSR,   &
-                               PEMIS, PALB, PUSTAR, PLES3L, PLEL3L,        &
+                               AT, PEMIS, PALB, PUSTAR, PLES3L, PLEL3L,    &
                                PEVAP3L, PQS3L, PALB3L, PGSFCSNOW,          &
                                PZGRNDFLUX, PFLSN_COR, PEMIST, PPALPHAN )
 !     ##########################################################################
@@ -58,6 +58,8 @@ USE MODD_DIAG_MISC_ISBA_n, ONLY : DIAG_MISC_ISBA_t
 !
 USE MODD_SURF_PAR,   ONLY : XUNDEF
 !
+USE MODD_SURF_ATM_TURB_n, ONLY : SURF_ATM_TURB_t
+!
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
@@ -78,7 +80,7 @@ TYPE(DIAG_EVAP_ISBA_t), INTENT(INOUT) :: DEK
 TYPE(DIAG_MISC_ISBA_t), INTENT(INOUT) :: DMK
 !
 LOGICAL,              INTENT(IN)  :: OMEB       ! True = patch with multi-energy balance 
-!                                               ! False = patch with classical ISBA
+!                                               ! False = patch with classical ISBA 
 LOGICAL, INTENT(IN)               :: OMEB_LITTER !True = litter option activated
 !                                                 ! over the ground
 !
@@ -95,6 +97,7 @@ REAL, DIMENSION(:), INTENT(IN)  :: PDIRCOSZW ! Cosinus of the angle between the 
 REAL, DIMENSION(:), INTENT(IN)  :: PVMOD     ! module of the horizontal wind
 REAL, DIMENSION(:), INTENT(IN)  :: PRR       ! Rain rate (in kg/m2/s)
 REAL, DIMENSION(:), INTENT(IN)  :: PSR       ! Snow rate (in kg/m2/s)
+TYPE(SURF_ATM_TURB_t), INTENT(IN) :: AT      ! atmospheric turbulence parameters
 !
 !* surface parameters
 !  ------------------
@@ -153,11 +156,11 @@ IF (LHOOK) CALL DR_HOOK('ISBA_SNOW_AGR',0,ZHOOK_HANDLE)
 ZWORK(:) = 0.
 !
 IF(OMEB)THEN
-  !
-  ! Snow free (ground-based snow) diagnostics: canopy and ground blended (W m-2):
-  ! NOTE that the effects of snow cover *fraction* are implicitly *included* in these fluxes 
-  ! so do NOT multiply by snow fraction.
-  !
+!
+! Snow free (ground-based snow) diagnostics: canopy and ground blended (W m-2):
+! NOTE that the effects of snow cover *fraction* are implicitly *included* in these fluxes 
+! so do NOT multiply by snow fraction.
+
   DEK%XRN_SN_FR   (:) = DEK%XSWNET_V(:) + DEK%XSWNET_G(:) + DEK%XLWNET_V(:) + DEK%XLWNET_G(:)
   DEK%XH_SN_FR    (:) = DEK%XH_CV(:) + DEK%XH_GN(:)
   IF (OMEB_LITTER) THEN
@@ -174,26 +177,26 @@ IF(OMEB)THEN
   DEK%XLETR_SN_FR(:) = DEK%XLETR_CV(:) 
   ! NOTE for now, this is same as total Ustar (includes snow)   
   DEK%XUSTAR_SN_FR(:) = PUSTAR       (:)        
-  ! LER does not include intercepted snow sublimation
+! LER does not include intercepted snow sublimation
   DEK%XLER_SN_FR  (:) = DEK%XLEV_CV(:) - DEK%XLETR_CV(:) 
 
   DEK%XLEI_SN_FR  (:) = DEK%XLEGI(:) + DEK%XLEI_FLOOD(:) + DEK%XLES(:) + DEK%XLES_CV(:)
-  ! LE includes intercepted snow sublimation
+! LE includes intercepted snow sublimation
   DEK%XLE_SN_FR   (:) = DEK%XLEG_SN_FR(:) + DEK%XLEGI_SN_FR(:) + DEK%XLEV_SN_FR(:) + &
                  DEK%XLES_CV(:) + DEK%XLE_FLOOD(:) + DEK%XLEI_FLOOD(:)
   DEK%XGFLUX_SN_FR(:) = DEK%XRN_SN_FR(:) - DEK%XH_SN_FR(:) - DEK%XLE_SN_FR(:)
-  !
-  PEMIST(:) = PEMIS(:)
-  !
-  ! Effective surface temperature (for diag): for MEB:
+!
+   PEMIST(:)      = PEMIS(:)
+!
+! Effective surface temperature (for diag): for MEB:
 
   ZWORK   (:) =  PPALPHAN(:)*PEK%XPSN(:)
   DK%XTS(:) = (1.0 - ZWORK(:))*PEK%XTC(:) + ZWORK(:)*DMK%XSNOWTEMP(:,1)
-  !
-  ! Total heat FLUX into snow/soil/vegetation surface:
-  !
+!
+! Total heat FLUX into snow/soil/vegetation surface:
+!
   DK%XGFLUX(:) = DK%XRN(:) - DK%XH(:) - PEK%XLE(:) + DMK%XHPSNOW(:) 
-  !
+!
 ELSE
 !
 ! * 2. Using an explicit snow scheme option with composite soil/veg ISBA:
@@ -212,7 +215,7 @@ ELSE
       DEK%XRN_SN_FR   (:) = DK%XRN   (:)
       DEK%XH_SN_FR    (:) = DK%XH    (:)
       DEK%XUSTAR_SN_FR(:) = PUSTAR   (:)      
-
+!  
       DEK%XLE_SN_FR   (:) = PEK%XLE(:)
       DEK%XGFLUX_SN_FR(:) = DK%XGFLUX(:)
 !  
@@ -308,7 +311,7 @@ ELSE
       DK%XTS    (:)  = PEK%XTG(:,1)
       DK%XTSRAD (:)  = PEK%XTG(:,1)
       DK%XALBT  (:)  = PALB (:)
-      PEMIST    (:)  = PEMIS(:)
+      PEMIST (:)  = PEMIS(:)
 !  
 !     Total sublimation flux (W/m2) :
       DK%XLEI   (:)  = DEK%XLES(:) + DEK%XLEGI(:) + DEK%XLEI_FLOOD(:)
@@ -334,7 +337,7 @@ USE MODD_SURF_ATM, ONLY : LDRAG_COEF_ARP, LRRGUST_ARP,   &
 USE MODI_SURFACE_RI
 USE MODI_SURFACE_AERO_COND
 USE MODI_SURFACE_CD
-USE MODI_SURFACE_CDCH_1DARP
+!USE MODI_SURFACE_CDCH_1DARP
 USE MODI_WIND_THRESHOLD
 !
 !*      0.2    declarations of local variables
@@ -359,10 +362,10 @@ ZVMOD = WIND_THRESHOLD(PVMOD,PUREF)
 ! * Drag coefficient for heat and momentum
 !
 IF (LDRAG_COEF_ARP) THEN
-   CALL SURFACE_CDCH_1DARP(PZREF, DK%XZ0EFF, DK%XZ0H, ZVMOD, PTA, PEK%XTG(:,1), &
-                             PQA, DK%XQS, DK%XCD, DK%XCDN, DK%XCH              )
+!   CALL SURFACE_CDCH_1DARP(PZREF, DK%XZ0EFF, DK%XZ0H, ZVMOD, PTA, PEK%XTG(:,1), &
+!                             PQA, DK%XQS, AT, DK%XCD, DK%XCDN, DK%XCH,DK%XRI              )
 ELSE
-   CALL SURFACE_AERO_COND(DK%XRI, PZREF, PUREF, ZVMOD, DK%XZ0, DK%XZ0H, ZAC, ZRA, DK%XCH)
+   CALL SURFACE_AERO_COND(DK%XRI, PZREF, PUREF, ZVMOD, DK%XZ0, DK%XZ0H, ZAC, ZRA, DK%XCH,'RIL')
    CALL SURFACE_CD(DK%XRI, PZREF, PUREF, DK%XZ0EFF, DK%XZ0H, DK%XCD, DK%XCDN)
 ENDIF
 !

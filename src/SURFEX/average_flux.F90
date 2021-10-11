@@ -43,6 +43,7 @@
 !!                            of TS
 !!      (J.Stein)   27/03/96 use only H and LE in the soil scheme
 !!      A. Boone    27/11/02 revised to output ALMA variables, and general applications
+!!      M. Goret    08/03/17 correction of unity comment for CO2 flux and scalar flux
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -67,14 +68,14 @@ REAL, DIMENSION(:,:), INTENT(IN) :: PFRAC_TILE ! Fraction in a mesh-area of
 !                                              ! a given surface
 REAL, DIMENSION(:,:), INTENT(IN) :: PSFTH_TILE ! pot. temp. flux  (mK/s)
 REAL, DIMENSION(:,:), INTENT(IN) :: PSFTQ_TILE ! water vapor flux (m kg/kg/s)
-REAL, DIMENSION(:,:), INTENT(IN) :: PSFCO2_TILE! CO2 flux         (m kg/kg/s)
-REAL, DIMENSION(:,:,:),INTENT(IN):: PSFTS_TILE ! scalar flux      (m kg/kg/s)
+REAL, DIMENSION(:,:), INTENT(IN) :: PSFCO2_TILE! CO2 flux         (m/s*kg_CO2/kg_air)
+REAL, DIMENSION(:,:,:),INTENT(IN):: PSFTS_TILE ! scalar flux      
 REAL, DIMENSION(:,:), INTENT(IN) :: PSFU_TILE  ! zonal momentum flux    (pa)
 REAL, DIMENSION(:,:), INTENT(IN) :: PSFV_TILE  ! meridian momentum flux (pa)
 REAL, DIMENSION(:),   INTENT(OUT):: PSFTH      ! pot. temp. flux  (mK/s)
 REAL, DIMENSION(:),   INTENT(OUT):: PSFTQ      ! water vapor flux (m kg/kg/s)
-REAL, DIMENSION(:,:), INTENT(OUT):: PSFTS      ! scalar flux      (m kg/kg/s)
-REAL, DIMENSION(:),   INTENT(OUT):: PSFCO2     ! CO2 flux         (m kg/kg/s)
+REAL, DIMENSION(:,:), INTENT(OUT):: PSFTS      ! scalar flux      
+REAL, DIMENSION(:),   INTENT(OUT):: PSFCO2     ! CO2 flux         (m/s*kg_CO2/kg_air)
 REAL, DIMENSION(:),   INTENT(OUT):: PSFU       ! zonal momentum flux    (pa)
 REAL, DIMENSION(:),   INTENT(OUT):: PSFV       ! meridian momentum flux (pa)
 !

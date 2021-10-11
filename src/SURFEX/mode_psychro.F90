@@ -29,6 +29,7 @@ MODULE MODE_PSYCHRO
 !!    -------------
 !!      Original    12/04/11
 !!      J.Escobar   11/13 :  remove space in ELSEWHERE statement
+!!      R. Schoetter 01/18  correction of bugs and optimization
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -36,25 +37,25 @@ USE PARKIND1  ,ONLY : JPRB
 interface PE_FROM_PQ
         module procedure PE_FROM_PQ_0D
         module procedure PE_FROM_PQ_1D
-end interface
+end interface PE_FROM_PQ
 interface TD_FROM_TQ
         module procedure TD_FROM_TQ_0D
         module procedure TD_FROM_TQ_1D
-end interface
+end interface TD_FROM_TQ
 interface RV_FROM_TPTWB
         module procedure RV_FROM_TPTWB_0D
         module procedure RV_FROM_TPTWB_1D
-end interface
+end interface RV_FROM_TPTWB
 interface TWB_FROM_TPQ
         module procedure TWB_FROM_TPQ_0D
         module procedure TWB_FROM_TPQ_1D
-end interface
+end interface TWB_FROM_TPQ
 INTERFACE ENTH_FN_T_Q
   MODULE PROCEDURE ENTH_FN_T_Q
-END INTERFACE
+END INTERFACE ENTH_FN_T_Q
 INTERFACE Q_FN_T_ENTH
   MODULE PROCEDURE Q_FN_T_ENTH
-END INTERFACE
+END INTERFACE Q_FN_T_ENTH
 
 contains
 !PE_FROM_PQ
@@ -83,12 +84,13 @@ end function PE_FROM_PQ_1D
 !-------------------------
 
 !TD_FROM_TQ
-function TD_FROM_TQ_0D(PT, PQ) RESULT(PTD)
+function TD_FROM_TQ_0D(PT, PQ, PP) RESULT(PTD)
 USE MODD_CSTS
 USE MODD_SURF_PAR, ONLY: XUNDEF
 !arguments and result
 REAL, INTENT(IN) :: PT !Air Temp. (K)
 REAL, INTENT(IN) :: PQ !Specific humidity (kg/kg)
+REAL, INTENT(IN) :: PP ! Atmos. pressure (Pa)
 REAL :: PTD !Dew Point Air Temp. (K)
 !local variables
 REAL :: ALPHA
@@ -96,9 +98,9 @@ REAL :: ZPE !water vapour pressure
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 
 IF (LHOOK) CALL DR_HOOK('MODE_PSYCHRO:TD_FROM_TQ_0D',0,ZHOOK_HANDLE)
-ZPE = PE_FROM_PQ(PT, PQ)
+ZPE = PE_FROM_PQ(PP,PQ)
 ALPHA = LOG(ZPE/1000.)
-IF (PT .GE. XTT .AND. PT .GE. 93.+XTT) THEN
+IF ( (PT.GE.XTT).AND.(PT.LE.(93.+XTT)) ) THEN
         PTD = XTT+6.54+14.526*ALPHA+0.7389*ALPHA*ALPHA+0.09486*ALPHA**3 &
               +0.4569*(ZPE/1000.)**0.1984
 ELSE IF (PT .LT. XTT) THEN
@@ -110,12 +112,13 @@ PTD = MIN(PTD, PT)
 IF (LHOOK) CALL DR_HOOK('MODE_PSYCHRO:TD_FROM_TQ_0D',1,ZHOOK_HANDLE)
 end function TD_FROM_TQ_0D
 
-function TD_FROM_TQ_1D(PT, PQ) RESULT(PTD)
+function TD_FROM_TQ_1D(PT, PQ, PP) RESULT(PTD)
 USE MODD_CSTS
 USE MODD_SURF_PAR, ONLY: XUNDEF
 !arguments and result
 REAL, DIMENSION(:), INTENT(IN) :: PT !Air Temp. (K)
 REAL, DIMENSION(:), INTENT(IN) :: PQ !Specific humidity (kg/kg)
+REAL, DIMENSION(:), INTENT(IN) :: PP !Atmospheric pressure (Pa)
 REAL, DIMENSION(SIZE(PQ))      :: PTD !Dew Point Air Temp. (K)
 !local variables
 REAL, DIMENSION(SIZE(PQ)) :: ALPHA
@@ -123,9 +126,9 @@ REAL, DIMENSION(SIZE(PQ)) :: ZPE !water vapour pressure
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 
 IF (LHOOK) CALL DR_HOOK('MODE_PSYCHRO:TD_FROM_TQ_1D',0,ZHOOK_HANDLE)
-ZPE = PE_FROM_PQ(PT, PQ)
+ZPE(:) = PE_FROM_PQ(PP(:), PQ(:))
 ALPHA(:) = LOG(ZPE(:)/1000.)
-WHERE (PT .GE. XTT .AND. PT .GE. 93.+XTT)
+WHERE ( (PT(:).GE.XTT) .AND. (PT(:).LE.(93.+XTT)) ) 
         PTD = XTT+6.54+14.526*ALPHA+0.7389*ALPHA*ALPHA+0.09486*ALPHA**3 &
               +0.4569*(ZPE/1000.)**0.1984
       ELSEWHERE (PT .LT. XTT)
@@ -133,7 +136,7 @@ WHERE (PT .GE. XTT .AND. PT .GE. 93.+XTT)
 ELSEWHERE
         PTD = XUNDEF
 END WHERE
-PTD(:) = MIN(PTD(:), PT(:))
+WHERE(PTD(:).GT.PT(:)) PTD(:) = PT(:)
 IF (LHOOK) CALL DR_HOOK('MODE_PSYCHRO:TD_FROM_TQ_1D',1,ZHOOK_HANDLE)
 end function TD_FROM_TQ_1D
 !-------------------------
@@ -151,7 +154,7 @@ REAL :: ZRVSAT !saturation water vapor mixing ratio
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 
 IF (LHOOK) CALL DR_HOOK('MODE_PSYCHRO:RV_FROM_TPTWB_0D',0,ZHOOK_HANDLE)
-ZRVSAT = QSAT(PT, PP) / (1 - QSAT(PT, PP))
+ZRVSAT = QSAT(PT, PP) / (1.0 - QSAT(PT, PP))
 PRV = ((2501. - 2.326*(PTWB-XTT))*ZRVSAT - 1.006*(PT - PTWB)) &
        / (2501. + 1.86*(PT - XTT) -4.186*(PTWB - XTT))
 IF (LHOOK) CALL DR_HOOK('MODE_PSYCHRO:RV_FROM_TPTWB_0D',1,ZHOOK_HANDLE)
@@ -169,7 +172,7 @@ REAL, DIMENSION(SIZE(PT)) :: ZRVSAT !saturation water vapor mixing ratio
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 
 IF (LHOOK) CALL DR_HOOK('MODE_PSYCHRO:RV_FROM_TPTWB_1D',0,ZHOOK_HANDLE)
-ZRVSAT = QSAT(PT, PP) / (1 - QSAT(PT, PP))
+ZRVSAT = QSAT(PT(:), PP(:)) / (1 - QSAT(PT(:), PP(:)))
 PRV(:) = ((2501. - 2.326*(PTWB(:)-XTT))*ZRVSAT(:) - 1.006*(PT(:) - PTWB(:))) &
        / (2501. + 1.86*(PT(:) - XTT) -4.186*(PTWB(:) - XTT))
 IF (LHOOK) CALL DR_HOOK('MODE_PSYCHRO:RV_FROM_TPTWB_1D',1,ZHOOK_HANDLE)       
@@ -179,65 +182,138 @@ end function RV_FROM_TPTWB_1D
 !TWB_FROM_TPQ
 !------------
 function TWB_FROM_TPQ_0D(PT, PP, PQ) RESULT(PTWB)
+!
+USE MODE_THERMOS
+USE MODD_CSTS, ONLY : XTT
+!
+! Robert:
+! The original version of this calculation based on an iteration
+! has been very time consuming and is therefore replaced by an approximation
+! taken from Stull (2011) JAMC
+!
+! This formula is only valid for a range of temperature
+! and humidity common for application of air conditioning
+! inside buildings and must not be used for other purposes
+!
+! This approximation is good for a pressure of 101325 Pa
+! and must therefore not be used in the upper atmosphere
+! or for very high areas. However, as illustrated in Stull (2011)
+! the error made by this assumption is not very large (e.g. for p = 800 hPa)
+!
 !arguments and results
 REAL, INTENT(IN) :: PT !air temperature (K)
-REAL, INTENT(IN) :: PQ !mixing ratio (kg/kg)
+REAL, INTENT(IN) :: PQ !humidity content (kg/kg)
 REAL, INTENT(IN) :: PP !atmos. pressure (Pa)
-REAL :: PTWB !Wet Bulb Temp. (K)
-!local variable
-REAL :: ZTD !Dew Point Temp. (K)
-REAL :: ZTWBINF, ZTWBSUP, ZRV
-INTEGER :: JITER
+!local variables
+!
+REAL :: ZPE
+REAL :: ZRH
+REAL :: ZPT
+! Output variable
+!
+REAL :: PTWB
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 IF (LHOOK) CALL DR_HOOK('MODE_PSYCHRO:TWB_FROM_TPQ_0D',0,ZHOOK_HANDLE)
-JITER = 1
-ZTD = TD_FROM_TQ(PT, PQ) 
-!initial guess
-ZTWBSUP = PT
-ZTWBINF = ZTD
-PTWB = 0.5 * (ZTWBSUP + ZTWBINF)
-DO WHILE (ZTWBSUP - ZTWBINF > 0.001 .OR. JITER .LE. 50)
-   ZRV = RV_FROM_TPTWB(PT, PP, PTWB)
-   IF (ZRV .GT. PQ/(1 - PQ)) THEN
-           ZTWBSUP = PTWB
-   ELSE
-           ZTWBINF = PTWB
-   ENDIF
-   PTWB = 0.5 * (ZTWBINF + ZTWBSUP)
-   JITER = JITER + 1
-END DO
+!
+! Calculation of relative humidity
+!
+ZPE = PE_FROM_PQ(PP,PQ)
+ZRH = 100.0*ZPE/PSAT(PT)
+!
+! Conversion K -> °C
+!
+ZPT = PT-XTT
+!
+! If the relative humidity is outside of
+! the regression range it is corrected
+!
+IF (ZRH.LT.10.0) ZRH=10.0
+IF (ZRH.GT.99.0) ZRH=99.0
+!
+! Check whether the temperature lies within the regression limits
+!
+IF (ZPT.LT.10.0) THEN
+!
+! Very simple approximation for the rare case
+! where climatisation is required and the air
+! temperature is below 10 °C
+!
+  PTWB = PT - 2.0
+ELSE
+! The regression from Stull (2011) is used
+! Wet bulb temperature from air temperature (°C)
+! and relative humidity (%)
+!
+  PTWB = ZPT*ATAN(0.151977*SQRT(ZRH+8.313659))        + &
+          ATAN(ZPT+ZRH)                                  - &
+          ATAN(ZRH-1.676331)                             + &
+          0.00391838*(ZRH)**(3.0/2.0)*ATAN(0.023101*ZRH) - &
+          4.686035
+! Conversion °C -> K
+!
+  PTWB = PTWB + XTT
+ENDIF
+!
+IF (PTWB.GT.PT) PTWB=PT
 IF (LHOOK) CALL DR_HOOK('MODE_PSYCHRO:TWB_FROM_TPQ_0D',1,ZHOOK_HANDLE)
 end function TWB_FROM_TPQ_0D
 
 function TWB_FROM_TPQ_1D(PT, PP, PQ) RESULT(PTWB)
+!
+USE MODE_THERMOS
+USE MODD_CSTS, ONLY : XTT
+!
+! Robert:
+! The original version of this calculation based on an iteration
+! has been very time consuming and is therefore replaced by an approximation
+! taken from Stull (2011) JAMC
+!
+! This formula is only valid for a range of temperature
+! and humidity common for application of air conditioning
+! inside buildings and must not be used for other purposes
+!
+! This approximation is good for a pressure of 101325 Pa
+! and must therefore not be used in the upper atmosphere
+! or for very high areas. However, as illustrated in Stull (2011)
+! the error made by this assumptions are not too high (e.g. for p = 800 hPa)
+!
 !arguments and results
 REAL, DIMENSION(:), INTENT(IN) :: PT !air temperature (K)
 REAL, DIMENSION(:), INTENT(IN) :: PQ !humidity content (kg/kg)
 REAL, DIMENSION(:), INTENT(IN) :: PP !atmos. pressure (Pa)
-REAL, DIMENSION(SIZE(PT)) :: PTWB !Wet Bulb Temp. (K)
-!local variable
-REAL, DIMENSION(SIZE(PT)) :: ZTD !Dew Point Temp. (K)
-REAL, DIMENSION(SIZE(PT)) :: ZTWBINF, ZTWBSUP, ZRV
-INTEGER :: JITER, JI
+!local variables
+REAL, DIMENSION(SIZE(PT)) :: ZPE
+REAL, DIMENSION(SIZE(PT)) :: ZRH
+REAL, DIMENSION(SIZE(PT)) :: ZPT
+! Output variable
+REAL, DIMENSION(SIZE(PT)) :: PTWB
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 IF (LHOOK) CALL DR_HOOK('MODE_PSYCHRO:TWB_FROM_TPQ_1D',0,ZHOOK_HANDLE)
-ZTD = TD_FROM_TQ(PT, PQ) 
-!initial guess
-ZTWBSUP = PT
-ZTWBINF = ZTD
-PTWB = 0.5 * (ZTWBSUP + ZTWBINF)
-DO JI=1,SIZE(PT)
-   JITER = 1
-   DO WHILE (ZTWBSUP(JI) - ZTWBINF(JI) > 0.001 .OR. JITER .LE. 50)
-      ZRV(JI) = RV_FROM_TPTWB(PT(JI), PP(JI), PTWB(JI))
-      IF (ZRV(JI) .GT. PQ(JI)/(1 - PQ(JI))) THEN
-              ZTWBSUP(JI) = PTWB(JI)
-      ELSE
-              ZTWBINF(JI) = PTWB(JI)
-      ENDIF
-      PTWB(JI) = 0.5 * (ZTWBINF(JI) + ZTWBSUP(JI))
-   END DO
-END DO
+!
+! Calculation of relative humidity
+ZPE(:) = PE_FROM_PQ(PP(:),PQ(:))
+ZRH(:) = 100.0*ZPE(:)/PSAT(PT(:))
+!
+! Conversion K -> °C
+ZPT(:) = PT(:)-XTT
+!
+! If the relative humidity is outside of
+! the regression range it is corrected
+WHERE(ZRH.LT.10.0) ZRH=10.0
+WHERE(ZRH.GT.99.0) ZRH=99.0
+!
+! Check whether the temperature lies within the regression limits
+IF ((MINVAL(ZPT).LT.10.0)) CALL ABOR1_SFX ("Air temperature outside of regression range")
+! Wet bulb temperature from air temperature (°C)
+! and relative humidity (%)
+!
+PTWB(:) = ZPT(:)*ATAN(0.151977*SQRT(ZRH(:)+8.313659))          + &
+        ATAN(ZPT(:)+ZRH(:))                                  - &
+        ATAN(ZRH(:)-1.676331)                                + &
+        0.00391838*(ZRH(:))**(3.0/2.0)*ATAN(0.023101*ZRH(:)) - &
+        4.686035
+! Conversion °C -> K
+PTWB(:) = PTWB(:) + XTT
 IF (LHOOK) CALL DR_HOOK('MODE_PSYCHRO:TWB_FROM_TPQ_1D',1,ZHOOK_HANDLE)
 end function TWB_FROM_TPQ_1D
 !-------------------------------------------------------------------------------
@@ -298,9 +374,9 @@ REAL        :: ZRV                         ! Mixing ratio (kg/kg_da)
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
       IF (LHOOK) CALL DR_HOOK('MODE_PSYCHRO:ENTH_FN_T_Q',0,ZHOOK_HANDLE)
-! calculate enthalpy
       ZT = PT - 273.15
-      ZRV=MAX(PQ/(1-PQ),1.0E-5)
+      ZRV = PQ/(1.0-PQ)
+      IF (ZRV.LT.1.0E-5) ZRV = 1.0E-5
       PENTH=1.00484d3*ZT+ZRV*(2.50094d6+1.85895d3*ZT)
 !
       IF (LHOOK) CALL DR_HOOK('MODE_PSYCHRO:ENTH_FN_T_Q',1,ZHOOK_HANDLE)
@@ -374,12 +450,10 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
       ZRV=(PENTH-1.00484d3*ZT)/(2.50094d6+1.85895d3*ZT)
 !
 !    validity test
-      IF (ZRV < 0.0d0) THEN
-        ZRV=1.d-5
-      ENDIF
+      IF (ZRV .LT. 0.0d0) ZRV=1.d-5
 !
 !    calculate humidity content
-      PQ = ZRV/(1+ZRV)
+      PQ = ZRV/(1.0+ZRV)
 !
      IF (LHOOK) CALL DR_HOOK('MODE_PSYCHRO:Q_FN_T_ENTH',1,ZHOOK_HANDLE)
 !

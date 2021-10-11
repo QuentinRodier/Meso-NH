@@ -10,7 +10,7 @@
                                      PTRAD, PEMIS, PDIR_ALB, PSCA_ALB,                       &
                                      PLW, PDIR_SW, PSCA_SW,                                  &
                                      PSFTH, PSFTQ, PSFZON, PSFMER, PSFCO2,                   &
-                                     PRN, PH, PLE, PGFLUX                                    )  
+                                     PRN, PH, PLE, PGFLUX, PQF                               )  
 !     ###############################################################################!
 !!****  *DIAG_INLINE_TEB_n * - Computes diagnostics during TEB time-step
 !!
@@ -34,6 +34,10 @@
 !!      S. Riette   06/2009 CLS_WIND has one more argument (height of diagnostic)
 !!      S. Riette   01/2010 Use of interpol_sbl to compute 10m wind diagnostic
 !       B. decharme 04/2013 : Add EVAP and SUBL diag
+!!      M. Goret    03/2017 : add new diagnostic for CO2 flux
+!!      M. Goret    03/2017 : remove write and call flush
+!!      M. Goret    07/2017 : move diagnostic for CO2 flux to diag_misc_tebn
+!!      M. Goret    08/2017 : add anthropogenic flux diagnostics
 !!------------------------------------------------------------------
 !
 
@@ -61,10 +65,10 @@ IMPLICIT NONE
 !*      0.1    declarations of arguments
 !
 !
-TYPE(DIAG_OPTIONS_t), INTENT(INOUT) :: DGO
-TYPE(DIAG_t), INTENT(INOUT) :: D
-TYPE(CANOPY_t), INTENT(INOUT) :: SB
-TYPE(TEB_t), INTENT(INOUT) :: T
+TYPE(DIAG_OPTIONS_t), INTENT(INOUT)  :: DGO
+TYPE(DIAG_t), INTENT(INOUT)          :: D
+TYPE(CANOPY_t), INTENT(INOUT)        :: SB
+TYPE(TEB_t), INTENT(INOUT)           :: T
 !
 LOGICAL,            INTENT(IN)       :: OCANOPY  ! Flag for canopy
 REAL, DIMENSION(:), INTENT(IN)       :: PTA      ! atmospheric temperature
@@ -92,6 +96,7 @@ REAL, DIMENSION(:), INTENT(IN)       :: PRN      ! net radiation
 REAL, DIMENSION(:), INTENT(IN)       :: PH       ! sensible heat flux
 REAL, DIMENSION(:), INTENT(IN)       :: PLE      ! latent heat flux
 REAL, DIMENSION(:), INTENT(IN)       :: PGFLUX   ! storage flux
+REAL, DIMENSION(:), INTENT(IN)       :: PQF      ! anthropogenic flux
 REAL, DIMENSION(:,:),INTENT(IN)      :: PDIR_SW  ! direct  solar radiation (on horizontal surf.)
 !                                                !                                      (W/m2)
 REAL, DIMENSION(:,:),INTENT(IN)      :: PSCA_SW  ! diffuse solar radiation (on horizontal surf.)
@@ -104,16 +109,19 @@ REAL, DIMENSION(:), INTENT(IN)       :: PEMIS    ! emissivity                   
 !
 !*      0.2    declarations of local variables
 !
-REAL                                 :: ZZ0_O_Z0H
-REAL, DIMENSION(SIZE(PTA))           :: ZH  
+REAL                        :: ZZ0_O_Z0H
+REAL, DIMENSION(SIZE(PTA))  :: ZH  
 REAL, DIMENSION(SIZE(PTA))  :: ZU10
 REAL, DIMENSION(SIZE(PTA))  :: ZWIND10M_MAX
 REAL, DIMENSION(SIZE(PTA))  :: ZT2M_MIN
 REAL, DIMENSION(SIZE(PTA))  :: ZT2M_MAX
 REAL, DIMENSION(SIZE(PTA))  :: ZHU2M_MIN
 REAL, DIMENSION(SIZE(PTA))  :: ZHU2M_MAX
-INTEGER                              :: JJ    ! loop counter
-
+REAL, DIMENSION(SIZE(PTA),SIZE(SB%XT,2)) :: ZQSPEC_CAN
+REAL, DIMENSION(SIZE(PTA),SIZE(SB%XT,2)) :: ZRELHU_CAN
+!
+INTEGER :: LVL    ! loop counter
+!
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------------
 !
@@ -141,6 +149,22 @@ IF (OCANOPY) THEN
   ZHU2M_MAX   (:) = XUNDEF
   ZWIND10M_MAX(:) = XUNDEF
   IF (DGO%N2M>0) CALL INIT_2M_10M( SB, D, PZONA, PMERA, PWIND, PRHOA )
+  !
+  ! Calculation of mean values in canopy 
+  !
+  SB%NCOUNT_STEP = SB%NCOUNT_STEP + 1
+  !
+  DO LVL=1,SIZE(SB%XQ,2)
+    ZQSPEC_CAN(:,LVL) = SB%XQ(:,LVL) / PRHOA(:)
+    ZRELHU_CAN(:,LVL) = MIN( ZQSPEC_CAN(:,LVL) / QSAT(SB%XT(:,LVL),SB%XP(:,LVL)),1.)
+  ENDDO
+  !
+  SB%XU_MEAN(:,:)  = SB%XU_MEAN(:,:)  + SB%XU(:,:)
+  SB%XT_MEAN(:,:)  = SB%XT_MEAN(:,:)  + SB%XT(:,:)
+  SB%XQ_MEAN(:,:)  = SB%XQ_MEAN(:,:)  + SB%XQ(:,:)
+  SB%XP_MEAN(:,:)  = SB%XP_MEAN(:,:)  + SB%XP(:,:)
+  SB%XRH_MEAN(:,:) = SB%XRH_MEAN(:,:) + ZRELHU_CAN(:,:)
+  !
 ELSE
 !* 2m and 10m variables using CLS laws
   IF (DGO%N2M==2) THEN
@@ -150,9 +174,6 @@ ELSE
     D%XQ2M  = T%XQ_CANYON
     D%XRI   = PRI
     D%XHU2M = MIN(T%XQ_CANYON /QSAT(T%XT_CANYON,PPA),1.)
-  END IF
-  !
-  IF (DGO%N2M>=1) THEN
     !
     D%XT2M_MIN(:) = MIN(D%XT2M_MIN(:),D%XT2M(:))
     D%XT2M_MAX(:) = MAX(D%XT2M_MAX(:),D%XT2M(:))
@@ -163,7 +184,17 @@ ELSE
     D%XWIND10M    (:) = SQRT(D%XZON10M**2+D%XMER10M**2)
     D%XWIND10M_MAX(:) = MAX(D%XWIND10M_MAX(:),D%XWIND10M(:))
     !
-  END IF
+    D%XT2M_MEAN    (:) = D%XT2M_MEAN    (:) + D%XT2M(:)
+    D%XQ2M_MEAN    (:) = D%XQ2M_MEAN    (:) + D%XQ2M(:)
+    D%XHU2M_MEAN   (:) = D%XHU2M_MEAN   (:) + D%XHU2M(:)
+    D%XZON10M_MEAN (:) = D%XZON10M_MEAN (:) + D%XZON10M(:)
+    D%XMER10M_MEAN (:) = D%XMER10M_MEAN (:) + D%XMER10M(:)
+    !
+    D%NCOUNT_STEP = D%NCOUNT_STEP + 1
+    !
+  !
+ END IF
+ !
 ENDIF
 !
 IF (DGO%LSURF_BUDGET) THEN
@@ -177,6 +208,7 @@ IF (DGO%LSURF_BUDGET) THEN
    D%XFMU   = PSFZON
    D%XFMV   = PSFMER
    D%XSFCO2 = PSFCO2
+   D%XQF    = PQF
    !
 END IF
 !

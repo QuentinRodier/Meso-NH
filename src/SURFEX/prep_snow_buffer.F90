@@ -225,7 +225,6 @@ ELSE
          DEALLOCATE(OINTERP)
        ENDIF
      ENDIF
-
      !
      ALLOCATE(PFIELD(NNI,1,1))
      PFIELD(:,1,1) = ZFIELD1D(:)

@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE AVERAGE_RAD(PFRAC_TILE,                              &
+      SUBROUTINE AVERAGE_RAD(PFRAC_TILE,                                  &
                    PDIR_ALB_TILE, PSCA_ALB_TILE, PEMIS_TILE, PTRAD_TILE,  &
                    PDIR_ALB, PSCA_ALB, PEMIS, PTRAD                       )  
 !     #################################################################
@@ -35,12 +35,13 @@
 !!
 !!    MODIFICATIONS
 !!    -------------
-!!      Original    10/03/95 
-!!      V.Masson    20/03/96  remove abnormal averages and average TS**4 instead
-!!                            of TS
-!!      (J.Stein)   27/03/96 use only H and LE in the soil scheme
-!!      A. Boone    27/11/02 revised to output ALMA variables, and general applications
-!       B. decharme 04/2013  Optimization
+!!      Original      10/03/95 
+!!      V.Masson      20/03/96  remove abnormal averages and average TS**4 instead
+!!                              of TS
+!!      (J.Stein)     27/03/96  use only H and LE in the soil scheme
+!!      A. Boone      27/11/02  revised to output ALMA variables, and general applications
+!!      B. Decharme   04/2013   Optimization
+!!      P. Marguinaud 10/2016   Port to single precision
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -118,7 +119,9 @@ PTRAD      (:)   = 0.
 !
 DO JP = 1, INP
   DO JI = 1,INI
-     PTRAD(JI) = PTRAD(JI) + (PTRAD_TILE(JI,JP)**4)*PFRAC_TILE(JI,JP)*PEMIS_TILE(JI,JP)
+    IF (PFRAC_TILE(JI,JP) > 0.) THEN
+      PTRAD(JI) = PTRAD(JI) + (PTRAD_TILE(JI,JP)**4)*PFRAC_TILE(JI,JP)*PEMIS_TILE(JI,JP)
+    ENDIF
   END DO
 END DO
 !

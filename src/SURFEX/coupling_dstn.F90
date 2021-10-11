@@ -2,7 +2,7 @@
 !SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
-SUBROUTINE COUPLING_DST_n (DSTK, KK, PK, PEK, DK, &
+SUBROUTINE COUPLING_DST_n (DSTK, DST, KK, PK, PEK, DK, &
        HPROGRAM,                 &!I [char] Type of ISBA version
        KI,                       &!I [nbr] number of points in patch
        KDST,                     &!I Number of dust emission variables
@@ -58,7 +58,7 @@ IMPLICIT NONE
 
 !INPUT
 !
-TYPE(DST_t), INTENT(INOUT) :: DSTK
+TYPE(DST_t), INTENT(INOUT) :: DSTK, DST
 TYPE(ISBA_K_t), INTENT(INOUT) :: KK
 TYPE(ISBA_P_t), INTENT(INOUT) :: PK
 TYPE(ISBA_PE_t), INTENT(INOUT) :: PEK
@@ -360,7 +360,7 @@ IF (CEMISPARAM_DST == "EXPLI" .OR. CEMISPARAM_DST == "AMMA ") THEN
 
 ELSE 
   DO JMODE = 1,NDSTMDE
-    ZP_MSS_FRC_SRC(:,JORDER_DST(JMODE)) = DSTK%XMSS_FRC_SRC(JMODE)
+    ZP_MSS_FRC_SRC(:,JORDER_DST(JMODE)) = DST%XMSS_FRC_SRC(JMODE)
   ENDDO
 END IF
 

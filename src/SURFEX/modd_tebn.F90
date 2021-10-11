@@ -29,6 +29,8 @@
 !!      Original       01/2004
 !!      A. Lemonsu      07/2012         Key for urban hydrology
 !!      V. Masson       06/2013         splits module in two
+!!      K.Chancibault/A.Lemonsu 01/2016 vertical discretization of soil
+!!      M. Goret        04/2017         add variables for CO2 flux calculus
 !
 !*       0.   DECLARATIONS
 !             ------------
@@ -51,8 +53,13 @@ TYPE TEB_t
   REAL, POINTER, DIMENSION(:)   :: XROAD_DIR     ! Road direction (deg from North, clockwise)
   REAL, POINTER, DIMENSION(:)   :: XGARDEN       ! fraction of veg in the streets   (-)
   REAL, POINTER, DIMENSION(:)   :: XGREENROOF    ! fraction of greenroofs on roofs  (-)
+  REAL, POINTER, DIMENSION(:)   :: XURBTREE      ! fraction of urban trees in caynon(-)
+  REAL, POINTER, DIMENSION(:)   :: XFRAC_HVEG    ! fraction of high vegetation      (-)
+  REAL, POINTER, DIMENSION(:)   :: XFRAC_LVEG    ! fraction of high vegetation      (-)
+  REAL, POINTER, DIMENSION(:)   :: XFRAC_NVEG    ! fraction of high vegetation      (-)
   REAL, POINTER, DIMENSION(:)   :: XBLD          ! fraction of buildings            (-)
   REAL, POINTER, DIMENSION(:)   :: XROAD         ! fraction of roads                (-)
+  REAL, POINTER, DIMENSION(:)   :: XTOTS_O_HORS  ! total canyon+roof surface over horizontal surfaces (-)
   REAL, POINTER, DIMENSION(:)   :: XCAN_HW_RATIO ! canyon    h/W                    (-)
   REAL, POINTER, DIMENSION(:)   :: XBLD_HEIGHT   ! buildings height 'h'             (m)
   REAL, POINTER, DIMENSION(:)   :: XWALL_O_HOR   ! wall surf. / hor. surf.          (-)
@@ -61,9 +68,23 @@ TYPE TEB_t
   REAL, POINTER, DIMENSION(:)   :: XWALL_O_GRND  ! wall surf. / (road + garden surf.) (-)
   REAL, POINTER, DIMENSION(:)   :: XWALL_O_BLD   ! wall surf. / bld surf. (-)
   REAL, POINTER, DIMENSION(:)   :: XZ0_TOWN      ! roughness length for momentum    (m)
-  REAL, POINTER, DIMENSION(:)   :: XSVF_ROAD     ! road sky view factor             (-)
-  REAL, POINTER, DIMENSION(:)   :: XSVF_GARDEN   ! green area sky view factor       (-)
-  REAL, POINTER, DIMENSION(:)   :: XSVF_WALL     ! wall sky view factor             (-)
+  REAL, POINTER, DIMENSION(:)   :: XSVF_RS     ! road sky view factor             (-)
+  REAL, POINTER, DIMENSION(:)   :: XSVF_WS     ! wall sky view factor             (-)
+! Sview view factors for street trees
+  REAL, POINTER, DIMENSION(:)   :: XSVF_RW     ! view factor of wall from road                           (-)
+  REAL, POINTER, DIMENSION(:)   :: XSVF_RT     ! view factor of high veg from road                       (-)
+  REAL, POINTER, DIMENSION(:)   :: XSVF_WR     ! view factor of road from wall                           (-)
+  REAL, POINTER, DIMENSION(:)   :: XSVF_WW     ! view factor of wall from wall                           (-)
+  REAL, POINTER, DIMENSION(:)   :: XSVF_WT     ! view factor of hv from wall                             (-)
+  REAL, POINTER, DIMENSION(:)   :: XSVF_TS     ! sky-view factor of high veg                             (-)
+  REAL, POINTER, DIMENSION(:)   :: XSVF_TR     ! view factor of road by high veg                         (-)
+  REAL, POINTER, DIMENSION(:)   :: XSVF_TW     ! view factor of wall by high veg                         (-)
+  REAL, POINTER, DIMENSION(:)   :: XSVF_ST     ! view factor of high veg from sky                        (-)
+  REAL, POINTER, DIMENSION(:)   :: XSVF_SW     ! view factor of wall from sky                            (-)
+  REAL, POINTER, DIMENSION(:)   :: XTAU_SW         ! extinction coeff by high vegetation for radiative exchange sky to wall
+  REAL, POINTER, DIMENSION(:)   :: XTAU_SR         ! extinction coeff by high vegetation for radiative exchange sky to road
+  REAL, POINTER, DIMENSION(:)   :: XTAU_WW         ! extinction coeff by high vegetation for radiative exchange wall to wall
+  REAL, POINTER, DIMENSION(:)   :: XTAU_WR         ! extinction coeff by high vegetation for radiative exchange wall to ground
 !
 ! Roof parameters
 !
@@ -71,7 +92,7 @@ TYPE TEB_t
   REAL, POINTER, DIMENSION(:)   :: XEMIS_ROOF    ! roof emissivity                  (-)
   REAL, POINTER, DIMENSION(:,:) :: XHC_ROOF      ! roof layers heat capacity        (J/K/m3)
   REAL, POINTER, DIMENSION(:,:) :: XTC_ROOF      ! roof layers thermal conductivity (W/K/m)
-  REAL, POINTER, DIMENSION(:,:) :: XD_ROOF       ! depth of roof layers             (m)
+  REAL, POINTER, DIMENSION(:,:) :: XD_ROOF       ! thickness of roof layers         (m)
   REAL, POINTER, DIMENSION(:)   :: XROUGH_ROOF   ! roof roughness coef
 !
 !
@@ -81,7 +102,7 @@ TYPE TEB_t
   REAL, POINTER, DIMENSION(:)   :: XEMIS_ROAD    ! road emissivity                  (-)
   REAL, POINTER, DIMENSION(:,:) :: XHC_ROAD      ! road layers heat capacity        (J/K/m3)
   REAL, POINTER, DIMENSION(:,:) :: XTC_ROAD      ! road layers thermal conductivity (W/K/m)
-  REAL, POINTER, DIMENSION(:,:) :: XD_ROAD       ! depth of road layers             (m)
+  REAL, POINTER, DIMENSION(:,:) :: XD_ROAD       ! thickness of road layers         (m)
 !
 ! Wall parameters
 !
@@ -89,15 +110,40 @@ TYPE TEB_t
   REAL, POINTER, DIMENSION(:)   :: XEMIS_WALL    ! wall emissivity                  (-)
   REAL, POINTER, DIMENSION(:,:) :: XHC_WALL      ! wall layers heat capacity        (J/K/m3)
   REAL, POINTER, DIMENSION(:,:) :: XTC_WALL      ! wall layers thermal conductivity (W/K/m)
-  REAL, POINTER, DIMENSION(:,:) :: XD_WALL       ! depth of wall layers             (m)
+  REAL, POINTER, DIMENSION(:,:) :: XD_WALL       ! thickness of wall layers         (m)
   REAL, POINTER, DIMENSION(:)   :: XROUGH_WALL   ! wall roughness coef
 !
-! Building's use type
+! Soil parameters under buildings
 !
-  REAL, POINTER, DIMENSION(:)   :: XRESIDENTIAL  ! fraction of Residential use      (-)
-  REAL                          :: XDT_RES       ! target temperature change when unoccupied (K) (residential buildings)
-  REAL                          :: XDT_OFF       ! target temperature change when unoccupied (K) (offices buildings)
-  
+  REAL, POINTER, DIMENSION(:,:) :: XHC_BLD       ! soil layers heat capacity        (J/K/m3)
+  REAL, POINTER, DIMENSION(:,:) :: XTC_BLD       ! soil layers thermal conductivity (W/K/m)
+  REAL, POINTER, DIMENSION(:,:) :: XD_BLD        ! thickness of soil layers         (m)
+!
+! New soil parameters for road and building soil columns
+!
+  REAL, POINTER, DIMENSION(:,:) :: XSAND_ROAD    ! sand fraction                                   (-)
+  REAL, POINTER, DIMENSION(:,:) :: XCLAY_ROAD    ! clay fraction                                   (-)
+  REAL, POINTER, DIMENSION(:,:) :: XWFC_ROAD     ! field capacity volumetric water content profile (m3/m3)
+  REAL, POINTER, DIMENSION(:,:) :: XWWILT_ROAD   ! wilting point volumetric water content profile  (m3/m3)        
+  REAL, POINTER, DIMENSION(:,:) :: XWSAT_ROAD    ! porosity profile                                (m3/m3) 
+  REAL, POINTER, DIMENSION(:,:) :: XBCOEF_ROAD   ! soil water CH78 b-parameter                     (-)
+  REAL, POINTER, DIMENSION(:,:) :: XCONDSAT_ROAD ! hydraulic conductivity at saturation            (m/s)
+  REAL, POINTER, DIMENSION(:,:) :: XMPOTSAT_ROAD ! matric potential at saturation                  (m)
+  REAL, POINTER, DIMENSION(:,:) :: XCONDDRY_ROAD ! Thermal conductivity for dry soil               (W/m/s)
+  REAL, POINTER, DIMENSION(:,:) :: XCONDSLD_ROAD ! Thermal conductivity for soil solids            (W/m/s)
+  REAL, POINTER, DIMENSION(:,:) :: XHCAPSOIL_ROAD! Heat capacity                                   (J/m3/K)
+!
+  REAL, POINTER, DIMENSION(:,:) :: XSAND_BLD     ! sand fraction                                   (-)
+  REAL, POINTER, DIMENSION(:,:) :: XCLAY_BLD     ! clay fraction                                   (-)
+  REAL, POINTER, DIMENSION(:,:) :: XWFC_BLD      ! field capacity volumetric water content profile (m3/m3)
+  REAL, POINTER, DIMENSION(:,:) :: XWWILT_BLD    ! wilting point volumetric water content profile  (m3/m3)        
+  REAL, POINTER, DIMENSION(:,:) :: XWSAT_BLD     ! porosity profile                                (m3/m3) 
+  REAL, POINTER, DIMENSION(:,:) :: XBCOEF_BLD    ! soil water CH78 b-parameter                     (-)
+  REAL, POINTER, DIMENSION(:,:) :: XCONDSAT_BLD  ! hydraulic conductivity at saturation            (m/s)
+  REAL, POINTER, DIMENSION(:,:) :: XMPOTSAT_BLD  ! matric potential at saturation                  (m)
+  REAL, POINTER, DIMENSION(:,:) :: XCONDDRY_BLD  ! Thermal conductivity for dry soil               (W/m/s)
+  REAL, POINTER, DIMENSION(:,:) :: XCONDSLD_BLD  ! Thermal conductivity for soil solids            (W/m/s)
+  REAL, POINTER, DIMENSION(:,:) :: XHCAPSOIL_BLD ! Heat capacity                                   (J/m3/K)
 !
 ! anthropogenic fluxes
 !
@@ -112,7 +158,7 @@ TYPE TEB_t
 !
 ! temperatures for boundary conditions
 !
-  REAL, POINTER, DIMENSION(:)   :: XTI_ROAD      ! road interior temperature        (K)
+  REAL, POINTER, DIMENSION(:)   :: XTDEEP_TEB      ! TEB deep soil temperature        (K)
 !
 ! Prognostic variables:
 !
@@ -122,6 +168,7 @@ TYPE TEB_t
   REAL, POINTER, DIMENSION(:,:) :: XT_ROAD       ! road layer temperatures          (K)
   REAL, POINTER, DIMENSION(:,:) :: XT_WALL_A     ! wall layer temperatures          (K)
   REAL, POINTER, DIMENSION(:,:) :: XT_WALL_B     ! wall layer temperatures          (K)
+  REAL, POINTER, DIMENSION(:,:) :: XT_BLD        ! soil layer temperatures under buildings(K)
 !
   REAL, POINTER, DIMENSION(:)   :: XAC_ROOF      ! roof aerodynamic conductance     ()
   REAL, POINTER, DIMENSION(:)   :: XAC_ROAD      ! road aerodynamic conductance     ()
@@ -141,6 +188,25 @@ TYPE TEB_t
   REAL, POINTER, DIMENSION(:)   :: XT_CANYON     ! canyon air temperature           (K)
   REAL, POINTER, DIMENSION(:)   :: XQ_CANYON     ! canyon air specific humidity     (kg/kg)
 !
+! Variables related with energy and moisture storage
+!
+  REAL, POINTER, DIMENSION(:) :: XTHEWALL
+  REAL, POINTER, DIMENSION(:) :: XTHEROOF
+  REAL, POINTER, DIMENSION(:) :: XTHEFLOOR
+  REAL, POINTER, DIMENSION(:) :: XTHESOILBLD
+  REAL, POINTER, DIMENSION(:) :: XTHEMASS
+  REAL, POINTER, DIMENSION(:) :: XTHEROAD
+  REAL, POINTER, DIMENSION(:) :: XTHEAIRIN
+  REAL, POINTER, DIMENSION(:) :: XTHETOTAL
+  REAL, POINTER, DIMENSION(:) :: XLATWATROOF
+  REAL, POINTER, DIMENSION(:) :: XLATWATROAD
+  REAL, POINTER, DIMENSION(:) :: XLATICEROOF
+  REAL, POINTER, DIMENSION(:) :: XLATICEROAD
+  REAL, POINTER, DIMENSION(:) :: XLATAIRIN
+  REAL, POINTER, DIMENSION(:) :: XLATSOILROAD
+  REAL, POINTER, DIMENSION(:) :: XLATSOILBLD
+  REAL, POINTER, DIMENSION(:) :: XLATTOTAL
+  REAL, POINTER, DIMENSION(:) :: XENETOTAL         
 !
 ! Prognostic snow:
 !
@@ -167,6 +233,16 @@ TYPE TEB_t
 !                                                  ! temperature                      (K)
 !                                                  ! density                          (kg m-3)
 !
+!
+! Variables for CO2 flux calculus
+  REAL, POINTER, DIMENSION(:) :: XNB_POP           ! Number of people per square kilometer
+  REAL, POINTER, DIMENSION(:) :: XSFCO2_RD         ! CO2 flux link to traffic (roads) (kg/m2 of town/s)
+  REAL, POINTER, DIMENSION(:,:) :: XDELTA_LEGAL_TIME ! difference between UTC and legal time (in hour)
+  TYPE(DATE_TIME), POINTER, DIMENSION(:) :: XTIME_OF_CHANGE   ! time of time change of the legal hour
+  INTEGER :: NDELTA_LEGAL_TIME            ! current indice of legal time array
+  LOGICAL :: LTIME_OF_CHANGE              ! time of time change of the legal hour
+  
+
 END TYPE TEB_t
 
 TYPE TEB_NP_t
@@ -185,8 +261,13 @@ IF (LHOOK) CALL DR_HOOK("MODD_TEB_N:TEB_INIT",0,ZHOOK_HANDLE)
   NULLIFY(YTEB%XROAD_DIR)
   NULLIFY(YTEB%XGARDEN)
   NULLIFY(YTEB%XGREENROOF)
+  NULLIFY(YTEB%XURBTREE)
+  NULLIFY(YTEB%XFRAC_HVEG)
+  NULLIFY(YTEB%XFRAC_LVEG)
+  NULLIFY(YTEB%XFRAC_NVEG)
   NULLIFY(YTEB%XBLD)
   NULLIFY(YTEB%XROAD)
+  NULLIFY(YTEB%XTOTS_O_HORS)
   NULLIFY(YTEB%XCAN_HW_RATIO)
   NULLIFY(YTEB%XBLD_HEIGHT)
   NULLIFY(YTEB%XWALL_O_HOR)
@@ -195,9 +276,22 @@ IF (LHOOK) CALL DR_HOOK("MODD_TEB_N:TEB_INIT",0,ZHOOK_HANDLE)
   NULLIFY(YTEB%XWALL_O_GRND)
   NULLIFY(YTEB%XWALL_O_BLD)
   NULLIFY(YTEB%XZ0_TOWN)
-  NULLIFY(YTEB%XSVF_ROAD)
-  NULLIFY(YTEB%XSVF_GARDEN)
-  NULLIFY(YTEB%XSVF_WALL)
+  NULLIFY(YTEB%XSVF_RS)
+  NULLIFY(YTEB%XSVF_WS)
+  NULLIFY(YTEB%XSVF_RW)
+  NULLIFY(YTEB%XSVF_RT)
+  NULLIFY(YTEB%XSVF_WR)
+  NULLIFY(YTEB%XSVF_WW)
+  NULLIFY(YTEB%XSVF_WT)
+  NULLIFY(YTEB%XSVF_TS)
+  NULLIFY(YTEB%XSVF_TR)
+  NULLIFY(YTEB%XSVF_TW)
+  NULLIFY(YTEB%XSVF_ST)
+  NULLIFY(YTEB%XSVF_SW)
+  NULLIFY(YTEB%XTAU_SW)
+  NULLIFY(YTEB%XTAU_SR)
+  NULLIFY(YTEB%XTAU_WW)
+  NULLIFY(YTEB%XTAU_SR)
   NULLIFY(YTEB%XALB_ROOF)
   NULLIFY(YTEB%XEMIS_ROOF)
   NULLIFY(YTEB%XHC_ROOF)
@@ -217,13 +311,14 @@ IF (LHOOK) CALL DR_HOOK("MODD_TEB_N:TEB_INIT",0,ZHOOK_HANDLE)
   NULLIFY(YTEB%XLE_TRAFFIC)
   NULLIFY(YTEB%XH_INDUSTRY)
   NULLIFY(YTEB%XLE_INDUSTRY)
-  NULLIFY(YTEB%XTI_ROAD)
+  NULLIFY(YTEB%XTDEEP_TEB)
   NULLIFY(YTEB%XWS_ROOF)
   NULLIFY(YTEB%XWS_ROAD)
   NULLIFY(YTEB%XT_ROOF)
   NULLIFY(YTEB%XT_ROAD)
   NULLIFY(YTEB%XT_WALL_A)
   NULLIFY(YTEB%XT_WALL_B)
+  NULLIFY(YTEB%XT_BLD)
   NULLIFY(YTEB%XAC_ROOF)
   NULLIFY(YTEB%XAC_ROAD)
   NULLIFY(YTEB%XAC_WALL)
@@ -238,9 +333,57 @@ IF (LHOOK) CALL DR_HOOK("MODD_TEB_N:TEB_INIT",0,ZHOOK_HANDLE)
   NULLIFY(YTEB%XQ_CANYON)
   NULLIFY(YTEB%XROUGH_ROOF)
   NULLIFY(YTEB%XROUGH_WALL)
-  NULLIFY(YTEB%XRESIDENTIAL)
-YTEB%XDT_RES=0.
-YTEB%XDT_OFF=0.
+  !
+  NULLIFY(YTEB%XSAND_ROAD)
+  NULLIFY(YTEB%XCLAY_ROAD)
+  NULLIFY(YTEB%XWFC_ROAD)
+  NULLIFY(YTEB%XWWILT_ROAD)
+  NULLIFY(YTEB%XWSAT_ROAD)
+  NULLIFY(YTEB%XBCOEF_ROAD)
+  NULLIFY(YTEB%XCONDSAT_ROAD)
+  NULLIFY(YTEB%XMPOTSAT_ROAD)
+  NULLIFY(YTEB%XCONDDRY_ROAD)
+  NULLIFY(YTEB%XCONDSLD_ROAD)
+  NULLIFY(YTEB%XHCAPSOIL_ROAD)
+  !
+  NULLIFY(YTEB%XHC_BLD)
+  NULLIFY(YTEB%XTC_BLD)
+  NULLIFY(YTEB%XD_BLD)
+  NULLIFY(YTEB%XSAND_BLD)
+  NULLIFY(YTEB%XCLAY_BLD)
+  NULLIFY(YTEB%XWFC_BLD)
+  NULLIFY(YTEB%XWWILT_BLD)
+  NULLIFY(YTEB%XWSAT_BLD)
+  NULLIFY(YTEB%XBCOEF_BLD)
+  NULLIFY(YTEB%XCONDSAT_BLD)
+  NULLIFY(YTEB%XMPOTSAT_BLD)
+  NULLIFY(YTEB%XCONDDRY_BLD)
+  NULLIFY(YTEB%XCONDSLD_BLD)
+  NULLIFY(YTEB%XHCAPSOIL_BLD)
+  NULLIFY(YTEB%XTHEWALL)
+  NULLIFY(YTEB%XTHEROOF)
+  NULLIFY(YTEB%XTHEFLOOR)
+  NULLIFY(YTEB%XTHESOILBLD)
+  NULLIFY(YTEB%XTHEMASS)
+  NULLIFY(YTEB%XTHEROAD)
+  NULLIFY(YTEB%XTHEAIRIN)
+  NULLIFY(YTEB%XTHETOTAL)
+  NULLIFY(YTEB%XLATWATROOF)
+  NULLIFY(YTEB%XLATWATROAD)
+  NULLIFY(YTEB%XLATICEROOF)
+  NULLIFY(YTEB%XLATICEROAD)
+  NULLIFY(YTEB%XLATAIRIN)
+  NULLIFY(YTEB%XLATTOTAL)
+  NULLIFY(YTEB%XENETOTAL)
+  !
+  NULLIFY(YTEB%XNB_POP)
+  NULLIFY(YTEB%XSFCO2_RD)
+  NULLIFY(YTEB%XDELTA_LEGAL_TIME)
+  NULLIFY(YTEB%XTIME_OF_CHANGE)
+!
+YTEB%NDELTA_LEGAL_TIME=1
+YTEB%LTIME_OF_CHANGE=.FALSE.
+!
 IF (LHOOK) CALL DR_HOOK("MODD_TEB_N:TEB_INIT",1,ZHOOK_HANDLE)
 END SUBROUTINE TEB_INIT
 !

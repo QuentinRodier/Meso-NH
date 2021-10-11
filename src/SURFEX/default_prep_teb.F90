@@ -39,16 +39,14 @@
 !
 USE MODD_PREP_TEB,   ONLY : CFILE_TEB, CTYPE, CFILEPGD_TEB, CTYPEPGD,                   &
                               CFILE_WS, CTYPE_WS, XWS_ROOF, XWS_ROAD,                   &
-                              CFILE_TS, CTYPE_TS, XTS_ROOF, XTS_ROAD, XTS_WALL,         &
-                              XTI_BLD, XTI_ROAD, XQ_CAN, XHUI_BLD_DEF, XHUI_BLD,        &
-                              XWS_ROAD_DEF, XWS_ROOF_DEF, XTI_BLD_DEF, XT_CAN  
-
+                              CFILE_TS, CTYPE_TS, XTS_ROOF, XTS_ROAD, XTS_BLD, XTS_WALL,  &
+                              XTI_BLD, XQ_CAN, XHUI_BLD_DEF, XHUI_BLD,                    &
+                              XWS_ROAD_DEF, XWS_ROOF_DEF, XTI_BLD_DEF, XT_CAN, XTDEEP_TEB, &
+                              XTS_BLD_DEF
 USE MODN_PREP_TEB,   ONLY : LTEB_CANOPY, CROAD_DIR, CWALL_OPT
-
 USE MODD_SURF_PAR,   ONLY : XUNDEF
 USE MODD_CSTS,       ONLY : XTT
-USE MODD_SNOW_PAR,   ONLY : XANSMIN, XRHOSMAX
-!
+USE MODD_SNOW_PAR,   ONLY : XRHOSMAX
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -82,15 +80,17 @@ XWS_ROOF = XUNDEF
 XWS_ROAD = XUNDEF
 XTS_ROOF = XUNDEF
 XTS_ROAD = XUNDEF
+XTS_BLD  = XUNDEF
 XTS_WALL = XUNDEF
-XTI_ROAD = XUNDEF
 XTI_BLD  = XUNDEF
 XHUI_BLD = XUNDEF
 XT_CAN   = XUNDEF
+XTDEEP_TEB = XUNDEF
 !
 XWS_ROOF_DEF = 0.
 XWS_ROAD_DEF = 0.
 XTI_BLD_DEF  = 19. + XTT
+XTS_BLD_DEF  = 17. + XTT
 XHUI_BLD_DEF = 0.5
 !
 XQ_CAN = 0.

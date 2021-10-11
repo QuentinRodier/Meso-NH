@@ -4,16 +4,17 @@
 !SFX_LIC for details. version 1.
 !     #########
 SUBROUTINE PREP_HOR_SNOW_FIELDS (DTCO, G, U, GCP, HPROGRAM,HSURF,&
-                                HFILE,HFILETYPE,             &
-                                HFILEPGD,HFILEPGDTYPE,       &
-                                KLUOUT,OUNIF,KPATCH,         &
-                                KTEB_PATCH, KL,TNPSNOW, TPTIME, &
-                                PUNIF_WSNOW, PUNIF_RSNOW,    &
-                                PUNIF_TSNOW, PUNIF_LWCSNOW,  &
-                                PUNIF_ASNOW, OSNOW_IDEAL,    &
-                                PUNIF_SG1SNOW, PUNIF_SG2SNOW,&
-                                PUNIF_HISTSNOW,PUNIF_AGESNOW, YDCTL,&
-                                PVEGTYPE_PATCH, KSIZE_P, KR_P,&
+                                HFILE,HFILETYPE,                 &
+                                HFILEPGD,HFILEPGDTYPE, KLUOUT,   &
+                                OUNIF, KPATCH, NPAR_VEG_IRR_USE, &
+                                KTEB_PATCH, KL,TNPSNOW, TPTIME,  &
+                                PUNIF_WSNOW, PUNIF_RSNOW,        &
+                                PUNIF_TSNOW, PUNIF_LWCSNOW,      &
+                                PUNIF_ASNOW, OSNOW_IDEAL,        &
+                                PUNIF_SG1SNOW, PUNIF_SG2SNOW,    &
+                                PUNIF_HISTSNOW,PUNIF_AGESNOW,    &
+                                YDCTL, PUNIF_IMPURSNOW,          &
+                                PVEGTYPE_PATCH, KSIZE_P, KR_P,   &
                                 PPATCH, OKEY                 )  
 !     #######################################################
 !
@@ -36,28 +37,28 @@ SUBROUTINE PREP_HOR_SNOW_FIELDS (DTCO, G, U, GCP, HPROGRAM,HSURF,&
 !!
 !!    MODIFICATIONS
 !!    -------------
-!!      Original    01/2004
-!!      B. Decharme 10/2013, Phasage Arpege-Climat
-!!      B. Decharme 04/2014, Init permsnow
-!!      P. Marguinaud10/2014, Support for a 2-part PREP
+!!      Original      01/2004
+!!      B. Decharme   10/2013, Phasage Arpege-Climat
+!!      B. Decharme   04/2014, Init permsnow
+!!      P. Marguinaud 10/2014, Support for a 2-part PREP
+!!      A. Druel      02/2019, Transmit NPAR_VEG_IRR_USE for irrigation
+!!
 !!------------------------------------------------------------------
 !
 !
-USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
+USE MODD_DATA_COVER_n,     ONLY : DATA_COVER_t
 !
-USE MODD_SFX_GRID_n, ONLY : GRID_t
-USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
+USE MODD_SFX_GRID_n,       ONLY : GRID_t
+USE MODD_SURF_ATM_n,       ONLY : SURF_ATM_t
 USE MODD_GRID_CONF_PROJ_n, ONLY : GRID_CONF_PROJ_t
-!
 USE MODD_TYPE_SNOW
-USE MODD_TYPE_DATE_SURF, ONLY : DATE_TIME
+USE MODD_TYPE_DATE_SURF,   ONLY : DATE_TIME
+USE MODD_SURF_PAR,         ONLY : XUNDEF
+USE MODD_SNOW_PAR,         ONLY : XAGLAMIN, XAGLAMAX
 !
-USE MODD_SURF_PAR,       ONLY : XUNDEF
-USE MODD_SNOW_PAR,       ONLY : XAGLAMIN, XAGLAMAX
+USE MODE_PREP_CTL,         ONLY : PREP_CTL, PREP_CTL_INT_PART2, PREP_CTL_INT_PART4
 !
-USE MODD_DATA_COVER_PAR, ONLY : NVEGTYPE
-!
-USE MODE_PREP_CTL, ONLY : PREP_CTL, PREP_CTL_INT_PART2, PREP_CTL_INT_PART4
+USE MODD_PREP_SNOW,        ONLY : NIMPUR
 !
 USE MODI_ALLOCATE_GR_SNOW
 USE MODI_PREP_HOR_SNOW_FIELD
@@ -75,24 +76,25 @@ IMPLICIT NONE
 !
 !
 !
-TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
+TYPE(DATA_COVER_t),    INTENT(INOUT) :: DTCO
 !
-TYPE(GRID_t), INTENT(INOUT) :: G
-TYPE(SURF_ATM_t), INTENT(INOUT) :: U
+TYPE(GRID_t),          INTENT(INOUT) :: G
+TYPE(SURF_ATM_t),      INTENT(INOUT) :: U
 TYPE(GRID_CONF_PROJ_t),INTENT(INOUT) :: GCP
 !
-TYPE (PREP_CTL),    INTENT (INOUT) :: YDCTL
+TYPE (PREP_CTL),       INTENT(INOUT) :: YDCTL
 !
- CHARACTER(LEN=6),   INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
- CHARACTER(LEN=7),   INTENT(IN)  :: HSURF     ! type of field
- CHARACTER(LEN=28),  INTENT(IN)  :: HFILE     ! file name
- CHARACTER(LEN=6),   INTENT(IN)  :: HFILETYPE ! file type
- CHARACTER(LEN=28),  INTENT(IN)  :: HFILEPGD     ! file name
- CHARACTER(LEN=6),   INTENT(IN)  :: HFILEPGDTYPE ! file type
+ CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
+ CHARACTER(LEN=7),  INTENT(IN)  :: HSURF     ! type of field
+ CHARACTER(LEN=28), INTENT(IN)  :: HFILE     ! file name
+ CHARACTER(LEN=6),  INTENT(IN)  :: HFILETYPE ! file type
+ CHARACTER(LEN=28), INTENT(IN)  :: HFILEPGD     ! file name
+ CHARACTER(LEN=6),  INTENT(IN)  :: HFILEPGDTYPE ! file type
 INTEGER,            INTENT(IN)  :: KLUOUT    ! logical unit of output listing
 LOGICAL,            INTENT(IN)  :: OUNIF     ! flag for prescribed uniform field
 INTEGER,            INTENT(IN)  :: KPATCH    ! patch number for output scheme
-INTEGER,            INTENT(IN) :: KTEB_PATCH
+INTEGER,DIMENSION(:),INTENT(IN) :: NPAR_VEG_IRR_USE ! vegtype with irrigation
+INTEGER,            INTENT(IN)  :: KTEB_PATCH
 INTEGER,            INTENT(IN)  :: KL        ! number of points
 TYPE(NSURF_SNOW), INTENT(INOUT) :: TNPSNOW   ! snow fields
 TYPE(DATE_TIME),    INTENT(IN)  :: TPTIME    ! date and time
@@ -105,35 +107,42 @@ LOGICAL,            INTENT(INOUT)  :: OSNOW_IDEAL
 REAL, DIMENSION(:), INTENT(IN)  :: PUNIF_SG1SNOW ! 
 REAL, DIMENSION(:), INTENT(IN)  :: PUNIF_SG2SNOW ! 
 REAL, DIMENSION(:), INTENT(IN)  :: PUNIF_HISTSNOW ! 
-REAL, DIMENSION(:), INTENT(IN)  :: PUNIF_AGESNOW ! 
+REAL, DIMENSION(:), INTENT(IN)  :: PUNIF_AGESNOW !
+REAL, DIMENSION(:,:), INTENT(IN):: PUNIF_IMPURSNOW
 
-REAL,DIMENSION(:,:,:),  INTENT(IN ), OPTIONAL :: PVEGTYPE_PATCH ! fraction of each vegtype per patch
-INTEGER, DIMENSION(:), INTENT(IN), OPTIONAL :: KSIZE_P
+REAL,DIMENSION(:,:,:),   INTENT(IN), OPTIONAL :: PVEGTYPE_PATCH ! fraction of each vegtype per patch
+INTEGER, DIMENSION(:),   INTENT(IN), OPTIONAL :: KSIZE_P
 INTEGER, DIMENSION(:,:), INTENT(IN), OPTIONAL :: KR_P
-REAL,DIMENSION(:,:),    INTENT(IN ), OPTIONAL :: PPATCH         ! fraction of each patch
-LOGICAL,                INTENT(OUT), OPTIONAL :: OKEY
+REAL,DIMENSION(:,:),     INTENT(IN), OPTIONAL :: PPATCH         ! fraction of each patch
+LOGICAL,                 INTENT(OUT),OPTIONAL :: OKEY
 !
 !
 !*      0.2    declarations of local variables
 !
-TYPE(SURF_SNOW), POINTER :: SK
- CHARACTER(LEN=10)                   :: YSNSURF   ! type of field
-REAL,ALLOCATABLE,DIMENSION(:)     :: ZWRHO     ! total snow content from rho profile alone
-REAL,ALLOCATABLE,DIMENSION(:,:,:) :: ZDEPTH    ! snow depth of each layer
-REAL,ALLOCATABLE,DIMENSION(:)     :: ZDTOT     ! total snow depth
-INTEGER, DIMENSION(KPATCH) :: ISIZE_P
-INTEGER,DIMENSION(KL,KPATCH) :: IR_P    ! fraction of each patch
-REAL,DIMENSION(KL,KPATCH)         :: ZPATCH    ! fraction of each patch
-REAL,DIMENSION(:,:,:), ALLOCATABLE  :: ZVEGTYPE_PATCH    ! fraction of each vegtype per patch
+TYPE(SURF_SNOW), POINTER           :: SK
+ CHARACTER(LEN=10)                 :: YSNSURF   ! type of field
+REAL,ALLOCATABLE, DIMENSION(:)     :: ZWRHO     ! total snow content from rho profile alone
+REAL,ALLOCATABLE, DIMENSION(:,:,:) :: ZDEPTH    ! snow depth of each layer
+REAL,ALLOCATABLE, DIMENSION(:)     :: ZDTOT     ! total snow depth
+REAL,DIMENSION(SIZE(PUNIF_IMPURSNOW,1),SIZE(PUNIF_IMPURSNOW,2))    :: ZUNIF_IMP_MASS_SNOW   ! Mass impurity to introduce in the layer converted from concentration in the namelist
+INTEGER, DIMENSION(KPATCH)         :: ISIZE_P
+INTEGER,DIMENSION(KL,KPATCH)       :: IR_P    ! fraction of each patch
+REAL,DIMENSION(KL,KPATCH)          :: ZPATCH    ! fraction of each patch
+REAL,DIMENSION(:,:,:), ALLOCATABLE :: ZVEGTYPE_PATCH    ! fraction of each vegtype per patch
+REAL, DIMENSION(:,:),  ALLOCATABLE  :: ZSNOWDZ_OLD
 !
+INTEGER                             :: JIMP    ! loop counter on impurity types
 INTEGER                             :: JP, ISNOW_NLAYER    ! loop counter on patches
 INTEGER                             :: JL, JI, ISIZE   ! loop counter on layers
+INTEGER                             :: JLAYER
 INTEGER                             :: IVERSION  ! surface version
-CHARACTER(LEN=LEN_HREC)                   :: YRECFM    ! record name
+CHARACTER(LEN=16)                   :: YRECFM    ! record name
 INTEGER                             :: IRESP     ! error return code
 LOGICAL                             :: GGLACIER
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
+!
+!
 !---------------------------------------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('PREP_HOR_SNOW_FIELDS',0,ZHOOK_HANDLE)
@@ -208,11 +217,13 @@ ENDIF
 YSNSURF='WWW'//HSURF
 CALL PREP_HOR_SNOW_FIELD(DTCO, G, U, GCP, &
                          HPROGRAM, HFILE, HFILETYPE, HFILEPGD, HFILEPGDTYPE,  &
-                         KLUOUT, OUNIF, YSNSURF, KPATCH, KTEB_PATCH, KL, TNPSNOW, TPTIME,  &
+                         KLUOUT, OUNIF, YSNSURF, KPATCH, NPAR_VEG_IRR_USE,    &
+                         KTEB_PATCH, KL, TNPSNOW, TPTIME,                     &
                          PUNIF_WSNOW, PUNIF_RSNOW, PUNIF_TSNOW, PUNIF_LWCSNOW,&
                          PUNIF_ASNOW, OSNOW_IDEAL, PUNIF_SG1SNOW,             &
-                         PUNIF_SG2SNOW, PUNIF_HISTSNOW,PUNIF_AGESNOW, YDCTL,  &                      
-                         ZVEGTYPE_PATCH, ZPATCH, ISIZE_P, IR_P         )  
+                         PUNIF_SG2SNOW, PUNIF_HISTSNOW,PUNIF_AGESNOW, YDCTL,  &
+                         PUNIF_IMPURSNOW,                                     &
+                         ZVEGTYPE_PATCH, ZPATCH, ISIZE_P, IR_P)
 !
 !----------------------------------------------------------------------------
 !
@@ -225,11 +236,13 @@ ENDDO
 YSNSURF='DEP'//HSURF
 CALL PREP_HOR_SNOW_FIELD(DTCO, G, U, GCP, &
                          HPROGRAM, HFILE, HFILETYPE, HFILEPGD, HFILEPGDTYPE,  &
-                         KLUOUT, OUNIF, YSNSURF, KPATCH, KTEB_PATCH, KL, TNPSNOW, TPTIME,  &
+                         KLUOUT, OUNIF, YSNSURF, KPATCH, NPAR_VEG_IRR_USE,    &
+                         KTEB_PATCH, KL, TNPSNOW, TPTIME,                     &
                          PUNIF_WSNOW, PUNIF_RSNOW, PUNIF_TSNOW, PUNIF_LWCSNOW,&
                          PUNIF_ASNOW, OSNOW_IDEAL, PUNIF_SG1SNOW,             &
                          PUNIF_SG2SNOW, PUNIF_HISTSNOW,PUNIF_AGESNOW, YDCTL,  &
-                         ZVEGTYPE_PATCH, ZPATCH, ISIZE_P, IR_P        )
+                         PUNIF_IMPURSNOW,                                     &
+                         ZVEGTYPE_PATCH, ZPATCH, ISIZE_P, IR_P)
 !
 !* snow layer thickness definition
 !
@@ -264,11 +277,13 @@ ENDDO
 YSNSURF='RHO'//HSURF
 CALL PREP_HOR_SNOW_FIELD(DTCO, G, U, GCP, &
                          HPROGRAM,HFILE,HFILETYPE,HFILEPGD,HFILEPGDTYPE,           &
-                         KLUOUT,OUNIF,YSNSURF, KPATCH, KTEB_PATCH, KL, TNPSNOW, TPTIME, &
+                         KLUOUT,OUNIF,YSNSURF, KPATCH, NPAR_VEG_IRR_USE,           &
+                         KTEB_PATCH, KL, TNPSNOW, TPTIME,                          &
                          PUNIF_WSNOW, PUNIF_RSNOW, PUNIF_TSNOW, PUNIF_LWCSNOW,     &
                          PUNIF_ASNOW, OSNOW_IDEAL, PUNIF_SG1SNOW,                  &
                          PUNIF_SG2SNOW, PUNIF_HISTSNOW,PUNIF_AGESNOW, YDCTL,       &
-                         ZVEGTYPE_PATCH, ZPATCH, ISIZE_P, IR_P, PDEPTH=ZDEPTH  )  
+                         PUNIF_IMPURSNOW,                                          &
+                         ZVEGTYPE_PATCH, ZPATCH, ISIZE_P, IR_P, PDEPTH=ZDEPTH)
 !
 !----------------------------------------------------------------------------
 !
@@ -307,7 +322,14 @@ IF (.NOT.OSNOW_IDEAL) THEN
     END DO
     !
     IF (ISNOW_NLAYER > 1) THEN
-      CALL SNOW3LGRID(ZDEPTH(1:ISIZE,:,JP),ZDTOT(1:ISIZE))
+      ALLOCATE(ZSNOWDZ_OLD(SIZE(ZDTOT,1),SK%NLAYER))
+      DO JLAYER=1,SK%NLAYER
+         ZSNOWDZ_OLD(:,JLAYER)=ZDTOT(:)/SK%NLAYER
+      ENDDO
+      !
+      CALL SNOW3LGRID(ZDEPTH(:,:,JP),ZDTOT(:),ZSNOWDZ_OLD(:,:))
+      !
+      DEALLOCATE(ZSNOWDZ_OLD)
     ELSE
       ZDEPTH(1:ISIZE,1,JP) = ZDTOT(1:ISIZE)
     ENDIF
@@ -338,12 +360,14 @@ ENDIF
 !* albedo
 YSNSURF='ALB'//HSURF
  CALL PREP_HOR_SNOW_FIELD(DTCO, G, U, GCP, &
-                         HPROGRAM,HFILE,HFILETYPE,HFILEPGD,HFILEPGDTYPE,         &
-                         KLUOUT,OUNIF,YSNSURF, KPATCH, KTEB_PATCH, KL, TNPSNOW, TPTIME, &
+                         HPROGRAM,HFILE,HFILETYPE,HFILEPGD,HFILEPGDTYPE,          &
+                         KLUOUT,OUNIF,YSNSURF, KPATCH, NPAR_VEG_IRR_USE,          &
+                         KTEB_PATCH, KL, TNPSNOW, TPTIME,                         &
                          PUNIF_WSNOW, PUNIF_RSNOW, PUNIF_TSNOW, PUNIF_LWCSNOW,    &
                          PUNIF_ASNOW, OSNOW_IDEAL, PUNIF_SG1SNOW,                 &
                          PUNIF_SG2SNOW, PUNIF_HISTSNOW,PUNIF_AGESNOW, YDCTL,      &
-                         ZVEGTYPE_PATCH, ZPATCH, ISIZE_P, IR_P, PDEPTH=ZDEPTH  ) 
+                         PUNIF_IMPURSNOW,                                         &
+                         ZVEGTYPE_PATCH, ZPATCH, ISIZE_P, IR_P, PDEPTH=ZDEPTH)
 !
 IF (TNPSNOW%AL(1)%SCHEME/='D95') THEN
   !
@@ -351,10 +375,12 @@ IF (TNPSNOW%AL(1)%SCHEME/='D95') THEN
   YSNSURF='HEA'//HSURF
   CALL PREP_HOR_SNOW_FIELD(DTCO, G, U, GCP, &
                            HPROGRAM,HFILE,HFILETYPE,HFILEPGD,HFILEPGDTYPE,          &
-                           KLUOUT,OUNIF,YSNSURF, KPATCH, KTEB_PATCH, KL, TNPSNOW, TPTIME, &
+                           KLUOUT,OUNIF,YSNSURF, KPATCH, NPAR_VEG_IRR_USE,          &
+                           KTEB_PATCH, KL, TNPSNOW, TPTIME,                         &
                            PUNIF_WSNOW, PUNIF_RSNOW, PUNIF_TSNOW, PUNIF_LWCSNOW,    &
                            PUNIF_ASNOW, OSNOW_IDEAL, PUNIF_SG1SNOW,                 &
                            PUNIF_SG2SNOW, PUNIF_HISTSNOW,PUNIF_AGESNOW, YDCTL,      &
+                           PUNIF_IMPURSNOW,                                         &
                            ZVEGTYPE_PATCH, ZPATCH, ISIZE_P, IR_P, PDEPTH=ZDEPTH    )
   !
 ENDIF
@@ -364,11 +390,13 @@ IF (TNPSNOW%AL(1)%SCHEME=='CRO'.OR. TNPSNOW%AL(1)%SCHEME=='3-L') THEN
   !* age in snowpack profile
   YSNSURF='AGE'//HSURF
   CALL PREP_HOR_SNOW_FIELD(DTCO, G, U, GCP, &
-                         HPROGRAM,HFILE,HFILETYPE,HFILEPGD,HFILEPGDTYPE,        &
-                         KLUOUT,OUNIF,YSNSURF, KPATCH, KTEB_PATCH, KL, TNPSNOW, TPTIME,  &
+                         HPROGRAM,HFILE,HFILETYPE,HFILEPGD,HFILEPGDTYPE,          &
+                         KLUOUT,OUNIF,YSNSURF, KPATCH, NPAR_VEG_IRR_USE,          &
+                         KTEB_PATCH, KL, TNPSNOW, TPTIME,                         &
                          PUNIF_WSNOW, PUNIF_RSNOW, PUNIF_TSNOW, PUNIF_LWCSNOW,    &
                          PUNIF_ASNOW, OSNOW_IDEAL, PUNIF_SG1SNOW,                 &
                          PUNIF_SG2SNOW, PUNIF_HISTSNOW,PUNIF_AGESNOW, YDCTL,      &
+                         PUNIF_IMPURSNOW,                                         &
                          ZVEGTYPE_PATCH, ZPATCH, ISIZE_P, IR_P, PDEPTH=ZDEPTH  )   
   !
   DO JP = 1,KPATCH
@@ -389,30 +417,53 @@ IF (TNPSNOW%AL(1)%SCHEME=='CRO') THEN
   !
   YSNSURF='SG1'//HSURF
   CALL PREP_HOR_SNOW_FIELD(DTCO, G, U, GCP, &
-                         HPROGRAM,HFILE,HFILETYPE,HFILEPGD,HFILEPGDTYPE,        &
-                         KLUOUT,OUNIF,YSNSURF, KPATCH, KTEB_PATCH, KL, TNPSNOW, TPTIME,   &
+                         HPROGRAM,HFILE,HFILETYPE,HFILEPGD,HFILEPGDTYPE,          &
+                         KLUOUT,OUNIF,YSNSURF, KPATCH, NPAR_VEG_IRR_USE,          &
+                         KTEB_PATCH, KL, TNPSNOW, TPTIME,                         &
                          PUNIF_WSNOW, PUNIF_RSNOW, PUNIF_TSNOW, PUNIF_LWCSNOW,    &
                          PUNIF_ASNOW, OSNOW_IDEAL, PUNIF_SG1SNOW,                 &
                          PUNIF_SG2SNOW, PUNIF_HISTSNOW,PUNIF_AGESNOW, YDCTL,      &
-                         ZVEGTYPE_PATCH, ZPATCH, ISIZE_P, IR_P, PDEPTH=ZDEPTH )   
+                         PUNIF_IMPURSNOW,                                         &
+                         ZVEGTYPE_PATCH, ZPATCH, ISIZE_P, IR_P, PDEPTH=ZDEPTH)
   !
   YSNSURF='SG2'//HSURF
   CALL PREP_HOR_SNOW_FIELD(DTCO, G, U, GCP, &
-                         HPROGRAM,HFILE,HFILETYPE,HFILEPGD,HFILEPGDTYPE,        &
-                         KLUOUT,OUNIF,YSNSURF, KPATCH, KTEB_PATCH, KL, TNPSNOW, TPTIME,  &
+                         HPROGRAM,HFILE,HFILETYPE,HFILEPGD,HFILEPGDTYPE,          &
+                         KLUOUT,OUNIF,YSNSURF, KPATCH, NPAR_VEG_IRR_USE,          &
+                         KTEB_PATCH, KL, TNPSNOW, TPTIME,                         &
                          PUNIF_WSNOW, PUNIF_RSNOW, PUNIF_TSNOW, PUNIF_LWCSNOW,    &
                          PUNIF_ASNOW, OSNOW_IDEAL, PUNIF_SG1SNOW,                 &
                          PUNIF_SG2SNOW, PUNIF_HISTSNOW,PUNIF_AGESNOW, YDCTL,      &
-                         ZVEGTYPE_PATCH, ZPATCH, ISIZE_P, IR_P, PDEPTH=ZDEPTH  )   
+                         PUNIF_IMPURSNOW,                                         &
+                         ZVEGTYPE_PATCH, ZPATCH, ISIZE_P, IR_P, PDEPTH=ZDEPTH)
   !
   YSNSURF='HIS'//HSURF
   CALL PREP_HOR_SNOW_FIELD(DTCO, G, U, GCP, &
-                         HPROGRAM,HFILE,HFILETYPE,HFILEPGD,HFILEPGDTYPE,        &
-                         KLUOUT,OUNIF,YSNSURF, KPATCH, KTEB_PATCH, KL, TNPSNOW, TPTIME, &
+                         HPROGRAM,HFILE,HFILETYPE,HFILEPGD,HFILEPGDTYPE,          &
+                         KLUOUT,OUNIF,YSNSURF, KPATCH, NPAR_VEG_IRR_USE,          &
+                         KTEB_PATCH, KL, TNPSNOW, TPTIME,                         &
                          PUNIF_WSNOW, PUNIF_RSNOW, PUNIF_TSNOW, PUNIF_LWCSNOW,    &
                          PUNIF_ASNOW, OSNOW_IDEAL, PUNIF_SG1SNOW,                 &
                          PUNIF_SG2SNOW, PUNIF_HISTSNOW,PUNIF_AGESNOW, YDCTL,      &
-                         ZVEGTYPE_PATCH, ZPATCH, ISIZE_P, IR_P, PDEPTH=ZDEPTH  )   
+                         PUNIF_IMPURSNOW,                                         &
+                         ZVEGTYPE_PATCH, ZPATCH, ISIZE_P, IR_P, PDEPTH=ZDEPTH)
+  !
+  DO JIMP = 1, NIMPUR
+
+    WRITE(YSNSURF,'(A2,I1,A7)') 'IM',JIMP,HSURF
+    
+    ZUNIF_IMP_MASS_SNOW(:,JIMP)=PUNIF_IMPURSNOW(:,JIMP)*(PUNIF_WSNOW(:)*1000)
+    CALL PREP_HOR_SNOW_FIELD(DTCO, G, U, GCP, &
+                             HPROGRAM,HFILE,HFILETYPE,HFILEPGD,HFILEPGDTYPE,       &
+                             KLUOUT,OUNIF,YSNSURF, KPATCH, NPAR_VEG_IRR_USE,       &
+                             KTEB_PATCH, KL, TNPSNOW, TPTIME,                      &
+                             PUNIF_WSNOW, PUNIF_RSNOW, PUNIF_TSNOW, PUNIF_LWCSNOW, &
+                             PUNIF_ASNOW, OSNOW_IDEAL, PUNIF_SG1SNOW,              &
+                             PUNIF_SG2SNOW, PUNIF_HISTSNOW,PUNIF_AGESNOW, YDCTL,   &
+                             ZUNIF_IMP_MASS_SNOW,                                  &
+                             ZVEGTYPE_PATCH, ZPATCH, ISIZE_P, IR_P, PDEPTH=ZDEPTH  ) 
+      
+  ENDDO
   !
 ENDIF
 !

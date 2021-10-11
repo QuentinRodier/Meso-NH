@@ -61,6 +61,20 @@ TYPE SSO_t
   REAL, DIMENSION(:), POINTER   :: XSIL_ZS        ! silhouette orography                    (m)
   REAL, DIMENSION(:), POINTER   :: XMAX_ZS        ! maximum subgrid orography               (m)
   REAL, DIMENSION(:), POINTER   :: XMIN_ZS        ! minimum subgrid orography               (m)
+  REAL, DIMENSION(:), POINTER   :: XAVG_SLO       ! averaged slope (rad)
+  REAL, DIMENSION(:), POINTER   :: XSLOPE         ! mesh-scale slope angle (rad)
+  REAL, DIMENSION(:), POINTER   :: XASPECT        ! mesh-scale slope aspect (rad)
+  REAL, DIMENSION(:,:), POINTER :: XSLOPE_DIR     ! averaged slope in each aspect section (direction) (rad)
+  REAL, DIMENSION(:,:), POINTER :: XFRAC_DIR      ! fraction of subrid scale pixels in each aspect section
+  REAL, DIMENSION(:), POINTER   :: XSVF           ! sky-view factor 
+  REAL, DIMENSION(:,:), POINTER :: XHMINS_DIR   ! minimum local horizon angle (sinus) in each aspect section
+  REAL, DIMENSION(:,:), POINTER :: XHMAXS_DIR   ! maximum local horizon angle (sinus) in each aspect section
+  REAL, DIMENSION(:,:), POINTER :: XSHA_DIR       ! A factor for local horizon angle in each aspect section
+  REAL, DIMENSION(:,:), POINTER :: XSHB_DIR       ! B factor for local horizon angle in each aspect section
+  INTEGER                       :: NSECTORS       ! number of aspect sectors
+  LOGICAL                       :: LDSV           ! switch for orographic shadowing, sky view factor
+  LOGICAL                       :: LDSH           ! switch for orographic shadowing, shadow factor
+  LOGICAL                       :: LDSL           ! switch for orographic shadowing, slope factor
 ! Zo threshold
   REAL   :: XFRACZ0                                ! Z0=Min(Z0, Href/XFRACZ0)
   REAL   :: XCOEFBE                                ! Beljaars coefficient         
@@ -112,6 +126,16 @@ IF (LHOOK) CALL DR_HOOK("MODD_SSO_N:SSO_INIT",0,ZHOOK_HANDLE)
   NULLIFY(YSSO%XSIL_ZS)
   NULLIFY(YSSO%XMAX_ZS)
   NULLIFY(YSSO%XMIN_ZS)
+  NULLIFY(YSSO%XAVG_SLO)
+  NULLIFY(YSSO%XSLOPE)
+  NULLIFY(YSSO%XASPECT)
+  NULLIFY(YSSO%XSLOPE_DIR)
+  NULLIFY(YSSO%XFRAC_DIR)
+  NULLIFY(YSSO%XSVF)
+  NULLIFY(YSSO%XHMINS_DIR)
+  NULLIFY(YSSO%XHMAXS_DIR)
+  NULLIFY(YSSO%XSHA_DIR)
+  NULLIFY(YSSO%XSHB_DIR)
   NULLIFY(YSSO%XAOSIP)
   NULLIFY(YSSO%XAOSIM)
   NULLIFY(YSSO%XAOSJP)
@@ -121,16 +145,20 @@ IF (LHOOK) CALL DR_HOOK("MODD_SSO_N:SSO_INIT",0,ZHOOK_HANDLE)
   NULLIFY(YSSO%XHO2JP)
   NULLIFY(YSSO%XHO2JM)
   NULLIFY(YSSO%XZ0REL)
-
   NULLIFY(YSSO%XZ0EFFIP)
   NULLIFY(YSSO%XZ0EFFIM)
   NULLIFY(YSSO%XZ0EFFJP)
   NULLIFY(YSSO%XZ0EFFJM)
   
-YSSO%CROUGH=' '
-YSSO%XFRACZ0=2.
-YSSO%XCOEFBE=2.
-IF (LHOOK) CALL DR_HOOK("MODD_SSO_N:SSO_INIT",1,ZHOOK_HANDLE)
+  YSSO%CROUGH=' '
+  YSSO%XFRACZ0=2.
+  YSSO%XCOEFBE=2.
+  YSSO%NSECTORS=0
+  YSSO%LDSV=.FALSE.
+  YSSO%LDSL=.FALSE.
+  YSSO%LDSH=.FALSE.
+
+  IF (LHOOK) CALL DR_HOOK("MODD_SSO_N:SSO_INIT",1,ZHOOK_HANDLE)
 END SUBROUTINE SSO_INIT
 !
 SUBROUTINE SSO_NP_INIT(YSSO_NP,KPATCH)

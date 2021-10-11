@@ -4,7 +4,8 @@
 !SFX_LIC for details. version 1.
 !     ###############################################################
       SUBROUTINE GET_MESH_INDEX_IGN(KSSO,PGRID_PAR,PLAT,PLON,&
-                                KINDEX,KISSOX,KISSOY,PVALUE,PNODATA)
+                                KINDEX,KISSOX,KISSOY,KFSSO,KFISSOX,KFISSOY, &
+                                PVALUE,PNODATA)
 !     ###############################################################
 !
 !!**** *GET_MESH_INDEX_IGN* get the grid mesh where point (lat,lon) is located
@@ -44,12 +45,15 @@ IMPLICIT NONE
 !            ------------------------
 !
 INTEGER,                       INTENT(IN)   :: KSSO      ! number of subgrid mesh in each direction
+INTEGER,                       INTENT(IN)   :: KFSSO     ! number of fractional subgrid mesh in each direction
 REAL,    DIMENSION(:),        INTENT(IN)    :: PGRID_PAR ! grid parameters
 REAL,    DIMENSION(:),        INTENT(IN)    :: PLAT      ! latitude of the point
 REAL,    DIMENSION(:),        INTENT(IN)    :: PLON      ! longitude of the point
 INTEGER, DIMENSION(:,:),      INTENT(OUT)   :: KINDEX    ! index of the grid mesh where the point is
 INTEGER, DIMENSION(:,:),      INTENT(OUT)   :: KISSOX    ! X index of the subgrid mesh
 INTEGER, DIMENSION(:,:),      INTENT(OUT)   :: KISSOY    ! Y index of the subgrid mesh
+INTEGER, DIMENSION(:,:),       INTENT(OUT)  :: KFISSOX   ! X index of the fractional subgrid mesh
+INTEGER, DIMENSION(:,:),       INTENT(OUT)  :: KFISSOY   ! Y index of the fractional subgrid mesh
 !
 REAL, DIMENSION(:), OPTIONAL, INTENT(IN)    :: PVALUE  ! value of the point to add
 REAL, OPTIONAL, INTENT(IN) :: PNODATA
@@ -180,6 +184,8 @@ KINDEX(:,:)=0
 !
 KISSOX(:,:) = 0
 KISSOY(:,:) = 0
+KFISSOX(:,:) = 0
+KFISSOY(:,:) = 0
 !
 ICI(:,:) = 0
 !
@@ -243,7 +249,11 @@ DO JL=1,SIZE(PLAT)
       IF (KSSO/=0) THEN
         KISSOX(ICPT,JL) = 1 + INT( FLOAT(KSSO) * (ZX(JL)-XXLIM(NXIDS(JI)))/XDX(NXIDS(JI)) )   
         KISSOY(ICPT,JL) = 1 + INT( FLOAT(KSSO) * (ZY(JL)-XYLIM(NXIDS(JI)))/XDY(NXIDS(JI)) ) 
-      ENDIF     
+      ENDIF
+      IF (KFSSO/=0) THEN
+        KFISSOX(ICPT,JL) = 1 + INT( FLOAT(KFSSO) * (ZX(JL)-XXLIM(NXIDS(JI)))/XDX(NXIDS(JI)) )   
+        KFISSOY(ICPT,JL) = 1 + INT( FLOAT(KFSSO) * (ZY(JL)-XYLIM(NXIDS(JI)))/XDY(NXIDS(JI)) ) 
+      ENDIF
       !
       IF (ICPT==NOVMX) EXIT
       !

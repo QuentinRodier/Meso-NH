@@ -39,6 +39,8 @@ IMPLICIT NONE
 
 TYPE TEB_PANEL_t
 !
+  CHARACTER(LEN=3)               :: CSOLAR_PANEL      ! solar panel option: 'PV ','MIX'
+                                                      ! 'MIX' option works only with BEM
   REAL,    POINTER, DIMENSION(:) :: XEMIS_PANEL       ! emissivity of solar panels               (-)
   REAL,    POINTER, DIMENSION(:) :: XALB_PANEL        ! albedo of soolar panels                  (-)
   REAL,    POINTER, DIMENSION(:) :: XEFF_PANEL        ! Efficiency coefficient of solar panels   (-)

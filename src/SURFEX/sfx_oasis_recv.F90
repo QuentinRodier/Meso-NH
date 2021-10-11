@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !#########
-SUBROUTINE SFX_OASIS_RECV(HPROGRAM,KI,KSW,PTIMEC,                &
+SUBROUTINE SFX_OASIS_RECV(HPROGRAM,KGPTOT,KI,KSW,PTIMEC,         &
                           ORECV_LAND, ORECV_SEA, ORECV_WAVE,     &
                           PLAND_WTD,PLAND_FWTD,                  &
                           PLAND_FFLOOD,PLAND_PIFLOOD,            &
@@ -40,6 +40,9 @@ SUBROUTINE SFX_OASIS_RECV(HPROGRAM,KI,KSW,PTIMEC,                &
 !!    -------------
 !!      Original    10/2013
 !!      Modified    11/2014 : J. Pianezze - add wave coupling parameters
+!!                  01/2020 : C. Lebeaupin : 
+!!                              add sfxrcv with phys/spectral domain distinction for ARO
+!!                              current components inout (init to 0. before)
 !
 !-------------------------------------------------------------------------------
 !
@@ -65,7 +68,8 @@ IMPLICIT NONE
 !              -------------------------
 !
 CHARACTER(LEN=*),       INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
-INTEGER,                INTENT(IN)  :: KI        ! number of points on this proc
+INTEGER,                INTENT(IN)  :: KI        ! number of physical points on proc
+INTEGER,                INTENT(IN)  :: KGPTOT    ! total number of points on proc
 INTEGER,                INTENT(IN)  :: KSW       ! number of short-wave spectral bands
 REAL,                   INTENT(IN)  :: PTIMEC    ! Cumulated run time step (s)
 !
@@ -79,8 +83,8 @@ REAL, DIMENSION(KI),    INTENT(OUT) :: PLAND_FFLOOD  ! Land Floodplains fraction
 REAL, DIMENSION(KI),    INTENT(OUT) :: PLAND_PIFLOOD ! Land Potential flood infiltration (kg/m2/s)
 !
 REAL, DIMENSION(KI),    INTENT(OUT) :: PSEA_SST ! Sea surface temperature (K)
-REAL, DIMENSION(KI),    INTENT(OUT) :: PSEA_UCU ! Sea u-current stress (Pa)
-REAL, DIMENSION(KI),    INTENT(OUT) :: PSEA_VCU ! Sea v-current stress (Pa)
+REAL, DIMENSION(KI),    INTENT(INOUT) :: PSEA_UCU ! Sea u-current (m/s)
+REAL, DIMENSION(KI),    INTENT(INOUT) :: PSEA_VCU ! Sea v-current (m/s)
 !
 REAL, DIMENSION(KI),    INTENT(OUT) :: PSEAICE_SIT ! Sea-ice Temperature (K)
 REAL, DIMENSION(KI),    INTENT(OUT) :: PSEAICE_CVR ! Sea-ice cover (-)
@@ -94,8 +98,6 @@ REAL, DIMENSION(KI),    INTENT(OUT) :: PWAVE_TP  ! Peak period (s)
 !
 !*       0.2   Declarations of local variables
 !              -------------------------------
-!
-REAL, DIMENSION(KI,1) :: ZREAD
 !
 INTEGER               :: IDATE  ! current coupling time step (s)
 INTEGER               :: IERR   ! Error info
@@ -114,6 +116,13 @@ IF (LHOOK) CALL DR_HOOK('SFX_OASIS_RECV',0,ZHOOK_HANDLE)
 !               ------------
 !
 CALL GET_LUOUT(HPROGRAM,ILUOUT)
+#ifdef ARO
+!
+IF( KI /= KGPTOT ) THEN
+  WRITE(ILUOUT,*) '**WARNING**: KI ', KI, 'is different from ',KGPTOT
+  IF(HPROGRAM=='AROME ') WRITE(ILUOUT,*) 'SFX_OASIS_RECV: ARRAY REDUCED AFTER GET'
+ENDIF
+#endif
 !
 IDATE = INT(PTIMEC)
 !
@@ -126,8 +135,6 @@ IF(ORECV_LAND)THEN
 !
 ! * Init river input fields
 !
-  ZREAD(:,:) = XUNDEF
-!
   PLAND_WTD    (:) = XUNDEF
   PLAND_FWTD   (:) = XUNDEF
   PLAND_FFLOOD (:) = XUNDEF
@@ -138,28 +145,20 @@ IF(ORECV_LAND)THEN
   IF(LCPL_GW)THEN
 !
     YCOMMENT='water table depth'
-    CALL OASIS_GET(NWTD_ID,IDATE,ZREAD(:,:),IERR)
-    CALL CHECK_RECV(ILUOUT,IERR,YCOMMENT)
-    PLAND_WTD(:)=ZREAD(:,1)
+    CALL SFXRCV(KI,KGPTOT,ILUOUT,IDATE,HPROGRAM,YCOMMENT,NWTD_ID,PLAND_WTD)
 !
     YCOMMENT='fraction of water table rise'
-    CALL OASIS_GET(NFWTD_ID,IDATE,ZREAD(:,:),IERR)
-    CALL CHECK_RECV(ILUOUT,IERR,YCOMMENT)
-    PLAND_FWTD(:)=ZREAD(:,1)
+    CALL SFXRCV(KI,KGPTOT,ILUOUT,IDATE,HPROGRAM,YCOMMENT,NFWTD_ID,PLAND_FWTD)
 !
   ENDIF
 !
   IF(LCPL_FLOOD)THEN
 !
     YCOMMENT='Flood fraction'
-    CALL OASIS_GET(NFFLOOD_ID,IDATE,ZREAD(:,:),IERR)
-    CALL CHECK_RECV(ILUOUT,IERR,YCOMMENT)
-    PLAND_FFLOOD(:)=ZREAD(:,1)
+    CALL SFXRCV(KI,KGPTOT,ILUOUT,IDATE,HPROGRAM,YCOMMENT,NFFLOOD_ID,PLAND_FFLOOD)
 !
     YCOMMENT='Potential flood infiltration'
-    CALL OASIS_GET(NPIFLOOD_ID,IDATE,ZREAD(:,:),IERR)
-    CALL CHECK_RECV(ILUOUT,IERR,YCOMMENT)
-    PLAND_PIFLOOD(:)=ZREAD(:,1)
+    CALL SFXRCV(KI,KGPTOT,ILUOUT,IDATE,HPROGRAM,YCOMMENT,NPIFLOOD_ID,PLAND_PIFLOOD)
 !
     WHERE(PLAND_PIFLOOD(:)==0.0)PLAND_FFLOOD(:)=0.0
 !
@@ -177,11 +176,9 @@ IF(ORECV_SEA)THEN
 !
 ! * Init ocean input fields
 !
-  ZREAD(:,:) = XUNDEF
-!
   PSEA_SST (:) = XUNDEF
-  PSEA_UCU (:) = XUNDEF
-  PSEA_VCU (:) = XUNDEF
+!  PSEA_UCU (:) = XUNDEF
+!  PSEA_VCU (:) = XUNDEF
 !
   PSEAICE_SIT (:) = XUNDEF
   PSEAICE_CVR (:) = XUNDEF
@@ -189,43 +186,25 @@ IF(ORECV_SEA)THEN
 !
 ! * Receive ocean input fields
 !
-  IF(NSEA_SST_ID/=NUNDEF)THEN
-    YCOMMENT='Sea surface temperature'
-    CALL OASIS_GET(NSEA_SST_ID,IDATE,ZREAD(:,:),IERR)
-    CALL CHECK_RECV(ILUOUT,IERR,YCOMMENT)
-    PSEA_SST(:)=ZREAD(:,1)
-  ENDIF
+  YCOMMENT='Sea surface temperature'
+  CALL SFXRCV(KI,KGPTOT,ILUOUT,IDATE,HPROGRAM,YCOMMENT,NSEA_SST_ID,PSEA_SST)
 !
-  IF(NSEA_UCU_ID/=NUNDEF)THEN
-    YCOMMENT='Sea u-current stress'
-    CALL OASIS_GET(NSEA_UCU_ID,IDATE,ZREAD(:,:),IERR)
-    CALL CHECK_RECV(ILUOUT,IERR,YCOMMENT)
-    PSEA_UCU(:)=ZREAD(:,1)
-  ENDIF
+  YCOMMENT='Sea u-current'
+  CALL SFXRCV(KI,KGPTOT,ILUOUT,IDATE,HPROGRAM,YCOMMENT,NSEA_UCU_ID,PSEA_UCU)
 !
-  IF(NSEA_VCU_ID/=NUNDEF)THEN
-    YCOMMENT='Sea v-current stress'
-    CALL OASIS_GET(NSEA_VCU_ID,IDATE,ZREAD(:,:),IERR)
-    CALL CHECK_RECV(ILUOUT,IERR,YCOMMENT)
-    PSEA_VCU(:)=ZREAD(:,1)
-  ENDIF
+  YCOMMENT='Sea v-current'
+  CALL SFXRCV(KI,KGPTOT,ILUOUT,IDATE,HPROGRAM,YCOMMENT,NSEA_VCU_ID,PSEA_VCU)
 !
   IF(LCPL_SEAICE)THEN
 !
     YCOMMENT='Sea-ice Temperature'
-    CALL OASIS_GET(NSEAICE_SIT_ID,IDATE,ZREAD(:,:),IERR)
-    CALL CHECK_RECV(ILUOUT,IERR,YCOMMENT)
-    PSEAICE_SIT(:)=ZREAD(:,1)
+    CALL SFXRCV(KI,KGPTOT,ILUOUT,IDATE,HPROGRAM,YCOMMENT,NSEAICE_SIT_ID,PSEAICE_SIT)
 !
     YCOMMENT='Sea-ice cover'
-    CALL OASIS_GET(NSEAICE_CVR_ID,IDATE,ZREAD(:,:),IERR)
-    CALL CHECK_RECV(ILUOUT,IERR,YCOMMENT)
-    PSEAICE_CVR(:)=ZREAD(:,1)
+    CALL SFXRCV(KI,KGPTOT,ILUOUT,IDATE,HPROGRAM,YCOMMENT,NSEAICE_CVR_ID,PSEAICE_CVR)
 !
     YCOMMENT='Sea-ice albedo'
-    CALL OASIS_GET(NSEAICE_ALB_ID,IDATE,ZREAD(:,:),IERR)
-    CALL CHECK_RECV(ILUOUT,IERR,YCOMMENT)
-    PSEAICE_ALB(:)=ZREAD(:,1)
+    CALL SFXRCV(KI,KGPTOT,ILUOUT,IDATE,HPROGRAM,YCOMMENT,NSEAICE_ALB_ID,PSEAICE_ALB)
 !
   ENDIF
 !
@@ -238,9 +217,7 @@ ENDIF
 !
 IF(ORECV_WAVE)THEN
 !
-! * Init ocean input fields
-!
-  ZREAD(:,:) = XUNDEF
+! * Init wave input fields
 !
   PWAVE_CHA (:) = XUNDEF
   PWAVE_UCU  (:) = XUNDEF
@@ -250,40 +227,20 @@ IF(ORECV_WAVE)THEN
 !
 ! * Receive wave input fields
 !
-  IF(NWAVE_CHA_ID/=NUNDEF)THEN
-    YCOMMENT='Charnock coefficient'
-    CALL OASIS_GET(NWAVE_CHA_ID,IDATE,ZREAD(:,:),IERR)
-    CALL CHECK_RECV(ILUOUT,IERR,YCOMMENT)
-    PWAVE_CHA(:)=ZREAD(:,1)
-  ENDIF
+  YCOMMENT='Charnock coefficient'
+  CALL SFXRCV(KI,KGPTOT,ILUOUT,IDATE,HPROGRAM,YCOMMENT,NWAVE_CHA_ID,PWAVE_CHA)
 !
-  IF(NWAVE_UCU_ID/=NUNDEF)THEN
-    YCOMMENT='u-current velocity'
-    CALL OASIS_GET(NWAVE_UCU_ID,IDATE,ZREAD(:,:),IERR)
-    CALL CHECK_RECV(ILUOUT,IERR,YCOMMENT)
-    PWAVE_UCU(:)=ZREAD(:,1)
-  ENDIF
+  YCOMMENT='u-current velocity'
+  CALL SFXRCV(KI,KGPTOT,ILUOUT,IDATE,HPROGRAM,YCOMMENT,NWAVE_UCU_ID,PWAVE_UCU)
 !
-  IF(NWAVE_VCU_ID/=NUNDEF)THEN
-    YCOMMENT='v-current velocity'
-    CALL OASIS_GET(NWAVE_VCU_ID,IDATE,ZREAD(:,:),IERR)
-    CALL CHECK_RECV(ILUOUT,IERR,YCOMMENT)
-    PWAVE_VCU(:)=ZREAD(:,1)
-  ENDIF
+  YCOMMENT='v-current velocity'
+  CALL SFXRCV(KI,KGPTOT,ILUOUT,IDATE,HPROGRAM,YCOMMENT,NWAVE_VCU_ID,PWAVE_VCU)
 !
-  IF(NWAVE_HS_ID/=NUNDEF)THEN
-    YCOMMENT='Significant wave height'
-    CALL OASIS_GET(NWAVE_HS_ID,IDATE,ZREAD(:,:),IERR)
-    CALL CHECK_RECV(ILUOUT,IERR,YCOMMENT)
-    PWAVE_HS(:)=ZREAD(:,1)
-  ENDIF
+  YCOMMENT='Significant wave height'
+  CALL SFXRCV(KI,KGPTOT,ILUOUT,IDATE,HPROGRAM,YCOMMENT,NWAVE_HS_ID,PWAVE_HS)
 !
-  IF(NWAVE_TP_ID/=NUNDEF)THEN
-    YCOMMENT='Peak period'
-    CALL OASIS_GET(NWAVE_TP_ID,IDATE,ZREAD(:,:),IERR)
-    CALL CHECK_RECV(ILUOUT,IERR,YCOMMENT)
-    PWAVE_TP(:)=ZREAD(:,1)
-  ENDIF
+  YCOMMENT='Peak period'
+  CALL SFXRCV(KI,KGPTOT,ILUOUT,IDATE,HPROGRAM,YCOMMENT,NWAVE_TP_ID,PWAVE_TP)
 !
 ENDIF
 !-------------------------------------------------------------------------------
@@ -292,6 +249,53 @@ IF (LHOOK) CALL DR_HOOK('SFX_OASIS_RECV',1,ZHOOK_HANDLE)
 !
 !-------------------------------------------------------------------------------
 CONTAINS
+!-------------------------------------------------------------------------------
+!
+SUBROUTINE SFXRCV(KI,KGPTOT,KLUOUT,KDATE,HPROGRAM,HCOMMENT,KVAR_ID,PVAR)
+!
+IMPLICIT NONE
+!
+INTEGER, INTENT(IN)             :: KI
+INTEGER, INTENT(IN)             :: KGPTOT
+INTEGER, INTENT(IN)             :: KLUOUT
+INTEGER, INTENT(IN)             :: KDATE
+CHARACTER(LEN=*), INTENT(IN)    :: HPROGRAM
+CHARACTER(LEN=*), INTENT(IN)    :: HCOMMENT
+INTEGER, INTENT(IN)             :: KVAR_ID ! flux id for OASIS
+REAL, DIMENSION(KI), INTENT(INOUT) :: PVAR  ! Cumulated flux
+!
+REAL, DIMENSION(KI,1) :: ZREAD 
+INTEGER :: IERR ! Error info
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+#ifdef ARO
+REAL(KIND=JPRB), DIMENSION(KGPTOT,1) :: ZFLDR !TARGET
+#endif
+!--------------------------------------------
+!
+IF (LHOOK) CALL DR_HOOK('SFX_OASIS_RECV:SFXRCV',0,ZHOOK_HANDLE)
+!
+ZREAD(:,:) = XUNDEF
+!
+IF(KVAR_ID/=NUNDEF)THEN
+#ifdef ARO
+  IF (HPROGRAM=='AROME ') THEN
+    CALL OASIS_GET(KVAR_ID,KDATE,ZFLDR(:,:),IERR)
+    CALL CHECK_RECV(KLUOUT,IERR,HCOMMENT)
+    ZREAD(:,:)=ZFLDR(1:KI,:)
+  ELSE
+#endif
+  CALL OASIS_GET(KVAR_ID,KDATE,ZREAD(:,:),IERR)
+  CALL CHECK_RECV(KLUOUT,IERR,HCOMMENT)
+#ifdef ARO
+  ENDIF
+#endif
+    PVAR(:)=ZREAD(:,1)
+ENDIF
+!
+IF (LHOOK) CALL DR_HOOK('SFX_OASIS_RECV:SFXRCV',1,ZHOOK_HANDLE)
+!
+END SUBROUTINE SFXRCV
+!
 !-------------------------------------------------------------------------------
 !
 SUBROUTINE CHECK_RECV(KLUOUT,KERR,HCOMMENT)

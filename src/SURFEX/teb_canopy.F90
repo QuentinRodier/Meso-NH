@@ -3,9 +3,13 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-SUBROUTINE TEB_CANOPY(KI, SB, PBLD, PBLD_HEIGHT, PWALL_O_HOR, PPA, PRHOA, PDUWDU_ROAD, PUW_ROOF, &
-                      PDUWDU_ROOF, PH_WALL, PH_ROOF, PE_ROOF, PAC_ROAD, PAC_ROAD_WAT, PFORC_U,    &
-                      PDFORC_UDU, PFORC_E, PDFORC_EDE, PFORC_T, PDFORC_TDT, PFORC_Q, PDFORC_QDQ)
+SUBROUTINE TEB_CANOPY(KI, SB, PBLD, PBLD_HEIGHT, PWALL_O_HOR, PPA, PRHOA,            &
+                      PDUWDU_ROAD, PUW_ROOF, PDUWDU_ROOF, PH_WALL,PE_WALL,           &
+                      PH_ROOF,PE_ROOF, PDH_HVEG, PDE_HVEG,                           &
+                      PAC_ROAD,PAC_ROAD_WAT,                                         &
+                      PURBTREE, PLAD_CAN, PFORC_U,                                   &
+                      PDFORC_UDU, PFORC_E, PDFORC_EDE, PFORC_T, PDFORC_TDT, PFORC_Q, &
+                      PDFORC_QDQ                                                     )
 !     ###############################################################################
 !
 !!****  *TEB_CANOPY_n * - prepares forcing for canopy air model
@@ -57,10 +61,16 @@ REAL, DIMENSION(KI),      INTENT(IN)    :: PDUWDU_ROAD  ! derivative of road fri
 REAL, DIMENSION(KI),      INTENT(IN)    :: PUW_ROOF  ! friction flux for roof surfaces       (m2/s2)
 REAL, DIMENSION(KI),      INTENT(IN)    :: PDUWDU_ROOF  ! derivative of roof friction flux   (m/s)
 REAL, DIMENSION(KI),      INTENT(IN)    :: PH_WALL   ! flux of heat for wall surfaces        (W/m2)
+REAL, DIMENSION(KI),      INTENT(IN)    :: PE_WALL   ! flux of water vapour for wall surfaces(kg/m2/s)
 REAL, DIMENSION(KI),      INTENT(IN)    :: PH_ROOF   ! flux of heat for roof surfaces        (W/m2)
 REAL, DIMENSION(KI),      INTENT(IN)    :: PE_ROOF   ! flux of vapor for roof surfaces       (kg/m2/s)
+REAL, DIMENSION(KI,SB%NLVL), INTENT(IN)    :: PDH_HVEG     ! flux of heat for high vegetation discretized on canopy grid (W/m2)
+REAL, DIMENSION(KI,SB%NLVL), INTENT(IN)    :: PDE_HVEG     ! flux of vapor for high vegetation discretized on canopy grid (kg/m2/s)
 REAL, DIMENSION(KI),      INTENT(IN)    :: PAC_ROAD  ! road aerodynamical conductance        ()
 REAL, DIMENSION(KI),      INTENT(IN)    :: PAC_ROAD_WAT ! road water aerodynamical conductance        ()
+!
+REAL, DIMENSION(KI),         INTENT(IN)    :: PURBTREE     ! fraction of high vegetation (inside canyon) 
+REAL, DIMENSION(KI,SB%NLVL), INTENT(IN)    :: PLAD_CAN     ! vertical profile of Leaf Area Density on canopy grid (m3 leaves / m² of soil)
 !
 REAL, DIMENSION(KI,SB%NLVL), INTENT(OUT)   :: PFORC_U   ! tendency of wind due to canopy drag   (m/s2)
 REAL, DIMENSION(KI,SB%NLVL), INTENT(OUT)   :: PDFORC_UDU! formal derivative of the tendency of
@@ -77,15 +87,18 @@ REAL, DIMENSION(KI,SB%NLVL), INTENT(OUT)   :: PDFORC_QDQ! formal derivative of t
 !
 !*      0.2    declarations of local variables
 !
+INTEGER                  :: JJ             ! loop counter on grid points
 INTEGER                  :: JLAYER    ! loop counter on canopy heights
 !         
 REAL, DIMENSION(KI,SB%NLVL) :: ZCDRAG    ! drag coefficient in canopy
+REAL, DIMENSION(KI,SB%NLVL) :: ZCDRAG_HVEG ! drag coefficient for high vegetation foliage
 REAL, DIMENSION(KI,SB%NLVL) :: ZSH       ! horizontal surface of building
                                       ! (road&roof) for each canopy level
 REAL, DIMENSION(KI,SB%NLVL) :: ZSV       ! vertical surface of building
                                       ! (walls) for each canopy level
 REAL, DIMENSION(KI,SB%NLVL) :: ZFORC
 REAL, DIMENSION(KI,SB%NLVL) :: ZDENSITY
+REAL, DIMENSION(KI,SB%NLVL) :: ZDENSITY_HVEG
 REAL, DIMENSION(KI,SB%NLVL) :: ZAIRVOL   ! Fraction of air for each canopy level total volume
 REAL, DIMENSION(KI,SB%NLVL) :: ZP        ! pressure              at full levels
 REAL, DIMENSION(KI,SB%NLVL) :: ZEXN      ! Exner function        at full levels
@@ -114,8 +127,7 @@ WHERE( SB%XZF(:,SB%NLVL)<PBLD_HEIGHT(:) ) ZSH(:,SB%NLVL) = PBLD(:)
 !              -------------------------
 !
 ZCDRAG(:,:) = 0.40
-!* integration for all canyon directions (for facing wind walls)
-ZCDRAG(:,:) = ZCDRAG(:,:) / XPI
+ZCDRAG_HVEG(:,:) = 0.20
 !
 !*      1.4    No building volume
 !
@@ -125,15 +137,40 @@ ZCDRAG(:,:) = ZCDRAG(:,:) / XPI
 !   present routine alone would not be energetically coeherent (there would be
 !   too much energy release for heat and vapor or consumed for wind).
 !
-ZAIRVOL = 1.
+ZAIRVOL(:,:) = 1.
+!
+! The volume considered in now adjusted to the canyon width or not
+! depending on if the CANOPY layer is within or above the canyon, repectively.
+DO JLAYER = 1,SB%NLVL-1
+  WHERE( SB%XZF(:,JLAYER)<PBLD_HEIGHT(:)                                          ) ZAIRVOL(:,JLAYER) = 1.-PBLD(:)
+  WHERE( SB%XZF(:,JLAYER)<PBLD_HEIGHT(:) .AND. SB%XZF(:,JLAYER+1)>=PBLD_HEIGHT(:) ) ZAIRVOL(:,JLAYER) = 1.
+END DO
+!
+ZCDRAG(:,:) = ZCDRAG(:,:) * ZAIRVOL(:,:)
+ZCDRAG_HVEG(:,:) = ZCDRAG_HVEG(:,:) * ZAIRVOL(:,:)
 !
 !*      1.2    Discretization on each canopy level
 !
+! Calculation of a density profile for trees on CANOPY grid
+ZDENSITY_HVEG(:,:) = 0.
+DO JJ = 1,KI
+  IF (PURBTREE(JJ) .GT. 0.) THEN
+    DO JLAYER = 1,SB%NLVL
+      ZDENSITY_HVEG(JJ,JLAYER) = PLAD_CAN(JJ,JLAYER) * PURBTREE(JJ) * (1.-PBLD(JJ)) 
+    ENDDO
+  ELSE
+    ZDENSITY_HVEG(JJ,:) = 0.
+  ENDIF
+END DO
+!
+! The final density profile includes walls and trees effects
+!
+!* integration for all canyon directions (for facing wind walls)
 DO JLAYER=1,SB%NLVL
-  ZDENSITY(:,JLAYER) = PWALL_O_HOR(:)
+  ZDENSITY(:,JLAYER) = PWALL_O_HOR(:) / XPI
 ENDDO  
 !
- CALL CANOPY(KI, SB, PBLD_HEIGHT, ZDENSITY, ZCDRAG, ZAIRVOL, &
+ CALL CANOPY(KI, SB, PBLD_HEIGHT, ZDENSITY, ZCDRAG, ZDENSITY_HVEG, ZCDRAG_HVEG, ZAIRVOL, &
             ZSV, ZFORC, PFORC_U, PDFORC_UDU, PFORC_E, PDFORC_EDE      )
 !
 !-------------------------------------------------------------------------------------
@@ -213,6 +250,15 @@ DO JLAYER=2,SB%NLVL
   PDFORC_TDT(:,JLAYER) = PDFORC_TDT(:,JLAYER) + 0.
 END DO
 !
+!*      4.4    Heating from the tree foliage flux
+!              ----------------------------------
+!
+DO JLAYER=1,SB%NLVL
+  PFORC_T   (:,JLAYER) = PFORC_T(:,JLAYER) + PDH_HVEG(:,JLAYER) * ZFORC(:,JLAYER) &
+                                             * PURBTREE(:)*(1.-PBLD(:))          
+  PDFORC_TDT(:,JLAYER) = PDFORC_TDT(:,JLAYER) + 0.
+END DO
+!
 !-------------------------------------------------------------------------------------
 !
 !*      5.     Conversion into temperature tendency
@@ -236,7 +282,7 @@ PFORC_Q(:,:) = 0.
 PDFORC_QDQ(:,:) = 0.
 !
 !
-!*      4.1    Evaporation from the road surface flux
+!*      6.1    Evaporation from the road surface flux
 !              --------------------------------------
 !
 !* surface flux
@@ -253,13 +299,31 @@ PDFORC_QDQ(:,1) = PDFORC_QDQ(:,1) - PAC_ROAD_WAT(:)
 !   SURF_ATM and then to the atmosphere. Only the canopy air profiles are
 !   affected.
 !
-!*      4.2    Evaporation from the roof surface flux
+!      6.2     Evaporation from the wall surfaces
+!              ----------------------------------
+!
+DO JLAYER=1,SB%NLVL
+   PFORC_Q   (:,JLAYER) = PFORC_Q   (:,JLAYER) + PE_WALL * ZSV(:,JLAYER)/ZAIRVOL(:,JLAYER)/SB%XDZ(:,JLAYER)
+   PDFORC_QDQ(:,JLAYER) = PDFORC_QDQ(:,JLAYER) + 0.
+ENDDO
+!
+!*      6.3    Evaporation from the roof surface flux
 !              --------------------------------------
 !
 DO JLAYER=2,SB%NLVL
   PFORC_Q   (:,JLAYER) = PFORC_Q   (:,JLAYER) + PE_ROOF * ZSH(:,JLAYER)/ZAIRVOL(:,JLAYER)/SB%XDZ(:,JLAYER)
   PDFORC_QDQ(:,JLAYER) = PDFORC_QDQ(:,JLAYER) + 0.
 END DO
+!
+!*      6.4    Evapotranspiration from the high vegetation
+!              -------------------------------------------
+!
+DO JLAYER=1,SB%NLVL
+  PFORC_Q   (:,JLAYER) = PFORC_Q   (:,JLAYER) + PDE_HVEG(:,JLAYER)/ZAIRVOL(:,JLAYER)/SB%XDZ(:,JLAYER) &
+                                                                  * PURBTREE(:)*(1.-PBLD(:))
+  PDFORC_QDQ(:,JLAYER) = PDFORC_QDQ(:,JLAYER) + 0.
+END DO
+!
 IF (LHOOK) CALL DR_HOOK('TEB_CANOPY',1,ZHOOK_HANDLE)
 !
 !-------------------------------------------------------------------------------------

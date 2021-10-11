@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !   ##########################################################################
-    SUBROUTINE MASS_LAYER_E_BUDGET(B, PTSTEP, PFLX_BLD_MA, PDQS_MA, PIMB_MA, PRADHT_IN, &
+    SUBROUTINE MASS_LAYER_E_BUDGET(B, CT, HPROGRAM, PTSTEP, KCOMP, PFLX_BLD_MA, PDQS_MA, PRADHT_IN, &
                                    PRAD_WL_MA, PRAD_RF_MA, PRAD_WIN_MA, PLOAD_MA,       &
                                    PRAD_FL_MA, PCONV_MA_BLD                  )
 !   ##########################################################################
@@ -70,10 +70,12 @@
 !               ------------
 !
 USE MODD_BEM_n, ONLY : BEM_t
+USE MODD_CHECK_TEB, ONLY : CHECK_TEB_t
 !
 USE MODI_LAYER_E_BUDGET_GET_COEF
 USE MODI_LAYER_E_BUDGET
 USE MODE_CONV_DOE
+USE MODI_GET_LUOUT
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -83,11 +85,13 @@ IMPLICIT NONE
 !*      0.1    declarations of arguments
 !
 TYPE(BEM_t), INTENT(INOUT) :: B
+TYPE(CHECK_TEB_t), INTENT(INOUT) :: CT
 !
+CHARACTER(LEN=6), INTENT(IN)        :: HPROGRAM     ! program calling surf. schemes
 REAL,                 INTENT(IN)    :: PTSTEP       ! time step
+INTEGER,              INTENT(IN)    :: KCOMP        ! compartiment index
 REAL, DIMENSION(:),   INTENT(OUT)  :: PFLX_BLD_MA !flux from building to floor
 REAL, DIMENSION(:),   INTENT(OUT) :: PDQS_MA !heat storage inside the floor
-REAL, DIMENSION(:),   INTENT(OUT) :: PIMB_MA !floor energy residual imbalance for verification
 REAL, DIMENSION(:), INTENT(IN)    :: PRADHT_IN      ! Indoor radiant heat transfer coefficient
                                                     ! [W K-1 m-2]
 REAL, DIMENSION(:), INTENT(IN)    :: PRAD_RF_MA ! rad. fluxes from roof to floor[W m-2(roof)]
@@ -108,48 +112,51 @@ REAL, DIMENSION(SIZE(B%XT_MASS,1),SIZE(B%XT_MASS,2)) :: ZA,& ! lower diag.
                                                       ZC,& ! upper diag.
                                                       ZY   ! r.h.s.
 !
+REAL, DIMENSION(SIZE(B%XT_MASS,1)) :: ZIMB_MA !floor energy residual imbalance for verification
 REAL, DIMENSION(SIZE(B%XT_MASS,1)) :: ZTS_MA  ! surf. mass temp.
                                               ! used during calculation
 REAL, DIMENSION(SIZE(B%XT_MASS,1)) :: ZTS_MA_CONV  ! surf. mass temp. used for conv flux
 REAL, DIMENSION(SIZE(B%XT_MASS,1)) :: ZCHTC_IN_MA ! Indoor floor convec heat transfer coefficient
                                                 ! [W K-1 m-2(bld)]
 INTEGER :: JJ
+INTEGER :: ILUOUT  ! Logical unit of output file
+
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------
 IF (LHOOK) CALL DR_HOOK('MASS_LAYER_E_BUDGET',0,ZHOOK_HANDLE)
 !
 ! *Convection heat transfer coefficients [W m-2 K-1] from EP Engineering Reference
 !
-ZCHTC_IN_MA(:) = CHTC_VERT_DOE(B%XT_MASS(:,1), B%XTI_BLD(:)) 
+ZCHTC_IN_MA(:) = CHTC_VERT_DOE(B%XT_MASS(:,1,KCOMP), B%XTI_BLD(:,KCOMP)) 
 DO JJ=1,SIZE(ZCHTC_IN_MA)
    ZCHTC_IN_MA(JJ) = MAX(1., ZCHTC_IN_MA(JJ))
 ENDDO
 !
- CALL LAYER_E_BUDGET_GET_COEF( B%XT_MASS, PTSTEP, ZIMPL, B%XHC_FLOOR, B%XTC_FLOOR, B%XD_FLOOR/2., &
+ CALL LAYER_E_BUDGET_GET_COEF( B%XT_MASS(:,:,KCOMP), PTSTEP, ZIMPL, B%XHC_MASS, B%XTC_MASS, B%XD_MASS, &
                               ZA, ZB, ZC, ZY )
 !
-ZTS_MA(:) = B%XT_MASS(:,1) 
+ZTS_MA(:) = B%XT_MASS(:,1,KCOMP) 
 
 ZB(:,1) = ZB(:,1) + ZIMPL * 4./3. * ZCHTC_IN_MA(:)
 
 ZY(:,1) = ZY(:,1)  &
-   + ZCHTC_IN_MA(:) * (B%XTI_BLD(:) - 1./3. * B%XT_MASS(:, 1) * (4 * ZEXPL -1.))  &
+   + ZCHTC_IN_MA(:) * (B%XTI_BLD(:,KCOMP) - 1./3. * B%XT_MASS(:, 1,KCOMP) * (4 * ZEXPL -1.))  &
    + B%XF_MASS_WIN  (:) * PRAD_WIN_MA(:) + B%XF_MASS_WALL (:) * PRAD_WL_MA(:)     &
    + B%XF_MASS_FLOOR (:) * (PRAD_RF_MA(:) +PRAD_FL_MA(:)) + PLOAD_MA(:)
 !
- CALL LAYER_E_BUDGET( B%XT_MASS, PTSTEP, ZIMPL, B%XHC_FLOOR, B%XTC_FLOOR, B%XD_FLOOR/2., &
+ CALL LAYER_E_BUDGET( B%XT_MASS(:,:,KCOMP), PTSTEP, ZIMPL, B%XHC_MASS, B%XTC_MASS, B%XD_MASS, &
                      ZA, ZB, ZC, ZY, PDQS_MA )
 !
 !*      calculation of temperature used in energy balance calculation
 !       -------------------------------------------------------------
 !
-ZTS_MA_CONV(:) = ZIMPL * 4./3. * B%XT_MASS(:,1) +1./3 * ZTS_MA(:) * (4 * ZEXPL -1.)
-ZTS_MA(:) = ZEXPL * ZTS_MA(:) + ZIMPL * B%XT_MASS(:,1)
+ZTS_MA_CONV(:) = ZIMPL * 4./3. * B%XT_MASS(:,1,KCOMP) +1./3 * ZTS_MA(:) * (4 * ZEXPL -1.)
+ZTS_MA(:) = ZEXPL * ZTS_MA(:) + ZIMPL * B%XT_MASS(:,1,KCOMP)
 !
 !*      calculation of convection flux between mass and building air
 !       ------------------------------------------------------------
 !
-PCONV_MA_BLD(:) = ZCHTC_IN_MA(:) * (ZTS_MA_CONV(:) - B%XTI_BLD(:))
+PCONV_MA_BLD(:) = ZCHTC_IN_MA(:) * (ZTS_MA_CONV(:) - B%XTI_BLD(:,KCOMP))
 !
 !*      For diagnostics calculation of flux exchanged between the mass and the
 !       indoor
@@ -162,7 +169,33 @@ PFLX_BLD_MA(:) = - PCONV_MA_BLD(:) + B%XF_MASS_WIN  (:) * PRAD_WIN_MA(:)  &
 !*      Floor residual energy imbalance for verification
 !       ------------------------------------------------
 !
-PIMB_MA(:) = PFLX_BLD_MA(:) - PDQS_MA(:)
+ZIMB_MA(:) = PFLX_BLD_MA(:) - PDQS_MA(:)
+!
+DO JJ=1,SIZE(ZIMB_MA)
+   !
+   IF (ISNAN(ZIMB_MA(JJ))) CALL ABOR1_SFX("NAN detected in mass_layer_e_budget")
+   !
+   IF (ABS(ZIMB_MA(JJ)).GT.CT%XCHECK_PROCESS) THEN
+      !
+      CALL GET_LUOUT(HPROGRAM,ILUOUT)
+      !
+      WRITE(ILUOUT,*) "                                       "
+      WRITE(ILUOUT,*) "In mass_layer_e_budget :               "
+      WRITE(ILUOUT,*) "JJ                 : ",JJ
+      WRITE(ILUOUT,*) "Conv. (W/m²(mass)) : ",PCONV_MA_BLD(JJ)
+      WRITE(ILUOUT,*) "Wind. (W/m²(mass)) : ",B%XF_MASS_WIN  (JJ) * PRAD_WIN_MA(JJ)
+      WRITE(ILUOUT,*) "DQS   (W/m²(mass)) : ",PDQS_MA(JJ)
+      WRITE(ILUOUT,*) "Wall  (W/m²(mass)) : ",B%XF_MASS_WALL (JJ) * PRAD_WL_MA(JJ)    
+      WRITE(ILUOUT,*) "Floor (W/m²(mass)) : ",B%XF_MASS_FLOOR (JJ) * (PRAD_RF_MA(JJ) + PRAD_FL_MA(JJ))
+      WRITE(ILUOUT,*) "Load  (W/m²(mass)) : ",PLOAD_MA(JJ)
+      WRITE(ILUOUT,*) "------------------------------"
+      WRITE(ILUOUT,*) "ZIMB (W/m²(mass))  : ",ZIMB_MA(JJ)
+      CALL FLUSH(ILUOUT)
+      !
+      CALL ABOR1_SFX('Too large energy imbalance of building internal mass')
+      !
+   ENDIF
+ENDDO
 !
 IF (LHOOK) CALL DR_HOOK('MASS_LAYER_E_BUDGET',1,ZHOOK_HANDLE)
 !-------------------------------------------------------------------------------

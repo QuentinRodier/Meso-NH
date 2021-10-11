@@ -4,7 +4,7 @@
 !SFX_LIC for details. version 1.
 !     #########
 SUBROUTINE DIAG_MISC_ISBA_n (DMK, KK, PK, PEK, AGK, IO, OSURF_MISC_BUDGET, &
-                             OVOLUMETRIC_SNOWLIQ, PTSTEP, OAGRIP, PTIME, KSIZE  )  
+                             OVOLUMETRIC_SNOWLIQ, PTSTEP, PTIME, KSIZE, PSLOPECOS)  
 !     ###############################################################################
 !
 !!****  *DIAG_MISC-ISBA_n * - additional diagnostics for ISBA
@@ -36,55 +36,62 @@ SUBROUTINE DIAG_MISC_ISBA_n (DMK, KK, PK, PEK, AGK, IO, OSURF_MISC_BUDGET, &
 !!       B. Decharme 05/2012 : Carbon fluxes in diag_evap
 !!       B. Decharme 05/2012 : Active and frozen layers thickness for dif
 !!       B. Decharme 06/2013 : Snow temp for EBA scheme (XP_SNOWTEMP not allocated)
+!!       M. Lafaysse 09/2015 : new Crocus-MEPRA outputs
+!!       A. Druel    02/2019 : Remove XSEUIL and associated LARGIP flag (for irrigation)
 !!
 !!------------------------------------------------------------------
 !
 !
 USE MODD_DIAG_MISC_ISBA_n, ONLY : DIAG_MISC_ISBA_t
-USE MODD_ISBA_n, ONLY : ISBA_K_t, ISBA_P_t, ISBA_PE_t
-USE MODD_AGRI_n, ONLY : AGRI_t
-USE MODD_ISBA_OPTIONS_n, ONLY : ISBA_OPTIONS_t
+USE MODD_ISBA_n,           ONLY : ISBA_K_t, ISBA_P_t, ISBA_PE_t
+USE MODD_AGRI_n,           ONLY : AGRI_t
+USE MODD_ISBA_OPTIONS_n,   ONLY : ISBA_OPTIONS_t
 !
-USE MODD_CSTS,       ONLY : XTT, XRHOLW
-USE MODD_SURF_PAR,   ONLY : XUNDEF
+USE MODD_CSTS,             ONLY : XTT, XRHOLW
+USE MODD_SURF_PAR,         ONLY : XUNDEF
 !
 !                                     
 USE MODD_TYPE_SNOW
+USE MODD_PREP_SNOW,        ONLY : NIMPUR
 !
 USE MODI_COMPUT_COLD_LAYERS_THICK
 !
-USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
-USE PARKIND1  ,ONLY : JPRB
+USE YOMHOOK   ,            ONLY : LHOOK,   DR_HOOK
+USE PARKIND1  ,            ONLY : JPRB
 !
 IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
 !
 TYPE(DIAG_MISC_ISBA_t), INTENT(INOUT) :: DMK
-TYPE(ISBA_K_t), INTENT(INOUT) :: KK
-TYPE(ISBA_P_t), INTENT(INOUT) :: PK
-TYPE(ISBA_PE_t), INTENT(INOUT) :: PEK
-TYPE(AGRI_t), INTENT(INOUT) :: AGK
-TYPE(ISBA_OPTIONS_t), INTENT(INOUT) :: IO
+TYPE(ISBA_K_t),         INTENT(INOUT) :: KK
+TYPE(ISBA_P_t),         INTENT(INOUT) :: PK
+TYPE(ISBA_PE_t),        INTENT(INOUT) :: PEK
+TYPE(AGRI_t),           INTENT(INOUT) :: AGK
+TYPE(ISBA_OPTIONS_t),   INTENT(INOUT) :: IO
 !
 LOGICAL, INTENT(IN) :: OSURF_MISC_BUDGET
 LOGICAL, INTENT(IN) :: OVOLUMETRIC_SNOWLIQ
-REAL,    INTENT(IN) :: PTSTEP        ! timestep for  accumulated values 
-LOGICAL, INTENT(IN) :: OAGRIP
+REAL,    INTENT(IN) :: PTSTEP  ! timestep for  accumulated values 
 REAL,    INTENT(IN) :: PTIME   ! current time since midnight
 INTEGER, INTENT(IN) :: KSIZE
 !
-!    
+REAL, DIMENSION(:),  INTENT(IN) :: PSLOPECOS ! cosine of the slope for Crocus
+!
+!
 !*      0.2    declarations of local variables
 !
-REAL, DIMENSION(SIZE(PEK%XPSN))    :: ZSNOWTEMP
+REAL, DIMENSION(SIZE(PEK%XPSN))                                  :: ZCORR_SLOPE
+REAL, DIMENSION(SIZE(PEK%TSNOW%WSNOW,1),SIZE(PEK%TSNOW%WSNOW,2)) :: ZCORR_SLOPE_2D
+REAL, DIMENSION(SIZE(PEK%TSNOW%WSNOW,1),SIZE(PEK%TSNOW%WSNOW,2)) :: ZWSNOW
+REAL, DIMENSION(SIZE(PEK%XPSN))                                  :: ZSNOWTEMP
 REAL, DIMENSION(SIZE(PEK%TSNOW%WSNOW,1),SIZE(PEK%TSNOW%WSNOW,2)) :: ZWORK
 REAL, DIMENSION(SIZE(PEK%TSNOW%WSNOW,1),SIZE(PEK%TSNOW%WSNOW,2)) :: ZWORKTEMP
 !
 REAL, DIMENSION(KSIZE) :: ZALT, ZFLT
 !
 LOGICAL :: GMASK
-INTEGER :: JL, JI, JK
+INTEGER :: JL, JI, JK, JJ
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !-------------------------------------------------------------------------------------
@@ -93,6 +100,26 @@ IF (LHOOK) CALL DR_HOOK('DIAG_MISC_ISBA_N',0,ZHOOK_HANDLE)
 !
 IF (OSURF_MISC_BUDGET) THEN
   !
+  IF (DMK%LPROSNOW) THEN
+    DO JJ = 1,SIZE(PEK%TSNOW%WSNOW,1)
+      !this variable is used further to project diagnostics on the verticale
+      ZCORR_SLOPE(JJ)=1./PSLOPECOS(JJ)
+    END DO
+    DO JI = 1,SIZE(PEK%TSNOW%WSNOW,2)
+      DO JJ = 1,SIZE(PEK%TSNOW%WSNOW,1)
+        IF (PEK%TSNOW%WSNOW(JJ,JI)>0) THEN
+          ZCORR_SLOPE_2D(JJ,JI)=ZCORR_SLOPE(JJ)
+        ELSE
+          ZCORR_SLOPE_2D(JJ,JI)=1.
+        ENDIF
+        ZWSNOW(JJ,JI)=PEK%TSNOW%WSNOW(JJ,JI)*ZCORR_SLOPE_2D(JJ,JI)
+      ENDDO
+    ENDDO
+  ELSE
+    ZCORR_SLOPE(:)=1.
+    ZWSNOW(:,:)=PEK%TSNOW%WSNOW(:,:)
+  END IF
+  
   DMK%XSWI (:,:)=XUNDEF
   DMK%XTSWI(:,:)=XUNDEF  
   DO JL=1,SIZE(PEK%XWG,2)
@@ -125,7 +152,7 @@ IF (OSURF_MISC_BUDGET) THEN
   !
   DO JL = 1,SIZE(PEK%TSNOW%WSNOW,2)
     DO JI = 1,SIZE(PEK%TSNOW%WSNOW,1)
-      DMK%XTWSNOW(JI) = DMK%XTWSNOW(JI) + PEK%TSNOW%WSNOW(JI,JL)      
+      DMK%XTWSNOW(JI) = DMK%XTWSNOW(JI) + PEK%TSNOW%WSNOW(JI,JL)
       DMK%XTDSNOW(JI) = DMK%XTDSNOW(JI) + ZWORK (JI,JL)
       ZSNOWTEMP  (JI) = ZSNOWTEMP(JI) + ZWORKTEMP(JI,JL) * ZWORK(JI,JL)
     ENDDO
@@ -145,12 +172,16 @@ IF (OSURF_MISC_BUDGET) THEN
   DMK%XFFV   (:) = KK%XFFV  (:)
   DMK%XFSAT  (:) = KK%XFSAT (:)
   DMK%XTTSNOW(:) = ZSNOWTEMP(:)
-  !  
+  !
   IF ( (PEK%TSNOW%SCHEME=='3-L' .OR. PEK%TSNOW%SCHEME=='CRO') .AND. OVOLUMETRIC_SNOWLIQ ) THEN
     !
     WHERE (DMK%XSNOWLIQ(:,:)/=XUNDEF) &
                     DMK%XSNOWLIQ(:,:) = DMK%XSNOWLIQ(:,:) * XRHOLW / DMK%XSNOWDZ(:,:)
+    !Check consitency: dz is vertical (?)
     !
+  ENDIF
+  IF (PEK%TSNOW%SCHEME=='CRO' .AND. IO%LSNOWSYTRON) THEN
+      DMK%XSYTMASSC(:)  =  DMK%XSYTMASSC(:) * PTSTEP
   ENDIF
   !
   ! cosine of solar zenith angle 
@@ -191,13 +222,6 @@ IF (OSURF_MISC_BUDGET) THEN
   !
 END IF
 !
-IF (OAGRIP) THEN
-  !
-  DO JI=1,KSIZE
-    DMK%XSEUIL   (JI)  =  AGK%XTHRESHOLDSPT (JI)
-  END DO
-!
-END IF
 IF (LHOOK) CALL DR_HOOK('DIAG_MISC_ISBA_N',1,ZHOOK_HANDLE)
 !-------------------------------------------------------------------------------------
 !

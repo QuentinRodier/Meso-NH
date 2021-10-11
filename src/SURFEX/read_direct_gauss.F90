@@ -33,25 +33,26 @@
 !!    ------------
 !!
 !!    Original    11/09/95
+!!    V. Masson,   03/2010  Optimization of some lat/lon boundaries computations
+!!    A. Druel,    02/2019  Add MA1 possibility (without taking into account the zeros)
 !!
-!! V. Masson, March 2010     Optimization of some lat/lon boundaries computations
 !----------------------------------------------------------------------------
 !
 !*    0.     DECLARATION
 !            -----------
 !
-USE MODD_SURF_PAR, ONLY : XUNDEF
-USE MODD_SURFEX_MPI, ONLY : NRANK, NPROC, NPIO
+USE MODD_SURF_PAR,        ONLY : XUNDEF
+USE MODD_SURFEX_MPI,      ONLY : NRANK, NPROC, NPIO
 !
 USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
-USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
-USE MODD_SSO_n, ONLY : SSO_t
+USE MODD_SURF_ATM_n,      ONLY : SURF_ATM_t
+USE MODD_SSO_n,           ONLY : SSO_t
 !
-USE MODD_PGD_GRID,   ONLY : LLATLONMASK, XMESHLENGTH
+USE MODD_PGD_GRID,        ONLY : LLATLONMASK, XMESHLENGTH
 !
-USE MODD_ARCH, ONLY : LITTLE_ENDIAN_ARCH
+USE MODD_ARCH,            ONLY : LITTLE_ENDIAN_ARCH
 !
-USE MODD_DATA_COVER_PAR, ONLY : JPCOVER, NTYPE
+USE MODD_DATA_COVER_PAR,  ONLY : JPCOVER, NTYPE
 !
 USE MODI_GET_LUOUT
 USE MODI_OPEN_NAMELIST
@@ -74,7 +75,7 @@ USE MODD_PGDWORK, ONLY : NSIZE_ALL, XALL, NVALNBR, NVALCOUNT, XVALLIST, &
                          CATYPE, JPVALMAX
 USE MODI_REFRESH_PGDWORK
 !
-USE MODD_CSTS ,ONLY : XSURF_EPSILON
+USE MODD_CSTS,    ONLY : XSURF_EPSILON
 !
 IMPLICIT NONE
 !
@@ -82,8 +83,8 @@ IMPLICIT NONE
 !            ------------------------
 !
 TYPE(SURF_ATM_GRID_t), INTENT(INOUT) :: UG
-TYPE(SURF_ATM_t), INTENT(INOUT) :: U
-TYPE(SSO_t), INTENT(INOUT) :: USS
+TYPE(SURF_ATM_t),      INTENT(INOUT) :: U
+TYPE(SSO_t),           INTENT(INOUT) :: USS
 !
  CHARACTER(LEN=6),  INTENT(IN) :: HPROGRAM      ! Type of program
  CHARACTER(LEN=6),  INTENT(IN) :: HSCHEME       ! Scheme treated
@@ -230,7 +231,7 @@ IF (LHOOK) CALL DR_HOOK('READ_DIRECT_GAUSS_2',0,ZHOOK_HANDLE)
 !
  CALL READHEAD(IGLBHDR,ZGLBLATMIN,ZGLBLATMAX,ZGLBLONMIN,ZGLBLONMAX, &
                INBLINE,INBCOL,ZNODATA,ZDLAT,ZDLON,ZLAT,ZLON,IERR,IFACT,&
-               GCOMPRESS)  
+               GCOMPRESS)
 IF (IERR/=0) CALL ABOR1_SFX('READ_DIRECT_GAUSS: PB IN FILE HEADER')
 !
 IF (GCOMPRESS .AND. (YTYPE/='INTEGER' .OR. IBITS/=16)) &
@@ -243,7 +244,7 @@ IF (GMULTITYPE) THEN
   DEALLOCATE(NSIZE_ALL)
   ALLOCATE(NSIZE_ALL(U%NDIM_FULL,SUM(NTYPE)))  
   NSIZE_ALL(:,:) = 0
-  IF (CATYPE=='MAJ') THEN
+  IF (CATYPE=='MAJ' .OR. CATYPE=='MA1') THEN
     DEALLOCATE(NVALNBR,NVALCOUNT,XVALLIST)
     ALLOCATE(NVALNBR  (U%NDIM_FULL,SUM(NTYPE)))
     ALLOCATE(NVALCOUNT(U%NDIM_FULL,JPVALMAX,SUM(NTYPE)))
@@ -671,7 +672,7 @@ DO
       IWORK = 0
       !
     ENDIF
-
+    !
   END DO ! JLINE
   !-------------------------------------------------------------------------------
   !

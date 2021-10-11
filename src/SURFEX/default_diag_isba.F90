@@ -7,8 +7,8 @@
                                    OCOEF,OSURF_VARS,OSURF_EVAP_BUDGET,      &
                                    OSURF_MISC_BUDGET,OSURF_DIAG_ALBEDO,     &
                                    OSURF_BUDGETC,OSURF_MISC_DIF,            &
-                                   OPATCH_BUDGET,OPGD,ORESET_BUDGETC,       &
-                                   OWATER_BUDGET,OPROSNOW,                  &
+                                   OPATCH_BUDGET,OUTCI, OPGD,ORESET_BUDGETC,&
+                                   OWATER_BUDGET,OPROSNOW,OPROBANDS,        &
                                    OVOLUMETRIC_SNOWLIQ,PDIAG_TSTEP          )  
 !     #################################################################################################################
 !
@@ -45,6 +45,7 @@
 !!                                         add miscellaneous field key for dif
 !!                                         add isba water budget key
 !!      Modif M. Lafaysse 09/2015: OPROSNOW, OVOLUMETRIC_SNOWLIQ
+!!      Modif M. Dumont 11/15 : OPROBANDS
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -74,10 +75,12 @@ LOGICAL,  INTENT(OUT) :: OSURF_DIAG_ALBEDO  ! flag for albedo
 LOGICAL,  INTENT(OUT) :: OSURF_BUDGETC      ! flag for cumulated surface budget
 LOGICAL,  INTENT(OUT) :: OSURF_MISC_DIF     ! flag for surface miscellaneous dif variables
 LOGICAL,  INTENT(OUT) :: OPATCH_BUDGET      ! flag for patch output
+LOGICAL,  INTENT(OUT) :: OUTCI              ! flag for UTCI fields
 LOGICAL,  INTENT(OUT) :: OPGD               ! flag for PGD fields
 LOGICAL,  INTENT(OUT) :: ORESET_BUDGETC     ! flag for cumulated surface budget
 LOGICAL,  INTENT(OUT) :: OWATER_BUDGET      ! flag for isba water budget
 LOGICAL,  INTENT(OUT) :: OPROSNOW           ! flag for Crocus-MEPRA diagnostics
+LOGICAL, INTENT(OUT)  :: OPROBANDS          ! flag for Crocus spectral output
 LOGICAL,  INTENT(OUT) :: OVOLUMETRIC_SNOWLIQ ! volumetric snow liquid water content (kg m-3)
 REAL,     INTENT(OUT) :: PDIAG_TSTEP        ! time-step for writing
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
@@ -107,12 +110,15 @@ OSURF_BUDGETC     = .FALSE.
 !
 OPATCH_BUDGET     = .TRUE.
 !
+OUTCI             = .FALSE.
+!
 OPGD              = .FALSE.
 ORESET_BUDGETC    = .FALSE.
 !
 OWATER_BUDGET     = .FALSE.
 !
 OPROSNOW          = .FALSE.
+OPROBANDS         =.FALSE.
 !
 OVOLUMETRIC_SNOWLIQ = .FALSE.
 !

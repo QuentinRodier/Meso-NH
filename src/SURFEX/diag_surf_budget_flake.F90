@@ -99,6 +99,11 @@ D%XGFLUX = D%XRN - D%XH - D%XLE
 D%XFMU = PSFZON
 !
 D%XFMV = PSFMER
+!
+!* Anthorpogenic flux
+!
+D%XQF = 0.
+!
 IF (LHOOK) CALL DR_HOOK('DIAG_SURF_BUDGET_FLAKE',1,ZHOOK_HANDLE)
 !
 !-------------------------------------------------------------------------------------

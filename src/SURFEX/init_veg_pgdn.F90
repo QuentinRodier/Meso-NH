@@ -5,8 +5,9 @@
 !#############################################################
 SUBROUTINE INIT_VEG_PGD_n (ISSK, DTI, IO, S, K, KK, PK, PEK, AGK, KI, &
                            HPROGRAM, HSURF, KLUOUT, KSIZE, KMONTH,    &
-                           ODEEPSOIL, OPHYSDOMC, PTDEEP_CLI, PGAMMAT_CLI,     &
-                           OAGRIP, PTHRESHOLD, HINIT, PCO2, PRHOA     )  
+                           OSOIL, ODEEPSOIL, OPHYSDOMC, OOZ0, OCO2,   &
+                           PTDEEP_CLI, PGAMMAT_CLI, OAGRIP ,OIRRIGMODE,&
+                           PTHRESHOLD, HINIT, PCO2, PRHOA)  
 !#############################################################
 !
 !!****  *INIT_VEG_PGD_n_n* - routine to initialize ISBA
@@ -35,13 +36,13 @@ SUBROUTINE INIT_VEG_PGD_n (ISSK, DTI, IO, S, K, KK, PK, PEK, AGK, KI, &
 !!    MODIFICATIONS
 !!    -------------
 !!      23/07/13     (Decharme) Surface / Water table depth coupling
+!!      02/2019      (A. Druel) Adapt the code to be compatible with irrigation (and new patches)
+!!                              Remove old parameters (not use anymore: XTHRESHOLDSPT, PTHRESHOLD and LIRRIDAY) 
 !!
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
-!
-USE MODD_SURFEX_MPI, ONLY : NRANK
 !
 USE MODD_SSO_n, ONLY : SSO_t
 !
@@ -51,14 +52,14 @@ USE MODD_ISBA_OPTIONS_n, ONLY : ISBA_OPTIONS_t
 USE MODD_ISBA_n, ONLY : ISBA_S_t, ISBA_K_t, ISBA_P_t, ISBA_PE_t
 USE MODD_AGRI_n, ONLY : AGRI_t
 !
-USE MODD_SURF_ATM,       ONLY : LCPL_ARP
-USE MODD_DATA_COVER_PAR, ONLY : NVEGTYPE
+USE MODD_SURF_ATM,       ONLY : LCPL_ARP, LARP_PN
 USE MODD_SURF_PAR,       ONLY : XUNDEF, NUNDEF
 USE MODD_CSTS,           ONLY : XCPD, XLVTT, XLSTT, XDAY
-USE MODD_SNOW_PAR,       ONLY : XEMISSN
 USE MODD_ISBA_PAR,       ONLY : XTAU_ICE
 !
 USE MODD_SGH_PAR,        ONLY : XICE_DEPH_MAX
+!
+USE MODD_COUPLING_TOPD,  ONLY : LPERT_PARAM
 !
 USE MODE_COTWO,          ONLY : GAULEG
 !
@@ -68,6 +69,7 @@ USE MODI_CO2_INIT_n
 USE MODI_SUBSCALE_Z0EFF
 !
 USE MODE_SOIL
+USE MODE_SOIL_PERT
 !
 USE MODI_HEATCAPZ
 USE MODI_THRMCONDZ
@@ -85,39 +87,43 @@ IMPLICIT NONE
 !              --²-----------------------
 !
 !
-TYPE(SSO_t), INTENT(INOUT) :: ISSK
-TYPE(DATA_ISBA_t), INTENT(INOUT) :: DTI
+TYPE(SSO_t), INTENT(INOUT)          :: ISSK
+TYPE(DATA_ISBA_t), INTENT(INOUT)    :: DTI
 !
 TYPE(ISBA_OPTIONS_t), INTENT(INOUT) :: IO
-TYPE(ISBA_S_t), INTENT(INOUT) :: S
-TYPE(ISBA_K_t), INTENT(INOUT) :: K
-TYPE(ISBA_K_t), INTENT(INOUT) :: KK
-TYPE(ISBA_P_t), INTENT(INOUT) :: PK
-TYPE(ISBA_PE_t), INTENT(INOUT) :: PEK
-TYPE(AGRI_t), INTENT(INOUT) :: AGK
+TYPE(ISBA_S_t), INTENT(INOUT)       :: S
+TYPE(ISBA_K_t), INTENT(INOUT)       :: K
+TYPE(ISBA_K_t), INTENT(INOUT)       :: KK
+TYPE(ISBA_P_t), INTENT(INOUT)       :: PK
+TYPE(ISBA_PE_t), INTENT(INOUT)      :: PEK
+TYPE(AGRI_t), INTENT(INOUT)         :: AGK
 !
-INTEGER, INTENT(IN) :: KI
+INTEGER, INTENT(IN)                 :: KI
 !
- CHARACTER(LEN=6), INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
- CHARACTER(LEN=6), INTENT(IN)  :: HSURF     ! Type of surface
-INTEGER, INTENT(IN)  :: KLUOUT
+ CHARACTER(LEN=6), INTENT(IN)       :: HPROGRAM  ! program calling surf. schemes
+ CHARACTER(LEN=6), INTENT(IN)       :: HSURF     ! Type of surface
+INTEGER, INTENT(IN)                 :: KLUOUT
 !
-INTEGER, INTENT(IN)  :: KSIZE
+INTEGER, INTENT(IN)                 :: KSIZE
 !
-INTEGER, INTENT(IN)  :: KMONTH
+INTEGER, INTENT(IN)                 :: KMONTH
 !
-LOGICAL, INTENT(IN) :: ODEEPSOIL
-LOGICAL, INTENT(IN) :: OPHYSDOMC
-REAL, DIMENSION(:), INTENT(IN) :: PTDEEP_CLI
-REAL, DIMENSION(:), INTENT(IN) :: PGAMMAT_CLI
+LOGICAL, INTENT(IN)                 :: OSOIL
+LOGICAL, INTENT(IN)                 :: ODEEPSOIL
+LOGICAL, INTENT(IN)                 :: OPHYSDOMC
+LOGICAL, INTENT(IN)                 :: OOZ0
+LOGICAL, INTENT(IN)                 :: OCO2
+REAL, DIMENSION(:), INTENT(IN)      :: PTDEEP_CLI
+REAL, DIMENSION(:), INTENT(IN)      :: PGAMMAT_CLI
 !
 LOGICAL, INTENT(IN) :: OAGRIP
+LOGICAL, INTENT(IN)                 :: OIRRIGMODE
 REAL, DIMENSION(:), INTENT(IN) :: PTHRESHOLD
 !
- CHARACTER(LEN=3), INTENT(IN) :: HINIT
+ CHARACTER(LEN=3), INTENT(IN)       :: HINIT
  !
-REAL, DIMENSION(:), INTENT(IN) :: PCO2
-REAL, DIMENSION(:), INTENT(IN) :: PRHOA
+REAL, DIMENSION(:), INTENT(IN)      :: PCO2
+REAL, DIMENSION(:), INTENT(IN)      :: PRHOA
 !
 !*       0.2   Declarations of local variables
 !              -------------------------------
@@ -126,13 +132,11 @@ REAL, DIMENSION(KI,IO%NGROUND_LAYER) :: ZCONDSAT
 !
 INTEGER :: JPATCH  ! loop counter on tiles
 INTEGER :: JILU,JP, JMAXLOC    ! loop increment
-INTEGER :: JL, JI  ! loop counter on layers
+INTEGER :: JL  ! loop counter on layers
 !
 INTEGER :: IABC
 !
 REAL, DIMENSION(SIZE(PCO2))       :: ZCO2  ! CO2 concentration  (kg/kg)
-!
-INTEGER, DIMENSION(:), ALLOCATABLE :: IR_NATURE_P
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
@@ -151,6 +155,10 @@ IF (LHOOK) CALL DR_HOOK('INIT_VEG_PGD_n',0,ZHOOK_HANDLE)
 !*          Soil hydraulic characteristics:
 !           -------------------------------
 !
+!- - - - - - - - - - - - - - -
+IF (OSOIL) THEN
+!- - - - - - - - - - - - - - -
+!
 IF (.NOT.ASSOCIATED(K%XMPOTSAT)) THEN
   !
   ALLOCATE(K%XMPOTSAT (KI,IO%NGROUND_LAYER))
@@ -160,27 +168,49 @@ IF (.NOT.ASSOCIATED(K%XMPOTSAT)) THEN
   ALLOCATE(K%XWSAT    (KI,IO%NGROUND_LAYER)) ! saturation
   !
   DO JL=1,IO%NGROUND_LAYER
+    !
     IF (DTI%LDATA_BCOEF) THEN
       K%XBCOEF  (:,JL) = DTI%XPAR_BCOEF  (:,JL)
     ELSE
-      K%XBCOEF  (:,JL) = BCOEF_FUNC     (K%XCLAY(:,JL),K%XSAND(:,JL),IO%CPEDOTF)
+      IF(LPERT_PARAM)THEN
+        K%XBCOEF  (:,JL) = BCOEF_FUNC_PERT(K%XCLAY(:,JL),K%XSAND(:,JL),IO%CPEDOTF)
+      ELSE      
+        K%XBCOEF  (:,JL) = BCOEF_FUNC     (K%XCLAY(:,JL),K%XSAND(:,JL),IO%CPEDOTF)
+      ENDIF
     ENDIF
+    !
     IF (DTI%LDATA_MPOTSAT) THEN
       K%XMPOTSAT(:,JL) = DTI%XPAR_MPOTSAT(:,JL)
     ELSE
-      K%XMPOTSAT(:,JL) = MATPOTSAT_FUNC (K%XCLAY(:,JL),K%XSAND(:,JL),IO%CPEDOTF)
+      IF(LPERT_PARAM)THEN
+        K%XMPOTSAT(:,JL) = MATPOTSAT_FUNC_PERT(K%XCLAY(:,JL),K%XSAND(:,JL),IO%CPEDOTF)
+      ELSE      
+        K%XMPOTSAT(:,JL) = MATPOTSAT_FUNC (K%XCLAY(:,JL),K%XSAND(:,JL),IO%CPEDOTF)
+      ENDIF
     ENDIF
+    !
     IF (DTI%LDATA_WSAT) THEN
       K%XWSAT   (:,JL) = DTI%XPAR_WSAT   (:,JL)
     ELSE
-      K%XWSAT   (:,JL) = WSAT_FUNC      (K%XCLAY(:,JL),K%XSAND(:,JL),IO%CPEDOTF)
+      IF(LPERT_PARAM)THEN
+        K%XWSAT   (:,JL) = WSAT_FUNC_PERT (K%XCLAY(:,JL),K%XSAND(:,JL),IO%CPEDOTF)
+      ELSE      
+        K%XWSAT   (:,JL) = WSAT_FUNC      (K%XCLAY(:,JL),K%XSAND(:,JL),IO%CPEDOTF)
+      ENDIF
     ENDIF
+    !
     IF (DTI%LDATA_WWILT) THEN
       K%XWWILT   (:,JL) = DTI%XPAR_WWILT  (:,JL)
     ELSE
-      K%XWWILT  (:,JL) = WWILT_FUNC     (K%XCLAY(:,JL),K%XSAND(:,JL),IO%CPEDOTF)
+      IF(LPERT_PARAM)THEN
+        K%XWWILT  (:,JL) = WWILT_FUNC_PERT(K%XCLAY(:,JL),K%XSAND(:,JL),IO%CPEDOTF)
+      ELSE      
+        K%XWWILT  (:,JL) = WWILT_FUNC     (K%XCLAY(:,JL),K%XSAND(:,JL),IO%CPEDOTF)
+      ENDIF
     ENDIF
+    !
   END DO
+  !
   IF (DTI%LDATA_BCOEF  ) DEALLOCATE(DTI%XPAR_BCOEF)
   IF (DTI%LDATA_MPOTSAT) DEALLOCATE(DTI%XPAR_MPOTSAT)
   IF (DTI%LDATA_WSAT   ) DEALLOCATE(DTI%XPAR_WSAT)
@@ -191,10 +221,18 @@ IF (.NOT.ASSOCIATED(K%XMPOTSAT)) THEN
     DEALLOCATE(DTI%XPAR_WFC)
   ELSEIF (IO%CISBA=='2-L' .OR. IO%CISBA=='3-L') THEN
     !  field capacity at hydraulic conductivity = 0.1mm/day
-    K%XWFC(:,:) = WFC_FUNC(K%XCLAY(:,:),K%XSAND(:,:),IO%CPEDOTF)
+    IF(LPERT_PARAM)THEN
+      K%XWFC(:,:) = WFC_FUNC_PERT(K%XCLAY(:,:),K%XSAND(:,:),IO%CPEDOTF)
+    ELSE
+      K%XWFC(:,:) = WFC_FUNC(K%XCLAY(:,:),K%XSAND(:,:),IO%CPEDOTF)
+    ENDIF
   ELSE IF (IO%CISBA=='DIF') THEN
-    !  field capacity at water potential = 0.33bar        
-    K%XWFC(:,:) = W33_FUNC(K%XCLAY(:,:),K%XSAND(:,:),IO%CPEDOTF)
+    !  field capacity at water potential = 0.33bar
+    IF(LPERT_PARAM)THEN
+      K%XWFC(:,:) = W33_FUNC_PERT(K%XCLAY(:,:),K%XSAND(:,:),IO%CPEDOTF)
+    ELSE    
+      K%XWFC(:,:) = W33_FUNC(K%XCLAY(:,:),K%XSAND(:,:),IO%CPEDOTF)
+    ENDIF
   END IF
  !
   IF (IO%CISBA=='2-L' .OR. IO%CISBA=='3-L') THEN
@@ -227,7 +265,6 @@ IF (.NOT.ASSOCIATED(K%XMPOTSAT)) THEN
         ENDDO
       ENDIF
       K%XWD0(:,:) = K%XWSAT(:,:) * ((0.0001/XDAY)/ZCONDSAT(:,:))**(1./(2.*K%XBCOEF(:,:)+3.))
-      print*,'wd0 ',minval(K%XWD0),maxval(K%XWD0)
     ELSEIF(IO%CISBA=='DIF')THEN
       K%XWD0(:,:) = WFC_FUNC(K%XCLAY(:,:),K%XSAND(:,:),IO%CPEDOTF)
     ELSE
@@ -290,6 +327,8 @@ ENDIF
 ! lateral water flux, deep soil temperature climatology and its relaxation time-scale
 !
 !these arrays are used only packed: we define them directly packed
+!
+!
 ALLOCATE(KK%XTDEEP (KSIZE))
 ALLOCATE(KK%XGAMMAT(KSIZE))
 KK%XTDEEP (:) = XUNDEF
@@ -341,35 +380,33 @@ ALLOCATE(KK%XALBUV_WET   (KSIZE))
 !
  CALL DRY_WET_SOIL_ALBEDOS(KK )
 !
-
+!- - - - - - - - - - - - - - -
+! End of soil initializations
+END IF
+!- - - - - - - - - - - - - - -
 !
 !*       2.A.4. Irrigation
 !        -----------------
 !
-IF (OAGRIP) THEN
+IF (OIRRIGMODE) THEN
   !
   ALLOCATE(AGK%NIRRINUM     (KSIZE))
-  ALLOCATE(AGK%LIRRIDAY     (KSIZE))
   ALLOCATE(AGK%LIRRIGATE    (KSIZE))
-  ALLOCATE(AGK%XTHRESHOLDSPT(KSIZE))
+  ALLOCATE(AGK%NIRR_TSC     (KSIZE))
   !
   AGK%NIRRINUM (:) = 1
-  AGK%LIRRIDAY (:) = .FALSE.                          
-  AGK%LIRRIGATE(:) = .FALSE.                          
+  AGK%LIRRIGATE(:) = .FALSE.
+  AGK%NIRR_TSC(:)  = 0
   !
-  DO JILU = 1, KSIZE
-    AGK%XTHRESHOLDSPT(JILU) = PTHRESHOLD(AGK%NIRRINUM(JILU))
-  END DO
 ELSE
   ALLOCATE(AGK%NIRRINUM     (0))
-  ALLOCATE(AGK%LIRRIDAY     (0))
   ALLOCATE(AGK%LIRRIGATE    (0))
-  ALLOCATE(AGK%XTHRESHOLDSPT(0))
 ENDIF
 !
 !*       2.A.5. Orographic roughness length
 !        ----------------------------------
 !
+IF (OOZ0) THEN
 ALLOCATE(ISSK%XZ0EFFIP(KSIZE))
 ALLOCATE(ISSK%XZ0EFFIM(KSIZE))
 ALLOCATE(ISSK%XZ0EFFJP(KSIZE))
@@ -382,6 +419,7 @@ ISSK%XZ0EFFJM(:) = XUNDEF
 !
 IF (SIZE(ISSK%XAOSIP)>0) CALL SUBSCALE_Z0EFF(ISSK,PEK%XZ0,.FALSE.)
 !
+END IF
 !-----------------------------------------------------------------------
 !
 !        PART 2: B: fields that depend on patches: PK, PEK
@@ -390,6 +428,10 @@ IF (SIZE(ISSK%XAOSIP)>0) CALL SUBSCALE_Z0EFF(ISSK,PEK%XZ0,.FALSE.)
 !
 !*       2.B.1. Additional fields for ISBA-AGS:
 !        --------------------------------------                 
+!
+!- - - - - - - - - - - - - - -
+IF (OCO2) THEN
+!- - - - - - - - - - - - - - -
 !
 IF(IO%CPHOTO /= 'NON' .AND. HINIT == 'ALL') THEN
   !
@@ -424,7 +466,7 @@ IF(IO%CPHOTO /= 'NON' .AND. HINIT == 'ALL') THEN
   ALLOCATE(PK%XTAU_WOOD     (KSIZE))
   ALLOCATE(PK%XINCREASE     (KSIZE,IO%NNBIOMASS))
   ALLOCATE(PK%XTURNOVER     (KSIZE,IO%NNBIOMASS))
-  CALL CO2_INIT_n(IO, S, PK, PEK, KSIZE, ZCO2  )
+  CALL CO2_INIT_n(IO, S, PK, PEK, KSIZE, ZCO2, DTI%NPAR_VEG_IRR_USE)
   !
 ELSEIF(IO%CPHOTO == 'NON' .AND. IO%LTR_ML) THEN ! Case for MEB
    !
@@ -466,10 +508,16 @@ ELSE
   !
 END IF
 !
+!- - - - - - - - - - - - - - -
+END IF
+!- - - - - - - - - - - - - - -
 !
 !*          2.B.2. Soil hydraulic characteristics (rest) :
 !           --------------------------------------------
 !
+!- - - - - - - - - - - - - - -
+IF (OSOIL) THEN
+!- - - - - - - - - - - - - - -
 !
 ALLOCATE(PK%XCONDSAT (KSIZE,IO%NGROUND_LAYER))
 ALLOCATE(PK%XTAUICE  (KSIZE))
@@ -482,7 +530,11 @@ ELSE
   END DO
 ENDIF
 !
-PK%XTAUICE(:) = XTAU_ICE
+IF (.NOT.LARP_PN) THEN
+  PK%XTAUICE(:) = XTAU_ICE
+ELSE
+  PK%XTAUICE(:) = 25000.
+ENDIF
 !
 IF (IO%CISBA=='2-L' .OR. IO%CISBA=='3-L') THEN
   !
@@ -558,6 +610,9 @@ ELSE
   PK%XKSAT_ICE(:) = 0.0
 ENDIF
 !
+!- - - - - - - - - - - - - - -
+END IF
+!- - - - - - - - - - - - - - -
 !-------------------------------------------------------------------------------
 !
 !*        Physiographic Radiative fields:  
@@ -568,7 +623,7 @@ ENDIF
 !*       2.B.4.  Nitrogen version for isbaAgs
 !        ------------------------------------                        
 !
-IF (IO%CPHOTO=='NIT' .OR. IO%CPHOTO=='NCB') THEN
+IF (OCO2 .AND. IO%CPHOTO=='NIT' .OR. IO%CPHOTO=='NCB') THEN
   ALLOCATE(PK%XBSLAI_NITRO (KSIZE ))
   WHERE ((PEK%XCE_NITRO(:) * PEK%XCNA_NITRO(:) + PEK%XCF_NITRO (:)) /= 0. )
       PK%XBSLAI_NITRO(:) = 1. / (PEK%XCE_NITRO (:)*PEK%XCNA_NITRO(:)+PEK%XCF_NITRO (:))

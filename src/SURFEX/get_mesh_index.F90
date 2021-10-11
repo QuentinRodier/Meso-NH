@@ -3,7 +3,8 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE GET_MESH_INDEX(UG,KLUOUT,KNBLINES,PLAT,PLON,KINDEX,PVALUE,PNODATA,KSSO,KISSOX,KISSOY)
+      SUBROUTINE GET_MESH_INDEX(UG,KLUOUT,KNBLINES,PLAT,PLON,KINDEX,PVALUE,PNODATA, &
+                                KSSO,KISSOX,KISSOY,KFSSO,KFISSOX,KFISSOY)
 !     ##############################################################
 !
 !!**** *GET_MESH_INDEX* get the grid mesh where point (lat,lon) is located
@@ -72,6 +73,10 @@ REAL, OPTIONAL,                   INTENT(IN)   :: PNODATA
 INTEGER,               OPTIONAL, INTENT(IN)    :: KSSO    ! number of subgrid mesh in each direction
 INTEGER, DIMENSION(:,:), OPTIONAL, INTENT(OUT) :: KISSOX  ! X index of the subgrid mesh where the point is
 INTEGER, DIMENSION(:,:), OPTIONAL, INTENT(OUT) :: KISSOY  ! Y index of the subgrid mesh where the point is
+INTEGER,               OPTIONAL, INTENT(IN)    :: KFSSO   ! number of fractional subgrid mesh in each direction
+INTEGER, DIMENSION(:,:), OPTIONAL, INTENT(OUT) :: KFISSOX ! X index of the fractional subgrid mesh where the point is
+INTEGER, DIMENSION(:,:), OPTIONAL, INTENT(OUT) :: KFISSOY ! Y index of the fractional subgrid mesh where the point is
+
 !
 !*    0.2    Declaration of other local variables
 !            ------------------------------------
@@ -79,6 +84,9 @@ INTEGER, DIMENSION(:,:), OPTIONAL, INTENT(OUT) :: KISSOY  ! Y index of the subgr
 INTEGER                        :: ISSO
 INTEGER, DIMENSION(NOVMX,SIZE(PLAT)) :: IISSOX
 INTEGER, DIMENSION(NOVMX,SIZE(PLAT)) :: IISSOY
+INTEGER                        :: IFSSO
+INTEGER, DIMENSION(NOVMX,SIZE(PLAT)) :: IFISSOX
+INTEGER, DIMENSION(NOVMX,SIZE(PLAT)) :: IFISSOY
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !----------------------------------------------------------------------------
 !
@@ -94,43 +102,61 @@ SELECT CASE (UG%G%CGRID)
     ELSE
       ISSO = 0
     ENDIF
+    IF (PRESENT(KFSSO) .AND. PRESENT(KFISSOX) .AND. PRESENT(KFISSOY)) THEN
+      IFSSO = KFSSO
+    ELSE
+      IFSSO = 0
+    ENDIF
     !
     IF (UG%G%CGRID=="CONF PROJ ") THEN
-      CALL GET_MESH_INDEX_CONF_PROJ(ISSO,UG%XGRID_FULL_PAR,PLAT,PLON,KINDEX,IISSOX,IISSOY)  
+            CALL GET_MESH_INDEX_CONF_PROJ(ISSO,UG%XGRID_FULL_PAR,PLAT,PLON,KINDEX,IISSOX,IISSOY, &
+                                          IFSSO,IFISSOX,IFISSOY)  
     ENDIF
     IF (UG%G%CGRID=="LONLAT REG") THEN
       IF (PRESENT(PVALUE) .AND. PRESENT(PNODATA)) THEN
         CALL GET_MESH_INDEX_LONLAT_REG(ISSO,UG%XGRID_FULL_PAR,PLAT,PLON,KINDEX,IISSOX,IISSOY, &
-                                     PVALUE,PNODATA)
+                                       IFSSO,IFISSOX,IFISSOY, &
+                                       PVALUE,PNODATA)
       ELSE            
-        CALL GET_MESH_INDEX_LONLAT_REG(ISSO,UG%XGRID_FULL_PAR,PLAT,PLON,KINDEX,IISSOX,IISSOY)  
+        CALL GET_MESH_INDEX_LONLAT_REG(ISSO,UG%XGRID_FULL_PAR,PLAT,PLON,KINDEX,IISSOX,IISSOY, &
+                                       IFSSO,IFISSOX,IFISSOY)  
       ENDIF
     ENDIF
     IF (UG%G%CGRID=="GAUSS     ") THEN
       IF (PRESENT(PVALUE) .AND. PRESENT(PNODATA)) THEN
         CALL GET_MESH_INDEX_GAUSS(KNBLINES,ISSO,UG%XGRID_FULL_PAR,PLAT,PLON,KINDEX,IISSOX,IISSOY, &
-                                     PVALUE,PNODATA)
+                                  IFSSO,IFISSOX,IFISSOY, &
+                                  PVALUE,PNODATA)
       ELSE
-        CALL GET_MESH_INDEX_GAUSS(KNBLINES,ISSO,UG%XGRID_FULL_PAR,PLAT,PLON,KINDEX,IISSOX,IISSOY)
+        CALL GET_MESH_INDEX_GAUSS(KNBLINES,ISSO,UG%XGRID_FULL_PAR,PLAT,PLON,KINDEX,IISSOX,IISSOY, &
+                                  IFSSO,IFISSOX,IFISSOY) 
       ENDIF              
     ENDIF
     IF (UG%G%CGRID=="IGN       ") THEN
       IF (PRESENT(PVALUE) .AND. PRESENT(PNODATA)) THEN
         CALL GET_MESH_INDEX_IGN(ISSO,UG%XGRID_FULL_PAR,PLAT,PLON,KINDEX,IISSOX,IISSOY, &
-                                     PVALUE,PNODATA)
+                                IFSSO,IFISSOX,IFISSOY, &
+                                PVALUE,PNODATA)
       ELSE       
-        CALL GET_MESH_INDEX_IGN(ISSO,UG%XGRID_FULL_PAR,PLAT,PLON,KINDEX,IISSOX,IISSOY)
+        CALL GET_MESH_INDEX_IGN(ISSO,UG%XGRID_FULL_PAR,PLAT,PLON,KINDEX,IISSOX,IISSOY, &
+                                IFSSO,IFISSOX,IFISSOY)
       ENDIF  
     ENDIF
     IF (UG%G%CGRID=="LONLATVAL ") &
-      CALL GET_MESH_INDEX_LONLATVAL(ISSO,UG%XGRID_FULL_PAR,PLAT,PLON,KINDEX,IISSOX,IISSOY)  
+      CALL GET_MESH_INDEX_LONLATVAL(ISSO,UG%XGRID_FULL_PAR,PLAT,PLON,KINDEX,IISSOX,IISSOY, &
+                                    IFSSO,IFISSOX,IFISSOY)  
     IF (UG%G%CGRID=="LONLAT ROT") THEN
-      CALL GET_MESH_INDEX_LONLAT_ROT(SIZE(PLAT),UG%XGRID_FULL_PAR,PLAT,PLON,KINDEX,ISSO,IISSOX,IISSOY)  
+      CALL GET_MESH_INDEX_LONLAT_ROT(SIZE(PLAT),UG%XGRID_FULL_PAR,PLAT,PLON,KINDEX,ISSO,IISSOX,IISSOY, &
+                                     IFSSO,IFISSOX,IFISSOY)  
     ENDIF
     !
     IF (PRESENT(KSSO) .AND. PRESENT(KISSOX) .AND. PRESENT(KISSOY)) THEN
       KISSOX = IISSOX
       KISSOY = IISSOY
+    ENDIF
+    IF (PRESENT(KFSSO) .AND. PRESENT(KFISSOX) .AND. PRESENT(KFISSOY)) THEN
+      KFISSOX = IFISSOX
+      KFISSOY = IFISSOY
     ENDIF
 
   CASE DEFAULT

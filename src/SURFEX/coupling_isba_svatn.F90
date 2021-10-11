@@ -3,10 +3,11 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     ###############################################################################
-SUBROUTINE COUPLING_ISBA_SVAT_n (DTCO, UG, U, USS, IM, NDST, SLT, BLOWSNW, HPROGRAM, HCOUPLING, PTSTEP, &
+SUBROUTINE COUPLING_ISBA_SVAT_n (DTCO, UG, U, USS, IM, NDST, DST, SLT, BLOWSNW, HPROGRAM, HCOUPLING, PTSTEP, &
                                  KYEAR, KMONTH, KDAY, PTIME, KI, KSV, KSW, PTSUN, PZENITH,    &
                                  PZENITH2, PAZIM, PZREF, PUREF, PZS, PU, PV, PQA, PTA, PRHOA, &
-                                 PSV, PCO2, HSV, PRAIN, PSNOW, PLW, PDIR_SW, PSCA_SW,         &
+                                 PSV, PCO2,PIMPWET,PIMPDRY, HSV, PRAIN, PSNOW, PLW, PDIR_SW,  &
+                                 PSCA_SW,         &
                                  PSW_BANDS, PPS, PPA, PSFTQ, PSFTH, PSFTS, PSFCO2, PSFU, PSFV,&
                                  PTRAD, PDIR_ALB, PSCA_ALB, PEMIS, PTSURF, PZ0, PZ0H, PQSURF, &
                                  PPEW_A_COEF, PPEW_B_COEF, PPET_A_COEF, PPEQ_A_COEF,          &
@@ -39,6 +40,7 @@ SUBROUTINE COUPLING_ISBA_SVAT_n (DTCO, UG, U, USS, IM, NDST, SLT, BLOWSNW, HPROG
 !!     B. Decharme  04/2013 new coupling variables and init local variables
 !!-------------------------------------------------------------------
 !
+USE MODD_PREP_SNOW, ONLY : NIMPUR
 !
 USE MODD_SURFEX_n, ONLY : ISBA_MODEL_t
 !
@@ -46,7 +48,7 @@ USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
 USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 USE MODD_SSO_n, ONLY : SSO_t
-USE MODD_DST_n, ONLY : DST_NP_t
+USE MODD_DST_n, ONLY : DST_NP_t, DST_t
 USE MODD_SLT_n, ONLY : SLT_t
 USE MODD_BLOWSNW_n, ONLY : BLOWSNW_t
 !
@@ -68,15 +70,16 @@ TYPE(SURF_ATM_t), INTENT(INOUT) :: U
 TYPE(SSO_t), INTENT(INOUT) :: USS
 TYPE(DST_NP_t), INTENT(INOUT) :: NDST
 TYPE(SLT_t), INTENT(INOUT) :: SLT
+TYPE(DST_t), INTENT(INOUT) :: DST
 TYPE(BLOWSNW_t), INTENT(INOUT) :: BLOWSNW
 !
  CHARACTER(LEN=6),    INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
  CHARACTER(LEN=1),    INTENT(IN)  :: HCOUPLING ! type of coupling
                                               ! 'E' : explicit
                                               ! 'I' : implicit
-INTEGER,             INTENT(IN)  :: KYEAR     ! current year (UTC)
-INTEGER,             INTENT(IN)  :: KMONTH    ! current month (UTC)
-INTEGER,             INTENT(IN)  :: KDAY      ! current day (UTC)
+INTEGER,             INTENT(INOUT)  :: KYEAR     ! current year (UTC)
+INTEGER,             INTENT(INOUT)  :: KMONTH    ! current month (UTC)
+INTEGER,             INTENT(INOUT)  :: KDAY      ! current day (UTC)
 REAL,                INTENT(IN)  :: PTIME     ! current time since midnight (UTC, s)
 INTEGER,             INTENT(IN)  :: KI        ! number of points
 INTEGER,             INTENT(IN)  :: KSV       ! number of scalars
@@ -109,6 +112,8 @@ REAL, DIMENSION(KI), INTENT(IN)  :: PPS       ! pressure at atmospheric model su
 REAL, DIMENSION(KI), INTENT(IN)  :: PPA       ! pressure at forcing level             (Pa)
 REAL, DIMENSION(KI), INTENT(IN)  :: PZS       ! atmospheric model orography           (m)
 REAL, DIMENSION(KI), INTENT(IN)  :: PCO2      ! CO2 concentration in the air          (kg/m3)
+REAL, DIMENSION(KI,NIMPUR), INTENT(IN) :: PIMPWET ! Wet impur deposition
+REAL, DIMENSION(KI,NIMPUR), INTENT(IN) :: PIMPDRY ! Dry impur deposition
 REAL, DIMENSION(KI), INTENT(IN)  :: PSNOW     ! snow precipitation                    (kg/m2/s)
 REAL, DIMENSION(KI), INTENT(IN)  :: PRAIN     ! liquid precipitation                  (kg/m2/s)
 !
@@ -232,12 +237,14 @@ ZWORK_Z0H= 0.0 ! work array for mean roughness length for heat
 !
 DO JT=1,IT
 !
-  CALL COUPLING_ISBA_OROGRAPHY_n(DTCO, UG, U, USS, IM%SB, IM%NAG, IM%CHI, IM%NCHI, IM%MGN, IM%MSF, IM%DTV,     &
+  CALL COUPLING_ISBA_OROGRAPHY_n(DTCO, UG, U, USS, IM%SB, IM%NAG, IM%CHI, IM%NCHI,             &
+                                 IM%MGN, IM%MSF,IM%DTV,                                        &
                                  IM%ID, IM%NGB, IM%GB, IM%ISS, IM%NISS, IM%G, IM%NG, IM%O,     &
-                                 IM%S, IM%K, IM%NK, IM%NP, IM%NPE, NDST, SLT, BLOWSNW,         &
+                                 IM%S, IM%K, IM%NK, IM%NP, IM%NPE, IM%AT, NDST, DST, SLT, BLOWSNW,  &
                                  HPROGRAM, HCOUPLING, ZTSTEP, KYEAR, KMONTH, KDAY, PTIME, KI,  &
                                  KSV, KSW, PTSUN, PZENITH, PZENITH2, PAZIM, PZREF, PUREF, PZS, &
-                                 PU, PV, PQA, PTA, PRHOA, PSV, PCO2, HSV, PRAIN, PSNOW, PLW,   &
+                                 PU, PV, PQA, PTA, PRHOA, PSV, PCO2,PIMPWET,PIMPDRY, HSV,      &
+                                 PRAIN, PSNOW, PLW,   &
                                  PDIR_SW, PSCA_SW, PSW_BANDS, PPS, PPA, ZSFTQ, ZSFTH, ZSFTS,   &
                                  ZSFCO2, ZSFU, ZSFV, ZTRAD, ZDIR_ALB, ZSCA_ALB, ZEMIS, ZTSURF, &
                                  ZZ0, ZZ0H, ZQSURF, PPEW_A_COEF, PPEW_B_COEF, PPET_A_COEF,     &
