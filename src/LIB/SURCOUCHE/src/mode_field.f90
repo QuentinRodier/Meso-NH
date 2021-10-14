@@ -60,42 +60,25 @@ end interface
 
 contains
 
-SUBROUTINE INI_FIELD_LIST(KMODEL)
+SUBROUTINE INI_FIELD_LIST()
 ! Modif
 !  J.Escobar 25/04/2018: missing def of FRC
 !------------------------------------------------
 USE MODD_CONF, ONLY: NMODEL
-!
-INTEGER,INTENT(IN),OPTIONAL :: KMODEL
-!
-INTEGER :: IMODEL
-CHARACTER(LEN=42) :: YMSG
-!
+
+CHARACTER(LEN=64) :: YMSG
+
 CALL PRINT_MSG(NVERB_DEBUG,'GEN','INI_FIELD_LIST','called')
 IF (LFIELDLIST_ISINIT) THEN
   CALL PRINT_MSG(NVERB_ERROR,'GEN','INI_FIELD_LIST','already called')
   RETURN
 END IF
+
 LFIELDLIST_ISINIT = .TRUE.
+
 Allocate( tfieldlist(NMAXFIELDINIT) )
 NMAXFIELDS = NMAXFIELDINIT
-!
-IF (PRESENT(KMODEL)) THEN
-  IMODEL = KMODEL
-ELSE
-  !NMODEL is not necessary known here => allocating for max allowed number of models
-  !WARNING: if known, the value could change after this subroutine (ie for a restart
-  !         with more models) because READ_DESFM_n is called before READ_EXSEG_n
-  IMODEL = JPMODELMAX
-END IF
-!
-IF (IMODEL==0) CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_FIELD_LIST','allocating fields for zero models not allowed')
-if ( imodel > JPMODELMAX ) &
-  call Print_msg( NVERB_FATAL, 'GEN', 'INI_FIELD_LIST', 'allocating fields for more than JPMODELMAX models not allowed' )
-!
-WRITE(YMSG,'("allocating fields for up to ",I4," model(s)")') IMODEL
-CALL PRINT_MSG(NVERB_DEBUG,'GEN','INI_FIELD_LIST',YMSG)
-!
+
 call Add_field2list( TFIELDDATA( &
   CMNHNAME   = 'MNHVERSION',     &
   CSTDNAME   = '',               &

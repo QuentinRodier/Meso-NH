@@ -131,7 +131,7 @@ CALL IO_File_close(TZPRE_REAL1FILE)
 !
 !*       4.2   reading of values of some configuration variables in namelist
 !
-CALL INI_FIELD_LIST(1)
+CALL INI_FIELD_LIST()
 !
 CALL INI_FIELD_SCALARS()
 !
