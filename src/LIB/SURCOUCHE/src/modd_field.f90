@@ -14,6 +14,7 @@
 !  P. Wautelet 10/11/2020: new data structures for netCDF dimensions
 !  P. Wautelet 24/09/2021: add Fill_tfielddata and use it as a custom constructor for tfielddata type
 !  P. Wautelet 08/10/2021: add 2 new dimensions: LW_bands (NMNHDIM_NLWB) and SW_bands (NMNHDIM_NSWB)
+!  P. Wautelet 14/10/2021: dynamically allocate tfieldlist (+ reallocate if necessary)
 !-----------------------------------------------------------------
 module modd_field
 
@@ -26,9 +27,11 @@ use NETCDF,          only: NF90_FILL_INT, NF90_FILL_REAL
 implicit none
 
 integer, parameter :: NMNHMAXDIMS = 6 ! Cannot be less than 6
-INTEGER,PARAMETER :: MAXFIELDS = 250
 INTEGER,PARAMETER :: TYPEUNDEF = -1, TYPEINT = 1, TYPELOG = 2, TYPEREAL = 3, TYPECHAR = 4, TYPEDATE = 5
 !
+INTEGER, PARAMETER :: NMAXFIELDINIT = 200 !Initial maximum number of fields in tfieldlist
+INTEGER, PARAMETER :: NMAXFIELDSTEP = 50  !Number of fields to add each time tfieldlist is too small
+
 integer, parameter :: NMNHDIM_UNKNOWN             = -2
 
 !For efficient use of memory, it is better that all values for real dimensions be contiguous
@@ -114,6 +117,8 @@ integer, dimension(0:8,3), parameter :: NMNHDIM_ARAKAWA = reshape( [ &
   NMNHDIM_NI_V,    NMNHDIM_NJ_V,    NMNHDIM_LEVEL_W, & ! zeta vorticity point (=vw point)
   NMNHDIM_NI_U,    NMNHDIM_NJ_V,    NMNHDIM_LEVEL_W] & ! fw point (=uvw point)
   , shape = [ 9, 3 ], order = [ 2, 1 ] )
+
+INTEGER, SAVE :: NMAXFIELDS !Maximum number of fields in tfieldlist (value is automatically increased if too small)
 
 TYPE TFIELDPTR_C0D
   CHARACTER(LEN=:),     POINTER :: DATA => NULL()
@@ -216,7 +221,7 @@ TYPE, extends( tfield_metadata_base ) :: TFIELDDATA
   CHARACTER(LEN=4)   :: CLBTYPE   = 'NONE' !Type of the lateral boundary (LBX,LBY,LBXU,LBYV)
   LOGICAL            :: LTIMEDEP  = .FALSE. !Is the field time-dependent?
   !
-  INTEGER :: NMODELMAX = -1 !Number of models for which the field has been allocated
+  INTEGER :: NMODELMAX = -1 !Number of models for which the field has been allocated (default value must be negative)
   !
   TYPE(TFIELDPTR_C0D),DIMENSION(:),ALLOCATABLE :: TFIELD_C0D !Pointer to the character string fields (one per nested mesh)
   TYPE(TFIELDPTR_C1D),DIMENSION(:),ALLOCATABLE :: TFIELD_C1D !Pointer to the character string 1D fields (one per nested mesh)
@@ -243,7 +248,7 @@ END TYPE TFIELDDATA
 !
 integer, save :: NFIELDS_USED = 0
 LOGICAL, SAVE :: LFIELDLIST_ISINIT = .FALSE.
-TYPE(TFIELDDATA),DIMENSION(MAXFIELDS),SAVE :: TFIELDLIST
+TYPE(TFIELDDATA), ALLOCATABLE, DIMENSION(:), SAVE :: TFIELDLIST
 
 interface TFIELDDATA
   module procedure :: Fill_tfielddata

@@ -16,6 +16,7 @@
 !  P. Wautelet 23/01/2020: split in modd_field.f90 and mode_field.f90
 !  JL Redelsperger 03/2021: add variables for Ocean LES and auto-coupled version
 !  P. Wautelet 08/10/2021: add Goto_model_1field + Add_field2list procedures + remove Fieldlist_nmodel_resize
+!  P. Wautelet 14/10/2021: dynamically allocate tfieldlist (+ reallocate if necessary)
 !-----------------------------------------------------------------
 module mode_field
 
@@ -70,17 +71,14 @@ INTEGER,INTENT(IN),OPTIONAL :: KMODEL
 INTEGER :: IMODEL
 CHARACTER(LEN=42) :: YMSG
 !
-!F90/95: TFIELDLIST(1) = TFIELDDATA('UT','x_wind','m s-1','XY','X_Y_Z_U component of wind',2)
-!F2003:
-!TFIELDLIST(1) = TFIELDDATA(CMNHNAME='UT',CSTDNAME='x_wind',CUNITS='m s-1',CDIR='XY',&
-!                           CCOMMENT='X_Y_Z_U component of wind',NGRID=2)
-!
 CALL PRINT_MSG(NVERB_DEBUG,'GEN','INI_FIELD_LIST','called')
 IF (LFIELDLIST_ISINIT) THEN
   CALL PRINT_MSG(NVERB_ERROR,'GEN','INI_FIELD_LIST','already called')
   RETURN
 END IF
 LFIELDLIST_ISINIT = .TRUE.
+Allocate( tfieldlist(NMAXFIELDINIT) )
+NMAXFIELDS = NMAXFIELDINIT
 !
 IF (PRESENT(KMODEL)) THEN
   IMODEL = KMODEL
@@ -3098,7 +3096,7 @@ call Add_field2list( TFIELDDATA( &
   LTIMEDEP   = .FALSE.           ) )
 !
 !
-WRITE(YMSG,'("number of used fields=",I4," out of ",I4)') nfields_used-1,MAXFIELDS
+WRITE(YMSG,'("number of used fields=",I4," out of ",I4)') nfields_used-1,NMAXFIELDS
 CALL PRINT_MSG(NVERB_INFO,'GEN','INI_FIELD_LIST',TRIM(YMSG))
 !
 #if 0
@@ -3749,11 +3747,17 @@ implicit none
 
 type(tfielddata) :: tpfield
 
-CHARACTER(LEN=42) :: YMSG
+character(len=64) :: ymsg
+type(tfielddata), allocatable, dimension(:) :: tzfieldlistnew
 
-if ( nfields_used >= MAXFIELDS ) then
-  WRITE(YMSG,'( "nfields_used>=MAXFIELDS (",I5,")" )') MAXFIELDS
-  CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_FIELD_LIST',TRIM(YMSG))
+!Check if tfieldlist big enough and enlarge it if necessary
+if ( nfields_used >= NMAXFIELDS ) then
+  Allocate( tzfieldlistnew(nmaxfields + nmaxfieldstep) )
+  tzfieldlistnew(1 : nmaxfields) = tfieldlist(1 : nmaxfields)
+  call Move_alloc( from = tzfieldlistnew, to = tfieldlist )
+  nmaxfields = nmaxfields + nmaxfieldstep
+  Write( ymsg, '( "nmaxfields increased from ", i5, " to ", i5 )') nmaxfields - nmaxfieldstep, nmaxfields
+  call Print_msg( NVERB_DEBUG, 'GEN', 'Add_field2list', Trim( ymsg ) )
 end if
 
 nfields_used = nfields_used + 1
