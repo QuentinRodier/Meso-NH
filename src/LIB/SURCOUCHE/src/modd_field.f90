@@ -263,7 +263,7 @@ type(tfielddata) function Fill_tfielddata( cmnhname, cstdname, clongname, cunits
 
   use mode_msg
 
-  character(len=*),                intent(in) :: cmnhname
+  character(len=*),      optional, intent(in) :: cmnhname
   character(len=*),      optional, intent(in) :: cstdname
   character(len=*),      optional, intent(in) :: clongname
   character(len=*),      optional, intent(in) :: cunits
@@ -283,11 +283,18 @@ type(tfielddata) function Fill_tfielddata( cmnhname, cstdname, clongname, cunits
   character(len=*),      optional, intent(in) :: clbtype
   logical,               optional, intent(in) :: ltimedep
 
+  character(len=:), allocatable :: ymnhname
+
   ! cmnhname
-  tpfield%cmnhname = cmnhname
-  if ( Len_trim(cmnhname) > NMNHNAMELGTMAX )                                                               &
-    call Print_msg( NVERB_WARNING, 'GEN', 'Fill_tfielddata',                                               &
-                    'cmnhname was truncated to ' // Trim( tpfield%cmnhname ) // ' from ' // Trim( cmnhname ) )
+  if ( Present( cmnhname ) ) then
+    tpfield%cmnhname = cmnhname
+    if ( Len_trim(cmnhname) > NMNHNAMELGTMAX )                                                               &
+      call Print_msg( NVERB_WARNING, 'GEN', 'Fill_tfielddata',                                               &
+                      'cmnhname was truncated to ' // Trim( tpfield%cmnhname ) // ' from ' // Trim( cmnhname ) )
+    ymnhname = Trim( cmnhname )
+  else
+    ymnhname = 'unknown mnhname'
+  end if
 
   ! cstdname
   if ( Present( cstdname ) ) then
@@ -295,7 +302,7 @@ type(tfielddata) function Fill_tfielddata( cmnhname, cstdname, clongname, cunits
     if ( Len_trim(cstdname) > NSTDNAMELGTMAX )                                                                 &
       call Print_msg( NVERB_WARNING, 'GEN', 'Fill_tfielddata',                                                 &
                       'cstdname was truncated to ' // Trim( tpfield%cstdname ) // ' from ' // Trim( cstdname ) &
-                      // ' for variable ' // Trim( cmnhname ) )
+                      // ' for variable ' // Trim( ymnhname ) )
   end if
 
   ! clongname
@@ -304,7 +311,7 @@ type(tfielddata) function Fill_tfielddata( cmnhname, cstdname, clongname, cunits
     if ( Len_trim(clongname) > NLONGNAMELGTMAX )                                                                  &
       call Print_msg( NVERB_WARNING, 'GEN', 'Fill_tfielddata',                                                    &
                       'clongname was truncated to ' // Trim( tpfield%clongname ) // ' from ' // Trim( clongname ) &
-                      // ' for variable ' // Trim( cmnhname ) )
+                      // ' for variable ' // Trim( ymnhname ) )
   end if
 
   ! cunits
@@ -313,7 +320,7 @@ type(tfielddata) function Fill_tfielddata( cmnhname, cstdname, clongname, cunits
     if ( Len_trim(cunits) > NUNITLGTMAX )                                                                &
       call Print_msg( NVERB_WARNING, 'GEN', 'Fill_tfielddata',                                           &
                       'cunits was truncated to ' // Trim( tpfield%cunits ) // ' from ' // Trim( cunits ) &
-                      // ' for variable ' // Trim( cmnhname ) )
+                      // ' for variable ' // Trim( ymnhname ) )
   end if
 
   ! ccomment
@@ -328,7 +335,7 @@ type(tfielddata) function Fill_tfielddata( cmnhname, cstdname, clongname, cunits
   if ( Present( ngrid ) ) then
     if ( ngrid /= NGRIDUNKNOWN .and. ngrid < 0 .and. ngrid > 8 ) then
       call Print_msg( NVERB_ERROR, 'GEN', 'Fill_tfielddata',                     &
-                      'invalid value of ngrid for variable ' // Trim( cmnhname ) )
+                      'invalid value of ngrid for variable ' // Trim( ymnhname ) )
     else
       tpfield%ngrid = ngrid
     end if
@@ -337,7 +344,7 @@ type(tfielddata) function Fill_tfielddata( cmnhname, cstdname, clongname, cunits
   ! ntype
   if ( All( ntype /= [ TYPEINT, TYPELOG, TYPEREAL, TYPECHAR, TYPEDATE ] ) )    &
     call Print_msg( NVERB_ERROR, 'GEN', 'Fill_tfielddata',                     &
-                    'invalid value of ntype for variable ' // Trim( cmnhname ) )
+                    'invalid value of ntype for variable ' // Trim( ymnhname ) )
   tpfield%ntype = ntype
 
   ! ndims
@@ -346,26 +353,26 @@ type(tfielddata) function Fill_tfielddata( cmnhname, cstdname, clongname, cunits
       case ( TYPECHAR )
         if ( ndims < 0 .or. ndims > 1 )                                                                 &
           call Print_msg( NVERB_ERROR, 'GEN', 'Fill_tfielddata', 'invalid value of ndims for variable ' &
-                          // Trim( cmnhname ) // ' of type TYPECHAR' )
+                          // Trim( ymnhname ) // ' of type TYPECHAR' )
       case ( TYPELOG )
         if ( ndims < 0 .or. ndims > 1 )                                                                 &
           call Print_msg( NVERB_ERROR, 'GEN', 'Fill_tfielddata', 'invalid value of ndims for variable ' &
-                          // Trim( cmnhname ) // ' of type TYPELOG' )
+                          // Trim( ymnhname ) // ' of type TYPELOG' )
       case ( TYPEINT )
         if ( ndims < 0 .or. ndims > 3 )                                                                 &
           call Print_msg( NVERB_ERROR, 'GEN', 'Fill_tfielddata', 'invalid value of ndims for variable ' &
-                          // Trim( cmnhname ) // ' of type TYPEINT' )
+                          // Trim( ymnhname ) // ' of type TYPEINT' )
       case ( TYPEREAL )
         if ( ndims < 0 .or. ndims > 6 )                                                                 &
           call Print_msg( NVERB_ERROR, 'GEN', 'Fill_tfielddata', 'invalid value of ndims for variable ' &
-                          // Trim( cmnhname ) // ' of type TYPEREAL' )
+                          // Trim( ymnhname ) // ' of type TYPEREAL' )
       case ( TYPEDATE )
         if ( ndims < 0 .or. ndims > 1 )                                                                 &
           call Print_msg( NVERB_ERROR, 'GEN', 'Fill_tfielddata', 'invalid value of ndims for variable ' &
-                          // Trim( cmnhname ) // ' of type TYPEDATE' )
+                          // Trim( ymnhname ) // ' of type TYPEDATE' )
       case default
         call Print_msg( NVERB_ERROR, 'GEN', 'Fill_tfielddata',                     &
-                        'invalid value of ntype for variable ' // Trim( cmnhname ) )
+                        'invalid value of ntype for variable ' // Trim( ymnhname ) )
 
     end select
     tpfield%ndims = ndims
@@ -374,7 +381,7 @@ type(tfielddata) function Fill_tfielddata( cmnhname, cstdname, clongname, cunits
   ! ndimlist
   if ( Present( ndimlist ) ) then
     if ( Size( ndimlist ) /= ndims ) &
-      call Print_msg( NVERB_ERROR, 'GEN', 'Fill_tfielddata', 'ndimlist size different of ndims for variable ' // Trim( cmnhname ) )
+      call Print_msg( NVERB_ERROR, 'GEN', 'Fill_tfielddata', 'ndimlist size different of ndims for variable ' // Trim( ymnhname ) )
 
     tpfield%ndimlist(1:ndims)  = ndimlist(:)
     tpfield%ndimlist(ndims+1:) = NMNHDIM_UNUSED
@@ -382,23 +389,25 @@ type(tfielddata) function Fill_tfielddata( cmnhname, cstdname, clongname, cunits
     !If ndimlist is not provided, it is possible to fill it if some information is available
     if ( Present( cdir ) ) then
       if ( cdir == 'XY' ) then
-        if ( ndims == 3 ) then
+        if ( ndims == 2 ) then
+          tpfield%ndimlist(1:2) = NMNHDIM_ARAKAWA(ngrid,1:2)
+        else if ( ndims == 3 ) then
           tpfield%ndimlist(1:3) = NMNHDIM_ARAKAWA(ngrid,1:3)
         else
-          call Print_msg( NVERB_DEBUG, 'GEN', 'Fill_tfielddata', 'ndimlist not filled for variable ' // Trim( cmnhname ) )
+          call Print_msg( NVERB_DEBUG, 'GEN', 'Fill_tfielddata', 'ndimlist not filled for variable ' // Trim( ymnhname ) )
         end if
       else
-        call Print_msg( NVERB_DEBUG, 'GEN', 'Fill_tfielddata', 'ndimlist not filled for variable ' // Trim( cmnhname ) )
+        call Print_msg( NVERB_DEBUG, 'GEN', 'Fill_tfielddata', 'ndimlist not filled for variable ' // Trim( ymnhname ) )
       end if
     else
-      call Print_msg( NVERB_DEBUG, 'GEN', 'Fill_tfielddata', 'ndimlist not filled for variable ' // Trim( cmnhname ) )
+      call Print_msg( NVERB_DEBUG, 'GEN', 'Fill_tfielddata', 'ndimlist not filled for variable ' // Trim( ymnhname ) )
     end if
   end if
   if ( Present( ltimedep ) ) then
     if ( ltimedep ) then
       if ( ndims == NMNHMAXDIMS )                                                                        &
         call Print_msg( NVERB_ERROR, 'GEN', 'Fill_tfielddata',                                           &
-                        'ltimedep=T not possible if ndims=NMNHMAXDIMS for variable ' // Trim( cmnhname ) )
+                        'ltimedep=T not possible if ndims=NMNHMAXDIMS for variable ' // Trim( ymnhname ) )
       !Set this dimension only if ndimlist already filled up or ndims = 0
       if ( ndims == 0 ) then
         tpfield%ndimlist( ndims + 1 ) = NMNHDIM_TIME
@@ -412,7 +421,7 @@ type(tfielddata) function Fill_tfielddata( cmnhname, cstdname, clongname, cunits
   if ( Present( nfillvalue ) ) then
     if ( ntype /= TYPEINT )                                                                   &
       call Print_msg( NVERB_WARNING, 'GEN', 'Fill_tfielddata',                                &
-                      'nfillvalue provided for the non-integer variable ' // Trim( cmnhname ) )
+                      'nfillvalue provided for the non-integer variable ' // Trim( ymnhname ) )
     tpfield%nfillvalue = nfillvalue
   end if
 
@@ -420,7 +429,7 @@ type(tfielddata) function Fill_tfielddata( cmnhname, cstdname, clongname, cunits
   if ( Present( xfillvalue ) ) then
     if ( ntype /= TYPEREAL )                                                               &
       call Print_msg( NVERB_WARNING, 'GEN', 'Fill_tfielddata',                             &
-                      'xfillvalue provided for the non-real variable ' // Trim( cmnhname ) )
+                      'xfillvalue provided for the non-real variable ' // Trim( ymnhname ) )
     tpfield%xfillvalue = xfillvalue
   end if
 
@@ -428,7 +437,7 @@ type(tfielddata) function Fill_tfielddata( cmnhname, cstdname, clongname, cunits
   if ( Present( nvalidmin ) ) then
     if ( ntype /= TYPEINT )                                                                  &
       call Print_msg( NVERB_WARNING, 'GEN', 'Fill_tfielddata',                               &
-                      'nvalidmin provided for the non-integer variable ' // Trim( cmnhname ) )
+                      'nvalidmin provided for the non-integer variable ' // Trim( ymnhname ) )
     tpfield%nvalidmin = nvalidmin
   end if
 
@@ -436,10 +445,10 @@ type(tfielddata) function Fill_tfielddata( cmnhname, cstdname, clongname, cunits
   if ( Present( nvalidmax ) ) then
     if ( ntype /= TYPEINT )                                                                  &
       call Print_msg( NVERB_WARNING, 'GEN', 'Fill_tfielddata',                               &
-                      'nvalidmax provided for the non-integer variable ' // Trim( cmnhname ) )
+                      'nvalidmax provided for the non-integer variable ' // Trim( ymnhname ) )
     if ( Present( nvalidmin ) ) then
       if ( nvalidmax < nvalidmin ) &
-        call Print_msg( NVERB_WARNING, 'GEN', 'Fill_tfielddata', 'nvalidmax < nvalidmin for variable ' // Trim( cmnhname ) )
+        call Print_msg( NVERB_WARNING, 'GEN', 'Fill_tfielddata', 'nvalidmax < nvalidmin for variable ' // Trim( ymnhname ) )
     end if
     tpfield%nvalidmax = nvalidmax
   end if
@@ -448,7 +457,7 @@ type(tfielddata) function Fill_tfielddata( cmnhname, cstdname, clongname, cunits
   if ( Present( xvalidmin ) ) then
     if ( ntype /= TYPEREAL )                                                              &
       call Print_msg( NVERB_WARNING, 'GEN', 'Fill_tfielddata',                            &
-                      'xvalidmin provided for the non-real variable ' // Trim( cmnhname ) )
+                      'xvalidmin provided for the non-real variable ' // Trim( ymnhname ) )
     tpfield%xvalidmin = xvalidmin
   end if
 
@@ -456,10 +465,10 @@ type(tfielddata) function Fill_tfielddata( cmnhname, cstdname, clongname, cunits
   if ( Present( xvalidmax ) ) then
     if ( ntype /= TYPEREAL )                                                              &
       call Print_msg( NVERB_WARNING, 'GEN', 'Fill_tfielddata',                            &
-                      'xvalidmax provided for the non-real variable ' // Trim( cmnhname ) )
+                      'xvalidmax provided for the non-real variable ' // Trim( ymnhname ) )
     if ( Present( xvalidmin ) ) then
       if ( xvalidmax < xvalidmin ) &
-        call Print_msg( NVERB_WARNING, 'GEN', 'Fill_tfielddata', 'xvalidmax < xvalidmin for variable ' // Trim( cmnhname ) )
+        call Print_msg( NVERB_WARNING, 'GEN', 'Fill_tfielddata', 'xvalidmax < xvalidmin for variable ' // Trim( ymnhname ) )
     end if
     tpfield%xvalidmax = xvalidmax
   end if
@@ -470,7 +479,7 @@ type(tfielddata) function Fill_tfielddata( cmnhname, cstdname, clongname, cunits
       tpfield%cdir = cdir
     else
       call Print_msg( NVERB_ERROR, 'GEN', 'Fill_tfielddata',                                             &
-                      'invalid value of cdir (' // Trim( cdir ) // ') for variable ' // Trim( cmnhname ) )
+                      'invalid value of cdir (' // Trim( cdir ) // ') for variable ' // Trim( ymnhname ) )
     end if
   end if
 
@@ -480,7 +489,7 @@ type(tfielddata) function Fill_tfielddata( cmnhname, cstdname, clongname, cunits
       tpfield%clbtype = clbtype
     else
       call Print_msg( NVERB_ERROR, 'GEN', 'Fill_tfielddata',                                                   &
-                      'invalid value of clbtype (' // Trim( clbtype ) // ') for variable ' // Trim( cmnhname ) )
+                      'invalid value of clbtype (' // Trim( clbtype ) // ') for variable ' // Trim( ymnhname ) )
     end if
   end if
 
