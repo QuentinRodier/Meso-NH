@@ -256,16 +256,17 @@ IF (NCONV_KF >= 0) THEN
       IF (NCLTOPCONV(JI,JJ)/=0) ZWORK21(JI,JJ)= XZZ(JI,JJ,NCLTOPCONV(JI,JJ))/1.E3
     END DO
   END DO
-  TZFIELD%CMNHNAME   = 'CLTOPCONV'
-  TZFIELD%CSTDNAME   = 'convective_cloud_top_altitude'
-  TZFIELD%CLONGNAME  = 'CLTOPCONV'
-  TZFIELD%CUNITS     = 'km'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_Top of Convective Cloud'
-  TZFIELD%NGRID      = 4
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 2
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDDATA(                           &
+    CMNHNAME   = 'CLTOPCONV',                     &
+    CSTDNAME   = 'convective_cloud_top_altitude', &
+    CLONGNAME  = 'CLTOPCONV',                     &
+    CUNITS     = 'km',                            &
+    CDIR       = 'XY',                            &
+    CCOMMENT   = 'X_Y_Top of Convective Cloud',   &
+    NGRID      = 4,                               &
+    NTYPE      = TYPEREAL,                        &
+    NDIMS      = 2,                               &
+    LTIMEDEP   = .TRUE.                           )
   CALL IO_Field_write(TPFILE,TZFIELD,ZWORK21)
 !
   ! base height (km) of convective clouds
@@ -275,16 +276,17 @@ IF (NCONV_KF >= 0) THEN
       IF (NCLBASCONV(JI,JJ)/=0) ZWORK21(JI,JJ)= XZZ(JI,JJ,NCLBASCONV(JI,JJ))/1.E3
     END DO
   END DO
-  TZFIELD%CMNHNAME   = 'CLBASCONV'
-  TZFIELD%CSTDNAME   = 'convective_cloud_base_altitude'
-  TZFIELD%CLONGNAME  = 'CLBASCONV'
-  TZFIELD%CUNITS     = 'km'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_Base of Convective Cloud'
-  TZFIELD%NGRID      = 4
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 2
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDDATA(                            &
+    CMNHNAME   = 'CLBASCONV',                      &
+    CSTDNAME   = 'convective_cloud_base_altitude', &
+    CLONGNAME  = 'CLBASCONV',                      &
+    CUNITS     = 'km',                             &
+    CDIR       = 'XY',                             &
+    CCOMMENT   = 'X_Y_Base of Convective Cloud',   &
+    NGRID      = 4,                                &
+    NTYPE      = TYPEREAL,                         &
+    NDIMS      = 2,                                &
+    LTIMEDEP   = .TRUE.                            )
   CALL IO_Field_write(TPFILE,TZFIELD,ZWORK21)
 !
 END IF
@@ -456,16 +458,17 @@ IF (LCLD_COV .AND. LUSERC) THEN
                                                   ! 0 if there is no cloud
   ZWORK21(:,:)=ZWORK21(:,:)/1.E3            ! height (km) of explicit clouds
 !
-  TZFIELD%CMNHNAME   = 'HECL'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'HECL'
-  TZFIELD%CUNITS     = 'km'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_Height of Explicit CLoud top'
-  TZFIELD%NGRID      = 4
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 2
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDDATA(                              &
+    CMNHNAME   = 'HECL',                             &
+    CSTDNAME   = '',                                 &
+    CLONGNAME  = 'HECL',                             &
+    CUNITS     = 'km',                               &
+    CDIR       = 'XY',                               &
+    CCOMMENT   = 'X_Y_Height of Explicit CLoud top', &
+    NGRID      = 4,                                  &
+    NTYPE      = TYPEREAL,                           &
+    NDIMS      = 2,                                  &
+    LTIMEDEP   = .TRUE.                              )
   CALL IO_Field_write(TPFILE,TZFIELD,ZWORK21)
 !
 !  Higher top of the different species of clouds
@@ -493,29 +496,31 @@ IF (LCLD_COV .AND. LUSERC) THEN
                                                          ! 0 if there is no cloud
     ZWORK21(:,:)=ZWORK21(:,:)/1.E3                 ! max. cloud height (km)
 !
-    TZFIELD%CMNHNAME   = 'HCL'
-    TZFIELD%CSTDNAME   = 'cloud_top_altitude'
-    TZFIELD%CLONGNAME  = 'HCL'
-    TZFIELD%CUNITS     = 'km'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%CCOMMENT   = 'X_Y_Height of CLoud top'
-    TZFIELD%NGRID      = 4
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 2
-    TZFIELD%LTIMEDEP   = .TRUE.
+    TZFIELD = TFIELDDATA(                     &
+      CMNHNAME   = 'HCL',                     &
+      CSTDNAME   = 'cloud_top_altitude',      &
+      CLONGNAME  = 'HCL',                     &
+      CUNITS     = 'km',                      &
+      CDIR       = 'XY',                      &
+      CCOMMENT   = 'X_Y_Height of CLoud top', &
+      NGRID      = 4,                         &
+      NTYPE      = TYPEREAL,                  &
+      NDIMS      = 2,                         &
+      LTIMEDEP   = .TRUE.                     )
     CALL IO_Field_write(TPFILE,TZFIELD,ZWORK21)
   ENDIF
 !
-  TZFIELD%CMNHNAME   = 'TCL'
-  TZFIELD%CSTDNAME   = 'air_temperature_at_cloud_top'
-  TZFIELD%CLONGNAME  = 'TCL'
-  TZFIELD%CUNITS     = 'celsius'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_Height of CLoud top'
-  TZFIELD%NGRID      = 4
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 2
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDDATA(                          &
+    CMNHNAME   = 'TCL',                          &
+    CSTDNAME   = 'air_temperature_at_cloud_top', &
+    CLONGNAME  = 'TCL',                          &
+    CUNITS     = 'celsius',                      &
+    CDIR       = 'XY',                           &
+    CCOMMENT   = 'X_Y_Height of CLoud top',      &
+    NGRID      = 4,                              &
+    NTYPE      = TYPEREAL,                       &
+    NDIMS      = 2,                              &
+    LTIMEDEP   = .TRUE.                          )
   CALL IO_Field_write(TPFILE,TZFIELD,ZWORK22)
 !
   CALL IO_Field_write(TPFILE,'CLDFR',XCLDFR)
@@ -527,16 +532,17 @@ IF (LCLD_COV .AND. LUSERC) THEN
     ZWORK31(:,:,:)=3.9E3/(144.7*(XRHODREF(:,:,:)*1.E3*XRT(:,:,:,2)/(1.+XRT(:,:,:,2)))**0.88)
   END WHERE
 !
-  TZFIELD%CMNHNAME   = 'VISI_HOR'
-  TZFIELD%CSTDNAME   = 'visibility_in_air'
-  TZFIELD%CLONGNAME  = 'VISI_HOR'
-  TZFIELD%CUNITS     = 'm'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_Z_VISI_HOR'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDDATA(               &
+    CMNHNAME   = 'VISI_HOR',          &
+    CSTDNAME   = 'visibility_in_air', &
+    CLONGNAME  = 'VISI_HOR',          &
+    CUNITS     = 'm',                 &
+    CDIR       = 'XY',                &
+    CCOMMENT   = 'X_Y_Z_VISI_HOR',    &
+    NGRID      = 1,                   &
+    NTYPE      = TYPEREAL,            &
+    NDIMS      = 3,                   &
+    LTIMEDEP   = .TRUE.               )
   CALL IO_Field_write(TPFILE,TZFIELD,ZWORK31)
 !
   DEALLOCATE(IWORK1,IWORK2,ICL_HE_ST,GMASK2,ZWORK22)
@@ -582,16 +588,17 @@ IF (NRAD_3D >= 1) THEN
       IKRAD = JK - JPVEXT
       ZWORK31(:,:,JK)= XAER(:,:,IKRAD,3)
     END DO
-    TZFIELD%CMNHNAME   = 'DSTAOD3D'
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = 'DSTAOD3D'
-    TZFIELD%CUNITS     = 'm'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%CCOMMENT   = 'X_Y_Z_DuST Aerosol Optical Depth'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
+    TZFIELD = TFIELDDATA(                              &
+      CMNHNAME   = 'DSTAOD3D',                         &
+      CSTDNAME   = '',                                 &
+      CLONGNAME  = 'DSTAOD3D',                         &
+      CUNITS     = 'm',                                &
+      CDIR       = 'XY',                               &
+      CCOMMENT   = 'X_Y_Z_DuST Aerosol Optical Depth', &
+      NGRID      = 1,                                  &
+      NTYPE      = TYPEREAL,                           &
+      NDIMS      = 3,                                  &
+      LTIMEDEP   = .TRUE.                              )
     CALL IO_Field_write(TPFILE,TZFIELD,ZWORK31)
 !Dust optical depth
     ZWORK21(:,:)=0.0
@@ -603,32 +610,34 @@ IF (NRAD_3D >= 1) THEN
         ENDDO
       ENDDO
     ENDDO
-    TZFIELD%CMNHNAME   = 'DSTAOD2D'
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = 'DSTAOD2D'
-    TZFIELD%CUNITS     = 'm'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%CCOMMENT   = 'X_Y_DuST Aerosol Optical Depth'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 2
-    TZFIELD%LTIMEDEP   = .TRUE.
+    TZFIELD = TFIELDDATA(                            &
+      CMNHNAME   = 'DSTAOD2D',                       &
+      CSTDNAME   = '',                               &
+      CLONGNAME  = 'DSTAOD2D',                       &
+      CUNITS     = 'm',                              &
+      CDIR       = 'XY',                             &
+      CCOMMENT   = 'X_Y_DuST Aerosol Optical Depth', &
+      NGRID      = 1,                                &
+      NTYPE      = TYPEREAL,                         &
+      NDIMS      = 2,                                &
+      LTIMEDEP   = .TRUE.                            )
     CALL IO_Field_write(TPFILE,TZFIELD,ZWORK21)
 !Dust extinction (optical depth per km)
     DO JK=IKB,IKE
       IKRAD = JK - JPVEXT
       ZWORK31(:,:,JK)= XAER(:,:,IKRAD,3)/(XZZ(:,:,JK+1)-XZZ(:,:,JK))*1.D3
     ENDDO
-    TZFIELD%CMNHNAME   = 'DSTEXT'
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = 'DSTEXT'
-    TZFIELD%CUNITS     = 'km-1'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%CCOMMENT   = 'X_Y_Z_DuST EXTinction'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
+    TZFIELD = TFIELDDATA(                   &
+      CMNHNAME   = 'DSTEXT',                &
+      CSTDNAME   = '',                      &
+      CLONGNAME  = 'DSTEXT',                &
+      CUNITS     = 'km-1',                  &
+      CDIR       = 'XY',                    &
+      CCOMMENT   = 'X_Y_Z_DuST EXTinction', &
+      NGRID      = 1,                       &
+      NTYPE      = TYPEREAL,                &
+      NDIMS      = 3,                       &
+      LTIMEDEP   = .TRUE.                   )
     CALL IO_Field_write(TPFILE,TZFIELD,ZWORK31)
   END IF
   IF (LSALT) THEN
@@ -638,16 +647,17 @@ IF (NRAD_3D >= 1) THEN
       IKRAD = JK - JPVEXT
       ZWORK31(:,:,JK)= XAER(:,:,IKRAD,2)
     END DO
-    TZFIELD%CMNHNAME   = 'SLTAOD3D'
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = 'SLTAOD3D'
-    TZFIELD%CUNITS     = 'm'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%CCOMMENT   = 'X_Y_Z_Salt Aerosol Optical Depth'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
+    TZFIELD = TFIELDDATA(                              &
+      CMNHNAME   = 'SLTAOD3D',                         &
+      CSTDNAME   = '',                                 &
+      CLONGNAME  = 'SLTAOD3D',                         &
+      CUNITS     = 'm',                                &
+      CDIR       = 'XY',                               &
+      CCOMMENT   = 'X_Y_Z_Salt Aerosol Optical Depth', &
+      NGRID      = 1,                                  &
+      NTYPE      = TYPEREAL,                           &
+      NDIMS      = 3,                                  &
+      LTIMEDEP   = .TRUE.                              )
     CALL IO_Field_write(TPFILE,TZFIELD,ZWORK31)
 !Salt optical depth
     ZWORK21(:,:)=0.0
@@ -659,32 +669,34 @@ IF (NRAD_3D >= 1) THEN
         ENDDO
       ENDDO
     ENDDO
-    TZFIELD%CMNHNAME   = 'SLTAOD2D'
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = 'SLTAOD2D'
-    TZFIELD%CUNITS     = 'm'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%CCOMMENT   = 'X_Y_Salt Aerosol Optical Depth'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 2
-    TZFIELD%LTIMEDEP   = .TRUE.
+    TZFIELD = TFIELDDATA(                            &
+      CMNHNAME   = 'SLTAOD2D',                       &
+      CSTDNAME   = '',                               &
+      CLONGNAME  = 'SLTAOD2D',                       &
+      CUNITS     = 'm',                              &
+      CDIR       = 'XY',                             &
+      CCOMMENT   = 'X_Y_Salt Aerosol Optical Depth', &
+      NGRID      = 1,                                &
+      NTYPE      = TYPEREAL,                         &
+      NDIMS      = 2,                                &
+      LTIMEDEP   = .TRUE.                            )
     CALL IO_Field_write(TPFILE,TZFIELD,ZWORK21)
 !Salt extinction (optical depth per km)
     DO JK=IKB,IKE
       IKRAD = JK - JPVEXT
       ZWORK31(:,:,JK)= XAER(:,:,IKRAD,2)/(XZZ(:,:,JK+1)-XZZ(:,:,JK))*1.D3
     ENDDO
-    TZFIELD%CMNHNAME   = 'SLTEXT'
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = 'SLTEXT'
-    TZFIELD%CUNITS     = 'km-1'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%CCOMMENT   = 'X_Y_Z_Salt EXTinction'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
+    TZFIELD = TFIELDDATA(                   &
+      CMNHNAME   = 'SLTEXT',                &
+      CSTDNAME   = '',                      &
+      CLONGNAME  = 'SLTEXT',                &
+      CUNITS     = 'km-1',                  &
+      CDIR       = 'XY',                    &
+      CCOMMENT   = 'X_Y_Z_Salt EXTinction', &
+      NGRID      = 1,                       &
+      NTYPE      = TYPEREAL,                &
+      NDIMS      = 3,                       &
+      LTIMEDEP   = .TRUE.                   )
     CALL IO_Field_write(TPFILE,TZFIELD,ZWORK31)
   END IF
   IF (LORILAM) THEN
@@ -694,16 +706,17 @@ IF (NRAD_3D >= 1) THEN
       IKRAD = JK - JPVEXT
       ZWORK31(:,:,JK)= XAER(:,:,IKRAD,4)
     END DO
-    TZFIELD%CMNHNAME   = 'AERAOD3D'
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = 'AERAOD3D'
-    TZFIELD%CUNITS     = 'm'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%CCOMMENT   = 'X_Y_Z_Anthropogenic Aerosol Optical Depth'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
+    TZFIELD = TFIELDDATA(                                       &
+      CMNHNAME   = 'AERAOD3D',                                  &
+      CSTDNAME   = '',                                          &
+      CLONGNAME  = 'AERAOD3D',                                  &
+      CUNITS     = 'm',                                         &
+      CDIR       = 'XY',                                        &
+      CCOMMENT   = 'X_Y_Z_Anthropogenic Aerosol Optical Depth', &
+      NGRID      = 1,                                           &
+      NTYPE      = TYPEREAL,                                    &
+      NDIMS      = 3,                                           &
+      LTIMEDEP   = .TRUE.                                       )
     CALL IO_Field_write(TPFILE,TZFIELD,ZWORK31)
 !Orilam anthropogenic optical depth
     ZWORK21(:,:)=0.0
@@ -715,32 +728,34 @@ IF (NRAD_3D >= 1) THEN
         ENDDO
       ENDDO
     ENDDO
-    TZFIELD%CMNHNAME   = 'AERAOD2D'
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = 'AERAOD2D'
-    TZFIELD%CUNITS     = 'm'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%CCOMMENT   = 'X_Y_Anthropogenic Aerosol Optical Depth'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 2
-    TZFIELD%LTIMEDEP   = .TRUE.
+    TZFIELD = TFIELDDATA(                                     &
+      CMNHNAME   = 'AERAOD2D',                                &
+      CSTDNAME   = '',                                        &
+      CLONGNAME  = 'AERAOD2D',                                &
+      CUNITS     = 'm',                                       &
+      CDIR       = 'XY',                                      &
+      CCOMMENT   = 'X_Y_Anthropogenic Aerosol Optical Depth', &
+      NGRID      = 1,                                         &
+      NTYPE      = TYPEREAL,                                  &
+      NDIMS      = 2,                                         &
+      LTIMEDEP   = .TRUE.                                     )
     CALL IO_Field_write(TPFILE,TZFIELD,ZWORK21)
 !Orilam anthropogenic extinction (optical depth per km)
     DO JK=IKB,IKE
       IKRAD = JK - JPVEXT
       ZWORK31(:,:,JK)= XAER(:,:,IKRAD,4)/(XZZ(:,:,JK+1)-XZZ(:,:,JK))*1.D3
     ENDDO
-    TZFIELD%CMNHNAME   = 'AEREXT'
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = 'AEREXT'
-    TZFIELD%CUNITS     = 'km-1'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%CCOMMENT   = 'X_Y_Z_Anthropogenic EXTinction'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
+    TZFIELD = TFIELDDATA(                            &
+      CMNHNAME   = 'AEREXT',                         &
+      CSTDNAME   = '',                               &
+      CLONGNAME  = 'AEREXT',                         &
+      CUNITS     = 'km-1',                           &
+      CDIR       = 'XY',                             &
+      CCOMMENT   = 'X_Y_Z_Anthropogenic EXTinction', &
+      NGRID      = 1,                                &
+      NTYPE      = TYPEREAL,                         &
+      NDIMS      = 3,                                &
+      LTIMEDEP   = .TRUE.                            )
     CALL IO_Field_write(TPFILE,TZFIELD,ZWORK31)
   END IF
 END IF
@@ -814,28 +829,30 @@ IF (LEN_TRIM(CRAD_SAT) /= 0 .AND. NRR /=0) THEN
                       LSUBG_COND, LRAD_SUBG_COND, ZIRBT, ZWVBT,               &
                       INDGEO(JI), VSIGQSAT                                    )
     !
-    TZFIELD%CMNHNAME   = TRIM(YNAM_SAT(JI))//'_IRBT'
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'K'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%CCOMMENT   = TRIM(YNAM_SAT(JI))//' Infra-Red Brightness Temperature'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 2
-    TZFIELD%LTIMEDEP   = .TRUE.
+    TZFIELD = TFIELDDATA(                                                   &
+      CMNHNAME   = TRIM(YNAM_SAT(JI))//'_IRBT',                             &
+      CSTDNAME   = '',                                                      &
+      CLONGNAME  = TRIM(YNAM_SAT(JI))//'_IRBT',                             &
+      CUNITS     = 'K',                                                     &
+      CDIR       = 'XY',                                                    &
+      CCOMMENT   = TRIM(YNAM_SAT(JI))//' Infra-Red Brightness Temperature', &
+      NGRID      = 1,                                                       &
+      NTYPE      = TYPEREAL,                                                &
+      NDIMS      = 2,                                                       &
+      LTIMEDEP   = .TRUE.                                                   )
     CALL IO_Field_write(TPFILE,TZFIELD,ZIRBT)
     !
-    TZFIELD%CMNHNAME   = TRIM(YNAM_SAT(JI))//'_WVBT'
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'K'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%CCOMMENT   = TRIM(YNAM_SAT(JI))//' Water-Vapor Brightness Temperature'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 2
-    TZFIELD%LTIMEDEP   = .TRUE.
+    TZFIELD = TFIELDDATA(                                                     &
+      CMNHNAME   = TRIM(YNAM_SAT(JI))//'_WVBT',                               &
+      CSTDNAME   = '',                                                        &
+      CLONGNAME  = TRIM(YNAM_SAT(JI))//'_WVBT',                               &
+      CUNITS     = 'K',                                                       &
+      CDIR       = 'XY',                                                      &
+      CCOMMENT   = TRIM(YNAM_SAT(JI))//' Water-Vapor Brightness Temperature', &
+      NGRID      = 1,                                                         &
+      NTYPE      = TYPEREAL,                                                  &
+      NDIMS      = 2,                                                         &
+      LTIMEDEP   = .TRUE.                                                     )
     CALL IO_Field_write(TPFILE,TZFIELD,ZWVBT)
   END DO
   DEALLOCATE(ZIRBT,ZWVBT)
@@ -901,138 +918,148 @@ IF (CSURF=='EXTE') THEN
   ! in this case (argument KGRID=0), input winds are ZONal and MERidian 
   !          and, output ones are in MesoNH grid   
   IF (.NOT. LCARTESIAN) THEN
-    TZFIELD2(1)%CMNHNAME   = 'UM10'
-    TZFIELD2(1)%CSTDNAME   = ''
-    TZFIELD2(1)%CLONGNAME  = 'UM10'
-    TZFIELD2(1)%CUNITS     = 'm s-1'
-    TZFIELD2(1)%CDIR       = 'XY'
-    TZFIELD2(1)%CCOMMENT   = 'Zonal wind at 10m'
-    TZFIELD2(1)%NGRID      = 1
-    TZFIELD2(1)%NTYPE      = TYPEREAL
-    TZFIELD2(1)%NDIMS      = 2
-    TZFIELD2(1)%LTIMEDEP   = .TRUE.
+    TZFIELD2(1) = TFIELDDATA(           &
+      CMNHNAME   = 'UM10',              &
+      CSTDNAME   = '',                  &
+      CLONGNAME  = 'UM10',              &
+      CUNITS     = 'm s-1',             &
+      CDIR       = 'XY',                &
+      CCOMMENT   = 'Zonal wind at 10m', &
+      NGRID      = 1,                   &
+      NTYPE      = TYPEREAL,            &
+      NDIMS      = 2,                   &
+      LTIMEDEP   = .TRUE.               )
     !
-    TZFIELD2(2)%CMNHNAME   = 'VM10'
-    TZFIELD2(2)%CSTDNAME   = ''
-    TZFIELD2(2)%CLONGNAME  = 'VM10'
-    TZFIELD2(2)%CUNITS     = 'm s-1'
-    TZFIELD2(2)%CDIR       = 'XY'
-    TZFIELD2(2)%CCOMMENT   = 'Meridian wind at 10m'
-    TZFIELD2(2)%NGRID      = 1
-    TZFIELD2(2)%NTYPE      = TYPEREAL
-    TZFIELD2(2)%NDIMS      = 2
-    TZFIELD2(2)%LTIMEDEP   = .TRUE.
+    TZFIELD2(2) = TFIELDDATA(              &
+      CMNHNAME   = 'VM10',                 &
+      CSTDNAME   = '',                     &
+      CLONGNAME  = 'VM10',                 &
+      CUNITS     = 'm s-1',                &
+      CDIR       = 'XY',                   &
+      CCOMMENT   = 'Meridian wind at 10m', &
+      NGRID      = 1,                      &
+      NTYPE      = TYPEREAL,               &
+      NDIMS      = 2,                      &
+      LTIMEDEP   = .TRUE.                  )
     !
     CALL UV_TO_ZONAL_AND_MERID(XCURRENT_ZON10M,XCURRENT_MER10M,KGRID=0,TPFILE=TPFILE,TZFIELDS=TZFIELD2)
   ELSE
-    TZFIELD%CMNHNAME   = 'UM10'
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = 'UM10'
-    TZFIELD%CUNITS     = 'm s-1'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%CCOMMENT   = 'Zonal wind at 10m'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 2
-    TZFIELD%LTIMEDEP   = .TRUE.
+    TZFIELD = TFIELDDATA(               &
+      CMNHNAME   = 'UM10',              &
+      CSTDNAME   = '',                  &
+      CLONGNAME  = 'UM10',              &
+      CUNITS     = 'm s-1',             &
+      CDIR       = 'XY',                &
+      CCOMMENT   = 'Zonal wind at 10m', &
+      NGRID      = 1,                   &
+      NTYPE      = TYPEREAL,            &
+      NDIMS      = 2,                   &
+      LTIMEDEP   = .TRUE.               )
     CALL IO_Field_write(TPFILE,TZFIELD,XCURRENT_ZON10M)
     !
-    TZFIELD%CMNHNAME   = 'VM10'
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = 'VM10'
-    TZFIELD%CUNITS     = 'm s-1'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%CCOMMENT   = 'Meridian wind at 10m'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 2
-    TZFIELD%LTIMEDEP   = .TRUE.
+    TZFIELD = TFIELDDATA(                  &
+      CMNHNAME   = 'VM10',                 &
+      CSTDNAME   = '',                     &
+      CLONGNAME  = 'VM10',                 &
+      CUNITS     = 'm s-1',                &
+      CDIR       = 'XY',                   &
+      CCOMMENT   = 'Meridian wind at 10m', &
+      NGRID      = 1,                      &
+      NTYPE      = TYPEREAL,               &
+      NDIMS      = 2,                      &
+      LTIMEDEP   = .TRUE.                  )
     CALL IO_Field_write(TPFILE,TZFIELD,XCURRENT_MER10M)
   ENDIF
   !
   IF (SIZE(XTKET)>0) THEN
     ZWORK21(:,:) = SQRT(XCURRENT_ZON10M(:,:)**2+XCURRENT_MER10M(:,:)**2)
     ZWORK21(:,:) = ZWORK21(:,:) + 4. * SQRT(XTKET(:,:,IKB))
-    TZFIELD%CMNHNAME   = 'FF10MAX'
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = 'FF10MAX'
-    TZFIELD%CUNITS     = 'm s-1'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%CCOMMENT   = 'X_Y_FF10MAX'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 2
-    TZFIELD%LTIMEDEP   = .TRUE.
+    TZFIELD = TFIELDDATA(         &
+      CMNHNAME   = 'FF10MAX',     &
+      CSTDNAME   = '',            &
+      CLONGNAME  = 'FF10MAX',     &
+      CUNITS     = 'm s-1',       &
+      CDIR       = 'XY',          &
+      CCOMMENT   = 'X_Y_FF10MAX', &
+      NGRID      = 1,             &
+      NTYPE      = TYPEREAL,      &
+      NDIMS      = 2,             &
+      LTIMEDEP   = .TRUE.         )
     CALL IO_Field_write(TPFILE,TZFIELD,ZWORK21)
   END IF
   !
   IF(ANY(XCURRENT_SFCO2/=XUNDEF))THEN
-    TZFIELD%CMNHNAME   = 'SFCO2'
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = 'SFCO2'
-    TZFIELD%CUNITS     = 'mg m-2 s-1'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%CCOMMENT   = 'CO2 Surface flux'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 2
-    TZFIELD%LTIMEDEP   = .TRUE.
+    TZFIELD = TFIELDDATA(              &
+      CMNHNAME   = 'SFCO2',            &
+      CSTDNAME   = '',                 &
+      CLONGNAME  = 'SFCO2',            &
+      CUNITS     = 'mg m-2 s-1',       &
+      CDIR       = 'XY',               &
+      CCOMMENT   = 'CO2 Surface flux', &
+      NGRID      = 1,                  &
+      NTYPE      = TYPEREAL,           &
+      NDIMS      = 2,                  &
+      LTIMEDEP   = .TRUE.              )
     CALL IO_Field_write(TPFILE,TZFIELD,XCURRENT_SFCO2)
   END IF
   !
   IF(ANY(XCURRENT_SWD/=XUNDEF))THEN
-    TZFIELD%CMNHNAME   = 'SWD'
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = 'SWD'
-    TZFIELD%CUNITS     = 'W m-2'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%CCOMMENT   = 'incoming ShortWave at the surface'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 2
-    TZFIELD%LTIMEDEP   = .TRUE.
+    TZFIELD = TFIELDDATA(                               &
+      CMNHNAME   = 'SWD',                               &
+      CSTDNAME   = '',                                  &
+      CLONGNAME  = 'SWD',                               &
+      CUNITS     = 'W m-2',                             &
+      CDIR       = 'XY',                                &
+      CCOMMENT   = 'incoming ShortWave at the surface', &
+      NGRID      = 1,                                   &
+      NTYPE      = TYPEREAL,                            &
+      NDIMS      = 2,                                   &
+      LTIMEDEP   = .TRUE.                               )
     CALL IO_Field_write(TPFILE,TZFIELD,XCURRENT_SWD)
   END IF
   !
   IF(ANY(XCURRENT_SWU/=XUNDEF))THEN
-    TZFIELD%CMNHNAME   = 'SWU'
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = 'SWU'
-    TZFIELD%CUNITS     = 'W m-2'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%CCOMMENT   = 'outcoming ShortWave at the surface'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 2
-    TZFIELD%LTIMEDEP   = .TRUE.
+    TZFIELD = TFIELDDATA(                                &
+      CMNHNAME   = 'SWU',                                &
+      CSTDNAME   = '',                                   &
+      CLONGNAME  = 'SWU',                                &
+      CUNITS     = 'W m-2',                              &
+      CDIR       = 'XY',                                 &
+      CCOMMENT   = 'outcoming ShortWave at the surface', &
+      NGRID      = 1,                                    &
+      NTYPE      = TYPEREAL,                             &
+      NDIMS      = 2,                                    &
+      LTIMEDEP   = .TRUE.                                )
     CALL IO_Field_write(TPFILE,TZFIELD,XCURRENT_SWU)
   END IF
 !
   IF(ANY(XCURRENT_LWD/=XUNDEF))THEN
-    TZFIELD%CMNHNAME   = 'LWD'
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = 'LWD'
-    TZFIELD%CUNITS     = 'W m-2'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%CCOMMENT   = 'incoming LongWave at the surface'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 2
-    TZFIELD%LTIMEDEP   = .TRUE.
+    TZFIELD = TFIELDDATA(                              &
+      CMNHNAME   = 'LWD',                              &
+      CSTDNAME   = '',                                 &
+      CLONGNAME  = 'LWD',                              &
+      CUNITS     = 'W m-2',                            &
+      CDIR       = 'XY',                               &
+      CCOMMENT   = 'incoming LongWave at the surface', &
+      NGRID      = 1,                                  &
+      NTYPE      = TYPEREAL,                           &
+      NDIMS      = 2,                                  &
+      LTIMEDEP   = .TRUE.                              )
     CALL IO_Field_write(TPFILE,TZFIELD,XCURRENT_LWD)
   END IF
 !
   IF(ANY(XCURRENT_LWU/=XUNDEF))THEN
-    TZFIELD%CMNHNAME   = 'LWU'
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = 'LWU'
-    TZFIELD%CUNITS     = 'W m-2'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%CCOMMENT   = 'outcoming LongWave at the surface'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 2
-    TZFIELD%LTIMEDEP   = .TRUE.
+    TZFIELD = TFIELDDATA(                               &
+      CMNHNAME   = 'LWU',                               &
+      CSTDNAME   = '',                                  &
+      CLONGNAME  = 'LWU',                               &
+      CUNITS     = 'W m-2',                             &
+      CDIR       = 'XY',                                &
+      CCOMMENT   = 'outcoming LongWave at the surface', &
+      NGRID      = 1,                                   &
+      NTYPE      = TYPEREAL,                            &
+      NDIMS      = 2,                                   &
+      LTIMEDEP   = .TRUE.                               )
     CALL IO_Field_write(TPFILE,TZFIELD,XCURRENT_LWD)
   END IF
 END IF
@@ -1072,12 +1099,14 @@ ALLOCATE(ZWORK34(IIU,IJU,IKU))
   END DO
   PRINT *,'PRESSURE LEVELS WHERE TO INTERPOLATE=',ZPRES(1,1,:)
   !
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 2
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDDATA(    &
+    CMNHNAME   = 'variables at pressure levels', & !Temporary name to ease identification
+    CSTDNAME   = '',       &
+    CDIR       = 'XY',     &
+    NGRID      = 1,        &
+    NTYPE      = TYPEREAL, &
+    NDIMS      = 2,        &
+    LTIMEDEP   = .TRUE.    )
   !
 !
 !*       Standard Variables
@@ -1177,12 +1206,14 @@ ALLOCATE(ZWORK34(IIU,IJU,IKU))
 
   PRINT *,'POTENTIAL TEMPERATURE LEVELS WHERE TO INTERPOLATE=',ZTH(:)
   !
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 2
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDDATA(    &
+    CMNHNAME   = 'variables at pot. temp. levels', & !Temporary name to ease identification
+    CSTDNAME   = '',       &
+    CDIR       = 'XY',     &
+    NGRID      = 1,        &
+    NTYPE      = TYPEREAL, &
+    NDIMS      = 2,        &
+    LTIMEDEP   = .TRUE.    )
   !
 !
 !*       Standard Variables
@@ -1279,16 +1310,17 @@ IF (LISOAL .AND.XISOAL(1)/=0.) THEN
 ! *********************
 ! Altitude
 ! *********************
-  TZFIELD%CMNHNAME   = 'ALT_ALT'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'ALT_ALT'
-  TZFIELD%CUNITS     = 'm'
-  TZFIELD%CDIR       = '--'
-  TZFIELD%CCOMMENT   = 'Z_alt ALT'
-  TZFIELD%NGRID      = 0
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 1
-  TZFIELD%LTIMEDEP   = .FALSE.
+  TZFIELD = TFIELDDATA(       &
+    CMNHNAME   = 'ALT_ALT',   &
+    CSTDNAME   = '',          &
+    CLONGNAME  = 'ALT_ALT',   &
+    CUNITS     = 'm',         &
+    CDIR       = '--',        &
+    CCOMMENT   = 'Z_alt ALT', &
+    NGRID      = 0,           &
+    NTYPE      = TYPEREAL,    &
+    NDIMS      = 1,           &
+    LTIMEDEP   = .FALSE.      )
   CALL IO_Field_write(TPFILE,TZFIELD,ZAL)
 !
 !*       Standard Variables
@@ -1302,16 +1334,17 @@ IF (LISOAL .AND.XISOAL(1)/=0.) THEN
   ZWORK31(:,:,:) = ZWORK31(:,:,:)*1.E3
   CALL ZINTER(ZWORK31, XZZ, ZWAL, ZAL, IIU, IJU, IKU, IKB, IAL, XUNDEF)
   WHERE(ZWAL.EQ.XUNDEF) ZWAL=ZFILLVAL
-  TZFIELD%CMNHNAME   = 'ALT_CLOUD'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'ALT_CLOUD'
-  TZFIELD%CUNITS     = 'g kg-1'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_cloud ALT'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDDATA(           &
+    CMNHNAME   = 'ALT_CLOUD',     &
+    CSTDNAME   = '',              &
+    CLONGNAME  = 'ALT_CLOUD',     &
+    CUNITS     = 'g kg-1',        &
+    CDIR       = 'XY',            &
+    CCOMMENT   = 'X_Y_cloud ALT', &
+    NGRID      = 1,               &
+    NTYPE      = TYPEREAL,        &
+    NDIMS      = 3,               &
+    LTIMEDEP   = .TRUE.           )
   CALL IO_Field_write(TPFILE,TZFIELD,ZWAL)
 ! *********************
 ! Precipitation
@@ -1324,48 +1357,51 @@ IF (LISOAL .AND.XISOAL(1)/=0.) THEN
   ZWORK31(:,:,:) = ZWORK31(:,:,:)*1.E3
   CALL ZINTER(ZWORK31, XZZ, ZWAL, ZAL, IIU, IJU, IKU, IKB, IAL, XUNDEF)
   WHERE(ZWAL.EQ.XUNDEF) ZWAL=ZFILLVAL
-  TZFIELD%CMNHNAME   = 'ALT_PRECIP'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'ALT_PRECIP'
-  TZFIELD%CUNITS     = 'g kg-1'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_precipitation ALT'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDDATA(                   &
+    CMNHNAME   = 'ALT_PRECIP',            &
+    CSTDNAME   = '',                      &
+    CLONGNAME  = 'ALT_PRECIP',            &
+    CUNITS     = 'g kg-1',                &
+    CDIR       = 'XY',                    &
+    CCOMMENT   = 'X_Y_precipitation ALT', &
+    NGRID      = 1,                       &
+    NTYPE      = TYPEREAL,                &
+    NDIMS      = 3,                       &
+    LTIMEDEP   = .TRUE.                   )
   CALL IO_Field_write(TPFILE,TZFIELD,ZWAL)
 ! *********************
 ! Potential temperature
 ! *********************
   CALL ZINTER(XTHT, XZZ, ZWAL, ZAL, IIU, IJU, IKU, IKB, IAL, XUNDEF)
   WHERE(ZWAL.EQ.XUNDEF) ZWAL=ZFILLVAL
-  TZFIELD%CMNHNAME   = 'ALT_THETA'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'ALT_THETA'
-  TZFIELD%CUNITS     = 'K'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_potential temperature ALT'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDDATA(                           &
+    CMNHNAME   = 'ALT_THETA',                     &
+    CSTDNAME   = '',                              &
+    CLONGNAME  = 'ALT_THETA',                     &
+    CUNITS     = 'K',                             &
+    CDIR       = 'XY',                            &
+    CCOMMENT   = 'X_Y_potential temperature ALT', &
+    NGRID      = 1,                               &
+    NTYPE      = TYPEREAL,                        &
+    NDIMS      = 3,                               &
+    LTIMEDEP   = .TRUE.                           )
   CALL IO_Field_write(TPFILE,TZFIELD,ZWAL)
 ! *********************
 ! Pressure
 ! *********************
   CALL ZINTER(XPABST, XZZ, ZWAL, ZAL, IIU, IJU, IKU, IKB, IAL, XUNDEF)
   WHERE(ZWAL.EQ.XUNDEF) ZWAL=ZFILLVAL
-  TZFIELD%CMNHNAME   = 'ALT_PRESSURE'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'ALT_PRESSURE'
-  TZFIELD%CUNITS     = 'Pa'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_pressure ALT'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDDATA(              &
+    CMNHNAME   = 'ALT_PRESSURE',     &
+    CSTDNAME   = '',                 &
+    CLONGNAME  = 'ALT_PRESSURE',     &
+    CUNITS     = 'Pa',               &
+    CDIR       = 'XY',               &
+    CCOMMENT   = 'X_Y_pressure ALT', &
+    NGRID      = 1,                  &
+    NTYPE      = TYPEREAL,           &
+    NDIMS      = 3,                  &
+    LTIMEDEP   = .TRUE.              )
   CALL IO_Field_write(TPFILE,TZFIELD,ZWAL)
 ! *********************
 ! Potential Vorticity
@@ -1389,16 +1425,17 @@ IF (LISOAL .AND.XISOAL(1)/=0.) THEN
   ZPOVO(:,:,IKU)=-1.E+11
   CALL ZINTER(ZPOVO, XZZ, ZWAL, ZAL, IIU, IJU, IKU, IKB, IAL, XUNDEF)
   WHERE(ZWAL.EQ.XUNDEF) ZWAL=ZFILLVAL
-  TZFIELD%CMNHNAME   = 'ALT_PV'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'ALT_PV'
-  TZFIELD%CUNITS     = 'PVU'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_Potential Vorticity ALT'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDDATA(                         &
+    CMNHNAME   = 'ALT_PV',                      &
+    CSTDNAME   = '',                            &
+    CLONGNAME  = 'ALT_PV',                      &
+    CUNITS     = 'PVU',                         &
+    CDIR       = 'XY',                          &
+    CCOMMENT   = 'X_Y_Potential Vorticity ALT', &
+    NGRID      = 1,                             &
+    NTYPE      = TYPEREAL,                      &
+    NDIMS      = 3,                             &
+    LTIMEDEP   = .TRUE.                         )
   CALL IO_Field_write(TPFILE,TZFIELD,ZWAL)
 ! *********************
 ! Wind
@@ -1406,31 +1443,33 @@ IF (LISOAL .AND.XISOAL(1)/=0.) THEN
   ZWORK31(:,:,:) = MXF(XUT(:,:,:))
   CALL ZINTER(ZWORK31, XZZ, ZWAL, ZAL, IIU, IJU, IKU, IKB, IAL, XUNDEF)
   WHERE(ZWAL.EQ.XUNDEF) ZWAL=ZFILLVAL
-  TZFIELD%CMNHNAME   = 'ALT_U'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'ALT_U'
-  TZFIELD%CUNITS     = 'm s-1'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_U component of wind ALT'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDDATA(                         &
+    CMNHNAME   = 'ALT_U',                       &
+    CSTDNAME   = '',                            &
+    CLONGNAME  = 'ALT_U',                       &
+    CUNITS     = 'm s-1',                       &
+    CDIR       = 'XY',                          &
+    CCOMMENT   = 'X_Y_U component of wind ALT', &
+    NGRID      = 1,                             &
+    NTYPE      = TYPEREAL,                      &
+    NDIMS      = 3,                             &
+    LTIMEDEP   = .TRUE.                         )
   CALL IO_Field_write(TPFILE,TZFIELD,ZWAL)
   !
   ZWORK31(:,:,:) = MYF(XVT(:,:,:))
   CALL ZINTER(ZWORK31, XZZ, ZWAL, ZAL, IIU, IJU, IKU, IKB, IAL, XUNDEF)
   WHERE(ZWAL.EQ.XUNDEF) ZWAL=ZFILLVAL
-  TZFIELD%CMNHNAME   = 'ALT_V'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'ALT_V'
-  TZFIELD%CUNITS     = 'm s-1'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_V component of wind ALT'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDDATA(                         &
+    CMNHNAME   = 'ALT_V',                       &
+    CSTDNAME   = '',                            &
+    CLONGNAME  = 'ALT_V',                       &
+    CUNITS     = 'm s-1',                       &
+    CDIR       = 'XY',                          &
+    CCOMMENT   = 'X_Y_V component of wind ALT', &
+    NGRID      = 1,                             &
+    NTYPE      = TYPEREAL,                      &
+    NDIMS      = 3,                             &
+    LTIMEDEP   = .TRUE.                         )
   CALL IO_Field_write(TPFILE,TZFIELD,ZWAL)
 ! *********************
 ! Dust extinction (optical depth per km)
@@ -1442,16 +1481,17 @@ IF (LISOAL .AND.XISOAL(1)/=0.) THEN
     ENDDO
     CALL ZINTER(ZWORK31, XZZ, ZWAL, ZAL, IIU, IJU, IKU, IKB, IAL, XUNDEF)
     WHERE(ZWAL.EQ.XUNDEF) ZWAL=ZFILLVAL
-    TZFIELD%CMNHNAME   = 'ALT_DSTEXT'
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = 'ALT_DSTEXT'
-    TZFIELD%CUNITS     = 'km-1'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%CCOMMENT   = 'X_Y_DuST EXTinction ALT'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
+    TZFIELD = TFIELDDATA(                     &
+      CMNHNAME   = 'ALT_DSTEXT',              &
+      CSTDNAME   = '',                        &
+      CLONGNAME  = 'ALT_DSTEXT',              &
+      CUNITS     = 'km-1',                    &
+      CDIR       = 'XY',                      &
+      CCOMMENT   = 'X_Y_DuST EXTinction ALT', &
+      NGRID      = 1,                         &
+      NTYPE      = TYPEREAL,                  &
+      NDIMS      = 3,                         &
+      LTIMEDEP   = .TRUE.                     )
     CALL IO_Field_write(TPFILE,TZFIELD,ZWAL)
   END IF
 !
@@ -1484,16 +1524,17 @@ IF (LCOARSE) THEN
   CALL BLOCKAVG(XTKET,IDX,IDX,ZWORK31)
   ZWORK31=0.5*( ZUU_AVG+ZVV_AVG+ZWW_AVG ) + ZWORK31
   WRITE (YDX,FMT='(I3.3)') IDX
-  TZFIELD%CMNHNAME   = 'TKEBAVG'//YDX
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'TKEBAVG'//YDX
-  TZFIELD%CUNITS     = 'm2 s-2'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'TKE_BLOCKAVG'//YDX
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDDATA(               &
+    CMNHNAME   = 'TKEBAVG'//YDX,      &
+    CSTDNAME   = '',                  &
+    CLONGNAME  = 'TKEBAVG'//YDX,      &
+    CUNITS     = 'm2 s-2',            &
+    CDIR       = 'XY',                &
+    CCOMMENT   = 'TKE_BLOCKAVG'//YDX, &
+    NGRID      = 1,                   &
+    NTYPE      = TYPEREAL,            &
+    NDIMS      = 3,                   &
+    LTIMEDEP   = .TRUE.               )
   CALL IO_Field_write(TPFILE,TZFIELD,ZWORK31)
 !---------------------------------
 ! MOVING AVERAGE OF TKE OVER IDX+1 POINTS
@@ -1514,16 +1555,17 @@ IF (LCOARSE) THEN
   CALL MOVINGAVG(XTKET,IDX,IDX,ZWORK31)
   ZWORK31=0.5*( ZUU_AVG+ZVV_AVG+ZWW_AVG ) + ZWORK31
   WRITE (YDX,FMT='(I3.3)') 2*IDX+1
-  TZFIELD%CMNHNAME   = 'TKEMAVG'//YDX
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'TKEMAVG'//YDX
-  TZFIELD%CUNITS     = 'm2 s-2'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'TKE_MOVINGAVG'//YDX
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDDATA(                &
+    CMNHNAME   = 'TKEMAVG'//YDX,       &
+    CSTDNAME   = '',                   &
+    CLONGNAME  = 'TKEMAVG'//YDX,       &
+    CUNITS     = 'm2 s-2',             &
+    CDIR       = 'XY',                 &
+    CCOMMENT   = 'TKE_MOVINGAVG'//YDX, &
+    NGRID      = 1,                    &
+    NTYPE      = TYPEREAL,             &
+    NDIMS      = 3,                    &
+    LTIMEDEP   = .TRUE.                )
   CALL IO_Field_write(TPFILE,TZFIELD,ZWORK31)
 END IF
 !

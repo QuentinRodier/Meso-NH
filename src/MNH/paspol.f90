@@ -141,7 +141,7 @@ REAL    :: ZP, ZTH, ZT, ZRHO, ZMASAIR
 !INTEGER                    :: J4PTI,J4PTJ,J9PTI,J9PTJ
 !
 REAL,  DIMENSION(:,:,:), ALLOCATABLE :: ZRHOM  ! 
-REAL,  DIMENSION(:,:,:), ALLOCATABLE :: ZTEMPO, ZSVT ! Work arrays
+REAL,  DIMENSION(:,:,:), ALLOCATABLE :: ZSVT ! Work arrays
 !
 TYPE(DATE_TIME)   :: TZDATE1,TZDATE2,TZDATE3,TZDATE4,TZDATE
 TYPE(TFIELDDATA)  :: TZFIELD
@@ -579,27 +579,23 @@ END DO
 !*	3.4 Ecriture conditionnelle.
 !
 IF ( tpfile%lopened ) THEN
-  ALLOCATE( ZTEMPO(IIU,IJU,IKU) )
-  !
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CUNITS     = 'm-3'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDDATA(    &
+    CMNHNAME   = 'generic for paspol', & !Temporary name to ease identification
+    CSTDNAME   = '',       &
+    CUNITS     = 'm-3',    &
+    CDIR       = 'XY',     &
+    NGRID      = 1,        &
+    NTYPE      = TYPEREAL, &
+    NDIMS      = 3,        &
+    LTIMEDEP   = .TRUE.    )
   !
   DO JSV=1,NSV_PP
-    ZTEMPO(:,:,:)=XATC(:,:,:,JSV)
-    !
     WRITE(TZFIELD%CMNHNAME,'(A3,I3.3)')'ATC',JSV+NSV_PPBEG-1
     TZFIELD%CLONGNAME = TRIM(TZFIELD%CMNHNAME)
     WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','ATC',JSV+NSV_PPBEG-1
     !
-    CALL IO_Field_write(TPFILE,TZFIELD,ZTEMPO)
+    CALL IO_Field_write(TPFILE,TZFIELD,XATC(:,:,:,JSV))
   END DO
-  !
-  DEALLOCATE(ZTEMPO)
 ENDIF
 !
 DEALLOCATE(ZRHOM, ZSVT)

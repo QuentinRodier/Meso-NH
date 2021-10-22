@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2009-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2009-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -207,14 +207,15 @@ CALL IO_Field_read(TPFILE1,'ZS',XZS)
 !
 !*	2.8 Rugosite Z0. 
 !
-tzfield%cmnhname  = 'Z0'
-tzfield%clongname = ''
-tzfield%cunits    = 'm'
-tzfield%cdir      = 'XY'
-tzfield%ccomment  = 'X_Y_Z0'
-tzfield%ngrid     = 4
-tzfield%ntype     = TYPEREAL
-tzfield%ndims     = 2
+tzfield = tfielddata(   &
+  cmnhname  = 'Z0',     &
+  clongname = '',       &
+  cunits    = 'm',      &
+  cdir      = 'XY',     &
+  ccomment  = 'X_Y_Z0', &
+  ngrid     = 4,        &
+  ntype     = TYPEREAL, &
+  ndims     = 2         )
 CALL IO_Field_read(TPFILE1,tzfield,XZ0)
 !
 XXPTSOMNH=XXHAT(1)+(XXHAT(2)-XXHAT(1))/2

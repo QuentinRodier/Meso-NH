@@ -366,54 +366,58 @@ END IF
 !* prints in the file the 3D Courant numbers (one should flag this)
 !
 IF ( tpfile%lopened .AND. OCFL_WRIT .AND. (.NOT. L1D) ) THEN
-    TZFIELD%CMNHNAME   = 'CFLU'
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = 'CFLU'
-    TZFIELD%CUNITS     = '1'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%CCOMMENT   = 'X_Y_Z_CFLU'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
+    TZFIELD = TFIELDDATA(        &
+      CMNHNAME   = 'CFLU',       &
+      CSTDNAME   = '',           &
+      CLONGNAME  = 'CFLU',       &
+      CUNITS     = '1',          &
+      CDIR       = 'XY',         &
+      CCOMMENT   = 'X_Y_Z_CFLU', &
+      NGRID      = 1,            &
+      NTYPE      = TYPEREAL,     &
+      NDIMS      = 3,            &
+      LTIMEDEP   = .TRUE.        )
     CALL IO_Field_write(TPFILE,TZFIELD,ZCFLU)
 !
   IF (.NOT. L2D) THEN
-    TZFIELD%CMNHNAME   = 'CFLV'
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = 'CFLV'
-    TZFIELD%CUNITS     = '1'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%CCOMMENT   = 'X_Y_Z_CFLV'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
+    TZFIELD = TFIELDDATA(        &
+      CMNHNAME   = 'CFLV',       &
+      CSTDNAME   = '',           &
+      CLONGNAME  = 'CFLV',       &
+      CUNITS     = '1',          &
+      CDIR       = 'XY',         &
+      CCOMMENT   = 'X_Y_Z_CFLV', &
+      NGRID      = 1,            &
+      NTYPE      = TYPEREAL,     &
+      NDIMS      = 3,            &
+      LTIMEDEP   = .TRUE.        )
     CALL IO_Field_write(TPFILE,TZFIELD,ZCFLV)
   END IF
 !
-    TZFIELD%CMNHNAME   = 'CFLW'
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = 'CFLW'
-    TZFIELD%CUNITS     = '1'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%CCOMMENT   = 'X_Y_Z_CFLW'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
+    TZFIELD = TFIELDDATA(        &
+      CMNHNAME   = 'CFLW',       &
+      CSTDNAME   = '',           &
+      CLONGNAME  = 'CFLW',       &
+      CUNITS     = '1',          &
+      CDIR       = 'XY',         &
+      CCOMMENT   = 'X_Y_Z_CFLW', &
+      NGRID      = 1,            &
+      NTYPE      = TYPEREAL,     &
+      NDIMS      = 3,            &
+      LTIMEDEP   = .TRUE.        )
     CALL IO_Field_write(TPFILE,TZFIELD,ZCFLW)
 !
-    TZFIELD%CMNHNAME   = 'CFL'
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = 'CFL'
-    TZFIELD%CUNITS     = '1'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%CCOMMENT   = 'X_Y_Z_CFL'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
+    TZFIELD = TFIELDDATA(       &
+      CMNHNAME   = 'CFL',       &
+      CSTDNAME   = '',          &
+      CLONGNAME  = 'CFL',       &
+      CUNITS     = '1',         &
+      CDIR       = 'XY',        &
+      CCOMMENT   = 'X_Y_Z_CFL', &
+      NGRID      = 1,           &
+      NTYPE      = TYPEREAL,    &
+      NDIMS      = 3,           &
+      LTIMEDEP   = .TRUE.       )
     CALL IO_Field_write(TPFILE,TZFIELD,ZCFL)
 END IF
 !

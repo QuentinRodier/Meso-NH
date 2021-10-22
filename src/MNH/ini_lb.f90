@@ -361,17 +361,18 @@ END SELECT
 !*        2.5 LB-Rx
 !
 IF(KSIZELBXR_ll  > 0 ) THEN
-  TZFIELD%CMNHNAME   = 'HORELAX_R'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'HORELAX_R'
-  TZFIELD%CUNITS     = ''
-  TZFIELD%CDIR       = '--'
-  TZFIELD%CCOMMENT   = 'Switch to activate the HOrizontal RELAXation'
-  TZFIELD%CLBTYPE    = 'NONE'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPELOG
-  TZFIELD%NDIMS      = 0
-  TZFIELD%LTIMEDEP   = .FALSE.
+  TZFIELD = TFIELDDATA(                                          &
+    CMNHNAME   = 'HORELAX_R',                                    &
+    CSTDNAME   = '',                                             &
+    CLONGNAME  = 'HORELAX_R',                                    &
+    CUNITS     = '',                                             &
+    CDIR       = '--',                                           &
+    CCOMMENT   = 'Switch to activate the HOrizontal RELAXation', &
+    CLBTYPE    = 'NONE',                                         &
+    NGRID      = 1,                                              &
+    NTYPE      = TYPELOG,                                        &
+    NDIMS      = 0,                                              &
+    LTIMEDEP   = .FALSE.                                         )
   !
   CALL IO_Field_read(TPINIFILE,TZFIELD,GHORELAX_R)
   !
@@ -389,13 +390,13 @@ IF(KSIZELBXR_ll  > 0 ) THEN
     IL3DY=2*JPHEXT ! 2
   END IF
   !
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CUNITS     = 'kg kg-1'
-  TZFIELD%CDIR       = ''
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDDATA(     &
+    CUNITS     = 'kg kg-1', &
+    CDIR       = '',        &
+    NGRID      = 1,         &
+    NTYPE      = TYPEREAL,  &
+    NDIMS      = 3,         &
+    LTIMEDEP   = .TRUE.     )
   !
   IRR=0
   JRR=1

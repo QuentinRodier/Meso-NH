@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1997-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1997-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -468,32 +468,33 @@ IF (CPROGRAM == 'DIAG  ' ) THEN
       Z2D(JI,JJ) = PZMASS_MX(JI,JJ,IK_BL_TOP(JI,JJ)) - PZS_LS(JI,JJ)
     END DO
   END DO
-  TZFIELD%CMNHNAME   = 'HBLTOP'
-  TZFIELD%CSTDNAME   = 'atmosphere_boundary_layer_thickness'
-  TZFIELD%CLONGNAME  = 'HBLTOP'
-  TZFIELD%CUNITS     = 'm'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'Height of Boundary Layer TOP'
-  TZFIELD%NGRID      = 4
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 2
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDDATA(                                 &
+    CMNHNAME   = 'HBLTOP',                              &
+    CSTDNAME   = 'atmosphere_boundary_layer_thickness', &
+    CLONGNAME  = 'HBLTOP',                              &
+    CUNITS     = 'm',                                   &
+    CDIR       = 'XY',                                  &
+    CCOMMENT   = 'Height of Boundary Layer TOP',        &
+    NGRID      = 4,                                     &
+    NTYPE      = TYPEREAL,                              &
+    NDIMS      = 2,                                     &
+    LTIMEDEP   = .TRUE.                                 )
   CALL IO_Field_write(TPFILE,TZFIELD,Z2D)
 !
 !*      11.2  Writing of level of boundary layer top
 !             --------------------------------------
 !
-  Z2D(:,:) = IK_BL_TOP(:,:)
-  TZFIELD%CMNHNAME   = 'KBLTOP'
-  TZFIELD%CSTDNAME   = 'model_level_number_at_top_of_atmosphere_boundary_layer'
-  TZFIELD%CLONGNAME  = 'KBLTOP'
-  TZFIELD%CUNITS     = '1'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'Index of Boundary Layer TOP'
-  TZFIELD%NGRID      = 4
-  TZFIELD%NTYPE      = TYPEINT
-  TZFIELD%NDIMS      = 2
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDDATA(                                                    &
+    CMNHNAME   = 'KBLTOP',                                                 &
+    CSTDNAME   = 'model_level_number_at_top_of_atmosphere_boundary_layer', &
+    CLONGNAME  = 'KBLTOP',                                                 &
+    CUNITS     = '1',                                                      &
+    CDIR       = 'XY',                                                     &
+    CCOMMENT   = 'Index of Boundary Layer TOP',                            &
+    NGRID      = 4,                                                        &
+    NTYPE      = TYPEINT,                                                  &
+    NDIMS      = 2,                                                        &
+    LTIMEDEP   = .TRUE.                                                    )
   CALL IO_Field_write(TPFILE,TZFIELD,IK_BL_TOP)
 END IF
 !
@@ -502,19 +503,18 @@ IF (CPROGRAM /= 'DIAG  ' .AND. CPROGRAM /= 'IDEAL ' ) THEN
 !*      11.3  Writing of free atmosphere gradient
 !             -----------------------------------
 !
-  Z2D(:,:)=ZFREE_GR(:,:)
-!
-  TZFIELD%CMNHNAME   = 'FREE_ATM_GR'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'FREE_ATM_GR'
-  TZFIELD%CUNITS     = 'K m-1'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'Free atmosphere gradient'
-  TZFIELD%NGRID      = 4
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 2
-  TZFIELD%LTIMEDEP   = .TRUE.
-  CALL IO_Field_write(TPFILE,TZFIELD,Z2D)
+  TZFIELD = TFIELDDATA(                      &
+    CMNHNAME   = 'FREE_ATM_GR',              &
+    CSTDNAME   = '',                         &
+    CLONGNAME  = 'FREE_ATM_GR',              &
+    CUNITS     = 'K m-1',                    &
+    CDIR       = 'XY',                       &
+    CCOMMENT   = 'Free atmosphere gradient', &
+    NGRID      = 4,                          &
+    NTYPE      = TYPEREAL,                   &
+    NDIMS      = 2,                          &
+    LTIMEDEP   = .TRUE.                      )
+  CALL IO_Field_write(TPFILE,TZFIELD,ZFREE_GR(:,:))
 !
 !*      11.4  Writing of free atmosphere 3D profiles
 !             --------------------------------------
@@ -525,16 +525,17 @@ IF (CPROGRAM /= 'DIAG  ' .AND. CPROGRAM /= 'IDEAL ' ) THEN
   CALL COEF_VER_INTERP_LIN(PZ_FREE(:,:,:),ZZMASS(:,:,:),OLEUG=.TRUE.)
   Z3D(:,:,:)=VER_INTERP_LIN(PF_FREE(:,:,:),NKLIN(:,:,:),XCOEFLIN(:,:,:))
 !
-  TZFIELD%CMNHNAME   = 'THV_FREE'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'THV_FREE'
-  TZFIELD%CUNITS     = 'K'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_Z_THV_FREE'
-  TZFIELD%NGRID      = 4
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDDATA(            &
+    CMNHNAME   = 'THV_FREE',       &
+    CSTDNAME   = '',               &
+    CLONGNAME  = 'THV_FREE',       &
+    CUNITS     = 'K',              &
+    CDIR       = 'XY',             &
+    CCOMMENT   = 'X_Y_Z_THV_FREE', &
+    NGRID      = 4,                &
+    NTYPE      = TYPEREAL,         &
+    NDIMS      = 3,                &
+    LTIMEDEP   = .TRUE.            )
   CALL IO_Field_write(TPFILE,TZFIELD,Z3D)
 !
 END IF

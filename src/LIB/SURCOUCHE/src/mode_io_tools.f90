@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -123,16 +123,17 @@ subroutine IO_Mnhversion_get(tpfile)
   if ( .not. associated( tpfile%tmainfile ) ) then
     imnhversion(:) = 0
     !use tzfield because tfieldlist could be not initialised
-    tzfield%cmnhname   = 'MNHVERSION'
-    tzfield%cstdname   = ''
-    tzfield%clongname  = 'MesoNH version'
-    tzfield%cunits     = ''
-    tzfield%cdir       = '--'
-    tzfield%ccomment   = ''
-    tzfield%ngrid      = 0
-    tzfield%ntype      = TYPEINT
-    tzfield%ndims      = 1
-    tzfield%ltimedep   = .false.
+    tzfield = tfielddata(            &
+      cmnhname   = 'MNHVERSION',     &
+      cstdname   = '',               &
+      clongname  = 'MesoNH version', &
+      cunits     = '',               &
+      cdir       = '--',             &
+      ccomment   = '',               &
+      ngrid      = 0,                &
+      ntype      = TYPEINT,          &
+      ndims      = 1,                &
+      ltimedep   = .false.           )
     call IO_Field_read(tpfile,tzfield,imnhversion,iresp)
     if (iresp/=0) then
       tzfield%cmnhname   = 'MASDEV'

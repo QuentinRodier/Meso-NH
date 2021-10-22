@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1997-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1997-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -11,7 +11,7 @@ CONTAINS
 
 SUBROUTINE PREPARE_METADATA_WRITE_SURF(HREC,HDIR,HCOMMENT,KGRID,KTYPE,KDIMS,HSUBR,TPFIELD)
 !
-use modd_field, only: tfielddata, tfieldlist, TYPECHAR, TYPEDATE, TYPELOG
+use modd_field, only: tfielddata, tfieldlist
 
 use mode_field, only: Find_field_id_from_mnhname
 USE MODE_MSG
@@ -99,23 +99,23 @@ IF (IRESP==0) THEN
   END IF
 ELSE
   CALL PRINT_MSG(NVERB_DEBUG,'IO',TRIM(HSUBR),TRIM(HREC)//' not found in FIELDLIST. Generating default metadata')
-  TPFIELD%CMNHNAME   = TRIM(HREC)
-  TPFIELD%CSTDNAME   = ''
-  TPFIELD%CLONGNAME  = TRIM(HREC)
-  TPFIELD%CUNITS     = ''
-  TPFIELD%CDIR       = HDIR
-  TPFIELD%CCOMMENT   = TRIM(HCOMMENT)
-  TPFIELD%NGRID      = KGRID
-  TPFIELD%NTYPE      = KTYPE
-  TPFIELD%NDIMS      = KDIMS
+  TPFIELD = TFIELDDATA(          &
+    CMNHNAME   = TRIM(HREC),     &
+    CSTDNAME   = '',             &
+    CLONGNAME  = TRIM(HREC),     &
+    CUNITS     = '',             &
+    CDIR       = HDIR,           &
+    CCOMMENT   = TRIM(HCOMMENT), &
+    NGRID      = KGRID,          &
+    NTYPE      = KTYPE,          &
+    NDIMS      = KDIMS,          &
+    LTIMEDEP   = .FALSE.         )
 #if 0
   IF (TPFIELD%NDIMS==0 .OR. TPFIELD%NTYPE==TYPECHAR .OR. TPFIELD%NTYPE==TYPEDATE .OR. TPFIELD%NTYPE==TYPELOG) THEN
     TPFIELD%LTIMEDEP   = .FALSE.
   ELSE
     TPFIELD%LTIMEDEP   = .TRUE.
   END IF
-#else
-  TPFIELD%LTIMEDEP   = .FALSE.
 #endif
 END IF
 !
@@ -641,16 +641,17 @@ END IF
 !GCOVER_PACKED = ( NB_PROCIO_W /= 1 )
 GCOVER_PACKED = .FALSE.
 !
-TZFIELD%CMNHNAME   = 'COVER_PACKED'
-TZFIELD%CSTDNAME   = ''
-TZFIELD%CLONGNAME  = 'COVER_PACKED'
-TZFIELD%CUNITS     = ''
-TZFIELD%CDIR       = '--'
-TZFIELD%CCOMMENT   = ''
-TZFIELD%NGRID      = 0
-TZFIELD%NTYPE      = TYPELOG
-TZFIELD%NDIMS      = 0
-TZFIELD%LTIMEDEP   = .FALSE.
+TZFIELD = TFIELDDATA(          &
+  CMNHNAME   = 'COVER_PACKED', &
+  CSTDNAME   = '',             &
+  CLONGNAME  = 'COVER_PACKED', &
+  CUNITS     = '',             &
+  CDIR       = '--',           &
+  CCOMMENT   = '',             &
+  NGRID      = 0,              &
+  NTYPE      = TYPELOG,        &
+  NDIMS      = 0,              &
+  LTIMEDEP   = .FALSE.         )
 CALL IO_Field_write(TFILE_SURFEX,TZFIELD,GCOVER_PACKED,KRESP)
 !
 IF (KRESP /=0) THEN
@@ -671,17 +672,19 @@ END DO
 !
 IF (.NOT. GCOVER_PACKED) THEN
   ICOVER=0
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CUNITS     = ''
-  TZFIELD%NGRID      = 4
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 2
-  TZFIELD%LTIMEDEP   = .FALSE.
+  TZFIELD = TFIELDDATA(                         &
+    CMNHNAME   = 'generic for COVER variables', & !Temporary name to ease identification
+    CSTDNAME   = '',                            &
+    CUNITS     = '',                            &
+    CDIR       = YDIR,                          &
+    NGRID      = 4,                             &
+    NTYPE      = TYPEREAL,                      &
+    NDIMS      = 2,                             &
+    LTIMEDEP   = .FALSE.                        )
   DO JL2=1,SIZE(OFLAG)
     WRITE(YREC,'(A5,I3.3)') 'COVER',JL2
     TZFIELD%CMNHNAME   = TRIM(YREC)
     TZFIELD%CLONGNAME  = TRIM(YREC)
-    TZFIELD%CDIR       = YDIR
     TZFIELD%CCOMMENT   = 'X_Y_'//TRIM(YREC)
     IF (OFLAG(JL2)) THEN
       ICOVER=ICOVER+1
@@ -1527,16 +1530,17 @@ ELSE
   ITDATE(2,:) = KMONTH (:)
   ITDATE(3,:) = KDAY   (:)
   !
-  TZFIELD%CMNHNAME   = TRIM(HREC)//'%TDATE'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-  TZFIELD%CUNITS     = ''
-  TZFIELD%CDIR       = '--'
-  TZFIELD%CCOMMENT   = TRIM(HCOMMENT)
-  TZFIELD%NGRID      = 0
-  TZFIELD%NTYPE      = TYPEINT
-  TZFIELD%NDIMS      = 2
-  TZFIELD%LTIMEDEP   = .FALSE.
+  TZFIELD = TFIELDDATA(                &
+    CMNHNAME   = TRIM(HREC)//'%TDATE', &
+    CSTDNAME   = '',                   &
+    CLONGNAME  = TRIM(HREC)//'%TDATE', &
+    CUNITS     = '',                   &
+    CDIR       = '--',                 &
+    CCOMMENT   = TRIM(HCOMMENT),       &
+    NGRID      = 0,                    &
+    NTYPE      = TYPEINT,              &
+    NDIMS      = 2,                    &
+    LTIMEDEP   = .FALSE.               )
   !
   CALL IO_Field_write(TFILE_SURFEX,TZFIELD,ITDATE(:,:),KRESP)
   !
@@ -1545,16 +1549,17 @@ ELSE
     CALL PRINT_MSG(NVERB_ERROR,'IO','WRITE_SURFT1_MNH','error when writing article '//TRIM(HREC)//' KRESP='//YMSG)
   END IF
   !
-  TZFIELD%CMNHNAME   = TRIM(HREC)//'%xtime'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-  TZFIELD%CUNITS     = ''
-  TZFIELD%CDIR       = '--'
-  TZFIELD%CCOMMENT   = TRIM(HCOMMENT)
-  TZFIELD%NGRID      = 0
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 1
-  TZFIELD%LTIMEDEP   = .FALSE.
+  TZFIELD = TFIELDDATA(                &
+    CMNHNAME   = TRIM(HREC)//'%xtime', &
+    CSTDNAME   = '',                   &
+    CLONGNAME  = TRIM(HREC)//'%xtime', &
+    CUNITS     = '',                   &
+    CDIR       = '--',                 &
+    CCOMMENT   = TRIM(HCOMMENT),       &
+    NGRID      = 0,                    &
+    NTYPE      = TYPEREAL,             &
+    NDIMS      = 1,                    &
+    LTIMEDEP   = .FALSE.               )
   !
   CALL IO_Field_write(TFILE_SURFEX,TZFIELD,PTIME(:),KRESP)
 !

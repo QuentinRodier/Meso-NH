@@ -538,68 +538,73 @@ END IF ! end of HTURBDIM if-block
 IF ( OTURB_DIAG .AND. tpfile%lopened ) THEN
   !
   ! stores the RED_TH1
-  TZFIELD%CMNHNAME   = 'RED_TH1'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'RED_TH1'
-  TZFIELD%CUNITS     = '1'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_Z_RED_TH1'
-  TZFIELD%NGRID      = 4
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDDATA(           &
+    CMNHNAME   = 'RED_TH1',       &
+    CSTDNAME   = '',              &
+    CLONGNAME  = 'RED_TH1',       &
+    CUNITS     = '1',             &
+    CDIR       = 'XY',            &
+    CCOMMENT   = 'X_Y_Z_RED_TH1', &
+    NGRID      = 4,               &
+    NTYPE      = TYPEREAL,        &
+    NDIMS      = 3,               &
+    LTIMEDEP   = .TRUE.           )
   CALL IO_Field_write(TPFILE,TZFIELD,PREDTH1)
   !
   ! stores the RED_R1
-  TZFIELD%CMNHNAME   = 'RED_R1'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'RED_R1'
-  TZFIELD%CUNITS     = '1'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_Z_RED_R1'
-  TZFIELD%NGRID      = 4
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDDATA(          &
+    CMNHNAME   = 'RED_R1',       &
+    CSTDNAME   = '',             &
+    CLONGNAME  = 'RED_R1',       &
+    CUNITS     = '1',            &
+    CDIR       = 'XY',           &
+    CCOMMENT   = 'X_Y_Z_RED_R1', &
+    NGRID      = 4,              &
+    NTYPE      = TYPEREAL,       &
+    NDIMS      = 3,              &
+    LTIMEDEP   = .TRUE.          )
   CALL IO_Field_write(TPFILE,TZFIELD,PREDR1)
   !
   ! stores the RED2_TH3
-  TZFIELD%CMNHNAME   = 'RED2_TH3'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'RED2_TH3'
-  TZFIELD%CUNITS     = '1'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_Z_RED2_TH3'
-  TZFIELD%NGRID      = 4
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDDATA(            &
+    CMNHNAME   = 'RED2_TH3',       &
+    CSTDNAME   = '',               &
+    CLONGNAME  = 'RED2_TH3',       &
+    CUNITS     = '1',              &
+    CDIR       = 'XY',             &
+    CCOMMENT   = 'X_Y_Z_RED2_TH3', &
+    NGRID      = 4,                &
+    NTYPE      = TYPEREAL,         &
+    NDIMS      = 3,                &
+    LTIMEDEP   = .TRUE.            )
   CALL IO_Field_write(TPFILE,TZFIELD,PRED2TH3)
   !
   ! stores the RED2_R3
-  TZFIELD%CMNHNAME   = 'RED2_R3'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'RED2_R3'
-  TZFIELD%CUNITS     = '1'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_Z_RED2_R3'
-  TZFIELD%NGRID      = 4
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDDATA(           &
+    CMNHNAME   = 'RED2_R3',       &
+    CSTDNAME   = '',              &
+    CLONGNAME  = 'RED2_R3',       &
+    CUNITS     = '1',             &
+    CDIR       = 'XY',            &
+    CCOMMENT   = 'X_Y_Z_RED2_R3', &
+    NGRID      = 4,               &
+    NTYPE      = TYPEREAL,        &
+    NDIMS      = 3,               &
+    LTIMEDEP   = .TRUE.           )
   CALL IO_Field_write(TPFILE,TZFIELD,PRED2R3)
   !
   ! stores the RED2_THR3
-  TZFIELD%CMNHNAME   = 'RED2_THR3'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'RED2_THR3'
-  TZFIELD%CUNITS     = '1'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_Z_RED2_THR3'
-  TZFIELD%NGRID      = 4
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDDATA(             &
+    CMNHNAME   = 'RED2_THR3',       &
+    CSTDNAME   = '',                &
+    CLONGNAME  = 'RED2_THR3',       &
+    CUNITS     = '1',               &
+    CDIR       = 'XY',              &
+    CCOMMENT   = 'X_Y_Z_RED2_THR3', &
+    NGRID      = 4,                 &
+    NTYPE      = TYPEREAL,          &
+    NDIMS      = 3,                 &
+    LTIMEDEP   = .TRUE.             )
   CALL IO_Field_write(TPFILE,TZFIELD,PRED2THR3)
   !
 END IF

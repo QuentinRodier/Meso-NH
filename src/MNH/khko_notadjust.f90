@@ -389,28 +389,30 @@ END IF
   PNPRO(:,:,:) = ZACT(:,:,:) 
 !
 IF ( tpfile%lopened ) THEN
-  TZFIELD%CMNHNAME   = 'SURSAT'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'SURSAT'
-  TZFIELD%CUNITS     = '1'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_Z_NEB'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .FALSE.
+  TZFIELD = TFIELDDATA(       &
+    CMNHNAME   = 'SURSAT',    &
+    CSTDNAME   = '',          &
+    CLONGNAME  = 'SURSAT',    &
+    CUNITS     = '1',         &
+    CDIR       = 'XY',        &
+    CCOMMENT   = 'X_Y_Z_NEB', &
+    NGRID      = 1,           &
+    NTYPE      = TYPEREAL,    &
+    NDIMS      = 3,           &
+    LTIMEDEP   = .FALSE.      )
   CALL IO_Field_write(TPFILE,TZFIELD,ZWORK)
   !
-  TZFIELD%CMNHNAME   = 'ACT_OD'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'ACT_OD'
-  TZFIELD%CUNITS     = '1'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_Z_NEB'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .FALSE.
+  TZFIELD = TFIELDDATA(       &
+    CMNHNAME   = 'ACT_OD',    &
+    CSTDNAME   = '',          &
+    CLONGNAME  = 'ACT_OD',    &
+    CUNITS     = '1',         &
+    CDIR       = 'XY',        &
+    CCOMMENT   = 'X_Y_Z_NEB', &
+    NGRID      = 1,           &
+    NTYPE      = TYPEREAL,    &
+    NDIMS      = 3,           &
+    LTIMEDEP   = .FALSE.      )
   CALL IO_Field_write(TPFILE,TZFIELD,ZACT)
 END IF
 !

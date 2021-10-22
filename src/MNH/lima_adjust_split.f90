@@ -726,16 +726,17 @@ IF ( OSUBG_COND ) THEN
 END IF ! fin test OSUBG_COND
 
 IF ( tpfile%lopened ) THEN
-   TZFIELD%CMNHNAME   = 'NEB'
-   TZFIELD%CSTDNAME   = ''
-   TZFIELD%CLONGNAME  = 'NEB'
-   TZFIELD%CUNITS     = '1'
-   TZFIELD%CDIR       = 'XY'
-   TZFIELD%CCOMMENT   = 'X_Y_Z_NEB'
-   TZFIELD%NGRID      = 1
-   TZFIELD%NTYPE      = TYPEREAL
-   TZFIELD%NDIMS      = 3
-   TZFIELD%LTIMEDEP   = .TRUE.
+   TZFIELD = TFIELDDATA(       &
+     CMNHNAME   = 'NEB',       &
+     CSTDNAME   = '',          &
+     CLONGNAME  = 'NEB',       &
+     CUNITS     = '1',         &
+     CDIR       = 'XY',        &
+     CCOMMENT   = 'X_Y_Z_NEB', &
+     NGRID      = 1,           &
+     NTYPE      = TYPEREAL,    &
+     NDIMS      = 3,           &
+     LTIMEDEP   = .TRUE.       )
    CALL IO_Field_write(TPFILE,TZFIELD,PCLDFR)
 END IF
 !
@@ -781,16 +782,17 @@ IF ( tpfile%lopened ) THEN
    ZW1(:,:,:)= 2.0*PPABST(:,:,:)-PPABSM(:,:,:)
    ZW(:,:,:) = PRVT(:,:,:)*( ZW1(:,:,:)-ZW(:,:,:) ) / ( (XMV/XMD) * ZW(:,:,:) ) - 1.0
    
-   TZFIELD%CMNHNAME   = 'SSI'
-   TZFIELD%CSTDNAME   = ''
-   TZFIELD%CLONGNAME  = 'SSI'
-   TZFIELD%CUNITS     = ''
-   TZFIELD%CDIR       = 'XY'
-   TZFIELD%CCOMMENT   = 'X_Y_Z_SSI'
-   TZFIELD%NGRID      = 1
-   TZFIELD%NTYPE      = TYPEREAL
-   TZFIELD%NDIMS      = 3
-   TZFIELD%LTIMEDEP   = .TRUE.
+   TZFIELD = TFIELDDATA(       &
+     CMNHNAME   = 'SSI',       &
+     CSTDNAME   = '',          &
+     CLONGNAME  = 'SSI',       &
+     CUNITS     = '',          &
+     CDIR       = 'XY',        &
+     CCOMMENT   = 'X_Y_Z_SSI', &
+     NGRID      = 1,           &
+     NTYPE      = TYPEREAL,    &
+     NDIMS      = 3,           &
+     LTIMEDEP   = .TRUE.       )
    CALL IO_Field_write(TPFILE,TZFIELD,ZW)
 END IF
 !

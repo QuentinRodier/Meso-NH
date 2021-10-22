@@ -696,42 +696,46 @@ IF ( OTURB_FLX .AND. tpfile%lopened ) THEN
 !
 ! stores the Turbulent Prandtl number
 ! 
-  TZFIELD%CMNHNAME   = 'PHI3'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'PHI3'
-  TZFIELD%CUNITS     = '1'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'Turbulent Prandtl number'
-  TZFIELD%NGRID      = 4
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDDATA(                      &
+    CMNHNAME   = 'PHI3',                     &
+    CSTDNAME   = '',                         &
+    CLONGNAME  = 'PHI3',                     &
+    CUNITS     = '1',                        &
+    CDIR       = 'XY',                       &
+    CCOMMENT   = 'Turbulent Prandtl number', &
+    NGRID      = 4,                          &
+    NTYPE      = TYPEREAL,                   &
+    NDIMS      = 3,                          &
+    LTIMEDEP   = .TRUE.                      )
   CALL IO_Field_write(TPFILE,TZFIELD,ZPHI3)
 !
 ! stores the Turbulent Schmidt number
 ! 
-  TZFIELD%CMNHNAME   = 'PSI3'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'PSI3'
-  TZFIELD%CUNITS     = '1'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'Turbulent Schmidt number'
-  TZFIELD%NGRID      = 4
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDDATA(                      &
+    CMNHNAME   = 'PSI3',                     &
+    CSTDNAME   = '',                         &
+    CLONGNAME  = 'PSI3',                     &
+    CUNITS     = '1',                        &
+    CDIR       = 'XY',                       &
+    CCOMMENT   = 'Turbulent Schmidt number', &
+    NGRID      = 4,                          &
+    NTYPE      = TYPEREAL,                   &
+    NDIMS      = 3,                          &
+    LTIMEDEP   = .TRUE.                      )
   CALL IO_Field_write(TPFILE,TZFIELD,ZPSI3)
 !
 !
 ! stores the Turbulent Schmidt number for the scalar variables
 ! 
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CUNITS     = '1'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%NGRID      = 4
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDDATA(                        &
+    CMNHNAME   = 'generic for SV in turb_ver', & !Temporary name to ease identification
+    CSTDNAME   = '',                           &
+    CUNITS     = '1',                          &
+    CDIR       = 'XY',                         &
+    NGRID      = 4,                            &
+    NTYPE      = TYPEREAL,                     &
+    NDIMS      = 3,                            &
+    LTIMEDEP   = .TRUE.                        )
   DO JSV=1,NSV
     WRITE(TZFIELD%CMNHNAME, '("PSI_SV_",I3.3)') JSV
     TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)

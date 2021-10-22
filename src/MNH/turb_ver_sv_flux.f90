@@ -359,6 +359,7 @@ REAL :: ZTIME1, ZTIME2
 REAL :: ZCSVP = 4.0  ! constant for scalar flux presso-correlation (RS81)
 REAL :: ZCSV          !constant for the scalar flux
 !
+CHARACTER(LEN=NMNHNAMELGTMAX) :: YMNHNAME
 TYPE(TFIELDDATA)  :: TZFIELD
 !----------------------------------------------------------------------------
 !
@@ -453,17 +454,19 @@ DO JSV=1,ISV
   !
   IF (OTURB_FLX .AND. tpfile%lopened) THEN
     ! stores the JSVth vertical flux
-    WRITE(TZFIELD%CMNHNAME,'("WSV_FLX_",I3.3)') JSV
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+    WRITE(YMNHNAME,'("WSV_FLX_",I3.3)') JSV
+    TZFIELD = TFIELDDATA(                        &
+      CMNHNAME   = TRIM( YMNHNAME ),             &
+      CSTDNAME   = '',                           &
+      CLONGNAME  = TRIM( YMNHNAME ),             &
     !PW: TODO: use the correct units of the JSV variable (and multiply it by m s-1)
-    TZFIELD%CUNITS     = 'SVUNIT m s-1'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%CCOMMENT   = 'X_Y_Z_'//TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%NGRID      = 4
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
+      CUNITS     = 'SVUNIT m s-1',               &
+      CDIR       = 'XY',                         &
+      CCOMMENT   = 'X_Y_Z_' // TRIM( YMNHNAME ), &
+      NGRID      = 4,                            &
+      NTYPE      = TYPEREAL,                     &
+      NDIMS      = 3,                            &
+      LTIMEDEP   = .TRUE.                        )
     !
     CALL IO_Field_write(TPFILE,TZFIELD,ZFLXZ)
   END IF

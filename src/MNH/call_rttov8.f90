@@ -686,6 +686,7 @@ REAL(Kind=jprb), PARAMETER :: q_mixratio_to_ppmv  = 1.60771704e+6_JPRB
 REAL(Kind=jprb), PARAMETER :: o3_mixratio_to_ppmv = 6.03504e+5_JPRB
 INTEGER(Kind=jpim) :: alloc_status(40)
 
+CHARACTER(LEN=:), ALLOCATABLE :: YMNHNAME, YUNITS, YCOMMENT
 TYPE(TFIELDDATA) :: TZFIELD
 
 ! - End of header --------------------------------------------------------
@@ -1567,16 +1568,17 @@ DO JSAT=1,IJSAT ! loop over sensors
 !    DO JK1=1,LEN_TRIM(inst_name(KRTTOVINFO(3,JSAT)))
 !      YINST(JK1:JK1)=CHAR(ICHAR(YINST(JK1:JK1))-32)
 !    END DO
-    TZFIELD%CMNHNAME   = TRIM(YINST)//'_ANGL'
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'degree'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%CCOMMENT   = TRIM(YINST)//' ANGLE'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 2
-    TZFIELD%LTIMEDEP   = .TRUE.
+    TZFIELD = TFIELDDATA(                &
+      CMNHNAME   = TRIM(YINST)//'_ANGL', &
+      CSTDNAME   = '',                   &
+      CLONGNAME  = TRIM(YINST)//'_ANGL', &
+      CUNITS     = 'degree',             &
+      CDIR       = 'XY',                 &
+      CCOMMENT   = TRIM(YINST)//' ANGLE' &
+      NGRID      = 1,                    &
+      NTYPE      = TYPEREAL,             &
+      NDIMS      = 2,                    &
+      LTIMEDEP   = .TRUE.                )
     PRINT *,TZFIELD%CMNHNAME//TZFIELD%CCOMMENT
     CALL IO_Field_write(TPFILE,TZFIELD,ZANTMP)
   END IF
@@ -1619,36 +1621,41 @@ DO JSAT=1,IJSAT ! loop over sensors
       YEND=YTWO//YCHAN
     END IF
     IF (INRAD==1) THEN
-      TZFIELD%CMNHNAME   = TRIM(YBEG)//'_'//TRIM(YEND)//'rad'
-      TZFIELD%CUNITS     = 'mw/cm-1/ster/sq.m'
-      TZFIELD%CCOMMENT   = TRIM(YBEG)//'_'//TRIM(YEND)//' rad'
+      YMNHNAME   = TRIM(YBEG)//'_'//TRIM(YEND)//'rad'
+      YUNITS     = 'mw/cm-1/ster/sq.m'
+      YCOMMENT   = TRIM(YBEG)//'_'//TRIM(YEND)//' rad'
     ELSE
-      TZFIELD%CMNHNAME   = TRIM(YBEG)//'_'//TRIM(YEND)//'BT'
-      TZFIELD%CUNITS     = 'K'
-      TZFIELD%CCOMMENT   = TRIM(YBEG)//'_'//TRIM(YEND)//' BT'
+      YMNHNAME   = TRIM(YBEG)//'_'//TRIM(YEND)//'BT'
+      YUNITS     = 'K'
+      YCOMMENT   = TRIM(YBEG)//'_'//TRIM(YEND)//' BT'
     ENDIF
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 2
-    TZFIELD%LTIMEDEP   = .TRUE.
+    TZFIELD = TFIELDDATA(            &
+      CMNHNAME   = TRIM( YMNHNAME ), &
+      CSTDNAME   = '',               &
+      CLONGNAME  = TRIM( YMNHNAME ), &
+      CUNITS     = TRIM( YUNITS ),   &
+      CDIR       = 'XY',             &
+      CCOMMENT   = TRIM( YCOMMENT ), &
+      NGRID      = 1,                &
+      NTYPE      = TYPEREAL,         &
+      NDIMS      = 2,                &
+      LTIMEDEP   = .TRUE.            )
     PRINT *,TZFIELD%CMNHNAME//TZFIELD%CCOMMENT, &
          MINVAL(ZTBTMP(:,:,JCH),ZTBTMP(:,:,JCH)/=XUNDEF), &
          MAXVAL(ZTBTMP(:,:,JCH),ZTBTMP(:,:,JCH)/=XUNDEF)
     CALL IO_Field_write(TPFILE,TZFIELD,ZTBTMP(:,:,JCH))
     IF (KRTTOVINFO(3,JSAT) == 4.AND. JCH==3 ) THEN ! AMSU-B
-      TZFIELD%CMNHNAME   = TRIM(YBEG)//'_UTH'
-      TZFIELD%CSTDNAME   = ''
-      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-      TZFIELD%CUNITS     = 'percent'
-      TZFIELD%CDIR       = 'XY'
-      TZFIELD%CCOMMENT   = TRIM(YBEG)//'_UTH'
-      TZFIELD%NGRID      = 1
-      TZFIELD%NTYPE      = TYPEREAL
-      TZFIELD%NDIMS      = 2
-      TZFIELD%LTIMEDEP   = .TRUE.
+      TZFIELD = TFIELDDATA(              &
+        CMNHNAME   = TRIM(YBEG)//'_UTH', &
+        CSTDNAME   = '',                 &
+        CLONGNAME  = TRIM(YBEG)//'_UTH', &
+        CUNITS     = 'percent',          &
+        CDIR       = 'XY',               &
+        CCOMMENT   = TRIM(YBEG)//'_UTH', &
+        NGRID      = 1,                  &
+        NTYPE      = TYPEREAL,           &
+        NDIMS      = 2,                  &
+        LTIMEDEP   = .TRUE.              )
 ! UTH computation from Buehler and John JGR 2005
       ZZH= 833000. ! (m) nominal altitude of the satellite
       zdeg_to_rad = XPI / 180.0
@@ -1720,31 +1727,33 @@ DO JSAT=1,IJSAT ! loop over sensors
         END DO
       END DO
       !
-      TZFIELD%CMNHNAME   = TRIM(YBEG)//'_'//TRIM(YEND)//'JAT'
-      TZFIELD%CSTDNAME   = ''
-      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-      TZFIELD%CUNITS     = 'K K-1'
-      TZFIELD%CDIR       = 'XY'
-      TZFIELD%CCOMMENT   = TRIM(YBEG)//'_'//TRIM(YEND)//' JATEMP'
-      TZFIELD%NGRID      = 1
-      TZFIELD%NTYPE      = TYPEREAL
-      TZFIELD%NDIMS      = 2
-      TZFIELD%LTIMEDEP   = .TRUE.
+      TZFIELD = TFIELDDATA(                                  &
+        CMNHNAME   = TRIM(YBEG)//'_'//TRIM(YEND)//'JAT',     &
+        CSTDNAME   = '',                                     &
+        CLONGNAME  = TRIM(YBEG)//'_'//TRIM(YEND)//'JAT',     &
+        CUNITS     = 'K K-1',                                &
+        CDIR       = 'XY',                                   &
+        CCOMMENT   = TRIM(YBEG)//'_'//TRIM(YEND)//' JATEMP', &
+        NGRID      = 1,                                      &
+        NTYPE      = TYPEREAL,                               &
+        NDIMS      = 2,                                      &
+        LTIMEDEP   = .TRUE.                                  )
       PRINT *,TZFIELD%CMNHNAME//TZFIELD%CCOMMENT, &
            MINVAL(ZTEMPK(:,:,:),ZTEMPK(:,:,:)/=XUNDEF), &
            MAXVAL(ZTEMPK(:,:,:),ZTEMPK(:,:,:)/=XUNDEF)
       CALL IO_Field_write(TPFILE,TZFIELD,ZTEMPK(:,:,:))
       !
-      TZFIELD%CMNHNAME   = TRIM(YBEG)//'_'//TRIM(YEND)//'JAV'
-      TZFIELD%CSTDNAME   = ''
-      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-      TZFIELD%CUNITS     = 'K'
-      TZFIELD%CDIR       = 'XY'
-      TZFIELD%CCOMMENT   = TRIM(YBEG)//'_'//TRIM(YEND)//' JAWVAP'
-      TZFIELD%NGRID      = 1
-      TZFIELD%NTYPE      = TYPEREAL
-      TZFIELD%NDIMS      = 2
-      TZFIELD%LTIMEDEP   = .TRUE.
+      TZFIELD = TFIELDDATA(                                  &
+        CMNHNAME   = TRIM(YBEG)//'_'//TRIM(YEND)//'JAV',     &
+        CSTDNAME   = '',                                     &
+        CLONGNAME  = TRIM(YBEG)//'_'//TRIM(YEND)//'JAV',     &
+        CUNITS     = 'K',                                    &
+        CDIR       = 'XY',                                   &
+        CCOMMENT   = TRIM(YBEG)//'_'//TRIM(YEND)//' JAWVAP', &
+        NGRID      = 1,                                      &
+        NTYPE      = TYPEREAL,                               &
+        NDIMS      = 2,                                      &
+        LTIMEDEP   = .TRUE.                                  )
       WHERE (ZWVAPK(:,:,:) /= XUNDEF) &
            ZWVAPK(:,:,:)=ZWVAPK(:,:,:)*(-0.1*PRT(:,:,:,1))
       PRINT *,TZFIELD%CMNHNAME//TZFIELD%CCOMMENT, &

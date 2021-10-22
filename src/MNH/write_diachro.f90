@@ -408,30 +408,32 @@ ILENCOMMENT = LFICOMMENTLGT
 !
 ! 1er enregistrement TYPE
 !
-TZFIELD%CMNHNAME   = TRIM(ygroup)//'.TYPE'
-TZFIELD%CSTDNAME   = ''
-TZFIELD%CLONGNAME  = TRIM(ygroup)//'.TYPE'
-TZFIELD%CUNITS     = ''
-TZFIELD%CDIR       = '--'
-TZFIELD%CCOMMENT   = TRIM(YCOMMENT)
-TZFIELD%NGRID      = tpfields(1)%ngrid
-TZFIELD%NTYPE      = TYPECHAR
-TZFIELD%NDIMS      = 0
-TZFIELD%LTIMEDEP   = .FALSE.
+TZFIELD = TFIELDDATA(                 &
+  CMNHNAME   = TRIM(ygroup)//'.TYPE', &
+  CSTDNAME   = '',                    &
+  CLONGNAME  = TRIM(ygroup)//'.TYPE', &
+  CUNITS     = '',                    &
+  CDIR       = '--',                  &
+  CCOMMENT   = TRIM(YCOMMENT),        &
+  NGRID      = tpfields(1)%ngrid,     &
+  NTYPE      = TYPECHAR,              &
+  NDIMS      = 0,                     &
+  LTIMEDEP   = .FALSE.                )
 CALL IO_Field_write(tzfile,TZFIELD,YTYPE)
 !
 ! 2eme  enregistrement DIMENSIONS des MATRICES et LONGUEUR des TABLEAUX de CARACTERES et FLAGS de COMPRESSION sur les DIFFERENTS AXES
 !
-TZFIELD%CMNHNAME   = TRIM(ygroup)//'.DIM'
-TZFIELD%CSTDNAME   = ''
-TZFIELD%CLONGNAME  = TRIM(ygroup)//'.DIM'
-TZFIELD%CUNITS     = ''
-TZFIELD%CDIR       = '--'
-TZFIELD%CCOMMENT   = TRIM(YCOMMENT)
-TZFIELD%NGRID      = tpfields(1)%ngrid
-TZFIELD%NTYPE      = TYPEINT
-TZFIELD%NDIMS      = 1
-TZFIELD%LTIMEDEP   = .FALSE.
+TZFIELD = TFIELDDATA(                &
+  CMNHNAME   = TRIM(ygroup)//'.DIM', &
+  CSTDNAME   = '',                   &
+  CLONGNAME  = TRIM(ygroup)//'.DIM', &
+  CUNITS     = '',                   &
+  CDIR       = '--',                 &
+  CCOMMENT   = TRIM(YCOMMENT),       &
+  NGRID      = tpfields(1)%ngrid,    &
+  NTYPE      = TYPEINT,              &
+  NDIMS      = 1,                    &
+  LTIMEDEP   = .FALSE.               )
 SELECT CASE(YTYPE)
   CASE('CART','MASK','SPXY')
     if ( iil < 0 .or. iih < 0 .or. ijl < 0 .or. ijh < 0 .or. ikl < 0 .or. ikh < 0 ) then
@@ -488,16 +490,17 @@ END SELECT
 !
 ! 3eme enregistrement TITRE
 !
-TZFIELD%CMNHNAME   = TRIM(ygroup)//'.TITRE'
-TZFIELD%CSTDNAME   = ''
-TZFIELD%CLONGNAME  = TRIM(ygroup)//'.TITRE'
-TZFIELD%CUNITS     = ''
-TZFIELD%CDIR       = '--'
-TZFIELD%CCOMMENT   = TRIM(YCOMMENT)
-TZFIELD%NGRID      = tpfields(1)%ngrid
-TZFIELD%NTYPE      = TYPECHAR
-TZFIELD%NDIMS      = 1
-TZFIELD%LTIMEDEP   = .FALSE.
+TZFIELD = TFIELDDATA(                  &
+  CMNHNAME   = TRIM(ygroup)//'.TITRE', &
+  CSTDNAME   = '',                     &
+  CLONGNAME  = TRIM(ygroup)//'.TITRE', &
+  CUNITS     = '',                     &
+  CDIR       = '--',                   &
+  CCOMMENT   = TRIM(YCOMMENT),         &
+  NGRID      = tpfields(1)%ngrid,      &
+  NTYPE      = TYPECHAR,               &
+  NDIMS      = 1,                      &
+  LTIMEDEP   = .FALSE.                 )
 allocate( ytitles( ip ) )
 ytitles(:) = tpfields(1 : ip)%cmnhname
 CALL IO_Field_write(tzfile,TZFIELD,ytitles(:))
@@ -505,16 +508,17 @@ deallocate( ytitles )
 !
 ! 4eme enregistrement UNITE
 !
-TZFIELD%CMNHNAME   = TRIM(ygroup)//'.UNITE'
-TZFIELD%CSTDNAME   = ''
-TZFIELD%CLONGNAME  = TRIM(ygroup)//'.UNITE'
-TZFIELD%CUNITS     = ''
-TZFIELD%CDIR       = '--'
-TZFIELD%CCOMMENT   = TRIM(YCOMMENT)
-TZFIELD%NGRID      = tpfields(1)%ngrid
-TZFIELD%NTYPE      = TYPECHAR
-TZFIELD%NDIMS      = 1
-TZFIELD%LTIMEDEP   = .FALSE.
+TZFIELD = TFIELDDATA(                  &
+  CMNHNAME   = TRIM(ygroup)//'.UNITE', &
+  CSTDNAME   = '',                     &
+  CLONGNAME  = TRIM(ygroup)//'.UNITE', &
+  CUNITS     = '',                     &
+  CDIR       = '--',                   &
+  CCOMMENT   = TRIM(YCOMMENT),         &
+  NGRID      = tpfields(1)%ngrid,      &
+  NTYPE      = TYPECHAR,               &
+  NDIMS      = 1,                      &
+  LTIMEDEP   = .FALSE.                 )
 allocate( yunits( ip ) )
 yunits(:) = tpfields(1 : ip)%cunits
 CALL IO_Field_write(tzfile,TZFIELD,yunits(:))
@@ -522,16 +526,17 @@ deallocate( yunits )
 !
 ! 5eme enregistrement COMMENT
 !
-TZFIELD%CMNHNAME   = TRIM(ygroup)//'.COMMENT'
-TZFIELD%CSTDNAME   = ''
-TZFIELD%CLONGNAME  = TRIM(ygroup)//'.COMMENT'
-TZFIELD%CUNITS     = ''
-TZFIELD%CDIR       = '--'
-TZFIELD%CCOMMENT   = TRIM(YCOMMENT)
-TZFIELD%NGRID      = tpfields(1)%ngrid
-TZFIELD%NTYPE      = TYPECHAR
-TZFIELD%NDIMS      = 1
-TZFIELD%LTIMEDEP   = .FALSE.
+TZFIELD = TFIELDDATA(                    &
+  CMNHNAME   = TRIM(ygroup)//'.COMMENT', &
+  CSTDNAME   = '',                       &
+  CLONGNAME  = TRIM(ygroup)//'.COMMENT', &
+  CUNITS     = '',                       &
+  CDIR       = '--',                     &
+  CCOMMENT   = TRIM(YCOMMENT),           &
+  NGRID      = tpfields(1)%ngrid,        &
+  NTYPE      = TYPECHAR,                 &
+  NDIMS      = 1,                        &
+  LTIMEDEP   = .FALSE.                   )
 allocate( ycomments( ip ) )
 ycomments(:) = tpfields(1 : ip)%ccomment
 CALL IO_Field_write(tzfile,TZFIELD,ycomments(:))
@@ -564,30 +569,32 @@ DO J = 1,IP
           WRITE(YJ,'(I3)')J
   ENDIF
   IF ( gdistributed ) THEN
-    TZFIELD%CMNHNAME   = TRIM(ygroup)//'.PROC'//YJ
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = tpfields(j)%cunits
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%CCOMMENT   = TRIM(tpfields(j)%cmnhname)//' - '//TRIM(tpfields(j)%ccomment)//' ('// Trim( tpfields(j)%cunits ) //')'
-    TZFIELD%NGRID      = tpfields(j)%ngrid
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 5
-    TZFIELD%LTIMEDEP   = .FALSE.
+    TZFIELD = TFIELDDATA(                     &
+      CMNHNAME   = TRIM(ygroup)//'.PROC'//YJ, &
+      CSTDNAME   = '',                        &
+      CLONGNAME  = TRIM(ygroup)//'.PROC'//YJ, &
+      CUNITS     = tpfields(j)%cunits,        &
+      CDIR       = 'XY',                      &
+      CCOMMENT   = TRIM(tpfields(j)%cmnhname)//' - '//TRIM(tpfields(j)%ccomment)//' ('// Trim( tpfields(j)%cunits ) //')', &
+      NGRID      = tpfields(j)%ngrid,         &
+      NTYPE      = TYPEREAL,                  &
+      NDIMS      = 5,                         &
+      LTIMEDEP   = .FALSE.                    )
 
     CALL IO_Field_write_BOX(tzfile,TZFIELD,'BUDGET',PVAR(:,:,:,:,:,J), &
                             iil+JPHEXT,iih+JPHEXT,ijl+JPHEXT,ijh+JPHEXT)
   ELSE
-    TZFIELD%CMNHNAME   = TRIM(ygroup)//'.PROC'//YJ
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = tpfields(j)%cunits
-    TZFIELD%CDIR       = '--'
-    TZFIELD%CCOMMENT   = TRIM(tpfields(j)%cmnhname)//' - '//TRIM(tpfields(j)%ccomment)//' ('// Trim( tpfields(j)%cunits ) //')'
-    TZFIELD%NGRID      = tpfields(j)%ngrid
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 5
-    TZFIELD%LTIMEDEP   = .FALSE.
+    TZFIELD = TFIELDDATA(                     &
+      CMNHNAME   = TRIM(ygroup)//'.PROC'//YJ, &
+      CSTDNAME   = '',                        &
+      CLONGNAME  = TRIM(ygroup)//'.PROC'//YJ, &
+      CUNITS     = tpfields(j)%cunits,        &
+      CDIR       = '--',                      &
+      CCOMMENT   = TRIM(tpfields(j)%cmnhname)//' - '//TRIM(tpfields(j)%ccomment)//' ('// Trim( tpfields(j)%cunits ) //')', &
+      NGRID      = tpfields(j)%ngrid,         &
+      NTYPE      = TYPEREAL,                  &
+      NDIMS      = 5,                         &
+      LTIMEDEP   = .FALSE.                    )
 
     CALL IO_Field_write(tzfile,TZFIELD,PVAR(:,:,:,:,:,J))
   ENDIF
@@ -596,16 +603,17 @@ ENDDO
 !
 ! 7eme enregistrement TRAJT
 !
-TZFIELD%CMNHNAME   = TRIM(ygroup)//'.TRAJT'
-TZFIELD%CSTDNAME   = ''
-TZFIELD%CLONGNAME  = TRIM(ygroup)//'.TRAJT'
-TZFIELD%CUNITS     = ''
-TZFIELD%CDIR       = '--'
-TZFIELD%CCOMMENT   = TRIM(YCOMMENT)
-TZFIELD%NGRID      = tpfields(1)%ngrid
-TZFIELD%NTYPE      = TYPEREAL
-TZFIELD%NDIMS      = 2
-TZFIELD%LTIMEDEP   = .FALSE.
+TZFIELD = TFIELDDATA(                  &
+  CMNHNAME   = TRIM(ygroup)//'.TRAJT', &
+  CSTDNAME   = '',                     &
+  CLONGNAME  = TRIM(ygroup)//'.TRAJT', &
+  CUNITS     = '',                     &
+  CDIR       = '--',                   &
+  CCOMMENT   = TRIM(YCOMMENT),         &
+  NGRID      = tpfields(1)%ngrid,      &
+  NTYPE      = TYPEREAL,               &
+  NDIMS      = 2,                      &
+  LTIMEDEP   = .FALSE.                 )
 
 !NMNHDIM_FLYER_TIME excluded because created only in netCDF/HDF groups (local to each flyer)
 if ( tpfields(1)%ndimlist(4) /= NMNHDIM_UNKNOWN .and. tpfields(1)%ndimlist(4) /= NMNHDIM_UNUSED &
@@ -635,28 +643,30 @@ deallocate( ztimes )
 ! 8eme enregistrement TRAJX
 !
 IF(PRESENT(tpflyer))THEN
-  TZFIELD%CMNHNAME   = TRIM(ygroup)//'.TRAJX'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = TRIM(ygroup)//'.TRAJX'
-  TZFIELD%CUNITS     = ''
-  TZFIELD%CDIR       = '--'
-  TZFIELD%CCOMMENT   = TRIM(YCOMMENT)
-  TZFIELD%NGRID      = tpfields(1)%ngrid
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .FALSE.
+  TZFIELD = TFIELDDATA(                  &
+    CMNHNAME   = TRIM(ygroup)//'.TRAJX', &
+    CSTDNAME   = '',                     &
+    CLONGNAME  = TRIM(ygroup)//'.TRAJX', &
+    CUNITS     = '',                     &
+    CDIR       = '--',                   &
+    CCOMMENT   = TRIM(YCOMMENT),         &
+    NGRID      = tpfields(1)%ngrid,      &
+    NTYPE      = TYPEREAL,               &
+    NDIMS      = 3,                      &
+    LTIMEDEP   = .FALSE.                 )
   CALL IO_Field_write(tzfile,TZFIELD, Reshape( tpflyer%x, [1, Size( tpflyer%x), 1] ) )
 ELSE IF ( ycategory == 'LES_budgets' .and.  tpbudiachro%clevels(NLVL_SHAPE) == 'Cartesian' ) THEN
-  TZFIELD%CMNHNAME   = TRIM(ygroup)//'.TRAJX'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = TRIM(ygroup)//'.TRAJX'
-  TZFIELD%CUNITS     = ''
-  TZFIELD%CDIR       = '--'
-  TZFIELD%CCOMMENT   = TRIM(YCOMMENT)
-  TZFIELD%NGRID      = tpfields(1)%ngrid
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .FALSE.
+  TZFIELD = TFIELDDATA(                  &
+    CMNHNAME   = TRIM(ygroup)//'.TRAJX', &
+    CSTDNAME   = '',                     &
+    CLONGNAME  = TRIM(ygroup)//'.TRAJX', &
+    CUNITS     = '',                     &
+    CDIR       = '--',                   &
+    CCOMMENT   = TRIM(YCOMMENT),         &
+    NGRID      = tpfields(1)%ngrid,      &
+    NTYPE      = TYPEREAL,               &
+    NDIMS      = 3,                      &
+    LTIMEDEP   = .FALSE.                 )
   !TRAJX is given in extended domain coordinates (=> +jphext) for backward compatibility
   CALL IO_Field_write(tzfile,TZFIELD, Real( Reshape( &
                        Spread( source = ( nles_current_iinf + nles_current_isup) / 2 + jphext, dim = 1, ncopies = IN ), &
@@ -666,28 +676,30 @@ ENDIF
 ! 9eme enregistrement TRAJY
 !
 IF(PRESENT(tpflyer))THEN
-  TZFIELD%CMNHNAME   = TRIM(ygroup)//'.TRAJY'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = TRIM(ygroup)//'.TRAJY'
-  TZFIELD%CUNITS     = ''
-  TZFIELD%CDIR       = '--'
-  TZFIELD%CCOMMENT   = TRIM(YCOMMENT)
-  TZFIELD%NGRID      = tpfields(1)%ngrid
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .FALSE.
+  TZFIELD = TFIELDDATA(                  &
+    CMNHNAME   = TRIM(ygroup)//'.TRAJY', &
+    CSTDNAME   = '',                     &
+    CLONGNAME  = TRIM(ygroup)//'.TRAJY', &
+    CUNITS     = '',                     &
+    CDIR       = '--',                   &
+    CCOMMENT   = TRIM(YCOMMENT),         &
+    NGRID      = tpfields(1)%ngrid,      &
+    NTYPE      = TYPEREAL,               &
+    NDIMS      = 3,                      &
+    LTIMEDEP   = .FALSE.                 )
   CALL IO_Field_write(tzfile,TZFIELD, Reshape( tpflyer%y, [1, Size( tpflyer%y), 1] ) )
 ELSE IF ( ycategory == 'LES_budgets' .and.  tpbudiachro%clevels(NLVL_SHAPE) == 'Cartesian' ) THEN
-  TZFIELD%CMNHNAME   = TRIM(ygroup)//'.TRAJY'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = TRIM(ygroup)//'.TRAJY'
-  TZFIELD%CUNITS     = ''
-  TZFIELD%CDIR       = '--'
-  TZFIELD%CCOMMENT   = TRIM(YCOMMENT)
-  TZFIELD%NGRID      = tpfields(1)%ngrid
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .FALSE.
+  TZFIELD = TFIELDDATA(                  &
+    CMNHNAME   = TRIM(ygroup)//'.TRAJY', &
+    CSTDNAME   = '',                     &
+    CLONGNAME  = TRIM(ygroup)//'.TRAJY', &
+    CUNITS     = '',                     &
+    CDIR       = '--',                   &
+    CCOMMENT   = TRIM(YCOMMENT),         &
+    NGRID      = tpfields(1)%ngrid,      &
+    NTYPE      = TYPEREAL,               &
+    NDIMS      = 3,                      &
+    LTIMEDEP   = .FALSE.                 )
   !TRAJY is given in extended domain coordinates (=> +jphext) for backward compatibility
   CALL IO_Field_write(tzfile,TZFIELD, Real( Reshape( &
                        Spread( source = ( nles_current_jinf + nles_current_jsup) / 2 + jphext, dim = 1, ncopies = IN ), &
@@ -697,28 +709,30 @@ ENDIF
 ! 10eme enregistrement TRAJZ
 !
 IF(PRESENT(tpflyer))THEN
-  TZFIELD%CMNHNAME   = TRIM(ygroup)//'.TRAJZ'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = TRIM(ygroup)//'.TRAJZ'
-  TZFIELD%CUNITS     = ''
-  TZFIELD%CDIR       = '--'
-  TZFIELD%CCOMMENT   = TRIM(YCOMMENT)
-  TZFIELD%NGRID      = tpfields(1)%ngrid
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .FALSE.
+  TZFIELD = TFIELDDATA(                  &
+    CMNHNAME   = TRIM(ygroup)//'.TRAJZ', &
+    CSTDNAME   = '',                     &
+    CLONGNAME  = TRIM(ygroup)//'.TRAJZ', &
+    CUNITS     = '',                     &
+    CDIR       = '--',                   &
+    CCOMMENT   = TRIM(YCOMMENT),         &
+    NGRID      = tpfields(1)%ngrid,      &
+    NTYPE      = TYPEREAL,               &
+    NDIMS      = 3,                      &
+    LTIMEDEP   = .FALSE.                 )
   CALL IO_Field_write(tzfile,TZFIELD, Reshape( tpflyer%z, [1, Size( tpflyer%z), 1] ) )
 ELSE IF ( ycategory == 'LES_budgets' .and.  tpbudiachro%clevels(NLVL_SHAPE) == 'Cartesian' ) THEN
-  TZFIELD%CMNHNAME   = TRIM(ygroup)//'.TRAJZ'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = TRIM(ygroup)//'.TRAJZ'
-  TZFIELD%CUNITS     = ''
-  TZFIELD%CDIR       = '--'
-  TZFIELD%CCOMMENT   = TRIM(YCOMMENT)
-  TZFIELD%NGRID      = tpfields(1)%ngrid
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .FALSE.
+  TZFIELD = TFIELDDATA(                  &
+    CMNHNAME   = TRIM(ygroup)//'.TRAJZ', &
+    CSTDNAME   = '',                     &
+    CLONGNAME  = TRIM(ygroup)//'.TRAJZ', &
+    CUNITS     = '',                     &
+    CDIR       = '--',                   &
+    CCOMMENT   = TRIM(YCOMMENT),         &
+    NGRID      = tpfields(1)%ngrid,      &
+    NTYPE      = TYPEREAL,               &
+    NDIMS      = 3,                      &
+    LTIMEDEP   = .FALSE.                 )
 
   Allocate( ztrajz(IK, 1, IN) )
   do jj = 1, IK
@@ -730,16 +744,17 @@ ENDIF
 !
 ! 11eme enregistrement PDATIME
 !
-TZFIELD%CMNHNAME   = TRIM(ygroup)//'.DATIM'
-TZFIELD%CSTDNAME   = ''
-TZFIELD%CLONGNAME  = TRIM(ygroup)//'.DATIM'
-TZFIELD%CUNITS     = ''
-TZFIELD%CDIR       = '--'
-TZFIELD%CCOMMENT   = TRIM(YCOMMENT)
-TZFIELD%NGRID      = tpfields(1)%ngrid
-TZFIELD%NTYPE      = TYPEREAL
-TZFIELD%NDIMS      = 2
-TZFIELD%LTIMEDEP   = .FALSE.
+TZFIELD = TFIELDDATA(                  &
+  CMNHNAME   = TRIM(ygroup)//'.DATIM', &
+  CSTDNAME   = '',                     &
+  CLONGNAME  = TRIM(ygroup)//'.DATIM', &
+  CUNITS     = '',                     &
+  CDIR       = '--',                   &
+  CCOMMENT   = TRIM(YCOMMENT),         &
+  NGRID      = tpfields(1)%ngrid,      &
+  NTYPE      = TYPEREAL,               &
+  NDIMS      = 2,                      &
+  LTIMEDEP   = .FALSE.                 )
 
 !Reconstitute old diachro format
 allocate( zdatime( 16, size(tpdates) ) )
@@ -1480,18 +1495,18 @@ if ( Present( tpflyer ) ) then
     ystdnameprefix = 'projection'
   endif
 
-  tzfield%cmnhname   = 'X'
-  tzfield%cstdname   = Trim( ystdnameprefix ) // '_x_coordinate'
-  tzfield%clongname  = 'x-position of the flyer'
-  tzfield%cunits     = 'm'
-  tzfield%cdir       = '--'
-  tzfield%ccomment   = ''
-  tzfield%ngrid      = 0
-  tzfield%ntype      = TYPEREAL
-  tzfield%ltimedep   = .false.
-  tzfield%ndims      = 1
-  tzfield%ndimlist(1)  = NMNHDIM_FLYER_TIME
-  tzfield%ndimlist(2:) = NMNHDIM_UNUSED
+  tzfield = tfielddata(                                     &
+    cmnhname   = 'X',                                       &
+    cstdname   = Trim( ystdnameprefix ) // '_x_coordinate', &
+    clongname  = 'x-position of the flyer',                 &
+    cunits     = 'm',                                       &
+    cdir       = '--',                                      &
+    ccomment   = '',                                        &
+    ngrid      = 0,                                         &
+    ntype      = TYPEREAL,                                  &
+    ndims      = 1,                                         &
+    ndimlist   = [ NMNHDIM_FLYER_TIME ],                    &
+    ltimedep   = .false.                                    )
 
   call IO_Field_write( tzfile, tzfield, tpflyer%x )
 

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -106,6 +106,7 @@ REAL, ALLOCATABLE, DIMENSION(:,:,:):: ZRV0          ! same fields
        ! for Rv as for the coordinates of the origin
 REAL, ALLOCATABLE, DIMENSION(:,:,:):: ZWORK1,ZWORK2,ZWORK3       
 TYPE(DATE_TIME)                    :: TDTCUR_START
+CHARACTER(LEN=NMNHNAMELGTMAX)      :: YMNHNAME
 CHARACTER(LEN=24)                  :: YDATE 
 INTEGER                            :: IHOUR, IMINUTE
 REAL                               :: ZSECOND, ZREMAIN
@@ -275,43 +276,49 @@ DO JFILECUR=1,NFILES
 !
   IF (GSTART) THEN
     PRINT *,'INBR_START',INBR_START,' NBRFILES(JFILECUR)',NBRFILES(JFILECUR)
-    WRITE(TZFIELD%CMNHNAME,'(A2,I2.2)')'X0',INBR_START
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'km'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%CCOMMENT   = 'X_Y_Z_'//TRIM(TZFIELD%CMNHNAME)//YDATE
+    WRITE(YMNHNAME,'(A2,I2.2)')'X0',INBR_START
+    TZFIELD = TFIELDDATA(                           &
+      CMNHNAME   = TRIM( YMNHNAME ),                &
+      CSTDNAME   = '',                              &
+      CLONGNAME  = TRIM( YMNHNAME ),                &
+      CUNITS     = 'km',                            &
+      CDIR       = 'XY',                            &
+      CCOMMENT   = 'X_Y_Z_'//TRIM(YMNHNAME)//YDATE, &
+      NGRID      = 1,                               &
+      NTYPE      = TYPEREAL,                        &
+      NDIMS      = 3,                               &
+      LTIMEDEP   = .TRUE.                           )
     PRINT *,'YCOMMENT = ',TRIM(TZFIELD%CCOMMENT)
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
     CALL IO_Field_write(TPFILE,TZFIELD,ZX00(:,:,:))
     !
-    WRITE(TZFIELD%CMNHNAME,'(A2,I2.2)')'Y0',INBR_START
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'km'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%CCOMMENT   = 'X_Y_Z_'//TRIM(TZFIELD%CMNHNAME)//YDATE
+    WRITE(YMNHNAME,'(A2,I2.2)')'Y0',INBR_START
+    TZFIELD = TFIELDDATA(                           &
+      CMNHNAME   = TRIM( YMNHNAME ),                &
+      CSTDNAME   = '',                              &
+      CLONGNAME  = TRIM(TZFIELD%CMNHNAME),          &
+      CUNITS     = 'km',                            &
+      CDIR       = 'XY',                            &
+      CCOMMENT   = 'X_Y_Z_'//TRIM(YMNHNAME)//YDATE, &
+      NGRID      = 1,                               &
+      NTYPE      = TYPEREAL,                        &
+      NDIMS      = 3,                               &
+      LTIMEDEP   = .TRUE.                           )
     PRINT *,'YCOMMENT = ',TRIM(TZFIELD%CCOMMENT)
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
     CALL IO_Field_write(TPFILE,TZFIELD,ZY00(:,:,:))
     !
-    WRITE(TZFIELD%CMNHNAME,'(A2,I2.2)')'Z0',INBR_START
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'km'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%CCOMMENT   = 'X_Y_Z_'//TRIM(TZFIELD%CMNHNAME)//YDATE
+    WRITE(YMNHNAME,'(A2,I2.2)')'Z0',INBR_START
+    TZFIELD = TFIELDDATA(                           &
+      CMNHNAME   = TRIM( YMNHNAME ),                &
+      CSTDNAME   = '',                              &
+      CLONGNAME  = TRIM( YMNHNAME ),                &
+      CUNITS     = 'km',                            &
+      CDIR       = 'XY',                            &
+      CCOMMENT   = 'X_Y_Z_'//TRIM(YMNHNAME)//YDATE, &
+      NGRID      = 1,                               &
+      NTYPE      = TYPEREAL,                        &
+      NDIMS      = 3,                               &
+      LTIMEDEP   = .TRUE.                           )
     PRINT *,'YCOMMENT = ',TRIM(TZFIELD%CCOMMENT)
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
     CALL IO_Field_write(TPFILE,TZFIELD,ZZ00(:,:,:))
   END IF
 !
@@ -330,56 +337,60 @@ DO JFILECUR=1,NFILES
 !
   IF (GSTART) THEN
     !
-    WRITE(TZFIELD%CMNHNAME,'(A3,I2.2)')'TH0',INBR_START
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'K'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%CCOMMENT   = 'X_Y_Z_'//TRIM(TZFIELD%CMNHNAME)//YDATE
+    WRITE(YMNHNAME,'(A3,I2.2)')'TH0',INBR_START
+    TZFIELD = TFIELDDATA(                           &
+      CMNHNAME   = TRIM( YMNHNAME ),                &
+      CSTDNAME   = '',                              &
+      CLONGNAME  = TRIM( YMNHNAME ),                &
+      CUNITS     = 'K',                             &
+      CDIR       = 'XY',                            &
+      CCOMMENT   = 'X_Y_Z_'//TRIM(YMNHNAME)//YDATE, &
+      NGRID      = 1,                               &
+      NTYPE      = TYPEREAL,                        &
+      NDIMS      = 3,                               &
+      LTIMEDEP   = .TRUE.                           )
     PRINT *,'YCOMMENT = ',TRIM(TZFIELD%CCOMMENT)
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
     CALL IO_Field_write(TPFILE,TZFIELD,ZWORK1(:,:,:))
     !
-    WRITE(TZFIELD%CMNHNAME,'(A3,I2.2)')'RV0',INBR_START
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'g kg-1'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%CCOMMENT   = 'X_Y_Z_'//TRIM(TZFIELD%CMNHNAME)//YDATE
+    WRITE(YMNHNAME,'(A3,I2.2)')'RV0',INBR_START
+    TZFIELD = TFIELDDATA(                           &
+      CMNHNAME   = TRIM( YMNHNAME ),                &
+      CSTDNAME   = '',                              &
+      CLONGNAME  = TRIM( YMNHNAME ),                &
+      CUNITS     = 'g kg-1',                        &
+      CDIR       = 'XY',                            &
+      CCOMMENT   = 'X_Y_Z_'//TRIM(YMNHNAME)//YDATE, &
+      NGRID      = 1,                               &
+      NTYPE      = TYPEREAL,                        &
+      NDIMS      = 3,                               &
+      LTIMEDEP   = .TRUE.                           )
     PRINT *,'YCOMMENT = ',TRIM(TZFIELD%CCOMMENT)
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
     CALL IO_Field_write(TPFILE,TZFIELD,ZWORK2(:,:,:))
   ENDIF
 !*       4.4   compute the origin of the particules using one more segment
 !
   IF (JFILECUR /= NFILES) THEN
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CUNITS     = 'm'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%CCOMMENT   = '' !Unknown comment
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
-    !
-    TZFIELD%CMNHNAME   = 'LGXT'
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+    TZFIELD = TFIELDDATA(    &
+      CMNHNAME   = 'LGXT',   &
+      CSTDNAME   = '',       &
+      CLONGNAME  = 'LGXT',   &
+      CUNITS     = 'm',      &
+      CDIR       = 'XY',     &
+      CCOMMENT   = '',       &
+      NGRID      = 1,        &
+      NTYPE      = TYPEREAL, &
+      NDIMS      = 3,        &
+      LTIMEDEP   = .TRUE.    )
     CALL IO_Field_read(TZTRACFILE,TZFIELD,ZX0)
     ZX0(:,:,:)=ZX0(:,:,:)*1.E-3   ! ZX0 in km
     !
     TZFIELD%CMNHNAME   = 'LGYT'
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+    TZFIELD%CLONGNAME  = 'LGYT'
     CALL IO_Field_read(TZTRACFILE,TZFIELD,ZY0)
     ZY0(:,:,:)=ZY0(:,:,:)*1.E-3   ! ZY0 in km
     !
     TZFIELD%CMNHNAME   = 'LGZT'
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+    TZFIELD%CLONGNAME  = 'LGZT'
     CALL IO_Field_read(TZTRACFILE,TZFIELD,ZZ0)
     ZZ0(:,:,:)=ZZ0(:,:,:)*1.E-3   ! ZZ0 in km
     !

@@ -541,16 +541,17 @@ END IF
 !
 IF ( OTURB_FLX .AND. tpfile%lopened ) THEN
   ! stores the U wind component vertical flux
-  TZFIELD%CMNHNAME   = 'UW_VFLX'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'UW_VFLX'
-  TZFIELD%CUNITS     = 'm2 s-2'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'U wind component vertical flux'
-  TZFIELD%NGRID      = 4
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDDATA(                            &
+    CMNHNAME   = 'UW_VFLX',                        &
+    CSTDNAME   = '',                               &
+    CLONGNAME  = 'UW_VFLX',                        &
+    CUNITS     = 'm2 s-2',                         &
+    CDIR       = 'XY',                             &
+    CCOMMENT   = 'U wind component vertical flux', &
+    NGRID      = 4,                                &
+    NTYPE      = TYPEREAL,                         &
+    NDIMS      = 3,                                &
+    LTIMEDEP   = .TRUE.                            )
   CALL IO_Field_write(TPFILE,TZFIELD,ZFLXZ)
 END IF
 !
@@ -769,16 +770,17 @@ END IF
 !
 IF ( OTURB_FLX .AND. tpfile%lopened ) THEN
   ! stores the V wind component vertical flux
-  TZFIELD%CMNHNAME   = 'VW_VFLX'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'VW_VFLX'
-  TZFIELD%CUNITS     = 'm2 s-2'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'V wind component vertical flux'
-  TZFIELD%NGRID      = 4
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDDATA(                            &
+    CMNHNAME   = 'VW_VFLX',                        &
+    CSTDNAME   = '',                               &
+    CLONGNAME  = 'VW_VFLX',                        &
+    CUNITS     = 'm2 s-2',                         &
+    CDIR       = 'XY',                             &
+    CCOMMENT   = 'V wind component vertical flux', &
+    NGRID      = 4,                                &
+    NTYPE      = TYPEREAL,                         &
+    NDIMS      = 3,                                &
+    LTIMEDEP   = .TRUE.                            )
   CALL IO_Field_write(TPFILE,TZFIELD,ZFLXZ)
 END IF
 !
@@ -906,16 +908,17 @@ IF ( OTURB_FLX .AND. tpfile%lopened .AND. HTURBDIM == '1DIM') THEN
   ! to be tested &
   !   +XCMFB*(4./3.)*PLM(:,:,:)/SQRT(PTKEM(:,:,:))*PTP(:,:,:) 
   ! stores the W variance
-  TZFIELD%CMNHNAME   = 'W_VVAR'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'W_VVAR'
-  TZFIELD%CUNITS     = 'm2 s-2'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_Z_W_VVAR'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDDATA(          &
+    CMNHNAME   = 'W_VVAR',       &
+    CSTDNAME   = '',             &
+    CLONGNAME  = 'W_VVAR',       &
+    CUNITS     = 'm2 s-2',       &
+    CDIR       = 'XY',           &
+    CCOMMENT   = 'X_Y_Z_W_VVAR', &
+    NGRID      = 1,              &
+    NTYPE      = TYPEREAL,       &
+    NDIMS      = 3,              &
+    LTIMEDEP   = .TRUE.          )
   CALL IO_Field_write(TPFILE,TZFIELD,ZFLXZ)
 END IF
 !

@@ -585,22 +585,17 @@ DO JSAT=1,IJSAT ! loop over sensors
       YEND=YTWO//YCHAN
     END IF
 
-!    IF (INRAD==1) THEN
-!    TZFIELD%CMNHNAME   = TRIM(YBEG)//'_'//TRIM(YEND)//'rad'
-!    TZFIELD%CUNITS     = 'mw/cm-1/ster/sq.m'
-!    TZFIELD%CCOMMENT   = TRIM(YBEG)//'_'//TRIM(YEND)//' rad'
-!    ELSE
-    TZFIELD%CMNHNAME   = TRIM(YBEG)//'_'//TRIM(YEND)//'BT'
-    TZFIELD%CUNITS     = 'K'
-    TZFIELD%CCOMMENT   = TRIM(YBEG)//'_'//TRIM(YEND)//' BT'
-!    ENDIF
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 2
-    TZFIELD%LTIMEDEP   = .TRUE.
+    TZFIELD = TFIELDDATA(                              &
+      CMNHNAME   = TRIM(YBEG)//'_'//TRIM(YEND)//'BT',  &
+      CSTDNAME   = '',                                 &
+      CLONGNAME  = TRIM(YBEG)//'_'//TRIM(YEND)//'BT',  &
+      CUNITS     = 'K',                                &
+      CDIR       = 'XY',                               &
+      CCOMMENT   = TRIM(YBEG)//'_'//TRIM(YEND)//' BT', &
+      NGRID      = 1,                                  &
+      NTYPE      = TYPEREAL,                           &
+      NDIMS      = 2,                                  &
+      LTIMEDEP   = .TRUE.                              )
 !    PRINT *,'YRECFM='//TRIM(TZFIELD%CMNHNAME)
     CALL IO_Field_write(TPFILE,TZFIELD,ZBT(:,:,JCH))
   END DO

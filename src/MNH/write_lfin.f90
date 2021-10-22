@@ -445,15 +445,17 @@ CALL IO_Field_write(TPFILE,'SURF',     CSURF)
 CALL IO_Field_write(TPFILE,'CPL_AROME',LCPL_AROME)
 CALL IO_Field_write(TPFILE,'COUPLING', LCOUPLING)
 !
-TZFIELD%CMNHNAME   = 'RECYCLING'
-TZFIELD%CLONGNAME  = 'RECYCLING'
-TZFIELD%CSTDNAME   = ''
-TZFIELD%CUNITS     = ''
-TZFIELD%CDIR       = '--'
-TZFIELD%NGRID      = 1
-TZFIELD%NTYPE      = TYPELOG
-TZFIELD%NDIMS      = 0
-TZFIELD%LTIMEDEP   = .FALSE. 
+TZFIELD = TFIELDDATA(       &
+  CMNHNAME   = 'RECYCLING', &
+  CLONGNAME  = 'RECYCLING', &
+  CSTDNAME   = '',          &
+  CUNITS     = '',          &
+  CDIR       = '--',        &
+  CCOMMENT   = '',          &
+  NGRID      = 1,           &
+  NTYPE      = TYPELOG,     &
+  NDIMS      = 0,           &
+  LTIMEDEP   = .FALSE.      )
 CALL IO_Field_write(TPFILE,TZFIELD,LRECYCL)
 !
 !*       1.4    Prognostic variables :
@@ -491,16 +493,17 @@ END IF
 !
 IF (LIBM .OR. LIBM_LSF) THEN
   !
-  TZFIELD%CMNHNAME  = 'LSFP'
-  TZFIELD%CLONGNAME = 'LSFP'
-  TZFIELD%CSTDNAME  = ''
-  TZFIELD%CUNITS    = 'm'
-  TZFIELD%CDIR      = 'XY'
-  TZFIELD%NGRID     = 1
-  TZFIELD%NTYPE     = TYPEREAL
-  TZFIELD%NDIMS     = 3
-  TZFIELD%LTIMEDEP  = .TRUE.
-  TZFIELD%CCOMMENT  = 'Level Set Function at mass node'
+  TZFIELD = TFIELDDATA(                           &
+    CMNHNAME  = 'LSFP',                           &
+    CLONGNAME = 'LSFP',                           &
+    CSTDNAME  = '',                               &
+    CUNITS    = 'm',                              &
+    CDIR      = 'XY',                             &
+    NGRID     = 1,                                &
+    NTYPE     = TYPEREAL,                         &
+    NDIMS     = 3,                                &
+    LTIMEDEP  = .TRUE.,                           &
+    CCOMMENT  = 'Level Set Function at mass node' )
   !
   CALL IO_Field_write(TPFILE,TZFIELD,XIBM_LS(:,:,:,1))
   !
@@ -508,189 +511,204 @@ ENDIF
 !
 IF (LRECYCL) THEN
   !
-  TZFIELD%CMNHNAME   = 'RCOUNT'
-  TZFIELD%CLONGNAME  = 'RCOUNT'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CUNITS     = ''
-  TZFIELD%CDIR       = '--'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEINT
-  TZFIELD%NDIMS      = 0
-  TZFIELD%LTIMEDEP   = .TRUE.
-  TZFIELD%CCOMMENT   = 'Incremental counter for averaging purpose'
+  TZFIELD = TFIELDDATA(                                      &
+    CMNHNAME   = 'RCOUNT',                                   &
+    CLONGNAME  = 'RCOUNT',                                   &
+    CSTDNAME   = '',                                         &
+    CUNITS     = '',                                         &
+    CDIR       = '--',                                       &
+    NGRID      = 1,                                          &
+    NTYPE      = TYPEINT,                                    &
+    NDIMS      = 0,                                          &
+    LTIMEDEP   = .TRUE.,                                     &
+    CCOMMENT   = 'Incremental counter for averaging purpose' )
   CALL IO_Field_write(TPFILE,TZFIELD,NR_COUNT)
   !
   IF (LRECYCLW) THEN
-    TZFIELD%CMNHNAME   = 'URECYCLW'
-    TZFIELD%CLONGNAME  = 'URECYCLW'
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CUNITS     = 'm s-1'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%NGRID      = 2
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
-    TZFIELD%CCOMMENT   = 'UMEAN-WEST side plan for recycling purpose'
+    TZFIELD = TFIELDDATA(                                       &
+      CMNHNAME   = 'URECYCLW',                                  &
+      CLONGNAME  = 'URECYCLW',                                  &
+      CSTDNAME   = '',                                          &
+      CUNITS     = 'm s-1',                                     &
+      CDIR       = 'XY',                                        &
+      NGRID      = 2,                                           &
+      NTYPE      = TYPEREAL,                                    &
+      NDIMS      = 3,                                           &
+      LTIMEDEP   = .TRUE.,                                      &
+      CCOMMENT   = 'UMEAN-WEST side plan for recycling purpose' )
     !
     CALL IO_Field_write(TPFILE,TZFIELD,XUMEANW(:,:,:))
     !
-    TZFIELD%CMNHNAME   = 'VRECYCLW'
-    TZFIELD%CLONGNAME  = 'VRECYCLW'
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CUNITS     = 'm s-1'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%NGRID      = 3
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
-    TZFIELD%CCOMMENT   = 'VMEAN-WEST side plan for recycling purpose'
+    TZFIELD = TFIELDDATA(                                       &
+      CMNHNAME   = 'VRECYCLW',                                  &
+      CLONGNAME  = 'VRECYCLW',                                  &
+      CSTDNAME   = '',                                          &
+      CUNITS     = 'm s-1',                                     &
+      CDIR       = 'XY',                                        &
+      NGRID      = 3,                                           &
+      NTYPE      = TYPEREAL,                                    &
+      NDIMS      = 3,                                           &
+      LTIMEDEP   = .TRUE.,                                      &
+      CCOMMENT   = 'VMEAN-WEST side plan for recycling purpose' )
     !
     CALL IO_Field_write(TPFILE,TZFIELD,XVMEANW(:,:,:))
     !
-    TZFIELD%CMNHNAME   = 'WRECYCLW'
-    TZFIELD%CLONGNAME  = 'WRECYCLW'
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CUNITS     = 'm s-1'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%NGRID      = 4
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
-    TZFIELD%CCOMMENT   = 'WMEAN-WEST side plan for recycling purpose'
+    TZFIELD = TFIELDDATA(                                       &
+      CMNHNAME   = 'WRECYCLW',                                  &
+      CLONGNAME  = 'WRECYCLW',                                  &
+      CSTDNAME   = '',                                          &
+      CUNITS     = 'm s-1',                                     &
+      CDIR       = 'XY',                                        &
+      NGRID      = 4,                                           &
+      NTYPE      = TYPEREAL,                                    &
+      NDIMS      = 3,                                           &
+      LTIMEDEP   = .TRUE.,                                      &
+      CCOMMENT   = 'WMEAN-WEST side plan for recycling purpose' )
     !
     CALL IO_Field_write(TPFILE,TZFIELD,XWMEANW(:,:,:))
     !
   ENDIF  
   IF (LRECYCLN) THEN
-    TZFIELD%CMNHNAME   = 'URECYCLN'
-    TZFIELD%CLONGNAME  = 'URECYCLN'
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CUNITS     = 'm s-1'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%NGRID      = 2
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
-    TZFIELD%CCOMMENT   = 'UMEAN-NORTH side plan for recycling purpose'
+    TZFIELD = TFIELDDATA(                                        &
+      CMNHNAME   = 'URECYCLN',                                   &
+      CLONGNAME  = 'URECYCLN',                                   &
+      CSTDNAME   = '',                                           &
+      CUNITS     = 'm s-1',                                      &
+      CDIR       = 'XY',                                         &
+      NGRID      = 2,                                            &
+      NTYPE      = TYPEREAL,                                     &
+      NDIMS      = 3,                                            &
+      LTIMEDEP   = .TRUE.,                                       &
+      CCOMMENT   = 'UMEAN-NORTH side plan for recycling purpose' )
     !
     CALL IO_Field_write(TPFILE,TZFIELD,XUMEANN(:,:,:))
     !
-    TZFIELD%CMNHNAME   = 'VRECYCLN'
-    TZFIELD%CLONGNAME  = 'VRECYCLN'
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CUNITS     = 'm s-1'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%NGRID      = 3
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
-    TZFIELD%CCOMMENT   = 'VMEAN-NORTH side plan for recycling purpose'
+    TZFIELD = TFIELDDATA(                                        &
+      CMNHNAME   = 'VRECYCLN',                                   &
+      CLONGNAME  = 'VRECYCLN',                                   &
+      CSTDNAME   = '',                                           &
+      CUNITS     = 'm s-1',                                      &
+      CDIR       = 'XY',                                         &
+      NGRID      = 3,                                            &
+      NTYPE      = TYPEREAL,                                     &
+      NDIMS      = 3,                                            &
+      LTIMEDEP   = .TRUE.,                                       &
+      CCOMMENT   = 'VMEAN-NORTH side plan for recycling purpose' )
     !
     CALL IO_Field_write(TPFILE,TZFIELD,XVMEANN(:,:,:))
     !
-    TZFIELD%CMNHNAME   = 'WRECYCLN'
-    TZFIELD%CLONGNAME  = 'WRECYCLN'
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CUNITS     = 'm s-1'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%NGRID      = 4
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
-    TZFIELD%CCOMMENT   = 'WMEAN-NORTH side plan for recycling purpose'
+    TZFIELD = TFIELDDATA(                                        &
+      CMNHNAME   = 'WRECYCLN',                                   &
+      CLONGNAME  = 'WRECYCLN',                                   &
+      CSTDNAME   = '',                                           &
+      CUNITS     = 'm s-1',                                      &
+      CDIR       = 'XY',                                         &
+      NGRID      = 4,                                            &
+      NTYPE      = TYPEREAL,                                     &
+      NDIMS      = 3,                                            &
+      LTIMEDEP   = .TRUE.,                                       &
+      CCOMMENT   = 'WMEAN-NORTH side plan for recycling purpose' )
     !
     CALL IO_Field_write(TPFILE,TZFIELD,XWMEANN(:,:,:))
     !
   ENDIF
   IF (LRECYCLE) THEN
-    TZFIELD%CMNHNAME   = 'URECYCLE'
-    TZFIELD%CLONGNAME  = 'URECYCLE'
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CUNITS     = 'm s-1'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%NGRID      = 2
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
-    TZFIELD%CCOMMENT   = 'UMEAN-EAST side plan for recycling purpose'
+    TZFIELD = TFIELDDATA(                                       &
+      CMNHNAME   = 'URECYCLE',                                  &
+      CLONGNAME  = 'URECYCLE',                                  &
+      CSTDNAME   = '',                                          &
+      CUNITS     = 'm s-1',                                     &
+      CDIR       = 'XY',                                        &
+      NGRID      = 2,                                           &
+      NTYPE      = TYPEREAL,                                    &
+      NDIMS      = 3,                                           &
+      LTIMEDEP   = .TRUE.,                                      &
+      CCOMMENT   = 'UMEAN-EAST side plan for recycling purpose' )
     !
     CALL IO_Field_write(TPFILE,TZFIELD,XUMEANE(:,:,:))
     !
-    TZFIELD%CMNHNAME   = 'VRECYCLE'
-    TZFIELD%CLONGNAME  = 'VRECYCLE'
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CUNITS     = 'm s-1'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%NGRID      = 3
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
-    TZFIELD%CCOMMENT   = 'VMEAN-EAST side plan for recycling purpose'
+    TZFIELD = TFIELDDATA(                                       &
+      CMNHNAME   = 'VRECYCLE',                                  &
+      CLONGNAME  = 'VRECYCLE',                                  &
+      CSTDNAME   = '',                                          &
+      CUNITS     = 'm s-1',                                     &
+      CDIR       = 'XY',                                        &
+      NGRID      = 3,                                           &
+      NTYPE      = TYPEREAL,                                    &
+      NDIMS      = 3,                                           &
+      LTIMEDEP   = .TRUE.,                                      &
+      CCOMMENT   = 'VMEAN-EAST side plan for recycling purpose' )
     !
     CALL IO_Field_write(TPFILE,TZFIELD,XVMEANE(:,:,:))
     !
-    TZFIELD%CMNHNAME   = 'WRECYCLE'
-    TZFIELD%CLONGNAME  = 'WRECYCLE'
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CUNITS     = 'm s-1'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%NGRID      = 4
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
-    TZFIELD%CCOMMENT   = 'WMEAN-EAST side plan for recycling purpose'
+    TZFIELD = TFIELDDATA(                                       &
+      CMNHNAME   = 'WRECYCLE',                                  &
+      CLONGNAME  = 'WRECYCLE',                                  &
+      CSTDNAME   = '',                                          &
+      CUNITS     = 'm s-1',                                     &
+      CDIR       = 'XY',                                        &
+      NGRID      = 4,                                           &
+      NTYPE      = TYPEREAL,                                    &
+      NDIMS      = 3,                                           &
+      LTIMEDEP   = .TRUE.,                                      &
+      CCOMMENT   = 'WMEAN-EAST side plan for recycling purpose' )
     !
     CALL IO_Field_write(TPFILE,TZFIELD,XWMEANE(:,:,:))
     !
   ENDIF
   IF (LRECYCLS) THEN
-    TZFIELD%CMNHNAME   = 'URECYCLS'
-    TZFIELD%CLONGNAME  = 'URECYCLS'
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CUNITS     = 'm s-1'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%NGRID      = 2
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
-    TZFIELD%CCOMMENT   = 'UMEAN-SOUTH side plan for recycling purpose'
+    TZFIELD = TFIELDDATA(                                        &
+      CMNHNAME   = 'URECYCLS',                                   &
+      CLONGNAME  = 'URECYCLS',                                   &
+      CSTDNAME   = '',                                           &
+      CUNITS     = 'm s-1',                                      &
+      CDIR       = 'XY',                                         &
+      NGRID      = 2,                                            &
+      NTYPE      = TYPEREAL,                                     &
+      NDIMS      = 3,                                            &
+      LTIMEDEP   = .TRUE.,                                       &
+      CCOMMENT   = 'UMEAN-SOUTH side plan for recycling purpose' )
     !
     CALL IO_Field_write(TPFILE,TZFIELD,XUMEANS(:,:,:))
     !
-    TZFIELD%CMNHNAME   = 'VRECYCLS'
-    TZFIELD%CLONGNAME  = 'VRECYCLS'
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CUNITS     = 'm s-1'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%NGRID      = 3
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
-    TZFIELD%CCOMMENT   = 'VMEAN-SOUTH side plan for recycling purpose'
+    TZFIELD = TFIELDDATA(                                        &
+      CMNHNAME   = 'VRECYCLS',                                   &
+      CLONGNAME  = 'VRECYCLS',                                   &
+      CSTDNAME   = '',                                           &
+      CUNITS     = 'm s-1',                                      &
+      CDIR       = 'XY',                                         &
+      NGRID      = 3,                                            &
+      NTYPE      = TYPEREAL,                                     &
+      NDIMS      = 3,                                            &
+      LTIMEDEP   = .TRUE.,                                       &
+      CCOMMENT   = 'VMEAN-SOUTH side plan for recycling purpose' )
     !
     CALL IO_Field_write(TPFILE,TZFIELD,XVMEANS(:,:,:))
     !
-    TZFIELD%CMNHNAME   = 'WRECYCLS'
-    TZFIELD%CLONGNAME  = 'WRECYCLS'
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CUNITS     = 'm s-1'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%NGRID      = 4
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
-    TZFIELD%CCOMMENT   = 'WMEAN-SOUTH side plan for recycling purpose'
+    TZFIELD = TFIELDDATA(                                        &
+      CMNHNAME   = 'WRECYCLS',                                   &
+      CLONGNAME  = 'WRECYCLS',                                   &
+      CSTDNAME   = '',                                           &
+      CUNITS     = 'm s-1',                                      &
+      CDIR       = 'XY',                                         &
+      NGRID      = 4,                                            &
+      NTYPE      = TYPEREAL,                                     &
+      NDIMS      = 3,                                            &
+      LTIMEDEP   = .TRUE.,                                       &
+      CCOMMENT   = 'WMEAN-SOUTH side plan for recycling purpose' )
     !
   ENDIF  
 ENDIF
 !
 IF (MEAN_COUNT /= 0) THEN
 !
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDDATA(                              &
+    CMNHNAME   = 'generic for mean_count variables', & !Temporary name to ease identification
+    CSTDNAME   = '',                                 &
+    CDIR       = 'XY',                               &
+    NTYPE      = TYPEREAL,                           &
+    NDIMS      = 3,                                  &
+    LTIMEDEP   = .TRUE.                              )
 !
   TZFIELD%NGRID      = 2
 !
@@ -1026,16 +1044,17 @@ IF (NSV >=1) THEN
     !
     ZWORK2D(:,:)  = XRHOLW*XINPRR(:,:)*XSVT(:,:,2,NSV_LIMA_SCAVMASS)/ &
                                         max( 1.e-20,XRT(:,:,2,3) ) !~2=at ground level
-    TZFIELD%CMNHNAME   = 'INPBP'
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = 'INPBP'
-    TZFIELD%CUNITS     = 'kg m-2 s-1'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%CCOMMENT   = 'X_Y_INstantaneous Precipitating Aerosol Rate'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 2
-    TZFIELD%LTIMEDEP   = .TRUE.
+    TZFIELD = TFIELDDATA(                                          &
+      CMNHNAME   = 'INPBP',                                        &
+      CSTDNAME   = '',                                             &
+      CLONGNAME  = 'INPBP',                                        &
+      CUNITS     = 'kg m-2 s-1',                                   &
+      CDIR       = 'XY',                                           &
+      CCOMMENT   = 'X_Y_INstantaneous Precipitating Aerosol Rate', &
+      NGRID      = 1,                                              &
+      NTYPE      = TYPEREAL,                                       &
+      NDIMS      = 2,                                              &
+      LTIMEDEP   = .TRUE.                                          )
     CALL IO_Field_write(TPFILE,TZFIELD,ZWORK2D)
     !
     CALL IO_Field_write(TPFILE,'ACPAP',XACPAP)
@@ -1074,16 +1093,17 @@ IF (NSV >=1) THEN
     CALL IO_Field_write(TPFILE,'EFIELDV',XEFIELDV)
     CALL IO_Field_write(TPFILE,'EFIELDW',XEFIELDW)
  !
-    TZFIELD%CMNHNAME   = 'EMODULE'
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'V m-1'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%CCOMMENT   = 'X_Y_Z_'//TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
+    TZFIELD = TFIELDDATA(           &
+      CMNHNAME   = 'EMODULE',       &
+      CSTDNAME   = '',              &
+      CLONGNAME  = 'EMODULE',       &
+      CUNITS     = 'V m-1',         &
+      CDIR       = 'XY',            &
+      CCOMMENT   = 'X_Y_Z_EMODULE', &
+      NGRID      = 1,               &
+      NTYPE      = TYPEREAL,        &
+      NDIMS      = 3,               &
+      LTIMEDEP   = .TRUE.           )
     ZWORK3D(:,:,:) = (XEFIELDU**2 + XEFIELDV**2 + XEFIELDW**2)**0.5
     CALL IO_Field_write(TPFILE,TZFIELD,ZWORK3D)
  !
@@ -1487,29 +1507,31 @@ IF (NSV >=1) THEN
   DO JSV=1,ICH_NBR
     WRITE(ILUOUT,*)JSV,TRIM(YCHNAMES(JSV))
   END DO
-  TZFIELD%CMNHNAME   = 'NSV.DIM'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'NSV.DIM'
-  TZFIELD%CUNITS     = ''
-  TZFIELD%CDIR       = '--'
-  TZFIELD%CCOMMENT   = 'Number of chemical variables'
-  TZFIELD%NGRID      = 0
-  TZFIELD%NTYPE      = TYPEINT
-  TZFIELD%NDIMS      = 0
-  TZFIELD%LTIMEDEP   = .FALSE.
+  TZFIELD = TFIELDDATA(                          &
+    CMNHNAME   = 'NSV.DIM',                      &
+    CSTDNAME   = '',                             &
+    CLONGNAME  = 'NSV.DIM',                      &
+    CUNITS     = '',                             &
+    CDIR       = '--',                           &
+    CCOMMENT   = 'Number of chemical variables', &
+    NGRID      = 0,                              &
+    NTYPE      = TYPEINT,                        &
+    NDIMS      = 0,                              &
+    LTIMEDEP   = .FALSE.                         )
   CALL IO_Field_write(TPFILE,TZFIELD,ICH_NBR)
   !
   IF (ICH_NBR/=0) THEN
-    TZFIELD%CMNHNAME   = 'NSV.TITRE'
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = 'NSV.TITRE'
-    TZFIELD%CUNITS     = ''
-    TZFIELD%CDIR       = '--'
-    TZFIELD%CCOMMENT   = ''
-    TZFIELD%NGRID      = 0
-    TZFIELD%NTYPE      = TYPEINT
-    TZFIELD%NDIMS      = 1
-    TZFIELD%LTIMEDEP   = .FALSE.
+    TZFIELD = TFIELDDATA(       &
+      CMNHNAME   = 'NSV.TITRE', &
+      CSTDNAME   = '',          &
+      CLONGNAME  = 'NSV.TITRE', &
+      CUNITS     = '',          &
+      CDIR       = '--',        &
+      CCOMMENT   = '',          &
+      NGRID      = 0,           &
+      NTYPE      = TYPEINT,     &
+      NDIMS      = 1,           &
+      LTIMEDEP   = .FALSE.      )
     ILREC=LEN(YCHNAMES(1))
     ILENG=ILREC*ICH_NBR
     ALLOCATE(ICH_NAMES(ILENG))
@@ -1610,29 +1632,31 @@ END IF
 ! IF (NSV >=1) THEN
 !    DO JSV = NSV_C2R2BEG,NSV_C2R2END
 !     IF (JSV == NSV_C2R2BEG ) THEN
-!       TZFIELD%CMNHNAME   = 'RSVS_CLD1'
-!       TZFIELD%CSTDNAME   = ''
-!       TZFIELD%CLONGNAME  = 'RSVS_CLD1'
-!       TZFIELD%CUNITS     = '1'
-!       TZFIELD%CDIR       = 'XY'
-!       TZFIELD%CCOMMENT   = 'X_Y_Z_RHS_CLD'
-!       TZFIELD%NGRID      = 1
-!       TZFIELD%NTYPE      = TYPEREAL
-!       TZFIELD%NDIMS      = 3
-!       TZFIELD%LTIMEDEP   = .TRUE.
+!       TZFIELD = TFIELDDATA(           &
+!         CMNHNAME   = 'RSVS_CLD1',     &
+!         CSTDNAME   = '',              &
+!         CLONGNAME  = 'RSVS_CLD1',     &
+!         CUNITS     = '1',             &
+!         CDIR       = 'XY',            &
+!         CCOMMENT   = 'X_Y_Z_RHS_CLD', &
+!         NGRID      = 1,               &
+!         NTYPE      = TYPEREAL,        &
+!         NDIMS      = 3,               &
+!         LTIMEDEP   = .TRUE.           )
 !       CALL IO_Field_write(TPFILE,TZFIELD,XRRS_CLD(:,:,:,IRR))
 !     END IF
 !     IF (JSV == NSV_C2R2END ) THEN
-!       TZFIELD%CMNHNAME   = 'RSVS_CLD2'
-!       TZFIELD%CSTDNAME   = ''
-!       TZFIELD%CLONGNAME  = 'RSVS_CLD2'
-!       TZFIELD%CUNITS     = '1'
-!       TZFIELD%CDIR       = 'XY'
-!       TZFIELD%CCOMMENT   = 'X_Y_Z_RHS_CLD'
-!       TZFIELD%NGRID      = 1
-!       TZFIELD%NTYPE      = TYPEREAL
-!       TZFIELD%NDIMS      = 3
-!       TZFIELD%LTIMEDEP   = .TRUE.
+!       TZFIELD = TFIELDDATA(           &
+!         CMNHNAME   = 'RSVS_CLD2',     &
+!         CSTDNAME   = '',              &
+!         CLONGNAME  = 'RSVS_CLD2',     &
+!         CUNITS     = '1',             &
+!         CDIR       = 'XY',            &
+!         CCOMMENT   = 'X_Y_Z_RHS_CLD', &
+!         NGRID      = 1,               &
+!         NTYPE      = TYPEREAL,        &
+!         NDIMS      = 3,               &
+!         LTIMEDEP   = .TRUE.           )
 !       CALL IO_Field_write(TPFILE,TZFIELD,XRRS_CLD(:,:,:,IRR))
 !     END IF
 !    END DO
@@ -1928,16 +1952,17 @@ END IF
 IF(LBLOWSNOW) THEN
   IF (ASSOCIATED(XSNWSUBL3D)) THEN
     IF (SIZE(XSNWSUBL3D) /= 0 ) THEN
-      TZFIELD%CMNHNAME   = 'SNWSUBL3D'
-      TZFIELD%CSTDNAME   = ''
-      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-      TZFIELD%CUNITS     = 'kg m-3 s-1'
-      TZFIELD%CDIR       = 'XY'
-      TZFIELD%CCOMMENT   = 'X_Y_INstantaneous 3D Drifting snow sublimation flux'
-      TZFIELD%NGRID      = 1
-      TZFIELD%NTYPE      = TYPEREAL
-      TZFIELD%NDIMS      = 3
-      TZFIELD%LTIMEDEP   = .TRUE.
+      TZFIELD = TFIELDDATA(                                                 &
+        CMNHNAME   = 'SNWSUBL3D',                                           &
+        CSTDNAME   = '',                                                    &
+        CLONGNAME  = 'SNWSUBL3D',                                           &
+        CUNITS     = 'kg m-3 s-1',                                          &
+        CDIR       = 'XY',                                                  &
+        CCOMMENT   = 'X_Y_INstantaneous 3D Drifting snow sublimation flux', &
+        NGRID      = 1,                                                     &
+        NTYPE      = TYPEREAL,                                              &
+        NDIMS      = 3,                                                     &
+        LTIMEDEP   = .TRUE.                                                 )
       CALL IO_Field_write(TPFILE,TZFIELD,XSNWSUBL3D(:,:,:))
       ZWORK2D(:,:) = 0.
       DO JK = IKB,IKE
@@ -1946,16 +1971,17 @@ IF(LBLOWSNOW) THEN
       END DO
       ZWORK2D(:,:) = ZWORK2D(:,:)*1000. ! vapor water in mm unit
       !
-      TZFIELD%CMNHNAME   = 'COL_SNWSUBL'
-      TZFIELD%CSTDNAME   = ''
-      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-      TZFIELD%CUNITS     = 'mm day-1'
-      TZFIELD%CDIR       = 'XY'
-      TZFIELD%CCOMMENT   = 'X_Y_Column Sublimation Rate (mmSWE/day)'
-      TZFIELD%NGRID      = 4
-      TZFIELD%NTYPE      = TYPEREAL
-      TZFIELD%NDIMS      = 2
-      TZFIELD%LTIMEDEP   = .TRUE.
+      TZFIELD = TFIELDDATA(                                     &
+        CMNHNAME   = 'COL_SNWSUBL',                             &
+        CSTDNAME   = '',                                        &
+        CLONGNAME  = 'COL_SNWSUBL',                             &
+        CUNITS     = 'mm day-1',                                &
+        CDIR       = 'XY',                                      &
+        CCOMMENT   = 'X_Y_Column Sublimation Rate (mmSWE/day)', &
+        NGRID      = 4,                                         &
+        NTYPE      = TYPEREAL,                                  &
+        NDIMS      = 2,                                         &
+        LTIMEDEP   = .TRUE.                                     )
       CALL IO_Field_write(TPFILE,TZFIELD,ZWORK2D(:,:))
     END IF
   END IF
@@ -1967,52 +1993,56 @@ IF ((.NOT.LCOUPLES).AND.LOCEAN) THEN
   CALL IO_Field_write(TPFILE,'NFRCLT',NFRCLT)
   CALL IO_Field_write(TPFILE,'NINFRT',NINFRT)
   !
-  TZFIELD%CMNHNAME   = 'SSUFL_T'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'SSUFL'
-  TZFIELD%CUNITS     = 'kg m-1 s-1'
-  TZFIELD%CDIR       = '--'
-  TZFIELD%CCOMMENT   = 'sfc stress along U to force ocean LES'
-  TZFIELD%NGRID      = 0
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 1
-  TZFIELD%LTIMEDEP   = .FALSE.
+  TZFIELD = TFIELDDATA(                                   &
+    CMNHNAME   = 'SSUFL_T',                               &
+    CSTDNAME   = '',                                      &
+    CLONGNAME  = 'SSUFL',                                 &
+    CUNITS     = 'kg m-1 s-1',                            &
+    CDIR       = '--',                                    &
+    CCOMMENT   = 'sfc stress along U to force ocean LES', &
+    NGRID      = 0,                                       &
+    NTYPE      = TYPEREAL,                                &
+    NDIMS      = 1,                                       &
+    LTIMEDEP   = .FALSE.                                  )
   CALL IO_Field_write(TPFILE,TZFIELD,XSSUFL_T(:))
   !
-  TZFIELD%CMNHNAME   = 'SSVFL_T'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'SSVFL'
-  TZFIELD%CUNITS     = 'kg m-1 s-1'
-  TZFIELD%CDIR       = '--'
-  TZFIELD%CCOMMENT   = 'sfc stress along V to force ocean LES'
-  TZFIELD%NGRID      = 0
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 1
-  TZFIELD%LTIMEDEP   = .FALSE.
+  TZFIELD = TFIELDDATA(                                   &
+    CMNHNAME   = 'SSVFL_T',                               &
+    CSTDNAME   = '',                                      &
+    CLONGNAME  = 'SSVFL',                                 &
+    CUNITS     = 'kg m-1 s-1',                            &
+    CDIR       = '--',                                    &
+    CCOMMENT   = 'sfc stress along V to force ocean LES', &
+    NGRID      = 0,                                       &
+    NTYPE      = TYPEREAL,                                &
+    NDIMS      = 1,                                       &
+    LTIMEDEP   = .FALSE.                                  )
   CALL IO_Field_write(TPFILE,TZFIELD,XSSVFL_T(:))
   !
-  TZFIELD%CMNHNAME   = 'SSTFL_T'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'SSTFL'
-  TZFIELD%CUNITS     = 'kg m3 K m s-1'
-  TZFIELD%CDIR       = '--'
-  TZFIELD%CCOMMENT   = 'sfc total heat flux to force ocean LES'
-  TZFIELD%NGRID      = 0
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 1
-  TZFIELD%LTIMEDEP   = .FALSE.
+  TZFIELD = TFIELDDATA(                                    &
+    CMNHNAME   = 'SSTFL_T',                                &
+    CSTDNAME   = '',                                       &
+    CLONGNAME  = 'SSTFL',                                  &
+    CUNITS     = 'kg m3 K m s-1',                          &
+    CDIR       = '--',                                     &
+    CCOMMENT   = 'sfc total heat flux to force ocean LES', &
+    NGRID      = 0,                                        &
+    NTYPE      = TYPEREAL,                                 &
+    NDIMS      = 1,                                        &
+    LTIMEDEP   = .FALSE.                                   )
   CALL IO_Field_write(TPFILE,TZFIELD,XSSTFL_T(:))
   !
-  TZFIELD%CMNHNAME   = 'SSOLA_T'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'SSOLA'
-  TZFIELD%CUNITS     = 'kg m3 K m s-1'
-  TZFIELD%CDIR       = '--'
-  TZFIELD%CCOMMENT   = 'sfc solar flux to force ocean LES'
-  TZFIELD%NGRID      = 0
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 1
-  TZFIELD%LTIMEDEP   = .FALSE.
+  TZFIELD = TFIELDDATA(                               &
+    CMNHNAME   = 'SSOLA_T',                           &
+    CSTDNAME   = '',                                  &
+    CLONGNAME  = 'SSOLA',                             &
+    CUNITS     = 'kg m3 K m s-1',                     &
+    CDIR       = '--',                                &
+    CCOMMENT   = 'sfc solar flux to force ocean LES', &
+    NGRID      = 0,                                   &
+    NTYPE      = TYPEREAL,                            &
+    NDIMS      = 1,                                   &
+    LTIMEDEP   = .FALSE.                              )
   CALL IO_Field_write(TPFILE,TZFIELD,XSSOLA_T(:))
   !
 END IF ! ocean sfc forcing end    
@@ -2027,160 +2057,173 @@ IF (LFORCING) THEN
 !
     WRITE (YFRC,'(I3.3)') JT
 !
-    TZFIELD%CMNHNAME   = 'DTFRC'//YFRC
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'seconds since YYYY-MM-DD HH:MM:SS.S'
-    TZFIELD%CDIR       = '--'
-    TZFIELD%CCOMMENT   = 'Date of forcing profile '//YFRC
-    TZFIELD%NGRID      = 0
-    TZFIELD%NTYPE      = TYPEDATE
-    TZFIELD%NDIMS      = 0
-    TZFIELD%LTIMEDEP   = .FALSE.
+    TZFIELD = TFIELDDATA(                                 &
+      CMNHNAME   = 'DTFRC'//YFRC,                         &
+      CSTDNAME   = '',                                    &
+      CLONGNAME  = 'DTFRC'//YFRC,                         &
+      CUNITS     = 'seconds since YYYY-MM-DD HH:MM:SS.S', &
+      CDIR       = '--',                                  &
+      CCOMMENT   = 'Date of forcing profile '//YFRC,      &
+      NGRID      = 0,                                     &
+      NTYPE      = TYPEDATE,                              &
+      NDIMS      = 0,                                     &
+      LTIMEDEP   = .FALSE.                                )
     CALL IO_Field_write(TPFILE,TZFIELD,TDTFRC(JT))
 !
-    TZFIELD%CMNHNAME   = 'UFRC'//YFRC
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'm s-1'
-    TZFIELD%CDIR       = '--'
-    TZFIELD%CCOMMENT   = 'Zonal component of horizontal forcing wind'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 1
-    TZFIELD%LTIMEDEP   = .FALSE.
+    TZFIELD = TFIELDDATA(                                        &
+      CMNHNAME   = 'UFRC'//YFRC,                                 &
+      CSTDNAME   = '',                                           &
+      CLONGNAME  = 'UFRC'//YFRC,                                 &
+      CUNITS     = 'm s-1',                                      &
+      CDIR       = '--',                                         &
+      CCOMMENT   = 'Zonal component of horizontal forcing wind', &
+      NGRID      = 1,                                            &
+      NTYPE      = TYPEREAL,                                     &
+      NDIMS      = 1,                                            &
+      LTIMEDEP   = .FALSE.                                       )
     CALL IO_Field_write(TPFILE,TZFIELD,XUFRC(:,JT))
 !
-    TZFIELD%CMNHNAME   = 'VFRC'//YFRC
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'm s-1'
-    TZFIELD%CDIR       = '--'
-    TZFIELD%CCOMMENT   = 'Meridian component of horizontal forcing wind'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 1
-    TZFIELD%LTIMEDEP   = .FALSE.
+    TZFIELD = TFIELDDATA(                                           &
+      CMNHNAME   = 'VFRC'//YFRC,                                    &
+      CSTDNAME   = '',                                              &
+      CLONGNAME  = 'VFRC'//YFRC,                                    &
+      CUNITS     = 'm s-1',                                         &
+      CDIR       = '--',                                            &
+      CCOMMENT   = 'Meridian component of horizontal forcing wind', &
+      NGRID      = 1,                                               &
+      NTYPE      = TYPEREAL,                                        &
+      NDIMS      = 1,                                               &
+      LTIMEDEP   = .FALSE.                                          )
     CALL IO_Field_write(TPFILE,TZFIELD,XVFRC(:,JT))
 !
-    TZFIELD%CMNHNAME   = 'WFRC'//YFRC
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'm s-1'
-    TZFIELD%CDIR       = '--'
-    TZFIELD%CCOMMENT   = 'Vertical forcing wind'
-    TZFIELD%NGRID      = 4
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 1
-    TZFIELD%LTIMEDEP   = .FALSE.
+    TZFIELD = TFIELDDATA(                   &
+      CMNHNAME   = 'WFRC'//YFRC,            &
+      CSTDNAME   = '',                      &
+      CLONGNAME  = 'WFRC'//YFRC,            &
+      CUNITS     = 'm s-1',                 &
+      CDIR       = '--',                    &
+      CCOMMENT   = 'Vertical forcing wind', &
+      NGRID      = 4,                       &
+      NTYPE      = TYPEREAL,                &
+      NDIMS      = 1,                       &
+      LTIMEDEP   = .FALSE.                  )
     CALL IO_Field_write(TPFILE,TZFIELD,XWFRC(:,JT))
 !
-    TZFIELD%CMNHNAME   = 'THFRC'//YFRC
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'K'
-    TZFIELD%CDIR       = '--'
-    TZFIELD%CCOMMENT   = 'Forcing potential temperature'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 1
-    TZFIELD%LTIMEDEP   = .FALSE.
+    TZFIELD = TFIELDDATA(                           &
+      CMNHNAME   = 'THFRC'//YFRC,                   &
+      CSTDNAME   = '',                              &
+      CLONGNAME  = 'THFRC'//YFRC,                   &
+      CUNITS     = 'K',                             &
+      CDIR       = '--',                            &
+      CCOMMENT   = 'Forcing potential temperature', &
+      NGRID      = 1,                               &
+      NTYPE      = TYPEREAL,                        &
+      NDIMS      = 1,                               &
+      LTIMEDEP   = .FALSE.                          )
     CALL IO_Field_write(TPFILE,TZFIELD,XTHFRC(:,JT))
 !
-    TZFIELD%CMNHNAME   = 'RVFRC'//YFRC
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'kg kg-1'
-    TZFIELD%CDIR       = '--'
-    TZFIELD%CCOMMENT   = 'Forcing vapor mixing ratio'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 1
-    TZFIELD%LTIMEDEP   = .FALSE.
+    TZFIELD = TFIELDDATA(                        &
+      CMNHNAME   = 'RVFRC'//YFRC,                &
+      CSTDNAME   = '',                           &
+      CLONGNAME  = 'RVFRC'//YFRC,                &
+      CUNITS     = 'kg kg-1',                    &
+      CDIR       = '--',                         &
+      CCOMMENT   = 'Forcing vapor mixing ratio', &
+      NGRID      = 1,                            &
+      NTYPE      = TYPEREAL,                     &
+      NDIMS      = 1,                            &
+      LTIMEDEP   = .FALSE.                       )
     CALL IO_Field_write(TPFILE,TZFIELD,XRVFRC(:,JT))
 !
-    TZFIELD%CMNHNAME   = 'TENDTHFRC'//YFRC
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'K s-1'
-    TZFIELD%CDIR       = '--'
-    TZFIELD%CCOMMENT   = 'Large-scale potential temperature tendency for forcing'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 1
-    TZFIELD%LTIMEDEP   = .FALSE.
+    TZFIELD = TFIELDDATA(                                                    &
+      CMNHNAME   = 'TENDTHFRC'//YFRC,                                        &
+      CSTDNAME   = '',                                                       &
+      CLONGNAME  = 'TENDTHFRC'//YFRC,                                        &
+      CUNITS     = 'K s-1',                                                  &
+      CDIR       = '--',                                                     &
+      CCOMMENT   = 'Large-scale potential temperature tendency for forcing', &
+      NGRID      = 1,                                                        &
+      NTYPE      = TYPEREAL,                                                 &
+      NDIMS      = 1,                                                        &
+      LTIMEDEP   = .FALSE.                                                   )
     CALL IO_Field_write(TPFILE,TZFIELD,XTENDTHFRC(:,JT))
 !
-    TZFIELD%CMNHNAME   = 'TENDRVFRC'//YFRC
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'kg kg-1 s-1'
-    TZFIELD%CDIR       = '--'
-    TZFIELD%CCOMMENT   = 'Large-scale vapor mixing ratio tendency for forcing'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 1
-    TZFIELD%LTIMEDEP   = .FALSE.
+    TZFIELD = TFIELDDATA(                                                 &
+      CMNHNAME   = 'TENDRVFRC'//YFRC,                                     &
+      CSTDNAME   = '',                                                    &
+      CLONGNAME  = 'TENDRVFRC'//YFRC,                                     &
+      CUNITS     = 'kg kg-1 s-1',                                         &
+      CDIR       = '--',                                                  &
+      CCOMMENT   = 'Large-scale vapor mixing ratio tendency for forcing', &
+      NGRID      = 1,                                                     &
+      NTYPE      = TYPEREAL,                                              &
+      NDIMS      = 1,                                                     &
+      LTIMEDEP   = .FALSE.                                                )
     CALL IO_Field_write(TPFILE,TZFIELD,XTENDRVFRC(:,JT))
 !
-    TZFIELD%CMNHNAME   = 'GXTHFRC'//YFRC
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'K m-1'
-    TZFIELD%CDIR       = '--'
-    TZFIELD%CCOMMENT   = 'Large-scale potential temperature gradient for forcing'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 1
-    TZFIELD%LTIMEDEP   = .FALSE.
+    TZFIELD = TFIELDDATA(                                                    &
+      CMNHNAME   = 'GXTHFRC'//YFRC,                                          &
+      CSTDNAME   = '',                                                       &
+      CLONGNAME  = 'GXTHFRC'//YFRC,                                          &
+      CUNITS     = 'K m-1',                                                  &
+      CDIR       = '--',                                                     &
+      CCOMMENT   = 'Large-scale potential temperature gradient for forcing', &
+      NGRID      = 1,                                                        &
+      NTYPE      = TYPEREAL,                                                 &
+      NDIMS      = 1,                                                        &
+      LTIMEDEP   = .FALSE.                                                   )
     CALL IO_Field_write(TPFILE,TZFIELD,XGXTHFRC(:,JT))
 !
-    TZFIELD%CMNHNAME   = 'GYTHFRC'//YFRC
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'K m-1'
-    TZFIELD%CDIR       = '--'
-    TZFIELD%CCOMMENT   = 'Large-scale potential temperature gradient for forcing'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 1
-    TZFIELD%LTIMEDEP   = .FALSE.
+    TZFIELD = TFIELDDATA(                                                    &
+      CMNHNAME   = 'GYTHFRC'//YFRC,                                          &
+      CSTDNAME   = '',                                                       &
+      CLONGNAME  = 'GYTHFRC'//YFRC,                                          &
+      CUNITS     = 'K m-1',                                                  &
+      CDIR       = '--',                                                     &
+      CCOMMENT   = 'Large-scale potential temperature gradient for forcing', &
+      NGRID      = 1,                                                        &
+      NTYPE      = TYPEREAL,                                                 &
+      NDIMS      = 1,                                                        &
+      LTIMEDEP   = .FALSE.                                                   )
     CALL IO_Field_write(TPFILE,TZFIELD,XGYTHFRC(:,JT))
 !
-    TZFIELD%CMNHNAME   = 'PGROUNDFRC'//YFRC
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'Pa'
-    TZFIELD%CDIR       = '--'
-    TZFIELD%CCOMMENT   = 'Forcing ground pressure'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 0
-    TZFIELD%LTIMEDEP   = .FALSE.
+    TZFIELD = TFIELDDATA(                     &
+      CMNHNAME   = 'PGROUNDFRC'//YFRC,        &
+      CSTDNAME   = '',                        &
+      CLONGNAME  = 'PGROUNDFRC'//YFRC,        &
+      CUNITS     = 'Pa',                      &
+      CDIR       = '--',                      &
+      CCOMMENT   = 'Forcing ground pressure', &
+      NGRID      = 1,                         &
+      NTYPE      = TYPEREAL,                  &
+      NDIMS      = 0,                         &
+      LTIMEDEP   = .FALSE.                    )
     CALL IO_Field_write(TPFILE,TZFIELD,XPGROUNDFRC(JT))
 !
-    TZFIELD%CMNHNAME   = 'TENDUFRC'//YFRC
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'm s-1'
-    TZFIELD%CDIR       = '--'
-    TZFIELD%CCOMMENT   = 'Large-scale U tendency for forcing'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 1
-    TZFIELD%LTIMEDEP   = .FALSE.
+    TZFIELD = TFIELDDATA(                                &
+      CMNHNAME   = 'TENDUFRC'//YFRC,                     &
+      CSTDNAME   = '',                                   &
+      CLONGNAME  = 'TENDUFRC'//YFRC,                     &
+      CUNITS     = 'm s-1',                              &
+      CDIR       = '--',                                 &
+      CCOMMENT   = 'Large-scale U tendency for forcing', &
+      NGRID      = 1,                                    &
+      NTYPE      = TYPEREAL,                             &
+      NDIMS      = 1,                                    &
+      LTIMEDEP   = .FALSE.                               )
     CALL IO_Field_write(TPFILE,TZFIELD,XTENDUFRC(:,JT))
 !
-    TZFIELD%CMNHNAME   = 'TENDVFRC'//YFRC
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'm s-1'
-    TZFIELD%CDIR       = '--'
-    TZFIELD%CCOMMENT   = 'Large-scale V tendency for forcing'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 1
-    TZFIELD%LTIMEDEP   = .FALSE.
+    TZFIELD = TFIELDDATA(                                &
+      CMNHNAME   = 'TENDVFRC'//YFRC,                     &
+      CSTDNAME   = '',                                   &
+      CLONGNAME  = 'TENDVFRC'//YFRC,                     &
+      CUNITS     = 'm s-1',                              &
+      CDIR       = '--',                                 &
+      CCOMMENT   = 'Large-scale V tendency for forcing', &
+      NGRID      = 1,                                    &
+      NTYPE      = TYPEREAL,                             &
+      NDIMS      = 1,                                    &
+      LTIMEDEP   = .FALSE.                               )
     CALL IO_Field_write(TPFILE,TZFIELD,XTENDVFRC(:,JT))
 !
   END DO
@@ -2191,56 +2234,60 @@ END IF
 ! -------------------------------------------------------------------------
 IF ( L2D_ADV_FRC ) THEN
 !
-  TZFIELD%CMNHNAME   = 'NADVFRC1'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'NADVFRC1'
-  TZFIELD%CUNITS     = '1'
-  TZFIELD%CDIR       = '--'
-  TZFIELD%CCOMMENT   = 'Number of forcing profiles'
-  TZFIELD%NGRID      = 0
-  TZFIELD%NTYPE      = TYPEINT
-  TZFIELD%NDIMS      = 0
-  TZFIELD%LTIMEDEP   = .FALSE.
+  TZFIELD = TFIELDDATA(                        &
+    CMNHNAME   = 'NADVFRC1',                   &
+    CSTDNAME   = '',                           &
+    CLONGNAME  = 'NADVFRC1',                   &
+    CUNITS     = '1',                          &
+    CDIR       = '--',                         &
+    CCOMMENT   = 'Number of forcing profiles', &
+    NGRID      = 0,                            &
+    NTYPE      = TYPEINT,                      &
+    NDIMS      = 0,                            &
+    LTIMEDEP   = .FALSE.                       )
   CALL IO_Field_write(TPFILE,TZFIELD,NADVFRC)
 !
   DO JT=1,NADVFRC
 !
     WRITE (YFRC,'(I3.3)') JT
 !
-    TZFIELD%CMNHNAME   = 'DTADV'//YFRC
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'seconds since YYYY-MM-DD HH:MM:SS.S'
-    TZFIELD%CDIR       = '--'
-    TZFIELD%CCOMMENT   = 'Date and time of the advecting forcing '//YFRC
-    TZFIELD%NGRID      = 0
-    TZFIELD%NTYPE      = TYPEDATE
-    TZFIELD%NDIMS      = 0
-    TZFIELD%LTIMEDEP   = .FALSE.
+    TZFIELD = TFIELDDATA(                                           &
+      CMNHNAME   = 'DTADV'//YFRC,                                   &
+      CSTDNAME   = '',                                              &
+      CLONGNAME  = 'DTADV'//YFRC,                                   &
+      CUNITS     = 'seconds since YYYY-MM-DD HH:MM:SS.S',           &
+      CDIR       = '--',                                            &
+      CCOMMENT   = 'Date and time of the advecting forcing '//YFRC, &
+      NGRID      = 0,                                               &
+      NTYPE      = TYPEDATE,                                        &
+      NDIMS      = 0,                                               &
+      LTIMEDEP   = .FALSE.                                          )
     CALL IO_Field_write(TPFILE,TZFIELD,TDTADVFRC(JT))
-!                                                                
-    TZFIELD%CMNHNAME   = 'TH_ADV'//YFRC
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'K s-1'
-    TZFIELD%CDIR       = '--'
-    TZFIELD%CCOMMENT   = ''
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .FALSE.
+!
+    TZFIELD = TFIELDDATA(          &
+      CMNHNAME   = 'TH_ADV'//YFRC, &
+      CSTDNAME   = '',             &
+      CLONGNAME  = 'TH_ADV'//YFRC, &
+      CUNITS     = 'K s-1',        &
+      CDIR       = '--',           &
+      CCOMMENT   = '',             &
+      NGRID      = 1,              &
+      NTYPE      = TYPEREAL,       &
+      NDIMS      = 3,              &
+      LTIMEDEP   = .FALSE.         )
     CALL IO_Field_write(TPFILE,TZFIELD,XDTHFRC(:,:,:,JT))
 !    
-    TZFIELD%CMNHNAME   = 'Q_ADV'//YFRC
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'kg kg-1 s-1'
-    TZFIELD%CDIR       = '--'
-    TZFIELD%CCOMMENT   = ''
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .FALSE.
+    TZFIELD = TFIELDDATA(         &
+      CMNHNAME   = 'Q_ADV'//YFRC, &
+      CSTDNAME   = '',            &
+      CLONGNAME  = 'Q_ADV'//YFRC, &
+      CUNITS     = 'kg kg-1 s-1', &
+      CDIR       = '--',          &
+      CCOMMENT   = '',            &
+      NGRID      = 1,             &
+      NTYPE      = TYPEREAL,      &
+      NDIMS      = 3,             &
+      LTIMEDEP   = .FALSE.        )
     CALL IO_Field_write(TPFILE,TZFIELD,XDRVFRC(:,:,:,JT))
 !
   ENDDO
@@ -2248,56 +2295,60 @@ ENDIF
 !
 IF ( L2D_REL_FRC ) THEN
 !
-  TZFIELD%CMNHNAME   = 'NRELFRC1'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'NRELFRC1'
-  TZFIELD%CUNITS     = '1'
-  TZFIELD%CDIR       = '--'
-  TZFIELD%CCOMMENT   = 'Number of forcing profiles'
-  TZFIELD%NGRID      = 0
-  TZFIELD%NTYPE      = TYPEINT
-  TZFIELD%NDIMS      = 0
-  TZFIELD%LTIMEDEP   = .FALSE.
+  TZFIELD = TFIELDDATA(                        &
+    CMNHNAME   = 'NRELFRC1',                   &
+    CSTDNAME   = '',                           &
+    CLONGNAME  = 'NRELFRC1',                   &
+    CUNITS     = '1',                          &
+    CDIR       = '--',                         &
+    CCOMMENT   = 'Number of forcing profiles', &
+    NGRID      = 0,                            &
+    NTYPE      = TYPEINT,                      &
+    NDIMS      = 0,                            &
+    LTIMEDEP   = .FALSE.                       )
   CALL IO_Field_write(TPFILE,TZFIELD,NRELFRC)
 !
   DO JT=1,NRELFRC
 !
     WRITE (YFRC,'(I3.3)') JT
 !
-    TZFIELD%CMNHNAME   = 'DTREL'//YFRC
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'seconds since YYYY-MM-DD HH:MM:SS.S'
-    TZFIELD%CDIR       = '--'
-    TZFIELD%CCOMMENT   = 'Date and time of the relaxation forcing '//YFRC
-    TZFIELD%NGRID      = 0
-    TZFIELD%NTYPE      = TYPEDATE
-    TZFIELD%NDIMS      = 0
-    TZFIELD%LTIMEDEP   = .FALSE.
+    TZFIELD = TFIELDDATA(                                            &
+      CMNHNAME   = 'DTREL'//YFRC,                                    &
+      CSTDNAME   = '',                                               &
+      CLONGNAME  = 'DTREL'//YFRC,                                    &
+      CUNITS     = 'seconds since YYYY-MM-DD HH:MM:SS.S',            &
+      CDIR       = '--',                                             &
+      CCOMMENT   = 'Date and time of the relaxation forcing '//YFRC, &
+      NGRID      = 0,                                                &
+      NTYPE      = TYPEDATE,                                         &
+      NDIMS      = 0,                                                &
+      LTIMEDEP   = .FALSE.                                           )
     CALL IO_Field_write(TPFILE,TZFIELD,TDTRELFRC(JT))
 !                                                                
-    TZFIELD%CMNHNAME   = 'TH_REL'//YFRC
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'K'
-    TZFIELD%CDIR       = '--'
-    TZFIELD%CCOMMENT   = ''
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .FALSE.
+    TZFIELD = TFIELDDATA(          &
+      CMNHNAME   = 'TH_REL'//YFRC, &
+      CSTDNAME   = '',             &
+      CLONGNAME  = 'TH_REL'//YFRC, &
+      CUNITS     = 'K',            &
+      CDIR       = '--',           &
+      CCOMMENT   = '',             &
+      NGRID      = 1,              &
+      NTYPE      = TYPEREAL,       &
+      NDIMS      = 3,              &
+      LTIMEDEP   = .FALSE.         )
     CALL IO_Field_write(TPFILE,TZFIELD,XTHREL(:,:,:,JT))
 !    
-    TZFIELD%CMNHNAME   = 'Q_REL'//YFRC
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'kg kg-1'
-    TZFIELD%CDIR       = '--'
-    TZFIELD%CCOMMENT   = ''
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .FALSE.
+    TZFIELD = TFIELDDATA(         &
+      CMNHNAME   = 'Q_REL'//YFRC, &
+      CSTDNAME   = '',            &
+      CLONGNAME  = 'Q_REL'//YFRC, &
+      CUNITS     = 'kg kg-1',     &
+      CDIR       = '--',          &
+      CCOMMENT   = '',            &
+      NGRID      = 1,             &
+      NTYPE      = TYPEREAL,      &
+      NDIMS      = 3,             &
+      LTIMEDEP   = .FALSE.        )
     CALL IO_Field_write(TPFILE,TZFIELD,XRVREL(:,:,:,JT))
 !
   ENDDO
@@ -2366,13 +2417,15 @@ IF ( CPROGRAM=='REAL  ' ) THEN
 !*       1.16    Dummy variables in PREP_REAL_CASE
 !
   IF (ALLOCATED(CDUMMY_2D)) THEN
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CUNITS     = ''
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 2
-    TZFIELD%LTIMEDEP   = .TRUE.
+    TZFIELD = TFIELDDATA(                           &
+      CMNHNAME   = 'generic for CDUMMY_2D variables', & !Temporary name to ease identification
+      CSTDNAME   = '',                                &
+      CUNITS     = '',                                &
+      CDIR       = 'XY',                              &
+      NGRID      = 1,                                 &
+      NTYPE      = TYPEREAL,                          &
+      NDIMS      = 2,                                 &
+      LTIMEDEP   = .TRUE.                             )
     !
     DO JSA=1,SIZE(XDUMMY_2D,3)
       TZFIELD%CMNHNAME   = ADJUSTL(CDUMMY_2D(JSA))
@@ -2389,11 +2442,15 @@ END IF
 !             i) Main
 !
 IF (LMAIN_EOL .AND. IMI == NMODEL_EOL) THEN
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CUNITS     = 'N'
+  TZFIELD = TFIELDDATA(                                &
+    CMNHNAME   = 'generic for wind turbine variables', & !Temporary name to ease identification
+    CSTDNAME   = '',                                   &
+    CUNITS     = 'N',                                  &
+    CDIR       = 'XY',                                 &
+    NGRID      = 1,                                    &
+    NTYPE      = TYPEREAL,                             &
+    NDIMS      = 3,                                    &
+    LTIMEDEP   = .TRUE.                                )
 !
   TZFIELD%CMNHNAME   = 'FX_RG'
   TZFIELD%CLONGNAME  = 'FX_RG'
@@ -2432,11 +2489,15 @@ SELECT CASE(CMETH_EOL)
 !
   CASE('ADNR') ! Actuator Disc Non-Rotating
 !
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 1
-    TZFIELD%CDIR       = '--'
-    TZFIELD%CUNITS     = '1'
+    TZFIELD = TFIELDDATA(                        &
+      CMNHNAME   = 'generic for ADNR variables', & !Temporary name to ease identification
+      CSTDNAME   = '',                           &
+      CUNITS     = '1',                          &
+      CDIR       = '--',                         &
+      NGRID      = 1,                            &
+      NTYPE      = TYPEREAL,                     &
+      NDIMS      = 1,                            &
+      LTIMEDEP   = .TRUE.                        )
 !
     TZFIELD%CMNHNAME   = 'A_INDU'
     TZFIELD%CLONGNAME  = 'INDUCTION_FACTOR'
@@ -2468,9 +2529,13 @@ SELECT CASE(CMETH_EOL)
 !
   CASE('ALM') ! Actuator Line Method
 !
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%CDIR       = '--'
+    TZFIELD = TFIELDDATA(                       &
+      CMNHNAME   = 'generic for ALM variables', & !Temporary name to ease identification
+      CSTDNAME   = '',                          &
+      CDIR       = '--',                        &
+      NGRID      = 1,                           &
+      NTYPE      = TYPEREAL,                    &
+      LTIMEDEP   = .TRUE.                       )
 !
     TZFIELD%NDIMS      = 1
 !
@@ -2534,9 +2599,13 @@ SELECT CASE(CMETH_EOL)
 !
     IF (MEAN_COUNT /= 0) THEN
 !
-      TZFIELD%NGRID      = 1
-      TZFIELD%NTYPE      = TYPEREAL
-      TZFIELD%CDIR       = '--'
+      TZFIELD = TFIELDDATA(                            &
+        CMNHNAME   = 'generic for ALM mean variables', & !Temporary name to ease identification
+        CSTDNAME   = '',                               &
+        CDIR       = '--',                             &
+        NGRID      = 1,                                &
+        NTYPE      = TYPEREAL,                         &
+        LTIMEDEP   = .TRUE.                            )
 !
       TZFIELD%NDIMS      = 1
 !

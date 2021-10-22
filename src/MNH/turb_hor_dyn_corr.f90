@@ -371,16 +371,17 @@ ZFLX(:,:,IKB-1) = 2. * ZFLX(:,:,IKB-1) -  ZFLX(:,:,IKB)
 CALL UPDATE_HALO_ll(TZFIELDS_ll, IINFO_ll)
 IF ( tpfile%lopened .AND. OTURB_FLX ) THEN
   ! stores <U U>  
-  TZFIELD%CMNHNAME   = 'U_VAR'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'U_VAR'
-  TZFIELD%CUNITS     = 'm2 s-2'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_Z_U_VAR'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDDATA(         &
+    CMNHNAME   = 'U_VAR',       &
+    CSTDNAME   = '',            &
+    CLONGNAME  = 'U_VAR',       &
+    CUNITS     = 'm2 s-2',      &
+    CDIR       = 'XY',          &
+    CCOMMENT   = 'X_Y_Z_U_VAR', &
+    NGRID      = 1,             &
+    NTYPE      = TYPEREAL,      &
+    NDIMS      = 3,             &
+    LTIMEDEP   = .TRUE.         )
   CALL IO_Field_write(TPFILE,TZFIELD,ZFLX)
 END IF
 !
@@ -466,16 +467,17 @@ CALL UPDATE_HALO_ll(TZFIELDS_ll, IINFO_ll)
 !
 IF ( tpfile%lopened .AND. OTURB_FLX ) THEN
   ! stores <V V>  
-  TZFIELD%CMNHNAME   = 'V_VAR'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'V_VAR'
-  TZFIELD%CUNITS     = 'm2 s-2'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_Z_V_VAR'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDDATA(         &
+    CMNHNAME   = 'V_VAR',       &
+    CSTDNAME   = '',            &
+    CLONGNAME  = 'V_VAR',       &
+    CUNITS     = 'm2 s-2',      &
+    CDIR       = 'XY',          &
+    CCOMMENT   = 'X_Y_Z_V_VAR', &
+    NGRID      = 1,             &
+    NTYPE      = TYPEREAL,      &
+    NDIMS      = 3,             &
+    LTIMEDEP   = .TRUE.         )
   CALL IO_Field_write(TPFILE,TZFIELD,ZFLX)
 END IF
 !
@@ -553,16 +555,17 @@ ZFLX(:,:,IKB-1) = 2. * ZFLX(:,:,IKB-1) - ZFLX(:,:,IKB)
 !
 IF ( tpfile%lopened .AND. OTURB_FLX ) THEN
   ! stores <W W>  
-  TZFIELD%CMNHNAME   = 'W_VAR'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'W_VAR'
-  TZFIELD%CUNITS     = 'm2 s-2'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_Z_W_VAR'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDDATA(         &
+    CMNHNAME   = 'W_VAR',       &
+    CSTDNAME   = '',            &
+    CLONGNAME  = 'W_VAR',       &
+    CUNITS     = 'm2 s-2',      &
+    CDIR       = 'XY',          &
+    CCOMMENT   = 'X_Y_Z_W_VAR', &
+    NGRID      = 1,             &
+    NTYPE      = TYPEREAL,      &
+    NDIMS      = 3,             &
+    LTIMEDEP   = .TRUE.         )
   CALL IO_Field_write(TPFILE,TZFIELD,ZFLX)
 END IF
 !

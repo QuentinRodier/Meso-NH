@@ -566,16 +566,17 @@ END IF
 !
 IF ( tpfile%lopened ) THEN
   ZW(:,:,:)=SUM(ZNAS,4)-ZW(:,:,:)
-  TZFIELD%CMNHNAME   = 'NACT'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'NACT'
-  TZFIELD%CUNITS     = ''
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_Z_NACT'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDDATA(        &
+    CMNHNAME   = 'NACT',       &
+    CSTDNAME   = '',           &
+    CLONGNAME  = 'NACT',       &
+    CUNITS     = 'kg-1',       &
+    CDIR       = 'XY',         &
+    CCOMMENT   = 'X_Y_Z_NACT', &
+    NGRID      = 1,            &
+    NTYPE      = TYPEREAL,     &
+    NDIMS      = 3,            &
+    LTIMEDEP   = .TRUE.        )
   CALL IO_Field_write(TPFILE,TZFIELD,ZW)
 END IF
 !

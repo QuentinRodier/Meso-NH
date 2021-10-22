@@ -220,16 +220,17 @@ ZFLX(:,:,IKB-1)=2.*ZFLX(:,:,IKB)- ZFLX(:,:,IKB+1)
 !
 ! stores  <U W>
 IF ( tpfile%lopened .AND. OTURB_FLX ) THEN
-  TZFIELD%CMNHNAME   = 'UW_HFLX'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'UW_HFLX'
-  TZFIELD%CUNITS     = 'm2 s-2'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_Z_UW_HFLX'
-  TZFIELD%NGRID      = 6
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDDATA(         &
+  CMNHNAME   = 'UW_HFLX',       &
+  CSTDNAME   = '',              &
+  CLONGNAME  = 'UW_HFLX',       &
+  CUNITS     = 'm2 s-2',        &
+  CDIR       = 'XY',            &
+  CCOMMENT   = 'X_Y_Z_UW_HFLX', &
+  NGRID      = 6,               &
+  NTYPE      = TYPEREAL,        &
+  NDIMS      = 3,               &
+  LTIMEDEP   = .TRUE.           )
   CALL IO_Field_write(TPFILE,TZFIELD,ZFLX)
 END IF
 !

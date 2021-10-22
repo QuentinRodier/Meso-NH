@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1996-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1996-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -260,13 +260,14 @@ ELSE
 !
  SELECT CASE(HGETSVCONV)
   CASE('READ')
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CUNITS     = 's-1'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
+    TZFIELD = TFIELDDATA(         &
+      CMNHNAME   = 'generic for ini_deep_convection', & !Temporary name to ease identification
+      CUNITS     = 's-1',         &
+      CDIR       = 'XY',          &
+      NGRID      = 1,             &
+      NTYPE      = TYPEREAL,      &
+      NDIMS      = 3,             &
+      LTIMEDEP   = .TRUE.         )
     !
     DO JSV = 1, NSV_USER
       WRITE(TZFIELD%CMNHNAME,'(A7,I3.3)')'DSVCONV',JSV

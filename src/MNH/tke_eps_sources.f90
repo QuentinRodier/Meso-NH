@@ -415,58 +415,62 @@ IF ( OTURB_DIAG .AND. tpfile%lopened ) THEN
 !
 ! stores the dynamic production 
 !
-  TZFIELD%CMNHNAME   = 'DP'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'DP'
-  TZFIELD%CUNITS     = 'm2 s-3'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_Z_DP'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDDATA(      &
+    CMNHNAME   = 'DP',       &
+    CSTDNAME   = '',         &
+    CLONGNAME  = 'DP',       &
+    CUNITS     = 'm2 s-3',   &
+    CDIR       = 'XY',       &
+    CCOMMENT   = 'X_Y_Z_DP', &
+    NGRID      = 1,          &
+    NTYPE      = TYPEREAL,   &
+    NDIMS      = 3,          &
+    LTIMEDEP   = .TRUE.      )
   CALL IO_Field_write(TPFILE,TZFIELD,PDP)
 !
 ! stores the thermal production 
 !
-  TZFIELD%CMNHNAME   = 'TP'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'TP'
-  TZFIELD%CUNITS     = 'm2 s-3'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_Z_TP'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDDATA(      &
+    CMNHNAME   = 'TP',       &
+    CSTDNAME   = '',         &
+    CLONGNAME  = 'TP',       &
+    CUNITS     = 'm2 s-3',   &
+    CDIR       = 'XY',       &
+    CCOMMENT   = 'X_Y_Z_TP', &
+    NGRID      = 1,          &
+    NTYPE      = TYPEREAL,   &
+    NDIMS      = 3,          &
+    LTIMEDEP   = .TRUE.      )
   CALL IO_Field_write(TPFILE,TZFIELD,PTP)
 !
 ! stores the whole turbulent transport
 !
-  TZFIELD%CMNHNAME   = 'TR'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'TR'
-  TZFIELD%CUNITS     = 'm2 s-3'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_Z_TR'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDDATA(      &
+    CMNHNAME   = 'TR',       &
+    CSTDNAME   = '',         &
+    CLONGNAME  = 'TR',       &
+    CUNITS     = 'm2 s-3',   &
+    CDIR       = 'XY',       &
+    CCOMMENT   = 'X_Y_Z_TR', &
+    NGRID      = 1,          &
+    NTYPE      = TYPEREAL,   &
+    NDIMS      = 3,          &
+    LTIMEDEP   = .TRUE.      )
   CALL IO_Field_write(TPFILE,TZFIELD,PTR)
 !
 ! stores the dissipation of TKE 
 !
-  TZFIELD%CMNHNAME   = 'DISS'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'DISS'
-  TZFIELD%CUNITS     = 'm2 s-3'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_Z_DISS'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDDATA(        &
+    CMNHNAME   = 'DISS',       &
+    CSTDNAME   = '',           &
+    CLONGNAME  = 'DISS',       &
+    CUNITS     = 'm2 s-3',     &
+    CDIR       = 'XY',         &
+    CCOMMENT   = 'X_Y_Z_DISS', &
+    NGRID      = 1,            &
+    NTYPE      = TYPEREAL,     &
+    NDIMS      = 3,            &
+    LTIMEDEP   = .TRUE.        )
   CALL IO_Field_write(TPFILE,TZFIELD,PDISS)
 END IF
 !

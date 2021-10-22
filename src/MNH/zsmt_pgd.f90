@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2005-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2005-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -333,41 +333,44 @@ IF(OHSLOP) THEN
    END DO
  END DO
  !
- ! Writes filtred orography and slopes along i and j
- TZFIELD%CMNHNAME   = 'ZSLOPEX'
- TZFIELD%CSTDNAME   = ''
- TZFIELD%CLONGNAME  = 'ZSLOPEX'
- TZFIELD%CUNITS     = ''
- TZFIELD%CDIR       = 'XY'
- TZFIELD%CCOMMENT   = 'orography slope along x'
- TZFIELD%NGRID      = 4
- TZFIELD%NTYPE      = TYPEREAL
- TZFIELD%NDIMS      = 2
- TZFIELD%LTIMEDEP   = .FALSE.
+  ! Writes filtred orography and slopes along i and j
+  TZFIELD = TFIELDDATA(                     &
+    CMNHNAME   = 'ZSLOPEX',                 &
+    CSTDNAME   = '',                        &
+    CLONGNAME  = 'ZSLOPEX',                 &
+    CUNITS     = '',                        &
+    CDIR       = 'XY',                      &
+    CCOMMENT   = 'orography slope along x', &
+    NGRID      = 4,                         &
+    NTYPE      = TYPEREAL,                  &
+    NDIMS      = 2,                         &
+    LTIMEDEP   = .FALSE.                    )
  CALL IO_Field_write(TPFILE,TZFIELD,ZSLOPEX)
  !
- TZFIELD%CMNHNAME   = 'ZSLOPEY'
- TZFIELD%CSTDNAME   = ''
- TZFIELD%CLONGNAME  = 'ZSLOPEY'
- TZFIELD%CUNITS     = ''
- TZFIELD%CDIR       = 'XY'
- TZFIELD%CCOMMENT   = 'orography slope along y'
- TZFIELD%NGRID      = 4
- TZFIELD%NTYPE      = TYPEREAL
- TZFIELD%NDIMS      = 2
- TZFIELD%LTIMEDEP   = .FALSE.
+  TZFIELD = TFIELDDATA(                     &
+    CMNHNAME   = 'ZSLOPEY',                 &
+    CSTDNAME   = '',                        &
+    CLONGNAME  = 'ZSLOPEY',                 &
+    CUNITS     = '',                        &
+    CDIR       = 'XY',                      &
+    CCOMMENT   = 'orography slope along y', &
+    NGRID      = 4,                         &
+    NTYPE      = TYPEREAL,                  &
+    NDIMS      = 2,                         &
+    LTIMEDEP   = .FALSE.                    )
  CALL IO_Field_write(TPFILE,TZFIELD,ZSLOPEY)
  !
- TZFIELD%CMNHNAME   = 'ZS_FILTR'
- TZFIELD%CSTDNAME   = ''
- TZFIELD%CLONGNAME  = 'ZS_FILTR'
- TZFIELD%CUNITS     = 'm'
- TZFIELD%CDIR       = 'XY'
- TZFIELD%CCOMMENT   = 'filtred orography'
- TZFIELD%NGRID      = 4
- TZFIELD%NTYPE      = TYPEREAL
- TZFIELD%NDIMS      = 2
- TZFIELD%LTIMEDEP   = .FALSE.
+  TZFIELD = TFIELDDATA(               &
+    CMNHNAME   = 'ZS_FILTR',          &
+    CSTDNAME   = '',                  &
+    CLONGNAME  = 'ZS_FILTR',          &
+    CUNITS     = 'm',                 &
+    CDIR       = 'XY',                &
+    CCOMMENT   = 'filtred orography', &
+    NGRID      = 4,                   &
+    NTYPE      = TYPEREAL,            &
+    NDIMS      = 2,                   &
+    LTIMEDEP   = .FALSE.              )
  CALL IO_Field_write(TPFILE,TZFIELD,ZSMOOTH_ZSINI-ZFINE_ZS)
 END IF
 !-------------------------------------------------------------------------------

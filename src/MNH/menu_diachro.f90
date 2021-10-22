@@ -115,16 +115,17 @@ IF(HGROUP == 'END')THEN
 
   ILENG=NMNHNAMELGTMAX*IGROUP
 
-  TZFIELD%CMNHNAME   = 'MENU_BUDGET.DIM'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'MENU_BUDGET.DIM'
-  TZFIELD%CUNITS     = ''
-  TZFIELD%CDIR       = '--'
-  TZFIELD%CCOMMENT   = ''
-  TZFIELD%NGRID      = 0
-  TZFIELD%NTYPE      = TYPEINT
-  TZFIELD%NDIMS      = 0
-  TZFIELD%LTIMEDEP   = .FALSE.
+  TZFIELD = TFIELDDATA(             &
+    CMNHNAME   = 'MENU_BUDGET.DIM', &
+    CSTDNAME   = '',                &
+    CLONGNAME  = 'MENU_BUDGET.DIM', &
+    CUNITS     = '',                &
+    CDIR       = '--',              &
+    CCOMMENT   = '',                &
+    NGRID      = 0,                 &
+    NTYPE      = TYPEINT,           &
+    NDIMS      = 0,                 &
+    LTIMEDEP   = .FALSE.            )
   CALL IO_Field_write(tzfile,TZFIELD,ILENG)
 
   ALLOCATE(ITABCHAR(ILENG))
@@ -134,16 +135,17 @@ IF(HGROUP == 'END')THEN
     ENDDO
   ENDDO
 
-  TZFIELD%CMNHNAME   = 'MENU_BUDGET'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'MENU_BUDGET'
-  TZFIELD%CUNITS     = ''
-  TZFIELD%CDIR       = '--'
-  TZFIELD%CCOMMENT   = ''
-  TZFIELD%NGRID      = 0
-  TZFIELD%NTYPE      = TYPEINT
-  TZFIELD%NDIMS      = 1
-  TZFIELD%LTIMEDEP   = .FALSE.
+  TZFIELD = TFIELDDATA(         &
+    CMNHNAME   = 'MENU_BUDGET', &
+    CSTDNAME   = '',            &
+    CLONGNAME  = 'MENU_BUDGET', &
+    CUNITS     = '',            &
+    CDIR       = '--',          &
+    CCOMMENT   = '',            &
+    NGRID      = 0,             &
+    NTYPE      = TYPEINT,       &
+    NDIMS      = 1,             &
+    LTIMEDEP   = .FALSE.        )
   CALL IO_Field_write(tzfile,TZFIELD,ITABCHAR)
 
   DEALLOCATE(ITABCHAR)
@@ -154,16 +156,17 @@ ELSE IF(HGROUP == 'READ')THEN
   tzfile = tpdiafile
   tzfile%cformat = 'LFI'
 
-  TZFIELD%CMNHNAME   = 'MENU_BUDGET.DIM'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'MENU_BUDGET.DIM'
-  TZFIELD%CUNITS     = ''
-  TZFIELD%CDIR       = '--'
-  TZFIELD%CCOMMENT   = ''
-  TZFIELD%NGRID      = 0
-  TZFIELD%NTYPE      = TYPEINT
-  TZFIELD%NDIMS      = 0
-  TZFIELD%LTIMEDEP   = .FALSE.
+  TZFIELD = TFIELDDATA(             &
+    CMNHNAME   = 'MENU_BUDGET.DIM', &
+    CSTDNAME   = '',                &
+    CLONGNAME  = 'MENU_BUDGET.DIM', &
+    CUNITS     = '',                &
+    CDIR       = '--',              &
+    CCOMMENT   = '',                &
+    NGRID      = 0,                 &
+    NTYPE      = TYPEINT,           &
+    NDIMS      = 0,                 &
+    LTIMEDEP   = .FALSE.            )
   CALL IO_Field_read(tzfile,TZFIELD,ILENG,IRESPDIA)
   IF(IRESPDIA == -47)THEN
 !   print *,' No record MENU_BUDGET '
@@ -172,16 +175,17 @@ ELSE IF(HGROUP == 'READ')THEN
   ENDIF
 
   ALLOCATE(ITABCHAR(ILENG))
-  TZFIELD%CMNHNAME   = 'MENU_BUDGET'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'MENU_BUDGET'
-  TZFIELD%CUNITS     = ''
-  TZFIELD%CDIR       = '--'
-  TZFIELD%CCOMMENT   = ''
-  TZFIELD%NGRID      = 0
-  TZFIELD%NTYPE      = TYPEINT
-  TZFIELD%NDIMS      = 1
-  TZFIELD%LTIMEDEP   = .FALSE.
+  TZFIELD = TFIELDDATA(         &
+    CMNHNAME   = 'MENU_BUDGET', &
+    CSTDNAME   = '',            &
+    CLONGNAME  = 'MENU_BUDGET', &
+    CUNITS     = '',            &
+    CDIR       = '--',          &
+    CCOMMENT   = '',            &
+    NGRID      = 0,             &
+    NTYPE      = TYPEINT,       &
+    NDIMS      = 1,             &
+    LTIMEDEP   = .FALSE.        )
   CALL IO_Field_read(tzfile,TZFIELD,ITABCHAR)
   IGROUP=ILENG/NMNHNAMELGTMAX
   DO JJ=1,IGROUP

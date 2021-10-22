@@ -213,17 +213,18 @@ IF (NRR >=1) THEN
                LHORELAX_RI .OR. LHORELAX_RS .OR. LHORELAX_RG .OR. &
                LHORELAX_RH
   !
-  TZFIELD%CMNHNAME   = 'HORELAX_R'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'HORELAX_R'
-  TZFIELD%CUNITS     = ''
-  TZFIELD%CDIR       = '--'
-  TZFIELD%CCOMMENT   = 'Switch to activate the HOrizontal RELAXation'
-  TZFIELD%CLBTYPE    = 'NONE'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPELOG
-  TZFIELD%NDIMS      = 0
-  TZFIELD%LTIMEDEP   = .FALSE.
+  TZFIELD = TFIELDDATA(                                          &
+    CMNHNAME   = 'HORELAX_R',                                    &
+    CSTDNAME   = '',                                             &
+    CLONGNAME  = 'HORELAX_R',                                    &
+    CUNITS     = '',                                             &
+    CDIR       = '--',                                           &
+    CCOMMENT   = 'Switch to activate the HOrizontal RELAXation', &
+    CLBTYPE    = 'NONE',                                         &
+    NGRID      = 1,                                              &
+    NTYPE      = TYPELOG,                                        &
+    NDIMS      = 0,                                              &
+    LTIMEDEP   = .FALSE.                                         )
   !
   CALL IO_Field_write(TPFILE,TZFIELD,GHORELAX_R)
   !
@@ -268,17 +269,18 @@ END IF
 IF (NSV >=1) THEN
   GHORELAX_SV=ANY ( LHORELAX_SV )
 !
-  TZFIELD%CMNHNAME   = 'HORELAX_SV'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'HORELAX_SV'
-  TZFIELD%CUNITS     = ''
-  TZFIELD%CDIR       = '--'
-  TZFIELD%CCOMMENT   = ''
-  TZFIELD%CLBTYPE    = 'NONE'
-  TZFIELD%NGRID      = 0
-  TZFIELD%NTYPE      = TYPELOG
-  TZFIELD%NDIMS      = 0
-  TZFIELD%LTIMEDEP   = .FALSE.
+  TZFIELD = TFIELDDATA(        &
+    CMNHNAME   = 'HORELAX_SV', &
+    CSTDNAME   = '',           &
+    CLONGNAME  = 'HORELAX_SV', &
+    CUNITS     = '',           &
+    CDIR       = '--',         &
+    CCOMMENT   = '',           &
+    CLBTYPE    = 'NONE',       &
+    NGRID      = 0,            &
+    NTYPE      = TYPELOG,      &
+    NDIMS      = 0,            &
+    LTIMEDEP   = .FALSE.       )
   CALL IO_Field_write(TPFILE,TZFIELD,GHORELAX_SV)
 !
   IRIMX =(NSIZELBXSV_ll-2*JPHEXT)/2

@@ -699,28 +699,30 @@ IF (KRRL >=1) THEN
 !
 !
   IF ( tpfile%lopened .AND. OTURB_DIAG ) THEN
-    TZFIELD%CMNHNAME   = 'ATHETA'
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = 'ATHETA'
-    TZFIELD%CUNITS     = 'm'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%CCOMMENT   = 'X_Y_Z_ATHETA'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
+    TZFIELD = TFIELDDATA(          &
+      CMNHNAME   = 'ATHETA',       &
+      CSTDNAME   = '',             &
+      CLONGNAME  = 'ATHETA',       &
+      CUNITS     = 'm',            &
+      CDIR       = 'XY',           &
+      CCOMMENT   = 'X_Y_Z_ATHETA', &
+      NGRID      = 1,              &
+      NTYPE      = TYPEREAL,       &
+      NDIMS      = 3,              &
+      LTIMEDEP   = .TRUE.          )
     CALL IO_Field_write(TPFILE,TZFIELD,ZATHETA)
-! 
-    TZFIELD%CMNHNAME   = 'AMOIST'
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = 'AMOIST'
-    TZFIELD%CUNITS     = 'm'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%CCOMMENT   = 'X_Y_Z_AMOIST'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
+!
+    TZFIELD = TFIELDDATA(          &
+      CMNHNAME   = 'AMOIST',       &
+      CSTDNAME   = '',             &
+      CLONGNAME  = 'AMOIST',       &
+      CUNITS     = 'm',            &
+      CDIR       = 'XY',           &
+      CCOMMENT   = 'X_Y_Z_AMOIST', &
+      NGRID      = 1,              &
+      NTYPE      = TYPEREAL,       &
+      NDIMS      = 3,              &
+      LTIMEDEP   = .TRUE.          )
     CALL IO_Field_write(TPFILE,TZFIELD,ZAMOIST)
   END IF
 !
@@ -1152,46 +1154,49 @@ IF ( OTURB_DIAG .AND. tpfile%lopened ) THEN
 ! 
 ! stores the mixing length
 ! 
-  TZFIELD%CMNHNAME   = 'LM'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'LM'
-  TZFIELD%CUNITS     = 'm'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'Mixing length'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDDATA(           &
+    CMNHNAME   = 'LM',            &
+    CSTDNAME   = '',              &
+    CLONGNAME  = 'LM',            &
+    CUNITS     = 'm',             &
+    CDIR       = 'XY',            &
+    CCOMMENT   = 'Mixing length', &
+    NGRID      = 1,               &
+    NTYPE      = TYPEREAL,        &
+    NDIMS      = 3,               &
+    LTIMEDEP   = .TRUE.           )
   CALL IO_Field_write(TPFILE,TZFIELD,PLEM)
 !
   IF (KRR /= 0) THEN
 !
 ! stores the conservative potential temperature
 !
-    TZFIELD%CMNHNAME   = 'THLM'
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = 'THLM'
-    TZFIELD%CUNITS     = 'K'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%CCOMMENT   = 'Conservative potential temperature'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
+    TZFIELD = TFIELDDATA(                              &
+    CMNHNAME   = 'THLM',                               &
+    CSTDNAME   = '',                                   &
+    CLONGNAME  = 'THLM',                               &
+    CUNITS     = 'K',                                  &
+    CDIR       = 'XY',                                 &
+    CCOMMENT   = 'Conservative potential temperature', &
+    NGRID      = 1,                                    &
+    NTYPE      = TYPEREAL,                             &
+    NDIMS      = 3,                                    &
+    LTIMEDEP   = .TRUE.                                )
     CALL IO_Field_write(TPFILE,TZFIELD,PTHLT)
 !
 ! stores the conservative mixing ratio
 !
-    TZFIELD%CMNHNAME   = 'RNPM'
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = 'RNPM'
-    TZFIELD%CUNITS     = 'kg kg-1'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%CCOMMENT   = 'Conservative mixing ratio'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
+    TZFIELD = TFIELDDATA(                    &
+    CMNHNAME   = 'RNPM',                     &
+    CSTDNAME   = '',                         &
+    CLONGNAME  = 'RNPM',                     &
+    CUNITS     = 'kg kg-1',                  &
+    CDIR       = 'XY',                       &
+    CCOMMENT   = 'Conservative mixing ratio',&
+    NGRID      = 1,                          &
+    NTYPE      = TYPEREAL,                   &
+    NDIMS      = 3,                          &
+    LTIMEDEP   = .TRUE.                      )
     CALL IO_Field_write(TPFILE,TZFIELD,PRT(:,:,:,1))
    END IF
 END IF
@@ -1820,16 +1825,17 @@ ENDIF
 !
 ! Impression before modification of the mixing length
 IF ( OTURB_DIAG .AND. tpfile%lopened ) THEN
-  TZFIELD%CMNHNAME   = 'LM_CLEAR_SKY'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'LM_CLEAR_SKY'
-  TZFIELD%CUNITS     = 'm'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_Z_LM CLEAR SKY'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDDATA(                &
+    CMNHNAME   = 'LM_CLEAR_SKY',       &
+    CSTDNAME   = '',                   &
+    CLONGNAME  = 'LM_CLEAR_SKY',       &
+    CUNITS     = 'm',                  &
+    CDIR       = 'XY',                 &
+    CCOMMENT   = 'X_Y_Z_LM CLEAR SKY', &
+    NGRID      = 1,                    &
+    NTYPE      = TYPEREAL,             &
+    NDIMS      = 3,                    &
+    LTIMEDEP   = .TRUE.                )
   CALL IO_Field_write(TPFILE,TZFIELD,PLEM)
 ENDIF
 !
@@ -1846,27 +1852,30 @@ WHERE (PCEI(:,:,:) == -1.) PLEM(:,:,:) = ZLM_CLOUD(:,:,:)
 !              ----------
 !
 IF ( OTURB_DIAG .AND. tpfile%lopened ) THEN
-  TZFIELD%CMNHNAME   = 'COEF_AMPL'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'COEF_AMPL'
-  TZFIELD%CUNITS     = '1'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_Z_COEF AMPL'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDDATA(             &
+    CMNHNAME   = 'COEF_AMPL',       &
+    CSTDNAME   = '',                &
+    CLONGNAME  = 'COEF_AMPL',       &
+    CUNITS     = '1',               &
+    CDIR       = 'XY',              &
+    CCOMMENT   = 'X_Y_Z_COEF AMPL', &
+    NGRID      = 1,                 &
+    NTYPE      = TYPEREAL,          &
+    NDIMS      = 3,                 &
+    LTIMEDEP   = .TRUE.             )
   CALL IO_Field_write(TPFILE,TZFIELD,ZCOEF_AMPL)
   !
-  TZFIELD%CMNHNAME   = 'LM_CLOUD'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'LM_CLOUD'
-  TZFIELD%CUNITS     = 'm'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_Z_LM CLOUD'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
+  TZFIELD = TFIELDDATA(            &
+    CMNHNAME   = 'LM_CLOUD',       &
+    CSTDNAME   = '',               &
+    CLONGNAME  = 'LM_CLOUD',       &
+    CUNITS     = 'm',              &
+    CDIR       = 'XY',             &
+    CCOMMENT   = 'X_Y_Z_LM CLOUD', &
+    NGRID      = 1,                &
+    NTYPE      = TYPEREAL,         &
+    NDIMS      = 3,                &
+    LTIMEDEP   = .TRUE.            )
   CALL IO_Field_write(TPFILE,TZFIELD,ZLM_CLOUD)
   !
 ENDIF

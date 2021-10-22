@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -295,16 +295,17 @@ DO JRR=1,SIZE(XRT,4)
 END DO
 !
 IF (NVERB>=10) THEN
-  TZFIELD%CMNHNAME   = 'THV'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'THV'
-  TZFIELD%CUNITS     = 'K'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_Z_THV'
-  TZFIELD%NGRID      = 4
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDDATA(       &
+    CMNHNAME   = 'THV',       &
+    CSTDNAME   = '',          &
+    CLONGNAME  = 'THV',       &
+    CUNITS     = 'K',         &
+    CDIR       = 'XY',        &
+    CCOMMENT   = 'X_Y_Z_THV', &
+    NGRID      = 4,           &
+    NTYPE      = TYPEREAL,    &
+    NDIMS      = 3,           &
+    LTIMEDEP   = .TRUE.       )
   CALL IO_Field_write(TPFILE,TZFIELD,ZTHV)
 END IF
 !-------------------------------------------------------------------------------

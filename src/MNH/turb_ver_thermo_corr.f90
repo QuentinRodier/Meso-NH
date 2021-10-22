@@ -568,16 +568,17 @@ END IF
   !
   ! stores <THl THl>  
   IF ( OTURB_FLX .AND. tpfile%lopened ) THEN
-    TZFIELD%CMNHNAME   = 'THL_VVAR'
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = 'THL_VVAR'
-    TZFIELD%CUNITS     = 'K2'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%CCOMMENT   = 'X_Y_Z_THL_VVAR'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
+    TZFIELD = TFIELDDATA(            &
+      CMNHNAME   = 'THL_VVAR',       &
+      CSTDNAME   = '',               &
+      CLONGNAME  = 'THL_VVAR',       &
+      CUNITS     = 'K2',             &
+      CDIR       = 'XY',             &
+      CCOMMENT   = 'X_Y_Z_THL_VVAR', &
+      NGRID      = 1,                &
+      NTYPE      = TYPEREAL,         &
+      NDIMS      = 3,                &
+      LTIMEDEP   = .TRUE.            )
     CALL IO_Field_write(TPFILE,TZFIELD,ZFLXZ)
   END IF
 !
@@ -695,16 +696,17 @@ END IF
     END IF
     ! stores <THl Rnp>   
     IF ( OTURB_FLX .AND. tpfile%lopened ) THEN
-      TZFIELD%CMNHNAME   = 'THLRCONS_VCOR'
-      TZFIELD%CSTDNAME   = ''
-      TZFIELD%CLONGNAME  = 'THLRCONS_VCOR'
-      TZFIELD%CUNITS     = 'K kg kg-1'
-      TZFIELD%CDIR       = 'XY'
-      TZFIELD%CCOMMENT   = 'X_Y_Z_THLRCONS_VCOR'
-      TZFIELD%NGRID      = 1
-      TZFIELD%NTYPE      = TYPEREAL
-      TZFIELD%NDIMS      = 3
-      TZFIELD%LTIMEDEP   = .TRUE.
+      TZFIELD = TFIELDDATA(                 &
+        CMNHNAME   = 'THLRCONS_VCOR',       &
+        CSTDNAME   = '',                    &
+        CLONGNAME  = 'THLRCONS_VCOR',       &
+        CUNITS     = 'K kg kg-1',           &
+        CDIR       = 'XY',                  &
+        CCOMMENT   = 'X_Y_Z_THLRCONS_VCOR', &
+        NGRID      = 1,                     &
+        NTYPE      = TYPEREAL,              &
+        NDIMS      = 3,                     &
+        LTIMEDEP   = .TRUE.                 )
       CALL IO_Field_write(TPFILE,TZFIELD,ZFLXZ)
     END IF
 !
@@ -802,16 +804,17 @@ END IF
     END IF
     ! stores <Rnp Rnp>    
     IF ( OTURB_FLX .AND. tpfile%lopened ) THEN
-      TZFIELD%CMNHNAME   = 'RTOT_VVAR'
-      TZFIELD%CSTDNAME   = ''
-      TZFIELD%CLONGNAME  = 'RTOT_VVAR'
-      TZFIELD%CUNITS     = 'kg2 kg-2'
-      TZFIELD%CDIR       = 'XY'
-      TZFIELD%CCOMMENT   = 'X_Y_Z_RTOT_VVAR'
-      TZFIELD%NGRID      = 1
-      TZFIELD%NTYPE      = TYPEREAL
-      TZFIELD%NDIMS      = 3
-      TZFIELD%LTIMEDEP   = .TRUE.
+      TZFIELD = TFIELDDATA(             &
+        CMNHNAME   = 'RTOT_VVAR',       &
+        CSTDNAME   = '',                &
+        CLONGNAME  = 'RTOT_VVAR',       &
+        CUNITS     = 'kg2 kg-2',        &
+        CDIR       = 'XY',              &
+        CCOMMENT   = 'X_Y_Z_RTOT_VVAR', &
+        NGRID      = 1,                 &
+        NTYPE      = TYPEREAL,          &
+        NDIMS      = 3,                 &
+        LTIMEDEP   = .TRUE.             )
       CALL IO_Field_write(TPFILE,TZFIELD,ZFLXZ)
     END IF
     !

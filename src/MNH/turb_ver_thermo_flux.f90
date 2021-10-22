@@ -753,16 +753,17 @@ END IF
 !
 IF ( OTURB_FLX .AND. tpfile%lopened ) THEN
   ! stores the conservative potential temperature vertical flux
-  TZFIELD%CMNHNAME   = 'THW_FLX'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'THW_FLX'
-  TZFIELD%CUNITS     = 'K m s-1'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'Conservative potential temperature vertical flux'
-  TZFIELD%NGRID      = 4
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDDATA(                                             &
+   CMNHNAME   = 'THW_FLX',                                          &
+   CSTDNAME   = '',                                                 &
+   CLONGNAME  = 'THW_FLX',                                          &
+   CUNITS     = 'K m s-1',                                          &
+   CDIR       = 'XY',                                               &
+   CCOMMENT   = 'Conservative potential temperature vertical flux', &
+   NGRID      = 4,                                                  &
+   NTYPE      = TYPEREAL,                                           &
+   NDIMS      = 3,                                                  &
+   LTIMEDEP   = .TRUE.                                              )
   CALL IO_Field_write(TPFILE,TZFIELD,ZFLXZ)
 END IF
 !
@@ -989,16 +990,17 @@ IF (KRR /= 0) THEN
   !
   IF ( OTURB_FLX .AND. tpfile%lopened ) THEN
     ! stores the conservative mixing ratio vertical flux
-    TZFIELD%CMNHNAME   = 'RCONSW_FLX'
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = 'RCONSW_FLX'
-    TZFIELD%CUNITS     = 'kg m s-1 kg-1'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%CCOMMENT   = 'Conservative mixing ratio vertical flux'
-    TZFIELD%NGRID      = 4
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
+    TZFIELD = TFIELDDATA(                                     &
+      CMNHNAME   = 'RCONSW_FLX',                              &
+      CSTDNAME   = '',                                        &
+      CLONGNAME  = 'RCONSW_FLX',                              &
+      CUNITS     = 'kg m s-1 kg-1',                           &
+      CDIR       = 'XY',                                      &
+      CCOMMENT   = 'Conservative mixing ratio vertical flux', &
+      NGRID      = 4,                                         &
+      NTYPE      = TYPEREAL,                                  &
+      NDIMS      = 3,                                         &
+      LTIMEDEP   = .TRUE.                                     )
     CALL IO_Field_write(TPFILE,TZFIELD,ZFLXZ)
   END IF
   !
@@ -1078,16 +1080,17 @@ IF ( ((OTURB_FLX .AND. tpfile%lopened) .OR. LLES_CALL) .AND. (KRRL > 0) ) THEN
   !                 
   ! store the liquid water mixing ratio vertical flux
   IF ( OTURB_FLX .AND. tpfile%lopened ) THEN
-    TZFIELD%CMNHNAME   = 'RCW_FLX'
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = 'RCW_FLX'
-    TZFIELD%CUNITS     = 'kg m s-1 kg-1'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%CCOMMENT   = 'Liquid water mixing ratio vertical flux'
-    TZFIELD%NGRID      = 4
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
+    TZFIELD = TFIELDDATA(                                     &
+      CMNHNAME   = 'RCW_FLX',                                 &
+      CSTDNAME   = '',                                        &
+      CLONGNAME  = 'RCW_FLX',                                 &
+      CUNITS     = 'kg m s-1 kg-1',                           &
+      CDIR       = 'XY',                                      &
+      CCOMMENT   = 'Liquid water mixing ratio vertical flux', &
+      NGRID      = 4,                                         &
+      NTYPE      = TYPEREAL,                                  &
+      NDIMS      = 3,                                         &
+      LTIMEDEP   = .TRUE.                                     )
     CALL IO_Field_write(TPFILE,TZFIELD,ZFLXZ)
   END IF
   !  

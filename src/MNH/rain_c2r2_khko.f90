@@ -595,16 +595,17 @@ end if
 !!
 !!
 ! IF ( tpfile%lopened ) THEN
-!   TZFIELD%CMNHNAME   = 'ZCHEN'
-!   TZFIELD%CSTDNAME   = ''
-!   TZFIELD%CLONGNAME  = 'ZCHEN'
-!   TZFIELD%CUNITS     = ''
-!   TZFIELD%CDIR       = 'XY'
-!   TZFIELD%CCOMMENT   = 'X_Y_Z_ZCHEN'
-!   TZFIELD%NGRID      = 1
-!   TZFIELD%NTYPE      = TYPEREAL
-!   TZFIELD%NDIMS      = 3
-!   TZFIELD%LTIMEDEP   = .TRUE.
+!   TZFIELD = TFIELDDATA(         &
+!     CMNHNAME   = 'ZCHEN',       &
+!     CSTDNAME   = '',            &
+!     CLONGNAME  = 'ZCHEN',       &
+!     CUNITS     = '',            &
+!     CDIR       = 'XY',          &
+!     CCOMMENT   = 'X_Y_Z_ZCHEN', &
+!     NGRID      = 1,             &
+!     NTYPE      = TYPEREAL,      &
+!     NDIMS      = 3,             &
+!     LTIMEDEP   = .TRUE.         )
 !   CALL IO_Field_write(TPFILE,TZFIELD,ZCHEN)
 ! END IF
 !
@@ -878,16 +879,17 @@ INUCT = COUNTJV( GNUCT(:,:,:),I1(:),I2(:),I3(:))
 ! END IF
 !                      
 IF ( tpfile%lopened ) THEN
-  TZFIELD%CMNHNAME   = 'SMAX'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'SMAX'
-  TZFIELD%CUNITS     = '1'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_Z_SMAX'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDDATA(        &
+    CMNHNAME   = 'SMAX',       &
+    CSTDNAME   = '',           &
+    CLONGNAME  = 'SMAX',       &
+    CUNITS     = '1',          &
+    CDIR       = 'XY',         &
+    CCOMMENT   = 'X_Y_Z_SMAX', &
+    NGRID      = 1,            &
+    NTYPE      = TYPEREAL,     &
+    NDIMS      = 3,            &
+    LTIMEDEP   = .TRUE.        )
   CALL IO_Field_write(TPFILE,TZFIELD,ZZW1LOG)
 END IF
 !
@@ -1896,28 +1898,30 @@ DO JN = 1 , KSPLITR
   END IF
 !   
  IF ( OSEDC .AND. tpfile%lopened ) THEN
-  TZFIELD%CMNHNAME   = 'SEDFLUXC'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'SEDFLUXC'
-  TZFIELD%CUNITS     = ''
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_Z_SEDFLUXC'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDDATA(            &
+    CMNHNAME   = 'SEDFLUXC',       &
+    CSTDNAME   = '',               &
+    CLONGNAME  = 'SEDFLUXC',       &
+    CUNITS     = '',               &
+    CDIR       = 'XY',             &
+    CCOMMENT   = 'X_Y_Z_SEDFLUXC', &
+    NGRID      = 1,                &
+    NTYPE      = TYPEREAL,         &
+    NDIMS      = 3,                &
+    LTIMEDEP   = .TRUE.            )
   CALL IO_Field_write(TPFILE,TZFIELD,ZWSEDC)
   !
-  TZFIELD%CMNHNAME   = 'SEDFLUXR'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'SEDFLUXR'
-  TZFIELD%CUNITS     = ''
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_Z_SEDFLUXR'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDDATA(            &
+    CMNHNAME   = 'SEDFLUXR',       &
+    CSTDNAME   = '',               &
+    CLONGNAME  = 'SEDFLUXR',       &
+    CUNITS     = '',               &
+    CDIR       = 'XY',             &
+    CCOMMENT   = 'X_Y_Z_SEDFLUXR', &
+    NGRID      = 1,                &
+    NTYPE      = TYPEREAL,         &
+    NDIMS      = 3,                &
+    LTIMEDEP   = .TRUE.            )
   CALL IO_Field_write(TPFILE,TZFIELD,ZWSEDR)
  END IF
 END DO

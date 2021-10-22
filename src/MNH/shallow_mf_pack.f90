@@ -395,72 +395,77 @@ end if
 IF ( OMF_FLX .AND. tpfile%lopened ) THEN
   ! stores the conservative potential temperature vertical flux
   ZWORK(:,:,:)=RESHAPE(ZFLXZTHMF (:,:),(/ IIU,IJU,IKU /) )
-  TZFIELD%CMNHNAME   = 'MF_THW_FLX'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'MF_THW_FLX'
-  TZFIELD%CUNITS     = 'K m s-1'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_Z_MF_THW_FLX'
-  TZFIELD%NGRID      = 4
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDDATA(              &
+    CMNHNAME   = 'MF_THW_FLX',       &
+    CSTDNAME   = '',                 &
+    CLONGNAME  = 'MF_THW_FLX',       &
+    CUNITS     = 'K m s-1',          &
+    CDIR       = 'XY',               &
+    CCOMMENT   = 'X_Y_Z_MF_THW_FLX', &
+    NGRID      = 4,                  &
+    NTYPE      = TYPEREAL,           &
+    NDIMS      = 3,                  &
+    LTIMEDEP   = .TRUE.              )
   CALL IO_Field_write(TPFILE,TZFIELD,ZWORK)
   !
   ! stores the conservative mixing ratio vertical flux
   ZWORK(:,:,:)=RESHAPE(ZFLXZRMF(:,:),(/ IIU,IJU,IKU /) )
-  TZFIELD%CMNHNAME   = 'MF_RCONSW_FLX'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'MF_RCONSW_FLX'
-  TZFIELD%CUNITS     = 'K m s-1'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_Z_MF_RCONSW_FLX'
-  TZFIELD%NGRID      = 4
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+    TZFIELD = TFIELDDATA(                 &
+      CMNHNAME   = 'MF_RCONSW_FLX',       &
+      CSTDNAME   = '',                    &
+      CLONGNAME  = 'MF_RCONSW_FLX',       &
+      CUNITS     = 'K m s-1',             &
+      CDIR       = 'XY',                  &
+      CCOMMENT   = 'X_Y_Z_MF_RCONSW_FLX', &
+      NGRID      = 4,                     &
+      NTYPE      = TYPEREAL,              &
+      NDIMS      = 3,                     &
+      LTIMEDEP   = .TRUE.                 )
   CALL IO_Field_write(TPFILE,TZFIELD,ZWORK)
   !
   ! stores the theta_v vertical flux
-  TZFIELD%CMNHNAME   = 'MF_THVW_FLX'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'MF_THVW_FLX'
-  TZFIELD%CUNITS     = 'K m s-1'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_Z_MF_THVW_FLX'
-  TZFIELD%NGRID      = 4
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDDATA(               &
+    CMNHNAME   = 'MF_THVW_FLX',       &
+    CSTDNAME   = '',                  &
+    CLONGNAME  = 'MF_THVW_FLX',       &
+    CUNITS     = 'K m s-1',           &
+    CDIR       = 'XY',                &
+    CCOMMENT   = 'X_Y_Z_MF_THVW_FLX', &
+    NGRID      = 4,                   &
+    NTYPE      = TYPEREAL,            &
+    NDIMS      = 3,                   &
+    LTIMEDEP   = .TRUE.               )
   CALL IO_Field_write(TPFILE,TZFIELD,PFLXZTHVMF)
   !
  IF (OMIXUV) THEN
   ! stores the U momentum vertical flux
   ZWORK(:,:,:)=RESHAPE(ZFLXZUMF(:,:),(/ IIU,IJU,IKU /) )
-  TZFIELD%CMNHNAME   = 'MF_UW_FLX'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'MF_UW_FLX'
-  TZFIELD%CUNITS     = 'm2 s-2'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_Z_MF_UW_FLX'
-  TZFIELD%NGRID      = 4
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDDATA(             &
+    CMNHNAME   = 'MF_UW_FLX',       &
+    CSTDNAME   = '',                &
+    CLONGNAME  = 'MF_UW_FLX',       &
+    CUNITS     = 'm2 s-2',          &
+    CDIR       = 'XY',              &
+    CCOMMENT   = 'X_Y_Z_MF_UW_FLX', &
+    NGRID      = 4,                 &
+    NTYPE      = TYPEREAL,          &
+    NDIMS      = 3,                 &
+    LTIMEDEP   = .TRUE.             )
   CALL IO_Field_write(TPFILE,TZFIELD,ZWORK)
   !
   ! stores the V momentum vertical flux
   ZWORK(:,:,:)=RESHAPE(ZFLXZVMF(:,:),(/ IIU,IJU,IKU /) )
-  TZFIELD%CMNHNAME   = 'MF_VW_FLX'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'MF_VW_FLX'
-  TZFIELD%CUNITS     = 'm2 s-2'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_Z_MF_VW_FLX'
-  TZFIELD%NGRID      = 4
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDDATA(             &
+    CMNHNAME   = 'MF_VW_FLX',       &
+    CSTDNAME   = '',                &
+    CLONGNAME  = 'MF_VW_FLX',       &
+    CUNITS     = 'm2 s-2',          &
+    CDIR       = 'XY',              &
+    CCOMMENT   = 'X_Y_Z_MF_VW_FLX', &
+    NGRID      = 4,                 &
+    NTYPE      = TYPEREAL,          &
+    NDIMS      = 3,                 &
+    LTIMEDEP   = .TRUE.             )
   CALL IO_Field_write(TPFILE,TZFIELD,ZWORK)
   !
  END IF

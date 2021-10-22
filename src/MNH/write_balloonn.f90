@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2001-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2001-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -113,64 +113,69 @@ CALL SM_LATLON(XLATORI,XLONORI,  &
      TPFLYER%X_CUR,TPFLYER%Y_CUR,ZLAT,ZLON)
 !
 !
-TZFIELD%CMNHNAME   = TRIM(TPFLYER%TITLE)//'LAT'
-TZFIELD%CSTDNAME   = ''
-TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-TZFIELD%CUNITS     = 'degree'
-TZFIELD%CDIR       = '--'
-TZFIELD%CCOMMENT   = ''
-TZFIELD%NGRID      = 0
-TZFIELD%NTYPE      = TYPEREAL
-TZFIELD%NDIMS      = 0
-TZFIELD%LTIMEDEP   = .TRUE.
+TZFIELD = TFIELDDATA(                      &
+  CMNHNAME   = TRIM(TPFLYER%TITLE)//'LAT', &
+  CSTDNAME   = '',                         &
+  CLONGNAME  = TRIM(TPFLYER%TITLE)//'LAT', &
+  CUNITS     = 'degree',                   &
+  CDIR       = '--',                       &
+  CCOMMENT   = '',                         &
+  NGRID      = 0,                          &
+  NTYPE      = TYPEREAL,                   &
+  NDIMS      = 0,                          &
+  LTIMEDEP   = .TRUE.                      )
 CALL IO_Field_write(TPFILE,TZFIELD,ZLAT)
 !
-TZFIELD%CMNHNAME   = TRIM(TPFLYER%TITLE)//'LON'
-TZFIELD%CSTDNAME   = ''
-TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-TZFIELD%CUNITS     = 'degree'
-TZFIELD%CDIR       = '--'
-TZFIELD%CCOMMENT   = ''
-TZFIELD%NGRID      = 0
-TZFIELD%NTYPE      = TYPEREAL
-TZFIELD%NDIMS      = 0
-TZFIELD%LTIMEDEP   = .TRUE.
+TZFIELD = TFIELDDATA(                      &
+  CMNHNAME   = TRIM(TPFLYER%TITLE)//'LON', &
+  CSTDNAME   = '',                         &
+  CLONGNAME  = TRIM(TPFLYER%TITLE)//'LON', &
+  CUNITS     = 'degree',                   &
+  CDIR       = '--',                       &
+  CCOMMENT   = '',                         &
+  NGRID      = 0,                          &
+  NTYPE      = TYPEREAL,                   &
+  NDIMS      = 0,                          &
+  LTIMEDEP   = .TRUE.                      )
 CALL IO_Field_write(TPFILE,TZFIELD,ZLON)
 !
-TZFIELD%CMNHNAME   = TRIM(TPFLYER%TITLE)//'ALT'
-TZFIELD%CSTDNAME   = ''
-TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-TZFIELD%CUNITS     = 'm'
-TZFIELD%CDIR       = '--'
-TZFIELD%CCOMMENT   = ''
-TZFIELD%NGRID      = 0
-TZFIELD%NTYPE      = TYPEREAL
-TZFIELD%NDIMS      = 0
-TZFIELD%LTIMEDEP   = .TRUE.
+TZFIELD = TFIELDDATA(                      &
+  CMNHNAME   = TRIM(TPFLYER%TITLE)//'ALT', &
+  CSTDNAME   = '',                         &
+  CLONGNAME  = TRIM(TPFLYER%TITLE)//'ALT', &
+  CUNITS     = 'm',                        &
+  CDIR       = '--',                       &
+  CCOMMENT   = '',                         &
+  NGRID      = 0,                          &
+  NTYPE      = TYPEREAL,                   &
+  NDIMS      = 0,                          &
+  LTIMEDEP   = .TRUE.                      )
 CALL IO_Field_write(TPFILE,TZFIELD,TPFLYER%Z_CUR)
 !
-TZFIELD%CMNHNAME   = TRIM(TPFLYER%TITLE)//'WASCENT'
-TZFIELD%CSTDNAME   = ''
-TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-TZFIELD%CUNITS     = 'm s-1'
-TZFIELD%CDIR       = '--'
-TZFIELD%CCOMMENT   = ''
-TZFIELD%NGRID      = 0
-TZFIELD%NTYPE      = TYPEREAL
-TZFIELD%NDIMS      = 0
-TZFIELD%LTIMEDEP   = .TRUE.
+TZFIELD = TFIELDDATA(                          &
+  CMNHNAME   = TRIM(TPFLYER%TITLE)//'WASCENT', &
+  CSTDNAME   = '',                             &
+  CLONGNAME  = TRIM(TPFLYER%TITLE)//'WASCENT', &
+  CUNITS     = 'm s-1',                        &
+  CDIR       = '--',                           &
+  CCOMMENT   = '',                             &
+  NGRID      = 0,                              &
+  NTYPE      = TYPEREAL,                       &
+  NDIMS      = 0,                              &
+  LTIMEDEP   = .TRUE.                          )
 CALL IO_Field_write(TPFILE,TZFIELD,TPFLYER%WASCENT)
 !
-TZFIELD%CMNHNAME   = TRIM(TPFLYER%TITLE)//'RHO'
-TZFIELD%CSTDNAME   = ''
-TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-TZFIELD%CUNITS     = 'kg m-3'
-TZFIELD%CDIR       = '--'
-TZFIELD%CCOMMENT   = ''
-TZFIELD%NGRID      = 0
-TZFIELD%NTYPE      = TYPEREAL
-TZFIELD%NDIMS      = 0
-TZFIELD%LTIMEDEP   = .TRUE.
+TZFIELD = TFIELDDATA(                      &
+  CMNHNAME   = TRIM(TPFLYER%TITLE)//'RHO', &
+  CSTDNAME   = '',                         &
+  CLONGNAME  = TRIM(TPFLYER%TITLE)//'RHO', &
+  CUNITS     = 'kg m-3',                   &
+  CDIR       = '--',                       &
+  CCOMMENT   = '',                         &
+  NGRID      = 0,                          &
+  NTYPE      = TYPEREAL,                   &
+  NDIMS      = 0,                          &
+  LTIMEDEP   = .TRUE.                      )
 CALL IO_Field_write(TPFILE,TZFIELD,TPFLYER%RHO)
 !
 !
