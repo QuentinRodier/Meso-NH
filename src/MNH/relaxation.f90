@@ -517,16 +517,16 @@ IF(OVE_RELAX) THEN
 !
   DO JK = KALBOT, IKE+1
 !
-    PRUS(:,:,JK)  = PRUS(:,:,JK)  - ZKV(JK)  *(PUT(:,:,JK)  -PLSUM(:,:,JK)  )&
+    PRUS(:,:,JK)  = PRUS(:,:,JK)  - ZKV(JK)  *(PUT(:,:,JK)  -real(PLSUM(:,:,JK),kind=4) )&
                     * ZRHODJU(:,:,JK)
 !
-    PRVS(:,:,JK)  = PRVS(:,:,JK)  - ZKV(JK)  *(PVT(:,:,JK)  -PLSVM(:,:,JK)  )&
+    PRVS(:,:,JK)  = PRVS(:,:,JK)  - ZKV(JK)  *(PVT(:,:,JK)  -real(PLSVM(:,:,JK),kind=4) )&
                     * ZRHODJV(:,:,JK)
 !
-    PRWS(:,:,JK)  = PRWS(:,:,JK)  - ZKVW(JK) *(PWT(:,:,JK)  -PLSWM(:,:,JK)  )&
+    PRWS(:,:,JK)  = PRWS(:,:,JK)  - ZKVW(JK) *(PWT(:,:,JK)  -real(PLSWM(:,:,JK),kind=4) )&
                     * ZRHODJW(:,:,JK)
 !
-    PRTHS(:,:,JK) = PRTHS(:,:,JK) - ZKV(JK)  *(PTHT(:,:,JK) -PLSTHM(:,:,JK) )&
+    PRTHS(:,:,JK) = PRTHS(:,:,JK) - ZKV(JK)  *(PTHT(:,:,JK) -real(PLSTHM(:,:,JK),kind=4) )&
                     * PRHODJ(:,:,JK)
 !
   END DO  
@@ -554,16 +554,16 @@ IF(OVE_RELAX_GRD) THEN
 !
   DO JK = 1,KALBAS
 !
-    PRUS(:,:,JK)  = PRUS(:,:,JK)  - ZKVBAS(JK)  *(PUT(:,:,JK)  -PLSUM(:,:,JK)  )&
+    PRUS(:,:,JK)  = PRUS(:,:,JK)  - ZKVBAS(JK)  *(PUT(:,:,JK)  -real(PLSUM(:,:,JK),kind=4) )&
                     * ZRHODJU(:,:,JK)
 !
-    PRVS(:,:,JK)  = PRVS(:,:,JK)  - ZKVBAS(JK)  *(PVT(:,:,JK)  -PLSVM(:,:,JK)  )&
+    PRVS(:,:,JK)  = PRVS(:,:,JK)  - ZKVBAS(JK)  *(PVT(:,:,JK)  -real(PLSVM(:,:,JK),kind=4) )&
                     * ZRHODJV(:,:,JK)
 !
-    PRWS(:,:,JK)  = PRWS(:,:,JK)  - ZKVWBAS(JK) *(PWT(:,:,JK)  -PLSWM(:,:,JK)  )&
+    PRWS(:,:,JK)  = PRWS(:,:,JK)  - ZKVWBAS(JK) *(PWT(:,:,JK)  -real(PLSWM(:,:,JK),kind=4) )&
                     * ZRHODJW(:,:,JK)
 !
-    PRTHS(:,:,JK) = PRTHS(:,:,JK) - ZKVBAS(JK)  *(PTHT(:,:,JK) -PLSTHM(:,:,JK) )&
+    PRTHS(:,:,JK) = PRTHS(:,:,JK) - ZKVBAS(JK)  *(PTHT(:,:,JK) -real(PLSTHM(:,:,JK),kind=4) )&
                     * PRHODJ(:,:,JK)
 !
   END DO  

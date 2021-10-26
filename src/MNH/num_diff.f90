@@ -1120,18 +1120,18 @@ CASE ('CYCL')          ! In that case one must have HLBCX(1) == HLBCX(2)
                 TPHALO2%WEST(:,:)   +   PFIELDM(IW+1,:,:)                &
           -4.*( PFIELDM(IW-2,:,:)   +   PFIELDM(IW,:,:)     )            &
           +6.*  PFIELDM(IW-1,:,:)                                        &
-            -   TPHALO2LS%WEST(:,:) -   PLSFIELD(IW+1,:,:)               &
-          +4.*( PLSFIELD(IW-2,:,:)  +   PLSFIELD(IW,:,:)   )             &
-          -6.*  PLSFIELD(IW-1,:,:)  )
+            -   real(TPHALO2LS%WEST(:,:),kind=4) -  real(PLSFIELD(IW+1,:,:),kind=4)               &
+          +4.*( real(PLSFIELD(IW-2,:,:),kind=4)  +  real(PLSFIELD(IW,:,:),kind=4)   )             &
+          -6.*  real(PLSFIELD(IW-1,:,:),kind=4)  )
 !
       PRFIELDS(IE+1,:,:) = PRFIELDS(IE+1,:,:) - PRHODJ(IE+1,:,:) *       &
       PDK4*(                                                             &
                 PFIELDM(IE-1,:,:)   +  TPHALO2%EAST(:,:)                 &
           -4.*( PFIELDM(IE,:,:)     +  PFIELDM(IE+2,:,:)   )             &
           +6.*  PFIELDM(IE+1,:,:)                                        &
-             -  PLSFIELD(IE-1,:,:)  -  TPHALO2LS%EAST(:,:)               &
-          +4.*( PLSFIELD(IE,:,:)    +  PLSFIELD(IE+2,:,:)  )             &
-          -6.*  PLSFIELD(IE+1,:,:)  )
+             -  real(PLSFIELD(IE-1,:,:),kind=4)  -  real(TPHALO2LS%EAST(:,:),kind=4)               &
+          +4.*( real(PLSFIELD(IE,:,:),kind=4)    +  real(PLSFIELD(IE+2,:,:),kind=4)  )             &
+          -6.*  real(PLSFIELD(IE+1,:,:),kind=4)  )
 !
 !!$    ENDIF
 !
@@ -1143,9 +1143,9 @@ CASE ('CYCL')          ! In that case one must have HLBCX(1) == HLBCX(2)
                   PFIELDM(IW-2:IE-2,:,:)  + PFIELDM(IW+2:IE+2,:,:)        &
             -4.*( PFIELDM(IW-1:IE-1,:,:)  + PFIELDM(IW+1:IE+1,:,:)   )    &
             +6.*  PFIELDM(IW:IE,:,:)                                      &                                                                         
-              -   PLSFIELD(IW-2:IE-2,:,:) - PLSFIELD(IW+2:IE+2,:,:)       &
-            +4.*( PLSFIELD(IW-1:IE-1,:,:) + PLSFIELD(IW+1:IE+1,:,:)  )    &
-            -6.*  PLSFIELD(IW:IE,:,:))
+              -   real(PLSFIELD(IW-2:IE-2,:,:),kind=4) - real(PLSFIELD(IW+2:IE+2,:,:),kind=4)       &
+            +4.*( real(PLSFIELD(IW-1:IE-1,:,:),kind=4) + real(PLSFIELD(IW+1:IE+1,:,:),kind=4)  )    &
+            -6.*  real(PLSFIELD(IW:IE,:,:),kind=4)     )
 !
   ELSE
 !
@@ -1215,7 +1215,7 @@ CASE ('OPEN','WALL','NEST')
       PRFIELDS(IW-1,:,:) = PRFIELDS(IW-1,:,:) + PRHODJ(IW-1,:,:) *              &
         PDK2*(                                                                  &
                  PFIELDM(IW-2,:,:)  -2.*PFIELDM(IW-1,:,:)  + PFIELDM(IW,:,:)    &
-                -PLSFIELD(IW-2,:,:) +2.*PLSFIELD(IW-1,:,:) - PLSFIELD(IW,:,:)   )
+                -real(PLSFIELD(IW-2,:,:),kind=4) +2.*real(PLSFIELD(IW-1,:,:),kind=4) - real(PLSFIELD(IW,:,:),kind=4)   )
 !
 !!$    ELSEIF (NHALO == 1) THEN
     ELSE
@@ -1225,9 +1225,9 @@ CASE ('OPEN','WALL','NEST')
                  TPHALO2%WEST(:,:)   +  PFIELDM(IW+1,:,:)                 &
           -4.*(  PFIELDM(IW-2,:,:)   +  PFIELDM(IW,:,:)     )             &
           +6.*   PFIELDM(IW-1,:,:)                                        &
-            -    TPHALO2LS%WEST(:,:) -  PLSFIELD(IW+1,:,:)                &
-          +4.*(  PLSFIELD(IW-2,:,:)  +  PLSFIELD(IW,:,:)    )             &
-          -6.*   PLSFIELD(IW-1,:,:)  ) 
+            -    real(TPHALO2LS%WEST(:,:),kind=4) -  real(PLSFIELD(IW+1,:,:),kind=4)                &
+          +4.*(  real(PLSFIELD(IW-2,:,:),kind=4)  +  real(PLSFIELD(IW,:,:),kind=4)    )             &
+          -6.*   real(PLSFIELD(IW-1,:,:),kind=4)  ) 
 !     
     ENDIF
 !
@@ -1236,7 +1236,7 @@ CASE ('OPEN','WALL','NEST')
       PRFIELDS(IE+1,:,:) = PRFIELDS(IE+1,:,:) + PRHODJ(IE+1,:,:) *            &
         PDK2*(                                                                & 
                 PFIELDM(IE,:,:)  -2.*PFIELDM(IE+1,:,:)  + PFIELDM(IE+2,:,:)   &
-              - PLSFIELD(IE,:,:) +2.*PLSFIELD(IE+1,:,:) - PLSFIELD(IE+2,:,:)  )
+              - real(PLSFIELD(IE,:,:),kind=4) +2.*real(PLSFIELD(IE+1,:,:),kind=4) - real(PLSFIELD(IE+2,:,:),kind=4)  )
 !
 !!$    ELSEIF (NHALO == 1) THEN
     ELSE
@@ -1246,9 +1246,9 @@ CASE ('OPEN','WALL','NEST')
                  PFIELDM(IE-1,:,:)  +   TPHALO2%EAST(:,:)               &
           -4.*(  PFIELDM(IE  ,:,:)  +   PFIELDM(IE+2,:,:)    )          &
           +6.*   PFIELDM(IE+1,:,:)                                      &
-            -    PLSFIELD(IE-1,:,:) -   TPHALO2LS%EAST(:,:)             &
-          +4.*(  PLSFIELD(IE  ,:,:) +   PLSFIELD(IE+2,:,:))             &
-          -6.*   PLSFIELD(IE+1,:,:))
+            -    real(PLSFIELD(IE-1,:,:),kind=4) -   real(TPHALO2LS%EAST(:,:),kind=4)             &
+          +4.*(  real(PLSFIELD(IE  ,:,:),kind=4) +   real(PLSFIELD(IE+2,:,:),kind=4)  )           &
+          -6.*   real(PLSFIELD(IE+1,:,:),kind=4) )
 !
     ENDIF
 
@@ -1262,9 +1262,9 @@ CASE ('OPEN','WALL','NEST')
                   PFIELDM(IW-2:IE-2,:,:)  + PFIELDM(IW+2:IE+2,:,:)        &
             -4.*( PFIELDM(IW-1:IE-1,:,:)  + PFIELDM(IW+1:IE+1,:,:)   )    &
             +6.*  PFIELDM(IW:IE,:,:)                                      & 
-              -   PLSFIELD(IW-2:IE-2,:,:) - PLSFIELD(IW+2:IE+2,:,:)       &
-            +4.*( PLSFIELD(IW-1:IE-1,:,:) + PLSFIELD(IW+1:IE+1,:,:)  )    &
-            -6.*  PLSFIELD(IW:IE,:,:)) 
+              -   real(PLSFIELD(IW-2:IE-2,:,:),kind=4) - real(PLSFIELD(IW+2:IE+2,:,:),kind=4)       &
+            +4.*( real(PLSFIELD(IW-1:IE-1,:,:),kind=4) + real(PLSFIELD(IW+1:IE+1,:,:),kind=4)  )    &
+            -6.*  real(PLSFIELD(IW:IE,:,:),kind=4)     ) 
 !
   ELSE
 !
@@ -1353,18 +1353,18 @@ IF ( .NOT. L2D ) THEN
                   TPHALO2%SOUTH(:,:)   +  PFIELDM(:,IS+1,:)               &
             -4.*( PFIELDM(:,IS-2,:)    +  PFIELDM(:,IS,:)    )            &
             +6.*  PFIELDM(:,IS-1,:)                                       &
-              -   TPHALO2LS%SOUTH(:,:) -  PLSFIELD(:,IS+1,:)              &
-            +4.*( PLSFIELD(:,IS-2,:)   +  PLSFIELD(:,IS,:)   )            &
-            -6.*  PLSFIELD(:,IS-1,:)   )
+              -   real(TPHALO2LS%SOUTH(:,:),kind=4) -  real(PLSFIELD(:,IS+1,:),kind=4)              &
+            +4.*( real(PLSFIELD(:,IS-2,:),kind=4)   +  real(PLSFIELD(:,IS,:),kind=4)   )            &
+            -6.*  real(PLSFIELD(:,IS-1,:),kind=4)   )
 !
         PRFIELDS(:,IN+1,:) = PRFIELDS(:,IN+1,:) - PRHODJ(:,IN+1,:) *      &
         PDK4*(                                                            &
                   PFIELDM(:,IN-1,:)    +  TPHALO2%NORTH(:,:)              &
             -4.*( PFIELDM(:,IN,:)      +  PFIELDM(:,IN+2,:)  )            &
             +6.*  PFIELDM(:,IN+1,:)                                       &
-               -  PLSFIELD(:,IN-1,:)   -  TPHALO2LS%NORTH(:,:)            &
-            +4.*( PLSFIELD(:,IN,:)     +  PLSFIELD(:,IN+2,:) )            &
-            -6.*  PLSFIELD(:,IN+1,:)   )
+               -  real(PLSFIELD(:,IN-1,:),kind=4)   -  real(TPHALO2LS%NORTH(:,:),kind=4)            &
+            +4.*( real(PLSFIELD(:,IN,:),kind=4)     +  real(PLSFIELD(:,IN+2,:),kind=4) )            &
+            -6.*  real(PLSFIELD(:,IN+1,:),kind=4)   )
 !
 !!$      ENDIF
 !
@@ -1376,9 +1376,9 @@ IF ( .NOT. L2D ) THEN
                      PFIELDM(:,IS-2:IN-2,:)  +  PFIELDM(:,IS+2:IN+2,:)     &
              -4.*(   PFIELDM(:,IS-1:IN-1,:)  +  PFIELDM(:,IS+1:IN+1,:)  )  &
              +6.*    PFIELDM(:,IS:IN,:)                                    &
-                   - PLSFIELD(:,IS-2:IN-2,:) -  PLSFIELD(:,IS+2:IN+2,:)    &
-             +4.*(   PLSFIELD(:,IS-1:IN-1,:) +  PLSFIELD(:,IS+1:IN+1,:) )  &
-             -6.*    PLSFIELD(:,IS:IN,:) )
+                   - real(PLSFIELD(:,IS-2:IN-2,:),kind=4) -  real(PLSFIELD(:,IS+2:IN+2,:),kind=4)    &
+             +4.*(   real(PLSFIELD(:,IS-1:IN-1,:),kind=4) +  real(PLSFIELD(:,IS+1:IN+1,:),kind=4) )  &
+             -6.*    real(PLSFIELD(:,IS:IN,:),kind=4)     )
 !
     ELSE
 !
@@ -1449,7 +1449,7 @@ IF ( .NOT. L2D ) THEN
         PRFIELDS(:,IS-1,:) = PRFIELDS(:,IS-1,:) + PRHODJ(:,IS-1,:) *            &
           PDK2*(                                                                &
                  PFIELDM(:,IS-2,:)  -2.*PFIELDM(:,IS-1,:)  + PFIELDM(:,IS,:)    &
-                -PLSFIELD(:,IS-2,:) +2.*PLSFIELD(:,IS-1,:) - PLSFIELD(:,IS,:)   )
+                -real(PLSFIELD(:,IS-2,:),kind=4) +2.*real(PLSFIELD(:,IS-1,:),kind=4) - real(PLSFIELD(:,IS,:),kind=4)   )
 !
 !!$      ELSEIF (NHALO == 1) THEN
       ELSE
@@ -1459,9 +1459,9 @@ IF ( .NOT. L2D ) THEN
                   TPHALO2%SOUTH(:,:)   +  PFIELDM(:,IS+1,:)                     &
             -4.*( PFIELDM(:,IS-2,:)    +  PFIELDM(:,IS,:)    )                  &
             +6.*  PFIELDM(:,IS-1,:)                                             &
-              -   TPHALO2LS%SOUTH(:,:) -  PLSFIELD(:,IS+1,:)                    &
-            +4.*( PLSFIELD(:,IS-2,:)   +  PLSFIELD(:,IS,:)   )                  &
-            -6.*  PLSFIELD(:,IS-1,:)   )
+              -   real(TPHALO2LS%SOUTH(:,:),kind=4) -  real(PLSFIELD(:,IS+1,:),kind=4)                    &
+            +4.*( real(PLSFIELD(:,IS-2,:),kind=4)   +  real(PLSFIELD(:,IS,:),kind=4)   )                  &
+            -6.*  real(PLSFIELD(:,IS-1,:),kind=4)   )
 !
       ENDIF
 !
@@ -1470,7 +1470,7 @@ IF ( .NOT. L2D ) THEN
         PRFIELDS(:,IN+1,:) = PRFIELDS(:,IN+1,:) + PRHODJ(:,IN+1,:) *             &
           PDK2*(                                                                 &
                    PFIELDM(:,IN,:)  -2.*PFIELDM(:,IN+1,:)   + PFIELDM(:,IN+2,:)  &
-                  -PLSFIELD(:,IN,:) +2.*PLSFIELD(:,IN+1,:)  - PLSFIELD(:,IN+2,:) )
+                  -real(PLSFIELD(:,IN,:),kind=4) +2.*real(PLSFIELD(:,IN+1,:),kind=4)  - real(PLSFIELD(:,IN+2,:),kind=4) )
 !
 !!$      ELSEIF (NHALO == 1) THEN
       ELSE
@@ -1480,9 +1480,9 @@ IF ( .NOT. L2D ) THEN
                   PFIELDM(:,IN-1,:)    +  TPHALO2%NORTH(:,:)                 &
           -4.*(   PFIELDM(:,IN,:)      +  PFIELDM(:,IN+2,:)   )              &
           +6.*    PFIELDM(:,IN+1,:)                                          &
-                - PLSFIELD(:,IN-1,:)   - TPHALO2LS%NORTH(:,:)                &
-          +4.*(   PLSFIELD(:,IN,:)     + PLSFIELD(:,IN+2,:)   )              &
-          -6.*    PLSFIELD(:,IN+1,:)   )
+                - real(PLSFIELD(:,IN-1,:),kind=4)   - real(TPHALO2LS%NORTH(:,:),kind=4)                &
+          +4.*(   real(PLSFIELD(:,IN,:),kind=4)     + real(PLSFIELD(:,IN+2,:),kind=4)   )              &
+          -6.*    real(PLSFIELD(:,IN+1,:),kind=4)   )
 !
       ENDIF
 !
@@ -1496,9 +1496,9 @@ IF ( .NOT. L2D ) THEN
                      PFIELDM(:,IS-2:IN-2,:)  +  PFIELDM(:,IS+2:IN+2,:)     &
              -4.*(   PFIELDM(:,IS-1:IN-1,:)  +  PFIELDM(:,IS+1:IN+1,:)  )  &
              +6.*    PFIELDM(:,IS:IN,:)                                    &
-                   - PLSFIELD(:,IS-2:IN-2,:) -  PLSFIELD(:,IS+2:IN+2,:)    &
-             +4.*(   PLSFIELD(:,IS-1:IN-1,:) +  PLSFIELD(:,IS+1:IN+1,:) )  &
-             -6.*    PLSFIELD(:,IS:IN,:)   )
+                   - real(PLSFIELD(:,IS-2:IN-2,:),kind=4) -  real(PLSFIELD(:,IS+2:IN+2,:),kind=4)    &
+             +4.*(   real(PLSFIELD(:,IS-1:IN-1,:),kind=4) +  real(PLSFIELD(:,IS+1:IN+1,:),kind=4) )  &
+             -6.*    real(PLSFIELD(:,IS:IN,:),kind=4)   )
       
 !
     ELSE

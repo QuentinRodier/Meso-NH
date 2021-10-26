@@ -317,6 +317,14 @@ SELECT CASE ( HLBCX(1) )
 !                 +  ZKTSTEP*( ZLBXU(:,:) )       )                         &
 !                    ) * ZINVTSTEP / (1.+ ZCPHASX(:,:) +ZKTSTEP)
 !
+!     ============================================================
+!
+!  Reproductibility for RSTART -> truncate ZLB to real(knd=4) to have reproductible result
+!
+   ZLBEU = real(ZLBEU,kind=4)
+   ZLBGU = real(ZLBGU,kind=4)
+   ZLBXU = real(ZLBXU,kind=4)
+!   ============================================================  
       PRUS (IIB,:,:) =(PRHODJ(IIB-1,:,:) + PRHODJ(IIB,:,:)) * 0.5 *          &
                        ZINVTSTEP / (1.+ ZKTSTEP * ZALPHA2 )  *               &
             (  (1. - ZCPHASX(:,:) - ZKTSTEP * (1. - ZALPHA2)) * PUT(IIB,:,:) &
@@ -374,7 +382,7 @@ SELECT CASE ( HLBCX(2) )
         ZLBXU(:,:)  = PLBXUM(ILBX-JPHEXT+1,:,:)
       END IF
     ELSE
-      ZLBEU (:,:) = PLBXUS(ILBX-JPHEXT+1,:,:)
+      ZLBEU (:,:) = PLBXUS(ILBX-JPHEXT+1,:,:)                          
       ZLBGU (:,:) = PLBXUM(ILBX-JPHEXT+1,:,:) - PLBXUM(ILBX-JPHEXT,:,:) +  &
                       PTSTEP * (PLBXUS(ILBX-JPHEXT+1,:,:) - PLBXUS(ILBX-JPHEXT,:,:))
       IF ( LRECYCL ) THEN
@@ -393,7 +401,15 @@ SELECT CASE ( HLBCX(2) )
 !                   +  ZLBGU (:,:) * ZCPHASX(:,:)                             &
 !                   +  ZKTSTEP*ZLBXU(:,:)   )                                 &
 !                      ) * ZINVTSTEP / (1.+ZCPHASX(:,:) +ZKTSTEP)
-! 
+!
+!   ============================================================
+!
+!  Reproductibility for RSTART -> truncate ZLB to real(knd=4)
+!
+   ZLBEU = real(ZLBEU,kind=4)
+   ZLBGU = real(ZLBGU,kind=4)
+   ZLBXU = real(ZLBXU,kind=4)
+!   ============================================================  
       PRUS (IIE+1,:,:) =(PRHODJ(IIE+1,:,:) + PRHODJ(IIE,:,:)) * 0.5 *           &
                        ZINVTSTEP / (1.+ ZKTSTEP * ZALPHA2 )  *                  &
             (  (1. - ZCPHASX(:,:) - ZKTSTEP * (1. - ZALPHA2) ) * PUT(IIE+1,:,:) &
@@ -469,6 +485,15 @@ SELECT CASE ( HLBCY(1) )
 !                 -  ZLBGV (:,:) * ZCPHASY(:,:)                             &
 !                 +  ZKTSTEP*ZLBYV(:,:)       )                             &
 !                    ) * ZINVTSTEP / (1.+ ZCPHASY(:,:) +ZKTSTEP)
+!
+!     ============================================================    
+!
+!  Reproductibility for RSTART -> truncate ZLB to real(knd=4) to have reproductible result
+!
+   ZLBEV = real(ZLBEV,kind=4)
+   ZLBGV = real(ZLBGV,kind=4)
+   ZLBYV = real(ZLBYV,kind=4)
+!   ============================================================      
       PRVS (:,IJB,:) =(PRHODJ(:,IJB-1,:) + PRHODJ(:,IJB,:)) * 0.5 *        &
                        ZINVTSTEP / (1.+ ZKTSTEP * ZALPHA2 )  *             &
           (  (1. - ZCPHASY(:,:) - ZKTSTEP * (1. - ZALPHA2) ) * PVT(:,IJB,:)&
@@ -546,6 +571,14 @@ SELECT CASE ( HLBCY(2) )
 !                   +  ZKTSTEP* ZLBYV(:,:)   )                                &
 !                      ) * ZINVTSTEP / (1.+ ZCPHASY(:,:) +ZKTSTEP)
 !
+!     ============================================================    
+!
+!  Reproductibility for RSTART -> truncate ZLB to real(knd=4) to have reproductible result
+!
+   ZLBEV = real(ZLBEV,kind=4)
+   ZLBGV = real(ZLBGV,kind=4)
+   ZLBYV = real(ZLBYV,kind=4)
+!   ============================================================    
       PRVS (:,IJE+1,:) =(PRHODJ(:,IJE+1,:) + PRHODJ(:,IJE,:)) * 0.5 *         &
                        ZINVTSTEP / (1.+ ZKTSTEP * ZALPHA2 )  *                &
            (  (1. - ZCPHASY(:,:) - ZKTSTEP * (1. - ZALPHA2) ) * PVT(:,IJE+1,:)&

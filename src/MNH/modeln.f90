@@ -944,6 +944,14 @@ CALL SECOND_MNH2(ZTIME2)
 !
 XT_BOUND = XT_BOUND + ZTIME2 - ZTIME1
 !
+!
+! For START/RESTART MPPDB_CHECK use 
+!IF ( (IMI==1) .AND. (CCONF == "START") .AND. (KTCOUNT == 2) ) THEN
+!   CALL MPPDB_START_DEBUG()
+!ENDIF
+!IF ( (IMI==1) .AND. (CCONF == "RESTA") .AND. (KTCOUNT == 1) ) THEN
+!   CALL MPPDB_START_DEBUG()
+!ENDIF
 !-------------------------------------------------------------------------------
 !* initializes surface number
 IF (CSURF=='EXTE') CALL GOTO_SURFEX(IMI)
@@ -1711,14 +1719,20 @@ CALL MPPDB_CHECK3DM("before RAD_BOUND :XRU/V/WS",PRECISION,XRUS,XRVS,XRWS)
 ZRUS=XRUS
 ZRVS=XRVS
 ZRWS=XRWS
-
+!
 if ( .not. l1d ) then
   if ( lbudget_u ) call Budget_store_init( tbudgets(NBUDGET_U), 'PRES', xrus(:, :, :) )
   if ( lbudget_v ) call Budget_store_init( tbudgets(NBUDGET_V), 'PRES', xrvs(:, :, :) )
   if ( lbudget_w ) call Budget_store_init( tbudgets(NBUDGET_W), 'PRES', xrws(:, :, :) )
 end if
-
-CALL RAD_BOUND (CLBCX,CLBCY,CTURB,XCARPKMAX,             &
+!
+CALL MPPDB_CHECK3DM("before RAD_BOUND : other var",PRECISION,XUT,XVT,XRHODJ,XTKET)
+CALL MPPDB_CHECKLB(XLBXUM,"modeln XLBXUM",PRECISION,'LBXU',NRIMX)
+CALL MPPDB_CHECKLB(XLBYVM,"modeln XLBYVM",PRECISION,'LBYV',NRIMY)
+CALL MPPDB_CHECKLB(XLBXUS,"modeln XLBXUS",PRECISION,'LBXU',NRIMX)
+CALL MPPDB_CHECKLB(XLBYVS,"modeln XLBYVS",PRECISION,'LBYV',NRIMY)
+!
+  CALL RAD_BOUND (CLBCX,CLBCY,CTURB,XCARPKMAX,           &
                 XTSTEP,                                  &
                 XDXHAT, XDYHAT, XZHAT,                   &
                 XUT, XVT,                                &
@@ -1764,6 +1778,7 @@ CALL MPPDB_CHECK3DM("before pressurez:XRU/V/WS",PRECISION,XRUS,XRVS,XRWS)
   XRUS_PRES = XRUS - XRUS_PRES + ZRUS
   XRVS_PRES = XRVS - XRVS_PRES + ZRVS
   XRWS_PRES = XRWS - XRWS_PRES + ZRWS
+  CALL MPPDB_CHECK3DM("after pressurez:XRU/V/WS",PRECISION,XRUS,XRVS,XRWS)
 !
 END IF
 !

@@ -7,6 +7,7 @@
 !  P. Wautelet 28/01/2020: new subroutines: Budget_store_init, Budget_store_end and Budget_source_id_find in new module mode_budget
 !  P. Wautelet 17/08/2020: treat LES budgets correctly
 !  P. Wautelet 05/03/2021: measure cpu_time for budgets
+!  J.Escobar : 06/10/2021 :for bit reproductiblity use MPPDB_CHECK if LCHECK=T
 !-----------------------------------------------------------------
 
 !#################
@@ -36,6 +37,8 @@ contains
 
 subroutine Budget_store_init( tpbudget, hsource, pvars )
   use modd_les, only: lles_call
+  USE MODE_MPPDB
+  USE MODD_CONF, ONLY : LCHECK
 
   type(tbudgetdata),      intent(inout) :: tpbudget ! Budget datastructure
   character(len=*),       intent(in)    :: hsource  ! Name of the source term
@@ -43,7 +46,15 @@ subroutine Budget_store_init( tpbudget, hsource, pvars )
 
   integer :: iid ! Reference number of the current source term
 
-  call Print_msg( NVERB_DEBUG, 'BUD', 'Budget_store_init', trim( tpbudget%cname )//':'//trim( hsource ) )
+  character(len=:),allocatable :: hbudget
+
+  hbudget =  trim( tpbudget%cname )//':'//trim( hsource )
+
+  IF (LCHECK) THEN
+     CALL MPPDB_CHECK3D(PVARS,'BUD_INI::'//hbudget,PRECISION)
+  END IF
+  
+  call Print_msg( NVERB_DEBUG, 'BUD', 'Budget_store_init', hbudget )
 
   if ( lles_call ) then
     call Second_mnh( ztime1 )
@@ -112,6 +123,8 @@ subroutine Budget_store_init( tpbudget, hsource, pvars )
 
 subroutine Budget_store_end( tpbudget, hsource, pvars )
   use modd_les, only: lles_call
+  USE MODE_MPPDB
+  USE MODD_CONF, ONLY : LCHECK
 
   use modi_les_budget, only: Les_budget
 
@@ -123,7 +136,14 @@ subroutine Budget_store_end( tpbudget, hsource, pvars )
   integer :: igroup ! Number of the group where to store the source term
   real, dimension(:,:,:), allocatable :: zvars_add
 
-  call Print_msg( NVERB_DEBUG, 'BUD', 'Budget_store_end', trim( tpbudget%cname )//':'//trim( hsource ) )
+  character(len=:),allocatable :: hbudget
+
+  hbudget =  trim( tpbudget%cname )//':'//trim( hsource )
+
+  IF (LCHECK) THEN
+     CALL MPPDB_CHECK3D(PVARS,'BUD_END::'//hbudget,PRECISION)
+  END IF  
+  call Print_msg( NVERB_DEBUG, 'BUD', 'Budget_store_end', hbudget )
 
   if ( lles_call ) then
     if ( hsource /= tpbudget%clessource ) &

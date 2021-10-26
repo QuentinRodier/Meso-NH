@@ -18,7 +18,7 @@ INTERFACE
             KSIZELBXR_ll,KSIZELBYR_ll,KSIZELBXSV_ll,KSIZELBYSV_ll,           &
             PUM,PVM,PWM,PDUM,PDVM,PDWM,                                      &
             PUT,PVT,PWT,PTHT,PPABST,PTKET,PRTKEMS,                           &
-            PRT,PSVT,PZWS,PCIT,PDRYMASST,                                    &            
+            PRT,PSVT,PZWS,PCIT,PDRYMASST,PDRYMASSS,                          &            
             PSIGS,PSRCT,PCLDFR,PBL_DEPTH,PSBL_DEPTH,PWTHVMF,PPHC,PPHR,       &
             PLSUM,PLSVM,PLSWM,PLSTHM,PLSRVM, PLSZWSM,                        &
             PLBXUM,PLBXVM,PLBXWM,PLBXTHM,PLBXTKEM,PLBXRM,PLBXSVM,            &
@@ -81,6 +81,7 @@ REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PSRCT           ! turbulent flux
                                                           !  <s'Rc'> at t 
 REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PCIT            ! ice conc. at t
 REAL,                      INTENT(OUT) :: PDRYMASST       ! Md(t)
+REAL,                      INTENT(OUT) :: PDRYMASSS       ! d Md(t) / dt
 REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PSIGS           ! =sqrt(<s's'>) for the
                                                           ! Subgrid Condensation
 REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PCLDFR          ! cloud fraction  
@@ -141,7 +142,7 @@ END MODULE MODI_READ_FIELD
             KSIZELBXR_ll,KSIZELBYR_ll,KSIZELBXSV_ll,KSIZELBYSV_ll,           &
             PUM,PVM,PWM,PDUM,PDVM,PDWM,                                      &
             PUT,PVT,PWT,PTHT,PPABST,PTKET,PRTKEMS,                           &
-            PRT,PSVT,PZWS,PCIT,PDRYMASST,                                    &
+            PRT,PSVT,PZWS,PCIT,PDRYMASST,PDRYMASSS,                          &
             PSIGS,PSRCT,PCLDFR,PBL_DEPTH,PSBL_DEPTH,PWTHVMF,PPHC,PPHR,       &
             PLSUM,PLSVM,PLSWM,PLSTHM,PLSRVM,PLSZWSM,                         &
             PLBXUM,PLBXVM,PLBXWM,PLBXTHM,PLBXTKEM,PLBXRM,PLBXSVM,            &
@@ -361,6 +362,7 @@ REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PSRCT           ! turbulent flux
                                                           !  <s'Rc'> at t 
 REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PCIT            ! ice conc. at t
 REAL,                      INTENT(OUT) :: PDRYMASST       ! Md(t)
+REAL,                      INTENT(OUT) :: PDRYMASSS       ! d Md(t) / dt
 REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PSIGS           ! =sqrt(<s's'>) for the
                                                           ! Subgrid Condensation
 REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PCLDFR          ! cloud fraction  
@@ -1464,6 +1466,11 @@ CALL INI_LB(TPINIFILE,GLSOURCE,ISV,                                   &
 !*       2.3  Some special variables:
 !
 CALL IO_Field_read(TPINIFILE,'DRYMASST',PDRYMASST) ! dry mass
+IF (CCONF=='RESTA') THEN
+  CALL IO_Field_read(TPINIFILE,'DRYMASSS',PDRYMASSS) ! dry mass tendency
+ELSE
+  PDRYMASSS=XUNDEF   ! should not be used
+END IF
 !
 SELECT CASE(HGETSRCT)                ! turbulent flux SRC at time t
   CASE('READ')

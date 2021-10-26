@@ -420,6 +420,24 @@ ELSE
 !
 END IF
 !
+!     ============================================================    
+!
+!  Reproductibility for RSTART -> truncate ZLB to real(knd=4) to have reproductible result
+!
+ZLBXVT(:,:,:)  = real(ZLBXVT(:,:,:),kind=4)
+ZLBXWT(:,:,:)  = real(ZLBXWT(:,:,:),kind=4)
+ZLBXTHT(:,:,:) = real(ZLBXTHT(:,:,:),kind=4)
+IF ( SIZE(PTKET,1) /= 0 ) THEN
+   ZLBXTKET(:,:,:) = real(ZLBXTKET(:,:,:),kind=4)
+END IF
+IF ( KRR > 0) THEN
+   ZLBXRT(:,:,:,:) = real(ZLBXRT(:,:,:,:),kind=4)
+END IF
+IF ( KSV > 0) THEN
+   ZLBXSVT(:,:,:,:) = real(ZLBXSVT(:,:,:,:),kind=4)
+END IF
+!     ============================================================ 
+!
 IF ( SIZE(PLBYTHS,1) /= 0 .AND.                       &
      (    HLBCY(1)=='OPEN' .OR. HLBCY(2)=='OPEN'    ))  THEN          
   ZLBYUT(:,:,:) = PLBYUM(:,:,:) + ZTSTEP * PLBYUS(:,:,:)
@@ -452,6 +470,24 @@ ELSE
 !
 END IF
 !
+!
+!     ============================================================    
+!
+!  Reproductibility for RSTART -> truncate ZLB to real(knd=4) to have reproductible result
+!
+ZLBYUT(:,:,:)  = real(ZLBYUT(:,:,:),kind=4)
+ZLBYWT(:,:,:)  = real(ZLBYWT(:,:,:),kind=4)
+ZLBYTHT(:,:,:) = real(ZLBYTHT(:,:,:),kind=4)
+IF ( SIZE(PTKET,1) /= 0 ) THEN
+   ZLBYTKET(:,:,:) = real(ZLBYTKET(:,:,:),kind=4)
+END IF
+IF ( KRR > 0) THEN
+   ZLBYRT(:,:,:,:) = real(ZLBYRT(:,:,:,:),kind=4) 
+END IF
+IF ( KSV > 0) THEN
+   ZLBYSVT(:,:,:,:) = real(ZLBYSVT(:,:,:,:),kind=4)
+END IF
+!     ============================================================ 
 !
 !-------------------------------------------------------------------------------
 ! PONDERATION COEFF for  Non-Normal velocities and pot temperature
