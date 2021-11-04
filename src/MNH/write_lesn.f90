@@ -7,7 +7,7 @@
 module mode_write_les_n
 !######################
 
-use modd_field, only: tfield_metadata_base
+use modd_field, only: tfieldmetadata_base
 
 implicit none
 
@@ -22,9 +22,9 @@ character(len=:), allocatable :: cgroupcomment
 logical :: ldoavg    ! Compute and store time average
 logical :: ldonorm   ! Compute and store normalized field
 
-type(tfield_metadata_base) :: tfield
-type(tfield_metadata_base) :: tfieldx
-type(tfield_metadata_base) :: tfieldy
+type(tfieldmetadata_base) :: tfield
+type(tfieldmetadata_base) :: tfieldx
+type(tfieldmetadata_base) :: tfieldy
 
 interface Les_diachro_write
   module procedure Les_diachro_write_1D, Les_diachro_write_2D, Les_diachro_write_3D, Les_diachro_write_4D
@@ -71,7 +71,7 @@ subroutine  Write_les_n( tpdiafile )
 !  P. Wautelet 12/10/2020: remove HLES_AVG dummy argument and group all 4 calls
 !  P. Wautelet 13/10/2020: bugfix: correct some names for LES_DIACHRO_2PT diagnostics (Ri)
 !  P. Wautelet 26/10/2020: bugfix: correct some comments and conditions + add missing RES_RTPZ
-!  P. Wautelet 26/10/2020: restructure subroutines to use tfield_metadata_base type
+!  P. Wautelet 26/10/2020: restructure subroutines to use tfieldmetadata_base type
 ! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS

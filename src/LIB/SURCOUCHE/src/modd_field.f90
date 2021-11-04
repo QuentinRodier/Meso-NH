@@ -9,8 +9,8 @@
 !  P. Wautelet 12/04/2019: added pointers for C1D, L1D, N1D, X5D and X6D structures in TFIELDDATA
 !  P. Wautelet 12/07/2019: add pointers for T1D structure in TFIELDDATA
 !  P. Wautelet 23/01/2020: split in modd_field.f90 and mode_field.f90
-!  P. Wautelet 27/01/2020: create the tfield_metadata_base abstract datatype
-!  P. Wautelet 14/09/2020: add ndimlist field to tfield_metadata_base
+!  P. Wautelet 27/01/2020: create the tfieldmetadata_base abstract datatype
+!  P. Wautelet 14/09/2020: add ndimlist field to tfieldmetadata_base
 !  P. Wautelet 10/11/2020: new data structures for netCDF dimensions
 !  P. Wautelet 24/09/2021: add Fill_tfielddata and use it as a custom constructor for tfielddata type
 !  P. Wautelet 08/10/2021: add 2 new dimensions: LW_bands (NMNHDIM_NLWB) and SW_bands (NMNHDIM_NSWB)
@@ -189,7 +189,7 @@ TYPE TFIELDPTR_T1D
   TYPE(DATE_TIME), DIMENSION(:), POINTER :: DATA => NULL()
 END TYPE TFIELDPTR_T1D
 !
-type :: tfield_metadata_base
+type :: tfieldmetadata_base
   CHARACTER(LEN=NMNHNAMELGTMAX)  :: CMNHNAME  = '' !Name of the field (for MesoNH, non CF convention)
   CHARACTER(LEN=NSTDNAMELGTMAX)  :: CSTDNAME  = '' !Standard name (CF convention)
   CHARACTER(LEN=NLONGNAMELGTMAX) :: CLONGNAME = '' !Long name (CF convention)
@@ -214,9 +214,9 @@ type :: tfield_metadata_base
   INTEGER            :: NVALIDMAX  =  2147483647 !Maximum valid value for integer fields
   REAL               :: XVALIDMIN  = -1.E36 !Minimum valid value for real fields
   REAL               :: XVALIDMAX  =  1.E36 !Maximum valid value for real fields
-end type tfield_metadata_base
+end type tfieldmetadata_base
 
-TYPE, extends( tfield_metadata_base ) :: TFIELDMETADATA
+TYPE, extends( tfieldmetadata_base ) :: TFIELDMETADATA
   CHARACTER(LEN=2)   :: CDIR      = '' !Type of the data field (XX,XY,--...)
   CHARACTER(LEN=4)   :: CLBTYPE   = 'NONE' !Type of the lateral boundary (LBX,LBY,LBXU,LBYV)
   LOGICAL            :: LTIMEDEP  = .FALSE. !Is the field time-dependent?

@@ -86,7 +86,7 @@ USE MODD_CH_M9_n,         ONLY: CNAMES
 USE MODD_CST,             ONLY: XRV
 USE MODD_ELEC_DESCR,      ONLY: CELECNAMES
 use modd_field,           only: NMNHDIM_LEVEL, NMNHDIM_PROFILER_TIME, NMNHDIM_PROFILER_PROC, NMNHDIM_UNUSED, &
-                                tfield_metadata_base, TYPEREAL
+                                tfieldmetadata_base, TYPEREAL
 USE MODD_ICE_C1R3_DESCR,  ONLY: C1R3NAMES
 USE MODD_IO,              ONLY: TFILEDATA
 USE MODD_LG,              ONLY: CLGNAMES
@@ -111,21 +111,21 @@ INTEGER,          INTENT(IN) :: KI
 !
 !*      0.2  declaration of local variables for diachro
 !
-character(len=2)                                      :: yidx
-character(len=100)                                    :: ycomment
-character(len=100)                                    :: yname
-CHARACTER(LEN=:),                         allocatable :: YGROUP   ! group title
-INTEGER                                               :: IKU
-INTEGER                                               :: IPROC    ! number of variables records
-INTEGER                                               :: JPROC
-INTEGER                                               :: JRR      ! loop counter
-INTEGER                                               :: JSV      ! loop counter
-integer                                               :: ji
-integer                                               :: irr !Number of moist variables
-REAL, DIMENSION(:,:,:),                   ALLOCATABLE :: ZRHO
-REAL, DIMENSION(:,:,:,:),                 ALLOCATABLE :: ZSV, ZN0, ZSIG, ZRG
-type(tbudiachrometadata)                              :: tzbudiachro
-type(tfield_metadata_base), dimension(:), allocatable :: tzfields
+character(len=2)                                     :: yidx
+character(len=100)                                   :: ycomment
+character(len=100)                                   :: yname
+CHARACTER(LEN=:),                        allocatable :: YGROUP   ! group title
+INTEGER                                              :: IKU
+INTEGER                                              :: IPROC    ! number of variables records
+INTEGER                                              :: JPROC
+INTEGER                                              :: JRR      ! loop counter
+INTEGER                                              :: JSV      ! loop counter
+integer                                              :: ji
+integer                                              :: irr !Number of moist variables
+REAL, DIMENSION(:,:,:),                  ALLOCATABLE :: ZRHO
+REAL, DIMENSION(:,:,:,:),                ALLOCATABLE :: ZSV, ZN0, ZSIG, ZRG
+type(tbudiachrometadata)                             :: tzbudiachro
+type(tfieldmetadata_base), dimension(:), allocatable :: tzfields
 !
 !----------------------------------------------------------------------------
 !

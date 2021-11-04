@@ -1,16 +1,16 @@
-!MNH_LIC Copyright 2000-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2000-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 ! Modifications:
-!  P. Wautelet 12/10/2020: restructure Les_diachro_spec subroutine to use tfield_metadata_base type
+!  P. Wautelet 12/10/2020: restructure Les_diachro_spec subroutine to use tfieldmetadata_base type
 !-----------------------------------------------------------------
 !     ######################
       MODULE MODE_LES_SPEC_n
 !     ######################
 
-use modd_field, only: tfield_metadata_base
+use modd_field, only: tfieldmetadata_base
 
 implicit none
 
@@ -22,8 +22,8 @@ public :: Les_spec_n
 real, dimension(:,:,:,:), allocatable :: xspectrax ! spectra coeffcients for
 real, dimension(:,:,:,:), allocatable :: xspectray ! x and y direction spectra
 
-type(tfield_metadata_base) :: tlesfieldx
-type(tfield_metadata_base) :: tlesfieldy
+type(tfieldmetadata_base) :: tlesfieldx
+type(tfieldmetadata_base) :: tlesfieldy
 
 
 CONTAINS

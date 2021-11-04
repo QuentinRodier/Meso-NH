@@ -126,7 +126,7 @@ SUBROUTINE STATION_DIACHRO_n(TSTATION,II)
 
 use modd_budget, only: NLVL_CATEGORY, NLVL_SUBCATEGORY, NLVL_GROUP, NLVL_SHAPE, NLVL_TIMEAVG, NLVL_NORM, NLVL_MASK
 use modd_field,  only: NMNHDIM_STATION_TIME, NMNHDIM_STATION_PROC, NMNHDIM_UNUSED, &
-                       tfield_metadata_base, TYPEREAL
+                       tfieldmetadata_base, TYPEREAL
 
 TYPE(STATION),        INTENT(IN)       :: TSTATION
 INTEGER,              INTENT(IN)       :: II
@@ -151,8 +151,8 @@ INTEGER :: IPROC    ! number of variables records
 INTEGER :: JPROC    ! loop counter
 INTEGER :: JRR      ! loop counter
 INTEGER :: JSV      ! loop counter
-type(tbudiachrometadata)                              :: tzbudiachro
-type(tfield_metadata_base), dimension(:), allocatable :: tzfields
+type(tbudiachrometadata)                             :: tzbudiachro
+type(tfieldmetadata_base), dimension(:), allocatable :: tzfields
 !
 !----------------------------------------------------------------------------
 IF (TSTATION%X(II)==XUNDEF) RETURN

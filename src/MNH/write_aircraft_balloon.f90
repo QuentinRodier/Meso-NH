@@ -179,7 +179,7 @@ SUBROUTINE FLYER_DIACHRO(TPFLYER)
 use modd_budget, only: NLVL_CATEGORY, NLVL_SUBCATEGORY, NLVL_GROUP, NLVL_SHAPE, NLVL_TIMEAVG, NLVL_NORM, NLVL_MASK, &
                        tbudiachrometadata
 use modd_field,  only: NMNHDIM_LEVEL, NMNHDIM_FLYER_PROC, NMNHDIM_FLYER_TIME, NMNHDIM_UNUSED, &
-                       tfield_metadata_base, TYPEREAL
+                       tfieldmetadata_base, TYPEREAL
 
 use modi_aircraft_balloon, only: Aircraft_balloon_longtype_get
 
@@ -217,7 +217,7 @@ INTEGER :: IKU, IK
 CHARACTER(LEN=2)  :: INDICE
 INTEGER :: JLOOP
 type(tbudiachrometadata) :: tzbudiachro
-type(tfield_metadata_base), dimension(:), allocatable :: tzfields
+type(tfieldmetadata_base), dimension(:), allocatable :: tzfields
 !
 !----------------------------------------------------------------------------
 !

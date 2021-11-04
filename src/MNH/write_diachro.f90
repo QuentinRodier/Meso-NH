@@ -97,7 +97,7 @@ subroutine Write_diachro( tpdiafile, tpbudiachro, tpfields,       &
 use modd_aircraft_balloon, only: flyer
 use modd_budget,           only: tbudiachrometadata
 use modd_conf,             only: lpack
-use modd_field,            only: tfield_metadata_base
+use modd_field,            only: tfieldmetadata_base
 use modd_io,               only: tfiledata
 use modd_type_date,        only: date_time
 !
@@ -105,13 +105,13 @@ IMPLICIT NONE
 !
 !*       0.1   Dummy arguments
 !              ---------------
-TYPE(TFILEDATA),                                     INTENT(IN)           :: TPDIAFILE    ! file to write
-type(tbudiachrometadata),                            intent(in)           :: tpbudiachro
-class(tfield_metadata_base), dimension(:),           intent(in)           :: tpfields
-type(date_time),             dimension(:),           intent(in)           :: tpdates  !Used only for LFI files
-REAL,                        DIMENSION(:,:,:,:,:,:), INTENT(IN)           :: PVAR
-logical,                                             intent(in), optional :: osplit
-type(flyer),                                         intent(in), optional :: tpflyer
+TYPE(TFILEDATA),                                    INTENT(IN)           :: TPDIAFILE    ! file to write
+type(tbudiachrometadata),                           intent(in)           :: tpbudiachro
+class(tfieldmetadata_base), dimension(:),           intent(in)           :: tpfields
+type(date_time),            dimension(:),           intent(in)           :: tpdates  !Used only for LFI files
+REAL,                       DIMENSION(:,:,:,:,:,:), INTENT(IN)           :: PVAR
+logical,                                            intent(in), optional :: osplit
+type(flyer),                                        intent(in), optional :: tpflyer
 !
 !*       0.1   Local variables
 !              ---------------
@@ -146,7 +146,7 @@ use modd_budget,         only: NLVL_CATEGORY, NLVL_GROUP, NLVL_SHAPE, nbumask, n
 use modd_field,          only: NMNHDIM_ONE, NMNHDIM_UNKNOWN, NMNHDIM_BUDGET_LES_MASK, &
                                NMNHDIM_FLYER_TIME, NMNHDIM_NOTLISTED, NMNHDIM_UNUSED, &
                                TYPECHAR, TYPEINT, TYPEREAL,                           &
-                               tfield_metadata_base, tfielddata
+                               tfieldmetadata_base, tfielddata
 use modd_io,             only: tfiledata
 use modd_les,            only: nles_current_iinf, nles_current_isup, nles_current_jinf, nles_current_jsup, &
                                nles_k, xles_current_z
@@ -161,12 +161,12 @@ use mode_menu_diachro,   only: Menu_diachro
 use mode_tools_ll,       only: Get_globaldims_ll
 
 
-type(tfiledata),                                     intent(in)           :: tpdiafile        ! File to write
-type(tbudiachrometadata),                            intent(in)           :: tpbudiachro
-class(tfield_metadata_base), dimension(:),           intent(in)           :: tpfields
-type(date_time),             dimension(:),           intent(in)           :: tpdates
-real,                        dimension(:,:,:,:,:,:), intent(in)           :: pvar
-type(flyer),                                         intent(in), optional :: tpflyer
+type(tfiledata),                                    intent(in)           :: tpdiafile        ! File to write
+type(tbudiachrometadata),                           intent(in)           :: tpbudiachro
+class(tfieldmetadata_base), dimension(:),           intent(in)           :: tpfields
+type(date_time),            dimension(:),           intent(in)           :: tpdates
+real,                       dimension(:,:,:,:,:,:), intent(in)           :: pvar
+type(flyer),                                        intent(in), optional :: tpflyer
 
 integer, parameter :: LFITITLELGT = 100
 integer, parameter :: LFIUNITLGT = 100
@@ -807,12 +807,12 @@ use modd_type_date,        only: date_time
 use mode_io_field_write,   only: IO_Field_create, IO_Field_write, IO_Field_write_box
 use mode_io_tools_nc4,     only: IO_Err_handle_nc4
 
-type(tfiledata),                                     intent(in)           :: tpdiafile        ! File to write
-type(tbudiachrometadata),                            intent(in)           :: tpbudiachro
-class(tfield_metadata_base), dimension(:),           intent(in)           :: tpfields
-real,                        dimension(:,:,:,:,:,:), intent(in)           :: pvar
-logical,                                             intent(in), optional :: osplit
-type(flyer),                                         intent(in), optional :: tpflyer
+type(tfiledata),                                    intent(in)           :: tpdiafile        ! File to write
+type(tbudiachrometadata),                           intent(in)           :: tpbudiachro
+class(tfieldmetadata_base), dimension(:),           intent(in)           :: tpfields
+real,                       dimension(:,:,:,:,:,:), intent(in)           :: pvar
+logical,                                            intent(in), optional :: osplit
+type(flyer),                                        intent(in), optional :: tpflyer
 
 character(len=:), allocatable :: ycategory
 character(len=:), allocatable :: ylevelname
@@ -1523,22 +1523,22 @@ end  subroutine Write_diachro_nc4
 subroutine Diachro_one_field_write_nc4( tpfile, tpbudiachro, tpfield, pvar, kdims, osplit, odistributed, &
                                         kil, kih, kjl, kjh, kkl, kkh )
 use modd_budget,      only: NLVL_CATEGORY, NLVL_GROUP, NLVL_SHAPE, nbutshift, nbusubwrite, tbudiachrometadata
-use modd_field,       only: tfielddata, tfield_metadata_base
+use modd_field,       only: tfielddata, tfieldmetadata_base
 use modd_io,          only: isp, tfiledata
 use modd_parameters,  only: jphext
 
 use mode_io_field_write, only: IO_Field_create, IO_Field_write, IO_Field_write_box
 
-type(tfiledata),                                     intent(in)  :: tpfile        !File to write
-type(tbudiachrometadata),                            intent(in)  :: tpbudiachro
-class(tfield_metadata_base),                         intent(in)  :: tpfield
-real,                        dimension(:,:,:,:,:,:), intent(in)  :: pvar
-integer, dimension(:),                               intent(in)  :: kdims        !List of indices of dimensions to use
-logical,                                             intent(in)  :: osplit
-logical,                                             intent(in)  :: odistributed !.T. if data is distributed among all processes
-integer,                                             intent(in), optional :: kil, kih
-integer,                                             intent(in), optional :: kjl, kjh
-integer,                                             intent(in), optional :: kkl, kkh
+type(tfiledata),                                    intent(in)  :: tpfile        !File to write
+type(tbudiachrometadata),                           intent(in)  :: tpbudiachro
+class(tfieldmetadata_base),                         intent(in)  :: tpfield
+real,                       dimension(:,:,:,:,:,:), intent(in)  :: pvar
+integer, dimension(:),                              intent(in)  :: kdims        !List of indices of dimensions to use
+logical,                                            intent(in)  :: osplit
+logical,                                            intent(in)  :: odistributed !.T. if data is distributed among all processes
+integer,                                            intent(in), optional :: kil, kih
+integer,                                            intent(in), optional :: kjl, kjh
+integer,                                            intent(in), optional :: kkl, kkh
 
 integer                                                    :: idims
 integer                                                    :: ibutimepos
@@ -1770,14 +1770,14 @@ end subroutine Diachro_one_field_write_nc4
 
 
 subroutine Prepare_diachro_write( tpfieldin, tpfieldout, kdims, osplit, odistributed, kbutimepos )
-use modd_field, only: NMNHDIM_BUDGET_TIME, NMNHDIM_UNUSED, NMNHMAXDIMS, tfielddata, tfield_metadata_base
+use modd_field, only: NMNHDIM_BUDGET_TIME, NMNHDIM_UNUSED, NMNHMAXDIMS, tfielddata, tfieldmetadata_base
 
-class(tfield_metadata_base), intent(in)  :: tpfieldin
-type(tfielddata),            intent(out) :: tpfieldout
-integer, dimension(:),       intent(in)  :: kdims ! List of indices of dimensions to use
-logical,                     intent(in)  :: osplit
-logical,                     intent(in)  :: odistributed ! .true. if data is distributed among all the processes
-integer,                     intent(out) :: kbutimepos
+class(tfieldmetadata_base), intent(in)  :: tpfieldin
+type(tfielddata),           intent(out) :: tpfieldout
+integer, dimension(:),      intent(in)  :: kdims ! List of indices of dimensions to use
+logical,                    intent(in)  :: osplit
+logical,                    intent(in)  :: odistributed ! .true. if data is distributed among all the processes
+integer,                    intent(out) :: kbutimepos
 
 integer :: idims
 integer :: jdim
