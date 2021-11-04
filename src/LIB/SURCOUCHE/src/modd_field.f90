@@ -15,6 +15,7 @@
 !  P. Wautelet 24/09/2021: add Fill_tfielddata and use it as a custom constructor for tfielddata type
 !  P. Wautelet 08/10/2021: add 2 new dimensions: LW_bands (NMNHDIM_NLWB) and SW_bands (NMNHDIM_NSWB)
 !  P. Wautelet 14/10/2021: dynamically allocate tfieldlist (+ reallocate if necessary)
+!  P. Wautelet 04/11/2021: add TFIELDMETADATA type
 !-----------------------------------------------------------------
 module modd_field
 
@@ -215,12 +216,14 @@ type :: tfield_metadata_base
   REAL               :: XVALIDMAX  =  1.E36 !Maximum valid value for real fields
 end type tfield_metadata_base
 
-!Structure describing the characteristics of a field
-TYPE, extends( tfield_metadata_base ) :: TFIELDDATA
+TYPE, extends( tfield_metadata_base ) :: TFIELDMETADATA
   CHARACTER(LEN=2)   :: CDIR      = '' !Type of the data field (XX,XY,--...)
   CHARACTER(LEN=4)   :: CLBTYPE   = 'NONE' !Type of the lateral boundary (LBX,LBY,LBXU,LBYV)
   LOGICAL            :: LTIMEDEP  = .FALSE. !Is the field time-dependent?
-  !
+END TYPE TFIELDMETADATA
+
+!Structure describing the characteristics of a field
+TYPE, EXTENDS( TFIELDMETADATA ) :: TFIELDDATA
   INTEGER :: NMODELMAX = -1 !Number of models for which the field has been allocated (default value must be negative)
   !
   TYPE(TFIELDPTR_C0D),DIMENSION(:),ALLOCATABLE :: TFIELD_C0D !Pointer to the character string fields (one per nested mesh)
@@ -250,16 +253,20 @@ integer, save :: NFIELDS_USED = 0
 LOGICAL, SAVE :: LFIELDLIST_ISINIT = .FALSE.
 TYPE(TFIELDDATA), ALLOCATABLE, DIMENSION(:), SAVE :: TFIELDLIST
 
+interface TFIELDMETADATA
+  module procedure :: Fill_tfieldmetadata
+end interface TFIELDMETADATA
+
 interface TFIELDDATA
   module procedure :: Fill_tfielddata
 end interface TFIELDDATA
 
 contains
 
-type(tfielddata) function Fill_tfielddata( cmnhname, cstdname, clongname, cunits, ccomment,                    &
-                                           ngrid, ntype, ndims, ndimlist,                                      &
-                                           nfillvalue, xfillvalue, nvalidmin, nvalidmax, xvalidmin, xvalidmax, &
-                                           cdir, clbtype, ltimedep ) result(tpfield)
+type(tfieldmetadata) function Fill_tfieldmetadata( cmnhname, cstdname, clongname, cunits, ccomment,                    &
+                                               ngrid, ntype, ndims, ndimlist,                                      &
+                                               nfillvalue, xfillvalue, nvalidmin, nvalidmax, xvalidmin, xvalidmax, &
+                                               cdir, clbtype, ltimedep ) result(tpfield)
 
   use mode_msg
 
@@ -495,10 +502,78 @@ type(tfielddata) function Fill_tfielddata( cmnhname, cstdname, clongname, cunits
 
   ! ltimedep
   if ( Present( ltimedep ) ) tpfield%ltimedep = ltimedep
+end function Fill_tfieldmetadata
 
-  ! Set nmodelmax to 0 instead of -1 by default.
-  ! This value can therefore be used to determine if the field was initialized by calling this constructor.
-  tpfield%nmodelmax = 0
+type(tfielddata) function Fill_tfielddata( cmnhname, cstdname, clongname, cunits, ccomment,                    &
+                                           ngrid, ntype, ndims, ndimlist,                                      &
+                                           nfillvalue, xfillvalue, nvalidmin, nvalidmax, xvalidmin, xvalidmax, &
+                                           cdir, clbtype, ltimedep ) result(tpfield)
+
+  use mode_msg
+
+  character(len=*),      optional, intent(in) :: cmnhname
+  character(len=*),      optional, intent(in) :: cstdname
+  character(len=*),      optional, intent(in) :: clongname
+  character(len=*),      optional, intent(in) :: cunits
+  character(len=*),      optional, intent(in) :: ccomment
+  integer,               optional, intent(in) :: ngrid
+  integer,                         intent(in) :: ntype
+  integer,               optional, intent(in) :: ndims
+  integer, dimension(:), optional, intent(in) :: ndimlist
+  integer,               optional, intent(in) :: nfillvalue
+  real,                  optional, intent(in) :: xfillvalue
+  integer,               optional, intent(in) :: nvalidmin
+  integer,               optional, intent(in) :: nvalidmax
+  real,                  optional, intent(in) :: xvalidmin
+  real,                  optional, intent(in) :: xvalidmax
+
+  character(len=*),      optional, intent(in) :: cdir
+  character(len=*),      optional, intent(in) :: clbtype
+  logical,               optional, intent(in) :: ltimedep
+
+
+  !Use the tfieldmetadata custom constructor and modify nmodelmax
+  !The data structures tfield_xyd are not set (null)
+  tpfield = tfielddata ( tfieldmetadata = tfieldmetadata( &
+                                 cmnhname   = cmnhname,   &
+                                 cstdname   = cstdname,   &
+                                 clongname  = clongname,  &
+                                 cunits     = cunits,     &
+                                 ccomment   = ccomment,   &
+                                 ngrid      = ngrid,      &
+                                 ntype      = ntype,      &
+                                 ndims      = ndims,      &
+                                 ndimlist   = ndimlist,   &
+                                 nfillvalue = nfillvalue, &
+                                 xfillvalue = xfillvalue, &
+                                 nvalidmin  = nvalidmin,  &
+                                 nvalidmax  = nvalidmax,  &
+                                 xvalidmin  = xvalidmin,  &
+                                 xvalidmax  = xvalidmax,  &
+                                 cdir       = cdir,       &
+                                 clbtype    = clbtype,    &
+                                 ltimedep   = ltimedep ) ,&
+! Set nmodelmax to 0 instead of -1 by default.
+! This value can therefore be used to determine if the field was initialized by calling this constructor.
+                         nmodelmax = 0,                   &
+                         tfield_c0d = null(),             &
+                         tfield_c1d = null(),             &
+                         tfield_l0d = null(),             &
+                         tfield_l1d = null(),             &
+                         tfield_n0d = null(),             &
+                         tfield_n1d = null(),             &
+                         tfield_n2d = null(),             &
+                         tfield_n3d = null(),             &
+                         tfield_x0d = null(),             &
+                         tfield_x1d = null(),             &
+                         tfield_x2d = null(),             &
+                         tfield_x3d = null(),             &
+                         tfield_x4d = null(),             &
+                         tfield_x5d = null(),             &
+                         tfield_x6d = null(),             &
+                         tfield_t0d = null(),             &
+                         tfield_t1d = null()              )
+
 end function Fill_tfielddata
 
 end module modd_field
