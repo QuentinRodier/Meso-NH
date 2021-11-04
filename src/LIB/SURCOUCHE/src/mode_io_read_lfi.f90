@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -13,7 +13,7 @@
 !-----------------------------------------------------------------
 module mode_io_read_lfi
 !
-use modd_field,      only: tfielddata
+use modd_field,      only: tfieldmetadata_base
 USE MODD_IO
 USE MODD_PARAMETERS, ONLY: NLFIMAXCOMMENTLENGTH
 use modd_precision,  only: LFIINT, MNHINT64, MNHREAL32, MNHREAL64
@@ -50,10 +50,10 @@ IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
 !
-TYPE(TFILEDATA),  INTENT(IN)    :: TPFILE
-TYPE(TFIELDDATA), INTENT(INOUT) :: TPFIELD
-REAL,             INTENT(INOUT) :: PFIELD  ! array containing the data field
-INTEGER,          INTENT(OUT)   :: KRESP   ! return-code if problems occured
+TYPE(TFILEDATA),            INTENT(IN)    :: TPFILE
+CLASS(tfieldmetadata_base), INTENT(INOUT) :: TPFIELD
+REAL,                       INTENT(INOUT) :: PFIELD  ! array containing the data field
+INTEGER,                    INTENT(OUT)   :: KRESP   ! return-code if problems occured
 !
 !*      0.2   Declarations of local variables
 !
@@ -89,10 +89,10 @@ IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
 !
-TYPE(TFILEDATA),  INTENT(IN)    :: TPFILE
-TYPE(TFIELDDATA), INTENT(INOUT) :: TPFIELD
-REAL,DIMENSION(:),INTENT(INOUT) :: PFIELD  ! array containing the data field
-INTEGER,          INTENT(OUT)   :: KRESP   ! return-code if problems occured
+TYPE(TFILEDATA),            INTENT(IN)    :: TPFILE
+CLASS(tfieldmetadata_base), INTENT(INOUT) :: TPFIELD
+REAL, DIMENSION(:),         INTENT(INOUT) :: PFIELD  ! array containing the data field
+INTEGER,                    INTENT(OUT)   :: KRESP   ! return-code if problems occured
 !
 !*      0.2   Declarations of local variables
 !
@@ -123,10 +123,10 @@ IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
 !
-TYPE(TFILEDATA),    INTENT(IN)    :: TPFILE
-TYPE(TFIELDDATA),   INTENT(INOUT) :: TPFIELD
-REAL,DIMENSION(:,:),INTENT(INOUT) :: PFIELD  ! array containing the data field
-INTEGER,            INTENT(OUT)   :: KRESP   ! return-code if problems occured
+TYPE(TFILEDATA),            INTENT(IN)    :: TPFILE
+CLASS(tfieldmetadata_base), INTENT(INOUT) :: TPFIELD
+REAL, DIMENSION(:,:),       INTENT(INOUT) :: PFIELD  ! array containing the data field
+INTEGER,                    INTENT(OUT)   :: KRESP   ! return-code if problems occured
 !
 !*      0.2   Declarations of local variables
 !
@@ -157,10 +157,10 @@ IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
 !
-TYPE(TFILEDATA),      INTENT(IN)    :: TPFILE
-TYPE(TFIELDDATA),     INTENT(INOUT) :: TPFIELD
-REAL,DIMENSION(:,:,:),INTENT(INOUT) :: PFIELD  ! array containing the data field
-INTEGER,              INTENT(OUT)   :: KRESP   ! return-code if problems occured
+TYPE(TFILEDATA),            INTENT(IN)    :: TPFILE
+CLASS(tfieldmetadata_base), INTENT(INOUT) :: TPFIELD
+REAL, DIMENSION(:,:,:),     INTENT(INOUT) :: PFIELD  ! array containing the data field
+INTEGER,                    INTENT(OUT)   :: KRESP   ! return-code if problems occured
 !
 !*      0.2   Declarations of local variables
 !
@@ -191,10 +191,10 @@ IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
 !
-TYPE(TFILEDATA),        INTENT(IN)    :: TPFILE
-TYPE(TFIELDDATA),       INTENT(INOUT) :: TPFIELD
-REAL,DIMENSION(:,:,:,:),INTENT(INOUT) :: PFIELD  ! array containing the data field
-INTEGER,                INTENT(OUT)   :: KRESP   ! return-code if problems occured
+TYPE(TFILEDATA),            INTENT(IN)    :: TPFILE
+CLASS(tfieldmetadata_base), INTENT(INOUT) :: TPFIELD
+REAL, DIMENSION(:,:,:,:),   INTENT(INOUT) :: PFIELD  ! array containing the data field
+INTEGER,                    INTENT(OUT)   :: KRESP   ! return-code if problems occured
 !
 !*      0.2   Declarations of local variables
 !
@@ -225,10 +225,10 @@ IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
 !
-TYPE(TFILEDATA),          INTENT(IN)    :: TPFILE
-TYPE(TFIELDDATA),         INTENT(INOUT) :: TPFIELD
-REAL,DIMENSION(:,:,:,:,:),INTENT(INOUT) :: PFIELD  ! array containing the data field
-INTEGER,                  INTENT(OUT)   :: KRESP   ! return-code if problems occured
+TYPE(TFILEDATA),            INTENT(IN)    :: TPFILE
+CLASS(tfieldmetadata_base), INTENT(INOUT) :: TPFIELD
+REAL ,DIMENSION(:,:,:,:,:), INTENT(INOUT) :: PFIELD  ! array containing the data field
+INTEGER,                    INTENT(OUT)   :: KRESP   ! return-code if problems occured
 !
 !*      0.2   Declarations of local variables
 !
@@ -259,10 +259,10 @@ IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
 !
-TYPE(TFILEDATA),            INTENT(IN)    :: TPFILE
-TYPE(TFIELDDATA),           INTENT(INOUT) :: TPFIELD
-REAL,DIMENSION(:,:,:,:,:,:),INTENT(INOUT) :: PFIELD  ! array containing the data field
-INTEGER,                    INTENT(OUT)   :: KRESP   ! return-code if problems occured
+TYPE(TFILEDATA),              INTENT(IN)    :: TPFILE
+CLASS(tfieldmetadata_base),   INTENT(INOUT) :: TPFIELD
+REAL, DIMENSION(:,:,:,:,:,:), INTENT(INOUT) :: PFIELD  ! array containing the data field
+INTEGER,                      INTENT(OUT)   :: KRESP   ! return-code if problems occured
 !
 !*      0.2   Declarations of local variables
 !
@@ -293,10 +293,10 @@ IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
 !
-TYPE(TFILEDATA), INTENT(IN)    :: TPFILE
-TYPE(TFIELDDATA),INTENT(INOUT) :: TPFIELD
-INTEGER,         INTENT(INOUT) :: KFIELD  ! array containing the data field
-INTEGER,         INTENT(OUT)   :: KRESP   ! return-code if problems occured
+TYPE(TFILEDATA),            INTENT(IN)    :: TPFILE
+CLASS(tfieldmetadata_base), INTENT(INOUT) :: TPFIELD
+INTEGER,                    INTENT(INOUT) :: KFIELD  ! array containing the data field
+INTEGER,                    INTENT(OUT)   :: KRESP   ! return-code if problems occured
 !
 !*      0.2   Declarations of local variables
 !
@@ -327,10 +327,10 @@ IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
 !
-TYPE(TFILEDATA),     INTENT(IN)    :: TPFILE
-TYPE(TFIELDDATA),    INTENT(INOUT) :: TPFIELD
-INTEGER,DIMENSION(:),INTENT(INOUT) :: KFIELD  ! array containing the data field
-INTEGER,             INTENT(OUT)   :: KRESP   ! return-code if problems occured
+TYPE(TFILEDATA),            INTENT(IN)    :: TPFILE
+CLASS(tfieldmetadata_base), INTENT(INOUT) :: TPFIELD
+INTEGER, DIMENSION(:),      INTENT(INOUT) :: KFIELD  ! array containing the data field
+INTEGER,                    INTENT(OUT)   :: KRESP   ! return-code if problems occured
 !
 !*      0.2   Declarations of local variables
 !
@@ -361,10 +361,10 @@ IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
 !
-TYPE(TFILEDATA),       INTENT(IN)    :: TPFILE
-TYPE(TFIELDDATA),      INTENT(INOUT) :: TPFIELD
-INTEGER,DIMENSION(:,:),INTENT(INOUT) :: KFIELD  ! array containing the data field
-INTEGER,               INTENT(OUT)   :: KRESP   ! return-code if problems occured
+TYPE(TFILEDATA),            INTENT(IN)    :: TPFILE
+CLASS(tfieldmetadata_base), INTENT(INOUT) :: TPFIELD
+INTEGER, DIMENSION(:,:),    INTENT(INOUT) :: KFIELD  ! array containing the data field
+INTEGER,                    INTENT(OUT)   :: KRESP   ! return-code if problems occured
 !
 !*      0.2   Declarations of local variables
 !
@@ -395,10 +395,10 @@ IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
 !
-TYPE(TFILEDATA),         INTENT(IN)    :: TPFILE
-TYPE(TFIELDDATA),        INTENT(INOUT) :: TPFIELD
-INTEGER,DIMENSION(:,:,:),INTENT(INOUT) :: KFIELD  ! array containing the data field
-INTEGER,                 INTENT(OUT)   :: KRESP   ! return-code if problems occured
+TYPE(TFILEDATA),            INTENT(IN)    :: TPFILE
+CLASS(tfieldmetadata_base), INTENT(INOUT) :: TPFIELD
+INTEGER, DIMENSION(:,:,:),  INTENT(INOUT) :: KFIELD  ! array containing the data field
+INTEGER,                    INTENT(OUT)   :: KRESP   ! return-code if problems occured
 !
 !*      0.2   Declarations of local variables
 !
@@ -429,10 +429,10 @@ IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
 !
-TYPE(TFILEDATA), INTENT(IN)    :: TPFILE
-TYPE(TFIELDDATA),INTENT(INOUT) :: TPFIELD
-LOGICAL,         INTENT(INOUT) :: OFIELD  ! array containing the data field
-INTEGER,         INTENT(OUT)   :: KRESP   ! return-code if problems occured
+TYPE(TFILEDATA),            INTENT(IN)    :: TPFILE
+CLASS(tfieldmetadata_base), INTENT(INOUT) :: TPFIELD
+LOGICAL,                    INTENT(INOUT) :: OFIELD  ! array containing the data field
+INTEGER,                    INTENT(OUT)   :: KRESP   ! return-code if problems occured
 !
 !*      0.2   Declarations of local variables
 !
@@ -476,10 +476,10 @@ IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
 !
-TYPE(TFILEDATA),     INTENT(IN)    :: TPFILE
-TYPE(TFIELDDATA),    INTENT(INOUT) :: TPFIELD
-LOGICAL,DIMENSION(:),INTENT(INOUT) :: OFIELD  ! array containing the data field
-INTEGER,             INTENT(OUT)   :: KRESP   ! return-code if problems occured
+TYPE(TFILEDATA),            INTENT(IN)    :: TPFILE
+CLASS(tfieldmetadata_base), INTENT(INOUT) :: TPFIELD
+LOGICAL, DIMENSION(:),      INTENT(INOUT) :: OFIELD  ! array containing the data field
+INTEGER,                    INTENT(OUT)   :: KRESP   ! return-code if problems occured
 !
 !*      0.2   Declarations of local variables
 !
@@ -531,10 +531,10 @@ IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
 !
-TYPE(TFILEDATA), INTENT(IN)    :: TPFILE
-TYPE(TFIELDDATA),INTENT(INOUT) :: TPFIELD
-CHARACTER(LEN=*),INTENT(INOUT) :: HFIELD  ! array containing the data field
-INTEGER,         INTENT(OUT)   :: KRESP   ! return-code if problems occured
+TYPE(TFILEDATA),            INTENT(IN)    :: TPFILE
+CLASS(tfieldmetadata_base), INTENT(INOUT) :: TPFIELD
+CHARACTER(LEN=*),           INTENT(INOUT) :: HFIELD  ! array containing the data field
+INTEGER,                    INTENT(OUT)   :: KRESP   ! return-code if problems occured
 !
 !*      0.2   Declarations of local variables
 !
@@ -581,10 +581,10 @@ IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
 !
-TYPE(TFILEDATA), INTENT(IN)    :: TPFILE
-TYPE(TFIELDDATA),INTENT(INOUT) :: TPFIELD
-TYPE (DATE_TIME),INTENT(INOUT) :: TPDATA  ! array containing the data field
-INTEGER,         INTENT(OUT)   :: KRESP   ! return-code if problems occured
+TYPE(TFILEDATA),            INTENT(IN)    :: TPFILE
+CLASS(tfieldmetadata_base), INTENT(INOUT) :: TPFIELD
+TYPE (DATE_TIME),           INTENT(INOUT) :: TPDATA  ! array containing the data field
+INTEGER,                    INTENT(OUT)   :: KRESP   ! return-code if problems occured
 !
 !*      0.2   Declarations of local variables
 !
@@ -592,7 +592,7 @@ INTEGER(KIND=LFIINT)                            :: IRESP, ITOTAL
 INTEGER                                         :: ILENG
 INTEGER(KIND=MNHINT64),DIMENSION(:),ALLOCATABLE :: IWORK
 LOGICAL                                         :: GGOOD
-TYPE(TFIELDDATA)                                :: TZFIELD
+TYPE(tfieldmetadata_base)                       :: TZFIELD
 INTEGER, DIMENSION(3)                           :: ITDATE    ! date array
 REAL,DIMENSION(1)                               :: ZTIME
 !
@@ -649,7 +649,7 @@ SUBROUTINE IO_Field_read_check_lfi(TPFILE,TPFIELD,KLENG,KWORK,KTOTAL,KRESP,OGOOD
 USE MODD_PARAMETERS, ONLY: NGRIDUNKNOWN
 !
 TYPE(TFILEDATA),                                INTENT(IN)    :: TPFILE
-TYPE(TFIELDDATA),                               INTENT(INOUT) :: TPFIELD
+CLASS(tfieldmetadata_base),                     INTENT(INOUT) :: TPFIELD
 INTEGER,                                        INTENT(IN)    :: KLENG
 INTEGER(KIND=MNHINT64),DIMENSION(:),ALLOCATABLE,INTENT(OUT)   :: KWORK
 INTEGER(KIND=LFIINT),                           INTENT(OUT)   :: KTOTAL

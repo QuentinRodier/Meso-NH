@@ -32,7 +32,7 @@
 #ifdef MNH_IOCDF4
 module mode_io_write_nc4
 
-use modd_field,        only: tfielddata
+use modd_field,        only: tfieldmetadata
 use modd_io,           only: gsmonoproc, tfiledata
 use modd_parameters,   only: NMNHNAMELGTMAX
 use modd_precision,    only: CDFINT, MNHINT_NF90, MNHREAL32, MNHREAL_MPI, MNHREAL_NF90
@@ -87,7 +87,7 @@ use modd_parameters, only: jphext
 use mode_tools_ll,   only: Get_globaldims_ll
 
 type(tfiledata),       intent(in) :: tpfile
-type(tfielddata),      intent(in) :: tpfield
+class(tfieldmetadata), intent(in) :: tpfield
 integer,               intent(in) :: knblocks
 
 character(len=len(tpfield%cmnhname))  :: yvarname
@@ -177,7 +177,7 @@ USE MODD_CONF_n, ONLY: CSTORAGE_TYPE
 use modd_field,  only: NMNHDIM_ARAKAWA, TYPEINT, TYPEREAL
 !
 TYPE(TFILEDATA),                              INTENT(IN) :: TPFILE
-TYPE(TFIELDDATA),                             INTENT(IN) :: TPFIELD
+CLASS(TFIELDMETADATA),                        INTENT(IN) :: TPFIELD
 INTEGER(KIND=CDFINT),                         INTENT(IN) :: KVARID
 LOGICAL,                                      INTENT(IN) :: OEXISTED !True if variable was already defined
 INTEGER(KIND=CDFINT), DIMENSION(:), OPTIONAL, INTENT(IN) :: KSHAPE
@@ -373,7 +373,7 @@ use modd_field,     only: NMNHDIM_TIME, TYPECHAR, TYPEDATE, TYPEINT, TYPELOG, TY
 use modd_precision, only: MNHINT_NF90, MNHREAL_NF90
 
 type(tfiledata),       intent(in)            :: tpfile
-type(tfielddata),      intent(in)            :: tpfield
+class(tfieldmetadata), intent(in)            :: tpfield
 integer, dimension(:), intent(in),  optional :: kshape
 character(len=*),      intent(in),  optional :: hcalendar
 logical,               intent(in),  optional :: oiscoord   ! Is a coordinate variable (->do not write coordinates attribute)
@@ -525,7 +525,7 @@ end subroutine IO_Field_create_nc4
 SUBROUTINE IO_Field_write_nc4_X0(TPFILE,TPFIELD,PFIELD,KRESP)
 !
 TYPE(TFILEDATA),       INTENT(IN) :: TPFILE
-TYPE(TFIELDDATA),      INTENT(IN) :: TPFIELD
+CLASS(TFIELDMETADATA), INTENT(IN) :: TPFIELD
 REAL,                  INTENT(IN) :: PFIELD
 INTEGER,               INTENT(OUT):: KRESP
 !
@@ -548,7 +548,7 @@ END SUBROUTINE IO_Field_write_nc4_X0
 SUBROUTINE IO_Field_write_nc4_X1(TPFILE,TPFIELD,PFIELD,KRESP)
 !
 TYPE(TFILEDATA),TARGET,INTENT(IN) :: TPFILE
-TYPE(TFIELDDATA),      INTENT(IN) :: TPFIELD
+CLASS(TFIELDMETADATA), INTENT(IN) :: TPFIELD
 REAL,DIMENSION(:),     INTENT(IN) :: PFIELD   ! array containing the data field
 INTEGER,               INTENT(OUT):: KRESP
 !
@@ -574,19 +574,19 @@ END SUBROUTINE IO_Field_write_nc4_X1
 SUBROUTINE IO_Field_write_nc4_X2(TPFILE,TPFIELD,PFIELD,KRESP,KVERTLEVEL,KZFILE,OISCOORD)
 !
 TYPE(TFILEDATA),       INTENT(IN) :: TPFILE
-TYPE(TFIELDDATA),      INTENT(IN) :: TPFIELD
+CLASS(TFIELDMETADATA), INTENT(IN) :: TPFIELD
 REAL,DIMENSION(:,:),   INTENT(IN) :: PFIELD   ! array containing the data field
 INTEGER,               INTENT(OUT):: KRESP
 INTEGER,OPTIONAL,      INTENT(IN) :: KVERTLEVEL ! Number of the vertical level (needed for Z-level split files)
 INTEGER,OPTIONAL,      INTENT(IN) :: KZFILE     ! Number of the Z-level split file
 LOGICAL,OPTIONAL,      INTENT(IN) :: OISCOORD   ! Is a coordinate variable (->do not write coordinates attribute)
 !
-INTEGER(KIND=CDFINT)      :: istatus
-CHARACTER(LEN=4)          :: YSUFFIX
-INTEGER(KIND=CDFINT)      :: IVARID
-logical                   :: gisempty
-TYPE(TFIELDDATA), pointer :: TZFIELD
-TYPE(TFILEDATA),  POINTER :: TZFILE
+CHARACTER(LEN=4)               :: YSUFFIX
+INTEGER(KIND=CDFINT)           :: istatus
+INTEGER(KIND=CDFINT)           :: IVARID
+logical                        :: gisempty
+CLASS(TFIELDMETADATA), pointer :: TZFIELD
+TYPE(TFILEDATA),       POINTER :: TZFILE
 !
 KRESP = 0
 !
@@ -610,7 +610,7 @@ END SUBROUTINE IO_Field_write_nc4_X2
 SUBROUTINE IO_Field_write_nc4_X3(TPFILE,TPFIELD,PFIELD,KRESP)
 !
 TYPE(TFILEDATA),       INTENT(IN) :: TPFILE
-TYPE(TFIELDDATA),      INTENT(IN) :: TPFIELD
+CLASS(TFIELDMETADATA), INTENT(IN) :: TPFIELD
 REAL,DIMENSION(:,:,:), INTENT(IN) :: PFIELD   ! array containing the data field
 INTEGER,               INTENT(OUT):: KRESP
 !
@@ -636,7 +636,7 @@ END SUBROUTINE IO_Field_write_nc4_X3
 SUBROUTINE IO_Field_write_nc4_X4(TPFILE,TPFIELD,PFIELD,KRESP)
 !
 TYPE(TFILEDATA),           INTENT(IN) :: TPFILE
-TYPE(TFIELDDATA),          INTENT(IN) :: TPFIELD
+CLASS(TFIELDMETADATA),     INTENT(IN) :: TPFIELD
 REAL,DIMENSION(:,:,:,:),   INTENT(IN) :: PFIELD   ! array containing the data field
 INTEGER,                   INTENT(OUT):: KRESP
 !
@@ -662,7 +662,7 @@ END SUBROUTINE IO_Field_write_nc4_X4
 SUBROUTINE IO_Field_write_nc4_X5(TPFILE,TPFIELD,PFIELD,KRESP)
 !
 TYPE(TFILEDATA),           INTENT(IN) :: TPFILE
-TYPE(TFIELDDATA),          INTENT(IN) :: TPFIELD
+CLASS(TFIELDMETADATA),     INTENT(IN) :: TPFIELD
 REAL,DIMENSION(:,:,:,:,:), INTENT(IN) :: PFIELD   ! array containing the data field
 INTEGER,                   INTENT(OUT):: KRESP
 !
@@ -688,7 +688,7 @@ END SUBROUTINE IO_Field_write_nc4_X5
 SUBROUTINE IO_Field_write_nc4_X6(TPFILE,TPFIELD,PFIELD,KRESP)
 !
 TYPE(TFILEDATA),             INTENT(IN) :: TPFILE
-TYPE(TFIELDDATA),            INTENT(IN) :: TPFIELD
+CLASS(TFIELDMETADATA),       INTENT(IN) :: TPFIELD
 REAL,DIMENSION(:,:,:,:,:,:), INTENT(IN) :: PFIELD   ! array containing the data field
 INTEGER,                     INTENT(OUT):: KRESP
 !
@@ -723,7 +723,7 @@ USE MODD_PARAMETERS_ll,  ONLY: JPVEXT
 #endif
 !
 TYPE(TFILEDATA),       INTENT(IN) :: TPFILE
-TYPE(TFIELDDATA),      INTENT(IN) :: TPFIELD
+CLASS(TFIELDMETADATA), INTENT(IN) :: TPFIELD
 INTEGER,               INTENT(IN) :: KFIELD
 INTEGER,               INTENT(OUT):: KRESP
 !
@@ -773,7 +773,7 @@ USE MODD_PARAMETERS_ll,  ONLY: JPVEXT
 #endif
 !
 TYPE(TFILEDATA),       INTENT(IN) :: TPFILE
-TYPE(TFIELDDATA),      INTENT(IN) :: TPFIELD
+CLASS(TFIELDMETADATA), INTENT(IN) :: TPFIELD
 INTEGER, DIMENSION(:), INTENT(IN) :: KFIELD
 INTEGER,               INTENT(OUT):: KRESP
 !
@@ -799,7 +799,7 @@ END SUBROUTINE IO_Field_write_nc4_N1
 SUBROUTINE IO_Field_write_nc4_N2(TPFILE,TPFIELD,KFIELD,KRESP)
 !
 TYPE(TFILEDATA),TARGET,INTENT(IN) :: TPFILE
-TYPE(TFIELDDATA),      INTENT(IN) :: TPFIELD
+CLASS(TFIELDMETADATA), INTENT(IN) :: TPFIELD
 INTEGER,DIMENSION(:,:),INTENT(IN) :: KFIELD   ! array containing the data field
 INTEGER,               INTENT(OUT):: KRESP
 !
@@ -825,7 +825,7 @@ END SUBROUTINE IO_Field_write_nc4_N2
 SUBROUTINE IO_Field_write_nc4_N3(TPFILE,TPFIELD,KFIELD,KRESP)
 !
 TYPE(TFILEDATA),TARGET,  INTENT(IN) :: TPFILE
-TYPE(TFIELDDATA),        INTENT(IN) :: TPFIELD
+CLASS(TFIELDMETADATA),   INTENT(IN) :: TPFIELD
 INTEGER,DIMENSION(:,:,:),INTENT(IN) :: KFIELD   ! array containing the data field
 INTEGER,                 INTENT(OUT):: KRESP
 !
@@ -851,7 +851,7 @@ END SUBROUTINE IO_Field_write_nc4_N3
 SUBROUTINE IO_Field_write_nc4_N4(TPFILE,TPFIELD,KFIELD,KRESP)
 !
 TYPE(TFILEDATA),TARGET,    INTENT(IN) :: TPFILE
-TYPE(TFIELDDATA),          INTENT(IN) :: TPFIELD
+CLASS(TFIELDMETADATA),     INTENT(IN) :: TPFIELD
 INTEGER,DIMENSION(:,:,:,:),INTENT(IN) :: KFIELD   ! array containing the data field
 INTEGER,                   INTENT(OUT):: KRESP
 !
@@ -877,7 +877,7 @@ END SUBROUTINE IO_Field_write_nc4_N4
 SUBROUTINE IO_Field_write_nc4_L0(TPFILE,TPFIELD,OFIELD,KRESP)
 !
 TYPE(TFILEDATA),       INTENT(IN) :: TPFILE
-TYPE(TFIELDDATA),      INTENT(IN) :: TPFIELD
+CLASS(TFIELDMETADATA), INTENT(IN) :: TPFIELD
 LOGICAL,               INTENT(IN) :: OFIELD
 INTEGER,               INTENT(OUT):: KRESP
 !
@@ -908,7 +908,7 @@ END SUBROUTINE IO_Field_write_nc4_L0
 SUBROUTINE IO_Field_write_nc4_L1(TPFILE,TPFIELD,OFIELD,KRESP)
 !
 TYPE(TFILEDATA),       INTENT(IN) :: TPFILE
-TYPE(TFIELDDATA),      INTENT(IN) :: TPFIELD
+CLASS(TFIELDMETADATA), INTENT(IN) :: TPFIELD
 LOGICAL, DIMENSION(:), INTENT(IN) :: OFIELD
 INTEGER,               INTENT(OUT):: KRESP
 !
@@ -942,7 +942,7 @@ END SUBROUTINE IO_Field_write_nc4_L1
 SUBROUTINE IO_Field_write_nc4_C0(TPFILE,TPFIELD,HFIELD,KRESP)
 !
 TYPE(TFILEDATA),       INTENT(IN) :: TPFILE
-TYPE(TFIELDDATA),      INTENT(IN) :: TPFIELD
+CLASS(TFIELDMETADATA), INTENT(IN) :: TPFIELD
 CHARACTER(LEN=*),      INTENT(IN) :: HFIELD
 INTEGER,               INTENT(OUT):: KRESP
 !
@@ -980,7 +980,7 @@ SUBROUTINE IO_Field_write_nc4_C1(TPFILE,TPFIELD,HFIELD,KRESP)
 !    J.Escobar : 25/04/2018 : missing 'IF ALLOCATED(IVDIMSTMP)' DEALLOCATE
 !----------------------------------------------------------------
 TYPE(TFILEDATA),              INTENT(IN)  :: TPFILE
-TYPE(TFIELDDATA),             INTENT(IN)  :: TPFIELD
+CLASS(TFIELDMETADATA),        INTENT(IN) :: TPFIELD
 CHARACTER(LEN=*),DIMENSION(:),INTENT(IN)  :: HFIELD
 INTEGER,                      INTENT(OUT) :: KRESP
 !
@@ -1017,22 +1017,22 @@ USE MODD_TYPE_DATE
 USE MODE_DATETIME
 !
 TYPE(TFILEDATA),       INTENT(IN) :: TPFILE
-TYPE(TFIELDDATA),      INTENT(IN) :: TPFIELD
+CLASS(TFIELDMETADATA), INTENT(IN) :: TPFIELD
 TYPE (DATE_TIME),      INTENT(IN) :: TPDATA
 INTEGER,               INTENT(OUT):: KRESP
 !
-INTEGER(KIND=CDFINT) :: istatus
-INTEGER(KIND=CDFINT) :: IVARID
-TYPE(TFIELDDATA)     :: TZFIELD
-CHARACTER(LEN=40)    :: YUNITS
-REAL                 :: ZDELTATIME !Distance in seconds since reference date and time
-TYPE(DATE_TIME)      :: TZREF
+CHARACTER(LEN=40)                  :: YUNITS
+INTEGER(KIND=CDFINT)               :: istatus
+INTEGER(KIND=CDFINT)               :: IVARID
+REAL                               :: ZDELTATIME !Distance in seconds since reference date and time
+CLASS(TFIELDMETADATA), ALLOCATABLE :: TZFIELD
+TYPE(DATE_TIME)                    :: TZREF
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_nc4_T0',TRIM(TPFILE%CNAME)//': writing '//TRIM(TPFIELD%CMNHNAME))
 !
 KRESP = 0
 !
-TZFIELD = TPFIELD
+Allocate( TZFIELD, source = TPFIELD )
 !
 ! Model beginning date (TDTMOD%TDATE) is used as the reference date
 ! Reference time is set to 0.
@@ -1071,24 +1071,24 @@ USE MODD_TYPE_DATE
 USE MODE_DATETIME
 !
 TYPE(TFILEDATA),                INTENT(IN) :: TPFILE
-TYPE(TFIELDDATA),               INTENT(IN) :: TPFIELD
+CLASS(TFIELDMETADATA),          INTENT(IN) :: TPFIELD
 TYPE (DATE_TIME), DIMENSION(:), INTENT(IN) :: TPDATA
 INTEGER,                        INTENT(OUT):: KRESP
 !
-CHARACTER(LEN=40)               :: YUNITS
-INTEGER                         :: JI
-INTEGER(KIND=CDFINT)            :: istatus
-INTEGER(KIND=CDFINT)            :: IVARID
-logical                         :: gisempty
-REAL, DIMENSION(:), ALLOCATABLE :: ZDELTATIME !Distance in seconds since reference date and time
-TYPE(DATE_TIME)                 :: TZREF
-TYPE(TFIELDDATA)                :: TZFIELD
+CHARACTER(LEN=40)                  :: YUNITS
+INTEGER                            :: JI
+INTEGER(KIND=CDFINT)               :: istatus
+INTEGER(KIND=CDFINT)               :: IVARID
+logical                            :: gisempty
+REAL, DIMENSION(:),    ALLOCATABLE :: ZDELTATIME !Distance in seconds since reference date and time
+CLASS(TFIELDMETADATA), ALLOCATABLE :: TZFIELD
+TYPE(DATE_TIME)                    :: TZREF
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_nc4_T1',TRIM(TPFILE%CNAME)//': writing '//TRIM(TPFIELD%CMNHNAME))
 !
 KRESP = 0
 !
-TZFIELD = TPFIELD
+Allocate( TZFIELD, source = TPFIELD )
 !
 ! Model beginning date (TDTMOD%TDATE) is used as the reference date
 ! Reference time is set to 0.
@@ -1128,7 +1128,7 @@ END SUBROUTINE IO_Field_write_nc4_T1
 subroutine IO_Field_partial_write_nc4_X1( tpfile, tpfield, pfield, koffset, kresp )
 
 type(tfiledata),                intent(in)  :: tpfile
-type(tfielddata),               intent(in)  :: tpfield
+class(tfieldmetadata),          intent(in)  :: tpfield
 real,             dimension(:), intent(in)  :: pfield   ! array containing the data field
 integer,          dimension(1), intent(in)  :: koffset
 integer,                        intent(out) :: kresp
@@ -1165,20 +1165,20 @@ end subroutine IO_Field_partial_write_nc4_X1
 subroutine IO_Field_partial_write_nc4_X2( tpfile, tpfield, pfield, koffset, kresp, kvertlevel, kzfile )
 
 type(tfiledata),                  intent(in)  :: tpfile
-type(tfielddata),                 intent(in)  :: tpfield
+class(tfieldmetadata),            intent(in)  :: tpfield
 real,             dimension(:,:), intent(in)  :: pfield   ! array containing the data field
 integer,          dimension(2),   intent(in)  :: koffset
 integer,                          intent(out) :: kresp
 integer,                optional, intent(in)  :: kvertlevel ! Number of the vertical level (needed for Z-level split files)
 integer,                optional, intent(in)  :: kzfile     ! Number of the Z-level split file
 
-character(len=4)                   :: ysuffix
-character(len=NMNHNAMELGTMAX)      :: yvarname
-integer(kind=CDFINT)               :: istatus
-integer(kind=CDFINT)               :: ivarid
-integer(kind=CDFINT), dimension(2) :: istarts
-type(tfielddata),     pointer      :: tzfield
-type(tfiledata),      pointer      :: tzfile
+character(len=4)                    :: ysuffix
+character(len=NMNHNAMELGTMAX)       :: yvarname
+integer(kind=CDFINT)                :: istatus
+integer(kind=CDFINT)                :: ivarid
+integer(kind=CDFINT),  dimension(2) :: istarts
+class(tfieldmetadata), pointer      :: tzfield
+type(tfiledata),       pointer      :: tzfile
 
 kresp = 0
 
@@ -1211,7 +1211,7 @@ end subroutine IO_Field_partial_write_nc4_X2
 subroutine IO_Field_partial_write_nc4_X3( tpfile, tpfield, pfield, koffset, kresp )
 
 type(tfiledata),                    intent(in)  :: tpfile
-type(tfielddata),                   intent(in)  :: tpfield
+class(tfieldmetadata),              intent(in)  :: tpfield
 real,             dimension(:,:,:), intent(in)  :: pfield   ! array containing the data field
 integer,          dimension(3),     intent(in)  :: koffset
 integer,                            intent(out) :: kresp
@@ -1248,7 +1248,7 @@ end subroutine IO_Field_partial_write_nc4_X3
 subroutine IO_Field_partial_write_nc4_X4( tpfile, tpfield, pfield, koffset, kresp )
 
 type(tfiledata),                      intent(in)  :: tpfile
-type(tfielddata),                     intent(in)  :: tpfield
+class(tfieldmetadata),                intent(in)  :: tpfield
 real,             dimension(:,:,:,:), intent(in)  :: pfield   ! array containing the data field
 integer,          dimension(4),       intent(in)  :: koffset
 integer,                              intent(out) :: kresp
@@ -1285,20 +1285,20 @@ end subroutine IO_Field_partial_write_nc4_X4
 subroutine IO_Field_partial_write_nc4_N2( tpfile, tpfield, kfield, koffset, kresp, kvertlevel, kzfile )
 
 type(tfiledata),                  intent(in)  :: tpfile
-type(tfielddata),                 intent(in)  :: tpfield
+class(tfieldmetadata),            intent(in)  :: tpfield
 integer,          dimension(:,:), intent(in)  :: kfield   ! array containing the data field
 integer,          dimension(2),   intent(in)  :: koffset
 integer,                          intent(out) :: kresp
 integer,                optional, intent(in)  :: kvertlevel ! Number of the vertical level (needed for Z-level split files)
 integer,                optional, intent(in)  :: kzfile     ! Number of the Z-level split file
 
-character(len=4)                   :: ysuffix
-character(len=NMNHNAMELGTMAX)      :: yvarname
-integer(kind=CDFINT)               :: istatus
-integer(kind=CDFINT)               :: ivarid
-integer(kind=CDFINT), dimension(2) :: istarts
-type(tfielddata),     pointer      :: tzfield
-type(tfiledata),      pointer      :: tzfile
+character(len=4)                    :: ysuffix
+character(len=NMNHNAMELGTMAX)       :: yvarname
+integer(kind=CDFINT)                :: istatus
+integer(kind=CDFINT)                :: ivarid
+integer(kind=CDFINT),  dimension(2) :: istarts
+class(tfieldmetadata), pointer      :: tzfield
+type(tfiledata),       pointer      :: tzfile
 
 kresp = 0
 
@@ -1331,20 +1331,20 @@ end subroutine IO_Field_partial_write_nc4_N2
 subroutine IO_Field_partial_write_nc4_N3( tpfile, tpfield, kfield, koffset, kresp, kvertlevel, kzfile )
 
 type(tfiledata),                    intent(in)  :: tpfile
-type(tfielddata),                   intent(in)  :: tpfield
+class(tfieldmetadata),              intent(in)  :: tpfield
 integer,          dimension(:,:,:), intent(in)  :: kfield   ! array containing the data field
 integer,          dimension(3),     intent(in)  :: koffset
 integer,                            intent(out) :: kresp
 integer,                  optional, intent(in)  :: kvertlevel ! Number of the vertical level (needed for Z-level split files)
 integer,                  optional, intent(in)  :: kzfile     ! Number of the Z-level split file
 
-character(len=4)                   :: ysuffix
-character(len=NMNHNAMELGTMAX)      :: yvarname
-integer(kind=CDFINT)               :: istatus
-integer(kind=CDFINT)               :: ivarid
-integer(kind=CDFINT), dimension(3) :: istarts
-type(tfielddata),     pointer      :: tzfield
-type(tfiledata),      pointer      :: tzfile
+character(len=4)                    :: ysuffix
+character(len=NMNHNAMELGTMAX)       :: yvarname
+integer(kind=CDFINT)                :: istatus
+integer(kind=CDFINT)                :: ivarid
+integer(kind=CDFINT),  dimension(3) :: istarts
+class(tfieldmetadata), pointer      :: tzfield
+type(tfiledata),       pointer      :: tzfile
 
 kresp = 0
 
@@ -1377,20 +1377,20 @@ end subroutine IO_Field_partial_write_nc4_N3
 subroutine IO_Field_partial_write_nc4_N4( tpfile, tpfield, kfield, koffset, kresp, kvertlevel, kzfile )
 
 type(tfiledata),                      intent(in)  :: tpfile
-type(tfielddata),                     intent(in)  :: tpfield
+class(tfieldmetadata),                intent(in)  :: tpfield
 integer,          dimension(:,:,:,:), intent(in)  :: kfield   ! array containing the data field
 integer,          dimension(4),       intent(in)  :: koffset
 integer,                              intent(out) :: kresp
 integer,                    optional, intent(in)  :: kvertlevel ! Number of the vertical level (needed for Z-level split files)
 integer,                    optional, intent(in)  :: kzfile     ! Number of the Z-level split file
 
-character(len=4)                   :: ysuffix
-character(len=NMNHNAMELGTMAX)      :: yvarname
-integer(kind=CDFINT)               :: istatus
-integer(kind=CDFINT)               :: ivarid
-integer(kind=CDFINT), dimension(4) :: istarts
-type(tfielddata),     pointer      :: tzfield
-type(tfiledata),      pointer      :: tzfile
+character(len=4)                    :: ysuffix
+character(len=NMNHNAMELGTMAX)       :: yvarname
+integer(kind=CDFINT)                :: istatus
+integer(kind=CDFINT)                :: ivarid
+integer(kind=CDFINT),  dimension(4) :: istarts
+class(tfieldmetadata), pointer      :: tzfield
+type(tfiledata),       pointer      :: tzfile
 
 kresp = 0
 
@@ -2454,8 +2454,8 @@ END SUBROUTINE IO_History_append_nc4
 
 subroutine IO_Select_split_file( tpfile, tpfield, tpfileout, tpfieldout, kvertlevel, kzfile )
 type(tfiledata),  target,         intent(in)  :: tpfile
-type(tfielddata), target,         intent(in)  :: tpfield
-type(tfielddata), pointer,        intent(out) :: tpfieldout
+class(tfieldmetadata), target,    intent(in)  :: tpfield
+class(tfieldmetadata), pointer,   intent(out) :: tpfieldout
 type(tfiledata),  pointer,        intent(out) :: tpfileout
 integer,                optional, intent(in)  :: kvertlevel ! Number of the vertical level (needed for Z-level split files)
 integer,                optional, intent(in)  :: kzfile     ! Number of the Z-level split file
@@ -2469,9 +2469,8 @@ if ( Present( kvertlevel ) ) then
 
   Write( ysuffix, '( i4.4 )' ) kvertlevel
   tpfileout => tpfile%tfiles_ioz(kzfile)%tfile
-  !Copy the values of tpfield to the pointer tpfieldout (new tfielddata)
-  Allocate( tpfieldout )
-  tpfieldout = tpfield
+  !Copy the values of tpfield to the pointer tpfieldout
+  Allocate( tpfieldout, source = tpfield )
   tpfieldout%cmnhname  = Trim( tpfieldout%cmnhname ) // ysuffix
   if ( Len_trim( tpfieldout%cstdname  ) > 0 )  tpfieldout%cstdname  = Trim( tpfieldout%cstdname  ) // '_at_level_' // ysuffix
   if ( Len_trim( tpfieldout%clongname ) > 0 )  tpfieldout%clongname = Trim( tpfieldout%clongname ) // ' at level ' // ysuffix

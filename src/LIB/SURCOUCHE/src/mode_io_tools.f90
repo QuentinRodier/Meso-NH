@@ -103,7 +103,7 @@ contains
 subroutine IO_Mnhversion_get(tpfile)
 !Compare MNHVERSION of file with current version and store it in file metadata
   use modd_conf,          only: nmnhversion
-  use modd_field,         only: tfielddata, TYPEINT
+  use modd_field,         only: tfieldmetadata, TYPEINT
 
   use mode_io_field_read, only: IO_Field_read
 
@@ -113,7 +113,7 @@ subroutine IO_Mnhversion_get(tpfile)
   integer :: imasdev,ibugfix
   integer :: iresp
   integer,dimension(3)    :: imnhversion
-  type(tfielddata)        :: tzfield
+  type(tfieldmetadata)    :: tzfield
 
   call print_msg(NVERB_DEBUG,'IO','IO_Mnhversion_get','called for '//trim(tpfile%cname))
 
@@ -123,7 +123,7 @@ subroutine IO_Mnhversion_get(tpfile)
   if ( .not. associated( tpfile%tmainfile ) ) then
     imnhversion(:) = 0
     !use tzfield because tfieldlist could be not initialised
-    tzfield = tfielddata(            &
+    tzfield = tfieldmetadata(        &
       cmnhname   = 'MNHVERSION',     &
       cstdname   = '',               &
       clongname  = 'MesoNH version', &

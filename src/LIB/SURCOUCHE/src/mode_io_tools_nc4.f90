@@ -24,7 +24,7 @@
 #ifdef MNH_IOCDF4
 module mode_io_tools_nc4
 
-use modd_field,     only: tfielddata
+use modd_field,     only: tfieldmetadata
 use modd_io,        only: tfiledata
 use modd_netcdf,    only: tdimnc, tdimsnc
 use modd_precision, only: CDFINT
@@ -85,7 +85,7 @@ USE MODD_FIELD, ONLY: NMNHDIM_ARAKAWA, TYPECHAR
 !
 !Used by LFI2CDF
 TYPE(TFILEDATA),                      INTENT(IN)  :: TPFILE
-TYPE(TFIELDDATA),                     INTENT(IN)  :: TPFIELD
+CLASS(TFIELDMETADATA),                INTENT(IN)  :: TPFIELD
 INTEGER,                              INTENT(IN)  :: KLEN
 TYPE(tdimnc),DIMENSION(:),            INTENT(OUT) :: TPDIMS
 INTEGER,                              INTENT(OUT) :: KRESP
@@ -253,6 +253,8 @@ USE MODD_CONF_n,        ONLY: CSTORAGE_TYPE
 USE MODD_DIM_n,         ONLY: NIMAX_ll, NJMAX_ll, NKMAX
 use modd_dyn,           only: xseglen
 use modd_dyn_n,         only: xtstep
+
+!PW: check if all parameters are used...
 use modd_field,         only: NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NI_U, NMNHDIM_NJ_U, NMNHDIM_NI_V, NMNHDIM_NJ_V,   &
                               NMNHDIM_LEVEL, NMNHDIM_LEVEL_W, NMNHDIM_TIME,                                     &
                               NMNHDIM_ONE,  NMNHDIM_NSWB, NMNHDIM_NLWB, NMNHDIM_COMPLEX,                        &
@@ -515,7 +517,7 @@ use modd_field,  only: NMNHDIM_UNKNOWN, NMNHDIM_ONE, NMNHDIM_COMPLEX,           
                        NMNHDIM_NOTLISTED, NMNHDIM_UNUSED, NMNHDIM_ARAKAWA
 
 TYPE(TFILEDATA),                              INTENT(IN)  :: TPFILE
-TYPE(TFIELDDATA),                             INTENT(IN)  :: TPFIELD
+CLASS(TFIELDMETADATA),                        INTENT(IN)  :: TPFIELD
 INTEGER(KIND=CDFINT),DIMENSION(:),            INTENT(IN)  :: KSHAPE
 INTEGER(KIND=CDFINT),DIMENSION(:),ALLOCATABLE,INTENT(OUT) :: KVDIMS
 !

@@ -114,8 +114,8 @@ end subroutine IO_Format_read_select
 
 
 SUBROUTINE IO_Field_metadata_bcast(TPFILE,TPFIELD)
-TYPE(TFILEDATA),  INTENT(IN)    :: TPFILE
-TYPE(TFIELDDATA), INTENT(INOUT) :: TPFIELD
+TYPE(TFILEDATA),       INTENT(IN)    :: TPFILE
+CLASS(TFIELDMETADATA), INTENT(INOUT) :: TPFIELD
 !
 INTEGER :: IERR
 !
@@ -159,10 +159,10 @@ SUBROUTINE IO_Field_read_byfield_X0(TPFILE,TPFIELD,PFIELD,KRESP)
 !
 USE MODD_IO,        ONLY: ISP,GSMONOPROC
 !
-TYPE(TFILEDATA),  INTENT(IN)    :: TPFILE
-TYPE(TFIELDDATA), INTENT(INOUT) :: TPFIELD
-REAL,             INTENT(INOUT) :: PFIELD   ! data field
-INTEGER,OPTIONAL, INTENT(OUT)   :: KRESP    ! return-code
+TYPE(TFILEDATA),       INTENT(IN)    :: TPFILE
+CLASS(TFIELDMETADATA), INTENT(INOUT) :: TPFIELD
+REAL,                  INTENT(INOUT) :: PFIELD   ! data field
+INTEGER, OPTIONAL,     INTENT(OUT)   :: KRESP    ! return-code
 !
 INTEGER                      :: IERR
 INTEGER                      :: IRESP
@@ -238,13 +238,13 @@ USE MODD_STRUCTURE_ll, ONLY: ZONE_ll
 USE MODE_SCATTER_ll
 USE MODE_ALLOCBUFFER_ll
 !
-TYPE(TFILEDATA),  INTENT(IN)    :: TPFILE
-TYPE(TFIELDDATA), INTENT(INOUT) :: TPFIELD
-REAL,DIMENSION(:),INTENT(INOUT) :: PFIELD   ! array containing the data field
-INTEGER,OPTIONAL, INTENT(OUT)   :: KRESP    ! return-code
-INTEGER,OPTIONAL, INTENT(IN)    :: KIMAX_ll
-INTEGER,OPTIONAL, INTENT(IN)    :: KJMAX_ll
-TYPE(ZONE_ll),DIMENSION(ISNPROC),OPTIONAL,INTENT(IN) :: TPSPLITTING  ! splitting of the domain
+TYPE(TFILEDATA),       INTENT(IN)    :: TPFILE
+CLASS(TFIELDMETADATA), INTENT(INOUT) :: TPFIELD
+REAL,    DIMENSION(:), INTENT(INOUT) :: PFIELD   ! array containing the data field
+INTEGER, OPTIONAL,     INTENT(OUT)   :: KRESP    ! return-code
+INTEGER, OPTIONAL,     INTENT(IN)    :: KIMAX_ll
+INTEGER, OPTIONAL,     INTENT(IN)    :: KJMAX_ll
+TYPE(ZONE_ll), DIMENSION(ISNPROC), OPTIONAL, INTENT(IN) :: TPSPLITTING  ! splitting of the domain
 !
 INTEGER                      :: IERR
 REAL,DIMENSION(:),POINTER    :: ZFIELDP
@@ -349,13 +349,13 @@ USE MODD_ARGSLIST_ll, ONLY : LIST_ll
 USE MODE_ll         , ONLY : ADD2DFIELD_ll,UPDATE_HALO_ll,CLEANLIST_ll
 #endif
 !
-TYPE(TFILEDATA),           INTENT(IN)    :: TPFILE
-TYPE(TFIELDDATA),          INTENT(INOUT) :: TPFIELD
-REAL,DIMENSION(:,:),TARGET,INTENT(INOUT) :: PFIELD   ! array containing the data field
-INTEGER, OPTIONAL,         INTENT(OUT)   :: KRESP    ! return-code
-INTEGER, OPTIONAL,         INTENT(IN)    :: KIMAX_ll
-INTEGER, OPTIONAL,         INTENT(IN)    :: KJMAX_ll
-TYPE(ZONE_ll),DIMENSION(ISNPROC),OPTIONAL,INTENT(IN) :: TPSPLITTING  ! splitting of the domain
+TYPE(TFILEDATA),                 INTENT(IN)    :: TPFILE
+CLASS(TFIELDMETADATA),           INTENT(INOUT) :: TPFIELD
+REAL,    DIMENSION(:,:), TARGET, INTENT(INOUT) :: PFIELD   ! array containing the data field
+INTEGER, OPTIONAL,               INTENT(OUT)   :: KRESP    ! return-code
+INTEGER, OPTIONAL,               INTENT(IN)    :: KIMAX_ll
+INTEGER, OPTIONAL,               INTENT(IN)    :: KJMAX_ll
+TYPE(ZONE_ll), DIMENSION(ISNPROC), OPTIONAL, INTENT(IN) :: TPSPLITTING  ! splitting of the domain
 !
 INTEGER                      :: IERR
 real                             :: zfieldp0d
@@ -367,7 +367,7 @@ INTEGER                      :: IRESP
 INTEGER                      :: IHEXTOT
 REAL(kind=MNHTIME), DIMENSION(2) :: ZT0, ZT1, ZT2
 REAL(kind=MNHTIME), DIMENSION(2) :: ZT11, ZT22
-type(tfielddata)                 :: tzfield
+class(tfieldmetadata),allocatable :: tzfield
 #ifdef MNH_GA
 REAL,DIMENSION(:,:),POINTER  :: ZFIELD_GA
 TYPE(LIST_ll)      ,POINTER  :: TZFIELD_ll
@@ -389,8 +389,8 @@ call IO_Format_read_select( tpfile, glfi, gnc4 )
 IF (IRESP==0) THEN
   IF (GSMONOPROC) THEN ! sequential execution
     if ( lpack .and. l1d .and. Size( pfield, 1 ) == ihextot .and. Size( pfield, 2 ) == ihextot ) then
+      Allocate( tzfield, source = tpfield )
       if ( tpfile%ldimreduced ) then
-        tzfield = tpfield
         tzfield%ndims = tzfield%ndims - 2
         if ( tzfield%ndimlist(1) /= NMNHDIM_UNKNOWN ) then
           tzfield%ndimlist(1)  = tzfield%ndimlist(3) !Necessary if time dimension
@@ -400,7 +400,6 @@ IF (IRESP==0) THEN
         if ( glfi ) call IO_Field_read_lfi( tpfile, tzfield, zfieldp0d, iresp )
         pfield(:, :) = Spread( Spread( zfieldp0d, dim = 1, ncopies = ihextot ), dim = 2, ncopies = ihextot )
       else
-        tzfield = tpfield
         if ( tzfield%ndimlist(1) /= NMNHDIM_UNKNOWN ) then
           tzfield%ndimlist(1:2) = NMNHDIM_ONE
         end if
@@ -410,8 +409,8 @@ IF (IRESP==0) THEN
         pfield(:, :) = Spread( Spread( pfield(jphext + 1, jphext + 1), dim = 1, ncopies = ihextot ), dim = 2, ncopies = ihextot )
       endif
     else if ( lpack .and. l2d .and. Size( pfield, 2 ) == ihextot ) then
+      Allocate( tzfield, source = tpfield )
       if ( tpfile%ldimreduced ) then
-        tzfield = tpfield
         tzfield%ndims = tzfield%ndims - 1
         if ( tzfield%ndimlist(1) /= NMNHDIM_UNKNOWN ) then
           tzfield%ndimlist(2)  = tzfield%ndimlist(3) !Necessary if time dimension
@@ -422,7 +421,6 @@ IF (IRESP==0) THEN
         if ( glfi ) call IO_Field_read_lfi( tpfile, tzfield, zfieldp1d, iresp )
         pfield(:, :) = Spread( pfield(:, jphext + 1), dim = 2, ncopies = ihextot )
       else
-        tzfield = tpfield
         if ( tzfield%ndimlist(1) /= NMNHDIM_UNKNOWN ) then
           tzfield%ndimlist(2)  = NMNHDIM_ONE
         end if
@@ -558,10 +556,10 @@ USE MODE_IO_MANAGE_STRUCT, ONLY: IO_File_find_byname
 USE MODE_MNH_TIMING,       ONLY: SECOND_MNH2
 USE MODE_SCATTER_ll
 !
-TYPE(TFILEDATA),TARGET,      INTENT(IN)    :: TPFILE
-TYPE(TFIELDDATA),            INTENT(INOUT) :: TPFIELD
-REAL,DIMENSION(:,:,:),TARGET,INTENT(INOUT) :: PFIELD   ! array containing the data field
-INTEGER, OPTIONAL,           INTENT(OUT)   :: KRESP    ! return-code
+TYPE(TFILEDATA), TARGET,       INTENT(IN)    :: TPFILE
+CLASS(TFIELDMETADATA),         INTENT(INOUT) :: TPFIELD
+REAL,DIMENSION(:,:,:), TARGET, INTENT(INOUT) :: PFIELD   ! array containing the data field
+INTEGER, OPTIONAL,             INTENT(OUT)   :: KRESP    ! return-code
 !
 TYPE TX_2DP
    REAL,DIMENSION(:,:), POINTER :: X
@@ -588,7 +586,7 @@ CHARACTER(LEN=2)                      :: YDIR
 CHARACTER(LEN=4)                      :: YK
 CHARACTER(LEN=NMNHNAMELGTMAX+4)       :: YRECZSLICE
 CHARACTER(LEN=4)                      :: YSUFFIX
-type(tfielddata)                      :: tzfield
+class(tfieldmetadata), allocatable    :: tzfield
 TYPE(TFILEDATA),POINTER               :: TZFILE
 TYPE(TX_2DP),ALLOCATABLE,DIMENSION(:) :: T_TX2DP
 #ifdef MNH_GA
@@ -615,8 +613,8 @@ call IO_Format_read_select( tpfile, glfi, gnc4 )
 IF (IRESP==0) THEN
   IF (GSMONOPROC  .AND. TPFILE%NSUBFILES_IOZ==0 ) THEN ! sequential execution
     if ( lpack .and. l1d .and. Size( pfield, 1 ) == ihextot .and. Size( pfield, 2 ) == ihextot ) then
+      Allocate( tzfield, source = tpfield )
       if ( tpfile%ldimreduced ) then
-        tzfield = tpfield
         tzfield%ndims = tzfield%ndims - 2
         if ( tzfield%ndimlist(1) /= NMNHDIM_UNKNOWN ) then
           tzfield%ndimlist(1)  = tzfield%ndimlist(3)
@@ -629,7 +627,6 @@ IF (IRESP==0) THEN
         pfield(:, :, :) = Spread( Spread( pfield(jphext + 1, jphext + 1, :), dim = 1, ncopies = ihextot ), &
                                   dim = 2, ncopies = ihextot )
       else
-        tzfield = tpfield
         if ( tzfield%ndimlist(1) /= NMNHDIM_UNKNOWN ) then
           tzfield%ndimlist(1:2) = NMNHDIM_ONE
         end if
@@ -640,8 +637,8 @@ IF (IRESP==0) THEN
                                   dim = 2, ncopies = ihextot )
       endif
     else if ( lpack .and. l2d .and. Size( pfield, 2 ) == ihextot ) then
+      Allocate( tzfield, source = tpfield )
       if ( tpfile%ldimreduced ) then
-        tzfield = tpfield
         tzfield%ndims = tzfield%ndims - 1
         if ( tzfield%ndimlist(1) /= NMNHDIM_UNKNOWN ) then
           tzfield%ndimlist(2)  = tzfield%ndimlist(3)
@@ -653,7 +650,6 @@ IF (IRESP==0) THEN
         if ( glfi ) call IO_Field_read_lfi( tpfile, tzfield, zfieldp2d, iresp )
         pfield(:, :, :) = Spread( pfield(:, jphext + 1, :), dim = 2, ncopies = ihextot )
       else
-        tzfield = tpfield
         if ( tzfield%ndimlist(1) /= NMNHDIM_UNKNOWN ) then
           tzfield%ndimlist(2)  = NMNHDIM_ONE
         end if
@@ -717,6 +713,7 @@ IF (IRESP==0) THEN
     ALLOCATE(ZSLICE_ll(0,0)) ! to avoid bug on test of size
     GALLOC_ll = .TRUE.
     IRESP_ISP=0
+    Allocate( tzfield, mold = tpfield )
     DO JKK=1,SIZE(PFIELD,3) ! IKU_ll
       IK_FILE = IO_Level2filenumber_get(JKK,TPFILE%NSUBFILES_IOZ)
       TZFILE => TPFILE%TFILES_IOZ(IK_FILE+1)%TFILE
@@ -783,6 +780,7 @@ IF (IRESP==0) THEN
       JK_MAX=MIN(SIZE(PFIELD,3),JK+INB_PROC_REAL-1)
       !
       INB_REQ=0
+      Allocate( tzfield, mold = tpfield )
       DO JKK=JK,JK_MAX
         IF (TPFILE%NSUBFILES_IOZ .GT. 1 ) THEN
           IK_FILE = IO_Level2filenumber_get(JKK,TPFILE%NSUBFILES_IOZ)
@@ -947,10 +945,10 @@ USE MODE_ALLOCBUFFER_ll
 USE MODE_MNH_TIMING,     ONLY: SECOND_MNH2
 USE MODE_SCATTER_ll
 !
-TYPE(TFILEDATA),               INTENT(IN)    :: TPFILE
-TYPE(TFIELDDATA),              INTENT(INOUT) :: TPFIELD
-REAL,DIMENSION(:,:,:,:),TARGET,INTENT(INOUT) :: PFIELD   ! array containing the data field
-INTEGER, OPTIONAL,             INTENT(OUT)   :: KRESP    ! return-code
+TYPE(TFILEDATA),                  INTENT(IN)    :: TPFILE
+CLASS(TFIELDMETADATA),            INTENT(INOUT) :: TPFIELD
+REAL, DIMENSION(:,:,:,:), TARGET, INTENT(INOUT) :: PFIELD   ! array containing the data field
+INTEGER, OPTIONAL,                INTENT(OUT)   :: KRESP    ! return-code
 !
 INTEGER                          :: IERR
 real, dimension(:,:),    pointer  :: zfieldp2d
@@ -960,7 +958,7 @@ LOGICAL                          :: GALLOC
 logical                          :: glfi, gnc4
 INTEGER                          :: IRESP
 INTEGER                          :: IHEXTOT
-type(tfielddata)                 :: tzfield
+class(tfieldmetadata), allocatable :: tzfield
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_read_byfield_X4',TRIM(TPFILE%CNAME)//': reading '//TRIM(TPFIELD%CMNHNAME))
 !
@@ -976,8 +974,8 @@ call IO_Format_read_select( tpfile, glfi, gnc4 )
 IF (IRESP==0) THEN
   IF (GSMONOPROC) THEN ! sequential execution
     if ( lpack .and. l1d .and. Size( pfield, 1 ) == ihextot .and. Size( pfield, 2 ) == ihextot ) then
+      Allocate( tzfield, source = tpfield )
       if ( tpfile%ldimreduced ) then
-        tzfield = tpfield
         tzfield%ndims = tzfield%ndims - 2
         if ( tzfield%ndimlist(1) /= NMNHDIM_UNKNOWN ) then
           tzfield%ndimlist(1)  = tzfield%ndimlist(3)
@@ -991,7 +989,6 @@ IF (IRESP==0) THEN
         pfield(:, :, :, :) = Spread( Spread( pfield(jphext + 1, jphext + 1, :, :), dim = 1, ncopies = ihextot ), &
                                      dim = 2, ncopies = ihextot )
       else
-        tzfield = tpfield
         if ( tzfield%ndimlist(1) /= NMNHDIM_UNKNOWN ) then
           tzfield%ndimlist(1:2) = NMNHDIM_ONE
         end if
@@ -1002,8 +999,8 @@ IF (IRESP==0) THEN
                                      dim = 2, ncopies = ihextot )
       endif
     else if ( lpack .and. l2d .and. Size( pfield, 2 ) == ihextot ) then
+      Allocate( tzfield, source = tpfield )
       if ( tpfile%ldimreduced ) then
-        tzfield = tpfield
         tzfield%ndims = tzfield%ndims - 1
         if ( tzfield%ndimlist(1) /= NMNHDIM_UNKNOWN ) then
           tzfield%ndimlist(2)  = tzfield%ndimlist(3)
@@ -1016,7 +1013,6 @@ IF (IRESP==0) THEN
         if ( glfi ) call IO_Field_read_lfi( tpfile, tzfield, zfieldp3d, iresp )
         pfield(:, :, :, :) = Spread( pfield(:, jphext + 1, :, :), dim = 2, ncopies = ihextot )
       else
-        tzfield = tpfield
         if ( tzfield%ndimlist(1) /= NMNHDIM_UNKNOWN ) then
           tzfield%ndimlist(2)  = NMNHDIM_ONE
         end if
@@ -1106,10 +1102,10 @@ USE MODE_ALLOCBUFFER_ll
 USE MODE_MNH_TIMING,     ONLY: SECOND_MNH2
 USE MODE_SCATTER_ll
 !
-TYPE(TFILEDATA),                 INTENT(IN)    :: TPFILE
-TYPE(TFIELDDATA),                INTENT(INOUT) :: TPFIELD
-REAL,DIMENSION(:,:,:,:,:),TARGET,INTENT(INOUT) :: PFIELD   ! array containing the data field
-INTEGER, OPTIONAL,               INTENT(OUT)   :: KRESP    ! return-code
+TYPE(TFILEDATA),                       INTENT(IN)    :: TPFILE
+CLASS(TFIELDMETADATA),                 INTENT(INOUT) :: TPFIELD
+REAL,    DIMENSION(:,:,:,:,:), TARGET, INTENT(INOUT) :: PFIELD   ! array containing the data field
+INTEGER, OPTIONAL,                     INTENT(OUT)   :: KRESP    ! return-code
 !
 INTEGER                            :: IERR
 real, dimension(:,:,:),    pointer  :: zfieldp3d
@@ -1119,7 +1115,7 @@ LOGICAL                            :: GALLOC
 logical                            :: glfi, gnc4
 INTEGER                            :: IRESP
 INTEGER                            :: IHEXTOT
-type(tfielddata)                   :: tzfield
+class(tfieldmetadata), allocatable :: tzfield
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_read_byfield_X5',TRIM(TPFILE%CNAME)//': reading '//TRIM(TPFIELD%CMNHNAME))
 !
@@ -1135,8 +1131,8 @@ call IO_Format_read_select( tpfile, glfi, gnc4 )
 IF (IRESP==0) THEN
   IF (GSMONOPROC) THEN ! sequential execution
     if ( lpack .and. l1d .and. Size( pfield, 1 ) == ihextot .and. Size( pfield, 2 ) == ihextot ) then
+      Allocate( tzfield, source = tpfield )
       if ( tpfile%ldimreduced ) then
-        tzfield = tpfield
         tzfield%ndims = tzfield%ndims - 2
         if ( tzfield%ndimlist(1) /= NMNHDIM_UNKNOWN ) then
           tzfield%ndimlist(1)  = tzfield%ndimlist(3)
@@ -1151,7 +1147,6 @@ IF (IRESP==0) THEN
         pfield(:, :, :, :, :) = Spread( Spread( pfield(jphext + 1, jphext + 1, :, :, :), dim = 1, ncopies = ihextot ), &
                                         dim = 2, ncopies = ihextot )
       else
-        tzfield = tpfield
         if ( tzfield%ndimlist(1) /= NMNHDIM_UNKNOWN ) then
           tzfield%ndimlist(1:2) = NMNHDIM_ONE
         end if
@@ -1162,8 +1157,8 @@ IF (IRESP==0) THEN
                                         dim = 2, ncopies = ihextot )
       endif
     else if ( lpack .and. l2d .and. Size( pfield, 2 ) == ihextot ) then
+      Allocate( tzfield, source = tpfield )
       if ( tpfile%ldimreduced ) then
-        tzfield = tpfield
         tzfield%ndims = tzfield%ndims - 1
         if ( tzfield%ndimlist(1) /= NMNHDIM_UNKNOWN ) then
           tzfield%ndimlist(2)  = tzfield%ndimlist(3)
@@ -1177,7 +1172,6 @@ IF (IRESP==0) THEN
         if ( glfi ) call IO_Field_read_lfi( tpfile, tzfield, zfieldp4d, iresp )
         pfield(:, :, :, :, :) = Spread( pfield(:, jphext + 1, :, :, :), dim = 2, ncopies = ihextot )
       else
-        tzfield = tpfield
         if ( tzfield%ndimlist(1) /= NMNHDIM_UNKNOWN ) then
           tzfield%ndimlist(2)  = NMNHDIM_ONE
         end if
@@ -1266,10 +1260,10 @@ USE MODE_ALLOCBUFFER_ll
 USE MODE_MNH_TIMING,     ONLY: SECOND_MNH2
 USE MODE_SCATTER_ll
 !
-TYPE(TFILEDATA),                   INTENT(IN)    :: TPFILE
-TYPE(TFIELDDATA),                  INTENT(INOUT) :: TPFIELD
-REAL,DIMENSION(:,:,:,:,:,:),TARGET,INTENT(INOUT) :: PFIELD   ! array containing the data field
-INTEGER, OPTIONAL,                 INTENT(OUT)   :: KRESP    ! return-code
+TYPE(TFILEDATA),                         INTENT(IN)    :: TPFILE
+CLASS(TFIELDMETADATA),                   INTENT(INOUT) :: TPFIELD
+REAL,    DIMENSION(:,:,:,:,:,:), TARGET, INTENT(INOUT) :: PFIELD   ! array containing the data field
+INTEGER, OPTIONAL,                       INTENT(OUT)   :: KRESP    ! return-code
 !
 INTEGER                              :: IERR
 REAL,DIMENSION(:,:,:,:,:,:),POINTER  :: ZFIELDP
@@ -1356,10 +1350,10 @@ SUBROUTINE IO_Field_read_byfield_N0(TPFILE,TPFIELD,KFIELD,KRESP)
 !
 USE MODD_IO, ONLY: ISP,GSMONOPROC
 !
-TYPE(TFILEDATA),  INTENT(IN)    :: TPFILE
-TYPE(TFIELDDATA), INTENT(INOUT) :: TPFIELD
-INTEGER,          INTENT(INOUT) :: KFIELD   ! array containing the data field
-INTEGER,OPTIONAL, INTENT(OUT)   :: KRESP    ! return-code
+TYPE(TFILEDATA),       INTENT(IN)    :: TPFILE
+CLASS(TFIELDMETADATA), INTENT(INOUT) :: TPFIELD
+INTEGER,               INTENT(INOUT) :: KFIELD   ! array containing the data field
+INTEGER, OPTIONAL,     INTENT(OUT)   :: KRESP    ! return-code
 !
 INTEGER                      :: IERR
 INTEGER                      :: IRESP
@@ -1427,10 +1421,10 @@ USE MODD_IO, ONLY: ISP, GSMONOPROC
 USE MODE_ALLOCBUFFER_ll
 USE MODE_SCATTER_ll
 !
-TYPE(TFILEDATA),     INTENT(IN)    :: TPFILE
-TYPE(TFIELDDATA),    INTENT(INOUT) :: TPFIELD
-INTEGER,DIMENSION(:),INTENT(INOUT) :: KFIELD   ! array containing the data field
-INTEGER,OPTIONAL,    INTENT(OUT)   :: KRESP    ! return-code
+TYPE(TFILEDATA),       INTENT(IN)    :: TPFILE
+CLASS(TFIELDMETADATA), INTENT(INOUT) :: TPFIELD
+INTEGER, DIMENSION(:), INTENT(INOUT) :: KFIELD   ! array containing the data field
+INTEGER, OPTIONAL,     INTENT(OUT)   :: KRESP    ! return-code
 !
 INTEGER                      :: IERR
 INTEGER                      :: IRESP
@@ -1518,10 +1512,10 @@ USE MODD_TIMEZ,         ONLY: TIMEZ
 USE MODE_ALLOCBUFFER_ll
 USE MODE_SCATTER_ll
 !
-TYPE(TFILEDATA),              INTENT(IN)    :: TPFILE
-TYPE(TFIELDDATA),             INTENT(INOUT) :: TPFIELD
-INTEGER,DIMENSION(:,:),TARGET,INTENT(INOUT) :: KFIELD   ! array containing the data field
-INTEGER, OPTIONAL,            INTENT(OUT)   :: KRESP    ! return-code
+TYPE(TFILEDATA),                 INTENT(IN)    :: TPFILE
+CLASS(TFIELDMETADATA),           INTENT(INOUT) :: TPFIELD
+INTEGER, DIMENSION(:,:), TARGET, INTENT(INOUT) :: KFIELD   ! array containing the data field
+INTEGER, OPTIONAL,               INTENT(OUT)   :: KRESP    ! return-code
 !
 INTEGER                         :: IERR
 integer                          :: ifieldp0d
@@ -1531,7 +1525,7 @@ LOGICAL                         :: GALLOC
 logical                         :: glfi, gnc4
 INTEGER                         :: IRESP
 INTEGER                         :: IHEXTOT
-type(tfielddata)                :: tzfield
+class(tfieldmetadata), allocatable :: tzfield
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_read_byfield_N2',TRIM(TPFILE%CNAME)//': reading '//TRIM(TPFIELD%CMNHNAME))
 !
@@ -1547,8 +1541,8 @@ call IO_Format_read_select( tpfile, glfi, gnc4 )
 IF (IRESP==0) THEN
   IF (GSMONOPROC) THEN ! sequential execution
     if ( lpack .and. l1d .and. Size( kfield, 1 ) == ihextot .and. Size( kfield, 2 ) == ihextot ) then
+      Allocate( tzfield, source = tpfield )
       if ( tpfile%ldimreduced ) then
-        tzfield = tpfield
         tzfield%ndims = tzfield%ndims - 2
         if ( tzfield%ndimlist(1) /= NMNHDIM_UNKNOWN ) then
           tzfield%ndimlist(1)  = tzfield%ndimlist(3) !Necessary if time dimension
@@ -1558,7 +1552,6 @@ IF (IRESP==0) THEN
         if ( glfi ) call IO_Field_read_lfi( tpfile, tzfield, ifieldp0d, iresp )
         kfield(:, :) = Spread( Spread( ifieldp0d, dim = 1, ncopies = ihextot ), dim = 2, ncopies = ihextot )
       else
-        tzfield = tpfield
         if ( tzfield%ndimlist(1) /= NMNHDIM_UNKNOWN ) then
           tzfield%ndimlist(1:2) = NMNHDIM_ONE
         end if
@@ -1568,8 +1561,8 @@ IF (IRESP==0) THEN
         kfield(:, :) = Spread( Spread( kfield(jphext + 1, jphext + 1), dim = 1, ncopies = ihextot ), dim = 2, ncopies = ihextot )
       endif
     else if ( lpack .and. l2d .and. Size( kfield, 2 ) == ihextot ) then
+      Allocate( tzfield, source = tpfield )
       if ( tpfile%ldimreduced ) then
-        tzfield = tpfield
         tzfield%ndims = tzfield%ndims - 1
         if ( tzfield%ndimlist(1) /= NMNHDIM_UNKNOWN ) then
           tzfield%ndimlist(2)  = tzfield%ndimlist(3) !Necessary if time dimension
@@ -1580,7 +1573,6 @@ IF (IRESP==0) THEN
         if ( glfi ) call IO_Field_read_lfi( tpfile, tzfield, ifieldp1d, iresp )
         kfield(:, :) = Spread( kfield(:, jphext + 1), dim = 2, ncopies = ihextot )
       else
-        tzfield = tpfield
         if ( tzfield%ndimlist(1) /= NMNHDIM_UNKNOWN ) then
           tzfield%ndimlist(2)  = NMNHDIM_ONE
         end if
@@ -1672,10 +1664,10 @@ USE MODD_TIMEZ,         ONLY: TIMEZ
 USE MODE_ALLOCBUFFER_ll
 USE MODE_SCATTER_ll
 !
-TYPE(TFILEDATA),                INTENT(IN)    :: TPFILE
-TYPE(TFIELDDATA),               INTENT(INOUT) :: TPFIELD
-INTEGER,DIMENSION(:,:,:),TARGET,INTENT(INOUT) :: KFIELD   ! array containing the data field
-INTEGER, OPTIONAL,              INTENT(OUT)   :: KRESP    ! return-code
+TYPE(TFILEDATA),                   INTENT(IN)    :: TPFILE
+CLASS(TFIELDMETADATA),             INTENT(INOUT) :: TPFIELD
+INTEGER, DIMENSION(:,:,:), TARGET, INTENT(INOUT) :: KFIELD   ! array containing the data field
+INTEGER, OPTIONAL,                 INTENT(OUT)   :: KRESP    ! return-code
 !
 INTEGER                           :: IERR
 integer, dimension(:),     pointer :: ifieldp1d
@@ -1685,7 +1677,7 @@ LOGICAL                           :: GALLOC
 logical                           :: glfi, gnc4
 INTEGER                           :: IRESP
 INTEGER                           :: IHEXTOT
-type(tfielddata)                  :: tzfield
+class(tfieldmetadata), allocatable :: tzfield
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_read_byfield_N3',TRIM(TPFILE%CNAME)//': reading '//TRIM(TPFIELD%CMNHNAME))
 !
@@ -1701,8 +1693,8 @@ call IO_Format_read_select( tpfile, glfi, gnc4 )
 IF (IRESP==0) THEN
   IF (GSMONOPROC) THEN ! sequential execution
     if ( lpack .and. l1d .and. Size( kfield, 1 ) == ihextot .and. Size( kfield, 2 ) == ihextot ) then
+      Allocate( tzfield, source = tpfield )
       if ( tpfile%ldimreduced ) then
-        tzfield = tpfield
         tzfield%ndims = tzfield%ndims - 2
         if ( tzfield%ndimlist(1) /= NMNHDIM_UNKNOWN ) then
           tzfield%ndimlist(1)  = tzfield%ndimlist(3)
@@ -1715,7 +1707,6 @@ IF (IRESP==0) THEN
         kfield(:, :, :) = Spread( Spread( kfield(jphext + 1, jphext + 1, :), dim = 1, ncopies = ihextot ), &
                                   dim = 2, ncopies = ihextot )
       else
-        tzfield = tpfield
         if ( tzfield%ndimlist(1) /= NMNHDIM_UNKNOWN ) then
           tzfield%ndimlist(1:2) = NMNHDIM_ONE
         end if
@@ -1726,8 +1717,8 @@ IF (IRESP==0) THEN
                                   dim = 2, ncopies = ihextot )
       endif
     else if ( lpack .and. l2d .and. Size( kfield, 2 ) == ihextot ) then
+      Allocate( tzfield, source = tpfield )
       if ( tpfile%ldimreduced ) then
-        tzfield = tpfield
         tzfield%ndims = tzfield%ndims - 1
         if ( tzfield%ndimlist(1) /= NMNHDIM_UNKNOWN ) then
           tzfield%ndimlist(2)  = tzfield%ndimlist(3)
@@ -1739,7 +1730,6 @@ IF (IRESP==0) THEN
         if ( glfi ) call IO_Field_read_lfi( tpfile, tzfield, ifieldp2d, iresp )
         kfield(:, :, :) = Spread( kfield(:, jphext + 1, :), dim = 2, ncopies = ihextot )
       else
-        tzfield = tpfield
         if ( tzfield%ndimlist(1) /= NMNHDIM_UNKNOWN ) then
           tzfield%ndimlist(2)  = NMNHDIM_ONE
         end if
@@ -1825,10 +1815,10 @@ SUBROUTINE IO_Field_read_byfield_L0(TPFILE,TPFIELD,OFIELD,KRESP)
 !
 USE MODD_IO, ONLY: ISP, GSMONOPROC
 !
-TYPE(TFILEDATA),  INTENT(IN)    :: TPFILE
-TYPE(TFIELDDATA), INTENT(INOUT) :: TPFIELD
-LOGICAL,          INTENT(INOUT) :: OFIELD   ! array containing the data field
-INTEGER,OPTIONAL, INTENT(OUT)   :: KRESP    ! return-code
+TYPE(TFILEDATA),       INTENT(IN)    :: TPFILE
+CLASS(TFIELDMETADATA), INTENT(INOUT) :: TPFIELD
+LOGICAL,               INTENT(INOUT) :: OFIELD   ! array containing the data field
+INTEGER, OPTIONAL,     INTENT(OUT)   :: KRESP    ! return-code
 !
 INTEGER                      :: IERR
 INTEGER                      :: IRESP
@@ -1893,10 +1883,10 @@ SUBROUTINE IO_Field_read_byfield_L1(TPFILE,TPFIELD,OFIELD,KRESP)
 !
 USE MODD_IO, ONLY: ISP, GSMONOPROC
 !
-TYPE(TFILEDATA),     INTENT(IN)    :: TPFILE
-TYPE(TFIELDDATA),    INTENT(INOUT) :: TPFIELD
-LOGICAL,DIMENSION(:),INTENT(INOUT) :: OFIELD   ! array containing the data field
-INTEGER,OPTIONAL,    INTENT(OUT)   :: KRESP    ! return-code
+TYPE(TFILEDATA),       INTENT(IN)    :: TPFILE
+CLASS(TFIELDMETADATA), INTENT(INOUT) :: TPFIELD
+LOGICAL, DIMENSION(:), INTENT(INOUT) :: OFIELD   ! array containing the data field
+INTEGER, OPTIONAL,     INTENT(OUT)   :: KRESP    ! return-code
 !
 INTEGER                      :: IERR
 INTEGER                      :: IRESP
@@ -1961,10 +1951,10 @@ SUBROUTINE IO_Field_read_byfield_C0(TPFILE,TPFIELD,HFIELD,KRESP)
 !
 USE MODD_IO, ONLY: ISP, GSMONOPROC
 !
-TYPE(TFILEDATA),  INTENT(IN)    :: TPFILE
-TYPE(TFIELDDATA), INTENT(INOUT) :: TPFIELD
-CHARACTER(LEN=*), INTENT(INOUT) :: HFIELD   ! array containing the data field
-INTEGER,OPTIONAL, INTENT(OUT)   :: KRESP    ! return-code
+TYPE(TFILEDATA),       INTENT(IN)    :: TPFILE
+CLASS(TFIELDMETADATA), INTENT(INOUT) :: TPFIELD
+CHARACTER(LEN=*),      INTENT(INOUT) :: HFIELD   ! array containing the data field
+INTEGER, OPTIONAL,     INTENT(OUT)   :: KRESP    ! return-code
 !
 INTEGER                      :: IERR
 INTEGER                      :: IRESP
@@ -2032,10 +2022,10 @@ SUBROUTINE IO_Field_read_byfield_T0(TPFILE,TPFIELD,TPDATA,KRESP)
 use modd_io,        only: ISP, GSMONOPROC
 use modd_type_date, only: DATE_TIME
 !
-TYPE(TFILEDATA),  INTENT(IN)    :: TPFILE
-TYPE(TFIELDDATA), INTENT(INOUT) :: TPFIELD
-TYPE (DATE_TIME), INTENT(INOUT) :: TPDATA   ! array containing the data field
-INTEGER,OPTIONAL, INTENT(OUT)   :: KRESP    ! return-code
+TYPE(TFILEDATA),       INTENT(IN)    :: TPFILE
+CLASS(TFIELDMETADATA), INTENT(INOUT) :: TPFIELD
+TYPE(DATE_TIME),       INTENT(INOUT) :: TPDATA   ! array containing the data field
+INTEGER, OPTIONAL,     INTENT(OUT)   :: KRESP    ! return-code
 !
 INTEGER                      :: IERR
 INTEGER                      :: IRESP
@@ -2118,12 +2108,12 @@ USE MODE_DISTRIB_lb
 USE MODE_MNH_TIMING,    ONLY: SECOND_MNH2
 USE MODE_TOOLS_ll,      ONLY: GET_GLOBALDIMS_ll
 !
-TYPE(TFILEDATA),               INTENT(IN)    :: TPFILE
-TYPE(TFIELDDATA),              INTENT(INOUT) :: TPFIELD
-INTEGER,                       INTENT(IN)    :: KL3D    ! size of the LB array in FM
-INTEGER,                       INTENT(IN)    :: KRIM    ! size of the LB area
-REAL, DIMENSION(:,:,:),TARGET, INTENT(INOUT) :: PLB     ! array containing the LB field
-INTEGER,OPTIONAL,              INTENT(OUT)   :: KRESP   ! return-code
+TYPE(TFILEDATA),                  INTENT(IN)    :: TPFILE
+CLASS(TFIELDMETADATA),            INTENT(INOUT) :: TPFIELD
+INTEGER,                          INTENT(IN)    :: KL3D    ! size of the LB array in FM
+INTEGER,                          INTENT(IN)    :: KRIM    ! size of the LB area
+REAL,   DIMENSION(:,:,:) ,TARGET, INTENT(INOUT) :: PLB     ! array containing the LB field
+INTEGER,OPTIONAL,                 INTENT(OUT)   :: KRESP   ! return-code
 !
 !*      0.2   Declarations of local variables
 !
@@ -2147,7 +2137,7 @@ real, dimension(:,:),  pointer           :: ZTX2DP
 REAL,DIMENSION(:,:,:), POINTER           :: TX3DP
 REAL(kind=MNHTIME), DIMENSION(2)         :: ZT0, ZT1, ZT2, ZT3
 REAL(kind=MNHTIME), DIMENSION(2)         :: ZT11, ZT22
-type(tfielddata)                         :: tzfield
+class(tfieldmetadata), allocatable       :: tzfield
 TYPE(TX_3DP),ALLOCATABLE,DIMENSION(:)    :: T_TX3DP
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_read_byfield_lb','reading '//TRIM(TPFIELD%CMNHNAME))
@@ -2175,8 +2165,8 @@ IF (IRESP==0) THEN
     IF (YLBTYPE == 'LBX' .OR. YLBTYPE == 'LBXU') THEN
       ALLOCATE(Z3D(KL3D,SIZE(PLB,2),SIZE(PLB,3)))
       IF (LPACK .AND. L2D) THEN
+        Allocate( tzfield, source = tpfield )
         if ( tpfile%ldimreduced ) then
-          tzfield = tpfield
           tzfield%ndims = tzfield%ndims - 1
           if ( tzfield%ndimlist(1) /= NMNHDIM_UNKNOWN ) then
             tzfield%ndimlist(2)  = tzfield%ndimlist(3)
@@ -2188,7 +2178,6 @@ IF (IRESP==0) THEN
           if ( glfi ) call IO_Field_read_lfi( tpfile, tzfield, ZTX2DP, iresp )
           Z3D(:,:,:) = SPREAD(Z3D(:,JPHEXT+1,:),DIM=2,NCOPIES=IHEXTOT)
         else
-          tzfield = tpfield
           if ( tzfield%ndimlist(2) /= NMNHDIM_UNKNOWN ) tzfield%ndimlist(2) = NMNHDIM_ONE
           TX3DP=>Z3D(:,JPHEXT+1:JPHEXT+1,:)
           if ( gnc4 ) call IO_Field_read_nc4( tpfile, tzfield, tx3dp, iresp )
