@@ -105,7 +105,7 @@ subroutine Write_budget( tpdiafile, tpdtcur, ptstep, ksv )
                                  tbudgets, tburhodj
   use modd_field,          only: NMNHDIM_ONE, NMNHDIM_NI, NMNHDIM_NJ,                              &
                                  NMNHDIM_BUDGET_TIME, NMNHDIM_BUDGET_MASK_NBUMASK, NMNHDIM_UNUSED, &
-                                 tfielddata, TYPEINT, TYPEREAL
+                                 tfieldmetadata, TYPEINT, TYPEREAL
   use modd_io,             only: tfiledata
   use modd_lunit_n,        only: tluout
   use modd_parameters,     only: NCOMMENTLGTMAX, NMNHNAMELGTMAX
@@ -135,8 +135,8 @@ subroutine Write_budget( tpdiafile, tpdtcur, ptstep, ksv )
   real,            dimension(:),           allocatable :: zworktemp
   real,            dimension(:,:,:,:,:,:), allocatable :: zrhodjn, zworkmask
   type(date_time), dimension(:),           allocatable :: tzdates
-  type(tfielddata) :: tzfield
-  type(tfiledata)  :: tzfile
+  type(tfieldmetadata) :: tzfield
+  type(tfiledata)      :: tzfile
   !
   !-------------------------------------------------------------------------------
   !
@@ -147,7 +147,7 @@ subroutine Write_budget( tpdiafile, tpdtcur, ptstep, ksv )
   !* Write TSTEP and BULEN
   !  ---------------------
   !
-  TZFIELD = TFIELDDATA(       &
+  TZFIELD = TFIELDMETADATA(   &
     CMNHNAME   = 'TSTEP',     &
     CSTDNAME   = '',          &
     CLONGNAME  = 'TSTEP',     &
@@ -160,7 +160,7 @@ subroutine Write_budget( tpdiafile, tpdtcur, ptstep, ksv )
     LTIMEDEP   = .FALSE.      )
   CALL IO_Field_write(TPDIAFILE,TZFIELD,PTSTEP)
   !
-  TZFIELD = TFIELDDATA(       &
+  TZFIELD = TFIELDMETADATA(   &
     CMNHNAME   = 'BULEN',     &
     CSTDNAME   = '',          &
     CLONGNAME  = 'BULEN',     &
@@ -251,7 +251,7 @@ subroutine Write_budget( tpdiafile, tpdtcur, ptstep, ksv )
 
         Write( ymnhname, fmt = "( 'MASK_', i4.4, '.MASK' )" ) nbutshift
         Write( ycomment, fmt = "( 'X_Y_MASK', i4.4 )" ) nbutshift
-        tzfield = tfielddata(             &
+        tzfield = tfieldmetadata(         &
           cmnhname   = Trim( ymnhname ),  &
           cstdname   = '',                &
           clongname  = Trim( ymnhname ),  &
@@ -276,7 +276,7 @@ subroutine Write_budget( tpdiafile, tpdtcur, ptstep, ksv )
         tzfile = tpdiafile
         tzfile%cformat = 'NETCDF4'
 
-        tzfield = tfielddata(                    &
+        tzfield = tfieldmetadata(                &
           cmnhname   = CMASK_VARNAME,            &
           cstdname   = '',                       &
           clongname  = CMASK_VARNAME,            &

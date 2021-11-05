@@ -121,7 +121,7 @@ USE MODI_DUSTLFI_n
 USE MODI_SALTLFI_n
 USE MODD_PARAMETERS,      ONLY: JPHEXT
 USE MODD_IO, ONLY: TFILEDATA
-use modd_field, only: tfielddata, TYPELOG, TYPEREAL
+use modd_field, only: tfieldmetadata, TYPELOG, TYPEREAL
 !
 !
 IMPLICIT NONE
@@ -152,8 +152,8 @@ INTEGER           :: IIB, IIE, IJB, IJE, IKB, IKE
 INTEGER           :: IIU, IJU, IKU
 REAL, DIMENSION(SIZE(XLBXSVM,1), SIZE(XLBXSVM,2), SIZE(XLBXSVM,3)) :: ZLBXZZ
 REAL, DIMENSION(SIZE(XLBYSVM,1), SIZE(XLBYSVM,2), SIZE(XLBYSVM,3)) :: ZLBYZZ
-CHARACTER(LEN=100) :: YMSG
-TYPE(TFIELDDATA)   :: TZFIELD
+CHARACTER(LEN=100)   :: YMSG
+TYPE(TFIELDMETADATA) :: TZFIELD
 !-------------------------------------------------------------------------------
 !
 !*       1.    SOME INITIALIZATIONS
@@ -213,7 +213,7 @@ IF (NRR >=1) THEN
                LHORELAX_RI .OR. LHORELAX_RS .OR. LHORELAX_RG .OR. &
                LHORELAX_RH
   !
-  TZFIELD = TFIELDDATA(                                          &
+  TZFIELD = TFIELDMETADATA(                                      &
     CMNHNAME   = 'HORELAX_R',                                    &
     CSTDNAME   = '',                                             &
     CLONGNAME  = 'HORELAX_R',                                    &
@@ -269,7 +269,7 @@ END IF
 IF (NSV >=1) THEN
   GHORELAX_SV=ANY ( LHORELAX_SV )
 !
-  TZFIELD = TFIELDDATA(        &
+  TZFIELD = TFIELDMETADATA(    &
     CMNHNAME   = 'HORELAX_SV', &
     CSTDNAME   = '',           &
     CLONGNAME  = 'HORELAX_SV', &

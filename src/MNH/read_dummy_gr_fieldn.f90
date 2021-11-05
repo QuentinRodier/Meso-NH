@@ -74,7 +74,7 @@ END MODULE MODI_READ_DUMMY_GR_FIELD_n
 !*       0.    DECLARATIONS
 !
 USE MODD_DUMMY_GR_FIELD_n
-use modd_field,         only: tfielddata, TYPEINT, TYPEREAL
+use modd_field,         only: tfieldmetadata, TYPEINT, TYPEREAL
 USE MODD_GRID_n
 USE MODD_IO,            ONLY: TFILEDATA
 USE MODD_PARAMETERS,    ONLY: JPHEXT, NMNHNAMELGTMAX
@@ -106,7 +106,7 @@ INTEGER                           :: IIINF  ! lower I index
 INTEGER                           :: IISUP  ! upper I index
 INTEGER                           :: IJINF  ! lower J index
 INTEGER                           :: IJSUP  ! upper J index
-TYPE(TFIELDDATA)                  :: TZFIELD
+TYPE(TFIELDMETADATA)              :: TZFIELD
 !
 !-------------------------------------------------------------------------------
 !
@@ -147,7 +147,7 @@ END IF
 !
 !
 IF (TPINIFILE%NMNHVERSION(1)>=4) THEN
-  TZFIELD = TFIELDDATA(                                       &
+  TZFIELD = TFIELDMETADATA(                                   &
     CMNHNAME   = 'DUMMY_GR_NBR',                              &
     CSTDNAME   = '',                                          &
     CLONGNAME  = 'DUMMY_GR_NBR',                              &
@@ -177,7 +177,7 @@ ALLOCATE(XDUMMY_GR_FIELDS(SIZE(XXHAT),SIZE(XYHAT),NDUMMY_GR_NBR))
 !
 DO JDUMMY=1,NDUMMY_GR_NBR
   WRITE(YRECFM,'(A8,I3.3)') 'DUMMY_GR',JDUMMY
-  TZFIELD = TFIELDDATA(        &
+  TZFIELD = TFIELDMETADATA(    &
     CMNHNAME   = TRIM(YRECFM), &
     CSTDNAME   = '',           &
     CLONGNAME  = TRIM(YRECFM), &

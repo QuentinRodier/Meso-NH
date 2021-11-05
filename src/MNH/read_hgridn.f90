@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1996-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1996-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -80,7 +80,7 @@ END MODULE MODI_READ_HGRID_n
 !
 USE MODD_CONF
 USE MODD_DIM_n
-use modd_field,         only: tfielddata, tfieldlist
+use modd_field,         only: tfieldmetadata, tfieldlist
 USE MODD_GRID
 USE MODD_GRID_n
 USE MODD_IO,            ONLY: TFILEDATA
@@ -106,21 +106,21 @@ CHARACTER(LEN=2) , INTENT(OUT) :: HSTORAGE_TYPE
 !
 !*       0.2   declarations of local variables
 !
-INTEGER             :: ILUOUT
-INTEGER             :: IRESP
-REAL                :: ZLAT0,ZLON0,ZRPK,ZBETA
-REAL                :: ZEPS = 1.E-10
-INTEGER             :: IID, IMI
+INTEGER              :: ILUOUT
+INTEGER              :: IRESP
+REAL                 :: ZLAT0,ZLON0,ZRPK,ZBETA
+REAL                 :: ZEPS = 1.E-10
+INTEGER              :: IID, IMI
 !
 !-------------------------------------------------------------------------------
 REAL :: ZLATOR, ZLONOR, ZXHATM, ZYHATM
 !-------------------------------------------------------------------------------
 !JUAN REALZ
-INTEGER             :: IIU,IJU
+INTEGER              :: IIU,IJU
 !JUAN REALZ
-INTEGER             :: IXOR, IYOR, IXEND, IYEND
-INTEGER             :: IJPHEXT
-TYPE(TFIELDDATA)    :: TZFIELD
+INTEGER              :: IXOR, IYOR, IXEND, IYEND
+INTEGER              :: IJPHEXT
+TYPE(TFIELDMETADATA) :: TZFIELD
 !
 ILUOUT = TLUOUT%NLU
 !
@@ -279,12 +279,12 @@ END IF
 !-------------------------------------------------------------------------------
 IF (TPFMFILE%NMNHVERSION(1)<4 .OR. (TPFMFILE%NMNHVERSION(1)==4 .AND. TPFMFILE%NMNHVERSION(2)<=5)) THEN
   CALL FIND_FIELD_ID_FROM_MNHNAME('LONORI',IID,IRESP)
-  TZFIELD = TFIELDLIST(IID)
+  TZFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
   TZFIELD%CMNHNAME = 'LONOR'
   CALL IO_Field_read(TPFMFILE,TZFIELD,XLONORI)
   !
   CALL FIND_FIELD_ID_FROM_MNHNAME('LATORI',IID,IRESP)
-  TZFIELD = TFIELDLIST(IID)
+  TZFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
   TZFIELD%CMNHNAME = 'LATOR'
   CALL IO_Field_read(TPFMFILE,TZFIELD,XLATORI)
   !

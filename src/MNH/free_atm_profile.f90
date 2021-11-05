@@ -93,7 +93,7 @@ END MODULE MODI_FREE_ATM_PROFILE
 !              ------------
 !
 USE MODD_CONF
-use modd_field,          only: tfielddata, TYPEINT, TYPEREAL
+use modd_field,          only: tfieldmetadata, TYPEINT, TYPEREAL
 USE MODD_GRID_n
 USE MODD_IO,             ONLY: TFILEDATA
 USE MODD_LUNIT,          ONLY: TLUOUT0
@@ -163,7 +163,7 @@ REAL, DIMENSION(SIZE(XZZ,1),SIZE(XZZ,2),SIZE(XZZ,3)) &
                                       :: Z3D ! field to be recorded
 REAL, DIMENSION(SIZE(XZZ,1),SIZE(XZZ,2),SIZE(XZZ,3)) &
                                       :: ZZMASS ! MESO-NH output mass grid
-TYPE(TFIELDDATA)  :: TZFIELD
+TYPE(TFIELDMETADATA) :: TZFIELD
 !-------------------------------------------------------------------------------
 !
 ILUOUT0 = TLUOUT0%NLU
@@ -468,7 +468,7 @@ IF (CPROGRAM == 'DIAG  ' ) THEN
       Z2D(JI,JJ) = PZMASS_MX(JI,JJ,IK_BL_TOP(JI,JJ)) - PZS_LS(JI,JJ)
     END DO
   END DO
-  TZFIELD = TFIELDDATA(                                 &
+  TZFIELD = TFIELDMETADATA(                             &
     CMNHNAME   = 'HBLTOP',                              &
     CSTDNAME   = 'atmosphere_boundary_layer_thickness', &
     CLONGNAME  = 'HBLTOP',                              &
@@ -484,7 +484,7 @@ IF (CPROGRAM == 'DIAG  ' ) THEN
 !*      11.2  Writing of level of boundary layer top
 !             --------------------------------------
 !
-  TZFIELD = TFIELDDATA(                                                    &
+  TZFIELD = TFIELDMETADATA(                                                &
     CMNHNAME   = 'KBLTOP',                                                 &
     CSTDNAME   = 'model_level_number_at_top_of_atmosphere_boundary_layer', &
     CLONGNAME  = 'KBLTOP',                                                 &
@@ -503,7 +503,7 @@ IF (CPROGRAM /= 'DIAG  ' .AND. CPROGRAM /= 'IDEAL ' ) THEN
 !*      11.3  Writing of free atmosphere gradient
 !             -----------------------------------
 !
-  TZFIELD = TFIELDDATA(                      &
+  TZFIELD = TFIELDMETADATA(                  &
     CMNHNAME   = 'FREE_ATM_GR',              &
     CSTDNAME   = '',                         &
     CLONGNAME  = 'FREE_ATM_GR',              &
@@ -525,7 +525,7 @@ IF (CPROGRAM /= 'DIAG  ' .AND. CPROGRAM /= 'IDEAL ' ) THEN
   CALL COEF_VER_INTERP_LIN(PZ_FREE(:,:,:),ZZMASS(:,:,:),OLEUG=.TRUE.)
   Z3D(:,:,:)=VER_INTERP_LIN(PF_FREE(:,:,:),NKLIN(:,:,:),XCOEFLIN(:,:,:))
 !
-  TZFIELD = TFIELDDATA(            &
+  TZFIELD = TFIELDMETADATA(        &
     CMNHNAME   = 'THV_FREE',       &
     CSTDNAME   = '',               &
     CLONGNAME  = 'THV_FREE',       &

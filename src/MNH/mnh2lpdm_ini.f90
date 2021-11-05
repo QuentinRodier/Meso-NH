@@ -34,7 +34,7 @@
 !
 USE MODD_CST
 USE MODD_DIM_n
-use modd_field,         only: tfielddata, TYPEREAL
+use modd_field,         only: tfieldmetadata, TYPEREAL
 USE MODD_GRID
 USE MODD_GRID_n
 USE MODD_IO,            ONLY: TFILEDATA
@@ -83,7 +83,7 @@ INTEGER, DIMENSION(:),   ALLOCATABLE   :: TAB1D
 INTEGER, DIMENSION(:,:), ALLOCATABLE   :: TAB2D
 TYPE(DATE_TIME)         :: TZDTCUR1,TZDTCUR2,TZDTEXP1
 INTEGER                :: IFDAT,IFGRI,IFLOG
-type(tfielddata)       :: tzfield
+type(tfieldmetadata)   :: tzfield
 !
 !
 !
@@ -207,15 +207,15 @@ CALL IO_Field_read(TPFILE1,'ZS',XZS)
 !
 !*	2.8 Rugosite Z0. 
 !
-tzfield = tfielddata(   &
-  cmnhname  = 'Z0',     &
-  clongname = '',       &
-  cunits    = 'm',      &
-  cdir      = 'XY',     &
-  ccomment  = 'X_Y_Z0', &
-  ngrid     = 4,        &
-  ntype     = TYPEREAL, &
-  ndims     = 2         )
+tzfield = tfieldmetadata( &
+  cmnhname  = 'Z0',       &
+  clongname = '',         &
+  cunits    = 'm',        &
+  cdir      = 'XY',       &
+  ccomment  = 'X_Y_Z0',   &
+  ngrid     = 4,          &
+  ntype     = TYPEREAL,   &
+  ndims     = 2           )
 CALL IO_Field_read(TPFILE1,tzfield,XZ0)
 !
 XXPTSOMNH=XXHAT(1)+(XXHAT(2)-XXHAT(1))/2

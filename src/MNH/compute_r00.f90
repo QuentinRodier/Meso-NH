@@ -65,7 +65,7 @@ END MODULE MODI_COMPUTE_R00
 !
 USE MODD_CONF
 USE MODD_GRID_n
-use modd_field,            only: tfielddata, TYPEREAL
+use modd_field,            only: tfieldmetadata, TYPEREAL
 USE MODD_FIELD_n
 USE MODD_IO,               ONLY: TFILEDATA
 USE MODD_LUNIT_n
@@ -114,7 +114,7 @@ LOGICAL                            :: GSTART
 INTEGER                            :: INBR_START
 REAL                               :: ZXMAX,ZYMAX,ZZMAX  ! domain extrema
 INTEGER, DIMENSION(100)            :: NBRFILES 
-TYPE(TFIELDDATA)                   :: TZFIELD
+TYPE(TFIELDMETADATA)               :: TZFIELD
 TYPE(TFILEDATA),POINTER            :: TZTRACFILE
 !
 !-------------------------------------------------------------------------------
@@ -277,7 +277,7 @@ DO JFILECUR=1,NFILES
   IF (GSTART) THEN
     PRINT *,'INBR_START',INBR_START,' NBRFILES(JFILECUR)',NBRFILES(JFILECUR)
     WRITE(YMNHNAME,'(A2,I2.2)')'X0',INBR_START
-    TZFIELD = TFIELDDATA(                           &
+    TZFIELD = TFIELDMETADATA(                       &
       CMNHNAME   = TRIM( YMNHNAME ),                &
       CSTDNAME   = '',                              &
       CLONGNAME  = TRIM( YMNHNAME ),                &
@@ -292,7 +292,7 @@ DO JFILECUR=1,NFILES
     CALL IO_Field_write(TPFILE,TZFIELD,ZX00(:,:,:))
     !
     WRITE(YMNHNAME,'(A2,I2.2)')'Y0',INBR_START
-    TZFIELD = TFIELDDATA(                           &
+    TZFIELD = TFIELDMETADATA(                       &
       CMNHNAME   = TRIM( YMNHNAME ),                &
       CSTDNAME   = '',                              &
       CLONGNAME  = TRIM(TZFIELD%CMNHNAME),          &
@@ -307,7 +307,7 @@ DO JFILECUR=1,NFILES
     CALL IO_Field_write(TPFILE,TZFIELD,ZY00(:,:,:))
     !
     WRITE(YMNHNAME,'(A2,I2.2)')'Z0',INBR_START
-    TZFIELD = TFIELDDATA(                           &
+    TZFIELD = TFIELDMETADATA(                       &
       CMNHNAME   = TRIM( YMNHNAME ),                &
       CSTDNAME   = '',                              &
       CLONGNAME  = TRIM( YMNHNAME ),                &
@@ -338,7 +338,7 @@ DO JFILECUR=1,NFILES
   IF (GSTART) THEN
     !
     WRITE(YMNHNAME,'(A3,I2.2)')'TH0',INBR_START
-    TZFIELD = TFIELDDATA(                           &
+    TZFIELD = TFIELDMETADATA(                       &
       CMNHNAME   = TRIM( YMNHNAME ),                &
       CSTDNAME   = '',                              &
       CLONGNAME  = TRIM( YMNHNAME ),                &
@@ -353,7 +353,7 @@ DO JFILECUR=1,NFILES
     CALL IO_Field_write(TPFILE,TZFIELD,ZWORK1(:,:,:))
     !
     WRITE(YMNHNAME,'(A3,I2.2)')'RV0',INBR_START
-    TZFIELD = TFIELDDATA(                           &
+    TZFIELD = TFIELDMETADATA(                       &
       CMNHNAME   = TRIM( YMNHNAME ),                &
       CSTDNAME   = '',                              &
       CLONGNAME  = TRIM( YMNHNAME ),                &
@@ -370,7 +370,7 @@ DO JFILECUR=1,NFILES
 !*       4.4   compute the origin of the particules using one more segment
 !
   IF (JFILECUR /= NFILES) THEN
-    TZFIELD = TFIELDDATA(    &
+    TZFIELD = TFIELDMETADATA(&
       CMNHNAME   = 'LGXT',   &
       CSTDNAME   = '',       &
       CLONGNAME  = 'LGXT',   &

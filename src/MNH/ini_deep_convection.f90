@@ -120,7 +120,7 @@ USE MODD_CH_M9_n,         ONLY: CNAMES
 USE MODD_CONVPAR
 USE MODD_DUST,            ONLY: CDUSTNAMES
 USE MODD_ELEC_DESCR,      ONLY: CELECNAMES
-use modd_field,           only: tfielddata, tfieldlist, TYPEREAL
+use modd_field,           only: tfieldmetadata, tfieldlist, TYPEREAL
 USE MODD_ICE_C1R3_DESCR,  ONLY: C1R3NAMES
 USE MODD_IO,              ONLY: TFILEDATA
 USE MODD_LG,              ONLY: CLGNAMES
@@ -180,10 +180,10 @@ REAL, DIMENSION(:,:),   INTENT(INOUT) :: PCG_TOTAL_NUMBER ! Total number of CG
 !*       0.2   declarations of local variables
 !
 !
-INTEGER          :: IID
-INTEGER          :: IRESP
-INTEGER          :: JSV     ! number of tracers
-TYPE(TFIELDDATA) :: TZFIELD
+INTEGER              :: IID
+INTEGER              :: IRESP
+INTEGER              :: JSV     ! number of tracers
+TYPE(TFIELDMETADATA) :: TZFIELD
 !
 !-------------------------------------------------------------------------------
 !
@@ -233,19 +233,19 @@ ELSE
   CALL IO_Field_read(TPINIFILE,'DRICONV',  PDRICONV)
 !
   CALL FIND_FIELD_ID_FROM_MNHNAME('PRCONV',IID,IRESP)
-  TZFIELD = TFIELDLIST(IID)
+  TZFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
   TZFIELD%CUNITS = 'mm hour-1'
   CALL IO_Field_read(TPINIFILE,TZFIELD,PPRCONV)
   PPRCONV=PPRCONV/(1000.*3600.) ! conversion into m/s units
 !
   CALL FIND_FIELD_ID_FROM_MNHNAME('PRSCONV',IID,IRESP)
-  TZFIELD = TFIELDLIST(IID)
+  TZFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
   TZFIELD%CUNITS = 'mm hour-1'
   CALL IO_Field_read(TPINIFILE,TZFIELD,PPRSCONV)
   PPRSCONV=PPRSCONV/(1000.*3600.) ! conversion into m/s units
 !
   CALL FIND_FIELD_ID_FROM_MNHNAME('PACCONV',IID,IRESP)
-  TZFIELD = TFIELDLIST(IID)
+  TZFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
   TZFIELD%CUNITS = 'mm'
   CALL IO_Field_read(TPINIFILE,TZFIELD,PPACCONV)
   PPACCONV=PPACCONV/1000.       ! conversion into m unit
@@ -260,7 +260,7 @@ ELSE
 !
  SELECT CASE(HGETSVCONV)
   CASE('READ')
-    TZFIELD = TFIELDDATA(         &
+    TZFIELD = TFIELDMETADATA(     &
       CMNHNAME   = 'generic for ini_deep_convection', & !Temporary name to ease identification
       CUNITS     = 's-1',         &
       CDIR       = 'XY',          &

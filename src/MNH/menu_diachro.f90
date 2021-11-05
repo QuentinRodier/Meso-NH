@@ -65,7 +65,7 @@ contains
 !              ------------
 !
 USE MODD_CONF
-use modd_field,          only: tfielddata, TYPEINT
+use modd_field,          only: tfieldmetadata, TYPEINT
 USE MODD_IO,             only: TFILEDATA
 use modd_parameters,     only: NMNHNAMELGTMAX
 !
@@ -92,7 +92,7 @@ INTEGER   ::   IRESPDIA
 INTEGER,SAVE   ::   IGROUP=0
 INTEGER,DIMENSION(:),ALLOCATABLE :: ITABCHAR
 LOGICAL   ::   GPACK
-TYPE(TFIELDDATA)  :: TZFIELD
+TYPE(TFIELDMETADATA) :: TZFIELD
 type(tfiledata) :: tzfile
 !------------------------------------------------------------------------------
 !
@@ -115,7 +115,7 @@ IF(HGROUP == 'END')THEN
 
   ILENG=NMNHNAMELGTMAX*IGROUP
 
-  TZFIELD = TFIELDDATA(             &
+  TZFIELD = TFIELDMETADATA(         &
     CMNHNAME   = 'MENU_BUDGET.DIM', &
     CSTDNAME   = '',                &
     CLONGNAME  = 'MENU_BUDGET.DIM', &
@@ -135,7 +135,7 @@ IF(HGROUP == 'END')THEN
     ENDDO
   ENDDO
 
-  TZFIELD = TFIELDDATA(         &
+  TZFIELD = TFIELDMETADATA(     &
     CMNHNAME   = 'MENU_BUDGET', &
     CSTDNAME   = '',            &
     CLONGNAME  = 'MENU_BUDGET', &
@@ -156,7 +156,7 @@ ELSE IF(HGROUP == 'READ')THEN
   tzfile = tpdiafile
   tzfile%cformat = 'LFI'
 
-  TZFIELD = TFIELDDATA(             &
+  TZFIELD = TFIELDMETADATA(         &
     CMNHNAME   = 'MENU_BUDGET.DIM', &
     CSTDNAME   = '',                &
     CLONGNAME  = 'MENU_BUDGET.DIM', &
@@ -175,7 +175,7 @@ ELSE IF(HGROUP == 'READ')THEN
   ENDIF
 
   ALLOCATE(ITABCHAR(ILENG))
-  TZFIELD = TFIELDDATA(         &
+  TZFIELD = TFIELDMETADATA(     &
     CMNHNAME   = 'MENU_BUDGET', &
     CSTDNAME   = '',            &
     CLONGNAME  = 'MENU_BUDGET', &

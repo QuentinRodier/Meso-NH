@@ -96,7 +96,7 @@ CONTAINS
 !-------------------------------------------------------------------------------
 SUBROUTINE WRITE_LFI_BALLOON(TPFLYER)
 !
-use modd_field,          only: tfielddata, TYPEREAL
+use modd_field,          only: tfieldmetadata, TYPEREAL
 USE MODE_IO_FIELD_WRITE, only: IO_Field_write
 !
 TYPE(FLYER),        INTENT(IN)       :: TPFLYER
@@ -104,16 +104,16 @@ TYPE(FLYER),        INTENT(IN)       :: TPFLYER
 !
 !*       0.2   Declarations of local variables
 !
-REAL               :: ZLAT          ! latitude of the balloon
-REAL               :: ZLON          ! longitude of the balloon
-TYPE(TFIELDDATA)   :: TZFIELD
+REAL                 :: ZLAT          ! latitude of the balloon
+REAL                 :: ZLON          ! longitude of the balloon
+TYPE(TFIELDMETADATA) :: TZFIELD
 !
 !
 CALL SM_LATLON(XLATORI,XLONORI,  &
      TPFLYER%X_CUR,TPFLYER%Y_CUR,ZLAT,ZLON)
 !
 !
-TZFIELD = TFIELDDATA(                      &
+TZFIELD = TFIELDMETADATA(                  &
   CMNHNAME   = TRIM(TPFLYER%TITLE)//'LAT', &
   CSTDNAME   = '',                         &
   CLONGNAME  = TRIM(TPFLYER%TITLE)//'LAT', &
@@ -126,7 +126,7 @@ TZFIELD = TFIELDDATA(                      &
   LTIMEDEP   = .TRUE.                      )
 CALL IO_Field_write(TPFILE,TZFIELD,ZLAT)
 !
-TZFIELD = TFIELDDATA(                      &
+TZFIELD = TFIELDMETADATA(                  &
   CMNHNAME   = TRIM(TPFLYER%TITLE)//'LON', &
   CSTDNAME   = '',                         &
   CLONGNAME  = TRIM(TPFLYER%TITLE)//'LON', &
@@ -139,7 +139,7 @@ TZFIELD = TFIELDDATA(                      &
   LTIMEDEP   = .TRUE.                      )
 CALL IO_Field_write(TPFILE,TZFIELD,ZLON)
 !
-TZFIELD = TFIELDDATA(                      &
+TZFIELD = TFIELDMETADATA(                  &
   CMNHNAME   = TRIM(TPFLYER%TITLE)//'ALT', &
   CSTDNAME   = '',                         &
   CLONGNAME  = TRIM(TPFLYER%TITLE)//'ALT', &
@@ -152,7 +152,7 @@ TZFIELD = TFIELDDATA(                      &
   LTIMEDEP   = .TRUE.                      )
 CALL IO_Field_write(TPFILE,TZFIELD,TPFLYER%Z_CUR)
 !
-TZFIELD = TFIELDDATA(                          &
+TZFIELD = TFIELDMETADATA(                      &
   CMNHNAME   = TRIM(TPFLYER%TITLE)//'WASCENT', &
   CSTDNAME   = '',                             &
   CLONGNAME  = TRIM(TPFLYER%TITLE)//'WASCENT', &
@@ -165,7 +165,7 @@ TZFIELD = TFIELDDATA(                          &
   LTIMEDEP   = .TRUE.                          )
 CALL IO_Field_write(TPFILE,TZFIELD,TPFLYER%WASCENT)
 !
-TZFIELD = TFIELDDATA(                      &
+TZFIELD = TFIELDMETADATA(                  &
   CMNHNAME   = TRIM(TPFLYER%TITLE)//'RHO', &
   CSTDNAME   = '',                         &
   CLONGNAME  = TRIM(TPFLYER%TITLE)//'RHO', &

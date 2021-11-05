@@ -360,7 +360,7 @@ USE MODD_CONF
 USE MODD_CST
 USE MODD_CTURB
 USE MODD_DYN_n, ONLY : LOCEAN
-use modd_field,          only: tfielddata, TYPEREAL
+use modd_field,          only: tfieldmetadata, TYPEREAL
 USE MODD_IO, ONLY: TFILEDATA
 USE MODD_LES
 USE MODD_NSV
@@ -557,7 +557,7 @@ REAL                :: ZALPHA       ! work coefficient :
 REAL :: ZTIME1, ZTIME2
 REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)):: ZTT,ZEXNE,ZLV,ZLS,ZCPH,ZCOR
 REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3))::  ZSHEAR, ZDUDZ, ZDVDZ
-TYPE(TFIELDDATA) :: TZFIELD
+TYPE(TFIELDMETADATA) :: TZFIELD
 !
 !------------------------------------------------------------------------------------------
 ALLOCATE (                                                        &
@@ -699,7 +699,7 @@ IF (KRRL >=1) THEN
 !
 !
   IF ( tpfile%lopened .AND. OTURB_DIAG ) THEN
-    TZFIELD = TFIELDDATA(          &
+    TZFIELD = TFIELDMETADATA(      &
       CMNHNAME   = 'ATHETA',       &
       CSTDNAME   = '',             &
       CLONGNAME  = 'ATHETA',       &
@@ -712,7 +712,7 @@ IF (KRRL >=1) THEN
       LTIMEDEP   = .TRUE.          )
     CALL IO_Field_write(TPFILE,TZFIELD,ZATHETA)
 !
-    TZFIELD = TFIELDDATA(          &
+    TZFIELD = TFIELDMETADATA(      &
       CMNHNAME   = 'AMOIST',       &
       CSTDNAME   = '',             &
       CLONGNAME  = 'AMOIST',       &
@@ -1154,7 +1154,7 @@ IF ( OTURB_DIAG .AND. tpfile%lopened ) THEN
 ! 
 ! stores the mixing length
 ! 
-  TZFIELD = TFIELDDATA(           &
+  TZFIELD = TFIELDMETADATA(       &
     CMNHNAME   = 'LM',            &
     CSTDNAME   = '',              &
     CLONGNAME  = 'LM',            &
@@ -1171,7 +1171,7 @@ IF ( OTURB_DIAG .AND. tpfile%lopened ) THEN
 !
 ! stores the conservative potential temperature
 !
-    TZFIELD = TFIELDDATA(                              &
+    TZFIELD = TFIELDMETADATA(                          &
     CMNHNAME   = 'THLM',                               &
     CSTDNAME   = '',                                   &
     CLONGNAME  = 'THLM',                               &
@@ -1186,7 +1186,7 @@ IF ( OTURB_DIAG .AND. tpfile%lopened ) THEN
 !
 ! stores the conservative mixing ratio
 !
-    TZFIELD = TFIELDDATA(                    &
+    TZFIELD = TFIELDMETADATA(                &
     CMNHNAME   = 'RNPM',                     &
     CSTDNAME   = '',                         &
     CLONGNAME  = 'RNPM',                     &
@@ -1825,7 +1825,7 @@ ENDIF
 !
 ! Impression before modification of the mixing length
 IF ( OTURB_DIAG .AND. tpfile%lopened ) THEN
-  TZFIELD = TFIELDDATA(                &
+  TZFIELD = TFIELDMETADATA(            &
     CMNHNAME   = 'LM_CLEAR_SKY',       &
     CSTDNAME   = '',                   &
     CLONGNAME  = 'LM_CLEAR_SKY',       &
@@ -1852,7 +1852,7 @@ WHERE (PCEI(:,:,:) == -1.) PLEM(:,:,:) = ZLM_CLOUD(:,:,:)
 !              ----------
 !
 IF ( OTURB_DIAG .AND. tpfile%lopened ) THEN
-  TZFIELD = TFIELDDATA(             &
+  TZFIELD = TFIELDMETADATA(         &
     CMNHNAME   = 'COEF_AMPL',       &
     CSTDNAME   = '',                &
     CLONGNAME  = 'COEF_AMPL',       &
@@ -1865,7 +1865,7 @@ IF ( OTURB_DIAG .AND. tpfile%lopened ) THEN
     LTIMEDEP   = .TRUE.             )
   CALL IO_Field_write(TPFILE,TZFIELD,ZCOEF_AMPL)
   !
-  TZFIELD = TFIELDDATA(            &
+  TZFIELD = TFIELDMETADATA(        &
     CMNHNAME   = 'LM_CLOUD',       &
     CSTDNAME   = '',               &
     CLONGNAME  = 'LM_CLOUD',       &

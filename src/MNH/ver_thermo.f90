@@ -159,7 +159,7 @@ USE MODD_CONF
 USE MODD_CONF_n
 USE MODD_CST
 USE MODD_DYN_n
-use modd_field,          only: tfielddata, TYPEREAL
+use modd_field,          only: tfieldmetadata, TYPEREAL
 USE MODD_FIELD_n,        ONLY: XTHT,XRT,XPABST,XDRYMASST
 USE MODD_GRID_n
 USE MODD_IO,             ONLY: TFILEDATA,TFILE_DUMMY
@@ -227,7 +227,7 @@ INTEGER :: IISIZEXF,IJSIZEXF,IISIZEXFU,IJSIZEXFU     ! dimensions of the
 INTEGER :: IISIZEX4,IJSIZEX4,IISIZEX2,IJSIZEX2       ! West-east LB arrays
 INTEGER :: IISIZEYF,IJSIZEYF,IISIZEYFV,IJSIZEYFV     ! dimensions of the
 INTEGER :: IISIZEY4,IJSIZEY4,IISIZEY2,IJSIZEY2       ! North-south LB arrays
-TYPE(TFIELDDATA) :: TZFIELD
+TYPE(TFIELDMETADATA) :: TZFIELD
 
 !-------------------------------------------------------------------------------
 !
@@ -295,7 +295,7 @@ DO JRR=1,SIZE(XRT,4)
 END DO
 !
 IF (NVERB>=10) THEN
-  TZFIELD = TFIELDDATA(       &
+  TZFIELD = TFIELDMETADATA(   &
     CMNHNAME   = 'THV',       &
     CSTDNAME   = '',          &
     CLONGNAME  = 'THV',       &

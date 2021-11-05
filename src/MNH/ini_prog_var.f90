@@ -113,7 +113,7 @@ USE MODD_CONF_n
 USE MODD_DIM_n
 USE MODD_DUST
 USE MODD_DYN_n
-use modd_field,            only: TFIELDDATA, TYPEREAL
+use modd_field,            only: TFIELDMETADATA, TYPEREAL
 USE MODD_FIELD_n
 USE MODD_IO,               ONLY: TFILEDATA
 USE MODD_LSFIELD_n
@@ -163,7 +163,7 @@ INTEGER :: JSV   ! Loop index
 INTEGER :: JMOM, IMOMENTS, JMODE, ISV_NAME_IDX, IMODEIDX  ! dust and salt modes
 INTEGER :: ILUDES                         !  logical unit numbers of DESFM file
 LOGICAL :: GFOUND                         ! Return code when searching namelist
-TYPE(TFIELDDATA)        :: TZFIELD
+TYPE(TFIELDMETADATA)    :: TZFIELD
 TYPE(TFILEDATA),POINTER :: TZCHEMFILE => NULL()
 !-------------------------------------------------------------------------------
 !

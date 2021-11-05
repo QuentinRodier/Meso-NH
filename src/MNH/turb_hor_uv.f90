@@ -126,7 +126,7 @@ END MODULE MODI_TURB_HOR_UV
 USE MODD_CST
 USE MODD_CONF
 USE MODD_CTURB
-use modd_field,          only: tfielddata, TYPEREAL
+use modd_field,          only: tfieldmetadata, TYPEREAL
 USE MODD_IO,             ONLY: TFILEDATA
 USE MODD_PARAMETERS
 USE MODD_LES
@@ -208,7 +208,7 @@ REAL, DIMENSION(SIZE(PUM,1),SIZE(PUM,2),SIZE(PUM,3))  :: GY_U_UV_PUM
 REAL, DIMENSION(SIZE(PVM,1),SIZE(PVM,2),SIZE(PVM,3))  :: GX_V_UV_PVM
 !
 REAL :: ZTIME1, ZTIME2
-TYPE(TFIELDDATA) :: TZFIELD
+TYPE(TFIELDMETADATA) :: TZFIELD
 ! ---------------------------------------------------------------------------
 !
 !*       1.   PRELIMINARY COMPUTATIONS
@@ -270,7 +270,7 @@ ZFLX(:,:,IKB-1:IKB-1) = 2. * MXM( MYM( ZFLX(:,:,IKB-1:IKB-1) ) )  &
 !     
 ! stores  <U V>
 IF ( tpfile%lopened .AND. OTURB_FLX ) THEN
-  TZFIELD = TFIELDDATA(          &
+  TZFIELD = TFIELDMETADATA(      &
     CMNHNAME   = 'UV_FLX',       &
     CSTDNAME   = '',             &
     CLONGNAME  = 'UV_FLX',       &

@@ -83,7 +83,7 @@ END MODULE MODI_TURB_CLOUD_INDEX
 !
 !-------------------------------------------------------------------------------
 !
-use modd_field,          only: tfielddata, TYPEREAL
+use modd_field,          only: tfieldmetadata, TYPEREAL
 USE MODD_IO,             ONLY: TFILEDATA
 USE MODD_PARAMETERS,     ONLY: JPVEXT
 !
@@ -133,7 +133,7 @@ INTEGER             :: IIB,IJB,IKB  ! Begin of physical dimensions
 INTEGER             :: IIE,IJE,IKE  ! End   of physical dimensions
 INTEGER, DIMENSION(SIZE(PRM,1),SIZE(PRM,2),SIZE(PRM,3)) :: IMASK_CLOUD
                              ! 0 except cloudy points or adjacent points (1)
-TYPE(TFIELDDATA)    :: TZFIELD
+TYPE(TFIELDMETADATA) :: TZFIELD
 !
 !-------------------------------------------------------------------------------
 !
@@ -244,7 +244,7 @@ ENDDO
 !*       2.5    Writing
 !
 IF ( OTURB_DIAG .AND. tpfile%lopened ) THEN
-  TZFIELD = TFIELDDATA(       &
+  TZFIELD = TFIELDMETADATA(   &
     CMNHNAME   = 'RVCI',      &
     CSTDNAME   = '',          &
     CLONGNAME  = 'RVCI',      &
@@ -257,7 +257,7 @@ IF ( OTURB_DIAG .AND. tpfile%lopened ) THEN
     LTIMEDEP   = .TRUE.       )
   CALL IO_Field_write(TPFILE,TZFIELD,ZRVCI)
   !
-  TZFIELD = TFIELDDATA(           &
+  TZFIELD = TFIELDMETADATA(       &
     CMNHNAME   = 'GX_RVCI',       &
     CSTDNAME   = '',              &
     CLONGNAME  = 'GX_RVCI',       &
@@ -270,7 +270,7 @@ IF ( OTURB_DIAG .AND. tpfile%lopened ) THEN
     LTIMEDEP   = .TRUE.           )
   CALL IO_Field_write(TPFILE,TZFIELD,ZG_RVCI(:,:,:,1))
   !
-  TZFIELD = TFIELDDATA(           &
+  TZFIELD = TFIELDMETADATA(       &
     CMNHNAME   = 'GY_RVCI',       &
     CSTDNAME   = '',              &
     CLONGNAME  = 'GY_RVCI',       &
@@ -283,7 +283,7 @@ IF ( OTURB_DIAG .AND. tpfile%lopened ) THEN
     LTIMEDEP   = .TRUE.           )
   CALL IO_Field_write(TPFILE,TZFIELD,ZG_RVCI(:,:,:,2))
   !
-  TZFIELD = TFIELDDATA(          &
+  TZFIELD = TFIELDMETADATA(      &
     CMNHNAME   = 'GNORM_RVCI',   &
     CSTDNAME   = '',             &
     CLONGNAME  = 'GNORM_RVCI',   &
@@ -296,7 +296,7 @@ IF ( OTURB_DIAG .AND. tpfile%lopened ) THEN
     LTIMEDEP   = .TRUE.          )
   CALL IO_Field_write(TPFILE,TZFIELD,ZGNORM_RVCI)
   !
-  TZFIELD = TFIELDDATA(           &
+  TZFIELD = TFIELDMETADATA(       &
     CMNHNAME   = 'QX_RVCI',       &
     CSTDNAME   = '',              &
     CLONGNAME  = 'QX_RVCI',       &
@@ -309,7 +309,7 @@ IF ( OTURB_DIAG .AND. tpfile%lopened ) THEN
     LTIMEDEP   = .TRUE.           )
   CALL IO_Field_write(TPFILE,TZFIELD,ZQ_RVCI(:,:,:,1))
   !
-  TZFIELD = TFIELDDATA(           &
+  TZFIELD = TFIELDMETADATA(       &
     CMNHNAME   = 'QY_RVCI',       &
     CSTDNAME   = '',              &
     CLONGNAME  = 'QY_RVCI',       &
@@ -322,7 +322,7 @@ IF ( OTURB_DIAG .AND. tpfile%lopened ) THEN
     LTIMEDEP   = .TRUE.           )
   CALL IO_Field_write(TPFILE,TZFIELD,ZQ_RVCI(:,:,:,2))
   !
-  TZFIELD = TFIELDDATA(              &
+  TZFIELD = TFIELDMETADATA(          &
     CMNHNAME   = 'QNORM_RVCI',       &
     CSTDNAME   = '',                 &
     CLONGNAME  = 'QNORM_RVCI',       &
@@ -335,7 +335,7 @@ IF ( OTURB_DIAG .AND. tpfile%lopened ) THEN
     LTIMEDEP   = .TRUE.              )
   CALL IO_Field_write(TPFILE,TZFIELD,ZQNORM_RVCI)
   !
-  TZFIELD = TFIELDDATA(             &
+  TZFIELD = TFIELDMETADATA(         &
     CMNHNAME   = 'CEI',             &
     CSTDNAME   = '',                &
     CLONGNAME  = 'CEI',             &

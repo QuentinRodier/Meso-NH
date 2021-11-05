@@ -63,7 +63,7 @@ END MODULE MODI_WRITE_DUMMY_GR_FIELD_n
 !
 USE MODD_DUMMY_GR_FIELD_n, ONLY: NDUMMY_GR_NBR, CDUMMY_GR_NAME,    &
                                  CDUMMY_GR_AREA, XDUMMY_GR_FIELDS
-use modd_field,            only: tfielddata, TYPEINT, TYPEREAL
+use modd_field,            only: tfieldmetadata, TYPEINT, TYPEREAL
 USE MODD_IO,               ONLY: TFILEDATA
 USE MODD_PARAMETERS,       ONLY: NMNHNAMELGTMAX
 !
@@ -87,7 +87,7 @@ CHARACTER(LEN=3)              :: YSTRING03
 !
 REAL, DIMENSION(:,:), ALLOCATABLE :: ZWORK2D
 !
-TYPE(TFIELDDATA)  :: TZFIELD
+TYPE(TFIELDMETADATA) :: TZFIELD
 !
 !-------------------------------------------------------------------------------
 !
@@ -104,7 +104,7 @@ ALLOCATE(ZWORK2D(SIZE(XDUMMY_GR_FIELDS,1),SIZE(XDUMMY_GR_FIELDS,2)))
 !*       3.     Dummy fields :
 !               ------------
 !
-TZFIELD = TFIELDDATA(                                       &
+TZFIELD = TFIELDMETADATA(                                   &
   CMNHNAME   = 'DUMMY_GR_NBR',                              &
   CSTDNAME   = '',                                          &
   CLONGNAME  = 'DUMMY_GR_NBR',                              &
@@ -122,7 +122,7 @@ DO JDUMMY=1,NDUMMY_GR_NBR
   YSTRING20=CDUMMY_GR_NAME(JDUMMY)
   YSTRING03=CDUMMY_GR_AREA(JDUMMY)
   !
-  TZFIELD = TFIELDDATA(                                &
+  TZFIELD = TFIELDMETADATA(                            &
     CMNHNAME   = TRIM(YRECFM),                         &
     CSTDNAME   = '',                                   &
     CLONGNAME  = TRIM(YRECFM),                         &

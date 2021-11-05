@@ -89,7 +89,7 @@ USE MODD_AIRCRAFT_BALLOON
 USE MODD_CONF
 USE MODD_DIAG_FLAG
 USE MODD_DYN_n
-use modd_field,      only: tfielddata, TYPEREAL
+use modd_field,      only: tfieldmetadata, TYPEREAL
 USE MODD_GRID
 USE MODD_IO,         ONLY: TFILEDATA
 USE MODD_LUNIT_n,    ONLY: TLUOUT
@@ -128,7 +128,7 @@ INTEGER :: ISTORE ! number of storage instants
 INTEGER :: ILUOUT ! logical unit
 INTEGER :: IRESP  ! return code
 INTEGER :: JSEG   ! loop counter
-TYPE(TFIELDDATA) :: TZFIELD
+TYPE(TFIELDMETADATA) :: TZFIELD
 !
 !----------------------------------------------------------------------------
 !
@@ -474,7 +474,7 @@ END IF
 IF ( CPROGRAM == 'MESONH' .OR. CPROGRAM == 'SPAWN ' .OR. CPROGRAM == 'REAL  ' ) THEN
   ! read the current location in the FM_FILE
   !
-  TZFIELD = TFIELDDATA(                      &
+  TZFIELD = TFIELDMETADATA(                  &
     CMNHNAME   = TRIM(TPFLYER%TITLE)//'LAT', &
     CSTDNAME   = '',                         &
     CLONGNAME  = TRIM(TPFLYER%TITLE)//'LAT', &
@@ -490,7 +490,7 @@ IF ( CPROGRAM == 'MESONH' .OR. CPROGRAM == 'SPAWN ' .OR. CPROGRAM == 'REAL  ' ) 
   IF ( IRESP /= 0 ) THEN
     WRITE(ILUOUT,*) "INI_LAUCH: Initial location take for ",TPFLYER%TITLE
   ELSE
-    TZFIELD = TFIELDDATA(                      &
+    TZFIELD = TFIELDMETADATA(                  &
       CMNHNAME   = TRIM(TPFLYER%TITLE)//'LON', &
       CSTDNAME   = '',                         &
       CLONGNAME  = TRIM(TPFLYER%TITLE)//'LON', &
@@ -503,7 +503,7 @@ IF ( CPROGRAM == 'MESONH' .OR. CPROGRAM == 'SPAWN ' .OR. CPROGRAM == 'REAL  ' ) 
       LTIMEDEP   = .TRUE.                      )
     CALL IO_Field_read(TPINIFILE,TZFIELD,ZLON)
     !
-    TZFIELD = TFIELDDATA(                      &
+    TZFIELD = TFIELDMETADATA(                  &
       CMNHNAME   = TRIM(TPFLYER%TITLE)//'ALT', &
       CSTDNAME   = '',                         &
       CLONGNAME  = TRIM(TPFLYER%TITLE)//'ALT', &
@@ -518,7 +518,7 @@ IF ( CPROGRAM == 'MESONH' .OR. CPROGRAM == 'SPAWN ' .OR. CPROGRAM == 'REAL  ' ) 
     !
     TPFLYER%P_CUR   = XUNDEF
     !
-    TZFIELD = TFIELDDATA(                          &
+    TZFIELD = TFIELDMETADATA(                      &
       CMNHNAME   = TRIM(TPFLYER%TITLE)//'WASCENT', &
       CSTDNAME   = '',                             &
       CLONGNAME  = TRIM(TPFLYER%TITLE)//'WASCENT', &
@@ -531,7 +531,7 @@ IF ( CPROGRAM == 'MESONH' .OR. CPROGRAM == 'SPAWN ' .OR. CPROGRAM == 'REAL  ' ) 
       LTIMEDEP   = .TRUE.                          )
     CALL IO_Field_read(TPINIFILE,TZFIELD,TPFLYER%WASCENT)
     !
-    TZFIELD = TFIELDDATA(                      &
+    TZFIELD = TFIELDMETADATA(                  &
       CMNHNAME   = TRIM(TPFLYER%TITLE)//'RHO', &
       CSTDNAME   = '',                         &
       CLONGNAME  = TRIM(TPFLYER%TITLE)//'RHO', &

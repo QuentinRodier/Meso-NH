@@ -225,7 +225,7 @@ USE MODD_CH_AEROSOL
 USE MODD_CONF
 USE MODD_CST
 USE MODD_DUST
-use modd_field,                only: tfielddata, TYPEREAL
+use modd_field,                only: tfieldmetadata, TYPEREAL
 USE MODD_IO,                   ONLY: TFILEDATA
 USE MODD_NSV,                  ONLY : NSV_C2R2BEG
 USE MODD_PARAM_C2R2
@@ -415,7 +415,7 @@ REAL  :: ZFACT, JSV, ZMU, ZALPHA
 REAL, DIMENSION(:), ALLOCATABLE    :: ZRTMIN
 REAL, DIMENSION(:), ALLOCATABLE    :: ZCTMIN
 REAL :: ZTMP
-TYPE(TFIELDDATA)    :: TZFIELD
+TYPE(TFIELDMETADATA) :: TZFIELD
 !
 !
 !
@@ -595,7 +595,7 @@ end if
 !!
 !!
 ! IF ( tpfile%lopened ) THEN
-!   TZFIELD = TFIELDDATA(         &
+!   TZFIELD = TFIELDMETADATA(     &
 !     CMNHNAME   = 'ZCHEN',       &
 !     CSTDNAME   = '',            &
 !     CLONGNAME  = 'ZCHEN',       &
@@ -879,7 +879,7 @@ INUCT = COUNTJV( GNUCT(:,:,:),I1(:),I2(:),I3(:))
 ! END IF
 !                      
 IF ( tpfile%lopened ) THEN
-  TZFIELD = TFIELDDATA(        &
+  TZFIELD = TFIELDMETADATA(    &
     CMNHNAME   = 'SMAX',       &
     CSTDNAME   = '',           &
     CLONGNAME  = 'SMAX',       &
@@ -1898,7 +1898,7 @@ DO JN = 1 , KSPLITR
   END IF
 !   
  IF ( OSEDC .AND. tpfile%lopened ) THEN
-  TZFIELD = TFIELDDATA(            &
+  TZFIELD = TFIELDMETADATA(        &
     CMNHNAME   = 'SEDFLUXC',       &
     CSTDNAME   = '',               &
     CLONGNAME  = 'SEDFLUXC',       &
@@ -1911,7 +1911,7 @@ DO JN = 1 , KSPLITR
     LTIMEDEP   = .TRUE.            )
   CALL IO_Field_write(TPFILE,TZFIELD,ZWSEDC)
   !
-  TZFIELD = TFIELDDATA(            &
+  TZFIELD = TFIELDMETADATA(        &
     CMNHNAME   = 'SEDFLUXR',       &
     CSTDNAME   = '',               &
     CLONGNAME  = 'SEDFLUXR',       &

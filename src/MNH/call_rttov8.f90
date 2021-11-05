@@ -90,6 +90,7 @@ SUBROUTINE CALL_RTTOV8(KDLON, KFLEV, KSTATM, PEMIS, PTSRAD, PSTATM,     &
 !!              ------------
 !!
 USE MODD_CST
+USE MODD_FIELD,          only: TFIELDMETADATA
 USE MODD_IO, ONLY: TFILEDATA
 USE MODD_PARAMETERS
 USE MODD_GRID_n
@@ -687,7 +688,7 @@ REAL(Kind=jprb), PARAMETER :: o3_mixratio_to_ppmv = 6.03504e+5_JPRB
 INTEGER(Kind=jpim) :: alloc_status(40)
 
 CHARACTER(LEN=:), ALLOCATABLE :: YMNHNAME, YUNITS, YCOMMENT
-TYPE(TFIELDDATA) :: TZFIELD
+TYPE(TFIELDMETADATA) :: TZFIELD
 
 ! - End of header --------------------------------------------------------
 !!!----------------------------------------------------------------------------
@@ -1568,7 +1569,7 @@ DO JSAT=1,IJSAT ! loop over sensors
 !    DO JK1=1,LEN_TRIM(inst_name(KRTTOVINFO(3,JSAT)))
 !      YINST(JK1:JK1)=CHAR(ICHAR(YINST(JK1:JK1))-32)
 !    END DO
-    TZFIELD = TFIELDDATA(                &
+    TZFIELD = TFIELDMETADATA(            &
       CMNHNAME   = TRIM(YINST)//'_ANGL', &
       CSTDNAME   = '',                   &
       CLONGNAME  = TRIM(YINST)//'_ANGL', &
@@ -1629,7 +1630,7 @@ DO JSAT=1,IJSAT ! loop over sensors
       YUNITS     = 'K'
       YCOMMENT   = TRIM(YBEG)//'_'//TRIM(YEND)//' BT'
     ENDIF
-    TZFIELD = TFIELDDATA(            &
+    TZFIELD = TFIELDMETADATA(        &
       CMNHNAME   = TRIM( YMNHNAME ), &
       CSTDNAME   = '',               &
       CLONGNAME  = TRIM( YMNHNAME ), &
@@ -1645,7 +1646,7 @@ DO JSAT=1,IJSAT ! loop over sensors
          MAXVAL(ZTBTMP(:,:,JCH),ZTBTMP(:,:,JCH)/=XUNDEF)
     CALL IO_Field_write(TPFILE,TZFIELD,ZTBTMP(:,:,JCH))
     IF (KRTTOVINFO(3,JSAT) == 4.AND. JCH==3 ) THEN ! AMSU-B
-      TZFIELD = TFIELDDATA(              &
+      TZFIELD = TFIELDMETADATA(          &
         CMNHNAME   = TRIM(YBEG)//'_UTH', &
         CSTDNAME   = '',                 &
         CLONGNAME  = TRIM(YBEG)//'_UTH', &
@@ -1727,7 +1728,7 @@ DO JSAT=1,IJSAT ! loop over sensors
         END DO
       END DO
       !
-      TZFIELD = TFIELDDATA(                                  &
+      TZFIELD = TFIELDMETADATA(                              &
         CMNHNAME   = TRIM(YBEG)//'_'//TRIM(YEND)//'JAT',     &
         CSTDNAME   = '',                                     &
         CLONGNAME  = TRIM(YBEG)//'_'//TRIM(YEND)//'JAT',     &
@@ -1743,7 +1744,7 @@ DO JSAT=1,IJSAT ! loop over sensors
            MAXVAL(ZTEMPK(:,:,:),ZTEMPK(:,:,:)/=XUNDEF)
       CALL IO_Field_write(TPFILE,TZFIELD,ZTEMPK(:,:,:))
       !
-      TZFIELD = TFIELDDATA(                                  &
+      TZFIELD = TFIELDMETADATA(                              &
         CMNHNAME   = TRIM(YBEG)//'_'//TRIM(YEND)//'JAV',     &
         CSTDNAME   = '',                                     &
         CLONGNAME  = TRIM(YBEG)//'_'//TRIM(YEND)//'JAV',     &

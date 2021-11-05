@@ -156,7 +156,7 @@ END MODULE MODI_WRITE_LFIFM1_FOR_DIAG
 USE MODD_DIM_n
 USE MODD_CONF
 USE MODD_CONF_n
-use modd_field,           only: tfielddata, tfieldlist, TYPEINT, TYPEREAL
+use modd_field,           only: tfieldmetadata, tfieldlist, TYPEINT, TYPEREAL
 USE MODD_GRID
 USE MODD_GRID_n
 USE MODD_IO, ONLY : TFILEDATA
@@ -343,8 +343,8 @@ INTEGER :: ILUOUT0 ! Logical unit number for output-listing
 CHARACTER(LEN=2)  :: INDICE
 CHARACTER(LEN=100) :: YMSG
 INTEGER           :: IID
-TYPE(TFIELDDATA)              :: TZFIELD
-TYPE(TFIELDDATA),DIMENSION(2) :: TZFIELD2
+TYPE(TFIELDMETADATA)               :: TZFIELD
+TYPE(TFIELDMETADATA), DIMENSION(2) :: TZFIELD2
 !
 ! LIMA LIDAR
 REAL,DIMENSION(:,:,:,:), ALLOCATABLE :: ZTMP1, ZTMP2, ZTMP3, ZTMP4
@@ -511,7 +511,7 @@ ZPOVO(:,:,:)= ZPOVO(:,:,:)*1E6/XRHODREF(:,:,:)
 ZPOVO(:,:,1)  =-1.E+11
 ZPOVO(:,:,IKU)=-1.E+11
 IF (INDEX(CISO,'EV') /= 0) THEN
-  TZFIELD = TFIELDDATA(                       &
+  TZFIELD = TFIELDMETADATA(                   &
     CMNHNAME   = 'POVOT',                     &
     CSTDNAME   = '',                          &
     CLONGNAME  = 'POVOT',                     &
@@ -531,7 +531,7 @@ IF (LVAR_RS) THEN
   CALL IO_Field_write(TPFILE,'VT',XVT)
   !
   IF (LWIND_ZM) THEN
-    TZFIELD2(1) = TFIELDDATA(                            &
+    TZFIELD2(1) = TFIELDMETADATA(                        &
       CMNHNAME   = 'UM_ZM',                              &
       CSTDNAME   = '',                                   &
       CLONGNAME  = 'UM_ZM',                              &
@@ -543,7 +543,7 @@ IF (LVAR_RS) THEN
       NDIMS      = 3,                                    &
       LTIMEDEP   = .TRUE.                                )
     !
-    TZFIELD2(2) = TFIELDDATA(                               &
+    TZFIELD2(2) = TFIELDMETADATA(                           &
       CMNHNAME   = 'VM_ZM',                                 &
       CSTDNAME   = '',                                      &
       CLONGNAME  = 'VM_ZM',                                 &
@@ -603,7 +603,7 @@ IF (LVAR_PR .AND. LUSERR .AND. SIZE(XINPRR)>0 ) THEN
   ! explicit species
   !
   CALL FIND_FIELD_ID_FROM_MNHNAME('INPRR',IID,IRESP)
-  TZFIELD = TFIELDLIST(IID)
+  TZFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
   TZFIELD%CUNITS = 'mm hour-1'
   CALL IO_Field_write(TPFILE,TZFIELD,XINPRR*3.6E6)
   !
@@ -611,7 +611,7 @@ IF (LVAR_PR .AND. LUSERR .AND. SIZE(XINPRR)>0 ) THEN
   CALL IO_Field_write(TPFILE,'EVAP3D', XEVAP3D)
   !
   CALL FIND_FIELD_ID_FROM_MNHNAME('ACPRR',IID,IRESP)
-  TZFIELD = TFIELDLIST(IID)
+  TZFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
   TZFIELD%CUNITS = 'mm'
   CALL IO_Field_write(TPFILE,TZFIELD,XACPRR*1.0E3)
   !
@@ -619,56 +619,56 @@ IF (LVAR_PR .AND. LUSERR .AND. SIZE(XINPRR)>0 ) THEN
       CCLOUD == 'KHKO' .OR. CCLOUD == 'LIMA') THEN 
     IF (SIZE(XINPRC) /= 0 ) THEN
       CALL FIND_FIELD_ID_FROM_MNHNAME('INPRC',IID,IRESP)
-      TZFIELD = TFIELDLIST(IID)
+      TZFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
       TZFIELD%CUNITS = 'mm hour-1'
       CALL IO_Field_write(TPFILE,TZFIELD,XINPRC*3.6E6)
       !
       CALL FIND_FIELD_ID_FROM_MNHNAME('ACPRC',IID,IRESP)
-      TZFIELD = TFIELDLIST(IID)
+      TZFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
       TZFIELD%CUNITS = 'mm'
       CALL IO_Field_write(TPFILE,TZFIELD,XACPRC*1.0E3)
     END IF 
     IF (SIZE(XINDEP) /= 0 ) THEN
       CALL FIND_FIELD_ID_FROM_MNHNAME('INDEP',IID,IRESP)
-      TZFIELD = TFIELDLIST(IID)
+      TZFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
       TZFIELD%CUNITS = 'mm hour-1'
       CALL IO_Field_write(TPFILE,TZFIELD,XINDEP*3.6E6)
       !
       CALL FIND_FIELD_ID_FROM_MNHNAME('ACDEP',IID,IRESP)
-      TZFIELD = TFIELDLIST(IID)
+      TZFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
       TZFIELD%CUNITS = 'mm'
       CALL IO_Field_write(TPFILE,TZFIELD,XACDEP*1.0E3)
     END IF 
   END IF 
   IF (CCLOUD(1:3) == 'ICE' .OR. CCLOUD == 'C3R5' .OR. CCLOUD == 'LIMA') THEN
     CALL FIND_FIELD_ID_FROM_MNHNAME('INPRS',IID,IRESP)
-    TZFIELD = TFIELDLIST(IID)
+    TZFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
     TZFIELD%CUNITS = 'mm hour-1'
     CALL IO_Field_write(TPFILE,TZFIELD,XINPRS*3.6E6)
     !
     CALL FIND_FIELD_ID_FROM_MNHNAME('ACPRS',IID,IRESP)
-    TZFIELD = TFIELDLIST(IID)
+    TZFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
     TZFIELD%CUNITS = 'mm'
     CALL IO_Field_write(TPFILE,TZFIELD,XACPRS*1.0E3)
     !
     CALL FIND_FIELD_ID_FROM_MNHNAME('INPRG',IID,IRESP)
-    TZFIELD = TFIELDLIST(IID)
+    TZFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
     TZFIELD%CUNITS = 'mm hour-1'
     CALL IO_Field_write(TPFILE,TZFIELD,XINPRG*3.6E6)
     !
     CALL FIND_FIELD_ID_FROM_MNHNAME('ACPRG',IID,IRESP)
-    TZFIELD = TFIELDLIST(IID)
+    TZFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
     TZFIELD%CUNITS = 'mm'
     CALL IO_Field_write(TPFILE,TZFIELD,XACPRG*1.0E3)
   !
     IF (SIZE(XINPRH) /= 0 ) THEN
       CALL FIND_FIELD_ID_FROM_MNHNAME('INPRH',IID,IRESP)
-      TZFIELD = TFIELDLIST(IID)
+      TZFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
       TZFIELD%CUNITS = 'mm hour-1'
       CALL IO_Field_write(TPFILE,TZFIELD,XINPRH*3.6E6)
       !
       CALL FIND_FIELD_ID_FROM_MNHNAME('ACPRH',IID,IRESP)
-      TZFIELD = TFIELDLIST(IID)
+      TZFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
       TZFIELD%CUNITS = 'mm'
       CALL IO_Field_write(TPFILE,TZFIELD,XACPRH*1.0E3)
     ENDIF
@@ -679,7 +679,7 @@ IF (LVAR_PR .AND. LUSERR .AND. SIZE(XINPRR)>0 ) THEN
     IF (SIZE(XINPRH) /= 0 ) &       
       ZWORK21(:,:) = ZWORK21(:,:) + XINPRH(:,:)
     CALL FIND_FIELD_ID_FROM_MNHNAME('INPRT',IID,IRESP)
-    TZFIELD = TFIELDLIST(IID)
+    TZFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
     TZFIELD%CUNITS = 'mm hour-1'
     CALL IO_Field_write(TPFILE,TZFIELD,ZWORK21*3.6E6)
   !
@@ -690,7 +690,7 @@ IF (LVAR_PR .AND. LUSERR .AND. SIZE(XINPRR)>0 ) THEN
       ZWORK21(:,:) = ZWORK21(:,:) + XACPRH(:,:)
   !
     CALL FIND_FIELD_ID_FROM_MNHNAME('ACPRT',IID,IRESP)
-    TZFIELD = TFIELDLIST(IID)
+    TZFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
     TZFIELD%CUNITS = 'mm'
     CALL IO_Field_write(TPFILE,TZFIELD,ZWORK21*1.0E3)
   !
@@ -700,17 +700,17 @@ IF (LVAR_PR .AND. LUSERR .AND. SIZE(XINPRR)>0 ) THEN
   !
   IF (CDCONV /= 'NONE') THEN
     CALL FIND_FIELD_ID_FROM_MNHNAME('PRCONV',IID,IRESP)
-    TZFIELD = TFIELDLIST(IID)
+    TZFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
     TZFIELD%CUNITS = 'mm hour-1'
     CALL IO_Field_write(TPFILE,TZFIELD,XPRCONV*3.6E6)
     !
     CALL FIND_FIELD_ID_FROM_MNHNAME('PACCONV',IID,IRESP)
-    TZFIELD = TFIELDLIST(IID)
+    TZFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
     TZFIELD%CUNITS = 'mm'
     CALL IO_Field_write(TPFILE,TZFIELD,XPACCONV*1.0E3)
     !
     CALL FIND_FIELD_ID_FROM_MNHNAME('PRSCONV',IID,IRESP)
-    TZFIELD = TFIELDLIST(IID)
+    TZFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
     TZFIELD%CUNITS = 'mm hour-1'
     CALL IO_Field_write(TPFILE,TZFIELD,XPRSCONV*3.6E6)
   END IF
@@ -740,7 +740,7 @@ IF (LVAR_PR ) THEN
     ZWORK23(:,:) = 0.
   END DO
   !* Precipitable water in kg/m**2
-  TZFIELD = TFIELDDATA(              &
+  TZFIELD = TFIELDMETADATA(          &
     CMNHNAME   = 'PRECIP_WAT', &
     CSTDNAME   = '',           &
     CLONGNAME  = 'PRECIP_WAT', &
@@ -820,7 +820,7 @@ IF (LHU_FLX) THEN
   ENDIF
   ! Ecriture
   !  composantes U et V du flux surfacique d'humidité  
-  TZFIELD = TFIELDDATA(        &
+  TZFIELD = TFIELDMETADATA(    &
     CMNHNAME   = 'UM90',       &
     CSTDNAME   = '',           &
     CLONGNAME  = 'UM90',       &
@@ -833,7 +833,7 @@ IF (LHU_FLX) THEN
     LTIMEDEP   = .TRUE.        )
   CALL IO_Field_write(TPFILE,TZFIELD,ZWORK31)
   !  
-  TZFIELD = TFIELDDATA(        &
+  TZFIELD = TFIELDMETADATA(    &
     CMNHNAME   = 'VM90',       &
     CSTDNAME   = '',           &
     CLONGNAME  = 'VM90',       &
@@ -846,7 +846,7 @@ IF (LHU_FLX) THEN
     LTIMEDEP   = .TRUE.        )
   CALL IO_Field_write(TPFILE,TZFIELD,ZWORK32)
   !  composantes U et V du flux d'humidité intégré sur 3000 metres
-  TZFIELD = TFIELDDATA(        &
+  TZFIELD = TFIELDMETADATA(    &
     CMNHNAME   = 'UM91',       &
     CSTDNAME   = '',           &
     CLONGNAME  = 'UM91',       &
@@ -859,7 +859,7 @@ IF (LHU_FLX) THEN
     LTIMEDEP   = .TRUE.        )
   CALL IO_Field_write(TPFILE,TZFIELD,ZWORK21)
   !
-  TZFIELD = TFIELDDATA(        &
+  TZFIELD = TFIELDMETADATA(    &
     CMNHNAME   = 'VM91',       &
     CSTDNAME   = '',           &
     CLONGNAME  = 'VM91',       &
@@ -873,7 +873,7 @@ IF (LHU_FLX) THEN
   CALL IO_Field_write(TPFILE,TZFIELD,ZWORK22)
   !
   !   Convergence d'humidité
-  TZFIELD = TFIELDDATA(                                         &
+  TZFIELD = TFIELDMETADATA(                                     &
     CMNHNAME   = 'HMCONV',                                      &
     CSTDNAME   = '',                                            &
     CLONGNAME  = 'HMCONV',                                      &
@@ -887,7 +887,7 @@ IF (LHU_FLX) THEN
   CALL IO_Field_write(TPFILE,TZFIELD,-ZWORK35)
   !
   !   Convergence d'humidité intégré sur 3000 mètres
-  TZFIELD = TFIELDDATA(                                         &
+  TZFIELD = TFIELDMETADATA(                                     &
     CMNHNAME   = 'HMCONV3000',                                  &
     CSTDNAME   = '',                                            &
     CLONGNAME  = 'HMCONV3000',                                  &
@@ -902,7 +902,7 @@ IF (LHU_FLX) THEN
   !
   IF  (CCLOUD(1:3) == 'ICE' .OR. CCLOUD == 'LIMA') THEN
     !  composantes U et V du flux surfacique d'hydrométéores  
-    TZFIELD = TFIELDDATA(        &
+    TZFIELD = TFIELDMETADATA(    &
       CMNHNAME   = 'UM92',       &
       CSTDNAME   = '',           &
       CLONGNAME  = 'UM92',       &
@@ -915,7 +915,7 @@ IF (LHU_FLX) THEN
       LTIMEDEP   = .TRUE.        )
     CALL IO_Field_write(TPFILE,TZFIELD,ZWORK33)
     ! 
-    TZFIELD = TFIELDDATA(        &
+    TZFIELD = TFIELDMETADATA(    &
       CMNHNAME   = 'VM92',       &
       CSTDNAME   = '',           &
       CLONGNAME  = 'VM92',       &
@@ -928,7 +928,7 @@ IF (LHU_FLX) THEN
       LTIMEDEP   = .TRUE.        )
     CALL IO_Field_write(TPFILE,TZFIELD,ZWORK34)
     !  composantes U et V du flux d'hydrométéores intégré sur 3000 metres
-    TZFIELD = TFIELDDATA(        &
+    TZFIELD = TFIELDMETADATA(    &
       CMNHNAME   = 'UM93',       &
       CSTDNAME   = '',           &
       CLONGNAME  = 'UM93',       &
@@ -941,7 +941,7 @@ IF (LHU_FLX) THEN
       LTIMEDEP   = .TRUE.        )
     CALL IO_Field_write(TPFILE,TZFIELD,ZWORK23)
     ! 
-    TZFIELD = TFIELDDATA(        &
+    TZFIELD = TFIELDMETADATA(    &
       CMNHNAME   = 'VM93',       &
       CSTDNAME   = '',           &
       CLONGNAME  = 'VM93',       &
@@ -954,7 +954,7 @@ IF (LHU_FLX) THEN
       LTIMEDEP   = .TRUE.        )
     CALL IO_Field_write(TPFILE,TZFIELD,ZWORK24)
     !   Convergence d'hydrométéores
-    TZFIELD = TFIELDDATA(                                            &
+    TZFIELD = TFIELDMETADATA(                                        &
       CMNHNAME   = 'HMCONV_TT',                                      &
       CSTDNAME   = '',                                               &
       CLONGNAME  = 'HMCONV_TT',                                      &
@@ -967,7 +967,7 @@ IF (LHU_FLX) THEN
       LTIMEDEP   = .TRUE.                                            )
     CALL IO_Field_write(TPFILE,TZFIELD,-ZWORK36)
     !   Convergence d'hydrométéores intégré sur 3000 mètres
-    TZFIELD = TFIELDDATA(                                            &
+    TZFIELD = TFIELDMETADATA(                                        &
       CMNHNAME   = 'HMCONV3000_TT',                                  &
       CSTDNAME   = '',                                               &
       CLONGNAME  = 'HMCONV3000_TT',                                  &
@@ -987,7 +987,7 @@ ENDIF
 IF (LVAR_MRW .OR. LLIMA_DIAG) THEN
   IF (NRR >=1) THEN
     ! Moist variables are written individually in file
-    TZFIELD = TFIELDDATA(                         &
+    TZFIELD = TFIELDMETADATA(                     &
       CMNHNAME   = 'generic for moist variables', & !Temporary name to ease identification
       CSTDNAME   = '',                            &
       CDIR       = 'XY',                          &
@@ -1068,7 +1068,7 @@ END IF
 ! User scalar variables
 ! individually in the file
 IF (LVAR_MRSV) THEN
-  TZFIELD = TFIELDDATA(                          &
+  TZFIELD = TFIELDMETADATA(                      &
     CMNHNAME   = 'generic for scalar variables', & !Temporary name to ease identification
     CSTDNAME   = '',                             &
     CUNITS     = 'g kg-1',                       &
@@ -1203,7 +1203,7 @@ IF (LLIMA_DIAG) THEN
   END DO
 !
   IF (LUSERC) THEN
-    TZFIELD = TFIELDDATA(        &
+    TZFIELD = TFIELDMETADATA(    &
       CMNHNAME   = 'LWC',        &
       CSTDNAME   = '',           &
       CLONGNAME  = 'LWC',        &
@@ -1219,7 +1219,7 @@ IF (LLIMA_DIAG) THEN
   END IF
 !
   IF (LUSERI) THEN
-    TZFIELD = TFIELDDATA(       &
+    TZFIELD = TFIELDMETADATA(   &
       CMNHNAME   = 'IWC',       &
       CSTDNAME   = '',          &
       CLONGNAME  = 'IWC',       &
@@ -1346,7 +1346,7 @@ END IF
 !  Blowing snow variables
 !
 IF(LBLOWSNOW) THEN
-  TZFIELD = TFIELDDATA(                                                 &
+  TZFIELD = TFIELDMETADATA(                                             &
     CMNHNAME   = 'SNWSUBL3D',                                           &
     CSTDNAME   = '',                                                    &
     CLONGNAME  = 'SNWSUBL3D',                                           &
@@ -1366,7 +1366,7 @@ IF(LBLOWSNOW) THEN
   END DO
   ZWORK21(:,:) = ZWORK21(:,:)*1000. ! vapor water in mm unit
   !
-  TZFIELD = TFIELDDATA(                                     &
+  TZFIELD = TFIELDMETADATA(                                 &
     CMNHNAME   = 'COL_SNWSUBL',                             &
     CSTDNAME   = '',                                        &
     CLONGNAME  = 'COL_SNWSUBL',                             &
@@ -1389,7 +1389,7 @@ IF(LBLOWSNOW) THEN
   CALL PPP2SNOW(XSVT(:,:,:,NSV_SNWBEG:NSV_SNWEND),XRHODREF,&
                PBET3D=ZBET_SNW, PRG3D=ZRG_SNW, PM3D=ZMA_SNW)
   !
-  TZFIELD = TFIELDDATA(            &
+  TZFIELD = TFIELDMETADATA(        &
     CMNHNAME   = 'SNWRGA',         &
     CSTDNAME   = '',               &
     CLONGNAME  = 'SNWRGA',         &
@@ -1402,7 +1402,7 @@ IF(LBLOWSNOW) THEN
     LTIMEDEP   = .TRUE.            )
   CALL IO_Field_write(TPFILE,TZFIELD,ZRG_SNW(:,:,:))
   !
-  TZFIELD = TFIELDDATA(       &
+  TZFIELD = TFIELDMETADATA(   &
     CMNHNAME   = 'SNWBETA',   &
     CSTDNAME   = '',          &
     CLONGNAME  = 'SNWBETA',   &
@@ -1415,7 +1415,7 @@ IF(LBLOWSNOW) THEN
     LTIMEDEP   = .TRUE.       )
   CALL IO_Field_write(TPFILE,TZFIELD,ZBET_SNW(:,:,:))
   !
-  TZFIELD = TFIELDDATA(                  &
+  TZFIELD = TFIELDMETADATA(              &
     CMNHNAME   = 'SNWNOA',               &
     CSTDNAME   = '',                     &
     CLONGNAME  = 'SNWNOA',               &
@@ -1428,7 +1428,7 @@ IF(LBLOWSNOW) THEN
     LTIMEDEP   = .TRUE.                  )
   CALL IO_Field_write(TPFILE,TZFIELD,ZMA_SNW(:,:,:,1))
   !
-  TZFIELD = TFIELDDATA(            &
+  TZFIELD = TFIELDMETADATA(        &
     CMNHNAME   = 'SNWMASS',        &
     CSTDNAME   = '',               &
     CLONGNAME  = 'SNWMASS',        &
@@ -1447,7 +1447,7 @@ IF(LBLOWSNOW) THEN
                    (XZZ(:,:,JK+1)-XZZ(:,:,JK))/XRHOLW
   END DO
   ZWORK21(:,:) = ZWORK21(:,:)*1000. ! vapor water in mm unit
-  TZFIELD = TFIELDDATA(                                     &
+  TZFIELD = TFIELDMETADATA(                                 &
     CMNHNAME   = 'THDS',                                    &
     CSTDNAME   = '',                                        &
     CLONGNAME  = 'THDS',                                    &
@@ -2066,7 +2066,7 @@ IF (LVAR_LS) THEN
   CALL IO_Field_write(TPFILE,'LSVM', XLSVM)
   !
   IF (LWIND_ZM) THEN
-    TZFIELD2(1) = TFIELDDATA(                                        &
+    TZFIELD2(1) = TFIELDMETADATA(                                    &
       CMNHNAME   = 'LSUM_ZM',                                        &
       CSTDNAME   = '',                                               &
       CLONGNAME  = 'LSUM_ZM',                                        &
@@ -2078,7 +2078,7 @@ IF (LVAR_LS) THEN
       NDIMS      = 3,                                                &
       LTIMEDEP   = .TRUE.                                            )
     !
-    TZFIELD2(2) = TFIELDDATA(                                           &
+    TZFIELD2(2) = TFIELDMETADATA(                                       &
       CMNHNAME   = 'LSVM_ZM',                                           &
       CSTDNAME   = '',                                                  &
       CLONGNAME  = 'LSVM_ZM',                                           &
@@ -2098,7 +2098,7 @@ IF (LVAR_LS) THEN
 !
   IF (LUSERV) THEN
     CALL FIND_FIELD_ID_FROM_MNHNAME('LSRVM',IID,IRESP)
-    TZFIELD = TFIELDLIST(IID)
+    TZFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
     TZFIELD%CUNITS = 'g kg-1'
     CALL IO_Field_write(TPFILE,TZFIELD,XLSRVM(:,:,:)*1.E3)
   END IF
@@ -2111,7 +2111,7 @@ IF (LVAR_FRC .AND. LFORCING) THEN
   DO JT=1,NFRC
     WRITE (YFRC,'(I3.3)') JT
 !
-    TZFIELD = TFIELDDATA(                                        &
+    TZFIELD = TFIELDMETADATA(                                    &
       CMNHNAME   = 'UFRC'//YFRC,                                 &
       CSTDNAME   = '',                                           &
       CLONGNAME  = 'UFRC'//YFRC,                                 &
@@ -2124,7 +2124,7 @@ IF (LVAR_FRC .AND. LFORCING) THEN
       LTIMEDEP   = .FALSE.                                       )
     CALL IO_Field_write(TPFILE,TZFIELD,XUFRC(:,JT))
 !
-    TZFIELD = TFIELDDATA(                                           &
+    TZFIELD = TFIELDMETADATA(                                       &
       CMNHNAME   = 'VFRC'//YFRC,                                    &
       CSTDNAME   = '',                                              &
       CLONGNAME  = 'VFRC'//YFRC,                                    &
@@ -2137,7 +2137,7 @@ IF (LVAR_FRC .AND. LFORCING) THEN
       LTIMEDEP   = .FALSE.                                          )
     CALL IO_Field_write(TPFILE,TZFIELD,XVFRC(:,JT))
 !
-    TZFIELD = TFIELDDATA(                   &
+    TZFIELD = TFIELDMETADATA(               &
       CMNHNAME   = 'WFRC'//YFRC,            &
       CSTDNAME   = '',                      &
       CLONGNAME  = 'WFRC'//YFRC,            &
@@ -2150,7 +2150,7 @@ IF (LVAR_FRC .AND. LFORCING) THEN
       LTIMEDEP   = .FALSE.                  )
     CALL IO_Field_write(TPFILE,TZFIELD,XWFRC(:,JT))
 !
-    TZFIELD = TFIELDDATA(                           &
+    TZFIELD = TFIELDMETADATA(                       &
       CMNHNAME   = 'THFRC'//YFRC,                   &
       CSTDNAME   = '',                              &
       CLONGNAME  = 'THFRC'//YFRC,                   &
@@ -2163,7 +2163,7 @@ IF (LVAR_FRC .AND. LFORCING) THEN
       LTIMEDEP   = .FALSE.                          )
     CALL IO_Field_write(TPFILE,TZFIELD,XTHFRC(:,JT))
 !
-    TZFIELD = TFIELDDATA(                        &
+    TZFIELD = TFIELDMETADATA(                    &
       CMNHNAME   = 'RVFRC'//YFRC,                &
       CSTDNAME   = '',                           &
       CLONGNAME  = 'RVFRC'//YFRC,                &
@@ -2176,7 +2176,7 @@ IF (LVAR_FRC .AND. LFORCING) THEN
       LTIMEDEP   = .FALSE.                       )
     CALL IO_Field_write(TPFILE,TZFIELD,XRVFRC(:,JT))
 !
-    TZFIELD = TFIELDDATA(                                                    &
+    TZFIELD = TFIELDMETADATA(                                                &
       CMNHNAME   = 'TENDTHFRC'//YFRC,                                        &
       CSTDNAME   = '',                                                       &
       CLONGNAME  = 'TENDTHFRC'//YFRC,                                        &
@@ -2189,7 +2189,7 @@ IF (LVAR_FRC .AND. LFORCING) THEN
       LTIMEDEP   = .FALSE.                                                   )
     CALL IO_Field_write(TPFILE,TZFIELD,XTENDTHFRC(:,JT))
 !
-    TZFIELD = TFIELDDATA(                                                 &
+    TZFIELD = TFIELDMETADATA(                                             &
       CMNHNAME   = 'TENDRVFRC'//YFRC,                                     &
       CSTDNAME   = '',                                                    &
       CLONGNAME  = 'TENDRVFRC'//YFRC,                                     &
@@ -2202,7 +2202,7 @@ IF (LVAR_FRC .AND. LFORCING) THEN
       LTIMEDEP   = .FALSE.                                                )
     CALL IO_Field_write(TPFILE,TZFIELD,XTENDRVFRC(:,JT))
 !
-    TZFIELD = TFIELDDATA(                                                    &
+    TZFIELD = TFIELDMETADATA(                                                &
       CMNHNAME   = 'GXTHFRC'//YFRC,                                          &
       CSTDNAME   = '',                                                       &
       CLONGNAME  = 'GXTHFRC'//YFRC,                                          &
@@ -2215,7 +2215,7 @@ IF (LVAR_FRC .AND. LFORCING) THEN
       LTIMEDEP   = .FALSE.                                                   )
     CALL IO_Field_write(TPFILE,TZFIELD,XGXTHFRC(:,JT))
 !
-    TZFIELD = TFIELDDATA(                                                    &
+    TZFIELD = TFIELDMETADATA(                                                &
       CMNHNAME   = 'GYTHFRC'//YFRC,                                          &
       CSTDNAME   = '',                                                       &
       CLONGNAME  = 'GYTHFRC'//YFRC,                                          &
@@ -2228,7 +2228,7 @@ IF (LVAR_FRC .AND. LFORCING) THEN
       LTIMEDEP   = .FALSE.                                                   )
     CALL IO_Field_write(TPFILE,TZFIELD,XGYTHFRC(:,JT))
 !
-    TZFIELD = TFIELDDATA(                     &
+    TZFIELD = TFIELDMETADATA(                 &
       CMNHNAME   = 'PGROUNDFRC'//YFRC,        &
       CSTDNAME   = '',                        &
       CLONGNAME  = 'PGROUNDFRC'//YFRC,        &
@@ -2251,7 +2251,7 @@ END IF
 IF (LTPZH .OR. LCOREF) THEN
 !
 !* Temperature in celsius
-  TZFIELD = TFIELDDATA(               &
+  TZFIELD = TFIELDMETADATA(           &
     CMNHNAME   = 'TEMP',              &
     CSTDNAME   = 'air_temperature',   &
     CLONGNAME  = 'TEMP',              &
@@ -2267,7 +2267,7 @@ IF (LTPZH .OR. LCOREF) THEN
 !
 !* Pressure in hPa        
   CALL FIND_FIELD_ID_FROM_MNHNAME('PABST',IID,IRESP)
-  TZFIELD = TFIELDLIST(IID)
+  TZFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
   TZFIELD%CMNHNAME = 'PRES'
   TZFIELD%CUNITS = 'hPa'
   CALL IO_Field_write(TPFILE,TZFIELD,XPABST(:,:,:)*1E-2)
@@ -2291,7 +2291,7 @@ IF (LTPZH .OR. LCOREF) THEN
       END WHERE
     END IF
     !
-    TZFIELD = TFIELDDATA(                     &
+    TZFIELD = TFIELDMETADATA(                 &
       CMNHNAME   = 'REHU',                    &
       CSTDNAME   = 'relative_humidity',       &
       CLONGNAME  = 'REHU',                    &
@@ -2304,7 +2304,7 @@ IF (LTPZH .OR. LCOREF) THEN
       LTIMEDEP   = .TRUE.                     )
     CALL IO_Field_write(TPFILE,TZFIELD,ZWORK32)
     !
-    TZFIELD = TFIELDDATA(                                 &
+    TZFIELD = TFIELDMETADATA(                             &
       CMNHNAME   = 'VPRES',                               &
       CSTDNAME   = 'water_vapor_partial_pressure_in_air', &
       CLONGNAME  = 'VPRES',                               &
@@ -2322,7 +2322,7 @@ IF (LTPZH .OR. LCOREF) THEN
       ZWORK33(:,:,:)=(77.6*( XPABST(:,:,:)*1E-2                &
                             +ZWORK33(:,:,:)*4810/ZTEMP(:,:,:)) &
                       -6*ZWORK33(:,:,:)                        )/ZTEMP(:,:,:)
-      TZFIELD = TFIELDDATA(                                &
+      TZFIELD = TFIELDMETADATA(                            &
         CMNHNAME   = 'COREF',                              &
         CSTDNAME   = '',                                   &
         CLONGNAME  = 'COREF',                              &
@@ -2336,7 +2336,7 @@ IF (LTPZH .OR. LCOREF) THEN
       CALL IO_Field_write(TPFILE,TZFIELD,ZWORK33)
       !
       ZWORK33(:,:,:)=ZWORK33(:,:,:)+MZF(XZZ(:,:,:))*1E6/XRADIUS
-      TZFIELD = TFIELDDATA(                                         &
+      TZFIELD = TFIELDMETADATA(                                     &
         CMNHNAME   = 'MCOREF',                                      &
         CSTDNAME   = '',                                            &
         CLONGNAME  = 'MCOREF',                                      &
@@ -2378,7 +2378,7 @@ IF ( LMOIST_V .OR. LMSLP .OR. CBLTOP/='NONE' ) THEN
 !
   IF (LMOIST_V .AND. NRR > 0) THEN
 ! Virtual potential temperature
-    TZFIELD = TFIELDDATA(                                 &
+    TZFIELD = TFIELDMETADATA(                             &
       CMNHNAME   = 'THETAV',                              &
       CSTDNAME   = '',                                    &
       CLONGNAME  = 'THETAV',                              &
@@ -2412,7 +2412,7 @@ IF (LVISI) THEN
      ZVISIKUN(:,:,:) =0.027/(XRT(:,:,:,2)*XRHODREF(:,:,:))**0.88*1000.
     END WHERE
 ! Visibity Kunkel                     
-    TZFIELD = TFIELDDATA(                     &
+    TZFIELD = TFIELDMETADATA(                 &
       CMNHNAME   = 'VISIKUN',                 &
       CSTDNAME   = '',                        &
       CLONGNAME  = 'VISIKUN',                 &
@@ -2433,7 +2433,7 @@ IF (LVISI) THEN
        ZVISIZHA(:,:,:) =0.187/(XRT(:,:,:,2)*XRHODREF(:,:,:)*XSVT(:,:,:,NSV_C2R2BEG+1))**0.34*1000.
       END WHERE
 ! Visibity Gultepe                    
-      TZFIELD = TFIELDDATA(                      &
+      TZFIELD = TFIELDMETADATA(                  &
         CMNHNAME   = 'VISIGUL',                  &
         CSTDNAME   = '',                         &
         CLONGNAME  = 'VISIGUL',                  &
@@ -2446,7 +2446,7 @@ IF (LVISI) THEN
       LTIMEDEP   = .TRUE.                        )
       CALL IO_Field_write(TPFILE,TZFIELD,ZVISIGUL)
 ! Visibity Zhang                      
-      TZFIELD = TFIELDDATA(                    &
+      TZFIELD = TFIELDMETADATA(                &
         CMNHNAME   = 'VISIZHA',                &
         CSTDNAME   = '',                       &
         CLONGNAME  = 'VISIZHA',                &
@@ -2482,7 +2482,7 @@ IF (( LMOIST_E .OR. LBV_FR ) .AND. (NRR>0)) THEN
                  *ZWORK31(:,:,:) *(1. +0.81 *ZWORK31(:,:,:)) )
 !
   IF (LMOIST_E) THEN
-    TZFIELD = TFIELDDATA(                                    &
+    TZFIELD = TFIELDMETADATA(                                &
       CMNHNAME   = 'THETAE',                                 &
       CSTDNAME   = '',                                       &
       CLONGNAME  = 'THETAE',                                 &
@@ -2509,7 +2509,7 @@ IF (LMOIST_ES .AND. (NRR>0)) THEN
        -4.805   )    ) + 55.
   ZTHETAES(:,:,:)= XTHT(:,:,:) * EXP( (3376. / ZTHETAE(:,:,:) - 2.54)  &
                *ZWORK31(:,:,:) *(1. +0.81 *ZWORK31(:,:,:)) )
-  TZFIELD = TFIELDDATA(                                              &
+  TZFIELD = TFIELDMETADATA(                                          &
     CMNHNAME   = 'THETAES',                                          &
     CSTDNAME   = '',                                                 &
     CLONGNAME  = 'THETAES',                                          &
@@ -2561,7 +2561,7 @@ IF ( LMOIST_L .OR. LMOIST_S1 .OR. LMOIST_S2 ) THEN
 !
   IF (LMOIST_L .AND. NRR > 0) THEN
     ! Liquid-Water potential temperature
-    TZFIELD = TFIELDDATA(                                      &
+    TZFIELD = TFIELDMETADATA(                                  &
       CMNHNAME   = 'THETAL',                                   &
       CSTDNAME   = '',                                         &
       CLONGNAME  = 'THETAL',                                   &
@@ -2617,7 +2617,7 @@ IF ( LMOIST_S1 .OR. LMOIST_S2 ) THEN
   END IF
   IF (LMOIST_S1) THEN
 ! The Moist-air Entropy potential temperature (1st order)
-    TZFIELD = TFIELDDATA(                                                       &
+    TZFIELD = TFIELDMETADATA(                                                   &
       CMNHNAME   = 'THETAS1',                                                   &
       CSTDNAME   = '',                                                          &
       CLONGNAME  = 'THETAS1',                                                   &
@@ -2632,7 +2632,7 @@ IF ( LMOIST_S1 .OR. LMOIST_S2 ) THEN
   END IF
   IF (LMOIST_S2) THEN
 ! The Moist-air Entropy potential temperature (2nd order)
-    TZFIELD = TFIELDDATA(                                                       &
+    TZFIELD = TFIELDMETADATA(                                                   &
       CMNHNAME   = 'THETAS2',                                                   &
       CSTDNAME   = '',                                                          &
       CLONGNAME  = 'THETAS2',                                                   &
@@ -2656,7 +2656,7 @@ END IF
 IF (LVORT) THEN
 ! Vorticity x
   ZWORK31(:,:,:)=MYF(MZF(MXM(ZVOX(:,:,:))))
-  TZFIELD = TFIELDDATA(                            &
+  TZFIELD = TFIELDMETADATA(                        &
     CMNHNAME   = 'UM1',                            &
     CSTDNAME   = '',                               &
     CLONGNAME  = 'UM1',                            &
@@ -2671,7 +2671,7 @@ IF (LVORT) THEN
 !    
 ! Vorticity y
   ZWORK32(:,:,:)=MZF(MXF(MYM(ZVOY(:,:,:))))
-  TZFIELD = TFIELDDATA(                            &
+  TZFIELD = TFIELDMETADATA(                        &
     CMNHNAME   = 'VM1',                            &
     CSTDNAME   = '',                               &
     CLONGNAME  = 'VM1',                            &
@@ -2685,7 +2685,7 @@ IF (LVORT) THEN
   CALL IO_Field_write(TPFILE,TZFIELD,ZWORK32)
   !
   IF (LWIND_ZM) THEN
-    TZFIELD2(1) = TFIELDDATA(                                 &
+    TZFIELD2(1) = TFIELDMETADATA(                             &
       CMNHNAME   = 'UM1_ZM',                                  &
       CSTDNAME   = '',                                        &
       CLONGNAME  = 'UM1_ZM',                                  &
@@ -2697,7 +2697,7 @@ IF (LVORT) THEN
       NDIMS      = 3,                                         &
       LTIMEDEP   = .TRUE.                                     )
     !
-    TZFIELD2(2) = TFIELDDATA(                                    &
+    TZFIELD2(2) = TFIELDMETADATA(                                &
       CMNHNAME   = 'VM1_ZM',                                     &
       CSTDNAME   = '',                                           &
       CLONGNAME  = 'VM1_ZM',                                     &
@@ -2714,7 +2714,7 @@ IF (LVORT) THEN
 !    
 ! Vorticity z
   ZWORK31(:,:,:)=MXF(MYF(MZM(ZVOZ(:,:,:))))
-  TZFIELD = TFIELDDATA(                      &
+  TZFIELD = TFIELDMETADATA(                  &
     CMNHNAME   = 'WM1',                      &
     CSTDNAME   = '',                         &
     CLONGNAME  = 'WM1',                      &
@@ -2729,7 +2729,7 @@ IF (LVORT) THEN
 !
 ! Absolute Vorticity 
   ZWORK31(:,:,:)=MYF(MXF(ZVOZ(:,:,:))) + ZCORIOZ(:,:,:)
-  TZFIELD = TFIELDDATA(                        &
+  TZFIELD = TFIELDMETADATA(                    &
     CMNHNAME   = 'ABVOR',                      &
     CSTDNAME   = '',                           &
     CLONGNAME  = 'ABVOR',                      &
@@ -2762,7 +2762,7 @@ IF ( LMEAN_POVO ) THEN
     END WHERE
   END DO
   WHERE (IWORK1(:,:)>0) ZWORK21(:,:)=ZWORK21(:,:)/REAL( IWORK1(:,:) )
-  TZFIELD = TFIELDDATA(                               &
+  TZFIELD = TFIELDMETADATA(                           &
     CMNHNAME   = 'MEAN_POVO',                         &
     CSTDNAME   = '',                                  &
     CLONGNAME  = 'MEAN_POVO',                         &
@@ -2785,7 +2785,7 @@ IF (LMOIST_V .AND. (NRR>0) ) THEN
                + ZWORK32(:,:,:)*MZF(MXF(ZVOY(:,:,:)))     &
                + ZWORK33(:,:,:)*(MYF(MXF(ZVOZ(:,:,:))) + ZCORIOZ(:,:,:))
   ZWORK34(:,:,:)=ZWORK34(:,:,:)*1E6/XRHODREF(:,:,:)
-  TZFIELD = TFIELDDATA(                               &
+  TZFIELD = TFIELDMETADATA(                           &
     CMNHNAME   = 'POVOV',                             &
     CSTDNAME   = '',                                  &
     CLONGNAME  = 'POVOV',                             &
@@ -2808,7 +2808,7 @@ IF (LMOIST_V .AND. (NRR>0) ) THEN
       END WHERE
     END DO
     WHERE(IWORK1(:,:)>0) ZWORK21(:,:)=ZWORK21(:,:)/REAL( IWORK1(:,:) )
-    TZFIELD = TFIELDDATA(                                       &
+    TZFIELD = TFIELDMETADATA(                                   &
       CMNHNAME   = 'MEAN_POVOV',                                &
       CSTDNAME   = '',                                          &
       CLONGNAME  = 'MEAN_POVOV',                                &
@@ -2833,7 +2833,7 @@ IF (LMOIST_E .AND. (NRR>0) ) THEN
                 + ZWORK32(:,:,:)*MZF(MXF(ZVOY(:,:,:)))     &
                 + ZWORK33(:,:,:)*(MYF(MXF(ZVOZ(:,:,:))) + ZCORIOZ(:,:,:))
   ZWORK34(:,:,:)=ZWORK34(:,:,:)*1E6/XRHODREF(:,:,:)
-  TZFIELD = TFIELDDATA(                                  &
+  TZFIELD = TFIELDMETADATA(                              &
     CMNHNAME   = 'POVOE',                                &
     CSTDNAME   = '',                                     &
     CLONGNAME  = 'POVOE',                                &
@@ -2856,7 +2856,7 @@ IF (LMOIST_E .AND. (NRR>0) ) THEN
       END WHERE
     END DO
     WHERE(IWORK1(:,:)>0) ZWORK21(:,:)=ZWORK21(:,:)/REAL( IWORK1(:,:) )
-    TZFIELD = TFIELDDATA(                                          &
+    TZFIELD = TFIELDMETADATA(                                      &
       CMNHNAME   = 'MEAN_POVOE',                                   &
       CSTDNAME   = '',                                             &
       CLONGNAME  = 'MEAN_POVOE',                                   &
@@ -2882,7 +2882,7 @@ IF (LMOIST_ES .AND. (NRR>0) ) THEN
                 + ZWORK32(:,:,:)*MZF(MXF(ZVOY(:,:,:)))     &
                 + ZWORK33(:,:,:)*(MYF(MXF(ZVOZ(:,:,:))) + ZCORIOZ(:,:,:))
   ZWORK34(:,:,:)=ZWORK34(:,:,:)*1E6/XRHODREF(:,:,:)
-  TZFIELD = TFIELDDATA(                                            &
+  TZFIELD = TFIELDMETADATA(                                        &
     CMNHNAME   = 'POVOES',                                         &
     CSTDNAME   = '',                                               &
     CLONGNAME  = 'POVOES',                                         &
@@ -2904,7 +2904,7 @@ ENDIF
 IF (LDIV) THEN
 !
   ZWORK31=GX_U_M(XUT,XDXX,XDZZ,XDZX) + GY_V_M(XVT,XDYY,XDZZ,XDZY)
-  TZFIELD = TFIELDDATA(                         &
+  TZFIELD = TFIELDMETADATA(                     &
     CMNHNAME   = 'HDIV',                        &
     CSTDNAME   = '',                            &
     CLONGNAME  = 'HDIV',                        &
@@ -2918,7 +2918,7 @@ IF (LDIV) THEN
   CALL IO_Field_write(TPFILE,TZFIELD,ZWORK31)
 !
   IF (LUSERV) THEN
-    TZFIELD = TFIELDDATA(                                        &
+    TZFIELD = TFIELDMETADATA(                                    &
       CMNHNAME   = 'HMDIV',                                      &
       CSTDNAME   = '',                                           &
       CLONGNAME  = 'HMDIV',                                      &
@@ -2954,7 +2954,7 @@ IF (LCLSTR) THEN
   CALL CLUSTERING(GBOTUP,GCLOUD,XWT,ICLUSTERID,ICLUSTERLV,ZCLDSIZE)
   PRINT *,'GOT OUT OF CLUSTERING'
   !
-  TZFIELD = TFIELDDATA(                       &
+  TZFIELD = TFIELDMETADATA(                   &
     CMNHNAME   = 'CLUSTERID',                 &
     CSTDNAME   = '',                          &
     CLONGNAME  = 'CLUSTERID',                 &
@@ -2967,7 +2967,7 @@ IF (LCLSTR) THEN
     LTIMEDEP   = .TRUE.                       )
   CALL IO_Field_write(TPFILE,TZFIELD,ICLUSTERID)
   !
-  TZFIELD = TFIELDDATA(                               &
+  TZFIELD = TFIELDMETADATA(                           &
     CMNHNAME   = 'CLUSTERLV',                         &
     CSTDNAME   = '',                                  &
     CLONGNAME  = 'CLUSTERLV',                         &
@@ -2980,7 +2980,7 @@ IF (LCLSTR) THEN
     LTIMEDEP   = .TRUE.                               )
   CALL IO_Field_write(TPFILE,TZFIELD,ICLUSTERLV)
   !
-  TZFIELD = TFIELDDATA(                          &
+  TZFIELD = TFIELDMETADATA(                      &
     CMNHNAME   = 'CLDSIZE',                      &
     CSTDNAME   = '',                             &
     CLONGNAME  = 'CLDSIZE',                      &
@@ -3034,7 +3034,7 @@ IF (LGEO .OR. LAGEO) THEN
   DEALLOCATE(ZPHI)
 !
   IF (LGEO) THEN 
-    TZFIELD = TFIELDDATA(                                   &
+    TZFIELD = TFIELDMETADATA(                               &
       CMNHNAME   = 'UM88',                                  &
       CSTDNAME   = '',                                      &
       CLONGNAME  = 'UM88',                                  &
@@ -3047,7 +3047,7 @@ IF (LGEO .OR. LAGEO) THEN
       LTIMEDEP   = .TRUE.                                   )
     CALL IO_Field_write(TPFILE,TZFIELD,ZWORK31)
 ! 
-    TZFIELD = TFIELDDATA(                                   &
+    TZFIELD = TFIELDMETADATA(                               &
       CMNHNAME   = 'VM88',                                  &
       CSTDNAME   = '',                                      &
       CLONGNAME  = 'VM88',                                  &
@@ -3061,7 +3061,7 @@ IF (LGEO .OR. LAGEO) THEN
     CALL IO_Field_write(TPFILE,TZFIELD,ZWORK32)
     !
     IF (LWIND_ZM) THEN
-      TZFIELD2(1) = TFIELDDATA(                             &
+      TZFIELD2(1) = TFIELDMETADATA(                         &
         CMNHNAME   = 'UM88_ZM',                             &
         CSTDNAME   = '',                                    &
         CLONGNAME  = 'UM88_ZM',                             &
@@ -3073,7 +3073,7 @@ IF (LGEO .OR. LAGEO) THEN
         NDIMS      = 3,                                     &
         LTIMEDEP   = .TRUE.                                 )
       !
-      TZFIELD2(2) = TFIELDDATA(                                &
+      TZFIELD2(2) = TFIELDMETADATA(                            &
         CMNHNAME   = 'VM88_ZM',                                &
         CSTDNAME   = '',                                       &
         CLONGNAME  = 'VM88_ZM',                                &
@@ -3090,7 +3090,7 @@ IF (LGEO .OR. LAGEO) THEN
 !
 ! wm necessary to plot vertical cross sections of wind vectors
     CALL FIND_FIELD_ID_FROM_MNHNAME('WT',IID,IRESP)
-    TZFIELD = TFIELDLIST(IID)
+    TZFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
     TZFIELD%CMNHNAME  = 'WM88'
     TZFIELD%CLONGNAME = 'WM88'
     CALL IO_Field_write(TPFILE,TZFIELD,XWT)
@@ -3100,7 +3100,7 @@ IF (LGEO .OR. LAGEO) THEN
     ZWORK31(:,:,:)=XUT(:,:,:)-ZWORK31(:,:,:)
     ZWORK32(:,:,:)=XVT(:,:,:)-ZWORK32(:,:,:)
     !
-    TZFIELD = TFIELDDATA(                                    &
+    TZFIELD = TFIELDMETADATA(                                &
       CMNHNAME   = 'UM89',                                   &
       CSTDNAME   = '',                                       &
       CLONGNAME  = 'UM89',                                   &
@@ -3113,7 +3113,7 @@ IF (LGEO .OR. LAGEO) THEN
       LTIMEDEP   = .TRUE.                                    )
     CALL IO_Field_write(TPFILE,TZFIELD,ZWORK31)
     !
-    TZFIELD = TFIELDDATA(                                    &
+    TZFIELD = TFIELDMETADATA(                                &
       CMNHNAME   = 'VM89',                                   &
       CSTDNAME   = '',                                       &
       CLONGNAME  = 'VM89',                                   &
@@ -3127,7 +3127,7 @@ IF (LGEO .OR. LAGEO) THEN
     CALL IO_Field_write(TPFILE,TZFIELD,ZWORK32)
     !
     IF (LWIND_ZM) THEN
-      TZFIELD2(1) = TFIELDDATA(                              &
+      TZFIELD2(1) = TFIELDMETADATA(                          &
         CMNHNAME   = 'UM89_ZM',                              &
         CSTDNAME   = '',                                     &
         CLONGNAME  = 'UM89_ZM',                              &
@@ -3139,7 +3139,7 @@ IF (LGEO .OR. LAGEO) THEN
         NDIMS      = 3,                                      &
         LTIMEDEP   = .TRUE.                                  )
       !
-      TZFIELD2(2) = TFIELDDATA(                                 &
+      TZFIELD2(2) = TFIELDMETADATA(                             &
         CMNHNAME   = 'VM89_ZM',                                 &
         CSTDNAME   = '',                                        &
         CLONGNAME  = 'VM89_ZM',                                 &
@@ -3156,7 +3156,7 @@ IF (LGEO .OR. LAGEO) THEN
 !
 ! wm necessary to plot vertical cross sections of wind vectors
     CALL FIND_FIELD_ID_FROM_MNHNAME('WT',IID,IRESP)
-    TZFIELD = TFIELDLIST(IID)
+    TZFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
     TZFIELD%CMNHNAME  = 'WM89'
     TZFIELD%CLONGNAME = 'WM89'
     CALL IO_Field_write(TPFILE,TZFIELD,XWT)
@@ -3173,7 +3173,7 @@ IF(LWIND_CONTRAV) THEN!$
   CALL CONTRAV ((/"TEST","TEST"/),(/"TEST","TEST"/),XUT,XVT,XWT,XDXX,XDYY,XDZZ,XDZX,XDZY, &
                 ZWORK31,ZWORK32,ZWORK33,2)
   !
-  TZFIELD = TFIELDDATA(                         &
+  TZFIELD = TFIELDMETADATA(                     &
     CMNHNAME   = 'WNORM',                       &
     CSTDNAME   = '',                            &
     CLONGNAME  = 'WNORM',                       &
@@ -3207,7 +3207,7 @@ IF (LMSLP) THEN
 !  sea level pressure (hPa)
   ZWORK22(:,:) = 1.E-2*ZWORK21(:,:)*EXP(XG*XZS(:,:)/(XRD*ZWORK22(:,:)))
 !
-  TZFIELD = TFIELDDATA(                         &
+  TZFIELD = TFIELDMETADATA(                     &
     CMNHNAME   = 'MSLP',                        &
     CSTDNAME   = 'air_pressure_at_sea_level',   &
     CLONGNAME  = 'MSLP',                        &
@@ -3233,7 +3233,7 @@ IF (LTHW) THEN
                      (XZZ(:,:,JK+1)-XZZ(:,:,JK))/XRHOLW
     END DO
     ZWORK21(:,:) = ZWORK21(:,:)*1000. ! vapor water in mm unit
-    TZFIELD = TFIELDDATA(                          &
+    TZFIELD = TFIELDMETADATA(                      &
       CMNHNAME   = 'THVW',                         &
       CSTDNAME   = '',                             &
       CLONGNAME  = 'THVW',                         &
@@ -3254,7 +3254,7 @@ IF (LTHW) THEN
                      (XZZ(:,:,JK+1)-XZZ(:,:,JK))/XRHOLW
     END DO
     ZWORK21(:,:) = ZWORK21(:,:)*1000. ! cloud water in mm unit
-    TZFIELD = TFIELDDATA(                          &
+    TZFIELD = TFIELDMETADATA(                      &
       CMNHNAME   = 'THCW',                         &
       CSTDNAME   = '',                             &
       CLONGNAME  = 'THCW',                         &
@@ -3275,7 +3275,7 @@ IF (LTHW) THEN
                      (XZZ(:,:,JK+1)-XZZ(:,:,JK))/XRHOLW
     END DO
     ZWORK21(:,:) = ZWORK21(:,:)*1000. ! rain water in mm unit
-    TZFIELD = TFIELDDATA(                         &
+    TZFIELD = TFIELDMETADATA(                     &
       CMNHNAME   = 'THRW',                        &
       CSTDNAME   = '',                            &
       CLONGNAME  = 'THRW',                        &
@@ -3296,7 +3296,7 @@ IF (LTHW) THEN
                    (XZZ(:,:,JK+1)-XZZ(:,:,JK))/XRHOLW
     END DO
     ZWORK21(:,:) = ZWORK21(:,:)*1000.   ! ice thickness in mm unit
-    TZFIELD = TFIELDDATA(                  &
+    TZFIELD = TFIELDMETADATA(              &
       CMNHNAME   = 'THIC',                 &
       CSTDNAME   = '',                     &
       CLONGNAME  = 'THIC',                 &
@@ -3317,7 +3317,7 @@ IF (LTHW) THEN
                    (XZZ(:,:,JK+1)-XZZ(:,:,JK))/XRHOLW
     END DO
     ZWORK21(:,:) = ZWORK21(:,:)*1000.   ! snow thickness in mm unit
-    TZFIELD = TFIELDDATA(                   &
+    TZFIELD = TFIELDMETADATA(               &
       CMNHNAME   = 'THSN',                  &
       CSTDNAME   = '',                      &
       CLONGNAME  = 'THSN',                  &
@@ -3338,7 +3338,7 @@ IF (LTHW) THEN
                    (XZZ(:,:,JK+1)-XZZ(:,:,JK))/XRHOLW
     END DO
     ZWORK21(:,:) = ZWORK21(:,:)*1000.   ! graupel thickness in mm unit
-    TZFIELD = TFIELDDATA(                      &
+    TZFIELD = TFIELDMETADATA(                  &
       CMNHNAME   = 'THGR',                     &
       CSTDNAME   = '',                         &
       CLONGNAME  = 'THGR',                     &
@@ -3359,7 +3359,7 @@ IF (LTHW) THEN
                    (XZZ(:,:,JK+1)-XZZ(:,:,JK))/XRHOLW
     END DO
     ZWORK21(:,:) = ZWORK21(:,:)*1000.   ! hail thickness in mm unit
-    TZFIELD = TFIELDDATA(                   &
+    TZFIELD = TFIELDMETADATA(               &
       CMNHNAME   = 'THHA',                  &
       CSTDNAME   = '',                      &
       CLONGNAME  = 'THHA',                  &
@@ -3401,7 +3401,7 @@ IF (LTOTAL_PR .AND. SIZE (XACPRR)>0 ) THEN
   END IF
   IF (LUSERR .OR. CCLOUD(1:3) == 'ICE' .OR. CCLOUD == 'C3R5' .OR. &
                   CCLOUD == 'LIMA' .OR. CDCONV /= 'NONE') THEN
-    TZFIELD = TFIELDDATA(                                       &
+    TZFIELD = TFIELDMETADATA(                                   &
       CMNHNAME   = 'ACTOPR',                                    &
       CSTDNAME   = '',                                          &
       CLONGNAME  = 'ACTOPR',                                    &
@@ -3421,7 +3421,7 @@ IF (LTOTAL_PR .AND. SIZE (XACPRR)>0 ) THEN
   ! calculation of the mean accumulated precipitations in the mesh-grid of a 
   !large-scale model
   IF (LMEAN_PR .AND. LUSERR) THEN
-    TZFIELD = TFIELDDATA(                                                   &
+    TZFIELD = TFIELDMETADATA(                                               &
       CSTDNAME   = 'generic LS_ACTOPR',                                     & !Temporary name to ease identification
       CUNITS     = 'mm',                                                    &
       CDIR       = 'XY',                                                    &
@@ -3469,7 +3469,7 @@ IF (LTOTAL_PR .AND. SIZE (XACPRR)>0 ) THEN
   END IF
   IF (LUSERR .OR. CCLOUD(1:3) == 'ICE' .OR. CCLOUD == 'C3R5' .OR. &
                   CCLOUD == 'LIMA' .OR. CDCONV /= 'NONE') THEN
-    TZFIELD = TFIELDDATA(                                        &
+    TZFIELD = TFIELDMETADATA(                                    &
       CMNHNAME   = 'INTOPR',                                     &
       CSTDNAME   = '',                                           &
       CLONGNAME  = 'INTOPR',                                     &
@@ -3491,7 +3491,7 @@ IF (LTOTAL_PR .AND. SIZE (XACPRR)>0 ) THEN
   IF (LMEAN_PR .AND. LUSERR) THEN
     CALL COMPUTE_MEAN_PRECIP(ZWORK21,XMEAN_PR,ZWORK22,TZFIELD%NGRID)
 !
-    TZFIELD = TFIELDDATA(                                                    &
+    TZFIELD = TFIELDMETADATA(                                                &
       CMNHNAME   = 'LS_INTOPR',                                              &
       CSTDNAME   = '',                                                       &
       CLONGNAME  = 'LS_INTOPR',                                              &
@@ -3521,7 +3521,7 @@ IF (NCAPE >=0 .AND. LUSERV) THEN
                    ZWORK32(:,:,IKB:IKE),ZWORK33(:,:,IKB:IKE),          &
                    ZWORK34(:,:,IKB:IKE),ZWORK21,ZWORK22                )
   !
-  TZFIELD = TFIELDDATA(                                              &
+  TZFIELD = TFIELDMETADATA(                                          &
     CMNHNAME   = 'CAPEMAX',                                          &
     CSTDNAME   = '',                                                 &
     CLONGNAME  = 'CAPEMAX',                                          &
@@ -3534,7 +3534,7 @@ IF (NCAPE >=0 .AND. LUSERV) THEN
     LTIMEDEP   = .TRUE.                                              )
   CALL IO_Field_write(TPFILE,TZFIELD,ZWORK21)
   !
-  TZFIELD = TFIELDDATA(                                     &
+  TZFIELD = TFIELDMETADATA(                                 &
     CMNHNAME   = 'CINMAX',                                  &
     CSTDNAME   = '',                                        &
     CLONGNAME  = 'CINMAX',                                  &
@@ -3548,7 +3548,7 @@ IF (NCAPE >=0 .AND. LUSERV) THEN
   CALL IO_Field_write(TPFILE,TZFIELD,ZWORK22)
   !
   IF (NCAPE >=1) THEN
-    TZFIELD = TFIELDDATA(                                              &
+    TZFIELD = TFIELDMETADATA(                                          &
       CMNHNAME   = 'CAPE3D',                                           &
       CSTDNAME   = 'atmosphere_convective_available_potential_energy', &
       CLONGNAME  = 'CAPE3D',                                           &
@@ -3561,7 +3561,7 @@ IF (NCAPE >=0 .AND. LUSERV) THEN
       LTIMEDEP   = .TRUE.                                              )
     CALL IO_Field_write(TPFILE,TZFIELD,ZWORK32)
     !
-    TZFIELD = TFIELDDATA(                                &
+    TZFIELD = TFIELDMETADATA(                            &
       CMNHNAME   = 'CIN3D',                              &
       CSTDNAME   = 'atmosphere_convective_inhibition',   &
       CLONGNAME  = 'CIN3D',                              &
@@ -3574,7 +3574,7 @@ IF (NCAPE >=0 .AND. LUSERV) THEN
       LTIMEDEP   = .TRUE.                                )
     CALL IO_Field_write(TPFILE,TZFIELD,ZWORK33)
     !
-    TZFIELD = TFIELDDATA(     &
+    TZFIELD = TFIELDMETADATA( &
       CMNHNAME   = 'DCAPE3D', &
       CSTDNAME   = '',        &
       CLONGNAME  = 'DCAPE3D', &
@@ -3593,7 +3593,7 @@ IF (NCAPE >=0 .AND. LUSERV) THEN
     ZWORK31(:,:,IKU)    = 0.
     ZWORK31=0.5*ZWORK31**2
     !
-    TZFIELD = TFIELDDATA(                           &
+    TZFIELD = TFIELDMETADATA(                       &
       CMNHNAME   = 'VKE',                           &
       CSTDNAME   = '',                              &
       CLONGNAME  = 'VKE',                           &
@@ -3626,7 +3626,7 @@ IF (LBV_FR) THEN
    ENDDO
   ENDDO
   !
-  TZFIELD = TFIELDDATA(                            &
+  TZFIELD = TFIELDMETADATA(                        &
     CMNHNAME   = 'BV',                             &
     CSTDNAME   = '',                               &
     CLONGNAME  = 'BV',                             &
@@ -3653,7 +3653,7 @@ IF (LBV_FR) THEN
      ENDDO
     ENDDO
 !
-    TZFIELD = TFIELDDATA(                                       &
+    TZFIELD = TFIELDMETADATA(                                   &
       CMNHNAME   = 'BVE',                                       &
       CSTDNAME   = '',                                          &
       CLONGNAME  = 'BVE',                                       &
@@ -3682,7 +3682,7 @@ IF ( NGPS>=0 ) THEN
   YFGRI=ADJUSTL(ADJUSTR(TPFILE%CNAME)//'GPS')
   CALL GPS_ZENITH (YFGRI,XRT(:,:,:,1),ZTEMP,XPABST,ZWORK21,ZWORK22,ZWORK23,ZWORK24)    
   !
-  TZFIELD = TFIELDDATA(                        &
+  TZFIELD = TFIELDMETADATA(                    &
     CMNHNAME   = 'ZTD',                        &
     CSTDNAME   = '',                           &
     CLONGNAME  = 'ZTD',                        &
@@ -3696,7 +3696,7 @@ IF ( NGPS>=0 ) THEN
   CALL IO_Field_write(TPFILE,TZFIELD,ZWORK22)
   !
   IF (NGPS>=1) THEN
-    TZFIELD = TFIELDDATA(                              &
+    TZFIELD = TFIELDMETADATA(                          &
       CMNHNAME   = 'ZHD',                              &
       CSTDNAME   = '',                                 &
       CLONGNAME  = 'ZHD',                              &
@@ -3709,7 +3709,7 @@ IF ( NGPS>=0 ) THEN
       LTIMEDEP   = .TRUE.                              )
     CALL IO_Field_write(TPFILE,TZFIELD,ZWORK23)
     !
-    TZFIELD = TFIELDDATA(                      &
+    TZFIELD = TFIELDMETADATA(                  &
       CMNHNAME   = 'ZWD',                      &
       CSTDNAME   = '',                         &
       CLONGNAME  = 'ZWD',                      &
@@ -3755,7 +3755,7 @@ IF(LRADAR .AND. LUSERR) THEN
                                                          ZWORK33, ZWORK34 )
   ENDIF 
 !
-  TZFIELD = TFIELDDATA(                            &
+  TZFIELD = TFIELDMETADATA(                        &
     CMNHNAME   = 'RARE',                           &
     CSTDNAME   = 'equivalent_reflectivity_factor', &
     CLONGNAME  = 'RARE',                           &
@@ -3768,7 +3768,7 @@ IF(LRADAR .AND. LUSERR) THEN
     LTIMEDEP   = .TRUE.                            )
   CALL IO_Field_write(TPFILE,TZFIELD,ZWORK31)
 !
-  TZFIELD = TFIELDDATA(                            &
+  TZFIELD = TFIELDMETADATA(                        &
     CMNHNAME   = 'VDOP',                           &
     CSTDNAME   = '',                               &
     CLONGNAME  = 'VDOP',                           &
@@ -3781,7 +3781,7 @@ IF(LRADAR .AND. LUSERR) THEN
     LTIMEDEP   = .TRUE.                            )
   CALL IO_Field_write(TPFILE,TZFIELD,ZWORK32)
 !
-  TZFIELD = TFIELDDATA(                                   &
+  TZFIELD = TFIELDMETADATA(                               &
     CMNHNAME   = 'ZDR',                                   &
     CSTDNAME   = '',                                      &
     CLONGNAME  = 'ZDR',                                   &
@@ -3794,7 +3794,7 @@ IF(LRADAR .AND. LUSERR) THEN
     LTIMEDEP   = .TRUE.                                   )
   CALL IO_Field_write(TPFILE,TZFIELD,ZWORK33)
 !
-  TZFIELD = TFIELDDATA(                                   &
+  TZFIELD = TFIELDMETADATA(                               &
     CMNHNAME   = 'KDP',                                   &
     CSTDNAME   = '',                                      &
     CLONGNAME  = 'KDP',                                   &
@@ -4103,7 +4103,7 @@ IF (LLIDAR) THEN
   IF( ALLOCATED(ZTMP3) ) DEALLOCATE(ZTMP3)
   IF( ALLOCATED(ZTMP4) ) DEALLOCATE(ZTMP4)
 !
-  TZFIELD = TFIELDDATA(                            &
+  TZFIELD = TFIELDMETADATA(                        &
     CMNHNAME   = 'LIDAR',                          &
     CSTDNAME   = '',                               &
     CLONGNAME  = 'LIDAR',                          &
@@ -4116,7 +4116,7 @@ IF (LLIDAR) THEN
     LTIMEDEP   = .TRUE.                            )
   CALL IO_Field_write(TPFILE,TZFIELD,ZWORK31)
 !
-  TZFIELD = TFIELDDATA(                          &
+  TZFIELD = TFIELDMETADATA(                      &
     CMNHNAME   = 'LIPAR',                        &
     CSTDNAME   = '',                             &
     CLONGNAME  = 'LIPAR',                        &
@@ -4161,7 +4161,7 @@ IF (CBLTOP == 'THETA') THEN
   ZSHMIX(:,:)=ZSHMIX(:,:)-XZS(:,:)
   ZSHMIX(:,:)=MAX(ZSHMIX(:,:),50.0)
   !
-  TZFIELD = TFIELDDATA(                                 &
+  TZFIELD = TFIELDMETADATA(                             &
     CMNHNAME   = 'HBLTOP',                              &
     CSTDNAME   = 'atmosphere_boundary_layer_thickness', &
     CLONGNAME  = 'HBLTOP',                              &
@@ -4206,7 +4206,7 @@ ELSEIF (CBLTOP == 'RICHA') THEN
   END DO
   ZSHMIX(:,:)=ZSHMIX(:,:)-XZS(:,:)
   !
-  TZFIELD = TFIELDDATA(                                 &
+  TZFIELD = TFIELDMETADATA(                             &
     CMNHNAME   = 'HBLTOP',                              &
     CSTDNAME   = 'atmosphere_boundary_layer_thickness', &
     CLONGNAME  = 'HBLTOP',                              &

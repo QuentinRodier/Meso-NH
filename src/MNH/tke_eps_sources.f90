@@ -177,7 +177,7 @@ USE MODD_CONF
 USE MODD_CST
 USE MODD_CTURB
 USE MODD_DIAG_IN_RUN,    ONLY: LDIAG_IN_RUN, XCURRENT_TKE_DISS
-use modd_field,          only: tfielddata, TYPEREAL
+use modd_field,          only: tfieldmetadata, TYPEREAL
 USE MODD_IO,             ONLY: TFILEDATA
 USE MODD_LES
 USE MODD_PARAMETERS
@@ -255,7 +255,7 @@ INTEGER             :: IIU,IJU,IKU  ! array size in the 3 dimensions
 !
 TYPE(LIST_ll), POINTER :: TZFIELDDISS_ll ! list of fields to exchange
 INTEGER                :: IINFO_ll       ! return code of parallel routine
-TYPE(TFIELDDATA) :: TZFIELD
+TYPE(TFIELDMETADATA) :: TZFIELD
 !
 !----------------------------------------------------------------------------
 NULLIFY(TZFIELDDISS_ll)
@@ -415,7 +415,7 @@ IF ( OTURB_DIAG .AND. tpfile%lopened ) THEN
 !
 ! stores the dynamic production 
 !
-  TZFIELD = TFIELDDATA(      &
+  TZFIELD = TFIELDMETADATA(  &
     CMNHNAME   = 'DP',       &
     CSTDNAME   = '',         &
     CLONGNAME  = 'DP',       &
@@ -430,7 +430,7 @@ IF ( OTURB_DIAG .AND. tpfile%lopened ) THEN
 !
 ! stores the thermal production 
 !
-  TZFIELD = TFIELDDATA(      &
+  TZFIELD = TFIELDMETADATA(  &
     CMNHNAME   = 'TP',       &
     CSTDNAME   = '',         &
     CLONGNAME  = 'TP',       &
@@ -445,7 +445,7 @@ IF ( OTURB_DIAG .AND. tpfile%lopened ) THEN
 !
 ! stores the whole turbulent transport
 !
-  TZFIELD = TFIELDDATA(      &
+  TZFIELD = TFIELDMETADATA(  &
     CMNHNAME   = 'TR',       &
     CSTDNAME   = '',         &
     CLONGNAME  = 'TR',       &
@@ -460,7 +460,7 @@ IF ( OTURB_DIAG .AND. tpfile%lopened ) THEN
 !
 ! stores the dissipation of TKE 
 !
-  TZFIELD = TFIELDDATA(        &
+  TZFIELD = TFIELDMETADATA(    &
     CMNHNAME   = 'DISS',       &
     CSTDNAME   = '',           &
     CLONGNAME  = 'DISS',       &

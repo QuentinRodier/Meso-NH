@@ -145,7 +145,7 @@ USE MODD_CTURB
 USE MODD_CONF
 USE MODD_DUST
 USE MODD_ELEC_DESCR,      ONLY: CELECNAMES
-use modd_field,           only: tfielddata, TYPELOG, TYPEREAL
+use modd_field,           only: tfieldmetadata, TYPELOG, TYPEREAL
 USE MODD_ICE_C1R3_DESCR,  ONLY: C1R3NAMES
 USE MODD_IO,              ONLY: TFILEDATA
 USE MODD_LG,              ONLY: CLGNAMES
@@ -231,8 +231,8 @@ LOGICAL :: GHORELAX_R, GHORELAX_SV ! switch for the horizontal relaxation
 CHARACTER (LEN= LEN(HGETRVM)), DIMENSION (7) :: YGETRXM ! Arrays with  the get indicators 
                                                         !  for the moist variables
 CHARACTER (LEN=1), DIMENSION (7) :: YC    ! array with the prefix of the moist variables
-CHARACTER(LEN=2)  :: INDICE ! to index CCN and IFN fields of LIMA scheme
-TYPE(TFIELDDATA)  :: TZFIELD
+CHARACTER(LEN=2)     :: INDICE ! to index CCN and IFN fields of LIMA scheme
+TYPE(TFIELDMETADATA) :: TZFIELD
 !-------------------------------------------------------------------------------
 !
 !
@@ -361,7 +361,7 @@ END SELECT
 !*        2.5 LB-Rx
 !
 IF(KSIZELBXR_ll  > 0 ) THEN
-  TZFIELD = TFIELDDATA(                                          &
+  TZFIELD = TFIELDMETADATA(                                      &
     CMNHNAME   = 'HORELAX_R',                                    &
     CSTDNAME   = '',                                             &
     CLONGNAME  = 'HORELAX_R',                                    &
@@ -390,7 +390,7 @@ IF(KSIZELBXR_ll  > 0 ) THEN
     IL3DY=2*JPHEXT ! 2
   END IF
   !
-  TZFIELD = TFIELDDATA(     &
+  TZFIELD = TFIELDMETADATA( &
     CUNITS     = 'kg kg-1', &
     CDIR       = '',        &
     NGRID      = 1,         &

@@ -121,7 +121,7 @@ END MODULE MODI_TURB_HOR_THERMO_CORR
 USE MODD_CST
 USE MODD_CONF
 USE MODD_CTURB
-use modd_field,          only: tfielddata, TYPEREAL
+use modd_field,          only: tfieldmetadata, TYPEREAL
 USE MODD_IO,             ONLY: TFILEDATA
 USE MODD_PARAMETERS
 USE MODD_LES
@@ -197,7 +197,7 @@ REAL, DIMENSION(SIZE(PDZZ,1),SIZE(PDZZ,2),1+JPVEXT:3+JPVEXT) :: ZCOEFF
                                     ! coefficients for the uncentred gradient 
                                     ! computation near the ground
 REAL :: ZTIME1, ZTIME2
-TYPE(TFIELDDATA) :: TZFIELD
+TYPE(TFIELDMETADATA) :: TZFIELD
 !
 ! ---------------------------------------------------------------------------
 !
@@ -266,7 +266,7 @@ IF ( ( KRRL > 0 .AND. OSUBG_COND) .OR. ( OTURB_FLX .AND. tpfile%lopened ) &
   !
   ! stores <THl THl>
   IF ( OTURB_FLX .AND. tpfile%lopened ) THEN
-    TZFIELD = TFIELDDATA(            &
+    TZFIELD = TFIELDMETADATA(        &
       CMNHNAME   = 'THL_HVAR',       &
       CSTDNAME   = '',               &
       CLONGNAME  = 'THL_HVAR',       &
@@ -355,7 +355,7 @@ IF ( ( KRRL > 0 .AND. OSUBG_COND) .OR. ( OTURB_FLX .AND. tpfile%lopened ) &
     !
     ! stores <THl Rnp>
     IF ( OTURB_FLX .AND. tpfile%lopened ) THEN
-      TZFIELD = TFIELDDATA(             &
+      TZFIELD = TFIELDMETADATA(         &
         CMNHNAME   = 'THLR_HCOR',       &
         CSTDNAME   = '',                &
         CLONGNAME  = 'THLR_HCOR',       &
@@ -424,7 +424,7 @@ IF ( ( KRRL > 0 .AND. OSUBG_COND) .OR. ( OTURB_FLX .AND. tpfile%lopened ) &
     !
     ! stores <Rnp Rnp>
     IF ( OTURB_FLX .AND. tpfile%lopened ) THEN
-      TZFIELD = TFIELDDATA(          &
+      TZFIELD = TFIELDMETADATA(      &
         CMNHNAME   = 'R_HVAR',       &
         CSTDNAME   = '',             &
         CLONGNAME  = 'R_HVAR',       &

@@ -172,7 +172,7 @@ USE MODD_CST
 USE MODD_CONF_n,          ONLY: CONF_MODEL
 USE MODD_DUST,            ONLY: CDUSTNAMES
 USE MODD_ELEC_DESCR,      ONLY: CELECNAMES
-use modd_field,           only: tfielddata, TYPEREAL
+use modd_field,           only: tfieldmetadata, TYPEREAL
 USE MODD_FIELD_n,         ONLY: FIELD_MODEL, XZWS_DEFAULT
 USE MODD_IO,              ONLY: TFILEDATA
 USE MODD_LATZ_EDFLX
@@ -279,7 +279,7 @@ LOGICAL :: GUSERV
 !
 CHARACTER(LEN=15) :: YVAL
 CHARACTER(LEN=2)  :: INDICE
-TYPE(TFIELDDATA)             :: TZFIELD
+TYPE(TFIELDMETADATA) :: TZFIELD
 !
 !-------------------------------------------------------------------------------
 !

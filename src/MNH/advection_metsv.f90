@@ -152,7 +152,7 @@ use modd_budget,     only: lbudget_th, lbudget_tke, lbudget_rv, lbudget_rc,     
 USE MODD_CST
 USE MODD_CTURB,          ONLY: XTKEMIN
 USE MODD_CONF,           ONLY: LNEUTRAL,NHALO,L1D, L2D
-use modd_field,          only: tfielddata, TYPEREAL
+use modd_field,          only: tfieldmetadata, TYPEREAL
 USE MODD_IBM_PARAM_n,    ONLY: LIBM,XIBM_LS,XIBM_EPSI
 USE MODD_IO,             ONLY: TFILEDATA
 USE MODD_LUNIT_n,        ONLY: TLUOUT
@@ -275,11 +275,11 @@ TYPE(LIST_ll), POINTER      :: TZFIELDS0_ll ! list of fields to exchange
 TYPE(LIST_ll), POINTER      :: TZFIELDS1_ll ! list of fields to exchange
 !
 !
-INTEGER             :: IRESP        ! Return code of FM routines
-INTEGER             :: ILUOUT       ! logical unit
-INTEGER             :: ISPLIT_PPM   ! temporal time splitting 
-INTEGER             :: IIB, IIE, IJB, IJE,IKB,IKE
-TYPE(TFIELDDATA) :: TZFIELD
+INTEGER              :: IRESP        ! Return code of FM routines
+INTEGER              :: ILUOUT       ! logical unit
+INTEGER              :: ISPLIT_PPM   ! temporal time splitting
+INTEGER              :: IIB, IIE, IJB, IJE,IKB,IKE
+TYPE(TFIELDMETADATA) :: TZFIELD
 !-------------------------------------------------------------------------------
 !
 !*       0.     INITIALIZATION                        
@@ -366,7 +366,7 @@ END IF
 !* prints in the file the 3D Courant numbers (one should flag this)
 !
 IF ( tpfile%lopened .AND. OCFL_WRIT .AND. (.NOT. L1D) ) THEN
-    TZFIELD = TFIELDDATA(        &
+    TZFIELD = TFIELDMETADATA(    &
       CMNHNAME   = 'CFLU',       &
       CSTDNAME   = '',           &
       CLONGNAME  = 'CFLU',       &
@@ -380,7 +380,7 @@ IF ( tpfile%lopened .AND. OCFL_WRIT .AND. (.NOT. L1D) ) THEN
     CALL IO_Field_write(TPFILE,TZFIELD,ZCFLU)
 !
   IF (.NOT. L2D) THEN
-    TZFIELD = TFIELDDATA(        &
+    TZFIELD = TFIELDMETADATA(    &
       CMNHNAME   = 'CFLV',       &
       CSTDNAME   = '',           &
       CLONGNAME  = 'CFLV',       &
@@ -394,7 +394,7 @@ IF ( tpfile%lopened .AND. OCFL_WRIT .AND. (.NOT. L1D) ) THEN
     CALL IO_Field_write(TPFILE,TZFIELD,ZCFLV)
   END IF
 !
-    TZFIELD = TFIELDDATA(        &
+    TZFIELD = TFIELDMETADATA(    &
       CMNHNAME   = 'CFLW',       &
       CSTDNAME   = '',           &
       CLONGNAME  = 'CFLW',       &
@@ -407,7 +407,7 @@ IF ( tpfile%lopened .AND. OCFL_WRIT .AND. (.NOT. L1D) ) THEN
       LTIMEDEP   = .TRUE.        )
     CALL IO_Field_write(TPFILE,TZFIELD,ZCFLW)
 !
-    TZFIELD = TFIELDDATA(       &
+    TZFIELD = TFIELDMETADATA(   &
       CMNHNAME   = 'CFL',       &
       CSTDNAME   = '',          &
       CLONGNAME  = 'CFL',       &

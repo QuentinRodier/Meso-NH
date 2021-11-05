@@ -188,7 +188,7 @@ END MODULE MODI_WRITE_LFIFM_n
 USE MODD_DIM_n
 USE MODD_CONF
 USE MODD_CONF_n
-use modd_field,       only: NMNHDIM_UNUSED, tfielddata, tfieldlist, TYPEDATE, TYPEINT, TYPELOG, TYPEREAL
+use modd_field,       only: NMNHDIM_UNUSED, tfieldmetadata, tfieldlist, TYPEDATE, TYPEINT, TYPELOG, TYPEREAL
 USE MODD_GRID
 USE MODD_GRID_n
 USE MODD_TIME
@@ -332,9 +332,9 @@ INTEGER :: IKRAD
 INTEGER           :: JI,JJ,JK   ! loop index
 INTEGER           :: IIU,IJU,IKU,IIB,IJB,IKB,IIE,IJE,IKE ! Arrays bounds
 !
-CHARACTER(LEN=2)  :: INDICE
-INTEGER           :: IID
-TYPE(TFIELDDATA)  :: TZFIELD
+CHARACTER(LEN=2)     :: INDICE
+INTEGER              :: IID
+TYPE(TFIELDMETADATA) :: TZFIELD
 !-------------------------------------------------------------------------------
 !
 !*	0. Initialization
@@ -445,7 +445,7 @@ CALL IO_Field_write(TPFILE,'SURF',     CSURF)
 CALL IO_Field_write(TPFILE,'CPL_AROME',LCPL_AROME)
 CALL IO_Field_write(TPFILE,'COUPLING', LCOUPLING)
 !
-TZFIELD = TFIELDDATA(       &
+TZFIELD = TFIELDMETADATA(   &
   CMNHNAME   = 'RECYCLING', &
   CLONGNAME  = 'RECYCLING', &
   CSTDNAME   = '',          &
@@ -493,7 +493,7 @@ END IF
 !
 IF (LIBM .OR. LIBM_LSF) THEN
   !
-  TZFIELD = TFIELDDATA(                           &
+  TZFIELD = TFIELDMETADATA(                       &
     CMNHNAME  = 'LSFP',                           &
     CLONGNAME = 'LSFP',                           &
     CSTDNAME  = '',                               &
@@ -511,7 +511,7 @@ ENDIF
 !
 IF (LRECYCL) THEN
   !
-  TZFIELD = TFIELDDATA(                                      &
+  TZFIELD = TFIELDMETADATA(                                  &
     CMNHNAME   = 'RCOUNT',                                   &
     CLONGNAME  = 'RCOUNT',                                   &
     CSTDNAME   = '',                                         &
@@ -525,7 +525,7 @@ IF (LRECYCL) THEN
   CALL IO_Field_write(TPFILE,TZFIELD,NR_COUNT)
   !
   IF (LRECYCLW) THEN
-    TZFIELD = TFIELDDATA(                                       &
+    TZFIELD = TFIELDMETADATA(                                   &
       CMNHNAME   = 'URECYCLW',                                  &
       CLONGNAME  = 'URECYCLW',                                  &
       CSTDNAME   = '',                                          &
@@ -539,7 +539,7 @@ IF (LRECYCL) THEN
     !
     CALL IO_Field_write(TPFILE,TZFIELD,XUMEANW(:,:,:))
     !
-    TZFIELD = TFIELDDATA(                                       &
+    TZFIELD = TFIELDMETADATA(                                   &
       CMNHNAME   = 'VRECYCLW',                                  &
       CLONGNAME  = 'VRECYCLW',                                  &
       CSTDNAME   = '',                                          &
@@ -553,7 +553,7 @@ IF (LRECYCL) THEN
     !
     CALL IO_Field_write(TPFILE,TZFIELD,XVMEANW(:,:,:))
     !
-    TZFIELD = TFIELDDATA(                                       &
+    TZFIELD = TFIELDMETADATA(                                   &
       CMNHNAME   = 'WRECYCLW',                                  &
       CLONGNAME  = 'WRECYCLW',                                  &
       CSTDNAME   = '',                                          &
@@ -569,7 +569,7 @@ IF (LRECYCL) THEN
     !
   ENDIF  
   IF (LRECYCLN) THEN
-    TZFIELD = TFIELDDATA(                                        &
+    TZFIELD = TFIELDMETADATA(                                    &
       CMNHNAME   = 'URECYCLN',                                   &
       CLONGNAME  = 'URECYCLN',                                   &
       CSTDNAME   = '',                                           &
@@ -583,7 +583,7 @@ IF (LRECYCL) THEN
     !
     CALL IO_Field_write(TPFILE,TZFIELD,XUMEANN(:,:,:))
     !
-    TZFIELD = TFIELDDATA(                                        &
+    TZFIELD = TFIELDMETADATA(                                    &
       CMNHNAME   = 'VRECYCLN',                                   &
       CLONGNAME  = 'VRECYCLN',                                   &
       CSTDNAME   = '',                                           &
@@ -597,7 +597,7 @@ IF (LRECYCL) THEN
     !
     CALL IO_Field_write(TPFILE,TZFIELD,XVMEANN(:,:,:))
     !
-    TZFIELD = TFIELDDATA(                                        &
+    TZFIELD = TFIELDMETADATA(                                    &
       CMNHNAME   = 'WRECYCLN',                                   &
       CLONGNAME  = 'WRECYCLN',                                   &
       CSTDNAME   = '',                                           &
@@ -613,7 +613,7 @@ IF (LRECYCL) THEN
     !
   ENDIF
   IF (LRECYCLE) THEN
-    TZFIELD = TFIELDDATA(                                       &
+    TZFIELD = TFIELDMETADATA(                                   &
       CMNHNAME   = 'URECYCLE',                                  &
       CLONGNAME  = 'URECYCLE',                                  &
       CSTDNAME   = '',                                          &
@@ -627,7 +627,7 @@ IF (LRECYCL) THEN
     !
     CALL IO_Field_write(TPFILE,TZFIELD,XUMEANE(:,:,:))
     !
-    TZFIELD = TFIELDDATA(                                       &
+    TZFIELD = TFIELDMETADATA(                                   &
       CMNHNAME   = 'VRECYCLE',                                  &
       CLONGNAME  = 'VRECYCLE',                                  &
       CSTDNAME   = '',                                          &
@@ -641,7 +641,7 @@ IF (LRECYCL) THEN
     !
     CALL IO_Field_write(TPFILE,TZFIELD,XVMEANE(:,:,:))
     !
-    TZFIELD = TFIELDDATA(                                       &
+    TZFIELD = TFIELDMETADATA(                                   &
       CMNHNAME   = 'WRECYCLE',                                  &
       CLONGNAME  = 'WRECYCLE',                                  &
       CSTDNAME   = '',                                          &
@@ -657,7 +657,7 @@ IF (LRECYCL) THEN
     !
   ENDIF
   IF (LRECYCLS) THEN
-    TZFIELD = TFIELDDATA(                                        &
+    TZFIELD = TFIELDMETADATA(                                    &
       CMNHNAME   = 'URECYCLS',                                   &
       CLONGNAME  = 'URECYCLS',                                   &
       CSTDNAME   = '',                                           &
@@ -671,7 +671,7 @@ IF (LRECYCL) THEN
     !
     CALL IO_Field_write(TPFILE,TZFIELD,XUMEANS(:,:,:))
     !
-    TZFIELD = TFIELDDATA(                                        &
+    TZFIELD = TFIELDMETADATA(                                    &
       CMNHNAME   = 'VRECYCLS',                                   &
       CLONGNAME  = 'VRECYCLS',                                   &
       CSTDNAME   = '',                                           &
@@ -685,7 +685,7 @@ IF (LRECYCL) THEN
     !
     CALL IO_Field_write(TPFILE,TZFIELD,XVMEANS(:,:,:))
     !
-    TZFIELD = TFIELDDATA(                                        &
+    TZFIELD = TFIELDMETADATA(                                    &
       CMNHNAME   = 'WRECYCLS',                                   &
       CLONGNAME  = 'WRECYCLS',                                   &
       CSTDNAME   = '',                                           &
@@ -702,7 +702,7 @@ ENDIF
 !
 IF (MEAN_COUNT /= 0) THEN
 !
-  TZFIELD = TFIELDDATA(                              &
+  TZFIELD = TFIELDMETADATA(                          &
     CMNHNAME   = 'generic for mean_count variables', & !Temporary name to ease identification
     CSTDNAME   = '',                                 &
     CDIR       = 'XY',                               &
@@ -1044,7 +1044,7 @@ IF (NSV >=1) THEN
     !
     ZWORK2D(:,:)  = XRHOLW*XINPRR(:,:)*XSVT(:,:,2,NSV_LIMA_SCAVMASS)/ &
                                         max( 1.e-20,XRT(:,:,2,3) ) !~2=at ground level
-    TZFIELD = TFIELDDATA(                                          &
+    TZFIELD = TFIELDMETADATA(                                      &
       CMNHNAME   = 'INPBP',                                        &
       CSTDNAME   = '',                                             &
       CLONGNAME  = 'INPBP',                                        &
@@ -1093,7 +1093,7 @@ IF (NSV >=1) THEN
     CALL IO_Field_write(TPFILE,'EFIELDV',XEFIELDV)
     CALL IO_Field_write(TPFILE,'EFIELDW',XEFIELDW)
  !
-    TZFIELD = TFIELDDATA(           &
+    TZFIELD = TFIELDMETADATA(       &
       CMNHNAME   = 'EMODULE',       &
       CSTDNAME   = '',              &
       CLONGNAME  = 'EMODULE',       &
@@ -1108,22 +1108,22 @@ IF (NSV >=1) THEN
     CALL IO_Field_write(TPFILE,TZFIELD,ZWORK3D)
  !
     CALL FIND_FIELD_ID_FROM_MNHNAME('NI_IAGGS',IID,IRESP)
-    TZFIELD = TFIELDLIST(IID)
+    TZFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
     TZFIELD%CUNITS = 'pC m-3 s-1'
     CALL IO_Field_write(TPFILE,TZFIELD,XNI_IAGGS*1.E12)
  !
     CALL FIND_FIELD_ID_FROM_MNHNAME('NI_IDRYG',IID,IRESP)
-    TZFIELD = TFIELDLIST(IID)
+    TZFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
     TZFIELD%CUNITS = 'pC m-3 s-1'
     CALL IO_Field_write(TPFILE,TZFIELD,XNI_IDRYG*1.E12)
  !
     CALL FIND_FIELD_ID_FROM_MNHNAME('NI_SDRYG',IID,IRESP)
-    TZFIELD = TFIELDLIST(IID)
+    TZFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
     TZFIELD%CUNITS = 'pC m-3 s-1'
     CALL IO_Field_write(TPFILE,TZFIELD,XNI_SDRYG*1.E12)
  !
     CALL FIND_FIELD_ID_FROM_MNHNAME('INDUC_CG',IID,IRESP)
-    TZFIELD = TFIELDLIST(IID)
+    TZFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
     TZFIELD%CUNITS = 'pC m-3 s-1'
     CALL IO_Field_write(TPFILE,TZFIELD,XIND_RATE*1.E12)
  !
@@ -1507,7 +1507,7 @@ IF (NSV >=1) THEN
   DO JSV=1,ICH_NBR
     WRITE(ILUOUT,*)JSV,TRIM(YCHNAMES(JSV))
   END DO
-  TZFIELD = TFIELDDATA(                          &
+  TZFIELD = TFIELDMETADATA(                      &
     CMNHNAME   = 'NSV.DIM',                      &
     CSTDNAME   = '',                             &
     CLONGNAME  = 'NSV.DIM',                      &
@@ -1521,7 +1521,7 @@ IF (NSV >=1) THEN
   CALL IO_Field_write(TPFILE,TZFIELD,ICH_NBR)
   !
   IF (ICH_NBR/=0) THEN
-    TZFIELD = TFIELDDATA(       &
+    TZFIELD = TFIELDMETADATA(   &
       CMNHNAME   = 'NSV.TITRE', &
       CSTDNAME   = '',          &
       CLONGNAME  = 'NSV.TITRE', &
@@ -1632,7 +1632,7 @@ END IF
 ! IF (NSV >=1) THEN
 !    DO JSV = NSV_C2R2BEG,NSV_C2R2END
 !     IF (JSV == NSV_C2R2BEG ) THEN
-!       TZFIELD = TFIELDDATA(           &
+!       TZFIELD = TFIELDMETADATA(       &
 !         CMNHNAME   = 'RSVS_CLD1',     &
 !         CSTDNAME   = '',              &
 !         CLONGNAME  = 'RSVS_CLD1',     &
@@ -1646,7 +1646,7 @@ END IF
 !       CALL IO_Field_write(TPFILE,TZFIELD,XRRS_CLD(:,:,:,IRR))
 !     END IF
 !     IF (JSV == NSV_C2R2END ) THEN
-!       TZFIELD = TFIELDDATA(           &
+!       TZFIELD = TFIELDMETADATA(       &
 !         CMNHNAME   = 'RSVS_CLD2',     &
 !         CSTDNAME   = '',              &
 !         CLONGNAME  = 'RSVS_CLD2',     &
@@ -1683,7 +1683,7 @@ IF (CRAD /= 'NONE') THEN
   !
   CALL PRINT_MSG(NVERB_INFO,'IO','WRITE_LFIFM_n','EMIS: writing only first band')
   CALL FIND_FIELD_ID_FROM_MNHNAME('EMIS',IID,IRESP)
-  TZFIELD = TFIELDLIST(IID)
+  TZFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
   TZFIELD%NDIMS = 2
   TZFIELD%NDIMLIST(3) = TZFIELD%NDIMLIST(4)
   TZFIELD%NDIMLIST(4) = NMNHDIM_UNUSED
@@ -1713,17 +1713,17 @@ IF (CDCONV /= 'NONE' .OR. CSCONV == 'KAFR') THEN
   CALL IO_Field_write(TPFILE,'DRICONV',  XDRICONV)
 !
   CALL FIND_FIELD_ID_FROM_MNHNAME('PRCONV',IID,IRESP)
-  TZFIELD = TFIELDLIST(IID)
+  TZFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
   TZFIELD%CUNITS = 'mm hour-1'
   CALL IO_Field_write(TPFILE,TZFIELD,XPRCONV*3.6E6)
 !
   CALL FIND_FIELD_ID_FROM_MNHNAME('PACCONV',IID,IRESP)
-  TZFIELD = TFIELDLIST(IID)
+  TZFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
   TZFIELD%CUNITS = 'mm'
   CALL IO_Field_write(TPFILE,TZFIELD,XPACCONV*1.0E3)
 !
   CALL FIND_FIELD_ID_FROM_MNHNAME('PRSCONV',IID,IRESP)
-  TZFIELD = TFIELDLIST(IID)
+  TZFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
   TZFIELD%CUNITS = 'mm hour-1'
   CALL IO_Field_write(TPFILE,TZFIELD,XPRSCONV*3.6E6)
 !
@@ -1838,12 +1838,12 @@ IF (CPROGRAM /= 'IDEAL') THEN
   IF (ASSOCIATED(XINPRC)) THEN
   IF (SIZE(XINPRC) /= 0 ) THEN
     CALL FIND_FIELD_ID_FROM_MNHNAME('INPRC',IID,IRESP)
-    TZFIELD = TFIELDLIST(IID)
+    TZFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
     TZFIELD%CUNITS = 'mm hour-1'
     CALL IO_Field_write(TPFILE,TZFIELD,XINPRC*3.6E6)
 !
     CALL FIND_FIELD_ID_FROM_MNHNAME('ACPRC',IID,IRESP)
-    TZFIELD = TFIELDLIST(IID)
+    TZFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
     TZFIELD%CUNITS = 'mm'
     CALL IO_Field_write(TPFILE,TZFIELD,XACPRC*1.0E3)
 !
@@ -1853,12 +1853,12 @@ IF (CPROGRAM /= 'IDEAL') THEN
   IF (ASSOCIATED(XINDEP)) THEN
   IF (SIZE(XINDEP) /= 0 ) THEN
     CALL FIND_FIELD_ID_FROM_MNHNAME('INDEP',IID,IRESP)
-    TZFIELD = TFIELDLIST(IID)
+    TZFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
     TZFIELD%CUNITS = 'mm hour-1'
     CALL IO_Field_write(TPFILE,TZFIELD,XINDEP*3.6E6)
 !
     CALL FIND_FIELD_ID_FROM_MNHNAME('ACDEP',IID,IRESP)
-    TZFIELD = TFIELDLIST(IID)
+    TZFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
     TZFIELD%CUNITS = 'mm'
     CALL IO_Field_write(TPFILE,TZFIELD,XACDEP*1.0E3)
 !
@@ -1868,7 +1868,7 @@ IF (CPROGRAM /= 'IDEAL') THEN
   IF (ASSOCIATED(XINPRR)) THEN
   IF (SIZE(XINPRR) /= 0 ) THEN
     CALL FIND_FIELD_ID_FROM_MNHNAME('INPRR',IID,IRESP)
-    TZFIELD = TFIELDLIST(IID)
+    TZFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
     TZFIELD%CUNITS = 'mm hour-1'
     CALL IO_Field_write(TPFILE,TZFIELD,XINPRR*3.6E6)
 !
@@ -1876,7 +1876,7 @@ IF (CPROGRAM /= 'IDEAL') THEN
     CALL IO_Field_write(TPFILE,'EVAP3D', XEVAP3D)
 !
     CALL FIND_FIELD_ID_FROM_MNHNAME('ACPRR',IID,IRESP)
-    TZFIELD = TFIELDLIST(IID)
+    TZFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
     TZFIELD%CUNITS = 'mm'
     CALL IO_Field_write(TPFILE,TZFIELD,XACPRR*1.0E3)
 !
@@ -1886,12 +1886,12 @@ IF (CPROGRAM /= 'IDEAL') THEN
   IF (ASSOCIATED(XINPRS)) THEN
   IF (SIZE(XINPRS) /= 0 ) THEN
     CALL FIND_FIELD_ID_FROM_MNHNAME('INPRS',IID,IRESP)
-    TZFIELD = TFIELDLIST(IID)
+    TZFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
     TZFIELD%CUNITS = 'mm hour-1'
     CALL IO_Field_write(TPFILE,TZFIELD,XINPRS*3.6E6)
 !
     CALL FIND_FIELD_ID_FROM_MNHNAME('ACPRS',IID,IRESP)
-    TZFIELD = TFIELDLIST(IID)
+    TZFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
     TZFIELD%CUNITS = 'mm'
     CALL IO_Field_write(TPFILE,TZFIELD,XACPRS*1.0E3)
   END IF
@@ -1900,12 +1900,12 @@ IF (CPROGRAM /= 'IDEAL') THEN
   IF (ASSOCIATED(XINPRG)) THEN
   IF (SIZE(XINPRG) /= 0 ) THEN
     CALL FIND_FIELD_ID_FROM_MNHNAME('INPRG',IID,IRESP)
-    TZFIELD = TFIELDLIST(IID)
+    TZFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
     TZFIELD%CUNITS = 'mm hour-1'
     CALL IO_Field_write(TPFILE,TZFIELD,XINPRG*3.6E6)
 !
     CALL FIND_FIELD_ID_FROM_MNHNAME('ACPRG',IID,IRESP)
-    TZFIELD = TFIELDLIST(IID)
+    TZFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
     TZFIELD%CUNITS = 'mm'
     CALL IO_Field_write(TPFILE,TZFIELD,XACPRG*1.0E3)
   END IF
@@ -1914,12 +1914,12 @@ IF (CPROGRAM /= 'IDEAL') THEN
   IF (ASSOCIATED(XINPRH)) THEN
   IF (SIZE(XINPRH) /= 0 ) THEN
     CALL FIND_FIELD_ID_FROM_MNHNAME('INPRH',IID,IRESP)
-    TZFIELD = TFIELDLIST(IID)
+    TZFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
     TZFIELD%CUNITS = 'mm hour-1'
     CALL IO_Field_write(TPFILE,TZFIELD,XINPRH*3.6E6)
 !
     CALL FIND_FIELD_ID_FROM_MNHNAME('ACPRH',IID,IRESP)
-    TZFIELD = TFIELDLIST(IID)
+    TZFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
     TZFIELD%CUNITS = 'mm'
     CALL IO_Field_write(TPFILE,TZFIELD,XACPRH*1.0E3)
   ENDIF
@@ -1932,7 +1932,7 @@ IF (CPROGRAM /= 'IDEAL') THEN
     IF (SIZE(XINPRH) /= 0 ) ZWORK2D = ZWORK2D + XINPRH
     IF (SIZE(XINPRC) /= 0 ) ZWORK2D = ZWORK2D + XINPRC
     CALL FIND_FIELD_ID_FROM_MNHNAME('INPRT',IID,IRESP)
-    TZFIELD = TFIELDLIST(IID)
+    TZFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
     TZFIELD%CUNITS = 'mm hour-1'
     CALL IO_Field_write(TPFILE,TZFIELD,ZWORK2D*3.6E6)
 !
@@ -1941,7 +1941,7 @@ IF (CPROGRAM /= 'IDEAL') THEN
     IF (SIZE(XINPRH) /= 0 ) ZWORK2D = ZWORK2D + XACPRH
     IF (SIZE(XINPRC) /= 0 ) ZWORK2D = ZWORK2D + XACPRC
     CALL FIND_FIELD_ID_FROM_MNHNAME('ACPRT',IID,IRESP)
-    TZFIELD = TFIELDLIST(IID)
+    TZFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
     TZFIELD%CUNITS = 'mm'
     CALL IO_Field_write(TPFILE,TZFIELD,ZWORK2D*1.0E3)
   END IF
@@ -1952,7 +1952,7 @@ END IF
 IF(LBLOWSNOW) THEN
   IF (ASSOCIATED(XSNWSUBL3D)) THEN
     IF (SIZE(XSNWSUBL3D) /= 0 ) THEN
-      TZFIELD = TFIELDDATA(                                                 &
+      TZFIELD = TFIELDMETADATA(                                             &
         CMNHNAME   = 'SNWSUBL3D',                                           &
         CSTDNAME   = '',                                                    &
         CLONGNAME  = 'SNWSUBL3D',                                           &
@@ -1971,7 +1971,7 @@ IF(LBLOWSNOW) THEN
       END DO
       ZWORK2D(:,:) = ZWORK2D(:,:)*1000. ! vapor water in mm unit
       !
-      TZFIELD = TFIELDDATA(                                     &
+      TZFIELD = TFIELDMETADATA(                                 &
         CMNHNAME   = 'COL_SNWSUBL',                             &
         CSTDNAME   = '',                                        &
         CLONGNAME  = 'COL_SNWSUBL',                             &
@@ -1993,7 +1993,7 @@ IF ((.NOT.LCOUPLES).AND.LOCEAN) THEN
   CALL IO_Field_write(TPFILE,'NFRCLT',NFRCLT)
   CALL IO_Field_write(TPFILE,'NINFRT',NINFRT)
   !
-  TZFIELD = TFIELDDATA(                                   &
+  TZFIELD = TFIELDMETADATA(                               &
     CMNHNAME   = 'SSUFL_T',                               &
     CSTDNAME   = '',                                      &
     CLONGNAME  = 'SSUFL',                                 &
@@ -2006,7 +2006,7 @@ IF ((.NOT.LCOUPLES).AND.LOCEAN) THEN
     LTIMEDEP   = .FALSE.                                  )
   CALL IO_Field_write(TPFILE,TZFIELD,XSSUFL_T(:))
   !
-  TZFIELD = TFIELDDATA(                                   &
+  TZFIELD = TFIELDMETADATA(                               &
     CMNHNAME   = 'SSVFL_T',                               &
     CSTDNAME   = '',                                      &
     CLONGNAME  = 'SSVFL',                                 &
@@ -2019,7 +2019,7 @@ IF ((.NOT.LCOUPLES).AND.LOCEAN) THEN
     LTIMEDEP   = .FALSE.                                  )
   CALL IO_Field_write(TPFILE,TZFIELD,XSSVFL_T(:))
   !
-  TZFIELD = TFIELDDATA(                                    &
+  TZFIELD = TFIELDMETADATA(                                &
     CMNHNAME   = 'SSTFL_T',                                &
     CSTDNAME   = '',                                       &
     CLONGNAME  = 'SSTFL',                                  &
@@ -2032,7 +2032,7 @@ IF ((.NOT.LCOUPLES).AND.LOCEAN) THEN
     LTIMEDEP   = .FALSE.                                   )
   CALL IO_Field_write(TPFILE,TZFIELD,XSSTFL_T(:))
   !
-  TZFIELD = TFIELDDATA(                               &
+  TZFIELD = TFIELDMETADATA(                           &
     CMNHNAME   = 'SSOLA_T',                           &
     CSTDNAME   = '',                                  &
     CLONGNAME  = 'SSOLA',                             &
@@ -2057,7 +2057,7 @@ IF (LFORCING) THEN
 !
     WRITE (YFRC,'(I3.3)') JT
 !
-    TZFIELD = TFIELDDATA(                                 &
+    TZFIELD = TFIELDMETADATA(                             &
       CMNHNAME   = 'DTFRC'//YFRC,                         &
       CSTDNAME   = '',                                    &
       CLONGNAME  = 'DTFRC'//YFRC,                         &
@@ -2070,7 +2070,7 @@ IF (LFORCING) THEN
       LTIMEDEP   = .FALSE.                                )
     CALL IO_Field_write(TPFILE,TZFIELD,TDTFRC(JT))
 !
-    TZFIELD = TFIELDDATA(                                        &
+    TZFIELD = TFIELDMETADATA(                                    &
       CMNHNAME   = 'UFRC'//YFRC,                                 &
       CSTDNAME   = '',                                           &
       CLONGNAME  = 'UFRC'//YFRC,                                 &
@@ -2083,7 +2083,7 @@ IF (LFORCING) THEN
       LTIMEDEP   = .FALSE.                                       )
     CALL IO_Field_write(TPFILE,TZFIELD,XUFRC(:,JT))
 !
-    TZFIELD = TFIELDDATA(                                           &
+    TZFIELD = TFIELDMETADATA(                                       &
       CMNHNAME   = 'VFRC'//YFRC,                                    &
       CSTDNAME   = '',                                              &
       CLONGNAME  = 'VFRC'//YFRC,                                    &
@@ -2096,7 +2096,7 @@ IF (LFORCING) THEN
       LTIMEDEP   = .FALSE.                                          )
     CALL IO_Field_write(TPFILE,TZFIELD,XVFRC(:,JT))
 !
-    TZFIELD = TFIELDDATA(                   &
+    TZFIELD = TFIELDMETADATA(               &
       CMNHNAME   = 'WFRC'//YFRC,            &
       CSTDNAME   = '',                      &
       CLONGNAME  = 'WFRC'//YFRC,            &
@@ -2109,7 +2109,7 @@ IF (LFORCING) THEN
       LTIMEDEP   = .FALSE.                  )
     CALL IO_Field_write(TPFILE,TZFIELD,XWFRC(:,JT))
 !
-    TZFIELD = TFIELDDATA(                           &
+    TZFIELD = TFIELDMETADATA(                       &
       CMNHNAME   = 'THFRC'//YFRC,                   &
       CSTDNAME   = '',                              &
       CLONGNAME  = 'THFRC'//YFRC,                   &
@@ -2122,7 +2122,7 @@ IF (LFORCING) THEN
       LTIMEDEP   = .FALSE.                          )
     CALL IO_Field_write(TPFILE,TZFIELD,XTHFRC(:,JT))
 !
-    TZFIELD = TFIELDDATA(                        &
+    TZFIELD = TFIELDMETADATA(                    &
       CMNHNAME   = 'RVFRC'//YFRC,                &
       CSTDNAME   = '',                           &
       CLONGNAME  = 'RVFRC'//YFRC,                &
@@ -2135,7 +2135,7 @@ IF (LFORCING) THEN
       LTIMEDEP   = .FALSE.                       )
     CALL IO_Field_write(TPFILE,TZFIELD,XRVFRC(:,JT))
 !
-    TZFIELD = TFIELDDATA(                                                    &
+    TZFIELD = TFIELDMETADATA(                                                &
       CMNHNAME   = 'TENDTHFRC'//YFRC,                                        &
       CSTDNAME   = '',                                                       &
       CLONGNAME  = 'TENDTHFRC'//YFRC,                                        &
@@ -2148,7 +2148,7 @@ IF (LFORCING) THEN
       LTIMEDEP   = .FALSE.                                                   )
     CALL IO_Field_write(TPFILE,TZFIELD,XTENDTHFRC(:,JT))
 !
-    TZFIELD = TFIELDDATA(                                                 &
+    TZFIELD = TFIELDMETADATA(                                             &
       CMNHNAME   = 'TENDRVFRC'//YFRC,                                     &
       CSTDNAME   = '',                                                    &
       CLONGNAME  = 'TENDRVFRC'//YFRC,                                     &
@@ -2161,7 +2161,7 @@ IF (LFORCING) THEN
       LTIMEDEP   = .FALSE.                                                )
     CALL IO_Field_write(TPFILE,TZFIELD,XTENDRVFRC(:,JT))
 !
-    TZFIELD = TFIELDDATA(                                                    &
+    TZFIELD = TFIELDMETADATA(                                                &
       CMNHNAME   = 'GXTHFRC'//YFRC,                                          &
       CSTDNAME   = '',                                                       &
       CLONGNAME  = 'GXTHFRC'//YFRC,                                          &
@@ -2174,7 +2174,7 @@ IF (LFORCING) THEN
       LTIMEDEP   = .FALSE.                                                   )
     CALL IO_Field_write(TPFILE,TZFIELD,XGXTHFRC(:,JT))
 !
-    TZFIELD = TFIELDDATA(                                                    &
+    TZFIELD = TFIELDMETADATA(                                                &
       CMNHNAME   = 'GYTHFRC'//YFRC,                                          &
       CSTDNAME   = '',                                                       &
       CLONGNAME  = 'GYTHFRC'//YFRC,                                          &
@@ -2187,7 +2187,7 @@ IF (LFORCING) THEN
       LTIMEDEP   = .FALSE.                                                   )
     CALL IO_Field_write(TPFILE,TZFIELD,XGYTHFRC(:,JT))
 !
-    TZFIELD = TFIELDDATA(                     &
+    TZFIELD = TFIELDMETADATA(                 &
       CMNHNAME   = 'PGROUNDFRC'//YFRC,        &
       CSTDNAME   = '',                        &
       CLONGNAME  = 'PGROUNDFRC'//YFRC,        &
@@ -2200,7 +2200,7 @@ IF (LFORCING) THEN
       LTIMEDEP   = .FALSE.                    )
     CALL IO_Field_write(TPFILE,TZFIELD,XPGROUNDFRC(JT))
 !
-    TZFIELD = TFIELDDATA(                                &
+    TZFIELD = TFIELDMETADATA(                            &
       CMNHNAME   = 'TENDUFRC'//YFRC,                     &
       CSTDNAME   = '',                                   &
       CLONGNAME  = 'TENDUFRC'//YFRC,                     &
@@ -2213,7 +2213,7 @@ IF (LFORCING) THEN
       LTIMEDEP   = .FALSE.                               )
     CALL IO_Field_write(TPFILE,TZFIELD,XTENDUFRC(:,JT))
 !
-    TZFIELD = TFIELDDATA(                                &
+    TZFIELD = TFIELDMETADATA(                            &
       CMNHNAME   = 'TENDVFRC'//YFRC,                     &
       CSTDNAME   = '',                                   &
       CLONGNAME  = 'TENDVFRC'//YFRC,                     &
@@ -2234,7 +2234,7 @@ END IF
 ! -------------------------------------------------------------------------
 IF ( L2D_ADV_FRC ) THEN
 !
-  TZFIELD = TFIELDDATA(                        &
+  TZFIELD = TFIELDMETADATA(                    &
     CMNHNAME   = 'NADVFRC1',                   &
     CSTDNAME   = '',                           &
     CLONGNAME  = 'NADVFRC1',                   &
@@ -2251,7 +2251,7 @@ IF ( L2D_ADV_FRC ) THEN
 !
     WRITE (YFRC,'(I3.3)') JT
 !
-    TZFIELD = TFIELDDATA(                                           &
+    TZFIELD = TFIELDMETADATA(                                       &
       CMNHNAME   = 'DTADV'//YFRC,                                   &
       CSTDNAME   = '',                                              &
       CLONGNAME  = 'DTADV'//YFRC,                                   &
@@ -2264,7 +2264,7 @@ IF ( L2D_ADV_FRC ) THEN
       LTIMEDEP   = .FALSE.                                          )
     CALL IO_Field_write(TPFILE,TZFIELD,TDTADVFRC(JT))
 !
-    TZFIELD = TFIELDDATA(          &
+    TZFIELD = TFIELDMETADATA(      &
       CMNHNAME   = 'TH_ADV'//YFRC, &
       CSTDNAME   = '',             &
       CLONGNAME  = 'TH_ADV'//YFRC, &
@@ -2277,7 +2277,7 @@ IF ( L2D_ADV_FRC ) THEN
       LTIMEDEP   = .FALSE.         )
     CALL IO_Field_write(TPFILE,TZFIELD,XDTHFRC(:,:,:,JT))
 !    
-    TZFIELD = TFIELDDATA(         &
+    TZFIELD = TFIELDMETADATA(     &
       CMNHNAME   = 'Q_ADV'//YFRC, &
       CSTDNAME   = '',            &
       CLONGNAME  = 'Q_ADV'//YFRC, &
@@ -2295,7 +2295,7 @@ ENDIF
 !
 IF ( L2D_REL_FRC ) THEN
 !
-  TZFIELD = TFIELDDATA(                        &
+  TZFIELD = TFIELDMETADATA(                    &
     CMNHNAME   = 'NRELFRC1',                   &
     CSTDNAME   = '',                           &
     CLONGNAME  = 'NRELFRC1',                   &
@@ -2312,7 +2312,7 @@ IF ( L2D_REL_FRC ) THEN
 !
     WRITE (YFRC,'(I3.3)') JT
 !
-    TZFIELD = TFIELDDATA(                                            &
+    TZFIELD = TFIELDMETADATA(                                        &
       CMNHNAME   = 'DTREL'//YFRC,                                    &
       CSTDNAME   = '',                                               &
       CLONGNAME  = 'DTREL'//YFRC,                                    &
@@ -2325,7 +2325,7 @@ IF ( L2D_REL_FRC ) THEN
       LTIMEDEP   = .FALSE.                                           )
     CALL IO_Field_write(TPFILE,TZFIELD,TDTRELFRC(JT))
 !                                                                
-    TZFIELD = TFIELDDATA(          &
+    TZFIELD = TFIELDMETADATA(      &
       CMNHNAME   = 'TH_REL'//YFRC, &
       CSTDNAME   = '',             &
       CLONGNAME  = 'TH_REL'//YFRC, &
@@ -2338,7 +2338,7 @@ IF ( L2D_REL_FRC ) THEN
       LTIMEDEP   = .FALSE.         )
     CALL IO_Field_write(TPFILE,TZFIELD,XTHREL(:,:,:,JT))
 !    
-    TZFIELD = TFIELDDATA(         &
+    TZFIELD = TFIELDMETADATA(     &
       CMNHNAME   = 'Q_REL'//YFRC, &
       CSTDNAME   = '',            &
       CLONGNAME  = 'Q_REL'//YFRC, &
@@ -2417,7 +2417,7 @@ IF ( CPROGRAM=='REAL  ' ) THEN
 !*       1.16    Dummy variables in PREP_REAL_CASE
 !
   IF (ALLOCATED(CDUMMY_2D)) THEN
-    TZFIELD = TFIELDDATA(                           &
+    TZFIELD = TFIELDMETADATA(                       &
       CMNHNAME   = 'generic for CDUMMY_2D variables', & !Temporary name to ease identification
       CSTDNAME   = '',                                &
       CUNITS     = '',                                &
@@ -2442,7 +2442,7 @@ END IF
 !             i) Main
 !
 IF (LMAIN_EOL .AND. IMI == NMODEL_EOL) THEN
-  TZFIELD = TFIELDDATA(                                &
+  TZFIELD = TFIELDMETADATA(                            &
     CMNHNAME   = 'generic for wind turbine variables', & !Temporary name to ease identification
     CSTDNAME   = '',                                   &
     CUNITS     = 'N',                                  &
@@ -2489,7 +2489,7 @@ SELECT CASE(CMETH_EOL)
 !
   CASE('ADNR') ! Actuator Disc Non-Rotating
 !
-    TZFIELD = TFIELDDATA(                        &
+    TZFIELD = TFIELDMETADATA(                    &
       CMNHNAME   = 'generic for ADNR variables', & !Temporary name to ease identification
       CSTDNAME   = '',                           &
       CUNITS     = '1',                          &
@@ -2529,7 +2529,7 @@ SELECT CASE(CMETH_EOL)
 !
   CASE('ALM') ! Actuator Line Method
 !
-    TZFIELD = TFIELDDATA(                       &
+    TZFIELD = TFIELDMETADATA(                   &
       CMNHNAME   = 'generic for ALM variables', & !Temporary name to ease identification
       CSTDNAME   = '',                          &
       CDIR       = '--',                        &
@@ -2599,7 +2599,7 @@ SELECT CASE(CMETH_EOL)
 !
     IF (MEAN_COUNT /= 0) THEN
 !
-      TZFIELD = TFIELDDATA(                            &
+      TZFIELD = TFIELDMETADATA(                        &
         CMNHNAME   = 'generic for ALM mean variables', & !Temporary name to ease identification
         CSTDNAME   = '',                               &
         CDIR       = '--',                             &

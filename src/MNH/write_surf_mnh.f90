@@ -11,7 +11,7 @@ CONTAINS
 
 SUBROUTINE PREPARE_METADATA_WRITE_SURF(HREC,HDIR,HCOMMENT,KGRID,KTYPE,KDIMS,HSUBR,TPFIELD)
 !
-use modd_field, only: tfielddata, tfieldlist
+use modd_field, only: tfieldmetadata, tfieldlist
 
 use mode_field, only: Find_field_id_from_mnhname
 USE MODE_MSG
@@ -23,7 +23,7 @@ INTEGER,                INTENT(IN)  :: KGRID    ! Localization on the model grid
 INTEGER,                INTENT(IN)  :: KTYPE    ! Datatype
 INTEGER,                INTENT(IN)  :: KDIMS    ! Number of dimensions
 CHARACTER(LEN=*),       INTENT(IN)  :: HSUBR    ! name of the subroutine calling
-TYPE(TFIELDDATA),       INTENT(OUT) :: TPFIELD  ! metadata of field
+TYPE(TFIELDMETADATA),   INTENT(OUT) :: TPFIELD  ! metadata of field
 !
 CHARACTER(LEN=32) :: YTXT
 INTEGER           :: IDX,IID, IRESP
@@ -99,7 +99,7 @@ IF (IRESP==0) THEN
   END IF
 ELSE
   CALL PRINT_MSG(NVERB_DEBUG,'IO',TRIM(HSUBR),TRIM(HREC)//' not found in FIELDLIST. Generating default metadata')
-  TPFIELD = TFIELDDATA(          &
+  TPFIELD = TFIELDMETADATA(      &
     CMNHNAME   = TRIM(HREC),     &
     CSTDNAME   = '',             &
     CLONGNAME  = TRIM(HREC),     &
@@ -175,7 +175,7 @@ END MODULE MODE_WRITE_SURF_MNH_TOOLS
 !
 USE MODD_CONF,           ONLY: CPROGRAM
 USE MODD_CONF_n,         ONLY: CSTORAGE_TYPE
-use modd_field,          only: tfielddata,TYPEREAL
+use modd_field,          only: tfieldmetadata, TYPEREAL
 USE MODD_GRID
 USE MODD_IO,             ONLY: TFILE_SURFEX
 
@@ -194,9 +194,9 @@ CHARACTER(LEN=100),     INTENT(IN)  :: HCOMMENT ! Comment string
 !
 !*      0.2   Declarations of local variables
 !
-CHARACTER(LEN=5) :: YMSG
-INTEGER          :: IID, IRESP
-TYPE(TFIELDDATA) :: TZFIELD
+CHARACTER(LEN=5)     :: YMSG
+INTEGER              :: IID, IRESP
+TYPE(TFIELDMETADATA) :: TZFIELD
 !
 !-------------------------------------------------------------------------------
 !
@@ -285,7 +285,7 @@ END SUBROUTINE WRITE_SURFX0_MNH
 !             ------------
 !
 USE MODD_CONF_n,        ONLY: CSTORAGE_TYPE
-use modd_field,         only: tfielddata, tfieldlist, TYPEREAL
+use modd_field,         only: tfieldmetadata, tfieldlist, TYPEREAL
 USE MODD_GRID_n,        ONLY: XXHAT, XYHAT
 USE MODD_IO,            ONLY: TFILE_SURFEX
 USE MODD_IO_SURF_MNH,   ONLY :NMASK, CMASK,                          &
@@ -334,8 +334,8 @@ INTEGER           :: IIU, IJU, IIB, IJB, IIE, IJE ! dimensions of horizontal fie
 INTEGER, DIMENSION(:), ALLOCATABLE :: IMASK       ! mask for unpacking
 REAL              :: ZUNDEF                       ! undefined value in SURFEX
 !
-CHARACTER(LEN=5) :: YMSG
-TYPE(TFIELDDATA) :: TZFIELD
+CHARACTER(LEN=5)     :: YMSG
+TYPE(TFIELDMETADATA) :: TZFIELD
 !-------------------------------------------------------------------------------
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','WRITE_SURFX1_MNH',TRIM(TFILE_SURFEX%CNAME)//': writing '//TRIM(HREC))
@@ -437,7 +437,7 @@ IF (      (CSTORAGE_TYPE=='PG' .OR. CSTORAGE_TYPE=='SU')  &
 !
   IF (HDIR=='A') THEN
     CALL FIND_FIELD_ID_FROM_MNHNAME('XHAT',IID,IRESP)
-    TZFIELD = TFIELDLIST(IID)
+    TZFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
     TZFIELD%CDIR  = '--'
     CALL IO_Field_write(TFILE_SURFEX,TZFIELD,ZW1D(:),KRESP)
   END IF
@@ -468,7 +468,7 @@ ELSE IF ( (CSTORAGE_TYPE=='PG' .OR. CSTORAGE_TYPE=='SU')  &
   END IF
   IF (HDIR=='A') THEN
     CALL FIND_FIELD_ID_FROM_MNHNAME('YHAT',IID,IRESP)
-    TZFIELD = TFIELDLIST(IID)
+    TZFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
     TZFIELD%CDIR  = '--'
     CALL IO_Field_write(TFILE_SURFEX,TZFIELD,ZW1D(:),KRESP)
   END IF
@@ -549,7 +549,7 @@ END SUBROUTINE WRITE_SURFX1_MNH
 !             ------------
 !
 USE MODD_CONF_n,         ONLY: CSTORAGE_TYPE
-use modd_field,          only: tfielddata, TYPELOG, TYPEREAL
+use modd_field,          only: tfieldmetadata, TYPELOG, TYPEREAL
 USE MODD_DATA_COVER_PAR, ONLY: JPCOVER
 USE MODD_IO,             ONLY: TFILE_SURFEX
 USE MODD_IO_SURF_MNH,    ONLY: NMASK, CMASK,                          &
@@ -603,8 +603,8 @@ REAL,DIMENSION(:,:,:), ALLOCATABLE :: ZWORK3D
 !JUANZ
 LOGICAL           :: GCOVER_PACKED   ! .T. if cover fields are all packed together
 !
-CHARACTER(LEN=5)  :: YMSG
-TYPE(TFIELDDATA)  :: TZFIELD
+CHARACTER(LEN=5)     :: YMSG
+TYPE(TFIELDMETADATA) :: TZFIELD
 !-------------------------------------------------------------------------------
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','WRITE_SURFX2COV_MNH',TRIM(TFILE_SURFEX%CNAME)//': writing '//TRIM(HREC))
@@ -641,7 +641,7 @@ END IF
 !GCOVER_PACKED = ( NB_PROCIO_W /= 1 )
 GCOVER_PACKED = .FALSE.
 !
-TZFIELD = TFIELDDATA(          &
+TZFIELD = TFIELDMETADATA(      &
   CMNHNAME   = 'COVER_PACKED', &
   CSTDNAME   = '',             &
   CLONGNAME  = 'COVER_PACKED', &
@@ -672,7 +672,7 @@ END DO
 !
 IF (.NOT. GCOVER_PACKED) THEN
   ICOVER=0
-  TZFIELD = TFIELDDATA(                         &
+  TZFIELD = TFIELDMETADATA(                     &
     CMNHNAME   = 'generic for COVER variables', & !Temporary name to ease identification
     CSTDNAME   = '',                            &
     CUNITS     = '',                            &
@@ -754,7 +754,7 @@ END SUBROUTINE WRITE_SURFX2COV_MNH
 !
 USE MODD_CONF_n,         ONLY: CSTORAGE_TYPE
 USE MODD_DATA_COVER_PAR, ONLY: JPCOVER
-use modd_field,          only: tfielddata, TYPEREAL
+use modd_field,          only: tfieldmetadata, TYPEREAL
 USE MODD_IO,             ONLY: TFILE_SURFEX
 USE MODD_IO_SURF_MNH,    ONLY: NMASK, CMASK,                          &
                                NIU, NJU, NIB, NJB, NIE, NJE,          &
@@ -797,8 +797,8 @@ INTEGER           :: IIU, IJU, IIB, IJB, IIE, IJE ! dimensions of horizontal fie
 INTEGER, DIMENSION(:), ALLOCATABLE :: IMASK       ! mask for unpacking
 REAL              :: ZUNDEF                       ! undefined value in SURFEX
 !
-CHARACTER(LEN=5)  :: YMSG
-TYPE(TFIELDDATA)  :: TZFIELD
+CHARACTER(LEN=5)     :: YMSG
+TYPE(TFIELDMETADATA) :: TZFIELD
 !-------------------------------------------------------------------------------
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','WRITE_SURFX2_MNH',TRIM(TFILE_SURFEX%CNAME)//': writing '//TRIM(HREC))
@@ -904,7 +904,7 @@ END SUBROUTINE WRITE_SURFX2_MNH
 !             ------------
 !
 USE MODD_CONF_n,         ONLY: CSTORAGE_TYPE
-use modd_field,          only: tfielddata, TYPEINT
+use modd_field,          only: tfieldmetadata, TYPEINT
 USE MODD_IO,             ONLY: TFILE_SURFEX
 USE MODD_IO_SURF_MNH,    ONLY: NIU_ALL, NJU_ALL
 USE MODD_PARAMETERS,     ONLY: JPHEXT
@@ -924,9 +924,9 @@ CHARACTER(LEN=100),     INTENT(IN)  :: HCOMMENT ! Comment string
 !
 !*      0.2   Declarations of local variables
 !
-INTEGER          :: IFIELD
-TYPE(TFIELDDATA) :: TZFIELD
-CHARACTER(LEN=5) :: YMSG
+INTEGER              :: IFIELD
+TYPE(TFIELDMETADATA) :: TZFIELD
+CHARACTER(LEN=5)     :: YMSG
 !-------------------------------------------------------------------------------
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','WRITE_SURFN0_MNH',TRIM(TFILE_SURFEX%CNAME)//': writing '//TRIM(HREC))
@@ -998,7 +998,7 @@ END SUBROUTINE WRITE_SURFN0_MNH
 !*      0.    DECLARATIONS
 !             ------------
 !
-use modd_field,          only: tfielddata, TYPEINT
+use modd_field,          only: tfieldmetadata, TYPEINT
 USE MODD_IO,             ONLY: TFILE_SURFEX
 USE MODD_IO_SURF_MNH,    ONLY: NMASK, CMASK, &
                                NIU, NJU, NIB, NJB, NIE, NJE
@@ -1028,8 +1028,8 @@ CHARACTER(LEN=1),       INTENT(IN)  :: HDIR     ! type of field :
 !
 INTEGER, DIMENSION(:,:), ALLOCATABLE :: IWORK  ! work array written in the file
 !
-CHARACTER(LEN=5) :: YMSG
-TYPE(TFIELDDATA) :: TZFIELD
+CHARACTER(LEN=5)     :: YMSG
+TYPE(TFIELDMETADATA) :: TZFIELD
 !-------------------------------------------------------------------------------
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','WRITE_SURFN1_MNH',TRIM(TFILE_SURFEX%CNAME)//': writing '//TRIM(HREC))
@@ -1102,7 +1102,7 @@ END SUBROUTINE WRITE_SURFN1_MNH
 !             ------------
 !
 USE MODD_CONF_n,         ONLY: CSTORAGE_TYPE
-use modd_field,          only: tfielddata, TYPECHAR, TYPELOG
+use modd_field,          only: tfieldmetadata, TYPECHAR, TYPELOG
 USE MODD_IO,             ONLY: TFILE_SURFEX
 USE MODD_IO_SURF_MNH,    ONLY: NIU_ALL, NJU_ALL
 
@@ -1121,9 +1121,9 @@ CHARACTER(LEN=100),     INTENT(IN)  :: HCOMMENT ! Comment string
 !
 !*      0.2   Declarations of local variables
 !
-LOGICAL          :: GCARTESIAN
-TYPE(TFIELDDATA) :: TZFIELD
-CHARACTER(LEN=5) :: YMSG
+LOGICAL              :: GCARTESIAN
+TYPE(TFIELDMETADATA) :: TZFIELD
+CHARACTER(LEN=5)     :: YMSG
 !-------------------------------------------------------------------------------
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','WRITE_SURFC0_MNH',TRIM(TFILE_SURFEX%CNAME)//': writing '//TRIM(HREC))
@@ -1198,7 +1198,7 @@ END SUBROUTINE WRITE_SURFC0_MNH
 !             ------------
 !
 USE MODD_CONF_n,         ONLY: CSTORAGE_TYPE
-use modd_field,          only: tfielddata, TYPEINT, TYPELOG
+use modd_field,          only: tfieldmetadata, TYPEINT, TYPELOG
 USE MODD_IO,             ONLY: TFILE_SURFEX
 USE MODD_IO_SURF_MNH,    ONLY: NMASK, CMASK, &
                                NIU, NJU, NIB, NJB, NIE, NJE
@@ -1228,8 +1228,8 @@ CHARACTER(LEN=1),       INTENT(IN)  :: HDIR     ! type of field :
 LOGICAL, DIMENSION(:,:), ALLOCATABLE :: GWORK  ! work array written in the file
 INTEGER, DIMENSION(:,:), ALLOCATABLE :: IWORK  ! work array written in the file
 !
-CHARACTER(LEN=5) :: YMSG
-TYPE(TFIELDDATA) :: TZFIELD
+CHARACTER(LEN=5)     :: YMSG
+TYPE(TFIELDMETADATA) :: TZFIELD
 !-------------------------------------------------------------------------------
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','WRITE_SURFL1_MNH',TRIM(TFILE_SURFEX%CNAME)//': writing '//TRIM(HREC))
@@ -1313,7 +1313,7 @@ END SUBROUTINE WRITE_SURFL1_MNH
 !             ------------
 !
 USE MODD_CONF_n,         ONLY: CSTORAGE_TYPE
-use modd_field,          only: tfielddata, TYPELOG
+use modd_field,          only: tfieldmetadata, TYPELOG
 USE MODD_IO,             ONLY: TFILE_SURFEX
 USE MODD_IO_SURF_MNH,    ONLY: CMASK
 
@@ -1332,8 +1332,8 @@ CHARACTER(LEN=100),     INTENT(IN)  :: HCOMMENT ! Comment string
 !
 !*      0.2   Declarations of local variables
 !
-CHARACTER(LEN=5) :: YMSG
-TYPE(TFIELDDATA) :: TZFIELD
+CHARACTER(LEN=5)     :: YMSG
+TYPE(TFIELDMETADATA) :: TZFIELD
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','WRITE_SURFL0_MNH',TRIM(TFILE_SURFEX%CNAME)//': writing '//TRIM(HREC))
 !
@@ -1396,7 +1396,7 @@ END SUBROUTINE WRITE_SURFL0_MNH
 !             ------------
 !
 USE MODD_CONF_n,         ONLY: CSTORAGE_TYPE
-use modd_field,          only: tfielddata, TYPEDATE
+use modd_field,          only: tfieldmetadata, TYPEDATE
 USE MODD_IO,             ONLY: TFILE_SURFEX
 USE MODD_TYPE_DATE
 
@@ -1420,11 +1420,11 @@ CHARACTER(LEN=100), INTENT(IN)  :: HCOMMENT ! Comment string
 !*      0.2   Declarations of local variables
 !
 !
-CHARACTER(LEN=LEN_HREC)      :: YRECFM    ! Name of the article to be written
-INTEGER, DIMENSION(3)  :: ITDATE
-CHARACTER(LEN=5) :: YMSG
-TYPE (DATE_TIME) :: TZDATA
-TYPE(TFIELDDATA) :: TZFIELD
+CHARACTER(LEN=LEN_HREC) :: YRECFM    ! Name of the article to be written
+INTEGER, DIMENSION(3)   :: ITDATE
+CHARACTER(LEN=5)        :: YMSG
+TYPE (DATE_TIME)        :: TZDATA
+TYPE(TFIELDMETADATA)    :: TZFIELD
 !-------------------------------------------------------------------------------
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','WRITE_SURFT0_MNH',TRIM(TFILE_SURFEX%CNAME)//': writing '//TRIM(HREC))
@@ -1490,7 +1490,7 @@ END SUBROUTINE WRITE_SURFT0_MNH
 !*      0.    DECLARATIONS
 !             ------------
 !
-use modd_field,          only: tfielddata, TYPEINT, TYPEREAL
+use modd_field,          only: tfieldmetadata, TYPEINT, TYPEREAL
 USE MODD_IO,             ONLY: TFILE_SURFEX
 USE MODD_CONF_n,         ONLY: CSTORAGE_TYPE
 
@@ -1514,9 +1514,9 @@ CHARACTER(LEN=100), INTENT(IN)  :: HCOMMENT ! Comment string
 !*      0.2   Declarations of local variables
 !
 !
-INTEGER, DIMENSION(3,KL1)  :: ITDATE
-CHARACTER(LEN=5) :: YMSG
-TYPE(TFIELDDATA) :: TZFIELD
+CHARACTER(LEN=5)          :: YMSG
+INTEGER, DIMENSION(3,KL1) :: ITDATE
+TYPE(TFIELDMETADATA)      :: TZFIELD
 !-------------------------------------------------------------------------------
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','WRITE_SURFT1_MNH',TRIM(TFILE_SURFEX%CNAME)//': writing '//TRIM(HREC))
@@ -1530,7 +1530,7 @@ ELSE
   ITDATE(2,:) = KMONTH (:)
   ITDATE(3,:) = KDAY   (:)
   !
-  TZFIELD = TFIELDDATA(                &
+  TZFIELD = TFIELDMETADATA(            &
     CMNHNAME   = TRIM(HREC)//'%TDATE', &
     CSTDNAME   = '',                   &
     CLONGNAME  = TRIM(HREC)//'%TDATE', &
@@ -1549,7 +1549,7 @@ ELSE
     CALL PRINT_MSG(NVERB_ERROR,'IO','WRITE_SURFT1_MNH','error when writing article '//TRIM(HREC)//' KRESP='//YMSG)
   END IF
   !
-  TZFIELD = TFIELDDATA(                &
+  TZFIELD = TFIELDMETADATA(            &
     CMNHNAME   = TRIM(HREC)//'%xtime', &
     CSTDNAME   = '',                   &
     CLONGNAME  = TRIM(HREC)//'%xtime', &

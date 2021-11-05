@@ -90,7 +90,7 @@ USE MODD_CST
 USE MODD_PARAMETERS
 USE MODD_GRID_n
 USE MODD_IO, ONLY: TFILEDATA
-USE MODD_FIELD, ONLY: TFIELDDATA, TYPEREAL
+USE MODD_FIELD, ONLY: TFIELDMETADATA, TYPEREAL
 USE MODD_LUNIT_n
 USE MODD_LBC_n
 USE MODD_DEEP_CONVECTION_n
@@ -264,7 +264,7 @@ character (len=256) :: outstring
 ! -----------------------------------------------------------------------------
 CHARACTER(LEN=:), ALLOCATABLE :: YMNHNAME, YUNITS, YCOMMENT
 REAL, DIMENSION(SIZE(PTHT,1),SIZE(PTHT,2),SIZE(PTHT,3)) :: ZTEMP
-TYPE(TFIELDDATA) :: TZFIELD
+TYPE(TFIELDMETADATA) :: TZFIELD
 !-------------------------------------------------------------------------------
 !
 !*       0.     ARRAYS BOUNDS INITIALIZATION
@@ -705,7 +705,7 @@ DO JSAT=1,IJSAT ! loop over sensors
       YUNITS     = '-'
       YCOMMENT   = TRIM(YBEG)//'_'//TRIM(YEND)//' bidirectional reflectance factor'
     END IF
-    TZFIELD = TFIELDDATA(                          &
+    TZFIELD = TFIELDMETADATA(                      &
       CMNHNAME   = TRIM( YMNHNAME ),               &
       CSTDNAME   = '',                             &
       CLONGNAME  = 'MesoNH: ' // TRIM( YMNHNAME ), &

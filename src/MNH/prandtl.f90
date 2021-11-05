@@ -197,7 +197,7 @@ USE MODD_CST
 USE MODD_CONF
 USE MODD_CTURB
 USE MODD_DYN_n,          ONLY: LOCEAN
-use modd_field,          only: tfielddata, TYPEREAL
+use modd_field,          only: tfieldmetadata, TYPEREAL
 USE MODD_IO,             ONLY: TFILEDATA
 USE MODD_PARAMETERS
 !
@@ -270,7 +270,7 @@ INTEGER::  JSV                      ! loop index for the scalar variables
 
 INTEGER :: JLOOP
 REAL    :: ZMINVAL
-TYPE(TFIELDDATA)  :: TZFIELD
+TYPE(TFIELDMETADATA) :: TZFIELD
 ! ---------------------------------------------------------------------------
 !
 !*      1.  DEFAULT VALUES,  1D REDELSPERGER NUMBERS 
@@ -538,7 +538,7 @@ END IF ! end of HTURBDIM if-block
 IF ( OTURB_DIAG .AND. tpfile%lopened ) THEN
   !
   ! stores the RED_TH1
-  TZFIELD = TFIELDDATA(           &
+  TZFIELD = TFIELDMETADATA(       &
     CMNHNAME   = 'RED_TH1',       &
     CSTDNAME   = '',              &
     CLONGNAME  = 'RED_TH1',       &
@@ -552,7 +552,7 @@ IF ( OTURB_DIAG .AND. tpfile%lopened ) THEN
   CALL IO_Field_write(TPFILE,TZFIELD,PREDTH1)
   !
   ! stores the RED_R1
-  TZFIELD = TFIELDDATA(          &
+  TZFIELD = TFIELDMETADATA(      &
     CMNHNAME   = 'RED_R1',       &
     CSTDNAME   = '',             &
     CLONGNAME  = 'RED_R1',       &
@@ -566,7 +566,7 @@ IF ( OTURB_DIAG .AND. tpfile%lopened ) THEN
   CALL IO_Field_write(TPFILE,TZFIELD,PREDR1)
   !
   ! stores the RED2_TH3
-  TZFIELD = TFIELDDATA(            &
+  TZFIELD = TFIELDMETADATA(        &
     CMNHNAME   = 'RED2_TH3',       &
     CSTDNAME   = '',               &
     CLONGNAME  = 'RED2_TH3',       &
@@ -580,7 +580,7 @@ IF ( OTURB_DIAG .AND. tpfile%lopened ) THEN
   CALL IO_Field_write(TPFILE,TZFIELD,PRED2TH3)
   !
   ! stores the RED2_R3
-  TZFIELD = TFIELDDATA(           &
+  TZFIELD = TFIELDMETADATA(       &
     CMNHNAME   = 'RED2_R3',       &
     CSTDNAME   = '',              &
     CLONGNAME  = 'RED2_R3',       &
@@ -594,7 +594,7 @@ IF ( OTURB_DIAG .AND. tpfile%lopened ) THEN
   CALL IO_Field_write(TPFILE,TZFIELD,PRED2R3)
   !
   ! stores the RED2_THR3
-  TZFIELD = TFIELDDATA(             &
+  TZFIELD = TFIELDMETADATA(         &
     CMNHNAME   = 'RED2_THR3',       &
     CSTDNAME   = '',                &
     CLONGNAME  = 'RED2_THR3',       &

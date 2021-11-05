@@ -290,7 +290,7 @@ USE MODD_CONF
 USE MODD_CST
 USE MODD_CTURB
 USE MODD_DYN_n,          ONLY: LOCEAN
-use modd_field,          only: tfielddata, TYPEREAL
+use modd_field,          only: tfieldmetadata, TYPEREAL
 USE MODD_IO,             ONLY: TFILEDATA
 USE MODD_LES
 USE MODD_NSV
@@ -404,7 +404,7 @@ REAL, DIMENSION(SIZE(PDZZ,1),SIZE(PDZZ,2),1) :: ZCOEFFLXU, &
 INTEGER             :: IIU,IJU      ! size of array in x,y,z directions
 !
 REAL :: ZTIME1, ZTIME2
-TYPE(TFIELDDATA) :: TZFIELD
+TYPE(TFIELDMETADATA) :: TZFIELD
 !----------------------------------------------------------------------------
 !
 !*       1.   PRELIMINARIES
@@ -541,7 +541,7 @@ END IF
 !
 IF ( OTURB_FLX .AND. tpfile%lopened ) THEN
   ! stores the U wind component vertical flux
-  TZFIELD = TFIELDDATA(                            &
+  TZFIELD = TFIELDMETADATA(                        &
     CMNHNAME   = 'UW_VFLX',                        &
     CSTDNAME   = '',                               &
     CLONGNAME  = 'UW_VFLX',                        &
@@ -770,7 +770,7 @@ END IF
 !
 IF ( OTURB_FLX .AND. tpfile%lopened ) THEN
   ! stores the V wind component vertical flux
-  TZFIELD = TFIELDDATA(                            &
+  TZFIELD = TFIELDMETADATA(                        &
     CMNHNAME   = 'VW_VFLX',                        &
     CSTDNAME   = '',                               &
     CLONGNAME  = 'VW_VFLX',                        &
@@ -908,7 +908,7 @@ IF ( OTURB_FLX .AND. tpfile%lopened .AND. HTURBDIM == '1DIM') THEN
   ! to be tested &
   !   +XCMFB*(4./3.)*PLM(:,:,:)/SQRT(PTKEM(:,:,:))*PTP(:,:,:) 
   ! stores the W variance
-  TZFIELD = TFIELDDATA(          &
+  TZFIELD = TFIELDMETADATA(      &
     CMNHNAME   = 'W_VVAR',       &
     CSTDNAME   = '',             &
     CLONGNAME  = 'W_VVAR',       &

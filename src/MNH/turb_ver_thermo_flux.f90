@@ -338,7 +338,7 @@ END MODULE MODI_TURB_VER_THERMO_FLUX
 !
 USE MODD_CST
 USE MODD_CTURB
-use modd_field,          only: tfielddata, TYPEREAL
+use modd_field,          only: tfieldmetadata, TYPEREAL
 USE MODD_GRID_n,         ONLY: XZS, XXHAT, XYHAT
 USE MODD_IO,             ONLY: TFILEDATA
 USE MODD_METRICS_n,      ONLY: XDXX, XDYY, XDZX, XDZY, XDZZ
@@ -522,7 +522,7 @@ LOGICAL :: GFWTH    ! flag to use w'2th'
 LOGICAL :: GFR2     ! flag to use w'r'2
 LOGICAL :: GFWR     ! flag to use w'2r'
 LOGICAL :: GFTHR    ! flag to use w'th'r'
-TYPE(TFIELDDATA) :: TZFIELD
+TYPE(TFIELDMETADATA) :: TZFIELD
 !----------------------------------------------------------------------------
 !
 !*       1.   PRELIMINARIES
@@ -753,7 +753,7 @@ END IF
 !
 IF ( OTURB_FLX .AND. tpfile%lopened ) THEN
   ! stores the conservative potential temperature vertical flux
-  TZFIELD = TFIELDDATA(                                             &
+  TZFIELD = TFIELDMETADATA(                                         &
    CMNHNAME   = 'THW_FLX',                                          &
    CSTDNAME   = '',                                                 &
    CLONGNAME  = 'THW_FLX',                                          &
@@ -990,7 +990,7 @@ IF (KRR /= 0) THEN
   !
   IF ( OTURB_FLX .AND. tpfile%lopened ) THEN
     ! stores the conservative mixing ratio vertical flux
-    TZFIELD = TFIELDDATA(                                     &
+    TZFIELD = TFIELDMETADATA(                                 &
       CMNHNAME   = 'RCONSW_FLX',                              &
       CSTDNAME   = '',                                        &
       CLONGNAME  = 'RCONSW_FLX',                              &
@@ -1080,7 +1080,7 @@ IF ( ((OTURB_FLX .AND. tpfile%lopened) .OR. LLES_CALL) .AND. (KRRL > 0) ) THEN
   !                 
   ! store the liquid water mixing ratio vertical flux
   IF ( OTURB_FLX .AND. tpfile%lopened ) THEN
-    TZFIELD = TFIELDDATA(                                     &
+    TZFIELD = TFIELDMETADATA(                                 &
       CMNHNAME   = 'RCW_FLX',                                 &
       CSTDNAME   = '',                                        &
       CLONGNAME  = 'RCW_FLX',                                 &

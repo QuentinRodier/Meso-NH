@@ -146,7 +146,7 @@ use modd_budget,         only: NLVL_CATEGORY, NLVL_GROUP, NLVL_SHAPE, nbumask, n
 use modd_field,          only: NMNHDIM_ONE, NMNHDIM_UNKNOWN, NMNHDIM_BUDGET_LES_MASK, &
                                NMNHDIM_FLYER_TIME, NMNHDIM_NOTLISTED, NMNHDIM_UNUSED, &
                                TYPECHAR, TYPEINT, TYPEREAL,                           &
-                               tfieldmetadata_base, tfielddata
+                               tfieldmetadata_base, tfieldmetadata
 use modd_io,             only: tfiledata
 use modd_les,            only: nles_current_iinf, nles_current_isup, nles_current_jinf, nles_current_jsup, &
                                nles_k, xles_current_z
@@ -196,7 +196,7 @@ logical   :: gdistributed
 real, dimension(:,:), allocatable :: ztimes
 real, dimension(:,:), allocatable :: zdatime
 real, dimension(:,:,:), allocatable :: ztrajz
-TYPE(TFIELDDATA) :: TZFIELD
+TYPE(TFIELDMETADATA) :: TZFIELD
 type(tfiledata)  :: tzfile
 
 call Print_msg( NVERB_DEBUG, 'BUD', 'Write_diachro_lfi', 'called' )
@@ -408,7 +408,7 @@ ILENCOMMENT = LFICOMMENTLGT
 !
 ! 1er enregistrement TYPE
 !
-TZFIELD = TFIELDDATA(                 &
+TZFIELD = TFIELDMETADATA(             &
   CMNHNAME   = TRIM(ygroup)//'.TYPE', &
   CSTDNAME   = '',                    &
   CLONGNAME  = TRIM(ygroup)//'.TYPE', &
@@ -423,7 +423,7 @@ CALL IO_Field_write(tzfile,TZFIELD,YTYPE)
 !
 ! 2eme  enregistrement DIMENSIONS des MATRICES et LONGUEUR des TABLEAUX de CARACTERES et FLAGS de COMPRESSION sur les DIFFERENTS AXES
 !
-TZFIELD = TFIELDDATA(                &
+TZFIELD = TFIELDMETADATA(            &
   CMNHNAME   = TRIM(ygroup)//'.DIM', &
   CSTDNAME   = '',                   &
   CLONGNAME  = TRIM(ygroup)//'.DIM', &
@@ -490,7 +490,7 @@ END SELECT
 !
 ! 3eme enregistrement TITRE
 !
-TZFIELD = TFIELDDATA(                  &
+TZFIELD = TFIELDMETADATA(              &
   CMNHNAME   = TRIM(ygroup)//'.TITRE', &
   CSTDNAME   = '',                     &
   CLONGNAME  = TRIM(ygroup)//'.TITRE', &
@@ -508,7 +508,7 @@ deallocate( ytitles )
 !
 ! 4eme enregistrement UNITE
 !
-TZFIELD = TFIELDDATA(                  &
+TZFIELD = TFIELDMETADATA(              &
   CMNHNAME   = TRIM(ygroup)//'.UNITE', &
   CSTDNAME   = '',                     &
   CLONGNAME  = TRIM(ygroup)//'.UNITE', &
@@ -526,7 +526,7 @@ deallocate( yunits )
 !
 ! 5eme enregistrement COMMENT
 !
-TZFIELD = TFIELDDATA(                    &
+TZFIELD = TFIELDMETADATA(                &
   CMNHNAME   = TRIM(ygroup)//'.COMMENT', &
   CSTDNAME   = '',                       &
   CLONGNAME  = TRIM(ygroup)//'.COMMENT', &
@@ -569,7 +569,7 @@ DO J = 1,IP
           WRITE(YJ,'(I3)')J
   ENDIF
   IF ( gdistributed ) THEN
-    TZFIELD = TFIELDDATA(                     &
+    TZFIELD = TFIELDMETADATA(                 &
       CMNHNAME   = TRIM(ygroup)//'.PROC'//YJ, &
       CSTDNAME   = '',                        &
       CLONGNAME  = TRIM(ygroup)//'.PROC'//YJ, &
@@ -584,7 +584,7 @@ DO J = 1,IP
     CALL IO_Field_write_BOX(tzfile,TZFIELD,'BUDGET',PVAR(:,:,:,:,:,J), &
                             iil+JPHEXT,iih+JPHEXT,ijl+JPHEXT,ijh+JPHEXT)
   ELSE
-    TZFIELD = TFIELDDATA(                     &
+    TZFIELD = TFIELDMETADATA(                 &
       CMNHNAME   = TRIM(ygroup)//'.PROC'//YJ, &
       CSTDNAME   = '',                        &
       CLONGNAME  = TRIM(ygroup)//'.PROC'//YJ, &
@@ -603,7 +603,7 @@ ENDDO
 !
 ! 7eme enregistrement TRAJT
 !
-TZFIELD = TFIELDDATA(                  &
+TZFIELD = TFIELDMETADATA(              &
   CMNHNAME   = TRIM(ygroup)//'.TRAJT', &
   CSTDNAME   = '',                     &
   CLONGNAME  = TRIM(ygroup)//'.TRAJT', &
@@ -643,7 +643,7 @@ deallocate( ztimes )
 ! 8eme enregistrement TRAJX
 !
 IF(PRESENT(tpflyer))THEN
-  TZFIELD = TFIELDDATA(                  &
+  TZFIELD = TFIELDMETADATA(              &
     CMNHNAME   = TRIM(ygroup)//'.TRAJX', &
     CSTDNAME   = '',                     &
     CLONGNAME  = TRIM(ygroup)//'.TRAJX', &
@@ -656,7 +656,7 @@ IF(PRESENT(tpflyer))THEN
     LTIMEDEP   = .FALSE.                 )
   CALL IO_Field_write(tzfile,TZFIELD, Reshape( tpflyer%x, [1, Size( tpflyer%x), 1] ) )
 ELSE IF ( ycategory == 'LES_budgets' .and.  tpbudiachro%clevels(NLVL_SHAPE) == 'Cartesian' ) THEN
-  TZFIELD = TFIELDDATA(                  &
+  TZFIELD = TFIELDMETADATA(              &
     CMNHNAME   = TRIM(ygroup)//'.TRAJX', &
     CSTDNAME   = '',                     &
     CLONGNAME  = TRIM(ygroup)//'.TRAJX', &
@@ -676,7 +676,7 @@ ENDIF
 ! 9eme enregistrement TRAJY
 !
 IF(PRESENT(tpflyer))THEN
-  TZFIELD = TFIELDDATA(                  &
+  TZFIELD = TFIELDMETADATA(              &
     CMNHNAME   = TRIM(ygroup)//'.TRAJY', &
     CSTDNAME   = '',                     &
     CLONGNAME  = TRIM(ygroup)//'.TRAJY', &
@@ -689,7 +689,7 @@ IF(PRESENT(tpflyer))THEN
     LTIMEDEP   = .FALSE.                 )
   CALL IO_Field_write(tzfile,TZFIELD, Reshape( tpflyer%y, [1, Size( tpflyer%y), 1] ) )
 ELSE IF ( ycategory == 'LES_budgets' .and.  tpbudiachro%clevels(NLVL_SHAPE) == 'Cartesian' ) THEN
-  TZFIELD = TFIELDDATA(                  &
+  TZFIELD = TFIELDMETADATA(              &
     CMNHNAME   = TRIM(ygroup)//'.TRAJY', &
     CSTDNAME   = '',                     &
     CLONGNAME  = TRIM(ygroup)//'.TRAJY', &
@@ -709,7 +709,7 @@ ENDIF
 ! 10eme enregistrement TRAJZ
 !
 IF(PRESENT(tpflyer))THEN
-  TZFIELD = TFIELDDATA(                  &
+  TZFIELD = TFIELDMETADATA(              &
     CMNHNAME   = TRIM(ygroup)//'.TRAJZ', &
     CSTDNAME   = '',                     &
     CLONGNAME  = TRIM(ygroup)//'.TRAJZ', &
@@ -722,7 +722,7 @@ IF(PRESENT(tpflyer))THEN
     LTIMEDEP   = .FALSE.                 )
   CALL IO_Field_write(tzfile,TZFIELD, Reshape( tpflyer%z, [1, Size( tpflyer%z), 1] ) )
 ELSE IF ( ycategory == 'LES_budgets' .and.  tpbudiachro%clevels(NLVL_SHAPE) == 'Cartesian' ) THEN
-  TZFIELD = TFIELDDATA(                  &
+  TZFIELD = TFIELDMETADATA(              &
     CMNHNAME   = TRIM(ygroup)//'.TRAJZ', &
     CSTDNAME   = '',                     &
     CLONGNAME  = TRIM(ygroup)//'.TRAJZ', &
@@ -744,7 +744,7 @@ ENDIF
 !
 ! 11eme enregistrement PDATIME
 !
-TZFIELD = TFIELDDATA(                  &
+TZFIELD = TFIELDMETADATA(              &
   CMNHNAME   = TRIM(ygroup)//'.DATIM', &
   CSTDNAME   = '',                     &
   CLONGNAME  = TRIM(ygroup)//'.DATIM', &
@@ -834,7 +834,7 @@ integer(kind=CDFINT), dimension(0:NMAXLEVELS) :: ilevelids ! ids of the differen
 logical                                       :: gdistributed
 logical                                       :: gsplit
 logical,              dimension(0:NMAXLEVELS) :: gleveldefined ! Are the different groups/levels already defined in the netCDF file
-type(tfielddata)                              :: tzfield
+type(tfieldmetadata)                          :: tzfield
 type(tfiledata)                               :: tzfile
 
 call Print_msg( NVERB_DEBUG, 'BUD', 'Write_diachro_nc4', 'called' )
@@ -1495,7 +1495,7 @@ if ( Present( tpflyer ) ) then
     ystdnameprefix = 'projection'
   endif
 
-  tzfield = tfielddata(                                     &
+  tzfield = tfieldmetadata(                                 &
     cmnhname   = 'X',                                       &
     cstdname   = Trim( ystdnameprefix ) // '_x_coordinate', &
     clongname  = 'x-position of the flyer',                 &
@@ -1523,7 +1523,7 @@ end  subroutine Write_diachro_nc4
 subroutine Diachro_one_field_write_nc4( tpfile, tpbudiachro, tpfield, pvar, kdims, osplit, odistributed, &
                                         kil, kih, kjl, kjh, kkl, kkh )
 use modd_budget,      only: NLVL_CATEGORY, NLVL_GROUP, NLVL_SHAPE, nbutshift, nbusubwrite, tbudiachrometadata
-use modd_field,       only: tfielddata, tfieldmetadata_base
+use modd_field,       only: tfieldmetadata, tfieldmetadata_base
 use modd_io,          only: isp, tfiledata
 use modd_parameters,  only: jphext
 
@@ -1552,7 +1552,7 @@ real,             dimension(:,:),              allocatable :: zdata2d
 real,             dimension(:,:,:),            allocatable :: zdata3d
 real,             dimension(:,:,:,:),          allocatable :: zdata4d
 real,             dimension(:,:,:,:,:),        allocatable :: zdata5d
-type(tfielddata)                                           :: tzfield
+type(tfieldmetadata)                                       :: tzfield
 
 idims = Size( kdims )
 
@@ -1770,10 +1770,10 @@ end subroutine Diachro_one_field_write_nc4
 
 
 subroutine Prepare_diachro_write( tpfieldin, tpfieldout, kdims, osplit, odistributed, kbutimepos )
-use modd_field, only: NMNHDIM_BUDGET_TIME, NMNHDIM_UNUSED, NMNHMAXDIMS, tfielddata, tfieldmetadata_base
+use modd_field, only: NMNHDIM_BUDGET_TIME, NMNHDIM_UNUSED, NMNHMAXDIMS, tfieldmetadata, tfieldmetadata_base
 
 class(tfieldmetadata_base), intent(in)  :: tpfieldin
-type(tfielddata),           intent(out) :: tpfieldout
+type(tfieldmetadata),       intent(out) :: tpfieldout
 integer, dimension(:),      intent(in)  :: kdims ! List of indices of dimensions to use
 logical,                    intent(in)  :: osplit
 logical,                    intent(in)  :: odistributed ! .true. if data is distributed among all the processes

@@ -101,7 +101,7 @@ use modd_budget,          only: lbudget_th, lbudget_rv, lbudget_rc, lbudget_sv, 
                                 tbudgets
 USE MODD_CONF
 USE MODD_CST
-use modd_field,           only: TFIELDDATA,TYPEREAL
+use modd_field,           only: TFIELDMETADATA, TYPEREAL
 USE MODD_IO,              ONLY: TFILEDATA
 USE MODD_LUNIT_n,         ONLY: TLUOUT
 USE MODD_NSV,             ONLY: NSV_C2R2BEG
@@ -183,8 +183,8 @@ INTEGER, DIMENSION(:), ALLOCATABLE :: IVEC1             ! Vectors of indices for
 REAL, DIMENSION(SIZE(PRHODREF,1),SIZE(PRHODREF,2),SIZE(PRHODREF,3)) ::&
                        ZEXNT,ZEXNS,ZT,ZRVSAT,ZWORK,ZLV,ZCPH, ZW1,        &
                        ZACT, ZDZ
-INTEGER           :: JK            ! For loop
-TYPE(TFIELDDATA)  :: TZFIELD
+INTEGER              :: JK            ! For loop
+TYPE(TFIELDMETADATA) :: TZFIELD
 
 !-------------------------------------------------------------------------------
 !
@@ -389,7 +389,7 @@ END IF
   PNPRO(:,:,:) = ZACT(:,:,:) 
 !
 IF ( tpfile%lopened ) THEN
-  TZFIELD = TFIELDDATA(       &
+  TZFIELD = TFIELDMETADATA(   &
     CMNHNAME   = 'SURSAT',    &
     CSTDNAME   = '',          &
     CLONGNAME  = 'SURSAT',    &
@@ -402,7 +402,7 @@ IF ( tpfile%lopened ) THEN
     LTIMEDEP   = .FALSE.      )
   CALL IO_Field_write(TPFILE,TZFIELD,ZWORK)
   !
-  TZFIELD = TFIELDDATA(       &
+  TZFIELD = TFIELDMETADATA(   &
     CMNHNAME   = 'ACT_OD',    &
     CSTDNAME   = '',          &
     CLONGNAME  = 'ACT_OD',    &

@@ -129,7 +129,7 @@ use modd_budget,          only: lbudget_u, lbudget_v, lbudget_th, lbudget_rv, lb
 USE MODD_CONF
 USE MODD_CST
 USE MODD_IO,              ONLY: TFILEDATA
-use modd_field,           only: tfielddata, TYPEREAL
+use modd_field,           only: tfieldmetadata, TYPEREAL
 USE MODD_NSV
 USE MODD_PARAMETERS
 USE MODD_PARAM_ICE,       ONLY: CFRAC_ICE_SHALLOW_MF
@@ -258,7 +258,7 @@ REAL, DIMENSION(SIZE(PTHM,1),SIZE(PTHM,2),SIZE(PTHM,3),SIZE(PSVM,4)) ::  ZDSVDT 
 INTEGER :: IIU, IJU, IKU, IKB, IKE, IRR, ISV  
 INTEGER :: JK,JRR,JSV                          ! Loop counters
 
-TYPE(TFIELDDATA) :: TZFIELD
+TYPE(TFIELDMETADATA) :: TZFIELD
 !------------------------------------------------------------------------
 
 !!! 1. Initialisation
@@ -395,7 +395,7 @@ end if
 IF ( OMF_FLX .AND. tpfile%lopened ) THEN
   ! stores the conservative potential temperature vertical flux
   ZWORK(:,:,:)=RESHAPE(ZFLXZTHMF (:,:),(/ IIU,IJU,IKU /) )
-  TZFIELD = TFIELDDATA(              &
+  TZFIELD = TFIELDMETADATA(          &
     CMNHNAME   = 'MF_THW_FLX',       &
     CSTDNAME   = '',                 &
     CLONGNAME  = 'MF_THW_FLX',       &
@@ -410,7 +410,7 @@ IF ( OMF_FLX .AND. tpfile%lopened ) THEN
   !
   ! stores the conservative mixing ratio vertical flux
   ZWORK(:,:,:)=RESHAPE(ZFLXZRMF(:,:),(/ IIU,IJU,IKU /) )
-    TZFIELD = TFIELDDATA(                 &
+    TZFIELD = TFIELDMETADATA(             &
       CMNHNAME   = 'MF_RCONSW_FLX',       &
       CSTDNAME   = '',                    &
       CLONGNAME  = 'MF_RCONSW_FLX',       &
@@ -424,7 +424,7 @@ IF ( OMF_FLX .AND. tpfile%lopened ) THEN
   CALL IO_Field_write(TPFILE,TZFIELD,ZWORK)
   !
   ! stores the theta_v vertical flux
-  TZFIELD = TFIELDDATA(               &
+  TZFIELD = TFIELDMETADATA(           &
     CMNHNAME   = 'MF_THVW_FLX',       &
     CSTDNAME   = '',                  &
     CLONGNAME  = 'MF_THVW_FLX',       &
@@ -440,7 +440,7 @@ IF ( OMF_FLX .AND. tpfile%lopened ) THEN
  IF (OMIXUV) THEN
   ! stores the U momentum vertical flux
   ZWORK(:,:,:)=RESHAPE(ZFLXZUMF(:,:),(/ IIU,IJU,IKU /) )
-  TZFIELD = TFIELDDATA(             &
+  TZFIELD = TFIELDMETADATA(         &
     CMNHNAME   = 'MF_UW_FLX',       &
     CSTDNAME   = '',                &
     CLONGNAME  = 'MF_UW_FLX',       &
@@ -455,7 +455,7 @@ IF ( OMF_FLX .AND. tpfile%lopened ) THEN
   !
   ! stores the V momentum vertical flux
   ZWORK(:,:,:)=RESHAPE(ZFLXZVMF(:,:),(/ IIU,IJU,IKU /) )
-  TZFIELD = TFIELDDATA(             &
+  TZFIELD = TFIELDMETADATA(         &
     CMNHNAME   = 'MF_VW_FLX',       &
     CSTDNAME   = '',                &
     CLONGNAME  = 'MF_VW_FLX',       &

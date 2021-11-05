@@ -113,7 +113,7 @@ END MODULE MODI_TURB_HOR_SV_FLUX
 USE MODD_CST
 USE MODD_CONF
 USE MODD_CTURB
-use modd_field,          only: tfielddata, TYPEREAL
+use modd_field,          only: tfieldmetadata, TYPEREAL
 USE MODD_IO,             ONLY: TFILEDATA
 USE MODD_PARAMETERS
 USE MODD_NSV,            ONLY: NSV_LGBEG, NSV_LGEND
@@ -187,7 +187,7 @@ REAL, DIMENSION(SIZE(PDZZ,1),SIZE(PDZZ,2),1+JPVEXT:3+JPVEXT) :: ZCOEFF
 !
 CHARACTER(LEN=NMNHNAMELGTMAX) :: YMNHNAME
 INTEGER :: IKU
-TYPE(TFIELDDATA) :: TZFIELD
+TYPE(TFIELDMETADATA) :: TZFIELD
 REAL :: ZTIME1, ZTIME2
 ! ---------------------------------------------------------------------------
 !
@@ -250,7 +250,7 @@ DO JSV=1,ISV
   ! stores  <U SVth>
   IF ( tpfile%lopened .AND. OTURB_FLX ) THEN
     WRITE(YMNHNAME,'("USV_FLX_",I3.3)') JSV
-    TZFIELD = TFIELDDATA(                        &
+    TZFIELD = TFIELDMETADATA(                    &
       CMNHNAME   = TRIM( YMNHNAME ),             &
       CSTDNAME   = '',                           &
       CLONGNAME  = TRIM( YMNHNAME ),             &
@@ -303,7 +303,7 @@ DO JSV=1,ISV
   ! stores  <V SVth>
     IF ( tpfile%lopened .AND. OTURB_FLX ) THEN
       WRITE(YMNHNAME,'("VSV_FLX_",I3.3)') JSV
-    TZFIELD = TFIELDDATA(                            &
+    TZFIELD = TFIELDMETADATA(                        &
       CMNHNAME   = TRIM( YMNHNAME ),                 &
       CSTDNAME   = '',                               &
       CLONGNAME  = TRIM(TZFIELD%CMNHNAME),           &

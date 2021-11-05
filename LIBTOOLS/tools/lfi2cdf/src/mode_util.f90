@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -15,7 +15,7 @@
 !  P. Wautelet 10/11/2020: new data structures for netCDF dimensions
 !-----------------------------------------------------------------
 MODULE mode_util
-  use modd_field,      only: tfielddata, tfieldlist
+  use modd_field,      only: tfieldmetadata, tfieldlist
   USE MODD_IO,         ONLY: TFILEDATA, TFILE_ELT
   USE MODD_NETCDF,     ONLY: CDFINT, tdimnc
   USE MODD_PARAMETERS, ONLY: NLFIMAXCOMMENTLENGTH, NMNHNAMELGTMAX
@@ -56,7 +56,7 @@ MODULE mode_util
      INTEGER(kind=CDFINT)                  :: NTYPE_FILE  ! netCDF datatype (NF90_CHAR, NF90_INT...) (as present in input file)
      INTEGER,DIMENSION(MAXRAW)             :: src    ! List of variables used to compute the variable (needed only if calc=.true.)
      INTEGER                               :: tgt    ! Target: id of the variable that use it (calc variable)
-     TYPE(TFIELDDATA)                      :: TFIELD ! Metadata about the field
+     TYPE(TFIELDMETADATA)                  :: TFIELD ! Metadata about the field
      TYPE(tdimnc),DIMENSION(:),ALLOCATABLE :: TDIMS  ! Dimensions of the field
   END TYPE workfield
 
@@ -388,7 +388,7 @@ END DO
       ELSE
         CALL FIND_FIELD_ID_FROM_MNHNAME(tpreclist(ji)%name,IID,IRESP,ONOWARNING=.TRUE.)
         IF (IRESP==0) THEN
-          tpreclist(ji)%TFIELD = TFIELDLIST(IID)
+          tpreclist(ji)%TFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
           ! Determine TDIMS
           IF (runmode==MODELFI2CDF) THEN
             ALLOCATE(tpreclist(ji)%TDIMS(tpreclist(ji)%TFIELD%NDIMS))

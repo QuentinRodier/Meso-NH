@@ -133,7 +133,7 @@ USE MODD_CH_AEROSOL,  ONLY: LORILAM
 USE MODD_CONF,        ONLY: LCARTESIAN
 USE MODD_CST
 USE MODD_DUST,        ONLY: LDUST
-use modd_field,          only: tfielddata, TYPEREAL
+use modd_field,          only: tfieldmetadata, TYPEREAL
 USE MODD_GRID ,       ONLY: XLAT0, XLON0
 USE MODD_GRID_n ,     ONLY: XLAT, XLON
 USE MODD_IO,          ONLY: TFILEDATA
@@ -535,7 +535,7 @@ CHARACTER (LEN=2)               :: YDIR        ! Type of the data field
 INTEGER :: ISWB ! number of SW spectral bands (between radiations and surface schemes)
 INTEGER :: JSWB ! loop on SW spectral bands
 INTEGER :: JAE  ! loop on aerosol class
-TYPE(TFIELDDATA) :: TZFIELD2D, TZFIELD3D
+TYPE(TFIELDMeTaDATA) :: TZFIELD2D, TZFIELD3D
 !
 REAL, DIMENSION(SIZE(PTHT,1),SIZE(PTHT,2),SIZE(PTHT,3)) :: ZDZPABST
 REAL :: ZMINVAL
@@ -2684,7 +2684,7 @@ IF( tpfile%lopened .AND. (KRAD_DIAG >= 1) ) THEN
   ZSTORE_3D2(:,:,:) = 0.0
   ZSTORE_2D(:,:)   = 0.0
   !
-  TZFIELD2D = TFIELDDATA(                     &
+  TZFIELD2D = TFIELDMETADATA(                 &
     CMNHNAME   = 'generic 2D for radiations', & !Temporary name to ease identification
     CSTDNAME   = '',                          &
     CDIR       = 'XY',                        &
@@ -2693,7 +2693,7 @@ IF( tpfile%lopened .AND. (KRAD_DIAG >= 1) ) THEN
     NDIMS      = 2,                           &
     LTIMEDEP   = .TRUE.                       )
 
-  TZFIELD3D = TFIELDDATA(                     &
+  TZFIELD3D = TFIELDMETADATA(                 &
     CMNHNAME   = 'generic 3D for radiations', & !Temporary name to ease identification
     CSTDNAME   = '',                          &
     CDIR       = 'XY',                        &

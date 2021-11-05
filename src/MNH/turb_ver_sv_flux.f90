@@ -270,7 +270,7 @@ END MODULE MODI_TURB_VER_SV_FLUX
 !
 USE MODD_CST
 USE MODD_CTURB
-use modd_field,          only: tfielddata, TYPEREAL
+use modd_field,          only: tfieldmetadata, TYPEREAL
 USE MODD_IO,             ONLY: TFILEDATA
 USE MODD_PARAMETERS
 USE MODD_LES
@@ -360,7 +360,7 @@ REAL :: ZCSVP = 4.0  ! constant for scalar flux presso-correlation (RS81)
 REAL :: ZCSV          !constant for the scalar flux
 !
 CHARACTER(LEN=NMNHNAMELGTMAX) :: YMNHNAME
-TYPE(TFIELDDATA)  :: TZFIELD
+TYPE(TFIELDMETADATA)  :: TZFIELD
 !----------------------------------------------------------------------------
 !
 !*       1.   PRELIMINARIES
@@ -455,7 +455,7 @@ DO JSV=1,ISV
   IF (OTURB_FLX .AND. tpfile%lopened) THEN
     ! stores the JSVth vertical flux
     WRITE(YMNHNAME,'("WSV_FLX_",I3.3)') JSV
-    TZFIELD = TFIELDDATA(                        &
+    TZFIELD = TFIELDMETADATA(                    &
       CMNHNAME   = TRIM( YMNHNAME ),             &
       CSTDNAME   = '',                           &
       CLONGNAME  = TRIM( YMNHNAME ),             &

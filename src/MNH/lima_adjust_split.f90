@@ -153,7 +153,7 @@ use modd_budget,           only: lbu_enable, nbumod,                            
                                  tbudgets
 USE MODD_CONF
 USE MODD_CST
-use modd_field,            only: TFIELDDATA, TYPEREAL
+use modd_field,            only: TFIELDMETADATA, TYPEREAL
 USE MODD_IO,               ONLY: TFILEDATA
 USE MODD_LUNIT_n,          ONLY: TLUOUT
 USE MODD_NSV
@@ -309,7 +309,7 @@ INTEGER                           :: JL       ! and PACK intrinsics
 INTEGER                           :: JMOD, JMOD_IFN, JMOD_IMM
 !
 INTEGER , DIMENSION(3) :: BV
-TYPE(TFIELDDATA)  :: TZFIELD
+TYPE(TFIELDMETADATA)  :: TZFIELD
 !
 !-------------------------------------------------------------------------------
 !
@@ -726,7 +726,7 @@ IF ( OSUBG_COND ) THEN
 END IF ! fin test OSUBG_COND
 
 IF ( tpfile%lopened ) THEN
-   TZFIELD = TFIELDDATA(       &
+   TZFIELD = TFIELDMETADATA(   &
      CMNHNAME   = 'NEB',       &
      CSTDNAME   = '',          &
      CLONGNAME  = 'NEB',       &
@@ -782,7 +782,7 @@ IF ( tpfile%lopened ) THEN
    ZW1(:,:,:)= 2.0*PPABST(:,:,:)-PPABSM(:,:,:)
    ZW(:,:,:) = PRVT(:,:,:)*( ZW1(:,:,:)-ZW(:,:,:) ) / ( (XMV/XMD) * ZW(:,:,:) ) - 1.0
    
-   TZFIELD = TFIELDDATA(       &
+   TZFIELD = TFIELDMETADATA(   &
      CMNHNAME   = 'SSI',       &
      CSTDNAME   = '',          &
      CLONGNAME  = 'SSI',       &

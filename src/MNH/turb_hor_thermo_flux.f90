@@ -130,7 +130,7 @@ END MODULE MODI_TURB_HOR_THERMO_FLUX
 USE MODD_CST
 USE MODD_CONF
 USE MODD_CTURB
-use modd_field,          only: tfielddata, TYPEREAL
+use modd_field,          only: tfieldmetadata, TYPEREAL
 USE MODD_IO,             ONLY: TFILEDATA
 USE MODD_PARAMETERS
 USE MODD_LES
@@ -214,7 +214,7 @@ REAL, DIMENSION(SIZE(PDZZ,1),SIZE(PDZZ,2),1+JPVEXT:3+JPVEXT) :: ZCOEFF
                                     ! computation near the ground
 !
 REAL :: ZTIME1, ZTIME2
-TYPE(TFIELDDATA) :: TZFIELD
+TYPE(TFIELDMETADATA) :: TZFIELD
 ! ---------------------------------------------------------------------------
 !
 !*       1.   PRELIMINARY COMPUTATIONS
@@ -311,7 +311,7 @@ END IF
 !
 ! stores the horizontal  <U THl>
 IF ( tpfile%lopened .AND. OTURB_FLX ) THEN
-  TZFIELD = TFIELDDATA(            &
+  TZFIELD = TFIELDMETADATA(        &
     CMNHNAME   = 'UTHL_FLX',       &
     CSTDNAME   = '',               &
     CLONGNAME  = 'UTHL_FLX',       &
@@ -415,7 +415,7 @@ IF (KRR/=0) THEN
   !
   ! stores the horizontal  <U Rnp>
   IF ( tpfile%lopened .AND. OTURB_FLX ) THEN
-    TZFIELD = TFIELDDATA(           &
+    TZFIELD = TFIELDMETADATA(       &
       CMNHNAME   = 'UR_FLX',        &
       CSTDNAME   = '',              &
       CLONGNAME  = 'UR_FLX',        &
@@ -465,7 +465,7 @@ END IF
 !!  !
 !!  ! stores the horizontal  <U VPT>
 !!  IF ( tpfile%lopened .AND. OTURB_FLX ) THEN
-!!    TZFIELD = TFIELDDATA(            &
+!!    TZFIELD = TFIELDMETADATA(        &
 !!      CMNHNAME   = 'UVPT_FLX',       &
 !!      CSTDNAME   = '',               &
 !!      CLONGNAME  = 'UVPT_FLX',       &
@@ -569,7 +569,7 @@ END IF
 !
 ! stores the horizontal  <V THl>
 IF ( tpfile%lopened .AND. OTURB_FLX ) THEN
-  TZFIELD = TFIELDDATA(            &
+  TZFIELD = TFIELDMETADATA(        &
     CMNHNAME   = 'VTHL_FLX',       &
     CSTDNAME   = '',               &
     CLONGNAME  = 'VTHL_FLX',       &
@@ -682,7 +682,7 @@ IF (KRR/=0) THEN
   !
   ! stores the horizontal  <V Rnp>
   IF ( tpfile%lopened .AND. OTURB_FLX ) THEN
-    TZFIELD = TFIELDDATA(           &
+    TZFIELD = TFIELDMETADATA(       &
       CMNHNAME   = 'VR_FLX',        &
       CSTDNAME   = '',              &
       CLONGNAME  = 'VR_FLX',        &
@@ -736,7 +736,7 @@ END IF
 !!  !
 !!  ! stores the horizontal  <V VPT>
 !!  IF ( tpfile%lopened .AND. OTURB_FLX ) THEN
-!!    TZFIELD = TFIELDDATA(            &
+!!    TZFIELD = TFIELDMETADATA(        &
 !!      CMNHNAME   = 'VVPT_FLX',       &
 !!      CSTDNAME   = '',               &
 !!      CLONGNAME  = 'VVPT_FLX',       &

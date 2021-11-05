@@ -144,7 +144,7 @@ USE MODD_ARGSLIST_ll,    ONLY: LIST_ll
 USE MODD_CST
 USE MODD_CONF
 USE MODD_CTURB
-use modd_field,          only: tfielddata, TYPEREAL
+use modd_field,          only: tfieldmetadata, TYPEREAL
 USE MODD_IO,             ONLY: TFILEDATA
 USE MODD_PARAMETERS
 USE MODD_LES
@@ -256,7 +256,7 @@ REAL :: ZTIME1, ZTIME2
 REAL, DIMENSION(SIZE(PDZZ,1),SIZE(PDZZ,2),1+JPVEXT:3+JPVEXT) :: ZCOEFF , ZDZZ
                                     ! coefficients for the uncentred gradient 
                                     ! computation near the ground
-TYPE(TFIELDDATA) :: TZFIELD
+TYPE(TFIELDMETADATA) :: TZFIELD
 ! --------------------------------------------------------------------------
 !
 !*       1.   PRELIMINARY COMPUTATIONS
@@ -371,7 +371,7 @@ ZFLX(:,:,IKB-1) = 2. * ZFLX(:,:,IKB-1) -  ZFLX(:,:,IKB)
 CALL UPDATE_HALO_ll(TZFIELDS_ll, IINFO_ll)
 IF ( tpfile%lopened .AND. OTURB_FLX ) THEN
   ! stores <U U>  
-  TZFIELD = TFIELDDATA(         &
+  TZFIELD = TFIELDMETADATA(     &
     CMNHNAME   = 'U_VAR',       &
     CSTDNAME   = '',            &
     CLONGNAME  = 'U_VAR',       &
@@ -467,7 +467,7 @@ CALL UPDATE_HALO_ll(TZFIELDS_ll, IINFO_ll)
 !
 IF ( tpfile%lopened .AND. OTURB_FLX ) THEN
   ! stores <V V>  
-  TZFIELD = TFIELDDATA(         &
+  TZFIELD = TFIELDMETADATA(     &
     CMNHNAME   = 'V_VAR',       &
     CSTDNAME   = '',            &
     CLONGNAME  = 'V_VAR',       &
@@ -555,7 +555,7 @@ ZFLX(:,:,IKB-1) = 2. * ZFLX(:,:,IKB-1) - ZFLX(:,:,IKB)
 !
 IF ( tpfile%lopened .AND. OTURB_FLX ) THEN
   ! stores <W W>  
-  TZFIELD = TFIELDDATA(         &
+  TZFIELD = TFIELDMETADATA(     &
     CMNHNAME   = 'W_VAR',       &
     CSTDNAME   = '',            &
     CLONGNAME  = 'W_VAR',       &

@@ -36,7 +36,7 @@ USE MODD_TIME
 !
 USE MODD_MNH2LPDM
 !
-use modd_field,            only: tfielddata, TYPEREAL
+use modd_field,            only: tfieldmetadata, TYPEREAL
 USE MODE_IO_FILE,          only: IO_File_close, IO_File_open
 USE MODE_IO_FIELD_READ,    only: IO_Field_read
 USE MODE_IO_MANAGE_STRUCT, only: IO_File_add2list
@@ -61,7 +61,7 @@ INTEGER              :: ICURAA,ICURMM,ICURJJ         ! Date  courante.
 INTEGER              :: ICURHH,ICURMN,ICURSS         ! Heure courante.
 INTEGER              :: JI,JJ,JK
 TYPE(DATE_TIME)      :: TZDTCUR
-type(tfielddata)        :: tzfield
+type(tfieldmetadata)    :: tzfield
 TYPE(TFILEDATA),POINTER :: TZFILE
 !
 !
@@ -110,7 +110,7 @@ CALL IO_Field_read(TPFILE,'WT',     XWT)
 CALL IO_Field_read(TPFILE,'THT',    XTHT)
 CALL IO_Field_read(TPFILE,'TKET',   XTKET)
 
-tzfield = tfielddata(          &
+tzfield = tfieldmetadata(      &
   cmnhname  = 'LM',            &
   clongname = '',              &
   cunits    = 'm',             &
@@ -121,7 +121,7 @@ tzfield = tfielddata(          &
   ndims     = 3                )
 CALL IO_Field_read(TPFILE, tzfield, XLM)
 
-tzfield = tfielddata(    &
+tzfield = tfieldmetadata(&
   cmnhname  = 'THW_FLX', &
   clongname = '',        &
   cunits    = 'K s-1',   & !correct?
@@ -132,7 +132,7 @@ tzfield = tfielddata(    &
   ndims     = 3          )
 CALL IO_Field_read(TPFILE, tzfield, XWPTHP)
 
-tzfield = tfielddata(       &
+tzfield = tfieldmetadata(   &
   cmnhname  = 'DISS',       &
   clongname = '',           &
   cunits    = '',           & !TODO: set units
@@ -143,7 +143,7 @@ tzfield = tfielddata(       &
   ndims     = 3             )
 CALL IO_Field_read(TPFILE, tzfield, XDISSIP)
 
-tzfield = tfielddata(       &
+tzfield = tfieldmetadata(   &
   cmnhname  = 'FMU',        &
   clongname = '',           &
   cunits    = 'kg m-1 s-2', &
@@ -154,7 +154,7 @@ tzfield = tfielddata(       &
   ndims     = 2             )
 CALL IO_Field_read(TPFILE, tzfield, XSFU)
 
-tzfield = tfielddata(       &
+tzfield = tfieldmetadata(   &
   cmnhname  = 'FMV',        &
   clongname = '',           &
   cunits    = 'kg m-1 s-2', &

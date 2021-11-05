@@ -93,7 +93,7 @@ USE MODD_CST
 USE MODD_PARAMETERS
 USE MODD_GRID_n
 USE MODD_IO, ONLY: TFILEDATA
-USE MODD_FIELD, ONLY: TFIELDDATA, TYPEREAL
+USE MODD_FIELD, ONLY: TFIELDMETADATA, TYPEREAL
 USE MODD_LUNIT_n
 USE MODD_DEEP_CONVECTION_n
 USE MODD_REF_n
@@ -266,7 +266,7 @@ integer (kind=jpim), parameter :: fin = 10
 character (len=256) :: outstring
 ! -----------------------------------------------------------------------------
 REAL, DIMENSION(SIZE(PTHT,1),SIZE(PTHT,2),SIZE(PTHT,3)) :: ZTEMP
-TYPE(TFIELDDATA) :: TZFIELD
+TYPE(TFIELDMETADATA) :: TZFIELD
 !-------------------------------------------------------------------------------
 !
 !*       0.     ARRAYS BOUNDS INITIALIZATION
@@ -585,7 +585,7 @@ DO JSAT=1,IJSAT ! loop over sensors
       YEND=YTWO//YCHAN
     END IF
 
-    TZFIELD = TFIELDDATA(                              &
+    TZFIELD = TFIELDMETADATA(                          &
       CMNHNAME   = TRIM(YBEG)//'_'//TRIM(YEND)//'BT',  &
       CSTDNAME   = '',                                 &
       CLONGNAME  = TRIM(YBEG)//'_'//TRIM(YEND)//'BT',  &

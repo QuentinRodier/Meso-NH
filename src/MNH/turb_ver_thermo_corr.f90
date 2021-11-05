@@ -312,7 +312,7 @@ END MODULE MODI_TURB_VER_THERMO_CORR
 !
 USE MODD_CST
 USE MODD_CTURB
-use modd_field,          only: tfielddata, TYPEREAL
+use modd_field,          only: tfieldmetadata, TYPEREAL
 USE MODD_IO,             ONLY: TFILEDATA
 USE MODD_PARAMETERS
 USE MODD_CONF
@@ -439,7 +439,7 @@ LOGICAL :: GFWTH    ! flag to use w'2th'
 LOGICAL :: GFR2     ! flag to use w'r'2
 LOGICAL :: GFWR     ! flag to use w'2r'
 LOGICAL :: GFTHR    ! flag to use w'th'r'
-TYPE(TFIELDDATA) :: TZFIELD
+TYPE(TFIELDMETADATA) :: TZFIELD
 !----------------------------------------------------------------------------
 !
 !*       1.   PRELIMINARIES
@@ -568,7 +568,7 @@ END IF
   !
   ! stores <THl THl>  
   IF ( OTURB_FLX .AND. tpfile%lopened ) THEN
-    TZFIELD = TFIELDDATA(            &
+    TZFIELD = TFIELDMETADATA(        &
       CMNHNAME   = 'THL_VVAR',       &
       CSTDNAME   = '',               &
       CLONGNAME  = 'THL_VVAR',       &
@@ -696,7 +696,7 @@ END IF
     END IF
     ! stores <THl Rnp>   
     IF ( OTURB_FLX .AND. tpfile%lopened ) THEN
-      TZFIELD = TFIELDDATA(                 &
+      TZFIELD = TFIELDMETADATA(             &
         CMNHNAME   = 'THLRCONS_VCOR',       &
         CSTDNAME   = '',                    &
         CLONGNAME  = 'THLRCONS_VCOR',       &
@@ -804,7 +804,7 @@ END IF
     END IF
     ! stores <Rnp Rnp>    
     IF ( OTURB_FLX .AND. tpfile%lopened ) THEN
-      TZFIELD = TFIELDDATA(             &
+      TZFIELD = TFIELDMETADATA(         &
         CMNHNAME   = 'RTOT_VVAR',       &
         CSTDNAME   = '',                &
         CLONGNAME  = 'RTOT_VVAR',       &

@@ -117,7 +117,7 @@ END MODULE MODI_TURB_HOR_UW
 USE MODD_CST
 USE MODD_CONF
 USE MODD_CTURB
-use modd_field,          only: tfielddata, TYPEREAL
+use modd_field,          only: tfieldmetadata, TYPEREAL
 USE MODD_IO,             ONLY: TFILEDATA
 USE MODD_PARAMETERS
 USE MODD_LES
@@ -187,7 +187,7 @@ INTEGER             :: JSV          ! scalar loop counter
 REAL, DIMENSION(SIZE(PWM,1),SIZE(PWM,2),SIZE(PWM,3))  :: GX_W_UW_PWM
 !
 REAL :: ZTIME1, ZTIME2
-TYPE(TFIELDDATA) :: TZFIELD
+TYPE(TFIELDMETADATA) :: TZFIELD
 ! ---------------------------------------------------------------------------
 !
 !*       1.   PRELIMINARY COMPUTATIONS
@@ -220,7 +220,7 @@ ZFLX(:,:,IKB-1)=2.*ZFLX(:,:,IKB)- ZFLX(:,:,IKB+1)
 !
 ! stores  <U W>
 IF ( tpfile%lopened .AND. OTURB_FLX ) THEN
-  TZFIELD = TFIELDDATA(         &
+  TZFIELD = TFIELDMETADATA(     &
   CMNHNAME   = 'UW_HFLX',       &
   CSTDNAME   = '',              &
   CLONGNAME  = 'UW_HFLX',       &

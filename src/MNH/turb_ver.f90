@@ -320,7 +320,7 @@ END MODULE MODI_TURB_VER
 USE MODD_CST
 USE MODD_CTURB
 USE MODD_DYN_n,          ONLY: LOCEAN
-use modd_field,          only: tfielddata, TYPEREAL
+use modd_field,          only: tfieldmetadata, TYPEREAL
 USE MODD_IO,             ONLY: TFILEDATA
 USE MODD_PARAMETERS
 USE MODD_LES
@@ -475,7 +475,7 @@ INTEGER :: IKB,IKE   ! index value for the Beginning
 INTEGER :: JSV       ! loop counter on scalar variables
 REAL    :: ZTIME1
 REAL    :: ZTIME2
-TYPE(TFIELDDATA) :: TZFIELD
+TYPE(TFIELDMETADATA) :: TZFIELD
 !----------------------------------------------------------------------------
 ALLOCATE (      ZBETA(SIZE(PTHLM,1),SIZE(PTHLM,2),SIZE(PTHLM,3))    ,&
        ZSQRT_TKE(SIZE(PTHLM,1),SIZE(PTHLM,2),SIZE(PTHLM,3)),& 
@@ -696,7 +696,7 @@ IF ( OTURB_FLX .AND. tpfile%lopened ) THEN
 !
 ! stores the Turbulent Prandtl number
 ! 
-  TZFIELD = TFIELDDATA(                      &
+  TZFIELD = TFIELDMETADATA(                  &
     CMNHNAME   = 'PHI3',                     &
     CSTDNAME   = '',                         &
     CLONGNAME  = 'PHI3',                     &
@@ -711,7 +711,7 @@ IF ( OTURB_FLX .AND. tpfile%lopened ) THEN
 !
 ! stores the Turbulent Schmidt number
 ! 
-  TZFIELD = TFIELDDATA(                      &
+  TZFIELD = TFIELDMETADATA(                  &
     CMNHNAME   = 'PSI3',                     &
     CSTDNAME   = '',                         &
     CLONGNAME  = 'PSI3',                     &
@@ -727,7 +727,7 @@ IF ( OTURB_FLX .AND. tpfile%lopened ) THEN
 !
 ! stores the Turbulent Schmidt number for the scalar variables
 ! 
-  TZFIELD = TFIELDDATA(                        &
+  TZFIELD = TFIELDMETADATA(                    &
     CMNHNAME   = 'generic for SV in turb_ver', & !Temporary name to ease identification
     CSTDNAME   = '',                           &
     CUNITS     = '1',                          &

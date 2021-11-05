@@ -67,7 +67,7 @@ END MODULE MODI_ZSMT_PGD
 !
 !*       0.    DECLARATIONS
 !
-use modd_field,          only: tfielddata, TYPEREAL
+use modd_field,          only: tfieldmetadata, TYPEREAL
 USE MODD_IO,         ONLY : TFILEDATA
 USE MODD_PARAMETERS, ONLY : JPHEXT, XUNDEF
 !
@@ -122,7 +122,7 @@ INTEGER                          :: INFO_ll                ! error return code
 INTEGER :: IIB,IIE,IJB,IJE
 REAL, DIMENSION(:), ALLOCATABLE  :: ZXHAT
 REAL, DIMENSION(:), ALLOCATABLE  :: ZYHAT
-TYPE(TFIELDDATA) :: TZFIELD
+TYPE(TFIELDMETADATA) :: TZFIELD
 !-------------------------------------------------------------------------------
 !
 !*       1.    Read orography in the file
@@ -334,7 +334,7 @@ IF(OHSLOP) THEN
  END DO
  !
   ! Writes filtred orography and slopes along i and j
-  TZFIELD = TFIELDDATA(                     &
+  TZFIELD = TFIELDMETADATA(                 &
     CMNHNAME   = 'ZSLOPEX',                 &
     CSTDNAME   = '',                        &
     CLONGNAME  = 'ZSLOPEX',                 &
@@ -347,7 +347,7 @@ IF(OHSLOP) THEN
     LTIMEDEP   = .FALSE.                    )
  CALL IO_Field_write(TPFILE,TZFIELD,ZSLOPEX)
  !
-  TZFIELD = TFIELDDATA(                     &
+  TZFIELD = TFIELDMETADATA(                 &
     CMNHNAME   = 'ZSLOPEY',                 &
     CSTDNAME   = '',                        &
     CLONGNAME  = 'ZSLOPEY',                 &
@@ -360,7 +360,7 @@ IF(OHSLOP) THEN
     LTIMEDEP   = .FALSE.                    )
  CALL IO_Field_write(TPFILE,TZFIELD,ZSLOPEY)
  !
-  TZFIELD = TFIELDDATA(               &
+  TZFIELD = TFIELDMETADATA(           &
     CMNHNAME   = 'ZS_FILTR',          &
     CSTDNAME   = '',                  &
     CLONGNAME  = 'ZS_FILTR',          &

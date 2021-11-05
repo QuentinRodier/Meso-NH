@@ -69,7 +69,7 @@ END MODULE MODI_PASPOL
 USE MODD_PARAMETERS
 USE MODD_NSV
 USE MODD_CST
-use modd_field,          only: tfielddata, TYPEREAL
+use modd_field,          only: tfieldmetadata, TYPEREAL
 USE MODD_IO, ONLY: TFILEDATA
 USE MODE_GRIDPROJ
 USE MODD_PASPOL
@@ -143,8 +143,8 @@ REAL    :: ZP, ZTH, ZT, ZRHO, ZMASAIR
 REAL,  DIMENSION(:,:,:), ALLOCATABLE :: ZRHOM  ! 
 REAL,  DIMENSION(:,:,:), ALLOCATABLE :: ZSVT ! Work arrays
 !
-TYPE(DATE_TIME)   :: TZDATE1,TZDATE2,TZDATE3,TZDATE4,TZDATE
-TYPE(TFIELDDATA)  :: TZFIELD
+TYPE(DATE_TIME)      :: TZDATE1,TZDATE2,TZDATE3,TZDATE4,TZDATE
+TYPE(TFIELDMetaDATA) :: TZFIELD
 !
 !
 !--------------------------------------------------------------------------------------
@@ -579,15 +579,15 @@ END DO
 !*	3.4 Ecriture conditionnelle.
 !
 IF ( tpfile%lopened ) THEN
-  TZFIELD = TFIELDDATA(    &
+  TZFIELD = TFIELDMetaDATA(            &
     CMNHNAME   = 'generic for paspol', & !Temporary name to ease identification
-    CSTDNAME   = '',       &
-    CUNITS     = 'm-3',    &
-    CDIR       = 'XY',     &
-    NGRID      = 1,        &
-    NTYPE      = TYPEREAL, &
-    NDIMS      = 3,        &
-    LTIMEDEP   = .TRUE.    )
+    CSTDNAME   = '',                   &
+    CUNITS     = 'm-3',                &
+    CDIR       = 'XY',                 &
+    NGRID      = 1,                    &
+    NTYPE      = TYPEREAL,             &
+    NDIMS      = 3,                    &
+    LTIMEDEP   = .TRUE.                )
   !
   DO JSV=1,NSV_PP
     WRITE(TZFIELD%CMNHNAME,'(A3,I3.3)')'ATC',JSV+NSV_PPBEG-1
