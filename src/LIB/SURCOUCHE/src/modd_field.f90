@@ -255,6 +255,7 @@ TYPE(TFIELDDATA), ALLOCATABLE, DIMENSION(:), SAVE :: TFIELDLIST
 
 interface TFIELDMETADATA
   module procedure :: Fill_tfieldmetadata
+  module procedure :: Fill_tfieldmetadata_from_tfielddata
 end interface TFIELDMETADATA
 
 interface TFIELDDATA
@@ -503,6 +504,32 @@ type(tfieldmetadata) function Fill_tfieldmetadata( cmnhname, cstdname, clongname
   ! ltimedep
   if ( Present( ltimedep ) ) tpfield%ltimedep = ltimedep
 end function Fill_tfieldmetadata
+
+
+type(tfieldmetadata) function Fill_tfieldmetadata_from_tfielddata( tpfieldin ) result(tpfield)
+  type(tfielddata), intent(in) :: tpfieldin
+
+  tpfield%CMNHNAME =   tpfieldin%CMNHNAME
+  tpfield%CSTDNAME =   tpfieldin%CSTDNAME
+  tpfield%CLONGNAME =  tpfieldin%CLONGNAME
+  tpfield%CUNITS =     tpfieldin%CUNITS
+  tpfield%CCOMMENT =   tpfieldin%CCOMMENT
+  tpfield%NGRID =      tpfieldin%NGRID
+  tpfield%NTYPE =      tpfieldin%NTYPE
+  tpfield%NDIMS =      tpfieldin%NDIMS
+  tpfield%NDIMLIST =   tpfieldin%NDIMLIST
+  tpfield%NFILLVALUE = tpfieldin%NFILLVALUE
+  tpfield%XFILLVALUE = tpfieldin%XFILLVALUE
+  tpfield%NVALIDMIN =  tpfieldin%NVALIDMIN
+  tpfield%NVALIDMAX =  tpfieldin%NVALIDMAX
+  tpfield%XVALIDMIN =  tpfieldin%XVALIDMIN
+  tpfield%XVALIDMAX =  tpfieldin%XVALIDMAX
+  tpfield%CDIR =       tpfieldin%CDIR
+  tpfield%CLBTYPE =    tpfieldin%CLBTYPE
+  tpfield%LTIMEDEP =   tpfieldin%LTIMEDEP
+
+end function Fill_tfieldmetadata_from_tfielddata
+
 
 type(tfielddata) function Fill_tfielddata( cmnhname, cstdname, clongname, cunits, ccomment,                    &
                                            ngrid, ntype, ndims, ndimlist,                                      &
