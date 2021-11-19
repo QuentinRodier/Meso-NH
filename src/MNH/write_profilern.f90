@@ -18,6 +18,7 @@
 !  P. Wautelet 05/07/2021: reorganisation to store point values correctly (not in vertical profiles)
 !  M. Taufour     07/2021: modify RARE for hydrometeors containing ice and add bright band calculation for RARE
 !  P. Wautelet 01/09/2021: fix: correct vertical dimension for ALT and W
+!  P. Wautelet 19/11/2021: bugfix in units for LIMA variables
 !-----------------------------------------------------------------
 !      ###########################
 MODULE MODE_WRITE_PROFILER_n
@@ -115,6 +116,7 @@ INTEGER,          INTENT(IN) :: KI
 character(len=2)                                      :: yidx
 character(len=100)                                    :: ycomment
 character(len=100)                                    :: yname
+character(len=40)                                     :: yunits
 CHARACTER(LEN=:),                         allocatable :: YGROUP   ! group title
 INTEGER                                               :: IKU
 INTEGER                                               :: IPROC    ! number of variables records
@@ -213,6 +215,7 @@ if ( Size( tprofiler%sv, 4 ) > 0  ) then
   end do
   ! LIMA variables
   do jsv = nsv_lima_beg, nsv_lima_end
+    yunits = 'kg-1'
     if ( jsv == nsv_lima_nc ) then
       yname = Trim( clima_warm_names(1) ) // 'T'
     else if ( jsv == nsv_lima_nr ) then
@@ -225,6 +228,7 @@ if ( Size( tprofiler%sv, 4 ) > 0  ) then
       yname = Trim( clima_warm_names(4) ) // yidx // 'T'
     else if ( jsv == nsv_lima_scavmass ) then
       yname = Trim( caero_mass(1) ) // 'T'
+      yunits = 'kg kg-1'
     else if ( jsv == nsv_lima_ni ) then
       yname = Trim( clima_cold_names(1) ) // 'T'
     else if ( jsv >= nsv_lima_ifn_free .and. jsv < nsv_lima_ifn_free + nmod_ifn ) then
@@ -241,7 +245,7 @@ if ( Size( tprofiler%sv, 4 ) > 0  ) then
     else if ( jsv == nsv_lima_spro ) then
       yname = Trim( clima_warm_names(5) ) // 'T'
     end if
-    call Add_profile( yname, '', 'kg-1', tprofiler%sv(:,:,:,jsv) )
+    call Add_profile( yname, '', yunits, tprofiler%sv(:,:,:,jsv) )
   end do
   ! electrical scalar variables
   do jsv = nsv_elecbeg, nsv_elecend
