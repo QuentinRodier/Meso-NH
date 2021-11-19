@@ -199,6 +199,7 @@ USE MODD_PARAMETERS
 USE MODD_PARAM_LIMA, ONLY : NMOD_CCN, NMOD_IFN, LBOUND, LWARM, LCOLD
 USE MODD_PARAM_n,    ONLY : CELEC,CCLOUD
 USE MODD_PASPOL,      ONLY : LPASPOL
+USE MODD_PRECISION,   ONLY: MNHREAL32
 USE MODD_REF_n
 USE MODD_SALT,        ONLY : LSALT
 
@@ -424,17 +425,17 @@ END IF
 !
 !  Reproductibility for RSTART -> truncate ZLB to real(knd=4) to have reproductible result
 !
-ZLBXVT(:,:,:)  = real(ZLBXVT(:,:,:),kind=4)
-ZLBXWT(:,:,:)  = real(ZLBXWT(:,:,:),kind=4)
-ZLBXTHT(:,:,:) = real(ZLBXTHT(:,:,:),kind=4)
+ZLBXVT(:,:,:)  = real(ZLBXVT(:,:,:),kind=MNHREAL32)
+ZLBXWT(:,:,:)  = real(ZLBXWT(:,:,:),kind=MNHREAL32)
+ZLBXTHT(:,:,:) = real(ZLBXTHT(:,:,:),kind=MNHREAL32)
 IF ( SIZE(PTKET,1) /= 0 ) THEN
-   ZLBXTKET(:,:,:) = real(ZLBXTKET(:,:,:),kind=4)
+   ZLBXTKET(:,:,:) = real(ZLBXTKET(:,:,:),kind=MNHREAL32)
 END IF
 IF ( KRR > 0) THEN
-   ZLBXRT(:,:,:,:) = real(ZLBXRT(:,:,:,:),kind=4)
+   ZLBXRT(:,:,:,:) = real(ZLBXRT(:,:,:,:),kind=MNHREAL32)
 END IF
 IF ( KSV > 0) THEN
-   ZLBXSVT(:,:,:,:) = real(ZLBXSVT(:,:,:,:),kind=4)
+   ZLBXSVT(:,:,:,:) = real(ZLBXSVT(:,:,:,:),kind=MNHREAL32)
 END IF
 !     ============================================================ 
 !
@@ -475,17 +476,17 @@ END IF
 !
 !  Reproductibility for RSTART -> truncate ZLB to real(knd=4) to have reproductible result
 !
-ZLBYUT(:,:,:)  = real(ZLBYUT(:,:,:),kind=4)
-ZLBYWT(:,:,:)  = real(ZLBYWT(:,:,:),kind=4)
-ZLBYTHT(:,:,:) = real(ZLBYTHT(:,:,:),kind=4)
+ZLBYUT(:,:,:)  = real(ZLBYUT(:,:,:),kind=MNHREAL32)
+ZLBYWT(:,:,:)  = real(ZLBYWT(:,:,:),kind=MNHREAL32)
+ZLBYTHT(:,:,:) = real(ZLBYTHT(:,:,:),kind=MNHREAL32)
 IF ( SIZE(PTKET,1) /= 0 ) THEN
-   ZLBYTKET(:,:,:) = real(ZLBYTKET(:,:,:),kind=4)
+   ZLBYTKET(:,:,:) = real(ZLBYTKET(:,:,:),kind=MNHREAL32)
 END IF
 IF ( KRR > 0) THEN
-   ZLBYRT(:,:,:,:) = real(ZLBYRT(:,:,:,:),kind=4) 
+   ZLBYRT(:,:,:,:) = real(ZLBYRT(:,:,:,:),kind=MNHREAL32)
 END IF
 IF ( KSV > 0) THEN
-   ZLBYSVT(:,:,:,:) = real(ZLBYSVT(:,:,:,:),kind=4)
+   ZLBYSVT(:,:,:,:) = real(ZLBYSVT(:,:,:,:),kind=MNHREAL32)
 END IF
 !     ============================================================ 
 !

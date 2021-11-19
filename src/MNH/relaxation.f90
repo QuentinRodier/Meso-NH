@@ -273,6 +273,7 @@ USE MODD_CONF,       only: cconf
 USE MODD_ELEC_DESCR, ONLY: LRELAX2FW_ION
 USE MODD_NSV,        ONLY: NSV_ELECBEG, NSV_ELECEND
 USE MODD_PARAMETERS, only: jphext, jpvext
+USE MODD_PRECISION,  ONLY: MNHREAL32
 
 use mode_budget,     only: Budget_store_init, Budget_store_end
 USE MODE_EXTRAPOL,   only: Extrapol
@@ -517,16 +518,16 @@ IF(OVE_RELAX) THEN
 !
   DO JK = KALBOT, IKE+1
 !
-    PRUS(:,:,JK)  = PRUS(:,:,JK)  - ZKV(JK)  *(PUT(:,:,JK)  -real(PLSUM(:,:,JK),kind=4) )&
+    PRUS(:,:,JK)  = PRUS(:,:,JK)  - ZKV(JK)  *(PUT(:,:,JK)  -real(PLSUM(:,:,JK),kind=MNHREAL32) )&
                     * ZRHODJU(:,:,JK)
 !
-    PRVS(:,:,JK)  = PRVS(:,:,JK)  - ZKV(JK)  *(PVT(:,:,JK)  -real(PLSVM(:,:,JK),kind=4) )&
+    PRVS(:,:,JK)  = PRVS(:,:,JK)  - ZKV(JK)  *(PVT(:,:,JK)  -real(PLSVM(:,:,JK),kind=MNHREAL32) )&
                     * ZRHODJV(:,:,JK)
 !
-    PRWS(:,:,JK)  = PRWS(:,:,JK)  - ZKVW(JK) *(PWT(:,:,JK)  -real(PLSWM(:,:,JK),kind=4) )&
+    PRWS(:,:,JK)  = PRWS(:,:,JK)  - ZKVW(JK) *(PWT(:,:,JK)  -real(PLSWM(:,:,JK),kind=MNHREAL32) )&
                     * ZRHODJW(:,:,JK)
 !
-    PRTHS(:,:,JK) = PRTHS(:,:,JK) - ZKV(JK)  *(PTHT(:,:,JK) -real(PLSTHM(:,:,JK),kind=4) )&
+    PRTHS(:,:,JK) = PRTHS(:,:,JK) - ZKV(JK)  *(PTHT(:,:,JK) -real(PLSTHM(:,:,JK),kind=MNHREAL32) )&
                     * PRHODJ(:,:,JK)
 !
   END DO  
@@ -554,16 +555,16 @@ IF(OVE_RELAX_GRD) THEN
 !
   DO JK = 1,KALBAS
 !
-    PRUS(:,:,JK)  = PRUS(:,:,JK)  - ZKVBAS(JK)  *(PUT(:,:,JK)  -real(PLSUM(:,:,JK),kind=4) )&
+    PRUS(:,:,JK)  = PRUS(:,:,JK)  - ZKVBAS(JK)  *(PUT(:,:,JK)  -real(PLSUM(:,:,JK),kind=MNHREAL32) )&
                     * ZRHODJU(:,:,JK)
 !
-    PRVS(:,:,JK)  = PRVS(:,:,JK)  - ZKVBAS(JK)  *(PVT(:,:,JK)  -real(PLSVM(:,:,JK),kind=4) )&
+    PRVS(:,:,JK)  = PRVS(:,:,JK)  - ZKVBAS(JK)  *(PVT(:,:,JK)  -real(PLSVM(:,:,JK),kind=MNHREAL32) )&
                     * ZRHODJV(:,:,JK)
 !
-    PRWS(:,:,JK)  = PRWS(:,:,JK)  - ZKVWBAS(JK) *(PWT(:,:,JK)  -real(PLSWM(:,:,JK),kind=4) )&
+    PRWS(:,:,JK)  = PRWS(:,:,JK)  - ZKVWBAS(JK) *(PWT(:,:,JK)  -real(PLSWM(:,:,JK),kind=MNHREAL32) )&
                     * ZRHODJW(:,:,JK)
 !
-    PRTHS(:,:,JK) = PRTHS(:,:,JK) - ZKVBAS(JK)  *(PTHT(:,:,JK) -real(PLSTHM(:,:,JK),kind=4) )&
+    PRTHS(:,:,JK) = PRTHS(:,:,JK) - ZKVBAS(JK)  *(PTHT(:,:,JK) -real(PLSTHM(:,:,JK),kind=MNHREAL32) )&
                     * PRHODJ(:,:,JK)
 !
   END DO  
