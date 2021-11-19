@@ -4,6 +4,10 @@
  *  (C) 1993 by Argonne National Laboratory and Mississipi State University.
  *      All rights reserved.  See COPYRIGHT in top-level directory.
  */
+/* Modifications:
+  P.Wautelet 19/11/2021: add MPI_LOGICAL4 and MPI_LOGICAL8 optional types
+!                         + modify MPI_REAL4/8 and MPI_INTEGER4/8
+*/
 
 /* user include file for MPI programs */
 
@@ -93,6 +97,13 @@ typedef int MPI_Datatype;
 #define MPI_2REAL             ((MPI_Datatype)32)
 #define MPI_2DOUBLE_PRECISION ((MPI_Datatype)33)
 #define MPI_CHARACTER         ((MPI_Datatype)1)
+
+#define MPI_INTEGER4 ((MPI_Datatype)34)
+#define MPI_INTEGER8 ((MPI_Datatype)35)
+#define MPI_LOGICAL4 ((MPI_Datatype)36)
+#define MPI_LOGICAL8 ((MPI_Datatype)37)
+#define MPI_REAL4    ((MPI_Datatype)38)
+#define MPI_REAL8    ((MPI_Datatype)39)
 
 /* Communicators */
 typedef int MPI_Comm;
