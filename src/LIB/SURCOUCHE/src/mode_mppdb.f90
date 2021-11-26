@@ -49,6 +49,7 @@ MODULE MODE_MPPDB
 
   REAL                             :: PRECISION = 1e-8 * 0.0
   LOGICAL                          :: MPPDB_CHECK_LB = .FALSE.
+  LOGICAL                          :: MPPDB_ACTIVED  = .FALSE.
 
 CONTAINS
 
@@ -92,6 +93,7 @@ CONTAINS
     IF (MPPDB_INITIALIZED) RETURN
     !
     MPPDB_INITIALIZED = .TRUE.
+    MPPDB_ACTIVED  = .TRUE.
     !
     ! Init MPI
     !
@@ -251,8 +253,28 @@ CONTAINS
   END SUBROUTINE MPPDB_INIT
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  SUBROUTINE MPPDB_START_DEBUG()
+    IMPLICIT NONE
+    MPPDB_ACTIVED = .TRUE.
+  END SUBROUTINE MPPDB_START_DEBUG
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
+  SUBROUTINE MPPDB_STOP_DEBUG()
+    IMPLICIT NONE
+    MPPDB_ACTIVED = .FALSE.
+  END SUBROUTINE MPPDB_STOP_DEBUG
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  SUBROUTINE MPPDB_GET_ACTIVED(OACTIVE)
+    IMPLICIT NONE
+    LOGICAL , INTENT(OUT) :: OACTIVE
+    OACTIVE = MPPDB_ACTIVED 
+  END SUBROUTINE MPPDB_GET_ACTIVED
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
+  SUBROUTINE MPPDB_SET_ACTIVED(OACTIVE)
+    IMPLICIT NONE
+    LOGICAL , INTENT(IN) :: OACTIVE
+    MPPDB_ACTIVED = OACTIVE
+  END SUBROUTINE MPPDB_SET_ACTIVED
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
   SUBROUTINE MPPDB_BARRIER()
 #ifdef MNH_SP4
     !pas de mpi_spawn sur IBM-SP ni MPI_ARGV_NULL etc ...
@@ -263,7 +285,7 @@ CONTAINS
     !
     ! synchronize all father & sons
     !
-    IF ( .NOT. MPPDB_INITIALIZED ) RETURN 
+    IF (( .NOT. MPPDB_INITIALIZED ) .OR. ( .NOT. MPPDB_ACTIVED )) RETURN 
     !
     CALL MPI_BARRIER(MPPDB_INTRA_COMM,IERR)
     !
@@ -279,6 +301,7 @@ CONTAINS
     use modd_precision,     only: MNHINT_MPI, MNHREAL_MPI
     USE MODD_MPIF      , ONLY : MPI_STATUS_IGNORE, MPI_SUM
     USE MODE_GATHER_ll
+    USE MODE_MODELN_HANDLER, ONLY : GET_CURRENT_MODEL_INDEX
 
     IMPLICIT NONE
 
@@ -310,12 +333,13 @@ CONTAINS
     INTEGER                              :: IIU_SON_ll,IJU_SON_ll,IKU_SON_ll
     INTEGER                              :: IIB_SON_ll,IIE_SON_ll,IJB_SON_ll,IJE_SON_ll
     INTEGER                              :: IHEXT_SON_ll , IDIFF_HEXT
+    INTEGER                              :: IMI
 
 #ifdef MNH_SP4
     !pas de mpi_spawn sur IBM-SP ni MPI_ARGV_NULL etc ...
     RETURN           
 #else
-    IF ( ( .NOT. MPPDB_INITIALIZED ) ) RETURN
+    IF ( ( .NOT. MPPDB_INITIALIZED ) .OR. ( .NOT. MPPDB_ACTIVED ) ) RETURN
     !get the global size of PTAB
     CALL MPI_ALLREDUCE(SIZE(PTAB), IGLBSIZEPTAB, 1,MNHINT_MPI, MPI_SUM, MPPDB_INTER_COMM, IINFO_ll)
     IF ( IGLBSIZEPTAB == 0 ) RETURN
@@ -386,10 +410,13 @@ CONTAINS
           MAX_DIFF=MAXVAL(TAB_ll(IIB_ll-IDIFF_HEXT:IIE_ll+IDIFF_HEXT,IJB_ll-IDIFF_HEXT:IJE_ll+IDIFF_HEXT,1:IKU_ll)/MAX_VAL)
           TAB_INTERIOR_ll=> TAB_ll(IIB_ll-IDIFF_HEXT:IIE_ll+IDIFF_HEXT,IJB_ll-IDIFF_HEXT:IJE_ll+IDIFF_HEXT,1:IKU_ll)
           !
+          IMI = GET_CURRENT_MODEL_INDEX()
           IF (MAX_DIFF > PRECISION ) THEN
-             write(6, '(" MPPDB_CHECK3D :: PB MPPDB_CHECK3D =",A40," ERROR=",e15.8," MAXVAL=",e15.8)' ) MESSAGE,MAX_DIFF , MAX_VAL
+             write(6, '(" MPPDB_CHECK3D :: PB MPPDB_CHECK3D =",A40," ERROR=",e15.8," MAXVAL=",e15.8," IMI=",I3.3)' ) &
+                       MESSAGE,MAX_DIFF , MAX_VAL, IMI
           ELSE
-             write(6, '(" MPPDB_CHECK3D :: OK MPPDB_CHECK3D =",A40," ERROR=",e15.8," MAXVAL=",e15.8)' ) MESSAGE,MAX_DIFF , MAX_VAL
+             write(6, '(" MPPDB_CHECK3D :: OK MPPDB_CHECK3D =",A40," ERROR=",e15.8," MAXVAL=",e15.8," IMI=",I3.3)' ) &
+                       MESSAGE,MAX_DIFF , MAX_VAL, IMI
           END IF
           flush(unit=OUTPUT_UNIT)
           !
@@ -475,7 +502,8 @@ CONTAINS
     USE MODD_MPIF      , ONLY : MPI_STATUS_IGNORE, MPI_SUM
     use modd_precision,     only: MNHINT_MPI, MNHREAL_MPI
 
-    USE  MODD_VAR_ll    , ONLY :  NMNH_COMM_WORLD
+    USE MODD_VAR_ll    , ONLY :  NMNH_COMM_WORLD
+    USE MODE_MODELN_HANDLER, ONLY : GET_CURRENT_MODEL_INDEX
 
     IMPLICIT NONE
 
@@ -504,12 +532,13 @@ CONTAINS
     INTEGER                              :: IIU_SON_ll,IJU_SON_ll
     INTEGER                              :: IIB_SON_ll,IIE_SON_ll,IJB_SON_ll,IJE_SON_ll
     INTEGER                              :: IHEXT_SON_ll , IDIFF_HEXT
+    INTEGER                              :: IMI
 
 #ifdef MNH_SP4
     !pas de mpi_spawn sur IBM-SP ni MPI_ARGV_NULL etc ...
     RETURN           
 #else
-    IF ( ( .NOT. MPPDB_INITIALIZED ) ) RETURN
+    IF ( ( .NOT. MPPDB_INITIALIZED ) .OR. ( .NOT. MPPDB_ACTIVED ) ) RETURN
     CALL MPI_ALLREDUCE(SIZE(PTAB), IGLBSIZEPTAB, 1,MNHINT_MPI, MPI_SUM, MPPDB_INTRA_COMM, IINFO_ll)
     IF ( IGLBSIZEPTAB == 0 ) RETURN
 
@@ -573,10 +602,14 @@ CONTAINS
           IF ( MAX_VAL .EQ. 0.0 ) MAX_VAL = 1.0
           MAX_DIFF = MAXVAL( TAB_ll(IIB_ll-IDIFF_HEXT:IIE_ll+IDIFF_HEXT,IIB_ll-IDIFF_HEXT:IJE_ll+IDIFF_HEXT) / MAX_VAL )
           TAB_INTERIOR_ll => TAB_ll(IIB_ll-IDIFF_HEXT:IIE_ll+IDIFF_HEXT,IIB_ll-IDIFF_HEXT:IJE_ll+IDIFF_HEXT)
+          !
+          IMI = GET_CURRENT_MODEL_INDEX()
           IF (MAX_DIFF > PRECISION ) THEN
-             write(6, '(" MPPDB_CHECK2D :: PB MPPDB_CHECK2D =",A40," ERROR=",e15.8," MAXVAL=",e15.8)' ) MESSAGE,MAX_DIFF , MAX_VAL
+             write(6, '(" MPPDB_CHECK2D :: PB MPPDB_CHECK2D =",A40," ERROR=",e15.8," MAXVAL=",e15.8," IMI=",I3.3)' ) &
+                       MESSAGE,MAX_DIFF , MAX_VAL , IMI
           ELSE
-             write(6, '(" MPPDB_CHECK2D :: OK MPPDB_CHECK2D =",A40," ERROR=",e15.8," MAXVAL=",e15.8)' ) MESSAGE,MAX_DIFF , MAX_VAL
+             write(6, '(" MPPDB_CHECK2D :: OK MPPDB_CHECK2D =",A40," ERROR=",e15.8," MAXVAL=",e15.8," IMI=",I3.3)' ) &
+                       MESSAGE,MAX_DIFF , MAX_VAL , IMI
           END IF
           flush(unit=OUTPUT_UNIT)
           !
@@ -619,14 +652,16 @@ CONTAINS
 
   SUBROUTINE MPPDB_CHECKLB(PLB,MESSAGE,PRECISION,HLBTYPE,KRIM)
 
-    USE MODD_IO,            ONLY: GSMONOPROC, ISP, ISNPROC, L2D, LPACK
-    USE MODD_MPIF,          ONLY: MPI_STATUS_IGNORE
-    USE MODD_PARAMETERS_ll, ONLY: JPHEXT
-    USE MODD_VAR_ll,        ONLY: NMNH_COMM_WORLD
-    use modd_precision,     only: MNHINT_MPI, MNHREAL_MPI
+    USE MODD_PARAMETERS_ll, ONLY : JPHEXT
+    USE MODD_VAR_ll    , ONLY : NMNH_COMM_WORLD
+    USE MODD_IO ,        ONLY : ISP,ISNPROC,GSMONOPROC,LPACK,L2D
+    USE MODD_MPIF      , ONLY   : MPI_STATUS_IGNORE, MPI_SUM
 
     USE MODE_DISTRIB_LB
-
+    USE MODE_TOOLS_ll,     ONLY : GET_GLOBALDIMS_ll
+    USE MODE_MODELN_HANDLER, ONLY : GET_CURRENT_MODEL_INDEX
+    use modd_precision,     only: MNHINT_MPI, MNHREAL_MPI
+    
     IMPLICIT NONE
 
     REAL, DIMENSION(:,:,:) , TARGET      :: PLB
@@ -657,14 +692,18 @@ CONTAINS
     INTEGER                              :: IIU_SON_ll,IJU_SON_ll,IKU_SON_ll
     INTEGER                              :: IIB_SON_ll,IIE_SON_ll,IJB_SON_ll,IJE_SON_ll
     INTEGER                              :: IHEXT_SON_ll , IDIFF_HEXT , IRIM_ll , IRIM_SON_ll
+    INTEGER                              :: IMI , IGLBSIZEPTAB
 
 #ifdef MNH_SP4
     !pas de mpi_spawn sur IBM-SP ni MPI_ARGV_NULL etc ...
     RETURN           
 #else
-    IF ( .NOT. MPPDB_INITIALIZED ) RETURN 
+    IF ( ( .NOT. MPPDB_INITIALIZED ) .OR. ( .NOT. MPPDB_ACTIVED ) ) RETURN
+    !get the global size of PLB
+    CALL MPI_ALLREDUCE(SIZE(PLB), IGLBSIZEPTAB, 1,MNHINT_MPI, MPI_SUM, MPPDB_INTER_COMM, IINFO_ll)
+    IF ( IGLBSIZEPTAB == 0 ) RETURN
     !
-    CALL MPPDB_BARRIER()
+    CALL  MPPDB_BARRIER()
     !
     IF(MPPDB_FATHER_WORLD) THEN
        !
@@ -674,26 +713,30 @@ CONTAINS
        IIU_ll = IIMAX_ll+2*JPHEXT
        IJU_ll = IJMAX_ll+2*JPHEXT
        IKU_ll = SIZE(PLB,3)
-       IRIM_ll = (KRIM+JPHEXT)*2
-
-       IF (HLBTYPE == 'LBX' .OR. HLBTYPE == 'LBXU') THEN 
-          IIU_ll = IRIM_ll
-       ELSE
-          IJU_ll = IRIM_ll
+       IRIM_ll = MAX(1,KRIM)
+       
+       IF       (HLBTYPE == 'LBX' ) THEN
+          IIU_ll = JPHEXT*2
+       ELSE IF ( HLBTYPE == 'LBXU') THEN
+          IIU_ll = (IRIM_ll+JPHEXT)*2
+       ELSE IF ( HLBTYPE == 'LBY') THEN
+          IJU_ll = JPHEXT*2
+       ELSE IF ( HLBTYPE == 'LBYV') THEN
+          IJU_ll = (IRIM_ll+JPHEXT)*2
        END IF
  
        IF (MPPDB_IRANK_WORLD.EQ.0)  THEN
           ! I/O proc case
           ALLOCATE(Z3D(IIU_ll,IJU_ll,SIZE(PLB,3)))
           DO JI = 1,ISNPROC
-             CALL GET_DISTRIB_LB(HLBTYPE,JI,'FM','WRITE',KRIM,IIB,IIE,IJB,IJE)
+             CALL GET_DISTRIB_LB(HLBTYPE,JI,'FM','WRITE',IRIM_ll,IIB,IIE,IJB,IJE)
              IF (IIB /= 0) THEN
                 TX3DP=>Z3D(IIB:IIE,IJB:IJE,:)
                 IF (ISP /= JI) THEN
                    CALL MPI_RECV(TX3DP,SIZE(TX3DP),MNHREAL_MPI,JI-1 &
                         ,99,NMNH_COMM_WORLD,MPI_STATUS_IGNORE,IINFO_ll) 
                 ELSE
-                   CALL GET_DISTRIB_LB(HLBTYPE,JI,'LOC','WRITE',KRIM,IIB,IIE,IJB,IJE)
+                   CALL GET_DISTRIB_LB(HLBTYPE,JI,'LOC','WRITE',IRIM_ll,IIB,IIE,IJB,IJE)
                    TX3DP = PLB(IIB:IIE,IJB:IJE,:)
                 END IF
              END IF
@@ -703,7 +746,7 @@ CONTAINS
 
        ELSE
           ! Other processors
-          CALL GET_DISTRIB_LB(HLBTYPE,ISP,'LOC','WRITE',KRIM,IIB,IIE,IJB,IJE)
+          CALL GET_DISTRIB_LB(HLBTYPE,ISP,'LOC','WRITE',IRIM_ll,IIB,IIE,IJB,IJE)
           IF (IIB /= 0) THEN
              TX3DP=>PLB(IIB:IIE,IJB:IJE,:)
              CALL MPI_BSEND(TX3DP,SIZE(TX3DP),MNHREAL_MPI,0,99,NMNH_COMM_WORLD,IINFO_ll)
@@ -727,12 +770,16 @@ CONTAINS
           IIU_SON_ll = IIMAX_ll+2*IHEXT_SON_ll
           IJU_SON_ll = IJMAX_ll+2*IHEXT_SON_ll
           IKU_SON_ll = SIZE(PLB,3)
-          IRIM_SON_ll = (KRIM+IHEXT_SON_ll)*2
+          IRIM_SON_ll = MAX(1,KRIM)
           !
-          IF (HLBTYPE == 'LBX' .OR. HLBTYPE == 'LBXU') THEN 
-             IIU_SON_ll = IRIM_SON_ll
-          ELSE
-             IJU_SON_ll = IRIM_SON_ll
+          IF       (HLBTYPE == 'LBX' ) THEN
+             IIU_SON_ll = IHEXT_SON_ll*2
+          ELSE IF ( HLBTYPE == 'LBXU') THEN
+             IIU_SON_ll = (IRIM_SON_ll+IHEXT_SON_ll)*2
+          ELSE IF ( HLBTYPE == 'LBY') THEN
+             IJU_SON_ll = IHEXT_SON_ll*2
+          ELSE IF ( HLBTYPE == 'LBYV') THEN
+             IJU_SON_ll = (IRIM_SON_ll+IHEXT_SON_ll)*2
           END IF          
           !
           ALLOCATE(TAB_SON_ll(IIU_SON_ll,IJU_SON_ll,IKU_SON_ll))
@@ -765,13 +812,16 @@ CONTAINS
                                              IJB_SON_ll-IDIFF_HEXT:IJE_SON_ll+IDIFF_HEXT,1:IKU_SON_ll) ) )
           IF ( MAX_VAL .EQ. 0.0 ) MAX_VAL = 1.0
           !
+          IMI = GET_CURRENT_MODEL_INDEX()
           MAX_DIFF=MAXVAL(Z3D(IIB_ll-IDIFF_HEXT:IIE_ll+IDIFF_HEXT,IJB_ll-IDIFF_HEXT:IJE_ll+IDIFF_HEXT,1:IKU_ll)/MAX_VAL)
           TAB_INTERIOR_ll=> Z3D(IIB_ll-IDIFF_HEXT:IIE_ll+IDIFF_HEXT,IJB_ll-IDIFF_HEXT:IJE_ll+IDIFF_HEXT,1:IKU_ll)
           !
           IF (MAX_DIFF > PRECISION ) THEN
-             print*," MPPDB_CHECKLB :: PB MPPDB_CHECKLB =", MESSAGE ," ERROR=",MAX_DIFF , MAX_VAL
+             write(6, '(" MPPDB_CHECKLB :: PB MPPDB_CHECKLB =",A40," ERROR=",e15.8," MAXVAL=",e15.8," IMI=",I3.3)' ) &
+                       MESSAGE ,MAX_DIFF , MAX_VAL , IMI
           ELSE
-             print*," MPPDB_CHECKLB :: OK MPPDB_CHECKLB =", MESSAGE ," ERROR=",MAX_DIFF , MAX_VAL
+             write(6, '(" MPPDB_CHECKLB :: OK MPPDB_CHECKLB =",A40," ERROR=",e15.8," MAXVAL=",e15.8," IMI=",I3.3)' ) &
+                      MESSAGE ,MAX_DIFF , MAX_VAL  , IMI
           END IF
           flush(unit=OUTPUT_UNIT)
           !
@@ -831,7 +881,7 @@ CONTAINS
     INTEGER                              :: KSIZE
     INTEGER                              :: KSIZE_FULL
     !
-    IF ( ( .NOT. MPPDB_INITIALIZED ) ) RETURN
+    IF ( ( .NOT. MPPDB_INITIALIZED ) .OR. ( .NOT. MPPDB_ACTIVED ) ) RETURN
     !
 !    IF ( SIZE(PTAB) == 0 ) THEN
 !      ALLOCATE(ZFIELD2D(0,0))
@@ -935,7 +985,7 @@ CONTAINS
     INTEGER                              :: IINFO_ll
     INTEGER                              :: IKSIZE_ll
     !
-    IF ( ( .NOT. MPPDB_INITIALIZED ) ) RETURN
+    IF ( ( .NOT. MPPDB_INITIALIZED ) .OR. ( .NOT. MPPDB_ACTIVED ) ) RETURN
     CALL MPI_ALLREDUCE(SIZE(PTAB), IGLBSIZEPTAB, 1,MNHINT_MPI, MPI_SUM, MPPDB_INTRA_COMM, IINFO_ll)
     IF ( IGLBSIZEPTAB == 0 ) RETURN
     CALL MPI_ALLREDUCE(SIZE(PTAB,2),IKSIZE_ll, 1, MNHINT_MPI, MPI_MAX, MPPDB_INTRA_COMM, IINFO_ll)

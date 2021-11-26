@@ -1767,6 +1767,18 @@ call Add_field2list( TFIELDDATA( &
   NDIMS      = 0,                &
   LTIMEDEP   = .TRUE.            ) )
 
+call Add_field2list( TFIELDDATA(        &
+  CMNHNAME   = 'DRYMASSS',              &
+  CSTDNAME   = '',                      &
+  CLONGNAME  = 'DRYMASSS',              &
+  CUNITS     = 'kg',                    &
+  CDIR       = '--',                    &
+  CCOMMENT   = 'Total Dry Mass Source', &
+  NGRID      = 0,                       &
+  NTYPE      = TYPEREAL,                &
+  NDIMS      = 0,                       &
+  LTIMEDEP   = .TRUE.                   ) )
+
 call Add_field2list( TFIELDDATA( &
   CMNHNAME   = 'BL_DEPTH',       &
   CSTDNAME   = '',               &
@@ -3283,6 +3295,12 @@ IF (.NOT.ASSOCIATED(XDRYMASST)) THEN
   call Goto_model_1field( 'DRYMASST', 1, 1, XDRYMASST )
 END IF
 !
+IF (.NOT.ASSOCIATED(XDRYMASSS)) THEN
+  CALL PRINT_MSG(NVERB_DEBUG,'GEN','INI_FIELD_SCALARS',' XDRYMASSS was not associated')
+  ALLOCATE(XDRYMASSS)
+  call Goto_model_1field( 'DRYMASSS', 1, 1, XDRYMASSS )
+END IF
+!
 IF (.NOT.ASSOCIATED(NRIMX)) THEN
   CALL PRINT_MSG(NVERB_DEBUG,'GEN','INI_FIELD_SCALARS',' NRIMX was not associated')
   ALLOCATE(NRIMX)
@@ -3558,6 +3576,7 @@ call Goto_model_1field( 'LBXTHM', kfrom, kto, XLBXTHM )
 call Goto_model_1field( 'LBYTHM', kfrom, kto, XLBYTHM )
 
 call Goto_model_1field( 'DRYMASST', kfrom, kto, XDRYMASST )
+call Goto_model_1field( 'DRYMASSS', kfrom, kto, XDRYMASSS )
 !
 ! MODD_DYN_n variables
 !

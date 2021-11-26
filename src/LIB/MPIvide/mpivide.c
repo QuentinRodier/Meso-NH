@@ -1,51 +1,39 @@
-/* 
-MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+/*
+MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 MNH_LIC for details. version 1.
-*/ 
+*/
+/* Modifications :
+  P. Wautelet 19/11/2021: add function findtypesize + improve/add support for 32 and 64 bits variables + add mpi_reduce
+*/
+
+#include <stdio.h>
 #include <string.h>
 #include "mpi.h"
 
-/* Variables defined in meso-nh code */
-#ifdef FUJI
-#if MNH_REAL == 4
-  #define MPI_PRECISION MPI_REAL
-  #define MPI_2PRECISION MPI_2REAL
-#else
-  #define MPI_PRECISION MPI_DOUBLE_PRECISION
-  #define MPI_2PRECISION MPI_2DOUBLE_PRECISION
-#endif
-#else
-  #define MPI_PRECISION MPI_REAL
-  #define MPI_2PRECISION MPI_2REAL
-#endif
-
-
 /* MPI_INTEGER is defined in mpi.h */
 
-#define MPI_INTEGER8 MPI_LONG_LONG_INT
-
-#ifdef FUJI
-#if MNH_INT == 8 
-#define SIZEINTEGER 8
+#define SIZEINTEGER4 4
 #define SIZEINTEGER8 8
+
+#define SIZELOGICAL4 4
+#define SIZELOGICAL8 8
+
+#define SIZEREAL4 4
+#define SIZEREAL8 8
+
+#if MNH_INT == 8
+#define SIZEINTEGER 8
 #define SIZELOGICAL 8
 #else
 #define SIZEINTEGER 4
-#define SIZEINTEGER8 8
 #define SIZELOGICAL 4
 #endif
 #if MNH_REAL == 4
 #define SIZEPRECISION 4
 #define SIZE2PRECISION 8
 #else
-#define SIZEPRECISION 8 
-#define SIZE2PRECISION 16 
-#endif
-#else
-#define SIZEINTEGER 8 
-#define SIZEINTEGER8 8
 #define SIZEPRECISION 8
 #define SIZE2PRECISION 16
 #endif
@@ -63,6 +51,57 @@ void disppass(fct)
 char *fct;
 {
   /* printf("MPIVIDE::Passage dans %s \n", fct); */
+}
+
+int findtypesize(int type)
+{
+  int size;
+
+  switch(type)
+  {
+    case MPI_INTEGER4:
+      size = SIZEINTEGER4 ;
+      break;
+    case MPI_INTEGER8:
+      size = SIZEINTEGER8 ;
+      break;
+    case MPI_LOGICAL4:
+      size = SIZELOGICAL4 ;
+      break;
+    case MPI_LOGICAL8:
+      size = SIZELOGICAL8 ;
+      break;
+    case MPI_REAL4:
+      size = SIZEREAL4 ;
+      break;
+    case MPI_REAL8:
+      size = SIZEREAL8 ;
+      break;
+    case MPI_2REAL:
+      size = 2*SIZEPRECISION ;
+      break;
+    case MPI_2DOUBLE_PRECISION:
+      size = 2*SIZE2PRECISION ;
+      break;
+    case MPI_INTEGER:
+      size = SIZEINTEGER;
+      break;
+    case MPI_REAL:
+      size = SIZEPRECISION;
+      break;
+    case MPI_DOUBLEDOUBLE:
+      size = SIZE_DOUBLEDOUBLE;
+      break;
+    case MPI_LOGICAL:
+      size = SIZELOGICAL ;
+      break;
+    default:
+      printf("ERROR : unknown precision in findtypesize (MPIVIDE library)\n");
+      size = SIZEPRECISION;
+      break;
+  }
+
+  return size;
 }
 
 #pragma weak mpi_cart_sub__ = mpi_cart_sub
@@ -127,26 +166,10 @@ void mpi_alltoallv(void *sendbuf, int *sendcounts,
             void *recvbuf, int *recvcounts,
             int *rdispls, int *recvtype, int *comm, int *__ierr)
 {
-    int size = SIZE2PRECISION;
+    int size;
+
     disppass("alltoallv");
-    switch(*sendtype)
-    {
-      case MPI_INTEGER:
-        size = SIZEINTEGER;
-        break;
-      case MPI_PRECISION:
-        size = SIZEPRECISION;
-        break;
-      case MPI_2PRECISION:
-        size = SIZE2PRECISION;
-        break;
-      case MPI_DOUBLEDOUBLE:
-        size = SIZE_DOUBLEDOUBLE;
-        break;
-      case MPI_LOGICAL:
-        size = SIZELOGICAL ;
-        break;
-    }
+    size = findtypesize(*sendtype);
     memcpy(recvbuf, sendbuf, (*recvcounts)*size);
 
     *__ierr = 0;
@@ -176,30 +199,10 @@ int              *recvtype;
 int              *comm;
 int              *__ierr;
 {
-   int size = SIZE2PRECISION;
-   disppass("allgatherv");
+    int size;
 
-   switch(*sendtype)
-    {
-      case MPI_INTEGER:
-        size = SIZEINTEGER;
-        break;
-      case MPI_INTEGER8:
-        size = SIZEINTEGER8;
-        break;
-      case MPI_PRECISION:
-        size = SIZEPRECISION;
-        break;
-      case MPI_2PRECISION:
-        size = SIZE2PRECISION;
-        break;
-      case MPI_DOUBLEDOUBLE:
-        size = SIZE_DOUBLEDOUBLE;
-        break;
-      case MPI_LOGICAL:
-        size = SIZELOGICAL ;
-        break;
-    }
+    disppass("allgatherv");
+    size = findtypesize(*sendtype);
     memcpy(recvbuf, sendbuf, (*recvcounts)*size);
     *__ierr = 0;
 }
@@ -219,29 +222,10 @@ int              *root;
 int              *comm;
 int              *__ierr;
 {
-    int size = SIZE2PRECISION;
+    int size;
+
     disppass("gather");
-    switch(*sendtype)
-    {
-      case MPI_INTEGER:
-        size = SIZEINTEGER;
-        break;
-      case MPI_PRECISION:
-        size = SIZEPRECISION;
-        break;
-      case MPI_2PRECISION:
-        size = SIZE2PRECISION;
-        break;
-      case MPI_DOUBLEDOUBLE:
-        size = SIZE_DOUBLEDOUBLE;
-        break;
-      case MPI_DOUBLE:
-        size = 8 ;
-        break;
-      case MPI_LOGICAL:
-        size = SIZELOGICAL ;
-        break;
-    }
+    size = findtypesize(*sendtype);
     memcpy(recvbuf, sendbuf, (*recvcount)*size);
 
     *__ierr = 0;
@@ -263,26 +247,10 @@ int              *root;
 int              *comm;
 int              *__ierr;
 {
-    int size = SIZE2PRECISION;
+    int size;
+
     disppass("gatherv");
-    switch(*sendtype)
-    {
-      case MPI_INTEGER:
-        size = SIZEINTEGER;
-        break;
-      case MPI_PRECISION:
-        size = SIZEPRECISION;
-        break;
-      case MPI_2PRECISION:
-        size = SIZE2PRECISION;
-        break;
-      case MPI_DOUBLEDOUBLE:
-        size = SIZE_DOUBLEDOUBLE;
-        break;
-      case MPI_LOGICAL:
-        size = SIZELOGICAL ;
-        break;
-    }
+    size = findtypesize(*sendtype);
     memcpy(recvbuf, sendbuf, (*recvcounts)*size);
 
     *__ierr = 0;
@@ -352,26 +320,10 @@ int              *recvtype;
 int              *comm;
 int              *__ierr;
 {
-    int size = SIZE2PRECISION;
+    int size;
+
     disppass("allgather");
-    switch(*sendtype)
-    {
-      case MPI_INTEGER:
-        size = SIZEINTEGER;
-        break;
-      case MPI_PRECISION:
-        size = SIZEPRECISION;
-        break;
-      case MPI_2PRECISION:
-        size = SIZE2PRECISION;
-        break;
-      case MPI_DOUBLEDOUBLE:
-        size = SIZE_DOUBLEDOUBLE;
-        break;
-      case MPI_LOGICAL:
-        size = SIZELOGICAL ;
-        break;
-    }
+    size = findtypesize(*sendtype);
     memcpy(recvbuf, sendbuf, (*recvcount)*size);
 
     *__ierr = 0;
@@ -425,28 +377,32 @@ int              *comm;
 int              *op;
 int              *__ierr;
 {
-    int size = SIZE2PRECISION;
+    int size;
  
     disppass("allreduce"); 
-    switch(*datatype)  
-    {
-      case MPI_INTEGER:
-        size = SIZEINTEGER;
-        break;
-      case MPI_PRECISION:
-        size = SIZEPRECISION;
-        break;
-      case MPI_2PRECISION:
-        size = SIZE2PRECISION;
-        break;
-      case MPI_DOUBLE:
-        size = 8 ;
-        break;
-      case MPI_LOGICAL:
-        size = SIZELOGICAL ;
-        break;
-    }
-    memcpy(recvbuf, sendbuf, (*count)*size); 
+    size = findtypesize(*datatype);
+    memcpy(recvbuf, sendbuf, (*count)*size);
+    *__ierr = 0;
+}
+
+#pragma weak mpi_reduce__ =  mpi_reduce
+#pragma weak mpi_reduce_  =  mpi_reduce
+void mpi_reduce
+( sendbuf, recvbuf, count, datatype, op, root, comm, __ierr )
+void             *sendbuf;
+void             *recvbuf;
+int              *count;
+int              *datatype;
+int              *root;
+int              *comm;
+int              *op;
+int              *__ierr;
+{
+    int size;
+
+    disppass("reduce");
+    size = findtypesize(*datatype);
+    memcpy(recvbuf, sendbuf, (*count)*size);
     *__ierr = 0;
 }
 

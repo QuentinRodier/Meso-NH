@@ -89,6 +89,7 @@ subroutine Write_diachro( tpdiafile, tpbudiachro, tpfields,       &
 !  P. Wautelet 03/03/2021: add tbudiachrometadata type (useful to pass more information to Write_diachro)
 !  P. Wautelet 11/03/2021: remove ptrajx/y/z optional dummy arguments of Write_diachro
 !                          + get the trajectory data for LFI files differently
+!  P. Wautelet 01/09/2021: allow NMNHDIM_LEVEL and NMNHDIM_LEVEL_W simultaneously
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -1050,7 +1051,10 @@ do jp = 2, Size( tpfields )
     if ( tpfields(jp)%ndimlist(ji) /= tpfields(1)%ndimlist(ji) ) then
       !For SERIES: it is possible to have NMNHDIM_NI and NMNHDIM_NI_U in the different tpfields
       !For SERIES: it is possible to have NMNHDIM_SERIES_LEVEL and NMNHDIM_SERIES_LEVEL_W in the different tpfields
-      if ( tpfields(jp)%ndimlist(ji) /= NMNHDIM_NI           .and. tpfields(jp)%ndimlist(ji) /= NMNHDIM_NI_U .and.     &
+      !For profiles: it is possible to have NMNHDIM_LEVEL and NMNHDIM_LEVEL_W in the different tpfields
+      !This check is not perfect but should catch most problems
+      if ( tpfields(jp)%ndimlist(ji) /= NMNHDIM_NI           .and. tpfields(jp)%ndimlist(ji) /= NMNHDIM_NI_U    .and.  &
+           tpfields(jp)%ndimlist(ji) /= NMNHDIM_LEVEL        .and. tpfields(jp)%ndimlist(ji) /= NMNHDIM_LEVEL_W .and.  &
            tpfields(jp)%ndimlist(ji) /= NMNHDIM_SERIES_LEVEL .and. tpfields(jp)%ndimlist(ji) /= NMNHDIM_SERIES_LEVEL_W ) then
         call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', &
                         'some dimensions are not the same for all tpfields entries for variable '//trim(tpfields(jp)%cmnhname) )
