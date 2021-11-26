@@ -70,7 +70,7 @@ END MODULE MODI_INI_NSV
 !  P. Wautelet 10/03/2021: add CSVNAMES and CSVNAMES_A to store the name of all the scalar variables
 !  P. Wautelet 30/03/2021: move NINDICE_CCN_IMM and NIMM initializations from init_aerosol_properties to ini_nsv
 !  B. Vie         06/2021: add prognostic supersaturation for LIMA
-!! 
+!  P. Wautelet 26/11/2021: initialize TSVLIST_A
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -98,6 +98,7 @@ USE MODD_DYN_n,           ONLY: LHORELAX_SVFF
 #endif
 USE MODD_ELEC_DESCR,      ONLY: LLNOX_EXPLICIT
 USE MODD_ELEC_DESCR,      ONLY: CELECNAMES
+USE MODD_FIELD,           ONLY: TFIELDMETADATA, TYPEREAL
 #ifdef MNH_FOREFIRE
 USE MODD_FOREFIRE
 #endif
@@ -106,6 +107,7 @@ USE MODD_LG,              ONLY: CLGNAMES, XLG1MIN, XLG2MIN, XLG3MIN
 USE MODD_LUNIT_n,         ONLY: TLUOUT
 USE MODD_NSV
 USE MODD_PARAM_C2R2,      ONLY: LSUPSAT
+USE MODD_PARAMETERS,      ONLY: NCOMMENTLGTMAX, NUNITLGTMAX
 USE MODD_PARAM_LIMA,      ONLY: NINDICE_CCN_IMM, NIMM, NMOD_CCN, LSCAV, LAERO_MASS, &
                                 NMOD_IFN, NMOD_IMM, LHHONI,  &
                                 LWARM, LCOLD, LRAIN, LSPRO
@@ -136,6 +138,8 @@ INTEGER, INTENT(IN)             :: KMI ! model index
 !
 CHARACTER(LEN=2) :: YNUM2
 CHARACTER(LEN=3) :: YNUM3
+CHARACTER(LEN=NCOMMENTLGTMAX) :: YCOMMENT
+CHARACTER(LEN=NUNITLGTMAX)    :: YUNITS
 INTEGER :: ILUOUT
 INTEGER :: ISV ! total number of scalar variables
 INTEGER :: IMODEIDX, IMOMENTS
@@ -570,7 +574,7 @@ ELSE
   NSV_LNOXEND_A(KMI)= 0
 END IF
 !
-! finale number of NSV variable
+! Final number of NSV variables
 !
 NSV_A(KMI) = ISV
 !
@@ -781,113 +785,393 @@ END IF
 DO JSV = 1, NSV_USER_A(KMI)
   WRITE( YNUM3, '( I3.3 )' ) JSV
   CSVNAMES_A(JSV,KMI) = 'SVUSER'//YNUM3
+
+  TSVLIST_A(JSV, KMI) = TFIELDMETADATA(         &
+    CMNHNAME   = 'SVUSER' // YNUM3,             &
+    CSTDNAME   = '',                            &
+    CLONGNAME  = 'SVUSER' // YNUM3,             &
+    CUNITS     = 'kg kg-1',                     &
+    CDIR       = 'XY',                          &
+    CCOMMENT   = 'X_Y_Z_' // 'SVUSER' // YNUM3, &
+    NGRID      = 1,                             &
+    NTYPE      = TYPEREAL,                      &
+    NDIMS      = 3,                             &
+    LTIMEDEP   = .TRUE.                         )
 END DO
 
 DO JSV = NSV_C2R2BEG_A(KMI), NSV_C2R2END_A(KMI)
   CSVNAMES_A(JSV,KMI) = TRIM( C2R2NAMES(JSV-NSV_C2R2BEG_A(KMI)+1) )
+
+  WRITE( YNUM3, '( I3.3 )' ) JSV
+
+  TSVLIST_A(JSV, KMI) = TFIELDMETADATA(                       &
+    CMNHNAME   = TRIM( C2R2NAMES(JSV-NSV_C2R2BEG_A(KMI)+1) ), &
+    CSTDNAME   = '',                                          &
+    CLONGNAME  = TRIM( C2R2NAMES(JSV-NSV_C2R2BEG_A(KMI)+1) ), &
+    CUNITS     = 'm-3',                                       &
+    CDIR       = 'XY',                                        &
+    CCOMMENT   = 'X_Y_Z_' // 'SVT' // YNUM3,                  &
+    NGRID      = 1,                                           &
+    NTYPE      = TYPEREAL,                                    &
+    NDIMS      = 3,                                           &
+    LTIMEDEP   = .TRUE.                                       )
 END DO
 
 DO JSV = NSV_C1R3BEG_A(KMI), NSV_C1R3END_A(KMI)
   CSVNAMES_A(JSV,KMI) = TRIM( C1R3NAMES(JSV-NSV_C1R3BEG_A(KMI)+1) )
+
+  WRITE( YNUM3, '( I3.3 )' ) JSV
+
+  TSVLIST_A(JSV, KMI) = TFIELDMETADATA(                       &
+    CMNHNAME   = TRIM( C1R3NAMES(JSV-NSV_C2R2BEG_A(KMI)+1) ), &
+    CSTDNAME   = '',                                          &
+    CLONGNAME  = TRIM( C1R3NAMES(JSV-NSV_C2R2BEG_A(KMI)+1) ), &
+    CUNITS     = 'm-3',                                       &
+    CDIR       = 'XY',                                        &
+    CCOMMENT   = 'X_Y_Z_' // 'SVT' // YNUM3,                  &
+    NGRID      = 1,                                           &
+    NTYPE      = TYPEREAL,                                    &
+    NDIMS      = 3,                                           &
+    LTIMEDEP   = .TRUE.                                       )
 END DO
 
 DO JSV = NSV_LIMA_BEG_A(KMI), NSV_LIMA_END_A(KMI)
+  WRITE( YNUM3, '( I3.3 )' ) JSV
+
+  TSVLIST_A(JSV, KMI) = TFIELDMETADATA(      &
+    CMNHNAME   = 'SV LIMA ' // YNUM3,        &
+    CSTDNAME   = '',                         &
+    CLONGNAME  = '',                         &
+    CUNITS     = 'kg-1',                    &
+    CDIR       = 'XY',                       &
+    CCOMMENT   = 'X_Y_Z_' // 'SVT' // YNUM3, &
+    NGRID      = 1,                          &
+    NTYPE      = TYPEREAL,                   &
+    NDIMS      = 3,                          &
+    LTIMEDEP   = .TRUE.                      )
+
   IF ( JSV == NSV_LIMA_NC_A(KMI) ) THEN
     CSVNAMES_A(JSV,KMI) = TRIM( CLIMA_WARM_NAMES(1) )
+    TSVLIST_A(JSV, KMI)%CMNHNAME = TRIM( CLIMA_WARM_NAMES(1) )
   ELSE IF ( JSV == NSV_LIMA_NR_A(KMI) ) THEN
     CSVNAMES_A(JSV,KMI) = TRIM( CLIMA_WARM_NAMES(2) )
+    TSVLIST_A(JSV, KMI)%CMNHNAME = TRIM( CLIMA_WARM_NAMES(2) )
   ELSE IF ( JSV >= NSV_LIMA_CCN_FREE_A(KMI) .AND. JSV < NSV_LIMA_CCN_ACTI_A(KMI) ) THEN
     WRITE( YNUM2, '( I2.2 )' ) JSV - NSV_LIMA_CCN_FREE_A(KMI) + 1
     CSVNAMES_A(JSV,KMI) = TRIM( CLIMA_WARM_NAMES(3) ) // YNUM2
+    TSVLIST_A(JSV, KMI)%CMNHNAME = TRIM( CLIMA_WARM_NAMES(3) ) // YNUM2
   ELSE IF (JSV >= NSV_LIMA_CCN_ACTI_A(KMI) .AND. JSV < ( NSV_LIMA_CCN_ACTI_A(KMI) + NMOD_CCN ) ) THEN
     WRITE( YNUM2, '( I2.2 )' ) JSV - NSV_LIMA_CCN_ACTI_A(KMI) + 1
     CSVNAMES_A(JSV,KMI) = TRIM( CLIMA_WARM_NAMES(4) ) // YNUM2
+    TSVLIST_A(JSV, KMI)%CMNHNAME = TRIM( CLIMA_WARM_NAMES(4) ) // YNUM2
   ELSE IF ( JSV == NSV_LIMA_SCAVMASS_A(KMI) ) THEN
     CSVNAMES_A(JSV,KMI) = TRIM( CAERO_MASS(1) )
+    TSVLIST_A(JSV, KMI)%CMNHNAME = TRIM( CAERO_MASS(1) )
+    TSVLIST_A(JSV, KMI)%CUNITS = 'kg kg-1'
   ELSE IF ( JSV == NSV_LIMA_NI_A(KMI) ) THEN
     CSVNAMES_A(JSV,KMI) = TRIM( CLIMA_COLD_NAMES(1) )
+    TSVLIST_A(JSV, KMI)%CMNHNAME = TRIM( CLIMA_COLD_NAMES(1) )
   ELSE IF ( JSV >= NSV_LIMA_IFN_FREE_A(KMI) .AND. JSV < NSV_LIMA_IFN_NUCL_A(KMI) ) THEN
     WRITE( YNUM2, '( I2.2 )' ) JSV - NSV_LIMA_IFN_FREE_A(KMI) + 1
     CSVNAMES_A(JSV,KMI) = TRIM( CLIMA_COLD_NAMES(2) ) // YNUM2
+    TSVLIST_A(JSV, KMI)%CMNHNAME = TRIM( CLIMA_COLD_NAMES(2) ) // YNUM2
   ELSE IF ( JSV >= NSV_LIMA_IFN_NUCL_A(KMI) .AND. JSV < ( NSV_LIMA_IFN_NUCL_A(KMI) + NMOD_IFN ) ) THEN
     WRITE( YNUM2, '( I2.2 )' ) JSV - NSV_LIMA_IFN_NUCL_A(KMI) + 1
     CSVNAMES_A(JSV,KMI) = TRIM( CLIMA_COLD_NAMES(3) ) // YNUM2
+    TSVLIST_A(JSV, KMI)%CMNHNAME = TRIM( CLIMA_COLD_NAMES(3) ) // YNUM2
   ELSE IF ( JSV >= NSV_LIMA_IMM_NUCL_A(KMI) .AND. JSV < ( NSV_LIMA_IMM_NUCL_A(KMI) + NMOD_IMM ) ) THEN
     WRITE( YNUM2, '( I2.2 )' ) NINDICE_CCN_IMM(JSV-NSV_LIMA_IMM_NUCL_A(KMI)+1)
     CSVNAMES_A(JSV,KMI) = TRIM( CLIMA_COLD_NAMES(4) ) // YNUM2
+    TSVLIST_A(JSV, KMI)%CMNHNAME = TRIM( CLIMA_COLD_NAMES(4) ) // YNUM2
   ELSE IF ( JSV == NSV_LIMA_HOM_HAZE_A(KMI) ) THEN
     CSVNAMES_A(JSV,KMI) = TRIM( CLIMA_COLD_NAMES(5) )
+    TSVLIST_A(JSV, KMI)%CMNHNAME = TRIM( CLIMA_COLD_NAMES(5) )
   ELSE IF ( JSV == NSV_LIMA_SPRO_A(KMI) ) THEN
     CSVNAMES_A(JSV,KMI) = TRIM( CLIMA_WARM_NAMES(5) )
+    TSVLIST_A(JSV, KMI)%CMNHNAME = TRIM( CLIMA_WARM_NAMES(5) )
   ELSE
     CALL Print_msg( NVERB_FATAL, 'GEN', 'INI_NSV', 'invalid index for LIMA' )
   END IF
+
+   TSVLIST_A(JSV, KMI)%CLONGNAME = TRIM( TSVLIST_A(JSV, KMI)%CMNHNAME )
 END DO
 
 DO JSV = NSV_ELECBEG_A(KMI), NSV_ELECEND_A(KMI)
   CSVNAMES_A(JSV,KMI) = TRIM( CELECNAMES(JSV-NSV_ELECBEG_A(KMI)+1) )
+
+  IF ( JSV > NSV_ELECBEG .AND. JSV < NSV_ELECEND ) THEN
+    YUNITS = 'C m-3'
+    WRITE( YCOMMENT, '( A6, A3, I3.3 )' ) 'X_Y_Z_', 'SVT', JSV
+  ELSE
+    YUNITS = 'm-3'
+    WRITE( YCOMMENT, '( A6, A3, I3.3, A8 )' ) 'X_Y_Z_', 'SVT', JSV, ' (nb ions/m3)'
+  END IF
+
+  TSVLIST_A(JSV, KMI) = TFIELDMETADATA(                        &
+    CMNHNAME   = TRIM( CELECNAMES(JSV-NSV_ELECBEG_A(KMI)+1) ), &
+    CSTDNAME   = '',                                           &
+    CLONGNAME  = TRIM( CELECNAMES(JSV-NSV_ELECBEG_A(KMI)+1) ), &
+    CUNITS     = TRIM( YUNITS ),                               &
+    CDIR       = 'XY',                                         &
+    CCOMMENT   = TRIM( YCOMMENT ),                             &
+    NGRID      = 1,                                            &
+    NTYPE      = TYPEREAL,                                     &
+    NDIMS      = 3,                                            &
+    LTIMEDEP   = .TRUE.                                        )
 END DO
 
 DO JSV = NSV_LGBEG_A(KMI), NSV_LGEND_A(KMI)
   CSVNAMES_A(JSV,KMI) = TRIM( CLGNAMES(JSV-NSV_LGBEG_A(KMI)+1) )
+
+  WRITE( YNUM3, '( I3.3 )' ) JSV
+
+  TSVLIST_A(JSV, KMI) = TFIELDMETADATA(                    &
+    CMNHNAME   = TRIM( CLGNAMES(JSV-NSV_LGBEG_A(KMI)+1) ), &
+    CSTDNAME   = '',                                       &
+    CLONGNAME  = TRIM( CLGNAMES(JSV-NSV_LGBEG_A(KMI)+1) ), &
+    CUNITS     = 'm',                                      &
+    CDIR       = 'XY',                                     &
+    CCOMMENT   = 'X_Y_Z_' // 'SVT' // YNUM3,               &
+    NGRID      = 1,                                        &
+    NTYPE      = TYPEREAL,                                 &
+    NDIMS      = 3,                                        &
+    LTIMEDEP   = .TRUE.                                    )
 END DO
 
 DO JSV = NSV_PPBEG_A(KMI), NSV_PPEND_A(KMI)
   WRITE( YNUM3, '( I3.3 )' ) JSV-NSV_PPBEG_A(KMI)+1
+
   CSVNAMES_A(JSV,KMI) = 'SVPP'//YNUM3
+
+  TSVLIST_A(JSV, KMI) = TFIELDMETADATA(      &
+    CMNHNAME   = 'SVPP' // YNUM3,            &
+    CSTDNAME   = '',                         &
+    CLONGNAME  = 'SVPP' // YNUM3,            &
+    CUNITS     = 'kg kg-1',                  &
+    CDIR       = 'XY',                       &
+    CCOMMENT   = 'X_Y_Z_' // 'SVT' // YNUM3, &
+    NGRID      = 1,                          &
+    NTYPE      = TYPEREAL,                   &
+    NDIMS      = 3,                          &
+    LTIMEDEP   = .TRUE.                      )
 END DO
 
 #ifdef MNH_FOREFIRE
 DO JSV = NSV_FFBEG_A(KMI), NSV_FFEND_A(KMI)
   WRITE( YNUM3, '( I3.3 )' ) JSV-NSV_FFBEG_A(KMI)+1
+
   CSVNAMES_A(JSV,KMI) = 'SVFF'//YNUM3
+
+  TSVLIST_A(JSV, KMI) = TFIELDMETADATA(      &
+    CMNHNAME   = 'SVFF' // YNUM3,            &
+    CSTDNAME   = '',                         &
+    CLONGNAME  = 'SVFF' // YNUM3,            &
+    CUNITS     = 'kg kg-1',                  &
+    CDIR       = 'XY',                       &
+    CCOMMENT   = 'X_Y_Z_' // 'SVT' // YNUM3, &
+    NGRID      = 1,                          &
+    NTYPE      = TYPEREAL,                   &
+    NDIMS      = 3,                          &
+    LTIMEDEP   = .TRUE.                      )
 END DO
 #endif
 
 DO JSV = NSV_CSBEG_A(KMI), NSV_CSEND_A(KMI)
   WRITE( YNUM3, '( I3.3 )' ) JSV-NSV_CSBEG_A(KMI)
+
   CSVNAMES_A(JSV,KMI) = 'SVCS'//YNUM3
+
+  TSVLIST_A(JSV, KMI) = TFIELDMETADATA(      &
+    CMNHNAME   = 'SVCS' // YNUM3,            &
+    CSTDNAME   = '',                         &
+    CLONGNAME  = 'SVCS' // YNUM3,            &
+    CUNITS     = 'kg kg-1',                  &
+    CDIR       = 'XY',                       &
+    CCOMMENT   = 'X_Y_Z_' // 'SVT' // YNUM3, &
+    NGRID      = 1,                          &
+    NTYPE      = TYPEREAL,                   &
+    NDIMS      = 3,                          &
+    LTIMEDEP   = .TRUE.                      )
 END DO
 
 DO JSV = NSV_CHEMBEG_A(KMI), NSV_CHEMEND_A(KMI)
   CSVNAMES_A(JSV,KMI) = TRIM( CNAMES(JSV-NSV_CHEMBEG_A(KMI)+1) )
+
+  WRITE( YNUM3, '( I3.3 )' ) JSV
+
+  TSVLIST_A(JSV, KMI) = TFIELDMETADATA(                    &
+    CMNHNAME   = TRIM( CNAMES(JSV-NSV_CHEMBEG_A(KMI)+1) ), &
+    CSTDNAME   = '',                                       &
+    CLONGNAME  = TRIM( CNAMES(JSV-NSV_CHEMBEG_A(KMI)+1) ), &
+    CUNITS     = 'ppp',                                    &
+    CDIR       = 'XY',                                     &
+    CCOMMENT   = 'X_Y_Z_' // 'SVT' // YNUM3,               &
+    NGRID      = 1,                                        &
+    NTYPE      = TYPEREAL,                                 &
+    NDIMS      = 3,                                        &
+    LTIMEDEP   = .TRUE.                                    )
 END DO
 
 DO JSV = NSV_CHICBEG_A(KMI), NSV_CHICEND_A(KMI)
   CSVNAMES_A(JSV,KMI) = TRIM( CICNAMES(JSV-NSV_CHICBEG_A(KMI)+1) )
+
+  WRITE( YNUM3, '( I3.3 )' ) JSV
+
+  TSVLIST_A(JSV, KMI) = TFIELDMETADATA(                      &
+    CMNHNAME   = TRIM( CICNAMES(JSV-NSV_CHICBEG_A(KMI)+1) ), &
+    CSTDNAME   = '',                                         &
+    CLONGNAME  = TRIM( CICNAMES(JSV-NSV_CHICBEG_A(KMI)+1) ), &
+    CUNITS     = 'ppp',                                      &
+    CDIR       = 'XY',                                       &
+    CCOMMENT   = 'X_Y_Z_' // 'SVT' // YNUM3,                 &
+    NGRID      = 1,                                          &
+    NTYPE      = TYPEREAL,                                   &
+    NDIMS      = 3,                                          &
+    LTIMEDEP   = .TRUE.                                      )
 END DO
 
 DO JSV = NSV_AERBEG_A(KMI), NSV_AEREND_A(KMI)
   CSVNAMES_A(JSV,KMI) = TRIM( CAERONAMES(JSV-NSV_AERBEG_A(KMI)+1) )
+
+  WRITE( YNUM3, '( I3.3 )' ) JSV
+
+  TSVLIST_A(JSV, KMI) = TFIELDMETADATA(                       &
+    CMNHNAME   = TRIM( CAERONAMES(JSV-NSV_AERBEG_A(KMI)+1) ), &
+    CSTDNAME   = '',                                          &
+    CLONGNAME  = TRIM( CAERONAMES(JSV-NSV_AERBEG_A(KMI)+1) ), &
+    CUNITS     = 'ppp',                                       &
+    CDIR       = 'XY',                                        &
+    CCOMMENT   = 'X_Y_Z_' // 'SVT' // YNUM3,                  &
+    NGRID      = 1,                                           &
+    NTYPE      = TYPEREAL,                                    &
+    NDIMS      = 3,                                           &
+    LTIMEDEP   = .TRUE.                                       )
 END DO
 
 DO JSV = NSV_AERDEPBEG_A(KMI), NSV_AERDEPEND_A(KMI)
   CSVNAMES_A(JSV,KMI) = TRIM( CDEAERNAMES(JSV-NSV_AERDEPBEG_A(KMI)+1) )
+
+  WRITE( YNUM3, '( I3.3 )' ) JSV
+
+  TSVLIST_A(JSV, KMI) = TFIELDMETADATA(                           &
+    CMNHNAME   = TRIM( CDEAERNAMES(JSV-NSV_AERDEPBEG_A(KMI)+1) ), &
+    CSTDNAME   = '',                                              &
+    CLONGNAME  = TRIM( CDEAERNAMES(JSV-NSV_AERDEPBEG_A(KMI)+1) ), &
+    CUNITS     = 'ppp',                                           &
+    CDIR       = 'XY',                                            &
+    CCOMMENT   = 'X_Y_Z_' // 'SVT' // YNUM3,                      &
+    NGRID      = 1,                                               &
+    NTYPE      = TYPEREAL,                                        &
+    NDIMS      = 3,                                               &
+    LTIMEDEP   = .TRUE.                                           )
 END DO
 
 DO JSV = NSV_DSTBEG_A(KMI), NSV_DSTEND_A(KMI)
   CSVNAMES_A(JSV,KMI) = TRIM( CDUSTNAMES(JSV-NSV_DSTBEG_A(KMI)+1) )
+
+  WRITE( YNUM3, '( I3.3 )' ) JSV
+
+  TSVLIST_A(JSV, KMI) = TFIELDMETADATA(                       &
+    CMNHNAME   = TRIM( CDUSTNAMES(JSV-NSV_DSTBEG_A(KMI)+1) ), &
+    CSTDNAME   = '',                                          &
+    CLONGNAME  = TRIM( CDUSTNAMES(JSV-NSV_DSTBEG_A(KMI)+1) ), &
+    CUNITS     = 'ppp',                                       &
+    CDIR       = 'XY',                                        &
+    CCOMMENT   = 'X_Y_Z_' // 'SVT' // YNUM3,                  &
+    NGRID      = 1,                                           &
+    NTYPE      = TYPEREAL,                                    &
+    NDIMS      = 3,                                           &
+    LTIMEDEP   = .TRUE.                                       )
 END DO
 
 DO JSV = NSV_DSTDEPBEG_A(KMI), NSV_DSTDEPEND_A(KMI)
   CSVNAMES_A(JSV,KMI) = TRIM( CDEDSTNAMES(JSV-NSV_DSTDEPBEG_A(KMI)+1) )
+
+  WRITE( YNUM3, '( I3.3 )' ) JSV
+
+  TSVLIST_A(JSV, KMI) = TFIELDMETADATA(                           &
+    CMNHNAME   = TRIM( CDEDSTNAMES(JSV-NSV_DSTDEPBEG_A(KMI)+1) ), &
+    CSTDNAME   = '',                                              &
+    CLONGNAME  = TRIM( CDEDSTNAMES(JSV-NSV_DSTDEPBEG_A(KMI)+1) ), &
+    CUNITS     = 'ppp',                                           &
+    CDIR       = 'XY',                                            &
+    CCOMMENT   = 'X_Y_Z_' // 'SVT' // YNUM3,                      &
+    NGRID      = 1,                                               &
+    NTYPE      = TYPEREAL,                                        &
+    NDIMS      = 3,                                               &
+    LTIMEDEP   = .TRUE.                                           )
 END DO
 
 DO JSV = NSV_SLTBEG_A(KMI), NSV_SLTEND_A(KMI)
   CSVNAMES_A(JSV,KMI) = TRIM( CSALTNAMES(JSV-NSV_SLTBEG_A(KMI)+1) )
+
+  WRITE( YNUM3, '( I3.3 )' ) JSV
+
+  TSVLIST_A(JSV, KMI) = TFIELDMETADATA(                       &
+    CMNHNAME   = TRIM( CSALTNAMES(JSV-NSV_SLTBEG_A(KMI)+1) ), &
+    CSTDNAME   = '',                                          &
+    CLONGNAME  = TRIM( CSALTNAMES(JSV-NSV_SLTBEG_A(KMI)+1) ), &
+    CUNITS     = 'ppp',                                       &
+    CDIR       = 'XY',                                        &
+    CCOMMENT   = 'X_Y_Z_' // 'SVT' // YNUM3,                  &
+    NGRID      = 1,                                           &
+    NTYPE      = TYPEREAL,                                    &
+    NDIMS      = 3,                                           &
+    LTIMEDEP   = .TRUE.                                       )
 END DO
 
 DO JSV = NSV_SLTDEPBEG_A(KMI), NSV_SLTDEPEND_A(KMI)
   CSVNAMES_A(JSV,KMI) = TRIM( CDESLTNAMES(JSV-NSV_SLTDEPBEG_A(KMI)+1) )
+
+  WRITE( YNUM3, '( I3.3 )' ) JSV
+
+  TSVLIST_A(JSV, KMI) = TFIELDMETADATA(                           &
+    CMNHNAME   = TRIM( CDESLTNAMES(JSV-NSV_SLTDEPBEG_A(KMI)+1) ), &
+    CSTDNAME   = '',                                              &
+    CLONGNAME  = TRIM( CDESLTNAMES(JSV-NSV_SLTDEPBEG_A(KMI)+1) ), &
+    CUNITS     = 'ppp',                                           &
+    CDIR       = 'XY',                                            &
+    CCOMMENT   = 'X_Y_Z_' // 'SVT' // YNUM3,                      &
+    NGRID      = 1,                                               &
+    NTYPE      = TYPEREAL,                                        &
+    NDIMS      = 3,                                               &
+    LTIMEDEP   = .TRUE.                                           )
 END DO
 
 DO JSV = NSV_SNWBEG_A(KMI), NSV_SNWEND_A(KMI)
   CSVNAMES_A(JSV,KMI) = TRIM( CSNOWNAMES(JSV-NSV_SNWBEG_A(KMI)+1) )
+
+  WRITE( YNUM3, '( I3.3 )' ) JSV
+
+  TSVLIST_A(JSV, KMI) = TFIELDMETADATA(                       &
+    CMNHNAME   = TRIM( CSNOWNAMES(JSV-NSV_SNWBEG_A(KMI)+1) ), &
+    CSTDNAME   = '',                                          &
+    CLONGNAME  = TRIM( CSNOWNAMES(JSV-NSV_SNWBEG_A(KMI)+1) ), &
+    CUNITS     = 'kg kg-1',                                   &
+    CDIR       = 'XY',                                        &
+    CCOMMENT   = 'X_Y_Z_' // 'SVT' // YNUM3,                  &
+    NGRID      = 1,                                           &
+    NTYPE      = TYPEREAL,                                    &
+    NDIMS      = 3,                                           &
+    LTIMEDEP   = .TRUE.                                       )
 END DO
 
 DO JSV = NSV_LNOXBEG_A(KMI), NSV_LNOXEND_A(KMI)
   WRITE( YNUM3, '( I3.3 )' ) JSV-NSV_LNOXBEG_A(KMI)+1
+
   CSVNAMES_A(JSV,KMI) = 'SVLNOX'//YNUM3
+
+  TSVLIST_A(JSV, KMI) = TFIELDMETADATA(      &
+    CMNHNAME   = 'SVLNOX' // YNUM3,          &
+    CSTDNAME   = '',                         &
+    CLONGNAME  = 'SVLNOX' // YNUM3,          &
+    CUNITS     = 'ppp',                      &
+    CDIR       = 'XY',                       &
+    CCOMMENT   = 'X_Y_Z_' // 'SVT' // YNUM3, &
+    NGRID      = 1,                          &
+    NTYPE      = TYPEREAL,                   &
+    NDIMS      = 3,                          &
+    LTIMEDEP   = .TRUE.                      )
 END DO
 
 END SUBROUTINE INI_NSV
