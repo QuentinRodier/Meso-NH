@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1998-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1998-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -151,10 +151,8 @@ USE MODD_IO,              ONLY: TFILEDATA
 USE MODD_LG,              ONLY: CLGNAMES
 USE MODD_LUNIT_n,         ONLY: TLUOUT
 USE MODD_NSV
-USE MODD_PARAMETERS,      ONLY: JPHEXT,NMNHNAMELGTMAX
-USE MODD_PARAM_LIMA
-USE MODD_PARAM_LIMA_COLD, ONLY: CLIMA_COLD_NAMES
-USE MODD_PARAM_LIMA_WARM, ONLY: CLIMA_WARM_NAMES
+USE MODD_PARAMETERS,      ONLY: JPHEXT, NMNHNAMELGTMAX
+USE MODD_PARAM_LIMA,      ONLY: NMOD_CCN, NMOD_IFN
 USE MODD_PARAM_n
 USE MODD_RAIN_C2R2_DESCR, ONLY: C2R2NAMES
 USE MODD_SALT
@@ -224,14 +222,14 @@ INTEGER             :: JSV,JRR                    ! Loop index for MOIST AND
 INTEGER             :: IRR                        !  counter for moist variables
 INTEGER             :: IRESP
 INTEGER             :: ILUOUT   !  Logical unit number associated with TLUOUT
-LOGICAL :: GHORELAX_UVWTH  ! switch for the horizontal relaxation for U,V,W,TH in the FM file 
+LOGICAL :: GHORELAX_UVWTH  ! switch for the horizontal relaxation for U,V,W,TH in the FM file
 LOGICAL :: GHORELAX_TKE    ! switch for the horizontal relaxation for tke in the FM file
 LOGICAL :: GHORELAX_R, GHORELAX_SV ! switch for the horizontal relaxation 
                                    ! for moist and scalar variables
 CHARACTER (LEN= LEN(HGETRVM)), DIMENSION (7) :: YGETRXM ! Arrays with  the get indicators 
                                                         !  for the moist variables
 CHARACTER (LEN=1), DIMENSION (7) :: YC    ! array with the prefix of the moist variables
-CHARACTER(LEN=2)     :: INDICE ! to index CCN and IFN fields of LIMA scheme
+CHARACTER(LEN=NMNHNAMELGTMAX) :: YMNHNAME_BASE
 TYPE(TFIELDMETADATA) :: TZFIELD
 !-------------------------------------------------------------------------------
 !
@@ -676,120 +674,131 @@ END IF
 ! LIMA: CCN and IFN scalar variables
 !
 IF (CCLOUD=='LIMA' ) THEN
-  IF (NSV_LIMA_CCN_FREE+NMOD_CCN-1 >= NSV_LIMA_CCN_FREE) THEN
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CUNITS     = 'kg-1'
-    TZFIELD%CDIR       = ''
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
-    !
-    DO JSV = NSV_LIMA_CCN_FREE,NSV_LIMA_CCN_FREE+NMOD_CCN-1
-      SELECT CASE(HGETSVM(JSV))
-        CASE ('READ')
-          WRITE(INDICE,'(I2.2)')(JSV - NSV_LIMA_CCN_FREE + 1)
-          IF ( KSIZELBXSV_ll /= 0 ) THEN
-            TZFIELD%CMNHNAME   = 'LBX_'//TRIM(UPCASE(CLIMA_WARM_NAMES(3))//INDICE)
-            TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-            TZFIELD%CLBTYPE    = 'LBX'
-            WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'2_Y_Z_','LBXSVM',JSV
-            CALL IO_Field_read_lb(TPINIFILE,TZFIELD,IL3DX,IRIMX,PLBXSVM(:,:,:,JSV),IRESP)
-            IF ( SIZE(PLBXSVM,1) /= 0 ) THEN
-              IF (IRESP/=0) THEN
-                IF (PRESENT(PLBXSVMM)) THEN
-                  PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
-                  WRITE(ILUOUT,*) 'CCN PLBXSVM   will be initialized to 0'
-                ELSE
-!callabortstop
-                  CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_LB','problem to initialize CCN PLBXSVM')
-                ENDIF
-              END IF
-            END IF
+  DO JSV = NSV_LIMA_CCN_FREE, NSV_LIMA_CCN_FREE + NMOD_CCN - 1
+    SELECT CASE(HGETSVM(JSV))
+      CASE ('READ')
+        TZFIELD = TSVLIST(JSV)
+        TZFIELD%CDIR = ''
+        YMNHNAME_BASE = TRIM( TZFIELD%CMNHNAME )
+
+        IF ( KSIZELBXSV_ll /= 0 .AND. SIZE(PLBXSVM,1) /= 0 ) THEN
+          TZFIELD%CMNHNAME   = 'LBX_' // TRIM( YMNHNAME_BASE )
+
+          IF (        TPINIFILE%NMNHVERSION(1) < 5                                                                            &
+               .OR. ( TPINIFILE%NMNHVERSION(1) == 5 .AND. TPINIFILE%NMNHVERSION(2) < 5 )                                      &
+               .OR. ( TPINIFILE%NMNHVERSION(1) == 5 .AND. TPINIFILE%NMNHVERSION(2) == 5  .AND. TPINIFILE%NMNHVERSION(3) < 1 ) ) THEN
+            CALL OLD_CMNHNAME_GENERATE_INTERN( TZFIELD%CMNHNAME )
           END IF
-          !
-          IF (KSIZELBYSV_ll  /= 0 ) THEN
-            TZFIELD%CMNHNAME   = 'LBY_'//TRIM(UPCASE(CLIMA_WARM_NAMES(3))//INDICE)
-            TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-            TZFIELD%CLBTYPE    = 'LBY'
-            WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'X_2_Z_','LBYSVM',JSV
-            CALL IO_Field_read_lb(TPINIFILE,TZFIELD,IL3DY,IRIMY,PLBYSVM(:,:,:,JSV),IRESP)
-            IF ( SIZE(PLBYSVM,1) /= 0 ) THEN
-              IF (IRESP/=0) THEN
-                IF (PRESENT(PLBYSVMM)) THEN
-                  PLBYSVM(:,:,:,JSV)=PLBYSVMM(:,:,:,JSV)
-                  WRITE(ILUOUT,*) 'CCN PLBYSVM   will be initialized to 0'
-                ELSE
+
+          TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+          WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'2_Y_Z_','LBXSVM',JSV
+          TZFIELD%CLBTYPE    = 'LBX'
+
+          CALL IO_Field_read_lb(TPINIFILE,TZFIELD,IL3DX,IRIMX,PLBXSVM(:,:,:,JSV),IRESP)
+
+          IF (IRESP/=0) THEN
+            IF (PRESENT(PLBXSVMM)) THEN
+              PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
+              WRITE(ILUOUT,*) 'CCN PLBXSVM   will be initialized to 0'
+            ELSE
 !callabortstop
-                  CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_LB','problem to initialize CCN PLBYSVM')
-                ENDIF
-              END IF
-            END IF
+              CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_LB','problem to initialize CCN PLBXSVM')
+            ENDIF
           END IF
-        CASE('INIT')
-          IF ( SIZE(PLBXSVM,1) /= 0 ) PLBXSVM(:,:,:,JSV) = 0.
-          IF ( SIZE(PLBYSVM,1) /= 0 ) PLBYSVM(:,:,:,JSV) = 0.
-      END SELECT
-    END DO
-  END IF
+        END IF
+        !
+        IF (KSIZELBYSV_ll  /= 0 .AND. SIZE(PLBYSVM,1) /= 0 ) THEN
+          TZFIELD%CMNHNAME   = 'LBY_' // TRIM( YMNHNAME_BASE )
+
+          IF (        TPINIFILE%NMNHVERSION(1) < 5                                                                            &
+               .OR. ( TPINIFILE%NMNHVERSION(1) == 5 .AND. TPINIFILE%NMNHVERSION(2) < 5 )                                      &
+               .OR. ( TPINIFILE%NMNHVERSION(1) == 5 .AND. TPINIFILE%NMNHVERSION(2) == 5  .AND. TPINIFILE%NMNHVERSION(3) < 1 ) ) THEN
+            CALL OLD_CMNHNAME_GENERATE_INTERN( TZFIELD%CMNHNAME )
+          END IF
+
+          TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+          WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'X_2_Z_','LBYSVM',JSV
+          TZFIELD%CLBTYPE    = 'LBY'
+
+          CALL IO_Field_read_lb(TPINIFILE,TZFIELD,IL3DY,IRIMY,PLBYSVM(:,:,:,JSV),IRESP)
+          IF (IRESP/=0) THEN
+            IF (PRESENT(PLBYSVMM)) THEN
+              PLBYSVM(:,:,:,JSV)=PLBYSVMM(:,:,:,JSV)
+              WRITE(ILUOUT,*) 'CCN PLBYSVM   will be initialized to 0'
+            ELSE
+!callabortstop
+              CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_LB','problem to initialize CCN PLBYSVM')
+            ENDIF
+          END IF
+        END IF
+      CASE('INIT')
+        IF ( SIZE(PLBXSVM,1) /= 0 ) PLBXSVM(:,:,:,JSV) = 0.
+        IF ( SIZE(PLBYSVM,1) /= 0 ) PLBYSVM(:,:,:,JSV) = 0.
+    END SELECT
+  END DO
   !
-  IF (NSV_LIMA_IFN_FREE+NMOD_IFN-1 >= NSV_LIMA_IFN_FREE) THEN
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CUNITS     = 'kg-1'
-    TZFIELD%CDIR       = ''
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
-    !
-    DO JSV = NSV_LIMA_IFN_FREE,NSV_LIMA_IFN_FREE+NMOD_IFN-1
-      SELECT CASE(HGETSVM(JSV))
-        CASE ('READ')
-          WRITE(INDICE,'(I2.2)')(JSV - NSV_LIMA_IFN_FREE + 1)
-          IF ( KSIZELBXSV_ll /= 0 ) THEN
-            TZFIELD%CMNHNAME   = 'LBX_'//TRIM(UPCASE(CLIMA_COLD_NAMES(2))//INDICE)
-            TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-            TZFIELD%CLBTYPE    = 'LBX'
-            WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'2_Y_Z_','LBXSVM',JSV
-            CALL IO_Field_read_lb(TPINIFILE,TZFIELD,IL3DX,IRIMX,PLBXSVM(:,:,:,JSV),IRESP)
-            IF ( SIZE(PLBXSVM,1) /= 0 ) THEN
-              IF (IRESP/=0) THEN
-                IF (PRESENT(PLBXSVMM)) THEN
-                  PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
-                  WRITE(ILUOUT,*) 'IFN PLBXSVM   will be initialized to 0'
-                ELSE
-!callabortstop
-                  CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_LB','problem to initialize IFN')
-                ENDIF
-              END IF
-            END IF
+  DO JSV = NSV_LIMA_IFN_FREE,NSV_LIMA_IFN_FREE+NMOD_IFN-1
+    SELECT CASE(HGETSVM(JSV))
+      CASE ('READ')
+        TZFIELD = TSVLIST(JSV)
+        TZFIELD%CDIR = ''
+        YMNHNAME_BASE = TRIM( TZFIELD%CMNHNAME )
+
+        IF ( KSIZELBXSV_ll /= 0 .AND. SIZE(PLBXSVM,1) /= 0 ) THEN
+          TZFIELD%CMNHNAME   = 'LBX_' // TRIM( YMNHNAME_BASE )
+
+          IF (        TPINIFILE%NMNHVERSION(1) < 5                                                                            &
+               .OR. ( TPINIFILE%NMNHVERSION(1) == 5 .AND. TPINIFILE%NMNHVERSION(2) < 5 )                                      &
+               .OR. ( TPINIFILE%NMNHVERSION(1) == 5 .AND. TPINIFILE%NMNHVERSION(2) == 5  .AND. TPINIFILE%NMNHVERSION(3) < 1 ) ) THEN
+            CALL OLD_CMNHNAME_GENERATE_INTERN( TZFIELD%CMNHNAME )
           END IF
-          !
-          IF (KSIZELBYSV_ll  /= 0 ) THEN
-            TZFIELD%CMNHNAME   = 'LBY_'//TRIM(UPCASE(CLIMA_COLD_NAMES(2))//INDICE)
-            TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-            TZFIELD%CLBTYPE    = 'LBY'
-            WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'X_2_Z_','LBYSVM',JSV
-            CALL IO_Field_read_lb(TPINIFILE,TZFIELD,IL3DY,IRIMY,PLBYSVM(:,:,:,JSV),IRESP)
-            IF ( SIZE(PLBYSVM,1) /= 0 ) THEN
-              IF (IRESP/=0) THEN
-                IF (PRESENT(PLBYSVMM)) THEN
-                  PLBYSVM(:,:,:,JSV)=PLBYSVMM(:,:,:,JSV)
-                  WRITE(ILUOUT,*) 'IFN PLBYSVM   will be initialized to 0'
-                ELSE
+
+          TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+          WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'2_Y_Z_','LBXSVM',JSV
+          TZFIELD%CLBTYPE    = 'LBX'
+
+          CALL IO_Field_read_lb(TPINIFILE,TZFIELD,IL3DX,IRIMX,PLBXSVM(:,:,:,JSV),IRESP)
+          IF (IRESP/=0) THEN
+            IF (PRESENT(PLBXSVMM)) THEN
+              PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
+              WRITE(ILUOUT,*) 'IFN PLBXSVM   will be initialized to 0'
+            ELSE
 !callabortstop
-                  CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_LB','problem to initialize IFN')
-                ENDIF
-              END IF
-            END IF
+              CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_LB','problem to initialize IFN')
+            ENDIF
           END IF
-        CASE('INIT')
-          IF ( SIZE(PLBXSVM,1) /= 0 ) PLBXSVM(:,:,:,JSV) = 0.
-          IF ( SIZE(PLBYSVM,1) /= 0 ) PLBYSVM(:,:,:,JSV) = 0.
-      END SELECT
-    END DO
-  END IF
-ENDIF
+        END IF
+        !
+        IF (KSIZELBYSV_ll  /= 0 .AND. SIZE(PLBYSVM,1) /= 0 ) THEN
+          TZFIELD%CMNHNAME   = 'LBY_' // TRIM( YMNHNAME_BASE )
+
+          IF (        TPINIFILE%NMNHVERSION(1) < 5                                                                            &
+               .OR. ( TPINIFILE%NMNHVERSION(1) == 5 .AND. TPINIFILE%NMNHVERSION(2) < 5 )                                      &
+               .OR. ( TPINIFILE%NMNHVERSION(1) == 5 .AND. TPINIFILE%NMNHVERSION(2) == 5  .AND. TPINIFILE%NMNHVERSION(3) < 1 ) ) THEN
+            CALL OLD_CMNHNAME_GENERATE_INTERN( TZFIELD%CMNHNAME )
+          END IF
+
+          TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+          WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'X_2_Z_','LBYSVM',JSV
+          TZFIELD%CLBTYPE    = 'LBY'
+
+          CALL IO_Field_read_lb(TPINIFILE,TZFIELD,IL3DY,IRIMY,PLBYSVM(:,:,:,JSV),IRESP)
+          IF (IRESP/=0) THEN
+            IF (PRESENT(PLBYSVMM)) THEN
+              PLBYSVM(:,:,:,JSV)=PLBYSVMM(:,:,:,JSV)
+              WRITE(ILUOUT,*) 'IFN PLBYSVM   will be initialized to 0'
+            ELSE
+!callabortstop
+              CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_LB','problem to initialize IFN')
+            ENDIF
+          END IF
+        END IF
+      CASE('INIT')
+        IF ( SIZE(PLBXSVM,1) /= 0 ) PLBXSVM(:,:,:,JSV) = 0.
+        IF ( SIZE(PLBYSVM,1) /= 0 ) PLBYSVM(:,:,:,JSV) = 0.
+    END SELECT
+  END DO
+END IF
 ! ELEC scalar variables
 IF (NSV_ELECEND>=NSV_ELECBEG) THEN
   TZFIELD%CSTDNAME   = ''
@@ -1634,4 +1643,29 @@ IF (OLSOURCE) THEN
 !
 ENDIF
 !
+CONTAINS
+
+  SUBROUTINE OLD_CMNHNAME_GENERATE_INTERN( YMNHNAME )
+
+    CHARACTER(LEN=*), INTENT(INOUT) :: YMNHNAME
+
+    INTEGER :: IPOS
+    INTEGER :: JI
+
+    !Try to generate CMNHNAME with old format
+    !In the old format, an indice of 2 numbers was written after the name but without trimming it
+    IPOS = SCAN( YMNHNAME, '0123456789' )
+
+    !Unmodified part YMNHNAME(1:IPOS-1) = YMNHNAME(1:IPOS-1)
+
+    !Move number part at the new end
+    IF ( 4+JPSVNAMELGTMAX+2 > LEN( YMNHNAME ) ) &
+      CALL PRINT_MSG(NVERB_FATAL,'GEN','OLD_CMNHNAME_GENERATE_INTERN','CMNHNAME too small')
+    YMNHNAME(4+JPSVNAMELGTMAX+1 : 4+JPSVNAMELGTMAX+2) = YMNHNAME(IPOS : IPOS+1)
+    DO JI = IPOS, 4+JPSVNAMELGTMAX
+      YMNHNAME(JI:JI) = ' '
+    END DO
+
+  END SUBROUTINE OLD_CMNHNAME_GENERATE_INTERN
+
 END SUBROUTINE INI_LB

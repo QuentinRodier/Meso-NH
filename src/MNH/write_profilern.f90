@@ -21,16 +21,18 @@
 !      ###########################
 MODULE MODE_WRITE_PROFILER_n
 !      ###########################
-!
+
+use modd_parameters, only: NCOMMENTLGTMAX, NMNHNAMELGTMAX, NUNITLGTMAX
+
 implicit none
 
 private
 
 public :: WRITE_PROFILER_n
 
-CHARACTER(LEN=100), DIMENSION(:), ALLOCATABLE :: CCOMMENT ! comment string
-CHARACTER(LEN=100), DIMENSION(:), ALLOCATABLE :: CTITLE   ! title
-CHARACTER(LEN=100), DIMENSION(:), ALLOCATABLE :: CUNIT    ! physical unit
+CHARACTER(LEN=NCOMMENTLGTMAX), DIMENSION(:), ALLOCATABLE :: CCOMMENT ! comment string
+CHARACTER(LEN=NMNHNAMELGTMAX), DIMENSION(:), ALLOCATABLE :: CTITLE   ! title
+CHARACTER(LEN=NUNITLGTMAX),    DIMENSION(:), ALLOCATABLE :: CUNIT    ! physical unit
 
 REAL, DIMENSION(:,:,:,:,:,:), ALLOCATABLE :: XWORK6   ! contains temporal serie
 
@@ -92,9 +94,6 @@ USE MODD_IO,              ONLY: TFILEDATA
 USE MODD_LG,              ONLY: CLGNAMES
 USE MODD_NSV
 USE MODD_PARAMETERS,      ONLY: XUNDEF
-USE MODD_PARAM_LIMA,      ONLY: NINDICE_CCN_IMM,NMOD_CCN,NMOD_IFN,NMOD_IMM
-USE MODD_PARAM_LIMA_COLD, ONLY: CLIMA_COLD_NAMES
-USE MODD_PARAM_LIMA_WARM, ONLY: CLIMA_WARM_NAMES, CAERO_MASS
 USE MODD_PARAM_n,         ONLY: CRAD
 USE MODD_PROFILER_n
 USE MODD_RADIATIONS_n,    ONLY: NAER
@@ -111,9 +110,9 @@ INTEGER,          INTENT(IN) :: KI
 !
 !*      0.2  declaration of local variables for diachro
 !
-character(len=2)                                     :: yidx
-character(len=100)                                   :: ycomment
-character(len=100)                                   :: yname
+character(len=NCOMMENTLGTMAX)                        :: ycomment
+character(len=NMNHNAMELGTMAX)                        :: yname
+character(len=NUNITLGTMAX)                           :: yunits
 CHARACTER(LEN=:),                        allocatable :: YGROUP   ! group title
 INTEGER                                              :: IKU
 INTEGER                                              :: IPROC    ! number of variables records
@@ -207,35 +206,10 @@ if ( Size( tprofiler%sv, 4 ) > 0  ) then
   end do
   ! LIMA variables
   do jsv = nsv_lima_beg, nsv_lima_end
-    if ( jsv == nsv_lima_nc ) then
-      yname = Trim( clima_warm_names(1) ) // 'T'
-    else if ( jsv == nsv_lima_nr ) then
-      yname = Trim( clima_warm_names(2) ) // 'T'
-    else if ( jsv >= nsv_lima_ccn_free .and. jsv < nsv_lima_ccn_free + nmod_ccn ) then
-      Write( yidx, '( i2.2 )' ) jsv - nsv_lima_ccn_free + 1
-      yname = Trim( clima_warm_names(3) ) // yidx // 'T'
-    else if ( jsv >= nsv_lima_ccn_acti .and. jsv < nsv_lima_ccn_acti + nmod_ccn ) then
-      Write( yidx, '( i2.2 )' ) jsv - nsv_lima_ccn_acti + 1
-      yname = Trim( clima_warm_names(4) ) // yidx // 'T'
-    else if ( jsv == nsv_lima_scavmass ) then
-      yname = Trim( caero_mass(1) ) // 'T'
-    else if ( jsv == nsv_lima_ni ) then
-      yname = Trim( clima_cold_names(1) ) // 'T'
-    else if ( jsv >= nsv_lima_ifn_free .and. jsv < nsv_lima_ifn_free + nmod_ifn ) then
-      Write( yidx, '( i2.2 )' ) jsv - nsv_lima_ifn_free + 1
-      yname = Trim( clima_cold_names(2) ) // yidx // 'T'
-    else if ( jsv >= nsv_lima_ifn_nucl .and. jsv < nsv_lima_ifn_nucl + nmod_ifn ) then
-      Write( yidx, '( i2.2 )' ) jsv - nsv_lima_ifn_nucl + 1
-      yname = Trim( clima_cold_names(3) ) // yidx // 'T'
-    else if ( jsv >= nsv_lima_imm_nucl .and. jsv < nsv_lima_imm_nucl + nmod_imm ) then
-      write( yidx, '( i2.2 )' ) nindice_ccn_imm(jsv - nsv_lima_imm_nucl + 1)
-      yname = Trim( clima_cold_names(4) ) // yidx // 'T'
-    else if ( jsv == nsv_lima_hom_haze ) then
-      yname = Trim( clima_cold_names(5) ) // 'T'
-    else if ( jsv == nsv_lima_spro ) then
-      yname = Trim( clima_warm_names(5) ) // 'T'
-    end if
-    call Add_profile( yname, '', 'kg-1', tprofiler%sv(:,:,:,jsv) )
+    yname  = Trim( tsvlist(jsv)%cmnhname )
+    yunits = Trim( tsvlist(jsv)%cunits )
+    ycomment = ''
+    call Add_profile( yname, ycomment, yunits, tprofiler%sv(:,:,:,jsv) )
   end do
   ! electrical scalar variables
   do jsv = nsv_elecbeg, nsv_elecend
