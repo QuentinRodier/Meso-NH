@@ -1,10 +1,11 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 ! Modifications:
-!  Philippe 13/02/2018: use ifdef MNH_REAL to prevent problems with intrinsics on Blue Gene/Q
+!  P. Wautelet 13/02/2018: use ifdef MNH_REAL to prevent problems with intrinsics on Blue Gene/Q
+!  P. Wautelet 17/12/2021: remove unused time variables (and remove use of non initialised time values)
 !-----------------------------------------------------------------
 ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ! 
@@ -1316,9 +1317,6 @@ USE MODI_CH_FCN
     REAL :: T, Y(N)
 !~~~> Output variables
     REAL :: Ydot(N)
-!~~~> Local variables
-    REAL :: Told
-    REAL :: TIME
 !
 INTEGER, INTENT(IN) :: KMI      ! model number
 INTEGER, INTENT(IN) :: KVECNPT
@@ -1330,8 +1328,6 @@ INTEGER, INTENT(IN) :: KVECNPT
     INTEGER       :: ISPECIES      ! Ancillary variable
 
 
-    Told = TIME
-    TIME = T
 !JPP   CALL Update_SUN()
 !JPP   CALL Update_RCONST()
 !JPP   CALL Fun( Y, FIX, RCONST, Ydot )
@@ -1352,7 +1348,6 @@ INTEGER, INTENT(IN) :: KVECNPT
       Ydot(JLSHIFT+1:JLSHIFT+ISPECIES) = ZFCN(JL,1:ISPECIES)
       JLSHIFT = JLSHIFT + ISPECIES
     END DO
-    TIME = Told
 
 END SUBROUTINE FunTemplate
 
@@ -1389,8 +1384,6 @@ INTEGER, INTENT(IN) :: KMI      ! model number
 INTEGER, INTENT(IN) :: KVECNPT
 !
 !~~~> Local variables
-    REAL :: Told
-    REAL :: TIME
 !#ifdef FULL_ALGEBRA    
 !##    INTEGER :: i, j
 !#endif   
@@ -1399,8 +1392,6 @@ INTEGER, INTENT(IN) :: KVECNPT
     INTEGER       :: JL, JLL, JLSHIFT   ! Loop indexes
     INTEGER       :: ISPECIES      ! Ancillary variable
 
-    Told = TIME
-    TIME = T
 !JPP    CALL Update_SUN()
 !JPP    CALL Update_RCONST()
 !#ifdef FULL_ALGEBRA    
@@ -1441,7 +1432,6 @@ INTEGER, INTENT(IN) :: KVECNPT
         JLSHIFT = JLSHIFT + NSPARSEDIM_NAQ
       END IF
     END DO
-    TIME = Told
 
 END SUBROUTINE JacTemplate
 
