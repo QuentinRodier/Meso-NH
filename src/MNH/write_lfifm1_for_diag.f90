@@ -2689,9 +2689,10 @@ IF ( LMEAN_POVO ) THEN
   IWORK1(:,:)=0
   ZWORK21(:,:)=0.
   IF (XMEAN_POVO(1)>XMEAN_POVO(2)) THEN
-    XMEAN_POVO(1) = ZX0D
-    XMEAN_POVO(2) = XMEAN_POVO(1)
-    ZX0D          = XMEAN_POVO(2)
+    !Invert values (smallest must be first)
+    ZX0D = XMEAN_POVO(1)
+    XMEAN_POVO(1) = XMEAN_POVO(2)
+    XMEAN_POVO(2) = ZX0D
   END IF
   DO JK=IKB,IKE
     WHERE((XPABST(:,:,JK)>XMEAN_POVO(1)).AND.(XPABST(:,:,JK)<XMEAN_POVO(2)))
