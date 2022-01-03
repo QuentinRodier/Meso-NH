@@ -347,7 +347,7 @@ export CC=gcc
                 export OPTLEVEL=${OPTLEVEL:-DEBUG}
                 export MVWORK=${MVWORK:-NO}
                 export VER_CDF=${VER_CDF:-CDFCTI}
-		export NEED_NCARG=${NEED_NCARG:-NO}
+		export NEED_NCARG=${NEED_NCARG:-YES}
 		export NEED_TOOLS=NO
               ;;
 'Linux nuwa'*)
