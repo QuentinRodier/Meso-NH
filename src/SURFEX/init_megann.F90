@@ -26,6 +26,7 @@ SUBROUTINE INIT_MEGAN_n(IO, S, K, NP, MSF, MGN, PLAT, HSV, PMEGAN_FIELDS)
 !!    Original: 25/10/14
 !!    Modified: 06/2017, J. Pianezze, adaptation for SurfEx v8.0
 !!    Modified: 06/2018, P. Tulet,  add PFT and LAI
+!!    Modified: 11/2021, P. Tulet,  update PFT with Ecoclimap-SG
 !!
 !!
 !!    EXTERNAL
@@ -40,10 +41,7 @@ USE MODD_MEGAN_n, ONLY : MEGAN_t
 USE MODD_ISBA_OPTIONS_n, ONLY : ISBA_OPTIONS_t
 USE MODD_ISBA_n, ONLY : ISBA_S_t, ISBA_P_t, ISBA_K_t, ISBA_NP_t
 !
-USE MODD_DATA_COVER_PAR, ONLY : NVT_C4, NVT_TRBE, NVT_TRBD, NVT_TEBE, &
-                    NVT_TEBD, NVT_TENE, NVT_BOBD, NVT_BONE, NVT_BOND, &
-                    NVT_BOGR, NVT_SHRB, NVT_GRAS, NVT_TROG, NVT_C3,   &
-                    NVT_NO, NVT_ROCK, NVT_SNOW, NVT_IRR, NVT_PARK
+USE MODD_DATA_COVER_PAR
 !
 USE MODD_SURF_PAR,   ONLY : XUNDEF
 USE MODD_DATA_COVER, ONLY : XDATA_LAI
@@ -94,6 +92,7 @@ REAL,DIMENSION(SIZE(K%XCLAY,1)) :: ZLAI
 !
 ALLOCATE(MGN%XPFT   (N_MGN_PFT,SIZE(K%XCLAY,1)))
 ALLOCATE(MGN%XEF    (N_MGN_SPC,SIZE(K%XCLAY,1)))
+ALLOCATE(MGN%XLAI   (SIZE(K%XCLAY,1)))
 ALLOCATE(MGN%NSLTYP (SIZE(K%XCLAY,1)))
 ALLOCATE(MGN%XBIOFLX(SIZE(K%XCLAY,1)))
 MGN%XBIOFLX(:) = 0.
@@ -313,134 +312,91 @@ ENDDO
 !
 ! 1 Needleleaf evergreen temperate tree
 ! -------------------------------------
-! utilisation de la classe NVT_CONI pour 30 < LAT < 60 
-WHERE ((PLAT(:) .GE. 30.) .AND. (PLAT(:) .LT. 60.))
-  MGN%XPFT(1,:) = S%XVEGTYPE(:,NVT_TENE)
-END WHERE
-WHERE ((PLAT(:) .LE. -30.) .AND. (PLAT(:) .GT. -60.))
-  MGN%XPFT(1,:) = S%XVEGTYPE(:,NVT_TENE)
-END WHERE
+! utilisation de la classe NVT_TENE 
+MGN%XPFT(1,:) = S%XVEGTYPE(:,NVT_TENE)
 !
 ! 2 Needleleaf evergreen boreal tree
 ! -------------------------------------
-!utilisation de la classe NVT_CONI  pour LAT > 60
-WHERE ((PLAT(:) .GE. 60.) .OR. (PLAT(:) .LE. -60.))
-  MGN%XPFT(2,:) = S%XVEGTYPE(:,NVT_BONE)
-END WHERE
+!utilisation de la classe NVT_BONE 
+MGN%XPFT(2,:) = S%XVEGTYPE(:,NVT_BONE)
 !
 !3 Needleleaf deciduous boreal tree
 ! -------------------------------------
-!utilisation de la classe NVT_TREE pour LAT > 60
-WHERE ((PLAT(:) .GE. 60.) .OR. (PLAT(:) .LE. -60.))
-  MGN%XPFT(3,:) = S%XVEGTYPE(:,NVT_BOND)
-END WHERE
+!utilisation de la classe NVT_BOND 
+MGN%XPFT(3,:) = S%XVEGTYPE(:,NVT_BOND)
 !
 !4 Broadleaf evergreen tropical tree
 ! -------------------------------------
-!utilisation de la classe NVT_EVER pour -30 < LAT < 30
-! et une hauteur d'arbre supérieur à 3 m
-WHERE (((PLAT(:) .GE. -30.) .AND. (PLAT(:) .LE. 30.)).AND.&
-       (ZH_TREE(:,IP_TRBE) .GE. 3.).AND.(ZH_TREE(:,IP_TRBE) .NE. XUNDEF))
+!utilisation de la classe NVT_TRBE
 MGN%XPFT(4,:) = S%XVEGTYPE(:,NVT_TRBE)
-END WHERE
 !
 !5 Broadleaf evergreen temperate tree
 ! -------------------------------------
-! utilisation de la classe NVT_EVER pour 30 < LAT < 60 
-! et une hauteur d'arbre supérieur à 3 m. 
-WHERE (((PLAT(:) .GE. 30.) .AND. (PLAT(:) .LT. 60.)).AND.&
-       (ZH_TREE(:,IP_TEBE) .GE. 3.).AND.(ZH_TREE(:,IP_TEBE) .NE. XUNDEF))
 MGN%XPFT(5,:) = S%XVEGTYPE(:,NVT_TEBE)
-END WHERE
-WHERE (((PLAT(:) .LE. -30.) .AND. (PLAT(:) .GT. -60.)).AND.&
-       (ZH_TREE(:,IP_TEBE) .GE. 3.).AND.(ZH_TREE(:,IP_TEBE) .NE. XUNDEF))
-MGN%XPFT(5,:) = S%XVEGTYPE(:,NVT_TEBE)
-END WHERE
 !
 !6 Broadleaf deciduous tropical tree
 ! -------------------------------------
-!utilisation de la classe NVT_TREE pour -30 < LAT < 30
-WHERE ((PLAT(:) .GE. -30.) .AND. (PLAT(:) .LE. 30.))
 MGN%XPFT(6,:) = S%XVEGTYPE(:,NVT_TRBD)
-END WHERE
 !
 !7 Broadleaf deciduous temperate tree
 ! -------------------------------------
-!utilisation de la classe NVT_TREE pour 30 < LAT < 60
-! en utilisant une hauteur d'arbre supérieur à 3 m
-WHERE (((PLAT(:) .GE. 30.) .AND. (PLAT(:) .LT. 60.)).AND.&
-       (ZH_TREE(:,IP_TEBD) .GE. 3.).AND.(ZH_TREE(:,IP_TEBD) .NE. XUNDEF))
 MGN%XPFT(7,:) = S%XVEGTYPE(:,NVT_TEBD)
-END WHERE
-WHERE (((PLAT(:) .LE. -30.) .AND. (PLAT(:) .GT. -60.)).AND.&
-       (ZH_TREE(:,IP_TEBD) .GE. 3.).AND.(ZH_TREE(:,IP_TEBD) .NE. XUNDEF))
-MGN%XPFT(7,:) = S%XVEGTYPE(:,NVT_TEBD)
-END WHERE
 !
 !8 Broadleaf deciduous boreal tree
 ! -------------------------------------
-!utilisation de la classe NVT_TREE pour LAT > 60
-WHERE (((PLAT(:) .GE. 60.) .OR. (PLAT(:) .LE. -60.)).AND.&
-       (ZH_TREE(:,IP_BOBD) .GE. 3.).AND.(ZH_TREE(:,IP_BOBD) .NE. XUNDEF))
 MGN%XPFT(8,:) = S%XVEGTYPE(:,NVT_BOBD)
-END WHERE
 !
 !9 Broadleaf evergreen shrub
 ! -------------------------------------
-!utilisation de la classe NVT_EVER pour une hauteur d'arbre inférieure à 3 m
-WHERE (ZH_TREE(:,IP_SHRB) .LT. 3.)
+!utilisation de la classe NVT_SHBR pour -30 < LAT < 30
+WHERE (((PLAT(:) .GE. -30.) .AND. (PLAT(:) .LE. 30.)))
 MGN%XPFT(9,:) = S%XVEGTYPE(:,NVT_SHRB)
+ELSE WHERE
+MGN%XPFT(9,:) = 0.
 END WHERE
 !
 !10 Broadleaf deciduous temperate shrub
 ! -------------------------------------
-!utilisation de la classe NVT_TREE pour une hauteur d'arbre inférieure à 3 m
-! et  pour 30 < LAT < 60
-WHERE ((ZH_TREE(:,IP_SHRB) .LT. 3.) .AND. (ZH_TREE(:,IP_SHRB).NE. XUNDEF) .AND. &
-       ((PLAT(:) .GE. 30.) .AND. (PLAT(:) .LT. 60.)))
-MGN%XPFT(10,:) = S%XVEGTYPE(:,NVT_SHRB)
-END WHERE
-WHERE ((ZH_TREE(:,IP_SHRB) .LT. 3.) .AND. (ZH_TREE(:,IP_SHRB).NE. XUNDEF) .AND. &
+!utilisation de la classe NVT_SHBR pour 30 < LAT < 60
+WHERE (((PLAT(:) .GE. 30.) .AND. (PLAT(:) .LT. 60.)).OR.&
        ((PLAT(:) .LE. -30.) .AND. (PLAT(:) .GT. -60.)))
 MGN%XPFT(10,:) = S%XVEGTYPE(:,NVT_SHRB)
+ELSE WHERE
+MGN%XPFT(10,:) = 0.
 END WHERE
 !
 !11 Broadleaf deciduous boreal_shrub
 ! -------------------------------------
-!utilisation de la classe NVT_TREE pour une hauteur d'arbre inférieure à 3 m
-! et  pour  LAT > 60
-WHERE ((ZH_TREE(:,IP_SHRB) .LT. 3.) .AND. (ZH_TREE(:,IP_SHRB).NE. XUNDEF) .AND. &
-       ((PLAT(:) .GE. 60.) .OR. (PLAT(:) .LE. -60.)))
+!utilisation de la classe NVT_SHBR pour LAT > 60
+WHERE (((PLAT(:) .GE. 60.) .OR. (PLAT(:) .LE. -60.)))
 MGN%XPFT(11,:) = S%XVEGTYPE(:,NVT_SHRB)
+ELSE WHERE
+MGN%XPFT(11,:) = 0.
 END WHERE
 !
 !12 C3 arctic grass
 ! -------------------------------------
-!utilisation de la classe NVT_GRAS + NVT_PARK pour LAT > 60
-WHERE ((PLAT(:) .GE. 60.) .OR. (PLAT(:) .LE. -60.))
-MGN%XPFT(12,:) = S%XVEGTYPE(:,NVT_GRAS) + S%XVEGTYPE(:,NVT_PARK)
-ELSEWHERE
+MGN%XPFT(12,:) = S%XVEGTYPE(:,NVT_BOGR) 
 !
 !13 C3 non-arctic grass
 ! -------------------------------------
-!utilisation de la classe NVT_GRAS + NVT_PARK ailleur
-MGN%XPFT(13,:) = S%XVEGTYPE(:,NVT_GRAS) +  S%XVEGTYPE(:,NVT_PARK)
-END WHERE
+MGN%XPFT(13,:) = S%XVEGTYPE(:,NVT_GRAS)
 !
 !14 C4 grass
 ! -------------------------------------
-! utilisation de la classe NVT_TROG 
 MGN%XPFT(14,:) = S%XVEGTYPE(:,NVT_TROG) 
 !
 !15 Corn
 ! -------------------------------------
-! utilisation de la classe NVT_C4
 MGN%XPFT(15,:) = S%XVEGTYPE(:,NVT_C4) 
 !
 !16 Wheat
 ! -------------------------------------
-! utilisation de la classe NVT_C3
+IF (NVT_C3W .NE. 0 ) THEN ! use ecoclimap_sg
+MGN%XPFT(16,:) = S%XVEGTYPE(:,NVT_C3W) + S%XVEGTYPE(:,NVT_C3S)
+ELSE  ! use ecaclimap2.0
 MGN%XPFT(16,:) = S%XVEGTYPE(:,NVT_C3)
+END IF
 !
 ! Emission factor
 MGN%XEF(:,:) = 0.
@@ -499,7 +455,6 @@ DO JSV=1, MSF%NMEGAN_NBR
   IF (TRIM(MSF%CMEGAN_NAME(JSV)) == "EFBIDER")  MGN%XEF(18,:) = PMEGAN_FIELDS(:,JSV)
   IF (TRIM(MSF%CMEGAN_NAME(JSV)) == "EFSTRESS") MGN%XEF(19,:) = PMEGAN_FIELDS(:,JSV)
   IF (TRIM(MSF%CMEGAN_NAME(JSV)) == "EFOTHER")  MGN%XEF(20,:) = PMEGAN_FIELDS(:,JSV)
-!  IF (TRIM(MSF%CMEGAN_NAME(JSV)) == "LAI")      PLAI(:,1)     = PMEGAN_FIELDS(:,JSV)
   IF (TRIM(MSF%CMEGAN_NAME(JSV)) == "PFT1")     MGN%XPFT(1,:) = PMEGAN_FIELDS(:,JSV)
   IF (TRIM(MSF%CMEGAN_NAME(JSV)) == "PFT2")     MGN%XPFT(2,:) = PMEGAN_FIELDS(:,JSV)
   IF (TRIM(MSF%CMEGAN_NAME(JSV)) == "PFT3")     MGN%XPFT(3,:) = PMEGAN_FIELDS(:,JSV)
@@ -516,6 +471,7 @@ DO JSV=1, MSF%NMEGAN_NBR
   IF (TRIM(MSF%CMEGAN_NAME(JSV)) == "PFT14")    MGN%XPFT(14,:) = PMEGAN_FIELDS(:,JSV)
   IF (TRIM(MSF%CMEGAN_NAME(JSV)) == "PFT15")    MGN%XPFT(15,:) = PMEGAN_FIELDS(:,JSV)
   IF (TRIM(MSF%CMEGAN_NAME(JSV)) == "PFT16")    MGN%XPFT(16,:) = PMEGAN_FIELDS(:,JSV)
+  IF (TRIM(MSF%CMEGAN_NAME(JSV)) == "LAI")      MGN%XLAI(:)    = PMEGAN_FIELDS(:,JSV)
 END DO
 
 #endif
