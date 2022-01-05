@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -1254,7 +1254,7 @@ IF (LCHEMDIAG) THEN
 END IF
 IF (LCHAQDIAG) THEN    !aqueous concentration in M
   TZFIELD%CSTDNAME   = ''
-  TZFIELD%CUNITS     = 'M'
+  TZFIELD%CUNITS     = 'mol l-1' !Original value: 'M' (molar) but not known by udunits => replaced by equivalent mol l-1
   TZFIELD%CDIR       = 'XY'
   TZFIELD%NGRID      = 1
   TZFIELD%NTYPE      = TYPEREAL
