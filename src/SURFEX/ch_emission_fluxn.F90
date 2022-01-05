@@ -1,4 +1,4 @@
-!SFX_LIC Copyright 2000-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC Copyright 2000-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
@@ -80,7 +80,7 @@ TYPE(CH_SURF_t), INTENT(INOUT) :: CHU
 REAL,               INTENT(IN)  :: PSIMTIME    ! time of simulation in sec UTC
                                                ! (counting from midnight of
                                                ! the current day)
-REAL,DIMENSION(:,:),  INTENT(INOUT) :: PSFSV   ! emission flux in ppp*m/s
+REAL,DIMENSION(:,:),  INTENT(INOUT) :: PSFSV   ! emission flux in ppv*m/s
 REAL, DIMENSION(:),   INTENT(IN)    :: PRHOA     ! air density (kg/m3)
 REAL,                 INTENT(IN)    :: PTSTEP    ! atmospheric time-step                 (s)
 INTEGER,              INTENT(IN)    :: KNBTS_MAX !max size of TEMISS%NETIMES
