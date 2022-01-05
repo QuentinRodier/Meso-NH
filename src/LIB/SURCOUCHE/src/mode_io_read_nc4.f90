@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -204,10 +204,20 @@ IF (istatus == NF90_NOERR) THEN
   istatus = NF90_GET_ATT(INCID, KVARID, 'units', YVALUE)
   IF (TRIM(YVALUE)/=TRIM(TPFIELD%CUNITS)) THEN
     IF(.NOT.PRESENT(HCALENDAR)) THEN
-      CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Field_attr_read_check_nc4',TRIM(TPFILE%CNAME)// &
-                     ': expected UNITS ('//TRIM(TPFIELD%CUNITS)//                           &
-                     ') is different than found ('//TRIM(YVALUE)//') in file for field '//TRIM(TPFIELD%CMNHNAME))
-      KRESP = -111 !Used later to broadcast modified metadata
+      if ( Trim( tpfield%cunits ) == 'ppv' .and. Trim( yvalue ) == 'ppp' ) then
+        ! 'ppp' (non-existing unit) was used in old Meso-NH files (before 5.5.1 version) instead of 'ppv'
+        CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_attr_read_check_nc4',TRIM(TPFILE%CNAME)// &
+                       ': expected UNITS    found in file for field '//TRIM(TPFIELD%CMNHNAME))
+      else if ( Trim( tpfield%cunits ) == 'ppb' .and. Trim( yvalue ) == 'ppbv' ) then
+        ! 'ppbv' was used in old Meso-NH files (before 5.5.1 version). It is strictly equivalent to 'ppb'
+        CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_attr_read_check_nc4',TRIM(TPFILE%CNAME)// &
+                       ': expected UNITS    found in file for field '//TRIM(TPFIELD%CMNHNAME))
+      else
+        CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Field_attr_read_check_nc4',TRIM(TPFILE%CNAME)// &
+                       ': expected UNITS ('//TRIM(TPFIELD%CUNITS)//                           &
+                       ') is different than found ('//TRIM(YVALUE)//') in file for field '//TRIM(TPFIELD%CMNHNAME))
+        KRESP = -111 !Used later to broadcast modified metadata
+      end if
     ELSE
       CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_attr_read_check_nc4',TRIM(TPFILE%CNAME)// &
                      ': UNITS found in file for field '//TRIM(TPFIELD%CMNHNAME)//' (will be analysed later)')
