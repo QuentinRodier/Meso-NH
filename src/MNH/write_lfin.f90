@@ -1243,12 +1243,12 @@ IF (NSV >=1) THEN
         YCHNAMES(JSV-JSA)=TZFIELD%CMNHNAME(1:LEN_TRIM(TZFIELD%CMNHNAME)-1) ! without M
       END DO
     ENDIF
-    IF (LUSECHAQ.AND.NRR>=3) THEN ! accumulated moles of aqueous species that fall at the surface (mol i/m2) 
+    IF (LUSECHAQ.AND.NRR>=3) THEN ! accumulated moles of aqueous species that fall at the surface (mol/m2)
       TZFIELD%NDIMS = 2
       DO JSV = NSV_CHACBEG+NSV_CHAC/2,NSV_CHACEND
         TZFIELD%CMNHNAME   = 'ACPR_'//TRIM(UPCASE(CNAMES(JSV-NSV_CHEMBEG+1)))
         TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-        TZFIELD%CUNITS     = 'mol i m-2'
+        TZFIELD%CUNITS     = 'mol m-2'
         TZFIELD%CCOMMENT   = 'X_Y_Accumulated moles of aqueous species at the surface'
         ZWORK2D(:,:)  = XACPRAQ(:,:,JSV-NSV_CHACBEG-NSV_CHAC/2+1)
         CALL IO_Field_write(TPFILE,TZFIELD,ZWORK2D)
