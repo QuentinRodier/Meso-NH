@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -1225,7 +1225,7 @@ IF (NSV >=1) THEN
     DO JSV = NSV_CHEMBEG,NSV_CHEMEND
       TZFIELD%CMNHNAME   = TRIM(UPCASE(CNAMES(JSV-NSV_CHEMBEG+1)))//'T'
       TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-      TZFIELD%CUNITS     = 'ppp'
+      TZFIELD%CUNITS     = 'ppv'
       WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
       CALL IO_Field_write(TPFILE,TZFIELD,XSVT(:,:,:,JSV))
       !
@@ -1236,7 +1236,7 @@ IF (NSV >=1) THEN
       DO JSV = NSV_CHICBEG,NSV_CHICEND
         TZFIELD%CMNHNAME   = TRIM(UPCASE(CICNAMES(JSV-NSV_CHICBEG+1)))//'T'
         TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-        TZFIELD%CUNITS     = 'ppp'
+        TZFIELD%CUNITS     = 'ppv'
         WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
         CALL IO_Field_write(TPFILE,TZFIELD,XSVT(:,:,:,JSV))
         !
@@ -1283,7 +1283,7 @@ IF (NSV >=1) THEN
     ENDIF
   ELSE IF (LCH_CONV_LINOX) THEN
     TZFIELD%CSTDNAME   = ''
-    TZFIELD%CUNITS     = 'ppp'
+    TZFIELD%CUNITS     = 'ppv'
     TZFIELD%CDIR       = 'XY'
     TZFIELD%NGRID      = 1
     TZFIELD%NTYPE      = TYPEREAL
@@ -1306,7 +1306,7 @@ IF (NSV >=1) THEN
       CALL CH_AER_REALLFI_n(XSVT(:,:,:,NSV_AERBEG:NSV_AEREND),XSVT(:,:,:,NSV_CHEMBEG-1+JP_CH_CO),  XRHODREF)
     IF (NSV_AEREND>=NSV_AERBEG) THEN
       TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'ppp'
+      TZFIELD%CUNITS     = 'ppv'
       TZFIELD%CDIR       = 'XY'
       TZFIELD%NGRID      = 1
       TZFIELD%NTYPE      = TYPEREAL
@@ -1325,7 +1325,7 @@ IF (NSV >=1) THEN
     END IF
     IF (LDEPOS_AER(IMI)) THEN
       TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'ppp'
+      TZFIELD%CUNITS     = 'ppv'
       TZFIELD%CDIR       = 'XY'
       TZFIELD%NGRID      = 1
       TZFIELD%NTYPE      = TYPEREAL
@@ -1352,7 +1352,7 @@ IF (NSV >=1) THEN
     !At this point, we have the tracer array in order of importance, i.e.
     !if mode 2 is most important it will occupy place 1-3 of XSVT  
     TZFIELD%CSTDNAME   = ''
-    TZFIELD%CUNITS     = 'ppp'
+    TZFIELD%CUNITS     = 'ppv'
     TZFIELD%CDIR       = 'XY'
     TZFIELD%NGRID      = 1
     TZFIELD%NTYPE      = TYPEREAL
@@ -1372,7 +1372,7 @@ IF (NSV >=1) THEN
 
     IF (LDEPOS_DST(IMI)) THEN
       TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'ppp'
+      TZFIELD%CUNITS     = 'ppv'
       TZFIELD%CDIR       = 'XY'
       TZFIELD%NGRID      = 1
       TZFIELD%NTYPE      = TYPEREAL
@@ -1399,7 +1399,7 @@ IF (NSV >=1) THEN
     !At this point, we have the tracer array in order of importance, i.e.
     !if mode 2 is most important it will occupy place 1-3 of XSVT  
     TZFIELD%CSTDNAME   = ''
-    TZFIELD%CUNITS     = 'ppp'
+    TZFIELD%CUNITS     = 'ppv'
     TZFIELD%CDIR       = 'XY'
     TZFIELD%NGRID      = 1
     TZFIELD%NTYPE      = TYPEREAL
@@ -1419,7 +1419,7 @@ IF (NSV >=1) THEN
 
     IF (LDEPOS_SLT(IMI)) THEN        
       TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'ppp'
+      TZFIELD%CUNITS     = 'ppv'
       TZFIELD%CDIR       = 'XY'
       TZFIELD%NGRID      = 1
       TZFIELD%NTYPE      = TYPEREAL

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -897,7 +897,7 @@ IF (CAOP=='EXPL') THEN
   
  IF (LORILAM) THEN
    CALL AEROOPT_GET(                             &
-        PSVT(IIB:IIE,IJB:IJE,:,NSV_AERBEG:NSV_AEREND)        &  !I [ppp]  aerosols concentration
+        PSVT(IIB:IIE,IJB:IJE,:,NSV_AERBEG:NSV_AEREND)        &  !I [ppv]  aerosols concentration
         ,PZZ(IIB:IIE,IJB:IJE,:)                   &  !I [m] height of layers
         ,PRHODREF(IIB:IIE,IJB:IJE,:)              &  !I [kg/m3] density of air
         ,ZPIZA_AER_TMP(IIB:IIE,IJB:IJE,IKB-JPVEXT:IKE-JPVEXT,:)   &  !O [-] single scattering albedo of aerosols
@@ -911,7 +911,7 @@ IF (CAOP=='EXPL') THEN
  ENDIF
  IF(LDUST) THEN
    CALL DUSTOPT_GET(                             &
-        PSVT(IIB:IIE,IJB:IJE,:,NSV_DSTBEG:NSV_DSTEND)        &  !I [ppp] Dust scalar concentration
+        PSVT(IIB:IIE,IJB:IJE,:,NSV_DSTBEG:NSV_DSTEND)        &  !I [ppv] Dust scalar concentration
         ,PZZ(IIB:IIE,IJB:IJE,:)                   &  !I [m] height of layers
         ,PRHODREF(IIB:IIE,IJB:IJE,:)              &  !I [kg/m3] density of air
         ,ZPIZA_DST_TMP(IIB:IIE,IJB:IJE,IKB-JPVEXT:IKE-JPVEXT,:)   &  !O [-] single scattering albedo of dust
@@ -926,7 +926,7 @@ IF (CAOP=='EXPL') THEN
  ENDIF
  IF(LSALT) THEN
    CALL SALTOPT_GET(                             &
-        PSVT(IIB:IIE,IJB:IJE,:,NSV_SLTBEG:NSV_SLTEND)        &  !I [ppp] sea salt scalar concentration
+        PSVT(IIB:IIE,IJB:IJE,:,NSV_SLTBEG:NSV_SLTEND)        &  !I [ppv] sea salt scalar concentration
         ,PZZ(IIB:IIE,IJB:IJE,:)                   &  !I [m] height of layers
         ,PRHODREF(IIB:IIE,IJB:IJE,:)              &  !I [kg/m3] density of air
         ,PTHT(IIB:IIE,IJB:IJE,:)                  &  !I [K] potential temperature

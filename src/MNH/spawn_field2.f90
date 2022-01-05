@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -912,7 +912,7 @@ IF (PRESENT(TPSONFILE)) THEN
     !
     IF (NSV_CHEMEND>=NSV_CHEMBEG) THEN
       TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'ppp'
+      TZFIELD%CUNITS     = 'ppv'
       TZFIELD%CDIR       = 'XY'
       TZFIELD%NGRID      = 1
       TZFIELD%NTYPE      = TYPEREAL
@@ -932,7 +932,7 @@ IF (PRESENT(TPSONFILE)) THEN
     !
     IF (NSV_CHICEND>=NSV_CHICBEG) THEN
       TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'ppp'
+      TZFIELD%CUNITS     = 'ppv'
       TZFIELD%CDIR       = 'XY'
       TZFIELD%NGRID      = 1
       TZFIELD%NTYPE      = TYPEREAL
@@ -953,7 +953,7 @@ IF (PRESENT(TPSONFILE)) THEN
     !
     IF (NSV_AEREND>=NSV_AERBEG) THEN
       TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'ppp'
+      TZFIELD%CUNITS     = 'ppv'
       TZFIELD%CDIR       = 'XY'
       TZFIELD%NGRID      = 1
       TZFIELD%NTYPE      = TYPEREAL
@@ -973,7 +973,7 @@ IF (PRESENT(TPSONFILE)) THEN
     !
     IF (NSV_DSTEND>=NSV_DSTBEG) THEN
       TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'ppp'
+      TZFIELD%CUNITS     = 'ppv'
       TZFIELD%CDIR       = 'XY'
       TZFIELD%NGRID      = 1
       TZFIELD%NTYPE      = TYPEREAL
@@ -993,7 +993,7 @@ IF (PRESENT(TPSONFILE)) THEN
     !
     IF (NSV_SLTEND>=NSV_SLTBEG) THEN
       TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'ppp'
+      TZFIELD%CUNITS     = 'ppv'
       TZFIELD%CDIR       = 'XY'
       TZFIELD%NGRID      = 1
       TZFIELD%NTYPE      = TYPEREAL
@@ -1035,7 +1035,7 @@ IF (PRESENT(TPSONFILE)) THEN
 !PW:TODO/bug2?: Same name of variable in a loop!
     IF (NSV_LNOXEND>=NSV_LNOXBEG) THEN
       TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'ppp' !PW: TODO: not sure (depends if LINOX or LINOXT)
+      TZFIELD%CUNITS     = 'ppv' !PW: TODO: not sure (depends if LINOX or LINOXT)
       TZFIELD%CDIR       = 'XY'
       TZFIELD%NGRID      = 1
       TZFIELD%NTYPE      = TYPEREAL

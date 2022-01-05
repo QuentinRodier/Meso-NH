@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !     ######################
       MODULE MODI_CH_CONVECT_SCAVENGING
 !     ######################
@@ -340,7 +341,7 @@ ENDDO
 !
 GCHFIRSTCALL = .FALSE.
 !
-!               Convert KH from mol/l/atm in ppp/ppp
+!               Convert KH from mol/l/atm in ppv/ppv
 !               ------------------------------------
 DO JKAQ = NSV_CHEMBEG, NSV_CHEMEND
  ZKHC(:,:,JKAQ) = ZKH(:,:,JKAQ)*0.08205*ZT(:,:)*ZLWCC(:,:)
@@ -368,7 +369,7 @@ DO JKAQ = NSV_CHEMBEG, NSV_CHEMEND
 ENDDO
 !
 !
-!          Convert KHI from cm3(air)/cm3(ice) in ppp/ppp
+!          Convert KHI from cm3(air)/cm3(ice) in ppv/ppv
 !          ---------------------------------------------    
 DO JKAQ = NSV_CHEMBEG, NSV_CHEMEND
  IF (CNAMES(JKAQ-NSV_CHEMBEG+1)=='HNO3') THEN 

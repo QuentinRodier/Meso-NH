@@ -1,19 +1,14 @@
-!ORILAM_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!ORILAM_LIC Copyright 2006-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !ORILAM_LIC This is part of the ORILAM software governed by the CeCILL-C licence
 !ORILAM_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !ORILAM_LIC for details.
-!-----------------------------------------------------------------
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$ $Date$
 !-----------------------------------------------------------------
 !!   ########################
 MODULE MODE_AERO_PSD
 !!   ########################
 !!
 !! MODULE DUST PSD (Particle Size Distribution)
-!! Purpose: Contains subroutines to convert from transported variables (ppp)
+!! Purpose: Contains subroutines to convert from transported variables (ppv)
 !! to understandable aerosol variables, e.g. #/m3, kg/m3, sigma, R_{n}
 
 USE MODD_CH_AEROSOL
@@ -29,7 +24,7 @@ CONTAINS
 ! 
 !    ############################################################
   SUBROUTINE PPP2AERO(             &
-       PSVT                         & !I [ppp] input scalar variables (moment of distribution)
+       PSVT                         & !I [ppv] input scalar variables (moment of distribution)
        , PRHODREF                   & !I [kg/m3] density of air       
        , PSIG3D                     & !O [-] standard deviation of aerosol distribution
        , PRG3D                      & !O [um] number median diameter of aerosol distribution
@@ -43,7 +38,7 @@ CONTAINS
 !!
 !!    PURPOSE
 !!    -------
-!!    Translate the three moments M0, M3 and M6 given in ppp into
+!!    Translate the three moments M0, M3 and M6 given in ppv into
 !!    Values which can be understood more easily (R, sigma, N, M)
 !! 
 !!    CALLING STRUCTURE NOTE: OPTIONAL VARIABLES
@@ -317,7 +312,7 @@ END SUBROUTINE PPP2AERO
 !
 !   ############################################################
   SUBROUTINE AERO2PPP(             &
-       PSVT                         & !IO [ppp] input scalar variables (moment of distribution)
+       PSVT                         & !IO [ppv] input scalar variables (moment of distribution)
        , PRHODREF                   & !I [kg/m3] density of air       
        , PSIG3D                     & !I [-] standard deviation of aerosol distribution
        , PRG3D                      & !I [um] number median diameter of aerosol distribution
@@ -328,7 +323,7 @@ END SUBROUTINE PPP2AERO
 !!
 !!    PURPOSE
 !!    -------
-!!    Translate the aerosol Mass, RG and SIGMA in the  three moments M0, M3 and M6 given in ppp 
+!!    Translate the aerosol Mass, RG and SIGMA in the  three moments M0, M3 and M6 given in ppv 
 !!
 !!    REFERENCE
 !!    ---------
@@ -519,7 +514,7 @@ ZCTOTA(:,:,:,:,:) = 0.
  ZM(:,:,:,6) = ZM(:,:,:,4)*(PRG3D(:,:,:,2)**6) * &
                EXP(18 *(LOG(PSIG3D(:,:,:,2)))**2)
 
-!*       6    return to ppp
+!*       6    return to ppv
 !
 PSVT(:,:,:,JP_CH_M0i) = ZM(:,:,:,1) * 1E-6 
 PSVT(:,:,:,JP_CH_M0j) = ZM(:,:,:,4) * 1E-6
@@ -537,7 +532,7 @@ END SUBROUTINE AERO2PPP
 !
 !    ############################################################
   SUBROUTINE PPP2AERO1D(            &
-       PSVT                         & !I [ppp] input scalar variables (moment of distribution)
+       PSVT                         & !I [ppv] input scalar variables (moment of distribution)
        , PRHODREF                   & !I [kg/m3] density of air       
        , PMI                        & !O molecular weight
        , PSIG1D                     & !O [-] standard deviation of aerosol distribution
@@ -551,7 +546,7 @@ END SUBROUTINE AERO2PPP
 !!
 !!    PURPOSE
 !!    -------
-!!    Translate the three moments M0, M3 and M6 given in ppp into
+!!    Translate the three moments M0, M3 and M6 given in ppv into
 !!    Values which can be understood more easily (R, sigma, N, M)
 !! 
 !!    CALLING STRUCTURE NOTE: OPTIONAL VARIABLES

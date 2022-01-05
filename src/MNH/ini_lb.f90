@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1998-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1998-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -913,7 +913,7 @@ END IF
 ! Chemical aqueous phase scalar variables
 IF (NSV_CHACEND>=NSV_CHACBEG) THEN
   TZFIELD%CSTDNAME   = ''
-  TZFIELD%CUNITS     = 'ppp'
+  TZFIELD%CUNITS     = 'ppv'
   TZFIELD%CDIR       = ''
   TZFIELD%NGRID      = 1
   TZFIELD%NTYPE      = TYPEREAL
@@ -969,7 +969,7 @@ END IF
 ! Chemical ice phase scalar variables
 IF (NSV_CHICEND>=NSV_CHICBEG) THEN
   TZFIELD%CSTDNAME   = ''
-  TZFIELD%CUNITS     = 'ppp'
+  TZFIELD%CUNITS     = 'ppv'
   TZFIELD%CDIR       = ''
   TZFIELD%NGRID      = 1
   TZFIELD%NTYPE      = TYPEREAL
@@ -1025,7 +1025,7 @@ END IF
 ! Orilam aerosol scalar variables
 IF (NSV_AEREND>=NSV_AERBEG) THEN
   TZFIELD%CSTDNAME   = ''
-  TZFIELD%CUNITS     = 'ppp'
+  TZFIELD%CUNITS     = 'ppv'
   TZFIELD%CDIR       = ''
   TZFIELD%NGRID      = 1
   TZFIELD%NTYPE      = TYPEREAL
@@ -1081,7 +1081,7 @@ END IF
 ! Orilam aerosols moist scalar variables
 IF (NSV_AERDEPEND>=NSV_AERDEPBEG) THEN
   TZFIELD%CSTDNAME   = ''
-  TZFIELD%CUNITS     = 'ppp'
+  TZFIELD%CUNITS     = 'ppv'
   TZFIELD%CDIR       = ''
   TZFIELD%NGRID      = 1
   TZFIELD%NTYPE      = TYPEREAL
@@ -1137,7 +1137,7 @@ END IF
 ! Dust scalar variables
 IF (NSV_DSTEND>=NSV_DSTBEG) THEN
   TZFIELD%CSTDNAME   = ''
-  TZFIELD%CUNITS     = 'ppp'
+  TZFIELD%CUNITS     = 'ppv'
   TZFIELD%CDIR       = ''
   TZFIELD%NGRID      = 1
   TZFIELD%NTYPE      = TYPEREAL
@@ -1193,7 +1193,7 @@ END IF
 !
 IF (NSV_DSTDEPEND>=NSV_DSTDEPBEG) THEN
   TZFIELD%CSTDNAME   = ''
-  TZFIELD%CUNITS     = 'ppp'
+  TZFIELD%CUNITS     = 'ppv'
   TZFIELD%CDIR       = ''
   TZFIELD%NGRID      = 1
   TZFIELD%NTYPE      = TYPEREAL
@@ -1250,7 +1250,7 @@ END IF
 ! Sea salt scalar variables
 IF (NSV_SLTEND>=NSV_SLTBEG) THEN
   TZFIELD%CSTDNAME   = ''
-  TZFIELD%CUNITS     = 'ppp'
+  TZFIELD%CUNITS     = 'ppv'
   TZFIELD%CDIR       = ''
   TZFIELD%NGRID      = 1
   TZFIELD%NTYPE      = TYPEREAL

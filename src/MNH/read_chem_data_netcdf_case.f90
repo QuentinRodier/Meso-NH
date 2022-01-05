@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2012-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2012-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -439,7 +439,7 @@ enddo
     ALLOCATE (XSV_LS(IIU,IJU,ilevlen,NSV))
    XSV_LS(:,:,:,:) = 0.
 !
-  WRITE (ILUOUT0,'(A,A4,A)') ' | Reading MOZART species (ppp) from ',HFILE,' file'
+  WRITE (ILUOUT0,'(A,A4,A)') ' | Reading MOZART species (ppv) from ',HFILE,' file'
 
 where (ZLONOUT(:) < 0.) ZLONOUT(:) = ZLONOUT(:) + 360.
 !

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -18,7 +18,7 @@ INTERFACE
 REAL, DIMENSION(:,:), INTENT(OUT) :: PSFTH ! surface flux of potential temperature (Km/s)
 REAL, DIMENSION(:,:), INTENT(OUT) :: PSFRV ! surface flux of water vapor           (m/s*kg/kg)
 REAL, DIMENSION(:,:,:),INTENT(OUT):: PSFSV ! surface flux of scalar                (m/s*kg/kg)
-                                           ! flux of chemical var.                 (ppp.m/s)
+                                           ! flux of chemical var.                 (ppv.m/s)
 REAL, DIMENSION(:,:), INTENT(OUT) :: PSFCO2! surface flux of CO2                   (m/s*kg/kg)
 REAL, DIMENSION(:,:), INTENT(OUT) :: PSFU  ! surface fluxes of horizontal   
 REAL, DIMENSION(:,:), INTENT(OUT) :: PSFV  ! momentum in x and y directions        (m2/s2)
@@ -195,7 +195,7 @@ IMPLICIT NONE
 REAL, DIMENSION(:,:), INTENT(OUT) :: PSFTH ! surface flux of potential temperature (Km/s)
 REAL, DIMENSION(:,:), INTENT(OUT) :: PSFRV ! surface flux of water vapor           (m/s*kg/kg)
 REAL, DIMENSION(:,:,:),INTENT(OUT):: PSFSV ! surface flux of scalar                (m/s*kg/kg)
-                                           ! flux of chemical var.                 (ppp.m/s)
+                                           ! flux of chemical var.                 (ppv.m/s)
 REAL, DIMENSION(:,:), INTENT(OUT) :: PSFCO2! surface flux of CO2                   (m/s*kg/kg)
 REAL, DIMENSION(:,:), INTENT(OUT) :: PSFU  ! surface fluxes of horizontal   
 REAL, DIMENSION(:,:), INTENT(OUT) :: PSFV  ! momentum in x and y directions        (m2/s2)
@@ -679,7 +679,7 @@ IF(NSV .GT. 0) THEN
    END DO
 END IF
 !
-!* conversion from chemistry flux (molec/m2/s) to (ppp.m.s-1)
+!* conversion from chemistry flux (molec/m2/s) to (ppv.m.s-1)
 !
 IF (LUSECHEM) THEN
    DO JSV=NSV_CHEMBEG,NSV_CHEMEND
@@ -690,7 +690,7 @@ ELSE
   PSFSV(:,:,NSV_CHEMBEG:NSV_CHEMEND) = 0.
 END IF
 !
-!* conversion from dust flux (kg/m2/s) to (ppp.m.s-1)
+!* conversion from dust flux (kg/m2/s) to (ppv.m.s-1)
 !
 IF (LDUST) THEN
   DO JSV=NSV_DSTBEG,NSV_DSTEND
@@ -700,7 +700,7 @@ ELSE
   PSFSV(:,:,NSV_DSTBEG:NSV_DSTEND) = 0.
 END IF
 !
-!* conversion from sea salt flux (kg/m2/s) to (ppp.m.s-1)
+!* conversion from sea salt flux (kg/m2/s) to (ppv.m.s-1)
 !
 IF (LSALT) THEN
   DO JSV=NSV_SLTBEG,NSV_SLTEND
@@ -710,7 +710,7 @@ ELSE
   PSFSV(:,:,NSV_SLTBEG:NSV_SLTEND) = 0.
 END IF
 !
-!* conversion from aerosol flux (molec/m2/s) to (ppp.m.s-1)
+!* conversion from aerosol flux (molec/m2/s) to (ppv.m.s-1)
 !
 IF (LORILAM) THEN
   DO JSV=NSV_AERBEG,NSV_AEREND

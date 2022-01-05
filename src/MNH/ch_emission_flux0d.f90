@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1999-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1999-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -13,7 +13,7 @@ USE MODD_CH_M9_n,      ONLY: NEQ
 IMPLICIT NONE
 REAL,                 INTENT(IN)  :: PTIME      ! time of simulation in sec UTC
                                                 ! (counting from midnight)
-REAL, DIMENSION(NEQ), INTENT(OUT) :: PFLUX      ! emission flux in ppp*m/s
+REAL, DIMENSION(NEQ), INTENT(OUT) :: PFLUX      ! emission flux in ppv*m/s
 CHARACTER(len=*),     INTENT(IN)  :: HINPUTFILE ! name of the input file
 INTEGER,              INTENT(IN)  :: KLUOUT     ! output listing channel
 INTEGER,              INTENT(IN)  :: KVERB      ! verbosity level
@@ -55,10 +55,10 @@ END MODULE MODI_CH_EMISSION_FLUX0D
 !!    where the unit identifier [MIX|CON|MOL] indicates whether
 !!    the flux is given as 
 !!    CON: molecules/cm2/s 
-!!    MIX: ppp*m/s
+!!    MIX: ppv*m/s
 !!    MOL: microMol/m2/day
 !!    (assuming standard pressure and temperature in the conversion)
-!!    The returned flux is given in ppp*m/s, that is standard MesoNH
+!!    The returned flux is given in ppv*m/s, that is standard MesoNH
 !!    units so that no conversion is to be applied when introducing 
 !!    the emission flux in the 3-D model.
 !!
@@ -96,7 +96,7 @@ IMPLICIT NONE
 
 REAL,                 INTENT(IN)  :: PTIME      ! time of simulation in sec UTC
                                                 ! (counting from midnight)
-REAL, DIMENSION(NEQ), INTENT(OUT) :: PFLUX      ! emission flux in ppp*m/s
+REAL, DIMENSION(NEQ), INTENT(OUT) :: PFLUX      ! emission flux in ppv*m/s
 CHARACTER(len=*),     INTENT(IN)  :: HINPUTFILE ! name of the input file
 INTEGER,              INTENT(IN)  :: KLUOUT     ! output listing channel
 INTEGER,              INTENT(IN)  :: KVERB      ! verbosity level
@@ -207,13 +207,13 @@ IF (LSFIRSTCALL) THEN
 !
 ! determine the conversion factor
   SELECT CASE (YUNIT)
-  CASE ('MIX') ! flux given ppp*m/s, no conversion required
+  CASE ('MIX') ! flux given ppv*m/s, no conversion required
     ZCONVERSION = 1.0
   CASE ('CON') ! flux given in molecules/cm2/s
-               ! where 1 molecule/cm2/s = (224.14/6.022136E23) ppp*m/s
+               ! where 1 molecule/cm2/s = (224.14/6.022136E23) ppv*m/s
     ZCONVERSION = (224.14/6.022136E23)
   CASE ('MOL') ! flux given in microMol/m2/day
-               ! where 1 microMol/m2/day = (22.414/86.400)*1E-12 ppp*m/s
+               ! where 1 microMol/m2/day = (22.414/86.400)*1E-12 ppv*m/s
     ZCONVERSION = (22.414/86.400)*1E-12
   CASE DEFAULT
     call Print_msg( NVERB_FATAL, 'GEN', 'CH_EMISSION_FLUX0D', 'unknow conversion factor: '//trim(YUNIT) )

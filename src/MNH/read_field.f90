@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -977,7 +977,7 @@ END IF
 !
 IF (NSV_CHICEND>=NSV_CHICBEG) THEN
   TZFIELD%CSTDNAME   = ''
-  TZFIELD%CUNITS     = 'ppp'
+  TZFIELD%CUNITS     = 'ppv'
   TZFIELD%CDIR       = 'XY'
   TZFIELD%NGRID      = 1
   TZFIELD%NTYPE      = TYPEREAL
@@ -1000,7 +1000,7 @@ END IF
 !
 IF (NSV_SLTEND>=NSV_SLTBEG) THEN
   TZFIELD%CSTDNAME   = ''
-  TZFIELD%CUNITS     = 'ppp'
+  TZFIELD%CUNITS     = 'ppv'
   TZFIELD%CDIR       = 'XY'
   TZFIELD%NGRID      = 1
   TZFIELD%NTYPE      = TYPEREAL
@@ -1022,7 +1022,7 @@ END IF
 !
 IF (NSV_SLTDEPEND>=NSV_SLTDEPBEG) THEN
   TZFIELD%CSTDNAME   = ''
-  TZFIELD%CUNITS     = 'ppp'
+  TZFIELD%CUNITS     = 'ppv'
   TZFIELD%CDIR       = 'XY'
   TZFIELD%NGRID      = 1
   TZFIELD%NTYPE      = TYPEREAL
@@ -1044,7 +1044,7 @@ END IF
 !
 IF (NSV_DSTEND>=NSV_DSTBEG) THEN
   TZFIELD%CSTDNAME   = ''
-  TZFIELD%CUNITS     = 'ppp'
+  TZFIELD%CUNITS     = 'ppv'
   TZFIELD%CDIR       = 'XY'
   TZFIELD%NGRID      = 1
   TZFIELD%NTYPE      = TYPEREAL
@@ -1066,7 +1066,7 @@ END IF
 !
 IF (NSV_DSTDEPEND>=NSV_DSTDEPBEG) THEN
   TZFIELD%CSTDNAME   = ''
-  TZFIELD%CUNITS     = 'ppp'
+  TZFIELD%CUNITS     = 'ppv'
   TZFIELD%CDIR       = 'XY'
   TZFIELD%NGRID      = 1
   TZFIELD%NTYPE      = TYPEREAL
@@ -1088,7 +1088,7 @@ END IF
 !
 IF (NSV_AEREND>=NSV_AERBEG) THEN
   TZFIELD%CSTDNAME   = ''
-  TZFIELD%CUNITS     = 'ppp'
+  TZFIELD%CUNITS     = 'ppv'
   TZFIELD%CDIR       = 'XY'
   TZFIELD%NGRID      = 1
   TZFIELD%NTYPE      = TYPEREAL
@@ -1110,7 +1110,7 @@ END IF
 !
 IF (NSV_AERDEPEND>=NSV_AERDEPBEG) THEN
   TZFIELD%CSTDNAME   = ''
-  TZFIELD%CUNITS     = 'ppp'
+  TZFIELD%CUNITS     = 'ppv'
   TZFIELD%CDIR       = 'XY'
   TZFIELD%NGRID      = 1
   TZFIELD%NTYPE      = TYPEREAL
@@ -1241,7 +1241,7 @@ END IF
 !
 IF (NSV_LNOXEND>=NSV_LNOXBEG) THEN
   TZFIELD%CSTDNAME   = ''
-  TZFIELD%CUNITS     = 'ppp'
+  TZFIELD%CUNITS     = 'ppv'
   TZFIELD%CDIR       = 'XY'
   TZFIELD%NGRID      = 1
   TZFIELD%NTYPE      = TYPEREAL

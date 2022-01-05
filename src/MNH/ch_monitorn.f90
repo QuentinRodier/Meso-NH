@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -623,7 +623,7 @@ IF (LORILAM) THEN
 !
 END IF
 !
-!*       1.4 compute conversion factor ppp/m3 --> molec/cm3
+!*       1.4 compute conversion factor ppv/m3 --> molec/cm3
 !
 ZDEN2MOL = 1E-6 * XAVOGADRO / XMD
 !
@@ -910,7 +910,7 @@ DO JL=1,ISVECNMASK
     IF (SIZE(XRT,4) .GE. 2) ZRC(JM+1) = XRT(JI, JJ, JK, 2)
     !Molar mass (kg/kg)
     ZMI(JM+1,:)     = XMI(JI, JJ, JK, :)
-    !Moments (ppp)
+    !Moments (ppv)
     ZM(JM+1,:)      = XM3D(JI,JJ,JK,:)
     ZSIG0(JM+1,:)   = LOG(XSIG3D(JI,JJ,JK,:))
     ZRG0(JM+1,:)    =  XRG3D(JI,JJ,JK,:)  

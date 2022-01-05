@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1998-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1998-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -1362,7 +1362,7 @@ IF (IMODEL==5) THEN
   XSV_LS(:,:,:,:) = 0.
   ILEV1=-1
 !
-  WRITE (ILUOUT0,'(A,A4,A)') ' | Reading Mocage species (ppp) from ',HFILE,' file'
+  WRITE (ILUOUT0,'(A,A4,A)') ' | Reading Mocage species (ppv) from ',HFILE,' file'
 !
 !*       2.6.1  read mocage species
 !
