@@ -1,4 +1,4 @@
-CMNH_LIC Copyright 1996-2019 CNRS, Meteo-France and Universite Paul Sabatier
+CMNH_LIC Copyright 1996-2022 CNRS, Meteo-France and Universite Paul Sabatier
 CMNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 CMNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 CMNH_LIC for details. version 1.
@@ -3782,7 +3782,8 @@ C
 C
       IMPLICIT REAL(kind(0.0d0))           (A-H, O-Z)
       PARAMETER (EXPON=1.D0/3.D0,     ZERO=0.D0, THET1=120.D0/180.D0, 
-     &           THET2=240.D0/180.D0, PI=3.14159265358932, EPS=1D-50)
+     &           THET2=240.D0/180.D0, PI=3.14159265358932, EPS=1D-50,
+     &           ONE=1.D0 )
       REAL(kind(0.0d0))            X(3)
 C
 C *** SPECIAL CASE : QUADRATIC*X EQUATION *****************************
