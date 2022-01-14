@@ -1156,15 +1156,20 @@ DO JSV = NSV_SNWBEG_A(KMI), NSV_SNWEND_A(KMI)
     LTIMEDEP   = .TRUE.                                       )
 END DO
 
-DO JSV = NSV_LNOXBEG_A(KMI), NSV_LNOXEND_A(KMI)
-  WRITE( YNUM3, '( I3.3 )' ) JSV-NSV_LNOXBEG_A(KMI)+1
+!Check if there is at most 1 LINOX scalar variable
+!if not, the name must be modified and different for all of them
+IF ( NSV_LNOX_A(KMI) > 1 ) &
+  CALL Print_msg( NVERB_ERROR, 'GEN', 'INI_NSV', 'NSV_LNOX_A>1: problem with the names of the corresponding scalar variables' )
 
-  CSVNAMES_A(JSV,KMI) = 'SVLNOX'//YNUM3
+DO JSV = NSV_LNOXBEG_A(KMI), NSV_LNOXEND_A(KMI)
+  CSVNAMES_A(JSV,KMI) = 'LINOX'
+
+  WRITE( YNUM3, '( I3.3 )' ) JSV
 
   TSVLIST_A(JSV, KMI) = TFIELDMETADATA(      &
-    CMNHNAME   = 'SVLNOX' // YNUM3,          &
+    CMNHNAME   = 'LINOX',                    &
     CSTDNAME   = '',                         &
-    CLONGNAME  = 'SVLNOX' // YNUM3,          &
+    CLONGNAME  = 'LINOX',                    &
     CUNITS     = 'ppv',                      &
     CDIR       = 'XY',                       &
     CCOMMENT   = 'X_Y_Z_' // 'SVT' // YNUM3, &
