@@ -148,7 +148,7 @@ INTEGER :: JMODE, JMOM, JSV_NAME
 !
 !-------------------------------------------------------------------------------
 !
-LINI_NSV = .TRUE.
+LINI_NSV(KMI) = .TRUE.
 
 ILUOUT = TLUOUT%NLU
 !

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2001-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2001-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -46,7 +46,7 @@ SAVE
 !
 REAL,DIMENSION(JPSVMAX) :: XSVMIN ! minimum value for SV variables
 !
-LOGICAL :: LINI_NSV = .FALSE. ! becomes True when routine INI_NSV is called
+LOGICAL :: LINI_NSV(JPMODELMAX) = .FALSE. ! becomes True when routine INI_NSV is called
 !
 CHARACTER(LEN=JPSVNAMELGTMAX), DIMENSION(:,:), ALLOCATABLE, TARGET :: CSVNAMES_A   !Names of all the scalar variables
 TYPE(tfieldmetadata), DIMENSION(:,:), ALLOCATABLE, TARGET :: TSVLIST_A !Metadata of all the scalar variables
