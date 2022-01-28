@@ -273,7 +273,8 @@ USE MODD_CST,            ONLY: XCI,XCL,XCPD,XCPV,XLSTT,XLVTT,XTT
 USE MODD_PARAMETERS,     ONLY: JPVEXT,XUNDEF
 USE MODD_PARAM_ICE,      ONLY: CSUBG_PR_PDF,CSUBG_RC_RR_ACCR,CSUBG_RR_EVAP,LDEPOSC,LFEEDBACKT,LSEDIM_AFTER, &
                                NMAXITER,XMRSTEP,XTSTEP_TS,XVDEPOSC
-USE MODD_RAIN_ICE_DESCR, ONLY: XRTMIN
+USE MODD_RAIN_ICE_DESCR, ONLY: XRTMIN,XLBDAS_MAX
+USE MODD_RAIN_ICE_PARAM, ONLY: XLBDAS_MIN,XTRANS_MP_GAMMAS
 USE MODD_VAR_ll,         ONLY: IP
 
 use mode_budget,         only: Budget_store_add, Budget_store_init, Budget_store_end
@@ -370,7 +371,7 @@ INTEGER :: JI, JJ, JK
 !For packing
 INTEGER :: IMICRO ! Case r_x>0 locations
 INTEGER, DIMENSION(KSIZE) :: I1,I2,I3 ! Used to replace the COUNT
-INTEGER                   :: JI, JJ, JK, JL       ! and PACK intrinsics
+INTEGER                   :: JL       ! and PACK intrinsics
 !
 !Arrays for nucleation call outisde of LDMICRO points
 REAL,    DIMENSION(KIT, KJT, KKT) :: ZW ! work array
@@ -578,9 +579,9 @@ ENDIF
 !Compute lambda_snow parameter ! Modif Wurtz
 !ZT en KELVIN
 PLBDAS(:,:,:)=1000. !Wurtz
-DO JK = 1, IKT
-  DO JJ = 1, IJT
-    DO JI = 1, IIT
+DO JK = 1, KKT
+  DO JJ = 1, KJT
+    DO JI = 1, KIT
 	IF (PRST(JI,JJ,JK)>XRTMIN(5)) THEN
 
 			IF(ZT(JI,JJ,JK)>263.15) THEN
