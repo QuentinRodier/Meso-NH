@@ -334,6 +334,7 @@ XLAUTR_THRESHOLD  = 0.4
 XITAUTR= 0.27 ! (Notice that T2 of BR74 is uncorrect and that 0.27=1./3.7
 XITAUTR_THRESHOLD = 7.5
 XCAUTR = 3.5E9
+XR0 = 25.0E-6
 !
 ! Cst for the accretion process
 !
@@ -405,6 +406,7 @@ X0EVAR = (12.0)*XF0R*GAMMA_X0D(XNUR+1./XALPHAR)/GAMMA_X0D(XNUR+3./XALPHAR)
 X1EVAR = (12.0)*XF1R*((ZRHO00)**(XCEXVT)*(XCR/0.15E-4))**0.5*    &
            GAMMA_X0D(XNUR+(XDR+3.0)/(2.0*XALPHAR))/GAMMA_X0D(XNUR+3./XALPHAR)
 !
+XCEVAP = 0.86
 !
 !------------------------------------------------------------------------------
 !

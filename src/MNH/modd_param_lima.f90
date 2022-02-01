@@ -133,6 +133,7 @@ LOGICAL, SAVE :: LDEPOC        ! Deposition of rc at 1st level above ground
 LOGICAL, SAVE :: LACTTKE       ! TRUE to take into account TKE in W for activation
 LOGICAL, SAVE :: LADJ          ! TRUE for adjustment procedure + Smax (false for diagnostic supersaturation)
 LOGICAL, SAVE :: LSPRO         ! TRUE for prognostic supersaturation                     
+LOGICAL, SAVE :: LKHKO         ! TRUE for Scu simulation (replicates the previous KHKO scheme)                     
 !
 ! 2.2 CCN initialisation
 !
