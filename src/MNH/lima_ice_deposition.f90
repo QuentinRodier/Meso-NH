@@ -73,8 +73,9 @@ SUBROUTINE LIMA_ICE_DEPOSITION (PTSTEP, LDCOMPUTE,                        &
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_PARAM_LIMA,      ONLY : XRTMIN, XCTMIN, XALPHAI, XALPHAS, XNUI, XNUS, LSNOW 
-USE MODD_PARAM_LIMA_COLD, ONLY : XCXS, XCCS, &
+USE MODD_PARAM_LIMA,      ONLY : XRTMIN, XCTMIN, XALPHAI, XALPHAS, XNUI, XNUS,&
+                                 LSNOW, NMOM_I 
+USE MODD_PARAM_LIMA_COLD, ONLY : XCXS, XCCS,                                  &
                                  XLBDAS_MAX, XDSCNVI_LIM, XLBDASCNVI_MAX,     &
                                  XC0DEPSI, XC1DEPSI, XR0DEPSI, XR1DEPSI,      &
                                  XSCFAC, X1DEPS, X0DEPS, XEX1DEPS, XEX0DEPS,  &
@@ -131,54 +132,51 @@ P_CI_CNVS(:) = 0.
 GMICRO(:) = LDCOMPUTE(:) .AND. PRIT(:)>XRTMIN(4)
 !
 !
-WHERE( GMICRO )
+IF (NMOM_I.EQ.1) THEN
+   WHERE( GMICRO )
 !
+!*       Conversion of pristine ice to r_s: RICNVS
+!        -----------------------------------------
 !
-!*       2.2    Deposition of water vapor on r_i: RVDEPI
-!        -----------------------------------------------
+      ZCRIAUTI(:)=MIN(0.2E-4,10**(0.06*(PT(:)-XTT)-3.5))
+      ZZW(:) = 0.0
+      WHERE ( (PRIT(:)>XRTMIN(4)))
+         ZZW(:)   = 1.E-3 * EXP( 0.015*(PT(:)-XTT) ) * MAX( PRIT(:)-ZCRIAUTI(:),0.0 )
+      END WHERE
 !
-!
-!   ZZW(:) = 0.0
-!   WHERE ( (PRIT(:)>XRTMIN(4)) .AND. (PCIT(:)>XCTMIN(4)) )
-!      ZZW(:) = ( PSSI(:) / PAI(:) ) * PCIT(:) *        &
-!        ( X0DEPI/PLBDI(:)+X2DEPI*PCJ(:)*PCJ(:)/PLBDI(:)**(XDI+2.0) )
-!   END WHERE
-!
-!   P_RI_DEPI(:) = ZZW(:)
-!!$   P_TH_DEPI(:) = P_RI_DEPI(:) * PLSFACT(:)
-!
-!!$   PA_TH(:) = PA_TH(:) + P_TH_DEPI(:)
-!!$   PA_RV(:) = PA_RV(:) - P_RI_DEPI(:) 
-!!$   PA_RI(:) = PA_RI(:) + P_RI_DEPI(:) 
-!
-!
-!*       2.3    Conversion of pristine ice to r_s: RICNVS
-!        ------------------------------------------------
-!
-!
-!!$   ZZW(:) = 0.0
-!!$   ZZW2(:) = 0.0
-!!$   WHERE ( (PLBDI(:)<XLBDAICNVS_LIM) .AND. (PCIT(:)>XCTMIN(4)) &
-!!$                                     .AND. (PSSI(:)>0.0)       )
-!!$      ZZW(:) = (PLBDI(:)*XDICNVS_LIM)**(XALPHAI)
-!!$      ZZX(:) = ( PSSI(:)/PAI(:) )*PCIT(:) * (ZZW(:)**XNUI) *EXP(-ZZW(:))
-!!$!
-!!$      ZZW(:) = ( XR0DEPIS + XR1DEPIS*PCJ(:) )*ZZX(:)                             
-!!$!
-!!$      ZZW2(:) = ZZW(:) * (XC0DEPIS+XC1DEPIS*PCJ(:)) / (XR0DEPIS+XR1DEPIS*PCJ(:))
-!!$   END WHERE
-!
-   ZCRIAUTI(:)=MIN(0.2E-4,10**(0.06*(PT(:)-XTT)-3.5))
-   ZZW(:) = 0.0
-   WHERE ( (PRIT(:)>XRTMIN(4)))
-      ZZW(:)   = 1.E-3 * EXP( 0.015*(PT(:)-XTT) ) * MAX( PRIT(:)-ZCRIAUTI(:),0.0 )
+      P_RI_CNVS(:) = - ZZW(:)
    END WHERE
+ELSE
+   WHERE( GMICRO )
 !
-P_RI_CNVS(:) = - ZZW(:)
-!P_CI_CNVS(:) = - ZZW2(:)
+!*       Deposition of water vapor on r_i: RVDEPI
+!        ----------------------------------------
 !
+      ZZW(:) = 0.0
+      WHERE ( (PRIT(:)>XRTMIN(4)) .AND. (PCIT(:)>XCTMIN(4)) )
+         ZZW(:) = ( PSSI(:) / PAI(:) ) * PCIT(:) *        &
+              ( X0DEPI/PLBDI(:)+X2DEPI*PCJ(:)*PCJ(:)/PLBDI(:)**(XDI+2.0) )
+      END WHERE
+      P_RI_DEPI(:) = ZZW(:)
 !
-END WHERE
+!*       Conversion of pristine ice to r_s: RICNVS
+!        -----------------------------------------
+!
+      ZZW(:) = 0.0
+      ZZW2(:) = 0.0
+      WHERE ( (PLBDI(:)<XLBDAICNVS_LIM) .AND. (PCIT(:)>XCTMIN(4)) &
+                                        .AND. (PSSI(:)>0.0)       )
+         ZZW(:) = (PLBDI(:)*XDICNVS_LIM)**(XALPHAI)
+         ZZX(:) = (PSSI(:)/PAI(:))*PCIT(:) * (ZZW(:)**XNUI) *EXP(-ZZW(:))
+!
+         ZZW(:) = (XR0DEPIS + XR1DEPIS*PCJ(:))*ZZX(:)                             
+!
+         ZZW2(:) = ZZW(:) * (XC0DEPIS+XC1DEPIS*PCJ(:)) / (XR0DEPIS+XR1DEPIS*PCJ(:))
+      END WHERE
+      P_RI_CNVS(:) = - ZZW(:)
+      P_CI_CNVS(:) = - ZZW2(:)
+   END WHERE
+END IF
 !
 IF (.NOT.LSNOW) THEN
    P_RI_CNVS(:) = 0.

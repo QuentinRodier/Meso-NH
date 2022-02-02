@@ -62,6 +62,7 @@ LOGICAL, SAVE :: LMEYERS                ! TRUE to use Meyers nucleation
 ! 1.2 IFN initialisation
 !
 INTEGER, SAVE          :: NMOD_IFN               ! Number of IFN modes
+INTEGER, SAVE          :: NMOM_I                 ! Number of moments for pristine ice
 REAL, DIMENSION(JPLIMAIFNMAX), SAVE :: XIFN_CONC ! Ref. concentration of IFN(#/L)
 LOGICAL, SAVE          :: LIFN_HOM               ! True for z-homogeneous IFN concentrations
 CHARACTER(LEN=8), SAVE :: CIFN_SPECIES           ! Internal mixing species definitions

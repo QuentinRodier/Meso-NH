@@ -239,7 +239,7 @@ SUBROUTINE LIMA_TENDENCIES (PTSTEP, LDCOMPUTE,                                  
 USE MODD_CST,              ONLY : XP00, XRD, XRV, XMD, XMV, XCPD, XCPV, XCL, XCI, XLVTT, XLSTT, XTT, &
                                   XALPW, XBETAW, XGAMW, XALPI, XBETAI, XGAMI
 USE MODD_PARAM_LIMA,       ONLY : XRTMIN, XCTMIN,                                                    &
-                                  LCOLD, LNUCL, LSNOW, LHAIL, LWARM, LACTI, LRAIN
+                                  LCOLD, LNUCL, LSNOW, LHAIL, LWARM, LACTI, LRAIN, NMOM_I
 USE MODD_PARAM_LIMA_WARM,  ONLY : XLBC, XLBEXC, XLBR, XLBEXR
 USE MODD_PARAM_LIMA_MIXED, ONLY : XLBG, XLBEXG, XLBH, XLBEXH, XLBDAG_MAX
 USE MODD_PARAM_LIMA_COLD,  ONLY : XSCFAC, XLBI, XLBEXI, XLBS, XLBEXS, XLBDAS_MAX
@@ -619,11 +619,11 @@ IF (LCOLD .AND. LSNOW) THEN
    !
    ! Includes vapour deposition on snow, snow -> ice conversion
    !
-   CALL LIMA_SNOW_DEPOSITION (LDCOMPUTE,                             & ! depends on IF, PF
+   CALL LIMA_SNOW_DEPOSITION (LDCOMPUTE,                         & ! depends on IF, PF
                               PRHODREF, ZSSI, ZAI, ZCJ, ZLSFACT, &
-                              PRST/ZPF1D, ZLBDS,                     &
-                              P_RI_CNVI, P_CI_CNVI,                  &
-                              P_TH_DEPS, P_RS_DEPS                   )
+                              PRST/ZPF1D, ZLBDS,                 &
+                              P_RI_CNVI, P_CI_CNVI,              &
+                              P_TH_DEPS, P_RS_DEPS               )
    !
    P_RI_CNVI(:) = P_RI_CNVI(:) * ZPF1D(:)
    P_CI_CNVI(:) = P_CI_CNVI(:) * ZPF1D(:)
@@ -669,19 +669,18 @@ IF (LWARM .AND. LCOLD) THEN
    PA_TH(:) = PA_TH(:) + P_TH_DEPG(:)
 END IF
 !
-IF (LWARM .AND. LCOLD) THEN
-   CALL LIMA_BERGERON (LDCOMPUTE,                         & ! depends on CF, IF
-                       PRCT, PRIT, PCIT, ZLBDI,           &
-                       ZSSIW, ZAI, ZCJ, ZLVFACT, ZLSFACT, &
-                       P_TH_BERFI, P_RC_BERFI,            &
-                       PA_TH, PA_RC, PA_RI                )
-END IF
-!P_TH_BERFI(:) = 0.
-!P_RC_BERFI(:) = 0.
+IF (LWARM .AND. LCOLD .AND. NMOM_I.EQ.1) THEN
+   CALL LIMA_BERGERON (LDCOMPUTE,                                 & ! depends on CF, IF
+                       PRCT/ZCF1D, PRIT/ZIF1D, PCIT/ZIF1D, ZLBDI, &
+                       ZSSIW, ZAI, ZCJ, ZLVFACT, ZLSFACT,         &
+                       P_TH_BERFI, P_RC_BERFI                     )
+   P_TH_BERFI(:) = P_TH_BERFI(:) * MIN(ZCF1D,ZIF1D)
+   P_RC_BERFI(:) = P_RC_BERFI(:) * MIN(ZCF1D,ZIF1D)
 !
-PA_RC(:) = PA_RC(:) + P_RC_BERFI(:)
-PA_RI(:) = PA_RI(:) - P_RC_BERFI(:)
-PA_TH(:) = PA_TH(:) + P_TH_BERFI(:)
+   PA_RC(:) = PA_RC(:) + P_RC_BERFI(:)
+   PA_RI(:) = PA_RI(:) - P_RC_BERFI(:)
+   PA_TH(:) = PA_TH(:) + P_TH_BERFI(:)
+END IF
 !
 IF (LWARM .AND. LCOLD .AND. LSNOW) THEN
      !

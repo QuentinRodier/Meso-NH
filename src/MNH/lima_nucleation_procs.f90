@@ -90,7 +90,7 @@ USE MODD_PARAMETERS, ONLY : JPHEXT, JPVEXT
 USE MODD_NSV,        ONLY : NSV_LIMA_NC, NSV_LIMA_NR, NSV_LIMA_CCN_FREE, NSV_LIMA_CCN_ACTI, &
                             NSV_LIMA_NI, NSV_LIMA_IFN_FREE, NSV_LIMA_IFN_NUCL, NSV_LIMA_IMM_NUCL, NSV_LIMA_HOM_HAZE
 USE MODD_PARAM_LIMA, ONLY : LCOLD, LNUCL, LMEYERS, LSNOW, LWARM, LACTI, LRAIN, LHHONI,  &
-                            NMOD_CCN, NMOD_IFN, NMOD_IMM, XCTMIN, XRTMIN, LSPRO
+                            NMOD_CCN, NMOD_IFN, NMOD_IMM, XCTMIN, XRTMIN, LSPRO, NMOM_I
 USE MODD_TURB_n,     ONLY : LSUBG_COND
 
 use mode_budget,     only: Budget_store_add, Budget_store_init, Budget_store_end
@@ -196,7 +196,7 @@ END IF
 !
 !-------------------------------------------------------------------------------
 !
-IF ( LCOLD .AND. LNUCL .AND. .NOT.LMEYERS .AND. NMOD_IFN >= 1 ) THEN
+IF ( LCOLD .AND. LNUCL .AND. NMOM_I>=2 .AND. .NOT.LMEYERS .AND. NMOD_IFN >= 1 ) THEN
   if ( lbu_enable ) then
     if ( lbudget_sv ) then
       do jl = 1, nmod_ifn
@@ -260,14 +260,43 @@ END IF
 !
 !-------------------------------------------------------------------------------
 !
-IF (LCOLD .AND. LNUCL .AND. LMEYERS) THEN
-!   CALL LIMA_MEYERS_NUCLEATION (PTSTEP,                                     &
-!                                PRHODREF, PEXNREF, PPABST,                  &
-!                                PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT,   &
-!                                PCCT, PCIT, PINT,                           &
-!                                Z_TH_HIND, Z_RI_HIND, Z_CI_HIND,            &
-!                                Z_TH_HINC, Z_RC_HINC, Z_CC_HINC,            &
-!                                PICEFR                                      )
+IF (LCOLD .AND. LNUCL .AND. NMOM_I>=2 .AND. LMEYERS) THEN
+   CALL LIMA_MEYERS_NUCLEATION (PTSTEP,                                     &
+                                PRHODREF, PEXNREF, PPABST,                  &
+                                PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT,   &
+                                PCCT, PCIT, PINT,                           &
+                                Z_TH_HIND, Z_RI_HIND, Z_CI_HIND,            &
+                                Z_TH_HINC, Z_RC_HINC, Z_CC_HINC,            &
+                                PICEFR                                      )
+  WHERE(PICEFR(:,:,:)<1.E-10 .AND. PRIT(:,:,:)>XRTMIN(4) .AND. PCIT(:,:,:)>XCTMIN(4)) PICEFR(:,:,:)=1.
+  !
+  if ( lbu_enable ) then
+    if ( lbudget_th ) call Budget_store_add( tbudgets(NBUDGET_TH), 'HIND',  z_th_hind(:, :, :) * prhodj(:, :, :) / ptstep )
+    if ( lbudget_rv ) call Budget_store_add( tbudgets(NBUDGET_RV), 'HIND', -z_ri_hind(:, :, :) * prhodj(:, :, :) / ptstep )
+    if ( lbudget_ri ) call Budget_store_add( tbudgets(NBUDGET_RI), 'HIND',  z_ri_hind(:, :, :) * prhodj(:, :, :) / ptstep )
+    if ( lbudget_sv ) then
+      call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'HIND', z_ci_hind(:, :, :) * prhodj(:, :, :) / ptstep )
+      if (nmod_ifn > 0 ) &
+        call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ifn_nucl), 'HIND', &
+                               z_ci_hind(:, :, :) * prhodj(:, :, :) / ptstep )
+    end if
+
+    if ( lbudget_th ) call Budget_store_add( tbudgets(NBUDGET_TH), 'HINC',  z_th_hinc(:, :, :) * prhodj(:, :, :) / ptstep )
+    if ( lbudget_rc ) call Budget_store_add( tbudgets(NBUDGET_RC), 'HINC',  z_rc_hinc(:, :, :) * prhodj(:, :, :) / ptstep )
+    if ( lbudget_ri ) call Budget_store_add( tbudgets(NBUDGET_RI), 'HINC', -z_rc_hinc(:, :, :) * prhodj(:, :, :) / ptstep )
+    if ( lbudget_sv ) then
+      call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'HINC',  z_cc_hinc(:, :, :) * prhodj(:, :, :) / ptstep )
+      call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'HINC', -z_cc_hinc(:, :, :) * prhodj(:, :, :) / ptstep )
+      if (nmod_ifn > 0 ) &
+        call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ifn_nucl), 'HINC', &
+                               -z_cc_hinc(:, :, :) * prhodj(:, :, :) / ptstep )
+    end if
+  end if
+END IF
+!
+!-------------------------------------------------------------------------------
+!
+IF (LCOLD .AND. LNUCL .AND. NMOM_I.EQ.1) THEN
   WHERE(PICEFR(:,:,:)<1.E-10 .AND. PRIT(:,:,:)>XRTMIN(4) .AND. PCIT(:,:,:)>XCTMIN(4)) PICEFR(:,:,:)=1.
   !
   ZTHS=PTHT/PTSTEP
