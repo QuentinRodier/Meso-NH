@@ -28,7 +28,6 @@
 !!       Pialat/Tulet  15/02/12 add ForeFire
 !!      Modification    01/2016  (JP Pinty) Add LIMA
 !!       V. Vionnet     07/17   add blowing snow
-!  P. Wautelet 10/03/2021: add CSVNAMES and CSVNAMES_A to store the name of all the scalar variables
 !  B. Vie         06/2021: add prognostic supersaturation for LIMA
 !  P. Wautelet 26/11/2021: add TSVLIST and TSVLIST_A to store the metadata of all the scalar variables
 !  P. Wautelet 14/01/2022: add CSV_CHEM_LIST(_A) to store the list of all chemical variables
@@ -51,7 +50,6 @@ REAL,DIMENSION(JPSVMAX) :: XSVMIN ! minimum value for SV variables
 !
 LOGICAL :: LINI_NSV(JPMODELMAX) = .FALSE. ! becomes True when routine INI_NSV is called
 !
-CHARACTER(LEN=JPSVNAMELGTMAX), DIMENSION(:,:), ALLOCATABLE, TARGET :: CSVNAMES_A   !Names of all the scalar variables
 CHARACTER(LEN=NMNHNAMELGTMAX), DIMENSION(:,:), ALLOCATABLE, TARGET :: CSV_CHEM_LIST_A !Names of all the chemical variables
 TYPE(tfieldmetadata), DIMENSION(:,:), ALLOCATABLE, TARGET :: TSVLIST_A !Metadata of all the scalar variables
 
@@ -158,7 +156,6 @@ INTEGER,DIMENSION(JPMODELMAX)::NSV_SNWEND_A = 0 ! NSV_SNWBEG_A...NSV_SNWEND_A
 !
 ! variables updated for the current model
 !
-CHARACTER(LEN=JPSVNAMELGTMAX), DIMENSION(:), POINTER :: CSVNAMES   !Names of all the scalar variables
 CHARACTER(LEN=NMNHNAMELGTMAX), DIMENSION(:), POINTER :: CSV_CHEM_LIST !Names of all the chemical variables
 TYPE(tfieldmetadata), DIMENSION(:), POINTER :: TSVLIST !Metadata of all the scalar variables
 

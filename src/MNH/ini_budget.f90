@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -26,7 +26,7 @@ use modd_budget, only: nbudgets, tbudgets,                                      
                        NBUDGET_U, NBUDGET_V, NBUDGET_W, NBUDGET_TH, NBUDGET_TKE,   &
                        NBUDGET_RV, NBUDGET_RC, NBUDGET_RR, NBUDGET_RI, NBUDGET_RS, &
                        NBUDGET_RG, NBUDGET_RH, NBUDGET_SV1
-use modd_nsv,    only: csvnames, nsv
+use modd_nsv,    only: nsv, tsvlist
 
 integer          :: ibudget
 integer          :: jsv
@@ -91,8 +91,8 @@ tbudgets(NBUDGET_RH)%nid      = NBUDGET_RH
 
 do jsv = 1, nsv
   ibudget = NBUDGET_SV1 - 1 + jsv
-  tbudgets(ibudget)%cname    = Trim( csvnames(jsv) )
-  tbudgets(ibudget)%ccomment = 'Budget for scalar variable ' // Trim( csvnames(jsv) )
+  tbudgets(ibudget)%cname    = Trim( tsvlist(jsv)%cmnhname )
+  tbudgets(ibudget)%ccomment = 'Budget for scalar variable ' // Trim( tsvlist(jsv)%cmnhname )
   tbudgets(ibudget)%nid      = ibudget
 end do
 
@@ -226,8 +226,7 @@ use modd_dyn,           only: lcorio, xseglen
 use modd_dyn_n,         only: xtstep, locean
 use modd_elec_descr,    only: linductive, lrelax2fw_ion
 use modd_field,         only: TYPEREAL
-use modd_nsv,           only: csvnames,                                                                            &
-                              nsv_aerbeg, nsv_aerend, nsv_aerdepbeg, nsv_aerdepend, nsv_c2r2beg, nsv_c2r2end,      &
+use modd_nsv,           only: nsv_aerbeg, nsv_aerend, nsv_aerdepbeg, nsv_aerdepend, nsv_c2r2beg, nsv_c2r2end,      &
                               nsv_chembeg, nsv_chemend, nsv_chicbeg, nsv_chicend, nsv_csbeg, nsv_csend,            &
                               nsv_dstbeg, nsv_dstend, nsv_dstdepbeg, nsv_dstdepend, nsv_elecbeg, nsv_elecend,      &
 #ifdef MNH_FOREFIRE
@@ -239,7 +238,7 @@ use modd_nsv,           only: csvnames,                                         
                               nsv_lima_nc, nsv_lima_nr, nsv_lima_ni, nsv_lima_scavmass, nsv_lima_spro,             &
                               nsv_lnoxbeg, nsv_lnoxend, nsv_ppbeg, nsv_ppend,                                      &
                               nsv_sltbeg, nsv_sltend, nsv_sltdepbeg, nsv_sltdepend, nsv_snwbeg, nsv_snwend,        &
-                              nsv_user
+                              nsv_user, tsvlist
 use modd_parameters,   only: jphext
 use modd_param_c2r2,   only: ldepoc_c2r2 => ldepoc, lrain_c2r2 => lrain, lsedc_c2r2 => lsedc, lsupsat_c2r2 => lsupsat
 use modd_param_ice,    only: ladj_after, ladj_before, ldeposc_ice => ldeposc, lred, lsedic_ice => lsedic, lwarm_ice => lwarm
@@ -2887,7 +2886,7 @@ SV_BUDGETS: do jsv = 1, ksv
 
     tbudgets(ibudget)%tsources(:)%ngroup = 0
 
-    tzsource%ccomment = 'Budget of scalar variable ' // csvnames(jsv)
+    tzsource%ccomment = 'Budget of scalar variable ' // tsvlist(jsv)%cmnhname
     tzsource%ngrid    = 1
 
     tzsource%cunits   = '1'
