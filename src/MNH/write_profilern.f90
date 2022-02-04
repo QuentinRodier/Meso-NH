@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2002-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -10,7 +10,6 @@
 !  G. Delautier      2016: LIMA
 !  C. Lac         10/2016: add visibility diagnostics for fog
 !  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
-!  J. Escobar  16/08/2018: From Pierre & Maud , correction use CNAMES(JSV-NSV_CHEMBEG+1)
 !  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
 !  P. Wautelet 09/10/2020: Write_diachro: use new datatype tpfields
 !  P. Wautelet 03/03/2021: budgets: add tbudiachrometadata type (useful to pass more information to Write_diachro)
@@ -19,6 +18,7 @@
 !  M. Taufour     07/2021: modify RARE for hydrometeors containing ice and add bright band calculation for RARE
 !  P. Wautelet 01/09/2021: fix: correct vertical dimension for ALT and W
 !  P. Wautelet 19/11/2021: bugfix in units for LIMA variables
+!  P. Wautelet 04/02/2022: use TSVLIST to manage metadata of scalar variables
 !-----------------------------------------------------------------
 !      ###########################
 MODULE MODE_WRITE_PROFILER_n
@@ -84,24 +84,18 @@ SUBROUTINE PROFILER_DIACHRO_n( TPDIAFILE, KI )
 use modd_budget,          only: NLVL_CATEGORY, NLVL_SUBCATEGORY, NLVL_GROUP, NLVL_SHAPE, NLVL_TIMEAVG, NLVL_NORM, NLVL_MASK, &
                                 tbudiachrometadata
 USE MODD_DIAG_IN_RUN,     only: LDIAG_IN_RUN
-USE MODD_DUST,            ONLY: CDUSTNAMES, LDUST, NMODE_DST
-USE MODD_CH_AEROSOL,      ONLY: CAERONAMES, LORILAM, JPMODE
-USE MODD_CH_M9_n,         ONLY: CNAMES
+USE MODD_DUST,            ONLY: LDUST, NMODE_DST
+USE MODD_CH_AEROSOL,      ONLY: LORILAM, JPMODE
 USE MODD_CST,             ONLY: XRV
-USE MODD_ELEC_DESCR,      ONLY: CELECNAMES
 use modd_field,           only: NMNHDIM_LEVEL, NMNHDIM_LEVEL_W, NMNHDIM_PROFILER_TIME, NMNHDIM_PROFILER_PROC, NMNHDIM_UNUSED, &
                                 tfieldmetadata_base, TYPEREAL
-USE MODD_ICE_C1R3_DESCR,  ONLY: C1R3NAMES
 USE MODD_IO,              ONLY: TFILEDATA
-USE MODD_LG,              ONLY: CLGNAMES
-USE MODD_NSV
+USE MODD_NSV,             ONLY: tsvlist, nsv, nsv_aer, nsv_aerbeg, nsv_aerend, nsv_dst, nsv_dstbeg, nsv_dstend
 USE MODD_PARAMETERS,      ONLY: XUNDEF
 USE MODD_PARAM_n,         ONLY: CRAD
-USE MODD_PROFILER_n
+USE MODD_PROFILER_n,      ONLY: tprofiler
 USE MODD_RADIATIONS_n,    ONLY: NAER
-USE MODD_RAIN_C2R2_DESCR, ONLY: C2R2NAMES
-USE MODD_SALT,            ONLY: CSALTNAMES, LSALT
-USE MODD_TYPE_PROFILER
+USE MODD_SALT,            ONLY: LSALT
 !
 USE MODE_AERO_PSD
 USE MODE_DUST_PSD
@@ -112,7 +106,6 @@ INTEGER,          INTENT(IN) :: KI
 !
 !*      0.2  declaration of local variables for diachro
 !
-character(len=NCOMMENTLGTMAX)                        :: ycomment
 character(len=NMNHNAMELGTMAX)                        :: yname
 character(len=NUNITLGTMAX)                           :: yunits
 CHARACTER(LEN=:),                        allocatable :: YGROUP   ! group title
@@ -125,6 +118,8 @@ INTEGER                                              :: JSV      ! loop counter
 integer                                              :: ji
 integer                                              :: irr !Number of moist variables
 REAL, DIMENSION(:,:,:),                  ALLOCATABLE :: ZRHO
+REAL, DIMENSION(:,:,:), TARGET,          ALLOCATABLE :: ZWORK
+REAL, DIMENSION(:,:,:), POINTER                      :: ZDATA
 REAL, DIMENSION(:,:,:,:),                ALLOCATABLE :: ZSV, ZN0, ZSIG, ZRG
 type(tbudiachrometadata)                             :: tzbudiachro
 type(tfieldmetadata_base), dimension(:), allocatable :: tzfields
@@ -133,7 +128,9 @@ type(tfieldmetadata_base), dimension(:), allocatable :: tzfields
 !
 IF (TPROFILER%X(KI)==XUNDEF) RETURN
 IF (TPROFILER%Y(KI)==XUNDEF) RETURN
-!
+
+ZDATA => Null()
+
 IKU = SIZE(TPROFILER%W,2) !Number of vertical levels
 !
 !IPROC is too large (not a big problem) due to the separation between vertical profiles and point values
@@ -193,40 +190,22 @@ if ( Size( tprofiler%tke, 1 ) > 0 ) &
   call Add_profile( 'Tke', 'Turbulent kinetic energy', 'm2 s-2', tprofiler%tke )
 
 if ( Size( tprofiler%sv, 4 ) > 0  ) then
-  ! User scalar variables
-  do jsv = 1, nsv_user
-    Write ( yname, fmt = '( a2, i3.3 )' ) 'Sv', jsv
-    call Add_profile( yname, '', 'kg kg-1', tprofiler%sv(:,:,:,jsv) )
+  ! Scalar variables
+  Allocate( zwork, mold = tprofiler%sv(:,:,:,1) )
+  do jsv = 1, nsv
+    if ( Trim( tsvlist(jsv)%cunits ) == 'ppv' ) then
+      yunits = 'ppb'
+      zwork = tprofiler%sv(:,:,:,jsv) * 1.e9 !*1e9 for conversion ppv->ppb
+      zdata => zwork
+    else
+      yunits = Trim( tsvlist(jsv)%cunits )
+      zdata => tprofiler%sv(:,:,:,jsv)
+    end if
+    call Add_profile( tsvlist(jsv)%cmnhname, '', yunits, zdata )
+    zdata => Null()
   end do
- ! Passive pollutant  scalar variables
-  do jsv = nsv_ppbeg, nsv_ppend
-    Write ( yname, fmt = '( a2, i3.3 )' ) 'Sv', jsv
-    call Add_profile( yname, '', '1', tprofiler%sv(:,:,:,jsv) )
-  end do
- ! microphysical C2R2 scheme scalar variables
-  do jsv = nsv_ppbeg, nsv_ppend
-    call Add_profile( Trim( c2r2names(jsv - nsv_c2r2beg + 1) ), '', 'm-3', tprofiler%sv(:,:,:,jsv) )
-  end do
-  ! microphysical C3R5 scheme additional scalar variables
-  do jsv = nsv_c1r3beg, nsv_c1r3end
-    call Add_profile( Trim( c1r3names(jsv - nsv_c1r3beg + 1) ), '', 'm-3', tprofiler%sv(:,:,:,jsv) )
-  end do
-  ! LIMA variables
-  do jsv = nsv_lima_beg, nsv_lima_end
-    yname  = Trim( tsvlist(jsv)%cmnhname )
-    yunits = Trim( tsvlist(jsv)%cunits )
-    ycomment = ''
-    call Add_profile( yname, ycomment, yunits, tprofiler%sv(:,:,:,jsv) )
-  end do
-  ! electrical scalar variables
-  do jsv = nsv_elecbeg, nsv_elecend
-    call Add_profile( Trim( celecnames(jsv - nsv_elecbeg + 1) ), '', 'C', tprofiler%sv(:,:,:,jsv) )
-  end do
-  ! chemical scalar variables
-  do jsv = nsv_chembeg, nsv_chemend
-    Write( ycomment, '( a5, a3, i3.3 )' ) 'T(s) ', 'SVT', jsv
-    call Add_profile( Trim( cnames(jsv - nsv_chembeg + 1) ), ycomment, 'ppb', tprofiler%sv(:,:,:,jsv) * 1.e9 )
-  end do
+  Deallocate( zwork )
+
   IF ( LORILAM .AND. .NOT.(ANY(TPROFILER%P(:,:,KI) == 0.)) ) THEN
     ALLOCATE (ZSV (1,iku,size(tprofiler%tpdates),NSV_AER))
     ALLOCATE (ZRHO(1,iku,size(tprofiler%tpdates)))
@@ -284,10 +263,6 @@ if ( Size( tprofiler%sv, 4 ) > 0  ) then
     DEALLOCATE (ZSV,ZRHO)
     DEALLOCATE (ZN0,ZRG,ZSIG)
   END IF
-  ! dust scalar variables
-  do jsv = nsv_dstbeg, nsv_dstend
-    call Add_profile( Trim( cdustnames(jsv - nsv_dstbeg + 1) ), '', 'ppb', tprofiler%sv(:,:,:,jsv) * 1.e9 )
-  end do
   IF ((LDUST).AND. .NOT.(ANY(TPROFILER%P(:,:,KI) == 0.))) THEN
     ALLOCATE (ZSV (1,iku,size(tprofiler%tpdates),NSV_DST))
     ALLOCATE (ZRHO(1,iku,size(tprofiler%tpdates)))
@@ -345,10 +320,6 @@ if ( Size( tprofiler%sv, 4 ) > 0  ) then
     DEALLOCATE (ZSV,ZRHO)
     DEALLOCATE (ZN0,ZRG,ZSIG)
   END IF
-  ! sea salt scalar variables
-  do jsv = nsv_sltbeg, nsv_sltend
-    call Add_profile( Trim( csaltnames(jsv - nsv_sltbeg + 1) ), '', 'ppb', tprofiler%sv(:,:,:,jsv) * 1.e9 )
-  end do
   if ( ldust .or. lorilam .or. lsalt ) then
     do jsv = 1, naer
       Write( yname, '( a, i1 )' ) 'AEREXT', jsv
@@ -592,7 +563,7 @@ jproc = jproc + 1
 
 if ( jproc > iproc ) call Print_msg( NVERB_FATAL, 'IO', 'Add_profile', 'more profiles than expected' )
 
-ctitle(jproc)   = Trim( htitle)
+ctitle(jproc)   = Trim( htitle )
 ccomment(jproc) = Trim( hcomment )
 cunit(jproc)    = Trim( hunits )
 

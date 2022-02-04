@@ -153,14 +153,12 @@ END MODULE MODI_WRITE_LFIFM_n
 !!       M.Tomasini    06/12 2D west african monsoon: nesting for ADV forcing writing
 !!       Pialat/Tulet  15/02/2012 add ForeFire variables
 !!       J. Escobar    Mars 2014 , missing YDIR="XY" in 1.6 for tendencies fields 
-!!       J.escobar & M.Leriche 23/06/2014 Pb with JSA increment versus ini_nsv order initialization 
 !!       P. Tulet      Nov 2014 accumulated moles of aqueous species that fall at the surface
 !!       M.Faivre      2014
 !!       C.Lac         Dec.2014 writing past wind fields for centred advection
 !!       J.-P. Pinty   Jan 2015 add LNOx and flash map diagnostics
 !!       J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !!       P. Tulet & M. Leriche    Nov 2015 add mean pH value in the rain at the surface
-!!       J.escobar     04/08/2015 suit Pb with writ_lfin JSA increment , modif in ini_nsv to have good order initialization
 !!       Modification    01/2016  (JP Pinty) Add LIMA
 !!       M.Mazoyer     04/16 : Add supersaturation fields
 !  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
@@ -180,115 +178,105 @@ END MODULE MODI_WRITE_LFIFM_n
 !  P. Wautelet 10/03/2021: use scalar variable names for dust and salt
 !  P. Wautelet 11/03/2021: bugfix: correct name for NSV_LIMA_IMM_NUCL
 !  J.L. Redelsperger 03/2021: add OCEAN and auto-coupled O-A LES cases
+!  P. Wautelet 04/02/2022: use TSVLIST to manage metadata of scalar variables
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_DIM_n
-USE MODD_CONF
-USE MODD_CONF_n
-use modd_field,       only: NMNHDIM_UNUSED, tfieldmetadata, tfieldlist, TYPEDATE, TYPEINT, TYPELOG, TYPEREAL
-USE MODD_GRID
-USE MODD_GRID_n
-USE MODD_TIME
-USE MODD_TIME_n
-USE MODD_FIELD_n
-USE MODD_MEAN_FIELD_n
-USE MODD_DUMMY_GR_FIELD_n
-USE MODD_LSFIELD_n
-USE MODD_DYN_n
-USE MODD_PARAM_n
-USE MODD_REF
-USE MODD_LUNIT_n
-USE MODD_TURB_n
-USE MODD_RADIATIONS_n,   ONLY : XDTHRAD, NCLEARCOL_TM1, XFLALWD, &
-                                XZENITH, XDIR_ALB, XSCA_ALB, XEMIS, XTSRAD, &
-                                XDIRSRFSWD, XSCAFLASWD, XDIRFLASWD, XAZIM
-USE MODD_REF_n,  ONLY : XRHODREF
-USE MODD_FRC
-USE MODD_PRECIP_n
-USE MODD_ELEC_n
-USE MODD_CST
-USE MODD_CLOUDPAR
-USE MODD_DEEP_CONVECTION_n
-USE MODD_PARAM_KAFR_n
-USE MODD_NESTING
-USE MODD_PARAMETERS
-USE MODD_GR_FIELD_n
+USE MODD_2D_FRC
+USE MODD_ADVFRC_n
+USE MODD_ADV_n,            ONLY: CUVW_ADV_SCHEME, XRTKEMS, CTEMP_SCHEME, LSPLIT_CFL
+USE MODD_AIRCRAFT_BALLOON, ONLY: LFLYER
+USE MODD_BLOWSNOW
+USE MODD_BLOWSNOW_n
+USE MODD_CH_AEROSOL
+USE MODD_CH_M9_n
 USE MODD_CH_MNHC_n,       ONLY: LUSECHEM,LCH_CONV_LINOX, &
                                 LUSECHAQ,LUSECHIC,LCH_PH, XCH_PHINIT
 USE MODD_CH_PH_n
-USE MODD_CH_M9_n
-USE MODD_RAIN_C2R2_DESCR, ONLY: C2R2NAMES
-USE MODD_ICE_C1R3_DESCR,  ONLY: C1R3NAMES
-USE MODD_ELEC_DESCR,      ONLY: CELECNAMES, LLNOX_EXPLICIT
-USE MODD_LG,              ONLY: CLGNAMES
-USE MODD_NSV
-USE MODD_AIRCRAFT_BALLOON
-USE MODD_HURR_CONF, ONLY: LFILTERING,CFILTERING,NDIAG_FILT
-USE MODD_HURR_FIELD_n
-USE MODD_PREP_REAL, ONLY: CDUMMY_2D, XDUMMY_2D
+USE MODD_CLOUDPAR
+USE MODD_CONDSAMP
+USE MODD_CONF
+USE MODD_CONF_n
+USE MODD_CST
+USE MODD_DEEP_CONVECTION_n
+USE MODD_DEF_EDDY_FLUX_n
+USE MODD_DEF_EDDYUV_FLUX_n
+USE MODD_DIM_n
+USE MODD_DUMMY_GR_FIELD_n
 USE MODD_DUST
-USE MODD_SALT
-USE MODD_OCEANH
-USE MODD_PASPOL
+USE MODD_DYN_n
+USE MODD_ELEC_DESCR,      ONLY: LLNOX_EXPLICIT
+USE MODD_ELEC_FLASH
+USE MODD_ELEC_n
+USE MODD_EOL_ADNR
+USE MODD_EOL_ALM
+USE MODD_EOL_MAIN
+USE MODD_EOL_SHARED_IO
+USE MODD_FIELD_n
+use modd_field,       only: NMNHDIM_UNUSED, tfieldmetadata, tfieldlist, TYPECHAR, TYPEDATE, TYPEINT, TYPELOG, TYPEREAL
 #ifdef MNH_FOREFIRE
 USE MODD_FOREFIRE
 #endif
-USE MODD_CONDSAMP
-USE MODD_CH_AEROSOL
-USE MODD_BLOWSNOW
-USE MODD_BLOWSNOW_n
-USE MODD_PAST_FIELD_n
-USE MODD_ADV_n, ONLY: CUVW_ADV_SCHEME,XRTKEMS,CTEMP_SCHEME,LSPLIT_CFL
-USE MODD_ELEC_FLASH
-!
-USE MODD_PARAM_LIMA,     ONLY: LSCAV, LAERO_MASS
-USE MODD_LIMA_PRECIP_SCAVENGING_n
-!
-USE MODE_IO_FILE,        only: IO_File_close
-USE MODE_IO_FIELD_WRITE, only: IO_Field_write
-USE MODE_ll
+USE MODD_FRC
+USE MODD_GR_FIELD_n
+USE MODD_GRID
+USE MODD_GRID_n
+USE MODD_HURR_CONF, ONLY: LFILTERING,CFILTERING,NDIAG_FILT
+USE MODD_HURR_FIELD_n
+USE MODD_IBM_LSF,         ONLY: LIBM_LSF
+USE MODD_IBM_PARAM_n,     ONLY: LIBM, XIBM_LS
 USE MODD_IO, ONLY: TFILEDATA
+USE MODD_LATZ_EDFLX
+USE MODD_LIMA_PRECIP_SCAVENGING_n
+USE MODD_LSFIELD_n
+USE MODD_LUNIT_n
+USE MODD_MEAN_FIELD_n
+USE MODD_NESTING
+USE MODD_NSV
+USE MODD_OCEANH
+USE MODD_PARAM_C2R2,      ONLY: LSUPSAT
+USE MODD_PARAMETERS
+USE MODD_PARAM_KAFR_n,      ONLY: LCHTRANS
+USE MODD_PARAM_LIMA,     ONLY: LSCAV, LAERO_MASS
+USE MODD_PARAM_n
+USE MODD_PASPOL
+USE MODD_PAST_FIELD_n
+USE MODD_PRECIP_n
+USE MODD_PREP_REAL, ONLY: CDUMMY_2D, XDUMMY_2D
+USE MODD_RADIATIONS_n,   ONLY : XDTHRAD, NCLEARCOL_TM1, XFLALWD, &
+                                XZENITH, XDIR_ALB, XSCA_ALB, XEMIS, XTSRAD, &
+                                XDIRSRFSWD, XSCAFLASWD, XDIRFLASWD, XAZIM
+USE MODD_RECYCL_PARAM_n
+USE MODD_REF
+USE MODD_REF_n,  ONLY : XRHODREF
+USE MODD_RELFRC_n
+USE MODD_SALT
+USE MODD_TIME
+USE MODD_TIME_n
+USE MODD_TURB_n
+
+USE MODE_EXTRAPOL
 use mode_field, only: Find_field_id_from_mnhname
 USE MODE_GATHER_ll
 USE MODE_GRIDPROJ
-USE MODE_MSG
+USE MODE_IO_FIELD_WRITE, only: IO_Field_write
+USE MODE_IO_FILE,        only: IO_File_close
+USE MODE_ll
 USE MODE_MODELN_HANDLER
-USE MODE_TOOLS, ONLY: UPCASE
-!
-USE MODI_WRITE_LB_n
-USE MODI_WRITE_BALLOON_n
-USE MODI_DUSTLFI_n
-USE MODI_SALTLFI_n
-USE MODI_CH_AER_REALLFI_n
-USE MODI_SALT_FILTER
-USE MODI_DUST_FILTER
-!
-!20131128
 USE MODE_MPPDB
-USE MODE_EXTRAPOL
-! Modif Eddy fluxes
-USE MODD_DEF_EDDY_FLUX_n       ! Ajout PP
-USE MODD_DEF_EDDYUV_FLUX_n     ! Ajout PP
-USE MODD_LATZ_EDFLX            ! Ajout PP
-!
-USE MODD_2D_FRC                  ! Ajout PP
-USE MODD_ADVFRC_n              ! Modif PP ADV FRC
-USE MODD_RELFRC_n
-!
-USE MODD_PARAM_C2R2
-!
-USE MODD_EOL_MAIN
-USE MODD_EOL_SHARED_IO
-USE MODD_EOL_ADNR
-USE MODD_EOL_ALM
-!
-USE MODD_RECYCL_PARAM_n
-USE MODD_IBM_PARAM_n,     ONLY: LIBM, XIBM_LS
-USE MODD_IBM_LSF,         ONLY: LIBM_LSF
-! 
+USE MODE_MSG
+USE MODE_TOOLS, ONLY: UPCASE
+
+USE MODI_CH_AER_REALLFI_n
+USE MODI_DUST_FILTER
+USE MODI_DUSTLFI_n
+USE MODI_SALT_FILTER
+USE MODI_SALTLFI_n
+USE MODI_WRITE_BALLOON_n
+USE MODI_WRITE_LB_n
+
 IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments
@@ -303,9 +291,7 @@ INTEGER           :: IRESP          ! IRESP  : return-code if a problem appears
                                     !in LFI subroutines at the open of the file              
 !
 INTEGER           :: JSV            ! loop index for scalar variables
-INTEGER           :: JSA            ! beginning of chemical-aerosol variables
-
-! 
+!
 CHARACTER(LEN=3)  :: YFRC           ! to mark the time of the forcing
 INTEGER           :: JT             ! loop index
 !
@@ -320,15 +306,11 @@ REAL, DIMENSION(:), ALLOCATABLE   :: ZYHAT_ll    !   Position y in the conformal
                                                  ! plane (array on the complete domain)
 INTEGER :: IMI ! Current model index
 !
-INTEGER           :: ICH_NBR        ! to write number and names of scalar 
-INTEGER,DIMENSION(:),ALLOCATABLE :: ICH_NAMES !(chem+aero+dust) variables
-CHARACTER(LEN=NMNHNAMELGTMAX),DIMENSION(:),ALLOCATABLE :: YDSTNAMES,YCHNAMES, YSLTNAMES
-INTEGER           :: ILREC,ILENG    !in NSV.DIM and NSV.TITRE
 INTEGER           :: INFO_ll
-INTEGER :: IKRAD
 INTEGER           :: JI,JJ,JK   ! loop index
 INTEGER           :: IIU,IJU,IKU,IIB,IJB,IKB,IIE,IJE,IKE ! Arrays bounds
 !
+INTEGER              :: IDX
 INTEGER              :: IID
 TYPE(TFIELDMETADATA) :: TZFIELD
 !-------------------------------------------------------------------------------
@@ -338,6 +320,8 @@ TYPE(TFIELDMETADATA) :: TZFIELD
 IMI = GET_CURRENT_MODEL_INDEX()
 !
 ILUOUT=TLUOUT%NLU
+
+IDX = 1
 !
 ALLOCATE(ZWORK2D(SIZE(XTHT,1),SIZE(XTHT,2)))
 ALLOCATE(ZWORK3D(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3)))
@@ -902,75 +886,45 @@ IF (NRR >=1) THEN
   IF (LUSERH) CALL IO_Field_write(TPFILE,'RHT',XRT(:,:,:,IDX_RHT))
 END IF
 !
-IF (NSV >=1) THEN
-  JSA=0
-  ! User scalar variables
-  IF (NSV_USER>0) THEN
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CUNITS     = 'kg kg-1'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
-    !
-    DO JSV = 1,NSV_USER
-      WRITE(TZFIELD%CMNHNAME,'(A3,I3.3)')'SVT',JSV
-      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-      TZFIELD%CCOMMENT   = 'X_Y_Z_'//TRIM(TZFIELD%CMNHNAME)
-      CALL IO_Field_write(TPFILE,TZFIELD,XSVT(:,:,:,JSV))
-      JSA=JSA+1
-    END DO
+IF (NSV >= 1 ) THEN
+  ! aerosol scalar variables
+  IF ( LORILAM ) THEN
+    IF ((CPROGRAM == 'REAL  ').AND.(NSV_AER > 1).AND.(IMI==1).AND.(LAERINIT))  &
+      CALL CH_AER_REALLFI_n(XSVT(:,:,:,NSV_AERBEG:NSV_AEREND),XSVT(:,:,:,NSV_CHEMBEG-1+JP_CH_CO), XRHODREF)
+    IF ((CPROGRAM == 'IDEAL ').AND.(NSV_AER > 1).AND.(IMI==1))  &
+      CALL CH_AER_REALLFI_n(XSVT(:,:,:,NSV_AERBEG:NSV_AEREND),XSVT(:,:,:,NSV_CHEMBEG-1+JP_CH_CO),  XRHODREF)
   END IF
-  ! microphysical C2R2 scheme scalar variables
-  IF (NSV_C2R2END>=NSV_C2R2BEG) THEN
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CUNITS     = 'm-3'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
-    !
-    DO JSV = NSV_C2R2BEG,NSV_C2R2END
-      TZFIELD%CMNHNAME   = TRIM(C2R2NAMES(JSV-NSV_C2R2BEG+1))//'T'
-      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-      WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
-      CALL IO_Field_write(TPFILE,TZFIELD,XSVT(:,:,:,JSV))
-      JSA=JSA+1
-    END DO
-  END IF
-  ! microphysical C3R5 scheme additional scalar variables
-  IF (NSV_C1R3END>=NSV_C1R3BEG) THEN
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CUNITS     = 'm-3'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
-    !
-    DO JSV = NSV_C1R3BEG,NSV_C1R3END
-      TZFIELD%CMNHNAME   = TRIM(C1R3NAMES(JSV-NSV_C1R3BEG+1))//'T'
-      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-      WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
-      CALL IO_Field_write(TPFILE,TZFIELD,XSVT(:,:,:,JSV))
-      JSA=JSA+1
-    END DO
-  END IF
-!
-! microphysical LIMA variables
-!
-  DO JSV = NSV_LIMA_BEG, NSV_LIMA_END
 
+  ! dust scalar variables
+  IF ( LDUST ) THEN
+    IF ((CPROGRAM == 'REAL  ').AND.(NSV_DST > 1).AND.(IMI==1).AND.(LDSTINIT)) &
+      CALL DUSTLFI_n(XSVT(:,:,:,NSV_DSTBEG:NSV_DSTEND), XRHODREF)
+    IF ((CPROGRAM == 'IDEAL ').AND.(NSV_DST > 1).AND.(IMI==1)) &
+      CALL DUSTLFI_n(XSVT(:,:,:,NSV_DSTBEG:NSV_DSTEND), XRHODREF)
+    !At this point, we have the tracer array in order of importance, i.e.
+    !if mode 2 is most important it will occupy place 1-3 of XSVT
+    CALL DUST_FILTER(XSVT(:,:,:,NSV_DSTBEG:NSV_DSTEND), XRHODREF)
+  END IF
+
+  ! sea salt scalar variables
+  IF ( LSALT ) THEN
+    IF ((CPROGRAM == 'REAL  ').AND.(NSV_SLT > 1).AND.(IMI==1).AND.(LSLTINIT)) &
+      CALL SALTLFI_n(XSVT(:,:,:,NSV_SLTBEG:NSV_SLTEND), XRHODREF, XZZ)
+    IF ((CPROGRAM == 'IDEAL ').AND.(NSV_SLT > 1).AND.(IMI==1)) &
+      CALL SALTLFI_n(XSVT(:,:,:,NSV_SLTBEG:NSV_SLTEND), XRHODREF, XZZ)
+    !At this point, we have the tracer array in order of importance, i.e.
+    !if mode 2 is most important it will occupy place 1-3 of XSVT
+    CALL SALT_FILTER(XSVT(:,:,:,NSV_SLTBEG:NSV_SLTEND), XRHODREF)
+  END IF
+
+  !Store all scalar variables
+  DO JSV = 1, NSV
     TZFIELD = TSVLIST(JSV)
-    TZFIELD%CMNHNAME  = TRIM( TZFIELD%CMNHNAME ) // 'T'
-    TZFIELD%CLONGNAME = TRIM( TZFIELD%CMNHNAME )
+    TZFIELD%CMNHNAME  = TRIM( TZFIELD%CMNHNAME )  // 'T'
+    TZFIELD%CLONGNAME = TRIM( TZFIELD%CLONGNAME ) // 'T'
     CALL IO_Field_write(TPFILE,TZFIELD,XSVT(:,:,:,JSV))
-!
-    JSA=JSA+1
   END DO
-!
+
   IF (LSCAV .AND. LAERO_MASS) THEN
   IF (ASSOCIATED(XINPAP)) THEN
   IF (SIZE(XINPAP) /= 0 ) THEN
@@ -995,33 +949,8 @@ IF (NSV >=1) THEN
   END IF
   END IF
   END IF
-!
-!
+
   ! electrical scalar variables
-  IF (NSV_ELECEND>=NSV_ELECBEG) THEN
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
-    !
-    DO JSV = NSV_ELECBEG,NSV_ELECEND
-      TZFIELD%CMNHNAME   = TRIM(CELECNAMES(JSV-NSV_ELECBEG+1))//'T'
-      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-      IF (JSV .GT. NSV_ELECBEG .AND. JSV .LT. NSV_ELECEND) THEN 
-        TZFIELD%CUNITS     = 'C m-3'
-        WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
-      ELSE
-        TZFIELD%CUNITS     = 'm-3'
-        WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (nb ions/m3)'
-      END IF
-      ZWORK3D(:,:,:) = XSVT(:,:,:,JSV) * XRHODREF(:,:,:) ! C/kg --> C/m3
-      CALL IO_Field_write(TPFILE,TZFIELD,ZWORK3D)
-      JSA=JSA+1
-    END DO
-  END IF
-  !
   IF (CELEC /= 'NONE') THEN
     CALL IO_Field_write(TPFILE,'EFIELDU',XEFIELDU)
     CALL IO_Field_write(TPFILE,'EFIELDV',XEFIELDV)
@@ -1067,57 +996,6 @@ IF (NSV >=1) THEN
     CALL IO_Field_write(TPFILE,'AREA_IC',   NMAP_2DAREA_IC)
     CALL IO_Field_write(TPFILE,'FLASH_3DCG',NMAP_3DCG)
     CALL IO_Field_write(TPFILE,'FLASH_3DIC',NMAP_3DIC)
- !
-    IF (LLNOX_EXPLICIT) THEN
-      TZFIELD%CMNHNAME   = 'LINOX'
-      TZFIELD%CSTDNAME   = ''
-      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-      TZFIELD%CUNITS     = 'mol mol-1'
-      TZFIELD%CDIR       = 'XY'
-      WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
-      TZFIELD%NGRID      = 1
-      TZFIELD%NTYPE      = TYPEREAL
-      TZFIELD%NDIMS      = 3
-      TZFIELD%LTIMEDEP   = .TRUE.
-      CALL IO_Field_write(TPFILE,TZFIELD,XSVT(:,:,:,NSV_LNOXEND))
-      JSA=JSA+1
-    END IF
-  END IF
-  ! lagrangian variables
-  IF (NSV_LGEND>=NSV_LGBEG) THEN
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CUNITS     = 'm'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
-    !
-    DO JSV = NSV_LGBEG,NSV_LGEND
-      TZFIELD%CMNHNAME   = TRIM(CLGNAMES(JSV-NSV_LGBEG+1))//'T'
-      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-      WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
-      CALL IO_Field_write(TPFILE,TZFIELD,XSVT(:,:,:,JSV))
-      JSA=JSA+1
-    END DO
-  END IF
-  ! Passive scalar variables        
-  IF (LPASPOL) THEN
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CUNITS     = 'kg kg-1'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
-    !
-    DO JSV = NSV_PPBEG,NSV_PPEND
-      WRITE(TZFIELD%CMNHNAME,'(A3,I3.3)')'SVT',JSV
-      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-      TZFIELD%CCOMMENT   = 'X_Y_Z_'//TRIM(TZFIELD%CMNHNAME)
-      CALL IO_Field_write(TPFILE,TZFIELD,XSVT(:,:,:,JSV))
-      JSA=JSA+1
-    END DO
   END IF
 !
   IF ( ((CCLOUD == 'KHKO') .OR.(CCLOUD == 'C2R2')) .AND. (.NOT. LSUPSAT)) THEN
@@ -1129,131 +1007,18 @@ IF (NSV >=1) THEN
     CALL IO_Field_write(TPFILE,'NPRO', XNPRO(:,:,:))
   END IF
 !
-#ifdef MNH_FOREFIRE
-  ! ForeFire scalar variables
-  IF ( LFOREFIRE ) THEN
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CUNITS     = 'kg kg-1'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
-    !
-    DO JSV = NSV_FFBEG,NSV_FFEND
-      WRITE(TZFIELD%CMNHNAME,'(A3,I3.3)')'SVT',JSV
-      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-      TZFIELD%CCOMMENT   = 'X_Y_Z_'//TRIM(TZFIELD%CMNHNAME)
-      CALL IO_Field_write(TPFILE,TZFIELD,XSVT(:,:,:,JSV))
-      JSA=JSA+1
-    END DO
-  END IF
-#endif
-! Blowing snow variables
-  IF (LBLOWSNOW) THEN
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CUNITS     = 'kg kg-1'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
-    DO JSV = NSV_SNWBEG,NSV_SNWEND
-      TZFIELD%CMNHNAME=TRIM(CSNOWNAMES(JSV-NSV_SNWBEG+1))//'T'
-      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-      WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
-      CALL IO_Field_write(TPFILE,TZFIELD,XSVT(:,:,:,JSV))
-      JSA=JSA+1
-    END DO
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CUNITS     = 'kg kg-1'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 2
-    TZFIELD%LTIMEDEP   = .TRUE.
-    DO JSV = 1,(NSV_SNW)
-      WRITE(TZFIELD%CMNHNAME,'(A10,I3.3)')'SNOWCANO_M',JSV
-      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-      WRITE(TZFIELD%CCOMMENT,'(A6,A8,I3.3)')'X_Y_Z_','SNOWCANO',JSV
-      CALL IO_Field_write(TPFILE,TZFIELD,XSNWCANO(:,:,JSV))
-      JSA=JSA+1
-    END DO
-  ENDIF
-  ! Conditional sampling variables  
-  IF (LCONDSAMP) THEN
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CUNITS     = 'kg kg-1'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
-    !
-    DO JSV = NSV_CSBEG,NSV_CSEND
-      WRITE(TZFIELD%CMNHNAME,'(A3,I3.3)')'SVT',JSV
-      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-      TZFIELD%CCOMMENT   = 'X_Y_Z_'//TRIM(TZFIELD%CMNHNAME)
-      CALL IO_Field_write(TPFILE,TZFIELD,XSVT(:,:,:,JSV))
-      JSA=JSA+1
-    END DO
-  !
-  END IF
-  ! number of chemical variables (chem+aero+dust)
-  ICH_NBR = 0
-  IF (LUSECHEM) ICH_NBR = ICH_NBR +NSV_CHEMEND-NSV_CHEMBEG+1 
-  IF (LUSECHIC) ICH_NBR = ICH_NBR +NSV_CHICEND-NSV_CHICBEG+1
-  IF (.NOT.LUSECHEM.AND.LCH_CONV_LINOX) ICH_NBR = ICH_NBR + &
-                                                  NSV_LNOXEND-NSV_LNOXBEG+1 
-  IF (LORILAM)  ICH_NBR = ICH_NBR +NSV_AEREND -NSV_AERBEG+1 
-  IF (LDUST)    ICH_NBR = ICH_NBR +NSV_DSTEND -NSV_DSTBEG+1
-  IF (LDEPOS_DST(IMI))  ICH_NBR = ICH_NBR +NSV_DSTDEPEND -NSV_DSTDEPBEG+1 
-  IF (LDEPOS_SLT(IMI))  ICH_NBR = ICH_NBR +NSV_SLTDEPEND -NSV_SLTDEPBEG+1 
-  IF (LDEPOS_AER(IMI))  ICH_NBR = ICH_NBR +NSV_AERDEPEND -NSV_AERDEPBEG+1 
-  IF (LSALT)    ICH_NBR = ICH_NBR +NSV_SLTEND -NSV_SLTBEG+1
-  IF (ICH_NBR /=0) ALLOCATE(YCHNAMES(ICH_NBR))
-  ! chemical scalar variables
   IF (LUSECHEM) THEN
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CUNITS     = ''
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
-    !
-    DO JSV = NSV_CHEMBEG,NSV_CHEMEND
-      TZFIELD%CMNHNAME   = TRIM(UPCASE(CNAMES(JSV-NSV_CHEMBEG+1)))//'T'
-      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-      TZFIELD%CUNITS     = 'ppv'
-      WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
-      CALL IO_Field_write(TPFILE,TZFIELD,XSVT(:,:,:,JSV))
-      !
-      YCHNAMES(JSV-JSA)=TZFIELD%CMNHNAME(1:LEN_TRIM(TZFIELD%CMNHNAME)-1) ! without T
-    END DO
-    !
-    IF (LUSECHIC) THEN
-      DO JSV = NSV_CHICBEG,NSV_CHICEND
-        TZFIELD%CMNHNAME   = TRIM(UPCASE(CICNAMES(JSV-NSV_CHICBEG+1)))//'T'
-        TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-        TZFIELD%CUNITS     = 'ppv'
-        WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
-        CALL IO_Field_write(TPFILE,TZFIELD,XSVT(:,:,:,JSV))
-        !
-        YCHNAMES(JSV-JSA)=TZFIELD%CMNHNAME(1:LEN_TRIM(TZFIELD%CMNHNAME)-1) ! without M
-      END DO
-    ENDIF
     IF (LUSECHAQ.AND.NRR>=3) THEN ! accumulated moles of aqueous species that fall at the surface (mol/m2)
-      TZFIELD%NDIMS = 2
-      DO JSV = NSV_CHACBEG+NSV_CHAC/2,NSV_CHACEND
-        TZFIELD%CMNHNAME   = 'ACPR_'//TRIM(UPCASE(CNAMES(JSV-NSV_CHEMBEG+1)))
-        TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+      DO JSV = NSV_CHACBEG + NSV_CHAC / 2, NSV_CHACEND
+        TZFIELD = TSVLIST(JSV)
+        TZFIELD%CMNHNAME   = 'ACPR_' // TRIM( TZFIELD%CMNHNAME )
+        TZFIELD%CLONGNAME  = 'ACPR_' // TRIM( TZFIELD%CLONGNAME )
         TZFIELD%CUNITS     = 'mol m-2'
         TZFIELD%CCOMMENT   = 'X_Y_Accumulated moles of aqueous species at the surface'
+        TZFIELD%NDIMS      = 2
         ZWORK2D(:,:)  = XACPRAQ(:,:,JSV-NSV_CHACBEG-NSV_CHAC/2+1)
         CALL IO_Field_write(TPFILE,TZFIELD,ZWORK2D)
       END DO
-      TZFIELD%NDIMS = 3
     END IF
     IF (LUSECHAQ.AND.LCH_PH) THEN  ! pH values in cloud
       CALL IO_Field_write(TPFILE,'PHC',XPHC)
@@ -1262,7 +1027,7 @@ IF (NSV >=1) THEN
         ! compute mean pH in accumulated surface water
         !ZWORK2D(:,:) = 10**(-XCH_PHINIT)
         WHERE (XACPRR > 0.)
-          ZWORK2D(:,:) =  XACPHR(:,:) *1E3 / XACPRR(:,:) ! moles of H+ / l of water 
+          ZWORK2D(:,:) =  XACPHR(:,:) *1E3 / XACPRR(:,:) ! moles of H+ / l of water
         ELSE WHERE
           ZWORK2D(:,:) = XUNDEF
         END WHERE
@@ -1278,173 +1043,16 @@ IF (NSV >=1) THEN
         TZFIELD%NGRID      = 1
         TZFIELD%NTYPE      = TYPEREAL
         TZFIELD%NDIMS      = 2
+        TZFIELD%LTIMEDEP = .TRUE.
         CALL IO_Field_write(TPFILE,TZFIELD,ZWORK2D)
       ENDIF
     ENDIF
-  ELSE IF (LCH_CONV_LINOX) THEN
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CUNITS     = 'ppv'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
-    !
-    DO JSV = NSV_LNOXBEG,NSV_LNOXEND
-      TZFIELD%CMNHNAME   = 'LINOXT'
-      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-      WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)') 'X_Y_Z_','SVT',JSV
-      CALL IO_Field_write(TPFILE,TZFIELD,XSVT(:,:,:,JSV))
-      YCHNAMES(JSV-JSA)=TZFIELD%CMNHNAME(1:LEN_TRIM(TZFIELD%CMNHNAME)-1)
-    END DO
-  ENDIF  
-  ! aerosol scalar variables
-  IF (LORILAM) THEN
-    IF ((CPROGRAM == 'REAL  ').AND.(NSV_AER > 1).AND.(IMI==1).AND.(LAERINIT))  &
-      CALL CH_AER_REALLFI_n(XSVT(:,:,:,NSV_AERBEG:NSV_AEREND),XSVT(:,:,:,NSV_CHEMBEG-1+JP_CH_CO), XRHODREF)
-    IF ((CPROGRAM == 'IDEAL ').AND.(NSV_AER > 1).AND.(IMI==1))  &
-      CALL CH_AER_REALLFI_n(XSVT(:,:,:,NSV_AERBEG:NSV_AEREND),XSVT(:,:,:,NSV_CHEMBEG-1+JP_CH_CO),  XRHODREF)
-    IF (NSV_AEREND>=NSV_AERBEG) THEN
-      TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'ppv'
-      TZFIELD%CDIR       = 'XY'
-      TZFIELD%NGRID      = 1
-      TZFIELD%NTYPE      = TYPEREAL
-      TZFIELD%NDIMS      = 3
-      TZFIELD%LTIMEDEP   = .TRUE.
-      !
-      DO JSV = NSV_AERBEG,NSV_AEREND
-        TZFIELD%CMNHNAME   = TRIM(UPCASE(CAERONAMES(JSV-NSV_AERBEG+1)))//'T'
-        TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-        WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
-        CALL IO_Field_write(TPFILE,TZFIELD,XSVT(:,:,:,JSV))
-        IF (JSV==NSV_AERBEG) WRITE(ILUOUT,*)'MNHC: write_lfin:NSV_AERBEG ',JSV
-        IF (JSV==NSV_AEREND) WRITE(ILUOUT,*)'MNHC: write_lfin:NSV_AEREND ',JSV
-        YCHNAMES(JSV-JSA)=  TZFIELD%CMNHNAME(1:LEN_TRIM(TZFIELD%CMNHNAME)-1)
-      END DO
-    END IF
-    IF (LDEPOS_AER(IMI)) THEN
-      TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'ppv'
-      TZFIELD%CDIR       = 'XY'
-      TZFIELD%NGRID      = 1
-      TZFIELD%NTYPE      = TYPEREAL
-      TZFIELD%NDIMS      = 3
-      TZFIELD%LTIMEDEP   = .TRUE.
-      !
-      DO JSV = NSV_AERDEPBEG,NSV_AERDEPEND
-        TZFIELD%CMNHNAME   = TRIM(CDEAERNAMES(JSV-NSV_AERDEPBEG+1))//'T'
-        TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-        WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
-        CALL IO_Field_write(TPFILE,TZFIELD,XSVT(:,:,:,JSV))
-        IF (JSV==NSV_AERDEPBEG) WRITE(ILUOUT,*)'MNHC: write_lfin:NSV_AERDEPBEG ',JSV
-        IF (JSV==NSV_AERDEPEND) WRITE(ILUOUT,*)'MNHC: write_lfin:NSV_AERDEPEND ',JSV
-        YCHNAMES(JSV-JSA) = TZFIELD%CMNHNAME(1:LEN_TRIM(TZFIELD%CMNHNAME)-1)
-      END DO   ! Loop on aq dust scalar variables      
-    ENDIF
-  END IF
-  ! dust scalar variables
-  IF (LDUST) THEN
-    IF ((CPROGRAM == 'REAL  ').AND.(NSV_DST > 1).AND.(IMI==1).AND.(LDSTINIT)) &
-      CALL DUSTLFI_n(XSVT(:,:,:,NSV_DSTBEG:NSV_DSTEND), XRHODREF)
-    IF ((CPROGRAM == 'IDEAL ').AND.(NSV_DST > 1).AND.(IMI==1)) &
-      CALL DUSTLFI_n(XSVT(:,:,:,NSV_DSTBEG:NSV_DSTEND), XRHODREF)
-    !At this point, we have the tracer array in order of importance, i.e.
-    !if mode 2 is most important it will occupy place 1-3 of XSVT  
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CUNITS     = 'ppv'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
-    !
-    CALL DUST_FILTER(XSVT(:,:,:,NSV_DSTBEG:NSV_DSTEND), XRHODREF)
-    DO JSV = NSV_DSTBEG,NSV_DSTEND
-      TZFIELD%CMNHNAME   = TRIM(CDUSTNAMES(JSV-NSV_DSTBEG+1))//'T'
-      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-      WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
-      CALL IO_Field_write(TPFILE,TZFIELD,XSVT(:,:,:,JSV))
-      IF (JSV==NSV_DSTBEG) WRITE(ILUOUT,*)'MNHC: write_lfin:NSV_DSTBEG ',JSV
-      IF (JSV==NSV_DSTEND) WRITE(ILUOUT,*)'MNHC: write_lfin:NSV_DSTEND ',JSV
-      YCHNAMES(JSV-JSA) = TZFIELD%CMNHNAME(1:LEN_TRIM(TZFIELD%CMNHNAME)-1)
-    END DO   ! Loop on dust scalar variables
-
-    IF (LDEPOS_DST(IMI)) THEN
-      TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'ppv'
-      TZFIELD%CDIR       = 'XY'
-      TZFIELD%NGRID      = 1
-      TZFIELD%NTYPE      = TYPEREAL
-      TZFIELD%NDIMS      = 3
-      TZFIELD%LTIMEDEP   = .TRUE.
-      !
-      DO JSV = NSV_DSTDEPBEG,NSV_DSTDEPEND
-        TZFIELD%CMNHNAME   = TRIM(CDEDSTNAMES(JSV-NSV_DSTDEPBEG+1))//'T'
-        TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-        WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
-        CALL IO_Field_write(TPFILE,TZFIELD,XSVT(:,:,:,JSV))
-        IF (JSV==NSV_DSTDEPBEG) WRITE(ILUOUT,*)'MNHC: write_lfin:NSV_DSTDEPBEG ',JSV
-        IF (JSV==NSV_DSTDEPEND) WRITE(ILUOUT,*)'MNHC: write_lfin:NSV_DSTDEPEND ',JSV
-        YCHNAMES(JSV-JSA) = TZFIELD%CMNHNAME(1:LEN_TRIM(TZFIELD%CMNHNAME)-1)
-      END DO   ! Loop on aq dust scalar variables
-    ENDIF
   ENDIF
-  ! sea salt scalar variables
-  IF (LSALT) THEN
-    IF ((CPROGRAM == 'REAL  ').AND.(NSV_SLT > 1).AND.(IMI==1).AND.(LSLTINIT)) &
-      CALL SALTLFI_n(XSVT(:,:,:,NSV_SLTBEG:NSV_SLTEND), XRHODREF, XZZ)
-    IF ((CPROGRAM == 'IDEAL ').AND.(NSV_SLT > 1).AND.(IMI==1)) &
-      CALL SALTLFI_n(XSVT(:,:,:,NSV_SLTBEG:NSV_SLTEND), XRHODREF, XZZ)
-    !At this point, we have the tracer array in order of importance, i.e.
-    !if mode 2 is most important it will occupy place 1-3 of XSVT  
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CUNITS     = 'ppv'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
-    !
-    CALL SALT_FILTER(XSVT(:,:,:,NSV_SLTBEG:NSV_SLTEND), XRHODREF)
-    DO JSV = NSV_SLTBEG,NSV_SLTEND
-      TZFIELD%CMNHNAME   = TRIM(CSALTNAMES(JSV-NSV_SLTBEG+1))//'T'
-      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-      WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
-      CALL IO_Field_write(TPFILE,TZFIELD,XSVT(:,:,:,JSV))
-      IF (JSV==NSV_SLTBEG) WRITE(ILUOUT,*)'MNHC: write_lfin:NSV_SLTBEG ',JSV
-      IF (JSV==NSV_SLTEND) WRITE(ILUOUT,*)'MNHC: write_lfin:NSV_SLTEND ',JSV
-      YCHNAMES(JSV-JSA) = TZFIELD%CMNHNAME(1:LEN_TRIM(TZFIELD%CMNHNAME)-1)
-    END DO   ! Loop on sea salt scalar variables
-
-    IF (LDEPOS_SLT(IMI)) THEN        
-      TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'ppv'
-      TZFIELD%CDIR       = 'XY'
-      TZFIELD%NGRID      = 1
-      TZFIELD%NTYPE      = TYPEREAL
-      TZFIELD%NDIMS      = 3
-      TZFIELD%LTIMEDEP   = .TRUE.
-      !
-      DO JSV = NSV_SLTDEPBEG,NSV_SLTDEPEND
-        TZFIELD%CMNHNAME   = TRIM(CDESLTNAMES(JSV-NSV_SLTDEPBEG+1))//'T'
-        TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-        WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
-        CALL IO_Field_write(TPFILE,TZFIELD,XSVT(:,:,:,JSV))
-        IF (JSV==NSV_SLTDEPBEG) WRITE(ILUOUT,*)'MNHC: write_lfin:NSV_SLTDEPBEG ',JSV
-        IF (JSV==NSV_SLTDEPEND) WRITE(ILUOUT,*)'MNHC: write_lfin:NSV_SLTDEPEND ',JSV
-        YCHNAMES(JSV-JSA) = TZFIELD%CMNHNAME(1:LEN_TRIM(TZFIELD%CMNHNAME)-1)
-      END DO   ! Loop on aq dust scalar variables      
-    ENDIF
-  ENDIF  
   !
-  DO JSV=1,ICH_NBR
-    WRITE(ILUOUT,*)JSV,TRIM(YCHNAMES(JSV))
-  END DO
   TZFIELD = TFIELDMETADATA(                      &
-    CMNHNAME   = 'NSV.DIM',                      &
+    CMNHNAME   = 'NSVCHEM',                      &
     CSTDNAME   = '',                             &
-    CLONGNAME  = 'NSV.DIM',                      &
+    CLONGNAME  = 'NSVCHEM',                      &
     CUNITS     = '',                             &
     CDIR       = '--',                           &
     CCOMMENT   = 'Number of chemical variables', &
@@ -1452,51 +1060,23 @@ IF (NSV >=1) THEN
     NTYPE      = TYPEINT,                        &
     NDIMS      = 0,                              &
     LTIMEDEP   = .FALSE.                         )
-  CALL IO_Field_write(TPFILE,TZFIELD,ICH_NBR)
+  CALL IO_Field_write(TPFILE,TZFIELD,NSV_CHEM_LIST)
   !
-  IF (ICH_NBR/=0) THEN
-    TZFIELD = TFIELDMETADATA(   &
-      CMNHNAME   = 'NSV.TITRE', &
-      CSTDNAME   = '',          &
-      CLONGNAME  = 'NSV.TITRE', &
-      CUNITS     = '',          &
-      CDIR       = '--',        &
-      CCOMMENT   = '',          &
-      NGRID      = 0,           &
-      NTYPE      = TYPEINT,     &
-      NDIMS      = 1,           &
-      LTIMEDEP   = .FALSE.      )
-    ILREC=LEN(YCHNAMES(1))
-    ILENG=ILREC*ICH_NBR
-    ALLOCATE(ICH_NAMES(ILENG))
-    DO JSV = 1,ICH_NBR
-      DO JT = 1,ILREC
-        ICH_NAMES(ILREC*(JSV-1)+JT) = ICHAR(YCHNAMES(JSV)(JT:JT))
-      ENDDO
-    ENDDO
-    CALL IO_Field_write(TPFILE,TZFIELD,ICH_NAMES)
-    DEALLOCATE(YCHNAMES,ICH_NAMES)
-  END IF 
-  !
-  ! lagrangian variables
-  IF (NSV_LGEND>=NSV_LGBEG) THEN
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CUNITS     = 'm'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
-    !
-    DO JSV = NSV_LGBEG,NSV_LGEND
-      TZFIELD%CMNHNAME   = TRIM(CLGNAMES(JSV-NSV_LGBEG+1))//'T'
-      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-      WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
-      CALL IO_Field_write(TPFILE,TZFIELD,XSVT(:,:,:,JSV))
-    END DO
+  IF ( NSV_CHEM_LIST > 0 ) THEN
+    TZFIELD = TFIELDMETADATA(                    &
+      CMNHNAME   = 'SV_CHEM_LIST',               &
+      CSTDNAME   = '',                           &
+      CLONGNAME  = 'SV_CHEM_LIST',               &
+      CUNITS     = '',                           &
+      CDIR       = '--',                         &
+      CCOMMENT   = 'List of chemical variables', &
+      NGRID      = 0,                            &
+      NTYPE      = TYPECHAR,                     &
+      NDIMS      = 1,                            &
+      LTIMEDEP   = .FALSE.                       )
+    CALL IO_Field_write(TPFILE,TZFIELD,CSV_CHEM_LIST)
   END IF
 END IF
-!
 !
 CALL IO_Field_write(TPFILE,'LSUM', XLSUM)
 CALL IO_Field_write(TPFILE,'LSVM', XLSVM)
@@ -1676,95 +1256,20 @@ IF (CDCONV /= 'NONE' .OR. CSCONV == 'KAFR') THEN
   IF ( LCHTRANS .AND. NSV > 0 ) THEN
    ! scalar variables are recorded
    ! individually in the file
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CUNITS     = 's-1'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
-    !
-    DO JSV = 1, NSV_USER
-      WRITE(TZFIELD%CMNHNAME,'(A7,I3.3)')'DSVCONV',JSV
-      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-      WRITE(TZFIELD%CCOMMENT,'(A6,A7,I3.3)')'X_Y_Z_','DSVCONV',JSV
-      CALL IO_Field_write(TPFILE,TZFIELD,XDSVCONV(:,:,:,JSV))
-    END DO
-    DO JSV = NSV_C2R2BEG, NSV_C2R2END
-      TZFIELD%CMNHNAME   = 'DSVCONV_'//TRIM(C2R2NAMES(JSV-NSV_C2R2BEG+1))
-      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-      WRITE(TZFIELD%CCOMMENT,'(A6,A7,I3.3)')'X_Y_Z_','DSVCONV',JSV
-      CALL IO_Field_write(TPFILE,TZFIELD,XDSVCONV(:,:,:,JSV))
-    END DO
-    DO JSV = NSV_C1R3BEG, NSV_C1R3END
-      TZFIELD%CMNHNAME   = 'DSVCONV_'//TRIM(C1R3NAMES(JSV-NSV_C1R3BEG+1))
-      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-      WRITE(TZFIELD%CCOMMENT,'(A6,A7,I3.3)')'X_Y_Z_','DSVCONV',JSV
-      CALL IO_Field_write(TPFILE,TZFIELD,XDSVCONV(:,:,:,JSV))
-    END DO
-    DO JSV = NSV_ELECBEG, NSV_ELECEND
-      TZFIELD%CMNHNAME   = 'DSVCONV_'//TRIM(CELECNAMES(JSV-NSV_ELECBEG+1))
-      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-      WRITE(TZFIELD%CCOMMENT,'(A6,A7,I3.3)')'X_Y_Z_','DSVCONV',JSV
-      CALL IO_Field_write(TPFILE,TZFIELD,XDSVCONV(:,:,:,JSV))
-    END DO
-    DO JSV = NSV_PPBEG, NSV_PPEND
-      WRITE(TZFIELD%CMNHNAME,'(A7,I3.3)')'DSVCONV',JSV
-      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-      WRITE(TZFIELD%CCOMMENT,'(A6,A7,I3.3)')'X_Y_Z_','DSVCONV',JSV
-      CALL IO_Field_write(TPFILE,TZFIELD,XDSVCONV(:,:,:,JSV))
-    END DO
-#ifdef MNH_FOREFIRE
-    IF (LFOREFIRE) THEN
-      DO JSV = NSV_FFBEG, NSV_FFEND
-        WRITE(TZFIELD%CMNHNAME,'(A7,I3.3)')'DSVCONV',JSV
-        TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-        WRITE(TZFIELD%CCOMMENT,'(A6,A7,I3.3)')'X_Y_Z_','DSVCONV',JSV
-        CALL IO_Field_write(TPFILE,TZFIELD,XDSVCONV(:,:,:,JSV))
-      END DO
-    END IF
-#endif
-    IF (LUSECHEM) THEN
-      DO JSV = NSV_CHEMBEG, NSV_CHEMEND
-        TZFIELD%CMNHNAME   = 'DSVCONV_'//TRIM(UPCASE(CNAMES(JSV-NSV_CHEMBEG+1)))
-        TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-        WRITE(TZFIELD%CCOMMENT,'(A6,A7,I3.3)')'X_Y_Z_','DSVCONV',JSV
-        CALL IO_Field_write(TPFILE,TZFIELD,XDSVCONV(:,:,:,JSV))
-      END DO
-      IF (LORILAM) THEN
-        DO JSV = NSV_AERBEG, NSV_AEREND
-          TZFIELD%CMNHNAME   = 'DSVCONV_'//TRIM(UPCASE(CAERONAMES(JSV-NSV_AERBEG+1)))
-          TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-          WRITE(TZFIELD%CCOMMENT,'(A6,A7,I3.3)')'X_Y_Z_','DSVCONV',JSV
-          CALL IO_Field_write(TPFILE,TZFIELD,XDSVCONV(:,:,:,JSV))
-        END DO
-      END IF
-! linox scalar variables
-    ELSE IF (LCH_CONV_LINOX) THEN
-      DO JSV = NSV_LNOXBEG,NSV_LNOXEND
-        TZFIELD%CMNHNAME   = 'DSVCONV_LINOX'
-        TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-        WRITE(TZFIELD%CCOMMENT,'(A6,A7,I3.3)')'X_Y_Z_','DSVCONV',JSV
-        CALL IO_Field_write(TPFILE,TZFIELD,XDSVCONV(:,:,:,JSV))
-      END DO
-    END IF
-    DO JSV = NSV_LGBEG, NSV_LGEND
-      TZFIELD%CMNHNAME   = 'DSVCONV_'//TRIM(CLGNAMES(JSV-NSV_LGBEG+1))
-      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-      WRITE(TZFIELD%CCOMMENT,'(A6,A7,I3.3)')'X_Y_Z_','DSVCONV',JSV
-      CALL IO_Field_write(TPFILE,TZFIELD,XDSVCONV(:,:,:,JSV))
-    END DO
-    DO JSV = NSV_DSTBEG, NSV_DSTEND
-      TZFIELD%CMNHNAME   = 'DSVCONV_'//TRIM(CDUSTNAMES(JSV-NSV_DSTBEG+1))
-      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-      WRITE(TZFIELD%CCOMMENT,'(A6,A7,I3.3)')'X_Y_Z_','DSVCONV',JSV
-      CALL IO_Field_write(TPFILE,TZFIELD,XDSVCONV(:,:,:,JSV))
-    END DO
-    DO JSV = NSV_SLTBEG, NSV_SLTEND
-      TZFIELD%CMNHNAME   = 'DSVCONV_'//TRIM(CSALTNAMES(JSV-NSV_SLTBEG+1))
-      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-      WRITE(TZFIELD%CCOMMENT,'(A6,A7,I3.3)')'X_Y_Z_','DSVCONV',JSV
-      CALL IO_Field_write(TPFILE,TZFIELD,XDSVCONV(:,:,:,JSV))
+    TZFIELD = TFIELDMETADATA(     &
+      CMNHNAME   = 'generic for DSVCONV', & !Temporary name to ease identification
+      CUNITS     = 's-1',         &
+      CDIR       = 'XY',          &
+      NGRID      = 1,             &
+      NTYPE      = TYPEREAL,      &
+      NDIMS      = 3,             &
+      LTIMEDEP   = .TRUE.         )
+
+    DO JSV = 1, NSV
+      TZFIELD%CMNHNAME   = 'DSVCONV_' // TRIM( TSVLIST(JSV)%CMNHNAME )
+      TZFIELD%CLONGNAME  = 'DSVCONV_' // TRIM( TSVLIST(JSV)%CLONGNAME )
+      TZFIELD%CCOMMENT   = 'Convective tendency for ' // TRIM( TSVLIST(JSV)%CMNHNAME )
+      CALL IO_Field_write( TPFILE, TZFIELD, XDSVCONV(:,:,:,JSV) )
     END DO
   END IF
 !
@@ -2366,11 +1871,11 @@ IF ( CPROGRAM=='REAL  ' ) THEN
       NDIMS      = 2,                                 &
       LTIMEDEP   = .TRUE.                             )
     !
-    DO JSA=1,SIZE(XDUMMY_2D,3)
-      TZFIELD%CMNHNAME   = ADJUSTL(CDUMMY_2D(JSA))
+    DO JI = 1, SIZE( XDUMMY_2D, 3 )
+      TZFIELD%CMNHNAME   = ADJUSTL(CDUMMY_2D(JI))
       TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
       TZFIELD%CCOMMENT   = 'X_Y_Z_'//TRIM(TZFIELD%CMNHNAME)
-      CALL IO_Field_write(TPFILE,TZFIELD,XDUMMY_2D(:,:,JSA))
+      CALL IO_Field_write(TPFILE,TZFIELD,XDUMMY_2D(:,:,JI))
     END DO
   END IF
 !

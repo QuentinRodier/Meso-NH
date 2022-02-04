@@ -579,7 +579,7 @@ END DO
 !*	3.4 Ecriture conditionnelle.
 !
 IF ( tpfile%lopened ) THEN
-  TZFIELD = TFIELDMetaDATA(            &
+  TZFIELD = TFIELDMETADATA(            &
     CMNHNAME   = 'generic for paspol', & !Temporary name to ease identification
     CSTDNAME   = '',                   &
     CUNITS     = 'm-3',                &

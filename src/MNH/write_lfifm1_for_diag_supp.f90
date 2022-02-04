@@ -90,65 +90,53 @@ END MODULE MODI_WRITE_LFIFM1_FOR_DIAG_SUPP
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!      J.-P. Chaboureau 07/2018 bug fix on XEMIS when calling CALL_RTTOVxx
 !!      J.-P. Chaboureau 09/04/2021 add the call to RTTOV13
+!  P. Wautelet 04/02/2022: use TSVLIST to manage metadata of scalar variables
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODE_ll
-USE MODD_CST
-use modd_field,           only: NMNHDIM_UNUSED, tfieldmetadata, tfieldlist, TYPEINT, TYPEREAL
-USE MODD_IO, ONLY: TFILEDATA
-USE MODD_PARAMETERS
-USE MODD_CONF_n
-USE MODD_CONF
-USE MODD_DEEP_CONVECTION_n
-USE MODD_DIM_n
-USE MODD_FIELD_n
-USE MODD_GRID_n
-USE MODD_LUNIT_n
-USE MODD_PARAM_n
-USE MODD_PARAM_KAFR_n
-USE MODD_PARAM_RAD_n
-USE MODD_RADIATIONS_n
-USE MODD_TIME_n
-USE MODD_TURB_n
-USE MODD_REF_n, ONLY: XRHODREF
-USE MODD_DIAG_FLAG
-USE MODD_NSV, ONLY : NSV,NSV_USER,NSV_C2R2BEG,NSV_C2R2END,             &
-                     NSV_C1R3BEG, NSV_C1R3END,NSV_ELECBEG,NSV_ELECEND, &
-                     NSV_CHEMBEG, NSV_CHEMEND,NSV_LGBEG,  NSV_LGEND
-USE MODD_CH_M9_n,         ONLY: CNAMES
-USE MODD_RAIN_C2R2_DESCR, ONLY: C2R2NAMES
-USE MODD_ICE_C1R3_DESCR,  ONLY: C1R3NAMES
-USE MODD_ELEC_DESCR,      ONLY: CELECNAMES
-USE MODD_LG,              ONLY: CLGNAMES
-USE MODD_DUST,            ONLY: LDUST
-USE MODD_SALT,            ONLY: LSALT
-USE MODD_CH_AEROSOL,      ONLY: LORILAM
-USE MODD_CH_MNHC_n
-USE MODD_CH_BUDGET_n
-USE MODD_CH_PRODLOSSTOT_n
+USE MODD_CH_AEROSOL,        ONLY: LORILAM
+USE MODD_CH_BUDGET_n,       ONLY: CNAMES_BUDGET, NEQ_BUDGET, XTCHEM
 USE MODD_CH_FLX_n,          ONLY: XCHFLX
-USE MODD_RAD_TRANSF
-USE MODD_DIAG_IN_RUN, ONLY: XCURRENT_ZON10M,XCURRENT_MER10M,           &
-                            XCURRENT_SFCO2,XCURRENT_SWD, XCURRENT_LWD, &
-                            XCURRENT_SWU, XCURRENT_LWU
-!
-USE MODD_DYN_n
-USE MODD_CURVCOR_n
-USE MODD_METRICS_n
-USE MODD_DIAG_BLANK
-USE MODI_PINTER
-USE MODI_ZINTER
-USE MODI_GRADIENT_M
-USE MODI_GRADIENT_W
-USE MODI_GRADIENT_U
-USE MODI_GRADIENT_V
-USE MODI_GRADIENT_UV
-!
-USE MODI_SHUMAN
-USE MODE_NEIGHBORAVG
+USE MODD_CH_PRODLOSSTOT_n,  ONLY: CNAMES_PRODLOSST, NEQ_PLT, XLOSS, XPROD
+USE MODD_CST,               ONLY: XCPD, XP00, XRD, XTT
+USE MODD_CURVCOR_n,         ONLY: XCORIOZ
+USE MODD_DIAG_IN_RUN,       ONLY: XCURRENT_ZON10M, XCURRENT_MER10M,           &
+                                  XCURRENT_SFCO2, XCURRENT_SWD, XCURRENT_LWD, &
+                                  XCURRENT_SWU, XCURRENT_LWU
+USE MODD_DUST,              ONLY: LDUST
+use modd_field,             only: NMNHDIM_UNUSED, tfieldmetadata, tfieldlist, TYPEINT, TYPEREAL
+USE MODD_IO,                ONLY: TFILEDATA
+USE MODD_CONF,              ONLY: LCARTESIAN
+USE MODD_CONF_n,            ONLY: LUSERC, LUSERI, NRR
+USE MODD_DEEP_CONVECTION_n, ONLY: NCLBASCONV, NCLTOPCONV, XCAPE, XDMFCONV, XDRCCONV, XDRICONV, XDRVCONV, &
+                                  XDTHCONV, XDSVCONV, XMFCONV, XPRLFLXCONV, XPRSFLXCONV, XUMFCONV
+USE MODD_DIAG_FLAG,         ONLY: CRAD_SAT, LCHEMDIAG, LCLD_COV, LCOARSE, LISOAL, LISOPR, LISOTH, LRAD_SUBG_COND, &
+                                  NCONV_KF, NDXCOARSE, NRAD_3D, NRTTOVINFO, XISOAL, XISOPR, XISOTH
+USE MODD_FIELD_n,           ONLY: XCLDFR, XPABST, XSIGS, XTHT, XTKET, XRT, XUT, XVT, XWT
+USE MODD_GRID_n,            ONLY: XZHAT, XZZ
+USE MODD_METRICS_n,         ONLY: XDXX, XDYY, XDZX, XDZY, XDZZ
+USE MODD_NSV,               ONLY: NSV, NSV_CHEMBEG, NSV_CHEMEND, TSVLIST
+USE MODD_PARAMETERS,        ONLY: JPVEXT, NUNDEF, XUNDEF
+USE MODD_PARAM_KAFR_n,      ONLY: LCHTRANS
+USE MODD_PARAM_n,           ONLY: CRAD, CSURF
+USE MODD_PARAM_RAD_n,       only: NRAD_COLNBR
+USE MODD_RADIATIONS_N,      ONLY: NCLEARCOL_TM1, NDLON, NFLEV, NSTATM,                                  &
+                                  XAER, XAZIM, XCCO2, XDIR_ALB, XDIRFLASWD, XDIRSRFSWD, XDTHRAD, XEMIS, &
+                                  XFLALWD, XSCA_ALB, XSCAFLASWD, XSTATM, XTSRAD, XZENITH
+USE MODD_RAD_TRANSF,        ONLY: JPGEOST
+USE MODD_REF_n,             ONLY: XRHODREF
+USE MODD_SALT,              ONLY: LSALT
+USE MODD_TIME_n,            ONLY: TDTCUR
+USE MODD_TURB_n,            ONLY: LSIGMAS, LSUBG_COND, VSIGQSAT
+
+use mode_field,             only: Find_field_id_from_mnhname
+USE MODE_IO_FIELD_WRITE,    only: IO_Field_write
+USE MODE_MSG
+USE MODE_NEIGHBORAVG,       ONLY: BLOCKAVG, MOVINGAVG
+USE MODE_TOOLS_LL,          ONLY: GET_INDICE_ll
+
 #ifdef MNH_RTTOV_8
 USE MODI_CALL_RTTOV8
 #endif
@@ -158,14 +146,18 @@ USE MODI_CALL_RTTOV11
 #ifdef MNH_RTTOV_13
 USE MODI_CALL_RTTOV13
 #endif
+USE MODI_GET_SURF_UNDEF
+USE MODI_GRADIENT_M
+USE MODI_GRADIENT_U
+USE MODI_GRADIENT_UV
+USE MODI_GRADIENT_V
+USE MODI_GRADIENT_W
+USE MODI_PINTER
+USE MODI_SHUMAN
 USE MODI_RADTR_SATEL
 USE MODI_UV_TO_ZONAL_AND_MERID
-!
-use mode_field,          only: Find_field_id_from_mnhname
-USE MODE_IO_FIELD_WRITE, only: IO_Field_write
-!
-USE MODI_GET_SURF_UNDEF
-!
+USE MODI_ZINTER
+
 IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments
@@ -246,7 +238,6 @@ ZTEMP(:,:,:)=XTHT(:,:,:)*(XPABST(:,:,:)/ XP00) **(XRD/XCPD)
 !* Diagnostic variables related to deep convection
 !
 IF (NCONV_KF >= 0) THEN
-!
   CALL IO_Field_write(TPFILE,'CAPE',XCAPE)
 !
   ! top height (km) of convective clouds
@@ -288,121 +279,35 @@ IF (NCONV_KF >= 0) THEN
     NDIMS      = 2,                                &
     LTIMEDEP   = .TRUE.                            )
   CALL IO_Field_write(TPFILE,TZFIELD,ZWORK21)
-!
 END IF
+
 IF (NCONV_KF >= 1) THEN
-!
   CALL IO_Field_write(TPFILE,'DTHCONV',XDTHCONV)
   CALL IO_Field_write(TPFILE,'DRVCONV',XDRVCONV)
   CALL IO_Field_write(TPFILE,'DRCCONV',XDRCCONV)
   CALL IO_Field_write(TPFILE,'DRICONV',XDRICONV)
-!  
-  IF ( LCHTRANS .AND. NSV > 0 ) THEN
-    ! User scalar variables
-    IF (NSV_USER>0) THEN
-      TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 's-1'
-      TZFIELD%CDIR       = 'XY'
-      TZFIELD%NGRID      = 1
-      TZFIELD%NTYPE      = TYPEREAL
-      TZFIELD%NDIMS      = 3
-      TZFIELD%LTIMEDEP   = .TRUE.
-      !
-      DO JSV = 1, NSV_USER
-        WRITE(TZFIELD%CMNHNAME,'(A7,I3.3)')'DSVCONV',JSV
-        TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-        WRITE(TZFIELD%CCOMMENT,'(A6,A2,I3.3,A20)')'X_Y_Z_','SV',JSV,' CONVective tendency'
-        CALL IO_Field_write(TPFILE,TZFIELD,XDSVCONV(:,:,:,JSV))
-      END DO
-    END IF
-    ! microphysical C2R2 scheme scalar variables
-    IF (NSV_C2R2END>=NSV_C2R2BEG) THEN
-      TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 's-1'
-      TZFIELD%CDIR       = 'XY'
-      TZFIELD%NGRID      = 1
-      TZFIELD%NTYPE      = TYPEREAL
-      TZFIELD%NDIMS      = 3
-      TZFIELD%LTIMEDEP   = .TRUE.
-      !
-      DO JSV = NSV_C2R2BEG, NSV_C2R2END
-        TZFIELD%CMNHNAME   = 'DSVCONV_'//TRIM(C2R2NAMES(JSV-NSV_C2R2BEG+1))
-        TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-        TZFIELD%CCOMMENT   = 'X_Y_Z_'//TRIM(C2R2NAMES(JSV-NSV_C2R2BEG+1))//' CONVective tendency'
-        CALL IO_Field_write(TPFILE,TZFIELD,XDSVCONV(:,:,:,JSV))
-      END DO
-    END IF
-    ! microphysical C3R5 scheme additional scalar variables
-    IF (NSV_C1R3END>=NSV_C1R3BEG) THEN
-      TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 's-1'
-      TZFIELD%CDIR       = 'XY'
-      TZFIELD%NGRID      = 1
-      TZFIELD%NTYPE      = TYPEREAL
-      TZFIELD%NDIMS      = 3
-      TZFIELD%LTIMEDEP   = .TRUE.
-      !
-      DO JSV = NSV_C1R3BEG,NSV_C1R3END
-        TZFIELD%CMNHNAME   = 'DSVCONV_'//TRIM(C1R3NAMES(JSV-NSV_C1R3BEG+1))
-        TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-        TZFIELD%CCOMMENT   = 'X_Y_Z_'//TRIM(C1R3NAMES(JSV-NSV_C1R3BEG+1))//' CONVective tendency'
-        CALL IO_Field_write(TPFILE,TZFIELD,XDSVCONV(:,:,:,JSV))
-      END DO
-    END IF
-    ! electrical scalar variables
-    IF (NSV_ELECEND>=NSV_ELECBEG) THEN
-      TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 's-1'
-      TZFIELD%CDIR       = 'XY'
-      TZFIELD%NGRID      = 1
-      TZFIELD%NTYPE      = TYPEREAL
-      TZFIELD%NDIMS      = 3
-      TZFIELD%LTIMEDEP   = .TRUE.
-      !
-      DO JSV = NSV_ELECBEG,NSV_ELECEND
-        TZFIELD%CMNHNAME   = 'DSVCONV_'//TRIM(CELECNAMES(JSV-NSV_ELECBEG+1))
-        TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-        TZFIELD%CCOMMENT   = 'X_Y_Z_'//TRIM(CELECNAMES(JSV-NSV_ELECBEG+1))//' CONVective tendency'
-        CALL IO_Field_write(TPFILE,TZFIELD,XDSVCONV(:,:,:,JSV))
-      END DO
-    END IF
-    ! chemical scalar variables
-    IF (NSV_CHEMEND>=NSV_CHEMBEG) THEN
-      TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 's-1'
-      TZFIELD%CDIR       = 'XY'
-      TZFIELD%NGRID      = 1
-      TZFIELD%NTYPE      = TYPEREAL
-      TZFIELD%NDIMS      = 3
-      TZFIELD%LTIMEDEP   = .TRUE.
-      !
-      DO JSV = NSV_CHEMBEG, NSV_CHEMEND
-        TZFIELD%CMNHNAME   = 'DSVCONV_'//TRIM(CNAMES(JSV-NSV_CHEMBEG+1))
-        TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-        TZFIELD%CCOMMENT   = 'X_Y_Z_'//TRIM(CNAMES(JSV-NSV_CHEMBEG+1))//' CONVective tendency'
-        CALL IO_Field_write(TPFILE,TZFIELD,XDSVCONV(:,:,:,JSV))
-      END DO
-    END IF
-    ! lagrangian variables
-    IF (NSV_LGEND>=NSV_LGBEG) THEN
-      TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 's-1'
-      TZFIELD%CDIR       = 'XY'
-      TZFIELD%NGRID      = 1
-      TZFIELD%NTYPE      = TYPEREAL
-      TZFIELD%NDIMS      = 3
-      TZFIELD%LTIMEDEP   = .TRUE.
-      !
-      DO JSV = NSV_LGBEG,NSV_LGEND
-        TZFIELD%CMNHNAME   = 'DSVCONV_'//TRIM(CLGNAMES(JSV-NSV_LGBEG+1))
-        TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-        TZFIELD%CCOMMENT   = 'X_Y_Z_'//TRIM(CLGNAMES(JSV-NSV_LGBEG+1))//' CONVective tendency'
-        CALL IO_Field_write(TPFILE,TZFIELD,XDSVCONV(:,:,:,JSV))
-      END DO
-    END IF
-  END IF
 !
+  IF ( LCHTRANS .AND. NSV > 0 ) THEN
+   ! scalar variables are recorded
+   ! individually in the file
+    TZFIELD = TFIELDMETADATA(     &
+      CMNHNAME   = 'generic for DSVCONV', & !Temporary name to ease identification
+      CUNITS     = 's-1',         &
+      CDIR       = 'XY',          &
+      NGRID      = 1,             &
+      NTYPE      = TYPEREAL,      &
+      NDIMS      = 3,             &
+      LTIMEDEP   = .TRUE.         )
+
+    DO JSV = 1, NSV
+      TZFIELD%CMNHNAME   = 'DSVCONV_' // TRIM( TSVLIST(JSV)%CMNHNAME )
+      TZFIELD%CLONGNAME  = 'DSVCONV_' // TRIM( TSVLIST(JSV)%CLONGNAME )
+      TZFIELD%CCOMMENT   = 'Convective tendency for ' // TRIM( TSVLIST(JSV)%CMNHNAME )
+      CALL IO_Field_write( TPFILE, TZFIELD, XDSVCONV(:,:,:,JSV) )
+    END DO
+  END IF
 END IF
+
 IF (NCONV_KF >= 2) THEN
   CALL IO_Field_write(TPFILE,'PRLFLXCONV',XPRLFLXCONV)
   CALL IO_Field_write(TPFILE,'PRSFLXCONV',XPRSFLXCONV)
@@ -762,22 +667,20 @@ END IF
 !
 !-------------------------------------------------------------------------------
 ! Net surface gaseous fluxes
-!print*,'LCHEMDIAG, NSV_CHEMBEG, NSV_CHEMEND=',&
-!LCHEMDIAG, NSV_CHEMBEG, NSV_CHEMEND
-
 IF (LCHEMDIAG) THEN
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CUNITS     = 'ppb m s-1'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 2
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDMETADATA(     &
+    CMNHNAME   = 'generic for net chemical flux', & !Temporary name to ease identification
+    CUNITS     = 'ppb m s-1',   &
+    CDIR       = 'XY',          &
+    NGRID      = 1,             &
+    NTYPE      = TYPEREAL,      &
+    NDIMS      = 2,             &
+    LTIMEDEP   = .TRUE.         )
   !
   DO JSV = NSV_CHEMBEG, NSV_CHEMEND
-    TZFIELD%CMNHNAME   = 'FLX_'//TRIM(CNAMES(JSV-NSV_CHEMBEG+1))
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    WRITE(TZFIELD%CCOMMENT,'(A6,A,A)')'X_Y_Z_',TRIM(CNAMES(JSV-NSV_CHEMBEG+1)),' Net chemical flux'
+    TZFIELD%CMNHNAME  = 'FLX_' // TRIM( TSVLIST(JSV)%CMNHNAME )
+    TZFIELD%CLONGNAME = 'FLX_' // TRIM( TSVLIST(JSV)%CLONGNAME )
+    WRITE(TZFIELD%CCOMMENT,'(A6,A,A)')'X_Y_Z_',TRIM( TSVLIST(JSV)%CMNHNAME ),' Net chemical flux'
     CALL IO_Field_write(TPFILE,TZFIELD,XCHFLX(:,:,JSV-NSV_CHEMBEG+1) * 1E9)
   END DO
 END IF
@@ -1575,14 +1478,15 @@ END IF
 !               -------------------------------
 !
 IF (NEQ_BUDGET>0) THEN
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%NGRID      = 1
-  !
-  TZFIELD%CUNITS     = 'ppv s-1'
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 4
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDMETADATA(                   &
+    CMNHNAME   = 'generic for CNAMES_BUDGET', & !Temporary name to ease identification
+    CSTDNAME   = '',                          &
+    CUNITS     = 'ppv s-1',                   &
+    CDIR       = 'XY',                        &
+    NGRID      = 1,                           &
+    NTYPE      = TYPEREAL,                    &
+    NDIMS      = 4,                           &
+    LTIMEDEP   = .TRUE.                       )
   !
   DO JSV = 1, NEQ_BUDGET
     TZFIELD%CMNHNAME   = TRIM(CNAMES_BUDGET(JSV))//'_BUDGET'
@@ -1591,9 +1495,15 @@ IF (NEQ_BUDGET>0) THEN
     CALL IO_Field_write(TPFILE,TZFIELD,XTCHEM(JSV)%XB_REAC(:,:,:,:))
   END DO
   !
-  TZFIELD%CUNITS     = ''
-  TZFIELD%NTYPE      = TYPEINT
-  TZFIELD%NDIMS      = 1
+  TZFIELD = TFIELDMETADATA(                   &
+    CMNHNAME   = 'generic for reaction list', & !Temporary name to ease identification
+    CSTDNAME   = '',                          &
+    CUNITS     = '',                          &
+    CDIR       = 'XY',                        &
+    NGRID      = 1,                           &
+    NTYPE      = TYPEINT,                     &
+    NDIMS      = 1,                           &
+    LTIMEDEP   = .TRUE.                       )
   !
   DO JSV=1, NEQ_BUDGET
     TZFIELD%CMNHNAME   = TRIM(CNAMES_BUDGET(JSV))//'_CHREACLIST'
@@ -1606,13 +1516,15 @@ END IF
 !
 ! chemical prod/loss terms
 IF (NEQ_PLT>0) THEN
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CUNITS     = 'ppv s-1'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDMETADATA(                      &
+    CMNHNAME   = 'generic for CNAMES_PRODLOSST', & !Temporary name to ease identification
+    CSTDNAME   = '',                             &
+    CUNITS     = 'ppv s-1',                      &
+    CDIR       = 'XY',                           &
+    NGRID      = 1,                              &
+    NTYPE      = TYPEREAL,                       &
+    NDIMS      = 3,                              &
+    LTIMEDEP   = .TRUE.                          )
   !
   DO JSV = 1, NEQ_PLT
     TZFIELD%CMNHNAME   = TRIM(CNAMES_PRODLOSST(JSV))//'_PROD'

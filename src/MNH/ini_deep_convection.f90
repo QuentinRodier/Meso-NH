@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1996-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1996-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -109,33 +109,23 @@ END MODULE MODI_INI_DEEP_CONVECTION
 !!                    for a correct restart this variable has to be writen in FM file
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 14/02/2019: remove CLUOUT/CLUOUT0 and associated variables
-!  P. Wautelet 14/02/2019: move UPCASE function to tools.f90
+!  P. Wautelet 04/02/2022: use TSVLIST to manage metadata of scalar variables
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_CH_AEROSOL,      ONLY: CAERONAMES
-USE MODD_CH_M9_n,         ONLY: CNAMES
-USE MODD_CONVPAR
-USE MODD_DUST,            ONLY: CDUSTNAMES
-USE MODD_ELEC_DESCR,      ONLY: CELECNAMES
 use modd_field,           only: tfieldmetadata, tfieldlist, TYPEREAL
-USE MODD_ICE_C1R3_DESCR,  ONLY: C1R3NAMES
 USE MODD_IO,              ONLY: TFILEDATA
-USE MODD_LG,              ONLY: CLGNAMES
-USE MODD_NSV,             ONLY: NSV, NSV_USER, NSV_CHEMBEG, NSV_CHEMEND, NSV_C2R2BEG, NSV_C2R2END, &
-                                NSV_LGBEG, NSV_LGEND, NSV_LNOXBEG, NSV_LNOXEND, &
-                                NSV_DSTBEG, NSV_DSTEND, NSV_AERBEG, NSV_AEREND, &
-                                NSV_SLTBEG, NSV_SLTEND, NSV_PPBEG, NSV_PPEND, &
-                                NSV_C1R3BEG, NSV_C1R3END, NSV_ELECBEG, NSV_ELECEND
-USE MODD_RAIN_C2R2_DESCR, ONLY: C2R2NAMES
-USE MODD_SALT,            ONLY: CSALTNAMES
+USE MODD_NSV,             ONLY: NSV, NSV_USER, TSVLIST,                               &
+                                NSV_AERDEPBEG, NSV_CHICBEG, NSV_CSBEG, NSV_DSTDEPBEG, &
+                                NSV_LIMA_BEG, NSV_PPBEG, NSV_SLTDEPBEG, NSV_SNWBEG,   &
+                                NSV_AERDEPEND, NSV_CHICEND, NSV_CSEND, NSV_DSTDEPEND, &
+                                NSV_LIMA_END, NSV_PPEND, NSV_SLTDEPEND, NSV_SNWEND
 USE MODD_TIME
 !
 use mode_field,           only: Find_field_id_from_mnhname
 USE MODE_IO_FIELD_READ,   only: IO_Field_read
-USE MODE_TOOLS,           ONLY: UPCASE
 !
 IMPLICIT NONE
 !
@@ -183,6 +173,8 @@ REAL, DIMENSION(:,:),   INTENT(INOUT) :: PCG_TOTAL_NUMBER ! Total number of CG
 INTEGER              :: IID
 INTEGER              :: IRESP
 INTEGER              :: JSV     ! number of tracers
+LOGICAL              :: GOLDFILEFORMAT
+LOGICAL              :: GREAD
 TYPE(TFIELDMETADATA) :: TZFIELD
 !
 !-------------------------------------------------------------------------------
@@ -196,6 +188,11 @@ TYPE(TFIELDMETADATA) :: TZFIELD
 !*       2. INITIALIZE CONVECTIVE TENDENCIES
 !	        --------------------------------
 !
+!If TPINIFILE file was written with a MesoNH version < 5.5.1, some variables had different names or were not available
+GOLDFILEFORMAT = (        TPINIFILE%NMNHVERSION(1) < 5                                                                            &
+                   .OR. ( TPINIFILE%NMNHVERSION(1) == 5 .AND. TPINIFILE%NMNHVERSION(2) < 5 )                                      &
+                   .OR. ( TPINIFILE%NMNHVERSION(1) == 5 .AND. TPINIFILE%NMNHVERSION(2) == 5  .AND. TPINIFILE%NMNHVERSION(3) < 1 ) )
+
 PUMFCONV(:,:,:)  = 0.0
 PDMFCONV(:,:,:)  = 0.0
 PMFCONV(:,:,:)   = 0.0  ! warning, restart may be incorrect
@@ -258,8 +255,8 @@ ELSE
   END IF
 !
 !
- SELECT CASE(HGETSVCONV)
-  CASE('READ')
+ GETSVCONV: SELECT CASE(HGETSVCONV)
+  CASE('READ') GETSVCONV
     TZFIELD = TFIELDMETADATA(     &
       CMNHNAME   = 'generic for ini_deep_convection', & !Temporary name to ease identification
       CUNITS     = 's-1',         &
@@ -269,73 +266,39 @@ ELSE
       NDIMS      = 3,             &
       LTIMEDEP   = .TRUE.         )
     !
-    DO JSV = 1, NSV_USER
-      WRITE(TZFIELD%CMNHNAME,'(A7,I3.3)')'DSVCONV',JSV
-      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-      WRITE(TZFIELD%CCOMMENT,'(A6,A7,I3.3)')'X_Y_Z_','DSVCONV',JSV
-      CALL IO_Field_read(TPINIFILE,TZFIELD,PDSVCONV(:,:,:,JSV))
+    DO JSV = 1, NSV
+      GREAD = .TRUE.
+
+      IF ( GOLDFILEFORMAT ) THEN
+        IF ( ( JSV >= 1         .AND. JSV <= NSV_USER  ) .OR. &
+             ( JSV >= NSV_PPBEG .AND. JSV <= NSV_PPEND )      ) THEN
+          WRITE( TZFIELD%CMNHNAME, '( A7, I3.3 )' ) 'DSVCONV', JSV
+          TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+        ELSE IF ( ( JSV >= NSV_LIMA_BEG  .AND. JSV <= NSV_LIMA_END  ) .OR. &
+                  ( JSV >= NSV_CSBEG     .AND. JSV <= NSV_CSEND     ) .OR. &
+                  ( JSV >= NSV_CHICBEG   .AND. JSV <= NSV_CHICEND   ) .OR. &
+                  ( JSV >= NSV_AERDEPBEG .AND. JSV <= NSV_AERDEPEND ) .OR. &
+                  ( JSV >= NSV_DSTDEPBEG .AND. JSV <= NSV_DSTDEPEND ) .OR. &
+                  ( JSV >= NSV_SLTDEPBEG .AND. JSV <= NSV_SLTDEPEND ) .OR. &
+                  ( JSV >= NSV_SNWBEG    .AND. JSV <= NSV_SNWEND    )      ) THEN
+          PDSVCONV(:,:,:,JSV) = 0.0
+          GREAD = .FALSE. !This variable was not written in pre-5.5.1 files
+        ELSE
+          TZFIELD%CMNHNAME   = 'DSVCONV_' // TRIM( TSVLIST(JSV)%CMNHNAME )
+          TZFIELD%CLONGNAME  = 'DSVCONV_' // TRIM( TSVLIST(JSV)%CLONGNAME )
+        END IF
+      ELSE
+        TZFIELD%CMNHNAME   = 'DSVCONV_' // TRIM( TSVLIST(JSV)%CMNHNAME )
+        TZFIELD%CLONGNAME  = 'DSVCONV_' // TRIM( TSVLIST(JSV)%CLONGNAME )
+      END IF
+      WRITE( TZFIELD%CCOMMENT, '( A, I3.3 )' )'X_Y_Z_DSVCONV', JSV
+      IF ( GREAD ) CALL IO_Field_read( TPINIFILE, TZFIELD, PDSVCONV(:,:,:,JSV) )
     END DO
-    DO JSV = NSV_C2R2BEG, NSV_C2R2END
-      TZFIELD%CMNHNAME   = 'DSVCONV_'//TRIM(C2R2NAMES(JSV-NSV_C2R2BEG+1))
-      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-      WRITE(TZFIELD%CCOMMENT,'(A6,A7,I3.3)')'X_Y_Z_','DSVCONV',JSV
-      CALL IO_Field_read(TPINIFILE,TZFIELD,PDSVCONV(:,:,:,JSV))
-    END DO
-    DO JSV = NSV_C1R3BEG, NSV_C1R3END
-      TZFIELD%CMNHNAME   = 'DSVCONV_'//TRIM(C1R3NAMES(JSV-NSV_C1R3BEG+1))
-      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-      WRITE(TZFIELD%CCOMMENT,'(A6,A7,I3.3)')'X_Y_Z_','DSVCONV',JSV
-      CALL IO_Field_read(TPINIFILE,TZFIELD,PDSVCONV(:,:,:,JSV))
-    END DO
-    DO JSV = NSV_ELECBEG, NSV_ELECEND
-      TZFIELD%CMNHNAME   = 'DSVCONV_'//TRIM(CELECNAMES(JSV-NSV_ELECBEG+1))
-      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-      WRITE(TZFIELD%CCOMMENT,'(A6,A7,I3.3)')'X_Y_Z_','DSVCONV',JSV
-      CALL IO_Field_read(TPINIFILE,TZFIELD,PDSVCONV(:,:,:,JSV))
-    END DO
-    DO JSV = NSV_CHEMBEG, NSV_CHEMEND
-      TZFIELD%CMNHNAME   = 'DSVCONV_'//TRIM(UPCASE(CNAMES(JSV-NSV_CHEMBEG+1)))
-      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-      WRITE(TZFIELD%CCOMMENT,'(A6,A7,I3.3)')'X_Y_Z_','DSVCONV',JSV
-      CALL IO_Field_read(TPINIFILE,TZFIELD,PDSVCONV(:,:,:,JSV))
-    END DO
-    DO JSV = NSV_AERBEG, NSV_AEREND
-      TZFIELD%CMNHNAME   = 'DSVCONV_'//TRIM(UPCASE(CAERONAMES(JSV-NSV_AERBEG+1)))
-      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-      WRITE(TZFIELD%CCOMMENT,'(A6,A7,I3.3)')'X_Y_Z_','DSVCONV',JSV
-      CALL IO_Field_read(TPINIFILE,TZFIELD,PDSVCONV(:,:,:,JSV))
-    END DO
-    DO JSV = NSV_LNOXBEG,NSV_LNOXEND
-      TZFIELD%CMNHNAME   = 'DSVCONV_LINOX'
-      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-      WRITE(TZFIELD%CCOMMENT,'(A6,A7,I3.3)')'X_Y_Z_','DSVCONV',JSV
-      CALL IO_Field_read(TPINIFILE,TZFIELD,PDSVCONV(:,:,:,JSV))
-    END DO
-    DO JSV = NSV_DSTBEG, NSV_DSTEND
-      TZFIELD%CMNHNAME   = 'DSVCONV_'//TRIM(UPCASE(CDUSTNAMES(JSV-NSV_DSTBEG+1)))
-      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-      WRITE(TZFIELD%CCOMMENT,'(A6,A7,I3.3)')'X_Y_Z_','DSVCONV',JSV
-      CALL IO_Field_read(TPINIFILE,TZFIELD,PDSVCONV(:,:,:,JSV))
-    END DO
-    DO JSV = NSV_SLTBEG, NSV_SLTEND
-      TZFIELD%CMNHNAME   = 'DSVCONV_'//TRIM(UPCASE(CSALTNAMES(JSV-NSV_SLTBEG+1)))
-      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-      WRITE(TZFIELD%CCOMMENT,'(A6,A7,I3.3)')'X_Y_Z_','DSVCONV',JSV
-      CALL IO_Field_read(TPINIFILE,TZFIELD,PDSVCONV(:,:,:,JSV))
-    END DO
-    DO JSV = NSV_LGBEG, NSV_LGEND
-      TZFIELD%CMNHNAME   = 'DSVCONV_'//TRIM(CLGNAMES(JSV-NSV_LGBEG+1))
-      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-      WRITE(TZFIELD%CCOMMENT,'(A6,A7,I3.3)')'X_Y_Z_','DSVCONV',JSV
-      CALL IO_Field_read(TPINIFILE,TZFIELD,PDSVCONV(:,:,:,JSV))
-    END DO
-    DO JSV = NSV_PPBEG, NSV_PPEND
-      WRITE(TZFIELD%CMNHNAME,'(A7,I3.3)')'DSVCONV',JSV
-      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-      WRITE(TZFIELD%CCOMMENT,'(A6,A7,I3.3)')'X_Y_Z_','DSVCONV',JSV
-      CALL IO_Field_read(TPINIFILE,TZFIELD,PDSVCONV(:,:,:,JSV))
-    END DO
- END SELECT
+
+  CASE('INIT') GETSVCONV
+    PDSVCONV(:,:,:,:) = 0.0
+
+ END SELECT GETSVCONV
 !
 !
 END IF

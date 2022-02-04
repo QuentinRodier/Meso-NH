@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2000-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2000-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -71,37 +71,24 @@ END MODULE MODI_WRITE_AIRCRAFT_BALLOON
 !  P. Wautelet 03/03/2021: budgets: add tbudiachrometadata type (useful to pass more information to Write_diachro)
 !  P. Wautelet 11/03/2021: budgets: remove ptrajx/y/z optional dummy arguments of Write_diachro
 !  P. Wautelet 11/03/2021: bugfix: correct name for NSV_LIMA_IMM_NUCL
+!  P. Wautelet 04/02/2022: use TSVLIST to manage metadata of scalar variables
 ! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
 !          ------------
 !
-USE MODD_CST
+USE MODD_CST,             ONLY: XRV
 USE MODD_IO,              ONLY: TFILEDATA
-USE MODD_LUNIT
-USE MODD_PARAMETERS
+USE MODD_PARAMETERS,      ONLY: XUNDEF
 !
 USE MODD_AIRCRAFT_BALLOON
-USE MODD_CH_M9_n,         ONLY: CNAMES
-USE MODD_CH_AEROSOL,      ONLY: CAERONAMES, LORILAM, NSP, NCARB, NSOA,    & 
-                                JPMODE, JP_AER_BC, JP_AER_OC, JP_AER_DST, &
-                                JP_AER_H2O, JP_AER_SO4, JP_AER_NO3,       &
-                                JP_AER_NH3, JP_AER_SOA1, JP_AER_SOA2,     &
-                                JP_AER_SOA3, JP_AER_SOA4, JP_AER_SOA5,    &
-                                JP_AER_SOA6, JP_AER_SOA7, JP_AER_SOA8,    &
-                                JP_AER_SOA9, JP_AER_SOA10
-USE MODD_RAIN_C2R2_DESCR, ONLY: C2R2NAMES
-USE MODD_ICE_C1R3_DESCR,  ONLY: C1R3NAMES
-USE MODD_ELEC_DESCR,      ONLY: CELECNAMES
-USE MODD_LG,              ONLY: CLGNAMES
-USE MODD_DUST,            ONLY: CDUSTNAMES, LDUST, NMODE_DST
-USE MODD_SALT,            ONLY: CSALTNAMES
-USE MODD_NSV
-USE MODD_DIAG_IN_RUN
+USE MODD_NSV,             ONLY: tsvlist, nsv, nsv_aer, nsv_aerbeg, nsv_aerend, nsv_dst, nsv_dstbeg, nsv_dstend, &
+                                nsv_lima_beg, nsv_lima_end
+USE MODD_DIAG_IN_RUN,     ONLY: LDIAG_IN_RUN
 !
-USE MODE_MODELN_HANDLER
-USE MODE_DUST_PSD
 USE MODE_AERO_PSD
+USE MODE_DUST_PSD
+USE MODE_MODELN_HANDLER,  ONLY: GET_CURRENT_MODEL_INDEX
 use mode_msg
 use mode_write_diachro,   only: Write_diachro
 !
@@ -404,72 +391,21 @@ IF (LDIAG_IN_RUN) THEN
 ENDIF
 !
 IF (SIZE(TPFLYER%SV,2)>=1) THEN
-  ! User scalar variables
-  DO JSV = 1,NSV_USER
-    JPROC = JPROC+1
-    WRITE (YTITLE(JPROC),FMT='(A2,I3.3)')   'Sv',JSV
-    YUNIT    (JPROC) = 'kg kg-1'
-    YCOMMENT (JPROC) = ' '
-    ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%SV(:,JSV)
-  END DO
-  ! microphysical C2R2 scheme scalar variables
-  DO JSV = NSV_C2R2BEG,NSV_C2R2END
-    JPROC = JPROC+1
-    YTITLE(JPROC)= TRIM(C2R2NAMES(JSV-NSV_C2R2BEG+1))
-    YUNIT    (JPROC) = 'm-3'
-    YCOMMENT (JPROC) = ' '
-    ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%SV(:,JSV)
-  END DO
-  ! microphysical C3R5 scheme additional scalar variables
-  DO JSV = NSV_C1R3BEG,NSV_C1R3END
-    JPROC = JPROC+1
-    YTITLE(JPROC)= TRIM(C1R3NAMES(JSV-NSV_C1R3BEG+1))
-    YUNIT    (JPROC) = 'm-3'
-    YCOMMENT (JPROC) = ' '
-    ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%SV(:,JSV)
-  END DO
-! LIMA variables
-  DO JSV=NSV_LIMA_BEG,NSV_LIMA_END
-    JPROC = JPROC+1
+  ! Scalar variables
+  DO JSV = 1, NSV
+    JPROC = JPROC + 1
 
     YTITLE(JPROC)   = TRIM( TSVLIST(JSV)%CMNHNAME )
-    YUNIT(JPROC)    = TRIM( TSVLIST(JSV)%CUNITS )
-    YCOMMENT(JPROC) = ' '
+    YCOMMENT(JPROC) = ''
+    IF ( TRIM( TSVLIST(JSV)%CUNITS ) == 'ppv' ) THEN
+      YUNIT(JPROC)  = 'ppb'
+      ZWORK6(1,1,1,:,1,JPROC) = TPFLYER%SV(:,JSV) * 1.e9 !*1e9 for conversion ppv->ppb
+    ELSE
+      YUNIT(JPROC)  = TRIM( TSVLIST(JSV)%CUNITS )
+      ZWORK6(1,1,1,:,1,JPROC) = TPFLYER%SV(:,JSV)
+    END IF
+  END DO
 
-    ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%SV(:,JSV)
-  END DO
-  ! electrical scalar variables
-  DO JSV = NSV_ELECBEG,NSV_ELECEND
-    JPROC = JPROC+1
-    YTITLE(JPROC)= TRIM(CELECNAMES(JSV-NSV_ELECBEG+1))
-    YUNIT    (JPROC) = 'C'
-    YCOMMENT (JPROC) = ' '
-    ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%SV(:,JSV)
-  END DO
-  ! chemical scalar variables
-  DO JSV = NSV_CHEMBEG,NSV_CHEMEND
-    JPROC = JPROC+1
-    YTITLE(JPROC)= TRIM(CNAMES(JSV-NSV_CHEMBEG+1))
-    YUNIT    (JPROC) = 'ppb'
-    YCOMMENT (JPROC) = ' '
-    ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%SV(:,JSV) * 1.E9
-  END DO
-  ! LiNOX passive tracer
-  DO JSV = NSV_LNOXBEG,NSV_LNOXEND
-    JPROC = JPROC+1
-    WRITE (YTITLE(JPROC),FMT='(A5)') 'LiNOx'
-    YUNIT    (JPROC) = 'ppb'
-    YCOMMENT (JPROC) = ' '
-    ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%SV(:,JSV) * 1.E9
-  END DO
-  ! aerosol scalar variables
-  DO JSV = NSV_AERBEG,NSV_AEREND
-    JPROC = JPROC+1
-    YTITLE(JPROC)= TRIM(CAERONAMES(JSV-NSV_AERBEG+1))
-    YUNIT    (JPROC) = 'ppb'
-    YCOMMENT (JPROC) = ' '
-    ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%SV(:,JSV) * 1.E9
-  END DO
   IF ((LORILAM).AND. .NOT.(ANY(TPFLYER%P(:) == 0.))) THEN
 
     ALLOCATE (ZSV(1,1,size(tpflyer%tpdates),NSV_AER))
@@ -485,7 +421,7 @@ IF (SIZE(TPFLYER%SV,2)>=1) THEN
         ZRHO(1,1,:) = ZRHO(1,1,:) + TPFLYER%R(:,JRR)
       ENDDO
       ZRHO(1,1,:) = TPFLYER%TH(:) * ( 1. + XRV/XRD*TPFLYER%R(:,1) )  &
-                                  / ( 1. + ZRHO(1,1,:)                ) 
+                                  / ( 1. + ZRHO(1,1,:)                )
     ELSE
       ZRHO(1,1,:) = TPFLYER%TH(:)
     ENDIF
@@ -623,19 +559,12 @@ IF (SIZE(TPFLYER%SV,2)>=1) THEN
       WRITE(YTITLE(JPROC),'(A4,I1)')'MDUST',JSV
       YUNIT    (JPROC) = 'ug m-3'
       WRITE(YCOMMENT(JPROC),'(A22,I1)')'MASS DUST AEROSOL MODE ',JSV
-      ZWORK6(1,1,1,:,1,JPROC) = ZPTOTA(1,1,:,JP_AER_DST,JSV)      
+      ZWORK6(1,1,1,:,1,JPROC) = ZPTOTA(1,1,:,JP_AER_DST,JSV)
     ENDDO
-    DEALLOCATE (ZSV,ZRHO) 
-    DEALLOCATE (ZN0,ZRG,ZSIG,ZPTOTA) 
+    DEALLOCATE (ZSV,ZRHO)
+    DEALLOCATE (ZN0,ZRG,ZSIG,ZPTOTA)
   END IF
-! dust scalar variables
-  DO JSV = NSV_DSTBEG,NSV_DSTEND
-    JPROC = JPROC+1
-    YTITLE(JPROC)= TRIM(CDUSTNAMES(JSV-NSV_DSTBEG+1))
-    YUNIT    (JPROC) = 'ppb'
-    YCOMMENT (JPROC) = ' '
-    ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%SV(:,JSV) * 1.E9
-  END DO
+
   IF ((LDUST).AND. .NOT.(ANY(TPFLYER%P(:) == 0.))) THEN
     ALLOCATE (ZSV(1,1,size(tpflyer%tpdates),NSV_DST))
     ALLOCATE (ZRHO(1,1,size(tpflyer%tpdates)))
@@ -649,7 +578,7 @@ IF (SIZE(TPFLYER%SV,2)>=1) THEN
         ZRHO(1,1,:) = ZRHO(1,1,:) + TPFLYER%R(:,JRR)
       ENDDO
       ZRHO(1,1,:) = TPFLYER%TH(:) * ( 1. + XRV/XRD*TPFLYER%R(:,1) )  &
-                                          / ( 1. + ZRHO(1,1,:)                ) 
+                                          / ( 1. + ZRHO(1,1,:)                )
     ELSE
       ZRHO(1,1,:) = TPFLYER%TH(:)
     ENDIF
@@ -676,17 +605,9 @@ IF (SIZE(TPFLYER%SV,2)>=1) THEN
       WRITE(YCOMMENT(JPROC),'(A13,I1)')'N0 DUST MODE ',JSV
       ZWORK6 (1,1,1,:,1,JPROC) = ZN0(1,1,:,JSV)
     ENDDO
-    DEALLOCATE (ZSV,ZRHO) 
-    DEALLOCATE (ZN0,ZRG,ZSIG) 
+    DEALLOCATE (ZSV,ZRHO)
+    DEALLOCATE (ZN0,ZRG,ZSIG)
   END IF
-  ! sea salt scalar variables
-  DO JSV = NSV_SLTBEG,NSV_SLTEND
-    JPROC = JPROC+1
-    YTITLE(JPROC)= TRIM(CSALTNAMES(JSV-NSV_SLTBEG+1))
-    YUNIT    (JPROC) = 'ppb'
-    YCOMMENT (JPROC) = ' '
-    ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%SV(:,JSV) * 1.E9
-  END DO
 ENDIF
 !
 IF (SIZE(TPFLYER%TSRAD)>0) THEN

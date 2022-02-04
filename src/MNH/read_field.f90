@@ -247,56 +247,48 @@ END MODULE MODI_READ_FIELD
 !!          C.Lac        10/16 CEN4TH with RKC4 + Correction on RK loop
 !!                   09/2017 Q.Rodier add LTEND_UV_FRC
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!          V. Vionnet  07/17    add blowing snow scheme
-!!          P. Wautelet 01/2019  corrected intent of PDUM,PDVM,PDWM (OUT->INOUT)
+!  V. Vionnet       07/17:   add blowing snow scheme
+!  P. Wautelet    01/2019:  corrected intent of PDUM,PDVM,PDWM (OUT->INOUT)
 !  P. Wautelet 13/02/2019: removed PPABSM and PTSTEP dummy arguments (bugfix: PPABSM was intent(OUT))
-!!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
+!  S. Bielli      02/2019:  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !  P. Wautelet 14/03/2019: correct ZWS when variable not present in file
 !  M. Leriche  10/06/2019: in restart case read all immersion modes for LIMA
-!! B. Vie         06/2020: Add prognostic supersaturation for LIMA
-!! F. Auguste  02/2021: add fields necessary for IBM
-!! T. Nagel    02/2021: add fields necessary for turbulence recycling
-!! J.L. Redelsperger 03/2021:  add necessary variables for Ocean LES case
+!  B. Vie         06/2020: Add prognostic supersaturation for LIMA
+!  F. Auguste     02/2021: add fields necessary for IBM
+!  T. Nagel       02/2021: add fields necessary for turbulence recycling
+!  JL. Redelsperger 03/2021:  add necessary variables for Ocean LES case
+!  P. Wautelet 04/02/2022: use TSVLIST to manage metadata of scalar variables
 !!-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_2D_FRC
-USE MODD_ADV_n
-USE MODD_BLOWSNOW
-USE MODD_BLOWSNOW_n
-USE MODD_CH_AEROSOL
-USE MODD_CH_M9_n,         ONLY: CNAMES, CICNAMES
-USE MODD_CONF
-USE MODD_CONF_n
-USE MODD_CST
-USE MODD_CTURB
-USE MODD_DUST
+USE MODD_2D_FRC,          ONLY: L2D_ADV_FRC, L2D_REL_FRC
+USE MODD_ADV_n,           ONLY: CTEMP_SCHEME, LSPLIT_CFL
+USE MODD_BLOWSNOW_n,      ONLY: XSNWCANO
+USE MODD_CONF,            ONLY: CCONF, CPROGRAM, L1D, LFORCING, NVERB
+USE MODD_CONF_n,          ONLY: IDX_RVT, IDX_RCT, IDX_RRT, IDX_RIT, IDX_RST, IDX_RGT, IDX_RHT
+USE MODD_CST,             ONLY: XALPW, XBETAW, XCPD, XGAMW, XMD, XMV, XP00, XRD
+USE MODD_CTURB,           ONLY: XTKEMIN
 USE MODD_DYN_n,           ONLY: LOCEAN
-USE MODD_ELEC_DESCR,      ONLY: CELECNAMES
-use modd_field,           only: tfieldmetadata, tfieldlist, TYPEDATE, TYPEREAL,TYPELOG,TYPEINT
+use modd_field,           only: tfieldmetadata, tfieldlist, TYPEDATE, TYPEREAL, TYPELOG, TYPEINT
 USE MODD_FIELD_n,         only: XZWS_DEFAULT
-#ifdef MNH_FOREFIRE
-USE MODD_FOREFIRE
-#endif
 USE MODD_IBM_PARAM_n,     ONLY: LIBM
-USE MODD_ICE_C1R3_DESCR,  ONLY: C1R3NAMES
 USE MODD_IO,              ONLY: TFILEDATA
-USE MODD_LATZ_EDFLX
-USE MODD_LG,              ONLY: CLGNAMES
+USE MODD_LATZ_EDFLX,      ONLY: LTH_FLX, LUV_FLX
 USE MODD_LUNIT_N,         ONLY: TLUOUT
-USE MODD_NSV
-USE MODD_OCEANH
+USE MODD_NSV,             ONLY: NSV, NSV_C2R2BEG, NSV_C2R2END, NSV_CSBEG, NSV_CSEND, &
+#ifdef MNH_FOREFIRE
+                                NSV_FFBEG, NSV_FFEND,                                &
+#endif
+                                NSV_PPBEG, NSV_PPEND, NSV_SNW, NSV_USER, TSVLIST
+USE MODD_OCEANH,          ONLY: NFRCLT, NINFRT, XSSOLA_T, XSSUFL_T, XSSTFL_T, XSSVFL_T
 USE MODD_PARAM_C2R2,      ONLY: LSUPSAT
-!
+USE MODD_PARAMETERS,      ONLY: XUNDEF
 USE MODD_PARAM_n,         ONLY: CSCONV
-USE MODD_PASPOL
-USE MODD_RAIN_C2R2_DESCR, ONLY: C2R2NAMES
-USE MODD_RECYCL_PARAM_n
+USE MODD_RECYCL_PARAM_n,  ONLY: LRECYCLE, LRECYCLN, LRECYCLS, LRECYCLW, NR_COUNT
 USE MODD_REF,             ONLY: LCOUPLES
-USE MODD_SALT
-USE MODD_TIME ! for type DATE_TIME
+USE MODD_TIME,            ONLY: DATE_TIME
 !
 use mode_field,           only: Find_field_id_from_mnhname
 USE MODE_IO_FIELD_READ,   only: IO_Field_read
@@ -418,7 +410,9 @@ INTEGER                      :: IIUP,IJUP    ! size  of working window arrays
 INTEGER                      :: JT           ! loop index
 LOGICAL                      :: GLSOURCE     ! switch for the source term (for ini_ls and ini_lb)
 LOGICAL                      :: ZLRECYCL     ! switch if turbulence recycling is activated
+LOGICAL                      :: GOLDFILEFORMAT
 CHARACTER(LEN=3)             :: YFRC         ! To mark the different forcing dates
+CHARACTER(LEN=3)             :: YNUM3
 CHARACTER(LEN=15)            :: YVAL
 REAL, DIMENSION(KIU,KJU,KKU) :: ZWORK        ! to compute supersaturation
 TYPE(TFIELDMETADATA)         :: TZFIELD
@@ -431,6 +425,10 @@ TYPE(TFIELDMETADATA)         :: TZFIELD
 GLSOURCE=.FALSE.
 ZWORK = 0.0
 !
+!If TPINIFILE file was written with a MesoNH version < 5.5.1, some variables had different names or were not available
+GOLDFILEFORMAT = (        TPINIFILE%NMNHVERSION(1) < 5                                                                            &
+                   .OR. ( TPINIFILE%NMNHVERSION(1) == 5 .AND. TPINIFILE%NMNHVERSION(2) < 5 )                                      &
+                   .OR. ( TPINIFILE%NMNHVERSION(1) == 5 .AND. TPINIFILE%NMNHVERSION(2) == 5  .AND. TPINIFILE%NMNHVERSION(3) < 1 ) )
 !-------------------------------------------------------------------------------
 !
 !*       2.    READ PROGNOSTIC VARIABLES
@@ -811,477 +809,83 @@ ENDIF
 !
 ISV= SIZE(PSVT,4)
 !
-IF (NSV_USER>0) THEN
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CUNITS     = 'kg kg-1'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
-  !
-  DO JSV = 1, NSV_USER              ! initialize according to the get indicators
-    SELECT CASE(HGETSVT(JSV))
-      CASE ('READ')
+DO JSV = 1, NSV              ! initialize according to the get indicators
+  SELECT CASE( HGETSVT(JSV) )
+    CASE ('READ')
+      TZFIELD = TSVLIST(JSV)
+
+      IF ( GOLDFILEFORMAT .AND.                               &
+           ( ( JSV >= 1         .AND. JSV <= NSV_USER  ) .OR. &
+             ( JSV >= NSV_PPBEG .AND. JSV <= NSV_PPEND ) .OR. &
+#ifdef MNH_FOREFIRE
+             ( JSV >= NSV_FFBEG .AND. JSV <= NSV_FFEND ) .OR. &
+#endif
+             ( JSV >= NSV_CSBEG .AND. JSV <= NSV_CSEND ) )    ) THEN
+        !Some variables were written with an other name in MesoNH < 5.5.1
         WRITE(TZFIELD%CMNHNAME,'(A3,I3.3)')'SVT',JSV
         TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+        TZFIELD%CSTDNAME   = ''
         TZFIELD%CCOMMENT   = 'X_Y_Z_'//TRIM(TZFIELD%CMNHNAME)
-        CALL IO_Field_read(TPINIFILE,TZFIELD,PSVT(:,:,:,JSV))
-      CASE ('INIT')
+      ELSE
+        TZFIELD%CMNHNAME  = TRIM( TZFIELD%CMNHNAME )  // 'T'
+        TZFIELD%CLONGNAME = TRIM( TZFIELD%CLONGNAME ) // 'T'
+      END IF
+
+      CALL IO_Field_read( TPINIFILE, TZFIELD, PSVT(:,:,:,JSV), IRESP )
+
+      IF ( IRESP /= 0 ) THEN
+        CALL PRINT_MSG( NVERB_WARNING, 'IO', 'READ_FIELD', 'PSVT set to 0 for ' // TRIM( TZFIELD%CMNHNAME ) )
         PSVT(:,:,:,JSV) = 0.
-    END SELECT
-  END DO
-END IF
-!
-IF (NSV_C2R2END>=NSV_C2R2BEG) THEN
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CUNITS     = 'm-3'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
-  !
-  DO JSV = NSV_C2R2BEG,NSV_C2R2END
-    SELECT CASE(HGETSVT(JSV))
-      CASE ('READ')
-        TZFIELD%CMNHNAME   = TRIM(C2R2NAMES(JSV-NSV_C2R2BEG+1))//'T'
-        TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-        WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
-        CALL IO_Field_read(TPINIFILE,TZFIELD,PSVT(:,:,:,JSV))
-      CASE ('INIT')
-        PSVT(:,:,:,JSV) = 0.
-        IF (LSUPSAT .AND. (HGETRVT == 'READ') ) THEN
+      END IF
+
+    CASE ('INIT')
+      PSVT(:,:,:,JSV) = 0.
+
+      IF ( JSV == NSV_C2R2END ) THEN
+        IF ( LSUPSAT .AND. (HGETRVT == 'READ') ) THEN
           ZWORK(:,:,:) = (PPABST(:,:,:)/XP00 )**(XRD/XCPD)
           ZWORK(:,:,:) = PTHT(:,:,:)*ZWORK(:,:,:)
-          ZWORK(:,:,:) = EXP(XALPW-XBETAW/ZWORK(:,:,:)-XGAMW*ALOG(ZWORK(:,:,:)))
+          ZWORK(:,:,:) = EXP(XALPW-XBETAW/ZWORK(:,:,:)-XGAMW*LOG(ZWORK(:,:,:)))
           !rvsat
           ZWORK(:,:,:) = (XMV / XMD)*ZWORK(:,:,:)/(PPABST(:,:,:)-ZWORK(:,:,:))
-          ZWORK(:,:,:) = PRT(:,:,:,1)/ZWORK(:,:,:)
+          ZWORK(:,:,:) = PRT(:,:,:,IDX_RVT)/ZWORK(:,:,:)
           PSVT(:,:,:,NSV_C2R2END ) = ZWORK(:,:,:)
         END IF
-    END SELECT
-  END DO
-END IF
-!
-IF (NSV_C1R3END>=NSV_C1R3BEG) THEN
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CUNITS     = 'm-3'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
-  !
-  DO JSV = NSV_C1R3BEG,NSV_C1R3END
-    SELECT CASE(HGETSVT(JSV))
-      CASE ('READ')
-        TZFIELD%CMNHNAME   = TRIM(C1R3NAMES(JSV-NSV_C1R3BEG+1))//'T'
-        TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-        WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
-        CALL IO_Field_read(TPINIFILE,TZFIELD,PSVT(:,:,:,JSV))
-      CASE ('INIT')
-        PSVT(:,:,:,JSV) = 0.
-    END SELECT
-  END DO
-END IF
-!
-! LIMA variables
-!
-DO JSV = NSV_LIMA_BEG, NSV_LIMA_END
-  SELECT CASE(HGETSVT(JSV))
-  CASE ('READ')
-    TZFIELD = TSVLIST(JSV)
-    TZFIELD%CMNHNAME  = TRIM( TZFIELD%CMNHNAME ) // 'T'
-    TZFIELD%CLONGNAME = TRIM( TZFIELD%CMNHNAME )
-    CALL IO_Field_read(TPINIFILE,TZFIELD,PSVT(:,:,:,JSV))
-  CASE ('INIT')
-    PSVT(:,:,:,JSV) = 0.
+      END IF
+
   END SELECT
 END DO
-!
-IF (NSV_ELECEND>=NSV_ELECBEG) THEN
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
-  !
-  DO JSV = NSV_ELECBEG,NSV_ELECEND
-    SELECT CASE(HGETSVT(JSV))
-      CASE ('READ')
-        TZFIELD%CMNHNAME   = TRIM(CELECNAMES(JSV-NSV_ELECBEG+1))//'T'
-        TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-        IF (JSV .GT. NSV_ELECBEG .AND. JSV .LT. NSV_ELECEND) THEN
-          TZFIELD%CUNITS     = 'C m-3'
-          WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
-        ELSE
-          TZFIELD%CUNITS     = 'm-3'
-          WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (nb ions/m3)'
-        END IF
-        CALL IO_Field_read(TPINIFILE,TZFIELD,PSVT(:,:,:,JSV))
-      CASE ('INIT')
-        PSVT(:,:,:,JSV) = 0.
-    END SELECT
-  END DO
-END IF
-!
-IF (NSV_CHGSEND>=NSV_CHGSBEG) THEN
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CUNITS     = 'ppbv'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
-  !
-  DO JSV = NSV_CHGSBEG,NSV_CHGSEND
-    CNAMES(JSV-NSV_CHGSBEG+1) = UPCASE(CNAMES(JSV-NSV_CHGSBEG+1))
-    SELECT CASE(HGETSVT(JSV))
-      CASE ('READ')
-        TZFIELD%CMNHNAME   = TRIM(CNAMES(JSV-NSV_CHGSBEG+1))//'T'
-        TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-        WRITE(TZFIELD%CCOMMENT,'(A6,A4,I3.3)')'X_Y_Z_','CHIM',JSV
-        CALL IO_Field_read(TPINIFILE,TZFIELD,PSVT(:,:,:,JSV))
-      CASE ('INIT')
-        PSVT(:,:,:,JSV) = 0.
-    END SELECT
-  END DO
-END IF
-!
-IF (NSV_CHACEND>=NSV_CHACBEG) THEN
-  TZFIELD%CSTDNAME   = ''
-  !PW TODO: check units
-  TZFIELD%CUNITS     = ''
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
-  !
-  DO JSV = NSV_CHACBEG,NSV_CHACEND
-    CNAMES(JSV-NSV_CHACBEG+NSV_CHGS+1) = UPCASE(CNAMES(JSV-NSV_CHACBEG+NSV_CHGS+1))
-    SELECT CASE(HGETSVT(JSV))
-      CASE ('READ')
-        TZFIELD%CMNHNAME   = TRIM(CNAMES(JSV-NSV_CHACBEG+NSV_CHGS+1))//'T'
-        TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-        WRITE(TZFIELD%CCOMMENT,'(A6,A4,I3.3,A4)')'X_Y_Z_','CHAQ',JSV,' (M)'
-        CALL IO_Field_read(TPINIFILE,TZFIELD,PSVT(:,:,:,JSV))
-!***ATTENTION: BUG ? field written with a M suffix, read with a T suffix
-      CASE ('INIT')
-        PSVT(:,:,:,JSV) = 0.
-    END SELECT
-  END DO
-END IF
-!
-IF (NSV_CHICEND>=NSV_CHICBEG) THEN
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CUNITS     = 'ppv'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
-  !
-  DO JSV = NSV_CHICBEG,NSV_CHICEND
-    CICNAMES(JSV-NSV_CHICBEG+1) = UPCASE(CICNAMES(JSV-NSV_CHICBEG+1))
-    SELECT CASE(HGETSVT(JSV))
-      CASE ('READ')
-        TZFIELD%CMNHNAME   = TRIM(CICNAMES(JSV-NSV_CHICBEG+1))//'T'
-        TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-        WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
-        CALL IO_Field_read(TPINIFILE,TZFIELD,PSVT(:,:,:,JSV))
-      CASE ('INIT')
-        PSVT(:,:,:,JSV) = 0.
-    END SELECT
-  END DO
-END IF
-!
-IF (NSV_SLTEND>=NSV_SLTBEG) THEN
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CUNITS     = 'ppv'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
-  !
-  DO JSV = NSV_SLTBEG,NSV_SLTEND
-    SELECT CASE(HGETSVT(JSV))
-      CASE ('READ')
-        TZFIELD%CMNHNAME   = TRIM(CSALTNAMES(JSV-NSV_SLTBEG+1))//'T'
-        TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-        WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
-        CALL IO_Field_read(TPINIFILE,TZFIELD,PSVT(:,:,:,JSV))
-      CASE ('INIT')
-        PSVT(:,:,:,JSV) = 0.
-    END SELECT
-  END DO
-END IF
-!
-IF (NSV_SLTDEPEND>=NSV_SLTDEPBEG) THEN
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CUNITS     = 'ppv'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
-  !
-  DO JSV = NSV_SLTDEPBEG,NSV_SLTDEPEND
-    SELECT CASE(HGETSVT(JSV))
-      CASE ('READ')
-        TZFIELD%CMNHNAME   = TRIM(CDESLTNAMES(JSV-NSV_SLTDEPBEG+1))//'T'
-        TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-        WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
-        CALL IO_Field_read(TPINIFILE,TZFIELD,PSVT(:,:,:,JSV))
-      CASE ('INIT')
-        PSVT(:,:,:,JSV) = 0.
-    END SELECT
-  END DO
-END IF
-!
-IF (NSV_DSTEND>=NSV_DSTBEG) THEN
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CUNITS     = 'ppv'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
-  !
-  DO JSV = NSV_DSTBEG,NSV_DSTEND
-    SELECT CASE(HGETSVT(JSV))
-      CASE ('READ')
-        TZFIELD%CMNHNAME   = TRIM(CDUSTNAMES(JSV-NSV_DSTBEG+1))//'T'
-        TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-        WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
-        CALL IO_Field_read(TPINIFILE,TZFIELD,PSVT(:,:,:,JSV))
-      CASE ('INIT')
-        PSVT(:,:,:,JSV) = 0.
-    END SELECT
-  END DO
-END IF
-!
-IF (NSV_DSTDEPEND>=NSV_DSTDEPBEG) THEN
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CUNITS     = 'ppv'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
-  !
-  DO JSV = NSV_DSTDEPBEG,NSV_DSTDEPEND
-    SELECT CASE(HGETSVT(JSV))
-      CASE ('READ')
-        TZFIELD%CMNHNAME   = TRIM(CDEDSTNAMES(JSV-NSV_DSTDEPBEG+1))//'T'
-        TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-        WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
-        CALL IO_Field_read(TPINIFILE,TZFIELD,PSVT(:,:,:,JSV))
-      CASE ('INIT')
-        PSVT(:,:,:,JSV) = 0.
-    END SELECT
-  END DO
-END IF
-!
-IF (NSV_AEREND>=NSV_AERBEG) THEN
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CUNITS     = 'ppv'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
-  !
-  DO JSV = NSV_AERBEG,NSV_AEREND
-    SELECT CASE(HGETSVT(JSV))
-      CASE ('READ')
-        TZFIELD%CMNHNAME   = TRIM(UPCASE(CAERONAMES(JSV-NSV_AERBEG+1)))//'T'
-        TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-        WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
-        CALL IO_Field_read(TPINIFILE,TZFIELD,PSVT(:,:,:,JSV))
-      CASE ('INIT')
-        PSVT(:,:,:,JSV) = 0.
-    END SELECT
-  END DO
-END IF
-!
-IF (NSV_AERDEPEND>=NSV_AERDEPBEG) THEN
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CUNITS     = 'ppv'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
-  !
-  DO JSV = NSV_AERDEPBEG,NSV_AERDEPEND
-    SELECT CASE(HGETSVT(JSV))
-      CASE ('READ')
-        TZFIELD%CMNHNAME   = TRIM(CDEAERNAMES(JSV-NSV_AERDEPBEG+1))//'T'
-        TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-        WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
-        CALL IO_Field_read(TPINIFILE,TZFIELD,PSVT(:,:,:,JSV))
-      CASE ('INIT')
-        PSVT(:,:,:,JSV) = 0.
-    END SELECT
-  END DO
-END IF
-!
-IF (NSV_LGEND>=NSV_LGBEG) THEN
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CUNITS     = 'm'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
-  !
-  DO JSV = NSV_LGBEG,NSV_LGEND
-    SELECT CASE(HGETSVT(JSV))
-      CASE ('READ')
-        TZFIELD%CMNHNAME   = TRIM(CLGNAMES(JSV-NSV_LGBEG+1))//'T'
-        TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-        WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
-        CALL IO_Field_read(TPINIFILE,TZFIELD,PSVT(:,:,:,JSV))
-      CASE ('INIT')
-        PSVT(:,:,:,JSV) = 0.
-    END SELECT
-  END DO
-END IF
-!
-IF (NSV_PPEND>=NSV_PPBEG) THEN
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
-  !
-  DO JSV = NSV_PPBEG,NSV_PPEND
-    SELECT CASE(HGETSVT(JSV))
-      CASE ('READ')
-        WRITE(TZFIELD%CMNHNAME,'(A3,I3.3)')'SVT',JSV
-        TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-        TZFIELD%CCOMMENT   = 'X_Y_Z_'//TRIM(TZFIELD%CMNHNAME)
-        TZFIELD%CUNITS     = 'kg kg-1'
-        CALL IO_Field_read(TPINIFILE,TZFIELD,PSVT(:,:,:,JSV),IRESP)
-        IF (IRESP/=0) THEN
-          PSVT(:,:,:,JSV) = 0.
-        END IF
-        !
-        WRITE(TZFIELD%CMNHNAME,'(A3,I3.3)')'ATC',JSV+NSV_PPBEG-1
-        TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-        WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','ATC',JSV+NSV_PPBEG-1
-        TZFIELD%CUNITS     = 'm-3'
-        CALL IO_Field_read(TPINIFILE,TZFIELD,PATC(:,:,:,JSV-NSV_PPBEG+1),IRESP)
-        IF (IRESP/=0) THEN
-          PATC(:,:,:,JSV-NSV_PPBEG+1) = 0.
-        ENDIF
-      CASE ('INIT')
-        PSVT(:,:,:,JSV) = 0.
+
+DO JSV = NSV_PPBEG, NSV_PPEND
+  SELECT CASE( HGETSVT(JSV) )
+    CASE ('READ')
+      WRITE( YNUM3, '( I3.3 )' ) JSV
+
+      TZFIELD = TFIELDMETADATA(            &
+        CMNHNAME   = 'ATC' // YNUM3,       &
+        CSTDNAME   = '',                   &
+        CLONGNAME  = 'ATC' // YNUM3,       &
+        CCOMMENT   = 'X_Y_Z_ATC' // YNUM3, &
+        CUNITS     = 'm-3',                &
+        CDIR       = 'XY',                 &
+        NGRID      = 1,                    &
+        NTYPE      = TYPEREAL,             &
+        NDIMS      = 3,                    &
+        LTIMEDEP   = .TRUE.                )
+
+      CALL IO_Field_read( TPINIFILE, TZFIELD, PATC(:,:,:,JSV-NSV_PPBEG+1), IRESP )
+
+      IF ( IRESP /= 0 ) THEN
         PATC(:,:,:,JSV-NSV_PPBEG+1) = 0.
-    END SELECT
-  END DO
-END IF
-!
-#ifdef MNH_FOREFIRE
-IF (NSV_FFEND>=NSV_FFBEG) THEN
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CUNITS     = 'kg kg-1'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
-  !
-  DO JSV = NSV_FFBEG,NSV_FFEND
-    SELECT CASE(HGETSVT(JSV))
-      CASE ('READ')
-        WRITE(TZFIELD%CMNHNAME,'(A3,I3.3)')'SVT',JSV
-        TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-        TZFIELD%CCOMMENT   = 'X_Y_Z_'//TRIM(TZFIELD%CMNHNAME)
-        CALL IO_Field_read(TPINIFILE,TZFIELD,PSVT(:,:,:,JSV),IRESP)
-        IF (IRESP /= 0) THEN
-          PSVT(:,:,:,JSV) = 0.
-        END IF
-      CASE ('INIT')
-        PSVT(:,:,:,JSV) = 0.
-    END SELECT
-  END DO
-END IF
-#endif
-!
-IF (NSV_CSEND>=NSV_CSBEG) THEN
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CUNITS     = 'kg kg-1'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
-  !
-  DO JSV = NSV_CSBEG,NSV_CSEND
-    SELECT CASE(HGETSVT(JSV))
-      CASE ('READ')
-        WRITE(TZFIELD%CMNHNAME,'(A3,I3.3)')'SVT',JSV
-        TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-        TZFIELD%CCOMMENT   = 'X_Y_Z_'//TRIM(TZFIELD%CMNHNAME)
-        CALL IO_Field_read(TPINIFILE,TZFIELD,PSVT(:,:,:,JSV),IRESP)
-        IF (IRESP /= 0) THEN
-          PSVT(:,:,:,JSV) = 0.
-        END IF
-      CASE ('INIT')
-        PSVT(:,:,:,JSV) = 0.
-    END SELECT
-  END DO
-END IF
-!
-IF (NSV_LNOXEND>=NSV_LNOXBEG) THEN
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CUNITS     = 'ppb'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
-  !
-  DO JSV = NSV_LNOXBEG,NSV_LNOXEND
-    SELECT CASE(HGETSVT(JSV))
-      CASE ('READ')
-        TZFIELD%CMNHNAME   = 'LINOXT'
-        TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-        WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)') 'X_Y_Z_','SVT',JSV
-        CALL IO_Field_read(TPINIFILE,TZFIELD,PSVT(:,:,:,JSV))
-      CASE ('INIT')
-        PSVT(:,:,:,JSV) = 0.
-    END SELECT
-  END DO
-END IF
-!
-IF (NSV_SNWEND>=NSV_SNWBEG) THEN
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CUNITS     = 'kg kg-1'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
-  DO JSV = NSV_SNWBEG,NSV_SNWEND
-    SELECT CASE(HGETSVT(JSV))
-      CASE ('READ')
-        TZFIELD%CMNHNAME   = TRIM(CSNOWNAMES(JSV-NSV_SNWBEG+1))//'T'
-        TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-        WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)') 'X_Y_Z_','SVT',JSV
-        CALL IO_Field_read(TPINIFILE,TZFIELD,PSVT(:,:,:,JSV))
-      CASE ('INIT')
-        PSVT(:,:,:,JSV) = 0.
-    END SELECT
-  END DO
-END IF
-IF (NSV_SNW>=1) THEN
+      ENDIF
+
+    CASE ('INIT')
+      PATC(:,:,:,JSV-NSV_PPBEG+1) = 0.
+
+  END SELECT
+END DO
+
+IF ( NSV_SNW >= 1 ) THEN
   TZFIELD%CSTDNAME   = ''
   TZFIELD%CUNITS     = 'kg kg-1'
   TZFIELD%CDIR       = 'XY'
@@ -1289,20 +893,18 @@ IF (NSV_SNW>=1) THEN
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 2
   TZFIELD%LTIMEDEP   = .TRUE.
-  DO JSV = 1,NSV_SNW
+  DO JSV = 1, NSV_SNW
     SELECT CASE(HGETSVT(JSV))
       CASE ('READ')
-        WRITE(TZFIELD%CMNHNAME,'(A10,I3.3)')'SNOWCANO_M',JSV      
+        WRITE(TZFIELD%CMNHNAME,'(A10,I3.3)')'SNOWCANO_M',JSV
         TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
         WRITE(TZFIELD%CCOMMENT,'(A6,A8,I3.3)') 'X_Y_Z_','SNOWCANO',JSV
-        CALL IO_Field_read(TPINIFILE,TZFIELD,XSNWCANO(:,:,JSV))
+        CALL IO_Field_read( TPINIFILE, TZFIELD, XSNWCANO(:,:,JSV) )
       CASE ('INIT')
         XSNWCANO(:,:,JSV) = 0.
     END SELECT
   END DO
-
 END IF
-
 !
 IF (CCONF == 'RESTA') THEN
   IF (CTEMP_SCHEME/='LEFR') THEN

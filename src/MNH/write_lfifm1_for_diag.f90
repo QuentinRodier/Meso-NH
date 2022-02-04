@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -145,115 +145,99 @@ END MODULE MODI_WRITE_LFIFM1_FOR_DIAG
 !  P. Wautelet 08/02/2019: minor bug: compute ZWORK36 only when needed
 !  S  Bielli      02/2019: sea salt: significant sea wave height influences salt emission; 5 salt modes
 !  P. Wautelet 18/03/2020: remove ICE2 option
-!      B. Vie          06/2020 Add prognostic supersaturation for LIMA
+!  B. Vie         06/2020: Add prognostic supersaturation for LIMA
 !  P. Wautelet 11/03/2021: bugfix: correct name for NSV_LIMA_IMM_NUCL
 !  J.L Redelsperger 03/2021 Adding OCEAN LES Case and Autocoupled O-A LES 
+!  P. Wautelet 04/02/2022: use TSVLIST to manage metadata of scalar variables
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_DIM_n
-USE MODD_CONF
-USE MODD_CONF_n
-use modd_field,           only: tfieldmetadata, tfieldlist, TYPEINT, TYPEREAL
-USE MODD_GRID
-USE MODD_GRID_n
-USE MODD_IO, ONLY : TFILEDATA
-USE MODD_METRICS_n
-USE MODD_TIME
-USE MODD_TIME_n
-USE MODD_DYN_n
-USE MODD_FIELD_n
-USE MODD_GR_FIELD_n
-USE MODD_LSFIELD_n
-USE MODD_PARAM_n
-USE MODD_CURVCOR_n
-USE MODD_REF
-USE MODD_REF_n
-USE MODD_LUNIT, ONLY : TLUOUT0
-USE MODD_LUNIT_n
-USE MODD_TURB_n
-USE MODD_RADIATIONS_n
-USE MODD_FRC
-USE MODD_PRECIP_n
-USE MODD_CST
-USE MODD_CLOUDPAR
-USE MODD_DEEP_CONVECTION_n
-USE MODD_PARAM_KAFR_n
-USE MODD_NESTING
-USE MODD_PARAMETERS
-USE MODD_DIAG_FLAG
-USE MODD_NSV
-USE MODD_CH_M9_n,         ONLY : CNAMES, NEQAQ
-USE MODD_RAIN_C2R2_DESCR, ONLY : C2R2NAMES
-USE MODD_ICE_C1R3_DESCR,  ONLY : C1R3NAMES
-USE MODD_ELEC_DESCR, ONLY : CELECNAMES
-USE MODD_RAIN_C2R2_KHKO_PARAM
-USE MODD_ICE_C1R3_PARAM
-USE MODD_PARAM_ICE,       ONLY : LSEDIC
-USE MODD_PARAM_LIMA,      ONLY : NMOD_CCN, NMOD_IFN, NMOD_IMM, NINDICE_CCN_IMM,&
-                                 LSCAV, LHHONI, LAERO_MASS,                    &
-                                 LLIMA_DIAG,                                   &
-                                 NSPECIE, XMDIAM_IFN, XSIGMA_IFN, ZFRAC=>XFRAC,&
-                                 XR_MEAN_CCN, XLOGSIG_CCN 
-USE MODD_PARAM_LIMA_WARM, ONLY : CLIMA_WARM_CONC, CAERO_MASS
-USE MODD_PARAM_LIMA_COLD, ONLY : CLIMA_COLD_CONC
-USE MODD_LG,              ONLY : CLGNAMES
-USE MODD_PASPOL,          ONLY : LPASPOL
-USE MODD_CONDSAMP,        ONLY : LCONDSAMP
-!
-USE MODD_DIAG_FLAG
-USE MODD_RADAR, ONLY: XLAT_RAD,XELEV,&
-     XSTEP_RAD,NBRAD,NBELEV,NBAZIM,NBSTEPMAX,&
-     NCURV_INTERPOL,LATT,LCART_RAD,NPTS_H,NPTS_V,XGRID,&
-     LREFR,LDNDZ,NMAX,CNAME_RAD,NDIFF,&
-     XLON_RAD,XALT_RAD,XLAM_RAD,XDT_RAD,LWBSCS,LWREFL
-use modd_precision,       only: MNHREAL_MPI
-!
-USE MODI_RADAR_SIMULATOR
-!
-USE MODD_DUST
-USE MODD_CSTS_DUST
-USE MODD_SALT
-USE MODD_BLOWSNOW
+USE MODD_BLOWSNOW,          ONLY: LBLOWSNOW, NBLOWSNOW3D
+USE MODD_BLOWSNOW_n,        ONLY: XSNWSUBL3D
+USE MODD_CH_AERO_n,         ONLY: XN3D, XRG3D, XSIG3D
 USE MODD_CH_AEROSOL
-USE MODD_CH_AERO_n
-USE MODD_CH_MNHC_n
-USE MODE_DUST_PSD
-USE MODE_SALT_PSD
-USE MODE_BLOWSNOW_PSD
-USE MODE_AERO_PSD
+USE MODD_CH_M9_n,           ONLY: NEQAQ
+USE MODD_CH_MNHC_n,         ONLY: LCH_CONV_LINOX, LUSECHEM, XRTMIN_AQ
+USE MODD_CONDSAMP,          ONLY: LCONDSAMP
+USE MODD_CONF,              ONLY: CBIBUSER, CEQNSYS, CPROGRAM, L1D, L2D, LCARTESIAN, LFORCING, LPACK, LTHINSHELL, NBUGFIX, NMASDEV
+USE MODD_CONF_n,            ONLY: IDX_RVT, IDX_RCT, IDX_RRT, IDX_RIT, IDX_RST, IDX_RGT, IDX_RHT, &
+                                  LUSERV,  LUSERC,  LUSERR,  LUSERI,  LUSERS,  LUSERG,  LUSERH,  &
+                                  LUSECI, NRR, NRRI, NRRL
+USE MODD_CST,               ONLY: XALPI, XAVOGADRO, XBETAI, XCI, XCL, XCPD, XCPV, XG, XGAMI, XLSTT, XLVTT, &
+                                  XMD, XMV, XP00, XPI, XRADIUS, XRHOLW, XRD, XRV, XTT
+USE MODD_CSTS_DUST,         ONLY: XDENSITY_DUST, XM3TOUM3, XMOLARWEIGHT_DUST
+USE MODD_CURVCOR_n,         ONLY: XCORIOZ
+USE MODD_DEEP_CONVECTION_n, ONLY: XCG_RATE, XCG_TOTAL_NUMBER, XIC_RATE, XIC_TOTAL_NUMBER, XPACCONV, XPRCONV, XPRSCONV
+USE MODD_DIAG_FLAG
+USE MODD_DIM_n,             ONLY: NIMAX_ll, NJMAX_ll, NKMAX
+USE MODD_DUST,              ONLY: LDEPOS_DST, LDUST, NMODE_DST
+USE MODD_DYN_n,             ONLY: LOCEAN
+use modd_field,             only: tfieldmetadata, tfieldlist, TYPEINT, TYPEREAL
+USE MODD_FIELD_n,           ONLY: XCIT, XCLDFR, XPABSM, XPABST, XRT, XSIGS, XSRCT, XSVT, XTHT, XTKET, XUT, XVT, XWT, XZWS
+USE MODD_FRC,               ONLY: NFRC, XGXTHFRC, XGYTHFRC, XPGROUNDFRC, XRVFRC, XTENDRVFRC, XTENDTHFRC, XTHFRC, XUFRC, XVFRC, XWFRC
+USE MODD_GRID,              ONLY: XBETA, XLAT0, XLATORI, XLON0, XLONORI, XRPK
+USE MODD_GRID_n,            only: LSLEVE, XLAT, XLEN1, XLEN2, XLON, XZS, XXHAT, XYHAT, XZHAT, XZSMT, XZTOP, XZZ
+USE MODD_IO,                ONLY: TFILEDATA
+USE MODD_LSFIELD_n,         ONLY: XLSRVM, XLSTHM, XLSUM, XLSVM, XLSWM
+USE MODD_LUNIT,             ONLY: TLUOUT0
+USE MODD_METRICS_n,         ONLY: XDXX, XDYY, XDZX, XDZY, XDZZ
+USE MODD_MPIF
+USE MODD_NESTING,           ONLY: NDXRATIO_ALL, NDYRATIO_ALL, NXOR_ALL, NYOR_ALL
+USE MODD_NSV
+USE MODD_PARAMETERS,        ONLY: JPHEXT, JPVEXT, XUNDEF
+USE MODD_PARAM_LIMA_COLD,   ONLY: CLIMA_COLD_CONC
+USE MODD_PARAM_LIMA,        ONLY: NMOD_CCN, NMOD_IFN, NMOD_IMM, NINDICE_CCN_IMM, &
+                                  LSCAV, LLIMA_DIAG
+USE MODD_PARAM_LIMA_WARM,   ONLY: CLIMA_WARM_CONC, CAERO_MASS
+USE MODD_PARAM_n,           ONLY: CCLOUD, CDCONV, CELEC, CSURF, CTURB
+USE MODD_PASPOL,            ONLY: LPASPOL
+USE MODD_PRECIP_n,          ONLY: XACDEP, XACPRC, XACPRG, XACPRH, XACPRR, XACPRS, XEVAP3D, &
+                                  XINDEP, XINPRC, XINPRG, XINPRH, XINPRR, XINPRR3D, XINPRS
+use modd_precision,         only: MNHREAL_MPI
+USE MODD_RADAR,             ONLY: CNAME_RAD, LATT, LCART_RAD, LDNDZ, LREFR, LWBSCS, LWREFL,                      &
+                                  NBAZIM, NBELEV, NBRAD, NBSTEPMAX, NCURV_INTERPOL, NDIFF, NMAX, NPTS_H, NPTS_V, &
+                                  XALT_RAD, XDT_RAD, XELEV, XGRID, XLAM_RAD, XLAT_RAD, XLON_RAD, XSTEP_RAD
+USE MODD_REF,               ONLY: LBOUSS, LCOUPLES, XEXNTOP, XEXNTOPO, XRHODREFZ, XRHODREFZO, XTHVREFZ, XTHVREFZO
+USE MODD_REF_n,             ONLY: XEXNREF, XRHODREF, XTHVREF
+USE MODD_SALT,              ONLY: LDEPOS_SLT, LSALT, NMODE_SLT
+USE MODD_TIME,              ONLY: TDTEXP, TDTSEG
+USE MODD_TIME_n,            ONLY: TDTCUR, TDTMOD
+USE MODD_TURB_n,            only: CTOM, XBL_DEPTH
+USE MODD_VAR_ll,            ONLY: NMNH_COMM_WORLD
+
+USE MODE_AERO_PSD,          ONLY: PPP2AERO
+USE MODE_BLOWSNOW_PSD,      ONLY: PPP2SNOW
+USE MODE_DUST_PSD,          ONLY: PPP2DUST
+use mode_field,             only: Find_field_id_from_mnhname
+use MODE_GATHER_ll,         only: GATHERALL_FIELD_ll
+USE MODE_GRIDPROJ,          ONLY: SM_LATLON
+USE MODE_IO_FIELD_WRITE,    only: IO_Field_write
+USE MODE_IO_FILE,           only: IO_File_close, IO_File_open
+USE MODE_IO_MANAGE_STRUCT,  only: IO_File_add2list
+USE MODE_MODELN_HANDLER,    only: GET_CURRENT_MODEL_INDEX
+use mode_msg
+USE MODE_SALT_PSD,          ONLY: PPP2SALT
+USE MODE_THERMO,            ONLY: QSAT, SM_FOES
+USE MODE_TOOLS,             ONLY: UPCASE
+USE MODE_TOOLS_ll,          ONLY: GET_DIM_EXT_ll, GET_INDICE_ll
+
+USE MODI_CALCSOUND
+USE MODI_CLUSTERING
+USE MODI_COMPUTE_MEAN_PRECIP
+USE MODI_CONTRAV
+USE MODI_GPS_ZENITH
 USE MODI_GRADIENT_M
-USE MODI_GRADIENT_W
 USE MODI_GRADIENT_U
 USE MODI_GRADIENT_V
-USE MODI_SHUMAN
-USE MODI_RADAR_RAIN_ICE
+USE MODI_GRADIENT_W
 USE MODI_INI_RADAR
-USE MODI_COMPUTE_MEAN_PRECIP
-USE MODI_UV_TO_ZONAL_AND_MERID
-USE MODI_CALCSOUND
-USE MODI_FREE_ATM_PROFILE
-USE MODI_GPS_ZENITH
-USE MODI_CONTRAV
-!
-use mode_field,            only: Find_field_id_from_mnhname
-USE MODE_GRIDPROJ
-USE MODE_GATHER_ll
-USE MODE_IO_FIELD_WRITE,   only: IO_Field_write
-USE MODE_IO_FILE,          only: IO_File_close, IO_File_open
-USE MODE_IO_MANAGE_STRUCT, only: IO_File_add2list
-USE MODE_ll
-use mode_msg
-USE MODE_THERMO
-USE MODE_TOOLS,            ONLY: UPCASE
-USE MODE_MODELN_HANDLER
 USE MODI_LIDAR
-USE MODI_CLUSTERING
-!
-USE MODD_MPIF
-USE MODD_VAR_ll
+USE MODI_RADAR_RAIN_ICE
+USE MODI_RADAR_SIMULATOR
+USE MODI_SHUMAN
+USE MODI_UV_TO_ZONAL_AND_MERID
 !
 IMPLICIT NONE
 !
@@ -303,8 +287,8 @@ INTEGER, DIMENSION(:,:), ALLOCATABLE                    :: IWORK1
 integer :: ICURR,INBOUT,IERR
 !
 REAL,DIMENSION(SIZE(XSVT,1),SIZE(XSVT,2),SIZE(XSVT,3),NSP+NCARB+NSOA,JPMODE):: ZPTOTA
-REAL,DIMENSION(SIZE(XSVT,1),SIZE(XSVT,2),SIZE(XSVT,3),NMODE_DST*2):: ZSDSTDEP
-REAL,DIMENSION(SIZE(XSVT,1),SIZE(XSVT,2),SIZE(XSVT,3),NMODE_SLT*2):: ZSSLTDEP
+REAL,DIMENSION(:,:,:,:), POINTER :: ZSDSTDEP
+REAL,DIMENSION(:,:,:,:), POINTER :: ZSSLTDEP
 REAL,DIMENSION(:,:,:,:), ALLOCATABLE  :: ZSIG_DST, ZRG_DST, ZN0_DST
 REAL,DIMENSION(:,:,:,:), ALLOCATABLE  :: ZSIG_SLT, ZRG_SLT, ZN0_SLT
 REAL,DIMENSION(:,:,:), ALLOCATABLE    :: ZBET_SNW, ZRG_SNW
@@ -1011,7 +995,7 @@ IF (LVAR_MRW .OR. LLIMA_DIAG) THEN
 !
       TZFIELD%CMNHNAME   = 'VRC'
       TZFIELD%CLONGNAME  = 'VRC'
-      TZFIELD%CUNITS     = '1' !vol/vol
+      TZFIELD%CUNITS     = 'ppv' !vol/vol
       TZFIELD%CCOMMENT   = 'X_Y_Z_VRC (vol/vol)'
       CALL IO_Field_write(TPFILE,TZFIELD,XRT(:,:,:,IDX_RCT)*XRHODREF(:,:,:)/1.E3)
     END IF
@@ -1024,7 +1008,7 @@ IF (LVAR_MRW .OR. LLIMA_DIAG) THEN
 !
       TZFIELD%CMNHNAME   = 'VRR'
       TZFIELD%CLONGNAME  = 'VRR'
-      TZFIELD%CUNITS     = '1' !vol/vol
+      TZFIELD%CUNITS     = 'ppv' !vol/vol
       TZFIELD%CCOMMENT   = 'X_Y_Z_VRR (vol/vol)'
       CALL IO_Field_write(TPFILE,TZFIELD,XRT(:,:,:,IDX_RRT)*XRHODREF(:,:,:)/1.E3)
     END IF
@@ -1068,76 +1052,52 @@ END IF
 ! User scalar variables
 ! individually in the file
 IF (LVAR_MRSV) THEN
-  TZFIELD = TFIELDMETADATA(                      &
-    CMNHNAME   = 'generic for scalar variables', & !Temporary name to ease identification
-    CSTDNAME   = '',                             &
-    CUNITS     = 'g kg-1',                       &
-    CDIR       = 'XY',                           &
-    NGRID      = 1,                              &
-    NTYPE      = TYPEREAL,                       &
-    NDIMS      = 3,                              &
-    LTIMEDEP   = .TRUE.                          )
-  !
   DO JSV = 1,NSV_USER
-    WRITE(TZFIELD%CMNHNAME,'(A4,I3.3)')'MRSV',JSV
+    TZFIELD = TSVLIST(JSV)
+    WRITE( TZFIELD%CMNHNAME, '( A4, I3.3 )' ) 'MRSV', JSV
     TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    WRITE(TZFIELD%CCOMMENT,'(A6,A4,I3.3)')'X_Y_Z_','MRSV',JSV
-    CALL IO_Field_write(TPFILE,TZFIELD,XSVT(:,:,:,JSV)*1.E3)
+    TZFIELD%CUNITS     = 'g kg-1'
+    WRITE( TZFIELD%CCOMMENT, '( A, I3.3 )' ) 'Mixing Ratio for user Scalar Variable', JSV
+    CALL IO_Field_write( TPFILE, TZFIELD, XSVT(:,:,:,JSV) * 1.E3 )
   END DO
 END IF
 ! microphysical C2R2 scheme scalar variables
 IF(LVAR_MRW) THEN
-  IF (NSV_C2R2END>=NSV_C2R2BEG) THEN
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
-    !
-    DO JSV = NSV_C2R2BEG,NSV_C2R2END
-      TZFIELD%CMNHNAME   = TRIM(C2R2NAMES(JSV-NSV_C2R2BEG+1))//'T'
-      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-      IF (JSV < NSV_C2R2END) THEN
-        TZFIELD%CUNITS     = 'cm-3'
-        ZWORK31(:,:,:)=XSVT(:,:,:,JSV)*1.E-6
-      ELSE
-        TZFIELD%CUNITS     = 'l-1'
-        ZWORK31(:,:,:)=XSVT(:,:,:,JSV)*1.E-3
-      END IF
-      WRITE(TZFIELD%CCOMMENT,'(A6,A4,I3.3)')'X_Y_Z_','MRSV',JSV
-      CALL IO_Field_write(TPFILE,TZFIELD,ZWORK31)
-    END DO
-  END IF
+  DO JSV = NSV_C2R2BEG,NSV_C2R2END
+    TZFIELD = TSVLIST(JSV)
+    TZFIELD%CMNHNAME  = TRIM( TZFIELD%CMNHNAME )  // 'T'
+    TZFIELD%CLONGNAME = TRIM( TZFIELD%CLONGNAME ) // 'T'
+   IF (JSV < NSV_C2R2END) THEN
+      TZFIELD%CUNITS     = 'cm-3'
+      ZWORK31(:,:,:)=XSVT(:,:,:,JSV)*1.E-6
+    ELSE
+      TZFIELD%CUNITS     = 'l-1'
+      ZWORK31(:,:,:)=XSVT(:,:,:,JSV)*1.E-3
+    END IF
+    WRITE(TZFIELD%CCOMMENT,'(A6,A4,I3.3)')'X_Y_Z_','MRSV',JSV
+    CALL IO_Field_write(TPFILE,TZFIELD,ZWORK31)
+  END DO
   ! microphysical C3R5 scheme additional scalar variables
-  IF (NSV_C1R3END>=NSV_C1R3BEG) THEN
-    TZFIELD%CSTDNAME   = ''
+  DO JSV = NSV_C1R3BEG,NSV_C1R3END
+    TZFIELD = TSVLIST(JSV)
+    TZFIELD%CMNHNAME  = TRIM( TZFIELD%CMNHNAME )  // 'T'
+    TZFIELD%CLONGNAME = TRIM( TZFIELD%CLONGNAME ) // 'T'
     TZFIELD%CUNITS     = 'l-1'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
-    !
-    DO JSV = NSV_C1R3BEG,NSV_C1R3END
-      TZFIELD%CMNHNAME   = TRIM(C1R3NAMES(JSV-NSV_C1R3BEG+1))//'T'
-      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-      WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
-      CALL IO_Field_write(TPFILE,TZFIELD,XSVT(:,:,:,JSV)*1.E-3)
-    END DO
-  END IF
+    CALL IO_Field_write(TPFILE,TZFIELD,XSVT(:,:,:,JSV)*1.E-3)
+  END DO
 END IF
 !
 ! microphysical LIMA scheme scalar variables
 !
 IF (LLIMA_DIAG) THEN
   IF (NSV_LIMA_END>=NSV_LIMA_BEG) THEN
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
+    TZFIELD = TFIELDMETADATA(           &
+      CMNHNAME   = 'generic LIMA diag', & !Temporary name to ease identification
+      CDIR       = 'XY',                &
+      NGRID      = 1,                   &
+      NTYPE      = TYPEREAL,            &
+      NDIMS      = 3,                   &
+      LTIMEDEP   = .TRUE.               )
   END IF
   !
   DO JSV = NSV_LIMA_BEG,NSV_LIMA_END
@@ -1192,7 +1152,7 @@ IF (LLIMA_DIAG) THEN
       TZFIELD%CMNHNAME   = TRIM(CLIMA_COLD_CONC(5))//'T'
     END IF
     !
-! Supersaturation          
+! Supersaturation
     IF (JSV .EQ. NSV_LIMA_SPRO) THEN
       TZFIELD%CMNHNAME   = TRIM(CLIMA_WARM_CONC(5))//'T'
     END IF
@@ -1235,36 +1195,127 @@ IF (LLIMA_DIAG) THEN
   END IF
 !
 END IF
+IF (LELECDIAG .AND. CELEC .NE. "NONE") THEN
+  DO JSV = NSV_ELECBEG,NSV_ELECEND
+    TZFIELD = TSVLIST(JSV)
+    TZFIELD%CMNHNAME  = TRIM( TZFIELD%CMNHNAME )  // 'T'
+    TZFIELD%CLONGNAME = TRIM( TZFIELD%CLONGNAME ) // 'T'
+    IF ( JSV > NSV_ELECBEG .AND. JSV < NSV_ELECEND ) THEN
+      TZFIELD%CUNITS = 'C m-3'
+      WRITE( TZFIELD%CCOMMENT, '( A6, A3, I3.3 )' ) 'X_Y_Z_', 'SVT', JSV
+    ELSE
+      TZFIELD%CUNITS = 'm-3'
+      WRITE( TZFIELD%CCOMMENT, '( A6, A3, I3.3, A8 )' ) 'X_Y_Z_', 'SVT', JSV, ' (nb ions/m3)'
+    END IF
+    ZWORK31(:,:,:)=XSVT(:,:,:,JSV) * XRHODREF(:,:,:)  ! C/kg --> C/m3
+    CALL IO_Field_write(TPFILE,TZFIELD,ZWORK31)
+  END DO
+END IF
 !
-! chemical scalar variables in gas phase ppbv
+! Lagrangian variables
+IF (LTRAJ) THEN
+  DO JSV = NSV_LGBEG, NSV_LGEND
+    TZFIELD = TSVLIST(JSV)
+    TZFIELD%CMNHNAME  = TRIM( TZFIELD%CMNHNAME )  // 'T'
+    TZFIELD%CLONGNAME = TRIM( TZFIELD%CLONGNAME ) // 'T'
+    WRITE(TZFIELD%CCOMMENT,'(A6,A20,I3.3,A4)')'X_Y_Z_','Lagrangian variable ',JSV
+    CALL IO_Field_write(TPFILE,TZFIELD,XSVT(:,:,:,JSV))
+  END DO
+
+  ! X coordinate
+  DO JK=1,IKU
+    DO JJ=1,IJU
+      DO JI=1,IIU-1
+       ZWORK31(JI,JJ,JK)=0.5*(XXHAT(JI)+XXHAT(JI+1))
+      END DO
+      ZWORK31(IIU,JJ,JK)=2.*ZWORK31(IIU-1,JJ,JK) - ZWORK31(IIU-2,JJ,JK)
+    END DO
+  END DO
+
+  TZFIELD = TFIELDMETADATA(            &
+    CMNHNAME   = 'X',                  &
+    CSTDNAME   = '',                   &
+    CLONGNAME  = 'X',                  &
+    CUNITS     = 'km',                 &
+    CDIR       = 'XY',                 &
+    CCOMMENT   = 'X_Y_Z_X coordinate', &
+    NGRID      = 1,                    &
+    NTYPE      = TYPEREAL,             &
+    NDIMS      = 3,                    &
+    LTIMEDEP   = .TRUE.                )
+
+  CALL IO_Field_write(TPFILE,TZFIELD,ZWORK31*1e-3)
+
+  ! Y coordinate
+  DO JK=1,IKU
+    DO JI=1,IIU
+      DO JJ=1,IJU-1
+        ZWORK31(JI,JJ,JK)=0.5*(XYHAT(JJ)+XYHAT(JJ+1))
+      END DO
+      ZWORK31(JI,IJU,JK)=2.*ZWORK31(JI,IJU-1,JK) - ZWORK31(JI,IJU-2,JK)
+    END DO
+  END DO
+
+  TZFIELD%CMNHNAME   = 'Y'
+  TZFIELD%CLONGNAME  = 'Y'
+  TZFIELD%CCOMMENT   = 'X_Y_Z_Y coordinate'
+
+  CALL IO_Field_write(TPFILE,TZFIELD,ZWORK31*1e-3)
+END IF
+!
+! Passive polluant scalar variables
+IF (LPASPOL) THEN
+  ALLOCATE(ZRHOT( SIZE(XTHT,1), SIZE(XTHT,2),SIZE(XTHT,3)))
+  ALLOCATE(ZTMP(  SIZE(XTHT,1), SIZE(XTHT,2),SIZE(XTHT,3)))
+!
+!* Density
+!
+  ZRHOT(:,:,:)=XPABST(:,:,:)/(XRD*XTHT(:,:,:)*((XPABST(:,:,:)/XP00)**(XRD/XCPD)))
+!
+!* Conversion g/m3.
+!
+  ZRHOT(:,:,:)=ZRHOT(:,:,:)*1000.0
+  !
+  DO JSV = NSV_PPBEG, NSV_PPEND
+    TZFIELD = TSVLIST(JSV)
+    TZFIELD%CMNHNAME  = TRIM( TZFIELD%CMNHNAME )  // 'T'
+    TZFIELD%CLONGNAME = TRIM( TZFIELD%CLONGNAME ) // 'T'
+    TZFIELD%CUNITS     = 'g m-3'
+
+    ZTMP(:,:,:)=ABS( XSVT(:,:,:,JSV)*ZRHOT(:,:,:) )
+    CALL IO_Field_write(TPFILE,TZFIELD,ZTMP)
+  END DO
+
+  DEALLOCATE(ZTMP)
+  DEALLOCATE(ZRHOT)
+END IF
+! Conditional sampling variables
+IF (LCONDSAMP) THEN
+  DO JSV = NSV_CSBEG, NSV_CSEND
+    TZFIELD = TSVLIST(JSV)
+    TZFIELD%CMNHNAME  = TRIM( TZFIELD%CMNHNAME )  // 'T'
+    TZFIELD%CLONGNAME = TRIM( TZFIELD%CLONGNAME ) // 'T'
+    CALL IO_Field_write(TPFILE,TZFIELD,XSVT(:,:,:,JSV))
+  END DO
+END IF
+! chemical scalar variables in gas phase ppb
 IF (LCHEMDIAG) THEN
   DO JSV = NSV_CHGSBEG,NSV_CHGSEND
-    TZFIELD%CMNHNAME   = TRIM(UPCASE(CNAMES(JSV-NSV_CHGSBEG+1)))//'T'
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'ppb'
-    TZFIELD%CDIR       = 'XY'
+    TZFIELD = TSVLIST(JSV)
+    TZFIELD%CMNHNAME  = TRIM( TZFIELD%CMNHNAME )  // 'T'
+    TZFIELD%CLONGNAME = TRIM( TZFIELD%CLONGNAME ) // 'T'
+    TZFIELD%CUNITS    = 'ppb'
     WRITE(TZFIELD%CCOMMENT,'(A6,A4,I3.3)')'X_Y_Z_','CHIM',JSV
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
     CALL IO_Field_write(TPFILE,TZFIELD,XSVT(:,:,:,JSV)*1.E9)
   END DO
 END IF
 IF (LCHAQDIAG) THEN    !aqueous concentration in M
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CUNITS     = 'mol l-1' !Original value: 'M' (molar) but not known by udunits => replaced by equivalent mol l-1
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
-  !
   ZWORK31(:,:,:)=0.
   DO JSV = NSV_CHACBEG, NSV_CHACBEG-1+NEQAQ/2   !cloud water
-    TZFIELD%CMNHNAME   = TRIM(CNAMES(JSV-NSV_CHACBEG+NSV_CHGS+1))//'T'
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+    TZFIELD = TSVLIST(JSV)
+    TZFIELD%CMNHNAME  = TRIM( TZFIELD%CMNHNAME )  // 'T'
+    TZFIELD%CLONGNAME = TRIM( TZFIELD%CLONGNAME ) // 'T'
+    TZFIELD%CUNITS    = 'mol l-1' !Original value: 'M' (molar) but not known by udunits => replaced by equivalent mol l-1
     WRITE(TZFIELD%CCOMMENT,'(A6,A4,I3.3)')'X_Y_Z_','CHAQ',JSV
     WHERE(((XRT(:,:,:,2)*XRHODREF(:,:,:))/1.e3) .GE. XRTMIN_AQ)
       ZWORK31(:,:,:)=(XSVT(:,:,:,JSV)*1000.)/(XMD*1.E+3*XRT(:,:,:,2))
@@ -1274,8 +1325,10 @@ IF (LCHAQDIAG) THEN    !aqueous concentration in M
   !
   ZWORK31(:,:,:)=0.
   DO JSV = NSV_CHACBEG+NEQAQ/2, NSV_CHACEND    !rain water
-    TZFIELD%CMNHNAME   = TRIM(CNAMES(JSV-NSV_CHACBEG+NSV_CHGS+1))//'T'
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+    TZFIELD = TSVLIST(JSV)
+    TZFIELD%CMNHNAME  = TRIM( TZFIELD%CMNHNAME )  // 'T'
+    TZFIELD%CLONGNAME = TRIM( TZFIELD%CLONGNAME ) // 'T'
+    TZFIELD%CUNITS    = 'mol l-1' !Original value: 'M' (molar) but not known by udunits => replaced by equivalent mol l-1
     WRITE(TZFIELD%CCOMMENT,'(A6,A4,I3.3)')'X_Y_Z_','CHAQ',JSV
     WHERE(((XRT(:,:,:,3)*XRHODREF(:,:,:))/1.e3) .GE. XRTMIN_AQ)
       ZWORK31(:,:,:)=(XSVT(:,:,:,JSV)*1000.)/(XMD*1.E+3*XRT(:,:,:,3))
@@ -1293,54 +1346,533 @@ IF (LCHAQDIAG) THEN    !aqueous concentration in M
 !    CALL IO_Field_write(TPFILE,TZFIELD,ZWORK31)
 !  END DO
 END IF
+! Aerosol
+IF ((LCHEMDIAG).AND.(LORILAM).AND.(LUSECHEM)) THEN
+  DO JSV = NSV_AERBEG, NSV_AEREND
+    TZFIELD = TSVLIST(JSV)
+    TZFIELD%CMNHNAME  = TRIM( TZFIELD%CMNHNAME )  // 'T'
+    TZFIELD%CLONGNAME = TRIM( TZFIELD%CLONGNAME ) // 'T'
+    TZFIELD%CUNITS    = 'ppb'
+    WRITE(TZFIELD%CCOMMENT,'(A6,A4,I3.3)')'X_Y_Z_','AERO',JSV
+    CALL IO_Field_write(TPFILE,TZFIELD,XSVT(:,:,:,JSV)*1.E9)
+  END DO
+  !
+  IF (.NOT.(ASSOCIATED(XN3D)))   &
+    ALLOCATE(XN3D(SIZE(XSVT,1),SIZE(XSVT,2),SIZE(XSVT,3),JPMODE))
+  IF (.NOT.(ASSOCIATED(XRG3D)))  &
+    ALLOCATE(XRG3D(SIZE(XSVT,1),SIZE(XSVT,2),SIZE(XSVT,3),JPMODE))
+  IF (.NOT.(ASSOCIATED(XSIG3D))) &
+    ALLOCATE(XSIG3D(SIZE(XSVT,1),SIZE(XSVT,2),SIZE(XSVT,3),JPMODE))
+  !
+  CALL  PPP2AERO(XSVT(:,:,:,NSV_AERBEG:NSV_AEREND), XRHODREF, &
+                 PSIG3D=XSIG3D, PRG3D=XRG3D, PN3D=XN3D, PCTOTA=ZPTOTA)
 
-! Passive polluant scalar variables
-IF (LPASPOL) THEN
-  ALLOCATE(ZRHOT( SIZE(XTHT,1), SIZE(XTHT,2),SIZE(XTHT,3)))
-  ALLOCATE(ZTMP(  SIZE(XTHT,1), SIZE(XTHT,2),SIZE(XTHT,3)))
-!
-!*	Density                                          
-!
-  ZRHOT(:,:,:)=XPABST(:,:,:)/(XRD*XTHT(:,:,:)*((XPABST(:,:,:)/XP00)**(XRD/XCPD)))
-!
-!*	Conversion g/m3.
-!
-  ZRHOT(:,:,:)=ZRHOT(:,:,:)*1000.0
-  !
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CUNITS     = 'g m-3'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
-  !
-  DO JSV = 1,NSV_PP
-    ZTMP(:,:,:)=ABS( XSVT(:,:,:,JSV+NSV_PPBEG-1)*ZRHOT(:,:,:) )
-    WRITE(TZFIELD%CMNHNAME,'(A3,I3.3)')'PPT',JSV
+  TZFIELD = TFIELDMETADATA(                   &
+    CMNHNAME   = 'generic for aerosol modes', &
+    CSTDNAME   = '',                          &
+    CDIR       = 'XY',                        &
+    NGRID      = 1,                           &
+    NTYPE      = TYPEREAL,                    &
+    NDIMS      = 3,                           &
+    LTIMEDEP   = .TRUE.                       )
+
+  DO JJ=1,JPMODE
+    WRITE(TZFIELD%CMNHNAME,'(A3,I1)')'RGA',JJ
     TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CCOMMENT   = 'X_Y_Z_'//TRIM(TZFIELD%CMNHNAME)
-    CALL IO_Field_write(TPFILE,TZFIELD,ZTMP)
-  END DO
-  DEALLOCATE(ZTMP)
-  DEALLOCATE(ZRHOT)
+    TZFIELD%CUNITS     = 'um'
+    WRITE(TZFIELD%CCOMMENT,'(A21,I1)')'RG (nb) AEROSOL MODE ',JJ
+    CALL IO_Field_write(TPFILE,TZFIELD,XRG3D(:,:,:,JJ))
+    !
+    WRITE(TZFIELD%CMNHNAME,'(A4,I1)')'RGAM',JJ
+    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+    TZFIELD%CUNITS     = 'um'
+    WRITE(TZFIELD%CCOMMENT,'(A20,I1)')'RG (m) AEROSOL MODE ',JJ
+    ZWORK31(:,:,:)=XRG3D(:,:,:,JJ) / (EXP(-3.*(LOG(XSIG3D(:,:,:,JJ)))**2))
+    CALL IO_Field_write(TPFILE,TZFIELD,ZWORK31)
+    !
+    WRITE(TZFIELD%CMNHNAME,'(A3,I1)')'N0A',JJ
+    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+    TZFIELD%CUNITS     = 'cm-3'
+    WRITE(TZFIELD%CCOMMENT,'(A16,I1)')'N0 AEROSOL MODE ',JJ
+    CALL IO_Field_write(TPFILE,TZFIELD,XN3D(:,:,:,JJ)*1.E-6)
+    !
+    WRITE(TZFIELD%CMNHNAME,'(A4,I1)')'SIGA',JJ
+    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+    TZFIELD%CUNITS     = '1'
+    WRITE(TZFIELD%CCOMMENT,'(A19,I1)')'SIGMA AEROSOL MODE ',JJ
+    CALL IO_Field_write(TPFILE,TZFIELD,XSIG3D(:,:,:,JJ))
+    !
+    WRITE(TZFIELD%CMNHNAME,'(A4,I1)')'MSO4',JJ
+    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+    TZFIELD%CUNITS     = 'ug m-3'
+    WRITE(TZFIELD%CCOMMENT,'(A22,I1)')'MASS SO4 AEROSOL MODE ',JJ
+    CALL IO_Field_write(TPFILE,TZFIELD,ZPTOTA(:,:,:,JP_AER_SO4,JJ))
+    !
+    WRITE(TZFIELD%CMNHNAME,'(A4,I1)')'MNO3',JJ
+    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+    TZFIELD%CUNITS     = 'ug m-3'
+    WRITE(TZFIELD%CCOMMENT,'(A22,I1)')'MASS NO3 AEROSOL MODE ',JJ
+    CALL IO_Field_write(TPFILE,TZFIELD,ZPTOTA(:,:,:,JP_AER_NO3,JJ))
+    !
+    WRITE(TZFIELD%CMNHNAME,'(A4,I1)')'MNH3',JJ
+    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+    TZFIELD%CUNITS     = 'ug m-3'
+    WRITE(TZFIELD%CCOMMENT,'(A22,I1)')'MASS NH3 AEROSOL MODE ',JJ
+    CALL IO_Field_write(TPFILE,TZFIELD,ZPTOTA(:,:,:,JP_AER_NH3,JJ))
+    !
+    WRITE(TZFIELD%CMNHNAME,'(A4,I1)')'MH2O',JJ
+    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+    TZFIELD%CUNITS     = 'ug m-3'
+    WRITE(TZFIELD%CCOMMENT,'(A22,I1)')'MASS H2O AEROSOL MODE ',JJ
+    CALL IO_Field_write(TPFILE,TZFIELD,ZPTOTA(:,:,:,JP_AER_H2O,JJ))
+    !
+    IF (NSOA .EQ. 10) THEN
+      WRITE(TZFIELD%CMNHNAME,'(A5,I1)')'MSOA1',JJ
+      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+      TZFIELD%CUNITS     = 'ug m-3'
+      WRITE(TZFIELD%CCOMMENT,'(A23,I1)')'MASS SOA1 AEROSOL MODE ',JJ
+      CALL IO_Field_write(TPFILE,TZFIELD,ZPTOTA(:,:,:,JP_AER_SOA1,JJ))
+      !
+      WRITE(TZFIELD%CMNHNAME,'(A5,I1)')'MSOA2',JJ
+      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+      TZFIELD%CUNITS     = 'ug m-3'
+      WRITE(TZFIELD%CCOMMENT,'(A23,I1)')'MASS SOA2 AEROSOL MODE ',JJ
+      CALL IO_Field_write(TPFILE,TZFIELD,ZPTOTA(:,:,:,JP_AER_SOA2,JJ))
+      !
+      WRITE(TZFIELD%CMNHNAME,'(A5,I1)')'MSOA3',JJ
+      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+      TZFIELD%CUNITS     = 'ug m-3'
+      WRITE(TZFIELD%CCOMMENT,'(A23,I1)')'MASS SOA3 AEROSOL MODE ',JJ
+      CALL IO_Field_write(TPFILE,TZFIELD,ZPTOTA(:,:,:,JP_AER_SOA3,JJ))
+      !
+      WRITE(TZFIELD%CMNHNAME,'(A5,I1)')'MSOA4',JJ
+      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+      TZFIELD%CUNITS     = 'ug m-3'
+      WRITE(TZFIELD%CCOMMENT,'(A23,I1)')'MASS SOA4 AEROSOL MODE ',JJ
+      CALL IO_Field_write(TPFILE,TZFIELD,ZPTOTA(:,:,:,JP_AER_SOA4,JJ))
+      !
+      WRITE(TZFIELD%CMNHNAME,'(A5,I1)')'MSOA5',JJ
+      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+      TZFIELD%CUNITS     = 'ug m-3'
+      WRITE(TZFIELD%CCOMMENT,'(A23,I1)')'MASS SOA5 AEROSOL MODE ',JJ
+      CALL IO_Field_write(TPFILE,TZFIELD,ZPTOTA(:,:,:,JP_AER_SOA5,JJ))
+      !
+      WRITE(TZFIELD%CMNHNAME,'(A5,I1)')'MSOA6',JJ
+      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+      TZFIELD%CUNITS     = 'ug m-3'
+      WRITE(TZFIELD%CCOMMENT,'(A23,I1)')'MASS SOA6 AEROSOL MODE ',JJ
+      CALL IO_Field_write(TPFILE,TZFIELD,ZPTOTA(:,:,:,JP_AER_SOA6,JJ))
+      !
+      WRITE(TZFIELD%CMNHNAME,'(A5,I1)')'MSOA7',JJ
+      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+      TZFIELD%CUNITS     = 'ug m-3'
+      WRITE(TZFIELD%CCOMMENT,'(A23,I1)')'MASS SOA7 AEROSOL MODE ',JJ
+      CALL IO_Field_write(TPFILE,TZFIELD,ZPTOTA(:,:,:,JP_AER_SOA7,JJ))
+      !
+      WRITE(TZFIELD%CMNHNAME,'(A5,I1)')'MSOA8',JJ
+      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+      TZFIELD%CUNITS     = 'ug m-3'
+      WRITE(TZFIELD%CCOMMENT,'(A23,I1)')'MASS SOA8 AEROSOL MODE ',JJ
+      CALL IO_Field_write(TPFILE,TZFIELD,ZPTOTA(:,:,:,JP_AER_SOA8,JJ))
+      !
+      WRITE(TZFIELD%CMNHNAME,'(A5,I1)')'MSOA9',JJ
+      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+      TZFIELD%CUNITS     = 'ug m-3'
+      WRITE(TZFIELD%CCOMMENT,'(A23,I1)')'MASS SOA9 AEROSOL MODE ',JJ
+      CALL IO_Field_write(TPFILE,TZFIELD,ZPTOTA(:,:,:,JP_AER_SOA9,JJ))
+      !
+      WRITE(TZFIELD%CMNHNAME,'(A6,I1)')'MSOA10',JJ
+      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+      TZFIELD%CUNITS     = 'ug m-3'
+      WRITE(TZFIELD%CCOMMENT,'(A24,I1)')'MASS SOA10 AEROSOL MODE ',JJ
+      CALL IO_Field_write(TPFILE,TZFIELD,ZPTOTA(:,:,:,JP_AER_SOA10,JJ))
+    END IF
+    !
+    WRITE(TZFIELD%CMNHNAME,'(A3,I1)')'MOC',JJ
+    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+    TZFIELD%CUNITS     = 'ug m-3'
+    WRITE(TZFIELD%CCOMMENT,'(A21,I1)')'MASS OC AEROSOL MODE ',JJ
+    CALL IO_Field_write(TPFILE,TZFIELD,ZPTOTA(:,:,:,JP_AER_OC,JJ))
+    !
+    WRITE(TZFIELD%CMNHNAME,'(A3,I1)')'MBC',JJ
+    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+    TZFIELD%CUNITS     = 'ug m-3'
+    WRITE(TZFIELD%CCOMMENT,'(A21,I1)')'MASS BC AEROSOL MODE ',JJ
+    CALL IO_Field_write(TPFILE,TZFIELD,ZPTOTA(:,:,:,JP_AER_BC,JJ))
+  ENDDO
 END IF
-! Conditional sampling variables
-IF (LCONDSAMP) THEN
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CUNITS     = '1'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+! Dust variables
+IF (LDUST) THEN
+  IF(.NOT.ALLOCATED(ZSIG_DST)) &
+    ALLOCATE(ZSIG_DST(SIZE(XSVT,1), SIZE(XSVT,2), SIZE(XSVT,3), NMODE_DST))
+  IF(.NOT.ALLOCATED(ZRG_DST))  &
+    ALLOCATE(ZRG_DST(SIZE(XSVT,1), SIZE(XSVT,2), SIZE(XSVT,3), NMODE_DST))
+  IF(.NOT.ALLOCATED(ZN0_DST))  &
+    ALLOCATE(ZN0_DST(SIZE(XSVT,1), SIZE(XSVT,2), SIZE(XSVT,3), NMODE_DST))
   !
-  DO JSV = NSV_CSBEG,NSV_CSEND
-    WRITE(TZFIELD%CMNHNAME,'(A3,I3.3)')'CST',JSV
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CCOMMENT   = 'X_Y_Z_'//TRIM(TZFIELD%CMNHNAME)
-    CALL IO_Field_write(TPFILE,TZFIELD,XSVT(:,:,:,JSV))
+  DO JSV = NSV_DSTBEG, NSV_DSTEND
+    TZFIELD = TSVLIST(JSV)
+    TZFIELD%CMNHNAME  = TRIM( TZFIELD%CMNHNAME )  // 'T'
+    TZFIELD%CLONGNAME = TRIM( TZFIELD%CLONGNAME ) // 'T'
+    TZFIELD%CUNITS    = 'ppb'
+    WRITE(TZFIELD%CCOMMENT,'(A6,A4,I3.3)')'X_Y_Z_','DUST',JSV
+    CALL IO_Field_write(TPFILE,TZFIELD,XSVT(:,:,:,JSV)*1.E9)
   END DO
+  !
+  CALL PPP2DUST(XSVT(:,:,:,NSV_DSTBEG:NSV_DSTEND),XRHODREF,&
+               PSIG3D=ZSIG_DST, PRG3D=ZRG_DST, PN3D=ZN0_DST)
+
+  TZFIELD = TFIELDMETADATA(                &
+    CMNHNAME   = 'generic for dust modes', &
+    CSTDNAME   = '',                       &
+    CDIR       = 'XY',                     &
+    NGRID      = 1,                        &
+    NTYPE      = TYPEREAL,                 &
+    NDIMS      = 3,                        &
+    LTIMEDEP   = .TRUE.                    )
+
+  DO JJ=1,NMODE_DST
+    WRITE(TZFIELD%CMNHNAME,'(A6,I1)')'DSTRGA',JJ
+    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+    TZFIELD%CUNITS     = 'um'
+    WRITE(TZFIELD%CCOMMENT,'(A18,I1)')'RG (nb) DUST MODE ',JJ
+    CALL IO_Field_write(TPFILE,TZFIELD,ZRG_DST(:,:,:,JJ))
+    !
+    WRITE(TZFIELD%CMNHNAME,'(A7,I1)')'DSTRGAM',JJ
+    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+    TZFIELD%CUNITS     = 'um'
+    WRITE(TZFIELD%CCOMMENT,'(A17,I1)')'RG (m) DUST MODE ',JJ
+    ZWORK31(:,:,:)=ZRG_DST(:,:,:,JJ) / (EXP(-3.*(LOG(ZSIG_DST(:,:,:,JJ)))**2))
+    CALL IO_Field_write(TPFILE,TZFIELD,ZWORK31)
+    !
+    WRITE(TZFIELD%CMNHNAME,'(A6,I1)')'DSTN0A',JJ
+    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+    TZFIELD%CUNITS     = 'm-3'
+    WRITE(TZFIELD%CCOMMENT,'(A13,I1)')'N0 DUST MODE ',JJ
+    CALL IO_Field_write(TPFILE,TZFIELD,ZN0_DST(:,:,:,JJ))
+    !
+    WRITE(TZFIELD%CMNHNAME,'(A7,I1)')'DSTSIGA',JJ
+    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+    TZFIELD%CUNITS     = '1'
+    WRITE(TZFIELD%CCOMMENT,'(A16,I1)')'SIGMA DUST MODE ',JJ
+    CALL IO_Field_write(TPFILE,TZFIELD,ZSIG_DST(:,:,:,JJ))
+    !DUST MASS CONCENTRATION
+    WRITE(TZFIELD%CMNHNAME,'(A4,I1)')'DSTMSS',JJ
+    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+    TZFIELD%CUNITS     = 'ug m-3'
+    WRITE(TZFIELD%CCOMMENT,'(A14,I1)')'MASSCONC MODE ',JJ
+    ZWORK31(:,:,:)= ZN0_DST(:,:,:,JJ)*4./3.*3.14*2500.*1e9 & !kg-->ug
+       * (ZRG_DST(:,:,:,JJ)**3)*1.d-18 &  !um-->m
+       * exp(4.5*log(ZSIG_DST(:,:,:,JJ))*log(ZSIG_DST(:,:,:,JJ)))
+    CALL IO_Field_write(TPFILE,TZFIELD,ZWORK31)
+    !DUST BURDEN (g/m2)
+    ZWORK21(:,:)=0.0
+    DO JK=IKB,IKE
+      ZWORK31(:,:,JK) = ZWORK31(:,:,JK) *(XZZ(:,:,JK+1)-XZZ(:,:,JK))      &
+                       *1.d-6 ! Convert to ug/m2-->g/m2 in each layer
+    END DO
+    DO JK=IKB,IKE
+      DO JT=IJB,IJE
+        DO JI=IIB,IIE
+           ZWORK21(JI,JT)=ZWORK21(JI,JT)+ZWORK31(JI,JT,JK)
+        ENDDO
+      ENDDO
+    ENDDO
+    WRITE(TZFIELD%CMNHNAME,'(A7,I1)')'DSTBRDN',JJ
+    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+    TZFIELD%CUNITS     = 'g m-2'
+    WRITE(TZFIELD%CCOMMENT,'(A6,I1)')'BURDEN',JJ
+    TZFIELD%NDIMS      = 2
+    CALL IO_Field_write(TPFILE,TZFIELD,ZWORK21)
+    !
+    TZFIELD%NDIMS      = 3
+  ENDDO
+END IF
+IF (LDUST.AND.LDEPOS_DST(IMI)) THEN
+  DO JSV = NSV_DSTBEG, NSV_DSTEND
+    TZFIELD = TSVLIST(JSV)
+    TZFIELD%CMNHNAME  = TRIM( TZFIELD%CMNHNAME )  // 'T'
+    TZFIELD%CLONGNAME = TRIM( TZFIELD%CLONGNAME ) // 'T'
+    TZFIELD%CUNITS    = 'ppb'
+    WRITE(TZFIELD%CCOMMENT,'(A,I3.3)') 'X_Y_Z_DUSTDEP', JSV
+    CALL IO_Field_write(TPFILE,TZFIELD,XSVT(:,:,:,JSV)*1.E9)
+  END DO
+  !
+  ZSDSTDEP => XSVT(:,:,:,NSV_DSTDEPBEG:NSV_DSTDEPEND)
+  !
+  TZFIELD = TFIELDMETADATA(                   &
+    CMNHNAME   = 'generic for dustdep modes', &
+    CSTDNAME   = '',                          &
+    CDIR       = 'XY',                        &
+    NGRID      = 1,                           &
+    NTYPE      = TYPEREAL,                    &
+    NDIMS      = 3,                           &
+    LTIMEDEP   = .TRUE.                       )
+  !
+  DO JJ=1,NMODE_DST
+    ! FOR CLOUDS
+    WRITE(TZFIELD%CMNHNAME,'(A9,I1)')'DSTDEPN0A',JJ
+    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+    WRITE(TZFIELD%CCOMMENT,'(A16,I1)')'N0 DUSTDEP MODE ',JJ
+    TZFIELD%CUNITS     = 'm-3'
+    ! CLOUD: CALCULATE MOMENT 3 FROM TOTAL AEROSOL MASS
+    ZWORK31(:,:,:) = ZSDSTDEP(:,:,:,JJ)         &!==>molec_{aer}/molec_{air}
+                     *(XMOLARWEIGHT_DUST/XMD)   &!==>kg_{aer}/kg_{air}
+                     *XRHODREF(:,:,:)           &!==>kg_{aer}/m3_{air}
+                     /XDENSITY_DUST             &!==>m3_{aer}/m3_{air}
+                     *XM3TOUM3                  &!==>um3_{aer}/m3_{air}
+                     /(XPI*4./3.)                !==>um3_{aer}/m3_{air}
+            !==>volume 3rd moment
+    !CLOUD: CALCULATE MOMENT 0 FROM DISPERSION AND MEAN RADIUS
+    ZWORK31(:,:,:)=  ZWORK31(:,:,:)/      &
+                    ((ZRG_DST(:,:,:,JJ)**3)*      &
+                    EXP(4.5 * LOG(ZSIG_DST(:,:,:,JJ))**2))
+    !CLOUD: RETURN TO CONCENTRATION #/m3
+    ZWORK31(:,:,:)= ZWORK31(:,:,:) *   XMD/ &
+                     (XAVOGADRO*XRHODREF(:,:,:))
+    !CLOUD:  Get number concentration (#/molec_{air}==>#/m3)
+    ZWORK31(:,:,:)=                         &
+                    ZWORK31(:,:,:)                  & !#/molec_{air}
+                    * XAVOGADRO                     & !==>#/mole
+                    / XMD                           & !==>#/kg_{air}
+                    * XRHODREF(:,:,:)                 !==>#/m3
+    CALL IO_Field_write(TPFILE,TZFIELD,ZWORK31)
+    ! CLOUD:   DUST MASS CONCENTRATION
+    WRITE(TZFIELD%CMNHNAME,'(A9,I1)')'DSTDEPMSS',JJ
+    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+    WRITE(TZFIELD%CCOMMENT,'(A17,I1)')'DEPMASSCONC MODE ',JJ
+    TZFIELD%CUNITS     = 'ug m-3'
+    ZWORK31(:,:,:)= ZWORK31(:,:,:)*4./3.*3.14*2500.*1e9 & !kg-->ug
+          * (ZRG_DST(:,:,:,JJ)**3)*1.d-18               &  !um-->m
+          * exp(4.5*log(ZSIG_DST(:,:,:,JJ))*log(ZSIG_DST(:,:,:,JJ)))
+    CALL IO_Field_write(TPFILE,TZFIELD,ZWORK31)
+    !   FOR RAIN DROPS
+    WRITE(TZFIELD%CMNHNAME,'(A9,I1)')'DSTDEPN0A',JJ+NMODE_DST
+    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+    WRITE(TZFIELD%CCOMMENT,'(A16,I1)')'N0 DUSTDEP MODE ',JJ+NMODE_DST
+    TZFIELD%CUNITS     = 'm-3'
+    ! RAIN: CALCULATE MOMENT 3 FROM TOTAL AEROSOL MASS
+    ZWORK31(:,:,:)=ZSDSTDEP(:,:,:,JJ+NMODE_DST)  &!==>molec_{aer}/molec_{air}
+            *(XMOLARWEIGHT_DUST/XMD)             &!==>kg_{aer}/kg_{air}
+            *XRHODREF(:,:,:)                     &!==>kg_{aer}/m3_{air}
+            *(1.d0/XDENSITY_DUST)                &!==>m3_{aer}/m3_{air}
+            *XM3TOUM3                            &!==>um3_{aer}/m3_{air}
+            /(XPI*4./3.)                          !==>um3_{aer}/m3_{air}
+            !==>volume 3rd moment
+    !RAIN: CALCULATE MOMENT 0 FROM DISPERSION AND MEAN RADIUS
+    ZWORK31(:,:,:)= ZWORK31(:,:,:)/                 &
+             ((ZRG_DST(:,:,:,JJ)**3)*               &
+              EXP(4.5 * LOG(ZSIG_DST(:,:,:,JJ))**2))
+    !RAIN: RETURN TO CONCENTRATION #/m3
+    ZWORK31(:,:,:)= ZWORK31(:,:,:) *   XMD/ &
+                    (XAVOGADRO*XRHODREF(:,:,:))
+    !RAIN: Get number concentration (#/molec_{air}==>#/m3)
+    ZWORK31(:,:,:)=                   &
+                    ZWORK31(:,:,:)    & !#/molec_{air}
+                    * XAVOGADRO       & !==>#/mole
+                    / XMD             & !==>#/kg_{air}
+                    * XRHODREF(:,:,:)   !==>#/m3
+    CALL IO_Field_write(TPFILE,TZFIELD,ZWORK31)
+    ! RAIN:   DUST MASS CONCENTRATION
+    WRITE(TZFIELD%CMNHNAME,'(A9,I1)')'DSTDEPMSS',JJ+NMODE_DST
+    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+    WRITE(TZFIELD%CCOMMENT,'(A17,I1)')'DEPMASSCONC MODE ',JJ+NMODE_DST
+    TZFIELD%CUNITS     = 'ug m-3'
+    ZWORK31(:,:,:)= ZWORK31(:,:,:)*4./3.*3.14*2500.*1e9 & !kg-->ug
+                    * (ZRG_DST(:,:,:,JJ)**3)*1.d-18     &  !um-->m
+                    * exp(4.5*log(ZSIG_DST(:,:,:,JJ))*log(ZSIG_DST(:,:,:,JJ)))
+    CALL IO_Field_write(TPFILE,TZFIELD,ZWORK31)
+  END DO
+
+  ZSDSTDEP => NULL()
+!
+END IF
+! Sea Salt variables
+IF (LSALT) THEN
+  IF(.NOT.ALLOCATED(ZSIG_SLT)) &
+    ALLOCATE(ZSIG_SLT(SIZE(XSVT,1), SIZE(XSVT,2), SIZE(XSVT,3), NMODE_SLT))
+  IF(.NOT.ALLOCATED(ZRG_SLT))  &
+    ALLOCATE(ZRG_SLT(SIZE(XSVT,1), SIZE(XSVT,2), SIZE(XSVT,3), NMODE_SLT))
+  IF(.NOT.ALLOCATED(ZN0_SLT))  &
+    ALLOCATE(ZN0_SLT(SIZE(XSVT,1), SIZE(XSVT,2), SIZE(XSVT,3), NMODE_SLT))
+  !
+  DO JSV = NSV_SLTBEG, NSV_SLTEND
+    TZFIELD = TSVLIST(JSV)
+    TZFIELD%CMNHNAME  = TRIM( TZFIELD%CMNHNAME )  // 'T'
+    TZFIELD%CLONGNAME = TRIM( TZFIELD%CLONGNAME ) // 'T'
+    TZFIELD%CUNITS    = 'ppb'
+    WRITE(TZFIELD%CCOMMENT,'(A,I3.3)') 'X_Y_Z_SALT', JSV
+    CALL IO_Field_write(TPFILE,TZFIELD,XSVT(:,:,:,JSV)*1.E9)
+  END DO
+  !
+  CALL PPP2SALT(XSVT(:,:,:,NSV_SLTBEG:NSV_SLTEND),XRHODREF,&
+               PSIG3D=ZSIG_SLT, PRG3D=ZRG_SLT, PN3D=ZN0_SLT)
+  !
+  TZFIELD = TFIELDMETADATA(                &
+    CMNHNAME   = 'generic for salt modes', &
+    CSTDNAME   = '',                       &
+    CDIR       = 'XY',                     &
+    NGRID      = 1,                        &
+    NTYPE      = TYPEREAL,                 &
+    NDIMS      = 3,                        &
+    LTIMEDEP   = .TRUE.                    )
+  !
+  DO JJ=1,NMODE_SLT
+    WRITE(TZFIELD%CMNHNAME,'(A6,I1)')'SLTRGA',JJ
+    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+    TZFIELD%CUNITS     = 'um'
+    WRITE(TZFIELD%CCOMMENT,'(A18,I1)')'RG (nb) SALT MODE ',JJ
+    CALL IO_Field_write(TPFILE,TZFIELD,ZRG_SLT(:,:,:,JJ))
+    !
+    WRITE(TZFIELD%CMNHNAME,'(A7,I1)')'SLTRGAM',JJ
+    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+    TZFIELD%CUNITS     = 'um'
+    WRITE(TZFIELD%CCOMMENT,'(A17,I1)')'RG (m) SALT MODE ',JJ
+    ZWORK31(:,:,:)=ZRG_SLT(:,:,:,JJ) / (EXP(-3.*(LOG(ZSIG_SLT(:,:,:,JJ)))**2))
+    CALL IO_Field_write(TPFILE,TZFIELD,ZWORK31)
+    !
+    WRITE(TZFIELD%CMNHNAME,'(A6,I1)')'SLTN0A',JJ
+    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+    TZFIELD%CUNITS     = 'm-3'
+    WRITE(TZFIELD%CCOMMENT,'(A13,I1)')'N0 SALT MODE ',JJ
+    CALL IO_Field_write(TPFILE,TZFIELD,ZN0_SLT(:,:,:,JJ))
+    !
+    WRITE(TZFIELD%CMNHNAME,'(A7,I1)')'SLTSIGA',JJ
+    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+    TZFIELD%CUNITS     = '1'
+    WRITE(TZFIELD%CCOMMENT,'(A16,I1)')'SIGMA SALT MODE ',JJ
+    CALL IO_Field_write(TPFILE,TZFIELD,ZSIG_SLT(:,:,:,JJ))
+    !SALT MASS CONCENTRATION
+    WRITE(TZFIELD%CMNHNAME,'(A4,I1)')'SLTMSS',JJ
+    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+    TZFIELD%CUNITS     = 'ug m-3'
+    WRITE(TZFIELD%CCOMMENT,'(A14,I1)')'MASSCONC MODE ',JJ
+    ZWORK31(:,:,:)= ZN0_SLT(:,:,:,JJ)*4./3.*3.14*2500.*1e9 & !kg-->ug
+       * (ZRG_SLT(:,:,:,JJ)**3)*1.d-18 &  !um-->m
+       * exp(4.5*log(ZSIG_SLT(:,:,:,JJ))*log(ZSIG_SLT(:,:,:,JJ)))
+    CALL IO_Field_write(TPFILE,TZFIELD,ZWORK31)
+    !SALT BURDEN (g/m2)
+    ZWORK21(:,:)=0.0
+    DO JK=IKB,IKE
+      ZWORK31(:,:,JK) = ZWORK31(:,:,JK) *(XZZ(:,:,JK+1)-XZZ(:,:,JK))      &
+                       *1.d-6 ! Convert to ug/m2-->g/m2 in each layer
+    END DO
+    DO JK=IKB,IKE
+      DO JT=IJB,IJE
+        DO JI=IIB,IIE
+           ZWORK21(JI,JT)=ZWORK21(JI,JT)+ZWORK31(JI,JT,JK)
+        ENDDO
+      ENDDO
+    ENDDO
+    WRITE(TZFIELD%CMNHNAME,'(A7,I1)')'SLTBRDN',JJ
+    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+    TZFIELD%CUNITS     = 'g m-2'
+    WRITE(TZFIELD%CCOMMENT,'(A6,I1)')'BURDEN',JJ
+    TZFIELD%NDIMS      = 2
+    CALL IO_Field_write(TPFILE,TZFIELD,ZWORK21)
+    !
+    TZFIELD%NDIMS      = 3
+  ENDDO
+END IF
+IF (LSALT.AND.LDEPOS_SLT(IMI)) THEN
+  !
+  DO JSV = NSV_SLTDEPBEG, NSV_SLTDEPEND
+    TZFIELD = TSVLIST(JSV)
+    TZFIELD%CMNHNAME  = TRIM( TZFIELD%CMNHNAME )  // 'T'
+    TZFIELD%CLONGNAME = TRIM( TZFIELD%CLONGNAME ) // 'T'
+    TZFIELD%CUNITS    = 'ppb'
+    WRITE(TZFIELD%CCOMMENT,'(A,I3.3)') 'X_Y_Z_SALTDEP', JSV
+    CALL IO_Field_write(TPFILE,TZFIELD,XSVT(:,:,:,JSV)*1.E9)
+  END DO
+  !
+  ZSSLTDEP => XSVT(:,:,:,NSV_SLTDEPBEG:NSV_SLTDEPEND)
+  !
+  TZFIELD = TFIELDMETADATA(                   &
+    CMNHNAME   = 'generic for saltdep modes', &
+    CSTDNAME   = '',                          &
+    CDIR       = 'XY',                        &
+    NGRID      = 1,                           &
+    NTYPE      = TYPEREAL,                    &
+    NDIMS      = 3,                           &
+    LTIMEDEP   = .TRUE.                       )
+  !
+  DO JJ=1,NMODE_SLT
+    ! FOR CLOUDS
+    WRITE(TZFIELD%CMNHNAME,'(A9,I1)')'SLTDEPN0A',JJ
+    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+    WRITE(TZFIELD%CCOMMENT,'(A16,I1)')'N0 DUSTDEP MODE ',JJ
+    TZFIELD%CUNITS     = 'm-3'
+    ! CLOUD: CALCULATE MOMENT 3 FROM TOTAL AEROSOL MASS
+    ZWORK31(:,:,:) = ZSSLTDEP(:,:,:,JJ)         &!==>molec_{aer}/molec_{air}
+                     *(XMOLARWEIGHT_DUST/XMD)   &!==>kg_{aer}/kg_{air}
+                     *XRHODREF(:,:,:)           &!==>kg_{aer}/m3_{air}
+                     /XDENSITY_DUST             &!==>m3_{aer}/m3_{air}
+                     *XM3TOUM3                  &!==>um3_{aer}/m3_{air}
+                     /(XPI*4./3.)                !==>um3_{aer}/m3_{air}
+            !==>volume 3rd moment
+    !CLOUD: CALCULATE MOMENT 0 FROM DISPERSION AND MEAN RADIUS
+    ZWORK31(:,:,:) =  ZWORK31(:,:,:)/                        &
+                      ((ZRG_SLT(:,:,:,JJ)**3)*               &
+                      EXP(4.5 * LOG(ZSIG_SLT(:,:,:,JJ))**2))
+    !CLOUD: RETURN TO CONCENTRATION #/m3
+    ZWORK31(:,:,:)= ZWORK31(:,:,:) *   XMD/ &
+                    (XAVOGADRO*XRHODREF(:,:,:))
+    !CLOUD:  Get number concentration (#/molec_{air}==>#/m3)
+    ZWORK31(:,:,:)=                   &
+                    ZWORK31(:,:,:)    & !#/molec_{air}
+                    * XAVOGADRO       & !==>#/mole
+                    / XMD             & !==>#/kg_{air}
+                    * XRHODREF(:,:,:)   !==>#/m3
+    CALL IO_Field_write(TPFILE,TZFIELD,ZWORK31)
+    ! CLOUD:   DUST MASS CONCENTRATION
+    WRITE(TZFIELD%CMNHNAME,'(A9,I1)')'SLTDEPMSS',JJ
+    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+    WRITE(TZFIELD%CCOMMENT,'(A17,I1)')'DEPMASSCONC MODE ',JJ
+    TZFIELD%CUNITS     = 'ug m-3'
+    ZWORK31(:,:,:)= ZWORK31(:,:,:)*4./3.*3.14*2500.*1e9 & !kg-->ug
+                    * (ZRG_SLT(:,:,:,JJ)**3)*1.d-18     &  !um-->m
+                    * exp(4.5*log(ZSIG_SLT(:,:,:,JJ))*log(ZSIG_SLT(:,:,:,JJ)))
+    CALL IO_Field_write(TPFILE,TZFIELD,ZWORK31)
+    !   FOR RAIN DROPS
+    WRITE(TZFIELD%CMNHNAME,'(A9,I1)')'SLTDEPN0A',JJ+NMODE_SLT
+    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+    WRITE(TZFIELD%CCOMMENT,'(A16,I1)')'N0 DUSTDEP MODE ',JJ+NMODE_SLT
+    TZFIELD%CUNITS     = 'm-3'
+    ! RAIN: CALCULATE MOMENT 3 FROM TOTAL AEROSOL MASS
+    ZWORK31(:,:,:) = ZSSLTDEP(:,:,:,JJ+NMODE_SLT)  &!==>molec_{aer}/molec_{air}
+                     *(XMOLARWEIGHT_DUST/XMD)      &!==>kg_{aer}/kg_{air}
+                     *XRHODREF(:,:,:)              &!==>kg_{aer}/m3_{air}
+                     /XDENSITY_DUST                &!==>m3_{aer}/m3_{air}
+                     *XM3TOUM3                     &!==>um3_{aer}/m3_{air}
+                     /(XPI*4./3.)                   !==>um3_{aer}/m3_{air}
+            !==>volume 3rd moment
+    !RAIN: CALCULATE MOMENT 0 FROM DISPERSION AND MEAN RADIUS
+    ZWORK31(:,:,:)= ZWORK31(:,:,:)/                        &
+                    ((ZRG_SLT(:,:,:,JJ)**3)*               &
+                    EXP(4.5 * LOG(ZSIG_SLT(:,:,:,JJ))**2))
+    !RAIN: RETURN TO CONCENTRATION #/m3
+    ZWORK31(:,:,:)= ZWORK31(:,:,:) *   XMD/ &
+                    (XAVOGADRO*XRHODREF(:,:,:))
+    !RAIN: Get number concentration (#/molec_{air}==>#/m3)
+    ZWORK31(:,:,:)=                   &
+                    ZWORK31(:,:,:)    & !#/molec_{air}
+                    * XAVOGADRO       & !==>#/mole
+                    / XMD             & !==>#/kg_{air}
+                    * XRHODREF(:,:,:)   !==>#/m3
+    CALL IO_Field_write(TPFILE,TZFIELD,ZWORK31)
+    ! RAIN:   DUST MASS CONCENTRATION
+    WRITE(TZFIELD%CMNHNAME,'(A9,I1)')'SLTDEPMSS',JJ+NMODE_SLT
+    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+    WRITE(TZFIELD%CCOMMENT,'(A17,I1)')'DEPMASSCONC MODE ',JJ+NMODE_SLT
+    TZFIELD%CUNITS     = 'ug m-3'
+    ZWORK31(:,:,:)= ZWORK31(:,:,:)*4./3.*3.14*2500.*1e9 & !kg-->ug
+                    * (ZRG_SLT(:,:,:,JJ)**3)*1.d-18     &  !um-->m
+                    * exp(4.5*log(ZSIG_SLT(:,:,:,JJ))*log(ZSIG_SLT(:,:,:,JJ)))
+    CALL IO_Field_write(TPFILE,TZFIELD,ZWORK31)
+  END DO
+
+  ZSSLTDEP => NULL()
+!
 END IF
 !
 !  Blowing snow variables
@@ -1460,603 +1992,16 @@ IF(LBLOWSNOW) THEN
     LTIMEDEP   = .TRUE.                                     )
   CALL IO_Field_write(TPFILE,TZFIELD,ZWORK21(:,:))
 END IF
-! Lagrangian variables
-IF (LTRAJ) THEN
-  TZFIELD%CSTDNAME   = ''
-  !PW TODO: check units
-  TZFIELD%CUNITS     = ''
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
-  !
-  DO JSV = NSV_LGBEG,NSV_LGEND
-    TZFIELD%CMNHNAME   = TRIM(CLGNAMES(JSV-NSV_LGBEG+1))//'T'
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    WRITE(TZFIELD%CCOMMENT,'(A6,A20,I3.3,A4)')'X_Y_Z_','Lagrangian variable ',JSV,' (M)'
-    CALL IO_Field_write(TPFILE,TZFIELD,XSVT(:,:,:,JSV))
-  END DO
-  ! X coordinate
-  DO JK=1,IKU
-    DO JJ=1,IJU
-      DO JI=1,IIU-1
-       ZWORK31(JI,JJ,JK)=0.5*(XXHAT(JI)+XXHAT(JI+1))
-      END DO
-      ZWORK31(IIU,JJ,JK)=2.*ZWORK31(IIU-1,JJ,JK) - ZWORK31(IIU-2,JJ,JK)
-    END DO
-  END DO
-  TZFIELD%CMNHNAME   = 'X'
-  TZFIELD%CLONGNAME  = 'X'
-  TZFIELD%CCOMMENT   = 'X_Y_Z_X coordinate'
-  CALL IO_Field_write(TPFILE,TZFIELD,ZWORK31)
-  ! Y coordinate
-  DO JK=1,IKU
-    DO JI=1,IIU
-      DO JJ=1,IJU-1
-        ZWORK31(JI,JJ,JK)=0.5*(XYHAT(JJ)+XYHAT(JJ+1))
-      END DO
-      ZWORK31(JI,IJU,JK)=2.*ZWORK31(JI,IJU-1,JK) - ZWORK31(JI,IJU-2,JK)
-    END DO
-  END DO
-  TZFIELD%CMNHNAME   = 'Y'
-  TZFIELD%CLONGNAME  = 'Y'
-  TZFIELD%CCOMMENT   = 'X_Y_Z_Y coordinate'
-  CALL IO_Field_write(TPFILE,TZFIELD,ZWORK31)
-END IF
 ! linox scalar variables
 IF (.NOT.(LUSECHEM .OR. LCHEMDIAG) .AND. LCH_CONV_LINOX) THEN
-  DO JSV = NSV_LNOXBEG,NSV_LNOXEND
-!PW:BUG?: same name for all variables
-    TZFIELD%CMNHNAME   = 'LINOXT'
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'ppb'
-    TZFIELD%CDIR       = 'XY'
-    WRITE(TZFIELD%CCOMMENT,'(A6,A4,I3.3)')'X_Y_Z_','LNOX',JSV
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
+  DO JSV = NSV_LNOXBEG, NSV_LNOXEND
+    TZFIELD = TSVLIST(JSV)
+    TZFIELD%CMNHNAME  = TRIM( TZFIELD%CMNHNAME )  // 'T'
+    TZFIELD%CLONGNAME = TRIM( TZFIELD%CLONGNAME ) // 'T'
+    TZFIELD%CUNITS    = 'ppb'
+    WRITE(TZFIELD%CCOMMENT,'(A,I3.3)') 'X_Y_Z_LNOX', JSV
     CALL IO_Field_write(TPFILE,TZFIELD,XSVT(:,:,:,JSV)*1.E9)
   END DO
-END IF
-IF (LELECDIAG .AND. CELEC .NE. "NONE") THEN
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
-  !
-  DO JSV = NSV_ELECBEG,NSV_ELECEND
-    TZFIELD%CMNHNAME   = TRIM(CELECNAMES(JSV-NSV_ELECBEG+1))//'T'
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    IF (JSV .GT. NSV_ELECBEG .AND. JSV .LT. NSV_ELECEND) THEN 
-      TZFIELD%CUNITS     = 'C m-3'
-      WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
-    ELSE
-      TZFIELD%CUNITS     = 'm-3'
-      WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (nb ions/m3)'
-    END IF
-    ZWORK31(:,:,:)=XSVT(:,:,:,JSV) * XRHODREF(:,:,:)  ! C/kg --> C/m3
-    CALL IO_Field_write(TPFILE,TZFIELD,ZWORK31)
-  END DO
-END IF
-! Sea Salt variables
-IF (LSALT) THEN
-  IF(.NOT.ALLOCATED(ZSIG_SLT)) &
-    ALLOCATE(ZSIG_SLT(SIZE(XSVT,1), SIZE(XSVT,2), SIZE(XSVT,3), NMODE_SLT))
-  IF(.NOT.ALLOCATED(ZRG_SLT))  &
-    ALLOCATE(ZRG_SLT(SIZE(XSVT,1), SIZE(XSVT,2), SIZE(XSVT,3), NMODE_SLT))
-  IF(.NOT.ALLOCATED(ZN0_SLT))  &
-    ALLOCATE(ZN0_SLT(SIZE(XSVT,1), SIZE(XSVT,2), SIZE(XSVT,3), NMODE_SLT))
-  !
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CUNITS     = 'ppb'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
-  !
-  DO JSV = NSV_SLTBEG,NSV_SLTEND
-    TZFIELD%CMNHNAME   = TRIM(UPCASE(CSALTNAMES(JSV-NSV_SLTBEG+1)))//'T'
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    WRITE(TZFIELD%CCOMMENT,'(A6,A4,I3.3)')'X_Y_Z_','SALT',JSV
-    CALL IO_Field_write(TPFILE,TZFIELD,XSVT(:,:,:,JSV)*1.E9)
-  END DO
-  !
-  CALL PPP2SALT(XSVT(:,:,:,NSV_SLTBEG:NSV_SLTEND),XRHODREF,&
-               PSIG3D=ZSIG_SLT, PRG3D=ZRG_SLT, PN3D=ZN0_SLT)
-  !
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
-  !
-  DO JJ=1,NMODE_SLT
-    WRITE(TZFIELD%CMNHNAME,'(A6,I1)')'SLTRGA',JJ
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'um'
-    WRITE(TZFIELD%CCOMMENT,'(A18,I1)')'RG (nb) SALT MODE ',JJ
-    CALL IO_Field_write(TPFILE,TZFIELD,ZRG_SLT(:,:,:,JJ))
-    !
-    WRITE(TZFIELD%CMNHNAME,'(A7,I1)')'SLTRGAM',JJ
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'um'
-    WRITE(TZFIELD%CCOMMENT,'(A17,I1)')'RG (m) SALT MODE ',JJ
-    ZWORK31(:,:,:)=ZRG_SLT(:,:,:,JJ) / (EXP(-3.*(LOG(ZSIG_SLT(:,:,:,JJ)))**2))
-    CALL IO_Field_write(TPFILE,TZFIELD,ZWORK31)
-    !
-    WRITE(TZFIELD%CMNHNAME,'(A6,I1)')'SLTN0A',JJ
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'm-3'
-    WRITE(TZFIELD%CCOMMENT,'(A13,I1)')'N0 SALT MODE ',JJ
-    CALL IO_Field_write(TPFILE,TZFIELD,ZN0_SLT(:,:,:,JJ))
-    !
-    WRITE(TZFIELD%CMNHNAME,'(A7,I1)')'SLTSIGA',JJ
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = '1'
-    WRITE(TZFIELD%CCOMMENT,'(A16,I1)')'SIGMA SALT MODE ',JJ
-    CALL IO_Field_write(TPFILE,TZFIELD,ZSIG_SLT(:,:,:,JJ))
-    !SALT MASS CONCENTRATION
-    WRITE(TZFIELD%CMNHNAME,'(A4,I1)')'SLTMSS',JJ
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'ug m-3'
-    WRITE(TZFIELD%CCOMMENT,'(A14,I1)')'MASSCONC MODE ',JJ
-    ZWORK31(:,:,:)= ZN0_SLT(:,:,:,JJ)*4./3.*3.14*2500.*1e9 & !kg-->ug
-       * (ZRG_SLT(:,:,:,JJ)**3)*1.d-18 &  !um-->m
-       * exp(4.5*log(ZSIG_SLT(:,:,:,JJ))*log(ZSIG_SLT(:,:,:,JJ)))
-    CALL IO_Field_write(TPFILE,TZFIELD,ZWORK31)
-    !SALT BURDEN (g/m2)
-    ZWORK21(:,:)=0.0
-    DO JK=IKB,IKE
-      ZWORK31(:,:,JK) = ZWORK31(:,:,JK) *(XZZ(:,:,JK+1)-XZZ(:,:,JK))      &
-                       *1.d-6 ! Convert to ug/m2-->g/m2 in each layer
-    END DO
-    DO JK=IKB,IKE
-      DO JT=IJB,IJE
-        DO JI=IIB,IIE
-           ZWORK21(JI,JT)=ZWORK21(JI,JT)+ZWORK31(JI,JT,JK)
-        ENDDO
-      ENDDO
-    ENDDO
-    WRITE(TZFIELD%CMNHNAME,'(A7,I1)')'SLTBRDN',JJ
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'g m-2'
-    WRITE(TZFIELD%CCOMMENT,'(A6,I1)')'BURDEN',JJ
-    TZFIELD%NDIMS      = 2
-    CALL IO_Field_write(TPFILE,TZFIELD,ZWORK21)
-    !
-    TZFIELD%NDIMS      = 3
-  ENDDO
-END IF
-IF (LSALT.AND.LDEPOS_SLT(IMI)) THEN
-  !
-  ZSSLTDEP=XSVT(:,:,:,NSV_SLTDEPBEG:NSV_SLTDEPEND)
-  !
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CUNITS     = 'ppb'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
-  !
-  DO JSV = 1,NSV_SLTDEP
-    TZFIELD%CMNHNAME   = TRIM(UPCASE(CDESLTNAMES(JSV)))//'T'
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    WRITE(TZFIELD%CCOMMENT,'(A6,A4,I3.3)')'X_Y_Z_','SALTDEP',JSV
-    CALL IO_Field_write(TPFILE,TZFIELD,ZSSLTDEP(:,:,:,JSV)*1.E9)
-  END DO
-  !
-  DO JJ=1,NMODE_SLT
-    ! FOR CLOUDS
-    WRITE(TZFIELD%CMNHNAME,'(A9,I1)')'SLTDEPN0A',JJ
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    WRITE(TZFIELD%CCOMMENT,'(A16,I1)')'N0 DUSTDEP MODE ',JJ
-    TZFIELD%CUNITS     = 'm-3'
-    ! CLOUD: CALCULATE MOMENT 3 FROM TOTAL AEROSOL MASS
-    ZWORK31(:,:,:) = ZSSLTDEP(:,:,:,JJ)         &!==>molec_{aer}/molec_{air}
-                     *(XMOLARWEIGHT_DUST/XMD)   &!==>kg_{aer}/kg_{air}
-                     *XRHODREF(:,:,:)           &!==>kg_{aer}/m3_{air}
-                     /XDENSITY_DUST             &!==>m3_{aer}/m3_{air}
-                     *XM3TOUM3                  &!==>um3_{aer}/m3_{air}
-                     /(XPI*4./3.)                !==>um3_{aer}/m3_{air}
-            !==>volume 3rd moment
-    !CLOUD: CALCULATE MOMENT 0 FROM DISPERSION AND MEAN RADIUS
-    ZWORK31(:,:,:) =  ZWORK31(:,:,:)/                        &
-                      ((ZRG_SLT(:,:,:,JJ)**3)*               &
-                      EXP(4.5 * LOG(ZSIG_SLT(:,:,:,JJ))**2))
-    !CLOUD: RETURN TO CONCENTRATION #/m3
-    ZWORK31(:,:,:)= ZWORK31(:,:,:) *   XMD/ &
-                    (XAVOGADRO*XRHODREF(:,:,:))
-    !CLOUD:  Get number concentration (#/molec_{air}==>#/m3)
-    ZWORK31(:,:,:)=                   &
-                    ZWORK31(:,:,:)    & !#/molec_{air}
-                    * XAVOGADRO       & !==>#/mole
-                    / XMD             & !==>#/kg_{air}
-                    * XRHODREF(:,:,:)   !==>#/m3
-    CALL IO_Field_write(TPFILE,TZFIELD,ZWORK31)
-    ! CLOUD:   DUST MASS CONCENTRATION
-    WRITE(TZFIELD%CMNHNAME,'(A9,I1)')'SLTDEPMSS',JJ
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    WRITE(TZFIELD%CCOMMENT,'(A17,I1)')'DEPMASSCONC MODE ',JJ
-    TZFIELD%CUNITS     = 'ug m-3'
-    ZWORK31(:,:,:)= ZWORK31(:,:,:)*4./3.*3.14*2500.*1e9 & !kg-->ug
-                    * (ZRG_SLT(:,:,:,JJ)**3)*1.d-18     &  !um-->m
-                    * exp(4.5*log(ZSIG_SLT(:,:,:,JJ))*log(ZSIG_SLT(:,:,:,JJ)))
-    CALL IO_Field_write(TPFILE,TZFIELD,ZWORK31)
-    !   FOR RAIN DROPS
-    WRITE(TZFIELD%CMNHNAME,'(A9,I1)')'SLTDEPN0A',JJ+NMODE_SLT
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    WRITE(TZFIELD%CCOMMENT,'(A16,I1)')'N0 DUSTDEP MODE ',JJ+NMODE_SLT
-    TZFIELD%CUNITS     = 'm-3'
-    ! RAIN: CALCULATE MOMENT 3 FROM TOTAL AEROSOL MASS
-    ZWORK31(:,:,:) = ZSSLTDEP(:,:,:,JJ+NMODE_SLT)  &!==>molec_{aer}/molec_{air}
-                     *(XMOLARWEIGHT_DUST/XMD)      &!==>kg_{aer}/kg_{air}
-                     *XRHODREF(:,:,:)              &!==>kg_{aer}/m3_{air}
-                     /XDENSITY_DUST                &!==>m3_{aer}/m3_{air}
-                     *XM3TOUM3                     &!==>um3_{aer}/m3_{air}
-                     /(XPI*4./3.)                   !==>um3_{aer}/m3_{air}
-            !==>volume 3rd moment   
-    !RAIN: CALCULATE MOMENT 0 FROM DISPERSION AND MEAN RADIUS
-    ZWORK31(:,:,:)= ZWORK31(:,:,:)/                        &
-                    ((ZRG_SLT(:,:,:,JJ)**3)*               &
-                    EXP(4.5 * LOG(ZSIG_SLT(:,:,:,JJ))**2))
-    !RAIN: RETURN TO CONCENTRATION #/m3
-    ZWORK31(:,:,:)= ZWORK31(:,:,:) *   XMD/ &
-                    (XAVOGADRO*XRHODREF(:,:,:))
-    !RAIN: Get number concentration (#/molec_{air}==>#/m3)
-    ZWORK31(:,:,:)=                   &
-                    ZWORK31(:,:,:)    & !#/molec_{air}
-                    * XAVOGADRO       & !==>#/mole
-                    / XMD             & !==>#/kg_{air}
-                    * XRHODREF(:,:,:)   !==>#/m3
-    CALL IO_Field_write(TPFILE,TZFIELD,ZWORK31)
-    ! RAIN:   DUST MASS CONCENTRATION
-    WRITE(TZFIELD%CMNHNAME,'(A9,I1)')'SLTDEPMSS',JJ+NMODE_SLT
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    WRITE(TZFIELD%CCOMMENT,'(A17,I1)')'DEPMASSCONC MODE ',JJ+NMODE_SLT
-    TZFIELD%CUNITS     = 'ug m-3'
-    ZWORK31(:,:,:)= ZWORK31(:,:,:)*4./3.*3.14*2500.*1e9 & !kg-->ug
-                    * (ZRG_SLT(:,:,:,JJ)**3)*1.d-18     &  !um-->m
-                    * exp(4.5*log(ZSIG_SLT(:,:,:,JJ))*log(ZSIG_SLT(:,:,:,JJ)))
-    CALL IO_Field_write(TPFILE,TZFIELD,ZWORK31)
-  END DO
-!
-END IF
-! Dust variables
-IF (LDUST) THEN
-  IF(.NOT.ALLOCATED(ZSIG_DST)) &
-    ALLOCATE(ZSIG_DST(SIZE(XSVT,1), SIZE(XSVT,2), SIZE(XSVT,3), NMODE_DST))
-  IF(.NOT.ALLOCATED(ZRG_DST))  &
-    ALLOCATE(ZRG_DST(SIZE(XSVT,1), SIZE(XSVT,2), SIZE(XSVT,3), NMODE_DST))
-  IF(.NOT.ALLOCATED(ZN0_DST))  &
-    ALLOCATE(ZN0_DST(SIZE(XSVT,1), SIZE(XSVT,2), SIZE(XSVT,3), NMODE_DST))
-  !
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CUNITS     = 'ppb'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
-  !
-  DO JSV = NSV_DSTBEG,NSV_DSTEND
-    TZFIELD%CMNHNAME   = TRIM(UPCASE(CDUSTNAMES(JSV-NSV_DSTBEG+1)))//'T'
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    WRITE(TZFIELD%CCOMMENT,'(A6,A4,I3.3)')'X_Y_Z_','DUST',JSV
-    CALL IO_Field_write(TPFILE,TZFIELD,XSVT(:,:,:,JSV)*1.E9)
-  END DO
-  !
-  CALL PPP2DUST(XSVT(:,:,:,NSV_DSTBEG:NSV_DSTEND),XRHODREF,&
-               PSIG3D=ZSIG_DST, PRG3D=ZRG_DST, PN3D=ZN0_DST)
-  DO JJ=1,NMODE_DST
-    WRITE(TZFIELD%CMNHNAME,'(A6,I1)')'DSTRGA',JJ
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'um'
-    WRITE(TZFIELD%CCOMMENT,'(A18,I1)')'RG (nb) DUST MODE ',JJ
-    CALL IO_Field_write(TPFILE,TZFIELD,ZRG_DST(:,:,:,JJ))
-    !
-    WRITE(TZFIELD%CMNHNAME,'(A7,I1)')'DSTRGAM',JJ
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'um'
-    WRITE(TZFIELD%CCOMMENT,'(A17,I1)')'RG (m) DUST MODE ',JJ
-    ZWORK31(:,:,:)=ZRG_DST(:,:,:,JJ) / (EXP(-3.*(LOG(ZSIG_DST(:,:,:,JJ)))**2))
-    CALL IO_Field_write(TPFILE,TZFIELD,ZWORK31)
-    !
-    WRITE(TZFIELD%CMNHNAME,'(A6,I1)')'DSTN0A',JJ
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'm-3'
-    WRITE(TZFIELD%CCOMMENT,'(A13,I1)')'N0 DUST MODE ',JJ
-    CALL IO_Field_write(TPFILE,TZFIELD,ZN0_DST(:,:,:,JJ))
-    !
-    WRITE(TZFIELD%CMNHNAME,'(A7,I1)')'DSTSIGA',JJ
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = '1'
-    WRITE(TZFIELD%CCOMMENT,'(A16,I1)')'SIGMA DUST MODE ',JJ
-    CALL IO_Field_write(TPFILE,TZFIELD,ZSIG_DST(:,:,:,JJ))
-    !DUST MASS CONCENTRATION
-    WRITE(TZFIELD%CMNHNAME,'(A4,I1)')'DSTMSS',JJ
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'ug m-3'
-    WRITE(TZFIELD%CCOMMENT,'(A14,I1)')'MASSCONC MODE ',JJ
-    ZWORK31(:,:,:)= ZN0_DST(:,:,:,JJ)*4./3.*3.14*2500.*1e9 & !kg-->ug
-       * (ZRG_DST(:,:,:,JJ)**3)*1.d-18 &  !um-->m
-       * exp(4.5*log(ZSIG_DST(:,:,:,JJ))*log(ZSIG_DST(:,:,:,JJ)))
-    CALL IO_Field_write(TPFILE,TZFIELD,ZWORK31)
-    !DUST BURDEN (g/m2)
-    ZWORK21(:,:)=0.0
-    DO JK=IKB,IKE
-      ZWORK31(:,:,JK) = ZWORK31(:,:,JK) *(XZZ(:,:,JK+1)-XZZ(:,:,JK))      &
-                       *1.d-6 ! Convert to ug/m2-->g/m2 in each layer
-    END DO
-    DO JK=IKB,IKE
-      DO JT=IJB,IJE
-        DO JI=IIB,IIE
-           ZWORK21(JI,JT)=ZWORK21(JI,JT)+ZWORK31(JI,JT,JK)
-        ENDDO
-      ENDDO
-    ENDDO
-    WRITE(TZFIELD%CMNHNAME,'(A7,I1)')'DSTBRDN',JJ
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'g m-2'
-    WRITE(TZFIELD%CCOMMENT,'(A6,I1)')'BURDEN',JJ
-    TZFIELD%NDIMS      = 2
-    CALL IO_Field_write(TPFILE,TZFIELD,ZWORK21)
-    !
-    TZFIELD%NDIMS      = 3
-  ENDDO
-END IF
-IF (LDUST.AND.LDEPOS_DST(IMI)) THEN
-  !
-  ZSDSTDEP=XSVT(:,:,:,NSV_DSTDEPBEG:NSV_DSTDEPEND)
-  !
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CUNITS     = 'ppb'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
-  !
-  DO JSV = 1,NSV_DSTDEP
-    TZFIELD%CMNHNAME   = TRIM(UPCASE(CDEDSTNAMES(JSV)))//'T'
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    WRITE(TZFIELD%CCOMMENT,'(A6,A4,I3.3)')'X_Y_Z_','DUSTDEP',JSV
-    CALL IO_Field_write(TPFILE,TZFIELD,ZSDSTDEP(:,:,:,JSV)*1.E9)
-  END DO
-  !
-  DO JJ=1,NMODE_DST
-    ! FOR CLOUDS
-    WRITE(TZFIELD%CMNHNAME,'(A9,I1)')'DSTDEPN0A',JJ
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    WRITE(TZFIELD%CCOMMENT,'(A16,I1)')'N0 DUSTDEP MODE ',JJ
-    TZFIELD%CUNITS     = 'm-3'
-    ! CLOUD: CALCULATE MOMENT 3 FROM TOTAL AEROSOL MASS
-    ZWORK31(:,:,:) = ZSDSTDEP(:,:,:,JJ)         &!==>molec_{aer}/molec_{air}
-                     *(XMOLARWEIGHT_DUST/XMD)   &!==>kg_{aer}/kg_{air}
-                     *XRHODREF(:,:,:)           &!==>kg_{aer}/m3_{air}
-                     /XDENSITY_DUST             &!==>m3_{aer}/m3_{air}
-                     *XM3TOUM3                  &!==>um3_{aer}/m3_{air}
-                     /(XPI*4./3.)                !==>um3_{aer}/m3_{air}
-            !==>volume 3rd moment
-    !CLOUD: CALCULATE MOMENT 0 FROM DISPERSION AND MEAN RADIUS
-    ZWORK31(:,:,:)=  ZWORK31(:,:,:)/      &
-                    ((ZRG_DST(:,:,:,JJ)**3)*      &
-                    EXP(4.5 * LOG(ZSIG_DST(:,:,:,JJ))**2))
-    !CLOUD: RETURN TO CONCENTRATION #/m3
-    ZWORK31(:,:,:)= ZWORK31(:,:,:) *   XMD/ &
-                     (XAVOGADRO*XRHODREF(:,:,:))
-    !CLOUD:  Get number concentration (#/molec_{air}==>#/m3)
-    ZWORK31(:,:,:)=                         &
-                    ZWORK31(:,:,:)                  & !#/molec_{air}
-                    * XAVOGADRO                     & !==>#/mole
-                    / XMD                           & !==>#/kg_{air}
-                    * XRHODREF(:,:,:)                 !==>#/m3  
-    CALL IO_Field_write(TPFILE,TZFIELD,ZWORK31)
-    ! CLOUD:   DUST MASS CONCENTRATION
-    WRITE(TZFIELD%CMNHNAME,'(A9,I1)')'DSTDEPMSS',JJ
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    WRITE(TZFIELD%CCOMMENT,'(A17,I1)')'DEPMASSCONC MODE ',JJ
-    TZFIELD%CUNITS     = 'ug m-3'
-    ZWORK31(:,:,:)= ZWORK31(:,:,:)*4./3.*3.14*2500.*1e9 & !kg-->ug
-          * (ZRG_DST(:,:,:,JJ)**3)*1.d-18               &  !um-->m
-          * exp(4.5*log(ZSIG_DST(:,:,:,JJ))*log(ZSIG_DST(:,:,:,JJ)))
-    CALL IO_Field_write(TPFILE,TZFIELD,ZWORK31)
-    !   FOR RAIN DROPS
-    WRITE(TZFIELD%CMNHNAME,'(A9,I1)')'DSTDEPN0A',JJ+NMODE_DST
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    WRITE(TZFIELD%CCOMMENT,'(A16,I1)')'N0 DUSTDEP MODE ',JJ+NMODE_DST
-    TZFIELD%CUNITS     = 'm-3'
-    ! RAIN: CALCULATE MOMENT 3 FROM TOTAL AEROSOL MASS
-    ZWORK31(:,:,:)=ZSDSTDEP(:,:,:,JJ+NMODE_DST)  &!==>molec_{aer}/molec_{air}
-            *(XMOLARWEIGHT_DUST/XMD)             &!==>kg_{aer}/kg_{air}
-            *XRHODREF(:,:,:)                     &!==>kg_{aer}/m3_{air}
-            *(1.d0/XDENSITY_DUST)                &!==>m3_{aer}/m3_{air}
-            *XM3TOUM3                            &!==>um3_{aer}/m3_{air}
-            /(XPI*4./3.)                          !==>um3_{aer}/m3_{air}
-            !==>volume 3rd moment   
-    !RAIN: CALCULATE MOMENT 0 FROM DISPERSION AND MEAN RADIUS
-    ZWORK31(:,:,:)= ZWORK31(:,:,:)/                 &
-             ((ZRG_DST(:,:,:,JJ)**3)*               &
-              EXP(4.5 * LOG(ZSIG_DST(:,:,:,JJ))**2))
-    !RAIN: RETURN TO CONCENTRATION #/m3
-    ZWORK31(:,:,:)= ZWORK31(:,:,:) *   XMD/ &
-                    (XAVOGADRO*XRHODREF(:,:,:))
-    !RAIN: Get number concentration (#/molec_{air}==>#/m3)
-    ZWORK31(:,:,:)=                   &
-                    ZWORK31(:,:,:)    & !#/molec_{air}
-                    * XAVOGADRO       & !==>#/mole
-                    / XMD             & !==>#/kg_{air}
-                    * XRHODREF(:,:,:)   !==>#/m3
-    CALL IO_Field_write(TPFILE,TZFIELD,ZWORK31)
-    ! RAIN:   DUST MASS CONCENTRATION
-    WRITE(TZFIELD%CMNHNAME,'(A9,I1)')'DSTDEPMSS',JJ+NMODE_DST
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    WRITE(TZFIELD%CCOMMENT,'(A17,I1)')'DEPMASSCONC MODE ',JJ+NMODE_DST
-    TZFIELD%CUNITS     = 'ug m-3'
-    ZWORK31(:,:,:)= ZWORK31(:,:,:)*4./3.*3.14*2500.*1e9 & !kg-->ug
-                    * (ZRG_DST(:,:,:,JJ)**3)*1.d-18     &  !um-->m
-                    * exp(4.5*log(ZSIG_DST(:,:,:,JJ))*log(ZSIG_DST(:,:,:,JJ)))
-    CALL IO_Field_write(TPFILE,TZFIELD,ZWORK31)
-  END DO
-!
-END IF
-! Aerosol
-IF ((LCHEMDIAG).AND.(LORILAM).AND.(LUSECHEM)) THEN
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CUNITS     = 'ppb'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
-  !
-  DO JSV = NSV_AERBEG,NSV_AEREND
-    TZFIELD%CMNHNAME   = TRIM(UPCASE(CAERONAMES(JSV-NSV_AERBEG+1)))//'T'
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    WRITE(TZFIELD%CCOMMENT,'(A6,A4,I3.3)')'X_Y_Z_','AERO',JSV
-    CALL IO_Field_write(TPFILE,TZFIELD,XSVT(:,:,:,JSV)*1.E9)
-  END DO
-  !
-  IF (.NOT.(ASSOCIATED(XN3D)))   &
-    ALLOCATE(XN3D(SIZE(XSVT,1),SIZE(XSVT,2),SIZE(XSVT,3),JPMODE))
-  IF (.NOT.(ASSOCIATED(XRG3D)))  &
-    ALLOCATE(XRG3D(SIZE(XSVT,1),SIZE(XSVT,2),SIZE(XSVT,3),JPMODE))
-  IF (.NOT.(ASSOCIATED(XSIG3D))) &
-    ALLOCATE(XSIG3D(SIZE(XSVT,1),SIZE(XSVT,2),SIZE(XSVT,3),JPMODE))
-  !
-  CALL  PPP2AERO(XSVT(:,:,:,NSV_AERBEG:NSV_AEREND), XRHODREF, &
-                 PSIG3D=XSIG3D, PRG3D=XRG3D, PN3D=XN3D, PCTOTA=ZPTOTA) 
-  DO JJ=1,JPMODE
-    TZFIELD%CMNHNAME   = 'RGA'
-    TZFIELD%CLONGNAME  = 'RGA'
-    TZFIELD%CUNITS     = 'um'
-    WRITE(TZFIELD%CCOMMENT,'(A21,I1)')'RG (nb) AEROSOL MODE ',JJ
-    CALL IO_Field_write(TPFILE,TZFIELD,XRG3D(:,:,:,JJ))
-    !
-    TZFIELD%CMNHNAME   = 'RGAM'
-    TZFIELD%CLONGNAME  = 'RGAM'
-    TZFIELD%CUNITS     = 'um'
-    WRITE(TZFIELD%CCOMMENT,'(A20,I1)')'RG (m) AEROSOL MODE ',JJ
-    ZWORK31(:,:,:)=XRG3D(:,:,:,JJ) / (EXP(-3.*(LOG(XSIG3D(:,:,:,JJ)))**2))
-    CALL IO_Field_write(TPFILE,TZFIELD,ZWORK31)
-    !
-    WRITE(TZFIELD%CMNHNAME,'(A3,I1)')'N0A',JJ
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'cm-3'
-    WRITE(TZFIELD%CCOMMENT,'(A16,I1)')'N0 AEROSOL MODE ',JJ
-    CALL IO_Field_write(TPFILE,TZFIELD,XN3D(:,:,:,JJ)*1.E-6)
-    !
-    WRITE(TZFIELD%CMNHNAME,'(A4,I1)')'SIGA',JJ
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = '1'
-    WRITE(TZFIELD%CCOMMENT,'(A19,I1)')'SIGMA AEROSOL MODE ',JJ
-    CALL IO_Field_write(TPFILE,TZFIELD,XSIG3D(:,:,:,JJ))
-    !
-    WRITE(TZFIELD%CMNHNAME,'(A4,I1)')'MSO4',JJ
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'ug m-3'
-    WRITE(TZFIELD%CCOMMENT,'(A22,I1)')'MASS SO4 AEROSOL MODE ',JJ
-    CALL IO_Field_write(TPFILE,TZFIELD,ZPTOTA(:,:,:,JP_AER_SO4,JJ))
-    !
-    WRITE(TZFIELD%CMNHNAME,'(A4,I1)')'MNO3',JJ
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'ug m-3'
-    WRITE(TZFIELD%CCOMMENT,'(A22,I1)')'MASS NO3 AEROSOL MODE ',JJ
-    CALL IO_Field_write(TPFILE,TZFIELD,ZPTOTA(:,:,:,JP_AER_NO3,JJ))
-    !
-    WRITE(TZFIELD%CMNHNAME,'(A4,I1)')'MNH3',JJ
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'ug m-3'
-    WRITE(TZFIELD%CCOMMENT,'(A22,I1)')'MASS NH3 AEROSOL MODE ',JJ
-    CALL IO_Field_write(TPFILE,TZFIELD,ZPTOTA(:,:,:,JP_AER_NH3,JJ))
-    !
-    WRITE(TZFIELD%CMNHNAME,'(A4,I1)')'MH2O',JJ
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'ug m-3'
-    WRITE(TZFIELD%CCOMMENT,'(A22,I1)')'MASS H2O AEROSOL MODE ',JJ
-    CALL IO_Field_write(TPFILE,TZFIELD,ZPTOTA(:,:,:,JP_AER_H2O,JJ))
-    !
-    IF (NSOA .EQ. 10) THEN
-      WRITE(TZFIELD%CMNHNAME,'(A5,I1)')'MSOA1',JJ
-      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-      TZFIELD%CUNITS     = 'ug m-3'
-      WRITE(TZFIELD%CCOMMENT,'(A23,I1)')'MASS SOA1 AEROSOL MODE ',JJ
-      CALL IO_Field_write(TPFILE,TZFIELD,ZPTOTA(:,:,:,JP_AER_SOA1,JJ))
-      !
-      WRITE(TZFIELD%CMNHNAME,'(A5,I1)')'MSOA2',JJ
-      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-      TZFIELD%CUNITS     = 'ug m-3'
-      WRITE(TZFIELD%CCOMMENT,'(A23,I1)')'MASS SOA2 AEROSOL MODE ',JJ
-      CALL IO_Field_write(TPFILE,TZFIELD,ZPTOTA(:,:,:,JP_AER_SOA2,JJ))
-      !
-      WRITE(TZFIELD%CMNHNAME,'(A5,I1)')'MSOA3',JJ
-      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-      TZFIELD%CUNITS     = 'ug m-3'
-      WRITE(TZFIELD%CCOMMENT,'(A23,I1)')'MASS SOA3 AEROSOL MODE ',JJ
-      CALL IO_Field_write(TPFILE,TZFIELD,ZPTOTA(:,:,:,JP_AER_SOA3,JJ))
-      !
-      WRITE(TZFIELD%CMNHNAME,'(A5,I1)')'MSOA4',JJ
-      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-      TZFIELD%CUNITS     = 'ug m-3'
-      WRITE(TZFIELD%CCOMMENT,'(A23,I1)')'MASS SOA4 AEROSOL MODE ',JJ
-      CALL IO_Field_write(TPFILE,TZFIELD,ZPTOTA(:,:,:,JP_AER_SOA4,JJ))
-      !
-      WRITE(TZFIELD%CMNHNAME,'(A5,I1)')'MSOA5',JJ
-      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-      TZFIELD%CUNITS     = 'ug m-3'
-      WRITE(TZFIELD%CCOMMENT,'(A23,I1)')'MASS SOA5 AEROSOL MODE ',JJ
-      CALL IO_Field_write(TPFILE,TZFIELD,ZPTOTA(:,:,:,JP_AER_SOA5,JJ))
-      !
-      WRITE(TZFIELD%CMNHNAME,'(A5,I1)')'MSOA6',JJ
-      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-      TZFIELD%CUNITS     = 'ug m-3'
-      WRITE(TZFIELD%CCOMMENT,'(A23,I1)')'MASS SOA6 AEROSOL MODE ',JJ
-      CALL IO_Field_write(TPFILE,TZFIELD,ZPTOTA(:,:,:,JP_AER_SOA6,JJ))
-      !
-      WRITE(TZFIELD%CMNHNAME,'(A5,I1)')'MSOA7',JJ
-      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-      TZFIELD%CUNITS     = 'ug m-3'
-      WRITE(TZFIELD%CCOMMENT,'(A23,I1)')'MASS SOA7 AEROSOL MODE ',JJ
-      CALL IO_Field_write(TPFILE,TZFIELD,ZPTOTA(:,:,:,JP_AER_SOA7,JJ))
-      !
-      WRITE(TZFIELD%CMNHNAME,'(A5,I1)')'MSOA8',JJ
-      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-      TZFIELD%CUNITS     = 'ug m-3'
-      WRITE(TZFIELD%CCOMMENT,'(A23,I1)')'MASS SOA8 AEROSOL MODE ',JJ
-      CALL IO_Field_write(TPFILE,TZFIELD,ZPTOTA(:,:,:,JP_AER_SOA8,JJ))
-      !
-      WRITE(TZFIELD%CMNHNAME,'(A5,I1)')'MSOA9',JJ
-      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-      TZFIELD%CUNITS     = 'ug m-3'
-      WRITE(TZFIELD%CCOMMENT,'(A23,I1)')'MASS SOA9 AEROSOL MODE ',JJ
-      CALL IO_Field_write(TPFILE,TZFIELD,ZPTOTA(:,:,:,JP_AER_SOA9,JJ))
-      !
-      WRITE(TZFIELD%CMNHNAME,'(A6,I1)')'MSOA10',JJ
-      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-      TZFIELD%CUNITS     = 'ug m-3'
-      WRITE(TZFIELD%CCOMMENT,'(A24,I1)')'MASS SOA10 AEROSOL MODE ',JJ
-      CALL IO_Field_write(TPFILE,TZFIELD,ZPTOTA(:,:,:,JP_AER_SOA10,JJ))
-    END IF
-    !
-    WRITE(TZFIELD%CMNHNAME,'(A3,I1)')'MOC',JJ
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'ug m-3'
-    WRITE(TZFIELD%CCOMMENT,'(A21,I1)')'MASS OC AEROSOL MODE ',JJ
-    CALL IO_Field_write(TPFILE,TZFIELD,ZPTOTA(:,:,:,JP_AER_OC,JJ))
-    !
-    WRITE(TZFIELD%CMNHNAME,'(A3,I1)')'MBC',JJ
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'ug m-3'
-    WRITE(TZFIELD%CCOMMENT,'(A21,I1)')'MASS BC AEROSOL MODE ',JJ
-    CALL IO_Field_write(TPFILE,TZFIELD,ZPTOTA(:,:,:,JP_AER_BC,JJ))
-  ENDDO
 END IF
 !
 !* Large Scale variables
@@ -3422,7 +3367,7 @@ IF (LTOTAL_PR .AND. SIZE (XACPRR)>0 ) THEN
   !large-scale model
   IF (LMEAN_PR .AND. LUSERR) THEN
     TZFIELD = TFIELDMETADATA(                                               &
-      CSTDNAME   = 'generic LS_ACTOPR',                                     & !Temporary name to ease identification
+      CMNHNAME   = 'generic LS_ACTOPR',                                     & !Temporary name to ease identification
       CUNITS     = 'mm',                                                    &
       CDIR       = 'XY',                                                    &
       CCOMMENT   = 'X_Y_Large Scale ACccumulated TOtal Precipitation Rate', &
@@ -4221,12 +4166,6 @@ ELSEIF (CBLTOP == 'RICHA') THEN
   !
   DEALLOCATE(ZRIB,ZSHMIX)
 ENDIF
-  ! used before 5-3-1 version
-  !
-  !ZGAMREF=3.5E-3 ! K/m
-  !ZWORK31(:,:,1:IKU-1)=0.5*(XZZ(:,:,1:IKU-1)+XZZ(:,:,2:IKU))
-  !ZWORK31(:,:,IKU)=2.*ZWORK31(:,:,IKU-1)-ZWORK31(:,:,IKU-2)
-  !CALL FREE_ATM_PROFILE(ZTHETAV,ZWORK31,XZS,XZSMT,ZGAMREF,ZWORK32,ZWORK33)
 !
 IF (ALLOCATED(ZTHETAV)) DEALLOCATE(ZTHETAV)
 !
