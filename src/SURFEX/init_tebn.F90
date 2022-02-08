@@ -460,6 +460,7 @@ DO JP=1,TOP%NTEB_PATCH
   !
   !-----------------------------------------------------------------------------------
   ! Read vegetation options if LGARDEN
+  GDM%O%NGROUND_LAYER=TOP%NTEB_SOIL
   IF (TOP%LGARDEN) THEN
      !
      IF (JP==1) THEN    
@@ -476,7 +477,6 @@ DO JP=1,TOP%NTEB_PATCH
         GDM%O%XSOILGRID = TOP%XTEB_SOILGRID 
      END IF
      !
-  ENDIF
   !
   ! Clay and sand fraction in garden also initialized here
   ALLOCATE(GDM%K%XCLAY(KI,GDM%O%NGROUND_LAYER))
@@ -485,6 +485,7 @@ DO JP=1,TOP%NTEB_PATCH
       GDM%K%XCLAY(:,JLAYER) = ZPGD_CLAY(:)
       GDM%K%XSAND(:,JLAYER) = ZPGD_SAND(:)
   ENDDO
+  END IF
   !
   !-----------------------------------------------------------------------------------
   !

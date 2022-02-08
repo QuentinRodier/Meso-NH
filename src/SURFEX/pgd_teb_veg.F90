@@ -191,6 +191,40 @@ GDO%CALBEDO       = YALBEDO
 !
 !-------------------------------------------------------------------------------
 !
+IF (.NOT. TOP%LGARDEN) THEN
+   !
+   GDO%NGROUND_LAYER = TOP%NTEB_SOIL
+   !
+ELSE
+   SELECT CASE (GDO%CISBA)
+      CASE ('2-L')
+      GDO%NGROUND_LAYER = 2   
+      WRITE(ILUOUT,*) '*****************************************'
+      WRITE(ILUOUT,*) '* With option CISBA = ',GDO%CISBA,'         *'
+      WRITE(ILUOUT,*) '* the number of soil layers is set to 2 *'
+      WRITE(ILUOUT,*) '* theta(psi) function = Brook and Corey *'
+      WRITE(ILUOUT,*) '* Pedo transfert function = CH78        *'          
+      WRITE(ILUOUT,*) '*****************************************'
+   CASE ('3-L')
+      GDO%NGROUND_LAYER = 3      
+      WRITE(ILUOUT,*) '*****************************************'
+      WRITE(ILUOUT,*) '* With option CISBA = ',GDO%CISBA,'         *'
+      WRITE(ILUOUT,*) '* the number of soil layers is set to 3 *'
+      WRITE(ILUOUT,*) '* theta(psi) function = Brook and Corey *'
+      WRITE(ILUOUT,*) '* Pedo transfert function = CH78        *'        
+      WRITE(ILUOUT,*) '*****************************************'
+   CASE ('DIF')
+      IF (TOP%NTEB_SOIL /= GDO%NGROUND_LAYER ) THEN
+        WRITE(ILUOUT,*) '*******************************************************************************'
+        WRITE(ILUOUT,FMT='(A17,I2,A,I2)') &
+        '* NGROUND_LAYER (',GDO%NGROUND_LAYER,') is changed to be set equal to the TEB soil layers number:', TOP%NTEB_SOIL
+        WRITE(ILUOUT,*) '*******************************************************************************'
+        GDO%NGROUND_LAYER = TOP%NTEB_SOIL
+      ENDIF
+   END SELECT
+ENDIF
+!
+!
 !*    2.      Sand fraction
 !             -------------
 !
