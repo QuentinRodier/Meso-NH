@@ -266,12 +266,6 @@ CRACK:    {
 	  $content='type_def';
 	  $type_def=0;
 	}
-        elsif(/^ASSOCIATE\b/) {
-          $content='ASSOCIATE';
-        }
-	elsif(/^END ASSOCIATE\b/){
-          $content='END ASSOCIATE';
-        }
         elsif( $in_interface ) {
           if(/^MODULE PROCEDURE\b/) {
             $content='MODULE PROCEDURE';
@@ -572,6 +566,17 @@ sub study_exec{
   elsif(/^END *WHERE\b/) {
     $$content='ENDWHERE';
   }
+  elsif(/^ASSOCIATE\b/) {
+    $$content='ASSOCIATE';
+  }
+#RJ: catch multi space cases too
+  elsif(/^END[ ]*+ASSOCIATE\b/){
+    $$content='ENDASSOCIATE';
+  }
+#RJ: new class "pointer_assign"
+  elsif(/^(?:[A-Z][\w]*+)[\s ]*+[\=][\>]/) {             #iglob_type  => g%glob%ntypsend(:)
+    $$content='pointer_assign';
+  }
   elsif(/^FLUSH\s*\(/) {
     $$content='FLUSH';
   }
@@ -614,7 +619,14 @@ sub study_exec{
   }
   elsif(/^$name\s*($nest_par)($nest_par)\s*=/o) {        #CLNAME(JK)(1:5) = ......
     $$content='array_assign';
-  }    
+  }
+  elsif(/^[\w]++[\s]*+(?:[\%][\s]*+[\w]++|(?:([(](?:[^()]++|(?-1))*+[)]))|[\s]++)++[\s]*[\=]/) {
+    $$content='array_assign';
+#RJ: redirect to "pointer_assign" class if contains '=>'
+    if(/[\=][\>]/) {
+      $$content='pointer_assign';                        #pre%storage=>g%pre%storage
+    }
+  }
 }
 #===================================================================================
 #sub get_indent {
