@@ -199,7 +199,7 @@ CONTAINS
       LOGICAL :: LDCOSP
       REAL, TARGET :: PCHAMP (:)
       REAL, POINTER :: ZCHAMP (:)
-#ifdef SFX_ARO      
+#ifdef SFX_FA      
 #include "faieno.h"
 #endif
       INTEGER :: ITYPTR, ITRONC, INLATI, INXLON, INIVER
@@ -257,7 +257,7 @@ CONTAINS
       ELSE
         ZCHAMP => PCHAMP
       ENDIF
-#ifdef SFX_ARO  
+#ifdef SFX_FA  
       CALL FAIENO (KREP, KNUMER, CDPREF, KNIVAU, CDSUFF, ZCHAMP, LDCOSP, LDUNDF=.TRUE., PUNDF=XUNDEF)
 #endif
       KLCHAM = SIZE (ZCHAMP)
