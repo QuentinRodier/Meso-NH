@@ -95,7 +95,7 @@ USE MODD_CST,             ONLY: XP00, XRD, XRV, XMV, XMD, XCPD, XCPV,        &
 USE MODD_NSV,             ONLY: NSV_LIMA_NI
 USE MODD_PARAMETERS,      ONLY: JPHEXT, JPVEXT
 USE MODD_PARAM_LIMA,      ONLY: LSNOW, XRTMIN, XCTMIN, XALPHAI, XALPHAS,     &
-                                XNUI, XNUS, XLBDAS_MIN,XFVELOS,XTRANS_MP_GAMMAS
+                                XNUI, XNUS
 USE MODD_PARAM_LIMA_COLD, ONLY: XLBI, XLBEXI, XLBS, XLBEXS, XBI, XCXS, XCCS, &
                                 XLBDAS_MAX, XDSCNVI_LIM, XLBDASCNVI_MAX,     &
                                 XC0DEPSI, XC1DEPSI, XR0DEPSI, XR1DEPSI,      &
@@ -103,7 +103,8 @@ USE MODD_PARAM_LIMA_COLD, ONLY: XLBI, XLBEXI, XLBS, XLBEXS, XBI, XCXS, XCCS, &
                                 XDICNVS_LIM, XLBDAICNVS_LIM,                 &
                                 XC0DEPIS, XC1DEPIS, XR0DEPIS, XR1DEPIS,      &
                                 XCOLEXIS, XAGGS_CLARGE1, XAGGS_CLARGE2,      &
-                                XAGGS_RLARGE1, XAGGS_RLARGE2, XBS
+                                XAGGS_RLARGE1, XAGGS_RLARGE2, XBS,           &
+                                XLBDAS_MIN,XFVELOS,XTRANS_MP_GAMMAS
 
 use mode_budget,          only: Budget_store_init, Budget_store_end
 use mode_tools,           only: Countjv

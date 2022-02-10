@@ -68,7 +68,7 @@ SUBROUTINE LIMA_SNOW_DEPOSITION (LDCOMPUTE,                                &
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_PARAM_LIMA,      ONLY : XRTMIN, XCTMIN, XALPHAI, XALPHAS, XNUI, XNUS, XFVELOS 
+USE MODD_PARAM_LIMA,      ONLY : XRTMIN, XCTMIN, XALPHAI, XALPHAS, XNUI, XNUS
 USE MODD_PARAM_LIMA_COLD, ONLY : XCXS, XCCS,XLBS,XBS, &
                                  XLBDAS_MAX, XDSCNVI_LIM, XLBDASCNVI_MAX,     &
                                  XC0DEPSI, XC1DEPSI, XR0DEPSI, XR1DEPSI,      &
@@ -76,7 +76,7 @@ USE MODD_PARAM_LIMA_COLD, ONLY : XCXS, XCCS,XLBS,XBS, &
                                  XDICNVS_LIM, XLBDAICNVS_LIM,                 &
                                  XC0DEPIS, XC1DEPIS, XR0DEPIS, XR1DEPIS,      &
                                  XCOLEXIS, XAGGS_CLARGE1, XAGGS_CLARGE2,      &
-                                 XAGGS_RLARGE1, XAGGS_RLARGE2  
+                                 XAGGS_RLARGE1, XAGGS_RLARGE2, XFVELOS
 
 !
 IMPLICIT NONE

@@ -75,9 +75,9 @@ USE MODD_CST,              ONLY: XRHOLW, XCL, XCI
 USE MODD_PARAMETERS,       ONLY: JPHEXT, JPVEXT
 USE MODD_PARAM_LIMA,       ONLY: XCEXVT, XRTMIN, XCTMIN, NSPLITSED,           &
                                  XLB, XLBEX, XD, XFSEDR, XFSEDC,              &
-                                 XALPHAC, XNUC, XLBDAS_MIN, XTRANS_MP_GAMMAS, &
-                                 XFVELOS, XALPHAS, XNUS
-USE MODD_PARAM_LIMA_COLD,  ONLY: XLBEXI, XLBI, XDI, XLBDAS_MAX, XBS, XEXSEDS
+                                 XALPHAC, XNUC, XALPHAS, XNUS
+USE MODD_PARAM_LIMA_COLD,  ONLY: XLBEXI, XLBI, XDI, XLBDAS_MAX, XBS, XEXSEDS, &
+                                 XLBDAS_MIN, XTRANS_MP_GAMMAS, XFVELOS
 
 use mode_tools,            only: Countjv
 
