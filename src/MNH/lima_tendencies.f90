@@ -239,7 +239,7 @@ SUBROUTINE LIMA_TENDENCIES (PTSTEP, LDCOMPUTE,                                  
 USE MODD_CST,              ONLY : XP00, XRD, XRV, XMD, XMV, XCPD, XCPV, XCL, XCI, XLVTT, XLSTT, XTT, &
                                   XALPW, XBETAW, XGAMW, XALPI, XBETAI, XGAMI
 USE MODD_PARAM_LIMA,       ONLY : XRTMIN, XCTMIN,                                                    &
-                                  LCOLD, LNUCL, LSNOW, LHAIL, LWARM, LACTI, LRAIN
+                                  LCOLD, LNUCL, LSNOW, LHAIL, LWARM, LACTI, LRAIN,XNUS, XTRANS_MP_GAMMAS,XFVELOS,XLBDAS_MIN
 USE MODD_PARAM_LIMA_WARM,  ONLY : XLBC, XLBEXC, XLBR, XLBEXR
 USE MODD_PARAM_LIMA_MIXED, ONLY : XLBG, XLBEXG, XLBH, XLBEXH, XLBDAG_MAX
 USE MODD_PARAM_LIMA_COLD,  ONLY : XSCFAC, XLBI, XLBEXI, XLBS, XLBEXS, XLBDAS_MAX
@@ -502,9 +502,18 @@ WHERE (PRIT(:)>XRTMIN(4) .AND. PCIT(:)>XCTMIN(4) .AND. LDCOMPUTE(:))
    ZLBDI(:) = ( XLBI*PCIT(:) / PRIT(:) )**XLBEXI
 END WHERE
 ZLBDS(:)  = 1.E10
+!WHERE (PRST(:)>XRTMIN(5) .AND. LDCOMPUTE(:) )
+!   ZLBDS(:) = XLBS*( PRHODREF(:)*PRST(:) )**XLBEXS
+!END WHERE
 WHERE (PRST(:)>XRTMIN(5) .AND. LDCOMPUTE(:) )
-   ZLBDS(:) = XLBS*( PRHODREF(:)*PRST(:) )**XLBEXS
-END WHERE
+   WHERE(ZT(:)>263.15)
+      ZLBDS(:) = MAX(MIN(XLBDAS_MAX, 10**(14.554-0.0423*ZT(:))),XLBDAS_MIN)
+   END WHERE
+   WHERE(ZT(:)<=263.15)
+      ZLBDS(:) = MAX(MIN(XLBDAS_MAX, 10**(6.226-0.0106*ZT(:))),XLBDAS_MIN)
+   END WHERE
+END WHERE                               ! Wurtz
+ZLBDS(:) =  ZLBDS(:) * XTRANS_MP_GAMMAS ! Wurtz
 ZLBDG(:)  = 1.E10
 WHERE (PRGT(:)>XRTMIN(6) .AND. LDCOMPUTE(:) )
    ZLBDG(:) = XLBG*( PRHODREF(:)*PRGT(:) )**XLBEXG
@@ -639,7 +648,7 @@ END IF
 ! Lambda_s limited for collection processes to prevent too high concentrations
 ! must be changed or removed if C and x modified
 !
-ZLBDS(:) = MIN( XLBDAS_MAX, ZLBDS(:))
+!ZLBDS(:) = MIN( XLBDAS_MAX, ZLBDS(:))
 !
 !
 IF (LCOLD .AND. LSNOW) THEN

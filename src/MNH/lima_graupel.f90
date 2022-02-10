@@ -330,9 +330,16 @@ WHERE( GDRY )
        			                                    * (ZVEC1(:) - 1.0)
    ZZW(:) = ZVEC3(:)
 !
+!   ZZW3(:) = XFSDRYG * ZZW(:) * EXP( XCOLEXSG*(PT(:)-XTT) )  & ! RSDRYG - rs collected by graupel in dry mode
+!                    *( PLBDS(:)**(XCXS-XBS) )*( PLBDG(:)**XCXG )    &
+!                    *( PRHODREF(:)**(-XCEXVT-1.) )                      &
+!                    *( XLBSDRYG1/( PLBDG(:)**2                 ) + &
+!                       XLBSDRYG2/( PLBDG(:)   * PLBDS(:)   ) + &
+!                       XLBSDRYG3/(                  PLBDS(:)**2) )
+! Wurtz 
    ZZW3(:) = XFSDRYG * ZZW(:) * EXP( XCOLEXSG*(PT(:)-XTT) )  & ! RSDRYG - rs collected by graupel in dry mode
-                    *( PLBDS(:)**(XCXS-XBS) )*( PLBDG(:)**XCXG )    &
-                    *( PRHODREF(:)**(-XCEXVT-1.) )                      &
+                    *( PRST(:))*( PLBDG(:)**XCXG )    &
+                    *( PRHODREF(:)**(-XCEXVT) )                      &
                     *( XLBSDRYG1/( PLBDG(:)**2                 ) + &
                        XLBSDRYG2/( PLBDG(:)   * PLBDS(:)   ) + &
                        XLBSDRYG3/(                  PLBDS(:)**2) )

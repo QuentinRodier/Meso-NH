@@ -61,7 +61,7 @@ END MODULE MODI_LIMA_ICE_AGGREGATION_SNOW
 USE MODD_CST,             ONLY : XTT
 USE MODD_PARAM_LIMA,      ONLY : XRTMIN, XCTMIN
 USE MODD_PARAM_LIMA_COLD, ONLY : XBI, XCCS, XCXS, XCOLEXIS, XAGGS_CLARGE1, XAGGS_CLARGE2, &
-                                 XAGGS_RLARGE1, XAGGS_RLARGE2
+                                 XAGGS_RLARGE1, XAGGS_RLARGE2, XBS, XLBS
 !
 IMPLICIT NONE
 !
@@ -101,8 +101,10 @@ P_CI_AGGS(:) = 0.
 !
 WHERE ( (PRIT(:)>XRTMIN(4)) .AND. (PRST(:)>XRTMIN(5)) .AND. LDCOMPUTE(:) )
    ZZW1(:) = (PLBDI(:) / PLBDS(:))**3
-   ZZW2(:) = (PCIT(:)*(XCCS*PLBDS(:)**XCXS)/PRHODREF(:)*EXP( XCOLEXIS*(PT(:)-XTT) )) &
-        / (PLBDI(:)**3)
+!   ZZW2(:) = (PCIT(:)*(XCCS*PLBDS(:)**XCXS)/PRHODREF(:)*EXP( XCOLEXIS*(PT(:)-XTT) )) &
+!        / (PLBDI(:)**3)
+   ZZW2(:) = (PCIT(:)*(XLBS*PRST(:)*PLBDS(:)**XBS)*EXP(XCOLEXIS*(PT(:)-XTT) )) & ! Wurtz
+        / (PLBDI(:)**3)                                                          ! Wurtz
    ZZW3(:) = ZZW2(:)*(XAGGS_CLARGE1+XAGGS_CLARGE2*ZZW1(:))
 !
    P_CI_AGGS(:) = - ZZW3(:)

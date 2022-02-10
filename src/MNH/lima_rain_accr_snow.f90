@@ -67,7 +67,7 @@ END MODULE MODI_LIMA_RAIN_ACCR_SNOW
 !              ------------
 !
 USE MODD_CST,              ONLY : XTT
-USE MODD_PARAM_LIMA,       ONLY : XRTMIN, XCEXVT
+USE MODD_PARAM_LIMA,       ONLY : XRTMIN, XCEXVT, XTRANS_MP_GAMMAS
 USE MODD_PARAM_LIMA_COLD,  ONLY : XBS, XCXS
 USE MODD_PARAM_LIMA_MIXED, ONLY : NACCLBDAS, XACCINTP1S, XACCINTP2S,         &
                                   NACCLBDAR, XACCINTP1R, XACCINTP2R,         &
@@ -141,7 +141,7 @@ WHERE( GACC )
 !
 !        1.3.1  select the (ZLBDAS,ZLBDAR) couplet
    !
-   ZVEC1(:) = MAX(MIN(PLBDS(:),5.E5),5.E1)
+   ZVEC1(:) = MAX(MIN(PLBDS(:),5.E5*XTRANS_MP_GAMMAS),5.E1*XTRANS_MP_GAMMAS)
    ZVEC2(:) = PLBDR(:)
 !
 !        1.3.2  find the next lower indice for the ZLBDAS and for the ZLBDAR
@@ -212,8 +212,13 @@ WHERE( GACC )
 !      
 ! BVIE manque PCRT ???????????????????????????????????
 !      ZZW4(:) =                                            & !! coef of RRACCS and RRACCS
-   ZZW4(:) = PCRT(:)                                     & !! coef of RRACCS and RRACCS
-         *  XFRACCSS *( PLBDS(:)**XCXS )*( PRHODREF(:)**(-XCEXVT-1.) ) &
+!   ZZW4(:) = PCRT(:)                                     & !! coef of RRACCS and RRACCS
+!         *  XFRACCSS *( PLBDS(:)**XCXS )*( PRHODREF(:)**(-XCEXVT-1.) ) &
+!         *( XLBRACCS1/( PLBDS(:)**2 )                +                     &
+!            XLBRACCS2/( PLBDS(:) * PLBDR(:)    ) +                     &
+!            XLBRACCS3/(                PLBDR(:)**2 ) ) / PLBDR(:)**3
+   ZZW4(:) = PCRT(:)                                     & !! coef of RRACCS and RRACCS ! Wurtz
+         *  XFRACCSS *( PRST(:)*PLBDS(:)**XBS )*( PRHODREF(:)**(-XCEXVT) ) &
          *( XLBRACCS1/( PLBDS(:)**2 )                +                     &
             XLBRACCS2/( PLBDS(:) * PLBDR(:)    ) +                     &
             XLBRACCS3/(                PLBDR(:)**2 ) ) / PLBDR(:)**3
@@ -227,8 +232,13 @@ WHERE( GACC )
 !        1.3.6  raindrop accretion-conversion of the large sized aggregates
 !               into graupeln
 !
-   ZZW5(:) = XFSACCRG*ZZW3(:) *                             & ! RSACCRG
-            ( PLBDS(:)**(XCXS-XBS) )*( PRHODREF(:)**(-XCEXVT-1.) ) &
+!   ZZW5(:) = XFSACCRG*ZZW3(:) *                             & ! RSACCRG
+!            ( PLBDS(:)**(XCXS-XBS) )*( PRHODREF(:)**(-XCEXVT-1.) ) &
+!           *( XLBSACCR1/((PLBDR(:)**2)               ) +           &
+!              XLBSACCR2/( PLBDR(:)    * PLBDS(:) ) +           &
+!              XLBSACCR3/(                  (PLBDS(:)**2)) )
+   ZZW5(:) = XFSACCRG*ZZW3(:) *                             & ! RSACCRG ! Wurtz
+            ( PRST(:) )*( PRHODREF(:)**(-XCEXVT) ) &
            *( XLBSACCR1/((PLBDR(:)**2)               ) +           &
               XLBSACCR2/( PLBDR(:)    * PLBDS(:) ) +           &
               XLBSACCR3/(                  (PLBDS(:)**2)) )

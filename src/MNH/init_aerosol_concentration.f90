@@ -79,7 +79,7 @@ INTEGER                                 :: IKB, IKE
 !
 !
 IF ( LWARM .AND. LACTI ) THEN
-  DO JSV = NSV_LIMA_CCN_FREE, NSV_LIMA_CCN_ACTI+NMOD_CCN-1         
+  DO JSV = NSV_LIMA_CCN_FREE, NSV_LIMA_CCN_ACTI+NMOD_CCN-1
     PSVT(:,:,:,JSV) = 0.0
   ENDDO
   IKB = 1+JPVEXT

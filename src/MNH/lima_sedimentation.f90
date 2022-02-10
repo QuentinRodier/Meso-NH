@@ -183,11 +183,23 @@ DO JN = 1 ,  NSPLITSED(KID)
          IF (KMOMENTS==2) ZCS(JL) = PCS(I1(JL),I2(JL),I3(JL))
       END DO
 !
-      IF (KMOMENTS==1) ZLBDA(:) = XLB(KID) * ( ZRHODREF(:) * ZRS(:) )**XLBEX(KID)
-      IF (KMOMENTS==2) ZLBDA(:) = ( XLB(KID)*ZCS(:) / ZRS(:) )**XLBEX(KID)
+      IF (KID == 5) THEN
+         ZLBDA(:) = 1.E10
+         WHERE(ZT(:)>263.15 .AND. ZRS(:)>XRTMIN(5))
+            ZLBDA(:) = MAX(MIN(XLBDAS_MAX, 10**(14.554-0.0423*ZT(:))),XLBDAS_MIN)
+         END WHERE
+         WHERE(ZT(:)<=263.15 .AND. ZRS(:)>XRTMIN(5))
+            ZLBDA(:) = MAX(MIN(XLBDAS_MAX, 10**(6.226-0.0106*ZT(:))),XLBDAS_MIN)
+         END WHERE
+         ZLBDA(:) = ZLBDA(:)*XTRANS_MP_GAMMAS
+         ZZW(:) = XFSEDR(KID) * ZRHODREF(:)**(1.-XCEXVT)*ZRS(:)*(1 + (XFVELOS/ZLBDA(:))**XALPHAS)**(-XNUS+XEXSEDS/XALPHAS) * ZLBDA(:)**(XBS+XEXSEDS)
+      ELSE
+         IF (KMOMENTS==1) ZLBDA(:) = XLB(KID) * ( ZRHODREF(:) * ZRS(:) )**XLBEX(KID)
+         IF (KMOMENTS==2) ZLBDA(:) = ( XLB(KID)*ZCS(:) / ZRS(:) )**XLBEX(KID)
+         ZZY(:) = ZRHODREF(:)**(-XCEXVT) * ZLBDA(:)**(-XD(KID))
+         ZZW(:) = XFSEDR(KID) * ZRS(:) * ZZY(:) * ZRHODREF(:)
+      END IF ! Wurtz
 !
-      ZZY(:) = ZRHODREF(:)**(-XCEXVT) * ZLBDA(:)**(-XD(KID))
-      ZZW(:) = XFSEDR(KID) * ZRS(:) * ZZY(:) * ZRHODREF(:)
       IF (KMOMENTS==2) ZZX(:) = XFSEDC(KID) * ZCS(:) * ZZY(:) * ZRHODREF(:)
 
       IF (KID==2) THEN

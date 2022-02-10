@@ -10,7 +10,7 @@
 INTERFACE
 !
       SUBROUTINE RZCOLX( KND, PALPHAX, PNUX, PALPHAZ, PNUZ,                  &
-			 PEXZ, PEXMASSZ, PFALLX, PEXFALLX, PFALLZ, PEXFALLZ, &
+			 PEXZ, PEXMASSZ, PFALLX, PEXFALLX, PFALLEXPX, PFALLZ, PEXFALLZ, PFALLEXPZ, & ! Wurtz
 		         PLBDAXMAX, PLBDAZMAX, PLBDAXMIN, PLBDAZMIN,         &
 		         PDINFTY, PRZCOLX                                    )
 !
@@ -29,8 +29,10 @@ REAL, INTENT(IN) :: PEXZ      ! Efficiency of specy X collecting specy Z
 REAL, INTENT(IN) :: PEXMASSZ  ! Mass exponent of specy Z
 REAL, INTENT(IN) :: PFALLX    ! Fall speed constant of specy X
 REAL, INTENT(IN) :: PEXFALLX  ! Fall speed exponent of specy X
+REAL, INTENT(IN) :: PFALLEXPX ! Fall speed exponential constant of specy X ! Wurtz
 REAL, INTENT(IN) :: PFALLZ    ! Fall speed constant of specy Z
 REAL, INTENT(IN) :: PEXFALLZ  ! Fall speed exponent of specy Z
+REAL, INTENT(IN) :: PFALLEXPZ ! Fall speed exponent of specy Z  ! Wurtz
 REAL, INTENT(IN) :: PLBDAXMAX ! Maximun slope of size distribution of specy X
 REAL, INTENT(IN) :: PLBDAZMAX ! Maximun slope of size distribution of specy Z
 REAL, INTENT(IN) :: PLBDAXMIN ! Minimun slope of size distribution of specy X
@@ -49,7 +51,7 @@ END INTERFACE
       END MODULE MODI_RZCOLX
 !     ########################################################################
       SUBROUTINE RZCOLX( KND, PALPHAX, PNUX, PALPHAZ, PNUZ,                  &
-			 PEXZ, PEXMASSZ, PFALLX, PEXFALLX, PFALLZ, PEXFALLZ, &
+			 PEXZ, PEXMASSZ, PFALLX, PEXFALLX, PFALLEXPX, PFALLZ, PEXFALLZ, PFALLEXPZ, & ! Wurtz
 		         PLBDAXMAX, PLBDAZMAX, PLBDAXMIN, PLBDAZMIN,         &
 		         PDINFTY, PRZCOLX                                    )
 !     ########################################################################
@@ -152,8 +154,10 @@ REAL, INTENT(IN) :: PEXZ      ! Efficiency of specy X collecting specy Z
 REAL, INTENT(IN) :: PEXMASSZ  ! Mass exponent of specy Z
 REAL, INTENT(IN) :: PFALLX    ! Fall speed constant of specy X
 REAL, INTENT(IN) :: PEXFALLX  ! Fall speed exponent of specy X
+REAL, INTENT(IN) :: PFALLEXPX ! Fall speed exponential constant of specy X ! Wurtz
 REAL, INTENT(IN) :: PFALLZ    ! Fall speed constant of specy Z
 REAL, INTENT(IN) :: PEXFALLZ  ! Fall speed exponent of specy Z
+REAL, INTENT(IN) :: PFALLEXPZ ! Fall speed exponent of specy Z  ! Wurtz
 REAL, INTENT(IN) :: PLBDAXMAX ! Maximun slope of size distribution of specy X
 REAL, INTENT(IN) :: PLBDAZMAX ! Maximun slope of size distribution of specy Z
 REAL, INTENT(IN) :: PLBDAXMIN ! Minimun slope of size distribution of specy X
@@ -246,8 +250,8 @@ DO JLBDAX = 1,SIZE(PRZCOLX(:,:),1)
 !*       1.7     Compute the scaled fall speed difference by integration over
 !                the dimensional spectrum of specy Z
 !
-	ZCOLLZ = ZCOLLZ + ZFUNC                                               &
-		        * PEXZ * ABS(PFALLX*ZDX**PEXFALLX-PFALLZ*ZDZ**PEXFALLZ)
+        ZCOLLZ = ZCOLLZ + ZFUNC   &
+                      &  * PEXZ * ABS(PFALLX*ZDX**PEXFALLX *EXP(-(ZDX*PFALLEXPX)**PALPHAX)-PFALLZ*ZDZ**PEXFALLZ * EXP(-(ZDZ*PFALLEXPZ)**PALPHAZ)) ! Wurtz
       END DO
 !
 !*       1.8     Compute the normalization factor by integration over the
