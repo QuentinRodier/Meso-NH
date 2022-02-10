@@ -73,10 +73,11 @@ END MODULE MODI_LIMA_SEDIMENTATION
 !
 USE MODD_CST,              ONLY: XRHOLW, XCL, XCI
 USE MODD_PARAMETERS,       ONLY: JPHEXT, JPVEXT
-USE MODD_PARAM_LIMA,       ONLY: XCEXVT, XRTMIN, XCTMIN, NSPLITSED, &
-                                 XLB, XLBEX, XD, XFSEDR, XFSEDC,    &
-                                 XALPHAC, XNUC
-USE MODD_PARAM_LIMA_COLD,  ONLY: XLBEXI, XLBI, XDI
+USE MODD_PARAM_LIMA,       ONLY: XCEXVT, XRTMIN, XCTMIN, NSPLITSED,           &
+                                 XLB, XLBEX, XD, XFSEDR, XFSEDC,              &
+                                 XALPHAC, XNUC, XLBDAS_MIN, XTRANS_MP_GAMMAS, &
+                                 XFVELOS, XALPHAS, XNUS
+USE MODD_PARAM_LIMA_COLD,  ONLY: XLBEXI, XLBI, XDI, XLBDAS_MAX, XBS, XEXSEDS
 
 use mode_tools,            only: Countjv
 
@@ -192,7 +193,8 @@ DO JN = 1 ,  NSPLITSED(KID)
             ZLBDA(:) = MAX(MIN(XLBDAS_MAX, 10**(6.226-0.0106*ZT(:))),XLBDAS_MIN)
          END WHERE
          ZLBDA(:) = ZLBDA(:)*XTRANS_MP_GAMMAS
-         ZZW(:) = XFSEDR(KID) * ZRHODREF(:)**(1.-XCEXVT)*ZRS(:)*(1 + (XFVELOS/ZLBDA(:))**XALPHAS)**(-XNUS+XEXSEDS/XALPHAS) * ZLBDA(:)**(XBS+XEXSEDS)
+         ZZW(:) = XFSEDR(KID) * ZRHODREF(:)**(1.-XCEXVT)*ZRS(:)* &
+              (1 + (XFVELOS/ZLBDA(:))**XALPHAS)**(-XNUS+XEXSEDS/XALPHAS) * ZLBDA(:)**(XBS+XEXSEDS)
       ELSE
          IF (KMOMENTS==1) ZLBDA(:) = XLB(KID) * ( ZRHODREF(:) * ZRS(:) )**XLBEX(KID)
          IF (KMOMENTS==2) ZLBDA(:) = ( XLB(KID)*ZCS(:) / ZRS(:) )**XLBEX(KID)

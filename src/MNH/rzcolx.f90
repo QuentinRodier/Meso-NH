@@ -10,7 +10,8 @@
 INTERFACE
 !
       SUBROUTINE RZCOLX( KND, PALPHAX, PNUX, PALPHAZ, PNUZ,                  &
-			 PEXZ, PEXMASSZ, PFALLX, PEXFALLX, PFALLEXPX, PFALLZ, PEXFALLZ, PFALLEXPZ, & ! Wurtz
+                         PEXZ, PEXMASSZ, PFALLX, PEXFALLX, PFALLEXPX,        &
+                         PFALLZ, PEXFALLZ, PFALLEXPZ,                        & ! Wurtz
 		         PLBDAXMAX, PLBDAZMAX, PLBDAXMIN, PLBDAZMIN,         &
 		         PDINFTY, PRZCOLX                                    )
 !
@@ -51,7 +52,8 @@ END INTERFACE
       END MODULE MODI_RZCOLX
 !     ########################################################################
       SUBROUTINE RZCOLX( KND, PALPHAX, PNUX, PALPHAZ, PNUZ,                  &
-			 PEXZ, PEXMASSZ, PFALLX, PEXFALLX, PFALLEXPX, PFALLZ, PEXFALLZ, PFALLEXPZ, & ! Wurtz
+                         PEXZ, PEXMASSZ, PFALLX, PEXFALLX, PFALLEXPX,        &
+                         PFALLZ, PEXFALLZ, PFALLEXPZ,                        & ! Wurtz
 		         PLBDAXMAX, PLBDAZMAX, PLBDAXMIN, PLBDAZMIN,         &
 		         PDINFTY, PRZCOLX                                    )
 !     ########################################################################
@@ -238,20 +240,20 @@ DO JLBDAX = 1,SIZE(PRZCOLX(:,:),1)
       ZSCALZ = 0.0
       ZCOLLZ = 0.0
       DO JDZ = 1,KND-1
-        ZDZ = ZDDZ * REAL(JDZ)
+         ZDZ = ZDDZ * REAL(JDZ)
 !
 !*       1.6     Compute the normalization factor by integration over the
 !                dimensional spectrum of specy Z  
 !
-	ZFUNC  = (ZDX+ZDZ)**2 * ZDZ**PEXMASSZ                            &
-			      * GENERAL_GAMMA(PALPHAZ,PNUZ,ZLBDAZ,ZDZ)
-	ZSCALZ = ZSCALZ + ZFUNC
+         ZFUNC  = (ZDX+ZDZ)**2 * ZDZ**PEXMASSZ                            &
+		               * GENERAL_GAMMA(PALPHAZ,PNUZ,ZLBDAZ,ZDZ)
+         ZSCALZ = ZSCALZ + ZFUNC
 !
 !*       1.7     Compute the scaled fall speed difference by integration over
 !                the dimensional spectrum of specy Z
 !
-        ZCOLLZ = ZCOLLZ + ZFUNC   &
-                      &  * PEXZ * ABS(PFALLX*ZDX**PEXFALLX *EXP(-(ZDX*PFALLEXPX)**PALPHAX)-PFALLZ*ZDZ**PEXFALLZ * EXP(-(ZDZ*PFALLEXPZ)**PALPHAZ)) ! Wurtz
+         ZCOLLZ = ZCOLLZ + ZFUNC * PEXZ * ABS( PFALLX*ZDX**PEXFALLX * EXP(-(ZDX*PFALLEXPX)**PALPHAX) &
+                                             - PFALLZ*ZDZ**PEXFALLZ * EXP(-(ZDZ*PFALLEXPZ)**PALPHAZ)) ! Wurtz
       END DO
 !
 !*       1.8     Compute the normalization factor by integration over the

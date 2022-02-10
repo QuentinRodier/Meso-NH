@@ -258,7 +258,8 @@ XNUI    = 3.0  ! Gamma law with little dispersion
 !Cas GAMMAGEN
 XALPHAS = .214   ! Generalized gamma law    !Wurtz
 XNUS    = 43.7   ! Generalized gamma law    !Wurtz
-XTRANS_MP_GAMMAS = SQRT( ( GAMMA(XNUS + 2./XALPHAS)*GAMMA(XNUS + 4./XALPHAS) ) / ( 8.* GAMMA(XNUS + 1./XALPHAS)*GAMMA(XNUS + 3./XALPHAS) ) )    ! Wurtz
+XTRANS_MP_GAMMAS = SQRT( ( GAMMA(XNUS + 2./XALPHAS)*GAMMA(XNUS + 4./XALPHAS) ) / &
+                         ( 8.* GAMMA(XNUS + 1./XALPHAS)*GAMMA(XNUS + 3./XALPHAS) ) )    ! Wurtz
 
 !
 XALPHAG = 1.0  ! Exponential law
@@ -292,7 +293,7 @@ IF (GFLAG) THEN
   WRITE(UNIT=ILUOUT0,FMT='(" XLBEXH =",E13.6," XLBH =",E13.6)') XLBEXH,XLBH
 END IF
 !
-XLBDAS_MAX = 500000. ! Attention il faut veuiller que LBDAS_MAX soit bien comparer avec un LBDAS avec une forme de Marshall-Palmer
+XLBDAS_MAX = 500000. ! LBDAS_MAX doit être compare avec LBDAS avec une forme de Marshall-Palmer
 XLBDAS_MIN = 1000.
 XLBDAG_MAX = 100000.0
 !
@@ -732,8 +733,8 @@ IF (GFLAG) THEN
 END IF
 !
 NGAMINC = 80
-XGAMINC_BOUND_MIN = (1000.*XTRANS_MP_GAMMAS*XDCSLIM)**XALPHAS !1.0E-1 !Correction Wurtz ! Minimal value of (Lbda * D_cs^lim)**alpha
-XGAMINC_BOUND_MAX = (50000.*XTRANS_MP_GAMMAS*XDCSLIM)**XALPHAS !1.0E7 !Correction Wurtz ! Maximal value of (Lbda * D_cs^lim)**alpha
+XGAMINC_BOUND_MIN = (1000.*XTRANS_MP_GAMMAS*XDCSLIM)**XALPHAS !1.0E-1 ! Wurtz ! Minimal value of (Lbda * D_cs^lim)**alpha
+XGAMINC_BOUND_MAX = (50000.*XTRANS_MP_GAMMAS*XDCSLIM)**XALPHAS !1.0E7 ! Wurtz ! Maximal value of (Lbda * D_cs^lim)**alpha
 ZRATE = EXP(LOG(XGAMINC_BOUND_MAX/XGAMINC_BOUND_MIN)/FLOAT(NGAMINC-1))
 !
 ALLOCATE( XGAMINC_RIM1(NGAMINC) )

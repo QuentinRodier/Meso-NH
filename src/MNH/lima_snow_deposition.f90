@@ -153,7 +153,8 @@ WHERE( GMICRO )
 !      ZZW(:) = ( PSSI(:)/(PAI(:)*PRHODREF(:)) ) * &
 !           ( X0DEPS*PLBDS(:)**XEX0DEPS + X1DEPS*PCJ(:)*PLBDS(:)**XEX1DEPS )
       ZZW(:) = ( PRHODREF(:) * PRST(:)*PSSI(:)/(PAI(:)) ) * & ! Wurtz
-                ( X0DEPS*PLBDS(:)**XEX0DEPS + (X1DEPS*PCJ(:)*(1+(XFVELOS/(2.*PLBDS))**XALPHAS)**(-XNUS+XEX1DEPS/XALPHAS)*(PLBDS(:))**(XEX1DEPS+XBS)) ) ! Wurtz
+           ( X0DEPS*PLBDS(:)**XEX0DEPS + (X1DEPS*PCJ(:)* &
+           (1+(XFVELOS/(2.*PLBDS))**XALPHAS)**(-XNUS+XEX1DEPS/XALPHAS)*(PLBDS(:))**(XEX1DEPS+XBS)) ) ! Wurtz
       ZZW(:) =    ZZW(:)*(0.5+SIGN(0.5,ZZW(:))) - ABS(ZZW(:))*(0.5-SIGN(0.5,ZZW(:)))
    END WHERE
 !

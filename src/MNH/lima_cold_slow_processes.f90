@@ -399,8 +399,10 @@ ZLBDAS(:) = ZLBDAS(:) * XTRANS_MP_GAMMAS
 !         ZZW(:) = ( ZSSI(:)/(ZRHODREF(:)*ZAI(:)) ) *                               &
      !    ZZW(:) = ( ZSSI(:)/(ZAI(:)) ) *                               &
       !            ( X0DEPS*ZLBDAS(:)**XEX0DEPS + X1DEPS*ZCJ(:)*ZLBDAS(:)**XEX1DEPS )
-         ZZW(:) = ( ZRHODREF(:)*ZRST(:)*ZSSI(:)/(ZAI(:)) ) *                               & ! Wurtz
-                 ( X0DEPS*ZLBDAS(:)**XEX0DEPS + (X1DEPS*ZCJ(:)*(1+(XFVELOS/(2.*ZLBDAS))**XALPHAS)**(-XNUS+XEX1DEPS/XALPHAS)*(ZLBDAS(:))**(XEX1DEPS+XBS))) ! Wurtz
+         ZZW(:) = ( ZRHODREF(:)*ZRST(:)*ZSSI(:)/(ZAI(:)) ) *                                & ! Wurtz
+              ( X0DEPS*ZLBDAS(:)**XEX0DEPS +                                                &
+              (X1DEPS*ZCJ(:)*(1+(XFVELOS/(2.*ZLBDAS))**XALPHAS)**(-XNUS+XEX1DEPS/XALPHAS) * &
+              (ZLBDAS(:))**(XEX1DEPS+XBS))) ! Wurtz
 
          ZZW(:) =    MIN( ZRVS(:),ZZW(:)      )*(0.5+SIGN(0.5,ZZW(:))) &
                    - MIN( ZRSS(:),ABS(ZZW(:)) )*(0.5-SIGN(0.5,ZZW(:)))
@@ -474,10 +476,10 @@ ZLBDAS(:) = ZLBDAS(:) * XTRANS_MP_GAMMAS
       WHERE ( (ZRIT(:)>XRTMIN(4)) .AND. (ZRST(:)>XRTMIN(5)) .AND. (ZRIS(:)>ZRTMIN(4)) &
                                                             .AND. (ZCIS(:)>ZCTMIN(4)) )
          ZZW1(:,3) = (ZLBDAI(:) / ZLBDAS(:))**3
-        ! ZZW1(:,1) = (ZCIT(:)*(XCCS*ZLBDAS(:)**XCXS)*EXP( XCOLEXIS*(ZZT(:)-XTT) )) &
-         !                                           / (ZLBDAI(:)**3)
-        ! ZZW1(:,1) = (ZCIT(:)*(XLBS*ZRHODREF(:)*ZRST(:)*ZLBDAS(:)**XBS)*EXP(XCOLEXIS*(ZZT(:)-XTT) )) &
-         !                                           / (ZLBDAI(:)**3)
+!         ZZW1(:,1) = (ZCIT(:)*(XCCS*ZLBDAS(:)**XCXS)*EXP( XCOLEXIS*(ZZT(:)-XTT) )) &
+!                                                    / (ZLBDAI(:)**3)
+!         ZZW1(:,1) = (ZCIT(:)*(XLBS*ZRHODREF(:)*ZRST(:)*ZLBDAS(:)**XBS)*EXP(XCOLEXIS*(ZZT(:)-XTT) )) &
+!                                                    / (ZLBDAI(:)**3)
          ZZW1(:,1) = (ZCIT(:)*(XLBS*ZRST(:)*ZLBDAS(:)**XBS)*EXP(XCOLEXIS*(ZZT(:)-XTT) )) &
                                                     / (ZLBDAI(:)**3)
          ZZW1(:,2) = MIN( ZZW1(:,1)*(XAGGS_CLARGE1+XAGGS_CLARGE2*ZZW1(:,3)),ZCIS(:) )

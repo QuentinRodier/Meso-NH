@@ -609,7 +609,8 @@ WHERE( (ZRST(:)>XRTMIN(5)) .AND. (ZRSS(:)>XRTMIN(5)/PTSTEP) .AND. (ZZT(:)>XTT) )
 
    ZZW(:)  = MIN( ZRSS(:), XFSCVMG*MAX( 0.0,( -ZZW(:) *             & ! Wurtz
                           ZRHODREF(:) * ZRST(:)*( X0DEPS*            ZLBDAS(:)**XEX0DEPS +     &
-                            X1DEPS*ZCJ(:)*(1+(XFVELOS/(2.*ZLBDAS(:)))**XALPHAS)**(-XNUS+XEX1DEPS/XALPHAS)*(ZLBDAS(:))**(XEX1DEPS+XBS))-    &
+                          X1DEPS*ZCJ(:)*(1+(XFVELOS/(2.*ZLBDAS(:)))**XALPHAS) &
+                          **(-XNUS+XEX1DEPS/XALPHAS)*(ZLBDAS(:))**(XEX1DEPS+XBS))-    &
                                     ( ZZW1(:,1)+ZZW1(:,4) ) *       &
                              ( ZRHODREF(:)*XCL*(XTT-ZZT(:))) ) /    &
                                             ( ZRHODREF(:)*XLMTT ) ) )
