@@ -919,10 +919,7 @@ IF (NSV >= 1 ) THEN
 
   !Store all scalar variables
   DO JSV = 1, NSV
-    TZFIELD = TSVLIST(JSV)
-    TZFIELD%CMNHNAME  = TRIM( TZFIELD%CMNHNAME )  // 'T'
-    TZFIELD%CLONGNAME = TRIM( TZFIELD%CLONGNAME ) // 'T'
-    CALL IO_Field_write(TPFILE,TZFIELD,XSVT(:,:,:,JSV))
+    CALL IO_Field_write( TPFILE, TSVLIST(JSV), XSVT(:,:,:,JSV) )
   END DO
 
   IF (LSCAV .AND. LAERO_MASS) THEN

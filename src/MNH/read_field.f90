@@ -814,21 +814,23 @@ DO JSV = 1, NSV              ! initialize according to the get indicators
     CASE ('READ')
       TZFIELD = TSVLIST(JSV)
 
-      IF ( GOLDFILEFORMAT .AND.                               &
-           ( ( JSV >= 1         .AND. JSV <= NSV_USER  ) .OR. &
+      IF ( GOLDFILEFORMAT ) THEN
+        IF ( ( JSV >= 1         .AND. JSV <= NSV_USER  ) .OR. &
              ( JSV >= NSV_PPBEG .AND. JSV <= NSV_PPEND ) .OR. &
 #ifdef MNH_FOREFIRE
              ( JSV >= NSV_FFBEG .AND. JSV <= NSV_FFEND ) .OR. &
 #endif
-             ( JSV >= NSV_CSBEG .AND. JSV <= NSV_CSEND ) )    ) THEN
-        !Some variables were written with an other name in MesoNH < 5.5.1
-        WRITE(TZFIELD%CMNHNAME,'(A3,I3.3)')'SVT',JSV
-        TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-        TZFIELD%CSTDNAME   = ''
-        TZFIELD%CCOMMENT   = 'X_Y_Z_'//TRIM(TZFIELD%CMNHNAME)
-      ELSE
-        TZFIELD%CMNHNAME  = TRIM( TZFIELD%CMNHNAME )  // 'T'
-        TZFIELD%CLONGNAME = TRIM( TZFIELD%CLONGNAME ) // 'T'
+             ( JSV >= NSV_CSBEG .AND. JSV <= NSV_CSEND )      ) THEN
+          !Some variables were written with an other name in MesoNH < 5.5.1
+          WRITE(TZFIELD%CMNHNAME,'(A3,I3.3)')'SVT',JSV
+          TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+          TZFIELD%CSTDNAME   = ''
+          TZFIELD%CCOMMENT   = 'X_Y_Z_'//TRIM(TZFIELD%CMNHNAME)
+        ELSE
+          !Scalar variables were written with a T suffix in older versions
+          TZFIELD%CMNHNAME  = TRIM( TZFIELD%CMNHNAME )  // 'T'
+          TZFIELD%CLONGNAME = TRIM( TZFIELD%CLONGNAME ) // 'T'
+        END IF
       END IF
 
       CALL IO_Field_read( TPINIFILE, TZFIELD, PSVT(:,:,:,JSV), IRESP )
