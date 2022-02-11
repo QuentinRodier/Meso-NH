@@ -78,8 +78,9 @@ END MODULE MODI_INI_NSV
 !             ------------
 !
 USE MODD_BLOWSNOW,        ONLY: CSNOWNAMES, LBLOWSNOW, NBLOWSNOW3D, YPSNOW_INI
-USE MODD_CH_AEROSOL,      ONLY: CAERONAMES, CDEAERNAMES, JPMODE, LAERINIT, LDEPOS_AER, LORILAM, &
-                                LVARSIGI, LVARSIGJ, NCARB, NM6_AER, NSOA, NSP
+USE MODD_CH_AEROSOL
+! USE MODD_CH_AEROSOL,      ONLY: CAERONAMES, CDEAERNAMES, JPMODE, LAERINIT, LDEPOS_AER, LORILAM, &
+!                                 LVARSIGI, LVARSIGJ, NCARB, NM6_AER, NSOA, NSP
 USE MODD_CH_M9_n,         ONLY: CICNAMES, CNAMES, NEQ, NEQAQ
 USE MODD_CH_MNHC_n,       ONLY: LCH_PH, LUSECHEM, LUSECHAQ, LUSECHIC, CCH_SCHEME, LCH_CONV_LINOX
 USE MODD_CONDSAMP,        ONLY: LCONDSAMP, NCONDSAMP
@@ -108,7 +109,7 @@ USE MODD_LG,              ONLY: CLGNAMES, XLG1MIN, XLG2MIN, XLG3MIN
 USE MODD_LUNIT_n,         ONLY: TLUOUT
 USE MODD_NSV
 USE MODD_PARAM_C2R2,      ONLY: LSUPSAT
-USE MODD_PARAMETERS,      ONLY: NCOMMENTLGTMAX, NUNITLGTMAX
+USE MODD_PARAMETERS,      ONLY: NCOMMENTLGTMAX, NLONGNAMELGTMAX, NUNITLGTMAX
 USE MODD_PARAM_LIMA,      ONLY: NINDICE_CCN_IMM, NIMM, NMOD_CCN, LSCAV, LAERO_MASS, &
                                 NMOD_IFN, NMOD_IMM, LHHONI,  &
                                 LWARM, LCOLD, LRAIN, LSPRO
@@ -141,12 +142,17 @@ CHARACTER(LEN=2) :: YNUM2
 CHARACTER(LEN=3) :: YNUM3
 CHARACTER(LEN=NCOMMENTLGTMAX) :: YCOMMENT
 CHARACTER(LEN=NUNITLGTMAX)    :: YUNITS
+CHARACTER(LEN=NLONGNAMELGTMAX), DIMENSION(:), ALLOCATABLE :: YAEROLONGNAMES
+CHARACTER(LEN=NLONGNAMELGTMAX), DIMENSION(:), ALLOCATABLE :: YDUSTLONGNAMES
+CHARACTER(LEN=NLONGNAMELGTMAX), DIMENSION(:), ALLOCATABLE :: YSALTLONGNAMES
 INTEGER :: ILUOUT
 INTEGER :: ICHIDX ! Index for position in CSV_CHEM_LIST_A array
 INTEGER :: ISV ! total number of scalar variables
-INTEGER :: IMODEIDX, IMOMENTS
+INTEGER :: IMODEIDX
+INTEGER :: JAER
 INTEGER :: JI, JJ, JSV
 INTEGER :: JMODE, JMOM, JSV_NAME
+INTEGER :: INMOMENTS_DST, INMOMENTS_SLT !Number of moments for dust or salt
 !
 !-------------------------------------------------------------------------------
 !
@@ -483,12 +489,18 @@ IF (LDUST) THEN
   IF (ALLOCATED(XT_LS).AND. .NOT.(LDSTPRES)) LDSTINIT=.TRUE.
   IF (CPROGRAM == 'IDEAL ') LVARSIG = .TRUE.
   IF ((CPROGRAM == 'REAL  ').AND.LDSTINIT) LVARSIG = .TRUE.
-  NSV_DST_A(KMI)   = NMODE_DST*2
-  IF (LRGFIX_DST) THEN
-        NSV_DST_A(KMI) = NMODE_DST
-        LVARSIG = .FALSE.
+  !Determine number of moments
+  IF ( LRGFIX_DST ) THEN
+    INMOMENTS_DST = 1
+    IF ( LVARSIG ) CALL Print_msg( NVERB_WARNING, 'GEN', 'INI_NSV', 'LVARSIG forced to FALSE because LRGFIX_DST is TRUE' )
+    LVARSIG = .FALSE.
+  ELSE IF ( LVARSIG ) THEN
+    INMOMENTS_DST = 3
+  ELSE
+    INMOMENTS_DST = 2
   END IF
-  IF (LVARSIG) NSV_DST_A(KMI) = NSV_DST_A(KMI) + NMODE_DST
+  !Number of entries = number of moments multiplied by number of modes
+  NSV_DST_A(KMI) = NMODE_DST * INMOMENTS_DST
   NSV_DSTBEG_A(KMI)= ISV+1
   NSV_DSTEND_A(KMI)= ISV+NSV_DST_A(KMI)
   ISV              = NSV_DSTEND_A(KMI)
@@ -522,12 +534,18 @@ IF (LSALT) THEN
   IF (ALLOCATED(XT_LS).AND. .NOT.(LSLTPRES)) LSLTINIT=.TRUE.
   IF (CPROGRAM == 'IDEAL ') LVARSIG_SLT = .TRUE.
   IF ((CPROGRAM == 'REAL  ').AND. LSLTINIT ) LVARSIG_SLT = .TRUE.
-  NSV_SLT_A(KMI)   = NMODE_SLT*2
-  IF (LRGFIX_SLT) THEN
-        NSV_SLT_A(KMI) = NMODE_SLT
-        LVARSIG_SLT = .FALSE.
+  !Determine number of moments
+  IF ( LRGFIX_SLT ) THEN
+    INMOMENTS_SLT = 1
+    IF ( LVARSIG_SLT ) CALL Print_msg( NVERB_WARNING, 'GEN', 'INI_NSV', 'LVARSIG_SLT forced to FALSE because LRGFIX_SLT is TRUE' )
+    LVARSIG_SLT = .FALSE.
+  ELSE IF ( LVARSIG_SLT ) THEN
+    INMOMENTS_SLT = 3
+  ELSE
+    INMOMENTS_SLT = 2
   END IF
-  IF (LVARSIG_SLT) NSV_SLT_A(KMI) = NSV_SLT_A(KMI) + NMODE_SLT
+  !Number of entries = number of moments multiplied by number of modes
+  NSV_SLT_A(KMI) = NMODE_SLT * INMOMENTS_SLT
   NSV_SLTBEG_A(KMI)= ISV+1
   NSV_SLTEND_A(KMI)= ISV+NSV_SLT_A(KMI)
   ISV              = NSV_SLTEND_A(KMI)
@@ -703,26 +721,39 @@ IF ( LDUST ) THEN
 
   ! Initialization of dust names
   IF( .NOT. ALLOCATED( CDUSTNAMES ) ) THEN
-    IMOMENTS = ( NSV_DSTEND_A(KMI) - NSV_DSTBEG_A(KMI) + 1 ) / NMODE_DST
-    ALLOCATE( CDUSTNAMES(IMOMENTS * NMODE_DST) )
+    ALLOCATE( CDUSTNAMES(NSV_DST_A(KMI)) )
+    ALLOCATE( YDUSTLONGNAMES(NSV_DST_A(KMI)) )
     !Loop on all dust modes
-    IF ( IMOMENTS == 1 ) THEN
+    IF ( INMOMENTS_DST == 1 ) THEN
       DO JMODE = 1, NMODE_DST
         IMODEIDX = JPDUSTORDER(JMODE)
         JSV_NAME = ( IMODEIDX - 1 ) * 3 + 2
         CDUSTNAMES(JMODE) = YPDUST_INI(JSV_NAME)
+        !Add meaning of the ppv unit (here for moment 3)
+        YDUSTLONGNAMES(JMODE) = TRIM( YPDUST_INI(JSV_NAME) ) // ' [molec_{aer}/molec_{air}]'
       END DO
     ELSE
       DO JMODE = 1,NMODE_DST
         !Find which mode we are dealing with
         IMODEIDX = JPDUSTORDER(JMODE)
-        DO JMOM = 1, IMOMENTS
+        DO JMOM = 1, INMOMENTS_DST
           !Find which number this is of the list of scalars
-          JSV = ( JMODE - 1 ) * IMOMENTS + JMOM
+          JSV = ( JMODE - 1 ) * INMOMENTS_DST + JMOM
           !Find what name this corresponds to, always 3 moments assumed in YPDUST_INI
           JSV_NAME = ( IMODEIDX - 1) * 3 + JMOM
           !Get the right CDUSTNAMES which should follow the list of scalars transported in XSVM/XSVT
           CDUSTNAMES(JSV) = YPDUST_INI(JSV_NAME)
+          !Add meaning of the ppv unit
+          IF ( JMOM == 1 ) THEN !Corresponds to moment 0
+            YDUSTLONGNAMES(JSV) = TRIM( YPDUST_INI(JSV_NAME) ) // ' [nb_aerosols/molec_{air}]'
+          ELSE IF ( JMOM == 2 ) THEN !Corresponds to moment 3
+            YDUSTLONGNAMES(JSV) = TRIM( YPDUST_INI(JSV_NAME) ) // ' [molec_{aer}/molec_{air}]'
+          ELSE IF ( JMOM == 3 ) THEN !Corresponds to moment 6
+            YDUSTLONGNAMES(JSV) = TRIM( YPDUST_INI(JSV_NAME) ) // ' [um6/molec_{air}*(cm3/m3)]'
+          ELSE
+            CALL Print_msg( NVERB_WARNING, 'GEN', 'INI_NSV', 'unknown moment for DUST' )
+            YDUSTLONGNAMES(JMODE) = TRIM( YPDUST_INI(JSV_NAME) )
+          END IF
         ENDDO ! Loop on moments
       ENDDO    ! Loop on dust modes
     END IF
@@ -746,26 +777,39 @@ IF ( LSALT ) THEN
   IF ( NMODE_SLT < 1 .OR. NMODE_SLT > 5 ) CALL Print_msg( NVERB_FATAL, 'GEN', 'INI_NSV', 'NMODE_SLT must in the 1 to 5 interval' )
 
   IF( .NOT. ALLOCATED( CSALTNAMES ) ) THEN
-    IMOMENTS = ( NSV_SLTEND_A(KMI) - NSV_SLTBEG_A(KMI) + 1 ) / NMODE_SLT
-    ALLOCATE( CSALTNAMES(IMOMENTS * NMODE_SLT) )
+    ALLOCATE( CSALTNAMES(NSV_SLT_A(KMI)) )
+    ALLOCATE( YSALTLONGNAMES(NSV_DST_A(KMI)) )
     !Loop on all dust modes
-    IF ( IMOMENTS == 1 ) THEN
+    IF ( INMOMENTS_SLT == 1 ) THEN
       DO JMODE = 1, NMODE_SLT
         IMODEIDX = JPSALTORDER(JMODE)
         JSV_NAME = ( IMODEIDX - 1 ) * 3 + 2
         CSALTNAMES(JMODE) = YPSALT_INI(JSV_NAME)
+        !Add meaning of the ppv unit (here for moment 3)
+        YSALTLONGNAMES(JMODE) = TRIM( YPSALT_INI(JSV_NAME) ) // ' [molec_{aer}/molec_{air}]'
       END DO
     ELSE
       DO JMODE = 1, NMODE_SLT
         !Find which mode we are dealing with
         IMODEIDX = JPSALTORDER(JMODE)
-        DO JMOM = 1, IMOMENTS
+        DO JMOM = 1, INMOMENTS_SLT
           !Find which number this is of the list of scalars
-          JSV = ( JMODE - 1 ) * IMOMENTS + JMOM
+          JSV = ( JMODE - 1 ) * INMOMENTS_SLT + JMOM
           !Find what name this corresponds to, always 3 moments assumed in YPSALT_INI
           JSV_NAME = ( IMODEIDX - 1 ) * 3 + JMOM
           !Get the right CSALTNAMES which should follow the list of scalars transported in XSVM/XSVT
           CSALTNAMES(JSV) = YPSALT_INI(JSV_NAME)
+          !Add meaning of the ppv unit
+          IF ( JMOM == 1 ) THEN !Corresponds to moment 0
+            YSALTLONGNAMES(JSV) = TRIM( YPSALT_INI(JSV_NAME) ) // ' [nb_aerosols/molec_{air}]'
+          ELSE IF ( JMOM == 2 ) THEN !Corresponds to moment 3
+            YSALTLONGNAMES(JSV) = TRIM( YPSALT_INI(JSV_NAME) ) // ' [molec_{aer}/molec_{air}]'
+          ELSE IF ( JMOM == 3 ) THEN !Corresponds to moment 6
+            YSALTLONGNAMES(JSV) = TRIM( YPSALT_INI(JSV_NAME) ) // ' [um6/molec_{air}*(cm3/m3)]'
+          ELSE
+            CALL Print_msg( NVERB_WARNING, 'GEN', 'INI_NSV', 'unknown moment for SALT' )
+            YSALTLONGNAMES(JMODE) = TRIM( YPSALT_INI(JSV_NAME) )
+          END IF
         ENDDO ! Loop on moments
       ENDDO    ! Loop on dust modes
     END IF
@@ -786,11 +830,10 @@ END IF
 ! Initialize scalar variable names for snow
 IF ( LBLOWSNOW ) THEN
   IF( .NOT. ALLOCATED( CSNOWNAMES ) ) THEN
-    IMOMENTS = ( NSV_SNWEND_A(KMI) - NSV_SNWBEG_A(KMI) + 1 )
-    ALLOCATE( CSNOWNAMES(IMOMENTS) )
-    DO JMOM = 1, IMOMENTS
+    ALLOCATE( CSNOWNAMES(NSV_SNW_A(KMI)) )
+    DO JMOM = 1, NSV_SNW_A(KMI)
       CSNOWNAMES(JMOM) = YPSNOW_INI(JMOM)
-    ENDDO ! Loop on moments
+    END DO
   END IF
 END IF
 
@@ -1026,17 +1069,40 @@ DO JSV = NSV_AERBEG_A(KMI), NSV_AEREND_A(KMI)
 
   WRITE( YNUM3, '( I3.3 )' ) JSV
 
-  TSVLIST_A(JSV, KMI) = TFIELDMETADATA(                       &
-    CMNHNAME   = TRIM( CAERONAMES(JSV-NSV_AERBEG_A(KMI)+1) ), &
-    CSTDNAME   = '',                                          &
-    CLONGNAME  = TRIM( CAERONAMES(JSV-NSV_AERBEG_A(KMI)+1) ), &
-    CUNITS     = 'ppv',                                       &
-    CDIR       = 'XY',                                        &
-    CCOMMENT   = 'X_Y_Z_' // 'SVT' // YNUM3,                  &
-    NGRID      = 1,                                           &
-    NTYPE      = TYPEREAL,                                    &
-    NDIMS      = 3,                                           &
-    LTIMEDEP   = .TRUE.                                       )
+  ALLOCATE( YAEROLONGNAMES(NSV_AER_A(KMI)) )
+
+  !Determine moment to add meaning of the ppv unit
+  JAER = JSV - NSV_AERBEG_A(KMI) + 1
+  IF ( ANY( JAER == [JP_CH_M0i, JP_CH_M0j] ) ) THEN
+    !Moment 0
+    YAEROLONGNAMES = TRIM( CAERONAMES(JAER) ) // ' [nb_aerosols/molec_{air}]'
+  ELSE IF ( ANY( JAER == [ JP_CH_SO4i, JP_CH_SO4j, JP_CH_NO3i, JP_CH_NO3j, JP_CH_H2Oi, JP_CH_H2Oj, JP_CH_NH3i, JP_CH_NH3j,   &
+                           JP_CH_OCi,  JP_CH_OCj,  JP_CH_BCi,  JP_CH_BCi,  JP_CH_DSTi, JP_CH_DSTj ] )                        &
+            .OR. ( NSOA == 10 .AND.                                                                                          &
+                   ANY( JAER == [ JP_CH_SOA1i, JP_CH_SOA1j, JP_CH_SOA2i, JP_CH_SOA2j, JP_CH_SOA3i, JP_CH_SOA3j, JP_CH_SOA4i, &
+                                  JP_CH_SOA4j, JP_CH_SOA5i, JP_CH_SOA5j, JP_CH_SOA6i, JP_CH_SOA6j, JP_CH_SOA7i, JP_CH_SOA7j, &
+                                  JP_CH_SOA8i, JP_CH_SOA8j, JP_CH_SOA9i, JP_CH_SOA9j, JP_CH_SOA10i, JP_CH_SOA10j ] )       ) ) THEN
+    !Moment 3
+    YAEROLONGNAMES = TRIM( CAERONAMES(JAER) ) // ' [molec_{aer}/molec_{air}]'
+  ELSE IF ( ( LVARSIGI .AND. JSV == JP_CH_M6i ) .OR. ( LVARSIGJ .AND. JSV == JP_CH_M6j ) ) THEN
+    !Moment 6
+    YAEROLONGNAMES = TRIM( CAERONAMES(JAER) ) // ' [um6/molec_{air}*(cm3/m3)]'
+  ELSE
+    CALL Print_msg( NVERB_WARNING, 'GEN', 'INI_NSV', 'unknown moment for AER' )
+    YAEROLONGNAMES = TRIM( CAERONAMES(JAER) )
+  END IF
+
+  TSVLIST_A(JSV, KMI) = TFIELDMETADATA(                           &
+    CMNHNAME   = TRIM( CAERONAMES(JSV-NSV_AERBEG_A(KMI)+1) ),     &
+    CSTDNAME   = '',                                              &
+    CLONGNAME  = TRIM( YAEROLONGNAMES(JSV-NSV_AERBEG_A(KMI)+1) ), &
+    CUNITS     = 'ppv',                                           &
+    CDIR       = 'XY',                                            &
+    CCOMMENT   = 'X_Y_Z_' // 'SVT' // YNUM3,                      &
+    NGRID      = 1,                                               &
+    NTYPE      = TYPEREAL,                                        &
+    NDIMS      = 3,                                               &
+    LTIMEDEP   = .TRUE.                                           )
 END DO
 
 DO JSV = NSV_AERDEPBEG_A(KMI), NSV_AERDEPEND_A(KMI)
@@ -1064,17 +1130,17 @@ DO JSV = NSV_DSTBEG_A(KMI), NSV_DSTEND_A(KMI)
 
   WRITE( YNUM3, '( I3.3 )' ) JSV
 
-  TSVLIST_A(JSV, KMI) = TFIELDMETADATA(                       &
-    CMNHNAME   = TRIM( CDUSTNAMES(JSV-NSV_DSTBEG_A(KMI)+1) ), &
-    CSTDNAME   = '',                                          &
-    CLONGNAME  = TRIM( CDUSTNAMES(JSV-NSV_DSTBEG_A(KMI)+1) ), &
-    CUNITS     = 'ppv',                                       &
-    CDIR       = 'XY',                                        &
-    CCOMMENT   = 'X_Y_Z_' // 'SVT' // YNUM3,                  &
-    NGRID      = 1,                                           &
-    NTYPE      = TYPEREAL,                                    &
-    NDIMS      = 3,                                           &
-    LTIMEDEP   = .TRUE.                                       )
+  TSVLIST_A(JSV, KMI) = TFIELDMETADATA(                           &
+    CMNHNAME   = TRIM( CDUSTNAMES(JSV-NSV_DSTBEG_A(KMI)+1) ),     &
+    CSTDNAME   = '',                                              &
+    CLONGNAME  = TRIM( YDUSTLONGNAMES(JSV-NSV_DSTBEG_A(KMI)+1) ), &
+    CUNITS     = 'ppv',                                           &
+    CDIR       = 'XY',                                            &
+    CCOMMENT   = 'X_Y_Z_' // 'SVT' // YNUM3,                      &
+    NGRID      = 1,                                               &
+    NTYPE      = TYPEREAL,                                        &
+    NDIMS      = 3,                                               &
+    LTIMEDEP   = .TRUE.                                           )
 END DO
 
 DO JSV = NSV_DSTDEPBEG_A(KMI), NSV_DSTDEPEND_A(KMI)
@@ -1102,17 +1168,17 @@ DO JSV = NSV_SLTBEG_A(KMI), NSV_SLTEND_A(KMI)
 
   WRITE( YNUM3, '( I3.3 )' ) JSV
 
-  TSVLIST_A(JSV, KMI) = TFIELDMETADATA(                       &
-    CMNHNAME   = TRIM( CSALTNAMES(JSV-NSV_SLTBEG_A(KMI)+1) ), &
-    CSTDNAME   = '',                                          &
-    CLONGNAME  = TRIM( CSALTNAMES(JSV-NSV_SLTBEG_A(KMI)+1) ), &
-    CUNITS     = 'ppv',                                       &
-    CDIR       = 'XY',                                        &
-    CCOMMENT   = 'X_Y_Z_' // 'SVT' // YNUM3,                  &
-    NGRID      = 1,                                           &
-    NTYPE      = TYPEREAL,                                    &
-    NDIMS      = 3,                                           &
-    LTIMEDEP   = .TRUE.                                       )
+  TSVLIST_A(JSV, KMI) = TFIELDMETADATA(                           &
+    CMNHNAME   = TRIM( CSALTNAMES(JSV-NSV_SLTBEG_A(KMI)+1) ),     &
+    CSTDNAME   = '',                                              &
+    CLONGNAME  = TRIM( YSALTLONGNAMES(JSV-NSV_SLTBEG_A(KMI)+1) ), &
+    CUNITS     = 'ppv',                                           &
+    CDIR       = 'XY',                                            &
+    CCOMMENT   = 'X_Y_Z_' // 'SVT' // YNUM3,                      &
+    NGRID      = 1,                                               &
+    NTYPE      = TYPEREAL,                                        &
+    NDIMS      = 3,                                               &
+    LTIMEDEP   = .TRUE.                                           )
 END DO
 
 DO JSV = NSV_SLTDEPBEG_A(KMI), NSV_SLTDEPEND_A(KMI)
