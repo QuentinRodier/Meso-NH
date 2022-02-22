@@ -356,7 +356,7 @@ if ( luserr ) &
 call Les_diachro_write( tpdiafile, XLES_MEAN_RF,     'MEAN_RF',     'Mean RF Profile',              '1',       ymasks )
 if ( luseri ) &
 call Les_diachro_write( tpdiafile, XLES_MEAN_Ri,     'MEAN_RI',     'Mean Ri Profile',              'kg kg-1', ymasks )
-if ( luseri .and. ccloud=='lima') &
+if ( luseri ) &
 call Les_diachro_write( tpdiafile, XLES_MEAN_If,     'MEAN_IF',     'Mean If Profile',              '1',       ymasks )
 if ( lusers ) &
 call Les_diachro_write( tpdiafile, XLES_MEAN_Rs,     'MEAN_RS',     'Mean Rs Profile',              'kg kg-1', ymasks )
