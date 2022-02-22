@@ -972,7 +972,7 @@ SELECT CASE ( HCLOUD )
                          PTSTEP, PRHODJ, PPABSM, PPABST, PRHODREF, PEXNREF, PZZ, &
                          PTHT,PRT, PSVT(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END),        &
                          PTHS,PRS, PSVS(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END),        &
-                         PCLDFR, PSRCS                                           )
+                         PCLDFR, PICEFR, PRAINFR, PSRCS                          )
    ELSE IF (LPTSPLIT) THEN
     CALL LIMA_ADJUST_SPLIT(KRR, KMI, TPFILE, CCONDENS, CLAMBDA3,                     &
                      OSUBG_COND, OSIGMAS, PTSTEP, PSIGQSAT,                          &
@@ -987,7 +987,7 @@ SELECT CASE ( HCLOUD )
                      PRHODREF, PRHODJ, PEXNREF, PPABST, PPABST,       &
                      PRT, PRS, PSVT(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END), &
                      PSVS(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END),           &
-                     PTHS, PSRCS, PCLDFR                              )
+                     PTHS, PSRCS, PCLDFR, PICEFR, PRAINFR             )
    ENDIF
 !
 END SELECT

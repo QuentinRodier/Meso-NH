@@ -11,7 +11,7 @@ INTERFACE
 !
       SUBROUTINE LIMA_NOTADJUST(KMI, TPFILE, HRAD,                                       &
                                 PTSTEP, PRHODJ, PPABSM,  PPABST, PRHODREF, PEXNREF, PZZ, &
-                                PTHT,PRT, PSVT, PTHS, PRS,PSVS, PCLDFR, PSRCS            )
+                                PTHT,PRT, PSVT, PTHS, PRS,PSVS, PCLDFR, PICEFR, PRAINFR, PSRCS )
 !
 USE MODD_IO, ONLY: TFILEDATA
 !
@@ -38,6 +38,8 @@ REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSRCS   ! Second-order flux
                                                    ! s'rc'/2Sigma_s2 at time t+1
                                                    ! multiplied by Lambda_3
 REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PCLDFR  ! Cloud fraction
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PICEFR    ! Cloud fraction          
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRAINFR   ! Cloud fraction          
 !
 !
 END SUBROUTINE LIMA_NOTADJUST
@@ -49,7 +51,7 @@ END MODULE MODI_LIMA_NOTADJUST
 !     ####################################################################################
       SUBROUTINE LIMA_NOTADJUST(KMI, TPFILE, HRAD,                                       &
                                 PTSTEP, PRHODJ, PPABSM,  PPABST, PRHODREF, PEXNREF, PZZ, &
-                                PTHT,PRT, PSVT, PTHS, PRS,PSVS, PCLDFR, PSRCS            )
+                                PTHT,PRT, PSVT, PTHS, PRS,PSVS, PCLDFR, PICEFR, PRAINFR, PSRCS )
 !     ####################################################################################
 !
 !!****  * -  compute pseudo-prognostic of supersaturation according to Thouron
@@ -126,6 +128,8 @@ REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSRCS   ! Second-order flux
                                                    ! s'rc'/2Sigma_s2 at time t+1
                                                    ! multiplied by Lambda_3
 REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PCLDFR  ! Cloud fraction
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PICEFR    ! Cloud fraction          
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRAINFR   ! Cloud fraction          
 !
 !
 !*       0.2   Declarations of local variables :
@@ -563,6 +567,23 @@ END IF
 IF ( HRAD /= 'NONE' ) THEN
      PCLDFR(:,:,:) = ZW1(:,:,:)
 END IF
+!
+ZW1(:,:,:)=0.
+IF (SIZE(PRS,4)>3) ZW1(:,:,:)=ZW1(:,:,:) + PRS(:,:,:,4)
+WHERE (ZW1(:,:,:) > 1.E-15)
+   PICEFR(:,:,:)  = 1.
+ELSEWHERE
+   PICEFR(:,:,:)  = 0.
+ENDWHERE
+ZW1(:,:,:)=0.
+IF (SIZE(PRS,4)>2) ZW1(:,:,:)=ZW1(:,:,:) + PRS(:,:,:,3)
+IF (SIZE(PRS,4)>4) ZW1(:,:,:)=ZW1(:,:,:) + PRS(:,:,:,5)
+IF (SIZE(PRS,4)>5) ZW1(:,:,:)=ZW1(:,:,:) + PRS(:,:,:,6)
+WHERE (ZW1(:,:,:) > 1.E-15)
+   PRAINFR(:,:,:)  = 1.
+ELSEWHERE
+   PRAINFR(:,:,:)  = 0.
+ENDWHERE
 !
 IF ( tpfile%lopened ) THEN
   ZW(:,:,:)=SUM(ZNAS,4)-ZW(:,:,:)
