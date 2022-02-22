@@ -14,7 +14,7 @@ INTERFACE
                              PRHODREF, PRHODJ, PEXNREF, PPABSM, PSIGS, PMFCONV, &
                              PPABST, PZZ, PDTHRAD, PW_NU,                       &
                              PRT, PRS, PSVT, PSVS,                              &
-                             PTHS, PSRCS, PCLDFR, PRC_MF, PCF_MF                )
+                             PTHS, PSRCS, PCLDFR, PICEFR, PRC_MF, PCF_MF        )
 !
 USE MODD_IO,    ONLY: TFILEDATA
 USE MODD_NSV,   only: NSV_LIMA_BEG
@@ -58,6 +58,7 @@ REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSRCS     ! Second-order flux
                                                      ! s'rc'/2Sigma_s2 at time t+1
                                                      ! multiplied by Lambda_3
 REAL, DIMENSION(:,:,:),   INTENT(INOUT)   :: PCLDFR    ! Cloud fraction          
+REAL, DIMENSION(:,:,:),   INTENT(INOUT)   :: PICEFR    ! Cloud fraction          
 REAL, DIMENSION(:,:,:),     INTENT(IN)    :: PRC_MF! Convective Mass Flux liquid mixing ratio
 REAL, DIMENSION(:,:,:),     INTENT(IN)    :: PCF_MF! Convective Mass Flux Cloud fraction 
 !
@@ -73,7 +74,7 @@ END MODULE MODI_LIMA_ADJUST_SPLIT
                              PRHODREF, PRHODJ, PEXNREF, PPABSM, PSIGS, PMFCONV, &
                              PPABST, PZZ, PDTHRAD, PW_NU,                       &
                              PRT, PRS, PSVT, PSVS,                              &
-                             PTHS, PSRCS, PCLDFR, PRC_MF, PCF_MF                )
+                             PTHS, PSRCS, PCLDFR, PICEFR, PRC_MF, PCF_MF        )
 !     ###########################################################################
 !
 !!****  *MIMA_ADJUST* -  compute the fast microphysical sources 
@@ -217,6 +218,7 @@ REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSRCS     ! Second-order flux
                                                      ! s'rc'/2Sigma_s2 at time t+1
                                                      ! multiplied by Lambda_3
 REAL, DIMENSION(:,:,:),   INTENT(INOUT)   :: PCLDFR    ! Cloud fraction          
+REAL, DIMENSION(:,:,:),   INTENT(INOUT)   :: PICEFR    ! Cloud fraction          
 REAL, DIMENSION(:,:,:),     INTENT(IN)    :: PRC_MF! Convective Mass Flux liquid mixing ratio
 REAL, DIMENSION(:,:,:),     INTENT(IN)    :: PCF_MF! Convective Mass Flux Cloud fraction 
 !
@@ -715,6 +717,8 @@ IF ( OSUBG_COND ) THEN
       PCCS=0.
       PCLDFR=0.
    END WHERE
+   PICEFR(:,:,:)=0.
+   WHERE(PICEFR(:,:,:)<1.E-10 .AND. PRIT(:,:,:)>XRTMIN(4) .AND. PCIT(:,:,:)>XCTMIN(4)) PICEFR(:,:,:)=1.
    
    PRVS(:,:,:)   = PRVS(:,:,:) - ZW1(:,:,:)
    PRCS(:,:,:)   = PRCS(:,:,:) + ZW1(:,:,:)

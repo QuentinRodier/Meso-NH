@@ -3953,7 +3953,7 @@ IF (LLIDAR) THEN
        ZTMP4(:,:,:,3)=XSVT(:,:,:,NSV_LIMA_NR)
        ZTMP4(:,:,:,4)=XSVT(:,:,:,NSV_LIMA_NI)
 !
-       CALL LIDAR(CCLOUD, YVIEW, XALT_LIDAR, XWVL_LIDAR, XZZ, XRHODREF, XCLDFR,&
+       CALL LIDAR(CCLOUD, YVIEW, XALT_LIDAR, XWVL_LIDAR, XZZ, XRHODREF, MAX(XCLDFR,XICEFR),&
             XRT, ZWORK31, ZWORK32,                                  &
             PCT=ZTMP4,                            &
             PDSTC=ZTMP1,                          &
@@ -3982,7 +3982,7 @@ IF (LLIDAR) THEN
        ZTMP4(:,:,:,3)=XSVT(:,:,:,NSV_LIMA_NR)
        ZTMP4(:,:,:,4)=XSVT(:,:,:,NSV_LIMA_NI)
 !
-       CALL LIDAR(CCLOUD, YVIEW, XALT_LIDAR, XWVL_LIDAR, XZZ, XRHODREF, XCLDFR,&
+       CALL LIDAR(CCLOUD, YVIEW, XALT_LIDAR, XWVL_LIDAR, XZZ, XRHODREF, MAX(XCLDFR,XICEFR),&
             XRT, ZWORK31, ZWORK32,                                  &
             PCT=ZTMP4)
     END SELECT

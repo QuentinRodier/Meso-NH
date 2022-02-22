@@ -86,6 +86,8 @@ TYPE GET_t
                                 ! and SRC related to the subgrid condensation
   CHARACTER (LEN=4)  :: CGETCLDFR             !  Get indicator for the
                                 ! CLouD FRaction
+  CHARACTER (LEN=4)  :: CGETICEFR             !  Get indicator for the
+                                ! CLouD FRaction
   CHARACTER (LEN=4)  :: CGETSRCT              !  Get indicator for SRCM
                                 ! and SRCT related to the subgrid condensation
   CHARACTER (LEN=4)  :: CGETHL                !  Get indicator for HighLow cloud
@@ -123,6 +125,7 @@ CHARACTER (LEN=4), POINTER :: CGETLSUM=>NULL(), CGETLSVM=>NULL(), CGETLSWM=>NULL
 CHARACTER (LEN=4), POINTER :: CGETLSTHM=>NULL(), CGETLSRVM=>NULL()
 CHARACTER (LEN=4), POINTER :: CGETSIGS=>NULL(),CGETSRC=>NULL()
 CHARACTER (LEN=4), POINTER :: CGETCLDFR=>NULL()
+CHARACTER (LEN=4), POINTER :: CGETICEFR=>NULL()
 CHARACTER (LEN=4), POINTER :: CGETSRCT=>NULL()
 CHARACTER (LEN=4), POINTER :: CGETHL=>NULL()
 CHARACTER (LEN=4), POINTER :: CGETCIT=>NULL()
@@ -178,6 +181,7 @@ CGETLSRVM=>GET_MODEL(KTO)%CGETLSRVM
 CGETSIGS=>GET_MODEL(KTO)%CGETSIGS
 CGETSRC=>GET_MODEL(KTO)%CGETSRC
 CGETCLDFR=>GET_MODEL(KTO)%CGETCLDFR
+CGETICEFR=>GET_MODEL(KTO)%CGETICEFR
 CGETSRCT=>GET_MODEL(KTO)%CGETSRCT
 CGETHL=>GET_MODEL(KTO)%CGETHL
 CGETCIT=>GET_MODEL(KTO)%CGETCIT

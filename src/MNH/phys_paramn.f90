@@ -624,7 +624,7 @@ IF (CRAD /='NONE') THEN
 !   
   IF (CRAD =='ECMW' .OR. CRAD =='ECRA') THEN
     IF (GRAD .AND. NRR.LE.3 ) THEN 
-      IF( MAXVAL(XCLDFR(:,:,:)).LE. 1.E-10 .AND. OCLOUD_ONLY ) THEN
+      IF( MAX(MAXVAL(XCLDFR(:,:,:)),MAXVAL(XICEFR(:,:,:))).LE. 1.E-10 .AND. OCLOUD_ONLY ) THEN
           GRAD = .FALSE.                ! only the cloudy verticals would be 
                                         ! refreshed but there is no clouds 
       END IF
@@ -739,7 +739,7 @@ CALL SUNPOS_n   ( XZENITH, ZCOSZEN, ZSINZEN, ZAZIMSOL )
                        COPWLW, COPILW, XFUDG,                                                    &
                        NDLON, NFLEV, NRAD_DIAG, NFLUX, NRAD, NAER, NSWB_OLD, NSWB_MNH, NLWB_MNH, &
                        NSTATM, NRAD_COLNBR, ZCOSZEN, XSEA, XCORSOL,                              &
-                       XDIR_ALB, XSCA_ALB, XEMIS, XCLDFR, XCCO2, XTSRAD, XSTATM, XTHT, XRT,      &
+                       XDIR_ALB, XSCA_ALB, XEMIS, MAX(XCLDFR,XICEFR), XCCO2, XTSRAD, XSTATM, XTHT, XRT,      &
                        XPABST, XOZON, XAER,XDST_WL, XAER_CLIM, XSVT,                             &
                        XDTHRAD, XFLALWD, XDIRFLASWD, XSCAFLASWD, XRHODREF, XZZ ,                 &
                        XRADEFF, XSWU, XSWD, XLWU, XLWD, XDTHRADSW, XDTHRADLW                     )
