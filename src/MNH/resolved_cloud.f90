@@ -476,9 +476,6 @@ INTEGER                               :: JMOD, JMOD_IFN
 LOGICAL                               :: GWEST,GEAST,GNORTH,GSOUTH
 ! BVIE work array waiting for PINPRI
 REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2)):: ZINPRI
-REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3)):: ZICEFR
-REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3)):: ZPRCFR
-REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3)):: ZTM
 !
 !------------------------------------------------------------------------------
 !
@@ -941,7 +938,7 @@ SELECT CASE ( HCLOUD )
                    PSVT(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END), PW_ACT,          &
                    PTHS, PRS, PSVS(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END),       &
                    PINPRC, PINDEP, PINPRR, ZINPRI, PINPRS, PINPRG, PINPRH, &
-                   PEVAP3D, PCLDFR, PICEFR, ZPRCFR                         )
+                   PEVAP3D, PCLDFR, PICEFR, PRAINFR                        )
      ELSE
 
         IF (OWARM) CALL LIMA_WARM(OACTIT, OSEDC, ORAIN, KSPLITR, PTSTEP, KMI,       &
