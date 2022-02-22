@@ -768,18 +768,12 @@ IF ( LCOLD )             ZCIT(:,:,:)   = ZCIS(:,:,:) * PTSTEP
 !*       2.     Compute cloud, ice and precipitation fractions
 !               ----------------------------------------------
 !
-IF (LSUBG_COND) THEN
-   CALL LIMA_COMPUTE_CLOUD_FRACTIONS (IIB, IIE, IJB, IJE, IKB, IKE, KKL, &
-                                      ZCCT, ZRCT,                        &
-                                      ZCRT, ZRRT,                        &
-                                      ZCIT, ZRIT,                        &
-                                      ZRST, ZRGT, ZRHT,                  &
-                                      PCLDFR, PICEFR, PPRCFR             )
-ELSE
-   PCLDFR(:,:,:)=1.
-   PICEFR(:,:,:)=1.
-   PPRCFR(:,:,:)=1.
-END IF
+CALL LIMA_COMPUTE_CLOUD_FRACTIONS (IIB, IIE, IJB, IJE, IKB, IKE, KKL, &
+                                   ZCCT, ZRCT,                        &
+                                   ZCRT, ZRRT,                        &
+                                   ZCIT, ZRIT,                        &
+                                   ZRST, ZRGT, ZRHT,                  &
+                                   PCLDFR, PICEFR, PPRCFR             )
 !
 !-------------------------------------------------------------------------------
 !

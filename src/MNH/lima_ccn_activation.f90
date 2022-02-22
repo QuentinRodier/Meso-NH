@@ -167,7 +167,7 @@ REAL, DIMENSION(:), ALLOCATABLE    :: ZZW1, ZZW2, ZZW3, ZZW4, ZZW5, ZZW6, &
 REAL, DIMENSION(:,:), ALLOCATABLE  :: ZTMP, ZCHEN_MULTI
 !
 REAL, DIMENSION(SIZE(PRHODREF,1),SIZE(PRHODREF,2),SIZE(PRHODREF,3))   &
-                                   :: ZTDT, ZDRC, ZRVSAT, ZW, ZW2  
+                                   :: ZTDT, ZDRC, ZRVSAT, ZW, ZW2, ZCLDFR  
 REAL, DIMENSION(SIZE(PNFT,1),SIZE(PNFT,2),SIZE(PNFT,3))               &
                                    :: ZCONC_TOT         ! total CCN C. available
 !
@@ -230,6 +230,11 @@ IF (.NOT. LSUBG_COND) GNUCT(IIB:IIE,IJB:IJE,IKB:IKE) = GNUCT(IIB:IIE,IJB:IJE,IKB
                                                  .AND. PRVT(IIB:IIE,IJB:IJE,IKB:IKE).GE.ZRVSAT(IIB:IIE,IJB:IJE,IKB:IKE)
 !
 
+IF (.NOT. LSUBG_COND) THEN
+   ZCLDFR(:,:,:) = 1.
+ELSE
+   ZCLDFR(:,:,:) = PCLDFR(:,:,:)
+END IF
 
 INUCT = COUNTJV( GNUCT(:,:,:),I1(:),I2(:),I3(:))
 !
@@ -255,8 +260,8 @@ IF( INUCT >= 1 ) THEN
    ALLOCATE(ZRHODREF(INUCT)) 
    ALLOCATE(ZEXNREF(INUCT)) 
    DO JL=1,INUCT
-      ZRCT(JL) = PRCT(I1(JL),I2(JL),I3(JL))/PCLDFR(I1(JL),I2(JL),I3(JL))
-      ZCCT(JL) = PCCT(I1(JL),I2(JL),I3(JL))/PCLDFR(I1(JL),I2(JL),I3(JL))
+      ZRCT(JL) = PRCT(I1(JL),I2(JL),I3(JL))/ZCLDFR(I1(JL),I2(JL),I3(JL))
+      ZCCT(JL) = PCCT(I1(JL),I2(JL),I3(JL))/ZCLDFR(I1(JL),I2(JL),I3(JL))
       ZZT(JL)  = PT(I1(JL),I2(JL),I3(JL))
       ZZW1(JL) = ZRVSAT(I1(JL),I2(JL),I3(JL))
       ZZW2(JL) = PW_NU(I1(JL),I2(JL),I3(JL))
