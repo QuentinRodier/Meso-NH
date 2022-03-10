@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -86,6 +86,8 @@ use modd_parameters, only: jphext
 
 use mode_tools_ll,   only: Get_globaldims_ll
 
+use NETCDF,          only: NF90_FLOAT
+
 type(tfiledata),       intent(in) :: tpfile
 class(tfieldmetadata), intent(in) :: tpfield
 integer,               intent(in) :: knblocks
@@ -112,7 +114,11 @@ call IO_Mnhname_clean( tpfield%cmnhname, yvarname )
 istatus = NF90_INQ_VARID( incid, yvarname, ivarid )
 if ( istatus /= NF90_NOERR ) then
 
-  istatus = NF90_DEF_VAR( incid, yvarname, MNHREAL_NF90, ivarid)
+  if ( tpfile%lncreduce_float_precision ) then
+    istatus = NF90_DEF_VAR( incid, yvarname, NF90_FLOAT, ivarid )
+  else
+    istatus = NF90_DEF_VAR( incid, yvarname, MNHREAL_NF90, ivarid )
+  end if
 
   if ( tpfield%ndims /= 3 ) call Print_msg( NVERB_FATAL, 'IO', 'IO_Field_header_split_write_nc4', &
                   trim( tpfile%cname )//': '//trim( yvarname )//': NDIMS should be 3' )
