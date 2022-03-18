@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2000-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2000-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -321,7 +321,7 @@ XLES_TEMP_SAMPLING = XTSTEP * NLES_DTCOUNT
 !            ----------------------------------------
 !
 !
-NLES_TIMES = ( INT( (XSEGLEN-XTSTEP+1.E-6) / XTSTEP ) ) / NLES_DTCOUNT
+NLES_TIMES = ( NINT( ( XSEGLEN - DYN_MODEL(1)%XTSTEP ) / XTSTEP ) ) / NLES_DTCOUNT
 !
 !*      3.5  current LES time counter
 !            ------------------------

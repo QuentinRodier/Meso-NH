@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -252,7 +252,7 @@ USE MODD_CONF,          ONLY: CPROGRAM, l2d, lpack
 USE MODD_CONF_n,        ONLY: CSTORAGE_TYPE
 USE MODD_DIM_n,         ONLY: NIMAX_ll, NJMAX_ll, NKMAX
 use modd_dyn,           only: xseglen
-use modd_dyn_n,         only: xtstep
+use modd_dyn_n,         only: dyn_model
 
 !PW: check if all parameters are used...
 use modd_field,         only: NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NI_U, NMNHDIM_NJ_U, NMNHDIM_NI_V, NMNHDIM_NJ_V,   &
@@ -423,13 +423,13 @@ if ( tpfile%ctype == 'MNHDIACHRONIC' ) then
 
   !Dimension for the number of profiler times
   if ( numbprofiler > 0 ) then
-    iprof = Int ( ( xseglen - xtstep ) / tprofiler%step ) + 1
+    iprof = Nint ( ( xseglen - dyn_model(1)%xtstep ) / tprofiler%step ) + 1
     call IO_Add_dim_nc4( tpfile, NMNHDIM_PROFILER_TIME, 'time_profiler', iprof )
   end if
 
   !Dimension for the number of station times
   if ( numbstat > 0 ) then
-    istation = Int ( ( xseglen - xtstep ) / tstation%step ) + 1
+    istation = Nint ( ( xseglen - dyn_model(1)%xtstep ) / tstation%step ) + 1
     call IO_Add_dim_nc4( tpfile, NMNHDIM_STATION_TIME, 'time_station', istation )
   end if
 

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -156,7 +156,7 @@ SUBROUTINE ALLOCATE_PROFILER_n(TPROFILER)
 !
 TYPE(PROFILER), INTENT(INOUT) :: TPROFILER
 !
-ISTORE = INT ( (PSEGLEN-XTSTEP) / TPROFILER%STEP ) + 1
+ISTORE = NINT( ( PSEGLEN - DYN_MODEL(1)%XTSTEP ) / TPROFILER%STEP ) + 1
 !
 allocate( tprofiler%tpdates( istore ) )
 ALLOCATE(TPROFILER%ERROR (NUMBPROFILER))
