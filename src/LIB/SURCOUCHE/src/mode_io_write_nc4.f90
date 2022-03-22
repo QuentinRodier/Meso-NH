@@ -28,6 +28,7 @@
 !  P. Wautelet 14/01/2021: add IO_Field_write_nc4_N4, IO_Field_partial_write_nc4_N2,
 !                          IO_Field_partial_write_nc4_N3 and IO_Field_partial_write_nc4_N4 subroutines
 !  P. Wautelet 30/03/2021: budgets: LES cartesian subdomain limits are defined in the physical domain
+!  P. Wautelet 22/03/2022: correct time_les_avg and time_les_avg_bounds coordinates
 !-----------------------------------------------------------------
 #ifdef MNH_IOCDF4
 module mode_io_write_nc4
@@ -1450,9 +1451,9 @@ use modd_grid,       only: xlatori, xlonori
 use modd_grid_n,     only: lsleve, xxhat, xyhat, xzhat
 use modd_les,        only: cles_level_type, cspectra_level_type, nlesn_iinf, nlesn_isup, nlesn_jinf, nlesn_jsup, &
                            nles_k, nles_levels, nspectra_k, nspectra_levels,                                     &
-                           xles_altitudes, xles_temp_mean_start, xles_temp_mean_end, xles_temp_mean_step,        &
-                           xspectra_altitudes
-use modd_les_n,      only: nles_times, nspectra_ni, nspectra_nj, tles_dates
+                           xles_altitudes, xspectra_altitudes
+use modd_les_n,      only: nles_dtcount, nles_mean_end, nles_mean_start, nles_mean_step, nles_mean_times, &
+                           nles_times, nspectra_ni, nspectra_nj, tles_dates, xles_times
 use modd_netcdf,     only: tdimnc
 use modd_parameters, only: jphext, JPVEXT
 use modd_profiler_n, only: numbprofiler, tprofiler
@@ -1476,14 +1477,13 @@ character(len=:),                         allocatable :: yprogram
 integer                                               :: iiu, iju, iku
 integer                                               :: id, iid, iresp
 integer                                               :: imi
-integer                                               :: iavg
 integer                                               :: ji
 integer                                               :: jt
+integer                                               :: jtb, jte
 integer(kind=cdfint)                                  :: incid
 logical                                               :: gchangemodel
 logical                                               :: gdealloc
 logical,                         pointer              :: gsleve
-real                                                  :: zles_temp_mean_start, zles_temp_mean_end
 real,            dimension(:),   pointer              :: zxhat, zyhat, zzhat
 real,            dimension(:),            allocatable :: zxhatm, zyhatm, zzhatm !Coordinates at mass points in the transformed space
 real,            dimension(:),            allocatable :: zles_levels
@@ -1746,31 +1746,34 @@ if ( tpfile%lmaster ) then
       call Write_time_coord( tpfile%tncdims%tdims(NMNHDIM_BUDGET_LES_TIME), 'time axis for LES budgets', tles_dates )
 
     !Coordinates for the number of LES budget time averages
-    iavg = int( xles_temp_mean_end - 1.e-10 - xles_temp_mean_start ) / xles_temp_mean_step + 1
     !Condition also on nles_times to not create this coordinate when not used (no time average if nles_times=0)
-    if ( nles_times > 0 .and. iavg > 0 ) then
-      Allocate( tzdates(iavg) )
-      Allocate( tzdates_bound(2, iavg) )
+    if ( nles_times > 0 .and. nles_mean_times > 0 ) then
+      Allocate( tzdates(nles_mean_times) )
+      Allocate( tzdates_bound(2, nles_mean_times) )
 
-      do jt = 1, iavg
-        zles_temp_mean_start = xles_temp_mean_start + ( jt - 1 ) * xles_temp_mean_step
-        zles_temp_mean_end   = Min( xles_temp_mean_end, zles_temp_mean_start + xles_temp_mean_step )
+      do jt = 1, nles_mean_times
+        jtb = ( nles_mean_start + ( jt - 1 ) * nles_mean_step ) / nles_dtcount
+        jte = MIN( jtb + nles_mean_step / nles_dtcount, nles_mean_end / nles_dtcount, nles_times )
+        ! jtb could be 0 if nles_mean_start is smaller than the first LES measurement
+        ! For example, it occurs if xles_temp_mean_start is smaller than xles_temp_sampling (if xles_temp_mean_start=0.)
+        ! Do this correction only after computation of jte
+        if ( jtb < 1 ) jtb = 1
 
         tzdates(jt)%nyear  = tdtseg%nyear
         tzdates(jt)%nmonth = tdtseg%nmonth
         tzdates(jt)%nday   = tdtseg%nday
-        tzdates(jt)%xtime        = tdtseg%xtime + ( zles_temp_mean_start + zles_temp_mean_end ) / 2.
+        tzdates(jt)%xtime        = tdtseg%xtime + ( xles_times(jtb) + xles_times(jte) ) / 2.
         !Not necessary:  call Datetime_correctdate( tzdates(jt ) )
 
         tzdates_bound(1, jt)%nyear  = tdtseg%nyear
         tzdates_bound(1, jt)%nmonth = tdtseg%nmonth
         tzdates_bound(1, jt)%nday   = tdtseg%nday
-        tzdates_bound(1, jt)%xtime        = tdtseg%xtime + zles_temp_mean_start
+        tzdates_bound(1, jt)%xtime  = tdtseg%xtime + xles_times(jtb)
 
         tzdates_bound(2, jt)%nyear  = tdtseg%nyear
         tzdates_bound(2, jt)%nmonth = tdtseg%nmonth
         tzdates_bound(2, jt)%nday   = tdtseg%nday
-        tzdates_bound(2, jt)%xtime        = tdtseg%xtime + zles_temp_mean_end
+        tzdates_bound(2, jt)%xtime  = tdtseg%xtime + xles_times(jte)
       end do
       call Write_time_coord( tpfile%tncdims%tdims(NMNHDIM_BUDGET_LES_AVG_TIME), 'time axis for LES budget time averages', &
                              tzdates, tzdates_bound )
