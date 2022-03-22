@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -12,6 +12,7 @@
 !  P. Wautelet    10/2020: restructure subroutines to use tfieldmetadata_base type
 !  P. Wautelet 03/03/2021: budgets: add tbudiachrometadata type (useful to pass more information to Write_diachro)
 !  P. Wautelet 11/03/2021: budgets: remove ptrajx/y/z optional dummy arguments of Write_diachro
+!  P. Wautelet 22/03/2022: LES averaging periods are more reliable (compute with integers instead of reals)
 !-----------------------------------------------------------------
 !#######################
 MODULE MODE_LES_DIACHRO
@@ -524,8 +525,7 @@ END SUBROUTINE LES_TIME_AVG
 subroutine Les_time_avg_4D( pwork4, tpdates, kresp )
 !########################################################
 
-use modd_les,        only: nles_current_times, xles_temp_mean_start, xles_temp_mean_end, xles_temp_mean_step
-use modd_parameters, only: XUNDEF
+use modd_les_n,      only: nles_dtcount, nles_mean_start, nles_mean_end, nles_mean_step, nles_mean_times, nles_times
 use modd_time,       only: tdtseg
 use modd_type_date,  only: date_time
 
@@ -537,60 +537,33 @@ real,            dimension(:,:,:,:), allocatable, intent(inout) :: pwork4 ! cont
 type(date_time), dimension(:),       allocatable, intent(inout) :: tpdates
 integer,                                          intent(out)   :: kresp  ! return code (0 is ok)
 !------------------------------------------------------------------------------
-integer                               :: jt                   ! time counter
-integer                               :: itime                ! nb of avg. points
-integer                               :: iavg                 ! nb of avg. periods
 integer                               :: javg                 ! loop counter on avg. periods
 integer                               :: jk                   ! vertical loop counter
 integer                               :: jp                   ! process loop counter
 integer                               :: jsv                  ! scalar loop counter
-integer                               :: jx                   ! first  spatial or spectral coordinate loop counter
-integer                               :: jy                   ! second spatial or spectral coordinate loop counter
 integer                               :: jtb, jte
-real                                  :: zles_temp_mean_start ! initial and end times
-real                                  :: zles_temp_mean_end   ! of one avergaing preiod
 real, dimension(:,:,:,:), allocatable :: zwork4               ! contains averaged physical field
 !------------------------------------------------------------------------------
 
-if (     xles_temp_mean_end   == XUNDEF &
-    .or. xles_temp_mean_start == XUNDEF &
-    .or. xles_temp_mean_step  == XUNDEF ) then
-  kresp = -1
-  return
-end if
-
-iavg = Int( xles_temp_mean_end - 1.e-10 - xles_temp_mean_start ) / xles_temp_mean_step + 1
-if ( iavg <= 0 ) then
+if ( nles_mean_times == 0 ) then
   kresp = -1
   return
 end if
 
 Deallocate( tpdates )
 
-Allocate( tpdates(iavg) )
-Allocate( zwork4(Size( pwork4, 1 ), iavg, Size( pwork4, 3 ), Size( pwork4, 4 )) )
+Allocate( tpdates(nles_mean_times) )
+Allocate( zwork4(Size( pwork4, 1 ), nles_mean_times, Size( pwork4, 3 ), Size( pwork4, 4 )) )
 
 zwork4(:, :, :, :) = 0.
 
-do javg = 1, iavg
-  zles_temp_mean_start = xles_temp_mean_start + (javg - 1) * xles_temp_mean_step
-  zles_temp_mean_end   = Min( xles_temp_mean_end, zles_temp_mean_start + xles_temp_mean_step )
-
-  jtb = -1
-  jte = -2
-  do jt = 1, nles_current_times
-    if ( xles_times(jt) >= zles_temp_mean_start ) then
-      jtb = jt
-      exit
-    end if
-  end do
-  do jt = jtb, nles_current_times
-    if ( xles_times(jt) <= zles_temp_mean_end ) then
-      jte = jt
-    else
-      exit
-    end if
-  end do
+do javg = 1, nles_mean_times
+  jtb = ( nles_mean_start + ( javg - 1 ) * nles_mean_step ) / nles_dtcount
+  jte = MIN( jtb + nles_mean_step / nles_dtcount, nles_mean_end / nles_dtcount, nles_times )
+  ! jtb could be 0 if nles_mean_start is smaller than the first LES measurement
+  ! For example, it occurs if xles_temp_mean_start is smaller than xles_temp_sampling (if xles_temp_mean_start=0.)
+  ! Do this correction only after computation of jte
+  if ( jtb < 1 ) jtb = 1
 
   do jp = 1, Size( pwork4, 4 )
     do jsv = 1, Size( pwork4, 3 )
@@ -603,12 +576,12 @@ do javg = 1, iavg
   tpdates(javg)%nyear  = tdtseg%nyear
   tpdates(javg)%nmonth = tdtseg%nmonth
   tpdates(javg)%nday   = tdtseg%nday
-  tpdates(javg)%xtime  = tdtseg%xtime + ( zles_temp_mean_start + zles_temp_mean_end ) / 2.
+  tpdates(javg)%xtime  = tdtseg%xtime + ( xles_times(jtb) + xles_times(jte) ) / 2.
   call Datetime_correctdate( tpdates(javg) )
 end do
 
 Deallocate( pwork4 )
-Allocate( pwork4(Size( zwork4, 1 ), iavg, Size( zwork4, 3 ), Size( zwork4, 4 )) )
+Allocate( pwork4(Size( zwork4, 1 ), nles_mean_times, Size( zwork4, 3 ), Size( zwork4, 4 )) )
 
 pwork4 = zwork4
 
