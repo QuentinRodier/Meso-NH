@@ -279,7 +279,7 @@ USE MODD_PARAM_LIMA, ONLY : LCOLD, LNUCL, LSEDI, LHHONI, LSNOW, LHAIL, LMEYERS, 
                             CPRISTINE_ICE_LIMA, CHEVRIMED_ICE_LIMA,                   &
                             XFACTNUC_DEP, XFACTNUC_CON,                               &
                             OWARM=>LWARM, LACTI, ORAIN=>LRAIN, OSEDC=>LSEDC,          &
-                            OACTIT=>LACTIT, LBOUND, LSPRO, LADJ,                      &
+                            OACTIT=>LACTIT, LBOUND, LSPRO, LADJ, LKHKO,               &
                             NMOD_CCN, XCCN_CONC,                                      &
                             LCCN_HOM, CCCN_MODES,                                     &
                             YALPHAR=>XALPHAR, YNUR=>XNUR,                             &
@@ -991,6 +991,7 @@ IF (KMI == 1) THEN
   OACTIT = .FALSE.
   LADJ   = .TRUE.
   LSPRO  = .FALSE.
+  LKHKO  = .FALSE.
   ODEPOC = .FALSE.
   LBOUND = .FALSE.
   OACTTKE = .TRUE.

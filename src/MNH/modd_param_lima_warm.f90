@@ -90,8 +90,8 @@ REAL,SAVE :: XSELFC                              ! Constants for cloud droplet
                                                  ! selfcollection : SELF
 !
 REAL,SAVE :: XAUTO1, XAUTO2, XCAUTR,           & ! Constants for cloud droplet
-    	     XLAUTR,   XLAUTR_THRESHOLD,       & ! autoconversion : AUT
-    	     XITAUTR, XITAUTR_THRESHOLD
+    	     XLAUTR, XLAUTR_THRESHOLD,         & ! autoconversion : AUT
+    	     XITAUTR, XITAUTR_THRESHOLD, XR0     ! XR0 for KHKO autoconversion
 !
 REAL,SAVE :: XACCR1, XACCR2, XACCR3,           & ! Constants for the accretion
 	     XACCR4, XACCR5, XACCR6,           & ! process
@@ -105,7 +105,8 @@ REAL,SAVE :: XSPONBUD1,XSPONBUD2,XSPONBUD3,    & ! Spontaneous Break-up
              XSPONCOEF2                          ! (drop size limiter)
 !
 REAL,SAVE :: X0EVAR, X1EVAR,                   & ! Constants for raindrop
-	     XEX0EVAR, XEX1EVAR, XEX2EVAR        ! evaporation: EVA 
+	     XEX0EVAR, XEX1EVAR, XEX2EVAR,     & ! evaporation: EVA 
+             XCEVAP                              ! for KHKO
 !
 REAL,DIMENSION(:,:,:,:), SAVE, ALLOCATABLE :: XCONCC_INI
 REAL,SAVE                                  :: XCONCR_PARAM_INI        
