@@ -451,9 +451,10 @@ GNUCT(:,:,:) = .FALSE.
 !GNUCT(IIB:IIE,IJB:IJE,IKB:IKE) = ZSAT(IIB:IIE,IJB:IJE,IKB:IKE)>0.0 .OR.   &
 !                                 ZCCS(IIB:IIE,IJB:IJE,IKB:IKE)>0.0
 !GNUCT(IIB:IIE,IJB:IJE,IKB:IKE) = ZSAT(IIB:IIE,IJB:IJE,IKB:IKE)>0.0 
-GNUCT(IIB:IIE,IJB:IJE,IKB:IKE) = ZSAT(IIB:IIE,IJB:IJE,IKB:IKE)>0.0 .OR.   &
+GNUCT(IIB:IIE,IJB:IJE,IKB:IKE) = ZSAT(IIB:IIE,IJB:IJE,IKB:IKE)>-1.0 .AND.  &
+                                 ( ZSAT(IIB:IIE,IJB:IJE,IKB:IKE)>0.0 .OR.  &
 !                                ZCCS(IIB:IIE,IJB:IJE,IKB:IKE)>1.E+05
-                                 ZCCS(IIB:IIE,IJB:IJE,IKB:IKE)>XCTMIN(2)
+                                 ZCCS(IIB:IIE,IJB:IJE,IKB:IKE)>XCTMIN(2) )
 INUCT = COUNTJV( GNUCT(:,:,:),I1(:),I2(:),I3(:))
 !3D array to 1D array
 !
