@@ -87,6 +87,7 @@ END MODULE MODI_INI_RAIN_ICE_ELEC
 !!    Modifications:
 !!      C. Barthe   20/11/09   update to version 4.8.1
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!  J. Wurtz       03/2022: new snow characteristics
 !
 !-------------------------------------------------------------------------------
 !

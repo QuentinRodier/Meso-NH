@@ -85,6 +85,7 @@ END MODULE MODI_INI_PARAM_ELEC
 !!        J. Escobar 8/01/2016 bug , missing YDIR='XY' in READ 
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!  J. Wurtz       03/2022: new snow characteristics
 !
 !-------------------------------------------------------------------------------
 !

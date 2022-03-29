@@ -112,10 +112,11 @@ USE MODE_FGAU,             ONLY : GAULAG
 USE MODE_FSCATTER,         ONLY: QEPSW,QEPSI,BHMIE,MOMG,MG
 USE MODD_PARAM_LIMA,       ONLY: XALPHAR_L=>XALPHAR,XNUR_L=>XNUR,XALPHAS_L=>XALPHAS,XNUS_L=>XNUS,&
                                  XALPHAG_L=>XALPHAG,XNUG_L=>XNUG, XALPHAI_L=>XALPHAI,XNUI_L=>XNUI,&
-                                 XRTMIN_L=>XRTMIN,XALPHAC_L=>XALPHAC,XNUC_L=>XNUC
+                                 XRTMIN_L=>XRTMIN,XALPHAC_L=>XALPHAC,XNUC_L=>XNUC, LSNOW_T_L=>LSNOW_T
 USE MODD_PARAM_LIMA_COLD,  ONLY: XDI_L=>XDI,XLBEXI_L=>XLBEXI,XLBI_L=>XLBI,XAI_L=>XAI,XBI_L=>XBI,XC_I_L=>XC_I,&
                                  XLBEXS_L=>XLBEXS,XLBS_L=>XLBS,XCCS_L=>XCCS,&
-                                 XAS_L=>XAS,XBS_L=>XBS,XCXS_L=>XCXS
+                                 XAS_L=>XAS,XBS_L=>XBS,XCXS_L=>XCXS,        &
+                                 XLBDAS_MIN,XLBDAS_MAX
 USE MODD_PARAM_LIMA_MIXED, ONLY: XDG_L=>XDG,XLBEXG_L=>XLBEXG,XLBG_L=>XLBG,XCCG_L=>XCCG,&
                                  XAG_L=>XAG,XBG_L=>XBG,XCXG_L=>XCXG,XCG_L=>XCG
 USE MODD_PARAM_LIMA_WARM,  ONLY: XLBEXR_L=>XLBEXR,XLBR_L=>XLBR,XBR_L=>XBR,XAR_L=>XAR,&
@@ -242,6 +243,7 @@ REAL                           :: ZAETOT,ZAETMP,ZREFLOC,ZQSCA,ZQBACK,ZQEXT ! tem
 REAL,DIMENSION(:),ALLOCATABLE  :: ZAELOC,ZZMZ ! temporary arrays
 INTEGER                        :: JPTS_GAULAG=9 ! number of points for Gauss-Laguerre quadrature
 REAL                           :: ZLBDA   ! slope distribution parameter
+REAL                           :: ZN   ! number cocentration
 REAL                           :: ZFRAC_ICE  ! ice water fraction
 REAL                           :: ZDELTA_EQUIV ! mass-equivalent Gauss-Laguerre point
 REAL                           :: ZFW ! liquid fraction
@@ -724,7 +726,17 @@ IF (GSTORE) THEN
                     ZLB=( ZA*ZCC*MOMG(ZALPHA,ZNU,ZB) )**(-ZLBEX)
                   ENDIF
             END SELECT
-            ZLBDA=ZLB*(ZRHODREFZ(JK)*ZRZ(JK,JLOOP))**ZLBEX
+            IF (JLOOP.EQ.5 .AND. CCLOUD=='LIMA' .AND. LSNOW_T_L) THEN
+               IF (ZTEMPZ(JK)>-10.) THEN
+                  ZLBDA = MAX(MIN(XLBDAS_MAX, 10**(14.554-0.0423*(ZTEMPZ(JK)+273.15))),XLBDAS_MIN)
+               ELSE
+                  ZLBDA = MAX(MIN(XLBDAS_MAX, 10**(6.226-0.0106*(ZTEMPZ(JK)+273.15))),XLBDAS_MIN)
+               END IF
+               ZN=XLBS_L*ZRHODREFZ(JK)*ZRZ(JK,JLOOP)*ZLBDA**ZB
+            ELSE
+               ZLBDA=ZLB*(ZRHODREFZ(JK)*ZRZ(JK,JLOOP))**ZLBEX
+               ZN=ZCC*ZLBDA**ZCX
+            END IF
             ZREFLOC=0.
             ZAETMP=0.
             DO JJ=1,JPTS_GAULAG ! Gauss-Laguerre quadrature
@@ -754,8 +766,8 @@ IF (GSTORE) THEN
                ZREFLOC=ZREFLOC+ZQBACK*ZX(JJ)**(ZNU-1)*ZDELTA_EQUIV**2*ZW(JJ)
                ZAETMP =ZAETMP +ZQEXT *ZX(JJ)**(ZNU-1)*ZDELTA_EQUIV**2*ZW(JJ)
              END DO
-             ZREFLOC=ZREFLOC*(XLAM_CRAD/XPI)**4*ZCC*ZLBDA**ZCX/(4.*GAMMA(ZNU)*.93)
-             ZAETMP=ZAETMP  *           XPI    *ZCC*ZLBDA**ZCX/(4.*GAMMA(ZNU))
+             ZREFLOC=ZREFLOC*(XLAM_CRAD/XPI)**4*ZN/(4.*GAMMA(ZNU)*.93)
+             ZAETMP=ZAETMP  *           XPI    *ZN/(4.*GAMMA(ZNU))
              TPROFILER%CRARE(IN,JK,I)=TPROFILER%CRARE(IN,JK,I)+ZREFLOC
              ZAELOC(JK)=ZAELOC(JK)+ZAETMP
            END IF

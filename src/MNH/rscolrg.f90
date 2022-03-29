@@ -10,7 +10,7 @@
 INTERFACE
 !
       SUBROUTINE RSCOLRG( KND, PALPHAS, PZNUS, PALPHAR, PNUR,                &
-                         PESR, PEXMASSS, PFALLS, PEXFALLS, PFALLEXPS, PFALLR, PEXFALLR, & ! Wurtz
+                         PESR, PEXMASSS, PFALLS, PEXFALLS, PFALLEXPS, PFALLR, PEXFALLR, &
                          PLBDASMAX, PLBDARMAX, PLBDASMIN, PLBDARMIN,         &
                          PDINFTY, PRSCOLRG,PAG, PBS, PAS                     )
 !
@@ -28,7 +28,7 @@ REAL, INTENT(IN) :: PESR      ! Efficiency of the aggregates collecting rain
 REAL, INTENT(IN) :: PEXMASSS  ! Mass exponent of the aggregates
 REAL, INTENT(IN) :: PFALLS    ! Fall speed constant of the aggregates
 REAL, INTENT(IN) :: PEXFALLS  ! Fall speed exponent of the aggregates
-REAL, INTENT(IN) :: PFALLEXPS  ! Fall speed exponential constant of the aggregates ! Wurtz
+REAL, INTENT(IN) :: PFALLEXPS  ! Fall speed exponential constant of the aggregates
 REAL, INTENT(IN) :: PFALLR    ! Fall speed constant of rain 
 REAL, INTENT(IN) :: PEXFALLR  ! Fall speed exponent of rain 
 REAL, INTENT(IN) :: PLBDASMAX ! Maximun slope of size distribution of the aggregates
@@ -118,6 +118,7 @@ END INTERFACE
 !!      Original    8/11/95
 !!
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!  J. Wurtz       03/2022: new snow characteristics
 !
 !-------------------------------------------------------------------------------
 !
@@ -150,7 +151,7 @@ REAL, INTENT(IN) :: PESR      ! Efficiency of the aggregates collecting rain
 REAL, INTENT(IN) :: PEXMASSS  ! Mass exponent of the aggregates
 REAL, INTENT(IN) :: PFALLS    ! Fall speed constant of the aggregates
 REAL, INTENT(IN) :: PEXFALLS  ! Fall speed exponent of the aggregates
-REAL, INTENT(IN) :: PFALLEXPS ! Fall speed exponential constant of the aggregates ! Wurtz
+REAL, INTENT(IN) :: PFALLEXPS ! Fall speed exponential constant of the aggregates
 REAL, INTENT(IN) :: PFALLR    ! Fall speed constant of rain 
 REAL, INTENT(IN) :: PEXFALLR  ! Fall speed exponent of rain 
 REAL, INTENT(IN) :: PLBDASMAX ! Maximun slope of size distribution of the aggregates
@@ -273,12 +274,12 @@ DO JLBDAR = 1,SIZE(PRSCOLRG(:,:),1)
             ZDR = ZDDCOLLR * REAL(JDR) + ZDRMIN
             ZCOLLR = ZCOLLR + (ZDS+ZDR)**2                                     &
                        * GENERAL_GAMMA(PALPHAR,PNUR,ZLBDAR,ZDR)                &
-                         * PESR * ABS(PFALLS*ZDS**PEXFALLS*EXP(-(ZDS*PFALLEXPS)**PALPHAS)-PFALLR*ZDR**PEXFALLR) ! Wurtz
+                         * PESR * ABS(PFALLS*ZDS**PEXFALLS*EXP(-(ZDS*PFALLEXPS)**PALPHAS)-PFALLR*ZDR**PEXFALLR)
           END DO
           IF( ZDRMIN>0.0 ) THEN
             ZCOLLDRMIN = (ZDS+ZDRMIN)**2                                       &
                       * GENERAL_GAMMA(PALPHAR,PNUR,ZLBDAR,ZDRMIN)              &
-                      * PESR * ABS(PFALLS*ZDS**PEXFALLS*EXP(-(ZDS*PFALLEXPS)**PALPHAS)-PFALLR*ZDRMIN**PEXFALLR) ! Wurtz
+                      * PESR * ABS(PFALLS*ZDS**PEXFALLS*EXP(-(ZDS*PFALLEXPS)**PALPHAS)-PFALLR*ZDRMIN**PEXFALLR)
             ELSE
             ZCOLLDRMIN = 0.0
           END IF 

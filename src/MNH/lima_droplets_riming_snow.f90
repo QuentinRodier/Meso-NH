@@ -66,6 +66,7 @@ END MODULE MODI_LIMA_DROPLETS_RIMING_SNOW
 !!    -------------
 !!      Original             15/03/2018 
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!  J. Wurtz       03/2022: new snow characteristics
 !
 !-------------------------------------------------------------------------------
 !
@@ -171,10 +172,9 @@ WHERE( GRIM )
 !        4.     riming
 !
    ! Cloud droplets collected
-!   P_RC_RIM(:) = - XCRIMSS * PRCT(:) * PLBDS(:)**XEXCRIMSS * PRHODREF(:)**(-XCEXVT)
    P_RC_RIM(:) = - XCRIMSS  * PRCT(:) * PRST(:)*(1+(XFVELOS/PLBDS(:))**XALPHAS)**(-XNUS+XEXCRIMSS/XALPHAS) &
                                       * PRHODREF(:)**(-XCEXVT+1) &
-                                      * (PLBDS(:)) ** (XEXCRIMSS+XBS) ! Wurtz
+                                      * (PLBDS(:)) ** (XEXCRIMSS+XBS)
    P_CC_RIM(:) = P_RC_RIM(:) *(PCCT(:)/PRCT(:)) ! Lambda_c**3
    !
    ! Cloud droplets collected on small aggregates add to snow
@@ -184,8 +184,7 @@ WHERE( GRIM )
    P_RG_RIM(:) = - P_RC_RIM(:) - P_RS_RIM(:) 
    !
    ! Large aggregates collecting droplets add to graupel (instant process ???)
-!   ZZW3(:) = XSRIMCG * PLBDS(:)**XEXSRIMCG * (1.0 - ZZW2(:))/(PTSTEP*PRHODREF(:))
-   ZZW3(:) = XSRIMCG *PRHODREF(:)*PRST(:)* PLBDS(:)**(XEXSRIMCG+XBS) * (1.0 - ZZW2(:))!/(PTSTEP*PRHODREF(:)) ! Wurtz
+   ZZW3(:) = PRST(:)*(1.0 - ZZW2(:))/PTSTEP
    P_RS_RIM(:) = P_RS_RIM(:) - ZZW3(:) 
    P_RG_RIM(:) = P_RG_RIM(:) + ZZW3(:) 
    !

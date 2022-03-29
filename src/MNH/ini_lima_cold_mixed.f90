@@ -41,6 +41,7 @@ END MODULE MODI_INI_LIMA_COLD_MIXED
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!  J. Wurtz       03/2022: new snow characteristics
 !
 !-------------------------------------------------------------------------------
 !
@@ -172,25 +173,25 @@ XF1IS = 0.28
 XAS = 0.02
 XBS = 1.9
 
-!OPER
-!XCS = 5.      ! Wurtz
-!XDS = 0.27    ! Wurtz
-!XFVELOS = 0.  ! Wurtz
-
-!Cas GAMMAGEN
-XCS = 11.52     ! Wurtz
-XDS = 0.39      ! Wurtz
-XFVELOS =0.097  ! Wurtz
-
+IF (LSNOW_T) THEN
+!Cas Gamma generalisee
+XCS = 11.52
+XDS = 0.39
+XFVELOS =0.097
 !Cas MP
-!XCS = 13.2        ! Wurtz
-!XDS = 0.423       ! Wurtz        
-!XFVELOS = 25.14   ! Wurtz
+!XCS = 13.2
+!XDS = 0.423       
+!XFVELOS = 25.14
+ELSE
+XCS = 5.
+XDS = 0.27
+XFVELOS = 0.
+END IF
 
-!
-!XCCS = 5.0 ! Wurtz unused
-!XCXS = 1.0 ! Wurtz unused
-!
+IF (.NOT. LSNOW_T) THEN
+   XCCS = 5.0
+   XCXS = 1.0
+END IF
 
 XF0S = 0.86
 XF1S = 0.28
@@ -249,18 +250,17 @@ XC1H = 1./2.
 XALPHAI = 3.0  ! Gamma law for the ice crystal volume
 XNUI    = 3.0  ! Gamma law with little dispersion
 !
-!Wurtz
-!Cas MP
-!XALPHAS = 1.0  ! Exponential law
-!XNUS    = 1.0  ! Exponential law
-
-!Wurtz
+IF (LSNOW_T) THEN
 !Cas GAMMAGEN
-XALPHAS = .214   ! Generalized gamma law    !Wurtz
-XNUS    = 43.7   ! Generalized gamma law    !Wurtz
-XTRANS_MP_GAMMAS = SQRT( ( GAMMA(XNUS + 2./XALPHAS)*GAMMA(XNUS + 4./XALPHAS) ) / &
-                         ( 8.* GAMMA(XNUS + 1./XALPHAS)*GAMMA(XNUS + 3./XALPHAS) ) )    ! Wurtz
-
+   XALPHAS = .214   ! Generalized gamma law
+   XNUS    = 43.7   ! Generalized gamma law
+   XTRANS_MP_GAMMAS = SQRT( ( GAMMA(XNUS + 2./XALPHAS)*GAMMA(XNUS + 4./XALPHAS) ) / &
+                            ( 8.* GAMMA(XNUS + 1./XALPHAS)*GAMMA(XNUS + 3./XALPHAS) ) )
+ELSE
+   XALPHAS = 1.0  ! Exponential law
+   XNUS    = 1.0  ! Exponential law
+   XTRANS_MP_GAMMAS = 1.
+END IF
 !
 XALPHAG = 1.0  ! Exponential law
 XNUG    = 1.0  ! Exponential law
@@ -273,10 +273,13 @@ XNUH    = 8.0  ! Gamma law with little dispersion
 XLBEXI = 1.0/XBI
 XLBI   = XAI*MOMG(XALPHAI,XNUI,XBI)
 !
-!!XLBEXS = 1.0/(XCXS-XBS) ! Wurtz unused
-XLBEXS = 0. !1.0/(XCXS-XBS) ! Wurtz unused but used for XLB
-!XLBS   = ( XAS*XCCS*MOMG(XALPHAS,XNUS,XBS) )**(-XLBEXS)
-XLBS   = 1.0/(XAS*MOMG(XALPHAS,XNUS,XBS)) ! Wurtz
+IF (LSNOW_T) THEN
+   XLBEXS = 0. ! Not used
+   XLBS   = 1.0/(XAS*MOMG(XALPHAS,XNUS,XBS))
+ELSE
+   XLBEXS = 1.0/(XCXS-XBS)
+   XLBS   = ( XAS*XCCS*MOMG(XALPHAS,XNUS,XBS) )**(-XLBEXS)
+END IF
 !
 XLBEXG = 1.0/(XCXG-XBG)
 XLBG   = ( XAG*XCCG*MOMG(XALPHAG,XNUG,XBG))**(-XLBEXG)
@@ -340,21 +343,20 @@ XFSEDRI  = XC_I*GAMMA_X0D(XNUI+(XDI+XBI)/XALPHAI)/GAMMA_X0D(XNUI+XBI/XALPHAI)*  
 XFSEDCI  = XC_I*GAMMA_X0D(XNUI+XDI/XALPHAI)/GAMMA_X0D(XNUI)*     &
             (ZRHO00)**XCEXVT
 !
-!OPER
-!XEXSEDS = (XBS+XDS-XCXS)/(XBS-XCXS)    ! Wurtz
-!XFSEDS  = XCS*XAS*XCCS*MOMG(XALPHAS,XNUS,XBS+XDS)*                         & ! Wurtz
-!            (XAS*XCCS*MOMG(XALPHAS,XNUS,XBS))**(-XEXSEDS)*(ZRHO00)**XCEXVT  ! Wurtz
-
+IF (LSNOW_T) THEN
 !HOUZE/HAIC
-!XEXSEDS = -XDS !(2*XBS+XDS) ! Modif Wurtz
-!XFSEDS  = XCS*MOMG(XALPHAS,XNUS,XBS+XDS)/(MOMG(XALPHAS,XNUS,XBS))    & ! Modif Wurtz
-!            *(ZRHO00)**XCEXVT
-
+   !XEXSEDS = -XDS !(2*XBS+XDS)
+   !XFSEDS  = XCS*MOMG(XALPHAS,XNUS,XBS+XDS)/(MOMG(XALPHAS,XNUS,XBS))    &
+   !            *(ZRHO00)**XCEXVT
 !LH_EXTENDED
-XEXSEDS = -XDS-XBS !-XNUS GAMMAGEN !(2*XBS+XDS) ! Modif Wurtz 
-XFSEDS  = XCS*MOMG(XALPHAS,XNUS,XBS+XDS)/(MOMG(XALPHAS,XNUS,XBS))    & ! Modif Wurtz
+   XEXSEDS = -XDS-XBS
+   XFSEDS  = XCS*MOMG(XALPHAS,XNUS,XBS+XDS)/(MOMG(XALPHAS,XNUS,XBS))    &
             *(ZRHO00)**XCEXVT
-!
+ELSE
+   XEXSEDS = (XBS+XDS-XCXS)/(XBS-XCXS)
+   XFSEDS  = XCS*XAS*XCCS*MOMG(XALPHAS,XNUS,XBS+XDS)*                         &
+            (XAS*XCCS*MOMG(XALPHAS,XNUS,XBS))**(-XEXSEDS)*(ZRHO00)**XCEXVT
+END IF
 !
 XEXSEDG = (XBG+XDG-XCXG)/(XBG-XCXG)
 XFSEDG  = XCG*XAG*XCCG*MOMG(XALPHAG,XNUG,XBG+XDG)*                         &
@@ -363,8 +365,6 @@ XFSEDG  = XCG*XAG*XCCG*MOMG(XALPHAG,XNUG,XBG+XDG)*                         &
 XEXSEDH = (XBH+XDH-XCXH)/(XBH-XCXH)
 XFSEDH  = XCH*XAH*XCCH*MOMG(XALPHAH,XNUH,XBH+XDH)*                         &
             (XAH*XCCH*MOMG(XALPHAH,XNUH,XBH))**(-XEXSEDH)*(ZRHO00)**XCEXVT
-!
-!
 !
 XLB(4)    = XLBI
 XLBEX(4)  = XLBEXI
@@ -601,7 +601,7 @@ XR1DEPIS = XC1DEPIS *(XAI*XDICNVS_LIM**XBI)
 !
 ! Harrington parameterization for snow to ice conversion
 !
-XLBDASCNVI_MAX = 6000.*XTRANS_MP_GAMMAS ! lbdas max after Field (1999) ! Wurtz
+XLBDASCNVI_MAX = 6000.*XTRANS_MP_GAMMAS ! lbdas max after Field (1999)
 !
 XDSCNVI_LIM    = 125.E-6  ! size in microns
 XLBDASCNVI_LIM = (50.0**(1.0/(XALPHAS)))/XDSCNVI_LIM  ! ZLBDAS Limitation
@@ -614,15 +614,10 @@ XR1DEPSI = XC1DEPSI *(XAS*XDSCNVI_LIM**XBS)
 !
 ! Vapor deposition on snow and graupel and hail
 !
-!X0DEPS = (4.0*XPI)*XCCS*XC1S*XF0S*MOMG(XALPHAS,XNUS,1.)
-!X1DEPS = (4.0*XPI)*XCCS*XC1S*XF1S*SQRT(XCS)*MOMG(XALPHAS,XNUS,0.5*XDS+1.5)
-X0DEPS = XLBS*(4.0*XPI)*XC1S*XF0S*MOMG(XALPHAS,XNUS,1.) ! Wurtz 
-X1DEPS = XLBS*(4.0*XPI)*XC1S*XF1S*SQRT(XCS)*MOMG(XALPHAS,XNUS,0.5*XDS+1.5) ! Wurtz 
-!XEX0DEPS = XCXS-1.0
-XEX0DEPS = XBS-1.0 ! Wurtz 
-!XEX1DEPS = XCXS-0.5*(XDS+3.0)
-XEX1DEPS = -0.5*(XDS+3.0) !GAMMAGEN !-0.5*(XDS+3.0)-XNUS ! Wurtz 
-
+X0DEPS = XLBS*(4.0*XPI)*XC1S*XF0S*MOMG(XALPHAS,XNUS,1.)
+X1DEPS = XLBS*(4.0*XPI)*XC1S*XF1S*SQRT(XCS)*MOMG(XALPHAS,XNUS,0.5*XDS+1.5)
+XEX0DEPS = XBS-1.0
+XEX1DEPS = -0.5*(XDS+3.0)
 !
 X0DEPG = (4.0*XPI)*XCCG*XC1G*XF0G*MOMG(XALPHAG,XNUG,1.)
 X1DEPG = (4.0*XPI)*XCCG*XC1G*XF1G*SQRT(XCG)*MOMG(XALPHAG,XNUG,0.5*XDG+1.5)
@@ -714,16 +709,13 @@ END IF
 !
 XDCSLIM  = 0.007 ! D_cs^lim = 7 mm as suggested by Farley et al. (1989)
 XCOLCS   = 1.0
-!XEXCRIMSS= XBS-XDS-2.0 ! Wurtz 
-XEXCRIMSS = -XDS-2.0 ! Wurtz GAMMAGEN
-!XCRIMSS  = (XPI/4.0)*XCOLCS*XCCS*XCS*(ZRHO00**XCEXVT)*MOMG(XALPHAS,XNUS,XDS+2.0)
-XCRIMSS  = XLBS * (XPI/4.0)*XCOLCS*XCS*(ZRHO00**XCEXVT)*MOMG(XALPHAS,XNUS,XDS+2.0) ! Wurtz
+XEXCRIMSS = -XDS-2.0
+XCRIMSS  = XLBS * (XPI/4.0)*XCOLCS*XCS*(ZRHO00**XCEXVT)*MOMG(XALPHAS,XNUS,XDS+2.0)
 
-XEXCRIMSG= XEXCRIMSS ! Done RHO
-XCRIMSG  = XCRIMSS   ! Done RHO
-!XSRIMCG  = XCCS*XAS*MOMG(XALPHAS,XNUS,XBS) 
-XSRIMCG  = XLBS*XAS*MOMG(XALPHAS,XNUS,XBS) ! Wurtz
-XEXSRIMCG=-XBS ! Wurtz GAMMAGEN
+XEXCRIMSG= XEXCRIMSS
+XCRIMSG  = XCRIMSS
+XSRIMCG  = XAS*MOMG(XALPHAS,XNUS,XBS)
+XEXSRIMCG= XCXS-XBS
 !
 GFLAG = .TRUE.
 IF (GFLAG) THEN
@@ -733,8 +725,8 @@ IF (GFLAG) THEN
 END IF
 !
 NGAMINC = 80
-XGAMINC_BOUND_MIN = (1000.*XTRANS_MP_GAMMAS*XDCSLIM)**XALPHAS !1.0E-1 ! Wurtz ! Minimal value of (Lbda * D_cs^lim)**alpha
-XGAMINC_BOUND_MAX = (50000.*XTRANS_MP_GAMMAS*XDCSLIM)**XALPHAS !1.0E7 ! Wurtz ! Maximal value of (Lbda * D_cs^lim)**alpha
+XGAMINC_BOUND_MIN = (1000.*XTRANS_MP_GAMMAS*XDCSLIM)**XALPHAS !1.0E-1 ! Minimal value of (Lbda * D_cs^lim)**alpha
+XGAMINC_BOUND_MAX = (50000.*XTRANS_MP_GAMMAS*XDCSLIM)**XALPHAS !1.0E7 ! Maximal value of (Lbda * D_cs^lim)**alpha
 ZRATE = EXP(LOG(XGAMINC_BOUND_MAX/XGAMINC_BOUND_MIN)/FLOAT(NGAMINC-1))
 !
 ALLOCATE( XGAMINC_RIM1(NGAMINC) )
@@ -781,15 +773,13 @@ XHMLINTP2 = 1.0 + XHMLINTP1*LOG( 25.E-6/(XGAMINC_HMC_BOUND_MIN)**(1.0/XALPHAC) )
 !
 !*       7.2    Constants for the accretion of raindrops onto aggregates
 !
-!XFRACCSS = ((XPI**2)/24.0)*XCCS*XCCR*XRHOLW*(ZRHO00**XCEXVT)
-XFRACCSS = XLBS*((XPI**2)/24.0)*XCCR*XRHOLW*(ZRHO00**XCEXVT) ! Wurtz 
+XFRACCSS = XLBS*((XPI**2)/24.0)*XCCR*XRHOLW*(ZRHO00**XCEXVT)
 !
 XLBRACCS1   =    MOMG(XALPHAS,XNUS,2.)*MOMG(XALPHAR,XNUR,3.)
 XLBRACCS2   = 2.*MOMG(XALPHAS,XNUS,1.)*MOMG(XALPHAR,XNUR,4.)
 XLBRACCS3   =                          MOMG(XALPHAR,XNUR,5.)
 !
-!XFSACCRG = (XPI/4.0)*XAS*XCCS*XCCR*(ZRHO00**XCEXVT)
-XFSACCRG = XLBS*(XPI/4.0)*XAS*XCCR*(ZRHO00**XCEXVT) ! Wurtz 
+XFSACCRG = XLBS*(XPI/4.0)*XAS*XCCR*(ZRHO00**XCEXVT)
 !
 XLBSACCR1   =    MOMG(XALPHAR,XNUR,2.)*MOMG(XALPHAS,XNUS,XBS)
 XLBSACCR2   = 2.*MOMG(XALPHAR,XNUR,1.)*MOMG(XALPHAS,XNUS,XBS+1.)
@@ -836,15 +826,15 @@ IF( (KACCLBDAS/=NACCLBDAS) .OR. (KACCLBDAR/=NACCLBDAR) .OR. (KND/=IND) .OR. &
     (PACCLBDAS_MIN/=XACCLBDAS_MIN) .OR. (PACCLBDAR_MIN/=XACCLBDAR_MIN) .OR. &
     (PFDINFTY/=ZFDINFTY)                                               ) THEN
   CALL RRCOLSS ( IND, XALPHAS, XNUS, XALPHAR, XNUR,                          &
-                 ZESR, XBR, XCS, XDS,XFVELOS, XCR, XDR,                      & ! Wurtz
+                 ZESR, XBR, XCS, XDS, XFVELOS, XCR, XDR,                     &
                  XACCLBDAS_MAX, XACCLBDAR_MAX, XACCLBDAS_MIN, XACCLBDAR_MIN, &
                  ZFDINFTY, XKER_RACCSS, XAG, XBS, XAS                        )
   CALL RZCOLX  ( IND, XALPHAS, XNUS, XALPHAR, XNUR,                          &
-                 ZESR, XBR, XCS, XDS, XFVELOS, XCR, XDR, 0.,                 & ! Wurtz
+                 ZESR, XBR, XCS, XDS, XFVELOS, XCR, XDR, 0.,                 &
                  XACCLBDAS_MAX, XACCLBDAR_MAX, XACCLBDAS_MIN, XACCLBDAR_MIN, &
                  ZFDINFTY, XKER_RACCS                                        )
   CALL RSCOLRG ( IND, XALPHAS, XNUS, XALPHAR, XNUR,                          &
-                 ZESR, XBS, XCS, XDS, XFVELOS, XCR, XDR,                     & ! Wurtz
+                 ZESR, XBS, XCS, XDS, XFVELOS, XCR, XDR,                     &
                  XACCLBDAS_MAX, XACCLBDAR_MAX, XACCLBDAS_MIN, XACCLBDAR_MIN, &
                  ZFDINFTY, XKER_SACCRG,XAG, XBS, XAS                         )
   WRITE(UNIT=ILUOUT0,FMT='("*****************************************")')
@@ -987,8 +977,7 @@ XCOLSG   = 0.01 ! Collection efficiency of S+G
 XCOLEXSG = 0.1  ! Temperature factor of the S+G collection efficiency
 WRITE (ILUOUT0, FMT=*) ' NEW Constants for the aggregate collection by the graupeln'
 WRITE (ILUOUT0, FMT=*) ' XCOLSG, XCOLEXSG  = ',XCOLSG,XCOLEXSG
-!XFSDRYG = (XPI/4.0)*XCOLSG*XCCG*XCCS*XAS*(ZRHO00**XCEXVT)
-XFSDRYG = XLBS*(XPI/4.0)*XCOLSG*XCCG*XAS*(ZRHO00**XCEXVT) ! Wurtz 
+XFSDRYG = XLBS*(XPI/4.0)*XCOLSG*XCCG*XAS*(ZRHO00**XCEXVT)
 !
 XLBSDRYG1   =    MOMG(XALPHAG,XNUG,2.)*MOMG(XALPHAS,XNUS,XBS)
 XLBSDRYG2   = 2.*MOMG(XALPHAG,XNUG,1.)*MOMG(XALPHAS,XNUS,XBS+1.)
@@ -1051,7 +1040,7 @@ IF( (KDRYLBDAG/=NDRYLBDAG) .OR. (KDRYLBDAS/=NDRYLBDAS) .OR. (KND/=IND) .OR. &
     (PDRYLBDAG_MIN/=XDRYLBDAG_MIN) .OR. (PDRYLBDAS_MIN/=XDRYLBDAS_MIN) .OR. &
     (PFDINFTY/=ZFDINFTY)                                               ) THEN
   CALL RZCOLX ( IND, XALPHAG, XNUG, XALPHAS, XNUS,                          &
-                ZEGS, XBS, XCG, XDG,0., XCS, XDS,XFVELOS,                   & !Wurtz
+                ZEGS, XBS, XCG, XDG, 0., XCS, XDS, XFVELOS,                 &
                 XDRYLBDAG_MAX, XDRYLBDAS_MAX, XDRYLBDAG_MIN, XDRYLBDAS_MIN, &
                 ZFDINFTY, XKER_SDRYG                                        )
   WRITE(UNIT=ILUOUT0,FMT='("*****************************************")')

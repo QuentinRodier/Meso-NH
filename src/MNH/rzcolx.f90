@@ -11,7 +11,7 @@ INTERFACE
 !
       SUBROUTINE RZCOLX( KND, PALPHAX, PNUX, PALPHAZ, PNUZ,                  &
                          PEXZ, PEXMASSZ, PFALLX, PEXFALLX, PFALLEXPX,        &
-                         PFALLZ, PEXFALLZ, PFALLEXPZ,                        & ! Wurtz
+                         PFALLZ, PEXFALLZ, PFALLEXPZ,                        &
 		         PLBDAXMAX, PLBDAZMAX, PLBDAXMIN, PLBDAZMIN,         &
 		         PDINFTY, PRZCOLX                                    )
 !
@@ -30,10 +30,10 @@ REAL, INTENT(IN) :: PEXZ      ! Efficiency of specy X collecting specy Z
 REAL, INTENT(IN) :: PEXMASSZ  ! Mass exponent of specy Z
 REAL, INTENT(IN) :: PFALLX    ! Fall speed constant of specy X
 REAL, INTENT(IN) :: PEXFALLX  ! Fall speed exponent of specy X
-REAL, INTENT(IN) :: PFALLEXPX ! Fall speed exponential constant of specy X ! Wurtz
+REAL, INTENT(IN) :: PFALLEXPX ! Fall speed exponential constant of specy X
 REAL, INTENT(IN) :: PFALLZ    ! Fall speed constant of specy Z
 REAL, INTENT(IN) :: PEXFALLZ  ! Fall speed exponent of specy Z
-REAL, INTENT(IN) :: PFALLEXPZ ! Fall speed exponent of specy Z  ! Wurtz
+REAL, INTENT(IN) :: PFALLEXPZ ! Fall speed exponential constant of specy Z
 REAL, INTENT(IN) :: PLBDAXMAX ! Maximun slope of size distribution of specy X
 REAL, INTENT(IN) :: PLBDAZMAX ! Maximun slope of size distribution of specy Z
 REAL, INTENT(IN) :: PLBDAXMIN ! Minimun slope of size distribution of specy X
@@ -53,7 +53,7 @@ END INTERFACE
 !     ########################################################################
       SUBROUTINE RZCOLX( KND, PALPHAX, PNUX, PALPHAZ, PNUZ,                  &
                          PEXZ, PEXMASSZ, PFALLX, PEXFALLX, PFALLEXPX,        &
-                         PFALLZ, PEXFALLZ, PFALLEXPZ,                        & ! Wurtz
+                         PFALLZ, PEXFALLZ, PFALLEXPZ,                        &
 		         PLBDAXMAX, PLBDAZMAX, PLBDAXMIN, PLBDAZMIN,         &
 		         PDINFTY, PRZCOLX                                    )
 !     ########################################################################
@@ -125,6 +125,7 @@ END INTERFACE
 !!      Original    8/11/95
 !!
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!  J. Wurtz       03/2022: new snow characteristics
 !
 !-------------------------------------------------------------------------------
 !
@@ -156,10 +157,10 @@ REAL, INTENT(IN) :: PEXZ      ! Efficiency of specy X collecting specy Z
 REAL, INTENT(IN) :: PEXMASSZ  ! Mass exponent of specy Z
 REAL, INTENT(IN) :: PFALLX    ! Fall speed constant of specy X
 REAL, INTENT(IN) :: PEXFALLX  ! Fall speed exponent of specy X
-REAL, INTENT(IN) :: PFALLEXPX ! Fall speed exponential constant of specy X ! Wurtz
+REAL, INTENT(IN) :: PFALLEXPX ! Fall speed exponential constant of specy X
 REAL, INTENT(IN) :: PFALLZ    ! Fall speed constant of specy Z
 REAL, INTENT(IN) :: PEXFALLZ  ! Fall speed exponent of specy Z
-REAL, INTENT(IN) :: PFALLEXPZ ! Fall speed exponent of specy Z  ! Wurtz
+REAL, INTENT(IN) :: PFALLEXPZ ! Fall speed exponential constant of specy Z
 REAL, INTENT(IN) :: PLBDAXMAX ! Maximun slope of size distribution of specy X
 REAL, INTENT(IN) :: PLBDAZMAX ! Maximun slope of size distribution of specy Z
 REAL, INTENT(IN) :: PLBDAXMIN ! Minimun slope of size distribution of specy X

@@ -80,6 +80,7 @@ END MODULE MODI_LIMA_COLD_SLOW_PROCESSES
 !  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
 !  P. Wautelet    03/2020: use the new data structures and subroutines for budgets
+!  J. Wurtz       03/2022: new snow characteristics
 !
 !-------------------------------------------------------------------------------
 !
@@ -94,8 +95,8 @@ USE MODD_CST,             ONLY: XP00, XRD, XRV, XMV, XMD, XCPD, XCPV,        &
                                 XCL, XCI, XTT, XLSTT, XALPI, XBETAI, XGAMI
 USE MODD_NSV,             ONLY: NSV_LIMA_NI
 USE MODD_PARAMETERS,      ONLY: JPHEXT, JPVEXT
-USE MODD_PARAM_LIMA,      ONLY: LSNOW, XRTMIN, XCTMIN, XALPHAI, XALPHAS,     &
-                                XNUI, XNUS
+USE MODD_PARAM_LIMA,      ONLY: LSNOW, LSNOW_T, XRTMIN, XCTMIN,              &
+                                XALPHAI, XALPHAS, XNUI, XNUS
 USE MODD_PARAM_LIMA_COLD, ONLY: XLBI, XLBEXI, XLBS, XLBEXS, XBI, XCXS, XCCS, &
                                 XLBDAS_MAX, XDSCNVI_LIM, XLBDASCNVI_MAX,     &
                                 XC0DEPSI, XC1DEPSI, XR0DEPSI, XR1DEPSI,      &
@@ -317,16 +318,20 @@ IF( IMICRO >= 1 ) THEN
       ZLBDAI(:) = ( XLBI*ZCIT(:) / ZRIT(:) )**XLBEXI
    END WHERE
    ZLBDAS(:)  = 1.E10
-   WHERE (ZRST(:)>XRTMIN(5) )
-WHERE(ZZT(:)>263.15) 
-ZLBDAS(:) = MAX(MIN(XLBDAS_MAX, 10**(14.554-0.0423*ZZT(:))),XLBDAS_MIN)
-END WHERE
-WHERE(ZZT(:)<=263.15) 
-ZLBDAS(:) = MAX(MIN(XLBDAS_MAX, 10**(6.226-0.0106*ZZT(:))),XLBDAS_MIN)
-END WHERE
-   END WHERE
-ZLBDAS(:) = ZLBDAS(:) * XTRANS_MP_GAMMAS
-
+   IF (LSNOW_T) THEN
+      WHERE(ZZT(:)>263.15 .AND. ZRST(:)>XRTMIN(5)) 
+         ZLBDAS(:) = MAX(MIN(XLBDAS_MAX, 10**(14.554-0.0423*ZZT(:))),XLBDAS_MIN)
+      END WHERE
+      WHERE(ZZT(:)<=263.15 .AND. ZRST(:)>XRTMIN(5)) 
+         ZLBDAS(:) = MAX(MIN(XLBDAS_MAX, 10**(6.226-0.0106*ZZT(:))),XLBDAS_MIN)
+      END WHERE
+      ZLBDAS(:) = ZLBDAS(:) * XTRANS_MP_GAMMAS
+   ELSE
+      WHERE (ZRST(:)>XRTMIN(5) )
+         ZLBDAS(:) = MAX(MIN(XLBDAS_MAX,XLBS*( ZRHODREF(:)*ZRST(:) )**XLBEXS),XLBDAS_MIN)
+      END WHERE
+   END IF
+!
    ZKA(:) = 2.38E-2 + 0.0071E-2 * ( ZZT(:) - XTT )          ! k_a
    ZDV(:) = 0.211E-4 * (ZZT(:)/XTT)**1.94 * (XP00/ZPRES(:)) ! D_v
 !
@@ -349,21 +354,11 @@ ZLBDAS(:) = ZLBDAS(:) * XTRANS_MP_GAMMAS
           call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'CNVI', pcis(:, :, :) * prhodj(:, :, :) )
       end if
 
-!      WHERE ( ZRST(:)>XRTMIN(5) )
-!         ZLBDAS(:)  = MIN( XLBDAS_MAX,                                           &
-!                           XLBS*( ZRHODREF(:)*MAX( ZRST(:),XRTMIN(5) ) )**XLBEXS )
-!      END WHERE
       ZZW(:) = 0.0
       WHERE ( ZLBDAS(:)<XLBDASCNVI_MAX .AND. (ZRST(:)>XRTMIN(5)) &
                                        .AND. (ZSSI(:)<0.0)       )
          ZZW(:) = (ZLBDAS(:)*XDSCNVI_LIM)**(XALPHAS)
-       !  ZZX(:) = ( -ZSSI(:)/ZAI(:) ) * (XCCS*ZLBDAS(:)**XCXS) * (ZZW(:)**XNUI) &
-                                                              ! * EXP(-ZZW(:))
-         ZZX(:) = ( -ZSSI(:)/ZAI(:) ) * (XLBS*ZRST(:)*ZLBDAS(:)**XBS) * (ZZW(:)**XNUI)  &
-
-                                                              * EXP(-ZZW(:))
-!MODIF CNVI -> concentration de la neige en kg-1 et non en m-3
-
+         ZZX(:) = ( -ZSSI(:)/ZAI(:) ) * (XLBS*ZRST(:)*ZLBDAS(:)**XBS) * (ZZW(:)**XNUI) * EXP(-ZZW(:))
 !
          ZZW(:) = MIN( ( XR0DEPSI+XR1DEPSI*ZCJ(:) )*ZZX(:),ZRSS(:) )
          ZRIS(:) = ZRIS(:) + ZZW(:)
@@ -396,14 +391,10 @@ ZLBDAS(:) = ZLBDAS(:) * XTRANS_MP_GAMMAS
 
       ZZW(:) = 0.0
       WHERE ( (ZRST(:)>XRTMIN(5)) .AND. (ZRSS(:)>ZRTMIN(5)) )
-!Correction BVIE rhodref
-!         ZZW(:) = ( ZSSI(:)/(ZRHODREF(:)*ZAI(:)) ) *                               &
-     !    ZZW(:) = ( ZSSI(:)/(ZAI(:)) ) *                               &
-      !            ( X0DEPS*ZLBDAS(:)**XEX0DEPS + X1DEPS*ZCJ(:)*ZLBDAS(:)**XEX1DEPS )
-         ZZW(:) = ( ZRHODREF(:)*ZRST(:)*ZSSI(:)/(ZAI(:)) ) *                                & ! Wurtz
+         ZZW(:) = ( ZRST(:)*ZSSI(:)/(ZAI(:)) ) *                                            &
               ( X0DEPS*ZLBDAS(:)**XEX0DEPS +                                                &
               (X1DEPS*ZCJ(:)*(1+(XFVELOS/(2.*ZLBDAS))**XALPHAS)**(-XNUS+XEX1DEPS/XALPHAS) * &
-              (ZLBDAS(:))**(XEX1DEPS+XBS))) ! Wurtz
+              (ZLBDAS(:))**(XEX1DEPS+XBS)))
 
          ZZW(:) =    MIN( ZRVS(:),ZZW(:)      )*(0.5+SIGN(0.5,ZZW(:))) &
                    - MIN( ZRSS(:),ABS(ZZW(:)) )*(0.5-SIGN(0.5,ZZW(:)))
@@ -439,8 +430,6 @@ ZLBDAS(:) = ZLBDAS(:) * XTRANS_MP_GAMMAS
          ZZW(:) = (ZLBDAI(:)*XDICNVS_LIM)**(XALPHAI)
          ZZX(:) = ( ZSSI(:)/ZAI(:) )*ZCIT(:) * (ZZW(:)**XNUI) *EXP(-ZZW(:))
 !
-! Correction BVIE
-!         ZZW(:) = MAX( MIN( ( XR0DEPIS + XR1DEPIS*ZCJ(:) )*ZZX(:)/ZRHODREF(:) &
          ZZW(:) = MAX( MIN( ( XR0DEPIS + XR1DEPIS*ZCJ(:) )*ZZX(:) &
                             ,ZRIS(:) ) + ZRTMIN(5), ZRTMIN(5) ) - ZRTMIN(5)
          ZRIS(:) = ZRIS(:) - ZZW(:)
@@ -477,10 +466,6 @@ ZLBDAS(:) = ZLBDAS(:) * XTRANS_MP_GAMMAS
       WHERE ( (ZRIT(:)>XRTMIN(4)) .AND. (ZRST(:)>XRTMIN(5)) .AND. (ZRIS(:)>ZRTMIN(4)) &
                                                             .AND. (ZCIS(:)>ZCTMIN(4)) )
          ZZW1(:,3) = (ZLBDAI(:) / ZLBDAS(:))**3
-!         ZZW1(:,1) = (ZCIT(:)*(XCCS*ZLBDAS(:)**XCXS)*EXP( XCOLEXIS*(ZZT(:)-XTT) )) &
-!                                                    / (ZLBDAI(:)**3)
-!         ZZW1(:,1) = (ZCIT(:)*(XLBS*ZRHODREF(:)*ZRST(:)*ZLBDAS(:)**XBS)*EXP(XCOLEXIS*(ZZT(:)-XTT) )) &
-!                                                    / (ZLBDAI(:)**3)
          ZZW1(:,1) = (ZCIT(:)*(XLBS*ZRST(:)*ZLBDAS(:)**XBS)*EXP(XCOLEXIS*(ZZT(:)-XTT) )) &
                                                     / (ZLBDAI(:)**3)
          ZZW1(:,2) = MIN( ZZW1(:,1)*(XAGGS_CLARGE1+XAGGS_CLARGE2*ZZW1(:,3)),ZCIS(:) )

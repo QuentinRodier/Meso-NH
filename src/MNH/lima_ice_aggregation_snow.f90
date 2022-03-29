@@ -52,6 +52,7 @@ END MODULE MODI_LIMA_ICE_AGGREGATION_SNOW
 !!    MODIFICATIONS
 !!    -------------
 !!      Original             15/03/2018
+!  J. Wurtz       03/2022: new snow characteristics
 !!
 !-------------------------------------------------------------------------------
 !
@@ -101,10 +102,8 @@ P_CI_AGGS(:) = 0.
 !
 WHERE ( (PRIT(:)>XRTMIN(4)) .AND. (PRST(:)>XRTMIN(5)) .AND. LDCOMPUTE(:) )
    ZZW1(:) = (PLBDI(:) / PLBDS(:))**3
-!   ZZW2(:) = (PCIT(:)*(XCCS*PLBDS(:)**XCXS)/PRHODREF(:)*EXP( XCOLEXIS*(PT(:)-XTT) )) &
-!        / (PLBDI(:)**3)
-   ZZW2(:) = (PCIT(:)*(XLBS*PRST(:)*PLBDS(:)**XBS)*EXP(XCOLEXIS*(PT(:)-XTT) )) & ! Wurtz
-        / (PLBDI(:)**3)                                                          ! Wurtz
+   ZZW2(:) = (PCIT(:)*(XLBS*PRST(:)*PLBDS(:)**XBS)*EXP(XCOLEXIS*(PT(:)-XTT) )) &
+        / (PLBDI(:)**3)
    ZZW3(:) = ZZW2(:)*(XAGGS_CLARGE1+XAGGS_CLARGE2*ZZW1(:))
 !
    P_CI_AGGS(:) = - ZZW3(:)

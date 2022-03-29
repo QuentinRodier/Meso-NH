@@ -66,6 +66,7 @@ END MODULE MODI_LIMA_SEDIMENTATION
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
 !  B. Vie         03/2020: disable temperature change of droplets by air temperature
+!  J. Wurtz       03/2022: new snow characteristics
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -75,7 +76,7 @@ USE MODD_CST,              ONLY: XRHOLW, XCL, XCI
 USE MODD_PARAMETERS,       ONLY: JPHEXT, JPVEXT
 USE MODD_PARAM_LIMA,       ONLY: XCEXVT, XRTMIN, XCTMIN, NSPLITSED,           &
                                  XLB, XLBEX, XD, XFSEDR, XFSEDC,              &
-                                 XALPHAC, XNUC, XALPHAS, XNUS
+                                 XALPHAC, XNUC, XALPHAS, XNUS, LSNOW_T
 USE MODD_PARAM_LIMA_COLD,  ONLY: XLBEXI, XLBI, XDI, XLBDAS_MAX, XBS, XEXSEDS, &
                                  XLBDAS_MIN, XTRANS_MP_GAMMAS, XFVELOS
 
@@ -184,7 +185,7 @@ DO JN = 1 ,  NSPLITSED(KID)
          IF (KMOMENTS==2) ZCS(JL) = PCS(I1(JL),I2(JL),I3(JL))
       END DO
 !
-      IF (KID == 5) THEN
+      IF (KID == 5 .AND. LSNOW_T) THEN
          ZLBDA(:) = 1.E10
          WHERE(ZT(:)>263.15 .AND. ZRS(:)>XRTMIN(5))
             ZLBDA(:) = MAX(MIN(XLBDAS_MAX, 10**(14.554-0.0423*ZT(:))),XLBDAS_MIN)

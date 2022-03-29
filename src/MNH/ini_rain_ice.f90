@@ -102,6 +102,7 @@ END MODULE MODI_INI_RAIN_ICE
 !!      S. Riette 2016-11: new ICE3/ICE4 options
 !!      P. Wautelet 22/01/2019 bug correction: incorrect write
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!  J. Wurtz       03/2022: new snow characteristics
 !
 !-------------------------------------------------------------------------------
 !

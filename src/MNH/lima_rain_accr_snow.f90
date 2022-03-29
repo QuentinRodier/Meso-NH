@@ -60,6 +60,7 @@ END MODULE MODI_LIMA_RAIN_ACCR_SNOW
 !!    -------------
 !!      Original             15/03/2018
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!  J. Wurtz       03/2022: new snow characteristics
 !
 !-------------------------------------------------------------------------------
 !
@@ -212,52 +213,28 @@ WHERE( GACC )
 !      
 ! BVIE manque PCRT ???????????????????????????????????
 !      ZZW4(:) =                                            & !! coef of RRACCS and RRACCS
-!   ZZW4(:) = PCRT(:)                                     & !! coef of RRACCS and RRACCS
-!         *  XFRACCSS *( PLBDS(:)**XCXS )*( PRHODREF(:)**(-XCEXVT-1.) ) &
-!         *( XLBRACCS1/( PLBDS(:)**2 )                +                     &
-!            XLBRACCS2/( PLBDS(:) * PLBDR(:)    ) +                     &
-!            XLBRACCS3/(                PLBDR(:)**2 ) ) / PLBDR(:)**3
-   ZZW4(:) = PCRT(:)                                     & !! coef of RRACCS and RRACCS ! Wurtz
+   ZZW4(:) = PCRT(:)                                                       & !! coef of RRACCS and RRACCS
          *  XFRACCSS *( PRST(:)*PLBDS(:)**XBS )*( PRHODREF(:)**(-XCEXVT) ) &
-         *( XLBRACCS1/( PLBDS(:)**2 )                +                     &
-            XLBRACCS2/( PLBDS(:) * PLBDR(:)    ) +                     &
-            XLBRACCS3/(                PLBDR(:)**2 ) ) / PLBDR(:)**3
+         *( XLBRACCS1/( PLBDS(:)**2               ) +                      &
+            XLBRACCS2/( PLBDS(:)    * PLBDR(:)    ) +                      &
+            XLBRACCS3/(               PLBDR(:)**2 ) ) / PLBDR(:)**3
 
-!      ZRRS(:) = ZRRS(:) - ZZW1(:,4)
-!      ZRSS(:) = ZRSS(:) + ZZW1(:,4)
-!      ZTHS(:) = ZTHS(:) + ZZW1(:,4)*(ZLSFACT(:)-ZLVFACT(:)) ! f(L_f*(RRACCSS))
-!
-!      ZCRS(:) = MAX( ZCRS(:)-ZZW1(:,4)*(ZCRT(:)/ZRRT(:)),0.0 ) ! Lambda_r**3 
 !
 !        1.3.6  raindrop accretion-conversion of the large sized aggregates
 !               into graupeln
 !
-!   ZZW5(:) = XFSACCRG*ZZW3(:) *                             & ! RSACCRG
-!            ( PLBDS(:)**(XCXS-XBS) )*( PRHODREF(:)**(-XCEXVT-1.) ) &
-!           *( XLBSACCR1/((PLBDR(:)**2)               ) +           &
-!              XLBSACCR2/( PLBDR(:)    * PLBDS(:) ) +           &
-!              XLBSACCR3/(                  (PLBDS(:)**2)) )
-   ZZW5(:) = XFSACCRG*ZZW3(:) *                             & ! RSACCRG ! Wurtz
-            ( PRST(:) )*( PRHODREF(:)**(-XCEXVT) ) &
-           *( XLBSACCR1/((PLBDR(:)**2)               ) +           &
-              XLBSACCR2/( PLBDR(:)    * PLBDS(:) ) +           &
-              XLBSACCR3/(                  (PLBDS(:)**2)) )
-      !
-!      P_RR_ACC(:) = - ZZW4(:) * ZZW1(:)           ! RRACCSS
-!      P_CR_ACC(:) = P_RR_ACC(:) * PCRT(:)/PRRT(:) ! Lambda_r**3 
-!      P_RS_ACC(:) = - P_RR_ACC(:) 
-      !
-!      P_RR_ACC(:) = P_RR_ACC(:) - ( ZZW2(:)-P_RS_ACC(:) )
-!      P_CR_ACC(:) = P_CR_ACC(:) - ( ZZW2(:)-P_RS_ACC(:) ) * PCRT(:)/PRRT(:) ! Lambda_r**3
-!      P_RS_ACC(:) = P_RS_ACC(:) - ZZW5(:)
-!      P_RG_ACC(:) = ( ZZW2(:)-P_RS_ACC(:) ) + ZZW5(:)
-      !
+   ZZW5(:) = XFSACCRG*ZZW3(:) *                         & ! RSACCRG
+            ( PRST(:) )*( PRHODREF(:)**(-XCEXVT)    )   &
+           *( XLBSACCR1/( PLBDR(:)**2               ) + &
+              XLBSACCR2/( PLBDR(:)    * PLBDS(:)    ) + &
+              XLBSACCR3/(               PLBDS(:)**2 ) )
+!
    P_RR_ACC(:) = - ZZW4(:) *  ZZW2(:)
    P_CR_ACC(:) = P_RR_ACC(:) * PCRT(:)/PRRT(:)
    P_RS_ACC(:) = ZZW4(:) *  ZZW1(:) - ZZW5(:)
    P_RG_ACC(:) = ZZW4(:) * ( ZZW2(:) - ZZW1(:) ) + ZZW5(:)
    P_TH_ACC(:) = - P_RR_ACC(:) * (PLSFACT(:)-PLVFACT(:))
-   !
+!
 END WHERE
 !
 !
