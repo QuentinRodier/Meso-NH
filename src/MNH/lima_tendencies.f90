@@ -232,6 +232,7 @@ SUBROUTINE LIMA_TENDENCIES (PTSTEP, LDCOMPUTE,                                  
 !!    -------------
 !!      Original             15/03/2018
 !!
+!       Delbeke/Vie     03/2022 : KHKO option
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS

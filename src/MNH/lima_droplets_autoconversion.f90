@@ -53,6 +53,7 @@ END MODULE MODI_LIMA_DROPLETS_AUTOCONVERSION
 !!    -------------
 !!      Original             15/03/2018 
 !!      B. Vie 02/03/2020 : missing CC process
+!       Delbeke/Vie     03/2022 : KHKO option
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS

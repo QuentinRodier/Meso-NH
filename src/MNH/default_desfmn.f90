@@ -219,6 +219,7 @@ END MODULE MODI_DEFAULT_DESFM_n
 !  Q. Rodier      06/2021: modify default value to LGZ=F (grey-zone corr.), LSEDI and OSEDC=T (LIMA sedimentation)
 !  F. Couvreux    06/2021: add LRELAX_UVMEAN_FRC
 !  Q. Rodier      07/2021: modify XPOND=1
+!  Delbeke/Vie    03/2022 : KHKO option in LIMA
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS

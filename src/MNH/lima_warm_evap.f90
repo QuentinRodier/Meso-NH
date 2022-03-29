@@ -75,6 +75,7 @@ END MODULE MODI_LIMA_WARM_EVAP
 !!      Original             ??/??/13 
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
+! Delbeke/Vie     03/2022 : KHKO option
 !
 !-------------------------------------------------------------------------------
 !
