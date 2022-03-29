@@ -142,6 +142,7 @@ END MODULE MODI_LIMA_MIXED_FAST_PROCESSES
 !!      C. Barthe  * LACy *  jan. 2014    add budgets
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !  P. Wautelet    03/2020: use the new data structures and subroutines for budgets
+!  J. Wurtz       03/2022: new snow characteristics
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -297,9 +298,11 @@ IF( IGRIM>0 ) THEN
 !
    WHERE ( GRIM(:) )
       ZZW1(:,1) = MIN( ZRCS(:),                              &
-  	           XCRIMSS * ZZW(:) * ZRCT(:)                & ! RCRIMSS
-  	                            *   ZLBDAS(:)**XEXCRIMSS &
-    			            * ZRHODREF(:)**(-XCEXVT) )
+             XCRIMSS * ZZW(:) * ZRCT(:)                &
+                                      *  ZRST(:)*(1+(XFVELOS/ZLBDAS(:))**XALPHAS)**(-XNUS+XEXCRIMSS/XALPHAS) &
+                                      * ZRHODREF(:)**(-XCEXVT+1) &
+                                      * (ZLBDAS(:)) ** (XEXCRIMSS+XBS) )
+!
       ZRCS(:) = ZRCS(:) - ZZW1(:,1)
       ZRSS(:) = ZRSS(:) + ZZW1(:,1)
       ZTHS(:) = ZTHS(:) + ZZW1(:,1)*(ZLSFACT(:)-ZLVFACT(:)) ! f(L_f*(RCRIMSS))
@@ -318,14 +321,15 @@ IF( IGRIM>0 ) THEN
 !
 !
    WHERE ( GRIM(:) .AND. (ZRSS(:)>XRTMIN(5)/PTSTEP) )
-      ZZW1(:,2) = MIN( ZRCS(:),                     &
-    	           XCRIMSG * ZRCT(:)                & ! RCRIMSG
-    	                   *  ZLBDAS(:)**XEXCRIMSG  &
-  	                   * ZRHODREF(:)**(-XCEXVT) &
-    		           - ZZW1(:,1)              )
+      ZZW1(:,2) = MIN( ZRCS(:),                     & 
+                   XCRIMSG * ZRCT(:)*  ZRST(:)                & ! RCRIMSG
+                           *(1+(XFVELOS/ZLBDAS(:))**XALPHAS)**(-XNUS+XEXCRIMSG/XALPHAS)*ZLBDAS(:)**(XBS+XEXCRIMSG)  &
+                           * ZRHODREF(:)**(-XCEXVT+1) &
+                           - ZZW1(:,1)              )
+
       ZZW1(:,3) = MIN( ZRSS(:),                         &
-                       XSRIMCG * ZLBDAS(:)**XEXSRIMCG   & ! RSRIMCG
-   	                       * (1.0 - ZZW(:) )/(PTSTEP*ZRHODREF(:)))
+                       XSRIMCG * XLBS * ZRST(:) * (1.0 - ZZW(:))/PTSTEP )
+
       ZRCS(:) = ZRCS(:) - ZZW1(:,2)
       ZRSS(:) = ZRSS(:) - ZZW1(:,3)
       ZRGS(:) = ZRGS(:) + ZZW1(:,2) + ZZW1(:,3)
@@ -477,7 +481,7 @@ IF( IGACC>0 .AND. LRAIN) THEN
 !
    WHERE ( GACC(:) )
       ZZW1(:,2) = ZCRT(:) *                                           & !! coef of RRACCS
-              XFRACCSS*( ZLBDAS(:)**XCXS )*( ZRHODREF(:)**(-XCEXVT-1.) ) &
+              XFRACCSS*( ZRST(:)*ZLBDAS(:)**XBS )*( ZRHODREF(:)**(-XCEXVT) ) &
          *( XLBRACCS1/((ZLBDAS(:)**2)               ) +                  &
             XLBRACCS2/( ZLBDAS(:)    * ZLBDAR(:)    ) +                  &
             XLBRACCS3/(               (ZLBDAR(:)**2)) )/ZLBDAR(:)**3
@@ -521,7 +525,7 @@ IF( IGACC>0 .AND. LRAIN) THEN
    WHERE ( GACC(:) .AND. (ZRSS(:)>XRTMIN(5)/PTSTEP) )
       ZZW1(:,2) = MAX( MIN( ZRRS(:),ZZW1(:,2)-ZZW1(:,4) ) , 0. )      ! RRACCSG
       ZZW1(:,3) = MIN( ZRSS(:),XFSACCRG*ZZW(:)*                     & ! RSACCRG
-            ( ZLBDAS(:)**(XCXS-XBS) )*( ZRHODREF(:)**(-XCEXVT-1.) ) &
+            ( ZRST(:) )*( ZRHODREF(:)**(-XCEXVT) ) &
            *( XLBSACCR1/((ZLBDAR(:)**2)               ) +           &
               XLBSACCR2/( ZLBDAR(:)    * ZLBDAS(:)    ) +           &
               XLBSACCR3/(               (ZLBDAS(:)**2)) ) )
@@ -573,8 +577,9 @@ WHERE( (ZRST(:)>XRTMIN(5)) .AND. (ZRSS(:)>XRTMIN(5)/PTSTEP) .AND. (ZZT(:)>XTT) )
 ! compute RSMLT
 !
    ZZW(:)  = MIN( ZRSS(:), XFSCVMG*MAX( 0.0,( -ZZW(:) *             &
-                          ( X0DEPS*       ZLBDAS(:)**XEX0DEPS +     &
-                            X1DEPS*ZCJ(:)*ZLBDAS(:)**XEX1DEPS ) -   &
+                          ZRHODREF(:) * ZRST(:)*( X0DEPS*            ZLBDAS(:)**XEX0DEPS +     &
+                          X1DEPS*ZCJ(:)*(1+(XFVELOS/(2.*ZLBDAS(:)))**XALPHAS) &
+                          **(-XNUS+XEX1DEPS/XALPHAS)*(ZLBDAS(:))**(XEX1DEPS+XBS))-    &
                                     ( ZZW1(:,1)+ZZW1(:,4) ) *       &
                              ( ZRHODREF(:)*XCL*(XTT-ZZT(:))) ) /    &
                                             ( ZRHODREF(:)*XLMTT ) ) )
@@ -738,14 +743,14 @@ IF( IGDRY>0 ) THEN
    END DO
    ZZW(:) = UNPACK( VECTOR=ZVEC3(:),MASK=GDRY,FIELD=0.0 )
 !
-   WHERE( GDRY(:) )
+   WHERE( GDRY(:) )  
       ZZW1(:,3) = MIN( ZRSS(:),XFSDRYG*ZZW(:)                         & ! RSDRYG
                                       * EXP( XCOLEXSG*(ZZT(:)-XTT) )  &
-                    *( ZLBDAS(:)**(XCXS-XBS) )*( ZLBDAG(:)**XCXG )    &
-                    *( ZRHODREF(:)**(-XCEXVT-1.) )                    &
+                    *( ZRST(:)) )*( ZLBDAG(:)**XCXG )    &
+                    *( ZRHODREF(:)**(-XCEXVT) )                    &
                          *( XLBSDRYG1/( ZLBDAG(:)**2              ) + &
                             XLBSDRYG2/( ZLBDAG(:)   * ZLBDAS(:)   ) + &
-                            XLBSDRYG3/(               ZLBDAS(:)**2) ) )
+                            XLBSDRYG3/(               ZLBDAS(:)**2) )
    END WHERE
    DEALLOCATE(IVEC2)
    DEALLOCATE(IVEC1)
@@ -1185,8 +1190,8 @@ IF( IHAIL>0 ) THEN
 !
       WHERE( GWET(:) )
         ZZW1(:,3) = MIN( ZRSS(:),XFSWETH*ZZW(:)                       & ! RSWETH
-                      *( ZLBDAS(:)**(XCXS-XBS) )*( ZLBDAH(:)**XCXH )  &
-       	                 *( ZRHODREF(:)**(-XCEXVT-1.) )               &
+                      *( ZRST(:))*( ZLBDAH(:)**XCXH )  &
+                        *( ZRHODREF(:)**(-XCEXVT) )               &
                          *( XLBSWETH1/( ZLBDAH(:)**2              ) + &
                             XLBSWETH2/( ZLBDAH(:)   * ZLBDAS(:)   ) + &
                             XLBSWETH3/(               ZLBDAS(:)**2) ) )

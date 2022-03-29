@@ -102,6 +102,7 @@ END MODULE MODI_INI_RAIN_ICE
 !!      S. Riette 2016-11: new ICE3/ICE4 options
 !!      P. Wautelet 22/01/2019 bug correction: incorrect write
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!  J. Wurtz       03/2022: new snow characteristics
 !
 !-------------------------------------------------------------------------------
 !
@@ -742,15 +743,15 @@ IF( (KACCLBDAS/=NACCLBDAS) .OR. (KACCLBDAR/=NACCLBDAR) .OR. (KND/=IND) .OR. &
     (PACCLBDAS_MIN/=XACCLBDAS_MIN) .OR. (PACCLBDAR_MIN/=XACCLBDAR_MIN) .OR. &
     (PFDINFTY/=ZFDINFTY)                                               ) THEN
   CALL RRCOLSS ( IND, XALPHAS, XNUS, XALPHAR, XNUR,                          &
-                 ZESR, XBR, XCS, XDS, XCR, XDR,                              &
+                 ZESR, XBR, XCS, XDS, 0., XCR, XDR,                          &
                  XACCLBDAS_MAX, XACCLBDAR_MAX, XACCLBDAS_MIN, XACCLBDAR_MIN, &
                  ZFDINFTY, XKER_RACCSS, XAG, XBS, XAS                        )
   CALL RZCOLX  ( IND, XALPHAS, XNUS, XALPHAR, XNUR,                          &
-                 ZESR, XBR, XCS, XDS, XCR, XDR,                              &
+                 ZESR, XBR, XCS, XDS, 0., XCR, XDR, 0.,                      &
                  XACCLBDAS_MAX, XACCLBDAR_MAX, XACCLBDAS_MIN, XACCLBDAR_MIN, &
                  ZFDINFTY, XKER_RACCS                                        )
   CALL RSCOLRG ( IND, XALPHAS, XNUS, XALPHAR, XNUR,                          &
-                 ZESR, XBS, XCS, XDS, XCR, XDR,                              &
+                 ZESR, XBS, XCS, XDS, 0., XCR, XDR,                          &
                  XACCLBDAS_MAX, XACCLBDAR_MAX, XACCLBDAS_MIN, XACCLBDAR_MIN, &
                  ZFDINFTY, XKER_SACCRG,  XAG, XBS, XAS                       )
   WRITE(UNIT=KLUOUT,FMT='("*****************************************")')
@@ -950,7 +951,7 @@ IF( (KDRYLBDAG/=NDRYLBDAG) .OR. (KDRYLBDAS/=NDRYLBDAS) .OR. (KND/=IND) .OR. &
     (PDRYLBDAG_MIN/=XDRYLBDAG_MIN) .OR. (PDRYLBDAS_MIN/=XDRYLBDAS_MIN) .OR. &
     (PFDINFTY/=ZFDINFTY)                                               ) THEN
   CALL RZCOLX ( IND, XALPHAG, XNUG, XALPHAS, XNUS,                          &
-                ZEGS, XBS, XCG, XDG, XCS, XDS,                              &
+                ZEGS, XBS, XCG, XDG, 0., XCS, XDS, 0.,                      &
                 XDRYLBDAG_MAX, XDRYLBDAS_MAX, XDRYLBDAG_MIN, XDRYLBDAS_MIN, &
                 ZFDINFTY, XKER_SDRYG                                        )
   WRITE(UNIT=KLUOUT,FMT='("*****************************************")')
@@ -1016,7 +1017,7 @@ IF( (KDRYLBDAG/=NDRYLBDAG) .OR. (KDRYLBDAR/=NDRYLBDAR) .OR. (KND/=IND) .OR. &
     (PDRYLBDAG_MIN/=XDRYLBDAG_MIN) .OR. (PDRYLBDAR_MIN/=XDRYLBDAR_MIN) .OR. &
     (PFDINFTY/=ZFDINFTY)                                               ) THEN
   CALL RZCOLX ( IND, XALPHAG, XNUG, XALPHAR, XNUR,                          &
-                ZEGR, XBR, XCG, XDG, XCR, XDR,                              &
+                ZEGR, XBR, XCG, XDG, 0., XCR, XDR, 0.,                      &
                 XDRYLBDAG_MAX, XDRYLBDAR_MAX, XDRYLBDAG_MIN, XDRYLBDAR_MIN, &
                 ZFDINFTY, XKER_RDRYG                                        )
   WRITE(UNIT=KLUOUT,FMT='("*****************************************")')
@@ -1154,7 +1155,7 @@ IF( (KWETLBDAH/=NWETLBDAH) .OR. (KWETLBDAS/=NWETLBDAS) .OR. (KND/=IND) .OR. &
     (PWETLBDAH_MIN/=XWETLBDAH_MIN) .OR. (PWETLBDAS_MIN/=XWETLBDAS_MIN) .OR. &
     (PFDINFTY/=ZFDINFTY)                                               ) THEN
   CALL RZCOLX ( IND, XALPHAH, XNUH, XALPHAS, XNUS,                          &
-                ZEHS, XBS, XCH, XDH, XCS, XDS,                              &
+                ZEHS, XBS, XCH, XDH, 0., XCS, XDS, 0.,                      &
                 XWETLBDAH_MAX, XWETLBDAS_MAX, XWETLBDAH_MIN, XWETLBDAS_MIN, &
                 ZFDINFTY, XKER_SWETH                                        )
   WRITE(UNIT=KLUOUT,FMT='("*****************************************")')
@@ -1220,7 +1221,7 @@ IF( (KWETLBDAH/=NWETLBDAH) .OR. (KWETLBDAG/=NWETLBDAG) .OR. (KND/=IND) .OR. &
     (PWETLBDAH_MIN/=XWETLBDAH_MIN) .OR. (PWETLBDAG_MIN/=XWETLBDAG_MIN) .OR. &
     (PFDINFTY/=ZFDINFTY)                                               ) THEN
   CALL RZCOLX ( IND, XALPHAH, XNUH, XALPHAG, XNUG,                          &
-                ZEHG, XBG, XCH, XDH, XCG, XDG,                              &
+                ZEHG, XBG, XCH, XDH, 0., XCG, XDG, 0.,                      &
                 XWETLBDAH_MAX, XWETLBDAG_MAX, XWETLBDAH_MIN, XWETLBDAG_MIN, &
                 ZFDINFTY, XKER_GWETH                                        )
   WRITE(UNIT=KLUOUT,FMT='("*****************************************")')
@@ -1286,7 +1287,7 @@ IF( (KWETLBDAH/=NWETLBDAH) .OR. (KWETLBDAR/=NWETLBDAR) .OR. (KND/=IND) .OR. &
     (PWETLBDAH_MIN/=XWETLBDAH_MIN) .OR. (PWETLBDAR_MIN/=XWETLBDAR_MIN) .OR. &
     (PFDINFTY/=ZFDINFTY)                                               ) THEN
   CALL RZCOLX ( IND, XALPHAH, XNUH, XALPHAR, XNUR,                          &
-                ZEHR, XBR, XCH, XDH, XCR, XDR,                              &
+                ZEHR, XBR, XCH, XDH, 0., XCR, XDR, 0.,                      &
                 XWETLBDAH_MAX, XWETLBDAR_MAX, XWETLBDAH_MIN, XWETLBDAR_MIN, &
                 ZFDINFTY, XKER_RWETH                                        )
   WRITE(UNIT=KLUOUT,FMT='("*****************************************")')

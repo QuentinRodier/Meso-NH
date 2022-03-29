@@ -63,20 +63,21 @@ SUBROUTINE LIMA_SNOW_DEPOSITION (LDCOMPUTE,                                &
 !!    -------------
 !!      Original             15/03/2018
 !!
+!  J. Wurtz       03/2022: new snow characteristics
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_PARAM_LIMA,      ONLY : XRTMIN, XCTMIN, XALPHAI, XALPHAS, XNUI, XNUS 
-USE MODD_PARAM_LIMA_COLD, ONLY : XCXS, XCCS, &
+USE MODD_PARAM_LIMA,      ONLY : XRTMIN, XCTMIN, XALPHAI, XALPHAS, XNUI, XNUS
+USE MODD_PARAM_LIMA_COLD, ONLY : XCXS, XCCS,XLBS,XBS, &
                                  XLBDAS_MAX, XDSCNVI_LIM, XLBDASCNVI_MAX,     &
                                  XC0DEPSI, XC1DEPSI, XR0DEPSI, XR1DEPSI,      &
                                  XSCFAC, X1DEPS, X0DEPS, XEX1DEPS, XEX0DEPS,  &
                                  XDICNVS_LIM, XLBDAICNVS_LIM,                 &
                                  XC0DEPIS, XC1DEPIS, XR0DEPIS, XR1DEPIS,      &
                                  XCOLEXIS, XAGGS_CLARGE1, XAGGS_CLARGE2,      &
-                                 XAGGS_RLARGE1, XAGGS_RLARGE2  
+                                 XAGGS_RLARGE1, XAGGS_RLARGE2, XFVELOS
 
 !
 IMPLICIT NONE
@@ -132,7 +133,7 @@ WHERE( GMICRO )
    WHERE ( PLBDS(:)<XLBDASCNVI_MAX .AND. (PRST(:)>XRTMIN(5)) &
                                    .AND. (PSSI(:)<0.0)       )
       ZZW(:) = (PLBDS(:)*XDSCNVI_LIM)**(XALPHAS)
-      ZZX(:) = ( -PSSI(:)/PAI(:) ) * (XCCS*PLBDS(:)**XCXS) * (ZZW(:)**XNUS) * EXP(-ZZW(:))
+      ZZX(:) = ( -PSSI(:)/PAI(:) ) * (XLBS*PRST(:)*PLBDS(:)**XBS) * (ZZW(:)**XNUS) * EXP(-ZZW(:))
 !
       ZZW(:) = ( XR0DEPSI+XR1DEPSI*PCJ(:) )*ZZX(:)
 !
@@ -149,8 +150,10 @@ WHERE( GMICRO )
 !
    ZZW(:) = 0.0
    WHERE ( (PRST(:)>XRTMIN(5)) )
-      ZZW(:) = ( PSSI(:)/(PAI(:)*PRHODREF(:)) ) * &
-           ( X0DEPS*PLBDS(:)**XEX0DEPS + X1DEPS*PCJ(:)*PLBDS(:)**XEX1DEPS )
+      ZZW(:) = ( PRST(:)*PSSI(:)/(PAI(:)) ) *           &
+           ( X0DEPS*PLBDS(:)**XEX0DEPS +                &
+           ( X1DEPS*PCJ(:)*(PLBDS(:))**(XBS+XEX1DEPS) * &
+                (1+(XFVELOS/(2.*PLBDS))**XALPHAS)**(-XNUS+XEX1DEPS/XALPHAS)) )
       ZZW(:) =    ZZW(:)*(0.5+SIGN(0.5,ZZW(:))) - ABS(ZZW(:))*(0.5-SIGN(0.5,ZZW(:)))
    END WHERE
 !

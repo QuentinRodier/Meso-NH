@@ -129,6 +129,7 @@ END MODULE MODI_LIMA_GRAUPEL
 !!    -------------
 !!      Original             15/03/2018
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!  J. Wurtz       03/2022: new snow characteristics
 !
 !-------------------------------------------------------------------------------
 !
@@ -330,12 +331,12 @@ WHERE( GDRY )
        			                                    * (ZVEC1(:) - 1.0)
    ZZW(:) = ZVEC3(:)
 !
-   ZZW3(:) = XFSDRYG * ZZW(:) * EXP( XCOLEXSG*(PT(:)-XTT) )  & ! RSDRYG - rs collected by graupel in dry mode
-                    *( PLBDS(:)**(XCXS-XBS) )*( PLBDG(:)**XCXG )    &
-                    *( PRHODREF(:)**(-XCEXVT-1.) )                      &
-                    *( XLBSDRYG1/( PLBDG(:)**2                 ) + &
-                       XLBSDRYG2/( PLBDG(:)   * PLBDS(:)   ) + &
-                       XLBSDRYG3/(                  PLBDS(:)**2) )
+   ZZW3(:) = XFSDRYG * ZZW(:) * EXP( XCOLEXSG*(PT(:)-XTT) )       & ! RSDRYG - rs collected by graupel in dry mode
+                    *( PRST(:))*( PLBDG(:)**XCXG )                &
+                    *( PRHODREF(:)**(-XCEXVT) )                   &
+                    *( XLBSDRYG1/( PLBDG(:)**2                ) + &
+                       XLBSDRYG2/( PLBDG(:)    * PLBDS(:)     ) + &
+                       XLBSDRYG3/(               PLBDS(:)**2) )
 END WHERE
 !
 !*           1.c  Collection of rr in the dry mode

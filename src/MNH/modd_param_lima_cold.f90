@@ -19,6 +19,7 @@
 !!    MODIFICATIONS
 !!    -------------
 !!      Original             ??/??/13 
+!  J. Wurtz       03/2022: new snow characteristics
 !!
 !-------------------------------------------------------------------------------
 USE MODD_PARAMETERS, ONLY: JPSVNAMELGTMAX
@@ -51,8 +52,9 @@ REAL,SAVE :: XAI,XBI,XC_I,XDI         ,XF0I,XF2I,XC1I ! Cloud ice      charact.
 REAL,SAVE ::                           XF0IS,XF1IS    ! (large Di vent. coef.)
 REAL,SAVE :: XAS,XBS,XCS,XDS,XCCS,XCXS,XF0S,XF1S,XC1S ! Snow/agg.      charact.
 !
-REAL,SAVE :: XLBDAS_MAX               ! Max values allowed for the shape
-                                      ! parameter of snow
+REAL,SAVE :: XLBDAS_MIN, XLBDAS_MAX   ! Max values allowed for the shape parameter of snow
+REAL,SAVE :: XFVELOS                  ! Wurtz - snow fall speed parameterizaed after Thompson 2008
+REAL,SAVE :: XTRANS_MP_GAMMAS         ! Wurtz - change between lambda value for MP and gen. gamma
 !
 CHARACTER(LEN=JPSVNAMELGTMAX),DIMENSION(5),PARAMETER &
                               :: CLIMA_COLD_NAMES=(/'CICE    ','CIFNFREE','CIFNNUCL', &

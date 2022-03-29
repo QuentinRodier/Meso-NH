@@ -14,6 +14,7 @@
 !!    MODIFICATIONS
 !!    -------------
 !!      Original             ??/??/13 
+!  J. Wurtz       03/2022: new snow characteristics
 !!
 !-------------------------------------------------------------------------------
 !
@@ -67,6 +68,7 @@ REAL,SAVE :: XDCSLIM,XCOLCS,                   & ! Constants for the riming of
     	     XEXCRIMSS,XCRIMSS,                & ! the aggregates : RIM
     	     XEXCRIMSG,XCRIMSG,                & !
     	     XEXSRIMCG,XSRIMCG,                & !
+             XSRIMCG2, XSRIMCG3, XEXSRIMCG2,   & ! Murakami 1990
     	     XGAMINC_BOUND_MIN,                & ! Min val. of Lbda_s for RIM
     	     XGAMINC_BOUND_MAX,                & ! Max val. of Lbda_s for RIM
     	     XRIMINTP1,XRIMINTP2                 ! Csts for lin. interpol. of 

@@ -20,7 +20,7 @@ IMPLICIT NONE
 NAMELIST/NAM_PARAM_LIMA/LCOLD, LNUCL, LSEDI, LSNOW, LHAIL, LHHONI, LMEYERS,&
                         NMOD_IFN, XIFN_CONC, LIFN_HOM,                     &
                         CIFN_SPECIES, CINT_MIXING, NMOD_IMM, NIND_SPECIE,  &
-                        CPRISTINE_ICE_LIMA, CHEVRIMED_ICE_LIMA,            &
+                        LSNOW_T, CPRISTINE_ICE_LIMA, CHEVRIMED_ICE_LIMA,   &
                         XALPHAI, XNUI, XALPHAS, XNUS, XALPHAG, XNUG,       &
                         XFACTNUC_DEP, XFACTNUC_CON, NPHILLIPS,             &
 !
