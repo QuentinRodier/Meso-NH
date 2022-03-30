@@ -53,7 +53,8 @@ END MODULE MODI_LIMA_ICE_AGGREGATION_SNOW
 !!    -------------
 !!      Original             15/03/2018
 !  J. Wurtz       03/2022: new snow characteristics
-!!
+!  B. Vie         03/2022: Add option for 1-moment pristine ice
+!
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -110,19 +111,19 @@ IF (NMOM_I.EQ.1) THEN
       P_RI_AGGS(:) = - ZZW1(:)
    END WHERE
 ELSE
-WHERE ( (PRIT(:)>XRTMIN(4)) .AND. (PRST(:)>XRTMIN(5)) .AND. LDCOMPUTE(:) )
-   ZZW1(:) = (PLBDI(:) / PLBDS(:))**3
-   ZZW2(:) = (PCIT(:)*(XLBS*PRST(:)*PLBDS(:)**XBS)*EXP(XCOLEXIS*(PT(:)-XTT) )) &
-        / (PLBDI(:)**3)
-   ZZW3(:) = ZZW2(:)*(XAGGS_CLARGE1+XAGGS_CLARGE2*ZZW1(:))
+   WHERE ( (PRIT(:)>XRTMIN(4)) .AND. (PRST(:)>XRTMIN(5)) .AND. LDCOMPUTE(:) )
+      ZZW1(:) = (PLBDI(:) / PLBDS(:))**3
+      ZZW2(:) = (PCIT(:)*(XLBS*PRST(:)*PLBDS(:)**XBS)*EXP(XCOLEXIS*(PT(:)-XTT) )) &
+           / (PLBDI(:)**3)
+      ZZW3(:) = ZZW2(:)*(XAGGS_CLARGE1+XAGGS_CLARGE2*ZZW1(:))
 !
-   P_CI_AGGS(:) = - ZZW3(:)
+      P_CI_AGGS(:) = - ZZW3(:)
 !
-   ZZW2(:) = ZZW2(:) / PLBDI(:)**XBI
-   ZZW2(:) = ZZW2(:)*(XAGGS_RLARGE1+XAGGS_RLARGE2*ZZW1(:))
+      ZZW2(:) = ZZW2(:) / PLBDI(:)**XBI
+      ZZW2(:) = ZZW2(:)*(XAGGS_RLARGE1+XAGGS_RLARGE2*ZZW1(:))
 !
-   P_RI_AGGS(:) = - ZZW2(:)
-END WHERE
+      P_RI_AGGS(:) = - ZZW2(:)
+   END WHERE
 END IF
 !
 !

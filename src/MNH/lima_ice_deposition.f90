@@ -67,7 +67,7 @@ SUBROUTINE LIMA_ICE_DEPOSITION (PTSTEP, LDCOMPUTE,                        &
 !!    -------------
 !!      Original             15/03/2018
 !!      B. Vié               30/08/2021      Disable CNVS if LSNOW=F  
-!!
+!!      B. Vie                  03/2022   Add option for 1-moment pristine ice
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS

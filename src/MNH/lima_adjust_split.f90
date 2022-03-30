@@ -144,6 +144,7 @@ END MODULE MODI_LIMA_ADJUST_SPLIT
 !!    -------------
 !!      Original             06/2021 forked from lima_adjust.f90 
 !  P. Wautelet 23/07/2021: replace non-standard FLOAT function by REAL function
+!  B. Vie         03/2022: Add option for 1-moment pristine ice
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS

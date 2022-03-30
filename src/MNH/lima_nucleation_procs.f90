@@ -79,6 +79,7 @@ SUBROUTINE LIMA_NUCLEATION_PROCS (PTSTEP, TPFILE, PRHODJ,                       
 !  P. Wautelet 27/02/2020: add Z_TH_HINC variable (for budgets)
 !  P. Wautelet    02/2020: use the new data structures and subroutines for budgets
 !  B. Vie      03/03/2020: use DTHRAD instead of dT/dt in Smax diagnostic computation
+!  B. Vie         03/2022: Add option for 1-moment pristine ice
 !-------------------------------------------------------------------------------
 !
 use modd_budget,     only: lbu_enable, lbudget_th, lbudget_rv, lbudget_rc, lbudget_rr,  &

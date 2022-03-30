@@ -234,6 +234,7 @@ SUBROUTINE LIMA_TENDENCIES (PTSTEP, LDCOMPUTE,                                  
 !!
 !       Delbeke/Vie     03/2022 : KHKO option
 !       J. Wurtz        03/2022 : new snow characteristics
+!       B. Vie          03/2022: Add option for 1-moment pristine ice
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
