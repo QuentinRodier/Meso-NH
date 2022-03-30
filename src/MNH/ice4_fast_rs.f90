@@ -77,6 +77,7 @@ SUBROUTINE ICE4_FAST_RS(KSIZE, LDSOFT, PCOMPUTE, &
 !!
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !  P. Wautelet 29/05/2019: remove PACK/UNPACK intrinsics (to get more performance and better OpenACC support)
+!  J. Wurtz       03/2022: New snow characteristics with LSNOW_T
 !
 !
 !*      0. DECLARATIONS
@@ -244,13 +245,10 @@ ELSE
     !        5.1.4  riming of the small sized aggregates
     !
     WHERE (GRIM(:))
-!      PRS_TEND(:, IRCRIMSS) = XCRIMSS * ZZW(:) * PRCT(:)                & ! RCRIMSS
-!                                      *   PLBDAS(:)**XEXCRIMSS &
-!                                      * PRHODREF(:)**(-XCEXVT)
-      PRS_TEND(:, IRCRIMSS) = XCRIMSS * ZZW(:) * PRCT(:)                & ! RCRIMSS	 !Wurtz ! Thompson
+      PRS_TEND(:, IRCRIMSS) = XCRIMSS * ZZW(:) * PRCT(:)                & ! RCRIMSS
                                       * PRST(:)*(1+(XFVELOS/PLBDAS(:))**XALPHAS)**(-XNUS+XEXCRIMSS/XALPHAS) &
                                       * PRHODREF(:)**(-XCEXVT+1.) &
-				      * (PLBDAS(:)) ** (XEXCRIMSS+XBS) ! Thompson
+				      * (PLBDAS(:)) ** (XEXCRIMSS+XBS)
     END WHERE
     !
     !        5.1.5  perform the linear interpolation of the normalized
@@ -275,21 +273,17 @@ ELSE
     !
     !
     WHERE(GRIM(:))
-!      PRS_TEND(:, IRCRIMS)=XCRIMSG * PRCT(:)               & ! RCRIMS
-!                                   * PLBDAS(:)**XEXCRIMSG  &
-!                                   * PRHODREF(:)**(-XCEXVT)
       PRS_TEND(:, IRCRIMS) = XCRIMSG * PRCT(:)               & ! RCRIMS
                                    * PRST(:)*(1+(XFVELOS/PLBDAS(:))**(XALPHAS))**(-XNUS+XEXCRIMSG/XALPHAS) &
                                    * PRHODREF(:)**(-XCEXVT+1.) &
-                                   * PLBDAS(:)**(XBS+XEXCRIMSG) ! GAMMAGEN LH_EXTENDED
+                                   * PLBDAS(:)**(XBS+XEXCRIMSG)
       ZZW6(:) = PRS_TEND(:, IRCRIMS) - PRS_TEND(:, IRCRIMSS) ! RCRIMSG
     END WHERE
 
     IF(CSNOWRIMING=='M90 ')THEN
       !Murakami 1990
       WHERE(GRIM(:))
-       ! PRS_TEND(:, IRSRIMCG)=XSRIMCG * PLBDAS(:)**XEXSRIMCG*(1.0-ZZW(:))
-        PRS_TEND(:, IRSRIMCG)=XSRIMCG * PRST(:)*PRHODREF(:)*PLBDAS(:)**(XEXSRIMCG+XBS)*(1.0-ZZW(:)) !Wurtz
+        PRS_TEND(:, IRSRIMCG)=XSRIMCG * PRST(:)*PRHODREF(:)*PLBDAS(:)**(XEXSRIMCG+XBS)*(1.0-ZZW(:))
 
         PRS_TEND(:, IRSRIMCG)=ZZW6(:)*PRS_TEND(:, IRSRIMCG)/ &
                        MAX(1.E-20, &
@@ -394,13 +388,8 @@ ELSE
     !        5.2.4  raindrop accretion on the small sized aggregates
     !
     WHERE(GACC(:))
-!      ZZW6(:) =                                                        & !! coef of RRACCS
-!            XFRACCSS*( PLBDAS(:)**XCXS )*( PRHODREF(:)**(-XCEXVT-1.) ) &
-!       *( XLBRACCS1/((PLBDAS(:)**2)               ) +                  &
-!          XLBRACCS2/( PLBDAS(:)    * PLBDAR(:)    ) +                  &
-!          XLBRACCS3/(               (PLBDAR(:)**2)) )/PLBDAR(:)**4
       ZZW6(:) =                                                        & !! coef of RRACCS
-            XFRACCSS*( PRST(:)*PLBDAS(:)**XBS )*( PRHODREF(:)**(-XCEXVT) ) & ! Wurtz
+            XFRACCSS*( PRST(:)*PLBDAS(:)**XBS )*( PRHODREF(:)**(-XCEXVT) ) &
        *( XLBRACCS1/((PLBDAS(:)**2)               ) +                  &
           XLBRACCS2/( PLBDAS(:)    * PLBDAR(:)    ) +                  &
           XLBRACCS3/(               (PLBDAR(:)**2)) )/PLBDAR(:)**4
@@ -445,12 +434,7 @@ ELSE
     !               into graupeln
     !
     WHERE(GACC(:))
-!      PRS_TEND(:, IRSACCRG) = XFSACCRG*ZZW(:)*                    & ! RSACCRG
-!          ( PLBDAS(:)**(XCXS-XBS) )*( PRHODREF(:)**(-XCEXVT-1.) ) &
-!         *( XLBSACCR1/((PLBDAR(:)**2)               ) +           &
-!            XLBSACCR2/( PLBDAR(:)    * PLBDAS(:)    ) +           &
-!            XLBSACCR3/(               (PLBDAS(:)**2)) )/PLBDAR(:)
-      PRS_TEND(:, IRSACCRG) = XFSACCRG*ZZW(:)*                    & ! RSACCRG	! Modif Wurtz
+      PRS_TEND(:, IRSACCRG) = XFSACCRG*ZZW(:)*                    & ! RSACCRG
           ( PRST(:))*( PRHODREF(:)**(-XCEXVT) ) &
          *( XLBSACCR1/((PLBDAR(:)**2)               ) +           &
             XLBSACCR2/( PLBDAR(:)    * PLBDAS(:)    ) +           &
@@ -516,13 +500,7 @@ ELSE
     !
     ! compute RSMLT
     !
-!    PRSMLTG(:)  = XFSCVMG*MAX( 0.0,( -PRSMLTG(:) *             &
-!                         ( X0DEPS*       PLBDAS(:)**XEX0DEPS +     &
-!                           X1DEPS*PCJ(:)*PLBDAS(:)**XEX1DEPS ) -   &
-!                                   ( PRS_TEND(:, IRCRIMS) + PRS_TEND(:, IRRACCS) ) *       &
-!                            ( PRHODREF(:)*XCL*(XTT-PT(:))) ) /    &
-!                                           ( PRHODREF(:)*XLMTT ) )
-    PRSMLTG(:)  = XFSCVMG*MAX( 0.0,( -PRSMLTG(:) *             & ! Modif GAMMAGEN LH_EXTENDED
+    PRSMLTG(:)  = XFSCVMG*MAX( 0.0,( -PRSMLTG(:) *             &
          PRST(:)*PRHODREF(:) *    &
          ( X0DEPS       *PLBDAS(:)**XEX0DEPS +     &
          X1DEPS*PCJ(:)*(1+(XFVELOS/(2*PLBDAS(:))**XALPHAS))**(XNUS+XEX1DEPS/XALPHAS)*((PLBDAS(:))**(XBS+XEX1DEPS))) -   &

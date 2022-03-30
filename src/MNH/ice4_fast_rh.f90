@@ -84,6 +84,7 @@ SUBROUTINE ICE4_FAST_RH(KSIZE, LDSOFT, PCOMPUTE, PWETG, &
 !!
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !  P. Wautelet 29/05/2019: remove PACK/UNPACK intrinsics (to get more performance and better OpenACC support)
+!  J. Wurtz       03/2022: New snow characteristics with LSNOW_T
 !
 !
 !*      0. DECLARATIONS
@@ -269,16 +270,10 @@ ELSE
     END DO
     !
     WHERE(GWET(:))
-!      PRH_TEND(:, IRSWETH)=XFSWETH*ZZW(:)                       & ! RSWETH
-!                    *( PLBDAS(:)**(XCXS-XBS) )*( PLBDAH(:)**XCXH )  &
-!                       *( PRHODREF(:)**(-XCEXVT-1.) )               &
-!                       *( XLBSWETH1/( PLBDAH(:)**2              ) + &
-!                          XLBSWETH2/( PLBDAH(:)   * PLBDAS(:)   ) + &
-!                          XLBSWETH3/(               PLBDAS(:)**2) )
-      PRH_TEND(:, IRSWETH)=XFSWETH*ZZW(:)                       & ! RSWETH Modif Wurtz conc snow
+      PRH_TEND(:, IRSWETH)=XFSWETH*ZZW(:)                       &
                     *( PRST(:))*( PLBDAH(:)**XCXH )  &
                        *( PRHODREF(:)**(-XCEXVT) )               &
-                       *( XLBSWETH1/( PLBDAH(:)**2              ) + &	! Il s'agit de moment (?)
+                       *( XLBSWETH1/( PLBDAH(:)**2              ) + &
                           XLBSWETH2/( PLBDAH(:)   * PLBDAS(:)   ) + &
                           XLBSWETH3/(               PLBDAS(:)**2) )
       PRH_TEND(:, IRSDRYH)=PRH_TEND(:, IRSWETH)*(XCOLSH*EXP(XCOLEXSH*(PT(:)-XTT)))

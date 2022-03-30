@@ -12,7 +12,6 @@ SUBROUTINE ICE4_TENDENCIES(KSIZE, KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKT, K
                           &PEXN, PRHODREF, PLVFACT, PLSFACT, K1, K2, K3, &
                           &PPRES, PCF, PSIGMA_RC, &
                           &PCIT, &
-			  &PLBDAS ,& ! Wurtz
                           &PT, PTHT, &
                           &PRVT, PRCT, PRRT, PRIT, PRST, PRGT, PRHT, &
                           &PRVHENI_MR, PRRHONG_MR, PRIMLTC_MR, PRSRIMCG_MR, &
@@ -136,7 +135,6 @@ REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PHLI_LCF
 REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PHLI_HRI
 REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PHLI_LRI
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(OUT)   :: PRAINFR   ! Rain fraction
-REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PLBDAS ! Wurtz
 END SUBROUTINE ICE4_TENDENCIES
 END INTERFACE
 END MODULE MODI_ICE4_TENDENCIES
@@ -147,7 +145,6 @@ SUBROUTINE ICE4_TENDENCIES(KSIZE, KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKT, K
                           &PEXN, PRHODREF, PLVFACT, PLSFACT, K1, K2, K3, &
                           &PPRES, PCF, PSIGMA_RC, &
                           &PCIT, &
-			  &PLBDAS ,& ! Wurtz
                           &PT, PTHT, &
                           &PRVT, PRCT, PRRT, PRIT, PRST, PRGT, PRHT, &
                           &PRVHENI_MR, PRRHONG_MR, PRIMLTC_MR, PRSRIMCG_MR, &
@@ -177,6 +174,7 @@ SUBROUTINE ICE4_TENDENCIES(KSIZE, KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKT, K
 !!    -------------
 !
 !  P. Wautelet 29/05/2019: remove PACK/UNPACK intrinsics (to get more performance and better OpenACC support)
+!  J. Wurtz       03/2022: New snow characteristics with LSNOW_T
 !
 !
 !*      0. DECLARATIONS
@@ -310,7 +308,6 @@ REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PHLI_LCF
 REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PHLI_HRI
 REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PHLI_LRI
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(OUT)   :: PRAINFR   ! Rain fraction
-REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PLBDAS ! Wurtz
 !
 !*       0.2  declaration of local variables
 !
@@ -321,7 +318,7 @@ REAL, DIMENSION(KSIZE) :: ZRVT, ZRCT, ZRRT, ZRIT, ZRST, ZRGT, &
                         & ZRF, &
                         & ZLBDAR, ZLBDAS, ZLBDAG, ZLBDAH, ZLBDAR_RF, &
                         & ZRGSI, ZRGSI_MR
-REAL, DIMENSION(KIT,KJT,KKT) :: ZRRT3D, ZRST3D, ZRGT3D, ZRHT3D
+REAL, DIMENSION(KIT,KJT,KKT) :: ZLBDAS3D, ZRRT3D, ZRST3D, ZRGT3D, ZRHT3D
 INTEGER :: JL
 REAL, DIMENSION(KSIZE) :: ZWETG ! 1. if graupel growths in wet mode, 0. otherwise
 
@@ -404,22 +401,28 @@ ELSE
   !        5.1.6  riming-conversion of the large sized aggregates into graupel (old parametrisation)
   !
   IF(CSNOWRIMING=='OLD ') THEN
-!    ZLBDAS(:)=0.
-!    WHERE(ZRST(:)>0.)
-!      ZLBDAS(:)  = MIN(XLBDAS_MAX, XLBS*(PRHODREF(:)*MAX(ZRST(:), XRTMIN(5)))**XLBEXS)
-!    END WHERE
-    CALL ICE4_RSRIMCG_OLD(KSIZE, ODSOFT, PCOMPUTE==1., &
-                         &PRHODREF, &
-!                         &ZLBDAS, &
-                         &PLBDAS, & ! Wurtz
-                         &ZT, ZRCT, ZRST, &
-                         &PRSRIMCG_MR, PB_RS, PB_RG)
-    DO JL=1, KSIZE
-      ZRST(JL) = ZRST(JL) - PRSRIMCG_MR(JL)
-      ZRGT(JL) = ZRGT(JL) + PRSRIMCG_MR(JL)
-    ENDDO
+     ZLBDAS(:)=0.
+     IF (LSNOW_T) THEN 
+        WHERE (ZRST(:)>XRTMIN(5) .AND. ZT(:)>263.15)
+           ZLBDAS(:) = MAX(MIN(XLBDAS_MAX, 10**(14.554-0.0423*ZT(:))),XLBDAS_MIN)*XTRANS_MP_GAMMAS
+        END WHERE
+        WHERE (ZRST(:)>XRTMIN(5) .AND. ZT(:)<=263.15)
+           ZLBDAS(:) = MAX(MIN(XLBDAS_MAX, 10**(6.226-0.0106*ZT(:))),XLBDAS_MIN)*XTRANS_MP_GAMMAS
+        END WHERE
+     ELSE
+        ZLBDAS(:)  = MAX(MIN(XLBDAS_MAX,XLBS*(PRHODREF(:)*MAX(ZRST(:), XRTMIN(5)))**XLBEXS,XLBDAS_MIN)
+     END IF
+     CALL ICE4_RSRIMCG_OLD(KSIZE, ODSOFT, PCOMPUTE==1., &
+                          &PRHODREF, &
+                          &ZLBDAS, &
+                          &ZT, ZRCT, ZRST, &
+                          &PRSRIMCG_MR, PB_RS, PB_RG)
+     DO JL=1, KSIZE
+        ZRST(JL) = ZRST(JL) - PRSRIMCG_MR(JL)
+        ZRGT(JL) = ZRGT(JL) + PRSRIMCG_MR(JL)
+     ENDDO
   ELSE
-    PRSRIMCG_MR(:) = 0.
+     PRSRIMCG_MR(:) = 0.
   ENDIF
 ENDIF
 !
@@ -474,10 +477,17 @@ IF(KSIZE>0) THEN
   !
   !*  compute the slope parameters
   !
-!  ZLBDAS(:)=0.
-!  WHERE(ZRST(:)>0.)
-!    ZLBDAS(:)  = MIN(XLBDAS_MAX, XLBS*(PRHODREF(:)*MAX(ZRST(:), XRTMIN(5)))**XLBEXS)
-!  END WHERE
+  ZLBDAS(:)=0.
+  IF (LSNOW_T) THEN 
+     WHERE (ZRST(:)>XRTMIN(5) .AND. ZT(:)>263.15)
+        ZLBDAS(:) = MAX(MIN(XLBDAS_MAX, 10**(14.554-0.0423*ZT(:))),XLBDAS_MIN)*XTRANS_MP_GAMMAS
+     END WHERE
+     WHERE (ZRST(:)>XRTMIN(5) .AND. ZT(:)<=263.15)
+        ZLBDAS(:) = MAX(MIN(XLBDAS_MAX, 10**(6.226-0.0106*ZT(:))),XLBDAS_MIN)*XTRANS_MP_GAMMAS
+     END WHERE
+  ELSE
+     ZLBDAS(:)  = MAX(MIN(XLBDAS_MAX,XLBS*(PRHODREF(:)*MAX(ZRST(:), XRTMIN(5)))**XLBEXS,XLBDAS_MIN)
+  END IF
   ZLBDAG(:)=0.
   WHERE(ZRGT(:)>0.)
     ZLBDAG(:)  = XLBG*(PRHODREF(:)*MAX(ZRGT(:), XRTMIN(6)))**XLBEXG
@@ -508,8 +518,7 @@ ENDIF
 CALL ICE4_SLOW(KSIZE, ODSOFT, PCOMPUTE, PRHODREF, ZT, &
               &PSSI, PLVFACT, PLSFACT, &
               &ZRVT, ZRCT, ZRIT, ZRST, ZRGT, &
-          !    &ZLBDAS, ZLBDAG, &
-              &PLBDAS, ZLBDAG, & ! Wurtz
+              &ZLBDAS, ZLBDAG, &
               &ZAI, ZCJ, PHLI_HCF, PHLI_HRI, &
               &PRCHONI, PRVDEPS, PRIAGGS, PRIAUTS, PRVDEPG, &
               &PA_TH, PA_RV, PA_RC, PA_RI, PA_RS, PA_RG)
@@ -546,8 +555,7 @@ END IF
 CALL ICE4_FAST_RS(KSIZE, ODSOFT, PCOMPUTE, &
                  &PRHODREF, PLVFACT, PLSFACT, PPRES, &
                  &ZDV, ZKA, ZCJ, &
-            !     &ZLBDAR, ZLBDAS, &
-                 &ZLBDAR, PLBDAS, & ! Wurtz
+                 &ZLBDAR, ZLBDAS, &
                  &ZT, ZRVT, ZRCT, ZRRT, ZRST, &
                  &PRIAGGS, &
                  &PRCRIMSS, PRCRIMSG, PRSRIMCG, &
@@ -570,8 +578,7 @@ ENDDO
 CALL ICE4_FAST_RG(KSIZE, ODSOFT, PCOMPUTE, KRR, &
                  &PRHODREF, PLVFACT, PLSFACT, PPRES, &
                  &ZDV, ZKA, ZCJ, PCIT, &
-               !  &ZLBDAR, ZLBDAS, ZLBDAG, &
-                 &ZLBDAR, PLBDAS, ZLBDAG, & ! Wurtz
+                 &ZLBDAR, ZLBDAS, ZLBDAG, &
                  &ZT, ZRVT, ZRCT, ZRRT, ZRIT, ZRST, ZRGT, &
                  &ZRGSI, ZRGSI_MR(:), &
                  &ZWETG, &
@@ -590,8 +597,7 @@ IF (KRR==7) THEN
   CALL ICE4_FAST_RH(KSIZE, ODSOFT, PCOMPUTE, ZWETG, &
                    &PRHODREF, PLVFACT, PLSFACT, PPRES, &
                    &ZDV, ZKA, ZCJ, &
-                !   &ZLBDAS, ZLBDAG, ZLBDAR, ZLBDAH, &
-                   &PLBDAS, ZLBDAG, ZLBDAR, ZLBDAH, & ! Wurtz 
+                   &ZLBDAS, ZLBDAG, ZLBDAR, ZLBDAH, &
                    &ZT,  ZRVT, ZRCT, ZRRT, ZRIT, ZRST, ZRGT, PRHT, &
                    &PRCWETH, PRIWETH, PRSWETH, PRGWETH, PRRWETH, &
                    &PRCDRYH, PRIDRYH, PRSDRYH, PRRDRYH, PRGDRYH, PRDRYHG, PRHMLTR, &

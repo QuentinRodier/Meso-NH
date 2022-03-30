@@ -6,12 +6,12 @@
 MODULE MODI_ICE4_SEDIMENTATION_SPLIT
 INTERFACE
 SUBROUTINE ICE4_SEDIMENTATION_SPLIT(KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKTB, KKTE, KKT, KKL, &
-                                   &PTSTEP, KRR, OSEDIC, ODEPOSC, PVDEPOSC, PDZZ, &
-                                   &PRHODREF, PPABST, PTHT, PRHODJ, &
-				   & PLBDAS, &  ! Modif Wurtz                           
-                                   &PRCS, PRCT, PRRS, PRRT, PRIS, PRIT, PRSS, PRST, PRGS, PRGT,&
-                                   &PINPRC, PINDEP, PINPRR, PINPRI, PINPRS, PINPRG, &
-                                   &PSEA, PTOWN,  &
+                                   &PTSTEP, KRR, OSEDIC, ODEPOSC, PVDEPOSC, PDZZ,                 &
+                                   &PRHODREF, PPABST, PTHT, PRHODJ,                               &
+				   & PLBDAS,                                                      &
+                                   &PRCS, PRCT, PRRS, PRRT, PRIS, PRIT, PRSS, PRST, PRGS, PRGT,   &
+                                   &PINPRC, PINDEP, PINPRR, PINPRI, PINPRS, PINPRG,               &
+                                   &PSEA, PTOWN,                                                  &
                                    &PINPRH, PRHT, PRHS, PFPR)
 IMPLICIT NONE
 INTEGER, INTENT(IN) :: KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKTB, KKTE, KKT
@@ -26,7 +26,7 @@ REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PRHODREF! Reference den
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PPABST  ! absolute pressure at t
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PTHT    ! Theta at time t
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PRHODJ  ! Dry density * Jacobian
-REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PLBDAS ! lambda parameter for snow ! Modif Wurtz
+REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PLBDAS  ! lambda parameter for snow
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(INOUT)           :: PRCS    ! Cloud water m.r. source
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PRCT    ! Cloud water m.r. at t
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(INOUT)           :: PRRS    ! Rain water m.r. source
@@ -53,12 +53,12 @@ END SUBROUTINE ICE4_SEDIMENTATION_SPLIT
 END INTERFACE
 END MODULE MODI_ICE4_SEDIMENTATION_SPLIT
 SUBROUTINE ICE4_SEDIMENTATION_SPLIT(KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKTB, KKTE, KKT, KKL, &
-                                   &PTSTEP, KRR, OSEDIC, ODEPOSC, PVDEPOSC, PDZZ, &
-                                   &PRHODREF, PPABST, PTHT, PRHODJ, &
-				   & PLBDAS, &  ! Modif Wurtz                           
-                                   &PRCS, PRCT, PRRS, PRRT, PRIS, PRIT, PRSS, PRST, PRGS, PRGT,&
-                                   &PINPRC, PINDEP, PINPRR, PINPRI, PINPRS, PINPRG, &
-                                   &PSEA, PTOWN,  &
+                                   &PTSTEP, KRR, OSEDIC, ODEPOSC, PVDEPOSC, PDZZ,                 &
+                                   &PRHODREF, PPABST, PTHT, PRHODJ,                               &
+				   & PLBDAS,                                                      &
+                                   &PRCS, PRCT, PRRS, PRRT, PRIS, PRIT, PRSS, PRST, PRGS, PRGT,   &
+                                   &PINPRC, PINDEP, PINPRR, PINPRI, PINPRS, PINPRG,               &
+                                   &PSEA, PTOWN,                                                  &
                                    &PINPRH, PRHT, PRHS, PFPR)
 !!
 !!**  PURPOSE
@@ -75,6 +75,7 @@ SUBROUTINE ICE4_SEDIMENTATION_SPLIT(KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKTB
 !!
 !  P. Wautelet 11/02/2019: dimensions of PINPRC and PINDEP not necessarily KIT,KJT
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
+!  J. Wurtz       03/2022: New snow characteristics with LSNOW_T
 !
 !
 !*      0. DECLARATIONS
@@ -105,7 +106,7 @@ REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PRHODREF! Reference den
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PPABST  ! absolute pressure at t
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PTHT    ! Theta at time t
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PRHODJ  ! Dry density * Jacobian
-REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PLBDAS ! lambda parameter for snow ! Modif Wurtz
+REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PLBDAS  ! lambda parameter for snow
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(INOUT)           :: PRCS    ! Cloud water m.r. source
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PRCT    ! Cloud water m.r. at t
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(INOUT)           :: PRRS    ! Rain water m.r. source
@@ -243,7 +244,7 @@ IF (GSEDIC) THEN
                           &XSPLIT_MAXCFL, &
                           &PRHODREF, ZW, PDZZ, PPABST, PTHT, PTSTEP, &
                           &2, &
-			  &PLBDAS, & ! Modif Wurtz
+			  &PLBDAS, &
                           &ZRCT, PRCS, PINPRC, ZPRCS, &
                           &ZRAY, ZLBC, ZFSEDC, ZCONC3D, PFPR=PFPR)
 ENDIF
@@ -270,7 +271,7 @@ END IF
                           &XSPLIT_MAXCFL, &
                           &PRHODREF, ZW, PDZZ, PPABST, PTHT, PTSTEP, &
                           &3, &
-			  &PLBDAS, & ! Modif Wurtz
+			  &PLBDAS, &
                           &ZRRT, PRRS, PINPRR, ZPRRS, &
                           &PFPR=PFPR)
 !
@@ -280,7 +281,7 @@ END IF
                           &XSPLIT_MAXCFL, &
                           &PRHODREF, ZW, PDZZ, PPABST, PTHT, PTSTEP, &
                           &4, &
-			  &PLBDAS, & ! Modif Wurtz
+			  &PLBDAS, &
                           &ZRIT, PRIS, PINPRI, ZPRIS, &
                           PFPR=PFPR)
 !
@@ -290,7 +291,7 @@ END IF
                         &XSPLIT_MAXCFL, &
                         &PRHODREF, ZW, PDZZ, PPABST, PTHT, PTSTEP, &
                         &5, &
-                        &PLBDAS, & ! Modif Wurtz
+                        &PLBDAS, &
                         &ZRST, PRSS, PINPRS, ZPRSS, &
                         PFPR=PFPR)
 !
@@ -300,7 +301,7 @@ END IF
                         &XSPLIT_MAXCFL, &
                         &PRHODREF, ZW, PDZZ, PPABST, PTHT, PTSTEP, &
                         &6, &
-                        &PLBDAS, & ! Modif Wurtz
+                        &PLBDAS, &
                         &ZRGT, PRGS, PINPRG, ZPRGS, &
                         PFPR=PFPR)
 !
@@ -311,7 +312,7 @@ IF (IRR==7) THEN
                           &XSPLIT_MAXCFL, &
                           &PRHODREF, ZW, PDZZ, PPABST, PTHT, PTSTEP, &
                           &7, &
-			  &PLBDAS, & ! Modif Wurtz
+			  &PLBDAS, &
                           &ZRHT, PRHS, PINPRH, ZPRHS, &
                           PFPR=PFPR)
 ENDIF
@@ -332,9 +333,9 @@ SUBROUTINE INTERNAL_SEDIM_SPLI(KIB,KIE,KIT,KJB,KJE,KJT,KKB,KKTB,KKTE,KKT,KKL,KRR
 !          ------------
 !
 USE MODD_CST,            ONLY: XCPD,XP00,XRD
-USE MODD_RAIN_ICE_DESCR, ONLY: XCC,XCEXVT,XDC,XLBEXC,XRTMIN,XALPHAS,XNUS,XBS
-USE MODD_RAIN_ICE_PARAM, ONLY: XEXCSEDI,XEXSEDG,XEXSEDH,XEXSEDR,XEXSEDS,XFSEDG,XFSEDH,XFSEDI,XFSEDR,XFSEDS,&
-                               XFVELOS
+USE MODD_RAIN_ICE_DESCR, ONLY: XCC,XCEXVT,XDC,XLBEXC,XRTMIN,XALPHAS,XNUS,XBS,XFVELOS
+USE MODD_RAIN_ICE_PARAM, ONLY: XEXCSEDI,XEXSEDG,XEXSEDH,XEXSEDR,XEXSEDS,XFSEDG,XFSEDH,XFSEDI,XFSEDR,XFSEDS
+                               
 !
 IMPLICIT NONE
 !
@@ -456,8 +457,8 @@ DO WHILE (ANY(ZREMAINT>0.))
 
         ZWSED(JI, JJ, JK) = XFSEDS *  &
                               & PRXT(JI,JJ,JK)* &
-                              & PRHODREF(JI,JJ,JK)**(1-XCEXVT) * & !    Modif Wurtz snow
-                              & (1 + (XFVELOS/PLBDAS(JI, JJ, JK))**XALPHAS)** (-XNUS+XEXSEDS/XALPHAS) * & ! GAMMAGEN LH_EXTENDED
+                              & PRHODREF(JI,JJ,JK)**(1-XCEXVT) * &
+                              & (1 + (XFVELOS/PLBDAS(JI, JJ, JK))**XALPHAS)** (-XNUS+XEXSEDS/XALPHAS) * &
 			      & PLBDAS(JI, JJ, JK) ** (XBS+XEXSEDS)
  ! GAMMAGEN_LH_EXTENDED
 
@@ -469,9 +470,6 @@ DO WHILE (ANY(ZREMAINT>0.))
       CASE(3)
         ZFSED=XFSEDR
         ZEXSED=XEXSEDR
-!      CASE(5)
-!        ZFSED=XFSEDS
-!        ZEXSED=XEXSEDS
       CASE(6)
         ZFSED=XFSEDG
         ZEXSED=XEXSEDG

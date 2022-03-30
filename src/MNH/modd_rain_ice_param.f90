@@ -39,9 +39,6 @@
 !             ------------
 !
 IMPLICIT NONE
-!certaines constantes a deplacer dans modd_rain_ice_descr.F90 ... peut etre ...
-REAL,SAVE :: XFVELOS,XLBDAS_MIN ! Wurtz
-REAL,SAVE :: XTRANS_MP_GAMMAS			 ! coefficient to convert lambdas for gamma function Wurtz
 REAL,DIMENSION(2),SAVE :: XFSEDC                 ! Constants for sedimentation fluxes of C
 REAL,SAVE :: XFSEDR,XEXSEDR,                   & ! Constants for sedimentation
              XFSEDI,XEXCSEDI,XEXRSEDI,         & ! fluxes of R, I, S and G

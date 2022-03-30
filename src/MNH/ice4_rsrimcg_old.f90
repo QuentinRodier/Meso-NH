@@ -44,6 +44,7 @@ SUBROUTINE ICE4_RSRIMCG_OLD(KSIZE, ODSOFT, ODCOMPUTE, &
 !!
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !  P. Wautelet 29/05/2019: remove PACK/UNPACK intrinsics (to get more performance and better OpenACC support)
+!  J. Wurtz       03/2022: New snow characteristics with LSNOW_T
 !
 !
 !*      0. DECLARATIONS
@@ -131,9 +132,7 @@ IF(.NOT. ODSOFT) THEN
     !
     !
     WHERE(GRIM(:))
-!      PRSRIMCG_MR(:) = XSRIMCG * PLBDAS(:)**XEXSRIMCG   & ! RSRIMCG
-!                               * (1.0 - ZZW(:) )/PRHODREF(:)
-      PRSRIMCG_MR(:) = XSRIMCG * PLBDAS(:)**XEXSRIMCG   & ! RSRIMCG	!Modif Wurtz concentration snow
+      PRSRIMCG_MR(:) = XSRIMCG * PLBDAS(:)**XEXSRIMCG   & ! RSRIMCG
                                * (1.0 - ZZW(:) )*PRST(:)
       PRSRIMCG_MR(:)=MIN(PRST(:), PRSRIMCG_MR(:))
     END WHERE

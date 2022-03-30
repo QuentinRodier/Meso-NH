@@ -8,7 +8,7 @@ INTERFACE
 SUBROUTINE ICE4_SEDIMENTATION_STAT(KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKTB, KKTE, KKT, KKL, &
                                    &PTSTEP, KRR, OSEDIC, ODEPOSC, PVDEPOSC, PDZZ, &
                                    &PRHODREF, PPABST, PTHT, PRHODJ, &
-				  & PLBDAS, &  ! Modif Wurtz                    
+				  & PLBDAS, &     
                                    &PRCS, PRCT, PRRS, PRRT, PRIS, PRIT,&
                                    &PRSS, PRST, PRGS, PRGT,&
                                    &PINPRC, PINDEP, PINPRR, PINPRI, PINPRS, PINPRG, &
@@ -27,7 +27,7 @@ REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PRHODREF! Reference den
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PPABST  ! absolute pressure at t
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PTHT    ! Theta at time t
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PRHODJ  ! Dry density * Jacobian
-REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PLBDAS ! lambda parameter for snow ! Modif Wurtz
+REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PLBDAS  ! lambda parameter for snow
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(INOUT)           :: PRCS    ! Cloud water m.r. source
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PRCT    ! Cloud water m.r. at t
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(INOUT)           :: PRRS    ! Rain water m.r. source
@@ -56,7 +56,7 @@ END MODULE MODI_ICE4_SEDIMENTATION_STAT
 SUBROUTINE ICE4_SEDIMENTATION_STAT(KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKTB, KKTE, KKT, KKL, &
                                   &PTSTEP, KRR, OSEDIC, ODEPOSC, PVDEPOSC, PDZZ, &
                                   &PRHODREF, PPABST, PTHT, PRHODJ, &
-				  & PLBDAS, &  ! Modif Wurtz                    
+				  & PLBDAS, & 
                                   &PRCS, PRCT, PRRS, PRRT, PRIS, PRIT, &
                                   &PRSS, PRST, PRGS, PRGT,&
                                   &PINPRC, PINDEP, PINPRR, PINPRI, PINPRS, PINPRG, &
@@ -78,6 +78,7 @@ SUBROUTINE ICE4_SEDIMENTATION_STAT(KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKTB,
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
 !  P. Wautelet 21/01/2021: initialize untouched part of PFPR
+!  J. Wurtz       03/2022: New snow characteristics with LSNOW_T
 !
 !
 !*      0. DECLARATIONS
@@ -104,7 +105,7 @@ REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PRHODREF! Reference den
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PPABST  ! absolute pressure at t
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PTHT    ! Theta at time t
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PRHODJ  ! Dry density * Jacobian
-REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PLBDAS ! lambda parameter for snow ! Modif Wurtz
+REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PLBDAS  ! lambda parameter for snow
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(INOUT)           :: PRCS    ! Cloud water m.r. source
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PRCT    ! Cloud water m.r. at t
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(INOUT)           :: PRRS    ! Rain water m.r. source
@@ -193,7 +194,7 @@ END IF
 CALL INTERNAL_SEDIM_STAT(KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKT, KKTB, KKTE, KKL, &
                         &PRHODREF, PDZZ, ZW, PPABST, PTHT, PTSTEP, &
                         &3, &
-		        &PLBDAS, &!Modif Wurtz
+		        &PLBDAS, &
                         &PRRT, PRRS, ZWSED)
 IF (PRESENT(PFPR)) THEN
   DO JK = KKTB , KKTE
@@ -207,7 +208,7 @@ PINPRR(:,:) = ZWSED(:,:,KKB)/XRHOLW                        ! in m/s
 CALL INTERNAL_SEDIM_STAT(KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKT, KKTB, KKTE, KKL, &
                         &PRHODREF, PDZZ, ZW, PPABST, PTHT, PTSTEP, &
                         &4, &
-		        &PLBDAS, &!Modif Wurtz
+		        &PLBDAS, &
                         &PRIT, PRIS, ZWSED)
 IF (PRESENT(PFPR)) THEN
   DO JK = KKTB , KKTE
@@ -221,7 +222,7 @@ PINPRI(:,:) = ZWSED(:,:,KKB)/XRHOLW                        ! in m/s
 CALL INTERNAL_SEDIM_STAT(KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKT, KKTB, KKTE, KKL, &
                         &PRHODREF, PDZZ, ZW, PPABST, PTHT, PTSTEP, &
                         &5, &
-		        &PLBDAS, &!Modif Wurtz
+		        &PLBDAS, &
                         &PRST, PRSS, ZWSED)
 IF (PRESENT(PFPR)) THEN
   DO JK = KKTB , KKTE
@@ -235,7 +236,7 @@ PINPRS(:,:) = ZWSED(:,:,KKB)/XRHOLW                        ! in m/s
 CALL INTERNAL_SEDIM_STAT(KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKT, KKTB, KKTE, KKL, &
                         &PRHODREF, PDZZ, ZW, PPABST, PTHT, PTSTEP, &
                         &6, &
-		        &PLBDAS, &!Modif Wurtz
+		        &PLBDAS, &
                         &PRGT, PRGS, ZWSED)
 IF (PRESENT(PFPR)) THEN
   DO JK = KKTB , KKTE
@@ -250,7 +251,7 @@ IF ( KRR == 7 ) THEN
   CALL INTERNAL_SEDIM_STAT(KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKT, KKTB, KKTE, KKL, &
                           &PRHODREF, PDZZ, ZW, PPABST, PTHT, PTSTEP, &
                           &7, &
-		        &PLBDAS, &!Modif Wurtz
+		        &PLBDAS, &
                           &PRHT, PRHS, ZWSED)
   IF (PRESENT(PFPR)) THEN
     DO JK = KKTB , KKTE
@@ -265,7 +266,7 @@ CONTAINS
   SUBROUTINE INTERNAL_SEDIM_STAT(KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKT, KKTB, KKTE, KKL, &
                                 &PRHODREF, PDZZ, PTSORHODZ, PPABST, PTHT, PTSTEP, &
                                 &KSPE, &
-				&PLBDAS, & !Modif Wurtz
+				&PLBDAS, &
                                 &PRXT, PRXS, PWSED, PSEA, PTOWN)
     !
     !*      0. DECLARATIONS
@@ -284,7 +285,7 @@ CONTAINS
     !
     INTEGER, INTENT(IN) :: KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKT, KKE, KKTB, KKTE, KKL
     REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PRHODREF ! Reference density
-    REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PLBDAS ! lambda parameter for snow ! Modif Wurtz
+    REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PLBDAS ! lambda parameter for snow
     REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PDZZ    ! Layer thikness (m)
     REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PTSORHODZ ! TimeStep Over (Rhodref times delta Z)
     REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PPABST
@@ -409,14 +410,14 @@ CONTAINS
 
         IF(PRXT(JI,JJ,JK) > XRTMIN(KSPE)) THEN
             ZWSEDW1(JI,JJ,JK)= XFSEDS *  &
-                              & PRHODREF(JI,JJ,JK)**(-XCEXVT) * & !    Modif Wurtz snow
-                              & (1+(XFVELOS/PLBDAS(JI,JJ,JK))**XALPHAS)**(-XNUS+XEXSEDS/XALPHAS) * & ! GAMMAGEN LH_EXTENDED
+                              & PRHODREF(JI,JJ,JK)**(-XCEXVT) * & 
+                              & (1+(XFVELOS/PLBDAS(JI,JJ,JK))**XALPHAS)**(-XNUS+XEXSEDS/XALPHAS) * & 
 			      & PLBDAS(JI,JJ,JK)**(XBS+XEXSEDS) 
           ENDIF
           IF ( ZQP(JI,JJ) > XRTMIN(KSPE)) THEN
             ZWSEDW2(JI,JJ,JK)= XFSEDS *  &
-                              & PRHODREF(JI,JJ,JK)**(-XCEXVT) * & !    Modif Wurtz snow Thompson
-                              & (1+(XFVELOS/PLBDAS(JI,JJ,JK))**XALPHAS)**(-XNUS+XEXSEDS/XALPHAS) * & ! GAMMAGEN LH_EXTENDED
+                              & PRHODREF(JI,JJ,JK)**(-XCEXVT) * &
+                              & (1+(XFVELOS/PLBDAS(JI,JJ,JK))**XALPHAS)**(-XNUS+XEXSEDS/XALPHAS) * &
                               & PLBDAS(JI,JJ,JK)**(XBS+XEXSEDS) 
 
           ENDIF
@@ -427,9 +428,6 @@ CONTAINS
         IF(KSPE==3) THEN
           ZFSED=XFSEDR
           ZEXSED=XEXSEDR
-      !  ELSEIF(KSPE==5) THEN
-       !   ZFSED=XFSEDS
-        !  ZEXSED=XEXSEDS
         ELSEIF(KSPE==6) THEN
           ZFSED=XFSEDG
           ZEXSED=XEXSEDG
