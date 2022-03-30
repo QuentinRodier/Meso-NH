@@ -94,6 +94,7 @@ SUBROUTINE ICE4_FAST_RG(KSIZE, LDSOFT, PCOMPUTE, KRR, &
 !!
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !  P. Wautelet 29/05/2019: remove PACK/UNPACK intrinsics (to get more performance and better OpenACC support)
+!  J. Wurtz       03/2022: New snow characteristics with LSNOW_T
 !
 !
 !*      0. DECLARATIONS
@@ -337,10 +338,10 @@ ELSE
     WHERE(GDRY(:))
       PRG_TEND(:, IRSWETG)=XFSDRYG*ZZW(:)                         & ! RSDRYG
                                     / XCOLSG &
-                  *(PLBDAS(:)**(XCXS-XBS))*( PLBDAG(:)**XCXG )    &
-                  *(PRHODREF(:)**(-XCEXVT-1.))                    &
-                       *( XLBSDRYG1/( PLBDAG(:)**2              ) + &
-                          XLBSDRYG2/( PLBDAG(:)   * PLBDAS(:)   ) + &
+                  *(PRST(:))*( PLBDAG(:)**XCXG )    &
+                  *(PRHODREF(:)**(-XCEXVT))                    &
+                       *( XLBSDRYG1/( PLBDAG(:)**2              ) + &	! Il s'agit de moments (?)
+                          XLBSDRYG2/( PLBDAG(:)   *  PLBDAS(:)   ) + &
                           XLBSDRYG3/(               PLBDAS(:)**2))
       PRG_TEND(:, IRSDRYG)=PRG_TEND(:, IRSWETG)*XCOLSG*EXP(XCOLEXSG*(PT(:)-XTT))
     END WHERE

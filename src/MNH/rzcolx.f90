@@ -254,7 +254,7 @@ DO JLBDAX = 1,SIZE(PRZCOLX(:,:),1)
 !                the dimensional spectrum of specy Z
 !
          ZCOLLZ = ZCOLLZ + ZFUNC * PEXZ * ABS( PFALLX*ZDX**PEXFALLX * EXP(-(ZDX*PFALLEXPX)**PALPHAX) &
-                                             - PFALLZ*ZDZ**PEXFALLZ * EXP(-(ZDZ*PFALLEXPZ)**PALPHAZ)) ! Wurtz
+                                             - PFALLZ*ZDZ**PEXFALLZ * EXP(-(ZDZ*PFALLEXPZ)**PALPHAZ))
       END DO
 !
 !*       1.8     Compute the normalization factor by integration over the

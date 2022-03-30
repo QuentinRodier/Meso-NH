@@ -76,7 +76,11 @@ REAL,SAVE :: XALPHAS,XNUS,XLBEXS,XLBS ! Snow/agg.      distribution parameters
 REAL,SAVE :: XALPHAG,XNUG,XLBEXG,XLBG ! Graupel        distribution parameters 
 REAL,SAVE :: XALPHAH,XNUH,XLBEXH,XLBH ! Hail           distribution parameters
 !
-REAL,SAVE :: XLBDAR_MAX,XLBDAS_MAX,XLBDAG_MAX ! Max values allowed for the shape
+LOGICAL,SAVE :: LSNOW_T         ! Snow parameterization from Wurtz (2021)
+REAL,SAVE :: XFVELOS            ! factor for snow fall speed after Thompson (2008)
+REAL,SAVE :: XTRANS_MP_GAMMAS	! coefficient to convert lambdas for gamma function
+!
+REAL,SAVE :: XLBDAR_MAX,XLBDAS_MIN,XLBDAS_MAX,XLBDAG_MAX ! Max values allowed for the shape
                                               ! parameters (rain,snow,graupeln)
 !
 REAL,DIMENSION(:),SAVE,ALLOCATABLE :: XRTMIN ! Min values allowed for the mixing ratios
