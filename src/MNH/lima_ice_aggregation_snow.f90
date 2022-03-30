@@ -60,9 +60,9 @@ END MODULE MODI_LIMA_ICE_AGGREGATION_SNOW
 !              ------------
 !
 USE MODD_CST,             ONLY : XTT
-USE MODD_PARAM_LIMA,      ONLY : XRTMIN, XCTMIN
+USE MODD_PARAM_LIMA,      ONLY : XRTMIN, XCTMIN, XCEXVT, NMOM_I
 USE MODD_PARAM_LIMA_COLD, ONLY : XBI, XCCS, XCXS, XCOLEXIS, XAGGS_CLARGE1, XAGGS_CLARGE2, &
-                                 XAGGS_RLARGE1, XAGGS_RLARGE2, XBS, XLBS
+                                 XAGGS_RLARGE1, XAGGS_RLARGE2, XFIAGGS, XBS, XLBS
 !
 IMPLICIT NONE
 !
@@ -100,6 +100,16 @@ P_RI_AGGS(:) = 0.
 P_CI_AGGS(:) = 0.
 !
 !
+IF (NMOM_I.EQ.1) THEN 
+   WHERE ( (PRIT(:)>XRTMIN(4)) .AND. (PRST(:)>XRTMIN(5)) .AND. LDCOMPUTE(:) )
+      ZZW1(:) = XFIAGGS * EXP( XCOLEXIS*(PT(:)-XTT) ) &
+                        * PRIT(:)                     &
+                        * PLBDS(:)**(1.-0.27-2.)      &
+                        * PRHODREF(:)**(-XCEXVT)
+!
+      P_RI_AGGS(:) = - ZZW1(:)
+   END WHERE
+ELSE
 WHERE ( (PRIT(:)>XRTMIN(4)) .AND. (PRST(:)>XRTMIN(5)) .AND. LDCOMPUTE(:) )
    ZZW1(:) = (PLBDI(:) / PLBDS(:))**3
    ZZW2(:) = (PCIT(:)*(XLBS*PRST(:)*PLBDS(:)**XBS)*EXP(XCOLEXIS*(PT(:)-XTT) )) &
@@ -113,6 +123,7 @@ WHERE ( (PRIT(:)>XRTMIN(4)) .AND. (PRST(:)>XRTMIN(5)) .AND. LDCOMPUTE(:) )
 !
    P_RI_AGGS(:) = - ZZW2(:)
 END WHERE
+END IF
 !
 !
 !-------------------------------------------------------------------------------

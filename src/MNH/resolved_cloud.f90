@@ -980,7 +980,7 @@ SELECT CASE ( HCLOUD )
                      PDTHRAD, PW_ACT,                                                &
                      PRT, PRS, PSVT(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END),                &
                      PSVS(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END),                          &
-                     PTHS, PSRCS, PCLDFR, PICEFR, PRC_MF, PCF_MF                     )
+                     PTHS, PSRCS, PCLDFR, PICEFR, PRC_MF, PRI_MF, PCF_MF             )
    ELSE
     CALL LIMA_ADJUST(KRR, KMI, TPFILE,                                &
                      OSUBG_COND, PTSTEP,                              &

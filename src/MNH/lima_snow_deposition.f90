@@ -69,7 +69,7 @@ SUBROUTINE LIMA_SNOW_DEPOSITION (LDCOMPUTE,                                &
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_PARAM_LIMA,      ONLY : XRTMIN, XCTMIN, XALPHAI, XALPHAS, XNUI, XNUS
+USE MODD_PARAM_LIMA,      ONLY : XRTMIN, XCTMIN, XALPHAI, XALPHAS, XNUI, XNUS, NMOM_I
 USE MODD_PARAM_LIMA_COLD, ONLY : XCXS, XCCS,XLBS,XBS, &
                                  XLBDAS_MAX, XDSCNVI_LIM, XLBDASCNVI_MAX,     &
                                  XC0DEPSI, XC1DEPSI, XR0DEPSI, XR1DEPSI,      &
@@ -114,14 +114,23 @@ P_CI_CNVI(:) = 0.
 P_TH_DEPS(:) = 0.
 P_RS_DEPS(:) = 0.
 !
-! Physical limitations
-!
-!
 ! Looking for regions where computations are necessary
-!
 GMICRO(:) = LDCOMPUTE(:) .AND. PRST(:)>XRTMIN(5)
 !
+IF (NMOM_I.EQ.1) THEN
+   WHERE( GMICRO )
 !
+! Deposition of water vapor on r_s: RVDEPS
+!
+      ZZW(:) = 0.0
+      WHERE ( (PRST(:)>XRTMIN(5)) )
+         ZZW(:) = ( PSSI(:)/(PAI(:)*PRHODREF(:)) ) * &
+              ( X0DEPS*PLBDS(:)**XEX0DEPS + X1DEPS*PCJ(:)*PLBDS(:)**XEX1DEPS )
+         ZZW(:) =    ZZW(:)*(0.5+SIGN(0.5,ZZW(:))) - ABS(ZZW(:))*(0.5-SIGN(0.5,ZZW(:)))
+      END WHERE
+      P_RS_DEPS(:) = ZZW(:)
+   END WHERE
+ELSE
 WHERE( GMICRO )
 !
 !*       2.1    Conversion of snow to r_i: RSCNVI
@@ -160,7 +169,7 @@ WHERE( GMICRO )
    P_RS_DEPS(:) = ZZW(:)
 !!$   P_TH_DEPS(:) = P_RS_DEPS(:) * PLSFACT(:)
 ! 
-END WHERE
-!
+   END WHERE
+END IF
 !
 END SUBROUTINE LIMA_SNOW_DEPOSITION
