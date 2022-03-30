@@ -23,7 +23,8 @@ os.system('rm -f tempgraph*')
 LnameFiles = ['REUNI.1.00A20.004dia.nc', 'REUNI.1.00A20.004.nc']
 
 Dvar_input = {
-'f1':['ZS', 'UT', 'VT', 'WT', 'THT', 'ALT_PRESSURE','ALT_U','ALT_V','ALT_THETA','level','ZTOP', 'longitude','latitude','level_w','time'],
+'f1':['ZS', 'UT', 'VT', 'WT', 'THT', 'ALT_PRESSURE','ALT_U','ALT_V','ALT_THETA','level','ZTOP', 'longitude','latitude','level_w','time',
+    'RN', 'H','LE','GFLUX','HU2M','T2M','W10M','CD','CH','Z0','CE','TS','Z0H'],
 'f2':['LSTHM', 'LSVM']}
 
 #  Read the variables in the files
@@ -65,7 +66,7 @@ Ltitle = ['wind vectors at K=2', 'wind vectors at z = 1500m ']
 Lxlab = ['longitude']*len(Lplot1)
 Lylab = ['latitude']*len(Lplot1)
 Llegendval = [25,25]
-Lcbarlabel = ['(m/s)']*len(Lplot1)
+Llegendlabel = ['(m/s)']*len(Lplot1)
 Larrowstep = [4]*len(Lplot1)
 Lwidth = [0.003]*len(Lplot1)
 Lcolor = ['black']*len(Lplot1)
@@ -73,7 +74,7 @@ Lprojection = [ccrs.PlateCarree()]*len(Lplot1)
 Llvl = [0]*len(Lplot1)
 Lscale = [400]*len(Lplot1)
 fig2 = Panel1.pvector(Lxx=LaxeX, Lyy=LaxeY, Llevel=Llvl, Lvar1=Lplot1, Lvar2=Lplot2, Lxlab=Lxlab, Lylab=Lylab, Ltitle=Ltitle, Lwidth=Lwidth, Larrowstep=Larrowstep, 
-                      Llegendval=Llegendval, Lcbarlabel=Lcbarlabel, Lproj=Lprojection, Lid_overlap=[2,6], ax=fig1.axes, Lscale=Lscale)
+                      Llegendval=Llegendval, Llegendlabel=Llegendlabel, Lproj=Lprojection, Lid_overlap=[2,6], ax=fig1.axes, Lscale=Lscale)
 
 ################################################################
 #########          PANEL 2  # Vertical cross-section
@@ -122,7 +123,7 @@ Lplot1 = [ Dvar['f1']['VM'][:,:,i_slice]]
 Lplot2 = [ Dvar['f1']['WM'][:,:,i_slice]]
 Ltitle = ['Wind']
 Llegendval = [15]
-Lcbarlabel = ['m/s']*len(Lplot)
+Llegendlabel = ['m/s']*len(Lplot)
 Lxlab = ['longitude']*len(Lplot)
 Lylab = ['altitude (m)']*len(Lplot)
 Larrowstep = [1]*len(Lplot)
@@ -133,6 +134,6 @@ Lxlim = [(-21.3,-20.9)]*len(Lplot)
 Lcolor=['lightgray']
 
 fig4 = Panel2.pvector(Lxx=LaxeX, Lyy=LaxeZ, Lvar1=Lplot1, Lvar2=Lplot2, Lxlab=Lxlab, Lylab=Lylab, Ltitle=Ltitle, Lwidth=Lwidth, Larrowstep=Larrowstep, 
-                        Llegendval=Llegendval, Lcbarlabel=Lcbarlabel, Lid_overlap=[6], ax=fig3.axes, Lscale=Lscale, Lylim=Lylim, Lxlim=Lxlim, Lcolor=Lcolor)
+                        Llegendval=Llegendval, Llegendlabel=Llegendlabel, Lid_overlap=[6], ax=fig3.axes, Lscale=Lscale, Lylim=Lylim, Lxlim=Lxlim, Lcolor=Lcolor)
 
 Panel2.save_graph(2,fig4)

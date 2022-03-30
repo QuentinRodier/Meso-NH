@@ -3,6 +3,13 @@ CMNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 CMNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 CMNH_LIC for details. version 1.
 C=======================================================================
+C Modifications:
+C  P. Wautelet 13/02/2018: use ifdef MNH_REAL to prevent problems with intrinsics on Blue Gene/Q
+C  P. Wautelet 22/01/2019: replace obsolete SNGL intrinsics by REAL intrinsics
+C  P. Wautelet 19/04/2019: use kind(0.0d0) instead of kind=8
+C  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+C  P. Wautelet 17/12/2021: add missing definitions of parameter ONE (in POLY3 and POLY3B)
+C=======================================================================
 C
 C *** ISORROPIA CODE
 C *** SUBROUTINE ISOROPIA
@@ -123,11 +130,6 @@ C
 C *** COPYRIGHT 1996-2000, UNIVERSITY OF MIAMI, CARNEGIE MELLON UNIVERSITY
 C *** WRITTEN BY ATHANASIOS NENES
 C
-C Modifications:
-C  P. Wautelet 13/02/2018: use ifdef MNH_REAL to prevent problems with intrinsics on Blue Gene/Q
-C  P. Wautelet 22/01/2019: replace obsolete SNGL intrinsics by REAL intrinsics
-C  P. Wautelet 19/04/2019: use kind(0.0d0) instead of kind=8
-C  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 C=======================================================================
 C
       SUBROUTINE ISOROPIA (WI, RHI, TEMPI,  CNTRL, 
@@ -3882,7 +3884,7 @@ C
       SUBROUTINE POLY3B (A1, A2, A3, RTLW, RTHI, ROOT, ISLV)
 C
       IMPLICIT REAL(kind(0.0d0))           (A-H, O-Z)
-      PARAMETER (ZERO=0.D0, EPS=1D-15, MAXIT=100, NDIV=5)
+      PARAMETER (ZERO=0.D0, ONE=1.D0, EPS=1D-15, MAXIT=100, NDIV=5)
 C
       FUNC(X) = X**3.d0 + A1*X**2.0 + A2*X + A3
 C

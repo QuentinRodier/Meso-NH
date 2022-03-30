@@ -9,7 +9,7 @@ MNH_LIC for details. version 1.
 @author: 07/2021 Quentin Rodier
 """
 import matplotlib as mpl
-mpl.use('Agg')
+#mpl.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib import cm
 from matplotlib.colors import ListedColormap
@@ -21,7 +21,7 @@ class PanelPlot():
     
     def __init__(self, nb_l, nb_c, Lfigsize, bigtitle, titlepad=40, minmaxpad=1.03, timepad=-0.06, lateralminmaxpad=0.86, 
                  labelcolorbarpad=6.0, colorbaraspect=20, colorbarpad=0.04, tickspad=0.8,
-                 minmaxTextSize=10, bigtitleSize=13, titleSize=12,
+                 minmaxTextSize=10, bigtitleSize=13, titleSize=12, legendSize=10,
                  xlabelSize=11, ylabelSize=11, timeSize=11, cbTicksLabelSize=11, cbTitleSize=11, xyTicksLabelSize=10, figBoxLinewidth=1,
                  xyTicksWidth=1, xyTicksLength=6):
 
@@ -45,6 +45,7 @@ class PanelPlot():
         self.titleSize = titleSize               #  Graph title fontsize
         self.xlabelSize = xlabelSize             #  X-label fontsize
         self.ylabelSize = ylabelSize             #  Y-label fontsize
+        self.legendSize = legendSize             #  X/Y plot legend fontsize
         self.timeSize = timeSize                 #  Time attribute of the graphs fontsize
         self.cbTicksLabelSize = cbTicksLabelSize #  Colorbar ticks label fontsize
         self.cbTitleSize = cbTitleSize           #  Colorbar title fontsize
@@ -57,7 +58,7 @@ class PanelPlot():
         #  Initialization of the panel plots
         self.fig = plt.figure(figsize=(self.Lfigsize[0],self.Lfigsize[1]))
         self.fig.set_dpi(125)
-        self.fig.suptitle(self.bigtitle,fontsize=16)
+        self.fig.suptitle(self.bigtitle,fontsize=bigtitleSize)
 
     def save_graph(self, iplt, fig, fig_name='tempgraph'):
       """
@@ -221,7 +222,7 @@ class PanelPlot():
                  Lstep=[], Lstepticks=[], Lcolormap=[], Lcbarlabel=[], LcolorLine=[],
                  Lfacconv=[], ax=[], Lid_overlap=[], colorbar=True, orog=[], Lxlim=[], Lylim=[], Ltime=[], Lpltype=[], LaddWhite_cm=[], LwhiteTop=[]):
       """
-        Horizontal cross section plot
+        Vertical cross section plot
         Parameters :
             - Lxx    : List of x or y coordinate variable or time axis
             - Lzz    : List of z coordinates variable
@@ -246,6 +247,7 @@ class PanelPlot():
             - colorbar   : show colorbar or not
             - LaddWhite_cm : List of boolean to add white color to a colormap at the last bottom (low value) tick colorbar
             - LwhiteTop    : List of boolean to add the white color at the first top (high value). If false, the white is added at the bottom if Laddwhite_cm=T
+            - orog         : Orography variable
       """
       self.ax = ax
       firstCall = (len(self.ax) == 0)
@@ -412,13 +414,16 @@ class PanelPlot():
         #  Legend
         #TODO : Handling legend with overlap two axis lines in the same box. For now, placement is by hand
         if not id_overlap: 
-          self.ax[iax].legend(loc='upper right', bbox_to_anchor=(1, 0.95))
+          self.ax[iax].legend(loc='upper right', bbox_to_anchor=(1, 0.95),fontsize=self.legendSize)
         else:
-          self.ax[iax].legend(loc='upper right', bbox_to_anchor=(1, 0.90))
+          self.ax[iax].legend(loc='upper right', bbox_to_anchor=(1, 0.90),fontsize=self.legendSize)
 
         #  Title
         if Ltitle: self.set_Title(self.ax, iax, Ltitle[i], id_overlap,Lxlab[i], Lylab[i])
     
+        #  Ticks label 
+        self.ax[iax].tick_params(axis='both', labelsize=self.xyTicksLabelSize, width=self.xyTicksWidth, length=self.xyTicksLength, pad=self.tickspad)
+        
         #  X/Y Axis label
         if id_overlap: 
           self.ax[iax].xaxis.tick_top()
@@ -577,7 +582,9 @@ class PanelPlot():
     
         #  X/Y Axis
         self.set_XYaxislab(self.ax, iax, Lxlab[i], Lylab[i])
-        
+        #  Ticks label 
+        self.ax[iax].tick_params(axis='both', labelsize=self.xyTicksLabelSize, width=self.xyTicksWidth, length=self.xyTicksLength, pad=self.tickspad)
+       
         #  Color label on contour-line
         if Lpltype[i]=='c': #  Contour
           if 'GeoAxes' in str(type(self.ax[self.i])): # cartopy does not like the levels arguments in clabel, known issue
@@ -594,11 +601,11 @@ class PanelPlot():
       return self.fig
     
     def pvector(self, Lxx=[], Lyy=[], Lvar1=[], Lvar2=[], Lcarte=[], Llevel=[], Lxlab=[], Lylab=[], 
-                Ltitle=[], Lwidth=[], Larrowstep=[], Lcolor=[], Llegendval=[], Lcbarlabel=[], 
+                Ltitle=[], Lwidth=[], Larrowstep=[], Lcolor=[], Llegendval=[], Llegendlabel=[], 
                 Lproj=[], Lfacconv=[], ax=[], coastLines=True, Lid_overlap=[], Ltime=[], Lscale=[],
                 Lylim=[], Lxlim=[]):
       """
-        Horizontal vectors lines
+        Vectors
         Parameters :
             - Lxx    : List of x or y coordinate variable (lat or ni or nm)
             - Lyy    : List of y coordinates variable (lon or level)
@@ -617,7 +624,7 @@ class PanelPlot():
             - Larrowstep : List of sub-sample (frequency) if too much arrows
             - Lcolor : List of colors for the arrows (default: black)
             - Llegendval : List of value for the legend of the default arrow
-            - Lcbarlabel : List of labels for the legend of the default arrow
+            - Llegendlabel : List of labels for the legend of the default arrow
             - Lproj      : List of ccrs cartopy projection
             - Lfacconv   : List of factors for unit conversion of each variables
             - coastLines : Boolean to plot coast lines and grid lines
@@ -703,7 +710,7 @@ class PanelPlot():
         if Lproj: self.draw_Backmap(coastLines, self.ax[iax], Lproj[i])
     
         # Arrow legend key
-        qk = self.ax[iax].quiverkey(cf, 1.0, -0.05, Llegendval[i], str(Llegendval[i]) + Lcbarlabel[i], labelpos='E', color='black')
+        qk = self.ax[iax].quiverkey(cf, 1.0, -0.05, Llegendval[i], str(Llegendval[i]) + Llegendlabel[i], labelpos='E', color='black')
            
       return self.fig
 

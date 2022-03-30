@@ -104,10 +104,10 @@ def read_netcdf(LnameFiles, Dvar_input, path='.', get_data_only=True, del_empty_
                 Dvar[keyFiles] = read_TIMESfiles_55(theFile, Dvar_input[keyFiles], Dvar[keyFiles], get_data_only, del_empty_dim, removeHALO)
         else:
             Dvar[keyFiles]= read_BACKUPfile(theFile, Dvar_input[keyFiles], Dvar[keyFiles], get_data_only, del_empty_dim, removeHALO)
-        theFile.close()
+        #theFile.close()
     return Dvar
 
-def read_var(theFile, Dvar, var_name, get_data_only=True, del_empty_dim=True, removeHALO=True):
+def read_var(theFile, Dvar, var_name, get_data_only, del_empty_dim=True, removeHALO=True):
     """Read a netCDF4 variable
     
     Parameters
@@ -141,7 +141,6 @@ def read_var(theFile, Dvar, var_name, get_data_only=True, del_empty_dim=True, re
         var_dim_name = theFile.variables[var_name].dimensions
     except:
         raise KeyError("Group and variable name not found in the file, check the group/variable name with ncdump -h YourMNHFile.000.nc. You asked for variable : " + var_name)
-    
     if not get_data_only:
         Dvar[var_name] = theFile.variables[var_name]
     else: 
@@ -180,11 +179,10 @@ def read_var(theFile, Dvar, var_name, get_data_only=True, del_empty_dim=True, re
                 except IndexError:
                     break
             Ldimtosqueeze=tuple(Ldimtosqueeze)
-            Dvar[var_name] = np.squeeze(Dvar[var_name], axis=Ldimtosqueeze) 
-        
+            Dvar[var_name] = np.squeeze(Dvar[var_name], axis=Ldimtosqueeze)
     return Dvar
 
-def read_from_group(theFile, Dvar, group_name, var_name, get_data_only=True, del_empty_dim=True,removeHALO=True):
+def read_from_group(theFile, Dvar, group_name, var_name, get_data_only, del_empty_dim=True,removeHALO=True):
     """Read a variable from a netCDF4 group 
     
     Parameters
@@ -267,7 +265,7 @@ def read_from_group(theFile, Dvar, group_name, var_name, get_data_only=True, del
             Dvar[(group_name,var_name)] = Dvar[(group_name,var_name)].T   
     return Dvar
 
-def read_BACKUPfile(theFile, Dvar_input, Dvar, get_data_only=True, del_empty_dim=True, removeHALO=True):
+def read_BACKUPfile(theFile, Dvar_input, Dvar, get_data_only, del_empty_dim=True, removeHALO=True):
     """Read variables from Meso-NH MASDEV >= 5.5.0 synchronous file
     For all variables in Dvar_input of one file, call functions to read the variable of the group+variable
     
@@ -301,19 +299,18 @@ def read_BACKUPfile(theFile, Dvar_input, Dvar, get_data_only=True, del_empty_dim
     #  Reading date since beginning of the model run
     Dvar['time'] = theFile.variables['time'][0]
     Dvar['date'] = nc.num2date(Dvar['time'],units=theFile.variables['time'].units, calendar = theFile.variables['time'].calendar)
-           
     for var in Dvar_input:
         if type(var) == tuple:
             Dvar = read_from_group(theFile, Dvar, var[0], var[1], get_data_only, del_empty_dim, removeHALO)
         else:
             Dvar = read_var(theFile, Dvar, var, get_data_only, del_empty_dim, removeHALO)
-            
             #  For all variables except scalars, change Fill_Value to NaN
-            Dvar[var]= np.where(Dvar[var] != -99999.0, Dvar[var], np.nan)
-            Dvar[var]= np.where(Dvar[var] != 999.0, Dvar[var], np.nan)
+            if get_data_only:
+                Dvar[var]= np.where(Dvar[var] != -99999.0, Dvar[var], np.nan)
+                Dvar[var]= np.where(Dvar[var] != 999.0, Dvar[var], np.nan)
     return Dvar
 
-def read_TIMESfiles_55(theFile, Dvar_input, Dvar, get_data_only=True, del_empty_dim=True, removeHALO=True):
+def read_TIMESfiles_55(theFile, Dvar_input, Dvar, get_data_only, del_empty_dim=True, removeHALO=True):
     """Read variables from Meso-NH MASDEV >= 5.5.0 diachronic file
     For all variables in Dvar_input of one file, call functions to read the variable of the group+variable
 
@@ -345,7 +342,6 @@ def read_TIMESfiles_55(theFile, Dvar_input, Dvar, get_data_only=True, del_empty_
     Dvar[ifile][('group_name','var_name')] if the group contains more than one variable
     """  
     for var in Dvar_input:
-        print(var)
         if type(var) == tuple:
             Dvar = read_from_group(theFile, Dvar, var[0], var[1], get_data_only, del_empty_dim, removeHALO)
         else:
@@ -354,6 +350,8 @@ def read_TIMESfiles_55(theFile, Dvar_input, Dvar, get_data_only=True, del_empty_
 
 def removetheHALO(idim, var):
     """Remove a NHALO=1 point [1:-1] at a given dimension idim of a variable var
+    TODO: with NHALO=3 with WENO5
+    TODO: with the use of get_data_only=False (NetCDF4 output)
     
     Parameters
     ----------
