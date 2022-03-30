@@ -872,7 +872,8 @@ IF (KMI == 1) THEN
   CFRAC_ICE_SHALLOW_MF = 'S'
   LSEDIM_AFTER = .FALSE.
   LDEPOSC = .FALSE.
-  XVDEPOSC= 0.02 ! 2 cm/s  
+  XVDEPOSC= 0.02 ! 2 cm/s
+  LSNOW_T=.FALSE.
 END IF
 !
 !-------------------------------------------------------------------------------

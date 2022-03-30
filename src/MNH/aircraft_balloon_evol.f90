@@ -154,6 +154,7 @@ USE MODD_PARAM_LIMA_MIXED, ONLY: XDG_L=>XDG,XLBEXG_L=>XLBEXG,XLBG_L=>XLBG,XCCG_L
 USE MODD_PARAM_LIMA_WARM,  ONLY: XLBEXR_L=>XLBEXR,XLBR_L=>XLBR,XBR_L=>XBR,XAR_L=>XAR,&
                                  XBC_L=>XBC,XAC_L=>XAC
 USE MODD_PARAM_n,          ONLY: CCLOUD, CSURF
+USE MODD_PARAM_ICE,        ONLY: LSNOW_T_I=>LSNOW_T
 USE MODD_RAIN_ICE_DESCR,   ONLY: XALPHAR_I=>XALPHAR,XNUR_I=>XNUR,XLBEXR_I=>XLBEXR,&
                                  XLBR_I=>XLBR,XCCR_I=>XCCR,XBR_I=>XBR,XAR_I=>XAR,&
                                  XALPHAC_I=>XALPHAC,XNUC_I=>XNUC,&
@@ -1179,7 +1180,8 @@ IF ( TPFLYER%FLY) THEN
                     ZLB=( ZA*ZCC*MOMG(ZALPHA,ZNU,ZB) )**(-ZLBEX)
                   ENDIF
               END SELECT
-              IF (JLOOP.EQ.5 .AND. CCLOUD=='LIMA' .AND. LSNOW_T_L) THEN
+              IF (JLOOP.EQ.5 .AND. ( (CCLOUD=='LIMA'.AND.LSNOW_T_L).OR. &
+                                     (CCLOUD=='ICE3'.AND.LSNOW_T_I) ) ) THEN
                  IF (ZTEMPZ(JK)>-10.) THEN
                     ZLBDA = MAX(MIN(XLBDAS_MAX, 10**(14.554-0.0423*(ZTEMPZ(JK)+273.15))),XLBDAS_MIN)
                  ELSE

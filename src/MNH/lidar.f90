@@ -99,6 +99,7 @@ USE MODD_RAIN_C2R2_DESCR, ONLY : XLBEXC, XLBEXR, &
                                  XRTMIN, XCTMIN
 USE MODD_PARAM_C2R2,      ONLY : YALPHAC=>XALPHAC,YNUC=>XNUC, &
                                  YALPHAR=>XALPHAR,YNUR=>XNUR
+USE MODD_PARAM_ICE,        ONLY: WSNOW_T=>LSNOW_T
 USE MODD_RAIN_ICE_DESCR,  ONLY : XCCR, WLBEXR=>XLBEXR, XLBR, &
                                  XCCS, XCXS,   XLBEXS, XLBS, &
                                  XCCG, XCXG,   XLBEXG, XLBG, &
@@ -527,7 +528,8 @@ SELECT CASE ( HCLOUD )
 !
             YDSD = 'MONOD'
             ZIWC    = PRHO(JI,JJ,JK)*PRT(JI,JJ,JK,5)
-            IF (HCLOUD=='LIMA' .AND. USNOW_T) THEN
+            IF ( (HCLOUD=='LIMA' .AND. USNOW_T) .OR. &
+                 (HCLOUD=='ICE3' .AND. WSNOW_T) ) THEN
                IF (PT(JI,JJ,JK)>-10.) THEN
                   ZLBDAS = MAX(MIN(XLBDAS_MAX, 10**(14.554-0.0423*(PT(JI,JJ,JK)+273.15))),XLBDAS_MIN)
                ELSE

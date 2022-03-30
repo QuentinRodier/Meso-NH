@@ -96,6 +96,7 @@ END MODULE MODI_RADAR_RAIN_ICE
 !
 USE MODD_CST
 USE MODD_REF
+USE MODD_PARAM_ICE,      ONLY: LSNOW_T_I=>LSNOW_T
 USE MODD_RAIN_ICE_DESCR, ONLY: XALPHAR_I=>XALPHAR,XNUR_I=>XNUR,XLBEXR_I=>XLBEXR,&
                                XLBR_I=>XLBR,XCCR_I=>XCCR,XBR_I=>XBR,XAR_I=>XAR,&
                                XALPHAC_I=>XALPHAC,XNUC_I=>XNUC,&
@@ -328,7 +329,8 @@ END IF
 !               ---------------
 !
 IF (SIZE(PRT,4) >= 5) THEN
-  IF (CCLOUD=='LIMA' .AND. LSNOW_T_L) THEN
+   IF ( (CCLOUD=='LIMA' .AND. LSNOW_T_L) .OR. &
+        (CCLOUD=='ICE3' .AND. LSNOW_T_I) ) THEN
     ZDMELT_FACT = ( (6.0*XAS_L)/(XPI*XRHOLW) )**(2.0)
     ZEXP = 2.0*XBS_L
     WHERE(PTEMP(:,:,:)>-10. .AND. PRT(:,:,:,5).GT.XRTMIN_L(5))

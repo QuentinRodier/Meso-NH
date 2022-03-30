@@ -105,6 +105,7 @@ USE MODD_CST
 USE MODD_IO,           ONLY: TFILEDATA
 USE MODD_LUNIT
 USE MODD_PARAMETERS
+USE MODD_PARAM_ICE,      ONLY: LSNOW_T_I=>LSNOW_T
 USE MODD_RAIN_ICE_DESCR, ONLY: XALPHAR_I=>XALPHAR,XNUR_I=>XNUR,XDR_I=>XDR,XLBEXR_I=>XLBEXR,&
                                XLBR_I=>XLBR,XCCR_I=>XCCR,XBR_I=>XBR,XCR_I=>XCR,&
                                XALPHAS_I=>XALPHAS,XNUS_I=>XNUS,XDS_I=>XDS,XLBEXS_I=>XLBEXS,&
@@ -1284,7 +1285,7 @@ DO JI=1,INBRAD
                     ZDMELT_FACT=6.*ZAS/(XPI*.92*XRHOLW)
                     ZEXP=2.*ZBS !XBS = 1.9 in ini_radar.f90 (bj tab 2.1 p24)
                     !dans ini_rain_ice.f90 :
-                    IF (GLIMA .AND. LSNOW_T_L) THEN
+                    IF ( (GLIMA .AND. LSNOW_T_L) .OR. (.NOT.GLIMA .AND. LSNOW_T_I) ) THEN
                        IF (PT_RAY(JI,JEL,JAZ,JL,JH,JV)>-10.) THEN
                           ZLBDA = MAX(MIN(XLBDAS_MAX, 10**(14.554-0.0423*(PT_RAY(JI,JEL,JAZ,JL,JH,JV)+273.15))),XLBDAS_MIN)
                        ELSE
