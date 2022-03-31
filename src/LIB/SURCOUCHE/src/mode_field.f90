@@ -64,7 +64,6 @@ SUBROUTINE INI_FIELD_LIST()
 ! Modif
 !  J.Escobar 25/04/2018: missing def of FRC
 !------------------------------------------------
-USE MODD_CONF, ONLY: NMODEL
 
 CHARACTER(LEN=64) :: YMSG
 
@@ -1307,7 +1306,7 @@ call Add_field2list( TFIELDDATA( &
   CLONGNAME  = 'NPRO',           &
   CUNITS     = '',               &
   CDIR       = 'XY',             &
-  CCOMMENT   = 'X_Y_Z_Nact',     &
+  CCOMMENT   = 'X_Y_Z_NPRO',     &
   NGRID      = 1,                &
   NTYPE      = TYPEREAL,         &
   NDIMS      = 3,                &
