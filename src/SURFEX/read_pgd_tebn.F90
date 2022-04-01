@@ -307,10 +307,6 @@ IF (TOP%LGARDEN) THEN
     YRECFM='URBTREE'
     CALL READ_SURF(HPROGRAM,YRECFM,TOP%CURBTREE,IRESP)
   END IF
-!  
-ELSE                                        
-  YRECFM='URBTREE'                            
-  CALL READ_SURF(HPROGRAM,YRECFM, TOP%CURBTREE,IRESP)
 !
 ENDIF
 !
