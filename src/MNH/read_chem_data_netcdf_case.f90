@@ -87,6 +87,7 @@ END MODULE MODI_READ_CHEM_DATA_NETCDF_CASE
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !  P. Wautelet 18/09/2019: correct support of 64bit integers (MNH_INT=8)
 !  P. Wautelet 09/03/2021: move some chemistry initializations to ini_nsv
+!  P. Wautelet 01/04/2022: add error if CDUMMY1 not set correctly
 !-------------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -395,6 +396,9 @@ ELSEIF (CDUMMY1=="18") THEN
        itimeindex=3
 ELSEIF ((CDUMMY1=="24").OR.(CDUMMY1=="00")) THEN
        itimeindex=4
+ELSE
+  call Print_msg( NVERB_ERROR, 'GEN', 'READ_CHEM_DATA_NETCDF_CASE', 'CDUMMY1 is not set correctly (or not set at all)' )
+  itimeindex=1
 ENDIF
  istart3d(4) = itimeindex
 !
@@ -423,7 +427,7 @@ enddo
   istatus = nf90_get_var(incid, ips_varid, ZPSMOZ(:,:), start=istart2d, count=icount2d)
   if (istatus /= nf90_noerr) call handle_err(istatus)
 
-  
+
 !------------------------------------------------------------------------
 !* 3 Interpolation of MOZART variable
 !---------------------------------------------------------------------
@@ -580,7 +584,7 @@ DO JI = 1,IMOZ               !for every MNH species existing in MOZ1.nam
     ENDIF      
 
   ENDDO ! JNCHEM
-  DO JNAER = NSV_AERBEG, NSV_AEREND 
+  DO JNAER = NSV_AERBEG, NSV_AEREND
     IF (trim(CAERONAMES(JNAER-NSV_AERBEG+1))==trim(YSPCMNH(JI))) THEN !MNH mechanism species
        IF (ISPCMOZ(JI)==1) THEN
          istatus = nf90_inq_varid(incid, trim(YCHANGE(JI,1)), ind_netcdf)
@@ -661,7 +665,7 @@ DO JI = 1,IMOZ               !for every MNH species existing in MOZ1.nam
     ENDIF         
   ENDDO ! JNAER
 ENDDO  ! JIDO JNCHEM = NSV_CHEMBEG, NSV_CHEMEND  !loop on all MNH species
-DEALLOCATE(YSPCMNH) 
+DEALLOCATE(YSPCMNH)
 DEALLOCATE(TZSTOC)
 DEALLOCATE(ISPCMOZ) 
 DEALLOCATE(ZCOEFMOZART)
