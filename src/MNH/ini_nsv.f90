@@ -1077,7 +1077,7 @@ DO JSV = NSV_AERBEG_A(KMI), NSV_AEREND_A(KMI)
     !Moment 0
     YAEROLONGNAMES = TRIM( CAERONAMES(JAER) ) // ' [nb_aerosols/molec_{air}]'
   ELSE IF ( ANY( JAER == [ JP_CH_SO4i, JP_CH_SO4j, JP_CH_NO3i, JP_CH_NO3j, JP_CH_H2Oi, JP_CH_H2Oj, JP_CH_NH3i, JP_CH_NH3j,   &
-                           JP_CH_OCi,  JP_CH_OCj,  JP_CH_BCi,  JP_CH_BCi,  JP_CH_DSTi, JP_CH_DSTj ] )                        &
+                           JP_CH_OCi,  JP_CH_OCj,  JP_CH_BCi,  JP_CH_BCj,  JP_CH_DSTi, JP_CH_DSTj ] )                        &
             .OR. ( NSOA == 10 .AND.                                                                                          &
                    ANY( JAER == [ JP_CH_SOA1i, JP_CH_SOA1j, JP_CH_SOA2i, JP_CH_SOA2j, JP_CH_SOA3i, JP_CH_SOA3j, JP_CH_SOA4i, &
                                   JP_CH_SOA4j, JP_CH_SOA5i, JP_CH_SOA5j, JP_CH_SOA6i, JP_CH_SOA6j, JP_CH_SOA7i, JP_CH_SOA7j, &
