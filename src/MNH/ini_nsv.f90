@@ -460,6 +460,8 @@ IF (LORILAM.AND.(NEQ .GT. 0)) THEN
   NSV_AEREND_A(KMI)= ISV+NSV_AER_A(KMI)
   ISV              = NSV_AEREND_A(KMI)
   NSV_CHEM_LIST_A(KMI) = NSV_CHEM_LIST_A(KMI) + NSV_AER_A(KMI)
+
+  ALLOCATE( YAEROLONGNAMES(NSV_AER_A(KMI)) )
 ELSE
   NSV_AER_A(KMI)   = 0
 ! force First index to be superior to last index
@@ -1068,8 +1070,6 @@ DO JSV = NSV_AERBEG_A(KMI), NSV_AEREND_A(KMI)
   CSV_CHEM_LIST_A(ICHIDX, KMI) = TRIM( CAERONAMES(JSV-NSV_AERBEG_A(KMI)+1) )
 
   WRITE( YNUM3, '( I3.3 )' ) JSV
-
-  ALLOCATE( YAEROLONGNAMES(NSV_AER_A(KMI)) )
 
   !Determine moment to add meaning of the ppv unit
   JAER = JSV - NSV_AERBEG_A(KMI) + 1
