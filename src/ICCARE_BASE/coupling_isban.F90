@@ -11,7 +11,7 @@ SUBROUTINE COUPLING_ISBA_n (DTCO, UG, U, USS, NAG, CHI, NCHI, MGN, MSF,  DTI, ID
                             PDIR_SW, PSCA_SW, PSW_BANDS, PPS, PPA, PSFTQ, PSFTH, PSFTS, &
                             PSFCO2, PSFU, PSFV, PTRAD, PDIR_ALB, PSCA_ALB, PEMIS,       &
                             PTSURF, PZ0, PZ0H, PQSURF, PPEW_A_COEF, PPEW_B_COEF,        &
-                            PPET_A_COEF, PPEQ_A_COEF, PPET_B_COEF, PPEQ_B_COEF, HTEST    )  
+                            PPET_A_COEF, PPEQ_A_COEF, PPET_B_COEF, PPEQ_B_COEF, HTEST )
 !     ###############################################################################
 !
 !!****  *COUPLING_ISBA_n * - Driver for ISBA time step   
@@ -257,7 +257,8 @@ REAL, DIMENSION(KI), INTENT(IN) :: PPET_A_COEF
 REAL, DIMENSION(KI), INTENT(IN) :: PPEQ_A_COEF
 REAL, DIMENSION(KI), INTENT(IN) :: PPET_B_COEF
 REAL, DIMENSION(KI), INTENT(IN) :: PPEQ_B_COEF
- CHARACTER(LEN=2),    INTENT(IN) :: HTEST ! must be equal to 'OK'
+CHARACTER(LEN=2),    INTENT(IN) :: HTEST ! must be equal to 'OK'
+
 !
 !
 !*      0.2    declarations of local variables
@@ -567,6 +568,22 @@ ENDIF
                    ZSFCO2_TILE, ZSFU_TILE, ZSFV_TILE, PSFTH, PSFTQ,&
                    PSFTS, PSFCO2, PSFU, PSFV    )  
 !
+! Get output megan flux if megan is activated
+
+
+IF (CHI%SVI%NBEQ>0 .AND. CHI%LCH_BIO_FLUX) THEN
+  IF (TRIM(CHI%CPARAMBVOC) == 'MEGAN') THEN
+        ! Get output Isoprene flux
+         DO II=1,SIZE(MGN%XBIOFLX,1)
+            IF ((S%XPATCH(II,1) + S%XPATCH(II,2) + S%XPATCH(II,3)) .LT. 1.) THEN
+               MGN%XBIOFLX(II) = PSFTS(II,MGN%NBIO)/(1. - S%XPATCH(II,1) - S%XPATCH(II,2) - S%XPATCH(II,3))
+            ELSE
+               MGN%XBIOFLX(:) = PSFTS(:,MGN%NBIO)
+            ENDIF
+         ENDDO
+  ENDIF
+ENDIF
+
 !
 !-------------------------------------------------------------------------------
 !Physical properties see by the atmosphere in order to close the energy budget 
@@ -705,7 +722,8 @@ REAL, DIMENSION(PK%NSIZE_P) :: ZP_TRAD    ! radiative temperature               
 REAL, DIMENSION(PK%NSIZE_P) :: ZP_TSURF   ! surface effective temperature (K)
 REAL, DIMENSION(PK%NSIZE_P) :: ZP_Z0      ! roughness length for momentum (m)
 REAL, DIMENSION(PK%NSIZE_P) :: ZP_Z0H     ! roughness length for heat     (m)
-REAL, DIMENSION(PK%NSIZE_P) :: ZP_QSURF   ! specific humidity at surface  (kg/kg)
+REAL, DIMENSION(PK%NSIZE_P):: ZP_QSURF   ! specific humidity at surface  (kg/kg)
+REAL, DIMENSION(PK%NSIZE_P) :: ZP_TEMP, ZP_PAR
 !
 !*  other forcing variables (packed for each patch)
 !
@@ -730,6 +748,7 @@ REAL, DIMENSION(PK%NSIZE_P) :: ZP_FFVNOS   !Floodplain fraction over vegetation 
 !
 REAL, DIMENSION(:,:),ALLOCATABLE :: ZP_PFT
 REAL, DIMENSION(:,:),ALLOCATABLE :: ZP_EF
+REAL, DIMENSION(:), ALLOCATABLE  :: ZP_T24, ZP_PFD24
 INTEGER, DIMENSION(PK%NSIZE_P) :: IP_SLTYP
 !
 REAL, DIMENSION(PK%NSIZE_P,IO%NNBIOMASS) :: ZP_RESP_BIOMASS_INST         ! instantaneous biomass respiration (kgCO2/kgair m/s)
@@ -787,6 +806,16 @@ IF (ASSOCIATED(MGN%XEF)) THEN
 ELSE
   ALLOCATE(ZP_EF(0,0))
 ENDIF
+IF (ASSOCIATED(MGN%XPPFD24)) THEN
+  ALLOCATE(ZP_PFD24(PK%NSIZE_P))
+ELSE
+  ALLOCATE(ZP_PFD24(0))
+ENDIF
+IF (ASSOCIATED(MGN%XT24)) THEN
+  ALLOCATE(ZP_T24(PK%NSIZE_P))
+ELSE
+  ALLOCATE(ZP_T24(0))
+ENDIF
 !--------------------------------------------------------------------------------------
 !
 ! Pack isba forcing outputs
@@ -827,7 +856,10 @@ IF (IO%NPATCH==1) THEN
       ZP_PFT(:,:)  = MGN%XPFT  (:,:)
       ZP_EF(:,:)   = MGN%XEF   (:,:)
       IP_SLTYP(:)  = MGN%NSLTYP  (:)
+      ZP_PFD24(:)  = MGN%XPPFD24 (:)
+      ZP_T24(:)    = MGN%XT24 (:)
    END IF   
+   
    ZP_RNSHADE(:)    = ZRNSHADE    (:)
    ZP_RNSUNLIT(:)   = ZRNSUNLIT   (:)
 
@@ -890,6 +922,8 @@ ELSE
       ZP_PFT(:,JJ) = MGN%XPFT  (:,JI)
       ZP_EF(:,JJ)  = MGN%XEF   (:,JI)
       IP_SLTYP(JJ) = MGN%NSLTYP  (JI)
+      ZP_PFD24(JJ) = MGN%XPPFD24 (JI)
+      ZP_T24(JJ)   = MGN%XT24 (JI)
     ENDDO
   END IF
   DO JJ=1,PK%NSIZE_P
@@ -1160,12 +1194,14 @@ IF (CHI%SVI%NBEQ>0 .AND. CHI%LCH_BIO_FLUX) THEN
   GBK%XIACAN = 0.
  END WHERE
 !UPG*PT
+  IBEG = CHI%SVI%NSV_CHSBEG
+  IEND = CHI%SVI%NSV_CHSEND 
 
- CALL COUPLING_MEGAN_n(MGN, CHI, GK, PEK, &
-                       KYEAR, KMONTH, KDAY, PTIME, IO%LTR_ML, &
-                       IP_SLTYP, ZP_PFT, ZP_EF, &
+ CALL COUPLING_MEGAN_n(MGN, CHI, GK, PEK, PTSTEP, &
+                       KYEAR, KMONTH, KDAY, PTIME, S%TTIME%TIME, IO%LTR_ML, &
+                       IP_SLTYP, ZP_PFT, ZP_EF, ZP_PFD24, ZP_T24,           &
                        ZP_TA, GBK%XIACAN, ZP_TRAD, ZP_RNSUNLIT, ZP_RNSHADE, &
-                       ZP_WIND, ZP_PA, ZP_QA, ZP_SFTS)
+                       ZP_WIND, ZP_PA, ZP_QA, ZP_SFTS(:,IBEG:IEND))
 
  END IF
 ENDIF
