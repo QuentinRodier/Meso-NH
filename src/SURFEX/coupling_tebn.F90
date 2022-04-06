@@ -231,6 +231,7 @@ REAL, DIMENSION(KI)  :: ZQA       ! specific humidity                 (kg/kg)
 REAL, DIMENSION(KI)  :: ZEXNA     ! Exner function at forcing level
 REAL, DIMENSION(KI)  :: ZEXNS     ! Exner function at surface level
 REAL, DIMENSION(KI,KLEV) :: ZWIND ! wind
+INTEGER :: ZCTL
 !
 ! Ouput Diagnostics:
 !
@@ -745,8 +746,8 @@ IF (TOP%LCANOPY) THEN
        !
        DO JLAYER=1,(SB%NLVL-1)
           !
-          IF ( (SB%XZ(JJ,JLAYER  ) .LE. ZAVG_BLD_HEIGHT(JJ)) .AND. &
-               (SB%XZ(JJ,JLAYER+1) .LT. ZAVG_BLD_HEIGHT(JJ)) ) THEN
+          IF ( (SB%XZ(JJ,JLAYER  ) .LT. ZAVG_BLD_HEIGHT(JJ)) .AND. &
+               (SB%XZ(JJ,JLAYER+1) .LE. ZAVG_BLD_HEIGHT(JJ)) ) THEN
              !
              ZWEIGHT = ZWEIGHT + (SB%XZF(JJ,JLAYER+1)-SB%XZF(JJ,JLAYER))
              !
@@ -1000,15 +1001,28 @@ DO JP = 1,TOP%NTEB_PATCH
      ! air temperature
      IF (TOP%LCANOPY) THEN
         DO JI=1,SIZE(GDM%PHV%XH_LAI_MAX)
+           ZCTL=0
            DO JLAYER=1,SB%NLVL-1
               !* finds middle of tree crown
+              !+marine condition si XH_LAI_MAX < XZ(1)
+              IF (GDM%PHV%XH_LAI_MAX(JI) < SB%XZ(JI,1)) THEN
+                 ZCTL=1
+                 ZTA_HVEG(JI) = SB%XT(JI,1)
+                 ZQA_HVEG(JI) = SB%XQ(JI,1)
+              ENDIF
+              !- marine
               IF (SB%XZ(JI,JLAYER)  < GDM%PHV%XH_LAI_MAX(JI) .AND. & 
                   SB%XZ(JI,JLAYER+1)>=GDM%PHV%XH_LAI_MAX(JI)) THEN
+                 ZCTL=1
                  ZCOEF(JI)    = (GDM%PHV%XH_LAI_MAX(JI)-SB%XZ(JI,JLAYER))/ (SB%XZ(JI,JLAYER+1)-SB%XZ(JI,JLAYER))
                  ZTA_HVEG(JI) = SB%XT(JI,JLAYER) + ZCOEF(JI)*(SB%XT(JI,JLAYER+1)-SB%XT(JI,JLAYER))
                  ZQA_HVEG(JI) = SB%XQ(JI,JLAYER) + ZCOEF(JI)*(SB%XQ(JI,JLAYER+1)-SB%XQ(JI,JLAYER))
               ENDIF
            ENDDO
+           IF (ZCTL.NE.1) THEN
+              print*,' CHECK 2 GDM%PHV%XH_LAI_MAX(',JI,') = ',GDM%PHV%XH_LAI_MAX(JI)
+              CALL ABOR1_SFX("COUPLING_TEBN: Tree forcing temperature not attributed")
+           ENDIF
         ENDDO
      ELSE
         ZTA_HVEG = ZT_CAN
