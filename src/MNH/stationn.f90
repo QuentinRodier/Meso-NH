@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2002-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -72,14 +72,15 @@ END MODULE MODI_STATION_n
 !!    MODIFICATIONS
 !!    -------------
 !!     Original 15/02/2002
-!!     A. Lemonsu 19/11/2002
-!!     P.Aumond 01/07/2011 : Add model levels
-!!     C.Lac       04/2013 : Correction on the vertical levels
-!!     C.Lac       04/2013 : Add I/J positioning                   
+!  A. Lemonsu   19/11/2002
+!  P. Aumond    01/07/2011: add model levels
+!  C. Lac          04/2013: correction on the vertical levels
+!  C. Lac          04/2013: add I/J positioning
 !  P. Wautelet  28/03/2018: replace TEMPORAL_DIST by DATETIME_DISTANCE
 !  P. Wautelet  05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet  13/09/2019: budget: simplify and modernize date/time management
 !  R. Schoetter    11/2019: use LCARTESIAN instead of LSTATLAT for multiproc in cartesian
+!  P. Wautelet  07/04/2022: rewrite types for stations
 !
 ! --------------------------------------------------------------------------
 !
@@ -185,27 +186,27 @@ ZYHATM(  IJU  )=1.5*PYHAT(  IJU  )-0.5*PYHAT(  IJU-1)
 !*      3.4  instant of storage
 !            ------------------
 !
-IF ( TSTATION%T_CUR == XUNDEF ) TSTATION%T_CUR = TSTATION%STEP - PTSTEP
+IF ( TSTATIONS_TIME%XTIME_CUR == XUNDEF ) TSTATIONS_TIME%XTIME_CUR = TSTATIONS_TIME%XTSTEP - PTSTEP
 !
-TSTATION%T_CUR = TSTATION%T_CUR + PTSTEP
+TSTATIONS_TIME%XTIME_CUR = TSTATIONS_TIME%XTIME_CUR + PTSTEP
 !
-IF ( TSTATION%T_CUR >= TSTATION%STEP - 1.E-10 ) THEN
+IF ( TSTATIONS_TIME%XTIME_CUR >= TSTATIONS_TIME%XTSTEP - 1.E-10 ) THEN
      GSTORE = .TRUE.
-     TSTATION%T_CUR = TSTATION%T_CUR - TSTATION%STEP
-     TSTATION%N_CUR = TSTATION%N_CUR + 1
-     IN = TSTATION%N_CUR
+     TSTATIONS_TIME%XTIME_CUR = TSTATIONS_TIME%XTIME_CUR - TSTATIONS_TIME%XTSTEP
+     TSTATIONS_TIME%N_CUR = TSTATIONS_TIME%N_CUR + 1
+     IN = TSTATIONS_TIME%N_CUR
 ELSE
      GSTORE = .FALSE.
 END IF
 !
 IF (GSTORE) THEN
 #if 0
-  tstation%tpdates(in)%date%year  = tdtexp%date%year
-  tstation%tpdates(in)%date%month = tdtexp%date%month
-  tstation%tpdates(in)%date%day   = tdtexp%date%day
-  tstation%tpdates(in)%xtime      = tdtexp%xtime + ( in - 1 ) * tstation%step
+  tstations_time%tpdates(in)%date%year  = tdtexp%date%year
+  tstations_time%tpdates(in)%date%month = tdtexp%date%month
+  tstations_time%tpdates(in)%date%day   = tdtexp%date%day
+  tstations_time%tpdates(in)%xtime      = tdtexp%xtime + ( in - 1 ) * tstation%step
 #else
-  tstation%tpdates(in) = tdtcur
+  tstations_time%tpdates(in) = tdtcur
 #endif
 END IF
 !
@@ -236,7 +237,6 @@ IF (GSTATFIRSTCALL) THEN
  ZYCOEF(:)  =XUNDEF
  ZVCOEF(:)  =XUNDEF
 
-!
  DO I=1,NUMBSTAT
 !
   ZTHIS_PROCS(I)=0.
@@ -244,21 +244,21 @@ IF (GSTATFIRSTCALL) THEN
 !*      4.1  X position
 !            ----------
 !
-  IU(I)=COUNT( PXHAT (:)<=TSTATION%X(I) )
-  II(I)=COUNT( ZXHATM(:)<=TSTATION%X(I) )
+  IU(I)=COUNT( PXHAT (:)<=TSTATIONS(I)%XX )
+  II(I)=COUNT( ZXHATM(:)<=TSTATIONS(I)%XX )
 !
-  IF (II(I)<=IIB-1   .AND. LWEST_ll() .AND. .NOT. L1D) TSTATION%ERROR(I)=.TRUE.
-  IF (II(I)>=IIE     .AND. LEAST_ll() .AND. .NOT. L1D) TSTATION%ERROR(I)=.TRUE.
+  IF (II(I)<=IIB-1   .AND. LWEST_ll() .AND. .NOT. L1D) TSTATIONS(I)%LERROR=.TRUE.
+  IF (II(I)>=IIE     .AND. LEAST_ll() .AND. .NOT. L1D) TSTATIONS(I)%LERROR=.TRUE.
 !
 !
 !*      4.2  Y position
 !            ----------
 !
-  IV(I)=COUNT( PYHAT (:)<=TSTATION%Y(I) )
-  IJ(I)=COUNT( ZYHATM(:)<=TSTATION%Y(I) )
+  IV(I)=COUNT( PYHAT (:)<=TSTATIONS(I)%XY )
+  IJ(I)=COUNT( ZYHATM(:)<=TSTATIONS(I)%XY )
 !
-  IF (IJ(I)<=IJB-1   .AND. LSOUTH_ll() .AND. .NOT. L1D) TSTATION%ERROR(I)=.TRUE.
-  IF (IJ(I)>=IJE     .AND. LNORTH_ll() .AND. .NOT. L1D) TSTATION%ERROR(I)=.TRUE.
+  IF (IJ(I)<=IJB-1   .AND. LSOUTH_ll() .AND. .NOT. L1D) TSTATIONS(I)%LERROR=.TRUE.
+  IF (IJ(I)>=IJE     .AND. LNORTH_ll() .AND. .NOT. L1D) TSTATIONS(I)%LERROR=.TRUE.
 !
 !
 !*      4.3  Position of station according to processors
@@ -272,7 +272,7 @@ IF (GSTATFIRSTCALL) THEN
 !            --------------------------------------
     ZXCOEF(I) = 0.
     ZYCOEF(I) = 0.
-    ZUCOEF(I) = 0.         
+    ZUCOEF(I) = 0.
     ZVCOEF(I) = 0.
     IF (ZTHIS_PROCS(I) >0. .AND. .NOT. L1D) THEN
 !----------------------------------------------------------------------------
@@ -280,14 +280,14 @@ IF (GSTATFIRSTCALL) THEN
 !*      6.1  Interpolation coefficient for X
 !            -------------------------------
 !
-       ZXCOEF(I) = (TSTATION%X(I) - ZXHATM(II(I))) / (ZXHATM(II(I)+1) - ZXHATM(II(I)))
+       ZXCOEF(I) = (TSTATIONS(I)%XX - ZXHATM(II(I))) / (ZXHATM(II(I)+1) - ZXHATM(II(I)))
 !
 !
 !
 !*      6.2  Interpolation coefficient for y
 !            -------------------------------
 !
-       ZYCOEF(I) = (TSTATION%Y(I) - ZYHATM(IJ(I))) / (ZYHATM(IJ(I)+1) - ZYHATM(IJ(I)))
+       ZYCOEF(I) = (TSTATIONS(I)%XY - ZYHATM(IJ(I))) / (ZYHATM(IJ(I)+1) - ZYHATM(IJ(I)))
 !
 !-------------------------------------------------------------------
 !
@@ -297,13 +297,13 @@ IF (GSTATFIRSTCALL) THEN
 !*      7.1  Interpolation coefficient for X (for U)
 !            -------------------------------
 !
-       ZUCOEF(I) = (TSTATION%X(I) - PXHAT(IU(I))) / (PXHAT(IU(I)+1) - PXHAT(IU(I)))
+       ZUCOEF(I) = (TSTATIONS(I)%XX - PXHAT(IU(I))) / (PXHAT(IU(I)+1) - PXHAT(IU(I)))
 !
 !
 !*      7.2  Interpolation coefficient for y (for V)
 !            -------------------------------
 !
-       ZVCOEF(I) = (TSTATION%Y(I) - PYHAT(IV(I))) / (PYHAT(IV(I)+1) - PYHAT(IV(I)))
+       ZVCOEF(I) = (TSTATIONS(I)%XY - PYHAT(IV(I))) / (PYHAT(IV(I)+1) - PYHAT(IV(I)))
 !
 !
 
@@ -318,70 +318,70 @@ END IF
 IF (GSTORE) THEN
   DO I=1,NUMBSTAT
      !
-     IF ((ZTHIS_PROCS(I)==1.).AND.(.NOT. TSTATION%ERROR(I))) THEN
-       IF (TSTATION%K(I)/= XUNDEF) THEN
-         J = TSTATION%K(I)
-       ELSE  ! suppose TSTATION%Z(I) /= XUNDEF
+     IF ((ZTHIS_PROCS(I)==1.).AND.(.NOT. TSTATIONS(I)%LERROR)) THEN
+       IF (TSTATIONS(I)%NK/= XUNDEF) THEN
+         J = TSTATIONS(I)%NK
+       ELSE  ! suppose TSTATIONS(I)%XZ /= XUNDEF
         J=1
         DO WHILE ((STATION_INTERP_2D(PZ(:,:,J))-STATION_INTERP_2D(PZ(:,:,2))) &
-        < TSTATION%Z(I))
+        < TSTATIONS(I)%XZ)
          J = J + 1
         END DO
-        IF (((STATION_INTERP_2D(PZ(:,:,J))-STATION_INTERP_2D(PZ(:,:,2)))-TSTATION%Z(I))>&
-       (TSTATION%Z(I)-(STATION_INTERP_2D(PZ(:,:,J-1))-STATION_INTERP_2D(PZ(:,:,2))))) THEN
+        IF (((STATION_INTERP_2D(PZ(:,:,J))-STATION_INTERP_2D(PZ(:,:,2)))-TSTATIONS(I)%XZ)>&
+       (TSTATIONS(I)%XZ-(STATION_INTERP_2D(PZ(:,:,J-1))-STATION_INTERP_2D(PZ(:,:,2))))) THEN
          J=J-1
         ENDIF
        END IF
       !
       IF (LCARTESIAN) THEN
-        TSTATION%ZON (IN,I)   =   STATION_INTERP_2D_U(PU(:,:,J))
-        TSTATION%MER (IN,I)   =   STATION_INTERP_2D_V(PV(:,:,J))
+        TSTATIONS(I)%XZON (IN)   =   STATION_INTERP_2D_U(PU(:,:,J))
+        TSTATIONS(I)%XMER (IN)   =   STATION_INTERP_2D_V(PV(:,:,J))
       ELSE
         ZU_STAT               = STATION_INTERP_2D_U(PU(:,:,J))
         ZV_STAT               = STATION_INTERP_2D_V(PV(:,:,J))
-        ZGAM                  = (XRPK * (TSTATION%LON(I) - XLON0) - XBETA)*(XPI/180.)
-        TSTATION%ZON (IN,I)   =   ZU_STAT     * COS(ZGAM) + ZV_STAT     * SIN(ZGAM)
-        TSTATION%MER (IN,I)   = - ZU_STAT     * SIN(ZGAM) + ZV_STAT     * COS(ZGAM)
+        ZGAM                  = (XRPK * (TSTATIONS(I)%XLON - XLON0) - XBETA)*(XPI/180.)
+        TSTATIONS(I)%XZON (IN)   =   ZU_STAT     * COS(ZGAM) + ZV_STAT     * SIN(ZGAM)
+        TSTATIONS(I)%XMER (IN)   = - ZU_STAT     * SIN(ZGAM) + ZV_STAT     * COS(ZGAM)
       ENDIF
-        TSTATION%W   (IN,I)   = STATION_INTERP_2D(PW(:,:,J))
-        TSTATION%TH  (IN,I)   = STATION_INTERP_2D(PTH(:,:,J))
-        TSTATION%P   (IN,I)   = STATION_INTERP_2D(PP(:,:,J))
+        TSTATIONS(I)%XW   (IN)   = STATION_INTERP_2D(PW(:,:,J))
+        TSTATIONS(I)%XTH  (IN)   = STATION_INTERP_2D(PTH(:,:,J))
+        TSTATIONS(I)%XP   (IN)   = STATION_INTERP_2D(PP(:,:,J))
       !
         DO JSV=1,SIZE(PR,4)
-         TSTATION%R   (IN,I,JSV) = STATION_INTERP_2D(PR(:,:,J,JSV))
+         TSTATIONS(I)%XR   (IN,JSV) = STATION_INTERP_2D(PR(:,:,J,JSV))
         END DO
       !
         DO JSV=1,SIZE(PSV,4)
-         TSTATION%SV  (IN,I,JSV) = STATION_INTERP_2D(PSV(:,:,J,JSV))
+         TSTATIONS(I)%XSV  (IN,JSV) = STATION_INTERP_2D(PSV(:,:,J,JSV))
         END DO
       !
-        IF (SIZE(PTKE)>0) TSTATION%TKE  (IN,I) = STATION_INTERP_2D(PTKE(:,:,J))
-        IF (SIZE(PTS) >0) TSTATION%TSRAD(IN,I) = STATION_INTERP_2D(PTS)
-        TSTATION%ZS(I)      = STATION_INTERP_2D(PZ(:,:,1+JPVEXT))
+        IF (SIZE(PTKE)>0) TSTATIONS(I)%XTKE  (IN) = STATION_INTERP_2D(PTKE(:,:,J))
+        IF (SIZE(PTS) >0) TSTATIONS(I)%XTSRAD(IN) = STATION_INTERP_2D(PTS)
+        TSTATIONS(I)%XZS      = STATION_INTERP_2D(PZ(:,:,1+JPVEXT))
       !
         IF (LDIAG_SURFRAD) THEN
-          TSTATION%ZON10M(IN,I) = STATION_INTERP_2D(XCURRENT_ZON10M)
-          TSTATION%MER10M(IN,I) = STATION_INTERP_2D(XCURRENT_MER10M)
-          TSTATION%T2M   (IN,I) = STATION_INTERP_2D(XCURRENT_T2M   )
-          TSTATION%Q2M   (IN,I) = STATION_INTERP_2D(XCURRENT_Q2M   )
-          TSTATION%HU2M  (IN,I) = STATION_INTERP_2D(XCURRENT_HU2M  )
-          TSTATION%RN    (IN,I) = STATION_INTERP_2D(XCURRENT_RN    ) 
-          TSTATION%H     (IN,I) = STATION_INTERP_2D(XCURRENT_H     ) 
-          TSTATION%LE    (IN,I) = STATION_INTERP_2D(XCURRENT_LE    ) 
-          TSTATION%LEI   (IN,I) = STATION_INTERP_2D(XCURRENT_LEI   ) 
-          TSTATION%GFLUX (IN,I) = STATION_INTERP_2D(XCURRENT_GFLUX ) 
+          TSTATIONS(I)%XZON10M(IN) = STATION_INTERP_2D(XCURRENT_ZON10M)
+          TSTATIONS(I)%XMER10M(IN) = STATION_INTERP_2D(XCURRENT_MER10M)
+          TSTATIONS(I)%XT2M   (IN) = STATION_INTERP_2D(XCURRENT_T2M   )
+          TSTATIONS(I)%XQ2M   (IN) = STATION_INTERP_2D(XCURRENT_Q2M   )
+          TSTATIONS(I)%XHU2M  (IN) = STATION_INTERP_2D(XCURRENT_HU2M  )
+          TSTATIONS(I)%XRN    (IN) = STATION_INTERP_2D(XCURRENT_RN    )
+          TSTATIONS(I)%XH     (IN) = STATION_INTERP_2D(XCURRENT_H     )
+          TSTATIONS(I)%XLE    (IN) = STATION_INTERP_2D(XCURRENT_LE    )
+          TSTATIONS(I)%XLEI   (IN) = STATION_INTERP_2D(XCURRENT_LEI   )
+          TSTATIONS(I)%XGFLUX (IN) = STATION_INTERP_2D(XCURRENT_GFLUX )
          IF (CRAD /= 'NONE') THEN
-          TSTATION%SWD   (IN,I) = STATION_INTERP_2D(XCURRENT_SWD   ) 
-          TSTATION%SWU   (IN,I) = STATION_INTERP_2D(XCURRENT_SWU   ) 
-          TSTATION%LWD   (IN,I) = STATION_INTERP_2D(XCURRENT_LWD   ) 
-          TSTATION%LWU   (IN,I) = STATION_INTERP_2D(XCURRENT_LWU   ) 
-          TSTATION%SWDIR (IN,I) = STATION_INTERP_2D(XCURRENT_SWDIR ) 
-          TSTATION%SWDIFF(IN,I) = STATION_INTERP_2D(XCURRENT_SWDIFF)
-          TSTATION%DSTAOD(IN,I) = STATION_INTERP_2D(XCURRENT_DSTAOD)
+          TSTATIONS(I)%XSWD   (IN) = STATION_INTERP_2D(XCURRENT_SWD   )
+          TSTATIONS(I)%XSWU   (IN) = STATION_INTERP_2D(XCURRENT_SWU   )
+          TSTATIONS(I)%XLWD   (IN) = STATION_INTERP_2D(XCURRENT_LWD   )
+          TSTATIONS(I)%XLWU   (IN) = STATION_INTERP_2D(XCURRENT_LWU   )
+          TSTATIONS(I)%XSWDIR (IN) = STATION_INTERP_2D(XCURRENT_SWDIR )
+          TSTATIONS(I)%XSWDIFF(IN) = STATION_INTERP_2D(XCURRENT_SWDIFF)
+          TSTATIONS(I)%XDSTAOD(IN) = STATION_INTERP_2D(XCURRENT_DSTAOD)
          ENDIF
-          TSTATION%SFCO2 (IN,I) = STATION_INTERP_2D(XCURRENT_SFCO2 ) 
+          TSTATIONS(I)%XSFCO2 (IN) = STATION_INTERP_2D(XCURRENT_SFCO2 )
         ENDIF
-       
+
       !
     END IF
 !
@@ -393,48 +393,48 @@ IF (GSTORE) THEN
 !*     11.2  data stored
 !            -----------
 !
-  CALL DISTRIBUTE_STATION(TSTATION%X   (I))
-  CALL DISTRIBUTE_STATION(TSTATION%Y   (I))
-  CALL DISTRIBUTE_STATION(TSTATION%Z   (I))
-  CALL DISTRIBUTE_STATION(TSTATION%LON (I))
-  CALL DISTRIBUTE_STATION(TSTATION%LAT (I))    
-  CALL DISTRIBUTE_STATION(TSTATION%ZON (IN,I))
-  CALL DISTRIBUTE_STATION(TSTATION%MER (IN,I))
-  CALL DISTRIBUTE_STATION(TSTATION%W   (IN,I))
-  CALL DISTRIBUTE_STATION(TSTATION%P   (IN,I))
-  CALL DISTRIBUTE_STATION(TSTATION%TH  (IN,I))
+  CALL DISTRIBUTE_STATION(TSTATIONS(I)%XX   )
+  CALL DISTRIBUTE_STATION(TSTATIONS(I)%XY   )
+  CALL DISTRIBUTE_STATION(TSTATIONS(I)%XZ   )
+  CALL DISTRIBUTE_STATION(TSTATIONS(I)%XLON )
+  CALL DISTRIBUTE_STATION(TSTATIONS(I)%XLAT )
+  CALL DISTRIBUTE_STATION(TSTATIONS(I)%XZON (IN))
+  CALL DISTRIBUTE_STATION(TSTATIONS(I)%XMER (IN))
+  CALL DISTRIBUTE_STATION(TSTATIONS(I)%XW   (IN))
+  CALL DISTRIBUTE_STATION(TSTATIONS(I)%XP   (IN))
+  CALL DISTRIBUTE_STATION(TSTATIONS(I)%XTH  (IN))
   DO JSV=1,SIZE(PR,4)
-    CALL DISTRIBUTE_STATION(TSTATION%R   (IN,I,JSV))
+    CALL DISTRIBUTE_STATION(TSTATIONS(I)%XR   (IN,JSV))
   END DO
   DO JSV=1,SIZE(PSV,4)
-    CALL DISTRIBUTE_STATION(TSTATION%SV  (IN,I,JSV))
+    CALL DISTRIBUTE_STATION(TSTATIONS(I)%XSV  (IN,JSV))
   END DO
-  IF (SIZE(PTKE)>0) CALL DISTRIBUTE_STATION(TSTATION%TKE  (IN,I))
-  IF (SIZE(PTS) >0) CALL DISTRIBUTE_STATION(TSTATION%TSRAD(IN,I))
-  CALL DISTRIBUTE_STATION(TSTATION%ZS  (I))
+  IF (SIZE(PTKE)>0) CALL DISTRIBUTE_STATION(TSTATIONS(I)%XTKE  (IN))
+  IF (SIZE(PTS) >0) CALL DISTRIBUTE_STATION(TSTATIONS(I)%XTSRAD(IN))
+  CALL DISTRIBUTE_STATION(TSTATIONS(I)%XZS )
   IF (LDIAG_SURFRAD) THEN
-    CALL DISTRIBUTE_STATION(TSTATION%T2M    (IN,I))
-    CALL DISTRIBUTE_STATION(TSTATION%Q2M    (IN,I))
-    CALL DISTRIBUTE_STATION(TSTATION%HU2M   (IN,I))
-    CALL DISTRIBUTE_STATION(TSTATION%ZON10M (IN,I))
-    CALL DISTRIBUTE_STATION(TSTATION%MER10M (IN,I))
-    CALL DISTRIBUTE_STATION(TSTATION%RN     (IN,I))
-    CALL DISTRIBUTE_STATION(TSTATION%H      (IN,I))
-    CALL DISTRIBUTE_STATION(TSTATION%LE     (IN,I))
-    CALL DISTRIBUTE_STATION(TSTATION%LEI    (IN,I))    
-    CALL DISTRIBUTE_STATION(TSTATION%GFLUX  (IN,I))
+    CALL DISTRIBUTE_STATION(TSTATIONS(I)%XT2M    (IN))
+    CALL DISTRIBUTE_STATION(TSTATIONS(I)%XQ2M    (IN))
+    CALL DISTRIBUTE_STATION(TSTATIONS(I)%XHU2M   (IN))
+    CALL DISTRIBUTE_STATION(TSTATIONS(I)%XZON10M (IN))
+    CALL DISTRIBUTE_STATION(TSTATIONS(I)%XMER10M (IN))
+    CALL DISTRIBUTE_STATION(TSTATIONS(I)%XRN     (IN))
+    CALL DISTRIBUTE_STATION(TSTATIONS(I)%XH      (IN))
+    CALL DISTRIBUTE_STATION(TSTATIONS(I)%XLE     (IN))
+    CALL DISTRIBUTE_STATION(TSTATIONS(I)%XLEI    (IN))
+    CALL DISTRIBUTE_STATION(TSTATIONS(I)%XGFLUX  (IN))
    IF (CRAD /= 'NONE') THEN
-    CALL DISTRIBUTE_STATION(TSTATION%SWD    (IN,I))
-    CALL DISTRIBUTE_STATION(TSTATION%SWU    (IN,I))
-    CALL DISTRIBUTE_STATION(TSTATION%LWD    (IN,I))
-    CALL DISTRIBUTE_STATION(TSTATION%LWU    (IN,I))
-    CALL DISTRIBUTE_STATION(TSTATION%SWDIR  (IN,I))
-    CALL DISTRIBUTE_STATION(TSTATION%SWDIFF (IN,I))    
-    CALL DISTRIBUTE_STATION(TSTATION%DSTAOD (IN,I))
+    CALL DISTRIBUTE_STATION(TSTATIONS(I)%XSWD    (IN))
+    CALL DISTRIBUTE_STATION(TSTATIONS(I)%XSWU    (IN))
+    CALL DISTRIBUTE_STATION(TSTATIONS(I)%XLWD    (IN))
+    CALL DISTRIBUTE_STATION(TSTATIONS(I)%XLWU    (IN))
+    CALL DISTRIBUTE_STATION(TSTATIONS(I)%XSWDIR  (IN))
+    CALL DISTRIBUTE_STATION(TSTATIONS(I)%XSWDIFF (IN))
+    CALL DISTRIBUTE_STATION(TSTATIONS(I)%XDSTAOD (IN))
    END IF
-    CALL DISTRIBUTE_STATION(TSTATION%SFCO2  (IN,I))
+    CALL DISTRIBUTE_STATION(TSTATIONS(I)%XSFCO2  (IN))
   ENDIF
-  !
+
  ENDDO
   !
 END IF

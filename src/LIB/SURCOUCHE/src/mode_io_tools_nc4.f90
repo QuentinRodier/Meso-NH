@@ -282,7 +282,7 @@ use modd_profiler_n,    only: numbprofiler, tprofiler
 use modd_radiations_n,  only: nlwb_mnh, nswb_mnh
 use modd_series,        only: lseries
 use modd_series_n,      only: nsnbstept
-use modd_station_n,     only: numbstat, tstation
+use modd_station_n,     only: numbstat, tstations_time
 
 TYPE(TFILEDATA),INTENT(INOUT)        :: TPFILE
 CHARACTER(LEN=*),OPTIONAL,INTENT(IN) :: HPROGRAM_ORIG !To emulate a file coming from this program
@@ -429,7 +429,7 @@ if ( tpfile%ctype == 'MNHDIACHRONIC' ) then
 
   !Dimension for the number of station times
   if ( numbstat > 0 ) then
-    istation = Nint ( ( xseglen - dyn_model(1)%xtstep ) / tstation%step ) + 1
+    istation = Nint ( ( xseglen - dyn_model(1)%xtstep ) / tstations_time%xtstep ) + 1
     call IO_Add_dim_nc4( tpfile, NMNHDIM_STATION_TIME, 'time_station', istation )
   end if
 

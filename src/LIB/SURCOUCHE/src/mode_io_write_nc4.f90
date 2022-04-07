@@ -1459,7 +1459,7 @@ use modd_parameters, only: jphext, JPVEXT
 use modd_profiler_n, only: numbprofiler, tprofiler
 use modd_series,     only: lseries
 use modd_series_n,   only: nsnbstept, tpsdates
-use modd_station_n,  only: numbstat, tstation
+use modd_station_n,  only: numbstat, tstations_time
 use modd_time,       only: tdtseg
 use modd_time_n,     only: tdtcur
 use modd_type_date,  only: date_time
@@ -1841,7 +1841,7 @@ if ( tpfile%lmaster ) then
 
     !Coordinates for the number of station times
     if ( numbstat > 0 ) &
-      call Write_time_coord( tpfile%tncdims%tdims(NMNHDIM_STATION_TIME), 'time axis for stations', tstation%tpdates )
+      call Write_time_coord( tpfile%tncdims%tdims(NMNHDIM_STATION_TIME), 'time axis for stations', tstations_time%tpdates )
 
     !Dimension for the number of series times
     if ( lseries .and. nsnbstept > 0 ) then

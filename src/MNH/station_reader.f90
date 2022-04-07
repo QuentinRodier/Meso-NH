@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2020-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2020-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -9,11 +9,11 @@
 !
 INTERFACE
 !
-SUBROUTINE READ_CSV_STATION(HFILE,TPSTATION,OCARTESIAN)
-        USE MODD_STATION_n
-        CHARACTER(LEN=*),   INTENT(IN)  :: HFILE        ! file to read    
-        TYPE(STATION),      INTENT(OUT) :: TPSTATION       ! stored blade data
-        LOGICAL,            INTENT(IN)  :: OCARTESIAN
+SUBROUTINE READ_CSV_STATION( HFILE, TPSTATIONS, OCARTESIAN )
+USE MODD_STATION_n
+CHARACTER(LEN=*),                          INTENT(IN)    :: HFILE      ! file to read
+TYPE(TSTATIONDATA), DIMENSION(:), POINTER, INTENT(INOUT) :: TPSTATIONS
+LOGICAL,                                   INTENT(IN)    :: OCARTESIAN
 END SUBROUTINE READ_CSV_STATION
 !
 END INTERFACE
@@ -21,7 +21,7 @@ END INTERFACE
 END MODULE MODI_STATION_READER
 !-------------------------------------------------------------------
 !
-!!****  *EOL_READER* -
+!!****  *READ_CSV_STATION* -
 !!
 !!    PURPOSE
 !!    -------
@@ -29,16 +29,16 @@ END MODULE MODI_STATION_READER
 !!
 !!    AUTHOR
 !!    ------
-!!     E. Jézéquel 		*CNRM & IFPEN*
+!!     E. Jezequel *CNRM & IFPEN*
 !!
 !!    MODIFICATIONS
 !!    -------------
 !!     03/2020      Original
-!!
-!!---------------------------------------------------------------
+!  P. Wautelet 07/04/2022: rewrite types for stations
+!---------------------------------------------------------------
 !
 !#########################################################
-SUBROUTINE READ_CSV_STATION(HFILE,TPSTATION,OCARTESIAN)
+SUBROUTINE READ_CSV_STATION( HFILE, TPSTATIONS, OCARTESIAN )
 USE MODD_ALLSTATION_n
 USE MODD_STATION_n
 USE MODD_PARAMETERS
@@ -46,15 +46,15 @@ USE MODD_TYPE_STATION
 USE MODI_INI_SURFSTATION_n
 
 !
-CHARACTER(LEN=*),   INTENT(IN)    :: HFILE      ! file to read
-TYPE(STATION),      INTENT(INOUT) :: TPSTATION     ! dummy stored
-LOGICAL,            INTENT(IN)    :: OCARTESIAN
+CHARACTER(LEN=*),                          INTENT(IN)    :: HFILE      ! file to read
+TYPE(TSTATIONDATA), DIMENSION(:), POINTER, INTENT(INOUT) :: TPSTATIONS
+LOGICAL,                                   INTENT(IN)    :: OCARTESIAN
 !
-INTEGER                           :: INBLINE      ! Nb of line in csv file
+INTEGER            :: INBLINE      ! Nb of line in csv file
 !
-CHARACTER(LEN=80)                 :: YERROR
-CHARACTER(LEN=400)                :: YSTRING
-INTEGER                           :: ILU     ! logical unit of the file
+CHARACTER(LEN=80)  :: YERROR
+CHARACTER(LEN=400) :: YSTRING
+INTEGER            :: ILU     ! logical unit of the file
 !
 
 ! Open file
@@ -76,39 +76,22 @@ END DO
   YERROR = 'Data not found in file : '//TRIM(HFILE)
   PRINT*, YERROR
  ELSE 
-  ! Save number of station 
+  ! Save number of stations
   NUMBSTAT = INBLINE - 1 
-  !
-  ! Allocation des tableaux
-  ALLOCATE(TPSTATION%LAT(NUMBSTAT))
-  ALLOCATE(TPSTATION%LON(NUMBSTAT)) 
-  ALLOCATE(TPSTATION%X(NUMBSTAT))
-  ALLOCATE(TPSTATION%Y(NUMBSTAT))
-  ALLOCATE(TPSTATION%Z(NUMBSTAT))
-  ALLOCATE(TPSTATION%K(NUMBSTAT))
-  !ALLOCATE(TPSTATION%STEP(NUMBSTAT))
-  ALLOCATE(TPSTATION%NAME(NUMBSTAT))
-!  ALLOCATE(TPSTATION%TYPE(NUMBSTAT))
 
-  TPSTATION%LON  = XUNDEF
-  TPSTATION%LAT  = XUNDEF
-  TPSTATION%Z    = XUNDEF
-  TPSTATION%K    = XUNDEF
-  TPSTATION%X    = XUNDEF
-  TPSTATION%Y    = XUNDEF
-  TPSTATION%NAME = "        "
-!  TPSTATION%TYPE = "        "
-  ! Nouvelle lecture 
+  ALLOCATE( TPSTATIONS(NUMBSTAT) )
+
+  ! New reading
   REWIND(ILU)
-  READ(ILU,FMT='(A400)') YSTRING ! Lecture du header
+  READ(ILU,FMT='(A400)') YSTRING ! Reading of header
   !
   ! Save the data
   IF (OCARTESIAN) THEN
    INBLINE = 1
    DO INBLINE=1, NUMBSTAT
     READ(ILU,FMT='(A400)') YSTRING
-    READ(YSTRING,*) TPSTATION%NAME(INBLINE), & !TPSTATION%TYPE(INBLINE),& 
-    TPSTATION%X(INBLINE), TPSTATION%Y(INBLINE), TPSTATION%Z(INBLINE)!,&
+    READ(YSTRING,*) TPSTATIONS(INBLINE)%CNAME, & !TPSTATIONS(INBLINE)%CTYPE,&
+    TPSTATIONS(INBLINE)%XX, TPSTATIONS(INBLINE)%XY, TPSTATIONS(INBLINE)%XZ
    END DO
    REWIND(ILU)
    CLOSE(ILU)
@@ -117,8 +100,8 @@ END DO
    INBLINE = 1
    DO INBLINE=1, NUMBSTAT
     READ(ILU,FMT='(A400)') YSTRING
-    READ(YSTRING,*) TPSTATION%NAME(INBLINE), & !TPSTATION%TYPE(INBLINE),&
-    TPSTATION%LAT(INBLINE), TPSTATION%LON(INBLINE), TPSTATION%Z(INBLINE)!,&
+    READ(YSTRING,*) TPSTATIONS(INBLINE)%CNAME, & !TPSTATIONS(INBLINE)%CTYPE,&
+    TPSTATIONS(INBLINE)%XLAT, TPSTATIONS(INBLINE)%XLON, TPSTATIONS(INBLINE)%XZ
    END DO
    REWIND(ILU)
    CLOSE(ILU)

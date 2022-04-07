@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2002-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -59,9 +59,9 @@
 !!    MODIFICATIONS
 !!    -------------
 !!     Original 15/01/2002
-!!     Modification: 02/2021 (E.Jezequel) Read stations from CVS file
-!!
-!! --------------------------------------------------------------------------
+!  E. Jezequel     02/2021: read stations from CVS file
+!  P. Wautelet  07/04/2022: rewrite types for stations
+! --------------------------------------------------------------------------
 !       
 !*      0. DECLARATIONS
 !          ------------
@@ -86,59 +86,40 @@ IMPLICIT NONE
 INTEGER :: JI
 !
 !----------------------------------------------------------------------------
-!
-!*      1.   Nameliste 
-!            ---------
-
 IF (CFILE_STAT=="NO_INPUT_CSV") THEN
+!
+!*      1.   Namelist
+!            --------
   NUMBSTAT             = NNUMB_STAT
 
   IF (NUMBSTAT > 0) THEN
-    ALLOCATE  (TSTATION%LAT(NUMBSTAT))
-    ALLOCATE  (TSTATION%LON(NUMBSTAT))
-    ALLOCATE  (TSTATION%X(NUMBSTAT))
-    ALLOCATE  (TSTATION%Y(NUMBSTAT))
-    ALLOCATE  (TSTATION%Z(NUMBSTAT))
-    ALLOCATE  (TSTATION%K(NUMBSTAT))
-    ALLOCATE  (TSTATION%NAME(NUMBSTAT))
-    ALLOCATE  (TSTATION%TYPE(NUMBSTAT))
-    !
-    TSTATION%LON  = XUNDEF
-    TSTATION%LAT  = XUNDEF
-    TSTATION%Z    = XUNDEF
-    TSTATION%K    = XUNDEF
-    TSTATION%X    = XUNDEF
-    TSTATION%Y    = XUNDEF
-    TSTATION%NAME = "        "
-    TSTATION%TYPE = "        "
-    !
-    TSTATION%STEP = XSTEP_STAT
-    !
+    ALLOCATE( TSTATIONS(NUMBSTAT) )
+
     IF (LCARTESIAN) THEN
       DO JI=1,NUMBSTAT
-        TSTATION%X(JI)= XX_STAT(JI)
-        TSTATION%Y(JI)= XY_STAT(JI)
-        TSTATION%Z(JI)= XZ_STAT(JI)
-        TSTATION%NAME(JI)= CNAME_STAT(JI)
-        TSTATION%TYPE(JI)= CTYPE_STAT(JI)
+        TSTATIONS(JI)%XX = XX_STAT(JI)
+        TSTATIONS(JI)%XY = XY_STAT(JI)
+        TSTATIONS(JI)%XZ = XZ_STAT(JI)
+        TSTATIONS(JI)%CNAME = CNAME_STAT(JI)
+        TSTATIONS(JI)%CTYPE = CTYPE_STAT(JI)
       END DO
     ELSE
       DO JI=1,NUMBSTAT
-        TSTATION%LAT(JI)= XLAT_STAT(JI)
-        TSTATION%LON(JI)= XLON_STAT(JI)
-        TSTATION%Z(JI)= XZ_STAT(JI)
-        TSTATION%NAME(JI)= CNAME_STAT(JI)
-        TSTATION%TYPE(JI)= CTYPE_STAT(JI)
+        TSTATIONS(JI)%XLAT = XLAT_STAT(JI)
+        TSTATIONS(JI)%XLON = XLON_STAT(JI)
+        TSTATIONS(JI)%XZ   = XZ_STAT(JI)
+        TSTATIONS(JI)%CNAME = CNAME_STAT(JI)
+        TSTATIONS(JI)%CTYPE = CTYPE_STAT(JI)
       END DO
-    ENDIF
-  ENDIF
+    END IF
+  END IF
 ELSE
 !
 !*      2.   CSV DATA 
 !
-  CALL READ_CSV_STATION(CFILE_STAT,TSTATION,LCARTESIAN)
-  TSTATION%STEP = XSTEP_STAT
-END IF 
+  CALL READ_CSV_STATION( CFILE_STAT, TSTATIONS, LCARTESIAN )
+END IF
 
-!
+TSTATIONS_TIME%XTSTEP = XSTEP_STAT
+
 END SUBROUTINE INI_STATION_n
