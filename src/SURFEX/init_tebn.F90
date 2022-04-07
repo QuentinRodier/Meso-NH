@@ -456,7 +456,7 @@ DO JP=1,TOP%NTEB_PATCH
   ENDIF
  ENDIF
   !
-    CALL INIT_TEB_SOIL_PGD_n(HPROGRAM, TOP, NT%AL(JP), GDM, KI, ZPGD_CLAY, ZPGD_SAND)
+  CALL INIT_TEB_SOIL_PGD_n(HPROGRAM, TOP, NT%AL(JP), GDM, KI, ZPGD_CLAY, ZPGD_SAND)
   !
   !-----------------------------------------------------------------------------------
   ! Read vegetation options if LGARDEN
@@ -477,15 +477,16 @@ DO JP=1,TOP%NTEB_PATCH
         GDM%O%XSOILGRID = TOP%XTEB_SOILGRID 
      END IF
      !
+  ENDIF
   !
   ! Clay and sand fraction in garden also initialized here
   ALLOCATE(GDM%K%XCLAY(KI,GDM%O%NGROUND_LAYER))
   ALLOCATE(GDM%K%XSAND(KI,GDM%O%NGROUND_LAYER))
   DO JLAYER=1,GDM%O%NGROUND_LAYER
-      GDM%K%XCLAY(:,JLAYER) = ZPGD_CLAY(:)
-      GDM%K%XSAND(:,JLAYER) = ZPGD_SAND(:)
+     GDM%K%XCLAY(:,JLAYER) = ZPGD_CLAY(:)
+     GDM%K%XSAND(:,JLAYER) = ZPGD_SAND(:)
   ENDDO
-  END IF
+  !
   !
   !-----------------------------------------------------------------------------------
   !
