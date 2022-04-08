@@ -116,19 +116,56 @@ INTEGER,            INTENT(IN) :: KMI     ! MODEL NUMBER
 !
 INTEGER :: ISTORE ! number of storage instants
 INTEGER :: IIU_ll,IJU_ll,IRESP
+INTEGER :: JI
 !
 !----------------------------------------------------------------------------
 !
 !*      1.   Default values
 !            --------------
 !
-CALL DEFAULT_STATION_n()
+NUMBSTAT   = 0
+TSTATIONS_TIME%XTSTEP = XTSTEP
 !
 !
 !*      3.   Stations initialization
 !            -----------------------
 !
-CALL INI_STATION_n()
+IF (CFILE_STAT=="NO_INPUT_CSV") THEN
+!
+!*      1.   Namelist
+!            --------
+  NUMBSTAT             = NNUMB_STAT
+
+  IF (NUMBSTAT > 0) THEN
+    ALLOCATE( TSTATIONS(NUMBSTAT) )
+
+    IF (LCARTESIAN) THEN
+      DO JI=1,NUMBSTAT
+        TSTATIONS(JI)%XX = XX_STAT(JI)
+        TSTATIONS(JI)%XY = XY_STAT(JI)
+        TSTATIONS(JI)%XZ = XZ_STAT(JI)
+        TSTATIONS(JI)%CNAME = CNAME_STAT(JI)
+        TSTATIONS(JI)%CTYPE = CTYPE_STAT(JI)
+      END DO
+    ELSE
+      DO JI=1,NUMBSTAT
+        TSTATIONS(JI)%XLAT = XLAT_STAT(JI)
+        TSTATIONS(JI)%XLON = XLON_STAT(JI)
+        TSTATIONS(JI)%XZ   = XZ_STAT(JI)
+        TSTATIONS(JI)%CNAME = CNAME_STAT(JI)
+        TSTATIONS(JI)%CTYPE = CTYPE_STAT(JI)
+      END DO
+    END IF
+  END IF
+ELSE
+!
+!*      2.   CSV DATA
+!
+  CALL READ_CSV_STATION( CFILE_STAT, TSTATIONS, LCARTESIAN )
+END IF
+
+TSTATIONS_TIME%XTSTEP = XSTEP_STAT
+
 LSTATION = (NUMBSTAT>0)
 !
 !----------------------------------------------------------------------------
@@ -144,16 +181,6 @@ ENDIF
 !
 CONTAINS
 !
-!----------------------------------------------------------------------------
-SUBROUTINE DEFAULT_STATION_n()
-
-USE MODD_DYN_N, ONLY: XTSTEP
-!
-NUMBSTAT   = 0
-TSTATIONS_TIME%XTSTEP = XTSTEP
-!
-END SUBROUTINE DEFAULT_STATION_n
-!----------------------------------------------------------------------------
 !----------------------------------------------------------------------------
 SUBROUTINE ALLOCATE_STATION_n()
 
