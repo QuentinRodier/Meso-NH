@@ -37,7 +37,7 @@
 !             ------------
 !
 use modd_type_date,  only: date_time
-use modd_parameters, only: NUNDEF, XUNDEF
+use modd_parameters, only: NNEGUNDEF, NUNDEF, XUNDEF
 
 implicit none
 
@@ -57,6 +57,7 @@ TYPE TSTATIONDATA
 CHARACTER(LEN=8) :: CNAME = ''  ! station name
 CHARACTER(LEN=8) :: CTYPE = ''  ! station type (currently not used)
 LOGICAL :: LERROR = .FALSE.  !
+LOGICAL :: LPRESENT = .FALSE. ! If true, this station is situated on this process
 
 REAL :: XX   = XUNDEF  ! X(n)
 REAL :: XY   = XUNDEF  ! Y(n)
@@ -64,6 +65,18 @@ REAL :: XZ   = XUNDEF  ! Z(n)
 REAL :: XLON = XUNDEF  ! longitude(n)
 REAL :: XLAT = XUNDEF  ! latitude (n)
 REAL :: XZS  = XUNDEF  ! zs(n)
+
+! Position in the mesh
+INTEGER :: NI_M = NNEGUNDEF ! X position for mass-point axis (between this one and the next one)
+INTEGER :: NJ_M = NNEGUNDEF ! Y position for mass-point axis (between this one and the next one)
+INTEGER :: NI_U = NNEGUNDEF ! X position for u-point axis (between this one and the next one)
+INTEGER :: NJ_V = NNEGUNDEF ! Y position for v-point axis (between this one and the next one)
+
+! Coefficient to interpolate values (stations are usually not exactly on mesh points)
+REAL :: XXMCOEF = XUNDEF ! Interpolation coefficient for X (mass-point)
+REAL :: XYMCOEF = XUNDEF ! Interpolation coefficient for Y (mass-point)
+REAL :: XXUCOEF = XUNDEF ! Interpolation coefficient for X (U-point)
+REAL :: XYVCOEF = XUNDEF ! Interpolation coefficient for Y (V-point)
 
 INTEGER :: NK = NUNDEF ! Model level for altitude comparisons
 

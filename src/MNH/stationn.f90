@@ -152,7 +152,6 @@ REAL    :: ZU_STAT     ! horizontal wind speed at station location (along x)
 REAL    :: ZV_STAT     ! horizontal wind speed at station location (along y)
 REAL    :: ZGAM        ! rotation between meso-nh base and spherical lat-lon base.
 !
-INTEGER :: IINFO_ll   ! return code
 INTEGER :: IRESP      ! return code
 INTEGER :: I          ! loop for stations
 INTEGER :: J          ! loop for levels
@@ -318,7 +317,7 @@ END IF
 IF (GSTORE) THEN
   DO I=1,NUMBSTAT
      !
-     IF ((ZTHIS_PROCS(I)==1.).AND.(.NOT. TSTATIONS(I)%LERROR)) THEN
+     IF ( TSTATIONS(I)%LPRESENT .AND. .NOT. TSTATIONS(I)%LERROR ) THEN
        IF (TSTATIONS(I)%NK/= XUNDEF) THEN
          J = TSTATIONS(I)%NK
        ELSE  ! suppose TSTATIONS(I)%XZ /= XUNDEF
@@ -461,17 +460,17 @@ ELSEIF (L1D) THEN
      JI=2
      JJ=2
 ELSE
-     JI=II(I)
-     JJ=IJ(I)
+     JI=TSTATIONS(I)%NI_M
+     JJ=TSTATIONS(I)%NJ_M
 END IF
 !
 !
 IF ((JI .GE. 1).AND. (JI .LE. SIZE(PA,1)) .AND. &
     (JJ .GE. 1).AND. (JJ .LE. SIZE(PA,2))) &
-PB = (1.-ZYCOEF(I)) * (1.-ZXCOEF(I)) *  PA(JI,JJ)    + &
-     (1.-ZYCOEF(I)) *    (ZXCOEF(I)) *  PA(JI+1,JJ)  + &
-     (   ZYCOEF(I)) * (1.-ZXCOEF(I)) *  PA(JI,JJ+1)  + &
-     (   ZYCOEF(I)) *    (ZXCOEF(I)) *  PA(JI+1,JJ+1)
+PB = (1.-TSTATIONS(I)%XYMCOEF) * (1.-TSTATIONS(I)%XXMCOEF) *  PA(JI,JJ)    + &
+     (1.-TSTATIONS(I)%XYMCOEF) *    (TSTATIONS(I)%XXMCOEF) *  PA(JI+1,JJ)  + &
+     (   TSTATIONS(I)%XYMCOEF) * (1.-TSTATIONS(I)%XXMCOEF) *  PA(JI,JJ+1)  + &
+     (   TSTATIONS(I)%XYMCOEF) *    (TSTATIONS(I)%XXMCOEF) *  PA(JI+1,JJ+1)
 !
 END FUNCTION STATION_INTERP_2D
 !----------------------------------------------------------------------------
@@ -491,16 +490,16 @@ ELSEIF (L1D) THEN
      JI=2
      JJ=2
 ELSE
-     JI=II(I)
-     JJ=IJ(I)
+     JI=TSTATIONS(I)%NI_M
+     JJ=TSTATIONS(I)%NJ_M
 END IF
 !
 IF ((JI .GE. 1).AND. (JI .LE. SIZE(PA,1)) .AND. &
     (JJ .GE. 1).AND. (JJ .LE. SIZE(PA,2))) &
-PB = (1.- ZYCOEF(I)) * (1.-ZUCOEF(I)) * PA(JI  ,JJ  ) &
-   + (1.- ZYCOEF(I)) * (   ZUCOEF(I)) * PA(JI+1,JJ  ) &
-   + (    ZYCOEF(I)) * (1.-ZUCOEF(I)) * PA(JI  ,JJ+1) &
-   + (    ZYCOEF(I)) * (   ZUCOEF(I)) * PA(JI+1,JJ+1)
+PB = (1.- TSTATIONS(I)%XYMCOEF) * (1.-TSTATIONS(I)%XXUCOEF) * PA(JI  ,JJ  ) &
+   + (1.- TSTATIONS(I)%XYMCOEF) * (   TSTATIONS(I)%XXUCOEF) * PA(JI+1,JJ  ) &
+   + (    TSTATIONS(I)%XYMCOEF) * (1.-TSTATIONS(I)%XXUCOEF) * PA(JI  ,JJ+1) &
+   + (    TSTATIONS(I)%XYMCOEF) * (   TSTATIONS(I)%XXUCOEF) * PA(JI+1,JJ+1)
 !
 END FUNCTION STATION_INTERP_2D_U
 !----------------------------------------------------------------------------
@@ -520,16 +519,16 @@ ELSEIF (L1D) THEN
      JI=2
      JJ=2  
 ELSE
-  JI=II(I)
-  JJ=IJ(I)
+  JI=TSTATIONS(I)%NI_M
+  JJ=TSTATIONS(I)%NJ_M
 END IF
 !
 IF ((JI .GT. 0).AND. (JI .LT. SIZE(PA,1)) .AND. &
     (JJ .GT. 0).AND. (JJ .LT. SIZE(PA,2))) &
-PB = (1.- ZVCOEF(I)) * (1.-ZXCOEF(I)) * PA(JI  ,JJ  ) &
-   + (1.- ZVCOEF(I)) * (   ZXCOEF(I)) * PA(JI+1,JJ  ) &
-   + (    ZVCOEF(I)) * (1.-ZXCOEF(I)) * PA(JI  ,JJ+1) &
-   + (    ZVCOEF(I)) * (   ZXCOEF(I)) * PA(JI+1,JJ+1)
+PB = (1.- TSTATIONS(I)%XYVCOEF) * (1.-TSTATIONS(I)%XXMCOEF) * PA(JI  ,JJ  ) &
+   + (1.- TSTATIONS(I)%XYVCOEF) * (   TSTATIONS(I)%XXMCOEF) * PA(JI+1,JJ  ) &
+   + (    TSTATIONS(I)%XYVCOEF) * (1.-TSTATIONS(I)%XXMCOEF) * PA(JI  ,JJ+1) &
+   + (    TSTATIONS(I)%XYVCOEF) * (   TSTATIONS(I)%XXMCOEF) * PA(JI+1,JJ+1)
 !
 END FUNCTION STATION_INTERP_2D_V
 !----------------------------------------------------------------------------
@@ -538,7 +537,9 @@ SUBROUTINE DISTRIBUTE_STATION(PAS)
 !
 REAL, INTENT(INOUT) :: PAS
 !
-PAS = PAS * ZTHIS_PROCS(I)
+INTEGER :: IINFO_ll   ! return code
+
+IF ( .NOT. TSTATIONS(I)%LPRESENT ) PAS = 0.
 CALL REDUCESUM_ll(PAS,IINFO_ll)
 !
 END SUBROUTINE DISTRIBUTE_STATION

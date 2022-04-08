@@ -262,6 +262,8 @@ END SUBROUTINE ALLOCATE_STATION_n
 !----------------------------------------------------------------------------
 SUBROUTINE INI_INTERP_STATION_n()
 !
+USE MODE_STATION_TOOLS, ONLY: STATION_POSITION
+
 INTEGER :: JII
 INTEGER :: IIU, IJU
 !
@@ -271,6 +273,7 @@ IF ( ALL(TSTATIONS(:)%XLAT /= XUNDEF) .AND. ALL(TSTATIONS(:)%XLON /= XUNDEF) ) T
    CALL SM_XYHAT(PLATOR,PLONOR,                        &
                  TSTATIONS(JII)%XLAT, TSTATIONS(JII)%XLON, &
                  TSTATIONS(JII)%XX,   TSTATIONS(JII)%XY    )
+   CALL STATION_POSITION( TSTATIONS(JII) )
  END DO
 ELSE
   CMNHMSG(1) = 'Error in station position'
