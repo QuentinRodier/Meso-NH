@@ -95,7 +95,6 @@ USE MODD_PARAMETERS
 USE MODD_PARAM_n,       ONLY: CRAD
 USE MODD_STATION_n
 USE MODD_ALLSTATION_n,  ONLY: LDIAG_SURFRAD
-USE MODD_SUB_STATION_n
 USE MODD_TIME,          ONLY: tdtexp
 USE MODD_TIME_n,        ONLY: tdtcur
 !
@@ -210,105 +209,6 @@ IF (GSTORE) THEN
 END IF
 !
 !
-!----------------------------------------------------------------------------
-!
-!*      4.   STATION POSITION
-!            --------------
-!
-!*      4.0  initialization of processor test
-!            --------------------------------
-IF (GSTATFIRSTCALL) THEN
- GSTATFIRSTCALL=.FALSE.
-!
- IF (.NOT.(ASSOCIATED(ZTHIS_PROCS))) ALLOCATE(ZTHIS_PROCS(NUMBSTAT))
-!
- IF (.NOT.(ASSOCIATED(II)))     ALLOCATE(II(NUMBSTAT))
- IF (.NOT.(ASSOCIATED(IJ)))     ALLOCATE(IJ(NUMBSTAT))
- IF (.NOT.(ASSOCIATED(IV)))     ALLOCATE(IV(NUMBSTAT))
- IF (.NOT.(ASSOCIATED(IU)))     ALLOCATE(IU(NUMBSTAT))
- IF (.NOT.(ASSOCIATED(ZXCOEF))) ALLOCATE(ZXCOEF(NUMBSTAT))
- IF (.NOT.(ASSOCIATED(ZUCOEF))) ALLOCATE(ZUCOEF(NUMBSTAT))
- IF (.NOT.(ASSOCIATED(ZYCOEF))) ALLOCATE(ZYCOEF(NUMBSTAT))
- IF (.NOT.(ASSOCIATED(ZVCOEF))) ALLOCATE(ZVCOEF(NUMBSTAT))
-
- ZXCOEF(:)  =XUNDEF
- ZUCOEF(:)  =XUNDEF
- ZYCOEF(:)  =XUNDEF
- ZVCOEF(:)  =XUNDEF
-
- DO I=1,NUMBSTAT
-!
-  ZTHIS_PROCS(I)=0.
-!
-!*      4.1  X position
-!            ----------
-!
-  IU(I)=COUNT( PXHAT (:)<=TSTATIONS(I)%XX )
-  II(I)=COUNT( ZXHATM(:)<=TSTATIONS(I)%XX )
-!
-  IF (II(I)<=IIB-1   .AND. LWEST_ll() .AND. .NOT. L1D) TSTATIONS(I)%LERROR=.TRUE.
-  IF (II(I)>=IIE     .AND. LEAST_ll() .AND. .NOT. L1D) TSTATIONS(I)%LERROR=.TRUE.
-!
-!
-!*      4.2  Y position
-!            ----------
-!
-  IV(I)=COUNT( PYHAT (:)<=TSTATIONS(I)%XY )
-  IJ(I)=COUNT( ZYHATM(:)<=TSTATIONS(I)%XY )
-!
-  IF (IJ(I)<=IJB-1   .AND. LSOUTH_ll() .AND. .NOT. L1D) TSTATIONS(I)%LERROR=.TRUE.
-  IF (IJ(I)>=IJE     .AND. LNORTH_ll() .AND. .NOT. L1D) TSTATIONS(I)%LERROR=.TRUE.
-!
-!
-!*      4.3  Position of station according to processors
-!            -------------------------------------------
-!
-  IF (IU(I)>=IIB .AND. IU(I)<=IIE .AND. IV(I)>=IJB .AND. IV(I)<=IJE) ZTHIS_PROCS(I)=1.
-  IF (L1D) ZTHIS_PROCS(I)=1.
-!
-!
-!*      4.4  Computations only on correct processor
-!            --------------------------------------
-    ZXCOEF(I) = 0.
-    ZYCOEF(I) = 0.
-    ZUCOEF(I) = 0.
-    ZVCOEF(I) = 0.
-    IF (ZTHIS_PROCS(I) >0. .AND. .NOT. L1D) THEN
-!----------------------------------------------------------------------------
-!
-!*      6.1  Interpolation coefficient for X
-!            -------------------------------
-!
-       ZXCOEF(I) = (TSTATIONS(I)%XX - ZXHATM(II(I))) / (ZXHATM(II(I)+1) - ZXHATM(II(I)))
-!
-!
-!
-!*      6.2  Interpolation coefficient for y
-!            -------------------------------
-!
-       ZYCOEF(I) = (TSTATIONS(I)%XY - ZYHATM(IJ(I))) / (ZYHATM(IJ(I)+1) - ZYHATM(IJ(I)))
-!
-!-------------------------------------------------------------------
-!
-!*      7.   INITIALIZATIONS FOR INTERPOLATIONS OF U AND V
-!            ---------------------------------------------
-!
-!*      7.1  Interpolation coefficient for X (for U)
-!            -------------------------------
-!
-       ZUCOEF(I) = (TSTATIONS(I)%XX - PXHAT(IU(I))) / (PXHAT(IU(I)+1) - PXHAT(IU(I)))
-!
-!
-!*      7.2  Interpolation coefficient for y (for V)
-!            -------------------------------
-!
-       ZVCOEF(I) = (TSTATIONS(I)%XY - PYHAT(IV(I))) / (PYHAT(IV(I)+1) - PYHAT(IV(I)))
-!
-!
-
-    END IF
- ENDDO
-END IF
 !----------------------------------------------------------------------------
 !
 !*      8.   DATA RECORDING
