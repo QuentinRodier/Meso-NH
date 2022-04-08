@@ -235,7 +235,8 @@ DO II = 1, SIZE(PSULF,1)
                     & -2.0199865087650833e-6 * PTEMP(II)**2 * LOG(ZSULF(II))**3 +  &
                     & -3.0200284885763192e-9 * PTEMP(II)**3 * LOG(ZSULF(II))**3 +  &
                     & (-6.9425267104126316e-3 * LOG(ZSULF(II))**3) / ZAL(II)
-          ! 
+          !
+          PJNUCN(II)=MIN(5.0E1,PJNUCN(II)) 
           PJNUCN(II)=EXP(PJNUCN(II))
           !
           ! 3. Molecules number in the cluster calculation
@@ -303,6 +304,8 @@ DO II = 1, SIZE(PSULF,1)
           !
           IF (ZNACN(II) .lt. 1.) THEN
             !
+             ! print *, 'Warning: number of acid molecules < 1 in nucleation regime, setting na_n=1'
+             !
              ZNACN(II)=1.0
              !
           END IF

@@ -71,7 +71,7 @@ CHARACTER(LEN=6),DIMENSION(24), PARAMETER  :: YPSALT_INI = &
 
 
 INTEGER, DIMENSION(8),PARAMETER  :: JPSALTORDER = (/1,2,3,4,5,6,7,8/)
-INTEGER :: NMODE_SLT= 5  ! number of sea salt modes (max 8; default = 3)
+INTEGER :: NMODE_SLT= 8  ! number of sea salt modes (default = 8)
 
 !Test Thomas (definir rayons et sigma ici si on veut desactiver initialisation MACC)
 
