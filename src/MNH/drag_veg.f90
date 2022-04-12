@@ -79,6 +79,7 @@ SUBROUTINE DRAG_VEG(PTSTEP,PUT,PVT,PTKET,ODEPOTREE, PVDEPOTREE, &
 !*       0.    DECLARATIONS
 !              ------------
 !
+USE MODD_ARGSLIST_ll, ONLY: LIST_ll
 use modd_budget,      only: lbudget_u, lbudget_v, lbudget_rc, lbudget_sv,  lbudget_tke, &
                             NBUDGET_U, NBUDGET_V, NBUDGET_RC, NBUDGET_SV1, NBUDGET_TKE, &
                             tbudgets
@@ -96,6 +97,7 @@ USE MODD_VEG_n
 
 use mode_budget,     only: Budget_store_init, Budget_store_end
 use mode_msg
+USE MODE_ll
 
 USE MODI_MNHGET_SURF_PARAM_n
 USE MODI_SHUMAN
@@ -125,8 +127,10 @@ REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PSVS
 !
 !*       0.2   Declarations of local variables :
 !
-INTEGER    ::  IIU,IJU,IKU,IKV         ! array size along the k direction 
-INTEGER  :: JI, JJ, JK             ! loop index
+INTEGER ::  IIU,IJU,IKU,IKV         ! array size along the k direction
+INTEGER :: JI, JJ, JK             ! loop index
+INTEGER :: IINFO_ll
+TYPE(LIST_ll), POINTER :: TZFIELDS_ll   ! list of fields to exchange
 !
 !
 REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)) ::           &
@@ -186,6 +190,16 @@ WHERE ( ZLAI (:,:) > (XUNDEF-1.) ) ZLAI (:,:) = 0.0
 ZUT_SCAL(:,:,:) = MXF(PUT(:,:,:))
 ZVT_SCAL(:,:,:) = MYF(PVT(:,:,:))
 ZTKET(:,:,:)    = PTKET(:,:,:)
+!
+! Update halo
+!
+NULLIFY(TZFIELDS_ll)
+CALL ADD3DFIELD_ll( TZFIELDS_ll, ZUT_SCAL, 'DRAG_VEG::ZUT_SCAL')
+CALL ADD3DFIELD_ll( TZFIELDS_ll, ZVT_SCAL, 'DRAG_VEG::ZVT_SCAL')
+CALL ADD3DFIELD_ll( TZFIELDS_ll, ZTKET   , 'DRAG_VEG::ZTKET'   )
+CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
+CALL CLEANLIST_ll(TZFIELDS_ll)
+!
 !-------------------------------------------------------------------------------
 !
 !*      1.     Computations of wind tendency due to canopy drag
@@ -242,6 +256,15 @@ ENDDO
 !
 ! To exclude the first vertical level already dealt in rain_ice or rain_c2r2_khko
 GDEP(:,:,2) = .FALSE.
+!
+! Update halo
+!
+NULLIFY(TZFIELDS_ll)
+CALL ADD3DFIELD_ll( TZFIELDS_ll, ZCDRAG  , 'DRAG_VEG::ZCDRAG')
+CALL ADD3DFIELD_ll( TZFIELDS_ll, ZDENSITY, 'DRAG_VEG::ZDENSITY')
+CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
+CALL CLEANLIST_ll(TZFIELDS_ll)
+!
 !
 !*      1.2    Drag force by wall surfaces
 !              ---------------------------
