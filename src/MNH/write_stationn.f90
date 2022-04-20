@@ -4,22 +4,16 @@
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !      ###########################
-MODULE MODI_WRITE_STATION_n
+MODULE MODE_WRITE_STATION_n
 !      ###########################
-!
-INTERFACE
-!
-      SUBROUTINE WRITE_STATION_n(TPDIAFILE)
-!
-USE MODD_IO, ONLY: TFILEDATA
-!
-TYPE(TFILEDATA),  INTENT(IN) :: TPDIAFILE ! diachronic file to write
-!
-END SUBROUTINE WRITE_STATION_n
-!
-END INTERFACE
-!
-END MODULE MODI_WRITE_STATION_n
+
+implicit none
+
+private
+
+public :: WRITE_STATION_n
+
+contains
 !
 !     ##########################################
       SUBROUTINE WRITE_STATION_n(TPDIAFILE)
@@ -931,3 +925,5 @@ DEALLOCATE (IGRID   )
 END SUBROUTINE STATION_DIACHRO_n
 !
 END SUBROUTINE WRITE_STATION_n
+
+END MODULE MODE_WRITE_STATION_n

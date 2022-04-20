@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -383,6 +383,7 @@ USE MODE_ONE_WAY_n
 use mode_write_les_n,               only: Write_les_n
 use mode_write_lfifmn_fordiachro_n, only: WRITE_LFIFMN_FORDIACHRO_n
 USE MODE_WRITE_PROFILER_n,          ONLY: WRITE_PROFILER_n
+USE MODE_WRITE_STATION_n,           ONLY: WRITE_STATION_n
 !
 USE MODI_ADDFLUCTUATIONS
 USE MODI_ADVECTION_METSV
@@ -450,7 +451,6 @@ USE MODI_WRITE_DESFM_n
 USE MODI_WRITE_DIAG_SURF_ATM_N
 USE MODI_WRITE_LFIFM_n
 USE MODI_WRITE_SERIES_n
-USE MODI_WRITE_STATION_n
 USE MODI_WRITE_SURF_ATM_N
 !
 IMPLICIT NONE
