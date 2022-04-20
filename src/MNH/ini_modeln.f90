@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -2565,9 +2565,7 @@ CALL INI_AIRCRAFT_BALLOON(TPINIFILE,XTSTEP, TDTSEG, XSEGLEN, NRR, NSV, &
 !*      24.     STATION initializations
 !              -----------------------
 !
-CALL INI_SURFSTATION_n(XTSTEP, XSEGLEN, NRR, NSV, &
-                       CTURB=="TKEL" , KMI,       &
-                       XLATORI, XLONORI           )
+CALL INI_SURFSTATION_n( )
 !
 !-------------------------------------------------------------------------------
 !

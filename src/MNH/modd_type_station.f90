@@ -30,14 +30,14 @@
 !!    -------------
 !!      Original    15/01/02
 !  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
-!  P. Wautelet 07/04/2022: rewrite types for stations
+!  P. Wautelet    04/2022: restructure stations for better performance, reduce memory usage and correct some problems/bugs
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
 !             ------------
 !
 use modd_type_date,  only: date_time
-use modd_parameters, only: NNEGUNDEF, NUNDEF, XUNDEF
+use modd_parameters, only: NNEGUNDEF, XUNDEF
 
 implicit none
 
@@ -54,10 +54,10 @@ END TYPE TSTATIONTIME
 
 TYPE TSTATIONDATA
 ! Type to store all the data of 1 station
+
 CHARACTER(LEN=8) :: CNAME = ''  ! station name
-CHARACTER(LEN=8) :: CTYPE = ''  ! station type (currently not used)
-LOGICAL :: LERROR = .FALSE.  !
-LOGICAL :: LPRESENT = .FALSE. ! If true, this station is situated on this process
+
+INTEGER :: NID = 0 ! Global identification number of the station (from 1 to total number of stations of the model)
 
 REAL :: XX   = XUNDEF  ! X(n)
 REAL :: XY   = XUNDEF  ! Y(n)
@@ -78,7 +78,7 @@ REAL :: XYMCOEF = XUNDEF ! Interpolation coefficient for Y (mass-point)
 REAL :: XXUCOEF = XUNDEF ! Interpolation coefficient for X (U-point)
 REAL :: XYVCOEF = XUNDEF ! Interpolation coefficient for Y (V-point)
 
-INTEGER :: NK = NUNDEF ! Model level for altitude comparisons
+INTEGER :: NK = NNEGUNDEF ! Model level for altitude comparisons
 
 REAL, DIMENSION(:),   ALLOCATABLE :: XZON    ! zonal wind(n)
 REAL, DIMENSION(:),   ALLOCATABLE :: XMER    ! meridian wind(n)

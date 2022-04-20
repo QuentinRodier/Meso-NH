@@ -61,7 +61,7 @@ END MODULE MODI_WRITE_STATION_n
 !  P. Wautelet 09/10/2020: Write_diachro: use new datatype tpfields
 !  P. Wautelet 03/03/2021: budgets: add tbudiachrometadata type (useful to pass more information to Write_diachro)
 !  P. Wautelet 04/02/2022: use TSVLIST to manage metadata of scalar variables
-!  P. Wautelet 07/04/2022: rewrite types for stations
+!  P. Wautelet    04/2022: restructure stations for better performance, reduce memory usage and correct some problems/bugs
 ! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -70,17 +70,22 @@ END MODULE MODI_WRITE_STATION_n
 USE MODD_ALLSTATION_n,    ONLY: LDIAG_SURFRAD
 use MODD_BUDGET,          ONLY: tbudiachrometadata
 USE MODD_CONF,            ONLY: LCARTESIAN
+USE MODD_CONF_n,          ONLY: NRR
 USE MODD_CST,             ONLY: XRV
-USE MODD_IO,              ONLY: TFILEDATA
+USE MODD_IO,              ONLY: ISNPROC, ISP, TFILEDATA
+USE MODD_MPIF
 USE MODD_NSV,             ONLY: tsvlist, nsv, nsv_aer, nsv_aerbeg, nsv_aerend, &
                                 nsv_dst, nsv_dstbeg, nsv_dstend, nsv_slt, nsv_sltbeg, nsv_sltend
-USE MODD_PARAM_n,         ONLY: CRAD, CSURF
+USE MODD_PARAM_n,         ONLY: CRAD, CSURF, CTURB
 USE MODD_PARAMETERS,      ONLY: XUNDEF
-USE MODD_STATION_n,       only: NUMBSTAT, TSTATIONS
+USE MODD_PRECISION,       ONLY: MNHINT_MPI, MNHREAL_MPI
+USE MODD_STATION_n,       only: NUMBSTAT_LOC, TSTATIONS, tstations_time
+USE MODD_TYPE_STATION,    ONLY: TSTATIONDATA
 !
 USE MODE_AERO_PSD
 USE MODE_DUST_PSD
 USE MODE_SALT_PSD
+USE MODE_STATION_TOOLS,   ONLY: STATION_ALLOCATE
 use MODE_WRITE_DIACHRO,   ONLY: Write_diachro
 !
 IMPLICIT NONE
@@ -94,13 +99,199 @@ TYPE(TFILEDATA),  INTENT(IN) :: TPDIAFILE ! diachronic file to write
 !
 !       0.2  declaration of local variables
 !
-INTEGER     ::  II  ! loop
+INTEGER, PARAMETER :: ITAG = 100
+INTEGER :: IERR
+INTEGER :: JP, JS
+INTEGER :: IDX
+INTEGER :: INUMSTAT  ! Total number of stations (for the current model)
+INTEGER :: IPACKSIZE ! Size of the ZPACK buffer
+INTEGER :: IPOS      ! Position in the ZPACK buffer
+INTEGER :: ISTORE
+INTEGER, DIMENSION(:), ALLOCATABLE :: INSTATPRC    ! Array to store the number of stations per process  (for the current model)
+INTEGER, DIMENSION(:), ALLOCATABLE :: ISTATIDS     ! Intermediate array for MPI communication
+INTEGER, DIMENSION(:), ALLOCATABLE :: ISTATPRCRANK ! Array to store the ranks of the processes where the stations are
+INTEGER, DIMENSION(:), ALLOCATABLE :: IDS          ! Array to store the station number to send
+INTEGER, DIMENSION(:), ALLOCATABLE :: IDISP        ! Array to store the displacements for MPI communications
+REAL,    DIMENSION(:), ALLOCATABLE :: ZPACK        ! Buffer to store raw data of a station (used for MPI communication)
+TYPE(TSTATIONDATA) :: TZSTATION
 !
 !----------------------------------------------------------------------------
-!
-DO II = 1, NUMBSTAT
-  CALL STATION_DIACHRO_n( TSTATIONS(II) )
-ENDDO
+
+ALLOCATE( INSTATPRC(ISNPROC) )
+ALLOCATE( IDS(NUMBSTAT_LOC) )
+
+!Gather number of station present on each process
+CALL MPI_ALLGATHER( NUMBSTAT_LOC, 1, MNHINT_MPI, INSTATPRC, 1, MNHINT_MPI, TPDIAFILE%NMPICOMM, IERR )
+
+!Store the identification number of local stations (these numbers are globals)
+DO JS = 1, NUMBSTAT_LOC
+  IDS(JS) = TSTATIONS(JS)%NID
+END DO
+
+ALLOCATE( IDISP(ISNPROC) )
+IDISP(1) = 0
+DO JP = 2, ISNPROC
+  IDISP(JP) = IDISP(JP-1) + INSTATPRC(JP-1)
+END DO
+
+INUMSTAT = SUM( INSTATPRC(:) )
+ALLOCATE( ISTATIDS(INUMSTAT) )
+ALLOCATE( ISTATPRCRANK(INUMSTAT) )
+
+!Gather the list of all the stations of all processes
+CALL MPI_ALLGATHERV( IDS(:), NUMBSTAT_LOC, MNHINT_MPI, ISTATIDS(:), INSTATPRC(:), &
+                     IDISP(:), MNHINT_MPI, TPDIAFILE%NMPICOMM, IERR )
+
+!Store the rank of each process corresponding to a given station
+IDX = 1
+ISTATPRCRANK(:) = -1
+DO JP = 1, ISNPROC
+  DO JS = 1, INSTATPRC(JP)
+    ISTATPRCRANK(ISTATIDS(IDX)) = JP
+    IDX = IDX + 1
+  END DO
+END DO
+
+CALL STATION_ALLOCATE( TZSTATION, SIZE( tstations_time%tpdates ) )
+
+!Determine the size of the ZPACK buffer used to transfer station data in 1 MPI communication
+IF ( ISNPROC > 1 ) THEN
+  ISTORE = SIZE( TSTATIONS_TIME%TPDATES )
+  IPACKSIZE = 7
+  IPACKSIZE = IPACKSIZE + ISTORE * ( 5 + NRR + NSV )
+  IF ( CTURB == 'TKEL') IPACKSIZE = IPACKSIZE + ISTORE !Tke term
+  IF ( CRAD /= 'NONE' ) IPACKSIZE = IPACKSIZE + ISTORE !XTSRAD term
+  IF (LDIAG_SURFRAD) THEN
+    IF ( CSURF == 'EXTE' ) IPACKSIZE = IPACKSIZE + ISTORE * 10
+    IF ( CRAD /= 'NONE' )  IPACKSIZE = IPACKSIZE + ISTORE * 7
+    IPACKSIZE = IPACKSIZE + ISTORE !XSFCO2 term
+  END IF
+
+  ALLOCATE( ZPACK(IPACKSIZE) )
+END IF
+
+IDX = 1
+
+STATION: DO JS = 1, INUMSTAT
+  IF ( ISTATPRCRANK(JS) == TPDIAFILE%NMASTER_RANK ) THEN
+    !No communication necessary, the station data is already on the writer process
+    IF ( ISP == TPDIAFILE%NMASTER_RANK ) THEN
+      TZSTATION = TSTATIONS(IDX)
+      IDX = IDX + 1
+    END IF
+  ELSE
+    !The station data is not on the writer process
+    IF ( ISP == ISTATPRCRANK(JS) ) THEN
+      ! This process has the data and needs to send it to the writer process
+      IPOS = 1
+      ZPACK(IPOS) = TSTATIONS(IDX)%NID;  IPOS = IPOS + 1
+      ZPACK(IPOS) = TSTATIONS(IDX)%XX;   IPOS = IPOS + 1
+      ZPACK(IPOS) = TSTATIONS(IDX)%XY;   IPOS = IPOS + 1
+      ZPACK(IPOS) = TSTATIONS(IDX)%XZ;   IPOS = IPOS + 1
+      ZPACK(IPOS) = TSTATIONS(IDX)%XLON; IPOS = IPOS + 1
+      ZPACK(IPOS) = TSTATIONS(IDX)%XLAT; IPOS = IPOS + 1
+      ZPACK(IPOS) = TSTATIONS(IDX)%XZS;  IPOS = IPOS + 1
+      ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XZON(:); IPOS = IPOS + ISTORE
+      ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XMER(:); IPOS = IPOS + ISTORE
+      ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XW(:);   IPOS = IPOS + ISTORE
+      ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XP(:);   IPOS = IPOS + ISTORE
+      IF ( CTURB == 'TKEL') THEN
+        ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XTKE(:); IPOS = IPOS + ISTORE
+      END IF
+      ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XTH(:);  IPOS = IPOS + ISTORE
+      ZPACK(IPOS:IPOS+ISTORE*NRR-1) = RESHAPE( TSTATIONS(IDX)%XR(:,:),  [ISTORE*NRR] ); IPOS = IPOS + ISTORE * NRR
+      ZPACK(IPOS:IPOS+ISTORE*NSV-1) = RESHAPE( TSTATIONS(IDX)%XSV(:,:), [ISTORE*NSV] ); IPOS = IPOS + ISTORE * NSV
+      IF ( CRAD /= 'NONE' ) THEN
+        ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XTSRAD(:); IPOS = IPOS + ISTORE
+      END IF
+      IF (LDIAG_SURFRAD) THEN
+        IF ( CSURF == 'EXTE') THEN
+          ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XT2M;    IPOS = IPOS + ISTORE
+          ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XQ2M;    IPOS = IPOS + ISTORE
+          ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XHU2M;   IPOS = IPOS + ISTORE
+          ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XZON10M; IPOS = IPOS + ISTORE
+          ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XMER10M; IPOS = IPOS + ISTORE
+          ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XRN;     IPOS = IPOS + ISTORE
+          ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XH;      IPOS = IPOS + ISTORE
+          ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XLE;     IPOS = IPOS + ISTORE
+          ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XGFLUX;  IPOS = IPOS + ISTORE
+          ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XLEI;    IPOS = IPOS + ISTORE
+        END IF
+        IF ( CRAD /= 'NONE' ) THEN
+          ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XSWD;    IPOS = IPOS + ISTORE
+          ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XSWU;    IPOS = IPOS + ISTORE
+          ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XLWD;    IPOS = IPOS + ISTORE
+          ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XLWU;    IPOS = IPOS + ISTORE
+          ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XSWDIR;  IPOS = IPOS + ISTORE
+          ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XSWDIFF; IPOS = IPOS + ISTORE
+          ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XDSTAOD; IPOS = IPOS + ISTORE
+        END IF
+        ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XSFCO2;    IPOS = IPOS + ISTORE
+      END IF
+
+      CALL MPI_SEND( TSTATIONS(IDX)%CNAME, LEN(TSTATIONS(IDX)%CNAME), MPI_CHARACTER, TPDIAFILE%NMASTER_RANK - 1, &
+                     ITAG, TPDIAFILE%NMPICOMM, IERR )
+      CALL MPI_SEND( ZPACK, IPACKSIZE, MNHREAL_MPI, TPDIAFILE%NMASTER_RANK - 1, ITAG, TPDIAFILE%NMPICOMM, IERR )
+
+      IDX = IDX + 1
+
+    ELSE IF ( ISP == TPDIAFILE%NMASTER_RANK ) THEN
+      ! This process is the writer and will receive the station data from its owner
+      CALL MPI_RECV( TZSTATION%CNAME, LEN(TZSTATION%CNAME), MPI_CHARACTER, &
+                                                    ISTATPRCRANK(JS) - 1, ITAG, TPDIAFILE%NMPICOMM, MPI_STATUS_IGNORE, IERR )
+      CALL MPI_RECV( ZPACK, IPACKSIZE, MNHREAL_MPI, ISTATPRCRANK(JS) - 1, ITAG, TPDIAFILE%NMPICOMM, MPI_STATUS_IGNORE, IERR )
+
+      IPOS = 1
+      TZSTATION%NID  = NINT( ZPACK(IPOS) ); IPOS = IPOS + 1
+      TZSTATION%XX   = ZPACK(IPOS);         IPOS = IPOS + 1
+      TZSTATION%XY   = ZPACK(IPOS);         IPOS = IPOS + 1
+      TZSTATION%XZ   = ZPACK(IPOS);         IPOS = IPOS + 1
+      TZSTATION%XLON = ZPACK(IPOS);         IPOS = IPOS + 1
+      TZSTATION%XLAT = ZPACK(IPOS);         IPOS = IPOS + 1
+      TZSTATION%XZS  = ZPACK(IPOS);         IPOS = IPOS + 1
+      TZSTATION%XZON(:) = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+      TZSTATION%XMER(:) = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+      TZSTATION%XW(:)   = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+      TZSTATION%XP(:)   = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+      IF ( CTURB == 'TKEL') THEN
+        TZSTATION%XTKE(:) = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+      END IF
+      TZSTATION%XTH(:) = ZPACK(IPOS:IPOS+ISTORE-1);  IPOS = IPOS + ISTORE
+      TZSTATION%XR(:,:)  = RESHAPE( ZPACK(IPOS:IPOS+ISTORE*NRR-1), [ ISTORE, NRR ] ); IPOS = IPOS + ISTORE * NRR
+      TZSTATION%XSV(:,:) = RESHAPE( ZPACK(IPOS:IPOS+ISTORE*NSV-1), [ ISTORE, NSV ] ); IPOS = IPOS + ISTORE * NSV
+      IF ( CRAD /= 'NONE' ) THEN
+        TZSTATION%XTSRAD(:) = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+      END IF
+      IF (LDIAG_SURFRAD) THEN
+        IF ( CSURF == 'EXTE' ) THEN
+          TZSTATION%XT2M    = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+          TZSTATION%XQ2M    = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+          TZSTATION%XHU2M   = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+          TZSTATION%XZON10M = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+          TZSTATION%XMER10M = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+          TZSTATION%XRN     = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+          TZSTATION%XH      = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+          TZSTATION%XLE     = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+          TZSTATION%XGFLUX  = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+          TZSTATION%XLEI    = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+        END IF
+        IF ( CRAD /= 'NONE' ) THEN
+          TZSTATION%XSWD    = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+          TZSTATION%XSWU    = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+          TZSTATION%XLWD    = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+          TZSTATION%XLWU    = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+          TZSTATION%XSWDIR  = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+          TZSTATION%XSWDIFF = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+          TZSTATION%XDSTAOD = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+        END IF
+        TZSTATION%XSFCO2 =    ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+      END IF
+    END IF
+  END IF
+
+  CALL STATION_DIACHRO_n( TZSTATION )
+
+END DO STATION
 !
 !----------------------------------------------------------------------------
 !----------------------------------------------------------------------------
@@ -145,13 +336,10 @@ type(tbudiachrometadata)                             :: tzbudiachro
 type(tfieldmetadata_base), dimension(:), allocatable :: tzfields
 !
 !----------------------------------------------------------------------------
-IF (TPSTATION%XX==XUNDEF) RETURN
-IF (TPSTATION%XY==XUNDEF) RETURN
 !
 IPROC = 8 + SIZE(TPSTATION%XR,2) + SIZE(TPSTATION%XSV,2)
 
-IF (TPSTATION%XX==XUNDEF) IPROC = IPROC + 2
-IF (SIZE(TPSTATION%XTKE  )>0) IPROC = IPROC + 1
+IF ( CTURB == 'TKEL' ) IPROC = IPROC + 1
 IF (LDIAG_SURFRAD) THEN
   IF(CSURF=="EXTE") IPROC = IPROC + 10
   IF(CRAD/="NONE")  IPROC = IPROC + 7
@@ -159,8 +347,8 @@ END IF
 IF (LORILAM) IPROC = IPROC + JPMODE*(3+NSOA+NCARB+NSP)
 IF (LDUST) IPROC = IPROC + NMODE_DST*3
 IF (LSALT) IPROC = IPROC + NMODE_SLT*3
-IF (ANY(TPSTATION%XTSRAD(:)/=XUNDEF))  IPROC = IPROC + 1
-IF (ANY(TPSTATION%XSFCO2(:)/=XUNDEF))  IPROC = IPROC + 1
+IF ( CRAD /= 'NONE' )  IPROC = IPROC + 1
+IPROC = IPROC + 1 ! XSFCO2 term
 !
 ALLOCATE (ZWORK6(1,1,1,SIZE(tstations_time%tpdates),1,IPROC))
 ALLOCATE (YCOMMENT(IPROC))
@@ -390,7 +578,7 @@ DO JRR=1,SIZE(TPSTATION%XR,2)
   END IF
 END DO
 !
-IF (SIZE(TPSTATION%XTKE,1)>0) THEN
+IF ( CTURB == 'TKEL' ) THEN
   JPROC = JPROC+1
   YTITLE   (JPROC) = 'Tke'
   YUNIT    (JPROC) = 'm2 s-2'
@@ -642,7 +830,7 @@ IF (SIZE(TPSTATION%XSV,2)>=1) THEN
   END IF
 END IF
 
-IF (ANY(TPSTATION%XTSRAD(:)/=XUNDEF)) THEN
+IF ( CRAD /= 'NONE' ) THEN
   JPROC = JPROC+1
   YTITLE   (JPROC) = 'Tsrad'
   YUNIT    (JPROC) = 'K'
@@ -650,13 +838,13 @@ IF (ANY(TPSTATION%XTSRAD(:)/=XUNDEF)) THEN
   ZWORK6 (1,1,1,:,1,JPROC) = TPSTATION%XTSRAD(:)
 END IF
 !
-IF (ANY(TPSTATION%XSFCO2(:)/=XUNDEF)) THEN
+! IF (ANY(TPSTATION%XSFCO2(:)/=XUNDEF)) THEN
   JPROC = JPROC+1
   YTITLE   (JPROC) = 'SFCO2'
   YUNIT    (JPROC) = 'mg m-2 s-1'
   YCOMMENT (JPROC) = 'CO2 Surface Flux'
   ZWORK6 (1,1,1,:,1,JPROC) = TPSTATION%XSFCO2(:)
-END IF
+! END IF
 !
 !----------------------------------------------------------------------------
 !
@@ -739,7 +927,5 @@ DEALLOCATE (YUNIT   )
 DEALLOCATE (IGRID   )
 !----------------------------------------------------------------------------
 END SUBROUTINE STATION_DIACHRO_n
-!----------------------------------------------------------------------------
-!----------------------------------------------------------------------------
 !
 END SUBROUTINE WRITE_STATION_n

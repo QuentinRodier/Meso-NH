@@ -9,21 +9,7 @@ MODULE MODI_INI_SURFSTATION_n
 !
 INTERFACE
 !
-      SUBROUTINE INI_SURFSTATION_n(PTSTEP, PSEGLEN,          &
-                                   KRR, KSV, OUSETKE, KMI,   &
-                                   PLATOR, PLONOR            )
-!
-USE MODD_TYPE_DATE
-REAL,               INTENT(IN) :: PTSTEP  ! time step
-REAL,               INTENT(IN) :: PSEGLEN ! segment length
-INTEGER,            INTENT(IN) :: KRR     ! number of moist variables
-INTEGER,            INTENT(IN) :: KSV     ! number of scalar variables
-LOGICAL,            INTENT(IN) :: OUSETKE ! flag to use tke
-REAL,               INTENT(IN) :: PLATOR  ! latitude of origine point
-REAL,               INTENT(IN) :: PLONOR  ! longitude of origine point
-INTEGER,            INTENT(IN) :: KMI     ! MODEL NUMBER
-!
-!-------------------------------------------------------------------------------
+      SUBROUTINE INI_SURFSTATION_n( )
 !
 END SUBROUTINE INI_SURFSTATION_n
 !
@@ -31,11 +17,9 @@ END INTERFACE
 !
 END MODULE MODI_INI_SURFSTATION_n
 !
-!     ########################################################
-      SUBROUTINE INI_SURFSTATION_n(PTSTEP, PSEGLEN,          &
-                                   KRR, KSV, OUSETKE, KMI,   &
-                                   PLATOR, PLONOR            )
-!     ########################################################
+!     ###############################
+      SUBROUTINE INI_SURFSTATION_n( )
+!     ###############################
 !
 !
 !!****  *INI_SURFSTATION_n* - 
@@ -69,222 +53,143 @@ END MODULE MODI_INI_SURFSTATION_n
 !  P. Wautelet  13/09/2019: budget: simplify and modernize date/time management
 !  R. Schoetter    11/2019: work for cartesian coordinates + parallel.
 !  E.Jezequel      02/2021: read stations from CVS file
-!  P. Wautelet  07/04/2022: rewrite types for stations
+!  P. Wautelet     04/2022: restructure stations for better performance, reduce memory usage and correct some problems/bugs
 ! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
 !          ------------
 !
 USE MODD_ALLSTATION_n
-USE MODD_CONF
-USE MODD_DIM_n
-USE MODD_DYN_n
-USE MODD_GRID
-USE MODD_GRID_n
-USE MODD_NESTING
-USE MODD_PARAMETERS
-USE MODD_SHADOWS_n
+USE MODD_CONF,           ONLY: LCARTESIAN
+USE MODD_DYN,            ONLY: XSEGLEN
+USE MODD_DYN_n,          ONLY: DYN_MODEL, XTSTEP
+USE MODD_GRID_n,         ONLY: XXHAT, XYHAT
+USE MODD_PARAMETERS,     ONLY: JPHEXT, JPVEXT
 USE MODD_STATION_n
-USE MODD_TYPE_DATE
-USE MODD_VAR_ll,          ONLY: IP
+USE MODD_TYPE_STATION
 !
-USE MODE_GATHER_ll
-USE MODE_GRIDPROJ
-USE MODE_ll
 USE MODE_MSG
-!
-USE MODI_INI_STATION_N
+USE MODE_STATION_READER
+USE MODE_STATION_TOOLS,  ONLY: STATION_ADD, STATION_ALLOCATE, STATION_INI_INTERP, STATION_POSITION
+USE MODE_ALLOCBUFFER_ll, ONLY: ALLOCBUFFER_ll
+USE MODE_GATHER_ll,      ONLY: GATHERALL_FIELD_ll
 !
 IMPLICIT NONE
 !
 !
 !*      0.1  declarations of arguments
 !
-!
-REAL,               INTENT(IN) :: PTSTEP  ! time step
-REAL,               INTENT(IN) :: PSEGLEN ! segment length
-INTEGER,            INTENT(IN) :: KRR     ! number of moist variables
-INTEGER,            INTENT(IN) :: KSV     ! number of scalar variables
-LOGICAL,            INTENT(IN) :: OUSETKE ! flag to use tke
-REAL,               INTENT(IN) :: PLATOR  ! latitude of origine point
-REAL,               INTENT(IN) :: PLONOR  ! longitude of origine point
-INTEGER,            INTENT(IN) :: KMI     ! MODEL NUMBER
+! NONE
 !
 !-------------------------------------------------------------------------------
 !
 !       0.2  declaration of local variables
 !
-INTEGER :: ISTORE ! number of storage instants
-INTEGER :: IIU_ll,IJU_ll,IRESP
+INTEGER :: IERR
+INTEGER :: IIU
+INTEGER :: IJU
+INTEGER :: ISTORE                           ! number of storage instants
 INTEGER :: JI
+LOGICAL :: GALLOCX, GALLOCY
+LOGICAL :: GINSIDE                          ! True if station is inside physical domain of model
+LOGICAL :: GPRESENT                         ! True if station is present on the current process
+REAL    :: ZXHATM_PHYS_MIN, ZYHATM_PHYS_MIN ! Minimum X coordinate of mass points in the physical domain
+REAL    :: ZXHATM_PHYS_MAX, ZYHATM_PHYS_MAX ! Minimum X coordinate of mass points in the physical domain
+REAL, DIMENSION(SIZE(XXHAT)) :: ZXHATM      ! mass point coordinates
+REAL, DIMENSION(SIZE(XYHAT)) :: ZYHATM      ! mass point coordinates
+REAL, DIMENSION(:), POINTER  :: ZXHAT_GLOB
+REAL, DIMENSION(:), POINTER  :: ZYHAT_GLOB
+TYPE(TSTATIONDATA)           :: TZSTATION
 !
 !----------------------------------------------------------------------------
-!
-!*      1.   Default values
-!            --------------
-!
-NUMBSTAT   = 0
-TSTATIONS_TIME%XTSTEP = XTSTEP
-!
-!
-!*      3.   Stations initialization
-!            -----------------------
-!
-IF (CFILE_STAT=="NO_INPUT_CSV") THEN
-!
-!*      1.   Namelist
-!            --------
-  NUMBSTAT             = NNUMB_STAT
-
-  IF (NUMBSTAT > 0) THEN
-    ALLOCATE( TSTATIONS(NUMBSTAT) )
-
-    IF (LCARTESIAN) THEN
-      DO JI=1,NUMBSTAT
-        TSTATIONS(JI)%XX = XX_STAT(JI)
-        TSTATIONS(JI)%XY = XY_STAT(JI)
-        TSTATIONS(JI)%XZ = XZ_STAT(JI)
-        TSTATIONS(JI)%CNAME = CNAME_STAT(JI)
-        TSTATIONS(JI)%CTYPE = CTYPE_STAT(JI)
-      END DO
-    ELSE
-      DO JI=1,NUMBSTAT
-        TSTATIONS(JI)%XLAT = XLAT_STAT(JI)
-        TSTATIONS(JI)%XLON = XLON_STAT(JI)
-        TSTATIONS(JI)%XZ   = XZ_STAT(JI)
-        TSTATIONS(JI)%CNAME = CNAME_STAT(JI)
-        TSTATIONS(JI)%CTYPE = CTYPE_STAT(JI)
-      END DO
-    END IF
-  END IF
-ELSE
-!
-!*      2.   CSV DATA
-!
-  CALL READ_CSV_STATION( CFILE_STAT, TSTATIONS, LCARTESIAN )
-END IF
 
 TSTATIONS_TIME%XTSTEP = XSTEP_STAT
-
-LSTATION = (NUMBSTAT>0)
-!
-!----------------------------------------------------------------------------
-!
-!*      4.   Allocations of storage arrays
-!            -----------------------------
-!
-IF(NUMBSTAT>0) THEN
-  CALL ALLOCATE_STATION_n()
-  IF (.NOT. LCARTESIAN) CALL INI_INTERP_STATION_n()
-ENDIF
-!----------------------------------------------------------------------------
-!
-CONTAINS
-!
-!----------------------------------------------------------------------------
-SUBROUTINE ALLOCATE_STATION_n()
-
-INTEGER :: JI
 
 if ( tstations_time%xtstep < xtstep ) then
   call Print_msg( NVERB_WARNING, 'GEN', 'INI_SURFSTATION_n', 'Timestep for stations was smaller than model timestep' )
   tstations_time%xtstep = xtstep
 end if
 
-ISTORE = NINT ( ( PSEGLEN - DYN_MODEL(1)%XTSTEP ) / TSTATIONS_TIME%XTSTEP ) + 1
+ISTORE = NINT ( ( XSEGLEN - DYN_MODEL(1)%XTSTEP ) / TSTATIONS_TIME%XTSTEP ) + 1
 
 allocate( tstations_time%tpdates(istore) )
+!
+! Prepare positioning data
+!
+IF ( CFILE_STAT /= "NO_INPUT_CSV" .OR. NNUMB_STAT > 0 ) THEN
+  IIU = SIZE( XXHAT )
+  IJU = SIZE( XYHAT )
 
-DO JI = 1, NUMBSTAT
-  ALLOCATE(TSTATIONS(JI)%XZON   (ISTORE))
-  ALLOCATE(TSTATIONS(JI)%XMER   (ISTORE))
-  ALLOCATE(TSTATIONS(JI)%XW     (ISTORE))
-  ALLOCATE(TSTATIONS(JI)%XP     (ISTORE))
-  IF (OUSETKE) THEN
-    ALLOCATE(TSTATIONS(JI)%XTKE (ISTORE))
-  ELSE
-    ALLOCATE(TSTATIONS(JI)%XTKE (0))
+  ! Get global XHAT and YHAT (needed by STATION_POSITION)
+  CALL ALLOCBUFFER_ll( ZXHAT_GLOB, XXHAT, 'XX', GALLOCX )
+  CALL ALLOCBUFFER_ll( ZYHAT_GLOB, XYHAT, 'YY', GALLOCY )
+  CALL GATHERALL_FIELD_ll( 'XX', XXHAT, ZXHAT_GLOB, IERR )
+  CALL GATHERALL_FIELD_ll( 'YY', XYHAT, ZYHAT_GLOB, IERR )
+
+  ! Interpolations of model variables to mass points
+  ZXHATM(1:IIU-1) = 0.5 * XXHAT(1:IIU-1) + 0.5 * XXHAT(2:IIU  )
+  ZXHATM(  IIU  ) = 1.5 * XXHAT(  IIU  ) - 0.5 * XXHAT(  IIU-1)
+
+  ZYHATM(1:IJU-1) = 0.5 * XYHAT(1:IJU-1) + 0.5 * XYHAT(2:IJU  )
+  ZYHATM(  IJU  ) = 1.5 * XYHAT(  IJU  ) - 0.5 * XYHAT(  IJU-1)
+
+  ZXHATM_PHYS_MIN = 0.5 * ( ZXHAT_GLOB(1+JPHEXT) + ZXHAT_GLOB(2+JPHEXT) )
+  ZXHATM_PHYS_MAX = 0.5 * ( ZXHAT_GLOB(UBOUND(ZXHAT_GLOB,1)-JPHEXT) + ZXHAT_GLOB(UBOUND(ZXHAT_GLOB,1)-JPHEXT+1) )
+  ZYHATM_PHYS_MIN = 0.5 * ( ZYHAT_GLOB(1+JPHEXT) + ZYHAT_GLOB(2+JPHEXT) )
+  ZYHATM_PHYS_MAX = 0.5 * ( ZYHAT_GLOB(UBOUND(ZYHAT_GLOB,1)-JPHEXT) + ZYHAT_GLOB(UBOUND(ZYHAT_GLOB,1)-JPHEXT+1) )
+END IF
+!
+! Stations initialization
+!
+NUMBSTAT_LOC = 0
+
+IF (CFILE_STAT=="NO_INPUT_CSV") THEN
+  ! Treat namelist
+  NUMBSTAT = 0
+  IF ( NNUMB_STAT > 0 ) THEN
+    DO JI = 1, NNUMB_STAT
+      IF ( LCARTESIAN ) THEN
+        TZSTATION%XX = XX_STAT(JI)
+        TZSTATION%XY = XY_STAT(JI)
+      ELSE
+        TZSTATION%XLAT = XLAT_STAT(JI)
+        TZSTATION%XLON = XLON_STAT(JI)
+        CALL STATION_INI_INTERP( TZSTATION )
+      END IF
+      TZSTATION%XZ    = XZ_STAT(JI)
+      TZSTATION%CNAME = CNAME_STAT(JI)
+
+      CALL STATION_POSITION( TZSTATION, ZXHAT_GLOB, ZYHAT_GLOB, ZXHATM, ZYHATM,                  &
+                             ZXHATM_PHYS_MIN, ZXHATM_PHYS_MAX, ZYHATM_PHYS_MIN, ZYHATM_PHYS_MAX, &
+                             GINSIDE, GPRESENT                                                   )
+
+      IF ( GINSIDE ) THEN
+        NUMBSTAT = NUMBSTAT + 1
+        TZSTATION%NID = NUMBSTAT
+      END IF
+
+      IF ( GPRESENT ) CALL STATION_ADD( TZSTATION )
+    END DO
   END IF
-  ALLOCATE(TSTATIONS(JI)%XTH    (ISTORE))
-  ALLOCATE(TSTATIONS(JI)%XR     (ISTORE,KRR))
-  ALLOCATE(TSTATIONS(JI)%XSV    (ISTORE,KSV))
-  ALLOCATE(TSTATIONS(JI)%XTSRAD (ISTORE))
-  ALLOCATE(TSTATIONS(JI)%XT2M   (ISTORE))
-  ALLOCATE(TSTATIONS(JI)%XQ2M   (ISTORE))
-  ALLOCATE(TSTATIONS(JI)%XHU2M  (ISTORE))
-  ALLOCATE(TSTATIONS(JI)%XZON10M(ISTORE))
-  ALLOCATE(TSTATIONS(JI)%XMER10M(ISTORE))
-  ALLOCATE(TSTATIONS(JI)%XRN    (ISTORE))
-  ALLOCATE(TSTATIONS(JI)%XH     (ISTORE))
-  ALLOCATE(TSTATIONS(JI)%XLE    (ISTORE))
-  ALLOCATE(TSTATIONS(JI)%XLEI   (ISTORE))
-  ALLOCATE(TSTATIONS(JI)%XGFLUX (ISTORE))
-  ALLOCATE(TSTATIONS(JI)%XSWD   (ISTORE))
-  ALLOCATE(TSTATIONS(JI)%XSWU   (ISTORE))
-  ALLOCATE(TSTATIONS(JI)%XLWD   (ISTORE))
-  ALLOCATE(TSTATIONS(JI)%XLWU   (ISTORE))
-  ALLOCATE(TSTATIONS(JI)%XSWDIR (ISTORE))
-  ALLOCATE(TSTATIONS(JI)%XSWDIFF(ISTORE))
-  ALLOCATE(TSTATIONS(JI)%XDSTAOD(ISTORE))
-  ALLOCATE(TSTATIONS(JI)%XSFCO2 (ISTORE))
-
-  TSTATIONS(JI)%XZON(:)    = XUNDEF
-  TSTATIONS(JI)%XMER(:)    = XUNDEF
-  TSTATIONS(JI)%XW(:)      = XUNDEF
-  TSTATIONS(JI)%XP(:)      = XUNDEF
-  TSTATIONS(JI)%XTKE(:)    = XUNDEF
-  TSTATIONS(JI)%XTH(:)     = XUNDEF
-  TSTATIONS(JI)%XR(:,:)    = XUNDEF
-  TSTATIONS(JI)%XSV(:,:)   = XUNDEF
-  TSTATIONS(JI)%XTSRAD(:)  = XUNDEF
-  TSTATIONS(JI)%XT2M(:)    = XUNDEF
-  TSTATIONS(JI)%XQ2M(:)    = XUNDEF
-  TSTATIONS(JI)%XHU2M(:)   = XUNDEF
-  TSTATIONS(JI)%XZON10M(:) = XUNDEF
-  TSTATIONS(JI)%XMER10M(:) = XUNDEF
-  TSTATIONS(JI)%XRN(:)     = XUNDEF
-  TSTATIONS(JI)%XH(:)      = XUNDEF
-  TSTATIONS(JI)%XLE(:)     = XUNDEF
-  TSTATIONS(JI)%XLEI(:)    = XUNDEF
-  TSTATIONS(JI)%XGFLUX(:)  = XUNDEF
-  TSTATIONS(JI)%XSWD(:)    = XUNDEF
-  TSTATIONS(JI)%XSWU(:)    = XUNDEF
-  TSTATIONS(JI)%XLWD(:)    = XUNDEF
-  TSTATIONS(JI)%XLWU(:)    = XUNDEF
-  TSTATIONS(JI)%XSWDIR(:)  = XUNDEF
-  TSTATIONS(JI)%XSWDIFF(:) = XUNDEF
-  TSTATIONS(JI)%XDSTAOD(:) = XUNDEF
-  TSTATIONS(JI)%XSFCO2(:)  = XUNDEF
-END DO
-
-END SUBROUTINE ALLOCATE_STATION_n
-!----------------------------------------------------------------------------
-!----------------------------------------------------------------------------
-SUBROUTINE INI_INTERP_STATION_n()
-!
-USE MODE_STATION_TOOLS, ONLY: STATION_POSITION
-
-INTEGER :: JII
-INTEGER :: IIU, IJU
-!
-IF ( ALL(TSTATIONS(:)%XLAT /= XUNDEF) .AND. ALL(TSTATIONS(:)%XLON /= XUNDEF) ) THEN
- DO JII = 1, NUMBSTAT
-   CALL GET_DIM_EXT_ll ('B',IIU,IJU)
-   CALL SM_XYHAT(PLATOR,PLONOR,                        &
-                 TSTATIONS(JII)%XLAT, TSTATIONS(JII)%XLON, &
-                 TSTATIONS(JII)%XX,   TSTATIONS(JII)%XY    )
-   CALL STATION_POSITION( TSTATIONS(JII) )
- END DO
 ELSE
-  CMNHMSG(1) = 'Error in station position'
-  CMNHMSG(1) = 'either LATitude or LONgitude segment'
-  CMNHMSG(1) = 'or I and J segment'
-  CMNHMSG(1) = 'definition is not complete.'
-  CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'INI_SURFSTATION_n' )
+  !Treat CSV datafile
+  CALL READ_CSV_STATION( CFILE_STAT, ZXHAT_GLOB, ZYHAT_GLOB, ZXHATM, ZYHATM,               &
+                         ZXHATM_PHYS_MIN, ZXHATM_PHYS_MAX,ZYHATM_PHYS_MIN, ZYHATM_PHYS_MAX )
 END IF
 
-END SUBROUTINE INI_INTERP_STATION_n
-!----------------------------------------------------------------------------
-!----------------------------------------------------------------------------
+LSTATION = ( NUMBSTAT > 0 )
+
+DO JI = 1, NUMBSTAT_LOC
+  CALL STATION_ALLOCATE( TSTATIONS(JI), ISTORE )
+END DO
 !
+! Clean positioning data
+!
+IF ( CFILE_STAT /= "NO_INPUT_CSV" .OR. NNUMB_STAT > 0 ) THEN
+  IF ( GALLOCX ) DEALLOCATE( ZXHAT_GLOB )
+  IF ( GALLOCY ) DEALLOCATE( ZYHAT_GLOB )
+END IF
+
+!----------------------------------------------------------------------------
+
 END SUBROUTINE INI_SURFSTATION_n

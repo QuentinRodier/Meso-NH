@@ -75,33 +75,29 @@ END MODULE MODI_STATION_n
 !  A. Lemonsu   19/11/2002
 !  P. Aumond    01/07/2011: add model levels
 !  C. Lac          04/2013: correction on the vertical levels
-!  C. Lac          04/2013: add I/J positioning
+!  C. Lac          04/2013: add I/JK positioning
 !  P. Wautelet  28/03/2018: replace TEMPORAL_DIST by DATETIME_DISTANCE
 !  P. Wautelet  05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet  13/09/2019: budget: simplify and modernize date/time management
 !  R. Schoetter    11/2019: use LCARTESIAN instead of LSTATLAT for multiproc in cartesian
-!  P. Wautelet  07/04/2022: rewrite types for stations
+!  P. Wautelet     04/2022: restructure stations for better performance, reduce memory usage and correct some problems/bugs
 !
 ! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
 !          ------------
 !
-USE MODD_CONF
-USE MODD_CST
+USE MODD_CONF,          ONLY: LCARTESIAN
+USE MODD_CST,           ONLY: XPI
 USE MODD_DIAG_IN_RUN
-USE MODD_GRID
-USE MODD_PARAMETERS
+USE MODD_GRID,          ONLY: XBETA, XLON0, XRPK
+USE MODD_PARAMETERS,    ONLY: JPVEXT, XUNDEF
 USE MODD_PARAM_n,       ONLY: CRAD
 USE MODD_STATION_n
 USE MODD_ALLSTATION_n,  ONLY: LDIAG_SURFRAD
-USE MODD_TIME,          ONLY: tdtexp
 USE MODD_TIME_n,        ONLY: tdtcur
 !
-USE MODE_ll
-!
-USE MODI_WATER_SUM
-!
+USE MODE_STATION_TOOLS, ONLY: STATION_INTERP_2D, STATION_INTERP_2D_U, STATION_INTERP_2D_V
 !
 !
 IMPLICIT NONE
@@ -129,21 +125,6 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PP     ! pressure
 !       0.2  declaration of local variables
 !
 !
-INTEGER :: IIB        ! current processor domain sizes
-INTEGER :: IJB        ! 
-INTEGER :: IIE        !    
-INTEGER :: IJE        !   
-INTEGER :: IIU        ! 
-INTEGER :: IJU        ! 
-!
-REAL, DIMENSION(SIZE(PXHAT))        :: ZXHATM ! mass point coordinates
-REAL, DIMENSION(SIZE(PYHAT))        :: ZYHATM ! mass point coordinates
-!
-REAL, DIMENSION(SIZE(PSV,1),SIZE(PSV,2),SIZE(PSV,3),SIZE(PSV,4))  :: ZWORK   ! 
-!
-LOGICAL       :: GSTORE                       ! storage occurs at this time step
-!
-!
 INTEGER :: IN       ! time index
 INTEGER :: JSV      ! loop counter
 !
@@ -151,33 +132,8 @@ REAL    :: ZU_STAT     ! horizontal wind speed at station location (along x)
 REAL    :: ZV_STAT     ! horizontal wind speed at station location (along y)
 REAL    :: ZGAM        ! rotation between meso-nh base and spherical lat-lon base.
 !
-INTEGER :: IRESP      ! return code
-INTEGER :: I          ! loop for stations
-INTEGER :: J          ! loop for levels
-
-!
-!----------------------------------------------------------------------------
-!
-!*      2.   PRELIMINARIES
-!            -------------
-!
-!*      2.1  Indices
-!            -------
-!
-CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
-!
-!
-!*      2.2  Interpolations of model variables to mass points
-!            ------------------------------------------------
-!
-IIU=SIZE(PXHAT)
-IJU=SIZE(PYHAT)
-!
-ZXHATM(1:IIU-1)=0.5*PXHAT(1:IIU-1)+0.5*PXHAT(2:IIU  )
-ZXHATM(  IIU  )=1.5*PXHAT(  IIU  )-0.5*PXHAT(  IIU-1)
-!
-ZYHATM(1:IJU-1)=0.5*PYHAT(1:IJU-1)+0.5*PYHAT(2:IJU  )
-ZYHATM(  IJU  )=1.5*PYHAT(  IJU  )-0.5*PYHAT(  IJU-1)
+INTEGER :: JS          ! loop for stations
+INTEGER :: JK          ! loop for levels
 !
 !----------------------------------------------------------------------------
 !
@@ -189,260 +145,73 @@ IF ( TSTATIONS_TIME%XTIME_CUR == XUNDEF ) TSTATIONS_TIME%XTIME_CUR = TSTATIONS_T
 TSTATIONS_TIME%XTIME_CUR = TSTATIONS_TIME%XTIME_CUR + PTSTEP
 !
 IF ( TSTATIONS_TIME%XTIME_CUR >= TSTATIONS_TIME%XTSTEP - 1.E-10 ) THEN
-     GSTORE = .TRUE.
-     TSTATIONS_TIME%XTIME_CUR = TSTATIONS_TIME%XTIME_CUR - TSTATIONS_TIME%XTSTEP
-     TSTATIONS_TIME%N_CUR = TSTATIONS_TIME%N_CUR + 1
-     IN = TSTATIONS_TIME%N_CUR
-ELSE
-     GSTORE = .FALSE.
-END IF
-!
-IF (GSTORE) THEN
-#if 0
-  tstations_time%tpdates(in)%date%year  = tdtexp%date%year
-  tstations_time%tpdates(in)%date%month = tdtexp%date%month
-  tstations_time%tpdates(in)%date%day   = tdtexp%date%day
-  tstations_time%tpdates(in)%xtime      = tdtexp%xtime + ( in - 1 ) * tstation%step
-#else
+  TSTATIONS_TIME%XTIME_CUR = TSTATIONS_TIME%XTIME_CUR - TSTATIONS_TIME%XTSTEP
+  TSTATIONS_TIME%N_CUR = TSTATIONS_TIME%N_CUR + 1
+  IN = TSTATIONS_TIME%N_CUR
   tstations_time%tpdates(in) = tdtcur
-#endif
+ELSE
+  !No station storage at this time step
+  RETURN
 END IF
-!
 !
 !----------------------------------------------------------------------------
 !
 !*      8.   DATA RECORDING
 !            --------------
 !
-IF (GSTORE) THEN
-  DO I=1,NUMBSTAT
-     !
-     IF ( TSTATIONS(I)%LPRESENT .AND. .NOT. TSTATIONS(I)%LERROR ) THEN
-       IF (TSTATIONS(I)%NK/= XUNDEF) THEN
-         J = TSTATIONS(I)%NK
-       ELSE  ! suppose TSTATIONS(I)%XZ /= XUNDEF
-        J=1
-        DO WHILE ((STATION_INTERP_2D(PZ(:,:,J))-STATION_INTERP_2D(PZ(:,:,2))) &
-        < TSTATIONS(I)%XZ)
-         J = J + 1
-        END DO
-        IF (((STATION_INTERP_2D(PZ(:,:,J))-STATION_INTERP_2D(PZ(:,:,2)))-TSTATIONS(I)%XZ)>&
-       (TSTATIONS(I)%XZ-(STATION_INTERP_2D(PZ(:,:,J-1))-STATION_INTERP_2D(PZ(:,:,2))))) THEN
-         J=J-1
-        ENDIF
-       END IF
-      !
-      IF (LCARTESIAN) THEN
-        TSTATIONS(I)%XZON (IN)   =   STATION_INTERP_2D_U(PU(:,:,J))
-        TSTATIONS(I)%XMER (IN)   =   STATION_INTERP_2D_V(PV(:,:,J))
-      ELSE
-        ZU_STAT               = STATION_INTERP_2D_U(PU(:,:,J))
-        ZV_STAT               = STATION_INTERP_2D_V(PV(:,:,J))
-        ZGAM                  = (XRPK * (TSTATIONS(I)%XLON - XLON0) - XBETA)*(XPI/180.)
-        TSTATIONS(I)%XZON (IN)   =   ZU_STAT     * COS(ZGAM) + ZV_STAT     * SIN(ZGAM)
-        TSTATIONS(I)%XMER (IN)   = - ZU_STAT     * SIN(ZGAM) + ZV_STAT     * COS(ZGAM)
-      ENDIF
-        TSTATIONS(I)%XW   (IN)   = STATION_INTERP_2D(PW(:,:,J))
-        TSTATIONS(I)%XTH  (IN)   = STATION_INTERP_2D(PTH(:,:,J))
-        TSTATIONS(I)%XP   (IN)   = STATION_INTERP_2D(PP(:,:,J))
-      !
-        DO JSV=1,SIZE(PR,4)
-         TSTATIONS(I)%XR   (IN,JSV) = STATION_INTERP_2D(PR(:,:,J,JSV))
-        END DO
-      !
-        DO JSV=1,SIZE(PSV,4)
-         TSTATIONS(I)%XSV  (IN,JSV) = STATION_INTERP_2D(PSV(:,:,J,JSV))
-        END DO
-      !
-        IF (SIZE(PTKE)>0) TSTATIONS(I)%XTKE  (IN) = STATION_INTERP_2D(PTKE(:,:,J))
-        IF (SIZE(PTS) >0) TSTATIONS(I)%XTSRAD(IN) = STATION_INTERP_2D(PTS)
-        TSTATIONS(I)%XZS      = STATION_INTERP_2D(PZ(:,:,1+JPVEXT))
-      !
-        IF (LDIAG_SURFRAD) THEN
-          TSTATIONS(I)%XZON10M(IN) = STATION_INTERP_2D(XCURRENT_ZON10M)
-          TSTATIONS(I)%XMER10M(IN) = STATION_INTERP_2D(XCURRENT_MER10M)
-          TSTATIONS(I)%XT2M   (IN) = STATION_INTERP_2D(XCURRENT_T2M   )
-          TSTATIONS(I)%XQ2M   (IN) = STATION_INTERP_2D(XCURRENT_Q2M   )
-          TSTATIONS(I)%XHU2M  (IN) = STATION_INTERP_2D(XCURRENT_HU2M  )
-          TSTATIONS(I)%XRN    (IN) = STATION_INTERP_2D(XCURRENT_RN    )
-          TSTATIONS(I)%XH     (IN) = STATION_INTERP_2D(XCURRENT_H     )
-          TSTATIONS(I)%XLE    (IN) = STATION_INTERP_2D(XCURRENT_LE    )
-          TSTATIONS(I)%XLEI   (IN) = STATION_INTERP_2D(XCURRENT_LEI   )
-          TSTATIONS(I)%XGFLUX (IN) = STATION_INTERP_2D(XCURRENT_GFLUX )
-         IF (CRAD /= 'NONE') THEN
-          TSTATIONS(I)%XSWD   (IN) = STATION_INTERP_2D(XCURRENT_SWD   )
-          TSTATIONS(I)%XSWU   (IN) = STATION_INTERP_2D(XCURRENT_SWU   )
-          TSTATIONS(I)%XLWD   (IN) = STATION_INTERP_2D(XCURRENT_LWD   )
-          TSTATIONS(I)%XLWU   (IN) = STATION_INTERP_2D(XCURRENT_LWU   )
-          TSTATIONS(I)%XSWDIR (IN) = STATION_INTERP_2D(XCURRENT_SWDIR )
-          TSTATIONS(I)%XSWDIFF(IN) = STATION_INTERP_2D(XCURRENT_SWDIFF)
-          TSTATIONS(I)%XDSTAOD(IN) = STATION_INTERP_2D(XCURRENT_DSTAOD)
-         ENDIF
-          TSTATIONS(I)%XSFCO2 (IN) = STATION_INTERP_2D(XCURRENT_SFCO2 )
-        ENDIF
+STATION: DO JS = 1,NUMBSTAT_LOC
+  JK = TSTATIONS(JS)%NK
 
-      !
-    END IF
-!
-!----------------------------------------------------------------------------
-!
-!*     11.   EXCHANGE OF INFORMATION BETWEEN PROCESSORS
-!            ------------------------------------------
-!
-!*     11.2  data stored
-!            -----------
-!
-  CALL DISTRIBUTE_STATION(TSTATIONS(I)%XX   )
-  CALL DISTRIBUTE_STATION(TSTATIONS(I)%XY   )
-  CALL DISTRIBUTE_STATION(TSTATIONS(I)%XZ   )
-  CALL DISTRIBUTE_STATION(TSTATIONS(I)%XLON )
-  CALL DISTRIBUTE_STATION(TSTATIONS(I)%XLAT )
-  CALL DISTRIBUTE_STATION(TSTATIONS(I)%XZON (IN))
-  CALL DISTRIBUTE_STATION(TSTATIONS(I)%XMER (IN))
-  CALL DISTRIBUTE_STATION(TSTATIONS(I)%XW   (IN))
-  CALL DISTRIBUTE_STATION(TSTATIONS(I)%XP   (IN))
-  CALL DISTRIBUTE_STATION(TSTATIONS(I)%XTH  (IN))
+  IF (LCARTESIAN) THEN
+    TSTATIONS(JS)%XZON(IN) =   STATION_INTERP_2D_U( TSTATIONS(JS), PU(:,:,JK) )
+    TSTATIONS(JS)%XMER(IN) =   STATION_INTERP_2D_V( TSTATIONS(JS), PV(:,:,JK) )
+  ELSE
+    ZU_STAT                = STATION_INTERP_2D_U( TSTATIONS(JS), PU(:,:,JK) )
+    ZV_STAT                = STATION_INTERP_2D_V( TSTATIONS(JS), PV(:,:,JK) )
+    ZGAM                   = (XRPK * (TSTATIONS(JS)%XLON - XLON0) - XBETA)*(XPI/180.)
+    TSTATIONS(JS)%XZON(IN) =   ZU_STAT * COS(ZGAM) + ZV_STAT * SIN(ZGAM)
+    TSTATIONS(JS)%XMER(IN) = - ZU_STAT * SIN(ZGAM) + ZV_STAT * COS(ZGAM)
+  END IF
+  TSTATIONS(JS)%XW (IN) = STATION_INTERP_2D( TSTATIONS(JS), PW(:,:,JK) )
+  TSTATIONS(JS)%XTH(IN) = STATION_INTERP_2D( TSTATIONS(JS), PTH(:,:,JK) )
+  TSTATIONS(JS)%XP (IN) = STATION_INTERP_2D( TSTATIONS(JS), PP(:,:,JK) )
+
   DO JSV=1,SIZE(PR,4)
-    CALL DISTRIBUTE_STATION(TSTATIONS(I)%XR   (IN,JSV))
+    TSTATIONS(JS)%XR(IN,JSV) = STATION_INTERP_2D( TSTATIONS(JS), PR(:,:,JK,JSV) )
   END DO
+
   DO JSV=1,SIZE(PSV,4)
-    CALL DISTRIBUTE_STATION(TSTATIONS(I)%XSV  (IN,JSV))
+    TSTATIONS(JS)%XSV(IN,JSV) = STATION_INTERP_2D( TSTATIONS(JS), PSV(:,:,JK,JSV) )
   END DO
-  IF (SIZE(PTKE)>0) CALL DISTRIBUTE_STATION(TSTATIONS(I)%XTKE  (IN))
-  IF (SIZE(PTS) >0) CALL DISTRIBUTE_STATION(TSTATIONS(I)%XTSRAD(IN))
-  CALL DISTRIBUTE_STATION(TSTATIONS(I)%XZS )
-  IF (LDIAG_SURFRAD) THEN
-    CALL DISTRIBUTE_STATION(TSTATIONS(I)%XT2M    (IN))
-    CALL DISTRIBUTE_STATION(TSTATIONS(I)%XQ2M    (IN))
-    CALL DISTRIBUTE_STATION(TSTATIONS(I)%XHU2M   (IN))
-    CALL DISTRIBUTE_STATION(TSTATIONS(I)%XZON10M (IN))
-    CALL DISTRIBUTE_STATION(TSTATIONS(I)%XMER10M (IN))
-    CALL DISTRIBUTE_STATION(TSTATIONS(I)%XRN     (IN))
-    CALL DISTRIBUTE_STATION(TSTATIONS(I)%XH      (IN))
-    CALL DISTRIBUTE_STATION(TSTATIONS(I)%XLE     (IN))
-    CALL DISTRIBUTE_STATION(TSTATIONS(I)%XLEI    (IN))
-    CALL DISTRIBUTE_STATION(TSTATIONS(I)%XGFLUX  (IN))
-   IF (CRAD /= 'NONE') THEN
-    CALL DISTRIBUTE_STATION(TSTATIONS(I)%XSWD    (IN))
-    CALL DISTRIBUTE_STATION(TSTATIONS(I)%XSWU    (IN))
-    CALL DISTRIBUTE_STATION(TSTATIONS(I)%XLWD    (IN))
-    CALL DISTRIBUTE_STATION(TSTATIONS(I)%XLWU    (IN))
-    CALL DISTRIBUTE_STATION(TSTATIONS(I)%XSWDIR  (IN))
-    CALL DISTRIBUTE_STATION(TSTATIONS(I)%XSWDIFF (IN))
-    CALL DISTRIBUTE_STATION(TSTATIONS(I)%XDSTAOD (IN))
-   END IF
-    CALL DISTRIBUTE_STATION(TSTATIONS(I)%XSFCO2  (IN))
-  ENDIF
 
- ENDDO
-  !
-END IF
-!
-!----------------------------------------------------------------------------
-!----------------------------------------------------------------------------
-!
-CONTAINS
-!
-!----------------------------------------------------------------------------
-!----------------------------------------------------------------------------
-!
-FUNCTION STATION_INTERP_2D(PA) RESULT(PB)
-!
-REAL, DIMENSION(:,:), INTENT(IN) :: PA
-REAL                             :: PB
-!
-INTEGER :: JI, JJ
-!
-IF (SIZE(PA,1)==2) THEN
-     JI=1
-     JJ=1 
-ELSEIF (L1D) THEN
-     JI=2
-     JJ=2
-ELSE
-     JI=TSTATIONS(I)%NI_M
-     JJ=TSTATIONS(I)%NJ_M
-END IF
-!
-!
-IF ((JI .GE. 1).AND. (JI .LE. SIZE(PA,1)) .AND. &
-    (JJ .GE. 1).AND. (JJ .LE. SIZE(PA,2))) &
-PB = (1.-TSTATIONS(I)%XYMCOEF) * (1.-TSTATIONS(I)%XXMCOEF) *  PA(JI,JJ)    + &
-     (1.-TSTATIONS(I)%XYMCOEF) *    (TSTATIONS(I)%XXMCOEF) *  PA(JI+1,JJ)  + &
-     (   TSTATIONS(I)%XYMCOEF) * (1.-TSTATIONS(I)%XXMCOEF) *  PA(JI,JJ+1)  + &
-     (   TSTATIONS(I)%XYMCOEF) *    (TSTATIONS(I)%XXMCOEF) *  PA(JI+1,JJ+1)
-!
-END FUNCTION STATION_INTERP_2D
-!----------------------------------------------------------------------------
-!----------------------------------------------------------------------------
-! MODIFS
-FUNCTION STATION_INTERP_2D_U(PA) RESULT(PB)
-!
-REAL, DIMENSION(:,:), INTENT(IN) :: PA
-REAL                             :: PB
-!
-INTEGER :: JI, JJ
-!
-IF (SIZE(PA,1)==2) THEN
-     JI=1
-     JJ=1
-ELSEIF (L1D) THEN
-     JI=2
-     JJ=2
-ELSE
-     JI=TSTATIONS(I)%NI_M
-     JJ=TSTATIONS(I)%NJ_M
-END IF
-!
-IF ((JI .GE. 1).AND. (JI .LE. SIZE(PA,1)) .AND. &
-    (JJ .GE. 1).AND. (JJ .LE. SIZE(PA,2))) &
-PB = (1.- TSTATIONS(I)%XYMCOEF) * (1.-TSTATIONS(I)%XXUCOEF) * PA(JI  ,JJ  ) &
-   + (1.- TSTATIONS(I)%XYMCOEF) * (   TSTATIONS(I)%XXUCOEF) * PA(JI+1,JJ  ) &
-   + (    TSTATIONS(I)%XYMCOEF) * (1.-TSTATIONS(I)%XXUCOEF) * PA(JI  ,JJ+1) &
-   + (    TSTATIONS(I)%XYMCOEF) * (   TSTATIONS(I)%XXUCOEF) * PA(JI+1,JJ+1)
-!
-END FUNCTION STATION_INTERP_2D_U
-!----------------------------------------------------------------------------
-!----------------------------------------------------------------------------
-! MODIFS
-FUNCTION STATION_INTERP_2D_V(PA) RESULT(PB)
-!
-REAL, DIMENSION(:,:), INTENT(IN) :: PA
-REAL                             :: PB
-!
-INTEGER :: JI, JJ
-!
-IF (SIZE(PA,1)==2) THEN
-  JI=1
-  JJ=1
-ELSEIF (L1D) THEN
-     JI=2
-     JJ=2  
-ELSE
-  JI=TSTATIONS(I)%NI_M
-  JJ=TSTATIONS(I)%NJ_M
-END IF
-!
-IF ((JI .GT. 0).AND. (JI .LT. SIZE(PA,1)) .AND. &
-    (JJ .GT. 0).AND. (JJ .LT. SIZE(PA,2))) &
-PB = (1.- TSTATIONS(I)%XYVCOEF) * (1.-TSTATIONS(I)%XXMCOEF) * PA(JI  ,JJ  ) &
-   + (1.- TSTATIONS(I)%XYVCOEF) * (   TSTATIONS(I)%XXMCOEF) * PA(JI+1,JJ  ) &
-   + (    TSTATIONS(I)%XYVCOEF) * (1.-TSTATIONS(I)%XXMCOEF) * PA(JI  ,JJ+1) &
-   + (    TSTATIONS(I)%XYVCOEF) * (   TSTATIONS(I)%XXMCOEF) * PA(JI+1,JJ+1)
-!
-END FUNCTION STATION_INTERP_2D_V
-!----------------------------------------------------------------------------
-!----------------------------------------------------------------------------
-SUBROUTINE DISTRIBUTE_STATION(PAS)
-!
-REAL, INTENT(INOUT) :: PAS
-!
-INTEGER :: IINFO_ll   ! return code
+  IF (SIZE(PTKE)>0) TSTATIONS(JS)%XTKE(IN) = STATION_INTERP_2D( TSTATIONS(JS), PTKE(:,:,JK) )
+  IF ( CRAD /= 'NONE' ) TSTATIONS(JS)%XTSRAD(IN) = STATION_INTERP_2D( TSTATIONS(JS), PTS )
+  TSTATIONS(JS)%XZS  = STATION_INTERP_2D( TSTATIONS(JS), PZ(:,:,1+JPVEXT))
 
-IF ( .NOT. TSTATIONS(I)%LPRESENT ) PAS = 0.
-CALL REDUCESUM_ll(PAS,IINFO_ll)
+  IF ( LDIAG_SURFRAD ) THEN
+    TSTATIONS(JS)%XZON10M(IN) = STATION_INTERP_2D( TSTATIONS(JS), XCURRENT_ZON10M )
+    TSTATIONS(JS)%XMER10M(IN) = STATION_INTERP_2D( TSTATIONS(JS), XCURRENT_MER10M )
+    TSTATIONS(JS)%XT2M   (IN) = STATION_INTERP_2D( TSTATIONS(JS), XCURRENT_T2M    )
+    TSTATIONS(JS)%XQ2M   (IN) = STATION_INTERP_2D( TSTATIONS(JS), XCURRENT_Q2M    )
+    TSTATIONS(JS)%XHU2M  (IN) = STATION_INTERP_2D( TSTATIONS(JS), XCURRENT_HU2M   )
+    TSTATIONS(JS)%XRN    (IN) = STATION_INTERP_2D( TSTATIONS(JS), XCURRENT_RN     )
+    TSTATIONS(JS)%XH     (IN) = STATION_INTERP_2D( TSTATIONS(JS), XCURRENT_H      )
+    TSTATIONS(JS)%XLE    (IN) = STATION_INTERP_2D( TSTATIONS(JS), XCURRENT_LE     )
+    TSTATIONS(JS)%XLEI   (IN) = STATION_INTERP_2D( TSTATIONS(JS), XCURRENT_LEI    )
+    TSTATIONS(JS)%XGFLUX (IN) = STATION_INTERP_2D( TSTATIONS(JS), XCURRENT_GFLUX  )
+    IF ( CRAD /= 'NONE' ) THEN
+      TSTATIONS(JS)%XSWD   (IN) = STATION_INTERP_2D( TSTATIONS(JS), XCURRENT_SWD    )
+      TSTATIONS(JS)%XSWU   (IN) = STATION_INTERP_2D( TSTATIONS(JS), XCURRENT_SWU    )
+      TSTATIONS(JS)%XLWD   (IN) = STATION_INTERP_2D( TSTATIONS(JS), XCURRENT_LWD    )
+      TSTATIONS(JS)%XLWU   (IN) = STATION_INTERP_2D( TSTATIONS(JS), XCURRENT_LWU    )
+      TSTATIONS(JS)%XSWDIR (IN) = STATION_INTERP_2D( TSTATIONS(JS), XCURRENT_SWDIR  )
+      TSTATIONS(JS)%XSWDIFF(IN) = STATION_INTERP_2D( TSTATIONS(JS), XCURRENT_SWDIFF )
+      TSTATIONS(JS)%XDSTAOD(IN) = STATION_INTERP_2D( TSTATIONS(JS), XCURRENT_DSTAOD )
+    END IF
+    TSTATIONS(JS)%XSFCO2(IN) = STATION_INTERP_2D( TSTATIONS(JS), XCURRENT_SFCO2 )
+  END IF
+END DO STATION
 !
-END SUBROUTINE DISTRIBUTE_STATION
 !----------------------------------------------------------------------------
 !
 END SUBROUTINE STATION_n

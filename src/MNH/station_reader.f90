@@ -4,21 +4,18 @@
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     #######################
-       MODULE MODI_STATION_READER
+       MODULE MODE_STATION_READER
 !     #######################
-!
-INTERFACE
-!
-SUBROUTINE READ_CSV_STATION( HFILE, TPSTATIONS, OCARTESIAN )
-USE MODD_STATION_n
-CHARACTER(LEN=*),                          INTENT(IN)    :: HFILE      ! file to read
-TYPE(TSTATIONDATA), DIMENSION(:), POINTER, INTENT(INOUT) :: TPSTATIONS
-LOGICAL,                                   INTENT(IN)    :: OCARTESIAN
-END SUBROUTINE READ_CSV_STATION
-!
-END INTERFACE
-!
-END MODULE MODI_STATION_READER
+
+IMPLICIT NONE
+
+PRIVATE
+
+PUBLIC :: READ_CSV_STATION
+
+INTEGER, PARAMETER :: NMAXLINELGT = 400
+
+CONTAINS
 !-------------------------------------------------------------------
 !
 !!****  *READ_CSV_STATION* -
@@ -34,85 +31,85 @@ END MODULE MODI_STATION_READER
 !!    MODIFICATIONS
 !!    -------------
 !!     03/2020      Original
-!  P. Wautelet 07/04/2022: rewrite types for stations
+!  P. Wautelet    04/2022: restructure stations for better performance, reduce memory usage and correct some problems/bugs
 !---------------------------------------------------------------
 !
-!#########################################################
-SUBROUTINE READ_CSV_STATION( HFILE, TPSTATIONS, OCARTESIAN )
-USE MODD_ALLSTATION_n
-USE MODD_STATION_n
-USE MODD_PARAMETERS
-USE MODD_TYPE_STATION
-USE MODI_INI_SURFSTATION_n
+!###############################################################################################
+SUBROUTINE READ_CSV_STATION( HFILE, PXHAT_GLOB, PYHAT_GLOB, PXHATM, PYHATM,                    &
+                             PXHATM_PHYS_MIN, PXHATM_PHYS_MAX,PYHATM_PHYS_MIN, PYHATM_PHYS_MAX )
+!###############################################################################################
 
+USE MODD_CONF,          ONLY: LCARTESIAN
+USE MODD_STATION_n,     ONLY: NUMBSTAT
+USE MODD_TYPE_STATION,  ONLY: TSTATIONDATA
+
+USE MODE_MSG
+USE MODE_STATION_TOOLS, ONLY: STATION_ADD, STATION_INI_INTERP, STATION_POSITION
+
+CHARACTER(LEN=*),   INTENT(IN) :: HFILE ! file to read
+REAL, DIMENSION(:), INTENT(IN) :: PXHAT_GLOB
+REAL, DIMENSION(:), INTENT(IN) :: PYHAT_GLOB
+REAL, DIMENSION(:), INTENT(IN) :: PXHATM ! mass point coordinates
+REAL, DIMENSION(:), INTENT(IN) :: PYHATM ! mass point coordinates
+REAL,               INTENT(IN) :: PXHATM_PHYS_MIN, PYHATM_PHYS_MIN  ! Minimum X coordinate of mass points in the physical domain
+REAL,               INTENT(IN) :: PXHATM_PHYS_MAX, PYHATM_PHYS_MAX  ! Minimum X coordinate of mass points in the physical domain
 !
-CHARACTER(LEN=*),                          INTENT(IN)    :: HFILE      ! file to read
-TYPE(TSTATIONDATA), DIMENSION(:), POINTER, INTENT(INOUT) :: TPSTATIONS
-LOGICAL,                                   INTENT(IN)    :: OCARTESIAN
-!
-INTEGER            :: INBLINE      ! Nb of line in csv file
-!
-CHARACTER(LEN=80)  :: YERROR
-CHARACTER(LEN=400) :: YSTRING
-INTEGER            :: ILU     ! logical unit of the file
-!
+CHARACTER(LEN=NMAXLINELGT) :: YSTRING
+INTEGER            :: ILU      ! logical unit of the file
+INTEGER            :: INBLINE  ! Nb of lines in csv file
+INTEGER            :: JI
+LOGICAL            :: GINSIDE  ! True if station is inside physical domain of model
+LOGICAL            :: GPRESENT ! True if station is present on the current process
+TYPE(TSTATIONDATA) :: TZSTATION
+
+INBLINE  = 0 !Number of stations found in the file
+NUMBSTAT = 0 !Number of stations found in the file AND inside the model domain
 
 ! Open file
-OPEN(NEWUNIT=ILU,FILE=HFILE, FORM='formatted')
-! Count lines  
-REWIND(ILU)
-INBLINE=0
+OPEN( NEWUNIT = ILU, FILE = HFILE, FORM = 'formatted' )
+
+READ( ILU, END = 101, FMT = '(A)' ) YSTRING ! Reading of header (skip it)
+
 DO
- READ(ILU,END=101,FMT='(A400)') YSTRING
-!* analyses if the record has been written in French convention 
- CALL FRENCH_TO_ENGLISH(YSTRING)                                         ! analyse de convention fr ou eng
- IF (LEN_TRIM(YSTRING) > 0) THEN
-  INBLINE = INBLINE + 1
- END IF
-END DO
-!
-101 CONTINUE
- IF (INBLINE == 0) THEN
-  YERROR = 'Data not found in file : '//TRIM(HFILE)
-  PRINT*, YERROR
- ELSE 
-  ! Save number of stations
-  NUMBSTAT = INBLINE - 1 
+  ! Read station coordinates
+  READ( ILU, END = 101, FMT = '(A)' ) YSTRING
 
-  ALLOCATE( TPSTATIONS(NUMBSTAT) )
+  ! Check if record is written in French convention
+  CALL FRENCH_TO_ENGLISH( YSTRING )
 
-  ! New reading
-  REWIND(ILU)
-  READ(ILU,FMT='(A400)') YSTRING ! Reading of header
-  !
-  ! Save the data
-  IF (OCARTESIAN) THEN
-   INBLINE = 1
-   DO INBLINE=1, NUMBSTAT
-    READ(ILU,FMT='(A400)') YSTRING
-    READ(YSTRING,*) TPSTATIONS(INBLINE)%CNAME, & !TPSTATIONS(INBLINE)%CTYPE,&
-    TPSTATIONS(INBLINE)%XX, TPSTATIONS(INBLINE)%XY, TPSTATIONS(INBLINE)%XZ
-   END DO
-   REWIND(ILU)
-   CLOSE(ILU)
-   RETURN
+  IF ( LCARTESIAN ) THEN
+    READ( YSTRING, * ) TZSTATION%CNAME, TZSTATION%XX,   TZSTATION%XY,   TZSTATION%XZ
   ELSE
-   INBLINE = 1
-   DO INBLINE=1, NUMBSTAT
-    READ(ILU,FMT='(A400)') YSTRING
-    READ(YSTRING,*) TPSTATIONS(INBLINE)%CNAME, & !TPSTATIONS(INBLINE)%CTYPE,&
-    TPSTATIONS(INBLINE)%XLAT, TPSTATIONS(INBLINE)%XLON, TPSTATIONS(INBLINE)%XZ
-   END DO
-   REWIND(ILU)
-   CLOSE(ILU)
-   RETURN
+    READ( YSTRING, * ) TZSTATION%CNAME, TZSTATION%XLAT, TZSTATION%XLON, TZSTATION%XZ
   END IF
- END IF
-!
+
+  IF ( .NOT. LCARTESIAN ) CALL STATION_INI_INTERP( TZSTATION )
+  CALL STATION_POSITION( TZSTATION, PXHAT_GLOB, PYHAT_GLOB, PXHATM, PYHATM,                  &
+                         PXHATM_PHYS_MIN, PXHATM_PHYS_MAX, PYHATM_PHYS_MIN, PYHATM_PHYS_MAX, &
+                         GINSIDE, GPRESENT                                                   )
+
+  IF ( GINSIDE ) THEN
+    NUMBSTAT = NUMBSTAT + 1
+    TZSTATION%NID = NUMBSTAT
+  END IF
+
+  IF ( GPRESENT ) CALL STATION_ADD( TZSTATION )
+
+  INBLINE = INBLINE + 1
+END DO
+
+101 CONTINUE
+
+CLOSE( ILU )
+
+IF ( INBLINE == 0 ) CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'READ_CSV_STATION', 'Data not found in file ' // TRIM( HFILE ) )
+
 END SUBROUTINE READ_CSV_STATION
+
 !#########################################################
 SUBROUTINE FRENCH_TO_ENGLISH(HSTRING)
-CHARACTER(LEN=400), INTENT(INOUT) :: HSTRING ! csv record
+CHARACTER(LEN=NMAXLINELGT), INTENT(INOUT) :: HSTRING ! csv record
+
 INTEGER :: JL
 LOGICAL :: GFRENCH
 !
@@ -120,13 +117,13 @@ GFRENCH = .FALSE.
 !* analyses if the record has been written in French convention 
 !     French  convention (separator is ;  decimal symbol is ,) 
 !  or English convention (separator is ,  decimal symbol is .)
-DO JL=1,400
+DO JL = 1, NMAXLINELGT
  IF (HSTRING(JL:JL)==';') GFRENCH=.TRUE.
 END DO
 !
 ! If French convention is used in the file, transforms it in English convention
 IF (GFRENCH) THEN
- DO JL=1,400
+ DO JL = 1, NMAXLINELGT
    IF (HSTRING(JL:JL)==',') HSTRING(JL:JL)='.'
    IF (HSTRING(JL:JL)==';') HSTRING(JL:JL)=','
  END DO
@@ -134,3 +131,4 @@ END IF
 !
 END SUBROUTINE FRENCH_TO_ENGLISH
 
+END MODULE MODE_STATION_READER
