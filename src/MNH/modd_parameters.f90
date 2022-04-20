@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -44,6 +44,7 @@
 !  P. Wautelet 17/01/2020: add NBUNAMELGTMAX and NCOMMENTLGTMAX parameters
 !  P. Wautelet 13/03/2020: remove JPBUMAX and JPBUPROMAX
 !  P. Wautelet 24/09/2021: add NLONGNAMELGTMAX and NUNITLGTMAX parameters
+!  P. Wautelet 20/04/2022: add NSTATIONNAMELGTMAX parameter
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -86,6 +87,8 @@ INTEGER, PARAMETER :: NSTDNAMELGTMAX  = 64  ! Maximum length of the standard nam
 INTEGER, PARAMETER :: NLONGNAMELGTMAX = 32  ! Maximum length of the long name of a variable (CF convention)
 INTEGER, PARAMETER :: NUNITLGTMAX     = 40  ! Maximum length of the canonical units of a variable (CF convention)
 !
+INTEGER, PARAMETER :: NSTATIONNAMELGTMAX = 8 ! Maximum length for the name of a station
+
 INTEGER, PARAMETER :: NDIRNAMELGTMAX = 512 ! Maximum length of a directory name
 INTEGER, PARAMETER :: NFILENAMELGTMAX = 32 ! Maximum length of a file name (must be at least NFILENAMELGTMAXLFI)
 INTEGER, PARAMETER :: NFILENAMELGTMAXLFI = 28 ! Maximum length of a file name in LFI file (this is necessary

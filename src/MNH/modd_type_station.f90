@@ -37,7 +37,7 @@
 !             ------------
 !
 use modd_type_date,  only: date_time
-use modd_parameters, only: NNEGUNDEF, XUNDEF
+use modd_parameters, only: NNEGUNDEF, NSTATIONNAMELGTMAX, XUNDEF
 
 implicit none
 
@@ -55,7 +55,7 @@ END TYPE TSTATIONTIME
 TYPE TSTATIONDATA
 ! Type to store all the data of 1 station
 
-CHARACTER(LEN=8) :: CNAME = ''  ! station name
+CHARACTER(LEN=NSTATIONNAMELGTMAX) :: CNAME = ''  ! station name
 
 INTEGER :: NID = 0 ! Global identification number of the station (from 1 to total number of stations of the model)
 

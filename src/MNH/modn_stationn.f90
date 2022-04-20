@@ -25,7 +25,6 @@
 !!
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
-USE MODD_STATION_n
 USE MODD_ALLSTATION_n, ONLY:&
         NNUMB_STAT_n    =>NNUMB_STAT    ,&
         XSTEP_STAT_n    =>XSTEP_STAT    ,&
@@ -36,18 +35,22 @@ USE MODD_ALLSTATION_n, ONLY:&
         XZ_STAT_n       =>XZ_STAT       ,&
         CNAME_STAT_n    =>CNAME_STAT    ,&
         CFILE_STAT_n    =>CFILE_STAT    ,&
-        LDIAG_SURFRAD_n =>LDIAG_SURFRAD 
-!!
+        LDIAG_SURFRAD_n =>LDIAG_SURFRAD
+USE MODD_PARAMETERS, ONLY: NFILENAMELGTMAX, NSTATIONNAMELGTMAX
+USE MODD_STATION_n
+!
 !-----------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
 !        -----------------
+
 IMPLICIT NONE
+
 INTEGER                          ,SAVE:: NNUMB_STAT
 REAL                             ,SAVE:: XSTEP_STAT
 REAL, DIMENSION(100)             ,SAVE:: XX_STAT, XY_STAT, XZ_STAT, XLAT_STAT, XLON_STAT
-CHARACTER (LEN=7), DIMENSION(100),SAVE:: CNAME_STAT
-CHARACTER (LEN=20)               ,SAVE:: CFILE_STAT              !filename
+CHARACTER (LEN=NSTATIONNAMELGTMAX), DIMENSION(100),SAVE:: CNAME_STAT
+CHARACTER (LEN=NFILENAMELGTMAX),                   SAVE:: CFILE_STAT              !filename
 LOGICAL                          ,SAVE:: LDIAG_SURFRAD
 
 NAMELIST /NAM_STATIONn/  &
