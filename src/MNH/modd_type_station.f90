@@ -43,14 +43,14 @@ implicit none
 
 private
 
-public :: TSTATIONTIME, TSTATIONDATA
+public :: TSTATPROFTIME, TSTATIONDATA
 
-TYPE TSTATIONTIME
+TYPE :: TSTATPROFTIME
   REAL                                       :: XTIME_CUR = XUNDEF  ! current time since last storage
   INTEGER                                    :: N_CUR     = 0           ! current step of storage
   REAL                                       :: XTSTEP    = 60.     ! storage time step (default reset later by INI_STATION_n)
   type(date_time), dimension(:), ALLOCATABLE :: tpdates             ! dates(n) (n: recording instants)
-END TYPE TSTATIONTIME
+END TYPE TSTATPROFTIME
 
 TYPE TSTATIONDATA
 ! Type to store all the data of 1 station
