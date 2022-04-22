@@ -44,7 +44,7 @@
 !  P. Wautelet 17/01/2020: add NBUNAMELGTMAX and NCOMMENTLGTMAX parameters
 !  P. Wautelet 13/03/2020: remove JPBUMAX and JPBUPROMAX
 !  P. Wautelet 24/09/2021: add NLONGNAMELGTMAX and NUNITLGTMAX parameters
-!  P. Wautelet 20/04/2022: add NSTATIONNAMELGTMAX parameter
+!  P. Wautelet 20/04/2022: add NSTATPROFNAMELGTMAX parameter
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -87,7 +87,7 @@ INTEGER, PARAMETER :: NSTDNAMELGTMAX  = 64  ! Maximum length of the standard nam
 INTEGER, PARAMETER :: NLONGNAMELGTMAX = 32  ! Maximum length of the long name of a variable (CF convention)
 INTEGER, PARAMETER :: NUNITLGTMAX     = 40  ! Maximum length of the canonical units of a variable (CF convention)
 !
-INTEGER, PARAMETER :: NSTATIONNAMELGTMAX = 8 ! Maximum length for the name of a station
+INTEGER, PARAMETER :: NSTATPROFNAMELGTMAX = 8 ! Maximum length for the name of a station or profiler
 
 INTEGER, PARAMETER :: NDIRNAMELGTMAX = 512 ! Maximum length of a directory name
 INTEGER, PARAMETER :: NFILENAMELGTMAX = 32 ! Maximum length of a file name (must be at least NFILENAMELGTMAXLFI)
