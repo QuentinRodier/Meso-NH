@@ -648,8 +648,8 @@ endif
 #
 ifeq "$(VER_CDF)" "CDFCTI"
 CDF_PATH?=/usr
-INC_NETCDF     = -I${CDF_PATH}/include
-LIB_NETCDF     = -L${CDF_PATH}/lib64 -lnetcdff -lnetcdf -lhdf5_hl -lhdf5 -lsz -lz
+INC_NETCDF     ?= $(shell nf-config --fflags)
+LIB_NETCDF     ?= $(shell nf-config --flibs)
 INC            += $(INC_NETCDF)
 LIBS           += $(LIB_NETCDF)
 endif
