@@ -65,35 +65,17 @@ END MODULE MODI_RECYCLING
 !**** 0. DECLARATIONS
 !     ---------------
 !
-! module
-USE MODE_POS
-USE MODE_ll
-USE MODE_IO
-!USE MODI_SHUMAN
-!
-USE MODD_PARAMETERS
-USE MODD_CONF
-!
-USE MODD_CST
-!
-USE MODD_DIM_n
-USE MODD_CONF
-USE MODD_CONF_n
-USE MODD_GRID
-USE MODD_GRID_n
-USE MODD_METRICS_n
-USE MODD_TIME
-USE MODD_TIME_n
-USE MODD_DYN_n
-USE MODD_FIELD_n
-USE MODD_CURVCOR_n
-USE MODD_REF
-!
-USE MODD_VAR_ll,          ONLY: IP, NPROC
+USE MODD_CONF,           ONLY: CCONF
+USE MODD_FIELD_n,        ONLY: XTHT, XUT, XVT, XWT
+USE MODD_GRID_n,         ONLY: XXHAT, XYHAT
+USE MODD_METRICS_n,      ONLY: XDZZ
+USE MODD_PARAMETERS,     ONLY: JPHEXT
 USE MODD_RECYCL_PARAM_n
+
+USE MODE_MSG
+
 USE MODI_RECYCL_FLUC
-USE MODD_LUNIT_n,     ONLY : TLUOUT
-!
+
 IMPLICIT NONE
 !
 !------------------------------------------------------------------------------
@@ -106,9 +88,6 @@ REAL, DIMENSION(:,:)     ,INTENT(INOUT) :: PFLUCTUNE,PFLUCTVTE,PFLUCTVNS,PFLUCTU
 !------------------------------------------------------------------------------
 !
 !       0.2  declaration of local variables
-INTEGER                                      :: IIU,IJU,IKU,JCOUNT,ICOUNT,ILUOUT
-INTEGER :: IIB,IIE,IJB,IJE,IKB,IKE,IIP
-INTEGER :: IIBG,IIEG,IJBG,IJEG,IIMAX,IJMAX
 INTEGER :: PMINW,PMINE,PMINN,PMINS
 INTEGER :: JIDIST,JJDIST
 REAL    :: Z_DELTX,Z_DELTY
@@ -116,24 +95,14 @@ REAL    :: Z_DELTX,Z_DELTY
 !------------------------------------------------------------------------------
 !
 !       0.3  allocation
-CALL GET_DIM_EXT_ll('B',IIU,IJU)
-IKU=NKMAX+2*JPVEXT
 PMINW=0
 PMINN=0
 PMINS=0
 PMINE=0
 
-CALL GET_OR_ll('B',IIBG,IJBG)
-IIBG = IIBG+IIB-1
-IJBG = IJBG+IJB-1
-CALL GET_GLOBALDIMS_ll( IIMAX,IJMAX)
-IIEG=IIBG+IIE-IIB
-IJEG=IJBG+IJE-IJB
 Z_DELTX = XXHAT(2)-XXHAT(1)
 Z_DELTY = XYHAT(2)-XYHAT(1)
 
-
-ILUOUT = TLUOUT%NLU
 !------------------------------------------------------------------------------
 !       
 !**** 1. Recycling distance calculation 

@@ -2689,9 +2689,10 @@ IF ( LMEAN_POVO ) THEN
   IWORK1(:,:)=0
   ZWORK21(:,:)=0.
   IF (XMEAN_POVO(1)>XMEAN_POVO(2)) THEN
-    XMEAN_POVO(1) = ZX0D
-    XMEAN_POVO(2) = XMEAN_POVO(1)
-    ZX0D          = XMEAN_POVO(2)
+    !Invert values (smallest must be first)
+    ZX0D = XMEAN_POVO(1)
+    XMEAN_POVO(1) = XMEAN_POVO(2)
+    XMEAN_POVO(2) = ZX0D
   END IF
   DO JK=IKB,IKE
     WHERE((XPABST(:,:,JK)>XMEAN_POVO(1)).AND.(XPABST(:,:,JK)<XMEAN_POVO(2)))
@@ -3925,20 +3926,20 @@ IF (LLIDAR) THEN
     ZTMP3(:,:,:,1)=ZSIG_DST(:,:,:,IACCMODE)
     SELECT CASE ( CCLOUD )
     CASE('KESS''ICE3','ICE4')
-      CALL LIDAR(CCLOUD, YVIEW, XALT_LIDAR, XWVL_LIDAR, XZZ, XRHODREF, XCLDFR, &
+      CALL LIDAR(CCLOUD, YVIEW, XALT_LIDAR, XWVL_LIDAR, XZZ, XRHODREF, ZTEMP, XCLDFR, &
                  XRT, ZWORK31, ZWORK32,                                        &
                  PDSTC=ZTMP1,                                                  &
                  PDSTD=ZTMP2,                                                  &
                  PDSTS=ZTMP3)
     CASE('C2R2')
-      CALL LIDAR(CCLOUD, YVIEW, XALT_LIDAR, XWVL_LIDAR, XZZ, XRHODREF, XCLDFR, &
+      CALL LIDAR(CCLOUD, YVIEW, XALT_LIDAR, XWVL_LIDAR, XZZ, XRHODREF, ZTEMP, XCLDFR, &
                  XRT, ZWORK31, ZWORK32,                                        &
                  PCT=XSVT(:,:,:,NSV_C2R2BEG+1:NSV_C2R2END),                    &
                  PDSTC=ZTMP1,                                                  &
                  PDSTD=ZTMP2,                                                  &
                  PDSTS=ZTMP3)
     CASE('C3R5')
-      CALL LIDAR(CCLOUD, YVIEW, XALT_LIDAR, XWVL_LIDAR, XZZ, XRHODREF, XCLDFR, &
+      CALL LIDAR(CCLOUD, YVIEW, XALT_LIDAR, XWVL_LIDAR, XZZ, XRHODREF, ZTEMP, XCLDFR, &
                  XRT, ZWORK31, ZWORK32,                                        &
                  PCT=XSVT(:,:,:,NSV_C2R2BEG+1:NSV_C1R3END-1),                  &
                  PDSTC=ZTMP1,                                                  &
@@ -3952,7 +3953,7 @@ IF (LLIDAR) THEN
        ZTMP4(:,:,:,3)=XSVT(:,:,:,NSV_LIMA_NR)
        ZTMP4(:,:,:,4)=XSVT(:,:,:,NSV_LIMA_NI)
 !
-       CALL LIDAR(CCLOUD, YVIEW, XALT_LIDAR, XWVL_LIDAR, XZZ, XRHODREF, XCLDFR,&
+       CALL LIDAR(CCLOUD, YVIEW, XALT_LIDAR, XWVL_LIDAR, XZZ, XRHODREF, ZTEMP, MAX(XCLDFR,XICEFR),&
             XRT, ZWORK31, ZWORK32,                                  &
             PCT=ZTMP4,                            &
             PDSTC=ZTMP1,                          &
@@ -3963,14 +3964,14 @@ IF (LLIDAR) THEN
   ELSE
     SELECT CASE ( CCLOUD )
     CASE('KESS','ICE3','ICE4')
-      CALL LIDAR(CCLOUD, YVIEW, XALT_LIDAR, XWVL_LIDAR, XZZ, XRHODREF, XCLDFR, &
+      CALL LIDAR(CCLOUD, YVIEW, XALT_LIDAR, XWVL_LIDAR, XZZ, XRHODREF, ZTEMP, XCLDFR, &
            XRT, ZWORK31, ZWORK32)
     CASE('C2R2')
-      CALL LIDAR(CCLOUD, YVIEW, XALT_LIDAR, XWVL_LIDAR, XZZ, XRHODREF, XCLDFR, &
+      CALL LIDAR(CCLOUD, YVIEW, XALT_LIDAR, XWVL_LIDAR, XZZ, XRHODREF, ZTEMP, XCLDFR, &
            XRT, ZWORK31, ZWORK32,                                  &
            PCT=XSVT(:,:,:,NSV_C2R2BEG+1:NSV_C2R2END))
     CASE('C3R5')
-      CALL LIDAR(CCLOUD, YVIEW, XALT_LIDAR, XWVL_LIDAR, XZZ, XRHODREF, XCLDFR, &
+      CALL LIDAR(CCLOUD, YVIEW, XALT_LIDAR, XWVL_LIDAR, XZZ, XRHODREF, ZTEMP, XCLDFR, &
            XRT, ZWORK31, ZWORK32,                                  &
            PCT=XSVT(:,:,:,NSV_C2R2BEG+1:NSV_C1R3END-1))
     CASE('LIMA')
@@ -3981,7 +3982,7 @@ IF (LLIDAR) THEN
        ZTMP4(:,:,:,3)=XSVT(:,:,:,NSV_LIMA_NR)
        ZTMP4(:,:,:,4)=XSVT(:,:,:,NSV_LIMA_NI)
 !
-       CALL LIDAR(CCLOUD, YVIEW, XALT_LIDAR, XWVL_LIDAR, XZZ, XRHODREF, XCLDFR,&
+       CALL LIDAR(CCLOUD, YVIEW, XALT_LIDAR, XWVL_LIDAR, XZZ, XRHODREF, ZTEMP, MAX(XCLDFR,XICEFR),&
             XRT, ZWORK31, ZWORK32,                                  &
             PCT=ZTMP4)
     END SELECT

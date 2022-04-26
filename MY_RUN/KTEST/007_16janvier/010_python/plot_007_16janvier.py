@@ -58,7 +58,7 @@ Ltitle = ['Wind at 850hPa', 'Wind at 700hPa', 'Wind at 9000m']
 Lxlab = ['longitude']*len(Lplot1)
 Lylab = ['latitude']*len(Lplot1)
 Llegendval = [20,20,40]
-Lcbarlabel = ['(m/s)']*len(Lplot1)
+Llegendlabel = ['(m/s)']*len(Lplot1)
 Larrowstep = [2]*len(Lplot1)
 Lwidth = [0.002]*len(Lplot1)
 Lcolor = ['black']*len(Lplot1)
@@ -66,7 +66,7 @@ Lprojection = [ccrs.PlateCarree()]*len(Lplot1)
 Llvl = [0]*len(Lplot1)
 fig2 = Panel1.pvector(Lxx=lon, Lyy=lat, Lvar1=Lplot1, Lvar2=Lplot2, Lcarte=[], Llevel=Llvl, Lxlab=Lxlab, Lylab=Lylab, 
                       Ltitle=Ltitle, Lwidth=Lwidth, Larrowstep=Larrowstep, Lproj=Lprojection,
-                      Lcolor=Lcolor, Llegendval=Llegendval, Lcbarlabel=Lcbarlabel, Lid_overlap=[2,4,6], ax=fig1.axes)
+                      Lcolor=Lcolor, Llegendval=Llegendval, Llegendlabel=Llegendlabel, Lid_overlap=[2,4,6], ax=fig1.axes)
 
 Panel1.save_graph(1,fig2)
 
@@ -99,7 +99,7 @@ Ltitle = ['Wind at 850hPa', 'Wind at 700hPa', 'Wind at 9000m']
 Llegendval = [20,20,40]
 Lxlab = ['longitude']*len(Lplot1)
 Lylab = ['latitude']*len(Lplot1)
-Lcbarlabel = ['(m/s)']*len(Lplot1)
+Llegendlabel = ['(m/s)']*len(Lplot1)
 Larrowstep = [2]*len(Lplot1)
 Lwidth = [0.002]*len(Lplot1)
 Lcolor = ['black']*len(Lplot1)
@@ -107,6 +107,6 @@ Lprojection = [ccrs.PlateCarree()]*len(Lplot1)
 Llvl = [0]*len(Lplot1)
 fig2 = Panel2.pvector(Lxx=lon, Lyy=lat, Lvar1=Lplot1, Lvar2=Lplot2, Lcarte=[], Llevel=Llvl, Lxlab=Lxlab, Lylab=Lylab, 
                       Ltitle=Ltitle, Lwidth=Lwidth, Larrowstep=Larrowstep, Lproj=Lprojection,
-                      Lcolor=Lcolor, Llegendval=Llegendval, Lcbarlabel=Lcbarlabel, Lid_overlap=[2,4,6], ax=fig1.axes)
+                      Lcolor=Lcolor, Llegendval=Llegendval, Llegendlabel=Llegendlabel, Lid_overlap=[2,4,6], ax=fig1.axes)
 
 Panel2.save_graph(2,fig2)

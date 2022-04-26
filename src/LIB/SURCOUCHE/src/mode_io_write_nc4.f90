@@ -35,7 +35,7 @@ module mode_io_write_nc4
 use modd_field,        only: tfielddata
 use modd_io,           only: gsmonoproc, tfiledata
 use modd_parameters,   only: NMNHNAMELGTMAX
-use modd_precision,    only: CDFINT, MNHINT_NF90, MNHREAL_MPI, MNHREAL_NF90
+use modd_precision,    only: CDFINT, MNHINT_NF90, MNHREAL32, MNHREAL_MPI, MNHREAL_NF90
 
 use mode_io_tools_nc4, only: IO_Mnhname_clean, IO_Vdims_fill_nc4, IO_Dim_find_create_nc4, IO_Strdimid_get_nc4, IO_Err_handle_nc4
 use mode_msg
@@ -340,7 +340,7 @@ IF(TPFIELD%NTYPE==TYPEREAL .AND. TPFIELD%NDIMS>0) THEN
   !          * it cannot be modified if some data has already been written (->check OEXISTED)
   IF(.NOT.OEXISTED) THEN
     IF (TPFILE%LNCREDUCE_FLOAT_PRECISION) THEN
-      istatus = NF90_PUT_ATT(INCID, KVARID,'_FillValue', REAL(TPFIELD%XFILLVALUE,KIND=4))
+      istatus = NF90_PUT_ATT(INCID, KVARID,'_FillValue', REAL(TPFIELD%XFILLVALUE,KIND=MNHREAL32))
     ELSE
       istatus = NF90_PUT_ATT(INCID, KVARID,'_FillValue', TPFIELD%XFILLVALUE)
     END IF
@@ -349,14 +349,14 @@ IF(TPFIELD%NTYPE==TYPEREAL .AND. TPFIELD%NDIMS>0) THEN
   !
   ! Valid_min/max (CF/COMODO convention)
   IF (TPFILE%LNCREDUCE_FLOAT_PRECISION) THEN
-    istatus = NF90_PUT_ATT(INCID, KVARID,'valid_min', REAL(TPFIELD%XVALIDMIN,KIND=4))
+    istatus = NF90_PUT_ATT(INCID, KVARID,'valid_min', REAL(TPFIELD%XVALIDMIN,KIND=MNHREAL32))
   ELSE
     istatus = NF90_PUT_ATT(INCID, KVARID,'valid_min', TPFIELD%XVALIDMIN)
   END IF
   IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_attr_write_nc4','NF90_PUT_ATT','valid_min')
   !
   IF (TPFILE%LNCREDUCE_FLOAT_PRECISION) THEN
-    istatus = NF90_PUT_ATT(INCID, KVARID,'valid_max', REAL(TPFIELD%XVALIDMAX,KIND=4))
+    istatus = NF90_PUT_ATT(INCID, KVARID,'valid_max', REAL(TPFIELD%XVALIDMAX,KIND=MNHREAL32))
   ELSE
     istatus = NF90_PUT_ATT(INCID, KVARID,'valid_max',TPFIELD%XVALIDMAX)
   END IF

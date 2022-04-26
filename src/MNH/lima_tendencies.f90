@@ -16,7 +16,7 @@ MODULE MODI_LIMA_TENDENCIES
                                  P_RC_AUTO, P_CC_AUTO, P_CR_AUTO,                       & 
                                  P_RC_ACCR, P_CC_ACCR,                                  & 
                                  P_CR_SCBU,                                             & 
-                                 P_TH_EVAP, P_RR_EVAP,                                  & 
+                                 P_TH_EVAP, P_RR_EVAP, P_CR_EVAP,                       & 
                                  P_RI_CNVI, P_CI_CNVI,                                  & 
                                  P_TH_DEPS, P_RS_DEPS,                                  & 
                                  P_TH_DEPI, P_RI_DEPI,                                  & 
@@ -80,7 +80,8 @@ REAL, DIMENSION(:),   INTENT(INOUT) :: P_CC_ACCR ! accretion of droplets by rain
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_CR_SCBU ! self collectio break up of drops (SCBU) : Nr
 !
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_TH_EVAP
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_RR_EVAP ! evaporation of rain drops (EVAP) : rr, rv=-rr
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_RR_EVAP
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_CR_EVAP ! evaporation of rain drops (EVAP) : rr, Nr, rv=-rr
 !
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_RI_CNVI
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_CI_CNVI  ! conversion snow -> ice (CNVI) : ri, Ni, rs=-ri
@@ -189,7 +190,7 @@ SUBROUTINE LIMA_TENDENCIES (PTSTEP, LDCOMPUTE,                                  
                             P_RC_AUTO, P_CC_AUTO, P_CR_AUTO,                       & 
                             P_RC_ACCR, P_CC_ACCR,                                  & 
                             P_CR_SCBU,                                             & 
-                            P_TH_EVAP, P_RR_EVAP,                                  & 
+                            P_TH_EVAP, P_RR_EVAP, P_CR_EVAP,                       & 
                             P_RI_CNVI, P_CI_CNVI,                                  & 
                             P_TH_DEPS, P_RS_DEPS,                                  & 
                             P_TH_DEPI, P_RI_DEPI,                                  & 
@@ -231,6 +232,9 @@ SUBROUTINE LIMA_TENDENCIES (PTSTEP, LDCOMPUTE,                                  
 !!    -------------
 !!      Original             15/03/2018
 !!
+!       Delbeke/Vie     03/2022 : KHKO option
+!       J. Wurtz        03/2022 : new snow characteristics
+!       B. Vie          03/2022: Add option for 1-moment pristine ice
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -238,11 +242,12 @@ SUBROUTINE LIMA_TENDENCIES (PTSTEP, LDCOMPUTE,                                  
 !
 USE MODD_CST,              ONLY : XP00, XRD, XRV, XMD, XMV, XCPD, XCPV, XCL, XCI, XLVTT, XLSTT, XTT, &
                                   XALPW, XBETAW, XGAMW, XALPI, XBETAI, XGAMI
-USE MODD_PARAM_LIMA,       ONLY : XRTMIN, XCTMIN,                                                    &
-                                  LCOLD, LNUCL, LSNOW, LHAIL, LWARM, LACTI, LRAIN
+USE MODD_PARAM_LIMA,       ONLY : XRTMIN, XCTMIN, XNUS,                                    &
+                                  LCOLD, LNUCL, LSNOW, LHAIL, LWARM, LACTI, LRAIN, LKHKO, LSNOW_T, NMOM_I
 USE MODD_PARAM_LIMA_WARM,  ONLY : XLBC, XLBEXC, XLBR, XLBEXR
 USE MODD_PARAM_LIMA_MIXED, ONLY : XLBG, XLBEXG, XLBH, XLBEXH, XLBDAG_MAX
-USE MODD_PARAM_LIMA_COLD,  ONLY : XSCFAC, XLBI, XLBEXI, XLBS, XLBEXS, XLBDAS_MAX
+USE MODD_PARAM_LIMA_COLD,  ONLY : XSCFAC, XLBI, XLBEXI, XLBS, XLBEXS, XLBDAS_MAX, XTRANS_MP_GAMMAS,  &
+                                  XFVELOS, XLBDAS_MIN
 !
 USE MODI_LIMA_DROPLETS_HOM_FREEZING
 USE MODI_LIMA_DROPLETS_SELF_COLLECTION
@@ -259,6 +264,8 @@ USE MODI_LIMA_RAIN_ACCR_SNOW
 USE MODI_LIMA_CONVERSION_MELTING_SNOW
 USE MODI_LIMA_RAIN_FREEZING
 USE MODI_LIMA_GRAUPEL
+!
+USE MODI_LIMA_BERGERON
 !
 IMPLICIT NONE
 !
@@ -300,7 +307,8 @@ REAL, DIMENSION(:),   INTENT(INOUT) :: P_CC_ACCR ! accretion of droplets by rain
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_CR_SCBU ! self collectio break up of drops (SCBU) : Nr
 !
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_TH_EVAP
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_RR_EVAP ! evaporation of rain drops (EVAP) : rr, rv=-rr
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_RR_EVAP
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_CR_EVAP ! evaporation of rain drops (EVAP) : rr, Nr, rv=-rr
 !
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_RI_CNVI
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_CI_CNVI  ! conversion snow -> ice (CNVI) : ri, Ni, rs=-ri
@@ -502,9 +510,21 @@ WHERE (PRIT(:)>XRTMIN(4) .AND. PCIT(:)>XCTMIN(4) .AND. LDCOMPUTE(:))
    ZLBDI(:) = ( XLBI*PCIT(:) / PRIT(:) )**XLBEXI
 END WHERE
 ZLBDS(:)  = 1.E10
-WHERE (PRST(:)>XRTMIN(5) .AND. LDCOMPUTE(:) )
-   ZLBDS(:) = XLBS*( PRHODREF(:)*PRST(:) )**XLBEXS
-END WHERE
+IF (LSNOW_T) THEN
+   WHERE (PRST(:)>XRTMIN(5) .AND. LDCOMPUTE(:) )
+      WHERE(ZT(:)>263.15)
+         ZLBDS(:) = MAX(MIN(XLBDAS_MAX, 10**(14.554-0.0423*ZT(:))),XLBDAS_MIN)
+      END WHERE
+      WHERE(ZT(:)<=263.15)
+         ZLBDS(:) = MAX(MIN(XLBDAS_MAX, 10**(6.226-0.0106*ZT(:))),XLBDAS_MIN)
+      END WHERE
+   END WHERE
+   ZLBDS(:) =  ZLBDS(:) * XTRANS_MP_GAMMAS
+ELSE
+   WHERE (PRST(:)>XRTMIN(5) .AND. LDCOMPUTE(:) )
+      ZLBDS(:) = XLBS*( PRHODREF(:)*PRST(:) )**XLBEXS
+   END WHERE
+END IF
 ZLBDG(:)  = 1.E10
 WHERE (PRGT(:)>XRTMIN(6) .AND. LDCOMPUTE(:) )
    ZLBDG(:) = XLBG*( PRHODREF(:)*PRGT(:) )**XLBEXG
@@ -525,7 +545,7 @@ IF (LCOLD .AND. LWARM) THEN
                                     PA_TH, PA_RC, PA_CC, PA_RI, PA_CI  )
 END IF
 !
-IF (LWARM .AND. LRAIN) THEN
+IF (LWARM .AND. LRAIN .AND. (.NOT. LKHKO)) THEN
    CALL LIMA_DROPLETS_SELF_COLLECTION (LDCOMPUTE,          & ! depends on CF
                                        PRHODREF,           &
                                        PCCT/ZCF1D, ZLBDC3, &
@@ -564,7 +584,7 @@ IF (LWARM .AND. LRAIN) THEN
    PA_RR(:) = PA_RR(:) - P_RC_ACCR(:)
 END IF
 !
-IF (LWARM .AND. LRAIN) THEN 
+IF (LWARM .AND. LRAIN .AND. (.NOT. LKHKO)) THEN 
    CALL LIMA_DROPS_SELF_COLLECTION (LDCOMPUTE,           & ! depends on PF
                                     PRHODREF,            &
                                     PCRT/ZPF1D(:), ZLBDR, ZLBDR3, &
@@ -576,18 +596,20 @@ IF (LWARM .AND. LRAIN) THEN
 END IF
 !
 IF (LWARM .AND. LRAIN) THEN
-   CALL LIMA_RAIN_EVAPORATION (PTSTEP, LDCOMPUTE,                          & ! depends on PF > CF 
-                               PRHODREF, ZT, ZLV, ZLVFACT, ZEVSAT, ZRVSAT, &
-                               PRVT, PRCT/ZPF1D, PRRT/ZPF1D, ZLBDR,        &
-                               P_TH_EVAP, P_RR_EVAP,                       &
-                               PEVAP3D                                     )
+   CALL LIMA_RAIN_EVAPORATION (PTSTEP, LDCOMPUTE,                               & ! depends on PF > CF 
+                               PRHODREF, ZT, ZLV, ZLVFACT, ZEVSAT, ZRVSAT,      &
+                               PRVT, PRCT/ZPF1D, PRRT/ZPF1D, PCRT/ZPF1D, ZLBDR, &
+                               P_TH_EVAP, P_RR_EVAP, P_CR_EVAP,                 &
+                               PEVAP3D                                          )
    P_RR_EVAP(:) = P_RR_EVAP(:) * MAX((ZPF1D(:) - ZCF1D(:)),0.)
+   P_CR_EVAP(:) = P_RR_EVAP(:) * MAX((ZPF1D(:) - ZCF1D(:)),0.)
    P_TH_EVAP(:) = P_RR_EVAP(:) * ZLVFACT(:)
    PEVAP3D(:) = - P_RR_EVAP(:)
    !
    PA_TH(:) = PA_TH(:) + P_TH_EVAP(:)
    PA_RV(:) = PA_RV(:) - P_RR_EVAP(:)
    PA_RR(:) = PA_RR(:) + P_RR_EVAP(:)
+   PA_CR(:) = PA_CR(:) + P_CR_EVAP(:)
 END IF
 !
 IF (LCOLD) THEN
@@ -595,7 +617,7 @@ IF (LCOLD) THEN
    ! Includes vapour deposition on ice, ice -> snow conversion
    !
    CALL LIMA_ICE_DEPOSITION (PTSTEP, LDCOMPUTE,                 & ! depends on IF, PF
-                             PRHODREF, ZSSI, ZAI, ZCJ, ZLSFACT, &
+                             PRHODREF, ZT, ZSSI, ZAI, ZCJ, ZLSFACT, &
                              PRIT/ZIF1D, PCIT/ZIF1D, ZLBDI,     &
                              P_TH_DEPI, P_RI_DEPI,              &
                              P_RI_CNVS, P_CI_CNVS               )
@@ -639,7 +661,7 @@ END IF
 ! Lambda_s limited for collection processes to prevent too high concentrations
 ! must be changed or removed if C and x modified
 !
-ZLBDS(:) = MIN( XLBDAS_MAX, ZLBDS(:))
+!ZLBDS(:) = MIN( XLBDAS_MAX, ZLBDS(:))
 !
 !
 IF (LCOLD .AND. LSNOW) THEN
@@ -667,16 +689,18 @@ IF (LWARM .AND. LCOLD) THEN
    PA_TH(:) = PA_TH(:) + P_TH_DEPG(:)
 END IF
 !
-!!$IF (LWARM .AND. LCOLD) THEN
-!!$   CALL LIMA_BERGERON (LDCOMPUTE,                         & ! depends on CF, IF
-!!$                       PRCT, PRIT, PCIT, ZLBDI,           &
-!!$                       ZSSIW, ZAI, ZCJ, ZLVFACT, ZLSFACT, &
-!!$                       P_TH_BERFI, P_RC_BERFI,            &
-!!$                       PA_TH, PA_RC, PA_RI                )
-!!$END IF
-P_TH_BERFI(:) = 0.
-P_RC_BERFI(:) = 0.
+IF (LWARM .AND. LCOLD .AND. NMOM_I.EQ.1) THEN
+   CALL LIMA_BERGERON (LDCOMPUTE,                                 & ! depends on CF, IF
+                       PRCT/ZCF1D, PRIT/ZIF1D, PCIT/ZIF1D, ZLBDI, &
+                       ZSSIW, ZAI, ZCJ, ZLVFACT, ZLSFACT,         &
+                       P_TH_BERFI, P_RC_BERFI                     )
+   P_TH_BERFI(:) = P_TH_BERFI(:) * MIN(ZCF1D,ZIF1D)
+   P_RC_BERFI(:) = P_RC_BERFI(:) * MIN(ZCF1D,ZIF1D)
 !
+   PA_RC(:) = PA_RC(:) + P_RC_BERFI(:)
+   PA_RI(:) = PA_RI(:) - P_RC_BERFI(:)
+   PA_TH(:) = PA_TH(:) + P_TH_BERFI(:)
+END IF
 !
 IF (LWARM .AND. LCOLD .AND. LSNOW) THEN
      !

@@ -67,7 +67,7 @@ source ${MNH_MINICONDA}/miniconda3/etc/profile.d/conda.sh
 
 conda create -n mnh_conda_cartopy_offlinedata
 conda activate mnh_conda_cartopy_offlinedata
-conda install -c conda-forge netcdf4 cartopy matlibplot
+conda install -c conda-forge netcdf4 cartopy matplotlib
 
 #
 # this is the minimum packages needed for the MesoNH script of the test cases

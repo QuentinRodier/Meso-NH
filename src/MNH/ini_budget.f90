@@ -525,7 +525,6 @@ if ( lbu_rth .or. lbu_rtke .or. lbu_rrv .or. lbu_rrc .or. lbu_rrr .or. &
   tburhodj%xdata(:, :, :) = 0.
 end if
 
-
 tzsource%ntype    = TYPEREAL
 tzsource%ndims    = 3
 
@@ -4098,31 +4097,6 @@ SV_BUDGETS: do jsv = 1, ksv
     call Sourcelist_scan( tbudgets(ibudget), cbulist_rsv )
   end if
 end do SV_BUDGETS
-
-IF (CBUTYPE=='CART') THEN
-  WRITE(UNIT=KLUOUT, FMT= '(2/,"DESCRIPTION OF THE BUDGET BOX")' )
-  WRITE(UNIT=KLUOUT, FMT= '("BUIL = ",I4.4)' ) NBUIL
-  WRITE(UNIT=KLUOUT, FMT= '("BUIH = ",I4.4)' ) NBUIH
-  WRITE(UNIT=KLUOUT, FMT= '("BUJL = ",I4.4)' ) NBUJL
-  WRITE(UNIT=KLUOUT, FMT= '("BUJH = ",I4.4)' ) NBUJH
-  WRITE(UNIT=KLUOUT, FMT= '("BUKL = ",I4.4)' ) NBUKL
-  WRITE(UNIT=KLUOUT, FMT= '("BUKH = ",I4.4)' ) NBUKH
-  WRITE(UNIT=KLUOUT, FMT= '("BUIMAX = ",I4.4)' ) NBUIMAX
-  WRITE(UNIT=KLUOUT, FMT= '("BUJMAX = ",I4.4)' ) NBUJMAX
-  WRITE(UNIT=KLUOUT, FMT= '("BUKMAX = ",I4.4)' ) NBUKMAX
-END IF
-IF (CBUTYPE=='MASK') THEN
-  WRITE(UNIT=KLUOUT, FMT= '(2/,"DESCRIPTION OF THE BUDGET MASK")' )
-  WRITE(UNIT=KLUOUT, FMT= '("BUIL = ",I4.4)' ) NBUIL
-  WRITE(UNIT=KLUOUT, FMT= '("BUIH = ",I4.4)' ) NBUIH
-  WRITE(UNIT=KLUOUT, FMT= '("BUJL = ",I4.4)' ) NBUJL
-  WRITE(UNIT=KLUOUT, FMT= '("BUJH = ",I4.4)' ) NBUJH
-  WRITE(UNIT=KLUOUT, FMT= '("BUKL = ",I4.4)' ) NBUKL
-  WRITE(UNIT=KLUOUT, FMT= '("BUKH = ",I4.4)' ) NBUKH
-  WRITE(UNIT=KLUOUT, FMT= '("BUKMAX = ",I4.4)' ) NBUKMAX
-  WRITE(UNIT=KLUOUT, FMT= '("BUSUBWRITE = ",I4.4)' ) NBUSUBWRITE
-  WRITE(UNIT=KLUOUT, FMT= '("BUMASK = ",I4.4)' ) NBUMASK
-END IF
 
 call Ini_budget_groups( tbudgets, ibudim1, ibudim2, ibudim3 )
 

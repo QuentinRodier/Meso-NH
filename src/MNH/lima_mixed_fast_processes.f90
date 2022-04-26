@@ -145,7 +145,7 @@ END MODULE MODI_LIMA_MIXED_FAST_PROCESSES
 !  C. Barthe   14/03/2022: - add CIBU (from T. Hoarau's work) and RDSF (from J.P. Pinty's work)
 !                          - change the name of some arguments to match the DOCTOR norm
 !                          - change conditions for HMG to occur
-!
+!  J. Wurtz       03/2022: new snow characteristics
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -347,8 +347,9 @@ IF( IGRIM>0 ) THEN
   WHERE ( GRIM(:) )
     ZZW1(:,1) = MIN( PRCS1D(:),                              &
                  XCRIMSS * ZZW(:) * PRCT1D(:)                & ! RCRIMSS
-                                  *   PLBDAS(:)**XEXCRIMSS &
-                                  * PRHODREF(:)**(-XCEXVT) )
+                                  * PRST1D(:)*(1+(XFVELOS/PLBDAS(:))**XALPHAS)**(-XNUS+XEXCRIMSS/XALPHAS) &
+                                      * PRHODREF(:)**(-XCEXVT+1) &
+                                      * (PLBDAS(:)) ** (XEXCRIMSS+XBS) )
     PRCS1D(:) = PRCS1D(:) - ZZW1(:,1)
     PRSS1D(:) = PRSS1D(:) + ZZW1(:,1)
     PTHS1D(:) = PTHS1D(:) + ZZW1(:,1) * (PLSFACT(:) - PLVFACT(:)) ! f(L_f*(RCRIMSS))
@@ -367,13 +368,12 @@ IF( IGRIM>0 ) THEN
 !
   WHERE ( GRIM(:) .AND. (PRSS1D(:)>XRTMIN(5)/PTSTEP) )
     ZZW1(:,2) = MIN( PRCS1D(:),                     &
-                 XCRIMSG * PRCT1D(:)                & ! RCRIMSG
-                         *  PLBDAS(:)**XEXCRIMSG  &
-                         * PRHODREF(:)**(-XCEXVT) &
-                         - ZZW1(:,1)              )
+                 XCRIMSG * PRCT1D(:)*  PRST1D(:)                & ! RCRIMSG
+                           *(1+(XFVELOS/PLBDAS(:))**XALPHAS)**(-XNUS+XEXCRIMSG/XALPHAS)*PLBDAS(:)**(XBS+XEXCRIMSG)  &
+                           * PRHODREF(:)**(-XCEXVT+1) &
+                           - ZZW1(:,1)              )
     ZZW1(:,3) = MIN( PRSS1D(:),                         &
-                     XSRIMCG * PLBDAS(:)**XEXSRIMCG   & ! RSRIMCG
-                             * (1.0 - ZZW(:) )/(PTSTEP*PRHODREF(:)))
+                     XSRIMCG * XLBS * PRST1D(:) * (1.0 - ZZW(:))/PTSTEP )
     PRCS1D(:) = PRCS1D(:) - ZZW1(:,2)
     PRSS1D(:) = PRSS1D(:) - ZZW1(:,3)
     PRGS1D(:) = PRGS1D(:) + ZZW1(:,2) + ZZW1(:,3)
@@ -824,10 +824,10 @@ IF( IGACC>0 .AND. LRAIN) THEN
 !
   WHERE ( GACC(:) )
     ZZW1(:,2) = PCRT1D(:) *                                           & !! coef of RRACCS
-         XFRACCSS*( PLBDAS(:)**XCXS )*( PRHODREF(:)**(-XCEXVT-1.) ) &
-    *( XLBRACCS1/((PLBDAS(:)**2)               ) +                  &
-       XLBRACCS2/( PLBDAS(:)    * PLBDAR(:)    ) +                  &
-       XLBRACCS3/(               (PLBDAR(:)**2)) )/PLBDAR(:)**3
+              XFRACCSS*( PRST1D(:)*PLBDAS(:)**XBS )*( PRHODREF(:)**(-XCEXVT) ) &
+         *( XLBRACCS1/((PLBDAS(:)**2)               ) +                  &
+            XLBRACCS2/( PLBDAS(:)    * PLBDAR(:)    ) +                  &
+            XLBRACCS3/(               (PLBDAR(:)**2)) )/PLBDAR(:)**3
     ZZW1(:,4) = MIN( PRRS1D(:),ZZW1(:,2)*ZZW(:) )           ! RRACCSS
     PRRS1D(:) = PRRS1D(:) - ZZW1(:,4)
     PRSS1D(:) = PRSS1D(:) + ZZW1(:,4)
@@ -868,10 +868,10 @@ IF( IGACC>0 .AND. LRAIN) THEN
   WHERE ( GACC(:) .AND. (PRSS1D(:)>XRTMIN(5)/PTSTEP) )
     ZZW1(:,2) = MAX( MIN( PRRS1D(:),ZZW1(:,2)-ZZW1(:,4) ) , 0. )      ! RRACCSG
     ZZW1(:,3) = MIN( PRSS1D(:),XFSACCRG*ZZW(:)*                     & ! RSACCRG
-          ( PLBDAS(:)**(XCXS-XBS) )*( PRHODREF(:)**(-XCEXVT-1.) ) &
-         *( XLBSACCR1/((PLBDAR(:)**2)               ) +           &
-            XLBSACCR2/( PLBDAR(:)    * PLBDAS(:)    ) +           &
-            XLBSACCR3/(               (PLBDAS(:)**2)) ) )
+            ( PRST1D(:) )*( PRHODREF(:)**(-XCEXVT) ) &
+           *( XLBSACCR1/((PLBDAR(:)**2)               ) +           &
+              XLBSACCR2/( PLBDAR(:)    * PLBDAS(:)    ) +           &
+              XLBSACCR3/(               (PLBDAS(:)**2)) ) )
     PRRS1D(:) = PRRS1D(:) - ZZW1(:,2)
     PRSS1D(:) = PRSS1D(:) - ZZW1(:,3)
     PRGS1D(:) = PRGS1D(:) + ZZW1(:,2) + ZZW1(:,3)
@@ -920,12 +920,13 @@ WHERE( (PRST1D(:)>XRTMIN(5)) .AND. (PRSS1D(:)>XRTMIN(5)/PTSTEP) .AND. (PZT(:)>XT
 !
 ! compute RSMLT
 !
-  ZZW(:)  = MIN( PRSS1D(:), XFSCVMG*MAX( 0.0,( -ZZW(:) *            &
-                        ( X0DEPS*       PLBDAS(:)**XEX0DEPS +     &
-                          X1DEPS*PCJ(:)*PLBDAS(:)**XEX1DEPS ) -   &
-                                  ( ZZW1(:,1)+ZZW1(:,4) ) *       &
-                           ( PRHODREF(:)*XCL*(XTT-PZT(:))) ) /    &
-                                          ( PRHODREF(:)*XLMTT ) ) )
+  ZZW(:)  = MIN( PRSS1D(:), XFSCVMG*MAX( 0.0,( -ZZW(:) *             &
+                          PRHODREF(:) * PRST1D(:)*( X0DEPS*            PLBDAS(:)**XEX0DEPS +     &
+                          X1DEPS*PCJ(:)*(1+(XFVELOS/(2.*PLBDAS(:)))**XALPHAS) &
+                          **(-XNUS+XEX1DEPS/XALPHAS)*(PLBDAS(:))**(XEX1DEPS+XBS))-    &
+                                    ( ZZW1(:,1)+ZZW1(:,4) ) *       &
+                             ( PRHODREF(:)*XCL*(XTT-PZT(:))) ) /    &
+                                            ( PRHODREF(:)*XLMTT ) ) )
 !
 ! note that RSCVMG = RSMLT*XFSCVMG but no heat is exchanged (at the rate RSMLT)
 ! because the graupeln produced by this process are still icy!!!
@@ -1174,12 +1175,12 @@ IF( IGDRY>0 ) THEN
 !
   WHERE( GDRY(:) )
     ZZW1(:,3) = MIN( PRSS1D(:),XFSDRYG*ZZW(:)                         & ! RSDRYG
-                                    * EXP( XCOLEXSG*(PZT(:)-XTT) )  &
-                  *( PLBDAS(:)**(XCXS-XBS) )*( PLBDAG(:)**XCXG )    &
-                  *( PRHODREF(:)**(-XCEXVT-1.) )                    &
-                       *( XLBSDRYG1/( PLBDAG(:)**2              ) + &
-                          XLBSDRYG2/( PLBDAG(:)   * PLBDAS(:)   ) + &
-                          XLBSDRYG3/(               PLBDAS(:)**2) ) )
+                                      * EXP( XCOLEXSG*(PZT(:)-XTT) )  &
+                    *( PRST1D(:)) )*( PLBDAG(:)**XCXG )    &
+                    *( PRHODREF(:)**(-XCEXVT) )                    &
+                         *( XLBSDRYG1/( PLBDAG(:)**2              ) + &
+                            XLBSDRYG2/( PLBDAG(:)   * PLBDAS(:)   ) + &
+                            XLBSDRYG3/(               PLBDAS(:)**2) )
   END WHERE
   DEALLOCATE(IVEC2)
   DEALLOCATE(IVEC1)
@@ -1426,11 +1427,8 @@ if ( nbumod == kmi .and. lbu_enable ) then
                                           Unpack( pcis1d(:), mask = gmicro(:, :, :), field = pcis(:, :, :) ) * prhodj(:, :, :) )
 end if
 
-!GDRY(:) = (PZT(:)<XHMTMAX) .AND. (PZT(:)>XHMTMIN)    .AND. (ZRDRYG(:)<ZZW(:))&
-!                           .AND. (PRGT1D(:)>XRTMIN(6)) .AND. (PRCT1D(:)>XRTMIN(2))
 GDRY(:) = (PZT(:)<XHMTMAX) .AND. (PZT(:)>XHMTMIN)      .AND. (ZRDRYG(:)<ZRWETG(:))&
                            .AND. (PRGT1D(:)>XRTMIN(6)) .AND. (PRCT1D(:)>XRTMIN(2))
-!
 IGDRY = COUNT( GDRY(:) )
 IF( IGDRY>0 ) THEN
   ALLOCATE(ZVEC1(IGDRY))
@@ -1620,11 +1618,11 @@ IF( IHAIL>0 ) THEN
 !
     WHERE( GWET(:) )
       ZZW1(:,3) = MIN( PRSS1D(:),XFSWETH*ZZW(:)                       & ! RSWETH
-                    *( PLBDAS(:)**(XCXS-XBS) )*( PLBDAH(:)**XCXH )  &
-                       *( PRHODREF(:)**(-XCEXVT-1.) )               &
-                       *( XLBSWETH1/( PLBDAH(:)**2              ) + &
-                          XLBSWETH2/( PLBDAH(:)   * PLBDAS(:)   ) + &
-                          XLBSWETH3/(               PLBDAS(:)**2) ) )
+                      *( PRST1D(:))*( PLBDAH(:)**XCXH )  &
+                        *( PRHODREF(:)**(-XCEXVT) )               &
+                         *( XLBSWETH1/( PLBDAH(:)**2              ) + &
+                            XLBSWETH2/( PLBDAH(:)   * PLBDAS(:)   ) + &
+                            XLBSWETH3/(               PLBDAS(:)**2) ) )
     END WHERE
     DEALLOCATE(IVEC2)
     DEALLOCATE(IVEC1)

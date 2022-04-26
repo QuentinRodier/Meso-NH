@@ -68,7 +68,7 @@ Ltitle = ['Wind at K=2', 'Wind at 3000m', 'Wind at 5000m']
 Lxlab = ['x (m)']*len(Lplot)
 Lylab = ['y (m)']*len(Lplot)
 Llegendval = [10,10,10]
-Lcbarlabel = ['m/s']*len(Lplot)
+Llegendlabel = ['m/s']*len(Lplot)
 Larrowstep = [1]*len(Lplot)
 Lwidth = [0.002]*len(Lplot)
 Lcolor = ['black']*len(Lplot)
@@ -78,7 +78,7 @@ lat = [Dvar['f1']['nj_u'], Dvar['f2']['nj'],  Dvar['f2']['nj'] ]
 Lscale = [200]*len(Lplot)
 fig2 = Panel1.pvector(Lxx=lon, Lyy=lat, Lvar1=Lplot1, Lvar2=Lplot2, Lcarte=[500,23500,500,23500], Llevel=Llvl, 
                       Lxlab=Lxlab, Lylab=Lylab, Ltitle=Ltitle, Lwidth=Lwidth, Larrowstep=Larrowstep, 
-                      Lcolor=Lcolor, Llegendval=Llegendval, Lcbarlabel=Lcbarlabel, Lid_overlap=[4,6,8], ax=fig1.axes, Lscale=Lscale)
+                      Lcolor=Lcolor, Llegendval=Llegendval, Llegendlabel=Llegendlabel, Lid_overlap=[4,6,8], ax=fig1.axes, Lscale=Lscale)
 #  Oblique projection
 i_beg, j_beg = (2,0)
 i_end, j_end = (21,22)
@@ -163,13 +163,13 @@ Lplot1 = [ WIND_sec1]
 Lplot2 = [ WT_sec1]
 Ltitle = ['Wind']
 Llegendval = [25]
-Lcbarlabel = ['m/s']*len(Lplot)
+Llegendlabel = ['m/s']*len(Lplot)
 Larrowstep = [1]*len(Lplot)
 Lwidth = [0.004]*len(Lplot)
 Lscale = [200]*len(Lplot)
 
 fig4 = Panel3.pvector(Lxx=LaxeX, Lyy=LaxeZ, Lvar1=Lplot1, Lvar2=Lplot2, Lxlab=Lxlab, Lylab=Lylab, Ltitle=Ltitle, Lwidth=Lwidth, Larrowstep=Larrowstep, 
-                        Llegendval=Llegendval, Lcbarlabel=Lcbarlabel, Lid_overlap=[0], ax=fig3.axes, Lscale=Lscale)
+                        Llegendval=Llegendval, Llegendlabel=Llegendlabel, Lid_overlap=[0], ax=fig3.axes, Lscale=Lscale)
 
 Lplot = [RRT_sec1]
 LaxeX = [axe_m1]

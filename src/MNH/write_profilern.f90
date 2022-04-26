@@ -17,6 +17,8 @@
 !  P. Wautelet 11/03/2021: bugfix: correct name for NSV_LIMA_IMM_NUCL
 !  P. Wautelet 05/07/2021: reorganisation to store point values correctly (not in vertical profiles)
 !  M. Taufour     07/2021: modify RARE for hydrometeors containing ice and add bright band calculation for RARE
+!  P. Wautelet 01/09/2021: fix: correct vertical dimension for ALT and W
+!  P. Wautelet 19/11/2021: bugfix in units for LIMA variables
 !-----------------------------------------------------------------
 !      ###########################
 MODULE MODE_WRITE_PROFILER_n
@@ -85,7 +87,7 @@ USE MODD_CH_AEROSOL,      ONLY: CAERONAMES, LORILAM, JPMODE
 USE MODD_CH_M9_n,         ONLY: CNAMES
 USE MODD_CST,             ONLY: XRV
 USE MODD_ELEC_DESCR,      ONLY: CELECNAMES
-use modd_field,           only: NMNHDIM_LEVEL, NMNHDIM_PROFILER_TIME, NMNHDIM_PROFILER_PROC, NMNHDIM_UNUSED, &
+use modd_field,           only: NMNHDIM_LEVEL, NMNHDIM_LEVEL_W, NMNHDIM_PROFILER_TIME, NMNHDIM_PROFILER_PROC, NMNHDIM_UNUSED, &
                                 tfield_metadata_base, TYPEREAL
 USE MODD_ICE_C1R3_DESCR,  ONLY: C1R3NAMES
 USE MODD_IO,              ONLY: TFILEDATA
@@ -114,10 +116,12 @@ INTEGER,          INTENT(IN) :: KI
 character(len=2)                                      :: yidx
 character(len=100)                                    :: ycomment
 character(len=100)                                    :: yname
+character(len=40)                                     :: yunits
 CHARACTER(LEN=:),                         allocatable :: YGROUP   ! group title
 INTEGER                                               :: IKU
 INTEGER                                               :: IPROC    ! number of variables records
 INTEGER                                               :: JPROC
+integer                                               :: jproc_alt, jproc_w
 INTEGER                                               :: JRR      ! loop counter
 INTEGER                                               :: JSV      ! loop counter
 integer                                               :: ji
@@ -161,11 +165,15 @@ call Add_profile( 'RARE',     'Radar reflectivity',            'dBZ',    tprofil
 call Add_profile( 'RAREatt',  'Radar attenuated reflectivity', 'dBZ',    tprofiler%crare_att )
 call Add_profile( 'P',        'Pressure',                      'Pa',     tprofiler%p         )
 call Add_profile( 'ALT',      'Altitude',                      'm',      tprofiler%zz        )
+!Store position of ALT in the field list. Useful because it is not computed on the same Arakawa-grid points
+jproc_alt = jproc
 call Add_profile( 'ZON_WIND', 'Zonal wind',                    'm s-1',  tprofiler%zon       )
 call Add_profile( 'MER_WIND', 'Meridional wind',               'm s-1',  tprofiler%mer       )
 call Add_profile( 'FF',       'Wind intensity',                'm s-1',  tprofiler%ff        )
 call Add_profile( 'DD',       'Wind direction',                'degree', tprofiler%dd        )
 call Add_profile( 'W',        'Air vertical speed',            'm s-1',  tprofiler%w         )
+!Store position of W in the field list. Useful because it is not computed on the same Arakawa-grid points
+jproc_w = jproc
 
 if ( ldiag_in_run ) &
   call Add_profile( 'TKE_DISS', 'TKE dissipation rate', 'm2 s-2', tprofiler% tke_diss )
@@ -207,6 +215,7 @@ if ( Size( tprofiler%sv, 4 ) > 0  ) then
   end do
   ! LIMA variables
   do jsv = nsv_lima_beg, nsv_lima_end
+    yunits = 'kg-1'
     if ( jsv == nsv_lima_nc ) then
       yname = Trim( clima_warm_names(1) ) // 'T'
     else if ( jsv == nsv_lima_nr ) then
@@ -219,6 +228,7 @@ if ( Size( tprofiler%sv, 4 ) > 0  ) then
       yname = Trim( clima_warm_names(4) ) // yidx // 'T'
     else if ( jsv == nsv_lima_scavmass ) then
       yname = Trim( caero_mass(1) ) // 'T'
+      yunits = 'kg kg-1'
     else if ( jsv == nsv_lima_ni ) then
       yname = Trim( clima_cold_names(1) ) // 'T'
     else if ( jsv >= nsv_lima_ifn_free .and. jsv < nsv_lima_ifn_free + nmod_ifn ) then
@@ -235,7 +245,7 @@ if ( Size( tprofiler%sv, 4 ) > 0  ) then
     else if ( jsv == nsv_lima_spro ) then
       yname = Trim( clima_warm_names(5) ) // 'T'
     end if
-    call Add_profile( yname, '', 'kg-1', tprofiler%sv(:,:,:,jsv) )
+    call Add_profile( yname, '', yunits, tprofiler%sv(:,:,:,jsv) )
   end do
   ! electrical scalar variables
   do jsv = nsv_elecbeg, nsv_elecend
@@ -389,6 +399,8 @@ tzfields(:)%ndims     = 3
 tzfields(:)%ndimlist(1) = NMNHDIM_UNUSED
 tzfields(:)%ndimlist(2) = NMNHDIM_UNUSED
 tzfields(:)%ndimlist(3) = NMNHDIM_LEVEL
+tzfields(jproc_alt)%ndimlist(3) = NMNHDIM_LEVEL_W
+tzfields(jproc_w)%ndimlist(3)   = NMNHDIM_LEVEL_W
 tzfields(:)%ndimlist(4) = NMNHDIM_PROFILER_TIME
 tzfields(:)%ndimlist(5) = NMNHDIM_UNUSED
 tzfields(:)%ndimlist(6) = NMNHDIM_PROFILER_PROC

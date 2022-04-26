@@ -958,9 +958,11 @@ END IF
 !
 IF (NRR>1) THEN
   ALLOCATE(XCLDFR(IIU,IJU,IKU));  XCLDFR (:, :, :) = 0.
+  ALLOCATE(XICEFR(IIU,IJU,IKU));  XICEFR (:, :, :) = 0.
   ALLOCATE(XRAINFR(IIU,IJU,IKU)); XRAINFR(:, :, :) = 0.
 ELSE
   ALLOCATE(XCLDFR(0,0,0))
+  ALLOCATE(XICEFR(0,0,0))
   ALLOCATE(XRAINFR(0,0,0))
 END IF
 !
@@ -1797,7 +1799,7 @@ gles = lles_mean .or. lles_resolved  .or. lles_subgrid .or. lles_updraft &
                  .or. lles_downdraft .or. lles_spectra
 !Called if budgets are enabled via NAM_BUDGET
 !or if LES budgets are enabled via NAM_LES (condition on kmi==1 to call it max once)
-if ( ( cbutype /= "NONE" .and. nbumod == kmi ) .or. ( gles .and. kmi == 1 ) ) THEN
+if ( ( cbutype /= "NONE" .and. nbumod == kmi ) .or. ( gles .and. kmi == 1 ) .or. LCHECK ) THEN
   call Budget_preallocate()
 end if
 
@@ -1905,16 +1907,16 @@ CALL MPPDB_CHECK3D(XUT,"INI_MODEL_N-before read_field::XUT",PRECISION)
 CALL READ_FIELD(KMI,TPINIFILE,IIU,IJU,IKU,                                    &
                 CGETTKET,CGETRVT,CGETRCT,CGETRRT,CGETRIT,CGETCIT,CGETZWS,     &
                 CGETRST,CGETRGT,CGETRHT,CGETSVT,CGETSRCT,CGETSIGS,CGETCLDFR,  &
-                CGETBL_DEPTH,CGETSBL_DEPTH,CGETPHC,CGETPHR,                   &
+                CGETICEFR, CGETBL_DEPTH,CGETSBL_DEPTH,CGETPHC,CGETPHR,        &
                 CUVW_ADV_SCHEME, CTEMP_SCHEME,                                &
                 NSIZELBX_ll, NSIZELBXU_ll, NSIZELBY_ll, NSIZELBYV_ll,         &
                 NSIZELBXTKE_ll,NSIZELBYTKE_ll,                                &
                 NSIZELBXR_ll,NSIZELBYR_ll,NSIZELBXSV_ll,NSIZELBYSV_ll,        &
                 XUM,XVM,XWM,XDUM,XDVM,XDWM,                                   &
                 XUT,XVT,XWT,XTHT,XPABST,XTKET,XRTKEMS,                        &
-                XRT,XSVT,XZWS,XCIT,XDRYMASST, XDRYMASSS,                      &
-                XSIGS,XSRCT,XCLDFR,XBL_DEPTH,XSBL_DEPTH,XWTHVMF,XPHC,XPHR,    &
-                XLSUM,XLSVM,XLSWM,XLSTHM,XLSRVM,XLSZWSM,                      &
+                XRT,XSVT,XZWS,XCIT,XDRYMASST,XDRYMASSS,                       &
+                XSIGS,XSRCT,XCLDFR,XICEFR, XBL_DEPTH,XSBL_DEPTH,XWTHVMF,      &
+                XPHC,XPHR, XLSUM,XLSVM,XLSWM,XLSTHM,XLSRVM,XLSZWSM,           &
                 XLBXUM,XLBXVM,XLBXWM,XLBXTHM,XLBXTKEM,                        &
                 XLBXRM,XLBXSVM,                                               &
                 XLBYUM,XLBYVM,XLBYWM,XLBYTHM,XLBYTKEM,                        &
@@ -1967,8 +1969,8 @@ CALL INI_LES_n
 !*       11.    INITIALIZE THE SOURCE OF TOTAL DRY MASS Md
 !               ------------------------------------------
 !
-IF((KMI==1).AND.LSTEADYLS) THEN
-  XDRYMASSS = 0.
+IF((KMI==1).AND.LSTEADYLS .AND. (CCONF=='START') ) THEN
+   XDRYMASSS = 0.
 END IF
 !
 !-------------------------------------------------------------------------------
@@ -2162,20 +2164,22 @@ IF ( KMI > 1) THEN
   DPTR_XLBYRM=>XLBYRM
   DPTR_XLBXSVM=>XLBXSVM
   DPTR_XLBYSVM=>XLBYSVM
-  CALL INI_ONE_WAY_n(NDAD(KMI),KMI,                                                             &
-       DPTR_XBMX1,DPTR_XBMX2,DPTR_XBMX3,DPTR_XBMX4,DPTR_XBMY1,DPTR_XBMY2,DPTR_XBMY3,DPTR_XBMY4, &
-       DPTR_XBFX1,DPTR_XBFX2,DPTR_XBFX3,DPTR_XBFX4,DPTR_XBFY1,DPTR_XBFY2,DPTR_XBFY3,DPTR_XBFY4, &
-       NDXRATIO_ALL(KMI),NDYRATIO_ALL(KMI),                                                     &
-       DPTR_CLBCX,DPTR_CLBCY,NRIMX,NRIMY,                                                       &
-       DPTR_NKLIN_LBXU,DPTR_XCOEFLIN_LBXU,DPTR_NKLIN_LBYU,DPTR_XCOEFLIN_LBYU,                   &
-       DPTR_NKLIN_LBXV,DPTR_XCOEFLIN_LBXV,DPTR_NKLIN_LBYV,DPTR_XCOEFLIN_LBYV,                   &
-       DPTR_NKLIN_LBXW,DPTR_XCOEFLIN_LBXW,DPTR_NKLIN_LBYW,DPTR_XCOEFLIN_LBYW,                   &
-       DPTR_NKLIN_LBXM,DPTR_XCOEFLIN_LBXM,DPTR_NKLIN_LBYM,DPTR_XCOEFLIN_LBYM,                   &
-       CCLOUD, LUSECHAQ, LUSECHIC,                                                              &
-       DPTR_XLBXUM,DPTR_XLBYUM,DPTR_XLBXVM,DPTR_XLBYVM,DPTR_XLBXWM,DPTR_XLBYWM,                 &
-       DPTR_XLBXTHM,DPTR_XLBYTHM,                                                               &
-       DPTR_XLBXTKEM,DPTR_XLBYTKEM,                                                             &
-       DPTR_XLBXRM,DPTR_XLBYRM,DPTR_XLBXSVM,DPTR_XLBYSVM                                        )
+  IF (CCONF=='START')  THEN
+  CALL INI_ONE_WAY_n(NDAD(KMI),KMI,                        &
+       DPTR_XBMX1,DPTR_XBMX2,DPTR_XBMX3,DPTR_XBMX4,DPTR_XBMY1,DPTR_XBMY2,DPTR_XBMY3,DPTR_XBMY4,        &
+       DPTR_XBFX1,DPTR_XBFX2,DPTR_XBFX3,DPTR_XBFX4,DPTR_XBFY1,DPTR_XBFY2,DPTR_XBFY3,DPTR_XBFY4,        &
+       NDXRATIO_ALL(KMI),NDYRATIO_ALL(KMI),      &
+       DPTR_CLBCX,DPTR_CLBCY,NRIMX,NRIMY,                                &
+       DPTR_NKLIN_LBXU,DPTR_XCOEFLIN_LBXU,DPTR_NKLIN_LBYU,DPTR_XCOEFLIN_LBYU,      &
+       DPTR_NKLIN_LBXV,DPTR_XCOEFLIN_LBXV,DPTR_NKLIN_LBYV,DPTR_XCOEFLIN_LBYV,      &
+       DPTR_NKLIN_LBXW,DPTR_XCOEFLIN_LBXW,DPTR_NKLIN_LBYW,DPTR_XCOEFLIN_LBYW,      &
+       DPTR_NKLIN_LBXM,DPTR_XCOEFLIN_LBXM,DPTR_NKLIN_LBYM,DPTR_XCOEFLIN_LBYM,      &
+       CCLOUD, LUSECHAQ, LUSECHIC,                                                 &
+       DPTR_XLBXUM,DPTR_XLBYUM,DPTR_XLBXVM,DPTR_XLBYVM,DPTR_XLBXWM,DPTR_XLBYWM,    &
+       DPTR_XLBXTHM,DPTR_XLBYTHM,                                                  &
+       DPTR_XLBXTKEM,DPTR_XLBYTKEM,                                                &
+       DPTR_XLBXRM,DPTR_XLBYRM,DPTR_XLBXSVM,DPTR_XLBYSVM                           )
+   ENDIF
 END IF
 !
 !

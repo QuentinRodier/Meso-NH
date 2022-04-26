@@ -87,6 +87,7 @@ use modd_grid_n,     only: xdxhat, xdyhat
 use modd_nsv,        only: nsv
 use modd_les
 use modd_les_n
+use modd_param_n,    only: ccloud
 use modd_param_c2r2, only: ldepoc
 use modd_param_ice,  only: ldeposc
 use modd_parameters, only: XUNDEF
@@ -125,6 +126,7 @@ INTEGER                                 :: IMI ! Current model inde
 !-------------------------------------------------------------------------------
 !
 IF (.NOT. LLES) RETURN
+!
 !
 !*      1.   Initializations
 !            ---------------
@@ -355,6 +357,8 @@ if ( luserr ) &
 call Les_diachro_write( tpdiafile, XLES_MEAN_RF,     'MEAN_RF',     'Mean RF Profile',              '1',       ymasks )
 if ( luseri ) &
 call Les_diachro_write( tpdiafile, XLES_MEAN_Ri,     'MEAN_RI',     'Mean Ri Profile',              'kg kg-1', ymasks )
+if ( luseri ) &
+call Les_diachro_write( tpdiafile, XLES_MEAN_If,     'MEAN_IF',     'Mean If Profile',              '1',       ymasks )
 if ( lusers ) &
 call Les_diachro_write( tpdiafile, XLES_MEAN_Rs,     'MEAN_RS',     'Mean Rs Profile',              'kg kg-1', ymasks )
 if ( luserg ) &

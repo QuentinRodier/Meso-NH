@@ -64,14 +64,14 @@ Lplot1 = [ Dvar['f1']['UM']]
 Lplot2 = [ Dvar['f1']['VM']]
 Ltitle = [' vectors at 1st level']
 Llegendval = [20]
-Lcbarlabel = ['m/s']*len(Lplot)
+Llegendlabel = ['m/s']*len(Lplot)
 Larrowstep = [1]*len(Lplot)
 Lwidth = [0.002]*len(Lplot)
 Lcolor = ['black']*len(Lplot)
 Lscale = [200]*len(Lplot)
 
 fig2 = Panel1.pvector(Lxx=lon, Lyy=lat, Lvar1=Lplot1, Llevel=Llvl, Lvar2=Lplot2, Lxlab=Lxlab, Lylab=Lylab, Ltitle=Ltitle, Lwidth=Lwidth, Larrowstep=Larrowstep, 
-                        Llegendval=Llegendval, Lcbarlabel=Lcbarlabel, Lid_overlap=[0], ax=fig1.axes, Lscale=Lscale)
+                        Llegendval=Llegendval, Llegendlabel=Llegendlabel, Lid_overlap=[0], ax=fig1.axes, Lscale=Lscale)
 
 Panel1.save_graph(1,fig2)
 

@@ -126,7 +126,7 @@ SUBROUTINE ONE_WAY_n(KDAD,PTSTEP,KMI,KTCOUNT,                            &
 !*      0.   DECLARATIONS
 !            ------------
 USE MODD_CH_MNHC_n,      only: LUSECHAQ, LUSECHIC
-USE MODD_CONF,           only: CEQNSYS
+USE MODD_CONF,           only: CEQNSYS,CCONF
 USE MODD_CST,            only: XCPD, XP00, XRD, XRV, XTH00
 USE MODD_DYN_n,          ONLY: LOCEAN
 USE MODD_FIELD_n,        only: XPABST, XRT, XSVT, XUT, XVT, XWT, XTHT, XTKET
@@ -683,22 +683,8 @@ IF(.NOT. OSTEADY_DMASS) THEN
 !
 !*       4.5 segment beginning (we have first to recover the dry mass at T-DT)
 !
-    IF(SIZE(XRT,4) == 0) THEN
-                          ! dry air case
-!                           ------------
-      ZRHOD(:,:,:) = XPABST(:,:,:)/(XPABST(:,:,:)/XP00)**ZRD_O_CPD/(XRD*XTHT(:,:,:))
-    ELSE                  ! moist air case
-!                           --------------
-      ZRHOD(:,:,:) = XPABST(:,:,:)/(XPABST(:,:,:)/XP00)**ZRD_O_CPD/(XRD*XTHT(:,:,:) &
-                                                       *(1.+ZRV_O_RD*XRT(:,:,:,1)))
-    ENDIF
-!
-!
-    ZDRYMASSM = SUM3D_ll (ZJ(:,:,:)*ZRHOD(:,:,:),IINFO_ll,NXOR_ALL(KMI)+JPHEXT,NYOR_ALL(KMI)+JPHEXT, &
-            1+JPVEXT,NXEND_ALL(KMI)-JPHEXT,NYEND_ALL(KMI)-JPHEXT,SIZE(XRHODJ,3)-JPVEXT)
-!
-    PDRYMASST =  ZDRYMASST
-    PDRYMASSS = (PDRYMASST - ZDRYMASSM) / (PTSTEP*KDTRATIO)
+     PDRYMASST =  ZDRYMASST  
+     IF  ( CCONF /= 'RESTA' ) PDRYMASSS =  0.
   ENDIF
 !
 END IF

@@ -1084,7 +1084,19 @@ etc ...
 # c) MNH_ECRAD for optional compilation of new ECRAD radiative library from ECMWF 
 # --------------------------------------
 #
-# The full ECRAD package was not included into the open source version of Meso-NH
+# The default version of ECRAD is 1.4.0 (open-source)
+#
+# Configure & Compilation
+export MNH_ECRAD=1
+./configure
+
+etc ...
+# The version of ECRAD is set by (by default):
+# export VER_ECRAD=140
+#
+# To use the previous version 1.0.1:
+#
+# The full ECRAD package 1.0.1  was not included into the open source version of Meso-NH
 # because it needs a licence agrement.
 #
 # See here to get the licence & full sources : https://software.ecmwf.int/wiki/display/ECRAD/ECMWF+Radiation+Scheme+Home
@@ -1098,6 +1110,7 @@ tar xvfz ecrad-1.0.1.tar.gz
 
 # Configure & Compilation
 export MNH_ECRAD=1
+export VER_ECRAD=101
 ./configure
 
 etc ...
@@ -1107,8 +1120,8 @@ etc ...
 #
 #  Usage :
 #   1) In namelist replace RAD='ECMW' by RAD='ECRA' 
-#   2) Add link to all 'ecrad-1.0.1/data' files in your mesonh run directory
-ln -sf ${SRC_MESONH}/src/LIB/RAD/ecrad-1.0.1/data/* .
+#   2) Add link to all 'ecrad-1.X.X/data' files in your mesonh run directory
+ln -sf ${SRC_MESONH}/src/LIB/RAD/ecrad-1.X.X/data/* .
 #
 # REM : you can replace CDATADIR = "." by CDATADIR = "data" of ini_radiations_ecrad.f90 to link only the data folder instead of all the files one by one
 #

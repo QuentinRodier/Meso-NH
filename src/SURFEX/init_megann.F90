@@ -26,6 +26,7 @@ SUBROUTINE INIT_MEGAN_n(IO, S, K, NP, MSF, MGN, PLAT, HSV, PMEGAN_FIELDS)
 !!    Original: 25/10/14
 !!    Modified: 06/2017, J. Pianezze, adaptation for SurfEx v8.0
 !!    Modified: 06/2018, P. Tulet,  add PFT and LAI
+!!    Modified: 11/2021, P. Tulet,  update PFT with Ecoclimap-SG
 !!
 !!
 !!    EXTERNAL

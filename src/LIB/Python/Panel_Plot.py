@@ -9,7 +9,7 @@ MNH_LIC for details. version 1.
 @author: 07/2021 Quentin Rodier
 """
 import matplotlib as mpl
-mpl.use('Agg')
+#mpl.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib import cm
 from matplotlib.colors import ListedColormap
@@ -20,33 +20,55 @@ import cartopy.feature as cfeature
 class PanelPlot():
     
     def __init__(self, nb_l, nb_c, Lfigsize, bigtitle, titlepad=40, minmaxpad=1.03, timepad=-0.06, lateralminmaxpad=0.86, 
-                 labelcolorbarpad=6.0, colorbaraspect=20, colorbarpad=0.04 ):
-        self.bigtitle = bigtitle
-        self.Lfigsize = Lfigsize
-        self.nb_l = nb_l
-        self.nb_c = nb_c
+                 labelcolorbarpad=6.0, colorbaraspect=20, colorbarpad=0.04, tickspad=0.8,
+                 minmaxTextSize=10, bigtitleSize=13, titleSize=12, legendSize=10,
+                 xlabelSize=11, ylabelSize=11, timeSize=11, cbTicksLabelSize=11, cbTitleSize=11, xyTicksLabelSize=10, figBoxLinewidth=1,
+                 xyTicksWidth=1, xyTicksLength=6):
+
+        self.bigtitle = bigtitle       #  Panel title
+        self.Lfigsize = Lfigsize       #  Panel size
+        self.nb_l = nb_l               #  Panel number of lines
+        self.nb_c = nb_c               #  Panel number of rows
         self.nb_graph = 0              #  New independent graph within the subplot
+
         self.titlepad = titlepad       #  Title pad (vertical shift) from graph
+        self.tickspad = tickspad       #  Ticks pad (between ticks and axis label)
         self.minmaxpad = minmaxpad     #  Min/Max print pad (vertical shift)
         self.timepad = timepad         #  Time print pad (vertical shift)
         self.colorbarpad = colorbarpad #  Colorbar pad (horizontal shift from graph)
         self.lateralminmaxpad = lateralminmaxpad
-        self.labelcolorbarpad = labelcolorbarpad # Vertical colorbal label pad
-        self.colorbaraspect = colorbaraspect  # Ratio of long to short dimensions of colorbar w.r.t. the figure
+        self.labelcolorbarpad = labelcolorbarpad #  Vertical colorbal label pad
+        self.colorbaraspect = colorbaraspect     #  Ratio of long to short dimensions of colorbar w.r.t. the figure
         
+        self.minmaxTextSize = minmaxTextSize     #  min/max text fontsize
+        self.bigtitleSize = bigtitleSize         #  Panel title fontsize
+        self.titleSize = titleSize               #  Graph title fontsize
+        self.xlabelSize = xlabelSize             #  X-label fontsize
+        self.ylabelSize = ylabelSize             #  Y-label fontsize
+        self.legendSize = legendSize             #  X/Y plot legend fontsize
+        self.timeSize = timeSize                 #  Time attribute of the graphs fontsize
+        self.cbTicksLabelSize = cbTicksLabelSize #  Colorbar ticks label fontsize
+        self.cbTitleSize = cbTitleSize           #  Colorbar title fontsize
+        self.xyTicksLabelSize = xyTicksLabelSize #  X/Y ticks label fontsize
+        self.figBoxLinewidth = figBoxLinewidth   #  Figure Box contour line width
+
+        self.xyTicksWidth = xyTicksWidth   #  Ticks width
+        self.xyTicksLength = xyTicksLength #  Ticks length 
+
         #  Initialization of the panel plots
         self.fig = plt.figure(figsize=(self.Lfigsize[0],self.Lfigsize[1]))
         self.fig.set_dpi(125)
-        self.fig.suptitle(self.bigtitle,fontsize=16)
+        self.fig.suptitle(self.bigtitle,fontsize=bigtitleSize)
 
-    def save_graph(self, iplt, fig):
+    def save_graph(self, iplt, fig, fig_name='tempgraph'):
       """
-        Create a temporary png file of (sub)-plot(s) which can be converted to PDF    
+        Create a temporary png file of the panel plot which can be converted to PDF    
       """
       self.iplt = iplt
       self.fig = fig
+      self.fig_name=fig_name   #  .png figure prefix name
       
-      self.fig.savefig('tempgraph'+str(self.iplt)) #TODO possibility to change the default value of .png file name
+      self.fig.savefig(self.fig_name+str(self.iplt))
       self.iplt+=1
       return self.iplt
     
@@ -57,7 +79,7 @@ class PanelPlot():
       self.drawCoastLines = drawCoastLines
       self.projo = projo
       
-        # Grid lines and labels
+      #  Grid lines and labels
       if 'PlateCarree' in str(projo):
         gl = ax.gridlines(crs=self.projo, draw_labels=True, linewidth=1, color='gray')
         if float(cartopy.__version__[:4]) >= 0.18:
@@ -67,7 +89,7 @@ class PanelPlot():
           gl.xlabels_top = False
           gl.ylabels_right = False
         
-        #  Coastlines
+      #  Coastlines
       if self.drawCoastLines and 'GeoAxes' in str(type(ax)):
         ax.coastlines(resolution='10m')
         
@@ -75,14 +97,19 @@ class PanelPlot():
         ax.add_feature(cfeature.BORDERS)
         ax.add_feature(cfeature.LAKES, alpha=0.7)
         
-    def addWhitecm(self, Laddwhite, colormap_in, nb_level):
-      if Laddwhite:
+    def addWhitecm(self, colormap_in, nb_level,whiteTop=False):
+        """
+          Add a white color at the top (whiteTop=True) or bottom of the colormap w.r.t. the number of independent colors used
+        """
         color_map = cm.get_cmap(colormap_in, 256)
         newcolor_map = color_map(np.linspace(0, 1, 256))
         whites = np.array([1, 1, 1, 1]) #RBG code + opacity
-        for i in range(int(256/nb_level)): newcolor_map[:i, :] = whites
+        if whiteTop:
+            for i in range(int(256/nb_level)): newcolor_map[-i, :] = whites
+        else:
+            for i in range(int(256/nb_level)): newcolor_map[:i, :] = whites
         newcmp = ListedColormap(newcolor_map)
-      return newcmp
+        return newcmp
 
 
     def set_Title(self, ax, i, title, Lid_overlap, xlab, ylab):
@@ -97,10 +124,10 @@ class PanelPlot():
       self.i = i
       #self.ax[self.i].set_xlabel("test", fontweight='bold')
       if not Lid_overlap: 
-        self.ax[self.i].set_title(title, pad=self.titlepad)
+        self.ax[self.i].set_title(title, pad=self.titlepad, fontsize=self.titleSize)
       else:  #  If graph overlap, title is concatenated
         new_title = self.ax[self.i].get_title() + ' and ' + title
-        self.ax[self.i].set_title(new_title, pad=self.titlepad)
+        self.ax[self.i].set_title(new_title, pad=self.titlepad, fontsize=self.titleSize)
 
     def set_xlim(self, ax, i, xlim):
       """
@@ -110,7 +137,7 @@ class PanelPlot():
       self.xlim = xlim
       self.i = i
       
-      self.ax[self.i].set_xlim(xlim[0],xlim[1])
+      self.ax[self.i].set_xlim(xlim[0],xlim[1])#, fontsize=self.xlabelSize)
       
     def set_ylim(self, ax, i, ylim):
       """
@@ -120,7 +147,7 @@ class PanelPlot():
       self.ylim = ylim
       self.i = i
       
-      self.ax[self.i].set_ylim(ylim[0],ylim[1])
+      self.ax[self.i].set_ylim(ylim[0],ylim[1])#, fontsize=self.ylabelSize)
 
     def set_XYaxislab(self, ax, i, xlab, ylab):
       """
@@ -136,14 +163,14 @@ class PanelPlot():
       #  https://github.com/SciTools/cartopy/issues/1332
       if 'GeoAxes' in str(type(self.ax[self.i])):
         self.ax[self.i].text(-0.11, 0.45, ylab, verticalalignment='top', horizontalalignment='left',
-              rotation='vertical', rotation_mode='anchor',  transform=self.ax[self.i].transAxes, color='black', fontsize=11)
+              rotation='vertical', rotation_mode='anchor',  transform=self.ax[self.i].transAxes, color='black', fontsize=self.ylabelSize)
         self.ax[self.i].text(0.45, -0.06, xlab, verticalalignment='top', horizontalalignment='left',
-             rotation='horizontal', rotation_mode='anchor',  transform=self.ax[self.i].transAxes, color='black', fontsize=11)
+             rotation='horizontal', rotation_mode='anchor',  transform=self.ax[self.i].transAxes, color='black', fontsize=self.xlabelSize)
       else:
-         self.ax[self.i].set_xlabel(xlab)
-         self.ax[self.i].set_ylabel(ylab)
+         self.ax[self.i].set_xlabel(xlab, fontsize=self.xlabelSize, labelpad=0.1)
+         self.ax[self.i].set_ylabel(ylab, fontsize=self.ylabelSize, labelpad=0.1)
          
-    def addLine(self, ax, beg_coord, end_coord, color='black', linewidth=1):
+    def addLine(self, ax, beg_coord, end_coord, color='black', linewidth=0.2):
       self.ax = ax
       self.beg_coord = beg_coord
       self.end_coord = end_coord
@@ -171,10 +198,10 @@ class PanelPlot():
       strtext = "   min = " + "{:.3e}".format(np.nanmin(var*facconv)) + "  max = " + "{:.3e}".format(np.nanmax(var*facconv))
       if not Lid_overlap:
         self.ax[self.i].text(0.01, self.minmaxpad, strtext, verticalalignment='top', horizontalalignment='left',
-          transform=self.ax[self.i].transAxes, color='black', fontsize=10)
+          transform=self.ax[self.i].transAxes, color='black', fontsize=self.minmaxTextSize)
       else:
         self.ax[self.i].text(self.lateralminmaxpad, self.minmaxpad, strtext, verticalalignment='top', horizontalalignment='right',
-          transform=self.ax[self.i].transAxes, color='black', fontsize=10)    
+          transform=self.ax[self.i].transAxes, color='black', fontsize=self.minmaxTextSize)    
       #  Print to help choose min/max value for ticks
       self.print_minmax(var*facconv, title)
       
@@ -188,14 +215,14 @@ class PanelPlot():
       
       strtext = "Time = " + timetxt
       self.ax[self.i].text(0.0, self.timepad, strtext, verticalalignment='top', horizontalalignment='left',
-          transform=self.ax[self.i].transAxes, color='black', fontsize=10)
+          transform=self.ax[self.i].transAxes, color='black', fontsize=self.timeSize)
 
 
     def psectionV(self, Lxx=[], Lzz=[], Lvar=[], Lxlab=[], Lylab=[], Ltitle=[], Lminval=[], Lmaxval=[], 
                  Lstep=[], Lstepticks=[], Lcolormap=[], Lcbarlabel=[], LcolorLine=[],
-                 Lfacconv=[], ax=[], Lid_overlap=[], colorbar=True, orog=[], Lxlim=[], Lylim=[], Ltime=[], Lpltype=[], LaddWhite_cm=[]):
+                 Lfacconv=[], ax=[], Lid_overlap=[], colorbar=True, orog=[], Lxlim=[], Lylim=[], Ltime=[], Lpltype=[], LaddWhite_cm=[], LwhiteTop=[]):
       """
-        Horizontal cross section plot
+        Vertical cross section plot
         Parameters :
             - Lxx    : List of x or y coordinate variable or time axis
             - Lzz    : List of z coordinates variable
@@ -216,9 +243,11 @@ class PanelPlot():
             - Lfacconv   : List of factors for unit conversion of each variables
             - ax         : List of fig.axes for ploting multiple different types of plots in a subplot panel
             - Lid_overlap: List of number index of plot to overlap current variables
-            - Lpltype      : List of types of plot 'cf' or 'c'. cf=contourf, c=contour (lines only)
+            - Lpltype    : List of types of plot 'cf' or 'c'. cf=contourf, c=contour (lines only)
             - colorbar   : show colorbar or not
-            - LaddWhite_cm : List of boolean to add white color to a colormap at the first (low value) tick colorbar
+            - LaddWhite_cm : List of boolean to add white color to a colormap at the last bottom (low value) tick colorbar
+            - LwhiteTop    : List of boolean to add the white color at the first top (high value). If false, the white is added at the bottom if Laddwhite_cm=T
+            - orog         : Orography variable
       """
       self.ax = ax
       firstCall = (len(self.ax) == 0)
@@ -235,6 +264,7 @@ class PanelPlot():
       if not Lcolormap: LcolorLine=['black']*len(Lvar)
       if not Lpltype: Lpltype=['cf']*len(Lvar)
       if not LaddWhite_cm: LaddWhite_cm=[False]*len(Lvar)
+      if not LwhiteTop: LwhiteTop=[False]*len(Lvar)            
       if not Lylab: Lylab = ['']*len(Lvar)
       if not Lxlab: Lxlab = ['']*len(Lvar)    
       #  Add an extra percentage of the top max value for forcing the colorbar show the true user maximum value (correct a bug)
@@ -261,7 +291,7 @@ class PanelPlot():
         
         #  Print time validity
         if Ltime: self.showTimeText(self.ax, iax, str(Ltime[i]))
-
+        
         # Number of contours level
         if not Lstep[i]: #  Default value of number of steps is 20
             Lstep[i] = (Lmaxval[i] - Lminval[i])/20  
@@ -270,16 +300,16 @@ class PanelPlot():
         levels_contour = np.arange(Lminval[i],Lmaxval[i],step=Lstep[i])
         
         #  Add White to colormap
-        if LaddWhite_cm[i] and Lcolormap: Lcolormap[i]=self.addWhitecm(LaddWhite_cm[i], Lcolormap[i], len(levels_contour))
+        if LaddWhite_cm[i] and Lcolormap: Lcolormap[i]=self.addWhitecm(Lcolormap[i], len(levels_contour), LwhiteTop[i])
         
         #  Plot
         if Lpltype[i]=='c': #  Contour
             if LcolorLine:
                 cf = self.ax[iax].contour(Lxx[i], Lzz[i], var*Lfacconv[i], levels=levels_contour, 
-                                norm=norm, vmin=Lminval[i], vmax=Lmaxval[i], colors=LcolorLine[i])
+                                norm=norm, vmin=Lminval[i], vmax=Lmaxval[i], colors=LcolorLine[i], linewidths=0.1)
             else:
                 cf = self.ax[iax].contour(Lxx[i], Lzz[i], var*Lfacconv[i], levels=levels_contour, 
-                                norm=norm, vmin=Lminval[i], vmax=Lmaxval[i], cmap=Lcolormap[i])                    
+                                norm=norm, vmin=Lminval[i], vmax=Lmaxval[i], cmap=Lcolormap[i], linewidths=0.1)                    
         else:  #  Contourf
           cf = self.ax[iax].contourf(Lxx[i], Lzz[i], var*Lfacconv[i], levels=levels_contour, 
                          norm=norm, vmin=Lminval[i], vmax=Lmaxval[i], cmap=Lcolormap[i])            
@@ -289,6 +319,13 @@ class PanelPlot():
     
         #  X/Y Axis label
         self.set_XYaxislab(self.ax, iax, Lxlab[i], Lylab[i])
+  
+        #  Ticks label 
+        self.ax[iax].tick_params(axis='both', labelsize=self.xyTicksLabelSize, width=self.xyTicksWidth, length=self.xyTicksLength, pad=self.tickspad)
+        
+        #  Bounding box of the plot line width
+        for axis in ['top','bottom','left','right']:
+          self.ax[iax].spines[axis].set_linewidth(self.figBoxLinewidth)
         
         # X/Y Axis limits value
         if Lxlim:
@@ -304,17 +341,17 @@ class PanelPlot():
           
         #  Color label on contour-line
         if Lpltype[i]=='c': #  Contour
-            self.ax[iax].clabel(cf)
-            #self.ax[iax].clabel(cf, levels=np.arange(Lminval[i],Lmaxval[i],step=Lstep[i])) #TODO bug, levels not recognized
+            self.ax[iax].clabel(cf, fontsize=self.cbTicksLabelSize)
+            #self.ax[iax].clabel(cf, levels=np.arange(Lminval[i],Lmaxval[i],step=Lstep[i]), fontsize=self.cbTicksLabelSize) #TODO bug, levels not recognized
  
         #Filling area under topography
         if not orog==[]:
-          self.ax[iax].fill_between(Lxx[i][0,:], orog, color='black')
+          self.ax[iax].fill_between(Lxx[i][0,:], orog, color='black', linewidth=0.2)
         
         #  Colorbar
         if colorbar:
           cb=plt.colorbar(cf, ax=self.ax[iax], fraction=0.031, pad=self.colorbarpad, ticks=np.arange(Lminval[i],Lmaxval[i],Lstepticks[i]), aspect=self.colorbaraspect)   
-          cb.ax.set_title(Lcbarlabel[i], pad = self.labelcolorbarpad, loc='left') #This creates a new AxesSubplot only for the colorbar y=0 ==> location at the bottom
+          cb.ax.set_title(Lcbarlabel[i], pad=self.labelcolorbarpad, loc='left', fontsize=self.cbTitleSize) # This creates a new AxesSubplot only for the colorbar y=0 ==> location at the bottom
         
       return self.fig
 
@@ -324,7 +361,7 @@ class PanelPlot():
       """
         XY (multiple)-lines plot
         Parameters :
-            - Lxx    : List of variables to plot or coordinates along the X axis #TODO : ajouter Lfacconv pour les deux axes. Impact tous les cas test avec lignes X/Y
+            - Lxx    : List of variables to plot or coordinates along the X axis
             - Lyy    : List of variables to plot or coordinates along the Y axis
             - Lxlab  : List of x-axis label
             - Lylab  : List of y-axis label
@@ -377,13 +414,16 @@ class PanelPlot():
         #  Legend
         #TODO : Handling legend with overlap two axis lines in the same box. For now, placement is by hand
         if not id_overlap: 
-          self.ax[iax].legend(loc='upper right', bbox_to_anchor=(1, 0.95))
+          self.ax[iax].legend(loc='upper right', bbox_to_anchor=(1, 0.95),fontsize=self.legendSize)
         else:
-          self.ax[iax].legend(loc='upper right', bbox_to_anchor=(1, 0.90))
+          self.ax[iax].legend(loc='upper right', bbox_to_anchor=(1, 0.90),fontsize=self.legendSize)
 
         #  Title
         if Ltitle: self.set_Title(self.ax, iax, Ltitle[i], id_overlap,Lxlab[i], Lylab[i])
     
+        #  Ticks label 
+        self.ax[iax].tick_params(axis='both', labelsize=self.xyTicksLabelSize, width=self.xyTicksWidth, length=self.xyTicksLength, pad=self.tickspad)
+        
         #  X/Y Axis label
         if id_overlap: 
           self.ax[iax].xaxis.tick_top()
@@ -410,7 +450,7 @@ class PanelPlot():
     
     def psectionH(self, lon=[],lat=[], Lvar=[], Lcarte=[], Llevel=[], Lxlab=[], Lylab=[], Ltitle=[], Lminval=[], Lmaxval=[], 
                  Lstep=[], Lstepticks=[], Lcolormap=[], LcolorLine=[], Lcbarlabel=[], Lproj=[], Lfacconv=[], coastLines=True, ax=[], 
-                 Lid_overlap=[], colorbar=True, Ltime=[], LaddWhite_cm=[], Lpltype=[], Lcbformatlabel=[]):
+                 Lid_overlap=[], colorbar=True, Ltime=[], LaddWhite_cm=[], LwhiteTop=[], Lpltype=[], Lcbformatlabel=[]):
       """
         Horizontal cross section plot
         Parameters :
@@ -438,6 +478,7 @@ class PanelPlot():
             - colorbar   : show colorbar or not
             - Lpltype      : List of types of plot 'cf' or 'c'. cf=contourf, c=contour (lines only)
             - LaddWhite_cm : List of boolean to add white color to a colormap at the first (low value) tick colorbar
+            - LwhiteTop    : List of boolean to add the white color at the first top (high value). If false, the white is added at the bottom if Laddwhite_cm=T            
             - Lcbformatlabel: List of boolean to reduce the format to exponential 1.1E+02 format colorbar label
       """
       self.ax = ax
@@ -457,6 +498,7 @@ class PanelPlot():
       if not Lcolormap: LcolorLine=['black']*len(Lvar)
       if not Lpltype: Lpltype=['cf']*len(Lvar)
       if not LaddWhite_cm: LaddWhite_cm=[False]*len(Lvar)
+      if not LwhiteTop: LwhiteTop=[False]*len(Lvar)      
       if not Lcbformatlabel: Lcbformatlabel=[False]*len(Lvar)
       #  Add an extra percentage of the top max value for forcing the colorbar show the true user maximum value (correct a bug)
       if Lstep: Lmaxval = list(map(lambda x, y: x + 1E-6*y, Lmaxval, Lstep) ) #The extra value is 1E-6 times the step ticks of the colorbar
@@ -511,7 +553,7 @@ class PanelPlot():
         levels_contour = np.arange(Lminval[i],Lmaxval[i],step=Lstep[i])
         
         #  Add White to colormap
-        if LaddWhite_cm[i] and Lcolormap: Lcolormap[i]=self.addWhitecm(LaddWhite_cm[i], Lcolormap[i], len(levels_contour))
+        if LaddWhite_cm[i] and Lcolormap: Lcolormap[i]=self.addWhitecm(Lcolormap[i], len(levels_contour), LwhiteTop[i])
         
         #  Plot
         if Lproj:
@@ -540,28 +582,30 @@ class PanelPlot():
     
         #  X/Y Axis
         self.set_XYaxislab(self.ax, iax, Lxlab[i], Lylab[i])
-        
+        #  Ticks label 
+        self.ax[iax].tick_params(axis='both', labelsize=self.xyTicksLabelSize, width=self.xyTicksWidth, length=self.xyTicksLength, pad=self.tickspad)
+       
         #  Color label on contour-line
         if Lpltype[i]=='c': #  Contour
           if 'GeoAxes' in str(type(self.ax[self.i])): # cartopy does not like the levels arguments in clabel, known issue
-            self.ax[iax].clabel(cf)
+            self.ax[iax].clabel(cf, fontsize=self.cbTicksLabelSize)
           else:  
-            self.ax[iax].clabel(cf, levels=np.arange(Lminval[i],Lmaxval[i],step=Lstep[i]))
+            self.ax[iax].clabel(cf, levels=np.arange(Lminval[i],Lmaxval[i],step=Lstep[i]), fontsize=self.cbTicksLabelSize)
         
         #  Colorbar
         if colorbar:
           cb=plt.colorbar(cf, ax=self.ax[iax], fraction=0.031, pad=self.colorbarpad, ticks=np.arange(Lminval[i],Lmaxval[i],Lstepticks[i]), aspect=self.colorbaraspect) 
-          cb.ax.set_title(Lcbarlabel[i], pad = self.labelcolorbarpad, loc='left') #This creates a new AxesSubplot only for the colorbar y=0 ==> location at the bottom
+          cb.ax.set_title(Lcbarlabel[i], pad = self.labelcolorbarpad, loc='left', fontsize=self.cbTitleSize) #This creates a new AxesSubplot only for the colorbar y=0 ==> location at the bottom
           if Lcbformatlabel[i]: cb.ax.set_yticklabels(["{:.1E}".format(i) for i in cb.get_ticks()])
         
       return self.fig
     
     def pvector(self, Lxx=[], Lyy=[], Lvar1=[], Lvar2=[], Lcarte=[], Llevel=[], Lxlab=[], Lylab=[], 
-                Ltitle=[], Lwidth=[], Larrowstep=[], Lcolor=[], Llegendval=[], Lcbarlabel=[], 
+                Ltitle=[], Lwidth=[], Larrowstep=[], Lcolor=[], Llegendval=[], Llegendlabel=[], 
                 Lproj=[], Lfacconv=[], ax=[], coastLines=True, Lid_overlap=[], Ltime=[], Lscale=[],
                 Lylim=[], Lxlim=[]):
       """
-        Horizontal vectors lines
+        Vectors
         Parameters :
             - Lxx    : List of x or y coordinate variable (lat or ni or nm)
             - Lyy    : List of y coordinates variable (lon or level)
@@ -580,7 +624,7 @@ class PanelPlot():
             - Larrowstep : List of sub-sample (frequency) if too much arrows
             - Lcolor : List of colors for the arrows (default: black)
             - Llegendval : List of value for the legend of the default arrow
-            - Lcbarlabel : List of labels for the legend of the default arrow
+            - Llegendlabel : List of labels for the legend of the default arrow
             - Lproj      : List of ccrs cartopy projection
             - Lfacconv   : List of factors for unit conversion of each variables
             - coastLines : Boolean to plot coast lines and grid lines
@@ -666,7 +710,7 @@ class PanelPlot():
         if Lproj: self.draw_Backmap(coastLines, self.ax[iax], Lproj[i])
     
         # Arrow legend key
-        qk = self.ax[iax].quiverkey(cf, 1.0, -0.05, Llegendval[i], str(Llegendval[i]) + Lcbarlabel[i], labelpos='E', color='black')
+        qk = self.ax[iax].quiverkey(cf, 1.0, -0.05, Llegendval[i], str(Llegendval[i]) + Llegendlabel[i], labelpos='E', color='black')
            
       return self.fig
 

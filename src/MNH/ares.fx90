@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1987-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1987-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -833,11 +833,8 @@ C....................................................................
 
 C...........PARAMETERS and their descriptions:
 
-      INTEGER      NCAT                 ! number of cations
-      PARAMETER  ( NCAT = 2 )
-
-      INTEGER      NAN                  ! number of anions
-      PARAMETER  ( NAN = 3 )
+      INTEGER, PARAMETER :: NCAT = 2 ! number of cations
+      INTEGER, PARAMETER :: NAN = 3  ! number of anions
 
 C...........ARGUMENTS and their descriptions
 
@@ -1071,12 +1068,14 @@ C ///////////////////////////////////
 C ***
 C234567
       subroutine cubic(a2,a1,a0,nr,crutes)
+      use modd_precision, only: MNHREAL64
       implicit none
       integer  nr      
       real a2,a1,a0,crutes(3)
-      real*8 qq,rr,a2sq,theta, sqrt3, one3rd
-      real*8 dum1,dum2,part1,part2,part3,rrsq,phi,yy1,yy2,yy3
-      real*8 costh, sinth
+      real(kind=MNHREAL64) qq,rr,a2sq,theta, sqrt3, one3rd
+      real(kind=MNHREAL64) dum1,dum2,part1,part2,part3,rrsq,phi
+      real(kind=MNHREAL64) yy1,yy2,yy3
+      real(kind=MNHREAL64) costh, sinth
       data sqrt3/1.732050808/, one3rd/0.333333333/
 	  a2sq=a2*a2
 	  qq=(a2sq-3.*a1)/9.
@@ -1372,16 +1371,32 @@ c     and the excess ammonium forms ammonum nitrate
        end if 
 c
        return
-       end
+       end subroutine awater
 
 c23456789012345678901234567890123456789012345678901234567890123456789012     
       
+      MODULE MODI_poly4
+      INTERFACE
+      function poly4(A,X)
+      real A(4), X
+      end function poly4
+      END INTERFACE
+      END MODULE MODI_poly4
+
       function poly4(A,X)
       real poly4
       real A(4), X     
        poly4 = A(1) + X * ( A(2) + X * ( A(3) + X * ( A(4) )))
-      return
-      end
+       return
+      end function poly4
+
+      MODULE MODI_poly6
+      INTERFACE
+      function poly6(A,X)
+      real A(6), X
+      end function poly6
+      END INTERFACE
+      END MODULE MODI_poly6
 
       function poly6(A,X)
       real poly6
@@ -1389,5 +1404,5 @@ c23456789012345678901234567890123456789012345678901234567890123456789012
       poly6 = A(1) + X * ( A(2) + X * ( A(3) + X * ( A(4) + 
      &           X * ( A(5) + X * (A(6)  )))))
        return
-      end      ! awater
+      end function poly6
 c //////////////////////////////////////////////////////////////////

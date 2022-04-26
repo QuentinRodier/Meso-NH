@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1996-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1996-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -13,6 +13,7 @@
 *                                named nband_model.f90 and compiled with -Fixed
 *           J.Escobar (1/12/2017) bug => intialized all ZV=0.0 in spectr
 *           P. Wautelet 21/11/2019: replace several CONTINUE (workaround of problems with gfortran OpenACC)
+*           P. Wautelet 17/12/2021: comment ZBSUI variable (not used and was not initialized)
 *
       SUBROUTINE NBMVEC
      I ( KIDIA  ,KFDIA ,KLON,KLEV,KGL,KCABS,KNG1,KUABS
@@ -768,7 +769,7 @@ C
       DO 255 JL=KIDIA,KFDIA
       ZBLEV(JL,KLEV+1)=ZRES(JL)
       ZBINT(JL,KLEV+1)=ZBINT(JL,KLEV+1)+ZRES(JL)
-      ZBSUI(JL)=ZBSUI(JL)+ZBSUR(JL)
+C      ZBSUI(JL)=ZBSUI(JL)+ZBSUR(JL)
  255  CONTINUE
 C      IF (NIMP.EQ.0) THEN
 C      JL=KIDIA
