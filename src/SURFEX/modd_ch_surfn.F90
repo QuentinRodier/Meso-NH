@@ -49,6 +49,9 @@ TYPE CH_SURF_t
   CHARACTER(LEN=4)              :: CCH_BIOEMIS         ! Option for MEGAN coupling activation
                                                        ! 'NONE' : no coupling with MEGAN
                                                        ! 'MEGA' : activate MEGAN coupling                                               
+  CHARACTER(LEN=4)              :: CCH_DMSEMIS         ! Option for DMS fluxes activation
+                                                       ! 'NONE' : no coupling with MEGAN
+                                                       ! 'DMSDATA' : activate  DMS fluxes                                              
   CHARACTER(LEN=6), DIMENSION(:), POINTER :: CCH_NAMES ! NAME OF CHEMICAL
   CHARACTER(LEN=6), DIMENSION(:), POINTER :: CAER_NAMES ! NAME OF AEROSOL SPECIES
                                                        ! SPECIES (FOR DIAG ONLY)
@@ -62,6 +65,8 @@ TYPE CH_SURF_t
   LOGICAL  :: LCH_EMIS                                 ! T : chemical emissions
                                                        ! are present in the file
   LOGICAL  :: LCH_BIOEMIS                              ! T : megan emissions
+                                                       ! are present in the file
+  LOGICAL  :: LCH_DMSEMIS                              ! T : dms data
                                                        ! are present in the file
 !
 END TYPE CH_SURF_t
@@ -77,12 +82,14 @@ IF (LHOOK) CALL DR_HOOK("MODD_CH_SURF_N:CH_SURF_INIT",0,ZHOOK_HANDLE)
   NULLIFY(YCH_SURF%CCH_NAMES)
   NULLIFY(YCH_SURF%CAER_NAMES)
   NULLIFY(YCH_SURF%XCONVERSION)
-YCH_SURF%CCH_EMIS=' '
-YCH_SURF%CCH_BIOEMIS=' '
-YCH_SURF%CCHEM_SURF_FILE=' '
+YCH_SURF%CCH_EMIS='NONE'
+YCH_SURF%CCH_BIOEMIS='NONE'
+YCH_SURF%CCH_DMSEMIS='NONE'
+YCH_SURF%CCHEM_SURF_FILE='EXSEG1.nam'
 YCH_SURF%LCH_SURF_EMIS=.FALSE.
 YCH_SURF%LCH_EMIS=.FALSE.
 YCH_SURF%LCH_BIOEMIS=.FALSE.
+YCH_SURF%LCH_DMSEMIS=.FALSE.
 IF (LHOOK) CALL DR_HOOK("MODD_CH_SURF_N:CH_SURF_INIT",1,ZHOOK_HANDLE)
 END SUBROUTINE CH_SURF_INIT
 

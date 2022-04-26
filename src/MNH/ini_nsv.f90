@@ -726,7 +726,7 @@ END IF
 
 ! Initialize scalar variable names for salt
 IF ( LSALT ) THEN
-  IF ( NMODE_SLT < 1 .OR. NMODE_SLT > 5 ) CALL Print_msg( NVERB_FATAL, 'GEN', 'INI_NSV', 'NMODE_SLT must in the 1 to 5 interval' )
+  IF ( NMODE_SLT < 1 .OR. NMODE_SLT > 8 ) CALL Print_msg( NVERB_FATAL, 'GEN', 'INI_NSV', 'NMODE_SLT must in the 1 to 8 interval' )
 
   IF( .NOT. ALLOCATED( CSALTNAMES ) ) THEN
     IMOMENTS = ( NSV_SLTEND_A(KMI) - NSV_SLTBEG_A(KMI) + 1 ) / NMODE_SLT

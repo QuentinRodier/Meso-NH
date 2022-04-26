@@ -63,8 +63,9 @@ IF (LHOOK) CALL DR_HOOK('GET_VEGTYPE_2_PATCH_MASK',0,ZHOOK_HANDLE)
 KMASK(:)              = 0
 
 KK=1  !First point of vegetation-vector
+
 DO JJ=1,KSIZE_PATCH                  !Number of points in the patch in question
-   II=KMASK_PATCH_NATURE(JJ)         !Nature-index corresponding to the point in question
+   II=JJ !KMASK_PATCH_NATURE(JJ)         !Nature-index corresponding to the point in question
    IF(PVEGTYPE_PATCH(II,KVEGTYPE)>0.)THEN
       KMASK(KK)=JJ
       KK=KK+1

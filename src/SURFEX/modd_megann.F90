@@ -63,6 +63,7 @@ TYPE MEGAN_t
   REAL               ::  XMODPREC              ! Precipitation correction factor (megan)
   REAL, POINTER, DIMENSION(:,:) :: XEF         ! efficiency factor
   REAL, POINTER, DIMENSION(:,:) :: XPFT        ! PFT factor (veg type)
+  REAL, POINTER, DIMENSION(:)   :: XLAI        ! Total LAI for MEGAN
   INTEGER, POINTER, DIMENSION(:) :: NSLTYP     ! USDA soil number category
   CHARACTER(LEN=16), POINTER, DIMENSION(:) :: CVNAME3D  ! name of the scheme species
   CHARACTER(LEN=16), POINTER, DIMENSION(:) :: CMECH_SPC ! name of the scheme species
@@ -70,18 +71,24 @@ TYPE MEGAN_t
   INTEGER, POINTER, DIMENSION(:) :: NMECH_MAP           ! index map the mecanisum species
   REAL, POINTER, DIMENSION(:) :: XCONV_FAC              ! conversion factor of species
   REAL, POINTER, DIMENSION(:) :: XMECH_MWT              ! molecular weight of species
-  REAL, POINTER, DIMENSION(:) ::XBIOFLX                 ! molecular weight of species
+  REAL, POINTER, DIMENSION(:) :: XBIOFLX                ! molecular weight of species
+  REAL, POINTER, DIMENSION(:) :: XT24                   !! average T over the past 24h
+  REAL, POINTER, DIMENSION(:) :: XPPFD24                !! average PAR over the past 24h
+  REAL, POINTER, DIMENSION(:) :: XPPFD                  !! par
+
 !
 END TYPE MEGAN_t
 
  CONTAINS
 !
+
 SUBROUTINE MEGAN_INIT(YMEGAN)        
 TYPE(MEGAN_t), INTENT(INOUT) :: YMEGAN
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 IF (LHOOK) CALL DR_HOOK("MODD_MEGAN_n:MEGAN_INIT",0,ZHOOK_HANDLE)
 NULLIFY(YMEGAN%XEF)
 NULLIFY(YMEGAN%XPFT)
+NULLIFY(YMEGAN%XLAI)
 NULLIFY(YMEGAN%NSLTYP)
 NULLIFY(YMEGAN%CVNAME3D)
 NULLIFY(YMEGAN%CMECH_SPC)
@@ -90,6 +97,9 @@ NULLIFY(YMEGAN%NMECH_MAP)
 NULLIFY(YMEGAN%XCONV_FAC)
 NULLIFY(YMEGAN%XMECH_MWT)
 NULLIFY(YMEGAN%XBIOFLX)
+NULLIFY(YMEGAN%XPPFD24)
+NULLIFY(YMEGAN%XT24)
+NULLIFY(YMEGAN%XPPFD)
 YMEGAN%NBIO=0
 YMEGAN%NALKA=0
 YMEGAN%NALKE=0
@@ -189,6 +199,7 @@ YMEGAN%XDROUGHT=0.
 YMEGAN%XDAILYPAR=150.
 YMEGAN%XDAILYTEMP=293.
 YMEGAN%XMODPREC=0.
+
 IF (LHOOK) CALL DR_HOOK("MODD_MEGAN_n:MEGAN_INIT",1,ZHOOK_HANDLE)
 END SUBROUTINE MEGAN_INIT
 

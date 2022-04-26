@@ -272,6 +272,7 @@ END MODULE MODI_MODEL_n
 !  T. Nagel    01/02/2021: add turbulence recycling
 !  P. Wautelet 19/02/2021: add NEGA2 term for SV budgets
 !  J.L. Redelsperger 03/2021: add Call NHOA_COUPLN (coupling O & A LES version)
+!  C. Barthe   07/04/2022: deallocation of ZSEA
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -2124,6 +2125,7 @@ IF (LPROFILER)                                                           &
                   XUT, XVT, XWT, XTHT, XRT, XSVT, XTKET, XTSRAD, XPABST, &
                   XAER, XCLDFR, XCIT,PSEA=ZSEA(:,:))
 !
+IF (ALLOCATED(ZSEA)) DEALLOCATE (ZSEA)
 !
 CALL SECOND_MNH2(ZTIME2)
 !

@@ -44,7 +44,8 @@ IMPLICIT NONE
 !
 !densité salt a introduire
 ! ++ PIERRE / MARINE SSA DUST - MODIF ++
-REAL, PARAMETER  :: XDENSITY_SALT     = 2.2e3     ![kg/m3] density of dust
+REAL, PARAMETER  :: XDENSITY_DRYSALT  = 2.160e3     ![kg/m3] density of sea salt (dry NaCl 2.160E3) 
+REAL, PARAMETER  :: XDENSITY_SALT     = 1.173e3     ![kg/m3] density of wet sea salt (Saltwater at RH80: 1.17e3) 
 ! -- PIERRE / MARINE SSA DUST - MODIF --
 REAL, PARAMETER  :: XMOLARWEIGHT_SALT = 58.e-3   ![kg/mol] molar weight dust
 REAL, PARAMETER  :: XM3TOUM3_SALT     = 1.d18     ![um3/m3] conversion factor

@@ -712,7 +712,6 @@ END IF
 !
 ! 
 CALL UPDATE_NSV(KMI) 
-!
 !-------------------------------------------------------------------------------
 !
 !*       3.    ALLOCATE  MEMORY
@@ -1913,7 +1912,7 @@ CALL READ_FIELD(KMI,TPINIFILE,IIU,IJU,IKU,                                    &
                 NSIZELBXR_ll,NSIZELBYR_ll,NSIZELBXSV_ll,NSIZELBYSV_ll,        &
                 XUM,XVM,XWM,XDUM,XDVM,XDWM,                                   &
                 XUT,XVT,XWT,XTHT,XPABST,XTKET,XRTKEMS,                        &
-                XRT,XSVT,XZWS,XCIT,XDRYMASST,                                 &
+                XRT,XSVT,XZWS,XCIT,XDRYMASST, XDRYMASSS,                      &
                 XSIGS,XSRCT,XCLDFR,XBL_DEPTH,XSBL_DEPTH,XWTHVMF,XPHC,XPHR,    &
                 XLSUM,XLSVM,XLSWM,XLSTHM,XLSRVM,XLSZWSM,                      &
                 XLBXUM,XLBXVM,XLBXWM,XLBXTHM,XLBXTKEM,                        &

@@ -41,6 +41,7 @@ END MODULE MODI_INI_LIMA_COLD_MIXED
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!  C. Barthe   14/03/2022: add CIBU and RDSF
 !
 !-------------------------------------------------------------------------------
 !
@@ -124,7 +125,21 @@ REAL     :: PWETLBDAH_MAX,PWETLBDAH_MIN
 INTEGER  :: KWETLBDAS,KWETLBDAG,KWETLBDAH
 !
 REAL     :: ZFAC_ZRNIC ! Zrnic factor used to decrease Long Kernels
-!  
+!
+REAL :: ZBOUND_CIBU_SMIN    ! XDCSLIM*Lbda_s : lower & upper bound used
+REAL :: ZBOUND_CIBU_SMAX    !        in the tabulated function
+REAL :: ZBOUND_CIBU_GMIN    ! XDCGLIM*Lbda_g : lower & upper bound used
+REAL :: ZBOUND_CIBU_GMAX    !        in the tabulated function
+REAL :: ZRATE_S             ! Geometrical growth of Lbda_s in the tabulated function
+REAL :: ZRATE_G             ! Geometrical growth of Lbda_g in the tabulated function
+!
+REAL :: ZBOUND_RDSF_RMIN    ! XDCRLIM*Lbda_r : lower & upper bound used
+REAL :: ZBOUND_RDSF_RMAX    ! in the tabulated function
+REAL :: ZRATE_R             ! Geometrical growth of Lbda_r in the tabulated function
+REAL :: ZKHI_LWM            ! Coefficient of Lawson et al. (2015)
+!
+REAL :: ZRHOIW ! ice density
+!
 !-------------------------------------------------------------------------------
 !
 !
@@ -872,7 +887,108 @@ IF (GFLAG) THEN
   WRITE(UNIT=ILUOUT0,FMT='("      conversion-melting of the aggregates")')
   WRITE(UNIT=ILUOUT0,FMT='(" Conv. factor XFSCVMG=",E13.6)') XFSCVMG
 END IF
-!  
+!
+!
+!*       7.4 Constants for Ice-Ice collision process (CIBU)
+!
+XDCSLIM_CIBU_MIN = 2.0E-4 ! D_cs lim min
+XDCSLIM_CIBU_MAX = 1.0E-3 ! D_cs lim max
+XDCGLIM_CIBU_MIN = 2.0E-3 ! D_cg lim min
+!
+GFLAG = .TRUE.
+IF (GFLAG) THEN
+  WRITE(UNIT=ILUOUT0,FMT='(" Ice-ice collision process")')
+  WRITE(UNIT=ILUOUT0,FMT='(" D_cs^lim min-max =",E13.6)') XDCSLIM_CIBU_MIN,XDCSLIM_CIBU_MAX
+  WRITE(UNIT=ILUOUT0,FMT='(" D_cg^lim min     =",E13.6)') XDCGLIM_CIBU_MIN
+END IF
+!
+NGAMINC = 80
+!
+!Note : Boundaries are rounded at 5.0 or 1.0 (down for Bound_min and up for Bound_max)
+XGAMINC_BOUND_CIBU_SMIN = 1.0E-5    ! Minimal value of (Lbda_s * D_cs^lim)**alpha) 0.2 mm
+XGAMINC_BOUND_CIBU_SMAX = 5.0E-3    ! Maximal value of (Lbda_s * D_cs^lim)**alpha) 1 mm
+XGAMINC_BOUND_CIBU_SMIN = 1.0E-5    ! Minimal value of (Lbda_s * D_cs^lim)**alpha) 0.2 mm
+XGAMINC_BOUND_CIBU_SMAX = 5.0E+2    ! Maximal value of (Lbda_s * D_cs^lim)**alpha) 1 mm
+ZRATE_S = EXP(LOG(XGAMINC_BOUND_CIBU_SMAX/XGAMINC_BOUND_CIBU_SMIN)/FLOAT(NGAMINC-1))
+!
+XGAMINC_BOUND_CIBU_GMIN = 1.0E-1        ! Minimal value of (Lbda_g * D_cg^lim)**alpha) 2 mm
+XGAMINC_BOUND_CIBU_GMAX = 1.0E0         ! Maximal value of (Lbda_g * D_cg^lim)**alpha) 2 mm
+XGAMINC_BOUND_CIBU_GMIN = 1.0E-1        ! Minimal value of (Lbda_g * D_cg^lim)**alpha) 2 mm
+XGAMINC_BOUND_CIBU_GMAX = 5.0E+1         ! Maximal value of (Lbda_g * D_cg^lim)**alpha) 2 mm
+ZRATE_G = EXP(LOG(XGAMINC_BOUND_CIBU_GMAX/XGAMINC_BOUND_CIBU_GMIN)/FLOAT(NGAMINC-1))
+!
+ALLOCATE( XGAMINC_CIBU_S(4,NGAMINC) )
+ALLOCATE( XGAMINC_CIBU_G(2,NGAMINC) )
+!
+DO J1 = 1, NGAMINC
+  ZBOUND_CIBU_SMIN = XGAMINC_BOUND_CIBU_SMIN * ZRATE_S**(J1-1)
+  ZBOUND_CIBU_GMIN = XGAMINC_BOUND_CIBU_GMIN * ZRATE_G**(J1-1)
+!
+! For ZNI_CIBU
+  XGAMINC_CIBU_S(1,J1) = GAMMA_INC(XNUS,ZBOUND_CIBU_SMIN)
+  XGAMINC_CIBU_S(2,J1) = GAMMA_INC(XNUS+(XDS/XALPHAS),ZBOUND_CIBU_SMIN)
+!
+  XGAMINC_CIBU_G(1,J1) = GAMMA_INC(XNUG+((2.0+XDG)/XALPHAG),ZBOUND_CIBU_GMIN)
+  XGAMINC_CIBU_G(2,J1) = GAMMA_INC(XNUG+(2.0/XALPHAG),ZBOUND_CIBU_GMIN)
+!
+! For ZRI_CIBU
+  XGAMINC_CIBU_S(3,J1) = GAMMA_INC(XNUS+(XBS/XALPHAS),ZBOUND_CIBU_SMIN)
+  XGAMINC_CIBU_S(4,J1) = GAMMA_INC(XNUS+((XBS+XDS)/XALPHAS),ZBOUND_CIBU_SMIN)
+END DO
+!
+XCIBUINTP_S = XALPHAS / LOG(ZRATE_S)
+XCIBUINTP1_S = 1.0 + XCIBUINTP_S * LOG(XDCSLIM_CIBU_MIN/(XGAMINC_BOUND_CIBU_SMIN)**(1.0/XALPHAS))
+XCIBUINTP2_S = 1.0 + XCIBUINTP_S * LOG(XDCSLIM_CIBU_MAX/(XGAMINC_BOUND_CIBU_SMIN)**(1.0/XALPHAS))
+!
+XCIBUINTP_G = XALPHAG / LOG(ZRATE_G)
+XCIBUINTP1_G = 1.0 + XCIBUINTP_G * LOG(XDCGLIM_CIBU_MIN/(XGAMINC_BOUND_CIBU_GMIN)**(1.0/XALPHAG))
+!
+! For ZNI_CIBU
+XFACTOR_CIBU_NI = (XPI / 4.0) * XCCG * XCCS * (ZRHO00**XCEXVT)
+XMOMGG_CIBU_1 = MOMG(XALPHAG,XNUG,2.0+XDG)
+XMOMGG_CIBU_2 = MOMG(XALPHAG,XNUG,2.0)
+XMOMGS_CIBU_1 = MOMG(XALPHAS,XNUS,XDS)
+!
+! For ZRI_CIBU
+XFACTOR_CIBU_RI = XAS * (XPI / 4.0) * XCCG * XCCS * (ZRHO00**XCEXVT)
+XMOMGS_CIBU_2 = MOMG(XALPHAS,XNUS,XBS)
+XMOMGS_CIBU_3 = MOMG(XALPHAS,XNUS,XBS+XDS)
+!
+!
+!*       7.5 Constants for raindrop shattering by freezing process (RDSF)
+!
+XDCRLIM_RDSF_MIN = 0.1E-3 ! D_cr lim min
+!
+GFLAG = .TRUE.
+IF (GFLAG) THEN
+  WRITE(UNIT=ILUOUT0,FMT='(" Ice-rain collision process")')
+  WRITE(UNIT=ILUOUT0,FMT='(" D_cr^lim min     =",E13.6)') XDCRLIM_RDSF_MIN
+END IF
+!
+NGAMINC = 80
+!
+XGAMINC_BOUND_RDSF_RMIN = 1.0E-5    ! Minimal value of (Lbda_r * D_cr^lim)**alpha) 0.1 mm
+XGAMINC_BOUND_RDSF_RMAX = 5.0E-3    ! Maximal value of (Lbda_r * D_cr^lim)**alpha) 1 mm
+ZRATE_R = EXP(LOG(XGAMINC_BOUND_RDSF_RMAX/XGAMINC_BOUND_RDSF_RMIN)/FLOAT(NGAMINC-1))
+!
+ALLOCATE( XGAMINC_RDSF_R(NGAMINC) )
+!
+DO J1 = 1, NGAMINC
+  ZBOUND_RDSF_RMIN = XGAMINC_BOUND_RDSF_RMIN * ZRATE_R**(J1-1)
+!
+! For ZNI_RDSF
+  XGAMINC_RDSF_R(J1) = GAMMA_INC(XNUR+((6.0+XDR)/XALPHAR),ZBOUND_RDSF_RMIN)
+END DO
+!
+XRDSFINTP_R = XALPHAR / LOG(ZRATE_R)
+XRDSFINTP1_R = 1.0 + XRDSFINTP_R * LOG( XDCRLIM_RDSF_MIN/(XGAMINC_BOUND_RDSF_RMIN)**(1.0/XALPHAR) )
+!
+! For ZNI_RDSF
+ZKHI_LWM = 2.5E13 ! Coeff. in Lawson-Woods-Morrison for the number of splinters
+                  ! N_DF = XKHI_LWM * D_R**4
+XFACTOR_RDSF_NI = ZKHI_LWM * (XPI / 4.0) * XCR * (ZRHO00**XCEXVT)
+XMOMGR_RDSF = MOMG(XALPHAR,XNUR,6.0+XDR)
+!
 !-------------------------------------------------------------------------------
 !
 !

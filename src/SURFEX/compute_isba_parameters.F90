@@ -518,6 +518,7 @@ IF (KSV /= 0) THEN
   DO JP = 1,IO%NPATCH
     !
     DSTK => NDST%AL(JP)
+    PK => NP%AL(JP)
     !
     IF (CHI%SVI%NDSTEQ >=1) THEN
       !

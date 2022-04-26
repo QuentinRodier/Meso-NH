@@ -23,7 +23,7 @@ NAMELIST/NAM_PARAM_LIMA/LCOLD, LNUCL, LSEDI, LSNOW, LHAIL, LHHONI, LMEYERS,&
                         CPRISTINE_ICE_LIMA, CHEVRIMED_ICE_LIMA,            &
                         XALPHAI, XNUI, XALPHAS, XNUS, XALPHAG, XNUG,       &
                         XFACTNUC_DEP, XFACTNUC_CON, NPHILLIPS,             &
-!
+                        LCIBU, XNDEBRIS_CIBU, LRDSF,                       &
                         LWARM, LACTI, LRAIN, LSEDC, LACTIT, LBOUND, LSPRO, &
                         LADJ,                                              &
                         NMOD_CCN, XCCN_CONC,                               &

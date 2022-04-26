@@ -11,16 +11,17 @@ MODULE MODD_SLT_SURF
 
 IMPLICIT NONE
 !
-REAL, PARAMETER  :: XDENSITY_SLT     = 2.1e3    ! [kg/m3] density of sea salt
+REAL, PARAMETER  :: XDENSITY_DRYSLT     = 2.16e3    ! [kg/m3] density of dry sea salt
+REAL, PARAMETER  :: XDENSITY_SLT        = 1.17e3    ! [kg/m3] density of wet sea salt
 REAL, PARAMETER  :: XMOLARWEIGHT_SLT = 58.e-3   ! [kg/mol] molar weight sea salt
 !
-INTEGER, PARAMETER  :: NEMISMODES_MAX=5
-INTEGER, DIMENSION(NEMISMODES_MAX), PARAMETER :: JORDER_SLT=(/1,2,3,4,5/) !Dust modes in order of importance
+INTEGER, PARAMETER  :: NEMISMODES_MAX=8
+INTEGER, DIMENSION(NEMISMODES_MAX), PARAMETER :: JORDER_SLT=(/1,2,3,4,5,6,7,8/) !Dust modes in order of importance
 !Set emission related parameters
 REAL,DIMENSION(NEMISMODES_MAX)   :: XEMISRADIUS_INI_SLT          ! number madian radius initialization for sea salt mode (um)
 REAL,DIMENSION(NEMISMODES_MAX)   :: XEMISSIG_INI_SLT             ! dispersion initialization for sea salt mode
 !
- CHARACTER(LEN=5)   :: CEMISPARAM_SLT    ! Reference to paper where emission parameterization is proposed
+CHARACTER(LEN=6)   :: CEMISPARAM_SLT    ! Reference to paper where emission parameterization is proposed
 INTEGER            :: JPMODE_SLT        ! number of sea salt modes (max 3; default = 1)
 LOGICAL            :: LVARSIG_SLT       ! switch to active pronostic dispersion for all modes
 LOGICAL            :: LRGFIX_SLT        ! switch to active pronostic mean radius for all modes

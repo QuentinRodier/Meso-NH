@@ -2,26 +2,19 @@
 !ORILAM_LIC This is part of the ORILAM software governed by the CeCILL-C licence
 !ORILAM_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !ORILAM_LIC for details.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 chimie 2006/05/18 13:07:25
-!-----------------------------------------------------------------
-!!    ################################ 
-MODULE MODI_CH_AER_NUCL
-!!    ################################ 
+!!   #########################
+     MODULE MODI_CH_AER_NUCL
+!!   #########################
 !!
 INTERFACE
   !!
-  SUBROUTINE CH_AER_NUCL(ZRH,ZT,ZCONC,ZJ,ZAL,KVECNPT)
+  SUBROUTINE CH_AER_NUCL(PRH,PTEMP,PSULF,PJNUC,PJ2RAT)
   IMPLICIT NONE
   !!
-REAL, DIMENSION(:), INTENT(INOUT) :: ZJ,ZAL
-REAL, DIMENSION(:), INTENT(IN)    :: ZRH,ZT
-REAL, DIMENSION(:), INTENT(INOUT) :: ZCONC
-INTEGER, INTENT(IN)               :: KVECNPT
-  !!
+  REAL, DIMENSION(:), INTENT(IN)    :: PRH,PTEMP
+  REAL, DIMENSION(:), INTENT(INOUT) :: PSULF
+  REAL, DIMENSION(:), INTENT(INOUT) :: PJNUC
+  REAL, DIMENSION(:), INTENT(INOUT) :: PJ2RAT
   !!
   END SUBROUTINE CH_AER_NUCL
   !!
@@ -29,95 +22,228 @@ END INTERFACE
 !!
 END MODULE MODI_CH_AER_NUCL
 !!
-!! #########################################################################
-SUBROUTINE CH_AER_NUCL(ZRH,ZT,ZCONC,ZJ,ZAL,KVECNPT)
-!###########################################################
-!
-!!                   
-!!                       
+!!   ##############################################
+     SUBROUTINE CH_AER_NUCL(PRH,PTEMP,PSULF,PJNUC,PJ2RAT)
+!!   ##############################################
 !!
-!!    PURPOSE
-!!    -------
-!!      
-!!    compute nucleation rate for binary sulfate/H2O 
-!!    (Kulmala 1998)
+!!   PURPOSE
+!!   -------
 !!
-!!    AUTHOR
-!!    ------
-!!      F.Cousin      * Laboratoire d'Aerologie*
+!!   METHOD
+!!   ------
 !!
-!!    MODIFICATIONS
-!!    -------------
-!!     P. Tulet       05/01/04 
-!!    M.Leriche 2015 : correction bug
-!----------------------------------------------------------------------------
+!!   EXTERNAL
+!!   --------
+!!     Subroutine CH_AER_KULMALA            : compute nucleation rate from Kulmala et al. 1998 parametrization
+!!     Subroutine CH_AER_VEHKAMAKI          : compute nucleation rate from Vehkamaki et al. 2002 parametrization
+!!     Subroutine CH_AER_MAATTANEN_NEUTRAL  : compute nucleation rate from Neural Maattanen et al. 2018 parametrization
+!!     Subroutine CH_AER_MAATTANEN_IONIND   : compute nucleation rate from Ion-induced Maattanen et al. 2018 parametrization
+!!
+!!   IMPLICIT ARGUMENTS
+!!   ------------------
+!!     USE MODD_CH_AEROSOL
+!!
+!!   REFERENCE
+!!   ---------
+!!
+!!   AUTHOR
+!!   ------
+!!   Brice Foucart & Joris Pianezze (LACy)
+!!
+!!   MODIFICATIONS
+!!   -------------
+!!     Original 06/2018  
+!!
+!-------------------------------------------------------------------------------
 !
-!*       0.    DECLARATIONS
-!              ------------
+!*       0.     DECLARATIONS
+!               ------------
+!    
+USE MODD_CST,  ONLY : XAVOGADRO
+USE MODI_CH_AER_KULMALA
+USE MODI_CH_AER_VEHKAMAKI
+USE MODI_CH_AER_MAATTANEN_NEUTRAL
+USE MODI_CH_AER_MAATTANEN_IONIND
+USE MODI_CH_AER_MODE_MERGING
 !
-! 
+USE MODD_CH_AEROSOL
+USE MODD_CONF, ONLY : NVERB
+!
 IMPLICIT NONE
 !
-!*       0.1   Declarations of dummy arguments :
+!*       0.1   Declarations of arguments
 !
-REAL, DIMENSION(:), INTENT(INOUT) :: ZJ,ZAL
-REAL, DIMENSION(:), INTENT(IN)    :: ZRH,ZT
-REAL, DIMENSION(:), INTENT(INOUT) :: ZCONC
-INTEGER, INTENT(IN)               :: KVECNPT
-INTEGER :: II
-REAL, DIMENSION(KVECNPT) :: RA,XH2O,PVH2O,PVH2SO4,KHI,SIG,XNSULFC,XNSULF
-REAL :: Kb,TC,T0
+REAL, DIMENSION(:), INTENT(IN)    :: PRH,PTEMP
+REAL, DIMENSION(:), INTENT(INOUT) :: PSULF
+REAL, DIMENSION(:), INTENT(INOUT) :: PJNUC
+REAL, DIMENSION(:), INTENT(INOUT) :: PJ2RAT
+!
+!*       0.2   Declarations of local variables
+!
+REAL, DIMENSION(SIZE(PSULF,1)) :: ZRCN, ZRCI         ! Critical cluster in m (neutral and ion-ind)
+REAL, DIMENSION(SIZE(PSULF,1)) :: ZRCN2, ZRCI2       ! Diameter of critical cluster in nm (neutral and ion-ind)
+REAL, DIMENSION(SIZE(PSULF,1)) :: ZLKKN, ZLKKI       ! Final scaling factor from Lehtinen et al., 2007 (neutral and ion-ind)
+REAL, DIMENSION(SIZE(PSULF,1)) :: ZJNUCN, ZJNUCI     ! Nucleation rate in part.cm-3.s-1 (neutral and ion-ind)
+REAL, DIMENSION(SIZE(PSULF,1)) :: ZJ2RATN, ZJ2RATI   ! Nucleation rate for 2 nm in part.cm-3.s-1 (neutral and ion-ind) 
+REAL, DIMENSION(SIZE(PSULF,1)) :: ZSULF              ! Sulfuric acid concentration in molec.cm-3
+REAL, DIMENSION(SIZE(PSULF,1)) :: ZGR                ! Particle Growth Rate according to Nieminen et al., 2010 (nm.h-1)
+REAL, DIMENSION(SIZE(PSULF,1)) :: ZGAMMA             ! Gamma
+REAL  :: ZCS                                ! Typical CS value in atmosphere in 1/h
+REAL  :: ZMAV                               ! Average m-value according to Lehtinen et al., 2007
+REAL  :: ZTSIZE                             ! Target size (in geometric diameter = mobility diameter -0.3nm).
+!
+!-------------------------------------------------------------------------------
+!
+!*       1.    DEFINE VARIABLES FOR J2 (particle formation rate)
+!              -----------------------------------------------
+!
+! [ Please, note that these calculations can fe found in the supplementary Fortran code of Maattanen et al., 2018 ]
+!
+!     a) H2SO4 conversion from ug.m-3 to molec.cm-3
+!
+!ZSULF(:) = PSULF(:)*(XAVOGADRO*1.E-12) / XH2SO4
+! 
+!     b) Growth rate calculation
+!
+!ZMAV = -1.6      ! It can also be calculated 
+!
+!
+!ZGR(:) = ZSULF(:) / (661.1 * (PRH(:) * 100)**2 - 1.129E5 * (PRH(:)*100) + 1.549E7)
+!
+!
+!     c) Condensation sink imposition
+!
+!ZCS = 22.        ! It can also be calculated
+!
+!     d) Target size (here 2 so 2 - 0.3 = 1.7)
+!
+!ZTSIZE = 1.7    ! We want a J2nm so 2nm -0.3 = 1.7 nm
+!
+!
+!*       2.    NUCLEATION PARAMETRIZATIONS
+!              ---------------------------
+!
+! [ Please, note that Kulmala et al., 1998 and Vehkamaki et al., 2002 are neutral parametrizations ]
+!
+!
+!IF (NVERB .GE. 10) WRITE(*,*) '~~ CH_AER_NUCL PSULF (deb) =',PSULF
+!
+IF (CNUCLEATION == 'KULMALA') THEN
+  !
+  CALL CH_AER_KULMALA(PRH, PTEMP, PSULF, PJNUC, ZRCN)
+  !
+  !  J2 (J2RAT) calculation for Kulmala:
+  !
+  !ZRCN2(:) = 2. * ZRCN(:) * 1.E9
+  !
+  !ZGAMMA(:) = max( 0.0, 1.0 / (ZMAV+1) * ((ZTSIZE /(ZRCN2(:)))**(ZMAV+1) -1) )
+  !
+  !ZLKKN(:) = exp(-ZGAMMA(:) * ZRCN2(:) * ZCS / ZGR(:))   ! Final scaling factor 
+  !
+  !PJ2RAT(:) = PJNUC(:) * ZLKKN(:)
+  !
+ELSE IF (CNUCLEATION == 'VEHKAMAKI') THEN 
+  !
+  CALL CH_AER_VEHKAMAKI(PRH, PTEMP, PSULF, PJNUC, ZRCN)
+  !
+  !  J2 (J2RAT) calculation for Vehkamaki:
+  !
+  !ZRCN2(:) = 2. * ZRCN(:) * 1.E9
+  !
+  !ZGAMMA(:) = max( 0.0, 1.0 / (ZMAV+1) * ((ZTSIZE /(ZRCN2(:)))**(ZMAV+1) -1) )
+  !
+  !ZLKKN(:) = exp(-ZGAMMA(:) * ZRCN2(:) * ZCS / ZGR(:))   ! Final scaling factor 
+  !
+  !PJ2RAT(:) = PJNUC(:) * ZLKKN(:)
+  !
+ELSE IF (CNUCLEATION == 'MAATTANEN_NEUTRAL') THEN
+  !
+  ! Define ZJNUCN
+  !
+  ZJNUCN(:) = PJNUC(:)
+  !
+  CALL CH_AER_MAATTANEN_NEUTRAL(PRH, PTEMP, PSULF, ZJNUCN, ZRCN)
+  !
+  PJNUC(:) = ZJNUCN(:)
+  !
+  !  J2 (J2RAT) calculation for Maattanen neutral:
+  !
+  !ZRCN2(:) = 2. * ZRCN(:) * 1.E9
+  !
+  !ZGAMMA(:) = max( 0.0, 1.0 / (ZMAV+1) * ((ZTSIZE /(ZRCN2(:)))**(ZMAV+1) -1) )
+  !
+  !ZLKKN(:) = exp(-ZGAMMA(:) * ZRCN2(:) * ZCS / ZGR(:))   ! Final scaling factor 
+  !
+  !PJ2RAT(:) = PJNUC(:) * ZLKKN(:)
+  !
+ELSE IF (CNUCLEATION == 'MAATTANEN_IONIND') THEN
+  !
+  ! Define ZJNUCI
+  !
+  ZJNUCI(:) = PJNUC(:)
+  !
+  CALL CH_AER_MAATTANEN_IONIND(PRH, PTEMP, PSULF, ZJNUCI, ZRCI)
+  !
+  PJNUC(:) = ZJNUCI(:)
+  !
+  !  J2 (J2RAT) calculation for Maattanen ion-ind:
+  !
+  !ZRCI2(:) = 2. * ZRCI(:) * 1.E9
+  !
+  !ZGAMMA(:) = max( 0.0, 1.0 / (ZMAV+1) * ((ZTSIZE /(ZRCI2(:)))**(ZMAV+1) -1) )
+  !
+  !ZLKKI(:) = exp(-ZGAMMA(:) * ZRCI2(:) * ZCS / ZGR(:))   ! Final scaling factor 
+  !
+  !PJ2RAT(:) = PJNUC(:) * ZLKKI(:)
+  !
+ELSE IF (CNUCLEATION == 'MAATTANEN_BOTH') THEN
+  !
+  ! Define ZJNUCN
+  !
+  ZJNUCN(:) = PJNUC(:)
+  !
+  CALL CH_AER_MAATTANEN_NEUTRAL(PRH, PTEMP, PSULF, ZJNUCN, ZRCN)
+  !
+  !  J2 (J2RAT) calculation for Maattanen neutral:
+  !
+  !ZRCN2(:) = 2. * ZRCN(:) * 1.E9
+  !
+  !ZGAMMA(:) = max( 0.0, 1.0 / (ZMAV+1) * ((ZTSIZE /(ZRCN2(:)))**(ZMAV+1) -1) )
+  !
+  !ZLKKN(:) = exp(-ZGAMMA(:) * ZRCN2(:) * ZCS / ZGR(:))   ! Final scaling factor 
+  !
+  !ZJ2RATN(:) = ZJNUCN(:) * ZLKKN(:)
+  !
+  ! Define ZJNUCI
+  !
+  ZJNUCI(:) = PJNUC(:)
+  !
+  CALL CH_AER_MAATTANEN_IONIND(PRH, PTEMP, PSULF, ZJNUCI, ZRCI)
+  !
+  !  J2 (J2RAT) calculation for Maattanen ion-ind:
+  !
+  !ZRCI2(:) = 2. * ZRCI(:) * 1.E9
+  !
+  !ZGAMMA(:) = max( 0.0, 1.0 / (ZMAV+1) * ((ZTSIZE /(ZRCI2(:)))**(ZMAV+1) -1) )
+  !
+  !ZLKKI(:) = exp(-ZGAMMA(:) * ZRCI2(:) * ZCS / ZGR(:))   ! Final scaling factor 
+  !
+  !ZJ2RATI(:) = ZJNUCI(:) * ZLKKI(:)
+  !
+  ! New particle formation rates addition 
+  !
+  PJNUC(:) = ZJNUCN(:) + ZJNUCI(:)
+  !
+  !PJ2RAT(:) = ZJ2RATN(:) + ZJ2RATI(:)
+  !
+END IF
+!
+PJ2RAT(:) = 1E-7
+!
+IF (NVERB .GE. 10) WRITE(*,*) '~~ CH_AER_NUCL PJNUC =',PJNUC
+IF (NVERB .GE. 10) WRITE(*,*) '~~ CH_AER_NUCL PSULF (fin) =',PSULF
+IF (NVERB .GE. 10) WRITE(*,*) '~~ CH_AER_NUCL ZJNUCI =',ZJNUCI
+IF (NVERB .GE. 10) WRITE(*,*) '~~ CH_AER_NUCL ZJNUCN =',ZJNUCN
 
-
-Kb=1.381E-23
-TC = 905.15
-T0 = 360.15
-!   1. Saturation vapor pressure for water (N/m2, T in K)
-!         (Preining et al, 1981)
-PVH2O(:) = EXP(77.344913-7235.4247/ZT(:)-8.2*LOG(ZT(:))+0.0057113*ZT(:))
-!   2.   Water concentration (molec/cm3) 
-XH2O(:) = ZRH(:)*PVH2O(:)/(Kb*ZT(:))/1.E6
-
-ZJ(:)=0.
-ZAL(:)=0.
-RA(:)=0.
-
-WHERE(((ZT(:)>=223.).OR.(ZT(:)<=298)).AND.(ZRH(:)>=0.1))
-!   1. Saturation vapor pressure for water (N/m2, T in K)
-!         (Preining et al, 1981)
-  PVH2O(:) = EXP(77.344913-7235.4247/ZT(:)-8.2*LOG(ZT(:))+0.0057113*ZT(:))
-!   2.   Water concentration (molec/cm3) 
-  XH2O(:) = ZRH(:)*PVH2O(:)/(Kb*ZT(:))/1.E6
-!   3.   Saturation vapor pressure for H2SO4 
-!         (Kulmala et al 1990, Seinfeld 577p)
-!PVH2SO4 = 1./T-1./T0+0.38*T0*(1./T-1./T0)/(TC-T0)
-!PVH2SO4 = PVH2SO4 + 0.38/(TC-T0)*LOG(T/T0)
-!PVH2SO4 = -10156.0*PVH2SO4 - 0.414
-!PVH2SO4= EXP(PVH2SO4)
-  PVH2SO4(:)=EXP(-10156./T0+16.259+10156.*(-1./ZT(:)+1./T0+0.38/(TC-T0)*&
-       (1.+LOG(T0/ZT(:))-T0/ZT(:))))*101325.
-
-!   4.   Relative Acidity
-  RA(:)=ZCONC(:)*1.E6*(Kb*ZT(:))/PVH2SO4(:)
-
-END WHERE
-!   5.    H2SO4 mole fraction in the critical nucleous 
-  DO II=1,SIZE(ZCONC,1)
-  IF((ZCONC(II)>0.).AND.(XH2O(II)>0.).AND.(RA(II)/=0.)) THEN
-    ZAL(II)=1.2233-0.0154*RA(II)/(RA(II)+ZRH(II))+0.0102*&
-         LOG(ZCONC(II))-0.0415*LOG(XH2O(II))+0.0016*ZT(II)
-  END IF
-  END DO
-
-WHERE(((ZT(:)>=223.).OR.(ZT(:)<=298)).AND.(ZRH(:)>=0.1).AND.ZAL(:)/=0.)
-    !   6.    Sulfuric nucleation rate (molec/cm3/s) 
-    XNSULFC(:)=EXP(-14.5125+0.1335*ZT(:)-10.5462*ZRH(:)+1958.4*ZRH(:)/ZT(:))
-    SIG(:) = 1.+(ZT(:)-273.15)/273.15
-    XNSULF(:)=LOG(ZCONC(:)/XNSULFC(:))
-    KHI(:)=25.1289*XNSULF(:)-4890.8*XNSULF(:)/ZT(:)-1743.3/ZT(:)-2.2479*SIG(:)*XNSULF(:)*ZRH(:)+&
-         7643.4*ZAL(:)/ZT(:)-1.9712*ZAL(:)*SIG(:)/ZRH(:)
-    ZJ(:)=EXP(KHI(:))
-END WHERE
-
-RETURN
+!
 END SUBROUTINE CH_AER_NUCL

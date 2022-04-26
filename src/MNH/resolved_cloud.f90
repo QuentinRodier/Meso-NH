@@ -288,11 +288,14 @@ END MODULE MODI_RESOLVED_CLOUD
 USE MODD_CH_AEROSOL,     ONLY: LORILAM
 USE MODD_DUST,           ONLY: LDUST
 use modd_cst,            only: xcpd, xrd, xp00, xrholw
-USE MODD_DUST ,          ONLY: LDUST
 USE MODD_IO,             ONLY: TFILEDATA
-USE MODD_NSV,            ONLY: NSV_C1R3END, NSV_C2R2BEG, NSV_C2R2END,                            &
-                               NSV_LIMA_BEG, NSV_LIMA_END, NSV_LIMA_CCN_FREE, NSV_LIMA_IFN_FREE, &
-                               NSV_LIMA_NC, NSV_LIMA_NI, NSV_LIMA_NR
+!UPG*PT
+USE MODD_NSV
+!USE MODD_NSV,            ONLY: NSV_C1R3END, NSV_C2R2BEG, NSV_C2R2END,                            &
+!                               NSV_LIMA_BEG, NSV_LIMA_END, NSV_LIMA_CCN_FREE, NSV_LIMA_IFN_FREE, &
+!                               NSV_LIMA_NC, NSV_LIMA_NI, NSV_LIMA_NR
+!                               NSV_LIMA_NC, NSV_LIMA_NI, NSV_LIMA_NR
+!UPG*PT
 USE MODD_PARAM_C2R2,     ONLY: LSUPSAT
 USE MODD_PARAMETERS,     ONLY: JPHEXT, JPVEXT
 USE MODD_PARAM_ICE,      ONLY: CSEDIM, LADJ_BEFORE, LADJ_AFTER, CFRAC_ICE_ADJUST, LRED
@@ -321,6 +324,9 @@ USE MODI_RAIN_ICE
 USE MODI_RAIN_ICE_RED
 USE MODI_SHUMAN
 USE MODI_SLOW_TERMS
+!UPG*PT
+USE MODI_AER2LIMA
+!UPG*PT
 !
 IMPLICIT NONE
 !
@@ -450,7 +456,8 @@ INTEGER :: IKB           !
 INTEGER :: IKE           !
 INTEGER :: IKU
 INTEGER :: IINFO_ll      ! return code of parallel routine
-INTEGER :: JK,JI,JL
+ 
+INTEGER :: JK,JI,JL,II
 !
 !
 !
@@ -467,6 +474,10 @@ REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3)):: ZZZ
 INTEGER                               :: ISVBEG ! first scalar index for microphysics
 INTEGER                               :: ISVEND ! last  scalar index for microphysics
 REAL, DIMENSION(:),       ALLOCATABLE :: ZRSMIN ! Minimum value for tendencies
+!UPG*PT
+REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: ZSVT   ! scalar variable for microphysics only
+!UPG*PT
+
 LOGICAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3)):: LLMICRO ! mask to limit computation
 REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3), KRR) :: ZFPR
 !
@@ -501,11 +512,61 @@ ELSE IF (HCLOUD == 'C3R5') THEN
   ISVEND = NSV_C1R3END
 ELSE IF (HCLOUD == 'LIMA') THEN
   ISVBEG = NSV_LIMA_BEG
-  ISVEND = NSV_LIMA_END
+!UPG*PT
+  IF (.NOT. LDUST .AND. .NOT. LSALT .AND. .NOT. LORILAM) THEN
+    ISVEND = NSV_LIMA_END
+  ELSE
+    IF (LORILAM) THEN
+      ISVEND = NSV_AEREND
+    END IF
+    IF (LDUST) THEN
+      ISVEND = NSV_DSTEND
+    END IF
+    IF (LSALT) THEN
+      ISVEND = NSV_SLTEND
+    END IF
+  END IF
 ELSE
   ISVBEG = 0
-  ISVEND = -1
+  ISVEND = 0
 END IF
+!
+!
+!
+!*        1.    From ORILAM to LIMA: 
+!
+IF (HCLOUD == 'LIMA') THEN
+!IF (HCLOUD == 'LIMA' .AND. ((LORILAM).OR.(LDUST).OR.(LSALT))) THEN
+! ORILAM : tendance s --> variable instant t
+ALLOCATE(ZSVT(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3),NSV))
+  DO II = 1, NSV
+    ZSVT(:,:,:,II) = PSVS(:,:,:,II) * PTSTEP / PRHODJ(:,:,:)
+  END DO
+
+CALL AER2LIMA(ZSVT(IIB:IIE,IJB:IJE,IKB:IKE,:),&
+              PRHODREF(IIB:IIE,IJB:IJE,IKB:IKE), &
+              PRT(IIB:IIE,IJB:IJE,IKB:IKE,1),&
+              PPABST(IIB:IIE,IJB:IJE,IKB:IKE),&
+              PTHT(IIB:IIE,IJB:IJE,IKB:IKE), &
+              PZZ(IIB:IIE,IJB:IJE,IKB:IKE))
+
+! LIMA : variable instant t --> tendance s
+  PSVS(:,:,:,NSV_LIMA_CCN_FREE)   = ZSVT(:,:,:,NSV_LIMA_CCN_FREE) * &
+                                    PRHODJ(:,:,:) / PTSTEP
+  PSVS(:,:,:,NSV_LIMA_CCN_FREE+1) = ZSVT(:,:,:,NSV_LIMA_CCN_FREE+1) * &
+                                    PRHODJ(:,:,:) / PTSTEP
+  PSVS(:,:,:,NSV_LIMA_CCN_FREE+2) = ZSVT(:,:,:,NSV_LIMA_CCN_FREE+2) * &
+                                    PRHODJ(:,:,:) / PTSTEP
+
+  PSVS(:,:,:,NSV_LIMA_IFN_FREE)   = ZSVT(:,:,:,NSV_LIMA_IFN_FREE) * &
+                                    PRHODJ(:,:,:) / PTSTEP
+  PSVS(:,:,:,NSV_LIMA_IFN_FREE+1) = ZSVT(:,:,:,NSV_LIMA_IFN_FREE+1) * &
+                                    PRHODJ(:,:,:) / PTSTEP
+
+DEALLOCATE(ZSVT)
+END IF
+
+!UPG*PT
 !
 IF (HCLOUD(1:3)=='ICE' .AND. LRED) THEN
   ALLOCATE(ZRSMIN(SIZE(XRTMIN)))

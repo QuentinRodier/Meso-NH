@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1998-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1998-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -685,11 +685,20 @@ IF (CCLOUD=='LIMA' ) THEN
     TZFIELD%LTIMEDEP   = .TRUE.
     !
     DO JSV = NSV_LIMA_CCN_FREE,NSV_LIMA_CCN_FREE+NMOD_CCN-1
+
       SELECT CASE(HGETSVM(JSV))
         CASE ('READ')
           WRITE(INDICE,'(I2.2)')(JSV - NSV_LIMA_CCN_FREE + 1)
           IF ( KSIZELBXSV_ll /= 0 ) THEN
-            TZFIELD%CMNHNAME   = 'LBX_'//TRIM(UPCASE(CLIMA_WARM_NAMES(3))//INDICE)
+            IF (        TPINIFILE%NMNHVERSION(1) < 5                                       &
+                 .OR. ( TPINIFILE%NMNHVERSION(1) == 5 .AND. TPINIFILE%NMNHVERSION(2) < 5 ) &
+                 .OR. ( TPINIFILE%NMNHVERSION(1) == 5 .AND. TPINIFILE%NMNHVERSION(2) == 5  &
+                        .AND. TPINIFILE%NMNHVERSION(3) < 1 ) ) THEN
+              !TZFIELD%CMNHNAME   = 'LBX_'//TRIM(UPCASE(CLIMA_WARM_NAMES(3))//INDICE)
+              TZFIELD%CMNHNAME   = 'LBX_'//TRIM(UPCASE(CLIMA_WARM_NAMES(3)))//INDICE
+            ELSE
+              TZFIELD%CMNHNAME   = 'LBX_'//TRIM(UPCASE(CLIMA_WARM_NAMES(3)))//INDICE
+            END IF
             TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
             TZFIELD%CLBTYPE    = 'LBX'
             WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'2_Y_Z_','LBXSVM',JSV
@@ -706,9 +715,19 @@ IF (CCLOUD=='LIMA' ) THEN
               END IF
             END IF
           END IF
+
+
           !
           IF (KSIZELBYSV_ll  /= 0 ) THEN
-            TZFIELD%CMNHNAME   = 'LBY_'//TRIM(UPCASE(CLIMA_WARM_NAMES(3))//INDICE)
+            IF (        TPINIFILE%NMNHVERSION(1) < 5                                       &
+                 .OR. ( TPINIFILE%NMNHVERSION(1) == 5 .AND. TPINIFILE%NMNHVERSION(2) < 5 ) &
+                 .OR. ( TPINIFILE%NMNHVERSION(1) == 5 .AND. TPINIFILE%NMNHVERSION(2) == 5  &
+                        .AND. TPINIFILE%NMNHVERSION(3) < 1 ) ) THEN
+    !          TZFIELD%CMNHNAME   = 'LBY_'//TRIM(UPCASE(CLIMA_WARM_NAMES(3))//INDICE)
+              TZFIELD%CMNHNAME   = 'LBY_'//TRIM(UPCASE(CLIMA_WARM_NAMES(3)))//INDICE
+            ELSE
+              TZFIELD%CMNHNAME   = 'LBY_'//TRIM(UPCASE(CLIMA_WARM_NAMES(3)))//INDICE
+            END IF
             TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
             TZFIELD%CLBTYPE    = 'LBY'
             WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'X_2_Z_','LBYSVM',JSV
@@ -746,7 +765,15 @@ IF (CCLOUD=='LIMA' ) THEN
         CASE ('READ')
           WRITE(INDICE,'(I2.2)')(JSV - NSV_LIMA_IFN_FREE + 1)
           IF ( KSIZELBXSV_ll /= 0 ) THEN
-            TZFIELD%CMNHNAME   = 'LBX_'//TRIM(UPCASE(CLIMA_COLD_NAMES(2))//INDICE)
+            IF (        TPINIFILE%NMNHVERSION(1) < 5                                       &
+                 .OR. ( TPINIFILE%NMNHVERSION(1) == 5 .AND. TPINIFILE%NMNHVERSION(2) < 5 ) &
+                 .OR. ( TPINIFILE%NMNHVERSION(1) == 5 .AND. TPINIFILE%NMNHVERSION(2) == 5  &
+                        .AND. TPINIFILE%NMNHVERSION(3) < 1 ) ) THEN
+              !TZFIELD%CMNHNAME   = 'LBX_'//TRIM(UPCASE(CLIMA_COLD_NAMES(2))//INDICE)
+              TZFIELD%CMNHNAME   = 'LBX_'//TRIM(UPCASE(CLIMA_COLD_NAMES(2)))//INDICE
+            ELSE
+              TZFIELD%CMNHNAME   = 'LBX_'//TRIM(UPCASE(CLIMA_COLD_NAMES(2)))//INDICE
+            END IF
             TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
             TZFIELD%CLBTYPE    = 'LBX'
             WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'2_Y_Z_','LBXSVM',JSV
@@ -765,7 +792,15 @@ IF (CCLOUD=='LIMA' ) THEN
           END IF
           !
           IF (KSIZELBYSV_ll  /= 0 ) THEN
-            TZFIELD%CMNHNAME   = 'LBY_'//TRIM(UPCASE(CLIMA_COLD_NAMES(2))//INDICE)
+            IF (        TPINIFILE%NMNHVERSION(1) < 5                                       &
+                 .OR. ( TPINIFILE%NMNHVERSION(1) == 5 .AND. TPINIFILE%NMNHVERSION(2) < 5 ) &
+                 .OR. ( TPINIFILE%NMNHVERSION(1) == 5 .AND. TPINIFILE%NMNHVERSION(2) == 5  &
+                        .AND. TPINIFILE%NMNHVERSION(3) < 1 ) ) THEN
+              !TZFIELD%CMNHNAME   = 'LBY_'//TRIM(UPCASE(CLIMA_COLD_NAMES(2))//INDICE)
+              TZFIELD%CMNHNAME   = 'LBY_'//TRIM(UPCASE(CLIMA_COLD_NAMES(2)))//INDICE
+            ELSE
+              TZFIELD%CMNHNAME   = 'LBY_'//TRIM(UPCASE(CLIMA_COLD_NAMES(2)))//INDICE
+            END IF
             TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
             TZFIELD%CLBTYPE    = 'LBY'
             WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'X_2_Z_','LBYSVM',JSV
@@ -1632,5 +1667,6 @@ IF (OLSOURCE) THEN
   END DO
 !
 ENDIF
+
 !
 END SUBROUTINE INI_LB

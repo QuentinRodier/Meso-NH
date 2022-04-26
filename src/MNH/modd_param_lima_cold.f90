@@ -19,6 +19,7 @@
 !!    MODIFICATIONS
 !!    -------------
 !!      Original             ??/??/13 
+!!      C. Barthe            14/03/2022  add CIBU and RDSF
 !!
 !-------------------------------------------------------------------------------
 USE MODD_PARAMETERS, ONLY: JPSVNAMELGTMAX
@@ -72,11 +73,11 @@ CHARACTER(LEN=JPSVNAMELGTMAX),DIMENSION(5),PARAMETER &
 !             ---------------------
 !
 REAL,SAVE :: XFSEDRI,XFSEDCI,                  & ! Constants for sedimentation
-    	     XFSEDS, XEXSEDS                     ! fluxes of ice and snow
+             XFSEDS, XEXSEDS                     ! fluxes of ice and snow
 !
 REAL,SAVE :: XNUC_DEP,XEXSI_DEP,XEX_DEP,       & ! Constants for heterogeneous
-    	     XNUC_CON,XEXTT_CON,XEX_CON,       & ! ice nucleation : DEP et CON
-    	     XMNU0                               ! mass of nucleated ice crystal
+             XNUC_CON,XEXTT_CON,XEX_CON,       & ! ice nucleation : DEP et CON
+             XMNU0                               ! mass of nucleated ice crystal
 !
 REAL,SAVE :: XRHOI_HONH,XCEXP_DIFVAP_HONH,     & ! Constants for homogeneous
              XCOEF_DIFVAP_HONH,XRCOEF_HONH,    & ! haze freezing : HHONI
@@ -86,7 +87,7 @@ REAL,SAVE :: XRHOI_HONH,XCEXP_DIFVAP_HONH,     & ! Constants for homogeneous
              XC1_HONH,XC2_HONH,XC3_HONH
 !
 REAL,SAVE :: XC_HONC,XR_HONC,                  & ! Constants for homogeneous
-    	     XTEXP1_HONC,XTEXP2_HONC,          & ! droplet freezing : CHONI
+             XTEXP1_HONC,XTEXP2_HONC,          & ! droplet freezing : CHONI
              XTEXP3_HONC,XTEXP4_HONC,          &
              XTEXP5_HONC
 !
@@ -97,7 +98,7 @@ REAL,SAVE :: XCSCNVI_MAX, XLBDASCNVI_MAX,      &
              XR0DEPSI,XR1DEPSI                   ! pristine ice : SCNVI
 !
 REAL,SAVE :: XSCFAC,                           & ! Constants for the Bergeron
-    	     X0DEPI,X2DEPI,                    & ! Findeisen process and
+             X0DEPI,X2DEPI,                    & ! Findeisen process and
              X0DEPS,X1DEPS,XEX0DEPS,XEX1DEPS     ! deposition
 !
 REAL,SAVE :: XDICNVS_LIM, XLBDAICNVS_LIM,      & ! Constants for pristine ice
@@ -105,7 +106,7 @@ REAL,SAVE :: XDICNVS_LIM, XLBDAICNVS_LIM,      & ! Constants for pristine ice
              XR0DEPIS,XR1DEPIS                   ! snow : ICNVS
 !
 REAL,SAVE :: XCOLEXIS,                         & ! Constants for snow 
-    	     XAGGS_CLARGE1,XAGGS_CLARGE2,      & ! aggregation : AGG
+             XAGGS_CLARGE1,XAGGS_CLARGE2,      & ! aggregation : AGG
              XAGGS_RLARGE1,XAGGS_RLARGE2
 !
 !??????????????????
@@ -122,6 +123,40 @@ REAL,SAVE :: XAUTO3, XAUTO4,                   & ! Constants for pristine ice
 REAL,SAVE :: XCONCI_MAX                          ! Limitation of the pristine 
                                    ! ice concentration (init and grid-nesting) 
 REAL,SAVE :: XFREFFI  ! Factor to compute the cloud ice effective radius
+!
+!
+! Constants for ice-ice collision : CIBU
+!
+REAL, SAVE :: XDCSLIM_CIBU_MIN,                & ! aggregates min diam. : 0.2 mm
+              XDCSLIM_CIBU_MAX,                & ! aggregates max diam. : 1.0 mm
+              XDCGLIM_CIBU_MIN,                & ! graupel min diam. : 2 mm
+              XGAMINC_BOUND_CIBU_SMIN,         & ! Min val. of Lbda_s*dlim
+              XGAMINC_BOUND_CIBU_SMAX,         & ! Max val. of Lbda_s*dlim
+              XGAMINC_BOUND_CIBU_GMIN,         & ! Min val. of Lbda_g*dlim
+              XGAMINC_BOUND_CIBU_GMAX,         & ! Max val. of Lbda_g*dlim
+              XCIBUINTP_S,XCIBUINTP1_S,        & !
+              XCIBUINTP2_S,                    & !
+              XCIBUINTP_G,XCIBUINTP1_G,        & !
+              XFACTOR_CIBU_NI,XFACTOR_CIBU_RI, & ! Factor for final CIBU Eq.
+              XMOMGG_CIBU_1,XMOMGG_CIBU_2,     & ! Moment computation
+              XMOMGS_CIBU_1,XMOMGS_CIBU_2,     &
+              XMOMGS_CIBU_3
+!
+REAL, DIMENSION(:,:), SAVE, ALLOCATABLE        &
+                       :: XGAMINC_CIBU_S,      & ! Tab.incomplete Gamma function
+                          XGAMINC_CIBU_G         ! Tab.incomplete Gamma function
+!
+! Constants for raindrop shattering : RDSF
+!
+REAL, SAVE :: XDCRLIM_RDSF_MIN,                & ! Raindrops min diam. : 0.2 mm
+              XGAMINC_BOUND_RDSF_RMIN,         & ! Min val. of Lbda_r*dlim
+              XGAMINC_BOUND_RDSF_RMAX,         & ! Max val. of Lbda_r*dlim
+              XRDSFINTP_R,XRDSFINTP1_R,        & !
+              XFACTOR_RDSF_NI,                 & ! Factor for final RDSF Eq.
+              XMOMGR_RDSF
+!
+REAL, DIMENSION(:), SAVE, ALLOCATABLE          &
+                       :: XGAMINC_RDSF_R         ! Tab.incomplete Gamma function
 !
 !-------------------------------------------------------------------------------
 !

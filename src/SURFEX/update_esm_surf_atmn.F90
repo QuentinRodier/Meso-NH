@@ -3,8 +3,8 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #################################################################################
-SUBROUTINE UPDATE_ESM_SURF_ATM_n (F, IM, S, U, W, HPROGRAM, KI, KSW, PZENITH, PSW_BANDS,     &
-                                   PTRAD, PDIR_ALB, PSCA_ALB, PEMIS, PTSURF )  
+SUBROUTINE UPDATE_ESM_SURF_ATM_n (F, IM, S, U, W, TM, GDM, GRM, HPROGRAM, KI, KSW, PZENITH, &
+                                  PSW_BANDS, PTRAD, PDIR_ALB, PSCA_ALB, PEMIS, PTSURF )  
 !     #################################################################################
 !
 !!****  *UPDATE_ESM_SURF_ATM_n * - Routine to update radiative properties in Earth
@@ -30,14 +30,17 @@ SUBROUTINE UPDATE_ESM_SURF_ATM_n (F, IM, S, U, W, HPROGRAM, KI, KSW, PZENITH, PS
 !!    -------------
 !!      Original    09/2009
 !!      B. Decharme 06/2013 new coupling variables
+!!      C. Lebeaupin 01/2020 add teb option
+!!
 !!-------------------------------------------------------------
 !
 !
-USE MODD_FLAKE_n, ONLY : FLAKE_t
-USE MODD_SURFEX_n, ONLY : ISBA_MODEL_t
-USE MODD_SEAFLUX_n, ONLY : SEAFLUX_t
-USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
-USE MODD_WATFLUX_n, ONLY : WATFLUX_t
+USE MODD_FLAKE_n,        ONLY : FLAKE_t
+USE MODD_SURFEX_n,       ONLY : ISBA_MODEL_t,TEB_MODEL_t, &
+                                TEB_GARDEN_MODEL_t,TEB_GREENROOF_MODEL_t
+USE MODD_SEAFLUX_n,      ONLY : SEAFLUX_t
+USE MODD_SURF_ATM_n,     ONLY : SURF_ATM_t
+USE MODD_WATFLUX_n,      ONLY : WATFLUX_t
 !
 USE MODD_SURF_PAR,       ONLY : XUNDEF
 !
@@ -56,23 +59,28 @@ USE MODI_UPDATE_ESM_ISBA_n
 USE MODI_UPDATE_ESM_SEAFLUX_n
 USE MODI_UPDATE_ESM_WATFLUX_n
 USE MODI_UPDATE_ESM_FLAKE_n
+USE MODI_UPDATE_ESM_TEB_n
 !
 IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
 !
 !
-TYPE(FLAKE_t), INTENT(INOUT) :: F
+TYPE(FLAKE_t),      INTENT(INOUT) :: F
 TYPE(ISBA_MODEL_t), INTENT(INOUT) :: IM
-TYPE(SEAFLUX_t), INTENT(INOUT) :: S
-TYPE(SURF_ATM_t), INTENT(INOUT) :: U
-TYPE(WATFLUX_t), INTENT(INOUT) :: W
+TYPE(SEAFLUX_t),    INTENT(INOUT) :: S
+TYPE(SURF_ATM_t),   INTENT(INOUT) :: U
+TYPE(WATFLUX_t),    INTENT(INOUT) :: W
+TYPE(TEB_MODEL_t),        INTENT(INOUT) :: TM
+TYPE(TEB_GARDEN_MODEL_t), INTENT(INOUT) :: GDM
+TYPE(TEB_GREENROOF_MODEL_t), INTENT(INOUT) :: GRM
+
 !
- CHARACTER(LEN=6),       INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
+ CHARACTER(LEN=6),      INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
 INTEGER,                INTENT(IN)  :: KI        ! number of points
 INTEGER,                INTENT(IN)  :: KSW       ! number of short-wave spectral bands
-REAL, DIMENSION(KI),     INTENT(IN) :: PZENITH   ! zenithal angle       (radian from the vertical)
-REAL, DIMENSION(KSW),    INTENT(IN) :: PSW_BANDS ! mean wavelength of each shortwave band (m)
+REAL, DIMENSION(KI),    INTENT(IN)  :: PZENITH   ! zenithal angle       (radian from the vertical)
+REAL, DIMENSION(KSW),   INTENT(IN)  :: PSW_BANDS ! mean wavelength of each shortwave band (m)
 !
 REAL, DIMENSION(KI),    INTENT(OUT) :: PTRAD     ! radiative temperature                 (K)
 REAL, DIMENSION(KI,KSW),INTENT(OUT) :: PDIR_ALB  ! direct albedo for each spectral band  (-)
@@ -108,7 +116,9 @@ GNATURE   = (U%NSIZE_NATURE >0 .AND. U%CNATURE/='NONE')
 !
 GTOWN     = U%NSIZE_TOWN   >0
 IF(GTOWN)THEN
-  CALL ABOR1_SFX('UPDATE_ESM_SURF_ATM_n: TOWN SCHEME NOT YET AVAILABLE FOR EARTH SYSTEM MODEL')
+  IF ((HPROGRAM/='OFFLIN').AND.(HPROGRAM/='MESONH').AND.(HPROGRAM/='AROME ')) THEN
+    CALL ABOR1_SFX('UPDATE_ESM_SURF_ATM_n: TOWN SCHEME NOT YET AVAILABLE FOR EARTH SYSTEM MODEL')
+  ENDIF
 ENDIF
 !
 ! Tile counter:
@@ -175,17 +185,16 @@ ENDIF
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 ! URBAN Tile calculations:
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-! Not yet implemented
 !
-!JTILE = JTILE + 1
+JTILE = JTILE + 1
 !
-!IF(GTOWN)THEN
+IF(GTOWN)THEN
 !
-!   ZFRAC_TILE(:,JTILE) = XTOWN(:)
+   ZFRAC_TILE(:,JTILE) = U%XTOWN(:)
 !
-!   CALL TREAT_SURF(NSIZE_TOWN,NR_TOWN,JTILE)  
+   CALL TREAT_SURF(U%NSIZE_TOWN,U%NR_TOWN,JTILE)  
 !
-!ENDIF 
+ENDIF 
 !
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 ! Grid box average radiative properties:
@@ -265,13 +274,15 @@ ELSEIF (KTILE==3) THEN
     CALL ABOR1_SFX('UPDATE_ESM_SURF_ATM_n: NATURE SCHEME MUST BE ACTIVATED FOR EARTH SYSTEM MODEL')
   ENDIF
   !
-!ELSEIF (KTILE==4) THEN
-!  !
-!  IF (CTOWN=='TEB   ') THEN   
-!    CALL UPDATE_ESM_TEB_n(NSIZE_SEA,KSW,ZP_ZENITH,ZP_TRAD,ZP_DIR_ALB,ZP_SCA_ALB,ZP_EMIS,ZP_TSURF)
-!  ELSE
-!    CALL ABOR1_SFX('UPDATE_ESM_SURF_ATM_n: TEB SCHEME MUST BE ACTIVATED FOR EARTH SYSTEM MODEL')
-!  ENDIF
+ELSEIF (KTILE==4) THEN
+  !
+  IF (U%CTOWN=='TEB   ') THEN   
+    CALL UPDATE_ESM_TEB_n(TM%TOP, TM%TPN, TM%NT, TM%NB, GDM, GRM, U%NSIZE_TOWN, &
+                          KSW,ZP_ZENITH,PSW_BANDS,ZP_DIR_ALB,ZP_SCA_ALB,&
+                          ZP_EMIS,ZP_TRAD,ZP_TSURF)
+  ELSE
+    CALL ABOR1_SFX('UPDATE_ESM_SURF_ATM_n: TEB SCHEME MUST BE ACTIVATED FOR EARTH SYSTEM MODEL')
+  ENDIF
 !  !        
 ENDIF
 !

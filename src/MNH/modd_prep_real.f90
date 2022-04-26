@@ -78,6 +78,9 @@ REAL,DIMENSION(:,:,:), ALLOCATABLE :: XPMHP_LS ! pressure minus hyd. pressure
 REAL,DIMENSION(:,:,:), ALLOCATABLE :: XTHV_LS  ! virtual potential temperature
 REAL,DIMENSION(:,:,:,:), ALLOCATABLE :: XR_LS  ! water mixing ratios
 REAL,DIMENSION(:,:,:,:), ALLOCATABLE :: XSV_LS ! scalar mixing ratios
+!UPG*PT
+REAL,DIMENSION(:,:,:,:), ALLOCATABLE :: XSV_LS_LIMA ! scalar mixing ratios for lima
+!UPG*PT
 REAL,DIMENSION(:,:,:), ALLOCATABLE :: XHU_LS   ! relative humidity
 REAL,DIMENSION(:,:,:), ALLOCATABLE :: XTKE_LS  ! turbulence kinetic energy
 REAL,DIMENSION(:,:,:), ALLOCATABLE :: XU_LS    ! pseudo zonal wind component

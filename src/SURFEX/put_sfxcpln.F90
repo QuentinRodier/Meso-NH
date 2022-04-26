@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-SUBROUTINE PUT_SFXCPL_n (F, IM, S, U, W, &
+SUBROUTINE PUT_SFXCPL_n (F, IM, S, U, W, TM, GDM, GRM, &
                          HPROGRAM,KI,KSW,PSW_BANDS,PZENITH, &
                         PLAND_WTD,PLAND_FWTD,PLAND_FFLOOD, &
                         PLAND_PIFLOOD,PSEA_SST,PSEA_UCU,   &
@@ -49,7 +49,8 @@ SUBROUTINE PUT_SFXCPL_n (F, IM, S, U, W, &
 !              ------------
 !
 USE MODD_FLAKE_n, ONLY : FLAKE_t
-USE MODD_SURFEX_n, ONLY : ISBA_MODEL_t
+USE MODD_SURFEX_n, ONLY : ISBA_MODEL_t, TEB_MODEL_t, &
+                          TEB_GARDEN_MODEL_t,TEB_GREENROOF_MODEL_t
 USE MODD_SEAFLUX_n, ONLY : SEAFLUX_t
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 USE MODD_WATFLUX_n, ONLY : WATFLUX_t
@@ -83,6 +84,9 @@ TYPE(ISBA_MODEL_t), INTENT(INOUT) :: IM
 TYPE(SEAFLUX_t), INTENT(INOUT) :: S
 TYPE(SURF_ATM_t), INTENT(INOUT) :: U
 TYPE(WATFLUX_t), INTENT(INOUT) :: W
+TYPE(TEB_MODEL_t),        INTENT(INOUT) :: TM
+TYPE(TEB_GARDEN_MODEL_t), INTENT(INOUT) :: GDM
+TYPE(TEB_GREENROOF_MODEL_t), INTENT(INOUT) :: GRM
 !
 CHARACTER(LEN=6),        INTENT(IN)  :: HPROGRAM
 INTEGER,                 INTENT(IN)  :: KI      ! number of points
@@ -174,8 +178,8 @@ ENDIF
 !-------------------------------------------------------------------------------
 !
 IF(LCPL_SEA.OR.LCPL_FLOOD)THEN
-  CALL UPDATE_ESM_SURF_ATM_n(F, IM, S, U, W, HPROGRAM, KI, KSW, PZENITH, PSW_BANDS,  &
-                             PTSRAD, PDIR_ALB, PSCA_ALB, PEMIS, PTSURF )
+  CALL UPDATE_ESM_SURF_ATM_n(F, IM, S, U, W, TM, GDM, GRM, HPROGRAM, KI, KSW, PZENITH, &
+                             PSW_BANDS, PTSRAD, PDIR_ALB, PSCA_ALB, PEMIS, PTSURF )
 ENDIF
 !
 !-------------------------------------------------------------------------------

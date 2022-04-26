@@ -219,6 +219,7 @@ END MODULE MODI_DEFAULT_DESFM_n
 !  Q. Rodier      06/2021: modify default value to LGZ=F (grey-zone corr.), LSEDI and OSEDC=T (LIMA sedimentation)
 !  F. Couvreux    06/2021: add LRELAX_UVMEAN_FRC
 !  Q. Rodier      07/2021: modify XPOND=1
+!  C. Barthe      03/2022: add CIBU and RDSF options in LIMA
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -288,6 +289,7 @@ USE MODD_PARAM_LIMA, ONLY : LCOLD, LNUCL, LSEDI, LHHONI, LSNOW, LHAIL, LMEYERS, 
                             YACTEMP_CCN=>XACTEMP_CCN, YAERDIFF=>XAERDIFF,             &
                             YAERHEIGHT=>XAERHEIGHT,                                   &
                             LSCAV, LAERO_MASS, NPHILLIPS,                             &
+                            LCIBU, XNDEBRIS_CIBU, LRDSF,                              &
                             ODEPOC=>LDEPOC, OVDEPOC=>XVDEPOC, OACTTKE=>LACTTKE,       &
                             LPTSPLIT, L_LFEEDBACKT=>LFEEDBACKT, L_NMAXITER=>NMAXITER, &
                             L_XMRSTEP=>XMRSTEP, L_XTSTEP_TS=>XTSTEP_TS
@@ -1039,6 +1041,9 @@ IF (KMI == 1) THEN
   XIFN_CONC(:) = 100.
   NMOD_IMM = 0
   NPHILLIPS=8
+  LCIBU = .FALSE.
+  XNDEBRIS_CIBU = 50.0
+  LRDSF = .FALSE.
 ENDIF
 !
 !-------------------------------------------------------------------------------

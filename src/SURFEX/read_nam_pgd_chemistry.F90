@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE READ_NAM_PGD_CHEMISTRY(HPROGRAM, HCH_EMIS, HCH_BIOEMIS )  
+      SUBROUTINE READ_NAM_PGD_CHEMISTRY(HPROGRAM, HCH_EMIS, HCH_BIOEMIS, HCH_DMSEMIS)  
 !     ##############################################################
 !
 !!**** *READ_NAM_PGD_CHEMISTRY* reads namelist for CHEMISTRY
@@ -34,6 +34,7 @@
 !!
 !!    Original    09/2011
 !!    M. Leriche 06/17 add coupling MEGAN
+!!    P. Tulet 06/21 add  DMS data base
 !----------------------------------------------------------------------------
 !
 !*    0.     DECLARATION
@@ -59,6 +60,7 @@ IMPLICIT NONE
 CHARACTER(LEN=6),    INTENT(IN)    :: HPROGRAM      ! Type of program
 CHARACTER(LEN=4),    INTENT(OUT)   :: HCH_EMIS      ! Option for emissions computations
 CHARACTER(LEN=4),    INTENT(OUT)   :: HCH_BIOEMIS   ! Option for activating MEGAN coupling      
+CHARACTER(LEN=4),    INTENT(OUT)   :: HCH_DMSEMIS   ! Option for activating DMS fluxes
 !
 !*    0.2    Declaration of local variables
 !            ------------------------------
@@ -72,9 +74,10 @@ LOGICAL                           :: GFOUND    ! flag when namelist is present
 !
 CHARACTER(LEN=4)         :: CCH_EMIS
 CHARACTER(LEN=4)         :: CCH_BIOEMIS 
+CHARACTER(LEN=4)         :: CCH_DMSEMIS 
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
-NAMELIST/NAM_CH_EMISSIONS/ CCH_EMIS, CCH_BIOEMIS
+NAMELIST/NAM_CH_EMISSIONS/ CCH_EMIS, CCH_BIOEMIS, CCH_DMSEMIS
 !
 !-------------------------------------------------------------------------------
 !
@@ -84,6 +87,7 @@ NAMELIST/NAM_CH_EMISSIONS/ CCH_EMIS, CCH_BIOEMIS
 IF (LHOOK) CALL DR_HOOK('READ_NAM_PGD_CHEMISTRY',0,ZHOOK_HANDLE)
 CCH_EMIS        = 'NONE'
 CCH_BIOEMIS     = 'NONE'
+CCH_DMSEMIS     = 'NONE'
 !
  CALL GET_LUOUT(HPROGRAM,ILUOUT)
 !
@@ -99,6 +103,7 @@ IF (GFOUND) READ(UNIT=ILUNAM,NML=NAM_CH_EMISSIONS)
 !
 CALL TEST_NAM_VAR_SURF(ILUOUT,'CCH_EMIS',CCH_EMIS,'NONE','AGGR','SNAP')
 CALL TEST_NAM_VAR_SURF(ILUOUT,'CCH_BIOEMIS',CCH_BIOEMIS,'NONE','MEGA')
+CALL TEST_NAM_VAR_SURF(ILUOUT,'CCH_DMSEMIS',CCH_DMSEMIS,'NONE','DMSD')
 !
 CALL CLOSE_NAMELIST(HPROGRAM,ILUNAM)
 !
@@ -106,6 +111,7 @@ CALL CLOSE_NAMELIST(HPROGRAM,ILUNAM)
 !
 HCH_EMIS = CCH_EMIS
 HCH_BIOEMIS = CCH_BIOEMIS
+HCH_DMSEMIS = CCH_DMSEMIS
 !
 IF (LHOOK) CALL DR_HOOK('READ_NAM_PGD_CHEMISTRY',1,ZHOOK_HANDLE)
 !

@@ -7,15 +7,16 @@
       MODULE MODI_VER_PREP_NETCDF_CASE
 !     ################################
 INTERFACE
-      SUBROUTINE VER_PREP_NETCDF_CASE(PDIAG)
+      SUBROUTINE VER_PREP_NETCDF_CASE(PDIAG, PSV_LS)
 !
-REAL, INTENT(OUT)                 :: PDIAG    ! diagnostics computing time
+REAL, INTENT(OUT)                        :: PDIAG    ! diagnostics computing time
+REAL, DIMENSION(:,:,:,:), INTENT(INOUT)  ::  PSV_LS ! sv var.
 !
 END SUBROUTINE VER_PREP_NETCDF_CASE
 END INTERFACE
 END MODULE MODI_VER_PREP_NETCDF_CASE
 !     ####################################################################
-      SUBROUTINE VER_PREP_NETCDF_CASE(PDIAG)
+      SUBROUTINE VER_PREP_NETCDF_CASE(PDIAG, PSV_LS)
 !     ####################################################################
 !
 !!****  *VER_PREP_NETCDF_CASE* - monitors the preparation to orographic change
@@ -85,6 +86,8 @@ END MODULE MODI_VER_PREP_NETCDF_CASE
 !!                  Oct 2017 (J.Escobar) minor, missing USE MODI_SECOND_MNH
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!                  Mars 2019 (Q. Rodier): missing SECOND_MNH(ZTIME1)
+!!                  Fevruary 2021 (M. Leriche) : XSV_LS in argument to avoid
+!!                                 duplicate the routine
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -112,7 +115,8 @@ IMPLICIT NONE
 !*       0.1   Declaration of arguments
 !              ------------------------
 !
-REAL, INTENT(OUT)                 :: PDIAG    ! diagnostics computing time
+REAL, INTENT(OUT)                        :: PDIAG    ! diagnostics computing time
+REAL, DIMENSION(:,:,:,:), INTENT(INOUT)  ::  PSV_LS ! sv var.
 !
 !*       0.2   Declaration of local variables
 !              ------------------------------
@@ -167,7 +171,7 @@ CALL SECOND_MNH(ZTIME1)
 ! vertical interpolation programs with all ILU physical points
 !
 ALLOCATE(ZZMASS_LS(IIU,IJU,ILU+2*JPVEXT))
-ALLOCATE(ZSV_LS(IIU,IJU,ILU+2*JPVEXT,SIZE(XSV_LS,4)))
+ALLOCATE(ZSV_LS(IIU,IJU,ILU+2*JPVEXT,SIZE(PSV_LS,4)))
 !
 ZZMASS_LS (:,:,JPVEXT+1:JPVEXT+ILU) = XZMASS_SV_LS(:,:,:)
 DO JK=1,JPVEXT
@@ -178,8 +182,8 @@ END DO
 !ZSV_LS    = XUNDEF
 ZSV_LS    = -999.
 !
-DO JSV=1,SIZE(XSV_LS,4)
-  ZSV_LS    (:,:,JPVEXT+1:JPVEXT+ILU,JSV) = XSV_LS (:,:,:,JSV)
+DO JSV=1,SIZE(PSV_LS,4)
+  ZSV_LS    (:,:,JPVEXT+1:JPVEXT+ILU,JSV) = PSV_LS (:,:,:,JSV)
 END DO
 !
   CALL VER_INTERP_TO_MIXED_GRID('CHEM',.TRUE.,XZS_SV_LS,XZS_SV_LS,&
@@ -209,7 +213,6 @@ PDIAG = ZTIME2 - ZTIME1
   DEALLOCATE(XTHV_SV_LS)
   DEALLOCATE(XR_SV_LS)
   DEALLOCATE(XHU_SV_LS)
-  DEALLOCATE(XSV_LS)
 !
 !
 !-------------------------------------------------------------------------------

@@ -31,6 +31,7 @@
 !!    MODIFICATIONS
 !!    -------------
 !!      Original             ??/??/13 
+!!      C. Barthe            14/03/2022  add CIBU and RDSF
 !!
 !-------------------------------------------------------------------------------
 !
@@ -58,6 +59,8 @@ LOGICAL, SAVE :: LHHONI                 ! TRUE to enable freezing of haze partic
 LOGICAL, SAVE :: LSNOW                  ! TRUE to enable snow and graupel
 LOGICAL, SAVE :: LHAIL                  ! TRUE to enable hail
 LOGICAL, SAVE :: LMEYERS                ! TRUE to use Meyers nucleation
+LOGICAL, SAVE :: LCIBU                  ! TRUE to use collisional ice breakup
+LOGICAL, SAVE :: LRDSF                  ! TRUE to use rain drop shattering by freezing
 !
 ! 1.2 IFN initialisation
 !
@@ -83,8 +86,8 @@ REAL, DIMENSION(:),    SAVE, ALLOCATABLE :: XFRAC_REF       ! AP compostion in P
 CHARACTER(LEN=4), SAVE :: CPRISTINE_ICE_LIMA ! Pristine type PLAT, COLU or BURO
 CHARACTER(LEN=4), SAVE :: CHEVRIMED_ICE_LIMA ! Heavily rimed type GRAU or HAIL
 REAL,SAVE              :: XALPHAI,XNUI,    & ! Pristine ice   distribution parameters
-	                  XALPHAS,XNUS,    & ! Snow/aggregate distribution parameters
-	                  XALPHAG,XNUG       ! Graupel        distribution parameters
+                          XALPHAS,XNUS,    & ! Snow/aggregate distribution parameters
+                          XALPHAG,XNUG       ! Graupel        distribution parameters
 !
 ! 1.4 Phillips (2013) nucleation parameterization
 !
@@ -112,6 +115,11 @@ INTEGER,           SAVE              :: NDIAM             ! Gauss quadrature acc
 REAL,SAVE :: XFACTNUC_DEP,XFACTNUC_CON  ! Amplification factor for IN conc.
                                         !   DEP refers to DEPosition mode
                                         !   CON refers to CONtact    mode
+!
+! 1.6 Collisional Ice Break Up parameterization
+!
+REAL,SAVE :: XNDEBRIS_CIBU              ! Number of ice crystal debris produced
+                                        ! by the break up of aggregate particles
 !
 !-------------------------------------------------------------------------------
 !

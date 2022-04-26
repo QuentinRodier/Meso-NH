@@ -208,6 +208,7 @@ end subroutine Budget_preallocate
 !  P. Wautelet 02/03/2021: budgets: add terms for blowing snow
 !  P. Wautelet 04/03/2021: budgets: add terms for drag due to buildings
 !  P. Wautelet 17/03/2021: choose source terms for budgets with character strings instead of multiple integer variables
+!  C. Barthe   14/03/2022: budgets: add terms for CIBU and RDSF in LIMA
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -248,7 +249,7 @@ use modd_param_lima,   only: laero_mass_lima => laero_mass, lacti_lima => lacti,
                              lhail_lima => lhail, lhhoni_lima => lhhoni, lmeyers_lima => lmeyers, lnucl_lima => lnucl,       &
                              lptsplit,                                                                                       &
                              lrain_lima => lrain, lscav_lima => lscav, lsedc_lima => lsedc, lsedi_lima => lsedi,             &
-                             lsnow_lima => lsnow, lspro_lima => lspro,  lwarm_lima => lwarm,                                 &
+                             lsnow_lima => lsnow, lspro_lima => lspro,  lwarm_lima => lwarm, lcibu, lrdsf,                   &
                              nmod_ccn, nmod_ifn, nmod_imm
 use modd_ref,          only: lcouples
 use modd_salt,         only: lsalt
@@ -2264,10 +2265,20 @@ if ( tbudgets(NBUDGET_RI)%lenabled ) then
   tzsource%lavailable = hcloud == 'LIMA' .and. ( lptsplit .or. ( lcold_lima .and. lwarm_lima .and. lsnow_lima ) )
   call Budget_source_add( tbudgets(NBUDGET_RI), tzsource )
 
+  tzsource%cmnhname   = 'CIBU'
+  tzsource%clongname  = 'ice multiplication process due to ice collisional breakup'
+  tzsource%lavailable = ( hcloud == 'LIMA' .and. .not.lptsplit .and. lcold_lima .and. lwarm_lima .and. lsnow_lima .and. lcibu )
+  call Budget_source_add( tbudgets(NBUDGET_RI), tzsource )
+
   tzsource%cmnhname   = 'CFRZ'
   tzsource%clongname  = 'conversion freezing of rain'
   tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. ( lcold_lima .and. lwarm_lima .and. lsnow_lima ) ) ) &
                         .or. hcloud(1:3) == 'ICE'
+  call Budget_source_add( tbudgets(NBUDGET_RI), tzsource )
+
+  tzsource%cmnhname   = 'RDSF'
+  tzsource%clongname  = 'ice multiplication process following rain contact freezing'
+  tzsource%lavailable = ( hcloud == 'LIMA' .and. .not.lptsplit .and. lcold_lima .and. lwarm_lima .and. lsnow_lima .and. lrdsf )
   call Budget_source_add( tbudgets(NBUDGET_RI), tzsource )
 
   tzsource%cmnhname   = 'WETG'
@@ -2463,6 +2474,11 @@ if ( tbudgets(NBUDGET_RS)%lenabled ) then
   tzsource%lavailable = hcloud == 'LIMA' .and. ( lptsplit .or. (lcold_lima .and. lwarm_lima .and. lsnow_lima ) )
   call Budget_source_add( tbudgets(NBUDGET_RS), tzsource )
 
+  tzsource%cmnhname   = 'CIBU'
+  tzsource%clongname  = 'ice multiplication process due to ice collisional breakup'
+  tzsource%lavailable = ( hcloud == 'LIMA' .and. .not.lptsplit .and. lcold_lima .and. lwarm_lima .and. lsnow_lima .and. lcibu )
+  call Budget_source_add( tbudgets(NBUDGET_RS), tzsource )
+
   tzsource%cmnhname   = 'ACC'
   tzsource%clongname  = 'accretion of rain on snow'
   tzsource%lavailable =       ( hcloud == 'LIMA' .and. ( lptsplit .or. (       lcold_lima .and. lwarm_lima      &
@@ -2650,6 +2666,11 @@ if ( tbudgets(NBUDGET_RG)%lenabled ) then
   tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. (lcold_lima .and. lwarm_lima .and. lsnow_lima) ) ) &
                         .or. hcloud(1:3) == 'ICE'
   call Budget_source_add( tbudgets(NBUDGET_RG), tzsource )
+
+  tzsource%cmnhname   = 'RDSF'
+  tzsource%clongname  = 'ice multiplication process following rain contact freezing'
+  tzsource%lavailable = ( hcloud == 'LIMA' .and. .not.lptsplit .and. lcold_lima .and. lwarm_lima .and. lsnow_lima .and. lrdsf )
+  call Budget_source_add( tbudgets(NBUDGET_RG), tzsource )  
 
   tzsource%cmnhname   = 'WETG'
   tzsource%clongname  = 'wet growth of graupel'
@@ -3422,9 +3443,19 @@ SV_BUDGETS: do jsv = 1, ksv
         tzsource%lavailable = lptsplit .or. ( lcold_lima .and. lwarm_lima  .and. lsnow_lima )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
+        tzsource%cmnhname   = 'CIBU'
+        tzsource%clongname  = 'ice multiplication process due to ice collisional breakup'
+        tzsource%lavailable = .not.lptsplit .and. lcold_lima .and. lwarm_lima .and. lsnow_lima .and. lcibu
+        call Budget_source_add( tbudgets(ibudget), tzsource )
+
         tzsource%cmnhname   = 'CFRZ'
         tzsource%clongname  = 'conversion freezing of rain'
         tzsource%lavailable = lptsplit .or. ( lcold_lima .and. lwarm_lima  .and. lsnow_lima )
+        call Budget_source_add( tbudgets(ibudget), tzsource )
+
+        tzsource%cmnhname   = 'RDSF'
+        tzsource%clongname  = 'ice multiplication process following rain contact freezing'
+        tzsource%lavailable = .not.lptsplit .and. lcold_lima .and. lwarm_lima .and. lsnow_lima .and. lrdsf
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'WETG'

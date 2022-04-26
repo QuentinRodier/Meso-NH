@@ -2,59 +2,54 @@
 !ORILAM_LIC This is part of the ORILAM software governed by the CeCILL-C licence
 !ORILAM_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !ORILAM_LIC for details.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 chimie 2006/05/18 13:07:25
-!-----------------------------------------------------------------
-!!   #######################
+!!   ##########################
      MODULE MODI_CH_AER_MINERAL
-!!   #######################
+!!   ##########################
 !!
 INTERFACE
-!
+!!
 SUBROUTINE CH_AER_MINERAL(PCTOTG, PCTOTA, PRV, PDENAIR, PPRESSURE, PTEMP, PRC, POM,&
-                           PCCTOT,PSIG0, PRG0, PDT)
+                           PCCTOT)
 IMPLICIT NONE
 REAL, DIMENSION(:,:),   INTENT(INOUT) :: PCTOTG, POM
 REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PCTOTA, PCCTOT 
 REAL, DIMENSION(:),     INTENT(IN)    :: PRV, PDENAIR, PPRESSURE, PTEMP, PRC
-REAL, DIMENSION(:,:),   INTENT(INOUT) :: PSIG0, PRG0
-REAL,                   INTENT(IN)    :: PDT
-!
+!!
 END SUBROUTINE CH_AER_MINERAL
-!
+!!
 END INTERFACE
-!
+!!
 END MODULE MODI_CH_AER_MINERAL
 !!
 !!
-!##########################################################################################
-     SUBROUTINE CH_AER_MINERAL(PCTOTG, PCTOTA, PRV, PDENAIR, PPRESSURE, PTEMP, PRC, POM,&
-                               PCCTOT,PSIG0, PRG0,PDT)
-!###########################################################################################
+!!   #####################################################################################
+     SUBROUTINE CH_AER_MINERAL(PCTOTG, PCTOTA, PRV, PDENAIR, PPRESSURE, PTEMP, PRC, POM, &
+                               PCCTOT)
+!!   #####################################################################################
 !!
 !!   PURPOSE
 !!   -------
 !!   solve the mineral thermodynamic balance
 !!
-!!    REFERENCE
-!!    ---------
-!!    none
+!!   REFERENCE
+!!   ---------
+!!   None
 !!
-!!    AUTHOR
-!!    ------
-!!    P. Tulet  (GMEI)
+!!   AUTHOR
+!!   ------
+!!   P. Tulet  (GMEI)
 !!
-!!    MODIFICATIONS
-!!    -------------
+!!   MODIFICATIONS
+!!   -------------
 !!
-!!    EXTERNAL
-!!    --------
-!!    None
+!!   EXTERNAL
+!!   --------
+!!   None
 !!
 !-------------------------------------------------------------------------------
+!
+!*       0.     DECLARATIONS
+!               ------------
 !
 USE MODD_CH_AEROSOL
 USE MODI_CH_NNARES
@@ -62,9 +57,9 @@ USE MODI_CH_ARES
 USE MODI_CH_ISOROPIA
 USE MODI_CH_AER_THERMO
 USE MODI_CH_AER_EQSAM
-USE MODD_CST, ONLY : XMNH_TINY
-!USE MODI_CH_AER_DIFF
-!!
+USE MODD_CST,          ONLY : XMNH_TINY
+USE MODD_CONF,         ONLY : NVERB
+!
 IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments
@@ -72,38 +67,40 @@ IMPLICIT NONE
 REAL, DIMENSION(:,:),   INTENT(INOUT) :: PCTOTG, POM
 REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PCTOTA, PCCTOT 
 REAL, DIMENSION(:),     INTENT(IN)    :: PRV, PDENAIR, PPRESSURE, PTEMP, PRC
-REAL, DIMENSION(:,:),   INTENT(INOUT) :: PSIG0, PRG0
-REAL,                   INTENT(IN)    :: PDT
 !
 !*       0.2   Declarations of local variables
 !
 INTEGER :: JI,JJ
-REAL, DIMENSION(SIZE(PCTOTA,1),NSP,JPMODE) :: ZFRAC
-REAL, DIMENSION(SIZE(PCTOTA,1),NSP) :: ZTOT,ZTOTNEW, ZTOTGNEW 
+REAL, DIMENSION(SIZE(PCTOTA,1),NSP,JPMODE)     :: ZFRAC
+REAL, DIMENSION(SIZE(PCTOTA,1),NSP)            :: ZTOT,ZTOTNEW, ZTOTGNEW 
 REAL, DIMENSION(SIZE(PCTOTA,1),NSP+NCARB+NSOA) :: ZDEL
-REAL, DIMENSION(SIZE(PCTOTA,1),6) :: ZAER
-REAL, DIMENSION(SIZE(PCTOTA,1))   :: ZPKM, ZPKH2O, ZSAT, ZRH
-
-!*****************************************************************
-!*****************************************************************
-! SOLVEUR DE L'EQUILIBRE CHIMIQUE MINERAL
-!*****************************************************************
-!*****************************************************************
-
-ZPKM(:) = 1E-3*PDENAIR(:) * 6.0221367E+23 / 28.9644
-ZPKH2O(:) = ZPKM(:)*1.6077*PRV(:)
+REAL, DIMENSION(SIZE(PCTOTA,1),6)              :: ZAER
+REAL, DIMENSION(SIZE(PCTOTA,1))                :: ZPKM, ZPKH2O, ZSAT, ZRH
+!
+!-------------------------------------------------------------------------------
+!
+!*       1.    INITIALIZATION
+!              --------------
+!
+ZPKM  (:) = 1E-3 * PDENAIR(:) * 6.0221367E+23 / 28.9644
+ZPKH2O(:) = ZPKM(:) * 1.6077 * PRV(:)
 !
 ! compute relative humidity
-ZSAT(:)=0.611*EXP(17.2694*(PTEMP(:)-273.16)/(PTEMP(:)-35.86))
-ZSAT(:)=ZSAT(:)*1000.
-ZRH(:)=(ZPKH2O(:)/(ZPKM(:)*1.6077))*PPRESSURE(:)/&
-       &(0.622+(ZPKH2O(:)/(ZPKM(:)*1.6077)))/ZSAT(:)
-ZRH(:) = MIN(0.95, MAX(ZRH(:), .1)) ! until 0.95 thermodynamic code is not valid
+ZSAT(:) = 0.611*EXP(17.2694*(PTEMP(:)-273.16)/(PTEMP(:)-35.86))
+ZSAT(:) = ZSAT(:)*1000.
+ZRH (:) = (ZPKH2O(:)/(ZPKM(:)*1.6077))*PPRESSURE(:)/&
+        & (0.622+(ZPKH2O(:)/(ZPKM(:)*1.6077)))/ZSAT(:)
+ZRH(:)  = MIN(0.95, MAX(ZRH(:), .1)) ! until 0.95 thermodynamic code is not valid
 !
 ! Mass need to be positive
-PCTOTA(:,:,:)= MAX (PCTOTA(:,:,:),0.)
-PCTOTG(:,:)= MAX (PCTOTG(:,:),0.)
-ZTOTGNEW(:,:)= 0.
+PCTOTA(:,:,:) = MAX(PCTOTA(:,:,:),0.)
+PCTOTG(:,:)   = MAX(PCTOTG(:,:),  0.)
+ZTOTGNEW(:,:) = 0.
+!
+!-------------------------------------------------------------------------------
+!
+!*       2.    COMPUTE MINERAL CHEMICAL EQUILIBRIUM
+!              ------------------------------------
 !
 !******************************************************************
 ! Calcul de la repartition des differentes especes entre les modes
@@ -112,8 +109,11 @@ ZTOTGNEW(:,:)= 0.
 DO JI=1,NSP
   ZTOTNEW(:,JI)=0.
   ZTOT(:,JI)=PCTOTA(:,JI,1)+PCTOTA(:,JI,2)
-  ZTOT(:,JI) = MAX(ZTOT(:,JI),1.E-40)
+  ZTOT(:,JI) = MAX(ZTOT(:,JI),1.E-40) 
   ZFRAC(:,JI,1)=PCTOTA(:,JI,1)/(ZTOT(:,JI)+1E-25)
+  ZFRAC(:,JI,2)=1.-ZFRAC(:,JI,1)
+  ! use SO4 fraction for all species (clean this up later)
+  ZFRAC(:,JI,1)=ZFRAC(:,1,1)
   ZFRAC(:,JI,2)=1.-ZFRAC(:,JI,1)
 ENDDO
 !
@@ -193,9 +193,9 @@ ELSE IF (CMINERAL == 'EQSAM') THEN
 !
 ELSE
 
-PRINT *,' WARNING WARNING WARNING WARNING WARNING WARNING'
-PRINT *,' PAS D EQUILIBRE THERMODYNAMIQUE ENTRE LES MINERAUX'
-PRINT *,' WARNING WARNING WARNING WARNING WARNING WARNING'
+IF (NVERB==10) PRINT *,' WARNING WARNING WARNING WARNING WARNING WARNING'
+IF (NVERB==10) PRINT *,' PAS D EQUILIBRE THERMODYNAMIQUE ENTRE LES MINERAUX'
+IF (NVERB==10) PRINT *,' WARNING WARNING WARNING WARNING WARNING WARNING'
   ZTOTNEW(:,:) = MAX(0.,ZTOT(:,:))
 
 ENDIF
@@ -209,16 +209,18 @@ ZDEL(:,1:NSP)=ZTOTNEW(:,1:NSP)-ZTOT(:,1:NSP)
 !
 ! Calcul de la nouvelle composition chimique
 ! de chacun des modes apres equilibre chimique
+!
 DO JI=1,JPMODE
   DO JJ=1,NSP
 
-  !PCTOTA(:,JJ,JI)=MAX(XMNH_TINY,PCTOTA(:,JJ,JI)+ZFRAC(:,JJ,JI)*ZDEL(:,JJ))
+  PCTOTA(:,JJ,JI)=MAX(XMNH_TINY,PCTOTA(:,JJ,JI)+ZFRAC(:,JJ,JI)*ZDEL(:,JJ))
   ! répartition entre les modes en fonction de la surface des aerosols (facteur
   ! omega)
   !  PCTOTA(:,JJ,JI)=MAX(XMNH_TINY,PCTOTA(:,JJ,JI)+ZDEL(:,JJ)*POM(:,JI)) 
-   PCTOTA(:,JJ,JI)=MAX(XMNH_TINY,ZTOTNEW(:,JJ)*POM(:,JI))
+  ! PCTOTA(:,JJ,JI)=MAX(XMNH_TINY,ZTOTNEW(:,JJ)*POM(:,JI))
  ENDDO
-ENDDO
+ !PCTOTA(:,JP_AER_SO4,JI) = ZCTOTA(:,JP_AER_SO4,JI)
+ENDDO 
 !
 DO JJ=1,NSP
   PCTOTG(:,JJ)=MAX(XMNH_TINY,PCTOTG(:,JJ)-ZDEL(:,JJ)) 

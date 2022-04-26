@@ -241,6 +241,7 @@ GRECV_FLOOD=(GRECV_LAND.AND.LCPL_FLOOD)
 IF(GRECV_SEA.OR.GRECV_FLOOD)THEN     
   CALL UPDATE_ESM_SURF_ATM_n(YSURF_CUR%FM%F, YSURF_CUR%IM, YSURF_CUR%SM%S, &
                              YSURF_CUR%U, YSURF_CUR%WM%W, &
+                             YSURF_CUR%TM, YSURF_CUR%GDM, YSURF_CUR%GRM, &
                              HPROGRAM, KI, KSW, PZENITH(:), PSW_BANDS, &
                              PTSRAD(:), PDIR_ALB(:,:),     &
                              PSCA_ALB(:,:), PEMIS(:),      &
