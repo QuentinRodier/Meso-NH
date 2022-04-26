@@ -219,6 +219,7 @@ END MODULE MODI_DEFAULT_DESFM_n
 !  Q. Rodier      06/2021: modify default value to LGZ=F (grey-zone corr.), LSEDI and OSEDC=T (LIMA sedimentation)
 !  F. Couvreux    06/2021: add LRELAX_UVMEAN_FRC
 !  Q. Rodier      07/2021: modify XPOND=1
+!  Delbeke/Vie    03/2022 : KHKO option in LIMA
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -274,12 +275,12 @@ USE MODD_ALLSTATION_n
 !
 !
 USE MODD_PARAM_LIMA, ONLY : LCOLD, LNUCL, LSEDI, LHHONI, LSNOW, LHAIL, LMEYERS,       &
-                            NMOD_IFN, XIFN_CONC, LIFN_HOM, CIFN_SPECIES,              &
+                            NMOD_IFN, NMOM_I, XIFN_CONC, LIFN_HOM, CIFN_SPECIES,      &
                             CINT_MIXING, NMOD_IMM, NIND_SPECIE,                       &
-                            CPRISTINE_ICE_LIMA, CHEVRIMED_ICE_LIMA,                   &
+                            YSNOW_T=>LSNOW_T, CPRISTINE_ICE_LIMA, CHEVRIMED_ICE_LIMA, &
                             XFACTNUC_DEP, XFACTNUC_CON,                               &
                             OWARM=>LWARM, LACTI, ORAIN=>LRAIN, OSEDC=>LSEDC,          &
-                            OACTIT=>LACTIT, LBOUND, LSPRO, LADJ,                      &
+                            OACTIT=>LACTIT, LBOUND, LSPRO, LADJ, LKHKO,               &
                             NMOD_CCN, XCCN_CONC,                                      &
                             LCCN_HOM, CCCN_MODES,                                     &
                             YALPHAR=>XALPHAR, YNUR=>XNUR,                             &
@@ -871,7 +872,8 @@ IF (KMI == 1) THEN
   CFRAC_ICE_SHALLOW_MF = 'S'
   LSEDIM_AFTER = .FALSE.
   LDEPOSC = .FALSE.
-  XVDEPOSC= 0.02 ! 2 cm/s  
+  XVDEPOSC= 0.02 ! 2 cm/s
+  LSNOW_T=.FALSE.
 END IF
 !
 !-------------------------------------------------------------------------------
@@ -972,13 +974,13 @@ ENDIF
 !*      19.BIS   SET DEFAULT VALUES FOR MODD_PARAM_LIMA :
 !                ----------------------------------------
 !
-LPTSPLIT     = .FALSE.
-L_LFEEDBACKT = .TRUE.
-L_NMAXITER   = 1
-L_XMRSTEP    = 0.
-L_XTSTEP_TS  = 0.
-!
 IF (KMI == 1) THEN
+   LPTSPLIT     = .FALSE.
+   L_LFEEDBACKT = .TRUE.
+   L_NMAXITER   = 1
+   L_XMRSTEP    = 0.
+   L_XTSTEP_TS  = 0.
+!
   YNUC    = 1.0
   YALPHAC = 3.0
   YNUR    = 2.0
@@ -991,6 +993,7 @@ IF (KMI == 1) THEN
   OACTIT = .FALSE.
   LADJ   = .TRUE.
   LSPRO  = .FALSE.
+  LKHKO  = .FALSE.
   ODEPOC = .FALSE.
   LBOUND = .FALSE.
   OACTTKE = .TRUE.
@@ -1017,19 +1020,19 @@ IF (KMI == 1) THEN
   LCCN_HOM = .TRUE.
   CCCN_MODES = 'COPT'
   XCCN_CONC(:)=300.
-ENDIF
-!
-IF (KMI == 1) THEN
+
   LHHONI = .FALSE.
   LCOLD  = .TRUE.
   LNUCL  = .TRUE.
   LSEDI  = .TRUE.
   LSNOW  = .TRUE.
   LHAIL  = .FALSE.
+  YSNOW_T = .TRUE.
   CPRISTINE_ICE_LIMA = 'PLAT'
   CHEVRIMED_ICE_LIMA = 'GRAU'
   XFACTNUC_DEP = 1.0  
   XFACTNUC_CON = 1.0
+  NMOM_I = 2
   NMOD_IFN = 1
   NIND_SPECIE = 1
   LMEYERS = .FALSE.

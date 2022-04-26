@@ -62,6 +62,7 @@ LOGICAL, SAVE :: LMEYERS                ! TRUE to use Meyers nucleation
 ! 1.2 IFN initialisation
 !
 INTEGER, SAVE          :: NMOD_IFN               ! Number of IFN modes
+INTEGER, SAVE          :: NMOM_I                 ! Number of moments for pristine ice
 REAL, DIMENSION(JPLIMAIFNMAX), SAVE :: XIFN_CONC ! Ref. concentration of IFN(#/L)
 LOGICAL, SAVE          :: LIFN_HOM               ! True for z-homogeneous IFN concentrations
 CHARACTER(LEN=8), SAVE :: CIFN_SPECIES           ! Internal mixing species definitions
@@ -80,6 +81,7 @@ REAL, DIMENSION(:),    SAVE, ALLOCATABLE :: XFRAC_REF       ! AP compostion in P
 !
 ! 1.3 Ice characteristics
 !
+LOGICAL, SAVE :: LSNOW_T                     ! TRUE to enable snow param. after Wurtz 2021
 CHARACTER(LEN=4), SAVE :: CPRISTINE_ICE_LIMA ! Pristine type PLAT, COLU or BURO
 CHARACTER(LEN=4), SAVE :: CHEVRIMED_ICE_LIMA ! Heavily rimed type GRAU or HAIL
 REAL,SAVE              :: XALPHAI,XNUI,    & ! Pristine ice   distribution parameters
@@ -133,6 +135,7 @@ LOGICAL, SAVE :: LDEPOC        ! Deposition of rc at 1st level above ground
 LOGICAL, SAVE :: LACTTKE       ! TRUE to take into account TKE in W for activation
 LOGICAL, SAVE :: LADJ          ! TRUE for adjustment procedure + Smax (false for diagnostic supersaturation)
 LOGICAL, SAVE :: LSPRO         ! TRUE for prognostic supersaturation                     
+LOGICAL, SAVE :: LKHKO         ! TRUE for Scu simulation (replicates the previous KHKO scheme)                     
 !
 ! 2.2 CCN initialisation
 !

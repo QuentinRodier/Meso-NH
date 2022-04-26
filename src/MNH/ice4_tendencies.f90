@@ -174,14 +174,16 @@ SUBROUTINE ICE4_TENDENCIES(KSIZE, KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKT, K
 !!    -------------
 !
 !  P. Wautelet 29/05/2019: remove PACK/UNPACK intrinsics (to get more performance and better OpenACC support)
+!  J. Wurtz       03/2022: New snow characteristics with LSNOW_T
 !
 !
 !*      0. DECLARATIONS
 !          ------------
 !
 USE MODD_CST,            ONLY: XALPI,XBETAI,XCI,XCPV,XEPSILO,XGAMI,XLSTT,XMD,XMV,XP00,XRV,XTT
-USE MODD_PARAM_ICE,      ONLY: CSNOWRIMING
-USE MODD_RAIN_ICE_DESCR, ONLY: XLBDAS_MAX,XLBEXG,XLBEXH,XLBEXR,XLBEXS,XLBG,XLBH,XLBR,XLBS,XRTMIN
+USE MODD_PARAM_ICE,      ONLY: CSNOWRIMING,LSNOW_T
+USE MODD_RAIN_ICE_DESCR, ONLY: XLBDAS_MIN,XLBDAS_MAX,XLBEXG,XLBEXH,XLBEXR,XLBEXS,&
+                               XLBG,XLBH,XLBR,XLBS,XRTMIN,XTRANS_MP_GAMMAS
 USE MODD_RAIN_ICE_PARAM, ONLY: XSCFAC
 !
 USE MODI_ICE4_COMPUTE_PDF
@@ -400,21 +402,28 @@ ELSE
   !        5.1.6  riming-conversion of the large sized aggregates into graupel (old parametrisation)
   !
   IF(CSNOWRIMING=='OLD ') THEN
-    ZLBDAS(:)=0.
-    WHERE(ZRST(:)>0.)
-      ZLBDAS(:)  = MIN(XLBDAS_MAX, XLBS*(PRHODREF(:)*MAX(ZRST(:), XRTMIN(5)))**XLBEXS)
-    END WHERE
-    CALL ICE4_RSRIMCG_OLD(KSIZE, ODSOFT, PCOMPUTE==1., &
-                         &PRHODREF, &
-                         &ZLBDAS, &
-                         &ZT, ZRCT, ZRST, &
-                         &PRSRIMCG_MR, PB_RS, PB_RG)
-    DO JL=1, KSIZE
-      ZRST(JL) = ZRST(JL) - PRSRIMCG_MR(JL)
-      ZRGT(JL) = ZRGT(JL) + PRSRIMCG_MR(JL)
-    ENDDO
+     ZLBDAS(:)=0.
+     IF (LSNOW_T) THEN 
+        WHERE (ZRST(:)>XRTMIN(5) .AND. ZT(:)>263.15)
+           ZLBDAS(:) = MAX(MIN(XLBDAS_MAX, 10**(14.554-0.0423*ZT(:))),XLBDAS_MIN)*XTRANS_MP_GAMMAS
+        END WHERE
+        WHERE (ZRST(:)>XRTMIN(5) .AND. ZT(:)<=263.15)
+           ZLBDAS(:) = MAX(MIN(XLBDAS_MAX, 10**(6.226-0.0106*ZT(:))),XLBDAS_MIN)*XTRANS_MP_GAMMAS
+        END WHERE
+     ELSE
+        ZLBDAS(:)  = MAX(MIN(XLBDAS_MAX,XLBS*(PRHODREF(:)*ZRST(:))**XLBEXS),XLBDAS_MIN)
+     END IF
+     CALL ICE4_RSRIMCG_OLD(KSIZE, ODSOFT, PCOMPUTE==1., &
+                          &PRHODREF, &
+                          &ZLBDAS, &
+                          &ZT, ZRCT, ZRST, &
+                          &PRSRIMCG_MR, PB_RS, PB_RG)
+     DO JL=1, KSIZE
+        ZRST(JL) = ZRST(JL) - PRSRIMCG_MR(JL)
+        ZRGT(JL) = ZRGT(JL) + PRSRIMCG_MR(JL)
+     ENDDO
   ELSE
-    PRSRIMCG_MR(:) = 0.
+     PRSRIMCG_MR(:) = 0.
   ENDIF
 ENDIF
 !
@@ -470,9 +479,16 @@ IF(KSIZE>0) THEN
   !*  compute the slope parameters
   !
   ZLBDAS(:)=0.
-  WHERE(ZRST(:)>0.)
-    ZLBDAS(:)  = MIN(XLBDAS_MAX, XLBS*(PRHODREF(:)*MAX(ZRST(:), XRTMIN(5)))**XLBEXS)
-  END WHERE
+  IF (LSNOW_T) THEN 
+     WHERE (ZRST(:)>XRTMIN(5) .AND. ZT(:)>263.15)
+        ZLBDAS(:) = MAX(MIN(XLBDAS_MAX, 10**(14.554-0.0423*ZT(:))),XLBDAS_MIN)*XTRANS_MP_GAMMAS
+     END WHERE
+     WHERE (ZRST(:)>XRTMIN(5) .AND. ZT(:)<=263.15)
+        ZLBDAS(:) = MAX(MIN(XLBDAS_MAX, 10**(6.226-0.0106*ZT(:))),XLBDAS_MIN)*XTRANS_MP_GAMMAS
+     END WHERE
+  ELSE
+     ZLBDAS(:)  = MAX(MIN(XLBDAS_MAX,XLBS*(PRHODREF(:)*ZRST(:))**XLBEXS),XLBDAS_MIN)
+  END IF
   ZLBDAG(:)=0.
   WHERE(ZRGT(:)>0.)
     ZLBDAG(:)  = XLBG*(PRHODREF(:)*MAX(ZRGT(:), XRTMIN(6)))**XLBEXG

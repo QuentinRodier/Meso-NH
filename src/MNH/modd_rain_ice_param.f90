@@ -39,7 +39,6 @@
 !             ------------
 !
 IMPLICIT NONE
-!
 REAL,DIMENSION(2),SAVE :: XFSEDC                 ! Constants for sedimentation fluxes of C
 REAL,SAVE :: XFSEDR,XEXSEDR,                   & ! Constants for sedimentation
              XFSEDI,XEXCSEDI,XEXRSEDI,         & ! fluxes of R, I, S and G

@@ -233,7 +233,7 @@ REAL, DIMENSION(:), ALLOCATABLE ::                          &
      Z_RC_ACCR, Z_CC_ACCR,                                  & ! accretion of droplets by rain drops (ACCR) : rc, Nc, rr=-rr
      Z_CR_SCBU,                                             & ! self collectio break up of drops (SCBU) : Nr
 !      Z_TH_EVAP, Z_RC_EVAP, Z_CC_EVAP, Z_RR_EVAP, Z_CR_EVAP, & ! evaporation of rain drops (EVAP) : rv=-rr-rc, rc, Nc, rr, Nr, th
-     Z_TH_EVAP, Z_RR_EVAP, & ! evaporation of rain drops (EVAP) : rv=-rr-rc, rc, Nc, rr, Nr, th
+     Z_TH_EVAP, Z_RR_EVAP, Z_CR_EVAP,                       & ! evaporation of rain drops (EVAP) : rv=-rr-rc, rc, Nc, rr, Nr, th
      Z_RI_CNVI, Z_CI_CNVI,                                  & ! conversion snow -> ice (CNVI) : ri, Ni, rs=-ri
      Z_TH_DEPS, Z_RS_DEPS,                                  & ! deposition of vapor on snow (DEPS) : rv=-rs, rs, th
      Z_TH_DEPI, Z_RI_DEPI,                                  & ! deposition of vapor on ice (DEPI) : rv=-ri, ri, th
@@ -284,7 +284,7 @@ REAL, DIMENSION(:,:,:), ALLOCATABLE ::                                     &
      ZTOT_RC_ACCR, ZTOT_CC_ACCR,                                           & ! accretion of droplets by rain drops (ACCR)
      ZTOT_CR_SCBU,                                                         & ! self collectio break up of drops (SCBU)
 !      ZTOT_TH_EVAP, ZTOT_RC_EVAP, ZTOT_CC_EVAP, ZTOT_RR_EVAP, ZTOT_CR_EVAP, & ! evaporation of rain drops (EVAP)
-     ZTOT_TH_EVAP, ZTOT_RR_EVAP, & ! evaporation of rain drops (EVAP)
+     ZTOT_TH_EVAP, ZTOT_RR_EVAP, ZTOT_CR_EVAP,                             & ! evaporation of rain drops (EVAP)
      ZTOT_RI_CNVI, ZTOT_CI_CNVI,                                           & ! conversion snow -> ice (CNVI)
      ZTOT_TH_DEPS, ZTOT_RS_DEPS,                                           & ! deposition of vapor on snow (DEPS)
      ZTOT_TH_DEPI, ZTOT_RI_DEPI,                                           & ! deposition of vapor on ice (DEPI)
@@ -428,7 +428,7 @@ if ( lbu_enable ) then
 !   allocate( ZTOT_RC_EVAP (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_RC_EVAP(:,:,:) = 0.
 !   allocate( ZTOT_CC_EVAP (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_CC_EVAP(:,:,:) = 0.
   allocate( ZTOT_RR_EVAP (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_RR_EVAP(:,:,:) = 0.
-!   allocate( ZTOT_CR_EVAP (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_CR_EVAP(:,:,:) = 0.
+  allocate( ZTOT_CR_EVAP (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_CR_EVAP(:,:,:) = 0.
   allocate( ZTOT_RI_CNVI (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_RI_CNVI(:,:,:) = 0.
   allocate( ZTOT_CI_CNVI (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_CI_CNVI(:,:,:) = 0.
   allocate( ZTOT_TH_DEPS (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_TH_DEPS(:,:,:) = 0.
@@ -768,18 +768,12 @@ IF ( LCOLD )             ZCIT(:,:,:)   = ZCIS(:,:,:) * PTSTEP
 !*       2.     Compute cloud, ice and precipitation fractions
 !               ----------------------------------------------
 !
-IF (LSUBG_COND) THEN
-   CALL LIMA_COMPUTE_CLOUD_FRACTIONS (IIB, IIE, IJB, IJE, IKB, IKE, KKL, &
-                                      ZCCT, ZRCT,                        &
-                                      ZCRT, ZRRT,                        &
-                                      ZCIT, ZRIT,                        &
-                                      ZRST, ZRGT, ZRHT,                  &
-                                      PCLDFR, PICEFR, PPRCFR             )
-ELSE
-   PCLDFR(:,:,:)=1.
-   PICEFR(:,:,:)=1.
-   PPRCFR(:,:,:)=1.
-END IF
+CALL LIMA_COMPUTE_CLOUD_FRACTIONS (IIB, IIE, IJB, IJE, IKB, IKE, KKL, &
+                                   ZCCT, ZRCT,                        &
+                                   ZCRT, ZRRT,                        &
+                                   ZCIT, ZRIT,                        &
+                                   ZRST, ZRGT, ZRHT,                  &
+                                   PCLDFR, PICEFR, PPRCFR             )
 !
 !-------------------------------------------------------------------------------
 !
@@ -994,6 +988,7 @@ DO WHILE(ANY(ZTIME(IIB:IIE,IJB:IJE,IKTB:IKTE)<PTSTEP))
       ALLOCATE(Z_CR_SCBU(IPACK))          ; Z_CR_SCBU(:) = 0.
       ALLOCATE(Z_TH_EVAP(IPACK))          ; Z_TH_EVAP(:) = 0.
       ALLOCATE(Z_RR_EVAP(IPACK))          ; Z_RR_EVAP(:) = 0.
+      ALLOCATE(Z_CR_EVAP(IPACK))          ; Z_CR_EVAP(:) = 0.
       ALLOCATE(Z_RI_CNVI(IPACK))          ; Z_RI_CNVI(:) = 0.
       ALLOCATE(Z_CI_CNVI(IPACK))          ; Z_CI_CNVI(:) = 0.
       ALLOCATE(Z_TH_DEPS(IPACK))          ; Z_TH_DEPS(:) = 0.
@@ -1086,7 +1081,7 @@ DO WHILE(ANY(ZTIME(IIB:IIE,IJB:IJE,IKTB:IKTE)<PTSTEP))
                             Z_RC_AUTO, Z_CC_AUTO, Z_CR_AUTO,                       & 
                             Z_RC_ACCR, Z_CC_ACCR,                                  & 
                             Z_CR_SCBU,                                             & 
-                            Z_TH_EVAP, Z_RR_EVAP,                                  & 
+                            Z_TH_EVAP, Z_RR_EVAP, Z_CR_EVAP,                       & 
                             Z_RI_CNVI, Z_CI_CNVI,                                  & 
                             Z_TH_DEPS, Z_RS_DEPS,                                  & 
                             Z_TH_DEPI, Z_RI_DEPI,                                  & 
@@ -1370,7 +1365,7 @@ DO WHILE(ANY(ZTIME(IIB:IIE,IJB:IJE,IKTB:IKTE)<PTSTEP))
 !!$            ZTOT_RC_EVAP(I1(II),I2(II),I3(II)) =   ZTOT_RC_EVAP(I1(II),I2(II),I3(II))   + Z_RC_EVAP(II)  * ZMAXTIME(II)
 !!$            ZTOT_CC_EVAP(I1(II),I2(II),I3(II)) =   ZTOT_CC_EVAP(I1(II),I2(II),I3(II))   + Z_CC_EVAP(II)  * ZMAXTIME(II)
             ZTOT_RR_EVAP(I1(II),I2(II),I3(II)) =   ZTOT_RR_EVAP(I1(II),I2(II),I3(II))   + Z_RR_EVAP(II)  * ZMAXTIME(II)
-!!$            ZTOT_CR_EVAP(I1(II),I2(II),I3(II)) =   ZTOT_CR_EVAP(I1(II),I2(II),I3(II))   + Z_CR_EVAP(II)  * ZMAXTIME(II)
+            ZTOT_CR_EVAP(I1(II),I2(II),I3(II)) =   ZTOT_CR_EVAP(I1(II),I2(II),I3(II))   + Z_CR_EVAP(II)  * ZMAXTIME(II)
             ZTOT_RI_CNVI(I1(II),I2(II),I3(II)) =   ZTOT_RI_CNVI(I1(II),I2(II),I3(II))   + Z_RI_CNVI(II)  * ZMAXTIME(II)
             ZTOT_CI_CNVI(I1(II),I2(II),I3(II)) =   ZTOT_CI_CNVI(I1(II),I2(II),I3(II))   + Z_CI_CNVI(II)  * ZMAXTIME(II)
             ZTOT_TH_DEPS(I1(II),I2(II),I3(II)) =   ZTOT_TH_DEPS(I1(II),I2(II),I3(II))   + Z_TH_DEPS(II)  * ZMAXTIME(II)
@@ -1537,6 +1532,7 @@ DO WHILE(ANY(ZTIME(IIB:IIE,IJB:IJE,IKTB:IKTE)<PTSTEP))
       DEALLOCATE(Z_CR_SCBU)
       DEALLOCATE(Z_TH_EVAP) 
       DEALLOCATE(Z_RR_EVAP) 
+      DEALLOCATE(Z_CR_EVAP) 
       DEALLOCATE(Z_RI_CNVI)
       DEALLOCATE(Z_CI_CNVI)
       DEALLOCATE(Z_TH_DEPS)
@@ -1765,7 +1761,7 @@ if ( lbu_enable ) then
     idx = NBUDGET_SV1 - 1 + nsv_lima_nr
     call Budget_store_add( tbudgets(idx), 'AUTO',  ztot_cr_auto(:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(idx), 'SCBU',  ztot_cr_scbu(:, :, :) * zrhodjontstep(:, :, :) )
-    !call Budget_store_add( tbudgets(idx), 'REVA',  0. )
+    call Budget_store_add( tbudgets(idx), 'REVA',  ztot_cr_evap(:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(idx), 'BRKU',  ztot_cr_brku(:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(idx), 'HONR',  ztot_cr_honr(:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(idx), 'ACC',   ztot_cr_acc (:, :, :) * zrhodjontstep(:, :, :) )

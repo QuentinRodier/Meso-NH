@@ -11,7 +11,7 @@ INTERFACE
 !
       SUBROUTINE READ_FIELD(KOCEMI,TPINIFILE,KIU,KJU,KKU,                    &
             HGETTKET,HGETRVT,HGETRCT,HGETRRT,HGETRIT,HGETCIT,HGETZWS,        &
-            HGETRST,HGETRGT,HGETRHT,HGETSVT,HGETSRCT,HGETSIGS,HGETCLDFR,     &
+            HGETRST,HGETRGT,HGETRHT,HGETSVT,HGETSRCT,HGETSIGS,HGETCLDFR,HGETICEFR, &
             HGETBL_DEPTH,HGETSBL_DEPTH,HGETPHC,HGETPHR,HUVW_ADV_SCHEME,      &
             HTEMP_SCHEME,KSIZELBX_ll,KSIZELBXU_ll,KSIZELBY_ll,KSIZELBYV_ll,  &
             KSIZELBXTKE_ll,KSIZELBYTKE_ll,                                   &
@@ -19,7 +19,7 @@ INTERFACE
             PUM,PVM,PWM,PDUM,PDVM,PDWM,                                      &
             PUT,PVT,PWT,PTHT,PPABST,PTKET,PRTKEMS,                           &
             PRT,PSVT,PZWS,PCIT,PDRYMASST,PDRYMASSS,                          &            
-            PSIGS,PSRCT,PCLDFR,PBL_DEPTH,PSBL_DEPTH,PWTHVMF,PPHC,PPHR,       &
+            PSIGS,PSRCT,PCLDFR,PICEFR,PBL_DEPTH,PSBL_DEPTH,PWTHVMF,PPHC,PPHR, &
             PLSUM,PLSVM,PLSWM,PLSTHM,PLSRVM, PLSZWSM,                        &
             PLBXUM,PLBXVM,PLBXWM,PLBXTHM,PLBXTKEM,PLBXRM,PLBXSVM,            &
             PLBYUM,PLBYVM,PLBYWM,PLBYTHM,PLBYTKEM,PLBYRM,PLBYSVM,            &
@@ -46,7 +46,7 @@ CHARACTER (LEN=*),         INTENT(IN)  :: HGETTKET,                          &
                                           HGETRVT,HGETRCT,HGETRRT,           &
                                           HGETRIT,HGETRST,HGETRGT,HGETRHT,   & 
                                           HGETCIT,HGETSRCT, HGETZWS,         &
-                                          HGETSIGS,HGETCLDFR,HGETBL_DEPTH,   &
+                                          HGETSIGS,HGETCLDFR,HGETICEFR,HGETBL_DEPTH,   &
                                           HGETSBL_DEPTH,HGETPHC,HGETPHR
 CHARACTER (LEN=*), DIMENSION(:),INTENT(IN)  :: HGETSVT
 !
@@ -85,6 +85,7 @@ REAL,                      INTENT(OUT) :: PDRYMASSS       ! d Md(t) / dt
 REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PSIGS           ! =sqrt(<s's'>) for the
                                                           ! Subgrid Condensation
 REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PCLDFR          ! cloud fraction  
+REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PICEFR          ! cloud fraction  
 REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PPHC            ! pH value in cloud water  
 REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PPHR            ! pH value in rainwater  
 ! Larger Scale fields
@@ -135,7 +136,7 @@ END MODULE MODI_READ_FIELD
 !     ########################################################################
       SUBROUTINE READ_FIELD(KOCEMI,TPINIFILE,KIU,KJU,KKU,                    &
             HGETTKET,HGETRVT,HGETRCT,HGETRRT,HGETRIT,HGETCIT,HGETZWS,        &
-            HGETRST,HGETRGT,HGETRHT,HGETSVT,HGETSRCT,HGETSIGS,HGETCLDFR,     &
+            HGETRST,HGETRGT,HGETRHT,HGETSVT,HGETSRCT,HGETSIGS,HGETCLDFR,HGETICEFR, &
             HGETBL_DEPTH,HGETSBL_DEPTH,HGETPHC,HGETPHR,HUVW_ADV_SCHEME,      &
             HTEMP_SCHEME,KSIZELBX_ll,KSIZELBXU_ll,KSIZELBY_ll,KSIZELBYV_ll,  &
             KSIZELBXTKE_ll,KSIZELBYTKE_ll,                                   &
@@ -143,7 +144,7 @@ END MODULE MODI_READ_FIELD
             PUM,PVM,PWM,PDUM,PDVM,PDWM,                                      &
             PUT,PVT,PWT,PTHT,PPABST,PTKET,PRTKEMS,                           &
             PRT,PSVT,PZWS,PCIT,PDRYMASST,PDRYMASSS,                          &
-            PSIGS,PSRCT,PCLDFR,PBL_DEPTH,PSBL_DEPTH,PWTHVMF,PPHC,PPHR,       &
+            PSIGS,PSRCT,PCLDFR,PICEFR,PBL_DEPTH,PSBL_DEPTH,PWTHVMF,PPHC,PPHR, &
             PLSUM,PLSVM,PLSWM,PLSTHM,PLSRVM,PLSZWSM,                         &
             PLBXUM,PLBXVM,PLBXWM,PLBXTHM,PLBXTKEM,PLBXRM,PLBXSVM,            &
             PLBYUM,PLBYVM,PLBYWM,PLBYTHM,PLBYTKEM,PLBYRM,PLBYSVM,            &
@@ -325,7 +326,7 @@ CHARACTER (LEN=*),         INTENT(IN)  :: HGETTKET,                          &
                                           HGETRVT,HGETRCT,HGETRRT,           &
                                           HGETRIT,HGETRST,HGETRGT,HGETRHT,   & 
                                           HGETCIT,HGETSRCT,HGETZWS,          &
-                                          HGETSIGS,HGETCLDFR,HGETBL_DEPTH,   &
+                                          HGETSIGS,HGETCLDFR,HGETICEFR,HGETBL_DEPTH, &
                                           HGETSBL_DEPTH,HGETPHC,HGETPHR
 CHARACTER (LEN=*), DIMENSION(:),INTENT(IN)  :: HGETSVT
 !
@@ -366,6 +367,7 @@ REAL,                      INTENT(OUT) :: PDRYMASSS       ! d Md(t) / dt
 REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PSIGS           ! =sqrt(<s's'>) for the
                                                           ! Subgrid Condensation
 REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PCLDFR          ! cloud fraction  
+REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PICEFR          ! cloud fraction  
 REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PPHC            ! pH value in cloud water  
 REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PPHR            ! pH value in rainwater  
 !
@@ -1517,6 +1519,22 @@ IF(HGETCLDFR=='INIT' .OR. IRESP /= 0) THEN
     ELSEWHERE
       PCLDFR(:,:,:) = 0.
     ENDWHERE
+  ENDIF
+ENDIF
+!
+IRESP=0
+IF(HGETICEFR=='READ') THEN           ! cloud fraction
+  CALL IO_Field_read(TPINIFILE,'ICEFR',PICEFR,IRESP)
+ENDIF
+IF(HGETCLDFR=='INIT' .OR. IRESP /= 0) THEN
+  IF(SIZE(PRT,4) > 3) THEN
+    WHERE(PRT(:,:,:,4) > 1.E-30)
+       PICEFR(:,:,:) = 1.
+    ELSEWHERE
+      PICEFR(:,:,:) = 0.
+    ENDWHERE
+  ELSE
+     PICEFR(:,:,:) = 0.
   ENDIF
 ENDIF
 !

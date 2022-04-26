@@ -19,6 +19,7 @@
 !!    MODIFICATIONS
 !!    -------------
 !!      Original             ??/??/13 
+!  J. Wurtz       03/2022: new snow characteristics
 !!
 !-------------------------------------------------------------------------------
 USE MODD_PARAMETERS, ONLY: JPSVNAMELGTMAX
@@ -51,8 +52,9 @@ REAL,SAVE :: XAI,XBI,XC_I,XDI         ,XF0I,XF2I,XC1I ! Cloud ice      charact.
 REAL,SAVE ::                           XF0IS,XF1IS    ! (large Di vent. coef.)
 REAL,SAVE :: XAS,XBS,XCS,XDS,XCCS,XCXS,XF0S,XF1S,XC1S ! Snow/agg.      charact.
 !
-REAL,SAVE :: XLBDAS_MAX               ! Max values allowed for the shape
-                                      ! parameter of snow
+REAL,SAVE :: XLBDAS_MIN, XLBDAS_MAX   ! Max values allowed for the shape parameter of snow
+REAL,SAVE :: XFVELOS                  ! Wurtz - snow fall speed parameterizaed after Thompson 2008
+REAL,SAVE :: XTRANS_MP_GAMMAS         ! Wurtz - change between lambda value for MP and gen. gamma
 !
 CHARACTER(LEN=JPSVNAMELGTMAX),DIMENSION(5),PARAMETER &
                               :: CLIMA_COLD_NAMES=(/'CICE    ','CIFNFREE','CIFNNUCL', &
@@ -106,7 +108,8 @@ REAL,SAVE :: XDICNVS_LIM, XLBDAICNVS_LIM,      & ! Constants for pristine ice
 !
 REAL,SAVE :: XCOLEXIS,                         & ! Constants for snow 
     	     XAGGS_CLARGE1,XAGGS_CLARGE2,      & ! aggregation : AGG
-             XAGGS_RLARGE1,XAGGS_RLARGE2
+             XAGGS_RLARGE1,XAGGS_RLARGE2,      &
+             XFIAGGS
 !
 !??????????????????
 REAL,SAVE :: XKER_ZRNIC_A1,XKER_ZRNIC_A2         ! Long-Zrnic Kernels (ini_ice_coma)

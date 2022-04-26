@@ -78,6 +78,7 @@ LOGICAL, SAVE :: LSEDIM_AFTER ! sedimentation done before (.FALSE.) or after (.T
 !
 REAL, SAVE :: XSPLIT_MAXCFL ! Maximum CFL number allowed for SPLIT scheme
 !
+LOGICAL,SAVE :: LSNOW_T         ! Snow parameterization from Wurtz (2021)
 !-------------------------------------------------------------------------------
 !
 END MODULE MODD_PARAM_ICE
