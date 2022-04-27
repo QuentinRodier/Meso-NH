@@ -4,7 +4,7 @@
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ############################
-      MODULE MODD_TYPE_STATION
+      MODULE MODD_TYPE_STATPROF
 !     ############################
 !
 !!****  *MODD_STATION* - declaration of stations
@@ -111,4 +111,4 @@ REAL, DIMENSION(:),   ALLOCATABLE :: XSFCO2  ! CO2 surface flux
 
 END TYPE TSTATIONDATA
 
-END MODULE MODD_TYPE_STATION
+END MODULE MODD_TYPE_STATPROF

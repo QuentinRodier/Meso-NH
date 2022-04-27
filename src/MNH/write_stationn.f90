@@ -77,9 +77,9 @@ USE MODD_NSV,             ONLY: nsv
 USE MODD_PARAM_n,         ONLY: CRAD, CSURF, CTURB
 USE MODD_PRECISION,       ONLY: MNHINT_MPI, MNHREAL_MPI
 USE MODD_STATION_n,       only: NUMBSTAT_LOC, TSTATIONS, tstations_time
-USE MODD_TYPE_STATION,    ONLY: TSTATIONDATA
+USE MODD_TYPE_STATPROF,   ONLY: TSTATIONDATA
 !
-USE MODE_STATION_TOOLS,   ONLY: STATION_ALLOCATE
+USE MODE_STATPROF_TOOLS,  ONLY: STATION_ALLOCATE
 !
 IMPLICIT NONE
 !
@@ -292,25 +292,25 @@ END SUBROUTINE WRITE_STATION_n
 SUBROUTINE STATION_DIACHRO_n( TPDIAFILE, TPSTATION )
 ! ##################################################
 
-USE MODD_ALLSTATION_n,    ONLY: LDIAG_SURFRAD
-use modd_budget, only: NLVL_CATEGORY, NLVL_SUBCATEGORY, NLVL_GROUP, NLVL_SHAPE, NLVL_TIMEAVG, NLVL_NORM, NLVL_MASK, &
-                       tbudiachrometadata
-USE MODD_CONF,            ONLY: LCARTESIAN
-USE MODD_CST,             ONLY: XRV
-use modd_field,  only: NMNHDIM_STATION_TIME, NMNHDIM_STATION_PROC, NMNHDIM_UNUSED, &
-                       tfieldmetadata_base, TYPEREAL
-USE MODD_IO,              ONLY:   TFILEDATA
-USE MODD_NSV,             ONLY: nsv, nsv_aer, nsv_aerbeg, nsv_aerend, &
-                                nsv_dst, nsv_dstbeg, nsv_dstend, nsv_slt, nsv_sltbeg, nsv_sltend, &
-                                tsvlist
-USE MODD_PARAM_n,         ONLY: CRAD, CSURF, CTURB
-use modd_station_n,    only: tstations_time
-use modd_type_station, only: tstationdata
+USE MODD_ALLSTATION_n,  ONLY: LDIAG_SURFRAD
+use modd_budget,        only: NLVL_CATEGORY, NLVL_SUBCATEGORY, NLVL_GROUP, NLVL_SHAPE, NLVL_TIMEAVG, NLVL_NORM, NLVL_MASK, &
+                              tbudiachrometadata
+USE MODD_CONF,          ONLY: LCARTESIAN
+USE MODD_CST,           ONLY: XRV
+use modd_field,         only: NMNHDIM_STATION_TIME, NMNHDIM_STATION_PROC, NMNHDIM_UNUSED, &
+                              tfieldmetadata_base, TYPEREAL
+USE MODD_IO,            ONLY: TFILEDATA
+USE MODD_NSV,           ONLY: nsv, nsv_aer, nsv_aerbeg, nsv_aerend, &
+                              nsv_dst, nsv_dstbeg, nsv_dstend, nsv_slt, nsv_sltbeg, nsv_sltend, &
+                              tsvlist
+USE MODD_PARAM_n,       ONLY: CRAD, CSURF, CTURB
+use modd_station_n,     only: tstations_time
+use modd_type_statprof, only: tstationdata
 
 USE MODE_AERO_PSD
 USE MODE_DUST_PSD
 USE MODE_SALT_PSD
-use MODE_WRITE_DIACHRO,   ONLY: Write_diachro
+use MODE_WRITE_DIACHRO, ONLY: Write_diachro
 
 TYPE(TFILEDATA),    INTENT(IN) :: TPDIAFILE ! diachronic file to write
 TYPE(TSTATIONDATA), INTENT(IN) :: TPSTATION

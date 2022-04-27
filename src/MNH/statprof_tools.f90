@@ -9,11 +9,11 @@
 !-----------------------------------------------------------------
 ! Modifications:
 !-----------------------------------------------------------------
-!      ##################
-MODULE MODE_STATION_TOOLS
-!      ##################
+!      ###################
+MODULE MODE_STATPROF_TOOLS
+!      ###################
 
-USE MODD_TYPE_STATION, ONLY: TSTATIONDATA
+USE MODD_TYPE_STATPROF, ONLY: TSTATIONDATA
 
 IMPLICIT NONE
 
@@ -390,4 +390,4 @@ FUNCTION STATION_INTERP_2D_V( TPSTATION, PA ) RESULT( PB )
 
 END FUNCTION STATION_INTERP_2D_V
 
-END MODULE MODE_STATION_TOOLS
+END MODULE MODE_STATPROF_TOOLS
