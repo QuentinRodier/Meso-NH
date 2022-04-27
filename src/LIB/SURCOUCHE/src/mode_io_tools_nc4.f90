@@ -278,11 +278,11 @@ use modd_les_n,         only: nles_times, nspectra_ni, nspectra_nj
 use modd_nsv,           only: nsv
 USE MODD_PARAMETERS_ll, ONLY: JPHEXT, JPVEXT
 use modd_param_n,       only: crad
-use modd_profiler_n,    only: numbprofiler, tprofiler
+use modd_profiler_n,    only: lprofiler, tprofiler
 use modd_radiations_n,  only: nlwb_mnh, nswb_mnh
 use modd_series,        only: lseries
 use modd_series_n,      only: nsnbstept
-use modd_station_n,     only: numbstat, tstations_time
+use modd_station_n,     only: lstation, tstations_time
 
 TYPE(TFILEDATA),INTENT(INOUT)        :: TPFILE
 CHARACTER(LEN=*),OPTIONAL,INTENT(IN) :: HPROGRAM_ORIG !To emulate a file coming from this program
@@ -422,13 +422,13 @@ if ( tpfile%ctype == 'MNHDIACHRONIC' ) then
   if ( nspectra_k > 0 ) call IO_Add_dim_nc4( tpfile, NMNHDIM_SPECTRA_LEVEL, 'nspectra_level', nspectra_k )
 
   !Dimension for the number of profiler times
-  if ( numbprofiler > 0 ) then
+  if ( lprofiler ) then
     iprof = Nint ( ( xseglen - dyn_model(1)%xtstep ) / tprofiler%step ) + 1
     call IO_Add_dim_nc4( tpfile, NMNHDIM_PROFILER_TIME, 'time_profiler', iprof )
   end if
 
   !Dimension for the number of station times
-  if ( numbstat > 0 ) then
+  if ( lstation ) then
     istation = Nint ( ( xseglen - dyn_model(1)%xtstep ) / tstations_time%xtstep ) + 1
     call IO_Add_dim_nc4( tpfile, NMNHDIM_STATION_TIME, 'time_station', istation )
   end if
