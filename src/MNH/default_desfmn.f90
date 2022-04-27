@@ -219,6 +219,7 @@ END MODULE MODI_DEFAULT_DESFM_n
 !  Q. Rodier      06/2021: modify default value to LGZ=F (grey-zone corr.), LSEDI and OSEDC=T (LIMA sedimentation)
 !  F. Couvreux    06/2021: add LRELAX_UVMEAN_FRC
 !  Q. Rodier      07/2021: modify XPOND=1
+!  P. Wautelet 27/04/2022: add namelist for profilers
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -270,6 +271,7 @@ USE MODD_EOL_MAIN
 USE MODD_EOL_ADNR
 USE MODD_EOL_ALM
 USE MODD_EOL_SHARED_IO
+USE MODD_ALLPROFILER_n
 USE MODD_ALLSTATION_n
 !
 !
@@ -592,7 +594,21 @@ LTIPLOSSG         = .TRUE.
 LTECOUTPTS        = .FALSE.
 !
 !------------------------------------------------------------------------------
-!*      10.e   SET DEFAULT VALUES FOR MODD_ALLSTATION_n :
+!*      10.e   SET DEFAULT VALUES FOR MODD_ALLPROFILER_n :
+!             ----------------------------------
+!
+NNUMB_PROF    = 0
+XSTEP_PROF    = 60.0
+XX_PROF(:)    = XUNDEF
+XY_PROF(:)    = XUNDEF
+XZ_PROF(:)    = XUNDEF
+XLAT_PROF(:)  = XUNDEF
+XLON_PROF(:)  = XUNDEF
+CNAME_PROF(:) = ''
+CFILE_PROF    = 'NO_INPUT_CSV'
+! LDIAG_SURFRAD = .TRUE.
+!------------------------------------------------------------------------------
+!*      10.f   SET DEFAULT VALUES FOR MODD_ALLSTATION_n :
 !             ----------------------------------
 !
 NNUMB_STAT    = 0

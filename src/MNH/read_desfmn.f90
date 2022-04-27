@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -195,6 +195,7 @@ END MODULE MODI_READ_DESFM_n
 !!      Modification   02/2021   (F.Auguste)  add IBM
 !!                               (T.Nagel)    add turbulence recycling
 !!                               (E.Jezequel) add stations read from CSV file
+!  P. Wautelet 27/04/2022: add namelist for profilers
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -263,6 +264,7 @@ USE MODN_LATZ_EDFLX
 USE MODN_2D_FRC
 USE MODN_BLOWSNOW_n
 USE MODN_BLOWSNOW
+USE MODN_PROFILER_n
 USE MODN_STATION_n
 !
 USE MODN_PARAM_LIMA
@@ -470,6 +472,12 @@ CALL INIT_NAM_BLANKn
 IF (GFOUND) THEN
   READ(UNIT=ILUDES,NML=NAM_BLANKn)
   CALL UPDATE_NAM_BLANKn
+END IF
+CALL POSNAM(ILUDES,'NAM_PROFILERN',GFOUND,ILUOUT)
+CALL INIT_NAM_PROFILERn
+IF (GFOUND) THEN
+  READ(UNIT=ILUDES,NML=NAM_PROFILERN)
+  CALL UPDATE_NAM_PROFILERn
 END IF
 CALL POSNAM(ILUDES,'NAM_STATIONN',GFOUND,ILUOUT)
 CALL INIT_NAM_STATIONn
@@ -732,6 +740,9 @@ IF (NVERB >= 10) THEN
 !
   WRITE(UNIT=ILUOUT,FMT="('********** BLANKn ******************')")
   WRITE(UNIT=ILUOUT,NML=NAM_BLANKn)
+!
+  WRITE(UNIT=ILUOUT,FMT="('********** PROFILERn *****************')")
+  WRITE(UNIT=ILUOUT,NML=NAM_PROFILERn)
 !
   WRITE(UNIT=ILUOUT,FMT="('********** STATIONn ******************')")
   WRITE(UNIT=ILUOUT,NML=NAM_STATIONn)

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
@@ -146,15 +146,19 @@ END MODULE MODI_WRITE_DESFM_n
 !!      Modification   V. Vionnet     07/2017  add blowing snow variables
 !!      Modification   F.Auguste      02/2021  add IBM
 !!                     E.Jezequel     02/2021  add stations read from CSV file
+!  P. Wautelet 27/04/2022: add namelist for profilers
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 USE MODD_CONF
-USE MODD_DYN_n,   ONLY: LHORELAX_SVLIMA
-USE MODD_IO,      ONLY: TFILEDATA
-USE MODD_LUNIT_n, ONLY: TLUOUT
+USE MODD_DYN_n,      ONLY: LHORELAX_SVLIMA
+USE MODD_IBM_LSF,    ONLY: LIBM_LSF
+USE MODD_IO,         ONLY: TFILEDATA
+USE MODD_LUNIT_n,    ONLY: TLUOUT
 USE MODD_PARAMETERS
+USE MODD_PROFILER_n, ONLY: LPROFILER
+USE MODD_STATION_n,  ONLY: LSTATION
 !
 USE MODE_MSG
 !
@@ -205,7 +209,7 @@ USE MODN_BLOWSNOW_n
 USE MODN_BLOWSNOW
 USE MODN_IBM_PARAM_n
 USE MODN_RECYCL_PARAM_n
-USE MODD_IBM_LSF, ONLY: LIBM_LSF
+USE MODN_PROFILER_n
 USE MODN_STATION_n
 !
 IMPLICIT NONE
@@ -388,6 +392,9 @@ IF(LUSECHEM) WRITE(UNIT=ILUSEG,NML=NAM_CH_SOLVERn)
 CALL INIT_NAM_BLOWSNOWn
 IF(LBLOWSNOW) WRITE(UNIT=ILUSEG,NML=NAM_BLOWSNOWn)
 IF(LBLOWSNOW) WRITE(UNIT=ILUSEG,NML=NAM_BLOWSNOW)
+!
+CALL INIT_NAM_PROFILERn
+IF(LPROFILER) WRITE(UNIT=ILUSEG,NML=NAM_PROFILERn)
 !
 CALL INIT_NAM_STATIONn
 IF(LSTATION) WRITE(UNIT=ILUSEG,NML=NAM_STATIONn)

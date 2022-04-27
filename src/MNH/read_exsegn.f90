@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -303,6 +303,7 @@ END MODULE MODI_READ_EXSEG_n
 !  P. Wautelet 10/03/2021: move scalar variable name initializations to ini_nsv
 !  R. Honnert  23/04/2021: add ADAP mixing length and delete HRIO and BOUT from CMF_UPDRAFT
 !  S. Riette   11/05/2021  HighLow cloud
+!  P. Wautelet 27/04/2022: add namelist for profilers
 !------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -391,6 +392,7 @@ USE MODN_PARAM_MFSHALL_n
 USE MODN_PARAM_n    ! realized in subroutine ini_model n
 USE MODN_PARAM_RAD_n
 USE MODN_PASPOL
+USE MODN_PROFILER_n
 USE MODN_RECYCL_PARAM_n
 USE MODN_SALT
 USE MODN_SERIES
@@ -498,6 +500,7 @@ CALL INIT_NAM_CH_MNHCN
 CALL INIT_NAM_CH_SOLVERN
 CALL INIT_NAM_SERIESN
 CALL INIT_NAM_BLOWSNOWN
+CALL INIT_NAM_PROFILERn
 CALL INIT_NAM_STATIONn
 !
 WRITE(UNIT=ILUOUT,FMT="(/,'READING THE EXSEG.NAM FILE')")
@@ -553,6 +556,8 @@ CALL POSNAM(ILUSEG,'NAM_EOL_ADNR',GFOUND,ILUOUT)
 IF (GFOUND) READ(UNIT=ILUSEG,NML=NAM_EOL_ADNR)
 CALL POSNAM(ILUSEG,'NAM_EOL_ALM',GFOUND,ILUOUT)
 IF (GFOUND) READ(UNIT=ILUSEG,NML=NAM_EOL_ALM)
+CALL POSNAM(ILUSEG,'NAM_PROFILERN',GFOUND,ILUOUT)
+IF (GFOUND) READ(UNIT=ILUSEG,NML=NAM_PROFILERn)
 CALL POSNAM(ILUSEG,'NAM_STATIONN',GFOUND,ILUOUT)
 IF (GFOUND) READ(UNIT=ILUSEG,NML=NAM_STATIONn)
 !
@@ -2974,6 +2979,7 @@ CALL UPDATE_NAM_CH_MNHCN
 CALL UPDATE_NAM_CH_SOLVERN
 CALL UPDATE_NAM_SERIESN
 CALL UPDATE_NAM_BLOWSNOWN
+CALL UPDATE_NAM_PROFILERn
 CALL UPDATE_NAM_STATIONn
 !-------------------------------------------------------------------------------
 WRITE(UNIT=ILUOUT,FMT='(/)')
