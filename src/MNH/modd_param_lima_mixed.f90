@@ -14,6 +14,7 @@
 !!    MODIFICATIONS
 !!    -------------
 !!      Original             ??/??/13 
+!!      C. Barthe            14/03/2022  add CIBU and RDSF
 !  J. Wurtz       03/2022: new snow characteristics
 !!
 !-------------------------------------------------------------------------------
@@ -49,7 +50,44 @@ REAL,SAVE :: XALPHAH,XNUH,XLBEXH,XLBH ! Hail           distribution parameters
 !
 !-------------------------------------------------------------------------------
 !
-!*       2.   MICROPHYSICAL FACTORS - Graupel
+!*       2.   MICROPHYSICAL FACTORS - CIBU and RDSF
+!             -------------------------------------
+!
+! Constants for ice-ice collision : CIBU
+!
+REAL, SAVE :: XDCSLIM_CIBU_MIN,                & ! aggregates min diam. : 0.2 mm
+              XDCSLIM_CIBU_MAX,                & ! aggregates max diam. : 1.0 mm
+              XDCGLIM_CIBU_MIN,                & ! graupel min diam. : 2 mm
+              XGAMINC_BOUND_CIBU_SMIN,         & ! Min val. of Lbda_s*dlim
+              XGAMINC_BOUND_CIBU_SMAX,         & ! Max val. of Lbda_s*dlim
+              XGAMINC_BOUND_CIBU_GMIN,         & ! Min val. of Lbda_g*dlim
+              XGAMINC_BOUND_CIBU_GMAX,         & ! Max val. of Lbda_g*dlim
+              XCIBUINTP_S,XCIBUINTP1_S,        & !
+              XCIBUINTP2_S,                    & !
+              XCIBUINTP_G,XCIBUINTP1_G,        & !
+              XFACTOR_CIBU_NI,XFACTOR_CIBU_RI, & ! Factor for final CIBU Eq.
+              XMOMGG_CIBU_1,XMOMGG_CIBU_2,     & ! Moment computation
+              XMOMGS_CIBU_1,XMOMGS_CIBU_2,     &
+              XMOMGS_CIBU_3
+!
+REAL, DIMENSION(:,:), SAVE, ALLOCATABLE        &
+                       :: XGAMINC_CIBU_S,      & ! Tab.incomplete Gamma function
+                          XGAMINC_CIBU_G         ! Tab.incomplete Gamma function
+!
+! Constants for raindrop shattering : RDSF
+!
+REAL, SAVE :: XDCRLIM_RDSF_MIN,                & ! Raindrops min diam. : 0.2 mm
+              XGAMINC_BOUND_RDSF_RMIN,         & ! Min val. of Lbda_r*dlim
+              XGAMINC_BOUND_RDSF_RMAX,         & ! Max val. of Lbda_r*dlim
+              XRDSFINTP_R,XRDSFINTP1_R,        & !
+              XFACTOR_RDSF_NI,                 & ! Factor for final RDSF Eq.
+              XMOMGR_RDSF
+!
+REAL, DIMENSION(:), SAVE, ALLOCATABLE          &
+                       :: XGAMINC_RDSF_R         ! Tab.incomplete Gamma function
+!
+!
+!*       3.   MICROPHYSICAL FACTORS - Graupel
 !             -------------------------------
 !
 REAL,SAVE :: XFSEDG, XEXSEDG                     ! Sedimentation fluxes of Graupel
@@ -134,7 +172,7 @@ REAL,DIMENSION(:,:), SAVE, ALLOCATABLE         &
 !
 !-------------------------------------------------------------------------------
 !
-!*       2.   MICROPHYSICAL FACTORS - Hail
+!*       4.   MICROPHYSICAL FACTORS - Hail
 !             ----------------------------
 !
 REAL,SAVE :: XFSEDH,XEXSEDH                      ! Constants for sedimentation

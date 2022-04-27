@@ -686,11 +686,12 @@ IF (ICIBU > 0) THEN
   ALLOCATE(ZFRAG_CIBU(SIZE(PZT)))
 !
   ZFRAG_CIBU(:) = UNPACK ( VECTOR=ZFRAGMENTS(:),MASK=GCIBU,FIELD=0.0 )
-  ZNI_CIBU(:) = ZFRAG_CIBU(:) * (XFACTOR_CIBU_NI / (PRHODREF(:)**(XCEXVT-1.0))) * &
-                (XCG * ZINTG_GRAUPEL_1(:) * ZINTG_SNOW_1(:) *                     &
-                 PLBDAS(:)**(XCXS) * PLBDAG(:)**(XCXG-(XDG+2.0))                  &
-               - XCS * ZINTG_GRAUPEL_2(:) * ZINTG_SNOW_2(:) *                     &
-                 PLBDAS(:)**(XCXS-XDS) * PLBDAG(:)**(XCXG-2.0) )
+  ZNI_CIBU(:) = ZFRAG_CIBU(:) * (XFACTOR_CIBU_NI * PRST1D(:) * PRHODREF(:) / (PRHODREF(:)**(XCEXVT-1.0))) * &
+                (XCG * ZINTG_GRAUPEL_1(:) * ZINTG_SNOW_1(:) *                                               &
+                 PLBDAS(:)**(XBS) * PLBDAG(:)**(XCXG-(XDG+2.0))                                             &
+               - XCS * ZINTG_GRAUPEL_2(:) * ZINTG_SNOW_2(:) *                                               &
+                 PLBDAS(:)**(-XDS+XBS) * PLBDAG(:)**(XCXG-2.0) *                                            &
+                 (1+(XFVELOS/PLBDAS(:))**XALPHAS)**(-XNUS-XDS/XALPHAS) )
   PCIS1D(:) = PCIS1D(:) + MAX(ZNI_CIBU(:), 0.)
 !
   DEALLOCATE(ZFRAG_CIBU)
@@ -698,11 +699,12 @@ IF (ICIBU > 0) THEN
 !
 ! Max value of rs removed by CIBU
   ALLOCATE(ZRI_CIBU(SIZE(PZT)))
-  ZRI_CIBU(:) = (XFACTOR_CIBU_RI / (PRHODREF(:)**(XCEXVT+1.0))) *     &
-                 (XCG * ZINTG_GRAUPEL_1(:) * ZINTG_SNOW_3(:) *        &
-                  PLBDAS(:)**(XCXS-XBS) * PLBDAG(:)**(XCXG-(XDG+2.0)) &
-                - XCS * ZINTG_GRAUPEL_2(:) * ZINTG_SNOW_4(:) *        &
-                  PLBDAS(:)**(XCXS-(XBS+XDS)) * PLBDAG(:)**(XCXG-2.0))
+  ZRI_CIBU(:) = (XFACTOR_CIBU_RI * PRST1D(:) * PRHODREF(:) / (PRHODREF(:)**(XCEXVT+1.0))) * &
+                 (XCG * ZINTG_GRAUPEL_1(:) * ZINTG_SNOW_3(:) *                              &
+                  PLBDAG(:)**(XCXG-(XDG+2.0))                                               &
+                - XCS * ZINTG_GRAUPEL_2(:) * ZINTG_SNOW_4(:) *                              &
+                  PLBDAS(:)**(-XDS) * PLBDAG(:)**(XCXG-2.0) *                               &
+                  (1+(XFVELOS/PLBDAS(:))**XALPHAS)**(-XNUS-(XBS+XDS)/XALPHAS) )
 !
 ! The value of rs removed by CIBU is determined by the mean mass of pristine ice
   WHERE( PRIT1D(:)>XRTMIN(4) .AND. PCIT1D(:)>XCTMIN(4) )

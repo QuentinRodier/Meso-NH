@@ -246,6 +246,8 @@ REAL, DIMENSION(:), ALLOCATABLE ::                          &
      Z_TH_ACC, Z_RR_ACC, Z_CR_ACC, Z_RS_ACC, Z_RG_ACC,      & ! rain accretion on aggregates (ACC) : rr, Nr, rs, rg, th
      Z_RS_CMEL,                                             & ! conversion-melting (CMEL) : rs, rg=-rs
      Z_TH_CFRZ, Z_RR_CFRZ, Z_CR_CFRZ, Z_RI_CFRZ, Z_CI_CFRZ, & ! rain freezing (CFRZ) : rr, Nr, ri, Ni, rg=-rr-ri, th
+     Z_RI_CIBU, Z_CI_CIBU,                                  & ! collisional ice break-up (CIBU) : ri, Ni, rs=-ri
+     Z_RI_RDSF, Z_CI_RDSF,                                  & ! rain drops freezing shattering (RDSF) : ri, Ni, rg=-ri
      Z_TH_WETG, Z_RC_WETG, Z_CC_WETG, Z_RR_WETG, Z_CR_WETG, & ! wet growth of graupel (WETG) : rc, NC, rr, Nr, ri, Ni, rs, rg, rh, th
      Z_RI_WETG, Z_CI_WETG, Z_RS_WETG, Z_RG_WETG, Z_RH_WETG, & ! wet growth of graupel (WETG) : rc, NC, rr, Nr, ri, Ni, rs, rg, rh, th
      Z_TH_DRYG, Z_RC_DRYG, Z_CC_DRYG, Z_RR_DRYG, Z_CR_DRYG, & ! dry growth of graupel (DRYG) : rc, Nc, rr, Nr, ri, Ni, rs, rg, th
@@ -297,6 +299,8 @@ REAL, DIMENSION(:,:,:), ALLOCATABLE ::                                     &
      ZTOT_TH_ACC, ZTOT_RR_ACC, ZTOT_CR_ACC, ZTOT_RS_ACC, ZTOT_RG_ACC,      & ! rain accretion on aggregates (ACC)
      ZTOT_RS_CMEL,                                                         & ! conversion-melting (CMEL)
      ZTOT_TH_CFRZ, ZTOT_RR_CFRZ, ZTOT_CR_CFRZ, ZTOT_RI_CFRZ, ZTOT_CI_CFRZ, & ! rain freezing (CFRZ)
+     ZTOT_RI_CIBU, ZTOT_CI_CIBU,                                           & ! collisional ice break-up (CIBU)
+     ZTOT_RI_RDSF, ZTOT_CI_RDSF,                                           & ! rain drops freezing shattering (RDSF)
      ZTOT_TH_WETG, ZTOT_RC_WETG, ZTOT_CC_WETG, ZTOT_RR_WETG, ZTOT_CR_WETG, & ! wet growth of graupel (WETG)
      ZTOT_RI_WETG, ZTOT_CI_WETG, ZTOT_RS_WETG, ZTOT_RG_WETG, ZTOT_RH_WETG, & ! wet growth of graupel (WETG)
      ZTOT_TH_DRYG, ZTOT_RC_DRYG, ZTOT_CC_DRYG, ZTOT_RR_DRYG, ZTOT_CR_DRYG, & ! dry growth of graupel (DRYG)
@@ -462,6 +466,10 @@ if ( lbu_enable ) then
   allocate( ZTOT_CR_CFRZ (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_CR_CFRZ(:,:,:) = 0.
   allocate( ZTOT_RI_CFRZ (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_RI_CFRZ(:,:,:) = 0.
   allocate( ZTOT_CI_CFRZ (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_CI_CFRZ(:,:,:) = 0.
+  allocate( ZTOT_RI_CIBU (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_RI_CIBU(:,:,:) = 0.
+  allocate( ZTOT_CI_CIBU (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_CI_CIBU(:,:,:) = 0.
+  allocate( ZTOT_RI_RDSF (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_RI_RDSF(:,:,:) = 0.
+  allocate( ZTOT_CI_RDSF (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_CI_RDSF(:,:,:) = 0.
   allocate( ZTOT_TH_WETG (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_TH_WETG(:,:,:) = 0.
   allocate( ZTOT_RC_WETG (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_RC_WETG(:,:,:) = 0.
   allocate( ZTOT_CC_WETG (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_CC_WETG(:,:,:) = 0.
@@ -1022,6 +1030,10 @@ DO WHILE(ANY(ZTIME(IIB:IIE,IJB:IJE,IKTB:IKTE)<PTSTEP))
       ALLOCATE(Z_CR_CFRZ(IPACK))          ; Z_CR_CFRZ = 0.
       ALLOCATE(Z_RI_CFRZ(IPACK))          ; Z_RI_CFRZ = 0.
       ALLOCATE(Z_CI_CFRZ(IPACK))          ; Z_CI_CFRZ = 0.
+      ALLOCATE(Z_RI_CIBU(IPACK))          ; Z_RI_CIBU = 0.
+      ALLOCATE(Z_CI_CIBU(IPACK))          ; Z_CI_CIBU = 0.
+      ALLOCATE(Z_RI_RDSF(IPACK))          ; Z_RI_RDSF = 0.
+      ALLOCATE(Z_CI_RDSF(IPACK))          ; Z_CI_RDSF = 0.
       ALLOCATE(Z_TH_WETG(IPACK))          ; Z_TH_WETG = 0.
       ALLOCATE(Z_RC_WETG(IPACK))          ; Z_RC_WETG = 0.
       ALLOCATE(Z_CC_WETG(IPACK))          ; Z_CC_WETG = 0.
@@ -1094,6 +1106,8 @@ DO WHILE(ANY(ZTIME(IIB:IIE,IJB:IJE,IKTB:IKTE)<PTSTEP))
                             Z_TH_ACC, Z_RR_ACC, Z_CR_ACC, Z_RS_ACC, Z_RG_ACC,      & 
                             Z_RS_CMEL,                                             & 
                             Z_TH_CFRZ, Z_RR_CFRZ, Z_CR_CFRZ, Z_RI_CFRZ, Z_CI_CFRZ, & 
+                            Z_RI_CIBU, Z_CI_CIBU,                                  & 
+                            Z_RI_RDSF, Z_CI_RDSF,                                  & 
                             Z_TH_WETG, Z_RC_WETG, Z_CC_WETG, Z_RR_WETG, Z_CR_WETG, & 
                             Z_RI_WETG, Z_CI_WETG, Z_RS_WETG, Z_RG_WETG, Z_RH_WETG, & 
                             Z_TH_DRYG, Z_RC_DRYG, Z_CC_DRYG, Z_RR_DRYG, Z_CR_DRYG, & 
@@ -1399,6 +1413,10 @@ DO WHILE(ANY(ZTIME(IIB:IIE,IJB:IJE,IKTB:IKTE)<PTSTEP))
             ZTOT_CR_CFRZ(I1(II),I2(II),I3(II)) =   ZTOT_CR_CFRZ(I1(II),I2(II),I3(II))   + Z_CR_CFRZ(II)  * ZMAXTIME(II)
             ZTOT_RI_CFRZ(I1(II),I2(II),I3(II)) =   ZTOT_RI_CFRZ(I1(II),I2(II),I3(II))   + Z_RI_CFRZ(II)  * ZMAXTIME(II)
             ZTOT_CI_CFRZ(I1(II),I2(II),I3(II)) =   ZTOT_CI_CFRZ(I1(II),I2(II),I3(II))   + Z_CI_CFRZ(II)  * ZMAXTIME(II)
+            ZTOT_RI_CIBU(I1(II),I2(II),I3(II)) =   ZTOT_RI_CIBU(I1(II),I2(II),I3(II))   + Z_RI_CIBU(II)  * ZMAXTIME(II)
+            ZTOT_CI_CIBU(I1(II),I2(II),I3(II)) =   ZTOT_CI_CIBU(I1(II),I2(II),I3(II))   + Z_CI_CIBU(II)  * ZMAXTIME(II)
+            ZTOT_RI_RDSF(I1(II),I2(II),I3(II)) =   ZTOT_RI_RDSF(I1(II),I2(II),I3(II))   + Z_RI_RDSF(II)  * ZMAXTIME(II)
+            ZTOT_CI_RDSF(I1(II),I2(II),I3(II)) =   ZTOT_CI_RDSF(I1(II),I2(II),I3(II))   + Z_CI_RDSF(II)  * ZMAXTIME(II)
             ZTOT_TH_WETG(I1(II),I2(II),I3(II)) =   ZTOT_TH_WETG(I1(II),I2(II),I3(II))   + Z_TH_WETG(II)  * ZMAXTIME(II)
             ZTOT_RC_WETG(I1(II),I2(II),I3(II)) =   ZTOT_RC_WETG(I1(II),I2(II),I3(II))   + Z_RC_WETG(II)  * ZMAXTIME(II)
             ZTOT_CC_WETG(I1(II),I2(II),I3(II)) =   ZTOT_CC_WETG(I1(II),I2(II),I3(II))   + Z_CC_WETG(II)  * ZMAXTIME(II)
@@ -1566,6 +1584,10 @@ DO WHILE(ANY(ZTIME(IIB:IIE,IJB:IJE,IKTB:IKTE)<PTSTEP))
       DEALLOCATE(Z_CR_CFRZ)
       DEALLOCATE(Z_RI_CFRZ)
       DEALLOCATE(Z_CI_CFRZ)
+      DEALLOCATE(Z_RI_CIBU) 
+      DEALLOCATE(Z_CI_CIBU) 
+      DEALLOCATE(Z_RI_RDSF) 
+      DEALLOCATE(Z_CI_RDSF) 
       DEALLOCATE(Z_TH_WETG)
       DEALLOCATE(Z_RC_WETG)
       DEALLOCATE(Z_CC_WETG)
@@ -1702,6 +1724,8 @@ if ( lbu_enable ) then
     call Budget_store_add( tbudgets(NBUDGET_RI), 'HMS',    ztot_ri_hms  (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(NBUDGET_RI), 'CFRZ',   ztot_ri_cfrz (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(NBUDGET_RI), 'DEPI',   ztot_ri_depi (:, :, :) * zrhodjontstep(:, :, :) )
+    call Budget_store_add( tbudgets(NBUDGET_RI), 'CIBU',   ztot_ri_cibu (:, :, :) * zrhodjontstep(:, :, :) )
+    call Budget_store_add( tbudgets(NBUDGET_RI), 'RDSF',   ztot_ri_rdsf (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(NBUDGET_RI), 'WETG',   ztot_ri_wetg (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(NBUDGET_RI), 'DRYG',   ztot_ri_dryg (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(NBUDGET_RI), 'HMG',    ztot_ri_hmg  (:, :, :) * zrhodjontstep(:, :, :) )
@@ -1717,6 +1741,7 @@ if ( lbu_enable ) then
     call Budget_store_add( tbudgets(NBUDGET_RS), 'HMS',   ztot_rs_hms (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(NBUDGET_RS), 'ACC',   ztot_rs_acc (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(NBUDGET_RS), 'CMEL',  ztot_rs_cmel(:, :, :) * zrhodjontstep(:, :, :) )
+    call Budget_store_add( tbudgets(NBUDGET_RS), 'CIBU', -ztot_ri_cibu(:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(NBUDGET_RS), 'WETG',  ztot_rs_wetg(:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(NBUDGET_RS), 'DRYG',  ztot_rs_dryg(:, :, :) * zrhodjontstep(:, :, :) )
   end if
@@ -1729,6 +1754,7 @@ if ( lbu_enable ) then
     call Budget_store_add( tbudgets(NBUDGET_RG), 'CMEL', -ztot_rs_cmel(:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(NBUDGET_RG), 'CFRZ', ( -ztot_rr_cfrz(:, :, :) - ztot_ri_cfrz(:, :, :) ) &
                                                          * zrhodjontstep(:, :, :) )
+    call Budget_store_add( tbudgets(NBUDGET_RG), 'RDSF', -ztot_ri_rdsf(:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(NBUDGET_RG), 'WETG',  ztot_rg_wetg(:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(NBUDGET_RG), 'DRYG',  ztot_rg_dryg(:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(NBUDGET_RG), 'HMG',   ztot_rg_hmg (:, :, :) * zrhodjontstep(:, :, :) )
@@ -1782,6 +1808,8 @@ if ( lbu_enable ) then
     call Budget_store_add( tbudgets(idx), 'IMLT',  -ztot_cc_imlt (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(idx), 'HMS',    ztot_ci_hms  (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(idx), 'CFRZ',   ztot_ci_cfrz (:, :, :) * zrhodjontstep(:, :, :) )
+    call Budget_store_add( tbudgets(idx), 'CIBU',   ztot_ci_cibu (:, :, :) * zrhodjontstep(:, :, :) )
+    call Budget_store_add( tbudgets(idx), 'RDSF',   ztot_ci_rdsf (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(idx), 'WETG',   ztot_ci_wetg (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(idx), 'DRYG',   ztot_ci_dryg (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(idx), 'HMG',    ztot_ci_hmg  (:, :, :) * zrhodjontstep(:, :, :) )

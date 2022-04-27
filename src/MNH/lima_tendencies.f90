@@ -29,6 +29,8 @@ MODULE MODI_LIMA_TENDENCIES
                                  P_TH_ACC, P_RR_ACC, P_CR_ACC, P_RS_ACC, P_RG_ACC,      & 
                                  P_RS_CMEL,                                             & 
                                  P_TH_CFRZ, P_RR_CFRZ, P_CR_CFRZ, P_RI_CFRZ, P_CI_CFRZ, & 
+                                 P_RI_CIBU, P_CI_CIBU,                                  & 
+                                 P_RI_RDSF, P_CI_RDSF,                                  & 
                                  P_TH_WETG, P_RC_WETG, P_CC_WETG, P_RR_WETG, P_CR_WETG, & 
                                  P_RI_WETG, P_CI_WETG, P_RS_WETG, P_RG_WETG, P_RH_WETG, & 
                                  P_TH_DRYG, P_RC_DRYG, P_CC_DRYG, P_RR_DRYG, P_CR_DRYG, & 
@@ -128,6 +130,12 @@ REAL, DIMENSION(:),   INTENT(INOUT) :: P_CR_CFRZ
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_RI_CFRZ
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_CI_CFRZ  ! rain freezing (CFRZ) : rr, Nr, ri, Ni, rg=-rr-ri, th
 !
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_RI_CIBU
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_CI_CIBU  ! collisional ice break-up (CIBU) : ri, Ni, rs=-ri
+!
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_RI_RDSF
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_CI_RDSF  ! rain drops freezing shattering (RDSF) : ri, Ni, rg=-ri
+!
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_TH_WETG
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_RC_WETG
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_CC_WETG
@@ -203,6 +211,8 @@ SUBROUTINE LIMA_TENDENCIES (PTSTEP, LDCOMPUTE,                                  
                             P_TH_ACC, P_RR_ACC, P_CR_ACC, P_RS_ACC, P_RG_ACC,      & 
                             P_RS_CMEL,                                             & 
                             P_TH_CFRZ, P_RR_CFRZ, P_CR_CFRZ, P_RI_CFRZ, P_CI_CFRZ, & 
+                            P_RI_CIBU, P_CI_CIBU,                                  & 
+                            P_RI_RDSF, P_CI_RDSF,                                  & 
                             P_TH_WETG, P_RC_WETG, P_CC_WETG, P_RR_WETG, P_CR_WETG, & 
                             P_RI_WETG, P_CI_WETG, P_RS_WETG, P_RG_WETG, P_RH_WETG, & 
                             P_TH_DRYG, P_RC_DRYG, P_CC_DRYG, P_RR_DRYG, P_CR_DRYG, & 
@@ -242,7 +252,7 @@ SUBROUTINE LIMA_TENDENCIES (PTSTEP, LDCOMPUTE,                                  
 !
 USE MODD_CST,              ONLY : XP00, XRD, XRV, XMD, XMV, XCPD, XCPV, XCL, XCI, XLVTT, XLSTT, XTT, &
                                   XALPW, XBETAW, XGAMW, XALPI, XBETAI, XGAMI
-USE MODD_PARAM_LIMA,       ONLY : XRTMIN, XCTMIN, XNUS,                                    &
+USE MODD_PARAM_LIMA,       ONLY : XRTMIN, XCTMIN, XNUS, LCIBU, LRDSF,                                &
                                   LCOLD, LNUCL, LSNOW, LHAIL, LWARM, LACTI, LRAIN, LKHKO, LSNOW_T, NMOM_I
 USE MODD_PARAM_LIMA_WARM,  ONLY : XLBC, XLBEXC, XLBR, XLBEXR
 USE MODD_PARAM_LIMA_MIXED, ONLY : XLBG, XLBEXG, XLBH, XLBEXH, XLBDAG_MAX
@@ -263,6 +273,8 @@ USE MODI_LIMA_DROPLETS_RIMING_SNOW
 USE MODI_LIMA_RAIN_ACCR_SNOW
 USE MODI_LIMA_CONVERSION_MELTING_SNOW
 USE MODI_LIMA_RAIN_FREEZING
+USE MODI_LIMA_COLLISIONAL_ICE_BREAKUP
+USE MODI_LIMA_RAINDROP_SHATTERING_FREEZING
 USE MODI_LIMA_GRAUPEL
 !
 USE MODI_LIMA_BERGERON
@@ -354,6 +366,12 @@ REAL, DIMENSION(:),   INTENT(INOUT) :: P_RR_CFRZ
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_CR_CFRZ
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_RI_CFRZ
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_CI_CFRZ  ! rain freezing (CFRZ) : rr, Nr, ri, Ni, rg=-rr-ri, th
+!
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_RI_CIBU
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_CI_CIBU  ! collisional ice break-up (CIBU) : ri, Ni, rs=-ri
+!
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_RI_RDSF
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_CI_RDSF  ! rain drops freezing shattering (RDSF) : ri, Ni, rg=-ri
 !
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_TH_WETG
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_RC_WETG
@@ -783,6 +801,44 @@ IF (LWARM .AND. LRAIN .AND. LCOLD ) THEN
    PA_RI(:) = PA_RI(:) + P_RI_CFRZ(:)
    PA_CI(:) = PA_CI(:) + P_CI_CFRZ(:)
    PA_RG(:) = PA_RG(:) - P_RR_CFRZ(:) - P_RI_CFRZ(:)
+
+END IF
+!
+IF (LWARM .AND. LCOLD .AND. LSNOW .AND. LCIBU) THEN
+   !
+   ! Conversion melting of snow should account for collected droplets and drops where T>0C, but does not !
+   ! Some thermodynamical computations inside, to externalize ?
+   !
+   CALL LIMA_COLLISIONAL_ICE_BREAKUP (LDCOMPUTE,                                      & ! depends on PF (IF for fragments size)
+                                      PRHODREF,                                       &
+                                      PRIT/ZIF1D, PRST/ZPF1D, PRGT/ZPF1D, PCIT/ZIF1D, &
+                                      ZLBDS, ZLBDG,                                   &
+                                      P_RI_CIBU, P_CI_CIBU                            )
+   P_RI_CIBU(:) = P_RI_CIBU(:) * ZPF1D(:)
+   P_CI_CIBU(:) = P_CI_CIBU(:) * ZPF1D(:)
+   !
+   PA_RI(:) = PA_RI(:) + P_RI_CIBU(:)
+   PA_CI(:) = PA_CI(:) + P_CI_CIBU(:)
+   PA_RS(:) = PA_RS(:) - P_RI_CIBU(:)
+
+END IF
+!
+IF (LWARM .AND. LRAIN .AND. LCOLD .AND. LSNOW .AND. LRDSF) THEN
+   !
+   ! Conversion melting of snow should account for collected droplets and drops where T>0C, but does not !
+   ! Some thermodynamical computations inside, to externalize ?
+   !
+   CALL LIMA_RAINDROP_SHATTERING_FREEZING (LDCOMPUTE,                                      & ! depends on PF, IF
+                                           PRHODREF,                                       &
+                                           PRRT/ZPF1D, PCRT/ZPF1D, PRIT/ZIF1D, PCIT/ZIF1D, &
+                                           ZLBDR,                                          &
+                                           P_RI_RDSF, P_CI_RDSF                            )
+   P_RI_RDSF(:) = P_RI_RDSF(:) * ZIF1D(:)
+   P_CI_RDSF(:) = P_CI_RDSF(:) * ZIF1D(:)
+   !
+   PA_RI(:) = PA_RI(:) + P_RI_RDSF(:)
+   PA_CI(:) = PA_CI(:) + P_CI_RDSF(:)
+   PA_RG(:) = PA_RG(:) - P_RI_RDSF(:)
 
 END IF
 !
