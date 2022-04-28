@@ -97,7 +97,7 @@ USE MODD_NSV,             ONLY: NSV_LIMA_NI
 USE MODD_PARAMETERS,      ONLY: JPHEXT, JPVEXT
 USE MODD_PARAM_LIMA,      ONLY: LSNOW, LSNOW_T, XRTMIN, XCTMIN,              &
                                 XALPHAI, XALPHAS, XNUI, XNUS
-USE MODD_PARAM_LIMA_COLD, ONLY: XLBI, XLBEXI, XLBS, XLBEXS, XBI, XCXS, XCCS, &
+USE MODD_PARAM_LIMA_COLD, ONLY: XLBI, XLBEXI, XLBS, XLBEXS, XNS, XBI, XCXS, XCCS, &
                                 XLBDAS_MAX, XDSCNVI_LIM, XLBDASCNVI_MAX,     &
                                 XC0DEPSI, XC1DEPSI, XR0DEPSI, XR1DEPSI,      &
                                 XSCFAC, X1DEPS, X0DEPS, XEX1DEPS, XEX0DEPS,  &
@@ -358,7 +358,7 @@ IF( IMICRO >= 1 ) THEN
       WHERE ( ZLBDAS(:)<XLBDASCNVI_MAX .AND. (ZRST(:)>XRTMIN(5)) &
                                        .AND. (ZSSI(:)<0.0)       )
          ZZW(:) = (ZLBDAS(:)*XDSCNVI_LIM)**(XALPHAS)
-         ZZX(:) = ( -ZSSI(:)/ZAI(:) ) * (XLBS*ZRST(:)*ZLBDAS(:)**XBS) * (ZZW(:)**XNUI) * EXP(-ZZW(:))
+         ZZX(:) = ( -ZSSI(:)/ZAI(:) ) * (XNS*ZRST(:)*ZLBDAS(:)**XBS) * (ZZW(:)**XNUI) * EXP(-ZZW(:))
 !
          ZZW(:) = MIN( ( XR0DEPSI+XR1DEPSI*ZCJ(:) )*ZZX(:),ZRSS(:) )
          ZRIS(:) = ZRIS(:) + ZZW(:)
@@ -466,7 +466,7 @@ IF( IMICRO >= 1 ) THEN
       WHERE ( (ZRIT(:)>XRTMIN(4)) .AND. (ZRST(:)>XRTMIN(5)) .AND. (ZRIS(:)>ZRTMIN(4)) &
                                                             .AND. (ZCIS(:)>ZCTMIN(4)) )
          ZZW1(:,3) = (ZLBDAI(:) / ZLBDAS(:))**3
-         ZZW1(:,1) = (ZCIT(:)*(XLBS*ZRST(:)*ZLBDAS(:)**XBS)*EXP(XCOLEXIS*(ZZT(:)-XTT) )) &
+         ZZW1(:,1) = (ZCIT(:)*(XNS*ZRST(:)*ZLBDAS(:)**XBS)*EXP(XCOLEXIS*(ZZT(:)-XTT) )) &
                                                     / (ZLBDAI(:)**3)
          ZZW1(:,2) = MIN( ZZW1(:,1)*(XAGGS_CLARGE1+XAGGS_CLARGE2*ZZW1(:,3)),ZCIS(:) )
          ZCIS(:) = ZCIS(:) - ZZW1(:,2)

@@ -114,7 +114,7 @@ USE MODD_PARAM_LIMA,       ONLY: XALPHAR_L=>XALPHAR,XNUR_L=>XNUR,XALPHAS_L=>XALP
                                  XALPHAG_L=>XALPHAG,XNUG_L=>XNUG, XALPHAI_L=>XALPHAI,XNUI_L=>XNUI,&
                                  XRTMIN_L=>XRTMIN,XALPHAC_L=>XALPHAC,XNUC_L=>XNUC, LSNOW_T_L=>LSNOW_T
 USE MODD_PARAM_LIMA_COLD,  ONLY: XDI_L=>XDI,XLBEXI_L=>XLBEXI,XLBI_L=>XLBI,XAI_L=>XAI,XBI_L=>XBI,XC_I_L=>XC_I,&
-                                 XLBEXS_L=>XLBEXS,XLBS_L=>XLBS,XCCS_L=>XCCS,&
+                                 XLBEXS_L=>XLBEXS,XLBS_L=>XLBS,XCCS_L=>XCCS,XNS_L=>XNS,&
                                  XAS_L=>XAS,XBS_L=>XBS,XCXS_L=>XCXS,        &
                                  XLBDAS_MIN,XLBDAS_MAX
 USE MODD_PARAM_LIMA_MIXED, ONLY: XDG_L=>XDG,XLBEXG_L=>XLBEXG,XLBG_L=>XLBG,XCCG_L=>XCCG,&
@@ -128,7 +128,7 @@ USE MODD_RAIN_ICE_DESCR,   ONLY: XALPHAR_I=>XALPHAR,XNUR_I=>XNUR,XLBEXR_I=>XLBEX
                                  XLBC_I=>XLBC,XBC_I=>XBC,XAC_I=>XAC,&
                                  XALPHAC2_I=>XALPHAC2,XNUC2_I=>XNUC2,&
                                  XALPHAS_I=>XALPHAS,XNUS_I=>XNUS,XLBEXS_I=>XLBEXS,&
-                                 XLBS_I=>XLBS,XCCS_I=>XCCS,XAS_I=>XAS,XBS_I=>XBS,XCXS_I=>XCXS,&
+                                 XLBS_I=>XLBS,XCCS_I=>XCCS,XNS_I=>XNS,XAS_I=>XAS,XBS_I=>XBS,XCXS_I=>XCXS,&
                                  XALPHAG_I=>XALPHAG,XNUG_I=>XNUG,XDG_I=>XDG,XLBEXG_I=>XLBEXG,&
                                  XLBG_I=>XLBG,XCCG_I=>XCCG,XAG_I=>XAG,XBG_I=>XBG,XCXG_I=>XCXG,XCG_I=>XCG,&
                                  XALPHAI_I=>XALPHAI,XNUI_I=>XNUI,XDI_I=>XDI,XLBEXI_I=>XLBEXI,&
@@ -237,7 +237,7 @@ REAL, DIMENSION(SIZE(PR,3))    :: ZCIT     ! pristine ice concentration
 REAL, DIMENSION(SIZE(PR,3))    :: ZCCI,ZCCR,ZCCC     ! ICE,RAIN CLOUD concentration (LIMA)
 REAL, DIMENSION(SIZE(PR,1),SIZE(PR,2),SIZE(PR,3))    :: ZR   
 REAL, DIMENSION(SIZE(PR,3),SIZE(PR,4)+1) :: ZRZ  ! vertical profile of hydrometeor mixing ratios
-REAL                           :: ZA,ZB,ZCC,ZCX,ZALPHA,ZNU,ZLB,ZLBEX,ZRHOHYD,XLAM_CRAD   ! generic microphysical parameters
+REAL                           :: ZA,ZB,ZCC,ZCX,ZALPHA,ZNU,ZLB,ZLBEX,ZRHOHYD,XLAM_CRAD,ZNS   ! generic microphysical parameters
 INTEGER                        :: JJ    ! loop counter for quadrature
 COMPLEX                        :: QMW,QMI,QM,QB,QEPSIW,QEPSWI   ! dielectric parameter
 REAL                           :: ZAETOT,ZAETMP,ZREFLOC,ZQSCA,ZQBACK,ZQEXT ! temporary scattering parameters
@@ -662,6 +662,7 @@ IF (GSTORE) THEN
                     ZCX=XCXS_L
                     ZALPHA=XALPHAS_L
                     ZNU=XNUS_L
+                    ZNS=XNS_L
                     ZLB=XLBS_L
                     ZLBEX=XLBEXS_L
                     ZFW=0
@@ -672,6 +673,7 @@ IF (GSTORE) THEN
                     ZCX=XCXS_I
                     ZALPHA=XALPHAS_I
                     ZNU=XNUS_I
+                    ZNS=XNS_I
                     ZLB=XLBS_I
                     ZLBEX=XLBEXS_I
                     ZFW=0
@@ -734,7 +736,7 @@ IF (GSTORE) THEN
                ELSE
                   ZLBDA = MAX(MIN(XLBDAS_MAX, 10**(6.226-0.0106*(ZTEMPZ(JK)+273.15))),XLBDAS_MIN)
                END IF
-               ZN=XLBS_L*ZRHODREFZ(JK)*ZRZ(JK,JLOOP)*ZLBDA**ZB
+               ZN=ZNS*ZRHODREFZ(JK)*ZRZ(JK,JLOOP)*ZLBDA**ZB
             ELSE
                ZLBDA=ZLB*(ZRHODREFZ(JK)*ZRZ(JK,JLOOP))**ZLBEX
                ZN=ZCC*ZLBDA**ZCX
