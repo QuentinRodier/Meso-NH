@@ -2116,21 +2116,20 @@ IF (LFLYER)                                                                   &
 !*       24.2    STATION (observation diagnostic)
 !               --------------------------------
 !
-IF (LSTATION)                                                            &
-  CALL STATION_n(XTSTEP,                                                 &
-                 XXHAT, XYHAT, XZZ,                                      &
-                 XUT, XVT, XWT, XTHT, XRT, XSVT, XTKET, XTSRAD, XPABST   )
+IF ( LSTATION )                                                        &
+  CALL STATION_n(XTSTEP, XZZ,                                          &
+                 XUT, XVT, XWT, XTHT, XRT, XSVT, XTKET, XTSRAD, XPABST )
 !
 !---------------------------------------------------------
 !
 !*       24.3    PROFILER (observation diagnostic)
 !               ---------------------------------
 !
-IF (LPROFILER)                                                           &
+IF ( LPROFILER )                                                         &
   CALL PROFILER_n(XTSTEP,                                                &
-                  XXHAT, XYHAT, XZZ,XRHODREF,                            &
+                  XZZ, XRHODREF,                                         &
                   XUT, XVT, XWT, XTHT, XRT, XSVT, XTKET, XTSRAD, XPABST, &
-                  XAER, XCLDFR, XCIT,PSEA=ZSEA(:,:))
+                  XAER, XCIT, PSEA=ZSEA(:,:))
 !
 !
 CALL SECOND_MNH2(ZTIME2)

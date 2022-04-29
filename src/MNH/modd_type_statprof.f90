@@ -30,7 +30,7 @@
 !!    -------------
 !!      Original    15/01/02
 !  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
-!  P. Wautelet    04/2022: restructure stations for better performance, reduce memory usage and correct some problems/bugs
+!  P. Wautelet    04/2022: restructure stations/profilers for better performance, reduce memory usage and correct some problems/bugs
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -43,7 +43,8 @@ implicit none
 
 private
 
-public :: TSTATPROFTIME, TSTATIONDATA
+public :: TSTATPROFTIME
+public :: TPROFILERDATA, TSTATIONDATA, TSTATPROFDATA
 
 TYPE :: TSTATPROFTIME
   REAL                                       :: XTIME_CUR = XUNDEF  ! current time since last storage
@@ -52,63 +53,105 @@ TYPE :: TSTATPROFTIME
   type(date_time), dimension(:), ALLOCATABLE :: tpdates             ! dates(n) (n: recording instants)
 END TYPE TSTATPROFTIME
 
-TYPE TSTATIONDATA
-! Type to store all the data of 1 station
-CHARACTER(LEN=NSTATPROFNAMELGTMAX) :: CNAME = ''  ! station name
+TYPE :: TSTATPROFDATA
+  ! Type to store data common to stations and profilers
+  ! It is used as a basis for the TSTATIONDATA and TPROFILERDATA
+  ! and for common procedures for these 2 types
+  CHARACTER(LEN=NSTATPROFNAMELGTMAX) :: CNAME = ''  ! Station/profiler name
 
+  INTEGER :: NID = 0 ! Global identification number of the station/profiler (from 1 to total number)
 
-INTEGER :: NID = 0 ! Global identification number of the station (from 1 to total number of stations of the model)
+  REAL :: XX   = XUNDEF  ! X(n)
+  REAL :: XY   = XUNDEF  ! Y(n)
+  REAL :: XZ   = XUNDEF  ! Z(n)
+  REAL :: XLON = XUNDEF  ! longitude(n)
+  REAL :: XLAT = XUNDEF  ! latitude (n)
 
-REAL :: XX   = XUNDEF  ! X(n)
-REAL :: XY   = XUNDEF  ! Y(n)
-REAL :: XZ   = XUNDEF  ! Z(n)
-REAL :: XLON = XUNDEF  ! longitude(n)
-REAL :: XLAT = XUNDEF  ! latitude (n)
-REAL :: XZS  = XUNDEF  ! zs(n)
+  ! Position in the mesh
+  INTEGER :: NI_M = NNEGUNDEF ! X position for mass-point axis (between this one and the next one)
+  INTEGER :: NJ_M = NNEGUNDEF ! Y position for mass-point axis (between this one and the next one)
+  INTEGER :: NI_U = NNEGUNDEF ! X position for u-point axis (between this one and the next one)
+  INTEGER :: NJ_V = NNEGUNDEF ! Y position for v-point axis (between this one and the next one)
 
-! Position in the mesh
-INTEGER :: NI_M = NNEGUNDEF ! X position for mass-point axis (between this one and the next one)
-INTEGER :: NJ_M = NNEGUNDEF ! Y position for mass-point axis (between this one and the next one)
-INTEGER :: NI_U = NNEGUNDEF ! X position for u-point axis (between this one and the next one)
-INTEGER :: NJ_V = NNEGUNDEF ! Y position for v-point axis (between this one and the next one)
+  ! Coefficient to interpolate values (stations are usually not exactly on mesh points)
+  REAL :: XXMCOEF = XUNDEF ! Interpolation coefficient for X (mass-point)
+  REAL :: XYMCOEF = XUNDEF ! Interpolation coefficient for Y (mass-point)
+  REAL :: XXUCOEF = XUNDEF ! Interpolation coefficient for X (U-point)
+  REAL :: XYVCOEF = XUNDEF ! Interpolation coefficient for Y (V-point)
 
-! Coefficient to interpolate values (stations are usually not exactly on mesh points)
-REAL :: XXMCOEF = XUNDEF ! Interpolation coefficient for X (mass-point)
-REAL :: XYMCOEF = XUNDEF ! Interpolation coefficient for Y (mass-point)
-REAL :: XXUCOEF = XUNDEF ! Interpolation coefficient for X (U-point)
-REAL :: XYVCOEF = XUNDEF ! Interpolation coefficient for Y (V-point)
+  ! Dimension corresponds to recording instants
+  REAL, DIMENSION(:),   ALLOCATABLE :: XT2M    ! 2 m air temperature (C)
+  REAL, DIMENSION(:),   ALLOCATABLE :: XQ2M    ! 2 m humidity (kg/kg)
+  REAL, DIMENSION(:),   ALLOCATABLE :: XHU2M   ! 2 m relative humidity (%)
+  REAL, DIMENSION(:),   ALLOCATABLE :: XZON10M ! 10 m zonal wind (m/s)
+  REAL, DIMENSION(:),   ALLOCATABLE :: XMER10M ! 10 m merid. wind (m/s)
+  REAL, DIMENSION(:),   ALLOCATABLE :: XRN     ! net radiation (W m2)
+  REAL, DIMENSION(:),   ALLOCATABLE :: XH      ! sensible heat flux (W m2)
+  REAL, DIMENSION(:),   ALLOCATABLE :: XLE     ! Total latent heat flux (W m2)
+  REAL, DIMENSION(:),   ALLOCATABLE :: XLEI    ! Solid latent heat flux (W m2)
+  REAL, DIMENSION(:),   ALLOCATABLE :: XGFLUX  ! storage heat flux (W m2)
+  REAL, DIMENSION(:),   ALLOCATABLE :: XSWD    ! IR downward radiation (W m2)
+  REAL, DIMENSION(:),   ALLOCATABLE :: XSWU    ! IR upward radiation (W m2)
+  REAL, DIMENSION(:),   ALLOCATABLE :: XLWD    ! solar downward radiation (W m2)
+  REAL, DIMENSION(:),   ALLOCATABLE :: XLWU    ! solar upward radiation (W m2)
+END TYPE
 
-INTEGER :: NK = NNEGUNDEF ! Model level for altitude comparisons
+TYPE, EXTENDS( TSTATPROFDATA ) ::  TSTATIONDATA
+  ! Type to store all the data of 1 station
+  INTEGER :: NK = NNEGUNDEF ! Model level for altitude comparisons
 
-REAL, DIMENSION(:),   ALLOCATABLE :: XZON    ! zonal wind(n)
-REAL, DIMENSION(:),   ALLOCATABLE :: XMER    ! meridian wind(n)
-REAL, DIMENSION(:),   ALLOCATABLE :: XW      ! w(n)  (air vertical speed)
-REAL, DIMENSION(:),   ALLOCATABLE :: XP      ! p(n)
-REAL, DIMENSION(:),   ALLOCATABLE :: XTKE    ! tke(n)
-REAL, DIMENSION(:),   ALLOCATABLE :: XTH     ! th(n)
-REAL, DIMENSION(:,:), ALLOCATABLE :: XR      ! r*(n)
-REAL, DIMENSION(:,:), ALLOCATABLE :: XSV     ! Sv*(n)
-REAL, DIMENSION(:),   ALLOCATABLE :: XTSRAD  ! Ts(n)
+  REAL :: XZS  = XUNDEF  ! zs(n)
 
-REAL, DIMENSION(:),   ALLOCATABLE :: XT2M
-REAL, DIMENSION(:),   ALLOCATABLE :: XQ2M
-REAL, DIMENSION(:),   ALLOCATABLE :: XHU2M
-REAL, DIMENSION(:),   ALLOCATABLE :: XZON10M
-REAL, DIMENSION(:),   ALLOCATABLE :: XMER10M
-REAL, DIMENSION(:),   ALLOCATABLE :: XRN
-REAL, DIMENSION(:),   ALLOCATABLE :: XH
-REAL, DIMENSION(:),   ALLOCATABLE :: XLE
-REAL, DIMENSION(:),   ALLOCATABLE :: XLEI
-REAL, DIMENSION(:),   ALLOCATABLE :: XGFLUX
-REAL, DIMENSION(:),   ALLOCATABLE :: XSWD
-REAL, DIMENSION(:),   ALLOCATABLE :: XSWU
-REAL, DIMENSION(:),   ALLOCATABLE :: XLWD
-REAL, DIMENSION(:),   ALLOCATABLE :: XLWU
-REAL, DIMENSION(:),   ALLOCATABLE :: XSWDIR
-REAL, DIMENSION(:),   ALLOCATABLE :: XSWDIFF
-REAL, DIMENSION(:),   ALLOCATABLE :: XDSTAOD ! Dust Aerosol Optical Depth
-REAL, DIMENSION(:),   ALLOCATABLE :: XSFCO2  ! CO2 surface flux
+  ! (n: recording instants)
+  REAL, DIMENSION(:),   ALLOCATABLE :: XZON    ! zonal wind(n)
+  REAL, DIMENSION(:),   ALLOCATABLE :: XMER    ! meridian wind(n)
+  REAL, DIMENSION(:),   ALLOCATABLE :: XW      ! w(n)  (air vertical speed)
+  REAL, DIMENSION(:),   ALLOCATABLE :: XP      ! p(n)
+  REAL, DIMENSION(:),   ALLOCATABLE :: XTKE    ! tke(n)
+  REAL, DIMENSION(:),   ALLOCATABLE :: XTH     ! th(n)
+  REAL, DIMENSION(:,:), ALLOCATABLE :: XR      ! r*(n)
+  REAL, DIMENSION(:,:), ALLOCATABLE :: XSV     ! Sv*(n)
+  REAL, DIMENSION(:),   ALLOCATABLE :: XTSRAD  ! Ts(n)
 
+  REAL, DIMENSION(:),   ALLOCATABLE :: XSWDIR
+  REAL, DIMENSION(:),   ALLOCATABLE :: XSWDIFF
+  REAL, DIMENSION(:),   ALLOCATABLE :: XDSTAOD ! Dust Aerosol Optical Depth
+  REAL, DIMENSION(:),   ALLOCATABLE :: XSFCO2  ! CO2 surface flux
 END TYPE TSTATIONDATA
+
+TYPE, EXTENDS( TSTATPROFDATA ) ::  TPROFILERDATA
+  ! Type to store all the data of 1 profiler
+  CHARACTER(LEN=NSTATPROFNAMELGTMAX) :: CTYPE = ''  ! Profiler type
+
+  ! (n: recording instants)
+  REAL, DIMENSION(:,:),   ALLOCATABLE :: XZON       ! zonal wind(n)
+  REAL, DIMENSION(:,:),   ALLOCATABLE :: XMER       ! meridian wind(n)
+  REAL, DIMENSION(:,:),   ALLOCATABLE :: XFF        ! wind intensity
+  REAL, DIMENSION(:,:),   ALLOCATABLE :: XDD        ! wind direction
+  REAL, DIMENSION(:,:),   ALLOCATABLE :: XW         ! w(n)  (air vertical speed)
+  REAL, DIMENSION(:,:),   ALLOCATABLE :: XP         ! p(n)
+  REAL, DIMENSION(:,:),   ALLOCATABLE :: XZZ        ! altitude(n)
+  REAL, DIMENSION(:,:),   ALLOCATABLE :: XTKE       ! tke(n)
+  REAL, DIMENSION(:,:),   ALLOCATABLE :: XTH        ! th(n)
+  REAL, DIMENSION(:,:),   ALLOCATABLE :: XTHV       ! thv(n)
+  REAL, DIMENSION(:,:),   ALLOCATABLE :: XVISI      ! VISI(n)
+  REAL, DIMENSION(:,:),   ALLOCATABLE :: XVISIKUN   ! VISI KUNKEL(n)
+  REAL, DIMENSION(:,:),   ALLOCATABLE :: XCRARE     ! radar reflectivity (n)
+  REAL, DIMENSION(:,:),   ALLOCATABLE :: XCRARE_ATT ! radar attenuated reflectivity (n)
+  REAL, DIMENSION(:,:),   ALLOCATABLE :: XCIZ       ! Ice number concentration ICE3 (n)
+  REAL, DIMENSION(:,:),   ALLOCATABLE :: XLWCZ      ! liquid water content (n)
+  REAL, DIMENSION(:,:),   ALLOCATABLE :: XIWCZ      ! ice water content (n)
+  REAL, DIMENSION(:,:),   ALLOCATABLE :: XRHOD      ! density of dry air/moist air
+  REAL, DIMENSION(:,:,:), ALLOCATABLE :: XR         ! r*(n)
+  REAL, DIMENSION(:,:,:), ALLOCATABLE :: XSV        ! Sv*(n)
+  REAL, DIMENSION(:,:,:), ALLOCATABLE :: XAER       ! AER*(n) aerosol extinction
+
+  REAL, DIMENSION(:), ALLOCATABLE :: XIWV ! integrated water vpour(n)
+  REAL, DIMENSION(:), ALLOCATABLE :: XZTD ! GPS zenith tropo delay(n)
+  REAL, DIMENSION(:), ALLOCATABLE :: XZWD ! GPS zenith wet delay(n)
+  REAL, DIMENSION(:), ALLOCATABLE :: XZHD ! GPS zenith hydro delay(n)
+
+  REAL, DIMENSION(:,:), ALLOCATABLE :: XTKE_DISS ! TKE dissipation rate
+END TYPE
 
 END MODULE MODD_TYPE_STATPROF

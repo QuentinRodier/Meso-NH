@@ -2572,9 +2572,7 @@ CALL INI_SURFSTATION_n( )
 !*      25.     PROFILER initializations
 !              ------------------------
 !
-CALL INI_POSPROFILER_n(XTSTEP, XSEGLEN, NRR, NSV,  &
-                       CTURB=="TKEL",              &
-                       XLATORI, XLONORI            )
+CALL INI_POSPROFILER_n( )
 !
 !-------------------------------------------------------------------------------
 !

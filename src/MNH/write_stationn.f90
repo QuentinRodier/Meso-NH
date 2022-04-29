@@ -3,6 +3,17 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
+! Author:
+!  P. Tulet    15/02/2002
+!
+!  Modifications
+!  P. Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
+!  P. Wautelet 09/10/2020: Write_diachro: use new datatype tpfields
+!  P. Wautelet 03/03/2021: budgets: add tbudiachrometadata type (useful to pass more information to Write_diachro)
+!  P. Wautelet 04/02/2022: use TSVLIST to manage metadata of scalar variables
+!  P. Wautelet    04/2022: restructure stations for better performance, reduce memory usage and correct some problems/bugs
+! --------------------------------------------------------------------------
 !      ###########################
 MODULE MODE_WRITE_STATION_n
 !      ###########################
@@ -28,43 +39,7 @@ SUBROUTINE WRITE_STATION_n( TPDIAFILE )
 ! #####################################
 !
 !
-!!****  *WRITE_STATION* - write the balloon and aircraft trajectories and records
-!!                      in the diachronic file
-!!
-!!    PURPOSE
-!!    -------
-!
-!
-!!**  METHOD
-!!    ------
-!!    
-!!
-!!
-!!
-!!
-!!    EXTERNAL
-!!    --------
-!!
-!!    IMPLICIT ARGUMENTS
-!!    ------------------
-!!
-!!    REFERENCE
-!!    ---------
-!!
-!!    AUTHOR
-!!    ------
-!!      Pierre TULET             * Meteo-France *
-!!
-!!    MODIFICATIONS
-!!    -------------
-!!     Original 15/02/2002
-!  P. Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
-!  P. Wautelet 09/10/2020: Write_diachro: use new datatype tpfields
-!  P. Wautelet 03/03/2021: budgets: add tbudiachrometadata type (useful to pass more information to Write_diachro)
-!  P. Wautelet 04/02/2022: use TSVLIST to manage metadata of scalar variables
-!  P. Wautelet    04/2022: restructure stations for better performance, reduce memory usage and correct some problems/bugs
-! --------------------------------------------------------------------------
+!****  *WRITE_STATION* - write the stations records in the diachronic file
 !
 !*      0. DECLARATIONS
 !          ------------
@@ -79,6 +54,7 @@ USE MODD_PRECISION,       ONLY: MNHINT_MPI, MNHREAL_MPI
 USE MODD_STATION_n,       only: NUMBSTAT_LOC, TSTATIONS, tstations_time
 USE MODD_TYPE_STATPROF,   ONLY: TSTATIONDATA
 !
+USE MODE_MSG
 USE MODE_STATPROF_TOOLS,  ONLY: STATION_ALLOCATE
 !
 IMPLICIT NONE
@@ -100,7 +76,7 @@ INTEGER :: INUMSTAT  ! Total number of stations (for the current model)
 INTEGER :: IPACKSIZE ! Size of the ZPACK buffer
 INTEGER :: IPOS      ! Position in the ZPACK buffer
 INTEGER :: ISTORE
-INTEGER, DIMENSION(:), ALLOCATABLE :: INSTATPRC    ! Array to store the number of stations per process  (for the current model)
+INTEGER, DIMENSION(:), ALLOCATABLE :: INSTATPRC    ! Array to store the number of stations per process (for the current model)
 INTEGER, DIMENSION(:), ALLOCATABLE :: ISTATIDS     ! Intermediate array for MPI communication
 INTEGER, DIMENSION(:), ALLOCATABLE :: ISTATPRCRANK ! Array to store the ranks of the processes where the stations are
 INTEGER, DIMENSION(:), ALLOCATABLE :: IDS          ! Array to store the station number to send
@@ -222,6 +198,8 @@ STATION: DO JS = 1, INUMSTAT
         ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XSFCO2;    IPOS = IPOS + ISTORE
       END IF
 
+      IF ( IPOS /= IPACKSIZE ) call Print_msg( NVERB_WARNING, 'IO', 'WRITE_STATION_n', 'IPOS /= IPACKSIZE (sender side)' )
+
       CALL MPI_SEND( TSTATIONS(IDX)%CNAME, LEN(TSTATIONS(IDX)%CNAME), MPI_CHARACTER, TPDIAFILE%NMASTER_RANK - 1, &
                      ITAG, TPDIAFILE%NMPICOMM, IERR )
       CALL MPI_SEND( ZPACK, IPACKSIZE, MNHREAL_MPI, TPDIAFILE%NMASTER_RANK - 1, ITAG, TPDIAFILE%NMPICOMM, IERR )
@@ -279,6 +257,8 @@ STATION: DO JS = 1, INUMSTAT
         END IF
         TZSTATION%XSFCO2 =    ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
       END IF
+
+      IF ( IPOS /= IPACKSIZE ) call Print_msg( NVERB_WARNING, 'IO', 'WRITE_STATION_n', 'IPOS /= IPACKSIZE (receiver side)' )
     END IF
   END IF
 

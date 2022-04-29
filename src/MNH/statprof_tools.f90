@@ -13,19 +13,145 @@
 MODULE MODE_STATPROF_TOOLS
 !      ###################
 
-USE MODD_TYPE_STATPROF, ONLY: TSTATIONDATA
+USE MODD_TYPE_STATPROF, ONLY: TPROFILERDATA, TSTATIONDATA, TSTATPROFDATA
 
 IMPLICIT NONE
 
 PRIVATE
 
-PUBLIC :: STATION_ALLOCATE
-PUBLIC :: STATION_INI_INTERP
-PUBLIC :: STATION_POSITION
-PUBLIC :: STATION_ADD
-PUBLIC :: STATION_INTERP_2D, STATION_INTERP_2D_U, STATION_INTERP_2D_V
+PUBLIC :: PROFILER_ALLOCATE, STATION_ALLOCATE
+PUBLIC :: STATPROF_INI_INTERP
+PUBLIC :: STATPROF_POSITION
+PUBLIC :: PROFILER_ADD, STATION_ADD
+PUBLIC :: STATPROF_INTERP_2D, STATPROF_INTERP_2D_U, STATPROF_INTERP_2D_V
+PUBLIC :: STATPROF_INTERP_3D, STATPROF_INTERP_3D_U, STATPROF_INTERP_3D_V
 
 CONTAINS
+
+! ################################################
+SUBROUTINE PROFILER_ALLOCATE( TPPROFILER, KSTORE )
+! ################################################
+
+!   USE MODD_ALLSTATION_n, ONLY: LDIAG_SURFRAD
+  USE MODD_CONF_n,       ONLY: NRR
+  USE MODD_DIAG_IN_RUN,  ONLY: LDIAG_IN_RUN
+  USE MODD_DIM_n,        ONLY: NKMAX
+  USE MODD_NSV,          ONLY: NSV
+  USE MODD_PARAMETERS,   ONLY: JPVEXT, XUNDEF
+  USE MODD_PARAM_n,      ONLY: CCLOUD, CRAD, CTURB
+  USE MODD_RADIATIONS_n, ONLY: NAER
+
+  IMPLICIT NONE
+
+  TYPE(TPROFILERDATA), INTENT(INOUT) :: TPPROFILER
+  INTEGER,             INTENT(IN)    :: KSTORE  ! number of moments to store
+
+  INTEGER :: IKU
+
+  IKU = NKMAX + 2 * JPVEXT
+  ALLOCATE( TPPROFILER%XZON      (KSTORE, IKU) )
+  ALLOCATE( TPPROFILER%XMER      (KSTORE, IKU) )
+  ALLOCATE( TPPROFILER%XFF       (KSTORE, IKU) )
+  ALLOCATE( TPPROFILER%XDD       (KSTORE, IKU) )
+  ALLOCATE( TPPROFILER%XW        (KSTORE, IKU) )
+  ALLOCATE( TPPROFILER%XP        (KSTORE, IKU) )
+  ALLOCATE( TPPROFILER%XZZ       (KSTORE, IKU) )
+  IF ( CTURB == 'TKEL' ) THEN
+    ALLOCATE( TPPROFILER%XTKE    (KSTORE, IKU) )
+  ELSE
+    ALLOCATE( TPPROFILER%XTKE    (0, 0) )
+  END IF
+  ALLOCATE( TPPROFILER%XTH       (KSTORE, IKU) )
+  ALLOCATE( TPPROFILER%XTHV      (KSTORE, IKU) )
+  ALLOCATE( TPPROFILER%XVISI     (KSTORE, IKU) )
+  ALLOCATE( TPPROFILER%XVISIKUN  (KSTORE, IKU) )
+  ALLOCATE( TPPROFILER%XCRARE    (KSTORE, IKU) )
+  ALLOCATE( TPPROFILER%XCRARE_ATT(KSTORE, IKU) )
+  IF ( CCLOUD == 'ICE3' .OR. CCLOUD == 'ICE4' ) THEN
+    ALLOCATE( TPPROFILER%XCIZ    (KSTORE, IKU) )
+  ELSE
+    ALLOCATE( TPPROFILER%XCIZ    (0, 0) )
+  END IF
+  ALLOCATE( TPPROFILER%XLWCZ     (KSTORE, IKU) )
+  ALLOCATE( TPPROFILER%XIWCZ     (KSTORE, IKU) )
+  ALLOCATE( TPPROFILER%XRHOD     (KSTORE, IKU) )
+  ALLOCATE( TPPROFILER%XR        (KSTORE, IKU, NRR) )
+  ALLOCATE( TPPROFILER%XSV       (KSTORE, IKU, NSV) )
+  ALLOCATE( TPPROFILER%XAER      (KSTORE, IKU, NAER) )
+
+  ALLOCATE( TPPROFILER%XIWV(KSTORE) )
+  ALLOCATE( TPPROFILER%XZTD(KSTORE) )
+  ALLOCATE( TPPROFILER%XZWD(KSTORE) )
+  ALLOCATE( TPPROFILER%XZHD(KSTORE) )
+
+!   IF ( LDIAG_IN_RUN ) THEN
+    ALLOCATE( TPPROFILER%XT2M   (KSTORE) )
+    ALLOCATE( TPPROFILER%XQ2M   (KSTORE) )
+    ALLOCATE( TPPROFILER%XHU2M  (KSTORE) )
+    ALLOCATE( TPPROFILER%XZON10M(KSTORE) )
+    ALLOCATE( TPPROFILER%XMER10M(KSTORE) )
+    ALLOCATE( TPPROFILER%XRN    (KSTORE) )
+    ALLOCATE( TPPROFILER%XH     (KSTORE) )
+    ALLOCATE( TPPROFILER%XLE    (KSTORE) )
+    ALLOCATE( TPPROFILER%XLEI   (KSTORE) )
+    ALLOCATE( TPPROFILER%XGFLUX (KSTORE) )
+    IF ( CRAD /= 'NONE' ) THEN
+      ALLOCATE( TPPROFILER%XSWD   (KSTORE) )
+      ALLOCATE( TPPROFILER%XSWU   (KSTORE) )
+      ALLOCATE( TPPROFILER%XLWD   (KSTORE) )
+      ALLOCATE( TPPROFILER%XLWU   (KSTORE) )
+    END IF
+    ALLOCATE( TPPROFILER%XTKE_DISS(KSTORE, IKU) )
+!   END IF
+
+  TPPROFILER%XZON      (:,:) = XUNDEF
+  TPPROFILER%XMER      (:,:) = XUNDEF
+  TPPROFILER%XFF       (:,:) = XUNDEF
+  TPPROFILER%XDD       (:,:) = XUNDEF
+  TPPROFILER%XW        (:,:) = XUNDEF
+  TPPROFILER%XP        (:,:) = XUNDEF
+  TPPROFILER%XZZ       (:,:) = XUNDEF
+  IF ( CTURB == 'TKEL' ) TPPROFILER%XTKE(:,:) = XUNDEF
+  TPPROFILER%XTH       (:,:) = XUNDEF
+  TPPROFILER%XTHV      (:,:) = XUNDEF
+  TPPROFILER%XVISI     (:,:) = XUNDEF
+  TPPROFILER%XVISIKUN  (:,:) = XUNDEF
+  TPPROFILER%XCRARE    (:,:) = XUNDEF
+  TPPROFILER%XCRARE_ATT(:,:) = XUNDEF
+  IF ( CCLOUD == 'ICE3' .OR. CCLOUD == 'ICE4' ) TPPROFILER%XCIZ      (:,:) = XUNDEF
+  TPPROFILER%XLWCZ     (:,:) = XUNDEF
+  TPPROFILER%XIWCZ     (:,:) = XUNDEF
+  TPPROFILER%XRHOD     (:,:) = XUNDEF
+  TPPROFILER%XR        (:,:,:) = XUNDEF
+  TPPROFILER%XSV       (:,:,:) = XUNDEF
+  TPPROFILER%XAER      (:,:,:) = XUNDEF
+
+  TPPROFILER%XIWV(:) = XUNDEF
+  TPPROFILER%XZTD(:) = XUNDEF
+  TPPROFILER%XZWD(:) = XUNDEF
+  TPPROFILER%XZHD(:) = XUNDEF
+
+!   IF ( LDIAG_IN_RUN ) THEN
+    TPPROFILER%XT2M   (:) = XUNDEF
+    TPPROFILER%XQ2M   (:) = XUNDEF
+    TPPROFILER%XHU2M  (:) = XUNDEF
+    TPPROFILER%XZON10M(:) = XUNDEF
+    TPPROFILER%XMER10M(:) = XUNDEF
+    TPPROFILER%XRN    (:) = XUNDEF
+    TPPROFILER%XH     (:) = XUNDEF
+    TPPROFILER%XLE    (:) = XUNDEF
+    TPPROFILER%XLEI   (:) = XUNDEF
+    TPPROFILER%XGFLUX (:) = XUNDEF
+    IF ( CRAD /= 'NONE' ) THEN
+      TPPROFILER%XSWD   (:) = XUNDEF
+      TPPROFILER%XSWU   (:) = XUNDEF
+      TPPROFILER%XLWD   (:) = XUNDEF
+      TPPROFILER%XLWU   (:) = XUNDEF
+    END IF
+    TPPROFILER%XTKE_DISS(:,:) = XUNDEF
+!   END IF
+
+END SUBROUTINE PROFILER_ALLOCATE
 
 ! ##############################################
 SUBROUTINE STATION_ALLOCATE( TPSTATION, KSTORE )
@@ -116,9 +242,9 @@ SUBROUTINE STATION_ALLOCATE( TPSTATION, KSTORE )
 
 END SUBROUTINE STATION_ALLOCATE
 
-! ########################################
-SUBROUTINE STATION_INI_INTERP( TPSTATION )
-! ########################################
+! ##########################################
+SUBROUTINE STATPROF_INI_INTERP( TPSTATPROF )
+! ##########################################
 
   USE MODD_GRID,         ONLY: XLATORI, XLONORI
   USE MODD_PARAMETERS,   ONLY: XUNDEF
@@ -128,28 +254,28 @@ SUBROUTINE STATION_INI_INTERP( TPSTATION )
 
   IMPLICIT NONE
 
-  TYPE(TSTATIONDATA), INTENT(INOUT) :: TPSTATION
+  CLASS(TSTATPROFDATA), INTENT(INOUT) :: TPSTATPROF
 
-  IF ( TPSTATION%XLAT == XUNDEF .OR. TPSTATION%XLON == XUNDEF ) THEN
-    CMNHMSG(1) = 'Error in station position'
+  IF ( TPSTATPROF%XLAT == XUNDEF .OR. TPSTATPROF%XLON == XUNDEF ) THEN
+    CMNHMSG(1) = 'Error in station or profiler position'
     CMNHMSG(2) = 'either LATitude or LONgitude segment'
     CMNHMSG(3) = 'or I and J segment'
     CMNHMSG(4) = 'definition is not complete.'
-    CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'STATION_INI_INTERP' )
+    CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'STATPROF_INI_INTERP' )
   END IF
 
-  CALL SM_XYHAT( XLATORI,        XLONORI,        &
-                 TPSTATION%XLAT, TPSTATION%XLON, &
-                 TPSTATION%XX,   TPSTATION%XY    )
+  CALL SM_XYHAT( XLATORI,         XLONORI,         &
+                 TPSTATPROF%XLAT, TPSTATPROF%XLON, &
+                 TPSTATPROF%XX,   TPSTATPROF%XY    )
 
-END SUBROUTINE STATION_INI_INTERP
+END SUBROUTINE STATPROF_INI_INTERP
 
 ! ###############################################################################################
-SUBROUTINE STATION_POSITION( TPSTATION, PXHAT_GLOB, PYHAT_GLOB, PXHATM, PYHATM,                 &
+SUBROUTINE STATPROF_POSITION( TPSTATPROF, PXHAT_GLOB, PYHAT_GLOB, PXHATM, PYHATM,               &
                              PXHATM_PHYS_MIN, PXHATM_PHYS_MAX,PYHATM_PHYS_MIN, PYHATM_PHYS_MAX, &
                              OINSIDE, OPRESENT                                                  )
 ! ###############################################################################################
-! Subroutine to determine the position of a station on the model grid
+! Subroutine to determine the position of a station/profiler on the model grid
 ! and set the useful coefficients for data interpolation
 
   USE MODD_CONF,           ONLY: L1D
@@ -162,15 +288,17 @@ SUBROUTINE STATION_POSITION( TPSTATION, PXHAT_GLOB, PYHAT_GLOB, PXHATM, PYHATM, 
 
   IMPLICIT NONE
 
-  TYPE(TSTATIONDATA), INTENT(INOUT) :: TPSTATION
-  REAL, DIMENSION(:), INTENT(IN)    :: PXHAT_GLOB
-  REAL, DIMENSION(:), INTENT(IN)    :: PYHAT_GLOB
-  REAL, DIMENSION(:), INTENT(IN)    :: PXHATM ! mass point coordinates
-  REAL, DIMENSION(:), INTENT(IN)    :: PYHATM ! mass point coordinates
-  REAL,               INTENT(IN)    :: PXHATM_PHYS_MIN, PYHATM_PHYS_MIN  ! Minimum X coordinate of mass points in the physical domain
-  REAL,               INTENT(IN)    :: PXHATM_PHYS_MAX, PYHATM_PHYS_MAX  ! Minimum X coordinate of mass points in the physical domain
-  LOGICAL,            INTENT(OUT)   :: OINSIDE  ! True if station is inside physical domain of model
-  LOGICAL,            INTENT(OUT)   :: OPRESENT ! True if station is present on the current process
+  CLASS(TSTATPROFDATA), INTENT(INOUT) :: TPSTATPROF
+  REAL, DIMENSION(:),   INTENT(IN)    :: PXHAT_GLOB
+  REAL, DIMENSION(:),   INTENT(IN)    :: PYHAT_GLOB
+  REAL, DIMENSION(:),   INTENT(IN)    :: PXHATM ! mass point coordinates
+  REAL, DIMENSION(:),   INTENT(IN)    :: PYHATM ! mass point coordinates
+  REAL,                 INTENT(IN)    :: PXHATM_PHYS_MIN  ! Minimum X coordinate of mass points in the physical domain
+  REAL,                 INTENT(IN)    :: PYHATM_PHYS_MIN  ! Minimum Y coordinate of mass points in the physical domain
+  REAL,                 INTENT(IN)    :: PXHATM_PHYS_MAX  ! Maximum X coordinate of mass points in the physical domain
+  REAL,                 INTENT(IN)    :: PYHATM_PHYS_MAX  ! Minimum Y coordinate of mass points in the physical domain
+  LOGICAL,              INTENT(OUT)   :: OINSIDE  ! True if station/profiler is inside physical domain of model
+  LOGICAL,              INTENT(OUT)   :: OPRESENT ! True if station/profiler is present on the current process
 
   INTEGER :: IIB ! domain sizes of current process
   INTEGER :: IJB !
@@ -185,39 +313,39 @@ SUBROUTINE STATION_POSITION( TPSTATION, PXHAT_GLOB, PYHAT_GLOB, PXHATM, PYHATM, 
 
   CALL GET_INDICE_ll( IIB, IJB, IIE, IJE )
 
-  IF (       TPSTATION%XX >= PXHAT_GLOB(JPHEXT+1) .AND. TPSTATION%XX <= PXHAT_GLOB(UBOUND(PXHAT_GLOB,1)-JPHEXT+1) &
-       .AND. TPSTATION%XY >= PYHAT_GLOB(JPHEXT+1) .AND. TPSTATION%XY <= PYHAT_GLOB(UBOUND(PYHAT_GLOB,1)-JPHEXT+1) ) THEN
+  IF (       TPSTATPROF%XX >= PXHAT_GLOB(JPHEXT+1) .AND. TPSTATPROF%XX <= PXHAT_GLOB(UBOUND(PXHAT_GLOB,1)-JPHEXT+1) &
+       .AND. TPSTATPROF%XY >= PYHAT_GLOB(JPHEXT+1) .AND. TPSTATPROF%XY <= PYHAT_GLOB(UBOUND(PYHAT_GLOB,1)-JPHEXT+1) ) THEN
     OINSIDE = .TRUE.
   ELSE
     CALL GET_MODEL_NUMBER_ll(IMI)
-    WRITE( CMNHMSG(1), "( 'station ', A, ' is outside of physical domain of model', I3 )" ) TRIM(TPSTATION%CNAME), IMI
-    CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'STATION_POSITION' )
+    WRITE( CMNHMSG(1), "( 'station or profiler ', A, ' is outside of physical domain of model', I3 )" ) TRIM(TPSTATPROF%CNAME), IMI
+    CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'STATPROF_POSITION' )
  END IF
 
   ! X position
-  TPSTATION%NI_U = COUNT( XXHAT (:) <= TPSTATION%XX )
-  TPSTATION%NI_M = COUNT( PXHATM(:) <= TPSTATION%XX )
+  TPSTATPROF%NI_U = COUNT( XXHAT (:) <= TPSTATPROF%XX )
+  TPSTATPROF%NI_M = COUNT( PXHATM(:) <= TPSTATPROF%XX )
 
   ! Y position
-  TPSTATION%NJ_V = COUNT( XYHAT (:) <= TPSTATION%XY )
-  TPSTATION%NJ_M = COUNT( PYHATM(:) <= TPSTATION%XY )
+  TPSTATPROF%NJ_V = COUNT( XYHAT (:) <= TPSTATPROF%XY )
+  TPSTATPROF%NJ_M = COUNT( PYHATM(:) <= TPSTATPROF%XY )
 
-  ! Position of station according to process
-  IF (       TPSTATION%NI_U >= IIB .AND. TPSTATION%NI_U <= IIE &
-       .AND. TPSTATION%NJ_V >= IJB .AND. TPSTATION%NJ_V <= IJE ) OPRESENT = .TRUE.
+  ! Position of station/profiler according to process
+  IF (       TPSTATPROF%NI_U >= IIB .AND. TPSTATPROF%NI_U <= IIE &
+       .AND. TPSTATPROF%NJ_V >= IJB .AND. TPSTATPROF%NJ_V <= IJE ) OPRESENT = .TRUE.
   IF ( L1D ) OPRESENT = .TRUE.
 
-  ! Check if station is too near of physical domain border (outside of physical domain for mass points)
+  ! Check if station/profiler is too near of physical domain border (outside of physical domain for mass points)
   IF ( OINSIDE .AND. .NOT. L1D ) THEN
-    IF (      TPSTATION%XX < PXHATM_PHYS_MIN .OR. TPSTATION%XX > PXHATM_PHYS_MAX &
-         .OR. TPSTATION%XY < PYHATM_PHYS_MIN .OR. TPSTATION%XY > PYHATM_PHYS_MAX ) THEN
+    IF (      TPSTATPROF%XX < PXHATM_PHYS_MIN .OR. TPSTATPROF%XX > PXHATM_PHYS_MAX &
+         .OR. TPSTATPROF%XY < PYHATM_PHYS_MIN .OR. TPSTATPROF%XY > PYHATM_PHYS_MAX ) THEN
       CALL GET_MODEL_NUMBER_ll(IMI)
-      WRITE( CMNHMSG(1), "( 'station ', A, ' is outside of mass-points physical domain of model', I3 )" ) &
-             TRIM(TPSTATION%CNAME), IMI
+      WRITE( CMNHMSG(1), "( 'station or profiler ', A, ' is outside of mass-points physical domain of model', I3 )" ) &
+             TRIM(TPSTATPROF%CNAME), IMI
       CMNHMSG(2) = 'but is inside of flux-points physical domain.'
-      CMNHMSG(3) = 'Meaning: station is too close to the boundaries of physical domain.'
-      CMNHMSG(4) = '=> station disabled (not computed)'
-      CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'STATION_POSITION' )
+      CMNHMSG(3) = 'Meaning: station or profiler is too close to the boundaries of physical domain.'
+      CMNHMSG(4) = '=> station or profiler disabled (not computed)'
+      CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'STATPROF_POSITION' )
       OPRESENT = .FALSE.
       OINSIDE = .FALSE.
     END IF
@@ -226,29 +354,83 @@ SUBROUTINE STATION_POSITION( TPSTATION, PXHAT_GLOB, PYHAT_GLOB, PXHATM, PYHATM, 
   ! Computations only on correct process
   IF ( OPRESENT .AND. .NOT. L1D ) THEN
     ! Interpolation coefficient for X (mass-point)
-    TPSTATION%XXMCOEF = ( TPSTATION%XX - PXHATM(TPSTATION%NI_M) ) / ( PXHATM(TPSTATION%NI_M+1) - PXHATM(TPSTATION%NI_M) )
+    TPSTATPROF%XXMCOEF = ( TPSTATPROF%XX - PXHATM(TPSTATPROF%NI_M) ) / ( PXHATM(TPSTATPROF%NI_M+1) - PXHATM(TPSTATPROF%NI_M) )
     ! Interpolation coefficient for Y (mass-point)
-    TPSTATION%XYMCOEF = ( TPSTATION%XY - PYHATM(TPSTATION%NJ_M) ) / ( PYHATM(TPSTATION%NJ_M+1) - PYHATM(TPSTATION%NJ_M) )
+    TPSTATPROF%XYMCOEF = ( TPSTATPROF%XY - PYHATM(TPSTATPROF%NJ_M) ) / ( PYHATM(TPSTATPROF%NJ_M+1) - PYHATM(TPSTATPROF%NJ_M) )
     ! Interpolation coefficient for X (U-point)
-    TPSTATION%XXUCOEF = ( TPSTATION%XX - XXHAT(TPSTATION%NI_U) )  / ( XXHAT(TPSTATION%NI_U+1)  - XXHAT(TPSTATION%NI_U) )
+    TPSTATPROF%XXUCOEF = ( TPSTATPROF%XX - XXHAT(TPSTATPROF%NI_U) )  / ( XXHAT(TPSTATPROF%NI_U+1)  - XXHAT(TPSTATPROF%NI_U) )
     ! Interpolation coefficient for Y (V-point)
-    TPSTATION%XYVCOEF = ( TPSTATION%XY - XYHAT(TPSTATION%NJ_V) )  / ( XYHAT(TPSTATION%NJ_V+1)  - XYHAT(TPSTATION%NJ_V) )
+    TPSTATPROF%XYVCOEF = ( TPSTATPROF%XY - XYHAT(TPSTATPROF%NJ_V) )  / ( XYHAT(TPSTATPROF%NJ_V+1)  - XYHAT(TPSTATPROF%NJ_V) )
   END IF
 
   IF ( OPRESENT ) THEN
-    ! The closest K-level to the station altitude is chosen
-    JK = JPVEXT + 1
-    DO WHILE ( ( STATION_INTERP_2D( TPSTATION, XZZ(:,:,JK) ) - STATION_INTERP_2D( TPSTATION, XZZ(:,:,JPVEXT+1) ) ) < TPSTATION%XZ)
-      JK = JK + 1
-    END DO
-    ZLOW  = STATION_INTERP_2D( TPSTATION, XZZ(:,:,JK-1) ) - STATION_INTERP_2D( TPSTATION, XZZ(:,:,JPVEXT+1) )
-    ZHIGH = STATION_INTERP_2D( TPSTATION, XZZ(:,:,JK  ) ) - STATION_INTERP_2D( TPSTATION, XZZ(:,:,JPVEXT+1) )
-    !If the station is nearer from the lower level, select it
-    IF ( ( ZHIGH - TPSTATION%XZ ) > ( TPSTATION%XZ - ZLOW ) ) JK = JK - 1
-    TPSTATION%NK = JK
+    SELECT TYPE( TPSTATPROF )
+      TYPE IS( TPROFILERDATA )
+        ! Nothing to do
+
+      TYPE IS( TSTATIONDATA )
+        ! The closest K-level to the station altitude is chosen
+        JK = JPVEXT + 1
+        DO WHILE ( ( STATPROF_INTERP_2D( TPSTATPROF, XZZ(:,:,JK) ) - STATPROF_INTERP_2D( TPSTATPROF, XZZ(:,:,JPVEXT+1) ) ) &
+                   < TPSTATPROF%XZ)
+          JK = JK + 1
+        END DO
+        ZLOW  = STATPROF_INTERP_2D( TPSTATPROF, XZZ(:,:,JK-1) ) - STATPROF_INTERP_2D( TPSTATPROF, XZZ(:,:,JPVEXT+1) )
+        ZHIGH = STATPROF_INTERP_2D( TPSTATPROF, XZZ(:,:,JK  ) ) - STATPROF_INTERP_2D( TPSTATPROF, XZZ(:,:,JPVEXT+1) )
+        !If the station/profiler is nearer from the lower level, select it
+        IF ( ( ZHIGH - TPSTATPROF%XZ ) > ( TPSTATPROF%XZ - ZLOW ) ) JK = JK - 1
+        TPSTATPROF%NK = JK
+
+      CLASS DEFAULT
+        CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'STATPROF_POSITION', 'unknown type for TPSTATPROF' )
+    END SELECT
   END IF
 
-END SUBROUTINE STATION_POSITION
+END SUBROUTINE STATPROF_POSITION
+
+! ###################################
+SUBROUTINE PROFILER_ADD( TPPROFILER )
+! ###################################
+! Subroutine to add a station to the local list of profilers
+  USE MODD_PROFILER_n, ONLY: NUMBPROFILER_LOC, TPROFILERS
+
+  IMPLICIT NONE
+
+  CLASS(TSTATPROFDATA), INTENT(IN) :: TPPROFILER
+
+  INTEGER :: JS
+  TYPE(TPROFILERDATA), DIMENSION(:), POINTER :: TZPROFILERS
+
+  NUMBPROFILER_LOC = NUMBPROFILER_LOC + 1
+
+  ALLOCATE( TZPROFILERS( NUMBPROFILER_LOC ) )
+  DO JS = 1, NUMBPROFILER_LOC - 1
+    TZPROFILERS(JS) = TPROFILERS(JS)
+  END DO
+
+  !Copy fields available in TSTATPROFDATA
+  !other fields are not yet set
+  TZPROFILERS(NUMBPROFILER_LOC)%CNAME   = TPPROFILER%CNAME
+  TZPROFILERS(NUMBPROFILER_LOC)%NID     = TPPROFILER%NID
+  TZPROFILERS(NUMBPROFILER_LOC)%XX      = TPPROFILER%XX
+  TZPROFILERS(NUMBPROFILER_LOC)%XY      = TPPROFILER%XY
+  TZPROFILERS(NUMBPROFILER_LOC)%XZ      = TPPROFILER%XZ
+  TZPROFILERS(NUMBPROFILER_LOC)%XLON    = TPPROFILER%XLON
+  TZPROFILERS(NUMBPROFILER_LOC)%XLAT    = TPPROFILER%XLAT
+  TZPROFILERS(NUMBPROFILER_LOC)%NI_M    = TPPROFILER%NI_M
+  TZPROFILERS(NUMBPROFILER_LOC)%NJ_M    = TPPROFILER%NJ_M
+  TZPROFILERS(NUMBPROFILER_LOC)%NI_U    = TPPROFILER%NI_U
+  TZPROFILERS(NUMBPROFILER_LOC)%NJ_V    = TPPROFILER%NJ_V
+  TZPROFILERS(NUMBPROFILER_LOC)%XXMCOEF = TPPROFILER%XXMCOEF
+  TZPROFILERS(NUMBPROFILER_LOC)%XYMCOEF = TPPROFILER%XYMCOEF
+  TZPROFILERS(NUMBPROFILER_LOC)%XXUCOEF = TPPROFILER%XXUCOEF
+  TZPROFILERS(NUMBPROFILER_LOC)%XYVCOEF = TPPROFILER%XYVCOEF
+
+  IF ( ASSOCIATED( TPROFILERS ) ) DEALLOCATE( TPROFILERS ) !Can be done without memory leak because allocatable arrays were
+                                                           !not yet allocated (will be done in PROFILER_ALLOCATE)
+  TPROFILERS => TZPROFILERS
+
+END SUBROUTINE PROFILER_ADD
 
 ! #################################
 SUBROUTINE STATION_ADD( TPSTATION )
@@ -258,7 +440,7 @@ SUBROUTINE STATION_ADD( TPSTATION )
 
   IMPLICIT NONE
 
-  TYPE(TSTATIONDATA), INTENT(IN) :: TPSTATION
+  CLASS(TSTATPROFDATA), INTENT(IN) :: TPSTATION
 
   INTEGER :: JS
   TYPE(TSTATIONDATA), DIMENSION(:), POINTER :: TZSTATIONS
@@ -269,23 +451,42 @@ SUBROUTINE STATION_ADD( TPSTATION )
   DO JS = 1, NUMBSTAT_LOC - 1
     TZSTATIONS(JS) = TSTATIONS(JS)
   END DO
-  TZSTATIONS(NUMBSTAT_LOC) = TPSTATION
+
+  !Copy fields available in TSTATPROFDATA
+  !other fields are not yet set
+  TZSTATIONS(NUMBSTAT_LOC)%CNAME   = TPSTATION%CNAME
+  TZSTATIONS(NUMBSTAT_LOC)%NID     = TPSTATION%NID
+  TZSTATIONS(NUMBSTAT_LOC)%XX      = TPSTATION%XX
+  TZSTATIONS(NUMBSTAT_LOC)%XY      = TPSTATION%XY
+  TZSTATIONS(NUMBSTAT_LOC)%XZ      = TPSTATION%XZ
+  TZSTATIONS(NUMBSTAT_LOC)%XLON    = TPSTATION%XLON
+  TZSTATIONS(NUMBSTAT_LOC)%XLAT    = TPSTATION%XLAT
+  TZSTATIONS(NUMBSTAT_LOC)%NI_M    = TPSTATION%NI_M
+  TZSTATIONS(NUMBSTAT_LOC)%NJ_M    = TPSTATION%NJ_M
+  TZSTATIONS(NUMBSTAT_LOC)%NI_U    = TPSTATION%NI_U
+  TZSTATIONS(NUMBSTAT_LOC)%NJ_V    = TPSTATION%NJ_V
+  TZSTATIONS(NUMBSTAT_LOC)%XXMCOEF = TPSTATION%XXMCOEF
+  TZSTATIONS(NUMBSTAT_LOC)%XYMCOEF = TPSTATION%XYMCOEF
+  TZSTATIONS(NUMBSTAT_LOC)%XXUCOEF = TPSTATION%XXUCOEF
+  TZSTATIONS(NUMBSTAT_LOC)%XYVCOEF = TPSTATION%XYVCOEF
+
   IF ( ASSOCIATED( TSTATIONS ) ) DEALLOCATE( TSTATIONS ) !Can be done without memory leak because allocatable arrays were
                                                          !not yet allocated (will be done in STATION_ALLOCATE)
   TSTATIONS => TZSTATIONS
 
 END SUBROUTINE STATION_ADD
-!
-! ######################################################
-FUNCTION STATION_INTERP_2D( TPSTATION, PA ) RESULT( PB )
-! ######################################################
-  USE MODD_CONF, ONLY: L1D
+
+! ########################################################
+FUNCTION STATPROF_INTERP_2D( TPSTATPROF, PA ) RESULT( PB )
+! ########################################################
+  USE MODD_CONF,       ONLY: L1D
+  USE MODD_PARAMETERS, ONLY: XUNDEF
 
   USE MODE_MSG
 
   IMPLICIT NONE
 
-  TYPE(TSTATIONDATA),   INTENT(IN) :: TPSTATION
+  CLASS(TSTATPROFDATA), INTENT(IN) :: TPSTATPROF
   REAL, DIMENSION(:,:), INTENT(IN) :: PA
   REAL                             :: PB
 
@@ -298,32 +499,34 @@ FUNCTION STATION_INTERP_2D( TPSTATION, PA ) RESULT( PB )
     JI = 2
     JJ = 2
   ELSE
-    JI = TPSTATION%NI_M
-    JJ = TPSTATION%NJ_M
+    JI = TPSTATPROF%NI_M
+    JJ = TPSTATPROF%NJ_M
   END IF
 
   IF (       JI >= 1 .AND. JI < SIZE( PA, 1 ) &
        .AND. JJ >= 1 .AND. JJ < SIZE( PA, 2 ) ) THEN
-    PB = (1.-TPSTATION%XXMCOEF) *  (1.-TPSTATION%XYMCOEF) * PA(JI,JJ)    + &
-         (   TPSTATION%XXMCOEF) *  (1.-TPSTATION%XYMCOEF) * PA(JI+1,JJ)  + &
-         (1.-TPSTATION%XXMCOEF) *  (   TPSTATION%XYMCOEF) * PA(JI,JJ+1)  + &
-         (   TPSTATION%XXMCOEF) *  (   TPSTATION%XYMCOEF) * PA(JI+1,JJ+1)
+    PB = (1.-TPSTATPROF%XXMCOEF) *  (1.-TPSTATPROF%XYMCOEF) * PA(JI,   JJ  ) + &
+         (   TPSTATPROF%XXMCOEF) *  (1.-TPSTATPROF%XYMCOEF) * PA(JI+1, JJ  ) + &
+         (1.-TPSTATPROF%XXMCOEF) *  (   TPSTATPROF%XYMCOEF) * PA(JI,   JJ+1) + &
+         (   TPSTATPROF%XXMCOEF) *  (   TPSTATPROF%XYMCOEF) * PA(JI+1, JJ+1)
   ELSE
-    CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'STATION_INTERP_2D', 'value can not be interpolated' )
+    CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'STATPROF_INTERP_2D', 'value can not be interpolated' )
+    PB = XUNDEF
   END IF
 
-END FUNCTION STATION_INTERP_2D
+END FUNCTION STATPROF_INTERP_2D
 
-! ########################################################
-FUNCTION STATION_INTERP_2D_U( TPSTATION, PA ) RESULT( PB )
-! ########################################################
-  USE MODD_CONF, ONLY: L1D
+! ##########################################################
+FUNCTION STATPROF_INTERP_2D_U( TPSTATPROF, PA ) RESULT( PB )
+! ##########################################################
+  USE MODD_CONF,       ONLY: L1D
+  USE MODD_PARAMETERS, ONLY: XUNDEF
 
   USE MODE_MSG
 
   IMPLICIT NONE
 
-  TYPE(TSTATIONDATA),   INTENT(IN) :: TPSTATION
+  CLASS(TSTATPROFDATA), INTENT(IN) :: TPSTATPROF
   REAL, DIMENSION(:,:), INTENT(IN) :: PA
   REAL                             :: PB
 
@@ -336,32 +539,34 @@ FUNCTION STATION_INTERP_2D_U( TPSTATION, PA ) RESULT( PB )
     JI = 2
     JJ = 2
   ELSE
-    JI = TPSTATION%NI_U
-    JJ = TPSTATION%NJ_M
+    JI = TPSTATPROF%NI_U
+    JJ = TPSTATPROF%NJ_M
   END IF
 
   IF (       JI >= 1 .AND. JI < SIZE( PA, 1 ) &
        .AND. JJ >= 1 .AND. JJ < SIZE( PA, 2 ) ) THEN
-    PB = (1.-TPSTATION%XXUCOEF) *  (1.-TPSTATION%XYMCOEF) * PA(JI,JJ)    + &
-         (   TPSTATION%XXUCOEF) *  (1.-TPSTATION%XYMCOEF) * PA(JI+1,JJ)  + &
-         (1.-TPSTATION%XXUCOEF) *  (   TPSTATION%XYMCOEF) * PA(JI,JJ+1)  + &
-         (   TPSTATION%XXUCOEF) *  (   TPSTATION%XYMCOEF) * PA(JI+1,JJ+1)
+    PB = (1.-TPSTATPROF%XXUCOEF) *  (1.-TPSTATPROF%XYMCOEF) * PA(JI,   JJ  ) + &
+         (   TPSTATPROF%XXUCOEF) *  (1.-TPSTATPROF%XYMCOEF) * PA(JI+1, JJ  ) + &
+         (1.-TPSTATPROF%XXUCOEF) *  (   TPSTATPROF%XYMCOEF) * PA(JI,   JJ+1) + &
+         (   TPSTATPROF%XXUCOEF) *  (   TPSTATPROF%XYMCOEF) * PA(JI+1, JJ+1)
   ELSE
-    CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'STATION_INTERP_2D_U', 'value can not be interpolated' )
+    CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'STATPROF_INTERP_2D_U', 'value can not be interpolated' )
+    PB = XUNDEF
   END IF
 
-END FUNCTION STATION_INTERP_2D_U
+END FUNCTION STATPROF_INTERP_2D_U
 
-! ########################################################
-FUNCTION STATION_INTERP_2D_V( TPSTATION, PA ) RESULT( PB )
-! ########################################################
-  USE MODD_CONF, ONLY: L1D
+! ##########################################################
+FUNCTION STATPROF_INTERP_2D_V( TPSTATPROF, PA ) RESULT( PB )
+! ##########################################################
+  USE MODD_CONF,       ONLY: L1D
+  USE MODD_PARAMETERS, ONLY: XUNDEF
 
   USE MODE_MSG
 
   IMPLICIT NONE
 
-  TYPE(TSTATIONDATA),   INTENT(IN) :: TPSTATION
+  CLASS(TSTATPROFDATA), INTENT(IN) :: TPSTATPROF
   REAL, DIMENSION(:,:), INTENT(IN) :: PA
   REAL                             :: PB
 
@@ -374,20 +579,149 @@ FUNCTION STATION_INTERP_2D_V( TPSTATION, PA ) RESULT( PB )
     JI = 2
     JJ = 2
   ELSE
-    JI = TPSTATION%NI_M
-    JJ = TPSTATION%NJ_V
+    JI = TPSTATPROF%NI_M
+    JJ = TPSTATPROF%NJ_V
   END IF
 
   IF (       JI >= 1 .AND. JI < SIZE( PA, 1 ) &
        .AND. JJ >= 1 .AND. JJ < SIZE( PA, 2 ) ) THEN
-    PB = (1.-TPSTATION%XXMCOEF) *  (1.-TPSTATION%XYVCOEF) * PA(JI,JJ)    + &
-         (   TPSTATION%XXMCOEF) *  (1.-TPSTATION%XYVCOEF) * PA(JI+1,JJ)  + &
-         (1.-TPSTATION%XXMCOEF) *  (   TPSTATION%XYVCOEF) * PA(JI,JJ+1)  + &
-         (   TPSTATION%XXMCOEF) *  (   TPSTATION%XYVCOEF) * PA(JI+1,JJ+1)
+    PB = (1.-TPSTATPROF%XXMCOEF) *  (1.-TPSTATPROF%XYVCOEF) * PA(JI,   JJ  ) + &
+         (   TPSTATPROF%XXMCOEF) *  (1.-TPSTATPROF%XYVCOEF) * PA(JI+1, JJ  ) + &
+         (1.-TPSTATPROF%XXMCOEF) *  (   TPSTATPROF%XYVCOEF) * PA(JI,   JJ+1) + &
+         (   TPSTATPROF%XXMCOEF) *  (   TPSTATPROF%XYVCOEF) * PA(JI+1, JJ+1)
   ELSE
-    CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'STATION_INTERP_2D_V', 'value can not be interpolated' )
+    CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'STATPROF_INTERP_2D_V', 'value can not be interpolated' )
+    PB = XUNDEF
   END IF
 
-END FUNCTION STATION_INTERP_2D_V
+END FUNCTION STATPROF_INTERP_2D_V
+
+! ########################################################
+FUNCTION STATPROF_INTERP_3D( TPSTATPROF, PA ) RESULT( PB )
+! ########################################################
+  USE MODD_CONF,       ONLY: L1D
+  USE MODD_PARAMETERS, ONLY: XUNDEF
+
+  USE MODE_MSG
+
+  IMPLICIT NONE
+
+  CLASS(TSTATPROFDATA),   INTENT(IN) :: TPSTATPROF
+  REAL, DIMENSION(:,:,:), INTENT(IN) :: PA
+  REAL, DIMENSION(SIZE(PA,3))        :: PB
+
+  INTEGER :: JI, JJ, JK
+
+  IF ( SIZE( PA, 1 ) == 2 ) THEN
+    JI = 1
+    JJ = 1
+  ELSE IF ( L1D ) THEN
+    JI = 2
+    JJ = 2
+  ELSE
+    JI = TPSTATPROF%NI_M
+    JJ = TPSTATPROF%NJ_M
+  END IF
+
+  IF (       JI >= 1 .AND. JI < SIZE( PA, 1 ) &
+       .AND. JJ >= 1 .AND. JJ < SIZE( PA, 2 ) ) THEN
+    DO JK = 1, SIZE( PA, 3 )
+      IF ( PA(JI, JJ,   JK) /= XUNDEF .AND. PA(JI+1, JJ,   JK) /= XUNDEF .AND. &
+           PA(JI, JJ+1, JK) /= XUNDEF .AND. PA(JI+1, JJ+1, JK) /= XUNDEF       ) THEN
+        PB(JK) = (1.-TPSTATPROF%XXMCOEF) *  (1.-TPSTATPROF%XYMCOEF) * PA(JI,   JJ,   JK) + &
+                 (   TPSTATPROF%XXMCOEF) *  (1.-TPSTATPROF%XYMCOEF) * PA(JI+1, JJ,   JK) + &
+                 (1.-TPSTATPROF%XXMCOEF) *  (   TPSTATPROF%XYMCOEF) * PA(JI,   JJ+1, JK) + &
+                 (   TPSTATPROF%XXMCOEF) *  (   TPSTATPROF%XYMCOEF) * PA(JI+1, JJ+1, JK)
+      ELSE
+        PB(JK) = XUNDEF
+      END IF
+    END DO
+  ELSE
+    CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'STATPROF_INTERP_3D', 'value can not be interpolated' )
+    PB(:) = XUNDEF
+  END IF
+
+END FUNCTION STATPROF_INTERP_3D
+
+! ##########################################################
+FUNCTION STATPROF_INTERP_3D_U( TPSTATPROF, PA ) RESULT( PB )
+! ##########################################################
+  USE MODD_CONF,       ONLY: L1D
+  USE MODD_PARAMETERS, ONLY: XUNDEF
+
+  USE MODE_MSG
+
+  IMPLICIT NONE
+
+  CLASS(TSTATPROFDATA),   INTENT(IN) :: TPSTATPROF
+  REAL, DIMENSION(:,:,:), INTENT(IN) :: PA
+  REAL, DIMENSION(SIZE(PA,3))        :: PB
+
+  INTEGER :: JI, JJ
+
+  IF ( SIZE( PA, 1 ) == 2 ) THEN
+    JI = 1
+    JJ = 1
+  ELSE IF ( L1D ) THEN
+    JI = 2
+    JJ = 2
+  ELSE
+    JI = TPSTATPROF%NI_U
+    JJ = TPSTATPROF%NJ_M
+  END IF
+
+  IF (       JI >= 1 .AND. JI < SIZE( PA, 1 ) &
+       .AND. JJ >= 1 .AND. JJ < SIZE( PA, 2 ) ) THEN
+    PB(:) = (1.-TPSTATPROF%XXUCOEF) *  (1.-TPSTATPROF%XYMCOEF) * PA(JI,   JJ,   :) + &
+            (   TPSTATPROF%XXUCOEF) *  (1.-TPSTATPROF%XYMCOEF) * PA(JI+1, JJ,   :) + &
+            (1.-TPSTATPROF%XXUCOEF) *  (   TPSTATPROF%XYMCOEF) * PA(JI,   JJ+1, :) + &
+            (   TPSTATPROF%XXUCOEF) *  (   TPSTATPROF%XYMCOEF) * PA(JI+1, JJ+1, :)
+  ELSE
+    CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'STATPROF_INTERP_3D_U', 'value can not be interpolated' )
+    PB = XUNDEF
+  END IF
+
+END FUNCTION STATPROF_INTERP_3D_U
+
+! ##########################################################
+FUNCTION STATPROF_INTERP_3D_V( TPSTATPROF, PA ) RESULT( PB )
+! ##########################################################
+  USE MODD_CONF,       ONLY: L1D
+  USE MODD_PARAMETERS, ONLY: XUNDEF
+
+  USE MODE_MSG
+
+  IMPLICIT NONE
+
+  CLASS(TSTATPROFDATA),   INTENT(IN) :: TPSTATPROF
+  REAL, DIMENSION(:,:,:), INTENT(IN) :: PA
+  REAL, DIMENSION(SIZE(PA,3))        :: PB
+
+  INTEGER :: JI, JJ
+
+  IF ( SIZE( PA, 1 ) == 2 ) THEN
+    JI = 1
+    JJ = 1
+  ELSE IF ( L1D ) THEN
+    JI = 2
+    JJ = 2
+  ELSE
+    JI = TPSTATPROF%NI_M
+    JJ = TPSTATPROF%NJ_V
+  END IF
+
+  IF (       JI >= 1 .AND. JI < SIZE( PA, 1 ) &
+       .AND. JJ >= 1 .AND. JJ < SIZE( PA, 2 ) ) THEN
+    PB(:) = (1.-TPSTATPROF%XXMCOEF) *  (1.-TPSTATPROF%XYVCOEF) * PA(JI,   JJ,   :) + &
+            (   TPSTATPROF%XXMCOEF) *  (1.-TPSTATPROF%XYVCOEF) * PA(JI+1, JJ,   :) + &
+            (1.-TPSTATPROF%XXMCOEF) *  (   TPSTATPROF%XYVCOEF) * PA(JI,   JJ+1, :) + &
+            (   TPSTATPROF%XXMCOEF) *  (   TPSTATPROF%XYVCOEF) * PA(JI+1, JJ+1, :)
+  ELSE
+    CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'STATPROF_INTERP_3D_V', 'value can not be interpolated' )
+    PB = XUNDEF
+  END IF
+
+END FUNCTION STATPROF_INTERP_3D_V
+
 
 END MODULE MODE_STATPROF_TOOLS

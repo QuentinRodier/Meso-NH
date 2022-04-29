@@ -1456,7 +1456,7 @@ use modd_les_n,      only: nles_dtcount, nles_mean_end, nles_mean_start, nles_me
                            nles_times, nspectra_ni, nspectra_nj, tles_dates, xles_times
 use modd_netcdf,     only: tdimnc
 use modd_parameters, only: jphext, JPVEXT
-use modd_profiler_n, only: lprofiler, tprofiler
+use modd_profiler_n, only: lprofiler, tprofilers_time
 use modd_series,     only: lseries
 use modd_series_n,   only: nsnbstept, tpsdates
 use modd_station_n,  only: lstation, tstations_time
@@ -1837,7 +1837,7 @@ if ( tpfile%lmaster ) then
 
     !Coordinates for the number of profiler times
     if ( lprofiler ) &
-      call Write_time_coord( tpfile%tncdims%tdims(NMNHDIM_PROFILER_TIME), 'time axis for profilers', tprofiler%tpdates )
+      call Write_time_coord( tpfile%tncdims%tdims(NMNHDIM_PROFILER_TIME), 'time axis for profilers', tprofilers_time%tpdates )
 
     !Coordinates for the number of station times
     if ( lstation ) &

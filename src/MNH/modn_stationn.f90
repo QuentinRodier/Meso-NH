@@ -37,7 +37,6 @@ USE MODD_ALLSTATION_n, ONLY:&
         CFILE_STAT_n    =>CFILE_STAT    ,&
         LDIAG_SURFRAD_n =>LDIAG_SURFRAD
 USE MODD_PARAMETERS, ONLY: NFILENAMELGTMAX, NSTATPROFNAMELGTMAX
-USE MODD_STATION_n
 !
 !-----------------------------------------------------------------------------
 !

@@ -278,7 +278,7 @@ use modd_les_n,         only: nles_times, nspectra_ni, nspectra_nj
 use modd_nsv,           only: nsv
 USE MODD_PARAMETERS_ll, ONLY: JPHEXT, JPVEXT
 use modd_param_n,       only: crad
-use modd_profiler_n,    only: lprofiler, tprofiler
+use modd_profiler_n,    only: lprofiler, tprofilers_time
 use modd_radiations_n,  only: nlwb_mnh, nswb_mnh
 use modd_series,        only: lseries
 use modd_series_n,      only: nsnbstept
@@ -423,7 +423,7 @@ if ( tpfile%ctype == 'MNHDIACHRONIC' ) then
 
   !Dimension for the number of profiler times
   if ( lprofiler ) then
-    iprof = Nint ( ( xseglen - dyn_model(1)%xtstep ) / tprofiler%step ) + 1
+    iprof = Nint ( ( xseglen - dyn_model(1)%xtstep ) / tprofilers_time%xtstep ) + 1
     call IO_Add_dim_nc4( tpfile, NMNHDIM_PROFILER_TIME, 'time_profiler', iprof )
   end if
 
