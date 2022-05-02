@@ -328,7 +328,7 @@ IF( IGRIM>0 ) THEN
                            - ZZW1(:,1)              )
 
       ZZW1(:,3) = MIN( ZRSS(:),                         &
-                       XSRIMCG * XLBS * ZRST(:) * (1.0 - ZZW(:))/PTSTEP )
+                       XSRIMCG * XNS * ZRST(:) * (1.0 - ZZW(:))/PTSTEP )
 
       ZRCS(:) = ZRCS(:) - ZZW1(:,2)
       ZRSS(:) = ZRSS(:) - ZZW1(:,3)

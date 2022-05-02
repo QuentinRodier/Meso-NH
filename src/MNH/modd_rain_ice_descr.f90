@@ -72,7 +72,7 @@ REAL,SAVE :: XALPHAC,XNUC,XALPHAC2,XNUC2, XLBEXC      ! Cloud droplet  distribut
 REAL,DIMENSION(2), SAVE :: XLBC ! Cloud droplet distribution parameters
 REAL,SAVE :: XALPHAR,XNUR,XLBEXR,XLBR ! Raindrop       distribution parameters
 REAL,SAVE :: XALPHAI,XNUI,XLBEXI,XLBI ! Cloud ice      distribution parameters
-REAL,SAVE :: XALPHAS,XNUS,XLBEXS,XLBS ! Snow/agg.      distribution parameters
+REAL,SAVE :: XALPHAS,XNUS,XLBEXS,XLBS,XNS ! Snow/agg.      distribution parameters
 REAL,SAVE :: XALPHAG,XNUG,XLBEXG,XLBG ! Graupel        distribution parameters 
 REAL,SAVE :: XALPHAH,XNUH,XLBEXH,XLBH ! Hail           distribution parameters
 !
