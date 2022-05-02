@@ -1816,7 +1816,7 @@ if ( lbu_enable ) then
     call Budget_store_add( tbudgets(idx), 'CORR2',  ztot_ci_corr2(:, :, :) * zrhodjontstep(:, :, :) )
 
     do ii = 1, nmod_ifn
-      idx = nsv_lima_ifn_nucl + ii - 1
+      idx = NBUDGET_SV1 - 1 + nsv_lima_ifn_nucl + ii - 1
       call Budget_store_add( tbudgets(idx), 'IMLT', ztot_ifnn_imlt(:, :, :, ii) * zrhodjontstep(:, :, :) )
     end do
   end if

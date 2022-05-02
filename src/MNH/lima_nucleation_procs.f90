@@ -310,38 +310,38 @@ IF (LCOLD .AND. LNUCL .AND. NMOM_I.EQ.1) THEN
                            PTSTEP, PTHT, PPABST, PRHODJ, PRHODREF, PRVT, PRCT, PRRT, PRIT, PRST, PRGT,               &
                            ZCIT, PEXNREF, ZTHS, ZRVS, ZRIS, ZT, ZRHT)
   !
-  Z_TH_HIND=ZTHS*PTSTEP-PTHT
-  Z_RI_HIND=ZRIS*PTSTEP-PRIT
-  Z_CI_HIND=ZCIT-PCIT
-  PCIT=ZCIT
-  PRIT=ZRIS*PTSTEP
-  PTHT=ZTHS*PTSTEP
-  Z_TH_HINC=0.
-  Z_RC_HINC=0.
-  Z_CC_HINC=0.
-  !
-  if ( lbu_enable ) then
-    if ( lbudget_th ) call Budget_store_add( tbudgets(NBUDGET_TH), 'HIND',  z_th_hind(:, :, :) * prhodj(:, :, :) / ptstep )
-    if ( lbudget_rv ) call Budget_store_add( tbudgets(NBUDGET_RV), 'HIND', -z_ri_hind(:, :, :) * prhodj(:, :, :) / ptstep )
-    if ( lbudget_ri ) call Budget_store_add( tbudgets(NBUDGET_RI), 'HIND',  z_ri_hind(:, :, :) * prhodj(:, :, :) / ptstep )
-    if ( lbudget_sv ) then
-      call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'HIND', z_ci_hind(:, :, :) * prhodj(:, :, :) / ptstep )
-      if (nmod_ifn > 0 ) &
-        call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ifn_nucl), 'HIND', &
-                               z_ci_hind(:, :, :) * prhodj(:, :, :) / ptstep )
-    end if
-
-    if ( lbudget_th ) call Budget_store_add( tbudgets(NBUDGET_TH), 'HINC',  z_th_hinc(:, :, :) * prhodj(:, :, :) / ptstep )
-    if ( lbudget_rc ) call Budget_store_add( tbudgets(NBUDGET_RC), 'HINC',  z_rc_hinc(:, :, :) * prhodj(:, :, :) / ptstep )
-    if ( lbudget_ri ) call Budget_store_add( tbudgets(NBUDGET_RI), 'HINC', -z_rc_hinc(:, :, :) * prhodj(:, :, :) / ptstep )
-    if ( lbudget_sv ) then
-      call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'HINC',  z_cc_hinc(:, :, :) * prhodj(:, :, :) / ptstep )
-      call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'HINC', -z_cc_hinc(:, :, :) * prhodj(:, :, :) / ptstep )
-      if (nmod_ifn > 0 ) &
-        call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ifn_nucl), 'HINC', &
-                               -z_cc_hinc(:, :, :) * prhodj(:, :, :) / ptstep )
-    end if
-  end if
+!  Z_TH_HIND=ZTHS*PTSTEP-PTHT
+!  Z_RI_HIND=ZRIS*PTSTEP-PRIT
+!  Z_CI_HIND=ZCIT-PCIT
+!  PCIT=ZCIT
+!  PRIT=ZRIS*PTSTEP
+!  PTHT=ZTHS*PTSTEP
+!  Z_TH_HINC=0.
+!  Z_RC_HINC=0.
+!  Z_CC_HINC=0.
+!  !
+!  if ( lbu_enable ) then
+!    if ( lbudget_th ) call Budget_store_add( tbudgets(NBUDGET_TH), 'HIND',  z_th_hind(:, :, :) * prhodj(:, :, :) / ptstep )
+!    if ( lbudget_rv ) call Budget_store_add( tbudgets(NBUDGET_RV), 'HIND', -z_ri_hind(:, :, :) * prhodj(:, :, :) / ptstep )
+!    if ( lbudget_ri ) call Budget_store_add( tbudgets(NBUDGET_RI), 'HIND',  z_ri_hind(:, :, :) * prhodj(:, :, :) / ptstep )
+!    if ( lbudget_sv ) then
+!      call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'HIND', z_ci_hind(:, :, :) * prhodj(:, :, :) / ptstep )
+!      if (nmod_ifn > 0 ) &
+!        call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ifn_nucl), 'HIND', &
+!                               z_ci_hind(:, :, :) * prhodj(:, :, :) / ptstep )
+!    end if
+!
+!    if ( lbudget_th ) call Budget_store_add( tbudgets(NBUDGET_TH), 'HINC',  z_th_hinc(:, :, :) * prhodj(:, :, :) / ptstep )
+!    if ( lbudget_rc ) call Budget_store_add( tbudgets(NBUDGET_RC), 'HINC',  z_rc_hinc(:, :, :) * prhodj(:, :, :) / ptstep )
+!    if ( lbudget_ri ) call Budget_store_add( tbudgets(NBUDGET_RI), 'HINC', -z_rc_hinc(:, :, :) * prhodj(:, :, :) / ptstep )
+!    if ( lbudget_sv ) then
+!      call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'HINC',  z_cc_hinc(:, :, :) * prhodj(:, :, :) / ptstep )
+!      call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'HINC', -z_cc_hinc(:, :, :) * prhodj(:, :, :) / ptstep )
+!      if (nmod_ifn > 0 ) &
+!        call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ifn_nucl), 'HINC', &
+!                               -z_cc_hinc(:, :, :) * prhodj(:, :, :) / ptstep )
+!    end if
+!  end if
 END IF
 !
 !-------------------------------------------------------------------------------

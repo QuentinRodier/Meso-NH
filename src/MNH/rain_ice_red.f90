@@ -527,8 +527,8 @@ REAL, DIMENSION(SIZE(PTHT,1),SIZE(PTHT,2),SIZE(PTHT,3)) :: &
 !
 !-------------------------------------------------------------------------------
 if ( lbu_enable ) then
-  if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'HENU', pths(:, :, :) * prhodj(:, :, :) )
-  if ( lbudget_rv ) call Budget_store_init( tbudgets(NBUDGET_RV), 'HENU', prvs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'HIN', pths(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rv ) call Budget_store_init( tbudgets(NBUDGET_RV), 'HIN', prvs(:, :, :) * prhodj(:, :, :) )
 end if
 !-------------------------------------------------------------------------------
 !
@@ -1244,10 +1244,10 @@ DO JK = 1, KKT
 ENDDO
 !
 if ( lbu_enable ) then
-  !Note: there is an other contribution for HENU later
-  if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'HENU', pths(:, :, :) * prhodj(:, :, :) )
-  if ( lbudget_rv ) call Budget_store_end( tbudgets(NBUDGET_RV), 'HENU', prvs(:, :, :) * prhodj(:, :, :) )
-  if ( lbudget_ri ) call Budget_store_add( tbudgets(NBUDGET_RI), 'HENU', zz_rvheni(:, :, :) * prhodj(:, :, :) )
+  !Note: there is an other contribution for HIN later
+  if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'HIN', pths(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rv ) call Budget_store_end( tbudgets(NBUDGET_RV), 'HIN', prvs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_ri ) call Budget_store_add( tbudgets(NBUDGET_RI), 'HIN', zz_rvheni(:, :, :) * prhodj(:, :, :) )
 end if
 !-------------------------------------------------------------------------------
 !
@@ -1353,9 +1353,9 @@ IF(LBU_ENABLE) THEN
   DO JL=1,IMICRO
     ZW(I1(JL), I2(JL), I3(JL)) = ZTOT_RVHENI(JL) * ZINV_TSTEP
   END DO
-  if ( lbudget_th ) call Budget_store_add( tbudgets(NBUDGET_TH), 'HENU',  zw(:, :, :) * zz_lsfact(:, :, :) * prhodj(:, :, :) )
-  if ( lbudget_rv ) call Budget_store_add( tbudgets(NBUDGET_RV), 'HENU', -zw(:, :, :)                      * prhodj(:, :, :) )
-  if ( lbudget_ri ) call Budget_store_add( tbudgets(NBUDGET_RI), 'HENU',  zw(:, :, :)                      * prhodj(:, :, :) )
+  if ( lbudget_th ) call Budget_store_add( tbudgets(NBUDGET_TH), 'HIN',  zw(:, :, :) * zz_lsfact(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rv ) call Budget_store_add( tbudgets(NBUDGET_RV), 'HIN', -zw(:, :, :)                      * prhodj(:, :, :) )
+  if ( lbudget_ri ) call Budget_store_add( tbudgets(NBUDGET_RI), 'HIN',  zw(:, :, :)                      * prhodj(:, :, :) )
 
   ZW(:,:,:) = 0.
   DO JL=1,IMICRO
