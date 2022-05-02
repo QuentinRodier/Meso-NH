@@ -101,7 +101,7 @@ USE MODD_PARAM_C2R2,      ONLY : YALPHAC=>XALPHAC,YNUC=>XNUC, &
                                  YALPHAR=>XALPHAR,YNUR=>XNUR
 USE MODD_PARAM_ICE,        ONLY: WSNOW_T=>LSNOW_T
 USE MODD_RAIN_ICE_DESCR,  ONLY : XCCR, WLBEXR=>XLBEXR, XLBR, &
-                                 XCCS, XCXS,   XLBEXS, XLBS, &
+                                 XCCS, XCXS,   XLBEXS, XLBS, XNS, &
                                  XCCG, XCXG,   XLBEXG, XLBG, &
                                  XCCH, XCXH,   XLBEXH, XLBH, &
                                  WRTMIN=>XRTMIN
@@ -114,7 +114,7 @@ USE MODD_PARAM_LIMA,      ONLY : URTMIN=>XRTMIN, UCTMIN=>XCTMIN, &
                                  UALPHAI=>XALPHAI,UNUI=>XNUI, &
                                  USNOW_T=>LSNOW_T
 USE MODD_PARAM_LIMA_COLD, ONLY : UCCS=>XCCS, UCXS=>XCXS, ULBEXS=>XLBEXS, & 
-                                                         ULBS=>XLBS,     &
+                                                ULBS=>XLBS, UNS=>XNS,    &
                                  XLBDAS_MAX,XLBDAS_MIN,  UBS=>XBS
 USE MODD_PARAM_LIMA_MIXED,ONLY : UCCG=>XCCG, UCXG=>XCXG, ULBEXG=>XLBEXG, &
                                                          ULBG=>XLBG
@@ -220,7 +220,7 @@ REAL                :: ZLBEXR
 !
 INTEGER :: JL
 REAL :: ZALPHAC, ZNUC, ZALPHAR, ZNUR, ZALPHAI, ZNUI
-REAL :: ZCCS, ZCXS, ZLBEXS, ZLBS
+REAL :: ZCCS, ZCXS, ZLBEXS, ZLBS, ZNS
 REAL :: ZCCG, ZCXG, ZLBEXG, ZLBG
 ! 
 ! -----------------------------------------------------------------------------
@@ -273,6 +273,7 @@ SELECT CASE ( HCLOUD )
     ZCXS    = XCXS
     ZLBEXS  = XLBEXS
     ZLBS    = XLBS
+    ZNS     = XNS
     ZCCG    = XCCG
     ZCXG    = XCXG
     ZLBEXG  = XLBEXG
@@ -315,6 +316,7 @@ SELECT CASE ( HCLOUD )
       ZCXS    = UCXS 
       ZLBEXS  = ULBEXS 
       ZLBS    = ULBS
+      ZNS     = UNS
       ZCCG    = UCCG
       ZCXG    = UCXG 
       ZLBEXG  = ULBEXG
@@ -535,7 +537,7 @@ SELECT CASE ( HCLOUD )
                ELSE
                   ZLBDAS = MAX(MIN(XLBDAS_MAX, 10**(6.226-0.0106*(PT(JI,JJ,JK)+273.15))),XLBDAS_MIN)
                END IF
-               ZCONC=ZLBS*ZIWC*ZLBDAS**UBS
+               ZCONC=ZNS*ZIWC*ZLBDAS**UBS
             ELSE
                ZLBDAS  = ZLBS*(ZIWC)**ZLBEXS
                ZCONC   = ZCCS*(ZLBDAS)**ZCXS

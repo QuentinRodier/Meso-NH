@@ -373,7 +373,7 @@ IF( IGRIM>0 ) THEN
                            * PRHODREF(:)**(-XCEXVT+1) &
                            - ZZW1(:,1)              )
     ZZW1(:,3) = MIN( PRSS1D(:),                         &
-                     XSRIMCG * XLBS * PRST1D(:) * (1.0 - ZZW(:))/PTSTEP )
+                     XSRIMCG * XNS * PRST1D(:) * (1.0 - ZZW(:))/PTSTEP )
     PRCS1D(:) = PRCS1D(:) - ZZW1(:,2)
     PRSS1D(:) = PRSS1D(:) - ZZW1(:,3)
     PRGS1D(:) = PRGS1D(:) + ZZW1(:,2) + ZZW1(:,3)

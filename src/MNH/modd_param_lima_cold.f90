@@ -47,7 +47,7 @@ IMPLICIT NONE
 !                                                distribution law
 !
 REAL,SAVE :: XLBEXI,XLBI              ! Prist. ice     distribution parameters
-REAL,SAVE :: XLBEXS,XLBS              ! Snow/agg.      distribution parameters
+REAL,SAVE :: XLBEXS,XLBS,XNS          ! Snow/agg.      distribution parameters
 !
 REAL,SAVE :: XAI,XBI,XC_I,XDI         ,XF0I,XF2I,XC1I ! Cloud ice      charact.
 REAL,SAVE ::                           XF0IS,XF1IS    ! (large Di vent. coef.)

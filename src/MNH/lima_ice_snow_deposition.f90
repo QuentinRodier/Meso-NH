@@ -86,7 +86,7 @@ SUBROUTINE LIMA_ICE_SNOW_DEPOSITION (PTSTEP, LDCOMPUTE,                        &
 !              ------------
 !
 USE MODD_PARAM_LIMA,      ONLY : XRTMIN, XCTMIN, XALPHAI, XALPHAS, XNUI, XNUS
-USE MODD_PARAM_LIMA_COLD, ONLY : XCXS, XCCS, XLBS, XBS, &
+USE MODD_PARAM_LIMA_COLD, ONLY : XCXS, XNS, XBS, &
                                  XLBDAS_MAX, XDSCNVI_LIM, XLBDASCNVI_MAX,     &
                                  XC0DEPSI, XC1DEPSI, XR0DEPSI, XR1DEPSI,      &
                                  XSCFAC, X1DEPS, X0DEPS, XEX1DEPS, XEX0DEPS,  &
@@ -167,7 +167,7 @@ WHERE( GMICRO )
    WHERE ( PLBDS(:)<XLBDASCNVI_MAX .AND. (PRST(:)>XRTMIN(5)) &
                                    .AND. (PSSI(:)<0.0)       )
       ZZW(:) = (PLBDS(:)*XDSCNVI_LIM)**(XALPHAS)
-      ZZX(:) = ( -PSSI(:)/PAI(:) ) * (XLBS*PRST(:)*PLBDS(:)**XBS) * (ZZW(:)**XNUS) * EXP(-ZZW(:))
+      ZZX(:) = ( -PSSI(:)/PAI(:) ) * (XNS*PRST(:)*PLBDS(:)**XBS) * (ZZW(:)**XNUS) * EXP(-ZZW(:))
 !
       ZZW(:) = ( XR0DEPSI+XR1DEPSI*PCJ(:) )*ZZX(:)
 !

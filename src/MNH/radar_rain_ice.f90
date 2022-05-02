@@ -103,7 +103,7 @@ USE MODD_RAIN_ICE_DESCR, ONLY: XALPHAR_I=>XALPHAR,XNUR_I=>XNUR,XLBEXR_I=>XLBEXR,
                                XLBC_I=>XLBC,XBC_I=>XBC,XAC_I=>XAC,&
                                XALPHAC2_I=>XALPHAC2,XNUC2_I=>XNUC2,&
                                XALPHAS_I=>XALPHAS,XNUS_I=>XNUS,XLBEXS_I=>XLBEXS,&
-                               XLBS_I=>XLBS,XCCS_I=>XCCS,XAS_I=>XAS,XBS_I=>XBS,XCXS_I=>XCXS,&
+                               XLBS_I=>XLBS,XCCS_I=>XCCS,XNS_I=>XNS,XAS_I=>XAS,XBS_I=>XBS,XCXS_I=>XCXS,&
                                XALPHAG_I=>XALPHAG,XNUG_I=>XNUG,XDG_I=>XDG,XLBEXG_I=>XLBEXG,&
                                XLBG_I=>XLBG,XCCG_I=>XCCG,XAG_I=>XAG,XBG_I=>XBG,XCXG_I=>XCXG,XCG_I=>XCG,&
                                XALPHAI_I=>XALPHAI,XNUI_I=>XNUI,XDI_I=>XDI,XLBEXI_I=>XLBEXI,&
@@ -114,7 +114,7 @@ USE MODD_RAIN_ICE_DESCR, ONLY: XALPHAR_I=>XALPHAR,XNUR_I=>XNUR,XLBEXR_I=>XLBEXR,
 USE MODD_PARAM_LIMA_WARM, ONLY: XLBEXR_L=>XLBEXR,XLBR_L=>XLBR,XBR_L=>XBR,XAR_L=>XAR,&
                                 XBC_L=>XBC,XAC_L=>XAC,XCR_L=>XCR,XDR_L=>XDR
 USE MODD_PARAM_LIMA_COLD, ONLY: XDI_L=>XDI,XLBEXI_L=>XLBEXI,XLBI_L=>XLBI,XAI_L=>XAI,XBI_L=>XBI,XC_I_L=>XC_I,&
-                                XLBEXS_L=>XLBEXS,XLBS_L=>XLBS,XCCS_L=>XCCS,&
+                                XLBEXS_L=>XLBEXS,XLBS_L=>XLBS,XCCS_L=>XCCS,XNS_L=>XNS,&
                                 XAS_L=>XAS,XBS_L=>XBS,XCXS_L=>XCXS,XCS_L=>XCS,XDS_L=>XDS,&
                                 XLBDAS_MIN,XLBDAS_MAX
 
@@ -329,8 +329,7 @@ END IF
 !               ---------------
 !
 IF (SIZE(PRT,4) >= 5) THEN
-   IF ( (CCLOUD=='LIMA' .AND. LSNOW_T_L) .OR. &
-        (CCLOUD=='ICE3' .AND. LSNOW_T_I) ) THEN
+   IF ( (CCLOUD=='LIMA' .AND. LSNOW_T_L) ) THEN
     ZDMELT_FACT = ( (6.0*XAS_L)/(XPI*XRHOLW) )**(2.0)
     ZEXP = 2.0*XBS_L
     WHERE(PTEMP(:,:,:)>-10. .AND. PRT(:,:,:,5).GT.XRTMIN_L(5))
@@ -339,12 +338,29 @@ IF (SIZE(PRT,4) >= 5) THEN
     WHERE(PTEMP(:,:,:)<=-10 .AND. PRT(:,:,:,5).GT.XRTMIN_L(5))
        ZLBDA(:,:,:) = MAX(MIN(XLBDAS_MAX, 10**(6.226-0.0106*(PTEMP(:,:,:)+273.15))),XLBDAS_MIN)
     END WHERE
-    ZN(:,:,:)=XLBS_L*PRHODREF(:,:,:)*PRT(:,:,:,5)*ZLBDA(:,:,:)**XBS_L
+    ZN(:,:,:)=XNS_L*PRHODREF(:,:,:)*PRT(:,:,:,5)*ZLBDA(:,:,:)**XBS_L
     WHERE( PRT(:,:,:,5).GT.XRTMIN_L(5) )
       ZW(:,:,:) = ZEQICE*ZDMELT_FACT                                             &
                   *1.E18*ZN(:,:,:)*(ZLBDA(:,:,:)**(-ZEXP))*MOMG(XALPHAS_L,XNUS_L,ZEXP)
       PVDOP(:,:,:) = PVDOP(:,:,:)+ZEQICE*ZDMELT_FACT*MOMG(XALPHAS_L,XNUS_L,ZEXP+XDS_L) &
                      *1.E18*ZN(:,:,:)*XCS_L*(ZLBDA(:,:,:)**(-ZEXP-XDS_L))
+      PRARE(:,:,:) = PRARE(:,:,:) + ZW(:,:,:)
+    END WHERE
+   ELSEIF ( (CCLOUD=='ICE3' .AND. LSNOW_T_I) ) THEN
+    ZDMELT_FACT = ( (6.0*XAS_I)/(XPI*XRHOLW) )**(2.0)
+    ZEXP = 2.0*XBS_I
+    WHERE(PTEMP(:,:,:)>-10. .AND. PRT(:,:,:,5).GT.XRTMIN_I(5))
+       ZLBDA(:,:,:) = MAX(MIN(XLBDAS_MAX, 10**(14.554-0.0423*(PTEMP(:,:,:)+273.15))),XLBDAS_MIN)
+    END WHERE
+    WHERE(PTEMP(:,:,:)<=-10 .AND. PRT(:,:,:,5).GT.XRTMIN_I(5))
+       ZLBDA(:,:,:) = MAX(MIN(XLBDAS_MAX, 10**(6.226-0.0106*(PTEMP(:,:,:)+273.15))),XLBDAS_MIN)
+    END WHERE
+    ZN(:,:,:)=XNS_I*PRHODREF(:,:,:)*PRT(:,:,:,5)*ZLBDA(:,:,:)**XBS_I
+    WHERE( PRT(:,:,:,5).GT.XRTMIN_I(5) )
+      ZW(:,:,:) = ZEQICE*ZDMELT_FACT                                             &
+                  *1.E18*ZN(:,:,:)*(ZLBDA(:,:,:)**(-ZEXP))*MOMG(XALPHAS_I,XNUS_I,ZEXP)
+      PVDOP(:,:,:) = PVDOP(:,:,:)+ZEQICE*ZDMELT_FACT*MOMG(XALPHAS_I,XNUS_I,ZEXP+XDS_I) &
+                     *1.E18*ZN(:,:,:)*XCS_I*(ZLBDA(:,:,:)**(-ZEXP-XDS_I))
       PRARE(:,:,:) = PRARE(:,:,:) + ZW(:,:,:)
     END WHERE
   ELSEIF (CCLOUD=='LIMA') THEN
