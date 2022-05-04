@@ -331,7 +331,7 @@ IF (ICIBU > 0) THEN
 !        1.3.3 To compute final "CIBU" contributions
 !
   ZFRAG_CIBU(:) = UNPACK ( VECTOR=ZFRAGMENTS(:),MASK=GCIBU,FIELD=0.0 )
-  ZNI_CIBU(:) = ZFRAG_CIBU(:) * (XFACTOR_CIBU_NI * PRST(:) * PRHODREF(:) / (PRHODREF(:)**(XCEXVT-1.0))) * &
+  ZNI_CIBU(:) = ZFRAG_CIBU(:) * (XFACTOR_CIBU_NI * PRST(:) / (PRHODREF(:)**XCEXVT)) * &
                 (XCG * ZINTG_GRAUPEL_1(:) * ZINTG_SNOW_1(:) *                                               &
                  PLBDS(:)**(XBS) * PLBDG(:)**(XCXG-(XDG+2.0))                                             &
                - XCS * ZINTG_GRAUPEL_2(:) * ZINTG_SNOW_2(:) *                                               &
@@ -343,7 +343,7 @@ IF (ICIBU > 0) THEN
   DEALLOCATE(ZFRAGMENTS)
 !
 ! Max value of rs removed by CIBU
-  ZRI_CIBU(:) = (XFACTOR_CIBU_RI * PRST(:) * PRHODREF(:) / (PRHODREF(:)**(XCEXVT+1.0))) * &
+  ZRI_CIBU(:) = (XFACTOR_CIBU_RI * PRST(:) / (PRHODREF(:)**XCEXVT)) * &
                  (XCG * ZINTG_GRAUPEL_1(:) * ZINTG_SNOW_3(:) *                              &
                   PLBDG(:)**(XCXG-(XDG+2.0))                                               &
                 - XCS * ZINTG_GRAUPEL_2(:) * ZINTG_SNOW_4(:) *                              &

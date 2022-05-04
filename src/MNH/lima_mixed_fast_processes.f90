@@ -686,7 +686,7 @@ IF (ICIBU > 0) THEN
   ALLOCATE(ZFRAG_CIBU(SIZE(PZT)))
 !
   ZFRAG_CIBU(:) = UNPACK ( VECTOR=ZFRAGMENTS(:),MASK=GCIBU,FIELD=0.0 )
-  ZNI_CIBU(:) = ZFRAG_CIBU(:) * (XFACTOR_CIBU_NI * PRST1D(:) * PRHODREF(:) / (PRHODREF(:)**(XCEXVT-1.0))) * &
+  ZNI_CIBU(:) = ZFRAG_CIBU(:) * (XFACTOR_CIBU_NI * PRST1D(:) / (PRHODREF(:)**XCEXVT)) * &
                 (XCG * ZINTG_GRAUPEL_1(:) * ZINTG_SNOW_1(:) *                                               &
                  PLBDAS(:)**(XBS) * PLBDAG(:)**(XCXG-(XDG+2.0))                                             &
                - XCS * ZINTG_GRAUPEL_2(:) * ZINTG_SNOW_2(:) *                                               &
@@ -699,7 +699,7 @@ IF (ICIBU > 0) THEN
 !
 ! Max value of rs removed by CIBU
   ALLOCATE(ZRI_CIBU(SIZE(PZT)))
-  ZRI_CIBU(:) = (XFACTOR_CIBU_RI * PRST1D(:) * PRHODREF(:) / (PRHODREF(:)**(XCEXVT+1.0))) * &
+  ZRI_CIBU(:) = (XFACTOR_CIBU_RI * PRST1D(:) / (PRHODREF(:)**XCEXVT)) * &
                  (XCG * ZINTG_GRAUPEL_1(:) * ZINTG_SNOW_3(:) *                              &
                   PLBDAG(:)**(XCXG-(XDG+2.0))                                               &
                 - XCS * ZINTG_GRAUPEL_2(:) * ZINTG_SNOW_4(:) *                              &
