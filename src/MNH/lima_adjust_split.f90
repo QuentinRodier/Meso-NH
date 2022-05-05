@@ -279,21 +279,10 @@ REAL, DIMENSION(SIZE(PRHODJ,1),SIZE(PRHODJ,2),SIZE(PRHODJ,3)) &
                             ZRC, ZRC2,  &
                             ZRI,  &
                             Z_SIGS, Z_SRCS, &
-                            ZW_MF
-LOGICAL, DIMENSION(SIZE(PRHODJ,1),SIZE(PRHODJ,2),SIZE(PRHODJ,3)) &
-                         :: GMICRO ! Test where to compute cond/dep proc.
-INTEGER                  :: IMICRO
-REAL, DIMENSION(:), ALLOCATABLE &
-                         :: ZRVT, ZRCT, ZRIT, ZRVS, ZRCS, ZRIS, ZTHS,        &
-                            ZCCT, ZCIT, ZCCS, ZCIS,                          &
-                            ZRHODREF, ZZT, ZPRES, ZEXNREF, ZZCPH,            &
-                            ZZW, ZLVFACT, ZLSFACT,                           &
-                            ZRVSATW, ZRVSATI, ZRVSATW_PRIME, ZRVSATI_PRIME,  &
-                            ZAW, ZAI, ZCJ, ZKA, ZDV, ZITW, ZITI, ZAWW, ZAIW, &
-                            ZAWI, ZAII, ZFACT, ZDELTW,                       &
-                            ZDELTI, ZDELT1, ZDELT2, ZCND, ZDEP, ZS, ZVEC1, ZZW2
+                            ZW_MF, &
+                            ZCND, ZS, ZVEC1
 !
-INTEGER, DIMENSION(:), ALLOCATABLE :: IVEC1
+INTEGER, DIMENSION(SIZE(PRHODJ,1),SIZE(PRHODJ,2),SIZE(PRHODJ,3)) :: IVEC1
 !
 INTEGER                  :: IRESP      ! Return code of FM routines
 INTEGER                  :: IIU,IJU,IKU! dimensions of dummy arrays
@@ -309,11 +298,9 @@ REAL, DIMENSION(:), ALLOCATABLE   :: ZRTMIN
 REAL, DIMENSION(:), ALLOCATABLE   :: ZCTMIN
 !
 integer :: idx
-INTEGER , DIMENSION(SIZE(GMICRO)) :: I1,I2,I3 ! Used to replace the COUNT
-INTEGER                           :: JL       ! and PACK intrinsics
+integer :: JI, JJ, JK, jl
 INTEGER                           :: JMOD, JMOD_IFN, JMOD_IMM
 !
-INTEGER , DIMENSION(3) :: BV
 TYPE(TFIELDDATA)  :: TZFIELD
 LOGICAL :: G_SIGMAS, GUSERI
 REAL :: Z_SIGQSAT
@@ -525,12 +512,13 @@ DO JITER =1,ITERMAX
       Z_SIGQSAT=0.
    END IF
 
-   CALL CONDENSATION(IIU, IJU, IKU, IIB, IIE, IJB, IJE, IKB, IKE, 1, 'S',   &
-        HCONDENS, HLAMBDA3,                                                 &
-        PPABST, PZZ, PRHODREF, ZT, ZRV, ZRC, ZRI, PRSS*PTSTEP, PRGS*PTSTEP, &
-        Z_SIGS, PMFCONV, PCLDFR, Z_SRCS, GUSERI, G_SIGMAS,                  &
-        Z_SIGQSAT, PLV=ZLV, PLS=ZLS, PCPH=ZCPH )
-
+   IF (LADJ) THEN
+      CALL CONDENSATION(IIU, IJU, IKU, IIB, IIE, IJB, IJE, IKB, IKE, 1, 'S',   &
+           HCONDENS, HLAMBDA3,                                                 &
+           PPABST, PZZ, PRHODREF, ZT, ZRV, ZRC, ZRI, PRSS*PTSTEP, PRGS*PTSTEP, &
+           Z_SIGS, PMFCONV, PCLDFR, Z_SRCS, GUSERI, G_SIGMAS,                  &
+           Z_SIGQSAT, PLV=ZLV, PLS=ZLS, PCPH=ZCPH )
+   END IF
    IF (OSUBG_COND) THEN
       PSRCS=Z_SRCS
       ZW_MF=0.
@@ -544,18 +532,46 @@ END DO
 !
 !*       5.1    compute the sources
 !
-                                                        !         Rc - Rc*
-ZW1(:,:,:) = (ZRC(:,:,:) - PRCS(:,:,:)*PTSTEP) / PTSTEP ! Pcon = ----------
-                                                        !         2 Delta t
-WHERE( ZW1(:,:,:) < 0.0 )
-   ZW1(:,:,:) = MAX ( ZW1(:,:,:), -PRCS(:,:,:) )
-ELSEWHERE
-   ZW1(:,:,:) = MIN ( ZW1(:,:,:),  PRVS(:,:,:) )
-END WHERE
-PRVS(:,:,:) = PRVS(:,:,:) - ZW1(:,:,:)
-PRCS(:,:,:) = PRCS(:,:,:) + ZW1(:,:,:)
-PTHS(:,:,:) = PTHS(:,:,:) +        &
+IF (LADJ) THEN
+                                                           !         Rc - Rc*
+   ZW1(:,:,:) = (ZRC(:,:,:) - PRCS(:,:,:)*PTSTEP) / PTSTEP ! Pcon = ----------
+                                                           !         2 Delta t
+   WHERE( ZW1(:,:,:) < 0.0 )
+      ZW1(:,:,:) = MAX ( ZW1(:,:,:), -PRCS(:,:,:) )
+   ELSEWHERE
+      ZW1(:,:,:) = MIN ( ZW1(:,:,:),  PRVS(:,:,:) )
+   END WHERE
+   PRVS(:,:,:) = PRVS(:,:,:) - ZW1(:,:,:)
+   PRCS(:,:,:) = PRCS(:,:,:) + ZW1(:,:,:)
+   PTHS(:,:,:) = PTHS(:,:,:) +        &
               ZW1(:,:,:) * ZLV(:,:,:) / (ZCPH(:,:,:) * PEXNREF(:,:,:))
+ELSE
+   DO JI=1,SIZE(PRCS,1)
+      DO JJ=1,SIZE(PRCS,2)
+         DO JK=1,SIZE(PRCS,3)
+            IF (PRCS(JI,JJ,JK).GE.XRTMIN(2) .AND. PCCS(JI,JJ,JK).GE.XCTMIN(2)) THEN
+               ZVEC1(JI,JJ,JK) = MAX( 1.0001, MIN( FLOAT(NAHEN)-0.0001, XAHENINTP1 * ZT(JI,JJ,JK) + XAHENINTP2 ) )
+               IVEC1(JI,JJ,JK) = INT( ZVEC1(JI,JJ,JK) )
+               ZVEC1(JI,JJ,JK) = ZVEC1(JI,JJ,JK) - FLOAT( IVEC1(JI,JJ,JK) )
+               ZW(JI,JJ,JK)=EXP( XALPW - XBETAW/ZT(JI,JJ,JK) - XGAMW*ALOG(ZT(JI,JJ,JK) ) ) ! es_w
+               ZW(JI,JJ,JK)=ZEPS*ZW(JI,JJ,JK) / ( PPABST(JI,JJ,JK)-ZW(JI,JJ,JK) ) 
+               ZS(JI,JJ,JK) = PRVS(JI,JJ,JK)*PTSTEP / ZW(JI,JJ,JK) - 1.
+               ZW(JI,JJ,JK) = PCCS(JI,JJ,JK)*PTSTEP/(XLBC*PCCS(JI,JJ,JK)/PRCS(JI,JJ,JK))**XLBEXC
+               ZW2(JI,JJ,JK) = XAHENG3(IVEC1(JI,JJ,JK)+1)*ZVEC1(JI,JJ,JK)-XAHENG3(IVEC1(JI,JJ,JK))*(ZVEC1(JI,JJ,JK)-1.)
+               ZCND(JI,JJ,JK) = 2.*3.14*1000.*ZW2(JI,JJ,JK)*ZS(JI,JJ,JK)*ZW(JI,JJ,JK)
+               IF(ZCND(JI,JJ,JK).LE.0.) THEN
+                  ZCND(JI,JJ,JK) = MAX ( ZCND(JI,JJ,JK), -PRCS(JI,JJ,JK) )
+               ELSE
+                  ZCND(JI,JJ,JK) = MIN ( ZCND(JI,JJ,JK),  PRVS(JI,JJ,JK) )
+               END IF
+               PRVS(JI,JJ,JK) = PRVS(JI,JJ,JK) - ZCND(JI,JJ,JK)
+               PRCS(JI,JJ,JK) = PRCS(JI,JJ,JK) + ZCND(JI,JJ,JK)
+               PTHS(JI,JJ,JK) = PTHS(JI,JJ,JK) + ZCND(JI,JJ,JK) * ZLV(JI,JJ,JK) / (ZCPH(JI,JJ,JK) * PEXNREF(JI,JJ,JK))
+            END IF
+         END DO
+      END DO
+   END DO
+END IF
 !
 IF (NMOM_I.EQ.1) THEN
    ZW2(:,:,:) = (ZRI(:,:,:) - PRIS(:,:,:)*PTSTEP) / PTSTEP ! idem ZW1 but for Ri
