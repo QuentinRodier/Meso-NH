@@ -61,9 +61,9 @@ END MODULE MODI_LIMA_ICE_AGGREGATION_SNOW
 !              ------------
 !
 USE MODD_CST,             ONLY : XTT
-USE MODD_PARAM_LIMA,      ONLY : XRTMIN, XCTMIN, XCEXVT, NMOM_I
+USE MODD_PARAM_LIMA,      ONLY : XRTMIN, XCTMIN, XCEXVT, NMOM_I, XNUS, XALPHAS, XCEXVT
 USE MODD_PARAM_LIMA_COLD, ONLY : XBI, XCCS, XCXS, XCOLEXIS, XAGGS_CLARGE1, XAGGS_CLARGE2, &
-                                 XAGGS_RLARGE1, XAGGS_RLARGE2, XFIAGGS, XBS, XNS
+                                 XAGGS_RLARGE1, XAGGS_RLARGE2, XFIAGGS, XBS, XNS, XFVELOS, XEXIAGGS
 !
 IMPLICIT NONE
 !
@@ -105,8 +105,9 @@ IF (NMOM_I.EQ.1) THEN
    WHERE ( (PRIT(:)>XRTMIN(4)) .AND. (PRST(:)>XRTMIN(5)) .AND. LDCOMPUTE(:) )
       ZZW1(:) = XFIAGGS * EXP( XCOLEXIS*(PT(:)-XTT) ) &
                         * PRIT(:)                     &
-                        * PLBDS(:)**(1.-0.27-2.)      &
-                        * PRHODREF(:)**(-XCEXVT)
+                        * PRST(:) * (1+(XFVELOS/PLBDS(:))**XALPHAS)**(-XNUS+XEXIAGGS/XALPHAS) &
+                        * PRHODREF(:)**(-XCEXVT+1.) &
+                        * ((PLBDS(:))**(XBS+XEXIAGGS))
 !
       P_RI_AGGS(:) = - ZZW1(:)
    END WHERE

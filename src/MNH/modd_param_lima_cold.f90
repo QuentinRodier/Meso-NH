@@ -110,7 +110,7 @@ REAL,SAVE :: XDICNVS_LIM, XLBDAICNVS_LIM,      & ! Constants for pristine ice
 REAL,SAVE :: XCOLEXIS,                         & ! Constants for snow 
     	     XAGGS_CLARGE1,XAGGS_CLARGE2,      & ! aggregation : AGG
              XAGGS_RLARGE1,XAGGS_RLARGE2,      &
-             XFIAGGS
+             XFIAGGS,XEXIAGGS
 !
 !??????????????????
 REAL,SAVE :: XKER_ZRNIC_A1,XKER_ZRNIC_A2         ! Long-Zrnic Kernels (ini_ice_coma)
