@@ -31,7 +31,7 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PP     ! pressure
 REAL, DIMENSION(:,:,:,:), INTENT(IN)     :: PAER   ! aerosol extinction
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PCLDFR ! cloud fraction
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PCIT   ! ice concentration
-REAL, DIMENSION(:,:),     INTENT(IN)     :: PSEA   ! for radar 
+REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN)     :: PSEA   ! for radar 
 !
 !-------------------------------------------------------------------------------
 !
@@ -97,7 +97,7 @@ USE MODD_GRID
 USE MODD_SUB_PROFILER_n
 USE MODD_NSV
 USE MODD_PARAMETERS
-USE MODD_PARAM_n,        ONLY: CCLOUD, CRAD
+USE MODD_PARAM_n,        ONLY: CCLOUD, CRAD, CSURF
 USE MODD_PROFILER_n
 USE MODD_TIME,           only: tdtexp
 USE MODD_TIME_n,         only: tdtcur
@@ -157,7 +157,7 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PP     ! pressure
 REAL, DIMENSION(:,:,:,:), INTENT(IN)     :: PAER   ! aerosol extinction
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PCLDFR ! cloud fraction
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PCIT   ! ice concentration
-REAL, DIMENSION(:,:),     INTENT(IN)     :: PSEA   ! for radar 
+REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN)     :: PSEA   ! for radar 
 !
 !-------------------------------------------------------------------------------
 !
@@ -548,10 +548,15 @@ IF (GSTORE) THEN
        DO JLOOP=3,6
           ZRZ(:,JLOOP)=PROFILER_INTERP(PR(:,:,:,JLOOP))
        END DO
-       DO JK=1,IKU
-          ZRZ(JK,2)=PROFILER_INTERP_2D(PR(:,:,JK,2)*PSEA(:,:))       ! becomes cloud mixing ratio over sea
-          ZRZ(JK,7)=PROFILER_INTERP_2D(PR(:,:,JK,2)*(1.-PSEA(:,:)))  ! becomes cloud mixing ratio over land
-       END DO
+       IF (CSURF=="EXTE") THEN
+         DO JK=1,IKU
+            ZRZ(JK,2)=PROFILER_INTERP_2D(PR(:,:,JK,2)*PSEA(:,:))       ! becomes cloud mixing ratio over sea
+            ZRZ(JK,7)=PROFILER_INTERP_2D(PR(:,:,JK,2)*(1.-PSEA(:,:)))  ! becomes cloud mixing ratio over land
+         END DO
+       ELSE
+          ZRZ(:,2)=PROFILER_INTERP(PR(:,:,:,2))
+          ZRZ(:,7)=0.
+       END IF
        ALLOCATE(ZAELOC(IKU))
         !
        ZAELOC(:)=0.
