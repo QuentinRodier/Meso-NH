@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2002-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -80,6 +80,7 @@ END MODULE MODI_STATION_n
 !  P. Wautelet  05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet  13/09/2019: budget: simplify and modernize date/time management
 !  R. Schoetter    11/2019: use LCARTESIAN instead of LSTATLAT for multiproc in cartesian
+!  P. Wautelet  09/05/2022: bugfix: use correct indices for U and V interpolation
 !
 ! --------------------------------------------------------------------------
 !
@@ -491,7 +492,7 @@ ELSEIF (L1D) THEN
      JI=2
      JJ=2
 ELSE
-     JI=II(I)
+     JI=IU(I)
      JJ=IJ(I)
 END IF
 !
@@ -521,7 +522,7 @@ ELSEIF (L1D) THEN
      JJ=2  
 ELSE
   JI=II(I)
-  JJ=IJ(I)
+  JJ=IV(I)
 END IF
 !
 IF ((JI .GT. 0).AND. (JI .LT. SIZE(PA,1)) .AND. &
