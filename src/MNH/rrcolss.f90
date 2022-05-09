@@ -280,11 +280,11 @@ DO JLBDAS = 1,SIZE(PRRCOLSS(:,:),1)
           DO JDR = 1,INR-1
             ZDR = ZDDCOLLR * REAL(JDR)
             ZCOLLR = ZCOLLR + (ZDS+ZDR)**2 * ZDR**PEXMASSR                     &
-                       * PESR * ABS(PFALLS*ZDS**PEXFALLS * EXP(-(PFALLEXPS*XDS)**PALPHAS)-PFALLR*ZDR**PEXFALLR) &
+                       * PESR * ABS(PFALLS*ZDS**PEXFALLS * EXP(-(PFALLEXPS*ZDS)**PALPHAS)-PFALLR*ZDR**PEXFALLR) &
                                       * GENERAL_GAMMA(PALPHAR,PNUR,ZLBDAR,ZDR)
           END DO
           ZCOLLDRMAX = (ZDS+ZDRMAX)**2 * ZDRMAX**PEXMASSR                      &
-                    * PESR * ABS(PFALLS*ZDS**PEXFALLS* EXP(-(PFALLEXPS*XDS)**PALPHAS)-PFALLR*ZDRMAX**PEXFALLR) &
+                    * PESR * ABS(PFALLS*ZDS**PEXFALLS* EXP(-(PFALLEXPS*ZDS)**PALPHAS)-PFALLR*ZDRMAX**PEXFALLR) &
                                    * GENERAL_GAMMA(PALPHAR,PNUR,ZLBDAR,ZDRMAX)
           ZCOLLR = (ZCOLLR + 0.5*ZCOLLDRMAX)*(ZDDCOLLR/ZDDSCALR)
 !
