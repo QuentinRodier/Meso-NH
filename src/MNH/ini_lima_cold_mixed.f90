@@ -147,18 +147,6 @@ REAL :: ZRHOIW ! ice density
 !
 ILUOUT0 = TLUOUT0%NLU
 !
-! Ice nucleation for NMOM_I=1
-!
-!
-XNU10 = 50.*ZFACT_NUCL
-XALPHA1 = 4.5
-XBETA1 = 0.6
-!
-XNU20 = 1000.*ZFACT_NUCL
-XALPHA2 = 12.96
-XBETA2 = 0.639
-!
-IMNU0 = 6.88E-13
 !
 !*       1.     CHARACTERISTICS OF THE SPECIES
 !   	        ------------------------------
@@ -552,7 +540,20 @@ IF (LMEYERS) THEN
                                                       XNUC_CON,XEXTT_CON,XEX_CON
   WRITE(UNIT=ILUOUT0,FMT='(" mass of embryo XMNU0=",E13.6)') XMNU0
 END IF
-!  
+!
+!                 ***************** 
+!*          4.3   NUCLEATION for NMOM_I=1
+!                 ***************** 
+!
+XNU10 = 50.*ZFACT_NUCL
+XALPHA1 = 4.5
+XBETA1 = 0.6
+!
+XNU20 = 1000.*ZFACT_NUCL
+XALPHA2 = 12.96
+XBETA2 = 0.639
+!
+IMNU0 = 6.88E-13
 !-------------------------------------------------------------------------------
 !
 !
