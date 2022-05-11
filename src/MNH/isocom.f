@@ -1,4 +1,4 @@
-CMNH_LIC Copyright 1996-2021 CNRS, Meteo-France and Universite Paul Sabatier
+CMNH_LIC Copyright 1996-2022 CNRS, Meteo-France and Universite Paul Sabatier
 CMNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 CMNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 CMNH_LIC for details. version 1.

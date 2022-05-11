@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2003-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2003-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -1023,7 +1023,7 @@ IF (.NOT. GCOVER_PACKED) THEN
   TZFIELD%CSTDNAME   = ''
   TZFIELD%CLONGNAME  = TRIM(YREC)
   TZFIELD%CUNITS     = ''
-  TZFIELD%CDIR       = YDIR1
+  TZFIELD%CDIR       = YDIR
   TZFIELD%CCOMMENT   = 'X_Y_'//TRIM(YREC)
   TZFIELD%NGRID      = 4
   TZFIELD%NTYPE      = TYPEREAL

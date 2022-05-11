@@ -316,7 +316,7 @@ ALLOCATE(UG%XJPDIR       (NL))
  CALL MPPDB_CHECK_SURFEX2D(UG%G%XLAT,"PGD_GRID after LATLON_GRID:XLAT",PRECISION,ILUOUT)
  CALL MPPDB_CHECK_SURFEX2D(UG%G%XLON,"PGD_GRID after LATLON_GRID:XLON",PRECISION,ILUOUT)
  CALL MPPDB_CHECK_SURFEX2D(UG%G%XMESH_SIZE,"PGD_GRID after LATLON_GRID:XMESH_SIZE",PRECISION,ILUOUT)
-#endif!
+#endif
 !------------------------------------------------------------------------------
 !
 !*    7.      Average grid length (in degrees)
