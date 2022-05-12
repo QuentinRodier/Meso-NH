@@ -361,15 +361,12 @@ INTEGER                                              :: JSV      ! loop counter
 integer                                              :: ji
 INTEGER                                              :: ISTORE
 REAL, DIMENSION(:,:,:),                  ALLOCATABLE :: ZRHO
-REAL, DIMENSION(:,:), TARGET,            ALLOCATABLE :: ZWORK
-REAL, DIMENSION(:,:), POINTER                        :: ZDATA
+REAL, DIMENSION(:,:),                    ALLOCATABLE :: ZWORK
 REAL, DIMENSION(:,:,:,:),                ALLOCATABLE :: ZSV, ZN0, ZSIG, ZRG
 type(tbudiachrometadata)                             :: tzbudiachro
 type(tfieldmetadata_base), dimension(:), allocatable :: tzfields
 !
 !----------------------------------------------------------------------------
-
-ZDATA => Null()
 
 IKU = NKMAX + 2 * JPVEXT !Number of vertical levels
 !
@@ -435,14 +432,11 @@ if ( nsv > 0  ) then
     if ( Trim( tsvlist(jsv)%cunits ) == 'ppv' ) then
       yunits = 'ppb'
       zwork = tpprofiler%xsv(:,:,jsv) * 1.e9 !*1e9 for conversion ppv->ppb
-      zdata => zwork
     else
       yunits = Trim( tsvlist(jsv)%cunits )
       zwork = tpprofiler%xsv(:,:,jsv)
-      zdata => zwork
     end if
-    call Add_profile( tsvlist(jsv)%cmnhname, '', yunits, zdata )
-    zdata => Null()
+    call Add_profile( tsvlist(jsv)%cmnhname, '', yunits, zwork )
   end do
   Deallocate( zwork )
 
