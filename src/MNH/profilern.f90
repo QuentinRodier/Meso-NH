@@ -9,12 +9,10 @@ MODULE MODI_PROFILER_n
 !
 INTERFACE
 !
-      SUBROUTINE PROFILER_n( PTSTEP,                         &
-                             PZ, PRHODREF,                   &
+      SUBROUTINE PROFILER_n( PZ, PRHODREF,                   &
                              PU, PV, PW, PTH, PR, PSV, PTKE, &
                              PTS, PP, PAER, PCIT, PSEA )
 !
-REAL,                     INTENT(IN)     :: PTSTEP ! time step
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PZ     ! z array
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PU     ! horizontal wind X component
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PV     ! horizontal wind Y component
@@ -39,8 +37,7 @@ END INTERFACE
 END MODULE MODI_PROFILER_n
 !
 !     ########################################################
-      SUBROUTINE PROFILER_n( PTSTEP,                         &
-                             PZ, PRHODREF,                   &
+      SUBROUTINE PROFILER_n( PZ, PRHODREF,                   &
                              PU, PV, PW, PTH, PR, PSV, PTKE, &
                              PTS, PP, PAER, PCIT, PSEA )
 !     ########################################################
@@ -120,12 +117,12 @@ USE MODD_RAIN_ICE_DESCR,   ONLY: XALPHAR_I => XALPHAR, XNUR_I => XNUR, XLBEXR_I 
                                  XALPHAI_I => XALPHAI, XNUI_I => XNUI, XDI_I => XDI, XLBEXI_I => XLBEXI,                   &
                                  XLBI_I => XLBI, XAI_I => XAI, XBI_I => XBI, XC_I_I => XC_I,                               &
                                  XRTMIN_I => XRTMIN, XCONC_LAND, XCONC_SEA
-USE MODD_TIME_n,           only: tdtcur
 !
 USE MODE_FGAU,             ONLY: GAULAG
 USE MODE_FSCATTER,         ONLY: BHMIE, QEPSI, QEPSW, MG, MOMG
 USE MODE_MSG
-USE MODE_STATPROF_TOOLS,   ONLY: STATPROF_INTERP_2D, STATPROF_INTERP_3D, STATPROF_INTERP_3D_U, STATPROF_INTERP_3D_V
+USE MODE_STATPROF_TOOLS,   ONLY: STATPROF_INSTANT, STATPROF_INTERP_2D, STATPROF_INTERP_3D, &
+                                 STATPROF_INTERP_3D_U, STATPROF_INTERP_3D_V
 !
 USE MODI_GPS_ZENITH_GRID
 USE MODI_WATER_SUM
@@ -137,7 +134,6 @@ IMPLICIT NONE
 !*      0.1  declarations of arguments
 !
 !
-REAL,                     INTENT(IN)     :: PTSTEP ! time step
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PZ     ! z array
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PU     ! horizontal wind X component
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PV     ! horizontal wind Y component
@@ -249,30 +245,18 @@ IKE = IKU-JPVEXT
 !
 !----------------------------------------------------------------------------
 !
-!
 !*      3.4  instant of storage
 !            ------------------
 !
-
-IF ( TPROFILERS_TIME%XTIME_CUR == XUNDEF ) TPROFILERS_TIME%XTIME_CUR = TPROFILERS_TIME%XTSTEP - PTSTEP
-!
-TPROFILERS_TIME%XTIME_CUR = TPROFILERS_TIME%XTIME_CUR + PTSTEP
-!
-IF ( TPROFILERS_TIME%XTIME_CUR >= TPROFILERS_TIME%XTSTEP - 1.E-10 ) THEN
-  TPROFILERS_TIME%XTIME_CUR = TPROFILERS_TIME%XTIME_CUR - TPROFILERS_TIME%XTSTEP
-  TPROFILERS_TIME%N_CUR = TPROFILERS_TIME%N_CUR + 1
-  IN = TPROFILERS_TIME%N_CUR
-  tprofilers_time%tpdates(in) = tdtcur
-ELSE
-  !No profiler storage at this time step
-  RETURN
-END IF
+CALL  STATPROF_INSTANT( TPROFILERS_TIME, IN )
+IF ( IN < 1 ) RETURN !No profiler storage at this time step
 !
 !----------------------------------------------------------------------------
 !
 !*      8.   DATA RECORDING
 !            --------------
 !
+!PW: TODO: ne faire le calcul que si necessaire (presence de profileurs locaux,...)
 ZTEMP(:,:,:)=PTH(:,:,:)*(PP(:,:,:)/ XP00) **(XRD/XCPD)
 ! Theta_v
 ZTHV(:,:,:) = PTH(:,:,:) / (1.+WATER_SUM(PR(:,:,:,:)))*(1.+PR(:,:,:,1)/ZRDSRV)

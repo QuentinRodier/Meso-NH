@@ -9,11 +9,10 @@ MODULE MODI_STATION_n
 !
 INTERFACE
 !
-      SUBROUTINE STATION_n( PTSTEP, PZ,                     &
+      SUBROUTINE STATION_n( PZ,                             &
                             PU, PV, PW, PTH, PR, PSV, PTKE, &
                             PTS, PP )
 !
-REAL,                     INTENT(IN)     :: PTSTEP ! time step
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PZ     ! z array
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PU     ! horizontal wind X component
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PV     ! horizontal wind Y component
@@ -34,7 +33,7 @@ END INTERFACE
 END MODULE MODI_STATION_n
 !
 !     #######################################################
-      SUBROUTINE STATION_n( PTSTEP, PZ,                     &
+      SUBROUTINE STATION_n( PZ,                             &
                             PU, PV, PW, PTH, PR, PSV, PTKE, &
                             PTS, PP )
 !     #######################################################
@@ -87,13 +86,12 @@ USE MODD_CONF,          ONLY: LCARTESIAN
 USE MODD_CST,           ONLY: XPI
 USE MODD_DIAG_IN_RUN
 USE MODD_GRID,          ONLY: XBETA, XLON0, XRPK
-USE MODD_PARAMETERS,    ONLY: JPVEXT, XUNDEF
+USE MODD_PARAMETERS,    ONLY: JPVEXT
 USE MODD_PARAM_n,       ONLY: CRAD
 USE MODD_STATION_n
 USE MODD_ALLSTATION_n,  ONLY: LDIAG_SURFRAD
-USE MODD_TIME_n,        ONLY: tdtcur
 !
-USE MODE_STATPROF_TOOLS, ONLY: STATPROF_INTERP_2D, STATPROF_INTERP_2D_U, STATPROF_INTERP_2D_V
+USE MODE_STATPROF_TOOLS, ONLY: STATPROF_INSTANT, STATPROF_INTERP_2D, STATPROF_INTERP_2D_U, STATPROF_INTERP_2D_V
 !
 !
 IMPLICIT NONE
@@ -102,7 +100,6 @@ IMPLICIT NONE
 !*      0.1  declarations of arguments
 !
 !
-REAL,                     INTENT(IN)     :: PTSTEP ! time step
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PZ     ! z array
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PU     ! horizontal wind X component
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PV     ! horizontal wind Y component
@@ -134,19 +131,8 @@ INTEGER :: JK          ! loop for levels
 !*      3.4  instant of storage
 !            ------------------
 !
-IF ( TSTATIONS_TIME%XTIME_CUR == XUNDEF ) TSTATIONS_TIME%XTIME_CUR = TSTATIONS_TIME%XTSTEP - PTSTEP
-!
-TSTATIONS_TIME%XTIME_CUR = TSTATIONS_TIME%XTIME_CUR + PTSTEP
-!
-IF ( TSTATIONS_TIME%XTIME_CUR >= TSTATIONS_TIME%XTSTEP - 1.E-10 ) THEN
-  TSTATIONS_TIME%XTIME_CUR = TSTATIONS_TIME%XTIME_CUR - TSTATIONS_TIME%XTSTEP
-  TSTATIONS_TIME%N_CUR = TSTATIONS_TIME%N_CUR + 1
-  IN = TSTATIONS_TIME%N_CUR
-  tstations_time%tpdates(in) = tdtcur
-ELSE
-  !No station storage at this time step
-  RETURN
-END IF
+CALL  STATPROF_INSTANT( TSTATIONS_TIME, IN )
+IF ( IN < 1 ) RETURN !No profiler storage at this time step
 !
 !----------------------------------------------------------------------------
 !
