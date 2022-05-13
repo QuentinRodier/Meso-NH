@@ -48,7 +48,7 @@ public :: TPROFILERDATA, TSTATIONDATA, TSTATPROFDATA
 
 TYPE :: TSTATPROFTIME
   REAL                                       :: XTIME_CUR = XUNDEF  ! current time since last storage
-  INTEGER                                    :: N_CUR     = 0           ! current step of storage
+  INTEGER                                    :: N_CUR     = 0       ! current step of storage
   REAL                                       :: XTSTEP    = 60.     ! storage time step (default reset later by INI_STATION_n)
   type(date_time), dimension(:), ALLOCATABLE :: tpdates             ! dates(n) (n: recording instants)
 END TYPE TSTATPROFTIME

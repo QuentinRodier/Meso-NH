@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2000-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2000-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -40,7 +40,8 @@
 !             ------------
 !
 !
-use modd_type_date, only: date_time
+USE MODD_TYPE_STATPROF, ONLY: TSTATPROFTIME
+use modd_type_date,     only: date_time
 
 implicit none
 
@@ -66,9 +67,7 @@ LOGICAL                       :: FLY    ! occurence of flying
 !
 !* storage monitoring
 !
-REAL                          :: T_CUR  ! current time since last storage
-INTEGER                       :: N_CUR  ! current step of storage
-REAL                          :: STEP   ! storage time step
+TYPE(TSTATPROFTIME)           :: TFLYER_TIME ! Time management for flyer
 !
 !* balloon dynamical characteristics
 !
@@ -112,7 +111,6 @@ REAL                          :: P_CUR    ! current p (if 'AIRCRA' and 'ALTDEF' 
 !
 !* data records
 !
-type(date_time), dimension(:), pointer :: tpdates => NULL() ! dates(n) (n: recording instants)
 REAL, DIMENSION(:),    POINTER :: X         => NULL() ! X(n)
 REAL, DIMENSION(:),    POINTER :: Y         => NULL() ! Y(n)
 REAL, DIMENSION(:),    POINTER :: Z         => NULL() ! Z(n)

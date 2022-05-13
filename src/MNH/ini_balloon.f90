@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2000-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2000-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -152,7 +152,7 @@ TBALLOON1%PRES               = 98450.
 !
 !* time step for data storage  (s)
 !
-TBALLOON1%STEP               = 20.
+TBALLOON1%TFLYER_TIME%XTSTEP = 20.
 !
 !* ascentional vertical speed of the ballon (in calm air) (for 'RADIOS')
 !
@@ -207,7 +207,7 @@ TBALLOON2%PRES               = 98490.
 !
 !* time step for data storage  (s)
 !
-TBALLOON2%STEP               = 20.
+TBALLOON2%TFLYER_TIME%XTSTEP = 20.
 !
 !* ascentional vertical speed of the ballon (in calm air) (for 'RADIOS')
 !
@@ -263,7 +263,7 @@ TBALLOON3%ALT                =   865.
 !
 !* time step for data storage  (s)
 !
-TBALLOON3%STEP               = 20.
+TBALLOON3%TFLYER_TIME%XTSTEP = 20.
 !
 !* ascentional vertical speed of the ballon (in calm air) (for 'RADIOS')
 !
@@ -319,7 +319,7 @@ TBALLOON4%ALT                =   3959.
 !
 !* time step for data storage  (s)
 !
-TBALLOON4%STEP               = 20.
+TBALLOON4%TFLYER_TIME%XTSTEP = 20.
 !
 !* ascentional vertical speed of the ballon (in calm air) (for 'RADIOS')
 !
@@ -374,7 +374,7 @@ TBALLOON5%ALT                =    340.
 !
 !* time step for data storage  (s)
 !
-TBALLOON5%STEP               = 20.
+TBALLOON5%TFLYER_TIME%XTSTEP = 20.
 !
 !* ascentional vertical speed of the ballon (in calm air) (for 'RADIOS')
 !
@@ -429,7 +429,7 @@ TBALLOON6%LON                =  8.646
 !
 !* time step for data storage  (s)
 !
-TBALLOON6%STEP               = 20.
+TBALLOON6%TFLYER_TIME%XTSTEP = 20.
 !
 !* ascentional vertical speed of the ballon (in calm air) (for 'RADIOS')
 !
@@ -484,7 +484,7 @@ TBALLOON7%PRES               = 62360.
 !
 !* time step for data storage  (s)
 !
-TBALLOON7%STEP               = 20.
+TBALLOON7%TFLYER_TIME%XTSTEP = 20.
 !
 !* ascentional vertical speed of the ballon (in calm air) (for 'RADIOS')
 !

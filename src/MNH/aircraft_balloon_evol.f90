@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2000-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2000-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -176,6 +176,7 @@ USE MODE_FSCATTER,         ONLY: QEPSW,QEPSI,BHMIE,MOMG,MG
 USE MODE_GRIDPROJ
 USE MODE_ll
 USE MODE_MSG
+USE MODE_STATPROF_TOOLS,   ONLY: STATPROF_INSTANT
 !
 USE MODI_GAMMA,            ONLY: GAMMA
 USE MODI_WATER_SUM
@@ -485,27 +486,8 @@ END IF
 !*      3.4  instant of storage
 !            ------------------
 !
-IF ( TPFLYER%T_CUR == XUNDEF ) TPFLYER%T_CUR = TPFLYER%STEP - PTSTEP
-!
-TPFLYER%T_CUR = TPFLYER%T_CUR + PTSTEP
-!
-IF ( TPFLYER%T_CUR >= TPFLYER%STEP - 1.E-10 ) THEN
-  GSTORE = .TRUE.
-  TPFLYER%T_CUR = TPFLYER%T_CUR - TPFLYER%STEP
-  TPFLYER%N_CUR = TPFLYER%N_CUR + 1
-END IF
-!
-IF (GSTORE) THEN
-  IN = TPFLYER%N_CUR
-#if 0
-  tpflyer%tpdates(in)%nyear  = tdtexp%nyear
-  tpflyer%tpdates(in)%nmonth = tdtexp%nmonth
-  tpflyer%tpdates(in)%nday   = tdtexp%nday
-  tpflyer%tpdates(in)%xtime  = tdtexp%xtime + ( in - 1 ) * tpflyer%step
-#else
-  tpflyer%tpdates(in) = tdtcur
-#endif
-END IF
+CALL  STATPROF_INSTANT( TPFLYER%TFLYER_TIME, IN )
+IF ( IN > 0 ) GSTORE = .TRUE. ! else no profiler storage at this time step
 !
 IF ( TPFLYER%FLY) THEN
 !

@@ -192,6 +192,7 @@ CHARACTER(LEN=:), ALLOCATABLE                 :: YGROUPZ  ! group title
 CHARACTER(LEN=100), DIMENSION(:), ALLOCATABLE :: YCOMMENTZ! comment string
 CHARACTER(LEN=100), DIMENSION(:), ALLOCATABLE :: YTITLEZ  ! title
 CHARACTER(LEN=100), DIMENSION(:), ALLOCATABLE :: YUNITZ   ! physical unit
+INTEGER :: ISTORE
 INTEGER :: IPROCZ   ! number of variables records
 INTEGER :: JPROCZ   ! loop counter
 INTEGER :: JRR      ! loop counter
@@ -225,12 +226,14 @@ IF (LORILAM) IPROC = IPROC + JPMODE*3
 IF (LDUST) IPROC = IPROC + NMODE_DST*3
 IF (SIZE(TPFLYER%TSRAD)>0) IPROC = IPROC + 1
 !
-ALLOCATE (ZWORK6(1,1,1,size(tpflyer%tpdates),1,IPROC))
+ISTORE = SIZE( TPFLYER%TFLYER_TIME%TPDATES )
+
+ALLOCATE (ZWORK6(1,1,1,ISTORE,1,IPROC))
 ALLOCATE (YCOMMENT(IPROC))
 ALLOCATE (YTITLE  (IPROC))
 ALLOCATE (YUNIT   (IPROC))
 ALLOCATE (IGRID   (IPROC))
-ALLOCATE (ZWORKZ6(1,1,IKU,size(tpflyer%tpdates),1,IPROCZ))
+ALLOCATE (ZWORKZ6(1,1,IKU,ISTORE,1,IPROCZ))
 ALLOCATE (YCOMMENTZ(IPROCZ))
 ALLOCATE (YTITLEZ (IPROCZ))
 ALLOCATE (YUNITZ  (IPROCZ))
@@ -330,7 +333,7 @@ END DO
 !
 !add cloud liquid water content in g/m3 to compare to measurements from FSSP
 !IF (.NOT.(ANY(TPFLYER%P(:) == 0.))) THEN
-ALLOCATE (ZRHO(1,1,size(tpflyer%tpdates)))
+ALLOCATE (ZRHO(1,1,ISTORE))
 IF (SIZE(TPFLYER%R,2) >1) THEN !cloud water is present
   ZRHO(1,1,:) = 0.
   DO JRR=1,SIZE(TPFLYER%R,2)
@@ -338,7 +341,7 @@ IF (SIZE(TPFLYER%R,2) >1) THEN !cloud water is present
   ENDDO
   ZRHO(1,1,:) = TPFLYER%TH(:) * ( 1. + XRV/XRD*TPFLYER%R(:,1) )  &
                                 / ( 1. + ZRHO(1,1,:)              )
-  DO JPT=1,size(tpflyer%tpdates)
+  DO JPT=1,ISTORE
     IF (TPFLYER%P(JPT) == 0.) THEN
       ZRHO(1,1,JPT) = 0.
     ELSE
@@ -408,12 +411,12 @@ IF (SIZE(TPFLYER%SV,2)>=1) THEN
 
   IF ((LORILAM).AND. .NOT.(ANY(TPFLYER%P(:) == 0.))) THEN
 
-    ALLOCATE (ZSV(1,1,size(tpflyer%tpdates),NSV_AER))
-    ALLOCATE (ZRHO(1,1,size(tpflyer%tpdates)))
-    ALLOCATE (ZN0(1,1,size(tpflyer%tpdates),JPMODE))
-    ALLOCATE (ZRG(1,1,size(tpflyer%tpdates),JPMODE))
-    ALLOCATE (ZSIG(1,1,size(tpflyer%tpdates),JPMODE))
-    ALLOCATE (ZPTOTA(1,1,size(tpflyer%tpdates),NSP+NCARB+NSOA,JPMODE))
+    ALLOCATE (ZSV(1,1,ISTORE,NSV_AER))
+    ALLOCATE (ZRHO(1,1,ISTORE))
+    ALLOCATE (ZN0(1,1,ISTORE,JPMODE))
+    ALLOCATE (ZRG(1,1,ISTORE,JPMODE))
+    ALLOCATE (ZSIG(1,1,ISTORE,JPMODE))
+    ALLOCATE (ZPTOTA(1,1,ISTORE,NSP+NCARB+NSOA,JPMODE))
     ZSV(1,1,:,1:NSV_AER) = TPFLYER%SV(:,NSV_AERBEG:NSV_AEREND)
     IF (SIZE(TPFLYER%R,2) >0) THEN
       ZRHO(1,1,:) = 0.
@@ -431,7 +434,7 @@ IF (SIZE(TPFLYER%SV,2)>=1) THEN
     ZRG = 0.
     ZN0 = 0.
     ZPTOTA = 0.
-    DO JPT=1,size(tpflyer%tpdates) ! prevent division by zero if ZSV = 0.
+    DO JPT=1,ISTORE ! prevent division by zero if ZSV = 0.
       IF (ALL(ZSV(1,1,JPT,:)/=0.)) THEN
         CALL PPP2AERO(ZSV,ZRHO, PSIG3D=ZSIG, PRG3D=ZRG, PN3D=ZN0, PCTOTA=ZPTOTA)
       ENDIF
@@ -566,11 +569,11 @@ IF (SIZE(TPFLYER%SV,2)>=1) THEN
   END IF
 
   IF ((LDUST).AND. .NOT.(ANY(TPFLYER%P(:) == 0.))) THEN
-    ALLOCATE (ZSV(1,1,size(tpflyer%tpdates),NSV_DST))
-    ALLOCATE (ZRHO(1,1,size(tpflyer%tpdates)))
-    ALLOCATE (ZN0(1,1,size(tpflyer%tpdates),NMODE_DST))
-    ALLOCATE (ZRG(1,1,size(tpflyer%tpdates),NMODE_DST))
-    ALLOCATE (ZSIG(1,1,size(tpflyer%tpdates),NMODE_DST))
+    ALLOCATE (ZSV(1,1,ISTORE,NSV_DST))
+    ALLOCATE (ZRHO(1,1,ISTORE))
+    ALLOCATE (ZN0(1,1,ISTORE,NMODE_DST))
+    ALLOCATE (ZRG(1,1,ISTORE,NMODE_DST))
+    ALLOCATE (ZSIG(1,1,ISTORE,NMODE_DST))
     ZSV(1,1,:,1:NSV_DST) = TPFLYER%SV(:,NSV_DSTBEG:NSV_DSTEND)
     IF (SIZE(TPFLYER%R,2) >0) THEN
       ZRHO(1,1,:) = 0.
@@ -723,10 +726,10 @@ DO IK=1, IKU
 END DO
 !----------------------------------------------------------------------------
 !
-ALLOCATE (ZW6(1,1,1,size(tpflyer%tpdates),1,JPROC))
+ALLOCATE (ZW6(1,1,1,ISTORE,1,JPROC))
 ZW6  = ZWORK6(:,:,:,:,:,:JPROC)
 DEALLOCATE(ZWORK6)
-ALLOCATE (ZWZ6(1,1,IKU,size(tpflyer%tpdates),1,JPROCZ))
+ALLOCATE (ZWZ6(1,1,IKU,ISTORE,1,JPROCZ))
 ZWZ6 = ZWORKZ6(:,:,:,:,:,:JPROCZ)
 DEALLOCATE(ZWORKZ6)
 !
@@ -792,8 +795,8 @@ tzbudiachro%lnorm      = .false.
 ! tzbudiachro%nkl        = NOT SET (default values)
 ! tzbudiachro%nkh        = NOT SET (default values)
 
-call Write_diachro( tpdiafile, tzbudiachro, tzfields, tpflyer%tpdates, zw6, &
-                    tpflyer = tpflyer                                       )
+call Write_diachro( tpdiafile, tzbudiachro, tzfields, tpflyer%tflyer_time%tpdates, zw6, &
+                    tpflyer = tpflyer                                                   )
 
 deallocate( tzfields )
 
@@ -864,8 +867,8 @@ tzbudiachro%njh        = 1
 tzbudiachro%nkl        = 1
 tzbudiachro%nkh        = iku
 
-call Write_diachro( tpdiafile, tzbudiachro, tzfields, tpflyer%tpdates, zwz6, &
-                    tpflyer = tpflyer                                        )
+call Write_diachro( tpdiafile, tzbudiachro, tzfields, tpflyer%tflyer_time%tpdates, zwz6, &
+                    tpflyer = tpflyer                                                    )
 
 deallocate( tzfields )
 

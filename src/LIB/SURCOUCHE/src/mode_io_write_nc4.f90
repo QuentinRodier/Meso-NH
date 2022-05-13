@@ -2339,7 +2339,7 @@ subroutine Write_flyer_time_coord( tpflyer )
     tzdim%nid = idimid
 
     !Remark: incid is used in Write_time_coord
-    call Write_time_coord( tzdim, 'time axis for flyer', tpflyer%tpdates )
+    call Write_time_coord( tzdim, 'time axis for flyer', tpflyer%tflyer_time%tpdates )
 
     Deallocate( tzdim )
 

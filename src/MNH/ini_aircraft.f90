@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2000-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2000-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -127,7 +127,7 @@ TAIRCRAFT1%TITLE             = 'DIMO19A'
 !
 !* time step for storage
 !
-TAIRCRAFT1%STEP              = 60. 
+TAIRCRAFT1%TFLYER_TIME%XTSTEP = 60.
 !
 !* take-off date and time
 !
@@ -357,7 +357,7 @@ TAIRCRAFT2%TITLE             = 'DIMO19B'
 !
 !* time step for storage
 !
-TAIRCRAFT2%STEP             = 60.
+TAIRCRAFT2%TFLYER_TIME%XTSTEP = 60.
 !
 !* take-off date and time
 !
@@ -616,7 +616,7 @@ TAIRCRAFT3%TITLE             = 'SAAL19A'
 !
 !* time step for storage
 !
-TAIRCRAFT3%STEP             = 30.
+TAIRCRAFT3%TFLYER_TIME%XTSTEP = 30.
 !
 !* take-off date and time
 !
@@ -723,7 +723,7 @@ TAIRCRAFT4%TITLE             = 'SAAL19B'
 !
 !* time step for storage
 !
-TAIRCRAFT4%STEP             = 30.
+TAIRCRAFT4%TFLYER_TIME%XTSTEP = 30.
 !
 !* take-off date and time
 !
@@ -829,7 +829,7 @@ TAIRCRAFT5%TITLE             = 'SAIB19A'
 !
 !* time step for storage
 !
-TAIRCRAFT5%STEP             = 30.
+TAIRCRAFT5%TFLYER_TIME%XTSTEP = 30.
 !
 !* take-off date and time
 !
@@ -1073,7 +1073,7 @@ TAIRCRAFT6%TITLE             = 'SAIB19B'
 !
 !* time step for storage
 !
-TAIRCRAFT6%STEP             = 30.
+TAIRCRAFT6%TFLYER_TIME%XTSTEP = 30.
 !
 !* take-off date and time
 !
@@ -1314,7 +1314,7 @@ TAIRCRAFT7%TITLE             = 'TEST_19'
 !
 !* time step for storage
 !
-TAIRCRAFT7%STEP             = 60.
+TAIRCRAFT7%TFLYER_TIME%XTSTEP = 60.
 !
 !* take-off date and time
 !
@@ -1585,7 +1585,7 @@ TAIRCRAFT8%TITLE             = 'DIMO22B'
 !
 !* time step for storage
 !
-TAIRCRAFT8%STEP             = 60.
+TAIRCRAFT8%TFLYER_TIME%XTSTEP = 60.
 !
 !* take-off date and time
 !
@@ -1859,7 +1859,7 @@ TAIRCRAFT9%TITLE             = 'DIMO23A'
 !
 !* time step for storage
 !
-TAIRCRAFT9%STEP             = 60.
+TAIRCRAFT9%TFLYER_TIME%XTSTEP = 60.
 !
 !* take-off date and time
 !
