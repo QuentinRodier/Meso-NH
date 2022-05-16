@@ -34,7 +34,7 @@ REAL, DIMENSION(:,:),     INTENT(IN)     :: PTS    ! surface temperature
 ! ++ OC
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PRHODREF ! dry air density of the reference state
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PCIT     ! pristine ice concentration
-REAL, DIMENSION(:,:),INTENT(IN) :: PSEA
+REAL, DIMENSION(:,:),OPTIONAL,INTENT(IN) :: PSEA
 ! -- OC
 !
 !-------------------------------------------------------------------------------

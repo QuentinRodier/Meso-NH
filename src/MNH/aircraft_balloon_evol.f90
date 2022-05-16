@@ -37,7 +37,7 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PRHODREF ! dry air density of the re
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PCIT     ! pristine ice concentration
 !
 CLASS(TFLYERDATA),        INTENT(INOUT)  :: TPFLYER! balloon/aircraft
-REAL, DIMENSION(:,:),     INTENT(IN)     :: PSEA
+REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN) :: PSEA
 !
 !-------------------------------------------------------------------------------
 !
