@@ -93,8 +93,12 @@ REAL,    DIMENSION(SIZE(PRRT))     :: ZINTG_RAIN         ! incomplete gamma func
 REAL,    DIMENSION(SIZE(PRRT))     :: ZNI_RDSF,ZRI_RDSF  ! RDSF rates
 !
 !-------------------------------------------------------------------------------
+P_RI_RDSF(:)=0.
+P_CI_RDSF(:)=0.
+!
 GRDSF(:) = LRDSF .AND. LDCOMPUTE .AND. (PRIT(:)>XRTMIN(4)) .AND. (PRRT(:)>XRTMIN(3)) &
                                  .AND. (PCIT(:)>XCTMIN(4)) .AND. (PCRT(:)>XCTMIN(3))
+
 IRDSF    = COUNT( GRDSF(:) )
 !
 IF (IRDSF > 0) THEN
