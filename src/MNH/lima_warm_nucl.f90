@@ -662,7 +662,7 @@ DO JL = 1, NPTS
             fl(JL)=fnew(JL)
          else if (PX2 .lt. 0.05) then
             PX2 = PX2 + 1.0E-2
-            PRINT*, 'PX2 ALWAYS too small, we put a greater one : PX2 =',PX2
+!            PRINT*, 'PX2 ALWAYS too small, we put a greater one : PX2 =',PX2
             fh(JL)   = SINGL_FUNCSMAX(PX2,PZZW3(JL),PZZW6(JL),JL)
             go to 100
          end if
@@ -683,7 +683,7 @@ DO JL = 1, NPTS
       PZRIDDR(JL)=PX2
    else if (PX2 .lt. 0.05) then
       PX2 = PX2 + 1.0E-2
-      PRINT*, 'PX2 too small, we put a greater one : PX2 =',PX2
+!      PRINT*, 'PX2 too small, we put a greater one : PX2 =',PX2
       fh(JL)   = SINGL_FUNCSMAX(PX2,PZZW3(JL),PZZW6(JL),JL)
       go to 100
    else

@@ -534,8 +534,8 @@ END IF
 !
 !*        1.    From ORILAM to LIMA: 
 !
-IF (HCLOUD == 'LIMA') THEN
-!IF (HCLOUD == 'LIMA' .AND. ((LORILAM).OR.(LDUST).OR.(LSALT))) THEN
+!IF (HCLOUD == 'LIMA') THEN
+IF (HCLOUD == 'LIMA' .AND. ((LORILAM).OR.(LDUST).OR.(LSALT))) THEN
 ! ORILAM : tendance s --> variable instant t
 ALLOCATE(ZSVT(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3),NSV))
   DO II = 1, NSV

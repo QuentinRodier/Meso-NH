@@ -278,29 +278,31 @@ END DO
 ELSE ! keep lima class intiatialization
   IF (CACTCCN=="ABRK") THEN
 ! only one CCN_FREE mode (activation is not performed upon aerosol class but by physical paramters)
-    IF (NMOD_CCN .GE. 2) &
-    ZCCN_SUM(:,:,:,1) = ZCCN_SUM(:,:,:,1) + &
-                        PSVT(:,:,:,NSV_LIMA_CCN_FREE+1) + PSVT(:,:,:,NSV_LIMA_CCN_ACTI+1)
-    IF (NMOD_CCN .GE. 3) &
-     ZCCN_SUM(:,:,:,1) = ZCCN_SUM(:,:,:,1) + &
-                        PSVT(:,:,:,NSV_LIMA_CCN_FREE+2) + PSVT(:,:,:,NSV_LIMA_CCN_ACTI+2)
-  
+     IF (NMOD_CCN .GE. 2) THEN
+        DO JI = 2, NMOD_CCN
+           ZCCN_SUM(:,:,:,1) = ZCCN_SUM(:,:,:,1) + &
+                        PSVT(:,:,:,NSV_LIMA_CCN_FREE+JI-1) + PSVT(:,:,:,NSV_LIMA_CCN_ACTI+JI-1)
+        END DO
+     END IF
   ELSE
-    IF (NMOD_CCN .GE. 2) &
-     ZCCN_SUM(:,:,:,2) = PSVT(:,:,:,NSV_LIMA_CCN_FREE+1) + PSVT(:,:,:,NSV_LIMA_CCN_ACTI+1)
-
-    IF (NMOD_CCN .GE. 3) &
-     ZCCN_SUM(:,:,:,3) = PSVT(:,:,:,NSV_LIMA_CCN_FREE+2) + PSVT(:,:,:,NSV_LIMA_CCN_ACTI+2)
+     IF (NMOD_CCN .GE. 2) THEN
+        DO JI = 2, NMOD_CCN
+           ZCCN_SUM(:,:,:,JI) = PSVT(:,:,:,NSV_LIMA_CCN_FREE+JI-1) + PSVT(:,:,:,NSV_LIMA_CCN_ACTI+JI-1)
+        END DO
+     END IF
   END IF 
 
-  IF (.NOT.(LDUST)) &
-   ZIFN_SUM(:,:,:,1) = PSVT(:,:,:,NSV_LIMA_IFN_FREE)   + PSVT(:,:,:,NSV_LIMA_IFN_NUCL)
+  IF (.NOT.(LDUST) .AND. NMOD_IFN.GE.1) &
+       ZIFN_SUM(:,:,:,1) = PSVT(:,:,:,NSV_LIMA_IFN_FREE)   + PSVT(:,:,:,NSV_LIMA_IFN_NUCL)
 
-  IF (NMOD_IFN .GE. 2) &
-   ZIFN_SUM(:,:,:,2) = PSVT(:,:,:,NSV_LIMA_IFN_FREE+1) + PSVT(:,:,:,NSV_LIMA_IFN_NUCL+1)
-
+  IF (NMOD_IFN .GE. 2) THEN
+     DO JI = 2, NMOD_IFN
+        ZIFN_SUM(:,:,:,JI) = PSVT(:,:,:,NSV_LIMA_IFN_FREE+JI-1) + PSVT(:,:,:,NSV_LIMA_IFN_NUCL+JI-1)
+     END DO
+  END IF
 END IF ! end if sur LORILAM
-
+!
+!
 ! Sea Salt part
 IF (LSALT) THEN
 !
@@ -329,7 +331,8 @@ ELSE ! keep lima class intiatialization for sea salt + ccn from orilam
 ZCCN_SUM(:,:,:,1) = PSVT(:,:,:,NSV_LIMA_CCN_FREE) + PSVT(:,:,:,NSV_LIMA_CCN_ACTI)
 
 END IF ! end if sur LSALT
-
+!
+!
 ! Dust part
 IF (LDUST) THEN
   ! initatialization of dust if not macc
@@ -352,24 +355,24 @@ IF (LDUST) THEN
   END DO
 
 ELSE ! keep lima class intiatialization
-
-    ZIFN_SUM(:,:,:,1) = PSVT(:,:,:,NSV_LIMA_IFN_FREE) + PSVT(:,:,:,NSV_LIMA_IFN_NUCL)
+   IF (NMOD_IFN.GE.1) &
+        ZIFN_SUM(:,:,:,1) = PSVT(:,:,:,NSV_LIMA_IFN_FREE) + PSVT(:,:,:,NSV_LIMA_IFN_NUCL)
 
 END IF  ! endif sur LDUST
-
-PSVT(:,:,:,NSV_LIMA_CCN_FREE)   = MAX(ZCCN_SUM(:,:,:,1) - PSVT(:,:,:,NSV_LIMA_CCN_ACTI), 0.)
-
-IF (NMOD_CCN .GE. 2) &
-PSVT(:,:,:,NSV_LIMA_CCN_FREE+1) = MAX(ZCCN_SUM(:,:,:,2) - PSVT(:,:,:,NSV_LIMA_CCN_ACTI+1), 0.)
-
-
-IF (NMOD_CCN .GE. 3) &
-PSVT(:,:,:,NSV_LIMA_CCN_FREE+2) = MAX(ZCCN_SUM(:,:,:,3) - PSVT(:,:,:,NSV_LIMA_CCN_ACTI+2), 0.)
-
-PSVT(:,:,:,NSV_LIMA_IFN_FREE)   = MAX(ZIFN_SUM(:,:,:,1) - PSVT(:,:,:,NSV_LIMA_IFN_NUCL), 0.)
-IF (NMOD_IFN .GE. 2) &
-PSVT(:,:,:,NSV_LIMA_IFN_FREE+1) = MAX(ZIFN_SUM(:,:,:,2) - PSVT(:,:,:,NSV_LIMA_IFN_NUCL+1), 0.)
-
+!
+!
+!
+IF (NMOD_CCN .GE. 1) THEN
+   DO JI=1,NMOD_CCN
+      PSVT(:,:,:,NSV_LIMA_CCN_FREE+JI-1)   = MAX(ZCCN_SUM(:,:,:,JI) - PSVT(:,:,:,NSV_LIMA_CCN_ACTI+JI-1), 0.)
+   END DO
+END IF
+!
+IF (NMOD_IFN .GE. 1) THEN
+   DO JI=1,NMOD_IFN
+      PSVT(:,:,:,NSV_LIMA_IFN_FREE+JI-1)   = MAX(ZIFN_SUM(:,:,:,JI) - PSVT(:,:,:,NSV_LIMA_IFN_NUCL+JI-1), 0.)
+   END DO
+END IF
 !
 !
 END SUBROUTINE AER2LIMA

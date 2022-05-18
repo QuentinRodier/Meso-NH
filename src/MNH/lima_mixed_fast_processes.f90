@@ -160,7 +160,7 @@ USE MODD_NSV
 USE MODD_PARAM_LIMA
 USE MODD_PARAM_LIMA_COLD
 USE MODD_PARAM_LIMA_MIXED
-USE MODD_PARAM_LIMA_WARM, ONLY : XDR
+USE MODD_PARAM_LIMA_WARM, ONLY : XBR, XDR
 
 use mode_budget,           only: Budget_store_init, Budget_store_end
 
@@ -826,10 +826,10 @@ IF( IGACC>0 .AND. LRAIN) THEN
 !
   WHERE ( GACC(:) )
     ZZW1(:,2) = PCRT1D(:) *                                           & !! coef of RRACCS
-              XFRACCSS*( PRST1D(:)*PLBDAS(:)**XBS )*( PRHODREF(:)**(-XCEXVT) ) &
+              XFRACCSS*( PRST1D(:)*PLBDAS(:)**XBS )*( PRHODREF(:)**(1-XCEXVT) ) &
          *( XLBRACCS1/((PLBDAS(:)**2)               ) +                  &
             XLBRACCS2/( PLBDAS(:)    * PLBDAR(:)    ) +                  &
-            XLBRACCS3/(               (PLBDAR(:)**2)) )/PLBDAR(:)**3
+            XLBRACCS3/(               (PLBDAR(:)**2)) )/PLBDAR(:)**XBR
     ZZW1(:,4) = MIN( PRRS1D(:),ZZW1(:,2)*ZZW(:) )           ! RRACCSS
     PRRS1D(:) = PRRS1D(:) - ZZW1(:,4)
     PRSS1D(:) = PRSS1D(:) + ZZW1(:,4)
@@ -870,7 +870,7 @@ IF( IGACC>0 .AND. LRAIN) THEN
   WHERE ( GACC(:) .AND. (PRSS1D(:)>XRTMIN(5)/PTSTEP) )
     ZZW1(:,2) = MAX( MIN( PRRS1D(:),ZZW1(:,2)-ZZW1(:,4) ) , 0. )      ! RRACCSG
     ZZW1(:,3) = MIN( PRSS1D(:),XFSACCRG*ZZW(:)*                     & ! RSACCRG
-            ( PRST1D(:) )*( PRHODREF(:)**(-XCEXVT) ) &
+            ( PRST1D(:) )*( PRHODREF(:)**(1-XCEXVT) ) &
            *( XLBSACCR1/((PLBDAR(:)**2)               ) +           &
               XLBSACCR2/( PLBDAR(:)    * PLBDAS(:)    ) +           &
               XLBSACCR3/(               (PLBDAS(:)**2)) ) )
