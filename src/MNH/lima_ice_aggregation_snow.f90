@@ -114,7 +114,7 @@ IF (NMOM_I.EQ.1) THEN
 ELSE
    WHERE ( (PRIT(:)>XRTMIN(4)) .AND. (PRST(:)>XRTMIN(5)) .AND. LDCOMPUTE(:) )
       ZZW1(:) = (PLBDI(:) / PLBDS(:))**3
-      ZZW2(:) = (PCIT(:)*(XNS*PRST(:)*PLBDS(:)**XBS)*EXP(XCOLEXIS*(PT(:)-XTT) )) &
+      ZZW2(:) = (PCIT(:)*(XNS*PRST(:)*PLBDS(:)**XBS)*EXP(XCOLEXIS*(PT(:)-XTT) ))*PRHODREF(:) &
            / (PLBDI(:)**3)
       ZZW3(:) = ZZW2(:)*(XAGGS_CLARGE1+XAGGS_CLARGE2*ZZW1(:))
 !

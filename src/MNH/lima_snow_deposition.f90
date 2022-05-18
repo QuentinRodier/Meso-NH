@@ -149,7 +149,7 @@ ELSE
 !
          ZZW(:) = ( XR0DEPSI+XR1DEPSI*PCJ(:) )*ZZX(:)
 !
-         ZZW2(:) = ZZW(:)*( XC0DEPSI+XC1DEPSI*PCJ(:) )/( XR0DEPSI+XR1DEPSI*PCJ(:) )
+         ZZW2(:)= ( XC0DEPSI+XC1DEPSI*PCJ(:) )*ZZX(:)
       END WHERE
 !
       P_RI_CNVI(:) = ZZW(:)

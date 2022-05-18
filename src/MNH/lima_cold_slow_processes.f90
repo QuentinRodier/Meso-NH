@@ -358,7 +358,7 @@ IF( IMICRO >= 1 ) THEN
       WHERE ( ZLBDAS(:)<XLBDASCNVI_MAX .AND. (ZRST(:)>XRTMIN(5)) &
                                        .AND. (ZSSI(:)<0.0)       )
          ZZW(:) = (ZLBDAS(:)*XDSCNVI_LIM)**(XALPHAS)
-         ZZX(:) = ( -ZSSI(:)/ZAI(:) ) * (XNS*ZRST(:)*ZLBDAS(:)**XBS) * (ZZW(:)**XNUI) * EXP(-ZZW(:))
+         ZZX(:) = ( -ZSSI(:)/ZAI(:) ) * (XNS*ZRST(:)*ZLBDAS(:)**XBS) * (ZZW(:)**XNUS) * EXP(-ZZW(:))
 !
          ZZW(:) = MIN( ( XR0DEPSI+XR1DEPSI*ZCJ(:) )*ZZX(:),ZRSS(:) )
          ZRIS(:) = ZRIS(:) + ZZW(:)
@@ -466,7 +466,7 @@ IF( IMICRO >= 1 ) THEN
       WHERE ( (ZRIT(:)>XRTMIN(4)) .AND. (ZRST(:)>XRTMIN(5)) .AND. (ZRIS(:)>ZRTMIN(4)) &
                                                             .AND. (ZCIS(:)>ZCTMIN(4)) )
          ZZW1(:,3) = (ZLBDAI(:) / ZLBDAS(:))**3
-         ZZW1(:,1) = (ZCIT(:)*(XNS*ZRST(:)*ZLBDAS(:)**XBS)*EXP(XCOLEXIS*(ZZT(:)-XTT) )) &
+         ZZW1(:,1) = (ZCIT(:)*(XNS*ZRST(:)*ZLBDAS(:)**XBS)*EXP(XCOLEXIS*(ZZT(:)-XTT) ))*ZRHODREF(:) &
                                                     / (ZLBDAI(:)**3)
          ZZW1(:,2) = MIN( ZZW1(:,1)*(XAGGS_CLARGE1+XAGGS_CLARGE2*ZZW1(:,3)),ZCIS(:) )
          ZCIS(:) = ZCIS(:) - ZZW1(:,2)

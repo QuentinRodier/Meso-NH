@@ -277,7 +277,7 @@ USE MODD_ALLSTATION_n
 !
 USE MODD_PARAM_LIMA, ONLY : LCOLD, LNUCL, LSEDI, LHHONI, LSNOW, LHAIL, LMEYERS,       &
                             NMOD_IFN, NMOM_I, XIFN_CONC, LIFN_HOM, CIFN_SPECIES,      &
-                            CINT_MIXING, NMOD_IMM, NIND_SPECIE,                       &
+                            CINT_MIXING, NMOD_IMM, NIND_SPECIE, LMURAKAMI,            &
                             YSNOW_T=>LSNOW_T, CPRISTINE_ICE_LIMA, CHEVRIMED_ICE_LIMA, &
                             XFACTNUC_DEP, XFACTNUC_CON,                               &
                             OWARM=>LWARM, LACTI, ORAIN=>LRAIN, OSEDC=>LSEDC,          &
@@ -1030,6 +1030,7 @@ IF (KMI == 1) THEN
   LSNOW  = .TRUE.
   LHAIL  = .FALSE.
   YSNOW_T = .TRUE.
+  LMURAKAMI = .TRUE.
   CPRISTINE_ICE_LIMA = 'PLAT'
   CHEVRIMED_ICE_LIMA = 'GRAU'
   XFACTNUC_DEP = 1.0  

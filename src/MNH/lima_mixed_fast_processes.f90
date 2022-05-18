@@ -1281,6 +1281,8 @@ WHERE( PRGT1D(:)>XRTMIN(6) )
                   ( ZZW1(:,5)+ZZW1(:,6) ) *                            &
                   ( PRHODREF(:)*(XLMTT+(XCI-XCL)*(XTT-PZT(:)))   ) ) / &
                                   ( PRHODREF(:)*(XLMTT-XCL*(XTT-PZT(:))) )   )
+  !We must agregate, at least, the cold species
+   ZRWETG(:)=MAX(ZRWETG(:), ZZW1(:,5)+ZZW1(:,6))
 END WHERE
 !
 !
@@ -1292,8 +1294,8 @@ END WHERE
 ZZW(:) = 0.0
 NHAIL = 0.
 IF (LHAIL) NHAIL = 1. 
-WHERE( PRGT1D(:)>XRTMIN(6) .AND. PZT(:)<XTT                               &
-                         .AND. ZRDRYG(:)>=ZRWETG(:) .AND. ZRWETG(:)>0.0 ) 
+WHERE( PRGT1D(:)>XRTMIN(6) .AND. PZT(:)<XTT .AND. &
+       (ZRDRYG(:)-ZZW1(:,2)-ZZW1(:,3))>=(ZRWETG(:)-ZZW1(:,5)-ZZW1(:,6)) .AND. ZRWETG(:)>0.0 ) 
 !   
   ZZW(:) = ZRWETG(:) - ZZW1(:,5) - ZZW1(:,6) ! RCWETG+RRWETG
 !   
@@ -1376,8 +1378,8 @@ if ( nbumod == kmi .and. lbu_enable ) then
   end if
 end if
 !
-WHERE( PRGT1D(:)>XRTMIN(6) .AND. PZT(:)<XTT                              &
-                         .AND. ZRDRYG(:)<ZRWETG(:) .AND. ZRDRYG(:)>0.0 ) ! case
+WHERE( PRGT1D(:)>XRTMIN(6) .AND. PZT(:)<XTT .AND. &
+       (ZRDRYG(:)-ZZW1(:,2)-ZZW1(:,3))<(ZRWETG(:)-ZZW1(:,5)-ZZW1(:,6)) .AND. ZRDRYG(:)>0.0 )
   PRCS1D(:) = PRCS1D(:) - ZZW1(:,1)
   PRIS1D(:) = PRIS1D(:) - ZZW1(:,2)
   PRSS1D(:) = PRSS1D(:) - ZZW1(:,3)
@@ -1429,8 +1431,9 @@ if ( nbumod == kmi .and. lbu_enable ) then
                                           Unpack( pcis1d(:), mask = gmicro(:, :, :), field = pcis(:, :, :) ) * prhodj(:, :, :) )
 end if
 
-GDRY(:) = (PZT(:)<XHMTMAX) .AND. (PZT(:)>XHMTMIN)      .AND. (ZRDRYG(:)<ZRWETG(:))&
-                           .AND. (PRGT1D(:)>XRTMIN(6)) .AND. (PRCT1D(:)>XRTMIN(2))
+GDRY(:) = (PZT(:)<XHMTMAX) .AND. (PZT(:)>XHMTMIN)            &
+     .AND. (PRGT1D(:)>XRTMIN(6)) .AND. (PRCT1D(:)>XRTMIN(2)) &
+     .AND. (ZRDRYG(:)-ZZW1(:,2)-ZZW1(:,3))<(ZRWETG(:)-ZZW1(:,5)-ZZW1(:,6))
 IGDRY = COUNT( GDRY(:) )
 IF( IGDRY>0 ) THEN
   ALLOCATE(ZVEC1(IGDRY))

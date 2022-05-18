@@ -115,6 +115,7 @@ INTEGER,SAVE :: NGAMINC                          ! Number of tab. Lbda_s
 REAL, DIMENSION(:), SAVE, ALLOCATABLE          &
                        :: XGAMINC_RIM1,        & ! Tab. incomplete Gamma funct.
                           XGAMINC_RIM2,        & ! for XDS+2 and for XBS
+                          XGAMINC_RIM4,        & ! Murakami
                           XGAMINC_HMC            ! and for the HM process
 !
 REAL,SAVE :: XFRACCSS,                         & ! Constants for the accretion 

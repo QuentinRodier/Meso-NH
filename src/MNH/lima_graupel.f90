@@ -414,6 +414,8 @@ WHERE( PRGT(:)>XRTMIN(6) .AND. LDCOMPUTE(:) )
                    ( ZZW5(:)+ZZW6(:) ) *                            &
                    ( PRHODREF(:)*(XLMTT+(XCI-XCL)*(XTT-PT(:)))   ) ) / &
                                    ( PRHODREF(:)*(XLMTT-XCL*(XTT-PT(:))) )   )
+  !We must agregate, at least, the cold species
+   ZRWETG(:)=MAX(ZRWETG(:), ZZW5(:)+ZZW6(:))
 END WHERE
 !
 !            1.f Wet mode and partial conversion to hail
@@ -422,8 +424,8 @@ END WHERE
 ZZW(:) = 0.0
 NHAIL = 0.
 IF (LHAIL) NHAIL = 1. 
-WHERE( LDCOMPUTE(:)      .AND. PRGT(:)>XRTMIN(6)        .AND. PT(:)<XTT       &
-                             .AND. ZRDRYG(:)>=ZRWETG(:) .AND. ZRWETG(:)>0.0 ) 
+WHERE( LDCOMPUTE(:) .AND. PRGT(:)>XRTMIN(6) .AND. PT(:)<XTT .AND. &
+       (ZRDRYG(:)-ZZW2(:)-ZZW3(:))>=(ZRWETG(:)-ZZW5(:)-ZZW6(:)) .AND. ZRWETG(:)>0.0 ) 
 !
 ! Mass of rain and cloud droplets frozen by graupel in wet mode : RCWETG + RRWETG = RWETG - RIWETG - RSWETG
    ZZW7(:) = ZRWETG(:) - ZZW5(:) - ZZW6(:)
@@ -449,8 +451,8 @@ END WHERE
 !            1.g Dry mode
 !            ------------
 !
-WHERE( LDCOMPUTE(:)      .AND. PRGT(:)>XRTMIN(6)       .AND. PT(:)<XTT       &
-                             .AND. ZRDRYG(:)<ZRWETG(:) .AND. ZRDRYG(:)>0.0 )
+WHERE( LDCOMPUTE(:) .AND. PRGT(:)>XRTMIN(6) .AND. PT(:)<XTT .AND.                  &
+       (ZRDRYG(:)-ZZW2(:)-ZZW3(:))<(ZRWETG(:)-ZZW5(:)-ZZW6(:)) .AND. ZRDRYG(:)>0.0 )
    !
    P_RC_DRYG(:) = - ZZW1(:)
    P_CC_DRYG(:) = P_RC_DRYG(:) * PCCT(:)/MAX(PRCT(:),XRTMIN(2))
@@ -470,8 +472,8 @@ END WHERE
 !
 ! BVIE test ZRDRYG<ZZW ?????????????????????????
 !GDRY(:) = (PT(:)<XHMTMAX) .AND. (PT(:)>XHMTMIN)    .AND. (ZRDRYG(:)<ZZW(:))&
-GDRY(:) = (PT(:)<XHMTMAX) .AND. (PT(:)>XHMTMIN)     .AND. (ZRDRYG(:)<ZRWETG(:))&
-               .AND. (PRGT(:)>XRTMIN(6)) .AND. (PRCT(:)>XRTMIN(2)) .AND. LDCOMPUTE(:)
+GDRY(:) = PT(:)<XHMTMAX .AND. PT(:)>XHMTMIN .AND. PRGT(:)>XRTMIN(6) .AND. PRCT(:)>XRTMIN(2) .AND. LDCOMPUTE(:) .AND. &
+          (ZRDRYG(:)-ZZW2(:)-ZZW3(:))<(ZRWETG(:)-ZZW5(:)-ZZW6(:))
 
 ZZX(:)=9999.
 ZVEC1(:)=0.
