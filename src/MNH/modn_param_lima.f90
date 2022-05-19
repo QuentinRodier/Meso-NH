@@ -26,7 +26,7 @@ NAMELIST/NAM_PARAM_LIMA/LCOLD, LNUCL, LSEDI, LSNOW, LHAIL, LHHONI, LMEYERS,&
                         XFACTNUC_DEP, XFACTNUC_CON, NPHILLIPS,             &
                         LCIBU, XNDEBRIS_CIBU, LRDSF, LMURAKAMI,            &
                         LWARM, LACTI, LRAIN, LSEDC, LACTIT, LBOUND, LSPRO, &
-                        LADJ, LKHKO, NMOM_C, NMOM_R,                       &
+                        LADJ, LKHKO, LKESSLERAC, NMOM_C, NMOM_R,           &
                         NMOD_CCN, XCCN_CONC,                               &
                         LCCN_HOM, CCCN_MODES, HINI_CCN, HTYPE_CCN,         &
                         XALPHAC, XNUC, XALPHAR, XNUR,                      &

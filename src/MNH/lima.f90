@@ -548,8 +548,13 @@ IF ( KRR .GE. 7 ) ZRHS(:,:,:) = PRS(:,:,:,7)
 !
 ! Concentrations
 !
-IF ( LWARM .AND. NMOM_C.GE.2)             ZCCT(:,:,:)   = PSVS(:,:,:,NSV_LIMA_NC) * PTSTEP
-IF ( LWARM .AND. NMOM_C.GE.2)             ZCCS(:,:,:)   = PSVS(:,:,:,NSV_LIMA_NC)
+IF ( NMOM_C.GE.2) THEN
+   ZCCT(:,:,:)   = PSVS(:,:,:,NSV_LIMA_NC) * PTSTEP
+   ZCCS(:,:,:)   = PSVS(:,:,:,NSV_LIMA_NC)
+ELSE
+   ZCCT(:,:,:)   = 300.E6 / PRHODREF(:,:,:)
+   ZCCS(:,:,:)   = ZCCT(:,:,:) / PTSTEP
+END IF
 IF ( LWARM .AND. LRAIN .AND. NMOM_R.GE.2) ZCRT(:,:,:)   = PSVS(:,:,:,NSV_LIMA_NR) * PTSTEP
 IF ( LWARM .AND. LRAIN .AND. NMOM_R.GE.2) ZCRS(:,:,:)   = PSVS(:,:,:,NSV_LIMA_NR)
 IF ( LCOLD .AND. NMOM_I.GE.2)             ZCIT(:,:,:)   = PSVS(:,:,:,NSV_LIMA_NI) * PTSTEP

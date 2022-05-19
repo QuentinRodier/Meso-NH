@@ -73,7 +73,8 @@ contains
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_PARAM_LIMA,      ONLY : XRTMIN, XCTMIN, LCOLD, LWARM, LRAIN, NMOD_CCN, NMOD_IFN
+USE MODD_PARAM_LIMA,      ONLY : XRTMIN, XCTMIN, LCOLD, LWARM, LRAIN, NMOD_CCN, NMOD_IFN, &
+                                 NMOM_C, NMOM_R, NMOM_I
 USE MODD_PARAM_LIMA_COLD, ONLY : XAI, XBI
 USE MODD_NSV,             ONLY : NSV_LIMA_BEG_A, NSV_LIMA_NC_A, NSV_LIMA_NR_A, NSV_LIMA_CCN_ACTI_A, &
                                  NSV_LIMA_NI_A, NSV_LIMA_IFN_NUCL_A
@@ -110,7 +111,7 @@ ILUOUT = TLUOUT%NLU
 !*       2.    INITIALIZATION
 !              --------------
 !
-IF (LWARM .AND. NRR.GE.2) THEN
+IF (LWARM .AND. NRR.GE.2 .AND. NMOM_C.GE.2) THEN
 !
 !  droplets
 !
@@ -138,7 +139,7 @@ IF (LWARM .AND. NRR.GE.2) THEN
    END IF
 END IF
 !
-IF (LWARM .AND. LRAIN .AND. NRR.GE.3) THEN
+IF (LWARM .AND. LRAIN .AND. NRR.GE.3 .AND. NMOM_R.GE.2) THEN
 !
 !  drops
 !
@@ -161,7 +162,7 @@ IF (LWARM .AND. LRAIN .AND. NRR.GE.3) THEN
    END IF
 END IF
 !
-IF (LCOLD .AND. NRR.GE.4) THEN
+IF (LCOLD .AND. NRR.GE.4 .AND. NMOM_I.GE.2) THEN
 !
 ! ice crystals
 !

@@ -606,11 +606,16 @@ IF (LCOLD .AND. LWARM) THEN
    CALL LIMA_DROPLETS_HOM_FREEZING (PTSTEP, LDCOMPUTE,                 & ! independent from CF,IF,PF
                                     ZT, ZLVFACT, ZLSFACT,              &
                                     PRCT, PCCT, ZLBDC,                 &
-                                    P_TH_HONC, P_RC_HONC, P_CC_HONC,   &
-                                    PA_TH, PA_RC, PA_CC, PA_RI, PA_CI  )
+                                    P_TH_HONC, P_RC_HONC, P_CC_HONC    )
+   PA_RC(:) = PA_RC(:) + P_RC_HONC(:)
+   PA_CC(:) = PA_CC(:) + P_CC_HONC(:)
+   PA_RI(:) = PA_RI(:) - P_RC_HONC(:)
+   PA_CI(:) = PA_CI(:) - P_CC_HONC(:) 
+   P_TH_ACC(:) = - P_CC_HONC(:) * (ZLSFACT(:)-ZLVFACT(:))
+   PA_TH(:) = PA_TH(:) + P_TH_HONC(:)
 END IF
 !
-IF (LWARM .AND. LRAIN .AND. (.NOT. LKHKO)) THEN
+IF (LWARM .AND. LRAIN .AND. (.NOT. LKHKO) .AND. NMOM_C.GE.2) THEN
    CALL LIMA_DROPLETS_SELF_COLLECTION (LDCOMPUTE,          & ! depends on CF
                                        PRHODREF,           &
                                        PCCT/ZCF1D, ZLBDC3, &
@@ -649,7 +654,7 @@ IF (LWARM .AND. LRAIN) THEN
    PA_RR(:) = PA_RR(:) - P_RC_ACCR(:)
 END IF
 !
-IF (LWARM .AND. LRAIN .AND. (.NOT. LKHKO)) THEN 
+IF (LWARM .AND. LRAIN .AND. (.NOT. LKHKO) .AND. NMOM_R.GE.2) THEN 
    CALL LIMA_DROPS_SELF_COLLECTION (LDCOMPUTE,           & ! depends on PF
                                     PRHODREF,            &
                                     PCRT/ZPF1D(:), ZLBDR, ZLBDR3, &

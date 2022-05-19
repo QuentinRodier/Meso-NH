@@ -59,7 +59,7 @@ END MODULE MODI_LIMA_DROPLETS_AUTOCONVERSION
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_PARAM_LIMA,      ONLY : XRTMIN, XCTMIN, LKHKO
+USE MODD_PARAM_LIMA,      ONLY : XRTMIN, XCTMIN, LKHKO, LKESSLERAC, NMOM_C
 USE MODD_PARAM_LIMA_WARM, ONLY : XLAUTR, XAUTO1, XLAUTR_THRESHOLD, &
                                  XITAUTR, XAUTO2, XITAUTR_THRESHOLD, &
                                  XACCR4, XACCR5, XACCR3, XACCR1, XAC, XR0
@@ -96,7 +96,9 @@ ZW3(:) = 0.0
 ZW2(:) = 0.0
 ZW1(:) = 0.0
 !
-IF (LKHKO) THEN
+IF (NMOM_C.EQ.1 .AND. LKESSLERAC) THEN
+   P_RC_AUTO(:) = - 1.E-3 * MAX ( PRCT(:) - 0.5E-3 / PRHODREF(:), 0. )
+ELSE IF (LKHKO) THEN
 !
 !        1. Autoconversion of cloud droplets (Berry-Reinhardt parameterization)
 !   	 ----------------------------------------------------------------------

@@ -374,11 +374,11 @@ PCIT(:,:,:) = 0.
 PCCS(:,:,:) = 0.
 ! PCIS(:,:,:) = 0.
 !
-IF ( LWARM ) PCCT(:,:,:) = PSVS(:,:,:,NSV_LIMA_NC)*PTSTEP
-IF ( LCOLD ) PCIT(:,:,:) = PSVT(:,:,:,NSV_LIMA_NI)
+IF ( LWARM .AND. NMOM_C.GE.2 ) PCCT(:,:,:) = PSVS(:,:,:,NSV_LIMA_NC)*PTSTEP
+IF ( LCOLD .AND. NMOM_I.GE.2 ) PCIT(:,:,:) = PSVT(:,:,:,NSV_LIMA_NI)
 !
-IF ( LWARM ) PCCS(:,:,:) = PSVS(:,:,:,NSV_LIMA_NC)
-! IF ( LCOLD ) PCIS(:,:,:) = PSVS(:,:,:,NSV_LIMA_NI)
+IF ( LWARM .AND. NMOM_C.GE.2 ) PCCS(:,:,:) = PSVS(:,:,:,NSV_LIMA_NC)
+! IF ( LCOLD .AND. NMOM_I.GE.2 ) PCIS(:,:,:) = PSVS(:,:,:,NSV_LIMA_NI)
 !
 IF ( LSCAV .AND. LAERO_MASS ) PMAS(:,:,:) = PSVS(:,:,:,NSV_LIMA_SCAVMASS)
 ! 
@@ -519,7 +519,7 @@ DO JITER =1,ITERMAX
            Z_SIGS, PMFCONV, PCLDFR, Z_SRCS, GUSERI, G_SIGMAS,                  &
            Z_SIGQSAT, PLV=ZLV, PLS=ZLS, PCPH=ZCPH )
    END IF
-   IF (OSUBG_COND) THEN
+   IF (OSUBG_COND .AND. NMOM_C.GE.2) THEN
       PSRCS=Z_SRCS
       ZW_MF=0.
       CALL LIMA_CCN_ACTIVATION (TPFILE,                          &
@@ -630,7 +630,7 @@ END IF
 !
 ZMASK(:,:,:) = 0.0
 ZW(:,:,:) = 0.
-WHERE (PRCS(:,:,:) <= ZRTMIN(2) .OR. PCCS(:,:,:) <= ZCTMIN(2)) 
+WHERE (PRCS(:,:,:) <= ZRTMIN(2) .OR. PCCS(:,:,:) <0.) 
    PRVS(:,:,:) = PRVS(:,:,:) + PRCS(:,:,:) 
    PTHS(:,:,:) = PTHS(:,:,:) - PRCS(:,:,:)*ZLV(:,:,:)/(ZCPH(:,:,:)*ZEXNS(:,:,:))
    PRCS(:,:,:) = 0.0
@@ -696,8 +696,8 @@ IF ( KRR .GE. 6 ) PRS(:,:,:,6) = PRGS(:,:,:)
 !
 ! Prepare 3D number concentrations
 !
-IF ( LWARM ) PSVS(:,:,:,NSV_LIMA_NC) = PCCS(:,:,:)
-! IF ( LCOLD ) PSVS(:,:,:,NSV_LIMA_NI) = PCIS(:,:,:)
+IF ( LWARM .AND. NMOM_C.GE.2 ) PSVS(:,:,:,NSV_LIMA_NC) = PCCS(:,:,:)
+! IF ( LCOLD .AND. NMOM_I.GE.2 ) PSVS(:,:,:,NSV_LIMA_NI) = PCIS(:,:,:)
 !
 IF ( LSCAV .AND. LAERO_MASS ) PSVS(:,:,:,NSV_LIMA_SCAVMASS) = PMAS(:,:,:)
 ! 

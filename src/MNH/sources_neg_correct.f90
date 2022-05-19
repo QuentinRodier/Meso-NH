@@ -235,7 +235,7 @@ CLOUD: select case ( hcloud )
     end where
 !
 !
-  case( 'LIMA' )
+  case( 'LIMA_OFF' )
 ! Correction where rc<0 or Nc<0
     if ( lwarm_lima ) then
       where ( prrs(:, :, :, 2) < xrtmin_lima(2) / ptstep .or. prsvs(:, :, :, nsv_lima_nc) < xctmin_lima(2) / ptstep )

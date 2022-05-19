@@ -148,6 +148,7 @@ LOGICAL, SAVE :: LACTTKE       ! TRUE to take into account TKE in W for activati
 LOGICAL, SAVE :: LADJ          ! TRUE for adjustment procedure + Smax (false for diagnostic supersaturation)
 LOGICAL, SAVE :: LSPRO         ! TRUE for prognostic supersaturation                     
 LOGICAL, SAVE :: LKHKO         ! TRUE for Scu simulation (replicates the previous KHKO scheme)                     
+LOGICAL, SAVE :: LKESSLERAC    ! TRUE for Kessler autoconversion (if NMOM_C=1)
 !
 INTEGER, SAVE :: NMOM_C        ! Number of moments for cloud droplets
 INTEGER, SAVE :: NMOM_R        ! Number of moments for rain drops
