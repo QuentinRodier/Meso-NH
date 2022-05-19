@@ -91,7 +91,7 @@ USE MODD_PARAMETERS, ONLY : JPHEXT, JPVEXT
 USE MODD_NSV,        ONLY : NSV_LIMA_NC, NSV_LIMA_NR, NSV_LIMA_CCN_FREE, NSV_LIMA_CCN_ACTI, &
                             NSV_LIMA_NI, NSV_LIMA_IFN_FREE, NSV_LIMA_IFN_NUCL, NSV_LIMA_IMM_NUCL, NSV_LIMA_HOM_HAZE
 USE MODD_PARAM_LIMA, ONLY : LCOLD, LNUCL, LMEYERS, LSNOW, LWARM, LACTI, LRAIN, LHHONI,  &
-                            NMOD_CCN, NMOD_IFN, NMOD_IMM, XCTMIN, XRTMIN, LSPRO, NMOM_I
+                            NMOD_CCN, NMOD_IFN, NMOD_IMM, XCTMIN, XRTMIN, LSPRO, NMOM_I, NMOM_C
 USE MODD_TURB_n,     ONLY : LSUBG_COND
 
 use mode_budget,     only: Budget_store_add, Budget_store_init, Budget_store_end
@@ -152,7 +152,7 @@ INTEGER :: JL
 !
 !-------------------------------------------------------------------------------
 !
-IF ( LWARM .AND. LACTI .AND. NMOD_CCN >=1 ) THEN
+IF ( LWARM .AND. LACTI .AND. NMOD_CCN >=1 .AND. NMOM_C.GE.2) THEN
 
   IF (.NOT.LSUBG_COND .AND. .NOT.LSPRO) THEN
 
@@ -347,7 +347,7 @@ END IF
 !
 !-------------------------------------------------------------------------------
 !
-IF ( LCOLD .AND. LNUCL .AND. LHHONI .AND. NMOD_CCN >= 1) THEN
+IF ( LCOLD .AND. LNUCL .AND. LHHONI .AND. NMOD_CCN >= 1 .AND. NMOM_I.GE.2) THEN
   if ( lbu_enable ) then
     if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'HONH', PTHT(:, :, :) * prhodj(:, :, :) / ptstep )
     if ( lbudget_rv ) call Budget_store_init( tbudgets(NBUDGET_RV), 'HONH', PRVT(:, :, :) * prhodj(:, :, :) / ptstep )

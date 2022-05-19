@@ -121,13 +121,14 @@ USE MODD_CST,             ONLY: XCI, XCL, XCPD, XCPV, XLSTT, XLVTT, XTT, XRHOLW,
 USE MODD_IO,              ONLY: TFILEDATA
 USE MODD_NSV,             ONLY: NSV_LIMA_BEG,                                                   &
                                 NSV_LIMA_NC, NSV_LIMA_NR, NSV_LIMA_CCN_FREE, NSV_LIMA_CCN_ACTI, &
-                                NSV_LIMA_NI, NSV_LIMA_IFN_FREE,                                 &
-                                NSV_LIMA_IFN_NUCL, NSV_LIMA_IMM_NUCL, NSV_LIMA_HOM_HAZE
+                                NSV_LIMA_NI, NSV_LIMA_NS, NSV_LIMA_NG, NSV_LIMA_NH,             &
+                                NSV_LIMA_IFN_FREE, NSV_LIMA_IFN_NUCL, NSV_LIMA_IMM_NUCL, NSV_LIMA_HOM_HAZE
 USE MODD_PARAMETERS,      ONLY: JPHEXT, JPVEXT
 USE MODD_PARAM_LIMA,      ONLY: LCOLD, LRAIN, LWARM, NMOD_CCN, NMOD_IFN, NMOD_IMM, LHHONI,      &
                                 LACTIT, LFEEDBACKT, NMAXITER, XMRSTEP, XTSTEP_TS,               &
                                 LSEDC, LSEDI, XRTMIN, XCTMIN, LDEPOC, XVDEPOC,                  &
-                                LHAIL, LSNOW
+                                LHAIL, LSNOW,                                                   &
+                                NMOM_C, NMOM_R, NMOM_I, NMOM_S, NMOM_G, NMOM_H
 USE MODD_PARAM_LIMA_COLD, ONLY: XAI, XBI
 USE MODD_PARAM_LIMA_WARM, ONLY: XLBC, XLBEXC, XAC, XBC, XAR, XBR
 USE MODD_TURB_n,          ONLY: LSUBG_COND
@@ -193,9 +194,9 @@ REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PPRCFR     ! Cloud fraction
 !
 ! Prognostic variables and sources
 REAL, DIMENSION(SIZE(PRT,1),SIZE(PRT,2),SIZE(PRT,3))      :: ZTHT, ZRVT, ZRCT, ZRRT, ZRIT, ZRST, ZRGT, ZRHT
-REAL, DIMENSION(SIZE(PRT,1),SIZE(PRT,2),SIZE(PRT,3))      :: ZCCT, ZCRT, ZCIT
+REAL, DIMENSION(SIZE(PRT,1),SIZE(PRT,2),SIZE(PRT,3))      :: ZCCT, ZCRT, ZCIT, ZCST, ZCGT, ZCHT
 REAL, DIMENSION(SIZE(PRT,1),SIZE(PRT,2),SIZE(PRT,3))      :: ZTHS, ZRVS, ZRCS, ZRRS, ZRIS, ZRSS, ZRGS, ZRHS
-REAL, DIMENSION(SIZE(PRT,1),SIZE(PRT,2),SIZE(PRT,3))      :: ZCCS, ZCRS, ZCIS
+REAL, DIMENSION(SIZE(PRT,1),SIZE(PRT,2),SIZE(PRT,3))      :: ZCCS, ZCRS, ZCIS, ZCSS, ZCGS, ZCHS
 REAL, DIMENSION(SIZE(PRT,1),SIZE(PRT,2),SIZE(PRT,3),NCCN) :: ZCCNFT, ZCCNAT
 REAL, DIMENSION(SIZE(PRT,1),SIZE(PRT,2),SIZE(PRT,3),NCCN) :: ZCCNFS, ZCCNAS
 REAL, DIMENSION(SIZE(PRT,1),SIZE(PRT,2),SIZE(PRT,3),NIFN) :: ZIFNFT, ZIFNNT
@@ -215,7 +216,7 @@ REAL, DIMENSION(:),   ALLOCATABLE ::                               &
      ZP1D, ZRHODREF1D, ZEXNREF1D, ZEXN1D,                          &
      ZTHT1D,                                                       &
      ZRVT1D, ZRCT1D, ZRRT1D, ZRIT1D, ZRST1D, ZRGT1D, ZRHT1D,       &
-     ZCCT1D, ZCRT1D, ZCIT1D,                                       &
+     ZCCT1D, ZCRT1D, ZCIT1D, ZCST1D, ZCGT1D, ZCHT1D,               &
      ZEVAP1D
 REAL, DIMENSION(:,:), ALLOCATABLE :: ZIFNN1D
 
@@ -268,8 +269,8 @@ REAL, DIMENSION(SIZE(PTHT,1),SIZE(PTHT,2),SIZE(PTHT,3)) ::  &
 !
 ! Packed variables for total tendencies
 REAL, DIMENSION(:),   ALLOCATABLE ::                                              &
-     ZA_TH, ZA_RV, ZA_RC, ZA_CC, ZA_RR, ZA_CR, ZA_RI, ZA_CI, ZA_RS, ZA_RG, ZA_RH, & ! ZA = continuous tendencies (kg/kg/s = S variable)
-     ZB_TH, ZB_RV, ZB_RC, ZB_CC, ZB_RR, ZB_CR, ZB_RI, ZB_CI, ZB_RS, ZB_RG, ZB_RH    ! ZB = instant mixing ratio change (kg/kg = T variable)
+     ZA_TH, ZA_RV, ZA_RC, ZA_CC, ZA_RR, ZA_CR, ZA_RI, ZA_CI, ZA_RS, ZA_CS, ZA_RG, ZA_CG, ZA_RH, ZA_CH, & ! ZA = continuous tendencies (kg/kg/s = S variable)
+     ZB_TH, ZB_RV, ZB_RC, ZB_CC, ZB_RR, ZB_CR, ZB_RI, ZB_CI, ZB_RS, ZB_CS, ZB_RG, ZB_CG, ZB_RH, ZB_CH    ! ZB = instant mixing ratio change (kg/kg = T variable)
 REAL, DIMENSION(:,:), ALLOCATABLE :: ZB_IFNN
 
 !
@@ -396,6 +397,12 @@ ZCRT(:,:,:)   = 0.
 ZCRS(:,:,:)   = 0.
 ZCIT(:,:,:)   = 0.
 ZCIS(:,:,:)   = 0.
+ZCST(:,:,:)   = 0.
+ZCSS(:,:,:)   = 0.
+ZCGT(:,:,:)   = 0.
+ZCGS(:,:,:)   = 0.
+ZCHT(:,:,:)   = 0.
+ZCHS(:,:,:)   = 0.
 ZCCNFT(:,:,:,:) = 0.
 ZCCNAT(:,:,:,:) = 0.
 ZCCNFS(:,:,:,:) = 0.
@@ -541,12 +548,18 @@ IF ( KRR .GE. 7 ) ZRHS(:,:,:) = PRS(:,:,:,7)
 !
 ! Concentrations
 !
-IF ( LWARM )             ZCCT(:,:,:)   = PSVS(:,:,:,NSV_LIMA_NC) * PTSTEP
-IF ( LWARM )             ZCCS(:,:,:)   = PSVS(:,:,:,NSV_LIMA_NC)
-IF ( LWARM .AND. LRAIN ) ZCRT(:,:,:)   = PSVS(:,:,:,NSV_LIMA_NR) * PTSTEP
-IF ( LWARM .AND. LRAIN ) ZCRS(:,:,:)   = PSVS(:,:,:,NSV_LIMA_NR)
-IF ( LCOLD )             ZCIT(:,:,:)   = PSVS(:,:,:,NSV_LIMA_NI) * PTSTEP
-IF ( LCOLD )             ZCIS(:,:,:)   = PSVS(:,:,:,NSV_LIMA_NI)
+IF ( LWARM .AND. NMOM_C.GE.2)             ZCCT(:,:,:)   = PSVS(:,:,:,NSV_LIMA_NC) * PTSTEP
+IF ( LWARM .AND. NMOM_C.GE.2)             ZCCS(:,:,:)   = PSVS(:,:,:,NSV_LIMA_NC)
+IF ( LWARM .AND. LRAIN .AND. NMOM_R.GE.2) ZCRT(:,:,:)   = PSVS(:,:,:,NSV_LIMA_NR) * PTSTEP
+IF ( LWARM .AND. LRAIN .AND. NMOM_R.GE.2) ZCRS(:,:,:)   = PSVS(:,:,:,NSV_LIMA_NR)
+IF ( LCOLD .AND. NMOM_I.GE.2)             ZCIT(:,:,:)   = PSVS(:,:,:,NSV_LIMA_NI) * PTSTEP
+IF ( LCOLD .AND. NMOM_I.GE.2)             ZCIS(:,:,:)   = PSVS(:,:,:,NSV_LIMA_NI)
+IF ( LCOLD .AND. LSNOW .AND. NMOM_S.GE.2) ZCST(:,:,:)   = PSVS(:,:,:,NSV_LIMA_NS) * PTSTEP
+IF ( LCOLD .AND. LSNOW .AND. NMOM_S.GE.2) ZCSS(:,:,:)   = PSVS(:,:,:,NSV_LIMA_NS)
+IF ( LCOLD .AND. NMOM_G.GE.2)             ZCGT(:,:,:)   = PSVS(:,:,:,NSV_LIMA_NG) * PTSTEP
+IF ( LCOLD .AND. NMOM_G.GE.2)             ZCGS(:,:,:)   = PSVS(:,:,:,NSV_LIMA_NG)
+IF ( LCOLD .AND. NMOM_H.GE.2)             ZCHT(:,:,:)   = PSVS(:,:,:,NSV_LIMA_NH) * PTSTEP
+IF ( LCOLD .AND. NMOM_H.GE.2)             ZCHS(:,:,:)   = PSVS(:,:,:,NSV_LIMA_NH)
 !
 IF ( NMOD_CCN .GE. 1 )   ZCCNFT(:,:,:,:) = PSVS(:,:,:,NSV_LIMA_CCN_FREE:NSV_LIMA_CCN_FREE+NMOD_CCN-1) * PTSTEP
 IF ( NMOD_CCN .GE. 1 )   ZCCNAT(:,:,:,:) = PSVS(:,:,:,NSV_LIMA_CCN_ACTI:NSV_LIMA_CCN_ACTI+NMOD_CCN-1) * PTSTEP
@@ -664,27 +677,27 @@ end if
 ZRT_SUM = (ZRVS + ZRCS + ZRRS + ZRIS + ZRSS + ZRGS + ZRHS)*PTSTEP
 ZCPT    = XCPD + (XCPV * ZRVS + XCL * (ZRCS + ZRRS) + XCI * (ZRIS + ZRSS + ZRGS + ZRHS))*PTSTEP
 IF (LWARM .AND. LSEDC) CALL LIMA_SEDIMENTATION(IIB, IIE, IIT, IJB, IJE, IJT, IKB, IKE, IKTB, IKTE, IKT, KKL, &
-                                               'L', 2, 2, 1, PTSTEP, PDZZ, PRHODREF, PPABST, ZT, ZRT_SUM, ZCPT, ZRCS, ZCCS, PINPRC)
+     'L', NMOM_C, 2, 1, PTSTEP, PDZZ, PRHODREF, PPABST, ZT, ZRT_SUM, ZCPT, ZRCS, ZCCS, PINPRC)
 ZRT_SUM = (ZRVS + ZRCS + ZRRS + ZRIS + ZRSS + ZRGS + ZRHS)*PTSTEP
 ZCPT    = XCPD + (XCPV * ZRVS + XCL * (ZRCS + ZRRS) + XCI * (ZRIS + ZRSS + ZRGS + ZRHS))*PTSTEP
 IF (LWARM .AND. LRAIN) CALL LIMA_SEDIMENTATION(IIB, IIE, IIT, IJB, IJE, IJT, IKB, IKE, IKTB, IKTE, IKT, KKL, &
-                                               'L', 2, 3, 1, PTSTEP, PDZZ, PRHODREF, PPABST, ZT, ZRT_SUM, ZCPT, ZRRS, ZCRS, PINPRR)
+     'L', NMOM_R, 3, 1, PTSTEP, PDZZ, PRHODREF, PPABST, ZT, ZRT_SUM, ZCPT, ZRRS, ZCRS, PINPRR)
 ZRT_SUM = (ZRVS + ZRCS + ZRRS + ZRIS + ZRSS + ZRGS + ZRHS)*PTSTEP
 ZCPT    = XCPD + (XCPV * ZRVS + XCL * (ZRCS + ZRRS) + XCI * (ZRIS + ZRSS + ZRGS + ZRHS))*PTSTEP
 IF (LCOLD .AND. LSEDI) CALL LIMA_SEDIMENTATION(IIB, IIE, IIT, IJB, IJE, IJT, IKB, IKE, IKTB, IKTE, IKT, KKL, &
-                                               'I', 2, 4, 1, PTSTEP, PDZZ, PRHODREF, PPABST, ZT, ZRT_SUM, ZCPT, ZRIS, ZCIS, ZW2D)
+     'I', NMOM_I, 4, 1, PTSTEP, PDZZ, PRHODREF, PPABST, ZT, ZRT_SUM, ZCPT, ZRIS, ZCIS, ZW2D)
 ZRT_SUM = (ZRVS + ZRCS + ZRRS + ZRIS + ZRSS + ZRGS + ZRHS)*PTSTEP
 ZCPT    = XCPD + (XCPV * ZRVS + XCL * (ZRCS + ZRRS) + XCI * (ZRIS + ZRSS + ZRGS + ZRHS))*PTSTEP
 IF (LCOLD .AND. LSNOW) CALL LIMA_SEDIMENTATION(IIB, IIE, IIT, IJB, IJE, IJT, IKB, IKE, IKTB, IKTE, IKT, KKL, &
-                                               'I', 1, 5, 1, PTSTEP, PDZZ, PRHODREF, PPABST, ZT, ZRT_SUM, ZCPT, ZRSS, ZW3D, PINPRS)
+     'I', NMOM_S, 5, 1, PTSTEP, PDZZ, PRHODREF, PPABST, ZT, ZRT_SUM, ZCPT, ZRSS, ZCSS, PINPRS)
 ZRT_SUM = (ZRVS + ZRCS + ZRRS + ZRIS + ZRSS + ZRGS + ZRHS)*PTSTEP
 ZCPT    = XCPD + (XCPV * ZRVS + XCL * (ZRCS + ZRRS) + XCI * (ZRIS + ZRSS + ZRGS + ZRHS))*PTSTEP
 IF (LCOLD .AND. LSNOW) CALL LIMA_SEDIMENTATION(IIB, IIE, IIT, IJB, IJE, IJT, IKB, IKE, IKTB, IKTE, IKT, KKL, &
-                                               'I', 1, 6, 1, PTSTEP, PDZZ, PRHODREF, PPABST, ZT, ZRT_SUM, ZCPT, ZRGS, ZW3D, PINPRG)
+     'I', NMOM_G, 6, 1, PTSTEP, PDZZ, PRHODREF, PPABST, ZT, ZRT_SUM, ZCPT, ZRGS, ZCGS, PINPRG)
 ZRT_SUM = (ZRVS + ZRCS + ZRRS + ZRIS + ZRSS + ZRGS + ZRHS)*PTSTEP
 ZCPT    = XCPD + (XCPV * ZRVS + XCL * (ZRCS + ZRRS) + XCI * (ZRIS + ZRSS + ZRGS + ZRHS))*PTSTEP
 IF (LCOLD .AND. LHAIL) CALL LIMA_SEDIMENTATION(IIB, IIE, IIT, IJB, IJE, IJT, IKB, IKE, IKTB, IKTE, IKT, KKL, &
-                                               'I', 1, 7, 1, PTSTEP, PDZZ, PRHODREF, PPABST, ZT, ZRT_SUM, ZCPT, ZRHS, ZW3D, PINPRH)
+     'I', NMOM_H, 7, 1, PTSTEP, PDZZ, PRHODREF, PPABST, ZT, ZRT_SUM, ZCPT, ZRHS, ZCHS, PINPRH)
 !
 ZTHS(:,:,:) = ZT(:,:,:) / ZEXN(:,:,:) * ZINV_TSTEP
 !
@@ -767,9 +780,12 @@ IF ( KRR .GE. 5 ) ZRST(:,:,:) = ZRSS(:,:,:) * PTSTEP
 IF ( KRR .GE. 6 ) ZRGT(:,:,:) = ZRGS(:,:,:) * PTSTEP
 IF ( KRR .GE. 7 ) ZRHT(:,:,:) = ZRHS(:,:,:) * PTSTEP
 !
-IF ( LWARM )             ZCCT(:,:,:)   = ZCCS(:,:,:) * PTSTEP
-IF ( LWARM .AND. LRAIN ) ZCRT(:,:,:)   = ZCRS(:,:,:) * PTSTEP
-IF ( LCOLD )             ZCIT(:,:,:)   = ZCIS(:,:,:) * PTSTEP
+IF ( LWARM .AND. NMOM_C.GE.2 )             ZCCT(:,:,:)   = ZCCS(:,:,:) * PTSTEP
+IF ( LWARM .AND. LRAIN .AND. NMOM_R.GE.2 ) ZCRT(:,:,:)   = ZCRS(:,:,:) * PTSTEP
+IF ( LCOLD .AND. NMOM_I.GE.2 )             ZCIT(:,:,:)   = ZCIS(:,:,:) * PTSTEP
+IF ( LCOLD .AND. NMOM_S.GE.2 )             ZCST(:,:,:)   = ZCSS(:,:,:) * PTSTEP
+IF ( LCOLD .AND. NMOM_G.GE.2 )             ZCGT(:,:,:)   = ZCGS(:,:,:) * PTSTEP
+IF ( LCOLD .AND. NMOM_H.GE.2 )             ZCHT(:,:,:)   = ZCHS(:,:,:) * PTSTEP
 ! 
 !-------------------------------------------------------------------------------
 !
@@ -780,7 +796,9 @@ CALL LIMA_COMPUTE_CLOUD_FRACTIONS (IIB, IIE, IJB, IJE, IKB, IKE, KKL, &
                                    ZCCT, ZRCT,                        &
                                    ZCRT, ZRRT,                        &
                                    ZCIT, ZRIT,                        &
-                                   ZRST, ZRGT, ZRHT,                  &
+                                   ZCST, ZRST,                        &
+                                   ZCGT, ZRGT,                        &
+                                   ZCHT, ZRHT,                        &
                                    PCLDFR, PICEFR, PPRCFR             )
 !
 !-------------------------------------------------------------------------------
@@ -805,9 +823,12 @@ ZRSS(:,:,:) = ZRST(:,:,:) *ZINV_TSTEP
 ZRGS(:,:,:) = ZRGT(:,:,:) *ZINV_TSTEP
 ZRHS(:,:,:) = ZRHT(:,:,:) *ZINV_TSTEP
 !
-ZCCS(:,:,:) = ZCCT(:,:,:) *ZINV_TSTEP
-ZCRS(:,:,:) = ZCRT(:,:,:) *ZINV_TSTEP
-ZCIS(:,:,:) = ZCIT(:,:,:) *ZINV_TSTEP
+IF (NMOM_C.GE.2) ZCCS(:,:,:) = ZCCT(:,:,:) *ZINV_TSTEP
+IF (NMOM_R.GE.2) ZCRS(:,:,:) = ZCRT(:,:,:) *ZINV_TSTEP
+IF (NMOM_I.GE.2) ZCIS(:,:,:) = ZCIT(:,:,:) *ZINV_TSTEP
+IF (NMOM_S.GE.2) ZCSS(:,:,:) = ZCST(:,:,:) *ZINV_TSTEP
+IF (NMOM_G.GE.2) ZCGS(:,:,:) = ZCGT(:,:,:) *ZINV_TSTEP
+IF (NMOM_H.GE.2) ZCHS(:,:,:) = ZCHT(:,:,:) *ZINV_TSTEP
 !
 ZCCNFS(:,:,:,:) = ZCCNFT(:,:,:,:) *ZINV_TSTEP
 ZCCNAS(:,:,:,:) = ZCCNAT(:,:,:,:) *ZINV_TSTEP
@@ -891,6 +912,9 @@ DO WHILE(ANY(ZTIME(IIB:IIE,IJB:IJE,IKTB:IKTE)<PTSTEP))
       ALLOCATE(ZCCT1D(IPACK))
       ALLOCATE(ZCRT1D(IPACK))
       ALLOCATE(ZCIT1D(IPACK))
+      ALLOCATE(ZCST1D(IPACK))
+      ALLOCATE(ZCGT1D(IPACK))
+      ALLOCATE(ZCHT1D(IPACK))
       ALLOCATE(ZIFNN1D(IPACK,NMOD_IFN))
       ALLOCATE(ZEVAP1D(IPACK))
       ALLOCATE(ZTIME1D(IPACK))
@@ -924,6 +948,9 @@ DO WHILE(ANY(ZTIME(IIB:IIE,IJB:IJE,IKTB:IKTE)<PTSTEP))
          ZCCT1D(II)           = ZCCT(I1(II),I2(II),I3(II))
          ZCRT1D(II)           = ZCRT(I1(II),I2(II),I3(II))
          ZCIT1D(II)           = ZCIT(I1(II),I2(II),I3(II))
+         ZCST1D(II)           = ZCST(I1(II),I2(II),I3(II))
+         ZCGT1D(II)           = ZCGT(I1(II),I2(II),I3(II))
+         ZCHT1D(II)           = ZCHT(I1(II),I2(II),I3(II))
          ZIFNN1D(II,:)        = ZIFNNT(I1(II),I2(II),I3(II),:)
          ZEVAP1D(II)          = PEVAP3D(I1(II),I2(II),I3(II))
          ZTIME1D(II)          = ZTIME(I1(II),I2(II),I3(II))         
@@ -944,8 +971,10 @@ DO WHILE(ANY(ZTIME(IIB:IIE,IJB:IJE,IKTB:IKTE)<PTSTEP))
       !
       WHERE(ZCF1D(:)<1.E-10 .AND. ZRCT1D(:)>XRTMIN(2) .AND. ZCCT1D(:)>XCTMIN(2)) ZCF1D(:)=1.
       WHERE(ZIF1D(:)<1.E-10 .AND. ZRIT1D(:)>XRTMIN(4) .AND. ZCIT1D(:)>XCTMIN(4)) ZIF1D(:)=1.
-      WHERE(ZPF1D(:)<1.E-10 .AND. (ZRRT1D(:)>XRTMIN(3) .OR. ZRST1D(:)>XRTMIN(5) &
-                              .OR. ZRGT1D(:)>XRTMIN(6) .OR. ZRHT1D(:)>XRTMIN(7) ) ) ZPF1D(:)=1.
+      WHERE(ZPF1D(:)<1.E-10 .AND. ZRRT1D(:)>XRTMIN(3) .AND. ZCRT1D(:)>XCTMIN(3)) ZPF1D(:)=1.
+      WHERE(ZPF1D(:)<1.E-10 .AND. ZRST1D(:)>XRTMIN(5) .AND. ZCST1D(:)>XCTMIN(5)) ZPF1D(:)=1.
+      WHERE(ZPF1D(:)<1.E-10 .AND. ZRGT1D(:)>XRTMIN(6) .AND. ZCGT1D(:)>XCTMIN(6)) ZPF1D(:)=1.
+      WHERE(ZPF1D(:)<1.E-10 .AND. ZRHT1D(:)>XRTMIN(7) .AND. ZCHT1D(:)>XCTMIN(7)) ZPF1D(:)=1.
       !
       ! Allocating 1D variables
       !
@@ -963,6 +992,9 @@ DO WHILE(ANY(ZTIME(IIB:IIE,IJB:IJE,IKTB:IKTE)<PTSTEP))
       ALLOCATE(ZA_CC(IPACK))              ;  ZA_CC(:) = 0.
       ALLOCATE(ZA_CR(IPACK))              ;  ZA_CR(:) = 0.
       ALLOCATE(ZA_CI(IPACK))              ;  ZA_CI(:) = 0.
+      ALLOCATE(ZA_CS(IPACK))              ;  ZA_CS(:) = 0.
+      ALLOCATE(ZA_CG(IPACK))              ;  ZA_CG(:) = 0.
+      ALLOCATE(ZA_CH(IPACK))              ;  ZA_CH(:) = 0.
       !
       ALLOCATE(ZB_TH(IPACK))              ;  ZB_TH(:) = 0.
       ALLOCATE(ZB_RV(IPACK))              ;  ZB_RV(:) = 0.
@@ -975,6 +1007,9 @@ DO WHILE(ANY(ZTIME(IIB:IIE,IJB:IJE,IKTB:IKTE)<PTSTEP))
       ALLOCATE(ZB_CC(IPACK))              ;  ZB_CC(:) = 0.
       ALLOCATE(ZB_CR(IPACK))              ;  ZB_CR(:) = 0.
       ALLOCATE(ZB_CI(IPACK))              ;  ZB_CI(:) = 0.
+      ALLOCATE(ZB_CS(IPACK))              ;  ZB_CS(:) = 0.
+      ALLOCATE(ZB_CG(IPACK))              ;  ZB_CG(:) = 0.
+      ALLOCATE(ZB_CH(IPACK))              ;  ZB_CH(:) = 0.
       ALLOCATE(ZB_IFNN(IPACK,NMOD_IFN))   ;  ZB_IFNN(:,:) = 0.
       !
       ALLOCATE(Z_CR_BRKU(IPACK))          ; Z_CR_BRKU(:) = 0.
@@ -1269,14 +1304,17 @@ DO WHILE(ANY(ZTIME(IIB:IIE,IJB:IJE,IKTB:IKTE)<PTSTEP))
       ZTHT1D = ZTHT1D + ZA_TH(:) * ZMAXTIME(:) + ZB_TH(:)
       ZRVT1D = ZRVT1D + ZA_RV(:) * ZMAXTIME(:) + ZB_RV(:)
       ZRCT1D = ZRCT1D + ZA_RC(:) * ZMAXTIME(:) + ZB_RC(:)
-      ZCCT1D = ZCCT1D + ZA_CC(:) * ZMAXTIME(:) + ZB_CC(:)
+      IF (NMOM_C.GE.2) ZCCT1D = ZCCT1D + ZA_CC(:) * ZMAXTIME(:) + ZB_CC(:)
       ZRRT1D = ZRRT1D + ZA_RR(:) * ZMAXTIME(:) + ZB_RR(:)
-      ZCRT1D = ZCRT1D + ZA_CR(:) * ZMAXTIME(:) + ZB_CR(:)
+      IF (NMOM_R.GE.2) ZCRT1D = ZCRT1D + ZA_CR(:) * ZMAXTIME(:) + ZB_CR(:)
       ZRIT1D = ZRIT1D + ZA_RI(:) * ZMAXTIME(:) + ZB_RI(:)
-      ZCIT1D = ZCIT1D + ZA_CI(:) * ZMAXTIME(:) + ZB_CI(:)
+      IF (NMOM_I.GE.2) ZCIT1D = ZCIT1D + ZA_CI(:) * ZMAXTIME(:) + ZB_CI(:)
       ZRST1D = ZRST1D + ZA_RS(:) * ZMAXTIME(:) + ZB_RS(:)
+      IF (NMOM_S.GE.2) ZCST1D = ZCST1D + ZA_CS(:) * ZMAXTIME(:) + ZB_CS(:)
       ZRGT1D = ZRGT1D + ZA_RG(:) * ZMAXTIME(:) + ZB_RG(:)
+      IF (NMOM_G.GE.2) ZCGT1D = ZCGT1D + ZA_CG(:) * ZMAXTIME(:) + ZB_CG(:)
       ZRHT1D = ZRHT1D + ZA_RH(:) * ZMAXTIME(:) + ZB_RH(:)
+      IF (NMOM_H.GE.2) ZCHT1D = ZCHT1D + ZA_CH(:) * ZMAXTIME(:) + ZB_CH(:)
       !
       DO II=1,NMOD_IFN
          ZIFNN1D(:,II) = ZIFNN1D(:,II) + ZB_IFNN(:,II)
@@ -1310,8 +1348,7 @@ DO WHILE(ANY(ZTIME(IIB:IIE,IJB:IJE,IKTB:IKTE)<PTSTEP))
          ZRVT1D = ZRVT1D + ZRIT1D
          ZRIT1D = 0.
          ZCIT1D = 0.
-      END WHERE
-      
+      END WHERE      
       !
       !***       4.5 Next loop
       !
@@ -1328,9 +1365,12 @@ DO WHILE(ANY(ZTIME(IIB:IIE,IJB:IJE,IKTB:IKTE)<PTSTEP))
          ZRST(I1(II),I2(II),I3(II))      = ZRST1D(II)
          ZRGT(I1(II),I2(II),I3(II))      = ZRGT1D(II)
          ZRHT(I1(II),I2(II),I3(II))      = ZRHT1D(II)
-         ZCCT(I1(II),I2(II),I3(II))      = ZCCT1D(II)
-         ZCRT(I1(II),I2(II),I3(II))      = ZCRT1D(II)
-         ZCIT(I1(II),I2(II),I3(II))      = ZCIT1D(II)
+         IF (NMOM_C.GE.2) ZCCT(I1(II),I2(II),I3(II))      = ZCCT1D(II)
+         IF (NMOM_R.GE.2) ZCRT(I1(II),I2(II),I3(II))      = ZCRT1D(II)
+         IF (NMOM_I.GE.2) ZCIT(I1(II),I2(II),I3(II))      = ZCIT1D(II)
+         IF (NMOM_S.GE.2) ZCST(I1(II),I2(II),I3(II))      = ZCST1D(II)
+         IF (NMOM_G.GE.2) ZCGT(I1(II),I2(II),I3(II))      = ZCGT1D(II)
+         IF (NMOM_H.GE.2) ZCHT(I1(II),I2(II),I3(II))      = ZCHT1D(II)
          ZIFNNT(I1(II),I2(II),I3(II),:)  = ZIFNN1D(II,:)
          PEVAP3D(I1(II),I2(II),I3(II))   = ZEVAP1D(II)
          ZTIME(I1(II),I2(II),I3(II))     = ZTIME1D(II)
@@ -1338,12 +1378,14 @@ DO WHILE(ANY(ZTIME(IIB:IIE,IJB:IJE,IKTB:IKTE)<PTSTEP))
          IITER(I1(II),I2(II),I3(II))     = IITER1D(II)
       END DO
       !
-      CALL LIMA_DROPS_TO_DROPLETS_CONV(PRHODREF, ZRCT, ZRRT, ZCCT, ZCRT, &
-                                       Z_RR_CVRC, Z_CR_CVRC    )
-      ZRCT(:,:,:) = ZRCT(:,:,:) - Z_RR_CVRC(:,:,:)
-      ZRRT(:,:,:) = ZRRT(:,:,:) + Z_RR_CVRC(:,:,:)
-      ZCCT(:,:,:) = ZCCT(:,:,:) - Z_CR_CVRC(:,:,:)
-      ZCRT(:,:,:) = ZCRT(:,:,:) + Z_CR_CVRC(:,:,:)
+      IF (NMOM_C.GE.2 .AND. NMOM_R.GE.2) THEN
+         CALL LIMA_DROPS_TO_DROPLETS_CONV(PRHODREF, ZRCT, ZRRT, ZCCT, ZCRT, &
+              Z_RR_CVRC, Z_CR_CVRC    )
+         ZRCT(:,:,:) = ZRCT(:,:,:) - Z_RR_CVRC(:,:,:)
+         ZRRT(:,:,:) = ZRRT(:,:,:) + Z_RR_CVRC(:,:,:)
+         ZCCT(:,:,:) = ZCCT(:,:,:) - Z_CR_CVRC(:,:,:)
+         ZCRT(:,:,:) = ZCRT(:,:,:) + Z_CR_CVRC(:,:,:)
+      END IF
       !
       !***       4.4 Unpacking for budgets
       !
@@ -1486,6 +1528,9 @@ DO WHILE(ANY(ZTIME(IIB:IIE,IJB:IJE,IKTB:IKTE)<PTSTEP))
       DEALLOCATE(ZCCT1D)
       DEALLOCATE(ZCRT1D)
       DEALLOCATE(ZCIT1D)
+      DEALLOCATE(ZCST1D)
+      DEALLOCATE(ZCGT1D)
+      DEALLOCATE(ZCHT1D)
       DEALLOCATE(ZIFNN1D)
       DEALLOCATE(ZEVAP1D)
       DEALLOCATE(ZTIME1D)
@@ -1517,6 +1562,9 @@ DO WHILE(ANY(ZTIME(IIB:IIE,IJB:IJE,IKTB:IKTE)<PTSTEP))
       DEALLOCATE(ZA_CC)
       DEALLOCATE(ZA_CR)
       DEALLOCATE(ZA_CI)
+      DEALLOCATE(ZA_CS)
+      DEALLOCATE(ZA_CG)
+      DEALLOCATE(ZA_CH)
       !
       DEALLOCATE(ZB_TH)
       DEALLOCATE(ZB_RV)   
@@ -1529,6 +1577,9 @@ DO WHILE(ANY(ZTIME(IIB:IIE,IJB:IJE,IKTB:IKTE)<PTSTEP))
       DEALLOCATE(ZB_CC)   
       DEALLOCATE(ZB_CR)  
       DEALLOCATE(ZB_CI)  
+      DEALLOCATE(ZB_CS)  
+      DEALLOCATE(ZB_CG)  
+      DEALLOCATE(ZB_CH)  
       DEALLOCATE(ZB_IFNN)
       !
       DEALLOCATE(Z_CR_BRKU)
@@ -1642,9 +1693,12 @@ IF ( KRR .GE. 5 ) PRS(:,:,:,5) = ZRST(:,:,:) *ZINV_TSTEP
 IF ( KRR .GE. 6 ) PRS(:,:,:,6) = ZRGT(:,:,:) *ZINV_TSTEP
 IF ( KRR .GE. 7 ) PRS(:,:,:,7) = ZRHT(:,:,:) *ZINV_TSTEP
 !
-IF ( LWARM )             PSVS(:,:,:,NSV_LIMA_NC) = ZCCT(:,:,:) *ZINV_TSTEP
-IF ( LWARM .AND. LRAIN ) PSVS(:,:,:,NSV_LIMA_NR) = ZCRT(:,:,:) *ZINV_TSTEP
-IF ( LCOLD )             PSVS(:,:,:,NSV_LIMA_NI) = ZCIT(:,:,:) *ZINV_TSTEP
+IF ( LWARM .AND. NMOM_C.GE.2 )             PSVS(:,:,:,NSV_LIMA_NC) = ZCCT(:,:,:) *ZINV_TSTEP
+IF ( LWARM .AND. LRAIN .AND. NMOM_R.GE.2 ) PSVS(:,:,:,NSV_LIMA_NR) = ZCRT(:,:,:) *ZINV_TSTEP
+IF ( LCOLD .AND. NMOM_I.GE.2 )             PSVS(:,:,:,NSV_LIMA_NI) = ZCIT(:,:,:) *ZINV_TSTEP
+IF ( LCOLD .AND. NMOM_S.GE.2 )             PSVS(:,:,:,NSV_LIMA_NS) = ZCST(:,:,:) *ZINV_TSTEP
+IF ( LCOLD .AND. NMOM_G.GE.2 )             PSVS(:,:,:,NSV_LIMA_NG) = ZCGT(:,:,:) *ZINV_TSTEP
+IF ( LCOLD .AND. NMOM_H.GE.2 )             PSVS(:,:,:,NSV_LIMA_NH) = ZCHT(:,:,:) *ZINV_TSTEP
 !
 IF ( NMOD_CCN .GE. 1 )   PSVS(:,:,:,NSV_LIMA_CCN_FREE:NSV_LIMA_CCN_FREE+NMOD_CCN-1) = ZCCNFT(:,:,:,:) *ZINV_TSTEP
 IF ( NMOD_CCN .GE. 1 )   PSVS(:,:,:,NSV_LIMA_CCN_ACTI:NSV_LIMA_CCN_ACTI+NMOD_CCN-1) = ZCCNAT(:,:,:,:) *ZINV_TSTEP
