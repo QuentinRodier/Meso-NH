@@ -1119,44 +1119,44 @@ DO WHILE(ANY(ZTIME(IIB:IIE,IJB:IJE,IKTB:IKTE)<PTSTEP))
                             ZB_IFNN,                                            &
                             ZCF1D, ZIF1D, ZPF1D                                 )
       
-      CALL LIMA_TENDENCIES (PTSTEP, LLCOMPUTE1D,                                   &
-                            ZEXNREF1D, ZRHODREF1D, ZP1D, ZTHT1D,                   &
-                            ZRVT1D, ZRCT1D, ZRRT1D, ZRIT1D, ZRST1D, ZRGT1D, ZRHT1D,&
-                            ZCCT1D, ZCRT1D, ZCIT1D,                                &
-                            Z_TH_HONC, Z_RC_HONC, Z_CC_HONC,                       & 
-                            Z_CC_SELF,                                             & 
-                            Z_RC_AUTO, Z_CC_AUTO, Z_CR_AUTO,                       & 
-                            Z_RC_ACCR, Z_CC_ACCR,                                  & 
-                            Z_CR_SCBU,                                             & 
-                            Z_TH_EVAP, Z_RR_EVAP, Z_CR_EVAP,                       & 
-                            Z_RI_CNVI, Z_CI_CNVI,                                  & 
-                            Z_TH_DEPS, Z_RS_DEPS,                                  & 
-                            Z_TH_DEPI, Z_RI_DEPI,                                  & 
-                            Z_RI_CNVS, Z_CI_CNVS,                                  & 
-                            Z_RI_AGGS, Z_CI_AGGS,                                  & 
-                            Z_TH_DEPG, Z_RG_DEPG,                                  & 
-                            Z_TH_BERFI, Z_RC_BERFI,                                & 
-                            Z_TH_RIM, Z_RC_RIM, Z_CC_RIM, Z_RS_RIM, Z_RG_RIM,      & 
-                            Z_RI_HMS, Z_CI_HMS, Z_RS_HMS,                          & 
-                            Z_TH_ACC, Z_RR_ACC, Z_CR_ACC, Z_RS_ACC, Z_RG_ACC,      & 
-                            Z_RS_CMEL,                                             & 
-                            Z_TH_CFRZ, Z_RR_CFRZ, Z_CR_CFRZ, Z_RI_CFRZ, Z_CI_CFRZ, & 
-                            Z_RI_CIBU, Z_CI_CIBU,                                  & 
-                            Z_RI_RDSF, Z_CI_RDSF,                                  & 
-                            Z_TH_WETG, Z_RC_WETG, Z_CC_WETG, Z_RR_WETG, Z_CR_WETG, & 
-                            Z_RI_WETG, Z_CI_WETG, Z_RS_WETG, Z_RG_WETG, Z_RH_WETG, & 
-                            Z_TH_DRYG, Z_RC_DRYG, Z_CC_DRYG, Z_RR_DRYG, Z_CR_DRYG, & 
-                            Z_RI_DRYG, Z_CI_DRYG, Z_RS_DRYG, Z_RG_DRYG,            & 
-                            Z_RI_HMG, Z_CI_HMG, Z_RG_HMG,                          & 
-                            Z_TH_GMLT, Z_RR_GMLT, Z_CR_GMLT,                       & 
+      CALL LIMA_TENDENCIES (PTSTEP, LLCOMPUTE1D,                                    &
+                            ZEXNREF1D, ZRHODREF1D, ZP1D, ZTHT1D,                    &
+                            ZRVT1D, ZRCT1D, ZRRT1D, ZRIT1D, ZRST1D, ZRGT1D, ZRHT1D, &
+                            ZCCT1D, ZCRT1D, ZCIT1D, ZCST1D, ZCGT1D, ZCHT1D,         &
+                            Z_TH_HONC, Z_RC_HONC, Z_CC_HONC,                        & 
+                            Z_CC_SELF,                                              & 
+                            Z_RC_AUTO, Z_CC_AUTO, Z_CR_AUTO,                        & 
+                            Z_RC_ACCR, Z_CC_ACCR,                                   & 
+                            Z_CR_SCBU,                                              & 
+                            Z_TH_EVAP, Z_RR_EVAP, Z_CR_EVAP,                        & 
+                            Z_RI_CNVI, Z_CI_CNVI,                                   & 
+                            Z_TH_DEPS, Z_RS_DEPS,                                   & 
+                            Z_TH_DEPI, Z_RI_DEPI,                                   & 
+                            Z_RI_CNVS, Z_CI_CNVS,                                   & 
+                            Z_RI_AGGS, Z_CI_AGGS,                                   & 
+                            Z_TH_DEPG, Z_RG_DEPG,                                   & 
+                            Z_TH_BERFI, Z_RC_BERFI,                                 & 
+                            Z_TH_RIM, Z_RC_RIM, Z_CC_RIM, Z_RS_RIM, Z_RG_RIM,       & 
+                            Z_RI_HMS, Z_CI_HMS, Z_RS_HMS,                           & 
+                            Z_TH_ACC, Z_RR_ACC, Z_CR_ACC, Z_RS_ACC, Z_RG_ACC,       & 
+                            Z_RS_CMEL,                                              & 
+                            Z_TH_CFRZ, Z_RR_CFRZ, Z_CR_CFRZ, Z_RI_CFRZ, Z_CI_CFRZ,  & 
+                            Z_RI_CIBU, Z_CI_CIBU,                                   & 
+                            Z_RI_RDSF, Z_CI_RDSF,                                   & 
+                            Z_TH_WETG, Z_RC_WETG, Z_CC_WETG, Z_RR_WETG, Z_CR_WETG,  & 
+                            Z_RI_WETG, Z_CI_WETG, Z_RS_WETG, Z_RG_WETG, Z_RH_WETG,  & 
+                            Z_TH_DRYG, Z_RC_DRYG, Z_CC_DRYG, Z_RR_DRYG, Z_CR_DRYG,  & 
+                            Z_RI_DRYG, Z_CI_DRYG, Z_RS_DRYG, Z_RG_DRYG,             & 
+                            Z_RI_HMG, Z_CI_HMG, Z_RG_HMG,                           & 
+                            Z_TH_GMLT, Z_RR_GMLT, Z_CR_GMLT,                        & 
 !!!     Z_RC_WETH, Z_CC_WETH, Z_RR_WETH, Z_CR_WETH,  &           ! wet growth of hail (WETH) : rc, Nc, rr, Nr, ri, Ni, rs, rg, rh, th
 !!!     Z_RI_WETH, Z_CI_WETH, Z_RS_WETH, Z_RG_WETH, Z_RH_WETH, & ! wet growth of hail (WETH) : rc, Nc, rr, Nr, ri, Ni, rs, rg, rh, th
 !!!     Z_RG_COHG, &                                             ! conversion of hail into graupel (COHG) : rg, rh
 !!!     Z_RR_HMLT, Z_CR_HMLT                                     ! hail melting (HMLT) : rr, Nr, rh=-rr, th
-                            ZA_TH, ZA_RV, ZA_RC, ZA_CC, ZA_RR, ZA_CR,              &
-                            ZA_RI, ZA_CI, ZA_RS, ZA_RG, ZA_RH,                     &
-                            ZEVAP1D,                                               &
-                            ZCF1D, ZIF1D, ZPF1D                                    )
+                            ZA_TH, ZA_RV, ZA_RC, ZA_CC, ZA_RR, ZA_CR,               &
+                            ZA_RI, ZA_CI, ZA_RS, ZA_CS, ZA_RG, ZA_CG, ZA_RH, ZA_CH, &
+                            ZEVAP1D,                                                &
+                            ZCF1D, ZIF1D, ZPF1D                                     )
 
       !
       !***       4.2 Integration time

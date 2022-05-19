@@ -162,8 +162,16 @@ ZGAMR(6) = MOMG(XALPHAR,XNUR,3.)**(2./3.)/MOMG(XALPHAR,XNUR,2.)
 !
 XLBC   = XAR*ZGAMC(2)
 XLBEXC = 1.0/XBC
-XLBR   = XAR*ZGAMR(2)
-XLBEXR = 1.0/XBR
+!
+IF (NMOM_R.EQ.1) THEN
+   XLBEXR = 1.0/XBR
+   XLBR   = ( XAR*XCCR*MOMG(XALPHAR,XNUR,XBR) )**(-XLBEXR)
+   XCCR   = 8.E6
+   XCXR   = -1.
+ELSE
+   XLBR   = XAR*ZGAMR(2)
+   XLBEXR = 1.0/XBR
+END IF
 !
 !
 !------------------------------------------------------------------------------

@@ -7,44 +7,44 @@
 MODULE MODI_LIMA_TENDENCIES
 !###############################
   INTERFACE
-     SUBROUTINE LIMA_TENDENCIES (PTSTEP, LDCOMPUTE,                                     &
-                                 PEXNREF, PRHODREF, PPABST, PTHT,                       &
-                                 PRVT, PRCT, PRRT, PRIT, PRST, PRGT, PRHT,              &
-                                 PCCT, PCRT, PCIT,                                      &
-                                 P_TH_HONC, P_RC_HONC, P_CC_HONC,                       & 
-                                 P_CC_SELF,                                             & 
-                                 P_RC_AUTO, P_CC_AUTO, P_CR_AUTO,                       & 
-                                 P_RC_ACCR, P_CC_ACCR,                                  & 
-                                 P_CR_SCBU,                                             & 
-                                 P_TH_EVAP, P_RR_EVAP, P_CR_EVAP,                       & 
-                                 P_RI_CNVI, P_CI_CNVI,                                  & 
-                                 P_TH_DEPS, P_RS_DEPS,                                  & 
-                                 P_TH_DEPI, P_RI_DEPI,                                  & 
-                                 P_RI_CNVS, P_CI_CNVS,                                  & 
-                                 P_RI_AGGS, P_CI_AGGS,                                  & 
-                                 P_TH_DEPG, P_RG_DEPG,                                  & 
-                                 P_TH_BERFI, P_RC_BERFI,                                & 
-                                 P_TH_RIM, P_RC_RIM, P_CC_RIM, P_RS_RIM, P_RG_RIM,      & 
-                                 P_RI_HMS, P_CI_HMS, P_RS_HMS,                          & 
-                                 P_TH_ACC, P_RR_ACC, P_CR_ACC, P_RS_ACC, P_RG_ACC,      & 
-                                 P_RS_CMEL,                                             & 
-                                 P_TH_CFRZ, P_RR_CFRZ, P_CR_CFRZ, P_RI_CFRZ, P_CI_CFRZ, & 
-                                 P_RI_CIBU, P_CI_CIBU,                                  & 
-                                 P_RI_RDSF, P_CI_RDSF,                                  & 
-                                 P_TH_WETG, P_RC_WETG, P_CC_WETG, P_RR_WETG, P_CR_WETG, & 
-                                 P_RI_WETG, P_CI_WETG, P_RS_WETG, P_RG_WETG, P_RH_WETG, & 
-                                 P_TH_DRYG, P_RC_DRYG, P_CC_DRYG, P_RR_DRYG, P_CR_DRYG, & 
-                                 P_RI_DRYG, P_CI_DRYG, P_RS_DRYG, P_RG_DRYG,            & 
-                                 P_RI_HMG, P_CI_HMG, P_RG_HMG,                          & 
-                                 P_TH_GMLT, P_RR_GMLT, P_CR_GMLT,                       & 
+     SUBROUTINE LIMA_TENDENCIES (PTSTEP, LDCOMPUTE,                                      &
+                                 PEXNREF, PRHODREF, PPABST, PTHT,                        &
+                                 PRVT, PRCT, PRRT, PRIT, PRST, PRGT, PRHT,               &
+                                 PCCT, PCRT, PCIT, PCST, PCGT, PCHT,                     &
+                                 P_TH_HONC, P_RC_HONC, P_CC_HONC,                        & 
+                                 P_CC_SELF,                                              & 
+                                 P_RC_AUTO, P_CC_AUTO, P_CR_AUTO,                        & 
+                                 P_RC_ACCR, P_CC_ACCR,                                   & 
+                                 P_CR_SCBU,                                              & 
+                                 P_TH_EVAP, P_RR_EVAP, P_CR_EVAP,                        & 
+                                 P_RI_CNVI, P_CI_CNVI,                                   & 
+                                 P_TH_DEPS, P_RS_DEPS,                                   & 
+                                 P_TH_DEPI, P_RI_DEPI,                                   & 
+                                 P_RI_CNVS, P_CI_CNVS,                                   & 
+                                 P_RI_AGGS, P_CI_AGGS,                                   & 
+                                 P_TH_DEPG, P_RG_DEPG,                                   & 
+                                 P_TH_BERFI, P_RC_BERFI,                                 & 
+                                 P_TH_RIM, P_RC_RIM, P_CC_RIM, P_RS_RIM, P_RG_RIM,       & 
+                                 P_RI_HMS, P_CI_HMS, P_RS_HMS,                           & 
+                                 P_TH_ACC, P_RR_ACC, P_CR_ACC, P_RS_ACC, P_RG_ACC,       & 
+                                 P_RS_CMEL,                                              & 
+                                 P_TH_CFRZ, P_RR_CFRZ, P_CR_CFRZ, P_RI_CFRZ, P_CI_CFRZ,  & 
+                                 P_RI_CIBU, P_CI_CIBU,                                   & 
+                                 P_RI_RDSF, P_CI_RDSF,                                   & 
+                                 P_TH_WETG, P_RC_WETG, P_CC_WETG, P_RR_WETG, P_CR_WETG,  & 
+                                 P_RI_WETG, P_CI_WETG, P_RS_WETG, P_RG_WETG, P_RH_WETG,  & 
+                                 P_TH_DRYG, P_RC_DRYG, P_CC_DRYG, P_RR_DRYG, P_CR_DRYG,  & 
+                                 P_RI_DRYG, P_CI_DRYG, P_RS_DRYG, P_RG_DRYG,             & 
+                                 P_RI_HMG, P_CI_HMG, P_RG_HMG,                           & 
+                                 P_TH_GMLT, P_RR_GMLT, P_CR_GMLT,                        & 
 !!!     Z_RC_WETH, Z_CC_WETH, Z_RR_WETH, Z_CR_WETH,  &           ! wet growth of hail (WETH) : rc, Nc, rr, Nr, ri, Ni, rs, rg, rh, th
 !!!     Z_RI_WETH, Z_CI_WETH, Z_RS_WETH, Z_RG_WETH, Z_RH_WETH, & ! wet growth of hail (WETH) : rc, Nc, rr, Nr, ri, Ni, rs, rg, rh, th
 !!!     Z_RG_COHG, &                                             ! conversion of hail into graupel (COHG) : rg, rh
 !!!     Z_RR_HMLT, Z_CR_HMLT                                     ! hail melting (HMLT) : rr, Nr, rh=-rr, th
-                                 PA_TH, PA_RV, PA_RC, PA_CC, PA_RR, PA_CR,              &
-                                 PA_RI, PA_CI, PA_RS, PA_RG, PA_RH,                     &
-                                 PEVAP3D,                                               &
-                                 PCF1D, PIF1D, PPF1D                                    )
+                                 PA_TH, PA_RV, PA_RC, PA_CC, PA_RR, PA_CR,               &
+                                 PA_RI, PA_CI, PA_RS, PA_CS, PA_RG, PA_CG, PA_RH, PA_CH, &
+                                 PEVAP3D,                                                &
+                                 PCF1D, PIF1D, PPF1D                                     )
 !
 REAL,                 INTENT(IN)    :: PTSTEP 
 LOGICAL, DIMENSION(:),INTENT(IN)    :: LDCOMPUTE
@@ -64,7 +64,10 @@ REAL, DIMENSION(:),   INTENT(IN)    :: PRHT      ! Mixing ratios (kg/kg)
 !
 REAL, DIMENSION(:),   INTENT(IN)    :: PCCT      !
 REAL, DIMENSION(:),   INTENT(IN)    :: PCRT      !
-REAL, DIMENSION(:),   INTENT(IN)    :: PCIT      ! Number concentrations (/kg)
+REAL, DIMENSION(:),   INTENT(IN)    :: PCIT      ! 
+REAL, DIMENSION(:),   INTENT(IN)    :: PCST      ! 
+REAL, DIMENSION(:),   INTENT(IN)    :: PCGT      !
+REAL, DIMENSION(:),   INTENT(IN)    :: PCHT      ! Number concentrations (/kg)
 !
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_TH_HONC
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_RC_HONC
@@ -174,8 +177,11 @@ REAL, DIMENSION(:),   INTENT(INOUT) :: PA_CR
 REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RI
 REAL, DIMENSION(:),   INTENT(INOUT) :: PA_CI
 REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RS
+REAL, DIMENSION(:),   INTENT(INOUT) :: PA_CS
 REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RG
+REAL, DIMENSION(:),   INTENT(INOUT) :: PA_CG
 REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RH
+REAL, DIMENSION(:),   INTENT(INOUT) :: PA_CH
 !
 REAL, DIMENSION(:),   INTENT(INOUT) :: PEVAP3D
 !
@@ -189,44 +195,44 @@ END MODULE MODI_LIMA_TENDENCIES
 !#####################################################################
 !
 !#####################################################################
-SUBROUTINE LIMA_TENDENCIES (PTSTEP, LDCOMPUTE,                                     &
-                            PEXNREF, PRHODREF, PPABST, PTHT,                       &
-                            PRVT, PRCT, PRRT, PRIT, PRST, PRGT, PRHT,              &
-                            PCCT, PCRT, PCIT,                                      &
-                            P_TH_HONC, P_RC_HONC, P_CC_HONC,                       & 
-                            P_CC_SELF,                                             & 
-                            P_RC_AUTO, P_CC_AUTO, P_CR_AUTO,                       & 
-                            P_RC_ACCR, P_CC_ACCR,                                  & 
-                            P_CR_SCBU,                                             & 
-                            P_TH_EVAP, P_RR_EVAP, P_CR_EVAP,                       & 
-                            P_RI_CNVI, P_CI_CNVI,                                  & 
-                            P_TH_DEPS, P_RS_DEPS,                                  & 
-                            P_TH_DEPI, P_RI_DEPI,                                  & 
-                            P_RI_CNVS, P_CI_CNVS,                                  & 
-                            P_RI_AGGS, P_CI_AGGS,                                  & 
-                            P_TH_DEPG, P_RG_DEPG,                                  & 
-                            P_TH_BERFI, P_RC_BERFI,                                & 
-                            P_TH_RIM, P_RC_RIM, P_CC_RIM, P_RS_RIM, P_RG_RIM,      & 
-                            P_RI_HMS, P_CI_HMS, P_RS_HMS,                          & 
-                            P_TH_ACC, P_RR_ACC, P_CR_ACC, P_RS_ACC, P_RG_ACC,      & 
-                            P_RS_CMEL,                                             & 
-                            P_TH_CFRZ, P_RR_CFRZ, P_CR_CFRZ, P_RI_CFRZ, P_CI_CFRZ, & 
-                            P_RI_CIBU, P_CI_CIBU,                                  & 
-                            P_RI_RDSF, P_CI_RDSF,                                  & 
-                            P_TH_WETG, P_RC_WETG, P_CC_WETG, P_RR_WETG, P_CR_WETG, & 
-                            P_RI_WETG, P_CI_WETG, P_RS_WETG, P_RG_WETG, P_RH_WETG, & 
-                            P_TH_DRYG, P_RC_DRYG, P_CC_DRYG, P_RR_DRYG, P_CR_DRYG, & 
-                            P_RI_DRYG, P_CI_DRYG, P_RS_DRYG, P_RG_DRYG,            & 
-                            P_RI_HMG, P_CI_HMG, P_RG_HMG,                          & 
-                            P_TH_GMLT, P_RR_GMLT, P_CR_GMLT,                       & 
+SUBROUTINE LIMA_TENDENCIES (PTSTEP, LDCOMPUTE,                                      &
+                            PEXNREF, PRHODREF, PPABST, PTHT,                        &
+                            PRVT, PRCT, PRRT, PRIT, PRST, PRGT, PRHT,               &
+                            PCCT, PCRT, PCIT, PCST, PCGT, PCHT,                     &
+                            P_TH_HONC, P_RC_HONC, P_CC_HONC,                        & 
+                            P_CC_SELF,                                              & 
+                            P_RC_AUTO, P_CC_AUTO, P_CR_AUTO,                        & 
+                            P_RC_ACCR, P_CC_ACCR,                                   & 
+                            P_CR_SCBU,                                              & 
+                            P_TH_EVAP, P_RR_EVAP, P_CR_EVAP,                        & 
+                            P_RI_CNVI, P_CI_CNVI,                                   & 
+                            P_TH_DEPS, P_RS_DEPS,                                   & 
+                            P_TH_DEPI, P_RI_DEPI,                                   & 
+                            P_RI_CNVS, P_CI_CNVS,                                   & 
+                            P_RI_AGGS, P_CI_AGGS,                                   & 
+                            P_TH_DEPG, P_RG_DEPG,                                   & 
+                            P_TH_BERFI, P_RC_BERFI,                                 & 
+                            P_TH_RIM, P_RC_RIM, P_CC_RIM, P_RS_RIM, P_RG_RIM,       & 
+                            P_RI_HMS, P_CI_HMS, P_RS_HMS,                           & 
+                            P_TH_ACC, P_RR_ACC, P_CR_ACC, P_RS_ACC, P_RG_ACC,       & 
+                            P_RS_CMEL,                                              & 
+                            P_TH_CFRZ, P_RR_CFRZ, P_CR_CFRZ, P_RI_CFRZ, P_CI_CFRZ,  & 
+                            P_RI_CIBU, P_CI_CIBU,                                   & 
+                            P_RI_RDSF, P_CI_RDSF,                                   & 
+                            P_TH_WETG, P_RC_WETG, P_CC_WETG, P_RR_WETG, P_CR_WETG,  & 
+                            P_RI_WETG, P_CI_WETG, P_RS_WETG, P_RG_WETG, P_RH_WETG,  & 
+                            P_TH_DRYG, P_RC_DRYG, P_CC_DRYG, P_RR_DRYG, P_CR_DRYG,  & 
+                            P_RI_DRYG, P_CI_DRYG, P_RS_DRYG, P_RG_DRYG,             & 
+                            P_RI_HMG, P_CI_HMG, P_RG_HMG,                           & 
+                            P_TH_GMLT, P_RR_GMLT, P_CR_GMLT,                        & 
 !!!     Z_RC_WETH, Z_CC_WETH, Z_RR_WETH, Z_CR_WETH,  &           ! wet growth of hail (WETH) : rc, Nc, rr, Nr, ri, Ni, rs, rg, rh, th
 !!!     Z_RI_WETH, Z_CI_WETH, Z_RS_WETH, Z_RG_WETH, Z_RH_WETH, & ! wet growth of hail (WETH) : rc, Nc, rr, Nr, ri, Ni, rs, rg, rh, th
 !!!     Z_RG_COHG, &                                             ! conversion of hail into graupel (COHG) : rg, rh
 !!!     Z_RR_HMLT, Z_CR_HMLT                                     ! hail melting (HMLT) : rr, Nr, rh=-rr, th
-                            PA_TH, PA_RV, PA_RC, PA_CC, PA_RR, PA_CR,              &
-                            PA_RI, PA_CI, PA_RS, PA_RG, PA_RH,                     &
-                            PEVAP3D,                                               &
-                            PCF1D, PIF1D, PPF1D                                    )
+                            PA_TH, PA_RV, PA_RC, PA_CC, PA_RR, PA_CR,               &
+                            PA_RI, PA_CI, PA_RS, PA_CS, PA_RG, PA_CG, PA_RH, PA_CH, &
+                            PEVAP3D,                                                &
+                            PCF1D, PIF1D, PPF1D                                     )
 !     ######################################################################
 !!
 !!    PURPOSE
@@ -253,11 +259,12 @@ SUBROUTINE LIMA_TENDENCIES (PTSTEP, LDCOMPUTE,                                  
 USE MODD_CST,              ONLY : XP00, XRD, XRV, XMD, XMV, XCPD, XCPV, XCL, XCI, XLVTT, XLSTT, XTT, &
                                   XALPW, XBETAW, XGAMW, XALPI, XBETAI, XGAMI
 USE MODD_PARAM_LIMA,       ONLY : XRTMIN, XCTMIN, XNUS, LCIBU, LRDSF,                                &
-                                  LCOLD, LNUCL, LSNOW, LHAIL, LWARM, LACTI, LRAIN, LKHKO, LSNOW_T, NMOM_I
-USE MODD_PARAM_LIMA_WARM,  ONLY : XLBC, XLBEXC, XLBR, XLBEXR
-USE MODD_PARAM_LIMA_MIXED, ONLY : XLBG, XLBEXG, XLBH, XLBEXH, XLBDAG_MAX
+                                  LCOLD, LNUCL, LSNOW, LHAIL, LWARM, LACTI, LRAIN, LKHKO, LSNOW_T,   &
+                                  NMOM_C, NMOM_R, NMOM_I, NMOM_S, NMOM_G, NMOM_H
+USE MODD_PARAM_LIMA_WARM,  ONLY : XLBC, XLBEXC, XLBR, XLBEXR, XCCR, XCXR
+USE MODD_PARAM_LIMA_MIXED, ONLY : XLBG, XLBEXG, XCCG, XCXG, XLBH, XLBEXH, XCCH, XCXH, XLBDAG_MAX
 USE MODD_PARAM_LIMA_COLD,  ONLY : XSCFAC, XLBI, XLBEXI, XLBS, XLBEXS, XLBDAS_MAX, XTRANS_MP_GAMMAS,  &
-                                  XFVELOS, XLBDAS_MIN
+                                  XFVELOS, XLBDAS_MIN, XCCS, XCXS, XBS, XNS
 !
 USE MODI_LIMA_DROPLETS_HOM_FREEZING
 USE MODI_LIMA_DROPLETS_SELF_COLLECTION
@@ -300,8 +307,11 @@ REAL, DIMENSION(:),   INTENT(IN)    :: PRGT      !
 REAL, DIMENSION(:),   INTENT(IN)    :: PRHT      ! Mixing ratios (kg/kg)
 !
 REAL, DIMENSION(:),   INTENT(IN)    :: PCCT      !
-REAL, DIMENSION(:),   INTENT(IN)    :: PCRT      !
-REAL, DIMENSION(:),   INTENT(IN)    :: PCIT      ! Number concentrations (/kg)
+REAL, DIMENSION(:),   INTENT(INOUT) :: PCRT      !
+REAL, DIMENSION(:),   INTENT(IN)    :: PCIT      ! 
+REAL, DIMENSION(:),   INTENT(INOUT) :: PCST      ! 
+REAL, DIMENSION(:),   INTENT(INOUT) :: PCGT      !
+REAL, DIMENSION(:),   INTENT(INOUT) :: PCHT      ! Number concentrations (/kg)
 !
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_TH_HONC
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_RC_HONC
@@ -411,8 +421,11 @@ REAL, DIMENSION(:),   INTENT(INOUT) :: PA_CR
 REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RI
 REAL, DIMENSION(:),   INTENT(INOUT) :: PA_CI
 REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RS
+REAL, DIMENSION(:),   INTENT(INOUT) :: PA_CS
 REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RG
+REAL, DIMENSION(:),   INTENT(INOUT) :: PA_CG
 REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RH
+REAL, DIMENSION(:),   INTENT(INOUT) :: PA_CH
 !
 REAL, DIMENSION(:),   INTENT(INOUT) :: PEVAP3D
 !
@@ -510,47 +523,81 @@ WHERE (LDCOMPUTE(:))
 !
 END WHERE
 !
-!
+! Cloud droplets : same formula for 1 and 2 moments, but using real or fixed Nc value
 ZLBDC(:)  = 1.E10
 ZLBDC3(:) = 1.E30
 WHERE (PRCT(:)>XRTMIN(2) .AND. PCCT(:)>XCTMIN(2) .AND. LDCOMPUTE(:))
    ZLBDC3(:) = XLBC*PCCT(:) / PRCT(:)
    ZLBDC(:)  = ZLBDC3(:)**XLBEXC
 END WHERE
+!
+! Rain drops
 ZLBDR(:)  = 1.E10
 ZLBDR3(:) = 1.E30
-WHERE (PRRT(:)>XRTMIN(3) .AND. PCRT(:)>XCTMIN(3) .AND. LDCOMPUTE(:))
-   ZLBDR3(:) = XLBR*PCRT(:) / PRRT(:)
-   ZLBDR(:)  = ZLBDR3(:)**XLBEXR
-END WHERE
+IF (NMOM_R.EQ.1) THEN
+   WHERE (PRRT(:)>XRTMIN(3) .AND. LDCOMPUTE(:) )
+      ZLBDR(:) = XLBR*(PRHODREF(:)*PRRT(:) )**XLBEXR
+      ZLBDR3(:) = ZLBDR(:)**3.
+   END WHERE
+   PCRT(:) = XCCR * ZLBDR(:)**XCXR / PRHODREF(:)
+ELSE
+   WHERE (PRRT(:)>XRTMIN(3) .AND. PCRT(:)>XCTMIN(3) .AND. LDCOMPUTE(:))
+      ZLBDR3(:) = XLBR*PCRT(:) / PRRT(:)
+      ZLBDR(:)  = ZLBDR3(:)**XLBEXR
+   END WHERE
+END IF
+!
+! Pristine ice : same formula for 1 and 2 moments, using real or diagnosed Ni
 ZLBDI(:)  = 1.E10
 WHERE (PRIT(:)>XRTMIN(4) .AND. PCIT(:)>XCTMIN(4) .AND. LDCOMPUTE(:))
    ZLBDI(:) = ( XLBI*PCIT(:) / PRIT(:) )**XLBEXI
 END WHERE
+!
+! Snow : additional option for LSNOW_T if NMOM_S=1
 ZLBDS(:)  = 1.E10
-IF (LSNOW_T) THEN
-   WHERE (PRST(:)>XRTMIN(5) .AND. LDCOMPUTE(:) )
-      WHERE(ZT(:)>263.15)
-         ZLBDS(:) = MAX(MIN(XLBDAS_MAX, 10**(14.554-0.0423*ZT(:))),XLBDAS_MIN)
+IF (NMOM_S.EQ.1) THEN
+   IF (LSNOW_T) THEN
+      WHERE (PRST(:)>XRTMIN(5) .AND. LDCOMPUTE(:) )
+         WHERE(ZT(:)>263.15)
+            ZLBDS(:) = MAX(MIN(XLBDAS_MAX, 10**(14.554-0.0423*ZT(:))),XLBDAS_MIN)
+         END WHERE
+         WHERE(ZT(:)<=263.15)
+            ZLBDS(:) = MAX(MIN(XLBDAS_MAX, 10**(6.226-0.0106*ZT(:))),XLBDAS_MIN)
+         END WHERE
       END WHERE
-      WHERE(ZT(:)<=263.15)
-         ZLBDS(:) = MAX(MIN(XLBDAS_MAX, 10**(6.226-0.0106*ZT(:))),XLBDAS_MIN)
+      ZLBDS(:) =  ZLBDS(:) * XTRANS_MP_GAMMAS
+      PCST(:) = XNS * PRST(:) * ZLBDS(:)**XBS
+   ELSE
+      WHERE (PRST(:)>XRTMIN(5) .AND. LDCOMPUTE(:) )
+         ZLBDS(:) = XLBS*( PRHODREF(:)*PRST(:) )**XLBEXS
       END WHERE
-   END WHERE
-   ZLBDS(:) =  ZLBDS(:) * XTRANS_MP_GAMMAS
+      PCST(:) = XCCS * ZLBDS(:)**XCXS / PRHODREF(:)
+   END IF
 ELSE
-   WHERE (PRST(:)>XRTMIN(5) .AND. LDCOMPUTE(:) )
-      ZLBDS(:) = XLBS*( PRHODREF(:)*PRST(:) )**XLBEXS
-   END WHERE
+   ZLBDS(:) = (XLBS*PCST(:)/PRST(:))**XLBEXS
 END IF
+!
+! Graupel
 ZLBDG(:)  = 1.E10
-WHERE (PRGT(:)>XRTMIN(6) .AND. LDCOMPUTE(:) )
-   ZLBDG(:) = XLBG*( PRHODREF(:)*PRGT(:) )**XLBEXG
-END WHERE
+IF (NMOM_G.EQ.1) THEN
+   WHERE (PRGT(:)>XRTMIN(6) .AND. LDCOMPUTE(:) )
+      ZLBDG(:) = XLBG*( PRHODREF(:)*PRGT(:) )**XLBEXG
+   END WHERE
+      PCGT(:) = XCCG * ZLBDG(:)**XCXG / PRHODREF(:)
+ELSE
+   ZLBDG(:) = (XLBG*PCGT(:)/PRGT(:))**XLBEXG
+END IF
+!
+! Hail
 ZLBDH(:)  = 1.E10
-WHERE (PRHT(:)>XRTMIN(7) .AND. LDCOMPUTE(:) )
-   ZLBDH(:) = XLBH*( PRHODREF(:)*PRHT(:) )**XLBEXH
-END WHERE
+IF (NMOM_H.EQ.1) THEN
+   WHERE (PRHT(:)>XRTMIN(7) .AND. LDCOMPUTE(:) )
+      ZLBDH(:) = XLBH*( PRHODREF(:)*PRHT(:) )**XLBEXH
+      PCHT(:) = XCCH * ZLBDH(:)**XCXH / PRHODREF(:)
+   END WHERE
+ELSE
+   ZLBDH(:) = (XLBH*PCHT(:)/PRHT(:))**XLBEXH
+END IF
 !
 !-------------------------------------------------------------------------------
 ! Call microphysical processes   

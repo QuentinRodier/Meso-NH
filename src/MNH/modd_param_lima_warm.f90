@@ -32,7 +32,7 @@ REAL,SAVE ::  XLBC, XLBEXC,          & ! shape parameters of the cloud droplets
               XLBR, XLBEXR             ! shape parameters of the raindrops
 !
 REAL,SAVE :: XAR,XBR,XCR,XDR,XF0R,XF1R,     & ! Raindrop       charact.
-                                  XCCR,     & !For diagnostics
+                             XCCR,XCXR,     & !For diagnostics
              XAC,XBC,XCC,XDC,XF0C,XF2C,XC1C   ! Cloud droplet  charact.
 !
 !
