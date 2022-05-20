@@ -88,7 +88,7 @@ END MODULE MODI_PROFILER_n
 !*      0. DECLARATIONS
 !          ------------
 !
-USE MODD_CST,              ONLY: XCPD, XG, XLIGHTSPEED, XP00, XPI, XRD, XRHOLW, XRV, XTT
+USE MODD_CST,              ONLY: XCPD, XG, XLAM_CRAD, XLIGHTSPEED, XP00, XPI, XRD, XRHOLW, XRV, XTT
 USE MODD_DIAG_IN_RUN
 USE MODD_GRID,             ONLY: XBETA, XLON0, XRPK
 USE MODD_NSV,              ONLY: NSV_C2R2BEG, NSV_C2R2END, NSV_LIMA_NC, NSV_LIMA_NI, NSV_LIMA_NR
@@ -235,7 +235,6 @@ ZK2 = 0.704       ! K/Pa
 ZK3 = 3739.       ! K2/Pa
 ZRDSRV=XRD/XRV
 !
-XLAM_CRAD        = 3.154E-3 ! (in m) <=> 95.04 GHz = Rasta cloud radar frequency
 !*      2.1  Indices
 !            -------
 !

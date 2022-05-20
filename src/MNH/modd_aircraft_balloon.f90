@@ -146,7 +146,6 @@ REAL, DIMENSION(:)  ,   POINTER :: THW_FLUX => NULL() ! thw_flux(n)
 REAL, DIMENSION(:)  ,   POINTER :: RCW_FLUX => NULL() ! rcw_flux(n)
 REAL, DIMENSION(:,:),   POINTER :: SVW_FLUX => NULL() ! psw_flux(n)
 END TYPE FLYER
-REAL :: XLAM_CRAD ! cloud radar wavelength (m)
 !
 !-------------------------------------------------------------------------------------------
 !

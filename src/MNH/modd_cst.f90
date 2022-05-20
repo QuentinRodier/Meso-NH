@@ -1,10 +1,10 @@
-!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ###############
-      MODULE MODD_CST      
+      MODULE MODD_CST
 !     ###############
 !
 !!****  *MODD_CST* - declaration of Physic constants 
@@ -37,7 +37,8 @@
 !!      C. Mari     31/10/00  add NDAYSEC
 !!      V. Masson   01/03/03  add conductivity of ice
 !!      J.Escobar : 10/2017 : for real*4 , add XMNH_HUGE_12_LOG
-!!      J.L. Redelsperger 03/2021  add constants for ocean penetrating solar
+!  J.L. Redelsperger 03/2021: add constants for ocean penetrating solar
+!  P. Wautelet 20/05/2022: add RASTA cloud radar wavelength
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -97,6 +98,8 @@ REAL,SAVE :: XD2=23.
 REAL,SAVE :: XRHOLI             ! Volumic mass of liquid water
 !
 INTEGER, SAVE :: NDAYSEC        ! Number of seconds in a day
+
+REAL, PARAMETER :: XLAM_CRAD = 3.154E-3 ! RASTA cloud radar wavelength (m) <=> 95.04 GHz
 !
 !
 !   Some machine precision value depending of real4/8 use  
