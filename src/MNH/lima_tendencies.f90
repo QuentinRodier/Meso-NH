@@ -608,10 +608,10 @@ IF (LCOLD .AND. LWARM) THEN
                                     PRCT, PCCT, ZLBDC,                 &
                                     P_TH_HONC, P_RC_HONC, P_CC_HONC    )
    PA_RC(:) = PA_RC(:) + P_RC_HONC(:)
-   PA_CC(:) = PA_CC(:) + P_CC_HONC(:)
+   IF (NMOM_C.GE.2) PA_CC(:) = PA_CC(:) + P_CC_HONC(:)
    PA_RI(:) = PA_RI(:) - P_RC_HONC(:)
-   PA_CI(:) = PA_CI(:) - P_CC_HONC(:) 
-   P_TH_ACC(:) = - P_CC_HONC(:) * (ZLSFACT(:)-ZLVFACT(:))
+   IF (NMOM_I.GE.2) PA_CI(:) = PA_CI(:) - P_CC_HONC(:) 
+   P_TH_ACC(:) = - P_RC_HONC(:) * (ZLSFACT(:)-ZLVFACT(:))
    PA_TH(:) = PA_TH(:) + P_TH_HONC(:)
 END IF
 !
@@ -634,9 +634,9 @@ IF (LWARM .AND. LRAIN) THEN
    P_CR_AUTO(:) = P_CR_AUTO(:) * ZCF1D(:)
    !
    PA_RC(:) = PA_RC(:) + P_RC_AUTO(:)
-   PA_CC(:) = PA_CC(:) + P_CC_AUTO(:)
+   IF (NMOM_C.GE.2) PA_CC(:) = PA_CC(:) + P_CC_AUTO(:)
    PA_RR(:) = PA_RR(:) - P_RC_AUTO(:)
-   PA_CR(:) = PA_CR(:) + P_CR_AUTO(:)
+   IF (NMOM_R.GE.2) PA_CR(:) = PA_CR(:) + P_CR_AUTO(:)
 END IF
 !
 IF (LWARM .AND. LRAIN) THEN
@@ -650,7 +650,7 @@ IF (LWARM .AND. LRAIN) THEN
    P_RC_ACCR(:) = P_RC_ACCR(:) * ZCF1D(:)
    !
    PA_RC(:) = PA_RC(:) + P_RC_ACCR(:)
-   PA_CC(:) = PA_CC(:) + P_CC_ACCR(:)
+   IF (NMOM_C.GE.2) PA_CC(:) = PA_CC(:) + P_CC_ACCR(:)
    PA_RR(:) = PA_RR(:) - P_RC_ACCR(:)
 END IF
 !
@@ -679,7 +679,7 @@ IF (LWARM .AND. LRAIN) THEN
    PA_TH(:) = PA_TH(:) + P_TH_EVAP(:)
    PA_RV(:) = PA_RV(:) - P_RR_EVAP(:)
    PA_RR(:) = PA_RR(:) + P_RR_EVAP(:)
-   PA_CR(:) = PA_CR(:) + P_CR_EVAP(:)
+   IF (NMOM_R.GE.2) PA_CR(:) = PA_CR(:) + P_CR_EVAP(:)
 END IF
 !
 IF (LCOLD) THEN
@@ -700,7 +700,7 @@ IF (LCOLD) THEN
    PA_TH(:) = PA_TH(:) + P_TH_DEPI(:)
    PA_RV(:) = PA_RV(:) - P_RI_DEPI(:) 
    PA_RI(:) = PA_RI(:) + P_RI_DEPI(:) + P_RI_CNVS(:)
-   PA_CI(:) = PA_CI(:)                + P_CI_CNVS(:)
+   IF (NMOM_I.GE.2) PA_CI(:) = PA_CI(:)                + P_CI_CNVS(:)
    PA_RS(:) = PA_RS(:)                - P_RI_CNVS(:)
 
 END IF
@@ -721,7 +721,7 @@ IF (LCOLD .AND. LSNOW) THEN
    P_TH_DEPS(:) = P_RS_DEPS(:) * ZLSFACT(:)
    !
    PA_RI(:) = PA_RI(:) + P_RI_CNVI(:)
-   PA_CI(:) = PA_CI(:) + P_CI_CNVI(:)
+   IF (NMOM_I.GE.2) PA_CI(:) = PA_CI(:) + P_CI_CNVI(:)
    PA_RS(:) = PA_RS(:) - P_RI_CNVI(:) + P_RS_DEPS(:) 
    PA_TH(:) = PA_TH(:)                + P_TH_DEPS(:)
    PA_RV(:) = PA_RV(:)                - P_RS_DEPS(:) 
@@ -743,7 +743,7 @@ IF (LCOLD .AND. LSNOW) THEN
    P_RI_AGGS(:) = P_RI_AGGS(:) * ZIF1D(:)
    !
    PA_RI(:) = PA_RI(:) + P_RI_AGGS(:)
-   PA_CI(:) = PA_CI(:) + P_CI_AGGS(:)
+   IF (NMOM_I.GE.2) PA_CI(:) = PA_CI(:) + P_CI_AGGS(:)
    PA_RS(:) = PA_RS(:) - P_RI_AGGS(:)
 END IF
 !
@@ -792,9 +792,9 @@ IF (LWARM .AND. LCOLD .AND. LSNOW) THEN
    P_RS_HMS(:) = P_RS_HMS(:) * ZCF1D(:)
    !
    PA_RC(:) = PA_RC(:) + P_RC_RIM(:) 
-   PA_CC(:) = PA_CC(:) + P_CC_RIM(:) 
+   IF (NMOM_C.GE.2) PA_CC(:) = PA_CC(:) + P_CC_RIM(:) 
    PA_RI(:) = PA_RI(:)               + P_RI_HMS(:)
-   PA_CI(:) = PA_CI(:)               + P_CI_HMS(:)
+   IF (NMOM_I.GE.2) PA_CI(:) = PA_CI(:)               + P_CI_HMS(:)
    PA_RS(:) = PA_RS(:) + P_RS_RIM(:) + P_RS_HMS(:)
    PA_RG(:) = PA_RG(:) + P_RG_RIM(:) 
    PA_TH(:) = PA_TH(:) + P_TH_RIM(:)
@@ -813,7 +813,7 @@ IF (LWARM .AND. LRAIN .AND. LCOLD .AND. LSNOW) THEN
    P_TH_ACC(:) = - P_RR_ACC(:) * (ZLSFACT(:)-ZLVFACT(:))
    !
    PA_RR(:) = PA_RR(:) + P_RR_ACC(:)
-   PA_CR(:) = PA_CR(:) + P_CR_ACC(:)
+   IF (NMOM_R.GE.2) PA_CR(:) = PA_CR(:) + P_CR_ACC(:)
    PA_RS(:) = PA_RS(:) + P_RS_ACC(:)
    PA_RG(:) = PA_RG(:) + P_RG_ACC(:)
    PA_TH(:) = PA_TH(:) + P_TH_ACC(:)
@@ -849,9 +849,9 @@ IF (LWARM .AND. LRAIN .AND. LCOLD ) THEN
 !
    PA_TH(:) = PA_TH(:) + P_TH_CFRZ(:)
    PA_RR(:) = PA_RR(:) + P_RR_CFRZ(:)
-   PA_CR(:) = PA_CR(:) + P_CR_CFRZ(:)
+   IF (NMOM_R.GE.2) PA_CR(:) = PA_CR(:) + P_CR_CFRZ(:)
    PA_RI(:) = PA_RI(:) + P_RI_CFRZ(:)
-   PA_CI(:) = PA_CI(:) + P_CI_CFRZ(:)
+   IF (NMOM_I.GE.2) PA_CI(:) = PA_CI(:) + P_CI_CFRZ(:)
    PA_RG(:) = PA_RG(:) - P_RR_CFRZ(:) - P_RI_CFRZ(:)
 
 END IF
@@ -870,7 +870,7 @@ IF (LWARM .AND. LCOLD .AND. LSNOW .AND. LCIBU) THEN
    P_CI_CIBU(:) = P_CI_CIBU(:) * ZPF1D(:)
    !
    PA_RI(:) = PA_RI(:) + P_RI_CIBU(:)
-   PA_CI(:) = PA_CI(:) + P_CI_CIBU(:)
+   IF (NMOM_I.GE.2) PA_CI(:) = PA_CI(:) + P_CI_CIBU(:)
    PA_RS(:) = PA_RS(:) - P_RI_CIBU(:)
 
 END IF
@@ -889,7 +889,7 @@ IF (LWARM .AND. LRAIN .AND. LCOLD .AND. LSNOW .AND. LRDSF) THEN
    P_CI_RDSF(:) = P_CI_RDSF(:) * ZIF1D(:)
    !
    PA_RI(:) = PA_RI(:) + P_RI_RDSF(:)
-   PA_CI(:) = PA_CI(:) + P_CI_RDSF(:)
+   IF (NMOM_I.GE.2) PA_CI(:) = PA_CI(:) + P_CI_RDSF(:)
    PA_RG(:) = PA_RG(:) - P_RI_RDSF(:)
 
 END IF
