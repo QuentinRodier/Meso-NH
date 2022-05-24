@@ -923,8 +923,8 @@ WHERE( (PRST1D(:)>XRTMIN(5)) .AND. (PRSS1D(:)>XRTMIN(5)/PTSTEP) .AND. (PZT(:)>XT
 ! compute RSMLT
 !
   ZZW(:)  = MIN( PRSS1D(:), XFSCVMG*MAX( 0.0,( -ZZW(:) *             &
-                          PRHODREF(:) * PRST1D(:)*( X0DEPS*            PLBDAS(:)**XEX0DEPS +     &
-                          X1DEPS*PCJ(:)*(1+(XFVELOS/(2.*PLBDAS(:)))**XALPHAS) &
+                          PRST1D(:)*( X0DEPS*            PLBDAS(:)**XEX0DEPS +     &
+                          X1DEPS*PCJ(:)*(1+0.5*(XFVELOS/PLBDAS(:))**XALPHAS) &
                           **(-XNUS+XEX1DEPS/XALPHAS)*(PLBDAS(:))**(XEX1DEPS+XBS))-    &
                                     ( ZZW1(:,1)+ZZW1(:,4) ) *       &
                              ( PRHODREF(:)*XCL*(XTT-PZT(:))) ) /    &
