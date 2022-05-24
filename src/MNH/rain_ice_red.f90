@@ -590,7 +590,9 @@ DO JK = 1, KKT
                END IF
             END IF
          ELSE
-            ZLBDAS(JI,JJ,JK)  = MAX(MIN(XLBDAS_MAX,XLBS*(PRHODREF(JI,JJ,JK)*PRST(JI,JJ,JK))**XLBEXS),XLBDAS_MIN)
+            IF (PRST(JI,JJ,JK).GT.XRTMIN(5)) THEN
+               ZLBDAS(JI,JJ,JK)  = MAX(MIN(XLBDAS_MAX,XLBS*(PRHODREF(JI,JJ,JK)*PRST(JI,JJ,JK))**XLBEXS),XLBDAS_MIN)
+            END IF
          END IF
       END DO
    END DO
