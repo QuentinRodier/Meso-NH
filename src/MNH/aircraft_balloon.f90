@@ -130,13 +130,13 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PTKE   ! turbulent kinetic energy
 REAL, DIMENSION(:,:),     INTENT(IN)     :: PTS    ! surface temperature
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PRHODREF ! dry air density of the reference state
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PCIT     ! pristine ice concentration
-REAL, DIMENSION(:,:),INTENT(IN) :: PSEA
+REAL, DIMENSION(:,:),     INTENT(IN)     :: PSEA
 !
 !-------------------------------------------------------------------------------
 !
 !       0.2  declaration of local variables
 !
-!
+INTEGER :: JI
 !----------------------------------------------------------------------------
 IF(.NOT. ALLOCATED(XTHW_FLUX)) &
 ALLOCATE(XTHW_FLUX(SIZE(PTH,1),SIZE(PTH,2),SIZE(PTH,3)))
@@ -145,202 +145,17 @@ ALLOCATE(XRCW_FLUX(SIZE(PTH,1),SIZE(PTH,2),SIZE(PTH,3)))
 IF(.NOT. ALLOCATED(XSVW_FLUX)) &
 ALLOCATE(XSVW_FLUX(SIZE(PSV,1),SIZE(PSV,2),SIZE(PSV,3),SIZE(PSV,4)))
 !
-IF (TBALLOON1%NMODEL /= 0) THEN
-CALL AIRCRAFT_BALLOON_EVOL(PTSTEP,  PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,           &
-                           PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           TBALLOON1, PSEA                                            )
-ENDIF
-IF (TBALLOON2%NMODEL /= 0) THEN
-CALL AIRCRAFT_BALLOON_EVOL(PTSTEP,  PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,           &
-                           PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           TBALLOON2, PSEA                                            )
-ENDIF
-IF (TBALLOON3%NMODEL /= 0) THEN
-CALL AIRCRAFT_BALLOON_EVOL(PTSTEP,  PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,           &
-                           PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           TBALLOON3, PSEA                                            )
-ENDIF
-IF (TBALLOON4%NMODEL /= 0) THEN
-CALL AIRCRAFT_BALLOON_EVOL(PTSTEP,  PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,           &
-                           PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           TBALLOON4, PSEA                                            )
-ENDIF
-IF (TBALLOON5%NMODEL /= 0) THEN
-CALL AIRCRAFT_BALLOON_EVOL(PTSTEP,  PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,           &
-                           PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           TBALLOON5, PSEA                                            )
-ENDIF
-IF (TBALLOON6%NMODEL /= 0) THEN
-CALL AIRCRAFT_BALLOON_EVOL(PTSTEP,  PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,           &
-                           PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           TBALLOON6, PSEA                                            )
-ENDIF
-IF (TBALLOON7%NMODEL /= 0) THEN
-CALL AIRCRAFT_BALLOON_EVOL(PTSTEP,  PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,           &
-                           PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           TBALLOON7, PSEA                                            )
-ENDIF
-IF (TBALLOON8%NMODEL /= 0) THEN
-CALL AIRCRAFT_BALLOON_EVOL(PTSTEP,  PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,           &
-                           PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           TBALLOON8, PSEA                                            )
-ENDIF
-IF (TBALLOON9%NMODEL /= 0) THEN
-CALL AIRCRAFT_BALLOON_EVOL(PTSTEP,  PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,           &
-                           PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           TBALLOON9, PSEA                                            )
-ENDIF
+DO JI = 1, NBALLOONS
+  CALL AIRCRAFT_BALLOON_EVOL( PTSTEP, PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,          &
+                              PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT, &
+                              TBALLOONS(JI), PSEA                                      )
+END DO
 !
-IF (TAIRCRAFT1%NMODEL /= 0) THEN
-CALL AIRCRAFT_BALLOON_EVOL(PTSTEP,  PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,           &
-                           PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           TAIRCRAFT1, PSEA                                           )
-ENDIF
-IF (TAIRCRAFT2%NMODEL /= 0) THEN
-CALL AIRCRAFT_BALLOON_EVOL(PTSTEP,  PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,           &
-                           PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           TAIRCRAFT2, PSEA                                           )
-ENDIF
-IF (TAIRCRAFT3%NMODEL /= 0) THEN
-CALL AIRCRAFT_BALLOON_EVOL(PTSTEP,  PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,           &
-                           PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           TAIRCRAFT3, PSEA                                           )
-ENDIF
-IF (TAIRCRAFT4%NMODEL /= 0) THEN
-CALL AIRCRAFT_BALLOON_EVOL(PTSTEP,  PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,           &
-                           PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           TAIRCRAFT4, PSEA                                           )
-ENDIF
-IF (TAIRCRAFT5%NMODEL /= 0) THEN
-CALL AIRCRAFT_BALLOON_EVOL(PTSTEP,  PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,           &
-                           PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           TAIRCRAFT5, PSEA                                           )
-ENDIF
-IF (TAIRCRAFT6%NMODEL /= 0) THEN
-CALL AIRCRAFT_BALLOON_EVOL(PTSTEP,  PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,           &
-                           PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           TAIRCRAFT6, PSEA                                           )
-ENDIF
-IF (TAIRCRAFT7%NMODEL /= 0) THEN
-CALL AIRCRAFT_BALLOON_EVOL(PTSTEP,  PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,           &
-                           PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           TAIRCRAFT7, PSEA                                           )
-ENDIF
-IF (TAIRCRAFT8%NMODEL /= 0) THEN
-CALL AIRCRAFT_BALLOON_EVOL(PTSTEP,  PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,           &
-                           PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           TAIRCRAFT8, PSEA                                           )
-ENDIF
-IF (TAIRCRAFT9%NMODEL /= 0) THEN
-CALL AIRCRAFT_BALLOON_EVOL(PTSTEP,  PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,           &
-                           PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           TAIRCRAFT9, PSEA                                           )
-ENDIF
-IF (TAIRCRAFT10%NMODEL /= 0) THEN
-CALL AIRCRAFT_BALLOON_EVOL(PTSTEP,  PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,           &
-                           PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           TAIRCRAFT10, PSEA                                          )
-ENDIF
-IF (TAIRCRAFT11%NMODEL /= 0) THEN
-CALL AIRCRAFT_BALLOON_EVOL(PTSTEP,  PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,           &
-                           PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           TAIRCRAFT11, PSEA                                          )
-ENDIF
-IF (TAIRCRAFT12%NMODEL /= 0) THEN
-CALL AIRCRAFT_BALLOON_EVOL(PTSTEP,  PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,           &
-                           PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           TAIRCRAFT12, PSEA                                          )
-ENDIF
-IF (TAIRCRAFT13%NMODEL /= 0) THEN
-CALL AIRCRAFT_BALLOON_EVOL(PTSTEP,  PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,           &
-                           PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           TAIRCRAFT13, PSEA                                          )
-ENDIF
-IF (TAIRCRAFT14%NMODEL /= 0) THEN
-CALL AIRCRAFT_BALLOON_EVOL(PTSTEP,  PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,           &
-                           PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           TAIRCRAFT14, PSEA                                          )
-ENDIF
-IF (TAIRCRAFT15%NMODEL /= 0) THEN
-CALL AIRCRAFT_BALLOON_EVOL(PTSTEP,  PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,           &
-                           PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           TAIRCRAFT15, PSEA                                          )
-ENDIF
-IF (TAIRCRAFT16%NMODEL /= 0) THEN
-CALL AIRCRAFT_BALLOON_EVOL(PTSTEP,  PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,           &
-                           PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           TAIRCRAFT16, PSEA                                          )
-ENDIF
-IF (TAIRCRAFT17%NMODEL /= 0) THEN
-CALL AIRCRAFT_BALLOON_EVOL(PTSTEP,  PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,           &
-                           PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           TAIRCRAFT17, PSEA                                          )
-ENDIF
-IF (TAIRCRAFT18%NMODEL /= 0) THEN
-CALL AIRCRAFT_BALLOON_EVOL(PTSTEP,  PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,           &
-                           PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           TAIRCRAFT18, PSEA                                          )
-ENDIF
-IF (TAIRCRAFT19%NMODEL /= 0) THEN
-CALL AIRCRAFT_BALLOON_EVOL(PTSTEP,  PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,           &
-                           PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           TAIRCRAFT19, PSEA                                          )
-ENDIF
-IF (TAIRCRAFT20%NMODEL /= 0) THEN
-CALL AIRCRAFT_BALLOON_EVOL(PTSTEP,  PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,           &
-                           PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           TAIRCRAFT20, PSEA                                          )
-ENDIF
-IF (TAIRCRAFT21%NMODEL /= 0) THEN
-CALL AIRCRAFT_BALLOON_EVOL(PTSTEP,  PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,           &
-                           PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           TAIRCRAFT21, PSEA                                          )
-ENDIF
-IF (TAIRCRAFT22%NMODEL /= 0) THEN
-CALL AIRCRAFT_BALLOON_EVOL(PTSTEP,  PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,           &
-                           PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           TAIRCRAFT22, PSEA                                          )
-ENDIF
-IF (TAIRCRAFT23%NMODEL /= 0) THEN
-CALL AIRCRAFT_BALLOON_EVOL(PTSTEP,  PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,           &
-                           PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           TAIRCRAFT23, PSEA                                          )
-ENDIF
-IF (TAIRCRAFT24%NMODEL /= 0) THEN
-CALL AIRCRAFT_BALLOON_EVOL(PTSTEP,  PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,           &
-                           PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           TAIRCRAFT24, PSEA                                          )
-ENDIF
-IF (TAIRCRAFT25%NMODEL /= 0) THEN
-CALL AIRCRAFT_BALLOON_EVOL(PTSTEP,  PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,           &
-                           PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           TAIRCRAFT25, PSEA                                          )
-ENDIF
-IF (TAIRCRAFT26%NMODEL /= 0) THEN
-CALL AIRCRAFT_BALLOON_EVOL(PTSTEP,  PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,           &
-                           PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           TAIRCRAFT26, PSEA                                          )
-ENDIF
-IF (TAIRCRAFT27%NMODEL /= 0) THEN
-CALL AIRCRAFT_BALLOON_EVOL(PTSTEP,  PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,           &
-                           PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           TAIRCRAFT27, PSEA                                          )
-ENDIF
-IF (TAIRCRAFT28%NMODEL /= 0) THEN
-CALL AIRCRAFT_BALLOON_EVOL(PTSTEP,  PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,           &
-                           PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           TAIRCRAFT28, PSEA                                          )
-ENDIF
-IF (TAIRCRAFT29%NMODEL /= 0) THEN
-CALL AIRCRAFT_BALLOON_EVOL(PTSTEP,  PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,           &
-                           PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           TAIRCRAFT29, PSEA                                          )
-ENDIF
-IF (TAIRCRAFT30%NMODEL /= 0) THEN
-CALL AIRCRAFT_BALLOON_EVOL(PTSTEP,  PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,           &
-                           PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           TAIRCRAFT30, PSEA                                          )
-ENDIF
+DO JI = 1, NBALLOONS
+  CALL AIRCRAFT_BALLOON_EVOL( PTSTEP, PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,          &
+                              PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT, &
+                              TAIRCRAFTS(JI), PSEA                                     )
+END DO
 !
 !----------------------------------------------------------------------------
 !

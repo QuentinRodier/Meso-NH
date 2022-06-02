@@ -47,6 +47,8 @@ use modd_type_date,     only: date_time
 
 implicit none
 
+save
+
 !-------------------------------------------------------------------------------------------
 !
 LOGICAL :: LFLYER    ! flag to use aircraft/balloons
@@ -158,45 +160,11 @@ TYPE, EXTENDS( TFLYERDATA ) :: TBALLOONDATA
   REAL :: MASS     = XUNDEF ! mass of the balloon (kg) (if 'CVBALL')
 END TYPE TBALLOONDATA
 
-TYPE(TBALLOONDATA) :: TBALLOON1 ! characteristics and records of a balloon
-TYPE(TBALLOONDATA) :: TBALLOON2 ! characteristics and records of a balloon
-TYPE(TBALLOONDATA) :: TBALLOON3 ! characteristics and records of a balloon
-TYPE(TBALLOONDATA) :: TBALLOON4 ! characteristics and records of a balloon
-TYPE(TBALLOONDATA) :: TBALLOON5 ! characteristics and records of a balloon
-TYPE(TBALLOONDATA) :: TBALLOON6 ! characteristics and records of a balloon
-TYPE(TBALLOONDATA) :: TBALLOON7 ! characteristics and records of a balloon
-TYPE(TBALLOONDATA) :: TBALLOON8 ! characteristics and records of a balloon
-TYPE(TBALLOONDATA) :: TBALLOON9 ! characteristics and records of a balloon
+INTEGER :: NAIRCRAFTS = 0 ! Total number of aircrafts
+INTEGER :: NBALLOONS  = 0 ! Total number of balloons
 
-TYPE(TAIRCRAFTDATA) :: TAIRCRAFT1 ! characteristics and records of an aircraft
-TYPE(TAIRCRAFTDATA) :: TAIRCRAFT2 ! characteristics and records of an aircraft
-TYPE(TAIRCRAFTDATA) :: TAIRCRAFT3 ! characteristics and records of an aircraft
-TYPE(TAIRCRAFTDATA) :: TAIRCRAFT4 ! characteristics and records of an aircraft
-TYPE(TAIRCRAFTDATA) :: TAIRCRAFT5 ! characteristics and records of an aircraft
-TYPE(TAIRCRAFTDATA) :: TAIRCRAFT6 ! characteristics and records of an aircraft
-TYPE(TAIRCRAFTDATA) :: TAIRCRAFT7 ! characteristics and records of an aircraft
-TYPE(TAIRCRAFTDATA) :: TAIRCRAFT8 ! characteristics and records of an aircraft
-TYPE(TAIRCRAFTDATA) :: TAIRCRAFT9 ! characteristics and records of an aircraft
-TYPE(TAIRCRAFTDATA) :: TAIRCRAFT10! characteristics and records of an aircraft
-TYPE(TAIRCRAFTDATA) :: TAIRCRAFT11! characteristics and records of an aircraft
-TYPE(TAIRCRAFTDATA) :: TAIRCRAFT12! characteristics and records of an aircraft
-TYPE(TAIRCRAFTDATA) :: TAIRCRAFT13! characteristics and records of an aircraft
-TYPE(TAIRCRAFTDATA) :: TAIRCRAFT14! characteristics and records of an aircraft
-TYPE(TAIRCRAFTDATA) :: TAIRCRAFT15! characteristics and records of an aircraft
-TYPE(TAIRCRAFTDATA) :: TAIRCRAFT16! characteristics and records of an aircraft
-TYPE(TAIRCRAFTDATA) :: TAIRCRAFT17! characteristics and records of an aircraft
-TYPE(TAIRCRAFTDATA) :: TAIRCRAFT18! characteristics and records of an aircraft
-TYPE(TAIRCRAFTDATA) :: TAIRCRAFT19! characteristics and records of an aircraft
-TYPE(TAIRCRAFTDATA) :: TAIRCRAFT20! characteristics and records of an aircraft
-TYPE(TAIRCRAFTDATA) :: TAIRCRAFT21! characteristics and records of an aircraft
-TYPE(TAIRCRAFTDATA) :: TAIRCRAFT22! characteristics and records of an aircraft
-TYPE(TAIRCRAFTDATA) :: TAIRCRAFT23! characteristics and records of an aircraft
-TYPE(TAIRCRAFTDATA) :: TAIRCRAFT24! characteristics and records of an aircraft
-TYPE(TAIRCRAFTDATA) :: TAIRCRAFT25! characteristics and records of an aircraft
-TYPE(TAIRCRAFTDATA) :: TAIRCRAFT26! characteristics and records of an aircraft
-TYPE(TAIRCRAFTDATA) :: TAIRCRAFT27! characteristics and records of an aircraft
-TYPE(TAIRCRAFTDATA) :: TAIRCRAFT28! characteristics and records of an aircraft
-TYPE(TAIRCRAFTDATA) :: TAIRCRAFT29! characteristics and records of an aircraft
-TYPE(TAIRCRAFTDATA) :: TAIRCRAFT30! characteristics and records of an aircraft
+TYPE(TAIRCRAFTDATA), DIMENSION(:), ALLOCATABLE :: TAIRCRAFTS ! characteristics and records of the aircrafts
+
+TYPE(TBALLOONDATA),  DIMENSION(:), ALLOCATABLE :: TBALLOONS  ! characteristics and records of the balloons
 
 END MODULE MODD_AIRCRAFT_BALLOON

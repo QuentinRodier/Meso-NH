@@ -1855,46 +1855,13 @@ if ( tpfile%lmaster ) then
     end if
 
     if ( lflyer ) then
-      call Write_flyer_time_coord( tballoon1 )
-      call Write_flyer_time_coord( tballoon2 )
-      call Write_flyer_time_coord( tballoon3 )
-      call Write_flyer_time_coord( tballoon4 )
-      call Write_flyer_time_coord( tballoon5 )
-      call Write_flyer_time_coord( tballoon6 )
-      call Write_flyer_time_coord( tballoon7 )
-      call Write_flyer_time_coord( tballoon8 )
-      call Write_flyer_time_coord( tballoon9 )
+      do ji = 1, nballoons
+        call Write_flyer_time_coord( tballoons(ji) )
+      end do
 
-      call Write_flyer_time_coord( taircraft1 )
-      call Write_flyer_time_coord( taircraft2 )
-      call Write_flyer_time_coord( taircraft3 )
-      call Write_flyer_time_coord( taircraft4 )
-      call Write_flyer_time_coord( taircraft5 )
-      call Write_flyer_time_coord( taircraft6 )
-      call Write_flyer_time_coord( taircraft7 )
-      call Write_flyer_time_coord( taircraft8 )
-      call Write_flyer_time_coord( taircraft9 )
-      call Write_flyer_time_coord( taircraft10 )
-      call Write_flyer_time_coord( taircraft11 )
-      call Write_flyer_time_coord( taircraft12 )
-      call Write_flyer_time_coord( taircraft13 )
-      call Write_flyer_time_coord( taircraft14 )
-      call Write_flyer_time_coord( taircraft15 )
-      call Write_flyer_time_coord( taircraft16 )
-      call Write_flyer_time_coord( taircraft17 )
-      call Write_flyer_time_coord( taircraft18 )
-      call Write_flyer_time_coord( taircraft19 )
-      call Write_flyer_time_coord( taircraft20 )
-      call Write_flyer_time_coord( taircraft21 )
-      call Write_flyer_time_coord( taircraft22 )
-      call Write_flyer_time_coord( taircraft23 )
-      call Write_flyer_time_coord( taircraft24 )
-      call Write_flyer_time_coord( taircraft25 )
-      call Write_flyer_time_coord( taircraft26 )
-      call Write_flyer_time_coord( taircraft27 )
-      call Write_flyer_time_coord( taircraft28 )
-      call Write_flyer_time_coord( taircraft29 )
-      call Write_flyer_time_coord( taircraft30 )
+      do ji = 1, naircrafts
+        call Write_flyer_time_coord( taircrafts(ji) )
+      end do
     end if
 
   end if !MNHDIACHRONIC
