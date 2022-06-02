@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1996-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1996-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -95,7 +95,7 @@ subroutine Write_diachro( tpdiafile, tpbudiachro, tpfields,       &
 !*       0.    DECLARATIONS
 !              ------------
 !
-use modd_aircraft_balloon, only: flyer
+use modd_aircraft_balloon, only: tflyerdata
 use modd_budget,           only: tbudiachrometadata
 use modd_conf,             only: lpack
 use modd_field,            only: tfieldmetadata_base
@@ -112,7 +112,7 @@ class(tfieldmetadata_base), dimension(:),           intent(in)           :: tpfi
 type(date_time),            dimension(:),           intent(in)           :: tpdates  !Used only for LFI files
 REAL,                       DIMENSION(:,:,:,:,:,:), INTENT(IN)           :: PVAR
 logical,                                            intent(in), optional :: osplit
-type(flyer),                                        intent(in), optional :: tpflyer
+class(tflyerdata),                                  intent(in), optional :: tpflyer
 !
 !*       0.1   Local variables
 !              ---------------
@@ -142,7 +142,7 @@ end subroutine Write_diachro
 !-----------------------------------------------------------------------------
 subroutine Write_diachro_lfi( tpdiafile, tpbudiachro, tpfields, tpdates, pvar, tpflyer )
 
-use modd_aircraft_balloon, only: flyer
+use modd_aircraft_balloon, only: tflyerdata
 use modd_budget,         only: NLVL_CATEGORY, NLVL_GROUP, NLVL_SHAPE, nbumask, nbutshift, nbusubwrite, tbudiachrometadata
 use modd_field,          only: NMNHDIM_ONE, NMNHDIM_UNKNOWN, NMNHDIM_BUDGET_LES_MASK, &
                                NMNHDIM_FLYER_TIME, NMNHDIM_NOTLISTED, NMNHDIM_UNUSED, &
@@ -167,7 +167,7 @@ type(tbudiachrometadata),                           intent(in)           :: tpbu
 class(tfieldmetadata_base), dimension(:),           intent(in)           :: tpfields
 type(date_time),            dimension(:),           intent(in)           :: tpdates
 real,                       dimension(:,:,:,:,:,:), intent(in)           :: pvar
-type(flyer),                                        intent(in), optional :: tpflyer
+class(tflyerdata),                                  intent(in), optional :: tpflyer
 
 integer, parameter :: LFITITLELGT = 100
 integer, parameter :: LFIUNITLGT = 100
@@ -792,7 +792,7 @@ subroutine Write_diachro_nc4( tpdiafile, tpbudiachro, tpfields, pvar, osplit, tp
 
 use NETCDF,                only: NF90_DEF_DIM, NF90_INQ_DIMID, NF90_INQUIRE_DIMENSION, NF90_NOERR
 
-use modd_aircraft_balloon, only: flyer
+use modd_aircraft_balloon, only: tflyerdata
 use modd_budget,           only: CNCGROUPNAMES,                                                      &
                                  NMAXLEVELS, NLVL_ROOT, NLVL_CATEGORY, NLVL_SUBCATEGORY, NLVL_GROUP, &
                                  NLVL_SHAPE, NLVL_TIMEAVG, NLVL_NORM, NLVL_MASK,                     &
@@ -813,7 +813,7 @@ type(tbudiachrometadata),                           intent(in)           :: tpbu
 class(tfieldmetadata_base), dimension(:),           intent(in)           :: tpfields
 real,                       dimension(:,:,:,:,:,:), intent(in)           :: pvar
 logical,                                            intent(in), optional :: osplit
-type(flyer),                                        intent(in), optional :: tpflyer
+class(tflyerdata),                                  intent(in), optional :: tpflyer
 
 character(len=:), allocatable :: ycategory
 character(len=:), allocatable :: ylevelname

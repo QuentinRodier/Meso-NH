@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2000-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2000-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -42,10 +42,10 @@ REAL, DIMENSION(:,:),INTENT(IN) :: PSEA
 END SUBROUTINE AIRCRAFT_BALLOON
 !
 SUBROUTINE AIRCRAFT_BALLOON_LONGTYPE_GET( TPFLYER, HLONGTYPE )
-  USE MODD_AIRCRAFT_BALLOON, ONLY: FLYER
+  USE MODD_AIRCRAFT_BALLOON, ONLY: TFLYERDATA
 
-  TYPE(FLYER),      INTENT(IN)  :: TPFLYER
-  CHARACTER(LEN=*), INTENT(OUT) :: HLONGTYPE
+  CLASS(TFLYERDATA), INTENT(IN)  :: TPFLYER
+  CHARACTER(LEN=*),  INTENT(OUT) :: HLONGTYPE
 END SUBROUTINE AIRCRAFT_BALLOON_LONGTYPE_GET
 
 END INTERFACE
@@ -92,6 +92,7 @@ END MODULE MODI_AIRCRAFT_BALLOON
 !!              March, 2008 (P.Lacarrere) Add 3D fluxes
 !  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
+!  P. Wautelet    06/2022: reorganize flyers
 ! --------------------------------------------------------------------------
 !       
 !*      0. DECLARATIONS
@@ -347,27 +348,36 @@ END SUBROUTINE AIRCRAFT_BALLOON
 
 
 SUBROUTINE AIRCRAFT_BALLOON_LONGTYPE_GET( TPFLYER, HLONGTYPE )
-USE MODD_AIRCRAFT_BALLOON, ONLY: FLYER
+USE MODD_AIRCRAFT_BALLOON, ONLY: taircraftdata, tballoondata, TFLYERDATA
 
 USE MODE_MSG
 
-TYPE(FLYER),      INTENT(IN)  :: TPFLYER
-CHARACTER(LEN=*), INTENT(OUT) :: HLONGTYPE
+CLASS(TFLYERDATA), INTENT(IN)  :: TPFLYER
+CHARACTER(LEN=*),  INTENT(OUT) :: HLONGTYPE
 
 character(len=:), allocatable :: ytype
 
-if ( Trim( TPFLYER%TYPE ) == 'AIRCRA' ) then
-  ytype = 'Aircrafts'
-else if ( Trim( TPFLYER%TYPE ) == 'RADIOS' ) then
-  ytype = 'Radiosonde_balloons'
-else if ( Trim( TPFLYER%TYPE ) == 'ISODEN' ) then
-  ytype = 'Isodensity_balloons'
-else if ( Trim( TPFLYER%TYPE ) == 'CVBALL' ) then
-  ytype = 'Constant_volume_balloons'
-else
-  call Print_msg( NVERB_ERROR, 'GEN', 'AIRCRAFT_BALLOON_LONGTYPE_GET', 'unknown category for flyer ' // Trim( tpflyer%title ) )
-  ytype = 'Unknown'
-end if
+select type ( tpflyer )
+  class is ( taircraftdata )
+    ytype = 'Aircrafts'
+
+  class is ( tballoondata )
+    if ( Trim( TPFLYER%TYPE ) == 'RADIOS' ) then
+      ytype = 'Radiosonde_balloons'
+    else if ( Trim( TPFLYER%TYPE ) == 'ISODEN' ) then
+      ytype = 'Isodensity_balloons'
+    else if ( Trim( TPFLYER%TYPE ) == 'CVBALL' ) then
+      ytype = 'Constant_volume_balloons'
+    else
+      call Print_msg( NVERB_ERROR, 'GEN', 'AIRCRAFT_BALLOON_LONGTYPE_GET', 'unknown category for flyer ' // Trim( tpflyer%title ) )
+      ytype = 'Unknown'
+    end if
+
+  class default
+    call Print_msg( NVERB_ERROR, 'GEN', 'AIRCRAFT_BALLOON_LONGTYPE_GET', 'unknown class for flyer ' // Trim( tpflyer%title ) )
+    ytype = 'Unknown'
+
+end select
 
 if ( Len_trim( ytype ) > Len( HLONGTYPE ) ) &
   call Print_msg( NVERB_WARNING, 'GEN', 'AIRCRAFT_BALLOON_LONGTYPE_GET', &

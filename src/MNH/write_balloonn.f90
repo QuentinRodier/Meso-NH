@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2001-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2001-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -57,7 +57,8 @@ END MODULE MODI_WRITE_BALLOON_n
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    06/06/01 
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet    06/2022: reorganize flyers
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -99,7 +100,7 @@ SUBROUTINE WRITE_LFI_BALLOON(TPFLYER)
 use modd_field,          only: tfieldmetadata, TYPEREAL
 USE MODE_IO_FIELD_WRITE, only: IO_Field_write
 !
-TYPE(FLYER),        INTENT(IN)       :: TPFLYER
+TYPE(TBALLOONDATA), INTENT(IN) :: TPFLYER
 !
 !
 !*       0.2   Declarations of local variables

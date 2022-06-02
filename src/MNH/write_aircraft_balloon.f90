@@ -72,6 +72,7 @@ END MODULE MODI_WRITE_AIRCRAFT_BALLOON
 !  P. Wautelet 11/03/2021: budgets: remove ptrajx/y/z optional dummy arguments of Write_diachro
 !  P. Wautelet 11/03/2021: bugfix: correct name for NSV_LIMA_IMM_NUCL
 !  P. Wautelet 04/02/2022: use TSVLIST to manage metadata of scalar variables
+!  P. Wautelet    06/2022: reorganize flyers
 ! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -167,7 +168,7 @@ use modd_field,  only: NMNHDIM_LEVEL, NMNHDIM_FLYER_PROC, NMNHDIM_FLYER_TIME, NM
 
 use modi_aircraft_balloon, only: Aircraft_balloon_longtype_get
 
-TYPE(FLYER),        INTENT(IN)       :: TPFLYER
+CLASS(TFLYERDATA), INTENT(IN)       :: TPFLYER
 !
 !*      0.2  declaration of local variables for diachro
 !
@@ -253,19 +254,30 @@ YUNIT    (JPROC) = 'm'
 YCOMMENT (JPROC) = 'orography'
 ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%ZS(:)
 !
-IF (TPFLYER%ALTDEF) THEN
-  JPROC = JPROC + 1
-  YTITLE   (JPROC) = 'P'
-  YUNIT    (JPROC) = 'Pascal'
-  YCOMMENT (JPROC) = 'pressure' 
-  ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%P(:)
-ELSE
-  JPROC = JPROC + 1
-  YTITLE   (JPROC) = 'Z'
-  YUNIT    (JPROC) = 'm'
-  YCOMMENT (JPROC) = 'altitude' 
-  ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%Z(:)
-ENDIF
+SELECT TYPE ( TPFLYER )
+  CLASS IS ( TAIRCRAFTDATA )
+    IF (TPFLYER%ALTDEF) THEN
+      JPROC = JPROC + 1
+      YTITLE   (JPROC) = 'P'
+      YUNIT    (JPROC) = 'Pascal'
+      YCOMMENT (JPROC) = 'pressure'
+      ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%P(:)
+    ELSE
+      JPROC = JPROC + 1
+      YTITLE   (JPROC) = 'Z'
+      YUNIT    (JPROC) = 'm'
+      YCOMMENT (JPROC) = 'altitude'
+      ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%Z(:)
+    ENDIF
+
+  CLASS IS ( TBALLOONDATA )
+    JPROC = JPROC + 1
+    YTITLE   (JPROC) = 'Z'
+    YUNIT    (JPROC) = 'm'
+    YCOMMENT (JPROC) = 'altitude'
+    ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%Z(:)
+
+END SELECT
 !
 JPROC = JPROC + 1
 YTITLE   (JPROC) = 'LON'

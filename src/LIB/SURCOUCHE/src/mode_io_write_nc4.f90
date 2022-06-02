@@ -2294,7 +2294,7 @@ subroutine Write_flyer_time_coord( tpflyer )
 
   use modi_aircraft_balloon, only: Aircraft_balloon_longtype_get
 
-  type(flyer), intent(in) :: tpflyer
+  class(tflyerdata), intent(in) :: tpflyer
 
   character(len=NBUNAMELGTMAX) :: ytype
   character(len=NBUNAMELGTMAX) :: ytype_clean
