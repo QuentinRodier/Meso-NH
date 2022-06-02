@@ -41,6 +41,7 @@
 !             ------------
 !
 !
+use modd_parameters,    only: XUNDEF
 USE MODD_TYPE_STATPROF, ONLY: TSTATPROFTIME
 use modd_type_date,     only: date_time
 
@@ -48,37 +49,37 @@ implicit none
 
 !-------------------------------------------------------------------------------------------
 !
-LOGICAL     :: LFLYER    ! flag to use aircraft/balloons
+LOGICAL :: LFLYER    ! flag to use aircraft/balloons
 !
 TYPE :: TFLYERDATA
   !
   !* general information
   !
-  CHARACTER(LEN=3)              :: MODEL  ! type of model used for each balloon/aircraft
-                                          ! 'FIX' : NMODEL used during the run
-                                          ! 'MOB' : change od model depends of the
-                                          !         balloon/aircraft location
-  INTEGER                       :: NMODEL ! model number for each balloon/aircraft
-  CHARACTER(LEN=6)              :: TYPE   ! flyer type:
-                                          ! 'RADIOS' : radiosounding balloon
-                                          ! 'ISODEN' : iso-density balloon
-                                          ! 'AIRCRA' : aircraft
-                                          ! 'CVBALL' : Constant Volume balloon
-  CHARACTER(LEN=10)             :: TITLE  ! title or name for the balloon/aircraft
-  TYPE(DATE_TIME)               :: LAUNCH ! launch/takeoff date and time
-  LOGICAL                       :: CRASH  ! occurence of crash
-  LOGICAL                       :: FLY    ! occurence of flying
+  CHARACTER(LEN=3)    :: MODEL = 'FIX' ! type of model used for each balloon/aircraft
+                                    ! 'FIX' : NMODEL used during the run
+                                    ! 'MOB' : change od model depends of the
+                                    !         balloon/aircraft location
+  INTEGER             :: NMODEL = 0 ! model number for each balloon/aircraft
+  CHARACTER(LEN=6)    :: TYPE = ''  ! flyer type:
+                                    ! 'RADIOS' : radiosounding balloon
+                                    ! 'ISODEN' : iso-density balloon
+                                    ! 'AIRCRA' : aircraft
+                                    ! 'CVBALL' : Constant Volume balloon
+  CHARACTER(LEN=10)   :: TITLE = ''  ! title or name for the balloon/aircraft
+  TYPE(DATE_TIME)     :: LAUNCH      ! launch/takeoff date and time
+  LOGICAL             :: CRASH = .FALSE. ! occurence of crash
+  LOGICAL             :: FLY   = .FALSE. ! occurence of flying
   !
   !* storage monitoring
   !
-  TYPE(TSTATPROFTIME)           :: TFLYER_TIME ! Time management for flyer
+  TYPE(TSTATPROFTIME) :: TFLYER_TIME ! Time management for flyer
   !
   !* current position of the balloon/aircraft
   !
-  REAL                          :: X_CUR    ! current x
-  REAL                          :: Y_CUR    ! current y
-  REAL                          :: Z_CUR    ! current z (if 'RADIOS' or 'AIRCRA' and 'ALTDEF' = T)
-  REAL                          :: P_CUR    ! current p (if 'AIRCRA' and 'ALTDEF' = F)
+  REAL :: X_CUR = XUNDEF ! current x
+  REAL :: Y_CUR = XUNDEF ! current y
+  REAL :: Z_CUR = XUNDEF ! current z (if 'RADIOS' or 'AIRCRA' and 'ALTDEF' = T)
+  REAL :: P_CUR = XUNDEF ! current p (if 'AIRCRA' and 'ALTDEF' = F)
   !
   !* data records
   !
@@ -122,9 +123,9 @@ TYPE, EXTENDS( TFLYERDATA ) :: TAIRCRAFTDATA
   !
   !* aircraft flight definition
   !
-  INTEGER                       :: SEG      ! number of aircraft flight segments
-  INTEGER                       :: SEGCURN  ! current flight segment number
-  REAL                          :: SEGCURT  ! current flight segment time spent
+  INTEGER :: SEG     = 0  ! number of aircraft flight segments
+  INTEGER :: SEGCURN = 1  ! current flight segment number
+  REAL    :: SEGCURT = 0. ! current flight segment time spent
   REAL, DIMENSION(:),   POINTER :: SEGLAT  => NULL() ! latitude of flight segment extremities  (LEG+1)
   REAL, DIMENSION(:),   POINTER :: SEGLON  => NULL() ! longitude of flight segment extremities (LEG+1)
   REAL, DIMENSION(:),   POINTER :: SEGX    => NULL() ! X of flight segment extremities         (LEG+1)
@@ -135,26 +136,26 @@ TYPE, EXTENDS( TFLYERDATA ) :: TAIRCRAFTDATA
   !
   !* aircraft altitude type definition
   !
-  LOGICAL                       :: ALTDEF   ! TRUE == altitude given in pressure
+  LOGICAL                       :: ALTDEF = .FALSE.  ! TRUE == altitude given in pressure
 END TYPE TAIRCRAFTDATA
 
 TYPE, EXTENDS( TFLYERDATA ) :: TBALLOONDATA
   !
   !* balloon dynamical characteristics
   !
-  REAL                          :: LAT    ! latitude of launch
-  REAL                          :: LON    ! lontitude of launch
-  REAL                          :: XLAUNCH! X coordinate of launch
-  REAL                          :: YLAUNCH! Y coordinate of launch
-  REAL                          :: ALT    ! altitude of launch (if 'RADIOS' or 'ISODEN' or 'CVBALL')
-  REAL                          :: WASCENT! ascent vertical speed (if 'RADIOS')
-  REAL                          :: RHO    ! density of launch (if 'ISODEN')
-  REAL                          :: PRES   ! pressure of launch (if 'ISODEN')
-  REAL                          :: DIAMETER! apparent diameter of the balloon (m) (if 'CVBALL')
-  REAL                          :: AERODRAG! aerodynamic drag coefficient of the balloon (if 'CVBALL')
-  REAL                          :: INDDRAG! induced drag coefficient (i.e. air shifted by the balloon) (if 'CVBALL')
-  REAL                          :: VOLUME ! volume of the balloon (m3) (if 'CVBALL')
-  REAL                          :: MASS   ! mass of the balloon (kg) (if 'CVBALL')
+  REAL :: LAT      = XUNDEF ! latitude of launch
+  REAL :: LON      = XUNDEF ! lontitude of launch
+  REAL :: XLAUNCH  = XUNDEF ! X coordinate of launch
+  REAL :: YLAUNCH  = XUNDEF ! Y coordinate of launch
+  REAL :: ALT      = XUNDEF ! altitude of launch (if 'RADIOS' or 'ISODEN' or 'CVBALL')
+  REAL :: WASCENT  = 5.     ! ascent vertical speed, m/s (if 'RADIOS')
+  REAL :: RHO      = XUNDEF ! density of launch (if 'ISODEN')
+  REAL :: PRES     = XUNDEF ! pressure of launch (if 'ISODEN')
+  REAL :: DIAMETER = XUNDEF ! apparent diameter of the balloon (m) (if 'CVBALL')
+  REAL :: AERODRAG = XUNDEF ! aerodynamic drag coefficient of the balloon (if 'CVBALL')
+  REAL :: INDDRAG  = XUNDEF ! induced drag coefficient (i.e. air shifted by the balloon) (if 'CVBALL')
+  REAL :: VOLUME   = XUNDEF ! volume of the balloon (m3) (if 'CVBALL')
+  REAL :: MASS     = XUNDEF ! mass of the balloon (kg) (if 'CVBALL')
 END TYPE TBALLOONDATA
 
 TYPE(TBALLOONDATA) :: TBALLOON1 ! characteristics and records of a balloon
