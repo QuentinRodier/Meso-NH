@@ -210,7 +210,7 @@ REAL, DIMENSION(SIZE(PR,3))    :: ZRHODREFZ ! vertical profile of dry air densit
 REAL, DIMENSION(SIZE(PR,3))    :: ZCIT     ! pristine ice concentration
 REAL, DIMENSION(SIZE(PR,3))    :: ZCCI,ZCCR,ZCCC     ! ICE,RAIN CLOUD concentration (LIMA)
 REAL, DIMENSION(SIZE(PR,3),SIZE(PR,4)+1) :: ZRZ  ! vertical profile of hydrometeor mixing ratios
-REAL                           :: ZA,ZB,ZCC,ZCX,ZALPHA,ZNU,ZLB,ZLBEX,ZRHOHYD,XLAM_CRAD   ! generic microphysical parameters
+REAL                           :: ZA,ZB,ZCC,ZCX,ZALPHA,ZNU,ZLB,ZLBEX,ZRHOHYD   ! generic microphysical parameters
 INTEGER                        :: JJ    ! loop counter for quadrature
 COMPLEX                        :: QMW,QMI,QM,QB,QEPSIW,QEPSWI   ! dielectric parameter
 REAL                           :: ZAETOT,ZAETMP,ZREFLOC,ZQSCA,ZQBACK,ZQEXT ! temporary scattering parameters
