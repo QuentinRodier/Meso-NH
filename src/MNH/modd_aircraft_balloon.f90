@@ -85,40 +85,41 @@ TYPE :: TFLYERDATA
   !
   !* data records
   !
-  REAL, DIMENSION(:),     POINTER :: XX         => NULL() ! X(n)
-  REAL, DIMENSION(:),     POINTER :: XY         => NULL() ! Y(n)
-  REAL, DIMENSION(:),     POINTER :: XZ         => NULL() ! Z(n)
-  REAL, DIMENSION(:),     POINTER :: XLAT       => NULL() ! latitude (n)
-  REAL, DIMENSION(:),     POINTER :: XLON       => NULL() ! longitude(n)
-  REAL, DIMENSION(:),     POINTER :: XZON       => NULL() ! zonal wind(n)
-  REAL, DIMENSION(:),     POINTER :: XMER       => NULL() ! meridian wind(n)
-  REAL, DIMENSION(:),     POINTER :: XW         => NULL() ! w(n)  (air vertical speed)
-  REAL, DIMENSION(:),     POINTER :: XP         => NULL() ! p(n)
-  REAL, DIMENSION(:),     POINTER :: XTKE       => NULL() ! tke(n)
-  REAL, DIMENSION(:),     POINTER :: XTKE_DISS  => NULL() ! tke dissipation rate
-  REAL, DIMENSION(:),     POINTER :: XTH        => NULL() ! th(n)
-  REAL, DIMENSION(:,:),   POINTER :: XR         => NULL() ! r*(n)
-  REAL, DIMENSION(:,:),   POINTER :: XSV        => NULL() ! Sv*(n)
-  REAL, DIMENSION(:,:),   POINTER :: XRTZ       => NULL() ! tot hydrometeor mixing ratio
-  REAL, DIMENSION(:,:,:), POINTER :: XRZ        => NULL() ! water vapour mixing ratio
-  REAL, DIMENSION(:,:),   POINTER :: XFFZ       => NULL() ! horizontal wind
-  REAL, DIMENSION(:,:),   POINTER :: XIWCZ      => NULL() ! ice water content
-  REAL, DIMENSION(:,:),   POINTER :: XLWCZ      => NULL() ! liquid water content
-  REAL, DIMENSION(:,:),   POINTER :: XCIZ       => NULL() ! Ice concentration
-  REAL, DIMENSION(:,:),   POINTER :: XCCZ       => NULL() ! Cloud concentration (LIMA)
-  REAL, DIMENSION(:,:),   POINTER :: XCRZ       => NULL() ! Rain concentration (LIMA)
-  REAL, DIMENSION(:,:),   POINTER :: XCRARE     => NULL() ! cloud radar reflectivity
-  REAL, DIMENSION(:,:),   POINTER :: XCRARE_ATT => NULL() ! attenuated (= more realistic) cloud radar reflectivity
-  REAL, DIMENSION(:,:),   POINTER :: XWZ        => NULL() ! vertical profile of vertical velocity
-  REAL, DIMENSION(:,:),   POINTER :: XZZ        => NULL() ! vertical profile of mass point altitude (above sea)
-  REAL, DIMENSION(:,:),   POINTER :: XAER       => NULL() ! Extinction at 550 nm
-  REAL, DIMENSION(:,:),   POINTER :: XDST_WL    => NULL() ! Extinction by wavelength
-  REAL, DIMENSION(:),     POINTER :: XZS        => NULL() ! zs(n)
-  REAL, DIMENSION(:),     POINTER :: XTSRAD     => NULL() ! Ts(n)
+
+  REAL, DIMENSION(:),     ALLOCATABLE :: XX         ! X(n)
+  REAL, DIMENSION(:),     ALLOCATABLE :: XY         ! Y(n)
+  REAL, DIMENSION(:),     ALLOCATABLE :: XZ         ! Z(n)
+  REAL, DIMENSION(:),     ALLOCATABLE :: XLAT       ! latitude (n)
+  REAL, DIMENSION(:),     ALLOCATABLE :: XLON       ! longitude(n)
+  REAL, DIMENSION(:),     ALLOCATABLE :: XZON       ! zonal wind(n)
+  REAL, DIMENSION(:),     ALLOCATABLE :: XMER       ! meridian wind(n)
+  REAL, DIMENSION(:),     ALLOCATABLE :: XW         ! w(n)  (air vertical speed)
+  REAL, DIMENSION(:),     ALLOCATABLE :: XP         ! p(n)
+  REAL, DIMENSION(:),     ALLOCATABLE :: XTKE       ! tke(n)
+  REAL, DIMENSION(:),     ALLOCATABLE :: XTKE_DISS  ! tke dissipation rate
+  REAL, DIMENSION(:),     ALLOCATABLE :: XTH        ! th(n)
+  REAL, DIMENSION(:,:),   ALLOCATABLE :: XR         ! r*(n)
+  REAL, DIMENSION(:,:),   ALLOCATABLE :: XSV        ! Sv*(n)
+  REAL, DIMENSION(:,:),   ALLOCATABLE :: XRTZ       ! tot hydrometeor mixing ratio
+  REAL, DIMENSION(:,:,:), ALLOCATABLE :: XRZ        ! water vapour mixing ratio
+  REAL, DIMENSION(:,:),   ALLOCATABLE :: XFFZ       ! horizontal wind
+  REAL, DIMENSION(:,:),   ALLOCATABLE :: XIWCZ      ! ice water content
+  REAL, DIMENSION(:,:),   ALLOCATABLE :: XLWCZ      ! liquid water content
+  REAL, DIMENSION(:,:),   ALLOCATABLE :: XCIZ       ! Ice concentration
+  REAL, DIMENSION(:,:),   ALLOCATABLE :: XCCZ       ! Cloud concentration (LIMA)
+  REAL, DIMENSION(:,:),   ALLOCATABLE :: XCRZ       ! Rain concentration (LIMA)
+  REAL, DIMENSION(:,:),   ALLOCATABLE :: XCRARE     ! cloud radar reflectivity
+  REAL, DIMENSION(:,:),   ALLOCATABLE :: XCRARE_ATT ! attenuated (= more realistic) cloud radar reflectivity
+  REAL, DIMENSION(:,:),   ALLOCATABLE :: XWZ        ! vertical profile of vertical velocity
+  REAL, DIMENSION(:,:),   ALLOCATABLE :: XZZ        ! vertical profile of mass point altitude (above sea)
+  REAL, DIMENSION(:,:),   ALLOCATABLE :: XAER       ! Extinction at 550 nm
+  REAL, DIMENSION(:,:),   ALLOCATABLE :: XDST_WL    ! Extinction by wavelength
+  REAL, DIMENSION(:),     ALLOCATABLE :: XZS        ! zs(n)
+  REAL, DIMENSION(:),     ALLOCATABLE :: XTSRAD     ! Ts(n)
   !
-  REAL, DIMENSION(:),     POINTER :: XTHW_FLUX => NULL() ! thw_flux(n)
-  REAL, DIMENSION(:),     POINTER :: XRCW_FLUX => NULL() ! rcw_flux(n)
-  REAL, DIMENSION(:,:),   POINTER :: XSVW_FLUX => NULL() ! psw_flux(n)
+  REAL, DIMENSION(:),     ALLOCATABLE :: XTHW_FLUX  ! thw_flux(n)
+  REAL, DIMENSION(:),     ALLOCATABLE :: XRCW_FLUX  ! rcw_flux(n)
+  REAL, DIMENSION(:,:),   ALLOCATABLE :: XSVW_FLUX  ! psw_flux(n)
 END TYPE TFLYERDATA
 
 TYPE, EXTENDS( TFLYERDATA ) :: TAIRCRAFTDATA
@@ -128,13 +129,13 @@ TYPE, EXTENDS( TFLYERDATA ) :: TAIRCRAFTDATA
   INTEGER :: NSEG     = 0  ! number of aircraft flight segments
   INTEGER :: NSEGCURN = 1  ! current flight segment number
   REAL    :: XSEGCURT = 0. ! current flight segment time spent
-  REAL, DIMENSION(:), POINTER :: XSEGLAT  => NULL() ! latitude of flight segment extremities  (LEG+1)
-  REAL, DIMENSION(:), POINTER :: XSEGLON  => NULL() ! longitude of flight segment extremities (LEG+1)
-  REAL, DIMENSION(:), POINTER :: XSEGX    => NULL() ! X of flight segment extremities         (LEG+1)
-  REAL, DIMENSION(:), POINTER :: XSEGY    => NULL() ! Y of flight segment extremities         (LEG+1)
-  REAL, DIMENSION(:), POINTER :: XSEGP    => NULL() ! pressure of flight segment extremities  (LEG+1)
-  REAL, DIMENSION(:), POINTER :: XSEGZ    => NULL() ! altitude of flight segment extremities  (LEG+1)
-  REAL, DIMENSION(:), POINTER :: XSEGTIME => NULL() ! duration of flight segments             (LEG  )
+  REAL, DIMENSION(:), ALLOCATABLE :: XSEGLAT  ! latitude of flight segment extremities  (LEG+1)
+  REAL, DIMENSION(:), ALLOCATABLE :: XSEGLON  ! longitude of flight segment extremities (LEG+1)
+  REAL, DIMENSION(:), ALLOCATABLE :: XSEGX    ! X of flight segment extremities         (LEG+1)
+  REAL, DIMENSION(:), ALLOCATABLE :: XSEGY    ! Y of flight segment extremities         (LEG+1)
+  REAL, DIMENSION(:), ALLOCATABLE :: XSEGP    ! pressure of flight segment extremities  (LEG+1)
+  REAL, DIMENSION(:), ALLOCATABLE :: XSEGZ    ! altitude of flight segment extremities  (LEG+1)
+  REAL, DIMENSION(:), ALLOCATABLE :: XSEGTIME ! duration of flight segments             (LEG  )
   !
   !* aircraft altitude type definition
   !
