@@ -51,7 +51,7 @@ save
 
 !-------------------------------------------------------------------------------------------
 !
-LOGICAL :: LFLYER    ! flag to use aircraft/balloons
+LOGICAL :: LFLYER = .FALSE. ! flag to use aircraft/balloons
 !
 TYPE :: TFLYERDATA
   !

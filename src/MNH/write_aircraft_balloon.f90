@@ -65,7 +65,6 @@ END MODULE MODI_WRITE_AIRCRAFT_BALLOON
 !  P. Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 29/01/2019: bug: moved an instruction later (to prevent access to a not allocated array)
 !  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
-!  P. Wautelet 02/10/2020: bugfix: YGROUP/YGROUPZ were too small
 !  P. Wautelet 09/10/2020: bugfix: correction on IPROCZ when not LIMA (condition was wrong)
 !  P. Wautelet 09/10/2020: Write_diachro: use new datatype tpfields
 !  P. Wautelet 03/03/2021: budgets: add tbudiachrometadata type (useful to pass more information to Write_diachro)
@@ -141,23 +140,17 @@ CLASS(TFLYERDATA), INTENT(IN)       :: TPFLYER
 !*      0.2  declaration of local variables for diachro
 !
 REAL, DIMENSION(:,:,:,:,:,:), ALLOCATABLE :: ZWORK6 ! contains temporal serie
-REAL, DIMENSION(:,:,:,:,:,:), ALLOCATABLE :: ZW6    ! contains temporal serie to write
 REAL, DIMENSION(:,:,:,:,:,:), ALLOCATABLE :: ZWORKZ6! contains temporal serie
-REAL, DIMENSION(:,:,:,:,:,:), ALLOCATABLE :: ZWZ6   ! contains temporal serie
 REAL, DIMENSION(:,:,:,:),     ALLOCATABLE :: ZSV, ZN0, ZSIG, ZRG
 REAL, DIMENSION(:,:,:,:,:),   ALLOCATABLE :: ZPTOTA
 REAL, DIMENSION(:,:,:),       ALLOCATABLE :: ZRHO
 !
-INTEGER, DIMENSION(:),            ALLOCATABLE :: IGRID    ! grid indicator
-CHARACTER(LEN=:), ALLOCATABLE                 :: YGROUP   ! group title
 CHARACTER(LEN=100), DIMENSION(:), ALLOCATABLE :: YCOMMENT ! comment string
 CHARACTER(LEN=100), DIMENSION(:), ALLOCATABLE :: YTITLE   ! title
 CHARACTER(LEN=100), DIMENSION(:), ALLOCATABLE :: YUNIT    ! physical unit
 !
 INTEGER :: IPROC    ! number of variables records
 INTEGER :: JPROC    ! loop counter
-INTEGER, DIMENSION(:),            ALLOCATABLE :: IGRIDZ   ! grid indicator
-CHARACTER(LEN=:), ALLOCATABLE                 :: YGROUPZ  ! group title
 CHARACTER(LEN=100), DIMENSION(:), ALLOCATABLE :: YCOMMENTZ! comment string
 CHARACTER(LEN=100), DIMENSION(:), ALLOCATABLE :: YTITLEZ  ! title
 CHARACTER(LEN=100), DIMENSION(:), ALLOCATABLE :: YUNITZ   ! physical unit
@@ -201,17 +194,10 @@ ALLOCATE (ZWORK6(1,1,1,ISTORE,1,IPROC))
 ALLOCATE (YCOMMENT(IPROC))
 ALLOCATE (YTITLE  (IPROC))
 ALLOCATE (YUNIT   (IPROC))
-ALLOCATE (IGRID   (IPROC))
 ALLOCATE (ZWORKZ6(1,1,IKU,ISTORE,1,IPROCZ))
 ALLOCATE (YCOMMENTZ(IPROCZ))
 ALLOCATE (YTITLEZ (IPROCZ))
 ALLOCATE (YUNITZ  (IPROCZ))
-ALLOCATE (IGRIDZ  (IPROCZ))
-!
-IGRID  = 1
-YGROUP = TPFLYER%CTITLE
-IGRIDZ = 1
-YGROUPZ = TPFLYER%CTITLE
 !
 !----------------------------------------------------------------------------
 JPROC = 0
@@ -706,14 +692,7 @@ DO IK=1, IKU
   ZWORKZ6 (1,1,IK,:,1,JPROCZ) = TPFLYER%XZZ(:,IK)
 END DO
 !----------------------------------------------------------------------------
-!
-ALLOCATE (ZW6(1,1,1,ISTORE,1,JPROC))
-ZW6  = ZWORK6(:,:,:,:,:,:JPROC)
-DEALLOCATE(ZWORK6)
-ALLOCATE (ZWZ6(1,1,IKU,ISTORE,1,JPROCZ))
-ZWZ6 = ZWORKZ6(:,:,:,:,:,:JPROCZ)
-DEALLOCATE(ZWORKZ6)
-!
+
 allocate( tzfields( jproc ) )
 
 tzfields(:)%cmnhname  = ytitle(1 : jproc)
@@ -740,7 +719,7 @@ call Aircraft_balloon_longtype_get( tpflyer, tzbudiachro%clevels(NLVL_SUBCATEGOR
 tzbudiachro%ccomments(NLVL_SUBCATEGORY) = 'Level for the flyers of type: ' // Trim( tzbudiachro%clevels(NLVL_SUBCATEGORY) )
 
 tzbudiachro%lleveluse(NLVL_GROUP)       = .true.
-tzbudiachro%clevels  (NLVL_GROUP)       = Trim( ygroup )
+tzbudiachro%clevels  (NLVL_GROUP)       = Trim( tpflyer%ctitle )
 tzbudiachro%ccomments(NLVL_GROUP)       = 'Values for flyer ' // Trim( tpflyer%ctitle )
 
 tzbudiachro%lleveluse(NLVL_SHAPE)       = .true.
@@ -776,8 +755,8 @@ tzbudiachro%lnorm      = .false.
 ! tzbudiachro%nkl        = NOT SET (default values)
 ! tzbudiachro%nkh        = NOT SET (default values)
 
-call Write_diachro( tpdiafile, tzbudiachro, tzfields, tpflyer%tflyer_time%tpdates, zw6, &
-                    tpflyer = tpflyer                                                   )
+call Write_diachro( tpdiafile, tzbudiachro, tzfields, tpflyer%tflyer_time%tpdates, zwork6(:,:,:,:,:,:jproc), &
+                    tpflyer = tpflyer                                                                        )
 
 deallocate( tzfields )
 
@@ -807,7 +786,7 @@ call Aircraft_balloon_longtype_get( tpflyer, tzbudiachro%clevels(NLVL_SUBCATEGOR
 tzbudiachro%ccomments(NLVL_SUBCATEGORY) = 'Level for the flyers of type: ' // Trim( tzbudiachro%clevels(NLVL_SUBCATEGORY) )
 
 tzbudiachro%lleveluse(NLVL_GROUP)       = .true.
-tzbudiachro%clevels  (NLVL_GROUP)       = Trim( ygroupz )
+tzbudiachro%clevels  (NLVL_GROUP)       = Trim( tpflyer%ctitle )
 tzbudiachro%ccomments(NLVL_GROUP)       = 'Values for flyer ' // Trim( tpflyer%ctitle )
 
 tzbudiachro%lleveluse(NLVL_SHAPE)       = .true.
@@ -848,21 +827,19 @@ tzbudiachro%njh        = 1
 tzbudiachro%nkl        = 1
 tzbudiachro%nkh        = iku
 
-call Write_diachro( tpdiafile, tzbudiachro, tzfields, tpflyer%tflyer_time%tpdates, zwz6, &
-                    tpflyer = tpflyer                                                    )
+call Write_diachro( tpdiafile, tzbudiachro, tzfields, tpflyer%tflyer_time%tpdates, zworkz6(:,:,:,:,:,:jprocz), &
+                    tpflyer = tpflyer                                                                          )
 
 deallocate( tzfields )
 
-DEALLOCATE (ZW6)
+DEALLOCATE (ZWORK6)
 DEALLOCATE (YCOMMENT)
 DEALLOCATE (YTITLE  )
 DEALLOCATE (YUNIT   )
-DEALLOCATE (IGRID   )
-DEALLOCATE (ZWZ6)
+DEALLOCATE (ZWORKZ6)
 DEALLOCATE (YCOMMENTZ)
 DEALLOCATE (YTITLEZ )
 DEALLOCATE (YUNITZ  )
-DEALLOCATE (IGRIDZ  )
 !----------------------------------------------------------------------------
 END SUBROUTINE FLYER_DIACHRO
 !----------------------------------------------------------------------------

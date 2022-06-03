@@ -152,10 +152,6 @@ IF ( CPROGRAM == 'DIAG  ') THEN
 ENDIF
 !
 !
-IF ( IMI == 1 ) THEN
-  LFLYER=.FALSE.
-END IF
-!
 !----------------------------------------------------------------------------
 !
 !*      2.   Balloon initialization
