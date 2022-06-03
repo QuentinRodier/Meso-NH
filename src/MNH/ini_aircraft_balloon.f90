@@ -215,84 +215,85 @@ ENDIF
 !
 IF (TPFLYER%NMODEL == 0) ISTORE=0
 IF (TPFLYER%NMODEL > 0) THEN
-  WRITE(ILUOUT,*) 'Aircraft or Balloon:',TPFLYER%TITLE,' nmodel=',TPFLYER%NMODEL
+  WRITE(ILUOUT,*) 'Aircraft or Balloon:',TPFLYER%CTITLE,' nmodel=',TPFLYER%NMODEL
 ENDIF
 !
 !
 allocate( tpflyer%tflyer_time%tpdates(istore) )
-ALLOCATE(TPFLYER%X   (ISTORE))
-ALLOCATE(TPFLYER%Y   (ISTORE))
-ALLOCATE(TPFLYER%Z   (ISTORE))
-ALLOCATE(TPFLYER%XLON(ISTORE))
-ALLOCATE(TPFLYER%YLAT(ISTORE))
-ALLOCATE(TPFLYER%ZON (ISTORE))
-ALLOCATE(TPFLYER%MER (ISTORE))
-ALLOCATE(TPFLYER%W   (ISTORE))
-ALLOCATE(TPFLYER%P   (ISTORE))
-ALLOCATE(TPFLYER%TH  (ISTORE))
-ALLOCATE(TPFLYER%R   (ISTORE,KRR))
-ALLOCATE(TPFLYER%SV  (ISTORE,KSV))
-ALLOCATE(TPFLYER%RTZ (ISTORE,KKU))
-ALLOCATE(TPFLYER%RZ (ISTORE,KKU,KRR))
-ALLOCATE(TPFLYER%FFZ (ISTORE,KKU))
-ALLOCATE(TPFLYER%IWCZ (ISTORE,KKU))
-ALLOCATE(TPFLYER%LWCZ (ISTORE,KKU))
-ALLOCATE(TPFLYER%CIZ (ISTORE,KKU))
+ALLOCATE(TPFLYER%XX   (ISTORE))
+ALLOCATE(TPFLYER%XY   (ISTORE))
+ALLOCATE(TPFLYER%XZ   (ISTORE))
+ALLOCATE(TPFLYER%XLON (ISTORE))
+ALLOCATE(TPFLYER%XLAT (ISTORE))
+ALLOCATE(TPFLYER%XZON (ISTORE))
+ALLOCATE(TPFLYER%XMER (ISTORE))
+ALLOCATE(TPFLYER%XW   (ISTORE))
+ALLOCATE(TPFLYER%XP   (ISTORE))
+ALLOCATE(TPFLYER%XTH  (ISTORE))
+ALLOCATE(TPFLYER%XR   (ISTORE,KRR))
+ALLOCATE(TPFLYER%XSV  (ISTORE,KSV))
+ALLOCATE(TPFLYER%XRTZ (ISTORE,KKU))
+ALLOCATE(TPFLYER%XRZ  (ISTORE,KKU,KRR))
+ALLOCATE(TPFLYER%XFFZ (ISTORE,KKU))
+ALLOCATE(TPFLYER%XIWCZ(ISTORE,KKU))
+ALLOCATE(TPFLYER%XLWCZ(ISTORE,KKU))
+ALLOCATE(TPFLYER%XCIZ (ISTORE,KKU))
 IF (CCLOUD=='LIMA') THEN
-  ALLOCATE(TPFLYER%CCZ  (ISTORE,KKU))
-  ALLOCATE(TPFLYER%CRZ  (ISTORE,KKU))
+  ALLOCATE(TPFLYER%XCCZ(ISTORE,KKU))
+  ALLOCATE(TPFLYER%XCRZ(ISTORE,KKU))
 ENDIF
-ALLOCATE(TPFLYER%CRARE(ISTORE,KKU))
-ALLOCATE(TPFLYER%CRARE_ATT(ISTORE,KKU))
-ALLOCATE(TPFLYER%WZ(ISTORE,KKU))
-ALLOCATE(TPFLYER%ZZ(ISTORE,KKU))
+ALLOCATE(TPFLYER%XCRARE    (ISTORE,KKU))
+ALLOCATE(TPFLYER%XCRARE_ATT(ISTORE,KKU))
+ALLOCATE(TPFLYER%XWZ       (ISTORE,KKU))
+ALLOCATE(TPFLYER%XZZ       (ISTORE,KKU))
 IF (OUSETKE) THEN
-  ALLOCATE(TPFLYER%TKE (ISTORE))
+  ALLOCATE(TPFLYER%XTKE(ISTORE))
 ELSE
-  ALLOCATE(TPFLYER%TKE (0))
+  ALLOCATE(TPFLYER%XTKE(0))
 END IF
-ALLOCATE(TPFLYER%TKE_DISS(ISTORE))
-ALLOCATE(TPFLYER%TSRAD (ISTORE))
-ALLOCATE(TPFLYER%ZS  (ISTORE))
+ALLOCATE(TPFLYER%XTKE_DISS(ISTORE))
+ALLOCATE(TPFLYER%XTSRAD   (ISTORE))
+ALLOCATE(TPFLYER%XZS      (ISTORE))
 !
-ALLOCATE(TPFLYER%THW_FLUX  (ISTORE))
-ALLOCATE(TPFLYER%RCW_FLUX  (ISTORE))
-ALLOCATE(TPFLYER%SVW_FLUX  (ISTORE,KSV))
+ALLOCATE(TPFLYER%XTHW_FLUX(ISTORE))
+ALLOCATE(TPFLYER%XRCW_FLUX(ISTORE))
+ALLOCATE(TPFLYER%XSVW_FLUX(ISTORE,KSV))
 !
-TPFLYER%X        = XUNDEF
-TPFLYER%Y        = XUNDEF
-TPFLYER%Z        = XUNDEF
-TPFLYER%XLON     = XUNDEF
-TPFLYER%YLAT     = XUNDEF
-TPFLYER%ZON      = XUNDEF
-TPFLYER%MER      = XUNDEF
-TPFLYER%W        = XUNDEF
-TPFLYER%P        = XUNDEF
-TPFLYER%TH       = XUNDEF
-TPFLYER%R        = XUNDEF
-TPFLYER%SV       = XUNDEF
-TPFLYER%RTZ      = XUNDEF
-TPFLYER%RZ       = XUNDEF
-TPFLYER%FFZ      = XUNDEF
-TPFLYER%CIZ      = XUNDEF
+TPFLYER%XX   = XUNDEF
+TPFLYER%XY   = XUNDEF
+TPFLYER%XZ   = XUNDEF
+TPFLYER%XLON = XUNDEF
+TPFLYER%XLAT = XUNDEF
+TPFLYER%XZON = XUNDEF
+TPFLYER%XMER = XUNDEF
+TPFLYER%XW   = XUNDEF
+TPFLYER%XP   = XUNDEF
+TPFLYER%XTH  = XUNDEF
+TPFLYER%XR   = XUNDEF
+TPFLYER%XSV  = XUNDEF
+TPFLYER%XRTZ = XUNDEF
+TPFLYER%XRZ  = XUNDEF
+TPFLYER%XFFZ = XUNDEF
+TPFLYER%XCIZ = XUNDEF
 IF (CCLOUD=='LIMA') THEN
-  TPFLYER%CRZ      = XUNDEF
-  TPFLYER%CCZ      = XUNDEF
+  TPFLYER%XCRZ = XUNDEF
+  TPFLYER%XCCZ = XUNDEF
 ENDIF
-TPFLYER%IWCZ     = XUNDEF
-TPFLYER%LWCZ     = XUNDEF
-TPFLYER%CRARE    = XUNDEF
-TPFLYER%CRARE_ATT= XUNDEF
-TPFLYER%WZ= XUNDEF
-TPFLYER%ZZ= XUNDEF
-TPFLYER%TKE      = XUNDEF
-TPFLYER%TSRAD    = XUNDEF
-TPFLYER%ZS       = XUNDEF
-TPFLYER%TKE_DISS = XUNDEF
+TPFLYER%XIWCZ      = XUNDEF
+TPFLYER%XLWCZ      = XUNDEF
+TPFLYER%XCRARE     = XUNDEF
+TPFLYER%XCRARE_ATT = XUNDEF
+TPFLYER%XWZ        = XUNDEF
+TPFLYER%XZZ        = XUNDEF
+TPFLYER%XTKE       = XUNDEF
+TPFLYER%XTSRAD     = XUNDEF
+TPFLYER%XZS        = XUNDEF
+TPFLYER%XTKE_DISS  = XUNDEF
 !
-TPFLYER%THW_FLUX        = XUNDEF
-TPFLYER%RCW_FLUX        = XUNDEF
-TPFLYER%SVW_FLUX        = XUNDEF
+TPFLYER%XTHW_FLUX = XUNDEF
+TPFLYER%XRCW_FLUX = XUNDEF
+TPFLYER%XSVW_FLUX = XUNDEF
+
 END SUBROUTINE ALLOCATE_FLYER
 !----------------------------------------------------------------------------
 !----------------------------------------------------------------------------
@@ -310,101 +311,99 @@ CLASS(TBALLOONDATA), INTENT(INOUT) :: TPFLYER
 REAL :: ZLAT ! latitude of the balloon
 REAL :: ZLON ! longitude of the balloon
 !
-IF (TPFLYER%MODEL == 'MOB' .AND. TPFLYER%NMODEL /= 0) TPFLYER%NMODEL=1
+IF (TPFLYER%CMODEL == 'MOB' .AND. TPFLYER%NMODEL /= 0) TPFLYER%NMODEL=1
 IF (TPFLYER%NMODEL > NMODEL) TPFLYER%NMODEL=0
 IF ( IMI /= TPFLYER%NMODEL ) RETURN
 !
 LFLYER=.TRUE.
 !
-IF (TPFLYER%TITLE=='          ') THEN
-  WRITE(TPFLYER%TITLE,FMT='(A6,I2.2)') TPFLYER%TYPE,KNBR
+IF (TPFLYER%CTITLE=='          ') THEN
+  WRITE(TPFLYER%CTITLE,FMT='(A6,I2.2)') TPFLYER%CTYPE,KNBR
 END IF
 !
 IF ( CPROGRAM == 'MESONH' .OR. CPROGRAM == 'SPAWN ' .OR. CPROGRAM == 'REAL  ' ) THEN
   ! read the current location in the FM_FILE
   !
-  TZFIELD = TFIELDMETADATA(                  &
-    CMNHNAME   = TRIM(TPFLYER%TITLE)//'LAT', &
-    CSTDNAME   = '',                         &
-    CLONGNAME  = TRIM(TPFLYER%TITLE)//'LAT', &
-    CUNITS     = 'degree',                   &
-    CDIR       = '--',                       &
-    CCOMMENT   = '',                         &
-    NGRID      = 0,                          &
-    NTYPE      = TYPEREAL,                   &
-    NDIMS      = 0,                          &
-    LTIMEDEP   = .TRUE.                      )
+  TZFIELD = TFIELDMETADATA(                   &
+    CMNHNAME   = TRIM(TPFLYER%CTITLE)//'LAT', &
+    CSTDNAME   = '',                          &
+    CLONGNAME  = TRIM(TPFLYER%CTITLE)//'LAT', &
+    CUNITS     = 'degree',                    &
+    CDIR       = '--',                        &
+    CCOMMENT   = '',                          &
+    NGRID      = 0,                           &
+    NTYPE      = TYPEREAL,                    &
+    NDIMS      = 0,                           &
+    LTIMEDEP   = .TRUE.                       )
   CALL IO_Field_read(TPINIFILE,TZFIELD,ZLAT,IRESP)
   !
   IF ( IRESP /= 0 ) THEN
-    WRITE(ILUOUT,*) "INI_LAUNCH: Initial location take for ",TPFLYER%TITLE
+    WRITE(ILUOUT,*) "INI_LAUNCH: Initial location take for ",TPFLYER%CTITLE
   ELSE
-    TZFIELD = TFIELDMETADATA(                  &
-      CMNHNAME   = TRIM(TPFLYER%TITLE)//'LON', &
-      CSTDNAME   = '',                         &
-      CLONGNAME  = TRIM(TPFLYER%TITLE)//'LON', &
-      CUNITS     = 'degree',                   &
-      CDIR       = '--',                       &
-      CCOMMENT   = '',                         &
-      NGRID      = 0,                          &
-      NTYPE      = TYPEREAL,                   &
-      NDIMS      = 0,                          &
-      LTIMEDEP   = .TRUE.                      )
+    TZFIELD = TFIELDMETADATA(                   &
+      CMNHNAME   = TRIM(TPFLYER%CTITLE)//'LON', &
+      CSTDNAME   = '',                          &
+      CLONGNAME  = TRIM(TPFLYER%CTITLE)//'LON', &
+      CUNITS     = 'degree',                    &
+      CDIR       = '--',                        &
+      CCOMMENT   = '',                          &
+      NGRID      = 0,                           &
+      NTYPE      = TYPEREAL,                    &
+      NDIMS      = 0,                           &
+      LTIMEDEP   = .TRUE.                       )
     CALL IO_Field_read(TPINIFILE,TZFIELD,ZLON)
     !
-    TZFIELD = TFIELDMETADATA(                  &
-      CMNHNAME   = TRIM(TPFLYER%TITLE)//'ALT', &
-      CSTDNAME   = '',                         &
-      CLONGNAME  = TRIM(TPFLYER%TITLE)//'ALT', &
-      CUNITS     = 'm',                        &
-      CDIR       = '--',                       &
-      CCOMMENT   = '',                         &
-      NGRID      = 0,                          &
-      NTYPE      = TYPEREAL,                   &
-      NDIMS      = 0,                          &
-      LTIMEDEP   = .TRUE.                      )
-    CALL IO_Field_read(TPINIFILE,TZFIELD,TPFLYER%Z_CUR)
+    TZFIELD = TFIELDMETADATA(                   &
+      CMNHNAME   = TRIM(TPFLYER%CTITLE)//'ALT', &
+      CSTDNAME   = '',                          &
+      CLONGNAME  = TRIM(TPFLYER%CTITLE)//'ALT', &
+      CUNITS     = 'm',                         &
+      CDIR       = '--',                        &
+      CCOMMENT   = '',                          &
+      NGRID      = 0,                           &
+      NTYPE      = TYPEREAL,                    &
+      NDIMS      = 0,                           &
+      LTIMEDEP   = .TRUE.                       )
+    CALL IO_Field_read(TPINIFILE,TZFIELD,TPFLYER%XZ_CUR)
     !
-    TPFLYER%P_CUR   = XUNDEF
+    TPFLYER%XP_CUR   = XUNDEF
     !
-    TZFIELD = TFIELDMETADATA(                      &
-      CMNHNAME   = TRIM(TPFLYER%TITLE)//'WASCENT', &
-      CSTDNAME   = '',                             &
-      CLONGNAME  = TRIM(TPFLYER%TITLE)//'WASCENT', &
-      CUNITS     = 'm s-1',                        &
-      CDIR       = '--',                           &
-      CCOMMENT   = '',                             &
-      NGRID      = 0,                              &
-      NTYPE      = TYPEREAL,                       &
-      NDIMS      = 0,                              &
-      LTIMEDEP   = .TRUE.                          )
-    CALL IO_Field_read(TPINIFILE,TZFIELD,TPFLYER%WASCENT)
+    TZFIELD = TFIELDMETADATA(                       &
+      CMNHNAME   = TRIM(TPFLYER%CTITLE)//'WASCENT', &
+      CSTDNAME   = '',                              &
+      CLONGNAME  = TRIM(TPFLYER%CTITLE)//'WASCENT', &
+      CUNITS     = 'm s-1',                         &
+      CDIR       = '--',                            &
+      CCOMMENT   = '',                              &
+      NGRID      = 0,                               &
+      NTYPE      = TYPEREAL,                        &
+      NDIMS      = 0,                               &
+      LTIMEDEP   = .TRUE.                           )
+    CALL IO_Field_read(TPINIFILE,TZFIELD,TPFLYER%XWASCENT)
     !
-    TZFIELD = TFIELDMETADATA(                  &
-      CMNHNAME   = TRIM(TPFLYER%TITLE)//'RHO', &
-      CSTDNAME   = '',                         &
-      CLONGNAME  = TRIM(TPFLYER%TITLE)//'RHO', &
-      CUNITS     = 'kg m-3',                   &
-      CDIR       = '--',                       &
-      CCOMMENT   = '',                         &
-      NGRID      = 0,                          &
-      NTYPE      = TYPEREAL,                   &
-      NDIMS      = 0,                          &
-      LTIMEDEP   = .TRUE.                      )
-    CALL IO_Field_read(TPINIFILE,TZFIELD,TPFLYER%RHO)
+    TZFIELD = TFIELDMETADATA(                   &
+      CMNHNAME   = TRIM(TPFLYER%CTITLE)//'RHO', &
+      CSTDNAME   = '',                          &
+      CLONGNAME  = TRIM(TPFLYER%CTITLE)//'RHO', &
+      CUNITS     = 'kg m-3',                    &
+      CDIR       = '--',                        &
+      CCOMMENT   = '',                          &
+      NGRID      = 0,                           &
+      NTYPE      = TYPEREAL,                    &
+      NDIMS      = 0,                           &
+      LTIMEDEP   = .TRUE.                       )
+    CALL IO_Field_read(TPINIFILE,TZFIELD,TPFLYER%XRHO)
     !
-    CALL SM_XYHAT(PLATOR,PLONOR,&
-              ZLAT,ZLON,        &
-              TPFLYER%X_CUR, TPFLYER%Y_CUR )
-    TPFLYER%FLY = .TRUE.
+    CALL SM_XYHAT( PLATOR, PLONOR, ZLAT, ZLON, TPFLYER%XX_CUR, TPFLYER%XY_CUR )
+    TPFLYER%LFLY = .TRUE.
     WRITE(ILUOUT,*) &
-    "INI_LAUNCH: Current location read in FM file for ",TPFLYER%TITLE
-    IF (TPFLYER%TYPE== 'CVBALL') THEN
+    "INI_LAUNCH: Current location read in FM file for ",TPFLYER%CTITLE
+    IF (TPFLYER%CTYPE== 'CVBALL') THEN
       WRITE(ILUOUT,*) &
-       " Lat=",ZLAT," Lon=",ZLON," Alt=",TPFLYER%Z_CUR," Wasc=",TPFLYER%WASCENT
-    ELSE IF (TPFLYER%TYPE== 'ISODEN') THEN
+       " Lat=",ZLAT," Lon=",ZLON," Alt=",TPFLYER%XZ_CUR," Wasc=",TPFLYER%XWASCENT
+    ELSE IF (TPFLYER%CTYPE== 'ISODEN') THEN
       WRITE(ILUOUT,*) &
-       " Lat=",ZLAT," Lon=",ZLON," Rho=",TPFLYER%RHO
+       " Lat=",ZLAT," Lon=",ZLON," Rho=",TPFLYER%XRHO
     END IF
     !
     TPFLYER%TFLYER_TIME%XTSTEP  = MAX ( PTSTEP, TPFLYER%TFLYER_TIME%XTSTEP )
@@ -416,35 +415,28 @@ ELSE IF (CPROGRAM == 'DIAG  ' ) THEN
     !
     ZLAT=XLAT_BALLOON(KNBR)
     ZLON=XLON_BALLOON(KNBR)
-    TPFLYER%Z_CUR=XALT_BALLOON(KNBR)
-    IF (TPFLYER%Z_CUR /= XUNDEF .AND. ZLAT /= XUNDEF .AND. ZLON /= XUNDEF ) THEN
-      CALL SM_XYHAT(PLATOR,PLONOR,       &
-              ZLAT,ZLON,        &
-              TPFLYER%X_CUR, TPFLYER%Y_CUR )
-      TPFLYER%FLY = .TRUE.
+    TPFLYER%XZ_CUR=XALT_BALLOON(KNBR)
+    IF (TPFLYER%XZ_CUR /= XUNDEF .AND. ZLAT /= XUNDEF .AND. ZLON /= XUNDEF ) THEN
+      CALL SM_XYHAT( PLATOR, PLONOR, ZLAT, ZLON, TPFLYER%XX_CUR, TPFLYER%XY_CUR )
+      TPFLYER%LFLY = .TRUE.
       WRITE(ILUOUT,*) &
-      "INI_LAUNCH: Current location read in MODD_DIAG_FLAG for ",TPFLYER%TITLE
+      "INI_LAUNCH: Current location read in MODD_DIAG_FLAG for ",TPFLYER%CTITLE
       WRITE(ILUOUT,*) &
-            " Lat=",ZLAT," Lon=",ZLON," Alt=",TPFLYER%Z_CUR
+            " Lat=",ZLAT," Lon=",ZLON," Alt=",TPFLYER%XZ_CUR
     END IF
     !
     TPFLYER%TFLYER_TIME%XTSTEP  = MAX (XSTEP_AIRCRAFT_BALLOON , TPFLYER%TFLYER_TIME%XTSTEP )
   END IF
 END IF
 !
-IF (TPFLYER%LAT==XUNDEF .OR.TPFLYER%LON==XUNDEF) THEN
-  WRITE(ILUOUT,*) 'Error in balloon initial position (balloon number ',KNBR,' )'
-  WRITE(ILUOUT,*) 'either LATitude or LONgitude is not given'
-  WRITE(ILUOUT,*) 'TPBALLOON%LAT=',TPFLYER%LAT
-  WRITE(ILUOUT,*) 'TPBALLOON%LON=',TPFLYER%LON
-  WRITE(ILUOUT,*) 'Check your INI_BALLOON routine'
-!callabortstop
-  CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_AIRCRAFT_BALLOON','')
+IF ( TPFLYER%XLATLAUNCH == XUNDEF .OR. TPFLYER%XLONLAUNCH == XUNDEF ) THEN
+  CMNHMSG(1) = 'Error in balloon initial position (balloon ' // TRIM( TPFLYER%CTITLE ) // ' )'
+  CMNHMSG(2) = 'either LATitude or LONgitude is not given'
+  CMNHMSG(3) = 'Check your INI_BALLOON routine'
+  CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'INI_AIRCRAFT_BALLOON' )
 END IF
 !
-CALL SM_XYHAT(PLATOR,PLONOR,       &
-              TPFLYER%LAT, TPFLYER%LON,        &
-              TPFLYER%XLAUNCH, TPFLYER%YLAUNCH )
+CALL SM_XYHAT( PLATOR, PLONOR, TPFLYER%XLATLAUNCH, TPFLYER%XLONLAUNCH, TPFLYER%XXLAUNCH, TPFLYER%XYLAUNCH )
 !
 END SUBROUTINE INI_LAUNCH
 !----------------------------------------------------------------------------
@@ -454,57 +446,47 @@ SUBROUTINE INI_FLIGHT(KNBR,TPFLYER)
 INTEGER,              INTENT(IN)    :: KNBR
 CLASS(TAIRCRAFTDATA), INTENT(INOUT) :: TPFLYER
 !
-IF (TPFLYER%MODEL == 'MOB' .AND. TPFLYER%NMODEL /= 0) TPFLYER%NMODEL=1
+IF (TPFLYER%CMODEL == 'MOB' .AND. TPFLYER%NMODEL /= 0) TPFLYER%NMODEL=1
 IF (TPFLYER%NMODEL > NMODEL) TPFLYER%NMODEL=0
 IF ( IMI /= TPFLYER%NMODEL ) RETURN
 !
 LFLYER=.TRUE.
 !
 TPFLYER%TFLYER_TIME%XTSTEP  = MAX ( PTSTEP, TPFLYER%TFLYER_TIME%XTSTEP )
-!
-IF (TPFLYER%SEG==0) THEN
-  WRITE(ILUOUT,*) 'Error in aircraft flight path (aircraft number ',KNBR,' )'
-  WRITE(ILUOUT,*) 'There is ZERO flight segment defined.'
-  WRITE(ILUOUT,*) 'TPAIRCRAFT%SEG=',TPFLYER%SEG
-  WRITE(ILUOUT,*) 'Check your INI_AIRCRAFT routine'
-!callabortstop
-  CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_FLIGHT','')
+
+IF (TPFLYER%CTITLE=='          ') THEN
+  WRITE(TPFLYER%CTITLE,FMT='(A6,I2.2)') TPFLYER%CTYPE,KNBR
+END IF
+
+IF ( TPFLYER%NSEG == 0 ) THEN
+  CMNHMSG(1) = 'Error in aircraft flight path (aircraft ' // TRIM( TPFLYER%CTITLE ) // ' )'
+  CMNHMSG(2) = 'There is ZERO flight segment defined.'
+  CMNHMSG(3) = 'Check your INI_AIRCRAFT routine'
+  CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'INI_FLIGHT' )
 END IF
 !
-IF ( ANY(TPFLYER%SEGLAT(:)==XUNDEF) .OR. ANY(TPFLYER%SEGLON(:)==XUNDEF) ) THEN
-  WRITE(ILUOUT,*) 'Error in aircraft flight path (aircraft number ',KNBR,' )'
-  WRITE(ILUOUT,*) 'either LATitude or LONgitude segment'
-  WRITE(ILUOUT,*) 'definiton is not complete.'
-  WRITE(ILUOUT,*) 'TPAIRCRAFT%SEGLAT=',TPFLYER%SEGLAT
-  WRITE(ILUOUT,*) 'TPAIRCRAFT%SEGLON=',TPFLYER%SEGLON
-  WRITE(ILUOUT,*) 'Check your INI_AIRCRAFT routine'
-!callabortstop
-  CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_AIRCRAFT_BALLOON','')
+IF ( ANY(TPFLYER%XSEGLAT(:)==XUNDEF) .OR. ANY(TPFLYER%XSEGLON(:)==XUNDEF) ) THEN
+  CMNHMSG(1) = 'Error in aircraft flight path (aircraft ' // TRIM( TPFLYER%CTITLE ) // ' )'
+  CMNHMSG(2) = 'either LATitude or LONgitude segment'
+  CMNHMSG(3) = 'definiton is not complete.'
+  CMNHMSG(4) = 'Check your INI_AIRCRAFT routine'
+  CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'INI_FLIGHT' )
 END IF
 !
-ALLOCATE(TPFLYER%SEGX(TPFLYER%SEG+1))
-ALLOCATE(TPFLYER%SEGY(TPFLYER%SEG+1))
+ALLOCATE(TPFLYER%XSEGX(TPFLYER%NSEG+1))
+ALLOCATE(TPFLYER%XSEGY(TPFLYER%NSEG+1))
 !
-DO JSEG=1,TPFLYER%SEG+1
-  CALL SM_XYHAT(PLATOR,PLONOR,                              &
-                TPFLYER%SEGLAT(JSEG), TPFLYER%SEGLON(JSEG), &
-                TPFLYER%SEGX(JSEG),   TPFLYER%SEGY(JSEG)    )
+DO JSEG=1,TPFLYER%NSEG+1
+  CALL SM_XYHAT( PLATOR, PLONOR, TPFLYER%XSEGLAT(JSEG), TPFLYER%XSEGLON(JSEG), TPFLYER%XSEGX(JSEG), TPFLYER%XSEGY(JSEG) )
 END DO
 !
-IF ( ANY(TPFLYER%SEGTIME(:)==XUNDEF) ) THEN
-  WRITE(ILUOUT,*) 'Error in aircraft flight path (aircraft number ',KNBR,' )'
-  WRITE(ILUOUT,*) 'definiton of segment duration is not complete.'
-  WRITE(ILUOUT,*) 'TPAIRCRAFT%SEGTIME=',TPFLYER%SEGTIME
-  WRITE(ILUOUT,*) 'Check your INI_AIRCRAFT routine'
-!callabortstop
-  CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_AIRCRAFT_BALLOON','')
+IF ( ANY(TPFLYER%XSEGTIME(:)==XUNDEF) ) THEN
+  CMNHMSG(1) = 'Error in aircraft flight path (aircraft ' // TRIM( TPFLYER%CTITLE ) // ' )'
+  CMNHMSG(2) = 'definiton of segment duration is not complete.'
+  CMNHMSG(3) = 'Check your INI_AIRCRAFT routine'
+  CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'INI_AIRCRAFT_BALLOON' )
 END IF
-!
-!
-IF (TPFLYER%TITLE=='          ') THEN
-  WRITE(TPFLYER%TITLE,FMT='(A6,I2.2)') TPFLYER%TYPE,KNBR
-END IF
-!
+
 END SUBROUTINE INI_FLIGHT
 !----------------------------------------------------------------------------
 !----------------------------------------------------------------------------

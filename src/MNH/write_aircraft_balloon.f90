@@ -175,25 +175,25 @@ type(tfieldmetadata_base), dimension(:), allocatable :: tzfields
 !----------------------------------------------------------------------------
 !
 IF (TPFLYER%NMODEL==0) RETURN
-IF (ALL(TPFLYER%X==XUNDEF)) RETURN
-IF (COUNT(TPFLYER%X/=XUNDEF)<=1) RETURN
+IF (ALL(TPFLYER%XX==XUNDEF)) RETURN
+IF (COUNT(TPFLYER%XX/=XUNDEF)<=1) RETURN
 IF ( IMI /= TPFLYER%NMODEL ) RETURN
 !
-IKU = SIZE(TPFLYER%RTZ,2) !number of vertical levels
+IKU = SIZE(TPFLYER%XRTZ,2) !number of vertical levels
 !
-IPROC = 20 + SIZE(TPFLYER%R,2) + SIZE(TPFLYER%SV,2) &
-       + 2 + SIZE(TPFLYER%SVW_FLUX,2)
-IPROCZ = SIZE(TPFLYER%RTZ,2)+ SIZE(TPFLYER%RZ,2)+ SIZE(TPFLYER%RZ,3)+  SIZE(TPFLYER%CRARE,2)+ &
-         SIZE(TPFLYER%CRARE_ATT,2)+ SIZE(TPFLYER%WZ,2) + SIZE(TPFLYER%FFZ,2)+ &
-         SIZE(TPFLYER%IWCZ,2)+ SIZE(TPFLYER%LWCZ,2) + SIZE(TPFLYER%CIZ,2) + &
-         SIZE(TPFLYER%ZZ,2)
+IPROC = 20 + SIZE(TPFLYER%XR,2) + SIZE(TPFLYER%XSV,2) &
+       + 2 + SIZE(TPFLYER%XSVW_FLUX,2)
+IPROCZ = SIZE(TPFLYER%XRTZ,2)+ SIZE(TPFLYER%XRZ,2)+ SIZE(TPFLYER%XRZ,3)+  SIZE(TPFLYER%XCRARE,2)+ &
+         SIZE(TPFLYER%XCRARE_ATT,2)+ SIZE(TPFLYER%XWZ,2) + SIZE(TPFLYER%XFFZ,2)+ &
+         SIZE(TPFLYER%XIWCZ,2)+ SIZE(TPFLYER%XLWCZ,2) + SIZE(TPFLYER%XCIZ,2) + &
+         SIZE(TPFLYER%XZZ,2)
 
-IF (NSV_LIMA_BEG<=NSV_LIMA_END) IPROCZ= IPROCZ+ SIZE(TPFLYER%CCZ,2) + SIZE(TPFLYER%CRZ,2)
-IF (SIZE(TPFLYER%TKE  )>0) IPROC = IPROC + 1
+IF (NSV_LIMA_BEG<=NSV_LIMA_END) IPROCZ= IPROCZ+ SIZE(TPFLYER%XCCZ,2) + SIZE(TPFLYER%XCRZ,2)
+IF (SIZE(TPFLYER%XTKE  )>0) IPROC = IPROC + 1
 IF (LDIAG_IN_RUN) IPROC = IPROC + 1
 IF (LORILAM) IPROC = IPROC + JPMODE*3
 IF (LDUST) IPROC = IPROC + NMODE_DST*3
-IF (SIZE(TPFLYER%TSRAD)>0) IPROC = IPROC + 1
+IF (SIZE(TPFLYER%XTSRAD)>0) IPROC = IPROC + 1
 !
 ISTORE = SIZE( TPFLYER%TFLYER_TIME%TPDATES )
 
@@ -209,9 +209,9 @@ ALLOCATE (YUNITZ  (IPROCZ))
 ALLOCATE (IGRIDZ  (IPROCZ))
 !
 IGRID  = 1
-YGROUP = TPFLYER%TITLE
+YGROUP = TPFLYER%CTITLE
 IGRIDZ = 1
-YGROUPZ = TPFLYER%TITLE
+YGROUPZ = TPFLYER%CTITLE
 !
 !----------------------------------------------------------------------------
 JPROC = 0
@@ -220,22 +220,22 @@ JPROC = JPROC + 1
 YTITLE   (JPROC) = 'ZS'
 YUNIT    (JPROC) = 'm'
 YCOMMENT (JPROC) = 'orography'
-ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%ZS(:)
+ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%XZS(:)
 !
 SELECT TYPE ( TPFLYER )
   CLASS IS ( TAIRCRAFTDATA )
-    IF (TPFLYER%ALTDEF) THEN
+    IF (TPFLYER%LALTDEF) THEN
       JPROC = JPROC + 1
       YTITLE   (JPROC) = 'P'
       YUNIT    (JPROC) = 'Pascal'
       YCOMMENT (JPROC) = 'pressure'
-      ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%P(:)
+      ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%XP(:)
     ELSE
       JPROC = JPROC + 1
       YTITLE   (JPROC) = 'Z'
       YUNIT    (JPROC) = 'm'
       YCOMMENT (JPROC) = 'altitude'
-      ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%Z(:)
+      ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%XZ(:)
     ENDIF
 
   CLASS IS ( TBALLOONDATA )
@@ -243,7 +243,7 @@ SELECT TYPE ( TPFLYER )
     YTITLE   (JPROC) = 'Z'
     YUNIT    (JPROC) = 'm'
     YCOMMENT (JPROC) = 'altitude'
-    ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%Z(:)
+    ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%XZ(:)
 
 END SELECT
 !
@@ -257,36 +257,36 @@ JPROC = JPROC + 1
 YTITLE   (JPROC) = 'LAT'
 YUNIT    (JPROC) = 'degree'
 YCOMMENT (JPROC) = 'latitude'
-ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%YLAT(:)
+ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%XLAT(:)
 !
 JPROC = JPROC + 1
 YTITLE   (JPROC) = 'ZON_WIND'
 YUNIT    (JPROC) = 'm s-1'
 YCOMMENT (JPROC) = 'zonal wind'
-ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%ZON(:)
+ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%XZON(:)
 !
 JPROC = JPROC + 1
 YTITLE   (JPROC) = 'MER_WIND'
 YUNIT    (JPROC) = 'm s-1'
 YCOMMENT (JPROC) = 'meridian wind'
-ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%MER(:)
+ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%XMER(:)
 !
 JPROC = JPROC + 1
 YTITLE   (JPROC) = 'W'
 YUNIT    (JPROC) = 'm s-1'
 YCOMMENT (JPROC) = 'air vertical speed' 
-ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%W(:)
+ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%XW(:)
 !
 JPROC = JPROC + 1
 YTITLE   (JPROC) = 'Th'
 YUNIT    (JPROC) = 'K'
 YCOMMENT (JPROC) = 'potential temperature' 
-ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%TH(:)
+ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%XTH(:)
 !
-DO JRR=1,SIZE(TPFLYER%R,2)
+DO JRR=1,SIZE(TPFLYER%XR,2)
   JPROC = JPROC+1
   YUNIT    (JPROC) = 'kg kg-1'
-  ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%R(:,JRR)
+  ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%XR(:,JRR)
   IF (JRR==1) THEN
     YTITLE   (JPROC) = 'Rv'
     YCOMMENT (JPROC) = 'water vapor mixing ratio' 
@@ -312,68 +312,69 @@ DO JRR=1,SIZE(TPFLYER%R,2)
 END DO
 !
 !add cloud liquid water content in g/m3 to compare to measurements from FSSP
-!IF (.NOT.(ANY(TPFLYER%P(:) == 0.))) THEN
+!IF (.NOT.(ANY(TPFLYER%XP(:) == 0.))) THEN
 ALLOCATE (ZRHO(1,1,ISTORE))
-IF (SIZE(TPFLYER%R,2) >1) THEN !cloud water is present
+IF (SIZE(TPFLYER%XR,2) >1) THEN !cloud water is present
   ZRHO(1,1,:) = 0.
-  DO JRR=1,SIZE(TPFLYER%R,2)
-    ZRHO(1,1,:) = ZRHO(1,1,:) + TPFLYER%R(:,JRR)
+  DO JRR=1,SIZE(TPFLYER%XR,2)
+    ZRHO(1,1,:) = ZRHO(1,1,:) + TPFLYER%XR(:,JRR)
   ENDDO
-  ZRHO(1,1,:) = TPFLYER%TH(:) * ( 1. + XRV/XRD*TPFLYER%R(:,1) )  &
+  ZRHO(1,1,:) = TPFLYER%XTH(:) * ( 1. + XRV/XRD*TPFLYER%XR(:,1) )  &
                                 / ( 1. + ZRHO(1,1,:)              )
   DO JPT=1,ISTORE
-    IF (TPFLYER%P(JPT) == 0.) THEN
+    IF (TPFLYER%XP(JPT) == 0.) THEN
       ZRHO(1,1,JPT) = 0.
     ELSE
-      ZRHO(1,1,JPT) =  TPFLYER%P(JPT) / &
-               (XRD *ZRHO(1,1,JPT) *((TPFLYER%P(JPT)/XP00)**(XRD/XCPD))  )
+      ZRHO(1,1,JPT) =  TPFLYER%XP(JPT) / &
+               (XRD *ZRHO(1,1,JPT) *((TPFLYER%XP(JPT)/XP00)**(XRD/XCPD))  )
     ENDIF
   ENDDO
   JPROC = JPROC + 1
   YTITLE   (JPROC) = 'LWC'
   YUNIT    (JPROC) = 'g m-3'
   YCOMMENT (JPROC) = 'cloud liquid water content'
-  ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%R(:,2)*ZRHO(1,1,:)*1.E3
+  ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%XR(:,2)*ZRHO(1,1,:)*1.E3
   DEALLOCATE (ZRHO)
 ENDIF
 !ENDIF
 !
-IF (SIZE(TPFLYER%TKE)>0) THEN
+IF (SIZE(TPFLYER%XTKE)>0) THEN
   JPROC = JPROC+1
   YTITLE   (JPROC) = 'Tke'
   YUNIT    (JPROC) = 'm2 s-2'
   YCOMMENT (JPROC) = 'Turbulent kinetic energy' 
-  ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%TKE(:)
+  ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%XTKE(:)
 END IF
 !
 JPROC = JPROC + 1
 YTITLE   (JPROC) = 'H_FLUX'
 YUNIT    (JPROC) = 'W m-2'
 YCOMMENT (JPROC) = 'sensible flux' 
-ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%THW_FLUX(:)
+ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%XTHW_FLUX(:)
 !
 JPROC = JPROC + 1
 YTITLE   (JPROC) = 'LE_FLUX'
 YUNIT    (JPROC) = 'W m-2'
 YCOMMENT (JPROC) = 'latent flux' 
-ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%RCW_FLUX(:)
+ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%XRCW_FLUX(:)
 !
-DO JSV=1,SIZE(TPFLYER%SVW_FLUX,2)
+DO JSV=1,SIZE(TPFLYER%XSVW_FLUX,2)
   JPROC = JPROC + 1
+!PW: titre a modifier pour recuperer nom variables scalaires depuis TSVLIST?
   WRITE ( YTITLE(JPROC), FMT = '( A7, I3.3 )' ) 'SV_FLUX', JSV
   YUNIT    (JPROC) = 'SVUNIT m s-1'
   YCOMMENT (JPROC) = 'scalar flux' 
-  ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%SVW_FLUX(:,JSV)
+  ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%XSVW_FLUX(:,JSV)
 END DO
 IF (LDIAG_IN_RUN) THEN
   JPROC = JPROC+1
   YTITLE   (JPROC) = 'Tke_Diss'
   YUNIT    (JPROC) = 'm2 s-2'
   YCOMMENT (JPROC) = 'TKE dissipation rate' 
-  ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%TKE_DISS(:)
+  ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%XTKE_DISS(:)
 ENDIF
 !
-IF (SIZE(TPFLYER%SV,2)>=1) THEN
+IF (SIZE(TPFLYER%XSV,2)>=1) THEN
   ! Scalar variables
   DO JSV = 1, NSV
     JPROC = JPROC + 1
@@ -382,14 +383,14 @@ IF (SIZE(TPFLYER%SV,2)>=1) THEN
     YCOMMENT(JPROC) = ''
     IF ( TRIM( TSVLIST(JSV)%CUNITS ) == 'ppv' ) THEN
       YUNIT(JPROC)  = 'ppb'
-      ZWORK6(1,1,1,:,1,JPROC) = TPFLYER%SV(:,JSV) * 1.e9 !*1e9 for conversion ppv->ppb
+      ZWORK6(1,1,1,:,1,JPROC) = TPFLYER%XSV(:,JSV) * 1.e9 !*1e9 for conversion ppv->ppb
     ELSE
       YUNIT(JPROC)  = TRIM( TSVLIST(JSV)%CUNITS )
-      ZWORK6(1,1,1,:,1,JPROC) = TPFLYER%SV(:,JSV)
+      ZWORK6(1,1,1,:,1,JPROC) = TPFLYER%XSV(:,JSV)
     END IF
   END DO
 
-  IF ((LORILAM).AND. .NOT.(ANY(TPFLYER%P(:) == 0.))) THEN
+  IF ((LORILAM).AND. .NOT.(ANY(TPFLYER%XP(:) == 0.))) THEN
 
     ALLOCATE (ZSV(1,1,ISTORE,NSV_AER))
     ALLOCATE (ZRHO(1,1,ISTORE))
@@ -397,19 +398,19 @@ IF (SIZE(TPFLYER%SV,2)>=1) THEN
     ALLOCATE (ZRG(1,1,ISTORE,JPMODE))
     ALLOCATE (ZSIG(1,1,ISTORE,JPMODE))
     ALLOCATE (ZPTOTA(1,1,ISTORE,NSP+NCARB+NSOA,JPMODE))
-    ZSV(1,1,:,1:NSV_AER) = TPFLYER%SV(:,NSV_AERBEG:NSV_AEREND)
-    IF (SIZE(TPFLYER%R,2) >0) THEN
+    ZSV(1,1,:,1:NSV_AER) = TPFLYER%XSV(:,NSV_AERBEG:NSV_AEREND)
+    IF (SIZE(TPFLYER%XR,2) >0) THEN
       ZRHO(1,1,:) = 0.
-      DO JRR=1,SIZE(TPFLYER%R,2)
-        ZRHO(1,1,:) = ZRHO(1,1,:) + TPFLYER%R(:,JRR)
+      DO JRR=1,SIZE(TPFLYER%XR,2)
+        ZRHO(1,1,:) = ZRHO(1,1,:) + TPFLYER%XR(:,JRR)
       ENDDO
-      ZRHO(1,1,:) = TPFLYER%TH(:) * ( 1. + XRV/XRD*TPFLYER%R(:,1) )  &
+      ZRHO(1,1,:) = TPFLYER%XTH(:) * ( 1. + XRV/XRD*TPFLYER%XR(:,1) )  &
                                   / ( 1. + ZRHO(1,1,:)                )
     ELSE
-      ZRHO(1,1,:) = TPFLYER%TH(:)
+      ZRHO(1,1,:) = TPFLYER%XTH(:)
     ENDIF
-    ZRHO(1,1,:) =  TPFLYER%P(:) / &
-                  (XRD *ZRHO(1,1,:) *((TPFLYER%P(:)/XP00)**(XRD/XCPD))  )
+    ZRHO(1,1,:) =  TPFLYER%XP(:) / &
+                  (XRD *ZRHO(1,1,:) *((TPFLYER%XP(:)/XP00)**(XRD/XCPD))  )
     ZSIG = 0.
     ZRG = 0.
     ZN0 = 0.
@@ -548,25 +549,25 @@ IF (SIZE(TPFLYER%SV,2)>=1) THEN
     DEALLOCATE (ZN0,ZRG,ZSIG,ZPTOTA)
   END IF
 
-  IF ((LDUST).AND. .NOT.(ANY(TPFLYER%P(:) == 0.))) THEN
+  IF ((LDUST).AND. .NOT.(ANY(TPFLYER%XP(:) == 0.))) THEN
     ALLOCATE (ZSV(1,1,ISTORE,NSV_DST))
     ALLOCATE (ZRHO(1,1,ISTORE))
     ALLOCATE (ZN0(1,1,ISTORE,NMODE_DST))
     ALLOCATE (ZRG(1,1,ISTORE,NMODE_DST))
     ALLOCATE (ZSIG(1,1,ISTORE,NMODE_DST))
-    ZSV(1,1,:,1:NSV_DST) = TPFLYER%SV(:,NSV_DSTBEG:NSV_DSTEND)
-    IF (SIZE(TPFLYER%R,2) >0) THEN
+    ZSV(1,1,:,1:NSV_DST) = TPFLYER%XSV(:,NSV_DSTBEG:NSV_DSTEND)
+    IF (SIZE(TPFLYER%XR,2) >0) THEN
       ZRHO(1,1,:) = 0.
-      DO JRR=1,SIZE(TPFLYER%R,2)
-        ZRHO(1,1,:) = ZRHO(1,1,:) + TPFLYER%R(:,JRR)
+      DO JRR=1,SIZE(TPFLYER%XR,2)
+        ZRHO(1,1,:) = ZRHO(1,1,:) + TPFLYER%XR(:,JRR)
       ENDDO
-      ZRHO(1,1,:) = TPFLYER%TH(:) * ( 1. + XRV/XRD*TPFLYER%R(:,1) )  &
+      ZRHO(1,1,:) = TPFLYER%XTH(:) * ( 1. + XRV/XRD*TPFLYER%XR(:,1) )  &
                                           / ( 1. + ZRHO(1,1,:)                )
     ELSE
-      ZRHO(1,1,:) = TPFLYER%TH(:)
+      ZRHO(1,1,:) = TPFLYER%XTH(:)
     ENDIF
-    ZRHO(1,1,:) =  TPFLYER%P(:) / &
-                  (XRD *ZRHO(1,1,:) *((TPFLYER%P(:)/XP00)**(XRD/XCPD)) )
+    ZRHO(1,1,:) =  TPFLYER%XP(:) / &
+                  (XRD *ZRHO(1,1,:) *((TPFLYER%XP(:)/XP00)**(XRD/XCPD)) )
     CALL PPP2DUST(ZSV,ZRHO, PSIG3D=ZSIG, PRG3D=ZRG, PN3D=ZN0)
     DO JSV=1,NMODE_DST
       ! mean radius
@@ -593,12 +594,12 @@ IF (SIZE(TPFLYER%SV,2)>=1) THEN
   END IF
 ENDIF
 !
-IF (SIZE(TPFLYER%TSRAD)>0) THEN
+IF (SIZE(TPFLYER%XTSRAD)>0) THEN
   JPROC = JPROC+1
   YTITLE   (JPROC) = 'Tsrad'
   YUNIT    (JPROC) = 'K'
   YCOMMENT (JPROC) = 'Radiative Surface Temperature'
-  ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%TSRAD(:)
+  ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%XTSRAD(:)
 END IF
 !
 DO IK=1, IKU
@@ -609,12 +610,12 @@ DO IK=1, IKU
   YTITLEZ  (JPROCZ) = 'Rt'
   YUNITZ   (JPROCZ) = 'kg kg-1'
   YCOMMENTZ(JPROCZ) = '1D Total hydrometeor mixing ratio'
-  ZWORKZ6 (1,1,IK,:,1,JPROCZ) = TPFLYER%RTZ(:,IK)
+  ZWORKZ6 (1,1,IK,:,1,JPROCZ) = TPFLYER%XRTZ(:,IK)
 !
-  DO JRR=1,SIZE(TPFLYER%RZ,3)
+  DO JRR=1,SIZE(TPFLYER%XRZ,3)
     JPROCZ = JPROCZ+1
     YUNITZ    (JPROCZ) = 'kg kg-1'
-    ZWORKZ6 (1,1,IK,:,1,JPROCZ) = TPFLYER%RZ(:,IK,JRR)
+    ZWORKZ6 (1,1,IK,:,1,JPROCZ) = TPFLYER%XRZ(:,IK,JRR)
     IF (JRR==1) THEN
       YTITLEZ   (JPROCZ) = 'Rv'
       YCOMMENTZ (JPROCZ) = '1D water vapor mixing ratio' 
@@ -643,66 +644,66 @@ DO IK=1, IKU
   YTITLEZ  (JPROCZ) = 'FF'
   YUNITZ   (JPROCZ) = 'm s-1'
   YCOMMENTZ(JPROCZ) = 'Horizontal wind'
-  ZWORKZ6 (1,1,IK,:,1,JPROCZ) = TPFLYER%FFZ(:,IK)
+  ZWORKZ6 (1,1,IK,:,1,JPROCZ) = TPFLYER%XFFZ(:,IK)
 !
   JPROCZ = JPROCZ + 1
   YTITLEZ  (JPROCZ) = 'IWC'
   YUNITZ   (JPROCZ) = 'kg m-3'
   YCOMMENTZ(JPROCZ) = 'Ice water content'
-  ZWORKZ6 (1,1,IK,:,1,JPROCZ) = TPFLYER%IWCZ(:,IK)
+  ZWORKZ6 (1,1,IK,:,1,JPROCZ) = TPFLYER%XIWCZ(:,IK)
 !
   JPROCZ = JPROCZ + 1
   YTITLEZ  (JPROCZ) = 'LWC'
   YUNITZ   (JPROCZ) = 'kg m-3'
   YCOMMENTZ(JPROCZ) = 'Liquid water content'
-  ZWORKZ6 (1,1,IK,:,1,JPROCZ) = TPFLYER%LWCZ(:,IK)
+  ZWORKZ6 (1,1,IK,:,1,JPROCZ) = TPFLYER%XLWCZ(:,IK)
 !
   IF (NSV_LIMA_BEG/=NSV_LIMA_END) THEN
     JPROCZ = JPROCZ + 1
     YTITLEZ  (JPROCZ) = 'CIT'
     YUNITZ   (JPROCZ) = 'm-3'
     YCOMMENTZ(JPROCZ) = 'Ice concentration'
-    ZWORKZ6 (1,1,IK,:,1,JPROCZ) = TPFLYER%CIZ(:,IK)
+    ZWORKZ6 (1,1,IK,:,1,JPROCZ) = TPFLYER%XCIZ(:,IK)
   ELSE
     JPROCZ = JPROCZ + 1
     YTITLEZ  (JPROCZ) = 'CCLOUDT'
     YUNITZ   (JPROCZ) = 'kg-1'
     YCOMMENTZ(JPROCZ) = 'liquid cloud concentration'
-    ZWORKZ6 (1,1,IK,:,1,JPROCZ) = TPFLYER%CCZ(:,IK)
+    ZWORKZ6 (1,1,IK,:,1,JPROCZ) = TPFLYER%XCCZ(:,IK)
 !
     JPROCZ = JPROCZ + 1
     YTITLEZ  (JPROCZ) = 'CRAINT'
     YUNITZ   (JPROCZ) = 'kg-1'
     YCOMMENTZ(JPROCZ) = 'Rain concentration'
-    ZWORKZ6 (1,1,IK,:,1,JPROCZ) = TPFLYER%CRZ(:,IK)
+    ZWORKZ6 (1,1,IK,:,1,JPROCZ) = TPFLYER%XCRZ(:,IK)
 !
     JPROCZ = JPROCZ + 1
     YTITLEZ  (JPROCZ) = 'CICET'
     YUNITZ   (JPROCZ) = 'kg-1'
     YCOMMENTZ(JPROCZ) = 'Ice concentration'
-    ZWORKZ6 (1,1,IK,:,1,JPROCZ) = TPFLYER%CIZ(:,IK)
+    ZWORKZ6 (1,1,IK,:,1,JPROCZ) = TPFLYER%XCIZ(:,IK)
  ENDIF
 !
   JPROCZ = JPROCZ + 1
   YTITLEZ  (JPROCZ) = 'RARE'
   YUNITZ   (JPROCZ) = 'dBZ'
   YCOMMENTZ(JPROCZ) = '1D cloud radar reflectivity'
-  ZWORKZ6 (1,1,IK,:,1,JPROCZ) = TPFLYER%CRARE(:,IK)
+  ZWORKZ6 (1,1,IK,:,1,JPROCZ) = TPFLYER%XCRARE(:,IK)
   JPROCZ = JPROCZ + 1
   YTITLEZ  (JPROCZ) = 'RAREatt'
   YUNITZ   (JPROCZ) = 'dBZ'
   YCOMMENTZ(JPROCZ) = '1D cloud radar attenuated reflectivity' 
-  ZWORKZ6 (1,1,IK,:,1,JPROCZ) = TPFLYER%CRARE_ATT(:,IK)
+  ZWORKZ6 (1,1,IK,:,1,JPROCZ) = TPFLYER%XCRARE_ATT(:,IK)
   JPROCZ = JPROCZ + 1
   YTITLEZ  (JPROCZ) = 'W'
   YUNITZ   (JPROCZ) = 'm s-1'
   YCOMMENTZ(JPROCZ) = '1D vertical velocity' 
-  ZWORKZ6 (1,1,IK,:,1,JPROCZ) = TPFLYER%WZ(:,IK)
+  ZWORKZ6 (1,1,IK,:,1,JPROCZ) = TPFLYER%XWZ(:,IK)
   JPROCZ = JPROCZ + 1
   YTITLEZ  (JPROCZ) = 'Z'
   YUNITZ   (JPROCZ) = 'm'
   YCOMMENTZ(JPROCZ) = '1D altitude above sea'
-  ZWORKZ6 (1,1,IK,:,1,JPROCZ) = TPFLYER%ZZ(:,IK)
+  ZWORKZ6 (1,1,IK,:,1,JPROCZ) = TPFLYER%XZZ(:,IK)
 END DO
 !----------------------------------------------------------------------------
 !
@@ -740,11 +741,11 @@ tzbudiachro%ccomments(NLVL_SUBCATEGORY) = 'Level for the flyers of type: ' // Tr
 
 tzbudiachro%lleveluse(NLVL_GROUP)       = .true.
 tzbudiachro%clevels  (NLVL_GROUP)       = Trim( ygroup )
-tzbudiachro%ccomments(NLVL_GROUP)       = 'Values for flyer ' // Trim( tpflyer%title )
+tzbudiachro%ccomments(NLVL_GROUP)       = 'Values for flyer ' // Trim( tpflyer%ctitle )
 
 tzbudiachro%lleveluse(NLVL_SHAPE)       = .true.
 tzbudiachro%clevels  (NLVL_SHAPE)       = 'Point'
-tzbudiachro%ccomments(NLVL_SHAPE)       = 'Values at position of flyer ' // Trim( tpflyer%title )
+tzbudiachro%ccomments(NLVL_SHAPE)       = 'Values at position of flyer ' // Trim( tpflyer%ctitle )
 
 tzbudiachro%lleveluse(NLVL_TIMEAVG)     = .false.
 tzbudiachro%clevels  (NLVL_TIMEAVG)     = 'Not_time_averaged'
@@ -807,11 +808,11 @@ tzbudiachro%ccomments(NLVL_SUBCATEGORY) = 'Level for the flyers of type: ' // Tr
 
 tzbudiachro%lleveluse(NLVL_GROUP)       = .true.
 tzbudiachro%clevels  (NLVL_GROUP)       = Trim( ygroupz )
-tzbudiachro%ccomments(NLVL_GROUP)       = 'Values for flyer ' // Trim( tpflyer%title )
+tzbudiachro%ccomments(NLVL_GROUP)       = 'Values for flyer ' // Trim( tpflyer%ctitle )
 
 tzbudiachro%lleveluse(NLVL_SHAPE)       = .true.
 tzbudiachro%clevels  (NLVL_SHAPE)       = 'Vertical_profile'
-tzbudiachro%ccomments(NLVL_SHAPE)       = 'Vertical profiles at position of flyer ' // Trim( tpflyer%title )
+tzbudiachro%ccomments(NLVL_SHAPE)       = 'Vertical profiles at position of flyer ' // Trim( tpflyer%ctitle )
 
 tzbudiachro%lleveluse(NLVL_TIMEAVG)     = .false.
 tzbudiachro%clevels  (NLVL_TIMEAVG)     = 'Not_time_averaged'

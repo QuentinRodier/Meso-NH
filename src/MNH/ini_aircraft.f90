@@ -41,9 +41,9 @@
 !!
 !!  6) the (SEG  ) duration of flight in the segments, in the flight order (sec.)
 !!
-!!  6bis) TAIRCRAFT%ALTDEF : flag to define the mode of initialisation of
-!!        aircraft altitude TRUE for pressure (corresponding to %SEGP)
-!!        or FALSE for Z (corresponding to %SEGZ)
+!!  6bis) TAIRCRAFT%LALTDEF : flag to define the mode of initialisation of
+!!        aircraft altitude TRUE for pressure (corresponding to %XSEGP)
+!!        or FALSE for Z (corresponding to %XSEGZ)
 !!
 !!  7) the (SEG+1) latitudes of the segments ends, in the flight order
 !!     first point is take-off
@@ -51,7 +51,7 @@
 !!
 !!  8) the (SEG+1) longitudes of the segments ends, in the flight order
 !!
-!!  9) the (SEG+1) pressure (%SEGP) or Z (%SEGZ) of the segments ends, in the flight order
+!!  9) the (SEG+1) pressure (%XSEGP) or Z (%XSEGZ) of the segments ends, in the flight order
 !!
 !!
 !!
@@ -121,15 +121,15 @@ TAIRCRAFTS(1)%NMODEL             = 0
 !
 !* model switch
 !
-TAIRCRAFTS(1)%MODEL              = 'FIX'
+TAIRCRAFTS(1)%CMODEL              = 'FIX'
 !
 !* aircraft type
 !
-TAIRCRAFTS(1)%TYPE               = 'AIRCRA'
+TAIRCRAFTS(1)%CTYPE               = 'AIRCRA'
 !
 !* aircraft flight name
 !
-TAIRCRAFTS(1)%TITLE             = 'DIMO19A'
+TAIRCRAFTS(1)%CTITLE             = 'DIMO19A'
 !
 !* time step for storage
 !
@@ -137,28 +137,28 @@ TAIRCRAFTS(1)%TFLYER_TIME%XTSTEP = 60.
 !
 !* take-off date and time
 !
-TAIRCRAFTS(1)%LAUNCH%nyear  =  2007
-TAIRCRAFTS(1)%LAUNCH%nmonth =    04
-TAIRCRAFTS(1)%LAUNCH%nday   =    19
-TAIRCRAFTS(1)%LAUNCH%xtime  = 32280.
+TAIRCRAFTS(1)%TLAUNCH%nyear  =  2007
+TAIRCRAFTS(1)%TLAUNCH%nmonth =    04
+TAIRCRAFTS(1)%TLAUNCH%nday   =    19
+TAIRCRAFTS(1)%TLAUNCH%xtime  = 32280.
 !
 !* number of flight segments
 !
-TAIRCRAFTS(1)%SEG                = 168
+TAIRCRAFTS(1)%NSEG                = 168
 !
 !* initalisation of flag for pressure (T) or Z(F) for aicraft altitude
 !
-TAIRCRAFTS(1)%ALTDEF             = .TRUE.
+TAIRCRAFTS(1)%LALTDEF             = .TRUE.
 !
 !* allocation of the arrays
 !
-ALLOCATE(TAIRCRAFTS(1)%SEGTIME(TAIRCRAFTS(1)%SEG  ))
-ALLOCATE(TAIRCRAFTS(1)%SEGLAT (TAIRCRAFTS(1)%SEG+1))
-ALLOCATE(TAIRCRAFTS(1)%SEGLON (TAIRCRAFTS(1)%SEG+1))
+ALLOCATE(TAIRCRAFTS(1)%XSEGTIME(TAIRCRAFTS(1)%NSEG  ))
+ALLOCATE(TAIRCRAFTS(1)%XSEGLAT (TAIRCRAFTS(1)%NSEG+1))
+ALLOCATE(TAIRCRAFTS(1)%XSEGLON (TAIRCRAFTS(1)%NSEG+1))
 !
 !* duration of the segments (seconds)
 !
-TAIRCRAFTS(1)%SEGTIME      = (/ 60,   60,   60,   60,   60,   60,&
+TAIRCRAFTS(1)%XSEGTIME      = (/ 60,   60,   60,   60,   60,   60,&
    60,   60,   60,   60,   60,   60,&
    60,   60,   60,   60,   60,   60,&
    60,   60,   60,   60,   60,   60,&
@@ -190,7 +190,7 @@ TAIRCRAFTS(1)%SEGTIME      = (/ 60,   60,   60,   60,   60,   60,&
 !* latitudes of the segments ends (1st point is takeoff, last point is landing)
 !        (decimal degrees)
 !
-TAIRCRAFTS(1)%SEGLAT  = (/ 44.39971, 44.40095, 44.40040, 44.39919, 44.39657,&
+TAIRCRAFTS(1)%XSEGLAT  = (/ 44.39971, 44.40095, 44.40040, 44.39919, 44.39657,&
  44.39339, 44.38749, 44.37916, 44.37464, 44.37021,&
  44.37045, 44.37059, 44.37443, 44.37222, 44.35214,&
  44.36092, 44.38175, 44.40122, 44.41992, 44.43539,&
@@ -228,7 +228,7 @@ TAIRCRAFTS(1)%SEGLAT  = (/ 44.39971, 44.40095, 44.40040, 44.39919, 44.39657,&
 !* longitudes of the segments ends (1st point is takeoff, last point is landing)
 !        (decimal degrees)
 !
-TAIRCRAFTS(1)%SEGLON   = (/0.75561, 0.73090, 0.70157, 0.66896, 0.63468,&
+TAIRCRAFTS(1)%XSEGLON   = (/0.75561, 0.73090, 0.70157, 0.66896, 0.63468,&
  0.60107, 0.56909, 0.53738, 0.50474, 0.47315,&
  0.44092, 0.40665, 0.37725, 0.35171, 0.33016,&
  0.31340, 0.29638, 0.27594, 0.25293, 0.22663,&
@@ -266,9 +266,9 @@ TAIRCRAFTS(1)%SEGLON   = (/0.75561, 0.73090, 0.70157, 0.66896, 0.63468,&
 !* pressure of the segments ends (1st point is takeoff, last point is landing)
 !        (pascals)
 !
-IF (TAIRCRAFTS(1)%ALTDEF) THEN
-  ALLOCATE(TAIRCRAFTS(1)%SEGP   (TAIRCRAFTS(1)%SEG+1))
-  TAIRCRAFTS(1)%SEGP    = 100. * (/1003.6, 990.8, 988.1, 988.5, 989.3,&
+IF (TAIRCRAFTS(1)%LALTDEF) THEN
+  ALLOCATE(TAIRCRAFTS(1)%XSEGP   (TAIRCRAFTS(1)%NSEG+1))
+  TAIRCRAFTS(1)%XSEGP    = 100. * (/1003.6, 990.8, 988.1, 988.5, 989.3,&
  988.9, 989.6, 989.9, 990.3, 989.2,&
  990.8, 993.9, 987.7, 987.2, 992.0,&
  995.2, 993.9, 994.0, 994.3, 993.9,&
@@ -303,8 +303,8 @@ IF (TAIRCRAFTS(1)%ALTDEF) THEN
  989.5, 981.8, 977.8, 983.3,1001.9,&
 1007.0,1006.8,1006.8, 1006.8 /)
 ELSE
-  ALLOCATE(TAIRCRAFTS(1)%SEGZ   (TAIRCRAFTS(1)%SEG+1))
-TAIRCRAFTS(1)%SEGZ    = (/8000,8000,8000,8000,8000,&
+  ALLOCATE(TAIRCRAFTS(1)%XSEGZ   (TAIRCRAFTS(1)%NSEG+1))
+TAIRCRAFTS(1)%XSEGZ    = (/8000,8000,8000,8000,8000,&
 8000,8000,8000,8000,8000,&
 8000,8000,8000,8000,8000,&
 8000,8000,8000,8000,8000,&
@@ -356,15 +356,15 @@ TAIRCRAFTS(2)%NMODEL             = 0
 !
 !* model switch
 !
-TAIRCRAFTS(2)%MODEL              = 'FIX'
+TAIRCRAFTS(2)%CMODEL              = 'FIX'
 !
 !* aircraft type
 !
-TAIRCRAFTS(2)%TYPE               = 'AIRCRA'
+TAIRCRAFTS(2)%CTYPE               = 'AIRCRA'
 
 !* aircraft flight name
 !
-TAIRCRAFTS(2)%TITLE             = 'DIMO19B'
+TAIRCRAFTS(2)%CTITLE             = 'DIMO19B'
 !
 !* time step for storage
 !
@@ -372,28 +372,28 @@ TAIRCRAFTS(2)%TFLYER_TIME%XTSTEP = 60.
 !
 !* take-off date and time
 !
-TAIRCRAFTS(2)%LAUNCH%nyear  =  2007
-TAIRCRAFTS(2)%LAUNCH%nmonth =    04
-TAIRCRAFTS(2)%LAUNCH%nday   =    19
-TAIRCRAFTS(2)%LAUNCH%xtime  = 48060.
+TAIRCRAFTS(2)%TLAUNCH%nyear  =  2007
+TAIRCRAFTS(2)%TLAUNCH%nmonth =    04
+TAIRCRAFTS(2)%TLAUNCH%nday   =    19
+TAIRCRAFTS(2)%TLAUNCH%xtime  = 48060.
 !
 !* number of flight segments
 !
-TAIRCRAFTS(2)%SEG                = 198
+TAIRCRAFTS(2)%NSEG                = 198
 !
 !* initalisation of flag for pressure (T) or Z(F) for aicraft altitude
 !
-TAIRCRAFTS(2)%ALTDEF             = .TRUE.
+TAIRCRAFTS(2)%LALTDEF             = .TRUE.
 !
 !* allocation of the arrays
 !
-ALLOCATE(TAIRCRAFTS(2)%SEGTIME(TAIRCRAFTS(2)%SEG  ))
-ALLOCATE(TAIRCRAFTS(2)%SEGLAT (TAIRCRAFTS(2)%SEG+1))
-ALLOCATE(TAIRCRAFTS(2)%SEGLON (TAIRCRAFTS(2)%SEG+1))
+ALLOCATE(TAIRCRAFTS(2)%XSEGTIME(TAIRCRAFTS(2)%NSEG  ))
+ALLOCATE(TAIRCRAFTS(2)%XSEGLAT (TAIRCRAFTS(2)%NSEG+1))
+ALLOCATE(TAIRCRAFTS(2)%XSEGLON (TAIRCRAFTS(2)%NSEG+1))
 !
 !* duration of the segments (seconds)
 !
-TAIRCRAFTS(2)%SEGTIME     = (/60,   60,   60,   60,   60,   60,&
+TAIRCRAFTS(2)%XSEGTIME     = (/60,   60,   60,   60,   60,   60,&
    60,   60,   60,   60,   60,   60,&
    60,   60,   60,   60,   60,   60,&
    60,   60,   60,   60,   60,   60,&
@@ -430,7 +430,7 @@ TAIRCRAFTS(2)%SEGTIME     = (/60,   60,   60,   60,   60,   60,&
 !* latitudes of the segments ends (1st point is takeoff, last point is landing)
 !        (decimal degrees)
 !
-TAIRCRAFTS(2)%SEGLAT      = (/ 44.39819, 44.39967, 44.40104, 44.40074, 44.40085,&
+TAIRCRAFTS(2)%XSEGLAT      = (/ 44.39819, 44.39967, 44.40104, 44.40074, 44.40085,&
  44.39843, 44.39619, 44.39141, 44.38353, 44.37732,&
  44.37508, 44.37609, 44.37377, 44.36764, 44.36083,&
  44.35442, 44.37187, 44.39327, 44.41394, 44.43280,&
@@ -474,7 +474,7 @@ TAIRCRAFTS(2)%SEGLAT      = (/ 44.39819, 44.39967, 44.40104, 44.40074, 44.40085,
 !* longitudes of the segments ends (1st point is takeoff, last point is landing)
 !        (decimal degrees)
 !
-TAIRCRAFTS(2)%SEGLON      = (/0.76323, 0.75549, 0.73212, 0.70405, 0.67289,&
+TAIRCRAFTS(2)%XSEGLON      = (/0.76323, 0.75549, 0.73212, 0.70405, 0.67289,&
  0.64082, 0.60831, 0.57717, 0.54697, 0.51578,&
  0.48245, 0.45056, 0.41783, 0.38851, 0.36046,&
  0.32828, 0.30353, 0.28176, 0.25886, 0.23647,&
@@ -518,9 +518,9 @@ TAIRCRAFTS(2)%SEGLON      = (/0.76323, 0.75549, 0.73212, 0.70405, 0.67289,&
 !* pressure of the segments ends (1st point is takeoff, last point is landing)
 !        (pascals)
 !
-IF (TAIRCRAFTS(2)%ALTDEF) THEN
-  ALLOCATE(TAIRCRAFTS(2)%SEGP   (TAIRCRAFTS(2)%SEG+1))
-TAIRCRAFTS(2)%SEGP = 100. * (/1001.,1001.0, 989.2, 987.5, 987.5,&
+IF (TAIRCRAFTS(2)%LALTDEF) THEN
+  ALLOCATE(TAIRCRAFTS(2)%XSEGP   (TAIRCRAFTS(2)%NSEG+1))
+TAIRCRAFTS(2)%XSEGP = 100. * (/1001.,1001.0, 989.2, 987.5, 987.5,&
  987.9, 989.1, 990.2, 989.3, 988.6,&
  989.8, 989.6, 991.0, 986.1, 980.7,&
  986.5, 991.9, 991.5, 993.0, 992.1,&
@@ -561,8 +561,8 @@ TAIRCRAFTS(2)%SEGP = 100. * (/1001.,1001.0, 989.2, 987.5, 987.5,&
  975.8, 993.9,1004.1,1004.1,1004.1,&
 1004.1,1004.1,1004.1,1004.1 /)
 ELSE
-  ALLOCATE(TAIRCRAFTS(2)%SEGZ   (TAIRCRAFTS(2)%SEG+1))
-  TAIRCRAFTS(2)%SEGZ    = (/8000,8000,8000,8000,8000,&
+  ALLOCATE(TAIRCRAFTS(2)%XSEGZ   (TAIRCRAFTS(2)%NSEG+1))
+  TAIRCRAFTS(2)%XSEGZ    = (/8000,8000,8000,8000,8000,&
 8000,8000,8000,8000,8000,&
 8000,8000,8000,8000,8000,&
 8000,8000,8000,8000,8000,&
@@ -620,15 +620,15 @@ TAIRCRAFTS(3)%NMODEL             = 0
 !
 !* model switch
 !
-TAIRCRAFTS(3)%MODEL              = 'FIX'
+TAIRCRAFTS(3)%CMODEL              = 'FIX'
 !
 !* aircraft type
 !
-TAIRCRAFTS(3)%TYPE               = 'AIRCRA'
+TAIRCRAFTS(3)%CTYPE               = 'AIRCRA'
 
 !* aircraft flight name
 !
-TAIRCRAFTS(3)%TITLE             = 'SAAL19A'
+TAIRCRAFTS(3)%CTITLE             = 'SAAL19A'
 !
 !* time step for storage
 !
@@ -636,28 +636,28 @@ TAIRCRAFTS(3)%TFLYER_TIME%XTSTEP = 30.
 !
 !* take-off date and time
 !
-TAIRCRAFTS(3)%LAUNCH%nyear  =  2007
-TAIRCRAFTS(3)%LAUNCH%nmonth =    04
-TAIRCRAFTS(3)%LAUNCH%nday   =    19
-TAIRCRAFTS(3)%LAUNCH%xtime  = 45369
+TAIRCRAFTS(3)%TLAUNCH%nyear  =  2007
+TAIRCRAFTS(3)%TLAUNCH%nmonth =    04
+TAIRCRAFTS(3)%TLAUNCH%nday   =    19
+TAIRCRAFTS(3)%TLAUNCH%xtime  = 45369
 !
 !* number of flight segments
 !
-TAIRCRAFTS(3)%SEG                = 39
+TAIRCRAFTS(3)%NSEG                = 39
 !
 !* initalisation of flag for pressure (T) or Z(F) for aicraft altitude
 !
-TAIRCRAFTS(3)%ALTDEF             = .TRUE.
+TAIRCRAFTS(3)%LALTDEF             = .TRUE.
 !
 !* allocation of the arrays
 !
-ALLOCATE(TAIRCRAFTS(3)%SEGTIME(TAIRCRAFTS(3)%SEG  ))
-ALLOCATE(TAIRCRAFTS(3)%SEGLAT (TAIRCRAFTS(3)%SEG+1))
-ALLOCATE(TAIRCRAFTS(3)%SEGLON (TAIRCRAFTS(3)%SEG+1))
+ALLOCATE(TAIRCRAFTS(3)%XSEGTIME(TAIRCRAFTS(3)%NSEG  ))
+ALLOCATE(TAIRCRAFTS(3)%XSEGLAT (TAIRCRAFTS(3)%NSEG+1))
+ALLOCATE(TAIRCRAFTS(3)%XSEGLON (TAIRCRAFTS(3)%NSEG+1))
 !
 !* duration of the segments (seconds)
 !
-TAIRCRAFTS(3)%SEGTIME = (/   15,   16,   16,   18,   17,   17,&
+TAIRCRAFTS(3)%XSEGTIME = (/   15,   16,   16,   18,   17,   17,&
    22,   25,   19,   19,   22,   27,&
    28,   27,   29,   32,   30,   24,&
   169,   18,   15,   18,   17,   16,&
@@ -669,7 +669,7 @@ TAIRCRAFTS(3)%SEGTIME = (/   15,   16,   16,   18,   17,   17,&
 !* latitudes of the segments ends (1st point is takeoff, last point is landing)
 !        (decimal degrees)
 !
-TAIRCRAFTS(3)%SEGLAT = (/ 44.14451, 44.14084, 44.14068, 44.14479, 44.14884,&
+TAIRCRAFTS(3)%XSEGLAT = (/ 44.14451, 44.14084, 44.14068, 44.14479, 44.14884,&
  44.14843, 44.14437, 44.14127, 44.14574, 44.14858,&
  44.14655, 44.14130, 44.14384, 44.14738, 44.14158,&
  44.14245, 44.14607, 44.14023, 44.14227, 44.15136,&
@@ -681,7 +681,7 @@ TAIRCRAFTS(3)%SEGLAT = (/ 44.14451, 44.14084, 44.14068, 44.14479, 44.14884,&
 !* longitudes of the segments ends (1st point is takeoff, last point is landing)
 !        (decimal degrees)
 !
-TAIRCRAFTS(3)%SEGLON   = (/0.95322, 0.95562, 0.96155, 0.96490, 0.96186,&
+TAIRCRAFTS(3)%XSEGLON   = (/0.95322, 0.95562, 0.96155, 0.96490, 0.96186,&
  0.95576, 0.95421, 0.96105, 0.96593, 0.96076,&
  0.95485, 0.95618, 0.96341, 0.95769, 0.95681,&
  0.96585, 0.96073, 0.96158, 0.97041, 0.96299,&
@@ -693,9 +693,9 @@ TAIRCRAFTS(3)%SEGLON   = (/0.95322, 0.95562, 0.96155, 0.96490, 0.96186,&
 !* pressure of the segments ends (1st point is takeoff, last point is landing)
 !        (pascals)
 !
-IF (TAIRCRAFTS(3)%ALTDEF) THEN
-  ALLOCATE(TAIRCRAFTS(3)%SEGP   (TAIRCRAFTS(3)%SEG+1))
-TAIRCRAFTS(3)%SEGP    = 100. * (/ 992.5, 987.4, 982.1, 976.4, 969.3,&
+IF (TAIRCRAFTS(3)%LALTDEF) THEN
+  ALLOCATE(TAIRCRAFTS(3)%XSEGP   (TAIRCRAFTS(3)%NSEG+1))
+TAIRCRAFTS(3)%XSEGP    = 100. * (/ 992.5, 987.4, 982.1, 976.4, 969.3,&
  964.3, 958.4, 952.9, 947.5, 942.8,&
  936.5, 930.8, 925.6, 919.8, 914.6,&
  909.2, 903.6, 898.0, 893.0, 881.8,&
@@ -704,8 +704,8 @@ TAIRCRAFTS(3)%SEGP    = 100. * (/ 992.5, 987.4, 982.1, 976.4, 969.3,&
  940.4, 946.6, 951.8, 957.8, 963.1,&
  969.1, 974.1, 980.0, 986.0, 993.0 /)
 ELSE
-  ALLOCATE(TAIRCRAFTS(3)%SEGZ   (TAIRCRAFTS(3)%SEG+1))
-  TAIRCRAFTS(3)%SEGZ    = (/8000,8000,8000,8000,8000,&
+  ALLOCATE(TAIRCRAFTS(3)%XSEGZ   (TAIRCRAFTS(3)%NSEG+1))
+  TAIRCRAFTS(3)%XSEGZ    = (/8000,8000,8000,8000,8000,&
 8000,8000,8000,8000,8000,&
 8000,8000,8000,8000,8000,&
 8000,8000,8000,8000,8000,&
@@ -731,15 +731,15 @@ TAIRCRAFTS(4)%NMODEL             = 0
 !
 !* model switch
 !
-TAIRCRAFTS(4)%MODEL              = 'FIX'
+TAIRCRAFTS(4)%CMODEL              = 'FIX'
 !
 !* aircraft type
 !
-TAIRCRAFTS(4)%TYPE               = 'AIRCRA'
+TAIRCRAFTS(4)%CTYPE               = 'AIRCRA'
 
 !* aircraft flight name
 !
-TAIRCRAFTS(4)%TITLE             = 'SAAL19B'
+TAIRCRAFTS(4)%CTITLE             = 'SAAL19B'
 !
 !* time step for storage
 !
@@ -747,28 +747,28 @@ TAIRCRAFTS(4)%TFLYER_TIME%XTSTEP = 30.
 !
 !* take-off date and time
 !
-TAIRCRAFTS(4)%LAUNCH%nyear  =  2007
-TAIRCRAFTS(4)%LAUNCH%nmonth =    04
-TAIRCRAFTS(4)%LAUNCH%nday   =    19
-TAIRCRAFTS(4)%LAUNCH%xtime  = 60392.
+TAIRCRAFTS(4)%TLAUNCH%nyear  =  2007
+TAIRCRAFTS(4)%TLAUNCH%nmonth =    04
+TAIRCRAFTS(4)%TLAUNCH%nday   =    19
+TAIRCRAFTS(4)%TLAUNCH%xtime  = 60392.
 !
 !* number of flight segments
 !
-TAIRCRAFTS(4)%SEG                = 39
+TAIRCRAFTS(4)%NSEG                = 39
 !
 !* initalisation of flag for pressure (T) or Z(F) for aicraft altitude
 !
-TAIRCRAFTS(4)%ALTDEF             = .TRUE.
+TAIRCRAFTS(4)%LALTDEF             = .TRUE.
 !
 !* allocation of the arrays
 !
-ALLOCATE(TAIRCRAFTS(4)%SEGTIME(TAIRCRAFTS(4)%SEG  ))
-ALLOCATE(TAIRCRAFTS(4)%SEGLAT (TAIRCRAFTS(4)%SEG+1))
-ALLOCATE(TAIRCRAFTS(4)%SEGLON (TAIRCRAFTS(4)%SEG+1))
+ALLOCATE(TAIRCRAFTS(4)%XSEGTIME(TAIRCRAFTS(4)%NSEG  ))
+ALLOCATE(TAIRCRAFTS(4)%XSEGLAT (TAIRCRAFTS(4)%NSEG+1))
+ALLOCATE(TAIRCRAFTS(4)%XSEGLON (TAIRCRAFTS(4)%NSEG+1))
 !
 !* duration of the segments (seconds)
 !
-TAIRCRAFTS(4)%SEGTIME = (/ 36,   18,   18,   21,   24,   23,&
+TAIRCRAFTS(4)%XSEGTIME = (/ 36,   18,   18,   21,   24,   23,&
    20,   20,   25,   27,   21,   25,&
    27,   23,   21,   23,   25,   21,&
    27,  190,   17,   17,   18,   17,&
@@ -779,7 +779,7 @@ TAIRCRAFTS(4)%SEGTIME = (/ 36,   18,   18,   21,   24,   23,&
 !* latitudes of the segments ends (1st point is takeoff, last point is landing)
 !        (decimal degrees)
 !
-TAIRCRAFTS(4)%SEGLAT = (/ 44.14025, 44.13824, 44.14291, 44.14575, 44.14321,&
+TAIRCRAFTS(4)%XSEGLAT = (/ 44.14025, 44.13824, 44.14291, 44.14575, 44.14321,&
  44.13749, 44.13853, 44.14373, 44.14530, 44.13921,&
  44.13773, 44.14285, 44.13974, 44.13622, 44.14093,&
  44.14375, 44.13868, 44.13771, 44.14272, 44.14156,&
@@ -791,7 +791,7 @@ TAIRCRAFTS(4)%SEGLAT = (/ 44.14025, 44.13824, 44.14291, 44.14575, 44.14321,&
 !* longitudes of the segments ends (1st point is takeoff, last point is landing)
 !        (decimal degrees)
 !
-TAIRCRAFTS(4)%SEGLON  = (/ 0.94868, 0.95712, 0.95820, 0.95265, 0.94556,&
+TAIRCRAFTS(4)%XSEGLON  = (/ 0.94868, 0.95712, 0.95820, 0.95265, 0.94556,&
  0.94730, 0.95518, 0.95559, 0.94882, 0.94656,&
  0.95488, 0.95463, 0.94889, 0.95589, 0.95988,&
  0.95389, 0.95076, 0.95834, 0.95888, 0.95095,&
@@ -803,9 +803,9 @@ TAIRCRAFTS(4)%SEGLON  = (/ 0.94868, 0.95712, 0.95820, 0.95265, 0.94556,&
 !* pressure of the segments ends (1st point is takeoff, last point is landing)
 !        (pascals)
 !
-IF (TAIRCRAFTS(4)%ALTDEF) THEN
-  ALLOCATE(TAIRCRAFTS(4)%SEGP   (TAIRCRAFTS(4)%SEG+1))
-TAIRCRAFTS(4)%SEGP = 100. * (/ 992.3, 985.4, 979.9, 974.2, 969.2,&
+IF (TAIRCRAFTS(4)%LALTDEF) THEN
+  ALLOCATE(TAIRCRAFTS(4)%XSEGP   (TAIRCRAFTS(4)%NSEG+1))
+TAIRCRAFTS(4)%XSEGP = 100. * (/ 992.3, 985.4, 979.9, 974.2, 969.2,&
  962.8, 957.7, 952.1, 946.3, 940.5,&
  935.3, 930.4, 924.0, 918.9, 913.4,&
  907.8, 902.8, 897.1, 892.2, 886.3,&
@@ -814,8 +814,8 @@ TAIRCRAFTS(4)%SEGP = 100. * (/ 992.3, 985.4, 979.9, 974.2, 969.2,&
  934.6, 940.3, 946.0, 951.4, 956.5,&
  962.8, 968.1, 973.7, 979.3, 984.9 /)
  ELSE
-  ALLOCATE(TAIRCRAFTS(4)%SEGZ   (TAIRCRAFTS(4)%SEG+1))
-  TAIRCRAFTS(4)%SEGZ    = (/8000,8000,8000,8000,8000,&
+  ALLOCATE(TAIRCRAFTS(4)%XSEGZ   (TAIRCRAFTS(4)%NSEG+1))
+  TAIRCRAFTS(4)%XSEGZ    = (/8000,8000,8000,8000,8000,&
 8000,8000,8000,8000,8000,&
 8000,8000,8000,8000,8000,&
 8000,8000,8000,8000,8000,&
@@ -841,15 +841,15 @@ TAIRCRAFTS(5)%NMODEL             = 0
 !
 !* model switch
 !
-TAIRCRAFTS(5)%MODEL              = 'FIX'
+TAIRCRAFTS(5)%CMODEL              = 'FIX'
 !
 !* aircraft type
 !
-TAIRCRAFTS(5)%TYPE               = 'AIRCRA'
+TAIRCRAFTS(5)%CTYPE               = 'AIRCRA'
 
 !* aircraft flight name
 !
-TAIRCRAFTS(5)%TITLE             = 'SAIB19A'
+TAIRCRAFTS(5)%CTITLE             = 'SAIB19A'
 !
 !* time step for storage
 !
@@ -857,28 +857,28 @@ TAIRCRAFTS(5)%TFLYER_TIME%XTSTEP = 30.
 !
 !* take-off date and time
 !
-TAIRCRAFTS(5)%LAUNCH%nyear  =  2007
-TAIRCRAFTS(5)%LAUNCH%nmonth =    04
-TAIRCRAFTS(5)%LAUNCH%nday   =    19
-TAIRCRAFTS(5)%LAUNCH%xtime  = 43380.
+TAIRCRAFTS(5)%TLAUNCH%nyear  =  2007
+TAIRCRAFTS(5)%TLAUNCH%nmonth =    04
+TAIRCRAFTS(5)%TLAUNCH%nday   =    19
+TAIRCRAFTS(5)%TLAUNCH%xtime  = 43380.
 !
 !* number of flight segments
 !
-TAIRCRAFTS(5)%SEG                = 176
+TAIRCRAFTS(5)%NSEG                = 176
 !
 !* initalisation of flag for pressure (T) or Z(F) for aicraft altitude
 !
-TAIRCRAFTS(5)%ALTDEF             = .TRUE.
+TAIRCRAFTS(5)%LALTDEF             = .TRUE.
 !
 !* allocation of the arrays
 !
-ALLOCATE(TAIRCRAFTS(5)%SEGTIME(TAIRCRAFTS(5)%SEG  ))
-ALLOCATE(TAIRCRAFTS(5)%SEGLAT (TAIRCRAFTS(5)%SEG+1))
-ALLOCATE(TAIRCRAFTS(5)%SEGLON (TAIRCRAFTS(5)%SEG+1))
+ALLOCATE(TAIRCRAFTS(5)%XSEGTIME(TAIRCRAFTS(5)%NSEG  ))
+ALLOCATE(TAIRCRAFTS(5)%XSEGLAT (TAIRCRAFTS(5)%NSEG+1))
+ALLOCATE(TAIRCRAFTS(5)%XSEGLON (TAIRCRAFTS(5)%NSEG+1))
 !
 !* duration of the segments (seconds)
 !
-TAIRCRAFTS(5)%SEGTIME = (/  28,   28,   29,   29,   29,   28,&
+TAIRCRAFTS(5)%XSEGTIME = (/  28,   28,   29,   29,   29,   28,&
    28,   28,   29,   26,   28,   27,&
    28,   27,   28,   27,   25,   27,&
    27,   26,   24,   25,   26,   26,&
@@ -913,7 +913,7 @@ TAIRCRAFTS(5)%SEGTIME = (/  28,   28,   29,   29,   29,   28,&
 !* latitudes of the segments ends (1st point is takeoff, last point is landing)
 !        (decimal degrees)
 !
-TAIRCRAFTS(5)%SEGLAT = (/44.38992, 44.38830, 44.38713, 44.38609, 44.38512,&
+TAIRCRAFTS(5)%XSEGLAT = (/44.38992, 44.38830, 44.38713, 44.38609, 44.38512,&
  44.38420, 44.38336, 44.38248, 44.38151, 44.38046,&
  44.37942, 44.37835, 44.37729, 44.37630, 44.37530,&
  44.37407, 44.37156, 44.36766, 44.36184, 44.35421,&
@@ -954,7 +954,7 @@ TAIRCRAFTS(5)%SEGLAT = (/44.38992, 44.38830, 44.38713, 44.38609, 44.38512,&
 !* longitudes of the segments ends (1st point is takeoff, last point is landing)
 !        (decimal degrees)
 !
-TAIRCRAFTS(5)%SEGLON = (/ 0.60996, 0.59790, 0.58554, 0.57296, 0.56046,&
+TAIRCRAFTS(5)%XSEGLON = (/ 0.60996, 0.59790, 0.58554, 0.57296, 0.56046,&
  0.54813, 0.53613, 0.52410, 0.51125, 0.49815,&
  0.48593, 0.47312, 0.46084, 0.44829, 0.43635,&
  0.42374, 0.41321, 0.40397, 0.39536, 0.38761,&
@@ -995,9 +995,9 @@ TAIRCRAFTS(5)%SEGLON = (/ 0.60996, 0.59790, 0.58554, 0.57296, 0.56046,&
 !* pressure of the segments ends (1st point is takeoff, last point is landing)
 !        (pascals)
 !
-IF (TAIRCRAFTS(5)%ALTDEF) THEN
-  ALLOCATE(TAIRCRAFTS(5)%SEGP   (TAIRCRAFTS(5)%SEG+1))
-TAIRCRAFTS(5)%SEGP  = 100. * (/ 995.7, 998.1, 998.7, 998.8, 999.1,&
+IF (TAIRCRAFTS(5)%LALTDEF) THEN
+  ALLOCATE(TAIRCRAFTS(5)%XSEGP   (TAIRCRAFTS(5)%NSEG+1))
+TAIRCRAFTS(5)%XSEGP  = 100. * (/ 995.7, 998.1, 998.7, 998.8, 999.1,&
  999.3, 999.9,1000.4,1000.7,1000.6,&
 1000.8,1000.8,1000.6,1000.5,1000.1,&
  999.7, 999.2, 999.2, 999.6,1000.5,&
@@ -1034,8 +1034,8 @@ TAIRCRAFTS(5)%SEGP  = 100. * (/ 995.7, 998.1, 998.7, 998.8, 999.1,&
  995.4, 995.4, 995.3, 994.8, 994.5,&
  994.1, 994.4  /)
  ELSE
-  ALLOCATE(TAIRCRAFTS(5)%SEGZ   (TAIRCRAFTS(5)%SEG+1))
-  TAIRCRAFTS(5)%SEGZ    = (/8000,8000,8000,8000,8000,&
+  ALLOCATE(TAIRCRAFTS(5)%XSEGZ   (TAIRCRAFTS(5)%NSEG+1))
+  TAIRCRAFTS(5)%XSEGZ    = (/8000,8000,8000,8000,8000,&
 8000,8000,8000,8000,8000,&
 8000,8000,8000,8000,8000,&
 8000,8000,8000,8000,8000,&
@@ -1089,15 +1089,15 @@ TAIRCRAFTS(6)%NMODEL             = 0
 !
 !* model switch
 !
-TAIRCRAFTS(6)%MODEL              = 'FIX'
+TAIRCRAFTS(6)%CMODEL              = 'FIX'
 !
 !* aircraft type
 !
-TAIRCRAFTS(6)%TYPE               = 'AIRCRA'
+TAIRCRAFTS(6)%CTYPE               = 'AIRCRA'
 
 !* aircraft flight name
 !
-TAIRCRAFTS(6)%TITLE             = 'SAIB19B'
+TAIRCRAFTS(6)%CTITLE             = 'SAIB19B'
 !
 !* time step for storage
 !
@@ -1105,28 +1105,28 @@ TAIRCRAFTS(6)%TFLYER_TIME%XTSTEP = 30.
 !
 !* take-off date and time
 !
-TAIRCRAFTS(6)%LAUNCH%nyear  =  2007
-TAIRCRAFTS(6)%LAUNCH%nmonth =    04
-TAIRCRAFTS(6)%LAUNCH%nday   =    19
-TAIRCRAFTS(6)%LAUNCH%xtime  = 55992.
+TAIRCRAFTS(6)%TLAUNCH%nyear  =  2007
+TAIRCRAFTS(6)%TLAUNCH%nmonth =    04
+TAIRCRAFTS(6)%TLAUNCH%nday   =    19
+TAIRCRAFTS(6)%TLAUNCH%xtime  = 55992.
 !
 !* number of flight segments
 !
-TAIRCRAFTS(6)%SEG                = 179
+TAIRCRAFTS(6)%NSEG                = 179
 !
 !* initalisation of flag for pressure (T) or Z(F) for aicraft altitude
 !
-TAIRCRAFTS(6)%ALTDEF             = .TRUE.
+TAIRCRAFTS(6)%LALTDEF             = .TRUE.
 !
 !* allocation of the arrays
 !
-ALLOCATE(TAIRCRAFTS(6)%SEGTIME(TAIRCRAFTS(6)%SEG  ))
-ALLOCATE(TAIRCRAFTS(6)%SEGLAT (TAIRCRAFTS(6)%SEG+1))
-ALLOCATE(TAIRCRAFTS(6)%SEGLON (TAIRCRAFTS(6)%SEG+1))
+ALLOCATE(TAIRCRAFTS(6)%XSEGTIME(TAIRCRAFTS(6)%NSEG  ))
+ALLOCATE(TAIRCRAFTS(6)%XSEGLAT (TAIRCRAFTS(6)%NSEG+1))
+ALLOCATE(TAIRCRAFTS(6)%XSEGLON (TAIRCRAFTS(6)%NSEG+1))
 !
 !* duration of the segments (seconds)
 !
-TAIRCRAFTS(6)%SEGTIME = (/ 27,   25,   26,   25,   25,   25,&
+TAIRCRAFTS(6)%XSEGTIME = (/ 27,   25,   26,   25,   25,   25,&
    25,   27,   28,   25,   26,   25,&
    26,   26,   26,   26,   25,   27,&
    27,   27,   27,   28,   28,   25,&
@@ -1160,7 +1160,7 @@ TAIRCRAFTS(6)%SEGTIME = (/ 27,   25,   26,   25,   25,   25,&
 !* latitudes of the segments ends (1st point is takeoff, last point is landing)
 !        (decimal degrees)
 !
-TAIRCRAFTS(6)%SEGLAT = (/  44.14614, 44.14841, 44.15199, 44.15888, 44.16587,&
+TAIRCRAFTS(6)%XSEGLAT = (/  44.14614, 44.14841, 44.15199, 44.15888, 44.16587,&
  44.17280, 44.17953, 44.18641, 44.19343, 44.20074,&
  44.20752, 44.21445, 44.22139, 44.22865, 44.23605,&
  44.24331, 44.25045, 44.25722, 44.26426, 44.27113,&
@@ -1200,7 +1200,7 @@ TAIRCRAFTS(6)%SEGLAT = (/  44.14614, 44.14841, 44.15199, 44.15888, 44.16587,&
 !* longitudes of the segments ends (1st point is takeoff, last point is landing)
 !        (decimal degrees)
 !
-TAIRCRAFTS(6)%SEGLON = (/-0.91544,-0.91300,-0.91007,-0.90375,-0.89495,&
+TAIRCRAFTS(6)%XSEGLON = (/-0.91544,-0.91300,-0.91007,-0.90375,-0.89495,&
 -0.88708,-0.87983,-0.87229,-0.86452,-0.85654,&
 -0.84914,-0.84153,-0.83408,-0.82634,-0.81846,&
 -0.81096,-0.80323,-0.79569,-0.78779,-0.78020,&
@@ -1240,9 +1240,9 @@ TAIRCRAFTS(6)%SEGLON = (/-0.91544,-0.91300,-0.91007,-0.90375,-0.89495,&
 !* pressure of the segments ends (1st point is takeoff, last point is landing)
 !        (pascals)
 !
-IF (TAIRCRAFTS(6)%ALTDEF) THEN
-  ALLOCATE(TAIRCRAFTS(6)%SEGP   (TAIRCRAFTS(6)%SEG+1))
-TAIRCRAFTS(6)%SEGP = 100. * (/ 990.1, 990.5, 991.1, 992.6, 993.7,&
+IF (TAIRCRAFTS(6)%LALTDEF) THEN
+  ALLOCATE(TAIRCRAFTS(6)%XSEGP   (TAIRCRAFTS(6)%NSEG+1))
+TAIRCRAFTS(6)%XSEGP = 100. * (/ 990.1, 990.5, 991.1, 992.6, 993.7,&
  993.5, 993.2, 993.5, 993.8, 994.1,&
  994.4, 994.3, 994.3, 994.7, 995.4,&
  996.0, 996.2, 996.3, 996.1, 996.0,&
@@ -1279,8 +1279,8 @@ TAIRCRAFTS(6)%SEGP = 100. * (/ 990.1, 990.5, 991.1, 992.6, 993.7,&
  999.2, 999.2, 999.2, 998.9, 998.4,&
  997.7, 997.1, 996.8, 996.9, 996.9  /)
  ELSE
-  ALLOCATE(TAIRCRAFTS(6)%SEGZ   (TAIRCRAFTS(6)%SEG+1))
-  TAIRCRAFTS(6)%SEGZ    = (/8000,8000,8000,8000,8000,&
+  ALLOCATE(TAIRCRAFTS(6)%XSEGZ   (TAIRCRAFTS(6)%NSEG+1))
+  TAIRCRAFTS(6)%XSEGZ    = (/8000,8000,8000,8000,8000,&
 8000,8000,8000,8000,8000,&
 8000,8000,8000,8000,8000,&
 8000,8000,8000,8000,8000,&
@@ -1335,15 +1335,15 @@ TAIRCRAFTS(7)%NMODEL             = 0
 !
 !* model switch
 !
-TAIRCRAFTS(7)%MODEL              = 'FIX'
+TAIRCRAFTS(7)%CMODEL              = 'FIX'
 !
 !* aircraft type
 !
-TAIRCRAFTS(7)%TYPE               = 'AIRCRA'
+TAIRCRAFTS(7)%CTYPE               = 'AIRCRA'
 
 !* aircraft flight name
 !
-TAIRCRAFTS(7)%TITLE             = 'TEST_19'
+TAIRCRAFTS(7)%CTITLE             = 'TEST_19'
 !
 !* time step for storage
 !
@@ -1351,28 +1351,28 @@ TAIRCRAFTS(7)%TFLYER_TIME%XTSTEP = 60.
 !
 !* take-off date and time
 !
-TAIRCRAFTS(7)%LAUNCH%nyear  =  2007
-TAIRCRAFTS(7)%LAUNCH%nmonth =    04
-TAIRCRAFTS(7)%LAUNCH%nday   =    19
-TAIRCRAFTS(7)%LAUNCH%xtime  = 43500.
+TAIRCRAFTS(7)%TLAUNCH%nyear  =  2007
+TAIRCRAFTS(7)%TLAUNCH%nmonth =    04
+TAIRCRAFTS(7)%TLAUNCH%nday   =    19
+TAIRCRAFTS(7)%TLAUNCH%xtime  = 43500.
 !
 !* number of flight segments
 !
-TAIRCRAFTS(7)%SEG                = 207
+TAIRCRAFTS(7)%NSEG                = 207
 !
 !* initalisation of flag for pressure (T) or Z(F) for aicraft altitude
 !
-TAIRCRAFTS(7)%ALTDEF             = .TRUE.
+TAIRCRAFTS(7)%LALTDEF             = .TRUE.
 !
 !* allocation of the arrays
 !
-ALLOCATE(TAIRCRAFTS(7)%SEGTIME(TAIRCRAFTS(7)%SEG  ))
-ALLOCATE(TAIRCRAFTS(7)%SEGLAT (TAIRCRAFTS(7)%SEG+1))
-ALLOCATE(TAIRCRAFTS(7)%SEGLON (TAIRCRAFTS(7)%SEG+1))
+ALLOCATE(TAIRCRAFTS(7)%XSEGTIME(TAIRCRAFTS(7)%NSEG  ))
+ALLOCATE(TAIRCRAFTS(7)%XSEGLAT (TAIRCRAFTS(7)%NSEG+1))
+ALLOCATE(TAIRCRAFTS(7)%XSEGLON (TAIRCRAFTS(7)%NSEG+1))
 !
 !* duration of the segments (seconds)
 !
-TAIRCRAFTS(7)%SEGTIME = (/  60,   60,   60,   60,   60,   60,&
+TAIRCRAFTS(7)%XSEGTIME = (/  60,   60,   60,   60,   60,   60,&
    60,   60,   60,   60,   60,   60,&
    60,   60,   60,   60,   60,   60,&
    60,   60,   60,   60,   60,   60,&
@@ -1411,7 +1411,7 @@ TAIRCRAFTS(7)%SEGTIME = (/  60,   60,   60,   60,   60,   60,&
 !* latitudes of the segments ends (1st point is takeoff, last point is landing)
 !        (decimal degrees)
 !
-TAIRCRAFTS(7)%SEGLAT = (/44.39766, 44.39865, 44.40084, 44.39968, 44.40132,&
+TAIRCRAFTS(7)%XSEGLAT = (/44.39766, 44.39865, 44.40084, 44.39968, 44.40132,&
  44.39968, 44.39728, 44.39430, 44.38775, 44.37997,&
  44.37950, 44.37838, 44.37529, 44.37039, 44.36210,&
  44.35464, 44.35734, 44.37871, 44.39900, 44.41864,&
@@ -1457,7 +1457,7 @@ TAIRCRAFTS(7)%SEGLAT = (/44.39766, 44.39865, 44.40084, 44.39968, 44.40132,&
 !* longitudes of the segments ends (1st point is takeoff, last point is landing)
 !        (decimal degrees)
 !
-TAIRCRAFTS(7)%SEGLON = (/0.76309, 0.76243, 0.74626, 0.71975, 0.69001,&
+TAIRCRAFTS(7)%XSEGLON = (/0.76309, 0.76243, 0.74626, 0.71975, 0.69001,&
  0.65673, 0.62503, 0.59412, 0.56233, 0.53107,&
  0.49721, 0.46349, 0.42894, 0.39615, 0.36775,&
  0.33793, 0.31306, 0.29383, 0.27389, 0.25332,&
@@ -1503,9 +1503,9 @@ TAIRCRAFTS(7)%SEGLON = (/0.76309, 0.76243, 0.74626, 0.71975, 0.69001,&
 !* pressure of the segments ends (1st point is takeoff, last point is landing)
 !        (pascals)
 !
-IF (TAIRCRAFTS(7)%ALTDEF) THEN
-  ALLOCATE(TAIRCRAFTS(7)%SEGP   (TAIRCRAFTS(7)%SEG+1))
-TAIRCRAFTS(7)%SEGP = 100. * (/1013.5,1012.2, 999.9, 993.1, 992.3,&
+IF (TAIRCRAFTS(7)%LALTDEF) THEN
+  ALLOCATE(TAIRCRAFTS(7)%XSEGP   (TAIRCRAFTS(7)%NSEG+1))
+TAIRCRAFTS(7)%XSEGP = 100. * (/1013.5,1012.2, 999.9, 993.1, 992.3,&
  994.3, 995.5, 996.0, 994.8, 995.3,&
  996.3, 997.7, 997.7, 994.8, 988.4,&
  993.4, 999.0, 999.4, 999.8,1000.0,&
@@ -1548,8 +1548,8 @@ TAIRCRAFTS(7)%SEGP = 100. * (/1013.5,1012.2, 999.9, 993.1, 992.3,&
  993.5, 994.8, 995.2, 999.8,1012.4,&
 1012.4,1012.4,1012.4   /)
  ELSE
-  ALLOCATE(TAIRCRAFTS(7)%SEGZ   (TAIRCRAFTS(7)%SEG+1))
-  TAIRCRAFTS(7)%SEGZ    = (/8000,8000,8000,8000,8000,&
+  ALLOCATE(TAIRCRAFTS(7)%XSEGZ   (TAIRCRAFTS(7)%NSEG+1))
+  TAIRCRAFTS(7)%XSEGZ    = (/8000,8000,8000,8000,8000,&
 8000,8000,8000,8000,8000,&
 8000,8000,8000,8000,8000,&
 8000,8000,8000,8000,8000,&
@@ -1609,15 +1609,15 @@ TAIRCRAFTS(8)%NMODEL             = 0
 !
 !* model switch
 !
-TAIRCRAFTS(8)%MODEL              = 'FIX'
+TAIRCRAFTS(8)%CMODEL              = 'FIX'
 !
 !* aircraft type
 !
-TAIRCRAFTS(8)%TYPE               = 'AIRCRA'
+TAIRCRAFTS(8)%CTYPE               = 'AIRCRA'
 
 !* aircraft flight name
 !
-TAIRCRAFTS(8)%TITLE             = 'DIMO22B'
+TAIRCRAFTS(8)%CTITLE             = 'DIMO22B'
 !
 !* time step for storage
 !
@@ -1625,28 +1625,28 @@ TAIRCRAFTS(8)%TFLYER_TIME%XTSTEP = 60.
 !
 !* take-off date and time
 !
-TAIRCRAFTS(8)%LAUNCH%nyear  =  2007
-TAIRCRAFTS(8)%LAUNCH%nmonth =    04
-TAIRCRAFTS(8)%LAUNCH%nday   =    22
-TAIRCRAFTS(8)%LAUNCH%xtime  = 45720.
+TAIRCRAFTS(8)%TLAUNCH%nyear  =  2007
+TAIRCRAFTS(8)%TLAUNCH%nmonth =    04
+TAIRCRAFTS(8)%TLAUNCH%nday   =    22
+TAIRCRAFTS(8)%TLAUNCH%xtime  = 45720.
 !
 !* number of flight segments
 !
-TAIRCRAFTS(8)%SEG                =  210
+TAIRCRAFTS(8)%NSEG                =  210
 !
 !* initalisation of flag for pressure (T) or Z(F) for aicraft altitude
 !
-TAIRCRAFTS(8)%ALTDEF             = .TRUE.
+TAIRCRAFTS(8)%LALTDEF             = .TRUE.
 !
 !* allocation of the arrays
 !
-ALLOCATE(TAIRCRAFTS(8)%SEGTIME(TAIRCRAFTS(8)%SEG  ))
-ALLOCATE(TAIRCRAFTS(8)%SEGLAT (TAIRCRAFTS(8)%SEG+1))
-ALLOCATE(TAIRCRAFTS(8)%SEGLON (TAIRCRAFTS(8)%SEG+1))
+ALLOCATE(TAIRCRAFTS(8)%XSEGTIME(TAIRCRAFTS(8)%NSEG  ))
+ALLOCATE(TAIRCRAFTS(8)%XSEGLAT (TAIRCRAFTS(8)%NSEG+1))
+ALLOCATE(TAIRCRAFTS(8)%XSEGLON (TAIRCRAFTS(8)%NSEG+1))
 !
 !* duration of the segments (seconds)
 !
-TAIRCRAFTS(8)%SEGTIME = (/   60,   60,   60,   60,   60,   60,&
+TAIRCRAFTS(8)%XSEGTIME = (/   60,   60,   60,   60,   60,   60,&
    60,   60,   60,   60,   60,   60,&
    60,   60,   60,   60,   60,   60,&
    60,   60,   60,   60,   60,   60,&
@@ -1685,7 +1685,7 @@ TAIRCRAFTS(8)%SEGTIME = (/   60,   60,   60,   60,   60,   60,&
 !* latitudes of the segments ends (1st point is takeoff, last point is landing)
 !        (decimal degrees)
 !
-TAIRCRAFTS(8)%SEGLAT = (/ 44.40018, 44.39977, 44.39868, 44.39992, 44.39773,&
+TAIRCRAFTS(8)%XSEGLAT = (/ 44.40018, 44.39977, 44.39868, 44.39992, 44.39773,&
  44.39547, 44.38932, 44.38114, 44.37649, 44.37682,&
  44.37604, 44.37314, 44.36610, 44.35869, 44.35126,&
  44.36888, 44.38902, 44.41019, 44.43016, 44.44711,&
@@ -1733,7 +1733,7 @@ TAIRCRAFTS(8)%SEGLAT = (/ 44.40018, 44.39977, 44.39868, 44.39992, 44.39773,&
 !* longitudes of the segments ends (1st point is takeoff, last point is landing)
 !        (decimal degrees)
 !
-TAIRCRAFTS(8)%SEGLON = (/  0.75057, 0.72578, 0.69760, 0.66704, 0.63457,&
+TAIRCRAFTS(8)%XSEGLON = (/  0.75057, 0.72578, 0.69760, 0.66704, 0.63457,&
  0.60222, 0.56878, 0.53642, 0.50398, 0.47225,&
  0.43953, 0.40789, 0.38031, 0.35008, 0.32169,&
  0.30147, 0.28060, 0.26058, 0.23973, 0.21616,&
@@ -1781,9 +1781,9 @@ TAIRCRAFTS(8)%SEGLON = (/  0.75057, 0.72578, 0.69760, 0.66704, 0.63457,&
 !* pressure of the segments ends (1st point is takeoff, last point is landing)
 !        (pascals)
 !
-IF (TAIRCRAFTS(8)%ALTDEF) THEN
-  ALLOCATE(TAIRCRAFTS(8)%SEGP   (TAIRCRAFTS(8)%SEG+1))
-TAIRCRAFTS(8)%SEGP = 100. * (/1002.7, 994.1, 993.0, 994.6, 994.2,&
+IF (TAIRCRAFTS(8)%LALTDEF) THEN
+  ALLOCATE(TAIRCRAFTS(8)%XSEGP   (TAIRCRAFTS(8)%NSEG+1))
+TAIRCRAFTS(8)%XSEGP = 100. * (/1002.7, 994.1, 993.0, 994.6, 994.2,&
  994.3, 995.3, 996.2, 997.4, 996.8,&
  997.5, 996.0, 989.7, 990.8, 996.2,&
  999.0, 997.8, 998.4, 999.0, 999.8,&
@@ -1827,8 +1827,8 @@ TAIRCRAFTS(8)%SEGP = 100. * (/1002.7, 994.1, 993.0, 994.6, 994.2,&
  995.1, 995.0, 986.7, 992.4,1009.3,&
 1010.1  /)
  ELSE
-  ALLOCATE(TAIRCRAFTS(8)%SEGZ   (TAIRCRAFTS(8)%SEG+1))
-  TAIRCRAFTS(8)%SEGZ    = (/8000,8000,8000,8000,8000,&
+  ALLOCATE(TAIRCRAFTS(8)%XSEGZ   (TAIRCRAFTS(8)%NSEG+1))
+  TAIRCRAFTS(8)%XSEGZ    = (/8000,8000,8000,8000,8000,&
 8000,8000,8000,8000,8000,&
 8000,8000,8000,8000,8000,&
 8000,8000,8000,8000,8000,&
@@ -1888,15 +1888,15 @@ TAIRCRAFTS(9)%NMODEL             = 0
 !
 !* model switch
 !
-TAIRCRAFTS(9)%MODEL              = 'FIX'
+TAIRCRAFTS(9)%CMODEL              = 'FIX'
 !
 !* aircraft type
 !
-TAIRCRAFTS(9)%TYPE               = 'AIRCRA'
+TAIRCRAFTS(9)%CTYPE               = 'AIRCRA'
 
 !* aircraft flight name
 !
-TAIRCRAFTS(9)%TITLE             = 'DIMO23A'
+TAIRCRAFTS(9)%CTITLE             = 'DIMO23A'
 !
 !* time step for storage
 !
@@ -1904,28 +1904,28 @@ TAIRCRAFTS(9)%TFLYER_TIME%XTSTEP = 60.
 !
 !* take-off date and time
 !
-TAIRCRAFTS(9)%LAUNCH%nyear  =  2007
-TAIRCRAFTS(9)%LAUNCH%nmonth =    04
-TAIRCRAFTS(9)%LAUNCH%nday   =    23
-TAIRCRAFTS(9)%LAUNCH%xtime  = 28080.
+TAIRCRAFTS(9)%TLAUNCH%nyear  =  2007
+TAIRCRAFTS(9)%TLAUNCH%nmonth =    04
+TAIRCRAFTS(9)%TLAUNCH%nday   =    23
+TAIRCRAFTS(9)%TLAUNCH%xtime  = 28080.
 !
 !* number of flight segments
 !
-TAIRCRAFTS(9)%SEG                =   217
+TAIRCRAFTS(9)%NSEG                =   217
 !
 !* initalisation of flag for pressure (T) or Z(F) for aicraft altitude
 !
-TAIRCRAFTS(9)%ALTDEF             = .TRUE.
+TAIRCRAFTS(9)%LALTDEF             = .TRUE.
 !
 !* allocation of the arrays
 !
-ALLOCATE(TAIRCRAFTS(9)%SEGTIME(TAIRCRAFTS(9)%SEG  ))
-ALLOCATE(TAIRCRAFTS(9)%SEGLAT (TAIRCRAFTS(9)%SEG+1))
-ALLOCATE(TAIRCRAFTS(9)%SEGLON (TAIRCRAFTS(9)%SEG+1))
+ALLOCATE(TAIRCRAFTS(9)%XSEGTIME(TAIRCRAFTS(9)%NSEG  ))
+ALLOCATE(TAIRCRAFTS(9)%XSEGLAT (TAIRCRAFTS(9)%NSEG+1))
+ALLOCATE(TAIRCRAFTS(9)%XSEGLON (TAIRCRAFTS(9)%NSEG+1))
 !
 !* duration of the segments (seconds)
 !
-TAIRCRAFTS(9)%SEGTIME = (/   60,   60,   60,   60,   60,   60,&
+TAIRCRAFTS(9)%XSEGTIME = (/   60,   60,   60,   60,   60,   60,&
    60,   60,   60,   60,   60,   60,&
    60,   60,   60,   60,   60,   60,&
    60,   60,   60,   60,   60,   60,&
@@ -1967,7 +1967,7 @@ TAIRCRAFTS(9)%SEGTIME = (/   60,   60,   60,   60,   60,   60,&
 !* latitudes of the segments ends (1st point is takeoff, last point is landing)
 !        (decimal degrees)
 !
-TAIRCRAFTS(9)%SEGLAT = (/  44.39751, 44.39753, 44.39752, 44.39853, 44.40034,&
+TAIRCRAFTS(9)%XSEGLAT = (/  44.39751, 44.39753, 44.39752, 44.39853, 44.40034,&
  44.39319, 44.38918, 44.39412, 44.40370, 44.40138,&
  44.39750, 44.39613, 44.39272, 44.38845, 44.38440,&
  44.38014, 44.37677, 44.37483, 44.36861, 44.35633,&
@@ -2017,7 +2017,7 @@ TAIRCRAFTS(9)%SEGLAT = (/  44.39751, 44.39753, 44.39752, 44.39853, 44.40034,&
 !* longitudes of the segments ends (1st point is takeoff, last point is landing)
 !        (decimal degrees)
 !
-TAIRCRAFTS(9)%SEGLON = (/  0.76306, 0.76307, 0.76305, 0.76269, 0.74580,&
+TAIRCRAFTS(9)%XSEGLON = (/  0.76306, 0.76307, 0.76305, 0.76269, 0.74580,&
  0.74072, 0.76103, 0.77639, 0.75449, 0.71425,&
  0.68316, 0.65249, 0.61874, 0.58328, 0.55006,&
  0.51760, 0.48441, 0.45139, 0.42065, 0.39305,&
@@ -2067,9 +2067,9 @@ TAIRCRAFTS(9)%SEGLON = (/  0.76306, 0.76307, 0.76305, 0.76269, 0.74580,&
 !        (pascals)
 !
 
-IF (TAIRCRAFTS(9)%ALTDEF) THEN
-  ALLOCATE(TAIRCRAFTS(9)%SEGP   (TAIRCRAFTS(9)%SEG+1))
-TAIRCRAFTS(9)%SEGP = 100. * (/ 1014.8,1014.8,1014.8,1014.8,1005.5,&
+IF (TAIRCRAFTS(9)%LALTDEF) THEN
+  ALLOCATE(TAIRCRAFTS(9)%XSEGP   (TAIRCRAFTS(9)%NSEG+1))
+TAIRCRAFTS(9)%XSEGP = 100. * (/ 1014.8,1014.8,1014.8,1014.8,1005.5,&
  987.8, 972.7, 959.2, 957.2, 978.1,&
  993.8, 993.5, 992.9, 995.5, 997.4,&
  997.7, 998.5, 998.3, 996.8, 997.7,&
@@ -2114,8 +2114,8 @@ TAIRCRAFTS(9)%SEGP = 100. * (/ 1014.8,1014.8,1014.8,1014.8,1005.5,&
  965.9, 985.1,1003.1,1013.9,1013.9,&
 1013.9,1013.9,1013.9  /)
  ELSE
-  ALLOCATE(TAIRCRAFTS(9)%SEGZ   (TAIRCRAFTS(9)%SEG+1))
-  TAIRCRAFTS(9)%SEGZ    = (/8000,8000,8000,8000,8000,&
+  ALLOCATE(TAIRCRAFTS(9)%XSEGZ   (TAIRCRAFTS(9)%NSEG+1))
+  TAIRCRAFTS(9)%XSEGZ    = (/8000,8000,8000,8000,8000,&
 8000,8000,8000,8000,8000,&
 8000,8000,8000,8000,8000,&
 8000,8000,8000,8000,8000,&

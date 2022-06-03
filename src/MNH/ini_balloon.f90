@@ -129,33 +129,33 @@ IF ( NBALLOONS < 1 ) RETURN
 !* model number
 !
 TBALLOONS(1)%NMODEL             = 0
-TBALLOONS(1)%MODEL             = 'MOB'
+TBALLOONS(1)%CMODEL             = 'MOB'
 !
 !* balloon type
 !
-TBALLOONS(1)%TYPE               = 'CVBALL'
+TBALLOONS(1)%CTYPE               = 'CVBALL'
 !
 !* balloon name
 !
-TBALLOONS(1)%TITLE              = 'CVB1MOBI'
+TBALLOONS(1)%CTITLE              = 'CVB1MOBI'
 !
 !* launching date and time
 !
-TBALLOONS(1)%LAUNCH%nyear  =  1999
-TBALLOONS(1)%LAUNCH%nmonth =    09
-TBALLOONS(1)%LAUNCH%nday   =    19
-TBALLOONS(1)%LAUNCH%xtime  = 32460.
+TBALLOONS(1)%TLAUNCH%nyear  =  1999
+TBALLOONS(1)%TLAUNCH%nmonth =    09
+TBALLOONS(1)%TLAUNCH%nday   =    19
+TBALLOONS(1)%TLAUNCH%xtime  = 32460.
 !
 !* latitude and longitude of launching site (decimal degree)
 !
-TBALLOONS(1)%LAT                = 45.800
-TBALLOONS(1)%LON                =  8.629
+TBALLOONS(1)%XLATLAUNCH                = 45.800
+TBALLOONS(1)%XLONLAUNCH                =  8.629
 !
 !* altitude of the launching site for 'RADIOS'
 !* altitude or pressure of the flight level for 'ISODEN'
 !
-!TBALLOONS(1)%ALT                =   3959.
-TBALLOONS(1)%PRES               = 98450.
+!TBALLOONS(1)%XALTLAUNCH                =   3959.
+TBALLOONS(1)%XPRES               = 98450.
 !
 !* time step for data storage  (s)
 !
@@ -163,18 +163,18 @@ TBALLOONS(1)%TFLYER_TIME%XTSTEP = 20.
 !
 !* ascentional vertical speed of the ballon (in calm air) (for 'RADIOS')
 !
-TBALLOONS(1)%WASCENT            = 0.
+TBALLOONS(1)%XWASCENT            = 0.
 !
 !* aerodynamic drag coefficient of the balloon (for 'CVBALL')
 !* induced drag coefficient (i.e. air shifted by the balloon) (for 'CVBALL')
 !* volume of the balloon (m3) (for 'CVBALL')
 !* mass of the balloon (kg) (for 'CVBALL')
 !
-TBALLOONS(1)%AERODRAG           = 0.44
-TBALLOONS(1)%INDDRAG           = 0.014
-TBALLOONS(1)%VOLUME           = 3.040
-TBALLOONS(1)%MASS           = 2.4516
-TBALLOONS(1)%DIAMETER           = ((3.*TBALLOONS(1)%VOLUME)/(4.*XPI))**(1./3.)
+TBALLOONS(1)%XAERODRAG           = 0.44
+TBALLOONS(1)%XINDDRAG           = 0.014
+TBALLOONS(1)%XVOLUME           = 3.040
+TBALLOONS(1)%XMASS           = 2.4516
+TBALLOONS(1)%XDIAMETER           = ((3.*TBALLOONS(1)%XVOLUME)/(4.*XPI))**(1./3.)
 !
 IF ( NBALLOONS < 2 ) RETURN
 #else
@@ -193,29 +193,29 @@ TBALLOONS(2)%MODEL             = 'MOB'
 !
 !* balloon type
 !
-TBALLOONS(2)%TYPE               = 'CVBALL'
+TBALLOONS(2)%CTYPE               = 'CVBALL'
 !
 !* balloon name
 !
-TBALLOONS(2)%TITLE              = 'CVB2MOBI'
+TBALLOONS(2)%CTITLE              = 'CVB2MOBI'
 !
 !* launching date and time
 !
-TBALLOONS(2)%LAUNCH%nyear  =  1999
-TBALLOONS(2)%LAUNCH%nmonth =    09
-TBALLOONS(2)%LAUNCH%nday   =    19
-TBALLOONS(2)%LAUNCH%xtime  = 39660.
+TBALLOONS(2)%TLAUNCH%nyear  =  1999
+TBALLOONS(2)%TLAUNCH%nmonth =    09
+TBALLOONS(2)%TLAUNCH%nday   =    19
+TBALLOONS(2)%TLAUNCH%xtime  = 39660.
 !
 !* latitude and longitude of launching site (decimal degree)
 !
-TBALLOONS(2)%LAT                = 45.800
-TBALLOONS(2)%LON                =  8.630
+TBALLOONS(2)%XLATLAUNCH                = 45.800
+TBALLOONS(2)%XLONLAUNCH                =  8.630
 !
 !* altitude of the launching site for 'RADIOS'
 !* altitude or pressure of the flight level for 'ISODEN'
 !
-!TBALLOONS(2)%ALT                =   3959.
-TBALLOONS(2)%PRES               = 98490.
+!TBALLOONS(2)%XALTLAUNCH                =   3959.
+TBALLOONS(2)%XPRES               = 98490.
 !
 !* time step for data storage  (s)
 !
@@ -223,18 +223,18 @@ TBALLOONS(2)%TFLYER_TIME%XTSTEP = 20.
 !
 !* ascentional vertical speed of the ballon (in calm air) (for 'RADIOS')
 !
-TBALLOONS(2)%WASCENT            = 0.
+TBALLOONS(2)%XWASCENT            = 0.
 !
 !* aerodynamic drag coefficient of the balloon (for 'CVBALL')
 !* induced drag coefficient (i.e. air shifted by the balloon) (for 'CVBALL')
 !* volume of the balloon (m3) (for 'CVBALL')
 !* mass of the balloon (kg) (for 'CVBALL')
 !
-TBALLOONS(2)%AERODRAG           = 0.44
-TBALLOONS(2)%INDDRAG           = 0.014
-TBALLOONS(2)%VOLUME           = 3.040
-TBALLOONS(2)%MASS           = 2.58087
-TBALLOONS(2)%DIAMETER           = ((3.*TBALLOONS(2)%VOLUME)/(4.*XPI))**(1./3.)
+TBALLOONS(2)%XAERODRAG           = 0.44
+TBALLOONS(2)%XINDDRAG           = 0.014
+TBALLOONS(2)%XVOLUME           = 3.040
+TBALLOONS(2)%XMASS           = 2.58087
+TBALLOONS(2)%XDIAMETER           = ((3.*TBALLOONS(2)%XVOLUME)/(4.*XPI))**(1./3.)
 !
 IF ( NBALLOONS < 3 ) RETURN
 #else
@@ -249,33 +249,33 @@ CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'INI_BALLOON', 'balloon characteristics are 
 !* model number
 !
 TBALLOONS(3)%NMODEL             = 0
-TBALLOONS(3)%MODEL             = 'MOB'
+TBALLOONS(3)%CMODEL             = 'MOB'
 !
 !* balloon type
 !
-TBALLOONS(3)%TYPE               = 'RADIOS'
+TBALLOONS(3)%CTYPE               = 'RADIOS'
 !
 !* balloon name
 !
-TBALLOONS(3)%TITLE              = 'RSMASE19'
+TBALLOONS(3)%CTITLE              = 'RSMASE19'
 !
 !* launching date and time
 !
-TBALLOONS(3)%LAUNCH%nyear  =  1999
-TBALLOONS(3)%LAUNCH%nmonth =    09
-TBALLOONS(3)%LAUNCH%nday   =    19
-TBALLOONS(3)%LAUNCH%xtime  = 68400.
+TBALLOONS(3)%TLAUNCH%nyear  =  1999
+TBALLOONS(3)%TLAUNCH%nmonth =    09
+TBALLOONS(3)%TLAUNCH%nday   =    19
+TBALLOONS(3)%TLAUNCH%xtime  = 68400.
 !
 !* latitude and longitude of launching site (decimal degree)
 !
-TBALLOONS(3)%LAT                = 46.810
-TBALLOONS(3)%LON                =  9.39
+TBALLOONS(3)%XLATLAUNCH                = 46.810
+TBALLOONS(3)%XLONLAUNCH                =  9.39
 !
 !* altitude of the launching site for 'RADIOS'
 !* altitude or pressure of the flight level for 'ISODEN'
 !
-TBALLOONS(3)%ALT                =   865.
-!TBALLOONS(3)%PRES               = 62360.
+TBALLOONS(3)%XALTLAUNCH                =   865.
+!TBALLOONS(3)%XPRES               = 62360.
 !
 !* time step for data storage  (s)
 !
@@ -283,18 +283,18 @@ TBALLOONS(3)%TFLYER_TIME%XTSTEP = 20.
 !
 !* ascentional vertical speed of the ballon (in calm air) (for 'RADIOS')
 !
-TBALLOONS(3)%WASCENT            = 4.85
+TBALLOONS(3)%XWASCENT            = 4.85
 !
 !* aerodynamic drag coefficient of the balloon (for 'CVBALL')
 !* induced drag coefficient (i.e. air shifted by the balloon) (for 'CVBALL')
 !* volume of the balloon (m3) (for 'CVBALL')
 !* mass of the balloon (kg) (for 'CVBALL')
 !
-TBALLOONS(3)%AERODRAG           = 0.44
-TBALLOONS(3)%INDDRAG           = 0.014
-TBALLOONS(3)%VOLUME           = 3.040
-TBALLOONS(3)%MASS           = 2.4516
-TBALLOONS(3)%DIAMETER           = ((3.*TBALLOONS(3)%VOLUME)/(4.*XPI))**(1./3.)
+TBALLOONS(3)%XAERODRAG           = 0.44
+TBALLOONS(3)%XINDDRAG           = 0.014
+TBALLOONS(3)%XVOLUME           = 3.040
+TBALLOONS(3)%XMASS           = 2.4516
+TBALLOONS(3)%XDIAMETER           = ((3.*TBALLOONS(3)%XVOLUME)/(4.*XPI))**(1./3.)
 !
 IF ( NBALLOONS < 4 ) RETURN
 #else
@@ -309,33 +309,33 @@ CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'INI_BALLOON', 'balloon characteristics are 
 !* model number
 !
 TBALLOONS(4)%NMODEL             = 0
-TBALLOONS(4)%MODEL             = 'FIX'
+TBALLOONS(4)%CMODEL             = 'FIX'
 !
 !* balloon type
 !
-TBALLOONS(4)%TYPE               = 'CVBALL'
+TBALLOONS(4)%CTYPE               = 'CVBALL'
 !
 !* balloon name
 !
-TBALLOONS(4)%TITLE              = 'CVB1ACVB'
+TBALLOONS(4)%CTITLE              = 'CVB1ACVB'
 !
 !* launching date and time
 !
-TBALLOONS(4)%LAUNCH%nyear  =  1999
-TBALLOONS(4)%LAUNCH%nmonth =    09
-TBALLOONS(4)%LAUNCH%nday   =    19
-TBALLOONS(4)%LAUNCH%xtime  = 32460.
+TBALLOONS(4)%TLAUNCH%nyear  =  1999
+TBALLOONS(4)%TLAUNCH%nmonth =    09
+TBALLOONS(4)%TLAUNCH%nday   =    19
+TBALLOONS(4)%TLAUNCH%xtime  = 32460.
 !
 !* latitude and longitude of launching site (decimal degree)
 !
-TBALLOONS(4)%LAT                = 45.922
-TBALLOONS(4)%LON                =  8.646
+TBALLOONS(4)%XLATLAUNCH                = 45.922
+TBALLOONS(4)%XLONLAUNCH                =  8.646
 !
 !* altitude of the launching site for 'RADIOS'
 !* altitude or pressure of the flight level for 'ISODEN'
 !
-TBALLOONS(4)%ALT                =   3959.
-!TBALLOONS(4)%PRES               = 62360.
+TBALLOONS(4)%XALTLAUNCH                =   3959.
+!TBALLOONS(4)%XPRES               = 62360.
 !
 !* time step for data storage  (s)
 !
@@ -343,18 +343,18 @@ TBALLOONS(4)%TFLYER_TIME%XTSTEP = 20.
 !
 !* ascentional vertical speed of the ballon (in calm air) (for 'RADIOS')
 !
-!TBALLOONS(4)%WASCENT            = 2.55
+!TBALLOONS(4)%XWASCENT            = 2.55
 !
 !* aerodynamic drag coefficient of the balloon (for 'CVBALL')
 !* induced drag coefficient (i.e. air shifted by the balloon) (for 'CVBALL')
 !* volume of the balloon (m3) (for 'CVBALL')
 !* mass of the balloon (kg) (for 'CVBALL')
 !
-TBALLOONS(4)%AERODRAG           = 0.44
-TBALLOONS(4)%INDDRAG           = 0.014
-TBALLOONS(4)%VOLUME           = 3.040
-TBALLOONS(4)%MASS           = 2.4516
-TBALLOONS(4)%DIAMETER           = ((3.*TBALLOONS(4)%VOLUME)/(4.*XPI))**(1./3.)
+TBALLOONS(4)%XAERODRAG           = 0.44
+TBALLOONS(4)%XINDDRAG           = 0.014
+TBALLOONS(4)%XVOLUME           = 3.040
+TBALLOONS(4)%XMASS           = 2.4516
+TBALLOONS(4)%XDIAMETER           = ((3.*TBALLOONS(4)%XVOLUME)/(4.*XPI))**(1./3.)
 !
 IF ( NBALLOONS < 5 ) RETURN
 #else
@@ -369,33 +369,33 @@ CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'INI_BALLOON', 'balloon characteristics are 
 !* model number
 !
 TBALLOONS(5)%NMODEL             = 0
-TBALLOONS(5)%MODEL             = 'FIX'
+TBALLOONS(5)%CMODEL             = 'FIX'
 !
 !* balloon type
 !
-TBALLOONS(5)%TYPE               = 'CVBALL'
+TBALLOONS(5)%CTYPE               = 'CVBALL'
 !
 !* balloon name
 !
-TBALLOONS(5)%TITLE              = 'CVB1DEPA'
+TBALLOONS(5)%CTITLE              = 'CVB1DEPA'
 !
 !* launching date and time
 !
-TBALLOONS(5)%LAUNCH%nyear  =  1999
-TBALLOONS(5)%LAUNCH%nmonth =    09
-TBALLOONS(5)%LAUNCH%nday   =    19
-TBALLOONS(5)%LAUNCH%xtime  = 32435.
+TBALLOONS(5)%TLAUNCH%nyear  =  1999
+TBALLOONS(5)%TLAUNCH%nmonth =    09
+TBALLOONS(5)%TLAUNCH%nday   =    19
+TBALLOONS(5)%TLAUNCH%xtime  = 32435.
 !
 !* latitude and longitude of launching site (decimal degree)
 !
-TBALLOONS(5)%LAT                = 45.800
-TBALLOONS(5)%LON                =  8.630
+TBALLOONS(5)%XLATLAUNCH                = 45.800
+TBALLOONS(5)%XLONLAUNCH                =  8.630
 !
 !* altitude of the launching site for 'RADIOS'
 !* altitude or pressure of the flight level for 'ISODEN'
 !
-TBALLOONS(5)%ALT                =    340.
-!TBALLOONS(5)%PRES               = 62360.
+TBALLOONS(5)%XALTLAUNCH                =    340.
+!TBALLOONS(5)%XPRES               = 62360.
 !
 !* time step for data storage  (s)
 !
@@ -403,18 +403,18 @@ TBALLOONS(5)%TFLYER_TIME%XTSTEP = 20.
 !
 !* ascentional vertical speed of the ballon (in calm air) (for 'RADIOS')
 !
-!TBALLOONS(5)%WASCENT            = 2.55
+!TBALLOONS(5)%XWASCENT            = 2.55
 !
 !* aerodynamic drag coefficient of the balloon (for 'CVBALL')
 !* induced drag coefficient (i.e. air shifted by the balloon) (for 'CVBALL')
 !* volume of the balloon (m3) (for 'CVBALL')
 !* mass of the balloon (kg) (for 'CVBALL')
 !
-TBALLOONS(5)%AERODRAG           = 0.44
-TBALLOONS(5)%INDDRAG           = 0.014
-TBALLOONS(5)%VOLUME           = 3.040
-TBALLOONS(5)%MASS           = 2.4516
-TBALLOONS(5)%DIAMETER           = ((3.*TBALLOONS(5)%VOLUME)/(4.*XPI))**(1./3.)
+TBALLOONS(5)%XAERODRAG           = 0.44
+TBALLOONS(5)%XINDDRAG           = 0.014
+TBALLOONS(5)%XVOLUME           = 3.040
+TBALLOONS(5)%XMASS           = 2.4516
+TBALLOONS(5)%XDIAMETER           = ((3.*TBALLOONS(5)%XVOLUME)/(4.*XPI))**(1./3.)
 !
 IF ( NBALLOONS < 6 ) RETURN
 #else
@@ -429,33 +429,33 @@ CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'INI_BALLOON', 'balloon characteristics are 
 !* model number
 !
 TBALLOONS(6)%NMODEL             = 0
-TBALLOONS(6)%MODEL             = 'FIX'
+TBALLOONS(6)%CMODEL             = 'FIX'
 !
 !* balloon type
 !
-TBALLOONS(6)%TYPE               = 'CVBALL'
+TBALLOONS(6)%CTYPE               = 'CVBALL'
 !
 !* balloon name
 !
-TBALLOONS(6)%TITLE              = 'CVB1RCVB'
+TBALLOONS(6)%CTITLE              = 'CVB1RCVB'
 !
 !* launching date and time
 !
-TBALLOONS(6)%LAUNCH%nyear  =  1999
-TBALLOONS(6)%LAUNCH%nmonth =    09
-TBALLOONS(6)%LAUNCH%nday   =    19
-TBALLOONS(6)%LAUNCH%xtime  = 32460.
+TBALLOONS(6)%TLAUNCH%nyear  =  1999
+TBALLOONS(6)%TLAUNCH%nmonth =    09
+TBALLOONS(6)%TLAUNCH%nday   =    19
+TBALLOONS(6)%TLAUNCH%xtime  = 32460.
 !
 !* latitude and longitude of launching site (decimal degree)
 !
-TBALLOONS(6)%LAT                = 45.922
-TBALLOONS(6)%LON                =  8.646
+TBALLOONS(6)%XLATLAUNCH                = 45.922
+TBALLOONS(6)%XLONLAUNCH                =  8.646
 !
 !* altitude of the launching site for 'RADIOS'
 !* altitude or pressure of the flight level for 'ISODEN'
 !
-!TBALLOONS(6)%ALT                =   3959.
-!TBALLOONS(6)%PRES               = 62360.
+!TBALLOONS(6)%XALTLAUNCH                =   3959.
+!TBALLOONS(6)%XPRES               = 62360.
 !
 !* time step for data storage  (s)
 !
@@ -463,18 +463,18 @@ TBALLOONS(6)%TFLYER_TIME%XTSTEP = 20.
 !
 !* ascentional vertical speed of the ballon (in calm air) (for 'RADIOS')
 !
-!TBALLOONS(6)%WASCENT            = 2.55
+!TBALLOONS(6)%XWASCENT            = 2.55
 !
 !* aerodynamic drag coefficient of the balloon (for 'CVBALL')
 !* induced drag coefficient (i.e. air shifted by the balloon) (for 'CVBALL')
 !* volume of the balloon (m3) (for 'CVBALL')
 !* mass of the balloon (kg) (for 'CVBALL')
 !
-TBALLOONS(6)%AERODRAG           = 0.44
-TBALLOONS(6)%INDDRAG           = 0.014
-TBALLOONS(6)%VOLUME           = 3.040
-TBALLOONS(6)%MASS           = 2.4516
-TBALLOONS(6)%DIAMETER           = ((3.*TBALLOONS(6)%VOLUME)/(4.*XPI))**(1./3.)
+TBALLOONS(6)%XAERODRAG           = 0.44
+TBALLOONS(6)%XINDDRAG           = 0.014
+TBALLOONS(6)%XVOLUME           = 3.040
+TBALLOONS(6)%XMASS           = 2.4516
+TBALLOONS(6)%XDIAMETER           = ((3.*TBALLOONS(6)%XVOLUME)/(4.*XPI))**(1./3.)
 !
 IF ( NBALLOONS < 7 ) RETURN
 #else
@@ -489,33 +489,33 @@ CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'INI_BALLOON', 'balloon characteristics are 
 !* model number
 !
 TBALLOONS(7)%NMODEL             = 0
-TBALLOONS(7)%MODEL             = 'FIX'
+TBALLOONS(7)%CMODEL             = 'FIX'
 !
 !* balloon type
 !
-TBALLOONS(7)%TYPE               = 'CVBALL'
+TBALLOONS(7)%CTYPE               = 'CVBALL'
 !
 !* balloon name
 !
-TBALLOONS(7)%TITLE              = 'CVB1PISO'
+TBALLOONS(7)%CTITLE              = 'CVB1PISO'
 !
 !* launching date and time
 !
-TBALLOONS(7)%LAUNCH%nyear  =  1999
-TBALLOONS(7)%LAUNCH%nmonth =    09
-TBALLOONS(7)%LAUNCH%nday   =    19
-TBALLOONS(7)%LAUNCH%xtime  = 32460.
+TBALLOONS(7)%TLAUNCH%nyear  =  1999
+TBALLOONS(7)%TLAUNCH%nmonth =    09
+TBALLOONS(7)%TLAUNCH%nday   =    19
+TBALLOONS(7)%TLAUNCH%xtime  = 32460.
 !
 !* latitude and longitude of launching site (decimal degree)
 !
-TBALLOONS(7)%LAT                = 45.922
-TBALLOONS(7)%LON                =  8.646
+TBALLOONS(7)%XLATLAUNCH                = 45.922
+TBALLOONS(7)%XLONLAUNCH                =  8.646
 !
 !* altitude of the launching site for 'RADIOS'
 !* altitude or pressure of the flight level for 'ISODEN'
 !
-!TBALLOONS(7)%ALT                =   3959.
-TBALLOONS(7)%PRES               = 62360.
+!TBALLOONS(7)%XALTLAUNCH                =   3959.
+TBALLOONS(7)%XPRES               = 62360.
 !
 !* time step for data storage  (s)
 !
@@ -523,18 +523,18 @@ TBALLOONS(7)%TFLYER_TIME%XTSTEP = 20.
 !
 !* ascentional vertical speed of the ballon (in calm air) (for 'RADIOS')
 !
-!TBALLOONS(7)%WASCENT            = 2.55
+!TBALLOONS(7)%XWASCENT            = 2.55
 !
 !* aerodynamic drag coefficient of the balloon (for 'CVBALL')
 !* induced drag coefficient (i.e. air shifted by the balloon) (for 'CVBALL')
 !* volume of the balloon (m3) (for 'CVBALL')
 !* mass of the balloon (kg) (for 'CVBALL')
 !
-TBALLOONS(7)%AERODRAG           = 0.44
-TBALLOONS(7)%INDDRAG           = 0.014
-TBALLOONS(7)%VOLUME           = 3.040
-TBALLOONS(7)%MASS           = 2.4516
-TBALLOONS(7)%DIAMETER           = ((3.*TBALLOONS(7)%VOLUME)/(4.*XPI))**(1./3.)
+TBALLOONS(7)%XAERODRAG           = 0.44
+TBALLOONS(7)%XINDDRAG           = 0.014
+TBALLOONS(7)%XVOLUME           = 3.040
+TBALLOONS(7)%XMASS           = 2.4516
+TBALLOONS(7)%XDIAMETER           = ((3.*TBALLOONS(7)%XVOLUME)/(4.*XPI))**(1./3.)
 #else
 CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'INI_BALLOON', 'balloon characteristics are commented' )
 #endif

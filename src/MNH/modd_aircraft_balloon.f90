@@ -57,20 +57,20 @@ TYPE :: TFLYERDATA
   !
   !* general information
   !
-  CHARACTER(LEN=3)    :: MODEL = 'FIX' ! type of model used for each balloon/aircraft
-                                    ! 'FIX' : NMODEL used during the run
-                                    ! 'MOB' : change od model depends of the
-                                    !         balloon/aircraft location
-  INTEGER             :: NMODEL = 0 ! model number for each balloon/aircraft
-  CHARACTER(LEN=6)    :: TYPE = ''  ! flyer type:
-                                    ! 'RADIOS' : radiosounding balloon
-                                    ! 'ISODEN' : iso-density balloon
-                                    ! 'AIRCRA' : aircraft
-                                    ! 'CVBALL' : Constant Volume balloon
-  CHARACTER(LEN=10)   :: TITLE = ''  ! title or name for the balloon/aircraft
-  TYPE(DATE_TIME)     :: LAUNCH      ! launch/takeoff date and time
-  LOGICAL             :: CRASH = .FALSE. ! occurence of crash
-  LOGICAL             :: FLY   = .FALSE. ! occurence of flying
+  CHARACTER(LEN=3) :: CMODEL = 'FIX' ! type of model used for each balloon/aircraft
+                                     ! 'FIX' : NMODEL used during the run
+                                     ! 'MOB' : change od model depends of the
+                                     !         balloon/aircraft location
+  INTEGER          :: NMODEL = 0 ! model number for each balloon/aircraft
+  CHARACTER(LEN=6) :: CTYPE = ''  ! flyer type:
+                                  ! 'RADIOS' : radiosounding balloon
+                                  ! 'ISODEN' : iso-density balloon
+                                  ! 'AIRCRA' : aircraft
+                                  ! 'CVBALL' : Constant Volume balloon
+  CHARACTER(LEN=10) :: CTITLE = ''  ! title or name for the balloon/aircraft
+  TYPE(DATE_TIME)   :: TLAUNCH      ! launch/takeoff date and time
+  LOGICAL           :: LCRASH = .FALSE. ! occurence of crash
+  LOGICAL           :: LFLY   = .FALSE. ! occurence of flying
   !
   !* storage monitoring
   !
@@ -78,86 +78,86 @@ TYPE :: TFLYERDATA
   !
   !* current position of the balloon/aircraft
   !
-  REAL :: X_CUR = XUNDEF ! current x
-  REAL :: Y_CUR = XUNDEF ! current y
-  REAL :: Z_CUR = XUNDEF ! current z (if 'RADIOS' or 'AIRCRA' and 'ALTDEF' = T)
-  REAL :: P_CUR = XUNDEF ! current p (if 'AIRCRA' and 'ALTDEF' = F)
+  REAL :: XX_CUR = XUNDEF ! current x
+  REAL :: XY_CUR = XUNDEF ! current y
+  REAL :: XZ_CUR = XUNDEF ! current z (if 'RADIOS' or 'AIRCRA' and 'ALTDEF' = T)
+  REAL :: XP_CUR = XUNDEF ! current p (if 'AIRCRA' and 'ALTDEF' = F)
   !
   !* data records
   !
-  REAL, DIMENSION(:),    POINTER :: X         => NULL() ! X(n)
-  REAL, DIMENSION(:),    POINTER :: Y         => NULL() ! Y(n)
-  REAL, DIMENSION(:),    POINTER :: Z         => NULL() ! Z(n)
-  REAL, DIMENSION(:),    POINTER :: XLON      => NULL() ! longitude(n)
-  REAL, DIMENSION(:),    POINTER :: YLAT      => NULL() ! latitude (n)
-  REAL, DIMENSION(:),    POINTER :: ZON       => NULL() ! zonal wind(n)
-  REAL, DIMENSION(:),    POINTER :: MER       => NULL() ! meridian wind(n)
-  REAL, DIMENSION(:),    POINTER :: W         => NULL() ! w(n)  (air vertical speed)
-  REAL, DIMENSION(:),    POINTER :: P         => NULL() ! p(n)
-  REAL, DIMENSION(:),    POINTER :: TKE       => NULL() ! tke(n)
-  REAL, DIMENSION(:),    POINTER :: TKE_DISS  => NULL() ! tke dissipation rate
-  REAL, DIMENSION(:),    POINTER :: TH        => NULL() ! th(n)
-  REAL, DIMENSION(:,:),  POINTER :: R         => NULL() ! r*(n)
-  REAL, DIMENSION(:,:),  POINTER :: SV        => NULL() ! Sv*(n)
-  REAL, DIMENSION(:,:),  POINTER :: RTZ       => NULL() ! tot hydrometeor mixing ratio
-  REAL, DIMENSION(:,:,:),POINTER :: RZ        => NULL() ! water vapour mixing ratio
-  REAL, DIMENSION(:,:),  POINTER :: FFZ       => NULL() ! horizontal wind
-  REAL, DIMENSION(:,:),  POINTER :: IWCZ      => NULL() ! ice water content
-  REAL, DIMENSION(:,:),  POINTER :: LWCZ      => NULL() ! liquid water content
-  REAL, DIMENSION(:,:),  POINTER :: CIZ       => NULL() ! Ice concentration
-  REAL, DIMENSION(:,:),  POINTER :: CCZ       => NULL() ! Cloud concentration (LIMA)
-  REAL, DIMENSION(:,:),  POINTER :: CRZ       => NULL() ! Rain concentration (LIMA)
-  REAL, DIMENSION(:,:),  POINTER :: CRARE     => NULL() ! cloud radar reflectivity
-  REAL, DIMENSION(:,:),  POINTER :: CRARE_ATT => NULL() ! attenuated (= more realistic) cloud radar reflectivity
-  REAL, DIMENSION(:,:),  POINTER :: WZ        => NULL() ! vertical profile of vertical velocity
-  REAL, DIMENSION(:,:),  POINTER :: ZZ        => NULL() ! vertical profile of mass point altitude (above sea)
-  REAL, DIMENSION(:,:),  POINTER :: AER       => NULL() ! Extinction at 550 nm
-  REAL, DIMENSION(:,:),  POINTER :: DST_WL    => NULL() ! Extinction by wavelength
-  REAL, DIMENSION(:),    POINTER :: ZS        => NULL() ! zs(n)
-  REAL, DIMENSION(:),    POINTER :: TSRAD     => NULL() ! Ts(n)
+  REAL, DIMENSION(:),     POINTER :: XX         => NULL() ! X(n)
+  REAL, DIMENSION(:),     POINTER :: XY         => NULL() ! Y(n)
+  REAL, DIMENSION(:),     POINTER :: XZ         => NULL() ! Z(n)
+  REAL, DIMENSION(:),     POINTER :: XLAT       => NULL() ! latitude (n)
+  REAL, DIMENSION(:),     POINTER :: XLON       => NULL() ! longitude(n)
+  REAL, DIMENSION(:),     POINTER :: XZON       => NULL() ! zonal wind(n)
+  REAL, DIMENSION(:),     POINTER :: XMER       => NULL() ! meridian wind(n)
+  REAL, DIMENSION(:),     POINTER :: XW         => NULL() ! w(n)  (air vertical speed)
+  REAL, DIMENSION(:),     POINTER :: XP         => NULL() ! p(n)
+  REAL, DIMENSION(:),     POINTER :: XTKE       => NULL() ! tke(n)
+  REAL, DIMENSION(:),     POINTER :: XTKE_DISS  => NULL() ! tke dissipation rate
+  REAL, DIMENSION(:),     POINTER :: XTH        => NULL() ! th(n)
+  REAL, DIMENSION(:,:),   POINTER :: XR         => NULL() ! r*(n)
+  REAL, DIMENSION(:,:),   POINTER :: XSV        => NULL() ! Sv*(n)
+  REAL, DIMENSION(:,:),   POINTER :: XRTZ       => NULL() ! tot hydrometeor mixing ratio
+  REAL, DIMENSION(:,:,:), POINTER :: XRZ        => NULL() ! water vapour mixing ratio
+  REAL, DIMENSION(:,:),   POINTER :: XFFZ       => NULL() ! horizontal wind
+  REAL, DIMENSION(:,:),   POINTER :: XIWCZ      => NULL() ! ice water content
+  REAL, DIMENSION(:,:),   POINTER :: XLWCZ      => NULL() ! liquid water content
+  REAL, DIMENSION(:,:),   POINTER :: XCIZ       => NULL() ! Ice concentration
+  REAL, DIMENSION(:,:),   POINTER :: XCCZ       => NULL() ! Cloud concentration (LIMA)
+  REAL, DIMENSION(:,:),   POINTER :: XCRZ       => NULL() ! Rain concentration (LIMA)
+  REAL, DIMENSION(:,:),   POINTER :: XCRARE     => NULL() ! cloud radar reflectivity
+  REAL, DIMENSION(:,:),   POINTER :: XCRARE_ATT => NULL() ! attenuated (= more realistic) cloud radar reflectivity
+  REAL, DIMENSION(:,:),   POINTER :: XWZ        => NULL() ! vertical profile of vertical velocity
+  REAL, DIMENSION(:,:),   POINTER :: XZZ        => NULL() ! vertical profile of mass point altitude (above sea)
+  REAL, DIMENSION(:,:),   POINTER :: XAER       => NULL() ! Extinction at 550 nm
+  REAL, DIMENSION(:,:),   POINTER :: XDST_WL    => NULL() ! Extinction by wavelength
+  REAL, DIMENSION(:),     POINTER :: XZS        => NULL() ! zs(n)
+  REAL, DIMENSION(:),     POINTER :: XTSRAD     => NULL() ! Ts(n)
   !
-  REAL, DIMENSION(:)  ,   POINTER :: THW_FLUX => NULL() ! thw_flux(n)
-  REAL, DIMENSION(:)  ,   POINTER :: RCW_FLUX => NULL() ! rcw_flux(n)
-  REAL, DIMENSION(:,:),   POINTER :: SVW_FLUX => NULL() ! psw_flux(n)
+  REAL, DIMENSION(:),     POINTER :: XTHW_FLUX => NULL() ! thw_flux(n)
+  REAL, DIMENSION(:),     POINTER :: XRCW_FLUX => NULL() ! rcw_flux(n)
+  REAL, DIMENSION(:,:),   POINTER :: XSVW_FLUX => NULL() ! psw_flux(n)
 END TYPE TFLYERDATA
 
 TYPE, EXTENDS( TFLYERDATA ) :: TAIRCRAFTDATA
   !
   !* aircraft flight definition
   !
-  INTEGER :: SEG     = 0  ! number of aircraft flight segments
-  INTEGER :: SEGCURN = 1  ! current flight segment number
-  REAL    :: SEGCURT = 0. ! current flight segment time spent
-  REAL, DIMENSION(:),   POINTER :: SEGLAT  => NULL() ! latitude of flight segment extremities  (LEG+1)
-  REAL, DIMENSION(:),   POINTER :: SEGLON  => NULL() ! longitude of flight segment extremities (LEG+1)
-  REAL, DIMENSION(:),   POINTER :: SEGX    => NULL() ! X of flight segment extremities         (LEG+1)
-  REAL, DIMENSION(:),   POINTER :: SEGY    => NULL() ! Y of flight segment extremities         (LEG+1)
-  REAL, DIMENSION(:),   POINTER :: SEGP    => NULL() ! pressure of flight segment extremities  (LEG+1)
-  REAL, DIMENSION(:),   POINTER :: SEGZ    => NULL() ! altitude of flight segment extremities  (LEG+1)
-  REAL, DIMENSION(:),   POINTER :: SEGTIME => NULL() ! duration of flight segments             (LEG  )
+  INTEGER :: NSEG     = 0  ! number of aircraft flight segments
+  INTEGER :: NSEGCURN = 1  ! current flight segment number
+  REAL    :: XSEGCURT = 0. ! current flight segment time spent
+  REAL, DIMENSION(:), POINTER :: XSEGLAT  => NULL() ! latitude of flight segment extremities  (LEG+1)
+  REAL, DIMENSION(:), POINTER :: XSEGLON  => NULL() ! longitude of flight segment extremities (LEG+1)
+  REAL, DIMENSION(:), POINTER :: XSEGX    => NULL() ! X of flight segment extremities         (LEG+1)
+  REAL, DIMENSION(:), POINTER :: XSEGY    => NULL() ! Y of flight segment extremities         (LEG+1)
+  REAL, DIMENSION(:), POINTER :: XSEGP    => NULL() ! pressure of flight segment extremities  (LEG+1)
+  REAL, DIMENSION(:), POINTER :: XSEGZ    => NULL() ! altitude of flight segment extremities  (LEG+1)
+  REAL, DIMENSION(:), POINTER :: XSEGTIME => NULL() ! duration of flight segments             (LEG  )
   !
   !* aircraft altitude type definition
   !
-  LOGICAL                       :: ALTDEF = .FALSE.  ! TRUE == altitude given in pressure
+  LOGICAL :: LALTDEF = .FALSE.  ! TRUE == altitude given in pressure
 END TYPE TAIRCRAFTDATA
 
 TYPE, EXTENDS( TFLYERDATA ) :: TBALLOONDATA
   !
   !* balloon dynamical characteristics
   !
-  REAL :: LAT      = XUNDEF ! latitude of launch
-  REAL :: LON      = XUNDEF ! lontitude of launch
-  REAL :: XLAUNCH  = XUNDEF ! X coordinate of launch
-  REAL :: YLAUNCH  = XUNDEF ! Y coordinate of launch
-  REAL :: ALT      = XUNDEF ! altitude of launch (if 'RADIOS' or 'ISODEN' or 'CVBALL')
-  REAL :: WASCENT  = 5.     ! ascent vertical speed, m/s (if 'RADIOS')
-  REAL :: RHO      = XUNDEF ! density of launch (if 'ISODEN')
-  REAL :: PRES     = XUNDEF ! pressure of launch (if 'ISODEN')
-  REAL :: DIAMETER = XUNDEF ! apparent diameter of the balloon (m) (if 'CVBALL')
-  REAL :: AERODRAG = XUNDEF ! aerodynamic drag coefficient of the balloon (if 'CVBALL')
-  REAL :: INDDRAG  = XUNDEF ! induced drag coefficient (i.e. air shifted by the balloon) (if 'CVBALL')
-  REAL :: VOLUME   = XUNDEF ! volume of the balloon (m3) (if 'CVBALL')
-  REAL :: MASS     = XUNDEF ! mass of the balloon (kg) (if 'CVBALL')
+  REAL :: XLATLAUNCH = XUNDEF ! latitude of launch
+  REAL :: XLONLAUNCH = XUNDEF ! lontitude of launch
+  REAL :: XXLAUNCH   = XUNDEF ! X coordinate of launch
+  REAL :: XYLAUNCH   = XUNDEF ! Y coordinate of launch
+  REAL :: XALTLAUNCH = XUNDEF ! altitude of launch (if 'RADIOS' or 'ISODEN' or 'CVBALL')
+  REAL :: XWASCENT   = 5.     ! ascent vertical speed, m/s (if 'RADIOS')
+  REAL :: XRHO       = XUNDEF ! density of launch (if 'ISODEN')
+  REAL :: XPRES      = XUNDEF ! pressure of launch (if 'ISODEN')
+  REAL :: XDIAMETER  = XUNDEF ! apparent diameter of the balloon (m) (if 'CVBALL')
+  REAL :: XAERODRAG  = XUNDEF ! aerodynamic drag coefficient of the balloon (if 'CVBALL')
+  REAL :: XINDDRAG   = XUNDEF ! induced drag coefficient (i.e. air shifted by the balloon) (if 'CVBALL')
+  REAL :: XVOLUME    = XUNDEF ! volume of the balloon (m3) (if 'CVBALL')
+  REAL :: XMASS      = XUNDEF ! mass of the balloon (kg) (if 'CVBALL')
 END TYPE TBALLOONDATA
 
 INTEGER :: NAIRCRAFTS = 0 ! Total number of aircrafts

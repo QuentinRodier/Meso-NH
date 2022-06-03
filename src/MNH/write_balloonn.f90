@@ -83,7 +83,7 @@ TYPE(TFILEDATA),   INTENT(IN) :: TPFILE ! File characteristics
 INTEGER :: JI
 
 DO JI = 1, NBALLOONS
-  IF ( TBALLOONS(JI)%FLY ) CALL WRITE_LFI_BALLOON( TBALLOONS(JI) )
+  IF ( TBALLOONS(JI)%LFLY ) CALL WRITE_LFI_BALLOON( TBALLOONS(JI) )
 END DO
 !
 !
@@ -107,13 +107,13 @@ TYPE(TFIELDMETADATA) :: TZFIELD
 !
 !
 CALL SM_LATLON(XLATORI,XLONORI,  &
-     TPFLYER%X_CUR,TPFLYER%Y_CUR,ZLAT,ZLON)
+     TPFLYER%XX_CUR,TPFLYER%XY_CUR,ZLAT,ZLON)
 !
 !
 TZFIELD = TFIELDMETADATA(                  &
-  CMNHNAME   = TRIM(TPFLYER%TITLE)//'LAT', &
+  CMNHNAME   = TRIM(TPFLYER%CTITLE)//'LAT', &
   CSTDNAME   = '',                         &
-  CLONGNAME  = TRIM(TPFLYER%TITLE)//'LAT', &
+  CLONGNAME  = TRIM(TPFLYER%CTITLE)//'LAT', &
   CUNITS     = 'degree',                   &
   CDIR       = '--',                       &
   CCOMMENT   = '',                         &
@@ -124,9 +124,9 @@ TZFIELD = TFIELDMETADATA(                  &
 CALL IO_Field_write(TPFILE,TZFIELD,ZLAT)
 !
 TZFIELD = TFIELDMETADATA(                  &
-  CMNHNAME   = TRIM(TPFLYER%TITLE)//'LON', &
+  CMNHNAME   = TRIM(TPFLYER%CTITLE)//'LON', &
   CSTDNAME   = '',                         &
-  CLONGNAME  = TRIM(TPFLYER%TITLE)//'LON', &
+  CLONGNAME  = TRIM(TPFLYER%CTITLE)//'LON', &
   CUNITS     = 'degree',                   &
   CDIR       = '--',                       &
   CCOMMENT   = '',                         &
@@ -137,9 +137,9 @@ TZFIELD = TFIELDMETADATA(                  &
 CALL IO_Field_write(TPFILE,TZFIELD,ZLON)
 !
 TZFIELD = TFIELDMETADATA(                  &
-  CMNHNAME   = TRIM(TPFLYER%TITLE)//'ALT', &
+  CMNHNAME   = TRIM(TPFLYER%CTITLE)//'ALT', &
   CSTDNAME   = '',                         &
-  CLONGNAME  = TRIM(TPFLYER%TITLE)//'ALT', &
+  CLONGNAME  = TRIM(TPFLYER%CTITLE)//'ALT', &
   CUNITS     = 'm',                        &
   CDIR       = '--',                       &
   CCOMMENT   = '',                         &
@@ -147,12 +147,12 @@ TZFIELD = TFIELDMETADATA(                  &
   NTYPE      = TYPEREAL,                   &
   NDIMS      = 0,                          &
   LTIMEDEP   = .TRUE.                      )
-CALL IO_Field_write(TPFILE,TZFIELD,TPFLYER%Z_CUR)
+CALL IO_Field_write(TPFILE,TZFIELD,TPFLYER%XZ_CUR)
 !
 TZFIELD = TFIELDMETADATA(                      &
-  CMNHNAME   = TRIM(TPFLYER%TITLE)//'WASCENT', &
+  CMNHNAME   = TRIM(TPFLYER%CTITLE)//'WASCENT', &
   CSTDNAME   = '',                             &
-  CLONGNAME  = TRIM(TPFLYER%TITLE)//'WASCENT', &
+  CLONGNAME  = TRIM(TPFLYER%CTITLE)//'WASCENT', &
   CUNITS     = 'm s-1',                        &
   CDIR       = '--',                           &
   CCOMMENT   = '',                             &
@@ -160,12 +160,12 @@ TZFIELD = TFIELDMETADATA(                      &
   NTYPE      = TYPEREAL,                       &
   NDIMS      = 0,                              &
   LTIMEDEP   = .TRUE.                          )
-CALL IO_Field_write(TPFILE,TZFIELD,TPFLYER%WASCENT)
+CALL IO_Field_write(TPFILE,TZFIELD,TPFLYER%XWASCENT)
 !
 TZFIELD = TFIELDMETADATA(                  &
-  CMNHNAME   = TRIM(TPFLYER%TITLE)//'RHO', &
+  CMNHNAME   = TRIM(TPFLYER%CTITLE)//'RHO', &
   CSTDNAME   = '',                         &
-  CLONGNAME  = TRIM(TPFLYER%TITLE)//'RHO', &
+  CLONGNAME  = TRIM(TPFLYER%CTITLE)//'RHO', &
   CUNITS     = 'kg m-3',                   &
   CDIR       = '--',                       &
   CCOMMENT   = '',                         &
@@ -173,7 +173,7 @@ TZFIELD = TFIELDMETADATA(                  &
   NTYPE      = TYPEREAL,                   &
   NDIMS      = 0,                          &
   LTIMEDEP   = .TRUE.                      )
-CALL IO_Field_write(TPFILE,TZFIELD,TPFLYER%RHO)
+CALL IO_Field_write(TPFILE,TZFIELD,TPFLYER%XRHO)
 !
 !
 !

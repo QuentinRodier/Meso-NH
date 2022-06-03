@@ -177,26 +177,26 @@ select type ( tpflyer )
     ytype = 'Aircrafts'
 
   class is ( tballoondata )
-    if ( Trim( TPFLYER%TYPE ) == 'RADIOS' ) then
+    if ( Trim( TPFLYER%CTYPE ) == 'RADIOS' ) then
       ytype = 'Radiosonde_balloons'
-    else if ( Trim( TPFLYER%TYPE ) == 'ISODEN' ) then
+    else if ( Trim( TPFLYER%CTYPE ) == 'ISODEN' ) then
       ytype = 'Isodensity_balloons'
-    else if ( Trim( TPFLYER%TYPE ) == 'CVBALL' ) then
+    else if ( Trim( TPFLYER%CTYPE ) == 'CVBALL' ) then
       ytype = 'Constant_volume_balloons'
     else
-      call Print_msg( NVERB_ERROR, 'GEN', 'AIRCRAFT_BALLOON_LONGTYPE_GET', 'unknown category for flyer ' // Trim( tpflyer%title ) )
+      call Print_msg( NVERB_ERROR, 'GEN', 'AIRCRAFT_BALLOON_LONGTYPE_GET', 'unknown category for flyer ' // Trim( tpflyer%ctitle ) )
       ytype = 'Unknown'
     end if
 
   class default
-    call Print_msg( NVERB_ERROR, 'GEN', 'AIRCRAFT_BALLOON_LONGTYPE_GET', 'unknown class for flyer ' // Trim( tpflyer%title ) )
+    call Print_msg( NVERB_ERROR, 'GEN', 'AIRCRAFT_BALLOON_LONGTYPE_GET', 'unknown class for flyer ' // Trim( tpflyer%ctitle ) )
     ytype = 'Unknown'
 
 end select
 
 if ( Len_trim( ytype ) > Len( HLONGTYPE ) ) &
   call Print_msg( NVERB_WARNING, 'GEN', 'AIRCRAFT_BALLOON_LONGTYPE_GET', &
-                  'HLONGTYPE truncated for flyer ' // Trim( tpflyer%title ) )
+                  'HLONGTYPE truncated for flyer ' // Trim( tpflyer%ctitle ) )
 HLONGTYPE = Trim( ytype )
 
 END SUBROUTINE AIRCRAFT_BALLOON_LONGTYPE_GET

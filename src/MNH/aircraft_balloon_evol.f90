@@ -354,12 +354,12 @@ ZTHIS_PROC=0.
 CALL GET_MODEL_NUMBER_ll  (IMI)
 !
 !
-IF (TPFLYER%MODEL  /= 'FIX' .AND. COUNT(NDAD(:) == IMI) /= 0 &
-   .AND. ( TPFLYER%NMODEL == IMI .OR. NDAD(TPFLYER%NMODEL) == IMI ) &
-   .AND. TPFLYER%X_CUR /= XUNDEF .AND. TPFLYER%Y_CUR /= XUNDEF &
-   .AND.  TPFLYER%FLY .AND. .NOT. TPFLYER%CRASH &
-   .AND. CPROGRAM == 'MESONH' ) THEN
-  CALL FLYER_CHANGE_MODEL(IMI)
+IF ( TPFLYER%CMODEL /= 'FIX' .AND. COUNT( NDAD(:) == IMI ) /= 0       &
+     .AND. ( TPFLYER%NMODEL == IMI .OR. NDAD(TPFLYER%NMODEL) == IMI ) &
+     .AND. TPFLYER%XX_CUR /= XUNDEF .AND. TPFLYER%XY_CUR /= XUNDEF    &
+     .AND. TPFLYER%LFLY .AND. .NOT. TPFLYER%LCRASH                    &
+     .AND. CPROGRAM == 'MESONH'                                       ) THEN
+  CALL FLYER_CHANGE_MODEL( IMI )
 ENDIF
 !
 IF ( TPFLYER%NMODEL /= IMI ) RETURN
@@ -394,7 +394,7 @@ ZYHATM(  IJU  )=1.5*PYHAT(  IJU  )-0.5*PYHAT(  IJU-1)
 !*      2.3  Compute time until launch by comparison of dates and times
 !            ----------------------------------------------------------
 !
-CALL DATETIME_DISTANCE(TPFLYER%LAUNCH,TDTCUR,ZTDIST)
+CALL DATETIME_DISTANCE( TPFLYER%TLAUNCH, TDTCUR, ZTDIST )
 !
 !*      3.   LAUNCH
 !            ------
@@ -402,13 +402,7 @@ CALL DATETIME_DISTANCE(TPFLYER%LAUNCH,TDTCUR,ZTDIST)
 GLAUNCH     = .FALSE.
 !
 !
-IF (.NOT. TPFLYER%FLY) THEN
-!
-!
-!*      3.1  comparison of dates and times
-!            -----------------------------
-!
-!  CALL DATETIME_DISTANCE(TPFLYER%LAUNCH,TDTCUR,ZTDIST)
+IF ( .NOT. TPFLYER%LFLY ) THEN
 !
 !*      3.2  launch/takeoff is effective
 !            ---------------------------
@@ -420,43 +414,43 @@ IF (.NOT. TPFLYER%FLY) THEN
 !*     3.2.1 Determination of flight segment
 !            -------------------------------
 !
-        TPFLYER%SEGCURN = 1
-        IL = TPFLYER%SEGCURN
+        TPFLYER%NSEGCURN = 1
+        IL = TPFLYER%NSEGCURN
         !
-        TPFLYER%SEGCURT = ZTDIST
+        TPFLYER%XSEGCURT = ZTDIST
         !
-        DO WHILE (TPFLYER%SEGCURT>TPFLYER%SEGTIME(IL) .AND. IL <= TPFLYER%SEG)
-          TPFLYER%SEGCURN = TPFLYER%SEGCURN + 1
-          IL = TPFLYER%SEGCURN
-          TPFLYER%SEGCURT = TPFLYER%SEGCURT - TPFLYER%SEGTIME(IL-1)
-          IF (IL>TPFLYER%SEG) EXIT
+        DO WHILE (TPFLYER%XSEGCURT>TPFLYER%XSEGTIME(IL) .AND. IL <= TPFLYER%NSEG)
+          TPFLYER%NSEGCURN = TPFLYER%NSEGCURN + 1
+          IL = TPFLYER%NSEGCURN
+          TPFLYER%XSEGCURT = TPFLYER%XSEGCURT - TPFLYER%XSEGTIME(IL-1)
+          IF (IL>TPFLYER%NSEG) EXIT
         END DO
         !
         !* end of flight
         !
-        IF (IL > TPFLYER%SEG) THEN
-          TPFLYER%FLY=.FALSE.
+        IF (IL > TPFLYER%NSEG) THEN
+          TPFLYER%LFLY = .FALSE.
         ELSE
-          TPFLYER%FLY = .TRUE.
-          GLAUNCH     = .TRUE.
-          TPFLYER%CRASH=.FALSE.
+          TPFLYER%LFLY   = .TRUE.
+          GLAUNCH        = .TRUE.
+          TPFLYER%LCRASH =.FALSE.
           IF (ZTDIST <= PTSTEP ) THEN
             WRITE(ILUOUT,*) '-------------------------------------------------------------------'
-            WRITE(ILUOUT,*) 'Aircraft ',TPFLYER%TITLE,' takes off the   ', &
-                        TDTCUR%nday,'/',TDTCUR%nmonth,'/',                 &
-                        TDTCUR%nyear,' at ',NINT(TDTCUR%xtime),' sec.'
+            WRITE(ILUOUT,*) 'Aircraft ',TPFLYER%CTITLE,' takes off the   ', &
+                            TDTCUR%nday,'/',TDTCUR%nmonth,'/',              &
+                            TDTCUR%nyear,' at ',NINT(TDTCUR%xtime),' sec.'
             WRITE(ILUOUT,*) '-------------------------------------------------------------------'
           ENDIF
         ENDIF
 
       CLASS IS ( TBALLOONDATA)
         IF (ZTDIST <= PTSTEP ) THEN
-          TPFLYER%FLY = .TRUE.
-          GLAUNCH     = .TRUE.
+          TPFLYER%LFLY = .TRUE.
+          GLAUNCH      = .TRUE.
           WRITE(ILUOUT,*) '-------------------------------------------------------------------'
-          WRITE(ILUOUT,*) 'Balloon  ',TPFLYER%TITLE,' is launched the ', &
-                        TDTCUR%nday,'/',TDTCUR%nmonth,'/',               &
-                        TDTCUR%nyear,' at ',NINT(TDTCUR%xtime),' sec.'
+          WRITE(ILUOUT,*) 'Balloon  ',TPFLYER%CTITLE,' is launched the ', &
+                          TDTCUR%nday,'/',TDTCUR%nmonth,'/',              &
+                          TDTCUR%nyear,' at ',NINT(TDTCUR%xtime),' sec.'
           WRITE(ILUOUT,*) '-------------------------------------------------------------------'
         END IF
 
@@ -470,9 +464,9 @@ IF (.NOT. TPFLYER%FLY) THEN
 !
     SELECT TYPE ( TPFLYER )
       CLASS IS ( TBALLOONDATA)
-        IF (TPFLYER%TYPE=='RADIOS' .OR. TPFLYER%TYPE=='ISODEN' .OR. TPFLYER%TYPE=='CVBALL') THEN
-          TPFLYER%X_CUR = TPFLYER%XLAUNCH
-          TPFLYER%Y_CUR = TPFLYER%YLAUNCH
+        IF ( TPFLYER%CTYPE == 'RADIOS' .OR. TPFLYER%CTYPE == 'ISODEN' .OR. TPFLYER%CTYPE == 'CVBALL' ) THEN
+          TPFLYER%XX_CUR = TPFLYER%XXLAUNCH
+          TPFLYER%XY_CUR = TPFLYER%XYLAUNCH
         END IF
 
       CLASS IS ( TAIRCRAFTDATA)
@@ -481,13 +475,13 @@ IF (.NOT. TPFLYER%FLY) THEN
 !*       3.3.2 Determination of initial position
 !              -----------------------------
 !
-        IF (TPFLYER%FLY) THEN
-          ZSEG_FRAC = TPFLYER%SEGCURT / TPFLYER%SEGTIME(IL)
+        IF (TPFLYER%LFLY) THEN
+          ZSEG_FRAC = TPFLYER%XSEGCURT / TPFLYER%XSEGTIME(IL)
           !
-          TPFLYER%X_CUR = (1.-ZSEG_FRAC) * TPFLYER%SEGX(IL  ) &
-                        +     ZSEG_FRAC  * TPFLYER%SEGX(IL+1)
-          TPFLYER%Y_CUR = (1.-ZSEG_FRAC) * TPFLYER%SEGY(IL  ) &
-                        +     ZSEG_FRAC  * TPFLYER%SEGY(IL+1)
+          TPFLYER%XX_CUR = (1.-ZSEG_FRAC) * TPFLYER%XSEGX(IL  ) &
+                         +     ZSEG_FRAC  * TPFLYER%XSEGX(IL+1)
+          TPFLYER%XY_CUR = (1.-ZSEG_FRAC) * TPFLYER%XSEGY(IL  ) &
+                         +     ZSEG_FRAC  * TPFLYER%XSEGY(IL+1)
         END IF
     END SELECT
   END IF
@@ -499,7 +493,7 @@ END IF
 CALL  STATPROF_INSTANT( TPFLYER%TFLYER_TIME, IN )
 IF ( IN > 0 ) GSTORE = .TRUE. ! else no profiler storage at this time step
 !
-IF ( TPFLYER%FLY) THEN
+IF ( TPFLYER%LFLY ) THEN
 !
 !----------------------------------------------------------------------------
 !
@@ -509,23 +503,23 @@ IF ( TPFLYER%FLY) THEN
 !*      4.1  X position
 !            ----------
 !
-  IU=COUNT( PXHAT (:)<=TPFLYER%X_CUR )
-  II=COUNT( ZXHATM(:)<=TPFLYER%X_CUR )
+  IU=COUNT( PXHAT (:)<=TPFLYER%XX_CUR )
+  II=COUNT( ZXHATM(:)<=TPFLYER%XX_CUR )
 !
-  IF (IU<IIB   .AND. LWEST_ll()) THEN
-    IF (TPFLYER%MODEL == 'FIX' .OR. TPFLYER%NMODEL == 1 ) THEN 
-      TPFLYER%CRASH=.TRUE.
+  IF ( IU < IIB .AND. LWEST_ll() ) THEN
+    IF ( TPFLYER%CMODEL == 'FIX' .OR. TPFLYER%NMODEL == 1 ) THEN
+      TPFLYER%LCRASH = .TRUE.
     ELSE
-      II=IIB
-      IU=IIB
+      II = IIB
+      IU = IIB
     END IF
   END IF
-  IF (IU>IIE     .AND. LEAST_ll())  THEN
-    IF (TPFLYER%MODEL == 'FIX'  .OR. TPFLYER%NMODEL == 1) THEN 
-      TPFLYER%CRASH=.TRUE.
+  IF ( IU > IIE .AND. LEAST_ll() )  THEN
+    IF ( TPFLYER%CMODEL == 'FIX'  .OR. TPFLYER%NMODEL == 1 ) THEN
+      TPFLYER%LCRASH = .TRUE.
     ELSE
-      II=IIE
-      IU=IIE
+      II = IIE
+      IU = IIE
     END IF
   END IF
 !
@@ -533,23 +527,23 @@ IF ( TPFLYER%FLY) THEN
 !*      4.2  Y position
 !            ----------
 !
-  IV=COUNT( PYHAT (:)<=TPFLYER%Y_CUR )
-  IJ=COUNT( ZYHATM(:)<=TPFLYER%Y_CUR )
+  IV=COUNT( PYHAT (:)<=TPFLYER%XY_CUR )
+  IJ=COUNT( ZYHATM(:)<=TPFLYER%XY_CUR )
 !
-  IF (IV<IJB   .AND. LSOUTH_ll()) THEN
-    IF (TPFLYER%MODEL == 'FIX'  .OR. TPFLYER%NMODEL == 1) THEN 
-      TPFLYER%CRASH=.TRUE.
+  IF ( IV < IJB .AND. LSOUTH_ll() ) THEN
+    IF ( TPFLYER%CMODEL == 'FIX'  .OR. TPFLYER%NMODEL == 1 ) THEN
+      TPFLYER%LCRASH = .TRUE.
     ELSE
-      IJ=IJB
-      IV=IJB
+      IJ = IJB
+      IV = IJB
     END IF
   END IF
-  IF (IV>IJE     .AND. LNORTH_ll()) THEN
-    IF (TPFLYER%MODEL == 'FIX'  .OR. TPFLYER%NMODEL == 1) THEN 
-      TPFLYER%CRASH=.TRUE.
+  IF (IV > IJE .AND. LNORTH_ll() ) THEN
+    IF ( TPFLYER%CMODEL == 'FIX'  .OR. TPFLYER%NMODEL == 1 ) THEN
+      TPFLYER%LCRASH = .TRUE.
     ELSE
-      IJ=IJE
-      IV=IJE
+      IJ = IJE
+      IV = IJE
     END IF
   END IF
 !
@@ -564,7 +558,7 @@ IF ( TPFLYER%FLY) THEN
 !            --------------------------------------
 !
 !----------------------------------------------------------------------------
-  IF (ZTHIS_PROC>0. .AND. .NOT. TPFLYER%CRASH) THEN
+  IF ( ZTHIS_PROC > 0. .AND. .NOT. TPFLYER%LCRASH ) THEN
 !----------------------------------------------------------------------------
 !
 !*      4.5  Interpolations of model variables to mass points
@@ -607,8 +601,7 @@ IF ( TPFLYER%FLY) THEN
       ZEXN(:,:,JK) = 1.5 * ZEXN(:,:,JK-1) - 0.5 * ZEXN(:,:,JK-2)
     END DO
     !
-    IF (TPFLYER%TYPE=='ISODEN' .OR. TPFLYER%TYPE=='CVBALL' &
-        .OR. TPFLYER%TYPE=='AIRCRA' ) THEN
+    IF ( TPFLYER%CTYPE == 'ISODEN' .OR. TPFLYER%CTYPE == 'CVBALL' .OR. TPFLYER%CTYPE == 'AIRCRA' ) THEN
       ZTHV(:,:,:) = PTH(II:II+1,IJ:IJ+1,:)
       IF (SIZE(PR,4)>0)                                                     &
       ZTHV(:,:,:) = ZTHV(:,:,:) * ( 1. + XRV/XRD*PR(II:II+1,IJ:IJ+1,:,1) )  &
@@ -634,27 +627,27 @@ IF ( TPFLYER%FLY) THEN
     IF (GLAUNCH) THEN
       SELECT TYPE ( TPFLYER )
         CLASS IS ( TBALLOONDATA)
-          SELECT CASE ( TPFLYER%TYPE )
+          SELECT CASE ( TPFLYER%CTYPE )
 !
 !*      5.2.1 Iso-density balloon
 !
             CASE ( 'ISODEN' )
-              ZXCOEF = (TPFLYER%X_CUR - ZXHATM(II)) / (ZXHATM(II+1) - ZXHATM(II))
+              ZXCOEF = (TPFLYER%XX_CUR - ZXHATM(II)) / (ZXHATM(II+1) - ZXHATM(II))
               ZXCOEF = MAX (0.,MIN(ZXCOEF,1.))
-              ZYCOEF = (TPFLYER%Y_CUR - ZYHATM(IJ)) / (ZYHATM(IJ+1) - ZYHATM(IJ))
+              ZYCOEF = (TPFLYER%XY_CUR - ZYHATM(IJ)) / (ZYHATM(IJ+1) - ZYHATM(IJ))
               ZYCOEF = MAX (0.,MIN(ZYCOEF,1.))
-              IF ( TPFLYER%ALT /= XUNDEF ) THEN
-                IK00 = MAX ( COUNT (TPFLYER%ALT >= ZZM(1,1,:)), 1)
-                IK01 = MAX ( COUNT (TPFLYER%ALT >= ZZM(1,2,:)), 1)
-                IK10 = MAX ( COUNT (TPFLYER%ALT >= ZZM(2,1,:)), 1)
-                IK11 = MAX ( COUNT (TPFLYER%ALT >= ZZM(2,2,:)), 1)
-                ZZCOEF00 = (TPFLYER%ALT - ZZM(1,1,IK00)) / ( ZZM(1,1,IK00+1) - ZZM(1,1,IK00))
-                ZZCOEF01 = (TPFLYER%ALT - ZZM(1,2,IK01)) / ( ZZM(1,2,IK01+1) - ZZM(1,2,IK01))
-                ZZCOEF10 = (TPFLYER%ALT - ZZM(2,1,IK10)) / ( ZZM(2,1,IK10+1) - ZZM(2,1,IK10))
-                ZZCOEF11 = (TPFLYER%ALT - ZZM(2,2,IK11)) / ( ZZM(2,2,IK11+1) - ZZM(2,2,IK11))
-                TPFLYER%RHO = FLYER_INTERP(ZRHO)
-              ELSE IF ( TPFLYER%PRES /= XUNDEF ) THEN
-                ZFLYER_EXN = (TPFLYER%PRES/XP00)**(XRD/XCPD)
+              IF ( TPFLYER%XALTLAUNCH /= XUNDEF ) THEN
+                IK00 = MAX ( COUNT (TPFLYER%XALTLAUNCH >= ZZM(1,1,:)), 1)
+                IK01 = MAX ( COUNT (TPFLYER%XALTLAUNCH >= ZZM(1,2,:)), 1)
+                IK10 = MAX ( COUNT (TPFLYER%XALTLAUNCH >= ZZM(2,1,:)), 1)
+                IK11 = MAX ( COUNT (TPFLYER%XALTLAUNCH >= ZZM(2,2,:)), 1)
+                ZZCOEF00 = (TPFLYER%XALTLAUNCH - ZZM(1,1,IK00)) / ( ZZM(1,1,IK00+1) - ZZM(1,1,IK00))
+                ZZCOEF01 = (TPFLYER%XALTLAUNCH - ZZM(1,2,IK01)) / ( ZZM(1,2,IK01+1) - ZZM(1,2,IK01))
+                ZZCOEF10 = (TPFLYER%XALTLAUNCH - ZZM(2,1,IK10)) / ( ZZM(2,1,IK10+1) - ZZM(2,1,IK10))
+                ZZCOEF11 = (TPFLYER%XALTLAUNCH - ZZM(2,2,IK11)) / ( ZZM(2,2,IK11+1) - ZZM(2,2,IK11))
+                TPFLYER%XRHO = FLYER_INTERP(ZRHO)
+              ELSE IF ( TPFLYER%XPRES /= XUNDEF ) THEN
+                ZFLYER_EXN = (TPFLYER%XPRES/XP00)**(XRD/XCPD)
                 IK00 = MAX ( COUNT (ZFLYER_EXN <= ZEXN(1,1,:)), 1)
                 IK01 = MAX ( COUNT (ZFLYER_EXN <= ZEXN(1,2,:)), 1)
                 IK10 = MAX ( COUNT (ZFLYER_EXN <= ZEXN(2,1,:)), 1)
@@ -663,9 +656,9 @@ IF ( TPFLYER%FLY) THEN
                 ZZCOEF01 = (ZFLYER_EXN - ZEXN(1,2,IK01)) / ( ZEXN(1,2,IK01+1) - ZEXN(1,2,IK01))
                 ZZCOEF10 = (ZFLYER_EXN - ZEXN(2,1,IK10)) / ( ZEXN(2,1,IK10+1) - ZEXN(2,1,IK10))
                 ZZCOEF11 = (ZFLYER_EXN - ZEXN(2,2,IK11)) / ( ZEXN(2,2,IK11+1) - ZEXN(2,2,IK11))
-                TPFLYER%RHO = FLYER_INTERP(ZRHO)
+                TPFLYER%XRHO = FLYER_INTERP(ZRHO)
               ELSE
-                CMNHMSG(1) = 'Error in balloon initial position (balloon ' // TRIM(TPFLYER%TITLE) // ' )'
+                CMNHMSG(1) = 'Error in balloon initial position (balloon ' // TRIM(TPFLYER%CTITLE) // ' )'
                 CMNHMSG(2) = 'neither initial ALTITUDE or PRESsure is given'
                 CMNHMSG(3) = 'Check your INI_BALLOON routine'
                 CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'AIRCRAFT_BALLOON_EVOL' )
@@ -674,74 +667,74 @@ IF ( TPFLYER%FLY) THEN
 !*      5.2.2 Radiosounding balloon
 !
             CASE ( 'RADIOS' )
-              TPFLYER%Z_CUR = TPFLYER%ALT
-              TPFLYER%Z_CUR = MAX ( TPFLYER%Z_CUR , ZZM(1,1,IKB) )
-              TPFLYER%Z_CUR = MAX ( TPFLYER%Z_CUR , ZZM(2,1,IKB) )
-              TPFLYER%Z_CUR = MAX ( TPFLYER%Z_CUR , ZZM(1,2,IKB) )
-              TPFLYER%Z_CUR = MAX ( TPFLYER%Z_CUR , ZZM(2,2,IKB) )
+              TPFLYER%XZ_CUR = TPFLYER%XALTLAUNCH
+              TPFLYER%XZ_CUR = MAX ( TPFLYER%XZ_CUR , ZZM(1,1,IKB) )
+              TPFLYER%XZ_CUR = MAX ( TPFLYER%XZ_CUR , ZZM(2,1,IKB) )
+              TPFLYER%XZ_CUR = MAX ( TPFLYER%XZ_CUR , ZZM(1,2,IKB) )
+              TPFLYER%XZ_CUR = MAX ( TPFLYER%XZ_CUR , ZZM(2,2,IKB) )
 !
 !*      5.2.4 Constant Volume Balloon
 !
             CASE ( 'CVBALL' )
-              ZXCOEF = (TPFLYER%X_CUR - ZXHATM(II)) / (ZXHATM(II+1) - ZXHATM(II))
+              ZXCOEF = (TPFLYER%XX_CUR - ZXHATM(II)) / (ZXHATM(II+1) - ZXHATM(II))
               ZXCOEF = MAX (0.,MIN(ZXCOEF,1.))
-              ZYCOEF = (TPFLYER%Y_CUR - ZYHATM(IJ)) / (ZYHATM(IJ+1) - ZYHATM(IJ))
+              ZYCOEF = (TPFLYER%XY_CUR - ZYHATM(IJ)) / (ZYHATM(IJ+1) - ZYHATM(IJ))
               ZYCOEF = MAX (0.,MIN(ZYCOEF,1.))
-              IF ( TPFLYER%ALT /= XUNDEF ) THEN
-                IK00 = MAX ( COUNT (TPFLYER%ALT >= ZZM(1,1,:)), 1)
-                IK01 = MAX ( COUNT (TPFLYER%ALT >= ZZM(1,2,:)), 1)
-                IK10 = MAX ( COUNT (TPFLYER%ALT >= ZZM(2,1,:)), 1)
-                IK11 = MAX ( COUNT (TPFLYER%ALT >= ZZM(2,2,:)), 1)
+              IF ( TPFLYER%XALTLAUNCH /= XUNDEF ) THEN
+                IK00 = MAX ( COUNT (TPFLYER%XALTLAUNCH >= ZZM(1,1,:)), 1)
+                IK01 = MAX ( COUNT (TPFLYER%XALTLAUNCH >= ZZM(1,2,:)), 1)
+                IK10 = MAX ( COUNT (TPFLYER%XALTLAUNCH >= ZZM(2,1,:)), 1)
+                IK11 = MAX ( COUNT (TPFLYER%XALTLAUNCH >= ZZM(2,2,:)), 1)
                 IF (IK00*IK01*IK10*IK11 .EQ. 0) THEN
-                  TPFLYER%Z_CUR = TPFLYER%ALT
-                  TPFLYER%Z_CUR = MAX ( TPFLYER%Z_CUR , ZZM(1,1,IKB) )
-                  TPFLYER%Z_CUR = MAX ( TPFLYER%Z_CUR , ZZM(2,1,IKB) )
-                  TPFLYER%Z_CUR = MAX ( TPFLYER%Z_CUR , ZZM(1,2,IKB) )
-                  TPFLYER%Z_CUR = MAX ( TPFLYER%Z_CUR , ZZM(2,2,IKB) )
+                  TPFLYER%XZ_CUR = TPFLYER%XALTLAUNCH
+                  TPFLYER%XZ_CUR = MAX ( TPFLYER%XZ_CUR , ZZM(1,1,IKB) )
+                  TPFLYER%XZ_CUR = MAX ( TPFLYER%XZ_CUR , ZZM(2,1,IKB) )
+                  TPFLYER%XZ_CUR = MAX ( TPFLYER%XZ_CUR , ZZM(1,2,IKB) )
+                  TPFLYER%XZ_CUR = MAX ( TPFLYER%XZ_CUR , ZZM(2,2,IKB) )
                 ELSE
-                  ZZCOEF00 = (TPFLYER%ALT - ZZM(1,1,IK00)) / ( ZZM(1,1,IK00+1) - ZZM(1,1,IK00))
-                  ZZCOEF01 = (TPFLYER%ALT - ZZM(1,2,IK01)) / ( ZZM(1,2,IK01+1) - ZZM(1,2,IK01))
-                  ZZCOEF10 = (TPFLYER%ALT - ZZM(2,1,IK10)) / ( ZZM(2,1,IK10+1) - ZZM(2,1,IK10))
-                  ZZCOEF11 = (TPFLYER%ALT - ZZM(2,2,IK11)) / ( ZZM(2,2,IK11+1) - ZZM(2,2,IK11))
-                  TPFLYER%RHO = FLYER_INTERP(ZRHO)
-                  TPFLYER%Z_CUR = FLYER_INTERP(ZZM)
+                  ZZCOEF00 = (TPFLYER%XALTLAUNCH - ZZM(1,1,IK00)) / ( ZZM(1,1,IK00+1) - ZZM(1,1,IK00))
+                  ZZCOEF01 = (TPFLYER%XALTLAUNCH - ZZM(1,2,IK01)) / ( ZZM(1,2,IK01+1) - ZZM(1,2,IK01))
+                  ZZCOEF10 = (TPFLYER%XALTLAUNCH - ZZM(2,1,IK10)) / ( ZZM(2,1,IK10+1) - ZZM(2,1,IK10))
+                  ZZCOEF11 = (TPFLYER%XALTLAUNCH - ZZM(2,2,IK11)) / ( ZZM(2,2,IK11+1) - ZZM(2,2,IK11))
+                  TPFLYER%XRHO = FLYER_INTERP(ZRHO)
+                  TPFLYER%XZ_CUR = FLYER_INTERP(ZZM)
                 END IF
-              ELSE IF ( TPFLYER%PRES /= XUNDEF ) THEN
-                ZFLYER_EXN = (TPFLYER%PRES/XP00)**(XRD/XCPD)
+              ELSE IF ( TPFLYER%XPRES /= XUNDEF ) THEN
+                ZFLYER_EXN = (TPFLYER%XPRES/XP00)**(XRD/XCPD)
                 IK00 = MAX ( COUNT (ZFLYER_EXN <= ZEXN(1,1,:)), 1)
                 IK01 = MAX ( COUNT (ZFLYER_EXN <= ZEXN(1,2,:)), 1)
                 IK10 = MAX ( COUNT (ZFLYER_EXN <= ZEXN(2,1,:)), 1)
                 IK11 = MAX ( COUNT (ZFLYER_EXN <= ZEXN(2,2,:)), 1)
                 IF (IK00*IK01*IK10*IK11 .EQ. 0) THEN
-                  TPFLYER%Z_CUR = ZZM(1,1,IKB)
-                  TPFLYER%Z_CUR = MAX ( TPFLYER%Z_CUR , ZZM(2,1,IKB) )
-                  TPFLYER%Z_CUR = MAX ( TPFLYER%Z_CUR , ZZM(1,2,IKB) )
-                  TPFLYER%Z_CUR = MAX ( TPFLYER%Z_CUR , ZZM(2,2,IKB) )
+                  TPFLYER%XZ_CUR = ZZM(1,1,IKB)
+                  TPFLYER%XZ_CUR = MAX ( TPFLYER%XZ_CUR , ZZM(2,1,IKB) )
+                  TPFLYER%XZ_CUR = MAX ( TPFLYER%XZ_CUR , ZZM(1,2,IKB) )
+                  TPFLYER%XZ_CUR = MAX ( TPFLYER%XZ_CUR , ZZM(2,2,IKB) )
                 ELSE
                   ZZCOEF00 = (ZFLYER_EXN - ZEXN(1,1,IK00)) / ( ZEXN(1,1,IK00+1) - ZEXN(1,1,IK00))
                   ZZCOEF01 = (ZFLYER_EXN - ZEXN(1,2,IK01)) / ( ZEXN(1,2,IK01+1) - ZEXN(1,2,IK01))
                   ZZCOEF10 = (ZFLYER_EXN - ZEXN(2,1,IK10)) / ( ZEXN(2,1,IK10+1) - ZEXN(2,1,IK10))
                   ZZCOEF11 = (ZFLYER_EXN - ZEXN(2,2,IK11)) / ( ZEXN(2,2,IK11+1) - ZEXN(2,2,IK11))
-                  TPFLYER%RHO = FLYER_INTERP(ZRHO)
-                  TPFLYER%Z_CUR = FLYER_INTERP(ZZM)
+                  TPFLYER%XRHO = FLYER_INTERP(ZRHO)
+                  TPFLYER%XZ_CUR = FLYER_INTERP(ZZM)
                 END IF
               ELSE
-                TPFLYER%RHO = TPFLYER%MASS / TPFLYER%VOLUME
-                IK00 = MAX ( COUNT (TPFLYER%RHO <= ZRHO(1,1,:)), 1)
-                IK01 = MAX ( COUNT (TPFLYER%RHO <= ZRHO(1,2,:)), 1)
-                IK10 = MAX ( COUNT (TPFLYER%RHO <= ZRHO(2,1,:)), 1)
-                IK11 = MAX ( COUNT (TPFLYER%RHO <= ZRHO(2,2,:)), 1)
+                TPFLYER%XRHO = TPFLYER%XMASS / TPFLYER%XVOLUME
+                IK00 = MAX ( COUNT (TPFLYER%XRHO <= ZRHO(1,1,:)), 1)
+                IK01 = MAX ( COUNT (TPFLYER%XRHO <= ZRHO(1,2,:)), 1)
+                IK10 = MAX ( COUNT (TPFLYER%XRHO <= ZRHO(2,1,:)), 1)
+                IK11 = MAX ( COUNT (TPFLYER%XRHO <= ZRHO(2,2,:)), 1)
                 IF (IK00*IK01*IK10*IK11 .EQ. 0) THEN
-                  TPFLYER%Z_CUR = ZZM(1,1,IKB)
-                  TPFLYER%Z_CUR = MAX ( TPFLYER%Z_CUR , ZZM(2,1,IKB) )
-                  TPFLYER%Z_CUR = MAX ( TPFLYER%Z_CUR , ZZM(1,2,IKB) )
-                  TPFLYER%Z_CUR = MAX ( TPFLYER%Z_CUR , ZZM(2,2,IKB) )
+                  TPFLYER%XZ_CUR = ZZM(1,1,IKB)
+                  TPFLYER%XZ_CUR = MAX ( TPFLYER%XZ_CUR , ZZM(2,1,IKB) )
+                  TPFLYER%XZ_CUR = MAX ( TPFLYER%XZ_CUR , ZZM(1,2,IKB) )
+                  TPFLYER%XZ_CUR = MAX ( TPFLYER%XZ_CUR , ZZM(2,2,IKB) )
                 ELSE
-                  ZZCOEF00 = (TPFLYER%RHO - ZRHO(1,1,IK00)) / ( ZRHO(1,1,IK00+1) - ZRHO(1,1,IK00))
-                  ZZCOEF01 = (TPFLYER%RHO - ZRHO(1,2,IK01)) / ( ZRHO(1,2,IK01+1) - ZRHO(1,2,IK01))
-                  ZZCOEF10 = (TPFLYER%RHO - ZRHO(2,1,IK10)) / ( ZRHO(2,1,IK10+1) - ZRHO(2,1,IK10))
-                  ZZCOEF11 = (TPFLYER%RHO - ZRHO(2,2,IK11)) / ( ZRHO(2,2,IK11+1) - ZRHO(2,2,IK11))
-                  TPFLYER%Z_CUR = FLYER_INTERP(ZZM)
+                  ZZCOEF00 = (TPFLYER%XRHO - ZRHO(1,1,IK00)) / ( ZRHO(1,1,IK00+1) - ZRHO(1,1,IK00))
+                  ZZCOEF01 = (TPFLYER%XRHO - ZRHO(1,2,IK01)) / ( ZRHO(1,2,IK01+1) - ZRHO(1,2,IK01))
+                  ZZCOEF10 = (TPFLYER%XRHO - ZRHO(2,1,IK10)) / ( ZRHO(2,1,IK10+1) - ZRHO(2,1,IK10))
+                  ZZCOEF11 = (TPFLYER%XRHO - ZRHO(2,2,IK11)) / ( ZRHO(2,2,IK11+1) - ZRHO(2,2,IK11))
+                  TPFLYER%XZ_CUR = FLYER_INTERP(ZZM)
                 END IF
               END IF
           END SELECT
@@ -749,12 +742,12 @@ IF ( TPFLYER%FLY) THEN
 !*      5.2.3 Aircraft
 !
         CLASS IS ( TAIRCRAFTDATA)
-          IF (TPFLYER%ALTDEF) THEN
-            TPFLYER%P_CUR = (1.-ZSEG_FRAC) * TPFLYER%SEGP(IL  ) &
-                          +     ZSEG_FRAC  * TPFLYER%SEGP(IL+1)
+          IF (TPFLYER%LALTDEF) THEN
+            TPFLYER%XP_CUR = (1.-ZSEG_FRAC) * TPFLYER%XSEGP(IL  ) &
+                           +     ZSEG_FRAC  * TPFLYER%XSEGP(IL+1)
           ELSE
-            TPFLYER%Z_CUR = (1.-ZSEG_FRAC) * TPFLYER%SEGZ(IL ) &
-                          +     ZSEG_FRAC  * TPFLYER%SEGZ(IL +1 )
+            TPFLYER%XZ_CUR = (1.-ZSEG_FRAC) * TPFLYER%XSEGZ(IL ) &
+                           +     ZSEG_FRAC  * TPFLYER%XSEGZ(IL +1 )
           END IF
       END SELECT
     END IF
@@ -766,30 +759,30 @@ IF ( TPFLYER%FLY) THEN
 !
     SELECT TYPE ( TPFLYER )
       CLASS IS ( TBALLOONDATA)
-        IF (TPFLYER%TYPE=='ISODEN') THEN
-          IK00 = MAX ( COUNT (TPFLYER%RHO <= ZRHO(1,1,:)), 1)
-          IK01 = MAX ( COUNT (TPFLYER%RHO <= ZRHO(1,2,:)), 1)
-          IK10 = MAX ( COUNT (TPFLYER%RHO <= ZRHO(2,1,:)), 1)
-          IK11 = MAX ( COUNT (TPFLYER%RHO <= ZRHO(2,2,:)), 1)
-        ELSE IF (TPFLYER%TYPE=='RADIOS' .OR. TPFLYER%TYPE=='CVBALL') THEN
-          IK00 = MAX ( COUNT (TPFLYER%Z_CUR >= ZZM(1,1,:)), 1)
-          IK01 = MAX ( COUNT (TPFLYER%Z_CUR >= ZZM(1,2,:)), 1)
-          IK10 = MAX ( COUNT (TPFLYER%Z_CUR >= ZZM(2,1,:)), 1)
-          IK11 = MAX ( COUNT (TPFLYER%Z_CUR >= ZZM(2,2,:)), 1)
+        IF ( TPFLYER%CTYPE == 'ISODEN' ) THEN
+          IK00 = MAX ( COUNT (TPFLYER%XRHO <= ZRHO(1,1,:)), 1)
+          IK01 = MAX ( COUNT (TPFLYER%XRHO <= ZRHO(1,2,:)), 1)
+          IK10 = MAX ( COUNT (TPFLYER%XRHO <= ZRHO(2,1,:)), 1)
+          IK11 = MAX ( COUNT (TPFLYER%XRHO <= ZRHO(2,2,:)), 1)
+        ELSE IF ( TPFLYER%CTYPE == 'RADIOS' .OR. TPFLYER%CTYPE == 'CVBALL' ) THEN
+          IK00 = MAX ( COUNT (TPFLYER%XZ_CUR >= ZZM(1,1,:)), 1)
+          IK01 = MAX ( COUNT (TPFLYER%XZ_CUR >= ZZM(1,2,:)), 1)
+          IK10 = MAX ( COUNT (TPFLYER%XZ_CUR >= ZZM(2,1,:)), 1)
+          IK11 = MAX ( COUNT (TPFLYER%XZ_CUR >= ZZM(2,2,:)), 1)
         END IF
 
       CLASS IS ( TAIRCRAFTDATA)
-        IF (TPFLYER%ALTDEF) THEN
-          ZFLYER_EXN = (TPFLYER%P_CUR/XP00)**(XRD/XCPD)
+        IF ( TPFLYER%LALTDEF ) THEN
+          ZFLYER_EXN = (TPFLYER%XP_CUR/XP00)**(XRD/XCPD)
           IK00 = MAX ( COUNT (ZFLYER_EXN <= ZEXN(1,1,:)), 1)
           IK01 = MAX ( COUNT (ZFLYER_EXN <= ZEXN(1,2,:)), 1)
           IK10 = MAX ( COUNT (ZFLYER_EXN <= ZEXN(2,1,:)), 1)
           IK11 = MAX ( COUNT (ZFLYER_EXN <= ZEXN(2,2,:)), 1)
         ELSE
-          IK00 = MAX ( COUNT (TPFLYER%Z_CUR >= ZZM(1,1,:)), 1)
-          IK01 = MAX ( COUNT (TPFLYER%Z_CUR >= ZZM(1,2,:)), 1)
-          IK10 = MAX ( COUNT (TPFLYER%Z_CUR >= ZZM(2,1,:)), 1)
-          IK11 = MAX ( COUNT (TPFLYER%Z_CUR >= ZZM(2,2,:)), 1)
+          IK00 = MAX ( COUNT (TPFLYER%XZ_CUR >= ZZM(1,1,:)), 1)
+          IK01 = MAX ( COUNT (TPFLYER%XZ_CUR >= ZZM(1,2,:)), 1)
+          IK10 = MAX ( COUNT (TPFLYER%XZ_CUR >= ZZM(2,1,:)), 1)
+          IK11 = MAX ( COUNT (TPFLYER%XZ_CUR >= ZZM(2,2,:)), 1)
         END IF
     END SELECT
 
@@ -805,31 +798,31 @@ IF ( TPFLYER%FLY) THEN
 !
     IF (IK00 <  IKB .OR. IK01 <  IKB .OR. IK10 <  IKB .OR. IK11 <  IKB .OR. &
         IK00 >= IKE .OR. IK01 >= IKE .OR. IK10 >= IKE .OR. IK11 >= IKE  ) THEN
-      TPFLYER%CRASH=.TRUE.
+      TPFLYER%LCRASH = .TRUE.
     END IF
 !
   END IF
 !
 !
-  IF (TPFLYER%CRASH) THEN
-    TPFLYER%FLY = .FALSE.
-    IF (TPFLYER%TYPE=='AIRCRA' .AND. .NOT. GLAUNCH ) THEN
-      WRITE(ILUOUT,*) 'Aircraft ',TPFLYER%TITLE,' flew out of the domain the ', &
-                    TDTCUR%nday,'/',TDTCUR%nmonth,'/',                          &
-                    TDTCUR%nyear,' at ',TDTCUR%xtime,' sec.'
-    ELSE IF (TPFLYER%TYPE /= 'AIRCRA') THEN
-      WRITE(ILUOUT,*) 'Balloon ',TPFLYER%TITLE,' crashed the ',                 &
-                    TDTCUR%nday,'/',TDTCUR%nmonth,'/',                          &
-                    TDTCUR%nyear,' at ',TDTCUR%xtime,' sec.'
+  IF ( TPFLYER%LCRASH ) THEN
+    TPFLYER%LFLY = .FALSE.
+    IF ( TPFLYER%CTYPE == 'AIRCRA' .AND. .NOT. GLAUNCH ) THEN
+      WRITE(ILUOUT,*) 'Aircraft ',TPFLYER%CTITLE,' flew out of the domain the ', &
+                      TDTCUR%nday,'/',TDTCUR%nmonth,'/',                         &
+                      TDTCUR%nyear,' at ',TDTCUR%xtime,' sec.'
+    ELSE IF (TPFLYER%CTYPE /= 'AIRCRA') THEN
+      WRITE(ILUOUT,*) 'Balloon ',TPFLYER%CTITLE,' crashed the ',                 &
+                      TDTCUR%nday,'/',TDTCUR%nmonth,'/',                         &
+                      TDTCUR%nyear,' at ',TDTCUR%xtime,' sec.'
     END IF
   ELSE
     SELECT TYPE ( TPFLYER )
       CLASS IS ( TAIRCRAFTDATA)
         IF ( .NOT. GLAUNCH .AND. ZTDIST > PTSTEP ) THEN
           WRITE(ILUOUT,*) '-------------------------------------------------------------------'
-          WRITE(ILUOUT,*) 'Aircraft ',TPFLYER%TITLE,' flies  in leg',TPFLYER%SEGCURN ,' the ',  &
-            TDTCUR%nday,'/',TDTCUR%nmonth,'/',      &
-            TDTCUR%nyear,' at ',NINT(TDTCUR%xtime),' sec.'
+          WRITE(ILUOUT,*) 'Aircraft ',TPFLYER%CTITLE,' flies  in leg',TPFLYER%NSEGCURN ,' the ',  &
+                          TDTCUR%nday,'/',TDTCUR%nmonth,'/',      &
+                          TDTCUR%nyear,' at ',NINT(TDTCUR%xtime),' sec.'
           WRITE(ILUOUT,*) '-------------------------------------------------------------------'
         ENDIF
     END SELECT
@@ -844,14 +837,14 @@ IF ( TPFLYER%FLY) THEN
 !*      6.1  Interpolation coefficient for X
 !            -------------------------------
 !
-      ZXCOEF = (TPFLYER%X_CUR - ZXHATM(II)) / (ZXHATM(II+1) - ZXHATM(II))
+      ZXCOEF = (TPFLYER%XX_CUR - ZXHATM(II)) / (ZXHATM(II+1) - ZXHATM(II))
       ZXCOEF = MAX (0.,MIN(ZXCOEF,1.))
 !
 !
 !*      6.2  Interpolation coefficient for y
 !            -------------------------------
 !
-      ZYCOEF = (TPFLYER%Y_CUR - ZYHATM(IJ)) / (ZYHATM(IJ+1) - ZYHATM(IJ))
+      ZYCOEF = (TPFLYER%XY_CUR - ZYHATM(IJ)) / (ZYHATM(IJ+1) - ZYHATM(IJ))
       ZYCOEF = MAX (0.,MIN(ZYCOEF,1.))
 !
 !
@@ -860,32 +853,32 @@ IF ( TPFLYER%FLY) THEN
 !
       SELECT TYPE ( TPFLYER )
         CLASS IS ( TBALLOONDATA)
-          IF (TPFLYER%TYPE=='ISODEN') THEN
-            ZZCOEF00 = (TPFLYER%RHO - ZRHO(1,1,IK00)) / ( ZRHO(1,1,IK00+1) - ZRHO(1,1,IK00) )
-            ZZCOEF01 = (TPFLYER%RHO - ZRHO(1,2,IK01)) / ( ZRHO(1,2,IK01+1) - ZRHO(1,2,IK01) )
-            ZZCOEF10 = (TPFLYER%RHO - ZRHO(2,1,IK10)) / ( ZRHO(2,1,IK10+1) - ZRHO(2,1,IK10) )
-            ZZCOEF11 = (TPFLYER%RHO - ZRHO(2,2,IK11)) / ( ZRHO(2,2,IK11+1) - ZRHO(2,2,IK11) )
-            TPFLYER%Z_CUR = FLYER_INTERP(ZZM)
-          ELSE IF (TPFLYER%TYPE=='RADIOS' .OR. TPFLYER%TYPE=='CVBALL') THEN
-            ZZCOEF00 = (TPFLYER%Z_CUR - ZZM(1,1,IK00)) / ( ZZM(1,1,IK00+1) - ZZM(1,1,IK00) )
-            ZZCOEF01 = (TPFLYER%Z_CUR - ZZM(1,2,IK01)) / ( ZZM(1,2,IK01+1) - ZZM(1,2,IK01) )
-            ZZCOEF10 = (TPFLYER%Z_CUR - ZZM(2,1,IK10)) / ( ZZM(2,1,IK10+1) - ZZM(2,1,IK10) )
-            ZZCOEF11 = (TPFLYER%Z_CUR - ZZM(2,2,IK11)) / ( ZZM(2,2,IK11+1) - ZZM(2,2,IK11) )
+          IF ( TPFLYER%CTYPE == 'ISODEN' ) THEN
+            ZZCOEF00 = (TPFLYER%XRHO - ZRHO(1,1,IK00)) / ( ZRHO(1,1,IK00+1) - ZRHO(1,1,IK00) )
+            ZZCOEF01 = (TPFLYER%XRHO - ZRHO(1,2,IK01)) / ( ZRHO(1,2,IK01+1) - ZRHO(1,2,IK01) )
+            ZZCOEF10 = (TPFLYER%XRHO - ZRHO(2,1,IK10)) / ( ZRHO(2,1,IK10+1) - ZRHO(2,1,IK10) )
+            ZZCOEF11 = (TPFLYER%XRHO - ZRHO(2,2,IK11)) / ( ZRHO(2,2,IK11+1) - ZRHO(2,2,IK11) )
+            TPFLYER%XZ_CUR = FLYER_INTERP(ZZM)
+          ELSE IF ( TPFLYER%CTYPE == 'RADIOS' .OR. TPFLYER%CTYPE == 'CVBALL' ) THEN
+            ZZCOEF00 = (TPFLYER%XZ_CUR - ZZM(1,1,IK00)) / ( ZZM(1,1,IK00+1) - ZZM(1,1,IK00) )
+            ZZCOEF01 = (TPFLYER%XZ_CUR - ZZM(1,2,IK01)) / ( ZZM(1,2,IK01+1) - ZZM(1,2,IK01) )
+            ZZCOEF10 = (TPFLYER%XZ_CUR - ZZM(2,1,IK10)) / ( ZZM(2,1,IK10+1) - ZZM(2,1,IK10) )
+            ZZCOEF11 = (TPFLYER%XZ_CUR - ZZM(2,2,IK11)) / ( ZZM(2,2,IK11+1) - ZZM(2,2,IK11) )
           END IF
 
         CLASS IS ( TAIRCRAFTDATA)
-          IF (TPFLYER%ALTDEF) THEN
+          IF ( TPFLYER%LALTDEF ) THEN
             ZZCOEF00 = (ZFLYER_EXN - ZEXN(1,1,IK00)) / ( ZEXN(1,1,IK00+1) - ZEXN(1,1,IK00) )
             ZZCOEF01 = (ZFLYER_EXN - ZEXN(1,2,IK01)) / ( ZEXN(1,2,IK01+1) - ZEXN(1,2,IK01) )
             ZZCOEF10 = (ZFLYER_EXN - ZEXN(2,1,IK10)) / ( ZEXN(2,1,IK10+1) - ZEXN(2,1,IK10) )
             ZZCOEF11 = (ZFLYER_EXN - ZEXN(2,2,IK11)) / ( ZEXN(2,2,IK11+1) - ZEXN(2,2,IK11) )
-            TPFLYER%Z_CUR = FLYER_INTERP(ZZM)
+            TPFLYER%XZ_CUR = FLYER_INTERP(ZZM)
           ELSE
-            ZZCOEF00 = (TPFLYER%Z_CUR - ZZM(1,1,IK00)) / ( ZZM(1,1,IK00+1) - ZZM(1,1,IK00) )
-            ZZCOEF01 = (TPFLYER%Z_CUR - ZZM(1,2,IK01)) / ( ZZM(1,2,IK01+1) - ZZM(1,2,IK01) )
-            ZZCOEF10 = (TPFLYER%Z_CUR - ZZM(2,1,IK10)) / ( ZZM(2,1,IK10+1) - ZZM(2,1,IK10) )
-            ZZCOEF11 = (TPFLYER%Z_CUR - ZZM(2,2,IK11)) / ( ZZM(2,2,IK11+1) - ZZM(2,2,IK11) )
-            TPFLYER%P_CUR = FLYER_INTERP(PP)
+            ZZCOEF00 = (TPFLYER%XZ_CUR - ZZM(1,1,IK00)) / ( ZZM(1,1,IK00+1) - ZZM(1,1,IK00) )
+            ZZCOEF01 = (TPFLYER%XZ_CUR - ZZM(1,2,IK01)) / ( ZZM(1,2,IK01+1) - ZZM(1,2,IK01) )
+            ZZCOEF10 = (TPFLYER%XZ_CUR - ZZM(2,1,IK10)) / ( ZZM(2,1,IK10+1) - ZZM(2,1,IK10) )
+            ZZCOEF11 = (TPFLYER%XZ_CUR - ZZM(2,2,IK11)) / ( ZZM(2,2,IK11+1) - ZZM(2,2,IK11) )
+            TPFLYER%XP_CUR = FLYER_INTERP(PP)
           END IF
       END SELECT
 !
@@ -897,42 +890,42 @@ IF ( TPFLYER%FLY) THEN
 !*      7.1  Interpolation coefficient for X (for U)
 !            -------------------------------
 !
-      ZUCOEF = (TPFLYER%X_CUR - PXHAT(IU)) / (PXHAT(IU+1) - PXHAT(IU))
+      ZUCOEF = (TPFLYER%XX_CUR - PXHAT(IU)) / (PXHAT(IU+1) - PXHAT(IU))
       ZUCOEF = MAX(0.,MIN(ZUCOEF,1.))
 !
 !
 !*      7.2  Interpolation coefficient for y (for V)
 !            -------------------------------
 !
-      ZVCOEF = (TPFLYER%Y_CUR - PYHAT(IV)) / (PYHAT(IV+1) - PYHAT(IV))
+      ZVCOEF = (TPFLYER%XY_CUR - PYHAT(IV)) / (PYHAT(IV+1) - PYHAT(IV))
       ZVCOEF = MAX(0.,MIN(ZVCOEF,1.))
 !
 !
 !*      7.3  Interpolation coefficients for the 4 suroundings verticals (for U)
 !            ----------------------------------------------------------
 !
-      IU00 = MAX( COUNT (TPFLYER%Z_CUR >= ZZU(1,1,:)), 1)
-      IU01 = MAX( COUNT (TPFLYER%Z_CUR >= ZZU(1,2,:)), 1)
-      IU10 = MAX( COUNT (TPFLYER%Z_CUR >= ZZU(2,1,:)), 1)
-      IU11 = MAX( COUNT (TPFLYER%Z_CUR >= ZZU(2,2,:)), 1)
-      ZUCOEF00 = (TPFLYER%Z_CUR - ZZU(1,1,IU00)) / ( ZZU(1,1,IU00+1) - ZZU(1,1,IU00) )
-      ZUCOEF01 = (TPFLYER%Z_CUR - ZZU(1,2,IU01)) / ( ZZU(1,2,IU01+1) - ZZU(1,2,IU01) )
-      ZUCOEF10 = (TPFLYER%Z_CUR - ZZU(2,1,IU10)) / ( ZZU(2,1,IU10+1) - ZZU(2,1,IU10) )
-      ZUCOEF11 = (TPFLYER%Z_CUR - ZZU(2,2,IU11)) / ( ZZU(2,2,IU11+1) - ZZU(2,2,IU11) )
+      IU00 = MAX( COUNT (TPFLYER%XZ_CUR >= ZZU(1,1,:)), 1)
+      IU01 = MAX( COUNT (TPFLYER%XZ_CUR >= ZZU(1,2,:)), 1)
+      IU10 = MAX( COUNT (TPFLYER%XZ_CUR >= ZZU(2,1,:)), 1)
+      IU11 = MAX( COUNT (TPFLYER%XZ_CUR >= ZZU(2,2,:)), 1)
+      ZUCOEF00 = (TPFLYER%XZ_CUR - ZZU(1,1,IU00)) / ( ZZU(1,1,IU00+1) - ZZU(1,1,IU00) )
+      ZUCOEF01 = (TPFLYER%XZ_CUR - ZZU(1,2,IU01)) / ( ZZU(1,2,IU01+1) - ZZU(1,2,IU01) )
+      ZUCOEF10 = (TPFLYER%XZ_CUR - ZZU(2,1,IU10)) / ( ZZU(2,1,IU10+1) - ZZU(2,1,IU10) )
+      ZUCOEF11 = (TPFLYER%XZ_CUR - ZZU(2,2,IU11)) / ( ZZU(2,2,IU11+1) - ZZU(2,2,IU11) )
 !
 !
 !*      7.4  Interpolation coefficients for the 4 suroundings verticals (for V)
 !            ----------------------------------------------------------
 !
 
-      IV00 = MAX ( COUNT (TPFLYER%Z_CUR >= ZZV(1,1,:)), 1)
-      IV01 = MAX ( COUNT (TPFLYER%Z_CUR >= ZZV(1,2,:)), 1)
-      IV10 = MAX ( COUNT (TPFLYER%Z_CUR >= ZZV(2,1,:)), 1)
-      IV11 = MAX ( COUNT (TPFLYER%Z_CUR >= ZZV(2,2,:)), 1)
-      ZVCOEF00 = (TPFLYER%Z_CUR - ZZV(1,1,IV00)) / ( ZZV(1,1,IV00+1) - ZZV(1,1,IV00) )
-      ZVCOEF01 = (TPFLYER%Z_CUR - ZZV(1,2,IV01)) / ( ZZV(1,2,IV01+1) - ZZV(1,2,IV01) )
-      ZVCOEF10 = (TPFLYER%Z_CUR - ZZV(2,1,IV10)) / ( ZZV(2,1,IV10+1) - ZZV(2,1,IV10) )
-      ZVCOEF11 = (TPFLYER%Z_CUR - ZZV(2,2,IV11)) / ( ZZV(2,2,IV11+1) - ZZV(2,2,IV11) )
+      IV00 = MAX ( COUNT (TPFLYER%XZ_CUR >= ZZV(1,1,:)), 1)
+      IV01 = MAX ( COUNT (TPFLYER%XZ_CUR >= ZZV(1,2,:)), 1)
+      IV10 = MAX ( COUNT (TPFLYER%XZ_CUR >= ZZV(2,1,:)), 1)
+      IV11 = MAX ( COUNT (TPFLYER%XZ_CUR >= ZZV(2,2,:)), 1)
+      ZVCOEF00 = (TPFLYER%XZ_CUR - ZZV(1,1,IV00)) / ( ZZV(1,1,IV00+1) - ZZV(1,1,IV00) )
+      ZVCOEF01 = (TPFLYER%XZ_CUR - ZZV(1,2,IV01)) / ( ZZV(1,2,IV01+1) - ZZV(1,2,IV01) )
+      ZVCOEF10 = (TPFLYER%XZ_CUR - ZZV(2,1,IV10)) / ( ZZV(2,1,IV10+1) - ZZV(2,1,IV10) )
+      ZVCOEF11 = (TPFLYER%XZ_CUR - ZZV(2,2,IV11)) / ( ZZV(2,2,IV11+1) - ZZV(2,2,IV11) )
 !
 !----------------------------------------------------------------------------
 !
@@ -940,54 +933,54 @@ IF ( TPFLYER%FLY) THEN
 !            --------------
 !
       IF ( GSTORE ) THEN
-        TPFLYER%X   (IN) = TPFLYER%X_CUR
-        TPFLYER%Y   (IN) = TPFLYER%Y_CUR
-        TPFLYER%Z   (IN) = TPFLYER%Z_CUR
+        TPFLYER%XX   (IN) = TPFLYER%XX_CUR
+        TPFLYER%XY   (IN) = TPFLYER%XY_CUR
+        TPFLYER%XZ   (IN) = TPFLYER%XZ_CUR
         !
         CALL SM_LATLON(PLATOR,PLONOR,          &
-                     TPFLYER%X_CUR, TPFLYER%Y_CUR,       &
-                     TPFLYER%YLAT(IN), TPFLYER%XLON(IN)  )
+                     TPFLYER%XX_CUR, TPFLYER%XY_CUR,       &
+                     TPFLYER%XLAT(IN), TPFLYER%XLON(IN)  )
         !
         ZU_BAL = FLYER_INTERP_U(PU)
         ZV_BAL = FLYER_INTERP_V(PV)
         ZGAM   = (XRPK * (TPFLYER%XLON(IN) - XLON0) - XBETA)*(XPI/180.)
-        TPFLYER%ZON (IN) = ZU_BAL * COS(ZGAM) + ZV_BAL * SIN(ZGAM)
-        TPFLYER%MER (IN) = - ZU_BAL * SIN(ZGAM) + ZV_BAL * COS(ZGAM)
+        TPFLYER%XZON (IN) = ZU_BAL * COS(ZGAM) + ZV_BAL * SIN(ZGAM)
+        TPFLYER%XMER (IN) = - ZU_BAL * SIN(ZGAM) + ZV_BAL * COS(ZGAM)
         !
-        TPFLYER%W   (IN) = FLYER_INTERP(ZWM)
-        TPFLYER%TH  (IN) = FLYER_INTERP(PTH)
+        TPFLYER%XW   (IN) = FLYER_INTERP(ZWM)
+        TPFLYER%XTH  (IN) = FLYER_INTERP(PTH)
         !
         ZFLYER_EXN = FLYER_INTERP(ZEXN)
-        TPFLYER%P   (IN) = XP00 * ZFLYER_EXN**(XCPD/XRD)
+        TPFLYER%XP   (IN) = XP00 * ZFLYER_EXN**(XCPD/XRD)
         !
         DO JLOOP=1,SIZE(PR,4)
-          TPFLYER%R   (IN,JLOOP) = FLYER_INTERP(PR(:,:,:,JLOOP))
+          TPFLYER%XR   (IN,JLOOP) = FLYER_INTERP(PR(:,:,:,JLOOP))
           IF (JLOOP>=2) ZR(:,:,:) = ZR(:,:,:) + PR(:,:,:,JLOOP)
         END DO
         DO JLOOP=1,SIZE(PSV,4)
-          TPFLYER%SV  (IN,JLOOP) = FLYER_INTERP(PSV(:,:,:,JLOOP))
+          TPFLYER%XSV  (IN,JLOOP) = FLYER_INTERP(PSV(:,:,:,JLOOP))
         END DO
-        TPFLYER%RTZ  (IN,:) = FLYER_INTERPZ(ZR(:,:,:))
+        TPFLYER%XRTZ  (IN,:) = FLYER_INTERPZ(ZR(:,:,:))
         DO JLOOP=1,SIZE(PR,4)
-          TPFLYER%RZ  (IN,:,JLOOP) = FLYER_INTERPZ(PR(:,:,:,JLOOP))
+          TPFLYER%XRZ  (IN,:,JLOOP) = FLYER_INTERPZ(PR(:,:,:,JLOOP))
         END DO
         ! Fin Modifs ON
-        TPFLYER%FFZ  (IN,:) = FLYER_INTERPZ(SQRT(PU**2+PV**2))
+        TPFLYER%XFFZ  (IN,:) = FLYER_INTERPZ(SQRT(PU**2+PV**2))
         IF (CCLOUD=="LIMA") THEN                                  
-          TPFLYER%CIZ  (IN,:) = FLYER_INTERPZ(PSV(:,:,:,NSV_LIMA_NI))  
-          TPFLYER%CCZ  (IN,:) = FLYER_INTERPZ(PSV(:,:,:,NSV_LIMA_NC))  
-          TPFLYER%CRZ  (IN,:) = FLYER_INTERPZ(PSV(:,:,:,NSV_LIMA_NR))  
+          TPFLYER%XCIZ  (IN,:) = FLYER_INTERPZ(PSV(:,:,:,NSV_LIMA_NI))
+          TPFLYER%XCCZ  (IN,:) = FLYER_INTERPZ(PSV(:,:,:,NSV_LIMA_NC))
+          TPFLYER%XCRZ  (IN,:) = FLYER_INTERPZ(PSV(:,:,:,NSV_LIMA_NR))
         ELSE IF ( CCLOUD=="ICE3" .OR. CCLOUD=="ICE4" ) THEN
-          TPFLYER%CIZ  (IN,:) = FLYER_INTERPZ(PCIT(:,:,:))
+          TPFLYER%XCIZ  (IN,:) = FLYER_INTERPZ(PCIT(:,:,:))
         ENDIF             
         ! initialization CRARE and CRARE_ATT + LWC and IWC
-        TPFLYER%CRARE(IN,:) = 0.
-        TPFLYER%CRARE_ATT(IN,:) = 0.
-        TPFLYER%LWCZ  (IN,:) = 0.
-        TPFLYER%IWCZ  (IN,:) = 0.
+        TPFLYER%XCRARE(IN,:) = 0.
+        TPFLYER%XCRARE_ATT(IN,:) = 0.
+        TPFLYER%XLWCZ  (IN,:) = 0.
+        TPFLYER%XIWCZ  (IN,:) = 0.
       IF (CCLOUD=="LIMA" .OR. CCLOUD=="ICE3" ) THEN ! only for ICE3 and LIMA
-       TPFLYER%LWCZ  (IN,:) = FLYER_INTERPZ((PR(:,:,:,2)+PR(:,:,:,3))*PRHODREF(:,:,:))
-       TPFLYER%IWCZ  (IN,:) = FLYER_INTERPZ((PR(:,:,:,4)+PR(:,:,:,5)+PR(:,:,:,6))*PRHODREF(:,:,:))
+       TPFLYER%XLWCZ  (IN,:) = FLYER_INTERPZ((PR(:,:,:,2)+PR(:,:,:,3))*PRHODREF(:,:,:))
+       TPFLYER%XIWCZ  (IN,:) = FLYER_INTERPZ((PR(:,:,:,4)+PR(:,:,:,5)+PR(:,:,:,6))*PRHODREF(:,:,:))
        ZTEMPZ(:)=FLYER_INTERPZ(PTH(II:II+1,IJ:IJ+1,:) * ZEXN(:,:,:))
         ZRHODREFZ(:)=FLYER_INTERPZ(PRHODREF(:,:,:))
         IF (CCLOUD=="LIMA") THEN
@@ -1215,7 +1208,7 @@ IF ( TPFLYER%FLY) THEN
               END DO
               ZREFLOC=ZREFLOC*(XLAM_CRAD/XPI)**4*ZCC*ZLBDA**ZCX/(4.*GAMMA(ZNU)*.93)
               ZAETMP=ZAETMP  *           XPI    *ZCC*ZLBDA**ZCX/(4.*GAMMA(ZNU))
-              TPFLYER%CRARE(IN,JK)=TPFLYER%CRARE(IN,JK)+ZREFLOC
+              TPFLYER%XCRARE(IN,JK)=TPFLYER%XCRARE(IN,JK)+ZREFLOC
               ZAELOC(JK)=ZAELOC(JK)+ZAETMP
             END IF
 
@@ -1228,65 +1221,65 @@ IF ( TPFLYER%FLY) THEN
         ZZMZ(:)=FLYER_INTERPZ(ZZM(:,:,:))
         ! nadir
         ZAETOT=1.
-        DO JK=COUNT(TPFLYER%Z_CUR >= ZZMZ(:)),1,-1
-          IF(JK.EQ.COUNT(TPFLYER%Z_CUR >= ZZMZ(:))) THEN
-            IF(TPFLYER%Z_CUR<=ZZMZ(JK)+.5*(ZZMZ(JK+1)-ZZMZ(JK))) THEN
+        DO JK=COUNT(TPFLYER%XZ_CUR >= ZZMZ(:)),1,-1
+          IF(JK.EQ.COUNT(TPFLYER%XZ_CUR >= ZZMZ(:))) THEN
+            IF(TPFLYER%XZ_CUR<=ZZMZ(JK)+.5*(ZZMZ(JK+1)-ZZMZ(JK))) THEN
               ! only attenuation from ZAELOC(JK)
-              ZAETOT=ZAETOT*EXP(-2.*(ZAELOC(JK)*(TPFLYER%Z_CUR-ZZMZ(JK))))
+              ZAETOT=ZAETOT*EXP(-2.*(ZAELOC(JK)*(TPFLYER%XZ_CUR-ZZMZ(JK))))
             ELSE
               ! attenuation from ZAELOC(JK) and ZAELOC(JK+1)
-              ZAETOT=ZAETOT*EXP(-2.*(ZAELOC(JK+1)*(TPFLYER%Z_CUR-.5*(ZZMZ(JK+1)+ZZMZ(JK))) &
+              ZAETOT=ZAETOT*EXP(-2.*(ZAELOC(JK+1)*(TPFLYER%XZ_CUR-.5*(ZZMZ(JK+1)+ZZMZ(JK))) &
                 +ZAELOC(JK)*.5*(ZZMZ(JK+1)-ZZMZ(JK))))
             END IF
           ELSE
             ! attenuation from ZAELOC(JK) and ZAELOC(JK+1)
             ZAETOT=ZAETOT*EXP(-(ZAELOC(JK+1)+ZAELOC(JK))*(ZZMZ(JK+1)-ZZMZ(JK)))
           END IF
-          TPFLYER%CRARE_ATT(IN,JK)=TPFLYER%CRARE(IN,JK)*ZAETOT
+          TPFLYER%XCRARE_ATT(IN,JK)=TPFLYER%XCRARE(IN,JK)*ZAETOT
         END DO
         ! zenith
         ZAETOT=1.
-        DO JK = MAX(COUNT(TPFLYER%Z_CUR >= ZZMZ(:)),1)+1,IKU
-          IF ( JK .EQ. (MAX(COUNT(TPFLYER%Z_CUR >= ZZMZ(:)),1)+1) ) THEN        
-            IF(TPFLYER%Z_CUR>=ZZMZ(JK)-.5*(ZZMZ(JK)-ZZMZ(JK-1))) THEN
+        DO JK = MAX(COUNT(TPFLYER%XZ_CUR >= ZZMZ(:)),1)+1,IKU
+          IF ( JK .EQ. (MAX(COUNT(TPFLYER%XZ_CUR >= ZZMZ(:)),1)+1) ) THEN
+            IF(TPFLYER%XZ_CUR>=ZZMZ(JK)-.5*(ZZMZ(JK)-ZZMZ(JK-1))) THEN
               ! only attenuation from ZAELOC(JK)
-              ZAETOT=ZAETOT*EXP(-2.*(ZAELOC(JK)*(ZZMZ(JK)-TPFLYER%Z_CUR)))
+              ZAETOT=ZAETOT*EXP(-2.*(ZAELOC(JK)*(ZZMZ(JK)-TPFLYER%XZ_CUR)))
             ELSE
               ! attenuation from ZAELOC(JK) and ZAELOC(JK-1)
-              ZAETOT=ZAETOT*EXP(-2.*(ZAELOC(JK-1)*(.5*(ZZMZ(JK)+ZZMZ(JK-1))-TPFLYER%Z_CUR) &
+              ZAETOT=ZAETOT*EXP(-2.*(ZAELOC(JK-1)*(.5*(ZZMZ(JK)+ZZMZ(JK-1))-TPFLYER%XZ_CUR) &
                 +ZAELOC(JK)*.5*(ZZMZ(JK)-ZZMZ(JK-1))))
             END IF
           ELSE
             ! attenuation from ZAELOC(JK) and ZAELOC(JK-1)
             ZAETOT=ZAETOT*EXP(-(ZAELOC(JK-1)+ZAELOC(JK))*(ZZMZ(JK)-ZZMZ(JK-1)))
           END IF
-          TPFLYER%CRARE_ATT(IN,JK)=TPFLYER%CRARE(IN,JK)*ZAETOT
+          TPFLYER%XCRARE_ATT(IN,JK)=TPFLYER%XCRARE(IN,JK)*ZAETOT
         END DO
-        TPFLYER%ZZ  (IN,:) = ZZMZ(:)
+        TPFLYER%XZZ  (IN,:) = ZZMZ(:)
         DEALLOCATE(ZZMZ,ZAELOC)
         ! m^3 → mm^6/m^3 → dBZ
-        WHERE(TPFLYER%CRARE(IN,:)>0)
-          TPFLYER%CRARE(IN,:)=10.*LOG10(1.E18*TPFLYER%CRARE(IN,:))
+        WHERE(TPFLYER%XCRARE(IN,:)>0)
+          TPFLYER%XCRARE(IN,:)=10.*LOG10(1.E18*TPFLYER%XCRARE(IN,:))
         ELSEWHERE
-          TPFLYER%CRARE(IN,:)=XUNDEF
+          TPFLYER%XCRARE(IN,:)=XUNDEF
         END WHERE
-        WHERE(TPFLYER%CRARE_ATT(IN,:)>0)
-          TPFLYER%CRARE_ATT(IN,:)=10.*LOG10(1.E18*TPFLYER%CRARE_ATT(IN,:))
+        WHERE(TPFLYER%XCRARE_ATT(IN,:)>0)
+          TPFLYER%XCRARE_ATT(IN,:)=10.*LOG10(1.E18*TPFLYER%XCRARE_ATT(IN,:))
         ELSEWHERE
-          TPFLYER%CRARE_ATT(IN,:)=XUNDEF
+          TPFLYER%XCRARE_ATT(IN,:)=XUNDEF
         END WHERE
         DEALLOCATE(ZX,ZW,ZRTMIN)
       END IF ! end LOOP ICE3
         ! vertical wind
-        TPFLYER%WZ  (IN,:) = FLYER_INTERPZ(ZWM(:,:,:))
-        IF (SIZE(PTKE)>0) TPFLYER%TKE  (IN)    = FLYER_INTERP(PTKE)
-        IF (SIZE(PTS) >0) TPFLYER%TSRAD(IN)    = FLYER_INTERP_2D(PTS)
-        IF (LDIAG_IN_RUN) TPFLYER%TKE_DISS(IN) = FLYER_INTERP(XCURRENT_TKE_DISS)
-        TPFLYER%ZS(IN)  = FLYER_INTERP_2D(PZ(:,:,1+JPVEXT))
-        TPFLYER%THW_FLUX(IN) = FLYER_INTERP(ZTHW_FLUX)
-        TPFLYER%RCW_FLUX(IN) = FLYER_INTERP(ZRCW_FLUX)
+        TPFLYER%XWZ  (IN,:) = FLYER_INTERPZ(ZWM(:,:,:))
+        IF (SIZE(PTKE)>0) TPFLYER%XTKE  (IN)    = FLYER_INTERP(PTKE)
+        IF (SIZE(PTS) >0) TPFLYER%XTSRAD(IN)    = FLYER_INTERP_2D(PTS)
+        IF (LDIAG_IN_RUN) TPFLYER%XTKE_DISS(IN) = FLYER_INTERP(XCURRENT_TKE_DISS)
+        TPFLYER%XZS(IN)  = FLYER_INTERP_2D(PZ(:,:,1+JPVEXT))
+        TPFLYER%XTHW_FLUX(IN) = FLYER_INTERP(ZTHW_FLUX)
+        TPFLYER%XRCW_FLUX(IN) = FLYER_INTERP(ZRCW_FLUX)
         DO JLOOP=1,SIZE(PSV,4)
-         TPFLYER%SVW_FLUX(IN,JLOOP) = FLYER_INTERP(ZSVW_FLUX(:,:,:,JLOOP))
+         TPFLYER%XSVW_FLUX(IN,JLOOP) = FLYER_INTERP(ZSVW_FLUX(:,:,:,JLOOP))
         END DO
       END IF
 !
@@ -1297,7 +1290,7 @@ IF ( TPFLYER%FLY) THEN
 !
       SELECT TYPE ( TPFLYER )
         CLASS IS ( TBALLOONDATA)
-          IF (TPFLYER%TYPE=='RADIOS' .OR. TPFLYER%TYPE=='ISODEN' .OR. TPFLYER%TYPE=='CVBALL') THEN
+          IF ( TPFLYER%CTYPE == 'RADIOS' .OR. TPFLYER%CTYPE == 'ISODEN' .OR. TPFLYER%CTYPE == 'CVBALL' ) THEN
             ZU_BAL = FLYER_INTERP_U(PU)
             ZV_BAL = FLYER_INTERP_V(PV)
             if ( .not. lcartesian ) then
@@ -1306,38 +1299,38 @@ IF ( TPFLYER%FLY) THEN
               ZMAP = 1.
             end if
             !
-            TPFLYER%X_CUR = TPFLYER%X_CUR   +   ZU_BAL * PTSTEP * ZMAP
-            TPFLYER%Y_CUR = TPFLYER%Y_CUR   +   ZV_BAL * PTSTEP * ZMAP
+            TPFLYER%XX_CUR = TPFLYER%XX_CUR   +   ZU_BAL * PTSTEP * ZMAP
+            TPFLYER%XY_CUR = TPFLYER%XY_CUR   +   ZV_BAL * PTSTEP * ZMAP
           END IF
           !
-          IF (TPFLYER%TYPE=='RADIOS') THEN
+          IF ( TPFLYER%CTYPE == 'RADIOS' ) THEN
             ZW_BAL = FLYER_INTERP(ZWM)
-            TPFLYER%Z_CUR = TPFLYER%Z_CUR + ( ZW_BAL + TPFLYER%WASCENT ) * PTSTEP
+            TPFLYER%XZ_CUR = TPFLYER%XZ_CUR + ( ZW_BAL + TPFLYER%XWASCENT ) * PTSTEP
           END IF
           !
-          IF (TPFLYER%TYPE=='CVBALL') THEN
+          IF ( TPFLYER%CTYPE == 'CVBALL' ) THEN
             ZW_BAL = FLYER_INTERP(ZWM)
             ZRO_BAL = FLYER_INTERP(ZRHO)
             ! calculation with a time step of 1 second or less
             IF (INT(PTSTEP) .GT. 1 ) THEN
               DO JK=1,INT(PTSTEP)
-                TPFLYER%WASCENT = TPFLYER%WASCENT &
-                  -  ( 1. / (1. + TPFLYER%INDDRAG ) ) * 1. * &
-                     ( XG * ( ( TPFLYER%MASS / TPFLYER%VOLUME ) - ZRO_BAL ) / ( TPFLYER%MASS / TPFLYER%VOLUME ) &
-                        + TPFLYER%WASCENT * ABS ( TPFLYER%WASCENT ) * &
-                          TPFLYER%DIAMETER * TPFLYER%AERODRAG / ( 2. * TPFLYER%VOLUME ) &
+                TPFLYER%XWASCENT = TPFLYER%XWASCENT &
+                  -  ( 1. / (1. + TPFLYER%XINDDRAG ) ) * 1. * &
+                     ( XG * ( ( TPFLYER%XMASS / TPFLYER%XVOLUME ) - ZRO_BAL ) / ( TPFLYER%XMASS / TPFLYER%XVOLUME ) &
+                        + TPFLYER%XWASCENT * ABS ( TPFLYER%XWASCENT ) * &
+                          TPFLYER%XDIAMETER * TPFLYER%XAERODRAG / ( 2. * TPFLYER%XVOLUME ) &
                       )
-                TPFLYER%Z_CUR = TPFLYER%Z_CUR + ( ZW_BAL + TPFLYER%WASCENT ) * 1.
+                TPFLYER%XZ_CUR = TPFLYER%XZ_CUR + ( ZW_BAL + TPFLYER%XWASCENT ) * 1.
               END DO
             END IF
             IF (PTSTEP .GT. INT(PTSTEP)) THEN
-                TPFLYER%WASCENT = TPFLYER%WASCENT &
-                  -  ( 1. / (1. + TPFLYER%INDDRAG ) ) * (PTSTEP-INT(PTSTEP)) * &
-                     ( XG * ( ( TPFLYER%MASS / TPFLYER%VOLUME ) - ZRO_BAL ) / ( TPFLYER%MASS / TPFLYER%VOLUME ) &
-                        + TPFLYER%WASCENT * ABS ( TPFLYER%WASCENT ) * &
-                          TPFLYER%DIAMETER * TPFLYER%AERODRAG / ( 2. * TPFLYER%VOLUME ) &
+                TPFLYER%XWASCENT = TPFLYER%XWASCENT &
+                  -  ( 1. / (1. + TPFLYER%XINDDRAG ) ) * (PTSTEP-INT(PTSTEP)) * &
+                     ( XG * ( ( TPFLYER%XMASS / TPFLYER%XVOLUME ) - ZRO_BAL ) / ( TPFLYER%XMASS / TPFLYER%XVOLUME ) &
+                        + TPFLYER%XWASCENT * ABS ( TPFLYER%XWASCENT ) * &
+                          TPFLYER%XDIAMETER * TPFLYER%XAERODRAG / ( 2. * TPFLYER%XVOLUME ) &
                       )
-                TPFLYER%Z_CUR = TPFLYER%Z_CUR + ( ZW_BAL + TPFLYER%WASCENT ) * (PTSTEP-INT(PTSTEP))
+                TPFLYER%XZ_CUR = TPFLYER%XZ_CUR + ( ZW_BAL + TPFLYER%XWASCENT ) * (PTSTEP-INT(PTSTEP))
             END IF
           END IF
       END SELECT
@@ -1356,43 +1349,43 @@ IF ( TPFLYER%FLY) THEN
 !*     10.1  Determination of flight segment
 !            -------------------------------
 !
-        IL = TPFLYER%SEGCURN
+        IL = TPFLYER%NSEGCURN
         !
-        TPFLYER%SEGCURT = TPFLYER%SEGCURT + PTSTEP
+        TPFLYER%XSEGCURT = TPFLYER%XSEGCURT + PTSTEP
         !
-         DO WHILE (TPFLYER%SEGCURT>TPFLYER%SEGTIME(IL))
-           TPFLYER%SEGCURN = TPFLYER%SEGCURN + 1
-           IL = TPFLYER%SEGCURN
-           TPFLYER%SEGCURT = TPFLYER%SEGCURT - TPFLYER%SEGTIME(IL-1)
-           IF (IL>TPFLYER%SEG) EXIT
+         DO WHILE (TPFLYER%XSEGCURT>TPFLYER%XSEGTIME(IL))
+           TPFLYER%NSEGCURN = TPFLYER%NSEGCURN + 1
+           IL = TPFLYER%NSEGCURN
+           TPFLYER%XSEGCURT = TPFLYER%XSEGCURT - TPFLYER%XSEGTIME(IL-1)
+           IF (IL>TPFLYER%NSEG) EXIT
         END DO
-!        DO WHILE (TPFLYER%SEGCURT>TPFLYER%SEGTIME(IL) .AND. IL <= TPFLYER%SEG)
-!          TPFLYER%SEGCURN = TPFLYER%SEGCURN + 1
-!          IL = TPFLYER%SEGCURN
-!          TPFLYER%SEGCURT = TPFLYER%SEGCURT - TPFLYER%SEGTIME(IL-1)
+!        DO WHILE (TPFLYER%XSEGCURT>TPFLYER%XSEGTIME(IL) .AND. IL <= TPFLYER%NSEG)
+!          TPFLYER%NSEGCURN = TPFLYER%NSEGCURN + 1
+!          IL = TPFLYER%NSEGCURN
+!          TPFLYER%XSEGCURT = TPFLYER%XSEGCURT - TPFLYER%XSEGTIME(IL-1)
 !        END DO
         !
         !* end of flight
         !
-        IF (IL > TPFLYER%SEG) TPFLYER%FLY=.FALSE.
+        IF (IL > TPFLYER%NSEG) TPFLYER%LFLY = .FALSE.
 !
 !
 !*     10.2  Determination of new position
 !            -----------------------------
 !
-        IF (TPFLYER%FLY) THEN
-          ZSEG_FRAC = TPFLYER%SEGCURT / TPFLYER%SEGTIME(IL)
+        IF (TPFLYER%LFLY) THEN
+          ZSEG_FRAC = TPFLYER%XSEGCURT / TPFLYER%XSEGTIME(IL)
           !
-          TPFLYER%X_CUR = (1.-ZSEG_FRAC) * TPFLYER%SEGX(IL  ) &
-                        +     ZSEG_FRAC  * TPFLYER%SEGX(IL+1)
-          TPFLYER%Y_CUR = (1.-ZSEG_FRAC) * TPFLYER%SEGY(IL  ) &
-                        +     ZSEG_FRAC  * TPFLYER%SEGY(IL+1)
-            IF (TPFLYER%ALTDEF) THEN
-               TPFLYER%P_CUR = (1.-ZSEG_FRAC) * TPFLYER%SEGP(IL  ) &
-                        +     ZSEG_FRAC  * TPFLYER%SEGP(IL+1)
+          TPFLYER%XX_CUR = (1.-ZSEG_FRAC) * TPFLYER%XSEGX(IL  ) &
+                        +     ZSEG_FRAC  * TPFLYER%XSEGX(IL+1)
+          TPFLYER%XY_CUR = (1.-ZSEG_FRAC) * TPFLYER%XSEGY(IL  ) &
+                        +     ZSEG_FRAC  * TPFLYER%XSEGY(IL+1)
+            IF (TPFLYER%LALTDEF) THEN
+               TPFLYER%XP_CUR = (1.-ZSEG_FRAC) * TPFLYER%XSEGP(IL  ) &
+                        +     ZSEG_FRAC  * TPFLYER%XSEGP(IL+1)
             ELSE
-               TPFLYER%Z_CUR = (1.-ZSEG_FRAC) * TPFLYER%SEGZ(IL  ) &
-                        +     ZSEG_FRAC  * TPFLYER%SEGZ(IL+1)
+               TPFLYER%XZ_CUR = (1.-ZSEG_FRAC) * TPFLYER%XSEGZ(IL  ) &
+                        +     ZSEG_FRAC  * TPFLYER%XSEGZ(IL+1)
             END IF
         END IF
     END SELECT
@@ -1409,27 +1402,27 @@ END IF
 !*     11.1  current position
 !            ----------------
 !
-CALL DISTRIBUTE_FLYER_L(TPFLYER%FLY)
-CALL DISTRIBUTE_FLYER_L(TPFLYER%CRASH)
-CALL DISTRIBUTE_FLYER(TPFLYER%X_CUR)
-CALL DISTRIBUTE_FLYER(TPFLYER%Y_CUR)
+CALL DISTRIBUTE_FLYER_L(TPFLYER%LFLY)
+CALL DISTRIBUTE_FLYER_L(TPFLYER%LCRASH)
+CALL DISTRIBUTE_FLYER(TPFLYER%XX_CUR)
+CALL DISTRIBUTE_FLYER(TPFLYER%XY_CUR)
 
 SELECT TYPE ( TPFLYER )
   CLASS IS ( TBALLOONDATA )
-    IF (TPFLYER%TYPE=='CVBALL') THEN
-      CALL DISTRIBUTE_FLYER(TPFLYER%Z_CUR)
-      CALL DISTRIBUTE_FLYER(TPFLYER%WASCENT)
-    ELSE IF (TPFLYER%TYPE=='RADIOS') THEN
-      CALL DISTRIBUTE_FLYER(TPFLYER%Z_CUR)
-    ELSE IF (TPFLYER%TYPE=='ISODEN' ) THEN
-      CALL DISTRIBUTE_FLYER(TPFLYER%RHO)
+    IF ( TPFLYER%CTYPE == 'CVBALL' ) THEN
+      CALL DISTRIBUTE_FLYER(TPFLYER%XZ_CUR)
+      CALL DISTRIBUTE_FLYER(TPFLYER%XWASCENT)
+    ELSE IF ( TPFLYER%CTYPE == 'RADIOS' ) THEN
+      CALL DISTRIBUTE_FLYER(TPFLYER%XZ_CUR)
+    ELSE IF ( TPFLYER%CTYPE == 'ISODEN' ) THEN
+      CALL DISTRIBUTE_FLYER(TPFLYER%XRHO)
     END IF
 
   CLASS IS ( TAIRCRAFTDATA )
-    IF (TPFLYER%ALTDEF) THEN
-      CALL DISTRIBUTE_FLYER(TPFLYER%P_CUR)
+    IF (TPFLYER%LALTDEF) THEN
+      CALL DISTRIBUTE_FLYER(TPFLYER%XP_CUR)
     ELSE
-      CALL DISTRIBUTE_FLYER(TPFLYER%Z_CUR)
+      CALL DISTRIBUTE_FLYER(TPFLYER%XZ_CUR)
     ENDIF
 END SELECT
 !
@@ -1437,47 +1430,47 @@ END SELECT
 !            -----------
 !
 IF ( GSTORE ) THEN
-  CALL DISTRIBUTE_FLYER(TPFLYER%X   (IN))
-  CALL DISTRIBUTE_FLYER(TPFLYER%Y   (IN))
-  CALL DISTRIBUTE_FLYER(TPFLYER%Z   (IN))
+  CALL DISTRIBUTE_FLYER(TPFLYER%XX  (IN))
+  CALL DISTRIBUTE_FLYER(TPFLYER%XY  (IN))
+  CALL DISTRIBUTE_FLYER(TPFLYER%XZ  (IN))
   CALL DISTRIBUTE_FLYER(TPFLYER%XLON(IN))
-  CALL DISTRIBUTE_FLYER(TPFLYER%YLAT(IN))
-  CALL DISTRIBUTE_FLYER(TPFLYER%ZON (IN))
-  CALL DISTRIBUTE_FLYER(TPFLYER%MER (IN))
-  CALL DISTRIBUTE_FLYER(TPFLYER%W   (IN))
-  CALL DISTRIBUTE_FLYER(TPFLYER%P   (IN))
-  CALL DISTRIBUTE_FLYER(TPFLYER%TH  (IN))
+  CALL DISTRIBUTE_FLYER(TPFLYER%XLAT(IN))
+  CALL DISTRIBUTE_FLYER(TPFLYER%XZON(IN))
+  CALL DISTRIBUTE_FLYER(TPFLYER%XMER(IN))
+  CALL DISTRIBUTE_FLYER(TPFLYER%XW  (IN))
+  CALL DISTRIBUTE_FLYER(TPFLYER%XP  (IN))
+  CALL DISTRIBUTE_FLYER(TPFLYER%XTH (IN))
   DO JLOOP=1,SIZE(PR,4)
-    CALL DISTRIBUTE_FLYER(TPFLYER%R   (IN,JLOOP))
+    CALL DISTRIBUTE_FLYER(TPFLYER%XR   (IN,JLOOP))
   END DO
   DO JLOOP=1,SIZE(PSV,4)
-    CALL DISTRIBUTE_FLYER(TPFLYER%SV  (IN,JLOOP))
+    CALL DISTRIBUTE_FLYER(TPFLYER%XSV  (IN,JLOOP))
   END DO
   DO JLOOP=1,IKU              
-    CALL DISTRIBUTE_FLYER(TPFLYER%RTZ (IN,JLOOP))
+    CALL DISTRIBUTE_FLYER(TPFLYER%XRTZ (IN,JLOOP))
     DO JLOOP2=1,SIZE(PR,4)
-      CALL DISTRIBUTE_FLYER(TPFLYER%RZ (IN,JLOOP,JLOOP2))
+      CALL DISTRIBUTE_FLYER(TPFLYER%XRZ (IN,JLOOP,JLOOP2))
     ENDDO
-    CALL DISTRIBUTE_FLYER(TPFLYER%FFZ (IN,JLOOP))
-    CALL DISTRIBUTE_FLYER(TPFLYER%CIZ (IN,JLOOP))
+    CALL DISTRIBUTE_FLYER(TPFLYER%XFFZ (IN,JLOOP))
+    CALL DISTRIBUTE_FLYER(TPFLYER%XCIZ (IN,JLOOP))
     IF (CCLOUD== 'LIMA' ) THEN
-      CALL DISTRIBUTE_FLYER(TPFLYER%CRZ (IN,JLOOP))
-      CALL DISTRIBUTE_FLYER(TPFLYER%CCZ (IN,JLOOP))      
+      CALL DISTRIBUTE_FLYER(TPFLYER%XCRZ (IN,JLOOP))
+      CALL DISTRIBUTE_FLYER(TPFLYER%XCCZ (IN,JLOOP))
     ENDIF
-    CALL DISTRIBUTE_FLYER(TPFLYER%IWCZ (IN,JLOOP))
-    CALL DISTRIBUTE_FLYER(TPFLYER%LWCZ (IN,JLOOP))
-    CALL DISTRIBUTE_FLYER(TPFLYER%CRARE (IN,JLOOP))
-    CALL DISTRIBUTE_FLYER(TPFLYER%CRARE_ATT (IN,JLOOP))
-    CALL DISTRIBUTE_FLYER(TPFLYER%WZ (IN,JLOOP))
-    CALL DISTRIBUTE_FLYER(TPFLYER%ZZ (IN,JLOOP))
+    CALL DISTRIBUTE_FLYER(TPFLYER%XIWCZ (IN,JLOOP))
+    CALL DISTRIBUTE_FLYER(TPFLYER%XLWCZ (IN,JLOOP))
+    CALL DISTRIBUTE_FLYER(TPFLYER%XCRARE (IN,JLOOP))
+    CALL DISTRIBUTE_FLYER(TPFLYER%XCRARE_ATT (IN,JLOOP))
+    CALL DISTRIBUTE_FLYER(TPFLYER%XWZ (IN,JLOOP))
+    CALL DISTRIBUTE_FLYER(TPFLYER%XZZ (IN,JLOOP))
   END DO
-  IF (SIZE(PTKE)>0) CALL DISTRIBUTE_FLYER(TPFLYER%TKE  (IN))
-  IF (SIZE(PTS) >0) CALL DISTRIBUTE_FLYER(TPFLYER%TSRAD(IN))
-  CALL DISTRIBUTE_FLYER(TPFLYER%ZS  (IN))
-  CALL DISTRIBUTE_FLYER(TPFLYER%THW_FLUX(IN))
-  CALL DISTRIBUTE_FLYER(TPFLYER%RCW_FLUX(IN))
+  IF (SIZE(PTKE)>0) CALL DISTRIBUTE_FLYER(TPFLYER%XTKE  (IN))
+  IF (SIZE(PTS) >0) CALL DISTRIBUTE_FLYER(TPFLYER%XTSRAD(IN))
+  CALL DISTRIBUTE_FLYER(TPFLYER%XZS  (IN))
+  CALL DISTRIBUTE_FLYER(TPFLYER%XTHW_FLUX(IN))
+  CALL DISTRIBUTE_FLYER(TPFLYER%XRCW_FLUX(IN))
   DO JLOOP=1,SIZE(PSV,4)
-    CALL DISTRIBUTE_FLYER(TPFLYER%SVW_FLUX(IN,JLOOP))
+    CALL DISTRIBUTE_FLYER(TPFLYER%XSVW_FLUX(IN,JLOOP))
   END DO
 END IF
 !
@@ -1673,8 +1666,8 @@ INTEGER :: IJE
 !
 IMODEL=TPFLYER%NMODEL
 CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
-IU=COUNT( PXHAT (:)<=TPFLYER%X_CUR )
-IV=COUNT( PYHAT (:)<=TPFLYER%Y_CUR )
+IU=COUNT( PXHAT (:)<=TPFLYER%XX_CUR )
+IV=COUNT( PYHAT (:)<=TPFLYER%XY_CUR )
 ZTHIS_PROC=0.
 IF (IU>=IIB .AND. IU<=IIE .AND. IV>=IJB .AND. IV<=IJE) ZTHIS_PROC=1.
 IF (ZTHIS_PROC .EQ. 1) THEN
@@ -1721,13 +1714,13 @@ ZTHIS_PROC=0.
 IF (TPFLYER%NMODEL /= IMODEL) THEN
    IF (NDAD(IMODEL) == TPFLYER%NMODEL) THEN
       WRITE(ILUOUT,*) '-------------------------------------------------------------------'
-      WRITE(ILUOUT,*) TPFLYER%TITLE,' comes from model ',IMODEL,' in  model ',&
-             TPFLYER%NMODEL,' at ',NINT(TDTCUR%xtime),' sec.'
+      WRITE(ILUOUT,*) TPFLYER%CTITLE,' comes from model ',IMODEL,' in  model ', &
+                      TPFLYER%NMODEL,' at ',NINT(TDTCUR%xtime),' sec.'
       WRITE(ILUOUT,*) '-------------------------------------------------------------------'
    ELSE
       WRITE(ILUOUT,*) '-------------------------------------------------------------------'
-      WRITE(ILUOUT,*) TPFLYER%TITLE,' goes from model ',IMODEL,' to  model ',&
-             TPFLYER%NMODEL,' at ',NINT(TDTCUR%xtime),' sec.'
+      WRITE(ILUOUT,*) TPFLYER%CTITLE,' goes from model ',IMODEL,' to  model ', &
+                      TPFLYER%NMODEL,' at ',NINT(TDTCUR%xtime),' sec.'
       WRITE(ILUOUT,*) '-------------------------------------------------------------------'
    ENDIF
 ENDIF

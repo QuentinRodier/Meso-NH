@@ -90,6 +90,7 @@ subroutine Write_diachro( tpdiafile, tpbudiachro, tpfields,       &
 !  P. Wautelet 11/03/2021: remove ptrajx/y/z optional dummy arguments of Write_diachro
 !                          + get the trajectory data for LFI files differently
 !  P. Wautelet 01/09/2021: allow NMNHDIM_LEVEL and NMNHDIM_LEVEL_W simultaneously
+!  P. Wautelet    06/2022: reorganize flyers
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -364,7 +365,7 @@ ITTRAJX=0; ITTRAJY=0; ITTRAJZ=0
 INTRAJX=0; INTRAJY=0; INTRAJZ=0
 IF ( PRESENT( tpflyer ) ) THEN
   IKTRAJX = 1
-  ITTRAJX = SIZE( tpflyer%x )
+  ITTRAJX = SIZE( tpflyer%xx )
   INTRAJX = 1
 ELSE IF ( ycategory == 'LES_budgets' .and.  tpbudiachro%clevels(NLVL_SHAPE) == 'Cartesian' ) THEN
   IKTRAJX = 1
@@ -373,7 +374,7 @@ ELSE IF ( ycategory == 'LES_budgets' .and.  tpbudiachro%clevels(NLVL_SHAPE) == '
 ENDIF
 IF ( PRESENT( tpflyer ) ) THEN
   IKTRAJY = 1
-  ITTRAJY = SIZE( tpflyer%y )
+  ITTRAJY = SIZE( tpflyer%xy )
   INTRAJY = 1
 ELSE IF ( ycategory == 'LES_budgets' .and.  tpbudiachro%clevels(NLVL_SHAPE) == 'Cartesian' ) THEN
   IKTRAJY = 1
@@ -382,7 +383,7 @@ ELSE IF ( ycategory == 'LES_budgets' .and.  tpbudiachro%clevels(NLVL_SHAPE) == '
 ENDIF
 IF ( PRESENT( tpflyer ) ) THEN
   IKTRAJZ = 1
-  ITTRAJZ = SIZE( tpflyer%z )
+  ITTRAJZ = SIZE( tpflyer%xz )
   INTRAJZ = 1
 ELSE IF ( ycategory == 'LES_budgets' .and.  tpbudiachro%clevels(NLVL_SHAPE) == 'Cartesian' ) THEN
   IKTRAJZ = IK
@@ -655,7 +656,7 @@ IF(PRESENT(tpflyer))THEN
     NTYPE      = TYPEREAL,               &
     NDIMS      = 3,                      &
     LTIMEDEP   = .FALSE.                 )
-  CALL IO_Field_write(tzfile,TZFIELD, Reshape( tpflyer%x, [1, Size( tpflyer%x), 1] ) )
+  CALL IO_Field_write(tzfile,TZFIELD, Reshape( tpflyer%xx, [1, Size( tpflyer%xx), 1] ) )
 ELSE IF ( ycategory == 'LES_budgets' .and.  tpbudiachro%clevels(NLVL_SHAPE) == 'Cartesian' ) THEN
   TZFIELD = TFIELDMETADATA(              &
     CMNHNAME   = TRIM(ygroup)//'.TRAJX', &
@@ -688,7 +689,7 @@ IF(PRESENT(tpflyer))THEN
     NTYPE      = TYPEREAL,               &
     NDIMS      = 3,                      &
     LTIMEDEP   = .FALSE.                 )
-  CALL IO_Field_write(tzfile,TZFIELD, Reshape( tpflyer%y, [1, Size( tpflyer%y), 1] ) )
+  CALL IO_Field_write(tzfile,TZFIELD, Reshape( tpflyer%xy, [1, Size( tpflyer%xy), 1] ) )
 ELSE IF ( ycategory == 'LES_budgets' .and.  tpbudiachro%clevels(NLVL_SHAPE) == 'Cartesian' ) THEN
   TZFIELD = TFIELDMETADATA(              &
     CMNHNAME   = TRIM(ygroup)//'.TRAJY', &
@@ -721,7 +722,7 @@ IF(PRESENT(tpflyer))THEN
     NTYPE      = TYPEREAL,               &
     NDIMS      = 3,                      &
     LTIMEDEP   = .FALSE.                 )
-  CALL IO_Field_write(tzfile,TZFIELD, Reshape( tpflyer%z, [1, Size( tpflyer%z), 1] ) )
+  CALL IO_Field_write(tzfile,TZFIELD, Reshape( tpflyer%xz, [1, Size( tpflyer%xz), 1] ) )
 ELSE IF ( ycategory == 'LES_budgets' .and.  tpbudiachro%clevels(NLVL_SHAPE) == 'Cartesian' ) THEN
   TZFIELD = TFIELDMETADATA(              &
     CMNHNAME   = TRIM(ygroup)//'.TRAJZ', &
@@ -1512,13 +1513,13 @@ if ( Present( tpflyer ) ) then
     ndimlist   = [ NMNHDIM_FLYER_TIME ],                    &
     ltimedep   = .false.                                    )
 
-  call IO_Field_write( tzfile, tzfield, tpflyer%x )
+  call IO_Field_write( tzfile, tzfield, tpflyer%xx )
 
   tzfield%cmnhname   = 'Y'
   tzfield%cstdname   = Trim( ystdnameprefix ) // '_y_coordinate'
   tzfield%clongname  = 'y-position of the flyer'
 
-  call IO_Field_write( tzfile, tzfield, tpflyer%y )
+  call IO_Field_write( tzfile, tzfield, tpflyer%xy )
 end if
 
 end  subroutine Write_diachro_nc4
@@ -1563,21 +1564,21 @@ idims = Size( kdims )
 if ( odistributed ) then
   if ( idims /= 2 .and. idims /= 3 )                                                                 &
     call Print_msg( NVERB_FATAL, 'IO', 'Diachro_one_field_write_nc4',                                &
-                   'odistributed=.true. not allowed for dims/=3, field: ' //Trim( tzfield%cmnhname ) )
+                   'odistributed=.true. not allowed for dims/=3, field: ' //Trim( tpfield%cmnhname ) )
 
-  if ( tpbudiachro%clevels(NLVL_SHAPE) /= 'Cartesian' )                                                                    &
+  if ( tpbudiachro%clevels(NLVL_SHAPE) /= 'Cartesian' )                                                       &
     call Print_msg( NVERB_FATAL, 'IO', 'Diachro_one_field_write_nc4',                                         &
-                   'odistributed=.true. not allowed for shape/=cartesian, field: ' //Trim( tzfield%cmnhname ) )
+                   'odistributed=.true. not allowed for shape/=cartesian, field: ' //Trim( tpfield%cmnhname ) )
 end if
 
 if ( osplit ) then
   if ( idims > 3 )                                                                                          &
     call Print_msg( NVERB_FATAL, 'IO', 'Diachro_one_field_write_nc4',                                       &
-                                 'osplit=.true. not allowed for dims>3, field: ' //Trim( tzfield%cmnhname ) )
+                                 'osplit=.true. not allowed for dims>3, field: ' //Trim( tpfield%cmnhname ) )
 
-  if ( tpbudiachro%clevels(NLVL_CATEGORY) /= 'Budgets' )                                                  &
+  if ( tpbudiachro%clevels(NLVL_CATEGORY) /= 'Budgets' )                                                 &
     call Print_msg( NVERB_FATAL, 'IO', 'Diachro_one_field_write_nc4',                                    &
-                    'osplit=.true. not allowed for category/=budget, field: ' //Trim( tzfield%cmnhname ) )
+                    'osplit=.true. not allowed for category/=budget, field: ' //Trim( tpfield%cmnhname ) )
 end if
 
 Allocate( isizes(idims) )

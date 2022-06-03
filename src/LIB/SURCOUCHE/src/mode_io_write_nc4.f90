@@ -29,6 +29,7 @@
 !                          IO_Field_partial_write_nc4_N3 and IO_Field_partial_write_nc4_N4 subroutines
 !  P. Wautelet 30/03/2021: budgets: LES cartesian subdomain limits are defined in the physical domain
 !  P. Wautelet 22/03/2022: correct time_les_avg and time_les_avg_bounds coordinates
+!  P. Wautelet    06/2022: reorganize flyers
 !-----------------------------------------------------------------
 #ifdef MNH_IOCDF4
 module mode_io_write_nc4
@@ -2272,7 +2273,7 @@ subroutine Write_flyer_time_coord( tpflyer )
   type(tdimnc),        pointer :: tzdim
 
   !Do it only if correct model level and has really flown
-  if ( tpflyer%nmodel == imi .and. Count( tpflyer%x /= XUNDEF) > 1 ) then
+  if ( tpflyer%nmodel == imi .and. Count( tpflyer%xx /= XUNDEF) > 1 ) then
     Allocate( tzdim )
 
     istatus = NF90_INQ_NCID( tpfile%nncid, 'Flyers', icatid )
@@ -2289,16 +2290,16 @@ subroutine Write_flyer_time_coord( tpflyer )
                       Trim( tpfile%cname ) // ': group ' // Trim( ytype_clean ) // ' not found' )
     end if
 
-    istatus = NF90_INQ_NCID( isubcatid, Trim( tpflyer%title ), incid )
+    istatus = NF90_INQ_NCID( isubcatid, Trim( tpflyer%ctitle ), incid )
     if ( istatus /= NF90_NOERR ) then
       call Print_msg( NVERB_ERROR, 'IO', 'Write_flyer_time_coord', &
-                      Trim( tpfile%cname ) // ': group '// Trim( tpflyer%title ) // ' not found' )
+                      Trim( tpfile%cname ) // ': group '// Trim( tpflyer%ctitle ) // ' not found' )
     end if
 
     istatus = NF90_INQ_DIMID( incid, 'time_flyer', idimid )
     if ( istatus /= NF90_NOERR ) then
       call Print_msg( NVERB_ERROR, 'IO', 'Write_flyer_time_coord', &
-                      Trim( tpfile%cname ) // ': group ' // Trim( tpflyer%title ) // ' time_flyer dimension not found' )
+                      Trim( tpfile%cname ) // ': group ' // Trim( tpflyer%ctitle ) // ' time_flyer dimension not found' )
     end if
 
     tzdim%cname = 'time_flyer'
