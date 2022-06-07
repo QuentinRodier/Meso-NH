@@ -8,11 +8,11 @@
 !      #############################################
 !
 INTERFACE
-   SUBROUTINE LIMA_RAINDROP_SHATTERING_FREEZING (LDCOMPUTE,              &
-                                                 PRHODREF,               &
-                                                 PRRT, PCRT, PRIT, PCIT, &
-                                                 PLBDR,                  &
-                                                 P_RI_RDSF, P_CI_RDSF    )
+   SUBROUTINE LIMA_RAINDROP_SHATTERING_FREEZING (LDCOMPUTE,                    &
+                                                 PRHODREF,                     &
+                                                 PRRT, PCRT, PRIT, PCIT, PRGT, &
+                                                 PLBDR,                        &
+                                                 P_RI_RDSF, P_CI_RDSF          )
 !
 LOGICAL, DIMENSION(:),INTENT(IN)    :: LDCOMPUTE
 !
@@ -22,6 +22,7 @@ REAL, DIMENSION(:),   INTENT(IN)    :: PRRT
 REAL, DIMENSION(:),   INTENT(IN)    :: PCRT
 REAL, DIMENSION(:),   INTENT(IN)    :: PRIT
 REAL, DIMENSION(:),   INTENT(IN)    :: PCIT
+REAL, DIMENSION(:),   INTENT(IN)    :: PRGT
 REAL, DIMENSION(:),   INTENT(IN)    :: PLBDR 
 !
 REAL, DIMENSION(:),   INTENT(OUT)   :: P_RI_RDSF
@@ -32,11 +33,11 @@ END INTERFACE
 END MODULE MODI_LIMA_RAINDROP_SHATTERING_FREEZING
 !
 !     #######################################################################
-      SUBROUTINE LIMA_RAINDROP_SHATTERING_FREEZING (LDCOMPUTE,              &
-                                                    PRHODREF,               &
-                                                    PRRT, PCRT, PRIT, PCIT, &
-                                                    PLBDR,                  &
-                                                    P_RI_RDSF, P_CI_RDSF    )
+      SUBROUTINE LIMA_RAINDROP_SHATTERING_FREEZING (LDCOMPUTE,                    &
+                                                    PRHODREF,                     &
+                                                    PRRT, PCRT, PRIT, PCIT, PRGT, &
+                                                    PLBDR,                        &
+                                                    P_RI_RDSF, P_CI_RDSF          )
 !     #######################################################################
 !
 !!    PURPOSE
@@ -75,6 +76,7 @@ REAL, DIMENSION(:),   INTENT(IN)    :: PRRT
 REAL, DIMENSION(:),   INTENT(IN)    :: PCRT
 REAL, DIMENSION(:),   INTENT(IN)    :: PRIT
 REAL, DIMENSION(:),   INTENT(IN)    :: PCIT
+REAL, DIMENSION(:),   INTENT(IN)    :: PRGT
 REAL, DIMENSION(:),   INTENT(IN)    :: PLBDR 
 !
 REAL, DIMENSION(:),   INTENT(OUT)   :: P_RI_RDSF
@@ -97,7 +99,8 @@ P_RI_RDSF(:)=0.
 P_CI_RDSF(:)=0.
 !
 GRDSF(:) = LRDSF .AND. LDCOMPUTE .AND. (PRIT(:)>XRTMIN(4)) .AND. (PRRT(:)>XRTMIN(3)) &
-                                 .AND. (PCIT(:)>XCTMIN(4)) .AND. (PCRT(:)>XCTMIN(3))
+                                 .AND. (PCIT(:)>XCTMIN(4)) .AND. (PCRT(:)>XCTMIN(3)) &
+                                 .AND. (PRGT(:)>XRTMIN(6))
 
 IRDSF    = COUNT( GRDSF(:) )
 !

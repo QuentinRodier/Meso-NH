@@ -830,7 +830,7 @@ IF (LWARM .AND. LRAIN .AND. LCOLD .AND. LSNOW .AND. LRDSF) THEN
    !
    CALL LIMA_RAINDROP_SHATTERING_FREEZING (LDCOMPUTE,                                      & ! depends on PF, IF
                                            PRHODREF,                                       &
-                                           PRRT/ZPF1D, PCRT/ZPF1D, PRIT/ZIF1D, PCIT/ZIF1D, &
+                                           PRRT/ZPF1D, PCRT/ZPF1D, PRIT/ZIF1D, PCIT/ZIF1D, PRGT/ZPF1D, &
                                            ZLBDR,                                          &
                                            P_RI_RDSF, P_CI_RDSF                            )
    P_RI_RDSF(:) = P_RI_RDSF(:) * ZIF1D(:)
