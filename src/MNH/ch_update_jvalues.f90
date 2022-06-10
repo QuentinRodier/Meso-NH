@@ -85,7 +85,9 @@ END MODULE MODI_CH_UPDATE_JVALUES
 !!    -------------
 !!    Original 05/03/97
 !!    05/03/05  P. Tulet (CNRM/GMEI) Update for Arome
-!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
+!!    P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
+!!    M. Leriche 01/06/2022: correct J by the presence of clouds 
+!!    if nrr >= 2 and not nrr = 2 (meaning only cloud and water vapor)
 !!
 !!------------------------------------------------------------------------------
 !!
@@ -273,7 +275,7 @@ ELSE
     IF (.NOT.ALLOCATED(ZFCLD))  ALLOCATE(ZFCLD(1:IIU,1:IJU,1:IKU,JPJVMAX))
 !
      ZAZ3D(:,:,:) = PZZ(:,:,:)
-     IF (SIZE(PRT,4) == 2 ) THEN
+     IF (SIZE(PRT,4) >= 2 ) THEN
       ZLWC3D(:,:,:) = PRT(:,:,:,2) * PRHODREF(:,:,:)
      ELSE
       ZLWC3D(:,:,:) = 0.
