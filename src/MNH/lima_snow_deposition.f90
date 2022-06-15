@@ -125,10 +125,10 @@ IF (NMOM_I.EQ.1) THEN
 !
       ZZW(:) = 0.0
       WHERE ( (PRST(:)>XRTMIN(5)) )
-         ZZW(:) = PRHODREF(:) * PRST(:) * PSSI(:) / PAI(:) * &
+         ZZW(:) = PRST(:) * PSSI(:) / PAI(:) * &
               ( X0DEPS*PLBDS(:)**XEX0DEPS +                  &
                 X1DEPS*PLBDS(:)**(XEX1DEPS+XBS)*PCJ(:) *     &
-                     (1+(XFVELOS/(2.*PLBDS))**XALPHAS)**(-XNUS+XEX1DEPS/XALPHAS) )
+                     (1+0.5*(XFVELOS/PLBDS(:))**XALPHAS)**(-XNUS+XEX1DEPS/XALPHAS) )
          ZZW(:) =    ZZW(:)*(0.5+SIGN(0.5,ZZW(:))) - ABS(ZZW(:))*(0.5-SIGN(0.5,ZZW(:)))
       END WHERE
       P_RS_DEPS(:) = ZZW(:)
@@ -165,7 +165,7 @@ ELSE
          ZZW(:) = ( PRST(:)*PSSI(:)/(PAI(:)) ) *           &
               ( X0DEPS*PLBDS(:)**XEX0DEPS +                &
               ( X1DEPS*PCJ(:)*(PLBDS(:))**(XBS+XEX1DEPS) * &
-                   (1+(XFVELOS/(2.*PLBDS))**XALPHAS)**(-XNUS+XEX1DEPS/XALPHAS)) )
+                   (1+0.5*(XFVELOS/PLBDS(:))**XALPHAS)**(-XNUS+XEX1DEPS/XALPHAS)) )
          ZZW(:) =    ZZW(:)*(0.5+SIGN(0.5,ZZW(:))) - ABS(ZZW(:))*(0.5-SIGN(0.5,ZZW(:)))
       END WHERE
 !

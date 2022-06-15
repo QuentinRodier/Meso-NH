@@ -590,7 +590,9 @@ DO JK = 1, KKT
                END IF
             END IF
          ELSE
-            ZLBDAS(JI,JJ,JK)  = MAX(MIN(XLBDAS_MAX,XLBS*(PRHODREF(JI,JK,JL)*PRST(JI,JK,JL))**XLBEXS),XLBDAS_MIN)
+            IF (PRST(JI,JJ,JK).GT.XRTMIN(5)) THEN
+               ZLBDAS(JI,JJ,JK)  = MAX(MIN(XLBDAS_MAX,XLBS*(PRHODREF(JI,JJ,JK)*PRST(JI,JJ,JK))**XLBEXS),XLBDAS_MIN)
+            END IF
          END IF
       END DO
    END DO
@@ -648,8 +650,7 @@ IF(.NOT. LSEDIM_AFTER) THEN
     IF(KRR==7) THEN
       CALL ICE4_SEDIMENTATION_SPLIT(IIB, IIE, KIT, IJB, IJE, KJT, IKB, IKE, IKTB, IKTE, KKT, KKL, &
                                    &PTSTEP, KRR, OSEDIC, LDEPOSC, XVDEPOSC, PDZZ, &
-                                   &PRHODREF, PPABST, PTHT, PRHODJ, &
-				   &ZLBDAS, &
+                                   &PRHODREF, PPABST, PTHT, ZT, PRHODJ, &
                                    &PRCS, PRCT, PRRS, PRRT, PRIS, PRIT, PRSS, PRST, PRGS, PRGT,&
                                    &PINPRC, PINDEP, PINPRR, ZINPRI, PINPRS, PINPRG, &
                                    &PSEA=PSEA, PTOWN=PTOWN, &
@@ -657,8 +658,7 @@ IF(.NOT. LSEDIM_AFTER) THEN
     ELSE
       CALL ICE4_SEDIMENTATION_SPLIT(IIB, IIE, KIT, IJB, IJE, KJT, IKB, IKE, IKTB, IKTE, KKT, KKL, &
                                    &PTSTEP, KRR, OSEDIC, LDEPOSC, XVDEPOSC, PDZZ, &
-                                   &PRHODREF, PPABST, PTHT, PRHODJ, &
-				   &ZLBDAS, &
+                                   &PRHODREF, PPABST, PTHT, ZT, PRHODJ, &
                                    &PRCS, PRCT, PRRS, PRRT, PRIS, PRIT, PRSS, PRST, PRGS, PRGT,&
                                    &PINPRC, PINDEP, PINPRR, ZINPRI, PINPRS, PINPRG, &
                                    &PSEA=PSEA, PTOWN=PTOWN, &

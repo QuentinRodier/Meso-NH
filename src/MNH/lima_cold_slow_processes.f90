@@ -393,7 +393,7 @@ IF( IMICRO >= 1 ) THEN
       WHERE ( (ZRST(:)>XRTMIN(5)) .AND. (ZRSS(:)>ZRTMIN(5)) )
          ZZW(:) = ( ZRST(:)*ZSSI(:)/(ZAI(:)) ) *                                            &
               ( X0DEPS*ZLBDAS(:)**XEX0DEPS +                                                &
-              (X1DEPS*ZCJ(:)*(1+(XFVELOS/(2.*ZLBDAS))**XALPHAS)**(-XNUS+XEX1DEPS/XALPHAS) * &
+              (X1DEPS*ZCJ(:)*(1+0.5*(XFVELOS/ZLBDAS(:))**XALPHAS)**(-XNUS+XEX1DEPS/XALPHAS) * &
               (ZLBDAS(:))**(XEX1DEPS+XBS)))
 
          ZZW(:) =    MIN( ZRVS(:),ZZW(:)      )*(0.5+SIGN(0.5,ZZW(:))) &

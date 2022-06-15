@@ -195,7 +195,7 @@ DO JN = 1 ,  NSPLITSED(KID)
          END WHERE
          ZLBDA(:) = ZLBDA(:)*XTRANS_MP_GAMMAS
          ZZW(:) = XFSEDR(KID) * ZRHODREF(:)**(1.-XCEXVT)*ZRS(:)* &
-              (1 + (XFVELOS/ZLBDA(:))**XALPHAS)**(-XNUS+XEXSEDS/XALPHAS) * ZLBDA(:)**(XBS+XEXSEDS)
+              (1 + (XFVELOS/ZLBDA(:))**XALPHAS)**(-XNUS-(XD(KID)+XBS)/XALPHAS) * ZLBDA(:)**(-XD(KID))
       ELSE
          IF (KMOMENTS==1) ZLBDA(:) = XLB(KID) * ( ZRHODREF(:) * ZRS(:) )**XLBEX(KID)
          IF (KMOMENTS==2) ZLBDA(:) = ( XLB(KID)*ZCS(:) / ZRS(:) )**XLBEX(KID)

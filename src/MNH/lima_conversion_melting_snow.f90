@@ -107,10 +107,10 @@ WHERE( (PRST(:)>XRTMIN(5)) .AND. (PT(:)>XTT) .AND. LDCOMPUTE(:) )
 !
 ! compute RSMLT
 !
-   ZW(:)  = XFSCVMG*MAX( 0.0,( -ZW(:) * PRHODREF(:) * PRST(:) *          &
+   ZW(:)  = XFSCVMG*MAX( 0.0,( -ZW(:) * PRST(:) *                        &
                                ( X0DEPS*PLBDS(:)**XEX0DEPS +             &
                                  X1DEPS*PCJ(:)*PLBDS(:)**(XEX1DEPS+XBS)* &
-                                   (1+(XFVELOS/(2.*PLBDS(:)))**XALPHAS)**(-XNUS+XEX1DEPS/XALPHAS)) ))
+                                   (1+0.5*(XFVELOS/PLBDS(:))**XALPHAS)**(-XNUS+XEX1DEPS/XALPHAS)) ))
 ! On ne tient pas compte de la collection de pluie et gouttelettes par la neige si T>0 !!!! 
 ! Note that no heat is exchanged because the graupeln produced are still icy!!!
    P_RS_CMEL(:) = - ZW(:)

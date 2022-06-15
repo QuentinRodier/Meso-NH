@@ -173,11 +173,13 @@ IF(LDSOFT) THEN
   ENDDO
 ELSE
   PRVDEPS(:) = 0.
-  WHERE(ZMASK(:)==1.)
-    PRVDEPS(:) = ( PRST(:)*PSSI(:)/PAI(:)) *                               &
-         ( X0DEPS*PLBDAS(:)**XEX0DEPS + (X1DEPS*PCJ(:)*(1+(PLBDAS(:)/(2*XFVELOS)**XALPHAS))**(-XNUS+XEX1DEPS) &
-         *(PLBDAS(:))**(XBS+XEX1DEPS)))
-  END WHERE
+  DO JL=1, KSIZE
+     IF (ZMASK(JL)==1.) THEN
+        PRVDEPS(JL) = ( PRST(JL)*PSSI(JL)/PAI(JL) ) * &
+             ( X0DEPS*PLBDAS(JL)**XEX0DEPS + X1DEPS*PCJ(JL) * (1+0.5*(XFVELOS/PLBDAS(JL))**XALPHAS)**(-XNUS+XEX1DEPS/XALPHAS) &
+             *(PLBDAS(JL))**(XBS+XEX1DEPS) )
+     END IF
+  END DO
 ENDIF
 DO JL=1, KSIZE
   PA_RS(JL) = PA_RS(JL) + PRVDEPS(JL)
