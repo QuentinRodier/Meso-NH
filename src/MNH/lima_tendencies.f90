@@ -471,6 +471,12 @@ REAL,    DIMENSION(SIZE(PRCT))  :: ZCF1D
 REAL,    DIMENSION(SIZE(PRCT))  :: ZIF1D
 REAL,    DIMENSION(SIZE(PRCT))  :: ZPF1D
 !
+REAL,    DIMENSION(SIZE(PRCT))  :: ZRCT
+REAL,    DIMENSION(SIZE(PRCT))  :: ZRRT
+REAL,    DIMENSION(SIZE(PRCT))  :: ZRIT
+REAL,    DIMENSION(SIZE(PRCT))  :: ZRST
+REAL,    DIMENSION(SIZE(PRCT))  :: ZRGT
+REAL,    DIMENSION(SIZE(PRCT))  :: ZRHT
 !-------------------------------------------------------------------------------
 ! Pre-compute quantities
 !
@@ -479,6 +485,39 @@ REAL,    DIMENSION(SIZE(PRCT))  :: ZPF1D
 ZCF1D(:) = MAX(PCF1D(:),0.01)
 ZIF1D(:) = MAX(PIF1D(:),0.01)
 ZPF1D(:) = MAX(PPF1D(:),0.01)
+!
+!
+!
+WHERE (PRCT(:).GE.XRTMIN(2))
+   ZRCT(:)=PRCT(:)
+ELSEWHERE
+   ZRCT(:)=0.
+END WHERE
+WHERE (PRRT(:).GE.XRTMIN(3))
+   ZRRT(:)=PRRT(:)
+ELSEWHERE
+   ZRRT(:)=0.
+END WHERE
+WHERE (PRIT(:).GE.XRTMIN(4))
+   ZRIT(:)=PRIT(:)
+ELSEWHERE
+   ZRIT(:)=0.
+END WHERE
+WHERE (PRST(:).GE.XRTMIN(5))
+   ZRST(:)=PRST(:)
+ELSEWHERE
+   ZRST(:)=0.
+END WHERE
+WHERE (PRGT(:).GE.XRTMIN(6))
+   ZRGT(:)=PRGT(:)
+ELSEWHERE
+   ZRGT(:)=0.
+END WHERE
+WHERE (PRHT(:).GE.XRTMIN(7))
+   ZRHT(:)=PRHT(:)
+ELSEWHERE
+   ZRHT(:)=0.
+END WHERE
 !
 ! Is it necessary to compute the following quantities
 ! accounting for subgrig cloud fraction ?
@@ -494,8 +533,8 @@ WHERE (LDCOMPUTE(:))
 !
    ZW(:) = PEXNREF(:)*( XCPD &
                                +XCPV*PRVT(:) &
-                               +XCL*(PRCT(:)+PRRT(:)) &
-                               +XCI*(PRIT(:)+PRST(:)+PRGT(:)+PRHT(:)) )
+                               +XCL*(ZRCT(:)+ZRRT(:)) &
+                               +XCI*(ZRIT(:)+ZRST(:)+ZRGT(:)+ZRHT(:)) )
 !
    ZLV(:) = XLVTT + (XCPV-XCL)*(ZT(:)-XTT)
    ZLVFACT(:) = ZLV(:)/ZW(:)               ! L_v/(Pi_ref*C_ph)
@@ -526,8 +565,8 @@ END WHERE
 ! Cloud droplets : same formula for 1 and 2 moments, but using real or fixed Nc value
 ZLBDC(:)  = 1.E10
 ZLBDC3(:) = 1.E30
-WHERE (PRCT(:)>XRTMIN(2) .AND. PCCT(:)>XCTMIN(2) .AND. LDCOMPUTE(:))
-   ZLBDC3(:) = XLBC*PCCT(:) / PRCT(:)
+WHERE (ZRCT(:)>XRTMIN(2) .AND. PCCT(:)>XCTMIN(2) .AND. LDCOMPUTE(:))
+   ZLBDC3(:) = XLBC*PCCT(:) / ZRCT(:)
    ZLBDC(:)  = ZLBDC3(:)**XLBEXC
 END WHERE
 !
@@ -535,29 +574,29 @@ END WHERE
 ZLBDR(:)  = 1.E10
 ZLBDR3(:) = 1.E30
 IF (NMOM_R.EQ.1) THEN
-   WHERE (PRRT(:)>XRTMIN(3) .AND. LDCOMPUTE(:) )
-      ZLBDR(:) = XLBR*(PRHODREF(:)*PRRT(:) )**XLBEXR
+   WHERE (ZRRT(:)>XRTMIN(3) .AND. LDCOMPUTE(:) )
+      ZLBDR(:) = XLBR*(PRHODREF(:)*ZRRT(:) )**XLBEXR
       ZLBDR3(:) = ZLBDR(:)**3.
    END WHERE
    PCRT(:) = XCCR * ZLBDR(:)**XCXR / PRHODREF(:)
 ELSE
-   WHERE (PRRT(:)>XRTMIN(3) .AND. PCRT(:)>XCTMIN(3) .AND. LDCOMPUTE(:))
-      ZLBDR3(:) = XLBR*PCRT(:) / PRRT(:)
+   WHERE (ZRRT(:)>XRTMIN(3) .AND. PCRT(:)>XCTMIN(3) .AND. LDCOMPUTE(:))
+      ZLBDR3(:) = XLBR*PCRT(:) / ZRRT(:)
       ZLBDR(:)  = ZLBDR3(:)**XLBEXR
    END WHERE
 END IF
 !
 ! Pristine ice : same formula for 1 and 2 moments, using real or diagnosed Ni
 ZLBDI(:)  = 1.E10
-WHERE (PRIT(:)>XRTMIN(4) .AND. PCIT(:)>XCTMIN(4) .AND. LDCOMPUTE(:))
-   ZLBDI(:) = ( XLBI*PCIT(:) / PRIT(:) )**XLBEXI
+WHERE (ZRIT(:)>XRTMIN(4) .AND. PCIT(:)>XCTMIN(4) .AND. LDCOMPUTE(:))
+   ZLBDI(:) = ( XLBI*PCIT(:) / ZRIT(:) )**XLBEXI
 END WHERE
 !
 ! Snow : additional option for LSNOW_T if NMOM_S=1
 ZLBDS(:)  = 1.E10
 IF (NMOM_S.EQ.1) THEN
    IF (LSNOW_T) THEN
-      WHERE (PRST(:)>XRTMIN(5) .AND. LDCOMPUTE(:) )
+      WHERE (ZRST(:)>XRTMIN(5) .AND. LDCOMPUTE(:) )
          WHERE(ZT(:)>263.15)
             ZLBDS(:) = MAX(MIN(XLBDAS_MAX, 10**(14.554-0.0423*ZT(:))),XLBDAS_MIN)
          END WHERE
@@ -566,37 +605,37 @@ IF (NMOM_S.EQ.1) THEN
          END WHERE
       END WHERE
       ZLBDS(:) =  ZLBDS(:) * XTRANS_MP_GAMMAS
-      PCST(:) = XNS * PRST(:) * ZLBDS(:)**XBS
+      PCST(:) = XNS * ZRST(:) * ZLBDS(:)**XBS
    ELSE
-      WHERE (PRST(:)>XRTMIN(5) .AND. LDCOMPUTE(:) )
-         ZLBDS(:) = XLBS*( PRHODREF(:)*PRST(:) )**XLBEXS
+      WHERE (ZRST(:)>XRTMIN(5) .AND. LDCOMPUTE(:) )
+         ZLBDS(:) = XLBS*( PRHODREF(:)*ZRST(:) )**XLBEXS
       END WHERE
       PCST(:) = XCCS * ZLBDS(:)**XCXS / PRHODREF(:)
    END IF
 ELSE
-   ZLBDS(:) = (XLBS*PCST(:)/PRST(:))**XLBEXS
+   ZLBDS(:) = (XLBS*PCST(:)/ZRST(:))**XLBEXS
 END IF
 !
 ! Graupel
 ZLBDG(:)  = 1.E10
 IF (NMOM_G.EQ.1) THEN
-   WHERE (PRGT(:)>XRTMIN(6) .AND. LDCOMPUTE(:) )
-      ZLBDG(:) = XLBG*( PRHODREF(:)*PRGT(:) )**XLBEXG
+   WHERE (ZRGT(:)>XRTMIN(6) .AND. LDCOMPUTE(:) )
+      ZLBDG(:) = XLBG*( PRHODREF(:)*ZRGT(:) )**XLBEXG
    END WHERE
       PCGT(:) = XCCG * ZLBDG(:)**XCXG / PRHODREF(:)
 ELSE
-   ZLBDG(:) = (XLBG*PCGT(:)/PRGT(:))**XLBEXG
+   ZLBDG(:) = (XLBG*PCGT(:)/ZRGT(:))**XLBEXG
 END IF
 !
 ! Hail
 ZLBDH(:)  = 1.E10
 IF (NMOM_H.EQ.1) THEN
-   WHERE (PRHT(:)>XRTMIN(7) .AND. LDCOMPUTE(:) )
-      ZLBDH(:) = XLBH*( PRHODREF(:)*PRHT(:) )**XLBEXH
+   WHERE (ZRHT(:)>XRTMIN(7) .AND. LDCOMPUTE(:) )
+      ZLBDH(:) = XLBH*( PRHODREF(:)*ZRHT(:) )**XLBEXH
       PCHT(:) = XCCH * ZLBDH(:)**XCXH / PRHODREF(:)
    END WHERE
 ELSE
-   ZLBDH(:) = (XLBH*PCHT(:)/PRHT(:))**XLBEXH
+   ZLBDH(:) = (XLBH*PCHT(:)/ZRHT(:))**XLBEXH
 END IF
 !
 !-------------------------------------------------------------------------------
@@ -605,7 +644,7 @@ END IF
 IF (LCOLD .AND. LWARM) THEN
    CALL LIMA_DROPLETS_HOM_FREEZING (PTSTEP, LDCOMPUTE,                 & ! independent from CF,IF,PF
                                     ZT, ZLVFACT, ZLSFACT,              &
-                                    PRCT, PCCT, ZLBDC,                 &
+                                    ZRCT, PCCT, ZLBDC,                 &
                                     P_TH_HONC, P_RC_HONC, P_CC_HONC    )
    PA_RC(:) = PA_RC(:) + P_RC_HONC(:)
    IF (NMOM_C.GE.2) PA_CC(:) = PA_CC(:) + P_CC_HONC(:)
@@ -627,7 +666,7 @@ END IF
 IF (LWARM .AND. LRAIN) THEN
    CALL LIMA_DROPLETS_AUTOCONVERSION (LDCOMPUTE,                             & ! depends on CF
                                       PRHODREF,                              &
-                                      PRCT/ZCF1D, PCCT/ZCF1D, ZLBDC, ZLBDR,  &
+                                      ZRCT/ZCF1D, PCCT/ZCF1D, ZLBDC, ZLBDR,  &
                                       P_RC_AUTO, P_CC_AUTO, P_CR_AUTO        )
    P_RC_AUTO(:) = P_RC_AUTO(:) * ZCF1D(:)
    P_CC_AUTO(:) = P_CC_AUTO(:) * ZCF1D(:)
@@ -642,7 +681,7 @@ END IF
 IF (LWARM .AND. LRAIN) THEN
    CALL LIMA_DROPLETS_ACCRETION (LDCOMPUTE,                                     & ! depends on CF, PF
                                  PRHODREF,                                      &
-                                 PRCT/ZCF1D, PRRT/ZPF1D, PCCT/ZCF1D, PCRT/ZPF1D,&
+                                 ZRCT/ZCF1D, ZRRT/ZPF1D, PCCT/ZCF1D, PCRT/ZPF1D,&
                                  ZLBDC, ZLBDC3, ZLBDR, ZLBDR3,                  &
                                  P_RC_ACCR, P_CC_ACCR                           )
    !
@@ -668,7 +707,7 @@ END IF
 IF (LWARM .AND. LRAIN) THEN
    CALL LIMA_RAIN_EVAPORATION (PTSTEP, LDCOMPUTE,                               & ! depends on PF > CF 
                                PRHODREF, ZT, ZLV, ZLVFACT, ZEVSAT, ZRVSAT,      &
-                               PRVT, PRCT/ZPF1D, PRRT/ZPF1D, PCRT/ZPF1D, ZLBDR, &
+                               PRVT, ZRCT/ZPF1D, ZRRT/ZPF1D, PCRT/ZPF1D, ZLBDR, &
                                P_TH_EVAP, P_RR_EVAP, P_CR_EVAP,                 &
                                PEVAP3D                                          )
    P_RR_EVAP(:) = P_RR_EVAP(:) * MAX((ZPF1D(:) - ZCF1D(:)),0.)
@@ -688,7 +727,7 @@ IF (LCOLD) THEN
    !
    CALL LIMA_ICE_DEPOSITION (PTSTEP, LDCOMPUTE,                 & ! depends on IF, PF
                              PRHODREF, ZT, ZSSI, ZAI, ZCJ, ZLSFACT, &
-                             PRIT/ZIF1D, PCIT/ZIF1D, ZLBDI,     &
+                             ZRIT/ZIF1D, PCIT/ZIF1D, ZLBDI,     &
                              P_TH_DEPI, P_RI_DEPI,              &
                              P_RI_CNVS, P_CI_CNVS               )
    !
@@ -711,7 +750,7 @@ IF (LCOLD .AND. LSNOW) THEN
    !
    CALL LIMA_SNOW_DEPOSITION (LDCOMPUTE,                         & ! depends on IF, PF
                               PRHODREF, ZSSI, ZAI, ZCJ, ZLSFACT, &
-                              PRST/ZPF1D, ZLBDS,                 &
+                              ZRST/ZPF1D, ZLBDS,                 &
                               P_RI_CNVI, P_CI_CNVI,              &
                               P_TH_DEPS, P_RS_DEPS               )
    !
@@ -737,7 +776,7 @@ END IF
 IF (LCOLD .AND. LSNOW) THEN
    CALL LIMA_ICE_AGGREGATION_SNOW (LDCOMPUTE,                                        & ! depends on IF, PF
                                    ZT, PRHODREF,                                     &
-                                   PRIT/ZIF1D, PRST/ZPF1D, PCIT/ZIF1D, ZLBDI, ZLBDS, &
+                                   ZRIT/ZIF1D, ZRST/ZPF1D, PCIT/ZIF1D, ZLBDI, ZLBDS, &
                                    P_RI_AGGS, P_CI_AGGS                              )
    P_CI_AGGS(:) = P_CI_AGGS(:) * ZIF1D(:)
    P_RI_AGGS(:) = P_RI_AGGS(:) * ZIF1D(:)
@@ -749,7 +788,7 @@ END IF
 !
 IF (LWARM .AND. LCOLD) THEN
    CALL LIMA_GRAUPEL_DEPOSITION (LDCOMPUTE, PRHODREF,                        & ! depends on PF ?
-                                 PRGT/ZPF1D, ZSSI, ZLBDG, ZAI, ZCJ, ZLSFACT, &
+                                 ZRGT/ZPF1D, ZSSI, ZLBDG, ZAI, ZCJ, ZLSFACT, &
                                  P_TH_DEPG, P_RG_DEPG                        )
    P_RG_DEPG(:) = P_RG_DEPG(:) * ZPF1D(:)
    P_TH_DEPG(:) = P_RG_DEPG(:) * ZLSFACT(:)
@@ -761,7 +800,7 @@ END IF
 !
 IF (LWARM .AND. LCOLD .AND. NMOM_I.EQ.1) THEN
    CALL LIMA_BERGERON (LDCOMPUTE,                                 & ! depends on CF, IF
-                       PRCT/ZCF1D, PRIT/ZIF1D, PCIT/ZIF1D, ZLBDI, &
+                       ZRCT/ZCF1D, ZRIT/ZIF1D, PCIT/ZIF1D, ZLBDI, &
                        ZSSIW, ZAI, ZCJ, ZLVFACT, ZLSFACT,         &
                        P_TH_BERFI, P_RC_BERFI                     )
    P_TH_BERFI(:) = P_TH_BERFI(:) * MIN(ZCF1D,ZIF1D)
@@ -779,7 +818,7 @@ IF (LWARM .AND. LCOLD .AND. LSNOW) THEN
      !
    CALL LIMA_DROPLETS_RIMING_SNOW (PTSTEP, LDCOMPUTE,                                & ! depends on CF
                                    PRHODREF, ZT,                                     &
-                                   PRCT/ZCF1D, PCCT/ZCF1D, PRST/ZPF1D, ZLBDC, ZLBDS, ZLVFACT, ZLSFACT, &
+                                   ZRCT/ZCF1D, PCCT/ZCF1D, ZRST/ZPF1D, ZLBDC, ZLBDS, ZLVFACT, ZLSFACT, &
                                    P_TH_RIM, P_RC_RIM, P_CC_RIM, P_RS_RIM, P_RG_RIM, &
                                    P_RI_HMS, P_CI_HMS, P_RS_HMS                      )
    P_RC_RIM(:) = P_RC_RIM(:) * ZCF1D(:)
@@ -804,7 +843,7 @@ END IF
 IF (LWARM .AND. LRAIN .AND. LCOLD .AND. LSNOW) THEN
    CALL LIMA_RAIN_ACCR_SNOW (PTSTEP, LDCOMPUTE,                                & ! depends on PF
                              PRHODREF, ZT,                                     &
-                             PRRT/ZPF1D, PCRT/ZPF1D, PRST/ZPF1D, ZLBDR, ZLBDS, ZLVFACT, ZLSFACT, &
+                             ZRRT/ZPF1D, PCRT/ZPF1D, ZRST/ZPF1D, ZLBDR, ZLBDS, ZLVFACT, ZLSFACT, &
                              P_TH_ACC, P_RR_ACC, P_CR_ACC, P_RS_ACC, P_RG_ACC )
    P_RR_ACC(:) = P_RR_ACC(:) * ZPF1D(:)
    P_CR_ACC(:) = P_CR_ACC(:) * ZPF1D(:)
@@ -827,7 +866,7 @@ IF (LWARM .AND. LCOLD .AND. LSNOW) THEN
    !
    CALL LIMA_CONVERSION_MELTING_SNOW (LDCOMPUTE,                           & ! depends on PF
                                       PRHODREF, PPABST, ZT, ZKA, ZDV, ZCJ, &
-                                      PRVT, PRST/ZPF1D, ZLBDS,             &
+                                      PRVT, ZRST/ZPF1D, ZLBDS,             &
                                       P_RS_CMEL                           )
    P_RS_CMEL(:) = P_RS_CMEL(:) * ZPF1D(:)
    !
@@ -839,7 +878,7 @@ END IF
 IF (LWARM .AND. LRAIN .AND. LCOLD ) THEN
    CALL LIMA_RAIN_FREEZING (LDCOMPUTE,                                             & ! depends on PF, IF
                             PRHODREF, ZT, ZLVFACT, ZLSFACT,                        &
-                            PRRT/ZPF1D, PCRT/ZPF1D, PRIT/ZIF1D, PCIT/ZIF1D, ZLBDR, &
+                            ZRRT/ZPF1D, PCRT/ZPF1D, ZRIT/ZIF1D, PCIT/ZIF1D, ZLBDR, &
                             P_TH_CFRZ, P_RR_CFRZ, P_CR_CFRZ, P_RI_CFRZ, P_CI_CFRZ  )
    P_RR_CFRZ(:) = P_RR_CFRZ(:) * ZIF1D(:)
    P_CR_CFRZ(:) = P_CR_CFRZ(:) * ZIF1D(:)
@@ -863,7 +902,7 @@ IF (LWARM .AND. LCOLD .AND. LSNOW .AND. LCIBU) THEN
    !
    CALL LIMA_COLLISIONAL_ICE_BREAKUP (LDCOMPUTE,                                      & ! depends on PF (IF for fragments size)
                                       PRHODREF,                                       &
-                                      PRIT/ZIF1D, PRST/ZPF1D, PRGT/ZPF1D, PCIT/ZIF1D, &
+                                      ZRIT/ZIF1D, ZRST/ZPF1D, ZRGT/ZPF1D, PCIT/ZIF1D, &
                                       ZLBDS, ZLBDG,                                   &
                                       P_RI_CIBU, P_CI_CIBU                            )
    P_RI_CIBU(:) = P_RI_CIBU(:) * ZPF1D(:)
@@ -882,7 +921,7 @@ IF (LWARM .AND. LRAIN .AND. LCOLD .AND. LSNOW .AND. LRDSF) THEN
    !
    CALL LIMA_RAINDROP_SHATTERING_FREEZING (LDCOMPUTE,                                      & ! depends on PF, IF
                                            PRHODREF,                                       &
-                                           PRRT/ZPF1D, PCRT/ZPF1D, PRIT/ZIF1D, PCIT/ZIF1D, PRGT/ZPF1D, &
+                                           ZRRT/ZPF1D, PCRT/ZPF1D, ZRIT/ZIF1D, PCIT/ZIF1D, ZRGT/ZPF1D, &
                                            ZLBDR,                                          &
                                            P_RI_RDSF, P_CI_RDSF                            )
    P_RI_RDSF(:) = P_RI_RDSF(:) * ZIF1D(:)
@@ -904,7 +943,7 @@ IF (LWARM .AND. LCOLD) THEN
      !
    CALL LIMA_GRAUPEL (PTSTEP, LDCOMPUTE,                                     & ! depends on PF, CF, IF
                       PRHODREF, PPABST, ZT, ZKA, ZDV, ZCJ,                   &
-                      PRVT, PRCT, PRRT, PRIT, PRST, PRGT,                    &
+                      PRVT, ZRCT, ZRRT, ZRIT, ZRST, ZRGT,                    &
                       PCCT, PCRT, PCIT,                                      &
                       ZLBDC, ZLBDR, ZLBDS, ZLBDG,                            &
                       ZLVFACT, ZLSFACT,                                      &

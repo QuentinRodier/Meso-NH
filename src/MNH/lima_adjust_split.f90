@@ -519,7 +519,7 @@ DO JITER =1,ITERMAX
            Z_SIGS, PMFCONV, PCLDFR, Z_SRCS, GUSERI, G_SIGMAS,                  &
            Z_SIGQSAT, PLV=ZLV, PLS=ZLS, PCPH=ZCPH )
    END IF
-   IF (OSUBG_COND .AND. NMOM_C.GE.2) THEN
+   IF (OSUBG_COND .AND. NMOM_C.GE.2 .AND. LACTI) THEN
       PSRCS=Z_SRCS
       ZW_MF=0.
       CALL LIMA_CCN_ACTIVATION (TPFILE,                          &
@@ -630,13 +630,15 @@ END IF
 !
 ZMASK(:,:,:) = 0.0
 ZW(:,:,:) = 0.
-WHERE (PRCS(:,:,:) <= ZRTMIN(2) .OR. PCCS(:,:,:) <0.) 
-   PRVS(:,:,:) = PRVS(:,:,:) + PRCS(:,:,:) 
-   PTHS(:,:,:) = PTHS(:,:,:) - PRCS(:,:,:)*ZLV(:,:,:)/(ZCPH(:,:,:)*ZEXNS(:,:,:))
-   PRCS(:,:,:) = 0.0
-   ZW(:,:,:)   = MAX(PCCS(:,:,:),0.)
-   PCCS(:,:,:) = 0.0
-END WHERE
+IF (NMOM_C .GE. 2) THEN
+   WHERE (PRCS(:,:,:) <= ZRTMIN(2) .OR. PCCS(:,:,:) <=0.) 
+      PRVS(:,:,:) = PRVS(:,:,:) + PRCS(:,:,:) 
+      PTHS(:,:,:) = PTHS(:,:,:) - PRCS(:,:,:)*ZLV(:,:,:)/(ZCPH(:,:,:)*ZEXNS(:,:,:))
+      PRCS(:,:,:) = 0.0
+      ZW(:,:,:)   = MAX(PCCS(:,:,:),0.)
+      PCCS(:,:,:) = 0.0
+   END WHERE
+END IF
 !
 ZW1(:,:,:) = 0.
 IF (LWARM .AND. NMOD_CCN.GE.1) ZW1(:,:,:) = SUM(PNAS,DIM=4)

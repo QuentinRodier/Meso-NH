@@ -29,7 +29,7 @@ use modd_budget,     only: lbudget_th, lbudget_rv, lbudget_rc, lbudget_rr, lbudg
 use modd_cst,        only: xci, xcl, xcpd, xcpv, xlstt, xlvtt, xp00, xrd, xtt
 use modd_nsv,        only: nsv_c2r2beg, nsv_c2r2end, nsv_lima_beg, nsv_lima_end, nsv_lima_nc, nsv_lima_nr, nsv_lima_ni
 use modd_param_lima, only: lcold_lima => lcold, lrain_lima => lrain, lspro_lima => lspro, lwarm_lima => lwarm, &
-                           xctmin_lima => xctmin, xrtmin_lima => xrtmin
+                           xctmin_lima => xctmin, xrtmin_lima => xrtmin, nmom_c, nmom_r, nmom_i
 
 use mode_budget,         only: Budget_store_init, Budget_store_end
 use mode_msg
@@ -54,6 +54,7 @@ integer :: jrmax
 integer :: jsv
 integer :: isv_lima_end
 real, dimension(:, :, :), allocatable :: zt, zexn, zlv, zls, zcph, zcor
+logical, dimension(:, :, :), allocatable :: zmask
 
 if ( krr == 0 ) return
 
@@ -235,42 +236,51 @@ CLOUD: select case ( hcloud )
     end where
 !
 !
-  case( 'LIMA_OFF' )
+  case( 'LIMA' )
+    allocate( zmask  ( Size( prths, 1 ), Size( prths, 2 ), Size( prths, 3 ) ) )
 ! Correction where rc<0 or Nc<0
     if ( lwarm_lima ) then
-      where ( prrs(:, :, :, 2) < xrtmin_lima(2) / ptstep .or. prsvs(:, :, :, nsv_lima_nc) < xctmin_lima(2) / ptstep )
+      zmask(:,:,:)=(prrs(:, :, :, 2) < xrtmin_lima(2) / ptstep)
+      if (nmom_c.ge.2) zmask(:,:,:)=(zmask(:,:,:) .or. prsvs(:, :, :, nsv_lima_nc) < 0. )
+      where ( zmask(:,:,:) )
         prrs(:, :, :, 1) = prrs(:, :, :, 1) + prrs(:, :, :, 2)
         prths(:, :, :) = prths(:, :, :) - prrs(:, :, :, 2) * zlv(:, :, :) /  &
                  ( zcph(:, :, :) * zexn(:, :, :) )
         prrs(:, :, :, 2)  = 0.
-        prsvs(:, :, :, nsv_lima_nc) = 0.
       end where
       where ( prrs(:, :, :, 1) < 0. .and. prrs(:, :, :, 2) > 0. )
         prrs(:, :, :, 1) = prrs(:, :, :, 1) + prrs(:, :, :, 2)
         prths(:, :, :) = prths(:, :, :) - prrs(:, :, :, 2) * zlv(:, :, :) /  &
            ( zcph(:, :, :) * zexn(:, :, :) )
         prrs(:, :, :, 2) = 0.
-        prsvs(:, :, :, nsv_lima_nc) = 0.
       end where
+      if (nmom_c.ge.2) then
+         where (prrs(:, :, :, 2) == 0.)  prsvs(:, :, :, nsv_lima_nc) = 0.
+      end if
     end if
 ! Correction where rr<0 or Nr<0
     if ( lwarm_lima .and. lrain_lima ) then
-      where ( prrs(:, :, :, 3) < xrtmin_lima(3) / ptstep .or. prsvs(:, :, :, nsv_lima_nr) < xctmin_lima(3) / ptstep )
+      zmask(:,:,:)=(prrs(:, :, :, 3) < xrtmin_lima(3) / ptstep)
+      if (nmom_r.ge.2) zmask(:,:,:)=(zmask(:,:,:) .or. prsvs(:, :, :, nsv_lima_nr) < 0. )
+      where ( zmask(:,:,:) )
         prrs(:, :, :, 1) = prrs(:, :, :, 1) + prrs(:, :, :, 3)
         prths(:, :, :) = prths(:, :, :) - prrs(:, :, :, 3) * zlv(:, :, :) /  &
                  ( zcph(:, :, :) * zexn(:, :, :) )
         prrs(:, :, :, 3)  = 0.
-        prsvs(:, :, :, nsv_lima_nr) = 0.
       end where
+      if (nmom_r.ge.2) then
+         where (prrs(:, :, :, 3) == 0.)  prsvs(:, :, :, nsv_lima_nr) = 0.
+      end if
     end if
 ! Correction where ri<0 or Ni<0
     if ( lcold_lima ) then
-      where ( prrs(:, :, :, 4) < xrtmin_lima(4) / ptstep .or. prsvs(:, :, :, nsv_lima_ni) < xctmin_lima(4) / ptstep )
+      zmask(:,:,:)=(prrs(:, :, :, 4) < xrtmin_lima(4) / ptstep)
+      if (nmom_i.ge.2) zmask(:,:,:)=(zmask(:,:,:) .or. prsvs(:, :, :, nsv_lima_ni) < 0. )
+      where ( zmask(:,:,:) )
         prrs(:, :, :, 1) = prrs(:, :, :, 1) + prrs(:, :, :, 4)
         prths(:, :, :) = prths(:, :, :) - prrs(:, :, :, 4) * zls(:, :, :) /  &
                  ( zcph(:, :, :) * zexn(:, :, :) )
         prrs(:, :, :, 4)  = 0.
-        prsvs(:, :, :, nsv_lima_ni) = 0.
       end where
       if ( hbudname /= 'NETUR' ) then
         do jr = 5, Size( prrs, 4 )
@@ -293,10 +303,13 @@ CLOUD: select case ( hcloud )
         end where
         deallocate( zcor )
       end if
+      if (nmom_i.ge.2) then
+         where (prrs(:, :, :, 4) == 0.)  prsvs(:, :, :, nsv_lima_ni) = 0.
+      end if
     end if
 
     prsvs(:, :, :, nsv_lima_beg : isv_lima_end) = Max( 0.0, prsvs(:, :, :, nsv_lima_beg : isv_lima_end) )
-
+    deallocate(zmask)
 end select CLOUD
 
 
