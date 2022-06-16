@@ -4,26 +4,28 @@
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !      ###########################
-MODULE MODI_WRITE_AIRCRAFT_BALLOON
+MODULE MODE_WRITE_AIRCRAFT_BALLOON
 !      ###########################
-!
-INTERFACE
-!
-      SUBROUTINE WRITE_AIRCRAFT_BALLOON(TPDIAFILE)
-!
-USE MODD_IO, ONLY: TFILEDATA
-!
-TYPE(TFILEDATA), INTENT(IN) :: TPDIAFILE ! file to write
-!
-END SUBROUTINE WRITE_AIRCRAFT_BALLOON
-!
-END INTERFACE
-!
-END MODULE MODI_WRITE_AIRCRAFT_BALLOON
-!
-!     ##########################################
-      SUBROUTINE WRITE_AIRCRAFT_BALLOON(TPDIAFILE)
-!     ##########################################
+
+use modd_parameters, only: NCOMMENTLGTMAX, NMNHNAMELGTMAX, NUNITLGTMAX
+
+implicit none
+
+private
+
+public :: WRITE_AIRCRAFT_BALLOON
+
+CHARACTER(LEN=NCOMMENTLGTMAX), DIMENSION(:), ALLOCATABLE :: CCOMMENT ! comment string(
+CHARACTER(LEN=NMNHNAMELGTMAX), DIMENSION(:), ALLOCATABLE :: CTITLE   ! title
+CHARACTER(LEN=NUNITLGTMAX),    DIMENSION(:), ALLOCATABLE :: CUNIT    ! physical unit
+
+REAL, DIMENSION(:,:,:,:,:,:), ALLOCATABLE :: XWORK6   ! contains temporal serie
+
+contains
+
+! ##########################################
+SUBROUTINE WRITE_AIRCRAFT_BALLOON(TPDIAFILE)
+! ##########################################
 !
 !
 !!****  *WRITE_AIRCRAFT_BALLOON* - write the balloon and aircraft trajectories and records
@@ -77,20 +79,8 @@ END MODULE MODI_WRITE_AIRCRAFT_BALLOON
 !*      0. DECLARATIONS
 !          ------------
 !
-USE MODD_CST,             ONLY: XRV
-USE MODD_IO,              ONLY: TFILEDATA
-USE MODD_PARAMETERS,      ONLY: XUNDEF
-!
 USE MODD_AIRCRAFT_BALLOON
-USE MODD_NSV,             ONLY: tsvlist, nsv, nsv_aer, nsv_aerbeg, nsv_aerend, nsv_dst, nsv_dstbeg, nsv_dstend, &
-                                nsv_lima_beg, nsv_lima_end
-USE MODD_DIAG_IN_RUN,     ONLY: LDIAG_IN_RUN
-!
-USE MODE_AERO_PSD
-USE MODE_DUST_PSD
-USE MODE_MODELN_HANDLER,  ONLY: GET_CURRENT_MODEL_INDEX
-use mode_msg
-use mode_write_diachro,   only: Write_diachro
+USE MODD_IO,              ONLY: TFILEDATA
 !
 IMPLICIT NONE
 !
@@ -103,70 +93,77 @@ TYPE(TFILEDATA), INTENT(IN) :: TPDIAFILE ! file to write
 !
 !       0.2  declaration of local variables
 !
-INTEGER :: IMI    ! current model index
 INTEGER :: JI
 !
 !----------------------------------------------------------------------------
 !
-IMI=GET_CURRENT_MODEL_INDEX()
-!
 DO JI = 1, NBALLOONS
-  CALL FLYER_DIACHRO( TBALLOONS(JI) )
+  CALL FLYER_DIACHRO( TPDIAFILE, TBALLOONS(JI) )
 END DO
 
 DO JI = 1, NAIRCRAFTS
-  CALL FLYER_DIACHRO( TAIRCRAFTS(JI) )
+  CALL FLYER_DIACHRO( TPDIAFILE, TAIRCRAFTS(JI) )
 END DO
 !
-!----------------------------------------------------------------------------
-!----------------------------------------------------------------------------
+END SUBROUTINE WRITE_AIRCRAFT_BALLOON
 !
-CONTAINS
-!
-!----------------------------------------------------------------------------
-!----------------------------------------------------------------------------
-!
-SUBROUTINE FLYER_DIACHRO(TPFLYER)
+! ############################################
+SUBROUTINE FLYER_DIACHRO( TPDIAFILE, TPFLYER )
+! ############################################
 
-use modd_budget, only: NLVL_CATEGORY, NLVL_SUBCATEGORY, NLVL_GROUP, NLVL_SHAPE, NLVL_TIMEAVG, NLVL_NORM, NLVL_MASK, &
-                       tbudiachrometadata
-use modd_field,  only: NMNHDIM_LEVEL, NMNHDIM_FLYER_PROC, NMNHDIM_FLYER_TIME, NMNHDIM_UNUSED, &
-                       tfieldmetadata_base, TYPEREAL
+USE MODD_AIRCRAFT_BALLOON
+use modd_budget,           only: NLVL_CATEGORY, NLVL_SUBCATEGORY, NLVL_GROUP, NLVL_SHAPE, NLVL_TIMEAVG, NLVL_NORM, NLVL_MASK, &
+                                 tbudiachrometadata
+USE MODD_CST,              ONLY: XRV
+USE MODD_DIAG_IN_RUN,      ONLY: LDIAG_IN_RUN
+use modd_field,            only: NMNHDIM_LEVEL, NMNHDIM_FLYER_PROC, NMNHDIM_FLYER_TIME, NMNHDIM_UNUSED, &
+                                 tfieldmetadata_base, TYPEREAL
+USE MODD_IO,               ONLY: TFILEDATA
+USE MODD_NSV,              ONLY: tsvlist, nsv, nsv_aer, nsv_aerbeg, nsv_aerend, nsv_dst, nsv_dstbeg, nsv_dstend, &
+                                 nsv_lima_beg, nsv_lima_end
+USE MODD_PARAMETERS,       ONLY: XUNDEF
+USE MODD_PARAM_n,          ONLY: CCLOUD
+
+USE MODE_AERO_PSD
+USE MODE_DUST_PSD
+USE MODE_MODELN_HANDLER,   ONLY: GET_CURRENT_MODEL_INDEX
+use mode_msg
+use mode_write_diachro,    only: Write_diachro
 
 use modi_aircraft_balloon, only: Aircraft_balloon_longtype_get
 
-CLASS(TFLYERDATA), INTENT(IN)       :: TPFLYER
+TYPE(TFILEDATA),   INTENT(IN) :: TPDIAFILE ! file to write
+CLASS(TFLYERDATA), INTENT(IN) :: TPFLYER
 !
 !*      0.2  declaration of local variables for diachro
 !
-REAL, DIMENSION(:,:,:,:,:,:), ALLOCATABLE :: ZWORK6 ! contains temporal serie
-REAL, DIMENSION(:,:,:,:,:,:), ALLOCATABLE :: ZWORKZ6! contains temporal serie
 REAL, DIMENSION(:,:,:,:),     ALLOCATABLE :: ZSV, ZN0, ZSIG, ZRG
 REAL, DIMENSION(:,:,:,:,:),   ALLOCATABLE :: ZPTOTA
 REAL, DIMENSION(:,:,:),       ALLOCATABLE :: ZRHO
 !
-CHARACTER(LEN=100), DIMENSION(:), ALLOCATABLE :: YCOMMENT ! comment string
-CHARACTER(LEN=100), DIMENSION(:), ALLOCATABLE :: YTITLE   ! title
-CHARACTER(LEN=100), DIMENSION(:), ALLOCATABLE :: YUNIT    ! physical unit
+CHARACTER(LEN=NMNHNAMELGTMAX) :: YTITLE
+CHARACTER(LEN=NCOMMENTLGTMAX) :: YCOMMENT
+CHARACTER(LEN=NUNITLGTMAX)    :: YUNIT
 !
+INTEGER :: IMI      ! current model index
 INTEGER :: IPROC    ! number of variables records
 INTEGER :: JPROC    ! loop counter
-CHARACTER(LEN=100), DIMENSION(:), ALLOCATABLE :: YCOMMENTZ! comment string
-CHARACTER(LEN=100), DIMENSION(:), ALLOCATABLE :: YTITLEZ  ! title
-CHARACTER(LEN=100), DIMENSION(:), ALLOCATABLE :: YUNITZ   ! physical unit
 INTEGER :: ISTORE
 INTEGER :: IPROCZ   ! number of variables records
-INTEGER :: JPROCZ   ! loop counter
+INTEGER :: IRR      ! number of hydrometeors
 INTEGER :: JRR      ! loop counter
 INTEGER :: JSV      ! loop counter
 INTEGER :: JPT      ! loop counter
-INTEGER :: IKU, IK
-INTEGER :: JLOOP
+INTEGER :: IKU
 type(tbudiachrometadata) :: tzbudiachro
 type(tfieldmetadata_base), dimension(:), allocatable :: tzfields
 !
 !----------------------------------------------------------------------------
 !
+IMI = GET_CURRENT_MODEL_INDEX()
+
+IRR = SIZE( tpflyer%xr, 2 )
+
 IF (TPFLYER%NMODEL==0) RETURN
 IF (ALL(TPFLYER%XX==XUNDEF)) RETURN
 IF (COUNT(TPFLYER%XX/=XUNDEF)<=1) RETURN
@@ -174,7 +171,7 @@ IF ( IMI /= TPFLYER%NMODEL ) RETURN
 !
 IKU = SIZE(TPFLYER%XRTZ,2) !number of vertical levels
 !
-IPROC = 20 + SIZE(TPFLYER%XR,2) + SIZE(TPFLYER%XSV,2) &
+IPROC = 20 + IRR + SIZE(TPFLYER%XSV,2) &
        + 2 + SIZE(TPFLYER%XSVW_FLUX,2)
 IPROCZ = SIZE(TPFLYER%XRTZ,2)+ SIZE(TPFLYER%XRZ,2)+ SIZE(TPFLYER%XRZ,3)+  SIZE(TPFLYER%XCRARE,2)+ &
          SIZE(TPFLYER%XCRARE_ATT,2)+ SIZE(TPFLYER%XWZ,2) + SIZE(TPFLYER%XFFZ,2)+ &
@@ -189,120 +186,52 @@ IF (LDUST) IPROC = IPROC + NMODE_DST*3
 IF (SIZE(TPFLYER%XTSRAD)>0) IPROC = IPROC + 1
 !
 ISTORE = SIZE( TPFLYER%TFLYER_TIME%TPDATES )
-
-ALLOCATE (ZWORK6(1,1,1,ISTORE,1,IPROC))
-ALLOCATE (YCOMMENT(IPROC))
-ALLOCATE (YTITLE  (IPROC))
-ALLOCATE (YUNIT   (IPROC))
-ALLOCATE (ZWORKZ6(1,1,IKU,ISTORE,1,IPROCZ))
-ALLOCATE (YCOMMENTZ(IPROCZ))
-ALLOCATE (YTITLEZ (IPROCZ))
-ALLOCATE (YUNITZ  (IPROCZ))
 !
 !----------------------------------------------------------------------------
-JPROC = 0
-!
-JPROC = JPROC + 1
-YTITLE   (JPROC) = 'ZS'
-YUNIT    (JPROC) = 'm'
-YCOMMENT (JPROC) = 'orography'
-ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%XZS(:)
+!Treat point values
+ALLOCATE (XWORK6(1,1,1,ISTORE,1,IPROC))
+ALLOCATE (CCOMMENT(IPROC))
+ALLOCATE (CTITLE  (IPROC))
+ALLOCATE (CUNIT   (IPROC))
+
+jproc = 0
+
+call Add_point( 'ZS', 'orography', 'm', tpflyer%xzs(:) )
 !
 SELECT TYPE ( TPFLYER )
   CLASS IS ( TAIRCRAFTDATA )
     IF (TPFLYER%LALTDEF) THEN
-      JPROC = JPROC + 1
-      YTITLE   (JPROC) = 'P'
-      YUNIT    (JPROC) = 'Pascal'
-      YCOMMENT (JPROC) = 'pressure'
-      ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%XP(:)
+      call Add_point( 'P', 'pressure', 'Pascal', tpflyer%xp(:) )
     ELSE
-      JPROC = JPROC + 1
-      YTITLE   (JPROC) = 'Z'
-      YUNIT    (JPROC) = 'm'
-      YCOMMENT (JPROC) = 'altitude'
-      ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%XZ(:)
+      call Add_point( 'Z', 'altitude', 'm', tpflyer%xz(:) )
     ENDIF
 
   CLASS IS ( TBALLOONDATA )
-    JPROC = JPROC + 1
-    YTITLE   (JPROC) = 'Z'
-    YUNIT    (JPROC) = 'm'
-    YCOMMENT (JPROC) = 'altitude'
-    ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%XZ(:)
+    call Add_point( 'Z', 'altitude', 'm', tpflyer%xz(:) )
 
 END SELECT
 !
-JPROC = JPROC + 1
-YTITLE   (JPROC) = 'LON'
-YUNIT    (JPROC) = 'degree'
-YCOMMENT (JPROC) = 'longitude'
-ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%XLON(:)
+call Add_point( 'LON',      'longitude',             'degree', tpflyer%xlon(:) )
+call Add_point( 'LAT',      'latitude',              'degree', tpflyer%xlat(:) )
+call Add_point( 'ZON_WIND', 'zonal wind',            'm s-1',  tpflyer%xzon(:) )
+call Add_point( 'MER_WIND', 'meridian wind',         'm s-1',  tpflyer%xmer(:) )
+call Add_point( 'W',        'air vertical speed',    'm s-1',  tpflyer%xw(:)   )
+call Add_point( 'Th',       'potential temperature', 'K',      tpflyer%xth(:)  )
 !
-JPROC = JPROC + 1
-YTITLE   (JPROC) = 'LAT'
-YUNIT    (JPROC) = 'degree'
-YCOMMENT (JPROC) = 'latitude'
-ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%XLAT(:)
-!
-JPROC = JPROC + 1
-YTITLE   (JPROC) = 'ZON_WIND'
-YUNIT    (JPROC) = 'm s-1'
-YCOMMENT (JPROC) = 'zonal wind'
-ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%XZON(:)
-!
-JPROC = JPROC + 1
-YTITLE   (JPROC) = 'MER_WIND'
-YUNIT    (JPROC) = 'm s-1'
-YCOMMENT (JPROC) = 'meridian wind'
-ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%XMER(:)
-!
-JPROC = JPROC + 1
-YTITLE   (JPROC) = 'W'
-YUNIT    (JPROC) = 'm s-1'
-YCOMMENT (JPROC) = 'air vertical speed' 
-ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%XW(:)
-!
-JPROC = JPROC + 1
-YTITLE   (JPROC) = 'Th'
-YUNIT    (JPROC) = 'K'
-YCOMMENT (JPROC) = 'potential temperature' 
-ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%XTH(:)
-!
-DO JRR=1,SIZE(TPFLYER%XR,2)
-  JPROC = JPROC+1
-  YUNIT    (JPROC) = 'kg kg-1'
-  ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%XR(:,JRR)
-  IF (JRR==1) THEN
-    YTITLE   (JPROC) = 'Rv'
-    YCOMMENT (JPROC) = 'water vapor mixing ratio' 
-  ELSE IF (JRR==2) THEN
-    YTITLE   (JPROC) = 'Rc'
-    YCOMMENT (JPROC) = 'liquid cloud water mixing ratio' 
-  ELSE IF (JRR==3) THEN
-    YTITLE   (JPROC) = 'Rr'
-    YCOMMENT (JPROC) = 'Rain water mixing ratio' 
-  ELSE IF (JRR==4) THEN
-    YTITLE   (JPROC) = 'Ri'
-    YCOMMENT (JPROC) = 'Ice cloud water mixing ratio' 
-  ELSE IF (JRR==5) THEN
-    YTITLE   (JPROC) = 'Rs'
-    YCOMMENT (JPROC) = 'Snow mixing ratio' 
-  ELSE IF (JRR==6) THEN
-    YTITLE   (JPROC) = 'Rg'
-    YCOMMENT (JPROC) = 'Graupel mixing ratio' 
-  ELSE IF (JRR==7) THEN
-    YTITLE   (JPROC) = 'Rh'
-    YCOMMENT (JPROC) = 'Hail mixing ratio' 
-  END IF
-END DO
+if ( irr >= 1 ) call Add_point( 'Rv', 'water vapor mixing ratio',        'kg kg-1', tpflyer%xr(:,1) )
+if ( irr >= 2 ) call Add_point( 'Rc', 'liquid cloud water mixing ratio', 'kg kg-1', tpflyer%xr(:,2) )
+if ( irr >= 3 ) call Add_point( 'Rr', 'Rain water mixing ratio',         'kg kg-1', tpflyer%xr(:,3) )
+if ( irr >= 4 ) call Add_point( 'Ri', 'Ice cloud water mixing ratio',    'kg kg-1', tpflyer%xr(:,4) )
+if ( irr >= 5 ) call Add_point( 'Rs', 'Snow mixing ratio',               'kg kg-1', tpflyer%xr(:,5) )
+if ( irr >= 6 ) call Add_point( 'Rg', 'Graupel mixing ratio',            'kg kg-1', tpflyer%xr(:,6) )
+if ( irr >= 7 ) call Add_point( 'Rh', 'Hail mixing ratio',               'kg kg-1', tpflyer%xr(:,7) )
 !
 !add cloud liquid water content in g/m3 to compare to measurements from FSSP
 !IF (.NOT.(ANY(TPFLYER%XP(:) == 0.))) THEN
 ALLOCATE (ZRHO(1,1,ISTORE))
-IF (SIZE(TPFLYER%XR,2) >1) THEN !cloud water is present
+IF ( IRR > 1 ) THEN !cloud water is present
   ZRHO(1,1,:) = 0.
-  DO JRR=1,SIZE(TPFLYER%XR,2)
+  DO JRR = 1, IRR
     ZRHO(1,1,:) = ZRHO(1,1,:) + TPFLYER%XR(:,JRR)
   ENDDO
   ZRHO(1,1,:) = TPFLYER%XTH(:) * ( 1. + XRV/XRD*TPFLYER%XR(:,1) )  &
@@ -315,64 +244,31 @@ IF (SIZE(TPFLYER%XR,2) >1) THEN !cloud water is present
                (XRD *ZRHO(1,1,JPT) *((TPFLYER%XP(JPT)/XP00)**(XRD/XCPD))  )
     ENDIF
   ENDDO
-  JPROC = JPROC + 1
-  YTITLE   (JPROC) = 'LWC'
-  YUNIT    (JPROC) = 'g m-3'
-  YCOMMENT (JPROC) = 'cloud liquid water content'
-  ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%XR(:,2)*ZRHO(1,1,:)*1.E3
+  call Add_point( 'LWC', 'cloud liquid water content', 'g m-3', tpflyer%xr(:,2)*ZRHO(1,1,:)*1.E3 )
   DEALLOCATE (ZRHO)
 ENDIF
 !ENDIF
 !
-IF (SIZE(TPFLYER%XTKE)>0) THEN
-  JPROC = JPROC+1
-  YTITLE   (JPROC) = 'Tke'
-  YUNIT    (JPROC) = 'm2 s-2'
-  YCOMMENT (JPROC) = 'Turbulent kinetic energy' 
-  ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%XTKE(:)
-END IF
+IF (SIZE(TPFLYER%XTKE)>0) call Add_point( 'Tke', 'Turbulent kinetic energy', 'm2 s-2', tpflyer%xtke(:) )
 !
-JPROC = JPROC + 1
-YTITLE   (JPROC) = 'H_FLUX'
-YUNIT    (JPROC) = 'W m-2'
-YCOMMENT (JPROC) = 'sensible flux' 
-ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%XTHW_FLUX(:)
-!
-JPROC = JPROC + 1
-YTITLE   (JPROC) = 'LE_FLUX'
-YUNIT    (JPROC) = 'W m-2'
-YCOMMENT (JPROC) = 'latent flux' 
-ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%XRCW_FLUX(:)
+call Add_point( 'H_FLUX',  'sensible flux', 'W m-2', tpflyer%xthw_flux(:) )
+call Add_point( 'LE_FLUX', 'latent flux',   'W m-2', tpflyer%xrcw_flux(:) )
 !
 DO JSV=1,SIZE(TPFLYER%XSVW_FLUX,2)
-  JPROC = JPROC + 1
-!PW: titre a modifier pour recuperer nom variables scalaires depuis TSVLIST?
-  WRITE ( YTITLE(JPROC), FMT = '( A7, I3.3 )' ) 'SV_FLUX', JSV
-  YUNIT    (JPROC) = 'SVUNIT m s-1'
-  YCOMMENT (JPROC) = 'scalar flux' 
-  ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%XSVW_FLUX(:,JSV)
+  WRITE ( YTITLE, FMT = '( A, I3.3 )' ) 'SV_FLUX', JSV
+  call Add_point( Trim( ytitle ), 'scalar flux', 'SVUNIT m s-1', tpflyer%xsvw_flux(:,jsv) )
 END DO
 IF (LDIAG_IN_RUN) THEN
-  JPROC = JPROC+1
-  YTITLE   (JPROC) = 'Tke_Diss'
-  YUNIT    (JPROC) = 'm2 s-2'
-  YCOMMENT (JPROC) = 'TKE dissipation rate' 
-  ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%XTKE_DISS(:)
+  call Add_point( 'Tke_Diss', 'TKE dissipation rate', 'm2 s-2', tpflyer%xtke_diss(:) )
 ENDIF
 !
 IF (SIZE(TPFLYER%XSV,2)>=1) THEN
   ! Scalar variables
   DO JSV = 1, NSV
-    JPROC = JPROC + 1
-
-    YTITLE(JPROC)   = TRIM( TSVLIST(JSV)%CMNHNAME )
-    YCOMMENT(JPROC) = ''
     IF ( TRIM( TSVLIST(JSV)%CUNITS ) == 'ppv' ) THEN
-      YUNIT(JPROC)  = 'ppb'
-      ZWORK6(1,1,1,:,1,JPROC) = TPFLYER%XSV(:,JSV) * 1.e9 !*1e9 for conversion ppv->ppb
+      call Add_point( Trim( tsvlist(jsv)%cmnhname ), '', 'ppb', tpflyer%xsv(:,jsv) * 1.e9 ) !*1e9 for conversion ppv->ppb
     ELSE
-      YUNIT(JPROC)  = TRIM( TSVLIST(JSV)%CUNITS )
-      ZWORK6(1,1,1,:,1,JPROC) = TPFLYER%XSV(:,JSV)
+      call Add_point( Trim( tsvlist(jsv)%cmnhname ), '', Trim( tsvlist(jsv)%cunits ), tpflyer%xsv(:,jsv) )
     END IF
   END DO
 
@@ -385,9 +281,9 @@ IF (SIZE(TPFLYER%XSV,2)>=1) THEN
     ALLOCATE (ZSIG(1,1,ISTORE,JPMODE))
     ALLOCATE (ZPTOTA(1,1,ISTORE,NSP+NCARB+NSOA,JPMODE))
     ZSV(1,1,:,1:NSV_AER) = TPFLYER%XSV(:,NSV_AERBEG:NSV_AEREND)
-    IF (SIZE(TPFLYER%XR,2) >0) THEN
+    IF (IRR >0) THEN
       ZRHO(1,1,:) = 0.
-      DO JRR=1,SIZE(TPFLYER%XR,2)
+      DO JRR=1,IRR
         ZRHO(1,1,:) = ZRHO(1,1,:) + TPFLYER%XR(:,JRR)
       ENDDO
       ZRHO(1,1,:) = TPFLYER%XTH(:) * ( 1. + XRV/XRD*TPFLYER%XR(:,1) )  &
@@ -408,128 +304,88 @@ IF (SIZE(TPFLYER%XSV,2)>=1) THEN
     ENDDO
     DO JSV=1,JPMODE
       ! mean radius
-      JPROC = JPROC+1
-      WRITE(YTITLE(JPROC),'(A6,I1)')'AERRGA',JSV
-      YUNIT    (JPROC) = 'um'
-      WRITE(YCOMMENT(JPROC),'(A18,I1)')'RG (nb) AERO MODE ',JSV
-      ZWORK6 (1,1,1,:,1,JPROC) = ZRG(1,1,:,JSV)
+      WRITE(YTITLE,'(A,I1)')'AERRGA',JSV
+      WRITE(YCOMMENT,'(A,I1)')'RG (nb) AERO MODE ',JSV
+      call Add_point( Trim( ytitle ), 'um', Trim( ycomment ), ZRG(1,1,:,JSV) )
       ! standard deviation
-      JPROC = JPROC+1
-      WRITE(YTITLE(JPROC),'(A7,I1)')'AERSIGA',JSV
-      YUNIT    (JPROC) = '  '
-      WRITE(YCOMMENT(JPROC),'(A16,I1)')'SIGMA AERO MODE ',JSV
-      ZWORK6 (1,1,1,:,1,JPROC) = ZSIG(1,1,:,JSV)
+      WRITE(YTITLE,'(A,I1)')'AERSIGA',JSV
+      WRITE(YCOMMENT,'(A,I1)')'SIGMA AERO MODE ',JSV
+      call Add_point( Trim( ytitle ), '1', Trim( ycomment ), ZSIG(1,1,:,JSV) )
       ! particles number
-      JPROC = JPROC+1
-      WRITE(YTITLE(JPROC),'(A6,I1)')'AERN0A',JSV
-      YUNIT    (JPROC) = 'm-3'
-      WRITE(YCOMMENT(JPROC),'(A13,I1)')'N0 AERO MODE ',JSV
-      ZWORK6 (1,1,1,:,1,JPROC) = ZN0(1,1,:,JSV)
+      WRITE(YTITLE,'(A,I1)')'AERN0A',JSV
+      WRITE(YCOMMENT,'(A,I1)')'N0 AERO MODE ',JSV
+      call Add_point( Trim( ytitle ), 'm-3', Trim( ycomment ), ZN0(1,1,:,JSV) )
       ! mass concentration in microg/m3
       ! sulfate
-      JPROC = JPROC + 1
-      WRITE(YTITLE(JPROC),'(A4,I1)')'MSO4',JSV
-      YUNIT    (JPROC) = 'ug m-3'
-      WRITE(YCOMMENT(JPROC),'(A22,I1)')'MASS SO4 AEROSOL MODE ',JSV
-      ZWORK6(1,1,1,:,1,JPROC) = ZPTOTA(1,1,:,JP_AER_SO4,JSV)
+      WRITE(YTITLE,'(A,I1)')'MSO4',JSV
+      WRITE(YCOMMENT,'(A,I1)')'MASS SO4 AEROSOL MODE ',JSV
+      call Add_point( Trim( ytitle ), 'ug m-3', Trim( ycomment ), ZPTOTA(1,1,:,JP_AER_SO4,JSV) )
       ! nitrate
-      JPROC = JPROC + 1
-      WRITE(YTITLE(JPROC),'(A4,I1)')'MNO3',JSV
-      YUNIT    (JPROC) = 'ug m-3'
-      WRITE(YCOMMENT(JPROC),'(A22,I1)')'MASS NO3 AEROSOL MODE ',JSV
-      ZWORK6(1,1,1,:,1,JPROC) = ZPTOTA(1,1,:,JP_AER_NO3,JSV)
+      WRITE(YTITLE,'(A,I1)')'MNO3',JSV
+      WRITE(YCOMMENT,'(A,I1)')'MASS NO3 AEROSOL MODE ',JSV
+      call Add_point( Trim( ytitle ), 'ug m-3', Trim( ycomment ), ZPTOTA(1,1,:,JP_AER_NO3,JSV) )
       ! amoniac
-      JPROC = JPROC + 1
-      WRITE(YTITLE(JPROC),'(A4,I1)')'MNH3',JSV
-      YUNIT    (JPROC) = 'ug m-3'
-      WRITE(YCOMMENT(JPROC),'(A22,I1)')'MASS NH3 AEROSOL MODE ',JSV
-      ZWORK6(1,1,1,:,1,JPROC) = ZPTOTA(1,1,:,JP_AER_NH3,JSV)
+      WRITE(YTITLE,'(A,I1)')'MNH3',JSV
+      WRITE(YCOMMENT,'(A,I1)')'MASS NH3 AEROSOL MODE ',JSV
+      call Add_point( Trim( ytitle ), 'ug m-3', Trim( ycomment ), ZPTOTA(1,1,:,JP_AER_NH3,JSV) )
       ! water
-      JPROC = JPROC + 1
-      WRITE(YTITLE(JPROC),'(A4,I1)')'MH2O',JSV
-      YUNIT    (JPROC) = 'ug m-3'
-      WRITE(YCOMMENT(JPROC),'(A22,I1)')'MASS H2O AEROSOL MODE ',JSV
-      ZWORK6(1,1,1,:,1,JPROC) = ZPTOTA(1,1,:,JP_AER_H2O,JSV)
+      WRITE(YTITLE,'(A,I1)')'MH2O',JSV
+      WRITE(YCOMMENT,'(A,I1)')'MASS H2O AEROSOL MODE ',JSV
+      call Add_point( Trim( ytitle ), 'ug m-3', Trim( ycomment ), ZPTOTA(1,1,:,JP_AER_H2O,JSV) )
       IF (NSOA .EQ. 10) THEN
         ! SOA1
-        JPROC = JPROC + 1
-        WRITE(YTITLE(JPROC),'(A4,I1)')'MSOA1',JSV
-        YUNIT    (JPROC) = 'ug m-3'
-        WRITE(YCOMMENT(JPROC),'(A22,I1)')'MASS SOA1 AEROSOL MODE ',JSV
-        ZWORK6(1,1,1,:,1,JPROC) = ZPTOTA(1,1,:,JP_AER_SOA1,JSV)
+        WRITE(YTITLE,'(A,I1)')'MSOA1',JSV
+        WRITE(YCOMMENT,'(A,I1)')'MASS SOA1 AEROSOL MODE ',JSV
+        call Add_point( Trim( ytitle ), 'ug m-3', Trim( ycomment ), ZPTOTA(1,1,:,JP_AER_SOA1,JSV) )
         ! SOA2
-        JPROC = JPROC + 1
-        WRITE(YTITLE(JPROC),'(A4,I1)')'MSOA2',JSV
-        YUNIT    (JPROC) = 'ug m-3'
-        WRITE(YCOMMENT(JPROC),'(A22,I1)')'MASS SOA2 AEROSOL MODE ',JSV
-        ZWORK6(1,1,1,:,1,JPROC) = ZPTOTA(1,1,:,JP_AER_SOA2,JSV)
+        WRITE(YTITLE,'(A,I1)')'MSOA2',JSV
+        WRITE(YCOMMENT,'(A,I1)')'MASS SOA2 AEROSOL MODE ',JSV
+        call Add_point( Trim( ytitle ), 'ug m-3', Trim( ycomment ), ZPTOTA(1,1,:,JP_AER_SOA2,JSV) )
         ! SOA3
-        JPROC = JPROC + 1
-        WRITE(YTITLE(JPROC),'(A4,I1)')'MSOA3',JSV
-        YUNIT    (JPROC) = 'ug m-3'
-        WRITE(YCOMMENT(JPROC),'(A22,I1)')'MASS SOA3 AEROSOL MODE ',JSV
-        ZWORK6(1,1,1,:,1,JPROC) = ZPTOTA(1,1,:,JP_AER_SOA3,JSV)
+        WRITE(YTITLE,'(A,I1)')'MSOA3',JSV
+        WRITE(YCOMMENT,'(A,I1)')'MASS SOA3 AEROSOL MODE ',JSV
+        call Add_point( Trim( ytitle ), 'ug m-3', Trim( ycomment ), ZPTOTA(1,1,:,JP_AER_SOA3,JSV) )
         ! SOA4
-        JPROC = JPROC + 1
-        WRITE(YTITLE(JPROC),'(A4,I1)')'MSOA4',JSV
-        YUNIT    (JPROC) = 'ug m-3'
-        WRITE(YCOMMENT(JPROC),'(A22,I1)')'MASS SOA4 AEROSOL MODE ',JSV
-        ZWORK6(1,1,1,:,1,JPROC) = ZPTOTA(1,1,:,JP_AER_SOA4,JSV)
+        WRITE(YTITLE,'(A,I1)')'MSOA4',JSV
+        WRITE(YCOMMENT,'(A,I1)')'MASS SOA4 AEROSOL MODE ',JSV
+        call Add_point( Trim( ytitle ), 'ug m-3', Trim( ycomment ), ZPTOTA(1,1,:,JP_AER_SOA4,JSV) )
         ! SOA5
-        JPROC = JPROC + 1
-        WRITE(YTITLE(JPROC),'(A4,I1)')'MSOA5',JSV
-        YUNIT    (JPROC) = 'ug m-3'
-        WRITE(YCOMMENT(JPROC),'(A22,I1)')'MASS SOA5 AEROSOL MODE ',JSV
-        ZWORK6(1,1,1,:,1,JPROC) = ZPTOTA(1,1,:,JP_AER_SOA5,JSV)
+        WRITE(YTITLE,'(A,I1)')'MSOA5',JSV
+        WRITE(YCOMMENT,'(A,I1)')'MASS SOA5 AEROSOL MODE ',JSV
+        call Add_point( Trim( ytitle ), 'ug m-3', Trim( ycomment ), ZPTOTA(1,1,:,JP_AER_SOA5,JSV) )
         ! SOA6
-        JPROC = JPROC + 1
-        WRITE(YTITLE(JPROC),'(A4,I1)')'MSOA6',JSV
-        YUNIT    (JPROC) = 'ug m-3'
-        WRITE(YCOMMENT(JPROC),'(A22,I1)')'MASS SOA6 AEROSOL MODE ',JSV
-        ZWORK6(1,1,1,:,1,JPROC) = ZPTOTA(1,1,:,JP_AER_SOA6,JSV)
+        WRITE(YTITLE,'(A,I1)')'MSOA6',JSV
+        WRITE(YCOMMENT,'(A,I1)')'MASS SOA6 AEROSOL MODE ',JSV
+        call Add_point( Trim( ytitle ), 'ug m-3', Trim( ycomment ), ZPTOTA(1,1,:,JP_AER_SOA6,JSV) )
         ! SOA7
-        JPROC = JPROC + 1
-        WRITE(YTITLE(JPROC),'(A4,I1)')'MSOA7',JSV
-        YUNIT    (JPROC) = 'ug m-3'
-        WRITE(YCOMMENT(JPROC),'(A22,I1)')'MASS SOA7 AEROSOL MODE ',JSV
-        ZWORK6(1,1,1,:,1,JPROC) = ZPTOTA(1,1,:,JP_AER_SOA7,JSV)
+        WRITE(YTITLE,'(A,I1)')'MSOA7',JSV
+        WRITE(YCOMMENT,'(A,I1)')'MASS SOA7 AEROSOL MODE ',JSV
+        call Add_point( Trim( ytitle ), 'ug m-3', Trim( ycomment ), ZPTOTA(1,1,:,JP_AER_SOA7,JSV) )
         ! SOA8
-        JPROC = JPROC + 1
-        WRITE(YTITLE(JPROC),'(A4,I1)')'MSOA8',JSV
-        YUNIT    (JPROC) = 'ug m-3'
-        WRITE(YCOMMENT(JPROC),'(A22,I1)')'MASS SOA8 AEROSOL MODE ',JSV
-        ZWORK6(1,1,1,:,1,JPROC) = ZPTOTA(1,1,:,JP_AER_SOA8,JSV)
+        WRITE(YTITLE,'(A,I1)')'MSOA8',JSV
+        WRITE(YCOMMENT,'(A,I1)')'MASS SOA8 AEROSOL MODE ',JSV
+        call Add_point( Trim( ytitle ), 'ug m-3', Trim( ycomment ), ZPTOTA(1,1,:,JP_AER_SOA8,JSV) )
         ! SOA9
-        JPROC = JPROC + 1
-        WRITE(YTITLE(JPROC),'(A4,I1)')'MSOA9',JSV
-        YUNIT    (JPROC) = 'ug m-3'
-        WRITE(YCOMMENT(JPROC),'(A22,I1)')'MASS SOA9 AEROSOL MODE ',JSV
-        ZWORK6(1,1,1,:,1,JPROC) = ZPTOTA(1,1,:,JP_AER_SOA9,JSV)
+        WRITE(YTITLE,'(A,I1)')'MSOA9',JSV
+        WRITE(YCOMMENT,'(A,I1)')'MASS SOA9 AEROSOL MODE ',JSV
+        call Add_point( Trim( ytitle ), 'ug m-3', Trim( ycomment ), ZPTOTA(1,1,:,JP_AER_SOA9,JSV) )
         ! SOA10
-        JPROC = JPROC + 1
-        WRITE(YTITLE(JPROC),'(A4,I1)')'MSOA10',JSV
-        YUNIT    (JPROC) = 'ug m-3'
-        WRITE(YCOMMENT(JPROC),'(A22,I1)')'MASS SOA10 AEROSOL MODE ',JSV
-        ZWORK6(1,1,1,:,1,JPROC) = ZPTOTA(1,1,:,JP_AER_SOA10,JSV)
+        WRITE(YTITLE,'(A,I1)')'MSOA10',JSV
+        WRITE(YCOMMENT,'(A,I1)')'MASS SOA10 AEROSOL MODE ',JSV
+        call Add_point( Trim( ytitle ), 'ug m-3', Trim( ycomment ), ZPTOTA(1,1,:,JP_AER_SOA10,JSV) )
       ENDIF
       ! OC
-      JPROC = JPROC + 1
-      WRITE(YTITLE(JPROC),'(A4,I1)')'MOC',JSV
-      YUNIT    (JPROC) = 'ug m-3'
-      WRITE(YCOMMENT(JPROC),'(A22,I1)')'MASS OC AEROSOL MODE ',JSV
-      ZWORK6(1,1,1,:,1,JPROC) = ZPTOTA(1,1,:,JP_AER_OC,JSV)
+      WRITE(YTITLE,'(A,I1)')'MOC',JSV
+      WRITE(YCOMMENT,'(A,I1)')'MASS OC AEROSOL MODE ',JSV
+      call Add_point( Trim( ytitle ), 'ug m-3', Trim( ycomment ), ZPTOTA(1,1,:,JP_AER_OC,JSV) )
       ! BC
-      JPROC = JPROC + 1
-      WRITE(YTITLE(JPROC),'(A4,I1)')'MBC',JSV
-      YUNIT    (JPROC) = 'ug m-3'
-      WRITE(YCOMMENT(JPROC),'(A22,I1)')'MASS BC AEROSOL MODE ',JSV
-      ZWORK6(1,1,1,:,1,JPROC) = ZPTOTA(1,1,:,JP_AER_BC,JSV)
+      WRITE(YTITLE,'(A,I1)')'MBC',JSV
+      WRITE(YCOMMENT,'(A,I1)')'MASS BC AEROSOL MODE ',JSV
+      call Add_point( Trim( ytitle ), 'ug m-3', Trim( ycomment ), ZPTOTA(1,1,:,JP_AER_BC,JSV) )
       ! dust
-      JPROC = JPROC + 1
-      WRITE(YTITLE(JPROC),'(A4,I1)')'MDUST',JSV
-      YUNIT    (JPROC) = 'ug m-3'
-      WRITE(YCOMMENT(JPROC),'(A22,I1)')'MASS DUST AEROSOL MODE ',JSV
-      ZWORK6(1,1,1,:,1,JPROC) = ZPTOTA(1,1,:,JP_AER_DST,JSV)
+      WRITE(YTITLE,'(A,I1)')'MDUST',JSV
+      WRITE(YCOMMENT,'(A,I1)')'MASS DUST AEROSOL MODE ',JSV
+      call Add_point( Trim( ytitle ), 'ug m-3', Trim( ycomment ), ZPTOTA(1,1,:,JP_AER_DST,JSV) )
     ENDDO
     DEALLOCATE (ZSV,ZRHO)
     DEALLOCATE (ZN0,ZRG,ZSIG,ZPTOTA)
@@ -542,9 +398,9 @@ IF (SIZE(TPFLYER%XSV,2)>=1) THEN
     ALLOCATE (ZRG(1,1,ISTORE,NMODE_DST))
     ALLOCATE (ZSIG(1,1,ISTORE,NMODE_DST))
     ZSV(1,1,:,1:NSV_DST) = TPFLYER%XSV(:,NSV_DSTBEG:NSV_DSTEND)
-    IF (SIZE(TPFLYER%XR,2) >0) THEN
+    IF (IRR >0) THEN
       ZRHO(1,1,:) = 0.
-      DO JRR=1,SIZE(TPFLYER%XR,2)
+      DO JRR=1,IRR
         ZRHO(1,1,:) = ZRHO(1,1,:) + TPFLYER%XR(:,JRR)
       ENDDO
       ZRHO(1,1,:) = TPFLYER%XTH(:) * ( 1. + XRV/XRD*TPFLYER%XR(:,1) )  &
@@ -557,23 +413,17 @@ IF (SIZE(TPFLYER%XSV,2)>=1) THEN
     CALL PPP2DUST(ZSV,ZRHO, PSIG3D=ZSIG, PRG3D=ZRG, PN3D=ZN0)
     DO JSV=1,NMODE_DST
       ! mean radius
-      JPROC = JPROC+1
-      WRITE(YTITLE(JPROC),'(A6,I1)')'DSTRGA',JSV
-      YUNIT    (JPROC) = 'um'
-      WRITE(YCOMMENT(JPROC),'(A18,I1)')'RG (nb) DUST MODE ',JSV
-      ZWORK6 (1,1,1,:,1,JPROC) = ZRG(1,1,:,JSV)
+      WRITE(YTITLE,'(A,I1)')'DSTRGA',JSV
+      WRITE(YCOMMENT,'(A,I1)')'RG (nb) DUST MODE ',JSV
+      call Add_point( Trim( ytitle ), 'um', Trim( ycomment ), ZRG(1,1,:,JSV) )
       ! standard deviation
-      JPROC = JPROC+1
-      WRITE(YTITLE(JPROC),'(A7,I1)')'DSTSIGA',JSV
-      YUNIT    (JPROC) = '  '
-      WRITE(YCOMMENT(JPROC),'(A16,I1)')'SIGMA DUST MODE ',JSV
-      ZWORK6 (1,1,1,:,1,JPROC) = ZSIG(1,1,:,JSV)
+      WRITE(YTITLE,'(A,I1)')'DSTSIGA',JSV
+      WRITE(YCOMMENT,'(A,I1)')'SIGMA DUST MODE ',JSV
+      call Add_point( Trim( ytitle ), '1', Trim( ycomment ), ZSIG(1,1,:,JSV) )
       ! particles number
-      JPROC = JPROC+1
-      WRITE(YTITLE(JPROC),'(A6,I1)')'DSTN0A',JSV
-      YUNIT    (JPROC) = 'm-3'
-      WRITE(YCOMMENT(JPROC),'(A13,I1)')'N0 DUST MODE ',JSV
-      ZWORK6 (1,1,1,:,1,JPROC) = ZN0(1,1,:,JSV)
+      WRITE(YTITLE,'(A,I1)')'DSTN0A',JSV
+      WRITE(YCOMMENT,'(A,I1)')'N0 DUST MODE ',JSV
+      call Add_point( Trim( ytitle ), 'm-3', Trim( ycomment ), ZN0(1,1,:,JSV) )
     ENDDO
     DEALLOCATE (ZSV,ZRHO)
     DEALLOCATE (ZN0,ZRG,ZSIG)
@@ -582,124 +432,19 @@ ENDIF
 !
 IF (SIZE(TPFLYER%XTSRAD)>0) THEN
   JPROC = JPROC+1
-  YTITLE   (JPROC) = 'Tsrad'
-  YUNIT    (JPROC) = 'K'
-  YCOMMENT (JPROC) = 'Radiative Surface Temperature'
-  ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%XTSRAD(:)
+  CTITLE   (JPROC) = 'Tsrad'
+  CUNIT    (JPROC) = 'K'
+  CCOMMENT (JPROC) = 'Radiative Surface Temperature'
+  XWORK6 (1,1,1,:,1,JPROC) = TPFLYER%XTSRAD(:)
 END IF
 !
-DO IK=1, IKU
-!
-  JPROCZ=0
-!
-  JPROCZ = JPROCZ + 1
-  YTITLEZ  (JPROCZ) = 'Rt'
-  YUNITZ   (JPROCZ) = 'kg kg-1'
-  YCOMMENTZ(JPROCZ) = '1D Total hydrometeor mixing ratio'
-  ZWORKZ6 (1,1,IK,:,1,JPROCZ) = TPFLYER%XRTZ(:,IK)
-!
-  DO JRR=1,SIZE(TPFLYER%XRZ,3)
-    JPROCZ = JPROCZ+1
-    YUNITZ    (JPROCZ) = 'kg kg-1'
-    ZWORKZ6 (1,1,IK,:,1,JPROCZ) = TPFLYER%XRZ(:,IK,JRR)
-    IF (JRR==1) THEN
-      YTITLEZ   (JPROCZ) = 'Rv'
-      YCOMMENTZ (JPROCZ) = '1D water vapor mixing ratio' 
-    ELSE IF (JRR==2) THEN
-      YTITLEZ   (JPROCZ) = 'Rc'
-      YCOMMENTZ (JPROCZ) = '1D liquid cloud water mixing ratio' 
-    ELSE IF (JRR==3) THEN
-      YTITLEZ   (JPROCZ) = 'Rr'
-      YCOMMENTZ (JPROCZ) = '1D Rain water mixing ratio' 
-    ELSE IF (JRR==4) THEN
-      YTITLEZ   (JPROCZ) = 'Ri'
-      YCOMMENTZ (JPROCZ) = '1D Ice cloud water mixing ratio' 
-    ELSE IF (JRR==5) THEN
-      YTITLEZ   (JPROCZ) = 'Rs'
-      YCOMMENTZ (JPROCZ) = '1D Snow mixing ratio' 
-    ELSE IF (JRR==6) THEN
-      YTITLEZ   (JPROCZ) = 'Rg'
-      YCOMMENTZ (JPROCZ) = '1D Graupel mixing ratio' 
-    ELSE IF (JRR==7) THEN
-      YTITLEZ   (JPROCZ) = 'Rh'
-      YCOMMENTZ (JPROCZ) = '1D Hail mixing ratio' 
-    END IF
-  END DO
-!
-  JPROCZ = JPROCZ + 1
-  YTITLEZ  (JPROCZ) = 'FF'
-  YUNITZ   (JPROCZ) = 'm s-1'
-  YCOMMENTZ(JPROCZ) = 'Horizontal wind'
-  ZWORKZ6 (1,1,IK,:,1,JPROCZ) = TPFLYER%XFFZ(:,IK)
-!
-  JPROCZ = JPROCZ + 1
-  YTITLEZ  (JPROCZ) = 'IWC'
-  YUNITZ   (JPROCZ) = 'kg m-3'
-  YCOMMENTZ(JPROCZ) = 'Ice water content'
-  ZWORKZ6 (1,1,IK,:,1,JPROCZ) = TPFLYER%XIWCZ(:,IK)
-!
-  JPROCZ = JPROCZ + 1
-  YTITLEZ  (JPROCZ) = 'LWC'
-  YUNITZ   (JPROCZ) = 'kg m-3'
-  YCOMMENTZ(JPROCZ) = 'Liquid water content'
-  ZWORKZ6 (1,1,IK,:,1,JPROCZ) = TPFLYER%XLWCZ(:,IK)
-!
-  IF (NSV_LIMA_BEG/=NSV_LIMA_END) THEN
-    JPROCZ = JPROCZ + 1
-    YTITLEZ  (JPROCZ) = 'CIT'
-    YUNITZ   (JPROCZ) = 'm-3'
-    YCOMMENTZ(JPROCZ) = 'Ice concentration'
-    ZWORKZ6 (1,1,IK,:,1,JPROCZ) = TPFLYER%XCIZ(:,IK)
-  ELSE
-    JPROCZ = JPROCZ + 1
-    YTITLEZ  (JPROCZ) = 'CCLOUDT'
-    YUNITZ   (JPROCZ) = 'kg-1'
-    YCOMMENTZ(JPROCZ) = 'liquid cloud concentration'
-    ZWORKZ6 (1,1,IK,:,1,JPROCZ) = TPFLYER%XCCZ(:,IK)
-!
-    JPROCZ = JPROCZ + 1
-    YTITLEZ  (JPROCZ) = 'CRAINT'
-    YUNITZ   (JPROCZ) = 'kg-1'
-    YCOMMENTZ(JPROCZ) = 'Rain concentration'
-    ZWORKZ6 (1,1,IK,:,1,JPROCZ) = TPFLYER%XCRZ(:,IK)
-!
-    JPROCZ = JPROCZ + 1
-    YTITLEZ  (JPROCZ) = 'CICET'
-    YUNITZ   (JPROCZ) = 'kg-1'
-    YCOMMENTZ(JPROCZ) = 'Ice concentration'
-    ZWORKZ6 (1,1,IK,:,1,JPROCZ) = TPFLYER%XCIZ(:,IK)
- ENDIF
-!
-  JPROCZ = JPROCZ + 1
-  YTITLEZ  (JPROCZ) = 'RARE'
-  YUNITZ   (JPROCZ) = 'dBZ'
-  YCOMMENTZ(JPROCZ) = '1D cloud radar reflectivity'
-  ZWORKZ6 (1,1,IK,:,1,JPROCZ) = TPFLYER%XCRARE(:,IK)
-  JPROCZ = JPROCZ + 1
-  YTITLEZ  (JPROCZ) = 'RAREatt'
-  YUNITZ   (JPROCZ) = 'dBZ'
-  YCOMMENTZ(JPROCZ) = '1D cloud radar attenuated reflectivity' 
-  ZWORKZ6 (1,1,IK,:,1,JPROCZ) = TPFLYER%XCRARE_ATT(:,IK)
-  JPROCZ = JPROCZ + 1
-  YTITLEZ  (JPROCZ) = 'W'
-  YUNITZ   (JPROCZ) = 'm s-1'
-  YCOMMENTZ(JPROCZ) = '1D vertical velocity' 
-  ZWORKZ6 (1,1,IK,:,1,JPROCZ) = TPFLYER%XWZ(:,IK)
-  JPROCZ = JPROCZ + 1
-  YTITLEZ  (JPROCZ) = 'Z'
-  YUNITZ   (JPROCZ) = 'm'
-  YCOMMENTZ(JPROCZ) = '1D altitude above sea'
-  ZWORKZ6 (1,1,IK,:,1,JPROCZ) = TPFLYER%XZZ(:,IK)
-END DO
-!----------------------------------------------------------------------------
-
 allocate( tzfields( jproc ) )
 
-tzfields(:)%cmnhname  = ytitle(1 : jproc)
+tzfields(:)%cmnhname  = ctitle(1 : jproc)
 tzfields(:)%cstdname  = ''
-tzfields(:)%clongname = ytitle(1 : jproc)
-tzfields(:)%cunits    = yunit(1 : jproc)
-tzfields(:)%ccomment  = ycomment(1 : jproc)
+tzfields(:)%clongname = ctitle(1 : jproc)
+tzfields(:)%cunits    = cunit(1 : jproc)
+tzfields(:)%ccomment  = ccomment(1 : jproc)
 tzfields(:)%ngrid     = 0
 tzfields(:)%ntype     = TYPEREAL
 tzfields(:)%ndims     = 2
@@ -755,18 +500,61 @@ tzbudiachro%lnorm      = .false.
 ! tzbudiachro%nkl        = NOT SET (default values)
 ! tzbudiachro%nkh        = NOT SET (default values)
 
-call Write_diachro( tpdiafile, tzbudiachro, tzfields, tpflyer%tflyer_time%tpdates, zwork6(:,:,:,:,:,:jproc), &
+call Write_diachro( tpdiafile, tzbudiachro, tzfields, tpflyer%tflyer_time%tpdates, xwork6(:,:,:,:,:,:jproc), &
                     tpflyer = tpflyer                                                                        )
 
-deallocate( tzfields )
+Deallocate( tzfields )
+Deallocate( xwork6 )
+Deallocate( ccomment )
+Deallocate( ctitle )
+Deallocate( cunit )
 
-allocate( tzfields( jprocz ) )
+!----------------------------------------------------------------------------
+!Treat vertical profiles
 
-tzfields(:)%cmnhname  = ytitlez(1 : jprocz)
+ALLOCATE (XWORK6(1,1,IKU,ISTORE,1,IPROCZ))
+ALLOCATE (CCOMMENT(IPROCZ))
+ALLOCATE (CTITLE (IPROCZ))
+ALLOCATE (CUNIT  (IPROCZ))
+
+JPROC = 0
+
+call Add_profile( 'Rt', '1D Total hydrometeor mixing ratio', 'kg kg-1', tpflyer%xrtz(:,:) )
+
+if ( irr >= 1 ) call Add_profile( 'Rv', '1D water vapor mixing ratio',        'kg kg-1', tpflyer%xrz(:,:,1) )
+if ( irr >= 2 ) call Add_profile( 'Rc', '1D liquid cloud water mixing ratio', 'kg kg-1', tpflyer%xrz(:,:,2) )
+if ( irr >= 3 ) call Add_profile( 'Rr', '1D Rain water mixing ratio',         'kg kg-1', tpflyer%xrz(:,:,3) )
+if ( irr >= 4 ) call Add_profile( 'Ri', '1D Ice cloud water mixing ratio',    'kg kg-1', tpflyer%xrz(:,:,4) )
+if ( irr >= 5 ) call Add_profile( 'Rs', '1D Snow mixing ratio',               'kg kg-1', tpflyer%xrz(:,:,5) )
+if ( irr >= 6 ) call Add_profile( 'Rg', '1D Graupel mixing ratio',            'kg kg-1', tpflyer%xrz(:,:,6) )
+if ( irr >= 7 ) call Add_profile( 'Rh', '1D Hail mixing ratio',               'kg kg-1', tpflyer%xrz(:,:,7) )
+
+call Add_profile( 'FF', 'Horizontal wind', 'm s-1', tpflyer%xffz(:,:) )
+
+call Add_profile( 'IWC', 'Ice water content',    'kg m-3', tpflyer%xiwcz(:,:) )
+call Add_profile( 'LWC', 'Liquid water content', 'kg m-3', tpflyer%xlwcz(:,:) )
+
+IF ( CCLOUD == 'LIMA' ) THEN
+  call Add_profile( 'CCLOUDT', 'liquid cloud concentration', 'kg-1', tpflyer%xccz(:,:) )
+  call Add_profile( 'CRAINT',  'Rain concentration',         'kg-1', tpflyer%xcrz(:,:) )
+  call Add_profile( 'CICET',   'Ice concentration',          'kg-1', tpflyer%xciz(:,:) )
+ELSE IF ( CCLOUD == 'ICE3' .OR. CCLOUD == 'ICE4' ) THEN
+  call Add_profile( 'CIT', 'Ice concentration', 'm-3', tpflyer%xciz(:,:) )
+END IF
+
+call Add_profile( 'RARE',    '1D cloud radar reflectivity',            'dBZ', tpflyer%xcrare(:,:) )
+call Add_profile( 'RAREatt', '1D cloud radar attenuated reflectivity', 'dBZ', tpflyer%xcrare_att(:,:) )
+
+call Add_profile( 'W', '1D vertical velocity', 'm s-1', tpflyer%xwz(:,:) )
+call Add_profile( 'Z', '1D altitude above sea', 'm', tpflyer%xzz(:,:) )
+
+allocate( tzfields( jproc ) )
+
+tzfields(:)%cmnhname  = ctitle(1 : jproc)
 tzfields(:)%cstdname  = ''
-tzfields(:)%clongname = ytitlez(1 : jprocz)
-tzfields(:)%cunits    = yunitz(1 : jprocz)
-tzfields(:)%ccomment  = ycommentz(1 : jprocz)
+tzfields(:)%clongname = ctitle(1 : jproc)
+tzfields(:)%cunits    = cunit(1 : jproc)
+tzfields(:)%ccomment  = ccomment(1 : jproc)
 tzfields(:)%ngrid     = 0
 tzfields(:)%ntype     = TYPEREAL
 tzfields(:)%ndims     = 3
@@ -827,22 +615,71 @@ tzbudiachro%njh        = 1
 tzbudiachro%nkl        = 1
 tzbudiachro%nkh        = iku
 
-call Write_diachro( tpdiafile, tzbudiachro, tzfields, tpflyer%tflyer_time%tpdates, zworkz6(:,:,:,:,:,:jprocz), &
-                    tpflyer = tpflyer                                                                          )
+call Write_diachro( tpdiafile, tzbudiachro, tzfields, tpflyer%tflyer_time%tpdates, xwork6(:,:,:,:,:,:jproc), &
+                    tpflyer = tpflyer                                                                        )
 
 deallocate( tzfields )
 
-DEALLOCATE (ZWORK6)
-DEALLOCATE (YCOMMENT)
-DEALLOCATE (YTITLE  )
-DEALLOCATE (YUNIT   )
-DEALLOCATE (ZWORKZ6)
-DEALLOCATE (YCOMMENTZ)
-DEALLOCATE (YTITLEZ )
-DEALLOCATE (YUNITZ  )
+DEALLOCATE (XWORK6)
+DEALLOCATE (CCOMMENT)
+DEALLOCATE (CTITLE  )
+DEALLOCATE (CUNIT   )
+
+contains
+
+subroutine Add_profile( htitle, hcomment, hunits, pfield )
+
+use mode_msg
+
+character(len=*),     intent(in) :: htitle
+character(len=*),     intent(in) :: hcomment
+character(len=*),     intent(in) :: hunits
+real, dimension(:,:), intent(in) :: pfield
+
+integer :: jk
+
+jproc = jproc + 1
+
+if ( jproc > iprocz ) call Print_msg( NVERB_FATAL, 'IO', 'Add_profile', 'more processes than expected' )
+
+ctitle(jproc)   = Trim( htitle )
+ccomment(jproc) = Trim( hcomment )
+cunit(jproc)    = Trim( hunits )
+
+do jk = 1, iku
+  xwork6(1, 1, jk, :, 1, jproc) = pfield(:, jk)
+end do
+
+end subroutine Add_profile
+
+
+subroutine Add_point( htitle, hcomment, hunits, pfield )
+
+use mode_msg
+
+character(len=*),   intent(in) :: htitle
+character(len=*),   intent(in) :: hcomment
+character(len=*),   intent(in) :: hunits
+real, dimension(:), intent(in) :: pfield
+
+integer :: jk
+
+jproc = jproc + 1
+
+if ( jproc > iproc ) call Print_msg( NVERB_FATAL, 'IO', 'Add_point', 'more processes than expected' )
+
+ctitle(jproc)   = Trim( htitle)
+ccomment(jproc) = Trim( hcomment )
+cunit(jproc)    = Trim( hunits )
+
+xwork6(1, 1, 1, :, 1, jproc) = pfield(:)
+
+end subroutine Add_point
+
 !----------------------------------------------------------------------------
 END SUBROUTINE FLYER_DIACHRO
 !----------------------------------------------------------------------------
 !----------------------------------------------------------------------------
 !
-END SUBROUTINE WRITE_AIRCRAFT_BALLOON
+
+END MODULE MODE_WRITE_AIRCRAFT_BALLOON
