@@ -29,6 +29,7 @@
 !                          IO_Field_partial_write_nc4_N3 and IO_Field_partial_write_nc4_N4 subroutines
 !  P. Wautelet 30/03/2021: budgets: LES cartesian subdomain limits are defined in the physical domain
 !  P. Wautelet 22/03/2022: correct time_les_avg and time_les_avg_bounds coordinates
+!  P. Wautelet 21/06/2022: bugfix: time_budget was not computed correctly (tdtexp -> tdtseg)
 !-----------------------------------------------------------------
 #ifdef MNH_IOCDF4
 module mode_io_write_nc4
@@ -1467,7 +1468,6 @@ use modd_type_date,  only: date_time
 use mode_field,      only: Find_field_id_from_mnhname
 use mode_gridproj,   only: Sm_latlon
 use mode_nest_ll,    only: Get_model_number_ll, Go_tomodel_ll
-use mode_time,       only: tdtexp
 
 type(tfiledata),            intent(in) :: tpfile
 character(len=*), optional, intent(in) :: hprogram_orig !To emulate a file coming from this program
@@ -1719,20 +1719,20 @@ if ( tpfile%lmaster ) then
       Allocate( tzdates_bound(2, nbutotwrite) )
 
       do jt = 1, nbutotwrite
-        tzdates(jt)%nyear  = tdtexp%nyear
-        tzdates(jt)%nmonth = tdtexp%nmonth
-        tzdates(jt)%nday   = tdtexp%nday
-        tzdates(jt)%xtime  = tdtexp%xtime + nbustep * ( ( jt - 1 )  + 0.5  ) * xtstep
+        tzdates(jt)%nyear  = tdtseg%nyear
+        tzdates(jt)%nmonth = tdtseg%nmonth
+        tzdates(jt)%nday   = tdtseg%nday
+        tzdates(jt)%xtime  = tdtseg%xtime + nbustep * ( ( jt - 1 )  + 0.5  ) * xtstep
 
-        tzdates_bound(1, jt)%nyear  = tdtexp%nyear
-        tzdates_bound(1, jt)%nmonth = tdtexp%nmonth
-        tzdates_bound(1, jt)%nday   = tdtexp%nday
-        tzdates_bound(1, jt)%xtime  = tdtexp%xtime + nbustep * ( jt - 1 ) * xtstep
+        tzdates_bound(1, jt)%nyear  = tdtseg%nyear
+        tzdates_bound(1, jt)%nmonth = tdtseg%nmonth
+        tzdates_bound(1, jt)%nday   = tdtseg%nday
+        tzdates_bound(1, jt)%xtime  = tdtseg%xtime + nbustep * ( jt - 1 ) * xtstep
 
-        tzdates_bound(2, jt)%nyear  = tdtexp%nyear
-        tzdates_bound(2, jt)%nmonth = tdtexp%nmonth
-        tzdates_bound(2, jt)%nday   = tdtexp%nday
-        tzdates_bound(2, jt)%xtime  = tdtexp%xtime + nbustep * jt * xtstep
+        tzdates_bound(2, jt)%nyear  = tdtseg%nyear
+        tzdates_bound(2, jt)%nmonth = tdtseg%nmonth
+        tzdates_bound(2, jt)%nday   = tdtseg%nday
+        tzdates_bound(2, jt)%xtime  = tdtseg%xtime + nbustep * jt * xtstep
       end do
 
       call Write_time_coord( tpfile%tncdims%tdims(NMNHDIM_BUDGET_TIME), 'time axis for budgets', tzdates, tzdates_bound )
