@@ -116,7 +116,7 @@ REAL     :: PALPHAR,PALPHAS,PALPHAG,PALPHAH
 REAL     :: PNUR,PNUS,PNUG,PNUH
 REAL     :: PBR,PBS,PBG,PBH
 REAL     :: PCR,PCS,PCG,PCH
-REAL     :: PDR,PDS,PDG,PDH
+REAL     :: PDR,PDS,PFVELOS,PDG,PDH
 REAL     :: PESR,PEGS,PEGR,PEHS,PEHG
 REAL     :: PFDINFTY
 REAL     :: PACCLBDAS_MAX,PACCLBDAR_MAX,PACCLBDAS_MIN,PACCLBDAR_MIN
@@ -859,15 +859,15 @@ ALLOCATE( XKER_RACCSS(NACCLBDAS,NACCLBDAR) )
 ALLOCATE( XKER_RACCS (NACCLBDAS,NACCLBDAR) )
 ALLOCATE( XKER_SACCRG(NACCLBDAR,NACCLBDAS) )
 !
-CALL LIMA_READ_XKER_RACCS (KACCLBDAS,KACCLBDAR,KND,                                &
-                           PALPHAS,PNUS,PALPHAR,PNUR,PESR,PBS,PBR,PCS,PDS,PCR,PDR, &
-                           PACCLBDAS_MAX,PACCLBDAR_MAX,PACCLBDAS_MIN,PACCLBDAR_MIN,&
-                           PFDINFTY                                                )
+CALL LIMA_READ_XKER_RACCS (KACCLBDAS,KACCLBDAR,KND,                                        &
+                           PALPHAS,PNUS,PALPHAR,PNUR,PESR,PBS,PBR,PCS,PDS,PFVELOS,PCR,PDR, &
+                           PACCLBDAS_MAX,PACCLBDAR_MAX,PACCLBDAS_MIN,PACCLBDAR_MIN,        &
+                           PFDINFTY                                                        )
 IF( (KACCLBDAS/=NACCLBDAS) .OR. (KACCLBDAR/=NACCLBDAR) .OR. (KND/=IND) .OR. &
     (PALPHAS/=XALPHAS) .OR. (PNUS/=XNUS)                               .OR. &
     (PALPHAR/=XALPHAR) .OR. (PNUR/=XNUR)                               .OR. &
     (PESR/=ZESR) .OR. (PBS/=XBS) .OR. (PBR/=XBR)                       .OR. &
-    (PCS/=XCS) .OR. (PDS/=XDS) .OR. (PCR/=XCR) .OR. (PDR/=XDR)         .OR. &
+    (PCS/=XCS) .OR. (PDS/=XDS) .OR. (PFVELOS/=XFVELOS) .OR. (PCR/=XCR) .OR. (PDR/=XDR)         .OR. &
     (PACCLBDAS_MAX/=XACCLBDAS_MAX) .OR. (PACCLBDAR_MAX/=XACCLBDAR_MAX) .OR. &
     (PACCLBDAS_MIN/=XACCLBDAS_MIN) .OR. (PACCLBDAR_MIN/=XACCLBDAR_MIN) .OR. &
     (PFDINFTY/=ZFDINFTY)                                               ) THEN
@@ -901,6 +901,7 @@ IF( (KACCLBDAS/=NACCLBDAS) .OR. (KACCLBDAR/=NACCLBDAR) .OR. (KND/=IND) .OR. &
   WRITE(UNIT=ILUOUT0,FMT='("PBR=",E13.6)') XBR
   WRITE(UNIT=ILUOUT0,FMT='("PCS=",E13.6)') XCS
   WRITE(UNIT=ILUOUT0,FMT='("PDS=",E13.6)') XDS
+  WRITE(UNIT=ILUOUT0,FMT='("PFVELOS=",E13.6)') XFVELOS
   WRITE(UNIT=ILUOUT0,FMT='("PCR=",E13.6)') XCR
   WRITE(UNIT=ILUOUT0,FMT='("PDR=",E13.6)') XDR
   WRITE(UNIT=ILUOUT0,FMT='("PACCLBDAS_MAX=",E13.6)') &
@@ -940,10 +941,10 @@ IF( (KACCLBDAS/=NACCLBDAS) .OR. (KACCLBDAR/=NACCLBDAR) .OR. (KND/=IND) .OR. &
   END DO
   WRITE(UNIT=ILUOUT0,FMT='("END IF")')
   ELSE
-  CALL LIMA_READ_XKER_RACCS (KACCLBDAS,KACCLBDAR,KND,                                &
-                             PALPHAS,PNUS,PALPHAR,PNUR,PESR,PBS,PBR,PCS,PDS,PCR,PDR, &
-                             PACCLBDAS_MAX,PACCLBDAR_MAX,PACCLBDAS_MIN,PACCLBDAR_MIN,&
-                             PFDINFTY,XKER_RACCSS,XKER_RACCS,XKER_SACCRG             )
+  CALL LIMA_READ_XKER_RACCS (KACCLBDAS,KACCLBDAR,KND,                                        &
+                             PALPHAS,PNUS,PALPHAR,PNUR,PESR,PBS,PBR,PCS,PDS,PFVELOS,PCR,PDR, &
+                             PACCLBDAS_MAX,PACCLBDAR_MAX,PACCLBDAS_MIN,PACCLBDAR_MIN,        &
+                             PFDINFTY,XKER_RACCSS,XKER_RACCS,XKER_SACCRG                     )
   WRITE(UNIT=ILUOUT0,FMT='(" Read XKER_RACCSS")')
   WRITE(UNIT=ILUOUT0,FMT='(" Read XKER_RACCS ")')
   WRITE(UNIT=ILUOUT0,FMT='(" Read XKER_SACCRG")')
@@ -1174,15 +1175,15 @@ ZFDINFTY = 20.0  ! computing the kernels XKER_SDRYG
 !
 ALLOCATE( XKER_SDRYG(NDRYLBDAG,NDRYLBDAS) )
 !
-CALL LIMA_READ_XKER_SDRYG (KDRYLBDAG,KDRYLBDAS,KND,                                 &
-                           PALPHAG,PNUG,PALPHAS,PNUS,PEGS,PBS,PCG,PDG,PCS,PDS,      &
-                           PDRYLBDAG_MAX,PDRYLBDAS_MAX,PDRYLBDAG_MIN,PDRYLBDAS_MIN, &
-                           PFDINFTY                                                 )
+CALL LIMA_READ_XKER_SDRYG (KDRYLBDAG,KDRYLBDAS,KND,                                    &
+                           PALPHAG,PNUG,PALPHAS,PNUS,PEGS,PBS,PCG,PDG,PCS,PDS,PFVELOS, &
+                           PDRYLBDAG_MAX,PDRYLBDAS_MAX,PDRYLBDAG_MIN,PDRYLBDAS_MIN,    &
+                           PFDINFTY                                                    )
 IF( (KDRYLBDAG/=NDRYLBDAG) .OR. (KDRYLBDAS/=NDRYLBDAS) .OR. (KND/=IND) .OR. &
     (PALPHAG/=XALPHAG) .OR. (PNUG/=XNUG)                               .OR. &
     (PALPHAS/=XALPHAS) .OR. (PNUS/=XNUS)                               .OR. &
     (PEGS/=ZEGS) .OR. (PBS/=XBS)                                       .OR. &
-    (PCG/=XCG) .OR. (PDG/=XDG) .OR. (PCS/=XCS) .OR. (PDS/=XDS)         .OR. &
+    (PCG/=XCG) .OR. (PDG/=XDG) .OR. (PCS/=XCS) .OR. (PDS/=XDS) .OR. (PFVELOS/=XFVELOS) .OR. &
     (PDRYLBDAG_MAX/=XDRYLBDAG_MAX) .OR. (PDRYLBDAS_MAX/=XDRYLBDAS_MAX) .OR. &
     (PDRYLBDAG_MIN/=XDRYLBDAG_MIN) .OR. (PDRYLBDAS_MIN/=XDRYLBDAS_MIN) .OR. &
     (PFDINFTY/=ZFDINFTY)                                               ) THEN
@@ -1207,6 +1208,7 @@ IF( (KDRYLBDAG/=NDRYLBDAG) .OR. (KDRYLBDAS/=NDRYLBDAS) .OR. (KND/=IND) .OR. &
   WRITE(UNIT=ILUOUT0,FMT='("PDG=",E13.6)') XDG
   WRITE(UNIT=ILUOUT0,FMT='("PCS=",E13.6)') XCS
   WRITE(UNIT=ILUOUT0,FMT='("PDS=",E13.6)') XDS
+  WRITE(UNIT=ILUOUT0,FMT='("PFVELOS=",E13.6)') XFVELOS
   WRITE(UNIT=ILUOUT0,FMT='("PDRYLBDAG_MAX=",E13.6)') &
                                                     XDRYLBDAG_MAX
   WRITE(UNIT=ILUOUT0,FMT='("PDRYLBDAS_MAX=",E13.6)') &
@@ -1226,10 +1228,10 @@ IF( (KDRYLBDAG/=NDRYLBDAG) .OR. (KDRYLBDAS/=NDRYLBDAS) .OR. (KND/=IND) .OR. &
   END DO
   WRITE(UNIT=ILUOUT0,FMT='("END IF")')
   ELSE
-  CALL LIMA_READ_XKER_SDRYG (KDRYLBDAG,KDRYLBDAS,KND,                                 &
-                             PALPHAG,PNUG,PALPHAS,PNUS,PEGS,PBS,PCG,PDG,PCS,PDS,      &
-                             PDRYLBDAG_MAX,PDRYLBDAS_MAX,PDRYLBDAG_MIN,PDRYLBDAS_MIN, &
-                             PFDINFTY,XKER_SDRYG                                      )
+  CALL LIMA_READ_XKER_SDRYG (KDRYLBDAG,KDRYLBDAS,KND,                                    &
+                             PALPHAG,PNUG,PALPHAS,PNUS,PEGS,PBS,PCG,PDG,PCS,PDS,PFVELOS, &
+                             PDRYLBDAG_MAX,PDRYLBDAS_MAX,PDRYLBDAG_MIN,PDRYLBDAS_MIN,    &
+                             PFDINFTY,XKER_SDRYG                                         )
   WRITE(UNIT=ILUOUT0,FMT='(" Read XKER_SDRYG")')
 END IF
 !
@@ -1358,15 +1360,15 @@ ZFDINFTY = 20.0  ! computing the kernels XKER_SWETH
 !
 IF( .NOT.ALLOCATED(XKER_SWETH) ) ALLOCATE( XKER_SWETH(NWETLBDAH,NWETLBDAS) )
 !
-CALL LIMA_READ_XKER_SWETH (KWETLBDAH,KWETLBDAS,KND,                                 &
-                           PALPHAH,PNUH,PALPHAS,PNUS,PEHS,PBS,PCH,PDH,PCS,PDS,      &
-                           PWETLBDAH_MAX,PWETLBDAS_MAX,PWETLBDAH_MIN,PWETLBDAS_MIN, &
-                           PFDINFTY                                                 )
+CALL LIMA_READ_XKER_SWETH (KWETLBDAH,KWETLBDAS,KND,                                    &
+                           PALPHAH,PNUH,PALPHAS,PNUS,PEHS,PBS,PCH,PDH,PCS,PDS,PFVELOS, &
+                           PWETLBDAH_MAX,PWETLBDAS_MAX,PWETLBDAH_MIN,PWETLBDAS_MIN,    &
+                           PFDINFTY                                                    )
 IF( (KWETLBDAH/=NWETLBDAH) .OR. (KWETLBDAS/=NWETLBDAS) .OR. (KND/=IND) .OR. &
     (PALPHAH/=XALPHAH) .OR. (PNUH/=XNUH)                               .OR. &
     (PALPHAS/=XALPHAS) .OR. (PNUS/=XNUS)                               .OR. &
     (PEHS/=ZEHS) .OR. (PBS/=XBS)                                       .OR. &
-    (PCH/=XCH) .OR. (PDH/=XDH) .OR. (PCS/=XCS) .OR. (PDS/=XDS)         .OR. &
+    (PCH/=XCH) .OR. (PDH/=XDH) .OR. (PCS/=XCS) .OR. (PDS/=XDS) .OR. (PFVELOS/=XFVELOS) .OR. &
     (PWETLBDAH_MAX/=XWETLBDAH_MAX) .OR. (PWETLBDAS_MAX/=XWETLBDAS_MAX) .OR. &
     (PWETLBDAH_MIN/=XWETLBDAH_MIN) .OR. (PWETLBDAS_MIN/=XWETLBDAS_MIN) .OR. &
     (PFDINFTY/=ZFDINFTY)                                               ) THEN
@@ -1391,6 +1393,7 @@ IF( (KWETLBDAH/=NWETLBDAH) .OR. (KWETLBDAS/=NWETLBDAS) .OR. (KND/=IND) .OR. &
   WRITE(UNIT=ILUOUT0,FMT='("PDH=",E13.6)') XDH
   WRITE(UNIT=ILUOUT0,FMT='("PCS=",E13.6)') XCS
   WRITE(UNIT=ILUOUT0,FMT='("PDS=",E13.6)') XDS
+  WRITE(UNIT=ILUOUT0,FMT='("PFVELOS=",E13.6)') XFVELOS
   WRITE(UNIT=ILUOUT0,FMT='("PWETLBDAH_MAX=",E13.6)') &
                                                     XWETLBDAH_MAX
   WRITE(UNIT=ILUOUT0,FMT='("PWETLBDAS_MAX=",E13.6)') &
@@ -1410,10 +1413,10 @@ IF( (KWETLBDAH/=NWETLBDAH) .OR. (KWETLBDAS/=NWETLBDAS) .OR. (KND/=IND) .OR. &
   END DO
   WRITE(UNIT=ILUOUT0,FMT='("END IF")')
   ELSE
-  CALL LIMA_READ_XKER_SWETH (KWETLBDAH,KWETLBDAS,KND,                                 &
-                             PALPHAH,PNUH,PALPHAS,PNUS,PEHS,PBS,PCH,PDH,PCS,PDS,      &
-                             PWETLBDAH_MAX,PWETLBDAS_MAX,PWETLBDAH_MIN,PWETLBDAS_MIN, &
-                             PFDINFTY,XKER_SWETH                                      )
+  CALL LIMA_READ_XKER_SWETH (KWETLBDAH,KWETLBDAS,KND,                                    &
+                             PALPHAH,PNUH,PALPHAS,PNUS,PEHS,PBS,PCH,PDH,PCS,PDS,PFVELOS, &
+                             PWETLBDAH_MAX,PWETLBDAS_MAX,PWETLBDAH_MIN,PWETLBDAS_MIN,    &
+                             PFDINFTY,XKER_SWETH                                         )
   WRITE(UNIT=ILUOUT0,FMT='(" Read XKER_SWETH")')
 END IF
 !

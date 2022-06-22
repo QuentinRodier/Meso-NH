@@ -133,10 +133,10 @@ IF (LWARM .AND. NRR.GE.2 .AND. NMOM_C.GE.2) THEN
       END WHERE
    END IF
    
-   IF( NVERB >= 5 ) THEN
-      WRITE (UNIT=ILUOUT,FMT=*) "!INI_MODEL$n: The droplet concentration has "
-      WRITE (UNIT=ILUOUT,FMT=*) "been roughly initialised"
-   END IF
+!   IF( NVERB >= 5 ) THEN
+!      WRITE (UNIT=ILUOUT,FMT=*) "!INI_MODEL$n: The droplet concentration has "
+!      WRITE (UNIT=ILUOUT,FMT=*) "been roughly initialised"
+!   END IF
 END IF
 !
 IF (LWARM .AND. LRAIN .AND. NRR.GE.3 .AND. NMOM_R.GE.2) THEN
@@ -155,10 +155,10 @@ IF (LWARM .AND. LRAIN .AND. NRR.GE.3 .AND. NMOM_R.GE.2) THEN
          PRT(:,:,:,3)  = 0.0
          PSVT(:,:,:,NSV_LIMA_NR_A(kmi)) = 0.0
       END WHERE
-      IF( NVERB >= 5 ) THEN
-         WRITE (UNIT=ILUOUT,FMT=*) "!INI_MODEL$n: The raindrop concentration has "
-         WRITE (UNIT=ILUOUT,FMT=*) "been roughly initialised"
-      END IF
+!      IF( NVERB >= 5 ) THEN
+!         WRITE (UNIT=ILUOUT,FMT=*) "!INI_MODEL$n: The raindrop concentration has "
+!         WRITE (UNIT=ILUOUT,FMT=*) "been roughly initialised"
+!      END IF
    END IF
 END IF
 !
@@ -189,10 +189,10 @@ IF (LCOLD .AND. NRR.GE.4 .AND. NMOM_I.GE.2) THEN
       END WHERE
    END IF
 
-   IF( NVERB >= 5 ) THEN
-      WRITE (UNIT=ILUOUT,FMT=*) "!INI_MODEL$n: The cloud ice concentration has "
-      WRITE (UNIT=ILUOUT,FMT=*) "been roughly initialised"
-   END IF
+!   IF( NVERB >= 5 ) THEN
+!      WRITE (UNIT=ILUOUT,FMT=*) "!INI_MODEL$n: The cloud ice concentration has "
+!      WRITE (UNIT=ILUOUT,FMT=*) "been roughly initialised"
+!   END IF
 !
 END IF
 !
