@@ -201,8 +201,20 @@ END IF
 !              ------------------------------------
 !
 IF (LFLAT) THEN
-  PRWCT(:,:,:) = PRWT(:,:,:) / PDZZ(:,:,:)
-  RETURN
+   !
+   PRWCT(:,:,:) = PRWT(:,:,:) / PDZZ(:,:,:)
+   !
+   IF (KADV_ORDER == 4 ) THEN
+      NULLIFY(TZFIELD_U)
+      NULLIFY(TZFIELD_V)
+      CALL ADD3DFIELD_ll( TZFIELD_U, PRUCT, 'CONTRAV::PRUCT' )
+      CALL ADD3DFIELD_ll( TZFIELD_V, PRVCT, 'CONTRAV::PRVCT' )
+      CALL UPDATE_HALO_ll(TZFIELD_U,IINFO_ll)
+      CALL UPDATE_HALO_ll(TZFIELD_V,IINFO_ll)
+   ENDIF
+   !
+   RETURN
+   !
 END IF
 !
 !*       3.    Compute the vertical contravariant components (general case)

@@ -63,6 +63,7 @@ TYPE MEGAN_t
   REAL               ::  XMODPREC              ! Precipitation correction factor (megan)
   REAL, POINTER, DIMENSION(:,:) :: XEF         ! efficiency factor
   REAL, POINTER, DIMENSION(:,:) :: XPFT        ! PFT factor (veg type)
+  REAL, POINTER, DIMENSION(:)   :: XLAI        ! Total LAI for MEGAN
   INTEGER, POINTER, DIMENSION(:) :: NSLTYP     ! USDA soil number category
   CHARACTER(LEN=16), POINTER, DIMENSION(:) :: CVNAME3D  ! name of the scheme species
   CHARACTER(LEN=16), POINTER, DIMENSION(:) :: CMECH_SPC ! name of the scheme species
@@ -82,6 +83,7 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 IF (LHOOK) CALL DR_HOOK("MODD_MEGAN_n:MEGAN_INIT",0,ZHOOK_HANDLE)
 NULLIFY(YMEGAN%XEF)
 NULLIFY(YMEGAN%XPFT)
+NULLIFY(YMEGAN%XLAI)
 NULLIFY(YMEGAN%NSLTYP)
 NULLIFY(YMEGAN%CVNAME3D)
 NULLIFY(YMEGAN%CMECH_SPC)

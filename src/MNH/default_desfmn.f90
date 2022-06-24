@@ -987,13 +987,13 @@ ENDIF
 !*      19.BIS   SET DEFAULT VALUES FOR MODD_PARAM_LIMA :
 !                ----------------------------------------
 !
-LPTSPLIT     = .FALSE.
-L_LFEEDBACKT = .TRUE.
-L_NMAXITER   = 1
-L_XMRSTEP    = 0.
-L_XTSTEP_TS  = 0.
-!
 IF (KMI == 1) THEN
+   LPTSPLIT     = .FALSE.
+   L_LFEEDBACKT = .TRUE.
+   L_NMAXITER   = 1
+   L_XMRSTEP    = 0.
+   L_XTSTEP_TS  = 0.
+!
   YNUC    = 1.0
   YALPHAC = 3.0
   YNUR    = 2.0
@@ -1032,9 +1032,7 @@ IF (KMI == 1) THEN
   LCCN_HOM = .TRUE.
   CCCN_MODES = 'COPT'
   XCCN_CONC(:)=300.
-ENDIF
-!
-IF (KMI == 1) THEN
+
   LHHONI = .FALSE.
   LCOLD  = .TRUE.
   LNUCL  = .TRUE.

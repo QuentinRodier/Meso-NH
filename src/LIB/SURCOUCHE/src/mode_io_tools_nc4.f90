@@ -253,8 +253,6 @@ USE MODD_CONF_n,        ONLY: CSTORAGE_TYPE
 USE MODD_DIM_n,         ONLY: NIMAX_ll, NJMAX_ll, NKMAX
 use modd_dyn,           only: xseglen
 use modd_dyn_n,         only: dyn_model
-
-!PW: check if all parameters are used...
 use modd_field,         only: NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NI_U, NMNHDIM_NJ_U, NMNHDIM_NI_V, NMNHDIM_NJ_V,   &
                               NMNHDIM_LEVEL, NMNHDIM_LEVEL_W, NMNHDIM_TIME,                                     &
                               NMNHDIM_ONE,  NMNHDIM_NSWB, NMNHDIM_NLWB, NMNHDIM_COMPLEX,                        &

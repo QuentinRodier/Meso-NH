@@ -1798,7 +1798,7 @@ gles = lles_mean .or. lles_resolved  .or. lles_subgrid .or. lles_updraft &
                  .or. lles_downdraft .or. lles_spectra
 !Called if budgets are enabled via NAM_BUDGET
 !or if LES budgets are enabled via NAM_LES (condition on kmi==1 to call it max once)
-if ( ( cbutype /= "NONE" .and. nbumod == kmi ) .or. ( gles .and. kmi == 1 ) .or. LCHECK ) THEN
+if ( ( cbutype /= "NONE" .and. nbumod == kmi ) .or. ( ( gles .or. lcheck ) .and. kmi == 1 ) ) THEN
   call Budget_preallocate()
 end if
 

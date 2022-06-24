@@ -1905,6 +1905,7 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
                           XHLC_HRC, XHLC_HCF, XHLI_HRI, XHLI_HCF,              &
                           ZSEA, ZTOWN                                          )
     DEALLOCATE(ZTOWN)
+    DEALLOCATE(ZSEA)
   ELSE
     CALL RESOLVED_CLOUD ( CCLOUD, CACTCCN, CSCONV, CMF_CLOUD, NRR, NSPLITR,    &
                           NSPLITG, IMI, KTCOUNT,                               &
@@ -1997,6 +1998,7 @@ IF (CELEC /= 'NONE' .AND. (CCLOUD(1:3) == 'ICE')) THEN
                           XINPRS, XINPRG, XINPRH,                        &
                           ZSEA, ZTOWN                                    )
     DEALLOCATE(ZTOWN)
+    DEALLOCATE(ZSEA)
   ELSE
     CALL RESOLVED_ELEC_n (CCLOUD, CSCONV, CMF_CLOUD,                     &
                           NRR, NSPLITR, IMI, KTCOUNT, OEXIT,             &
@@ -2135,10 +2137,21 @@ IF ( LSTATION ) &
 !*       24.3    PROFILER (observation diagnostic)
 !               ---------------------------------
 !
-IF ( LPROFILER )                                                          &
-  CALL PROFILER_n( XZZ, XRHODREF,                                         &
-                   XUT, XVT, XWT, XTHT, XRT, XSVT, XTKET, XTSRAD, XPABST, &
-                   XAER, XCIT, PSEA=ZSEA(:,:) )
+IF (LPROFILER)  THEN
+  IF (CSURF=='EXTE') THEN
+    ALLOCATE(ZSEA(IIU,IJU))
+    ZSEA(:,:) = 0.
+    CALL MNHGET_SURF_PARAM_n (PSEA=ZSEA(:,:))
+    CALL PROFILER_n( XZZ, XRHODREF,                             &
+                     XUT, XVT, XWT, XTHT, XRT, XSVT, XTKET,     &
+                     XTSRAD, XPABST, XAER, XCIT, PSEA=ZSEA(:,:) )
+    DEALLOCATE(ZSEA)
+  ELSE
+    CALL PROFILER_n( XZZ, XRHODREF,                         &
+                     XUT, XVT, XWT, XTHT, XRT, XSVT, XTKET, &
+                     XTSRAD, XPABST, XAER, XCIT             )
+  END IF
+END IF
 !
 !
 CALL SECOND_MNH2(ZTIME2)

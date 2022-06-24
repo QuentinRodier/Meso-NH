@@ -26,7 +26,7 @@ REAL, DIMENSION(:,:),     INTENT(IN)     :: PTS    ! surface temperature
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PP     ! pressure
 REAL, DIMENSION(:,:,:,:), INTENT(IN)     :: PAER   ! aerosol extinction
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PCIT   ! ice concentration
-REAL, DIMENSION(:,:),     INTENT(IN)     :: PSEA   ! for radar 
+REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN)     :: PSEA   ! for radar
 !
 !-------------------------------------------------------------------------------
 !
@@ -147,7 +147,7 @@ REAL, DIMENSION(:,:),     INTENT(IN)     :: PTS    ! surface temperature
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PP     ! pressure
 REAL, DIMENSION(:,:,:,:), INTENT(IN)     :: PAER   ! aerosol extinction
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PCIT   ! ice concentration
-REAL, DIMENSION(:,:),     INTENT(IN)     :: PSEA   ! for radar
+REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN)     :: PSEA   ! for radar
 !
 !-------------------------------------------------------------------------------
 !
