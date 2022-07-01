@@ -356,7 +356,7 @@ PROFILER: DO JP = 1, NUMBPROFILER_LOC
   ELSE
     CMNHMSG(1) = 'altitude of profiler ' // TRIM( TPROFILERS(JP)%CNAME ) // ' is too far from orography'
     CMNHMSG(2) = 'some variables are therefore not computed (IWV, ZTD, ZWD, ZHD)'
-    CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'PROFILER_n' )
+    CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'PROFILER_n', OLOCAL = .TRUE. )
     TPROFILERS(JP)%XIWV(IN)= XUNDEF
     TPROFILERS(JP)%XZTD(IN)= XUNDEF
     TPROFILERS(JP)%XZWD(IN)= XUNDEF

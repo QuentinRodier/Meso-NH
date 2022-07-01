@@ -198,7 +198,8 @@ STATION: DO JS = 1, INUMSTAT
         ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XSFCO2;    IPOS = IPOS + ISTORE
       END IF
 
-      IF ( IPOS /= IPACKSIZE ) call Print_msg( NVERB_WARNING, 'IO', 'WRITE_STATION_n', 'IPOS /= IPACKSIZE (sender side)' )
+      IF ( IPOS /= IPACKSIZE ) &
+        call Print_msg( NVERB_WARNING, 'IO', 'WRITE_STATION_n', 'IPOS /= IPACKSIZE (sender side)', OLOCAL = .TRUE. )
 
       CALL MPI_SEND( TSTATIONS(IDX)%CNAME, LEN(TSTATIONS(IDX)%CNAME), MPI_CHARACTER, TPDIAFILE%NMASTER_RANK - 1, &
                      ITAG, TPDIAFILE%NMPICOMM, IERR )
@@ -258,7 +259,8 @@ STATION: DO JS = 1, INUMSTAT
         TZSTATION%XSFCO2 =    ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
       END IF
 
-      IF ( IPOS /= IPACKSIZE ) call Print_msg( NVERB_WARNING, 'IO', 'WRITE_STATION_n', 'IPOS /= IPACKSIZE (receiver side)' )
+      IF ( IPOS /= IPACKSIZE ) &
+        call Print_msg( NVERB_WARNING, 'IO', 'WRITE_STATION_n', 'IPOS /= IPACKSIZE (receiver side)', OLOCAL = .TRUE. )
     END IF
   END IF
 
