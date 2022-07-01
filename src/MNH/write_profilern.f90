@@ -230,7 +230,7 @@ PROFILER: DO JS = 1, INUMPROF
       END IF
 
       IF ( IPOS-1 /= IPACKSIZE ) &
-        call Print_msg( NVERB_WARNING, 'IO', 'WRITE_PROFILER_n', 'IPOS /= IPACKSIZE (sender side)', OLOCAL = .TRUE. )
+        call Print_msg( NVERB_WARNING, 'IO', 'WRITE_PROFILER_n', 'IPOS-1 /= IPACKSIZE (sender side)', OLOCAL = .TRUE. )
 
       CALL MPI_SEND( TPROFILERS(IDX)%CNAME, LEN(TPROFILERS(IDX)%CNAME), MPI_CHARACTER, TPDIAFILE%NMASTER_RANK - 1, &
                      ITAG, TPDIAFILE%NMPICOMM, IERR )
@@ -308,7 +308,7 @@ PROFILER: DO JS = 1, INUMPROF
       END IF
 
       IF ( IPOS-1 /= IPACKSIZE ) &
-        call Print_msg( NVERB_WARNING, 'IO', 'WRITE_PROFILER_n', 'IPOS /= IPACKSIZE (receiver side)', OLOCAL = .TRUE. )
+        call Print_msg( NVERB_WARNING, 'IO', 'WRITE_PROFILER_n', 'IPOS-1 /= IPACKSIZE (receiver side)', OLOCAL = .TRUE. )
     END IF
   END IF
 
