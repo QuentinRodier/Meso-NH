@@ -361,6 +361,11 @@ XACCR_CSMALL2 = XKERA1*ZGAMR(3)
 XACCR_RSMALL1 = XKERA1*ZGAMC(5)*XRHOLW*(XPI/6.0)
 XACCR_RSMALL2 = XKERA1*ZGAMC(2)*ZGAMR(3)*XRHOLW*(XPI/6.0)
 !
+! ICE3 accretion of cloud droplets by rain drops
+!
+XFCACCR  = (XPI/4.0)*XCCR*XCR*(ZRHO00**XCEXVT)*MOMG(XALPHAR,XNUR,XDR+2.0)
+XEXCACCR = -XDR-3.0
+!
 ! Cst for the raindrop self-collection/breakup process
 !
 XSCBU2 = XKERA2*ZGAMR(2)

@@ -185,11 +185,11 @@ DO JI = 1, SIZE(PRCT)
    !
       P_TH_RIM(JI) = - P_RC_RIM(JI)*(PLSFACT(JI)-PLVFACT(JI))
    ELSE
-      P_TH_RIM(:) = 0.
-      P_RC_RIM(:) = 0.
-      P_CC_RIM(:) = 0.
-      P_RS_RIM(:) = 0.
-      P_RG_RIM(:) = 0.
+      P_TH_RIM(JI) = 0.
+      P_RC_RIM(JI) = 0.
+      P_CC_RIM(JI) = 0.
+      P_RS_RIM(JI) = 0.
+      P_RG_RIM(JI) = 0.
    END IF
 !
 !*       Hallett-Mossop ice production (HMS)  
@@ -214,14 +214,14 @@ DO JI = 1, SIZE(PRCT)
          P_RI_HMS(JI) = P_CI_HMS(JI) * XMNU0                                     ! RCHMSI
          P_RS_HMS(JI) = - P_RI_HMS(JI)
       ELSE
-         P_RI_HMS(:) = 0.
-         P_CI_HMS(:) = 0.
-         P_RS_HMS(:) = 0.
+         P_RI_HMS(JI) = 0.
+         P_CI_HMS(JI) = 0.
+         P_RS_HMS(JI) = 0.
       END IF
    ELSE
-      P_RI_HMS(:) = 0.
-      P_CI_HMS(:) = 0.
-      P_RS_HMS(:) = 0.
+      P_RI_HMS(JI) = 0.
+      P_CI_HMS(JI) = 0.
+      P_RS_HMS(JI) = 0.
    END IF
 END DO
 !

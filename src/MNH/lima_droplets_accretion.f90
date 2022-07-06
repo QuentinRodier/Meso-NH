@@ -64,11 +64,12 @@ END MODULE MODI_LIMA_DROPLETS_ACCRETION
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_PARAM_LIMA,      ONLY : XRTMIN, XCTMIN, LKHKO
+USE MODD_PARAM_LIMA,      ONLY : XRTMIN, XCTMIN, LKHKO, NMOM_C, NMOM_R, XCEXVT
 USE MODD_PARAM_LIMA_WARM, ONLY : XLAUTR, XAUTO1, XLAUTR_THRESHOLD, &
                                  XACCR4, XACCR5, XACCR3, XACCR2, XACCR1, &
                                  XACCR_CLARGE1, XACCR_CLARGE2, XACCR_RLARGE1, XACCR_RLARGE2, &
-                                 XACCR_CSMALL1, XACCR_CSMALL2, XACCR_RSMALL1, XACCR_RSMALL2
+                                 XACCR_CSMALL1, XACCR_CSMALL2, XACCR_RSMALL1, XACCR_RSMALL2, &
+                                 XFCACCR, XEXCACCR
 !
 IMPLICIT NONE
 !
@@ -128,6 +129,14 @@ IF ( LKHKO ) THEN
 !
    END WHERE
 !
+ELSE IF (NMOM_C.EQ.1 .AND. NMOM_R.EQ.1) THEN
+   GACCR(:) = PRRT(:)>XRTMIN(3) .AND. &
+              PRCT(:)>XRTMIN(2)
+   WHERE ( GACCR(:) )
+      P_RC_ACCR(:) = XFCACCR * PRCT(:)      &
+                   * PLBDR(:)**XEXCACCR     &
+                   * PRHODREF(:)**(-XCEXVT)
+   END WHERE
 ELSE
 !
    WHERE( PRCT(:)>XRTMIN(2) .AND. PCCT(:)>XCTMIN(2) .AND. PRRT(:)>XRTMIN(3) .AND. PCRT(:)>XCTMIN(3) .AND. LDCOMPUTE(:) )
