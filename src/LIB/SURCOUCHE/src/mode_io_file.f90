@@ -555,7 +555,7 @@ SELECT CASE(TPFILE%CTYPE)
   !Remark: 'MNH' is more general than MNHBACKUP and could be in fact a MNHBACKUP file
   CASE ('MNH', 'MNHBACKUP', 'MNHDIACHRONIC', 'MNHDIAG', 'MNHOUTPUT', 'PGD')
     !Do not close (non-existing) '.des' file if OUTPUT
-    IF(TPFILE%CTYPE/='OUTPUT' .AND. CPROGRAM/='LFICDF') THEN
+    IF(TPFILE%CTYPE/='MNHOUTPUT' .AND. CPROGRAM/='LFICDF') THEN
       CALL IO_File_find_byname(TRIM(TPFILE%CNAME)//'.des',TZFILE_DES,IRESP)
       IF (IRESP/=0) CALL PRINT_MSG(NVERB_ERROR,'IO','IO_File_close','file '//TRIM(TPFILE%CNAME)//'.des not in filelist')
       CALL IO_File_close(TZFILE_DES,KRESP=IRESP,HPROGRAM_ORIG=HPROGRAM_ORIG)

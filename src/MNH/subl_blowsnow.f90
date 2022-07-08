@@ -696,6 +696,7 @@ ZFCRI = MAX(ZFCRI1,ZFCRI2)
 !*      2    Calculate variances of the horizontal and vertical velocity components
 !
 ZS0   = ZFCRI*PZZ/PVMOD
+STOP 'Bug in TURB_FLUC: ZUSTAR used but not set'
 ZSIGU = 4.77 *ZUSTAR**2/ (1+33*ZS0)**0.66666
 ZSIGV = 2.76 *ZUSTAR**2/ (1+9.5*ZS0)**0.66666
 ZSIGW = 1.31 *ZUSTAR**2/ (1+3.12*ZS0)**0.66666

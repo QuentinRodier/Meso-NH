@@ -81,7 +81,7 @@ SUBROUTINE IBM_PREP_LS(OIBM,HIBM_TYPE,PPHI)
   !    MODIFICATIONS
   !    -------------
   !      Original         01/06/2021
-  !
+  !  P. Wautelet 23/07/2021: replace non-standard FLOAT function by REAL function
   !------------------------------------------------------------------------------
   !       
   !**** 0. DECLARATIONS
@@ -367,7 +367,7 @@ SUBROUTINE IBM_PREP_LS(OIBM,HIBM_TYPE,PPHI)
      DO JN=1,IIBM_NUMB_TYPE_SURF
      !
         READ(UNIT=ILUIBMIDEA,FMT=*) IIBM_TYPE_SURF, IIBM_NUMB_SURF
-        ZIBM_TYPE_SURF= float(IIBM_TYPE_SURF)
+        ZIBM_TYPE_SURF= REAL(IIBM_TYPE_SURF)
         !
         DO JM=1,IIBM_NUMB_SURF
            !

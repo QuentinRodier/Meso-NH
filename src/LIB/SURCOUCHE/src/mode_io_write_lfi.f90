@@ -17,7 +17,7 @@ module mode_io_write_lfi
 use modd_field,      only: tfielddata
 USE MODD_IO
 USE MODD_PARAMETERS, ONLY: NLFIMAXCOMMENTLENGTH
-use modd_precision,  only: LFIINT
+use modd_precision,  only: LFIINT, MNHINT64, MNHREAL64
 !
 USE MODE_MSG
 !
@@ -59,10 +59,10 @@ INTEGER,               INTENT(OUT):: KRESP  ! return-code if problems araised
 !
 !*      0.2   Declarations of local variables
 !
-INTEGER                                  :: ILENG
-INTEGER(KIND=LFIINT)                     :: IRESP, ITOTAL
-INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
-CHARACTER(LEN=MNH_LEN_HREC)                  :: YRECFM
+INTEGER                                         :: ILENG
+INTEGER(KIND=LFIINT)                            :: IRESP, ITOTAL
+INTEGER(KIND=MNHINT64),DIMENSION(:),ALLOCATABLE :: IWORK
+CHARACTER(LEN=MNH_LEN_HREC)                     :: YRECFM
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_lfi_X0','writing '//TRIM(TPFIELD%CMNHNAME))
 !
@@ -98,10 +98,10 @@ INTEGER,               INTENT(OUT):: KRESP  ! return-code if problems araised
 !
 !*      0.2   Declarations of local variables
 !
-INTEGER                                  :: ILENG
-INTEGER(kind=LFIINT)                     :: IRESP, ITOTAL
-INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
-CHARACTER(LEN=MNH_LEN_HREC)                  :: YRECFM
+INTEGER                                         :: ILENG
+INTEGER(kind=LFIINT)                            :: IRESP, ITOTAL
+INTEGER(KIND=MNHINT64),DIMENSION(:),ALLOCATABLE :: IWORK
+CHARACTER(LEN=MNH_LEN_HREC)                     :: YRECFM
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_lfi_X1','writing '//TRIM(TPFIELD%CMNHNAME))
 !
@@ -145,13 +145,13 @@ INTEGER,OPTIONAL,      INTENT(IN) :: KZFILE     ! Number of the Z-level split fi
 !
 !*      0.2   Declarations of local variables
 !
-INTEGER                                  :: ILENG
-INTEGER(kind=LFIINT)                     :: IRESP, ITOTAL
-INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
-CHARACTER(LEN=4)                         :: YSUFFIX
-CHARACTER(LEN=LEN(TPFIELD%CMNHNAME)+4)   :: YVARNAME
-CHARACTER(LEN=MNH_LEN_HREC)                  :: YRECFM
-TYPE(TFILEDATA),POINTER                  :: TZFILE
+INTEGER                                         :: ILENG
+INTEGER(kind=LFIINT)                            :: IRESP, ITOTAL
+INTEGER(KIND=MNHINT64),DIMENSION(:),ALLOCATABLE :: IWORK
+CHARACTER(LEN=4)                                :: YSUFFIX
+CHARACTER(LEN=LEN(TPFIELD%CMNHNAME)+4)          :: YVARNAME
+CHARACTER(LEN=MNH_LEN_HREC)                     :: YRECFM
+TYPE(TFILEDATA),POINTER                         :: TZFILE
 !
 IRESP=0
 !
@@ -209,10 +209,10 @@ INTEGER,                 INTENT(OUT):: KRESP  ! return-code if problems araised
 !
 !*      0.2   Declarations of local variables
 !
-INTEGER                                  :: ILENG
-INTEGER(kind=LFIINT)                     :: IRESP, ITOTAL
-INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
-CHARACTER(LEN=MNH_LEN_HREC)                  :: YRECFM
+INTEGER                                         :: ILENG
+INTEGER(kind=LFIINT)                            :: IRESP, ITOTAL
+INTEGER(KIND=MNHINT64),DIMENSION(:),ALLOCATABLE :: IWORK
+CHARACTER(LEN=MNH_LEN_HREC)                     :: YRECFM
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_lfi_X3','writing '//TRIM(TPFIELD%CMNHNAME))
 !
@@ -254,10 +254,10 @@ INTEGER,                  INTENT(OUT):: KRESP  ! return-code if problems araised
 !
 !*      0.2   Declarations of local variables
 !
-INTEGER                                  :: ILENG
-INTEGER(kind=LFIINT)                     :: IRESP, ITOTAL
-INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
-CHARACTER(LEN=MNH_LEN_HREC)                  :: YRECFM
+INTEGER                                         :: ILENG
+INTEGER(kind=LFIINT)                            :: IRESP, ITOTAL
+INTEGER(KIND=MNHINT64),DIMENSION(:),ALLOCATABLE :: IWORK
+CHARACTER(LEN=MNH_LEN_HREC)                     :: YRECFM
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_lfi_X4','writing '//TRIM(TPFIELD%CMNHNAME))
 !
@@ -299,10 +299,10 @@ INTEGER,                  INTENT(OUT):: KRESP  ! return-code if problems araised
 !
 !*      0.2   Declarations of local variables
 !
-INTEGER                                  :: ILENG
-INTEGER(kind=LFIINT)                     :: IRESP, ITOTAL
-INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
-CHARACTER(LEN=MNH_LEN_HREC)                  :: YRECFM
+INTEGER                                         :: ILENG
+INTEGER(kind=LFIINT)                            :: IRESP, ITOTAL
+INTEGER(KIND=MNHINT64),DIMENSION(:),ALLOCATABLE :: IWORK
+CHARACTER(LEN=MNH_LEN_HREC)                     :: YRECFM
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_lfi_X5','writing '//TRIM(TPFIELD%CMNHNAME))
 !
@@ -344,10 +344,10 @@ INTEGER,                    INTENT(OUT):: KRESP  ! return-code if problems arais
 !
 !*      0.2   Declarations of local variables
 !
-INTEGER                                  :: ILENG
-INTEGER(kind=LFIINT)                     :: IRESP, ITOTAL
-INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
-CHARACTER(LEN=MNH_LEN_HREC)                  :: YRECFM
+INTEGER                                         :: ILENG
+INTEGER(kind=LFIINT)                            :: IRESP, ITOTAL
+INTEGER(KIND=MNHINT64),DIMENSION(:),ALLOCATABLE :: IWORK
+CHARACTER(LEN=MNH_LEN_HREC)                     :: YRECFM
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_lfi_X6','writing '//TRIM(TPFIELD%CMNHNAME))
 !
@@ -389,10 +389,10 @@ INTEGER,                 INTENT(OUT):: KRESP  ! return-code if problems araised
 !
 !*      0.2   Declarations of local variables
 !
-INTEGER                                  :: ILENG
-INTEGER(kind=LFIINT)                     :: IRESP, ITOTAL
-INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
-CHARACTER(LEN=MNH_LEN_HREC)                  :: YRECFM
+INTEGER                                         :: ILENG
+INTEGER(kind=LFIINT)                            :: IRESP, ITOTAL
+INTEGER(KIND=MNHINT64),DIMENSION(:),ALLOCATABLE :: IWORK
+CHARACTER(LEN=MNH_LEN_HREC)                     :: YRECFM
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_lfi_N0','writing '//TRIM(TPFIELD%CMNHNAME))
 !
@@ -428,10 +428,10 @@ INTEGER,                 INTENT(OUT):: KRESP  ! return-code if problems araised
 !
 !*      0.2   Declarations of local variables
 !
-INTEGER                                  :: ILENG
-INTEGER(kind=LFIINT)                     :: IRESP, ITOTAL
-INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
-CHARACTER(LEN=MNH_LEN_HREC)                  :: YRECFM
+INTEGER                                         :: ILENG
+INTEGER(kind=LFIINT)                            :: IRESP, ITOTAL
+INTEGER(KIND=MNHINT64),DIMENSION(:),ALLOCATABLE :: IWORK
+CHARACTER(LEN=MNH_LEN_HREC)                     :: YRECFM
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_lfi_N1','writing '//TRIM(TPFIELD%CMNHNAME))
 !
@@ -473,10 +473,10 @@ INTEGER,               INTENT(OUT):: KRESP  ! return-code if problems araised
 !
 !*      0.2   Declarations of local variables
 !
-INTEGER                                  :: ILENG
-INTEGER(kind=LFIINT)                     :: IRESP, ITOTAL
-INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
-CHARACTER(LEN=MNH_LEN_HREC)                  :: YRECFM
+INTEGER                                         :: ILENG
+INTEGER(kind=LFIINT)                            :: IRESP, ITOTAL
+INTEGER(KIND=MNHINT64),DIMENSION(:),ALLOCATABLE :: IWORK
+CHARACTER(LEN=MNH_LEN_HREC)                     :: YRECFM
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_lfi_N2','writing '//TRIM(TPFIELD%CMNHNAME))
 !
@@ -518,10 +518,10 @@ INTEGER,                 INTENT(OUT):: KRESP  ! return-code if problems araised
 !
 !*      0.2   Declarations of local variables
 !
-INTEGER                                  :: ILENG
-INTEGER(kind=LFIINT)                     :: IRESP, ITOTAL
-INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
-CHARACTER(LEN=MNH_LEN_HREC)                  :: YRECFM
+INTEGER                                         :: ILENG
+INTEGER(kind=LFIINT)                            :: IRESP, ITOTAL
+INTEGER(KIND=MNHINT64),DIMENSION(:),ALLOCATABLE :: IWORK
+CHARACTER(LEN=MNH_LEN_HREC)                     :: YRECFM
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_lfi_N3','writing '//TRIM(TPFIELD%CMNHNAME))
 !
@@ -564,10 +564,10 @@ INTEGER,                   INTENT(OUT):: KRESP  ! return-code if problems araise
 !
 !*      0.2   Declarations of local variables
 !
-INTEGER                                  :: ILENG
-INTEGER(kind=LFIINT)                     :: IRESP, ITOTAL
-INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
-CHARACTER(LEN=MNH_LEN_HREC)                  :: YRECFM
+INTEGER                                         :: ILENG
+INTEGER(kind=LFIINT)                            :: IRESP, ITOTAL
+INTEGER(KIND=MNHINT64),DIMENSION(:),ALLOCATABLE :: IWORK
+CHARACTER(LEN=MNH_LEN_HREC)                     :: YRECFM
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_lfi_N4','writing '//TRIM(TPFIELD%CMNHNAME))
 !
@@ -610,11 +610,11 @@ INTEGER,                 INTENT(OUT):: KRESP  ! return-code if problems araised
 !
 !*      0.2   Declarations of local variables
 !
-INTEGER                                  :: IFIELD
-INTEGER                                  :: ILENG
-INTEGER(kind=LFIINT)                     :: IRESP, ITOTAL
-INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
-CHARACTER(LEN=MNH_LEN_HREC)                  :: YRECFM
+INTEGER                                         :: IFIELD
+INTEGER                                         :: ILENG
+INTEGER(kind=LFIINT)                            :: IRESP, ITOTAL
+INTEGER(KIND=MNHINT64),DIMENSION(:),ALLOCATABLE :: IWORK
+CHARACTER(LEN=MNH_LEN_HREC)                     :: YRECFM
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_lfi_L0','writing '//TRIM(TPFIELD%CMNHNAME))
 !
@@ -657,11 +657,11 @@ INTEGER,                 INTENT(OUT):: KRESP  ! return-code if problems araised
 !
 !*      0.2   Declarations of local variables
 !
-INTEGER, DIMENSION(SIZE(OFIELD))         :: IFIELD
-INTEGER                                  :: ILENG
-INTEGER(kind=LFIINT)                     :: IRESP, ITOTAL
-INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
-CHARACTER(LEN=MNH_LEN_HREC)                  :: YRECFM
+INTEGER, DIMENSION(SIZE(OFIELD))                :: IFIELD
+INTEGER                                         :: ILENG
+INTEGER(kind=LFIINT)                            :: IRESP, ITOTAL
+INTEGER(KIND=MNHINT64),DIMENSION(:),ALLOCATABLE :: IWORK
+CHARACTER(LEN=MNH_LEN_HREC)                     :: YRECFM
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_lfi_L1','writing '//TRIM(TPFIELD%CMNHNAME))
 !
@@ -712,10 +712,10 @@ INTEGER,                 INTENT(OUT):: KRESP  ! return-code if problems araised
 !
 !*      0.2   Declarations of local variables
 !
-INTEGER                                  :: ILENG, ILENGMAX, JLOOP
-INTEGER(kind=LFIINT)                     :: IRESP, ITOTAL
-INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
-CHARACTER(LEN=MNH_LEN_HREC)                  :: YRECFM
+INTEGER                                         :: ILENG, ILENGMAX, JLOOP
+INTEGER(kind=LFIINT)                            :: IRESP, ITOTAL
+INTEGER(KIND=MNHINT64),DIMENSION(:),ALLOCATABLE :: IWORK
+CHARACTER(LEN=MNH_LEN_HREC)                     :: YRECFM
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_lfi_C0','writing '//TRIM(TPFIELD%CMNHNAME))
 !
@@ -770,12 +770,12 @@ INTEGER,                 INTENT(OUT):: KRESP  ! return-code if problems araised
 !
 !*      0.2   Declarations of local variables
 !
-INTEGER                                  :: ILENG
-INTEGER(kind=LFIINT)                     :: IRESP, ITOTAL
-TYPE(TFIELDDATA)                         :: TZFIELD
-INTEGER, DIMENSION(3)                    :: ITDATE    ! date array
-INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
-CHARACTER(LEN=MNH_LEN_HREC)                  :: YRECFM
+INTEGER                                         :: ILENG
+INTEGER(kind=LFIINT)                            :: IRESP, ITOTAL
+TYPE(TFIELDDATA)                                :: TZFIELD
+INTEGER, DIMENSION(3)                           :: ITDATE    ! date array
+INTEGER(KIND=MNHINT64),DIMENSION(:),ALLOCATABLE :: IWORK
+CHARACTER(LEN=MNH_LEN_HREC)                     :: YRECFM
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_lfi_T0','writing '//TRIM(TPFIELD%CMNHNAME))
 !
@@ -846,13 +846,13 @@ INTEGER,                        INTENT(OUT):: KRESP  ! return-code if problems a
 !
 !*      0.2   Declarations of local variables
 !
-INTEGER                                  :: ILENG, IPOS
-INTEGER                                  :: JI
-INTEGER(kind=LFIINT)                     :: IRESP, ITOTAL
-TYPE(TFIELDDATA)                         :: TZFIELD
-INTEGER, DIMENSION(:), ALLOCATABLE       :: ITDATE    ! date array
-INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
-CHARACTER(LEN=MNH_LEN_HREC)                  :: YRECFM
+INTEGER                                         :: ILENG, IPOS
+INTEGER                                         :: JI
+INTEGER(kind=LFIINT)                            :: IRESP, ITOTAL
+TYPE(TFIELDDATA)                                :: TZFIELD
+INTEGER, DIMENSION(:), ALLOCATABLE              :: ITDATE    ! date array
+INTEGER(KIND=MNHINT64),DIMENSION(:),ALLOCATABLE :: IWORK
+CHARACTER(LEN=MNH_LEN_HREC)                     :: YRECFM
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_lfi_T1','writing '//TRIM(TPFIELD%CMNHNAME))
 !
@@ -924,11 +924,11 @@ END SUBROUTINE IO_Field_write_lfi_T1
 !
 SUBROUTINE WRITE_PREPARE(TPFIELD,KLENG,KWORK,KTOTAL,KRESP)
 !
-TYPE(TFIELDDATA),                        INTENT(IN)    :: TPFIELD
-INTEGER,                                 INTENT(IN)    :: KLENG
-INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE,INTENT(INOUT) :: KWORK
-INTEGER(kind=LFIINT),                    INTENT(OUT)   :: KTOTAL
-INTEGER(kind=LFIINT),                    INTENT(OUT)   :: KRESP
+TYPE(TFIELDDATA),                               INTENT(IN)    :: TPFIELD
+INTEGER,                                        INTENT(IN)    :: KLENG
+INTEGER(KIND=MNHINT64),DIMENSION(:),ALLOCATABLE,INTENT(INOUT) :: KWORK
+INTEGER(kind=LFIINT),                           INTENT(OUT)   :: KTOTAL
+INTEGER(kind=LFIINT),                           INTENT(OUT)   :: KRESP
 !
 INTEGER                   :: ICOMLEN
 INTEGER                   :: J
@@ -971,12 +971,12 @@ END SUBROUTINE WRITE_PREPARE
 !
 SUBROUTINE TRANSFER_R_I8(PFIELDIN,KFIELDOUT)
 !
-REAL,DIMENSION(:),           INTENT(IN)  :: PFIELDIN
-INTEGER(KIND=8),DIMENSION(:),INTENT(OUT) :: KFIELDOUT
+REAL,DIMENSION(:),                  INTENT(IN)  :: PFIELDIN
+INTEGER(KIND=MNHINT64),DIMENSION(:),INTENT(OUT) :: KFIELDOUT
 !
 INTEGER :: ILENG
 #if (MNH_REAL == 4)
-REAL(KIND=8),DIMENSION(:),ALLOCATABLE    :: ZFIELD8
+REAL(KIND=MNHREAL64),DIMENSION(:),ALLOCATABLE :: ZFIELD8
 #endif
 !
 ILENG = SIZE(PFIELDIN)
@@ -985,7 +985,7 @@ ILENG = SIZE(PFIELDIN)
   KFIELDOUT(:) = TRANSFER(PFIELDIN,KFIELDOUT(1),ILENG)
 #else
   ALLOCATE(ZFIELD8(ILENG))
-  ZFIELD8(:) = REAL(PFIELDIN(:),KIND=8)
+  ZFIELD8(:) = REAL(PFIELDIN(:),KIND=MNHREAL64)
   KFIELDOUT(:) = TRANSFER(ZFIELD8,KFIELDOUT(1),ILENG)
   DEALLOCATE(ZFIELD8)
 #endif

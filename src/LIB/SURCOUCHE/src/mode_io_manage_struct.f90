@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2016-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2016-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -19,6 +19,8 @@
 !  P. Wautelet 11/02/2020: bugfix: TDADFILE was wrongly constructed for output files
 !  S. Donnier  28/02/2020: type STREAM needed for use of ECOCLIMAP SG
 !  P. Wautelet 08/01/2021: allow output files with empty variable list (useful if IO_Field_user_write is not empty)
+!  P. Wautelet 18/03/2022: minor bugfix in ISTEP_MAX computation + adapt diagnostics messages
+                           (change verbosity level and remove some unnecessary warnings)
 !-----------------------------------------------------------------
 MODULE MODE_IO_MANAGE_STRUCT
 !
@@ -86,8 +88,8 @@ END IF
 DO IMI = 1, NMODEL
   IBAK_NUMB = 0
   IOUT_NUMB = 0
-  ISTEP_MAX = NINT(XSEGLEN/DYN_MODEL(IMI)%XTSTEP)+1
-  IF (IMI == 1) ISTEP_MAX = ISTEP_MAX - KSUP
+  !Reduce XSEGLEN by time added to XSEGLEN for 1st domain (see set_grid subroutine)
+  ISTEP_MAX = NINT( ( XSEGLEN - KSUP * DYN_MODEL(1)%XTSTEP ) / DYN_MODEL(IMI)%XTSTEP ) + 1
   !
   !* Insert regular backups/outputs into XBAK_TIME/XOUT_TIME arrays
   !
@@ -468,7 +470,7 @@ SUBROUTINE FIND_REMOVE_DUPLICATES(KNUMB,KSTEPS)
   DO JOUT = 1,KNUMB
     DO JKLOOP = JOUT+1,KNUMB
       IF ( KSTEPS(JKLOOP) == KSTEPS(JOUT) .AND. KSTEPS(JKLOOP) > 0 ) THEN
-        CALL PRINT_MSG(NVERB_INFO,'IO','FIND_REMOVE_DUPLICATES','found duplicated backup/output step (removed extra one)')
+        CALL PRINT_MSG(NVERB_DEBUG,'IO','FIND_REMOVE_DUPLICATES','found duplicated backup/output step (removed extra one)')
         KSTEPS(JKLOOP) = NNEGUNDEF
       END IF
     END DO
@@ -484,7 +486,8 @@ SUBROUTINE FIND_REMOVE_OUTOFTIMERANGE(KNUMB,KSTEPS)
   !
   DO JOUT = 1,KNUMB
     IF ( KSTEPS(JOUT) < 1 .OR. KSTEPS(JOUT) > ISTEP_MAX ) THEN
-      CALL PRINT_MSG(NVERB_WARNING,'IO','FIND_REMOVE_OUTOFTIMERANGE','found backup/output step outside of time range')
+      IF ( KSTEPS(JOUT) /= NNEGUNDEF ) &
+        CALL PRINT_MSG(NVERB_WARNING,'IO','FIND_REMOVE_OUTOFTIMERANGE','found backup/output step outside of time range')
       KSTEPS(JOUT) = NNEGUNDEF
     END IF
   END DO
@@ -959,7 +962,7 @@ SELECT CASE(TPFILE%CTYPE)
     TPFILE%NLFITYPE = ILFITYPE
     TPFILE%NLFIVERB = ILFIVERB
     !
-    IF (TRIM(HTYPE)=='OUTPUT') THEN
+    IF (TRIM(HTYPE)=='MNHOUTPUT') THEN
       TPFILE%LNCREDUCE_FLOAT_PRECISION = LOUT_REDUCE_FLOAT_PRECISION(IMI)
       TPFILE%LNCCOMPRESS               = LOUT_COMPRESS(IMI)
       TPFILE%NNCCOMPRESS_LEVEL         = NOUT_COMPRESS_LEVEL(IMI)

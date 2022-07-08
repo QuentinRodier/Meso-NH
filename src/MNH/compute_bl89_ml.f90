@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2006-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2006-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -57,6 +57,7 @@ END MODULE MODI_COMPUTE_BL89_ML
 !!     R.Honnert Oct 2016 : Update with AROME
 !!     Q.Rodier  01/2019 : support RM17 mixing length as in bl89.f90 
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
+!  P. Wautelet 17/12/2021: bugfix: KK instead of JKK
 !!
 !-------------------------------------------------------------------------------
 !
@@ -162,9 +163,9 @@ IF (OUPORDN.EQV..TRUE.) THEN
      ! Lenght travelled by parcel to nullify energy
       ZLWORK2(J1D)=        ( - PG_O_THVREF(J1D) *                     &
             (  ZHLVPT(J1D,KK) - ZVPT_DEP(J1D) )                              &
-            - XRM17*PSHEAR(J1D,JKK)*sqrt(abs(PTKEM_DEP(J1D))) &
+            - XRM17*PSHEAR(J1D,KK)*sqrt(abs(PTKEM_DEP(J1D))) &
           + SQRT (ABS(                                                       &
-            (XRM17*PSHEAR(J1D,JKK)*sqrt(abs(PTKEM_DEP(J1D))) +  &
+            (XRM17*PSHEAR(J1D,KK)*sqrt(abs(PTKEM_DEP(J1D))) +  &
              PG_O_THVREF(J1D) * (ZHLVPT(J1D,KK) - ZVPT_DEP(J1D)) )**2  &
             + 2. * ZINTE(J1D) * PG_O_THVREF(J1D)                        &
                  * ZDELTVPT(J1D,KK) / PDZZ2D(J1D,KK) ))    ) /             &

@@ -944,6 +944,14 @@ CALL SECOND_MNH2(ZTIME2)
 !
 XT_BOUND = XT_BOUND + ZTIME2 - ZTIME1
 !
+!
+! For START/RESTART MPPDB_CHECK use 
+!IF ( (IMI==1) .AND. (CCONF == "START") .AND. (KTCOUNT == 2) ) THEN
+!   CALL MPPDB_START_DEBUG()
+!ENDIF
+!IF ( (IMI==1) .AND. (CCONF == "RESTA") .AND. (KTCOUNT == 1) ) THEN
+!   CALL MPPDB_START_DEBUG()
+!ENDIF
 !-------------------------------------------------------------------------------
 !* initializes surface number
 IF (CSURF=='EXTE') CALL GOTO_SURFEX(IMI)
@@ -972,6 +980,10 @@ IF ( nfile_backup_current < NBAK_NUMB ) THEN
       TFILE_SURFEX => TZBAKFILE
       CALL GOTO_SURFEX(IMI)
       CALL WRITE_SURF_ATM_n(YSURF_CUR,'MESONH','ALL',.FALSE.)
+      IF ( KTCOUNT > 1) THEN
+        CALL DIAG_SURF_ATM_n(YSURF_CUR,'MESONH')
+        CALL WRITE_DIAG_SURF_ATM_n(YSURF_CUR,'MESONH','ALL')
+      END IF
       NULLIFY(TFILE_SURFEX)
     END IF
     !
@@ -1426,17 +1438,6 @@ IF (CDCONV/='NONE') THEN
   END IF
 END IF
 !
-IF ( nfile_backup_current > 0 .AND. nfile_backup_current <= NBAK_NUMB ) THEN
-  IF ( KTCOUNT == TBACKUPN(nfile_backup_current)%NSTEP ) THEN
-    IF (CSURF=='EXTE') THEN
-      CALL GOTO_SURFEX(IMI)
-      CALL DIAG_SURF_ATM_n(YSURF_CUR,'MESONH')
-      TFILE_SURFEX => TZBAKFILE
-      CALL WRITE_DIAG_SURF_ATM_n(YSURF_CUR,'MESONH','ALL')
-      NULLIFY(TFILE_SURFEX)
-    END IF
-  END IF
-END IF
 !
 CALL SECOND_MNH2(ZTIME2)
 !
@@ -1718,14 +1719,20 @@ CALL MPPDB_CHECK3DM("before RAD_BOUND :XRU/V/WS",PRECISION,XRUS,XRVS,XRWS)
 ZRUS=XRUS
 ZRVS=XRVS
 ZRWS=XRWS
-
+!
 if ( .not. l1d ) then
   if ( lbudget_u ) call Budget_store_init( tbudgets(NBUDGET_U), 'PRES', xrus(:, :, :) )
   if ( lbudget_v ) call Budget_store_init( tbudgets(NBUDGET_V), 'PRES', xrvs(:, :, :) )
   if ( lbudget_w ) call Budget_store_init( tbudgets(NBUDGET_W), 'PRES', xrws(:, :, :) )
 end if
-
-CALL RAD_BOUND (CLBCX,CLBCY,CTURB,XCARPKMAX,             &
+!
+CALL MPPDB_CHECK3DM("before RAD_BOUND : other var",PRECISION,XUT,XVT,XRHODJ,XTKET)
+CALL MPPDB_CHECKLB(XLBXUM,"modeln XLBXUM",PRECISION,'LBXU',NRIMX)
+CALL MPPDB_CHECKLB(XLBYVM,"modeln XLBYVM",PRECISION,'LBYV',NRIMY)
+CALL MPPDB_CHECKLB(XLBXUS,"modeln XLBXUS",PRECISION,'LBXU',NRIMX)
+CALL MPPDB_CHECKLB(XLBYVS,"modeln XLBYVS",PRECISION,'LBYV',NRIMY)
+!
+  CALL RAD_BOUND (CLBCX,CLBCY,CTURB,XCARPKMAX,           &
                 XTSTEP,                                  &
                 XDXHAT, XDYHAT, XZHAT,                   &
                 XUT, XVT,                                &
@@ -1771,6 +1778,7 @@ CALL MPPDB_CHECK3DM("before pressurez:XRU/V/WS",PRECISION,XRUS,XRVS,XRWS)
   XRUS_PRES = XRUS - XRUS_PRES + ZRUS
   XRVS_PRES = XRVS - XRVS_PRES + ZRVS
   XRWS_PRES = XRWS - XRWS_PRES + ZRWS
+  CALL MPPDB_CHECK3DM("after pressurez:XRU/V/WS",PRECISION,XRUS,XRVS,XRWS)
 !
 END IF
 !
@@ -1897,6 +1905,7 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
                           XHLC_HRC, XHLC_HCF, XHLI_HRI, XHLI_HCF,              &
                           ZSEA, ZTOWN                                          )
     DEALLOCATE(ZTOWN)
+    DEALLOCATE(ZSEA)
   ELSE
     CALL RESOLVED_CLOUD ( CCLOUD, CACTCCN, CSCONV, CMF_CLOUD, NRR, NSPLITR,    &
                           NSPLITG, IMI, KTCOUNT,                               &
@@ -1989,6 +1998,7 @@ IF (CELEC /= 'NONE' .AND. (CCLOUD(1:3) == 'ICE')) THEN
                           XINPRS, XINPRG, XINPRH,                        &
                           ZSEA, ZTOWN                                    )
     DEALLOCATE(ZTOWN)
+    DEALLOCATE(ZSEA)
   ELSE
     CALL RESOLVED_ELEC_n (CCLOUD, CSCONV, CMF_CLOUD,                     &
                           NRR, NSPLITR, IMI, KTCOUNT, OEXIT,             &
@@ -2096,12 +2106,23 @@ XT_STEP_SWA = XT_STEP_SWA + ZTIME2 - ZTIME1 - XTIME_BU_PROCESS
 !
 ZTIME1 = ZTIME2
 !
-IF (LFLYER)                                                                   &
-  CALL AIRCRAFT_BALLOON(XTSTEP,                                               &
+IF (LFLYER) THEN
+  IF (CSURF=='EXTE') THEN
+    ALLOCATE(ZSEA(IIU,IJU))
+    ZSEA(:,:) = 0.
+    CALL MNHGET_SURF_PARAM_n (PSEA=ZSEA(:,:))
+    CALL AIRCRAFT_BALLOON(XTSTEP,                                             &
                       XXHAT, XYHAT, XZZ, XMAP, XLONORI, XLATORI,              &
                       XUT, XVT, XWT, XPABST, XTHT, XRT, XSVT, XTKET, XTSRAD,  &
                       XRHODREF,XCIT,PSEA=ZSEA(:,:))
-
+    DEALLOCATE(ZSEA)
+  ELSE
+    CALL AIRCRAFT_BALLOON(XTSTEP,                                             &
+                      XXHAT, XYHAT, XZZ, XMAP, XLONORI, XLATORI,              &
+                      XUT, XVT, XWT, XPABST, XTHT, XRT, XSVT, XTKET, XTSRAD,  &
+                      XRHODREF,XCIT)
+  END IF
+END IF
 
 !-------------------------------------------------------------------------------
 !
@@ -2118,11 +2139,23 @@ IF (LSTATION)                                                            &
 !*       24.3    PROFILER (observation diagnostic)
 !               ---------------------------------
 !
-IF (LPROFILER)                                                           &
-  CALL PROFILER_n(XTSTEP,                                                &
+IF (LPROFILER)  THEN
+  IF (CSURF=='EXTE') THEN
+    ALLOCATE(ZSEA(IIU,IJU))
+    ZSEA(:,:) = 0.
+    CALL MNHGET_SURF_PARAM_n (PSEA=ZSEA(:,:))
+    CALL PROFILER_n(XTSTEP,                                              &
                   XXHAT, XYHAT, XZZ,XRHODREF,                            &
                   XUT, XVT, XWT, XTHT, XRT, XSVT, XTKET, XTSRAD, XPABST, &
                   XAER, XCLDFR, XCIT,PSEA=ZSEA(:,:))
+    DEALLOCATE(ZSEA)
+  ELSE
+    CALL PROFILER_n(XTSTEP,                                              &
+                  XXHAT, XYHAT, XZZ,XRHODREF,                            &
+                  XUT, XVT, XWT, XTHT, XRT, XSVT, XTKET, XTSRAD, XPABST, &
+                  XAER, XCLDFR, XCIT)
+  END IF
+END IF
 !
 !
 CALL SECOND_MNH2(ZTIME2)

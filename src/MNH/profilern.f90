@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2002-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -31,7 +31,7 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PP     ! pressure
 REAL, DIMENSION(:,:,:,:), INTENT(IN)     :: PAER   ! aerosol extinction
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PCLDFR ! cloud fraction
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PCIT   ! ice concentration
-REAL, DIMENSION(:,:),     INTENT(IN)     :: PSEA   ! for radar 
+REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN)     :: PSEA   ! for radar 
 !
 !-------------------------------------------------------------------------------
 !
@@ -85,6 +85,9 @@ END MODULE MODI_PROFILER_n
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
 !  M. Taufour  05/07/2021: modify RARE for hydrometeors containing ice and add bright band calculation for RARE
+!  P. Wautelet 09/02/2022: add message when some variables not computed
+!                          + bugfix: put values in variables in this case
+!                          + move some operations outside a do loop
 ! --------------------------------------------------------------------------
 !       
 !*      0. DECLARATIONS
@@ -97,12 +100,13 @@ USE MODD_GRID
 USE MODD_SUB_PROFILER_n
 USE MODD_NSV
 USE MODD_PARAMETERS
-USE MODD_PARAM_n,        ONLY: CCLOUD, CRAD
+USE MODD_PARAM_n,        ONLY: CCLOUD, CRAD, CSURF
 USE MODD_PROFILER_n
 USE MODD_TIME,           only: tdtexp
 USE MODD_TIME_n,         only: tdtcur
 !
 USE MODE_ll
+USE MODE_MSG
 !
 USE MODI_GPS_ZENITH_GRID
 USE MODI_LIDAR
@@ -157,7 +161,7 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PP     ! pressure
 REAL, DIMENSION(:,:,:,:), INTENT(IN)     :: PAER   ! aerosol extinction
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PCLDFR ! cloud fraction
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PCIT   ! ice concentration
-REAL, DIMENSION(:,:),     INTENT(IN)     :: PSEA   ! for radar 
+REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN)     :: PSEA   ! for radar 
 !
 !-------------------------------------------------------------------------------
 !
@@ -515,6 +519,14 @@ IF (GSTORE) THEN
         TPROFILER%ZTD(IN,I)= ZZTD_PROFILER
         TPROFILER%ZWD(IN,I)= ZZWD_PROFILER
         TPROFILER%ZHD(IN,I)= ZZHD_PROFILER
+      ELSE
+        CMNHMSG(1) = 'altitude of profiler ' // TRIM( TPROFILER%NAME(I) ) // ' is too far from orography'
+        CMNHMSG(2) = 'some variables are therefore not computed (IWV, ZTD, ZWD, ZHD)'
+        CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'PROFILER_n' )
+        TPROFILER%IWV(IN,I)= XUNDEF
+        TPROFILER%ZTD(IN,I)= XUNDEF
+        TPROFILER%ZWD(IN,I)= XUNDEF
+        TPROFILER%ZHD(IN,I)= XUNDEF
       END IF
       TPROFILER%ZON (IN,:,I) = ZU_PROFILER(:) * COS(ZGAM) + ZV_PROFILER(:) * SIN(ZGAM)
       TPROFILER%MER (IN,:,I) = - ZU_PROFILER(:) * SIN(ZGAM) + ZV_PROFILER(:) * COS(ZGAM)
@@ -548,10 +560,15 @@ IF (GSTORE) THEN
        DO JLOOP=3,6
           ZRZ(:,JLOOP)=PROFILER_INTERP(PR(:,:,:,JLOOP))
        END DO
-       DO JK=1,IKU
-          ZRZ(JK,2)=PROFILER_INTERP_2D(PR(:,:,JK,2)*PSEA(:,:))       ! becomes cloud mixing ratio over sea
-          ZRZ(JK,7)=PROFILER_INTERP_2D(PR(:,:,JK,2)*(1.-PSEA(:,:)))  ! becomes cloud mixing ratio over land
-       END DO
+       IF (CSURF=="EXTE") THEN
+         DO JK=1,IKU
+            ZRZ(JK,2)=PROFILER_INTERP_2D(PR(:,:,JK,2)*PSEA(:,:))       ! becomes cloud mixing ratio over sea
+            ZRZ(JK,7)=PROFILER_INTERP_2D(PR(:,:,JK,2)*(1.-PSEA(:,:)))  ! becomes cloud mixing ratio over land
+         END DO
+       ELSE
+          ZRZ(:,2)=PROFILER_INTERP(PR(:,:,:,2))
+          ZRZ(:,7)=0.
+       END IF
        ALLOCATE(ZAELOC(IKU))
         !
        ZAELOC(:)=0.
@@ -881,10 +898,7 @@ IF (GSTORE) THEN
   CALL DISTRIBUTE_PROFILER(TPROFILER%CRARE(IN,JK,I))
   CALL DISTRIBUTE_PROFILER(TPROFILER%CRARE_ATT(IN,JK,I))
   CALL DISTRIBUTE_PROFILER(TPROFILER%CIZ(IN,JK,I))
-  CALL DISTRIBUTE_PROFILER(TPROFILER%IWV(IN,I))
-  CALL DISTRIBUTE_PROFILER(TPROFILER%ZTD(IN,I))
-  CALL DISTRIBUTE_PROFILER(TPROFILER%ZHD(IN,I))
-  CALL DISTRIBUTE_PROFILER(TPROFILER%ZWD(IN,I))
+
   !
   IF (LDIAG_IN_RUN) CALL DISTRIBUTE_PROFILER(TPROFILER%TKE_DISS(IN,JK,I))
   !
@@ -896,6 +910,11 @@ IF (GSTORE) THEN
   END DO
   IF (SIZE(PTKE)>0) CALL DISTRIBUTE_PROFILER(TPROFILER%TKE  (IN,JK,I))
  ENDDO
+
+  CALL DISTRIBUTE_PROFILER(TPROFILER%IWV(IN,I))
+  CALL DISTRIBUTE_PROFILER(TPROFILER%ZTD(IN,I))
+  CALL DISTRIBUTE_PROFILER(TPROFILER%ZHD(IN,I))
+  CALL DISTRIBUTE_PROFILER(TPROFILER%ZWD(IN,I))
 ENDDO
 !
 END IF

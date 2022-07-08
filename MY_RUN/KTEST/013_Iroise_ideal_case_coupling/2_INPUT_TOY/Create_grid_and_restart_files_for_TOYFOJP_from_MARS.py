@@ -6,8 +6,7 @@
 #  Creating grid and restart file for toy model
 #  Author : J. Pianezze
 #  Date   :        2015
-#  Modification :Avril 2022  Joris Pianezze et  Françoise Orain pour  python3
-#fichier  etopo2  dispo sur site SURFEX 
+#  Modification  Avril 2022 :Françoise Orain et Joris Pianezze  pour python3 et utiliser H0(bathy de MARC)
 #=================================================#
 ###################################################
 #
@@ -44,53 +43,44 @@ value_SINUS_LENGTH=1000.
 #$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 #$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 
-file_topo = netCDF4.Dataset('topo.nc')
+file_topo = netCDF4.Dataset('bathy_MARC.nc')
 
 #------ Read variables
-lon_full    = file_topo.variables['lon'] [:]
-lat_full    = file_topo.variables['lat'] [:]
-topo_full   = file_topo.variables['topo'][:,:]
+lon_full  = file_topo.variables['longitude'][:,:]
+lat_full  = file_topo.variables['latitude'][:,:]
+topo_full = file_topo.variables['H0'][:,:]
 
-ind_min_lon = np.where(lon_full[:]>lon_domain[0])[0][0] ; print ("ind_min_lon = ",ind_min_lon)
-ind_max_lon = np.where(lon_full[:]>lon_domain[1])[0][0] ; print ("ind_max_lon = ",ind_max_lon)
-ind_min_lat = np.where(lat_full[:]>lat_domain[0])[0][0] ; print ("ind_min_lat = ",ind_min_lat)
-ind_max_lat = np.where(lat_full[:]>lat_domain[1])[0][0] ; print ("ind_max_lat = ",ind_max_lat)
+ind_min_lon=np.where(lon_full[0,:]>lon_domain[0])[0][0] ; print ("ind_min_lon = ",ind_min_lon)
+ind_max_lon=-1 # np.where(lon_full[0,:]>lon_domain[1])[0][0] ; print ("ind_max_lon = ",ind_max_lon)
+ind_min_lat=np.where(lat_full[:,0]>lat_domain[0])[0][0] ; print ("ind_min_lat = ",ind_min_lat)
+ind_max_lat=np.where(lat_full[:,0]>lat_domain[1])[0][0] ; print ("ind_max_lat = ",ind_max_lat)
 
-lon         = lon_full [ind_min_lon:ind_max_lon]
-lat         = lat_full [ind_min_lat:ind_max_lat]
-topo        = topo_full[ind_min_lat:ind_max_lat,ind_min_lon:ind_max_lon]
-
-#plt.contourf(topo)
-#plt.show()
-
-nlon=np.size(lon) ;  print ('nlon =',  nlon)
-nlat=np.size(lat) ;  print ('nlat =',  nlat)
-ncorn=4           ;  print ('ncorn=', ncorn)
+print ('---- topo')
+topo  = topo_full[ind_min_lat:ind_max_lat,ind_min_lon:ind_max_lon]
 
 print ('---- longitude/latitude')
-lon2D=np.zeros((nlat,nlon))
-lat2D=np.zeros((nlat,nlon))
+lon = lon_full[ind_min_lat:ind_max_lat,ind_min_lon:ind_max_lon]
+lat = lat_full[ind_min_lat:ind_max_lat,ind_min_lon:ind_max_lon]
 
-for ind_lon in range(nlon):
-  lat2D[:,ind_lon]=lat[:]
-for ind_lat in range(nlat):
-  lon2D[ind_lat,:]=lon[:]
+nlon=np.size(lon[0,:]) ;  print ('nlon =',  nlon)
+nlat=np.size(lat[:,0]) ;  print ('nlat =',  nlat)
+ncorn=4           ;  print ('ncorn=', ncorn)
 
 print ('---- corners longitude/latitude')
 clo=np.zeros((ncorn,nlat,nlon))
 cla=np.zeros((ncorn,nlat,nlon))
 
-deltax=lon[1]-lon[0] ; print ('deltax=', deltax)
-clo[0,:,:]=lon2D[:,:]+deltax/2.0
-clo[1,:,:]=lon2D[:,:]-deltax/2.0
-clo[2,:,:]=lon2D[:,:]-deltax/2.0
-clo[3,:,:]=lon2D[:,:]+deltax/2.0
+deltax=lon[0,1]-lon[0,0] ; print ('deltax=', deltax)
+clo[0,:,:]=lon[:,:]+deltax/2.0
+clo[1,:,:]=lon[:,:]-deltax/2.0
+clo[2,:,:]=lon[:,:]-deltax/2.0
+clo[3,:,:]=lon[:,:]+deltax/2.0
 
 deltay=lat[1]-lat[0] ; print ('deltay=', deltay)
-cla[0,:,:]=lat2D[:,:]+deltay/2.0
-cla[1,:,:]=lat2D[:,:]+deltay/2.0
-cla[2,:,:]=lat2D[:,:]-deltay/2.0
-cla[3,:,:]=lat2D[:,:]-deltay/2.0
+cla[0,:,:]=lat[:,:]+deltay/2.0
+cla[1,:,:]=lat[:,:]+deltay/2.0
+cla[2,:,:]=lat[:,:]-deltay/2.0
+cla[3,:,:]=lat[:,:]-deltay/2.0
 
 print ('---- surface')
 surface=np.zeros((nlat,nlon))
@@ -105,20 +95,27 @@ toyvarsinus=np.zeros((nlat,nlon))
 for ind_lon in range(nlon):
   for ind_lat in range(nlat):
     if topo[ind_lat,ind_lon] > 0.0 :
-      mask[ind_lat,ind_lon]=0
+      if ind_lon >= 132 and ind_lat >= 23 and ind_lat <= 25:
+        mask     [ind_lat,ind_lon] = 1
+      else:      
+        mask[ind_lat,ind_lon]=0
       toyvarcnste[ind_lat,ind_lon] = value_CNSTE
-      toyvarsinus[ind_lat,ind_lon] = value_SINUS_COEF*math.sin(lat[ind_lat]*math.pi/180.0*value_SINUS_LENGTH)
+      toyvarsinus[ind_lat,ind_lon] = value_SINUS_COEF*math.sin(lat[ind_lat,0]*math.pi/180.0*value_SINUS_LENGTH)
     else:
-      mask[ind_lat,ind_lon]=1
-      toyvarcnste[ind_lat,ind_lon]=value_CNSTE
-      toyvarsinus[ind_lat,ind_lon]= value_SINUS_COEF*math.sin(lat[ind_lat]*math.pi/180.0*value_SINUS_LENGTH)
+      mask     [ind_lat,ind_lon] = 1
+      toyvarcnste[ind_lat,ind_lon] = value_CNSTE
+      toyvarsinus[ind_lat,ind_lon] = value_SINUS_COEF*math.sin(lat[ind_lat,0]*math.pi/180.0*value_SINUS_LENGTH)
 
+# -----------------------------------------------------------------------
+#  Inverse du mask car la bathy est positive en mer et negative sur terre
+# -----------------------------------------------------------------------
+mask = 1 - mask
 
 ##################################################
 print ('------------------------------------------')
-print (' Creating netcdf file : grid_toy_model.nc ')
+print (' Creating netcdf file : grid_toy_modelMARC.nc')
 
-grid_file=netCDF4.Dataset(curdir_path+'grid_toy_model.nc','w',format='NETCDF3_64BIT')
+grid_file=netCDF4.Dataset(curdir_path+'grid_toy_modelMARC.nc','w',format='NETCDF3_64BIT')
 grid_file.Description='Grid file for OASIS coupling'
 
 # ----------------------------------
@@ -141,8 +138,8 @@ varout=grid_file.createVariable('imask','d',('nlat','nlon'))
 # ---------------------------------------
 # Write out the data arrays into the file
 # ---------------------------------------
-grid_file.variables['lon'][:,:] = lon2D[:,:]
-grid_file.variables['lat'][:,:] = lat2D[:,:]
+grid_file.variables['lon'][:,:] = lon[:,:]
+grid_file.variables['lat'][:,:] = lat[:,:]
 grid_file.variables['clo'][:,:] = clo[:,:,:]
 grid_file.variables['cla'][:,:] = cla[:,:,:]
 grid_file.variables['srf'][:,:] = surface[:,:]
@@ -153,15 +150,15 @@ grid_file.variables['imask'][:,:] = mask[:,:]
 # ---------------------------------------
 grid_file.close()
 
-print (' Closing netcdf file : grid_toy_model.nc  ')
+print (' Closing netcdf file : grid_toy_modelMARC.nc')
 print ('------------------------------------------')
 ##################################################
 
 ##################################################
 print ('------------------------------------------')
-print (' Creating netcdf file : rstrt_TOY.nc      ')
+print (' Creating netcdf file : rstrt_TOYMARC.nc')
 
-rstrt_file=netCDF4.Dataset(curdir_path+'rstrt_TOY.nc','w',format='NETCDF3_64BIT')
+rstrt_file=netCDF4.Dataset(curdir_path+'rstrt_TOYMARC.nc','w',format='NETCDF3_64BIT')
 rstrt_file.Description='Restart file for OASIS coupling'
 
 # ----------------------------------
@@ -189,6 +186,6 @@ rstrt_file.variables['VARSIN02'][:,:] = toyvarsinus[:,:]
 # ---------------------------------------
 rstrt_file.close()
 
-print (' Closing netcdf file : rstrt_TOY.nc      ')
+print (' Closing netcdf file : rstrt_TOYMARC.nc  ')
 print ('-----------------------------------------')
 #####################################################

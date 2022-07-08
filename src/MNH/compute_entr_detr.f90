@@ -122,6 +122,7 @@ END MODULE MODI_COMPUTE_ENTR_DETR
 !!      R.Honnert Oct 2016 : Update with AROME
 !  P. Wautelet 08/02/2019: bugfix: compute ZEPSI_CLOUD only once and only when it is needed
 !  P. Wautelet 10/02/2021: bugfix: initialized PPART_DRY everywhere
+!  M. Mandement 24/01/2022:bugfix: init of theta_l in mixtures was too low (0.1K) 
 !! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -232,7 +233,7 @@ INTEGER :: JI,JLOOP
   ZFRAC_ICE(:)=PFRAC_ICE(:) ! to not modify fraction of ice
  
   ZPRE(:)=PPRE_MINUS_HALF(:)
-  ZMIXTHL(:)=0.1
+  ZMIXTHL(:)=300.0
   ZMIXRT(:)=0.1
 
   !Initialize PPART_DRY everywhere to prevent access to non-initialized values

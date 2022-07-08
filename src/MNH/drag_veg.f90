@@ -73,6 +73,7 @@ SUBROUTINE DRAG_VEG(PTSTEP,PUT,PVT,PTKET,ODEPOTREE, PVDEPOTREE, &
 !  P. Wautelet 28/01/2020: use the new data structures and subroutines for budgets for U
 !  C. Lac         02/2020: correction missing condition for budget on RC and SV
 !  P. Wautelet 04/02/2021: budgets: bugfixes for LDRAGTREE if LIMA + small optimisations and verifications
+!  R. Schoetter 04/2022: bug add update halo for vegetation drag variables
 !!---------------------------------------------------------------
 !
 !

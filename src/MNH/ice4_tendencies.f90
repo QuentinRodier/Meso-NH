@@ -456,9 +456,12 @@ IF(KSIZE>0) THEN
       DO JL=1,KSIZE    
         ZRHT3D (K1(JL), K2(JL), K3(JL)) = ZRHT(JL)
       ENDDO
+      CALL ICE4_RAINFR_VERT(KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKT, KKL, PRAINFR(:,:,:), &
+                         &ZRRT3D(:,:,:), ZRST3D(:,:,:), ZRGT3D(:,:,:), ZRHT3D(:,:,:))
+    ELSE
+      CALL ICE4_RAINFR_VERT(KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKT, KKL, PRAINFR(:,:,:), &
+                         &ZRRT3D(:,:,:), ZRST3D(:,:,:), ZRGT3D(:,:,:))
     ENDIF
-    CALL ICE4_RAINFR_VERT(KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKT, KKL, PRAINFR(:,:,:), ZRRT3D(:,:,:), &
-                         &ZRST3D(:,:,:), ZRGT3D(:,:,:), ZRHT3D(:,:,:))
     DO JL=1,KSIZE
       ZRF(JL)=PRAINFR(K1(JL), K2(JL), K3(JL))
     END DO

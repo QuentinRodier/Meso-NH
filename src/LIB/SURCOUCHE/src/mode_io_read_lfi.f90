@@ -16,7 +16,7 @@ module mode_io_read_lfi
 use modd_field,      only: tfielddata
 USE MODD_IO
 USE MODD_PARAMETERS, ONLY: NLFIMAXCOMMENTLENGTH
-use modd_precision,  only: LFIINT
+use modd_precision,  only: LFIINT, MNHINT64, MNHREAL32, MNHREAL64
 !
 USE MODE_MSG
 !
@@ -57,11 +57,11 @@ INTEGER,          INTENT(OUT)   :: KRESP   ! return-code if problems occured
 !
 !*      0.2   Declarations of local variables
 !
-INTEGER(KIND=LFIINT)                     :: IRESP,ITOTAL
-INTEGER                                  :: ILENG
-INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
-LOGICAL                                  :: GGOOD
-REAL,DIMENSION(1)                        :: ZFIELD
+INTEGER(KIND=LFIINT)                            :: IRESP,ITOTAL
+INTEGER                                         :: ILENG
+INTEGER(KIND=MNHINT64),DIMENSION(:),ALLOCATABLE :: IWORK
+LOGICAL                                         :: GGOOD
+REAL,DIMENSION(1)                               :: ZFIELD
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_read_lfi_X0',TRIM(TPFILE%CNAME)//': reading '//TRIM(TPFIELD%CMNHNAME))
 !
@@ -96,10 +96,10 @@ INTEGER,          INTENT(OUT)   :: KRESP   ! return-code if problems occured
 !
 !*      0.2   Declarations of local variables
 !
-INTEGER(KIND=LFIINT)                     :: IRESP,ITOTAL
-INTEGER                                  :: ILENG
-INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
-LOGICAL                                  :: GGOOD
+INTEGER(KIND=LFIINT)                            :: IRESP,ITOTAL
+INTEGER                                         :: ILENG
+INTEGER(KIND=MNHINT64),DIMENSION(:),ALLOCATABLE :: IWORK
+LOGICAL                                         :: GGOOD
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_read_lfi_X1',TRIM(TPFILE%CNAME)//': reading '//TRIM(TPFIELD%CMNHNAME))
 !
@@ -130,10 +130,10 @@ INTEGER,            INTENT(OUT)   :: KRESP   ! return-code if problems occured
 !
 !*      0.2   Declarations of local variables
 !
-INTEGER(KIND=LFIINT)                     :: IRESP,ITOTAL
-INTEGER                                  :: ILENG
-INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
-LOGICAL                                  :: GGOOD
+INTEGER(KIND=LFIINT)                            :: IRESP,ITOTAL
+INTEGER                                         :: ILENG
+INTEGER(KIND=MNHINT64),DIMENSION(:),ALLOCATABLE :: IWORK
+LOGICAL                                         :: GGOOD
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_read_lfi_X2',TRIM(TPFILE%CNAME)//': reading '//TRIM(TPFIELD%CMNHNAME))
 !
@@ -164,10 +164,10 @@ INTEGER,              INTENT(OUT)   :: KRESP   ! return-code if problems occured
 !
 !*      0.2   Declarations of local variables
 !
-INTEGER(KIND=LFIINT)                     :: IRESP,ITOTAL
-INTEGER                                  :: ILENG
-INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
-LOGICAL                                  :: GGOOD
+INTEGER(KIND=LFIINT)                            :: IRESP,ITOTAL
+INTEGER                                         :: ILENG
+INTEGER(KIND=MNHINT64),DIMENSION(:),ALLOCATABLE :: IWORK
+LOGICAL                                         :: GGOOD
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_read_lfi_X3',TRIM(TPFILE%CNAME)//': reading '//TRIM(TPFIELD%CMNHNAME))
 !
@@ -198,10 +198,10 @@ INTEGER,                INTENT(OUT)   :: KRESP   ! return-code if problems occur
 !
 !*      0.2   Declarations of local variables
 !
-INTEGER(KIND=LFIINT)                     :: IRESP,ITOTAL
-INTEGER                                  :: ILENG
-INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
-LOGICAL                                  :: GGOOD
+INTEGER(KIND=LFIINT)                            :: IRESP,ITOTAL
+INTEGER                                         :: ILENG
+INTEGER(KIND=MNHINT64),DIMENSION(:),ALLOCATABLE :: IWORK
+LOGICAL                                         :: GGOOD
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_read_lfi_X4',TRIM(TPFILE%CNAME)//': reading '//TRIM(TPFIELD%CMNHNAME))
 !
@@ -232,10 +232,10 @@ INTEGER,                  INTENT(OUT)   :: KRESP   ! return-code if problems occ
 !
 !*      0.2   Declarations of local variables
 !
-INTEGER(KIND=LFIINT)                     :: IRESP,ITOTAL
-INTEGER                                  :: ILENG
-INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
-LOGICAL                                  :: GGOOD
+INTEGER(KIND=LFIINT)                            :: IRESP,ITOTAL
+INTEGER                                         :: ILENG
+INTEGER(KIND=MNHINT64),DIMENSION(:),ALLOCATABLE :: IWORK
+LOGICAL                                         :: GGOOD
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_read_lfi_X5',TRIM(TPFILE%CNAME)//': reading '//TRIM(TPFIELD%CMNHNAME))
 !
@@ -266,10 +266,10 @@ INTEGER,                    INTENT(OUT)   :: KRESP   ! return-code if problems o
 !
 !*      0.2   Declarations of local variables
 !
-INTEGER(KIND=LFIINT)                     :: IRESP,ITOTAL
-INTEGER                                  :: ILENG
-INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
-LOGICAL                                  :: GGOOD
+INTEGER(KIND=LFIINT)                            :: IRESP,ITOTAL
+INTEGER                                         :: ILENG
+INTEGER(KIND=MNHINT64),DIMENSION(:),ALLOCATABLE :: IWORK
+LOGICAL                                         :: GGOOD
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_read_lfi_X6',TRIM(TPFILE%CNAME)//': reading '//TRIM(TPFIELD%CMNHNAME))
 !
@@ -300,10 +300,10 @@ INTEGER,         INTENT(OUT)   :: KRESP   ! return-code if problems occured
 !
 !*      0.2   Declarations of local variables
 !
-INTEGER(KIND=LFIINT)                     :: IRESP,ITOTAL
-INTEGER                                  :: ILENG
-INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
-LOGICAL                                  :: GGOOD
+INTEGER(KIND=LFIINT)                            :: IRESP,ITOTAL
+INTEGER                                         :: ILENG
+INTEGER(KIND=MNHINT64),DIMENSION(:),ALLOCATABLE :: IWORK
+LOGICAL                                         :: GGOOD
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_read_lfi_N0',TRIM(TPFILE%CNAME)//': reading '//TRIM(TPFIELD%CMNHNAME))
 !
@@ -334,10 +334,10 @@ INTEGER,             INTENT(OUT)   :: KRESP   ! return-code if problems occured
 !
 !*      0.2   Declarations of local variables
 !
-INTEGER(KIND=LFIINT)                     :: IRESP,ITOTAL
-INTEGER                                  :: ILENG
-INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
-LOGICAL                                  :: GGOOD
+INTEGER(KIND=LFIINT)                            :: IRESP,ITOTAL
+INTEGER                                         :: ILENG
+INTEGER(KIND=MNHINT64),DIMENSION(:),ALLOCATABLE :: IWORK
+LOGICAL                                         :: GGOOD
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_read_lfi_N1',TRIM(TPFILE%CNAME)//': reading '//TRIM(TPFIELD%CMNHNAME))
 !
@@ -368,10 +368,10 @@ INTEGER,               INTENT(OUT)   :: KRESP   ! return-code if problems occure
 !
 !*      0.2   Declarations of local variables
 !
-INTEGER(KIND=LFIINT)                     :: IRESP,ITOTAL
-INTEGER                                  :: ILENG
-INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
-LOGICAL                                  :: GGOOD
+INTEGER(KIND=LFIINT)                            :: IRESP,ITOTAL
+INTEGER                                         :: ILENG
+INTEGER(KIND=MNHINT64),DIMENSION(:),ALLOCATABLE :: IWORK
+LOGICAL                                         :: GGOOD
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_read_lfi_N2',TRIM(TPFILE%CNAME)//': reading '//TRIM(TPFIELD%CMNHNAME))
 !
@@ -402,10 +402,10 @@ INTEGER,                 INTENT(OUT)   :: KRESP   ! return-code if problems occu
 !
 !*      0.2   Declarations of local variables
 !
-INTEGER(KIND=LFIINT)                     :: IRESP,ITOTAL
-INTEGER                                  :: ILENG
-INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
-LOGICAL                                  :: GGOOD
+INTEGER(KIND=LFIINT)                            :: IRESP,ITOTAL
+INTEGER                                         :: ILENG
+INTEGER(KIND=MNHINT64),DIMENSION(:),ALLOCATABLE :: IWORK
+LOGICAL                                         :: GGOOD
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_read_lfi_N3',TRIM(TPFILE%CNAME)//': reading '//TRIM(TPFIELD%CMNHNAME))
 !
@@ -436,11 +436,11 @@ INTEGER,         INTENT(OUT)   :: KRESP   ! return-code if problems occured
 !
 !*      0.2   Declarations of local variables
 !
-INTEGER(KIND=LFIINT)                     :: IRESP,ITOTAL
-INTEGER                                  :: ILENG
-INTEGER                                  :: IFIELD
-INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
-LOGICAL                                  :: GGOOD
+INTEGER(KIND=LFIINT)                            :: IRESP,ITOTAL
+INTEGER                                         :: ILENG
+INTEGER                                         :: IFIELD
+INTEGER(KIND=MNHINT64),DIMENSION(:),ALLOCATABLE :: IWORK
+LOGICAL                                         :: GGOOD
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_read_lfi_L0',TRIM(TPFILE%CNAME)//': reading '//TRIM(TPFIELD%CMNHNAME))
 !
@@ -483,12 +483,12 @@ INTEGER,             INTENT(OUT)   :: KRESP   ! return-code if problems occured
 !
 !*      0.2   Declarations of local variables
 !
-INTEGER(KIND=LFIINT)                     :: IRESP,ITOTAL
-INTEGER                                  :: ILENG
-INTEGER                                  :: JI
-INTEGER, DIMENSION(SIZE(OFIELD))         :: IFIELD
-INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
-LOGICAL                                  :: GGOOD
+INTEGER(KIND=LFIINT)                            :: IRESP,ITOTAL
+INTEGER                                         :: ILENG
+INTEGER                                         :: JI
+INTEGER, DIMENSION(SIZE(OFIELD))                :: IFIELD
+INTEGER(KIND=MNHINT64),DIMENSION(:),ALLOCATABLE :: IWORK
+LOGICAL                                         :: GGOOD
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_read_lfi_L1',TRIM(TPFILE%CNAME)//': reading '//TRIM(TPFIELD%CMNHNAME))
 !
@@ -538,10 +538,10 @@ INTEGER,         INTENT(OUT)   :: KRESP   ! return-code if problems occured
 !
 !*      0.2   Declarations of local variables
 !
-INTEGER(KIND=LFIINT)                     :: IRESP,ITOTAL
-INTEGER                                  :: ILENG, ILENGMAX, JLOOP
-INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
-LOGICAL                                  :: GGOOD
+INTEGER(KIND=LFIINT)                            :: IRESP,ITOTAL
+INTEGER                                         :: ILENG, ILENGMAX, JLOOP
+INTEGER(KIND=MNHINT64),DIMENSION(:),ALLOCATABLE :: IWORK
+LOGICAL                                         :: GGOOD
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_read_lfi_C0',TRIM(TPFILE%CNAME)//': reading '//TRIM(TPFIELD%CMNHNAME))
 !
@@ -588,13 +588,13 @@ INTEGER,         INTENT(OUT)   :: KRESP   ! return-code if problems occured
 !
 !*      0.2   Declarations of local variables
 !
-INTEGER(KIND=LFIINT)                     :: IRESP, ITOTAL
-INTEGER                                  :: ILENG
-INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
-LOGICAL                                  :: GGOOD
-TYPE(TFIELDDATA)                         :: TZFIELD
-INTEGER, DIMENSION(3)                    :: ITDATE    ! date array
-REAL,DIMENSION(1)                        :: ZTIME
+INTEGER(KIND=LFIINT)                            :: IRESP, ITOTAL
+INTEGER                                         :: ILENG
+INTEGER(KIND=MNHINT64),DIMENSION(:),ALLOCATABLE :: IWORK
+LOGICAL                                         :: GGOOD
+TYPE(TFIELDDATA)                                :: TZFIELD
+INTEGER, DIMENSION(3)                           :: ITDATE    ! date array
+REAL,DIMENSION(1)                               :: ZTIME
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_read_lfi_T0',TRIM(TPFILE%CNAME)//': reading '//TRIM(TPFIELD%CMNHNAME))
 !
@@ -648,13 +648,13 @@ SUBROUTINE IO_Field_read_check_lfi(TPFILE,TPFIELD,KLENG,KWORK,KTOTAL,KRESP,OGOOD
 !
 USE MODD_PARAMETERS, ONLY: NGRIDUNKNOWN
 !
-TYPE(TFILEDATA),                         INTENT(IN)    :: TPFILE
-TYPE(TFIELDDATA),                        INTENT(INOUT) :: TPFIELD
-INTEGER,                                 INTENT(IN)    :: KLENG
-INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE,INTENT(OUT)   :: KWORK
-INTEGER(KIND=LFIINT),                    INTENT(OUT)   :: KTOTAL
-INTEGER(KIND=LFIINT),                    INTENT(OUT)   :: KRESP
-LOGICAL,                                 INTENT(OUT)   :: OGOOD
+TYPE(TFILEDATA),                                INTENT(IN)    :: TPFILE
+TYPE(TFIELDDATA),                               INTENT(INOUT) :: TPFIELD
+INTEGER,                                        INTENT(IN)    :: KLENG
+INTEGER(KIND=MNHINT64),DIMENSION(:),ALLOCATABLE,INTENT(OUT)   :: KWORK
+INTEGER(KIND=LFIINT),                           INTENT(OUT)   :: KTOTAL
+INTEGER(KIND=LFIINT),                           INTENT(OUT)   :: KRESP
+LOGICAL,                                        INTENT(OUT)   :: OGOOD
 !
 INTEGER                      :: IERRLEVEL,IROW,J
 INTEGER,DIMENSION(JPXKRK)    :: ICOMMENT
@@ -788,12 +788,12 @@ END SUBROUTINE IO_Field_read_check_lfi
 !
 FUNCTION TRANSFER_I8_R(KFIELDIN) RESULT(PFIELDOUT)
 !
-INTEGER(KIND=8),DIMENSION(:),INTENT(IN)  :: KFIELDIN
+INTEGER(KIND=MNHINT64),DIMENSION(:),INTENT(IN) :: KFIELDIN
 REAL,DIMENSION(SIZE(KFIELDIN))           :: PFIELDOUT
 !
 INTEGER :: ILENG
 #if (MNH_REAL == 4)
-REAL(KIND=8),DIMENSION(:),ALLOCATABLE    :: ZFIELD8
+REAL(KIND=MNHREAL64),DIMENSION(:),ALLOCATABLE :: ZFIELD8
 #endif
 !
 ILENG = SIZE(PFIELDOUT)
@@ -803,7 +803,7 @@ ILENG = SIZE(PFIELDOUT)
 #else
   ALLOCATE(ZFIELD8(ILENG))
   ZFIELD8(:) = TRANSFER(KFIELDIN,ZFIELD8(1),ILENG)
-  PFIELDOUT(:) = REAL(ZFIELD8(:),KIND=4)
+  PFIELDOUT(:) = REAL(ZFIELD8(:),KIND=MNHREAL32)
   DEALLOCATE(ZFIELD8)
 #endif
 !

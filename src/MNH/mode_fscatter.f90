@@ -153,6 +153,12 @@ CONTAINS
 !
 ! Modification (C.Lac) 04/2014 : exclude very small values of x 
 !
+    IF (X <= 1.E-07) THEN
+     QEXT = 0.
+     QSCA = 0.
+     QBACK = 0.
+     RETURN
+    ELSE
     !         -----------------------------------------------------------
     !              del is the inner sphere convergence criterion
     !         -----------------------------------------------------------
@@ -169,13 +175,7 @@ CONTAINS
     qext = 0.0
     xback = (0.0,0.0)
     n=1
-    IF (x <= 1.E-07) THEN
-     QEXT = 0.
-     QSCA = 0.
-     QBACK = 0.
-     RETURN
-    ELSE
-     do while(n<=nstop)
+    do while(n<=nstop)
    ! DO n=1,nstop 
        DX  = 1.0/(n/x-dx) - n/x       
        DY  = 1.0/(n/y-dy) - n/y
