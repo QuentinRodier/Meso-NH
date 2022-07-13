@@ -455,7 +455,7 @@ IF ( .NOT. TPFLYER%LFLY ) THEN
         END IF
 
       CLASS DEFAULT
-        CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'AIRCRAFT_BALLOON_EVOL', 'unknown type for TPFLYER' )
+        CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'AIRCRAFT_BALLOON_EVOL', 'unknown type for TPFLYER', OLOCAL = .TRUE. )
 
     END SELECT
 !
@@ -636,7 +636,7 @@ IF ( TPFLYER%LFLY ) THEN
               ZXCOEF = MAX (0.,MIN(ZXCOEF,1.))
               ZYCOEF = (TPFLYER%XY_CUR - ZYHATM(IJ)) / (ZYHATM(IJ+1) - ZYHATM(IJ))
               ZYCOEF = MAX (0.,MIN(ZYCOEF,1.))
-              IF ( TPFLYER%XALTLAUNCH /= XUNDEF ) THEN
+              IF ( TPFLYER%XALTLAUNCH /= XNEGUNDEF ) THEN
                 IK00 = MAX ( COUNT (TPFLYER%XALTLAUNCH >= ZZM(1,1,:)), 1)
                 IK01 = MAX ( COUNT (TPFLYER%XALTLAUNCH >= ZZM(1,2,:)), 1)
                 IK10 = MAX ( COUNT (TPFLYER%XALTLAUNCH >= ZZM(2,1,:)), 1)
@@ -646,7 +646,7 @@ IF ( TPFLYER%LFLY ) THEN
                 ZZCOEF10 = (TPFLYER%XALTLAUNCH - ZZM(2,1,IK10)) / ( ZZM(2,1,IK10+1) - ZZM(2,1,IK10))
                 ZZCOEF11 = (TPFLYER%XALTLAUNCH - ZZM(2,2,IK11)) / ( ZZM(2,2,IK11+1) - ZZM(2,2,IK11))
                 TPFLYER%XRHO = FLYER_INTERP(ZRHO)
-              ELSE IF ( TPFLYER%XPRES /= XUNDEF ) THEN
+              ELSE IF ( TPFLYER%XPRES /= XNEGUNDEF ) THEN
                 ZFLYER_EXN = (TPFLYER%XPRES/XP00)**(XRD/XCPD)
                 IK00 = MAX ( COUNT (ZFLYER_EXN <= ZEXN(1,1,:)), 1)
                 IK01 = MAX ( COUNT (ZFLYER_EXN <= ZEXN(1,2,:)), 1)
@@ -661,7 +661,7 @@ IF ( TPFLYER%LFLY ) THEN
                 CMNHMSG(1) = 'Error in balloon initial position (balloon ' // TRIM(TPFLYER%CTITLE) // ' )'
                 CMNHMSG(2) = 'neither initial ALTITUDE or PRESsure is given'
                 CMNHMSG(3) = 'Check your INI_BALLOON routine'
-                CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'AIRCRAFT_BALLOON_EVOL' )
+                CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'AIRCRAFT_BALLOON_EVOL', OLOCAL = .TRUE. )
               END IF
 !
 !*      5.2.2 Radiosounding balloon
@@ -680,7 +680,7 @@ IF ( TPFLYER%LFLY ) THEN
               ZXCOEF = MAX (0.,MIN(ZXCOEF,1.))
               ZYCOEF = (TPFLYER%XY_CUR - ZYHATM(IJ)) / (ZYHATM(IJ+1) - ZYHATM(IJ))
               ZYCOEF = MAX (0.,MIN(ZYCOEF,1.))
-              IF ( TPFLYER%XALTLAUNCH /= XUNDEF ) THEN
+              IF ( TPFLYER%XALTLAUNCH /= XNEGUNDEF ) THEN
                 IK00 = MAX ( COUNT (TPFLYER%XALTLAUNCH >= ZZM(1,1,:)), 1)
                 IK01 = MAX ( COUNT (TPFLYER%XALTLAUNCH >= ZZM(1,2,:)), 1)
                 IK10 = MAX ( COUNT (TPFLYER%XALTLAUNCH >= ZZM(2,1,:)), 1)
@@ -699,7 +699,7 @@ IF ( TPFLYER%LFLY ) THEN
                   TPFLYER%XRHO = FLYER_INTERP(ZRHO)
                   TPFLYER%XZ_CUR = FLYER_INTERP(ZZM)
                 END IF
-              ELSE IF ( TPFLYER%XPRES /= XUNDEF ) THEN
+              ELSE IF ( TPFLYER%XPRES /= XNEGUNDEF ) THEN
                 ZFLYER_EXN = (TPFLYER%XPRES/XP00)**(XRD/XCPD)
                 IK00 = MAX ( COUNT (ZFLYER_EXN <= ZEXN(1,1,:)), 1)
                 IK01 = MAX ( COUNT (ZFLYER_EXN <= ZEXN(1,2,:)), 1)

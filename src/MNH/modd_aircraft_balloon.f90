@@ -41,7 +41,7 @@
 !             ------------
 !
 !
-use modd_parameters,    only: XUNDEF
+use modd_parameters,    only: XNEGUNDEF, XUNDEF
 USE MODD_TYPE_STATPROF, ONLY: TSTATPROFTIME
 use modd_type_date,     only: date_time
 
@@ -78,10 +78,10 @@ TYPE :: TFLYERDATA
   !
   !* current position of the balloon/aircraft
   !
-  REAL :: XX_CUR = XUNDEF ! current x
-  REAL :: XY_CUR = XUNDEF ! current y
-  REAL :: XZ_CUR = XUNDEF ! current z (if 'RADIOS' or 'AIRCRA' and 'ALTDEF' = T)
-  REAL :: XP_CUR = XUNDEF ! current p (if 'AIRCRA' and 'ALTDEF' = F)
+  REAL :: XX_CUR = XNEGUNDEF ! current x
+  REAL :: XY_CUR = XNEGUNDEF ! current y
+  REAL :: XZ_CUR = XNEGUNDEF ! current z (if 'RADIOS' or 'AIRCRA' and 'ALTDEF' = T)
+  REAL :: XP_CUR = XNEGUNDEF ! current p (if 'AIRCRA' and 'ALTDEF' = F)
   !
   !* data records
   !
@@ -150,15 +150,15 @@ TYPE, EXTENDS( TFLYERDATA ) :: TBALLOONDATA
   REAL :: XLONLAUNCH = XUNDEF ! lontitude of launch
   REAL :: XXLAUNCH   = XUNDEF ! X coordinate of launch
   REAL :: XYLAUNCH   = XUNDEF ! Y coordinate of launch
-  REAL :: XALTLAUNCH = XUNDEF ! altitude of launch (if 'RADIOS' or 'ISODEN' or 'CVBALL')
-  REAL :: XWASCENT   = 5.     ! ascent vertical speed, m/s (if 'RADIOS')
-  REAL :: XRHO       = XUNDEF ! density of launch (if 'ISODEN')
-  REAL :: XPRES      = XUNDEF ! pressure of launch (if 'ISODEN')
-  REAL :: XDIAMETER  = XUNDEF ! apparent diameter of the balloon (m) (if 'CVBALL')
-  REAL :: XAERODRAG  = XUNDEF ! aerodynamic drag coefficient of the balloon (if 'CVBALL')
-  REAL :: XINDDRAG   = XUNDEF ! induced drag coefficient (i.e. air shifted by the balloon) (if 'CVBALL')
-  REAL :: XVOLUME    = XUNDEF ! volume of the balloon (m3) (if 'CVBALL')
-  REAL :: XMASS      = XUNDEF ! mass of the balloon (kg) (if 'CVBALL')
+  REAL :: XALTLAUNCH = XNEGUNDEF ! altitude of launch (if 'RADIOS' or 'ISODEN' or 'CVBALL')
+  REAL :: XWASCENT   = XNEGUNDEF ! ascent vertical speed, m/s (constant if 'RADIOS' or variable if 'CVBALL')
+  REAL :: XRHO       = XNEGUNDEF ! density of launch (if 'ISODEN')
+  REAL :: XPRES      = XNEGUNDEF ! pressure of launch (if 'ISODEN' or 'CVBALL')
+  REAL :: XDIAMETER  = XNEGUNDEF ! apparent diameter of the balloon (m) (if 'CVBALL')
+  REAL :: XAERODRAG  = XNEGUNDEF ! aerodynamic drag coefficient of the balloon (if 'CVBALL')
+  REAL :: XINDDRAG   = XNEGUNDEF ! induced drag coefficient (i.e. air shifted by the balloon) (if 'CVBALL')
+  REAL :: XVOLUME    = XNEGUNDEF ! volume of the balloon (m3) (if 'CVBALL')
+  REAL :: XMASS      = XNEGUNDEF ! mass of the balloon (kg) (if 'CVBALL')
 END TYPE TBALLOONDATA
 
 INTEGER :: NAIRCRAFTS = 0 ! Total number of aircrafts

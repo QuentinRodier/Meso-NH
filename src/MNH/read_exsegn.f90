@@ -304,10 +304,12 @@ END MODULE MODI_READ_EXSEG_n
 !  S. Riette   11/05/2021: HighLow cloud
 !  P. Wautelet 27/04/2022: add namelist for profilers
 !  P. Wautelet 24/06/2022: remove check on CSTORAGE_TYPE for restart of ForeFire variables
+!  P. Wautelet 13/07/2022: add namelist for flyers and balloons
 !------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
+USE MODD_AIRCRAFT_BALLOON, ONLY: NAIRCRAFTS, NBALLOONS
 USE MODD_BLOWSNOW
 USE MODD_BUDGET
 USE MODD_CH_AEROSOL
@@ -342,6 +344,7 @@ USE MODI_TEST_NAM_VAR
 USE MODN_2D_FRC
 USE MODN_ADV_n      ! The final filling of these modules for the model n is
 USE MODN_BACKUP
+USE MODN_BALLOONS, ONLY: BALLOONS_NML_ALLOCATE, NAM_BALLOONS
 USE MODN_BLANK_n
 USE MODN_BLOWSNOW
 USE MODN_BLOWSNOW_n
@@ -363,6 +366,7 @@ USE MODN_ELEC
 USE MODN_EOL
 USE MODN_EOL_ADNR
 USE MODN_EOL_ALM
+USE MODN_FLYERS
 #ifdef MNH_FOREFIRE
 USE MODN_FOREFIRE
 #endif
@@ -844,6 +848,14 @@ IF (KMI == 1) THEN
   IF (GFOUND) READ(UNIT=ILUSEG,NML=NAM_BLOWSNOW)
   CALL POSNAM(ILUSEG,'NAM_VISC',GFOUND,ILUOUT)
   IF (GFOUND) READ(UNIT=ILUSEG,NML=NAM_VISC)
+
+  CALL POSNAM(ILUSEG,'NAM_FLYERS',GFOUND,ILUOUT)
+  IF (GFOUND) READ(UNIT=ILUSEG,NML=NAM_FLYERS)
+  IF ( NBALLOONS > 0 ) THEN
+    CALL BALLOONS_NML_ALLOCATE( NBALLOONS )
+    CALL POSNAM(ILUSEG,'NAM_BALLOONS',GFOUND,ILUOUT)
+    IF (GFOUND) READ(UNIT=ILUSEG,NML=NAM_BALLOONS)
+  END IF
 END IF
 !
 !-------------------------------------------------------------------------------

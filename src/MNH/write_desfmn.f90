@@ -147,6 +147,7 @@ END MODULE MODI_WRITE_DESFM_n
 !!      Modification   F.Auguste      02/2021  add IBM
 !!                     E.Jezequel     02/2021  add stations read from CSV file
 !  P. Wautelet 27/04/2022: add namelist for profilers
+!  P. Wautelet 13/07/2022: add namelist for flyers and balloons
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -163,6 +164,7 @@ USE MODD_STATION_n,  ONLY: LSTATION
 USE MODE_MSG
 !
 USE MODN_BACKUP
+USE MODN_BALLOONS
 USE MODN_CONF
 USE MODN_DYN
 USE MODN_NESTING
@@ -211,6 +213,7 @@ USE MODN_IBM_PARAM_n
 USE MODN_RECYCL_PARAM_n
 USE MODN_PROFILER_n
 USE MODN_STATION_n
+USE MODN_FLYERS
 !
 IMPLICIT NONE
 !
@@ -451,6 +454,8 @@ IF(CELEC /= 'NONE') WRITE(UNIT=ILUSEG,NML=NAM_ELEC)
 IF(LSERIES) WRITE(UNIT=ILUSEG,NML=NAM_SERIES)
 IF(NMODEL_CLOUD/=NUNDEF) WRITE(UNIT=ILUSEG,NML=NAM_TURB_CLOUD)
 IF(CTURB /= 'NONE') WRITE(UNIT=ILUSEG,NML=NAM_TURB)
+WRITE(UNIT=ILUSEG,NML=NAM_FLYERS)
+!Not possible (for the moment): arrays have been deallocated after ini_balloon: WRITE(UNIT=ILUSEG,NML=NAM_BALLOONS)
 !
 !
 !
