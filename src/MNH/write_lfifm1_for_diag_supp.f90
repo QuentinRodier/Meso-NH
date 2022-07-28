@@ -846,15 +846,15 @@ END IF
 !
 IF (NRTTOVINFO(1,1) /= NUNDEF) THEN
 ! PRINT*,'YOU ASK FOR BRIGHTNESS TEMPERATURE COMPUTED BY THE RTTOV CODE'
-#ifdef MNH_RTTOV_8
+#if defined(MNH_RTTOV_8)
   CALL CALL_RTTOV8(NDLON, NFLEV, NSTATM, XEMIS(:,:,1), XTSRAD, XSTATM, XTHT, XRT, &
                   XPABST, XZZ, XMFCONV, XCLDFR, XUT(:,:,IKB), XVT(:,:,IKB),   &
                   LUSERI, NRTTOVINFO, TPFILE                                  )
-#elif MNH_RTTOV_11
+#elif defined(MNH_RTTOV_11)
   CALL CALL_RTTOV11(NDLON, NFLEV, XEMIS(:,:,1), XTSRAD, XTHT, XRT,            &
                   XPABST, XZZ, XMFCONV, XCLDFR, XUT(:,:,IKB), XVT(:,:,IKB),   &
                   LUSERI, NRTTOVINFO, TPFILE                                  )
-#elif MNH_RTTOV_13
+#elif defined(MNH_RTTOV_13)
   CALL CALL_RTTOV13(NDLON, NFLEV, XEMIS(:,:,1), XTSRAD, XTHT, XRT,            &
                   XPABST, XZZ, XMFCONV, XCLDFR, XUT(:,:,IKB), XVT(:,:,IKB),   &
                   LUSERI, NRTTOVINFO, TPFILE                                  )
