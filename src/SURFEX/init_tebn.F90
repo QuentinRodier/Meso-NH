@@ -460,7 +460,6 @@ DO JP=1,TOP%NTEB_PATCH
   !
   !-----------------------------------------------------------------------------------
   ! Read vegetation options if LGARDEN
-  GDM%O%NGROUND_LAYER=TOP%NTEB_SOIL
   IF (TOP%LGARDEN) THEN
      !
      IF (JP==1) THEN    
