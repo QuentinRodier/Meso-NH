@@ -76,7 +76,8 @@ USE MODD_CST,              ONLY: XRHOLW, XCL, XCI, XPI
 USE MODD_PARAMETERS,       ONLY: JPHEXT, JPVEXT
 USE MODD_PARAM_LIMA,       ONLY: XCEXVT, XRTMIN, XCTMIN, NSPLITSED,           &
                                  XLB, XLBEX, XD, XFSEDR, XFSEDC,              &
-                                 XALPHAC, XNUC, XALPHAS, XNUS, LSNOW_T
+                                 XALPHAC, XNUC, XALPHAS, XNUS, LSNOW_T,       &
+                                 NMOM_S
 USE MODD_PARAM_LIMA_COLD,  ONLY: XLBEXI, XLBI, XDI, XLBDAS_MAX, XBS, XEXSEDS, &
                                  XLBDAS_MIN, XTRANS_MP_GAMMAS, XFVELOS
 
@@ -194,7 +195,7 @@ DO JN = 1 ,  NSPLITSED(KID)
          IF (ZMOMENTS==2) ZCS(JL) = PCS(I1(JL),I2(JL),I3(JL))
       END DO
 !
-      IF (KID == 5 .AND. LSNOW_T) THEN
+      IF (KID == 5 .AND. NMOM_S.EQ.1 .AND. LSNOW_T) THEN
          ZLBDA(:) = 1.E10
          WHERE(ZT(:)>263.15 .AND. ZRS(:)>XRTMIN(5))
             ZLBDA(:) = MAX(MIN(XLBDAS_MAX, 10**(14.554-0.0423*ZT(:))),XLBDAS_MIN)
@@ -209,6 +210,8 @@ DO JN = 1 ,  NSPLITSED(KID)
          IF (ZMOMENTS==1) ZLBDA(:) = XLB(KID) * ( ZRHODREF(:) * ZRS(:) )**XLBEX(KID)
          IF (ZMOMENTS==2) ZLBDA(:) = ( XLB(KID)*ZCS(:) / ZRS(:) )**XLBEX(KID)
          ZZY(:) = ZRHODREF(:)**(-XCEXVT) * ZLBDA(:)**(-XD(KID))
+         IF (LSNOW_T .AND. KID==5) &
+              ZZY(:) = ZZY(:) * (1 + (XFVELOS/ZLBDA(:))**XALPHAS)**(-XNUS-(XD(KID)+XBS)/XALPHAS)
          ZZW(:) = XFSEDR(KID) * ZRS(:) * ZZY(:) * ZRHODREF(:)
       END IF ! Wurtz
 !

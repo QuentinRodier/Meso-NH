@@ -10,7 +10,7 @@
 INTERFACE
       SUBROUTINE LIMA_SNOW_DEPOSITION (LDCOMPUTE,                         &
                                        PRHODREF, PSSI, PAI, PCJ, PLSFACT, &
-                                       PRST, PLBDS,                       &
+                                       PRST, PCST, PLBDS,                 &
                                        P_RI_CNVI, P_CI_CNVI,              &
                                        P_TH_DEPS, P_RS_DEPS               )
 !
@@ -23,6 +23,7 @@ REAL, DIMENSION(:),   INTENT(IN)    :: PCJ  ! abs. pressure at time t
 REAL, DIMENSION(:),   INTENT(IN)    :: PLSFACT  ! abs. pressure at time t
 !
 REAL, DIMENSION(:),   INTENT(IN)    :: PRST    ! Snow/aggregate m.r. at t 
+REAL, DIMENSION(:),   INTENT(IN)    :: PCST    ! Snow/aggregate concentration 
 !
 REAL, DIMENSION(:),   INTENT(IN)    :: PLBDS    ! Graupel m.r. at t 
 !
@@ -38,7 +39,7 @@ END MODULE MODI_LIMA_SNOW_DEPOSITION
 !     ##########################################################################
 SUBROUTINE LIMA_SNOW_DEPOSITION (LDCOMPUTE,                                &
                                  PRHODREF,  PSSI, PAI, PCJ, PLSFACT,       &
-                                 PRST, PLBDS,                              &
+                                 PRST, PCST, PLBDS,                        &
                                  P_RI_CNVI, P_CI_CNVI,                     &
                                  P_TH_DEPS, P_RS_DEPS                      )
 !     ##########################################################################
@@ -65,6 +66,7 @@ SUBROUTINE LIMA_SNOW_DEPOSITION (LDCOMPUTE,                                &
 !!
 !  J. Wurtz       03/2022: new snow characteristics
 !  B. Vie         03/2022: Add option for 1-moment pristine ice
+!  M. Taufour     07/2022: add snow concentration
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -94,6 +96,7 @@ REAL, DIMENSION(:),   INTENT(IN)    :: PCJ  ! abs. pressure at time t
 REAL, DIMENSION(:),   INTENT(IN)    :: PLSFACT  ! abs. pressure at time t
 !
 REAL, DIMENSION(:),   INTENT(IN)    :: PRST    ! Snow/aggregate m.r. at t 
+REAL, DIMENSION(:),   INTENT(IN)    :: PCST    ! Snow/aggregate m.r. at t 
 !
 REAL, DIMENSION(:),   INTENT(IN)    :: PLBDS    ! Graupel m.r. at t 
 !
@@ -124,7 +127,7 @@ IF (NMOM_I.EQ.1) THEN
 ! Deposition of water vapor on r_s: RVDEPS
 !
       ZZW(:) = 0.0
-      WHERE ( (PRST(:)>XRTMIN(5)) )
+      WHERE ( PRST(:)>XRTMIN(5) )
          ZZW(:) = PRST(:) * PSSI(:) / PAI(:) * &
               ( X0DEPS*PLBDS(:)**XEX0DEPS +                  &
                 X1DEPS*PLBDS(:)**(XEX1DEPS+XBS)*PCJ(:) *     &
@@ -142,10 +145,10 @@ ELSE
 !
       ZZW2(:) = 0.0
       ZZW(:) = 0.0
-      WHERE ( PLBDS(:)<XLBDASCNVI_MAX .AND. (PRST(:)>XRTMIN(5)) &
-                                      .AND. (PSSI(:)<0.0)       )
+      WHERE ( PLBDS(:)<XLBDASCNVI_MAX .AND. PRST(:)>XRTMIN(5) .AND. PCST(:)>XCTMIN(5) &
+                                      .AND. PSSI(:)<0.0                               )
          ZZW(:) = (PLBDS(:)*XDSCNVI_LIM)**(XALPHAS)
-         ZZX(:) = ( -PSSI(:)/PAI(:) ) * (XNS*PRST(:)*PLBDS(:)**XBS) * (ZZW(:)**XNUS) * EXP(-ZZW(:))
+         ZZX(:) = ( -PSSI(:)/PAI(:) ) * PCST(:) * (ZZW(:)**XNUS) * EXP(-ZZW(:))
 !
          ZZW(:) = ( XR0DEPSI+XR1DEPSI*PCJ(:) )*ZZX(:)
 !
@@ -161,16 +164,15 @@ ELSE
 !
 !
       ZZW(:) = 0.0
-      WHERE ( (PRST(:)>XRTMIN(5)) )
-         ZZW(:) = ( PRST(:)*PSSI(:)/(PAI(:)) ) *           &
+      WHERE ( PRST(:)>XRTMIN(5) .AND. PCST(:)>XCTMIN(5) )
+         ZZW(:) = ( PCST(:)*PSSI(:)/(PAI(:)) ) *           &
               ( X0DEPS*PLBDS(:)**XEX0DEPS +                &
-              ( X1DEPS*PCJ(:)*(PLBDS(:))**(XBS+XEX1DEPS) * &
+              ( X1DEPS*PCJ(:)*PLBDS(:)**XEX1DEPS * &
                    (1+0.5*(XFVELOS/PLBDS(:))**XALPHAS)**(-XNUS+XEX1DEPS/XALPHAS)) )
          ZZW(:) =    ZZW(:)*(0.5+SIGN(0.5,ZZW(:))) - ABS(ZZW(:))*(0.5-SIGN(0.5,ZZW(:)))
       END WHERE
 !
       P_RS_DEPS(:) = ZZW(:)
-!!$   P_TH_DEPS(:) = P_RS_DEPS(:) * PLSFACT(:)
 ! 
    END WHERE
 END IF

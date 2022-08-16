@@ -27,9 +27,10 @@ use modd_budget,     only: lbudget_th, lbudget_rv, lbudget_rc, lbudget_rr, lbudg
                            NBUDGET_RS, NBUDGET_RG, NBUDGET_RH, NBUDGET_SV1,            &
                            tbudgets
 use modd_cst,        only: xci, xcl, xcpd, xcpv, xlstt, xlvtt, xp00, xrd, xtt
-use modd_nsv,        only: nsv_c2r2beg, nsv_c2r2end, nsv_lima_beg, nsv_lima_end, nsv_lima_nc, nsv_lima_nr, nsv_lima_ni
+use modd_nsv,        only: nsv_c2r2beg, nsv_c2r2end, nsv_lima_beg, nsv_lima_end, nsv_lima_nc, nsv_lima_nr,&
+                           nsv_lima_ni, nsv_lima_ns, nsv_lima_ng, nsv_lima_nh
 use modd_param_lima, only: lcold_lima => lcold, lrain_lima => lrain, lspro_lima => lspro, lwarm_lima => lwarm, &
-                           xctmin_lima => xctmin, xrtmin_lima => xrtmin, nmom_c, nmom_r, nmom_i
+                           xctmin_lima => xctmin, xrtmin_lima => xrtmin, nmom_c, nmom_r, nmom_i, nmom_s, nmom_g, nmom_h
 
 use mode_budget,         only: Budget_store_init, Budget_store_end
 use mode_msg
@@ -237,77 +238,109 @@ CLOUD: select case ( hcloud )
 !
 !
   case( 'LIMA' )
-    allocate( zmask  ( Size( prths, 1 ), Size( prths, 2 ), Size( prths, 3 ) ) )
+     allocate( zmask  ( Size( prths, 1 ), Size( prths, 2 ), Size( prths, 3 ) ) )
 ! Correction where rc<0 or Nc<0
-    if ( lwarm_lima ) then
-      zmask(:,:,:)=(prrs(:, :, :, 2) < xrtmin_lima(2) / ptstep)
-      if (nmom_c.ge.2) zmask(:,:,:)=(zmask(:,:,:) .or. prsvs(:, :, :, nsv_lima_nc) < 0. )
-      where ( zmask(:,:,:) )
-        prrs(:, :, :, 1) = prrs(:, :, :, 1) + prrs(:, :, :, 2)
-        prths(:, :, :) = prths(:, :, :) - prrs(:, :, :, 2) * zlv(:, :, :) /  &
-                 ( zcph(:, :, :) * zexn(:, :, :) )
-        prrs(:, :, :, 2)  = 0.
-      end where
-      where ( prrs(:, :, :, 1) < 0. .and. prrs(:, :, :, 2) > 0. )
-        prrs(:, :, :, 1) = prrs(:, :, :, 1) + prrs(:, :, :, 2)
-        prths(:, :, :) = prths(:, :, :) - prrs(:, :, :, 2) * zlv(:, :, :) /  &
-           ( zcph(:, :, :) * zexn(:, :, :) )
-        prrs(:, :, :, 2) = 0.
-      end where
-      if (nmom_c.ge.2) then
-         where (prrs(:, :, :, 2) == 0.)  prsvs(:, :, :, nsv_lima_nc) = 0.
-      end if
-    end if
+     if ( krr.GE.2 ) then
+        zmask(:,:,:)=(prrs(:, :, :, 2) < xrtmin_lima(2) / ptstep)
+        if (nmom_c.ge.2) zmask(:,:,:)=(zmask(:,:,:) .or. prsvs(:, :, :, nsv_lima_nc) < 0. )
+        where ( zmask(:,:,:) )
+           prrs(:, :, :, 1) = prrs(:, :, :, 1) + prrs(:, :, :, 2)
+           prths(:, :, :) = prths(:, :, :) - prrs(:, :, :, 2) * zlv(:, :, :) /  &
+                ( zcph(:, :, :) * zexn(:, :, :) )
+           prrs(:, :, :, 2)  = 0.
+        end where
+        where ( prrs(:, :, :, 1) < 0. .and. prrs(:, :, :, 2) > 0. )
+           prrs(:, :, :, 1) = prrs(:, :, :, 1) + prrs(:, :, :, 2)
+           prths(:, :, :) = prths(:, :, :) - prrs(:, :, :, 2) * zlv(:, :, :) /  &
+                ( zcph(:, :, :) * zexn(:, :, :) )
+           prrs(:, :, :, 2) = 0.
+        end where
+        if (nmom_c.ge.2) then
+           where (prrs(:, :, :, 2) == 0.)  prsvs(:, :, :, nsv_lima_nc) = 0.
+        end if
+     end if
 ! Correction where rr<0 or Nr<0
-    if ( lwarm_lima .and. lrain_lima ) then
-      zmask(:,:,:)=(prrs(:, :, :, 3) < xrtmin_lima(3) / ptstep)
-      if (nmom_r.ge.2) zmask(:,:,:)=(zmask(:,:,:) .or. prsvs(:, :, :, nsv_lima_nr) < 0. )
-      where ( zmask(:,:,:) )
-        prrs(:, :, :, 1) = prrs(:, :, :, 1) + prrs(:, :, :, 3)
-        prths(:, :, :) = prths(:, :, :) - prrs(:, :, :, 3) * zlv(:, :, :) /  &
-                 ( zcph(:, :, :) * zexn(:, :, :) )
-        prrs(:, :, :, 3)  = 0.
-      end where
-      if (nmom_r.ge.2) then
-         where (prrs(:, :, :, 3) == 0.)  prsvs(:, :, :, nsv_lima_nr) = 0.
-      end if
-    end if
+     if ( krr.GE.3 ) then
+        zmask(:,:,:)=(prrs(:, :, :, 3) < xrtmin_lima(3) / ptstep)
+        if (nmom_r.ge.2) zmask(:,:,:)=(zmask(:,:,:) .or. prsvs(:, :, :, nsv_lima_nr) < 0. )
+        where ( zmask(:,:,:) )
+           prrs(:, :, :, 1) = prrs(:, :, :, 1) + prrs(:, :, :, 3)
+           prths(:, :, :) = prths(:, :, :) - prrs(:, :, :, 3) * zlv(:, :, :) /  &
+                ( zcph(:, :, :) * zexn(:, :, :) )
+           prrs(:, :, :, 3)  = 0.
+        end where
+        if (nmom_r.ge.2) then
+           where (prrs(:, :, :, 3) == 0.)  prsvs(:, :, :, nsv_lima_nr) = 0.
+        end if
+     end if
 ! Correction where ri<0 or Ni<0
-    if ( lcold_lima ) then
-      zmask(:,:,:)=(prrs(:, :, :, 4) < xrtmin_lima(4) / ptstep)
-      if (nmom_i.ge.2) zmask(:,:,:)=(zmask(:,:,:) .or. prsvs(:, :, :, nsv_lima_ni) < 0. )
-      where ( zmask(:,:,:) )
-        prrs(:, :, :, 1) = prrs(:, :, :, 1) + prrs(:, :, :, 4)
-        prths(:, :, :) = prths(:, :, :) - prrs(:, :, :, 4) * zls(:, :, :) /  &
-                 ( zcph(:, :, :) * zexn(:, :, :) )
-        prrs(:, :, :, 4)  = 0.
-      end where
-      if ( hbudname /= 'NETUR' ) then
-        do jr = 5, Size( prrs, 4 )
-          where ( prrs(:, :, :, jr) < 0. )
-            prrs(:, :, :, 1) = prrs(:, :, :, 1) + prrs(:, :, :, jr)
-            prths(:, :, :) = prths(:, :, :) - prrs(:, :, :, jr) * zls(:, :, :) /  &
-                    ( zcph(:, :, :) * zexn(:, :, :) )
-            prrs(:, :, :, jr) = 0.
-          end where
-        end do
-      end if
-      if(krr > 3) then
+     if ( krr.GE.4 ) then
+        zmask(:,:,:)=(prrs(:, :, :, 4) < xrtmin_lima(4) / ptstep)
+        if (nmom_i.ge.2) zmask(:,:,:)=(zmask(:,:,:) .or. prsvs(:, :, :, nsv_lima_ni) < 0. )
+        where ( zmask(:,:,:) )
+           prrs(:, :, :, 1) = prrs(:, :, :, 1) + prrs(:, :, :, 4)
+           prths(:, :, :) = prths(:, :, :) - prrs(:, :, :, 4) * zls(:, :, :) /  &
+                ( zcph(:, :, :) * zexn(:, :, :) )
+           prrs(:, :, :, 4)  = 0.
+        end where
+     end if
+     if(krr > 3) then
         allocate( zcor( Size( prths, 1 ), Size( prths, 2 ), Size( prths, 3 ) ) )
         where ( prrs(:, :, :, 1) < 0. .and. prrs(:, :, :, 4) > 0. )
-          zcor(:, :, :) = Min( -prrs(:, :, :, 1), prrs(:, :, :, 4) )
-          prrs(:, :, :, 1) = prrs(:, :, :, 1) + zcor(:, :, :)
-          prths(:, :, :) = prths(:, :, :) - zcor(:, :, :) * zls(:, :, :) /  &
-             ( zcph(:, :, :) * zexn(:, :, :) )
-          prrs(:, :, :, 4) = prrs(:, :, :, 4) - zcor(:, :, :)
+           zcor(:, :, :) = Min( -prrs(:, :, :, 1), prrs(:, :, :, 4) )
+           prrs(:, :, :, 1) = prrs(:, :, :, 1) + zcor(:, :, :)
+           prths(:, :, :) = prths(:, :, :) - zcor(:, :, :) * zls(:, :, :) /  &
+                ( zcph(:, :, :) * zexn(:, :, :) )
+           prrs(:, :, :, 4) = prrs(:, :, :, 4) - zcor(:, :, :)
         end where
         deallocate( zcor )
-      end if
-      if (nmom_i.ge.2) then
-         where (prrs(:, :, :, 4) == 0.)  prsvs(:, :, :, nsv_lima_ni) = 0.
-      end if
-    end if
-
+     end if
+     if (nmom_i.ge.2) then
+        where (prrs(:, :, :, 4) == 0.)  prsvs(:, :, :, nsv_lima_ni) = 0.
+     end if
+! Snow     
+     if ( krr.GE.5 ) then
+        zmask(:,:,:)=(prrs(:, :, :, 5) < xrtmin_lima(5) / ptstep)
+        if (nmom_s.ge.2) zmask(:,:,:)=(zmask(:,:,:) .or. prsvs(:, :, :, nsv_lima_ns) < 0. )
+        where ( zmask(:,:,:) )
+           prrs(:, :, :, 1) = prrs(:, :, :, 1) + prrs(:, :, :, 5)
+           prths(:, :, :) = prths(:, :, :) - prrs(:, :, :, 5) * zls(:, :, :) /  &
+                ( zcph(:, :, :) * zexn(:, :, :) )
+           prrs(:, :, :, 5)  = 0.
+        end where
+     end if
+     if (nmom_s.ge.2) then
+        where (prrs(:, :, :, 5) == 0.)  prsvs(:, :, :, nsv_lima_ns) = 0.
+     end if
+! Graupel
+     if ( krr.GE.6 ) then
+        zmask(:,:,:)=(prrs(:, :, :, 6) < xrtmin_lima(6) / ptstep)
+        if (nmom_g.ge.2) zmask(:,:,:)=(zmask(:,:,:) .or. prsvs(:, :, :, nsv_lima_ng) < 0. )
+        where ( zmask(:,:,:) )
+           prrs(:, :, :, 1) = prrs(:, :, :, 1) + prrs(:, :, :, 6)
+           prths(:, :, :) = prths(:, :, :) - prrs(:, :, :, 6) * zls(:, :, :) /  &
+                ( zcph(:, :, :) * zexn(:, :, :) )
+           prrs(:, :, :, 6)  = 0.
+        end where
+     end if
+     if (nmom_g.ge.2) then
+        where (prrs(:, :, :, 6) == 0.)  prsvs(:, :, :, nsv_lima_ng) = 0.
+     end if
+! Hail
+     if ( krr.GE.7 ) then
+        zmask(:,:,:)=(prrs(:, :, :, 7) < xrtmin_lima(7) / ptstep)
+        if (nmom_h.ge.2) zmask(:,:,:)=(zmask(:,:,:) .or. prsvs(:, :, :, nsv_lima_nh) < 0. )
+        where ( zmask(:,:,:) )
+           prrs(:, :, :, 1) = prrs(:, :, :, 1) + prrs(:, :, :, 7)
+           prths(:, :, :) = prths(:, :, :) - prrs(:, :, :, 7) * zls(:, :, :) /  &
+                ( zcph(:, :, :) * zexn(:, :, :) )
+           prrs(:, :, :, 7)  = 0.
+        end where
+     end if
+     if (nmom_h.ge.2) then
+        where (prrs(:, :, :, 7) == 0.)  prsvs(:, :, :, nsv_lima_nh) = 0.
+     end if
+!
     prsvs(:, :, :, nsv_lima_beg : isv_lima_end) = Max( 0.0, prsvs(:, :, :, nsv_lima_beg : isv_lima_end) )
     deallocate(zmask)
 end select CLOUD

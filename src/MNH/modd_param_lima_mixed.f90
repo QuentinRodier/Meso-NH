@@ -15,7 +15,8 @@
 !!    -------------
 !!      Original             ??/??/13 
 !!      C. Barthe            14/03/2022  add CIBU and RDSF
-!  J. Wurtz       03/2022: new snow characteristics
+!       J. Wurtz                03/2022: new snow characteristics
+!       M. Taufour              07/2022: add concentration for snow, graupel, hail
 !!
 !-------------------------------------------------------------------------------
 !
@@ -41,7 +42,7 @@ IMPLICIT NONE
 !                                                distribution law
 !
 REAL,SAVE :: XAG,XBG,XCG,XDG,XCCG,XCXG,XF0G,XF1G,XC1G ! Graupel        charact.
-REAL,SAVE :: XLBEXG,XLBG              ! Graupel        distribution parameters 
+REAL,SAVE :: XLBEXG,XLBG,XNG          ! Graupel        distribution parameters 
 REAL,SAVE :: XLBDAG_MAX               ! Max values allowed for the shape
                                       ! parameter of graupeln
 !
@@ -90,7 +91,7 @@ REAL, DIMENSION(:), SAVE, ALLOCATABLE          &
 !*       3.   MICROPHYSICAL FACTORS - Graupel
 !             -------------------------------
 !
-REAL,SAVE :: XFSEDG, XEXSEDG                     ! Sedimentation fluxes of Graupel
+REAL,SAVE :: XFSEDG, XEXSEDG, XFSEDRG, XFSEDCG   ! Sedimentation fluxes of Graupel
 !
 REAL,SAVE :: X0DEPG,X1DEPG,XEX0DEPG,XEX1DEPG     ! Deposition on graupel
 !
@@ -119,9 +120,15 @@ REAL, DIMENSION(:), SAVE, ALLOCATABLE          &
                           XGAMINC_HMC            ! and for the HM process
 !
 REAL,SAVE :: XFRACCSS,                         & ! Constants for the accretion 
+             XFNRACCSS,                        & ! Constants for the accretion 
              XLBRACCS1,XLBRACCS2,XLBRACCS3,    & ! raindrops onto the aggregates
+             XLBNRACCS1,XLBNRACCS2,XLBNRACCS3, & ! raindrops onto the aggregates 
              XFSACCRG,                         & ! ACC (processes RACCSS and
+             XFNSACCRG,                        & ! ACC (processes RACCSS and 
              XLBSACCR1,XLBSACCR2,XLBSACCR3,    & !                SACCRG)
+             XLBNSACCR1,XLBNSACCR2,XLBNSACCR3, & !                SACCRG)             
+             XSCLBDAS_MIN,                     & ! Min val. of Lbda_s for ACC
+    	     XSCLBDAS_MAX,                     & ! Max val. of Lbda_s for ACC   
     	     XACCLBDAS_MIN,                    & ! Min val. of Lbda_s for ACC
     	     XACCLBDAS_MAX,                    & ! Max val. of Lbda_s for ACC
     	     XACCLBDAR_MIN,                    & ! Min val. of Lbda_r for ACC
@@ -137,7 +144,10 @@ INTEGER,SAVE :: NACCLBDAS,                     & ! Number of Lbda_s values and
 REAL,DIMENSION(:,:), SAVE, ALLOCATABLE         &
        			 :: XKER_RACCSS,       & ! Normalized kernel for RACCSS
        			    XKER_RACCS,        & ! Normalized kernel for RACCS
-       			    XKER_SACCRG          ! Normalized kernel for SACCRG 
+       			    XKER_SACCRG,        & ! Normalized kernel for SACCRG 
+       			    XKER_N_RACCSS,     & ! Normalized kernel for RACCSS  
+       			    XKER_N_RACCS,      & ! Normalized kernel for RACCS   
+       			    XKER_N_SACCRG        ! Normalized kernel for SACCRG
 REAL,SAVE :: XFSCVMG                             ! Melting-conversion factor of
                                                  ! the aggregates
 !
@@ -148,10 +158,12 @@ REAL,SAVE :: XCOLIR,                           & ! Constants for rain contact
 REAL,SAVE :: XFCDRYG,                          & ! Constants for the dry growth
              XCOLCG,                           & ! of the graupeln :
              XCOLIG,XCOLEXIG,XFIDRYG,          & ! 
-             XCOLSG,XCOLEXSG,XFSDRYG,          & !             RCDRYG
+             XCOLSG,XCOLEXSG,XFSDRYG,XFNSDRYG, & !             RCDRYG
              XLBSDRYG1,XLBSDRYG2,XLBSDRYG3,    & !             RIDRYG
-             XFRDRYG,                          & !             RSDRYG
+             XLBNSDRYG1,XLBNSDRYG2,XLBNSDRYG3, & !             RIDRYG  
+             XFRDRYG,XFNRDRYG,                 & !             RSDRYG
              XLBRDRYG1,XLBRDRYG2,XLBRDRYG3,    & !             RRDRYG
+             XLBNRDRYG1,XLBNRDRYG2,XLBNRDRYG3, & !             RRDRYG         
              XDRYLBDAR_MIN,                    & ! Min val. of Lbda_r for DRY
     	     XDRYLBDAR_MAX,                    & ! Max val. of Lbda_r for DRY
              XDRYLBDAS_MIN,                    & ! Min val. of Lbda_s for DRY
@@ -169,22 +181,26 @@ INTEGER,SAVE :: NDRYLBDAR,                     & ! Number of Lbda_r,
                         			 !            tables
 REAL,DIMENSION(:,:), SAVE, ALLOCATABLE         &
                          :: XKER_SDRYG,        & ! Normalized kernel for SDRYG
-       			    XKER_RDRYG           ! Normalized kernel for RDRYG 
+       			    XKER_RDRYG,        & ! Normalized kernel for RDRYG 
+       			    XKER_N_SDRYG,      & ! Normalized kernel for RDRYG    
+       			    XKER_N_RDRYG         ! Normalized kernel for RDRYG 
 !
 !-------------------------------------------------------------------------------
 !
 !*       4.   MICROPHYSICAL FACTORS - Hail
 !             ----------------------------
 !
-REAL,SAVE :: XFSEDH,XEXSEDH                      ! Constants for sedimentation
+REAL,SAVE :: XFSEDH,XEXSEDH,XFSEDRH,XFSEDCH      ! Constants for sedimentation
 !
 !
 REAL,SAVE :: X0DEPH,X1DEPH,XEX0DEPH,XEX1DEPH     ! Constants for deposition
 !
-REAL,SAVE :: XFWETH,XFSWETH,                   & ! Constants for the wet growth
+REAL,SAVE :: XFWETH,XFSWETH,XFNSWETH,          & ! Constants for the wet growth
              XLBSWETH1,XLBSWETH2,XLBSWETH3,    & ! of the hailstones : WET
-             XFGWETH,                          & !   processes RSWETH
+             XLBNSWETH1,XLBNSWETH2,XLBNSWETH3, & ! of the hailstones : WET 
+             XFGWETH, XFNGWETH,                & !   processes RSWETH
              XLBGWETH1,XLBGWETH2,XLBGWETH3,    & !             RGWETH
+             XLBNGWETH1,XLBNGWETH2,XLBNGWETH3, & !             RGWETH   
              XWETLBDAS_MIN,                    & ! Min val. of Lbda_s for WET
              XWETLBDAS_MAX,                    & ! Max val. of Lbda_s for WET
              XWETLBDAG_MIN,                    & ! Min val. of Lbda_g for WET
@@ -202,7 +218,9 @@ INTEGER,SAVE :: NWETLBDAS,                     & ! Number of Lbda_s,
                                                  !            tables
 REAL,DIMENSION(:,:), SAVE, ALLOCATABLE         &
                          :: XKER_SWETH,        & ! Normalized kernel for SWETH
-                            XKER_GWETH           ! Normalized kernel for GWETH
+                            XKER_GWETH,        & ! Normalized kernel for GWETH
+                            XKER_N_SWETH,      & ! Normalized kernel for GWETH 
+                            XKER_N_GWETH         ! Normalized kernel for GWETH
 
 !
 !-------------------------------------------------------------------------------

@@ -239,26 +239,28 @@ REAL, DIMENSION(:), ALLOCATABLE ::                          &
      Z_TH_DEPS, Z_RS_DEPS,                                  & ! deposition of vapor on snow (DEPS) : rv=-rs, rs, th
      Z_TH_DEPI, Z_RI_DEPI,                                  & ! deposition of vapor on ice (DEPI) : rv=-ri, ri, th
      Z_RI_CNVS, Z_CI_CNVS,                                  & ! conversion ice -> snow (CNVS) : ri, Ni, rs=-ri
+     Z_CS_SSC,                                              & ! self collection of snow (SSC) : Ns
      Z_RI_AGGS, Z_CI_AGGS,                                  & ! aggregation of ice on snow (AGGS) : ri, Ni, rs=-ri
      Z_TH_DEPG, Z_RG_DEPG,                                  & ! deposition of vapor on graupel (DEPG) : rv=-rg, rg, th
      Z_TH_BERFI, Z_RC_BERFI,                                & ! Bergeron (BERFI) : rc, ri=-rc, th
-     Z_TH_RIM, Z_RC_RIM, Z_CC_RIM, Z_RS_RIM, Z_RG_RIM,      & ! cloud droplet riming (RIM) : rc, Nc, rs, rg, th
+     Z_TH_RIM, Z_RC_RIM, Z_CC_RIM, Z_RS_RIM, Z_CS_RIM, Z_RG_RIM,      & ! cloud droplet riming (RIM) : rc, Nc, rs, Ns, rg, Ng=-Ns, th
      Z_RI_HMS, Z_CI_HMS, Z_RS_HMS,                          & ! hallett mossop snow (HMS) : ri, Ni, rs
-     Z_TH_ACC, Z_RR_ACC, Z_CR_ACC, Z_RS_ACC, Z_RG_ACC,      & ! rain accretion on aggregates (ACC) : rr, Nr, rs, rg, th
-     Z_RS_CMEL,                                             & ! conversion-melting (CMEL) : rs, rg=-rs
+     Z_TH_ACC, Z_RR_ACC, Z_CR_ACC, Z_RS_ACC, Z_CS_ACC, Z_RG_ACC,      & ! rain accretion on aggregates (ACC) : rr, Nr, rs, Ns, rg, Ng=-Ns, th
+     Z_RS_CMEL, Z_CS_CMEL,                                  & ! conversion-melting (CMEL) : rs, rg=-rs
      Z_TH_CFRZ, Z_RR_CFRZ, Z_CR_CFRZ, Z_RI_CFRZ, Z_CI_CFRZ, & ! rain freezing (CFRZ) : rr, Nr, ri, Ni, rg=-rr-ri, th
      Z_RI_CIBU, Z_CI_CIBU,                                  & ! collisional ice break-up (CIBU) : ri, Ni, rs=-ri
      Z_RI_RDSF, Z_CI_RDSF,                                  & ! rain drops freezing shattering (RDSF) : ri, Ni, rg=-ri
      Z_TH_WETG, Z_RC_WETG, Z_CC_WETG, Z_RR_WETG, Z_CR_WETG, & ! wet growth of graupel (WETG) : rc, NC, rr, Nr, ri, Ni, rs, rg, rh, th
-     Z_RI_WETG, Z_CI_WETG, Z_RS_WETG, Z_RG_WETG, Z_RH_WETG, & ! wet growth of graupel (WETG) : rc, NC, rr, Nr, ri, Ni, rs, rg, rh, th
+     Z_RI_WETG, Z_CI_WETG, Z_RS_WETG, Z_CS_WETG, Z_RG_WETG, Z_CG_WETG, Z_RH_WETG, & ! wet growth of graupel (WETG) : rc, NC, rr, Nr, ri, Ni, rs, Ns, rg, Ng, rh, Nh=-Ng, th
      Z_TH_DRYG, Z_RC_DRYG, Z_CC_DRYG, Z_RR_DRYG, Z_CR_DRYG, & ! dry growth of graupel (DRYG) : rc, Nc, rr, Nr, ri, Ni, rs, rg, th
-     Z_RI_DRYG, Z_CI_DRYG, Z_RS_DRYG, Z_RG_DRYG,            & ! dry growth of graupel (DRYG) : rc, Nc, rr, Nr, ri, Ni, rs, rg, th
+     Z_RI_DRYG, Z_CI_DRYG, Z_RS_DRYG, Z_CS_DRYG, Z_RG_DRYG, & ! dry growth of graupel (DRYG) : rc, Nc, rr, Nr, ri, Ni, rs, Ns, rg, th
      Z_RI_HMG, Z_CI_HMG, Z_RG_HMG,                          & ! hallett mossop graupel (HMG) : ri, Ni, rg
-     Z_TH_GMLT, Z_RR_GMLT, Z_CR_GMLT,                       & ! graupel melting (GMLT) : rr, Nr, rg=-rr, th
-!      Z_RC_WETH, Z_CC_WETH, Z_RR_WETH, Z_CR_WETH,            & ! wet growth of hail (WETH) : rc, Nc, rr, Nr, ri, Ni, rs, rg, rh, th
-!      Z_RI_WETH, Z_CI_WETH, Z_RS_WETH, Z_RG_WETH, Z_RH_WETH, & ! wet growth of hail (WETH) : rc, Nc, rr, Nr, ri, Ni, rs, rg, rh, th
-!      Z_RG_COHG,                                             & ! conversion of hail into graupel (COHG) : rg, rh
-!      Z_RR_HMLT, Z_CR_HMLT                                     ! hail melting (HMLT) : rr, Nr, rh=-rr, th
+     Z_TH_GMLT, Z_RR_GMLT, Z_CR_GMLT, Z_CG_GMLT,            & ! graupel melting (GMLT) : rr, Nr, rg=-rr, th
+     Z_TH_DEPH, Z_RH_DEPH,                                  & ! deposition of vapor on hail (DEPH) : rv=-rh, rh, th
+     Z_TH_WETH, Z_RC_WETH, Z_CC_WETH, Z_RR_WETH, Z_CR_WETH, & ! wet growth of hail (WETH) : rc, Nc, rr, Nr, ri, Ni, rs, rg, rh, th
+     Z_RI_WETH, Z_CI_WETH, Z_RS_WETH, Z_CS_WETH, Z_RG_WETH, Z_CG_WETH, Z_RH_WETH, & ! wet growth of hail (WETH) : rc, Nc, rr, Nr, ri, Ni, rs, rg, rh, th
+     Z_RG_COHG, Z_CG_COHG,                                  & ! conversion of hail into graupel (COHG) : rg, rh
+     Z_TH_HMLT, Z_RR_HMLT, Z_CR_HMLT, Z_CH_HMLT,            & ! hail melting (HMLT) : rr, Nr, rh=-rr, th
      Z_RV_CORR2, Z_RC_CORR2, Z_RR_CORR2, Z_RI_CORR2,        &
      Z_CC_CORR2, Z_CR_CORR2, Z_CI_CORR2
 !
@@ -292,26 +294,28 @@ REAL, DIMENSION(:,:,:), ALLOCATABLE ::                                     &
      ZTOT_TH_DEPS, ZTOT_RS_DEPS,                                           & ! deposition of vapor on snow (DEPS)
      ZTOT_TH_DEPI, ZTOT_RI_DEPI,                                           & ! deposition of vapor on ice (DEPI)
      ZTOT_RI_CNVS, ZTOT_CI_CNVS,                                           & ! conversion ice -> snow (CNVS)
+     ZTOT_CS_SSC,                                                          & ! self collection of snow (SSC)
      ZTOT_RI_AGGS, ZTOT_CI_AGGS,                                           & ! aggregation of ice on snow (AGGS)
      ZTOT_TH_DEPG, ZTOT_RG_DEPG,                                           & ! deposition of vapor on graupel (DEPG)
      ZTOT_TH_BERFI, ZTOT_RC_BERFI,                                         & ! Bergeron (BERFI)
-     ZTOT_TH_RIM, ZTOT_RC_RIM, ZTOT_CC_RIM, ZTOT_RS_RIM, ZTOT_RG_RIM,      & ! cloud droplet riming (RIM)
+     ZTOT_TH_RIM, ZTOT_RC_RIM, ZTOT_CC_RIM, ZTOT_RS_RIM, ZTOT_CS_RIM, ZTOT_RG_RIM,      & ! cloud droplet riming (RIM)
      ZTOT_RI_HMS, ZTOT_CI_HMS, ZTOT_RS_HMS,                                & ! hallett mossop snow (HMS)
-     ZTOT_TH_ACC, ZTOT_RR_ACC, ZTOT_CR_ACC, ZTOT_RS_ACC, ZTOT_RG_ACC,      & ! rain accretion on aggregates (ACC)
-     ZTOT_RS_CMEL,                                                         & ! conversion-melting (CMEL)
+     ZTOT_TH_ACC, ZTOT_RR_ACC, ZTOT_CR_ACC, ZTOT_RS_ACC, ZTOT_CS_ACC, ZTOT_RG_ACC,      & ! rain accretion on aggregates (ACC)
+     ZTOT_RS_CMEL, ZTOT_CS_CMEL,                                                        & ! conversion-melting (CMEL)
      ZTOT_TH_CFRZ, ZTOT_RR_CFRZ, ZTOT_CR_CFRZ, ZTOT_RI_CFRZ, ZTOT_CI_CFRZ, & ! rain freezing (CFRZ)
      ZTOT_RI_CIBU, ZTOT_CI_CIBU,                                           & ! collisional ice break-up (CIBU)
      ZTOT_RI_RDSF, ZTOT_CI_RDSF,                                           & ! rain drops freezing shattering (RDSF)
      ZTOT_TH_WETG, ZTOT_RC_WETG, ZTOT_CC_WETG, ZTOT_RR_WETG, ZTOT_CR_WETG, & ! wet growth of graupel (WETG)
-     ZTOT_RI_WETG, ZTOT_CI_WETG, ZTOT_RS_WETG, ZTOT_RG_WETG, ZTOT_RH_WETG, & ! wet growth of graupel (WETG)
+     ZTOT_RI_WETG, ZTOT_CI_WETG, ZTOT_RS_WETG, ZTOT_CS_WETG, ZTOT_RG_WETG, ZTOT_CG_WETG, ZTOT_RH_WETG, & ! wet growth of graupel (WETG)
      ZTOT_TH_DRYG, ZTOT_RC_DRYG, ZTOT_CC_DRYG, ZTOT_RR_DRYG, ZTOT_CR_DRYG, & ! dry growth of graupel (DRYG)
-     ZTOT_RI_DRYG, ZTOT_CI_DRYG, ZTOT_RS_DRYG, ZTOT_RG_DRYG,               & ! dry growth of graupel (DRYG)
+     ZTOT_RI_DRYG, ZTOT_CI_DRYG, ZTOT_RS_DRYG, ZTOT_CS_DRYG, ZTOT_RG_DRYG,               & ! dry growth of graupel (DRYG)
      ZTOT_RI_HMG, ZTOT_CI_HMG, ZTOT_RG_HMG,                                & ! hallett mossop graupel (HMG)
-     ZTOT_TH_GMLT, ZTOT_RR_GMLT, ZTOT_CR_GMLT,                             & ! graupel melting (GMLT)
-!      ZTOT_RC_WETH, ZTOT_CC_WETH, ZTOT_RR_WETH, ZTOT_CR_WETH,               & ! wet growth of hail (WETH)
-!      ZTOT_RI_WETH, ZTOT_CI_WETH, ZTOT_RS_WETH, ZTOT_RG_WETH, ZTOT_RH_WETH, & ! wet growth of hail (WETH)
-!      ZTOT_RG_COHG,                                                         & ! conversion of hail into graupel (COHG)
-!      ZTOT_RR_HMLT, ZTOT_CR_HMLT,                                           & ! hail melting (HMLT)
+     ZTOT_TH_GMLT, ZTOT_RR_GMLT, ZTOT_CR_GMLT, ZTOT_CG_GMLT,               & ! graupel melting (GMLT)
+     ZTOT_TH_DEPH, ZTOT_RH_DEPH,                                           & ! deposition of vapor on hail (DEPH)
+     ZTOT_TH_WETH, ZTOT_RC_WETH, ZTOT_CC_WETH, ZTOT_RR_WETH, ZTOT_CR_WETH, & ! wet growth of hail (WETH)
+     ZTOT_RI_WETH, ZTOT_CI_WETH, ZTOT_RS_WETH, ZTOT_CS_WETH, ZTOT_RG_WETH, ZTOT_CG_WETH, ZTOT_RH_WETH, & ! wet growth of hail (WETH)
+     ZTOT_RG_COHG, ZTOT_CG_COHG,                                           & ! conversion of hail into graupel (COHG)
+     ZTOT_TH_HMLT, ZTOT_RR_HMLT, ZTOT_CR_HMLT, ZTOT_CH_HMLT,               & ! hail melting (HMLT)
      ZTOT_RR_CVRC, ZTOT_CR_CVRC,                                           & ! conversion of rain into cloud droplets if diameter too small
      ZTOT_RV_CORR2, ZTOT_RC_CORR2, ZTOT_RR_CORR2, ZTOT_RI_CORR2,           &
      ZTOT_CC_CORR2, ZTOT_CR_CORR2, ZTOT_CI_CORR2
@@ -448,6 +452,7 @@ if ( lbu_enable ) then
   allocate( ZTOT_RI_DEPI (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_RI_DEPI(:,:,:) = 0.
   allocate( ZTOT_RI_CNVS (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_RI_CNVS(:,:,:) = 0.
   allocate( ZTOT_CI_CNVS (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_CI_CNVS(:,:,:) = 0.
+  allocate( ZTOT_CS_SSC  (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_CS_SSC(:,:,:) = 0.
   allocate( ZTOT_RI_AGGS (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_RI_AGGS(:,:,:) = 0.
   allocate( ZTOT_CI_AGGS (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_CI_AGGS(:,:,:) = 0.
   allocate( ZTOT_TH_DEPG (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_TH_DEPG(:,:,:) = 0.
@@ -458,6 +463,7 @@ if ( lbu_enable ) then
   allocate( ZTOT_RC_RIM  (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_RC_RIM(:,:,:) = 0.
   allocate( ZTOT_CC_RIM  (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_CC_RIM(:,:,:) = 0.
   allocate( ZTOT_RS_RIM  (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_RS_RIM(:,:,:) = 0.
+  allocate( ZTOT_CS_RIM  (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_CS_RIM(:,:,:) = 0.
   allocate( ZTOT_RG_RIM  (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_RG_RIM(:,:,:) = 0.
   allocate( ZTOT_RI_HMS  (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_RI_HMS(:,:,:) = 0.
   allocate( ZTOT_CI_HMS  (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_CI_HMS(:,:,:) = 0.
@@ -466,8 +472,10 @@ if ( lbu_enable ) then
   allocate( ZTOT_RR_ACC  (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_RR_ACC(:,:,:) = 0.
   allocate( ZTOT_CR_ACC  (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_CR_ACC(:,:,:) = 0.
   allocate( ZTOT_RS_ACC  (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_RS_ACC(:,:,:) = 0.
+  allocate( ZTOT_CS_ACC  (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_CS_ACC(:,:,:) = 0.
   allocate( ZTOT_RG_ACC  (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_RG_ACC(:,:,:) = 0.
   allocate( ZTOT_RS_CMEL (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_RS_CMEL(:,:,:) = 0.
+  allocate( ZTOT_CS_CMEL (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_CS_CMEL(:,:,:) = 0.
   allocate( ZTOT_TH_CFRZ (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_TH_CFRZ(:,:,:) = 0.
   allocate( ZTOT_RR_CFRZ (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_RR_CFRZ(:,:,:) = 0.
   allocate( ZTOT_CR_CFRZ (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_CR_CFRZ(:,:,:) = 0.
@@ -485,7 +493,9 @@ if ( lbu_enable ) then
   allocate( ZTOT_RI_WETG (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_RI_WETG(:,:,:) = 0.
   allocate( ZTOT_CI_WETG (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_CI_WETG(:,:,:) = 0.
   allocate( ZTOT_RS_WETG (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_RS_WETG(:,:,:) = 0.
+  allocate( ZTOT_CS_WETG (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_CS_WETG(:,:,:) = 0.
   allocate( ZTOT_RG_WETG (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_RG_WETG(:,:,:) = 0.
+  allocate( ZTOT_CG_WETG (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_CG_WETG(:,:,:) = 0.
   allocate( ZTOT_RH_WETG (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_RH_WETG(:,:,:) = 0.
   allocate( ZTOT_TH_DRYG (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_TH_DRYG(:,:,:) = 0.
   allocate( ZTOT_RC_DRYG (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_RC_DRYG(:,:,:) = 0.
@@ -495,6 +505,7 @@ if ( lbu_enable ) then
   allocate( ZTOT_RI_DRYG (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_RI_DRYG(:,:,:) = 0.
   allocate( ZTOT_CI_DRYG (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_CI_DRYG(:,:,:) = 0.
   allocate( ZTOT_RS_DRYG (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_RS_DRYG(:,:,:) = 0.
+  allocate( ZTOT_CS_DRYG (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_CS_DRYG(:,:,:) = 0.
   allocate( ZTOT_RG_DRYG (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_RG_DRYG(:,:,:) = 0.
   allocate( ZTOT_RI_HMG  (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_RI_HMG(:,:,:) = 0.
   allocate( ZTOT_CI_HMG  (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_CI_HMG(:,:,:) = 0.
@@ -502,18 +513,27 @@ if ( lbu_enable ) then
   allocate( ZTOT_TH_GMLT (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_TH_GMLT(:,:,:) = 0.
   allocate( ZTOT_RR_GMLT (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_RR_GMLT(:,:,:) = 0.
   allocate( ZTOT_CR_GMLT (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_CR_GMLT(:,:,:) = 0.
-!   allocate( ZTOT_RC_WETH (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_RC_WETH(:,:,:) = 0.
-!   allocate( ZTOT_CC_WETH (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_CC_WETH(:,:,:) = 0.
-!   allocate( ZTOT_RR_WETH (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_RR_WETH(:,:,:) = 0.
-!   allocate( ZTOT_CR_WETH (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_CR_WETH(:,:,:) = 0.
-!   allocate( ZTOT_RI_WETH (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_RI_WETH(:,:,:) = 0.
-!   allocate( ZTOT_CI_WETH (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_CI_WETH(:,:,:) = 0.
-!   allocate( ZTOT_RS_WETH (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_RS_WETH(:,:,:) = 0.
-!   allocate( ZTOT_RG_WETH (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_RG_WETH(:,:,:) = 0.
-!   allocate( ZTOT_RH_WETH (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_RH_WETH(:,:,:) = 0.
-!   allocate( ZTOT_RG_COHG (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_RG_COHG(:,:,:) = 0.
-!   allocate( ZTOT_RR_HMLT (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_RR_HMLT(:,:,:) = 0.
-!   allocate( ZTOT_CR_HMLT (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_CR_HMLT(:,:,:) = 0.
+  allocate( ZTOT_CG_GMLT (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_CG_GMLT(:,:,:) = 0.
+  allocate( ZTOT_TH_DEPH (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_TH_DEPH(:,:,:) = 0.
+  allocate( ZTOT_RH_DEPH (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_RH_DEPH(:,:,:) = 0.
+  allocate( ZTOT_TH_WETH (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_TH_WETH(:,:,:) = 0.
+  allocate( ZTOT_RC_WETH (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_RC_WETH(:,:,:) = 0.
+  allocate( ZTOT_CC_WETH (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_CC_WETH(:,:,:) = 0.
+  allocate( ZTOT_RR_WETH (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_RR_WETH(:,:,:) = 0.
+  allocate( ZTOT_CR_WETH (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_CR_WETH(:,:,:) = 0.
+  allocate( ZTOT_RI_WETH (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_RI_WETH(:,:,:) = 0.
+  allocate( ZTOT_CI_WETH (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_CI_WETH(:,:,:) = 0.
+  allocate( ZTOT_RS_WETH (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_RS_WETH(:,:,:) = 0.
+  allocate( ZTOT_CS_WETH (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_CS_WETH(:,:,:) = 0.
+  allocate( ZTOT_RG_WETH (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_RG_WETH(:,:,:) = 0.
+  allocate( ZTOT_CG_WETH (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_CG_WETH(:,:,:) = 0.
+  allocate( ZTOT_RH_WETH (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_RH_WETH(:,:,:) = 0.
+  allocate( ZTOT_RG_COHG (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_RG_COHG(:,:,:) = 0.
+  allocate( ZTOT_CG_COHG (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_CG_COHG(:,:,:) = 0.
+  allocate( ZTOT_TH_HMLT (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_TH_HMLT(:,:,:) = 0.
+  allocate( ZTOT_RR_HMLT (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_RR_HMLT(:,:,:) = 0.
+  allocate( ZTOT_CR_HMLT (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_CR_HMLT(:,:,:) = 0.
+  allocate( ZTOT_CH_HMLT (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_CH_HMLT(:,:,:) = 0.
   allocate( ZTOT_RR_CVRC (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_RR_CVRC(:,:,:) = 0.
   allocate( ZTOT_CR_CVRC (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_CR_CVRC(:,:,:) = 0.
 
@@ -1045,68 +1065,96 @@ DO WHILE(ANY(ZTIME(IIB:IIE,IJB:IJE,IKTB:IKTE)<PTSTEP))
       ALLOCATE(Z_RI_DEPI(IPACK))          ; Z_RI_DEPI(:) = 0.
       ALLOCATE(Z_RI_CNVS(IPACK))          ; Z_RI_CNVS(:) = 0.
       ALLOCATE(Z_CI_CNVS(IPACK))          ; Z_CI_CNVS(:) = 0.
+      ALLOCATE(Z_CS_SSC(IPACK))           ; Z_CS_SSC(:) = 0.
       ALLOCATE(Z_RI_AGGS(IPACK))          ; Z_RI_AGGS(:) = 0.
       ALLOCATE(Z_CI_AGGS(IPACK))          ; Z_CI_AGGS(:) = 0.
       ALLOCATE(Z_TH_DEPG(IPACK))          ; Z_TH_DEPG(:) = 0.
       ALLOCATE(Z_RG_DEPG(IPACK))          ; Z_RG_DEPG(:) = 0.
       ALLOCATE(Z_TH_BERFI(IPACK))         ; Z_TH_BERFI(:) = 0.
       ALLOCATE(Z_RC_BERFI(IPACK))         ; Z_RC_BERFI(:) = 0.
-      ALLOCATE(Z_TH_RIM(IPACK))           ; Z_TH_RIM = 0.
-      ALLOCATE(Z_RC_RIM(IPACK))           ; Z_RC_RIM = 0.
-      ALLOCATE(Z_CC_RIM(IPACK))           ; Z_CC_RIM = 0.
-      ALLOCATE(Z_RS_RIM(IPACK))           ; Z_RS_RIM = 0.
-      ALLOCATE(Z_RG_RIM(IPACK))           ; Z_RG_RIM = 0.
-      ALLOCATE(Z_RI_HMS(IPACK))           ; Z_RI_HMS = 0.
-      ALLOCATE(Z_CI_HMS(IPACK))           ; Z_CI_HMS = 0.
-      ALLOCATE(Z_RS_HMS(IPACK))           ; Z_RS_HMS = 0.
-      ALLOCATE(Z_TH_ACC(IPACK))           ; Z_TH_ACC = 0.
-      ALLOCATE(Z_RR_ACC(IPACK))           ; Z_RR_ACC = 0.
-      ALLOCATE(Z_CR_ACC(IPACK))           ; Z_CR_ACC = 0.
-      ALLOCATE(Z_RS_ACC(IPACK))           ; Z_RS_ACC = 0.
-      ALLOCATE(Z_RG_ACC(IPACK))           ; Z_RG_ACC = 0.
-      ALLOCATE(Z_RS_CMEL(IPACK))          ; Z_RS_CMEL = 0.
-      ALLOCATE(Z_TH_CFRZ(IPACK))          ; Z_TH_CFRZ = 0.
-      ALLOCATE(Z_RR_CFRZ(IPACK))          ; Z_RR_CFRZ = 0.
-      ALLOCATE(Z_CR_CFRZ(IPACK))          ; Z_CR_CFRZ = 0.
-      ALLOCATE(Z_RI_CFRZ(IPACK))          ; Z_RI_CFRZ = 0.
-      ALLOCATE(Z_CI_CFRZ(IPACK))          ; Z_CI_CFRZ = 0.
-      ALLOCATE(Z_RI_CIBU(IPACK))          ; Z_RI_CIBU = 0.
-      ALLOCATE(Z_CI_CIBU(IPACK))          ; Z_CI_CIBU = 0.
-      ALLOCATE(Z_RI_RDSF(IPACK))          ; Z_RI_RDSF = 0.
-      ALLOCATE(Z_CI_RDSF(IPACK))          ; Z_CI_RDSF = 0.
-      ALLOCATE(Z_TH_WETG(IPACK))          ; Z_TH_WETG = 0.
-      ALLOCATE(Z_RC_WETG(IPACK))          ; Z_RC_WETG = 0.
-      ALLOCATE(Z_CC_WETG(IPACK))          ; Z_CC_WETG = 0.
-      ALLOCATE(Z_RR_WETG(IPACK))          ; Z_RR_WETG = 0.
-      ALLOCATE(Z_CR_WETG(IPACK))          ; Z_CR_WETG = 0.
-      ALLOCATE(Z_RI_WETG(IPACK))          ; Z_RI_WETG = 0.
-      ALLOCATE(Z_CI_WETG(IPACK))          ; Z_CI_WETG = 0.
-      ALLOCATE(Z_RS_WETG(IPACK))          ; Z_RS_WETG = 0.
-      ALLOCATE(Z_RG_WETG(IPACK))          ; Z_RG_WETG = 0.
-      ALLOCATE(Z_RH_WETG(IPACK))          ; Z_RH_WETG = 0.
-      ALLOCATE(Z_TH_DRYG(IPACK))          ; Z_TH_DRYG = 0.
-      ALLOCATE(Z_RC_DRYG(IPACK))          ; Z_RC_DRYG = 0.
-      ALLOCATE(Z_CC_DRYG(IPACK))          ; Z_CC_DRYG = 0.
-      ALLOCATE(Z_RR_DRYG(IPACK))          ; Z_RR_DRYG = 0.
-      ALLOCATE(Z_CR_DRYG(IPACK))          ; Z_CR_DRYG = 0.
-      ALLOCATE(Z_RI_DRYG(IPACK))          ; Z_RI_DRYG = 0.
-      ALLOCATE(Z_CI_DRYG(IPACK))          ; Z_CI_DRYG = 0.
-      ALLOCATE(Z_RS_DRYG(IPACK))          ; Z_RS_DRYG = 0.
-      ALLOCATE(Z_RG_DRYG(IPACK))          ; Z_RG_DRYG = 0.
-      ALLOCATE(Z_RI_HMG(IPACK))           ; Z_RI_HMG = 0.
-      ALLOCATE(Z_CI_HMG(IPACK))           ; Z_CI_HMG = 0.
-      ALLOCATE(Z_RG_HMG(IPACK))           ; Z_RG_HMG = 0.
-      ALLOCATE(Z_TH_GMLT(IPACK))          ; Z_TH_GMLT = 0.
-      ALLOCATE(Z_RR_GMLT(IPACK))          ; Z_RR_GMLT = 0.
-      ALLOCATE(Z_CR_GMLT(IPACK))          ; Z_CR_GMLT = 0.
+      ALLOCATE(Z_TH_RIM(IPACK))           ; Z_TH_RIM(:) = 0.
+      ALLOCATE(Z_RC_RIM(IPACK))           ; Z_RC_RIM(:) = 0.
+      ALLOCATE(Z_CC_RIM(IPACK))           ; Z_CC_RIM(:) = 0.
+      ALLOCATE(Z_RS_RIM(IPACK))           ; Z_RS_RIM(:) = 0.
+      ALLOCATE(Z_CS_RIM(IPACK))           ; Z_CS_RIM(:) = 0.
+      ALLOCATE(Z_RG_RIM(IPACK))           ; Z_RG_RIM(:) = 0.
+      ALLOCATE(Z_RI_HMS(IPACK))           ; Z_RI_HMS(:) = 0.
+      ALLOCATE(Z_CI_HMS(IPACK))           ; Z_CI_HMS(:) = 0.
+      ALLOCATE(Z_RS_HMS(IPACK))           ; Z_RS_HMS(:) = 0.
+      ALLOCATE(Z_TH_ACC(IPACK))           ; Z_TH_ACC(:) = 0.
+      ALLOCATE(Z_RR_ACC(IPACK))           ; Z_RR_ACC(:) = 0.
+      ALLOCATE(Z_CR_ACC(IPACK))           ; Z_CR_ACC(:) = 0.
+      ALLOCATE(Z_RS_ACC(IPACK))           ; Z_RS_ACC(:) = 0.
+      ALLOCATE(Z_CS_ACC(IPACK))           ; Z_CS_ACC(:) = 0.
+      ALLOCATE(Z_RG_ACC(IPACK))           ; Z_RG_ACC(:) = 0.
+      ALLOCATE(Z_RS_CMEL(IPACK))          ; Z_RS_CMEL(:) = 0.
+      ALLOCATE(Z_CS_CMEL(IPACK))          ; Z_CS_CMEL(:) = 0.
+      ALLOCATE(Z_TH_CFRZ(IPACK))          ; Z_TH_CFRZ(:) = 0.
+      ALLOCATE(Z_RR_CFRZ(IPACK))          ; Z_RR_CFRZ(:) = 0.
+      ALLOCATE(Z_CR_CFRZ(IPACK))          ; Z_CR_CFRZ(:) = 0.
+      ALLOCATE(Z_RI_CFRZ(IPACK))          ; Z_RI_CFRZ(:) = 0.
+      ALLOCATE(Z_CI_CFRZ(IPACK))          ; Z_CI_CFRZ(:) = 0.
+      ALLOCATE(Z_RI_CIBU(IPACK))          ; Z_RI_CIBU(:) = 0.
+      ALLOCATE(Z_CI_CIBU(IPACK))          ; Z_CI_CIBU(:) = 0.
+      ALLOCATE(Z_RI_RDSF(IPACK))          ; Z_RI_RDSF(:) = 0.
+      ALLOCATE(Z_CI_RDSF(IPACK))          ; Z_CI_RDSF(:) = 0.
+      ALLOCATE(Z_TH_WETG(IPACK))          ; Z_TH_WETG(:) = 0.
+      ALLOCATE(Z_RC_WETG(IPACK))          ; Z_RC_WETG(:) = 0.
+      ALLOCATE(Z_CC_WETG(IPACK))          ; Z_CC_WETG(:) = 0.
+      ALLOCATE(Z_RR_WETG(IPACK))          ; Z_RR_WETG(:) = 0.
+      ALLOCATE(Z_CR_WETG(IPACK))          ; Z_CR_WETG(:) = 0.
+      ALLOCATE(Z_RI_WETG(IPACK))          ; Z_RI_WETG(:) = 0.
+      ALLOCATE(Z_CI_WETG(IPACK))          ; Z_CI_WETG(:) = 0.
+      ALLOCATE(Z_RS_WETG(IPACK))          ; Z_RS_WETG(:) = 0.
+      ALLOCATE(Z_CS_WETG(IPACK))          ; Z_CS_WETG(:) = 0.
+      ALLOCATE(Z_RG_WETG(IPACK))          ; Z_RG_WETG(:) = 0.
+      ALLOCATE(Z_CG_WETG(IPACK))          ; Z_CG_WETG(:) = 0.
+      ALLOCATE(Z_RH_WETG(IPACK))          ; Z_RH_WETG(:) = 0.
+      ALLOCATE(Z_TH_DRYG(IPACK))          ; Z_TH_DRYG(:) = 0.
+      ALLOCATE(Z_RC_DRYG(IPACK))          ; Z_RC_DRYG(:) = 0.
+      ALLOCATE(Z_CC_DRYG(IPACK))          ; Z_CC_DRYG(:) = 0.
+      ALLOCATE(Z_RR_DRYG(IPACK))          ; Z_RR_DRYG(:) = 0.
+      ALLOCATE(Z_CR_DRYG(IPACK))          ; Z_CR_DRYG(:) = 0.
+      ALLOCATE(Z_RI_DRYG(IPACK))          ; Z_RI_DRYG(:) = 0.
+      ALLOCATE(Z_CI_DRYG(IPACK))          ; Z_CI_DRYG(:) = 0.
+      ALLOCATE(Z_RS_DRYG(IPACK))          ; Z_RS_DRYG(:) = 0.
+      ALLOCATE(Z_CS_DRYG(IPACK))          ; Z_CS_DRYG(:) = 0.
+      ALLOCATE(Z_RG_DRYG(IPACK))          ; Z_RG_DRYG(:) = 0.
+      ALLOCATE(Z_RI_HMG(IPACK))           ; Z_RI_HMG(:) = 0.
+      ALLOCATE(Z_CI_HMG(IPACK))           ; Z_CI_HMG(:) = 0.
+      ALLOCATE(Z_RG_HMG(IPACK))           ; Z_RG_HMG(:) = 0.
+      ALLOCATE(Z_TH_GMLT(IPACK))          ; Z_TH_GMLT(:) = 0.
+      ALLOCATE(Z_RR_GMLT(IPACK))          ; Z_RR_GMLT(:) = 0.
+      ALLOCATE(Z_CR_GMLT(IPACK))          ; Z_CR_GMLT(:) = 0.
+      ALLOCATE(Z_CG_GMLT(IPACK))          ; Z_CG_GMLT(:) = 0.
+      ALLOCATE(Z_TH_DEPH(IPACK))          ; Z_TH_DEPH(:) = 0.
+      ALLOCATE(Z_RH_DEPH(IPACK))          ; Z_RH_DEPH(:) = 0.
+      ALLOCATE(Z_TH_WETH(IPACK))          ; Z_TH_WETH(:) = 0.
+      ALLOCATE(Z_RC_WETH(IPACK))          ; Z_RC_WETH(:) = 0.
+      ALLOCATE(Z_CC_WETH(IPACK))          ; Z_CC_WETH(:) = 0.
+      ALLOCATE(Z_RR_WETH(IPACK))          ; Z_RR_WETH(:) = 0.
+      ALLOCATE(Z_CR_WETH(IPACK))          ; Z_CR_WETH(:) = 0.
+      ALLOCATE(Z_RI_WETH(IPACK))          ; Z_RI_WETH(:) = 0.
+      ALLOCATE(Z_CI_WETH(IPACK))          ; Z_CI_WETH(:) = 0.
+      ALLOCATE(Z_RS_WETH(IPACK))          ; Z_RS_WETH(:) = 0.
+      ALLOCATE(Z_CS_WETH(IPACK))          ; Z_CS_WETH(:) = 0.
+      ALLOCATE(Z_RG_WETH(IPACK))          ; Z_RG_WETH(:) = 0.
+      ALLOCATE(Z_CG_WETH(IPACK))          ; Z_CG_WETH(:) = 0.
+      ALLOCATE(Z_RH_WETH(IPACK))          ; Z_RH_WETH(:) = 0.
+      ALLOCATE(Z_RG_COHG(IPACK))          ; Z_RG_COHG(:) = 0.
+      ALLOCATE(Z_CG_COHG(IPACK))          ; Z_CG_COHG(:) = 0.
+      ALLOCATE(Z_TH_HMLT(IPACK))          ; Z_TH_HMLT(:) = 0.
+      ALLOCATE(Z_RR_HMLT(IPACK))          ; Z_RR_HMLT(:) = 0.
+      ALLOCATE(Z_CR_HMLT(IPACK))          ; Z_CR_HMLT(:) = 0.
+      ALLOCATE(Z_CH_HMLT(IPACK))          ; Z_CH_HMLT(:) = 0.
 
-      ALLOCATE(Z_RV_CORR2(IPACK))         ; Z_RV_CORR2 = 0.
-      ALLOCATE(Z_RC_CORR2(IPACK))         ; Z_RC_CORR2 = 0.
-      ALLOCATE(Z_RR_CORR2(IPACK))         ; Z_RR_CORR2 = 0.
-      ALLOCATE(Z_RI_CORR2(IPACK))         ; Z_RI_CORR2 = 0.
-      ALLOCATE(Z_CC_CORR2(IPACK))         ; Z_CC_CORR2 = 0.
-      ALLOCATE(Z_CR_CORR2(IPACK))         ; Z_CR_CORR2 = 0.
-      ALLOCATE(Z_CI_CORR2(IPACK))         ; Z_CI_CORR2 = 0.
+      ALLOCATE(Z_RV_CORR2(IPACK))         ; Z_RV_CORR2(:) = 0.
+      ALLOCATE(Z_RC_CORR2(IPACK))         ; Z_RC_CORR2(:) = 0.
+      ALLOCATE(Z_RR_CORR2(IPACK))         ; Z_RR_CORR2(:) = 0.
+      ALLOCATE(Z_RI_CORR2(IPACK))         ; Z_RI_CORR2(:) = 0.
+      ALLOCATE(Z_CC_CORR2(IPACK))         ; Z_CC_CORR2(:) = 0.
+      ALLOCATE(Z_CR_CORR2(IPACK))         ; Z_CR_CORR2(:) = 0.
+      ALLOCATE(Z_CI_CORR2(IPACK))         ; Z_CI_CORR2(:) = 0.
       !
       !***       4.1 Tendecies computation
       !
@@ -1138,26 +1186,28 @@ DO WHILE(ANY(ZTIME(IIB:IIE,IJB:IJE,IKTB:IKTE)<PTSTEP))
                             Z_TH_DEPS, Z_RS_DEPS,                                   & 
                             Z_TH_DEPI, Z_RI_DEPI,                                   & 
                             Z_RI_CNVS, Z_CI_CNVS,                                   & 
+                            Z_CS_SSC,                                               & 
                             Z_RI_AGGS, Z_CI_AGGS,                                   & 
                             Z_TH_DEPG, Z_RG_DEPG,                                   & 
                             Z_TH_BERFI, Z_RC_BERFI,                                 & 
-                            Z_TH_RIM, Z_RC_RIM, Z_CC_RIM, Z_RS_RIM, Z_RG_RIM,       & 
+                            Z_TH_RIM, Z_RC_RIM, Z_CC_RIM, Z_RS_RIM, Z_CS_RIM, Z_RG_RIM,       & 
                             Z_RI_HMS, Z_CI_HMS, Z_RS_HMS,                           & 
-                            Z_TH_ACC, Z_RR_ACC, Z_CR_ACC, Z_RS_ACC, Z_RG_ACC,       & 
-                            Z_RS_CMEL,                                              & 
+                            Z_TH_ACC, Z_RR_ACC, Z_CR_ACC, Z_RS_ACC, Z_CS_ACC, Z_RG_ACC,       & 
+                            Z_RS_CMEL, Z_CS_CMEL,                                   & 
                             Z_TH_CFRZ, Z_RR_CFRZ, Z_CR_CFRZ, Z_RI_CFRZ, Z_CI_CFRZ,  & 
                             Z_RI_CIBU, Z_CI_CIBU,                                   & 
                             Z_RI_RDSF, Z_CI_RDSF,                                   & 
                             Z_TH_WETG, Z_RC_WETG, Z_CC_WETG, Z_RR_WETG, Z_CR_WETG,  & 
-                            Z_RI_WETG, Z_CI_WETG, Z_RS_WETG, Z_RG_WETG, Z_RH_WETG,  & 
+                            Z_RI_WETG, Z_CI_WETG, Z_RS_WETG, Z_CS_WETG, Z_RG_WETG, Z_CG_WETG, Z_RH_WETG,  & 
                             Z_TH_DRYG, Z_RC_DRYG, Z_CC_DRYG, Z_RR_DRYG, Z_CR_DRYG,  & 
-                            Z_RI_DRYG, Z_CI_DRYG, Z_RS_DRYG, Z_RG_DRYG,             & 
+                            Z_RI_DRYG, Z_CI_DRYG, Z_RS_DRYG, Z_CS_DRYG, Z_RG_DRYG,  & 
                             Z_RI_HMG, Z_CI_HMG, Z_RG_HMG,                           & 
-                            Z_TH_GMLT, Z_RR_GMLT, Z_CR_GMLT,                        & 
-!!!     Z_RC_WETH, Z_CC_WETH, Z_RR_WETH, Z_CR_WETH,  &           ! wet growth of hail (WETH) : rc, Nc, rr, Nr, ri, Ni, rs, rg, rh, th
-!!!     Z_RI_WETH, Z_CI_WETH, Z_RS_WETH, Z_RG_WETH, Z_RH_WETH, & ! wet growth of hail (WETH) : rc, Nc, rr, Nr, ri, Ni, rs, rg, rh, th
-!!!     Z_RG_COHG, &                                             ! conversion of hail into graupel (COHG) : rg, rh
-!!!     Z_RR_HMLT, Z_CR_HMLT                                     ! hail melting (HMLT) : rr, Nr, rh=-rr, th
+                            Z_TH_GMLT, Z_RR_GMLT, Z_CR_GMLT, Z_CG_GMLT,             &
+                            Z_TH_DEPH, Z_RH_DEPH,                                   &
+                            Z_TH_WETH, Z_RC_WETH, Z_CC_WETH, Z_RR_WETH, Z_CR_WETH,  &
+                            Z_RI_WETH, Z_CI_WETH, Z_RS_WETH, Z_CS_WETH, Z_RG_WETH, Z_CG_WETH, Z_RH_WETH, &
+                            Z_RG_COHG, Z_CG_COHG,                                   &
+                            Z_TH_HMLT, Z_RR_HMLT, Z_CR_HMLT, Z_CH_HMLT,             &
                             ZA_TH, ZA_RV, ZA_RC, ZA_CC, ZA_RR, ZA_CR,               &
                             ZA_RI, ZA_CI, ZA_RS, ZA_CS, ZA_RG, ZA_CG, ZA_RH, ZA_CH, &
                             ZEVAP1D,                                                &
@@ -1435,6 +1485,7 @@ DO WHILE(ANY(ZTIME(IIB:IIE,IJB:IJE,IKTB:IKTE)<PTSTEP))
             ZTOT_RI_DEPI(I1(II),I2(II),I3(II)) =   ZTOT_RI_DEPI(I1(II),I2(II),I3(II))   + Z_RI_DEPI(II)  * ZMAXTIME(II)
             ZTOT_RI_CNVS(I1(II),I2(II),I3(II)) =   ZTOT_RI_CNVS(I1(II),I2(II),I3(II))   + Z_RI_CNVS(II)  * ZMAXTIME(II)
             ZTOT_CI_CNVS(I1(II),I2(II),I3(II)) =   ZTOT_CI_CNVS(I1(II),I2(II),I3(II))   + Z_CI_CNVS(II)  * ZMAXTIME(II)
+            ZTOT_CS_SSC(I1(II),I2(II),I3(II))  =   ZTOT_CS_SSC(I1(II),I2(II),I3(II))    + Z_CS_SSC(II)   * ZMAXTIME(II)
             ZTOT_RI_AGGS(I1(II),I2(II),I3(II)) =   ZTOT_RI_AGGS(I1(II),I2(II),I3(II))   + Z_RI_AGGS(II)  * ZMAXTIME(II)
             ZTOT_CI_AGGS(I1(II),I2(II),I3(II)) =   ZTOT_CI_AGGS(I1(II),I2(II),I3(II))   + Z_CI_AGGS(II)  * ZMAXTIME(II)
             ZTOT_TH_DEPG(I1(II),I2(II),I3(II)) =   ZTOT_TH_DEPG(I1(II),I2(II),I3(II))   + Z_TH_DEPG(II)  * ZMAXTIME(II)
@@ -1445,6 +1496,7 @@ DO WHILE(ANY(ZTIME(IIB:IIE,IJB:IJE,IKTB:IKTE)<PTSTEP))
             ZTOT_RC_RIM(I1(II),I2(II),I3(II))  =   ZTOT_RC_RIM(I1(II),I2(II),I3(II))    + Z_RC_RIM(II)   * ZMAXTIME(II)
             ZTOT_CC_RIM(I1(II),I2(II),I3(II))  =   ZTOT_CC_RIM(I1(II),I2(II),I3(II))    + Z_CC_RIM(II)   * ZMAXTIME(II)
             ZTOT_RS_RIM(I1(II),I2(II),I3(II))  =   ZTOT_RS_RIM(I1(II),I2(II),I3(II))    + Z_RS_RIM(II)   * ZMAXTIME(II)
+            ZTOT_CS_RIM(I1(II),I2(II),I3(II))  =   ZTOT_CS_RIM(I1(II),I2(II),I3(II))    + Z_CS_RIM(II)   * ZMAXTIME(II)
             ZTOT_RG_RIM(I1(II),I2(II),I3(II))  =   ZTOT_RG_RIM(I1(II),I2(II),I3(II))    + Z_RG_RIM(II)   * ZMAXTIME(II)
             ZTOT_RI_HMS(I1(II),I2(II),I3(II))  =   ZTOT_RI_HMS(I1(II),I2(II),I3(II))    + Z_RI_HMS(II)   * ZMAXTIME(II)
             ZTOT_CI_HMS(I1(II),I2(II),I3(II))  =   ZTOT_CI_HMS(I1(II),I2(II),I3(II))    + Z_CI_HMS(II)   * ZMAXTIME(II)
@@ -1453,7 +1505,9 @@ DO WHILE(ANY(ZTIME(IIB:IIE,IJB:IJE,IKTB:IKTE)<PTSTEP))
             ZTOT_RR_ACC(I1(II),I2(II),I3(II))  =   ZTOT_RR_ACC(I1(II),I2(II),I3(II))    + Z_RR_ACC(II)   * ZMAXTIME(II)
             ZTOT_CR_ACC(I1(II),I2(II),I3(II))  =   ZTOT_CR_ACC(I1(II),I2(II),I3(II))    + Z_CR_ACC(II)   * ZMAXTIME(II)
             ZTOT_RS_ACC(I1(II),I2(II),I3(II))  =   ZTOT_RS_ACC(I1(II),I2(II),I3(II))    + Z_RS_ACC(II)   * ZMAXTIME(II)
+            ZTOT_CS_ACC(I1(II),I2(II),I3(II))  =   ZTOT_CS_ACC(I1(II),I2(II),I3(II))    + Z_CS_ACC(II)   * ZMAXTIME(II)
             ZTOT_RG_ACC(I1(II),I2(II),I3(II))  =   ZTOT_RG_ACC(I1(II),I2(II),I3(II))    + Z_RG_ACC(II)   * ZMAXTIME(II)
+            ZTOT_CS_CMEL(I1(II),I2(II),I3(II)) =   ZTOT_CS_CMEL(I1(II),I2(II),I3(II))   + Z_CS_CMEL(II)  * ZMAXTIME(II)
             ZTOT_RS_CMEL(I1(II),I2(II),I3(II)) =   ZTOT_RS_CMEL(I1(II),I2(II),I3(II))   + Z_RS_CMEL(II)  * ZMAXTIME(II)
             ZTOT_TH_CFRZ(I1(II),I2(II),I3(II)) =   ZTOT_TH_CFRZ(I1(II),I2(II),I3(II))   + Z_TH_CFRZ(II)  * ZMAXTIME(II)
             ZTOT_RR_CFRZ(I1(II),I2(II),I3(II)) =   ZTOT_RR_CFRZ(I1(II),I2(II),I3(II))   + Z_RR_CFRZ(II)  * ZMAXTIME(II)
@@ -1472,7 +1526,9 @@ DO WHILE(ANY(ZTIME(IIB:IIE,IJB:IJE,IKTB:IKTE)<PTSTEP))
             ZTOT_RI_WETG(I1(II),I2(II),I3(II)) =   ZTOT_RI_WETG(I1(II),I2(II),I3(II))   + Z_RI_WETG(II)  * ZMAXTIME(II)
             ZTOT_CI_WETG(I1(II),I2(II),I3(II)) =   ZTOT_CI_WETG(I1(II),I2(II),I3(II))   + Z_CI_WETG(II)  * ZMAXTIME(II)
             ZTOT_RS_WETG(I1(II),I2(II),I3(II)) =   ZTOT_RS_WETG(I1(II),I2(II),I3(II))   + Z_RS_WETG(II)  * ZMAXTIME(II)
+            ZTOT_CS_WETG(I1(II),I2(II),I3(II)) =   ZTOT_CS_WETG(I1(II),I2(II),I3(II))   + Z_CS_WETG(II)  * ZMAXTIME(II)
             ZTOT_RG_WETG(I1(II),I2(II),I3(II)) =   ZTOT_RG_WETG(I1(II),I2(II),I3(II))   + Z_RG_WETG(II)  * ZMAXTIME(II)
+            ZTOT_CG_WETG(I1(II),I2(II),I3(II)) =   ZTOT_CG_WETG(I1(II),I2(II),I3(II))   + Z_CG_WETG(II)  * ZMAXTIME(II)
             ZTOT_RH_WETG(I1(II),I2(II),I3(II)) =   ZTOT_RH_WETG(I1(II),I2(II),I3(II))   + Z_RH_WETG(II)  * ZMAXTIME(II)
             ZTOT_TH_DRYG(I1(II),I2(II),I3(II)) =   ZTOT_TH_DRYG(I1(II),I2(II),I3(II))   + Z_TH_DRYG(II)  * ZMAXTIME(II)
             ZTOT_RC_DRYG(I1(II),I2(II),I3(II)) =   ZTOT_RC_DRYG(I1(II),I2(II),I3(II))   + Z_RC_DRYG(II)  * ZMAXTIME(II)
@@ -1482,6 +1538,7 @@ DO WHILE(ANY(ZTIME(IIB:IIE,IJB:IJE,IKTB:IKTE)<PTSTEP))
             ZTOT_RI_DRYG(I1(II),I2(II),I3(II)) =   ZTOT_RI_DRYG(I1(II),I2(II),I3(II))   + Z_RI_DRYG(II)  * ZMAXTIME(II)
             ZTOT_CI_DRYG(I1(II),I2(II),I3(II)) =   ZTOT_CI_DRYG(I1(II),I2(II),I3(II))   + Z_CI_DRYG(II)  * ZMAXTIME(II)
             ZTOT_RS_DRYG(I1(II),I2(II),I3(II)) =   ZTOT_RS_DRYG(I1(II),I2(II),I3(II))   + Z_RS_DRYG(II)  * ZMAXTIME(II)
+            ZTOT_CS_DRYG(I1(II),I2(II),I3(II)) =   ZTOT_CS_DRYG(I1(II),I2(II),I3(II))   + Z_CS_DRYG(II)  * ZMAXTIME(II)
             ZTOT_RG_DRYG(I1(II),I2(II),I3(II)) =   ZTOT_RG_DRYG(I1(II),I2(II),I3(II))   + Z_RG_DRYG(II)  * ZMAXTIME(II)
             ZTOT_RI_HMG(I1(II),I2(II),I3(II))  =   ZTOT_RI_HMG(I1(II),I2(II),I3(II))    + Z_RI_HMG(II)   * ZMAXTIME(II)
             ZTOT_CI_HMG(I1(II),I2(II),I3(II))  =   ZTOT_CI_HMG(I1(II),I2(II),I3(II))    + Z_CI_HMG(II)   * ZMAXTIME(II)
@@ -1489,18 +1546,27 @@ DO WHILE(ANY(ZTIME(IIB:IIE,IJB:IJE,IKTB:IKTE)<PTSTEP))
             ZTOT_TH_GMLT(I1(II),I2(II),I3(II)) =   ZTOT_TH_GMLT(I1(II),I2(II),I3(II))   + Z_TH_GMLT(II)  * ZMAXTIME(II)
             ZTOT_RR_GMLT(I1(II),I2(II),I3(II)) =   ZTOT_RR_GMLT(I1(II),I2(II),I3(II))   + Z_RR_GMLT(II)  * ZMAXTIME(II)
             ZTOT_CR_GMLT(I1(II),I2(II),I3(II)) =   ZTOT_CR_GMLT(I1(II),I2(II),I3(II))   + Z_CR_GMLT(II)  * ZMAXTIME(II)
-!!$            ZTOT_RC_WETH(I1(II),I2(II),I3(II)) =   ZTOT_RC_WETH(I1(II),I2(II),I3(II))   + Z_RC_WETH(II)  * ZMAXTIME(II)
-!!$            ZTOT_CC_WETH(I1(II),I2(II),I3(II)) =   ZTOT_CC_WETH(I1(II),I2(II),I3(II))   + Z_CC_WETH(II)  * ZMAXTIME(II)
-!!$            ZTOT_RR_WETH(I1(II),I2(II),I3(II)) =   ZTOT_RR_WETH(I1(II),I2(II),I3(II))   + Z_RR_WETH(II)  * ZMAXTIME(II)
-!!$            ZTOT_CR_WETH(I1(II),I2(II),I3(II)) =   ZTOT_CR_WETH(I1(II),I2(II),I3(II))   + Z_CR_WETH(II)  * ZMAXTIME(II)
-!!$            ZTOT_RI_WETH(I1(II),I2(II),I3(II)) =   ZTOT_RI_WETH(I1(II),I2(II),I3(II))   + Z_RI_WETH(II)  * ZMAXTIME(II)
-!!$            ZTOT_CI_WETH(I1(II),I2(II),I3(II)) =   ZTOT_CI_WETH(I1(II),I2(II),I3(II))   + Z_CI_WETH(II)  * ZMAXTIME(II)
-!!$            ZTOT_RS_WETH(I1(II),I2(II),I3(II)) =   ZTOT_RS_WETH(I1(II),I2(II),I3(II))   + Z_RS_WETH(II)  * ZMAXTIME(II)
-!!$            ZTOT_RG_WETH(I1(II),I2(II),I3(II)) =   ZTOT_RG_WETH(I1(II),I2(II),I3(II))   + Z_RG_WETH(II)  * ZMAXTIME(II)
-!!$            ZTOT_RH_WETH(I1(II),I2(II),I3(II)) =   ZTOT_RH_WETH(I1(II),I2(II),I3(II))   + Z_RH_WETH(II)  * ZMAXTIME(II)
-!!$            ZTOT_RG_COHG(I1(II),I2(II),I3(II)) =   ZTOT_RG_COHG(I1(II),I2(II),I3(II))   + Z_RG_COHG(II)  * ZMAXTIME(II)
-!!$            ZTOT_RR_HMLT(I1(II),I2(II),I3(II)) =   ZTOT_RR_HMLT(I1(II),I2(II),I3(II))   + Z_RR_HMLT(II)  * ZMAXTIME(II)
-!!$            ZTOT_CR_HMLT(I1(II),I2(II),I3(II)) =   ZTOT_CR_HMLT(I1(II),I2(II),I3(II))   + Z_CR_HMLT(II)  * ZMAXTIME(II)
+            ZTOT_CG_GMLT(I1(II),I2(II),I3(II)) =   ZTOT_CG_GMLT(I1(II),I2(II),I3(II))   + Z_CG_GMLT(II)  * ZMAXTIME(II)
+            ZTOT_TH_DEPH(I1(II),I2(II),I3(II)) =   ZTOT_TH_DEPH(I1(II),I2(II),I3(II))   + Z_TH_DEPH(II)  * ZMAXTIME(II)
+            ZTOT_RH_DEPH(I1(II),I2(II),I3(II)) =   ZTOT_RH_DEPH(I1(II),I2(II),I3(II))   + Z_RH_DEPH(II)  * ZMAXTIME(II)
+            ZTOT_TH_WETH(I1(II),I2(II),I3(II)) =   ZTOT_TH_WETH(I1(II),I2(II),I3(II))   + Z_TH_WETH(II)  * ZMAXTIME(II)
+            ZTOT_RC_WETH(I1(II),I2(II),I3(II)) =   ZTOT_RC_WETH(I1(II),I2(II),I3(II))   + Z_RC_WETH(II)  * ZMAXTIME(II)
+            ZTOT_CC_WETH(I1(II),I2(II),I3(II)) =   ZTOT_CC_WETH(I1(II),I2(II),I3(II))   + Z_CC_WETH(II)  * ZMAXTIME(II)
+            ZTOT_RR_WETH(I1(II),I2(II),I3(II)) =   ZTOT_RR_WETH(I1(II),I2(II),I3(II))   + Z_RR_WETH(II)  * ZMAXTIME(II)
+            ZTOT_CR_WETH(I1(II),I2(II),I3(II)) =   ZTOT_CR_WETH(I1(II),I2(II),I3(II))   + Z_CR_WETH(II)  * ZMAXTIME(II)
+            ZTOT_RI_WETH(I1(II),I2(II),I3(II)) =   ZTOT_RI_WETH(I1(II),I2(II),I3(II))   + Z_RI_WETH(II)  * ZMAXTIME(II)
+            ZTOT_CI_WETH(I1(II),I2(II),I3(II)) =   ZTOT_CI_WETH(I1(II),I2(II),I3(II))   + Z_CI_WETH(II)  * ZMAXTIME(II)
+            ZTOT_RS_WETH(I1(II),I2(II),I3(II)) =   ZTOT_RS_WETH(I1(II),I2(II),I3(II))   + Z_RS_WETH(II)  * ZMAXTIME(II)
+            ZTOT_CS_WETH(I1(II),I2(II),I3(II)) =   ZTOT_CS_WETH(I1(II),I2(II),I3(II))   + Z_CS_WETH(II)  * ZMAXTIME(II)
+            ZTOT_RG_WETH(I1(II),I2(II),I3(II)) =   ZTOT_RG_WETH(I1(II),I2(II),I3(II))   + Z_RG_WETH(II)  * ZMAXTIME(II)
+            ZTOT_CG_WETH(I1(II),I2(II),I3(II)) =   ZTOT_CG_WETH(I1(II),I2(II),I3(II))   + Z_CG_WETH(II)  * ZMAXTIME(II)
+            ZTOT_RH_WETH(I1(II),I2(II),I3(II)) =   ZTOT_RH_WETH(I1(II),I2(II),I3(II))   + Z_RH_WETH(II)  * ZMAXTIME(II)
+            ZTOT_RG_COHG(I1(II),I2(II),I3(II)) =   ZTOT_RG_COHG(I1(II),I2(II),I3(II))   + Z_RG_COHG(II)  * ZMAXTIME(II)
+            ZTOT_CG_COHG(I1(II),I2(II),I3(II)) =   ZTOT_CG_COHG(I1(II),I2(II),I3(II))   + Z_CG_COHG(II)  * ZMAXTIME(II)
+            ZTOT_TH_HMLT(I1(II),I2(II),I3(II)) =   ZTOT_RR_HMLT(I1(II),I2(II),I3(II))   + Z_RR_HMLT(II)  * ZMAXTIME(II)
+            ZTOT_RR_HMLT(I1(II),I2(II),I3(II)) =   ZTOT_RR_HMLT(I1(II),I2(II),I3(II))   + Z_RR_HMLT(II)  * ZMAXTIME(II)
+            ZTOT_CR_HMLT(I1(II),I2(II),I3(II)) =   ZTOT_CR_HMLT(I1(II),I2(II),I3(II))   + Z_CR_HMLT(II)  * ZMAXTIME(II)
+            ZTOT_CH_HMLT(I1(II),I2(II),I3(II)) =   ZTOT_CH_HMLT(I1(II),I2(II),I3(II))   + Z_CH_HMLT(II)  * ZMAXTIME(II)
 
           !Correction term
           ZTOT_RV_CORR2(I1(II),I2(II),I3(II)) =   ZTOT_RV_CORR2(I1(II),I2(II),I3(II)) + Z_RV_CORR2(II)
@@ -1615,6 +1681,7 @@ DO WHILE(ANY(ZTIME(IIB:IIE,IJB:IJE,IKTB:IKTE)<PTSTEP))
       DEALLOCATE(Z_RI_DEPI)
       DEALLOCATE(Z_RI_CNVS)
       DEALLOCATE(Z_CI_CNVS)
+      DEALLOCATE(Z_CS_SSC) 
       DEALLOCATE(Z_RI_AGGS) 
       DEALLOCATE(Z_CI_AGGS) 
       DEALLOCATE(Z_TH_DEPG) 
@@ -1625,6 +1692,7 @@ DO WHILE(ANY(ZTIME(IIB:IIE,IJB:IJE,IKTB:IKTE)<PTSTEP))
       DEALLOCATE(Z_RC_RIM) 
       DEALLOCATE(Z_CC_RIM)  
       DEALLOCATE(Z_RS_RIM) 
+      DEALLOCATE(Z_CS_RIM) 
       DEALLOCATE(Z_RG_RIM) 
       DEALLOCATE(Z_RI_HMS) 
       DEALLOCATE(Z_CI_HMS) 
@@ -1634,6 +1702,7 @@ DO WHILE(ANY(ZTIME(IIB:IIE,IJB:IJE,IKTB:IKTE)<PTSTEP))
       DEALLOCATE(Z_CR_ACC) 
       DEALLOCATE(Z_RS_ACC) 
       DEALLOCATE(Z_RG_ACC)  
+      DEALLOCATE(Z_CS_CMEL) 
       DEALLOCATE(Z_RS_CMEL) 
       DEALLOCATE(Z_TH_CFRZ)
       DEALLOCATE(Z_RR_CFRZ)
@@ -1652,7 +1721,9 @@ DO WHILE(ANY(ZTIME(IIB:IIE,IJB:IJE,IKTB:IKTE)<PTSTEP))
       DEALLOCATE(Z_RI_WETG)
       DEALLOCATE(Z_CI_WETG)
       DEALLOCATE(Z_RS_WETG)
+      DEALLOCATE(Z_CS_WETG)
       DEALLOCATE(Z_RG_WETG)
+      DEALLOCATE(Z_CG_WETG)
       DEALLOCATE(Z_RH_WETG) 
       DEALLOCATE(Z_TH_DRYG) 
       DEALLOCATE(Z_RC_DRYG) 
@@ -1662,6 +1733,7 @@ DO WHILE(ANY(ZTIME(IIB:IIE,IJB:IJE,IKTB:IKTE)<PTSTEP))
       DEALLOCATE(Z_RI_DRYG)
       DEALLOCATE(Z_CI_DRYG)
       DEALLOCATE(Z_RS_DRYG) 
+      DEALLOCATE(Z_CS_DRYG) 
       DEALLOCATE(Z_RG_DRYG)
       DEALLOCATE(Z_RI_HMG) 
       DEALLOCATE(Z_CI_HMG) 
@@ -1669,6 +1741,27 @@ DO WHILE(ANY(ZTIME(IIB:IIE,IJB:IJE,IKTB:IKTE)<PTSTEP))
       DEALLOCATE(Z_TH_GMLT)
       DEALLOCATE(Z_RR_GMLT)
       DEALLOCATE(Z_CR_GMLT)
+      DEALLOCATE(Z_CG_GMLT)
+      DEALLOCATE(Z_TH_DEPH) 
+      DEALLOCATE(Z_RH_DEPH) 
+      DEALLOCATE(Z_TH_WETH)
+      DEALLOCATE(Z_RC_WETH)
+      DEALLOCATE(Z_CC_WETH)
+      DEALLOCATE(Z_RR_WETH) 
+      DEALLOCATE(Z_CR_WETH) 
+      DEALLOCATE(Z_RI_WETH)
+      DEALLOCATE(Z_CI_WETH)
+      DEALLOCATE(Z_RS_WETH)
+      DEALLOCATE(Z_CS_WETH)
+      DEALLOCATE(Z_RG_WETH)
+      DEALLOCATE(Z_CG_WETH)
+      DEALLOCATE(Z_RH_WETH) 
+      DEALLOCATE(Z_RG_COHG)
+      DEALLOCATE(Z_CG_COHG)
+      DEALLOCATE(Z_TH_HMLT) 
+      DEALLOCATE(Z_RR_HMLT) 
+      DEALLOCATE(Z_CR_HMLT) 
+      DEALLOCATE(Z_CH_HMLT) 
 
       DEALLOCATE(Z_RV_CORR2)
       DEALLOCATE(Z_RC_CORR2)
@@ -1735,6 +1828,9 @@ if ( lbu_enable ) then
     call Budget_store_add( tbudgets(NBUDGET_TH), 'WETG',  ztot_th_wetg (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(NBUDGET_TH), 'DRYG',  ztot_th_dryg (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(NBUDGET_TH), 'GMLT',  ztot_th_gmlt (:, :, :) * zrhodjontstep(:, :, :) )
+    call Budget_store_add( tbudgets(NBUDGET_TH), 'DEPH',  ztot_th_deph (:, :, :) * zrhodjontstep(:, :, :) )
+    call Budget_store_add( tbudgets(NBUDGET_TH), 'WETH',  ztot_th_weth (:, :, :) * zrhodjontstep(:, :, :) )
+    call Budget_store_add( tbudgets(NBUDGET_TH), 'HMLT',  ztot_th_hmlt (:, :, :) * zrhodjontstep(:, :, :) )
   end if
 
   if ( lbudget_rv ) then
@@ -1743,6 +1839,7 @@ if ( lbu_enable ) then
     call Budget_store_add( tbudgets(NBUDGET_RV), 'DEPI', -ztot_ri_depi (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(NBUDGET_RV), 'DEPG', -ztot_rg_depg (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(NBUDGET_RV), 'CORR2', ztot_rv_corr2(:, :, :) * zrhodjontstep(:, :, :) )
+    call Budget_store_add( tbudgets(NBUDGET_RV), 'DEPH', -ztot_rh_deph (:, :, :) * zrhodjontstep(:, :, :) )
   end if
 
   if ( lbudget_rc ) then
@@ -1757,6 +1854,7 @@ if ( lbu_enable ) then
     call Budget_store_add( tbudgets(NBUDGET_RC), 'DRYG',  ztot_rc_dryg (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(NBUDGET_RC), 'CVRC', -ztot_rr_cvrc (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(NBUDGET_RC), 'CORR2', ztot_rc_corr2(:, :, :) * zrhodjontstep(:, :, :) )
+    call Budget_store_add( tbudgets(NBUDGET_RC), 'WETH',  ztot_rc_weth(:, :, :)  * zrhodjontstep(:, :, :) )
   end if
 
   if ( lbudget_rr ) then
@@ -1770,7 +1868,9 @@ if ( lbu_enable ) then
     call Budget_store_add( tbudgets(NBUDGET_RR), 'DRYG',  ztot_rr_dryg(:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(NBUDGET_RR), 'GMLT',  ztot_rr_gmlt(:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(NBUDGET_RR), 'CVRC',  ztot_rr_cvrc(:, :, :) * zrhodjontstep(:, :, :) )
-    call Budget_store_add( tbudgets(NBUDGET_RR), 'CORR2', ztot_rr_corr2(:, :, :) * zrhodjontstep(:, :, :) )
+    call Budget_store_add( tbudgets(NBUDGET_RR), 'CORR2', ztot_rr_corr2(:, :, :)* zrhodjontstep(:, :, :) )
+    call Budget_store_add( tbudgets(NBUDGET_RR), 'WETH',  ztot_rr_weth(:, :, :) * zrhodjontstep(:, :, :) )
+    call Budget_store_add( tbudgets(NBUDGET_RR), 'HMLT',  ztot_rr_hmlt(:, :, :) * zrhodjontstep(:, :, :) )
   end if
 
   if ( lbudget_ri ) then
@@ -1789,6 +1889,7 @@ if ( lbu_enable ) then
     call Budget_store_add( tbudgets(NBUDGET_RI), 'DRYG',   ztot_ri_dryg (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(NBUDGET_RI), 'HMG',    ztot_ri_hmg  (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(NBUDGET_RI), 'CORR2',  ztot_ri_corr2(:, :, :) * zrhodjontstep(:, :, :) )
+    call Budget_store_add( tbudgets(NBUDGET_RI), 'WETH',   ztot_ri_weth (:, :, :) * zrhodjontstep(:, :, :) )
   end if
 
   if ( lbudget_rs ) then
@@ -1803,6 +1904,7 @@ if ( lbu_enable ) then
     call Budget_store_add( tbudgets(NBUDGET_RS), 'CIBU', -ztot_ri_cibu(:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(NBUDGET_RS), 'WETG',  ztot_rs_wetg(:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(NBUDGET_RS), 'DRYG',  ztot_rs_dryg(:, :, :) * zrhodjontstep(:, :, :) )
+    call Budget_store_add( tbudgets(NBUDGET_RS), 'WETH',  ztot_rs_weth(:, :, :) * zrhodjontstep(:, :, :) )
   end if
 
   if ( lbudget_rg ) then
@@ -1818,10 +1920,16 @@ if ( lbu_enable ) then
     call Budget_store_add( tbudgets(NBUDGET_RG), 'DRYG',  ztot_rg_dryg(:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(NBUDGET_RG), 'HMG',   ztot_rg_hmg (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(NBUDGET_RG), 'GMLT', -ztot_rr_gmlt(:, :, :) * zrhodjontstep(:, :, :) )
+    call Budget_store_add( tbudgets(NBUDGET_RG), 'WETH',  ztot_rg_weth(:, :, :) * zrhodjontstep(:, :, :) )
+    call Budget_store_add( tbudgets(NBUDGET_RG), 'COHG',  ztot_rg_cohg(:, :, :) * zrhodjontstep(:, :, :) )
   end if
 
   if ( lbudget_rh ) then
-    call Budget_store_add( tbudgets(NBUDGET_RH), 'WETG', ztot_rh_wetg(:, :, :) * zrhodjontstep(:, :, :) )
+    call Budget_store_add( tbudgets(NBUDGET_RH), 'WETG',  ztot_rh_wetg(:, :, :) * zrhodjontstep(:, :, :) )
+    call Budget_store_add( tbudgets(NBUDGET_RH), 'DEPH',  ztot_rh_deph(:, :, :) * zrhodjontstep(:, :, :) )
+    call Budget_store_add( tbudgets(NBUDGET_RH), 'WETH',  ztot_rh_weth(:, :, :) * zrhodjontstep(:, :, :) )
+    call Budget_store_add( tbudgets(NBUDGET_RH), 'COHG', -ztot_rg_cohg(:, :, :) * zrhodjontstep(:, :, :) )
+    call Budget_store_add( tbudgets(NBUDGET_RH), 'HMLT', -ztot_rr_hmlt(:, :, :) * zrhodjontstep(:, :, :) )
   end if
 
   if ( lbudget_sv ) then
@@ -1840,6 +1948,7 @@ if ( lbu_enable ) then
     call Budget_store_add( tbudgets(idx), 'DRYG',  ztot_cc_dryg (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(idx), 'CVRC', -ztot_cr_cvrc (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(idx), 'CORR2', ztot_cc_corr2(:, :, :) * zrhodjontstep(:, :, :) )
+    call Budget_store_add( tbudgets(idx), 'WETH',  ztot_cc_weth (:, :, :) * zrhodjontstep(:, :, :) )
     !
     ! Rain drops
     !
@@ -1856,6 +1965,8 @@ if ( lbu_enable ) then
     call Budget_store_add( tbudgets(idx), 'GMLT',  ztot_cr_gmlt(:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(idx), 'CVRC',  ztot_cr_cvrc(:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(idx), 'CORR2', ztot_cr_corr2(:, :, :) * zrhodjontstep(:, :, :) )
+    call Budget_store_add( tbudgets(idx), 'WETH',  ztot_cr_weth(:, :, :) * zrhodjontstep(:, :, :) )
+    call Budget_store_add( tbudgets(idx), 'HMLT',  ztot_cr_hmlt(:, :, :) * zrhodjontstep(:, :, :) )
     !
     ! Ice crystals
     !
@@ -1873,6 +1984,40 @@ if ( lbu_enable ) then
     call Budget_store_add( tbudgets(idx), 'DRYG',   ztot_ci_dryg (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(idx), 'HMG',    ztot_ci_hmg  (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(idx), 'CORR2',  ztot_ci_corr2(:, :, :) * zrhodjontstep(:, :, :) )
+    call Budget_store_add( tbudgets(idx), 'WETH',   ztot_ci_weth (:, :, :) * zrhodjontstep(:, :, :) )
+    !
+    ! Snow
+    !
+    idx = NBUDGET_SV1 - 1 + nsv_lima_ns
+    call Budget_store_add( tbudgets(idx), 'CNVI',  -ztot_ci_cnvi(:, :, :) * zrhodjontstep(:, :, :) )
+    call Budget_store_add( tbudgets(idx), 'CNVS',  -ztot_ci_cnvs(:, :, :) * zrhodjontstep(:, :, :) )
+    call Budget_store_add( tbudgets(idx), 'RIM',    ztot_cs_rim(:, :, :)  * zrhodjontstep(:, :, :) )
+    call Budget_store_add( tbudgets(idx), 'ACC',    ztot_cs_acc(:, :, :)  * zrhodjontstep(:, :, :) )
+    call Budget_store_add( tbudgets(idx), 'CMEL',   ztot_cs_cmel(:, :, :) * zrhodjontstep(:, :, :) )
+    call Budget_store_add( tbudgets(idx), 'SSC',    ztot_cs_ssc(:, :, :)  * zrhodjontstep(:, :, :) )
+    call Budget_store_add( tbudgets(idx), 'WETG',   ztot_cs_wetg(:, :, :) * zrhodjontstep(:, :, :) )
+    call Budget_store_add( tbudgets(idx), 'DRYG',   ztot_cs_dryg(:, :, :) * zrhodjontstep(:, :, :) )
+    call Budget_store_add( tbudgets(idx), 'WETH',   ztot_cs_weth(:, :, :) * zrhodjontstep(:, :, :) )
+    !
+    ! Graupel
+    !
+    idx = NBUDGET_SV1 - 1 + nsv_lima_ng
+    call Budget_store_add( tbudgets(idx), 'RIM',   -ztot_cs_rim(:, :, :)  * zrhodjontstep(:, :, :) )
+    call Budget_store_add( tbudgets(idx), 'ACC',   -ztot_cs_acc(:, :, :)  * zrhodjontstep(:, :, :) )
+    call Budget_store_add( tbudgets(idx), 'CMEL',  -ztot_cs_cmel(:, :, :) * zrhodjontstep(:, :, :) )
+    call Budget_store_add( tbudgets(idx), 'CFRZ',  -ztot_cr_cfrz(:, :, :) * zrhodjontstep(:, :, :) )
+    call Budget_store_add( tbudgets(idx), 'WETG',   ztot_cg_wetg(:, :, :) * zrhodjontstep(:, :, :) )
+    call Budget_store_add( tbudgets(idx), 'GMLT',   ztot_cg_gmlt(:, :, :) * zrhodjontstep(:, :, :) )
+    call Budget_store_add( tbudgets(idx), 'WETH',   ztot_cg_weth(:, :, :) * zrhodjontstep(:, :, :) )
+    call Budget_store_add( tbudgets(idx), 'COHG',   ztot_cg_cohg(:, :, :) * zrhodjontstep(:, :, :) )
+    !
+    ! Hail
+    !
+    idx = NBUDGET_SV1 - 1 + nsv_lima_nh
+    call Budget_store_add( tbudgets(idx), 'WETG',  -ztot_cg_wetg(:, :, :) * zrhodjontstep(:, :, :) )
+    call Budget_store_add( tbudgets(idx), 'COHG',  -ztot_cg_cohg(:, :, :) * zrhodjontstep(:, :, :) )
+    call Budget_store_add( tbudgets(idx), 'HMLT',   ztot_ch_hmlt(:, :, :) * zrhodjontstep(:, :, :) )
+
 
     do ii = 1, nmod_ifn
       idx = NBUDGET_SV1 - 1 + nsv_lima_ifn_nucl + ii - 1

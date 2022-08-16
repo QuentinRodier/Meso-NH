@@ -8,11 +8,11 @@
 !      #################################
 !
 INTERFACE
-   SUBROUTINE LIMA_DROPLETS_RIMING_SNOW (PTSTEP,  LDCOMPUTE,                               &
-                                         PRHODREF, PT,                                     &
-                                         PRCT, PCCT, PRST, PLBDC, PLBDS, PLVFACT, PLSFACT, &
-                                         P_TH_RIM, P_RC_RIM, P_CC_RIM, P_RS_RIM, P_RG_RIM, &
-                                         P_RI_HMS, P_CI_HMS, P_RS_HMS                      )
+   SUBROUTINE LIMA_DROPLETS_RIMING_SNOW (PTSTEP,  LDCOMPUTE,                                               &
+                                         PRHODREF, PT,                                                     &
+                                         PRCT, PCCT, PRST, PCST, PLBDC, PLBDS, PLVFACT, PLSFACT,           &
+                                         P_TH_RIM, P_RC_RIM, P_CC_RIM, P_RS_RIM, P_CS_RIM, P_RG_RIM,       &
+                                         P_RI_HMS, P_CI_HMS, P_RS_HMS                                      )
 !
 REAL,                 INTENT(IN)    :: PTSTEP 
 LOGICAL, DIMENSION(:),INTENT(IN)    :: LDCOMPUTE
@@ -20,9 +20,10 @@ LOGICAL, DIMENSION(:),INTENT(IN)    :: LDCOMPUTE
 REAL, DIMENSION(:),   INTENT(IN)    :: PRHODREF    ! 
 REAL, DIMENSION(:),   INTENT(IN)    :: PT   ! 
 !
-REAL, DIMENSION(:),   INTENT(IN)    :: PRCT    ! Cloud water C. at t
+REAL, DIMENSION(:),   INTENT(IN)    :: PRCT    ! Cloud water mr at t
 REAL, DIMENSION(:),   INTENT(IN)    :: PCCT    ! Cloud water C. at t
-REAL, DIMENSION(:),   INTENT(IN)    :: PRST    ! Cloud water C. at t
+REAL, DIMENSION(:),   INTENT(IN)    :: PRST    ! Snow mr at t
+REAL, DIMENSION(:),   INTENT(IN)    :: PCST    ! Snow C. at t
 REAL, DIMENSION(:),   INTENT(IN)    :: PLBDC   ! 
 REAL, DIMENSION(:),   INTENT(IN)    :: PLBDS   ! 
 REAL, DIMENSION(:),   INTENT(IN)    :: PLVFACT ! 
@@ -32,6 +33,7 @@ REAL, DIMENSION(:),   INTENT(OUT)   :: P_TH_RIM
 REAL, DIMENSION(:),   INTENT(OUT)   :: P_RC_RIM
 REAL, DIMENSION(:),   INTENT(OUT)   :: P_CC_RIM
 REAL, DIMENSION(:),   INTENT(OUT)   :: P_RS_RIM
+REAL, DIMENSION(:),   INTENT(OUT)   :: P_CS_RIM
 REAL, DIMENSION(:),   INTENT(OUT)   :: P_RG_RIM
 !
 REAL, DIMENSION(:),   INTENT(OUT)   :: P_RI_HMS
@@ -43,11 +45,11 @@ END INTERFACE
 END MODULE MODI_LIMA_DROPLETS_RIMING_SNOW
 !
 !     #########################################################################################
-      SUBROUTINE LIMA_DROPLETS_RIMING_SNOW (PTSTEP, LDCOMPUTE,                                &
-                                            PRHODREF, PT,                                     &
-                                            PRCT, PCCT, PRST, PLBDC, PLBDS, PLVFACT, PLSFACT, &
-                                            P_TH_RIM, P_RC_RIM, P_CC_RIM, P_RS_RIM, P_RG_RIM, &
-                                            P_RI_HMS, P_CI_HMS, P_RS_HMS                      )
+      SUBROUTINE LIMA_DROPLETS_RIMING_SNOW (PTSTEP, LDCOMPUTE,                                                &
+                                            PRHODREF, PT,                                                     &
+                                            PRCT, PCCT, PRST, PCST, PLBDC, PLBDS, PLVFACT, PLSFACT,           &
+                                            P_TH_RIM, P_RC_RIM, P_CC_RIM, P_RS_RIM, P_CS_RIM, P_RG_RIM,       &
+                                            P_RI_HMS, P_CI_HMS, P_RS_HMS                                      )
 !     #########################################################################################
 !
 !!    PURPOSE
@@ -90,9 +92,10 @@ LOGICAL, DIMENSION(:),INTENT(IN)    :: LDCOMPUTE
 REAL, DIMENSION(:),   INTENT(IN)    :: PRHODREF    ! 
 REAL, DIMENSION(:),   INTENT(IN)    :: PT   ! 
 !
-REAL, DIMENSION(:),   INTENT(IN)    :: PRCT    ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PCCT    ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PRST    ! 
+REAL, DIMENSION(:),   INTENT(IN)    :: PRCT    ! Cloud water mr at t
+REAL, DIMENSION(:),   INTENT(IN)    :: PCCT    ! Cloud water C. at t
+REAL, DIMENSION(:),   INTENT(IN)    :: PRST    ! Snow mr at t
+REAL, DIMENSION(:),   INTENT(IN)    :: PCST    ! Snow C. at t
 REAL, DIMENSION(:),   INTENT(IN)    :: PLBDC   ! 
 REAL, DIMENSION(:),   INTENT(IN)    :: PLBDS   ! 
 REAL, DIMENSION(:),   INTENT(IN)    :: PLVFACT ! 
@@ -101,6 +104,7 @@ REAL, DIMENSION(:),   INTENT(IN)    :: PLSFACT !
 REAL, DIMENSION(:),   INTENT(OUT)   :: P_RC_RIM
 REAL, DIMENSION(:),   INTENT(OUT)   :: P_CC_RIM
 REAL, DIMENSION(:),   INTENT(OUT)   :: P_RS_RIM
+REAL, DIMENSION(:),   INTENT(OUT)   :: P_CS_RIM
 REAL, DIMENSION(:),   INTENT(OUT)   :: P_RG_RIM
 !
 REAL, DIMENSION(:),   INTENT(OUT)   :: P_TH_RIM
@@ -112,8 +116,8 @@ REAL, DIMENSION(:),   INTENT(OUT)   :: P_RS_HMS
 !
 REAL,    DIMENSION(SIZE(PRCT))  :: ZZW1, ZZW2, ZZW3, ZZW4, ZZW5
 !
-INTEGER, DIMENSION(SIZE(PRCT))  :: IVEC1,IVEC2      ! Vectors of indices
-REAL,    DIMENSION(SIZE(PRCT))  :: ZVEC1,ZVEC2      ! Work vectors
+INTEGER, DIMENSION(SIZE(PRCT))  :: IVEC1,IVEC2        ! Vectors of indices
+REAL,    DIMENSION(SIZE(PRCT))  :: ZVEC1,ZVEC2,ZVEC1W ! Work vectors
 INTEGER                         :: JI
 !
 !-------------------------------------------------------------------------------
@@ -128,37 +132,38 @@ DO JI = 1, SIZE(PRCT)
    IF ( PRCT(JI)>XRTMIN(2) .AND. PRST(JI)>XRTMIN(5) .AND. PT(JI)<XTT .AND. LDCOMPUTE(JI) ) THEN
 !
       ZVEC1(JI) = PLBDS(JI)
+      ZVEC1W(JI)= ( XFVELOS**XALPHAS + PLBDS(JI)**XALPHAS ) ** (1./XALPHAS) ! modified equivalent lambda 
 !
-!        1.     find the next lower indice for the ZLBDAS in the geometrical
-!               set of Lbda_s used to tabulate some moments of the incomplete 
-!               gamma function
+!        2.     perform the linear interpolation of the normalized
+!               "2+XDS"-moment of the incomplete gamma function using the modified equivalent lambda
 !
       ZVEC2(JI) = MAX( 1.0001, MIN( REAL(NGAMINC)-0.0001,           &
-                       XRIMINTP1 * LOG( ZVEC1(JI) ) + XRIMINTP2 ) )
+                       XRIMINTP1 * LOG( ZVEC1W(JI) ) + XRIMINTP2 ) )
       IVEC2(JI) = INT( ZVEC2(JI) )
       ZVEC2(JI) = ZVEC2(JI) - REAL( IVEC2(JI) )
 !
-!        2.     perform the linear interpolation of the normalized
-!               "2+XDS"-moment of the incomplete gamma function
-!
-      ZVEC1(JI) =   XGAMINC_RIM1( IVEC2(JI)+1 )* ZVEC2(JI)      &
+      ZVEC1(JI) =  XGAMINC_RIM1( IVEC2(JI)+1 )* ZVEC2(JI)      &
                  - XGAMINC_RIM1( IVEC2(JI)   )*(ZVEC2(JI) - 1.0)
       ZZW1(JI) = ZVEC1(JI)
 !
 !        3.     perform the linear interpolation of the normalized
 !               "XBS"-moment of the incomplete gamma function
 !
-      ZVEC1(JI) =  XGAMINC_RIM2( IVEC2(JI)+1 )* ZVEC2(JI)      &
+      ZVEC2(JI) = MAX( 1.0001, MIN( REAL(NGAMINC)-0.0001,           &
+                       XRIMINTP1 * LOG( ZVEC1(JI) ) + XRIMINTP2 ) )
+      IVEC2(JI) = INT( ZVEC2(JI) )
+      ZVEC2(JI) = ZVEC2(JI) - REAL( IVEC2(JI) )
+!
+      ZVEC1(JI) = XGAMINC_RIM2( IVEC2(JI)+1 )* ZVEC2(JI)      &
                 - XGAMINC_RIM2( IVEC2(JI)   )*(ZVEC2(JI) - 1.0)
       ZZW2(JI) = ZVEC1(JI)
 !
 !        4.     riming
 !
    ! Cloud droplets collected
-      P_RC_RIM(JI) = - XCRIMSS  * PRCT(JI) * PRST(JI)*(1+(XFVELOS/PLBDS(JI))**XALPHAS)**(-XNUS+XEXCRIMSS/XALPHAS) &
-                                         * PRHODREF(JI)**(-XCEXVT+1) &
-                                         * (PLBDS(JI)) ** (XEXCRIMSS+XBS)
-      P_CC_RIM(JI) = P_RC_RIM(JI) *(PCCT(JI)/PRCT(JI)) ! Lambda_c**3
+      P_RC_RIM(JI) = - XCRIMSS  * PRCT(JI) * PCST(JI)*(1+(XFVELOS/PLBDS(JI))**XALPHAS)**(-XNUS+XEXCRIMSS/XALPHAS) &
+                                * PRHODREF(JI)**(-XCEXVT+1) * PLBDS(JI)**XEXCRIMSS
+      P_CC_RIM(JI) = P_RC_RIM(JI) * PCCT(JI)/PRCT(JI) ! Lambda_c**3
    !
    ! Cloud droplets collected on small aggregates add to snow
       P_RS_RIM(JI) = - P_RC_RIM(JI) * ZZW1(JI)
@@ -168,19 +173,20 @@ DO JI = 1, SIZE(PRCT)
    !
       IF (LMURAKAMI) THEN
    ! Graupel formation based on Murakami
-         ZVEC1(JI) =  XGAMINC_RIM4( IVEC2(JI)+1 )* ZVEC2(JI)      &
+         ZVEC1(JI) = XGAMINC_RIM4( IVEC2(JI)+1 )* ZVEC2(JI)      &
                    - XGAMINC_RIM4( IVEC2(JI)   )*(ZVEC2(JI) - 1.0)
          ZZW5(JI) = ZVEC1(JI)
-         ZZW3(JI) = XSRIMCG *PRHODREF(JI)*PRST(JI)* PLBDS(JI)**(XEXSRIMCG+XBS) * (1.0 - ZZW2(JI))!/(PTSTEP*PRHODREF(JI))
-         ZZW3(JI) = (P_RG_RIM(JI))*ZZW3(JI)/ &
+         ZZW3(JI) = XSRIMCG * PRHODREF(JI) * PCST(JI) * PLBDS(JI)**XEXSRIMCG * (1.0 - ZZW2(JI))!/(PTSTEP*PRHODREF(JI))
+         ZZW3(JI) = P_RG_RIM(JI)*ZZW3(JI)/ &
                        MAX(1.E-10, & !-20
-                           XSRIMCG3*XSRIMCG2*PRST(JI)*PRHODREF(JI)*PLBDS(JI)**(XEXSRIMCG2)*(1.-ZZW5(JI))- &
+                           XSRIMCG3*XSRIMCG2*PCST(JI)*PRHODREF(JI)*PLBDS(JI)**(XEXSRIMCG2)*(1.-ZZW5(JI))- &
                            XSRIMCG3*ZZW3(JI))
       ELSE
       ! Large aggregates collecting droplets add to graupel (instant process ???)
          ZZW3(JI) = PRST(JI)*(1.0 - ZZW2(JI))/PTSTEP
       END IF
       P_RS_RIM(JI) = P_RS_RIM(JI) - ZZW3(JI) 
+      P_CS_RIM(JI) = -ZZW3(JI) * PCST(JI)/PRST(JI)
       P_RG_RIM(JI) = P_RG_RIM(JI) + ZZW3(JI) 
    !
       P_TH_RIM(JI) = - P_RC_RIM(JI)*(PLSFACT(JI)-PLVFACT(JI))
@@ -189,6 +195,7 @@ DO JI = 1, SIZE(PRCT)
       P_RC_RIM(JI) = 0.
       P_CC_RIM(JI) = 0.
       P_RS_RIM(JI) = 0.
+      P_CS_RIM(JI) = 0.
       P_RG_RIM(JI) = 0.
    END IF
 !
@@ -203,7 +210,7 @@ DO JI = 1, SIZE(PRCT)
                          XHMLINTP1 * LOG( ZVEC1(JI) ) + XHMLINTP2 ) )
       IVEC2(JI) = INT( ZVEC2(JI) )
       ZVEC2(JI) = ZVEC2(JI) - REAL( IVEC2(JI) )
-      ZVEC1(JI) =   XGAMINC_HMC( IVEC2(JI)+1 )* ZVEC2(JI)      &
+      ZVEC1(JI) =  XGAMINC_HMC( IVEC2(JI)+1 )* ZVEC2(JI)      &
                  - XGAMINC_HMC( IVEC2(JI)   )*(ZVEC2(JI) - 1.0)
       ZZW4(JI) = ZVEC1(JI) ! Large droplets
 !

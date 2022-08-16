@@ -9,7 +9,7 @@
 !
 INTERFACE
       SUBROUTINE RADAR_RAIN_ICE(PRT,PCIT,PRHODREF,PTEMP,PRARE,PVDOP,PRZDR,PRKDP,&
-                             PCRT)
+                             PCRT,PCST,PCGT,PCHT)
 !
 REAL,  DIMENSION(:,:,:,:), INTENT(IN)  :: PRT  ! microphysical  mix. ratios at t
 REAL,  DIMENSION(:,:,:),   INTENT(IN)  :: PCIT ! pristine ice concentration at t
@@ -23,7 +23,9 @@ REAL,  DIMENSION(:,:,:), INTENT(OUT) :: PRZDR! radar differential reflectivity
 REAL,  DIMENSION(:,:,:), INTENT(OUT) :: PRKDP! radar differential phase shift
                                              ! H-V in degree/km
 REAL,  DIMENSION(:,:,:),   INTENT(IN),OPTIONAL  :: PCRT ! rain concentration at t
-                                             
+REAL,  DIMENSION(:,:,:),   INTENT(IN),OPTIONAL  :: PCST ! snow concentration at t !
+REAL,  DIMENSION(:,:,:),   INTENT(IN),OPTIONAL  :: PCGT ! graupel concentration at t ! 
+REAL,  DIMENSION(:,:,:),   INTENT(IN),OPTIONAL  :: PCHT ! hail concentration at t !                                             
 !
 END SUBROUTINE RADAR_RAIN_ICE
 !
@@ -31,7 +33,7 @@ END INTERFACE
 !
 END MODULE MODI_RADAR_RAIN_ICE
 !     #########################################################################
-      SUBROUTINE RADAR_RAIN_ICE(PRT,PCIT,PRHODREF,PTEMP,PRARE,PVDOP,PRZDR,PRKDP,PCRT)
+      SUBROUTINE RADAR_RAIN_ICE(PRT,PCIT,PRHODREF,PTEMP,PRARE,PVDOP,PRZDR,PRKDP,PCRT,PCST,PCGT,PCHT)
 !     #########################################################################
 !
 !!****  *RADAR_RAIN_ICE * - computes some pertinent radar parameters
@@ -125,7 +127,7 @@ USE MODD_PARAM_LIMA_MIXED, ONLY:XDG_L=>XDG,XLBEXG_L=>XLBEXG,XLBG_L=>XLBG,XCCG_L=
 
 USE MODD_PARAM_LIMA, ONLY: XALPHAR_L=>XALPHAR,XNUR_L=>XNUR,XALPHAS_L=>XALPHAS,XNUS_L=>XNUS,&
                            XALPHAG_L=>XALPHAG,XNUG_L=>XNUG, XALPHAI_L=>XALPHAI,XNUI_L=>XNUI,&
-                           XRTMIN_L=>XRTMIN,XALPHAC_L=>XALPHAC,XNUC_L=>XNUC, LSNOW_T_L=>LSNOW_T                      
+                           XRTMIN_L=>XRTMIN,XALPHAC_L=>XALPHAC,XNUC_L=>XNUC,LSNOW_T_L=>LSNOW_T,NMOM_S,NMOM_G,NMOM_H                      
 USE MODD_PARAMETERS
 USE MODD_PARAM_n, ONLY : CCLOUD
 USE MODD_LUNIT
@@ -147,6 +149,9 @@ REAL,  DIMENSION(:,:,:), INTENT(OUT) :: PRZDR! radar differential reflectivity
 REAL,  DIMENSION(:,:,:), INTENT(OUT) :: PRKDP! radar differential phase shift
                                              ! H-V in degree/km
 REAL,  DIMENSION(:,:,:),   INTENT(IN),OPTIONAL  :: PCRT ! rain concentration at t
+REAL,  DIMENSION(:,:,:),   INTENT(IN),OPTIONAL  :: PCST ! snow concentration at t     
+REAL,  DIMENSION(:,:,:),   INTENT(IN),OPTIONAL  :: PCGT ! graupel concentration at t  
+REAL,  DIMENSION(:,:,:),   INTENT(IN),OPTIONAL  :: PCHT ! hail concentration at t   
 !
 !*       0.2   Declarations of local variables :
 !
@@ -338,7 +343,11 @@ IF (SIZE(PRT,4) >= 5) THEN
     WHERE(PTEMP(:,:,:)<=-10 .AND. PRT(:,:,:,5).GT.XRTMIN_L(5))
        ZLBDA(:,:,:) = MAX(MIN(XLBDAS_MAX, 10**(6.226-0.0106*(PTEMP(:,:,:)+273.15))),XLBDAS_MIN)
     END WHERE
-    ZN(:,:,:)=XNS_L*PRHODREF(:,:,:)*PRT(:,:,:,5)*ZLBDA(:,:,:)**XBS_L
+    IF (NMOM_S.GE.2) THEN
+      ZN(:,:,:)=PCST(:,:,:)
+    ELSE
+      ZN(:,:,:)=XNS_L*PRHODREF(:,:,:)*PRT(:,:,:,5)*ZLBDA(:,:,:)**XBS_L
+    END IF
     WHERE( PRT(:,:,:,5).GT.XRTMIN_L(5) )
       ZW(:,:,:) = ZEQICE*ZDMELT_FACT                                             &
                   *1.E18*ZN(:,:,:)*(ZLBDA(:,:,:)**(-ZEXP))*MOMG(XALPHAS_L,XNUS_L,ZEXP)
@@ -366,14 +375,25 @@ IF (SIZE(PRT,4) >= 5) THEN
   ELSEIF (CCLOUD=='LIMA') THEN
     ZDMELT_FACT = ( (6.0*XAS_L)/(XPI*XRHOLW) )**(2.0)
     ZEXP = 2.0*XBS_L
-    WHERE( PRT(:,:,:,5).GT.XRTMIN_L(5) )
-      ZLBDA(:,:,:) = XLBS_L*( PRHODREF(:,:,:)*PRT(:,:,:,5) )**XLBEXS_L
-      ZW(:,:,:) = ZEQICE*ZDMELT_FACT                                             &
+    if (NMOM_S.GE.2) then
+      WHERE( PRT(:,:,:,5).GT.XRTMIN_L(5) .AND. PCST(:,:,:).GT.0.0)      
+        ZLBDA(:,:,:) = XLBS_L**(XLBEXS_L)*(PRT(:,:,:,5)/PCST(:,:,:))**(-XLBEXS_L)  
+        ZW(:,:,:) = ZEQICE*ZDMELT_FACT                                             &
+                    *1.E18*PRHODREF(:,:,:)*PCST(:,:,:)*(ZLBDA(:,:,:)**(-ZEXP))*MOMG(XALPHAS_L,XNUS_L,ZEXP)
+        PVDOP(:,:,:) = PVDOP(:,:,:)+ZEQICE*ZDMELT_FACT*MOMG(XALPHAS_L,XNUS_L,ZEXP+XDS_L) &
+                       *1.E18*PRHODREF(:,:,:)*PCST(:,:,:)*XCS_L*(ZLBDA(:,:,:)**(-ZEXP-XDS_L))
+        PRARE(:,:,:) = PRARE(:,:,:) + ZW(:,:,:)
+      END WHERE             
+    else
+      WHERE( PRT(:,:,:,5).GT.XRTMIN_L(5) )
+        ZLBDA(:,:,:) = XLBS_L*( PRHODREF(:,:,:)*PRT(:,:,:,5) )**XLBEXS_L
+        ZW(:,:,:) = ZEQICE*ZDMELT_FACT                                             &
                   *1.E18*XCCS_L*(ZLBDA(:,:,:)**(XCXS_L-ZEXP))*MOMG(XALPHAS_L,XNUS_L,ZEXP)
-      PVDOP(:,:,:) = PVDOP(:,:,:)+ZEQICE*ZDMELT_FACT*MOMG(XALPHAS_L,XNUS_L,ZEXP+XDS_L) &
+        PVDOP(:,:,:) = PVDOP(:,:,:)+ZEQICE*ZDMELT_FACT*MOMG(XALPHAS_L,XNUS_L,ZEXP+XDS_L) &
                      *1.E18*XCCS_L*XCS_L*(ZLBDA(:,:,:)**(XCXS_L-ZEXP-XDS_L))
-      PRARE(:,:,:) = PRARE(:,:,:) + ZW(:,:,:)
-    END WHERE
+        PRARE(:,:,:) = PRARE(:,:,:) + ZW(:,:,:)
+      END WHERE
+    end if
   ELSE
     ZDMELT_FACT = ( (6.0*XAS_I)/(XPI*XRHOLW) )**(2.0)
     ZEXP = 2.0*XBS_I
@@ -402,15 +422,27 @@ IF (SIZE(PRT,4) >= 6) THEN
     END WHERE
 !
     ZEXP = 2.0*XBG_L
-    WHERE( PRT(:,:,:,6).GT.XRTMIN_L(6) )
-      ZLBDA(:,:,:) = XLBG_L*( PRHODREF(:,:,:)*PRT(:,:,:,6) )**XLBEXG_L
-      ZW(:,:,:)    = ZREFL_MELT_CONV(:,:,:)*1.E18*XCCG_L*                &
-                    (ZLBDA(:,:,:)**(XCXG_L-ZEXP))*MOMG(XALPHAG_L,XNUG_L,ZEXP)
-      PVDOP(:,:,:) = PVDOP(:,:,:) +                                            &
-                     ZREFL_MELT_CONV(:,:,:)*1.E18*XCCG_L*XCG_L*                    &
-                     (ZLBDA(:,:,:)**(XCXG_L-ZEXP-XDG_L))*MOMG(XALPHAG_L,XNUG_L,ZEXP+XDG_L)
-      PRARE(:,:,:) = PRARE(:,:,:) + ZW(:,:,:)
-    END WHERE
+    if(NMOM_G.GE.2) then
+      WHERE( PRT(:,:,:,6).GT.XRTMIN_L(6) .AND. PCGT(:,:,:).GT.1.0E-3 )      
+        ZLBDA(:,:,:) = XLBG_L**(XLBEXG_L)*(PRT(:,:,:,6)/PCGT(:,:,:))**(-XLBEXG_L)  
+        ZW(:,:,:)    = ZREFL_MELT_CONV(:,:,:)          &
+                  *1.E18*PRHODREF(:,:,:)*PCGT(:,:,:)*(ZLBDA(:,:,:)**(-ZEXP))*MOMG(XALPHAG_L,XNUG_L,ZEXP)   
+        PVDOP(:,:,:) = PVDOP(:,:,:) +                                            &
+                       ZREFL_MELT_CONV(:,:,:)*1.E18                      &
+                       *1.E18*PRHODREF(:,:,:)*PCGT(:,:,:)*XCG_L*(ZLBDA(:,:,:)**(-ZEXP-XDG_L))
+        PRARE(:,:,:) = PRARE(:,:,:) + ZW(:,:,:)
+      END WHERE
+    else
+      WHERE( PRT(:,:,:,6).GT.XRTMIN_L(6) )
+        ZLBDA(:,:,:) = XLBG_L*( PRHODREF(:,:,:)*PRT(:,:,:,6) )**XLBEXG_L
+        ZW(:,:,:)    = ZREFL_MELT_CONV(:,:,:)*1.E18*XCCG_L*                &
+                      (ZLBDA(:,:,:)**(XCXG_L-ZEXP))*MOMG(XALPHAG_L,XNUG_L,ZEXP)
+        PVDOP(:,:,:) = PVDOP(:,:,:) +                                            &
+                       ZREFL_MELT_CONV(:,:,:)*1.E18*XCCG_L*XCG_L*                    &
+                       (ZLBDA(:,:,:)**(XCXG_L-ZEXP-XDG_L))*MOMG(XALPHAG_L,XNUG_L,ZEXP+XDG_L)
+        PRARE(:,:,:) = PRARE(:,:,:) + ZW(:,:,:)
+      END WHERE
+    end if
   ELSE
     ZFRAC_WATER = 0.14
     ZDMELT_FACT = ( (6.0*XAG_I)/(XPI*XRHOLW) )**(2.0)
@@ -443,15 +475,27 @@ IF (SIZE(PRT,4) >= 7) THEN
     ZREFL_MELT_CONV(:,:,:) = ((1.0-ZFRAC_WATER)*ZEQICE+ZFRAC_WATER)*ZDMELT_FACT
 !
     ZEXP = 2.0*XBH_L
-    WHERE( PRT(:,:,:,7).GT.XRTMIN_L(7) )
-      ZLBDA(:,:,:) = XLBH_L*( PRHODREF(:,:,:)*PRT(:,:,:,7) )**XLBEXH_L
-      ZW(:,:,:)    = ZREFL_MELT_CONV(:,:,:)*1.E18*XCCH_L*                &
-                   (ZLBDA(:,:,:)**(XCXH_L-ZEXP))*MOMG(XALPHAH_L,XNUH_L,ZEXP)
-      PVDOP(:,:,:) = PVDOP(:,:,:) +                                            &
-                   ZREFL_MELT_CONV(:,:,:)*1.E18*XCCH_L*XCH_L*                    &
-                   (ZLBDA(:,:,:)**(XCXH_L-ZEXP-XDH_L))*MOMG(XALPHAH_L,XNUH_L,ZEXP+XDH_L)
-      PRARE(:,:,:) = PRARE(:,:,:) + ZW(:,:,:)
-    END WHERE
+    if (NMOM_H.GE.2) then
+      WHERE( PRT(:,:,:,7).GT.XRTMIN_L(7) .AND. PCHT(:,:,:).GT.1.0E-3 ) 
+        ZLBDA(:,:,:) =  XLBH_L**(XLBEXH_L)*(PRT(:,:,:,7)/PCHT(:,:,:))**(-XLBEXH_L)  
+        ZW(:,:,:)    = ZREFL_MELT_CONV(:,:,:)     &
+                    *1.E18*PRHODREF(:,:,:)*PCHT(:,:,:)*(ZLBDA(:,:,:)**(-ZEXP))*MOMG(XALPHAH_L,XNUH_L,ZEXP)   
+        PVDOP(:,:,:) = PVDOP(:,:,:) +                                            &
+                     ZREFL_MELT_CONV(:,:,:)            &
+                       *1.E18*PRHODREF(:,:,:)*PCHT(:,:,:)*XCH_L*(ZLBDA(:,:,:)**(-ZEXP-XDH_L)) 
+        PRARE(:,:,:) = PRARE(:,:,:) + ZW(:,:,:)
+      END WHERE            
+    else
+      WHERE( PRT(:,:,:,7).GT.XRTMIN_L(7) )
+        ZLBDA(:,:,:) = XLBH_L*( PRHODREF(:,:,:)*PRT(:,:,:,7) )**XLBEXH_L
+        ZW(:,:,:)    = ZREFL_MELT_CONV(:,:,:)*1.E18*XCCH_L*                &
+                     (ZLBDA(:,:,:)**(XCXH_L-ZEXP))*MOMG(XALPHAH_L,XNUH_L,ZEXP)
+        PVDOP(:,:,:) = PVDOP(:,:,:) +                                            &
+                     ZREFL_MELT_CONV(:,:,:)*1.E18*XCCH_L*XCH_L*                    &
+                     (ZLBDA(:,:,:)**(XCXH_L-ZEXP-XDH_L))*MOMG(XALPHAH_L,XNUH_L,ZEXP+XDH_L)
+        PRARE(:,:,:) = PRARE(:,:,:) + ZW(:,:,:)
+      END WHERE
+    end if
   ELSE
     ZFRAC_WATER = 1.
     ZDMELT_FACT = ( (6.0*XAH_I)/(XPI*XRHOLW) )**(2.0)

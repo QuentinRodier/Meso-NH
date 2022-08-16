@@ -29,7 +29,7 @@ IMPLICIT NONE
 !             ----------------------
 !
 REAL,SAVE ::  XLBC, XLBEXC,          & ! shape parameters of the cloud droplets
-              XLBR, XLBEXR             ! shape parameters of the raindrops
+              XLBR, XLBEXR, XNR        ! shape parameters of the raindrops
 !
 REAL,SAVE :: XAR,XBR,XCR,XDR,XF0R,XF1R,     & ! Raindrop       charact.
                              XCCR,XCXR,     & !For diagnostics

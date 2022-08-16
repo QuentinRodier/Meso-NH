@@ -43,6 +43,7 @@ END MODULE MODI_INI_LIMA_COLD_MIXED
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !  C. Barthe   14/03/2022: add CIBU and RDSF
 !  J. Wurtz       03/2022: new snow characteristics
+!  M. Taufour     07/2022: add concentration for snow, graupel, hail
 !
 !-------------------------------------------------------------------------------
 !
@@ -65,8 +66,11 @@ USE MODI_LIMA_FUNCTIONS
 USE MODI_GAMMA
 USE MODI_GAMMA_INC
 USE MODI_RRCOLSS
+USE MODI_NRCOLSS
 USE MODI_RZCOLX
+USE MODI_NZCOLX
 USE MODI_RSCOLRG
+USE MODI_NSCOLRG
 USE MODI_LIMA_READ_XKER_RACCS
 USE MODI_LIMA_READ_XKER_SDRYG
 USE MODI_LIMA_READ_XKER_RDRYG
@@ -100,7 +104,7 @@ REAL :: ZBOUND                ! XDCSLIM*Lbda_s: upper bound for the partial
 REAL :: ZEGS, ZEGR, ZEHS, ZEHG! Bulk collection efficiencies
 !
 INTEGER :: IND                ! Number of interval to integrate the kernels
-REAL :: ZESR                  ! Mean efficiency of rain-aggregate collection
+REAL :: ZESR, ZESS            ! Mean efficiency of rain-aggregate collection, aggregate-aggregate collection
 REAL :: ZFDINFTY              ! Factor used to define the "infinite" diameter
 !
 !
@@ -270,14 +274,24 @@ IF (LSNOW_T) THEN
    XNUS    = 43.7   ! Generalized gamma law
    XTRANS_MP_GAMMAS = SQRT( ( GAMMA(XNUS + 2./XALPHAS)*GAMMA(XNUS + 4./XALPHAS) ) / &
                             ( 8.* GAMMA(XNUS + 1./XALPHAS)*GAMMA(XNUS + 3./XALPHAS) ) )
+ELSE IF (NMOM_S.EQ.2) THEN
+   XALPHAS = 1.0  ! Gamma law 
+   XNUS    = 2.0  !
+   XTRANS_MP_GAMMAS = SQRT( ( GAMMA(XNUS + 2./XALPHAS)*GAMMA(XNUS + 4./XALPHAS) ) / &
+                            ( 8.* GAMMA(XNUS + 1./XALPHAS)*GAMMA(XNUS + 3./XALPHAS) ) )
 ELSE
    XALPHAS = 1.0  ! Exponential law
    XNUS    = 1.0  ! Exponential law
    XTRANS_MP_GAMMAS = 1.
 END IF
 !
-XALPHAG = 1.0  ! Exponential law
-XNUG    = 1.0  ! Exponential law
+if (NMOM_G.GE.2) then
+   XALPHAG = 1.0  ! 
+   XNUG    = 2.0  !
+else
+   XALPHAG = 1.0  ! Exponential law
+   XNUG    = 1.0  ! Exponential law
+end if
 !
 XALPHAH = 1.0  ! Gamma law
 XNUH    = 8.0  ! Gamma law with little dispersion
@@ -287,8 +301,8 @@ XNUH    = 8.0  ! Gamma law with little dispersion
 XLBEXI = 1.0/XBI
 XLBI   = XAI*MOMG(XALPHAI,XNUI,XBI)
 !
+XNS = 1.0/(XAS*MOMG(XALPHAS,XNUS,XBS))
 IF (NMOM_S.EQ.1) THEN
-   XNS = 1.0/(XAS*MOMG(XALPHAS,XNUS,XBS))
    XLBEXS = 1.0/(XCXS-XBS)
    XLBS   = ( XAS*XCCS*MOMG(XALPHAS,XNUS,XBS) )**(-XLBEXS)
 ELSE
@@ -296,6 +310,7 @@ ELSE
    XLBS   = XAS * MOMG(XALPHAS,XNUS,XBS)
 END IF
 !
+XNG = 1.0/(XAG*MOMG(XALPHAG,XNUG,XBG))
 IF (NMOM_G.EQ.1) THEN
    XLBEXG = 1.0/(XCXG-XBG)
    XLBG   = ( XAG*XCCG*MOMG(XALPHAG,XNUG,XBG))**(-XLBEXG)
@@ -390,6 +405,26 @@ XFSEDG  = XCG*XAG*XCCG*MOMG(XALPHAG,XNUG,XBG+XDG)*                         &
 XEXSEDH = (XBH+XDH-XCXH)/(XBH-XCXH)
 XFSEDH  = XCH*XAH*XCCH*MOMG(XALPHAH,XNUH,XBH+XDH)*                         &
             (XAH*XCCH*MOMG(XALPHAH,XNUH,XBH))**(-XEXSEDH)*(ZRHO00)**XCEXVT
+IF (NMOM_S.GE.2) THEN
+  XFSEDRS  = XCS*GAMMA_X0D(XNUS+(XDS+XBS)/XALPHAS)/GAMMA_X0D(XNUS+XBS/XALPHAS)*  &   
+            (ZRHO00)**XCEXVT                                                       
+  XFSEDCS  = XCS*GAMMA_X0D(XNUS+XDS/XALPHAS)/GAMMA_X0D(XNUS)*                     & 
+            (ZRHO00)**XCEXVT
+END IF
+IF (NMOM_G.GE.2) THEN
+  XFSEDRG  = XCG*GAMMA_X0D(XNUG+(XDG+XBG)/XALPHAG)/GAMMA_X0D(XNUG+XBG/XALPHAG)*  &  
+               (ZRHO00)**XCEXVT                                                      
+  XFSEDCG  = XCG*GAMMA_X0D(XNUG+XDG/XALPHAG)/GAMMA_X0D(XNUG)*                     & 
+               (ZRHO00)**XCEXVT 
+END IF
+IF (NMOM_H.GE.2) THEN
+  XFSEDRH  = XCH*GAMMA_X0D(XNUH+(XDH+XBH)/XALPHAH)/GAMMA_X0D(XNUH+XBH/XALPHAH)*  &  
+            (ZRHO00)**XCEXVT                                                        
+  XFSEDCH  = XCH*GAMMA_X0D(XNUH+XDH/XALPHAH)/GAMMA_X0D(XNUH)*                     & 
+            (ZRHO00)**XCEXVT
+END IF
+!
+!
 !
 XLB(4)    = XLBI
 XLBEX(4)  = XLBEXI
@@ -402,17 +437,23 @@ XLBEX(5)  = XLBEXS
 XD(5)     = XDS
 XFSEDR(5) = XCS*GAMMA_X0D(XNUS+(XDS+XBS)/XALPHAS)/GAMMA_X0D(XNUS+XBS/XALPHAS)*     &
             (ZRHO00)**XCEXVT
+XFSEDC(5) = XCS*GAMMA_X0D(XNUS+XDS/XALPHAS)/GAMMA_X0D(XNUS)*                     & 
+            (ZRHO00)**XCEXVT
 !
 XLB(6)    = XLBG
 XLBEX(6)  = XLBEXG
 XD(6)     = XDG
 XFSEDR(6) = XCG*GAMMA_X0D(XNUG+(XDG+XBG)/XALPHAG)/GAMMA_X0D(XNUG+XBG/XALPHAG)*     &
             (ZRHO00)**XCEXVT
+XFSEDC(6) = XCG*GAMMA_X0D(XNUG+XDG/XALPHAG)/GAMMA_X0D(XNUG)*                     & 
+            (ZRHO00)**XCEXVT
 !
 XLB(7)    = XLBH
 XLBEX(7)  = XLBEXH
 XD(7)     = XDH
 XFSEDR(7) = XCH*GAMMA_X0D(XNUH+(XDH+XBH)/XALPHAH)/GAMMA_X0D(XNUH+XBH/XALPHAH)*     &
+            (ZRHO00)**XCEXVT
+XFSEDC(7) = XCH*GAMMA_X0D(XNUH+XDH/XALPHAH)/GAMMA_X0D(XNUH)*                     & 
             (ZRHO00)**XCEXVT
 !
 !-------------------------------------------------------------------------------
@@ -652,21 +693,21 @@ XR1DEPSI = XC1DEPSI *(XAS*XDSCNVI_LIM**XBS)
 !
 ! Vapor deposition on snow and graupel and hail
 !
-X0DEPS = XNS*(4.0*XPI)*XC1S*XF0S*MOMG(XALPHAS,XNUS,1.)
-X1DEPS = XNS*(4.0*XPI)*XC1S*XF1S*SQRT(XCS)*MOMG(XALPHAS,XNUS,0.5*XDS+1.5)
-XEX0DEPS = XBS-1.0
+X0DEPS = (4.0*XPI)*XC1S*XF0S*MOMG(XALPHAS,XNUS,1.)
+X1DEPS = (4.0*XPI)*XC1S*XF1S*SQRT(XCS)*MOMG(XALPHAS,XNUS,0.5*XDS+1.5)
+XEX0DEPS = -1.0
 XEX1DEPS = -0.5*(XDS+3.0)
 !
-X0DEPG = (4.0*XPI)*XCCG*XC1G*XF0G*MOMG(XALPHAG,XNUG,1.)
-X1DEPG = (4.0*XPI)*XCCG*XC1G*XF1G*SQRT(XCG)*MOMG(XALPHAG,XNUG,0.5*XDG+1.5)
-XEX0DEPG = XCXG-1.0
-XEX1DEPG = XCXG-0.5*(XDG+3.0)
+X0DEPG = (4.0*XPI)*XC1G*XF0G*MOMG(XALPHAG,XNUG,1.)  
+X1DEPG = (4.0*XPI)*XC1G*XF1G*SQRT(XCG)*MOMG(XALPHAG,XNUG,0.5*XDG+1.5) 
+XEX0DEPG = -1.0                                                       
+XEX1DEPG = -0.5*(XDG+3.0)
 !
-X0DEPH = (4.0*XPI)*XCCH*XC1H*XF0H*MOMG(XALPHAH,XNUH,1.)
-X1DEPH = (4.0*XPI)*XCCH*XC1H*XF1H*SQRT(XCH)*MOMG(XALPHAH,XNUH,0.5*XDH+1.5)
-XEX0DEPH = XCXH-1.0
-XEX1DEPH = XCXH-0.5*(XDH+3.0)
-!  
+X0DEPH = (4.0*XPI)*XC1H*XF0H*MOMG(XALPHAH,XNUH,1.)   
+X1DEPH = (4.0*XPI)*XC1H*XF1H*SQRT(XCH)*MOMG(XALPHAH,XNUH,0.5*XDH+1.5) 
+XEX0DEPH = -1.0                                                        
+XEX1DEPH = -0.5*(XDH+3.0)
+!
 !-------------------------------------------------------------------------------
 !
 !
@@ -749,18 +790,18 @@ END IF
 !
 XDCSLIM  = 0.007 ! D_cs^lim = 7 mm as suggested by Farley et al. (1989)
 XCOLCS   = 1.0
-XEXCRIMSS = -XDS-2.0
-XCRIMSS  = XNS * (XPI/4.0)*XCOLCS*XCS*(ZRHO00**XCEXVT)*MOMG(XALPHAS,XNUS,XDS+2.0)
+XEXCRIMSS= -XDS-2.0
+XCRIMSS  = (XPI/4.0)*XCOLCS*XCS*(ZRHO00**XCEXVT)*MOMG(XALPHAS,XNUS,XDS+2.0)
 
 XEXCRIMSG= XEXCRIMSS
 XCRIMSG  = XCRIMSS
-XSRIMCG  = XNS*XAS*MOMG(XALPHAS,XNUS,XBS)
+XSRIMCG  = XAS*MOMG(XALPHAS,XNUS,XBS)
 XEXSRIMCG= -XBS
 !
 !Pour Murakami 1990
-XSRIMCG2 = XNS*XAG*MOMG(XALPHAS,XNUS,XBG)
+XSRIMCG2 = XAG*MOMG(XALPHAS,XNUS,XBG)
 XSRIMCG3 = 0.1
-XEXSRIMCG2=XBS-XBG
+XEXSRIMCG2=XBG
 GFLAG = .TRUE.
 IF (GFLAG) THEN
   WRITE(UNIT=ILUOUT0,FMT='("      riming of the aggregates")')
@@ -819,17 +860,25 @@ XHMLINTP2 = 1.0 + XHMLINTP1*LOG( 25.E-6/(XGAMINC_HMC_BOUND_MIN)**(1.0/XALPHAC) )
 !
 !*       7.2    Constants for the accretion of raindrops onto aggregates
 !
-XFRACCSS = XNS*XPI/4.0*XAR*(ZRHO00**XCEXVT)
+XFRACCSS  = XPI/4.0*XAR*(ZRHO00**XCEXVT)
+XFNRACCSS = XPI/4.0*(ZRHO00**XCEXVT)
 !
 XLBRACCS1   =    MOMG(XALPHAS,XNUS,2.)*MOMG(XALPHAR,XNUR,3.)
 XLBRACCS2   = 2.*MOMG(XALPHAS,XNUS,1.)*MOMG(XALPHAR,XNUR,4.)
 XLBRACCS3   =                          MOMG(XALPHAR,XNUR,5.)
+XLBNRACCS1  =    MOMG(XALPHAS,XNUS,2.)                             
+XLBNRACCS2  = 2.*MOMG(XALPHAS,XNUS,1.)*MOMG(XALPHAR,XNUR,1.)       
+XLBNRACCS3  =                          MOMG(XALPHAR,XNUR,2.)
 !
-XFSACCRG = XNS*(XPI/4.0)*XAS*(ZRHO00**XCEXVT)
+XFSACCRG  = (XPI/4.0)*XAS*(ZRHO00**XCEXVT)
+XFNSACCRG = (XPI/4.0)*(ZRHO00**XCEXVT)
 !
 XLBSACCR1   =    MOMG(XALPHAR,XNUR,2.)*MOMG(XALPHAS,XNUS,XBS)
 XLBSACCR2   = 2.*MOMG(XALPHAR,XNUR,1.)*MOMG(XALPHAS,XNUS,XBS+1.)
 XLBSACCR3   =                          MOMG(XALPHAS,XNUS,XBS+2.)
+XLBNSACCR1  =    MOMG(XALPHAR,XNUR,2.)                             
+XLBNSACCR2  = 2.*MOMG(XALPHAR,XNUR,1.)*MOMG(XALPHAS,XNUS,1.)      
+XLBNSACCR3  =                          MOMG(XALPHAS,XNUS,2.)
 !
 !*       7.2.1  Defining the ranges for the computation of the kernels
 !
@@ -858,6 +907,49 @@ ZFDINFTY = 20.0  ! computing the kernels XKER_RACCSS, XKER_RACCS and XKER_SACCRG
 ALLOCATE( XKER_RACCSS(NACCLBDAS,NACCLBDAR) )
 ALLOCATE( XKER_RACCS (NACCLBDAS,NACCLBDAR) )
 ALLOCATE( XKER_SACCRG(NACCLBDAR,NACCLBDAS) )
+ALLOCATE( XKER_N_RACCSS(NACCLBDAS,NACCLBDAR) )
+ALLOCATE( XKER_N_RACCS (NACCLBDAS,NACCLBDAR) )
+ALLOCATE( XKER_N_SACCRG(NACCLBDAR,NACCLBDAS) )
+CALL NRCOLSS ( IND, XALPHAS, XNUS, XALPHAR, XNUR,                        & 
+               ZESR, XCS, XDS, XFVELOS, XCR, XDR,                        & 
+               XACCLBDAS_MAX, XACCLBDAR_MAX, XACCLBDAS_MIN, XACCLBDAR_MIN, & 
+               ZFDINFTY, XKER_N_RACCSS, XAG, XBS, XAS                      )
+CALL NZCOLX  ( IND, XALPHAS, XNUS, XALPHAR, XNUR,                          & 
+               ZESR, XCS, XDS, XFVELOS, XCR, XDR, 0.,                      & ! 
+               XACCLBDAS_MAX, XACCLBDAR_MAX, XACCLBDAS_MIN, XACCLBDAR_MIN, & 
+               ZFDINFTY, XKER_N_RACCS                                      )
+CALL NSCOLRG ( IND, XALPHAS, XNUS, XALPHAR, XNUR,                          & 
+               ZESR, XCS, XDS, XFVELOS, XCR, XDR,                          & 
+               XACCLBDAS_MAX, XACCLBDAR_MAX, XACCLBDAS_MIN, XACCLBDAR_MIN, & 
+               ZFDINFTY, XKER_N_SACCRG,XAG, XBS, XAS                       )
+WRITE(UNIT=ILUOUT0,FMT='("!")')
+WRITE(UNIT=ILUOUT0,FMT='("IF( PRESENT(PKER_N_RACCSS) ) THEN")')          
+DO J1 = 1 , NACCLBDAS                                                    
+  DO J2 = 1 , NACCLBDAR                                                  
+  WRITE(UNIT=ILUOUT0,FMT='("  PKER_N_RACCSS(",I3,",",I3,") = ",E13.6)') &
+                    J1,J2,XKER_N_RACCSS(J1,J2)                          
+  END DO                                                                
+END DO                                                                   
+WRITE(UNIT=ILUOUT0,FMT='("!")')                                           
+WRITE(UNIT=ILUOUT0,FMT='("!")')
+WRITE(UNIT=ILUOUT0,FMT='("IF( PRESENT(PKER_N_RACCS) ) THEN")')          
+DO J1 = 1 , NACCLBDAS                                                    
+  DO J2 = 1 , NACCLBDAR                                                  
+  WRITE(UNIT=ILUOUT0,FMT='("  PKER_N_RACCS(",I3,",",I3,") = ",E13.6)') &
+                    J1,J2,XKER_N_RACCS(J1,J2)                          
+  END DO                                                                
+END DO                                                                   
+WRITE(UNIT=ILUOUT0,FMT='("!")') 
+WRITE(UNIT=ILUOUT0,FMT='("!")')
+WRITE(UNIT=ILUOUT0,FMT='("IF( PRESENT(PKER_N_SACCRG) ) THEN")')          
+DO J1 = 1 , NACCLBDAR                                                    
+  DO J2 = 1 , NACCLBDAS                                                  
+  WRITE(UNIT=ILUOUT0,FMT='("  PKER_N_SACCRG(",I3,",",I3,") = ",E13.6)') &
+                    J1,J2,XKER_N_SACCRG(J1,J2)                          
+  END DO                                                                
+END DO                                                                   
+WRITE(UNIT=ILUOUT0,FMT='("!")') 
+
 !
 CALL LIMA_READ_XKER_RACCS (KACCLBDAS,KACCLBDAR,KND,                                        &
                            PALPHAS,PNUS,PALPHAR,PNUR,PESR,PBS,PBR,PCS,PDS,PFVELOS,PCR,PDR, &
@@ -950,6 +1042,75 @@ IF( (KACCLBDAS/=NACCLBDAS) .OR. (KACCLBDAR/=NACCLBDAR) .OR. (KND/=IND) .OR. &
   WRITE(UNIT=ILUOUT0,FMT='(" Read XKER_SACCRG")')
 END IF
 !
+!*       7.2N  Computations of the tabulated normalized kernels Snow Self Collection !! 
+!
+!
+if (NMOM_S.GE.2) then
+  XCOLSS   = 0.1 ! Collection efficiency of S+S
+  XCOLEXSS = 0.1  ! Temperature factor of the S+S collection efficiency
+  XFNSSCS = (XPI/4.0)*XCOLSS*(ZRHO00**XCEXVT)/2.0       
+!
+  XLBNSSCS1   = 2.0*MOMG(XALPHAS,XNUS,2.)                        
+  XLBNSSCS2   = 2.0*MOMG(XALPHAS,XNUS,1.)**2  
+!
+!*       7.2N.1  Defining the ranges for the computation of the kernels
+!
+! Notice: One magnitude of lambda discretized over 10 points for snow
+!
+NSCLBDAS = 80
+XSCLBDAS_MIN = 1.0E0*XTRANS_MP_GAMMAS  ! Minimal value of Lbda_s to tabulate XKER_RSCS
+XSCLBDAS_MAX = 5.0E10*XTRANS_MP_GAMMAS ! Maximal value of Lbda_s to tabulate XKER_RSCS
+ZRATE = LOG(XSCLBDAS_MAX/XSCLBDAS_MIN)/FLOAT(NSCLBDAS-1)
+XSCINTP1S = 1.0 / ZRATE
+XSCINTP2S = 1.0 - LOG( XSCLBDAS_MIN ) / ZRATE
+!
+!
+  IND      = 50    ! Interval number, collection efficiency and infinite diameter
+  ZESS     = 1.0   ! factor used to integrate the dimensional distributions when
+  ZFDINFTY = 20.0  ! computing the kernels XKER_SSCSS
+!
+  ALLOCATE( XKER_N_SSCS(NSCLBDAS,NSCLBDAS) )
+!
+  CALL NZCOLX  ( IND, XALPHAS, XNUS, XALPHAS, XNUS,                          & 
+               ZESS, XCS, XDS, XFVELOS, XCS, XDS, XFVELOS,                   & 
+               XSCLBDAS_MAX, XSCLBDAS_MAX, XSCLBDAS_MIN, XSCLBDAS_MIN, & 
+               ZFDINFTY, XKER_N_SSCS                                      ) 
+!
+  WRITE(UNIT=ILUOUT0,FMT='("*****************************************")')
+  WRITE(UNIT=ILUOUT0,FMT='("**** UPDATE NEW SET OF SSCS  KERNELS ***")')
+  WRITE(UNIT=ILUOUT0,FMT='("*****************************************")')
+  WRITE(UNIT=ILUOUT0,FMT='("!")')
+  WRITE(UNIT=ILUOUT0,FMT='("KND=",I3)') IND
+  WRITE(UNIT=ILUOUT0,FMT='("KSCLBDAS=",I3)') NSCLBDAS
+  WRITE(UNIT=ILUOUT0,FMT='("PALPHAS=",E13.6)') XALPHAS
+  WRITE(UNIT=ILUOUT0,FMT='("PNUS=",E13.6)') XNUS
+  WRITE(UNIT=ILUOUT0,FMT='("PESS=",E13.6)') ZESS
+  WRITE(UNIT=ILUOUT0,FMT='("PBS=",E13.6)') XBS
+  WRITE(UNIT=ILUOUT0,FMT='("PCS=",E13.6)') XCS
+  WRITE(UNIT=ILUOUT0,FMT='("PDS=",E13.6)') XDS
+  WRITE(UNIT=ILUOUT0,FMT='("PSCLBDAS_MAX=",E13.6)') &
+                                                  XSCLBDAS_MAX
+  WRITE(UNIT=ILUOUT0,FMT='("PSCLBDAS_MIN=",E13.6)') &
+                                                  XSCLBDAS_MIN
+  WRITE(UNIT=ILUOUT0,FMT='("PFDINFTY=",E13.6)') ZFDINFTY
+  WRITE(UNIT=ILUOUT0,FMT='("!")')
+  WRITE(UNIT=ILUOUT0,FMT='("!")')
+  WRITE(UNIT=ILUOUT0,FMT='("IF( PRESENT(PKER_N_SSCS ) ) THEN")')           
+  DO J1 = 1 , NSCLBDAS                                                     
+    WRITE(UNIT=ILUOUT0,FMT='("  PKER_N_SSCS (",I3,",",I3,") = ",E13.6)') & 
+                      J1,J1,XKER_N_SSCS (J1,J1)                          
+  END DO                                                                    
+  WRITE(UNIT=ILUOUT0,FMT='("!")')  
+!
+!*       7.2N2    Constants for the 'spontaneous' break-up
+!
+  XACCS1=MOMG(XALPHAS,XNUS,XBS)
+  XSPONBUDS1 = 2.5E-3
+  XSPONBUDS2 = 3.5E-3
+  XSPONBUDS3 = 4.5E-3
+  XSPONCOEFS2 = ((XSPONBUDS3/XSPONBUDS2)**3 - 1.0)/(XSPONBUDS3-XSPONBUDS1)**2
+!
+end if
 !
 !*       7.3    Constant for the conversion-melting rate
 !
@@ -1017,13 +1178,13 @@ XCIBUINTP_G = XALPHAG / LOG(ZRATE_G)
 XCIBUINTP1_G = 1.0 + XCIBUINTP_G * LOG(XDCGLIM_CIBU_MIN/(XGAMINC_BOUND_CIBU_GMIN)**(1.0/XALPHAG))
 !
 ! For ZNI_CIBU
-XFACTOR_CIBU_NI = XNS * (XPI / 4.0) * XCCG  * (ZRHO00**XCEXVT)
+XFACTOR_CIBU_NI = (XPI / 4.0) * (ZRHO00**XCEXVT)
 XMOMGG_CIBU_1 = MOMG(XALPHAG,XNUG,2.0+XDG)
 XMOMGG_CIBU_2 = MOMG(XALPHAG,XNUG,2.0)
 XMOMGS_CIBU_1 = MOMG(XALPHAS,XNUS,XDS)
 !
 ! For ZRI_CIBU
-XFACTOR_CIBU_RI = XNS * XAS * (XPI / 4.0) * XCCG  * (ZRHO00**XCEXVT)
+XFACTOR_CIBU_RI = XAS * (XPI / 4.0) * (ZRHO00**XCEXVT)
 XMOMGS_CIBU_2 = MOMG(XALPHAS,XNUS,XBS)
 XMOMGS_CIBU_3 = MOMG(XALPHAS,XNUS,XBS+XDS)
 !
@@ -1095,7 +1256,7 @@ END IF
 !               and for the Hallett-Mossop process
 !
 XCOLCG  = 0.6  !  Estimated from Cober and List (1993)
-XFCDRYG = (XPI/4.0)*XCOLCG*XCCG*XCG*(ZRHO00**XCEXVT)*MOMG(XALPHAG,XNUG,XDG+2.0)
+XFCDRYG = (XPI/4.0)*XCOLCG*XCG*(ZRHO00**XCEXVT)*MOMG(XALPHAG,XNUG,XDG+2.0)
 !
 XHM_COLLCG= 0.9   ! Collision efficiency graupel/droplet (with Dc>25 microns)
 XHM_FACTG = XHM_YIELD*(XHM_COLLCG/XCOLCG)
@@ -1108,7 +1269,7 @@ XCOLIG   = 0.01 ! Collection efficiency of I+G
 XCOLEXIG = 0.1  ! Temperature factor of the I+G collection efficiency
 WRITE (ILUOUT0, FMT=*) ' NEW Constants for the cloud ice collection by the graupeln'
 WRITE (ILUOUT0, FMT=*) ' XCOLIG, XCOLEXIG  = ',XCOLIG,XCOLEXIG
-XFIDRYG = (XPI/4.0)*XCOLIG*XCCG*XCG*(ZRHO00**XCEXVT)*MOMG(XALPHAG,XNUG,XDG+2.0)
+XFIDRYG = (XPI/4.0)*XCOLIG*XCG*(ZRHO00**XCEXVT)*MOMG(XALPHAG,XNUG,XDG+2.0)
 !
 GFLAG = .TRUE.
 IF (GFLAG) THEN
@@ -1125,8 +1286,12 @@ XCOLSG   = 0.01 ! Collection efficiency of S+G
 XCOLEXSG = 0.1  ! Temperature factor of the S+G collection efficiency
 WRITE (ILUOUT0, FMT=*) ' NEW Constants for the aggregate collection by the graupeln'
 WRITE (ILUOUT0, FMT=*) ' XCOLSG, XCOLEXSG  = ',XCOLSG,XCOLEXSG
-XFSDRYG = XNS*(XPI/4.0)*XCOLSG*XCCG*XAS*(ZRHO00**XCEXVT)
+XFSDRYG = XNS*(XPI/4.0)*XCOLSG*XAS*(ZRHO00**XCEXVT)
+XFNSDRYG = XNS*(XPI/4.0)*XCOLSG*XAS*(ZRHO00**XCEXVT)
 !
+XLBNSDRYG1  =    MOMG(XALPHAG,XNUG,2.)                        
+XLBNSDRYG2  = 2.*MOMG(XALPHAG,XNUG,1.)*MOMG(XALPHAS,XNUS,1.) 
+XLBNSDRYG3  =                          MOMG(XALPHAS,XNUS,2.)
 XLBSDRYG1   =    MOMG(XALPHAG,XNUG,2.)*MOMG(XALPHAS,XNUS,XBS)
 XLBSDRYG2   = 2.*MOMG(XALPHAG,XNUG,1.)*MOMG(XALPHAS,XNUS,XBS+1.)
 XLBSDRYG3   =                          MOMG(XALPHAS,XNUS,XBS+2.)
@@ -1140,11 +1305,15 @@ END IF
 !
 !*       8.2.4  Constants for the raindrop collection by the graupeln
 !
-XFRDRYG = ((XPI**2)/24.0)*XCCG*XRHOLW*(ZRHO00**XCEXVT)
+XFRDRYG = XNR*(XPI/4.0)*XAR*(ZRHO00**XCEXVT)
+XFNRDRYG= XNR*(XPI/4.0)*XAR*(ZRHO00**XCEXVT)
 !
 XLBRDRYG1   =    MOMG(XALPHAG,XNUG,2.)*MOMG(XALPHAR,XNUR,3.)
 XLBRDRYG2   = 2.*MOMG(XALPHAG,XNUG,1.)*MOMG(XALPHAR,XNUR,4.)
 XLBRDRYG3   =                          MOMG(XALPHAR,XNUR,5.)
+XLBNRDRYG1   =    MOMG(XALPHAG,XNUG,2.)                      
+XLBNRDRYG2   = 2.*MOMG(XALPHAG,XNUG,1.)*MOMG(XALPHAR,XNUR,1.) 
+XLBNRDRYG3   =                          MOMG(XALPHAR,XNUR,2.)
 !
 ! Notice: One magnitude of lambda discretized over 10 points
 !
@@ -1174,6 +1343,22 @@ ZEGS     = 1.0   ! factor used to integrate the dimensional distributions when
 ZFDINFTY = 20.0  ! computing the kernels XKER_SDRYG
 !
 ALLOCATE( XKER_SDRYG(NDRYLBDAG,NDRYLBDAS) )
+if (NMOM_S.GE.2) then
+  ALLOCATE( XKER_N_SDRYG(NDRYLBDAG,NDRYLBDAS) )
+  CALL NZCOLX  ( IND, XALPHAG, XNUG, XALPHAS, XNUS,                         & 
+              ZEGS, XCG, XDG, 0., XCS, XDS, XFVELOS,                        & 
+              XDRYLBDAG_MAX, XDRYLBDAS_MAX, XDRYLBDAG_MIN, XDRYLBDAS_MIN, & 
+              ZFDINFTY, XKER_N_SDRYG                                      ) 
+  WRITE(UNIT=ILUOUT0,FMT='("!")')
+  WRITE(UNIT=ILUOUT0,FMT='("IF( PRESENT(PKER_N_SDRYG) ) THEN")')          
+  DO J1 = 1 , NDRYLBDAG                                                    
+    DO J2 = 1 , NDRYLBDAS                                                  
+    WRITE(UNIT=ILUOUT0,FMT='("  PKER_N_SDRYG(",I3,",",I3,") = ",E13.6)') &
+                      J1,J2,XKER_N_SDRYG(J1,J2)                          
+    END DO                                                                
+  END DO                                                                   
+  WRITE(UNIT=ILUOUT0,FMT='("!")') 
+end if
 !
 CALL LIMA_READ_XKER_SDRYG (KDRYLBDAG,KDRYLBDAS,KND,                                    &
                            PALPHAG,PNUG,PALPHAS,PNUS,PEGS,PBS,PCG,PDG,PCS,PDS,PFVELOS, &
@@ -1241,6 +1426,22 @@ ZEGR     = 1.0   ! distributions when computing the kernel XKER_RDRYG
 ZFDINFTY = 20.0
 !
 ALLOCATE( XKER_RDRYG(NDRYLBDAG,NDRYLBDAR) )
+if ( NMOM_R.GE.2 ) then
+  ALLOCATE( XKER_N_RDRYG(NDRYLBDAG,NDRYLBDAR) ) 
+  CALL NZCOLX  ( IND, XALPHAS, XNUS, XALPHAR, XNUR,                          & 
+               ZEGR, XCG, XDG, 0., XCR, XDR, 0.,                            & 
+               XDRYLBDAG_MAX, XDRYLBDAR_MAX, XDRYLBDAG_MIN, XDRYLBDAR_MIN, &
+               ZFDINFTY, XKER_N_RDRYG                                      )
+  WRITE(UNIT=ILUOUT0,FMT='("!")')
+  WRITE(UNIT=ILUOUT0,FMT='("IF( PRESENT(PKER_N_RDRYG) ) THEN")')          
+  DO J1 = 1 , NDRYLBDAG                                                    
+    DO J2 = 1 , NDRYLBDAR                                                  
+    WRITE(UNIT=ILUOUT0,FMT='("  PKER_N_RDRYG(",I3,",",I3,") = ",E13.6)') &
+                      J1,J2,XKER_N_RDRYG(J1,J2)                          
+    END DO                                                                
+  END DO                                                                   
+  WRITE(UNIT=ILUOUT0,FMT='("!")') 
+end if
 !
 CALL LIMA_READ_XKER_RDRYG (KDRYLBDAG,KDRYLBDAR,KND,                                 &
                            PALPHAG,PNUG,PALPHAR,PNUR,PEGR,PBR,PCG,PDG,PCR,PDR,      &
@@ -1255,7 +1456,7 @@ IF( (KDRYLBDAG/=NDRYLBDAG) .OR. (KDRYLBDAR/=NDRYLBDAR) .OR. (KND/=IND) .OR. &
     (PDRYLBDAG_MIN/=XDRYLBDAG_MIN) .OR. (PDRYLBDAR_MIN/=XDRYLBDAR_MIN) .OR. &
     (PFDINFTY/=ZFDINFTY)                                               ) THEN
   CALL RZCOLX ( IND, XALPHAG, XNUG, XALPHAR, XNUR,                          &
-                ZEGR, XBR, XCG, XDG,0., XCR, XDR, 0.,                             &
+                ZEGR, XBR, XCG, XDG, 0., XCR, XDR, 0.,                      &
                 XDRYLBDAG_MAX, XDRYLBDAR_MAX, XDRYLBDAG_MIN, XDRYLBDAR_MIN, &
                 ZFDINFTY, XKER_RDRYG                                        )
   WRITE(UNIT=ILUOUT0,FMT='("*****************************************")')
@@ -1317,7 +1518,7 @@ XFWETH = (XPI/4.0)*XCCH*XCH*(ZRHO00**XCEXVT)*MOMG(XALPHAH,XNUH,XDH+2.0)
 !*       9.2.2  Constants for the aggregate collection by the hailstones
 !
 !XFSWETH = (XPI/4.0)*XCCH*XCCS*XAS*(ZRHO00**XCEXVT)
-XFSWETH = XNS*(XPI/4.0)*XCCH*XAS*(ZRHO00**XCEXVT) ! Wurtz  
+XFSWETH = XNS*(XPI/4.0)*XAS*(ZRHO00**XCEXVT)
 !
 XLBSWETH1   =    MOMG(XALPHAH,XNUH,2.)*MOMG(XALPHAS,XNUS,XBS)
 XLBSWETH2   = 2.*MOMG(XALPHAH,XNUH,1.)*MOMG(XALPHAS,XNUS,XBS+1.)
@@ -1325,7 +1526,7 @@ XLBSWETH3   =                          MOMG(XALPHAS,XNUS,XBS+2.)
 !
 !*       9.2.3  Constants for the graupel collection by the hailstones
 !
-XFGWETH = (XPI/4.0)*XCCH*XCCG*XAG*(ZRHO00**XCEXVT)
+XFGWETH = XNG*(XPI/4.0)*XAG*(ZRHO00**XCEXVT)
 !
 XLBGWETH1   =    MOMG(XALPHAH,XNUH,2.)*MOMG(XALPHAG,XNUG,XBG)
 XLBGWETH2   = 2.*MOMG(XALPHAH,XNUH,1.)*MOMG(XALPHAG,XNUG,XBG+1.)
@@ -1358,6 +1559,22 @@ IND      = 50    ! Interval number, collection efficiency and infinite diameter
 ZEHS     = 1.0   ! factor used to integrate the dimensional distributions when
 ZFDINFTY = 20.0  ! computing the kernels XKER_SWETH
 !
+if ( NMOM_S.GE.2 ) then
+  IF( .NOT.ALLOCATED(XKER_N_SWETH) ) ALLOCATE( XKER_N_SWETH(NWETLBDAH,NWETLBDAS) )
+  CALL NZCOLX ( IND, XALPHAH, XNUH, XALPHAS, XNUS,                          &  
+              ZEHS, XCH, XDH, 0., XCS, XDS, XFVELOS,                       &  ! 
+              XWETLBDAH_MAX, XWETLBDAS_MAX, XWETLBDAH_MIN, XWETLBDAS_MIN, &  ! 
+              ZFDINFTY, XKER_N_SWETH                                        )
+  WRITE(UNIT=ILUOUT0,FMT='("!")')
+  WRITE(UNIT=ILUOUT0,FMT='("IF( PRESENT(PKER_N_SWETH) ) THEN")')          
+  DO J1 = 1 , NWETLBDAH                                                    
+    DO J2 = 1 , NWETLBDAS                                                  
+    WRITE(UNIT=ILUOUT0,FMT='("  PKER_N_SWETH(",I3,",",I3,") = ",E13.6)') &
+                      J1,J2,XKER_N_SWETH(J1,J2)                          
+    END DO                                                                
+  END DO                                                                   
+  WRITE(UNIT=ILUOUT0,FMT='("!")') 
+end  if
 IF( .NOT.ALLOCATED(XKER_SWETH) ) ALLOCATE( XKER_SWETH(NWETLBDAH,NWETLBDAS) )
 !
 CALL LIMA_READ_XKER_SWETH (KWETLBDAH,KWETLBDAS,KND,                                    &
@@ -1373,7 +1590,7 @@ IF( (KWETLBDAH/=NWETLBDAH) .OR. (KWETLBDAS/=NWETLBDAS) .OR. (KND/=IND) .OR. &
     (PWETLBDAH_MIN/=XWETLBDAH_MIN) .OR. (PWETLBDAS_MIN/=XWETLBDAS_MIN) .OR. &
     (PFDINFTY/=ZFDINFTY)                                               ) THEN
   CALL RZCOLX ( IND, XALPHAH, XNUH, XALPHAS, XNUS,                          &
-                ZEHS, XBS, XCH, XDH,0., XCS, XDS, XFVELOS,                  &
+                ZEHS, XBS, XCH, XDH, 0., XCS, XDS, XFVELOS,                 &
                 XWETLBDAH_MAX, XWETLBDAS_MAX, XWETLBDAH_MIN, XWETLBDAS_MIN, &
                 ZFDINFTY, XKER_SWETH                                        )
   WRITE(UNIT=ILUOUT0,FMT='("*****************************************")')
@@ -1425,6 +1642,22 @@ IND      = 50    ! Number of interval used to integrate the dimensional
 ZEHG     = 1.0   ! distributions when computing the kernel XKER_GWETH
 ZFDINFTY = 20.0
 !
+if ( NMOM_G.GE.2 ) then
+  IF( .NOT.ALLOCATED(XKER_N_GWETH) ) ALLOCATE( XKER_N_GWETH(NWETLBDAH,NWETLBDAG) )
+  CALL NZCOLX ( IND, XALPHAH, XNUH, XALPHAG, XNUG,                          & 
+              ZEHG, XCH, XDH, 0., XCG, XDG, 0.,                            & 
+              XWETLBDAH_MAX, XWETLBDAG_MAX, XWETLBDAH_MIN, XWETLBDAG_MIN, & 
+              ZFDINFTY, XKER_N_GWETH                                      )
+  WRITE(UNIT=ILUOUT0,FMT='("!")')
+  WRITE(UNIT=ILUOUT0,FMT='("IF( PRESENT(PKER_N_GWETH) ) THEN")')          
+  DO J1 = 1 , NWETLBDAH                                                    
+    DO J2 = 1 , NWETLBDAG                                                  
+    WRITE(UNIT=ILUOUT0,FMT='("  PKER_N_GWETH(",I3,",",I3,") = ",E13.6)') &
+                      J1,J2,XKER_N_GWETH(J1,J2)                          
+    END DO                                                                
+  END DO                                                                   
+  WRITE(UNIT=ILUOUT0,FMT='("!")') 
+end if
 IF( .NOT.ALLOCATED(XKER_GWETH) ) ALLOCATE( XKER_GWETH(NWETLBDAH,NWETLBDAG) )
 !
 CALL LIMA_READ_XKER_GWETH (KWETLBDAH,KWETLBDAG,KND,                                 &
@@ -1440,7 +1673,7 @@ IF( (KWETLBDAH/=NWETLBDAH) .OR. (KWETLBDAG/=NWETLBDAG) .OR. (KND/=IND) .OR. &
     (PWETLBDAH_MIN/=XWETLBDAH_MIN) .OR. (PWETLBDAG_MIN/=XWETLBDAG_MIN) .OR. &
     (PFDINFTY/=ZFDINFTY)                                               ) THEN
   CALL RZCOLX ( IND, XALPHAH, XNUH, XALPHAG, XNUG,                          &
-                ZEHG, XBG, XCH, XDH,0., XCG, XDG,   0.,                     &
+                ZEHG, XBG, XCH, XDH, 0., XCG, XDG, 0.,                      &
                 XWETLBDAH_MAX, XWETLBDAG_MAX, XWETLBDAH_MIN, XWETLBDAG_MIN, &
                 ZFDINFTY, XKER_GWETH                                        )
   WRITE(UNIT=ILUOUT0,FMT='("*****************************************")')

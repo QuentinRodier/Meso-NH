@@ -7,44 +7,46 @@
 MODULE MODI_LIMA_TENDENCIES
 !###############################
   INTERFACE
-     SUBROUTINE LIMA_TENDENCIES (PTSTEP, LDCOMPUTE,                                      &
-                                 PEXNREF, PRHODREF, PPABST, PTHT,                        &
-                                 PRVT, PRCT, PRRT, PRIT, PRST, PRGT, PRHT,               &
-                                 PCCT, PCRT, PCIT, PCST, PCGT, PCHT,                     &
-                                 P_TH_HONC, P_RC_HONC, P_CC_HONC,                        & 
-                                 P_CC_SELF,                                              & 
-                                 P_RC_AUTO, P_CC_AUTO, P_CR_AUTO,                        & 
-                                 P_RC_ACCR, P_CC_ACCR,                                   & 
-                                 P_CR_SCBU,                                              & 
-                                 P_TH_EVAP, P_RR_EVAP, P_CR_EVAP,                        & 
-                                 P_RI_CNVI, P_CI_CNVI,                                   & 
-                                 P_TH_DEPS, P_RS_DEPS,                                   & 
-                                 P_TH_DEPI, P_RI_DEPI,                                   & 
-                                 P_RI_CNVS, P_CI_CNVS,                                   & 
-                                 P_RI_AGGS, P_CI_AGGS,                                   & 
-                                 P_TH_DEPG, P_RG_DEPG,                                   & 
-                                 P_TH_BERFI, P_RC_BERFI,                                 & 
-                                 P_TH_RIM, P_RC_RIM, P_CC_RIM, P_RS_RIM, P_RG_RIM,       & 
-                                 P_RI_HMS, P_CI_HMS, P_RS_HMS,                           & 
-                                 P_TH_ACC, P_RR_ACC, P_CR_ACC, P_RS_ACC, P_RG_ACC,       & 
-                                 P_RS_CMEL,                                              & 
-                                 P_TH_CFRZ, P_RR_CFRZ, P_CR_CFRZ, P_RI_CFRZ, P_CI_CFRZ,  & 
-                                 P_RI_CIBU, P_CI_CIBU,                                   & 
-                                 P_RI_RDSF, P_CI_RDSF,                                   & 
-                                 P_TH_WETG, P_RC_WETG, P_CC_WETG, P_RR_WETG, P_CR_WETG,  & 
-                                 P_RI_WETG, P_CI_WETG, P_RS_WETG, P_RG_WETG, P_RH_WETG,  & 
-                                 P_TH_DRYG, P_RC_DRYG, P_CC_DRYG, P_RR_DRYG, P_CR_DRYG,  & 
-                                 P_RI_DRYG, P_CI_DRYG, P_RS_DRYG, P_RG_DRYG,             & 
-                                 P_RI_HMG, P_CI_HMG, P_RG_HMG,                           & 
-                                 P_TH_GMLT, P_RR_GMLT, P_CR_GMLT,                        & 
-!!!     Z_RC_WETH, Z_CC_WETH, Z_RR_WETH, Z_CR_WETH,  &           ! wet growth of hail (WETH) : rc, Nc, rr, Nr, ri, Ni, rs, rg, rh, th
-!!!     Z_RI_WETH, Z_CI_WETH, Z_RS_WETH, Z_RG_WETH, Z_RH_WETH, & ! wet growth of hail (WETH) : rc, Nc, rr, Nr, ri, Ni, rs, rg, rh, th
-!!!     Z_RG_COHG, &                                             ! conversion of hail into graupel (COHG) : rg, rh
-!!!     Z_RR_HMLT, Z_CR_HMLT                                     ! hail melting (HMLT) : rr, Nr, rh=-rr, th
-                                 PA_TH, PA_RV, PA_RC, PA_CC, PA_RR, PA_CR,               &
-                                 PA_RI, PA_CI, PA_RS, PA_CS, PA_RG, PA_CG, PA_RH, PA_CH, &
-                                 PEVAP3D,                                                &
-                                 PCF1D, PIF1D, PPF1D                                     )
+     SUBROUTINE LIMA_TENDENCIES (PTSTEP, LDCOMPUTE,                                                &
+                                 PEXNREF, PRHODREF, PPABST, PTHT,                                  &
+                                 PRVT, PRCT, PRRT, PRIT, PRST, PRGT, PRHT,                         &
+                                 PCCT, PCRT, PCIT, PCST, PCGT, PCHT,                               &
+                                 P_TH_HONC, P_RC_HONC, P_CC_HONC,                                  & 
+                                 P_CC_SELF,                                                        & 
+                                 P_RC_AUTO, P_CC_AUTO, P_CR_AUTO,                                  & 
+                                 P_RC_ACCR, P_CC_ACCR,                                             & 
+                                 P_CR_SCBU,                                                        & 
+                                 P_TH_EVAP, P_RR_EVAP, P_CR_EVAP,                                  & 
+                                 P_RI_CNVI, P_CI_CNVI,                                             & 
+                                 P_TH_DEPS, P_RS_DEPS,                                             & 
+                                 P_TH_DEPI, P_RI_DEPI,                                             & 
+                                 P_RI_CNVS, P_CI_CNVS,                                             &
+                                 P_CS_SSC,                                                         &
+                                 P_RI_AGGS, P_CI_AGGS,                                             & 
+                                 P_TH_DEPG, P_RG_DEPG,                                             & 
+                                 P_TH_BERFI, P_RC_BERFI,                                           & 
+                                 P_TH_RIM, P_RC_RIM, P_CC_RIM, P_RS_RIM, P_CS_RIM, P_RG_RIM,       & 
+                                 P_RI_HMS, P_CI_HMS, P_RS_HMS,                                     & 
+                                 P_TH_ACC, P_RR_ACC, P_CR_ACC, P_RS_ACC, P_CS_ACC, P_RG_ACC,       & 
+                                 P_RS_CMEL, P_CS_CMEL,                                             & 
+                                 P_TH_CFRZ, P_RR_CFRZ, P_CR_CFRZ, P_RI_CFRZ, P_CI_CFRZ,            & 
+                                 P_RI_CIBU, P_CI_CIBU,                                             & 
+                                 P_RI_RDSF, P_CI_RDSF,                                             & 
+                                 P_TH_WETG, P_RC_WETG, P_CC_WETG, P_RR_WETG, P_CR_WETG,            & 
+                                 P_RI_WETG, P_CI_WETG, P_RS_WETG, P_CS_WETG, P_RG_WETG, P_CG_WETG, P_RH_WETG, & 
+                                 P_TH_DRYG, P_RC_DRYG, P_CC_DRYG, P_RR_DRYG, P_CR_DRYG,            & 
+                                 P_RI_DRYG, P_CI_DRYG, P_RS_DRYG, P_CS_DRYG, P_RG_DRYG,            & 
+                                 P_RI_HMG, P_CI_HMG, P_RG_HMG,                                     & 
+                                 P_TH_GMLT, P_RR_GMLT, P_CR_GMLT, P_CG_GMLT,                       &
+                                 P_TH_DEPH, P_RH_DEPH,                                             &
+                                 P_TH_WETH, P_RC_WETH, P_CC_WETH, P_RR_WETH, P_CR_WETH,            &
+                                 P_RI_WETH, P_CI_WETH, P_RS_WETH, P_CS_WETH, P_RG_WETH, P_CG_WETH, P_RH_WETH, &
+                                 P_RG_COHG, P_CG_COHG,                                             &
+                                 P_TH_HMLT, P_RR_HMLT, P_CR_HMLT, P_CH_HMLT,                       &
+                                 PA_TH, PA_RV, PA_RC, PA_CC, PA_RR, PA_CR,                         &
+                                 PA_RI, PA_CI, PA_RS, PA_CS, PA_RG, PA_CG, PA_RH, PA_CH,           &
+                                 PEVAP3D,                                                          &
+                                 PCF1D, PIF1D, PPF1D                                               )
 !
 REAL,                 INTENT(IN)    :: PTSTEP 
 LOGICAL, DIMENSION(:),INTENT(IN)    :: LDCOMPUTE
@@ -100,6 +102,8 @@ REAL, DIMENSION(:),   INTENT(INOUT) :: P_RI_DEPI  ! deposition of vapor on ice (
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_RI_CNVS
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_CI_CNVS  ! conversion ice -> snow (CNVS) : ri, Ni, rs=-ri
 !
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_CS_SSC   ! self collection of snow (SSC) : Ns
+!
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_RI_AGGS
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_CI_AGGS  ! aggregation of ice on snow (AGGS) : ri, Ni, rs=-ri
 !
@@ -113,7 +117,8 @@ REAL, DIMENSION(:),   INTENT(INOUT) :: P_TH_RIM
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_RC_RIM
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_CC_RIM
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_RS_RIM
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_RG_RIM   ! cloud droplet riming (RIM) : rc, Nc, rs, rg, th
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_CS_RIM
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_RG_RIM   ! cloud droplet riming (RIM) : rc, Nc, rs, Ns, rg, Ng=-Ns, th
 !
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_RI_HMS
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_CI_HMS
@@ -123,9 +128,11 @@ REAL, DIMENSION(:),   INTENT(INOUT) :: P_TH_ACC
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_RR_ACC
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_CR_ACC
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_RS_ACC
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_RG_ACC   ! rain accretion on aggregates (ACC) : rr, Nr, rs, rg, th
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_CS_ACC
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_RG_ACC   ! rain accretion on aggregates (ACC) : rr, Nr, rs, Ns, rg, Ng=-Ns, th
 !
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_RS_CMEL  ! conversion-melting (CMEL) : rs, rg=-rs
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_RS_CMEL
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_CS_CMEL  ! conversion-melting (CMEL) : rs, Ns, rg=-rs, Ng=-Ns
 !
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_TH_CFRZ
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_RR_CFRZ
@@ -147,8 +154,10 @@ REAL, DIMENSION(:),   INTENT(INOUT) :: P_CR_WETG
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_RI_WETG
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_CI_WETG
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_RS_WETG
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_CS_WETG
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_RG_WETG
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_RH_WETG ! wet growth of graupel (WETG) : rc, NC, rr, Nr, ri, Ni, rs, rg, rh, th
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_CG_WETG
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_RH_WETG ! wet growth of graupel (WETG) : rc, NC, rr, Nr, ri, Ni, rs, Ns, rg, Ng, rh, Nh=-Ng, th
 !
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_TH_DRYG
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_RC_DRYG
@@ -158,7 +167,8 @@ REAL, DIMENSION(:),   INTENT(INOUT) :: P_CR_DRYG
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_RI_DRYG
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_CI_DRYG
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_RS_DRYG
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_RG_DRYG ! dry growth of graupel (DRYG) : rc, Nc, rr, Nr, ri, Ni, rs, rg, th
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_CS_DRYG
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_RG_DRYG ! dry growth of graupel (DRYG) : rc, Nc, rr, Nr, ri, Ni, rs, Ns, rg, th
 !
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_RI_HMG
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_CI_HMG
@@ -166,7 +176,32 @@ REAL, DIMENSION(:),   INTENT(INOUT) :: P_RG_HMG  ! hallett mossop graupel (HMG) 
 !
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_TH_GMLT
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_RR_GMLT
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_CR_GMLT ! graupel melting (GMLT) : rr, Nr, rg=-rr, th
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_CR_GMLT
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_CG_GMLT ! graupel melting (GMLT) : rr, Nr, rg=-rr, Ng, th
+!
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_TH_DEPH
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_RH_DEPH  ! deposition of vapor on hail (DEPH) : rv=-rh, rh, th
+!
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_TH_WETH
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_RC_WETH
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_CC_WETH
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_RR_WETH
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_CR_WETH
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_RI_WETH
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_CI_WETH
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_RS_WETH
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_CS_WETH
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_RG_WETH
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_CG_WETH
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_RH_WETH ! wet growth of hail (WETH) : rc, NC, rr, Nr, ri, Ni, rs, Ns, rg, Ng, rh, th
+!
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_RG_COHG
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_CG_COHG ! conversion hail -> graupel (COHG) : rg, Ng, rh=-rg; Nh=-Ng
+!
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_TH_HMLT
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_RR_HMLT
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_CR_HMLT
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_CH_HMLT ! hail melting (HMLT) : rr, Nr, rh=-rr, Nh, th
 !
 REAL, DIMENSION(:),   INTENT(INOUT) :: PA_TH
 REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RV
@@ -195,44 +230,46 @@ END MODULE MODI_LIMA_TENDENCIES
 !#####################################################################
 !
 !#####################################################################
-SUBROUTINE LIMA_TENDENCIES (PTSTEP, LDCOMPUTE,                                      &
-                            PEXNREF, PRHODREF, PPABST, PTHT,                        &
-                            PRVT, PRCT, PRRT, PRIT, PRST, PRGT, PRHT,               &
-                            PCCT, PCRT, PCIT, PCST, PCGT, PCHT,                     &
-                            P_TH_HONC, P_RC_HONC, P_CC_HONC,                        & 
-                            P_CC_SELF,                                              & 
-                            P_RC_AUTO, P_CC_AUTO, P_CR_AUTO,                        & 
-                            P_RC_ACCR, P_CC_ACCR,                                   & 
-                            P_CR_SCBU,                                              & 
-                            P_TH_EVAP, P_RR_EVAP, P_CR_EVAP,                        & 
-                            P_RI_CNVI, P_CI_CNVI,                                   & 
-                            P_TH_DEPS, P_RS_DEPS,                                   & 
-                            P_TH_DEPI, P_RI_DEPI,                                   & 
-                            P_RI_CNVS, P_CI_CNVS,                                   & 
-                            P_RI_AGGS, P_CI_AGGS,                                   & 
-                            P_TH_DEPG, P_RG_DEPG,                                   & 
-                            P_TH_BERFI, P_RC_BERFI,                                 & 
-                            P_TH_RIM, P_RC_RIM, P_CC_RIM, P_RS_RIM, P_RG_RIM,       & 
-                            P_RI_HMS, P_CI_HMS, P_RS_HMS,                           & 
-                            P_TH_ACC, P_RR_ACC, P_CR_ACC, P_RS_ACC, P_RG_ACC,       & 
-                            P_RS_CMEL,                                              & 
-                            P_TH_CFRZ, P_RR_CFRZ, P_CR_CFRZ, P_RI_CFRZ, P_CI_CFRZ,  & 
-                            P_RI_CIBU, P_CI_CIBU,                                   & 
-                            P_RI_RDSF, P_CI_RDSF,                                   & 
-                            P_TH_WETG, P_RC_WETG, P_CC_WETG, P_RR_WETG, P_CR_WETG,  & 
-                            P_RI_WETG, P_CI_WETG, P_RS_WETG, P_RG_WETG, P_RH_WETG,  & 
-                            P_TH_DRYG, P_RC_DRYG, P_CC_DRYG, P_RR_DRYG, P_CR_DRYG,  & 
-                            P_RI_DRYG, P_CI_DRYG, P_RS_DRYG, P_RG_DRYG,             & 
-                            P_RI_HMG, P_CI_HMG, P_RG_HMG,                           & 
-                            P_TH_GMLT, P_RR_GMLT, P_CR_GMLT,                        & 
-!!!     Z_RC_WETH, Z_CC_WETH, Z_RR_WETH, Z_CR_WETH,  &           ! wet growth of hail (WETH) : rc, Nc, rr, Nr, ri, Ni, rs, rg, rh, th
-!!!     Z_RI_WETH, Z_CI_WETH, Z_RS_WETH, Z_RG_WETH, Z_RH_WETH, & ! wet growth of hail (WETH) : rc, Nc, rr, Nr, ri, Ni, rs, rg, rh, th
-!!!     Z_RG_COHG, &                                             ! conversion of hail into graupel (COHG) : rg, rh
-!!!     Z_RR_HMLT, Z_CR_HMLT                                     ! hail melting (HMLT) : rr, Nr, rh=-rr, th
-                            PA_TH, PA_RV, PA_RC, PA_CC, PA_RR, PA_CR,               &
-                            PA_RI, PA_CI, PA_RS, PA_CS, PA_RG, PA_CG, PA_RH, PA_CH, &
-                            PEVAP3D,                                                &
-                            PCF1D, PIF1D, PPF1D                                     )
+SUBROUTINE LIMA_TENDENCIES (PTSTEP, LDCOMPUTE,                                                &
+                            PEXNREF, PRHODREF, PPABST, PTHT,                                  &
+                            PRVT, PRCT, PRRT, PRIT, PRST, PRGT, PRHT,                         &
+                            PCCT, PCRT, PCIT, PCST, PCGT, PCHT,                               &
+                            P_TH_HONC, P_RC_HONC, P_CC_HONC,                                  & 
+                            P_CC_SELF,                                                        & 
+                            P_RC_AUTO, P_CC_AUTO, P_CR_AUTO,                                  & 
+                            P_RC_ACCR, P_CC_ACCR,                                             & 
+                            P_CR_SCBU,                                                        & 
+                            P_TH_EVAP, P_RR_EVAP, P_CR_EVAP,                                  & 
+                            P_RI_CNVI, P_CI_CNVI,                                             & 
+                            P_TH_DEPS, P_RS_DEPS,                                             & 
+                            P_TH_DEPI, P_RI_DEPI,                                             & 
+                            P_RI_CNVS, P_CI_CNVS,                                             &
+                            P_CS_SSC,                                                         &
+                            P_RI_AGGS, P_CI_AGGS,                                             & 
+                            P_TH_DEPG, P_RG_DEPG,                                             & 
+                            P_TH_BERFI, P_RC_BERFI,                                           & 
+                            P_TH_RIM, P_RC_RIM, P_CC_RIM, P_RS_RIM, P_CS_RIM, P_RG_RIM,       & 
+                            P_RI_HMS, P_CI_HMS, P_RS_HMS,                                     & 
+                            P_TH_ACC, P_RR_ACC, P_CR_ACC, P_RS_ACC, P_CS_ACC, P_RG_ACC,       & 
+                            P_RS_CMEL, P_CS_CMEL,                                             & 
+                            P_TH_CFRZ, P_RR_CFRZ, P_CR_CFRZ, P_RI_CFRZ, P_CI_CFRZ,            & 
+                            P_RI_CIBU, P_CI_CIBU,                                             & 
+                            P_RI_RDSF, P_CI_RDSF,                                             & 
+                            P_TH_WETG, P_RC_WETG, P_CC_WETG, P_RR_WETG, P_CR_WETG,            & 
+                            P_RI_WETG, P_CI_WETG, P_RS_WETG, P_CS_WETG, P_RG_WETG, P_CG_WETG, P_RH_WETG, & 
+                            P_TH_DRYG, P_RC_DRYG, P_CC_DRYG, P_RR_DRYG, P_CR_DRYG,            & 
+                            P_RI_DRYG, P_CI_DRYG, P_RS_DRYG, P_CS_DRYG, P_RG_DRYG,            & 
+                            P_RI_HMG, P_CI_HMG, P_RG_HMG,                                     & 
+                            P_TH_GMLT, P_RR_GMLT, P_CR_GMLT, P_CG_GMLT,                       &
+                            P_TH_DEPH, P_RH_DEPH,                                             &
+                            P_TH_WETH, P_RC_WETH, P_CC_WETH, P_RR_WETH, P_CR_WETH,            &
+                            P_RI_WETH, P_CI_WETH, P_RS_WETH, P_CS_WETH, P_RG_WETH, P_CG_WETH, P_RH_WETH, &
+                            P_RG_COHG, P_CG_COHG,                                             &
+                            P_TH_HMLT, P_RR_HMLT, P_CR_HMLT, P_CH_HMLT,                       &
+                            PA_TH, PA_RV, PA_RC, PA_CC, PA_RR, PA_CR,                         &
+                            PA_RI, PA_CI, PA_RS, PA_CS, PA_RG, PA_CG, PA_RH, PA_CH,           &
+                            PEVAP3D,                                                          &
+                            PCF1D, PIF1D, PPF1D                                               )
 !     ######################################################################
 !!
 !!    PURPOSE
@@ -274,6 +311,7 @@ USE MODI_LIMA_DROPS_SELF_COLLECTION
 USE MODI_LIMA_RAIN_EVAPORATION
 USE MODI_LIMA_ICE_DEPOSITION
 USE MODI_LIMA_SNOW_DEPOSITION
+USE MODI_LIMA_SNOW_SELF_COLLECTION
 USE MODI_LIMA_ICE_AGGREGATION_SNOW
 USE MODI_LIMA_GRAUPEL_DEPOSITION
 USE MODI_LIMA_DROPLETS_RIMING_SNOW
@@ -283,6 +321,7 @@ USE MODI_LIMA_RAIN_FREEZING
 USE MODI_LIMA_COLLISIONAL_ICE_BREAKUP
 USE MODI_LIMA_RAINDROP_SHATTERING_FREEZING
 USE MODI_LIMA_GRAUPEL
+USE MODI_LIMA_HAIL_DEPOSITION
 !
 USE MODI_LIMA_BERGERON
 !
@@ -344,6 +383,8 @@ REAL, DIMENSION(:),   INTENT(INOUT) :: P_RI_DEPI  ! deposition of vapor on ice (
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_RI_CNVS
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_CI_CNVS  ! conversion ice -> snow (CNVS) : ri, Ni, rs=-ri
 !
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_CS_SSC   ! self collection of snow (SSC) : Ns
+!
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_RI_AGGS
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_CI_AGGS  ! aggregation of ice on snow (AGGS) : ri, Ni, rs=-ri
 !
@@ -357,6 +398,7 @@ REAL, DIMENSION(:),   INTENT(INOUT) :: P_TH_RIM
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_RC_RIM
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_CC_RIM
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_RS_RIM
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_CS_RIM
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_RG_RIM   ! cloud droplet riming (RIM) : rc, Nc, rs, rg, th
 !
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_RI_HMS
@@ -367,9 +409,11 @@ REAL, DIMENSION(:),   INTENT(INOUT) :: P_TH_ACC
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_RR_ACC
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_CR_ACC
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_RS_ACC
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_RG_ACC   ! rain accretion on aggregates (ACC) : rr, Nr, rs, rg, th
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_CS_ACC
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_RG_ACC   ! rain accretion on aggregates (ACC) : rr, Nr, rs, Ns, rg, Ng=-Ns, th
 !
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_RS_CMEL  ! conversion-melting (CMEL) : rs, rg=-rs
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_RS_CMEL
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_CS_CMEL  ! conversion-melting (CMEL) : rs, Ns, rg=-rs, Ng=-Ns
 !
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_TH_CFRZ
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_RR_CFRZ
@@ -391,8 +435,10 @@ REAL, DIMENSION(:),   INTENT(INOUT) :: P_CR_WETG
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_RI_WETG
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_CI_WETG
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_RS_WETG
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_CS_WETG
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_RG_WETG
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_RH_WETG ! wet growth of graupel (WETG) : rc, NC, rr, Nr, ri, Ni, rs, rg, rh, th
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_CG_WETG
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_RH_WETG ! wet growth of graupel (WETG) : rc, NC, rr, Nr, ri, Ni, rs, Ns, rg, Ng, rh, Nh=-Ng, th
 !
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_TH_DRYG
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_RC_DRYG
@@ -402,6 +448,7 @@ REAL, DIMENSION(:),   INTENT(INOUT) :: P_CR_DRYG
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_RI_DRYG
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_CI_DRYG
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_RS_DRYG
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_CS_DRYG
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_RG_DRYG ! dry growth of graupel (DRYG) : rc, Nc, rr, Nr, ri, Ni, rs, rg, th
 !
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_RI_HMG
@@ -410,7 +457,32 @@ REAL, DIMENSION(:),   INTENT(INOUT) :: P_RG_HMG  ! hallett mossop graupel (HMG) 
 !
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_TH_GMLT
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_RR_GMLT
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_CR_GMLT ! graupel melting (GMLT) : rr, Nr, rg=-rr, th
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_CR_GMLT
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_CG_GMLT ! graupel melting (GMLT) : rr, Nr, rg=-rr, Ng, th
+!
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_TH_DEPH
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_RH_DEPH  ! deposition of vapor on hail (DEPH) : rv=-rh, rh, th
+!
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_TH_WETH
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_RC_WETH
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_CC_WETH
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_RR_WETH
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_CR_WETH
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_RI_WETH
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_CI_WETH
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_RS_WETH
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_CS_WETH
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_RG_WETH
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_CG_WETH
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_RH_WETH ! wet growth of hail (WETH) : rc, NC, rr, Nr, ri, Ni, rs, Ns, rg, Ng, rh, th
+!
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_RG_COHG
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_CG_COHG ! conversion hail -> graupel (COHG) : rg, Ng, rh=-rg; Nh=-Ng
+!
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_TH_HMLT
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_RR_HMLT
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_CR_HMLT
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_CH_HMLT ! hail melting (HMLT) : rr, Nr, rh=-rr, Nh, th
 !
 REAL, DIMENSION(:),   INTENT(INOUT) :: PA_TH
 REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RV
@@ -443,6 +515,7 @@ REAL,    DIMENSION(SIZE(PRCT))  :: ZLBDR
 REAL,    DIMENSION(SIZE(PRCT))  :: ZLBDR3
 REAL,    DIMENSION(SIZE(PRCT))  :: ZLBDI
 REAL,    DIMENSION(SIZE(PRCT))  :: ZLBDS
+REAL,    DIMENSION(SIZE(PRCT))  :: ZLBDS3
 REAL,    DIMENSION(SIZE(PRCT))  :: ZLBDG
 REAL,    DIMENSION(SIZE(PRCT))  :: ZLBDH
 
@@ -615,6 +688,7 @@ IF (NMOM_S.EQ.1) THEN
 ELSE
    ZLBDS(:) = (XLBS*PCST(:)/ZRST(:))**XLBEXS
 END IF
+ZLBDS3(:) = ZLBDS(:)**3.
 !
 ! Graupel
 ZLBDG(:)  = 1.E10
@@ -741,6 +815,7 @@ IF (LCOLD) THEN
    PA_RI(:) = PA_RI(:) + P_RI_DEPI(:) + P_RI_CNVS(:)
    IF (NMOM_I.GE.2) PA_CI(:) = PA_CI(:)                + P_CI_CNVS(:)
    PA_RS(:) = PA_RS(:)                - P_RI_CNVS(:)
+   IF (NMOM_S.GE.2) PA_CS(:) = PA_CS(:)                - P_CI_CNVS(:)
 
 END IF
 !
@@ -750,7 +825,7 @@ IF (LCOLD .AND. LSNOW) THEN
    !
    CALL LIMA_SNOW_DEPOSITION (LDCOMPUTE,                         & ! depends on IF, PF
                               PRHODREF, ZSSI, ZAI, ZCJ, ZLSFACT, &
-                              ZRST/ZPF1D, ZLBDS,                 &
+                              ZRST/ZPF1D, PCST/ZPF1D, ZLBDS,     &
                               P_RI_CNVI, P_CI_CNVI,              &
                               P_TH_DEPS, P_RS_DEPS               )
    !
@@ -762,9 +837,21 @@ IF (LCOLD .AND. LSNOW) THEN
    PA_RI(:) = PA_RI(:) + P_RI_CNVI(:)
    IF (NMOM_I.GE.2) PA_CI(:) = PA_CI(:) + P_CI_CNVI(:)
    PA_RS(:) = PA_RS(:) - P_RI_CNVI(:) + P_RS_DEPS(:) 
+   IF (NMOM_S.GE.2) PA_CS(:) = PA_CS(:) - P_CI_CNVI(:)
    PA_TH(:) = PA_TH(:)                + P_TH_DEPS(:)
    PA_RV(:) = PA_RV(:)                - P_RS_DEPS(:) 
 
+END IF
+!
+IF (LSNOW .AND. NMOM_S.GE.2) THEN 
+   CALL LIMA_SNOW_SELF_COLLECTION (LDCOMPUTE,           & ! depends on PF
+                                   PRHODREF,            &
+                                   PCST/ZPF1D(:), ZLBDS, ZLBDS3, &
+                                   P_CS_SSC             )
+   !
+   P_CS_SSC(:) = P_CS_SSC(:) * ZPF1D(:)
+   !
+   PA_CS(:) = PA_CS(:) + P_CS_SSC(:)
 END IF
 !
 ! Lambda_s limited for collection processes to prevent too high concentrations
@@ -774,10 +861,10 @@ END IF
 !
 !
 IF (LCOLD .AND. LSNOW) THEN
-   CALL LIMA_ICE_AGGREGATION_SNOW (LDCOMPUTE,                                        & ! depends on IF, PF
-                                   ZT, PRHODREF,                                     &
-                                   ZRIT/ZIF1D, ZRST/ZPF1D, PCIT/ZIF1D, ZLBDI, ZLBDS, &
-                                   P_RI_AGGS, P_CI_AGGS                              )
+   CALL LIMA_ICE_AGGREGATION_SNOW (LDCOMPUTE,                                                    & ! depends on IF, PF
+                                   ZT, PRHODREF,                                                 &
+                                   ZRIT/ZIF1D, ZRST/ZPF1D, PCIT/ZIF1D, PCST/ZPF1D, ZLBDI, ZLBDS, &
+                                   P_RI_AGGS, P_CI_AGGS                                          )
    P_CI_AGGS(:) = P_CI_AGGS(:) * ZIF1D(:)
    P_RI_AGGS(:) = P_RI_AGGS(:) * ZIF1D(:)
    !
@@ -787,9 +874,9 @@ IF (LCOLD .AND. LSNOW) THEN
 END IF
 !
 IF (LWARM .AND. LCOLD) THEN
-   CALL LIMA_GRAUPEL_DEPOSITION (LDCOMPUTE, PRHODREF,                        & ! depends on PF ?
-                                 ZRGT/ZPF1D, ZSSI, ZLBDG, ZAI, ZCJ, ZLSFACT, &
-                                 P_TH_DEPG, P_RG_DEPG                        )
+   CALL LIMA_GRAUPEL_DEPOSITION (LDCOMPUTE, PRHODREF,                                    & ! depends on PF ?
+                                 ZRGT/ZPF1D, PCGT/ZPF1D, ZSSI, ZLBDG, ZAI, ZCJ, ZLSFACT, &
+                                 P_TH_DEPG, P_RG_DEPG                                    )
    P_RG_DEPG(:) = P_RG_DEPG(:) * ZPF1D(:)
    P_TH_DEPG(:) = P_RG_DEPG(:) * ZLSFACT(:)
    !
@@ -818,12 +905,13 @@ IF (LWARM .AND. LCOLD .AND. LSNOW) THEN
      !
    CALL LIMA_DROPLETS_RIMING_SNOW (PTSTEP, LDCOMPUTE,                                & ! depends on CF
                                    PRHODREF, ZT,                                     &
-                                   ZRCT/ZCF1D, PCCT/ZCF1D, ZRST/ZPF1D, ZLBDC, ZLBDS, ZLVFACT, ZLSFACT, &
-                                   P_TH_RIM, P_RC_RIM, P_CC_RIM, P_RS_RIM, P_RG_RIM, &
+                                   ZRCT/ZCF1D, PCCT/ZCF1D, ZRST/ZPF1D, PCST/ZPF1D, ZLBDC, ZLBDS, ZLVFACT, ZLSFACT, &
+                                   P_TH_RIM, P_RC_RIM, P_CC_RIM, P_RS_RIM, P_CS_RIM, P_RG_RIM, &
                                    P_RI_HMS, P_CI_HMS, P_RS_HMS                      )
    P_RC_RIM(:) = P_RC_RIM(:) * ZCF1D(:)
    P_CC_RIM(:) = P_CC_RIM(:) * ZCF1D(:)
    P_RS_RIM(:) = P_RS_RIM(:) * ZCF1D(:)
+   P_CS_RIM(:) = P_CS_RIM(:) * ZCF1D(:)
    P_RG_RIM(:) = P_RG_RIM(:) * ZCF1D(:)
    P_TH_RIM(:) = - P_RC_RIM(:) * (ZLSFACT(:)-ZLVFACT(:))
    P_RI_HMS(:) = P_RI_HMS(:) * ZCF1D(:)
@@ -835,7 +923,9 @@ IF (LWARM .AND. LCOLD .AND. LSNOW) THEN
    PA_RI(:) = PA_RI(:)               + P_RI_HMS(:)
    IF (NMOM_I.GE.2) PA_CI(:) = PA_CI(:)               + P_CI_HMS(:)
    PA_RS(:) = PA_RS(:) + P_RS_RIM(:) + P_RS_HMS(:)
+   IF (NMOM_S.GE.2) PA_CS(:) = PA_CS(:) + P_CS_RIM(:)
    PA_RG(:) = PA_RG(:) + P_RG_RIM(:) 
+   IF (NMOM_G.GE.2) PA_CG(:) = PA_CG(:) - P_CS_RIM(:)
    PA_TH(:) = PA_TH(:) + P_TH_RIM(:)
 
 END IF
@@ -843,18 +933,21 @@ END IF
 IF (LWARM .AND. LRAIN .AND. LCOLD .AND. LSNOW) THEN
    CALL LIMA_RAIN_ACCR_SNOW (PTSTEP, LDCOMPUTE,                                & ! depends on PF
                              PRHODREF, ZT,                                     &
-                             ZRRT/ZPF1D, PCRT/ZPF1D, ZRST/ZPF1D, ZLBDR, ZLBDS, ZLVFACT, ZLSFACT, &
-                             P_TH_ACC, P_RR_ACC, P_CR_ACC, P_RS_ACC, P_RG_ACC )
+                             ZRRT/ZPF1D, PCRT/ZPF1D, ZRST/ZPF1D, PCST/ZPF1D, ZLBDR, ZLBDS, ZLVFACT, ZLSFACT, &
+                             P_TH_ACC, P_RR_ACC, P_CR_ACC, P_RS_ACC, P_CS_ACC, P_RG_ACC )
    P_RR_ACC(:) = P_RR_ACC(:) * ZPF1D(:)
    P_CR_ACC(:) = P_CR_ACC(:) * ZPF1D(:)
    P_RS_ACC(:) = P_RS_ACC(:) * ZPF1D(:)
+   P_CS_ACC(:) = P_CS_ACC(:) * ZPF1D(:)
    P_RG_ACC(:) = P_RG_ACC(:) * ZPF1D(:)
    P_TH_ACC(:) = - P_RR_ACC(:) * (ZLSFACT(:)-ZLVFACT(:))
    !
    PA_RR(:) = PA_RR(:) + P_RR_ACC(:)
    IF (NMOM_R.GE.2) PA_CR(:) = PA_CR(:) + P_CR_ACC(:)
    PA_RS(:) = PA_RS(:) + P_RS_ACC(:)
+   IF (NMOM_S.GE.2) PA_CS(:) = PA_CS(:) + P_CS_ACC(:)
    PA_RG(:) = PA_RG(:) + P_RG_ACC(:)
+   IF (NMOM_G.GE.2) PA_CG(:) = PA_CG(:) - P_CS_ACC(:)
    PA_TH(:) = PA_TH(:) + P_TH_ACC(:)
 
 END IF
@@ -866,12 +959,15 @@ IF (LWARM .AND. LCOLD .AND. LSNOW) THEN
    !
    CALL LIMA_CONVERSION_MELTING_SNOW (LDCOMPUTE,                           & ! depends on PF
                                       PRHODREF, PPABST, ZT, ZKA, ZDV, ZCJ, &
-                                      PRVT, ZRST/ZPF1D, ZLBDS,             &
-                                      P_RS_CMEL                           )
+                                      PRVT, ZRST/ZPF1D, PCST/ZPF1D, ZLBDS, &
+                                      P_RS_CMEL, P_CS_CMEL                 )
    P_RS_CMEL(:) = P_RS_CMEL(:) * ZPF1D(:)
+   P_CS_CMEL(:) = P_CS_CMEL(:) * ZPF1D(:)
    !
    PA_RS(:) = PA_RS(:) + P_RS_CMEL(:)
+   IF (NMOM_S.GE.2) PA_CS(:) = PA_CS(:) + P_CS_CMEL(:)
    PA_RG(:) = PA_RG(:) - P_RS_CMEL(:)
+   IF (NMOM_G.GE.2) PA_CG(:) = PA_CG(:) - P_CS_CMEL(:)
 
 END IF
 !
@@ -892,6 +988,7 @@ IF (LWARM .AND. LRAIN .AND. LCOLD ) THEN
    PA_RI(:) = PA_RI(:) + P_RI_CFRZ(:)
    IF (NMOM_I.GE.2) PA_CI(:) = PA_CI(:) + P_CI_CFRZ(:)
    PA_RG(:) = PA_RG(:) - P_RR_CFRZ(:) - P_RI_CFRZ(:)
+   IF (NMOM_G.GE.2) PA_CG(:) = PA_CG(:) - P_CR_CFRZ(:)
 
 END IF
 !
@@ -902,7 +999,7 @@ IF (LWARM .AND. LCOLD .AND. LSNOW .AND. LCIBU) THEN
    !
    CALL LIMA_COLLISIONAL_ICE_BREAKUP (LDCOMPUTE,                                      & ! depends on PF (IF for fragments size)
                                       PRHODREF,                                       &
-                                      ZRIT/ZIF1D, ZRST/ZPF1D, ZRGT/ZPF1D, PCIT/ZIF1D, &
+                                      ZRIT/ZIF1D, ZRST/ZPF1D, ZRGT/ZPF1D, PCIT/ZIF1D, PCST/ZPF1D, PCST/ZPF1D, &
                                       ZLBDS, ZLBDG,                                   &
                                       P_RI_CIBU, P_CI_CIBU                            )
    P_RI_CIBU(:) = P_RI_CIBU(:) * ZPF1D(:)
@@ -944,25 +1041,42 @@ IF (LWARM .AND. LCOLD) THEN
    CALL LIMA_GRAUPEL (PTSTEP, LDCOMPUTE,                                     & ! depends on PF, CF, IF
                       PRHODREF, PPABST, ZT, ZKA, ZDV, ZCJ,                   &
                       PRVT, ZRCT, ZRRT, ZRIT, ZRST, ZRGT,                    &
-                      PCCT, PCRT, PCIT,                                      &
+                      PCCT, PCRT, PCIT, PCST, PCGT,                          &
                       ZLBDC, ZLBDR, ZLBDS, ZLBDG,                            &
                       ZLVFACT, ZLSFACT,                                      &
                       P_TH_WETG, P_RC_WETG, P_CC_WETG, P_RR_WETG, P_CR_WETG, &
-                      P_RI_WETG, P_CI_WETG, P_RS_WETG, P_RG_WETG, P_RH_WETG, &
+                      P_RI_WETG, P_CI_WETG, P_RS_WETG, P_CS_WETG, P_RG_WETG, P_CG_WETG, P_RH_WETG, &
                       P_TH_DRYG, P_RC_DRYG, P_CC_DRYG, P_RR_DRYG, P_CR_DRYG, &
-                      P_RI_DRYG, P_CI_DRYG, P_RS_DRYG, P_RG_DRYG,            &
+                      P_RI_DRYG, P_CI_DRYG, P_RS_DRYG, P_CS_DRYG, P_RG_DRYG, &
                       P_RI_HMG, P_CI_HMG, P_RG_HMG,                          &
-                      P_TH_GMLT, P_RR_GMLT, P_CR_GMLT,                       &
+                      P_TH_GMLT, P_RR_GMLT, P_CR_GMLT, P_CG_GMLT,            &
                       PA_TH, PA_RC, PA_CC, PA_RR, PA_CR,                     &
-                      PA_RI, PA_CI, PA_RS, PA_RG, PA_RH                      )
+                      PA_RI, PA_CI, PA_RS, PA_CS, PA_RG, PA_CG, PA_RH, PA_CH )
 END IF
 !
 IF (LWARM .AND. LCOLD .AND. LHAIL) THEN
-!     CALL LIMA_HAIL_GROWTH
-
-!     CALL LIMA_HAIL_CONVERSION
-
-!     CALL LIMA_HAIL_MELTING
+   CALL LIMA_HAIL_DEPOSITION (LDCOMPUTE, PRHODREF,                                    & ! depends on PF ?
+                              ZRHT/ZPF1D, PCHT/ZPF1D, ZSSI, ZLBDH, ZAI, ZCJ, ZLSFACT, &
+                              P_TH_DEPH, P_RH_DEPH                                    )
+   P_RH_DEPH(:) = P_RH_DEPH(:) * ZPF1D(:)
+   P_TH_DEPH(:) = P_RH_DEPH(:) * ZLSFACT(:)
+   !
+   PA_RV(:) = PA_RV(:) - P_RH_DEPH(:)
+   PA_RH(:) = PA_RH(:) + P_RH_DEPH(:)
+   PA_TH(:) = PA_TH(:) + P_TH_DEPH(:)
+!     CALL LIMA_HAIL_GROWTH   LIMA_HAIL_CONVERSION   LIMA_HAIL_MELTING
+   CALL LIMA_HAIL (PTSTEP, LDCOMPUTE,                                     & ! depends on PF, CF, IF
+                   PRHODREF, PPABST, ZT, ZKA, ZDV, ZCJ,                   &
+                   PRVT, ZRCT, ZRRT, ZRIT, ZRST, ZRGT, ZRHT,              &
+                   PCCT, PCRT, PCIT, PCST, PCGT, PCHT,                    &
+                   ZLBDC, ZLBDR, ZLBDS, ZLBDG, ZLBDH,                     &
+                   ZLVFACT, ZLSFACT,                                      &
+                   P_TH_WETH, P_RC_WETH, P_CC_WETH, P_RR_WETH, P_CR_WETH, &
+                   P_RI_WETH, P_CI_WETH, P_RS_WETH, P_CS_WETH, P_RG_WETH, P_CG_WETH, P_RH_WETH, &
+                   P_RG_COHG, P_CG_COHG,                                  &
+                   P_TH_HMLT, P_RR_HMLT, P_CR_HMLT, P_CH_HMLT,            &
+                   PA_TH, PA_RC, PA_CC, PA_RR, PA_CR,                     &
+                   PA_RI, PA_CI, PA_RS, PA_CS, PA_RG, PA_CG, PA_RH, PA_CH )
 END IF
    !  
 END SUBROUTINE LIMA_TENDENCIES
