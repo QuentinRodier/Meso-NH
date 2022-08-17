@@ -19,6 +19,8 @@
 !!    MODIFICATIONS
 !!    -------------
 !!      Original             ??/??/13 
+!!      C. Barthe            14/03/2022  add CIBU and RDSF
+!  J. Wurtz       03/2022: new snow characteristics
 !!
 !-------------------------------------------------------------------------------
 USE MODD_PARAMETERS, ONLY: JPSVNAMELGTMAX
@@ -45,14 +47,15 @@ IMPLICIT NONE
 !                                                distribution law
 !
 REAL,SAVE :: XLBEXI,XLBI              ! Prist. ice     distribution parameters
-REAL,SAVE :: XLBEXS,XLBS              ! Snow/agg.      distribution parameters
+REAL,SAVE :: XLBEXS,XLBS,XNS          ! Snow/agg.      distribution parameters
 !
 REAL,SAVE :: XAI,XBI,XC_I,XDI         ,XF0I,XF2I,XC1I ! Cloud ice      charact.
 REAL,SAVE ::                           XF0IS,XF1IS    ! (large Di vent. coef.)
 REAL,SAVE :: XAS,XBS,XCS,XDS,XCCS,XCXS,XF0S,XF1S,XC1S ! Snow/agg.      charact.
 !
-REAL,SAVE :: XLBDAS_MAX               ! Max values allowed for the shape
-                                      ! parameter of snow
+REAL,SAVE :: XLBDAS_MIN, XLBDAS_MAX   ! Max values allowed for the shape parameter of snow
+REAL,SAVE :: XFVELOS                  ! Wurtz - snow fall speed parameterizaed after Thompson 2008
+REAL,SAVE :: XTRANS_MP_GAMMAS         ! Wurtz - change between lambda value for MP and gen. gamma
 !
 CHARACTER(LEN=JPSVNAMELGTMAX),DIMENSION(5),PARAMETER &
                               :: CLIMA_COLD_NAMES=(/'CICE    ','CIFNFREE','CIFNNUCL', &
@@ -72,11 +75,11 @@ CHARACTER(LEN=JPSVNAMELGTMAX),DIMENSION(5),PARAMETER &
 !             ---------------------
 !
 REAL,SAVE :: XFSEDRI,XFSEDCI,                  & ! Constants for sedimentation
-    	     XFSEDS, XEXSEDS                     ! fluxes of ice and snow
+             XFSEDS, XEXSEDS                     ! fluxes of ice and snow
 !
 REAL,SAVE :: XNUC_DEP,XEXSI_DEP,XEX_DEP,       & ! Constants for heterogeneous
-    	     XNUC_CON,XEXTT_CON,XEX_CON,       & ! ice nucleation : DEP et CON
-    	     XMNU0                               ! mass of nucleated ice crystal
+             XNUC_CON,XEXTT_CON,XEX_CON,       & ! ice nucleation : DEP et CON
+             XMNU0                               ! mass of nucleated ice crystal
 !
 REAL,SAVE :: XRHOI_HONH,XCEXP_DIFVAP_HONH,     & ! Constants for homogeneous
              XCOEF_DIFVAP_HONH,XRCOEF_HONH,    & ! haze freezing : HHONI
@@ -86,7 +89,7 @@ REAL,SAVE :: XRHOI_HONH,XCEXP_DIFVAP_HONH,     & ! Constants for homogeneous
              XC1_HONH,XC2_HONH,XC3_HONH
 !
 REAL,SAVE :: XC_HONC,XR_HONC,                  & ! Constants for homogeneous
-    	     XTEXP1_HONC,XTEXP2_HONC,          & ! droplet freezing : CHONI
+             XTEXP1_HONC,XTEXP2_HONC,          & ! droplet freezing : CHONI
              XTEXP3_HONC,XTEXP4_HONC,          &
              XTEXP5_HONC
 !
@@ -97,7 +100,7 @@ REAL,SAVE :: XCSCNVI_MAX, XLBDASCNVI_MAX,      &
              XR0DEPSI,XR1DEPSI                   ! pristine ice : SCNVI
 !
 REAL,SAVE :: XSCFAC,                           & ! Constants for the Bergeron
-    	     X0DEPI,X2DEPI,                    & ! Findeisen process and
+             X0DEPI,X2DEPI,                    & ! Findeisen process and
              X0DEPS,X1DEPS,XEX0DEPS,XEX1DEPS     ! deposition
 !
 REAL,SAVE :: XDICNVS_LIM, XLBDAICNVS_LIM,      & ! Constants for pristine ice
@@ -106,7 +109,8 @@ REAL,SAVE :: XDICNVS_LIM, XLBDAICNVS_LIM,      & ! Constants for pristine ice
 !
 REAL,SAVE :: XCOLEXIS,                         & ! Constants for snow 
     	     XAGGS_CLARGE1,XAGGS_CLARGE2,      & ! aggregation : AGG
-             XAGGS_RLARGE1,XAGGS_RLARGE2
+             XAGGS_RLARGE1,XAGGS_RLARGE2,      &
+             XFIAGGS,XEXIAGGS
 !
 !??????????????????
 REAL,SAVE :: XKER_ZRNIC_A1,XKER_ZRNIC_A2         ! Long-Zrnic Kernels (ini_ice_coma)

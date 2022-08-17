@@ -6,11 +6,11 @@
 MODULE MODI_ICE4_SEDIMENTATION_SPLIT
 INTERFACE
 SUBROUTINE ICE4_SEDIMENTATION_SPLIT(KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKTB, KKTE, KKT, KKL, &
-                                   &PTSTEP, KRR, OSEDIC, ODEPOSC, PVDEPOSC, PDZZ, &
-                                   &PRHODREF, PPABST, PTHT, PRHODJ, &
-                                   &PRCS, PRCT, PRRS, PRRT, PRIS, PRIT, PRSS, PRST, PRGS, PRGT,&
-                                   &PINPRC, PINDEP, PINPRR, PINPRI, PINPRS, PINPRG, &
-                                   &PSEA, PTOWN,  &
+                                   &PTSTEP, KRR, OSEDIC, ODEPOSC, PVDEPOSC, PDZZ,                 &
+                                   &PRHODREF, PPABST, PTHT, PT, PRHODJ,                           &
+                                   &PRCS, PRCT, PRRS, PRRT, PRIS, PRIT, PRSS, PRST, PRGS, PRGT,   &
+                                   &PINPRC, PINDEP, PINPRR, PINPRI, PINPRS, PINPRG,               &
+                                   &PSEA, PTOWN,                                                  &
                                    &PINPRH, PRHT, PRHS, PFPR)
 IMPLICIT NONE
 INTEGER, INTENT(IN) :: KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKTB, KKTE, KKT
@@ -24,6 +24,7 @@ REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PDZZ    ! Layer thiknes
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PRHODREF! Reference density
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PPABST  ! absolute pressure at t
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PTHT    ! Theta at time t
+REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PT      ! Theta at time t
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PRHODJ  ! Dry density * Jacobian
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(INOUT)           :: PRCS    ! Cloud water m.r. source
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PRCT    ! Cloud water m.r. at t
@@ -51,11 +52,11 @@ END SUBROUTINE ICE4_SEDIMENTATION_SPLIT
 END INTERFACE
 END MODULE MODI_ICE4_SEDIMENTATION_SPLIT
 SUBROUTINE ICE4_SEDIMENTATION_SPLIT(KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKTB, KKTE, KKT, KKL, &
-                                   &PTSTEP, KRR, OSEDIC, ODEPOSC, PVDEPOSC, PDZZ, &
-                                   &PRHODREF, PPABST, PTHT, PRHODJ, &
-                                   &PRCS, PRCT, PRRS, PRRT, PRIS, PRIT, PRSS, PRST, PRGS, PRGT,&
-                                   &PINPRC, PINDEP, PINPRR, PINPRI, PINPRS, PINPRG, &
-                                   &PSEA, PTOWN,  &
+                                   &PTSTEP, KRR, OSEDIC, ODEPOSC, PVDEPOSC, PDZZ,                 &
+                                   &PRHODREF, PPABST, PTHT, PT, PRHODJ,                           &
+                                   &PRCS, PRCT, PRRS, PRRT, PRIS, PRIT, PRSS, PRST, PRGS, PRGT,   &
+                                   &PINPRC, PINDEP, PINPRR, PINPRI, PINPRS, PINPRG,               &
+                                   &PSEA, PTOWN,                                                  &
                                    &PINPRH, PRHT, PRHS, PFPR)
 !!
 !!**  PURPOSE
@@ -72,6 +73,7 @@ SUBROUTINE ICE4_SEDIMENTATION_SPLIT(KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKTB
 !!
 !  P. Wautelet 11/02/2019: dimensions of PINPRC and PINDEP not necessarily KIT,KJT
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
+!  J. Wurtz       03/2022: New snow characteristics with LSNOW_T
 !
 !
 !*      0. DECLARATIONS
@@ -101,6 +103,7 @@ REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PDZZ    ! Layer thiknes
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PRHODREF! Reference density
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PPABST  ! absolute pressure at t
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PTHT    ! Theta at time t
+REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PT      ! Theta at time t
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PRHODJ  ! Dry density * Jacobian
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(INOUT)           :: PRCS    ! Cloud water m.r. source
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PRCT    ! Cloud water m.r. at t
@@ -237,7 +240,7 @@ ZW(:,:,KKTB:KKTE) =1./(PRHODREF(:,:,KKTB:KKTE)* PDZZ(:,:,KKTB:KKTE))
 IF (GSEDIC) THEN
     CALL INTERNAL_SEDIM_SPLI(KIB,KIE,KIT,KJB,KJE,KJT, KKB, KKTB, KKTE, KKT, KKL, KRR, &
                           &XSPLIT_MAXCFL, &
-                          &PRHODREF, ZW, PDZZ, PPABST, PTHT, PTSTEP, &
+                          &PRHODREF, ZW, PDZZ, PPABST, PTHT, PT, PTSTEP, &
                           &2, &
                           &ZRCT, PRCS, PINPRC, ZPRCS, &
                           &ZRAY, ZLBC, ZFSEDC, ZCONC3D, PFPR=PFPR)
@@ -263,16 +266,16 @@ END IF
 !
   CALL INTERNAL_SEDIM_SPLI(KIB,KIE,KIT,KJB,KJE,KJT, KKB, KKTB, KKTE, KKT, KKL, KRR, &
                           &XSPLIT_MAXCFL, &
-                          &PRHODREF, ZW, PDZZ, PPABST, PTHT, PTSTEP, &
+                          &PRHODREF, ZW, PDZZ, PPABST, PTHT, PT, PTSTEP, &
                           &3, &
                           &ZRRT, PRRS, PINPRR, ZPRRS, &
-                          PFPR=PFPR)
+                          &PFPR=PFPR)
 !
 !*       2.3   for pristine ice
 !
   CALL INTERNAL_SEDIM_SPLI(KIB,KIE,KIT,KJB,KJE,KJT, KKB, KKTB, KKTE, KKT, KKL, KRR, &
                           &XSPLIT_MAXCFL, &
-                          &PRHODREF, ZW, PDZZ, PPABST, PTHT, PTSTEP, &
+                          &PRHODREF, ZW, PDZZ, PPABST, PTHT, PT, PTSTEP, &
                           &4, &
                           &ZRIT, PRIS, PINPRI, ZPRIS, &
                           PFPR=PFPR)
@@ -281,7 +284,7 @@ END IF
 !
   CALL INTERNAL_SEDIM_SPLI(KIB,KIE,KIT,KJB,KJE,KJT, KKB, KKTB, KKTE, KKT, KKL, KRR, &
                         &XSPLIT_MAXCFL, &
-                        &PRHODREF, ZW, PDZZ, PPABST, PTHT, PTSTEP, &
+                        &PRHODREF, ZW, PDZZ, PPABST, PTHT, PT, PTSTEP, &
                         &5, &
                         &ZRST, PRSS, PINPRS, ZPRSS, &
                         PFPR=PFPR)
@@ -290,7 +293,7 @@ END IF
 !
   CALL INTERNAL_SEDIM_SPLI(KIB,KIE,KIT,KJB,KJE,KJT, KKB, KKTB, KKTE, KKT, KKL, KRR, &
                         &XSPLIT_MAXCFL, &
-                        &PRHODREF, ZW, PDZZ, PPABST, PTHT, PTSTEP, &
+                        &PRHODREF, ZW, PDZZ, PPABST, PTHT, PT, PTSTEP, &
                         &6, &
                         &ZRGT, PRGS, PINPRG, ZPRGS, &
                         PFPR=PFPR)
@@ -300,7 +303,7 @@ END IF
 IF (IRR==7) THEN
     CALL INTERNAL_SEDIM_SPLI(KIB,KIE,KIT,KJB,KJE,KJT, KKB, KKTB, KKTE, KKT, KKL, KRR, &
                           &XSPLIT_MAXCFL, &
-                          &PRHODREF, ZW, PDZZ, PPABST, PTHT, PTSTEP, &
+                          &PRHODREF, ZW, PDZZ, PPABST, PTHT, PT, PTSTEP, &
                           &7, &
                           &ZRHT, PRHS, PINPRH, ZPRHS, &
                           PFPR=PFPR)
@@ -313,17 +316,19 @@ CONTAINS
 !-------------------------------------------------------------------------------
 !
 !
-SUBROUTINE INTERNAL_SEDIM_SPLI(KIB,KIE,KIT,KJB,KJE,KJT,KKB,KKTB,KKTE,KKT,KKL,KRR, &
-                              &PMAXCFL,PRHODREF,POORHODZ,PDZZ,PPABST,PTHT,PTSTEP, &
-                              &KSPE,PRXT,PRXS,PINPRX,PPRXS,                       &
+SUBROUTINE INTERNAL_SEDIM_SPLI(KIB,KIE,KIT,KJB,KJE,KJT,KKB,KKTB,KKTE,KKT,KKL,KRR,    &
+                              &PMAXCFL,PRHODREF,POORHODZ,PDZZ,PPABST,PTHT,PT,PTSTEP, &
+                              &KSPE,PRXT,PRXS,PINPRX,PPRXS,                          &
                               &PRAY,PLBC,PFSEDC,PCONC3D,PFPR)
 !
 !*      0. DECLARATIONS
 !          ------------
 !
 USE MODD_CST,            ONLY: XCPD,XP00,XRD
-USE MODD_RAIN_ICE_DESCR, ONLY: XCC,XCEXVT,XDC,XLBEXC,XRTMIN
+USE MODD_RAIN_ICE_DESCR, ONLY: XCC,XCEXVT,XDC,XLBEXC,XRTMIN,XALPHAS,XNUS,XBS,XFVELOS, &
+                               XLBDAS_MAX,XLBDAS_MIN,XLBEXS,XLBS
 USE MODD_RAIN_ICE_PARAM, ONLY: XEXCSEDI,XEXSEDG,XEXSEDH,XEXSEDR,XEXSEDS,XFSEDG,XFSEDH,XFSEDI,XFSEDR,XFSEDS
+USE MODD_PARAM_ICE,      ONLY: LSNOW_T                               
 !
 IMPLICIT NONE
 !
@@ -336,6 +341,7 @@ REAL, DIMENSION(KIT,KJT,KKTB:KKTE), INTENT(IN)        :: POORHODZ ! One Over (Rh
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PDZZ ! layer thikness (m)
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PPABST
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PTHT
+REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PT
 REAL,                         INTENT(IN)              :: PTSTEP  ! total timestep
 INTEGER,                      INTENT(IN)              :: KSPE ! 1 for rc, 2 for rr...
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(INOUT)           :: PRXT ! mr of specy X
@@ -354,6 +360,7 @@ INTEGER, DIMENSION(KIT*KJT*KKT) :: I1,I2,I3 ! Used to replace the COUNT
 LOGICAL                         :: GPRESENT_PFPR
 REAL                            :: ZINVTSTEP
 REAL                            :: ZZWLBDC, ZRAY, ZZT, ZZWLBDA, ZZCC
+REAL                            :: ZLBDA
 REAL                            :: ZFSED, ZEXSED
 REAL, DIMENSION(KIT, KJT)       :: ZMRCHANGE
 REAL, DIMENSION(KIT, KJT)       :: ZMAX_TSTEP ! Maximum CFL in column
@@ -433,15 +440,35 @@ DO WHILE (ANY(ZREMAINT>0.))
                             &      ALOG(PRHODREF(JI,JJ,JK)*PRXT(JI,JJ,JK)) )**XEXCSEDI
       ENDIF
     ENDDO
+    ELSEIF(KSPE==5) THEN
+      ! ******* for snow
+      ZWSED(:,:,:) = 0.
+      DO JL=1, ISEDIM
+        JI=I1(JL)
+        JJ=I2(JL)
+        JK=I3(JL)
+        IF(PRXT(JI,JJ,JK)> XRTMIN(KSPE)) THEN
+           IF (LSNOW_T .AND. PT(JI,JJ,JK)>263.15) THEN
+              ZLBDA = MAX(MIN(XLBDAS_MAX, 10**(14.554-0.0423*PT(JI,JJ,JK))),XLBDAS_MIN)
+           ELSE IF (LSNOW_T) THEN
+              ZLBDA = MAX(MIN(XLBDAS_MAX, 10**(6.226 -0.0106*PT(JI,JJ,JK))),XLBDAS_MIN)
+           ELSE
+              ZLBDA=MAX(MIN(XLBDAS_MAX, XLBS * ( PRHODREF(JI,JJ,JK) * PRXT(JI,JJ,JK) )**XLBEXS),XLBDAS_MIN)
+           END IF
+           ZWSED(JI, JJ, JK) = XFSEDS *  &
+                & PRXT(JI,JJ,JK)* &
+                & PRHODREF(JI,JJ,JK)**(1-XCEXVT) * &
+                & (1 + (XFVELOS/ZLBDA)**XALPHAS)** (-XNUS+XEXSEDS/XALPHAS) * &
+                & ZLBDA ** (XBS+XEXSEDS)
+
+        ENDIF
+      ENDDO
   ELSE
     ! ******* for other species
     SELECT CASE(KSPE)
       CASE(3)
         ZFSED=XFSEDR
         ZEXSED=XEXSEDR
-      CASE(5)
-        ZFSED=XFSEDS
-        ZEXSED=XEXSEDS
       CASE(6)
         ZFSED=XFSEDG
         ZEXSED=XEXSEDG

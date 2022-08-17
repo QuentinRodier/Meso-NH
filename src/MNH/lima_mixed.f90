@@ -96,6 +96,7 @@ END MODULE MODI_LIMA_MIXED
 !  P. Wautelet    03/2020: use the new data structures and subroutines for budgets (no more call to budget in this subroutine)
 !  P. Wautelet 28/05/2020: bugfix: correct array start for PSVT and PSVS
 !  P. Wautelet 02/02/2021: budgets: add missing source terms for SV budgets in LIMA
+!  J. Wurtz       03/2022: new snow characteristics
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -108,9 +109,9 @@ USE MODD_CST,              ONLY: XP00, XRD, XRV, XMV, XMD, XCPD, XCPV,       &
 USE MODD_NSV
 USE MODD_PARAMETERS,       ONLY: JPHEXT, JPVEXT
 USE MODD_PARAM_LIMA,       ONLY: NMOD_IFN, XRTMIN, XCTMIN, LWARM, LCOLD,     &
-                                 NMOD_CCN, NMOD_IMM, LRAIN, LSNOW, LHAIL
+                                 NMOD_CCN, NMOD_IMM, LRAIN, LSNOW, LHAIL, LSNOW_T
 USE MODD_PARAM_LIMA_WARM,  ONLY: XLBC, XLBEXC, XLBR, XLBEXR
-USE MODD_PARAM_LIMA_COLD,  ONLY: XLBI, XLBEXI, XLBS, XLBEXS, XSCFAC
+USE MODD_PARAM_LIMA_COLD,  ONLY: XLBI, XLBEXI, XLBS, XLBEXS, XSCFAC, XLBDAS_MAX, XLBDAS_MIN, XTRANS_MP_GAMMAS
 USE MODD_PARAM_LIMA_MIXED, ONLY: XLBG, XLBEXG, XLBH, XLBEXH
 
 use mode_tools,            only: Countjv
@@ -467,9 +468,19 @@ IF( IMICRO >= 1 ) THEN
       ZLBDAI(:) = ( XLBI*ZCIT(:) / ZRIT(:) )**XLBEXI
    END WHERE
    ZLBDAS(:)  = 1.E10
-   WHERE (ZRST(:)>XRTMIN(5) )
-      ZLBDAS(:) = XLBS*( ZRHODREF(:)*ZRST(:) )**XLBEXS
-   END WHERE
+   IF (LSNOW_T) THEN
+      WHERE(ZZT(:)>263.15 .AND. ZRST(:)>XRTMIN(5)) 
+         ZLBDAS(:) = MAX(MIN(XLBDAS_MAX, 10**(14.554-0.0423*ZZT(:))),XLBDAS_MIN)
+      END WHERE
+      WHERE(ZZT(:)<=263.15 .AND. ZRST(:)>XRTMIN(5)) 
+         ZLBDAS(:) = MAX(MIN(XLBDAS_MAX, 10**(6.226-0.0106*ZZT(:))),XLBDAS_MIN)
+      END WHERE
+      ZLBDAS(:) = ZLBDAS(:)*XTRANS_MP_GAMMAS
+   ELSE
+      WHERE (ZRST(:)>XRTMIN(5))
+         ZLBDAS(:) = MAX(MIN(XLBDAS_MAX, XLBS*( ZRHODREF(:)*ZRST(:) )**XLBEXS),XLBDAS_MIN)
+      END WHERE
+   END IF
    ZLBDAG(:)  = 1.E10
    WHERE (ZRGT(:)>XRTMIN(6) )
       ZLBDAG(:) = XLBG*( ZRHODREF(:)*ZRGT(:) )**XLBEXG

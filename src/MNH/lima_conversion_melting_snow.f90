@@ -55,15 +55,16 @@ END MODULE MODI_LIMA_CONVERSION_MELTING_SNOW
 !!    -------------
 !!      Original             15/03/2018 
 !!
+!  J. Wurtz       03/2022: new snow characteristics
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
 USE MODD_CST,              ONLY : XTT, XMV, XMD, XLVTT, XCPV, XCL, XESTT, XRV
-USE MODD_PARAM_LIMA,       ONLY : XRTMIN
+USE MODD_PARAM_LIMA,       ONLY : XRTMIN, XNUS, XALPHAS
 USE MODD_PARAM_LIMA_MIXED, ONLY : XFSCVMG
-USE MODD_PARAM_LIMA_COLD,  ONLY : X0DEPS, XEX0DEPS, X1DEPS, XEX1DEPS
+USE MODD_PARAM_LIMA_COLD,  ONLY : X0DEPS, XEX0DEPS, X1DEPS, XEX1DEPS, XBS, XFVELOS
 !
 IMPLICIT NONE
 !
@@ -106,9 +107,10 @@ WHERE( (PRST(:)>XRTMIN(5)) .AND. (PT(:)>XTT) .AND. LDCOMPUTE(:) )
 !
 ! compute RSMLT
 !
-   ZW(:)  = XFSCVMG*MAX( 0.0,( -ZW(:) *             &
-                          ( X0DEPS*           PLBDS(:)**XEX0DEPS +     &
-                            X1DEPS*PCJ(:)*PLBDS(:)**XEX1DEPS ) ))!-    &
+   ZW(:)  = XFSCVMG*MAX( 0.0,( -ZW(:) * PRST(:) *                        &
+                               ( X0DEPS*PLBDS(:)**XEX0DEPS +             &
+                                 X1DEPS*PCJ(:)*PLBDS(:)**(XEX1DEPS+XBS)* &
+                                   (1+0.5*(XFVELOS/PLBDS(:))**XALPHAS)**(-XNUS+XEX1DEPS/XALPHAS)) ))
 ! On ne tient pas compte de la collection de pluie et gouttelettes par la neige si T>0 !!!! 
 ! Note that no heat is exchanged because the graupeln produced are still icy!!!
    P_RS_CMEL(:) = - ZW(:)

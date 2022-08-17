@@ -71,6 +71,7 @@ END MODULE MODI_CH_INIT_FIELD_n
 !!    04/06/07 (M. Leriche & JP Pinty) add pH initialization
 !!    20/04/10 (M. Leriche) remove pH initialization to ini_modeln
 !  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
+!  P. Tulet  20/05/2021:  correction for CON to MIX transformation unit (aerosols only)
 !!
 !!    EXTERNAL
 !!    --------
@@ -83,6 +84,7 @@ USE MODI_CH_FIELD_VALUE_n ! returns value of chemical species at each grid point
 USE MODI_CH_INIT_CONST_n
 USE MODI_CH_AER_EQM_INIT_n
 USE MODE_ll
+USE MODE_AERO_PSD
 !!
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
@@ -232,6 +234,40 @@ IF (LORILAM) THEN
   IF (.NOT.(ASSOCIATED(XMI))) THEN
     ALLOCATE(XMI(SIZE(XSVT,1),SIZE(XSVT,2),IKU,NSP+NCARB+NSOA))
   END IF
+  IF (.NOT.(ASSOCIATED(XJNUC)))        ALLOCATE(XJNUC(SIZE(XSVT,1),SIZE(XSVT,2),IKU))
+  IF (.NOT.(ASSOCIATED(XJ2RAT)))       ALLOCATE(XJ2RAT(SIZE(XSVT,1),SIZE(XSVT,2),IKU))
+  IF (.NOT.(ASSOCIATED(XCONC_MASS)))   ALLOCATE(XCONC_MASS(SIZE(XSVT,1),SIZE(XSVT,2),IKU))
+  IF (.NOT.(ASSOCIATED(XCOND_MASS_I))) ALLOCATE(XCOND_MASS_I(SIZE(XSVT,1),SIZE(XSVT,2),IKU))
+  IF (.NOT.(ASSOCIATED(XCOND_MASS_J))) ALLOCATE(XCOND_MASS_J(SIZE(XSVT,1),SIZE(XSVT,2),IKU))
+  IF (.NOT.(ASSOCIATED(XNUCL_MASS)))   ALLOCATE(XNUCL_MASS(SIZE(XSVT,1),SIZE(XSVT,2),IKU))
+
+  IF (.NOT.(ASSOCIATED(XMBEG)))   ALLOCATE(XMBEG(SIZE(XSVT,1),SIZE(XSVT,2),IKU,JPIN))
+  IF (.NOT.(ASSOCIATED(XMINT)))   ALLOCATE(XMINT(SIZE(XSVT,1),SIZE(XSVT,2),IKU,JPIN))
+  IF (.NOT.(ASSOCIATED(XMEND)))   ALLOCATE(XMEND(SIZE(XSVT,1),SIZE(XSVT,2),IKU,JPIN))
+
+  IF (.NOT.(ASSOCIATED(XDMINTRA)))  ALLOCATE(XDMINTRA(SIZE(XSVT,1),SIZE(XSVT,2),IKU,JPIN))
+  IF (.NOT.(ASSOCIATED(XDMINTER)))  ALLOCATE(XDMINTER(SIZE(XSVT,1),SIZE(XSVT,2),IKU,JPIN))
+  IF (.NOT.(ASSOCIATED(XDMCOND)))   ALLOCATE(XDMCOND(SIZE(XSVT,1),SIZE(XSVT,2),IKU,JPIN))
+  IF (.NOT.(ASSOCIATED(XDMNUCL)))   ALLOCATE(XDMNUCL(SIZE(XSVT,1),SIZE(XSVT,2),IKU,JPIN))
+  IF (.NOT.(ASSOCIATED(XDMMERG)))   ALLOCATE(XDMMERG(SIZE(XSVT,1),SIZE(XSVT,2),IKU,JPIN))
+  !
+  XJNUC(:,:,:)        = 1.0E-7
+  XJ2RAT(:,:,:)       = 0.
+  XCONC_MASS(:,:,:)   = 0.
+  XCOND_MASS_I(:,:,:) = 0.
+  XCOND_MASS_J(:,:,:) = 0.
+  XNUCL_MASS(:,:,:)   = 0.
+  !
+  XMBEG(:,:,:,:)      = 0.
+  XMINT(:,:,:,:)      = 0.
+  XMEND(:,:,:,:)      = 0.
+  !
+  XDMINTRA(:,:,:,:)     = 0.
+  XDMINTER(:,:,:,:)     = 0.
+  XDMCOND(:,:,:,:)      = 0.
+  XDMNUCL(:,:,:,:)      = 0.
+  XDMMERG(:,:,:,:)      = 0.
+
 END IF
 !
 !*          print info for user
@@ -268,6 +304,12 @@ IF ((LCH_INIT_FIELD).AND.(CPROGRAM/='DIAG  ')) THEN
     DO JK=1,JPVEXT
       XSVT(:,:,IKB-JPVEXT,JN) = XSVT(:,:,IKB,JN)
       XSVT(:,:,IKE+JPVEXT,JN) = XSVT(:,:,IKE,JN)
+
+      XSVT(IIB-JPHEXT,:,:,JN) = XSVT(IIB,:,:,JN)
+      XSVT(IIU,:,:,JN) = XSVT(IIU-JPHEXT,:,:,JN)
+
+      XSVT(:,IJB-JPHEXT,:,JN) = XSVT(:,IJB,:,JN)
+      XSVT(:,IJU,:,JN) = XSVT(:,IJU-JPHEXT,:,JN)
     END DO
   END DO
   !
@@ -310,17 +352,22 @@ IF ((LCH_INIT_FIELD).AND.(CPROGRAM/='DIAG  ')) THEN
     DO JK=1,JPVEXT
       XSVT(:,:,IKB-JPVEXT,JN) = XSVT(:,:,IKB,JN)
       XSVT(:,:,IKE+JPVEXT,JN) = XSVT(:,:,IKE,JN)
+
+      XSVT(IIB-JPHEXT,:,:,JN) = XSVT(IIB,:,:,JN)
+      XSVT(IIU,:,:,JN) = XSVT(IIU-JPHEXT,:,:,JN)
+
+      XSVT(:,IJB-JPHEXT,:,JN) = XSVT(:,IJB,:,JN)
+      XSVT(:,IJU,:,JN) = XSVT(:,IJU-JPHEXT,:,JN)
     END DO
   END DO
   !
   IF (YUNIT .EQ. "CON") THEN
-    WRITE(KLUOUT,*) "CH_INIT_FIELD_n (ORILAM): converting initial values to mixing ratio"
-    DO JN = NSV_AERBEG,NSV_AEREND
-      XSVT(:,:,:,JN) = XSVT(:,:,:,JN)/(XRHODREF(:,:,:)*ZDEN2MOL)
-    ENDDO
+    WRITE(KLUOUT,*) "CH_INIT_FIELD_n (ORILAM): converting initial values µg/m3 to mixing ratio"
+    CALL CON2MIX (XSVT(:,:,:,NSV_AERBEG:NSV_AEREND), XRHODREF)
   ELSE
     WRITE(KLUOUT,*)"CH_INIT_FIELD_n (ORILAM): initial values are used as is (mixing ratio)"
   ENDIF
+
   !
   ENDIF !LORILAM
   !

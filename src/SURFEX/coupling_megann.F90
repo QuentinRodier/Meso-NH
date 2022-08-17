@@ -3,9 +3,9 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !    ###############################
-     SUBROUTINE COUPLING_MEGAN_n(MGN, CHI, GK, PEK,      &
-                     KYEAR, KMONTH, KDAY, PTIME, OTR_ML, &
-                     KSLTYP, PPFT, PEF,                  &
+     SUBROUTINE COUPLING_MEGAN_n(MGN, CHI, GK, PEK, PTSTEP,      &
+                     KYEAR, KMONTH, KDAY, PTIME, PTIME2, OTR_ML, &
+                     KSLTYP, PPFT, PEF, PPFD24, PT24,            &
                      PTEMP, PIACAN, PLEAFT, PRN_SUNLIT, PRN_SHADE, &
                      PWIND, PPRES, PQV, PSFTS) 
 !    ###############################
@@ -30,6 +30,7 @@
 !!    Original: 25/10/2014
 !!    Modified: 06/07/2017, J. Pianezze, adaptation for SurfEx v8.0
 !!    Modified: 06/07/2018, P. Tulet, correction for T leaf
+!!    Modified: 06/02/2021, S. Oumami, off-line & daily averages use
 !!
 !!    EXTERNAL
 !!    --------
@@ -42,7 +43,7 @@ USE MODD_CH_ISBA_n, ONLY : CH_ISBA_t
 USE MODD_ISBA_n, ONLY: ISBA_PE_t
 USE MODD_SFX_GRID_n, ONLY: GRID_t
 !
-USE MODD_CSTS, ONLY : XAVOGADRO
+USE MODD_CSTS, ONLY : XAVOGADRO, XDAY
 !
 #ifdef MNH_MEGAN
 USE MODD_MEGAN
@@ -69,19 +70,23 @@ INTEGER,             INTENT(IN)     :: KYEAR     ! I current year (UTC)
 INTEGER,             INTENT(IN)     :: KMONTH    ! I current month (UTC)
 INTEGER,             INTENT(IN)     :: KDAY      ! I current day (UTC)
 REAL,                INTENT(IN)     :: PTIME     ! I current time since midnight (UTC, s)
+REAL,                INTENT(IN)     :: PTIME2    ! Time since simulation begin (s)
 LOGICAL,             INTENT(IN)     :: OTR_ML    ! new radiation for leaves temperatures
+REAL,                INTENT(IN)  :: PTSTEP    ! atmospheric time-step                 (s)
 !
 REAL, DIMENSION(:),  INTENT(IN)     :: PTEMP     ! I Air temperature (K)
-REAL, DIMENSION(:,:),INTENT(IN)     :: PIACAN    ! I PAR (umol/m2.s)
+REAL, DIMENSION(:,:),INTENT(IN)     :: PIACAN    ! I PAR (W/m2)
 REAL, DIMENSION(:),  INTENT(IN)     :: PLEAFT    ! I Leaf temperature (K)
 REAL, DIMENSION(:),  INTENT(IN)     :: PRN_SUNLIT! I Leaf RN
 REAL, DIMENSION(:),  INTENT(IN)     :: PRN_SHADE ! I Leaf RN
+REAL, DIMENSION(:),  INTENT(INOUT)  :: PPFD24
+REAL, DIMENSION(:),  INTENT(INOUT)  :: PT24
 REAL, DIMENSION(:),  INTENT(IN)     :: PWIND
 REAL, DIMENSION(:),  INTENT(IN)     :: PPRES     ! I Atmospheric pressure (Pa)
 REAL, DIMENSION(:),  INTENT(IN)     :: PQV       ! I Air humidity (kg/kg)
-REAL, DIMENSION(:,:),INTENT(IN)     :: PPFT, PEF
-INTEGER, DIMENSION(:),  INTENT(IN)     :: KSLTYP
-REAL, DIMENSION(:,:), INTENT(INOUT)  :: PSFTS     ! O Scalar flux in molecules/m2/s
+REAL, DIMENSION(:,:),INTENT(IN)  :: PPFT, PEF
+INTEGER, DIMENSION(:), INTENT(IN)   :: KSLTYP
+REAL, DIMENSION(:,:),INTENT(INOUT)  :: PSFTS     ! O Scalar flux in molecules/m2/s
 #ifdef MNH_MEGAN
 !*   0.1 Declaration of local variables
 !
@@ -99,14 +104,17 @@ REAL, DIMENSION(SIZE(PTEMP)) :: ZCFNO    ! NO correction factor
 REAL, DIMENSION(SIZE(PTEMP)) :: ZCFNOG   ! NO correction factor for grass
 REAL, DIMENSION(N_MGN_SPC,SIZE(PTEMP)) :: ZCFSPEC  ! Output emission buffer
 REAL, DIMENSION(MGN%NVARS3D,SIZE(PTEMP)) :: ZFLUX   ! Output emission megan flux
+REAL, DIMENSION(SIZE(PTEMP)) :: ZD_TEMP, ZTSUM  ! Daily temperature (K) and daily sum temperature
+
 !
 REAL :: ZDI      ! Drought Index (0 normal, -2  moderate drought, -3 severe drought, -4 extreme drought)
 REAL :: ZREC_ADJ ! Rain adjustment factor
-REAL :: ZD_TEMP  ! Daily temperature (K)
-REAL :: ZD_PPFD  ! Daily PAR (umol/m2.s)
 !
 INTEGER,DIMENSION(SIZE(PTEMP)) ::   ISLTYP  !Soil category (function of silt, clay and sand))
 INTEGER :: JSV, JSM
+INTEGER, SAVE :: ICOUNTNEW, ICOUNT, INB_COUNT
+LOGICAL, SAVE :: GFIRSTCALL = .TRUE.
+
 !
 ! Input parameters
 ZHOUR = FLOAT(INT(PTIME/3600.))
@@ -121,19 +129,23 @@ ZLAIC(:) = MIN(MAX(0.001,PEK%XLAI(:)),8.)
 !
 ZDI      = MGN%XDROUGHT
 ZREC_ADJ = MGN%XMODPREC
-ZD_TEMP  = MGN%XDAILYTEMP
-ZD_PPFD  = MGN%XDAILYPAR
-!
 ZCFNO   = 0.
 ZCFNOG  = 0.
 ZCFSPEC = 0.
-!
+
+! Compute PAR from the entire canopy and conversion W/m2 in micromol/m²/s
 ZPFD(:) = 0.
-! Compute PAR from the entire canopy
 DO JSM = 1,SIZE(PIACAN,2)
-  ZPFD(:) = ZPFD(:) + PIACAN(:, JSM)
+  ZPFD(:) = ZPFD(:) + PIACAN(:, JSM) * 4.6
 END DO
-!
+
+
+!INB_COUNT=INB_COUNT+1
+!ICOUNTNEW = INT(INB_COUNT*PTSTEP/XDAY)
+
+PT24(:)  = PT24(:)*XDAY / (XDAY + PTSTEP) + PTEMP(:)* PTSTEP / (XDAY + PTSTEP)
+PPFD24(:) = PPFD24(:)*XDAY / (XDAY + PTSTEP) + ZPFD(:)*PTSTEP / (XDAY + PTSTEP)
+
 ! UPG*PT en attendat un calcul propre. Temperature des feuilles à l'ombre egale a la
 ! température de l'air. La temparature des feuilles au soleil egale a la valeur
 ! max entre la temperature de l'air et la temperaure radiative.
@@ -167,7 +179,8 @@ ZLSHT(:) = PTEMP(:)
 ! 19: STRESS
 ! 20: OTHER
 !
-CALL EMPROC(ITIME, IDATE, ZD_PPFD, ZD_TEMP, ZDI, ZREC_ADJ, &
+
+CALL EMPROC(ITIME, IDATE, PPFD24, PT24, ZDI, ZREC_ADJ,     &
             GK%XLAT, GK%XLON, ZLAIC, ZLAIC, PTEMP,         &
             ZPFD,  PWIND, PPRES, PQV,  KSLTYP,             &
             PEK%XWG(:,1), PEK%XTG(:,1), PPFT,              &

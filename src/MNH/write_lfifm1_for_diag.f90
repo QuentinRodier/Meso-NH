@@ -1904,13 +1904,13 @@ IF ((LCHEMDIAG).AND.(LORILAM).AND.(LUSECHEM)) THEN
   CALL  PPP2AERO(XSVT(:,:,:,NSV_AERBEG:NSV_AEREND), XRHODREF, &
                  PSIG3D=XSIG3D, PRG3D=XRG3D, PN3D=XN3D, PCTOTA=ZPTOTA) 
   DO JJ=1,JPMODE
-    TZFIELD%CMNHNAME   = 'RGA'
+    WRITE(TZFIELD%CMNHNAME,'(A3,I1)')'RGA',JJ
     TZFIELD%CLONGNAME  = 'RGA'
     TZFIELD%CUNITS     = 'um'
     WRITE(TZFIELD%CCOMMENT,'(A21,I1)')'RG (nb) AEROSOL MODE ',JJ
     CALL IO_Field_write(TPFILE,TZFIELD,XRG3D(:,:,:,JJ))
     !
-    TZFIELD%CMNHNAME   = 'RGAM'
+    WRITE(TZFIELD%CMNHNAME,'(A4,I1)')'RGAM',JJ
     TZFIELD%CLONGNAME  = 'RGAM'
     TZFIELD%CUNITS     = 'um'
     WRITE(TZFIELD%CCOMMENT,'(A20,I1)')'RG (m) AEROSOL MODE ',JJ
@@ -3926,20 +3926,20 @@ IF (LLIDAR) THEN
     ZTMP3(:,:,:,1)=ZSIG_DST(:,:,:,IACCMODE)
     SELECT CASE ( CCLOUD )
     CASE('KESS''ICE3','ICE4')
-      CALL LIDAR(CCLOUD, YVIEW, XALT_LIDAR, XWVL_LIDAR, XZZ, XRHODREF, XCLDFR, &
+      CALL LIDAR(CCLOUD, YVIEW, XALT_LIDAR, XWVL_LIDAR, XZZ, XRHODREF, ZTEMP, XCLDFR, &
                  XRT, ZWORK31, ZWORK32,                                        &
                  PDSTC=ZTMP1,                                                  &
                  PDSTD=ZTMP2,                                                  &
                  PDSTS=ZTMP3)
     CASE('C2R2')
-      CALL LIDAR(CCLOUD, YVIEW, XALT_LIDAR, XWVL_LIDAR, XZZ, XRHODREF, XCLDFR, &
+      CALL LIDAR(CCLOUD, YVIEW, XALT_LIDAR, XWVL_LIDAR, XZZ, XRHODREF, ZTEMP, XCLDFR, &
                  XRT, ZWORK31, ZWORK32,                                        &
                  PCT=XSVT(:,:,:,NSV_C2R2BEG+1:NSV_C2R2END),                    &
                  PDSTC=ZTMP1,                                                  &
                  PDSTD=ZTMP2,                                                  &
                  PDSTS=ZTMP3)
     CASE('C3R5')
-      CALL LIDAR(CCLOUD, YVIEW, XALT_LIDAR, XWVL_LIDAR, XZZ, XRHODREF, XCLDFR, &
+      CALL LIDAR(CCLOUD, YVIEW, XALT_LIDAR, XWVL_LIDAR, XZZ, XRHODREF, ZTEMP, XCLDFR, &
                  XRT, ZWORK31, ZWORK32,                                        &
                  PCT=XSVT(:,:,:,NSV_C2R2BEG+1:NSV_C1R3END-1),                  &
                  PDSTC=ZTMP1,                                                  &
@@ -3953,7 +3953,7 @@ IF (LLIDAR) THEN
        ZTMP4(:,:,:,3)=XSVT(:,:,:,NSV_LIMA_NR)
        ZTMP4(:,:,:,4)=XSVT(:,:,:,NSV_LIMA_NI)
 !
-       CALL LIDAR(CCLOUD, YVIEW, XALT_LIDAR, XWVL_LIDAR, XZZ, XRHODREF, XCLDFR,&
+       CALL LIDAR(CCLOUD, YVIEW, XALT_LIDAR, XWVL_LIDAR, XZZ, XRHODREF, ZTEMP, MAX(XCLDFR,XICEFR),&
             XRT, ZWORK31, ZWORK32,                                  &
             PCT=ZTMP4,                            &
             PDSTC=ZTMP1,                          &
@@ -3964,14 +3964,14 @@ IF (LLIDAR) THEN
   ELSE
     SELECT CASE ( CCLOUD )
     CASE('KESS','ICE3','ICE4')
-      CALL LIDAR(CCLOUD, YVIEW, XALT_LIDAR, XWVL_LIDAR, XZZ, XRHODREF, XCLDFR, &
+      CALL LIDAR(CCLOUD, YVIEW, XALT_LIDAR, XWVL_LIDAR, XZZ, XRHODREF, ZTEMP, XCLDFR, &
            XRT, ZWORK31, ZWORK32)
     CASE('C2R2')
-      CALL LIDAR(CCLOUD, YVIEW, XALT_LIDAR, XWVL_LIDAR, XZZ, XRHODREF, XCLDFR, &
+      CALL LIDAR(CCLOUD, YVIEW, XALT_LIDAR, XWVL_LIDAR, XZZ, XRHODREF, ZTEMP, XCLDFR, &
            XRT, ZWORK31, ZWORK32,                                  &
            PCT=XSVT(:,:,:,NSV_C2R2BEG+1:NSV_C2R2END))
     CASE('C3R5')
-      CALL LIDAR(CCLOUD, YVIEW, XALT_LIDAR, XWVL_LIDAR, XZZ, XRHODREF, XCLDFR, &
+      CALL LIDAR(CCLOUD, YVIEW, XALT_LIDAR, XWVL_LIDAR, XZZ, XRHODREF, ZTEMP, XCLDFR, &
            XRT, ZWORK31, ZWORK32,                                  &
            PCT=XSVT(:,:,:,NSV_C2R2BEG+1:NSV_C1R3END-1))
     CASE('LIMA')
@@ -3982,7 +3982,7 @@ IF (LLIDAR) THEN
        ZTMP4(:,:,:,3)=XSVT(:,:,:,NSV_LIMA_NR)
        ZTMP4(:,:,:,4)=XSVT(:,:,:,NSV_LIMA_NI)
 !
-       CALL LIDAR(CCLOUD, YVIEW, XALT_LIDAR, XWVL_LIDAR, XZZ, XRHODREF, XCLDFR,&
+       CALL LIDAR(CCLOUD, YVIEW, XALT_LIDAR, XWVL_LIDAR, XZZ, XRHODREF, ZTEMP, MAX(XCLDFR,XICEFR),&
             XRT, ZWORK31, ZWORK32,                                  &
             PCT=ZTMP4)
     END SELECT

@@ -105,10 +105,11 @@ USE MODD_CST
 USE MODD_IO,           ONLY: TFILEDATA
 USE MODD_LUNIT
 USE MODD_PARAMETERS
+USE MODD_PARAM_ICE,      ONLY: LSNOW_T_I=>LSNOW_T
 USE MODD_RAIN_ICE_DESCR, ONLY: XALPHAR_I=>XALPHAR,XNUR_I=>XNUR,XDR_I=>XDR,XLBEXR_I=>XLBEXR,&
                                XLBR_I=>XLBR,XCCR_I=>XCCR,XBR_I=>XBR,XCR_I=>XCR,&
                                XALPHAS_I=>XALPHAS,XNUS_I=>XNUS,XDS_I=>XDS,XLBEXS_I=>XLBEXS,&
-                               XLBS_I=>XLBS,XCCS_I=>XCCS,XAS_I=>XAS,XBS_I=>XBS,XCXS_I=>XCXS,XCS_I=>XCS,&
+                               XLBS_I=>XLBS,XCCS_I=>XCCS,XNS_I=>XNS,XAS_I=>XAS,XBS_I=>XBS,XCXS_I=>XCXS,XCS_I=>XCS,&
                                XALPHAG_I=>XALPHAG,XNUG_I=>XNUG,XDG_I=>XDG,XLBEXG_I=>XLBEXG,&
                                XLBG_I=>XLBG,XCCG_I=>XCCG,XAG_I=>XAG,XBG_I=>XBG,XCXG_I=>XCXG,XCG_I=>XCG,&
                                XALPHAH_I=>XALPHAH,XNUH_I=>XNUH,XDH_I=>XDH,XLBEXH_I=>XLBEXH,&
@@ -119,12 +120,13 @@ USE MODD_RAIN_ICE_DESCR, ONLY: XALPHAR_I=>XALPHAR,XNUR_I=>XNUR,XDR_I=>XDR,XLBEXR
 !!LIMA         
 USE MODD_PARAM_LIMA_WARM, ONLY: XDR_L=>XDR,XLBEXR_L=>XLBEXR,XLBR_L=>XLBR,XBR_L=>XBR,XCR_L=>XCR
 USE MODD_PARAM_LIMA_COLD, ONLY: XDI_L=>XDI,XLBEXI_L=>XLBEXI,XLBI_L=>XLBI,XAI_L=>XAI,XBI_L=>XBI,XC_I_L=>XC_I,&
-                                XDS_L=>XDS,XLBEXS_L=>XLBEXS,XLBS_L=>XLBS,XCCS_L=>XCCS,XAS_L=>XAS,XBS_L=>XBS,XCXS_L=>XCXS,XCS_L=>XCS
+                                XDS_L=>XDS,XLBEXS_L=>XLBEXS,XLBS_L=>XLBS,XCCS_L=>XCCS,XNS_L=>XNS,XAS_L=>XAS,XBS_L=>XBS,&
+                                XCXS_L=>XCXS,XCS_L=>XCS,XLBDAS_MIN,XLBDAS_MAX
 
 USE MODD_PARAM_LIMA_MIXED, ONLY:XDG_L=>XDG,XLBEXG_L=>XLBEXG,XLBG_L=>XLBG,XCCG_L=>XCCG,XAG_L=>XAG,XBG_L=>XBG,XCXG_L=>XCXG,XCG_L=>XCG
 USE MODD_PARAM_LIMA, ONLY: XALPHAR_L=>XALPHAR,XNUR_L=>XNUR,XALPHAS_L=>XALPHAS,XNUS_L=>XNUS,&
                            XALPHAG_L=>XALPHAG,XNUG_L=>XNUG, XALPHAI_L=>XALPHAI,XNUI_L=>XNUI,&
-                           XRTMIN_L=>XRTMIN
+                           XRTMIN_L=>XRTMIN, LSNOW_T_L=>LSNOW_T
 !!LIMA
 USE MODD_RADAR, ONLY:XLAM_RAD,XSTEP_RAD,NBELEV,NDIFF,LATT,NPTS_GAULAG,LQUAD,XVALGROUND,NDGS, &
      LFALL,LWBSCS,LWREFL,XREFLVDOPMIN,XREFLMIN,LSNRT,XSNRMIN
@@ -192,6 +194,7 @@ REAL :: ZDMELT_FACT ! factor used to compute the equivalent melted diameter
 REAL :: ZEQICE=0.224! factor used to convert the ice crystals reflectivity into an equivalent  liquid water reflectivity (from Smith, JCAM 84)
 REAL :: ZEXP        ! anciliary parameter
 REAL :: ZLBDA   ! slope distribution parameter
+REAL :: ZN      ! Number concentration
 REAL :: ZFRAC_ICE,ZD,ZDE ! auxiliary variables
 REAL :: ZQSCA
 REAL,DIMENSION(2) :: ZQEXT
@@ -281,7 +284,7 @@ REAL,   DIMENSION(:,:,:,:,:,:),ALLOCATABLE :: ZM_6D,ZCC_6D
 REAL :: ZC
 !
 REAL ::  ZCCR,ZLBR,ZLBEXR,ZDR,ZALPHAR,ZNUR,ZBR
-REAL ::  ZCCS,ZLBS,ZLBEXS,ZDS,ZALPHAS,ZNUS,ZAS,ZBS,ZCXS
+REAL ::  ZCCS,ZLBS,ZLBEXS,ZDS,ZALPHAS,ZNUS,ZAS,ZBS,ZCXS,ZNS
 REAL ::  ZCCG,ZLBG,ZLBEXG,ZDG,ZALPHAG,ZNUG,ZAG,ZBG,ZCXG
 REAL ::  ZCCH,ZLBH,ZLBEXH,ZDH,ZALPHAH,ZNUH,ZAH,ZBH,ZCXH
 REAL ::       ZLBI,ZLBEXI,ZDI,ZALPHAI,ZNUI,ZAI,ZBI
@@ -339,6 +342,7 @@ IF (GLIMA) THEN ! LIMA
   ZCXS=XCXS_L
   ZLBS=XLBS_L
   ZLBEXS=XLBEXS_L
+  ZNS=XNS_L
   ZDS=XDS_L
   ZALPHAS=XALPHAS_L
   ZNUS=XNUS_L
@@ -374,6 +378,7 @@ ELSE ! ICE3
   ZCXS=XCXS_I
   ZLBS=XLBS_I
   ZLBEXS=XLBEXS_I
+  ZNS=XNS_I
   ZDS=XDS_I
   ZALPHAS=XALPHAS_I
   ZNUS=XNUS_I
@@ -1282,28 +1287,37 @@ DO JI=1,INBRAD
                     ZDMELT_FACT=6.*ZAS/(XPI*.92*XRHOLW)
                     ZEXP=2.*ZBS !XBS = 1.9 in ini_radar.f90 (bj tab 2.1 p24)
                     !dans ini_rain_ice.f90 :
-                    ZLBDA= ZLBS*(ZM)**ZLBEXS
-
+                    IF ( (GLIMA .AND. LSNOW_T_L) .OR. (.NOT.GLIMA .AND. LSNOW_T_I) ) THEN
+                       IF (PT_RAY(JI,JEL,JAZ,JL,JH,JV)>-10.) THEN
+                          ZLBDA = MAX(MIN(XLBDAS_MAX, 10**(14.554-0.0423*(PT_RAY(JI,JEL,JAZ,JL,JH,JV)+273.15))),XLBDAS_MIN)
+                       ELSE
+                          ZLBDA = MAX(MIN(XLBDAS_MAX, 10**(6.226-0.0106*(PT_RAY(JI,JEL,JAZ,JL,JH,JV)+273.15))),XLBDAS_MIN)
+                       END IF
+                       ZN=ZNS*ZM*ZLBDA**ZBS
+                    ELSE
+                       ZLBDA= ZLBS*(ZM)**ZLBEXS
+                       ZN=ZCCS*ZLBDA**ZCXS
+                    END IF
                     ! Rayleigh or Rayleigh-Gans or Rayleigh with 6th order for attenuation
                     IF(NDIFF==0.OR.NDIFF==3.OR.NDIFF==4) THEN
-                      ZREFLOC(1:2)=ZEQICE*.92**2*ZDMELT_FACT**2*1.E18*ZCCS*ZLBDA**(ZCXS-ZEXP)*MOMG(ZALPHAS,ZNUS,ZEXP)
+                      ZREFLOC(1:2)=ZEQICE*.92**2*ZDMELT_FACT**2*1.E18*ZN*ZLBDA**(ZEXP)*MOMG(ZALPHAS,ZNUS,ZEXP)
                       ZREFLOC(3)=0.
                       IF(LWREFL) THEN ! weighting by reflectivities
                         ZREFL(JI,JEL,JAZ,JL,JH,JV,IVDOP)=ZREFL(JI,JEL,JAZ,JL,JH,JV,IVDOP)&
                                -ZCS*SIN(PELEV(JI,JEL,JL,JV))*ZEQICE*.92**2*ZDMELT_FACT**2&
-                               *1.E18*ZCCS*ZLBDA**(ZCXS-ZEXP-ZDS)*MOMG(ZALPHAS,ZNUS,ZEXP+ZDS)
+                               *1.E18*ZN*ZLBDA**(ZEXP-ZDS)*MOMG(ZALPHAS,ZNUS,ZEXP+ZDS)
                       ELSE
-                        ZREFL(JI,JEL,JAZ,JL,JH,JV,IMAX)=ZREFL(JI,JEL,JAZ,JL,JH,JV,IMAX)+ZCCS*ZLBDA**ZCXS
+                        ZREFL(JI,JEL,JAZ,JL,JH,JV,IMAX)=ZREFL(JI,JEL,JAZ,JL,JH,JV,IMAX)+ZN
                         ZREFL(JI,JEL,JAZ,JL,JH,JV,IVDOP)=ZREFL(JI,JEL,JAZ,JL,JH,JV,IVDOP)&
                                                             -ZCS*SIN(PELEV(JI,JEL,JL,JV))&
-                                           *ZCCS*ZLBDA**(ZCXS-ZDS)*MOMG(ZALPHAS,ZNUS,ZDS)
+                                           *ZN*ZLBDA**(ZDS)*MOMG(ZALPHAS,ZNUS,ZDS)
                       END IF
                       IF(LATT) THEN
                         IF(NDIFF==0.OR.NDIFF==3) THEN
-                          ZAETMP(:)=ZCCS*ZLBDA**ZCXS*(ZDMELT_FACT*XPI**2/XLAM_RAD(JI)*AIMAG(ZQK)&
+                          ZAETMP(:)=ZN*(ZDMELT_FACT*XPI**2/XLAM_RAD(JI)*AIMAG(ZQK)&
                                     *MOMG(ZALPHAS,ZNUS,ZBS)/ZLBDA**ZBS)
                         ELSE
-                          ZAETMP(:)=ZCCS*ZLBDA**ZCXS*(ZDMELT_FACT*XPI**2/XLAM_RAD(JI)*AIMAG(ZQK)      &
+                          ZAETMP(:)=ZN*(ZDMELT_FACT*XPI**2/XLAM_RAD(JI)*AIMAG(ZQK)      &
                                     *MOMG(ZALPHAS,ZNUS,ZBS)/ZLBDA**ZBS                               &
                                     +ZDMELT_FACT**(5./3.)*XPI**4/15./XLAM_RAD(JI)**3                 &
                                     *AIMAG(ZQK**2*(ZQMI**4+27.*ZQMI**2+38.)                             &
@@ -1355,7 +1369,7 @@ DO JI=1,INBRAD
                       ZREFLOC(3)=180.E3/XPI*XLAM_RAD(JI)*ZRE_S22FMS11F
                       ZREFL(JI,JEL,JAZ,JL,JH,JV,IVDOP)=PVDOP_RAY(JI,JEL,JAZ,JL,JH,JV)*ZREFLOC(1) &
                                                         -ZCS*SIN(PELEV(JI,JEL,JL,JV))*ZREFLOC(1) &
-                                         *1.E18*(XLAM_RAD(JI)/XPI)**4/.93*ZCCS/4./ZLBDA**(3+ZDS)
+                                         *1.E18*(XLAM_RAD(JI)/XPI)**4/.93*(ZN*ZLBDA**(-ZCXS))/4./ZLBDA**(3+ZDS)
                       IF(LATT) THEN
                         ZAETMP(1)=ZIM_S22FT*XLAM_RAD(JI)*2
                         ZAETMP(2)=ZIM_S11FT*XLAM_RAD(JI)*2
@@ -1374,15 +1388,15 @@ DO JI=1,INBRAD
                         ZREFLOC(4)=ZREFLOC(4)+ZQBACK(1)*ZX(JJ)**(ZNUS-1.+2.*ZBS/3./ZALPHAS+ZDS/ZALPHAS)*ZW(JJ)
                         IF(LATT) ZAETMP(:)=ZAETMP(:)+ZQEXT(:)*ZX(JJ)**(ZNUS-1.+2.*ZBS/3./ZALPHAS)*ZW(JJ)
                       END DO ! ****** end loop Gauss-Laguerre quadrature
-                      ZREFLOC(1:2)=1.E18*(XLAM_RAD(JI)/XPI)**4*ZCCS*ZLBDA**(ZCXS-2.*ZBS/3.)/&
+                      ZREFLOC(1:2)=1.E18*(XLAM_RAD(JI)/XPI)**4*ZN*ZLBDA**(-2.*ZBS/3.)/&
                                   (4.*GAMMA(ZNUS)*.93)*ZDMELT_FACT**(2./3.)*ZREFLOC(1:2)               
                       ZREFL(JI,JEL,JAZ,JL,JH,JV,IVDOP)=ZREFL(JI,JEL,JAZ,JL,JH,JV,IVDOP)&
                                             +PVDOP_RAY(JI,JEL,JAZ,JL,JH,JV)*ZREFLOC(1) &
                                             -ZCS*SIN(PELEV(JI,JEL,JL,JV))*ZREFLOC(4)   &
-                                            *1.E18*(XLAM_RAD(JI)/XPI)**4*ZCCS          &
-                                            *ZLBDA**(ZCXS-2.*ZBS/3.-ZDS)/              &
+                                            *1.E18*(XLAM_RAD(JI)/XPI)**4*ZN          &
+                                            *ZLBDA**(2.*ZBS/3.-ZDS)/              &
                                             (4.*GAMMA(ZNUS)*.93)*ZDMELT_FACT**(2./3.)                              
-                      IF(LATT) ZAETMP(:)=ZAETMP(:)*XPI*ZCCS*ZLBDA**(ZCXS-2.*ZBS/3.)/(4.*GAMMA(ZNUS))&
+                      IF(LATT) ZAETMP(:)=ZAETMP(:)*XPI*ZN*ZLBDA**(-2.*ZBS/3.)/(4.*GAMMA(ZNUS))&
                                          *ZDMELT_FACT**(2./3.)            
                       ZRE_S22S11_S=0
                       ZIM_S22S11_S=0

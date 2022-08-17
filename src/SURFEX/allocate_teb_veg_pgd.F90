@@ -34,6 +34,7 @@ IF (LHOOK) CALL DR_HOOK('ALLOCATE_TEB_VEG_PGD',0,ZHOOK_HANDLE)
 ! - Physiographic field that can evolve prognostically
 !
 ALLOCATE(PEK%XLAI                    (KLU))
+ALLOCATE(PEK%XLAIp                    (KLU))
 ALLOCATE(PEK%XVEG                    (KLU)) 
 ALLOCATE(PEK%XEMIS                   (KLU)) 
 ALLOCATE(PEK%XZ0                     (KLU)) 

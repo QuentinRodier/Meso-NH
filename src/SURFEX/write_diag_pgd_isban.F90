@@ -142,6 +142,20 @@ IF (IO%CPHOTO=='NON' .OR. IO%CPHOTO=='AST') THEN
   !
 ENDIF
 !
+!* Leaf Area Index previous
+!
+IF (IO%CPHOTO=='NON' .OR. IO%CPHOTO=='AST') THEN
+  !
+  YRECFM='LAIp'
+  YCOMMENT='leaf area index previous (-)'
+  !
+  DO JP = 1,IO%NPATCH
+    CALL  WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+                NP%AL(JP)%NR_P,NPE%AL(JP)%XLAIp(:),ILU,S%XWORK_WR)
+  ENDDO
+  !
+ENDIF
+
 !-------------------------------------------------------------------------------
 !
 !* Vegetation fraction

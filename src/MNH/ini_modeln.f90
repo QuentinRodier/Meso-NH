@@ -712,7 +712,6 @@ END IF
 !
 ! 
 CALL UPDATE_NSV(KMI) 
-!
 !-------------------------------------------------------------------------------
 !
 !*       3.    ALLOCATE  MEMORY
@@ -959,9 +958,11 @@ END IF
 !
 IF (NRR>1) THEN
   ALLOCATE(XCLDFR(IIU,IJU,IKU));  XCLDFR (:, :, :) = 0.
+  ALLOCATE(XICEFR(IIU,IJU,IKU));  XICEFR (:, :, :) = 0.
   ALLOCATE(XRAINFR(IIU,IJU,IKU)); XRAINFR(:, :, :) = 0.
 ELSE
   ALLOCATE(XCLDFR(0,0,0))
+  ALLOCATE(XICEFR(0,0,0))
   ALLOCATE(XRAINFR(0,0,0))
 END IF
 !
@@ -1906,7 +1907,7 @@ CALL MPPDB_CHECK3D(XUT,"INI_MODEL_N-before read_field::XUT",PRECISION)
 CALL READ_FIELD(KMI,TPINIFILE,IIU,IJU,IKU,                                    &
                 CGETTKET,CGETRVT,CGETRCT,CGETRRT,CGETRIT,CGETCIT,CGETZWS,     &
                 CGETRST,CGETRGT,CGETRHT,CGETSVT,CGETSRCT,CGETSIGS,CGETCLDFR,  &
-                CGETBL_DEPTH,CGETSBL_DEPTH,CGETPHC,CGETPHR,                   &
+                CGETICEFR, CGETBL_DEPTH,CGETSBL_DEPTH,CGETPHC,CGETPHR,        &
                 CUVW_ADV_SCHEME, CTEMP_SCHEME,                                &
                 NSIZELBX_ll, NSIZELBXU_ll, NSIZELBY_ll, NSIZELBYV_ll,         &
                 NSIZELBXTKE_ll,NSIZELBYTKE_ll,                                &
@@ -1914,8 +1915,8 @@ CALL READ_FIELD(KMI,TPINIFILE,IIU,IJU,IKU,                                    &
                 XUM,XVM,XWM,XDUM,XDVM,XDWM,                                   &
                 XUT,XVT,XWT,XTHT,XPABST,XTKET,XRTKEMS,                        &
                 XRT,XSVT,XZWS,XCIT,XDRYMASST,XDRYMASSS,                       &
-                XSIGS,XSRCT,XCLDFR,XBL_DEPTH,XSBL_DEPTH,XWTHVMF,XPHC,XPHR,    &
-                XLSUM,XLSVM,XLSWM,XLSTHM,XLSRVM,XLSZWSM,                      &
+                XSIGS,XSRCT,XCLDFR,XICEFR, XBL_DEPTH,XSBL_DEPTH,XWTHVMF,      &
+                XPHC,XPHR, XLSUM,XLSVM,XLSWM,XLSTHM,XLSRVM,XLSZWSM,           &
                 XLBXUM,XLBXVM,XLBXWM,XLBXTHM,XLBXTKEM,                        &
                 XLBXRM,XLBXSVM,                                               &
                 XLBYUM,XLBYVM,XLBYWM,XLBYTHM,XLBYTKEM,                        &

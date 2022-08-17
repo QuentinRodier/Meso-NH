@@ -65,13 +65,14 @@ SUBROUTINE ICE4_SLOW(KSIZE, LDSOFT, PCOMPUTE, PRHODREF, PT, &
 !!    MODIFICATIONS
 !!    -------------
 !!
+!  J. Wurtz       03/2022: New snow characteristics with LSNOW_T
 !
 !
 !*      0. DECLARATIONS
 !          ------------
 !
 USE MODD_CST,            ONLY: XTT
-USE MODD_RAIN_ICE_DESCR, ONLY: XCEXVT,XRTMIN
+USE MODD_RAIN_ICE_DESCR, ONLY: XCEXVT,XRTMIN,XALPHAS,XNUS,XBS,XFVELOS
 USE MODD_RAIN_ICE_PARAM, ONLY: X0DEPG,X0DEPS,X1DEPG,X1DEPS,XACRIAUTI,XALPHA3,XBCRIAUTI,XBETA3,XCOLEXIS,XCRIAUTI, &
                                XEX0DEPG,XEX0DEPS,XEX1DEPG,XEX1DEPS,XEXIAGGS,XFIAGGS,XHON,XTEXAUTI,XTIMAUTI
 !
@@ -172,10 +173,13 @@ IF(LDSOFT) THEN
   ENDDO
 ELSE
   PRVDEPS(:) = 0.
-  WHERE(ZMASK(:)==1.)
-    PRVDEPS(:) = ( PSSI(:)/(PRHODREF(:)*PAI(:)) ) *                               &
-                 ( X0DEPS*PLBDAS(:)**XEX0DEPS + X1DEPS*PCJ(:)*PLBDAS(:)**XEX1DEPS )
-  END WHERE
+  DO JL=1, KSIZE
+     IF (ZMASK(JL)==1.) THEN
+        PRVDEPS(JL) = ( PRST(JL)*PSSI(JL)/PAI(JL) ) * &
+             ( X0DEPS*PLBDAS(JL)**XEX0DEPS + X1DEPS*PCJ(JL) * (1+0.5*(XFVELOS/PLBDAS(JL))**XALPHAS)**(-XNUS+XEX1DEPS/XALPHAS) &
+             *(PLBDAS(JL))**(XBS+XEX1DEPS) )
+     END IF
+  END DO
 ENDIF
 DO JL=1, KSIZE
   PA_RS(JL) = PA_RS(JL) + PRVDEPS(JL)
@@ -197,10 +201,11 @@ IF(LDSOFT) THEN
 ELSE
   PRIAGGS(:) = 0.
   WHERE(ZMASK(:)==1)
-    PRIAGGS(:) = XFIAGGS * EXP( XCOLEXIS*(PT(:)-XTT) ) &
+      PRIAGGS(:) = XFIAGGS * EXP( XCOLEXIS*(PT(:)-XTT) ) &
                          * PRIT(:)                      &
-                         * PLBDAS(:)**XEXIAGGS          &
-                         * PRHODREF(:)**(-XCEXVT)
+                         * PRST(:) * (1+(XFVELOS/PLBDAS(:))**XALPHAS)**(-XNUS+XEXIAGGS/XALPHAS)          &
+                         * PRHODREF(:)**(-XCEXVT+1.) &
+                         * ((PLBDAS(:))**(XBS+XEXIAGGS))
   END WHERE
 ENDIF
 DO JL=1, KSIZE

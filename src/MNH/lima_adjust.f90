@@ -9,12 +9,12 @@
 !
 INTERFACE
 !
-      SUBROUTINE LIMA_ADJUST(KRR, KMI, TPFILE,                  &
-                             OSUBG_COND, PTSTEP,                &
-                             PRHODREF, PRHODJ, PEXNREF, PPABSM, &
-                             PPABST,                            &
-                             PRT, PRS, PSVT, PSVS,              &
-                             PTHS, PSRCS, PCLDFR                )
+      SUBROUTINE LIMA_ADJUST(KRR, KMI, TPFILE,                    &
+                             OSUBG_COND, PTSTEP,                  &
+                             PRHODREF, PRHODJ, PEXNREF, PPABSM,   &
+                             PPABST,                              &
+                             PRT, PRS, PSVT, PSVS,                &
+                             PTHS, PSRCS, PCLDFR, PICEFR, PRAINFR )
 !
 USE MODD_IO,  ONLY: TFILEDATA
 USE MODD_NSV, only: NSV_LIMA_BEG
@@ -47,6 +47,8 @@ REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSRCS     ! Second-order flux
                                                      ! s'rc'/2Sigma_s2 at time t+1
                                                      ! multiplied by Lambda_3
 REAL, DIMENSION(:,:,:),   INTENT(INOUT)   :: PCLDFR    ! Cloud fraction          
+REAL, DIMENSION(:,:,:),   INTENT(INOUT)   :: PICEFR    ! Cloud fraction          
+REAL, DIMENSION(:,:,:),   INTENT(INOUT)   :: PRAINFR   ! Cloud fraction          
 !
 END SUBROUTINE LIMA_ADJUST
 !
@@ -54,14 +56,14 @@ END INTERFACE
 !
 END MODULE MODI_LIMA_ADJUST
 !
-!     ###########################################################
-      SUBROUTINE LIMA_ADJUST(KRR, KMI, TPFILE,                  &
-                             OSUBG_COND, PTSTEP,                &
-                             PRHODREF, PRHODJ, PEXNREF, PPABSM, &
-                             PPABST,                            &
-                             PRT, PRS, PSVT, PSVS,              &
-                             PTHS, PSRCS, PCLDFR                )
-!     ###########################################################
+!     #############################################################
+      SUBROUTINE LIMA_ADJUST(KRR, KMI, TPFILE,                    &
+                             OSUBG_COND, PTSTEP,                  &
+                             PRHODREF, PRHODJ, PEXNREF, PPABSM,   &
+                             PPABST,                              &
+                             PRT, PRS, PSVT, PSVS,                &
+                             PTHS, PSRCS, PCLDFR, PICEFR, PRAINFR )
+!     #############################################################
 !
 !!****  *MIMA_ADJUST* -  compute the fast microphysical sources 
 !!
@@ -202,6 +204,8 @@ REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSRCS     ! Second-order flux
                                                      ! s'rc'/2Sigma_s2 at time t+1
                                                      ! multiplied by Lambda_3
 REAL, DIMENSION(:,:,:),   INTENT(INOUT)   :: PCLDFR    ! Cloud fraction          
+REAL, DIMENSION(:,:,:),   INTENT(INOUT)   :: PICEFR    ! Cloud fraction          
+REAL, DIMENSION(:,:,:),   INTENT(INOUT)   :: PRAINFR   ! Cloud fraction          
 !
 !
 !*       0.2   Declarations of local variables :
@@ -1171,10 +1175,20 @@ END DO
 !*       5.2    compute the cloud fraction PCLDFR (binary !!!!!!!)
 !
 IF ( .NOT. OSUBG_COND ) THEN
-  WHERE (PRCS(:,:,:) + PRIS(:,:,:) + PRSS(:,:,:) > 1.E-12 / ZDT)
+   WHERE (PRCS(:,:,:) + PRIS(:,:,:) + PRSS(:,:,:) > 1.E-12 / ZDT)
       PCLDFR(:,:,:)  = 1.
    ELSEWHERE
       PCLDFR(:,:,:)  = 0.
+   ENDWHERE
+   WHERE (PRIS(:,:,:) > 1.E-12 / ZDT)
+      PICEFR(:,:,:)  = 1.
+   ELSEWHERE
+      PICEFR(:,:,:)  = 0.
+   ENDWHERE
+   WHERE (PRRS(:,:,:)+PRSS(:,:,:)+PRGS(:,:,:) > 1.E-12 / ZDT)
+      PRAINFR(:,:,:)  = 1.
+   ELSEWHERE
+      PRAINFR(:,:,:)  = 0.
    ENDWHERE
 END IF
 !

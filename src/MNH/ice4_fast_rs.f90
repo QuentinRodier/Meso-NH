@@ -77,6 +77,7 @@ SUBROUTINE ICE4_FAST_RS(KSIZE, LDSOFT, PCOMPUTE, &
 !!
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !  P. Wautelet 29/05/2019: remove PACK/UNPACK intrinsics (to get more performance and better OpenACC support)
+!  J. Wurtz       03/2022: New snow characteristics with LSNOW_T
 !
 !
 !*      0. DECLARATIONS
@@ -85,7 +86,7 @@ SUBROUTINE ICE4_FAST_RS(KSIZE, LDSOFT, PCOMPUTE, &
 USE MODD_CST,            ONLY: XALPI,XALPW,XBETAI,XBETAW,XCI,XCL,XCPV,XESTT,XGAMI,XGAMW,XLMTT,XLVTT,XMD,XMV,XRV,XTT,  &
                                XEPSILO
 USE MODD_PARAM_ICE,      ONLY: LEVLIMIT, CSNOWRIMING
-USE MODD_RAIN_ICE_DESCR, ONLY: XBS,XCEXVT,XCXS,XRTMIN
+USE MODD_RAIN_ICE_DESCR, ONLY: XBS,XCEXVT,XCXS,XRTMIN,XALPHAS,XNUS,XFVELOS
 USE MODD_RAIN_ICE_PARAM, ONLY: NACCLBDAR,NACCLBDAS,NGAMINC,X0DEPS,X1DEPS,XACCINTP1R,XACCINTP1S,XACCINTP2R,XACCINTP2S, &
                                XCRIMSG,XCRIMSS,XEX0DEPS,XEX1DEPS,XEXCRIMSG,XEXCRIMSS,XEXSRIMCG,XEXSRIMCG2,XFRACCSS,   &
                                XFSACCRG,XFSCVMG,XGAMINC_RIM1,XGAMINC_RIM1,XGAMINC_RIM2,XGAMINC_RIM4,XKER_RACCS,       &
@@ -170,9 +171,10 @@ ELSE
     PRS_TEND(:, IFREEZ1)=PKA(:)*(XTT-PT(:)) +                              &
              (PDV(:)*(XLVTT+(XCPV-XCL)*(PT(:)-XTT)) &
                            *(XESTT-PRS_TEND(:, IFREEZ1))/(XRV*PT(:))           )
-    PRS_TEND(:, IFREEZ1)=PRS_TEND(:, IFREEZ1)* ( X0DEPS*       PLBDAS(:)**XEX0DEPS +     &
-                           X1DEPS*PCJ(:)*PLBDAS(:)**XEX1DEPS )/ &
-                          ( PRHODREF(:)*(XLMTT-XCL*(XTT-PT(:))) )
+    PRS_TEND(:, IFREEZ1)=PRS_TEND(:, IFREEZ1)* PRST(:) * ( X0DEPS*       PLBDAS(:)**XEX0DEPS +     &
+         X1DEPS*PCJ(:)*PLBDAS(:) **(XBS+XEX1DEPS)* &
+         (1+0.5*(XFVELOS/PLBDAS(:))**XALPHAS)**(-XNUS+XEX1DEPS/XALPHAS))/ &
+         ( PRHODREF(:)*(XLMTT-XCL*(XTT-PT(:))) )
     PRS_TEND(:, IFREEZ2)=(PRHODREF(:)*(XLMTT+(XCI-XCL)*(XTT-PT(:)))   ) / &
                           ( PRHODREF(:)*(XLMTT-XCL*(XTT-PT(:))) )
   END WHERE
@@ -218,7 +220,7 @@ ELSE
     !        5.1.1  select the PLBDAS
     !
     DO JJ = 1, IGRIM
-      ZVEC1(JJ) = PLBDAS(I1(JJ))
+      ZVEC1(JJ) = (PLBDAS(I1(JJ))**XALPHAS + XFVELOS**XALPHAS)**(1./XALPHAS)
     END DO
     !
     !        5.1.2  find the next lower indice for the PLBDAS in the geometrical
@@ -244,8 +246,9 @@ ELSE
     !
     WHERE (GRIM(:))
       PRS_TEND(:, IRCRIMSS) = XCRIMSS * ZZW(:) * PRCT(:)                & ! RCRIMSS
-                                      *   PLBDAS(:)**XEXCRIMSS &
-                                      * PRHODREF(:)**(-XCEXVT)
+                                      * PRST(:)*(1+(XFVELOS/PLBDAS(:))**XALPHAS)**(-XNUS+XEXCRIMSS/XALPHAS) &
+                                      * PRHODREF(:)**(-XCEXVT+1.) &
+				      * (PLBDAS(:)) ** (XEXCRIMSS+XBS)
     END WHERE
     !
     !        5.1.5  perform the linear interpolation of the normalized
@@ -270,19 +273,21 @@ ELSE
     !
     !
     WHERE(GRIM(:))
-      PRS_TEND(:, IRCRIMS)=XCRIMSG * PRCT(:)               & ! RCRIMS
-                                   * PLBDAS(:)**XEXCRIMSG  &
-                                   * PRHODREF(:)**(-XCEXVT)
+      PRS_TEND(:, IRCRIMS) = XCRIMSG * PRCT(:)               & ! RCRIMS
+                                   * PRST(:)*(1+(XFVELOS/PLBDAS(:))**(XALPHAS))**(-XNUS+XEXCRIMSG/XALPHAS) &
+                                   * PRHODREF(:)**(-XCEXVT+1.) &
+                                   * PLBDAS(:)**(XBS+XEXCRIMSG)
       ZZW6(:) = PRS_TEND(:, IRCRIMS) - PRS_TEND(:, IRCRIMSS) ! RCRIMSG
     END WHERE
 
     IF(CSNOWRIMING=='M90 ')THEN
       !Murakami 1990
       WHERE(GRIM(:))
-        PRS_TEND(:, IRSRIMCG)=XSRIMCG * PLBDAS(:)**XEXSRIMCG*(1.0-ZZW(:))
+        PRS_TEND(:, IRSRIMCG)=XSRIMCG * PRST(:)*PRHODREF(:)*PLBDAS(:)**(XEXSRIMCG+XBS)*(1.0-ZZW(:))
+
         PRS_TEND(:, IRSRIMCG)=ZZW6(:)*PRS_TEND(:, IRSRIMCG)/ &
                        MAX(1.E-20, &
-                           XSRIMCG3*XSRIMCG2*PLBDAS(:)**XEXSRIMCG2*(1.-ZZW2(:)) - &
+                           XSRIMCG3*XSRIMCG2*PRST(:)*PRHODREF(:)*PLBDAS(:)**XEXSRIMCG2*(1.-ZZW2(:)) - &
                            XSRIMCG3*PRS_TEND(:, IRSRIMCG))
       END WHERE
     ELSE
@@ -384,7 +389,7 @@ ELSE
     !
     WHERE(GACC(:))
       ZZW6(:) =                                                        & !! coef of RRACCS
-            XFRACCSS*( PLBDAS(:)**XCXS )*( PRHODREF(:)**(-XCEXVT-1.) ) &
+            XFRACCSS*( PRST(:)*PLBDAS(:)**XBS )*( PRHODREF(:)**(-XCEXVT) ) &
        *( XLBRACCS1/((PLBDAS(:)**2)               ) +                  &
           XLBRACCS2/( PLBDAS(:)    * PLBDAR(:)    ) +                  &
           XLBRACCS3/(               (PLBDAR(:)**2)) )/PLBDAR(:)**4
@@ -430,7 +435,7 @@ ELSE
     !
     WHERE(GACC(:))
       PRS_TEND(:, IRSACCRG) = XFSACCRG*ZZW(:)*                    & ! RSACCRG
-          ( PLBDAS(:)**(XCXS-XBS) )*( PRHODREF(:)**(-XCEXVT-1.) ) &
+          ( PRST(:))*( PRHODREF(:)**(-XCEXVT) ) &
          *( XLBSACCR1/((PLBDAR(:)**2)               ) +           &
             XLBSACCR2/( PLBDAR(:)    * PLBDAS(:)    ) +           &
             XLBSACCR3/(               (PLBDAS(:)**2)) )/PLBDAR(:)
@@ -496,11 +501,16 @@ ELSE
     ! compute RSMLT
     !
     PRSMLTG(:)  = XFSCVMG*MAX( 0.0,( -PRSMLTG(:) *             &
-                         ( X0DEPS*       PLBDAS(:)**XEX0DEPS +     &
-                           X1DEPS*PCJ(:)*PLBDAS(:)**XEX1DEPS ) -   &
-                                   ( PRS_TEND(:, IRCRIMS) + PRS_TEND(:, IRRACCS) ) *       &
-                            ( PRHODREF(:)*XCL*(XTT-PT(:))) ) /    &
-                                           ( PRHODREF(:)*XLMTT ) )
+         PRST(:)*PRHODREF(:) *    &
+         ( X0DEPS       *PLBDAS(:)**XEX0DEPS +     &
+         X1DEPS*PCJ(:)*(1+0.5*(XFVELOS/PLBDAS(:))**XALPHAS)**(XNUS+XEX1DEPS/XALPHAS)*PLBDAS(:)**(XBS+XEX1DEPS)) -   &
+         ( PRS_TEND(:, IRCRIMS) + PRS_TEND(:, IRRACCS)) *       &
+         ( PRHODREF(:)*XCL*(XTT-PT(:))) ) /    &
+         ( PRHODREF(:)*XLMTT ) )
+    !
+    ! note that RSCVMG = RSMLT*XFSCVMG but no heat is exchanged (at the rate RSMLT)
+    ! because the graupeln produced by this process are still icy!!!
+    !
     ! When T < XTT, rc is collected by snow (riming) to produce snow and graupel
     ! When T > XTT, if riming was still enabled, rc would produce snow and graupel with snow becomming graupel (conversion/melting) and graupel becomming rain (melting)
     ! To insure consistency when crossing T=XTT, rc collected with T>XTT must be transformed in rain.

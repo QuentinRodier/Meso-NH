@@ -144,22 +144,24 @@ USE MODD_NSV,              ONLY : NSV_LIMA_NI,NSV_LIMA_NR,NSV_LIMA_NC
 USE MODD_PARAMETERS
 USE MODD_PARAM_LIMA,       ONLY: XALPHAR_L=>XALPHAR,XNUR_L=>XNUR,XALPHAS_L=>XALPHAS,XNUS_L=>XNUS,&
                                  XALPHAG_L=>XALPHAG,XNUG_L=>XNUG, XALPHAI_L=>XALPHAI,XNUI_L=>XNUI,&
-                                 XRTMIN_L=>XRTMIN,XALPHAC_L=>XALPHAC,XNUC_L=>XNUC
+                                 XRTMIN_L=>XRTMIN,XALPHAC_L=>XALPHAC,XNUC_L=>XNUC,LSNOW_T_L=>LSNOW_T
 USE MODD_PARAM_LIMA_COLD,  ONLY: XDI_L=>XDI,XLBEXI_L=>XLBEXI,XLBI_L=>XLBI,XAI_L=>XAI,XBI_L=>XBI,XC_I_L=>XC_I,&
                                  XLBEXS_L=>XLBEXS,XLBS_L=>XLBS,XCCS_L=>XCCS,&
-                                 XAS_L=>XAS,XBS_L=>XBS,XCXS_L=>XCXS
+                                 XAS_L=>XAS,XBS_L=>XBS,XCXS_L=>XCXS,XNS_L=>XNS,        &
+                                 XLBDAS_MAX,XLBDAS_MIN
 USE MODD_PARAM_LIMA_MIXED, ONLY: XDG_L=>XDG,XLBEXG_L=>XLBEXG,XLBG_L=>XLBG,XCCG_L=>XCCG,&
                                  XAG_L=>XAG,XBG_L=>XBG,XCXG_L=>XCXG,XCG_L=>XCG
 USE MODD_PARAM_LIMA_WARM,  ONLY: XLBEXR_L=>XLBEXR,XLBR_L=>XLBR,XBR_L=>XBR,XAR_L=>XAR,&
                                  XBC_L=>XBC,XAC_L=>XAC
 USE MODD_PARAM_n,          ONLY: CCLOUD, CSURF
+USE MODD_PARAM_ICE,        ONLY: LSNOW_T_I=>LSNOW_T
 USE MODD_RAIN_ICE_DESCR,   ONLY: XALPHAR_I=>XALPHAR,XNUR_I=>XNUR,XLBEXR_I=>XLBEXR,&
                                  XLBR_I=>XLBR,XCCR_I=>XCCR,XBR_I=>XBR,XAR_I=>XAR,&
                                  XALPHAC_I=>XALPHAC,XNUC_I=>XNUC,&
                                  XLBC_I=>XLBC,XBC_I=>XBC,XAC_I=>XAC,&
                                  XALPHAC2_I=>XALPHAC2,XNUC2_I=>XNUC2,&
                                  XALPHAS_I=>XALPHAS,XNUS_I=>XNUS,XLBEXS_I=>XLBEXS,&
-                                 XLBS_I=>XLBS,XCCS_I=>XCCS,XAS_I=>XAS,XBS_I=>XBS,XCXS_I=>XCXS,&
+                                 XLBS_I=>XLBS,XCCS_I=>XCCS,XAS_I=>XAS,XBS_I=>XBS,XCXS_I=>XCXS,XNS_I=>XNS,&
                                  XALPHAG_I=>XALPHAG,XNUG_I=>XNUG,XDG_I=>XDG,XLBEXG_I=>XLBEXG,&
                                  XLBG_I=>XLBG,XCCG_I=>XCCG,XAG_I=>XAG,XBG_I=>XBG,XCXG_I=>XCXG,XCG_I=>XCG,&
                                  XALPHAI_I=>XALPHAI,XNUI_I=>XNUI,XDI_I=>XDI,XLBEXI_I=>XLBEXI,&
@@ -311,13 +313,14 @@ REAL, DIMENSION(SIZE(PR,3))    :: ZCIT     ! pristine ice concentration
 REAL, DIMENSION(SIZE(PR,3))    :: ZCCI,ZCCR,ZCCC     ! ICE,RAIN CLOUD concentration (LIMA)
 REAL, DIMENSION(SIZE(PR,1),SIZE(PR,2),SIZE(PR,3))    :: ZR   
 REAL, DIMENSION(SIZE(PR,3),SIZE(PR,4)+1) :: ZRZ  ! vertical profile of hydrometeor mixing ratios
-REAL                           :: ZA,ZB,ZCC,ZCX,ZALPHA,ZNU,ZLB,ZLBEX,ZRHOHYD   ! generic microphysical parameters
+REAL                           :: ZA,ZB,ZCC,ZCX,ZALPHA,ZNU,ZLB,ZLBEX,ZNS,ZRHOHYD   ! generic microphysical parameters
 INTEGER                        :: JJ    ! loop counter for quadrature
 COMPLEX                        :: QMW,QMI,QM,QB,QEPSIW,QEPSWI   ! dielectric parameter
 REAL                           :: ZAETOT,ZAETMP,ZREFLOC,ZQSCA,ZQBACK,ZQEXT ! temporary scattering parameters
 REAL,DIMENSION(:),ALLOCATABLE  :: ZAELOC,ZZMZ ! temporary arrays
 INTEGER                        :: JPTS_GAULAG=7 ! number of points for Gauss-Laguerre quadrature
 REAL                           :: ZLBDA   ! slope distribution parameter
+REAL                           :: ZN   ! number concentration
 REAL                           :: ZFRAC_ICE  ! ice water fraction
 REAL                           :: ZDELTA_EQUIV ! mass-equivalent Gauss-Laguerre point
 REAL                           :: ZFW ! liquid fraction
@@ -1114,6 +1117,7 @@ IF ( TPFLYER%FLY) THEN
                     ZCX=XCXS_L
                     ZALPHA=XALPHAS_L
                     ZNU=XNUS_L
+                    ZNS=XNS_L
                     ZLB=XLBS_L
                     ZLBEX=XLBEXS_L
                     ZFW=0
@@ -1124,6 +1128,7 @@ IF ( TPFLYER%FLY) THEN
                     ZCX=XCXS_I
                     ZALPHA=XALPHAS_I
                     ZNU=XNUS_I
+                    ZNS=XNS_I
                     ZLB=XLBS_I
                     ZLBEX=XLBEXS_I
                     ZFW=0
@@ -1177,7 +1182,18 @@ IF ( TPFLYER%FLY) THEN
                     ZLB=( ZA*ZCC*MOMG(ZALPHA,ZNU,ZB) )**(-ZLBEX)
                   ENDIF
               END SELECT
-              ZLBDA=ZLB*(ZRHODREFZ(JK)*ZRZ(JK,JLOOP))**ZLBEX
+              IF (JLOOP.EQ.5 .AND. ( (CCLOUD=='LIMA'.AND.LSNOW_T_L).OR. &
+                                     (CCLOUD=='ICE3'.AND.LSNOW_T_I) ) ) THEN
+                 IF (ZTEMPZ(JK)>-10.) THEN
+                    ZLBDA = MAX(MIN(XLBDAS_MAX, 10**(14.554-0.0423*(ZTEMPZ(JK)+273.15))),XLBDAS_MIN)
+                 ELSE
+                    ZLBDA = MAX(MIN(XLBDAS_MAX, 10**(6.226-0.0106*(ZTEMPZ(JK)+273.15))),XLBDAS_MIN)
+                 END IF
+                 ZN=ZNS*ZRHODREFZ(JK)*ZRZ(JK,JLOOP)*ZLBDA**ZB
+              ELSE
+                 ZLBDA=ZLB*(ZRHODREFZ(JK)*ZRZ(JK,JLOOP))**ZLBEX
+                 ZN=ZCC*ZLBDA**ZCX
+              END IF
               ZREFLOC=0.
               ZAETMP=0.
               DO JJ=1,JPTS_GAULAG ! Gauss-Laguerre quadrature
@@ -1209,8 +1225,8 @@ IF ( TPFLYER%FLY) THEN
                 ZREFLOC=ZREFLOC+ZQBACK*ZX(JJ)**(ZNU-1)*ZDELTA_EQUIV**2*ZW(JJ)
                 ZAETMP =ZAETMP +ZQEXT *ZX(JJ)**(ZNU-1)*ZDELTA_EQUIV**2*ZW(JJ)
               END DO
-              ZREFLOC=ZREFLOC*(XLAM_CRAD/XPI)**4*ZCC*ZLBDA**ZCX/(4.*GAMMA(ZNU)*.93)
-              ZAETMP=ZAETMP  *           XPI    *ZCC*ZLBDA**ZCX/(4.*GAMMA(ZNU))
+              ZREFLOC=ZREFLOC*(XLAM_CRAD/XPI)**4*ZN/(4.*GAMMA(ZNU)*.93)
+              ZAETMP=ZAETMP  *           XPI    *ZN/(4.*GAMMA(ZNU))
               TPFLYER%CRARE(IN,JK)=TPFLYER%CRARE(IN,JK)+ZREFLOC
               ZAELOC(JK)=ZAELOC(JK)+ZAETMP
             END IF

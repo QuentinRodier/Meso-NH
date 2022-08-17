@@ -519,6 +519,7 @@ IF (LCLD_COV .AND. LUSERC) THEN
   CALL IO_Field_write(TPFILE,TZFIELD,ZWORK22)
 !
   CALL IO_Field_write(TPFILE,'CLDFR',XCLDFR)
+  CALL IO_Field_write(TPFILE,'ICEFR',XICEFR)
 !
 !  Visibility                                    
 !
@@ -808,7 +809,7 @@ IF (LEN_TRIM(CRAD_SAT) /= 0 .AND. NRR /=0) THEN
     CALL RADTR_SATEL( TDTCUR%nyear, TDTCUR%nmonth, TDTCUR%nday, TDTCUR%xtime, &
                       NDLON, NFLEV, NSTATM, NRAD_COLNBR, XEMIS(:,:,1),        &
                       XCCO2, XTSRAD, XSTATM, XTHT, XRT, XPABST, XZZ,          &
-                      XSIGS, XMFCONV, XCLDFR, LUSERI, LSIGMAS,                &
+                      XSIGS, XMFCONV, MAX(XCLDFR,XICEFR), LUSERI, LSIGMAS,    &
                       LSUBG_COND, LRAD_SUBG_COND, ZIRBT, ZWVBT,               &
                       INDGEO(JI), VSIGQSAT                                    )
     !
@@ -848,15 +849,15 @@ IF (NRTTOVINFO(1,1) /= NUNDEF) THEN
 ! PRINT*,'YOU ASK FOR BRIGHTNESS TEMPERATURE COMPUTED BY THE RTTOV CODE'
 #if defined(MNH_RTTOV_8)
   CALL CALL_RTTOV8(NDLON, NFLEV, NSTATM, XEMIS(:,:,1), XTSRAD, XSTATM, XTHT, XRT, &
-                  XPABST, XZZ, XMFCONV, XCLDFR, XUT(:,:,IKB), XVT(:,:,IKB),   &
+                  XPABST, XZZ, XMFCONV, MAX(XCLDFR,XICEFR), XUT(:,:,IKB), XVT(:,:,IKB),   &
                   LUSERI, NRTTOVINFO, TPFILE                                  )
 #elif defined(MNH_RTTOV_11)
   CALL CALL_RTTOV11(NDLON, NFLEV, XEMIS(:,:,1), XTSRAD, XTHT, XRT,            &
-                  XPABST, XZZ, XMFCONV, XCLDFR, XUT(:,:,IKB), XVT(:,:,IKB),   &
+                  XPABST, XZZ, XMFCONV, MAX(XCLDFR,XICEFR), XUT(:,:,IKB), XVT(:,:,IKB),   &
                   LUSERI, NRTTOVINFO, TPFILE                                  )
 #elif defined(MNH_RTTOV_13)
   CALL CALL_RTTOV13(NDLON, NFLEV, XEMIS(:,:,1), XTSRAD, XTHT, XRT,            &
-                  XPABST, XZZ, XMFCONV, XCLDFR, XUT(:,:,IKB), XVT(:,:,IKB),   &
+                  XPABST, XZZ, XMFCONV, MAX(XCLDFR,XICEFR), XUT(:,:,IKB), XVT(:,:,IKB),   &
                   LUSERI, NRTTOVINFO, TPFILE                                  )
 #else
 PRINT *, "RTTOV LIBRARY NOT AVAILABLE = ###CALL_RTTOV####"

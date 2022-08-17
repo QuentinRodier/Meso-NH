@@ -18,11 +18,9 @@ SUBROUTINE COUPLING_SLT_n (SLT, &
 !PURPOSE
 !-------
 !  Compute sea salt emission  upon Vignatti et al, 2001
-! ++ PIERRE / MARINE SSA - MODIF ++
 !  Compute sea salt emission  upon Ovadnevaite et al, 2014
-! -- PIERRE / MARINE SSA - MODIF --
+!  Compute sea salt emission  upon Ovadnevaite et al, 2014 and Bruch et al. 2021
 !
-!!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !AUTHOR
 !-------
 ! P. Tulet
@@ -50,6 +48,8 @@ REAL, DIMENSION(KI,KSLT), INTENT(OUT) :: PSFSLT      !Out: kg/m2/s (index #2)
 REAL, DIMENSION(KI),      INTENT(INOUT)  :: PWHEIGHT !Significant height of wind-generated waves (in ECMWF analyses)
 REAL, DIMENSION(KI),      INTENT(IN)  :: PUSTAR   !Friction velocity (ecmwf?) : Unite: m.s^(-2)?
 REAL, DIMENSION(KI),      INTENT(IN)  :: PSST     ! Sea surface temperature (K)
+REAL, DIMENSION(KI)                   :: MSS ! Variance de Pente de vague
+REAL, DIMENSION(KI)                   :: PWIND12 ! Vent 12m
 ! -- PIERRE / MARINE SSA - MODIF --
 
 !LOCAL VARIABLES
@@ -156,17 +156,13 @@ ZCONVERTFACM3_SLT = 4./3.*XPI*XDENSITY_SLT / 1.d18
 PSFSLT(:,:)=0.d0
 !
 !+ Marine
-IF (CEMISPARAM_SLT .eq. "Ova14") THEN ! Rajouter Ova14 dans fichier initialisation
+IF ((CEMISPARAM_SLT .eq. "Ova14").OR.(CEMISPARAM_SLT .eq. "OvB21a").OR.(CEMISPARAM_SLT .eq. "OvB21b")) THEN ! Rajouter Ova14 dans fichier initialisation
   ZHVAGUE(:)  = 0.
   DO II = 1, 8
-!++cb++19/10/16 modif de la formule : + de vent => vagues + hautes
-!    WHERE ((PWIND(:) .GT. VVENT(II)).AND.(PWIND(:) .LT. VVENT(II+1)))
     WHERE ((PWIND(:) .GT. VVENT(II)).AND.(PWIND(:) .LT. VVENT(II+1)))
-!      ZHVAGUE(:) = HVAGUE(II) + (VVENT(II+1)  - PWIND(:)) * &
       ZHVAGUE(:) = HVAGUE(II) + (PWIND(:)     - VVENT(II+1)) * &
                                 (HVAGUE(II+1) - HVAGUE(II)) / &
                                 (VVENT(II+1)  - VVENT(II))
-!--cb--
     ENDWHERE
   ENDDO
 
@@ -183,9 +179,16 @@ IF (CEMISPARAM_SLT .eq. "Ova14") THEN ! Rajouter Ova14 dans fichier initialisati
 ! Unite : m².s^(-1) Pour une salinite = 35g/kg.
 ! En mer Mediterranee = 38.5g/kg (Lewis and Schwartz)
 
-! Initialisation des valeurs de ZVISCO, ZREYNOLDS
+! Initialisation des valeurs de ZVISCO, ZREYNOLDS Variance de pente vague vent
+! 12m
   ZVISCO(:)    = 0.
   ZREYNOLDS(:) = 0.
+  MSS(:)       = 0.
+  PWIND12(:)   = 0.
+  PWIND12(:)=PWIND(:)+(PUSTAR(:)/0.4)*LOG(12.5/10.0)
+  MSS(:)=(0.003+(0.00512*PWIND12(:)))*(0.666) ! Correction factor
+                                              ! to convert tunnel to
+                                              ! Cox and munk MSS
 
   ! Tableau d'interpolation pour calculer ZNUWATER en fonction de la SST
   ! Cas ou 0 < SST < 10 C
@@ -214,17 +217,14 @@ IF (CEMISPARAM_SLT .eq. "Ova14") THEN ! Rajouter Ova14 dans fichier initialisati
 
 ! Calcul du nombre de Reynolds
   ZREYNOLDS(:) = (PUSTAR(:) * PWHEIGHT(:)) / ZVISCO(:)
-
 ! Calcul du flux en nombre pour chaque mode
 
 ! Ovadnevaite et al. 2014 
 !!!!! Total number flux, Unite ZSDSLT_MDE ne correspond pas au total number
 !flux mais au size dependent SSA production flux
-
-! Ecrire equation integration pour chaque mode
-
 !Condition d'emission : ZREYNOLDS > 1E5
 
+  ZSFSLT_MDE(:,:) = 0. 
   WHERE (ZREYNOLDS(:) > 1.E5)
     ZSFSLT_MDE(:,1) = 104.51 * ( ZREYNOLDS(:) - 1.E5)**0.556
     ZSFSLT_MDE(:,2) = 0.044  * ( ZREYNOLDS(:) - 1.E5)**1.08
@@ -235,29 +235,30 @@ IF (CEMISPARAM_SLT .eq. "Ova14") THEN ! Rajouter Ova14 dans fichier initialisati
     ZSFSLT_MDE(:,5) = 0.52   * ( ZREYNOLDS(:) - 2.E5)**0.87
   ENDWHERE
 
-
-
-  WHERE (ZREYNOLDS(:) <= 1.E5)
+   WHERE (ZREYNOLDS(:) <= 1.E5)
     ZSFSLT_MDE(:,1) = 1.E-10
     ZSFSLT_MDE(:,2) = 1.E-10
     ZSFSLT_MDE(:,3) = 1.E-10
     ZSFSLT_MDE(:,4) = 1.E-10
-  ENDWHERE
-  WHERE (ZREYNOLDS(:) <= 2.E5)
     ZSFSLT_MDE(:,5) = 1.E-10
   ENDWHERE
 
-! Controle avec des valeurs limites , Pas besoin de la conversion 1E4 pour Ova
-! car deja en m-2
-  ZSFSLT_MDE(:,1) = MAX(ZSFSLT_MDE(:,1) , 1.E-10)
-  ZSFSLT_MDE(:,2) = MAX(ZSFSLT_MDE(:,2) , 1.E-10)
-  ZSFSLT_MDE(:,3) = MAX(ZSFSLT_MDE(:,3) , 1.E-10)
-  ZSFSLT_MDE(:,4) = MAX(ZSFSLT_MDE(:,4) , 1.E-10)
-  ZSFSLT_MDE(:,5) = MAX(ZSFSLT_MDE(:,5) , 1.E-10)
-!- Marine
+ ! Wave slope variance dependent SSGF (Bruch et al., 2021) - In #/m2/um/s
+ IF ((CEMISPARAM_SLT .eq. "OvB21a").AND.(JPMODE_SLT >= 6)) ZSFSLT_MDE(:,6)=(5.3824*10**6) * (MSS(:))**2.45
+ IF ((CEMISPARAM_SLT .eq. "OvB21a").AND.(JPMODE_SLT >= 7)) ZSFSLT_MDE(:,7)=(1.9424*10**6) * (MSS(:))**2.30
+ IF ((CEMISPARAM_SLT .eq. "OvB21a").AND.(JPMODE_SLT == 8)) ZSFSLT_MDE(:,8)=(1.3153*10**5) * (MSS(:))**2.39
+
+ ! Wave slope variance, wave age, and Rb dependent SSGF, (Bruch et al. 2021) - In #/m2/um/s
+ IF ((CEMISPARAM_SLT .eq. "OvB21b").AND.(JPMODE_SLT >= 6)) ZSFSLT_MDE(:,6)=(47.6139) * &
+                                                        (((MSS(:)*PUSTAR(:)**3)*(1/(9.8*1.8*1e-5))))**0.92
+ IF ((CEMISPARAM_SLT .eq. "OvB21b").AND.(JPMODE_SLT >= 7)) ZSFSLT_MDE(:,7)=(1.6849) * &
+                                                        (((MSS(:)*PUSTAR(:)**3)*(1/(9.8*1.8*1e-5))))**1.41
+ IF ((CEMISPARAM_SLT .eq. "OvB21b").AND.(JPMODE_SLT == 8)) ZSFSLT_MDE(:,8)=(0.4481) * &
+                                                        (((MSS(:)*PUSTAR(:)**3)*(1/(9.8*1.8*1e-5))))**1.11
+
 
 ELSEIF (CEMISPARAM_SLT .eq. "Vig01") THEN
-! Vignatti et al. 2001 (in particles.cm-2.s-1) : en #.cm-3 en fait
+! Vignatti et al. 2001 (in particles.cm-2.s-1) 
   ZSFSLT_MDE(:,1) =  10.**(0.09  *PWIND(:) + 0.283)   ! fine mode
   ZSFSLT_MDE(:,2) =  10.**(0.0422*PWIND(:) + 0.288)   ! median mode
   ZSFSLT_MDE(:,3) =  10.**(0.069 *PWIND(:) - 3.5)     ! coarse mode
@@ -267,24 +268,6 @@ ELSEIF (CEMISPARAM_SLT .eq. "Vig01") THEN
   ZSFSLT_MDE(:,2) = MAX(ZSFSLT_MDE(:,2) * 1.E4, 1.E-10)
   ZSFSLT_MDE(:,3) = MAX(ZSFSLT_MDE(:,3) * 1.E4, 1.E-10)
 !
-ELSEIF (CEMISPARAM_SLT .eq. "Sch04") THEN! Use Schultz et al., 2004
-  WCL(:) = INT(PWIND(:))
-  WCL(:) = MAX (0, MIN(WCL(:), 39))
- 
-  DZSPEED(:) = MAX(0., MIN(PWIND(:) - FLOAT(WCL(:)), 1.))
- !
- ! Flux given  in  particles.m-2 s-1
- !
-  DO JI = 1, KI
-   !plm-gfortran
-    ZSFSLT_MDE(JI,1) = NUMB1FLUX(WCL(JI)) + &
-                      (NUMB1FLUX(WCL(JI)+1)-NUMB1FLUX(WCL(JI)))*DZSPEED(JI)
-    ZSFSLT_MDE(JI,2) = NUMB2FLUX(WCL(JI)) + &
-                      (NUMB2FLUX(WCL(JI)+1)-NUMB2FLUX(WCL(JI)))*DZSPEED(JI)
-    ZSFSLT_MDE(JI,3) = NUMB3FLUX(WCL(JI)) + &
-                      (NUMB3FLUX(WCL(JI)+1)-NUMB3FLUX(WCL(JI)))*DZSPEED(JI)
-   !plm-gfortran
-  END DO
 END IF
 !
 DO JN = 1, JPMODE_SLT
@@ -292,7 +275,6 @@ DO JN = 1, JPMODE_SLT
 ! convert  particles.m-2 s-1 into kg.m-2.s-1
 ! N'est calculé que pour le moment 3 (en masse), la conversion pour les autres
 ! flux de moments se fait plus tard (mode_dslt_surf.F90 MASSFLUX2MOMENTFLUX)
-!+Marine
   !
   IF (LVARSIG_SLT) THEN ! cas 3 moment
 
@@ -313,7 +295,6 @@ DO JN = 1, JPMODE_SLT
                             * ((SLT%XEMISRADIUS_SLT(JN)**3) &
                             * EXP(4.5 * LOG(SLT%XEMISSIG_SLT(JN))**2)) &
                             * ZCONVERTFACM3_SLT
-! -- PIERRE / MARINE SSA - MODIF --
   END IF
 END DO
 

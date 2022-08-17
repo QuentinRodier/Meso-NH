@@ -14,7 +14,7 @@ INTERFACE
                                   PTSTEP, PZZ, PRHODJ, PRHODREF, PEXNREF,              &
                                   PPABST, PTHT, PRT, PSIGS, PSIGQSAT, PMFCONV,         &
                                   PTHM, PRCM, PPABSM,                                  &
-                                  PW_ACT,PDTHRAD, PTHS, PRS, PSVT, PSVS, PSRCS, PCLDFR,&
+                                  PW_ACT,PDTHRAD, PTHS, PRS, PSVT, PSVS, PSRCS, PCLDFR, PICEFR,&
                                   PCIT, OSEDIC, OACTIT, OSEDC, OSEDI,                  &
                                   ORAIN, OWARM, OHHONI, OCONVHG,                       &
                                   PCF_MF,PRC_MF, PRI_MF,                               &
@@ -83,6 +83,7 @@ REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSRCS ! Second-order flux
                                                  ! s'rc'/2Sigma_s2 at time t+1
                                                  ! multiplied by Lambda_3
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PCLDFR! Cloud fraction
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PICEFR! Cloud fraction
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PCIT  ! Pristine ice number
                                                  ! concentration at time t
 LOGICAL,                  INTENT(IN)    :: OSEDIC! Switch to activate the
@@ -152,7 +153,7 @@ END MODULE MODI_RESOLVED_CLOUD
                                   PTSTEP, PZZ, PRHODJ, PRHODREF, PEXNREF,              &
                                   PPABST, PTHT, PRT, PSIGS, PSIGQSAT, PMFCONV,         &
                                   PTHM, PRCM, PPABSM,                                  &
-                                  PW_ACT,PDTHRAD, PTHS, PRS, PSVT, PSVS, PSRCS, PCLDFR,&
+                                  PW_ACT,PDTHRAD, PTHS, PRS, PSVT, PSVS, PSRCS, PCLDFR,PICEFR,&
                                   PCIT, OSEDIC, OACTIT, OSEDC, OSEDI,                  &
                                   ORAIN, OWARM, OHHONI, OCONVHG,                       &
                                   PCF_MF,PRC_MF, PRI_MF,                               &
@@ -288,11 +289,14 @@ END MODULE MODI_RESOLVED_CLOUD
 USE MODD_CH_AEROSOL,     ONLY: LORILAM
 USE MODD_DUST,           ONLY: LDUST
 use modd_cst,            only: xcpd, xrd, xp00, xrholw
-USE MODD_DUST ,          ONLY: LDUST
 USE MODD_IO,             ONLY: TFILEDATA
-USE MODD_NSV,            ONLY: NSV_C1R3END, NSV_C2R2BEG, NSV_C2R2END,                            &
-                               NSV_LIMA_BEG, NSV_LIMA_END, NSV_LIMA_CCN_FREE, NSV_LIMA_IFN_FREE, &
-                               NSV_LIMA_NC, NSV_LIMA_NI, NSV_LIMA_NR
+!UPG*PT
+USE MODD_NSV
+!USE MODD_NSV,            ONLY: NSV_C1R3END, NSV_C2R2BEG, NSV_C2R2END,                            &
+!                               NSV_LIMA_BEG, NSV_LIMA_END, NSV_LIMA_CCN_FREE, NSV_LIMA_IFN_FREE, &
+!                               NSV_LIMA_NC, NSV_LIMA_NI, NSV_LIMA_NR
+!                               NSV_LIMA_NC, NSV_LIMA_NI, NSV_LIMA_NR
+!UPG*PT
 USE MODD_PARAM_C2R2,     ONLY: LSUPSAT
 USE MODD_PARAMETERS,     ONLY: JPHEXT, JPVEXT
 USE MODD_PARAM_ICE,      ONLY: CSEDIM, LADJ_BEFORE, LADJ_AFTER, CFRAC_ICE_ADJUST, LRED
@@ -321,6 +325,9 @@ USE MODI_RAIN_ICE
 USE MODI_RAIN_ICE_RED
 USE MODI_SHUMAN
 USE MODI_SLOW_TERMS
+!UPG*PT
+USE MODI_AER2LIMA
+!UPG*PT
 !
 IMPLICIT NONE
 !
@@ -382,6 +389,7 @@ REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSRCS ! Second-order flux
                                                  ! s'rc'/2Sigma_s2 at time t+1
                                                  ! multiplied by Lambda_3
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PCLDFR! Cloud fraction
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PICEFR! Cloud fraction
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PCIT  ! Pristine ice number
                                                  ! concentration at time t
 LOGICAL,                  INTENT(IN)    :: OSEDIC! Switch to activate the
@@ -450,7 +458,8 @@ INTEGER :: IKB           !
 INTEGER :: IKE           !
 INTEGER :: IKU
 INTEGER :: IINFO_ll      ! return code of parallel routine
-INTEGER :: JK,JI,JL
+ 
+INTEGER :: JK,JI,JL,II
 !
 !
 !
@@ -467,6 +476,10 @@ REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3)):: ZZZ
 INTEGER                               :: ISVBEG ! first scalar index for microphysics
 INTEGER                               :: ISVEND ! last  scalar index for microphysics
 REAL, DIMENSION(:),       ALLOCATABLE :: ZRSMIN ! Minimum value for tendencies
+!UPG*PT
+REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: ZSVT   ! scalar variable for microphysics only
+!UPG*PT
+
 LOGICAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3)):: LLMICRO ! mask to limit computation
 REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3), KRR) :: ZFPR
 !
@@ -474,9 +487,6 @@ INTEGER                               :: JMOD, JMOD_IFN
 LOGICAL                               :: GWEST,GEAST,GNORTH,GSOUTH
 ! BVIE work array waiting for PINPRI
 REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2)):: ZINPRI
-REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3)):: ZICEFR
-REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3)):: ZPRCFR
-REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3)):: ZTM
 !
 !------------------------------------------------------------------------------
 !
@@ -501,11 +511,61 @@ ELSE IF (HCLOUD == 'C3R5') THEN
   ISVEND = NSV_C1R3END
 ELSE IF (HCLOUD == 'LIMA') THEN
   ISVBEG = NSV_LIMA_BEG
-  ISVEND = NSV_LIMA_END
+!UPG*PT
+  IF (.NOT. LDUST .AND. .NOT. LSALT .AND. .NOT. LORILAM) THEN
+    ISVEND = NSV_LIMA_END
+  ELSE
+    IF (LORILAM) THEN
+      ISVEND = NSV_AEREND
+    END IF
+    IF (LDUST) THEN
+      ISVEND = NSV_DSTEND
+    END IF
+    IF (LSALT) THEN
+      ISVEND = NSV_SLTEND
+    END IF
+  END IF
 ELSE
   ISVBEG = 0
-  ISVEND = -1
+  ISVEND = 0
 END IF
+!
+!
+!
+!*        1.    From ORILAM to LIMA: 
+!
+!IF (HCLOUD == 'LIMA') THEN
+IF (HCLOUD == 'LIMA' .AND. ((LORILAM).OR.(LDUST).OR.(LSALT))) THEN
+! ORILAM : tendance s --> variable instant t
+ALLOCATE(ZSVT(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3),NSV))
+  DO II = 1, NSV
+    ZSVT(:,:,:,II) = PSVS(:,:,:,II) * PTSTEP / PRHODJ(:,:,:)
+  END DO
+
+CALL AER2LIMA(ZSVT(IIB:IIE,IJB:IJE,IKB:IKE,:),&
+              PRHODREF(IIB:IIE,IJB:IJE,IKB:IKE), &
+              PRT(IIB:IIE,IJB:IJE,IKB:IKE,1),&
+              PPABST(IIB:IIE,IJB:IJE,IKB:IKE),&
+              PTHT(IIB:IIE,IJB:IJE,IKB:IKE), &
+              PZZ(IIB:IIE,IJB:IJE,IKB:IKE))
+
+! LIMA : variable instant t --> tendance s
+  PSVS(:,:,:,NSV_LIMA_CCN_FREE)   = ZSVT(:,:,:,NSV_LIMA_CCN_FREE) * &
+                                    PRHODJ(:,:,:) / PTSTEP
+  PSVS(:,:,:,NSV_LIMA_CCN_FREE+1) = ZSVT(:,:,:,NSV_LIMA_CCN_FREE+1) * &
+                                    PRHODJ(:,:,:) / PTSTEP
+  PSVS(:,:,:,NSV_LIMA_CCN_FREE+2) = ZSVT(:,:,:,NSV_LIMA_CCN_FREE+2) * &
+                                    PRHODJ(:,:,:) / PTSTEP
+
+  PSVS(:,:,:,NSV_LIMA_IFN_FREE)   = ZSVT(:,:,:,NSV_LIMA_IFN_FREE) * &
+                                    PRHODJ(:,:,:) / PTSTEP
+  PSVS(:,:,:,NSV_LIMA_IFN_FREE+1) = ZSVT(:,:,:,NSV_LIMA_IFN_FREE+1) * &
+                                    PRHODJ(:,:,:) / PTSTEP
+
+DEALLOCATE(ZSVT)
+END IF
+
+!UPG*PT
 !
 IF (HCLOUD(1:3)=='ICE' .AND. LRED) THEN
   ALLOCATE(ZRSMIN(SIZE(XRTMIN)))
@@ -939,7 +999,7 @@ SELECT CASE ( HCLOUD )
                    PSVT(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END), PW_ACT,          &
                    PTHS, PRS, PSVS(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END),       &
                    PINPRC, PINDEP, PINPRR, ZINPRI, PINPRS, PINPRG, PINPRH, &
-                   PEVAP3D, PCLDFR, ZICEFR, ZPRCFR                         )
+                   PEVAP3D, PCLDFR, PICEFR, PRAINFR                        )
      ELSE
 
         IF (OWARM) CALL LIMA_WARM(OACTIT, OSEDC, ORAIN, KSPLITR, PTSTEP, KMI,       &
@@ -973,7 +1033,7 @@ SELECT CASE ( HCLOUD )
                          PTSTEP, PRHODJ, PPABSM, PPABST, PRHODREF, PEXNREF, PZZ, &
                          PTHT,PRT, PSVT(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END),        &
                          PTHS,PRS, PSVS(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END),        &
-                         PCLDFR, PSRCS                                           )
+                         PCLDFR, PICEFR, PRAINFR, PSRCS                          )
    ELSE IF (LPTSPLIT) THEN
     CALL LIMA_ADJUST_SPLIT(KRR, KMI, TPFILE, CCONDENS, CLAMBDA3,                     &
                      OSUBG_COND, OSIGMAS, PTSTEP, PSIGQSAT,                          &
@@ -981,14 +1041,14 @@ SELECT CASE ( HCLOUD )
                      PDTHRAD, PW_ACT,                                                &
                      PRT, PRS, PSVT(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END),                &
                      PSVS(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END),                          &
-                     PTHS, PSRCS, PCLDFR, PRC_MF, PCF_MF                             )
+                     PTHS, PSRCS, PCLDFR, PICEFR, PRC_MF, PRI_MF, PCF_MF             )
    ELSE
     CALL LIMA_ADJUST(KRR, KMI, TPFILE,                                &
                      OSUBG_COND, PTSTEP,                              &
                      PRHODREF, PRHODJ, PEXNREF, PPABST, PPABST,       &
                      PRT, PRS, PSVT(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END), &
                      PSVS(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END),           &
-                     PTHS, PSRCS, PCLDFR                              )
+                     PTHS, PSRCS, PCLDFR, PICEFR, PRAINFR             )
    ENDIF
 !
 END SELECT

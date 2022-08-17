@@ -272,6 +272,7 @@ END MODULE MODI_MODEL_n
 !  T. Nagel    01/02/2021: add turbulence recycling
 !  P. Wautelet 19/02/2021: add NEGA2 term for SV budgets
 !  J.L. Redelsperger 03/2021: add Call NHOA_COUPLN (coupling O & A LES version)
+!  C. Barthe   07/04/2022: deallocation of ZSEA
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -1807,7 +1808,7 @@ IF ((LDUST).OR.(LSALT)) THEN
 !   
     GCLD=.TRUE.
     IF (GCLD .AND. NRR.LE.3 ) THEN 
-      IF( MAXVAL(XCLDFR(:,:,:)).LE. 1.E-10 .AND. GCLOUD_ONLY ) THEN
+      IF( MAX(MAXVAL(XCLDFR(:,:,:)),MAXVAL(XICEFR(:,:,:))).LE. 1.E-10 .AND. GCLOUD_ONLY ) THEN
           GCLD = .FALSE.                ! only the cloudy verticals would be 
                                         ! refreshed but there is no clouds 
       END IF
@@ -1895,7 +1896,7 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
                           ZPABST, XTHT,XRT,XSIGS,VSIGQSAT,XMFCONV,XTHM,XRCM,   &
                           XPABSM, XWT_ACT_NUC,XDTHRAD, XRTHS, XRRS,            &
                           XSVT, XRSVS,                                         &
-                          XSRCT, XCLDFR,XCIT,                                  &
+                          XSRCT, XCLDFR,XICEFR, XCIT,                          &
                           LSEDIC,KACTIT, KSEDC, KSEDI, KRAIN, KWARM, KHHONI,   &
                           LCONVHG, XCF_MF,XRC_MF, XRI_MF,                      &
                           XINPRC,ZINPRC3D,XINPRR, XINPRR3D, XEVAP3D,           &
@@ -1915,7 +1916,7 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
                           ZPABST, XTHT,XRT,XSIGS,VSIGQSAT,XMFCONV,XTHM,XRCM,   &
                           XPABSM, XWT_ACT_NUC,XDTHRAD, XRTHS, XRRS,            &
                           XSVT, XRSVS,                                         &
-                          XSRCT, XCLDFR,XCIT,                                  &
+                          XSRCT, XCLDFR, XICEFR, XCIT,                         &
                           LSEDIC,KACTIT, KSEDC, KSEDI, KRAIN, KWARM, KHHONI,   &
                           LCONVHG, XCF_MF,XRC_MF, XRI_MF,                      &
                           XINPRC,ZINPRC3D,XINPRR, XINPRR3D, XEVAP3D,           &
@@ -2147,16 +2148,17 @@ IF (LPROFILER)  THEN
     CALL PROFILER_n(XTSTEP,                                              &
                   XXHAT, XYHAT, XZZ,XRHODREF,                            &
                   XUT, XVT, XWT, XTHT, XRT, XSVT, XTKET, XTSRAD, XPABST, &
-                  XAER, XCLDFR, XCIT,PSEA=ZSEA(:,:))
+                  XAER, MAX(XCLDFR,XICEFR), XCIT,PSEA=ZSEA(:,:))
     DEALLOCATE(ZSEA)
   ELSE
     CALL PROFILER_n(XTSTEP,                                              &
                   XXHAT, XYHAT, XZZ,XRHODREF,                            &
                   XUT, XVT, XWT, XTHT, XRT, XSVT, XTKET, XTSRAD, XPABST, &
-                  XAER, XCLDFR, XCIT)
+                  XAER, MAX(XCLDFR,XICEFR), XCIT)
   END IF
 END IF
 !
+IF (ALLOCATED(ZSEA)) DEALLOCATE (ZSEA)
 !
 CALL SECOND_MNH2(ZTIME2)
 !

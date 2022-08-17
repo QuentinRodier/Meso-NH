@@ -35,16 +35,16 @@
 !!     -------------
 !! 
 !!     2014 P.Tulet modif XINIRADIUS_SLT and XN0MIN_SLT
-!!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !!
 USE MODD_PARAMETERS, ONLY: JPMODELMAX
+!USE MODD_SLT_n, ONLY : SLT_t
 !!--------------------------------------------------------------------
 !!     DECLARATIONS
 !!     ------------
 IMPLICIT NONE
 !
 ! ++ PIERRE / MARINE SSA DUST - MODIF ++
-LOGICAL      :: LSLTMACC  = .FALSE.   ! switch to active pronostic sea salts  from MACC
+LOGICAL      :: LSLTCAMS  = .FALSE.   ! switch to active pronostic sea salts  from CAMS
 LOGICAL      :: LSALT     = .FALSE.   ! switch to active pronostic sea salts
 LOGICAL      :: LONLY     = .FALSE.
 LOGICAL      :: LREAD_ONLY_HS_MACC     = .FALSE.
@@ -52,37 +52,39 @@ LOGICAL      :: LSLTINIT  = .FALSE.   ! switch to initialize pronostic sea salts
 LOGICAL      :: LSLTPRES  = .FALSE.   ! switch to know if pronostic salts exist            
 LOGICAL,DIMENSION(JPMODELMAX)  :: LDEPOS_SLT = .FALSE.    ! switch to SLT wet depositon
 
-!INTEGER      :: NMODE_SLT= 3  ! number of sea salt modes (max 3; default = 3)
-INTEGER :: NMODE_SLT= 5  ! number of sea salt modes (max 5; default = 3)
-!
 CHARACTER(LEN=9),DIMENSION(:),ALLOCATABLE :: CDESLTNAMES
 CHARACTER(LEN=6),DIMENSION(:), ALLOCATABLE :: CSALTNAMES
-CHARACTER(LEN=9),DIMENSION(10), PARAMETER  :: YPDESLT_INI = &
-    (/'DESLTM31C','DESLTM32C','DESLTM33C','DESLTM34C', 'DESLTM35C', &
-      'DESLTM31R','DESLTM32R','DESLTM33R', 'DESLTM34R','DESLTM35R' /)
+CHARACTER(LEN=9),DIMENSION(16), PARAMETER  :: YPDESLT_INI = &
+    (/'DESLTM31C','DESLTM32C','DESLTM33C','DESLTM34C', 'DESLTM35C','DESLTM36C', &
+       'DESLTM37C','DESLTM38C',& 
+      'DESLTM31R','DESLTM32R','DESLTM33R', 'DESLTM34R','DESLTM35R','DESLTM36R','DESLTM37R','DESLTM38R' /)
 
-CHARACTER(LEN=6),DIMENSION(15), PARAMETER  :: YPSALT_INI = &
+CHARACTER(LEN=6),DIMENSION(24), PARAMETER  :: YPSALT_INI = &
                   (/'SLTM01','SLTM31','SLTM61',&
                     'SLTM02','SLTM32','SLTM62',&
                     'SLTM03','SLTM33','SLTM63',&
                     'SLTM04','SLTM34','SLTM64',&
-                    'SLTM05','SLTM35','SLTM65' /)
+                    'SLTM05','SLTM35','SLTM65',&
+                    'SLTM06','SLTM36','SLTM66',&
+                    'SLTM07','SLTM37','SLTM67',&
+                    'SLTM08','SLTM38','SLTM68'/)
 
-INTEGER, DIMENSION(5),PARAMETER  :: JPSALTORDER = (/1, 2, 3, 4, 5/)
+
+INTEGER, DIMENSION(8),PARAMETER  :: JPSALTORDER = (/1,2,3,4,5,6,7,8/)
+INTEGER :: NMODE_SLT= 8  ! number of sea salt modes (default = 8)
 
 !Test Thomas (definir rayons et sigma ici si on veut desactiver initialisation MACC)
 
 !REAL, DIMENSION(5) :: XINIRADIUS_SLT,XINISIG_SLT,XN0MIN_SLT
 
 !Initial dry number median radius (um) from Ova et al., 2014
-REAL,DIMENSION(5)    :: XINIRADIUS_SLT=  (/0.009, 0.021, 0.045, 0.115, 0.415/)
+REAL,DIMENSION(8)    :: XINIRADIUS_SLT=  (/0.009, 0.021, 0.045, 0.115,0.415,2.5, 7.0, 20.0/)
 !Initial, standard deviation from  Ova et al., 2014
-REAL,DIMENSION(5)      :: XINISIG_SLT =  (/ 1.37, 1.5, 1.42, 1.53, 1.85 /)
+REAL,DIMENSION(8)      :: XINISIG_SLT =  (/ 1.37, 1.5, 1.42, 1.53, 1.85,1.7,1.8, 2.9 /)
+
 !Minimum allowed number concentration for any mode (#/m3)
-REAL,DIMENSION(5)  :: XN0MIN_SLT  = (/1. , 1., 1., 1., 1. /)
-
+REAL,DIMENSION(8)  :: XN0MIN_SLT  = (/1.e1 , 1.e1, 1.e1, 1., 1.e-4,1.e-20, 1.e-20,1.e-20 /)
 !Test Thomas
-
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: XSLTMSS   ! [kg/m3] total mass concentration of sea salt
 !
 ! aerosol lognormal parameterization

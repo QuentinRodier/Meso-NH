@@ -62,6 +62,8 @@ USE MODD_TEB_n, ONLY : TEB_NP_t
 USE MODD_MEGAN_n, ONLY : MEGAN_t
 USE MODD_MEGAN_SURF_FIELDS_n, ONLY : MEGAN_SURF_FIELDS_t
 !
+USE MODD_DMS_n, ONLY : DMS_t
+USE MODD_DMS_SURF_FIELDS_n, ONLY : DMS_SURF_FIELDS_t
 !---------------------------------------------------------------------------
 !
 TYPE FLAKE_MODEL_t
@@ -120,6 +122,9 @@ TYPE(SEAFLUX_t) :: S
 TYPE(OCEAN_t) :: O
 TYPE(OCEAN_REL_t) :: OR
 !
+TYPE(DMS_t) :: DMS
+TYPE(DMS_SURF_FIELDS_t) :: DSF
+
 END TYPE SEAFLUX_MODEL_t
 !
 !--------------------------------------------------

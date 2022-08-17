@@ -132,6 +132,7 @@ USE MODD_CST,        ONLY : XP00, XCPD, XRD, XRV,XRHOLW, XDAY, XPI, XLVTT, XMD, 
 USE MODD_PARAMETERS, ONLY : JPVEXT, XUNDEF
 USE MODD_DYN_n,      ONLY : XTSTEP
 USE MODD_CH_MNHC_n,  ONLY : LUSECHEM
+USE MODD_CH_M9_n,   ONLY : CNAMES
 USE MODD_FIELD_n,    ONLY : XUT, XVT, XWT, XTHT, XRT, XPABST, XSVT, XTKET, XZWS
 USE MODD_METRICS_n,  ONLY : XDXX, XDYY, XDZZ
 USE MODD_DIM_n,      ONLY : NKMAX
@@ -591,6 +592,7 @@ END IF
 !
 ! Call to surface schemes
 !                       
+
 CALL COUPLING_SURF_ATM_n(YSURF_CUR,'MESONH', 'E',ZTIMEC,                                            &
                XTSTEP, TDTCUR%nyear, TDTCUR%nmonth, TDTCUR%nday, TDTCUR%xtime,                      &
                IDIM1D,KSV_SURF,SIZE(XSW_BANDS),                                                     &
@@ -687,7 +689,7 @@ END IF
 IF (LUSECHEM) THEN
    DO JSV=NSV_CHEMBEG,NSV_CHEMEND
       PSFSV(:,:,JSV) = ZSFTS(:,:,JSV) * XMD / ( XAVOGADRO * XRHODREF(:,:,IKB))
-      IF ((LCHEMDIAG).AND.(CPROGRAM == 'DIAG  ')) XCHFLX(:,:,JSV) = PSFSV(:,:,JSV)    
+      IF ((LCHEMDIAG).AND.(CPROGRAM == 'DIAG  ')) XCHFLX(:,:,JSV-NSV_CHEMBEG+1) = PSFSV(:,:,JSV)    
    END DO
 ELSE
   PSFSV(:,:,NSV_CHEMBEG:NSV_CHEMEND) = 0.
