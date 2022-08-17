@@ -551,12 +551,6 @@ if [ "x${VER_OASIS}" == "xOASISAUTO" ] ; then
 ( cd $LOCAL/src/LIB ; [ ! -d oasis3-${VERSION_OASIS} ] && tar xvfz oasis3-${VERSION_OASIS}.tar.gz ; [ ! -d toy_${VERSION_TOY} ] && tar xvfz toy_${VERSION_TOY}.tar.gz )
 fi
 #
-#  Install MEGAN if MNH_MEGAN=1
-#
-if [ "x${MNH_MEGAN}" == "x1" ] ; then
-( cd $LOCAL/src/LIB ; [ ! -d MEGAN ] && tar xvfz megan.tar.gz )
-fi
-#
 #  Install GRIBAPI or ecCodes
 #
 if [ "x${MNH_GRIBAPI}" == "xyes" ] ; then
