@@ -344,7 +344,7 @@ DO JI = 1, NBALLOONS
   END SELECT
 END DO
 
-CALL BALLOONS_NML_DEALLOCATE()
+IF ( NBALLOONS > 0 ) CALL BALLOONS_NML_DEALLOCATE()
 
 !----------------------------------------------------------------------------
 !
