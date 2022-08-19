@@ -3,6 +3,16 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
+MODULE MODE_INI_BALLOON
+
+IMPLICIT NONE
+
+PRIVATE
+
+PUBLIC :: INI_BALLOON
+
+CONTAINS
+
 !     ######################
       SUBROUTINE INI_BALLOON
 !     ######################
@@ -98,7 +108,7 @@
 USE MODD_AIRCRAFT_BALLOON
 USE MODD_CONF,             ONLY: NMODEL_NEST => NMODEL
 USE MODD_CST,              ONLY: XPI
-USE MODD_PARAMETERS,       ONLY: XUNDEF
+USE MODD_PARAMETERS,       ONLY: XNEGUNDEF, XUNDEF
 
 USE MODE_MSG
 
@@ -349,3 +359,5 @@ IF ( NBALLOONS > 0 ) CALL BALLOONS_NML_DEALLOCATE()
 !----------------------------------------------------------------------------
 !
 END SUBROUTINE INI_BALLOON
+
+END MODULE MODE_INI_BALLOON

@@ -163,8 +163,9 @@ USE MODD_STATION_n,  ONLY: LSTATION
 !
 USE MODE_MSG
 !
+! USE MODN_AIRCRAFTS
 USE MODN_BACKUP
-USE MODN_BALLOONS
+! USE MODN_BALLOONS
 USE MODN_CONF
 USE MODN_DYN
 USE MODN_NESTING
@@ -455,7 +456,8 @@ IF(LSERIES) WRITE(UNIT=ILUSEG,NML=NAM_SERIES)
 IF(NMODEL_CLOUD/=NUNDEF) WRITE(UNIT=ILUSEG,NML=NAM_TURB_CLOUD)
 IF(CTURB /= 'NONE') WRITE(UNIT=ILUSEG,NML=NAM_TURB)
 WRITE(UNIT=ILUSEG,NML=NAM_FLYERS)
-!Not possible (for the moment): arrays have been deallocated after ini_balloon: WRITE(UNIT=ILUSEG,NML=NAM_BALLOONS)
+!Not possible (for the moment): arrays have been deallocated after ini_aircraft: WRITE(UNIT=ILUSEG,NML=NAM_AIRCRAFTS)
+!Not possible (for the moment): arrays have been deallocated after ini_balloon:  WRITE(UNIT=ILUSEG,NML=NAM_BALLOONS)
 !
 !
 !
