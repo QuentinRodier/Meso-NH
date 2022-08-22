@@ -1220,7 +1220,8 @@ if ( lbu_rth ) then
   tzsource%clongname  = 'wet growth of hail'
   tzsource%lavailable =      ( hcloud == 'LIMA' .and. .not.lptsplit .and. lhail_lima .and. lcold_lima &
                                                 .and. lwarm_lima    .and. lsnow_lima )                   &
-                        .or.   hcloud == 'ICE4'
+                        .or. ( hcloud == 'LIMA' .and. lptsplit ) &
+                        .or.   hcloud == 'ICE4' 
   call Budget_source_add( tbudgets(NBUDGET_TH), tzsource )
 
   tzsource%cmnhname   = 'DRYH'
@@ -1232,6 +1233,7 @@ if ( lbu_rth ) then
   tzsource%clongname  = 'melting of hail'
   tzsource%lavailable =      ( hcloud == 'LIMA' .and. .not.lptsplit .and. lhail_lima .and. lcold_lima &
                                                 .and. lwarm_lima    .and. lsnow_lima ) &
+                        .or. ( hcloud == 'LIMA' .and. lptsplit ) &
                         .or.   hcloud == 'ICE4'
   call Budget_source_add( tbudgets(NBUDGET_TH), tzsource )
 
@@ -1833,6 +1835,7 @@ if ( tbudgets(NBUDGET_RC)%lenabled ) then
   tzsource%clongname  = 'wet growth of hail'
   tzsource%lavailable =      ( hcloud == 'LIMA' .and. .not.lptsplit .and. lhail_lima .and. lcold_lima  &
                                                 .and. lwarm_lima    .and. lsnow_lima )                 &
+                        .or. ( hcloud == 'LIMA' .and. lptsplit ) &
                         .or.   hcloud == 'ICE4'
   call Budget_source_add( tbudgets(NBUDGET_RC), tzsource )
 
@@ -2062,6 +2065,7 @@ if ( tbudgets(NBUDGET_RR)%lenabled ) then
   tzsource%clongname  = 'wet growth of hail'
   tzsource%lavailable =      ( hcloud == 'LIMA' .and. .not.lptsplit .and. lhail_lima .and. lcold_lima &
                                                 .and. lwarm_lima    .and. lsnow_lima )                &
+                        .or. ( hcloud == 'LIMA' .and. lptsplit ) &
                         .or.   hcloud == 'ICE4'
   call Budget_source_add( tbudgets(NBUDGET_RR), tzsource )
 
@@ -2074,6 +2078,7 @@ if ( tbudgets(NBUDGET_RR)%lenabled ) then
   tzsource%clongname  = 'melting of hail'
   tzsource%lavailable =       ( hcloud == 'LIMA' .and. .not.lptsplit .and. lhail_lima .and. lcold_lima &
                                                 .and. lwarm_lima    .and. lsnow_lima )                &
+                        .or. ( hcloud == 'LIMA' .and. lptsplit ) &
                          .or.   hcloud == 'ICE4'
   call Budget_source_add( tbudgets(NBUDGET_RR), tzsource )
 
@@ -2323,6 +2328,7 @@ if ( tbudgets(NBUDGET_RI)%lenabled ) then
   tzsource%clongname  = 'wet growth of hail'
   tzsource%lavailable =      ( hcloud == 'LIMA' .and. .not.lptsplit .and. lhail_lima .and. lcold_lima &
                                                 .and. lwarm_lima    .and. lsnow_lima )                &
+                        .or. ( hcloud == 'LIMA' .and. lptsplit ) &
                         .or.   hcloud == 'ICE4'
   call Budget_source_add( tbudgets(NBUDGET_RI), tzsource )
 
@@ -2529,6 +2535,7 @@ if ( tbudgets(NBUDGET_RS)%lenabled ) then
   tzsource%clongname  = 'wet growth of hail'
   tzsource%lavailable =      ( hcloud == 'LIMA' .and. .not.lptsplit .and. lhail_lima .and. lcold_lima &
                                                 .and. lwarm_lima    .and. lsnow_lima )                &
+                        .or. ( hcloud == 'LIMA' .and. lptsplit ) &
                         .or.   hcloud == 'ICE4'
   call Budget_source_add( tbudgets(NBUDGET_RS), tzsource )
 
@@ -2725,12 +2732,13 @@ if ( tbudgets(NBUDGET_RG)%lenabled ) then
   tzsource%clongname  = 'wet growth of hail'
   tzsource%lavailable =      ( hcloud == 'LIMA' .and. .not.lptsplit .and. lhail_lima .and. lcold_lima &
                                                 .and. lwarm_lima    .and. lsnow_lima )                &
+                        .or. ( hcloud == 'LIMA' .and. lptsplit ) &
                         .or.   hcloud == 'ICE4'
   call Budget_source_add( tbudgets(NBUDGET_RG), tzsource )
 
   tzsource%cmnhname   = 'COHG'
   tzsource%clongname  = 'conversion of hail to graupel'
-  tzsource%lavailable = hcloud == 'LIMA' .and. .not.lptsplit .and. lhail_lima .and. lcold_lima .and. lwarm_lima .and. lsnow_lima
+  tzsource%lavailable = hcloud == 'LIMA' .and. (lptsplit .or. (lhail_lima .and. lcold_lima .and. lwarm_lima .and. lsnow_lima) )
   call Budget_source_add( tbudgets(NBUDGET_RG), tzsource )
 
   tzsource%cmnhname   = 'HGCV'
@@ -2872,13 +2880,14 @@ if ( tbudgets(NBUDGET_RH)%lenabled ) then
   tzsource%clongname  = 'wet growth of hail'
   tzsource%lavailable =      ( hcloud == 'LIMA' .and. .not.lptsplit .and. lhail_lima .and. lcold_lima    &
                                                                     .and. lwarm_lima .and. lsnow_lima ) &
+                        .or. ( hcloud == 'LIMA' .and. lptsplit ) &
                         .or.   hcloud == 'ICE4'
   call Budget_source_add( tbudgets(NBUDGET_RH), tzsource )
 
   tzsource%cmnhname   = 'COHG'
   tzsource%clongname  = 'conversion from hail to graupel'
-  tzsource%lavailable = hcloud == 'LIMA' .and. .not.lptsplit .and. lhail_lima .and. lcold_lima &
-                                                             .and. lwarm_lima .and. lsnow_lima
+  tzsource%lavailable = hcloud == 'LIMA' .and. ( lptsplit .or. (lhail_lima .and. lcold_lima &
+                                                             .and. lwarm_lima .and. lsnow_lima) )
   call Budget_source_add( tbudgets(NBUDGET_RH), tzsource )
 
   tzsource%cmnhname   = 'HGCV'
@@ -2895,6 +2904,7 @@ if ( tbudgets(NBUDGET_RH)%lenabled ) then
   tzsource%clongname  = 'melting of hail'
   tzsource%lavailable =      ( hcloud == 'LIMA' .and. .not. lptsplit .and. lhail_lima .and. lcold_lima   &
                                                                      .and. lwarm_lima .and. lsnow_lima ) &
+                        .or. ( hcloud == 'LIMA' .and. lptsplit ) &
                         .or.   hcloud == 'ICE4'
   call Budget_source_add( tbudgets(NBUDGET_RH), tzsource )
 

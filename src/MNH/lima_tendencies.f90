@@ -853,7 +853,7 @@ END IF
 IF (LSNOW .AND. NMOM_S.GE.2) THEN 
    CALL LIMA_SNOW_SELF_COLLECTION (LDCOMPUTE,           & ! depends on PF
                                    PRHODREF,            &
-                                   PCST/ZPF1D(:), ZLBDS, ZLBDS3, &
+                                   ZRST(:)/ZPF1D(:), PCST/ZPF1D(:), ZLBDS, ZLBDS3, &
                                    P_CS_SSC             )
    !
    P_CS_SSC(:) = P_CS_SSC(:) * ZPF1D(:)

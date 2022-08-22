@@ -8,16 +8,17 @@
 !      #################################
 !
 INTERFACE
-   SUBROUTINE LIMA_SNOW_SELF_COLLECTION (LDCOMPUTE,    &
-                                         PRHODREF, PT, &
-                                         PCST, PLBDS,  &
-                                         P_CS_SSC      )
+   SUBROUTINE LIMA_SNOW_SELF_COLLECTION (LDCOMPUTE,          &
+                                         PRHODREF, PT,       &
+                                         PRST, PCST, PLBDS,  &
+                                         P_CS_SSC            )
 !
 LOGICAL, DIMENSION(:),INTENT(IN)    :: LDCOMPUTE
 !
 REAL, DIMENSION(:),   INTENT(IN)    :: PRHODREF ! Reference Exner function
 REAL, DIMENSION(:),   INTENT(IN)    :: PT       ! Temperature
 !
+REAL, DIMENSION(:),   INTENT(IN)    :: PRST    ! Snow mr at t
 REAL, DIMENSION(:),   INTENT(IN)    :: PCST    ! Snow C. at t
 REAL, DIMENSION(:),   INTENT(IN)    :: PLBDS   ! 
 !
@@ -28,10 +29,10 @@ END INTERFACE
 END MODULE MODI_LIMA_SNOW_SELF_COLLECTION
 !
 !     #############################################################
-      SUBROUTINE LIMA_SNOW_SELF_COLLECTION (LDCOMPUTE,    &
-                                            PRHODREF, PT, &
-                                            PCST, PLBDS,  &
-                                            P_CS_SSC      )
+      SUBROUTINE LIMA_SNOW_SELF_COLLECTION (LDCOMPUTE,          &
+                                            PRHODREF, PT,       &
+                                            PRST, PCST, PLBDS,  &
+                                            P_CS_SSC            )
 !     #############################################################
 !
 !!    PURPOSE
@@ -56,7 +57,7 @@ END MODULE MODI_LIMA_SNOW_SELF_COLLECTION
 !              ------------
 !
 USE MODD_CST,             ONLY : XTT
-USE MODD_PARAM_LIMA,      ONLY : XCTMIN, XCEXVT
+USE MODD_PARAM_LIMA,      ONLY : XRTMIN, XCTMIN, XCEXVT
 USE MODD_PARAM_LIMA_COLD, ONLY : NSCLBDAS, XSCINTP1S, XSCINTP2S, XKER_N_SSCS, XFNSSCS, XCOLEXSS, &
                                  XLBNSSCS1, XLBNSSCS2
 !
@@ -69,6 +70,7 @@ LOGICAL, DIMENSION(:),INTENT(IN)    :: LDCOMPUTE
 REAL, DIMENSION(:),   INTENT(IN)    :: PRHODREF ! Reference Exner function
 REAL, DIMENSION(:),   INTENT(IN)    :: PT       ! Temperature
 !
+REAL, DIMENSION(:),   INTENT(IN)    :: PRST    ! Snow mr at t
 REAL, DIMENSION(:),   INTENT(IN)    :: PCST    ! Snow C. at t
 REAL, DIMENSION(:),   INTENT(IN)    :: PLBDS   ! 
 !
@@ -96,7 +98,7 @@ P_CS_SSC(:)=0.
 ZW1(:) =0.
 ZW2(:) =0.
 !
-GSSC(:) = PCST(:)>XCTMIN(5)
+GSSC(:) = PCST(:)>XCTMIN(5) .AND. PRST(:)>XRTMIN(5)
 IGSSC = COUNT(GSSC(:))
 !
 IF( IGSSC>0 ) THEN
