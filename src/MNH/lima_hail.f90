@@ -422,7 +422,7 @@ END WHERE
 !            ----------------------
 !
 ZZW(:) = 0.0
-WHERE( PRGT(:)>XRTMIN(6) .AND. PCGT(:) >XCTMIN(6) .AND. LDCOMPUTE(:) )
+WHERE( PRHT(:)>XRTMIN(6) .AND. PCHT(:) >XCTMIN(6) .AND. LDCOMPUTE(:) )
    ZZW(:) = PRVT(:)*PPRES(:)/((XMV/XMD)+PRVT(:)) ! Vapor pressure
    ZZW(:) = PKA(:)*(XTT-PT(:)) +                                  &
               ( PDV(:)*(XLVTT + ( XCPV - XCL ) * ( PT(:) - XTT ))   &
@@ -436,15 +436,17 @@ WHERE( PRGT(:)>XRTMIN(6) .AND. PCGT(:) >XCTMIN(6) .AND. LDCOMPUTE(:) )
                    / (XLMTT-XCL*(XTT-PT(:)))                                     )
    ! We must agregate, at least, the cold species
    ZRWETH(:)=MAX(ZRWETH(:), ZZW2(:)+ZZW3(:)+ZZW4(:))
-   ! Mass of rain and cloud droplets frozen by hail (RCWETH + RRWETH)
-   ZZW5(:) = ZRWETH(:) - ZZW2(:) - ZZW3(:) - ZZW4(:)
+END WHERE
+WHERE( PRHT(:)>XRTMIN(6) .AND. PCHT(:) >XCTMIN(6) .AND. PRRT(:)>XRTMIN(3) .AND. PCRT(:) >XCTMIN(3) .AND. LDCOMPUTE(:) )
+   ! Mass of rain frozen by hail RRWETH
+   ZZW5(:) = ZRWETH(:) - ZZW2(:) - ZZW3(:) - ZZW4(:) - ZZW1(:)
 END WHERE
 !
 ZZW(:) = 0.0
 WHERE( LDCOMPUTE(:) .AND. PT(:)<XTT .AND. ZZW5(:)>0.0 ) 
    P_RC_WETH(:) = - ZZW1(:)
    P_CC_WETH(:) = P_RC_WETH(:) * PCCT(:)/MAX(PRCT(:),XRTMIN(2))
-   P_RR_WETH(:) = - ZZW5(:) + ZZW1(:)
+   P_RR_WETH(:) = - ZZW5(:)
    P_CR_WETH(:) = P_RR_WETH(:) * PCRT(:)/MAX(PRRT(:),XRTMIN(3))
    P_RI_WETH(:) = - ZZW2(:)
    P_CI_WETH(:) = P_RI_WETH(:) * PCIT(:)/MAX(PRIT(:),XRTMIN(4))
@@ -454,7 +456,7 @@ WHERE( LDCOMPUTE(:) .AND. PT(:)<XTT .AND. ZZW5(:)>0.0 )
    P_CG_WETH(:) = - ZZW4N(:)
    P_RH_WETH(:) =   ZRWETH(:)
    !
-   P_TH_WETH(:) = ZZW5(:) * (PLSFACT(:)-PLVFACT(:))
+   P_TH_WETH(:) = (ZZW5(:)+ZZW1(:)) * (PLSFACT(:)-PLVFACT(:))
 END WHERE
 !
 !
