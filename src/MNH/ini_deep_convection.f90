@@ -188,10 +188,9 @@ TYPE(TFIELDMETADATA) :: TZFIELD
 !*       2. INITIALIZE CONVECTIVE TENDENCIES
 !	        --------------------------------
 !
-!If TPINIFILE file was written with a MesoNH version < 5.5.1, some variables had different names or were not available
-GOLDFILEFORMAT = (        TPINIFILE%NMNHVERSION(1) < 5                                                                            &
-                   .OR. ( TPINIFILE%NMNHVERSION(1) == 5 .AND. TPINIFILE%NMNHVERSION(2) < 5 )                                      &
-                   .OR. ( TPINIFILE%NMNHVERSION(1) == 5 .AND. TPINIFILE%NMNHVERSION(2) == 5  .AND. TPINIFILE%NMNHVERSION(3) < 1 ) )
+!If TPINIFILE file was written with a MesoNH version < 5.6, some variables had different names or were not available
+GOLDFILEFORMAT = (        TPINIFILE%NMNHVERSION(1) < 5                                       &
+                   .OR. ( TPINIFILE%NMNHVERSION(1) == 5 .AND. TPINIFILE%NMNHVERSION(2) < 6 ) )
 
 PUMFCONV(:,:,:)  = 0.0
 PDMFCONV(:,:,:)  = 0.0
@@ -282,7 +281,7 @@ ELSE
                   ( JSV >= NSV_SLTDEPBEG .AND. JSV <= NSV_SLTDEPEND ) .OR. &
                   ( JSV >= NSV_SNWBEG    .AND. JSV <= NSV_SNWEND    )      ) THEN
           PDSVCONV(:,:,:,JSV) = 0.0
-          GREAD = .FALSE. !This variable was not written in pre-5.5.1 files
+          GREAD = .FALSE. !This variable was not written in pre-5.6 files
         ELSE
           TZFIELD%CMNHNAME   = 'DSVCONV_' // TRIM( TSVLIST(JSV)%CMNHNAME )
           TZFIELD%CLONGNAME  = 'DSVCONV_' // TRIM( TSVLIST(JSV)%CLONGNAME )

@@ -425,10 +425,9 @@ TYPE(TFIELDMETADATA)         :: TZFIELD
 GLSOURCE=.FALSE.
 ZWORK = 0.0
 !
-!If TPINIFILE file was written with a MesoNH version < 5.5.1, some variables had different names or were not available
-GOLDFILEFORMAT = (        TPINIFILE%NMNHVERSION(1) < 5                                                                            &
-                   .OR. ( TPINIFILE%NMNHVERSION(1) == 5 .AND. TPINIFILE%NMNHVERSION(2) < 5 )                                      &
-                   .OR. ( TPINIFILE%NMNHVERSION(1) == 5 .AND. TPINIFILE%NMNHVERSION(2) == 5  .AND. TPINIFILE%NMNHVERSION(3) < 1 ) )
+!If TPINIFILE file was written with a MesoNH version < 5.6, some variables had different names or were not available
+GOLDFILEFORMAT = (        TPINIFILE%NMNHVERSION(1) < 5                                       &
+                   .OR. ( TPINIFILE%NMNHVERSION(1) == 5 .AND. TPINIFILE%NMNHVERSION(2) < 6 ) )
 !-------------------------------------------------------------------------------
 !
 !*       2.    READ PROGNOSTIC VARIABLES
@@ -821,7 +820,7 @@ DO JSV = 1, NSV              ! initialize according to the get indicators
              ( JSV >= NSV_FFBEG .AND. JSV <= NSV_FFEND ) .OR. &
 #endif
              ( JSV >= NSV_CSBEG .AND. JSV <= NSV_CSEND )      ) THEN
-          !Some variables were written with an other name in MesoNH < 5.5.1
+          !Some variables were written with an other name in MesoNH < 5.6
           WRITE(TZFIELD%CMNHNAME,'(A3,I3.3)')'SVT',JSV
           TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
           TZFIELD%CSTDNAME   = ''

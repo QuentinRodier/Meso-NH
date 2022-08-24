@@ -279,10 +279,9 @@ CALL GOTO_MODEL(2)
 CALL GO_TOMODEL_ll(2, IINFO_ll)
 
 IF (PRESENT(TPSONFILE)) THEN
-  !If TPSONFILE file was written with a MesoNH version < 5.5.1, some variables had different names or were not available
-  GOLDFILEFORMAT = (      TPSONFILE%NMNHVERSION(1) < 5                                                                            &
-                   .OR. ( TPSONFILE%NMNHVERSION(1) == 5 .AND. TPSONFILE%NMNHVERSION(2) < 5 )                                      &
-                   .OR. ( TPSONFILE%NMNHVERSION(1) == 5 .AND. TPSONFILE%NMNHVERSION(2) == 5  .AND. TPSONFILE%NMNHVERSION(3) < 1 ) )
+  !If TPSONFILE file was written with a MesoNH version < 5.6, some variables had different names or were not available
+  GOLDFILEFORMAT = (      TPSONFILE%NMNHVERSION(1) < 5                                      &
+                   .OR. ( TPSONFILE%NMNHVERSION(1) == 5 .AND. TPSONFILE%NMNHVERSION(2) <6 ) )
 END IF
 !
 !*       1.0  recovers logical unit number of output listing
@@ -843,7 +842,7 @@ IF (PRESENT(TPSONFILE)) THEN
            ( JSV >= NSV_FFBEG .AND. JSV <= NSV_FFEND ) .OR. &
 #endif
            ( JSV >= NSV_CSBEG .AND. JSV <= NSV_CSEND )      ) THEN
-        !Some variables were written with an other name in MesoNH < 5.5.1
+        !Some variables were written with an other name in MesoNH < 5.6
         WRITE(TZFIELD%CMNHNAME,'(A3,I3.3)')'SVT',JSV
         TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
         TZFIELD%CSTDNAME   = ''

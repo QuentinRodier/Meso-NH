@@ -219,6 +219,7 @@ LOGICAL :: GHORELAX_UVWTH  ! switch for the horizontal relaxation for U,V,W,TH i
 LOGICAL :: GHORELAX_TKE    ! switch for the horizontal relaxation for tke in the FM file
 LOGICAL :: GHORELAX_R, GHORELAX_SV ! switch for the horizontal relaxation 
                                    ! for moist and scalar variables
+LOGICAL :: GIS551 ! True if file was written with MNH 5.5.1
 LOGICAL :: GOLDFILEFORMAT
 CHARACTER (LEN= LEN(HGETRVM)), DIMENSION (7) :: YGETRXM ! Arrays with  the get indicators 
                                                         !  for the moist variables
@@ -241,10 +242,10 @@ ENDIF
 !*       1.    SOME INITIALIZATIONS
 !              --------------------
 !
-!If TPINIFILE file was written with a MesoNH version < 5.5.1, some variables had different names or were not available
-GOLDFILEFORMAT = (        TPINIFILE%NMNHVERSION(1) < 5                                                                            &
-                   .OR. ( TPINIFILE%NMNHVERSION(1) == 5 .AND. TPINIFILE%NMNHVERSION(2) < 5 )                                      &
-                   .OR. ( TPINIFILE%NMNHVERSION(1) == 5 .AND. TPINIFILE%NMNHVERSION(2) == 5  .AND. TPINIFILE%NMNHVERSION(3) < 1 ) )
+!If TPINIFILE file was written with a MesoNH version < 5.6, some variables had different names or were not available
+GOLDFILEFORMAT = (        TPINIFILE%NMNHVERSION(1) < 5                                       &
+                   .OR. ( TPINIFILE%NMNHVERSION(1) == 5 .AND. TPINIFILE%NMNHVERSION(2) < 6 ) )
+GIS551 = TPINIFILE%NMNHVERSION(1) == 5 .AND. TPINIFILE%NMNHVERSION(2) == 5 .AND. TPINIFILE%NMNHVERSION(3) == 1
 !
 !
 !-------------------------------------------------------------------------------
@@ -488,21 +489,22 @@ DO JSV = 1, NSV
         TZFIELD%CMNHNAME  = 'LBX_' // TRIM( YMNHNAME_BASE  )
         TZFIELD%CLONGNAME = 'LBX_' // TRIM( YLONGNAME_BASE )
 
-        !Some variables were written with an other name in MesoNH < 5.5.1
+        !Some variables were written with an other name in MesoNH < 5.6
         IF ( GOLDFILEFORMAT ) THEN
           IF ( JSV >= 1 .AND. JSV <= NSV_USER ) THEN
             WRITE( TZFIELD%CMNHNAME, '( A6, I3.3 )' ) 'LBXSVM',JSV
             TZFIELD%CSTDNAME  = ''
             TZFIELD%CLONGNAME = TRIM( TZFIELD%CMNHNAME )
           ELSE IF ( JSV >= NSV_LIMA_BEG .AND. JSV <= NSV_LIMA_END ) THEN
-            CALL OLD_CMNHNAME_GENERATE_INTERN( TZFIELD%CMNHNAME, TZFIELD%CLONGNAME )
+            ! Name was corrected in MNH 5.5.1
+            IF ( .NOT. GIS551 ) CALL OLD_CMNHNAME_GENERATE_INTERN( TZFIELD%CMNHNAME, TZFIELD%CLONGNAME )
             TZFIELD%CSTDNAME  = ''
           ELSE IF ( JSV >= NSV_PPBEG .AND. JSV <= NSV_PPEND ) THEN
             TZFIELD%CMNHNAME  = 'LBX_PP'
             TZFIELD%CSTDNAME  = ''
             TZFIELD%CLONGNAME = 'LBX_PP'
             IF ( JSV == NSV_PPBEG .AND. NSV_PP > 1 ) THEN
-              CMNHMSG(1) = 'reading older file (<5.5.1) for LBX_PP scalar variables'
+              CMNHMSG(1) = 'reading older file (<5.6) for LBX_PP scalar variables'
               CMNHMSG(2) = 'they are bugged: there should be several LBX_PP variables'
               CMNHMSG(3) = 'but they were all written with the same name ''LBX_PP'''
               CALL PRINT_MSG( NVERB_WARNING, 'IO', 'INI_LB' )
@@ -513,7 +515,7 @@ DO JSV = 1, NSV
             TZFIELD%CSTDNAME  = ''
             TZFIELD%CLONGNAME = 'LBX_FF'
             IF ( JSV == NSV_FFBEG .AND. NSV_FF > 1 ) THEN
-              CMNHMSG(1) = 'reading older file (<5.5.1) for LBX_FF scalar variables'
+              CMNHMSG(1) = 'reading older file (<5.6) for LBX_FF scalar variables'
               CMNHMSG(2) = 'they are bugged: there should be several LBX_FF variables'
               CMNHMSG(3) = 'but they were all written with the same name ''LBX_FF'''
               CALL PRINT_MSG( NVERB_WARNING, 'IO', 'INI_LB' )
@@ -524,7 +526,7 @@ DO JSV = 1, NSV
             TZFIELD%CSTDNAME  = ''
             TZFIELD%CLONGNAME = 'LBX_CS'
             IF ( JSV == NSV_CSBEG .AND. NSV_CS > 1 ) THEN
-              CMNHMSG(1) = 'reading older file (<5.5.1) for LBX_CS scalar variables'
+              CMNHMSG(1) = 'reading older file (<5.6) for LBX_CS scalar variables'
               CMNHMSG(2) = 'they are bugged: there should be several LBX_CS variables'
               CMNHMSG(3) = 'but they were all written with the same name ''LBX_CS'''
               CALL PRINT_MSG( NVERB_WARNING, 'IO', 'INI_LB' )
@@ -543,7 +545,7 @@ DO JSV = 1, NSV
             CALL PRINT_MSG( NVERB_INFO, 'IO', 'INI_LB', 'PLBXSVM is initialized to PLBXSVMM for ' // TRIM( YMNHNAME_BASE ) )
           ELSE
             IF ( GOLDFILEFORMAT .AND. JSV >= NSV_LIMA_BEG .AND. JSV <= NSV_LIMA_END ) THEN
-              !In pre 5.5.1 files, only CCN_FREE and IFN_FREE LIMA scalar variables were available (for LIMA scalar variables)
+              !In pre 5.6 files, only CCN_FREE and IFN_FREE LIMA scalar variables were available (for LIMA scalar variables)
               IF ( JSV >= NSV_LIMA_CCN_FREE .AND. JSV <= (NSV_LIMA_CCN_FREE+NMOD_CCN-1) ) THEN
                 CALL PRINT_MSG( NVERB_FATAL, 'IO', 'INI_LB', 'problem to initialize LIMA CCN_FREE PLBXSVM' )
               ELSE IF ( JSV >= NSV_LIMA_IFN_FREE .AND. JSV <= (NSV_LIMA_IFN_FREE+NMOD_IFN-1) ) THEN
@@ -557,7 +559,7 @@ DO JSV = 1, NSV
                       ( JSV >= NSV_FFBEG  .AND. JSV <= NSV_FFEND ) .OR. &
 #endif
                       ( JSV >= NSV_CSBEG  .AND. JSV <= NSV_CSEND ) .OR. &
-                      ( JSV >= NSV_SNWBEG .AND. JSV <= NSV_SNWEND .AND. GOLDFILEFORMAT ) ) THEN !Snow was not written in <5.5.1
+                      ( JSV >= NSV_SNWBEG .AND. JSV <= NSV_SNWEND .AND. GOLDFILEFORMAT ) ) THEN !Snow was not written in <5.6
               PLBXSVM(:,:,:,JSV) = 0.
               CALL PRINT_MSG( NVERB_WARNING, 'IO', 'INI_LB', 'PLBXSVM is initialized to 0 for ' // TRIM( YMNHNAME_BASE ) )
             ELSE
@@ -571,21 +573,22 @@ DO JSV = 1, NSV
         TZFIELD%CMNHNAME  = 'LBY_' // TRIM( YMNHNAME_BASE  )
         TZFIELD%CLONGNAME = 'LBY_' // TRIM( YLONGNAME_BASE )
 
-        !Some variables were written with an other name in MesoNH < 5.5.1
+        !Some variables were written with an other name in MesoNH < 5.6
         IF ( GOLDFILEFORMAT ) THEN
           IF ( JSV >= 1 .AND. JSV <= NSV_USER ) THEN
             WRITE( TZFIELD%CMNHNAME, '( A6, I3.3 )' ) 'LBYSVM',JSV
             TZFIELD%CSTDNAME  = ''
             TZFIELD%CLONGNAME = TRIM( TZFIELD%CMNHNAME )
           ELSE IF ( JSV >= NSV_LIMA_BEG .AND. JSV <= NSV_LIMA_END ) THEN
-            CALL OLD_CMNHNAME_GENERATE_INTERN( TZFIELD%CMNHNAME, TZFIELD%CLONGNAME )
+            ! Name was corrected in MNH 5.5.1
+            IF ( .NOT. GIS551 ) CALL OLD_CMNHNAME_GENERATE_INTERN( TZFIELD%CMNHNAME, TZFIELD%CLONGNAME )
             TZFIELD%CSTDNAME  = ''
           ELSE IF ( JSV >= NSV_PPBEG .AND. JSV <= NSV_PPEND ) THEN
             TZFIELD%CMNHNAME  = 'LBY_PP'
             TZFIELD%CSTDNAME  = ''
             TZFIELD%CLONGNAME = 'LBY_PP'
             IF ( JSV == NSV_PPBEG .AND. NSV_PP > 1 ) THEN
-              CMNHMSG(1) = 'reading older file (<5.5.1) for LBY_PP scalar variables'
+              CMNHMSG(1) = 'reading older file (<5.6) for LBY_PP scalar variables'
               CMNHMSG(2) = 'they are bugged: there should be several LBY_PP variables'
               CMNHMSG(3) = 'but they were all written with the same name ''LBY_PP'''
               CALL PRINT_MSG( NVERB_WARNING, 'IO', 'INI_LB' )
@@ -596,7 +599,7 @@ DO JSV = 1, NSV
             TZFIELD%CSTDNAME  = ''
             TZFIELD%CLONGNAME = 'LBY_FF'
             IF ( JSV == NSV_FFBEG .AND. NSV_FF > 1 ) THEN
-              CMNHMSG(1) = 'reading older file (<5.5.1) for LBY_FF scalar variables'
+              CMNHMSG(1) = 'reading older file (<5.6) for LBY_FF scalar variables'
               CMNHMSG(2) = 'they are bugged: there should be several LBY_FF variables'
               CMNHMSG(3) = 'but they were all written with the same name ''LBY_FF'''
               CALL PRINT_MSG( NVERB_WARNING, 'IO', 'INI_LB' )
@@ -607,7 +610,7 @@ DO JSV = 1, NSV
             TZFIELD%CSTDNAME  = ''
             TZFIELD%CLONGNAME = 'LBY_CS'
             IF ( JSV == NSV_CSBEG .AND. NSV_CS > 1 ) THEN
-              CMNHMSG(1) = 'reading older file (<5.5.1) for LBY_CS scalar variables'
+              CMNHMSG(1) = 'reading older file (<5.6) for LBY_CS scalar variables'
               CMNHMSG(2) = 'they are bugged: there should be several LBY_CS variables'
               CMNHMSG(3) = 'but they were all written with the same name ''LBY_CS'''
               CALL PRINT_MSG( NVERB_WARNING, 'IO', 'INI_LB' )
@@ -625,7 +628,7 @@ DO JSV = 1, NSV
             CALL PRINT_MSG( NVERB_INFO, 'IO', 'INI_LB', 'PLBYSVM is initialized to PLBYSVMM for ' // TRIM( YMNHNAME_BASE ) )
           ELSE
             IF ( GOLDFILEFORMAT .AND. JSV >= NSV_LIMA_BEG .AND. JSV <= NSV_LIMA_END ) THEN
-              !In pre 5.5.1 files, only CCN_FREE and IFN_FREE LIMA scalar variables were available (for LIMA scalar variables)
+              !In pre 5.6 files, only CCN_FREE and IFN_FREE LIMA scalar variables were available (for LIMA scalar variables)
               IF ( JSV >= NSV_LIMA_CCN_FREE .AND. JSV <= (NSV_LIMA_CCN_FREE+NMOD_CCN-1) ) THEN
                 CALL PRINT_MSG( NVERB_FATAL, 'IO', 'INI_LB', 'problem to initialize LIMA CCN_FREE PLBYSVM' )
               ELSE IF ( JSV >= NSV_LIMA_IFN_FREE .AND. JSV <= (NSV_LIMA_IFN_FREE+NMOD_IFN-1) ) THEN
@@ -639,7 +642,7 @@ DO JSV = 1, NSV
                       ( JSV >= NSV_FFBEG  .AND. JSV <= NSV_FFEND ) .OR. &
 #endif
                       ( JSV >= NSV_CSBEG  .AND. JSV <= NSV_CSEND ) .OR. &
-                      ( JSV >= NSV_SNWBEG .AND. JSV <= NSV_SNWEND .AND. GOLDFILEFORMAT ) ) THEN !Snow was not written in <5.5.1
+                      ( JSV >= NSV_SNWBEG .AND. JSV <= NSV_SNWEND .AND. GOLDFILEFORMAT ) ) THEN !Snow was not written in <5.6
               PLBYSVM(:,:,:,JSV) = 0.
               CALL PRINT_MSG( NVERB_WARNING, 'IO', 'INI_LB', 'PLBYSVM is initialized to 0 for ' // TRIM( YMNHNAME_BASE ) )
             ELSE

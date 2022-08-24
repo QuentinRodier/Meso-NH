@@ -215,10 +215,9 @@ IF(PRESENT(HCHEMFILE)) THEN
   CALL IO_File_add2list(TZCHEMFILE,TRIM(HCHEMFILE),'MNH','READ',KLFITYPE=2,KLFIVERB=NVERB)
   CALL IO_File_open(TZCHEMFILE)
 
-  !If TZCHEMFILE file was written with a MesoNH version < 5.5.1, some variables had different names (or were not available)
-  GOLDFILEFORMAT = ( TZCHEMFILE%NMNHVERSION(1) < 5                                                                              &
-              .OR. ( TZCHEMFILE%NMNHVERSION(1) == 5 .AND. TZCHEMFILE%NMNHVERSION(2) < 5 )                                       &
-              .OR. ( TZCHEMFILE%NMNHVERSION(1) == 5 .AND. TZCHEMFILE%NMNHVERSION(2) == 5  .AND. TZCHEMFILE%NMNHVERSION(3) < 1 ) )
+  !If TZCHEMFILE file was written with a MesoNH version < 5.6, some variables had different names (or were not available)
+  GOLDFILEFORMAT = ( TZCHEMFILE%NMNHVERSION(1) < 5                                        &
+              .OR. ( TZCHEMFILE%NMNHVERSION(1) == 5 .AND. TZCHEMFILE%NMNHVERSION(2) < 6 ) )
 
   ILUDES = TZCHEMFILE%TDESFILE%NLU
   !
