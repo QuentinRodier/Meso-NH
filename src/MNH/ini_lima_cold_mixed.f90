@@ -1045,7 +1045,7 @@ END IF
 !*       7.2N  Computations of the tabulated normalized kernels Snow Self Collection !! 
 !
 !
-if (NMOM_S.GE.2) then
+!if (NMOM_S.GE.2) then
   XCOLSS   = 0.1 ! Collection efficiency of S+S
   XCOLEXSS = 0.1  ! Temperature factor of the S+S collection efficiency
   XFNSSCS = (XPI/4.0)*XCOLSS*(ZRHO00**XCEXVT)/2.0       
@@ -1110,7 +1110,7 @@ XSCINTP2S = 1.0 - LOG( XSCLBDAS_MIN ) / ZRATE
   XSPONBUDS3 = 4.5E-3
   XSPONCOEFS2 = ((XSPONBUDS3/XSPONBUDS2)**3 - 1.0)/(XSPONBUDS3-XSPONBUDS1)**2
 !
-end if
+!end if
 !
 !*       7.3    Constant for the conversion-melting rate
 !
@@ -1343,7 +1343,7 @@ ZEGS     = 1.0   ! factor used to integrate the dimensional distributions when
 ZFDINFTY = 20.0  ! computing the kernels XKER_SDRYG
 !
 ALLOCATE( XKER_SDRYG(NDRYLBDAG,NDRYLBDAS) )
-if (NMOM_S.GE.2) then
+!if (NMOM_S.GE.2) then
   ALLOCATE( XKER_N_SDRYG(NDRYLBDAG,NDRYLBDAS) )
   CALL NZCOLX  ( IND, XALPHAG, XNUG, XALPHAS, XNUS,                         & 
               ZEGS, XCG, XDG, 0., XCS, XDS, XFVELOS,                        & 
@@ -1358,7 +1358,7 @@ if (NMOM_S.GE.2) then
     END DO                                                                
   END DO                                                                   
   WRITE(UNIT=ILUOUT0,FMT='("!")') 
-end if
+!end if
 !
 CALL LIMA_READ_XKER_SDRYG (KDRYLBDAG,KDRYLBDAS,KND,                                    &
                            PALPHAG,PNUG,PALPHAS,PNUS,PEGS,PBS,PCG,PDG,PCS,PDS,PFVELOS, &
@@ -1426,7 +1426,7 @@ ZEGR     = 1.0   ! distributions when computing the kernel XKER_RDRYG
 ZFDINFTY = 20.0
 !
 ALLOCATE( XKER_RDRYG(NDRYLBDAG,NDRYLBDAR) )
-if ( NMOM_R.GE.2 ) then
+!if ( NMOM_R.GE.2 ) then
   ALLOCATE( XKER_N_RDRYG(NDRYLBDAG,NDRYLBDAR) ) 
   CALL NZCOLX  ( IND, XALPHAS, XNUS, XALPHAR, XNUR,                          & 
                ZEGR, XCG, XDG, 0., XCR, XDR, 0.,                            & 
@@ -1441,7 +1441,7 @@ if ( NMOM_R.GE.2 ) then
     END DO                                                                
   END DO                                                                   
   WRITE(UNIT=ILUOUT0,FMT='("!")') 
-end if
+!end if
 !
 CALL LIMA_READ_XKER_RDRYG (KDRYLBDAG,KDRYLBDAR,KND,                                 &
                            PALPHAG,PNUG,PALPHAR,PNUR,PEGR,PBR,PCG,PDG,PCR,PDR,      &
@@ -1559,7 +1559,7 @@ IND      = 50    ! Interval number, collection efficiency and infinite diameter
 ZEHS     = 1.0   ! factor used to integrate the dimensional distributions when
 ZFDINFTY = 20.0  ! computing the kernels XKER_SWETH
 !
-if ( NMOM_S.GE.2 ) then
+!if ( NMOM_S.GE.2 ) then
   IF( .NOT.ALLOCATED(XKER_N_SWETH) ) ALLOCATE( XKER_N_SWETH(NWETLBDAH,NWETLBDAS) )
   CALL NZCOLX ( IND, XALPHAH, XNUH, XALPHAS, XNUS,                          &  
               ZEHS, XCH, XDH, 0., XCS, XDS, XFVELOS,                       &  ! 
@@ -1574,7 +1574,7 @@ if ( NMOM_S.GE.2 ) then
     END DO                                                                
   END DO                                                                   
   WRITE(UNIT=ILUOUT0,FMT='("!")') 
-end  if
+!end  if
 IF( .NOT.ALLOCATED(XKER_SWETH) ) ALLOCATE( XKER_SWETH(NWETLBDAH,NWETLBDAS) )
 !
 CALL LIMA_READ_XKER_SWETH (KWETLBDAH,KWETLBDAS,KND,                                    &
@@ -1642,7 +1642,7 @@ IND      = 50    ! Number of interval used to integrate the dimensional
 ZEHG     = 1.0   ! distributions when computing the kernel XKER_GWETH
 ZFDINFTY = 20.0
 !
-if ( NMOM_G.GE.2 ) then
+!if ( NMOM_G.GE.2 ) then
   IF( .NOT.ALLOCATED(XKER_N_GWETH) ) ALLOCATE( XKER_N_GWETH(NWETLBDAH,NWETLBDAG) )
   CALL NZCOLX ( IND, XALPHAH, XNUH, XALPHAG, XNUG,                          & 
               ZEHG, XCH, XDH, 0., XCG, XDG, 0.,                            & 
@@ -1657,7 +1657,7 @@ if ( NMOM_G.GE.2 ) then
     END DO                                                                
   END DO                                                                   
   WRITE(UNIT=ILUOUT0,FMT='("!")') 
-end if
+!end if
 IF( .NOT.ALLOCATED(XKER_GWETH) ) ALLOCATE( XKER_GWETH(NWETLBDAH,NWETLBDAG) )
 !
 CALL LIMA_READ_XKER_GWETH (KWETLBDAH,KWETLBDAG,KND,                                 &
