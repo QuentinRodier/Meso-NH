@@ -283,8 +283,6 @@ CLOUD: select case ( hcloud )
                 ( zcph(:, :, :) * zexn(:, :, :) )
            prrs(:, :, :, 4)  = 0.
         end where
-     end if
-     if(krr > 3) then
         allocate( zcor( Size( prths, 1 ), Size( prths, 2 ), Size( prths, 3 ) ) )
         where ( prrs(:, :, :, 1) < 0. .and. prrs(:, :, :, 4) > 0. )
            zcor(:, :, :) = Min( -prrs(:, :, :, 1), prrs(:, :, :, 4) )
@@ -294,9 +292,9 @@ CLOUD: select case ( hcloud )
            prrs(:, :, :, 4) = prrs(:, :, :, 4) - zcor(:, :, :)
         end where
         deallocate( zcor )
-     end if
-     if (nmom_i.ge.2) then
-        where (prrs(:, :, :, 4) == 0.)  prsvs(:, :, :, nsv_lima_ni) = 0.
+        if (nmom_i.ge.2) then
+           where (prrs(:, :, :, 4) == 0.)  prsvs(:, :, :, nsv_lima_ni) = 0.
+        end if
      end if
 ! Snow     
      if ( krr.GE.5 ) then
@@ -308,9 +306,9 @@ CLOUD: select case ( hcloud )
                 ( zcph(:, :, :) * zexn(:, :, :) )
            prrs(:, :, :, 5)  = 0.
         end where
-     end if
-     if (nmom_s.ge.2) then
-        where (prrs(:, :, :, 5) == 0.)  prsvs(:, :, :, nsv_lima_ns) = 0.
+        if (nmom_s.ge.2) then
+           where (prrs(:, :, :, 5) == 0.)  prsvs(:, :, :, nsv_lima_ns) = 0.
+        end if
      end if
 ! Graupel
      if ( krr.GE.6 ) then
@@ -322,9 +320,9 @@ CLOUD: select case ( hcloud )
                 ( zcph(:, :, :) * zexn(:, :, :) )
            prrs(:, :, :, 6)  = 0.
         end where
-     end if
-     if (nmom_g.ge.2) then
-        where (prrs(:, :, :, 6) == 0.)  prsvs(:, :, :, nsv_lima_ng) = 0.
+        if (nmom_g.ge.2) then
+           where (prrs(:, :, :, 6) == 0.)  prsvs(:, :, :, nsv_lima_ng) = 0.
+        end if
      end if
 ! Hail
      if ( krr.GE.7 ) then
@@ -336,9 +334,9 @@ CLOUD: select case ( hcloud )
                 ( zcph(:, :, :) * zexn(:, :, :) )
            prrs(:, :, :, 7)  = 0.
         end where
-     end if
-     if (nmom_h.ge.2) then
-        where (prrs(:, :, :, 7) == 0.)  prsvs(:, :, :, nsv_lima_nh) = 0.
+        if (nmom_h.ge.2) then
+           where (prrs(:, :, :, 7) == 0.)  prsvs(:, :, :, nsv_lima_nh) = 0.
+        end if
      end if
 !
     prsvs(:, :, :, nsv_lima_beg : isv_lima_end) = Max( 0.0, prsvs(:, :, :, nsv_lima_beg : isv_lima_end) )
