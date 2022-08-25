@@ -6,41 +6,21 @@
 ! Modifications:
 !  P. Wautelet 01/10/2020: bugfix: DEFAULT_FLYER: add missing default values
 !  P. Wautelet    06/2022: reorganize flyers
+!  P. Wautelet 25/08/2022: write balloon positions in netCDF4 files inside HDF5 groups
 !-----------------------------------------------------------------
 
-!      #########################
-MODULE MODI_INI_AIRCRAFT_BALLOON
-!      #########################
-!
-INTERFACE
-!
-      SUBROUTINE INI_AIRCRAFT_BALLOON(TPINIFILE,                    &
-                                      PTSTEP, TPDTSEG, PSEGLEN,     &
-                                      KRR, KSV, KKU, OUSETKE,       &
-                                      PLATOR, PLONOR                )
-!
-USE MODD_IO, ONLY: TFILEDATA
-USE MODD_TYPE_DATE
-!
-TYPE(TFILEDATA),    INTENT(IN) :: TPINIFILE !Initial file
-REAL,               INTENT(IN) :: PTSTEP  ! time step
-TYPE(DATE_TIME),    INTENT(IN) :: TPDTSEG ! segment date and time
-REAL,               INTENT(IN) :: PSEGLEN ! segment length
-INTEGER,            INTENT(IN) :: KRR     ! number of moist variables
-INTEGER,            INTENT(IN) :: KSV     ! number of scalar variables
-INTEGER,            INTENT(IN) :: KKU     ! number of vertical levels 
-LOGICAL,            INTENT(IN) :: OUSETKE ! flag to use tke
-REAL,               INTENT(IN) :: PLATOR  ! latitude of origine point
-REAL,               INTENT(IN) :: PLONOR  ! longitude of origine point
-!
-!-------------------------------------------------------------------------------
-!
-END SUBROUTINE INI_AIRCRAFT_BALLOON
-!
-END INTERFACE
-!
-END MODULE MODI_INI_AIRCRAFT_BALLOON
-!
+!###############################
+MODULE MODE_INI_AIRCRAFT_BALLOON
+!###############################
+
+IMPLICIT NONE
+
+PRIVATE
+
+PUBLIC :: INI_AIRCRAFT_BALLOON
+
+CONTAINS
+
 !     ###############################################################
       SUBROUTINE INI_AIRCRAFT_BALLOON(TPINIFILE,                    &
                                       PTSTEP, TPDTSEG, PSEGLEN,     &
@@ -294,9 +274,19 @@ END SUBROUTINE ALLOCATE_FLYER
 !----------------------------------------------------------------------------
 !----------------------------------------------------------------------------
 SUBROUTINE INI_LAUNCH(KNBR,TPFLYER)
-!
+
+#ifdef MNH_IOCDF4
+USE NETCDF,             ONLY: NF90_INQ_NCID, NF90_NOERR
+#endif
+
+USE MODD_IO,            ONLY: ISP, TFILEDATA
+#ifdef MNH_IOCDF4
+USE MODD_MPIF
+USE MODD_PRECISION,     ONLY: CDFINT, CDFINT_MPI
+#endif
+
 use MODE_IO_FIELD_READ, only: IO_Field_read
-!
+
 INTEGER,             INTENT(IN)    :: KNBR
 CLASS(TBALLOONDATA), INTENT(INOUT) :: TPFLYER
 !
@@ -304,42 +294,36 @@ CLASS(TBALLOONDATA), INTENT(INOUT) :: TPFLYER
 !
 !*      0.2  declaration of local variables
 !
+#ifdef MNH_IOCDF4
+INTEGER              :: IERR
+INTEGER(KIND=CDFINT) :: IGROUPID
+INTEGER(KIND=CDFINT) :: ISTATUS
+INTEGER(KIND=CDFINT), DIMENSION(2) :: IDATA ! Intermediate array to allow merge of 2 MPI broadcasts
+#endif
+LOGICAL :: GREAD ! True if balloon position was read in synchronous file
 REAL :: ZLAT ! latitude of the balloon
 REAL :: ZLON ! longitude of the balloon
-!
-IF (TPFLYER%CMODEL == 'MOB' .AND. TPFLYER%NMODEL /= 0) TPFLYER%NMODEL=1
-IF (TPFLYER%NMODEL > NMODEL) TPFLYER%NMODEL=0
+#ifdef MNH_IOCDF4
+TYPE(TFILEDATA) :: TZFILE
+#endif
+
 IF ( IMI /= TPFLYER%NMODEL ) RETURN
-!
+
+GREAD = .FALSE.
 LFLYER=.TRUE.
-!
-IF (TPFLYER%CTITLE=='          ') THEN
-  WRITE(TPFLYER%CTITLE,FMT='(A6,I2.2)') TPFLYER%CTYPE,KNBR
-END IF
-!
+
 IF ( CPROGRAM == 'MESONH' .OR. CPROGRAM == 'SPAWN ' .OR. CPROGRAM == 'REAL  ' ) THEN
-  ! read the current location in the FM_FILE
-  !
-  TZFIELD = TFIELDMETADATA(                   &
-    CMNHNAME   = TRIM(TPFLYER%CTITLE)//'LAT', &
-    CSTDNAME   = '',                          &
-    CLONGNAME  = TRIM(TPFLYER%CTITLE)//'LAT', &
-    CUNITS     = 'degree',                    &
-    CDIR       = '--',                        &
-    CCOMMENT   = '',                          &
-    NGRID      = 0,                           &
-    NTYPE      = TYPEREAL,                    &
-    NDIMS      = 0,                           &
-    LTIMEDEP   = .TRUE.                       )
-  CALL IO_Field_read(TPINIFILE,TZFIELD,ZLAT,IRESP)
-  !
-  IF ( IRESP /= 0 ) THEN
-    WRITE(ILUOUT,*) "INI_LAUNCH: Initial location take for ",TPFLYER%CTITLE
-  ELSE
+  ! Read the current location in the synchronous file
+
+  IF ( TPINIFILE%CFORMAT == 'LFI'                                                             &
+       .OR. ( TPINIFILE%CFORMAT == 'NETCDF4' .AND.                                            &
+              (        TPINIFILE%NMNHVERSION(1) < 5                                           &
+                .OR. ( TPINIFILE%NMNHVERSION(1) == 5 .AND. TPINIFILE%NMNHVERSION(2) < 6 ) ) ) ) THEN
+    ! Read in LFI file or in old format if netCDF (MesoNH < 5.6)
     TZFIELD = TFIELDMETADATA(                   &
-      CMNHNAME   = TRIM(TPFLYER%CTITLE)//'LON', &
+      CMNHNAME   = TRIM(TPFLYER%CTITLE)//'LAT', &
       CSTDNAME   = '',                          &
-      CLONGNAME  = TRIM(TPFLYER%CTITLE)//'LON', &
+      CLONGNAME  = TRIM(TPFLYER%CTITLE)//'LAT', &
       CUNITS     = 'degree',                    &
       CDIR       = '--',                        &
       CCOMMENT   = '',                          &
@@ -347,65 +331,173 @@ IF ( CPROGRAM == 'MESONH' .OR. CPROGRAM == 'SPAWN ' .OR. CPROGRAM == 'REAL  ' ) 
       NTYPE      = TYPEREAL,                    &
       NDIMS      = 0,                           &
       LTIMEDEP   = .TRUE.                       )
-    CALL IO_Field_read(TPINIFILE,TZFIELD,ZLON)
-    !
-    TZFIELD = TFIELDMETADATA(                   &
-      CMNHNAME   = TRIM(TPFLYER%CTITLE)//'ALT', &
-      CSTDNAME   = '',                          &
-      CLONGNAME  = TRIM(TPFLYER%CTITLE)//'ALT', &
-      CUNITS     = 'm',                         &
-      CDIR       = '--',                        &
-      CCOMMENT   = '',                          &
-      NGRID      = 0,                           &
-      NTYPE      = TYPEREAL,                    &
-      NDIMS      = 0,                           &
-      LTIMEDEP   = .TRUE.                       )
-    CALL IO_Field_read(TPINIFILE,TZFIELD,TPFLYER%XZ_CUR)
-    !
-    TPFLYER%XP_CUR   = XUNDEF
-    !
-    TZFIELD = TFIELDMETADATA(                       &
-      CMNHNAME   = TRIM(TPFLYER%CTITLE)//'WASCENT', &
-      CSTDNAME   = '',                              &
-      CLONGNAME  = TRIM(TPFLYER%CTITLE)//'WASCENT', &
-      CUNITS     = 'm s-1',                         &
-      CDIR       = '--',                            &
-      CCOMMENT   = '',                              &
-      NGRID      = 0,                               &
-      NTYPE      = TYPEREAL,                        &
-      NDIMS      = 0,                               &
-      LTIMEDEP   = .TRUE.                           )
-    CALL IO_Field_read(TPINIFILE,TZFIELD,TPFLYER%XWASCENT)
-    !
-    TZFIELD = TFIELDMETADATA(                   &
-      CMNHNAME   = TRIM(TPFLYER%CTITLE)//'RHO', &
-      CSTDNAME   = '',                          &
-      CLONGNAME  = TRIM(TPFLYER%CTITLE)//'RHO', &
-      CUNITS     = 'kg m-3',                    &
-      CDIR       = '--',                        &
-      CCOMMENT   = '',                          &
-      NGRID      = 0,                           &
-      NTYPE      = TYPEREAL,                    &
-      NDIMS      = 0,                           &
-      LTIMEDEP   = .TRUE.                       )
-    CALL IO_Field_read(TPINIFILE,TZFIELD,TPFLYER%XRHO)
-    !
-    CALL SM_XYHAT( PLATOR, PLONOR, ZLAT, ZLON, TPFLYER%XX_CUR, TPFLYER%XY_CUR )
-    TPFLYER%LFLY = .TRUE.
-    WRITE(ILUOUT,*) &
-    "INI_LAUNCH: Current location read in FM file for ",TPFLYER%CTITLE
-    IF (TPFLYER%CTYPE== 'CVBALL') THEN
-      WRITE(ILUOUT,*) &
-       " Lat=",ZLAT," Lon=",ZLON," Alt=",TPFLYER%XZ_CUR," Wasc=",TPFLYER%XWASCENT
-    ELSE IF (TPFLYER%CTYPE== 'ISODEN') THEN
-      WRITE(ILUOUT,*) &
-       " Lat=",ZLAT," Lon=",ZLON," Rho=",TPFLYER%XRHO
+    CALL IO_Field_read(TPINIFILE,TZFIELD,ZLAT,IRESP)
+
+    IF ( IRESP == 0 ) THEN
+      GREAD = .TRUE.
+
+      TZFIELD = TFIELDMETADATA(                   &
+        CMNHNAME   = TRIM(TPFLYER%CTITLE)//'LON', &
+        CSTDNAME   = '',                          &
+        CLONGNAME  = TRIM(TPFLYER%CTITLE)//'LON', &
+        CUNITS     = 'degree',                    &
+        CDIR       = '--',                        &
+        CCOMMENT   = '',                          &
+        NGRID      = 0,                           &
+        NTYPE      = TYPEREAL,                    &
+        NDIMS      = 0,                           &
+        LTIMEDEP   = .TRUE.                       )
+      CALL IO_Field_read(TPINIFILE,TZFIELD,ZLON)
+
+      TZFIELD = TFIELDMETADATA(                   &
+        CMNHNAME   = TRIM(TPFLYER%CTITLE)//'ALT', &
+        CSTDNAME   = '',                          &
+        CLONGNAME  = TRIM(TPFLYER%CTITLE)//'ALT', &
+        CUNITS     = 'm',                         &
+        CDIR       = '--',                        &
+        CCOMMENT   = '',                          &
+        NGRID      = 0,                           &
+        NTYPE      = TYPEREAL,                    &
+        NDIMS      = 0,                           &
+        LTIMEDEP   = .TRUE.                       )
+      CALL IO_Field_read(TPINIFILE,TZFIELD,TPFLYER%XZ_CUR)
+
+      TPFLYER%XP_CUR   = XUNDEF
+
+      TZFIELD = TFIELDMETADATA(                       &
+        CMNHNAME   = TRIM(TPFLYER%CTITLE)//'WASCENT', &
+        CSTDNAME   = '',                              &
+        CLONGNAME  = TRIM(TPFLYER%CTITLE)//'WASCENT', &
+        CUNITS     = 'm s-1',                         &
+        CDIR       = '--',                            &
+        CCOMMENT   = '',                              &
+        NGRID      = 0,                               &
+        NTYPE      = TYPEREAL,                        &
+        NDIMS      = 0,                               &
+        LTIMEDEP   = .TRUE.                           )
+      CALL IO_Field_read(TPINIFILE,TZFIELD,TPFLYER%XWASCENT)
+
+      TZFIELD = TFIELDMETADATA(                   &
+        CMNHNAME   = TRIM(TPFLYER%CTITLE)//'RHO', &
+        CSTDNAME   = '',                          &
+        CLONGNAME  = TRIM(TPFLYER%CTITLE)//'RHO', &
+        CUNITS     = 'kg m-3',                    &
+        CDIR       = '--',                        &
+        CCOMMENT   = '',                          &
+        NGRID      = 0,                           &
+        NTYPE      = TYPEREAL,                    &
+        NDIMS      = 0,                           &
+        LTIMEDEP   = .TRUE.                       )
+      CALL IO_Field_read(TPINIFILE,TZFIELD,TPFLYER%XRHO)
     END IF
-    !
+#ifdef MNH_IOCDF4
+  ELSE
+    ! Read in netCDF file (new structure since MesoNH 5.6)
+    IF ( ISP == TPINIFILE%NMASTER_RANK ) ISTATUS = NF90_INQ_NCID( TPINIFILE%NNCID, TRIM( TPFLYER%CTITLE ), IGROUPID )
+
+    IDATA(:) = [ ISTATUS, IGROUPID ] ! Merge 2 broadcasts into 1
+    CALL MPI_BCAST( IDATA, SIZE( IDATA ), CDFINT_MPI, TPINIFILE%NMASTER_RANK - 1, TPINIFILE%NMPICOMM, IERR )
+    ISTATUS  = IDATA(1)
+    IGROUPID = IDATA(2)
+
+    IF ( ISTATUS == NF90_NOERR ) THEN
+      GREAD = .TRUE.
+
+      TZFILE = TPINIFILE
+      TZFILE%NNCID = IGROUPID
+
+      TZFIELD = TFIELDMETADATA(  &
+        CMNHNAME   = 'LAT',      &
+        CSTDNAME   = '',         &
+        CLONGNAME  = 'LAT',      &
+        CUNITS     = 'degree',   &
+        CDIR       = '--',       &
+        CCOMMENT   = 'latitude', &
+        NGRID      = 0,          &
+        NTYPE      = TYPEREAL,   &
+        NDIMS      = 0,          &
+        LTIMEDEP   = .TRUE.      )
+      CALL IO_Field_read(TZFILE,TZFIELD,ZLAT)
+
+      TZFIELD = TFIELDMETADATA(   &
+        CMNHNAME   = 'LON',       &
+        CSTDNAME   = '',          &
+        CLONGNAME  = 'LON',       &
+        CUNITS     = 'degree',    &
+        CDIR       = '--',        &
+        CCOMMENT   = 'longitude', &
+        NGRID      = 0,           &
+        NTYPE      = TYPEREAL,    &
+        NDIMS      = 0,           &
+        LTIMEDEP   = .TRUE.       )
+      CALL IO_Field_read(TZFILE,TZFIELD,ZLON)
+
+      TZFIELD = TFIELDMETADATA(  &
+        CMNHNAME   = 'ALT',      &
+        CSTDNAME   = '',         &
+        CLONGNAME  = 'ALT',      &
+        CUNITS     = 'm',        &
+        CDIR       = '--',       &
+        CCOMMENT   = 'altitude', &
+        NGRID      = 0,          &
+        NTYPE      = TYPEREAL,   &
+        NDIMS      = 0,          &
+        LTIMEDEP   = .TRUE.      )
+      CALL IO_Field_read(TZFILE,TZFIELD,TPFLYER%XZ_CUR)
+
+      TPFLYER%XP_CUR   = XUNDEF
+
+      TZFIELD = TFIELDMETADATA(               &
+        CMNHNAME   = 'WASCENT',               &
+        CSTDNAME   = '',                      &
+        CLONGNAME  = 'WASCENT',               &
+        CUNITS     = 'm s-1',                 &
+        CDIR       = '--',                    &
+        CCOMMENT   = 'ascent vertical speed', &
+        NGRID      = 0,                       &
+        NTYPE      = TYPEREAL,                &
+        NDIMS      = 0,                       &
+        LTIMEDEP   = .TRUE.                   )
+      CALL IO_Field_read(TZFILE,TZFIELD,TPFLYER%XWASCENT)
+
+      TZFIELD = TFIELDMETADATA(     &
+        CMNHNAME   = 'RHO',         &
+        CSTDNAME   = '',            &
+        CLONGNAME  = 'RHO',         &
+        CUNITS     = 'kg m-3',      &
+        CDIR       = '--',          &
+        CCOMMENT   = 'air density', &
+        NGRID      = 0,             &
+        NTYPE      = TYPEREAL,      &
+        NDIMS      = 0,             &
+        LTIMEDEP   = .TRUE.         )
+      CALL IO_Field_read(TZFILE,TZFIELD,TPFLYER%XRHO)
+    END IF
+#endif
+  END IF
+
+  IF ( GREAD ) THEN
+    CALL SM_XYHAT( PLATOR, PLONOR, ZLAT, ZLON, TPFLYER%XX_CUR, TPFLYER%XY_CUR )
+
+    TPFLYER%LFLY = .TRUE.
+
+    CMNHMSG(1) = 'current location read from synchronous file for ' // TRIM( TPFLYER%CTITLE )
+    IF (TPFLYER%CTYPE== 'CVBALL') THEN
+      WRITE( CMNHMSG(2), * ) " Lat=", ZLAT, " Lon=", ZLON
+      WRITE( CMNHMSG(3), * ) " Alt=", TPFLYER%XZ_CUR, " Wasc=", TPFLYER%XWASCENT
+    ELSE IF (TPFLYER%CTYPE== 'ISODEN') THEN
+      WRITE( CMNHMSG(2), * ) " Lat=", ZLAT, " Lon=", ZLON, " Rho=", TPFLYER%XRHO
+    END IF
+    CALL PRINT_MSG( NVERB_INFO, 'GEN', 'INI_LAUNCH' )
+
     TPFLYER%TFLYER_TIME%XTSTEP  = MAX ( PTSTEP, TPFLYER%TFLYER_TIME%XTSTEP )
+  ELSE
+    ! The position is not found, data is not in the synchronous file
+    ! Use the position given in namelist
+    CALL PRINT_MSG( NVERB_INFO, 'GEN', 'INI_LAUNCH', 'initial location taken from namelist for ' // TRIM( TPFLYER%CTITLE ) )
   END IF
   !
-ELSE IF (CPROGRAM == 'DIAG  ' ) THEN
+ELSE IF ( CPROGRAM == 'DIAG  ' ) THEN
   IF ( LAIRCRAFT_BALLOON ) THEN
     ! read the current location in MODD_DIAG_FLAG
     !
@@ -415,10 +507,9 @@ ELSE IF (CPROGRAM == 'DIAG  ' ) THEN
     IF (TPFLYER%XZ_CUR /= XUNDEF .AND. ZLAT /= XUNDEF .AND. ZLON /= XUNDEF ) THEN
       CALL SM_XYHAT( PLATOR, PLONOR, ZLAT, ZLON, TPFLYER%XX_CUR, TPFLYER%XY_CUR )
       TPFLYER%LFLY = .TRUE.
-      WRITE(ILUOUT,*) &
-      "INI_LAUNCH: Current location read in MODD_DIAG_FLAG for ",TPFLYER%CTITLE
-      WRITE(ILUOUT,*) &
-            " Lat=",ZLAT," Lon=",ZLON," Alt=",TPFLYER%XZ_CUR
+      CMNHMSG(1) = 'current location read from MODD_DIAG_FLAG for ' // TRIM( TPFLYER%CTITLE )
+      WRITE( CMNHMSG(2), * ) " Lat=", ZLAT, " Lon=", ZLON," Alt=",TPFLYER%XZ_CUR
+      CALL PRINT_MSG( NVERB_INFO, 'GEN', 'INI_LAUNCH' )
     END IF
     !
     TPFLYER%TFLYER_TIME%XTSTEP  = MAX (XSTEP_AIRCRAFT_BALLOON , TPFLYER%TFLYER_TIME%XTSTEP )
@@ -488,3 +579,5 @@ END SUBROUTINE INI_FLIGHT
 !----------------------------------------------------------------------------
 !
 END SUBROUTINE INI_AIRCRAFT_BALLOON
+
+END MODULE MODE_INI_AIRCRAFT_BALLOON
