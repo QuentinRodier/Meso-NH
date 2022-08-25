@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2019-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2019-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -10,6 +10,7 @@
 !  P. Wautelet 27/03/2019: add MNHTIME and MNHTIME_MPI
 !  P. Wautelet 26/04/2019: add MNHLOG and MNHLOG_MPI/MNHLOG32_MPI/MNHLOG64_MPI
 !  P. Wautelet 06/01/2021: use kind=CDFINT to define parameters used in netCDF calls
+!  P. Wautelet 25/08/2022: add CDFINT_MPI parameter
 !-----------------------------------------------------------------
 module modd_precision
 
@@ -37,7 +38,7 @@ public :: MNHTIME, MNHTIME_MPI
 public :: LFIINT
 
 #ifdef MNH_IOCDF4
-public :: CDFINT, MNHINT_NF90, MNHREAL_NF90
+public :: CDFINT, CDFINT_MPI, MNHINT_NF90, MNHREAL_NF90
 #endif
 
 integer, parameter :: MNHINT32 = selected_int_kind( r = 9 )
@@ -117,6 +118,7 @@ integer, parameter :: LFIINT = MNHINT64
 #ifdef MNH_IOCDF4
 ! Kinds for netCDF
 integer, parameter :: CDFINT = selected_int_kind( r = 9 )
+integer, parameter :: CDFINT_MPI = MPI_INTEGER4
 
 #if (MNH_INT == 4)
 integer(kind=CDFINT), parameter :: MNHINT_NF90 = NF90_INT
