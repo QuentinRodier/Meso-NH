@@ -275,7 +275,7 @@ CLOUD: select case ( hcloud )
 ! Correction where ri<0 or Ni<0
     if ( lcold_lima ) then
       zmask(:,:,:)=(prrs(:, :, :, 4) < xrtmin_lima(4) / ptstep)
-      if (nmom_i.ge.2) zmask(:,:,:)=(zmask(:,:,:) .or. prsvs(:, :, :, nsv_lima_ni) < 0. )
+      if (nmom_i.ge.2) zmask(:,:,:)=(zmask(:,:,:) .or. prsvs(:, :, :, nsv_lima_ni) < xctmin_lima(4) / ptstep)
       where ( zmask(:,:,:) )
         prrs(:, :, :, 1) = prrs(:, :, :, 1) + prrs(:, :, :, 4)
         prths(:, :, :) = prths(:, :, :) - prrs(:, :, :, 4) * zls(:, :, :) /  &
