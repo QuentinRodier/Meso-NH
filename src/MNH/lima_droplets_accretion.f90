@@ -133,7 +133,7 @@ ELSE IF (NMOM_C.EQ.1 .AND. NMOM_R.EQ.1) THEN
    GACCR(:) = PRRT(:)>XRTMIN(3) .AND. &
               PRCT(:)>XRTMIN(2)
    WHERE ( GACCR(:) )
-      P_RC_ACCR(:) = XFCACCR * PRCT(:)      &
+      P_RC_ACCR(:) = - XFCACCR * PRCT(:)    &
                    * PLBDR(:)**XEXCACCR     &
                    * PRHODREF(:)**(-XCEXVT)
    END WHERE
