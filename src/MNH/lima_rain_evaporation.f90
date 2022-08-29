@@ -150,8 +150,7 @@ ELSE
 !
 ! Compute the function G(T)
 !
-      ZZW2(:) = 1. / ( XRHOLW*((((PLV(:)/PT(:))**2)/(XTHCO*XRV)) +          & ! G
-           (XRV*PT(:))/(XDIVA*PEVSAT(:))))
+      ZZW2(:) = 1. / ( XRHOLW*((((PLV(:)/PT(:))**2)/(XTHCO*XRV)) + (XRV*PT(:))/(XDIVA*PEVSAT(:)))) !G
 !
 ! Compute the evaporation tendency
 !
