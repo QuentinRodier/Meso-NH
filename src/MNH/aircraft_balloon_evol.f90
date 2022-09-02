@@ -138,6 +138,7 @@ USE MODD_CONF
 USE MODD_CST
 USE MODD_DIAG_IN_RUN
 USE MODD_GRID
+USE MODD_GRID_n,           ONLY: XXHATM, XYHATM
 USE MODD_LUNIT_n,          ONLY: TLUOUT
 USE MODD_NESTING
 USE MODD_NSV,              ONLY : NSV_LIMA_NI,NSV_LIMA_NR,NSV_LIMA_NC
@@ -228,9 +229,6 @@ INTEGER :: IKE
 INTEGER :: IKU
 !
 INTEGER :: JK         ! loop index
-!
-REAL, DIMENSION(SIZE(PXHAT))        :: ZXHATM ! mass point coordinates
-REAL, DIMENSION(SIZE(PYHAT))        :: ZYHATM ! mass point coordinates
 !
 REAL, DIMENSION(2,2,SIZE(PZ,3))     :: ZZM    ! mass point coordinates
 REAL, DIMENSION(2,2,SIZE(PZ,3))     :: ZZU    ! U points z coordinates
@@ -384,11 +382,6 @@ IKU = SIZE(PZ,3)
 IIU=SIZE(PXHAT)
 IJU=SIZE(PYHAT)
 !
-ZXHATM(1:IIU-1)=0.5*PXHAT(1:IIU-1)+0.5*PXHAT(2:IIU  )
-ZXHATM(  IIU  )=1.5*PXHAT(  IIU  )-0.5*PXHAT(  IIU-1)
-!
-ZYHATM(1:IJU-1)=0.5*PYHAT(1:IJU-1)+0.5*PYHAT(2:IJU  )
-ZYHATM(  IJU  )=1.5*PYHAT(  IJU  )-0.5*PYHAT(  IJU-1)
 !----------------------------------------------------------------------------
 !
 !*      2.3  Compute time until launch by comparison of dates and times
@@ -504,7 +497,7 @@ IF ( TPFLYER%LFLY ) THEN
 !            ----------
 !
   IU=COUNT( PXHAT (:)<=TPFLYER%XX_CUR )
-  II=COUNT( ZXHATM(:)<=TPFLYER%XX_CUR )
+  II=COUNT( XXHATM(:)<=TPFLYER%XX_CUR )
 !
   IF ( IU < IIB .AND. LWEST_ll() ) THEN
     IF ( TPFLYER%CMODEL == 'FIX' .OR. TPFLYER%NMODEL == 1 ) THEN
@@ -528,7 +521,7 @@ IF ( TPFLYER%LFLY ) THEN
 !            ----------
 !
   IV=COUNT( PYHAT (:)<=TPFLYER%XY_CUR )
-  IJ=COUNT( ZYHATM(:)<=TPFLYER%XY_CUR )
+  IJ=COUNT( XYHATM(:)<=TPFLYER%XY_CUR )
 !
   IF ( IV < IJB .AND. LSOUTH_ll() ) THEN
     IF ( TPFLYER%CMODEL == 'FIX'  .OR. TPFLYER%NMODEL == 1 ) THEN
@@ -632,9 +625,9 @@ IF ( TPFLYER%LFLY ) THEN
 !*      5.2.1 Iso-density balloon
 !
             CASE ( 'ISODEN' )
-              ZXCOEF = (TPFLYER%XX_CUR - ZXHATM(II)) / (ZXHATM(II+1) - ZXHATM(II))
+              ZXCOEF = (TPFLYER%XX_CUR - XXHATM(II)) / (XXHATM(II+1) - XXHATM(II))
               ZXCOEF = MAX (0.,MIN(ZXCOEF,1.))
-              ZYCOEF = (TPFLYER%XY_CUR - ZYHATM(IJ)) / (ZYHATM(IJ+1) - ZYHATM(IJ))
+              ZYCOEF = (TPFLYER%XY_CUR - XYHATM(IJ)) / (XYHATM(IJ+1) - XYHATM(IJ))
               ZYCOEF = MAX (0.,MIN(ZYCOEF,1.))
               IF ( TPFLYER%XALTLAUNCH /= XNEGUNDEF ) THEN
                 IK00 = MAX ( COUNT (TPFLYER%XALTLAUNCH >= ZZM(1,1,:)), 1)
@@ -676,9 +669,9 @@ IF ( TPFLYER%LFLY ) THEN
 !*      5.2.4 Constant Volume Balloon
 !
             CASE ( 'CVBALL' )
-              ZXCOEF = (TPFLYER%XX_CUR - ZXHATM(II)) / (ZXHATM(II+1) - ZXHATM(II))
+              ZXCOEF = (TPFLYER%XX_CUR - XXHATM(II)) / (XXHATM(II+1) - XXHATM(II))
               ZXCOEF = MAX (0.,MIN(ZXCOEF,1.))
-              ZYCOEF = (TPFLYER%XY_CUR - ZYHATM(IJ)) / (ZYHATM(IJ+1) - ZYHATM(IJ))
+              ZYCOEF = (TPFLYER%XY_CUR - XYHATM(IJ)) / (XYHATM(IJ+1) - XYHATM(IJ))
               ZYCOEF = MAX (0.,MIN(ZYCOEF,1.))
               IF ( TPFLYER%XALTLAUNCH /= XNEGUNDEF ) THEN
                 IK00 = MAX ( COUNT (TPFLYER%XALTLAUNCH >= ZZM(1,1,:)), 1)
@@ -837,14 +830,14 @@ IF ( TPFLYER%LFLY ) THEN
 !*      6.1  Interpolation coefficient for X
 !            -------------------------------
 !
-      ZXCOEF = (TPFLYER%XX_CUR - ZXHATM(II)) / (ZXHATM(II+1) - ZXHATM(II))
+      ZXCOEF = (TPFLYER%XX_CUR - XXHATM(II)) / (XXHATM(II+1) - XXHATM(II))
       ZXCOEF = MAX (0.,MIN(ZXCOEF,1.))
 !
 !
 !*      6.2  Interpolation coefficient for y
 !            -------------------------------
 !
-      ZYCOEF = (TPFLYER%XY_CUR - ZYHATM(IJ)) / (ZYHATM(IJ+1) - ZYHATM(IJ))
+      ZYCOEF = (TPFLYER%XY_CUR - XYHATM(IJ)) / (XYHATM(IJ+1) - XYHATM(IJ))
       ZYCOEF = MAX (0.,MIN(ZYCOEF,1.))
 !
 !

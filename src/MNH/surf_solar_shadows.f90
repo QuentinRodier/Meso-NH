@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 param 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !    ##############################
      MODULE MODI_SURF_SOLAR_SHADOWS 
@@ -14,14 +9,14 @@
 !
 INTERFACE 
 !
-      SUBROUTINE SURF_SOLAR_SHADOWS ( PMAP, PXHAT, PYHAT,                     &
+      SUBROUTINE SURF_SOLAR_SHADOWS ( PMAP, PXHATM, PYHATM,                   &
                   PCOSZEN, PSINZEN, PAZIMSOL,                                 &
                   PZS, PZS_XY, PDIRSWDT, PDIRSRFSWD                           )
 !
 !
 REAL, DIMENSION(:,:),     INTENT(IN) :: PMAP         ! map factor
-REAL, DIMENSION(:),       INTENT(IN) :: PXHAT        ! X coordinate
-REAL, DIMENSION(:),       INTENT(IN) :: PYHAT        ! Y coordinate
+REAL, DIMENSION(:),       INTENT(IN) :: PXHATM       ! X coordinate at mass points
+REAL, DIMENSION(:),       INTENT(IN) :: PYHATM       ! Y coordinate at mass points
 REAL, DIMENSION(:,:),     INTENT(IN) :: PCOSZEN ! COS(zenithal solar angle)
 REAL, DIMENSION(:,:),     INTENT(IN) :: PSINZEN ! SIN(zenithal solar angle)
 REAL, DIMENSION(:,:),     INTENT(IN) :: PAZIMSOL! azimuthal solar angle
@@ -39,7 +34,7 @@ END INTERFACE
 !
 END MODULE MODI_SURF_SOLAR_SHADOWS
 !     #########################################################################
-      SUBROUTINE SURF_SOLAR_SHADOWS ( PMAP, PXHAT, PYHAT,                     &
+      SUBROUTINE SURF_SOLAR_SHADOWS ( PMAP, PXHATM, PYHATM,                   &
                   PCOSZEN, PSINZEN, PAZIMSOL,                                 &
                   PZS, PZS_XY, PDIRSWDT, PDIRSRFSWD                           )
 !     #########################################################################
@@ -95,8 +90,8 @@ IMPLICIT NONE
 !
 !
 REAL, DIMENSION(:,:),     INTENT(IN) :: PMAP         ! map factor
-REAL, DIMENSION(:),       INTENT(IN) :: PXHAT        ! X coordinate
-REAL, DIMENSION(:),       INTENT(IN) :: PYHAT        ! Y coordinate
+REAL, DIMENSION(:),       INTENT(IN) :: PXHATM       ! X coordinate at mass points
+REAL, DIMENSION(:),       INTENT(IN) :: PYHATM       ! Y coordinate at mass points
 REAL, DIMENSION(:,:),     INTENT(IN) :: PCOSZEN ! COS(zenithal solar angle)
 REAL, DIMENSION(:,:),     INTENT(IN) :: PSINZEN ! SIN(zenithal solar angle)
 REAL, DIMENSION(:,:),     INTENT(IN) :: PAZIMSOL! azimuthal solar angle
@@ -231,20 +226,20 @@ DO JJ=IJB,IJE
 !
       SELECT CASE (JT)
        CASE (1)
-         ZX=(5.*PXHAT(JI)+PXHAT(JI+1))/6.
-         ZY=0.5*(PYHAT(JJ)+PYHAT(JJ+1))
+         ZX=PXHATM(JI)/6.
+         ZY=PYHATM(JJ)
          ZZ=(PZS(JI,JJ)+PZS_XY(JI,JJ)+PZS_XY(JI,JJ+1))/3.
        CASE (2)
-         ZX=0.5*(PXHAT(JI)+PXHAT(JI+1))
-         ZY=(5.*PYHAT(JJ+1)+PYHAT(JJ))/6.
+         ZX=PXHATM(JI)
+         ZY=PYHATM(JJ)/6.
          ZZ=(PZS(JI,JJ)+PZS_XY(JI,JJ+1)+PZS_XY(JI+1,JJ+1))/3.
        CASE (3)
-         ZX=(5.*PXHAT(JI+1)+PXHAT(JI))/6.
-         ZY=0.5*(PYHAT(JJ)+PYHAT(JJ+1))
+         ZX=PXHATM(JI)/6.
+         ZY=PYHATM(JJ)
          ZZ=(PZS(JI,JJ)+PZS_XY(JI+1,JJ)+PZS_XY(JI+1,JJ+1))/3.
        CASE (4)
-         ZX=0.5*(PXHAT(JI)+PXHAT(JI+1))
-         ZY=(5.*PYHAT(JJ)+PYHAT(JJ+1))/6.
+         ZX=PXHATM(JI)
+         ZY=PYHATM(JJ)/6.
          ZZ=(PZS(JI,JJ)+PZS_XY(JI,JJ)+PZS_XY(JI+1,JJ))/3.
       END SELECT
 !

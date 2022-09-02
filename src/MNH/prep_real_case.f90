@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -858,9 +858,9 @@ IF (LCARTESIAN) THEN
   CALL SM_GRIDCART(XXHAT,XYHAT,XZHAT,XZS,LSLEVE,XLEN1,XLEN2,XZSMT,XDXHAT,XDYHAT,XZZ,ZJ)
   XMAP=1.
 ELSE
-  CALL SM_GRIDPROJ(XXHAT,XYHAT,XZHAT,XZS,                    &
-                   LSLEVE,XLEN1,XLEN2,XZSMT,XLATORI,XLONORI, &
-                   XMAP,XLAT,XLON,XDXHAT,XDYHAT,XZZ,ZJ       )
+  CALL SM_GRIDPROJ( XXHAT, XYHAT, XZHAT, XXHATM, XYHATM, XZS,      &
+                    LSLEVE, XLEN1, XLEN2, XZSMT, XLATORI, XLONORI, &
+                    XMAP, XLAT, XLON, XDXHAT, XDYHAT, XZZ, ZJ      )
 END IF
 !
 CALL MPPDB_CHECK2D(XZS,"prep_real_case8:XZS",PRECISION)

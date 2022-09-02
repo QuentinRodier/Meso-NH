@@ -1,11 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2001-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
 !-----------------------------------------------------------------
 !     ##########################
       MODULE MODI_EXTRACT_VORTEX
@@ -102,7 +98,7 @@ END MODULE MODI_EXTRACT_VORTEX
 USE MODD_CST, ONLY: XPI
 USE MODD_PARAMETERS, ONLY: XUNDEF
 USE MODD_DIM_n,      ONLY: NIMAX,NJMAX
-USE MODD_GRID_n,     ONLY: XXHAT,XYHAT
+USE MODD_GRID_n,     ONLY: XDXHAT, XXHAT, XDYHAT, XYHAT
 USE MODE_ll
 !
 IMPLICIT NONE
@@ -142,8 +138,8 @@ IPHI=SIZE(PR0,1)
 !
 CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 !
-ZDELTAX = XXHAT(3) - XXHAT(2)
-ZDELTAY = XYHAT(3) - XYHAT(2)
+ZDELTAX = XDXHAT(2)
+ZDELTAY = XDYHAT(2)
 ZDELTAR = MAX(ZDELTAX,ZDELTAY)
 ZDPHI = 2.*XPI / IPHI
 !

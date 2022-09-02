@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2002-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -9,14 +9,14 @@
 !
 INTERFACE 
 !
-      SUBROUTINE SURF_SOLAR_SLOPES ( PMAP, PXHAT, PYHAT,                      &
+      SUBROUTINE SURF_SOLAR_SLOPES ( PMAP, PDXHAT, PDYHAT,                    &
                   PCOSZEN, PSINZEN, PAZIMSOL,                                 &
                   PZS, PZS_XY, PDIRSRFSWD, PDIRSWDT                           )
 !
 !
 REAL, DIMENSION(:,:),     INTENT(IN) :: PMAP         ! map factor
-REAL, DIMENSION(:),       INTENT(IN) :: PXHAT        ! X coordinate
-REAL, DIMENSION(:),       INTENT(IN) :: PYHAT        ! Y coordinate
+REAL, DIMENSION(:),       INTENT(IN) :: PDXHAT       ! horizontal stretching in x
+REAL, DIMENSION(:),       INTENT(IN) :: PDYHAT       ! horizontal stretching in y
 REAL, DIMENSION(:,:),     INTENT(IN) :: PCOSZEN ! COS(zenithal solar angle)
 REAL, DIMENSION(:,:),     INTENT(IN) :: PSINZEN ! SIN(zenithal solar angle)
 REAL, DIMENSION(:,:),     INTENT(IN) :: PAZIMSOL! azimuthal solar angle
@@ -34,7 +34,7 @@ END INTERFACE
 !
 END MODULE MODI_SURF_SOLAR_SLOPES
 !     #########################################################################
-      SUBROUTINE SURF_SOLAR_SLOPES ( PMAP, PXHAT, PYHAT,                      &
+      SUBROUTINE SURF_SOLAR_SLOPES ( PMAP, PDXHAT, PDYHAT,                    &
                   PCOSZEN, PSINZEN, PAZIMSOL,                                 &
                   PZS, PZS_XY, PDIRSRFSWD, PDIRSWDT                           )
 !     #########################################################################
@@ -86,8 +86,8 @@ IMPLICIT NONE
 !
 !
 REAL, DIMENSION(:,:),     INTENT(IN) :: PMAP         ! map factor
-REAL, DIMENSION(:),       INTENT(IN) :: PXHAT        ! X coordinate
-REAL, DIMENSION(:),       INTENT(IN) :: PYHAT        ! Y coordinate
+REAL, DIMENSION(:),       INTENT(IN) :: PDXHAT       ! horizontal stretching in x
+REAL, DIMENSION(:),       INTENT(IN) :: PDYHAT       ! horizontal stretching in y
 REAL, DIMENSION(:,:),     INTENT(IN) :: PCOSZEN ! COS(zenithal solar angle)
 REAL, DIMENSION(:,:),     INTENT(IN) :: PSINZEN ! SIN(zenithal solar angle)
 REAL, DIMENSION(:,:),     INTENT(IN) :: PAZIMSOL! azimuthal solar angle
@@ -144,27 +144,27 @@ DO JT=1,4
         CASE (1)
           ZDZSDX=(    2.* PZS   (JI,JJ)                   &
                    - (PZS_XY(JI,JJ)+PZS_XY(JI,JJ+1)) )    &
-                 / (PXHAT(JI+1)-PXHAT(JI))  * PMAP(JI,JJ)
+                 / PDXHAT(JI)  * PMAP(JI,JJ)
           ZDZSDY=(  PZS_XY(JI,JJ+1) - PZS_XY(JI,JJ) )     &
-                 / (PYHAT(JJ+1)-PYHAT(JJ))  * PMAP(JI,JJ)
+                 / PDYHAT(JJ)  * PMAP(JI,JJ)
         CASE (2)
            ZDZSDX=(  PZS_XY(JI+1,JJ+1) -PZS_XY(JI,JJ+1))  &
-                 / (PXHAT(JI+1)-PXHAT(JI))  * PMAP(JI,JJ)
+                 / PDXHAT(JI)  * PMAP(JI,JJ)
            ZDZSDY=(  (PZS_XY(JI+1,JJ+1)+PZS_XY(JI,JJ+1))  &
                      - 2.* PZS (JI,JJ) )                  &
-                 / (PYHAT(JJ+1)-PYHAT(JJ))  * PMAP(JI,JJ)
+                 / PDYHAT(JJ)  * PMAP(JI,JJ)
         CASE (3)
           ZDZSDX=(  (PZS_XY(JI+1,JJ)+PZS_XY(JI+1,JJ+1))   &
                    - 2.* PZS(JI,JJ)                    )  &
-                 / (PXHAT(JI+1)-PXHAT(JI))  * PMAP(JI,JJ)
+                 / PDXHAT(JI)  * PMAP(JI,JJ)
           ZDZSDY=(  PZS_XY(JI+1,JJ+1) - PZS_XY(JI+1,JJ) ) &
-                 / (PYHAT(JJ+1)-PYHAT(JJ))  * PMAP(JI,JJ)
+                 / PDYHAT(JJ)  * PMAP(JI,JJ)
         CASE (4)
            ZDZSDX=(  PZS_XY(JI+1,JJ) - PZS_XY(JI,JJ) )    &
-                 / (PXHAT(JI+1)-PXHAT(JI))  * PMAP(JI,JJ)
+                 / PDXHAT(JI)  * PMAP(JI,JJ)
            ZDZSDY=(  2.* PZS(JI,JJ)                       &
                    - (PZS_XY(JI+1,JJ)+PZS_XY(JI,JJ)) )    &
-                 / (PYHAT(JJ+1)-PYHAT(JJ))  * PMAP(JI,JJ)
+                 / PDYHAT(JJ)  * PMAP(JI,JJ)
       END SELECT
 !
 !* slope angles

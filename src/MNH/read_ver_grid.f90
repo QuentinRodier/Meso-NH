@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -7,7 +7,7 @@
       MODULE MODI_READ_VER_GRID
 !     #########################
 INTERFACE
-      SUBROUTINE READ_VER_GRID(TPPRE_REAL1,PZHAT,OSLEVE,PLEN1,PLEN2)
+      SUBROUTINE READ_VER_GRID( TPPRE_REAL1, PZHAT, OSLEVE, PLEN1, PLEN2 )
 !
 USE MODD_IO, ONLY : TFILEDATA
 !
@@ -21,9 +21,9 @@ END SUBROUTINE READ_VER_GRID
 END INTERFACE
 END MODULE MODI_READ_VER_GRID
 !
-!     ##############################################################
-      SUBROUTINE READ_VER_GRID(TPPRE_REAL1,PZHAT,OSLEVE,PLEN1,PLEN2)
-!     ##############################################################
+!     ####################################################################
+      SUBROUTINE READ_VER_GRID( TPPRE_REAL1, PZHAT, OSLEVE, PLEN1, PLEN2 )
+!     ####################################################################
 !
 !!****  *READ_VER_GRID* - reads namelist data in file PRE_REAL1 for the 
 !!                        initialization of the vertical grid for real cases.
@@ -121,10 +121,10 @@ IMPLICIT NONE
 !*       0.1   Declaration of arguments
 !              ------------------------
 TYPE(TFILEDATA),POINTER,      INTENT(IN) :: TPPRE_REAL1! namelist file
+REAL, DIMENSION(:), OPTIONAL, INTENT(IN) :: PZHAT      ! vertival grid of input fmfile
 LOGICAL,            OPTIONAL, INTENT(IN) :: OSLEVE     ! flag for SLEVE coordinate
 REAL,               OPTIONAL, INTENT(IN) :: PLEN1      ! Decay scale for smooth topography
 REAL,               OPTIONAL, INTENT(IN) :: PLEN2      ! Decay scale for small-scale topography deviation
-REAL, DIMENSION(:), OPTIONAL, INTENT(IN) :: PZHAT      ! vertival grid of input fmfile
 !
 !*       0.2   Declaration of local variables
 !              ------------------------------
@@ -193,7 +193,8 @@ XLEN1_n  = XLEN1
 XLEN2_n  = XLEN2
 !
 IF (CPROGRAM=='REAL  ') THEN
-  IF (ASSOCIATED (XZHAT) ) DEALLOCATE(XZHAT)
+  IF (ASSOCIATED (XZHAT)  ) DEALLOCATE(XZHAT)
+  IF (ASSOCIATED (XZHATM) ) DEALLOCATE(XZHATM)
   CALL POSNAM(IPRE_REAL1,'NAM_BLANKN',GFOUND,ILUOUT0)
   IF (GFOUND) THEN
     CALL INIT_NAM_BLANKn
@@ -214,9 +215,10 @@ SELECT CASE(YZGRID_TYPE)
 CASE('SAMEGR')
   IF (PRESENT(PZHAT) .AND. PRESENT(OSLEVE) .AND. PRESENT(PLEN1) .AND.  PRESENT(PLEN2)) THEN
     IF (NKMAX_n==0)  NKMAX_n=SIZE(PZHAT)-2*JPVEXT
-    ALLOCATE(XZHAT(NKMAX_n+2*JPVEXT))
+    ALLOCATE( XZHAT (IKU) )
+    ALLOCATE( XZHATM(IKU) )
 
-    IF ( (NKMAX_n+2*JPVEXT) > SIZE(PZHAT) ) THEN
+    IF ( (IKU) > SIZE(PZHAT) ) THEN
       WRITE(ILUOUT0,*) 'ERROR IN READ_VER_GRID :'
       WRITE(ILUOUT0,*) '  YOU WANT TO KEEP THE SAME VERTICAL GRID, BUT YOU ASK'
       WRITE(ILUOUT0,*) '  FOR MORE LEVELS THAN IN INPUT FM FILE.'
@@ -226,13 +228,13 @@ CASE('SAMEGR')
       CALL PRINT_MSG(NVERB_FATAL,'GEN','READ_VER_GRID','')
     END IF
 
-    XZHAT(:)=PZHAT(1:NKMAX_n+2*JPVEXT)
+    XZHAT(:)  = PZHAT (1:IKU)
     LTHINSHELL = GTHINSHELL
     LSLEVE_n     = OSLEVE
     XLEN1_n      = PLEN1
     XLEN2_n      = PLEN2
 
-    IF ( (NKMAX_n+2*JPVEXT) == SIZE(PZHAT) ) THEN
+    IF ( (IKU) == SIZE(PZHAT) ) THEN
       WRITE(ILUOUT0,*) 'same vertical grid kept.'
     ELSE
       WRITE(ILUOUT0,*) NKMAX_n,' first levels in vertical grid kept.'
@@ -257,7 +259,8 @@ CASE('SAMEGR')
 !
 CASE('FUNCTN')
 !
-  IF (.NOT. ASSOCIATED(XZHAT)) ALLOCATE(XZHAT(IKU))
+  IF ( .NOT. ASSOCIATED(XZHAT)  ) ALLOCATE( XZHAT (IKU) )
+  IF ( .NOT. ASSOCIATED(XZHATM) ) ALLOCATE( XZHATM(IKU) )
 !
   IF (ABS(ZDZTOP-ZDZGRD) < 1.E-10) THEN
     XZHAT(:) = (/ (REAL(JK-IKB)*ZDZGRD, JK=1,IKU) /)
@@ -297,7 +300,8 @@ CASE('FUNCTN')
 !
 CASE('MANUAL')
 !
-  IF (.NOT. ASSOCIATED(XZHAT)) ALLOCATE(XZHAT(IKU))
+  IF ( .NOT. ASSOCIATED(XZHAT)  ) ALLOCATE( XZHAT (IKU) )
+  IF ( .NOT. ASSOCIATED(XZHATM) ) ALLOCATE( XZHATM(IKU) )
 !
   WRITE(ILUOUT0,FMT=*) 'YZGRID_TYPE="MANUAL", ATTEMPT TO READ VECTOR XZHAT(2,NKU)'
   CALL POSKEY(IPRE_REAL1,ILUOUT0,'ZHAT')
@@ -322,7 +326,11 @@ END SELECT
 !
 !Set model top
 XZTOP = XZHAT(IKU)
-!
+
+! Interpolations of positions to mass points
+XZHATM(1:IKU-1 ) = 0.5 * XZHAT(1:IKU-1) + 0.5 * XZHAT(2:IKU  )
+XZHATM(  IKU   ) = 1.5 * XZHAT(  IKU  ) - 0.5 * XZHAT(  IKU-1)
+
 !-------------------------------------------------------------------------------
 !
 !*       5.    TEST ON STRETCHING :

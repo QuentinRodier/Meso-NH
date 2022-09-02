@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -781,9 +781,9 @@ CALL SUNPOS_n   ( XZENITH, ZCOSZEN, ZSINZEN, ZAZIMSOL )
 !
   ZTIME1 = ZTIME2
 !
-  CALL SURF_RAD_MODIF (XMAP, XXHAT, XYHAT,                 &
-                  ZCOSZEN, ZSINZEN, ZAZIMSOL, XZS, XZS_XY, &
-                  XDIRFLASWD, XDIRSRFSWD                   )
+  CALL SURF_RAD_MODIF (XMAP, XDXHAT, XDYHAT, XXHATM, XYHATM, &
+                  ZCOSZEN, ZSINZEN, ZAZIMSOL, XZS, XZS_XY,   &
+                  XDIRFLASWD, XDIRSRFSWD                     )
 !
 !* Azimuthal angle to be sent later to surface processes
 !  Defined in radian, clockwise, from North

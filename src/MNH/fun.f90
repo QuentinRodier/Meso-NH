@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2017 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
@@ -126,9 +126,9 @@ ZWIDTHY =ZYHAT_ll(IJ0+IJU_ll/5)-ZYHAT_ll(IJ0)
 ZWIDTHZ =PZHAT(IK0+KKU/5)-PZHAT(IK0)
 DO JJ = 1,KJU-1
   DO JK = 1,KKU
-    FUNUYZ(JJ,JK) = 1./COSH(                                    &
-     (( (XYHAT(JJ)+XYHAT(JJ+1))*0.5-ZYHAT_ll(IJ0))/ZWIDTHY) **2 &
-    +((  PZHAT(JK)                 -   PZHAT(IK0))/ZWIDTHZ) **2 )
+    FUNUYZ(JJ,JK) = 1./COSH(                   &
+     (( XYHATM(JJ)-ZYHAT_ll(IJ0))/ZWIDTHY) **2 &
+    +(( PZHAT(JK) -   PZHAT(IK0))/ZWIDTHZ) **2 )
   END DO
 END DO
 DEALLOCATE(ZYHAT_ll)
@@ -217,7 +217,7 @@ ALLOCATE(ZYHAT_ll(IJU_ll))
 CALL GATHERALL_FIELD_ll('YY',XYHAT,ZYHAT_ll,IINFO_ll)
 ZWIDTH=ZYHAT_ll(IJ0+IJU_ll/5)-ZYHAT_ll(IJ0)
 DO JJ = 1,KJU-1
- FUNUY(JJ) = 1./COSH(((XYHAT(JJ)+XYHAT(JJ+1))*0.5-ZYHAT_ll(IJ0))/ZWIDTH)
+ FUNUY(JJ) = 1./COSH((XYHATM(JJ)-ZYHAT_ll(IJ0))/ZWIDTH)
 END DO
 FUNUY(KJU)=2.*FUNUY(KJU-1)-FUNUY(KJU-2) !simple extrapolation for the last point
 !
@@ -314,9 +314,9 @@ ZWIDTHX=ZXHAT_ll(II0+IIU_ll/5)-ZXHAT_ll(II0)
 ZWIDTHZ=PZHAT(IK0+KKU/5)-PZHAT(IK0)
 DO JI = 1,KIU-1
   DO JK = 1,KKU
-    FUNVXZ(JI,JK) = 1./COSH(                                   &
-     (( (XXHAT(JI)+XXHAT(JI+1))*0.5-ZXHAT_ll(II0))/ZWIDTHX)**2 &
-    +((  PZHAT (JK)                 - PZHAT (IK0))/ZWIDTHZ)**2 )
+    FUNVXZ(JI,JK) = 1./COSH(                  &
+     (( XXHATM(JI)-ZXHAT_ll(II0))/ZWIDTHX)**2 &
+    +(( PZHAT (JK) - PZHAT (IK0))/ZWIDTHZ)**2 )
   END DO
 END DO
 FUNVXZ(KIU,:)=2.*FUNVXZ(KIU-1,:)-FUNVXZ(KIU-2,:) !simple extrapolation for the last point
@@ -403,7 +403,7 @@ ALLOCATE(ZXHAT_ll(IIU_ll))
 CALL GATHERALL_FIELD_ll('XX',XXHAT,ZXHAT_ll,IINFO_ll)
 ZWIDTH=ZXHAT_ll(II0+IIU_ll/5)-ZXHAT_ll(II0)
 DO JI = 1,KIU
- FUNVX(JI)=1./COSH(((XXHAT(JI)+XXHAT(JI))*0.5-ZXHAT_ll(II0))/ZWIDTH)
+ FUNVX(JI)=1./COSH((XXHATM(JI)-ZXHAT_ll(II0))/ZWIDTH)
 END DO
 DEALLOCATE(ZXHAT_ll)
 !-------------------------------------------------------------------------------

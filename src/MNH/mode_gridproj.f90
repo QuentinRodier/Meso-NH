@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -71,11 +71,11 @@ CONTAINS
 !*                1.  ROUTINE  SM_GRIDPROJ   
 !                     --------------------
 !-------------------------------------------------------------------------------
-!      ####################################################################
-       SUBROUTINE SM_GRIDPROJ(PXHAT,PYHAT,PZHAT,PZS,                  &
-                              OSLEVE,PLEN1,PLEN2,PZSMT,PLATOR,PLONOR, &
-                              PMAP,PLAT,PLON,PDXHAT,PDYHAT,PZZ,PJ     )
-!      ####################################################################
+!      ######################################################################
+       SUBROUTINE SM_GRIDPROJ( PXHAT, PYHAT, PZHAT, PXHATM, PYHATM, PZS,    &
+                               OSLEVE, PLEN1, PLEN2, PZSMT, PLATOR, PLONOR, &
+                               PMAP, PLAT, PLON, PDXHAT, PDYHAT, PZZ, PJ    )
+!      ######################################################################
 !
 !!*****  *SM_GRIDPROJ * - Computes Jacobian J, map factor M,
 !!    horizontal grid-meshes, latitude and longitude  at the 
@@ -199,8 +199,8 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments
 !
-REAL, DIMENSION(:),      INTENT(IN) :: PXHAT,PYHAT,PZHAT ! Positions x,y,z in 
-                                                         ! the cartesian plane
+REAL, DIMENSION(:),      INTENT(IN) :: PXHAT,PYHAT,PZHAT ! Positions x,y,z in the cartesian plane
+REAL, DIMENSION(:),      INTENT(IN) :: PXHATM, PYHATM    ! Positions x,y,z in the cartesian plane at mass points
 REAL, DIMENSION(:,:),    INTENT(IN) :: PZS               ! Orography
 LOGICAL,                INTENT(IN)  :: OSLEVE            ! flag for SLEVE coordinate
 REAL,                   INTENT(IN)  :: PLEN1             ! Decay scale for smooth topography
@@ -332,21 +332,13 @@ END IF
 !*       4.   COMPUTE ZXHAT AND ZYHAT AT MASS POINTS
 !              -------------------------------------
 !
-ZXHATM(:,:) = 0.
-ZYHATM(:,:) = 0.
-ZXHATM(1:IIU-1,1) = .5*(PXHAT(1:IIU-1)+PXHAT(2:IIU))
-ZXHATM(IIU,1)     = 2.*PXHAT(IIU)-ZXHATM(IIU-1,1)
-ZXHATM(:,2:IJU)   = SPREAD(ZXHATM(:,1),2,IJU-1)
+ZXHATM(:,:) = SPREAD( PXHATM(:), 2 , IJU )
+ZYHATM(:,:) = SPREAD( PYHATM(:), 1 , IIU )
 ! cancel MPPDB_CHECK if cprog=='SPAWN  '
-IF(CPROGRAM/='SPAWN ')&
-CALL MPPDB_CHECK2D(ZXHATM,"GRIDPROJ:ZXHATM",PRECISION)
-!
-ZYHATM(1,1:IJU-1) = .5*(PYHAT(1:IJU-1)+PYHAT(2:IJU))
-ZYHATM(1,IJU)     = 2.*PYHAT(IJU)-ZYHATM(1,IJU-1)
-ZYHATM(2:IIU,:)   = SPREAD(ZYHATM(1,:),1,IIU-1)
-! cancel MPPDB_CHECK if cprog=='SPAWN  '
-IF(CPROGRAM/='SPAWN ')&
-CALL MPPDB_CHECK2D(ZYHATM,"GRIDPROJ:ZYHATM",PRECISION)
+IF( CPROGRAM /= 'SPAWN ') THEN
+  CALL MPPDB_CHECK( ZXHATM, "GRIDPROJ:ZXHATM" )
+  CALL MPPDB_CHECK( ZYHATM, "GRIDPROJ:ZXHATM" )
+END IF
 ! ZXHATM and ZXHATM have to be updated
 CALL ADD2DFIELD_ll( TZHALO_ll, ZXHATM, 'SM_GRIDPROJ::ZXHATM' )
 CALL ADD2DFIELD_ll( TZHALO_ll, ZYHATM, 'SM_GRIDPROJ::ZYHATM' )

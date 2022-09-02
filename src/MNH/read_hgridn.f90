@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1996-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1996-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -250,7 +250,17 @@ ENDIF
 
 CALL IO_Field_read(TPFMFILE,'XHAT',XXHAT)
 CALL IO_Field_read(TPFMFILE,'YHAT',XYHAT)
-!
+
+IF ( .NOT. ASSOCIATED(XXHATM) ) ALLOCATE( XXHATM(SIZE( XXHAT )) )
+IF ( .NOT. ASSOCIATED(XYHATM) ) ALLOCATE( XYHATM(SIZE( XYHAT )) )
+
+! Interpolations of positions to mass points
+XXHATM( : UBOUND(XXHATM,1)-1 ) = 0.5 * XXHAT( : UBOUND(XXHAT,1)-1 ) + 0.5 * XXHAT( LBOUND(XXHAT,1)+1 : UBOUND(XXHAT,1) )
+XXHATM( UBOUND(XXHATM,1)     ) = 1.5 * XXHAT( UBOUND(XXHAT,1)     ) - 0.5 * XXHAT( UBOUND(XXHAT,1)-1 )
+
+XYHATM( : UBOUND(XYHATM,1)-1 ) = 0.5 * XYHAT( : UBOUND(XYHAT,1)-1 ) + 0.5 * XYHAT( LBOUND(XYHAT,1)+1 : UBOUND(XYHAT,1) )
+XYHATM( UBOUND(XYHATM,1)     ) = 1.5 * XYHAT( UBOUND(XYHAT,1)     ) - 0.5 * XYHAT( UBOUND(XYHAT,1)-1 )
+
 !JUAN REALZ
 IF ( CPROGRAM .EQ. "REAL  " ) THEN
 IF (.NOT. (ASSOCIATED(XZS))) ALLOCATE(XZS(IIU,IJU))

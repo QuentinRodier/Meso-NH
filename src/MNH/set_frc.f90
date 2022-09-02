@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -153,8 +153,6 @@ REAL, DIMENSION(:), ALLOCATABLE :: ZHEIGHTMF   ! Height at mass levels
 REAL, DIMENSION(:), ALLOCATABLE :: ZTHVF       ! Thetav at mass levels
 REAL, DIMENSION(:), ALLOCATABLE :: ZTHDF       ! Theta (dry) at mass levels
 REAL, DIMENSION(:), ALLOCATABLE :: ZMRF        ! Vapor mixing ratio at mass lev.
-REAL, DIMENSION(SIZE(XZHAT))    :: ZZHATM      ! Height of mass model grid
-                                               ! levels  without orography
 REAL, DIMENSION(SIZE(XZHAT))    :: ZSHEAR      ! vertical wind shear
 CHARACTER(LEN=4)                :: YZP         ! choice of zfrc or pfrc
 CHARACTER(LEN=100)              :: YMSG
@@ -386,11 +384,8 @@ DO JKT = 1,NFRC
 ! Interpolate and extrapolate Ufrc on u-vertical-grid levels
 !           the other forcing variables.
 !
-  ZZHATM(1:IKU-1) = 0.5*(XZHAT(2:IKU)+XZHAT(1:IKU-1))
-  ZZHATM(IKU) = 2.*XZHAT(IKU)-ZZHATM(IKU-1)
-!
   DO JK = 1,IKU
-    IF (ZZHATM(JK) <= ZHEIGHTF(1)) THEN
+    IF (XZHATM(JK) <= ZHEIGHTF(1)) THEN
 !
 ! copy below the first level
 !
@@ -402,7 +397,7 @@ DO JKT = 1,NFRC
       XTENDRVFRC(JK,JKT) = ZGYRF(1)
       XTENDUFRC(JK,JKT) = ZTUF(1)
       XTENDVFRC(JK,JKT) = ZTVF(1)        
-    ELSE IF (ZZHATM(JK) > ZHEIGHTF(ILEVELF) ) THEN
+    ELSE IF (XZHATM(JK) > ZHEIGHTF(ILEVELF) ) THEN
 !
 ! copy above the last level
 !
@@ -419,9 +414,9 @@ DO JKT = 1,NFRC
 ! interpolation between first and last levels
 !
       DO JKLEV = 1,ILEVELF-1
-        IF ( (ZZHATM(JK) > ZHEIGHTF(JKLEV)).AND. &
-             (ZZHATM(JK) <= ZHEIGHTF(JKLEV+1))   ) THEN
-          ZDZ1SDH = (ZZHATM(JK) - ZHEIGHTF(JKLEV)) /  &
+        IF ( (XZHATM(JK) > ZHEIGHTF(JKLEV)).AND. &
+             (XZHATM(JK) <= ZHEIGHTF(JKLEV+1))   ) THEN
+          ZDZ1SDH = (XZHATM(JK) - ZHEIGHTF(JKLEV)) /  &
                     (ZHEIGHTF(JKLEV+1)-ZHEIGHTF(JKLEV))
           ZDZ2SDH = 1.- ZDZ1SDH
           XUFRC(JK,JKT)  = ZUF(JKLEV)*ZDZ2SDH  + ZUF(JKLEV+1)*ZDZ1SDH

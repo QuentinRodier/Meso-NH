@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -192,7 +192,6 @@ USE MODI_COMPUTE_FRAC_ICE
 USE MODI_SHUMAN_MF
 !
 USE MODI_COMPUTE_BL89_ML
-USE MODD_GRID_n, ONLY : XDXHAT, XDYHAT
 USE MODD_REF_n, ONLY : XTHVREF
 USE MODE_MSG
 !

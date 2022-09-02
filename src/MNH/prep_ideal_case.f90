@@ -1239,7 +1239,8 @@ ELSE
 ! the MESONH horizontal grid is built from the PRE_IDEA1.nam informations
 !------------------------------------------------------------------------
 !
-  ALLOCATE(XXHAT(NIU),XYHAT(NJU))
+  ALLOCATE( XXHAT(NIU),  XYHAT(NJU)  )
+  ALLOCATE( XXHATM(NIU), XYHATM(NJU) )
 !
 ! define the grid localization at the earth surface by the central point
 ! coordinates
@@ -1283,6 +1284,13 @@ ELSE
     XXHAT(:) = (/ (REAL(JLOOP-NIB)*XDELTAX, JLOOP=1,NIU) /)
     XYHAT(:) = (/ (REAL(JLOOP-NJB)*XDELTAY, JLOOP=1,NJU) /)
   END IF
+
+  ! Interpolations of positions to mass points
+  XXHATM(1:NIU-1) = 0.5 * XXHAT(1:NIU-1) + 0.5 * XXHAT(2:NIU)
+  XXHATM(  NIU)   = 1.5 * XXHAT(  NIU)   - 0.5 * XXHAT(NIU-1)
+
+  XYHATM(1:NJU-1) = 0.5 * XYHAT(1:NJU-1) + 0.5 * XYHAT(2:NJU)
+  XYHATM(  NJU)   = 1.5 * XYHAT(  NJU)   - 0.5 * XYHAT(NJU-1)
 END IF
 !
 !*       5.1.2  Orography and Gal-Chen Sommerville transformation :
@@ -1425,8 +1433,9 @@ IF (LCARTESIAN) THEN
   CALL SM_GRIDCART(XXHAT,XYHAT,XZHAT,XZS,LSLEVE,XLEN1,XLEN2,XZSMT,XDXHAT,XDYHAT,XZZ,XJ)
   XMAP=1.
 ELSE
-  CALL SM_GRIDPROJ(XXHAT,XYHAT,XZHAT,XZS,LSLEVE,XLEN1,XLEN2,XZSMT,XLATORI,XLONORI, &
-                   XMAP,XLAT,XLON,XDXHAT,XDYHAT,XZZ,XJ)
+  CALL SM_GRIDPROJ( XXHAT, XYHAT, XZHAT, XXHATM, XYHATM, XZS,      &
+                    LSLEVE, XLEN1, XLEN2, XZSMT, XLATORI, XLONORI, &
+                    XMAP, XLAT, XLON, XDXHAT, XDYHAT, XZZ, XJ      )
 END IF
 !*       5.4.1  metrics coefficients and update halos:
 !
@@ -1550,10 +1559,10 @@ CALL UPDATE_METRICS(CLBCX,CLBCY,XDXX,XDYY,XDZX,XDZY,XDZZ)
 !
 !*       5.4.2  3D reference state :
 !
-CALL SET_REF(0,TFILE_DUMMY,                        &
-             XZZ,XZHAT,XJ,XDXX,XDYY,CLBCX,CLBCY,   &
-             XREFMASS,XMASS_O_PHI0,XLINMASS,       &
-             XRHODREF,XTHVREF,XRVREF,XEXNREF,XRHODJ)
+CALL SET_REF( 0, TFILE_DUMMY,                            &
+              XZZ, XZHATM, XJ, XDXX, XDYY, CLBCX, CLBCY, &
+              XREFMASS, XMASS_O_PHI0, XLINMASS,          &
+              XRHODREF, XTHVREF, XRVREF, XEXNREF, XRHODJ )
 !
 !
 !*       5.5.1  Absolute pressure :

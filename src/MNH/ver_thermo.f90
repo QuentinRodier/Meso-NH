@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -332,9 +332,9 @@ ALLOCATE(XRVREF(IIU,IJU,IKU))
 ALLOCATE(XEXNREF(IIU,IJU,IKU))
 ALLOCATE(XRHODJ(IIU,IJU,IKU))
 XRVREF(:,:,:) = 0.
-CALL SET_REF(0,TFILE_DUMMY,XZZ,XZHAT,PJ,PDXX,PDYY,CLBCX,CLBCY,       &
-             XREFMASS,XMASS_O_PHI0,XLINMASS,XRHODREF,XTHVREF,XRVREF, &
-             XEXNREF,XRHODJ)
+CALL SET_REF( 0, TFILE_DUMMY, XZZ, XZHATM, PJ, PDXX, PDYY, CLBCX, CLBCY,   &
+              XREFMASS, XMASS_O_PHI0, XLINMASS, XRHODREF, XTHVREF, XRVREF, &
+              XEXNREF, XRHODJ                                              )
 
 CALL MPPDB_CHECK3D(XRHODREF,"VERTHERMO::XRHODREF",PRECISION)
 CALL MPPDB_CHECK3D(XTHVREF,"VERTHERMO::XTHVREF",PRECISION)

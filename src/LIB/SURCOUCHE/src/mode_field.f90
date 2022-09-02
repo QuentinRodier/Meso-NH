@@ -440,7 +440,6 @@ call Add_field2list( TFIELDDATA( &
 
 call Add_field2list( TFIELDDATA( &
   CMNHNAME   = 'XHAT',           &
-!TODO: check stdname
   CSTDNAME   = 'projection_x_coordinate', &
   CLONGNAME  = 'XHAT',           &
   CUNITS     = 'm',              &
@@ -453,13 +452,36 @@ call Add_field2list( TFIELDDATA( &
 
 call Add_field2list( TFIELDDATA( &
   CMNHNAME   = 'YHAT',           &
-!TODO: check stdname
   CSTDNAME   = 'projection_y_coordinate', &
   CLONGNAME  = 'YHAT',           &
   CUNITS     = 'm',              &
   CDIR       = 'YY',             &
   CCOMMENT   = 'Position y in the conformal or cartesian plane', &
   NGRID      = 3,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 1,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'XHATM',          &
+  CSTDNAME   = 'projection_x_coordinate', &
+  CLONGNAME  = 'XHATM',          &
+  CUNITS     = 'm',              &
+  CDIR       = 'XX',             &
+  CCOMMENT   = 'Position x in the conformal or cartesian plane at mass point', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 1,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'YHATM',          &
+  CSTDNAME   = 'projection_y_coordinate', &
+  CLONGNAME  = 'YHATM',          &
+  CUNITS     = 'm',              &
+  CDIR       = 'YY',             &
+  CCOMMENT   = 'Position y in the conformal or cartesian plane at mass point', &
+  NGRID      = 1,                &
   NTYPE      = TYPEREAL,         &
   NDIMS      = 1,                &
   LTIMEDEP   = .FALSE.           ) )
@@ -472,6 +494,18 @@ call Add_field2list( TFIELDDATA( &
   CUNITS     = 'm',              &
   CDIR       = 'ZZ',             &
   CCOMMENT   = 'Height level without orography', &
+  NGRID      = 4,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 1,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'ZHATM',          &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'ZHATM',          &
+  CUNITS     = 'm',              &
+  CDIR       = 'ZZ',             &
+  CCOMMENT   = 'Height level without orography at mass point', &
   NGRID      = 4,                &
   NTYPE      = TYPEREAL,         &
   NDIMS      = 1,                &
@@ -3594,7 +3628,10 @@ call Goto_model_1field( 'ZS'  ,  kfrom, kto, XZS    )
 call Goto_model_1field( 'ZSMT',  kfrom, kto, XZSMT  )
 call Goto_model_1field( 'XHAT',  kfrom, kto, XXHAT  )
 call Goto_model_1field( 'YHAT',  kfrom, kto, XYHAT  )
+call Goto_model_1field( 'XHATM', kfrom, kto, XXHATM )
+call Goto_model_1field( 'YHATM', kfrom, kto, XYHATM )
 call Goto_model_1field( 'ZHAT',  kfrom, kto, XZHAT  )
+call Goto_model_1field( 'ZHATM', kfrom, kto, XZHATM )
 call Goto_model_1field( 'ZTOP',  kfrom, kto, XZTOP  )
 call Goto_model_1field( 'DXHAT', kfrom, kto, XDXHAT )
 call Goto_model_1field( 'DYHAT', kfrom, kto, XDYHAT )

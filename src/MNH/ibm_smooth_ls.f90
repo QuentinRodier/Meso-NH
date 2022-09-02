@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2019-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2019-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -74,7 +74,7 @@ SUBROUTINE IBM_SMOOTH_LS(KIBM_SMOOTH,PIBM_SMOOTH,PPHI)
   USE MODD_IBM_PARAM_n    
   USE MODD_IBM_LSF   
   USE MODD_PARAMETERS, ONLY: JPVEXT,JPHEXT   
-  USE MODD_GRID_n, ONLY: XXHAT,XYHAT,XZZ 
+  USE MODD_GRID_n,      ONLY: XDXHAT, XDYHAT
   USE MODD_METRICS_n, ONLY: XDXX,XDYY,XDZZ,XDZX,XDZY
   USE MODD_ARGSLIST_ll, ONLY: LIST_ll
   USE MODD_VAR_ll, ONLY: IP
@@ -131,8 +131,8 @@ SUBROUTINE IBM_SMOOTH_LS(KIBM_SMOOTH,PIBM_SMOOTH,PPHI)
   !
   IKE = IKU - JPVEXT
   IKB =   1 + JPVEXT
-  ZREF =(1.e-2)*((XXHAT(IIB+1)-XXHAT(IIB))*(XYHAT(IJB+1)-XYHAT(IJB)))**0.5
-  ZREF3=((XXHAT(IIB+1)-XXHAT(IIB))*(XYHAT(IJB+1)-XYHAT(IJB)))**0.5
+  ZREF =(1.e-2)*( XDXHAT(IIB) * XDYHAT(IJB) )**0.5
+  ZREF3=        ( XDXHAT(IIB) * XDYHAT(IJB) )**0.5
   !
   ! Boundary symmetry
   !

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1999-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
@@ -66,6 +66,7 @@ CHARACTER (LEN=28) :: CDADSPAFILE ! DAD fm-file for spawning file
 REAL,DIMENSION(:),    SAVE,POINTER :: XXHAT1  => NULL()
 REAL,DIMENSION(:),    SAVE,POINTER :: XYHAT1  => NULL()
 REAL,DIMENSION(:),    SAVE,POINTER :: XZHAT1  => NULL()
+REAL,DIMENSION(:),    SAVE,POINTER :: XZHATM1 => NULL()
 REAL,                 SAVE,POINTER :: XZTOP1  => NULL()
 REAL,DIMENSION(:,:),  SAVE,POINTER :: XZS1    => NULL()
 REAL,DIMENSION(:,:),  SAVE,POINTER :: XZSMT1  => NULL()

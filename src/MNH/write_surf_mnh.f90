@@ -286,7 +286,7 @@ END SUBROUTINE WRITE_SURFX0_MNH
 !
 USE MODD_CONF_n,        ONLY: CSTORAGE_TYPE
 use modd_field,         only: tfieldmetadata, tfieldlist, TYPEREAL
-USE MODD_GRID_n,        ONLY: XXHAT, XYHAT
+USE MODD_GRID_n,        ONLY: XXHAT, XXHATM, XYHAT, XYHATM
 USE MODD_IO,            ONLY: TFILE_SURFEX
 USE MODD_IO_SURF_MNH,   ONLY :NMASK, CMASK,                          &
                               NIU, NJU, NIB, NJB, NIE, NJE,          &
@@ -447,7 +447,12 @@ IF (      (CSTORAGE_TYPE=='PG' .OR. CSTORAGE_TYPE=='SU')  &
     IF (.NOT. (ASSOCIATED(XXHAT))) THEN
       !Store XXHAT if not yet done (necessary for PREP_PGD program when writing netCDF files)
       ALLOCATE(XXHAT(IIU-2*NHALO))
+      ALLOCATE(XXHATM(IIU-2*NHALO))
       XXHAT(:) = ZW1D(1+NHALO:IIU-NHALO)
+
+      ! Interpolations of positions to mass points
+      XXHATM( : UBOUND(XXHATM,1)-1 ) = 0.5 * XXHAT( : UBOUND(XXHAT,1)-1 ) + 0.5 * XXHAT( LBOUND(XXHAT,1)+1 : UBOUND(XXHAT,1) )
+      XXHATM( UBOUND(XXHATM,1)     ) = 1.5 * XXHAT( UBOUND(XXHAT,1)     ) - 0.5 * XXHAT( UBOUND(XXHAT,1)-1 )
     END IF
   END IF
   DEALLOCATE(ZW1D)
@@ -478,7 +483,12 @@ ELSE IF ( (CSTORAGE_TYPE=='PG' .OR. CSTORAGE_TYPE=='SU')  &
     IF (.NOT. (ASSOCIATED(XYHAT))) THEN
       !Store XYHAT if not yet done (necessary for PREP_PGD program when writing netCDF files)
       ALLOCATE(XYHAT(IJU-2*NHALO))
+      ALLOCATE(XYHATM(IJU-2*NHALO))
       XYHAT(:) = ZW1D(1+NHALO:IJU-NHALO)
+
+      ! Interpolations of positions to mass points
+      XYHATM( : UBOUND(XYHATM,1)-1 ) = 0.5 * XYHAT( : UBOUND(XYHAT,1)-1 ) + 0.5 * XYHAT( LBOUND(XYHAT,1)+1 : UBOUND(XYHAT,1) )
+      XYHATM( UBOUND(XYHATM,1)     ) = 1.5 * XYHAT( UBOUND(XYHAT,1)     ) - 0.5 * XYHAT( UBOUND(XYHAT,1)-1 )
     END IF
   END IF
   DEALLOCATE(ZW1D)

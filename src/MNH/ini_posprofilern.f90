@@ -62,7 +62,7 @@ USE MODD_ALLPROFILER_n
 USE MODD_CONF,           ONLY: LCARTESIAN
 USE MODD_DYN,            ONLY: XSEGLEN
 USE MODD_DYN_n,          ONLY: DYN_MODEL, XTSTEP
-USE MODD_GRID_n,         ONLY: XXHAT, XYHAT
+USE MODD_GRID_n,         ONLY: XXHAT, XXHATM, XYHAT, XYHATM
 USE MODD_PARAMETERS,     ONLY: JPHEXT, JPVEXT
 USE MODD_PROFILER_n,     ONLY: LPROFILER, NUMBPROFILER_LOC, TPROFILERS, TPROFILERS_TIME
 USE MODD_TYPE_STATPROF,  ONLY: TPROFILERDATA
@@ -95,8 +95,6 @@ LOGICAL :: GINSIDE                          ! True if profiler is inside physica
 LOGICAL :: GPRESENT                         ! True if profiler is present on the current process
 REAL    :: ZXHATM_PHYS_MIN, ZYHATM_PHYS_MIN ! Minimum X coordinate of mass points in the physical domain
 REAL    :: ZXHATM_PHYS_MAX, ZYHATM_PHYS_MAX ! Minimum X coordinate of mass points in the physical domain
-REAL, DIMENSION(SIZE(XXHAT)) :: ZXHATM      ! mass point coordinates
-REAL, DIMENSION(SIZE(XYHAT)) :: ZYHATM      ! mass point coordinates
 REAL, DIMENSION(:), POINTER  :: ZXHAT_GLOB
 REAL, DIMENSION(:), POINTER  :: ZYHAT_GLOB
 TYPE(TPROFILERDATA)          :: TZPROFILER
@@ -126,13 +124,6 @@ IF ( CFILE_PROF /= "NO_INPUT_CSV" .OR. NNUMB_PROF > 0 ) THEN
   CALL GATHERALL_FIELD_ll( 'XX', XXHAT, ZXHAT_GLOB, IERR )
   CALL GATHERALL_FIELD_ll( 'YY', XYHAT, ZYHAT_GLOB, IERR )
 
-  ! Interpolations of model variables to mass points
-  ZXHATM(1:IIU-1) = 0.5 * XXHAT(1:IIU-1) + 0.5 * XXHAT(2:IIU  )
-  ZXHATM(  IIU  ) = 1.5 * XXHAT(  IIU  ) - 0.5 * XXHAT(  IIU-1)
-
-  ZYHATM(1:IJU-1) = 0.5 * XYHAT(1:IJU-1) + 0.5 * XYHAT(2:IJU  )
-  ZYHATM(  IJU  ) = 1.5 * XYHAT(  IJU  ) - 0.5 * XYHAT(  IJU-1)
-
   ZXHATM_PHYS_MIN = 0.5 * ( ZXHAT_GLOB(1+JPHEXT) + ZXHAT_GLOB(2+JPHEXT) )
   ZXHATM_PHYS_MAX = 0.5 * ( ZXHAT_GLOB(UBOUND(ZXHAT_GLOB,1)-JPHEXT) + ZXHAT_GLOB(UBOUND(ZXHAT_GLOB,1)-JPHEXT+1) )
   ZYHATM_PHYS_MIN = 0.5 * ( ZYHAT_GLOB(1+JPHEXT) + ZYHAT_GLOB(2+JPHEXT) )
@@ -159,7 +150,7 @@ IF (CFILE_PROF=="NO_INPUT_CSV") THEN
       TZPROFILER%XZ    = XZ_PROF(JI)
       TZPROFILER%CNAME = CNAME_PROF(JI)
 
-      CALL STATPROF_POSITION( TZPROFILER, ZXHAT_GLOB, ZYHAT_GLOB, ZXHATM, ZYHATM,                 &
+      CALL STATPROF_POSITION( TZPROFILER, ZXHAT_GLOB, ZYHAT_GLOB, XXHATM, XYHATM,                 &
                               ZXHATM_PHYS_MIN, ZXHATM_PHYS_MAX, ZYHATM_PHYS_MIN, ZYHATM_PHYS_MAX, &
                               GINSIDE, GPRESENT                                                   )
 
@@ -173,7 +164,7 @@ IF (CFILE_PROF=="NO_INPUT_CSV") THEN
   END IF
 ELSE
   !Treat CSV datafile
-  CALL STATPROF_CSV_READ( TZPROFILER, CFILE_PROF, ZXHAT_GLOB, ZYHAT_GLOB, ZXHATM, ZYHATM,    &
+  CALL STATPROF_CSV_READ( TZPROFILER, CFILE_PROF, ZXHAT_GLOB, ZYHAT_GLOB, XXHATM, XYHATM,    &
                           ZXHATM_PHYS_MIN, ZXHATM_PHYS_MAX,ZYHATM_PHYS_MIN, ZYHATM_PHYS_MAX, &
                           INUMBPROF                                                          )
 END IF

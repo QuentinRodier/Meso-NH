@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -339,7 +339,7 @@ END MODULE MODI_TURB_VER_THERMO_FLUX
 USE MODD_CST
 USE MODD_CTURB
 use modd_field,          only: tfieldmetadata, TYPEREAL
-USE MODD_GRID_n,         ONLY: XZS, XXHAT, XYHAT
+USE MODD_GRID_n,         ONLY: XZS, XXHAT, XXHATM, XYHAT, XYHATM
 USE MODD_IO,             ONLY: TFILEDATA
 USE MODD_METRICS_n,      ONLY: XDXX, XDYY, XDZX, XDZY, XDZZ
 USE MODD_PARAMETERS
@@ -545,10 +545,9 @@ IF (LOCEAN .AND. LDEEPOC) THEN
   CALL GET_INDICE_ll(IIB,IJB,IIE,IJE)
   DO JJ = IJB,IJE
     DO JI = IIB,IIE
-      ZDIST(JI,JJ) = SQRT(                         &
-      (( (XXHAT(JI)+XXHAT(JI+1))*0.5 - XCENTX_OC ) / XRADX_OC)**2 + &
-      (( (XYHAT(JJ)+XYHAT(JJ+1))*0.5 - XCENTY_OC ) / XRADY_OC)**2   &
-                                )
+      ZDIST(JI,JJ) = SQRT(                          &
+      ( ( XXHATM(JI) - XCENTX_OC ) / XRADX_OC )**2 + &
+      ( ( XYHATM(JJ) - XCENTY_OC ) / XRADY_OC )**2 )
     END DO
   END DO
   DO JJ=IJB,IJE

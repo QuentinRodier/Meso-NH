@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1999-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1999-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -287,7 +287,7 @@ IF (LEN_TRIM(CDOMAIN)>0) THEN
   CALL READ_HGRID(2,TZDOMAIN,YMY_NAME,YDAD_NAME,YSTORAGE_TYPE)
   CALL IO_File_close(TZDOMAIN)
   CALL RETRIEVE1_NEST_INFO_n(1,2,NXOR,NYOR,NXSIZE,NYSIZE,NDXRATIO,NDYRATIO)
-  DEALLOCATE(XZS,XZSMT,XXHAT,XYHAT)
+  DEALLOCATE( XZS, XZSMT, XXHAT, XYHAT, XXHATM, XYHATM)
 !
 END IF
 !

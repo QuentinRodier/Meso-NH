@@ -1001,10 +1001,13 @@ ALLOCATE(XXHAT(IIU))
 ALLOCATE(XDXHAT(IIU))
 ALLOCATE(XYHAT(IJU))
 ALLOCATE(XDYHAT(IJU))
+ALLOCATE(XXHATM(IIU))
+ALLOCATE(XYHATM(IJU))
 ALLOCATE(XZS(IIU,IJU))
 ALLOCATE(XZSMT(IIU,IJU))
 ALLOCATE(XZZ(IIU,IJU,IKU))
 ALLOCATE(XZHAT(IKU))
+ALLOCATE(XZHATM(IKU))
 ALLOCATE(XDIRCOSZW(IIU,IJU))
 ALLOCATE(XDIRCOSXW(IIU,IJU))
 ALLOCATE(XDIRCOSYW(IIU,IJU))
@@ -1852,13 +1855,13 @@ END IF
 !*       7.    INITIALIZE GRIDS AND METRIC COEFFICIENTS
 !              ----------------------------------------
 !
-CALL SET_GRID(KMI,TPINIFILE,IKU,NIMAX_ll,NJMAX_ll,                       &
-              XTSTEP,XSEGLEN,                                            &
-              XLONORI,XLATORI,XLON,XLAT,                                 &
-              XXHAT,XYHAT,XDXHAT,XDYHAT, XMAP,                           &
-              XZS,XZZ,XZHAT,XZTOP,LSLEVE,XLEN1,XLEN2,XZSMT,              &
-              ZJ,                                                        &
-              TDTMOD,TDTCUR,NSTOP,NBAK_NUMB,NOUT_NUMB,TBACKUPN,TOUTPUTN)
+CALL SET_GRID( KMI, TPINIFILE, IKU, NIMAX_ll, NJMAX_ll,                        &
+               XTSTEP, XSEGLEN,                                                &
+               XLONORI, XLATORI, XLON, XLAT,                                   &
+               XXHAT, XYHAT, XDXHAT, XDYHAT, XXHATM, XYHATM, XMAP,             &
+               XZS, XZZ, XZHAT, XZHATM, XZTOP, LSLEVE, XLEN1, XLEN2, XZSMT,    &
+               ZJ,                                                             &
+               TDTMOD, TDTCUR, NSTOP, NBAK_NUMB, NOUT_NUMB, TBACKUPN, TOUTPUTN )
 !
 CALL METRICS(XMAP,XDXHAT,XDYHAT,XZZ,XDXX,XDYY,XDZX,XDZY,XDZZ)
 !
@@ -1938,10 +1941,10 @@ CALL READ_FIELD(KMI,TPINIFILE,IIU,IJU,IKU,                                    &
 !              ---------------------------
 !
 !
-CALL SET_REF(KMI,TPINIFILE,                         &
-             XZZ,XZHAT,ZJ,XDXX,XDYY,CLBCX,CLBCY,    &
-             XREFMASS,XMASS_O_PHI0,XLINMASS,        &
-             XRHODREF,XTHVREF,XRVREF,XEXNREF,XRHODJ )
+CALL SET_REF( KMI, TPINIFILE,                            &
+              XZZ, XZHATM, ZJ, XDXX, XDYY, CLBCX, CLBCY, &
+              XREFMASS, XMASS_O_PHI0, XLINMASS,          &
+              XRHODREF, XTHVREF, XRVREF, XEXNREF, XRHODJ )
 !
 !-------------------------------------------------------------------------------
 !
@@ -2187,7 +2190,7 @@ END IF
 !               -------------------------------
 !
 IF (LLG .AND. LINIT_LG .AND. CPROGRAM=='MESONH') &
-  CALL INI_LG(XXHAT,XYHAT,XZZ,XSVT,XLBXSVM,XLBYSVM)
+  CALL INI_LG( XXHATM, XYHATM, XZZ, XSVT, XLBXSVM, XLBYSVM )
 
 !
 !-------------------------------------------------------------------------------
@@ -2196,7 +2199,7 @@ IF (LLG .AND. LINIT_LG .AND. CPROGRAM=='MESONH') &
 !               ------------------------------------------
 !
 CALL INI_DYNAMICS(XLON,XLAT,XRHODJ,XTHVREF,XMAP,XZZ,XDXHAT,XDYHAT,            &
-             XZHAT,CLBCX,CLBCY,XTSTEP,                                        &
+             XZHAT,XZHATM,CLBCX,CLBCY,XTSTEP,                                 &
              LVE_RELAX,LVE_RELAX_GRD,LHORELAX_UVWTH,LHORELAX_RV,              &
              LHORELAX_RC,LHORELAX_RR,LHORELAX_RI,LHORELAX_RS,LHORELAX_RG,     &
              LHORELAX_RH,LHORELAX_TKE,LHORELAX_SV,                            &

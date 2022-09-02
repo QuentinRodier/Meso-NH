@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ##################
@@ -36,6 +36,7 @@
 !!      V. Ducrocq   13/08/98  // : add XLATOR_ll and XLONOR_ll       
 !!      V. Masson   nov 2004  supress XLATOR,XLONOR,XLATOR_ll,XLONOR_ll
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 02/09/2022: add XXHATM, XYHATM and XZHATM
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -47,6 +48,8 @@ IMPLICIT NONE
 REAL, DIMENSION(:,:),  POINTER :: XLON=>NULL(),XLAT=>NULL() ! Longitude and latitude  
 REAL, DIMENSION(:),    POINTER :: XXHAT=>NULL()             ! Position x in the conformal or cartesian plane
 REAL, DIMENSION(:),    POINTER :: XYHAT=>NULL()             ! Position y in the conformal or cartesian plane
+REAL, DIMENSION(:),    POINTER :: XXHATM=>NULL()            ! Position x in the conformal or cartesian plane at mass points
+REAL, DIMENSION(:),    POINTER :: XYHATM=>NULL()            ! Position y in the conformal or cartesian plane at mass points
 REAL, DIMENSION(:),    POINTER :: XDXHAT=>NULL()            ! horizontal stretching in x
 REAL, DIMENSION(:),    POINTER :: XDYHAT=>NULL()            ! horizontal stretching in y
 REAL, DIMENSION(:,:),  POINTER :: XMAP=>NULL()              ! Map factor 
@@ -54,6 +57,7 @@ REAL, DIMENSION(:,:),  POINTER :: XZS=>NULL()               ! orography
 REAL, DIMENSION(:,:,:),POINTER :: XZZ=>NULL()               ! height z 
 REAL,                  POINTER :: XZTOP=>NULL()             ! model top (m)
 REAL, DIMENSION(:),    POINTER :: XZHAT=>NULL()             ! height level without orography
+REAL, DIMENSION(:),    POINTER :: XZHATM=>NULL()            ! height level without orography at mass points
 REAL, DIMENSION(:,:),  POINTER :: XDIRCOSXW=>NULL(),XDIRCOSYW=>NULL(),XDIRCOSZW=>NULL() ! director cosinus of the normal
                                                                                         ! to the ground surface
 REAL, DIMENSION(:,:),  POINTER  :: XCOSSLOPE=>NULL()         ! cosinus of the angle between i and the slope vector

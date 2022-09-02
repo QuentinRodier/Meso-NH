@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -275,11 +275,10 @@ SELECT CASE(CPERT_KIND)
     DO JK =IKB,IKE
       DO JJ = IJB,IJE
         DO JI = IIB,IIE
-          ZDIST(JI,JJ,JK) = SQRT(                         &
-          (( (XXHAT(JI)+XXHAT(JI+1))*0.5 - ZCENTERX ) / XRADX)**2 + &
-          (( (XYHAT(JJ)+XYHAT(JJ+1))*0.5 - ZCENTERY ) / XRADY)**2 + &
-          (( (XZHAT(JK)+XZHAT(JK+1))*0.5 - XCENTERZ ) / XRADZ)**2   &
-                                )
+          ZDIST(JI,JJ,JK) = SQRT(                                           &
+                                  ( ( XXHATM(JI) - ZCENTERX ) / XRADX)**2 + &
+                                  ( ( XYHATM(JJ) - ZCENTERY ) / XRADY)**2 + &
+                                  ( ( XZHATM(JK) - XCENTERZ ) / XRADZ)**2   )
         END DO
       END DO
     END DO

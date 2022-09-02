@@ -1450,7 +1450,7 @@ use modd_field,      only: NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NI_U, NMNHDIM_NJ_U, N
                            NMNHDIM_PROFILER_TIME, NMNHDIM_STATION_TIME,                                    &
                            tfieldlist
 use modd_grid,       only: xlatori, xlonori
-use modd_grid_n,     only: lsleve, xxhat, xyhat, xzhat
+use modd_grid_n,     only: lsleve, xxhat, xxhatm, xyhat, xyhatm, xzhat, xzhatm
 use modd_les,        only: cles_level_type, cspectra_level_type, nlesn_iinf, nlesn_isup, nlesn_jinf, nlesn_jsup, &
                            nles_k, nles_levels, nspectra_k, nspectra_levels,                                     &
                            xles_altitudes, xspectra_altitudes
@@ -1475,7 +1475,7 @@ character(len=*), optional, intent(in) :: hprogram_orig !To emulate a file comin
 
 character(len=:),                         allocatable :: ystdnameprefix
 character(len=:),                         allocatable :: yprogram
-integer                                               :: iiu, iju, iku
+integer                                               :: iiu, iju
 integer                                               :: id, iid, iresp
 integer                                               :: imi
 integer                                               :: ji
@@ -1486,7 +1486,7 @@ logical                                               :: gchangemodel
 logical                                               :: gdealloc
 logical,                         pointer              :: gsleve
 real,            dimension(:),   pointer              :: zxhat, zyhat, zzhat
-real,            dimension(:),            allocatable :: zxhatm, zyhatm, zzhatm !Coordinates at mass points in the transformed space
+real,            dimension(:),   pointer              :: zxhatm, zyhatm, zzhatm !Coordinates at mass points in the transformed space
 real,            dimension(:),            allocatable :: zles_levels
 real,            dimension(:),            allocatable :: zspectra_levels
 real,            dimension(:,:), pointer              :: zlat, zlon
@@ -1505,9 +1505,12 @@ real, dimension(:,:), pointer, save :: zlatf_glob  => null(), zlonf_glob  => nul
 
 call Print_msg( NVERB_DEBUG, 'IO', 'IO_Coordvar_write_nc4', 'called for ' // Trim( tpfile%cname ) )
 
-zxhat => null()
-zyhat => null()
-zzhat => null()
+zxhat  => null()
+zyhat  => null()
+zzhat  => null()
+zxhatm => null()
+zyhatm => null()
+zzhatm => null()
 
 gchangemodel = .false.
 
@@ -1527,8 +1530,14 @@ if ( tpfile%nmodel > 0 ) then
   zxhat => tfieldlist(iid)%tfield_x1d(tpfile%nmodel)%data
   call Find_field_id_from_mnhname( 'YHAT', iid, iresp )
   zyhat => tfieldlist(iid)%tfield_x1d(tpfile%nmodel)%data
+  call Find_field_id_from_mnhname( 'XHATM', iid, iresp )
+  zxhatm => tfieldlist(iid)%tfield_x1d(tpfile%nmodel)%data
+  call Find_field_id_from_mnhname( 'YHATM', iid, iresp )
+  zyhatm => tfieldlist(iid)%tfield_x1d(tpfile%nmodel)%data
   call Find_field_id_from_mnhname( 'ZHAT', iid, iresp )
   zzhat => tfieldlist(iid)%tfield_x1d(tpfile%nmodel)%data
+  call Find_field_id_from_mnhname( 'ZHATM', iid, iresp )
+  zzhatm => tfieldlist(iid)%tfield_x1d(tpfile%nmodel)%data
   call Find_field_id_from_mnhname( 'SLEVE', iid, iresp )
   gsleve => tfieldlist(iid)%tfield_l0d(tpfile%nmodel)%data
 
@@ -1538,21 +1547,17 @@ if ( tpfile%nmodel > 0 ) then
     gchangemodel = .true.
   end if
 else
-  zxhat => xxhat
-  zyhat => xyhat
-  zzhat => xzhat
+  zxhat  => xxhat
+  zyhat  => xyhat
+  zzhat  => xzhat
+  zxhatm => xxhatm
+  zyhatm => xyhatm
+  zzhatm => xzhatm
   gsleve => lsleve
 end if
 
 iiu = Size( zxhat )
 iju = Size( zyhat )
-Allocate( zxhatm(iiu), zyhatm(iju) )
-!zxhatm(iiu) and zyhatm(iju) are correct only on some processes
-!but it is OK due to the way Gather_xxfield is done
-zxhatm(1 : iiu - 1) = 0.5 * ( zxhat(1 : iiu - 1) + zxhat(2 : iiu) )
-zxhatm(iiu)         = 2. * zxhat(iiu) - zxhatm(iiu - 1)
-zyhatm(1 : iju - 1) = 0.5 * ( zyhat(1 : iju - 1) + zyhat(2 : iju) )
-zyhatm(iju)         = 2. * zyhat(iju) - zyhatm(iju - 1)
 
 if ( lcartesian ) then
   ystdnameprefix = 'plane'
@@ -1634,16 +1639,9 @@ if ( .not. lcartesian ) then
   if ( gdealloc ) Deallocate( zlatm_glob, zlonm_glob, zlatu_glob, zlonu_glob, zlatv_glob, zlonv_glob, zlatf_glob, zlonf_glob )
 end if
 
-Deallocate( zxhatm, zyhatm )
-
 if ( tpfile%lmaster ) then !vertical coordinates in the transformed space are the same on all processes
   if ( Trim( yprogram ) /= 'PGD' .and. Trim( yprogram ) /= 'NESPGD' .and. Trim( yprogram ) /= 'ZOOMPG' &
       .and. .not. ( Trim( yprogram ) == 'REAL' .and. cstorage_type == 'SU') ) then !condition to detect prep_surfex
-
-    iku = Size( zzhat )
-    Allocate( zzhatm(iku) )
-    zzhatm(1 : iku - 1) = 0.5 * ( zzhat(2 : iku) + zzhat(1 : iku - 1) )
-    zzhatm(iku)         = 2.* zzhat(iku) - zzhatm(iku - 1)
 
     call Write_ver_coord( tpfile%tncdims%tdims(NMNHDIM_LEVEL),  'position z in the transformed space',              '', &
                           'altitude',                0.,  JPVEXT, JPVEXT, ZZHATM )

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -9,15 +9,15 @@
 !
 INTERFACE
 !
-      SUBROUTINE SET_GRID(KMI,TPINIFILE,                                      &
-                          KKU,KIMAX_ll,KJMAX_ll,                              &
-                          PTSTEP,PSEGLEN,                                     &
-                          PLONORI,PLATORI,PLON,PLAT,                          &
-                          PXHAT,PYHAT,PDXHAT,PDYHAT, PMAP,                    &
-                          PZS,PZZ,PZHAT,PZTOP,OSLEVE,PLEN1,PLEN2,PZSMT,       &
-                          PJ,                                                 &
-                          TPDTMOD,TPDTCUR,KSTOP,                              &
-                          KBAK_NUMB,KOUT_NUMB,TPBACKUPN,TPOUTPUTN             )
+      SUBROUTINE SET_GRID( KMI, TPINIFILE,                                &
+                           KKU, KIMAX_ll, KJMAX_ll,                       &
+                           PTSTEP, PSEGLEN,                               &
+                           PLONORI, PLATORI, PLON, PLAT,                  &
+                           PXHAT, PYHAT, PDXHAT, PDYHAT, PXHATM, PYHATM,  &
+                           PMAP, PZS, PZZ, PZHAT, PZHATM, PZTOP, OSLEVE,  &
+                           PLEN1, PLEN2, PZSMT, PJ,                       &
+                           TPDTMOD, TPDTCUR, KSTOP,                       &
+                           KBAK_NUMB, KOUT_NUMB, TPBACKUPN, TPOUTPUTN     )
 !
 USE MODD_TYPE_DATE
 USE MODD_IO, ONLY: TFILEDATA,TOUTBAK
@@ -47,11 +47,14 @@ REAL, DIMENSION(:),     INTENT(OUT) :: PYHAT     ! Position y in the conformal
                                                  ! plane or on the cartesian plane
 REAL, DIMENSION(:),     INTENT(OUT) :: PDXHAT    ! horizontal stretching in x
 REAL, DIMENSION(:),     INTENT(OUT) :: PDYHAT    ! horizontal stretching in y
+REAL, DIMENSION(:),     INTENT(OUT) :: PXHATM    ! Position x in the conformal plane or on the cartesian plane at mass points
+REAL, DIMENSION(:),     INTENT(OUT) :: PYHATM    ! Position y in the conformal plane or on the cartesian plane at mass points
 REAL, DIMENSION(:,:),   INTENT(OUT) :: PMAP      ! Map factor
 !
 REAL, DIMENSION(:,:),   INTENT(OUT) :: PZS       ! orography
 REAL, DIMENSION(:,:,:), INTENT(OUT) :: PZZ       ! Height z
-REAL, DIMENSION(:),     INTENT(OUT) :: PZHAT     ! Height  level
+REAL, DIMENSION(:),     INTENT(OUT) :: PZHAT     ! Height level
+REAL, DIMENSION(:),     INTENT(OUT) :: PZHATM    ! Height level at mass points
 REAL,                   INTENT(OUT) :: PZTOP     ! Model top
 LOGICAL,                INTENT(OUT) :: OSLEVE    ! flag for SLEVE coordinate
 REAL,                   INTENT(OUT) :: PLEN1     ! Decay scale for smooth topography
@@ -80,17 +83,17 @@ END MODULE MODI_SET_GRID
 !
 !
 !
-!     #########################################################################
-      SUBROUTINE SET_GRID(KMI,TPINIFILE,                                      &
-                          KKU,KIMAX_ll,KJMAX_ll,                              &
-                          PTSTEP,PSEGLEN,                                     &
-                          PLONORI,PLATORI,PLON,PLAT,                          &
-                          PXHAT,PYHAT,PDXHAT,PDYHAT, PMAP,                    &
-                          PZS,PZZ,PZHAT,PZTOP,OSLEVE,PLEN1,PLEN2,PZSMT,       &
-                          PJ,                                                 &
-                          TPDTMOD,TPDTCUR,KSTOP,                              &
-                          KBAK_NUMB,KOUT_NUMB,TPBACKUPN,TPOUTPUTN             )
-!     #########################################################################
+!     #####################################################################
+      SUBROUTINE SET_GRID( KMI, TPINIFILE,                                &
+                           KKU, KIMAX_ll, KJMAX_ll,                       &
+                           PTSTEP, PSEGLEN,                               &
+                           PLONORI, PLATORI, PLON, PLAT,                  &
+                           PXHAT, PYHAT, PDXHAT, PDYHAT, PXHATM, PYHATM,  &
+                           PMAP, PZS, PZZ, PZHAT, PZHATM, PZTOP, OSLEVE,  &
+                           PLEN1, PLEN2, PZSMT, PJ,                       &
+                           TPDTMOD, TPDTCUR, KSTOP,                       &
+                           KBAK_NUMB, KOUT_NUMB, TPBACKUPN, TPOUTPUTN     )
+!     #####################################################################
 !
 !!****  *SET_GRID* - routine to set grid variables
 !!
@@ -207,6 +210,7 @@ END MODULE MODI_SET_GRID
 !!     V.MASSON 12/10/00 read of the orography in all cases, even if LFLAT=T
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 19/04/2019: removed unused dummy arguments and variables
+!  P. Wautelet 31/08/2022: add PXHATM and PYHATM variables
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -260,11 +264,14 @@ REAL, DIMENSION(:),     INTENT(OUT) :: PYHAT     ! Position y in the conformal
                                                  ! plane or on the cartesian plane
 REAL, DIMENSION(:),     INTENT(OUT) :: PDXHAT    ! horizontal stretching in x
 REAL, DIMENSION(:),     INTENT(OUT) :: PDYHAT    ! horizontal stretching in y
+REAL, DIMENSION(:),     INTENT(OUT) :: PXHATM    ! Position x in the conformal plane or on the cartesian plane at mass points
+REAL, DIMENSION(:),     INTENT(OUT) :: PYHATM    ! Position y in the conformal plane or on the cartesian plane at mass points
 REAL, DIMENSION(:,:),   INTENT(OUT) :: PMAP      ! Map factor
 !
 REAL, DIMENSION(:,:),   INTENT(OUT) :: PZS       ! orography
 REAL, DIMENSION(:,:,:), INTENT(OUT) :: PZZ       ! Height z
-REAL, DIMENSION(:),     INTENT(OUT) :: PZHAT     ! Height  level
+REAL, DIMENSION(:),     INTENT(OUT) :: PZHAT     ! Height level
+REAL, DIMENSION(:),     INTENT(OUT) :: PZHATM    ! Height level at mass points
 REAL,                   INTENT(OUT) :: PZTOP     ! Model top
 LOGICAL,                INTENT(OUT) :: OSLEVE    ! flag for SLEVE coordinate
 REAL,                   INTENT(OUT) :: PLEN1     ! Decay scale for smooth topography
@@ -396,11 +403,23 @@ CALL IO_Field_read(TPINIFILE,'DTSEG',TDTSEG)
 !
 !*       2.1    Spatial grid
 !
+
+! Interpolations of positions to mass points
+PXHATM( : UBOUND(PXHATM,1)-1 ) = 0.5 * PXHAT( : UBOUND(PXHAT,1)-1 ) + 0.5 * PXHAT( LBOUND(PXHAT,1)+1 : UBOUND(PXHAT,1) )
+PXHATM( UBOUND(PXHATM,1)     ) = 1.5 * PXHAT( UBOUND(PXHAT,1)     ) - 0.5 * PXHAT( UBOUND(PXHAT,1)-1 )
+
+PYHATM( : UBOUND(PYHATM,1)-1 ) = 0.5 * PYHAT( : UBOUND(PYHAT,1)-1 ) + 0.5 * PYHAT( LBOUND(PYHAT,1)+1 : UBOUND(PYHAT,1) )
+PYHATM( UBOUND(PYHATM,1)     ) = 1.5 * PYHAT( UBOUND(PYHAT,1)     ) - 0.5 * PYHAT( UBOUND(PYHAT,1)-1 )
+
+PZHATM( : UBOUND(PZHATM,1)-1 ) = 0.5 * PZHAT( : UBOUND(PZHAT,1)-1 ) + 0.5 * PZHAT( LBOUND(PZHAT,1)+1 : UBOUND(PZHAT,1) )
+PZHATM( UBOUND(PZHATM,1)     ) = 1.5 * PZHAT( UBOUND(PZHAT,1)     ) - 0.5 * PZHAT( UBOUND(PZHAT,1)-1 )
+
 IF (LCARTESIAN) THEN
   CALL SM_GRIDCART(PXHAT,PYHAT,PZHAT,PZS,OSLEVE,PLEN1,PLEN2,PZSMT,PDXHAT,PDYHAT,PZZ,PJ)
 ELSE
-  CALL SM_GRIDPROJ(PXHAT,PYHAT,PZHAT,PZS,OSLEVE,PLEN1,PLEN2,PZSMT,PLATORI,PLONORI, &
-                   PMAP,PLAT,PLON,PDXHAT,PDYHAT,PZZ,PJ)
+  CALL SM_GRIDPROJ( PXHAT, PYHAT, PZHAT, PXHATM, PYHATM, PZS,      &
+                    OSLEVE, PLEN1, PLEN2, PZSMT, PLATORI, PLONORI, &
+                    PMAP, PLAT, PLON, PDXHAT, PDYHAT, PZZ, PJ      )
 END IF
 !
 !*       2.2    Temporal grid - segment length
