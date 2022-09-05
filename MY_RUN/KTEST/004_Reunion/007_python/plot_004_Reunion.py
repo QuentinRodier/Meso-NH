@@ -23,8 +23,7 @@ os.system('rm -f tempgraph*')
 LnameFiles = ['REUNI.1.00A20.004dia.nc', 'REUNI.1.00A20.004.nc']
 
 Dvar_input = {
-'f1':['ZS', 'UT', 'VT', 'WT', 'THT', 'ALT_PRESSURE','ALT_U','ALT_V','ALT_THETA','level','ZTOP', 'longitude','latitude','level_w','time',
-    'RN', 'H','LE','GFLUX','HU2M','T2M','W10M','CD','CH','Z0','CE','TS','Z0H'],
+'f1':['ZS', 'UT', 'VT', 'WT', 'THT', 'ALT_PRESSURE','ALT_U','ALT_V','ALT_THETA','level','ZTOP', 'longitude','latitude','level_w','time'],
 'f2':['LSTHM', 'LSVM']}
 
 #  Read the variables in the files

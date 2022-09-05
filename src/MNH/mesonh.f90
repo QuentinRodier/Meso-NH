@@ -134,7 +134,7 @@ INTEGER       :: IINFO_ll                     ! return code of // routines
 ! Switch to model 1 variables
 #ifndef CPLOASIS
 CALL MPPDB_INIT()
-CALL MPPDB_STOP_DEBUG()  
+!CALL MPPDB_STOP_DEBUG()  
 #endif
 !
 CALL GOTO_MODEL(1,ONOFIELDLIST=.TRUE.)

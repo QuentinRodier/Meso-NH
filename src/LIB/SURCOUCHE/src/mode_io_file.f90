@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -38,6 +38,7 @@
 !  P. Wautelet 12/03/2019: simplify opening of IO split files
 !  P. Wautelet 05/09/2019: disable IO_Coordvar_write_nc4 for Z-split files
 !  P. Wautelet 01/10/2020: bugfix: add missing initializations for IRESP
+!  P. Wautelet 19/08/2022: bugfix: IO_File_check_format_exist: broadcast cformat if changed
 !-----------------------------------------------------------------
 module mode_io_file
 
@@ -666,9 +667,11 @@ end subroutine IO_Transfer_list_addto
 
 
 subroutine IO_File_check_format_exist( tpfile )
+use modd_mpif
 
 type(tfiledata), intent(inout) :: tpfile ! File structure
 
+integer :: ierr
 logical :: gexist_lfi, gexist_nc4
 
 
@@ -719,6 +722,9 @@ IF (TPFILE%LMASTER) THEN
     END SELECT
   end if MODE
 END IF
+
+if ( tpfile%cmode == 'READ' ) &
+  call MPI_BCAST( tpfile%cformat, Len( tpfile%cformat ), MPI_CHARACTER, tpfile%nmaster_rank - 1, tpfile%nmpicomm, ierr )
 
 end subroutine IO_File_check_format_exist
 

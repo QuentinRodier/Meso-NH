@@ -1906,6 +1906,7 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
                           XHLC_HRC, XHLC_HCF, XHLI_HRI, XHLI_HCF,              &
                           ZSEA, ZTOWN                                          )
     DEALLOCATE(ZTOWN)
+    DEALLOCATE(ZSEA)
   ELSE
     CALL RESOLVED_CLOUD ( CCLOUD, CACTCCN, CSCONV, CMF_CLOUD, NRR, NSPLITR,    &
                           NSPLITG, IMI, KTCOUNT,                               &
@@ -1998,6 +1999,7 @@ IF (CELEC /= 'NONE' .AND. (CCLOUD(1:3) == 'ICE')) THEN
                           XINPRS, XINPRG, XINPRH,                        &
                           ZSEA, ZTOWN                                    )
     DEALLOCATE(ZTOWN)
+    DEALLOCATE(ZSEA)
   ELSE
     CALL RESOLVED_ELEC_n (CCLOUD, CSCONV, CMF_CLOUD,                     &
                           NRR, NSPLITR, IMI, KTCOUNT, OEXIT,             &
@@ -2105,12 +2107,23 @@ XT_STEP_SWA = XT_STEP_SWA + ZTIME2 - ZTIME1 - XTIME_BU_PROCESS
 !
 ZTIME1 = ZTIME2
 !
-IF (LFLYER)                                                                   &
-  CALL AIRCRAFT_BALLOON(XTSTEP,                                               &
+IF (LFLYER) THEN
+  IF (CSURF=='EXTE') THEN
+    ALLOCATE(ZSEA(IIU,IJU))
+    ZSEA(:,:) = 0.
+    CALL MNHGET_SURF_PARAM_n (PSEA=ZSEA(:,:))
+    CALL AIRCRAFT_BALLOON(XTSTEP,                                             &
                       XXHAT, XYHAT, XZZ, XMAP, XLONORI, XLATORI,              &
                       XUT, XVT, XWT, XPABST, XTHT, XRT, XSVT, XTKET, XTSRAD,  &
                       XRHODREF,XCIT,PSEA=ZSEA(:,:))
-
+    DEALLOCATE(ZSEA)
+  ELSE
+    CALL AIRCRAFT_BALLOON(XTSTEP,                                             &
+                      XXHAT, XYHAT, XZZ, XMAP, XLONORI, XLATORI,              &
+                      XUT, XVT, XWT, XPABST, XTHT, XRT, XSVT, XTKET, XTSRAD,  &
+                      XRHODREF,XCIT)
+  END IF
+END IF
 
 !-------------------------------------------------------------------------------
 !
@@ -2127,11 +2140,23 @@ IF (LSTATION)                                                            &
 !*       24.3    PROFILER (observation diagnostic)
 !               ---------------------------------
 !
-IF (LPROFILER)                                                           &
-  CALL PROFILER_n(XTSTEP,                                                &
+IF (LPROFILER)  THEN
+  IF (CSURF=='EXTE') THEN
+    ALLOCATE(ZSEA(IIU,IJU))
+    ZSEA(:,:) = 0.
+    CALL MNHGET_SURF_PARAM_n (PSEA=ZSEA(:,:))
+    CALL PROFILER_n(XTSTEP,                                              &
                   XXHAT, XYHAT, XZZ,XRHODREF,                            &
                   XUT, XVT, XWT, XTHT, XRT, XSVT, XTKET, XTSRAD, XPABST, &
                   XAER, MAX(XCLDFR,XICEFR), XCIT,PSEA=ZSEA(:,:))
+    DEALLOCATE(ZSEA)
+  ELSE
+    CALL PROFILER_n(XTSTEP,                                              &
+                  XXHAT, XYHAT, XZZ,XRHODREF,                            &
+                  XUT, XVT, XWT, XTHT, XRT, XSVT, XTKET, XTSRAD, XPABST, &
+                  XAER, MAX(XCLDFR,XICEFR), XCIT)
+  END IF
+END IF
 !
 IF (ALLOCATED(ZSEA)) DEALLOCATE (ZSEA)
 !

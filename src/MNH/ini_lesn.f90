@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2000-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2000-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -40,6 +40,7 @@
 !  P. Wautelet 04/01/2021: bugfix: nles_k was used instead of nspectra_k for a loop index
 !  P. Wautelet 30/03/2021: budgets: LES cartesian subdomain limits are defined in the physical domain
 !  P. Wautelet 09/07/2021: bugfix: altitude levels are on the correct grid position (mass point)
+!  P. Wautelet 22/03/2022: LES averaging periods are more reliable (compute with integers instead of reals)
 ! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -321,7 +322,7 @@ XLES_TEMP_SAMPLING = XTSTEP * NLES_DTCOUNT
 !            ----------------------------------------
 !
 !
-NLES_TIMES = ( INT( (XSEGLEN-XTSTEP+1.E-6) / XTSTEP ) ) / NLES_DTCOUNT
+NLES_TIMES = ( NINT( ( XSEGLEN - DYN_MODEL(1)%XTSTEP ) / XTSTEP ) ) / NLES_DTCOUNT
 !
 !*      3.5  current LES time counter
 !            ------------------------
@@ -342,6 +343,46 @@ IF (NLES_TIMES==0) THEN
   RETURN
 END IF
 !
+!*     3.8  Averaging
+!           ---------
+IF (     XLES_TEMP_MEAN_END   == XUNDEF &
+    .OR. XLES_TEMP_MEAN_START == XUNDEF &
+    .OR. XLES_TEMP_MEAN_STEP  == XUNDEF ) THEN
+  !No LES temporal averaging
+  NLES_MEAN_TIMES = 0
+  NLES_MEAN_STEP  = NNEGUNDEF
+  NLES_MEAN_START = NNEGUNDEF
+  NLES_MEAN_END   = NNEGUNDEF
+ELSE
+  !LES temporal averaging is enabled
+  !Ensure that XLES_TEMP_MEAN_END is not after segment end
+  XLES_TEMP_MEAN_END = MIN( XLES_TEMP_MEAN_END, XSEGLEN - DYN_MODEL(1)%XTSTEP )
+
+  NLES_MEAN_START = NINT( XLES_TEMP_MEAN_START / XTSTEP )
+
+  IF ( MODULO( NLES_MEAN_START, NLES_DTCOUNT ) /= 0 ) THEN
+    CMNHMSG(1) = 'XLES_TEMP_MEAN_START is not a multiple of XLES_TEMP_SAMPLING'
+    CMNHMSG(2) = 'LES averaging periods could be wrong'
+    CALL Print_msg( NVERB_WARNING, 'IO', 'INI_LES_n' )
+  END IF
+
+  NLES_MEAN_END = NINT( XLES_TEMP_MEAN_END / XTSTEP )
+
+  NLES_MEAN_STEP = NINT( XLES_TEMP_MEAN_STEP / XTSTEP )
+
+  IF ( NLES_MEAN_STEP < NLES_DTCOUNT ) &
+    CALL Print_msg( NVERB_ERROR, 'IO', 'INI_LES_n', 'XLES_TEMP_MEAN_STEP < XLES_TEMP_SAMPLING not allowed' )
+
+  IF ( MODULO( NLES_MEAN_STEP, NLES_DTCOUNT ) /= 0 ) THEN
+    CMNHMSG(1) = 'XLES_TEMP_MEAN_STEP is not a multiple of XLES_TEMP_SAMPLING'
+    CMNHMSG(2) = 'LES averaging periods could be wrong'
+    CALL Print_msg( NVERB_WARNING, 'IO', 'INI_LES_n' )
+  END IF
+
+  NLES_MEAN_TIMES = ( NLES_MEAN_END - NLES_MEAN_START ) / NLES_MEAN_STEP
+  !Add 1 averaging period if the last one is incomplete (for example: start=0., end=10., step=3.)
+  IF ( MODULO( NLES_MEAN_END - NLES_MEAN_START, NLES_MEAN_STEP ) > 0 ) NLES_MEAN_TIMES = NLES_MEAN_TIMES + 1
+END IF
 !-------------------------------------------------------------------------------
 !
 !*      4.   Number of vertical levels for local diagnostics

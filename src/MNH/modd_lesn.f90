@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -42,6 +42,7 @@
 !  P. Wautelet 08/02/2019: add missing NULL association for pointers
 !  C. Lac         02/2019: add rain fraction as a LES diagnostic
 !  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
+!  P. Wautelet 22/03/2022: LES averaging periods are more reliable (compute with integers instead of reals)
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -61,6 +62,10 @@ TYPE LES_t
   INTEGER :: NLES_TIMES         ! number of LES computations in time
   INTEGER :: NLES_DTCOUNT       ! number of time steps between two LES comp.
   INTEGER :: NLES_TCOUNT        ! current time counter for LES comp.
+  INTEGER :: NLES_MEAN_TIMES    ! Number of LES averaging periods
+  INTEGER :: NLES_MEAN_STEP     ! number of time steps between two LES average comp.
+  INTEGER :: NLES_MEAN_START    ! First time step number taken into account for LES averaging
+  INTEGER :: NLES_MEAN_END      ! Last  time step number taken into account for LES averaging
   INTEGER :: NSPECTRA_NI        ! number of wave lengths in I direction
   INTEGER :: NSPECTRA_NJ        ! number of wave lengths in J direction
 !
@@ -661,6 +666,10 @@ TYPE(LES_t), DIMENSION(JPMODELMAX), TARGET, SAVE :: LES_MODEL
 INTEGER, POINTER :: NLES_TIMES=>NULL()
 INTEGER, POINTER :: NLES_DTCOUNT=>NULL()
 INTEGER, POINTER :: NLES_TCOUNT=>NULL()
+INTEGER, POINTER :: NLES_MEAN_TIMES => NULL()
+INTEGER, POINTER :: NLES_MEAN_STEP  => NULL()
+INTEGER, POINTER :: NLES_MEAN_START => NULL()
+INTEGER, POINTER :: NLES_MEAN_END   => NULL()
 INTEGER, POINTER :: NSPECTRA_NI=>NULL()
 INTEGER, POINTER :: NSPECTRA_NJ=>NULL()
 type(date_time), dimension(:), pointer :: tles_dates => null()
@@ -1512,6 +1521,10 @@ LES_MODEL(KFROM)%XLES_RADEFF=>XLES_RADEFF
 NLES_TIMES=>LES_MODEL(KTO)%NLES_TIMES
 NLES_DTCOUNT=>LES_MODEL(KTO)%NLES_DTCOUNT
 NLES_TCOUNT=>LES_MODEL(KTO)%NLES_TCOUNT
+NLES_MEAN_TIMES => LES_MODEL(KTO)%NLES_MEAN_TIMES
+NLES_MEAN_STEP  => LES_MODEL(KTO)%NLES_MEAN_STEP
+NLES_MEAN_START => LES_MODEL(KTO)%NLES_MEAN_START
+NLES_MEAN_END   => LES_MODEL(KTO)%NLES_MEAN_END
 NSPECTRA_NI=>LES_MODEL(KTO)%NSPECTRA_NI
 NSPECTRA_NJ=>LES_MODEL(KTO)%NSPECTRA_NJ
 tles_dates=>les_model(kto)%tles_dates
