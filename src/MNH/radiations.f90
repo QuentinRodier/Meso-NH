@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -121,6 +121,7 @@ CONTAINS
 !!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!  P. Wautelet 06/09/2022: small fix: GSURF_CLOUD was not set outside of physical domain
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -2613,6 +2614,7 @@ END DO
 !
 IF(OCLOUD_ONLY) THEN
 
+  GCLOUD_SURF(:,:) = .FALSE.
   DO JJ=IJB,IJE
     DO JI=IIB,IIE
         IIJ = 1 + (JI-IIB) + (IIE-IIB+1)*(JJ-IJB)
