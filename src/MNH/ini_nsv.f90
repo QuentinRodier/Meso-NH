@@ -70,6 +70,7 @@ END MODULE MODI_INI_NSV
 !  P. Wautelet 10/03/2021: add CSVNAMES and CSVNAMES_A to store the name of all the scalar variables
 !  P. Wautelet 30/03/2021: move NINDICE_CCN_IMM and NIMM initializations from init_aerosol_properties to ini_nsv
 !  B. Vie         06/2021: add prognostic supersaturation for LIMA
+!  A. Costes      12/2021: smoke tracer for fire model
 !! 
 !-------------------------------------------------------------------------------
 !
@@ -101,6 +102,10 @@ USE MODD_ELEC_DESCR,      ONLY: CELECNAMES
 #ifdef MNH_FOREFIRE
 USE MODD_FOREFIRE
 #endif
+!Blaze fire model
+USE MODD_FIRE
+USE MODD_DYN_n,     ONLY : LHORELAX_SVFIRE
+!
 USE MODD_ICE_C1R3_DESCR,  ONLY: C1R3NAMES
 USE MODD_LG,              ONLY: CLGNAMES, XLG1MIN, XLG2MIN, XLG3MIN
 USE MODD_LUNIT_n,         ONLY: TLUOUT
@@ -371,6 +376,20 @@ ELSE
   NSV_FFEND_A(KMI)= 0
 END IF
 #endif
+! Blaze tracers
+IF (LBLAZE .AND. NNBSMOKETRACER .GT. 0) THEN
+  NSV_FIRE_A(KMI)    = NNBSMOKETRACER
+  NSV_FIREBEG_A(KMI) = ISV+1
+  NSV_FIREEND_A(KMI) = ISV+NSV_FIRE_A(KMI)
+  ISV              = NSV_FIREEND_A(KMI)
+ELSE
+  NSV_FIRE_A(KMI)   = 0
+! force First index to be superior to last index
+! in order to create a null section
+  NSV_FIREBEG_A(KMI)= 1
+  NSV_FIREEND_A(KMI)= 0
+END IF
+!
 ! Conditional sampling variables  
 IF (LCONDSAMP) THEN
   NSV_CS_A(KMI)   = NCONDSAMP
@@ -636,6 +655,9 @@ LHORELAX_SV(NSV_PPBEG_A(KMI):NSV_PPEND_A(KMI))=LHORELAX_SVPP
 IF (LFOREFIRE) &
 LHORELAX_SV(NSV_FFBEG_A(KMI):NSV_FFEND_A(KMI))=LHORELAX_SVFF
 #endif
+! Blaze Fire pollutants
+IF (LBLAZE) &
+LHORELAX_SV(NSV_FIREBEG_A(KMI):NSV_FIREEND_A(KMI))=LHORELAX_SVFIRE
 ! Conditional sampling
 IF (LCONDSAMP) &
 LHORELAX_SV(NSV_CSBEG_A(KMI):NSV_CSEND_A(KMI))=LHORELAX_SVCS
@@ -681,6 +703,9 @@ IF (LPASPOL) XSVMIN(NSV_PPBEG_A(KMI):NSV_PPEND_A(KMI))=0.
 #ifdef MNH_FOREFIRE      
 IF (LFOREFIRE) XSVMIN(NSV_FFBEG_A(KMI):NSV_FFEND_A(KMI))=0.
 #endif
+! Blaze smoke
+IF (LBLAZE) XSVMIN(NSV_FIREBEG_A(KMI):NSV_FIREEND_A(KMI))=0.
+!
 IF (LCONDSAMP) XSVMIN(NSV_CSBEG_A(KMI):NSV_CSEND_A(KMI))=0.   
 IF (LBLOWSNOW) XSVMIN(NSV_SNWBEG_A(KMI):NSV_SNWEND_A(KMI))=XMNH_TINY
 !

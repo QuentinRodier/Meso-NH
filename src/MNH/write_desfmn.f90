@@ -146,12 +146,13 @@ END MODULE MODI_WRITE_DESFM_n
 !!      Modification   V. Vionnet     07/2017  add blowing snow variables
 !!      Modification   F.Auguste      02/2021  add IBM
 !!                     E.Jezequel     02/2021  add stations read from CSV file
+!!      Modification   A. Costes      12/2021  add Blaze fire model
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 USE MODD_CONF
-USE MODD_DYN_n,   ONLY: LHORELAX_SVLIMA
+USE MODD_DYN_n,   ONLY: LHORELAX_SVLIMA, LHORELAX_SVFIRE
 USE MODD_IO,      ONLY: TFILEDATA
 USE MODD_LUNIT_n, ONLY: TLUOUT
 USE MODD_PARAMETERS
@@ -207,6 +208,8 @@ USE MODN_IBM_PARAM_n
 USE MODN_RECYCL_PARAM_n
 USE MODD_IBM_LSF, ONLY: LIBM_LSF
 USE MODN_STATION_n
+USE MODD_FIRE
+USE MODN_FIRE
 !
 IMPLICIT NONE
 !
@@ -224,7 +227,7 @@ LOGICAL                     ::  GHORELAX_UVWTH,                               &
                                 GHORELAX_RV,  GHORELAX_RC, GHORELAX_RR,       &
                                 GHORELAX_RI,  GHORELAX_RS, GHORELAX_RG,       &
                                 GHORELAX_TKE, GHORELAX_SVC2R2, GHORELAX_SVPP, &
-                                GHORELAX_SVCS, GHORELAX_SVCHIC,               &
+                                GHORELAX_SVCS, GHORELAX_SVCHIC, GHORELAX_SVFIRE,&
 #ifdef MNH_FOREFIRE
                                 GHORELAX_SVFF,                                &
 #endif
@@ -274,7 +277,8 @@ IF (CPROGRAM/='MESONH') THEN   ! impose default value for next simulation
   GHORELAX_SVCHIC= LHORELAX_SVCHIC
   GHORELAX_SVDST = LHORELAX_SVDST
   GHORELAX_SVSLT = LHORELAX_SVSLT
-  GHORELAX_SVPP  = LHORELAX_SVPP 
+  GHORELAX_SVPP  = LHORELAX_SVPP
+  GHORELAX_SVFIRE  = LHORELAX_SVFIRE
 #ifdef MNH_FOREFIRE
   GHORELAX_SVFF  = LHORELAX_SVFF
 #endif
@@ -299,6 +303,7 @@ IF (CPROGRAM/='MESONH') THEN   ! impose default value for next simulation
   LHORELAX_SVCHIC= .FALSE.
   LHORELAX_SVLG  = .FALSE.
   LHORELAX_SVPP  = .FALSE.
+  LHORELAX_SVFIRE  = .FALSE.
 #ifdef MNH_FOREFIRE
   LHORELAX_SVFF  = .FALSE.
 #endif
@@ -398,6 +403,7 @@ IF(LPASPOL) WRITE(UNIT=ILUSEG,NML=NAM_PASPOL)
 #ifdef MNH_FOREFIRE
 IF(FFCOUPLING) WRITE(UNIT=ILUSEG,NML=NAM_FOREFIRE)
 #endif
+IF(LBLAZE) WRITE(UNIT=ILUSEG,NML=NAM_PASPOL)
 IF(LCONDSAMP) WRITE(UNIT=ILUSEG,NML=NAM_CONDSAMP)
 IF(LORILAM.AND.LUSECHEM) WRITE(UNIT=ILUSEG,NML=NAM_CH_ORILAM)
 !
@@ -616,6 +622,12 @@ IF (NVERB >= 5) THEN
     WRITE(UNIT=ILUOUT,NML=NAM_FOREFIRE)
 !
 #endif
+!
+IF (LBLAZE) THEN
+  WRITE(UNIT=ILUOUT,FMT="('******************** BLAZE ********************')")
+  WRITE(UNIT=ILUOUT,NML=NAM_FIRE)
+END IF
+!
     WRITE(UNIT=ILUOUT,FMT="('********** CONDSAMP****************************')")
     WRITE(UNIT=ILUOUT,NML=NAM_CONDSAMP)
 !
@@ -682,6 +694,7 @@ IF (CPROGRAM /='MESONH') THEN !return to previous LHORELAX_
   LHORELAX_SVDST = GHORELAX_SVDST
   LHORELAX_SVSLT = GHORELAX_SVSLT
   LHORELAX_SVPP  = GHORELAX_SVPP 
+  LHORELAX_SVFIRE  = GHORELAX_SVFIRE
 #ifdef MNH_FOREFIRE
   LHORELAX_SVFF  = GHORELAX_SVFF
 #endif

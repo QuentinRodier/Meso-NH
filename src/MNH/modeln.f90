@@ -272,6 +272,7 @@ END MODULE MODI_MODEL_n
 !  T. Nagel    01/02/2021: add turbulence recycling
 !  P. Wautelet 19/02/2021: add NEGA2 term for SV budgets
 !  J.L. Redelsperger 03/2021: add Call NHOA_COUPLN (coupling O & A LES version)
+!  A. Costes      12/2021: add Blaze fire model
 !  C. Barthe   07/04/2022: deallocation of ZSEA
 !!-------------------------------------------------------------------------------
 !
@@ -454,6 +455,7 @@ USE MODI_WRITE_SERIES_n
 USE MODI_WRITE_STATION_n
 USE MODI_WRITE_SURF_ATM_N
 !
+USE MODD_FIRE
 IMPLICIT NONE
 !
 !*       0.1   declarations of arguments
@@ -475,7 +477,7 @@ INTEGER :: IVERB                ! LFI verbosity level
 LOGICAL :: GSTEADY_DMASS        ! conditional call to mass computation
 !
                                 ! for computing time analysis
-REAL(kind=MNHTIME), DIMENSION(2) :: ZTIME, ZTIME1, ZTIME2, ZEND, ZTOT, ZALL, ZTOT_PT
+REAL(kind=MNHTIME), DIMENSION(2) :: ZTIME, ZTIME1, ZTIME2, ZEND, ZTOT, ZALL, ZTOT_PT, ZBLAZETOT
 REAL(kind=MNHTIME), DIMENSION(2) :: ZTIME_STEP,ZTIME_STEP_PTS
 CHARACTER                 :: YMI
 INTEGER                   :: IPOINTS
@@ -654,6 +656,32 @@ IF (KTCOUNT == 1) THEN
   CALL ADD4DFIELD_ll( TFIELDS_ll, XRSVS    (:,:,:,1:NSV), 'MODEL_n::XRSVS')
   CALL ADD4DFIELD_ll( TFIELDS_ll, XRSVS_CLD(:,:,:,1:NSV), 'MODEL_n::XRSVS_CLD')
   IF (SIZE(XSRCT,1) /= 0) CALL ADD3DFIELD_ll( TFIELDS_ll, XSRCT, 'MODEL_n::XSRCT' )
+  ! Fire model parallel setup
+  IF (LBLAZE) THEN
+    CALL ADD3DFIELD_ll( TFIELDS_ll, XLSPHI,     'MODEL_n::XLSPHI')
+    CALL ADD3DFIELD_ll( TFIELDS_ll, XBMAP,      'MODEL_n::XBMAP')
+    CALL ADD3DFIELD_ll( TFIELDS_ll, XFMRFA,     'MODEL_n::XFMRFA')
+    CALL ADD3DFIELD_ll( TFIELDS_ll, XFMWF0,     'MODEL_n::XFMWF0')
+    CALL ADD3DFIELD_ll( TFIELDS_ll, XFMR0,      'MODEL_n::XFMR0')
+    CALL ADD3DFIELD_ll( TFIELDS_ll, XFMR00,     'MODEL_n::XFMR00')
+    CALL ADD3DFIELD_ll( TFIELDS_ll, XFMIGNITION, 'MODEL_n::XFMIGNITION')
+    CALL ADD3DFIELD_ll( TFIELDS_ll, XFMFUELTYPE, 'MODEL_n::XFMFUELTYPE')
+    CALL ADD3DFIELD_ll( TFIELDS_ll, XFIRETAU,   'MODEL_n::XFIRETAU')
+    CALL ADD4DFIELD_ll( TFIELDS_ll, XFLUXPARAMH(:,:,:,1:SIZE(XFLUXPARAMH,4)), 'MODEL_n::XFLUXPARAMH')
+    CALL ADD4DFIELD_ll( TFIELDS_ll, XFLUXPARAMW(:,:,:,1:SIZE(XFLUXPARAMW,4)), 'MODEL_n::XFLUXPARAMW')
+    CALL ADD3DFIELD_ll( TFIELDS_ll, XFIRERW,    'MODEL_n::XFIRERW')
+    CALL ADD3DFIELD_ll( TFIELDS_ll, XFMASE,     'MODEL_n::XFMASE')
+    CALL ADD3DFIELD_ll( TFIELDS_ll, XFMAWC,     'MODEL_n::XFMAWC')
+    CALL ADD3DFIELD_ll( TFIELDS_ll, XFMWALKIG,  'MODEL_n::XFMWALKIG')
+    CALL ADD3DFIELD_ll( TFIELDS_ll, XFMFLUXHDH, 'MODEL_n::XFMFLUXHDH')
+    CALL ADD3DFIELD_ll( TFIELDS_ll, XFMFLUXHDW, 'MODEL_n::XFMFLUXHDW')
+    CALL ADD3DFIELD_ll( TFIELDS_ll, XFMHWS,     'MODEL_n::XFMHWS')
+    CALL ADD3DFIELD_ll( TFIELDS_ll, XFMWINDU,   'MODEL_n::XFMWINDU')
+    CALL ADD3DFIELD_ll( TFIELDS_ll, XFMWINDV,   'MODEL_n::XFMWINDV')
+    CALL ADD3DFIELD_ll( TFIELDS_ll, XFMWINDW,   'MODEL_n::XFMWINDW')
+    CALL ADD3DFIELD_ll( TFIELDS_ll, XFMGRADOROX, 'MODEL_n::XFMGRADOROX')
+    CALL ADD3DFIELD_ll( TFIELDS_ll, XFMGRADOROY, 'MODEL_n::XFMGRADOROY')
+  END IF
   !
   IF ((LNUMDIFU .OR. LNUMDIFTH .OR. LNUMDIFSV) ) THEN
   !
@@ -738,6 +766,8 @@ IF (KTCOUNT == 1) THEN
   XT_2WAY      = 0.0_MNHTIME
   !
   XT_IBM_FORC  = 0.0_MNHTIME
+  ! Blaze fire model
+  XFIREPERF    = 0.0_MNHTIME
   !
 END IF
 !
@@ -1340,6 +1370,10 @@ DO JSV = NSV_FFBEG,NSV_FFEND
   XRSVS(:,:,:,JSV) = MAX(XRSVS(:,:,:,JSV),0.)
 END DO
 #endif
+! Blaze smoke
+DO JSV = NSV_FIREBEG,NSV_FIREEND
+  XRSVS(:,:,:,JSV) = MAX(XRSVS(:,:,:,JSV),0.)
+END DO
 DO JSV = NSV_CSBEG,NSV_CSEND
   XRSVS(:,:,:,JSV) = MAX(XRSVS(:,:,:,JSV),0.)
 END DO
@@ -1391,7 +1425,7 @@ IF(LVE_RELAX .OR. LVE_RELAX_GRD .OR. LHORELAX_UVWTH .OR. LHORELAX_RV .OR.&
                    LHORELAX_SVELEC,LHORELAX_SVLG,                      &
                    LHORELAX_SVCHEM,LHORELAX_SVCHIC,LHORELAX_SVAER,     &
                    LHORELAX_SVDST,LHORELAX_SVSLT,LHORELAX_SVPP,        &
-                   LHORELAX_SVCS,LHORELAX_SVSNW,                       &
+                   LHORELAX_SVCS,LHORELAX_SVSNW,LHORELAX_SVFIRE,       &
 #ifdef MNH_FOREFIRE
                    LHORELAX_SVFF,                                      &
 #endif
@@ -1535,6 +1569,11 @@ IF (.NOT. LSTEADYLS) THEN
       ENDDO
       !
 #endif
+      DO JSV=NSV_FIREBEG,NSV_FIREEND
+        XLBXSVS(:,:,:,JSV)=MAX(XLBXSVS(:,:,:,JSV),0.)
+        XLBYSVS(:,:,:,JSV)=MAX(XLBYSVS(:,:,:,JSV),0.)
+      ENDDO
+      !
       DO JSV=NSV_CSBEG,NSV_CSEND
         XLBXSVS(:,:,:,JSV)=MAX(XLBXSVS(:,:,:,JSV),0.)
         XLBYSVS(:,:,:,JSV)=MAX(XLBYSVS(:,:,:,JSV),0.)
@@ -2278,6 +2317,15 @@ IF (OEXIT) THEN
     CALL TIME_STAT_ll(XT_SHADOWS,ZTOT,  '   SHADOWS'             ,'-')
     CALL TIME_STAT_ll(XT_DCONV,ZTOT,    '   DEEP CONV = '//CDCONV,'-')
     CALL TIME_STAT_ll(XT_GROUND,ZTOT,   '   GROUND'              ,'-')
+    ! Blaze perf
+    IF (LBLAZE) THEN
+      CALL TIME_STAT_ll(XFIREPERF,ZBLAZETOT)
+      CALL TIME_STAT_ll(XFIREPERF,ZTOT,           '     BLAZE'          ,'~')
+      CALL TIME_STAT_ll(XGRADPERF,ZBLAZETOT,      '       GRAD(PHI)'    ,' ')
+      CALL TIME_STAT_ll(XROSWINDPERF,ZBLAZETOT,   '       ROS & WIND'   ,' ')
+      CALL TIME_STAT_ll(XPROPAGPERF,ZBLAZETOT,    '       PROPAGATION'  ,' ')
+      CALL TIME_STAT_ll(XFLUXPERF,ZBLAZETOT,      '       HEAT FLUXES'  ,' ')
+    END IF
     CALL TIME_STAT_ll(XT_TURB,ZTOT,     '   TURB      = '//CTURB ,'-')
     CALL TIME_STAT_ll(XT_MAFL,ZTOT,     '   MAFL      = '//CSCONV,'-')
     CALL TIME_STAT_ll(XT_CHEM,ZTOT,     '   CHIMIE'              ,'-')

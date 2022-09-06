@@ -237,6 +237,7 @@ END MODULE MODI_PHYS_PARAM_n
 !  C. Lac         11/2019: correction in the drag formula and application to building in addition to tree
 !  F. Auguste     02/2021: add IBM
 !  JL Redelsperger 03/2021: add the SW flux penetration for Ocean model case
+!  A. Costes      12/2021: add Blaze fire model
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -1222,8 +1223,8 @@ IF (CSURF=='EXTE') THEN
     DEALLOCATE( ZSAVE_INPRC,ZSAVE_PRCONV,ZSAVE_PRSCONV)
     DEALLOCATE( ZSAVE_DIRFLASWD,ZSAVE_SCAFLASWD,ZSAVE_DIRSRFSWD)
  END IF
-  CALL GROUND_PARAM_n(ZSFTH, ZSFRV, ZSFSV, ZSFCO2, ZSFU, ZSFV, &
-                      ZDIR_ALB, ZSCA_ALB, ZEMIS, ZTSRAD        )
+  CALL GROUND_PARAM_n( ZSFTH, ZSFRV, ZSFSV, ZSFCO2, ZSFU, ZSFV, &
+                      ZDIR_ALB, ZSCA_ALB, ZEMIS, ZTSRAD, KTCOUNT, TPFILE )
   !
   IF (LIBM) THEN
     WHERE(XIBM_LS(:,:,IKB,1).GT.-XIBM_EPSI)

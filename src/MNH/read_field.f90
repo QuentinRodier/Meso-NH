@@ -31,7 +31,8 @@ INTERFACE
             PVTH_FLUX_M,PWTH_FLUX_M,PVU_FLUX_M,                              &
             PRUS_PRES,PRVS_PRES,PRWS_PRES,PRTHS_CLD,PRRS_CLD,PRSVS_CLD,      &
             PIBM_LSF,PIBM_XMUT,PUMEANW,PVMEANW,PWMEANW,PUMEANN,PVMEANN,      &
-            PWMEANN,PUMEANE,PVMEANE,PWMEANE,PUMEANS,PVMEANS,PWMEANS          )
+            PWMEANN,PUMEANE,PVMEANE,PWMEANE,PUMEANS,PVMEANS,PWMEANS,         &
+            PLSPHI,PBMAP,PFMASE,PFMAWC,PFMWINDU,PFMWINDV,PFMWINDW,PFMHWS     )
 !
 USE MODD_IO, ONLY : TFILEDATA
 USE MODD_TIME ! for type DATE_TIME
@@ -126,6 +127,15 @@ REAL, DIMENSION(:,:,:),         INTENT(INOUT) :: PUMEANN,PVMEANN,PWMEANN
 REAL, DIMENSION(:,:,:),         INTENT(INOUT) :: PUMEANE,PVMEANE,PWMEANE
 REAL, DIMENSION(:,:,:),         INTENT(INOUT) :: PUMEANS,PVMEANS,PWMEANS
 !
+! Fire Model fields
+REAL, DIMENSION(:,:,:),          INTENT(OUT) :: PLSPHI    ! Fire Model Level Set function Phi [-]
+REAL, DIMENSION(:,:,:),          INTENT(OUT) :: PBMAP     ! Fire Model Burning map [s]
+REAL, DIMENSION(:,:,:),          INTENT(OUT) :: PFMASE    ! Fire Model Available Sensible Energy [J/m2]
+REAL, DIMENSION(:,:,:),          INTENT(OUT) :: PFMAWC    ! Fire Model Available Water Content [kg/m2]
+REAL, DIMENSION(:,:,:),          INTENT(OUT) :: PFMWINDU  ! Fire Model filtered u wind [m/s]
+REAL, DIMENSION(:,:,:),          INTENT(OUT) :: PFMWINDV  ! Fire Model filtered v wind [m/s]
+REAL, DIMENSION(:,:,:),          INTENT(OUT) :: PFMWINDW  ! Fire Model filtered w wind [m/s]
+REAL, DIMENSION(:,:,:),          INTENT(OUT) :: PFMHWS    ! Fire Model filtered horizontal wind speed [m/s]
 !
 END SUBROUTINE READ_FIELD
 !
@@ -156,7 +166,8 @@ END MODULE MODI_READ_FIELD
             PVTH_FLUX_M,PWTH_FLUX_M,PVU_FLUX_M,                              &
             PRUS_PRES,PRVS_PRES,PRWS_PRES,PRTHS_CLD,PRRS_CLD,PRSVS_CLD,      &
             PIBM_LSF,PIBM_XMUT,PUMEANW,PVMEANW,PWMEANW,PUMEANN,PVMEANN,      &
-            PWMEANN,PUMEANE,PVMEANE,PWMEANE,PUMEANS,PVMEANS,PWMEANS          )
+            PWMEANN,PUMEANE,PVMEANE,PWMEANE,PUMEANS,PVMEANS,PWMEANS,         &
+            PLSPHI,PBMAP,PFMASE,PFMAWC,PFMWINDU,PFMWINDV,PFMWINDW,PFMHWS     )
 !     ########################################################################
 !
 !!****  *READ_FIELD* - routine to read prognostic and surface fields
@@ -258,6 +269,7 @@ END MODULE MODI_READ_FIELD
 !! F. Auguste  02/2021: add fields necessary for IBM
 !! T. Nagel    02/2021: add fields necessary for turbulence recycling
 !! J.L. Redelsperger 03/2021:  add necessary variables for Ocean LES case
+!! A. Costes   12/2021: add Blaze fire model
 !!-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -310,6 +322,8 @@ USE MODE_TOOLS,           ONLY: UPCASE
 !
 USE MODI_INI_LB
 USE MODI_INI_LS
+!
+USE MODD_FIRE,            ONLY: LBLAZE, LRESTA_ASE, LRESTA_AWC, LWINDFILTER, LRESTA_EWAM, LRESTA_WLIM, CWINDFILTER
 !
 IMPLICIT NONE
 !
@@ -411,6 +425,15 @@ REAL, DIMENSION(:,:,:),         INTENT(INOUT) :: PUMEANW,PVMEANW,PWMEANW ! Veloc
 REAL, DIMENSION(:,:,:),         INTENT(INOUT) :: PUMEANN,PVMEANN,PWMEANN ! Velocity average at North boundary
 REAL, DIMENSION(:,:,:),         INTENT(INOUT) :: PUMEANE,PVMEANE,PWMEANE ! Velocity average at East boundary
 REAL, DIMENSION(:,:,:),         INTENT(INOUT) :: PUMEANS,PVMEANS,PWMEANS ! Velocity average at South boundary
+! Fire Model fields
+REAL, DIMENSION(:,:,:),          INTENT(OUT) :: PLSPHI    ! Fire Model Level Set function Phi [-]
+REAL, DIMENSION(:,:,:),          INTENT(OUT) :: PBMAP     ! Fire Model Burning map [s]
+REAL, DIMENSION(:,:,:),          INTENT(OUT) :: PFMASE    ! Fire Model Available Sensible Energy [J/m2]
+REAL, DIMENSION(:,:,:),          INTENT(OUT) :: PFMAWC    ! Fire Model Available Water Content [kg/m2]
+REAL, DIMENSION(:,:,:),          INTENT(OUT) :: PFMWINDU  ! Fire Model filtered u wind [m/s]
+REAL, DIMENSION(:,:,:),          INTENT(OUT) :: PFMWINDV  ! Fire Model filtered v wind [m/s]
+REAL, DIMENSION(:,:,:),          INTENT(OUT) :: PFMWINDW  ! Fire Model filtered v wind [m/s]
+REAL, DIMENSION(:,:,:),          INTENT(OUT) :: PFMHWS    ! Fire Model filtered horizontal wind speed [m/s]
 !
 !*       0.2   declarations of local variables
 !
@@ -1290,6 +1313,31 @@ IF (NSV_FFEND>=NSV_FFBEG) THEN
   END DO
 END IF
 #endif
+! Blaze smoke variables
+IF (NSV_FIREEND>=NSV_FIREBEG) THEN
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CUNITS     = 'kg kg-1'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%NGRID      = 1
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  TZFIELD%LTIMEDEP   = .TRUE.
+  !
+  DO JSV = NSV_FIREBEG,NSV_FIREEND
+    SELECT CASE(HGETSVT(JSV))
+      CASE ('READ')
+        WRITE(TZFIELD%CMNHNAME,'(A3,I3.3)')'SVT',JSV
+        TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+        TZFIELD%CCOMMENT   = 'X_Y_Z_'//TRIM(TZFIELD%CMNHNAME)
+        CALL IO_Field_read(TPINIFILE,TZFIELD,PSVT(:,:,:,JSV),IRESP)
+        IF (IRESP /= 0) THEN
+          PSVT(:,:,:,JSV) = 0.
+        END IF
+      CASE ('INIT')
+        PSVT(:,:,:,JSV) = 0.
+    END SELECT
+  END DO
+END IF
 !
 IF (NSV_CSEND>=NSV_CSBEG) THEN
   TZFIELD%CSTDNAME   = ''
@@ -1314,6 +1362,75 @@ IF (NSV_CSEND>=NSV_CSBEG) THEN
         PSVT(:,:,:,JSV) = 0.
     END SELECT
   END DO
+END IF
+! Blaze fire model
+IF (LBLAZE .AND. CCONF=='RESTA') THEN
+  ! Blaze is not compliant with MNHVERSION(1)<5
+  ! Blaze begins with MNH 5.3.1
+  CALL IO_Field_read(TPINIFILE,'LSPHI',PLSPHI,IRESP)
+  IF (IRESP /= 0) PLSPHI = 0.
+  CALL IO_Field_read(TPINIFILE,'BMAP',PBMAP,IRESP)
+  IF (IRESP /= 0) PBMAP = -1.
+  CALL IO_Field_read(TPINIFILE,'FMASE',PFMASE,IRESP)
+  IF(IRESP == 0) THEN
+    ! flag for the use of restart value for ASE initialization
+    LRESTA_ASE = .TRUE.
+  ELSE
+    PFMASE = 0.
+  END IF
+  CALL IO_Field_read(TPINIFILE,'FMAWC',PFMAWC,IRESP)
+  ! flag for the use of restart value for AWC initialization
+  IF(IRESP == 0) THEN
+    LRESTA_AWC = .TRUE.
+  ELSE
+    PFMAWC = 0.
+  END IF
+  ! read wind on fire grid if present
+  IF (LWINDFILTER) THEN
+    ! read in file only if wind filtering is required
+    SELECT CASE(CWINDFILTER)
+    CASE('EWAM')
+      ! read u
+      CALL IO_Field_read(TPINIFILE,'FMWINDU',PFMWINDU,IRESP)
+      ! flag for EWAM filtered u wind
+      IF(IRESP == 0) THEN
+        LRESTA_EWAM = .TRUE.
+      ELSE
+       PFMWINDU = 0.
+      END IF
+      ! read v
+      CALL IO_Field_read(TPINIFILE,'FMWINDV',PFMWINDV,IRESP)
+      ! flag for EWAM filtered v wind
+      IF(IRESP == 0 .AND. LRESTA_EWAM) THEN
+        ! u and v fields found
+        LRESTA_EWAM = .TRUE.
+      ELSE
+        ! u or v fields NOT found
+        LRESTA_EWAM = .FALSE.
+      END IF
+      IF (IRESP /= 0) PFMWINDV = 0.
+      ! read w
+      CALL IO_Field_read(TPINIFILE,'FMWINDW',PFMWINDW,IRESP)
+      ! flag for EWAM filtered w wind
+      IF(IRESP == 0 .AND. LRESTA_EWAM) THEN
+        ! u and v and w fields found
+        LRESTA_EWAM = .TRUE.
+      ELSE
+        ! u or v or w fields NOT found
+        LRESTA_EWAM = .FALSE.
+      END IF
+      IF (IRESP /= 0) PFMWINDW = 0.
+
+    CASE('WLIM')
+      CALL IO_Field_read(TPINIFILE,'FMHWS',PFMHWS,IRESP)
+      ! flag for WLIM filtered horizontal wind speed
+      IF(IRESP == 0) THEN
+        LRESTA_WLIM = .TRUE.
+      ELSE
+        PFMHWS = 0.
+      END IF
+    END SELECT
+  END IF
 END IF
 !
 IF (NSV_LNOXEND>=NSV_LNOXBEG) THEN

@@ -13,7 +13,7 @@ INTERFACE
                    OUSERC,OUSERR,OUSERI,OUSECI,OUSERS,OUSERG,OUSERH,               &
                    OUSECHEM,OUSECHAQ,OUSECHIC,OCH_PH,OCH_CONV_LINOX,OSALT,         &
                    ODEPOS_SLT, ODUST,ODEPOS_DST, OCHTRANS,                         &
-                   OORILAM,ODEPOS_AER, OLG,OPASPOL,                                &
+                   OORILAM,ODEPOS_AER, OLG,OPASPOL, OFIRE,                         &
 #ifdef MNH_FOREFIRE
                    OFOREFIRE,                                                      &
 #endif
@@ -21,7 +21,7 @@ INTERFACE
                    OCONDSAMP,OBLOWSNOW,                                            &
                    KRIMX,KRIMY, KSV_USER,                                          &
                    HTURB,HTOM,ORMC01,HRAD,HDCONV,HSCONV,HCLOUD,HELEC,              &
-                   HEQNSYS,PTSTEP_ALL,HINIFILEPGD                                  )
+                   HEQNSYS,PTSTEP_ALL,HSTORAGE_TYPE,HINIFILEPGD                    )
 !
 USE MODD_IO,   ONLY: TFILEDATA
 !
@@ -47,6 +47,7 @@ LOGICAL,DIMENSION(:), INTENT(IN)  :: ODEPOS_AER  ! Orilam wet deposition FLAG in
 LOGICAL,            INTENT(IN) :: OSALT          ! Sea Salt FLAG in FMFILE
 LOGICAL,            INTENT(IN) :: OORILAM        ! Orilam FLAG in FMFILE
 LOGICAL,            INTENT(IN) :: OPASPOL        ! Passive pollutant FLAG in FMFILE
+LOGICAL,            INTENT(IN) :: OFIRE          ! Blaze FLAG in FMFILE
 #ifdef MNH_FOREFIRE
 LOGICAL,            INTENT(IN) :: OFOREFIRE      ! ForeFire FLAG in FMFILE
 #endif
@@ -71,6 +72,7 @@ CHARACTER (LEN=4),  INTENT(IN) :: HCLOUD ! Kind of microphysical scheme
 CHARACTER (LEN=4),  INTENT(IN) :: HELEC  ! Kind of electrical scheme
 CHARACTER (LEN=*),  INTENT(IN) :: HEQNSYS! type of equations' system
 REAL,DIMENSION(:),  INTENT(INOUT):: PTSTEP_ALL ! Time STEP of ALL models
+CHARACTER (LEN=*),  INTENT(IN) :: HSTORAGE_TYPE ! type of initial file
 CHARACTER (LEN=*),  INTENT(IN) :: HINIFILEPGD ! name of PGD file
 !
 END SUBROUTINE READ_EXSEG_n
@@ -85,7 +87,7 @@ END MODULE MODI_READ_EXSEG_n
                    OUSERC,OUSERR,OUSERI,OUSECI,OUSERS,OUSERG,OUSERH,               &
                    OUSECHEM,OUSECHAQ,OUSECHIC,OCH_PH,OCH_CONV_LINOX,OSALT,         &
                    ODEPOS_SLT, ODUST,ODEPOS_DST, OCHTRANS,                         &
-                   OORILAM,ODEPOS_AER, OLG,OPASPOL,                                &
+                   OORILAM,ODEPOS_AER, OLG,OPASPOL, OFIRE,                         &
 #ifdef MNH_FOREFIRE
                    OFOREFIRE,                                                      &
 #endif
@@ -93,7 +95,7 @@ END MODULE MODI_READ_EXSEG_n
                    OCONDSAMP, OBLOWSNOW,                                           &
                    KRIMX,KRIMY, KSV_USER,                                          &
                    HTURB,HTOM,ORMC01,HRAD,HDCONV,HSCONV,HCLOUD,HELEC,              &
-                   HEQNSYS,PTSTEP_ALL,HINIFILEPGD                                  )
+                   HEQNSYS,PTSTEP_ALL,HSTORAGE_TYPE,HINIFILEPGD                    )
 !     #########################################################################
 !
 !!****  *READ_EXSEG_n * - routine to read  the descriptor file EXSEG
@@ -301,8 +303,8 @@ END MODULE MODI_READ_EXSEG_n
 !  P. Wautelet 09/03/2021: move some chemistry initializations to ini_nsv
 !  P. Wautelet 10/03/2021: move scalar variable name initializations to ini_nsv
 !  R. Honnert  23/04/2021: add ADAP mixing length and delete HRIO and BOUT from CMF_UPDRAFT
-!  S. Riette   11/05/2021: HighLow cloud
-!  P. Wautelet 24/06/2022: remove check on CSTORAGE_TYPE for restart of ForeFire variables
+!  S. Riette   11/05/2021  HighLow cloud
+!  A. Costes      12/2021: add Blaze fire model
 !------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -313,11 +315,12 @@ USE MODD_CH_AEROSOL
 USE MODD_CH_M9_n, ONLY : NEQ
 USE MODD_CONDSAMP
 USE MODD_CONF
+USE MODD_CONF_n,  ONLY: CSTORAGE_TYPE
 USE MODD_CONFZ
 ! USE MODD_DRAG_n
 USE MODD_DUST
 USE MODD_DYN
-USE MODD_DYN_n, ONLY : LHORELAX_SVLIMA
+USE MODD_DYN_n, ONLY : LHORELAX_SVLIMA, LHORELAX_SVFIRE
 #ifdef MNH_FOREFIRE
 USE MODD_FOREFIRE
 #endif
@@ -400,7 +403,9 @@ USE MODN_TURB
 USE MODN_TURB_CLOUD
 USE MODN_TURB_n
 USE MODN_VISCOSITY
-
+USE MODD_FIRE
+USE MODN_FIRE
+!
 IMPLICIT NONE
 !
 !*       0.1   declarations of arguments
@@ -429,6 +434,7 @@ LOGICAL,DIMENSION(:), INTENT(IN) :: ODEPOS_AER   ! Orilam wet deposition FLAG in
 LOGICAL,            INTENT(IN) :: OSALT          ! Sea Salt FLAG in FMFILE
 LOGICAL,            INTENT(IN) :: OORILAM        ! Orilam FLAG in FMFILE
 LOGICAL,            INTENT(IN) :: OPASPOL        ! Passive pollutant FLAG in FMFILE
+LOGICAL,            INTENT(IN) :: OFIRE          ! Blaze FLAG in FMFILE
 #ifdef MNH_FOREFIRE
 LOGICAL,            INTENT(IN) :: OFOREFIRE      ! ForeFire FLAG in FMFILE
 #endif
@@ -453,6 +459,7 @@ CHARACTER (LEN=4),  INTENT(IN) :: HCLOUD ! Kind of microphysical scheme
 CHARACTER (LEN=4),  INTENT(IN) :: HELEC  ! Kind of electrical scheme
 CHARACTER (LEN=*),  INTENT(IN) :: HEQNSYS! type of equations' system
 REAL,DIMENSION(:),  INTENT(INOUT):: PTSTEP_ALL ! Time STEP of ALL models
+CHARACTER (LEN=*),  INTENT(IN) :: HSTORAGE_TYPE ! type of initial file
 CHARACTER (LEN=*),  INTENT(IN) :: HINIFILEPGD ! name of PGD file
 !
 !*       0.2   declarations of local variables
@@ -836,6 +843,8 @@ IF (KMI == 1) THEN
   IF (GFOUND) READ(UNIT=ILUSEG,NML=NAM_2D_FRC)
   CALL POSNAM(ILUSEG,'NAM_LATZ_EDFLX',GFOUND)
   IF (GFOUND) READ(UNIT=ILUSEG,NML=NAM_LATZ_EDFLX)
+  CALL POSNAM(ILUSEG,'NAM_FIRE',GFOUND,ILUOUT)
+  IF (GFOUND) READ(UNIT=ILUSEG,NML=NAM_FIRE)
   CALL POSNAM(ILUSEG,'NAM_BLOWSNOW',GFOUND,ILUOUT)
   IF (GFOUND) READ(UNIT=ILUSEG,NML=NAM_BLOWSNOW)
   CALL POSNAM(ILUSEG,'NAM_VISC',GFOUND,ILUOUT)
@@ -927,6 +936,14 @@ IF( CCLOUD == 'LIMA' ) THEN
                                                 'PLAT','COLU','BURO')
   CALL TEST_NAM_VAR(ILUOUT,'CHEVRIMED_ICE_LIMA',CHEVRIMED_ICE_LIMA, &
                                                 'GRAU','HAIL')
+END IF
+! Blaze
+IF (LBLAZE) THEN
+  CALL TEST_NAM_VAR(ILUOUT,'CPROPAG_MODEL',CPROPAG_MODEL,'SANTONI2011')
+  CALL TEST_NAM_VAR(ILUOUT,'CHEAT_FLUX_MODEL',CHEAT_FLUX_MODEL,'CST','EXP','EXS')
+  CALL TEST_NAM_VAR(ILUOUT,'CLATENT_FLUX_MODEL',CLATENT_FLUX_MODEL,'CST','EXP')
+  CALL TEST_NAM_VAR(ILUOUT,'CFIRE_CPL_MODE',CFIRE_CPL_MODE,'2WAYCPL','FIR2ATM','ATM2FIR')
+  CALL TEST_NAM_VAR(ILUOUT,'CWINDFILTER',CWINDFILTER,'EWAM','WLIM')
 END IF
 IF(LBLOWSNOW) THEN
        CALL TEST_NAM_VAR(ILUOUT,'CSNOWSEDIM',CSNOWSEDIM,'NONE','MITC','CARR','TABC')
@@ -1768,6 +1785,7 @@ END IF
 IF (CCLOUD == 'LIMA') THEN
   IF (HCLOUD == 'LIMA') THEN
     CGETSVT(NSV_LIMA_BEG:NSV_LIMA_END)='READ'
+!!JPP    IF(HSTORAGE_TYPE=='TT') CGETSVT(NSV_LIMA_BEG:NSV_LIMA_END)='INIT'
   ELSE
     WRITE(UNIT=ILUOUT,FMT=9001) KMI
     WRITE(UNIT=ILUOUT,FMT='("THERE IS NO SCALAR VARIABLES FOR LIMA &
@@ -2062,6 +2080,9 @@ END IF
 IF (LFOREFIRE) THEN
   IF (OFOREFIRE) THEN
     CGETSVT(NSV_FFBEG:NSV_FFEND)='READ'
+    IF(HSTORAGE_TYPE=='TT') THEN
+      CGETSVT(NSV_FFBEG:NSV_FFEND)='INIT'
+    END IF
   ELSE
     WRITE(UNIT=ILUOUT,FMT=9001) KMI
     WRITE(UNIT=ILUOUT,FMT='("THERE IS NO FOREFIRE SCALAR VARIABLES IN INITIAL FMFILE",/,&
@@ -2070,6 +2091,21 @@ IF (LFOREFIRE) THEN
   END IF
 END IF
 #endif
+! Blaze smoke
+!
+IF (LBLAZE) THEN
+  IF (OFIRE) THEN
+    CGETSVT(NSV_FIREBEG:NSV_FIREEND)='READ'
+    IF(HSTORAGE_TYPE=='TT') THEN
+      CGETSVT(NSV_FIREBEG:NSV_FIREEND)='INIT'
+    END IF
+  ELSE
+    WRITE(UNIT=ILUOUT,FMT=9001) KMI
+    WRITE(UNIT=ILUOUT,FMT='("THERE IS NO BLAZE SCALAR VARIABLES IN INITIAL FMFILE",/,&
+                       & "THE VARIABLES HAVE BEEN INITIALIZED TO ZERO")')
+    CGETSVT(NSV_FIREBEG:NSV_FIREEND)='INIT'
+  END IF
+END IF
 !
 ! Conditional sampling case
 !
@@ -2588,6 +2624,12 @@ IF (.NOT. LFOREFIRE .AND. LHORELAX_SVFF) THEN
   WRITE(ILUOUT,FMT=*) 'THEREFORE LHORELAX_SVFF=FALSE'
 END IF
 #endif
+IF (.NOT. LBLAZE .AND. LHORELAX_SVFIRE) THEN
+  LHORELAX_SVFIRE=.FALSE.
+  WRITE(UNIT=ILUOUT,FMT=9002) KMI
+  WRITE(ILUOUT,FMT=*) 'YOU WANT TO RELAX BLAZE FLUXES BUT THEY DO NOT EXIST.'
+  WRITE(ILUOUT,FMT=*) 'THEREFORE LHORELAX_SVFIRE=FALSE'
+END IF
 IF (.NOT. LCONDSAMP .AND. LHORELAX_SVCS) THEN
   LHORELAX_SVCS=.FALSE.
   WRITE(UNIT=ILUOUT,FMT=9002) KMI
@@ -2640,7 +2682,7 @@ IF ( (.NOT. LHORELAX_UVWTH) .AND. (.NOT.(ANY(LHORELAX_SV))) .AND.  &
      (.NOT. LHORELAX_SVLIMA).AND.                                  &
      (.NOT. LHORELAX_SVELEC).AND. (.NOT. LHORELAX_SVCHEM)   .AND.  &
      (.NOT. LHORELAX_SVLG)  .AND. (.NOT. LHORELAX_SVPP)     .AND.  &
-     (.NOT. LHORELAX_SVCS)  .AND.                                  &
+     (.NOT. LHORELAX_SVCS)  .AND. (.NOT. LHORELAX_SVFIRE)   .AND.  &
 #ifdef MNH_FOREFIRE
      (.NOT. LHORELAX_SVFF)  .AND.                                  &
 #endif
@@ -2658,7 +2700,7 @@ IF ( (.NOT. LHORELAX_UVWTH) .AND. (.NOT.(ANY(LHORELAX_SV))) .AND.  &
 END IF
 !
 IF ((LHORELAX_UVWTH  .OR. LHORELAX_SVPP   .OR.  &
-     LHORELAX_SVCS   .OR.                       &
+     LHORELAX_SVCS   .OR. LHORELAX_SVFIRE .OR.  &
 #ifdef MNH_FOREFIRE
      LHORELAX_SVFF   .OR.                       &
 #endif
@@ -2684,6 +2726,7 @@ IF ((LHORELAX_UVWTH  .OR. LHORELAX_SVPP   .OR.  &
   WRITE(ILUOUT,FMT=*) "LHORELAX_SVCHIC=",LHORELAX_SVCHIC
   WRITE(ILUOUT,FMT=*) "LHORELAX_SVLG=",LHORELAX_SVLG
   WRITE(ILUOUT,FMT=*) "LHORELAX_SVPP=",LHORELAX_SVPP
+  WRITE(ILUOUT,FMT=*) "LHORELAX_SVFIRE=",LHORELAX_SVFIRE
 #ifdef MNH_FOREFIRE
   WRITE(ILUOUT,FMT=*) "LHORELAX_SVFF=",LHORELAX_SVFF
 #endif
@@ -2705,7 +2748,7 @@ IF ((LHORELAX_UVWTH  .OR. LHORELAX_SVPP   .OR.  &
 END IF
 ! 
 IF ((LHORELAX_UVWTH  .OR. LHORELAX_SVPP  .OR.   &
-     LHORELAX_SVCS   .OR.                       &
+     LHORELAX_SVCS   .OR. LHORELAX_SVFIRE .OR.  &
 #ifdef MNH_FOREFIRE
      LHORELAX_SVFF   .OR.                       &
 #endif
@@ -2728,7 +2771,7 @@ IF ((LHORELAX_UVWTH  .OR. LHORELAX_SVPP  .OR.   &
 END IF
 !
 IF ((LHORELAX_UVWTH  .OR. LHORELAX_SVPP  .OR.   &
-     LHORELAX_SVCS   .OR.                       &
+     LHORELAX_SVCS   .OR. LHORELAX_SVFIRE .OR.  &
 #ifdef MNH_FOREFIRE
      LHORELAX_SVFF   .OR.                       &
 #endif

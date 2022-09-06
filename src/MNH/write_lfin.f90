@@ -180,6 +180,7 @@ END MODULE MODI_WRITE_LFIFM_n
 !  P. Wautelet 10/03/2021: use scalar variable names for dust and salt
 !  P. Wautelet 11/03/2021: bugfix: correct name for NSV_LIMA_IMM_NUCL
 !  J.L. Redelsperger 03/2021: add OCEAN and auto-coupled O-A LES cases
+!  A. Costes      12/2021: add Blaze fire model
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -293,6 +294,8 @@ USE MODD_EOL_ALM
 USE MODD_RECYCL_PARAM_n
 USE MODD_IBM_PARAM_n,     ONLY: LIBM, XIBM_LS
 USE MODD_IBM_LSF,         ONLY: LIBM_LSF
+!
+USE MODD_FIRE
 ! 
 IMPLICIT NONE
 !
@@ -479,6 +482,25 @@ CALL IO_Field_write(TPFILE,'VT',XVT)
 CALL IO_Field_write(TPFILE,'WT',XWT)
 !
 CALL IO_Field_write(TPFILE,'THT',XTHT)
+IF (LBLAZE) THEN
+  CALL IO_Field_write( TPFILE, 'LSPHI', XLSPHI )
+  CALL IO_Field_write( TPFILE, 'BMAP', XBMAP )
+  CALL IO_Field_write( TPFILE, 'FMR0', XFMR0 )
+  CALL IO_Field_write( TPFILE, 'FIRERW', XFIRERW )
+  CALL IO_Field_write( TPFILE, 'FMASE', XFMASE )
+  CALL IO_Field_write( TPFILE, 'FMAWC', XFMAWC )
+  CALL IO_Field_write( TPFILE, 'FMFLUXHDH', XFMFLUXHDH )
+  CALL IO_Field_write( TPFILE, 'FMFLUXHDW', XFMFLUXHDW )
+  IF (LWINDFILTER .AND. CWINDFILTER=='WLIM') THEN
+    CALL IO_Field_write( TPFILE, 'FMHWS', XFMHWS )
+  ELSE
+    CALL IO_Field_write( TPFILE, 'FMWINDU', XFMWINDU )
+    CALL IO_Field_write( TPFILE, 'FMWINDV', XFMWINDV )
+    CALL IO_Field_write( TPFILE, 'FMWINDW', XFMWINDW )
+  END IF
+  CALL IO_Field_write( TPFILE, 'FMGRADOROX', XFMGRADOROX )
+  CALL IO_Field_write( TPFILE, 'FMGRADOROY', XFMGRADOROY )
+END IF
 !
 !*       1.4.2  Time t-dt:
 !
@@ -1209,6 +1231,24 @@ IF (NSV >=1) THEN
     END DO
   END IF
 #endif
+! Blaze scalar variables
+IF ( LBLAZE ) THEN
+  TZFIELD%CSTDNAME   = 'fire smoke'
+  TZFIELD%CUNITS     = 'kg kg-1'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%NGRID      = 1
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  TZFIELD%LTIMEDEP   = .TRUE.
+  !
+  DO JSV = NSV_FIREBEG,NSV_FIREEND
+    WRITE(TZFIELD%CMNHNAME,'(A3,I3.3)')'SVT',JSV
+    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+    TZFIELD%CCOMMENT   = 'X_Y_Z_'//TRIM(TZFIELD%CMNHNAME)
+    CALL IO_Field_write(TPFILE,TZFIELD,XSVT(:,:,:,JSV))
+    JSA=JSA+1
+  END DO
+END IF
 ! Blowing snow variables
   IF (LBLOWSNOW) THEN
     TZFIELD%CSTDNAME   = ''

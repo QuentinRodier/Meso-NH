@@ -13,7 +13,7 @@ INTERFACE
                    OUSERC,OUSERR,OUSERI,OUSECI,OUSERS,OUSERG,OUSERH,             &
                    OUSECHEM,OUSECHAQ,OUSECHIC,OCH_PH,OCH_CONV_LINOX,OSALT,       &
                    ODEPOS_SLT,ODUST,ODEPOS_DST, OCHTRANS,                        &
-                   OORILAM,ODEPOS_AER,OLG,OPASPOL,                               &
+                   OORILAM,ODEPOS_AER,OLG,OPASPOL,OFIRE,                         &
 #ifdef MNH_FOREFIRE
                    OFOREFIRE,                                                    &
 #endif
@@ -46,6 +46,7 @@ LOGICAL,            INTENT(OUT) :: OLG      ! lagrangian flag
 LOGICAL,            INTENT(OUT) :: OSALT    ! Sea Salt flag
 LOGICAL,            INTENT(OUT) :: ODUST    ! Dust flag
 LOGICAL,            INTENT(OUT) :: OPASPOL  ! Passive pollutant flag
+LOGICAL,            INTENT(OUT) :: OFIRE    ! Blaze flag
 #ifdef MNH_FOREFIRE
 LOGICAL,            INTENT(OUT) :: OFOREFIRE! ForeFire flag
 #endif
@@ -81,7 +82,7 @@ END MODULE MODI_READ_DESFM_n
                    OUSERC,OUSERR,OUSERI,OUSECI,OUSERS,OUSERG,OUSERH,             &
                    OUSECHEM,OUSECHAQ,OUSECHIC,OCH_PH,OCH_CONV_LINOX,OSALT,       &
                    ODEPOS_SLT,ODUST,ODEPOS_DST, OCHTRANS,                        &
-                   OORILAM,ODEPOS_AER,OLG,OPASPOL,                               &
+                   OORILAM,ODEPOS_AER,OLG,OPASPOL,OFIRE,                         &
 #ifdef MNH_FOREFIRE
                    OFOREFIRE,                                                    &
 #endif
@@ -195,6 +196,7 @@ END MODULE MODI_READ_DESFM_n
 !!      Modification   02/2021   (F.Auguste)  add IBM
 !!                               (T.Nagel)    add turbulence recycling
 !!                               (E.Jezequel) add stations read from CSV file
+!!      Modifications  12/2021   (A. Costes)  add Blaze fire model
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -273,6 +275,9 @@ USE MODN_RECYCL_PARAM_n
 USE MODN_IBM_PARAM_n
 USE MODD_IBM_LSF, ONLY: LIBM_LSF
 !
+USE MODD_FIRE
+USE MODN_FIRE
+!
 IMPLICIT NONE
 !
 !*       0.1   declarations of arguments
@@ -313,6 +318,7 @@ CHARACTER (LEN=4),  INTENT(OUT) :: HELEC  ! Kind of electrical scheme
 CHARACTER (LEN=*),  INTENT(OUT) :: HEQNSYS! type of equations' system
 LOGICAL,            INTENT(OUT) :: OSALT    ! Sea Salt flag
 LOGICAL,            INTENT(OUT) :: OPASPOL  ! Passive pollutant flag
+LOGICAL,            INTENT(OUT) :: OFIRE    ! Blaze flag
 #ifdef MNH_FOREFIRE
 LOGICAL,            INTENT(OUT) :: OFOREFIRE ! ForeFire flag
 #endif
@@ -601,6 +607,8 @@ IF (KMI == 1) THEN
   CALL POSNAM(ILUDES,'NAM_FOREFIRE',GFOUND,ILUOUT)
   IF (GFOUND) READ(UNIT=ILUDES,NML=NAM_FOREFIRE)
 #endif
+  CALL POSNAM(ILUDES,'NAM_FIRE',GFOUND,ILUOUT)
+  IF (GFOUND) READ(UNIT=ILUDES,NML=NAM_FIRE)
   CALL POSNAM(ILUDES,'NAM_CONDSAMP',GFOUND,ILUOUT)
   IF (GFOUND) READ(UNIT=ILUDES,NML=NAM_CONDSAMP)
   CALL POSNAM(ILUDES,'NAM_BLOWSNOW',GFOUND,ILUOUT)
@@ -644,6 +652,7 @@ OSALT    = LSALT
 OORILAM  = LORILAM
 OLG      = LLG
 OPASPOL  = LPASPOL
+OFIRE  = LBLAZE
 #ifdef MNH_FOREFIRE
 OFOREFIRE  = LFOREFIRE
 #endif
@@ -820,7 +829,13 @@ IF (NVERB >= 10) THEN
 	WRITE(UNIT=ILUOUT,FMT="('************ FOREFIRE  ***************')")
 	WRITE(UNIT=ILUOUT,NML=NAM_FOREFIRE)
 !
-#endif		
+#endif	
+!
+IF (LBLAZE) THEN
+  WRITE(UNIT=ILUOUT,FMT="('******************** BLAZE ********************')")
+  WRITE(UNIT=ILUOUT,NML=NAM_FIRE)
+END IF
+!	
     WRITE(UNIT=ILUOUT,FMT="('************ CONDITIONAL SAMPLING *************')")
     WRITE(UNIT=ILUOUT,NML=NAM_CONDSAMP)
  !
