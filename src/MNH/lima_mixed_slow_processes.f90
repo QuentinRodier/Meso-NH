@@ -119,6 +119,7 @@ END MODULE MODI_LIMA_MIXED_SLOW_PROCESSES
 !!      C. Barthe  * LACy *  jan. 2014   add budgets
 !  P. Wautelet    03/2020: use the new data structures and subroutines for budgets
 !  P. Wautelet 02/02/2021: budgets: add missing source terms for SV budgets in LIMA
+!  M. Taufour     07/2022: add concentration for snow, graupel, hail
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -203,27 +204,15 @@ INTEGER :: JMOD_IFN
 !
 IF (LSNOW) THEN
    ZZW(:) = 0.0
-   if (NMOM_G.GE.2) then
-      WHERE ( (ZRGT(:)>XRTMIN(6)) .AND. (ZRGS(:)>XRTMIN(6)/PTSTEP) ) 
-          ZZW(:) = ( ZSSI(:)/ZAI(:)/ZRHODREF(:) ) *  ZCGT(:) *               &
-                  ( X0DEPG*ZLBDAG(:)**XEX0DEPG + X1DEPG*ZCJ(:)*ZLBDAG(:)**XEX1DEPG )
-          ZZW(:) =         MIN( ZRVS(:),ZZW(:)      )*(0.5+SIGN(0.5,ZZW(:))) &
-                         - MIN( ZRGS(:),ABS(ZZW(:)) )*(0.5-SIGN(0.5,ZZW(:)))
-          ZRGS(:) = ZRGS(:) + ZZW(:)
-          ZRVS(:) = ZRVS(:) - ZZW(:)
-          ZTHS(:) = ZTHS(:) + ZZW(:)*ZLSFACT(:)
-       END WHERE
-   else
-       WHERE ( (ZRGT(:)>XRTMIN(6)) .AND. (ZRGS(:)>XRTMIN(6)/PTSTEP) )
-          ZZW(:) = ( ZSSI(:)/ZAI(:)/ZRHODREF(:) ) * XCCG *                      &
-                   ( X0DEPG*ZLBDAG(:)**(XCXG+XEX0DEPG) + X1DEPG*ZCJ(:)*ZLBDAG(:)**(XCXG+XEX1DEPG) )
-          ZZW(:) =         MIN( ZRVS(:),ZZW(:)      )*(0.5+SIGN(0.5,ZZW(:))) &
-                         - MIN( ZRGS(:),ABS(ZZW(:)) )*(0.5-SIGN(0.5,ZZW(:)))
-          ZRGS(:) = ZRGS(:) + ZZW(:)
-          ZRVS(:) = ZRVS(:) - ZZW(:)
-          ZTHS(:) = ZTHS(:) + ZZW(:)*ZLSFACT(:)
-       END WHERE
-   end if
+   WHERE ( (ZRGT(:)>XRTMIN(6)) .AND. (ZRGS(:)>XRTMIN(6)/PTSTEP) ) 
+      ZZW(:) = ( ZSSI(:)/ZAI(:)/ZRHODREF(:) ) *  ZCGT(:) *               &
+           ( X0DEPG*ZLBDAG(:)**XEX0DEPG + X1DEPG*ZCJ(:)*ZLBDAG(:)**XEX1DEPG )
+      ZZW(:) =         MIN( ZRVS(:),ZZW(:)      )*(0.5+SIGN(0.5,ZZW(:))) &
+                     - MIN( ZRGS(:),ABS(ZZW(:)) )*(0.5-SIGN(0.5,ZZW(:)))
+      ZRGS(:) = ZRGS(:) + ZZW(:)
+      ZRVS(:) = ZRVS(:) - ZZW(:)
+      ZTHS(:) = ZTHS(:) + ZZW(:)*ZLSFACT(:)
+   END WHERE
 !
 ! Budget storage
   if ( nbumod == kmi .and. lbu_enable ) then

@@ -255,8 +255,8 @@ IF( IMICRO >= 1 ) THEN
    ALLOCATE(ZTHS(IMICRO))
 !
    ALLOCATE(ZCIS(IMICRO))
-   if (NMOM_S.GE.2) ALLOCATE(ZCST(IMICRO))
-   if (NMOM_S.GE.2) ALLOCATE(ZCSS(IMICRO)) 
+   ALLOCATE(ZCST(IMICRO))
+   ALLOCATE(ZCSS(IMICRO)) 
 ! 
    ALLOCATE(ZRHODREF(IMICRO)) 
    ALLOCATE(ZZT(IMICRO)) 
@@ -331,7 +331,7 @@ IF( IMICRO >= 1 ) THEN
       ZLBDAI(:) = ( XLBI*ZCIT(:) / ZRIT(:) )**XLBEXI
    END WHERE
    ZLBDAS(:)  = 1.E10
-   IF (LSNOW_T) THEN
+   IF (LSNOW_T .AND. NMOM_S.EQ.1) THEN
       WHERE(ZZT(:)>263.15 .AND. ZRST(:)>XRTMIN(5)) 
          ZLBDAS(:) = MAX(MIN(XLBDAS_MAX, 10**(14.554-0.0423*ZZT(:))),XLBDAS_MIN)
       END WHERE
@@ -339,6 +339,8 @@ IF( IMICRO >= 1 ) THEN
          ZLBDAS(:) = MAX(MIN(XLBDAS_MAX, 10**(6.226-0.0106*ZZT(:))),XLBDAS_MIN)
       END WHERE
       ZLBDAS(:) = ZLBDAS(:) * XTRANS_MP_GAMMAS
+      ZCST(:) = (XNS*ZRST(:)*ZLBDAS(:)**XBS)
+      ZCSS(:) = (XNS*ZRSS(:)*ZLBDAS(:)**XBS)
    ELSE IF (NMOM_S.GE.2) THEN
 	WHERE (ZRST(:)>XRTMIN(5) .AND. ZCST(:)>XCTMIN(5))
                 ZLBDAS(:) = ( XLBS*ZCST(:) / ZRST(:) )**XLBEXS 
@@ -347,6 +349,8 @@ IF( IMICRO >= 1 ) THEN
       WHERE (ZRST(:)>XRTMIN(5) )
          ZLBDAS(:) = MAX(MIN(XLBDAS_MAX,XLBS*( ZRHODREF(:)*ZRST(:) )**XLBEXS),XLBDAS_MIN)
       END WHERE
+      ZCST(:) = XCCS*ZLBDAS(:)**XCXS / ZRHODREF(:)
+      ZCSS(:) = XCCS*ZLBDAS(:)**XCXS / ZRHODREF(:)
    END IF
 !
    ZKA(:) = 2.38E-2 + 0.0071E-2 * ( ZZT(:) - XTT )          ! k_a
@@ -374,40 +378,19 @@ IF( IMICRO >= 1 ) THEN
       end if
 !
       ZZW(:) = 0.0
-      if(NMOM_S.GE.2) THEN
-        WHERE ( ZLBDAS(:)<XLBDASCNVI_MAX .AND. (ZRST(:)>XRTMIN(5)) .AND.(ZCST(:)>XCTMIN(5))   &
+      WHERE ( ZLBDAS(:)<XLBDASCNVI_MAX .AND. (ZRST(:)>XRTMIN(5)) .AND.(ZCST(:)>XCTMIN(5))   &
                                          .AND. (ZSSI(:)<0.0)       )
-           ZZW(:) = (ZLBDAS(:)*XDSCNVI_LIM)**(XALPHAS)
-           ZZX(:) = ( -ZSSI(:)/ZAI(:) ) * (ZCST(:)) * (ZZW(:)**XNUI) & 
-                                                        * EXP(-ZZW(:))
+         ZZW(:) = (ZLBDAS(:)*XDSCNVI_LIM)**(XALPHAS)
+         ZZX(:) = ( -ZSSI(:)/ZAI(:) ) * (ZCST(:)) * (ZZW(:)**XNUS) * EXP(-ZZW(:))
 !
-           ZZW(:) = MIN( ( XR0DEPSI+XR1DEPSI*ZCJ(:) )*ZZX(:),ZRSS(:) )
-           ZRIS(:) = ZRIS(:) + ZZW(:)
-           ZRSS(:) = ZRSS(:) - ZZW(:)
+         ZZW(:) = MIN( ( XR0DEPSI+XR1DEPSI*ZCJ(:) )*ZZX(:),ZRSS(:) )
+         ZRIS(:) = ZRIS(:) + ZZW(:)
+         ZRSS(:) = ZRSS(:) - ZZW(:)
 !
-           ZZW(:) = MIN(ZZW(:)*( XC0DEPSI+XC1DEPSI*ZCJ(:) )/( XR0DEPSI+XR1DEPSI*ZCJ(:)),ZCSS(:) )
-           ZCIS(:) = ZCIS(:) + ZZW(:)
-           ZCSS(:) = ZCSS(:) - ZZW(:)
-        END WHERE
-      else
-        WHERE ( ZRST(:)>XRTMIN(5) )
-           ZLBDAS(:)  = MIN( XLBDAS_MAX,                                           &
-                             XLBS*( ZRHODREF(:)*MAX( ZRST(:),XRTMIN(5) ) )**XLBEXS )
-        END WHERE
-        WHERE ( ZLBDAS(:)<XLBDASCNVI_MAX .AND. (ZRST(:)>XRTMIN(5)) &
-                                         .AND. (ZSSI(:)<0.0)       )
-           ZZW(:) = (ZLBDAS(:)*XDSCNVI_LIM)**(XALPHAS)
-           ZZX(:) = ( -ZSSI(:)/ZAI(:) ) * (XCCS*ZLBDAS(:)**XCXS)/ZRHODREF(:) * (ZZW(:)**XNUI) &
-                                                                       * EXP(-ZZW(:))
-!
-           ZZW(:) = MIN( ( XR0DEPSI+XR1DEPSI*ZCJ(:) )*ZZX(:),ZRSS(:) )
-           ZRIS(:) = ZRIS(:) + ZZW(:)
-           ZRSS(:) = ZRSS(:) - ZZW(:)
-!
-           ZZW(:) = ZZW(:)*( XC0DEPSI+XC1DEPSI*ZCJ(:) )/( XR0DEPSI+XR1DEPSI*ZCJ(:) )
-           ZCIS(:) = ZCIS(:) + ZZW(:)
-        END WHERE
-      end if
+         ZZW(:) = MIN(ZZW(:)*( XC0DEPSI+XC1DEPSI*ZCJ(:) )/( XR0DEPSI+XR1DEPSI*ZCJ(:)),ZCSS(:) )
+         ZCIS(:) = ZCIS(:) + ZZW(:)
+         ZCSS(:) = ZCSS(:) - ZZW(:)
+      END WHERE
 !
 ! Budget storage
       if ( nbumod == kmi .and. lbu_enable ) then
@@ -434,28 +417,17 @@ IF( IMICRO >= 1 ) THEN
       end if
 
       ZZW(:) = 0.0
-      if (NMOM_S.GE.2) then
          WHERE ( (ZRST(:)>XRTMIN(5)) .AND. (ZRSS(:)>ZRTMIN(5)) )
-            ZZW(:) = ( ZSSI(:)/(ZRHODREF(:)*ZAI(:)) ) * ZCST *                   &
-                     ( X0DEPS*ZLBDAS(:)**XEX0DEPS + X1DEPS*ZCJ(:)*ZLBDAS(:)**XEX1DEPS )
+            ZZW(:) = ( ZSSI(:)/(ZRHODREF(:)*ZAI(:)) ) * ZCST(:) *  &
+                      ( X0DEPS*ZLBDAS(:)**XEX0DEPS +               &
+                        X1DEPS*ZCJ(:)*ZLBDAS(:)**XEX1DEPS *        &
+                             (1+0.5*(XFVELOS/ZLBDAS(:))**XALPHAS)**(-XNUS+XEX1DEPS/XALPHAS) )
             ZZW(:) =    MIN( ZRVS(:),ZZW(:)      )*(0.5+SIGN(0.5,ZZW(:))) &
                       - MIN( ZRSS(:),ABS(ZZW(:)) )*(0.5-SIGN(0.5,ZZW(:)))
             ZRSS(:) = ZRSS(:) + ZZW(:)
             ZRVS(:) = ZRVS(:) - ZZW(:)
             ZTHS(:) = ZTHS(:) + ZZW(:)*ZLSFACT(:)
          END WHERE
-      else
-         WHERE ( (ZRST(:)>XRTMIN(5)) .AND. (ZRSS(:)>ZRTMIN(5)) )
-            ZZW(:) = ( ZSSI(:)/(ZRHODREF(:)*ZAI(:)) ) *                    &
-                     ( X0DEPS*ZLBDAS(:)**XEX0DEPS + X1DEPS*ZCJ(:)*ZLBDAS(:)**XEX1DEPS )
-
-            ZZW(:) =    MIN( ZRVS(:),ZZW(:)      )*(0.5+SIGN(0.5,ZZW(:))) &
-                      - MIN( ZRSS(:),ABS(ZZW(:)) )*(0.5-SIGN(0.5,ZZW(:)))
-            ZRSS(:) = ZRSS(:) + ZZW(:)
-            ZRVS(:) = ZRVS(:) - ZZW(:)
-            ZTHS(:) = ZTHS(:) + ZZW(:)*ZLSFACT(:)
-         END WHERE
-      end if
 ! Budget storage
       if ( nbumod == kmi .and. lbu_enable ) then
         if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'DEPS', &
@@ -481,42 +453,22 @@ IF( IMICRO >= 1 ) THEN
       end if
 
       ZZW(:) = 0.0
-      if (NMOM_S.GE.2) then
-         WHERE ( (ZLBDAI(:)<XLBDAICNVS_LIM) .AND. (ZCIT(:)>XCTMIN(4)) &
+      WHERE ( (ZLBDAI(:)<XLBDAICNVS_LIM) .AND. (ZCIT(:)>XCTMIN(4)) &
                                             .AND. (ZSSI(:)>0.0)       )
-            ZZW(:) = (ZLBDAI(:)*XDICNVS_LIM)**(XALPHAI)
-            ZZX(:) = ( ZSSI(:)/ZAI(:) )*ZCIT(:) * (ZZW(:)**XNUI) *EXP(-ZZW(:))
+         ZZW(:) = (ZLBDAI(:)*XDICNVS_LIM)**(XALPHAI)
+         ZZX(:) = ( ZSSI(:)/ZAI(:) )*ZCIT(:) * (ZZW(:)**XNUI) *EXP(-ZZW(:))
 !
 ! Correction BVIE
 !         ZZW(:) = MAX( MIN( ( XR0DEPIS + XR1DEPIS*ZCJ(:) )*ZZX(:)/ZRHODREF(:) &
-            ZZW(:) = MAX( MIN( ( XR0DEPIS + XR1DEPIS*ZCJ(:) )*ZZX(:) &
-                               ,ZRIS(:) ) + ZRTMIN(5), ZRTMIN(5) ) - ZRTMIN(5)
-            ZRIS(:) = ZRIS(:) - ZZW(:)
-            ZRSS(:) = ZRSS(:) + ZZW(:)
+         ZZW(:) = MAX( MIN( ( XR0DEPIS + XR1DEPIS*ZCJ(:) )*ZZX(:) , ZRIS(:) ) , 0. )
+         ZRIS(:) = ZRIS(:) - ZZW(:)
+         ZRSS(:) = ZRSS(:) + ZZW(:)
 !
-            ZZW(:) = MIN( ZZW(:)*(( XC0DEPIS+XC1DEPIS*ZCJ(:) )                   &
+         ZZW(:) = MIN( ZZW(:)*(( XC0DEPIS+XC1DEPIS*ZCJ(:) )                   &
                                 /( XR0DEPIS+XR1DEPIS*ZCJ(:) )),ZCIS(:) )
-            ZCIS(:) = ZCIS(:) - ZZW(:)
-            ZCSS(:) = ZCSS(:) + ZZW(:)
+         ZCIS(:) = ZCIS(:) - ZZW(:)
+         ZCSS(:) = ZCSS(:) + ZZW(:)
          END WHERE
-      else
-         WHERE ( (ZLBDAI(:)<XLBDAICNVS_LIM) .AND. (ZCIT(:)>XCTMIN(4)) &
-                                            .AND. (ZSSI(:)>0.0)       )
-            ZZW(:) = (ZLBDAI(:)*XDICNVS_LIM)**(XALPHAI)
-            ZZX(:) = ( ZSSI(:)/ZAI(:) )*ZCIT(:) * (ZZW(:)**XNUI) *EXP(-ZZW(:))
-!
-! Correction BVIE
-!         ZZW(:) = MAX( MIN( ( XR0DEPIS + XR1DEPIS*ZCJ(:) )*ZZX(:)/ZRHODREF(:) &
-            ZZW(:) = MAX( MIN( ( XR0DEPIS + XR1DEPIS*ZCJ(:) )*ZZX(:) &
-                               ,ZRIS(:) ) + ZRTMIN(5), ZRTMIN(5) ) - ZRTMIN(5)
-            ZRIS(:) = ZRIS(:) - ZZW(:)
-            ZRSS(:) = ZRSS(:) + ZZW(:)
-!
-            ZZW(:) = MIN( ZZW(:)*(( XC0DEPIS+XC1DEPIS*ZCJ(:) )                   &
-                                /( XR0DEPIS+XR1DEPIS*ZCJ(:) )),ZCIS(:) )
-            ZCIS(:) = ZCIS(:) - ZZW(:)
-         END WHERE
-      end if
 !
 ! Budget storage
       if ( nbumod == kmi .and. lbu_enable ) then
@@ -543,35 +495,18 @@ IF( IMICRO >= 1 ) THEN
                                                Unpack( zcis(:), mask = gmicro(:, :, :), field = pcis(:, :, :) ) * prhodj(:, :, :) )
       end if
 !
-      if (NMOM_S.GE.2) then
-         WHERE ( (ZRIT(:)>XRTMIN(4)) .AND. (ZRST(:)>XRTMIN(5)) .AND. (ZRIS(:)>ZRTMIN(4)) &
+      WHERE ( (ZRIT(:)>XRTMIN(4)) .AND. (ZRST(:)>XRTMIN(5)) .AND. (ZRIS(:)>ZRTMIN(4)) &
                                                                .AND. (ZCIS(:)>ZCTMIN(4)) )
-              ZZW1(:,3) = (ZLBDAI(:) / ZLBDAS(:))**3
-              ZZW1(:,1) = (ZCIT(:)*ZCST(:)*EXP( XCOLEXIS*(ZZT(:)-XTT) )) & 
-                                                 / (ZLBDAI(:)**3)
-              ZZW1(:,2) = MIN( ZZW1(:,1)*(XAGGS_CLARGE1+XAGGS_CLARGE2*ZZW1(:,3)),ZCIS(:) )
-              ZCIS(:) = ZCIS(:) - ZZW1(:,2)
+         ZZW1(:,3) = (ZLBDAI(:) / ZLBDAS(:))**3
+         ZZW1(:,1) = (ZCIT(:)*ZCST(:)*EXP( XCOLEXIS*(ZZT(:)-XTT) )) / (ZLBDAI(:)**3)
+         ZZW1(:,2) = MIN( ZZW1(:,1)*(XAGGS_CLARGE1+XAGGS_CLARGE2*ZZW1(:,3)),ZCIS(:) )
+         ZCIS(:) = ZCIS(:) - ZZW1(:,2)
 !
-              ZZW1(:,1) = ZZW1(:,1) / ZLBDAI(:)**XBI
-              ZZW1(:,2) = MIN( ZZW1(:,1)*(XAGGS_RLARGE1+XAGGS_RLARGE2*ZZW1(:,3)),ZRIS(:) )
-              ZRIS(:) = ZRIS(:) - ZZW1(:,2)
-              ZRSS(:) = ZRSS(:) + ZZW1(:,2)
-         END WHERE
-      else
-         WHERE ( (ZRIT(:)>XRTMIN(4)) .AND. (ZRST(:)>XRTMIN(5)) .AND. (ZRIS(:)>ZRTMIN(4)) &
-                                                         .AND. (ZCIS(:)>ZCTMIN(4)) )
-              ZZW1(:,3) = (ZLBDAI(:) / ZLBDAS(:))**3
-              ZZW1(:,1) = (ZCIT(:)*(XCCS*ZLBDAS(:)**XCXS)/ZRHODREF(:)*EXP( XCOLEXIS*(ZZT(:)-XTT) )) &
-                                                         / (ZLBDAI(:)**3)
-              ZZW1(:,2) = MIN( ZZW1(:,1)*(XAGGS_CLARGE1+XAGGS_CLARGE2*ZZW1(:,3)),ZCIS(:) )
-              ZCIS(:) = ZCIS(:) - ZZW1(:,2)
-!
-              ZZW1(:,1) = ZZW1(:,1) / ZLBDAI(:)**XBI
-              ZZW1(:,2) = MIN( ZZW1(:,1)*(XAGGS_RLARGE1+XAGGS_RLARGE2*ZZW1(:,3)),ZRIS(:) )
-              ZRIS(:) = ZRIS(:) - ZZW1(:,2)
-              ZRSS(:) = ZRSS(:) + ZZW1(:,2)
-         END WHERE
-      end if
+         ZZW1(:,1) = ZZW1(:,1) / ZLBDAI(:)**XBI
+         ZZW1(:,2) = MIN( ZZW1(:,1)*(XAGGS_RLARGE1+XAGGS_RLARGE2*ZZW1(:,3)),ZRIS(:) )
+         ZRIS(:) = ZRIS(:) - ZZW1(:,2)
+         ZRSS(:) = ZRSS(:) + ZZW1(:,2)
+      END WHERE
 ! Budget storage
       if ( nbumod == kmi .and. lbu_enable ) then
         if ( lbudget_ri ) call Budget_store_end( tbudgets(NBUDGET_RI), 'AGGS', &
@@ -618,8 +553,8 @@ IF( IMICRO >= 1 ) THEN
   DEALLOCATE(ZRSS)
   DEALLOCATE(ZTHS)
   DEALLOCATE(ZCIS)
-  if (NMOM_S.GE.2)  DEALLOCATE(ZCSS)  
-  if (NMOM_S.GE.2)  DEALLOCATE(ZCST)  
+  DEALLOCATE(ZCSS)  
+  DEALLOCATE(ZCST)  
   DEALLOCATE(ZRHODREF) 
   DEALLOCATE(ZZT) 
   DEALLOCATE(ZPRES) 

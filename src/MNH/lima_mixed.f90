@@ -97,6 +97,7 @@ END MODULE MODI_LIMA_MIXED
 !  P. Wautelet 28/05/2020: bugfix: correct array start for PSVT and PSVS
 !  P. Wautelet 02/02/2021: budgets: add missing source terms for SV budgets in LIMA
 !  J. Wurtz       03/2022: new snow characteristics
+!  M. Taufour     07/2022: add concentration for snow, graupel, hail
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -109,10 +110,13 @@ USE MODD_CST,              ONLY: XP00, XRD, XRV, XMV, XMD, XCPD, XCPV,       &
 USE MODD_NSV
 USE MODD_PARAMETERS,       ONLY: JPHEXT, JPVEXT
 USE MODD_PARAM_LIMA,       ONLY: NMOD_IFN, XRTMIN, XCTMIN, LWARM, LCOLD,     &
-                                 NMOD_CCN, NMOD_IMM, LRAIN, LSNOW, LHAIL, LSNOW_T
+                                 NMOD_CCN, NMOD_IMM, LRAIN, LSNOW, LHAIL, LSNOW_T,    &
+                                 NMOM_S, NMOM_G, NMOM_H
 USE MODD_PARAM_LIMA_WARM,  ONLY: XLBC, XLBEXC, XLBR, XLBEXR
-USE MODD_PARAM_LIMA_COLD,  ONLY: XLBI, XLBEXI, XLBS, XLBEXS, XSCFAC, XLBDAS_MAX, XLBDAS_MIN, XTRANS_MP_GAMMAS
-USE MODD_PARAM_LIMA_MIXED, ONLY: XLBG, XLBEXG, XLBH, XLBEXH
+USE MODD_PARAM_LIMA_COLD,  ONLY: XLBI, XLBEXI, XLBS, XLBEXS, XSCFAC, &
+                                 XLBDAS_MAX, XLBDAS_MIN, XTRANS_MP_GAMMAS, &
+                                 XBS, XCCS, XCXS, XNS
+USE MODD_PARAM_LIMA_MIXED, ONLY: XLBG, XLBEXG, XCCG, XCXG, XLBH, XLBEXH, XCCH, XCXH
 
 use mode_tools,            only: Countjv
 
@@ -175,17 +179,16 @@ REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3))  &
                                        PCCT,    & ! Cloud water C. at t
                                        PCRT,    & ! Rain water C. at t
                                        PCIT,    & ! Ice crystal C. at t
-                                       PCST,    & ! Snow/aggregates C. at t       ! MTaufour
-                                       PCGT,    & ! Graupel C. at t               ! MTaufour
-                                       PCHT,    & ! Hail C. at t                  ! MTaufour
+                                       PCST,    & ! Snow/aggregates C. at t   
+                                       PCGT,    & ! Graupel C. at t           
+                                       PCHT,    & ! Hail C. at t 
                                        !
                                        PCCS,    & ! Cloud water C. source
                                        PCRS,    & ! Rain water C. source
                                        PCIS,    & ! Ice crystal C. source
-                                       PCSS,    & ! Snow/aggregates C. source    ! MTaufour
-                                       PCGS,    & ! Graupel C. source            ! MTaufour
-                                       PCHS       ! Hail C. source               ! MTaufour
-!
+                                       PCSS,    & ! Snow/aggregates C. source
+                                       PCGS,    & ! Graupel C. source
+                                       PCHS       ! Hail C. source
 REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: PNFS     ! CCN C. available source
                                                   !used as Free ice nuclei for
                                                   !HOMOGENEOUS nucleation of haze
@@ -217,9 +220,9 @@ REAL, DIMENSION(:), ALLOCATABLE   :: ZRHT    ! Hail m.r. at t
 REAL, DIMENSION(:), ALLOCATABLE   :: ZCCT    ! Cloud water conc. at t
 REAL, DIMENSION(:), ALLOCATABLE   :: ZCRT    ! Rain water conc. at t
 REAL, DIMENSION(:), ALLOCATABLE   :: ZCIT    ! Pristine ice conc. at t
-REAL, DIMENSION(:), ALLOCATABLE   :: ZCST    ! Snow/aggregates conc. at t  ! MTaufour
-REAL, DIMENSION(:), ALLOCATABLE   :: ZCGT    ! Graupel conc. at t          ! MTaufour
-REAL, DIMENSION(:), ALLOCATABLE   :: ZCHT    ! Hail conc. at t             ! MTaufour
+REAL, DIMENSION(:), ALLOCATABLE   :: ZCST    ! Snow/aggregates conc. at t 
+REAL, DIMENSION(:), ALLOCATABLE   :: ZCGT    ! Graupel conc. at t
+REAL, DIMENSION(:), ALLOCATABLE   :: ZCHT    ! Hail conc. at t
 !
 REAL, DIMENSION(:), ALLOCATABLE   :: ZRVS    ! Water vapor m.r. source
 REAL, DIMENSION(:), ALLOCATABLE   :: ZRCS    ! Cloud water m.r. source
@@ -234,9 +237,9 @@ REAL, DIMENSION(:), ALLOCATABLE   :: ZTHS    ! Theta source
 REAL, DIMENSION(:),   ALLOCATABLE :: ZCCS    ! Cloud water conc. source
 REAL, DIMENSION(:),   ALLOCATABLE :: ZCRS    ! Rain water conc. source
 REAL, DIMENSION(:),   ALLOCATABLE :: ZCIS    ! Pristine ice conc. source
-REAL, DIMENSION(:),   ALLOCATABLE :: ZCSS    ! Snow/aggregates conc. at t  ! MTaufour
-REAL, DIMENSION(:),   ALLOCATABLE :: ZCGS    ! Graupel conc. at t          ! MTaufour
-REAL, DIMENSION(:),   ALLOCATABLE :: ZCHS    ! Hail conc. at t             ! MTaufour
+REAL, DIMENSION(:),   ALLOCATABLE :: ZCSS    ! Snow/aggregates conc. at t
+REAL, DIMENSION(:),   ALLOCATABLE :: ZCGS    ! Graupel conc. at t
+REAL, DIMENSION(:),   ALLOCATABLE :: ZCHS    ! Hail conc. at t
 !
 REAL, DIMENSION(:,:), ALLOCATABLE :: ZIFS    ! Free Ice nuclei conc. source
 REAL, DIMENSION(:,:), ALLOCATABLE :: ZINS    ! Nucleated Ice nuclei conc. source
@@ -311,29 +314,29 @@ IF ( KRR .GE. 7 ) PRHS(:,:,:) = PRS(:,:,:,7)
 PCCT(:,:,:) = 0.
 PCRT(:,:,:) = 0.
 PCIT(:,:,:) = 0.
-PCST(:,:,:) = 0.  ! MTaufour
-PCGT(:,:,:) = 0.  ! MTaufour
-PCHT(:,:,:) = 0.  ! MTaufour
+PCST(:,:,:) = 0. 
+PCGT(:,:,:) = 0. 
+PCHT(:,:,:) = 0.
 PCCS(:,:,:) = 0.
 PCRS(:,:,:) = 0.
 PCIS(:,:,:) = 0.
-PCSS(:,:,:) = 0.  ! MTaufour
-PCGS(:,:,:) = 0.  ! MTaufour
-PCHS(:,:,:) = 0.  ! MTaufour
+PCSS(:,:,:) = 0. 
+PCGS(:,:,:) = 0. 
+PCHS(:,:,:) = 0. 
 !
 IF ( LWARM ) PCCT(:,:,:) = PSVT(:,:,:,NSV_LIMA_NC) 
 IF ( LWARM .AND. LRAIN ) PCRT(:,:,:) = PSVT(:,:,:,NSV_LIMA_NR)
 IF ( LCOLD ) PCIT(:,:,:) = PSVT(:,:,:,NSV_LIMA_NI)
-IF ( LCOLD .AND. LSNOW ) PCST(:,:,:) = PSVT(:,:,:,NSV_LIMA_NS)          ! MTaufour
-IF ( LCOLD .AND. LSNOW ) PCGT(:,:,:) = PSVT(:,:,:,NSV_LIMA_NG)          ! MTaufour
-IF ( LCOLD .AND. LHAIL ) PCHT(:,:,:) = PSVT(:,:,:,NSV_LIMA_NH)          ! MTaufour
+IF ( NMOM_S.GE.2 ) PCST(:,:,:) = PSVT(:,:,:,NSV_LIMA_NS)
+IF ( NMOM_G.GE.2 ) PCGT(:,:,:) = PSVT(:,:,:,NSV_LIMA_NG)
+IF ( NMOM_H.GE.2 ) PCHT(:,:,:) = PSVT(:,:,:,NSV_LIMA_NH)
 !
 IF ( LWARM ) PCCS(:,:,:) = PSVS(:,:,:,NSV_LIMA_NC)
 IF ( LWARM .AND. LRAIN ) PCRS(:,:,:) = PSVS(:,:,:,NSV_LIMA_NR)
 IF ( LCOLD ) PCIS(:,:,:) = PSVS(:,:,:,NSV_LIMA_NI)
-IF ( LCOLD .AND. LSNOW ) PCSS(:,:,:) = PSVS(:,:,:,NSV_LIMA_NS)          ! MTaufour
-IF ( LCOLD .AND. LSNOW ) PCGS(:,:,:) = PSVS(:,:,:,NSV_LIMA_NG)          ! MTaufour
-IF ( LCOLD .AND. LHAIL ) PCHS(:,:,:) = PSVS(:,:,:,NSV_LIMA_NH)          ! MTaufour
+IF ( NMOM_S.GE.2 ) PCSS(:,:,:) = PSVS(:,:,:,NSV_LIMA_NS)
+IF ( NMOM_G.GE.2 ) PCGS(:,:,:) = PSVS(:,:,:,NSV_LIMA_NG)
+IF ( NMOM_H.GE.2 ) PCHS(:,:,:) = PSVS(:,:,:,NSV_LIMA_NH)
 !
 IF ( NMOD_CCN .GE. 1 ) THEN
    ALLOCATE( PNFS(SIZE(PRHODJ,1),SIZE(PRHODJ,2),SIZE(PRHODJ,3),NMOD_CCN) )
@@ -416,10 +419,10 @@ IF( IMICRO >= 0 ) THEN
    !
    ALLOCATE(ZCCT(IMICRO)) 
    ALLOCATE(ZCRT(IMICRO)) 
-   ALLOCATE(ZCIT(IMICRO)) 
-   ALLOCATE(ZCST(IMICRO)) ! MTaufour 
-   ALLOCATE(ZCGT(IMICRO)) ! MTaufour
-   ALLOCATE(ZCHT(IMICRO)) ! MTaufour   
+   ALLOCATE(ZCIT(IMICRO))
+   ALLOCATE(ZCST(IMICRO)) 
+   ALLOCATE(ZCGT(IMICRO))
+   ALLOCATE(ZCHT(IMICRO))
    !
    ALLOCATE(ZRVS(IMICRO))  
    ALLOCATE(ZRCS(IMICRO)) 
@@ -432,10 +435,10 @@ IF( IMICRO >= 0 ) THEN
    !
    ALLOCATE(ZCCS(IMICRO)) 
    ALLOCATE(ZCRS(IMICRO)) 
-   ALLOCATE(ZCIS(IMICRO)) 
-   ALLOCATE(ZCSS(IMICRO)) ! MTaufour 
-   ALLOCATE(ZCGS(IMICRO)) ! MTaufour
-   ALLOCATE(ZCHS(IMICRO)) ! MTaufour   
+   ALLOCATE(ZCIS(IMICRO))
+   ALLOCATE(ZCSS(IMICRO)) 
+   ALLOCATE(ZCGS(IMICRO)) 
+   ALLOCATE(ZCHS(IMICRO))
    ALLOCATE(ZIFS(IMICRO,NMOD_IFN))
    ALLOCATE(ZINS(IMICRO,NMOD_IFN))
    !
@@ -455,9 +458,9 @@ IF( IMICRO >= 0 ) THEN
       ZCCT(JL) = PCCT(I1(JL),I2(JL),I3(JL))
       ZCRT(JL) = PCRT(I1(JL),I2(JL),I3(JL))
       ZCIT(JL) = PCIT(I1(JL),I2(JL),I3(JL))
-      ZCST(JL) = PCST(I1(JL),I2(JL),I3(JL)) ! MTaufour
-      ZCGT(JL) = PCGT(I1(JL),I2(JL),I3(JL)) ! MTaufour
-      ZCHT(JL) = PCHT(I1(JL),I2(JL),I3(JL)) ! MTaufour      
+      ZCST(JL) = PCST(I1(JL),I2(JL),I3(JL))
+      ZCGT(JL) = PCGT(I1(JL),I2(JL),I3(JL)) 
+      ZCHT(JL) = PCHT(I1(JL),I2(JL),I3(JL))
       !
       ZRVS(JL) = PRVS(I1(JL),I2(JL),I3(JL))
       ZRCS(JL) = PRCS(I1(JL),I2(JL),I3(JL))
@@ -471,9 +474,9 @@ IF( IMICRO >= 0 ) THEN
       ZCCS(JL) = PCCS(I1(JL),I2(JL),I3(JL))
       ZCRS(JL) = PCRS(I1(JL),I2(JL),I3(JL))
       ZCIS(JL) = PCIS(I1(JL),I2(JL),I3(JL))
-      ZCSS(JL) = PCSS(I1(JL),I2(JL),I3(JL)) ! MTaufour
-      ZCGS(JL) = PCGS(I1(JL),I2(JL),I3(JL)) ! MTaufour
-      ZCHS(JL) = PCHS(I1(JL),I2(JL),I3(JL)) ! MTaufour      
+      ZCSS(JL) = PCSS(I1(JL),I2(JL),I3(JL)) 
+      ZCGS(JL) = PCGS(I1(JL),I2(JL),I3(JL)) 
+      ZCHS(JL) = PCHS(I1(JL),I2(JL),I3(JL))       
       DO JMOD_IFN = 1, NMOD_IFN
          ZIFS(JL,JMOD_IFN) = PIFS(I1(JL),I2(JL),I3(JL),JMOD_IFN)
          ZINS(JL,JMOD_IFN) = PINS(I1(JL),I2(JL),I3(JL),JMOD_IFN)
@@ -541,27 +544,51 @@ IF( IMICRO >= 0 ) THEN
       ZLBDAI(:) = ( XLBI*ZCIT(:) / ZRIT(:) )**XLBEXI
    END WHERE
    ZLBDAS(:)  = 1.E10
-   IF (LSNOW_T) THEN
+   IF (LSNOW_T .AND. NMOM_S.EQ.1) THEN
       WHERE(ZZT(:)>263.15 .AND. ZRST(:)>XRTMIN(5)) 
          ZLBDAS(:) = MAX(MIN(XLBDAS_MAX, 10**(14.554-0.0423*ZZT(:))),XLBDAS_MIN)
       END WHERE
       WHERE(ZZT(:)<=263.15 .AND. ZRST(:)>XRTMIN(5)) 
          ZLBDAS(:) = MAX(MIN(XLBDAS_MAX, 10**(6.226-0.0106*ZZT(:))),XLBDAS_MIN)
       END WHERE
-      ZLBDAS(:) = ZLBDAS(:)*XTRANS_MP_GAMMAS
+      ZLBDAS(:) = ZLBDAS(:) * XTRANS_MP_GAMMAS
+      ZCST(:) = (XNS*ZRST(:)*ZLBDAS(:)**XBS)
+      ZCSS(:) = (XNS*ZRSS(:)*ZLBDAS(:)**XBS)
+   ELSE IF (NMOM_S.GE.2) THEN
+	WHERE (ZRST(:)>XRTMIN(5) .AND. ZCST(:)>XCTMIN(5))
+                ZLBDAS(:) = ( XLBS*ZCST(:) / ZRST(:) )**XLBEXS 
+        END WHERE
    ELSE
-      WHERE (ZRST(:)>XRTMIN(5) .AND. ZCST(:)>XCTMIN(5))
-         ZLBDAS(:) = ( XLBS*ZCST(:) / ZRST(:) )**XLBEXS
+      WHERE (ZRST(:)>XRTMIN(5) )
+         ZLBDAS(:) = MAX(MIN(XLBDAS_MAX,XLBS*( ZRHODREF(:)*ZRST(:) )**XLBEXS),XLBDAS_MIN)
       END WHERE
+      ZCST(:) = XCCS*ZLBDAS(:)**XCXS / ZRHODREF(:)
+      ZCSS(:) = XCCS*ZLBDAS(:)**XCXS / ZRHODREF(:)
    END IF
    ZLBDAG(:)  = 1.E10
-   WHERE (ZRGT(:)>XRTMIN(6) .AND. ZCGT(:)>XCTMIN(6) )  ! MTaufour
-      ZLBDAG(:) =  ( XLBG*ZCGT(:) / ZRGT(:) )**XLBEXG  ! MTaufour
-   END WHERE
+   if (NMOM_G.GE.2) then
+       WHERE (ZRGT(:)>XRTMIN(6) .AND. ZCGT(:)>XCTMIN(6) )  
+           ZLBDAG(:) =  ( XLBG*ZCGT(:) / ZRGT(:) )**XLBEXG 
+       END WHERE
+   else
+       WHERE (ZRGT(:)>XRTMIN(6) )
+           ZLBDAG(:) = XLBG*( ZRHODREF(:)*ZRGT(:) )**XLBEXG
+       END WHERE
+      ZCGT(:) = XCCG*ZLBDAG(:)**XCXG / ZRHODREF(:)
+      ZCGS(:) = XCCG*ZLBDAG(:)**XCXG / ZRHODREF(:)
+   end if
    ZLBDAH(:)  = 1.E10
-   WHERE (ZRHT(:)>XRTMIN(7) .AND.  ZCHT(:)>XCTMIN(7))  ! MTaufour
-      ZLBDAH(:) =  ( XLBH*ZCHT(:) / ZRHT(:) )**XLBEXH  ! MTaufour
-   END WHERE
+   if (NMOM_H.GE.2) then
+       WHERE (ZRHT(:)>XRTMIN(7) .AND.  ZCHT(:)>XCTMIN(7))  
+           ZLBDAH(:) =  ( XLBH*ZCHT(:) / ZRHT(:) )**XLBEXH 
+       END WHERE
+   else
+       WHERE (ZRHT(:)>XRTMIN(7) )
+           ZLBDAH(:) = XLBH*( ZRHODREF(:)*ZRHT(:) )**XLBEXH
+       END WHERE
+      ZCHT(:) = XCCH*ZLBDAH(:)**XCXH / ZRHODREF(:)
+      ZCHS(:) = XCCH*ZLBDAH(:)**XCXH / ZRHODREF(:)
+   end if
 ! 
 !-------------------------------------------------------------------------------
 !
@@ -571,12 +598,12 @@ IF( IMICRO >= 0 ) THEN
 !
    CALL LIMA_MIXED_SLOW_PROCESSES(ZRHODREF, ZZT, ZSSI, PTSTEP,        &
                                   ZLSFACT, ZLVFACT, ZAI, ZCJ,         &
-                                  ZRGT, ZRHT, ZCIT, ZCGT, ZCHT,       & ! MTaufour add ZCGT, ZCHT
-                                  ZRVS, ZRCS, ZRIS, ZRGS, ZRHS, ZTHS, & ! MTaufour add ZRHS 
-                                  ZCCS, ZCIS, ZCGS, ZIFS, ZINS,       & ! MTaufour add ZCGS
-                                  ZLBDAI, ZLBDAG, ZLBDAH,             & ! MTaufour add ZLBDAH
+                                  ZRGT, ZRHT, ZCIT, ZCGT, ZCHT,       &
+                                  ZRVS, ZRCS, ZRIS, ZRGS, ZRHS, ZTHS, &
+                                  ZCCS, ZCIS, ZCGS, ZIFS, ZINS,       &
+                                  ZLBDAI, ZLBDAG, ZLBDAH,             &
                                   ZRHODJ, GMICRO, PRHODJ, KMI,        &
-                                  PTHS, PRVS, PRCS, PRIS, PRGS, PRHS, & ! MTaufour add PRHS
+                                  PTHS, PRVS, PRCS, PRIS, PRGS, PRHS, &
                                   PCCS, PCIS                          )
 ! 
 !-------------------------------------------------------------------------------
@@ -586,16 +613,16 @@ IF( IMICRO >= 0 ) THEN
 !   	        ------------------------------------
 !
 IF (LSNOW) THEN
-!   CALL LIMA_MIXED_FAST_PROCESSES(ZRHODREF, ZZT, ZPRES, PTSTEP,             &
-!                                  ZLSFACT, ZLVFACT, ZKA, ZDV, ZCJ,          &
-!                                  ZRVT, ZRCT, ZRRT, ZRIT, ZRST, ZRGT,       &
-!                                  ZRHT, ZCCT, ZCRT, ZCIT, ZCST, ZCGT, ZCHT, & ! MTaufour add ZCST, ZCGT, ZCHT
-!                                  ZRCS, ZRRS, ZRIS, ZRSS, ZRGS, ZRHS,       &
-!                                  ZTHS, ZCCS, ZCRS, ZCIS, ZCSS, ZCGS, ZCHS, & ! MTaufour add  ZCSS, ZCGS, ZCHS
-!                                  ZLBDAC, ZLBDAR, ZLBDAI, ZLBDAS, ZLBDAG, ZLBDAH,   & ! MTaufour add ZLBDAI
-!                                  ZRHODJ, GMICRO, PRHODJ, KMI, PTHS,        &
-!                                  PRCS, PRRS, PRIS, PRSS, PRGS, PRHS,       &
-!                                  PCCS, PCRS, PCIS, PCSS, PCGS, PCHS        ) ! MTaufour add PCSS, PCGS, PCHS
+   CALL LIMA_MIXED_FAST_PROCESSES(ZRHODREF, ZZT, ZPRES, PTSTEP,                   &
+                                  ZLSFACT, ZLVFACT, ZKA, ZDV, ZCJ,                &
+                                  ZRVT, ZRCT, ZRRT, ZRIT, ZRST, ZRGT,             &
+                                  ZRHT, ZCCT, ZCRT, ZCIT, ZCST, ZCGT, ZCHT,       &
+                                  ZRCS, ZRRS, ZRIS, ZRSS, ZRGS, ZRHS,             &
+                                  ZTHS, ZCCS, ZCRS, ZCIS, ZCSS, ZCGS, ZCHS,       &
+                                  ZLBDAC, ZLBDAR, ZLBDAI, ZLBDAS, ZLBDAG, ZLBDAH, &
+                                  ZRHODJ, GMICRO, PRHODJ, KMI, PTHS,              &
+                                  PRCS, PRRS, PRIS, PRSS, PRGS, PRHS,             &
+                                  PCCS, PCRS, PCIS, PCSS, PCGS, PCHS              )
 END IF
 !
 !-------------------------------------------------------------------------------
@@ -630,12 +657,18 @@ END IF
    PCRS(:,:,:) = UNPACK( ZCRS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:) )
    ZW(:,:,:) = PCIS(:,:,:)
    PCIS(:,:,:) = UNPACK( ZCIS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:) )
-   ZW(:,:,:) = PCSS(:,:,:)                                            ! MTaufour
-   PCSS(:,:,:) = UNPACK( ZCSS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:) ) ! MTaufour
-   ZW(:,:,:) = PCGS(:,:,:)                                            ! MTaufour
-   PCGS(:,:,:) = UNPACK( ZCGS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:) ) ! MTaufour
-   ZW(:,:,:) = PCHS(:,:,:)                                            ! MTaufour
-   PCHS(:,:,:) = UNPACK( ZCHS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:) ) ! MTaufour
+   if (NMOM_S.GE.2) then
+       ZW(:,:,:) = PCSS(:,:,:)
+       PCSS(:,:,:) = UNPACK( ZCSS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:) ) 
+   end if
+   if (NMOM_G.GE.2) then
+       ZW(:,:,:) = PCGS(:,:,:)
+       PCGS(:,:,:) = UNPACK( ZCGS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:) )
+   end if
+   if (NMOM_H.GE.2) then
+       ZW(:,:,:) = PCHS(:,:,:)      
+       PCHS(:,:,:) = UNPACK( ZCHS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:) ) 
+   end if
 !
    DO JMOD_IFN = 1, NMOD_IFN
       ZW(:,:,:) = PIFS(:,:,:,JMOD_IFN)
@@ -657,9 +690,9 @@ END IF
    DEALLOCATE(ZCCT) 
    DEALLOCATE(ZCRT) 
    DEALLOCATE(ZCIT)
-   DEALLOCATE(ZCST) ! MTaufour
-   DEALLOCATE(ZCGT) ! MTaufour
-   DEALLOCATE(ZCHT) ! MTaufour   
+   DEALLOCATE(ZCST) 
+   DEALLOCATE(ZCGT)
+   DEALLOCATE(ZCHT) 
 ! 
    DEALLOCATE(ZRVS)  
    DEALLOCATE(ZRCS) 
@@ -673,9 +706,9 @@ END IF
    DEALLOCATE(ZCCS) 
    DEALLOCATE(ZCRS) 
    DEALLOCATE(ZCIS)  
-   DEALLOCATE(ZCSS) ! MTaufour  
-   DEALLOCATE(ZCGS) ! MTaufour     
-   DEALLOCATE(ZCHS) ! MTaufour        
+   DEALLOCATE(ZCSS)  
+   DEALLOCATE(ZCGS)     
+   DEALLOCATE(ZCHS)
    DEALLOCATE(ZIFS)
    DEALLOCATE(ZINS)
 !
@@ -722,9 +755,9 @@ IF ( KRR .GE. 7 ) PRS(:,:,:,7) = PRHS(:,:,:)
 !
 PSVS(:,:,:,NSV_LIMA_NC) = PCCS(:,:,:)
 IF ( LRAIN ) PSVS(:,:,:,NSV_LIMA_NR) = PCRS(:,:,:)
-IF ( LSNOW ) PSVS(:,:,:,NSV_LIMA_NS) = PCSS(:,:,:) ! MTaufour
-IF ( LSNOW ) PSVS(:,:,:,NSV_LIMA_NG) = PCGS(:,:,:) ! MTaufour
-IF ( LHAIL ) PSVS(:,:,:,NSV_LIMA_NH) = PCHS(:,:,:) ! MTaufour
+IF ( NMOM_S.GE.2 ) PSVS(:,:,:,NSV_LIMA_NS) = PCSS(:,:,:)
+IF ( NMOM_G.GE.2 ) PSVS(:,:,:,NSV_LIMA_NG) = PCGS(:,:,:)
+IF ( NMOM_H.GE.2 ) PSVS(:,:,:,NSV_LIMA_NH) = PCHS(:,:,:)
 PSVS(:,:,:,NSV_LIMA_NI) = PCIS(:,:,:)
 !
 IF ( NMOD_CCN .GE. 1 ) THEN

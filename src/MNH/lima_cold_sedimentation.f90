@@ -420,7 +420,7 @@ END IF
                 ALLOCATE(ZLBDAH(ISEDIM))                  
                  DO JL = 1,ISEDIM
                     ZRHS(JL) = PRHS(I1(JL),I2(JL),I3(JL))
-                    ZCHS(JL) = PRHS(I1(JL),I2(JL),I3(JL))            
+                    ZCHS(JL) = PCHS(I1(JL),I2(JL),I3(JL))            
                  END DO
                  ZLBDAH(:)  = 1.E10         
                  WHERE( ZRHS(:)>XRTMIN(7) .AND. ZCHS(:)>XCTMIN(7) )
@@ -473,11 +473,15 @@ END IF
          PRSS(:,:,:) = PRSS(:,:,:) / PTSTEP
          PRGS(:,:,:) = PRGS(:,:,:) / PTSTEP
          PRHS(:,:,:) = PRHS(:,:,:) / PTSTEP
+         IF(NMOM_S.GE.2) PCSS(:,:,:) = PCSS(:,:,:) / PTSTEP
+         IF(NMOM_G.GE.2) PCGS(:,:,:) = PCGS(:,:,:) / PTSTEP
+         IF(NMOM_H.GE.2) PCHS(:,:,:) = PCHS(:,:,:) / PTSTEP 
       END IF
    END IF
 END DO
 !++cb++
 DEALLOCATE(ZRTMIN)
+DEALLOCATE(ZCTMIN)
 !--cb--
 !
 END SUBROUTINE LIMA_COLD_SEDIMENTATION

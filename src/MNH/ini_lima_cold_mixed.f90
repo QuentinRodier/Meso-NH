@@ -293,8 +293,13 @@ else
    XNUG    = 1.0  ! Exponential law
 end if
 !
-XALPHAH = 1.0  ! Gamma law
-XNUH    = 8.0  ! Gamma law with little dispersion
+if (NMOM_H.GE.2) then
+   XALPHAH = 1.0  ! Gamma law
+   XNUH    = 5.0  ! Gamma law with little dispersion
+else
+   XALPHAH = 1.0  ! Gamma law
+   XNUH    = 8.0  ! Gamma law with little dispersion
+end if
 !
 !*       2.2    Constants for shape parameter
 !
@@ -1513,24 +1518,31 @@ END IF
 !*       9.2.1  Constant for the cloud droplet and cloud ice collection
 !               by the hailstones
 !
-XFWETH = (XPI/4.0)*XCCH*XCH*(ZRHO00**XCEXVT)*MOMG(XALPHAH,XNUH,XDH+2.0)
+XFWETH = (XPI/4.0)*XCH*(ZRHO00**XCEXVT)*MOMG(XALPHAH,XNUH,XDH+2.0)
 !
 !*       9.2.2  Constants for the aggregate collection by the hailstones
 !
-!XFSWETH = (XPI/4.0)*XCCH*XCCS*XAS*(ZRHO00**XCEXVT)
 XFSWETH = XNS*(XPI/4.0)*XAS*(ZRHO00**XCEXVT)
+XFNSWETH= XNS*(XPI/4.0)*XAS*(ZRHO00**XCEXVT)
 !
 XLBSWETH1   =    MOMG(XALPHAH,XNUH,2.)*MOMG(XALPHAS,XNUS,XBS)
 XLBSWETH2   = 2.*MOMG(XALPHAH,XNUH,1.)*MOMG(XALPHAS,XNUS,XBS+1.)
 XLBSWETH3   =                          MOMG(XALPHAS,XNUS,XBS+2.)
+XLBNSWETH1  =    MOMG(XALPHAH,XNUH,2.)                       
+XLBNSWETH2  = 2.*MOMG(XALPHAH,XNUH,1.)*MOMG(XALPHAS,XNUS,1.) 
+XLBNSWETH3  =                          MOMG(XALPHAS,XNUS,2.)
 !
 !*       9.2.3  Constants for the graupel collection by the hailstones
 !
 XFGWETH = XNG*(XPI/4.0)*XAG*(ZRHO00**XCEXVT)
+XFNGWETH= XNG*(XPI/4.0)*XAG*(ZRHO00**XCEXVT)
 !
 XLBGWETH1   =    MOMG(XALPHAH,XNUH,2.)*MOMG(XALPHAG,XNUG,XBG)
 XLBGWETH2   = 2.*MOMG(XALPHAH,XNUH,1.)*MOMG(XALPHAG,XNUG,XBG+1.)
 XLBGWETH3   =                          MOMG(XALPHAG,XNUG,XBG+2.)
+XLBNGWETH1  =    MOMG(XALPHAH,XNUH,2.)                      
+XLBNGWETH2  = 2.*MOMG(XALPHAH,XNUH,1.)*MOMG(XALPHAG,XNUG,1.)
+XLBNGWETH3  =                          MOMG(XALPHAG,XNUG,2.)
 !
 ! Notice: One magnitude of lambda discretized over 10 points
 !
