@@ -108,9 +108,9 @@ IF (NMOM_I.EQ.1) THEN
    WHERE ( PRIT(:)>XRTMIN(4) .AND. PRST(:)>XRTMIN(5) .AND. LDCOMPUTE(:) )
       ZZW1(:) = XFIAGGS * EXP( XCOLEXIS*(PT(:)-XTT) ) &
                         * PRIT(:)                     &
-                        * PRST(:) * (1+(XFVELOS/PLBDS(:))**XALPHAS)**(-XNUS+XEXIAGGS/XALPHAS) &
+                        * PCST(:) * (1+(XFVELOS/PLBDS(:))**XALPHAS)**(-XNUS+XEXIAGGS/XALPHAS) &
                         * PRHODREF(:)**(-XCEXVT+1.) &
-                        * ((PLBDS(:))**(XBS+XEXIAGGS))
+                        * PLBDS(:)**XEXIAGGS
 !
       P_RI_AGGS(:) = - ZZW1(:)
    END WHERE

@@ -132,7 +132,7 @@ DO JI = 1, SIZE(PRCT)
    IF ( PRCT(JI)>XRTMIN(2) .AND. PRST(JI)>XRTMIN(5) .AND. PT(JI)<XTT .AND. LDCOMPUTE(JI) ) THEN
 !
       ZVEC1(JI) = PLBDS(JI)
-      ZVEC1W(JI)= ( XFVELOS**XALPHAS + PLBDS(JI)**XALPHAS ) ** (1./XALPHAS) ! modified equivalent lambda 
+      ZVEC1W(JI)= ( XFVELOS**XALPHAS + PLBDS(JI)**XALPHAS ) ** (1./XALPHAS) ! modified equivalent lambda
 !
 !        2.     perform the linear interpolation of the normalized
 !               "2+XDS"-moment of the incomplete gamma function using the modified equivalent lambda
@@ -142,9 +142,8 @@ DO JI = 1, SIZE(PRCT)
       IVEC2(JI) = INT( ZVEC2(JI) )
       ZVEC2(JI) = ZVEC2(JI) - REAL( IVEC2(JI) )
 !
-      ZVEC1(JI) =  XGAMINC_RIM1( IVEC2(JI)+1 )* ZVEC2(JI)      &
+      ZZW1(JI)  =  XGAMINC_RIM1( IVEC2(JI)+1 )* ZVEC2(JI)      &
                  - XGAMINC_RIM1( IVEC2(JI)   )*(ZVEC2(JI) - 1.0)
-      ZZW1(JI) = ZVEC1(JI)
 !
 !        3.     perform the linear interpolation of the normalized
 !               "XBS"-moment of the incomplete gamma function
@@ -154,9 +153,8 @@ DO JI = 1, SIZE(PRCT)
       IVEC2(JI) = INT( ZVEC2(JI) )
       ZVEC2(JI) = ZVEC2(JI) - REAL( IVEC2(JI) )
 !
-      ZVEC1(JI) = XGAMINC_RIM2( IVEC2(JI)+1 )* ZVEC2(JI)      &
+      ZZW2(JI)  = XGAMINC_RIM2( IVEC2(JI)+1 )* ZVEC2(JI)      &
                 - XGAMINC_RIM2( IVEC2(JI)   )*(ZVEC2(JI) - 1.0)
-      ZZW2(JI) = ZVEC1(JI)
 !
 !        4.     riming
 !

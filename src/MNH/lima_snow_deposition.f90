@@ -110,7 +110,6 @@ REAL, DIMENSION(:),   INTENT(OUT)   :: P_RS_DEPS
 LOGICAL, DIMENSION(SIZE(PRHODREF)) :: GMICRO ! Computations only where necessary
 REAL,    DIMENSION(SIZE(PRHODREF)) :: ZZW, ZZW2, ZZX ! Work array
 !
-!
 !-------------------------------------------------------------------------------
 !
 P_RI_CNVI(:) = 0.
@@ -128,9 +127,9 @@ IF (NMOM_I.EQ.1) THEN
 !
       ZZW(:) = 0.0
       WHERE ( PRST(:)>XRTMIN(5) )
-         ZZW(:) = PRST(:) * PSSI(:) / PAI(:) * &
-              ( X0DEPS*PLBDS(:)**XEX0DEPS +                  &
-                X1DEPS*PLBDS(:)**(XEX1DEPS+XBS)*PCJ(:) *     &
+         ZZW(:) = PCST(:) * PSSI(:) / PAI(:) * &
+              ( X0DEPS*PLBDS(:)**XEX0DEPS +             &
+                X1DEPS*PLBDS(:)**XEX1DEPS *PCJ(:) *     &
                      (1+0.5*(XFVELOS/PLBDS(:))**XALPHAS)**(-XNUS+XEX1DEPS/XALPHAS) )
          ZZW(:) =    ZZW(:)*(0.5+SIGN(0.5,ZZW(:))) - ABS(ZZW(:))*(0.5-SIGN(0.5,ZZW(:)))
       END WHERE
@@ -165,8 +164,8 @@ ELSE
 !
       ZZW(:) = 0.0
       WHERE ( PRST(:)>XRTMIN(5) .AND. PCST(:)>XCTMIN(5) )
-         ZZW(:) = ( PCST(:)*PSSI(:)/(PAI(:)) ) *           &
-              ( X0DEPS*PLBDS(:)**XEX0DEPS +                &
+         ZZW(:) = ( PCST(:)*PSSI(:)/PAI(:) ) *     &
+              ( X0DEPS*PLBDS(:)**XEX0DEPS +        &
               ( X1DEPS*PCJ(:)*PLBDS(:)**XEX1DEPS * &
                    (1+0.5*(XFVELOS/PLBDS(:))**XALPHAS)**(-XNUS+XEX1DEPS/XALPHAS)) )
          ZZW(:) =    ZZW(:)*(0.5+SIGN(0.5,ZZW(:))) - ABS(ZZW(:))*(0.5-SIGN(0.5,ZZW(:)))

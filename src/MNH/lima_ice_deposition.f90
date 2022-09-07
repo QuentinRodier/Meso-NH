@@ -78,8 +78,7 @@ USE MODD_PARAM_LIMA,      ONLY : XRTMIN, XCTMIN, XALPHAI, XALPHAS, XNUI, XNUS,&
 USE MODD_PARAM_LIMA_COLD, ONLY : XCXS, XCCS,                                  &
                                  XLBDAS_MAX, XDSCNVI_LIM, XLBDASCNVI_MAX,     &
                                  XC0DEPSI, XC1DEPSI, XR0DEPSI, XR1DEPSI,      &
-                                 XSCFAC, X1DEPS, X0DEPS, XEX1DEPS, XEX0DEPS,  &
-                                 XDICNVS_LIM, XLBDAICNVS_LIM,                 &
+                                 XSCFAC, XDICNVS_LIM, XLBDAICNVS_LIM,         &
                                  XC0DEPIS, XC1DEPIS, XR0DEPIS, XR1DEPIS,      &
                                  XCOLEXIS, XAGGS_CLARGE1, XAGGS_CLARGE2,      &
                                  XAGGS_RLARGE1, XAGGS_RLARGE2,                &
