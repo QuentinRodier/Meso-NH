@@ -200,6 +200,7 @@ USE MODD_FIELD
 USE MODI_FIRE_MODEL
 USE MODD_CONF, ONLY : NVERB, NHALO
 USE MODE_MNH_TIMING, ONLY : SECOND_MNH2
+USE MODE_MSG
 USE MODD_IO,      ONLY: TFILEDATA
 !
 IMPLICIT NONE
@@ -764,13 +765,13 @@ IF (LBLAZE) THEN
     !*       2.1.7  Test halo size
     !               --------------
     IF (NHALO < 2 .AND. NFIRE_WENO_ORDER == 3) THEN
-      PRINT *, 'ERROR : WENO3 fire gradient calculation needs NHALO >= 2'
-      CALL ABORT
-      STOP  ' Error in ground_paramn.f90. Step 2.1.7'
+      WRITE(ILUOUT,'(A/A)') 'ERROR BLAZE-FIRE : WENO3 fire gradient calculation needs NHALO >= 2'
+      !callabortstop
+      CALL PRINT_MSG(NVERB_FATAL,'GEN','GROUND_PARAM_n','')
     ELSEIF (NHALO < 3 .AND. NFIRE_WENO_ORDER == 5) THEN
-      PRINT *, 'ERROR : WENO5 fire gradient calculation needs NHALO >= 3'
-      CALL ABORT
-      STOP  ' Error in ground_paramn.f90. Step 2.1.7'
+      WRITE(ILUOUT,'(A/A)') 'ERROR : WENO5 fire gradient calculation needs NHALO >= 3'
+      !callabortstop
+      CALL PRINT_MSG(NVERB_FATAL,'GEN','GROUND_PARAM_n','')
     END IF
     !
   END IF
