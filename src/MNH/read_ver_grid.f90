@@ -111,6 +111,7 @@ USE MODD_PARAMETERS
 !
 USE MODE_MSG
 USE MODE_POS
+USE MODE_SET_GRID, ONLY: INTERP_VERGRID_TO_MASSPOINTS
 !
 USE MODI_DEFAULT_SLEVE
 !
@@ -328,8 +329,7 @@ END SELECT
 XZTOP = XZHAT(IKU)
 
 ! Interpolations of positions to mass points
-XZHATM(1:IKU-1 ) = 0.5 * XZHAT(1:IKU-1) + 0.5 * XZHAT(2:IKU  )
-XZHATM(  IKU   ) = 1.5 * XZHAT(  IKU  ) - 0.5 * XZHAT(  IKU-1)
+CALL INTERP_VERGRID_TO_MASSPOINTS( XZHAT, XZHATM )
 
 !-------------------------------------------------------------------------------
 !

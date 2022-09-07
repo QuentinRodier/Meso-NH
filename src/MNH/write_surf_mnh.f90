@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1997-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1997-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -297,6 +297,7 @@ USE MODD_PARAMETERS,    ONLY: XUNDEF, JPHEXT
 use mode_field,          only: Find_field_id_from_mnhname
 use MODE_IO_FIELD_WRITE, only: IO_Field_write
 USE MODE_MSG
+USE MODE_SET_GRID,       only: INTERP_HORGRID_1DIR_TO_MASSPOINTS
 USE MODE_TOOLS_ll
 USE MODE_WRITE_SURF_MNH_TOOLS
 
@@ -451,8 +452,7 @@ IF (      (CSTORAGE_TYPE=='PG' .OR. CSTORAGE_TYPE=='SU')  &
       XXHAT(:) = ZW1D(1+NHALO:IIU-NHALO)
 
       ! Interpolations of positions to mass points
-      XXHATM( : UBOUND(XXHATM,1)-1 ) = 0.5 * XXHAT( : UBOUND(XXHAT,1)-1 ) + 0.5 * XXHAT( LBOUND(XXHAT,1)+1 : UBOUND(XXHAT,1) )
-      XXHATM( UBOUND(XXHATM,1)     ) = 1.5 * XXHAT( UBOUND(XXHAT,1)     ) - 0.5 * XXHAT( UBOUND(XXHAT,1)-1 )
+      CALL INTERP_HORGRID_1DIR_TO_MASSPOINTS( 'X', XXHAT, XXHATM )
     END IF
   END IF
   DEALLOCATE(ZW1D)
@@ -487,8 +487,7 @@ ELSE IF ( (CSTORAGE_TYPE=='PG' .OR. CSTORAGE_TYPE=='SU')  &
       XYHAT(:) = ZW1D(1+NHALO:IJU-NHALO)
 
       ! Interpolations of positions to mass points
-      XYHATM( : UBOUND(XYHATM,1)-1 ) = 0.5 * XYHAT( : UBOUND(XYHAT,1)-1 ) + 0.5 * XYHAT( LBOUND(XYHAT,1)+1 : UBOUND(XYHAT,1) )
-      XYHATM( UBOUND(XYHATM,1)     ) = 1.5 * XYHAT( UBOUND(XYHAT,1)     ) - 0.5 * XYHAT( UBOUND(XYHAT,1)-1 )
+      CALL INTERP_HORGRID_1DIR_TO_MASSPOINTS( 'Y', XYHAT, XYHATM )
     END IF
   END IF
   DEALLOCATE(ZW1D)

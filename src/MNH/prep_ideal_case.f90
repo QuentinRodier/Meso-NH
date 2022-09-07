@@ -379,6 +379,7 @@ USE MODE_ll
 USE MODE_MODELN_HANDLER
 use mode_field,            only: Alloc_field_scalars, Ini_field_list, Ini_field_scalars
 USE MODE_MSG
+USE MODE_SET_GRID,         only: INTERP_HORGRID_TO_MASSPOINTS
 !
 USE MODI_DEFAULT_DESFM_n    ! Interface modules
 USE MODI_DEFAULT_EXPRE
@@ -1286,11 +1287,7 @@ ELSE
   END IF
 
   ! Interpolations of positions to mass points
-  XXHATM(1:NIU-1) = 0.5 * XXHAT(1:NIU-1) + 0.5 * XXHAT(2:NIU)
-  XXHATM(  NIU)   = 1.5 * XXHAT(  NIU)   - 0.5 * XXHAT(NIU-1)
-
-  XYHATM(1:NJU-1) = 0.5 * XYHAT(1:NJU-1) + 0.5 * XYHAT(2:NJU)
-  XYHATM(  NJU)   = 1.5 * XYHAT(  NJU)   - 0.5 * XYHAT(NJU-1)
+  CALL INTERP_HORGRID_TO_MASSPOINTS( XXHAT, XYHAT, XXHATM, XYHATM )
 END IF
 !
 !*       5.1.2  Orography and Gal-Chen Sommerville transformation :

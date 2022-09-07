@@ -3,86 +3,24 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
+! Modifications:
+!  P. Wautelet 31/08/2022: add PXHATM and PYHATM variables
+!  P. Wautelet 07/09/2022: add INTERP_HORGRID_1DIR_TO_MASSPOINTS, INTERP_HORGRID_TO_MASSPOINTS, INTERP_VERGRID_TO_MASSPOINTS
+!-----------------------------------------------------------------
 !     ####################
-      MODULE MODI_SET_GRID
+      MODULE MODE_SET_GRID
 !     ####################
-!
-INTERFACE
-!
-      SUBROUTINE SET_GRID( KMI, TPINIFILE,                                &
-                           KKU, KIMAX_ll, KJMAX_ll,                       &
-                           PTSTEP, PSEGLEN,                               &
-                           PLONORI, PLATORI, PLON, PLAT,                  &
-                           PXHAT, PYHAT, PDXHAT, PDYHAT, PXHATM, PYHATM,  &
-                           PMAP, PZS, PZZ, PZHAT, PZHATM, PZTOP, OSLEVE,  &
-                           PLEN1, PLEN2, PZSMT, PJ,                       &
-                           TPDTMOD, TPDTCUR, KSTOP,                       &
-                           KBAK_NUMB, KOUT_NUMB, TPBACKUPN, TPOUTPUTN     )
-!
-USE MODD_TYPE_DATE
-USE MODD_IO, ONLY: TFILEDATA,TOUTBAK
-!
-INTEGER,                INTENT(IN)  :: KMI       ! Model index
-TYPE(TFILEDATA),        INTENT(IN)  :: TPINIFILE !Initial file
-INTEGER,                INTENT(IN)  :: KKU       ! Upper dimension in z direction
-                                                 ! for domain arrays
-INTEGER,                INTENT(IN)  :: KIMAX_ll  !  Dimensions  in x direction
-                                                 ! of the physical domain,
-INTEGER,                INTENT(IN)  :: KJMAX_ll  !  Dimensions  in y direction
-                                                 ! of the physical domain,
-!
-REAL,                   INTENT(IN)  :: PTSTEP    ! time step of model KMI
-REAL,                   INTENT(INOUT) :: PSEGLEN ! segment duration (in seconds)
-!
-REAL,                   INTENT(OUT) :: PLONORI   ! Longitude  of the
-                                                 ! Origine point of
-                                                 ! conformal projection
-REAL,                   INTENT(OUT) :: PLATORI   ! Latitude of the
-                                                 ! Origine point of
-                                                 ! conformal projection
-REAL, DIMENSION(:,:),   INTENT(OUT) :: PLON,PLAT ! Longitude and latitude
-REAL, DIMENSION(:),     INTENT(OUT) :: PXHAT     ! Position x in the conformal
-                                                 ! plane or on the cartesian plane
-REAL, DIMENSION(:),     INTENT(OUT) :: PYHAT     ! Position y in the conformal
-                                                 ! plane or on the cartesian plane
-REAL, DIMENSION(:),     INTENT(OUT) :: PDXHAT    ! horizontal stretching in x
-REAL, DIMENSION(:),     INTENT(OUT) :: PDYHAT    ! horizontal stretching in y
-REAL, DIMENSION(:),     INTENT(OUT) :: PXHATM    ! Position x in the conformal plane or on the cartesian plane at mass points
-REAL, DIMENSION(:),     INTENT(OUT) :: PYHATM    ! Position y in the conformal plane or on the cartesian plane at mass points
-REAL, DIMENSION(:,:),   INTENT(OUT) :: PMAP      ! Map factor
-!
-REAL, DIMENSION(:,:),   INTENT(OUT) :: PZS       ! orography
-REAL, DIMENSION(:,:,:), INTENT(OUT) :: PZZ       ! Height z
-REAL, DIMENSION(:),     INTENT(OUT) :: PZHAT     ! Height level
-REAL, DIMENSION(:),     INTENT(OUT) :: PZHATM    ! Height level at mass points
-REAL,                   INTENT(OUT) :: PZTOP     ! Model top
-LOGICAL,                INTENT(OUT) :: OSLEVE    ! flag for SLEVE coordinate
-REAL,                   INTENT(OUT) :: PLEN1     ! Decay scale for smooth topography
-REAL,                   INTENT(OUT) :: PLEN2     ! Decay scale for small-scale topography deviation
-REAL, DIMENSION(:,:),   INTENT(OUT) :: PZSMT     ! smooth-orography
-!
-TYPE (DATE_TIME),       INTENT(OUT) :: TPDTMOD   ! date and time of the model
-                                                 ! beginning
-TYPE (DATE_TIME),       INTENT(OUT) :: TPDTCUR   ! Current date and time
-INTEGER,                INTENT(OUT) :: KSTOP     ! number of time steps for
-                                                 ! current segment
-INTEGER,POINTER,        INTENT(OUT) :: KBAK_NUMB ! number of backups
-INTEGER,POINTER,        INTENT(OUT) :: KOUT_NUMB ! number of outputs
-TYPE(TOUTBAK),DIMENSION(:),POINTER,INTENT(OUT) :: TPBACKUPN ! List of backups
-TYPE(TOUTBAK),DIMENSION(:),POINTER,INTENT(OUT) :: TPOUTPUTN ! List of outputs
-!
-REAL, DIMENSION(:,:,:), INTENT(OUT) :: PJ        ! Jacobian
-!
-END SUBROUTINE SET_GRID
-!
-END INTERFACE
-!
-END MODULE MODI_SET_GRID
-!
-!
-!
-!
-!
+
+IMPLICIT NONE
+
+PRIVATE
+
+PUBLIC :: SET_GRID
+
+PUBLIC :: INTERP_HORGRID_1DIR_TO_MASSPOINTS, INTERP_HORGRID_TO_MASSPOINTS, INTERP_VERGRID_TO_MASSPOINTS
+
+CONTAINS
+
 !     #####################################################################
       SUBROUTINE SET_GRID( KMI, TPINIFILE,                                &
                            KKU, KIMAX_ll, KJMAX_ll,                       &
@@ -405,14 +343,8 @@ CALL IO_Field_read(TPINIFILE,'DTSEG',TDTSEG)
 !
 
 ! Interpolations of positions to mass points
-PXHATM( : UBOUND(PXHATM,1)-1 ) = 0.5 * PXHAT( : UBOUND(PXHAT,1)-1 ) + 0.5 * PXHAT( LBOUND(PXHAT,1)+1 : UBOUND(PXHAT,1) )
-PXHATM( UBOUND(PXHATM,1)     ) = 1.5 * PXHAT( UBOUND(PXHAT,1)     ) - 0.5 * PXHAT( UBOUND(PXHAT,1)-1 )
-
-PYHATM( : UBOUND(PYHATM,1)-1 ) = 0.5 * PYHAT( : UBOUND(PYHAT,1)-1 ) + 0.5 * PYHAT( LBOUND(PYHAT,1)+1 : UBOUND(PYHAT,1) )
-PYHATM( UBOUND(PYHATM,1)     ) = 1.5 * PYHAT( UBOUND(PYHAT,1)     ) - 0.5 * PYHAT( UBOUND(PYHAT,1)-1 )
-
-PZHATM( : UBOUND(PZHATM,1)-1 ) = 0.5 * PZHAT( : UBOUND(PZHAT,1)-1 ) + 0.5 * PZHAT( LBOUND(PZHAT,1)+1 : UBOUND(PZHAT,1) )
-PZHATM( UBOUND(PZHATM,1)     ) = 1.5 * PZHAT( UBOUND(PZHAT,1)     ) - 0.5 * PZHAT( UBOUND(PZHAT,1)-1 )
+CALL INTERP_HORGRID_TO_MASSPOINTS( PXHAT, PYHAT, PXHATM, PYHATM )
+CALL INTERP_VERGRID_TO_MASSPOINTS( PZHAT, PZHATM )
 
 IF (LCARTESIAN) THEN
   CALL SM_GRIDCART(PXHAT,PYHAT,PZHAT,PZS,OSLEVE,PLEN1,PLEN2,PZSMT,PDXHAT,PDYHAT,PZZ,PJ)
@@ -496,3 +428,77 @@ CALL SM_PRINT_TIME(TDTSEG,TLUOUT,YTITLE)
 !-------------------------------------------------------------------------------
 !
 END SUBROUTINE SET_GRID
+
+
+SUBROUTINE INTERP_HORGRID_1DIR_TO_MASSPOINTS( HDIR, PHAT, PHATM )
+! Interpolate 1 direction of horizontal grid to mass points
+
+USE MODD_ARGSLIST_ll, ONLY: LIST1D_ll
+
+USE MODE_ARGSLIST_ll, ONLY: ADD1DFIELD_ll, CLEANLIST1D_ll
+USE MODE_EXCHANGE_ll, ONLY: UPDATE_1DHALO_ll
+USE MODE_MSG
+
+IMPLICIT NONE
+
+CHARACTER(LEN=1),   INTENT(IN)  :: HDIR  ! Direction ('X' or 'Y')
+REAL, DIMENSION(:), INTENT(IN)  :: PHAT  ! Position x or y in the conformal or cartesian plane
+REAL, DIMENSION(:), INTENT(OUT) :: PHATM ! Position x or y in the conformal or cartesian plane at mass points
+
+CHARACTER(LEN=:), ALLOCATABLE :: YNAME
+INTEGER                       :: IINFO_ll ! return code
+TYPE(LIST1D_ll),  POINTER     :: TZLIST   ! pointer for the list of 1D fields to be communicated
+
+
+! Interpolate inside subdomain
+PHATM( : UBOUND(PHATM,1)-1 ) = 0.5 * PHAT( : UBOUND(PHAT,1)-1 ) + 0.5 * PHAT( LBOUND(PHAT,1)+1 : UBOUND(PHAT,1) )
+PHATM( UBOUND(PHATM,1)     ) = 1.5 * PHAT( UBOUND(PHAT,1)     ) - 0.5 * PHAT( UBOUND(PHAT,1)-1 )
+
+! Update data between subdomains
+NULLIFY( TZLIST )
+
+IF ( HDIR == 'X' ) THEN
+  YNAME = 'XHATM'
+ELSE IF ( HDIR == 'Y' ) THEN
+  YNAME = 'YHATM'
+ELSE
+  CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'INTERP_HORGRID_1DIR_TO_MASSPOINTS', 'invalid direction (valid: X or Y)' )
+END IF
+
+CALL ADD1DFIELD_ll( HDIR, TZLIST, PHATM, YNAME )
+CALL UPDATE_1DHALO_ll( TZLIST, IINFO_ll )
+CALL CLEANLIST1D_ll( TZLIST )
+
+END SUBROUTINE INTERP_HORGRID_1DIR_TO_MASSPOINTS
+
+
+SUBROUTINE INTERP_HORGRID_TO_MASSPOINTS( PXHAT, PYHAT, PXHATM, PYHATM )
+
+IMPLICIT NONE
+
+REAL, DIMENSION(:), INTENT(IN)  :: PXHAT  ! Position x in the conformal or cartesian plane
+REAL, DIMENSION(:), INTENT(IN)  :: PYHAT  ! Position y in the conformal or cartesian plane
+REAL, DIMENSION(:), INTENT(OUT) :: PXHATM ! Position x in the conformal or cartesian plane at mass points
+REAL, DIMENSION(:), INTENT(OUT) :: PYHATM ! Position y in the conformal or cartesian plane at mass points
+
+CALL INTERP_HORGRID_1DIR_TO_MASSPOINTS( 'X', PXHAT, PXHATM )
+CALL INTERP_HORGRID_1DIR_TO_MASSPOINTS( 'Y', PYHAT, PYHATM )
+
+END SUBROUTINE INTERP_HORGRID_TO_MASSPOINTS
+
+
+PURE SUBROUTINE INTERP_VERGRID_TO_MASSPOINTS( PZHAT, PZHATM )
+! Interpolate vertical grid to mass points
+
+IMPLICIT NONE
+
+REAL, DIMENSION(:), INTENT(IN)  :: PZHAT  ! Position z in the conformal or cartesian plane
+REAL, DIMENSION(:), INTENT(OUT) :: PZHATM ! Position z in the conformal or cartesian plane at mass points
+
+PZHATM( : UBOUND(PZHATM,1)-1 ) = 0.5 * PZHAT( : UBOUND(PZHAT,1)-1 ) + 0.5 * PZHAT( LBOUND(PZHAT,1)+1 : UBOUND(PZHAT,1) )
+PZHATM( UBOUND(PZHATM,1)     ) = 1.5 * PZHAT( UBOUND(PZHAT,1)     ) - 0.5 * PZHAT( UBOUND(PZHAT,1)-1 )
+
+END SUBROUTINE INTERP_VERGRID_TO_MASSPOINTS
+
+
+END MODULE MODE_SET_GRID

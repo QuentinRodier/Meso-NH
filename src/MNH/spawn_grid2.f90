@@ -167,6 +167,7 @@ USE MODD_BIKHARDT_n
 USE MODD_VAR_ll
 use mode_bikhardt
 USE MODE_ll
+USE MODE_SET_GRID,   only: INTERP_HORGRID_TO_MASSPOINTS
 USE MODE_TIME
 USE MODE_GRIDPROJ
 !
@@ -394,11 +395,6 @@ PLEN2    = XLEN21
   DEALLOCATE(ZXHAT_2D_F)
   DEALLOCATE(ZXHAT_EXTENDED_C)
   DEALLOCATE(ZXHAT_2D_C)
-
-  ! Interpolations of positions to mass points
-  PXHATM(1:IIU_C-1) = 0.5 * PXHAT(1:IIU_C-1) + 0.5 * PXHAT(2:IIU_C)
-  PXHATM(  IIU_C)   = 1.5 * PXHAT(  IIU_C)   - 0.5 * PXHAT(IIU_C-1)
-
 !
 !     YHAT
 !
@@ -459,8 +455,7 @@ PLEN2    = XLEN21
   DEALLOCATE(ZYHAT_2D_C)
 
   ! Interpolations of positions to mass points
-  PYHATM(1:IJU_C-1) = 0.5 * PYHAT(1:IJU_C-1) + 0.5 * PYHAT(2:IJU_C)
-  PYHATM(  IJU_C)   = 1.5 * PYHAT(  IJU_C)   - 0.5 * PYHAT(IJU_C-1)
+  CALL INTERP_HORGRID_TO_MASSPOINTS( PXHAT, PYHAT, PXHATM, PYHATM )
 
 !!$=======
 !!$  IXSIZE1=SIZE(XXHAT1)
