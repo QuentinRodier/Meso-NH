@@ -272,7 +272,7 @@ INTEGER, PARAMETER                 :: I_SEED_PARAM = 26032012
 INTEGER, DIMENSION(:), ALLOCATABLE :: I_SEED
 INTEGER                            :: NI_SEED
 !
-REAL,    DIMENSION(:), ALLOCATABLE :: ZVEC1_S, ZVEC1_S1, ZVEC1_S2,  & ! Work vectors
+REAL,    DIMENSION(:), ALLOCATABLE :: ZVEC1_S, ZVEC1_SW, ZVEC1_S1, ZVEC1_S2,  & ! Work vectors
                                       ZVEC1_S3, ZVEC1_S4,           &
                                       ZVEC1_S11, ZVEC1_S12,         & ! for snow
                                       ZVEC1_S21, ZVEC1_S22,         &
@@ -554,6 +554,7 @@ IF (ICIBU > 0) THEN
 !       1.3.1.0 allocations
 !
   ALLOCATE(ZVEC1_S(ICIBU))
+  ALLOCATE(ZVEC1_SW(ICIBU))
   ALLOCATE(ZVEC1_S1(ICIBU))
   ALLOCATE(ZVEC1_S2(ICIBU))
   ALLOCATE(ZVEC1_S3(ICIBU))
@@ -575,6 +576,7 @@ IF (ICIBU > 0) THEN
 !       1.3.1.1 select the PLBDAS
 !
   ZVEC1_S(:) = PACK( PLBDAS(:),MASK=GCIBU(:) )
+  ZVEC1_SW(:)= ( XFVELOS**XALPHAS + ZVEC1_S(:)**XALPHAS ) ** (1./XALPHAS) ! modified equivalent lambda 
 !
 !
 !       1.3.1.2 find the next lower indice for the PLBDAS in the
@@ -613,6 +615,41 @@ IF (ICIBU > 0) THEN
 !
 !
 !       1.3.1.5 perform the linear interpolation of the
+!               normalized "XBS"-moment of the incomplete gamma function
+!
+! For lower boundary (0.2 mm)
+  ZVEC1_S31(1:ICIBU) = XGAMINC_CIBU_S(3,IVEC2_S1(1:ICIBU)+1) *  ZVEC2_S1(1:ICIBU) &
+                     - XGAMINC_CIBU_S(3,IVEC2_S1(1:ICIBU))   * (ZVEC2_S1(1:ICIBU)-1.0)
+!
+! For upper boundary (1 mm)
+  ZVEC1_S32(1:ICIBU) = XGAMINC_CIBU_S(3,IVEC2_S2(1:ICIBU)+1) *  ZVEC2_S2(1:ICIBU) &
+                     - XGAMINC_CIBU_S(3,IVEC2_S2(1:ICIBU))   * (ZVEC2_S2(1:ICIBU)-1.0)
+!
+! From 0.2 mm to 1 mm we need
+  ZVEC1_S3(1:ICIBU) = XMOMGS_CIBU_2 * (ZVEC1_S32(1:ICIBU) - ZVEC1_S31(1:ICIBU))
+!
+!
+!       1.3.1.2 find the next lower indice for the PLBDS in the
+!               geometrical set of Lbda_s used to tabulate some moments of the
+!               incomplete gamma function, for boundary 1 (0.2 mm) for modified lambda (Wurtz snow fall speed)
+!
+  ZVEC2_S1(1:ICIBU) = MAX( 1.0001, MIN( FLOAT(NGAMINC)-0.0001,XCIBUINTP_S  &
+                      * LOG( ZVEC1_SW(1:ICIBU) ) + XCIBUINTP1_S  ) )
+  IVEC2_S1(1:ICIBU) = INT( ZVEC2_S1(1:ICIBU) )
+  ZVEC2_S1(1:ICIBU) = ZVEC2_S1(1:ICIBU) - FLOAT( IVEC2_S1(1:ICIBU) )
+!
+!
+!       1.3.1.3 find the next lower indice for the PLBDS in the
+!               geometrical set of Lbda_s used to tabulate some moments of the
+!               incomplete gamma function, for boundary 2 (1 mm) for modified lambda (Wurtz snow fall speed)
+!
+  ZVEC2_S2(1:ICIBU) = MAX( 1.0001, MIN( FLOAT(NGAMINC)-0.0001,XCIBUINTP_S  &
+                      * LOG( ZVEC1_SW(1:ICIBU) ) + XCIBUINTP2_S  ) )
+  IVEC2_S2(1:ICIBU) = INT( ZVEC2_S2(1:ICIBU) )
+  ZVEC2_S2(1:ICIBU) = ZVEC2_S2(1:ICIBU) - FLOAT( IVEC2_S2(1:ICIBU) )
+!
+!
+!       1.3.1.5 perform the linear interpolation of the
 !               normalized "XDS"-moment of the incomplete gamma function
 !
 ! For lower boundary (0.2 mm)
@@ -625,17 +662,6 @@ IF (ICIBU > 0) THEN
 !
 ! From 0.2 mm to 1 mm we need
   ZVEC1_S2(1:ICIBU) = XMOMGS_CIBU_1 * (ZVEC1_S22(1:ICIBU) - ZVEC1_S21(1:ICIBU))
-!
-! For lower boundary (0.2 mm)
-  ZVEC1_S31(1:ICIBU) = XGAMINC_CIBU_S(3,IVEC2_S1(1:ICIBU)+1) *  ZVEC2_S1(1:ICIBU) &
-                     - XGAMINC_CIBU_S(3,IVEC2_S1(1:ICIBU))   * (ZVEC2_S1(1:ICIBU)-1.0)
-!
-! For upper boundary (1 mm)
-  ZVEC1_S32(1:ICIBU) = XGAMINC_CIBU_S(3,IVEC2_S2(1:ICIBU)+1) *  ZVEC2_S2(1:ICIBU) &
-                     - XGAMINC_CIBU_S(3,IVEC2_S2(1:ICIBU))   * (ZVEC2_S2(1:ICIBU)-1.0)
-!
-! From 0.2 mm to 1 mm we need
-  ZVEC1_S3(1:ICIBU) = XMOMGS_CIBU_2 * (ZVEC1_S32(1:ICIBU) - ZVEC1_S31(1:ICIBU))
 !
 !
 !       1.3.1.6 perform the linear interpolation of the
@@ -722,12 +748,13 @@ IF (ICIBU > 0) THEN
   ALLOCATE(ZFRAG_CIBU(SIZE(PZT)))
 !
   ZFRAG_CIBU(:) = UNPACK ( VECTOR=ZFRAGMENTS(:),MASK=GCIBU,FIELD=0.0 )
-  ZNI_CIBU(:) = ZFRAG_CIBU(:) * (XFACTOR_CIBU_NI * PRST1D(:) / (PRHODREF(:)**XCEXVT)) * &
+  ZNI_CIBU(:) = ZFRAG_CIBU(:) * (XFACTOR_CIBU_NI * PCST(:) * PCGT(:) / (PRHODREF(:)**XCEXVT)) * &
                 (XCG * ZINTG_GRAUPEL_1(:) * ZINTG_SNOW_1(:) *                                               &
-                 PLBDAS(:)**(XBS) * PLBDAG(:)**(XCXG-(XDG+2.0))                                             &
+                 PLBDAG(:)**(-(XDG+2.0))                                             &
                - XCS * ZINTG_GRAUPEL_2(:) * ZINTG_SNOW_2(:) *                                               &
-                 PLBDAS(:)**(-XDS+XBS) * PLBDAG(:)**(XCXG-2.0) *                                            &
+                 PLBDAS(:)**(-XDS) * PLBDAG(:)**(-2.0) *                                            &
                  (1+(XFVELOS/PLBDAS(:))**XALPHAS)**(-XNUS-XDS/XALPHAS) )
+
   PCIS1D(:) = PCIS1D(:) + MAX(ZNI_CIBU(:), 0.)
 !
   DEALLOCATE(ZFRAG_CIBU)
@@ -735,11 +762,11 @@ IF (ICIBU > 0) THEN
 !
 ! Max value of rs removed by CIBU
   ALLOCATE(ZRI_CIBU(SIZE(PZT)))
-  ZRI_CIBU(:) = (XFACTOR_CIBU_RI * PRST1D(:) / (PRHODREF(:)**XCEXVT)) * &
+  ZRI_CIBU(:) = (XFACTOR_CIBU_RI * PCST(:) * PCGT(:) / (PRHODREF(:)**XCEXVT)) * &
                  (XCG * ZINTG_GRAUPEL_1(:) * ZINTG_SNOW_3(:) *                              &
-                  PLBDAG(:)**(XCXG-(XDG+2.0))                                               &
+                  PLBDAS(:)**(-XBS) * PLBDAG(:)**(-(XDG+2.0))                                               &
                 - XCS * ZINTG_GRAUPEL_2(:) * ZINTG_SNOW_4(:) *                              &
-                  PLBDAS(:)**(-XDS) * PLBDAG(:)**(XCXG-2.0) *                               &
+                  PLBDAS(:)**(-XBS-XDS) * PLBDAG(:)**(-2.0) *                               &
                   (1+(XFVELOS/PLBDAS(:))**XALPHAS)**(-XNUS-(XBS+XDS)/XALPHAS) )
 !
 ! The value of rs removed by CIBU is determined by the mean mass of pristine ice
@@ -753,6 +780,7 @@ IF (ICIBU > 0) THEN
   PRSS1D(:) = PRSS1D(:) - MAX(ZRI_CIBU(:), 0.)   !
 !
   DEALLOCATE(ZVEC1_S)
+  DEALLOCATE(ZVEC1_SW)
   DEALLOCATE(ZVEC1_S1)
   DEALLOCATE(ZVEC1_S2)
   DEALLOCATE(ZVEC1_S3)
