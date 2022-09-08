@@ -489,7 +489,7 @@ ZZW(:) = 0.0
 NHAIL = 0.
 IF (LHAIL) NHAIL = 1. 
 WHERE( LDCOMPUTE(:) .AND. PRGT(:)>XRTMIN(6) .AND. PT(:)<XTT .AND. &
-       (ZRDRYG(:)-ZZW2(:)-ZZW3(:))>=(ZRWETG(:)-ZZW5(:)-ZZW6(:)) .AND. ZRWETG(:)>0.0 ) 
+       (ZRDRYG(:)-ZZW2(:)-ZZW3(:))>=(ZRWETG(:)-ZZW5(:)-ZZW6(:)) .AND. ZRWETG(:)-ZZW5(:)-ZZW6(:)>0.0 ) 
 !
 ! Mass of rain and cloud droplets frozen by graupel in wet mode : RCWETG + RRWETG = RWETG - RIWETG - RSWETG
    ZZW7(:) = ZRWETG(:) - ZZW5(:) - ZZW6(:)

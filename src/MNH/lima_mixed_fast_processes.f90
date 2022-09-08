@@ -1508,7 +1508,7 @@ NHAIL = 0.
 IF (LHAIL) NHAIL = 1. 
 
 WHERE( PRGT1D(:)>XRTMIN(6) .AND. PZT(:)<XTT .AND.                              &
-     (ZRDRYG(:)-ZZW1(:,2)-ZZW1(:,3))>=(ZRWETG(:)-ZZW1(:,5)-ZZW1(:,6)) .AND. ZRWETG(:)-ZZW1(JJ,5)-ZZW1(JJ,6)>0.0 ) 
+     (ZRDRYG(:)-ZZW1(:,2)-ZZW1(:,3))>=(ZRWETG(:)-ZZW1(:,5)-ZZW1(:,6)) .AND. ZRWETG(:)-ZZW1(:,5)-ZZW1(:,6)>0.0 ) 
 !   
    ZZW(:) = ZRWETG(:) - ZZW1(:,5) - ZZW1(:,6) ! RCWETG+RRWETG
 !   
