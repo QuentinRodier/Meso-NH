@@ -559,6 +559,9 @@ REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)):: ZTT,ZEXNE,ZLV,ZLS,ZCPH,ZC
 REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3))::  ZSHEAR, ZDUDZ, ZDVDZ
 TYPE(TFIELDDATA) :: TZFIELD
 !
+!Do not change rain, snow, graupel and hail concentrations (mixing ratio is not changed)
+REAL, DIMENSION(SIZE(PSVT,1),SIZE(PSVT,2),SIZE(PSVT,3),SIZE(PSVT,4)):: ZRSVS
+!
 !------------------------------------------------------------------------------------------
 ALLOCATE (                                                        &
           ZCP(SIZE(PTHLT,1),SIZE(PTHLT,2),SIZE(PTHLT,3)),         &  
@@ -623,6 +626,8 @@ IF (HTURBLEN=='BL89' .OR. HTURBLEN=='RM17' .OR. HTURBLEN=='ADAP' .OR. ORMC01) TH
   ZRM(:,:,:,:) = PRT(:,:,:,:)
 END IF
 !
+!Save LIMA scalar variables sources
+ZRSVS(:,:,:,:)=PRSVS(:,:,:,:)
 !
 !
 !----------------------------------------------------------------------------
@@ -1005,6 +1010,13 @@ CALL TURB_VER(KKA,KKU,KKL,KRR, KRRL, KRRI,               &
           PRUS,PRVS,PRWS,PRTHLS,PRRS,PRSVS,              &
           PDYP,PTHP,PSIGS,PWTH,PWRC,PWSV                 )
 
+IF (HCLOUD == 'LIMA') THEN
+   IF (NMOM_R.GE.2) PRSVS(:,:,:,NSV_LIMA_NR) = ZRSVS(:,:,:,NSV_LIMA_NR) 
+   IF (NMOM_S.GE.2) PRSVS(:,:,:,NSV_LIMA_NS) = ZRSVS(:,:,:,NSV_LIMA_NS)
+   IF (NMOM_G.GE.2) PRSVS(:,:,:,NSV_LIMA_NG) = ZRSVS(:,:,:,NSV_LIMA_NG) 
+   IF (NMOM_H.GE.2) PRSVS(:,:,:,NSV_LIMA_NH) = ZRSVS(:,:,:,NSV_LIMA_NH)
+END IF
+
 if ( lbudget_u ) call Budget_store_end( tbudgets(NBUDGET_U), 'VTURB', prus(:, :, :) )
 if ( lbudget_v ) call Budget_store_end( tbudgets(NBUDGET_V), 'VTURB', prvs(:, :, :) )
 if ( lbudget_w ) call Budget_store_end( tbudgets(NBUDGET_W), 'VTURB', prws(:, :, :) )
@@ -1089,6 +1101,13 @@ if ( hturbdim == '3DIM' ) then
           PDYP,PTHP,PSIGS,                                     &
           ZTRH,                                                &
           PRUS,PRVS,PRWS,PRTHLS,PRRS,PRSVS                     )
+
+IF (HCLOUD == 'LIMA') THEN
+   IF (NMOM_R.GE.2) PRSVS(:,:,:,NSV_LIMA_NR) = ZRSVS(:,:,:,NSV_LIMA_NR)
+   IF (NMOM_S.GE.2) PRSVS(:,:,:,NSV_LIMA_NS) = ZRSVS(:,:,:,NSV_LIMA_NS)
+   IF (NMOM_G.GE.2) PRSVS(:,:,:,NSV_LIMA_NG) = ZRSVS(:,:,:,NSV_LIMA_NG)
+   IF (NMOM_H.GE.2) PRSVS(:,:,:,NSV_LIMA_NH) = ZRSVS(:,:,:,NSV_LIMA_NH) 
+END IF
 
   if ( lbudget_u ) call Budget_store_end( tbudgets(NBUDGET_U), 'HTURB', prus(:, :, :) )
   if ( lbudget_v ) call Budget_store_end( tbudgets(NBUDGET_V), 'HTURB', prvs(:, :, :) )
