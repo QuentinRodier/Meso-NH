@@ -616,11 +616,11 @@ ZT(:,:,:)   = ZTHT(:,:,:) * ZEXN(:,:,:)
 !   if ( lbudget_ri .and. lcold .and. lsnow ) call Budget_store_init( tbudgets(NBUDGET_RI), 'CORR', zris(:, :, :) * prhodj(:, :, :) )
 !   if ( lbudget_rs .and. lcold .and. lsnow ) call Budget_store_init( tbudgets(NBUDGET_RS), 'CORR', zrss(:, :, :) * prhodj(:, :, :) )
 !   if ( lbudget_sv ) then
-!     if ( lwarm .and. lrain ) &
+!     if ( lwarm .and. lrain .and. nmom_c.ge.2) &
 !       call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'CORR', zccs(:, :, :) * prhodj(:, :, :) )
-!     if ( lwarm .and. lrain ) &
+!     if ( lwarm .and. lrain .and. nmom_r.ge.2) &
 !       call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nr), 'CORR', zcrs(:, :, :) * prhodj(:, :, :) )
-!     if ( lcold .and. lsnow ) &
+!     if ( lcold .and. lsnow .and. nmom_i.ge.2) &
 !       call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'CORR', zcis(:, :, :) * prhodj(:, :, :) )
 !   end if
 ! end if
@@ -667,11 +667,11 @@ ZT(:,:,:)   = ZTHT(:,:,:) * ZEXN(:,:,:)
 !   if ( lbudget_ri .and. lcold .and. lsnow ) call Budget_store_end( tbudgets(NBUDGET_RI), 'CORR', zris(:, :, :) * prhodj(:, :, :) )
 !   if ( lbudget_rs .and. lcold .and. lsnow ) call Budget_store_end( tbudgets(NBUDGET_RS), 'CORR', zrss(:, :, :) * prhodj(:, :, :) )
 !   if ( lbudget_sv ) then
-!     if ( lwarm .and. lrain ) &
+!     if ( lwarm .and. lrain .and. nmom_c.ge.2) &
 !       call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'CORR', zccs(:, :, :) * prhodj(:, :, :) )
-!     if ( lwarm .and. lrain ) &
+!     if ( lwarm .and. lrain .and. nmom_r.ge.2) &
 !       call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nr), 'CORR', zcrs(:, :, :) * prhodj(:, :, :) )
-!     if ( lcold .and. lsnow ) &
+!     if ( lcold .and. lsnow .and. nmom_i.ge.2) &
 !       call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'CORR', zcis(:, :, :) * prhodj(:, :, :) )
 !   end if
 ! end if
@@ -690,11 +690,11 @@ if ( lbu_enable ) then
   if ( lbudget_rg .and. lcold .and. lsnow ) call Budget_store_init( tbudgets(NBUDGET_RG), 'SEDI', zrgs(:, :, :) * prhodj(:, :, :) )
   if ( lbudget_rh .and. lcold .and. lhail ) call Budget_store_init( tbudgets(NBUDGET_RH), 'SEDI', zrhs(:, :, :) * prhodj(:, :, :) )
   if ( lbudget_sv ) then
-    if ( lwarm .and. lsedc ) &
+    if ( lwarm .and. lsedc .and. nmom_c.ge.2) &
       call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'SEDI', zccs(:, :, :) * prhodj(:, :, :) )
-    if ( lwarm .and. lrain ) &
+    if ( lwarm .and. lrain .and. nmom_r.ge.2) &
       call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nr), 'SEDI', zcrs(:, :, :) * prhodj(:, :, :) )
-    if ( lcold .and. lsedi ) &
+    if ( lcold .and. lsedi .and. nmom_i.ge.2) &
       call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'SEDI', zcis(:, :, :) * prhodj(:, :, :) )
   end if
 end if
@@ -737,11 +737,11 @@ if ( lbu_enable ) then
   if ( lbudget_rg .and. lcold .and. lsnow ) call Budget_store_end( tbudgets(NBUDGET_RG), 'SEDI', zrgs(:, :, :) * prhodj(:, :, :) )
   if ( lbudget_rh .and. lcold .and. lhail ) call Budget_store_end( tbudgets(NBUDGET_RH), 'SEDI', zrhs(:, :, :) * prhodj(:, :, :) )
   if ( lbudget_sv ) then
-    if ( lwarm .and. lsedc ) &
+    if ( lwarm .and. lsedc .and. nmom_c.ge.2) &
       call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'SEDI', zccs(:, :, :) * prhodj(:, :, :) )
-    if ( lwarm .and. lrain ) &
+    if ( lwarm .and. lrain .and. nmom_r.ge.2) &
       call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nr), 'SEDI', zcrs(:, :, :) * prhodj(:, :, :) )
-    if ( lcold .and. lsedi ) &
+    if ( lcold .and. lsedi .and. nmom_i.ge.2) &
       call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'SEDI', zcis(:, :, :) * prhodj(:, :, :) )
   end if
 end if
@@ -750,7 +750,8 @@ end if
 !
 IF (LWARM .AND. LDEPOC) THEN
   if ( lbudget_rc ) call Budget_store_init( tbudgets(NBUDGET_RC),                    'DEPO', zrcs(:, :, :) * prhodj(:, :, :) )
-  if ( lbudget_sv ) call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'DEPO', zccs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_sv .and. nmom_c.ge.2) &
+       call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'DEPO', zccs(:, :, :) * prhodj(:, :, :) )
 
   PINDEP(:,:)=0.
   GDEP(:,:) = .FALSE.
@@ -763,7 +764,8 @@ IF (LWARM .AND. LDEPOC) THEN
   END WHERE
 
   if ( lbudget_rc ) call Budget_store_end( tbudgets(NBUDGET_RC),                    'DEPO', zrcs(:, :, :) * prhodj(:, :, :) )
-  if ( lbudget_sv ) call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'DEPO', zccs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_sv .and. nmom_c.ge.2) &
+       call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'DEPO', zccs(:, :, :) * prhodj(:, :, :) )
 END IF
 !
 !
@@ -773,8 +775,10 @@ IF (LWARM .AND. LRAIN) THEN
    if( lbu_enable ) then
     if ( lbudget_rc ) call Budget_store_init( tbudgets(NBUDGET_RC),                    'R2C1', zrcs(:, :, :) * prhodj(:, :, :) )
     if ( lbudget_rr ) call Budget_store_init( tbudgets(NBUDGET_RR),                    'R2C1', zrrs(:, :, :) * prhodj(:, :, :) )
-    if ( lbudget_sv ) call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'R2C1', zccs(:, :, :) * prhodj(:, :, :) )
-    if ( lbudget_sv ) call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nr), 'R2C1', zcrs(:, :, :) * prhodj(:, :, :) )
+    if ( lbudget_sv .and. nmom_c.ge.2) &
+         call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'R2C1', zccs(:, :, :) * prhodj(:, :, :) )
+    if ( lbudget_sv .and. nmom_r.ge.2) &
+         call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nr), 'R2C1', zcrs(:, :, :) * prhodj(:, :, :) )
    end if
 
    CALL LIMA_DROPS_TO_DROPLETS_CONV(PRHODREF, ZRCS*PTSTEP, ZRRS*PTSTEP, ZCCS*PTSTEP, ZCRS*PTSTEP, &
@@ -788,8 +792,10 @@ IF (LWARM .AND. LRAIN) THEN
    if( lbu_enable ) then
     if ( lbudget_rc ) call Budget_store_end( tbudgets(NBUDGET_RC),                    'R2C1', zrcs(:, :, :) * prhodj(:, :, :) )
     if ( lbudget_rr ) call Budget_store_end( tbudgets(NBUDGET_RR),                    'R2C1', zrrs(:, :, :) * prhodj(:, :, :) )
-    if ( lbudget_sv ) call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'R2C1', zccs(:, :, :) * prhodj(:, :, :) )
-    if ( lbudget_sv ) call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nr), 'R2C1', zcrs(:, :, :) * prhodj(:, :, :) )
+    if ( lbudget_sv .and. nmom_c.ge.2) &
+         call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'R2C1', zccs(:, :, :) * prhodj(:, :, :) )
+    if ( lbudget_sv .and. nmom_r.ge.2) &
+         call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nr), 'R2C1', zcrs(:, :, :) * prhodj(:, :, :) )
    end if
 END IF
 !
@@ -1937,88 +1943,99 @@ if ( lbu_enable ) then
     !
     ! Cloud droplets
     !
-    idx = NBUDGET_SV1 - 1 + nsv_lima_nc
-    call Budget_store_add( tbudgets(idx), 'SELF',  ztot_cc_self (:, :, :) * zrhodjontstep(:, :, :) )
-    call Budget_store_add( tbudgets(idx), 'AUTO',  ztot_cc_auto (:, :, :) * zrhodjontstep(:, :, :) )
-    call Budget_store_add( tbudgets(idx), 'ACCR',  ztot_cc_accr (:, :, :) * zrhodjontstep(:, :, :) )
-    !call Budget_store_add( tbudgets(idx), 'REVA',  0. )
-    call Budget_store_add( tbudgets(idx), 'HONC',  ztot_cc_honc (:, :, :) * zrhodjontstep(:, :, :) )
-    call Budget_store_add( tbudgets(idx), 'IMLT',  ztot_cc_imlt (:, :, :) * zrhodjontstep(:, :, :) )
-    call Budget_store_add( tbudgets(idx), 'RIM',   ztot_cc_rim  (:, :, :) * zrhodjontstep(:, :, :) )
-    call Budget_store_add( tbudgets(idx), 'WETG',  ztot_cc_wetg (:, :, :) * zrhodjontstep(:, :, :) )
-    call Budget_store_add( tbudgets(idx), 'DRYG',  ztot_cc_dryg (:, :, :) * zrhodjontstep(:, :, :) )
-    call Budget_store_add( tbudgets(idx), 'CVRC', -ztot_cr_cvrc (:, :, :) * zrhodjontstep(:, :, :) )
-    call Budget_store_add( tbudgets(idx), 'CORR2', ztot_cc_corr2(:, :, :) * zrhodjontstep(:, :, :) )
-    call Budget_store_add( tbudgets(idx), 'WETH',  ztot_cc_weth (:, :, :) * zrhodjontstep(:, :, :) )
+    if (nmom_c.ge.2) then 
+       idx = NBUDGET_SV1 - 1 + nsv_lima_nc
+       call Budget_store_add( tbudgets(idx), 'SELF',  ztot_cc_self (:, :, :) * zrhodjontstep(:, :, :) )
+       call Budget_store_add( tbudgets(idx), 'AUTO',  ztot_cc_auto (:, :, :) * zrhodjontstep(:, :, :) )
+       call Budget_store_add( tbudgets(idx), 'ACCR',  ztot_cc_accr (:, :, :) * zrhodjontstep(:, :, :) )
+       !call Budget_store_add( tbudgets(idx), 'REVA',  0. )
+       call Budget_store_add( tbudgets(idx), 'HONC',  ztot_cc_honc (:, :, :) * zrhodjontstep(:, :, :) )
+       call Budget_store_add( tbudgets(idx), 'IMLT',  ztot_cc_imlt (:, :, :) * zrhodjontstep(:, :, :) )
+       call Budget_store_add( tbudgets(idx), 'RIM',   ztot_cc_rim  (:, :, :) * zrhodjontstep(:, :, :) )
+       call Budget_store_add( tbudgets(idx), 'WETG',  ztot_cc_wetg (:, :, :) * zrhodjontstep(:, :, :) )
+       call Budget_store_add( tbudgets(idx), 'DRYG',  ztot_cc_dryg (:, :, :) * zrhodjontstep(:, :, :) )
+       call Budget_store_add( tbudgets(idx), 'CVRC', -ztot_cr_cvrc (:, :, :) * zrhodjontstep(:, :, :) )
+       call Budget_store_add( tbudgets(idx), 'CORR2', ztot_cc_corr2(:, :, :) * zrhodjontstep(:, :, :) )
+       call Budget_store_add( tbudgets(idx), 'WETH',  ztot_cc_weth (:, :, :) * zrhodjontstep(:, :, :) )
+    end if
     !
     ! Rain drops
     !
-    idx = NBUDGET_SV1 - 1 + nsv_lima_nr
-    call Budget_store_add( tbudgets(idx), 'AUTO',  ztot_cr_auto(:, :, :) * zrhodjontstep(:, :, :) )
-    call Budget_store_add( tbudgets(idx), 'SCBU',  ztot_cr_scbu(:, :, :) * zrhodjontstep(:, :, :) )
-    call Budget_store_add( tbudgets(idx), 'REVA',  ztot_cr_evap(:, :, :) * zrhodjontstep(:, :, :) )
-    call Budget_store_add( tbudgets(idx), 'BRKU',  ztot_cr_brku(:, :, :) * zrhodjontstep(:, :, :) )
-    call Budget_store_add( tbudgets(idx), 'HONR',  ztot_cr_honr(:, :, :) * zrhodjontstep(:, :, :) )
-    call Budget_store_add( tbudgets(idx), 'ACC',   ztot_cr_acc (:, :, :) * zrhodjontstep(:, :, :) )
-    call Budget_store_add( tbudgets(idx), 'CFRZ',  ztot_cr_cfrz(:, :, :) * zrhodjontstep(:, :, :) )
-    call Budget_store_add( tbudgets(idx), 'WETG',  ztot_cr_wetg(:, :, :) * zrhodjontstep(:, :, :) )
-    call Budget_store_add( tbudgets(idx), 'DRYG',  ztot_cr_dryg(:, :, :) * zrhodjontstep(:, :, :) )
-    call Budget_store_add( tbudgets(idx), 'GMLT',  ztot_cr_gmlt(:, :, :) * zrhodjontstep(:, :, :) )
-    call Budget_store_add( tbudgets(idx), 'CVRC',  ztot_cr_cvrc(:, :, :) * zrhodjontstep(:, :, :) )
-    call Budget_store_add( tbudgets(idx), 'CORR2', ztot_cr_corr2(:, :, :) * zrhodjontstep(:, :, :) )
-    call Budget_store_add( tbudgets(idx), 'WETH',  ztot_cr_weth(:, :, :) * zrhodjontstep(:, :, :) )
-    call Budget_store_add( tbudgets(idx), 'HMLT',  ztot_cr_hmlt(:, :, :) * zrhodjontstep(:, :, :) )
+    if (nmom_r.ge.2) then
+       idx = NBUDGET_SV1 - 1 + nsv_lima_nr
+       call Budget_store_add( tbudgets(idx), 'AUTO',  ztot_cr_auto(:, :, :) * zrhodjontstep(:, :, :) )
+       call Budget_store_add( tbudgets(idx), 'SCBU',  ztot_cr_scbu(:, :, :) * zrhodjontstep(:, :, :) )
+       call Budget_store_add( tbudgets(idx), 'REVA',  ztot_cr_evap(:, :, :) * zrhodjontstep(:, :, :) )
+       call Budget_store_add( tbudgets(idx), 'BRKU',  ztot_cr_brku(:, :, :) * zrhodjontstep(:, :, :) )
+       call Budget_store_add( tbudgets(idx), 'HONR',  ztot_cr_honr(:, :, :) * zrhodjontstep(:, :, :) )
+       call Budget_store_add( tbudgets(idx), 'ACC',   ztot_cr_acc (:, :, :) * zrhodjontstep(:, :, :) )
+       call Budget_store_add( tbudgets(idx), 'CFRZ',  ztot_cr_cfrz(:, :, :) * zrhodjontstep(:, :, :) )
+       call Budget_store_add( tbudgets(idx), 'WETG',  ztot_cr_wetg(:, :, :) * zrhodjontstep(:, :, :) )
+       call Budget_store_add( tbudgets(idx), 'DRYG',  ztot_cr_dryg(:, :, :) * zrhodjontstep(:, :, :) )
+       call Budget_store_add( tbudgets(idx), 'GMLT',  ztot_cr_gmlt(:, :, :) * zrhodjontstep(:, :, :) )
+       call Budget_store_add( tbudgets(idx), 'CVRC',  ztot_cr_cvrc(:, :, :) * zrhodjontstep(:, :, :) )
+       call Budget_store_add( tbudgets(idx), 'CORR2', ztot_cr_corr2(:, :, :) * zrhodjontstep(:, :, :) )
+       call Budget_store_add( tbudgets(idx), 'WETH',  ztot_cr_weth(:, :, :) * zrhodjontstep(:, :, :) )
+       call Budget_store_add( tbudgets(idx), 'HMLT',  ztot_cr_hmlt(:, :, :) * zrhodjontstep(:, :, :) )
+    end if
     !
     ! Ice crystals
     !
-    idx = NBUDGET_SV1 - 1 + nsv_lima_ni
-    call Budget_store_add( tbudgets(idx), 'HONC',  -ztot_cc_honc (:, :, :) * zrhodjontstep(:, :, :) )
-    call Budget_store_add( tbudgets(idx), 'CNVI',   ztot_ci_cnvi (:, :, :) * zrhodjontstep(:, :, :) )
-    call Budget_store_add( tbudgets(idx), 'CNVS',   ztot_ci_cnvs (:, :, :) * zrhodjontstep(:, :, :) )
-    call Budget_store_add( tbudgets(idx), 'AGGS',   ztot_ci_aggs (:, :, :) * zrhodjontstep(:, :, :) )
-    call Budget_store_add( tbudgets(idx), 'IMLT',  -ztot_cc_imlt (:, :, :) * zrhodjontstep(:, :, :) )
-    call Budget_store_add( tbudgets(idx), 'HMS',    ztot_ci_hms  (:, :, :) * zrhodjontstep(:, :, :) )
-    call Budget_store_add( tbudgets(idx), 'CFRZ',   ztot_ci_cfrz (:, :, :) * zrhodjontstep(:, :, :) )
-    call Budget_store_add( tbudgets(idx), 'CIBU',   ztot_ci_cibu (:, :, :) * zrhodjontstep(:, :, :) )
-    call Budget_store_add( tbudgets(idx), 'RDSF',   ztot_ci_rdsf (:, :, :) * zrhodjontstep(:, :, :) )
-    call Budget_store_add( tbudgets(idx), 'WETG',   ztot_ci_wetg (:, :, :) * zrhodjontstep(:, :, :) )
-    call Budget_store_add( tbudgets(idx), 'DRYG',   ztot_ci_dryg (:, :, :) * zrhodjontstep(:, :, :) )
-    call Budget_store_add( tbudgets(idx), 'HMG',    ztot_ci_hmg  (:, :, :) * zrhodjontstep(:, :, :) )
-    call Budget_store_add( tbudgets(idx), 'CORR2',  ztot_ci_corr2(:, :, :) * zrhodjontstep(:, :, :) )
-    call Budget_store_add( tbudgets(idx), 'WETH',   ztot_ci_weth (:, :, :) * zrhodjontstep(:, :, :) )
+    if (nmom_i.ge.2) then
+       idx = NBUDGET_SV1 - 1 + nsv_lima_ni
+       call Budget_store_add( tbudgets(idx), 'HONC',  -ztot_cc_honc (:, :, :) * zrhodjontstep(:, :, :) )
+       call Budget_store_add( tbudgets(idx), 'CNVI',   ztot_ci_cnvi (:, :, :) * zrhodjontstep(:, :, :) )
+       call Budget_store_add( tbudgets(idx), 'CNVS',   ztot_ci_cnvs (:, :, :) * zrhodjontstep(:, :, :) )
+       call Budget_store_add( tbudgets(idx), 'AGGS',   ztot_ci_aggs (:, :, :) * zrhodjontstep(:, :, :) )
+       call Budget_store_add( tbudgets(idx), 'IMLT',  -ztot_cc_imlt (:, :, :) * zrhodjontstep(:, :, :) )
+       call Budget_store_add( tbudgets(idx), 'HMS',    ztot_ci_hms  (:, :, :) * zrhodjontstep(:, :, :) )
+       call Budget_store_add( tbudgets(idx), 'CFRZ',   ztot_ci_cfrz (:, :, :) * zrhodjontstep(:, :, :) )
+       call Budget_store_add( tbudgets(idx), 'CIBU',   ztot_ci_cibu (:, :, :) * zrhodjontstep(:, :, :) )
+       call Budget_store_add( tbudgets(idx), 'RDSF',   ztot_ci_rdsf (:, :, :) * zrhodjontstep(:, :, :) )
+       call Budget_store_add( tbudgets(idx), 'WETG',   ztot_ci_wetg (:, :, :) * zrhodjontstep(:, :, :) )
+       call Budget_store_add( tbudgets(idx), 'DRYG',   ztot_ci_dryg (:, :, :) * zrhodjontstep(:, :, :) )
+       call Budget_store_add( tbudgets(idx), 'HMG',    ztot_ci_hmg  (:, :, :) * zrhodjontstep(:, :, :) )
+       call Budget_store_add( tbudgets(idx), 'CORR2',  ztot_ci_corr2(:, :, :) * zrhodjontstep(:, :, :) )
+       call Budget_store_add( tbudgets(idx), 'WETH',   ztot_ci_weth (:, :, :) * zrhodjontstep(:, :, :) )
+    end if
     !
     ! Snow
     !
-    idx = NBUDGET_SV1 - 1 + nsv_lima_ns
-    call Budget_store_add( tbudgets(idx), 'CNVI',  -ztot_ci_cnvi(:, :, :) * zrhodjontstep(:, :, :) )
-    call Budget_store_add( tbudgets(idx), 'CNVS',  -ztot_ci_cnvs(:, :, :) * zrhodjontstep(:, :, :) )
-    call Budget_store_add( tbudgets(idx), 'RIM',    ztot_cs_rim(:, :, :)  * zrhodjontstep(:, :, :) )
-    call Budget_store_add( tbudgets(idx), 'ACC',    ztot_cs_acc(:, :, :)  * zrhodjontstep(:, :, :) )
-    call Budget_store_add( tbudgets(idx), 'CMEL',   ztot_cs_cmel(:, :, :) * zrhodjontstep(:, :, :) )
-    call Budget_store_add( tbudgets(idx), 'SSC',    ztot_cs_ssc(:, :, :)  * zrhodjontstep(:, :, :) )
-    call Budget_store_add( tbudgets(idx), 'WETG',   ztot_cs_wetg(:, :, :) * zrhodjontstep(:, :, :) )
-    call Budget_store_add( tbudgets(idx), 'DRYG',   ztot_cs_dryg(:, :, :) * zrhodjontstep(:, :, :) )
-    call Budget_store_add( tbudgets(idx), 'WETH',   ztot_cs_weth(:, :, :) * zrhodjontstep(:, :, :) )
+    if (nmom_s.ge.2) then
+       idx = NBUDGET_SV1 - 1 + nsv_lima_ns
+       call Budget_store_add( tbudgets(idx), 'CNVI',  -ztot_ci_cnvi(:, :, :) * zrhodjontstep(:, :, :) )
+       call Budget_store_add( tbudgets(idx), 'CNVS',  -ztot_ci_cnvs(:, :, :) * zrhodjontstep(:, :, :) )
+       call Budget_store_add( tbudgets(idx), 'RIM',    ztot_cs_rim(:, :, :)  * zrhodjontstep(:, :, :) )
+       call Budget_store_add( tbudgets(idx), 'ACC',    ztot_cs_acc(:, :, :)  * zrhodjontstep(:, :, :) )
+       call Budget_store_add( tbudgets(idx), 'CMEL',   ztot_cs_cmel(:, :, :) * zrhodjontstep(:, :, :) )
+       call Budget_store_add( tbudgets(idx), 'SSC',    ztot_cs_ssc(:, :, :)  * zrhodjontstep(:, :, :) )
+       call Budget_store_add( tbudgets(idx), 'WETG',   ztot_cs_wetg(:, :, :) * zrhodjontstep(:, :, :) )
+       call Budget_store_add( tbudgets(idx), 'DRYG',   ztot_cs_dryg(:, :, :) * zrhodjontstep(:, :, :) )
+       call Budget_store_add( tbudgets(idx), 'WETH',   ztot_cs_weth(:, :, :) * zrhodjontstep(:, :, :) )
+    end if
     !
     ! Graupel
     !
-    idx = NBUDGET_SV1 - 1 + nsv_lima_ng
-    call Budget_store_add( tbudgets(idx), 'RIM',   -ztot_cs_rim(:, :, :)  * zrhodjontstep(:, :, :) )
-    call Budget_store_add( tbudgets(idx), 'ACC',   -ztot_cs_acc(:, :, :)  * zrhodjontstep(:, :, :) )
-    call Budget_store_add( tbudgets(idx), 'CMEL',  -ztot_cs_cmel(:, :, :) * zrhodjontstep(:, :, :) )
-    call Budget_store_add( tbudgets(idx), 'CFRZ',  -ztot_cr_cfrz(:, :, :) * zrhodjontstep(:, :, :) )
-    call Budget_store_add( tbudgets(idx), 'WETG',   ztot_cg_wetg(:, :, :) * zrhodjontstep(:, :, :) )
-    call Budget_store_add( tbudgets(idx), 'GMLT',   ztot_cg_gmlt(:, :, :) * zrhodjontstep(:, :, :) )
-    call Budget_store_add( tbudgets(idx), 'WETH',   ztot_cg_weth(:, :, :) * zrhodjontstep(:, :, :) )
-    call Budget_store_add( tbudgets(idx), 'COHG',   ztot_cg_cohg(:, :, :) * zrhodjontstep(:, :, :) )
+    if (nmom_g.ge.2) then
+       idx = NBUDGET_SV1 - 1 + nsv_lima_ng
+       call Budget_store_add( tbudgets(idx), 'RIM',   -ztot_cs_rim(:, :, :)  * zrhodjontstep(:, :, :) )
+       call Budget_store_add( tbudgets(idx), 'ACC',   -ztot_cs_acc(:, :, :)  * zrhodjontstep(:, :, :) )
+       call Budget_store_add( tbudgets(idx), 'CMEL',  -ztot_cs_cmel(:, :, :) * zrhodjontstep(:, :, :) )
+       call Budget_store_add( tbudgets(idx), 'CFRZ',  -ztot_cr_cfrz(:, :, :) * zrhodjontstep(:, :, :) )
+       call Budget_store_add( tbudgets(idx), 'WETG',   ztot_cg_wetg(:, :, :) * zrhodjontstep(:, :, :) )
+       call Budget_store_add( tbudgets(idx), 'GMLT',   ztot_cg_gmlt(:, :, :) * zrhodjontstep(:, :, :) )
+       call Budget_store_add( tbudgets(idx), 'WETH',   ztot_cg_weth(:, :, :) * zrhodjontstep(:, :, :) )
+       call Budget_store_add( tbudgets(idx), 'COHG',   ztot_cg_cohg(:, :, :) * zrhodjontstep(:, :, :) )
+    end if
     !
     ! Hail
     !
-    idx = NBUDGET_SV1 - 1 + nsv_lima_nh
-    call Budget_store_add( tbudgets(idx), 'WETG',  -ztot_cg_wetg(:, :, :) * zrhodjontstep(:, :, :) )
-    call Budget_store_add( tbudgets(idx), 'COHG',  -ztot_cg_cohg(:, :, :) * zrhodjontstep(:, :, :) )
-    call Budget_store_add( tbudgets(idx), 'HMLT',   ztot_ch_hmlt(:, :, :) * zrhodjontstep(:, :, :) )
-
+    if (nmom_h.ge.2) then
+       idx = NBUDGET_SV1 - 1 + nsv_lima_nh
+       call Budget_store_add( tbudgets(idx), 'WETG',  -ztot_cg_wetg(:, :, :) * zrhodjontstep(:, :, :) )
+       call Budget_store_add( tbudgets(idx), 'COHG',  -ztot_cg_cohg(:, :, :) * zrhodjontstep(:, :, :) )
+       call Budget_store_add( tbudgets(idx), 'HMLT',   ztot_ch_hmlt(:, :, :) * zrhodjontstep(:, :, :) )
+    end if
 
     do ii = 1, nmod_ifn
       idx = NBUDGET_SV1 - 1 + nsv_lima_ifn_nucl + ii - 1

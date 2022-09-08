@@ -192,7 +192,7 @@ if ( nbumod == kmi .and. lbu_enable ) then
   if ( lbudget_rc ) call Budget_store_init( tbudgets(NBUDGET_RC), 'CEDS', prs(:, :, :, 2) * prhodj(:, :, :) )
   if ( lbudget_ri ) call Budget_store_init( tbudgets(NBUDGET_RI), 'CEDS', prs(:, :, :, 4) * prhodj(:, :, :) )
   if ( lbudget_sv ) then
-    if ( lwarm ) then
+    if ( lwarm .and. nmom_c.ge.2) then
       call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'CEDS', psvs(:, :, :, nsv_lima_nc) * prhodj(:, :, :) )
       do jl = nsv_lima_ccn_free, nsv_lima_ccn_free + nmod_ccn - 1
         idx = NBUDGET_SV1 - 1 + jl
@@ -610,7 +610,7 @@ if ( nbumod == kmi .and. lbu_enable ) then
   if ( lbudget_rc ) call Budget_store_end( tbudgets(NBUDGET_RC), 'CEDS', prs(:, :, :, 2) * prhodj(:, :, :) )
   if ( lbudget_ri ) call Budget_store_end( tbudgets(NBUDGET_RI), 'CEDS', prs(:, :, :, 4) * prhodj(:, :, :) )
   if ( lbudget_sv ) then
-    if ( lwarm ) then
+    if ( lwarm .and. nmom_c.ge.2) then
       call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'CEDS', psvs(:, :, :, nsv_lima_nc) * prhodj(:, :, :) )
       do jl = nsv_lima_ccn_free, nsv_lima_ccn_free + nmod_ccn - 1
         idx = NBUDGET_SV1 - 1 + jl
