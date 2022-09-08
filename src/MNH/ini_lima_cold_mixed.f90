@@ -341,8 +341,8 @@ IF (GFLAG) THEN
   WRITE(UNIT=ILUOUT0,FMT='(" XLBEXH =",E13.6," XLBH =",E13.6)') XLBEXH,XLBH
 END IF
 !
-XLBDAS_MAX = 500000. ! LBDAS_MAX doit être compare avec LBDAS avec une forme de Marshall-Palmer
-XLBDAS_MIN = 1000.
+XLBDAS_MAX = 500000. * XTRANS_MP_GAMMAS ! LBDAS_MAX doit être compare avec LBDAS avec une forme de Marshall-Palmer
+XLBDAS_MIN = 1000. * XTRANS_MP_GAMMAS
 XLBDAG_MAX = 100000.0
 !
 ZCONC_MAX  = 1.E6 ! Maximal concentration for falling particules set to 1 per cc
@@ -1144,16 +1144,12 @@ END IF
 NGAMINC = 80
 !
 !Note : Boundaries are rounded at 5.0 or 1.0 (down for Bound_min and up for Bound_max)
-XGAMINC_BOUND_CIBU_SMIN = 1.0E-5    ! Minimal value of (Lbda_s * D_cs^lim)**alpha) 0.2 mm
-XGAMINC_BOUND_CIBU_SMAX = 5.0E-3    ! Maximal value of (Lbda_s * D_cs^lim)**alpha) 1 mm
-XGAMINC_BOUND_CIBU_SMIN = 1.0E-5    ! Minimal value of (Lbda_s * D_cs^lim)**alpha) 0.2 mm
-XGAMINC_BOUND_CIBU_SMAX = 5.0E+2    ! Maximal value of (Lbda_s * D_cs^lim)**alpha) 1 mm
+XGAMINC_BOUND_CIBU_SMIN = 1.0E-5 * XTRANS_MP_GAMMAS**XALPHAS ! Minimal value of (Lbda_s * D_cs^lim)**alpha) 0.2 mm
+XGAMINC_BOUND_CIBU_SMAX = 5.0E+2 * XTRANS_MP_GAMMAS**XALPHAS ! Maximal value of (Lbda_s * D_cs^lim)**alpha) 1 mm
 ZRATE_S = EXP(LOG(XGAMINC_BOUND_CIBU_SMAX/XGAMINC_BOUND_CIBU_SMIN)/FLOAT(NGAMINC-1))
 !
-XGAMINC_BOUND_CIBU_GMIN = 1.0E-1        ! Minimal value of (Lbda_g * D_cg^lim)**alpha) 2 mm
-XGAMINC_BOUND_CIBU_GMAX = 1.0E0         ! Maximal value of (Lbda_g * D_cg^lim)**alpha) 2 mm
-XGAMINC_BOUND_CIBU_GMIN = 1.0E-1        ! Minimal value of (Lbda_g * D_cg^lim)**alpha) 2 mm
-XGAMINC_BOUND_CIBU_GMAX = 5.0E+1         ! Maximal value of (Lbda_g * D_cg^lim)**alpha) 2 mm
+XGAMINC_BOUND_CIBU_GMIN = 1.0E-1 ! Minimal value of (Lbda_g * D_cg^lim)**alpha) 2 mm
+XGAMINC_BOUND_CIBU_GMAX = 5.0E+1 ! Maximal value of (Lbda_g * D_cg^lim)**alpha) 2 mm
 ZRATE_G = EXP(LOG(XGAMINC_BOUND_CIBU_GMAX/XGAMINC_BOUND_CIBU_GMIN)/FLOAT(NGAMINC-1))
 !
 ALLOCATE( XGAMINC_CIBU_S(4,NGAMINC) )
