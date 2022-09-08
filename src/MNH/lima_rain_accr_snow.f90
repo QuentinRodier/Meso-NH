@@ -276,7 +276,7 @@ WHERE( GACC )
             XFNRACCSS * PCST(:) * PRHODREF(:)**(1-XCEXVT)                    &
          *( XLBNRACCS1/( PLBDS(:)**2               ) +                       &
             XLBNRACCS2/( PLBDS(:)    * PLBDR(:)    ) +                       &
-            XLBNRACCS3/(               PLBDR(:)**2 ) ) / PLBDR(:)**XBR
+            XLBNRACCS3/(               PLBDR(:)**2 ) )
 
 !
 !        1.3.6  raindrop accretion-conversion of the large sized aggregates
@@ -289,7 +289,7 @@ WHERE( GACC )
               XLBSACCR3/(               PLBDS(:)**2 ) )
 !
    ZZWC5(:)= XFNSACCRG * ZZW3(:) * PCRT(:) *             & ! RSACCRG
-             PCST(:) * PLBDS(:)**(-XBS) * PRHODREF(:)**(1-XCEXVT) * &
+             PCST(:) * PRHODREF(:)**(1-XCEXVT) * &
             ( XLBNSACCR1/( PLBDR(:)**2               ) + &
               XLBNSACCR2/( PLBDR(:)    * PLBDS(:)    ) + &
               XLBNSACCR3/(               PLBDS(:)**2 ) )

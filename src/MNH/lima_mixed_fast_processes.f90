@@ -914,13 +914,13 @@ IF( IGACC>0 .AND. LRAIN) THEN
 !
   WHERE ( GACC(:) )
      ZZW1(:,2) = PCRT1D(:) *                                      & !! coef of RRACCS 
-                  XFRACCSS*( PCST1D(:) )*( PRHODREF(:)**(-XCEXVT-1.) ) &
+                  XFRACCSS*( PCST1D(:) )*( PRHODREF(:)**(-XCEXVT+1.) ) &
              *( XLBRACCS1/((PLBDAS(:)**2)               ) +                  &
                 XLBRACCS2/( PLBDAS(:)    * PLBDAR(:)    ) +                  &
                 XLBRACCS3/(               (PLBDAR(:)**2)) )/PLBDAR(:)**3
 !                                                                                
      ZZNW1(:,2) = PCRT1D(:) *                                           & !! coef of CRACCS
-                  XFNRACCSS*( PCST1D(:) )*( PRHODREF(:)**(-XCEXVT-1.) ) &
+                  XFNRACCSS*( PCST1D(:) )*( PRHODREF(:)**(-XCEXVT+1.) ) &
              *( XLBNRACCS1/((PLBDAS(:)**2)               ) +                  &
                XLBNRACCS2/( PLBDAS(:)    * PLBDAR(:)    ) +                  &
                 XLBNRACCS3/(               (PLBDAR(:)**2)) )
@@ -991,13 +991,13 @@ IF( IGACC>0 .AND. LRAIN) THEN
   WHERE ( GACC(:) .AND. (PRSS1D(:)>XRTMIN(5)/PTSTEP)  .AND. (PCSS1D(:)>XCTMIN(5)/PTSTEP) )
      ZZW1(:,2) = MAX( MIN( PRRS1D(:),ZZW1(:,2)-ZZW1(:,4) ) , 0. )      ! RRACCSG
      ZZNW1(:,2) = MAX( MIN( PCRS1D(:),ZZNW1(:,2)-ZZNW1(:,4) ) , 0. )   ! NRACCSG  
-     ZZW1(:,3) = MIN( PRSS1D(:),XFSACCRG*ZZW(:)* PCST1D(:) *           & ! RSACCRG 
-                ( PLBDAS(:)**(-XBS) )*( PRHODREF(:)**(-XCEXVT-1.) )     & 
+     ZZW1(:,3) = MIN( PRSS1D(:),PCRT1D(:)*XFSACCRG*ZZW(:)* PCST1D(:) *           & ! RSACCRG 
+                PLBDAS(:)**(-XBS) * ( PRHODREF(:)**(-XCEXVT+1.) )     & 
                 *( XLBSACCR1/((PLBDAR(:)**2)               ) +           &
                   XLBSACCR2/( PLBDAR(:)    * PLBDAS(:)    ) +           &
                   XLBSACCR3/(               (PLBDAS(:)**2)) ) )
-     ZZNW1(:,3) = MIN( PCSS1D(:),XFNSACCRG*ZZNW(:)* PCST1D(:) *        & ! NSACCRG 
-                                      ( PRHODREF(:)**(-XCEXVT-1.) )     &            
+     ZZNW1(:,3) = MIN( PCSS1D(:),PCRT1D(:)*XFNSACCRG*ZZNW(:)* PCST1D(:) *        & ! NSACCRG 
+                                      ( PRHODREF(:)**(-XCEXVT+1.) )     &            
                *( XLBNSACCR1/((PLBDAR(:)**2)               ) +          &            
                   XLBNSACCR2/( PLBDAR(:)    * PLBDAS(:)    ) +          &            
                   XLBNSACCR3/(               (PLBDAS(:)**2)) ) )           
