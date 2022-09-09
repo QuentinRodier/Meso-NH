@@ -11,6 +11,7 @@ INTERFACE
 !
      SUBROUTINE SPAWN_GRID2( KXOR, KYOR, KXEND, KYEND, KDXRATIO, KDYRATIO,                &
                              PLONOR, PLATOR, PXHAT, PYHAT, PZHAT, PXHATM, PYHATM, PZHATM, &
+                             PHAT_BOUND, PHATM_BOUND,                                     &
                              PZTOP, OSLEVE, PLEN1, PLEN2,                                 &
                              PZS, PZSMT, PZS_LS, PZSMT_LS,                                &
                              TPDTMOD, TPDTCUR                                             )
@@ -29,6 +30,8 @@ REAL, DIMENSION(:),   INTENT(OUT) :: PXHAT,PYHAT,PZHAT ! positions x,y,z in the
                                      ! conformal plane or on the cartesian plane
 REAL, DIMENSION(:),   INTENT(OUT) :: PXHATM, PYHATM, PZHATM ! positions x,y in the
                                      ! conformal plane or on the cartesian plane at mass points
+REAL, DIMENSION(:),   INTENT(INOUT) :: PHAT_BOUND  ! Boundaries of global domain in the conformal or cartesian plane
+REAL, DIMENSION(:),   INTENT(INOUT) :: PHATM_BOUND ! Boundaries of global domain in the conformal or cartesian plane at mass points
 REAL,                 INTENT(OUT)   :: PZTOP             ! model top (m)
 LOGICAL,              INTENT(OUT)   :: OSLEVE            ! flag for SLEVE coordinate
 REAL,                 INTENT(OUT)   :: PLEN1             ! Decay scale for smooth topography
@@ -51,6 +54,7 @@ END MODULE MODI_SPAWN_GRID2
 !    ######################################################################################
      SUBROUTINE SPAWN_GRID2( KXOR, KYOR, KXEND, KYEND, KDXRATIO, KDYRATIO,                &
                              PLONOR, PLATOR, PXHAT, PYHAT, PZHAT, PXHATM, PYHATM, PZHATM, &
+                             PHAT_BOUND, PHATM_BOUND,                                     &
                              PZTOP, OSLEVE, PLEN1, PLEN2,                                 &
                              PZS, PZSMT, PZS_LS, PZSMT_LS,                                &
                              TPDTMOD, TPDTCUR                                             )
@@ -167,7 +171,7 @@ USE MODD_BIKHARDT_n
 USE MODD_VAR_ll
 use mode_bikhardt
 USE MODE_ll
-USE MODE_SET_GRID,   only: INTERP_HORGRID_TO_MASSPOINTS
+USE MODE_SET_GRID,   only: INTERP_HORGRID_TO_MASSPOINTS, STORE_GRID_BOUNDS
 USE MODE_TIME
 USE MODE_GRIDPROJ
 !
@@ -192,6 +196,8 @@ REAL, DIMENSION(:),   INTENT(OUT) :: PXHAT,PYHAT,PZHAT ! positions x,y,z in the
                                      ! conformal plane or on the cartesian plane
 REAL, DIMENSION(:),   INTENT(OUT) :: PXHATM, PYHATM, PZHATM ! positions x,y in the
                                      ! conformal plane or on the cartesian plane at mass points
+REAL, DIMENSION(:),   INTENT(INOUT) :: PHAT_BOUND  ! Boundaries of global domain in the conformal or cartesian plane
+REAL, DIMENSION(:),   INTENT(INOUT) :: PHATM_BOUND ! Boundaries of global domain in the conformal or cartesian plane at mass points
 REAL,                 INTENT(OUT)   :: PZTOP             ! model top (m)
 LOGICAL,              INTENT(OUT)   :: OSLEVE            ! flag for SLEVE coordinate
 REAL,                 INTENT(OUT)   :: PLEN1             ! Decay scale for smooth topography
@@ -456,6 +462,10 @@ PLEN2    = XLEN21
 
   ! Interpolations of positions to mass points
   CALL INTERP_HORGRID_TO_MASSPOINTS( PXHAT, PYHAT, PXHATM, PYHATM )
+
+  ! Collect global domain boundaries
+  CALL STORE_GRID_BOUNDS( PXHAT,  PYHAT,  PZHAT,  PHAT_BOUND  )
+  CALL STORE_GRID_BOUNDS( PXHATM, PYHATM, PZHATM, PHATM_BOUND )
 
 !!$=======
 !!$  IXSIZE1=SIZE(XXHAT1)

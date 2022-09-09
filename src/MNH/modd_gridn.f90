@@ -31,19 +31,38 @@
 !!
 !!    MODIFICATIONS
 !!    -------------
-!!      Original    05/05/94                      
-!!      J. Stein    15/11/95  add the slope angle
-!!      V. Ducrocq   13/08/98  // : add XLATOR_ll and XLONOR_ll       
-!!      V. Masson   nov 2004  supress XLATOR,XLONOR,XLATOR_ll,XLONOR_ll
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!  P. Wautelet 02/09/2022: add XXHATM, XYHATM and XZHATM
+!  Original    05/05/94
+!  J. Stein    15/11/95:  add the slope angle
+!  V. Ducrocq  13/08/98: //: add XLATOR_ll and XLONOR_ll
+!  V. Masson      11/2004: supress XLATOR, XLONOR, XLATOR_ll, XLONOR_ll
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet    09/2022: add XXHATM, XYHATM, XZHATM, XHAT_BOUND and XHATM_BOUND
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
 !             ------------
 !
 USE MODD_PARAMETERS, ONLY: JPMODELMAX
+
 IMPLICIT NONE
+
+SAVE
+
+! Parameters for XHAT_BOUND and XHATM_BOUND
+INTEGER, PARAMETER :: NHAT_BOUND_SIZE = 12
+INTEGER, PARAMETER :: NPHYS_XMIN = 1  ! Position of minimum position in physical domain in x direction
+INTEGER, PARAMETER :: NPHYS_XMAX = 2  ! Position of maximum position in physical domain in x direction
+INTEGER, PARAMETER :: NPHYS_YMIN = 3  ! Position of minimum position in physical domain in y direction
+INTEGER, PARAMETER :: NPHYS_YMAX = 4  ! Position of maximum position in physical domain in y direction
+INTEGER, PARAMETER :: NPHYS_ZMIN = 5  ! Position of minimum position in physical domain in z direction
+INTEGER, PARAMETER :: NPHYS_ZMAX = 6  ! Position of maximum position in physical domain in z direction
+INTEGER, PARAMETER :: NEXTE_XMIN = 7  ! Position of minimum position in extended domain in x direction
+INTEGER, PARAMETER :: NEXTE_XMAX = 8  ! Position of maximum position in extended domain in x direction
+INTEGER, PARAMETER :: NEXTE_YMIN = 9  ! Position of minimum position in extended domain in y direction
+INTEGER, PARAMETER :: NEXTE_YMAX = 10 ! Position of maximum position in extended domain in y direction
+INTEGER, PARAMETER :: NEXTE_ZMIN = 11 ! Position of minimum position in extended domain in z direction
+INTEGER, PARAMETER :: NEXTE_ZMAX = 12 ! Position of maximum position in extended domain in z direction
+
 
 REAL, DIMENSION(:,:),  POINTER :: XLON=>NULL(),XLAT=>NULL() ! Longitude and latitude  
 REAL, DIMENSION(:),    POINTER :: XXHAT=>NULL()             ! Position x in the conformal or cartesian plane
@@ -67,5 +86,7 @@ LOGICAL,               POINTER  :: LSLEVE=>NULL()            ! Logical for SLEVE
 REAL,                  POINTER  :: XLEN1=>NULL()             ! Decay scale for smooth topography
 REAL,                  POINTER  :: XLEN2=>NULL()             ! Decay scale for small-scale topography deviation
 REAL, DIMENSION(:,:),  POINTER  :: XZSMT=>NULL()             ! smooth orography for SLEVE coordinate
+REAL, DIMENSION(:),    POINTER :: XHAT_BOUND  => NULL() ! Boundaries of global domain at u and v points
+REAL, DIMENSION(:),    POINTER :: XHATM_BOUND => NULL() ! Boundaries of global domain at mass points
 
 END MODULE MODD_GRID_n

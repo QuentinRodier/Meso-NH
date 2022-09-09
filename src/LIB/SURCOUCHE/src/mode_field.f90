@@ -511,6 +511,30 @@ call Add_field2list( TFIELDDATA( &
   NDIMS      = 1,                &
   LTIMEDEP   = .FALSE.           ) )
 
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'HAT_BOUND', &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'HAT_BOUND', &
+  CUNITS     = 'm',              &
+  CDIR       = '--',             &
+  CCOMMENT   = 'Boundaries of domain in the conformal or cartesian plane at u and v points', &
+  NGRID      = 0,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 1,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA(  &
+  CMNHNAME   = 'HATM_BOUND', &
+  CSTDNAME   = '',                &
+  CLONGNAME  = 'HATM_BOUND', &
+  CUNITS     = 'm',               &
+  CDIR       = '--',              &
+  CCOMMENT   = 'Boundaries of domain in the conformal or cartesian plane at mass points', &
+  NGRID      = 0,                 &
+  NTYPE      = TYPEREAL,          &
+  NDIMS      = 1,                 &
+  LTIMEDEP   = .FALSE.            ) )
+
 call Add_field2list( TFIELDDATA(      &
   CMNHNAME   = 'ZTOP',                &
   CSTDNAME   = 'altitude_at_top_of_atmosphere_model', &
@@ -3632,6 +3656,8 @@ call Goto_model_1field( 'XHATM', kfrom, kto, XXHATM )
 call Goto_model_1field( 'YHATM', kfrom, kto, XYHATM )
 call Goto_model_1field( 'ZHAT',  kfrom, kto, XZHAT  )
 call Goto_model_1field( 'ZHATM', kfrom, kto, XZHATM )
+call Goto_model_1field( 'HAT_BOUND',  kfrom, kto, XHAT_BOUND  )
+call Goto_model_1field( 'HATM_BOUND', kfrom, kto, XHATM_BOUND )
 call Goto_model_1field( 'ZTOP',  kfrom, kto, XZTOP  )
 call Goto_model_1field( 'DXHAT', kfrom, kto, XDXHAT )
 call Goto_model_1field( 'DYHAT', kfrom, kto, XDYHAT )

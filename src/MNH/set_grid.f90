@@ -19,6 +19,8 @@ PUBLIC :: SET_GRID
 
 PUBLIC :: INTERP_HORGRID_1DIR_TO_MASSPOINTS, INTERP_HORGRID_TO_MASSPOINTS, INTERP_VERGRID_TO_MASSPOINTS
 
+PUBLIC :: STORE_GRID_BOUNDS, STORE_HORGRID_BOUNDS, STORE_VERGRID_BOUNDS
+
 CONTAINS
 
 !     #####################################################################
@@ -27,6 +29,7 @@ CONTAINS
                            PTSTEP, PSEGLEN,                               &
                            PLONORI, PLATORI, PLON, PLAT,                  &
                            PXHAT, PYHAT, PDXHAT, PDYHAT, PXHATM, PYHATM,  &
+                           PHAT_BOUND, PHATM_BOUND,                       &
                            PMAP, PZS, PZZ, PZHAT, PZHATM, PZTOP, OSLEVE,  &
                            PLEN1, PLEN2, PZSMT, PJ,                       &
                            TPDTMOD, TPDTCUR, KSTOP,                       &
@@ -204,6 +207,8 @@ REAL, DIMENSION(:),     INTENT(OUT) :: PDXHAT    ! horizontal stretching in x
 REAL, DIMENSION(:),     INTENT(OUT) :: PDYHAT    ! horizontal stretching in y
 REAL, DIMENSION(:),     INTENT(OUT) :: PXHATM    ! Position x in the conformal plane or on the cartesian plane at mass points
 REAL, DIMENSION(:),     INTENT(OUT) :: PYHATM    ! Position y in the conformal plane or on the cartesian plane at mass points
+REAL, DIMENSION(:),     INTENT(INOUT) :: PHAT_BOUND  ! Boundaries of global domain in the conformal or cartesian plane
+REAL, DIMENSION(:),     INTENT(INOUT) :: PHATM_BOUND ! Boundaries of global domain in the conformal or cartesian plane at mass pts
 REAL, DIMENSION(:,:),   INTENT(OUT) :: PMAP      ! Map factor
 !
 REAL, DIMENSION(:,:),   INTENT(OUT) :: PZS       ! orography
@@ -346,6 +351,10 @@ CALL IO_Field_read(TPINIFILE,'DTSEG',TDTSEG)
 CALL INTERP_HORGRID_TO_MASSPOINTS( PXHAT, PYHAT, PXHATM, PYHATM )
 CALL INTERP_VERGRID_TO_MASSPOINTS( PZHAT, PZHATM )
 
+! Collect global domain boundaries
+CALL STORE_GRID_BOUNDS( PXHAT,  PYHAT,  PZHAT,  PHAT_BOUND  )
+CALL STORE_GRID_BOUNDS( PXHATM, PYHATM, PZHATM, PHATM_BOUND )
+
 IF (LCARTESIAN) THEN
   CALL SM_GRIDCART(PXHAT,PYHAT,PZHAT,PZS,OSLEVE,PLEN1,PLEN2,PZSMT,PDXHAT,PDYHAT,PZZ,PJ)
 ELSE
@@ -430,75 +439,186 @@ CALL SM_PRINT_TIME(TDTSEG,TLUOUT,YTITLE)
 END SUBROUTINE SET_GRID
 
 
+!-----------------------------------------------------------------
 SUBROUTINE INTERP_HORGRID_1DIR_TO_MASSPOINTS( HDIR, PHAT, PHATM )
-! Interpolate 1 direction of horizontal grid to mass points
+  ! Interpolate 1 direction of horizontal grid to mass points
 
-USE MODD_ARGSLIST_ll, ONLY: LIST1D_ll
+  USE MODD_ARGSLIST_ll, ONLY: LIST1D_ll
 
-USE MODE_ARGSLIST_ll, ONLY: ADD1DFIELD_ll, CLEANLIST1D_ll
-USE MODE_EXCHANGE_ll, ONLY: UPDATE_1DHALO_ll
-USE MODE_MSG
+  USE MODE_ARGSLIST_ll, ONLY: ADD1DFIELD_ll, CLEANLIST1D_ll
+  USE MODE_EXCHANGE_ll, ONLY: UPDATE_1DHALO_ll
+  USE MODE_MSG
 
-IMPLICIT NONE
+  IMPLICIT NONE
 
-CHARACTER(LEN=1),   INTENT(IN)  :: HDIR  ! Direction ('X' or 'Y')
-REAL, DIMENSION(:), INTENT(IN)  :: PHAT  ! Position x or y in the conformal or cartesian plane
-REAL, DIMENSION(:), INTENT(OUT) :: PHATM ! Position x or y in the conformal or cartesian plane at mass points
+  CHARACTER(LEN=1),   INTENT(IN)  :: HDIR  ! Direction ('X' or 'Y')
+  REAL, DIMENSION(:), INTENT(IN)  :: PHAT  ! Position x or y in the conformal or cartesian plane
+  REAL, DIMENSION(:), INTENT(OUT) :: PHATM ! Position x or y in the conformal or cartesian plane at mass points
 
-CHARACTER(LEN=:), ALLOCATABLE :: YNAME
-INTEGER                       :: IINFO_ll ! return code
-TYPE(LIST1D_ll),  POINTER     :: TZLIST   ! pointer for the list of 1D fields to be communicated
+  CHARACTER(LEN=:), ALLOCATABLE :: YNAME
+  INTEGER                       :: IINFO_ll ! return code
+  TYPE(LIST1D_ll),  POINTER     :: TZLIST   ! pointer for the list of 1D fields to be communicated
 
 
-! Interpolate inside subdomain
-PHATM( : UBOUND(PHATM,1)-1 ) = 0.5 * PHAT( : UBOUND(PHAT,1)-1 ) + 0.5 * PHAT( LBOUND(PHAT,1)+1 : UBOUND(PHAT,1) )
-PHATM( UBOUND(PHATM,1)     ) = 1.5 * PHAT( UBOUND(PHAT,1)     ) - 0.5 * PHAT( UBOUND(PHAT,1)-1 )
+  ! Interpolate inside subdomain
+  PHATM( : UBOUND(PHATM,1)-1 ) = 0.5 * PHAT( : UBOUND(PHAT,1)-1 ) + 0.5 * PHAT( LBOUND(PHAT,1)+1 : UBOUND(PHAT,1) )
+  PHATM( UBOUND(PHATM,1)     ) = 1.5 * PHAT( UBOUND(PHAT,1)     ) - 0.5 * PHAT( UBOUND(PHAT,1)-1 )
 
-! Update data between subdomains
-NULLIFY( TZLIST )
+  ! Update data between subdomains
+  NULLIFY( TZLIST )
 
-IF ( HDIR == 'X' ) THEN
-  YNAME = 'XHATM'
-ELSE IF ( HDIR == 'Y' ) THEN
-  YNAME = 'YHATM'
-ELSE
-  CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'INTERP_HORGRID_1DIR_TO_MASSPOINTS', 'invalid direction (valid: X or Y)' )
-END IF
+  IF ( HDIR == 'X' ) THEN
+    YNAME = 'XHATM'
+  ELSE IF ( HDIR == 'Y' ) THEN
+    YNAME = 'YHATM'
+  ELSE
+    CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'INTERP_HORGRID_1DIR_TO_MASSPOINTS', 'invalid direction (valid: X or Y)' )
+  END IF
 
-CALL ADD1DFIELD_ll( HDIR, TZLIST, PHATM, YNAME )
-CALL UPDATE_1DHALO_ll( TZLIST, IINFO_ll )
-CALL CLEANLIST1D_ll( TZLIST )
+  CALL ADD1DFIELD_ll( HDIR, TZLIST, PHATM, YNAME )
+  CALL UPDATE_1DHALO_ll( TZLIST, IINFO_ll )
+  CALL CLEANLIST1D_ll( TZLIST )
 
 END SUBROUTINE INTERP_HORGRID_1DIR_TO_MASSPOINTS
+!-----------------------------------------------------------------
 
 
+!-----------------------------------------------------------------
 SUBROUTINE INTERP_HORGRID_TO_MASSPOINTS( PXHAT, PYHAT, PXHATM, PYHATM )
 
-IMPLICIT NONE
+  IMPLICIT NONE
 
-REAL, DIMENSION(:), INTENT(IN)  :: PXHAT  ! Position x in the conformal or cartesian plane
-REAL, DIMENSION(:), INTENT(IN)  :: PYHAT  ! Position y in the conformal or cartesian plane
-REAL, DIMENSION(:), INTENT(OUT) :: PXHATM ! Position x in the conformal or cartesian plane at mass points
-REAL, DIMENSION(:), INTENT(OUT) :: PYHATM ! Position y in the conformal or cartesian plane at mass points
+  REAL, DIMENSION(:), INTENT(IN)  :: PXHAT  ! Position x in the conformal or cartesian plane
+  REAL, DIMENSION(:), INTENT(IN)  :: PYHAT  ! Position y in the conformal or cartesian plane
+  REAL, DIMENSION(:), INTENT(OUT) :: PXHATM ! Position x in the conformal or cartesian plane at mass points
+  REAL, DIMENSION(:), INTENT(OUT) :: PYHATM ! Position y in the conformal or cartesian plane at mass points
 
-CALL INTERP_HORGRID_1DIR_TO_MASSPOINTS( 'X', PXHAT, PXHATM )
-CALL INTERP_HORGRID_1DIR_TO_MASSPOINTS( 'Y', PYHAT, PYHATM )
+  CALL INTERP_HORGRID_1DIR_TO_MASSPOINTS( 'X', PXHAT, PXHATM )
+  CALL INTERP_HORGRID_1DIR_TO_MASSPOINTS( 'Y', PYHAT, PYHATM )
 
 END SUBROUTINE INTERP_HORGRID_TO_MASSPOINTS
+!-----------------------------------------------------------------
 
 
+!-----------------------------------------------------------------
 PURE SUBROUTINE INTERP_VERGRID_TO_MASSPOINTS( PZHAT, PZHATM )
-! Interpolate vertical grid to mass points
+  ! Interpolate vertical grid to mass points
 
-IMPLICIT NONE
+  IMPLICIT NONE
 
-REAL, DIMENSION(:), INTENT(IN)  :: PZHAT  ! Position z in the conformal or cartesian plane
-REAL, DIMENSION(:), INTENT(OUT) :: PZHATM ! Position z in the conformal or cartesian plane at mass points
+  REAL, DIMENSION(:), INTENT(IN)  :: PZHAT  ! Position z in the conformal or cartesian plane
+  REAL, DIMENSION(:), INTENT(OUT) :: PZHATM ! Position z in the conformal or cartesian plane at mass points
 
-PZHATM( : UBOUND(PZHATM,1)-1 ) = 0.5 * PZHAT( : UBOUND(PZHAT,1)-1 ) + 0.5 * PZHAT( LBOUND(PZHAT,1)+1 : UBOUND(PZHAT,1) )
-PZHATM( UBOUND(PZHATM,1)     ) = 1.5 * PZHAT( UBOUND(PZHAT,1)     ) - 0.5 * PZHAT( UBOUND(PZHAT,1)-1 )
+  PZHATM( : UBOUND(PZHATM,1)-1 ) = 0.5 * PZHAT( : UBOUND(PZHAT,1)-1 ) + 0.5 * PZHAT( LBOUND(PZHAT,1)+1 : UBOUND(PZHAT,1) )
+  PZHATM( UBOUND(PZHATM,1)     ) = 1.5 * PZHAT( UBOUND(PZHAT,1)     ) - 0.5 * PZHAT( UBOUND(PZHAT,1)-1 )
 
 END SUBROUTINE INTERP_VERGRID_TO_MASSPOINTS
+!-----------------------------------------------------------------
+
+
+!-----------------------------------------------------------------
+SUBROUTINE STORE_GRID_1DIR_BOUNDS( HDIR, PHAT, PHAT_BOUND )
+
+  USE MODD_GRID_n
+  USE MODD_PARAMETERS,     ONLY: JPHEXT, JPVEXT
+
+  USE MODE_ALLOCBUFFER_ll, ONLY: ALLOCBUFFER_ll
+  USE MODE_GATHER_ll,      ONLY: GATHERALL_FIELD_ll
+  USE MODE_MSG
+
+  IMPLICIT NONE
+
+  CHARACTER(LEN=1),                 INTENT(IN)    :: HDIR       ! Direction ('X', 'Y' or 'Z')
+  REAL, DIMENSION(:), TARGET,       INTENT(IN)    :: PHAT       ! Position x, y or z in the conformal or cartesian plane
+  REAL, DIMENSION(NHAT_BOUND_SIZE), INTENT(INOUT) :: PHAT_BOUND ! Boundaries of global domain in the conformal or cartesian plane
+
+  INTEGER                     :: IERR
+  LOGICAL                     :: GALLOC
+  REAL, DIMENSION(:), POINTER :: ZHAT_GLOB
+
+  ZHAT_GLOB => NULL()
+
+  SELECT CASE (HDIR)
+    CASE ( 'X' )
+      CALL ALLOCBUFFER_ll( ZHAT_GLOB, PHAT, 'XX', GALLOC )
+      CALL GATHERALL_FIELD_ll( 'XX', PHAT, ZHAT_GLOB, IERR )
+      PHAT_BOUND(NEXTE_XMIN) = ZHAT_GLOB( 1 )
+      PHAT_BOUND(NEXTE_XMAX) = ZHAT_GLOB( UBOUND( ZHAT_GLOB, 1 ) )
+      PHAT_BOUND(NPHYS_XMIN) = ZHAT_GLOB( JPHEXT + 1 )
+      PHAT_BOUND(NPHYS_XMAX) = ZHAT_GLOB( UBOUND( ZHAT_GLOB, 1 ) - JPHEXT )
+
+    CASE ( 'Y' )
+      CALL ALLOCBUFFER_ll( ZHAT_GLOB, PHAT, 'YY', GALLOC )
+      CALL GATHERALL_FIELD_ll( 'YY', PHAT, ZHAT_GLOB, IERR )
+      PHAT_BOUND(NEXTE_YMIN) = ZHAT_GLOB( 1 )
+      PHAT_BOUND(NEXTE_YMAX) = ZHAT_GLOB( UBOUND( ZHAT_GLOB, 1 ) )
+      PHAT_BOUND(NPHYS_YMIN) = ZHAT_GLOB( JPHEXT + 1 )
+      PHAT_BOUND(NPHYS_YMAX) = ZHAT_GLOB( UBOUND( ZHAT_GLOB, 1 ) - JPHEXT )
+
+    CASE ( 'Z' )
+      ZHAT_GLOB => PHAT
+      PHAT_BOUND(NEXTE_ZMIN) = ZHAT_GLOB( 1 )
+      PHAT_BOUND(NEXTE_ZMAX) = ZHAT_GLOB( UBOUND( ZHAT_GLOB, 1 ) )
+      PHAT_BOUND(NPHYS_ZMIN) = ZHAT_GLOB( JPVEXT + 1 )
+      PHAT_BOUND(NPHYS_ZMAX) = ZHAT_GLOB( UBOUND( ZHAT_GLOB, 1 ) - JPVEXT )
+
+    CASE DEFAULT
+      CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'STORE_GRID_1DIR_BOUNDS', 'invalid direction (valid: X, Y or Z)' )
+
+  END SELECT
+
+  IF ( GALLOC ) DEALLOCATE( ZHAT_GLOB )
+
+END SUBROUTINE STORE_GRID_1DIR_BOUNDS
+!-----------------------------------------------------------------
+
+
+!-----------------------------------------------------------------
+SUBROUTINE STORE_GRID_BOUNDS( PXHAT, PYHAT, PZHAT, PHAT_BOUND )
+
+  IMPLICIT NONE
+
+  REAL, DIMENSION(:), INTENT(IN)    :: PXHAT  ! Position x in the conformal or cartesian plane
+  REAL, DIMENSION(:), INTENT(IN)    :: PYHAT  ! Position y in the conformal or cartesian plane
+  REAL, DIMENSION(:), INTENT(IN)    :: PZHAT  ! Position y in the conformal or cartesian plane
+  REAL, DIMENSION(:), INTENT(INOUT) :: PHAT_BOUND ! Boundaries of global domain in the conformal or cartesian plane
+
+  CALL STORE_GRID_1DIR_BOUNDS( 'X', PXHAT, PHAT_BOUND )
+  CALL STORE_GRID_1DIR_BOUNDS( 'Y', PYHAT, PHAT_BOUND )
+  CALL STORE_GRID_1DIR_BOUNDS( 'Z', PZHAT, PHAT_BOUND )
+
+END SUBROUTINE STORE_GRID_BOUNDS
+!-----------------------------------------------------------------
+
+
+!-----------------------------------------------------------------
+SUBROUTINE STORE_HORGRID_BOUNDS( PXHAT, PYHAT, PHAT_BOUND )
+
+  IMPLICIT NONE
+
+  REAL, DIMENSION(:), INTENT(IN)    :: PXHAT  ! Position x in the conformal or cartesian plane
+  REAL, DIMENSION(:), INTENT(IN)    :: PYHAT  ! Position y in the conformal or cartesian plane
+  REAL, DIMENSION(:), INTENT(INOUT) :: PHAT_BOUND ! Boundaries of global domain in the conformal or cartesian plane
+
+  CALL STORE_GRID_1DIR_BOUNDS( 'X', PXHAT, PHAT_BOUND )
+  CALL STORE_GRID_1DIR_BOUNDS( 'Y', PYHAT, PHAT_BOUND )
+
+END SUBROUTINE STORE_HORGRID_BOUNDS
+!-----------------------------------------------------------------
+
+
+!-----------------------------------------------------------------
+SUBROUTINE STORE_VERGRID_BOUNDS( PZHAT, PHAT_BOUND )
+
+  IMPLICIT NONE
+
+  REAL, DIMENSION(:), INTENT(IN)    :: PZHAT  ! Position y in the conformal or cartesian plane
+  REAL, DIMENSION(:), INTENT(INOUT) :: PHAT_BOUND ! Boundaries of global domain in the conformal or cartesian plane
+
+  CALL STORE_GRID_1DIR_BOUNDS( 'Z', PZHAT, PHAT_BOUND )
+
+END SUBROUTINE STORE_VERGRID_BOUNDS
+!-----------------------------------------------------------------
 
 
 END MODULE MODE_SET_GRID

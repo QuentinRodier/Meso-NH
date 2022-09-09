@@ -269,6 +269,8 @@ ALLOCATE(XZSMT(IIU,IJU))
 ALLOCATE(XZZ(IIU,IJU,IKU))
 ALLOCATE(XZHAT(IKU))
 ALLOCATE(XZHATM(IKU))
+ALLOCATE(XHAT_BOUND (NHAT_BOUND_SIZE))
+ALLOCATE(XHATM_BOUND(NHAT_BOUND_SIZE))
 !
 ALLOCATE(XDXX(IIU,IJU,IKU))
 ALLOCATE(XDYY(IIU,IJU,IKU))
@@ -688,9 +690,10 @@ CALL INI_BIKHARDT_n (NDXRATIO_ALL(KMI),NDYRATIO_ALL(KMI),KMI)
 CALL SET_GRID( KMI, TPINIFILE, IKU, NIMAX_ll, NJMAX_ll,                        &
                XTSTEP, XSEGLEN,                                                &
                XLONORI, XLATORI, XLON, XLAT,                                   &
-               XXHAT, XYHAT, XDXHAT, XDYHAT, XXHATM, XYHATM, XMAP,             &
-               XZS, XZZ, XZHAT, XZHATM, XZTOP, LSLEVE, XLEN1, XLEN2, XZSMT,    &
-               ZJ,                                                             &
+               XXHAT, XYHAT, XDXHAT, XDYHAT, XXHATM, XYHATM,                   &
+               XHAT_BOUND, XHATM_BOUND,                                        &
+               XMAP, XZS, XZZ, XZHAT, XZHATM, XZTOP, LSLEVE,                   &
+               XLEN1, XLEN2, XZSMT, ZJ,                                        &
                TDTMOD, TDTCUR, NSTOP, NBAK_NUMB, NOUT_NUMB, TBACKUPN, TOUTPUTN )
 !
 CALL METRICS(XMAP,XDXHAT,XDYHAT,XZZ,XDXX,XDYY,XDZX,XDZY,XDZZ)

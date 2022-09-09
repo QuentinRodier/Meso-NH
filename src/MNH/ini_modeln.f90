@@ -292,7 +292,7 @@ END MODULE MODI_INI_MODEL_n
 !  S. Riette      04/2020: XHL* fields
 !  F. Auguste     02/2021: add IBM
 !  T.Nigel        02/2021: add turbulence recycling
-! J.L.Redelsperger 06/2011: OCEAN case
+! J.L.Redelsperger 06/2021: OCEAN case
 !---------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -1013,6 +1013,8 @@ ALLOCATE(XDIRCOSXW(IIU,IJU))
 ALLOCATE(XDIRCOSYW(IIU,IJU))
 ALLOCATE(XCOSSLOPE(IIU,IJU))
 ALLOCATE(XSINSLOPE(IIU,IJU))
+ALLOCATE(XHAT_BOUND (NHAT_BOUND_SIZE))
+ALLOCATE(XHATM_BOUND(NHAT_BOUND_SIZE))
 !
 ALLOCATE(XDXX(IIU,IJU,IKU))
 ALLOCATE(XDYY(IIU,IJU,IKU))
@@ -1858,9 +1860,10 @@ END IF
 CALL SET_GRID( KMI, TPINIFILE, IKU, NIMAX_ll, NJMAX_ll,                        &
                XTSTEP, XSEGLEN,                                                &
                XLONORI, XLATORI, XLON, XLAT,                                   &
-               XXHAT, XYHAT, XDXHAT, XDYHAT, XXHATM, XYHATM, XMAP,             &
-               XZS, XZZ, XZHAT, XZHATM, XZTOP, LSLEVE, XLEN1, XLEN2, XZSMT,    &
-               ZJ,                                                             &
+               XXHAT, XYHAT, XDXHAT, XDYHAT, XXHATM, XYHATM,                   &
+               XHAT_BOUND, XHATM_BOUND,                                        &
+               XMAP, XZS, XZZ, XZHAT, XZHATM, XZTOP, LSLEVE,                   &
+               XLEN1, XLEN2, XZSMT, ZJ,                                        &
                TDTMOD, TDTCUR, NSTOP, NBAK_NUMB, NOUT_NUMB, TBACKUPN, TOUTPUTN )
 !
 CALL METRICS(XMAP,XDXHAT,XDYHAT,XZZ,XDXX,XDYY,XDZX,XDZY,XDZZ)

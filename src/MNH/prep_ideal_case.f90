@@ -379,7 +379,7 @@ USE MODE_ll
 USE MODE_MODELN_HANDLER
 use mode_field,            only: Alloc_field_scalars, Ini_field_list, Ini_field_scalars
 USE MODE_MSG
-USE MODE_SET_GRID,         only: INTERP_HORGRID_TO_MASSPOINTS
+USE MODE_SET_GRID,         only: INTERP_HORGRID_TO_MASSPOINTS, STORE_HORGRID_BOUNDS
 !
 USE MODI_DEFAULT_DESFM_n    ! Interface modules
 USE MODI_DEFAULT_EXPRE
@@ -1242,6 +1242,7 @@ ELSE
 !
   ALLOCATE( XXHAT(NIU),  XYHAT(NJU)  )
   ALLOCATE( XXHATM(NIU), XYHATM(NJU) )
+  ALLOCATE( XHAT_BOUND (NHAT_BOUND_SIZE), XHATM_BOUND(NHAT_BOUND_SIZE) )
 !
 ! define the grid localization at the earth surface by the central point
 ! coordinates
@@ -1254,14 +1255,10 @@ ELSE
 ! conformal coordinates (0,0). This is to allow the centering of the model in
 ! a non-cyclic  configuration regarding to XLATCEN or XLONCEN.
 !
-      ALLOCATE(ZXHAT_ll(NIMAX_ll+2*JPHEXT),ZYHAT_ll(NJMAX_ll+2*JPHEXT))
-      ZXHAT_ll=0.
-      ZYHAT_ll=0.
       CALL SM_LATLON(XLATCEN,XLONCEN,                     &
                        -XDELTAX*(NIMAX_ll/2-0.5+JPHEXT),  &
                        -XDELTAY*(NJMAX_ll/2-0.5+JPHEXT),  &
                        XLATORI,XLONORI)
-        DEALLOCATE(ZXHAT_ll,ZYHAT_ll)
 !
       WRITE(NLUOUT,FMT=*) 'PREP_IDEAL_CASE : XLATORI=' , XLATORI, &
                           ' XLONORI= ', XLONORI
@@ -1288,6 +1285,11 @@ ELSE
 
   ! Interpolations of positions to mass points
   CALL INTERP_HORGRID_TO_MASSPOINTS( XXHAT, XYHAT, XXHATM, XYHATM )
+
+  ! Collect global domain boundaries
+  CALL STORE_HORGRID_BOUNDS( XXHAT,  XYHAT,  XHAT_BOUND  )
+  CALL STORE_HORGRID_BOUNDS( XXHATM, XYHATM, XHATM_BOUND )
+
 END IF
 !
 !*       5.1.2  Orography and Gal-Chen Sommerville transformation :
