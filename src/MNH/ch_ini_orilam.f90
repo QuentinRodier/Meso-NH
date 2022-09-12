@@ -1,4 +1,4 @@
-!ORILAM_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!ORILAM_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !ORILAM_LIC This is part of the ORILAM software governed by the CeCILL-C licence
 !ORILAM_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !ORILAM_LIC for details.
@@ -56,6 +56,8 @@ END MODULE MODI_CH_INI_ORILAM
 !!    MODIFICATIONS
 !!    -------------
 !!    Original
+!!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
+!!
 !! 
 !!    EXTERNAL
 !!    --------
@@ -80,6 +82,7 @@ USE MODD_CST,       ONLY :    &
       ,XRD              & ! Gaz constant for dry air
       ,XCPD               ! Cpd (dry air)
 USE MODD_CONF,      ONLY : NVERB
+use mode_msg
 !
 IMPLICIT NONE
 !
@@ -99,6 +102,7 @@ CHARACTER(LEN=10),      INTENT(IN)    :: GSCHEME
 !
 !*      0.2    declarations of local variables
 !
+character(len=10) :: yspec ! String for error message
 REAL, DIMENSION(SIZE(PM,1),(JPMODE)*3)    :: ZDMINTRA, ZDMINTER, ZDMCOND, ZDMNUCL, ZDMMERG
 REAL, DIMENSION(SIZE(PM,1),JPMODE)        :: ZMASK, ZSOLORG
 REAL, DIMENSION(SIZE(PM,1),(JPMODE)*3)    :: ZMBEG, ZMINT, ZMEND
@@ -158,10 +162,8 @@ ENDDO
 ! verify that all array elements are defined
 DO JI = 1, SIZE(XRHOI)
   IF (XRHOI(JI) .LE. 0.0) THEN
-    PRINT *, 'CH_AER_MOD_INIT ERROR: density for species ', JI, ' not defined'
-    ! callabortstop
-    CALL ABORT
-    STOP 'CH_AER_MOD_INIT ERROR: density not defined'
+    write( yspec, '( I10 )' ) JI
+    call Print_msg( NVERB_FATAL, 'GEN', 'CH_AER_MOD_INIT', 'density for species '//trim(yspec)//' not defined' )
   END IF
 ENDDO
 !

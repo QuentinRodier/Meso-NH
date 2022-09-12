@@ -1505,46 +1505,48 @@ END WHERE
 !
 ZZW(:) = 0.0
 NHAIL = 0.
-IF (LHAIL) NHAIL = 1. 
-
-WHERE( PRGT1D(:)>XRTMIN(6) .AND. PZT(:)<XTT .AND.                              &
-     (ZRDRYG(:)-ZZW1(:,2)-ZZW1(:,3))>=(ZRWETG(:)-ZZW1(:,5)-ZZW1(:,6)) .AND. ZRWETG(:)-ZZW1(:,5)-ZZW1(:,6)>0.0 ) 
-!   
-   ZZW(:) = ZRWETG(:) - ZZW1(:,5) - ZZW1(:,6) ! RCWETG+RRWETG
+IF (LHAIL) NHAIL = 1.
+DO JJ=1, SIZE(PRGT1D)
+   IF ( PRGT1D(JJ)>XRTMIN(6) .AND. PZT(JJ)<XTT .AND. &
+        (ZRDRYG(JJ)-ZZW1(JJ,2)-ZZW1(JJ,3))>(ZRWETG(JJ)-ZZW1(JJ,5)-ZZW1(JJ,6)) .AND. (ZRWETG(JJ)-ZZW1(JJ,5)-ZZW1(JJ,6))>0.0 ) THEN
+      !
+      ZZW(JJ) = ZRWETG(JJ) - ZZW1(JJ,5) - ZZW1(JJ,6) ! RCWETG+RRWETG
 !   
 ! limitation of the available rainwater mixing ratio (RRWETH < RRS !)
 !   
-   ZZW1(:,7) = MAX( 0.0,MIN( ZZW(:),PRRS1D(:)+ZZW1(:,1) ) )
-   ZZX(:)    = ZZW1(:,7) / ZZW(:)
-   ZZW1(:,5) = ZZW1(:,5)*ZZX(:)
-   ZZNW1(:,5) = ZZNW1(:,5)*ZZX(:) 
-   ZZW1(:,6) = ZZW1(:,6)*ZZX(:)
-   ZZNW1(:,6) = ZZNW1(:,6)*ZZX(:) 
-   ZRWETG(:) = ZZW1(:,7) + ZZW1(:,5) + ZZW1(:,6)
-!     
-   PRCS1D(:) = PRCS1D(:) - ZZW1(:,1)
-   PRIS1D(:) = PRIS1D(:) - ZZW1(:,5)
-   PRSS1D(:) = PRSS1D(:) - ZZW1(:,6)
+      ZZW1(JJ,7) = MAX( 0.0,MIN( ZZW(JJ),PRRS1D(JJ)+ZZW1(JJ,1) ) )
+      ZZX(JJ)    = ZZW1(JJ,7) / ZZW(JJ)
+      ZZW1(JJ,5) = ZZW1(JJ,5)*ZZX(JJ)
+      ZZNW1(:,5) = ZZNW1(JJ,5)*ZZX(JJ)
+      ZZW1(JJ,6) = ZZW1(JJ,6)*ZZX(JJ)
+      ZZNW1(JJ,6) = ZZNW1(JJ,6)*ZZX(JJ)
+      ZRWETG(JJ) = ZZW1(JJ,7) + ZZW1(JJ,5) + ZZW1(JJ,6)
+!   
+      PRCS1D(JJ) = PRCS1D(JJ) - ZZW1(JJ,1)
+      PRIS1D(JJ) = PRIS1D(JJ) - ZZW1(JJ,5)
+      PRSS1D(JJ) = PRSS1D(JJ) - ZZW1(JJ,6)
 !
 ! assume a linear percent of conversion of graupel into hail
 !
-   PRGS1D(:) = PRGS1D(:) + ZRWETG(:)
-   ZZW(:)  = PRGS1D(:)*ZRDRYG(:)*NHAIL/(ZRWETG(:)+ZRDRYG(:)) 
-   PRGS1D(:) = PRGS1D(:) - ZZW(:)                        
-   PRHS1D(:) = PRHS1D(:) + ZZW(:)
-   PRRS1D(:) = MAX( 0.0,PRRS1D(:) - ZZW1(:,7) + ZZW1(:,1) )
-   PTHS1D(:) = PTHS1D(:) + ZZW1(:,7)*(PLSFACT(:)-PLVFACT(:))
-                                                 ! f(L_f*(RCWETG+RRWETG))
+      PRGS1D(JJ) = PRGS1D(JJ) + ZRWETG(JJ)
+      ZZW(JJ)  = PRGS1D(JJ)*ZRDRYG(JJ)*NHAIL/(ZRWETG(JJ)+ZRDRYG(JJ)) 
+      PRGS1D(JJ) = PRGS1D(JJ) - ZZW(JJ)                        
+      PRHS1D(JJ) = PRHS1D(JJ) + ZZW(JJ)
+      PRRS1D(JJ) = MAX( 0.0,PRRS1D(JJ) - ZZW1(JJ,7) + ZZW1(JJ,1) )
+      PTHS1D(JJ) = PTHS1D(JJ) + ZZW1(JJ,7) * (PLSFACT(JJ) - PLVFACT(JJ))
+                                                ! f(L_f*(RCWETG+RRWETG))
 !
-   PCCS1D(:) = MAX( PCCS1D(:)-ZZW1(:,1)*(PCCT1D(:)/MAX(PRCT1D(:),XRTMIN(2))),0.0 )
-   PCIS1D(:) = MAX( PCIS1D(:)-ZZNW1(:,5),0.0 ) 
-   PCRS1D(:) = MAX( PCRS1D(:)-MAX( ZZW1(:,7)-ZZW1(:,1),0.0 )                 &
-				   *(PCRT1D(:)/MAX(PRRT1D(:),XRTMIN(3))),0.0 )
-   PCSS1D(:) = MAX( PCSS1D(:)-ZZNW1(:,6),0.0 ) 
-   ZZNW(:)  = PCGS1D(:)*ZRDRYG(:)*NHAIL/(ZRWETG(:)+ZRDRYG(:)) 
-   PCGS1D(:) = MAX( PCGS1D(:)-ZZNW(:),0.0 ) 
-   PCHS1D(:) = MAX( PCHS1D(:)+ZZNW(:),0.0 ) 
-END WHERE
+      PCCS1D(JJ) = MAX( PCCS1D(JJ)-ZZW1(JJ,1)*(PCCT1D(JJ)/MAX(PRCT1D(JJ),XRTMIN(2))),0.0 )
+      PCIS1D(JJ) = MAX( PCIS1D(JJ)-ZNZW1(JJ,5),0.0 )
+      PCRS1D(JJ) = MAX( PCRS1D(JJ)-MAX( ZZW1(JJ,7)-ZZW1(JJ,1),0.0 )                 &
+           *(PCRT1D(JJ)/MAX(PRRT1D(JJ),XRTMIN(3))),0.0 )
+      PCSS1D(JJ) = MAX( PCSS1D(JJ)-ZZNW1(JJ,6),0.0 )
+      ZZNW(JJ)  = PCGS1D(JJ)*ZRDRYG(JJ)*NHAIL/(ZRWETG(JJ)+ZRDRYG(JJ))
+      PCGS1D(JJ) = MAX( PCGS1D(JJ)-ZZNW(JJ),0.0 )
+      PCHS1D(JJ) = MAX( PCHS1D(JJ)+ZZNW(JJ),0.0 )
+   END IF
+END DO
+>>>>>>> MNH-56-branch
 !
 ! Budget storage
 if ( nbumod == kmi .and. lbu_enable ) then

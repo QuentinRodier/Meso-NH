@@ -33,6 +33,7 @@
 !!    -------------
 !!      Original    xx/xxxx
 !!      Modified 10/2014 P. Samuelsson  MEB
+!!               11/2019 C.Lac correction in the drag formula and application to building in addition to tree
 !
 !
 USE MODD_ISBA_OPTIONS_n, ONLY : ISBA_OPTIONS_t

@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !!    ########################
       MODULE MODI_CH_MONITOR_n
 !!    ########################
@@ -892,6 +893,8 @@ IF (LUSECHAQ.AND.(NRRL>=2) ) THEN
                                   ZINPRR(:,:)                                  )
 
     END SELECT
+  ELSE
+    ZINPRR(:,:) = 0.
   END IF
 ELSE IF (LUSECHAQ.AND.(NRRL==1) ) THEN
   CALL CH_AQUEOUS_CHECK (PTSTEP, XRHODREF, XRHODJ, XRRS, XRSVS, NRRL, &
