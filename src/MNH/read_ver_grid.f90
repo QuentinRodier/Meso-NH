@@ -332,8 +332,7 @@ XZTOP = XZHAT(IKU)
 CALL INTERP_VERGRID_TO_MASSPOINTS( XZHAT, XZHATM )
 
 ! Collect global domain boundaries
-CALL STORE_VERGRID_BOUNDS( XZHAT,  XHAT_BOUND  )
-CALL STORE_VERGRID_BOUNDS( XZHATM, XHATM_BOUND )
+CALL STORE_VERGRID_BOUNDS( XZHAT, XZHATM, XHAT_BOUND, XHATM_BOUND )
 
 !-------------------------------------------------------------------------------
 !
