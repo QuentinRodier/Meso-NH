@@ -151,7 +151,7 @@ DO JI = 1, NBALLOONS
                               TBALLOONS(JI), PSEA                                      )
 END DO
 !
-DO JI = 1, NBALLOONS
+DO JI = 1, NAIRCRAFTS
   CALL AIRCRAFT_BALLOON_EVOL( PTSTEP, PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,          &
                               PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT, &
                               TAIRCRAFTS(JI), PSEA                                     )
