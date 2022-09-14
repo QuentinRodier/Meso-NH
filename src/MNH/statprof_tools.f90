@@ -271,16 +271,15 @@ SUBROUTINE STATPROF_INI_INTERP( TPSTATPROF )
 
 END SUBROUTINE STATPROF_INI_INTERP
 
-! ###############################################################################################
-SUBROUTINE STATPROF_POSITION( TPSTATPROF, PXHAT_GLOB, PYHAT_GLOB, PXHATM, PYHATM,               &
-                             PXHATM_PHYS_MIN, PXHATM_PHYS_MAX,PYHATM_PHYS_MIN, PYHATM_PHYS_MAX, &
-                             OINSIDE, OPRESENT                                                  )
-! ###############################################################################################
+! ###########################################################
+SUBROUTINE STATPROF_POSITION( TPSTATPROF, OINSIDE, OPRESENT )
+! ###########################################################
 ! Subroutine to determine the position of a station/profiler on the model grid
 ! and set the useful coefficients for data interpolation
 
   USE MODD_CONF,           ONLY: L1D
-  USE MODD_GRID_n,         ONLY: XXHAT, XYHAT, XZZ
+  USE MODD_GRID_n,         ONLY: NPHYS_XMIN, NPHYS_XMAX, NPHYS_YMIN, NPHYS_YMAX, XHAT_BOUND, XHATM_BOUND, &
+                                 XXHAT, XYHAT, XXHATM, XYHATM, XZZ
   USE MODD_PARAMETERS,     ONLY: JPHEXT, JPVEXT
 
   USE MODE_MSG
@@ -290,14 +289,6 @@ SUBROUTINE STATPROF_POSITION( TPSTATPROF, PXHAT_GLOB, PYHAT_GLOB, PXHATM, PYHATM
   IMPLICIT NONE
 
   CLASS(TSTATPROFDATA), INTENT(INOUT) :: TPSTATPROF
-  REAL, DIMENSION(:),   INTENT(IN)    :: PXHAT_GLOB
-  REAL, DIMENSION(:),   INTENT(IN)    :: PYHAT_GLOB
-  REAL, DIMENSION(:),   INTENT(IN)    :: PXHATM ! mass point coordinates
-  REAL, DIMENSION(:),   INTENT(IN)    :: PYHATM ! mass point coordinates
-  REAL,                 INTENT(IN)    :: PXHATM_PHYS_MIN  ! Minimum X coordinate of mass points in the physical domain
-  REAL,                 INTENT(IN)    :: PYHATM_PHYS_MIN  ! Minimum Y coordinate of mass points in the physical domain
-  REAL,                 INTENT(IN)    :: PXHATM_PHYS_MAX  ! Maximum X coordinate of mass points in the physical domain
-  REAL,                 INTENT(IN)    :: PYHATM_PHYS_MAX  ! Minimum Y coordinate of mass points in the physical domain
   LOGICAL,              INTENT(OUT)   :: OINSIDE  ! True if station/profiler is inside physical domain of model
   LOGICAL,              INTENT(OUT)   :: OPRESENT ! True if station/profiler is present on the current process
 
@@ -314,8 +305,8 @@ SUBROUTINE STATPROF_POSITION( TPSTATPROF, PXHAT_GLOB, PYHAT_GLOB, PXHATM, PYHATM
 
   CALL GET_INDICE_ll( IIB, IJB, IIE, IJE )
 
-  IF (       TPSTATPROF%XX >= PXHAT_GLOB(JPHEXT+1) .AND. TPSTATPROF%XX <= PXHAT_GLOB(UBOUND(PXHAT_GLOB,1)-JPHEXT+1) &
-       .AND. TPSTATPROF%XY >= PYHAT_GLOB(JPHEXT+1) .AND. TPSTATPROF%XY <= PYHAT_GLOB(UBOUND(PYHAT_GLOB,1)-JPHEXT+1) ) THEN
+  IF (       TPSTATPROF%XX >= XHAT_BOUND(NPHYS_XMIN) .AND. TPSTATPROF%XX <= XHAT_BOUND(NPHYS_XMAX) &
+       .AND. TPSTATPROF%XY >= XHAT_BOUND(NPHYS_YMIN) .AND. TPSTATPROF%XY <= XHAT_BOUND(NPHYS_YMAX) ) THEN
     OINSIDE = .TRUE.
   ELSE
     CALL GET_MODEL_NUMBER_ll(IMI)
@@ -325,11 +316,11 @@ SUBROUTINE STATPROF_POSITION( TPSTATPROF, PXHAT_GLOB, PYHAT_GLOB, PXHATM, PYHATM
 
   ! X position
   TPSTATPROF%NI_U = COUNT( XXHAT (:) <= TPSTATPROF%XX )
-  TPSTATPROF%NI_M = COUNT( PXHATM(:) <= TPSTATPROF%XX )
+  TPSTATPROF%NI_M = COUNT( XXHATM(:) <= TPSTATPROF%XX )
 
   ! Y position
   TPSTATPROF%NJ_V = COUNT( XYHAT (:) <= TPSTATPROF%XY )
-  TPSTATPROF%NJ_M = COUNT( PYHATM(:) <= TPSTATPROF%XY )
+  TPSTATPROF%NJ_M = COUNT( XYHATM(:) <= TPSTATPROF%XY )
 
   ! Position of station/profiler according to process
   IF (       TPSTATPROF%NI_U >= IIB .AND. TPSTATPROF%NI_U <= IIE &
@@ -338,8 +329,8 @@ SUBROUTINE STATPROF_POSITION( TPSTATPROF, PXHAT_GLOB, PYHAT_GLOB, PXHATM, PYHATM
 
   ! Check if station/profiler is too near of physical domain border (outside of physical domain for mass points)
   IF ( OINSIDE .AND. .NOT. L1D ) THEN
-    IF (      TPSTATPROF%XX < PXHATM_PHYS_MIN .OR. TPSTATPROF%XX > PXHATM_PHYS_MAX &
-         .OR. TPSTATPROF%XY < PYHATM_PHYS_MIN .OR. TPSTATPROF%XY > PYHATM_PHYS_MAX ) THEN
+    IF (      TPSTATPROF%XX < XHATM_BOUND(NPHYS_XMIN) .OR. TPSTATPROF%XX > XHATM_BOUND(NPHYS_XMAX) &
+         .OR. TPSTATPROF%XY < XHATM_BOUND(NPHYS_YMIN) .OR. TPSTATPROF%XY > XHATM_BOUND(NPHYS_YMAX) ) THEN
       CALL GET_MODEL_NUMBER_ll(IMI)
       WRITE( CMNHMSG(1), "( 'station or profiler ', A, ' is outside of mass-points physical domain of model', I3 )" ) &
              TRIM(TPSTATPROF%CNAME), IMI
@@ -355,9 +346,9 @@ SUBROUTINE STATPROF_POSITION( TPSTATPROF, PXHAT_GLOB, PYHAT_GLOB, PXHATM, PYHATM
   ! Computations only on correct process
   IF ( OPRESENT .AND. .NOT. L1D ) THEN
     ! Interpolation coefficient for X (mass-point)
-    TPSTATPROF%XXMCOEF = ( TPSTATPROF%XX - PXHATM(TPSTATPROF%NI_M) ) / ( PXHATM(TPSTATPROF%NI_M+1) - PXHATM(TPSTATPROF%NI_M) )
+    TPSTATPROF%XXMCOEF = ( TPSTATPROF%XX - XXHATM(TPSTATPROF%NI_M) ) / ( XXHATM(TPSTATPROF%NI_M+1) - XXHATM(TPSTATPROF%NI_M) )
     ! Interpolation coefficient for Y (mass-point)
-    TPSTATPROF%XYMCOEF = ( TPSTATPROF%XY - PYHATM(TPSTATPROF%NJ_M) ) / ( PYHATM(TPSTATPROF%NJ_M+1) - PYHATM(TPSTATPROF%NJ_M) )
+    TPSTATPROF%XYMCOEF = ( TPSTATPROF%XY - XYHATM(TPSTATPROF%NJ_M) ) / ( XYHATM(TPSTATPROF%NJ_M+1) - XYHATM(TPSTATPROF%NJ_M) )
     ! Interpolation coefficient for X (U-point)
     TPSTATPROF%XXUCOEF = ( TPSTATPROF%XX - XXHAT(TPSTATPROF%NI_U) )  / ( XXHAT(TPSTATPROF%NI_U+1)  - XXHAT(TPSTATPROF%NI_U) )
     ! Interpolation coefficient for Y (V-point)

@@ -62,13 +62,9 @@ USE MODD_ALLPROFILER_n
 USE MODD_CONF,           ONLY: LCARTESIAN
 USE MODD_DYN,            ONLY: XSEGLEN
 USE MODD_DYN_n,          ONLY: DYN_MODEL, XTSTEP
-USE MODD_GRID_n,         ONLY: XXHAT, XXHATM, XYHAT, XYHATM
-USE MODD_PARAMETERS,     ONLY: JPHEXT, JPVEXT
 USE MODD_PROFILER_n,     ONLY: LPROFILER, NUMBPROFILER_LOC, TPROFILERS, TPROFILERS_TIME
 USE MODD_TYPE_STATPROF,  ONLY: TPROFILERDATA
 
-USE MODE_ALLOCBUFFER_ll,  ONLY: ALLOCBUFFER_ll
-USE MODE_GATHER_ll,       ONLY: GATHERALL_FIELD_ll
 USE MODE_MSG
 USE MODE_STATPROF_READER, ONLY: STATPROF_CSV_READ
 USE MODE_STATPROF_TOOLS,  ONLY: PROFILER_ADD, PROFILER_ALLOCATE, STATPROF_INI_INTERP, STATPROF_POSITION
@@ -84,19 +80,11 @@ IMPLICIT NONE
 !
 !       0.2  declaration of local variables
 !
-INTEGER :: IERR
-INTEGER :: IIU
-INTEGER :: IJU
 INTEGER :: INUMBPROF                        ! Total number of profilers (inside physical domain of model)
 INTEGER :: ISTORE                           ! number of storage instants
 INTEGER :: JI
-LOGICAL :: GALLOCX, GALLOCY
 LOGICAL :: GINSIDE                          ! True if profiler is inside physical domain of model
 LOGICAL :: GPRESENT                         ! True if profiler is present on the current process
-REAL    :: ZXHATM_PHYS_MIN, ZYHATM_PHYS_MIN ! Minimum X coordinate of mass points in the physical domain
-REAL    :: ZXHATM_PHYS_MAX, ZYHATM_PHYS_MAX ! Minimum X coordinate of mass points in the physical domain
-REAL, DIMENSION(:), POINTER  :: ZXHAT_GLOB
-REAL, DIMENSION(:), POINTER  :: ZYHAT_GLOB
 TYPE(TPROFILERDATA)          :: TZPROFILER
 !
 !----------------------------------------------------------------------------
@@ -111,24 +99,6 @@ end if
 ISTORE = NINT ( ( XSEGLEN - DYN_MODEL(1)%XTSTEP ) / TPROFILERS_TIME%XTSTEP ) + 1
 
 allocate( tprofilers_time%tpdates(istore) )
-!
-! Prepare positioning data
-!
-IF ( CFILE_PROF /= "NO_INPUT_CSV" .OR. NNUMB_PROF > 0 ) THEN
-  IIU = SIZE( XXHAT )
-  IJU = SIZE( XYHAT )
-
-  ! Get global XHAT and YHAT (needed by PROFILER_POSITION)
-  CALL ALLOCBUFFER_ll( ZXHAT_GLOB, XXHAT, 'XX', GALLOCX )
-  CALL ALLOCBUFFER_ll( ZYHAT_GLOB, XYHAT, 'YY', GALLOCY )
-  CALL GATHERALL_FIELD_ll( 'XX', XXHAT, ZXHAT_GLOB, IERR )
-  CALL GATHERALL_FIELD_ll( 'YY', XYHAT, ZYHAT_GLOB, IERR )
-
-  ZXHATM_PHYS_MIN = 0.5 * ( ZXHAT_GLOB(1+JPHEXT) + ZXHAT_GLOB(2+JPHEXT) )
-  ZXHATM_PHYS_MAX = 0.5 * ( ZXHAT_GLOB(UBOUND(ZXHAT_GLOB,1)-JPHEXT) + ZXHAT_GLOB(UBOUND(ZXHAT_GLOB,1)-JPHEXT+1) )
-  ZYHATM_PHYS_MIN = 0.5 * ( ZYHAT_GLOB(1+JPHEXT) + ZYHAT_GLOB(2+JPHEXT) )
-  ZYHATM_PHYS_MAX = 0.5 * ( ZYHAT_GLOB(UBOUND(ZYHAT_GLOB,1)-JPHEXT) + ZYHAT_GLOB(UBOUND(ZYHAT_GLOB,1)-JPHEXT+1) )
-END IF
 !
 ! Profilers initialization
 !
@@ -150,9 +120,7 @@ IF (CFILE_PROF=="NO_INPUT_CSV") THEN
       TZPROFILER%XZ    = XZ_PROF(JI)
       TZPROFILER%CNAME = CNAME_PROF(JI)
 
-      CALL STATPROF_POSITION( TZPROFILER, ZXHAT_GLOB, ZYHAT_GLOB, XXHATM, XYHATM,                 &
-                              ZXHATM_PHYS_MIN, ZXHATM_PHYS_MAX, ZYHATM_PHYS_MIN, ZYHATM_PHYS_MAX, &
-                              GINSIDE, GPRESENT                                                   )
+      CALL STATPROF_POSITION( TZPROFILER, GINSIDE, GPRESENT )
 
       IF ( GINSIDE ) THEN
         INUMBPROF = INUMBPROF + 1
@@ -164,9 +132,7 @@ IF (CFILE_PROF=="NO_INPUT_CSV") THEN
   END IF
 ELSE
   !Treat CSV datafile
-  CALL STATPROF_CSV_READ( TZPROFILER, CFILE_PROF, ZXHAT_GLOB, ZYHAT_GLOB, XXHATM, XYHATM,    &
-                          ZXHATM_PHYS_MIN, ZXHATM_PHYS_MAX,ZYHATM_PHYS_MIN, ZYHATM_PHYS_MAX, &
-                          INUMBPROF                                                          )
+  CALL STATPROF_CSV_READ( TZPROFILER, CFILE_PROF, INUMBPROF )
 END IF
 
 LPROFILER = ( INUMBPROF > 0 )
@@ -174,13 +140,6 @@ LPROFILER = ( INUMBPROF > 0 )
 DO JI = 1, NUMBPROFILER_LOC
   CALL PROFILER_ALLOCATE( TPROFILERS(JI), ISTORE )
 END DO
-!
-! Clean positioning data
-!
-IF ( CFILE_PROF /= "NO_INPUT_CSV" .OR. NNUMB_PROF > 0 ) THEN
-  IF ( GALLOCX ) DEALLOCATE( ZXHAT_GLOB )
-  IF ( GALLOCY ) DEALLOCATE( ZYHAT_GLOB )
-END IF
 !----------------------------------------------------------------------------
 !
 END SUBROUTINE INI_POSPROFILER_n

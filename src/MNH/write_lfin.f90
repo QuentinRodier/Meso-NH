@@ -259,7 +259,6 @@ USE MODD_TURB_n
 
 USE MODE_EXTRAPOL
 use mode_field, only: Find_field_id_from_mnhname
-USE MODE_GATHER_ll
 USE MODE_GRIDPROJ
 USE MODE_IO_FIELD_WRITE, only: IO_Field_write
 USE MODE_IO_FILE,        only: IO_File_close
@@ -299,11 +298,6 @@ REAL,DIMENSION(:,:), ALLOCATABLE  :: ZWORK2D     ! Working array
 REAL,DIMENSION(:,:,:), ALLOCATABLE  :: ZWORK3D     ! Working array
 !
 REAL                              :: ZLATOR, ZLONOR ! geographical coordinates of 1st mass point
-REAL                              :: ZXHATM, ZYHATM ! conformal    coordinates of 1st mass point
-REAL, DIMENSION(:), ALLOCATABLE   :: ZXHAT_ll    !  Position x in the conformal
-                                                 ! plane (array on the complete domain)
-REAL, DIMENSION(:), ALLOCATABLE   :: ZYHAT_ll    !   Position y in the conformal
-                                                 ! plane (array on the complete domain)
 INTEGER :: IMI ! Current model index
 !
 INTEGER           :: INFO_ll
@@ -366,13 +360,7 @@ IF (.NOT.LCARTESIAN) THEN
 ! 
 !* diagnostic of 1st mass point
 !
-  ALLOCATE(ZXHAT_ll(NIMAX_ll+ 2 * JPHEXT),ZYHAT_ll(NJMAX_ll+2 * JPHEXT))
-  CALL GATHERALL_FIELD_ll('XX',XXHAT,ZXHAT_ll,IRESP) !//
-  CALL GATHERALL_FIELD_ll('YY',XYHAT,ZYHAT_ll,IRESP) !//
-  ZXHATM = 0.5 * (ZXHAT_ll(1)+ZXHAT_ll(2))
-  ZYHATM = 0.5 * (ZYHAT_ll(1)+ZYHAT_ll(2))
-  CALL SM_LATLON(XLATORI,XLONORI,ZXHATM,ZYHATM,ZLATOR,ZLONOR)
-  DEALLOCATE(ZXHAT_ll,ZYHAT_ll)
+  CALL SM_LATLON( XLATORI, XLONORI, XHATM_BOUND(NEXTE_XMIN), XYHATM(NEXTE_XMIN), ZLATOR, ZLONOR )
 !
   CALL IO_Field_write(TPFILE,'LONOR',ZLONOR)
   CALL IO_Field_write(TPFILE,'LATOR',ZLATOR)

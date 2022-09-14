@@ -34,11 +34,9 @@ CONTAINS
 !  P. Wautelet    04/2022: restructure stations/profilers for better performance, reduce memory usage and correct some problems/bugs
 !---------------------------------------------------------------
 !
-!#################################################################################################
-SUBROUTINE STATPROF_CSV_READ( TPSTATPROF, HFILE, PXHAT_GLOB, PYHAT_GLOB, PXHATM, PYHATM,         &
-                              PXHATM_PHYS_MIN, PXHATM_PHYS_MAX,PYHATM_PHYS_MIN, PYHATM_PHYS_MAX, &
-                              KNUMBSTATPROF                                                      )
-!#################################################################################################
+!###############################################################
+SUBROUTINE STATPROF_CSV_READ( TPSTATPROF, HFILE, KNUMBSTATPROF )
+!###############################################################
 
 USE MODD_CONF,          ONLY: LCARTESIAN
 USE MODD_TYPE_STATPROF, ONLY: TPROFILERDATA, TSTATIONDATA, TSTATPROFDATA
@@ -48,18 +46,11 @@ USE MODE_STATPROF_TOOLS, ONLY: PROFILER_ADD, STATION_ADD, STATPROF_INI_INTERP, S
 
 CLASS(TSTATPROFDATA), INTENT(IN)  :: TPSTATPROF ! Used only to identify datatype
 CHARACTER(LEN=*),     INTENT(IN)  :: HFILE ! file to read
-REAL, DIMENSION(:),   INTENT(IN)  :: PXHAT_GLOB
-REAL, DIMENSION(:),   INTENT(IN)  :: PYHAT_GLOB
-REAL, DIMENSION(:),   INTENT(IN)  :: PXHATM ! mass point coordinates
-REAL, DIMENSION(:),   INTENT(IN)  :: PYHATM ! mass point coordinates
-REAL,                 INTENT(IN)  :: PXHATM_PHYS_MIN, PYHATM_PHYS_MIN  ! Minimum X coordinate of mass points in the physical domain
-REAL,                 INTENT(IN)  :: PXHATM_PHYS_MAX, PYHATM_PHYS_MAX  ! Minimum X coordinate of mass points in the physical domain
 INTEGER,              INTENT(OUT) :: KNUMBSTATPROF ! Total number of stations/profilers (inside physical domain of model)
 !
 CHARACTER(LEN=NMAXLINELGT) :: YSTRING
 INTEGER             :: ILU      ! logical unit of the file
 INTEGER             :: INBLINE  ! Nb of lines in csv file
-INTEGER             :: JI
 LOGICAL             :: GINSIDE  ! True if station/profiler is inside physical domain of model
 LOGICAL             :: GPRESENT ! True if station/profiler is present on the current process
 TYPE(TSTATIONDATA),  TARGET :: TZSTATION
@@ -100,9 +91,7 @@ DO
   END IF
 
   IF ( .NOT. LCARTESIAN ) CALL STATPROF_INI_INTERP( TZSTATPROF )
-  CALL STATPROF_POSITION( TZSTATPROF, PXHAT_GLOB, PYHAT_GLOB, PXHATM, PYHATM,                 &
-                         PXHATM_PHYS_MIN, PXHATM_PHYS_MAX, PYHATM_PHYS_MIN, PYHATM_PHYS_MAX, &
-                         GINSIDE, GPRESENT                                                   )
+  CALL STATPROF_POSITION( TZSTATPROF, GINSIDE, GPRESENT )
 
   IF ( GINSIDE ) THEN
     KNUMBSTATPROF = KNUMBSTATPROF + 1

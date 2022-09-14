@@ -178,7 +178,8 @@ use modd_field,             only: tfieldmetadata, tfieldlist, TYPEINT, TYPEREAL
 USE MODD_FIELD_n,           ONLY: XCIT, XCLDFR, XPABSM, XPABST, XRT, XSIGS, XSRCT, XSVT, XTHT, XTKET, XUT, XVT, XWT, XZWS
 USE MODD_FRC,               ONLY: NFRC, XGXTHFRC, XGYTHFRC, XPGROUNDFRC, XRVFRC, XTENDRVFRC, XTENDTHFRC, XTHFRC, XUFRC, XVFRC, XWFRC
 USE MODD_GRID,              ONLY: XBETA, XLAT0, XLATORI, XLON0, XLONORI, XRPK
-USE MODD_GRID_n,            only: LSLEVE, XLAT, XLEN1, XLEN2, XLON, XZS, XXHAT, XXHATM, XYHAT, XYHATM, XZHAT, XZSMT, XZTOP, XZZ
+USE MODD_GRID_n,            only: LSLEVE, NEXTE_XMIN, NEXTE_YMIN, XHATM_BOUND, &
+                                  XLAT, XLEN1, XLEN2, XLON, XZS, XXHAT, XXHATM, XYHAT, XYHATM, XZHAT, XZSMT, XZTOP, XZZ
 USE MODD_IO,                ONLY: TFILEDATA
 USE MODD_LSFIELD_n,         ONLY: XLSRVM, XLSTHM, XLSUM, XLSVM, XLSWM
 USE MODD_LUNIT,             ONLY: TLUOUT0
@@ -211,7 +212,6 @@ USE MODE_AERO_PSD,          ONLY: PPP2AERO
 USE MODE_BLOWSNOW_PSD,      ONLY: PPP2SNOW
 USE MODE_DUST_PSD,          ONLY: PPP2DUST
 use mode_field,             only: Find_field_id_from_mnhname
-use MODE_GATHER_ll,         only: GATHERALL_FIELD_ll
 USE MODE_GRIDPROJ,          ONLY: SM_LATLON
 USE MODE_IO_FIELD_WRITE,    only: IO_Field_write
 USE MODE_IO_FILE,           only: IO_File_close, IO_File_open
@@ -263,11 +263,6 @@ REAL :: ZRV_OV_RD !  XRV / XRD
 REAL :: ZGAMREF   ! Standard atmosphere lapse rate (K/m)
 REAL :: ZX0D      ! work real scalar  
 REAL :: ZLATOR, ZLONOR ! geographical coordinates of 1st mass point
-REAL :: ZXHATM, ZYHATM ! conformal    coordinates of 1st mass point
-REAL, DIMENSION(:), ALLOCATABLE   :: ZXHAT_ll    !  Position x in the conformal
-                                                 ! plane (array on the complete domain)
-REAL, DIMENSION(:), ALLOCATABLE   :: ZYHAT_ll    !   Position y in the conformal
-                                                 ! plane (array on the complete domain)
 !
 REAL,DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3))  :: ZPOVO
 REAL,DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3))  :: ZTEMP
@@ -398,13 +393,7 @@ IF (.NOT.LCARTESIAN) THEN
 ! 
 !* diagnostic of 1st mass point
 !
-  ALLOCATE(ZXHAT_ll(NIMAX_ll+ 2 * JPHEXT),ZYHAT_ll(NJMAX_ll+2 * JPHEXT))
-  CALL GATHERALL_FIELD_ll('XX',XXHAT,ZXHAT_ll,IRESP) !//
-  CALL GATHERALL_FIELD_ll('YY',XYHAT,ZYHAT_ll,IRESP) !//
-  ZXHATM = 0.5 * (ZXHAT_ll(1)+ZXHAT_ll(2))
-  ZYHATM = 0.5 * (ZYHAT_ll(1)+ZYHAT_ll(2))
-  CALL SM_LATLON(XLATORI,XLONORI,ZXHATM,ZYHATM,ZLATOR,ZLONOR)
-  DEALLOCATE(ZXHAT_ll,ZYHAT_ll)
+  CALL SM_LATLON( XLATORI, XLONORI, XHATM_BOUND(NEXTE_XMIN), XYHATM(NEXTE_XMIN), ZLATOR, ZLONOR )
 !
   CALL IO_Field_write(TPFILE,'LONOR',ZLONOR)
   CALL IO_Field_write(TPFILE,'LATOR',ZLATOR)
