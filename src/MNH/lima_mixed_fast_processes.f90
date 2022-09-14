@@ -1537,7 +1537,7 @@ DO JJ=1, SIZE(PRGT1D)
                                                 ! f(L_f*(RCWETG+RRWETG))
 !
       PCCS1D(JJ) = MAX( PCCS1D(JJ)-ZZW1(JJ,1)*(PCCT1D(JJ)/MAX(PRCT1D(JJ),XRTMIN(2))),0.0 )
-      PCIS1D(JJ) = MAX( PCIS1D(JJ)-ZNZW1(JJ,5),0.0 )
+      PCIS1D(JJ) = MAX( PCIS1D(JJ)-ZZNW1(JJ,5),0.0 )
       PCRS1D(JJ) = MAX( PCRS1D(JJ)-MAX( ZZW1(JJ,7)-ZZW1(JJ,1),0.0 )                 &
            *(PCRT1D(JJ)/MAX(PRRT1D(JJ),XRTMIN(3))),0.0 )
       PCSS1D(JJ) = MAX( PCSS1D(JJ)-ZZNW1(JJ,6),0.0 )
@@ -1546,7 +1546,6 @@ DO JJ=1, SIZE(PRGT1D)
       PCHS1D(JJ) = MAX( PCHS1D(JJ)+ZZNW(JJ),0.0 )
    END IF
 END DO
->>>>>>> MNH-56-branch
 !
 ! Budget storage
 if ( nbumod == kmi .and. lbu_enable ) then

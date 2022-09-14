@@ -179,9 +179,9 @@ WHERE(PICEFR(:,:,:)<1.E-10 .AND. PRIT(:,:,:)>XRTMIN(4) .AND. (NMOM_I.EQ.1 .OR. P
 !!$
 PPRCFR(:,:,:) = 0.
 WHERE ( (PRRT(:,:,:).GT.0. .AND. (NMOM_R.EQ.1 .OR. PCRT(:,:,:).GT.0.) ) .OR. &
-        (PRST(:,:,:).GT.0. .AND. (NMOM_R.EQ.1 .OR. PCST(:,:,:).GT.0.) ) .OR. &
-        (PRGT(:,:,:).GT.0. .AND. (NMOM_R.EQ.1 .OR. PCGT(:,:,:).GT.0.) ) .OR. &
-        (PRHT(:,:,:).GT.0. .AND. (NMOM_R.EQ.1 .OR. PCHT(:,:,:).GT.0.) ) )  PPRCFR(:,:,:) = 1.
+        (PRST(:,:,:).GT.0. .AND. (NMOM_S.EQ.1 .OR. PCST(:,:,:).GT.0.) ) .OR. &
+        (PRGT(:,:,:).GT.0. .AND. (NMOM_G.EQ.1 .OR. PCGT(:,:,:).GT.0.) ) .OR. &
+        (PRHT(:,:,:).GT.0. .AND. (NMOM_H.EQ.1 .OR. PCHT(:,:,:).GT.0.) ) )  PPRCFR(:,:,:) = 1.
 !
 !-------------------------------------------------------------------------------
 !

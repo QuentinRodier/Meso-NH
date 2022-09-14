@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 2012-2017 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2012-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ################################
@@ -27,7 +27,7 @@ END MODULE MODI_READ_LIMA_DATA_NETCDF_CASE
                                             PTIME_HORI,KVERB,ODUMMY_REAL ) 
 !     ####################################################################
 !
-!!****  *READ_LIMA_DATA_NETCDF_CASE* - reads data for the initialization of real cases.
+!!****  *READ_CAMS_DATA_NETCDF_CASE* - reads data for the initialization of real cases.
 !!
 !!    PURPOSE
 !!    -------
@@ -71,7 +71,7 @@ END MODULE MODI_READ_LIMA_DATA_NETCDF_CASE
 !!      Module MODD_CONF      : contains configuration variables for all models.
 !!         NVERB : verbosity level for output-listing
 !!      Module MODD_LUNIT     : contains logical unit names for all models
-!!         CLUOUT0 : name of output-listing
+!!         TLUOUT0 : name of output-listing
 !!      Module MODD_PGDDIM    : contains dimension of PGD fields
 !!         NPGDIMAX: dimension along x (no external point)
 !!         NPGDJMAX: dimension along y (no external point)
@@ -80,14 +80,13 @@ END MODULE MODI_READ_LIMA_DATA_NETCDF_CASE
 !!
 !!    MODIFICATIONS
 !!    -------------
-!!      Original    23/01/12 (C. Mari) 
-!!      P. Wautelet 30/10/17 use F90 module for netCDF
+!!      Original    06/2021 forked from read_chem_data_netcdf_case.f90
+
 !-------------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
-!          ------------
+!------------
 !
-USE MODD_BLANK_n
 USE MODD_CH_AEROSOL, ONLY: CORGANIC, NCARB, NSOA, NSP, LORILAM,&
                            JPMODE, LVARSIGI, LVARSIGJ,CAERONAMES
 USE MODD_CH_M9_n,    ONLY: NEQ ,  CNAMES
@@ -98,26 +97,24 @@ USE MODD_CST
 USE MODD_DIM_n
 USE MODD_GRID
 USE MODD_GRID_n
-USE MODD_IO,      ONLY: TFILEDATA
+USE MODD_IO,         ONLY: TFILEDATA
 USE MODD_LUNIT,      ONLY: TLUOUT0
 USE MODE_MODELN_HANDLER
 USE MODD_NETCDF,     ONLY:CDFINT
 USE MODD_NSV  
 USE MODD_PARAMETERS
 USE MODD_PARAM_n,    ONLY : CTURB
+USE MODD_PRECISION, ONLY:CDFINT
 USE MODD_PREP_REAL
 USE MODD_TIME
 USE MODD_TIME_n
 !
-!UPG*PT
-!USE MODE_FM
-!USE MODE_IO_ll
-USE MODE_IO
-USE MODE_TOOLS_ll
-!UPG*PT
+USE MODE_IO_FILE,    only: IO_File_close
 USE MODE_MPPDB
 USE MODE_THERMO
 USE MODE_TIME
+USE MODE_TOOLS,      ONLY: UPCASE
+use mode_tools_ll,   only: GET_DIM_EXT_ll
 !
 USE MODI_CH_AER_INIT_SOA
 USE MODI_CH_INIT_SCHEME_n
@@ -132,7 +129,8 @@ USE NETCDF
 !
 USE MODD_PARAM_n,    ONLY : CCLOUD
 USE MODD_PARAM_LIMA, ONLY : NMOD_CCN, LSCAV, LAERO_MASS, HINI_CCN, HTYPE_CCN, &
-                            NMOD_IFN, NMOD_IMM, LHHONI, NINDICE_CCN_IMM
+                            NMOD_IFN, NMOD_IMM, LHHONI, NINDICE_CCN_IMM,CCCN_MODES,&
+                            CIFN_SPECIES
 !
 IMPLICIT NONE
 !
@@ -150,7 +148,7 @@ LOGICAL,            INTENT(IN)    :: ODUMMY_REAL! flag to interpolate dummy fiel
 !      ------------------------------
 ! General purpose variables
 INTEGER                            :: ILUOUT0       ! Unit used for output msg.
-INTEGER                            :: JI,JJ,JK      ! Dummy counters
+INTEGER                            :: JJ            ! Dummy counters
 INTEGER                            :: JLOOP1
 ! Variables used by the PGD reader
 CHARACTER(LEN=28)                  :: YPGD_NAME     ! not used - dummy argument
@@ -160,63 +158,37 @@ CHARACTER(LEN=2)                   :: YPGD_TYPE     ! not used - dummy argument
 INTEGER                            :: INO           ! Number of points of the grid
 INTEGER                            :: IIU           ! Number of points along X
 INTEGER                            :: IJU           ! Number of points along Y
+integer                            :: ilatlen, ilonlen, ilevlen
 REAL, DIMENSION(:), ALLOCATABLE    :: ZLONOUT       ! mapping PGD -> Grib (lon.)
 REAL, DIMENSION(:), ALLOCATABLE    :: ZLATOUT       ! mapping PGD -> Grib (lat.)
 REAL, DIMENSION(:,:), ALLOCATABLE  :: ZXM           ! X of PGD mass points
 REAL, DIMENSION(:,:), ALLOCATABLE  :: ZYM           ! Y of PGD mass points
 REAL, DIMENSION(:,:), ALLOCATABLE  :: ZLATM         ! Lat of PGD mass points
 REAL, DIMENSION(:,:), ALLOCATABLE  :: ZLONM         ! Lon of PGD mass points
-! Variable involved in the task of reading the netcdf  file
-REAL,DIMENSION(:,:),ALLOCATABLE    :: ZVALUE        ! Intermediate array
-REAL,DIMENSION(:),ALLOCATABLE      :: ZVALUE1D        ! Intermediate array
-REAL,DIMENSION(:,:),ALLOCATABLE    :: ZOUT          ! Intermediate arrays
-REAL,DIMENSION(:),ALLOCATABLE      :: ZOUT1D          ! Intermediate arrays
-! model indice
 INTEGER                           :: IMI
-TYPE(TFILEDATA),POINTER                       :: TZFILE
 !
 ! For netcdf 
 !
-integer(kind=CDFINT) :: status, ncid, varid
-integer(kind=CDFINT) :: lat_varid, lon_varid, lev_varid, time_varid 
-integer(kind=CDFINT) :: a_varid, b_varid, p0_varid, ps_varid, t_varid, q_varid 
-integer(kind=CDFINT) :: mmr_dust1_varid, mmr_dust2_varid, mmr_dust3_varid
-integer(kind=CDFINT) :: mmr_seasalt1_varid, mmr_seasalt2_varid, mmr_seasalt3_varid
-integer(kind=CDFINT) :: mmr_bc_hydrophilic_varid, mmr_bc_hydrophobic_varid
-integer(kind=CDFINT) :: mmr_oc_hydrophilic_varid, mmr_oc_hydrophobic_varid
-integer(kind=CDFINT) :: mmr_sulfaer_varid
-integer(kind=CDFINT) :: recid, latid, lonid, levid, timeid
-integer(kind=CDFINT) :: latlen, lonlen, levlen, nrecs,timelen
-integer(kind=CDFINT) :: KILEN
-CHARACTER(LEN=40)                     :: recname
-REAL, DIMENSION(:), ALLOCATABLE       :: lats
-REAL, DIMENSION(:), ALLOCATABLE       :: lons 
-REAL, DIMENSION(:), ALLOCATABLE       :: levs 
-INTEGER, DIMENSION(:), ALLOCATABLE    :: count3d, start3d
-INTEGER, DIMENSION(:), ALLOCATABLE    :: count2d, start2d 
-REAL, DIMENSION(:), ALLOCATABLE       :: time, a, b 
-REAL                                  :: p0 
-INTEGER, DIMENSION(:), ALLOCATABLE    :: kinlo 
-REAL, DIMENSION(:,:,:), ALLOCATABLE   :: mmr_dust1, mmr_dust2, mmr_dust3
-REAL, DIMENSION(:,:,:), ALLOCATABLE   :: mmr_seasalt1, mmr_seasalt2, mmr_seasalt3
-REAL, DIMENSION(:,:,:), ALLOCATABLE   :: mmr_bc_hydrophilic, mmr_bc_hydrophobic
-REAL, DIMENSION(:,:,:), ALLOCATABLE   :: mmr_oc_hydrophilic, mmr_oc_hydrophobic
-REAL, DIMENSION(:,:,:), ALLOCATABLE   :: mmr_sulfaer
+integer(kind=CDFINT) :: istatus, incid
+integer(kind=CDFINT) :: itimeindex
+INTEGER(kind=CDFINT)               :: ind_netcdf    ! Indice for netcdf var.
+REAL, DIMENSION(:), ALLOCATABLE       :: zlats
+REAL, DIMENSION(:), ALLOCATABLE       :: zlons 
+REAL, DIMENSION(:), ALLOCATABLE       :: zlevs 
+REAL, DIMENSION(:,:,:), ALLOCATABLE   :: zmmr_dust1, zmmr_dust2, zmmr_dust3
+REAL, DIMENSION(:,:,:), ALLOCATABLE   :: zmmr_seasalt1, zmmr_seasalt2, zmmr_seasalt3
+REAL, DIMENSION(:,:,:), ALLOCATABLE   :: zmmr_bc_hydrophilic, zmmr_bc_hydrophobic
+REAL, DIMENSION(:,:,:), ALLOCATABLE   :: zmmr_oc_hydrophilic, zmmr_oc_hydrophobic
+REAL, DIMENSION(:,:,:), ALLOCATABLE   :: zmmr_sulfaer
 REAL, DIMENSION(:,:,:), ALLOCATABLE   :: ZWORK
-!REAL, DIMENSION(:,:,:), ALLOCATABLE   :: TMOZ, QMOZ, PSMOZ
-REAL, DIMENSION(:,:,:), ALLOCATABLE   :: ZTCAM, ZQCAM
-REAL, DIMENSION(:,:), ALLOCATABLE     :: ZPSCAM
-REAL                                  :: scale, offset
-! for reverse altitude
-REAL, DIMENSION(:), ALLOCATABLE       :: TMP1, TMP2
-REAL, DIMENSION(:,:,:), ALLOCATABLE   :: TMP3
-REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: TMP4,TMP5
+REAL, DIMENSION(:,:,:), ALLOCATABLE   :: ZTCAMS, ZQCAMS
+REAL, DIMENSION(:,:), ALLOCATABLE     :: ZPSCAMS
+REAL, DIMENSION(:), ALLOCATABLE       :: ZTMP1, ZTMP2
+REAL, DIMENSION(:,:,:), ALLOCATABLE   :: ZTMP3
+REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: ZTMP4,ZTMP5
 !----------------------------------------------------------------------
-TZFILE => NULL()
 !
 IMI = GET_CURRENT_MODEL_INDEX()
-!
-!--------------------------------------------------------------
 !
 !* 1. READ PGD FILE
 !     -------------
@@ -254,172 +226,74 @@ DO JJ = 1, IJU
 ENDDO
 DEALLOCATE (ZYM)
 DEALLOCATE (ZXM)
+DEALLOCATE (ZLONM)
+DEALLOCATE (ZLATM)
 !
-!--------------------------------------------------------------
 !
 !* 2. READ NETCDF FIELDS
 !     ------------------
 !
 ! 2.1 Open netcdf files
 !
-status = nf90_open(HFILE, nf90_nowrite, ncid) 
-if (status /= nf90_noerr) call handle_err(status)
+istatus = nf90_open(HFILE, nf90_nowrite, incid) 
+if (istatus /= nf90_noerr) call handle_err(istatus)
 !
 ! 2.2 Read netcdf files
 !
-! get dimension IDs
-!
-!* get dimension ID of unlimited variable in netcdf file
-status = nf90_inquire(ncid, unlimitedDimId = recid)
-!status = nf90_inq_dimid(ncid, "time", timeid)
-if (status /= nf90_noerr) call handle_err(status)
-status = nf90_inq_dimid(ncid, "latitude", latid)
-if (status /= nf90_noerr) call handle_err(status)
-status = nf90_inq_dimid(ncid, "longitude", lonid)
-if (status /= nf90_noerr) call handle_err(status)
-status = nf90_inq_dimid(ncid, "level", levid)
-if (status /= nf90_noerr) call handle_err(status)
-!
 ! get dimensions
 !
-!* get dimension and name of unlimited variable in netcdf file
-status = nf90_inquire_dimension(ncid, recid, name=recname, len=nrecs)
-!status = nf90_inquire_dimension(ncid, timeid, len=nrecs)
-if (status /= nf90_noerr) call handle_err(status)
-status = nf90_inquire_dimension(ncid, latid, len=latlen)
-if (status /= nf90_noerr) call handle_err(status)
-status = nf90_inquire_dimension(ncid, lonid, len=lonlen)
-if (status /= nf90_noerr) call handle_err(status)
-status = nf90_inquire_dimension(ncid, levid, len=levlen)
-if (status /= nf90_noerr) call handle_err(status)
-!
-! get variable IDs
-!
-status = nf90_inq_varid(ncid, "latitude", lat_varid)
-if (status /= nf90_noerr) call handle_err(status)
-status = nf90_inq_varid(ncid, "longitude", lon_varid)
-if (status /= nf90_noerr) call handle_err(status)
-status = nf90_inq_varid(ncid, "level", lev_varid)
-if (status /= nf90_noerr) call handle_err(status)
-status = nf90_inq_varid(ncid, "time", time_varid)
-if (status /= nf90_noerr) call handle_err(status)
-!
-!!! status = nf90_inq_varid(ncid, "a", a_varid)
-!!! if (status /= nf90_noerr) call handle_err(status)
-!!! status = nf90_inq_varid(ncid, "b", b_varid)
-!!! if (status /= nf90_noerr) call handle_err(status)
-!
-status = nf90_inq_varid(ncid, "aermr04", mmr_dust1_varid)
-if (status /= nf90_noerr) call handle_err(status)
-status = nf90_inq_varid(ncid, "aermr05", mmr_dust2_varid)
-if (status /= nf90_noerr) call handle_err(status)
-status = nf90_inq_varid(ncid, "aermr06", mmr_dust3_varid)
-if (status /= nf90_noerr) call handle_err(status)
-!
-status = nf90_inq_varid(ncid, "aermr01", mmr_seasalt1_varid)
-if (status /= nf90_noerr) call handle_err(status)
-status = nf90_inq_varid(ncid, "aermr02", mmr_seasalt2_varid)
-if (status /= nf90_noerr) call handle_err(status)
-status = nf90_inq_varid(ncid, "aermr03", mmr_seasalt3_varid)
-if (status /= nf90_noerr) call handle_err(status)
-!
-status = nf90_inq_varid(ncid, "aermr10", mmr_bc_hydrophilic_varid)
-if (status /= nf90_noerr) call handle_err(status)
-status = nf90_inq_varid(ncid, "aermr09", mmr_bc_hydrophobic_varid)
-if (status /= nf90_noerr) call handle_err(status)
-!
-status = nf90_inq_varid(ncid, "aermr08", mmr_oc_hydrophilic_varid)
-if (status /= nf90_noerr) call handle_err(status)
-status = nf90_inq_varid(ncid, "aermr07", mmr_oc_hydrophobic_varid)
-if (status /= nf90_noerr) call handle_err(status)
-!
-status = nf90_inq_varid(ncid, "aermr11", mmr_sulfaer_varid)
-if (status /= nf90_noerr) call handle_err(status)
-!
-!!! status = nf90_inq_varid(ncid, "p0", p0_varid)
-!!! if (status /= nf90_noerr) call handle_err(status)
-status = nf90_inq_varid(ncid, "sp", ps_varid)
-if (status /= nf90_noerr) call handle_err(status)
-status = nf90_inq_varid(ncid, "t", t_varid)
-if (status /= nf90_noerr) call handle_err(status)
-status = nf90_inq_varid(ncid, "q", q_varid)
-if (status /= nf90_noerr) call handle_err(status)
-!
-
-KILEN = latlen * lonlen
+CALL READ_DIM(incid,"latitude",ilatlen)
+CALL READ_DIM(incid,"longitude",ilonlen)
+CALL READ_DIM(incid,"level",ilevlen)
 !
 ! 2.3 Read data.
 !
-ALLOCATE (count3d(4))
-ALLOCATE (start3d(4))
-ALLOCATE (count2d(3))
-ALLOCATE (start2d(3))
-ALLOCATE (lats(latlen))
-ALLOCATE (lons(lonlen))
-ALLOCATE (levs(levlen))
-ALLOCATE (kinlo(latlen))
-kinlo(:) = lonlen
-!ALLOCATE (time(nrecs))
-!ALLOCATE (a(levlen))
-!ALLOCATE (b(levlen))
+ALLOCATE (zlats(ilatlen))
+ALLOCATE (zlons(ilonlen))
+ALLOCATE (zlevs(ilevlen))
 ! T, Q, Ps :
-ALLOCATE (ZTCAM(lonlen,latlen,levlen))
-ALLOCATE (ZQCAM(lonlen,latlen,levlen))
-!ALLOCATE (ZPSCAM(lonlen,latlen,levlen))
-ALLOCATE (ZPSCAM(lonlen,latlen))
+ALLOCATE (ZTCAMS(ilonlen,ilatlen,ilevlen))
+ALLOCATE (ZQCAMS(ilonlen,ilatlen,ilevlen))
+ALLOCATE (ZPSCAMS(ilonlen,ilatlen))
 ! transformed a, b :
-ALLOCATE (XA_SV_LS(levlen))
-ALLOCATE (XB_SV_LS(levlen))
+ALLOCATE (XA_SV_LS(ilevlen))
+ALLOCATE (XB_SV_LS(ilevlen))
 ! meteo var
-ALLOCATE (XT_SV_LS(IIU,IJU,levlen))
-ALLOCATE (XQ_SV_LS(IIU,IJU,levlen,1))
+ALLOCATE (XT_SV_LS(IIU,IJU,ilevlen))
+ALLOCATE (XQ_SV_LS(IIU,IJU,ilevlen,1))
 ALLOCATE (XPS_SV_LS(IIU,IJU))
 ALLOCATE (XZS_SV_LS(IIU,IJU))
 ! take the orography from ECMWF
 XZS_SV_LS(:,:) = XZS_LS(:,:)
 ! aerosol mr from CAMS or MACC
-ALLOCATE (mmr_dust1(lonlen,latlen,levlen))
-ALLOCATE (mmr_dust2(lonlen,latlen,levlen))
-ALLOCATE (mmr_dust3(lonlen,latlen,levlen))
+ALLOCATE (zmmr_dust1(ilonlen,ilatlen,ilevlen))
+ALLOCATE (zmmr_dust2(ilonlen,ilatlen,ilevlen))
+ALLOCATE (zmmr_dust3(ilonlen,ilatlen,ilevlen))
 !
-ALLOCATE (mmr_seasalt1(lonlen,latlen,levlen))
-ALLOCATE (mmr_seasalt2(lonlen,latlen,levlen))
-ALLOCATE (mmr_seasalt3(lonlen,latlen,levlen))
+ALLOCATE (zmmr_seasalt1(ilonlen,ilatlen,ilevlen))
+ALLOCATE (zmmr_seasalt2(ilonlen,ilatlen,ilevlen))
+ALLOCATE (zmmr_seasalt3(ilonlen,ilatlen,ilevlen))
 !
-ALLOCATE (mmr_bc_hydrophilic(lonlen,latlen,levlen))
-ALLOCATE (mmr_bc_hydrophobic(lonlen,latlen,levlen))
+ALLOCATE (zmmr_bc_hydrophilic(ilonlen,ilatlen,ilevlen))
+ALLOCATE (zmmr_bc_hydrophobic(ilonlen,ilatlen,ilevlen))
 !
-ALLOCATE (mmr_oc_hydrophilic(lonlen,latlen,levlen))
-ALLOCATE (mmr_oc_hydrophobic(lonlen,latlen,levlen))
+ALLOCATE (zmmr_oc_hydrophilic(ilonlen,ilatlen,ilevlen))
+ALLOCATE (zmmr_oc_hydrophobic(ilonlen,ilatlen,ilevlen))
 !
-ALLOCATE (mmr_sulfaer(lonlen,latlen,levlen))
+ALLOCATE (zmmr_sulfaer(ilonlen,ilatlen,ilevlen))
 !
-ALLOCATE (ZWORK(lonlen,latlen,levlen))
+ALLOCATE (ZWORK(ilonlen,ilatlen,ilevlen))
 !
 ! get values of variables
 !
-status = nf90_get_var(ncid, lat_varid, lats(:))
-if (status /= nf90_noerr) call handle_err(status)
-status = nf90_get_var(ncid, lon_varid, lons(:))
-if (status /= nf90_noerr) call handle_err(status)
-status = nf90_get_var(ncid, lev_varid, levs(:))
-if (status /= nf90_noerr) call handle_err(status)
-!!! status = nf90_get_var(ncid, time_varid, time(:))
-!!! if (status /= nf90_noerr) call handle_err(status)
-!!! status = nf90_get_var(ncid, a_varid, a(:))
-!!! if (status /= nf90_noerr) call handle_err(status)
-!!! status = nf90_get_var(ncid, b_varid, b(:))
-!!! if (status /= nf90_noerr) call handle_err(status)
-!!! status = nf90_get_var(ncid, p0_varid, p0)
-!!! if (status /= nf90_noerr) call handle_err(status)
 !
 ! Reference pressure (needed for the vertical interpolation)
 !
-!!! XP00_SV_LS = p0
 XP00_SV_LS = 101325.0
 !
 ! a and b coefficients (needed for the vertical interpolation)
 !
+IF (ilevlen .eq. 60) THEN
 XA_SV_LS(:) = (/ 20.000000000, 38.425343000, 63.647804000, 95.636963000, 134.48330700, &
                  180.58435100, 234.77905300, 298.49578900, 373.97192400, 464.61813400, &
                  575.65100100, 713.21807900, 883.66052200, 1094.8347170, 1356.4746090, &
@@ -447,126 +321,75 @@ XB_SV_LS(:) = (/ 0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.00000000, &
                  0.68326861, 0.72878581, 0.77159661, 0.81125343, 0.84737492, &
                  0.87965691, 0.90788388, 0.93194032, 0.95182151, 0.96764523, &
                  0.97966272, 0.98827010, 0.99401945, 0.99763012, 1.00000000  /)
+
+ELSE IF (ilevlen .eq. 137) THEN
+
+XA_SV_LS(:) = (/ &
+2.000365 , 3.102241 , 4.666084 , 6.827977 , 9.746966 , 13.605424 , 18.608931 , 24.985718 , &
+32.985710 , 42.879242 , 54.955463 , 69.520576 , 86.895882 , 107.415741 , 131.425507 , 159.279404 , &
+191.338562 , 227.968948 , 269.539581 , 316.420746 , 368.982361 , 427.592499 , 492.616028 , 564.413452 , &
+643.339905 , 729.744141 , 823.967834 , 926.344910 , 1037.201172 , 1156.853638 , 1285.610352 , 1423.770142 , &
+1571.622925 , 1729.448975 , 1897.519287 , 2076.095947 , 2265.431641 , 2465.770508 , 2677.348145 , 2900.391357 , &
+3135.119385 , 3381.743652 , 3640.468262 , 3911.490479 , 4194.930664 , 4490.817383 , 4799.149414 , 5119.895020 , &
+5452.990723 , 5798.344727 , 6156.074219 , 6526.946777 , 6911.870605 , 7311.869141 , 7727.412109 , 8159.354004 , &
+8608.525391 , 9076.400391 , 9562.682617 , 10065.978516 , 10584.631836 , 11116.662109 , 11660.067383 , 12211.547852 , &
+12766.873047 , 13324.668945 , 13881.331055 , 14432.139648 , 14975.615234 , 15508.256836 , 16026.115234 , 16527.322266 , &
+17008.789063 , 17467.613281 , 17901.621094 , 18308.433594 , 18685.718750 , 19031.289063 , 19343.511719 , 19620.042969 , &
+19859.390625 , 20059.931641 , 20219.664063 , 20337.863281 , 20412.308594 , 20442.078125 , 20425.718750 , 20361.816406 , &
+20249.511719 , 20087.085938 , 19874.025391 , 19608.572266 , 19290.226563 , 18917.460938 , 18489.707031 , 18006.925781 , &
+17471.839844 , 16888.687500 , 16262.046875 , 15596.695313 , 14898.453125 , 14173.324219 , 13427.769531 , 12668.257813 , &
+11901.339844 , 11133.304688 , 10370.175781 , 9617.515625 , 8880.453125 , 8163.375000 , 7470.343750 , 6804.421875 , &
+6168.531250 , 5564.382813 , 4993.796875 , 4457.375000 , 3955.960938 , 3489.234375 , 3057.265625 , 2659.140625 , &
+2294.242188 , 1961.500000 , 1659.476563 , 1387.546875 , 1143.250000 , 926.507813 , 734.992188 , 568.062500 , &
+424.414063 , 302.476563 , 202.484375 , 122.101563 , 62.781250 , 22.835938 , 3.757813 , 0.000000 , 0.000000  /)
+
+XA_SV_LS(:) = XA_SV_LS(:) / XP00_SV_LS
+
+XB_SV_LS(:) = (/ &
+0.000000 , 0.000000 , 0.000000 , 0.000000 , 0.000000 , 0.000000 , 0.000000 , 0.000000 , &
+0.000000 , 0.000000 , 0.000000 , 0.000000 , 0.000000 , 0.000000 , 0.000000 , 0.000000 , &
+0.000000 , 0.000000 , 0.000000 , 0.000000 , 0.000000 , 0.000000 , 0.000000 , 0.000000 , &
+0.000000 , 0.000000 , 0.000000 , 0.000000 , 0.000000 , 0.000000 , 0.000000 , 0.000000 , &
+0.000000 , 0.000000 , 0.000000 , 0.000000 , 0.000000 , 0.000000 , 0.000000 , 0.000000 , &
+0.000000 , 0.000000 , 0.000000 , 0.000000 , 0.000000 , 0.000000 , 0.000000 , 0.000000 , &
+0.000000 , 0.000000 , 0.000000 , 0.000000 , 0.000000 , 0.000000 , 0.000007 , 0.000024 , &
+0.000059 , 0.000112 , 0.000199 , 0.000340 , 0.000562 , 0.000890 , 0.001353 , 0.001992 , &
+0.002857 , 0.003971 , 0.005378 , 0.007133 , 0.009261 , 0.011806 , 0.014816 , 0.018318 , &
+0.022355 , 0.026964 , 0.032176 , 0.038026 , 0.044548 , 0.051773 , 0.059728 , 0.068448 , &
+0.077958 , 0.088286 , 0.099462 , 0.111505 , 0.124448 , 0.138313 , 0.153125 , 0.168910 , &
+0.185689 , 0.203491 , 0.222333 , 0.242244 , 0.263242 , 0.285354 , 0.308598 , 0.332939 , &
+0.358254 , 0.384363 , 0.411125 , 0.438391 , 0.466003 , 0.493800 , 0.521619 , 0.549301 , &
+0.576692 , 0.603648 , 0.630036 , 0.655736 , 0.680643 , 0.704669 , 0.727739 , 0.749797 , &
+0.770798 , 0.790717 , 0.809536 , 0.827256 , 0.843881 , 0.859432 , 0.873929 , 0.887408 , &
+0.899900 , 0.911448 , 0.922096 , 0.931881 , 0.940860 , 0.949064 , 0.956550 , 0.963352 , &
+0.969513 , 0.975078 , 0.980072 , 0.984542 , 0.988500 , 0.991984 , 0.995003 , 0.997630 , 1.000000 /)
+
+END IF
+
+CALL READ_VAR_1D(incid,"latitude",ilatlen,zlats)
+CALL READ_VAR_1D(incid,"longitude",ilonlen,zlons)
+CALL READ_VAR_1D(incid,"level",ilevlen,zlevs)
+
+CALL READ_VAR_2D(incid,"sp",ilonlen,ilatlen,ZPSCAMS)
+
+CALL READ_VAR_3D(incid,"t",ilonlen,ilatlen,ilevlen,ZTCAMS)
+CALL READ_VAR_3D(incid,"q",ilonlen,ilatlen,ilevlen,ZQCAMS)
+
+CALL READ_VAR_3D(incid,"aermr01",ilonlen,ilatlen,ilevlen,zmmr_seasalt1)
+CALL READ_VAR_3D(incid,"aermr02",ilonlen,ilatlen,ilevlen,zmmr_seasalt2)
+CALL READ_VAR_3D(incid,"aermr03",ilonlen,ilatlen,ilevlen,zmmr_seasalt3)
+CALL READ_VAR_3D(incid,"aermr04",ilonlen,ilatlen,ilevlen,zmmr_dust1)
+CALL READ_VAR_3D(incid,"aermr05",ilonlen,ilatlen,ilevlen,zmmr_dust2)
+CALL READ_VAR_3D(incid,"aermr06",ilonlen,ilatlen,ilevlen,zmmr_dust3)
+CALL READ_VAR_3D(incid,"aermr07",ilonlen,ilatlen,ilevlen,zmmr_oc_hydrophobic)
+CALL READ_VAR_3D(incid,"aermr08",ilonlen,ilatlen,ilevlen,zmmr_oc_hydrophilic)
+CALL READ_VAR_3D(incid,"aermr09",ilonlen,ilatlen,ilevlen,zmmr_bc_hydrophobic)
+CALL READ_VAR_3D(incid,"aermr10",ilonlen,ilatlen,ilevlen,zmmr_bc_hydrophilic)
+CALL READ_VAR_3D(incid,"aermr11",ilonlen,ilatlen,ilevlen,zmmr_sulfaer)
 !
-!     Read 1 record of lon*lat values, starting at the
-!     beginning of the record (the (1, 1, rec=time) element in the netCDF
-!     file).
-count2d(1) = lonlen
-count2d(2) = latlen
-count2d(3) = 1
-start2d(1) = 1
-start2d(2) = 1
-start2d(3) = 1
-!
-!     Read 1 record of lon*lat*lev values, starting at the
-!     beginning of the record (the (1, 1, 1, rec=time) element in the netCDF
-!     file).
-count3d(1) = lonlen
-count3d(2) = latlen
-count3d(3) = levlen
-count3d(4) = 1
-start3d(1) = 1
-start3d(2) = 1
-start3d(3) = 1
-start3d(4) = 1
-!
-! Temperature and spec. hum. (needed for the vertical interpolation)
-!
-status = nf90_get_var(ncid, t_varid, ZTCAM(:,:,:), start=start3d, count=count3d)
-if (status /= nf90_noerr) call handle_err(status)
-status = nf90_get_att(ncid, t_varid, "scale_factor", scale) 
-status = nf90_get_att(ncid, t_varid, "add_offset", offset) 
-ZTCAM(:,:,:) = offset + scale * ZTCAM(:,:,:)
-!
-status = nf90_get_var(ncid, q_varid, ZQCAM(:,:,:), start=start3d, count=count3d)
-if (status /= nf90_noerr) call handle_err(status)
-status = nf90_get_att(ncid, q_varid, "scale_factor", scale) 
-status = nf90_get_att(ncid, q_varid, "add_offset", offset) 
-ZQCAM(:,:,:) = offset + scale * ZQCAM(:,:,:)
-!
-status = nf90_get_var(ncid, ps_varid, ZPSCAM(:,:), start=start2d, count=count2d)
-if (status /= nf90_noerr) call handle_err(status)
-status = nf90_get_att(ncid, ps_varid, "scale_factor", scale) 
-status = nf90_get_att(ncid, ps_varid, "add_offset", offset) 
-ZPSCAM(:,:) = offset + scale * ZPSCAM(:,:)
-!ZPSCAM(:,:) = EXP( ZPSCAM(:,:) )
-!
-! Aerosol concentrations
-!
-status = nf90_get_var(ncid, mmr_dust1_varid, mmr_dust1(:,:,:), start=start3d, count=count3d)
-if (status /= nf90_noerr) call handle_err(status)
-status = nf90_get_att(ncid, mmr_dust1_varid, "scale_factor", scale) 
-status = nf90_get_att(ncid, mmr_dust1_varid, "add_offset", offset) 
-mmr_dust1(:,:,:) = offset + scale * mmr_dust1(:,:,:)
-!
-status = nf90_get_var(ncid, mmr_dust2_varid, mmr_dust2(:,:,:), start=start3d, count=count3d)
-if (status /= nf90_noerr) call handle_err(status)
-status = nf90_get_att(ncid, mmr_dust2_varid, "scale_factor", scale) 
-status = nf90_get_att(ncid, mmr_dust2_varid, "add_offset", offset) 
-mmr_dust2(:,:,:) = offset + scale * mmr_dust2(:,:,:)
-!
-status = nf90_get_var(ncid, mmr_dust3_varid, mmr_dust3(:,:,:), start=start3d, count=count3d)
-if (status /= nf90_noerr) call handle_err(status)
-status = nf90_get_att(ncid, mmr_dust3_varid, "scale_factor", scale) 
-status = nf90_get_att(ncid, mmr_dust3_varid, "add_offset", offset) 
-mmr_dust3(:,:,:) = offset + scale * mmr_dust3(:,:,:)
-!
-!
-status = nf90_get_var(ncid, mmr_seasalt1_varid, mmr_seasalt1(:,:,:), start=start3d, count=count3d)
-if (status /= nf90_noerr) call handle_err(status)
-status = nf90_get_att(ncid, mmr_seasalt1_varid, "scale_factor", scale) 
-status = nf90_get_att(ncid, mmr_seasalt1_varid, "add_offset", offset) 
-mmr_seasalt1(:,:,:) = offset + scale * mmr_seasalt1(:,:,:)
-!
-status = nf90_get_var(ncid, mmr_seasalt2_varid, mmr_seasalt2(:,:,:), start=start3d, count=count3d)
-if (status /= nf90_noerr) call handle_err(status)
-status = nf90_get_att(ncid, mmr_seasalt2_varid, "scale_factor", scale) 
-status = nf90_get_att(ncid, mmr_seasalt2_varid, "add_offset", offset) 
-mmr_seasalt2(:,:,:) = offset + scale * mmr_seasalt2(:,:,:)
-!
-status = nf90_get_var(ncid, mmr_seasalt3_varid, mmr_seasalt3(:,:,:), start=start3d, count=count3d)
-if (status /= nf90_noerr) call handle_err(status)
-status = nf90_get_att(ncid, mmr_seasalt3_varid, "scale_factor", scale) 
-status = nf90_get_att(ncid, mmr_seasalt3_varid, "add_offset", offset) 
-mmr_seasalt3(:,:,:) = offset + scale * mmr_seasalt3(:,:,:)
-!
-!
-status = nf90_get_var(ncid, mmr_bc_hydrophilic_varid, mmr_bc_hydrophilic(:,:,:), start=start3d, count=count3d)
-if (status /= nf90_noerr) call handle_err(status)
-status = nf90_get_att(ncid, mmr_bc_hydrophilic_varid, "scale_factor", scale) 
-status = nf90_get_att(ncid, mmr_bc_hydrophilic_varid, "add_offset", offset) 
-mmr_bc_hydrophilic(:,:,:) = offset + scale * mmr_bc_hydrophilic(:,:,:)
-!
-status = nf90_get_var(ncid, mmr_bc_hydrophobic_varid, mmr_bc_hydrophobic(:,:,:), start=start3d, count=count3d)
-if (status /= nf90_noerr) call handle_err(status)
-status = nf90_get_att(ncid, mmr_bc_hydrophobic_varid, "scale_factor", scale) 
-status = nf90_get_att(ncid, mmr_bc_hydrophobic_varid, "add_offset", offset) 
-mmr_bc_hydrophobic(:,:,:) = offset + scale * mmr_bc_hydrophobic(:,:,:)
-!
-!
-status = nf90_get_var(ncid, mmr_oc_hydrophilic_varid, mmr_oc_hydrophilic(:,:,:), start=start3d, count=count3d)
-if (status /= nf90_noerr) call handle_err(status)
-status = nf90_get_att(ncid, mmr_oc_hydrophilic_varid, "scale_factor", scale) 
-status = nf90_get_att(ncid, mmr_oc_hydrophilic_varid, "add_offset", offset) 
-mmr_oc_hydrophilic(:,:,:) = offset + scale * mmr_oc_hydrophilic(:,:,:)
-!
-status = nf90_get_var(ncid, mmr_oc_hydrophobic_varid, mmr_oc_hydrophobic(:,:,:), start=start3d, count=count3d)
-if (status /= nf90_noerr) call handle_err(status)
-status = nf90_get_att(ncid, mmr_oc_hydrophobic_varid, "scale_factor", scale) 
-status = nf90_get_att(ncid, mmr_oc_hydrophobic_varid, "add_offset", offset) 
-mmr_oc_hydrophobic(:,:,:) = offset + scale * mmr_oc_hydrophobic(:,:,:)
-!
-!
-status = nf90_get_var(ncid, mmr_sulfaer_varid, mmr_sulfaer(:,:,:), start=start3d, count=count3d)
-if (status /= nf90_noerr) call handle_err(status)
-status = nf90_get_att(ncid, mmr_sulfaer_varid, "scale_factor", scale) 
-status = nf90_get_att(ncid, mmr_sulfaer_varid, "add_offset", offset) 
-mmr_sulfaer(:,:,:) = offset + scale * mmr_sulfaer(:,:,:)
-!
-!--------------------------------------------------------------
-!
-!*  3 Conversion of MACC or CAMS variables into LIMA variables
-!     ------------------------------------------------
+!------------------------------------------------------------------------
+!* 3 Conversion of CAMS variables into LIMA variables
+!---------------------------------------------------------------------
 !
 ! initialise NSV_* variables
 ! cas simple : 3 modes de CCN (dont 1 actif par immersion), 2 modes IFN
@@ -580,6 +403,7 @@ mmr_sulfaer(:,:,:) = offset + scale * mmr_sulfaer(:,:,:)
 !
 ! Concentrations en nombre par kilo !
 !
+!
 CCLOUD='LIMA'
 NMOD_CCN=3
 LSCAV=.FALSE.
@@ -591,10 +415,11 @@ HINI_CCN='AER'
 HTYPE_CCN(1)='M'
 HTYPE_CCN(2)='C'
 HTYPE_CCN(3)='C'
-!
-!   3.1 initialize lima sv var. 
+CCCN_MODES='CAMS_AIT'
+CIFN_SPECIES='CAMS_AIT'
 !
 ! Always initialize chemical scheme variables before INI_NSV call !
+!
 CALL CH_INIT_SCHEME_n(IMI,LUSECHAQ,LUSECHIC,LCH_PH,ILUOUT0,KVERB)
 IF (LORILAM) THEN
    CORGANIC = "MPMPO"
@@ -603,267 +428,166 @@ IF (LORILAM) THEN
    CALL CH_AER_INIT_SOA(ILUOUT0, KVERB)
 END IF
 !
-CALL INI_NSV(1)
-DEALLOCATE(XSV_LS_LIMA)
-ALLOCATE (XSV_LS_LIMA(IIU,IJU,levlen,NSV))
+CALL INI_NSV(IMI)
+ALLOCATE (XSV_LS_LIMA(IIU,IJU,ilevlen,NSV))
 XSV_LS_LIMA(:,:,:,:) = 0.
 !
-ALLOCATE(NINDICE_CCN_IMM(1))
 NINDICE_CCN_IMM(1)=3
 !
 ! Define work arrays
 !
-ALLOCATE(ZVALUE(levlen,KILEN))
-ALLOCATE(ZVALUE1D(KILEN))
-ALLOCATE(ZOUT(levlen,INO))
-ALLOCATE(ZOUT1D(INO))
+ALLOCATE (XPS_SV_LS(IIU,IJU))
+ALLOCATE (XZS_SV_LS(IIU,IJU))
+ALLOCATE (XT_SV_LS(IIU,IJU,ilevlen))
+ALLOCATE (XQ_SV_LS(IIU,IJU,ilevlen,NRR))
+XQ_SV_LS(:,:,:,2:)=0.000000000001
 !
+XZS_SV_LS(:,:) = XZS_LS(:,:) ! orography from the PGD file
 where (ZLONOUT(:) < 0.) ZLONOUT(:) = ZLONOUT(:) + 360. ! correct longitudes
 !
 !
-!  3.2 Select CAMS/MACC mixing ratios and perform the horizontal interpolation
+! Select CAMS mixing ratios
+! and perform the horizontal interpolation
 !
 ! Free CCN concentration (mode 1)
 !
-ZWORK(:,:,:)=mmr_seasalt1(:,:,:)+mmr_seasalt2(:,:,:)+mmr_seasalt3(:,:,:)
-!!! ZWORK(:,:,:)=mmr_seasalt2(:,:,:)
-!!!JPP ZWORK(:,:,:)=ZWORK(:,:,:)*1.E18/3620.
-DO JK = 1, levlen
-   JLOOP1 = 0
-   DO JJ = 1, latlen
-      ZVALUE(JK,JLOOP1+1:JLOOP1+lonlen) = ZWORK(1:lonlen,JJ,JK)
-      JLOOP1 = JLOOP1 + lonlen
-   ENDDO
-   CALL HORIBL(lats(1),lons(1),lats(latlen),lons(lonlen), &
-        latlen,kinlo,KILEN,                                &
-        ZVALUE(JK,:),INO,ZLONOUT,ZLATOUT,                  &
-        ZOUT(JK,:),.FALSE.,PTIME_HORI,.TRUE. )
-   CALL ARRAY_1D_TO_2D(INO,ZOUT(JK,:),IIU,IJU,XSV_LS_LIMA(:,:,JK,NSV_LIMA_CCN_FREE))
-ENDDO
+ZWORK(:,:,:)=zmmr_seasalt1(:,:,:)+zmmr_seasalt2(:,:,:)+zmmr_seasalt3(:,:,:)
+CALL INTERP_3D (ilonlen,ilatlen,ilevlen,ZWORK,zlats,zlons,IIU,IJU,ZLATOUT,ZLONOUT,PTIME_HORI, &
+     XSV_LS_LIMA(:,:,:,NSV_LIMA_CCN_FREE))
 !
 ! Free CCN concentration (mode 2)
 !
-!!!JPP ZWORK(:,:,:)=mmr_sulfaer(:,:,:)*1.E18/345
-ZWORK(:,:,:)=mmr_sulfaer(:,:,:)
-DO JK = 1, levlen
-   JLOOP1 = 0
-   DO JJ = 1, latlen
-      ZVALUE(JK,JLOOP1+1:JLOOP1+lonlen) = ZWORK(1:lonlen,JJ,JK)
-      JLOOP1 = JLOOP1 + lonlen
-   ENDDO
-   CALL HORIBL(lats(1),lons(1),lats(latlen),lons(lonlen), &
-        latlen,kinlo,KILEN,                                &
-        ZVALUE(JK,:),INO,ZLONOUT,ZLATOUT,                  &
-        ZOUT(JK,:),.FALSE.,PTIME_HORI,.TRUE. )
-   CALL ARRAY_1D_TO_2D(INO,ZOUT(JK,:),IIU,IJU,XSV_LS_LIMA(:,:,JK,NSV_LIMA_CCN_FREE + 1))
-ENDDO
+ZWORK(:,:,:)=zmmr_sulfaer(:,:,:)
+CALL INTERP_3D (ilonlen,ilatlen,ilevlen,ZWORK,zlats,zlons,IIU,IJU,ZLATOUT,ZLONOUT,PTIME_HORI, &
+     XSV_LS_LIMA(:,:,:,NSV_LIMA_CCN_FREE + 1))
 !
 ! Free CCN concentration (mode 3, IMM)
 !
-!!!JPP ZWORK(:,:,:)=mmr_bc_hydrophilic(:,:,:)*1.E18/20.
-!!!JPP ZWORK(:,:,:)=ZWORK(:,:,:) + mmr_oc_hydrophilic(:,:,:)*1.E18/16.
-ZWORK(:,:,:)=mmr_bc_hydrophilic(:,:,:)+mmr_oc_hydrophilic(:,:,:)
-DO JK = 1, levlen
-   JLOOP1 = 0
-   DO JJ = 1, latlen
-      ZVALUE(JK,JLOOP1+1:JLOOP1+lonlen) = ZWORK(1:lonlen,JJ,JK)
-      JLOOP1 = JLOOP1 + lonlen
-   ENDDO
-   CALL HORIBL(lats(1),lons(1),lats(latlen),lons(lonlen), &
-        latlen,kinlo,KILEN,                                &
-        ZVALUE(JK,:),INO,ZLONOUT,ZLATOUT,                  &
-        ZOUT(JK,:),.FALSE.,PTIME_HORI,.TRUE. )
-   CALL ARRAY_1D_TO_2D(INO,ZOUT(JK,:),IIU,IJU,XSV_LS_LIMA(:,:,JK,NSV_LIMA_CCN_FREE + 2))
-ENDDO
+ZWORK(:,:,:)=zmmr_bc_hydrophilic(:,:,:)+zmmr_oc_hydrophilic(:,:,:)
+CALL INTERP_3D (ilonlen,ilatlen,ilevlen,ZWORK,zlats,zlons,IIU,IJU,ZLATOUT,ZLONOUT,PTIME_HORI, &
+     XSV_LS_LIMA(:,:,:,NSV_LIMA_CCN_FREE + 2))
 !
 ! Free IFN concentration (mode 1)
 !
-!!!JPP ZWORK(:,:,:)=mmr_dust2(:,:,:)*1.E18/(1204.*0.58)
-!!!JPP ZWORK2(:,:,:)=max(0.,(mmr_dust3(:,:,:)*1.E18/1204.-2.4*ZWORK(:,:,:))/70.)
-ZWORK(:,:,:)=mmr_dust1(:,:,:) + mmr_dust2(:,:,:) + mmr_dust3(:,:,:)
-DO JK = 1, levlen
-   JLOOP1 = 0
-   DO JJ = 1, latlen
-      ZVALUE(JK,JLOOP1+1:JLOOP1+lonlen) = ZWORK(1:lonlen,JJ,JK)
-      JLOOP1 = JLOOP1 + lonlen
-   ENDDO
-   CALL HORIBL(lats(1),lons(1),lats(latlen),lons(lonlen), &
-        latlen,kinlo,KILEN,                                &
-        ZVALUE(JK,:),INO,ZLONOUT,ZLATOUT,                  &
-        ZOUT(JK,:),.FALSE.,PTIME_HORI,.TRUE. )
-   CALL ARRAY_1D_TO_2D(INO,ZOUT(JK,:),IIU,IJU,XSV_LS_LIMA(:,:,JK,NSV_LIMA_IFN_FREE))
-ENDDO
+ZWORK(:,:,:)=zmmr_dust1(:,:,:) + zmmr_dust2(:,:,:) + zmmr_dust3(:,:,:)
+CALL INTERP_3D (ilonlen,ilatlen,ilevlen,ZWORK,zlats,zlons,IIU,IJU,ZLATOUT,ZLONOUT,PTIME_HORI, &
+     XSV_LS_LIMA(:,:,:,NSV_LIMA_IFN_FREE))
 !
 ! Free IFN concentration (mode 2)
 !
-!!!JPP ZWORK(:,:,:)=mmr_bc_hydrophobic(:,:,:)*1.E18/20.
-!!!JPP ZWORK(:,:,:)=ZWORK(:,:,:) + mmr_oc_hydrophobic(:,:,:)*1.E18/16.
-ZWORK(:,:,:)=mmr_bc_hydrophobic(:,:,:)+mmr_oc_hydrophobic(:,:,:)
-DO JK = 1, levlen
-   JLOOP1 = 0
-   DO JJ = 1, latlen
-      ZVALUE(JK,JLOOP1+1:JLOOP1+lonlen) = ZWORK(1:lonlen,JJ,JK)
-      JLOOP1 = JLOOP1 + lonlen
-   ENDDO
-   CALL HORIBL(lats(1),lons(1),lats(latlen),lons(lonlen), &
-        latlen,kinlo,KILEN,                                &
-        ZVALUE(JK,:),INO,ZLONOUT,ZLATOUT,                  &
-        ZOUT(JK,:),.FALSE.,PTIME_HORI,.TRUE. )
-   CALL ARRAY_1D_TO_2D(INO,ZOUT(JK,:),IIU,IJU,XSV_LS_LIMA(:,:,JK,NSV_LIMA_IFN_FREE + 1))
-ENDDO
-!
-!  3.3 Meteo ver. perform the horizontal interpolation
+ZWORK(:,:,:)=zmmr_bc_hydrophobic(:,:,:)+zmmr_oc_hydrophobic(:,:,:)
+CALL INTERP_3D (ilonlen,ilatlen,ilevlen,ZWORK,zlats,zlons,IIU,IJU,ZLATOUT,ZLONOUT,PTIME_HORI, &
+     XSV_LS_LIMA(:,:,:,NSV_LIMA_IFN_FREE + 1))
 !
 ! Temperature (needed for the vertical interpolation) 
 !
-DO JK = 1, levlen
-   JLOOP1 = 0
-   DO JJ = 1, latlen
-      ZVALUE(JK,JLOOP1+1:JLOOP1+lonlen) = ZTCAM(1:lonlen,JJ,JK)
-      JLOOP1 = JLOOP1 + lonlen
-   ENDDO
-   CALL HORIBL(lats(1),lons(1),lats(latlen),lons(lonlen), &
-        latlen,kinlo,KILEN,                                &
-        ZVALUE(JK,:),INO,ZLONOUT,ZLATOUT,                  &
-        ZOUT(JK,:),.FALSE.,PTIME_HORI,.TRUE. )
-   CALL ARRAY_1D_TO_2D(INO,ZOUT(JK,:),IIU,IJU,XT_SV_LS(:,:,JK))
-ENDDO  ! levlen
+CALL INTERP_3D (ilonlen,ilatlen,ilevlen,ZTCAMS,zlats,zlons,IIU,IJU,ZLATOUT,ZLONOUT,PTIME_HORI,XT_SV_LS)
 !
 ! Spec. Humidity (needed for the vertical interpolation) 
 !
-DO JK = 1, levlen
-   JLOOP1 = 0
-   DO JJ = 1, latlen
-      ZVALUE(JK,JLOOP1+1:JLOOP1+lonlen) = ZQCAM(1:lonlen,JJ,JK)
-      JLOOP1 = JLOOP1 + lonlen
-   ENDDO
-   CALL HORIBL(lats(1),lons(1),lats(latlen),lons(lonlen), &
-        latlen,kinlo,KILEN,                                &
-        ZVALUE(JK,:),INO,ZLONOUT,ZLATOUT,                  &
-        ZOUT(JK,:),.FALSE.,PTIME_HORI,.TRUE. )
-   CALL ARRAY_1D_TO_2D(INO,ZOUT(JK,:),IIU,IJU,XQ_SV_LS(:,:,JK,1))
-ENDDO  ! levlen
+CALL INTERP_3D (ilonlen,ilatlen,ilevlen,ZQCAMS,zlats,zlons,IIU,IJU,ZLATOUT,ZLONOUT,PTIME_HORI,XQ_SV_LS(:,:,:,1))
 !
 ! Surface pressure (needed for the vertical interpolation) 
 !
-JLOOP1 = 0
-DO JJ = 1, latlen
-   ZVALUE1D(JLOOP1+1:JLOOP1+lonlen) = ZPSCAM(1:lonlen,JJ)
-   JLOOP1 = JLOOP1 + lonlen
-ENDDO
-CALL HORIBL(lats(1),lons(1),lats(latlen),lons(lonlen), &
-     latlen,kinlo,KILEN,                                &
-     ZVALUE1D(:),INO,ZLONOUT,ZLATOUT,                  &
-     ZOUT1D(:),.FALSE.,PTIME_HORI,.TRUE. )
-CALL ARRAY_1D_TO_2D(INO,ZOUT1D(:),IIU,IJU,XPS_SV_LS(:,:))
+CALL INTERP_2D (ilonlen,ilatlen,ZPSCAMS,zlats,zlons,IIU,IJU,ZLATOUT,ZLONOUT,PTIME_HORI,XPS_SV_LS)
 !
-!  3.4 Correct negative values produced by the horizontal interpolations
+! Correct negative values produced by the horizontal interpolations
 !
 XSV_LS_LIMA(:,:,:,:) = MAX(XSV_LS_LIMA(:,:,:,:),0.)
 XPS_SV_LS(:,:)  = MAX(XPS_SV_LS(:,:),0.)
 XT_SV_LS(:,:,:) = MAX(XT_SV_LS(:,:,:),0.)
 XQ_SV_LS(:,:,:,1) = MAX(XQ_SV_LS(:,:,:,1),0.)
 !
-!  3.5 If Netcdf vertical levels have to be reversed :
+! If Netcdf vertical levels have to be reversed :
 !
-ALLOCATE(TMP1(levlen))
-ALLOCATE(TMP2(levlen))
-ALLOCATE(TMP3(IIU,IJU,levlen))
-ALLOCATE(TMP4(IIU,IJU,levlen,NRR))
-ALLOCATE(TMP5(IIU,IJU,levlen,NSV))
-DO JJ=1,levlen
+ALLOCATE(ZTMP1(ilevlen))
+ALLOCATE(ZTMP2(ilevlen))
+ALLOCATE(ZTMP3(IIU,IJU,ilevlen))
+ALLOCATE(ZTMP4(IIU,IJU,ilevlen,NRR))
+ALLOCATE(ZTMP5(IIU,IJU,ilevlen,NSV))
+DO JJ=1,ilevlen
    ! inv. lev
-   TMP1(JJ)       = XA_SV_LS(levlen+1-JJ)
-   TMP2(JJ)       = XB_SV_LS(levlen+1-JJ)
-   TMP3(:,:,JJ)   = XT_SV_LS(:,:,levlen+1-JJ)
-   TMP4(:,:,JJ,:) = XQ_SV_LS(:,:,levlen+1-JJ,:)
-   TMP5(:,:,JJ,:)   = XSV_LS(:,:,levlen+1-JJ,:)
+   ZTMP1(JJ)       = XA_SV_LS(ilevlen+1-JJ)
+   ZTMP2(JJ)       = XB_SV_LS(ilevlen+1-JJ)
+   ZTMP3(:,:,JJ)   = XT_SV_LS(:,:,ilevlen+1-JJ)
+   ZTMP4(:,:,JJ,:) = XQ_SV_LS(:,:,ilevlen+1-JJ,:)
+   ZTMP5(:,:,JJ,:) = XSV_LS_LIMA(:,:,ilevlen+1-JJ,:)
 ENDDO
-XA_SV_LS(:)       = TMP1(:)
-XB_SV_LS(:)       = TMP2(:)
-XT_SV_LS(:,:,:)   = TMP3(:,:,:)
-XQ_SV_LS(:,:,:,:) = TMP4(:,:,:,:)
-XSV_LS(:,:,:,:)   = TMP5(:,:,:,:)
-DEALLOCATE(TMP1)
-DEALLOCATE(TMP2)
-DEALLOCATE(TMP3)
-DEALLOCATE(TMP4)
-DEALLOCATE(TMP5)
+XA_SV_LS(:)          = ZTMP1(:)
+XB_SV_LS(:)          = ZTMP2(:)
+XT_SV_LS(:,:,:)      = ZTMP3(:,:,:)
+XQ_SV_LS(:,:,:,:)    = ZTMP4(:,:,:,:)
+XSV_LS_LIMA(:,:,:,:) = ZTMP5(:,:,:,:)
+DEALLOCATE(ZTMP1)
+DEALLOCATE(ZTMP2)
+DEALLOCATE(ZTMP3)
+DEALLOCATE(ZTMP4)
+DEALLOCATE(ZTMP5)
 !
-!  3.6 close the netcdf file
+! close the netcdf file
+istatus = nf90_close(incid) 
+if (istatus /= nf90_noerr) call handle_err(istatus)
 !
-status = nf90_close(ncid) 
-if (status /= nf90_noerr) call handle_err(status)
-!
-DEALLOCATE (ZVALUE)
-DEALLOCATE (ZOUT)
-!!
 !-------------------------------------------------------------
 !
 !* 4. VERTICAL GRID
-!     -------------      
 !
-!  4.1 Read VERTICAL GRID
+!* 4.1 Read VERTICAL GRID
 !
 WRITE (ILUOUT0,'(A)') ' | Reading of vertical grid in progress'
 CALL READ_VER_GRID(TPPRE_REAL1)
 !
 !--------------------------------------------------------------
 !
-!  5. Free all temporary allocations
-!     ------------------------------
+!* Free all temporary allocations
 !
 DEALLOCATE (ZLATOUT)
 DEALLOCATE (ZLONOUT)
-DEALLOCATE (count3d)
-DEALLOCATE (start3d)
-DEALLOCATE (count2d)
-DEALLOCATE (start2d)
 !
-DEALLOCATE (lats)
-DEALLOCATE (lons)
-DEALLOCATE (levs)
-!DEALLOCATE (time)
-!DEALLOCATE (a)
-!DEALLOCATE (b)
+DEALLOCATE (zlats)
+DEALLOCATE (zlons)
+DEALLOCATE (zlevs)
 ! ps, T, Q :
-DEALLOCATE (ZPSCAM)
-DEALLOCATE (ZTCAM)
-DEALLOCATE (ZQCAM)
+DEALLOCATE (ZPSCAMS)
+DEALLOCATE (ZTCAMS)
+DEALLOCATE (ZQCAMS)
 !
-DEALLOCATE (mmr_dust1)
-DEALLOCATE (mmr_dust2)
-DEALLOCATE (mmr_dust3)
+DEALLOCATE (zmmr_dust1)
+DEALLOCATE (zmmr_dust2)
+DEALLOCATE (zmmr_dust3)
 !
-DEALLOCATE (mmr_seasalt1)
-DEALLOCATE (mmr_seasalt2)
-DEALLOCATE (mmr_seasalt3)
+DEALLOCATE (zmmr_seasalt1)
+DEALLOCATE (zmmr_seasalt2)
+DEALLOCATE (zmmr_seasalt3)
 !
-DEALLOCATE (mmr_bc_hydrophilic)
-DEALLOCATE (mmr_bc_hydrophobic)
+DEALLOCATE (zmmr_bc_hydrophilic)
+DEALLOCATE (zmmr_bc_hydrophobic)
 !
-DEALLOCATE (mmr_oc_hydrophilic)
-DEALLOCATE (mmr_oc_hydrophobic)
+DEALLOCATE (zmmr_oc_hydrophilic)
+DEALLOCATE (zmmr_oc_hydrophobic)
 !
-DEALLOCATE (mmr_sulfaer)
+DEALLOCATE (zmmr_sulfaer)
 !
 DEALLOCATE (ZWORK)
 !
 WRITE (ILUOUT0,'(A,A4,A)') ' -- netcdf decoder for ',HFILE,' file ended successfully'
-WRITE (ILUOUT0,'(A,A4,A)') 'MACC mixing ratios are interpolated horizontally'
+WRITE (ILUOUT0,'(A,A4,A)') 'CAMS mixing ratios are interpolated horizontally'
 !
 !
 CONTAINS
 !
-!     #############################
-      SUBROUTINE HANDLE_ERR(STATUS)
-!     #############################
-     INTEGER(KIND=CDFINT) STATUS
-     IF (STATUS .NE. NF90_NOERR) THEN
-        PRINT *, NF90_STRERROR(STATUS)
-     STOP 'Stopped'
-     ENDIF
-     END SUBROUTINE HANDLE_ERR
+! #############################
+  subroutine handle_err(istatus)
+! #############################
+    use mode_msg
+
+    integer(kind=CDFINT) istatus
+
+    if ( istatus /= NF90_NOERR ) then
+      call Print_msg( NVERB_FATAL, 'IO', 'HANDLE_ERR', NF90_STRERROR(istatus) )
+    end if
+
+  end subroutine handle_err
 !
 !
 !     #############################################
@@ -894,5 +618,201 @@ DO JLOOP2_A1T2 = 1, KL2
   END DO
 END DO
 END SUBROUTINE ARRAY_1D_TO_2D
+!
+!     #############################################
+      SUBROUTINE READ_DIM (file,name,output)
+!     #############################################
+!
+!       Small routine used to store a linear array into a 2 dimension array
+!
+IMPLICIT NONE
+INTEGER(kind=CDFINT),   INTENT(IN)  :: file
+CHARACTER(*),           INTENT(IN)  :: name
+INTEGER,                INTENT(OUT) :: output
+!
+INTEGER(kind=CDFINT) :: ilen
+INTEGER(kind=CDFINT) :: istatus, index
+!
+istatus = nf90_inq_dimid(file, name, index)
+if (istatus /= nf90_noerr) call handle_err(istatus)
+istatus = nf90_inquire_dimension(file, index, len=ilen)
+if (istatus /= nf90_noerr) call handle_err(istatus)
+!
+output = ilen
+!
+END SUBROUTINE READ_DIM
+!
+!     #############################################
+      SUBROUTINE READ_VAR_1D (file,name,size,output)
+!     #############################################
+!
+!       Small routine used to store a linear array into a 2 dimension array
+!
+IMPLICIT NONE
+INTEGER(kind=CDFINT),   INTENT(IN)  :: file
+CHARACTER(*),           INTENT(IN)  :: name
+INTEGER,                INTENT(IN)  :: size
+REAL, DIMENSION(size),  INTENT(INOUT) :: output
+!
+INTEGER(kind=CDFINT) :: istatus, index
+!
+istatus = nf90_inq_varid(file, name, index)
+if (istatus /= nf90_noerr) call handle_err(istatus)
+istatus = nf90_get_var(file, index, output)
+if (istatus /= nf90_noerr) call handle_err(istatus)
+!
+END SUBROUTINE READ_VAR_1D
+!
+!     #############################################
+      SUBROUTINE READ_VAR_2D (file,name,size_lon,size_lat,output)
+!     #############################################
+!
+!       Small routine used to store a linear array into a 2 dimension array
+!
+IMPLICIT NONE
+INTEGER(kind=CDFINT),   INTENT(IN)  :: file
+CHARACTER(*),           INTENT(IN)  :: name
+INTEGER,                INTENT(IN)  :: size_lon
+INTEGER,                INTENT(IN)  :: size_lat
+REAL, DIMENSION(size_lon,size_lat),      INTENT(INOUT) :: output
+!
+INTEGER(kind=CDFINT) :: istatus, index
+REAL :: scale, offset
+INTEGER,DIMENSION(4) :: s, c
+!
+s(:)=1
+c(1)=size_lon
+c(2)=size_lat
+c(3)=1
+c(4)=1
+istatus = nf90_inq_varid(file, name, index)
+if (istatus /= nf90_noerr) call handle_err(istatus)
+istatus = nf90_get_var(file, index, output)
+if (istatus /= nf90_noerr) call handle_err(istatus)
+istatus = nf90_get_att(file, index, "scale_factor", scale) 
+istatus = nf90_get_att(file, index, "add_offset", offset)
+output = offset + scale * output
+!
+END SUBROUTINE READ_VAR_2D
+!
+!     #############################################
+      SUBROUTINE READ_VAR_3D (file,name,size_lon,size_lat,size_lev,output)
+!     #############################################
+!
+!       Small routine used to store a linear array into a 2 dimension array
+!
+IMPLICIT NONE
+INTEGER(kind=CDFINT),   INTENT(IN)  :: file
+CHARACTER(*),           INTENT(IN)  :: name
+INTEGER,                INTENT(IN)  :: size_lon
+INTEGER,                INTENT(IN)  :: size_lat
+INTEGER,                INTENT(IN)  :: size_lev
+REAL, DIMENSION(size_lon,size_lat,size_lev),      INTENT(INOUT) :: output
+!
+INTEGER(kind=CDFINT) :: istatus, index
+REAL :: scale, offset
+INTEGER(kind=CDFINT),DIMENSION(4) :: s, c
+!
+s(:)=1
+c(1)=size_lon
+c(2)=size_lat
+c(3)=size_lev
+c(4)=1
+istatus = nf90_inq_varid(file, name, index)
+if (istatus /= nf90_noerr) call handle_err(istatus)
+istatus = nf90_get_var(file, index, output,start=s,count=c)
+if (istatus /= nf90_noerr) call handle_err(istatus)
+istatus = nf90_get_att(file, index, "scale_factor", scale) 
+istatus = nf90_get_att(file, index, "add_offset", offset)
+output = offset + scale * output
+!
+END SUBROUTINE READ_VAR_3D
+!
+!     #############################################
+      SUBROUTINE INTERP_2D (size_lon,size_lat,input,zlats,zlons,IIU,IJU,PLATOUT,PLONOUT,PTIME_HORI,output)
+!     #############################################
+!
+!       Small routine used to store a linear array into a 2 dimension array
+!
+IMPLICIT NONE
+!
+INTEGER,                INTENT(IN)  :: size_lon
+INTEGER,                INTENT(IN)  :: size_lat
+REAL, DIMENSION(size_lon,size_lat),      INTENT(IN) :: input
+REAL, DIMENSION(size_lat),      INTENT(IN) :: zlats
+REAL, DIMENSION(size_lon),      INTENT(IN) :: zlons
+INTEGER,                INTENT(IN) :: IIU
+INTEGER,                INTENT(IN) :: IJU
+REAL, DIMENSION(IIU*IJU),      INTENT(IN) :: PLATOUT
+REAL, DIMENSION(IIU*IJU),      INTENT(IN) :: PLONOUT
+REAL,               INTENT(INOUT) :: PTIME_HORI
+REAL, DIMENSION(IIU,IJU),      INTENT(INOUT) :: output
+!
+INTEGER :: JLOOP1, JJ, INO
+REAL, DIMENSION(size_lat*size_lon) :: ZVALUE
+REAL, DIMENSION(IIU*IJU) :: ZOUT
+INTEGER, DIMENSION(size_lat) :: kinlo
+INTEGER :: KILEN
+!
+kinlo(:)=size_lon
+KILEN=size_lat*size_lon
+INO=IIU*IJU
+JLOOP1 = 0
+DO JJ = 1, size_lat
+   ZVALUE(JLOOP1+1:JLOOP1+size_lon) = input(1:size_lon,JJ)
+   JLOOP1 = JLOOP1 + size_lon
+ENDDO
+CALL HORIBL(zlats(1),zlons(1),zlats(size_lat),zlons(size_lon), &
+     size_lat,kinlo,KILEN,                                &
+     ZVALUE(:),INO,PLONOUT,PLATOUT,                  &
+     ZOUT(:),.FALSE.,PTIME_HORI,.TRUE. )
+CALL ARRAY_1D_TO_2D(INO,ZOUT(:),IIU,IJU,output(:,:))
+!
+END SUBROUTINE INTERP_2D
+!
+!     #############################################
+      SUBROUTINE INTERP_3D (size_lon,size_lat,size_lev,input,zlats,zlons,IIU,IJU,PLATOUT,PLONOUT,PTIME_HORI,output)
+!     #############################################
+!
+!       Small routine used to store a linear array into a 2 dimension array
+!
+IMPLICIT NONE
+!
+INTEGER,                INTENT(IN)  :: size_lon
+INTEGER,                INTENT(IN)  :: size_lat
+INTEGER,                INTENT(IN)  :: size_lev
+REAL, DIMENSION(size_lon,size_lat,size_lev),      INTENT(IN) :: input
+REAL, DIMENSION(size_lat),      INTENT(IN) :: zlats
+REAL, DIMENSION(size_lon),      INTENT(IN) :: zlons
+INTEGER,                INTENT(IN) :: IIU
+INTEGER,                INTENT(IN) :: IJU
+REAL, DIMENSION(IIU*IJU),      INTENT(IN) :: PLATOUT
+REAL, DIMENSION(IIU*IJU),      INTENT(IN) :: PLONOUT
+REAL,               INTENT(INOUT) :: PTIME_HORI
+REAL, DIMENSION(IIU,IJU,size_lev),      INTENT(INOUT) :: output
+!
+INTEGER :: JLOOP1, JJ, JK, INO
+REAL, DIMENSION(size_lev,size_lat*size_lon) :: ZVALUE
+REAL, DIMENSION(size_lev,IIU*IJU) :: ZOUT
+INTEGER, DIMENSION(size_lat) :: kinlo
+INTEGER :: KILEN
+!
+kinlo(:)=size_lon
+KILEN=size_lat*size_lon
+INO=IIU*IJU
+DO JK = 1, ilevlen
+   JLOOP1 = 0
+   DO JJ = 1, size_lat
+      ZVALUE(JK,JLOOP1+1:JLOOP1+size_lon) = input(1:size_lon,JJ,JK)
+      JLOOP1 = JLOOP1 + size_lon
+   ENDDO
+   CALL HORIBL(zlats(1),zlons(1),zlats(size_lat),zlons(size_lon), &
+        size_lat,kinlo,KILEN,                                &
+        ZVALUE(JK,:),INO,PLONOUT,PLATOUT,                  &
+        ZOUT(JK,:),.FALSE.,PTIME_HORI,.TRUE. )
+   CALL ARRAY_1D_TO_2D(INO,ZOUT(JK,:),IIU,IJU,output(:,:,JK))
+ENDDO
+!
+END SUBROUTINE INTERP_3D
 !
 END SUBROUTINE READ_LIMA_DATA_NETCDF_CASE

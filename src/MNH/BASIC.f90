@@ -39368,9 +39368,9 @@ IMPLICIT NONE
 !!    EXECUTABLE STATEMENTS
 !!    ---------------------
 ! check if output array is large enough
-IF (KSPARSEDIM.LT.753) THEN
-  call Print_msg( NVERB_FATAL, 'GEN', 'CH_SPARSE_AQ', 'array KSPARSE is too small' )
-END IF
+!IF (KSPARSEDIM.LT.753) THEN
+!  call Print_msg( NVERB_FATAL, 'GEN', 'CH_SPARSE_AQ', 'array KSPARSE is too small' )
+!END IF
 !O3/O3
  KSPARSE(1, 1)=1
  KSPARSE(2, 1)=1
@@ -41684,9 +41684,9 @@ IMPLICIT NONE
 !!    EXECUTABLE STATEMENTS
 !!    ---------------------
 ! check if output array is large enough
-IF (KSPARSEDIM.LT.457) THEN
-+  call Print_msg( NVERB_FATAL, 'GEN', 'CH_SPARSE_GAZ', 'array KSPARSE is too small' )
-END IF
+!IF (KSPARSEDIM.LT.457) THEN
+!+  call Print_msg( NVERB_FATAL, 'GEN', 'CH_SPARSE_GAZ', 'array KSPARSE is too small' )
+!END IF
 !O3/O3
  KSPARSE(1, 1)=1
  KSPARSE(2, 1)=1

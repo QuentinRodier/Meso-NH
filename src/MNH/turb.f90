@@ -1011,10 +1011,10 @@ CALL TURB_VER(KKA,KKU,KKL,KRR, KRRL, KRRI,               &
           PDYP,PTHP,PSIGS,PWTH,PWRC,PWSV                 )
 
 IF (HCLOUD == 'LIMA') THEN
-   IF (NMOM_R.GE.2) PRSVS(:,:,:,NSV_LIMA_NR) = ZRSVS(:,:,:,NSV_LIMA_NR) 
-   IF (NMOM_S.GE.2) PRSVS(:,:,:,NSV_LIMA_NS) = ZRSVS(:,:,:,NSV_LIMA_NS)
-   IF (NMOM_G.GE.2) PRSVS(:,:,:,NSV_LIMA_NG) = ZRSVS(:,:,:,NSV_LIMA_NG) 
-   IF (NMOM_H.GE.2) PRSVS(:,:,:,NSV_LIMA_NH) = ZRSVS(:,:,:,NSV_LIMA_NH)
+   IF (NSV_LIMA_NR.GT.0) PRSVS(:,:,:,NSV_LIMA_NR) = ZRSVS(:,:,:,NSV_LIMA_NR) 
+   IF (NSV_LIMA_NS.GT.0) PRSVS(:,:,:,NSV_LIMA_NS) = ZRSVS(:,:,:,NSV_LIMA_NS)
+   IF (NSV_LIMA_NG.GT.0) PRSVS(:,:,:,NSV_LIMA_NG) = ZRSVS(:,:,:,NSV_LIMA_NG) 
+   IF (NSV_LIMA_NH.GT.0) PRSVS(:,:,:,NSV_LIMA_NH) = ZRSVS(:,:,:,NSV_LIMA_NH)
 END IF
 
 if ( lbudget_u ) call Budget_store_end( tbudgets(NBUDGET_U), 'VTURB', prus(:, :, :) )
@@ -1103,10 +1103,10 @@ if ( hturbdim == '3DIM' ) then
           PRUS,PRVS,PRWS,PRTHLS,PRRS,PRSVS                     )
 
 IF (HCLOUD == 'LIMA') THEN
-   IF (NMOM_R.GE.2) PRSVS(:,:,:,NSV_LIMA_NR) = ZRSVS(:,:,:,NSV_LIMA_NR)
-   IF (NMOM_S.GE.2) PRSVS(:,:,:,NSV_LIMA_NS) = ZRSVS(:,:,:,NSV_LIMA_NS)
-   IF (NMOM_G.GE.2) PRSVS(:,:,:,NSV_LIMA_NG) = ZRSVS(:,:,:,NSV_LIMA_NG)
-   IF (NMOM_H.GE.2) PRSVS(:,:,:,NSV_LIMA_NH) = ZRSVS(:,:,:,NSV_LIMA_NH) 
+   IF (NSV_LIMA_NR.GT.0) PRSVS(:,:,:,NSV_LIMA_NR) = ZRSVS(:,:,:,NSV_LIMA_NR) 
+   IF (NSV_LIMA_NS.GT.0) PRSVS(:,:,:,NSV_LIMA_NS) = ZRSVS(:,:,:,NSV_LIMA_NS)
+   IF (NSV_LIMA_NG.GT.0) PRSVS(:,:,:,NSV_LIMA_NG) = ZRSVS(:,:,:,NSV_LIMA_NG) 
+   IF (NSV_LIMA_NH.GT.0) PRSVS(:,:,:,NSV_LIMA_NH) = ZRSVS(:,:,:,NSV_LIMA_NH)
 END IF
 
   if ( lbudget_u ) call Budget_store_end( tbudgets(NBUDGET_U), 'HTURB', prus(:, :, :) )
