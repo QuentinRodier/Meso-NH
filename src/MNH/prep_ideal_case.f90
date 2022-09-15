@@ -904,6 +904,7 @@ IF(.NOT. L1D) LHORELAX_SV(1:NSV)=.TRUE.
 !
 !*       4.1  Vertical Spatial grid 
 !
+ALLOCATE( XHAT_BOUND(NHAT_BOUND_SIZE), XHATM_BOUND(NHAT_BOUND_SIZE) )
 CALL READ_VER_GRID(TZEXPREFILE)
 !
 !*       4.2  Initialize parallel variables and compute array's dimensions
@@ -1242,7 +1243,6 @@ ELSE
 !
   ALLOCATE( XXHAT(NIU),  XYHAT(NJU)  )
   ALLOCATE( XXHATM(NIU), XYHATM(NJU) )
-  ALLOCATE( XHAT_BOUND (NHAT_BOUND_SIZE), XHATM_BOUND(NHAT_BOUND_SIZE) )
 !
 ! define the grid localization at the earth surface by the central point
 ! coordinates
