@@ -341,20 +341,12 @@ if ( lbu_enable ) then
   if (NMOM_H.GE.2) call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nh), 'SEDI', pchs(:, :, :) * prhodj(:, :, :) )
 end if
 
-if (NMOM_S.GE.2 .AND. NMOM_G.GE.2 .AND. NMOM_H.GE.2) then
-   CALL LIMA_COLD_SEDIMENTATION (OSEDI, KSPLITG, PTSTEP, KMI,     &
-                                 PZZ, PRHODJ, PRHODREF,           &
-                                 PRIT, PCIT,                      &
-                                 PRIS, PRSS, PRGS, PRHS, PCIS,    &
-                                 PINPRS, PINPRG, PINPRH,          &
-                                 PCSS=PCSS, PCGS=PCGS, PCHS=PCHS    )
-else 
-   CALL LIMA_COLD_SEDIMENTATION (OSEDI, KSPLITG, PTSTEP, KMI,     &
-                                 PZZ, PRHODJ, PRHODREF,           &
-                                 PRIT, PCIT,                      &
-                                 PRIS, PRSS, PRGS, PRHS, PCIS,    &
-                                 PINPRS, PINPRG, PINPRH)
-end if
+CALL LIMA_COLD_SEDIMENTATION (OSEDI, KSPLITG, PTSTEP, KMI,     &
+                              PZZ, PRHODJ, PRHODREF,           &
+                              PRIT, PCIT,                      &
+                              PRIS, PRSS, PRGS, PRHS, PCIS,    &
+                              PINPRS, PINPRG, PINPRH,          &
+                              PCSS=PCSS, PCGS=PCGS, PCHS=PCHS    )
 if ( lbu_enable ) then
   if ( lbudget_ri .and. osedi ) call Budget_store_end( tbudgets(NBUDGET_RI), 'SEDI', pris(:, :, :) * prhodj(:, :, :) )
   if ( lbudget_rs .and. lsnow ) call Budget_store_end( tbudgets(NBUDGET_RS), 'SEDI', prss(:, :, :) * prhodj(:, :, :) )

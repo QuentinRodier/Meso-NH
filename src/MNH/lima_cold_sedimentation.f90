@@ -306,47 +306,47 @@ END IF
       IF( MAXVAL(PRSS(:,:,:))>XRTMIN(5) ) THEN
          ALLOCATE(ZRSS(ISEDIM)) 
          IF(NMOM_S.GE.2) THEN
-             ALLOCATE(ZCSS(ISEDIM))  
-             ALLOCATE(ZLBDAS(ISEDIM))
+            ALLOCATE(ZCSS(ISEDIM))  
+            ALLOCATE(ZLBDAS(ISEDIM))
             DO JL = 1,ISEDIM
-            ZRSS(JL) = PRSS(I1(JL),I2(JL),I3(JL))
-            ZCSS(JL) = PCSS(I1(JL),I2(JL),I3(JL))       
-         END DO
-         ZLBDAS(:)  = 1.E10         
-         WHERE( ZRSS(:)>XRTMIN(5) .AND. ZCSS(:)>XCTMIN(5) )            
-            ZLBDAS(:) = ( XLBS*ZCSS(:) / ZRSS(:) )**XLBEXS    
-            ZZY(:) = ZRHODREF(:)**(-XCEXVT) * (ZLBDAS(:)**(-XDS))
-            ZZW(:) = XFSEDRS * ZRSS(:) * ZZY(:) * ZRHODREF(:)
-            ZZX(:) = XFSEDCS * ZCSS(:) * ZZY(:) * ZRHODREF(:)
-         END WHERE
-         ZWSEDR(:,:,:) = UNPACK( ZZW(:),MASK=GSEDIM(:,:,:),FIELD=0.0 )
-         ZWSEDR(:,:,IKB:IKE) = MIN( ZWSEDR(:,:,IKB:IKE), PRSS(:,:,IKB:IKE) * PRHODREF(:,:,IKB:IKE) / ZW(:,:,IKB:IKE) )
-         ZWSEDC(:,:,:) = UNPACK( ZZX(:),MASK=GSEDIM(:,:,:),FIELD=0.0 )
-         ZWSEDC(:,:,IKB:IKE) = MIN( ZWSEDC(:,:,IKB:IKE), PCSS(:,:,IKB:IKE) * PRHODREF(:,:,IKB:IKE) / ZW(:,:,IKB:IKE) )
-         DO JK = IKB , IKE
-            PRSS(:,:,JK) = PRSS(:,:,JK) + ZW(:,:,JK)*                      &
-                 (ZWSEDR(:,:,JK+1)-ZWSEDR(:,:,JK))/PRHODREF(:,:,JK)
-            PCSS(:,:,JK) = PCSS(:,:,JK) + ZW(:,:,JK)*                      &
-                 (ZWSEDC(:,:,JK+1)-ZWSEDC(:,:,JK))/PRHODREF(:,:,JK)
-         END DO          
-         DEALLOCATE(ZRSS)
-         DEALLOCATE(ZCSS)
-         DEALLOCATE(ZLBDAS) 
+               ZRSS(JL) = PRSS(I1(JL),I2(JL),I3(JL))
+               ZCSS(JL) = PCSS(I1(JL),I2(JL),I3(JL))       
+            END DO
+            ZLBDAS(:)  = 1.E10         
+            WHERE( ZRSS(:)>XRTMIN(5) .AND. ZCSS(:)>XCTMIN(5) )            
+               ZLBDAS(:) = ( XLBS*ZCSS(:) / ZRSS(:) )**XLBEXS    
+               ZZY(:) = ZRHODREF(:)**(-XCEXVT) * (ZLBDAS(:)**(-XDS))
+               ZZW(:) = XFSEDRS * ZRSS(:) * ZZY(:) * ZRHODREF(:)
+               ZZX(:) = XFSEDCS * ZCSS(:) * ZZY(:) * ZRHODREF(:)
+            END WHERE
+            ZWSEDR(:,:,:) = UNPACK( ZZW(:),MASK=GSEDIM(:,:,:),FIELD=0.0 )
+            ZWSEDR(:,:,IKB:IKE) = MIN( ZWSEDR(:,:,IKB:IKE), PRSS(:,:,IKB:IKE) * PRHODREF(:,:,IKB:IKE) / ZW(:,:,IKB:IKE) )
+            ZWSEDC(:,:,:) = UNPACK( ZZX(:),MASK=GSEDIM(:,:,:),FIELD=0.0 )
+            ZWSEDC(:,:,IKB:IKE) = MIN( ZWSEDC(:,:,IKB:IKE), PCSS(:,:,IKB:IKE) * PRHODREF(:,:,IKB:IKE) / ZW(:,:,IKB:IKE) )
+            DO JK = IKB , IKE
+               PRSS(:,:,JK) = PRSS(:,:,JK) + ZW(:,:,JK)*                      &
+                    (ZWSEDR(:,:,JK+1)-ZWSEDR(:,:,JK))/PRHODREF(:,:,JK)
+               PCSS(:,:,JK) = PCSS(:,:,JK) + ZW(:,:,JK)*                      &
+                    (ZWSEDC(:,:,JK+1)-ZWSEDC(:,:,JK))/PRHODREF(:,:,JK)
+            END DO
+            DEALLOCATE(ZRSS)
+            DEALLOCATE(ZCSS)
+            DEALLOCATE(ZLBDAS) 
          ELSE
-             DO JL = 1,ISEDIM
-                ZRSS(JL) = PRSS(I1(JL),I2(JL),I3(JL))
-             END DO
-             WHERE( ZRSS(:)>XRTMIN(5) )
-                ZZW(:) = XFSEDS * (ZRSS(:)*ZRHODREF(:))**XEXSEDS * ZRHODREF(:)**(-XCEXVT)
-             END WHERE
-             ZWSEDR(:,:,:) = UNPACK( ZZW(:),MASK=GSEDIM(:,:,:),FIELD=0.0 )
-             ZWSEDR(:,:,IKB:IKE) = MIN( ZWSEDR(:,:,IKB:IKE), PRSS(:,:,IKB:IKE) * PRHODREF(:,:,IKB:IKE) / ZW(:,:,IKB:IKE) )
-             DO JK = IKB , IKE
-                PRSS(:,:,JK) = PRSS(:,:,JK) + ZW(:,:,JK)* &
-                      (ZWSEDR(:,:,JK+1)-ZWSEDR(:,:,JK))/PRHODREF(:,:,JK)
-             END DO
-             DEALLOCATE(ZRSS)
-     END IF
+            DO JL = 1,ISEDIM
+               ZRSS(JL) = PRSS(I1(JL),I2(JL),I3(JL))
+            END DO
+            WHERE( ZRSS(:)>XRTMIN(5) )
+               ZZW(:) = XFSEDS * (ZRSS(:)*ZRHODREF(:))**XEXSEDS * ZRHODREF(:)**(-XCEXVT)
+            END WHERE
+            ZWSEDR(:,:,:) = UNPACK( ZZW(:),MASK=GSEDIM(:,:,:),FIELD=0.0 )
+            ZWSEDR(:,:,IKB:IKE) = MIN( ZWSEDR(:,:,IKB:IKE), PRSS(:,:,IKB:IKE) * PRHODREF(:,:,IKB:IKE) / ZW(:,:,IKB:IKE) )
+            DO JK = IKB , IKE
+               PRSS(:,:,JK) = PRSS(:,:,JK) + ZW(:,:,JK)* &
+                    (ZWSEDR(:,:,JK+1)-ZWSEDR(:,:,JK))/PRHODREF(:,:,JK)
+            END DO
+            DEALLOCATE(ZRSS)
+         END IF
       ELSE
          ZWSEDR(:,:,IKB) = 0.0
       END IF

@@ -308,7 +308,8 @@ LOGICAL :: M2_ICE
 !
 !-------------------------------------------------------------------------------
 !
-M2_ICE = NMOM_S.GE.2 .AND. NMOM_G.GE.2 .AND. NMOM_H.GE.2
+M2_ICE = NMOM_S.GE.2 .AND. NMOM_G.GE.2
+IF (LHAIL) M2_ICE = M2_ICE .AND. NMOM_H.GE.2
 !
 !                         #################
 !                         FAST RS PROCESSES
@@ -1263,13 +1264,13 @@ if ( nbumod == kmi .and. lbu_enable ) then
                                           Unpack( pcrs1d(:), mask = gmicro(:, :, :), field = pcrs(:, :, :) ) * prhodj(:, :, :) )
                   call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'WETG', &
                                           Unpack( pcis1d(:), mask = gmicro(:, :, :), field = pcis(:, :, :) ) * prhodj(:, :, :) )
-       if(NMOM_S.GE.2 .AND. NMOM_G.GE.2 .AND. NMOM_H.GE.2) then
+       if(M2_ICE) then
                   call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ns), 'WETG', &
                                          Unpack( pcss1d(:), mask = gmicro(:, :, :), field = pcss(:, :, :) ) * prhodj(:, :, :) )
                   call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ng), 'WETG', &
                                          Unpack( pcgs1d(:), mask = gmicro(:, :, :), field = pcgs(:, :, :) ) * prhodj(:, :, :) )
-                  call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nh), 'WETG', &
-                                         Unpack( pchs1d(:), mask = gmicro(:, :, :), field = pchs(:, :, :) ) * prhodj(:, :, :) )                                   
+                  if (LHAIL) call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nh), 'WETG', &
+                                         Unpack( pchs1d(:), mask = gmicro(:, :, :), field = pchs(:, :, :) ) * prhodj(:, :, :) )
        end if
   end if
 end if
@@ -1575,7 +1576,7 @@ if ( nbumod == kmi .and. lbu_enable ) then
                                          Unpack( pcss1d(:), mask = gmicro(:, :, :), field = pcss(:, :, :) ) * prhodj(:, :, :) )
                   call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ng), 'WETG', &
                                          Unpack( pcgs1d(:), mask = gmicro(:, :, :), field = pcgs(:, :, :) ) * prhodj(:, :, :) )
-                  call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nh), 'WETG', &
+                  if (LHAIL) call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nh), 'WETG', &
                                          Unpack( pchs1d(:), mask = gmicro(:, :, :), field = pchs(:, :, :) ) * prhodj(:, :, :) )
        end if
   end if

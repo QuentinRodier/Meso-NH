@@ -260,7 +260,7 @@ ALLOCATE (XA_SV_LS(ilevlen))
 ALLOCATE (XB_SV_LS(ilevlen))
 ! meteo var
 ALLOCATE (XT_SV_LS(IIU,IJU,ilevlen))
-ALLOCATE (XQ_SV_LS(IIU,IJU,ilevlen,1))
+ALLOCATE (XQ_SV_LS(IIU,IJU,ilevlen,NRR))
 ALLOCATE (XPS_SV_LS(IIU,IJU))
 ALLOCATE (XZS_SV_LS(IIU,IJU))
 ! take the orography from ECMWF
@@ -436,13 +436,6 @@ NINDICE_CCN_IMM(1)=3
 !
 ! Define work arrays
 !
-ALLOCATE (XPS_SV_LS(IIU,IJU))
-ALLOCATE (XZS_SV_LS(IIU,IJU))
-ALLOCATE (XT_SV_LS(IIU,IJU,ilevlen))
-ALLOCATE (XQ_SV_LS(IIU,IJU,ilevlen,NRR))
-XQ_SV_LS(:,:,:,2:)=0.000000000001
-!
-XZS_SV_LS(:,:) = XZS_LS(:,:) ! orography from the PGD file
 where (ZLONOUT(:) < 0.) ZLONOUT(:) = ZLONOUT(:) + 360. ! correct longitudes
 !
 !
@@ -510,13 +503,13 @@ DO JJ=1,ilevlen
    ZTMP1(JJ)       = XA_SV_LS(ilevlen+1-JJ)
    ZTMP2(JJ)       = XB_SV_LS(ilevlen+1-JJ)
    ZTMP3(:,:,JJ)   = XT_SV_LS(:,:,ilevlen+1-JJ)
-   ZTMP4(:,:,JJ,:) = XQ_SV_LS(:,:,ilevlen+1-JJ,:)
+   ZTMP4(:,:,JJ,1) = XQ_SV_LS(:,:,ilevlen+1-JJ,1)
    ZTMP5(:,:,JJ,:) = XSV_LS_LIMA(:,:,ilevlen+1-JJ,:)
 ENDDO
 XA_SV_LS(:)          = ZTMP1(:)
 XB_SV_LS(:)          = ZTMP2(:)
 XT_SV_LS(:,:,:)      = ZTMP3(:,:,:)
-XQ_SV_LS(:,:,:,:)    = ZTMP4(:,:,:,:)
+XQ_SV_LS(:,:,:,1)    = ZTMP4(:,:,:,1)
 XSV_LS_LIMA(:,:,:,:) = ZTMP5(:,:,:,:)
 DEALLOCATE(ZTMP1)
 DEALLOCATE(ZTMP2)
