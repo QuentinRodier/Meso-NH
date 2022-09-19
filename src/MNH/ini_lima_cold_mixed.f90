@@ -342,7 +342,7 @@ IF (GFLAG) THEN
 END IF
 !
 XLBDAS_MAX = 500000. ! used only before transforming lambda for non MP PSD
-XLBDAS_MIN = 1000. *1.E-10
+XLBDAS_MIN = 1000.
 XLBDAG_MAX = 100000.0
 !
 ZCONC_MAX  = 1.E6 ! Maximal concentration for falling particules set to 1 per cc
