@@ -341,8 +341,8 @@ IF (GFLAG) THEN
   WRITE(UNIT=ILUOUT0,FMT='(" XLBEXH =",E13.6," XLBH =",E13.6)') XLBEXH,XLBH
 END IF
 !
-XLBDAS_MAX = 500000. * XTRANS_MP_GAMMAS ! LBDAS_MAX doit être compare avec LBDAS avec une forme de Marshall-Palmer
-XLBDAS_MIN = 1000. * XTRANS_MP_GAMMAS
+XLBDAS_MAX = 500000. ! used only before transforming lambda for non MP PSD
+XLBDAS_MIN = 1000. *1.E-10
 XLBDAG_MAX = 100000.0
 !
 ZCONC_MAX  = 1.E6 ! Maximal concentration for falling particules set to 1 per cc

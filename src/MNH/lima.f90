@@ -769,35 +769,35 @@ IF (LWARM .AND. LDEPOC) THEN
 END IF
 !
 !
-Z_RR_CVRC(:,:,:) = 0.
-Z_CR_CVRC(:,:,:) = 0.
-IF (LWARM .AND. LRAIN) THEN
-   if( lbu_enable ) then
-    if ( lbudget_rc ) call Budget_store_init( tbudgets(NBUDGET_RC),                    'R2C1', zrcs(:, :, :) * prhodj(:, :, :) )
-    if ( lbudget_rr ) call Budget_store_init( tbudgets(NBUDGET_RR),                    'R2C1', zrrs(:, :, :) * prhodj(:, :, :) )
-    if ( lbudget_sv .and. nmom_c.ge.2) &
-         call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'R2C1', zccs(:, :, :) * prhodj(:, :, :) )
-    if ( lbudget_sv .and. nmom_r.ge.2) &
-         call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nr), 'R2C1', zcrs(:, :, :) * prhodj(:, :, :) )
-   end if
-
-   CALL LIMA_DROPS_TO_DROPLETS_CONV(PRHODREF, ZRCS*PTSTEP, ZRRS*PTSTEP, ZCCS*PTSTEP, ZCRS*PTSTEP, &
-                                    Z_RR_CVRC, Z_CR_CVRC)
-   !
-   ZRCS(:,:,:) = ZRCS(:,:,:) - Z_RR_CVRC(:,:,:)/PTSTEP
-   ZRRS(:,:,:) = ZRRS(:,:,:) + Z_RR_CVRC(:,:,:)/PTSTEP
-   ZCCS(:,:,:) = ZCCS(:,:,:) - Z_CR_CVRC(:,:,:)/PTSTEP
-   ZCRS(:,:,:) = ZCRS(:,:,:) + Z_CR_CVRC(:,:,:)/PTSTEP
-
-   if( lbu_enable ) then
-    if ( lbudget_rc ) call Budget_store_end( tbudgets(NBUDGET_RC),                    'R2C1', zrcs(:, :, :) * prhodj(:, :, :) )
-    if ( lbudget_rr ) call Budget_store_end( tbudgets(NBUDGET_RR),                    'R2C1', zrrs(:, :, :) * prhodj(:, :, :) )
-    if ( lbudget_sv .and. nmom_c.ge.2) &
-         call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'R2C1', zccs(:, :, :) * prhodj(:, :, :) )
-    if ( lbudget_sv .and. nmom_r.ge.2) &
-         call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nr), 'R2C1', zcrs(:, :, :) * prhodj(:, :, :) )
-   end if
-END IF
+!!$Z_RR_CVRC(:,:,:) = 0.
+!!$Z_CR_CVRC(:,:,:) = 0.
+!!$IF (LWARM .AND. LRAIN) THEN
+!!$   if( lbu_enable ) then
+!!$    if ( lbudget_rc ) call Budget_store_init( tbudgets(NBUDGET_RC),                    'R2C1', zrcs(:, :, :) * prhodj(:, :, :) )
+!!$    if ( lbudget_rr ) call Budget_store_init( tbudgets(NBUDGET_RR),                    'R2C1', zrrs(:, :, :) * prhodj(:, :, :) )
+!!$    if ( lbudget_sv .and. nmom_c.ge.2) &
+!!$         call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'R2C1', zccs(:, :, :) * prhodj(:, :, :) )
+!!$    if ( lbudget_sv .and. nmom_r.ge.2) &
+!!$         call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nr), 'R2C1', zcrs(:, :, :) * prhodj(:, :, :) )
+!!$   end if
+!!$
+!!$   CALL LIMA_DROPS_TO_DROPLETS_CONV(PRHODREF, ZRCS*PTSTEP, ZRRS*PTSTEP, ZCCS*PTSTEP, ZCRS*PTSTEP, &
+!!$                                    Z_RR_CVRC, Z_CR_CVRC)
+!!$   !
+!!$   ZRCS(:,:,:) = ZRCS(:,:,:) - Z_RR_CVRC(:,:,:)/PTSTEP
+!!$   ZRRS(:,:,:) = ZRRS(:,:,:) + Z_RR_CVRC(:,:,:)/PTSTEP
+!!$   ZCCS(:,:,:) = ZCCS(:,:,:) - Z_CR_CVRC(:,:,:)/PTSTEP
+!!$   ZCRS(:,:,:) = ZCRS(:,:,:) + Z_CR_CVRC(:,:,:)/PTSTEP
+!!$
+!!$   if( lbu_enable ) then
+!!$    if ( lbudget_rc ) call Budget_store_end( tbudgets(NBUDGET_RC),                    'R2C1', zrcs(:, :, :) * prhodj(:, :, :) )
+!!$    if ( lbudget_rr ) call Budget_store_end( tbudgets(NBUDGET_RR),                    'R2C1', zrrs(:, :, :) * prhodj(:, :, :) )
+!!$    if ( lbudget_sv .and. nmom_c.ge.2) &
+!!$         call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'R2C1', zccs(:, :, :) * prhodj(:, :, :) )
+!!$    if ( lbudget_sv .and. nmom_r.ge.2) &
+!!$         call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nr), 'R2C1', zcrs(:, :, :) * prhodj(:, :, :) )
+!!$   end if
+!!$END IF
 !
 ! Update variables
 !
@@ -1439,14 +1439,14 @@ DO WHILE(ANY(ZTIME(IIB:IIE,IJB:IJE,IKTB:IKTE)<PTSTEP))
          IITER(I1(II),I2(II),I3(II))     = IITER1D(II)
       END DO
       !
-      IF (NMOM_C.GE.2 .AND. NMOM_R.GE.2) THEN
-         CALL LIMA_DROPS_TO_DROPLETS_CONV(PRHODREF, ZRCT, ZRRT, ZCCT, ZCRT, &
-              Z_RR_CVRC, Z_CR_CVRC    )
-         ZRCT(:,:,:) = ZRCT(:,:,:) - Z_RR_CVRC(:,:,:)
-         ZRRT(:,:,:) = ZRRT(:,:,:) + Z_RR_CVRC(:,:,:)
-         ZCCT(:,:,:) = ZCCT(:,:,:) - Z_CR_CVRC(:,:,:)
-         ZCRT(:,:,:) = ZCRT(:,:,:) + Z_CR_CVRC(:,:,:)
-      END IF
+!!$      IF (NMOM_C.GE.2 .AND. NMOM_R.GE.2) THEN
+!!$         CALL LIMA_DROPS_TO_DROPLETS_CONV(PRHODREF, ZRCT, ZRRT, ZCCT, ZCRT, &
+!!$              Z_RR_CVRC, Z_CR_CVRC    )
+!!$         ZRCT(:,:,:) = ZRCT(:,:,:) - Z_RR_CVRC(:,:,:)
+!!$         ZRRT(:,:,:) = ZRRT(:,:,:) + Z_RR_CVRC(:,:,:)
+!!$         ZCCT(:,:,:) = ZCCT(:,:,:) - Z_CR_CVRC(:,:,:)
+!!$         ZCRT(:,:,:) = ZCRT(:,:,:) + Z_CR_CVRC(:,:,:)
+!!$      END IF
       !
       !***       4.4 Unpacking for budgets
       !

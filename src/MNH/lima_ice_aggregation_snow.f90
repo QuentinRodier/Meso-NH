@@ -104,7 +104,7 @@ P_RI_AGGS(:) = 0.
 P_CI_AGGS(:) = 0.
 !
 !
-IF (NMOM_I.EQ.1) THEN 
+IF (NMOM_I.EQ.1) THEN
    WHERE ( PRIT(:)>XRTMIN(4) .AND. PRST(:)>XRTMIN(5) .AND. LDCOMPUTE(:) )
       ZZW1(:) = XFIAGGS * EXP( XCOLEXIS*(PT(:)-XTT) ) &
                         * PRIT(:)                     &
