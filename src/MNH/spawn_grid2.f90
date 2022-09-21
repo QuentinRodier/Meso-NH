@@ -30,8 +30,8 @@ REAL, DIMENSION(:),   INTENT(OUT) :: PXHAT,PYHAT,PZHAT ! positions x,y,z in the
                                      ! conformal plane or on the cartesian plane
 REAL, DIMENSION(:),   INTENT(OUT) :: PXHATM, PYHATM, PZHATM ! positions x,y in the
                                      ! conformal plane or on the cartesian plane at mass points
-REAL, DIMENSION(:),   INTENT(INOUT) :: PHAT_BOUND  ! Boundaries of global domain in the conformal or cartesian plane
-REAL, DIMENSION(:),   INTENT(INOUT) :: PHATM_BOUND ! Boundaries of global domain in the conformal or cartesian plane at mass points
+REAL, DIMENSION(:),   POINTER, INTENT(INOUT) :: PHAT_BOUND  ! Boundaries of global domain in the conformal or cartesian plane
+REAL, DIMENSION(:),   POINTER, INTENT(INOUT) :: PHATM_BOUND ! idem at mass points
 REAL,                 INTENT(OUT)   :: PZTOP             ! model top (m)
 LOGICAL,              INTENT(OUT)   :: OSLEVE            ! flag for SLEVE coordinate
 REAL,                 INTENT(OUT)   :: PLEN1             ! Decay scale for smooth topography
@@ -196,8 +196,8 @@ REAL, DIMENSION(:),   INTENT(OUT) :: PXHAT,PYHAT,PZHAT ! positions x,y,z in the
                                      ! conformal plane or on the cartesian plane
 REAL, DIMENSION(:),   INTENT(OUT) :: PXHATM, PYHATM, PZHATM ! positions x,y in the
                                      ! conformal plane or on the cartesian plane at mass points
-REAL, DIMENSION(:),   INTENT(INOUT) :: PHAT_BOUND  ! Boundaries of global domain in the conformal or cartesian plane
-REAL, DIMENSION(:),   INTENT(INOUT) :: PHATM_BOUND ! Boundaries of global domain in the conformal or cartesian plane at mass points
+REAL, DIMENSION(:),   POINTER, INTENT(INOUT) :: PHAT_BOUND  ! Boundaries of global domain in the conformal or cartesian plane
+REAL, DIMENSION(:),   POINTER, INTENT(INOUT) :: PHATM_BOUND ! idem at mass points
 REAL,                 INTENT(OUT)   :: PZTOP             ! model top (m)
 LOGICAL,              INTENT(OUT)   :: OSLEVE            ! flag for SLEVE coordinate
 REAL,                 INTENT(OUT)   :: PLEN1             ! Decay scale for smooth topography

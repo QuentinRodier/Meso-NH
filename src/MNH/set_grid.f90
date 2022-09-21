@@ -207,8 +207,8 @@ REAL, DIMENSION(:),     INTENT(OUT) :: PDXHAT    ! horizontal stretching in x
 REAL, DIMENSION(:),     INTENT(OUT) :: PDYHAT    ! horizontal stretching in y
 REAL, DIMENSION(:),     INTENT(OUT) :: PXHATM    ! Position x in the conformal plane or on the cartesian plane at mass points
 REAL, DIMENSION(:),     INTENT(OUT) :: PYHATM    ! Position y in the conformal plane or on the cartesian plane at mass points
-REAL, DIMENSION(:),     INTENT(INOUT) :: PHAT_BOUND  ! Boundaries of global domain in the conformal or cartesian plane
-REAL, DIMENSION(:),     INTENT(INOUT) :: PHATM_BOUND ! Boundaries of global domain in the conformal or cartesian plane at mass pts
+REAL, DIMENSION(:),     POINTER, INTENT(INOUT) :: PHAT_BOUND  ! Boundaries of global domain in the conformal or cartesian plane
+REAL, DIMENSION(:),     POINTER, INTENT(INOUT) :: PHATM_BOUND ! idem at mass points
 REAL, DIMENSION(:,:),   INTENT(OUT) :: PMAP      ! Map factor
 !
 REAL, DIMENSION(:,:),   INTENT(OUT) :: PZS       ! orography
@@ -284,7 +284,8 @@ IF (.NOT.LCARTESIAN) THEN
     CALL IO_Field_read(TPINIFILE,'LONORI',PLONORI)
     CALL IO_Field_read(TPINIFILE,'LATORI',PLATORI)
   !
-  ELSE                     
+  ELSE
+    ! If file comes from MesoNH < 4.6.0
     CALL FIND_FIELD_ID_FROM_MNHNAME('LONORI',IID,IRESP)
     TZFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
     TZFIELD%CMNHNAME = 'LONOR'
@@ -519,7 +520,7 @@ END SUBROUTINE INTERP_VERGRID_TO_MASSPOINTS
 SUBROUTINE STORE_GRID_1DIR_BOUNDS( HDIR, PHAT, PHATM, PHAT_BOUND, PHATM_BOUND )
 
   USE MODD_GRID_n
-  USE MODD_PARAMETERS,     ONLY: JPHEXT, JPVEXT
+  USE MODD_PARAMETERS,     ONLY: JPHEXT, JPVEXT, XNEGUNDEF
 
   USE MODE_ALLOCBUFFER_ll, ONLY: ALLOCBUFFER_ll
   USE MODE_GATHER_ll,      ONLY: GATHERALL_FIELD_ll
@@ -527,11 +528,11 @@ SUBROUTINE STORE_GRID_1DIR_BOUNDS( HDIR, PHAT, PHATM, PHAT_BOUND, PHATM_BOUND )
 
   IMPLICIT NONE
 
-  CHARACTER(LEN=1),                 INTENT(IN)    :: HDIR        ! Direction ('X', 'Y' or 'Z')
-  REAL, DIMENSION(:), TARGET,       INTENT(IN)    :: PHAT        ! Position x, y or z in the conformal or cartesian plane
-  REAL, DIMENSION(:), TARGET,       INTENT(IN)    :: PHATM       ! id at mass points
-  REAL, DIMENSION(NHAT_BOUND_SIZE), INTENT(INOUT) :: PHAT_BOUND  ! Boundaries of global domain in the conformal or cartesian plane
-  REAL, DIMENSION(NHAT_BOUND_SIZE), INTENT(INOUT) :: PHATM_BOUND ! id at mass points
+  CHARACTER(LEN=1),            INTENT(IN)    :: HDIR        ! Direction ('X', 'Y' or 'Z')
+  REAL, DIMENSION(:), TARGET,  INTENT(IN)    :: PHAT        ! Position x, y or z in the conformal or cartesian plane
+  REAL, DIMENSION(:), TARGET,  INTENT(IN)    :: PHATM       ! id at mass points
+  REAL, DIMENSION(:), POINTER, INTENT(INOUT) :: PHAT_BOUND  ! Boundaries of global domain in the conformal or cartesian plane
+  REAL, DIMENSION(:), POINTER, INTENT(INOUT) :: PHATM_BOUND ! idem at mass points
 
   INTEGER                     :: IERR
   LOGICAL                     :: GALLOC, GALLOCM
@@ -540,8 +541,19 @@ SUBROUTINE STORE_GRID_1DIR_BOUNDS( HDIR, PHAT, PHATM, PHAT_BOUND, PHATM_BOUND )
 
   GALLOC  = .FALSE.
   GALLOCM = .FALSE.
+
   ZHAT_GLOB  => NULL()
   ZHATM_GLOB => NULL()
+
+  IF ( .NOT. ASSOCIATED( PHAT_BOUND ) ) THEN
+    ALLOCATE( PHAT_BOUND(NHAT_BOUND_SIZE) )
+    PHAT_BOUND(:) = XNEGUNDEF
+  END IF
+
+  IF ( .NOT. ASSOCIATED( PHATM_BOUND ) ) THEN
+    ALLOCATE( PHATM_BOUND(NHAT_BOUND_SIZE) )
+    PHATM_BOUND(:) = XNEGUNDEF
+  END IF
 
   SELECT CASE (HDIR)
     CASE ( 'X' )
@@ -613,14 +625,14 @@ SUBROUTINE STORE_GRID_BOUNDS( PXHAT, PYHAT, PZHAT, PXHATM, PYHATM, PZHATM, PHAT_
 
   IMPLICIT NONE
 
-  REAL, DIMENSION(:), INTENT(IN)    :: PXHAT  ! Position x in the conformal or cartesian plane
-  REAL, DIMENSION(:), INTENT(IN)    :: PYHAT  ! Position y in the conformal or cartesian plane
-  REAL, DIMENSION(:), INTENT(IN)    :: PZHAT  ! Position y in the conformal or cartesian plane
-  REAL, DIMENSION(:), INTENT(IN)    :: PXHATM ! id at mass points
-  REAL, DIMENSION(:), INTENT(IN)    :: PYHATM ! id at mass points
-  REAL, DIMENSION(:), INTENT(IN)    :: PZHATM ! id at mass points
-  REAL, DIMENSION(:), INTENT(INOUT) :: PHAT_BOUND  ! Boundaries of global domain in the conformal or cartesian plane
-  REAL, DIMENSION(:), INTENT(INOUT) :: PHATM_BOUND ! id at mass points
+  REAL, DIMENSION(:),              INTENT(IN)    :: PXHAT       ! Position x in the conformal or cartesian plane
+  REAL, DIMENSION(:),              INTENT(IN)    :: PYHAT       ! Position y in the conformal or cartesian plane
+  REAL, DIMENSION(:),              INTENT(IN)    :: PZHAT       ! Position y in the conformal or cartesian plane
+  REAL, DIMENSION(:),              INTENT(IN)    :: PXHATM      ! idem at mass points
+  REAL, DIMENSION(:),              INTENT(IN)    :: PYHATM      ! idem at mass points
+  REAL, DIMENSION(:),              INTENT(IN)    :: PZHATM      ! idem at mass points
+  REAL, DIMENSION(:), POINTER, INTENT(INOUT) :: PHAT_BOUND  ! Boundaries of global domain in the conformal or cartesian plane
+  REAL, DIMENSION(:), POINTER, INTENT(INOUT) :: PHATM_BOUND ! idem at mass points
 
   CALL STORE_GRID_1DIR_BOUNDS( 'X', PXHAT, PXHATM, PHAT_BOUND, PHATM_BOUND )
   CALL STORE_GRID_1DIR_BOUNDS( 'Y', PYHAT, PYHATM, PHAT_BOUND, PHATM_BOUND )
@@ -635,12 +647,12 @@ SUBROUTINE STORE_HORGRID_BOUNDS( PXHAT, PYHAT, PXHATM, PYHATM, PHAT_BOUND, PHATM
 
   IMPLICIT NONE
 
-  REAL, DIMENSION(:), INTENT(IN)    :: PXHAT  ! Position x in the conformal or cartesian plane
-  REAL, DIMENSION(:), INTENT(IN)    :: PYHAT  ! Position y in the conformal or cartesian plane
-  REAL, DIMENSION(:), INTENT(IN)    :: PXHATM ! id at mass points
-  REAL, DIMENSION(:), INTENT(IN)    :: PYHATM ! id at mass points
-  REAL, DIMENSION(:), INTENT(INOUT) :: PHAT_BOUND  ! Boundaries of global domain in the conformal or cartesian plane
-  REAL, DIMENSION(:), INTENT(INOUT) :: PHATM_BOUND ! id at mass points
+  REAL, DIMENSION(:),          INTENT(IN)    :: PXHAT       ! Position x in the conformal or cartesian plane
+  REAL, DIMENSION(:),          INTENT(IN)    :: PYHAT       ! Position y in the conformal or cartesian plane
+  REAL, DIMENSION(:),          INTENT(IN)    :: PXHATM      ! idem at mass points
+  REAL, DIMENSION(:),          INTENT(IN)    :: PYHATM      ! idem at mass points
+  REAL, DIMENSION(:), POINTER, INTENT(INOUT) :: PHAT_BOUND  ! Boundaries of global domain in the conformal or cartesian plane
+  REAL, DIMENSION(:), POINTER, INTENT(INOUT) :: PHATM_BOUND ! idem at mass points
 
   CALL STORE_GRID_1DIR_BOUNDS( 'X', PXHAT, PXHATM, PHAT_BOUND, PHATM_BOUND )
   CALL STORE_GRID_1DIR_BOUNDS( 'Y', PYHAT, PYHATM, PHAT_BOUND, PHATM_BOUND )
@@ -654,10 +666,10 @@ SUBROUTINE STORE_VERGRID_BOUNDS( PZHAT, PZHATM, PHAT_BOUND, PHATM_BOUND )
 
   IMPLICIT NONE
 
-  REAL, DIMENSION(:), INTENT(IN)    :: PZHAT  ! Position y in the conformal or cartesian plane
-  REAL, DIMENSION(:), INTENT(IN)    :: PZHATM ! id at mass points
-  REAL, DIMENSION(:), INTENT(INOUT) :: PHAT_BOUND  ! Boundaries of global domain in the conformal or cartesian plane
-  REAL, DIMENSION(:), INTENT(INOUT) :: PHATM_BOUND ! id at mass points
+  REAL, DIMENSION(:),          INTENT(IN)    :: PZHAT       ! Position z in the conformal or cartesian plane
+  REAL, DIMENSION(:),          INTENT(IN)    :: PZHATM      ! idem at mass points
+  REAL, DIMENSION(:), POINTER, INTENT(INOUT) :: PHAT_BOUND  ! Boundaries of global domain in the conformal or cartesian plane
+  REAL, DIMENSION(:), POINTER, INTENT(INOUT) :: PHATM_BOUND ! idem at mass points
 
   CALL STORE_GRID_1DIR_BOUNDS( 'Z', PZHAT, PZHATM, PHAT_BOUND, PHATM_BOUND )
 
