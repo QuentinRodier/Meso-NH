@@ -11,7 +11,6 @@ INTERFACE
       SUBROUTINE LIMA_COLD (OSEDI, OHHONI, KSPLITG, PTSTEP, KMI,           &
                            KRR, PZZ, PRHODJ,                               &
                            PRHODREF, PEXNREF, PPABST, PW_NU,               &
-                           PTHM, PPABSM,                                   &
                            PTHT, PRT, PSVT,                                &
                            PTHS, PRS, PSVS,                                &
                            PINPRS, PINPRG, PINPRH)
@@ -36,9 +35,6 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PPABST  ! abs. pressure at time t
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PW_NU   ! updraft velocity used for
                                                    ! the nucleation param.
 !
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHM    ! Theta at time t-dt
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PPABSM  ! abs. pressure at time t-dt
-!
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHT    ! Theta at time t
 REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PRT     ! m.r. at t 
 REAL, DIMENSION(:,:,:,NSV_LIMA_BEG:), INTENT(IN)    :: PSVT ! Concentrations at time t
@@ -59,7 +55,6 @@ END MODULE MODI_LIMA_COLD
       SUBROUTINE LIMA_COLD (OSEDI, OHHONI, KSPLITG, PTSTEP, KMI,           &
                            KRR, PZZ, PRHODJ,                               &
                            PRHODREF, PEXNREF, PPABST, PW_NU,               &
-                           PTHM, PPABSM,                                   &
                            PTHT, PRT, PSVT,                                &
                            PTHS, PRS, PSVS,                                &
                            PINPRS, PINPRG, PINPRH)
@@ -153,9 +148,6 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PEXNREF ! Reference Exner function
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PPABST  ! abs. pressure at time t
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PW_NU   ! updraft velocity used for
                                                    ! the nucleation param.
-!
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHM    ! Theta at time t-dt
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PPABSM  ! abs. pressure at time t-dt
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHT    ! Theta at time t
 REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PRT     ! m.r. at t 

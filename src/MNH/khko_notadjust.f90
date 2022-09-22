@@ -10,7 +10,7 @@
 INTERFACE
 !
       SUBROUTINE KHKO_NOTADJUST(KRR, KTCOUNT, TPFILE, HRAD,                         &
-                                PTSTEP, PRHODJ, PPABSM,  PPABST, PRHODREF, PZZ,     &
+                                PTSTEP, PRHODJ, PPABSTT,  PPABST, PRHODREF, PZZ,     &
                                 PTHT,PRVT,PRCT,PRRT,                                &
                                 PTHS, PRVS, PRCS, PRRS, PCCS, PCNUCS, PSAT,         &
                                 PCLDFR, PSRCS, PNPRO,PSSPRO                         )
@@ -25,7 +25,7 @@ REAL,                     INTENT(IN)    :: PTSTEP   ! Double Time step
                                                     ! (single if cold start)
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PRHODJ  ! Dry density * Jacobian
-REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PPABSM  ! Absolute Pressure at t-dt
+REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PPABSTT  ! Absolute Pressure at t+dt
 REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PPABST  ! Absolute Pressure at t     
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODREF ! Reference density
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PZZ      ! Reference density
@@ -58,7 +58,7 @@ END MODULE MODI_KHKO_NOTADJUST
 !
 !     ###############################################################################
       SUBROUTINE KHKO_NOTADJUST(KRR, KTCOUNT, TPFILE, HRAD,                         &
-                                PTSTEP, PRHODJ, PPABSM,  PPABST, PRHODREF, PZZ,     &
+                                PTSTEP, PRHODJ, PPABSTT,  PPABST, PRHODREF, PZZ,     &
                                 PTHT,PRVT,PRCT,PRRT,                                &
                                 PTHS, PRVS, PRCS, PRRS, PCCS, PCNUCS, PSAT,         &
                                 PCLDFR, PSRCS, PNPRO,PSSPRO                         )
@@ -133,7 +133,7 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRVT     ! Water vapor m.r.
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRCT     ! Cloud water m.r. 
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRRT     ! Rain  water m.r. 
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODJ   ! Dry density * Jacobian
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PPABSM   ! Absolute Pressure at t-dt
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PPABSTT   ! Absolute Pressure at t+dt
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PPABST   ! Absolute Pressure at t     
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODREF ! Reference density
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PZZ      ! Reference density
@@ -233,7 +233,7 @@ ZACT(:,:,:)   = PCCS(:,:,:)
 !
 !*       2.2    estimate the Exner function at t+1 and t respectively
 !
-ZEXNS(:,:,:)=((2.* PPABST(:,:,:)-PPABSM(:,:,:))/XP00 )**(XRD/XCPD)
+ZEXNS(:,:,:)=(PPABSTT(:,:,:)/XP00 )**(XRD/XCPD)
 ZEXNT(:,:,:)=(PPABST(:,:,:)/XP00 )**(XRD/XCPD)
 !sources terms *dt
 PRRS(:,:,:)   = PRRS(:,:,:) * PTSTEP
@@ -288,7 +288,7 @@ IF( INUCT >= 1 ) THEN
   ALLOCATE(ZZLV(INUCT))
   ALLOCATE(ZZCPH(INUCT))
   DO JL=1,INUCT
-   ZPRES(JL) = 2. * PPABST(I1(JL),I2(JL),I3(JL)) - PPABSM(I1(JL),I2(JL),I3(JL))
+   ZPRES(JL) = PPABSTT(I1(JL),I2(JL),I3(JL))
    ZRHOD(JL) = PRHODREF(I1(JL),I2(JL),I3(JL))
    ZRR(JL)   = PRRS(I1(JL),I2(JL),I3(JL))
    ZTT(JL)   = PTHS(I1(JL),I2(JL),I3(JL))
@@ -337,7 +337,7 @@ ENDIF
 WHERE(.NOT.GNUCT(:,:,:) )
  ZRVSAT(:,:,:) = EXP(XALPW-XBETAW/PTHS(:,:,:)-XGAMW*ALOG(PTHS(:,:,:)))
  !rvsat
- ZRVSAT(:,:,:) = (XMV / XMD)*ZRVSAT(:,:,:)/((2.* PPABST(:,:,:)-PPABSM(:,:,:))-ZRVSAT(:,:,:))
+ ZRVSAT(:,:,:) = (XMV / XMD)*ZRVSAT(:,:,:)/(PPABSTT(:,:,:)-ZRVSAT(:,:,:))
  PSAT(:,:,:)   = (PRVS(:,:,:)/ZRVSAT(:,:,:))-1D0
 ENDWHERE
 !

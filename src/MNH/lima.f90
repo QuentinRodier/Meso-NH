@@ -12,7 +12,7 @@ INTERFACE
    SUBROUTINE LIMA ( KKA, KKU, KKL,                                          &
                      PTSTEP, TPFILE,                                         &
                      PRHODREF, PEXNREF, PDZZ,                                &
-                     PRHODJ, PPABSM, PPABST,                                 &
+                     PRHODJ, PPABST,                                         &
                      NCCN, NIFN, NIMM,                                       &
                      PDTHRAD, PTHT, PRT, PSVT, PW_NU,                        &
                      PTHS, PRS, PSVS,                                        &
@@ -34,7 +34,6 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PEXNREF    ! Reference Exner function
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PDZZ       ! Layer thikness (m)
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODJ     ! Dry density * Jacobian
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PPABSM     ! absolute pressure at t
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PPABST     ! absolute pressure at t
 !
 INTEGER,                  INTENT(IN)    :: NCCN       ! for array size declarations
@@ -73,7 +72,7 @@ END MODULE MODI_LIMA
       SUBROUTINE LIMA ( KKA, KKU, KKL,                                          &
                         PTSTEP, TPFILE,                                         &
                         PRHODREF, PEXNREF, PDZZ,                                &
-                        PRHODJ, PPABSM, PPABST,                                 &
+                        PRHODJ, PPABST,                                         &
                         NCCN, NIFN, NIMM,                                       &
                         PDTHRAD, PTHT, PRT, PSVT, PW_NU,                        &
                         PTHS, PRS, PSVS,                                        &
@@ -159,7 +158,6 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PEXNREF    ! Reference Exner function
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PDZZ       ! Layer thikness (m)
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODJ     ! Dry density * Jacobian
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PPABSM     ! absolute pressure at t
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PPABST     ! absolute pressure at t
 !
 INTEGER,                  INTENT(IN)    :: NCCN       ! for array size declarations

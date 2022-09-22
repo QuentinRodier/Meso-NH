@@ -11,7 +11,6 @@ INTERFACE
       SUBROUTINE LIMA_MIXED (OSEDI, OHHONI, KSPLITG, PTSTEP, KMI, &
                              KRR, PZZ, PRHODJ,                    &
                              PRHODREF, PEXNREF, PPABST, PW_NU,    &
-                             PTHM, PPABSM,                        &
                              PTHT, PRT, PSVT,                     &
                              PTHS, PRS, PSVS)
 !
@@ -35,9 +34,6 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PPABST  ! abs. pressure at time t
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PW_NU   ! updraft velocity used for
                                                    ! the nucleation param.
 !
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHM    ! Theta at time t-dt
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PPABSM  ! abs. pressure at time t-dt
-!
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHT    ! Theta at time t
 REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PRT     ! m.r. at t 
 REAL, DIMENSION(:,:,:,NSV_LIMA_BEG:), INTENT(IN)    :: PSVT ! Concentrations at time t
@@ -54,7 +50,6 @@ END MODULE MODI_LIMA_MIXED
       SUBROUTINE LIMA_MIXED (OSEDI, OHHONI, KSPLITG, PTSTEP, KMI, &
                              KRR, PZZ, PRHODJ,                    &
                              PRHODREF, PEXNREF, PPABST, PW_NU,    &
-                             PTHM, PPABSM,                        &
                              PTHT, PRT, PSVT,                     &
                              PTHS, PRS, PSVS                      )
 !     #######################################################################
@@ -144,9 +139,6 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PEXNREF ! Reference Exner function
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PPABST  ! abs. pressure at time t
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PW_NU   ! updraft velocity used for
                                                    ! the nucleation param.
-!
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHM    ! Theta at time t-dt
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PPABSM  ! abs. pressure at time t-dt
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHT    ! Theta at time t
 REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PRT     ! m.r. at t 
@@ -543,7 +535,6 @@ IF( IMICRO >= 0 ) THEN
    WHERE (ZRIT(:)>XRTMIN(4) .AND. ZCIT(:)>XCTMIN(4))
       ZLBDAI(:) = ( XLBI*ZCIT(:) / ZRIT(:) )**XLBEXI
    END WHERE
-   ZLBDAS(:)  = 1.E10
    IF (LSNOW_T .AND. NMOM_S.EQ.1) THEN
       WHERE(ZZT(:)>263.15 .AND. ZRST(:)>XRTMIN(5)) 
          ZLBDAS(:) = MAX(MIN(XLBDAS_MAX, 10**(14.554-0.0423*ZZT(:))),XLBDAS_MIN)
@@ -559,11 +550,16 @@ IF( IMICRO >= 0 ) THEN
                 ZLBDAS(:) = ( XLBS*ZCST(:) / ZRST(:) )**XLBEXS 
         END WHERE
    ELSE
+      ZLBDAS(:)  = 1.E10
+      WHERE (ZRSS(:)>XRTMIN(5)/PTSTEP)
+         ZLBDAS(:) = MAX(MIN(XLBDAS_MAX,XLBS*( ZRHODREF(:)*ZRSS(:)*PTSTEP )**XLBEXS),XLBDAS_MIN)
+      END WHERE
+      ZCSS(:) = XCCS*ZLBDAS(:)**XCXS / ZRHODREF(:) / PTSTEP
+      ZLBDAS(:)  = 1.E10
       WHERE (ZRST(:)>XRTMIN(5) )
          ZLBDAS(:) = MAX(MIN(XLBDAS_MAX,XLBS*( ZRHODREF(:)*ZRST(:) )**XLBEXS),XLBDAS_MIN)
       END WHERE
       ZCST(:) = XCCS*ZLBDAS(:)**XCXS / ZRHODREF(:)
-      ZCSS(:) = XCCS*ZLBDAS(:)**XCXS / ZRHODREF(:)
    END IF
    ZLBDAG(:)  = 1.E10
    if (NMOM_G.GE.2) then

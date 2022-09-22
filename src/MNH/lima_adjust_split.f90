@@ -11,8 +11,8 @@ INTERFACE
 !
       SUBROUTINE LIMA_ADJUST_SPLIT(KRR, KMI, TPFILE, HCONDENS, HLAMBDA3,        &
                              OSUBG_COND, OSIGMAS, PTSTEP, PSIGQSAT,             &
-                             PRHODREF, PRHODJ, PEXNREF, PPABSM, PSIGS, PMFCONV, &
-                             PPABST, PZZ, PDTHRAD, PW_NU,                       &
+                             PRHODREF, PRHODJ, PEXNREF, PSIGS, PMFCONV,         &
+                             PPABST, PPABSTT, PZZ, PDTHRAD, PW_NU,              &
                              PRT, PRS, PSVT, PSVS,                              &
                              PTHS, PSRCS, PCLDFR, PICEFR, PRC_MF, PRI_MF, PCF_MF)
 !
@@ -36,10 +36,10 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PRHODREF  ! Dry density of the
                                                      ! reference state
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PRHODJ    ! Dry density * Jacobian
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PEXNREF   ! Reference Exner function
-REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PPABSM    ! Absolute Pressure at t-dt
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PSIGS     ! Sigma_s at time t
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PMFCONV   ! 
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PPABST    ! Absolute Pressure at t     
+REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PPABSTT   ! Absolute Pressure at t+dt     
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PZZ       !     
 REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PDTHRAD   ! Radiative temperature tendency
 REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PW_NU     ! updraft velocity used for
@@ -72,8 +72,8 @@ END MODULE MODI_LIMA_ADJUST_SPLIT
 !     ###########################################################################
       SUBROUTINE LIMA_ADJUST_SPLIT(KRR, KMI, TPFILE, HCONDENS, HLAMBDA3,        &
                              OSUBG_COND, OSIGMAS, PTSTEP, PSIGQSAT,             &
-                             PRHODREF, PRHODJ, PEXNREF, PPABSM, PSIGS, PMFCONV, &
-                             PPABST, PZZ, PDTHRAD, PW_NU,                       &
+                             PRHODREF, PRHODJ, PEXNREF, PSIGS, PMFCONV,         &
+                             PPABST, PPABSTT, PZZ, PDTHRAD, PW_NU,              &
                              PRT, PRS, PSVT, PSVS,                              &
                              PTHS, PSRCS, PCLDFR, PICEFR, PRC_MF, PRI_MF, PCF_MF)
 !     ###########################################################################
@@ -198,10 +198,10 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PRHODREF  ! Dry density of the
                                                      ! reference state
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PRHODJ    ! Dry density * Jacobian
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PEXNREF   ! Reference Exner function
-REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PPABSM    ! Absolute Pressure at t-dt
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PSIGS     ! Sigma_s at time t
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PMFCONV   ! 
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PPABST    ! Absolute Pressure at t     
+REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PPABSTT   ! Absolute Pressure at t+dt     
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PZZ       !     
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PDTHRAD   ! Radiative temperature tendency
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PW_NU     ! updraft velocity used for
@@ -462,7 +462,7 @@ END WHERE
 !
 !*       2.2    estimate the Exner function at t+1
 !
-ZEXNS(:,:,:) = ( (2. * PPABST(:,:,:) - PPABSM(:,:,:)) / XP00 ) ** (XRD/XCPD)  
+ZEXNS(:,:,:) = ( PPABSTT(:,:,:) / XP00 ) ** (XRD/XCPD)  
 !
 !    beginning of the iterative loop
 !
@@ -722,7 +722,7 @@ END IF
 IF ( tpfile%lopened ) THEN
    ZT(:,:,:) = ( PTHS(:,:,:) * ZDT ) * ZEXNS(:,:,:)
    ZW(:,:,:) = EXP( XALPI - XBETAI/ZT(:,:,:) - XGAMI*ALOG(ZT(:,:,:) ) )
-   ZW1(:,:,:)= 2.0*PPABST(:,:,:)-PPABSM(:,:,:)
+   ZW1(:,:,:)= PPABSTT(:,:,:)
    ZW(:,:,:) = PRVT(:,:,:)*( ZW1(:,:,:)-ZW(:,:,:) ) / ( (XMV/XMD) * ZW(:,:,:) ) - 1.0
    
    TZFIELD%CMNHNAME   = 'SSI'
