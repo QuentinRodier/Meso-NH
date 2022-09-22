@@ -1450,7 +1450,7 @@ use modd_field,      only: NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NI_U, NMNHDIM_NJ_U, N
                            NMNHDIM_PROFILER_TIME, NMNHDIM_STATION_TIME,                                    &
                            tfieldlist
 use modd_grid,       only: xlatori, xlonori
-use modd_grid_n,     only: lsleve, xxhat, xxhatm, xyhat, xyhatm, xzhat, xzhatm
+use modd_grid_n,     only: lsleve, xxhat, xxhatm, xyhat, xyhatm, xzhat, xzhatm, xxhat_ll, xyhat_ll, xxhatm_ll, xyhatm_ll
 use modd_les,        only: cles_level_type, cspectra_level_type, nlesn_iinf, nlesn_isup, nlesn_jinf, nlesn_jsup, &
                            nles_k, nles_levels, nspectra_k, nspectra_levels,                                     &
                            xles_altitudes, xspectra_altitudes
@@ -1494,9 +1494,9 @@ type(tdimnc),                    pointer              :: tzdim_ni, tzdim_nj, tzd
 type(date_time), dimension(:),            allocatable :: tzdates
 type(date_time), dimension(:,:),          allocatable :: tzdates_bound
 
+real, dimension(:),   pointer :: zxhat_glob,  zyhat_glob
+real, dimension(:),   pointer :: zxhatm_glob, zyhatm_glob
 !These variables are save: they are populated once for the master Z-split file and freed after the last file has been written
-real, dimension(:),   pointer, save :: zxhat_glob  => null(), zyhat_glob  => null()
-real, dimension(:),   pointer, save :: zxhatm_glob => null(), zyhatm_glob => null()
 real, dimension(:,:), pointer, save :: zlatm_glob  => null(), zlonm_glob  => null()
 real, dimension(:,:), pointer, save :: zlatu_glob  => null(), zlonu_glob  => null()
 real, dimension(:,:), pointer, save :: zlatv_glob  => null(), zlonv_glob  => null()
@@ -1511,6 +1511,10 @@ zzhat  => null()
 zxhatm => null()
 zyhatm => null()
 zzhatm => null()
+zxhat_glob  => null()
+zyhat_glob  => null()
+zxhatm_glob => null()
+zyhatm_glob => null()
 
 gchangemodel = .false.
 
@@ -1538,6 +1542,14 @@ if ( tpfile%nmodel > 0 ) then
   zzhat => tfieldlist(iid)%tfield_x1d(tpfile%nmodel)%data
   call Find_field_id_from_mnhname( 'ZHATM', iid, iresp )
   zzhatm => tfieldlist(iid)%tfield_x1d(tpfile%nmodel)%data
+  call Find_field_id_from_mnhname( 'XHAT_ll', iid, iresp )
+  zxhat_glob => tfieldlist(iid)%tfield_x1d(tpfile%nmodel)%data
+  call Find_field_id_from_mnhname( 'YHAT_ll', iid, iresp )
+  zyhat_glob => tfieldlist(iid)%tfield_x1d(tpfile%nmodel)%data
+  call Find_field_id_from_mnhname( 'XHATM_ll', iid, iresp )
+  zxhatm_glob => tfieldlist(iid)%tfield_x1d(tpfile%nmodel)%data
+  call Find_field_id_from_mnhname( 'YHATM_ll', iid, iresp )
+  zyhatm_glob => tfieldlist(iid)%tfield_x1d(tpfile%nmodel)%data
   call Find_field_id_from_mnhname( 'SLEVE', iid, iresp )
   gsleve => tfieldlist(iid)%tfield_l0d(tpfile%nmodel)%data
 
@@ -1553,6 +1565,10 @@ else
   zxhatm => xxhatm
   zyhatm => xyhatm
   zzhatm => xzhatm
+  zxhat_glob  => xxhat_ll
+  zyhat_glob  => xyhat_ll
+  zxhatm_glob => xxhatm_ll
+  zyhatm_glob => xyhatm_ll
   gsleve => lsleve
 end if
 
@@ -1581,14 +1597,6 @@ else
   tzdim_nj_v => Null()
 end if
 
-!If the file is a Z-split subfile, coordinates are already collected
-if ( .not. Associated( tpfile%tmainfile ) ) then
-  call Gather_hor_coord1d( 'X', zxhat,  zxhat_glob  )
-  call Gather_hor_coord1d( 'X', zxhatm, zxhatm_glob )
-  call Gather_hor_coord1d( 'Y', zyhat,  zyhat_glob  )
-  call Gather_hor_coord1d( 'Y', zyhatm, zyhatm_glob )
-end if
-
 call Write_hor_coord1d( tzdim_ni,   'x-dimension of the grid', &
                         trim(ystdnameprefix)//'_x_coordinate',               'X', 0.,   jphext, jphext, zxhatm_glob )
 call Write_hor_coord1d( tzdim_nj,   'y-dimension of the grid', &
@@ -1602,7 +1610,6 @@ call Write_hor_coord1d( tzdim_ni_v, 'x-dimension of the grid at v location', &
 call Write_hor_coord1d( tzdim_nj_v, 'y-dimension of the grid at v location', &
                         trim(ystdnameprefix)//'_y_coordinate_at_v_location', 'Y', -0.5, jphext, 0,      zyhat_glob  )
 
-!The z?hat*_glob were allocated in Gather_hor_coord1d calls
 !Deallocate only if it is a non Z-split file or the last Z-split subfile
 gdealloc = .false.
 if ( Associated( tpfile%tmainfile ) ) then
@@ -1867,13 +1874,14 @@ if ( tpfile%lmaster ) then
 
 end if
 
-if ( gdealloc ) deallocate( zxhat_glob, zxhatm_glob, zyhat_glob, zyhatm_glob )
 
 if ( gchangemodel ) call Go_tomodel_ll( imi, iresp )
 
 
 contains
 
+#if 0
+!Not used anymore
 subroutine Gather_hor_coord1d( haxis, pcoords_loc, pcoords_glob )
   use mode_allocbuffer_ll, only: Allocbuffer_ll
   use mode_gather_ll,      only: Gather_xxfield
@@ -1917,7 +1925,9 @@ subroutine Gather_hor_coord1d( haxis, pcoords_loc, pcoords_glob )
   !PW: TODO: broadcast only to subfile writers
   if ( tpfile%nsubfiles_ioz > 0 ) &
     call MPI_BCAST( pcoords_glob, size( pcoords_glob ), MNHREAL_MPI, tpfile%nmaster_rank - 1,  tpfile%nmpicomm, ierr )
+
 end subroutine Gather_hor_coord1d
+#endif
 
 
 subroutine Gather_hor_coord2d( px, py, plat_glob, plon_glob )

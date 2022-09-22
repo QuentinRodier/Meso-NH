@@ -1061,6 +1061,7 @@ ENDIF
 XZS=0.
 CALL SPAWN_GRID2( NXOR, NYOR, NXEND, NYEND, NDXRATIO, NDYRATIO,                  &
                   XLONORI, XLATORI, XXHAT, XYHAT, XZHAT, XXHATM, XYHATM, XZHATM, &
+                  XXHAT_ll, XYHAT_ll, XXHATM_ll, XYHATM_ll,                      &
                   XHAT_BOUND, XHATM_BOUND,                                       &
                   XZTOP, LSLEVE, XLEN1, XLEN2,                                   &
                   XZS, XZSMT, ZZS_LS, ZZSMT_LS, TDTMOD, TDTCUR                   )

@@ -164,10 +164,6 @@ REAL,DIMENSION(:,:),ALLOCATABLE :: ZCY_ll,ZSY_ll  ! and y directions
 REAL, DIMENSION(SIZE(XXHAT),SIZE(XYHAT),SIZE(XZHAT)) :: ZT    ! temperature
 REAL, DIMENSION(SIZE(XXHAT),SIZE(XYHAT),SIZE(XZHAT)) :: ZHU   ! rel. humidity
 !
-REAL, DIMENSION(:), ALLOCATABLE   :: ZXHAT_ll    !  Position x in the conformal
-                                                 ! plane (array on the complete domain)
-REAL, DIMENSION(:), ALLOCATABLE   :: ZYHAT_ll    !   Position y in the conformal
-                                                 ! plane (array on the complete domain)
 INTEGER :: IIU_ll,IJU_ll ! horizontal,vertical size of the extended global domain 
 INTEGER :: IIB_ll,IJB_ll ! global coordinate of the physical global domain 
 INTEGER :: IIE_ll,IJE_ll ! 
@@ -241,9 +237,6 @@ IJE=IJU-JPHEXT
 !
 IIU_ll=NIMAX_ll+2*JPHEXT
 IJU_ll=NJMAX_ll+2*JPHEXT
-ALLOCATE(ZXHAT_ll(IIU_ll),ZYHAT_ll(IJU_ll))
-CALL GATHERALL_FIELD_ll('XX',XXHAT,ZXHAT_ll,IRESP)
-CALL GATHERALL_FIELD_ll('YY',XYHAT,ZYHAT_ll,IRESP)
 !  
 CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IIB_ll=1+JPHEXT
@@ -269,8 +262,8 @@ SELECT CASE(CPERT_KIND)
   CASE('TH')
     ZDIST(:,:,:) = 2.
 ! C grid shift
-    ZCENTERX=(ZXHAT_ll(2)+ZXHAT_ll(IIU_ll))*0.5
-    ZCENTERY=(ZYHAT_ll(2)+ZYHAT_ll(IJU_ll))*0.5
+    ZCENTERX=(XXHAT_ll(2)+XXHAT_ll(IIU_ll))*0.5
+    ZCENTERY=(XYHAT_ll(2)+XYHAT_ll(IJU_ll))*0.5
 !
     DO JK =IKB,IKE
       DO JJ = IJB,IJE
@@ -339,8 +332,8 @@ SELECT CASE(CPERT_KIND)
 !
     DO JI = 1,IIU_ll
       DO JJ = 1,IJU_ll
-        ZPHI_ll(JI,JJ) = XAMPLIUV*EXP(-((ZYHAT_ll(JJ)-ZYHAT_ll(IJ0))/XRADY)**2)       &
-                             * COS(2.*XPI/XRADX*ZXHAT_ll(JI))
+        ZPHI_ll(JI,JJ) = XAMPLIUV*EXP(-((XYHAT_ll(JJ)-XYHAT_ll(IJ0))/XRADY)**2)       &
+                             * COS(2.*XPI/XRADX*XXHAT_ll(JI))
       END DO
     END DO
 !
@@ -348,8 +341,8 @@ SELECT CASE(CPERT_KIND)
 !
     DO JI = 1,IIU_ll
       DO JJ = IJMIN,IJMAX
-        ZPU_ll(JI,JJ) = (ZPHI_ll(JI,JJ+1)-ZPHI_ll(JI,JJ)) / (-ZYHAT_ll(JJ+1)+ZYHAT_ll(JJ) )
-        ZPV_ll(JI,JJ) = (ZPHI_ll(JI+1,JJ)-ZPHI_ll(JI,JJ)) / ( ZXHAT_ll(JI+1)-ZXHAT_ll(JI) )
+        ZPU_ll(JI,JJ) = (ZPHI_ll(JI,JJ+1)-ZPHI_ll(JI,JJ)) / (-XYHAT_ll(JJ+1)+XYHAT_ll(JJ) )
+        ZPV_ll(JI,JJ) = (ZPHI_ll(JI+1,JJ)-ZPHI_ll(JI,JJ)) / ( XXHAT_ll(JI+1)-XXHAT_ll(JI) )
       END DO
     END DO
 !
@@ -557,8 +550,6 @@ SELECT CASE(CPERT_KIND)
 !
 !
 END SELECT
-!
-DEALLOCATE(ZXHAT_ll,ZYHAT_ll)
 !
 !-------------------------------------------------------------------------------
 !

@@ -36,7 +36,8 @@
 !  V. Ducrocq  13/08/98: //: add XLATOR_ll and XLONOR_ll
 !  V. Masson      11/2004: supress XLATOR, XLONOR, XLATOR_ll, XLONOR_ll
 !  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
-!  P. Wautelet    09/2022: add XXHATM, XYHATM, XZHATM, XHAT_BOUND and XHATM_BOUND
+!  P. Wautelet    09/2022: add XXHATM, XYHATM, XZHATM, XHAT_BOUND, XHATM_BOUND,
+!                          XXHAT_ll, XYHAT_ll, XXHATM_ll and XYHATM_ll
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -88,5 +89,9 @@ REAL,                  POINTER  :: XLEN2=>NULL()             ! Decay scale for s
 REAL, DIMENSION(:,:),  POINTER  :: XZSMT=>NULL()             ! smooth orography for SLEVE coordinate
 REAL, DIMENSION(:),    POINTER :: XHAT_BOUND  => NULL() ! Boundaries of global domain at u and v points
 REAL, DIMENSION(:),    POINTER :: XHATM_BOUND => NULL() ! Boundaries of global domain at mass points
+REAL, DIMENSION(:),    POINTER :: XXHAT_ll  => NULL()   ! Position x in the conformal or cartesian plane (all domain)
+REAL, DIMENSION(:),    POINTER :: XYHAT_ll  => NULL()   ! Position y in the conformal or cartesian plane (all domain)
+REAL, DIMENSION(:),    POINTER :: XXHATM_ll => NULL()   ! Position x in the conformal or cartesian plane at mass points (all domain)
+REAL, DIMENSION(:),    POINTER :: XYHATM_ll => NULL()   ! Position y in the conformal or cartesian plane (all domain) at mass points
 
 END MODULE MODD_GRID_n

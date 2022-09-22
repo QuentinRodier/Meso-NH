@@ -468,7 +468,7 @@ call Add_field2list( TFIELDDATA( &
   CLONGNAME  = 'XHATM',          &
   CUNITS     = 'm',              &
   CDIR       = 'XX',             &
-  CCOMMENT   = 'Position x in the conformal or cartesian plane at mass point', &
+  CCOMMENT   = 'Position x in the conformal or cartesian plane at mass points', &
   NGRID      = 1,                &
   NTYPE      = TYPEREAL,         &
   NDIMS      = 1,                &
@@ -480,7 +480,7 @@ call Add_field2list( TFIELDDATA( &
   CLONGNAME  = 'YHATM',          &
   CUNITS     = 'm',              &
   CDIR       = 'YY',             &
-  CCOMMENT   = 'Position y in the conformal or cartesian plane at mass point', &
+  CCOMMENT   = 'Position y in the conformal or cartesian plane at mass points', &
   NGRID      = 1,                &
   NTYPE      = TYPEREAL,         &
   NDIMS      = 1,                &
@@ -778,6 +778,58 @@ call Add_field2list( TFIELDDATA( &
   NGRID      = 1,                &
   NTYPE      = TYPEREAL,         &
   NDIMS      = 2,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+!Note: do not use XHAT_ll in I/O (use XHAT instead)
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'XHAT_ll',        &
+  CSTDNAME   = 'projection_x_coordinate', &
+  CLONGNAME  = 'XHAT_ll',        &
+  CUNITS     = 'm',              &
+  CDIR       = 'XX',             &
+  CCOMMENT   = 'Position x in the conformal or cartesian plane (all domain)', &
+  NGRID      = 2,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 1,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+!Note: do not use YHAT_ll in I/O (use YHAT instead)
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'YHAT_ll',        &
+  CSTDNAME   = 'projection_y_coordinate', &
+  CLONGNAME  = 'YHAT_ll',        &
+  CUNITS     = 'm',              &
+  CDIR       = 'YY',             &
+  CCOMMENT   = 'Position y in the conformal or cartesian plane (all domain)', &
+  NGRID      = 3,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 1,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+!Note: do not use XHATM_ll in I/O (use XHATM instead)
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'XHATM_ll',        &
+  CSTDNAME   = 'projection_x_coordinate', &
+  CLONGNAME  = 'XHATL_ll',        &
+  CUNITS     = 'm',              &
+  CDIR       = 'XX',             &
+  CCOMMENT   = 'Position x in the conformal or cartesian plane at mass points (all domain)', &
+  NGRID      = 2,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 1,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+!Note: do not use YHATM_ll in I/O (use YHATM instead)
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'YHATM_ll',        &
+  CSTDNAME   = 'projection_y_coordinate', &
+  CLONGNAME  = 'YHATM_ll',        &
+  CUNITS     = 'm',              &
+  CDIR       = 'YY',             &
+  CCOMMENT   = 'Position y in the conformal or cartesian plane at mass points (all domain)', &
+  NGRID      = 3,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 1,                &
   LTIMEDEP   = .FALSE.           ) )
 
 call Add_field2list( TFIELDDATA(   &
@@ -3673,6 +3725,10 @@ call Goto_model_1field( 'SINSLOPE', kfrom, kto, XSINSLOPE )
 call Goto_model_1field( 'MAP',      kfrom, kto, XMAP )
 call Goto_model_1field( 'LAT',      kfrom, kto, XLAT )
 call Goto_model_1field( 'LON',      kfrom, kto, XLON )
+call Goto_model_1field( 'XHAT_ll',  kfrom, kto, XXHAT_ll  )
+call Goto_model_1field( 'YHAT_ll',  kfrom, kto, XYHAT_ll  )
+call Goto_model_1field( 'XHATM_ll', kfrom, kto, XXHATM_ll )
+call Goto_model_1field( 'YHATM_ll', kfrom, kto, XYHATM_ll )
 !
 ! MODD_TIME_n variables
 !

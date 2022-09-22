@@ -372,7 +372,6 @@ USE MODE_PRANDTL
 !
 USE MODI_SECOND_MNH
 USE MODE_ll
-USE MODE_GATHER_ll
 !
 IMPLICIT NONE
 !
@@ -494,12 +493,6 @@ INTEGER                    :: IIB,IJB       ! Lower bounds of the physical
 INTEGER                    :: IIE,IJE       ! Upper bounds of the physical
                                             ! sub-domain in x and y directions
 !
-REAL, DIMENSION(:), ALLOCATABLE   :: ZXHAT_ll    !  Position x in the conformal
-                                                 ! plane (array on the complete domain)
-REAL, DIMENSION(:), ALLOCATABLE   :: ZYHAT_ll    !   Position y in the conformal
-                                                 ! plane (array on the complete domain)
-!
-!
 CHARACTER (LEN=100) :: YCOMMENT     ! comment string in LFIFM file
 CHARACTER (LEN=LEN_HREC)  :: YRECFM       ! Name of the desired field in LFIFM file
 !
@@ -535,12 +528,6 @@ IJU=SIZE(PTHLM,2)
 ! 
 IF (LOCEAN .AND. LDEEPOC) THEN
   !*       COMPUTES THE PHYSICAL SUBDOMAIN BOUNDS
-  ALLOCATE(ZXHAT_ll(NIMAX_ll+2*JPHEXT),ZYHAT_ll(NJMAX_ll+2*JPHEXT))
-  !compute ZXHAT_ll = position in the (0:Lx) domain 1 (Lx=Size of domain1 )
-  !compute XXHAT_ll = position in the (L0_subproc,Lx_subproc) domain for the current subproc
-  !                                     L0_subproc as referenced in the full domain 1
-  CALL GATHERALL_FIELD_ll('XX',XXHAT,ZXHAT_ll,IRESP)
-  CALL GATHERALL_FIELD_ll('YY',XYHAT,ZYHAT_ll,IRESP)
   CALL GET_DIM_EXT_ll('B',IIU,IJU)
   CALL GET_INDICE_ll(IIB,IJB,IIE,IJE)
   DO JJ = IJB,IJE
@@ -1103,9 +1090,6 @@ IF ( ((OTURB_FLX .AND. tpfile%lopened) .OR. LLES_CALL) .AND. (KRRL > 0) ) THEN
   END IF
 !
 END IF !end of <w Rc>
-IF (LOCEAN.AND.LDEEPOC) THEN
-  DEALLOCATE(ZXHAT_ll,ZYHAT_ll)
-END IF
 !
 !----------------------------------------------------------------------------
 END SUBROUTINE TURB_VER_THERMO_FLUX

@@ -88,7 +88,6 @@ END MODULE MODI_FUN
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODE_GATHER_ll
 USE MODD_GRID_n
 USE MODD_DIM_n
 USE MODD_PARAMETERS
@@ -110,7 +109,6 @@ INTEGER :: JJ ,JK  ! Loop index
 INTEGER :: IINFO_ll, IJU_ll  ! parallel variables
 REAL    :: ZWIDTHY ! Width of the jet along the y direction
 REAL    :: ZWIDTHZ ! Width of the jet along the z direction
-REAL, DIMENSION(:), ALLOCATABLE :: ZYHAT_ll
 !
 !-------------------------------------------------------------------------------
 !
@@ -120,18 +118,15 @@ REAL, DIMENSION(:), ALLOCATABLE :: ZYHAT_ll
 IJU_ll=NJMAX_ll+2*JPHEXT
 IJ0=IJU_ll/2
 IK0=KKU/2
-ALLOCATE(ZYHAT_ll(IJU_ll))
-CALL GATHERALL_FIELD_ll('YY',XYHAT,ZYHAT_ll,IINFO_ll)
-ZWIDTHY =ZYHAT_ll(IJ0+IJU_ll/5)-ZYHAT_ll(IJ0)
+ZWIDTHY =XYHAT_ll(IJ0+IJU_ll/5)-XYHAT_ll(IJ0)
 ZWIDTHZ =PZHAT(IK0+KKU/5)-PZHAT(IK0)
 DO JJ = 1,KJU-1
   DO JK = 1,KKU
     FUNUYZ(JJ,JK) = 1./COSH(                   &
-     (( XYHATM(JJ)-ZYHAT_ll(IJ0))/ZWIDTHY) **2 &
+     (( XYHATM(JJ)-XYHAT_ll(IJ0))/ZWIDTHY) **2 &
     +(( PZHAT(JK) -   PZHAT(IK0))/ZWIDTHZ) **2 )
   END DO
 END DO
-DEALLOCATE(ZYHAT_ll)
 FUNUYZ(KJU,:)=2.*FUNUYZ(KJU-1,:)-FUNUYZ(KJU-2,:) !simple extrapolation  
                                                  !for the last point
 !
@@ -189,7 +184,6 @@ END FUNCTION FUNUYZ
 USE MODD_GRID_n
 USE MODD_DIM_n
 USE MODD_PARAMETERS
-USE MODE_GATHER_ll
 !
 !
 IMPLICIT NONE
@@ -206,18 +200,15 @@ INTEGER :: IJ0      ! Jet center
 INTEGER :: JJ       ! Loop index
 INTEGER :: IINFO_ll, IJU_ll  ! parallel variables
 REAL    :: ZWIDTH   ! Width of the jet
-REAL, DIMENSION(:), ALLOCATABLE ::  ZYHAT_ll
 !-------------------------------------------------------------------------------
 !
 !*	 1.     COMPUTE FUNUY
 !	        -------------
 IJU_ll=NJMAX_ll+2*JPHEXT
 IJ0=IJU_ll/2
-ALLOCATE(ZYHAT_ll(IJU_ll))
-CALL GATHERALL_FIELD_ll('YY',XYHAT,ZYHAT_ll,IINFO_ll)
-ZWIDTH=ZYHAT_ll(IJ0+IJU_ll/5)-ZYHAT_ll(IJ0)
+ZWIDTH=XYHAT_ll(IJ0+IJU_ll/5)-XYHAT_ll(IJ0)
 DO JJ = 1,KJU-1
- FUNUY(JJ) = 1./COSH((XYHATM(JJ)-ZYHAT_ll(IJ0))/ZWIDTH)
+ FUNUY(JJ) = 1./COSH((XYHATM(JJ)-XYHAT_ll(IJ0))/ZWIDTH)
 END DO
 FUNUY(KJU)=2.*FUNUY(KJU-1)-FUNUY(KJU-2) !simple extrapolation for the last point
 !
@@ -276,7 +267,6 @@ END FUNCTION FUNUY
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODE_GATHER_ll
 USE MODD_GRID_n
 USE MODD_DIM_n
 USE MODD_PARAMETERS
@@ -298,7 +288,6 @@ INTEGER :: JI,JK     ! Loop index
 INTEGER :: IINFO_ll, IIU_ll  ! parallel variables
 REAL    :: ZWIDTHX ! Width of the jet along the x direction
 REAL    :: ZWIDTHZ ! Width of the jet along the z direction
-REAL, DIMENSION(:), ALLOCATABLE :: ZXHAT_ll
 !
 !-------------------------------------------------------------------------------
 !
@@ -308,14 +297,12 @@ REAL, DIMENSION(:), ALLOCATABLE :: ZXHAT_ll
 IIU_ll=NIMAX_ll+2*JPHEXT
 II0=IIU_ll/2
 IK0=KKU/2
-ALLOCATE(ZXHAT_ll(IIU_ll))
-CALL GATHERALL_FIELD_ll('XX',XXHAT,ZXHAT_ll,IINFO_ll)
-ZWIDTHX=ZXHAT_ll(II0+IIU_ll/5)-ZXHAT_ll(II0)
+ZWIDTHX=XXHAT_ll(II0+IIU_ll/5)-XXHAT_ll(II0)
 ZWIDTHZ=PZHAT(IK0+KKU/5)-PZHAT(IK0)
 DO JI = 1,KIU-1
   DO JK = 1,KKU
     FUNVXZ(JI,JK) = 1./COSH(                  &
-     (( XXHATM(JI)-ZXHAT_ll(II0))/ZWIDTHX)**2 &
+     (( XXHATM(JI)-XXHAT_ll(II0))/ZWIDTHX)**2 &
     +(( PZHAT (JK) - PZHAT (IK0))/ZWIDTHZ)**2 )
   END DO
 END DO
@@ -372,7 +359,6 @@ END FUNCTION FUNVXZ
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODE_GATHER_ll
 USE MODD_GRID_n
 USE MODD_DIM_n
 USE MODD_PARAMETERS
@@ -392,20 +378,16 @@ INTEGER :: II0   ! Jet center
 INTEGER :: JI    ! Loop index
 INTEGER :: IINFO_ll, IIU_ll  ! parallel variables
 REAL    :: ZWIDTH ! Width of the jet
-REAL, DIMENSION(:), ALLOCATABLE :: ZXHAT_ll
 !-------------------------------------------------------------------------------
 !
 !*	 1.     COMPUTE FUNUY
 !	        -------------
 IIU_ll=NIMAX_ll+2*JPHEXT
 II0=IIU_ll/2
-ALLOCATE(ZXHAT_ll(IIU_ll))
-CALL GATHERALL_FIELD_ll('XX',XXHAT,ZXHAT_ll,IINFO_ll)
-ZWIDTH=ZXHAT_ll(II0+IIU_ll/5)-ZXHAT_ll(II0)
+ZWIDTH=XXHAT_ll(II0+IIU_ll/5)-XXHAT_ll(II0)
 DO JI = 1,KIU
- FUNVX(JI)=1./COSH((XXHATM(JI)-ZXHAT_ll(II0))/ZWIDTH)
+ FUNVX(JI)=1./COSH((XXHATM(JI)-XXHAT_ll(II0))/ZWIDTH)
 END DO
-DEALLOCATE(ZXHAT_ll)
 !-------------------------------------------------------------------------------
 !
 END FUNCTION FUNVX

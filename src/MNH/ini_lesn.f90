@@ -46,8 +46,6 @@
 !*      0. DECLARATIONS
 !          ------------
 !
-USE MODE_ll
-USE MODE_GATHER_ll
 USE MODE_MSG
 USE MODE_MODELN_HANDLER
 !
@@ -90,25 +88,20 @@ IMPLICIT NONE
 !      
 INTEGER :: ILUOUT, IRESP
 INTEGER :: JI,JJ, JK ! loop counters
-INTEGER :: IIU_ll    ! total domain I size
-INTEGER :: IJU_ll    ! total domain J size
-INTEGER :: IIMAX_ll  ! total physical domain I size
-INTEGER :: IJMAX_ll  ! total physical domain J size
 !
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZZ_LES ! LES altitudes 3D array
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZZ_SPEC! " for spectra
 !
 !
-REAL, DIMENSION(:), ALLOCATABLE :: ZXHAT_ll ! father model coordinates
-REAL, DIMENSION(:), ALLOCATABLE :: ZYHAT_ll !
+REAL, DIMENSION(:), POINTER :: ZXHAT_ll ! father model coordinates
+REAL, DIMENSION(:), POINTER :: ZYHAT_ll !
 INTEGER :: IMI
 !
 !-------------------------------------------------------------------------------
 IMI = GET_CURRENT_MODEL_INDEX()
 !
-CALL GET_GLOBALDIMS_ll(IIMAX_ll,IJMAX_ll)
-IIU_ll = IIMAX_ll+2*JPHEXT
-IJU_ll = IJMAX_ll+2*JPHEXT
+ZXHAT_ll => NULL()
+ZYHAT_ll => NULL()
 !
 ILUOUT = TLUOUT%NLU
 !
@@ -208,19 +201,14 @@ IF (IMI==1) THEN
 !  -----------------------------------------------------
 !
 ELSE
-  ALLOCATE(ZXHAT_ll(IIU_ll))
-  ALLOCATE(ZYHAT_ll(IJU_ll))
-  CALL GATHERALL_FIELD_ll('XX',XXHAT,ZXHAT_ll,IRESP)
-  CALL GATHERALL_FIELD_ll('YY',XYHAT,ZYHAT_ll,IRESP)
+  ZXHAT_ll => XXHAT_ll !Use current (IMI) model XXHAT_ll
+  ZYHAT_ll => XYHAT_ll
 !
   CALL GOTO_MODEL(NDAD(IMI))
   CALL INI_LES_CART_MASK_n(IMI,ZXHAT_ll,ZYHAT_ll,          &
                          NLESn_IINF(IMI),NLESn_JINF(IMI), &
                          NLESn_ISUP(IMI),NLESn_JSUP(IMI)  )
   CALL GOTO_MODEL(IMI)
-! 
-  DEALLOCATE(ZXHAT_ll)
-  DEALLOCATE(ZYHAT_ll)
 END IF
 !
 !* in non cyclic boundary conditions, limitiation of masks due to u and v grids

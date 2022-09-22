@@ -1859,6 +1859,7 @@ CALL SET_GRID( KMI, TPINIFILE, IKU, NIMAX_ll, NJMAX_ll,                        &
                XTSTEP, XSEGLEN,                                                &
                XLONORI, XLATORI, XLON, XLAT,                                   &
                XXHAT, XYHAT, XDXHAT, XDYHAT, XXHATM, XYHATM,                   &
+               XXHAT_ll, XYHAT_ll, XXHATM_ll, XYHATM_ll,                       &
                XHAT_BOUND, XHATM_BOUND,                                        &
                XMAP, XZS, XZZ, XZHAT, XZHATM, XZTOP, LSLEVE,                   &
                XLEN1, XLEN2, XZSMT, ZJ,                                        &
@@ -2263,15 +2264,11 @@ IF (CRAD   /= 'NONE') THEN
   IF (GINIRAD) CALL SUNPOS_n(XZENITH,PAZIMSOL=XAZIM)
   CALL SURF_SOLAR_GEOM    (XZS, XZS_XY)
   !
-  ALLOCATE(XXHAT_ll                 (IIU_ll))
-  ALLOCATE(XYHAT_ll                 (IJU_ll))
   ALLOCATE(XZS_ll                   (IIU_ll,IJU_ll))
   ALLOCATE(XZS_XY_ll                (IIU_ll,IJU_ll))
   !
   CALL GATHERALL_FIELD_ll('XY',XZS,XZS_ll,IRESP)
   CALL GATHERALL_FIELD_ll('XY',XZS_XY,XZS_XY_ll,IRESP)
-  CALL GATHERALL_FIELD_ll('XX',XXHAT,XXHAT_ll,IRESP)
-  CALL GATHERALL_FIELD_ll('YY',XYHAT,XYHAT_ll,IRESP)
   XZS_MAX_ll=MAXVAL(XZS_ll)
 ELSE
   XAZIM       = XPI

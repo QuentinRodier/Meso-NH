@@ -19,7 +19,7 @@ PUBLIC :: SET_GRID
 
 PUBLIC :: INTERP_HORGRID_1DIR_TO_MASSPOINTS, INTERP_HORGRID_TO_MASSPOINTS, INTERP_VERGRID_TO_MASSPOINTS
 
-PUBLIC :: STORE_GRID_BOUNDS, STORE_HORGRID_BOUNDS, STORE_VERGRID_BOUNDS
+PUBLIC :: STORE_GLOB_GRID, STORE_GLOB_HORGRID, STORE_GLOB_VERGRID
 
 CONTAINS
 
@@ -29,6 +29,7 @@ CONTAINS
                            PTSTEP, PSEGLEN,                               &
                            PLONORI, PLATORI, PLON, PLAT,                  &
                            PXHAT, PYHAT, PDXHAT, PDYHAT, PXHATM, PYHATM,  &
+                           PXHAT_ll, PYHAT_ll, PXHATM_ll, PYHATM_ll,      &
                            PHAT_BOUND, PHATM_BOUND,                       &
                            PMAP, PZS, PZZ, PZHAT, PZHATM, PZTOP, OSLEVE,  &
                            PLEN1, PLEN2, PZSMT, PJ,                       &
@@ -207,6 +208,10 @@ REAL, DIMENSION(:),     INTENT(OUT) :: PDXHAT    ! horizontal stretching in x
 REAL, DIMENSION(:),     INTENT(OUT) :: PDYHAT    ! horizontal stretching in y
 REAL, DIMENSION(:),     INTENT(OUT) :: PXHATM    ! Position x in the conformal plane or on the cartesian plane at mass points
 REAL, DIMENSION(:),     INTENT(OUT) :: PYHATM    ! Position y in the conformal plane or on the cartesian plane at mass points
+REAL, DIMENSION(:),     POINTER, INTENT(INOUT) :: PXHAT_ll    ! Position x, y or z in the conformal or cartesian plane (all domain)
+REAL, DIMENSION(:),     POINTER, INTENT(INOUT) :: PYHAT_ll    ! Position x, y or z in the conformal or cartesian plane (all domain)
+REAL, DIMENSION(:),     POINTER, INTENT(INOUT) :: PXHATM_ll   ! id at mass points
+REAL, DIMENSION(:),     POINTER, INTENT(INOUT) :: PYHATM_ll   ! id at mass points
 REAL, DIMENSION(:),     POINTER, INTENT(INOUT) :: PHAT_BOUND  ! Boundaries of global domain in the conformal or cartesian plane
 REAL, DIMENSION(:),     POINTER, INTENT(INOUT) :: PHATM_BOUND ! idem at mass points
 REAL, DIMENSION(:,:),   INTENT(OUT) :: PMAP      ! Map factor
@@ -353,7 +358,8 @@ CALL INTERP_HORGRID_TO_MASSPOINTS( PXHAT, PYHAT, PXHATM, PYHATM )
 CALL INTERP_VERGRID_TO_MASSPOINTS( PZHAT, PZHATM )
 
 ! Collect global domain boundaries
-CALL STORE_GRID_BOUNDS( PXHAT, PYHAT, PZHAT, PXHATM, PYHATM, PZHATM, PHAT_BOUND, PHATM_BOUND )
+CALL STORE_GLOB_GRID( PXHAT, PYHAT, PZHAT, PXHATM, PYHATM, PZHATM,                      &
+                        PXHAT_ll, PYHAT_ll, PXHATM_ll, PYHATM_ll, PHAT_BOUND, PHATM_BOUND )
 
 IF (LCARTESIAN) THEN
   CALL SM_GRIDCART(PXHAT,PYHAT,PZHAT,PZS,OSLEVE,PLEN1,PLEN2,PZSMT,PDXHAT,PDYHAT,PZZ,PJ)
@@ -517,7 +523,7 @@ END SUBROUTINE INTERP_VERGRID_TO_MASSPOINTS
 
 
 !-----------------------------------------------------------------
-SUBROUTINE STORE_GRID_1DIR_BOUNDS( HDIR, PHAT, PHATM, PHAT_BOUND, PHATM_BOUND )
+SUBROUTINE STORE_GRID_1DIR( HDIR, PHAT, PHATM, PHAT_ll, PHATM_ll, PHAT_BOUND, PHATM_BOUND )
 
   USE MODD_GRID_n
   USE MODD_PARAMETERS,     ONLY: JPHEXT, JPVEXT, XNEGUNDEF
@@ -531,19 +537,17 @@ SUBROUTINE STORE_GRID_1DIR_BOUNDS( HDIR, PHAT, PHATM, PHAT_BOUND, PHATM_BOUND )
   CHARACTER(LEN=1),            INTENT(IN)    :: HDIR        ! Direction ('X', 'Y' or 'Z')
   REAL, DIMENSION(:), TARGET,  INTENT(IN)    :: PHAT        ! Position x, y or z in the conformal or cartesian plane
   REAL, DIMENSION(:), TARGET,  INTENT(IN)    :: PHATM       ! id at mass points
+  REAL, DIMENSION(:), POINTER, INTENT(INOUT) :: PHAT_ll     ! Position x, y or z in the conformal or cartesian plane (all domain)
+  REAL, DIMENSION(:), POINTER, INTENT(INOUT) :: PHATM_ll    ! id at mass points
   REAL, DIMENSION(:), POINTER, INTENT(INOUT) :: PHAT_BOUND  ! Boundaries of global domain in the conformal or cartesian plane
   REAL, DIMENSION(:), POINTER, INTENT(INOUT) :: PHATM_BOUND ! idem at mass points
 
   INTEGER                     :: IERR
-  LOGICAL                     :: GALLOC, GALLOCM
-  REAL, DIMENSION(:), POINTER :: ZHAT_GLOB
-  REAL, DIMENSION(:), POINTER :: ZHATM_GLOB
+  LOGICAL                     :: GALLOC, GALLOCM !Remark: do not deallocate (PHAT_ll/PHATM_ll may be used outside this subroutine)
 
   GALLOC  = .FALSE.
   GALLOCM = .FALSE.
 
-  ZHAT_GLOB  => NULL()
-  ZHATM_GLOB => NULL()
 
   IF ( .NOT. ASSOCIATED( PHAT_BOUND ) ) THEN
     ALLOCATE( PHAT_BOUND(NHAT_BOUND_SIZE) )
@@ -557,93 +561,112 @@ SUBROUTINE STORE_GRID_1DIR_BOUNDS( HDIR, PHAT, PHATM, PHAT_BOUND, PHATM_BOUND )
 
   SELECT CASE (HDIR)
     CASE ( 'X' )
-      CALL ALLOCBUFFER_ll( ZHAT_GLOB,  PHAT,  'XX', GALLOC  )
-      CALL ALLOCBUFFER_ll( ZHATM_GLOB, PHATM, 'XX', GALLOCM )
-      CALL GATHERALL_FIELD_ll( 'XX', PHAT,  ZHAT_GLOB,  IERR )
-      CALL GATHERALL_FIELD_ll( 'XX', PHATM, ZHATM_GLOB, IERR )
+      IF ( .NOT. ASSOCIATED( PHAT_ll ) ) THEN
+        CALL ALLOCBUFFER_ll( PHAT_ll,  PHAT,  'XX', GALLOC )
+        CALL GATHERALL_FIELD_ll( 'XX', PHAT,  PHAT_ll,  IERR )
+      END IF
+      IF ( .NOT. ASSOCIATED( PHATM_ll ) ) THEN
+        CALL ALLOCBUFFER_ll( PHATM_ll, PHATM, 'XX', GALLOCM )
+        CALL GATHERALL_FIELD_ll( 'XX', PHATM, PHATM_ll, IERR )
+      END IF
 
       ! Global boundaries on u points
-      PHAT_BOUND(NEXTE_XMIN) = ZHAT_GLOB( 1 )
-      PHAT_BOUND(NEXTE_XMAX) = ZHAT_GLOB( UBOUND( ZHAT_GLOB, 1 ) )
-      PHAT_BOUND(NPHYS_XMIN) = ZHAT_GLOB( JPHEXT + 1 )
-      PHAT_BOUND(NPHYS_XMAX) = ZHAT_GLOB( UBOUND( ZHAT_GLOB, 1 ) )
+      PHAT_BOUND(NEXTE_XMIN) = PHAT_ll( 1 )
+      PHAT_BOUND(NEXTE_XMAX) = PHAT_ll( UBOUND( PHAT_ll, 1 ) )
+      PHAT_BOUND(NPHYS_XMIN) = PHAT_ll( JPHEXT + 1 )
+      PHAT_BOUND(NPHYS_XMAX) = PHAT_ll( UBOUND( PHAT_ll, 1 ) )
 
       ! Global boundaries on m points
-      PHATM_BOUND(NEXTE_XMIN) = ZHATM_GLOB( 1 )
-      PHATM_BOUND(NEXTE_XMAX) = ZHATM_GLOB( UBOUND( ZHATM_GLOB, 1 ) )
-      PHATM_BOUND(NPHYS_XMIN) = ZHATM_GLOB( JPHEXT + 1 )
-      PHATM_BOUND(NPHYS_XMAX) = ZHATM_GLOB( UBOUND( ZHATM_GLOB, 1 ) - JPHEXT )
+      PHATM_BOUND(NEXTE_XMIN) = PHATM_ll( 1 )
+      PHATM_BOUND(NEXTE_XMAX) = PHATM_ll( UBOUND( PHATM_ll, 1 ) )
+      PHATM_BOUND(NPHYS_XMIN) = PHATM_ll( JPHEXT + 1 )
+      PHATM_BOUND(NPHYS_XMAX) = PHATM_ll( UBOUND( PHATM_ll, 1 ) - JPHEXT )
 
     CASE ( 'Y' )
-      CALL ALLOCBUFFER_ll( ZHAT_GLOB,  PHAT,  'YY', GALLOC  )
-      CALL ALLOCBUFFER_ll( ZHATM_GLOB, PHATM, 'YY', GALLOCM )
-      CALL GATHERALL_FIELD_ll( 'YY', PHAT,  ZHAT_GLOB,  IERR )
-      CALL GATHERALL_FIELD_ll( 'YY', PHATM, ZHATM_GLOB, IERR )
+      IF ( .NOT. ASSOCIATED( PHAT_ll ) ) THEN
+        CALL ALLOCBUFFER_ll( PHAT_ll,  PHAT,  'YY', GALLOC )
+        CALL GATHERALL_FIELD_ll( 'YY', PHAT,  PHAT_ll,  IERR )
+      END IF
+      IF ( .NOT. ASSOCIATED( PHATM_ll ) ) THEN
+        CALL ALLOCBUFFER_ll( PHATM_ll, PHATM, 'YY', GALLOCM )
+        CALL GATHERALL_FIELD_ll( 'YY', PHATM, PHATM_ll, IERR )
+      END IF
 
       ! Global boundaries on v points
-      PHAT_BOUND(NEXTE_YMIN) = ZHAT_GLOB( 1 )
-      PHAT_BOUND(NEXTE_YMAX) = ZHAT_GLOB( UBOUND( ZHAT_GLOB, 1 ) )
-      PHAT_BOUND(NPHYS_YMIN) = ZHAT_GLOB( JPHEXT + 1 )
-      PHAT_BOUND(NPHYS_YMAX) = ZHAT_GLOB( UBOUND( ZHAT_GLOB, 1 ) )
+      PHAT_BOUND(NEXTE_YMIN) = PHAT_ll( 1 )
+      PHAT_BOUND(NEXTE_YMAX) = PHAT_ll( UBOUND( PHAT_ll, 1 ) )
+      PHAT_BOUND(NPHYS_YMIN) = PHAT_ll( JPHEXT + 1 )
+      PHAT_BOUND(NPHYS_YMAX) = PHAT_ll( UBOUND( PHAT_ll, 1 ) )
 
       ! Global boundaries on m points
-      PHATM_BOUND(NEXTE_YMIN) = ZHATM_GLOB( 1 )
-      PHATM_BOUND(NEXTE_YMAX) = ZHATM_GLOB( UBOUND( ZHATM_GLOB, 1 ) )
-      PHATM_BOUND(NPHYS_YMIN) = ZHATM_GLOB( JPHEXT + 1 )
-      PHATM_BOUND(NPHYS_YMAX) = ZHATM_GLOB( UBOUND( ZHATM_GLOB, 1 ) - JPHEXT )
+      PHATM_BOUND(NEXTE_YMIN) = PHATM_ll( 1 )
+      PHATM_BOUND(NEXTE_YMAX) = PHATM_ll( UBOUND( PHATM_ll, 1 ) )
+      PHATM_BOUND(NPHYS_YMIN) = PHATM_ll( JPHEXT + 1 )
+      PHATM_BOUND(NPHYS_YMAX) = PHATM_ll( UBOUND( PHATM_ll, 1 ) - JPHEXT )
 
     CASE ( 'Z' )
-      ZHAT_GLOB  => PHAT
-      ZHATM_GLOB => PHATM
+      PHAT_ll  => PHAT
+      PHATM_ll => PHATM
 
       ! Global boundaries on w points
-      PHAT_BOUND(NEXTE_ZMIN) = ZHAT_GLOB( 1 )
-      PHAT_BOUND(NEXTE_ZMAX) = ZHAT_GLOB( UBOUND( ZHAT_GLOB, 1 ) )
-      PHAT_BOUND(NPHYS_ZMIN) = ZHAT_GLOB( JPVEXT + 1 )
-      PHAT_BOUND(NPHYS_ZMAX) = ZHAT_GLOB( UBOUND( ZHAT_GLOB, 1 ) )
+      PHAT_BOUND(NEXTE_ZMIN) = PHAT_ll( 1 )
+      PHAT_BOUND(NEXTE_ZMAX) = PHAT_ll( UBOUND( PHAT_ll, 1 ) )
+      PHAT_BOUND(NPHYS_ZMIN) = PHAT_ll( JPVEXT + 1 )
+      PHAT_BOUND(NPHYS_ZMAX) = PHAT_ll( UBOUND( PHAT_ll, 1 ) )
 
       ! Global boundaries on m points
-      PHATM_BOUND(NEXTE_ZMIN) = ZHATM_GLOB( 1 )
-      PHATM_BOUND(NEXTE_ZMAX) = ZHATM_GLOB( UBOUND( ZHATM_GLOB, 1 ) )
-      PHATM_BOUND(NPHYS_ZMIN) = ZHATM_GLOB( JPVEXT + 1 )
-      PHATM_BOUND(NPHYS_ZMAX) = ZHATM_GLOB( UBOUND( ZHATM_GLOB, 1 ) - JPVEXT )
+      PHATM_BOUND(NEXTE_ZMIN) = PHATM_ll( 1 )
+      PHATM_BOUND(NEXTE_ZMAX) = PHATM_ll( UBOUND( PHATM_ll, 1 ) )
+      PHATM_BOUND(NPHYS_ZMIN) = PHATM_ll( JPVEXT + 1 )
+      PHATM_BOUND(NPHYS_ZMAX) = PHATM_ll( UBOUND( PHATM_ll, 1 ) - JPVEXT )
 
     CASE DEFAULT
-      CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'STORE_GRID_1DIR_BOUNDS', 'invalid direction (valid: X, Y or Z)' )
+      CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'STORE_GRID_1DIR', 'invalid direction (valid: X, Y or Z)' )
 
   END SELECT
 
-  IF ( GALLOC  ) DEALLOCATE( ZHAT_GLOB  )
-  IF ( GALLOCM ) DEALLOCATE( ZHATM_GLOB )
-
-END SUBROUTINE STORE_GRID_1DIR_BOUNDS
+END SUBROUTINE STORE_GRID_1DIR
 !-----------------------------------------------------------------
 
 
 !-----------------------------------------------------------------
-SUBROUTINE STORE_GRID_BOUNDS( PXHAT, PYHAT, PZHAT, PXHATM, PYHATM, PZHATM, PHAT_BOUND, PHATM_BOUND )
+SUBROUTINE STORE_GLOB_GRID( PXHAT, PYHAT, PZHAT, PXHATM, PYHATM, PZHATM,                        &
+                              PXHAT_ll, PYHAT_ll, PXHATM_ll, PYHATM_ll, PHAT_BOUND, PHATM_BOUND )
 
   IMPLICIT NONE
 
-  REAL, DIMENSION(:),              INTENT(IN)    :: PXHAT       ! Position x in the conformal or cartesian plane
-  REAL, DIMENSION(:),              INTENT(IN)    :: PYHAT       ! Position y in the conformal or cartesian plane
-  REAL, DIMENSION(:),              INTENT(IN)    :: PZHAT       ! Position y in the conformal or cartesian plane
-  REAL, DIMENSION(:),              INTENT(IN)    :: PXHATM      ! idem at mass points
-  REAL, DIMENSION(:),              INTENT(IN)    :: PYHATM      ! idem at mass points
-  REAL, DIMENSION(:),              INTENT(IN)    :: PZHATM      ! idem at mass points
+  REAL, DIMENSION(:),          INTENT(IN)    :: PXHAT       ! Position x in the conformal or cartesian plane
+  REAL, DIMENSION(:),          INTENT(IN)    :: PYHAT       ! Position y in the conformal or cartesian plane
+  REAL, DIMENSION(:),          INTENT(IN)    :: PZHAT       ! Position y in the conformal or cartesian plane
+  REAL, DIMENSION(:),          INTENT(IN)    :: PXHATM      ! idem at mass points
+  REAL, DIMENSION(:),          INTENT(IN)    :: PYHATM      ! idem at mass points
+  REAL, DIMENSION(:),          INTENT(IN)    :: PZHATM      ! idem at mass points
+  REAL, DIMENSION(:), POINTER, INTENT(INOUT) :: PXHAT_ll     ! Position x, y or z in the conformal or cartesian plane (all domain)
+  REAL, DIMENSION(:), POINTER, INTENT(INOUT) :: PYHAT_ll     ! Position x, y or z in the conformal or cartesian plane (all domain)
+  REAL, DIMENSION(:), POINTER, INTENT(INOUT) :: PXHATM_ll    ! id at mass points
+  REAL, DIMENSION(:), POINTER, INTENT(INOUT) :: PYHATM_ll    ! id at mass points
   REAL, DIMENSION(:), POINTER, INTENT(INOUT) :: PHAT_BOUND  ! Boundaries of global domain in the conformal or cartesian plane
   REAL, DIMENSION(:), POINTER, INTENT(INOUT) :: PHATM_BOUND ! idem at mass points
 
-  CALL STORE_GRID_1DIR_BOUNDS( 'X', PXHAT, PXHATM, PHAT_BOUND, PHATM_BOUND )
-  CALL STORE_GRID_1DIR_BOUNDS( 'Y', PYHAT, PYHATM, PHAT_BOUND, PHATM_BOUND )
-  CALL STORE_GRID_1DIR_BOUNDS( 'Z', PZHAT, PZHATM, PHAT_BOUND, PHATM_BOUND )
+  REAL, DIMENSION(:), POINTER :: PZHAT_DUMMY_ll
+  REAL, DIMENSION(:), POINTER :: PZHATM_DUMMY_ll
 
-END SUBROUTINE STORE_GRID_BOUNDS
+  PZHAT_DUMMY_ll  => NULL()
+  PZHATM_DUMMY_ll => NULL()
+
+  CALL STORE_GLOB_HORGRID( PXHAT, PYHAT, PXHATM, PYHATM, PXHAT_ll, PYHAT_ll, PXHATM_ll, PYHATM_ll, PHAT_BOUND, PHATM_BOUND )
+  CALL STORE_GLOB_VERGRID( PZHAT, PZHATM, PHAT_BOUND, PHATM_BOUND )
+
+  PZHAT_DUMMY_ll => NULL()
+  PZHATM_DUMMY_ll => NULL()
+
+END SUBROUTINE STORE_GLOB_GRID
 !-----------------------------------------------------------------
 
 
 !-----------------------------------------------------------------
-SUBROUTINE STORE_HORGRID_BOUNDS( PXHAT, PYHAT, PXHATM, PYHATM, PHAT_BOUND, PHATM_BOUND )
+SUBROUTINE STORE_GLOB_HORGRID( PXHAT, PYHAT, PXHATM, PYHATM,                                     &
+                                 PXHAT_ll, PYHAT_ll, PXHATM_ll, PYHATM_ll, PHAT_BOUND, PHATM_BOUND )
 
   IMPLICIT NONE
 
@@ -651,18 +674,22 @@ SUBROUTINE STORE_HORGRID_BOUNDS( PXHAT, PYHAT, PXHATM, PYHATM, PHAT_BOUND, PHATM
   REAL, DIMENSION(:),          INTENT(IN)    :: PYHAT       ! Position y in the conformal or cartesian plane
   REAL, DIMENSION(:),          INTENT(IN)    :: PXHATM      ! idem at mass points
   REAL, DIMENSION(:),          INTENT(IN)    :: PYHATM      ! idem at mass points
+  REAL, DIMENSION(:), POINTER, INTENT(INOUT) :: PXHAT_ll     ! Position x, y or z in the conformal or cartesian plane (all domain)
+  REAL, DIMENSION(:), POINTER, INTENT(INOUT) :: PYHAT_ll     ! Position x, y or z in the conformal or cartesian plane (all domain)
+  REAL, DIMENSION(:), POINTER, INTENT(INOUT) :: PXHATM_ll    ! id at mass points
+  REAL, DIMENSION(:), POINTER, INTENT(INOUT) :: PYHATM_ll    ! id at mass points
   REAL, DIMENSION(:), POINTER, INTENT(INOUT) :: PHAT_BOUND  ! Boundaries of global domain in the conformal or cartesian plane
   REAL, DIMENSION(:), POINTER, INTENT(INOUT) :: PHATM_BOUND ! idem at mass points
 
-  CALL STORE_GRID_1DIR_BOUNDS( 'X', PXHAT, PXHATM, PHAT_BOUND, PHATM_BOUND )
-  CALL STORE_GRID_1DIR_BOUNDS( 'Y', PYHAT, PYHATM, PHAT_BOUND, PHATM_BOUND )
+  CALL STORE_GRID_1DIR( 'X', PXHAT, PXHATM, PXHAT_ll, PXHATM_ll, PHAT_BOUND, PHATM_BOUND )
+  CALL STORE_GRID_1DIR( 'Y', PYHAT, PYHATM, PYHAT_ll, PYHATM_ll, PHAT_BOUND, PHATM_BOUND )
 
-END SUBROUTINE STORE_HORGRID_BOUNDS
+END SUBROUTINE STORE_GLOB_HORGRID
 !-----------------------------------------------------------------
 
 
 !-----------------------------------------------------------------
-SUBROUTINE STORE_VERGRID_BOUNDS( PZHAT, PZHATM, PHAT_BOUND, PHATM_BOUND )
+SUBROUTINE STORE_GLOB_VERGRID( PZHAT, PZHATM, PHAT_BOUND, PHATM_BOUND )
 
   IMPLICIT NONE
 
@@ -671,9 +698,18 @@ SUBROUTINE STORE_VERGRID_BOUNDS( PZHAT, PZHATM, PHAT_BOUND, PHATM_BOUND )
   REAL, DIMENSION(:), POINTER, INTENT(INOUT) :: PHAT_BOUND  ! Boundaries of global domain in the conformal or cartesian plane
   REAL, DIMENSION(:), POINTER, INTENT(INOUT) :: PHATM_BOUND ! idem at mass points
 
-  CALL STORE_GRID_1DIR_BOUNDS( 'Z', PZHAT, PZHATM, PHAT_BOUND, PHATM_BOUND )
+  REAL, DIMENSION(:), POINTER :: PZHAT_DUMMY_ll
+  REAL, DIMENSION(:), POINTER :: PZHATM_DUMMY_ll
 
-END SUBROUTINE STORE_VERGRID_BOUNDS
+  PZHAT_DUMMY_ll  => NULL()
+  PZHATM_DUMMY_ll => NULL()
+
+  CALL STORE_GRID_1DIR( 'Z', PZHAT, PZHATM, PZHAT_DUMMY_ll, PZHATM_DUMMY_ll, PHAT_BOUND, PHATM_BOUND )
+
+  PZHAT_DUMMY_ll => NULL()
+  PZHATM_DUMMY_ll => NULL()
+
+END SUBROUTINE STORE_GLOB_VERGRID
 !-----------------------------------------------------------------
 
 

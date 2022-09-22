@@ -689,6 +689,7 @@ CALL SET_GRID( KMI, TPINIFILE, IKU, NIMAX_ll, NJMAX_ll,                        &
                XTSTEP, XSEGLEN,                                                &
                XLONORI, XLATORI, XLON, XLAT,                                   &
                XXHAT, XYHAT, XDXHAT, XDYHAT, XXHATM, XYHATM,                   &
+               XXHAT_ll, XYHAT_ll, XXHATM_ll, XYHATM_ll,                       &
                XHAT_BOUND, XHATM_BOUND,                                        &
                XMAP, XZS, XZZ, XZHAT, XZHATM, XZTOP, LSLEVE,                   &
                XLEN1, XLEN2, XZSMT, ZJ,                                        &
