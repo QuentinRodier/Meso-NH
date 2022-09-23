@@ -342,7 +342,7 @@ IF (GFLAG) THEN
 END IF
 !
 XLBDAS_MAX = 500000. ! used only before transforming lambda for non MP PSD
-XLBDAS_MIN = 1000.
+XLBDAS_MIN = 1000. *1.E-10
 XLBDAG_MAX = 100000.0
 !
 ZCONC_MAX  = 1.E6 ! Maximal concentration for falling particules set to 1 per cc
@@ -891,8 +891,8 @@ XLBNSACCR3  =                          MOMG(XALPHAS,XNUS,2.)
 ! Notice: One magnitude of lambda discretized over 10 points for snow
 !
 NACCLBDAS = 40
-XACCLBDAS_MIN = 5.0E2*XTRANS_MP_GAMMAS !5.0E1*XTRANS_MP_GAMMAS ! Minimal value of Lbda_s to tabulate XKER_RACCS
-XACCLBDAS_MAX = 1.0E5*XTRANS_MP_GAMMAS !5.0E5*XTRANS_MP_GAMMAS ! Maximal value of Lbda_s to tabulate XKER_RACCS
+XACCLBDAS_MIN = 5.0E1*XTRANS_MP_GAMMAS !5.0E1*XTRANS_MP_GAMMAS ! Minimal value of Lbda_s to tabulate XKER_RACCS
+XACCLBDAS_MAX = 5.0E5*XTRANS_MP_GAMMAS !5.0E5*XTRANS_MP_GAMMAS ! Maximal value of Lbda_s to tabulate XKER_RACCS
 ZRATE = LOG(XACCLBDAS_MAX/XACCLBDAS_MIN)/FLOAT(NACCLBDAS-1)
 XACCINTP1S = 1.0 / ZRATE
 XACCINTP2S = 1.0 - LOG( XACCLBDAS_MIN ) / ZRATE
@@ -1325,8 +1325,8 @@ ZRATE = LOG(XDRYLBDAR_MAX/XDRYLBDAR_MIN)/REAL(NDRYLBDAR-1)
 XDRYINTP1R = 1.0 / ZRATE
 XDRYINTP2R = 1.0 - LOG( XDRYLBDAR_MIN ) / ZRATE
 NDRYLBDAS = 80
-XDRYLBDAS_MIN = 5.0E2*XTRANS_MP_GAMMAS ! Minimal value of Lbda_s to tabulate XKER_SDRYG
-XDRYLBDAS_MAX = 1.0E5*XTRANS_MP_GAMMAS ! Maximal value of Lbda_s to tabulate XKER_SDRYG
+XDRYLBDAS_MIN = 5.0E1*XTRANS_MP_GAMMAS ! Minimal value of Lbda_s to tabulate XKER_SDRYG
+XDRYLBDAS_MAX = 5.0E8*XTRANS_MP_GAMMAS ! Maximal value of Lbda_s to tabulate XKER_SDRYG
 ZRATE = LOG(XDRYLBDAS_MAX/XDRYLBDAS_MIN)/REAL(NDRYLBDAS-1)
 XDRYINTP1S = 1.0 / ZRATE
 XDRYINTP2S = 1.0 - LOG( XDRYLBDAS_MIN ) / ZRATE
@@ -1543,8 +1543,8 @@ XLBNGWETH3  =                          MOMG(XALPHAG,XNUG,2.)
 ! Notice: One magnitude of lambda discretized over 10 points
 !
 NWETLBDAS = 80
-XWETLBDAS_MIN = 5.0E2*XTRANS_MP_GAMMAS ! Minimal value of Lbda_s to tabulate XKER_SWETH
-XWETLBDAS_MAX = 1.0E5*XTRANS_MP_GAMMAS ! Maximal value of Lbda_s to tabulate XKER_SWETH
+XWETLBDAS_MIN = 5.0E1*XTRANS_MP_GAMMAS ! Minimal value of Lbda_s to tabulate XKER_SWETH
+XWETLBDAS_MAX = 5.0E8*XTRANS_MP_GAMMAS ! Maximal value of Lbda_s to tabulate XKER_SWETH
 ZRATE = LOG(XWETLBDAS_MAX/XWETLBDAS_MIN)/REAL(NWETLBDAS-1)
 XWETINTP1S = 1.0 / ZRATE
 XWETINTP2S = 1.0 - LOG( XWETLBDAS_MIN ) / ZRATE
