@@ -2196,7 +2196,7 @@ if( M2_ICE) then
 !
    ZZNW1(:,:) = 0.0
 !
-   GACC(:) = (PCST1D(:)>XCTMIN(5)) .AND. (PZT(:)<XTT)
+   GACC(:) = PCST1D(:)>XCTMIN(5) .AND. PRST1D(:)>XRTMIN(5) .AND. PZT(:)<XTT
    IGACC = COUNT( GACC(:) )
 !
    IF( IGACC>0 ) THEN
