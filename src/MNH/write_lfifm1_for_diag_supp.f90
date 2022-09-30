@@ -963,7 +963,7 @@ IF (CSURF=='EXTE') THEN
       NTYPE      = TYPEREAL,                            &
       NDIMS      = 2,                                   &
       LTIMEDEP   = .TRUE.                               )
-    CALL IO_Field_write(TPFILE,TZFIELD,XCURRENT_LWD)
+    CALL IO_Field_write(TPFILE,TZFIELD,XCURRENT_LWU)
   END IF
 END IF
 
