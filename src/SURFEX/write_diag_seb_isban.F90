@@ -661,20 +661,18 @@ IF (CHI%LCH_NO_FLUX) THEN
   END IF
 END IF
 !
-!UPG*PT - cette ecriture ne fonctionne pas chez moi. Testée ??
-!IF (CHI%SVI%NDSTEQ > 0)THEN
-!  !
-!  DO JSV = 1,NDSTMDE ! for all dust modes
-!    WRITE(YRECFM,'(A5,I3.3)')'F_DST',JSV
-!    YCOMMENT='X_Y_'//YRECFM//' (kg/m2/s)'
-!    DO JP = 1,IO%NPATCH
-!      CALL  WRITE_FIELD_1D_PATCH(DUO%CSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
-!                                 NP%AL(JP)%NR_P,NDST%AL(JP)%XSFDST(:,JSV),ISIZE,S%XWORK_WR)
-!    ENDDO    
-!  END DO
-!  !
-!ENDIF
-!UPG*PT
+IF (CHI%SVI%NDSTEQ > 0)THEN
+  !
+  DO JSV = 1,NDSTMDE ! for all dust modes
+    WRITE(YRECFM,'(A5,I3.3)')'F_DST',JSV
+    YCOMMENT='X_Y_'//YRECFM//' (kg/m2/s)'
+    DO JP = 1,IO%NPATCH
+      CALL  WRITE_FIELD_1D_PATCH(DUO%CSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+                                 NP%AL(JP)%NR_P,NDST%AL(JP)%XSFDST(:,JSV),ISIZE,S%XWORK_WR)
+    ENDDO    
+  END DO
+  !
+ENDIF
 !
 !
 ! Blowing snow variables

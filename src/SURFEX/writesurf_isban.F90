@@ -520,19 +520,16 @@ IF (IO%CRESPSL=='CNT') THEN
 ENDIF
 !
 !
-!UPG*PT
-! Je ne sais pas qui a codé cette ecriture mais chez moi ca plante. Pourtant XSFDSTM est bien calculé dans coupling_isban
-!IF (CHI%SVI%NDSTEQ > 0)THEN
-!  DO JSV = 1,NDSTMDE ! for all dust modes
-!    WRITE(YRECFM,'(A6,I3.3)')'F_DSTM',JSV
-!    YCOMMENT='X_Y_'//YRECFM//' (kg/m2)'
-!    DO JP = 1,IO%NPATCH
-!      CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
-!                      NP%AL(JP)%NR_P,NDST%AL(JP)%XSFDSTM(:,JSV),KI,S%XWORK_WR)    
-!    ENDDO     
-!  END DO
-!ENDIF
-!UPG*PT
+IF (CHI%SVI%NDSTEQ > 0)THEN
+  DO JSV = 1,NDSTMDE ! for all dust modes
+    WRITE(YRECFM,'(A6,I3.3)')'F_DSTM',JSV
+    YCOMMENT='X_Y_'//YRECFM//' (kg/m2)'
+    DO JP = 1,IO%NPATCH
+      CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+                      NP%AL(JP)%NR_P,NDST%AL(JP)%XSFDSTM(:,JSV),KI,S%XWORK_WR)    
+    ENDDO     
+  END DO
+ENDIF
 !
 !-------------------------------------------------------------------------------
 
