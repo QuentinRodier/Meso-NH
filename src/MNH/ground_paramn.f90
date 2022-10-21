@@ -114,6 +114,7 @@ END MODULE MODI_GROUND_PARAM_n
 !  P. Wautelet 09/02/2022: bugfix: add missing XCURRENT_LEI computation
 !  P. Wautelet 30/09/2022: bugfix: missing communications for SWDIFF, SWDIR and LEI
 !  P. Wautelet 30/09/2022: bugfix: use XUNDEF from SURFEX for surface variables computed by SURFEX
+!  P. Wautelet 21/10/2022: bugfix: communicate halo values between processes for OUT variables
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -352,6 +353,7 @@ TYPE(LIST_ll), POINTER            :: TZFIELDSURF_ll    ! list of fields to excha
 INTEGER                           :: IINFO_ll       ! return code of parallel routine
 !
 !
+CHARACTER(LEN=6) :: YJSV
 CHARACTER(LEN=6), DIMENSION(:), ALLOCATABLE :: YSV_SURF ! name of the scalar variables
                                                         ! sent to SURFEX
 !                                                        
@@ -745,6 +747,32 @@ END IF
 !
 PSFCO2(:,:) = ZSFCO2(:,:) / XRHODREF(:,:,IKB)
 !
+!  Communicate halo values
+!
+NULLIFY(TZFIELDSURF_ll)
+!The commented communications are done in PHYS_PARAM_n
+! CALL ADD2DFIELD_ll( TZFIELDSURF_ll,PSFTH,  'GROUND_PARAM_n::PSFTH'  )
+! CALL ADD2DFIELD_ll( TZFIELDSURF_ll,PSFRV,  'GROUND_PARAM_n::PSFRV'  )
+! DO JSV = 1, NSV
+!   WRITE( YJSV, '( I6.6 )' ) JSV
+!   CALL ADD2DFIELD_ll( TZFIELDSURF_ll,PSFSV(:,:,JSV), 'GROUND_PARAM_n::PSFSV'//YJSV )
+! END DO
+! CALL ADD2DFIELD_ll( TZFIELDSURF_ll,PSFCO2, 'GROUND_PARAM_n::PSFCO2' )
+! CALL ADD2DFIELD_ll( TZFIELDSURF_ll,PSFU,   'GROUND_PARAM_n::PSFU'   )
+! CALL ADD2DFIELD_ll( TZFIELDSURF_ll,PSFV,   'GROUND_PARAM_n::PSFV'   )
+DO JLAYER = 1, SIZE( PDIR_ALB, 3 )
+  WRITE( YJSV, '( I6.6 )' ) JSV
+  CALL ADD2DFIELD_ll( TZFIELDSURF_ll,PDIR_ALB(:,:,JLAYER), 'GROUND_PARAM_n::PDIR_ALB'//YJSV )
+  CALL ADD2DFIELD_ll( TZFIELDSURF_ll,PSCA_ALB(:,:,JLAYER), 'GROUND_PARAM_n::PSCA_ALB'//YJSV )
+END DO
+DO JLAYER = 1, SIZE( PEMIS, 3 )
+  WRITE( YJSV, '( I6.6 )' ) JSV
+  CALL ADD2DFIELD_ll( TZFIELDSURF_ll,PEMIS(:,:,JLAYER), 'GROUND_PARAM_n::PEMIS'//YJSV )
+END DO
+CALL ADD2DFIELD_ll( TZFIELDSURF_ll,PTSRAD, 'GROUND_PARAM_n::PTSRAD'  )
+
+CALL UPDATE_HALO_ll(TZFIELDSURF_ll,IINFO_ll)
+CALL CLEANLIST_ll(TZFIELDSURF_ll)
 !
 !*  Diagnostics
 !   -----------
