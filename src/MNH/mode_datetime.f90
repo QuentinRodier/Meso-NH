@@ -7,7 +7,7 @@
 !  P. Wautelet 22/02/2019: use MOD intrinsics with same kind for all arguments (to respect Fortran standard)
 !  P. Wautelet 19/04/2019: use modd_precision kinds
 !  P. Wautelet 20/07/2021: modify DATETIME_TIME2REFERENCE and DATETIME_DISTANCE to allow correct computation with 32-bit floats
-!  P. Wautelet 27/10/2022: add +, <= and > operators and improve older comparison subroutines (more robust but slower)
+!  P. Wautelet 27/10/2022: add +, -, <= and > operators and improve older comparison subroutines (more robust but slower)
 !-----------------------------------------------------------------
 MODULE MODE_DATETIME
 !
@@ -25,6 +25,7 @@ PUBLIC :: OPERATOR(<=)
 PUBLIC :: OPERATOR(>)
 PUBLIC :: OPERATOR(>=)
 PUBLIC :: OPERATOR(+)
+PUBLIC :: OPERATOR(-)
 !
 !Reference date (do not change it)
 !To work with DATETIME_TIME2REFERENCE, we assume the year is a multiple of 400 + 1 and the date is January 1st (and time=0.)
@@ -48,6 +49,10 @@ END INTERFACE
 !
 INTERFACE OPERATOR(+)
   MODULE PROCEDURE DATETIME_TIME_ADD
+END INTERFACE
+!
+INTERFACE OPERATOR(-)
+  MODULE PROCEDURE DATETIME_TIME_SUBSTRACT
 END INTERFACE
 !
 CONTAINS
@@ -404,5 +409,21 @@ TPOUT%XTIME = TPOUT%XTIME + PTIME
 CALL DATETIME_CORRECTDATE( TPOUT )
 
 END FUNCTION DATETIME_TIME_ADD
+
+
+FUNCTION DATETIME_TIME_SUBSTRACT( TPT1, TPT2 ) RESULT( PDIST )
+!
+!Compute distance (in seconds) between 2 dates
+!
+
+IMPLICIT NONE
+
+TYPE(DATE_TIME), INTENT(IN)  :: TPT1
+TYPE(DATE_TIME), INTENT(IN)  :: TPT2
+REAL                         :: PDIST
+
+CALL DATETIME_DISTANCE( TPT2, TPT1, PDIST )
+
+END FUNCTION  DATETIME_TIME_SUBSTRACT
 
 END MODULE MODE_DATETIME
