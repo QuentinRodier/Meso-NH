@@ -502,7 +502,7 @@ ELSE
     !
     PRSMLTG(:)  = XFSCVMG*MAX( 0.0,( -PRSMLTG(:) *             &
          PRST(:)*PRHODREF(:) *    &
-         ( X0DEPS       *PLBDAS(:)**XEX0DEPS +     &
+         ( X0DEPS       *PLBDAS(:)**(XBS+XEX0DEPS) +     &
          X1DEPS*PCJ(:)*(1+0.5*(XFVELOS/PLBDAS(:))**XALPHAS)**(XNUS+XEX1DEPS/XALPHAS)*PLBDAS(:)**(XBS+XEX1DEPS)) -   &
          ( PRS_TEND(:, IRCRIMS) + PRS_TEND(:, IRRACCS)) *       &
          ( PRHODREF(:)*XCL*(XTT-PT(:))) ) /    &
