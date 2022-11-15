@@ -343,7 +343,7 @@ export CC=gcc
 'Linux lxenm'*) #PC Linux ENM
                 export MNH_ARCH=`echo $ARCH | grep LX`
                 export     ARCH=${MNH_ARCH:-LXgfortran}
-                export  VER_MPI=${VER_MPI:-MPIVID}
+                export  VER_MPI=${VER_MPI:-MPIVIDE}
                 export OPTLEVEL=${OPTLEVEL:-DEBUG}
                 export MVWORK=${MVWORK:-NO}
                 export VER_CDF=${VER_CDF:-CDFAUTO}
