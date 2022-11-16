@@ -134,7 +134,7 @@ TYPE, EXTENDS( TSTATPROFDATA ) ::  TPROFILERDATA
   REAL, DIMENSION(:,:),   ALLOCATABLE :: XTKE       ! tke(n)
   REAL, DIMENSION(:,:),   ALLOCATABLE :: XTH        ! th(n)
   REAL, DIMENSION(:,:),   ALLOCATABLE :: XTHV       ! thv(n)
-  REAL, DIMENSION(:,:),   ALLOCATABLE :: XVISI      ! VISI(n)
+  REAL, DIMENSION(:,:),   ALLOCATABLE :: XVISIGUL   ! VISI GULTEPE(n)
   REAL, DIMENSION(:,:),   ALLOCATABLE :: XVISIKUN   ! VISI KUNKEL(n)
   REAL, DIMENSION(:,:),   ALLOCATABLE :: XCRARE     ! radar reflectivity (n)
   REAL, DIMENSION(:,:),   ALLOCATABLE :: XCRARE_ATT ! radar attenuated reflectivity (n)

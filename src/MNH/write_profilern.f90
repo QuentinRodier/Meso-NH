@@ -140,7 +140,9 @@ CALL PROFILER_ALLOCATE( TZPROFILER, SIZE( tprofilers_time%tpdates ) )
 IF ( ISNPROC > 1 ) THEN
   ISTORE = SIZE( TPROFILERS_TIME%TPDATES )
   IPACKSIZE = 6
-  IPACKSIZE = IPACKSIZE + ISTORE * IKU * ( 16 + NRR + NSV + NAER )
+  IPACKSIZE = IPACKSIZE + ISTORE * IKU * ( 14 + NRR + NSV + NAER )
+  IF ( CCLOUD == 'C2R2' .OR. CCLOUD == 'KHKO' )  IPACKSIZE = IPACKSIZE + ISTORE * IKU !VISIGUL
+  IF ( CCLOUD /= 'NONE' .AND. CCLOUD /= 'REVE' ) IPACKSIZE = IPACKSIZE + ISTORE * IKU !VISIKUN
   IF ( CTURB == 'TKEL') IPACKSIZE = IPACKSIZE + ISTORE * IKU !Tke term
   IF ( CCLOUD == 'ICE3' .OR. CCLOUD == 'ICE4' ) IPACKSIZE = IPACKSIZE + ISTORE * IKU  !CIZ term
   IPACKSIZE = IPACKSIZE + 4 * ISTORE
@@ -186,8 +188,12 @@ PROFILER: DO JS = 1, INUMPROF
       END IF
       ZPACK(IPOS:IPOS+ISTORE*IKU-1) = RESHAPE( TPROFILERS(IDX)%XTH(:,:),        [ISTORE*IKU] ) ; IPOS = IPOS + ISTORE * IKU
       ZPACK(IPOS:IPOS+ISTORE*IKU-1) = RESHAPE( TPROFILERS(IDX)%XTHV(:,:),       [ISTORE*IKU] ) ; IPOS = IPOS + ISTORE * IKU
-      ZPACK(IPOS:IPOS+ISTORE*IKU-1) = RESHAPE( TPROFILERS(IDX)%XVISI(:,:),      [ISTORE*IKU] ) ; IPOS = IPOS + ISTORE * IKU
-      ZPACK(IPOS:IPOS+ISTORE*IKU-1) = RESHAPE( TPROFILERS(IDX)%XVISIKUN(:,:),   [ISTORE*IKU] ) ; IPOS = IPOS + ISTORE * IKU
+      IF ( CCLOUD == 'C2R2' .OR. CCLOUD == 'KHKO' ) THEN
+        ZPACK(IPOS:IPOS+ISTORE*IKU-1) = RESHAPE( TPROFILERS(IDX)%XVISIGUL(:,:), [ISTORE*IKU] ) ; IPOS = IPOS + ISTORE * IKU
+      END IF
+      IF ( CCLOUD /= 'NONE' .AND. CCLOUD /= 'REVE' ) THEN
+        ZPACK(IPOS:IPOS+ISTORE*IKU-1) = RESHAPE( TPROFILERS(IDX)%XVISIKUN(:,:), [ISTORE*IKU] ) ; IPOS = IPOS + ISTORE * IKU
+      END IF
       ZPACK(IPOS:IPOS+ISTORE*IKU-1) = RESHAPE( TPROFILERS(IDX)%XCRARE(:,:),     [ISTORE*IKU] ) ; IPOS = IPOS + ISTORE * IKU
       ZPACK(IPOS:IPOS+ISTORE*IKU-1) = RESHAPE( TPROFILERS(IDX)%XCRARE_ATT(:,:), [ISTORE*IKU] ) ; IPOS = IPOS + ISTORE * IKU
       IF ( CCLOUD == 'ICE3' .OR. CCLOUD == 'ICE4' ) THEN
@@ -264,8 +270,12 @@ PROFILER: DO JS = 1, INUMPROF
       END IF
       TZPROFILER%XTH(:,:)        = RESHAPE( ZPACK(IPOS:IPOS+ISTORE*IKU-1), [ ISTORE, IKU ] ) ; IPOS = IPOS + ISTORE * IKU
       TZPROFILER%XTHV(:,:)       = RESHAPE( ZPACK(IPOS:IPOS+ISTORE*IKU-1), [ ISTORE, IKU ] ) ; IPOS = IPOS + ISTORE * IKU
-      TZPROFILER%XVISI(:,:)      = RESHAPE( ZPACK(IPOS:IPOS+ISTORE*IKU-1), [ ISTORE, IKU ] ) ; IPOS = IPOS + ISTORE * IKU
-      TZPROFILER%XVISIKUN(:,:)   = RESHAPE( ZPACK(IPOS:IPOS+ISTORE*IKU-1), [ ISTORE, IKU ] ) ; IPOS = IPOS + ISTORE * IKU
+      IF ( CCLOUD == 'C2R2' .OR. CCLOUD == 'KHKO' ) THEN
+        TZPROFILER%XVISIGUL(:,:) = RESHAPE( ZPACK(IPOS:IPOS+ISTORE*IKU-1), [ ISTORE, IKU ] ) ; IPOS = IPOS + ISTORE * IKU
+      END IF
+      IF ( CCLOUD /= 'NONE' .AND. CCLOUD /= 'REVE' ) THEN
+        TZPROFILER%XVISIKUN(:,:) = RESHAPE( ZPACK(IPOS:IPOS+ISTORE*IKU-1), [ ISTORE, IKU ] ) ; IPOS = IPOS + ISTORE * IKU
+      END IF
       TZPROFILER%XCRARE(:,:)     = RESHAPE( ZPACK(IPOS:IPOS+ISTORE*IKU-1), [ ISTORE, IKU ] ) ; IPOS = IPOS + ISTORE * IKU
       TZPROFILER%XCRARE_ATT(:,:) = RESHAPE( ZPACK(IPOS:IPOS+ISTORE*IKU-1), [ ISTORE, IKU ] ) ; IPOS = IPOS + ISTORE * IKU
       IF ( CCLOUD == 'ICE3' .OR. CCLOUD == 'ICE4' ) THEN
@@ -393,8 +403,10 @@ jproc = 0
 
 call Add_profile( 'Th',       'Potential temperature',         'K',      tpprofiler%xth        )
 call Add_profile( 'Thv',      'Virtual Potential temperature', 'K',      tpprofiler%xthv       )
-call Add_profile( 'VISI',     'Visibility',                    'km',     tpprofiler%xvisi      )
-call Add_profile( 'VISIKUN',  'Visibility Kunkel',             'km',     tpprofiler%xvisikun   )
+if ( ccloud == 'C2R2' .or. ccloud == 'KHKO' ) &
+  call Add_profile( 'VISIGUL', 'Visibility Gultepe',           'km',     tpprofiler%xvisigul   )
+if ( ccloud /= 'NONE' .and. ccloud /= 'REVE' ) &
+  call Add_profile( 'VISIKUN', 'Visibility Kunkel',            'km',     tpprofiler%xvisikun   )
 call Add_profile( 'RARE',     'Radar reflectivity',            'dBZ',    tpprofiler%xcrare     )
 call Add_profile( 'RAREatt',  'Radar attenuated reflectivity', 'dBZ',    tpprofiler%xcrare_att )
 call Add_profile( 'P',        'Pressure',                      'Pa',     tpprofiler%xp         )
