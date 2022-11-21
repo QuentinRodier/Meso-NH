@@ -1894,7 +1894,7 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
                           LSUBG_COND,LSIGMAS,CSUBG_AUCV,XTSTEP,                &
                           XZZ, XRHODJ, XRHODREF, XEXNREF,                      &
                           ZPABST, XTHT,XRT,XSIGS,VSIGQSAT,XMFCONV,XTHM,XRCM,   &
-                          XPABSM, XWT_ACT_NUC,XDTHRAD, XRTHS, XRRS,            &
+                          XPABST, XWT_ACT_NUC,XDTHRAD, XRTHS, XRRS,            &
                           XSVT, XRSVS,                                         &
                           XSRCT, XCLDFR,XICEFR, XCIT,                          &
                           LSEDIC,KACTIT, KSEDC, KSEDI, KRAIN, KWARM, KHHONI,   &
@@ -1914,7 +1914,7 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
                           LSUBG_COND,LSIGMAS,CSUBG_AUCV,                       &
                           XTSTEP,XZZ, XRHODJ, XRHODREF, XEXNREF,               &
                           ZPABST, XTHT,XRT,XSIGS,VSIGQSAT,XMFCONV,XTHM,XRCM,   &
-                          XPABSM, XWT_ACT_NUC,XDTHRAD, XRTHS, XRRS,            &
+                          XPABST, XWT_ACT_NUC,XDTHRAD, XRTHS, XRRS,            &
                           XSVT, XRSVS,                                         &
                           XSRCT, XCLDFR, XICEFR, XCIT,                         &
                           LSEDIC,KACTIT, KSEDC, KSEDI, KRAIN, KWARM, KHHONI,   &

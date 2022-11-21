@@ -990,24 +990,36 @@ IF (NSV >=1) THEN
     IF (JSV .EQ. NSV_LIMA_NI) THEN
       TZFIELD%CMNHNAME   = TRIM(CLIMA_COLD_NAMES(1))//'T'
     END IF
+! Ns                                                                                
+    IF (JSV .EQ. NSV_LIMA_NS) THEN                                                  
+      TZFIELD%CMNHNAME   = TRIM(CLIMA_COLD_NAMES(2))//'T'                           
+    END IF
+! Ng
+    IF (JSV .EQ. NSV_LIMA_NG) THEN                                                  
+      TZFIELD%CMNHNAME   = TRIM(CLIMA_COLD_NAMES(3))//'T'                           
+    END IF                                                                          
+! Nh
+    IF (JSV .EQ. NSV_LIMA_NH) THEN                                                  
+      TZFIELD%CMNHNAME   = TRIM(CLIMA_COLD_NAMES(4))//'T'                           
+    END IF 
 ! N IFN free
     IF (JSV .GE. NSV_LIMA_IFN_FREE .AND. JSV .LT. NSV_LIMA_IFN_NUCL) THEN
       WRITE(INDICE,'(I2.2)')(JSV - NSV_LIMA_IFN_FREE + 1)
-      TZFIELD%CMNHNAME   = TRIM(CLIMA_COLD_NAMES(2))//INDICE//'T'
+      TZFIELD%CMNHNAME   = TRIM(CLIMA_COLD_NAMES(5))//INDICE//'T'
     END IF
 ! N IFN nucl
     IF (JSV .GE. NSV_LIMA_IFN_NUCL .AND. JSV .LT. NSV_LIMA_IFN_NUCL + NMOD_IFN) THEN
       WRITE(INDICE,'(I2.2)')(JSV - NSV_LIMA_IFN_NUCL + 1)
-      TZFIELD%CMNHNAME   = TRIM(CLIMA_COLD_NAMES(3))//INDICE//'T'
+      TZFIELD%CMNHNAME   = TRIM(CLIMA_COLD_NAMES(6))//INDICE//'T'
     END IF
 ! N IMM nucl
     IF (JSV .GE. NSV_LIMA_IMM_NUCL .AND. JSV .LT. NSV_LIMA_IMM_NUCL + NMOD_IMM) THEN
       WRITE(INDICE,'(I2.2)')(NINDICE_CCN_IMM(JSV - NSV_LIMA_IMM_NUCL + 1))
-      TZFIELD%CMNHNAME   = TRIM(CLIMA_COLD_NAMES(4))//INDICE//'T'
+      TZFIELD%CMNHNAME   = TRIM(CLIMA_COLD_NAMES(7))//INDICE//'T'
     END IF
 ! Hom. freez. of CCN
     IF (JSV .EQ. NSV_LIMA_HOM_HAZE) THEN
-      TZFIELD%CMNHNAME   = TRIM(CLIMA_COLD_NAMES(5))//'T'
+      TZFIELD%CMNHNAME   = TRIM(CLIMA_COLD_NAMES(8))//'T'
     END IF
     !
 ! Supersaturation     

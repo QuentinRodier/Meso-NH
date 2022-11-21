@@ -10,7 +10,7 @@
 INTERFACE
       SUBROUTINE LIMA_WARM_NUCL( OACTIT, PTSTEP, KMI, TPFILE,               &
                                  PRHODREF, PEXNREF, PPABST, PT, PTM, PW_NU, &
-                                 PRCM, PRVT, PRCT, PRRT,                    &
+                                 PRVT, PRCT, PRRT,                          &
                                  PTHS, PRVS, PRCS, PCCS, PNFS, PNAS         )
 !
 USE MODD_IO,   ONLY: TFILEDATA
@@ -32,8 +32,6 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTM        ! Temperature at time t-dt
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PW_NU      ! updraft velocity used for
                                                       ! the nucleation param.
 !
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRCM       ! Cloud water m.r. at t-dt
-!   
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRVT       ! Water vapor m.r. at t 
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRCT       ! Cloud water m.r. at t 
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRRT       ! Rain water m.r. at t 
@@ -52,7 +50,7 @@ END MODULE MODI_LIMA_WARM_NUCL
 !     #######################################################################
       SUBROUTINE LIMA_WARM_NUCL( OACTIT, PTSTEP, KMI, TPFILE,               &
                                  PRHODREF, PEXNREF, PPABST, PT, PTM, PW_NU, &
-                                 PRCM, PRVT, PRCT, PRRT,                    &
+                                 PRVT, PRCT, PRRT,                          &
                                  PTHS, PRVS, PRCS, PCCS, PNFS, PNAS         )
 !     #######################################################################
 !
@@ -142,8 +140,6 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTM        ! Temperature at time t-dt
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PW_NU      ! updraft velocity used for
                                                       ! the nucleation param.
-!
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRCM       ! Cloud water m.r. at t-dt
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRVT       ! Water vapor m.r. at t 
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRCT       ! Cloud water m.r. at t 

@@ -29,10 +29,10 @@ IMPLICIT NONE
 !             ----------------------
 !
 REAL,SAVE ::  XLBC, XLBEXC,          & ! shape parameters of the cloud droplets
-              XLBR, XLBEXR             ! shape parameters of the raindrops
+              XLBR, XLBEXR, XNR        ! shape parameters of the raindrops
 !
 REAL,SAVE :: XAR,XBR,XCR,XDR,XF0R,XF1R,     & ! Raindrop       charact.
-                                  XCCR,     & !For diagnostics
+                             XCCR,XCXR,     & !For diagnostics
              XAC,XBC,XCC,XDC,XF0C,XF2C,XC1C   ! Cloud droplet  charact.
 !
 !
@@ -96,7 +96,8 @@ REAL,SAVE :: XAUTO1, XAUTO2, XCAUTR,           & ! Constants for cloud droplet
 REAL,SAVE :: XACCR1, XACCR2, XACCR3,           & ! Constants for the accretion
 	     XACCR4, XACCR5, XACCR6,           & ! process
              XACCR_CLARGE1, XACCR_CLARGE2, XACCR_RLARGE1, XACCR_RLARGE2, &
-             XACCR_CSMALL1, XACCR_CSMALL2, XACCR_RSMALL1, XACCR_RSMALL2
+             XACCR_CSMALL1, XACCR_CSMALL2, XACCR_RSMALL1, XACCR_RSMALL2, &
+             XFCACCR, XEXCACCR
 !
 REAL,SAVE :: XSCBU2, XSCBU3,                   & ! Constants for the raindrop
              XSCBU_EFF1, XSCBU_EFF2, XSCBUEXP1   ! breakup-selfcollection: SCBU

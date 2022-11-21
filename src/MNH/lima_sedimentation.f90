@@ -72,11 +72,12 @@ END MODULE MODI_LIMA_SEDIMENTATION
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_CST,              ONLY: XRHOLW, XCL, XCI
+USE MODD_CST,              ONLY: XRHOLW, XCL, XCI, XPI
 USE MODD_PARAMETERS,       ONLY: JPHEXT, JPVEXT
 USE MODD_PARAM_LIMA,       ONLY: XCEXVT, XRTMIN, XCTMIN, NSPLITSED,           &
                                  XLB, XLBEX, XD, XFSEDR, XFSEDC,              &
-                                 XALPHAC, XNUC, XALPHAS, XNUS, LSNOW_T
+                                 XALPHAC, XNUC, XALPHAS, XNUS, LSNOW_T,       &
+                                 NMOM_S
 USE MODD_PARAM_LIMA_COLD,  ONLY: XLBEXI, XLBI, XDI, XLBDAS_MAX, XBS, XEXSEDS, &
                                  XLBDAS_MIN, XTRANS_MP_GAMMAS, XFVELOS
 
@@ -133,9 +134,12 @@ INTEGER , DIMENSION(SIZE(PRHODREF)) :: I1,I2,I3 ! Indexes for PACK replacement
 !
 REAL    :: ZTSPLITG                       ! Small time step for rain sedimentation
 REAL    :: ZC                             ! Cpl or Cpi
+INTEGER :: ZMOMENTS
 !
 !
 !-------------------------------------------------------------------------------
+!
+ZMOMENTS=KMOMENTS
 !
 ! Time splitting
 !
@@ -153,6 +157,12 @@ END DO
 IF (HPHASE=='L') ZC=XCL
 IF (HPHASE=='I') ZC=XCI
 !
+IF (KID==4 .AND. ZMOMENTS==1) THEN
+   ZMOMENTS=2
+   WHERE(PRS(:,:,:)>0) PCS(:,:,:)=1/(4*XPI*900.) * PRS(:,:,:) * &
+        MAX(0.05E6,-0.15319E6-0.021454E6*ALOG(PRHODREF(:,:,:)*PRS(:,:,:)))**3
+END IF
+!
 ! ################################
 ! Compute the sedimentation fluxes
 ! ################################
@@ -161,7 +171,7 @@ DO JN = 1 ,  NSPLITSED(KID)
   ! Computation only where enough ice, snow, graupel or hail
    GSEDIM(:,:,:) = .FALSE.
    GSEDIM(KIB:KIE,KJB:KJE,KKTB:KKTE) = PRS(KIB:KIE,KJB:KJE,KKTB:KKTE)>XRTMIN(KID)
-   IF (KMOMENTS==2)  GSEDIM(:,:,:) = GSEDIM(:,:,:) .AND. PCS(:,:,:)>XCTMIN(KID)
+   IF (ZMOMENTS==2)  GSEDIM(:,:,:) = GSEDIM(:,:,:) .AND. PCS(:,:,:)>XCTMIN(KID)
    ISEDIM = COUNTJV( GSEDIM(:,:,:),I1(:),I2(:),I3(:))
 !
    IF( ISEDIM >= 1 ) THEN
@@ -182,10 +192,10 @@ DO JN = 1 ,  NSPLITSED(KID)
          ZPABST(JL) = PPABST(I1(JL),I2(JL),I3(JL))
          ZT(JL) = PT(I1(JL),I2(JL),I3(JL))
          ZRS(JL) = PRS(I1(JL),I2(JL),I3(JL))
-         IF (KMOMENTS==2) ZCS(JL) = PCS(I1(JL),I2(JL),I3(JL))
+         IF (ZMOMENTS==2) ZCS(JL) = PCS(I1(JL),I2(JL),I3(JL))
       END DO
 !
-      IF (KID == 5 .AND. LSNOW_T) THEN
+      IF (KID == 5 .AND. NMOM_S.EQ.1 .AND. LSNOW_T) THEN
          ZLBDA(:) = 1.E10
          WHERE(ZT(:)>263.15 .AND. ZRS(:)>XRTMIN(5))
             ZLBDA(:) = MAX(MIN(XLBDAS_MAX, 10**(14.554-0.0423*ZT(:))),XLBDAS_MIN)
@@ -197,9 +207,11 @@ DO JN = 1 ,  NSPLITSED(KID)
          ZZW(:) = XFSEDR(KID) * ZRHODREF(:)**(1.-XCEXVT)*ZRS(:)* &
               (1 + (XFVELOS/ZLBDA(:))**XALPHAS)**(-XNUS-(XD(KID)+XBS)/XALPHAS) * ZLBDA(:)**(-XD(KID))
       ELSE
-         IF (KMOMENTS==1) ZLBDA(:) = XLB(KID) * ( ZRHODREF(:) * ZRS(:) )**XLBEX(KID)
-         IF (KMOMENTS==2) ZLBDA(:) = ( XLB(KID)*ZCS(:) / ZRS(:) )**XLBEX(KID)
+         IF (ZMOMENTS==1) ZLBDA(:) = XLB(KID) * ( ZRHODREF(:) * ZRS(:) )**XLBEX(KID)
+         IF (ZMOMENTS==2) ZLBDA(:) = ( XLB(KID)*ZCS(:) / ZRS(:) )**XLBEX(KID)
          ZZY(:) = ZRHODREF(:)**(-XCEXVT) * ZLBDA(:)**(-XD(KID))
+         IF (LSNOW_T .AND. KID==5) &
+              ZZY(:) = ZZY(:) * (1 + (XFVELOS/ZLBDA(:))**XALPHAS)**(-XNUS-(XD(KID)+XBS)/XALPHAS)
          ZZW(:) = XFSEDR(KID) * ZRS(:) * ZZY(:) * ZRHODREF(:)
       END IF ! Wurtz
 !

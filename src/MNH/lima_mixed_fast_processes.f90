@@ -8,16 +8,16 @@
 !      #####################################
 !
 INTERFACE
-      SUBROUTINE LIMA_MIXED_FAST_PROCESSES (PRHODREF, PZT, PPRES, PTSTEP,           &
-                                            PLSFACT, PLVFACT, PKA, PDV, PCJ,        &
-                                            PRVT1D, PRCT1D, PRRT1D, PRIT1D, PRST1D, &
-                                            PRGT1D, PRTH1D, PCCT1D, PCRT1D, PCIT1D, &
-                                            PRCS1D, PRRS1D, PRIS1D, PRSS1D, PRGS1D, &
-                                            PRHS1D, PTHS1D, PCCS1D, PCRS1D, PCIS1D, &
-                                            PLBDAC, PLBDAR, PLBDAS, PLBDAG, PLBDAH, &
-                                            PRHODJ1D, GMICRO, PRHODJ, KMI, PTHS,    &
-                                            PRCS, PRRS, PRIS, PRSS, PRGS, PRHS,     &
-                                            PCCS, PCRS, PCIS                        )
+      SUBROUTINE LIMA_MIXED_FAST_PROCESSES (PRHODREF, PZT, PPRES, PTSTEP,                   &
+                                            PLSFACT, PLVFACT, PKA, PDV, PCJ,                &
+                                            PRVT1D, PRCT1D, PRRT1D, PRIT1D, PRST1D, PRGT1D, &
+                                            PRHT1D, PCCT1D, PCRT1D, PCIT1D, PCST1D, PCGT1D, PCHT1D, &
+                                            PRCS1D, PRRS1D, PRIS1D, PRSS1D, PRGS1D, PRHS1D, &
+                                            PTHS1D, PCCS1D, PCRS1D, PCIS1D, PCSS1D, PCGS1D, PCHS1D, &
+                                            PLBDAC, PLBDAR, PLBDAI, PLBDAS, PLBDAG, PLBDAH, &
+                                            PRHODJ1D, GMICRO, PRHODJ, KMI, PTHS,            &
+                                            PRCS, PRRS, PRIS, PRSS, PRGS, PRHS,             &
+                                            PCCS, PCRS, PCIS, PCSS, PCGS, PCHS              )
 !
 REAL, DIMENSION(:),   INTENT(IN)    :: PRHODREF  ! RHO Dry REFerence
 REAL, DIMENSION(:),   INTENT(IN)    :: PZT       ! Temperature
@@ -36,11 +36,14 @@ REAL, DIMENSION(:),   INTENT(IN)    :: PRRT1D    ! Rain water m.r. at t
 REAL, DIMENSION(:),   INTENT(IN)    :: PRIT1D    ! Pristine ice m.r. at t
 REAL, DIMENSION(:),   INTENT(IN)    :: PRST1D    ! Snow/aggregate m.r. at t
 REAL, DIMENSION(:),   INTENT(IN)    :: PRGT1D    ! Graupel m.r. at t
-REAL, DIMENSION(:),   INTENT(IN)    :: PRTH1D    ! Hail m.r. at t
+REAL, DIMENSION(:),   INTENT(IN)    :: PRHT1D    ! Hail m.r. at t
 !
 REAL, DIMENSION(:),   INTENT(IN)    :: PCCT1D    ! Cloud water conc. at t
 REAL, DIMENSION(:),   INTENT(IN)    :: PCRT1D    ! Rain water conc. at t
 REAL, DIMENSION(:),   INTENT(IN)    :: PCIT1D    ! Pristine ice conc. at t
+REAL, DIMENSION(:),   INTENT(IN)    :: PCST1D    ! Snow/aggregate conc. at t
+REAL, DIMENSION(:),   INTENT(IN)    :: PCGT1D    ! Graupel conc. at t
+REAL, DIMENSION(:),   INTENT(IN)    :: PCHT1D    ! Hail conc. at t
 !
 REAL, DIMENSION(:),   INTENT(INOUT) :: PRCS1D    ! Cloud water m.r. source
 REAL, DIMENSION(:),   INTENT(INOUT) :: PRRS1D    ! Rain water m.r. source
@@ -54,9 +57,13 @@ REAL, DIMENSION(:),   INTENT(INOUT) :: PTHS1D    ! Theta source
 REAL, DIMENSION(:),   INTENT(INOUT) :: PCCS1D    ! Cloud water conc. source
 REAL, DIMENSION(:),   INTENT(INOUT) :: PCRS1D    ! Rain water conc. source
 REAL, DIMENSION(:),   INTENT(INOUT) :: PCIS1D    ! Pristine ice conc. source
+REAL, DIMENSION(:),   INTENT(INOUT) :: PCSS1D    ! Snow/aggregate conc. source
+REAL, DIMENSION(:),   INTENT(INOUT) :: PCGS1D    ! Graupel conc. source
+REAL, DIMENSION(:),   INTENT(INOUT) :: PCHS1D    ! Hail conc. source
 !
 REAL, DIMENSION(:),   INTENT(IN)    :: PLBDAC  ! Slope param of the cloud droplet distr.
 REAL, DIMENSION(:),   INTENT(IN)    :: PLBDAR  ! Slope param of the raindrop  distr
+REAL, DIMENSION(:),   INTENT(IN)    :: PLBDAI  ! Slope param of the ice distr.
 REAL, DIMENSION(:),   INTENT(IN)    :: PLBDAS  ! Slope param of the aggregate distr.
 REAL, DIMENSION(:),   INTENT(IN)    :: PLBDAG  ! Slope param of the graupel distr.
 REAL, DIMENSION(:),   INTENT(IN)    :: PLBDAH  ! Slope param of the hail distr.
@@ -76,22 +83,25 @@ REAL,    DIMENSION(:,:,:), INTENT(IN) :: PRHS
 REAL,    DIMENSION(:,:,:), INTENT(IN) :: PCCS
 REAL,    DIMENSION(:,:,:), INTENT(IN) :: PCRS
 REAL,    DIMENSION(:,:,:), INTENT(IN) :: PCIS
+REAL,    DIMENSION(:,:,:), INTENT(IN) :: PCSS 
+REAL,    DIMENSION(:,:,:), INTENT(IN) :: PCGS 
+REAL,    DIMENSION(:,:,:), INTENT(IN) :: PCHS
 !
 END SUBROUTINE LIMA_MIXED_FAST_PROCESSES
 END INTERFACE
 END MODULE MODI_LIMA_MIXED_FAST_PROCESSES
 !
 !     ###############################################################################
-      SUBROUTINE LIMA_MIXED_FAST_PROCESSES (PRHODREF, PZT, PPRES, PTSTEP,           &
-                                            PLSFACT, PLVFACT, PKA, PDV, PCJ,        &
-                                            PRVT1D, PRCT1D, PRRT1D, PRIT1D, PRST1D, &
-                                            PRGT1D, PRTH1D, PCCT1D, PCRT1D, PCIT1D, &
-                                            PRCS1D, PRRS1D, PRIS1D, PRSS1D, PRGS1D, &
-                                            PRHS1D, PTHS1D, PCCS1D, PCRS1D, PCIS1D, &
-                                            PLBDAC, PLBDAR, PLBDAS, PLBDAG, PLBDAH, &
-                                            PRHODJ1D, GMICRO, PRHODJ, KMI, PTHS,    &
-                                            PRCS, PRRS, PRIS, PRSS, PRGS, PRHS,     &
-                                            PCCS, PCRS, PCIS                        )
+      SUBROUTINE LIMA_MIXED_FAST_PROCESSES (PRHODREF, PZT, PPRES, PTSTEP,                   &
+                                            PLSFACT, PLVFACT, PKA, PDV, PCJ,                &
+                                            PRVT1D, PRCT1D, PRRT1D, PRIT1D, PRST1D, PRGT1D, &
+                                            PRHT1D, PCCT1D, PCRT1D, PCIT1D, PCST1D, PCGT1D, PCHT1D, &
+                                            PRCS1D, PRRS1D, PRIS1D, PRSS1D, PRGS1D, PRHS1D, &
+                                            PTHS1D, PCCS1D, PCRS1D, PCIS1D, PCSS1D, PCGS1D, PCHS1D, &
+                                            PLBDAC, PLBDAR, PLBDAI, PLBDAS, PLBDAG, PLBDAH, &
+                                            PRHODJ1D, GMICRO, PRHODJ, KMI, PTHS,            &
+                                            PRCS, PRRS, PRIS, PRSS, PRGS, PRHS,             &
+                                            PCCS, PCRS, PCIS, PCSS, PCGS, PCHS              )
 !     ###############################################################################
 !
 !!
@@ -146,6 +156,7 @@ END MODULE MODI_LIMA_MIXED_FAST_PROCESSES
 !                          - change the name of some arguments to match the DOCTOR norm
 !                          - change conditions for HMG to occur
 !  J. Wurtz       03/2022: new snow characteristics
+!  M. Taufour     07/2022: add concentration for snow, graupel, hail
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -184,12 +195,15 @@ REAL, DIMENSION(:),   INTENT(IN)    :: PRCT1D    ! Cloud water m.r. at t
 REAL, DIMENSION(:),   INTENT(IN)    :: PRRT1D    ! Rain water m.r. at t
 REAL, DIMENSION(:),   INTENT(IN)    :: PRIT1D    ! Pristine ice m.r. at t
 REAL, DIMENSION(:),   INTENT(IN)    :: PRST1D    ! Snow/aggregate m.r. at t
-REAL, DIMENSION(:),   INTENT(IN)    :: PRGT1D    ! Graupel/hail m.r. at t
-REAL, DIMENSION(:),   INTENT(IN)    :: PRTH1D    ! Hail m.r. at t
+REAL, DIMENSION(:),   INTENT(IN)    :: PRGT1D    ! Graupel m.r. at t
+REAL, DIMENSION(:),   INTENT(IN)    :: PRHT1D    ! Hail m.r. at t
 !
 REAL, DIMENSION(:),   INTENT(IN)    :: PCCT1D    ! Cloud water conc. at t
 REAL, DIMENSION(:),   INTENT(IN)    :: PCRT1D    ! Rain water conc. at t
 REAL, DIMENSION(:),   INTENT(IN)    :: PCIT1D    ! Pristine ice conc. at t
+REAL, DIMENSION(:),   INTENT(IN)    :: PCST1D    ! Snow/aggregate conc. at t
+REAL, DIMENSION(:),   INTENT(IN)    :: PCGT1D    ! Graupel conc. at t
+REAL, DIMENSION(:),   INTENT(IN)    :: PCHT1D    ! Hail conc. at t
 !
 REAL, DIMENSION(:),   INTENT(INOUT) :: PRCS1D    ! Cloud water m.r. source
 REAL, DIMENSION(:),   INTENT(INOUT) :: PRRS1D    ! Rain water m.r. source
@@ -203,9 +217,13 @@ REAL, DIMENSION(:),   INTENT(INOUT) :: PTHS1D    ! Theta source
 REAL, DIMENSION(:),   INTENT(INOUT) :: PCCS1D    ! Cloud water conc. source
 REAL, DIMENSION(:),   INTENT(INOUT) :: PCRS1D    ! Rain water conc. source
 REAL, DIMENSION(:),   INTENT(INOUT) :: PCIS1D    ! Pristine ice conc. source
+REAL, DIMENSION(:),   INTENT(INOUT) :: PCSS1D    ! Snow/aggregate conc. source
+REAL, DIMENSION(:),   INTENT(INOUT) :: PCGS1D    ! Graupel conc. source
+REAL, DIMENSION(:),   INTENT(INOUT) :: PCHS1D    ! Hail conc. source
 !
 REAL, DIMENSION(:),   INTENT(IN)    :: PLBDAC  ! Slope param of the cloud droplet distr.
 REAL, DIMENSION(:),   INTENT(IN)    :: PLBDAR  ! Slope param of the raindrop  distr
+REAL, DIMENSION(:),   INTENT(IN)    :: PLBDAI  ! Slope param of the ice distr.
 REAL, DIMENSION(:),   INTENT(IN)    :: PLBDAS  ! Slope param of the aggregate distr.
 REAL, DIMENSION(:),   INTENT(IN)    :: PLBDAG  ! Slope param of the graupel distr.
 REAL, DIMENSION(:),   INTENT(IN)    :: PLBDAH  ! Slope param of the hail distr.
@@ -214,7 +232,7 @@ REAL, DIMENSION(:),   INTENT(IN)    :: PLBDAH  ! Slope param of the hail distr.
 REAL,    DIMENSION(:),     INTENT(IN) :: PRHODJ1D
 LOGICAL, DIMENSION(:,:,:), INTENT(IN) :: GMICRO 
 REAL,    DIMENSION(:,:,:), INTENT(IN) :: PRHODJ
-INTEGER,                   INTENT(IN) :: KMI
+INTEGER,                   INTENT(IN) :: KMI 
 REAL,    DIMENSION(:,:,:), INTENT(IN) :: PTHS
 REAL,    DIMENSION(:,:,:), INTENT(IN) :: PRCS
 REAL,    DIMENSION(:,:,:), INTENT(IN) :: PRRS
@@ -225,7 +243,9 @@ REAL,    DIMENSION(:,:,:), INTENT(IN) :: PRHS
 REAL,    DIMENSION(:,:,:), INTENT(IN) :: PCCS
 REAL,    DIMENSION(:,:,:), INTENT(IN) :: PCRS
 REAL,    DIMENSION(:,:,:), INTENT(IN) :: PCIS
-
+REAL,    DIMENSION(:,:,:), INTENT(IN) :: PCSS 
+REAL,    DIMENSION(:,:,:), INTENT(IN) :: PCGS 
+REAL,    DIMENSION(:,:,:), INTENT(IN) :: PCHS
 !
 !*       0.2   Declarations of local variables :
 !
@@ -234,9 +254,10 @@ INTEGER :: IGRIM, IGACC, IGDRY, IGWET, IHAIL
 INTEGER :: JJ
 INTEGER, DIMENSION(:), ALLOCATABLE :: IVEC1,IVEC2        ! Vectors of indices
 REAL,    DIMENSION(:), ALLOCATABLE :: ZVEC1,ZVEC2, ZVEC3 ! Work vectors
-REAL,    DIMENSION(SIZE(PZT))  :: ZZW, ZZX      
-REAL,    DIMENSION(SIZE(PZT))  :: ZRDRYG, ZRWETG   
-REAL,    DIMENSION(SIZE(PZT),7)  :: ZZW1 
+REAL,    DIMENSION(SIZE(PZT))  :: ZZW, ZZX, ZZNW
+REAL,    DIMENSION(SIZE(PRIT1D)) :: ZZDI, ZZDC
+REAL,    DIMENSION(SIZE(PZT))  :: ZRDRYG, ZRWETG, ZNWETG
+REAL,    DIMENSION(SIZE(PZT),7)  :: ZZW1, ZZNW1 
 REAL :: NHAIL
 REAL :: ZTHRH, ZTHRC
 !
@@ -251,7 +272,7 @@ INTEGER, PARAMETER                 :: I_SEED_PARAM = 26032012
 INTEGER, DIMENSION(:), ALLOCATABLE :: I_SEED
 INTEGER                            :: NI_SEED
 !
-REAL,    DIMENSION(:), ALLOCATABLE :: ZVEC1_S, ZVEC1_S1, ZVEC1_S2,  & ! Work vectors
+REAL,    DIMENSION(:), ALLOCATABLE :: ZVEC1_S, ZVEC1_SW, ZVEC1_S1, ZVEC1_S2,  & ! Work vectors
                                       ZVEC1_S3, ZVEC1_S4,           &
                                       ZVEC1_S11, ZVEC1_S12,         & ! for snow
                                       ZVEC1_S21, ZVEC1_S22,         &
@@ -282,9 +303,13 @@ REAL,    DIMENSION(:), ALLOCATABLE :: ZNI_RDSF,ZRI_RDSF  ! RDSF rates
 REAL,    DIMENSION(:),   ALLOCATABLE :: ZAUX     ! used to distribute
 REAL,    DIMENSION(:,:), ALLOCATABLE :: ZFACT    ! the total concentration in each shape
 REAL,    DIMENSION(:),   ALLOCATABLE :: ZONEOVER_VAR ! for optimization
+LOGICAL :: M2_ICE
 !
 !
 !-------------------------------------------------------------------------------
+!
+M2_ICE = NMOM_S.GE.2 .AND. NMOM_G.GE.2
+IF (LHAIL) M2_ICE = M2_ICE .AND. NMOM_H.GE.2
 !
 !                         #################
 !                         FAST RS PROCESSES
@@ -299,6 +324,7 @@ SNOW: IF (LSNOW) THEN
 ZZW1(:,:) = 0.0
 !
 GRIM(:) = (PRCT1D(:)>XRTMIN(2)) .AND. (PRST1D(:)>XRTMIN(5)) .AND. (PRCS1D(:)>XRTMIN(2)/PTSTEP) .AND. (PZT(:)<XTT)
+IF (NMOM_S.GE.2) GRIM(:) = GRIM(:) .AND. (PCST1D(:)>XCTMIN(5))
 IGRIM = COUNT( GRIM(:) )
 !
 IF( IGRIM>0 ) THEN
@@ -313,6 +339,10 @@ IF( IGRIM>0 ) THEN
                                             Unpack( prgs1d(:), mask = gmicro(:, :, :), field = prgs(:, :, :) ) * prhodj(:, :, :) )
     if ( lbudget_sv ) call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'RIM', &
                                             Unpack( pccs1d(:), mask = gmicro(:, :, :), field = pccs(:, :, :) ) * prhodj(:, :, :) )
+    if ( lbudget_sv .and. NMOM_S.GE.2 ) call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ns), 'RIM', &
+                                            Unpack( pcss1d(:), mask = gmicro(:, :, :), field = pcss(:, :, :) ) * prhodj(:, :, :) )
+    if ( lbudget_sv .and. NMOM_G.GE.2 ) call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ng), 'RIM', &
+                                            Unpack( pcgs1d(:), mask = gmicro(:, :, :), field = pcgs(:, :, :) ) * prhodj(:, :, :) )
   end if
 !
 !        1.1.0  allocations
@@ -345,16 +375,16 @@ IF( IGRIM>0 ) THEN
 !        1.1.4  riming of the small sized aggregates
 !
   WHERE ( GRIM(:) )
-    ZZW1(:,1) = MIN( PRCS1D(:),                              &
-                 XCRIMSS * ZZW(:) * PRCT1D(:)                & ! RCRIMSS
-                                  * PRST1D(:)*(1+(XFVELOS/PLBDAS(:))**XALPHAS)**(-XNUS+XEXCRIMSS/XALPHAS) &
-                                      * PRHODREF(:)**(-XCEXVT+1) &
-                                      * (PLBDAS(:)) ** (XEXCRIMSS+XBS) )
-    PRCS1D(:) = PRCS1D(:) - ZZW1(:,1)
-    PRSS1D(:) = PRSS1D(:) + ZZW1(:,1)
-    PTHS1D(:) = PTHS1D(:) + ZZW1(:,1) * (PLSFACT(:) - PLVFACT(:)) ! f(L_f*(RCRIMSS))
+     ZZW1(:,1) = MIN( PRCS1D(:),                          &
+  	           XCRIMSS * ZZW(:) * PRCT1D(:) * PCST1D(:)      & 
+  	                            *   PLBDAS(:)**XEXCRIMSS &
+               * (1+(XFVELOS/PLBDAS(:))**XALPHAS)**(-XNUS+XEXCRIMSS/XALPHAS) &
+    			            * PRHODREF(:)**(-XCEXVT) )
+     PRCS1D(:) = PRCS1D(:) - ZZW1(:,1)
+     PRSS1D(:) = PRSS1D(:) + ZZW1(:,1)
+     PTHS1D(:) = PTHS1D(:) + ZZW1(:,1)*(PLSFACT(:)-PLVFACT(:)) ! f(L_f*(RCRIMSS))
 !
-    PCCS1D(:) = MAX( PCCS1D(:)-ZZW1(:,1)*(PCCT1D(:)/PRCT1D(:)),0.0 ) ! Lambda_c**3
+     PCCS1D(:) = MAX( PCCS1D(:)-ZZW1(:,1)*(PCCT1D(:)/PRCT1D(:)),0.0 ) ! Lambda_c**3
   END WHERE
 !
 !        1.1.5  perform the linear interpolation of the normalized
@@ -366,20 +396,23 @@ IF( IGRIM>0 ) THEN
 !
 !        1.1.6  riming-conversion of the large sized aggregates into graupeln
 !
-  WHERE ( GRIM(:) .AND. (PRSS1D(:)>XRTMIN(5)/PTSTEP) )
-    ZZW1(:,2) = MIN( PRCS1D(:),                     &
-                 XCRIMSG * PRCT1D(:)*  PRST1D(:)                & ! RCRIMSG
-                           *(1+(XFVELOS/PLBDAS(:))**XALPHAS)**(-XNUS+XEXCRIMSG/XALPHAS)*PLBDAS(:)**(XBS+XEXCRIMSG)  &
-                           * PRHODREF(:)**(-XCEXVT+1) &
-                           - ZZW1(:,1)              )
-    ZZW1(:,3) = MIN( PRSS1D(:),                         &
-                     XSRIMCG * XNS * PRST1D(:) * (1.0 - ZZW(:))/PTSTEP )
-    PRCS1D(:) = PRCS1D(:) - ZZW1(:,2)
-    PRSS1D(:) = PRSS1D(:) - ZZW1(:,3)
-    PRGS1D(:) = PRGS1D(:) + ZZW1(:,2) + ZZW1(:,3)
-    PTHS1D(:) = PTHS1D(:) + ZZW1(:,2) * (PLSFACT(:) - PLVFACT(:)) ! f(L_f*(RCRIMSG))
-    !
-    PCCS1D(:) = MAX( PCCS1D(:)-ZZW1(:,2)*(PCCT1D(:)/PRCT1D(:)),0.0 ) ! Lambda_c**3
+  WHERE ( GRIM(:) .AND. (PRSS1D(:)>XRTMIN(5)/PTSTEP) .AND. (PCSS1D(:)>XCTMIN(5)/PTSTEP))
+     ZZW1(:,2) = MIN( PRCS1D(:),                 &
+    	           XCRIMSG * PRCT1D(:) * PCST1D(:)      & ! RCRIMSG
+    	           *  PLBDAS(:)**XEXCRIMSG*(1+(XFVELOS/PLBDAS(:))**XALPHAS)**(-XNUS+XEXCRIMSG/XALPHAS)  &
+  	                   * PRHODREF(:)**(-XCEXVT) &
+    		           - ZZW1(:,1)              )
+     ZZW1(:,3) = MIN( PRSS1D(:),  PCST1D(:) *          &
+                       XSRIMCG * PLBDAS(:)**XEXSRIMCG   & ! RSRIMCG 
+   	                       * (1.0 - ZZW(:) )/PTSTEP)
+     PRCS1D(:) = PRCS1D(:) - ZZW1(:,2)
+     PRSS1D(:) = PRSS1D(:) - ZZW1(:,3)
+     PRGS1D(:) = PRGS1D(:) + ZZW1(:,2) + ZZW1(:,3)
+     PTHS1D(:) = PTHS1D(:) + ZZW1(:,2)*(PLSFACT(:)-PLVFACT(:)) ! f(L_f*(RCRIMSG))
+!
+     PCCS1D(:) = MAX( PCCS1D(:)-ZZW1(:,2)*(PCCT1D(:)/PRCT1D(:)),0.0 ) ! Lambda_c**3
+     PCSS1D(:) = MAX( PCSS1D(:)-ZZW1(:,3)*(PCST1D(:)/PRST1D(:)),0.0 )
+     PCGS1D(:) = MAX( PCGS1D(:)+ZZW1(:,3)*(PCST1D(:)/PRST1D(:)),0.0 ) !
   END WHERE
   DEALLOCATE(IVEC2)
   DEALLOCATE(IVEC1)
@@ -398,6 +431,10 @@ IF( IGRIM>0 ) THEN
                                            Unpack( prgs1d(:), mask = gmicro(:, :, :), field = prgs(:, :, :) ) * prhodj(:, :, :) )
     if ( lbudget_sv ) call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'RIM', &
                                            Unpack( pccs1d(:), mask = gmicro(:, :, :), field = pccs(:, :, :) ) * prhodj(:, :, :) )
+    if ( lbudget_sv .and. NMOM_S.GE.2) call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ns), 'RIM', &
+                                           Unpack( pcss1d(:), mask = gmicro(:, :, :), field = pcss(:, :, :) ) * prhodj(:, :, :) )
+    if ( lbudget_sv .and. NMOM_G.GE.2) call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ng), 'RIM', &
+                                           Unpack( pcgs1d(:), mask = gmicro(:, :, :), field = pcgs(:, :, :) ) * prhodj(:, :, :) )
   end if
 END IF
 !
@@ -518,6 +555,7 @@ IF (ICIBU > 0) THEN
 !       1.3.1.0 allocations
 !
   ALLOCATE(ZVEC1_S(ICIBU))
+  ALLOCATE(ZVEC1_SW(ICIBU))
   ALLOCATE(ZVEC1_S1(ICIBU))
   ALLOCATE(ZVEC1_S2(ICIBU))
   ALLOCATE(ZVEC1_S3(ICIBU))
@@ -539,6 +577,7 @@ IF (ICIBU > 0) THEN
 !       1.3.1.1 select the PLBDAS
 !
   ZVEC1_S(:) = PACK( PLBDAS(:),MASK=GCIBU(:) )
+  ZVEC1_SW(:)= ( XFVELOS**XALPHAS + ZVEC1_S(:)**XALPHAS ) ** (1./XALPHAS) ! modified equivalent lambda 
 !
 !
 !       1.3.1.2 find the next lower indice for the PLBDAS in the
@@ -577,6 +616,41 @@ IF (ICIBU > 0) THEN
 !
 !
 !       1.3.1.5 perform the linear interpolation of the
+!               normalized "XBS"-moment of the incomplete gamma function
+!
+! For lower boundary (0.2 mm)
+  ZVEC1_S31(1:ICIBU) = XGAMINC_CIBU_S(3,IVEC2_S1(1:ICIBU)+1) *  ZVEC2_S1(1:ICIBU) &
+                     - XGAMINC_CIBU_S(3,IVEC2_S1(1:ICIBU))   * (ZVEC2_S1(1:ICIBU)-1.0)
+!
+! For upper boundary (1 mm)
+  ZVEC1_S32(1:ICIBU) = XGAMINC_CIBU_S(3,IVEC2_S2(1:ICIBU)+1) *  ZVEC2_S2(1:ICIBU) &
+                     - XGAMINC_CIBU_S(3,IVEC2_S2(1:ICIBU))   * (ZVEC2_S2(1:ICIBU)-1.0)
+!
+! From 0.2 mm to 1 mm we need
+  ZVEC1_S3(1:ICIBU) = XMOMGS_CIBU_2 * (ZVEC1_S32(1:ICIBU) - ZVEC1_S31(1:ICIBU))
+!
+!
+!       1.3.1.2 find the next lower indice for the PLBDS in the
+!               geometrical set of Lbda_s used to tabulate some moments of the
+!               incomplete gamma function, for boundary 1 (0.2 mm) for modified lambda (Wurtz snow fall speed)
+!
+  ZVEC2_S1(1:ICIBU) = MAX( 1.0001, MIN( FLOAT(NGAMINC)-0.0001,XCIBUINTP_S  &
+                      * LOG( ZVEC1_SW(1:ICIBU) ) + XCIBUINTP1_S  ) )
+  IVEC2_S1(1:ICIBU) = INT( ZVEC2_S1(1:ICIBU) )
+  ZVEC2_S1(1:ICIBU) = ZVEC2_S1(1:ICIBU) - FLOAT( IVEC2_S1(1:ICIBU) )
+!
+!
+!       1.3.1.3 find the next lower indice for the PLBDS in the
+!               geometrical set of Lbda_s used to tabulate some moments of the
+!               incomplete gamma function, for boundary 2 (1 mm) for modified lambda (Wurtz snow fall speed)
+!
+  ZVEC2_S2(1:ICIBU) = MAX( 1.0001, MIN( FLOAT(NGAMINC)-0.0001,XCIBUINTP_S  &
+                      * LOG( ZVEC1_SW(1:ICIBU) ) + XCIBUINTP2_S  ) )
+  IVEC2_S2(1:ICIBU) = INT( ZVEC2_S2(1:ICIBU) )
+  ZVEC2_S2(1:ICIBU) = ZVEC2_S2(1:ICIBU) - FLOAT( IVEC2_S2(1:ICIBU) )
+!
+!
+!       1.3.1.5 perform the linear interpolation of the
 !               normalized "XDS"-moment of the incomplete gamma function
 !
 ! For lower boundary (0.2 mm)
@@ -589,17 +663,6 @@ IF (ICIBU > 0) THEN
 !
 ! From 0.2 mm to 1 mm we need
   ZVEC1_S2(1:ICIBU) = XMOMGS_CIBU_1 * (ZVEC1_S22(1:ICIBU) - ZVEC1_S21(1:ICIBU))
-!
-! For lower boundary (0.2 mm)
-  ZVEC1_S31(1:ICIBU) = XGAMINC_CIBU_S(3,IVEC2_S1(1:ICIBU)+1) *  ZVEC2_S1(1:ICIBU) &
-                     - XGAMINC_CIBU_S(3,IVEC2_S1(1:ICIBU))   * (ZVEC2_S1(1:ICIBU)-1.0)
-!
-! For upper boundary (1 mm)
-  ZVEC1_S32(1:ICIBU) = XGAMINC_CIBU_S(3,IVEC2_S2(1:ICIBU)+1) *  ZVEC2_S2(1:ICIBU) &
-                     - XGAMINC_CIBU_S(3,IVEC2_S2(1:ICIBU))   * (ZVEC2_S2(1:ICIBU)-1.0)
-!
-! From 0.2 mm to 1 mm we need
-  ZVEC1_S3(1:ICIBU) = XMOMGS_CIBU_2 * (ZVEC1_S32(1:ICIBU) - ZVEC1_S31(1:ICIBU))
 !
 !
 !       1.3.1.6 perform the linear interpolation of the
@@ -686,12 +749,13 @@ IF (ICIBU > 0) THEN
   ALLOCATE(ZFRAG_CIBU(SIZE(PZT)))
 !
   ZFRAG_CIBU(:) = UNPACK ( VECTOR=ZFRAGMENTS(:),MASK=GCIBU,FIELD=0.0 )
-  ZNI_CIBU(:) = ZFRAG_CIBU(:) * (XFACTOR_CIBU_NI * PRST1D(:) / (PRHODREF(:)**XCEXVT)) * &
+  ZNI_CIBU(:) = ZFRAG_CIBU(:) * (XFACTOR_CIBU_NI * PCST1D(:) * PCGT1D(:) / (PRHODREF(:)**XCEXVT)) * &
                 (XCG * ZINTG_GRAUPEL_1(:) * ZINTG_SNOW_1(:) *                                               &
-                 PLBDAS(:)**(XBS) * PLBDAG(:)**(XCXG-(XDG+2.0))                                             &
+                 PLBDAG(:)**(-(XDG+2.0))                                             &
                - XCS * ZINTG_GRAUPEL_2(:) * ZINTG_SNOW_2(:) *                                               &
-                 PLBDAS(:)**(-XDS+XBS) * PLBDAG(:)**(XCXG-2.0) *                                            &
+                 PLBDAS(:)**(-XDS) * PLBDAG(:)**(-2.0) *                                            &
                  (1+(XFVELOS/PLBDAS(:))**XALPHAS)**(-XNUS-XDS/XALPHAS) )
+
   PCIS1D(:) = PCIS1D(:) + MAX(ZNI_CIBU(:), 0.)
 !
   DEALLOCATE(ZFRAG_CIBU)
@@ -699,17 +763,17 @@ IF (ICIBU > 0) THEN
 !
 ! Max value of rs removed by CIBU
   ALLOCATE(ZRI_CIBU(SIZE(PZT)))
-  ZRI_CIBU(:) = (XFACTOR_CIBU_RI * PRST1D(:) / (PRHODREF(:)**XCEXVT)) * &
+  ZRI_CIBU(:) = (XFACTOR_CIBU_RI * PCST1D(:) * PCGT1D(:) / (PRHODREF(:)**XCEXVT)) * &
                  (XCG * ZINTG_GRAUPEL_1(:) * ZINTG_SNOW_3(:) *                              &
-                  PLBDAG(:)**(XCXG-(XDG+2.0))                                               &
+                  PLBDAS(:)**(-XBS) * PLBDAG(:)**(-(XDG+2.0))                                               &
                 - XCS * ZINTG_GRAUPEL_2(:) * ZINTG_SNOW_4(:) *                              &
-                  PLBDAS(:)**(-XDS) * PLBDAG(:)**(XCXG-2.0) *                               &
+                  PLBDAS(:)**(-XBS-XDS) * PLBDAG(:)**(-2.0) *                               &
                   (1+(XFVELOS/PLBDAS(:))**XALPHAS)**(-XNUS-(XBS+XDS)/XALPHAS) )
 !
 ! The value of rs removed by CIBU is determined by the mean mass of pristine ice
   WHERE( PRIT1D(:)>XRTMIN(4) .AND. PCIT1D(:)>XCTMIN(4) )
     ZRI_CIBU(:) = MIN( ZRI_CIBU(:), PRSS1D(:), ZNI_CIBU(:)*PRIT1D(:)/PCIT1D(:) )
-  ELSE WHERE
+  ELSEWHERE
     ZRI_CIBU(:) = MIN( ZRI_CIBU(:), PRSS1D(:), MAX( ZNI_CIBU(:)*XMNU0,XRTMIN(4) ) )
   END WHERE
 !
@@ -717,6 +781,7 @@ IF (ICIBU > 0) THEN
   PRSS1D(:) = PRSS1D(:) - MAX(ZRI_CIBU(:), 0.)   !
 !
   DEALLOCATE(ZVEC1_S)
+  DEALLOCATE(ZVEC1_SW)
   DEALLOCATE(ZVEC1_S1)
   DEALLOCATE(ZVEC1_S2)
   DEALLOCATE(ZVEC1_S3)
@@ -780,6 +845,10 @@ IF( IGACC>0 .AND. LRAIN) THEN
                                             Unpack( prgs1d(:), mask = gmicro(:, :, :), field = prgs(:, :, :) ) * prhodj(:, :, :) )
     if ( lbudget_sv ) call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nr), 'ACC', &
                                             Unpack( pcrs1d(:), mask = gmicro(:, :, :), field = pcrs(:, :, :) ) * prhodj(:, :, :) )
+    if ( lbudget_sv .and. NMOM_S.GE.2) call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ns), 'ACC', &
+                                            Unpack( pcss1d(:), mask = gmicro(:, :, :), field = pcss(:, :, :) ) * prhodj(:, :, :) )
+    if ( lbudget_sv .and. NMOM_G.GE.2) call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ng), 'ACC', &
+                                            Unpack( pcgs1d(:), mask = gmicro(:, :, :), field = pcgs(:, :, :) ) * prhodj(:, :, :) )
   end if
 !
 !        1.4.0  allocations
@@ -792,7 +861,11 @@ IF( IGACC>0 .AND. LRAIN) THEN
 !
 !        1.4.1  select the (PLBDAS,PLBDAR) couplet
 !
-  ZVEC1(:) = PACK( PLBDAS(:),MASK=GACC(:) )
+  if (M2_ICE) then
+     ZVEC1(:) = PACK( MAX(MIN(PLBDAS(:),5.E5),5.E1),MASK=GACC(:) )
+  else
+     ZVEC1(:) = PACK( PLBDAS(:),MASK=GACC(:) )
+  end if
   ZVEC2(:) = PACK( PLBDAR(:),MASK=GACC(:) )
 !
 !        1.4.2  find the next lower indice for the PLBDAS and for the PLBDAR
@@ -821,21 +894,44 @@ IF( IGACC>0 .AND. LRAIN) THEN
                                                           * (ZVEC1(JJ) - 1.0)
   END DO
   ZZW(:) = UNPACK( VECTOR=ZVEC3(:),MASK=GACC,FIELD=0.0 )
+  DEALLOCATE(ZVEC3)
+  ALLOCATE(ZVEC3(IGACC))  
+!
+!                                                                         
+!        1.4.3b  perform the bilinear interpolation of the normalized
+!               RACCSS-kernel FOR CONCENTRATION
+!
+  DO JJ = 1,IGACC
+     ZVEC3(JJ) =  (  XKER_N_RACCSS(IVEC1(JJ)+1,IVEC2(JJ)+1)* ZVEC2(JJ)          &
+                    - XKER_N_RACCSS(IVEC1(JJ)+1,IVEC2(JJ)  )*(ZVEC2(JJ) - 1.0) ) &
+                				 	           * ZVEC1(JJ) &
+                 - (  XKER_N_RACCSS(IVEC1(JJ)  ,IVEC2(JJ)+1)* ZVEC2(JJ)          &
+                    - XKER_N_RACCSS(IVEC1(JJ)  ,IVEC2(JJ)  )*(ZVEC2(JJ) - 1.0) ) &
+  	                    			             * (ZVEC1(JJ) - 1.0)
+  END DO
+  ZZNW(:) = UNPACK( VECTOR=ZVEC3(:),MASK=GACC,FIELD=0.0 )
 !
 !        1.4.4  raindrop accretion on the small sized aggregates
 !
   WHERE ( GACC(:) )
-    ZZW1(:,2) = PCRT1D(:) *                                           & !! coef of RRACCS
-              XFRACCSS*( PRST1D(:)*PLBDAS(:)**XBS )*( PRHODREF(:)**(1-XCEXVT) ) &
-         *( XLBRACCS1/((PLBDAS(:)**2)               ) +                  &
-            XLBRACCS2/( PLBDAS(:)    * PLBDAR(:)    ) +                  &
-            XLBRACCS3/(               (PLBDAR(:)**2)) )/PLBDAR(:)**XBR
-    ZZW1(:,4) = MIN( PRRS1D(:),ZZW1(:,2)*ZZW(:) )           ! RRACCSS
-    PRRS1D(:) = PRRS1D(:) - ZZW1(:,4)
-    PRSS1D(:) = PRSS1D(:) + ZZW1(:,4)
-    PTHS1D(:) = PTHS1D(:) + ZZW1(:,4) * (PLSFACT(:) - PLVFACT(:)) ! f(L_f*(RRACCSS))
+     ZZW1(:,2) = PCRT1D(:) *                                      & !! coef of RRACCS 
+                  XFRACCSS*( PCST1D(:) )*( PRHODREF(:)**(-XCEXVT+1.) ) &
+             *( XLBRACCS1/((PLBDAS(:)**2)               ) +                  &
+                XLBRACCS2/( PLBDAS(:)    * PLBDAR(:)    ) +                  &
+                XLBRACCS3/(               (PLBDAR(:)**2)) )/PLBDAR(:)**3
+!                                                                                
+     ZZNW1(:,2) = PCRT1D(:) *                                           & !! coef of CRACCS
+                  XFNRACCSS*( PCST1D(:) )*( PRHODREF(:)**(-XCEXVT+1.) ) &
+             *( XLBNRACCS1/((PLBDAS(:)**2)               ) +                  &
+               XLBNRACCS2/( PLBDAS(:)    * PLBDAR(:)    ) +                  &
+                XLBNRACCS3/(               (PLBDAR(:)**2)) )
+     ZZW1(:,4) = MIN( PRRS1D(:),ZZW1(:,2)*ZZW(:) )           ! RRACCSS
+     PRRS1D(:) = PRRS1D(:) - ZZW1(:,4)
+     PRSS1D(:) = PRSS1D(:) + ZZW1(:,4)
+     PTHS1D(:) = PTHS1D(:) + ZZW1(:,4)*(PLSFACT(:)-PLVFACT(:)) ! f(L_f*(RRACCSS))
 !
-    PCRS1D(:) = MAX( PCRS1D(:)-ZZW1(:,4)*(PCRT1D(:)/PRRT1D(:)),0.0 ) ! Lambda_r**3 
+     ZZNW1(:,4) = MIN( PCRS1D(:),ZZNW1(:,2)*ZZNW(:) )           ! NRACCSS      
+     PCRS1D(:) = PCRS1D(:)-ZZNW1(:,4)
   END WHERE
 !
 !        1.4.4b perform the bilinear interpolation of the normalized
@@ -850,6 +946,19 @@ IF( IGACC>0 .AND. LRAIN) THEN
                                                          * (ZVEC1(JJ) - 1.0)
   END DO
   ZZW1(:,2) = ZZW1(:,2)*UNPACK( VECTOR=ZVEC3(:),MASK=GACC(:),FIELD=0.0 ) !! RRACCS
+!                                                                                 
+!        1.3.4b2 perform the bilinear interpolation of the normalized
+!               RACCS-kernel
+!
+  DO JJ = 1,IGACC
+     ZVEC3(JJ) =  (   XKER_N_RACCS(IVEC1(JJ)+1,IVEC2(JJ)+1)* ZVEC2(JJ)          &
+                         -  XKER_N_RACCS(IVEC1(JJ)+1,IVEC2(JJ)  )*(ZVEC2(JJ) - 1.0) ) &
+                                                                         * ZVEC1(JJ) &
+                         - (   XKER_N_RACCS(IVEC1(JJ)  ,IVEC2(JJ)+1)* ZVEC2(JJ)          &
+                         -  XKER_N_RACCS(IVEC1(JJ)  ,IVEC2(JJ)  )*(ZVEC2(JJ) - 1.0) ) &
+                                                           * (ZVEC1(JJ) - 1.0)
+  END DO
+  ZZNW1(:,2) = ZZNW1(:,2)*UNPACK( VECTOR=ZVEC3(:),MASK=GACC(:),FIELD=0.0 ) !! NRACCS
 !
 !        1.4.5  perform the bilinear interpolation of the normalized
 !               SACCRG-kernel
@@ -864,28 +973,49 @@ IF( IGACC>0 .AND. LRAIN) THEN
   END DO
   ZZW(:) = UNPACK( VECTOR=ZVEC3(:),MASK=GACC,FIELD=0.0 )
 !
+!        1.3.5b  perform the bilinear interpolation of the normalized
+!               SACCRG-kernel
+!
+  DO JJ = 1,IGACC
+     ZVEC3(JJ) =  (  XKER_N_SACCRG(IVEC2(JJ)+1,IVEC1(JJ)+1)* ZVEC1(JJ)          &
+                        - XKER_N_SACCRG(IVEC2(JJ)+1,IVEC1(JJ)  )*(ZVEC1(JJ) - 1.0) ) &
+      			 	                                   * ZVEC2(JJ) &
+                     - (  XKER_N_SACCRG(IVEC2(JJ)  ,IVEC1(JJ)+1)* ZVEC1(JJ)          &
+                        - XKER_N_SACCRG(IVEC2(JJ)  ,IVEC1(JJ)  )*(ZVEC1(JJ) - 1.0) ) &
+			                                     * (ZVEC2(JJ) - 1.0)
+  END DO
+  ZZNW(:) = UNPACK( VECTOR=ZVEC3(:),MASK=GACC,FIELD=0.0 )
+!
 !        1.4.6  raindrop accretion-conversion of the large sized aggregates
 !               into graupeln
 !
-  WHERE ( GACC(:) .AND. (PRSS1D(:)>XRTMIN(5)/PTSTEP) )
-    ZZW1(:,2) = MAX( MIN( PRRS1D(:),ZZW1(:,2)-ZZW1(:,4) ) , 0. )      ! RRACCSG
-    ZZW1(:,3) = MIN( PRSS1D(:),PCRT1D(:)*XFSACCRG*ZZW(:)*           & ! RSACCRG
-            ( PRST1D(:) )*( PRHODREF(:)**(1-XCEXVT) ) &
-           *( XLBSACCR1/((PLBDAR(:)**2)               ) +           &
-              XLBSACCR2/( PLBDAR(:)    * PLBDAS(:)    ) +           &
-              XLBSACCR3/(               (PLBDAS(:)**2)) ) )
-    PRRS1D(:) = PRRS1D(:) - ZZW1(:,2)
-    PRSS1D(:) = PRSS1D(:) - ZZW1(:,3)
-    PRGS1D(:) = PRGS1D(:) + ZZW1(:,2) + ZZW1(:,3)
-    PTHS1D(:) = PTHS1D(:) + ZZW1(:,2) * (PLSFACT(:) - PLVFACT(:)) ! f(L_f*(RRACCSG))
+  WHERE ( GACC(:) .AND. (PRSS1D(:)>XRTMIN(5)/PTSTEP)  .AND. (PCSS1D(:)>XCTMIN(5)/PTSTEP) )
+     ZZW1(:,2) = MAX( MIN( PRRS1D(:),ZZW1(:,2)-ZZW1(:,4) ) , 0. )      ! RRACCSG
+     ZZNW1(:,2) = MAX( MIN( PCRS1D(:),ZZNW1(:,2)-ZZNW1(:,4) ) , 0. )   ! NRACCSG  
+     ZZW1(:,3) = MIN( PRSS1D(:),PCRT1D(:)*XFSACCRG*ZZW(:)* PCST1D(:) *           & ! RSACCRG 
+                PLBDAS(:)**(-XBS) * ( PRHODREF(:)**(-XCEXVT+1.) )     & 
+                *( XLBSACCR1/((PLBDAR(:)**2)               ) +           &
+                  XLBSACCR2/( PLBDAR(:)    * PLBDAS(:)    ) +           &
+                  XLBSACCR3/(               (PLBDAS(:)**2)) ) )
+     ZZNW1(:,3) = MIN( PCSS1D(:),PCRT1D(:)*XFNSACCRG*ZZNW(:)* PCST1D(:) *        & ! NSACCRG 
+                                      ( PRHODREF(:)**(-XCEXVT+1.) )     &            
+               *( XLBNSACCR1/((PLBDAR(:)**2)               ) +          &            
+                  XLBNSACCR2/( PLBDAR(:)    * PLBDAS(:)    ) +          &            
+                  XLBNSACCR3/(               (PLBDAS(:)**2)) ) )           
+     PRRS1D(:) = PRRS1D(:) - ZZW1(:,2)
+     PRSS1D(:) = PRSS1D(:) - ZZW1(:,3)
+     PRGS1D(:) = PRGS1D(:) + ZZW1(:,2)+ZZW1(:,3)
+     PTHS1D(:) = PTHS1D(:) + ZZW1(:,2)*(PLSFACT(:)-PLVFACT(:)) ! f(L_f*(RRACCSG))
 !
-    PCRS1D(:) = MAX( PCRS1D(:)-ZZW1(:,2)*(PCRT1D(:)/PRRT1D(:)),0.0 ) ! Lambda_r**3 
+     PCRS1D(:) = PCRS1D(:)-ZZNW1(:,2) !                                   
+     PCSS1D(:) = PCSS1D(:)-ZZNW1(:,3)
+     PCGS1D(:) = PCGS1D(:)+ZZNW1(:,3)
   END WHERE
-  DEALLOCATE(IVEC2)
-  DEALLOCATE(IVEC1)
-  DEALLOCATE(ZVEC3)
-  DEALLOCATE(ZVEC2)
-  DEALLOCATE(ZVEC1)
+   DEALLOCATE(IVEC2)
+   DEALLOCATE(IVEC1)
+   DEALLOCATE(ZVEC3)
+   DEALLOCATE(ZVEC2)
+   DEALLOCATE(ZVEC1)
   !
   ! Budget storage
   if ( nbumod == kmi .and. lbu_enable ) then
@@ -899,6 +1029,10 @@ IF( IGACC>0 .AND. LRAIN) THEN
                                            Unpack( prgs1d(:), mask = gmicro(:, :, :), field = prgs(:, :, :) ) * prhodj(:, :, :) )
     if ( lbudget_sv ) call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nr), 'ACC', &
                                            Unpack( pcrs1d(:), mask = gmicro(:, :, :), field = pcrs(:, :, :) ) * prhodj(:, :, :) )
+    if ( lbudget_sv .and. NMOM_S.GE.2) call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ns), 'ACC', &
+                                           Unpack( pcss1d(:), mask = gmicro(:, :, :), field = pcss(:, :, :) ) * prhodj(:, :, :) )
+    if ( lbudget_sv .and. NMOM_G.GE.2) call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ng), 'ACC', &
+                                           Unpack( pcgs1d(:), mask = gmicro(:, :, :), field = pcgs(:, :, :) ) * prhodj(:, :, :) )
   end if
 END IF
 !
@@ -911,30 +1045,34 @@ if ( nbumod == kmi .and. lbu_enable ) then
                                           Unpack( prss1d(:), mask = gmicro(:, :, :), field = prss(:, :, :) ) * prhodj(:, :, :) )
   if ( lbudget_rg ) call Budget_store_init( tbudgets(NBUDGET_RG), 'CMEL', &
                                           Unpack( prgs1d(:), mask = gmicro(:, :, :), field = prgs(:, :, :) ) * prhodj(:, :, :) )
+  if ( lbudget_sv .and. NMOM_S.GE.2 .and. NMOM_G.GE.2 ) then
+                   call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ns), 'CMEL', &
+                                          Unpack( pcss1d(:), mask = gmicro(:, :, :), field = pcss(:, :, :) ) * prhodj(:, :, :) )
+                  call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ng), 'CMEL', &
+                                          Unpack( pcgs1d(:), mask = gmicro(:, :, :), field = pcgs(:, :, :) ) * prhodj(:, :, :) ) 
+  end if
 end if
 !
 ZZW(:) = 0.0
 WHERE( (PRST1D(:)>XRTMIN(5)) .AND. (PRSS1D(:)>XRTMIN(5)/PTSTEP) .AND. (PZT(:)>XTT) )
-  ZZW(:) = PRVT1D(:) * PPRES(:) / ((XMV / XMD) + PRVT1D(:)) ! Vapor pressure
-  ZZW(:) = PKA(:) * (XTT - PZT(:)) +                            &
-         ( PDV(:) * (XLVTT + ( XCPV - XCL ) * ( PZT(:) - XTT )) &
-                  * (XESTT-ZZW(:))/(XRV*PZT(:)) )
+   ZZW(:) = PRVT1D(:)*PPRES(:)/((XMV/XMD)+PRVT1D(:)) ! Vapor pressure
+   ZZW(:) =  PKA(:)*(XTT-PZT(:)) +                                 &
+              ( PDV(:)*(XLVTT + ( XCPV - XCL ) * ( PZT(:) - XTT )) &
+                          *(XESTT-ZZW(:))/(XRV*PZT(:))             )
 !
 ! compute RSMLT
 !
-  ZZW(:)  = MIN( PRSS1D(:), XFSCVMG*MAX( 0.0,( -ZZW(:) *             &
-                          PRST1D(:)*( X0DEPS*            PLBDAS(:)**XEX0DEPS +     &
-                          X1DEPS*PCJ(:)*(1+0.5*(XFVELOS/PLBDAS(:))**XALPHAS) &
-                          **(-XNUS+XEX1DEPS/XALPHAS)*(PLBDAS(:))**(XEX1DEPS+XBS))-    &
+   ZZW(:)  = MIN( PRSS1D(:), XFSCVMG*MAX( 0.0,( -ZZW(:) * PCST1D(:) *   & 
+                          ( X0DEPS*       PLBDAS(:)**XEX0DEPS +     &
+                            X1DEPS*PCJ(:)*PLBDAS(:)**XEX1DEPS *     &
+                                  (1+0.5*(XFVELOS/PLBDAS(:))**XALPHAS)**(-XNUS+XEX1DEPS/XALPHAS) ) -   &
                                     ( ZZW1(:,1)+ZZW1(:,4) ) *       &
                              ( PRHODREF(:)*XCL*(XTT-PZT(:))) ) /    &
                                             ( PRHODREF(:)*XLMTT ) ) )
-!
-! note that RSCVMG = RSMLT*XFSCVMG but no heat is exchanged (at the rate RSMLT)
-! because the graupeln produced by this process are still icy!!!
-!
-  PRSS1D(:) = PRSS1D(:) - ZZW(:)
-  PRGS1D(:) = PRGS1D(:) + ZZW(:)
+   PRSS1D(:) = PRSS1D(:) - ZZW(:)
+   PRGS1D(:) = PRGS1D(:) + ZZW(:)
+   PCSS1D(:) = MAX( PCSS1D(:) - ZZW(:)*(MAX(PCST1D(:),XCTMIN(5))/MAX(PRST1D(:),XRTMIN(5))), 0.0 )
+   PCGS1D(:) = MAX( PCGS1D(:) + ZZW(:)*(MAX(PCST1D(:),XCTMIN(5))/MAX(PRST1D(:),XRTMIN(5))), 0.0 )
 END WHERE
 !
 ! Budget storage
@@ -943,6 +1081,12 @@ if ( nbumod == kmi .and. lbu_enable ) then
                                          Unpack( prss1d(:), mask = gmicro(:, :, :), field = prss(:, :, :) ) * prhodj(:, :, :) )
   if ( lbudget_rg ) call Budget_store_end( tbudgets(NBUDGET_RG), 'CMEL', &
                                          Unpack( prgs1d(:), mask = gmicro(:, :, :), field = prgs(:, :, :) ) * prhodj(:, :, :) )
+  if ( lbudget_sv .and. NMOM_S.GE.2 .AND. NMOM_G.GE.2) then
+                   call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ns), 'CMEL', &
+                                         Unpack( pcss1d(:), mask = gmicro(:, :, :), field = pcss(:, :, :) ) * prhodj(:, :, :) )
+                   call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ng), 'CMEL', &
+                                         Unpack( pcgs1d(:), mask = gmicro(:, :, :), field = pcgs(:, :, :) ) * prhodj(:, :, :) ) 
+  end if
 end if
 
 END IF SNOW
@@ -970,24 +1114,27 @@ if ( nbumod == kmi .and. lbu_enable ) then
                                          Unpack( pcrs1d(:), mask = gmicro(:, :, :), field = pcrs(:, :, :) ) * prhodj(:, :, :) )
   if ( lbudget_sv ) call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'CFRZ', &
                                          Unpack( pcis1d(:), mask = gmicro(:, :, :), field = pcis(:, :, :) ) * prhodj(:, :, :) )
+  if ( lbudget_sv .and. NMOM_G.GE.2 ) call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ng), 'CFRZ', &
+                                         Unpack( pcgs1d(:), mask = gmicro(:, :, :), field = pcgs(:, :, :) ) * prhodj(:, :, :) )
 end if
 
 ZZW1(:,3:4) = 0.0
 WHERE( (PRIT1D(:)>XRTMIN(4)) .AND. (PRRT1D(:)>XRTMIN(3)) .AND. (PRIS1D(:)>XRTMIN(4)/PTSTEP) .AND. (PRRS1D(:)>XRTMIN(3)/PTSTEP) )
-  ZZW1(:,3) = MIN( PRIS1D(:),XICFRR * PRIT1D(:) * PCRT1D(:)          & ! RICFRRG
-                                  * PLBDAR(:)**XEXICFRR        &
-                                  * PRHODREF(:)**(-XCEXVT-1.0) )
+   ZZW1(:,3) = MIN( PRIS1D(:),XICFRR * PRIT1D(:) * PCRT1D(:)          & ! RICFRRG
+                                   * PLBDAR(:)**XEXICFRR        &
+                                   * PRHODREF(:)**(-XCEXVT-1.0) )
 !
-  ZZW1(:,4) = MIN( PRRS1D(:),XRCFRI * PCIT1D(:) * PCRT1D(:)          & ! RRCFRIG
-                                  * PLBDAR(:)**XEXRCFRI        &
-                                  * PRHODREF(:)**(-XCEXVT-2.0) )
-  PRIS1D(:) = PRIS1D(:) - ZZW1(:,3)
-  PRRS1D(:) = PRRS1D(:) - ZZW1(:,4)
-  PRGS1D(:) = PRGS1D(:) + ZZW1(:,3) + ZZW1(:,4)
-  PTHS1D(:) = PTHS1D(:) + ZZW1(:,4) * (PLSFACT(:) - PLVFACT(:)) ! f(L_f*RRCFRIG)
+   ZZW1(:,4) = MIN( PRRS1D(:),XRCFRI * PCIT1D(:) * PCRT1D(:)          & ! RRCFRIG
+                                   * PLBDAR(:)**XEXRCFRI        &
+                                   * PRHODREF(:)**(-XCEXVT-2.0) )
+   PRIS1D(:) = PRIS1D(:) - ZZW1(:,3)
+   PRRS1D(:) = PRRS1D(:) - ZZW1(:,4)
+   PRGS1D(:) = PRGS1D(:) + ZZW1(:,3)+ZZW1(:,4)
+   PTHS1D(:) = PTHS1D(:) + ZZW1(:,4)*(PLSFACT(:)-PLVFACT(:)) ! f(L_f*RRCFRIG)
 !
-  PCIS1D(:) = MAX( PCIS1D(:)-ZZW1(:,3)*(PCIT1D(:)/PRIT1D(:)),0.0 )     ! CICFRRG
-  PCRS1D(:) = MAX( PCRS1D(:)-ZZW1(:,4)*(PCRT1D(:)/PRRT1D(:)),0.0 )     ! CRCFRIG
+   PCIS1D(:) = MAX( PCIS1D(:)-ZZW1(:,3)*(PCIT1D(:)/PRIT1D(:)),0.0 )     ! CICFRRG
+   PCRS1D(:) = MAX( PCRS1D(:)-ZZW1(:,4)*(PCRT1D(:)/PRRT1D(:)),0.0 )     ! CRCFRIG
+   PCGS1D(:) = PCGS1D(:)+ZZW1(:,3)*(PCIT1D(:)/PRIT1D(:)) 
 END WHERE
 !
 if ( nbumod == kmi .and. lbu_enable ) then
@@ -1003,6 +1150,8 @@ if ( nbumod == kmi .and. lbu_enable ) then
                                          Unpack( pcrs1d(:), mask = gmicro(:, :, :), field = pcrs(:, :, :) ) * prhodj(:, :, :) )
   if ( lbudget_sv ) call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'CFRZ', &
                                          Unpack( pcis1d(:), mask = gmicro(:, :, :), field = pcis(:, :, :) ) * prhodj(:, :, :) )
+  if ( lbudget_sv .and. NMOM_G.GE.2 ) call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ng), 'CFRZ', &
+                                         Unpack( pcgs1d(:), mask = gmicro(:, :, :), field = pcgs(:, :, :) ) * prhodj(:, :, :) )
 end if
 !
 !
@@ -1115,22 +1264,34 @@ if ( nbumod == kmi .and. lbu_enable ) then
                                           Unpack( pcrs1d(:), mask = gmicro(:, :, :), field = pcrs(:, :, :) ) * prhodj(:, :, :) )
                   call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'WETG', &
                                           Unpack( pcis1d(:), mask = gmicro(:, :, :), field = pcis(:, :, :) ) * prhodj(:, :, :) )
+       if(M2_ICE) then
+                  call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ns), 'WETG', &
+                                         Unpack( pcss1d(:), mask = gmicro(:, :, :), field = pcss(:, :, :) ) * prhodj(:, :, :) )
+                  call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ng), 'WETG', &
+                                         Unpack( pcgs1d(:), mask = gmicro(:, :, :), field = pcgs(:, :, :) ) * prhodj(:, :, :) )
+                  if (LHAIL) call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nh), 'WETG', &
+                                         Unpack( pchs1d(:), mask = gmicro(:, :, :), field = pchs(:, :, :) ) * prhodj(:, :, :) )
+       end if
   end if
 end if
 !
 ZZW1(:,:) = 0.0
-WHERE( ((PRCT1D(:)>XRTMIN(2)) .AND. (PRGT1D(:)>XRTMIN(6)) .AND. (PRCS1D(:)>XRTMIN(2)/PTSTEP)) .OR. &
-       ((PRIT1D(:)>XRTMIN(4)) .AND. (PRGT1D(:)>XRTMIN(6)) .AND. (PRIS1D(:)>XRTMIN(4)/PTSTEP))      )
-  ZZW(:) = PLBDAG(:)**(XCXG-XDG-2.0) * PRHODREF(:)**(-XCEXVT)
-  ZZW1(:,1) = MIN( PRCS1D(:),XFCDRYG * PRCT1D(:) * ZZW(:) )             ! RCDRYG
-  ZZW1(:,2) = MIN( PRIS1D(:),XFIDRYG * EXP( XCOLEXIG*(PZT(:)-XTT) ) &
-                                   * PRIT1D(:) * ZZW(:) )             ! RIDRYG
+ZZNW1(:,:) = 0.0   
+WHERE( ((PRCT1D(:)>XRTMIN(2)) .AND. (PRGT1D(:)>XRTMIN(6)) .AND. (PRCS1D(:)>XRTMIN(2)/PTSTEP))  .OR. &
+          ((PRIT1D(:)>XRTMIN(4)) .AND. (PRGT1D(:)>XRTMIN(6)) .AND. (PRIS1D(:)>XRTMIN(4)/PTSTEP))      )
+   ZZW(:) = PLBDAG(:)**(-XDG-2.0) * PRHODREF(:)**(-XCEXVT) * PCGT1D(:) 
+   ZZW1(:,1) = MIN( PRCS1D(:),XFCDRYG * PRCT1D(:) * ZZW(:) )             ! RCDRYG
+   ZZNW1(:,1) =  MIN( PCCS1D(:),ZZW1(:,1) * PCCT1D(:) / MAX(PRCT1D(:),XRTMIN(2)) )
+   ZZW1(:,2) = MIN( PRIS1D(:),XFIDRYG * EXP( XCOLEXIG*(PZT(:)-XTT) ) &
+                                    * PRIT1D(:) * ZZW(:) )             ! RIDRYG
+   ZZNW1(:,2) =  MIN( PCIS1D(:),ZZW1(:,2) * PCIT1D(:) / MAX(PRIT1D(:),XRTMIN(4)) )
 END WHERE
 !
 !*       2.3.1  accretion of aggregates on the graupeln
 !        ----------------------------------------------
 !
 GDRY(:) = (PRST1D(:)>XRTMIN(5)) .AND. (PRGT1D(:)>XRTMIN(6)) .AND. (PRSS1D(:)>XRTMIN(5)/PTSTEP)
+if (M2_ICE) GDRY(:) = GDRY(:) .AND. (PCST1D(:)>XCTMIN(5)) .AND. PCSS1D(:)>XCTMIN(5)/PTSTEP
 IGDRY = COUNT( GDRY(:) )
 !
 IF( IGDRY>0 ) THEN
@@ -1176,13 +1337,38 @@ IF( IGDRY>0 ) THEN
   ZZW(:) = UNPACK( VECTOR=ZVEC3(:),MASK=GDRY,FIELD=0.0 )
 !
   WHERE( GDRY(:) )
-    ZZW1(:,3) = MIN( PRSS1D(:),XFSDRYG*ZZW(:)                         & ! RSDRYG
+     ZZW1(:,3) = MIN( PRSS1D(:),XFSDRYG*ZZW(:)                         & ! RSDRYG
                                       * EXP( XCOLEXSG*(PZT(:)-XTT) )  &
-                    *( PRST1D(:)) )*( PLBDAG(:)**XCXG )    &
-                    *( PRHODREF(:)**(-XCEXVT) )                    &
+                    *( PRST1D(:) )*( PCGT1D(:) )      &  
+                    *( PRHODREF(:)**(-XCEXVT+1.) )                    &
                          *( XLBSDRYG1/( PLBDAG(:)**2              ) + &
                             XLBSDRYG2/( PLBDAG(:)   * PLBDAS(:)   ) + &
-                            XLBSDRYG3/(               PLBDAS(:)**2) )
+                            XLBSDRYG3/(               PLBDAS(:)**2) ) )
+  END WHERE
+!
+!                                                                           
+!*       2.2.5b  perform the bilinear interpolation of the normalized
+!               SDRYG-kernel FOR CONCENTRATION
+!
+  DO JJ = 1,IGDRY
+     ZVEC3(JJ) =  (  XKER_N_SDRYG(IVEC1(JJ)+1,IVEC2(JJ)+1)* ZVEC2(JJ)          &
+                        - XKER_N_SDRYG(IVEC1(JJ)+1,IVEC2(JJ)  )*(ZVEC2(JJ) - 1.0) ) &
+      	    		 	                                  * ZVEC1(JJ) &
+                     - (  XKER_N_SDRYG(IVEC1(JJ)  ,IVEC2(JJ)+1)* ZVEC2(JJ)          &
+                        - XKER_N_SDRYG(IVEC1(JJ)  ,IVEC2(JJ)  )*(ZVEC2(JJ) - 1.0) ) &
+                        * (ZVEC1(JJ) - 1.0)
+  END DO
+  ZZNW(:) = UNPACK( VECTOR=ZVEC3(:),MASK=GDRY,FIELD=0.0 )
+!
+  WHERE( GDRY(:)   )
+     ZZNW1(:,3) = MIN( PCSS1D(:),XFNSDRYG*ZZNW(:)                       & ! NSDRYG
+                                   * EXP( XCOLEXSG*(PZT(:)-XTT) )  &
+                 *( PCST1D(:)                     )*( PCGT1D(:) )      &  
+                 *( PRHODREF(:)**(-XCEXVT+1.) )                    &
+                      *( XLBNSDRYG1/( PLBDAG(:)**2             ) + &
+                         XLBNSDRYG2/( PLBDAG(:)   * PLBDAS(:)  ) + &
+                         XLBNSDRYG3/(               PLBDAS(:)**2)) )
+!                                                                        
   END WHERE
   DEALLOCATE(IVEC2)
   DEALLOCATE(IVEC1)
@@ -1240,12 +1426,33 @@ IF( IGDRY>0 ) THEN
   ZZW(:) = UNPACK( VECTOR=ZVEC3(:),MASK=GDRY,FIELD=0.0 )
 !
   WHERE( GDRY(:) )
-    ZZW1(:,4) = MIN( PRRS1D(:),XFRDRYG*ZZW(:) * PCRT1D(:)          & ! RRDRYG
-                      *( PLBDAR(:)**(-3) )*( PLBDAG(:)**XCXG ) &
-                              *( PRHODREF(:)**(-XCEXVT-1.) )   &
-                  *( XLBRDRYG1/( PLBDAG(:)**2              ) + &
-                     XLBRDRYG2/( PLBDAG(:)   * PLBDAR(:)   ) + &
-                     XLBRDRYG3/(               PLBDAR(:)**2) ) )
+     ZZW1(:,4) = MIN( PRRS1D(:),XFRDRYG*ZZW(:) * PRRT1D(:) * PCGT1D(:) & !
+                                *( PRHODREF(:)**(-XCEXVT+1.) )   &
+                    *( XLBRDRYG1/( PLBDAG(:)**2              ) + &
+                       XLBRDRYG2/( PLBDAG(:)   * PLBDAR(:)   ) + &
+                       XLBRDRYG3/(               PLBDAR(:)**2) ) )    
+  END WHERE
+!
+!                                                                          
+!*       2.2.10b perform the bilinear interpolation of the normalized
+!               RDRYG-kernel FOR CONCENTRATION
+!
+  DO JJ = 1,IGDRY
+     ZVEC3(JJ) =  (  XKER_N_RDRYG(IVEC1(JJ)+1,IVEC2(JJ)+1)* ZVEC2(JJ)          &
+                        - XKER_N_RDRYG(IVEC1(JJ)+1,IVEC2(JJ)  )*(ZVEC2(JJ) - 1.0) ) &
+                         			 	                  * ZVEC1(JJ) &
+                    - (  XKER_N_RDRYG(IVEC1(JJ)  ,IVEC2(JJ)+1)* ZVEC2(JJ)          &
+                        - XKER_N_RDRYG(IVEC1(JJ)  ,IVEC2(JJ)  )*(ZVEC2(JJ) - 1.0) ) &
+                                     			     * (ZVEC1(JJ) - 1.0)
+  END DO
+  ZZNW(:) = UNPACK( VECTOR=ZVEC3(:),MASK=GDRY,FIELD=0.0 )
+!
+  WHERE( GDRY(:)  )
+     ZZNW1(:,4) = MIN( PCRS1D(:),XFNRDRYG*ZZNW(:) * PCRT1D(:) * PCGT1D(:) & ! NRDRYG
+                                *( PRHODREF(:)**(-XCEXVT+1.) )      &
+                    *( XLBNRDRYG1/( PLBDAG(:)**2              ) +   &
+                       XLBNRDRYG2/( PLBDAG(:)   * PLBDAR(:)   ) +   &
+                       XLBNRDRYG3/(               PLBDAR(:)**2) ) )
   END WHERE
   DEALLOCATE(IVEC2)
   DEALLOCATE(IVEC1)
@@ -1263,24 +1470,30 @@ ZRDRYG(:) = ZZW1(:,1) + ZZW1(:,2) + ZZW1(:,3) + ZZW1(:,4)
 ZZW(:) = 0.0
 ZRWETG(:) = 0.0
 WHERE( PRGT1D(:)>XRTMIN(6) )
-  ZZW1(:,5) = MIN( PRIS1D(:),                                    &
-              ZZW1(:,2) / (XCOLIG*EXP(XCOLEXIG*(PZT(:)-XTT)) ) ) ! RIWETG
-  ZZW1(:,6) = MIN( PRSS1D(:),                                    &
-              ZZW1(:,3) / (XCOLSG*EXP(XCOLEXSG*(PZT(:)-XTT)) ) ) ! RSWETG
+   ZZW1(:,5) = MIN( PRIS1D(:),                                    &
+               ZZW1(:,2) / (XCOLIG*EXP(XCOLEXIG*(PZT(:)-XTT)) ) ) ! RIWETG
+   ZZNW1(:,5) = MIN( PCIS1D(:),                      &  
+               ZZNW1(:,2) / (XCOLIG*EXP(XCOLEXIG*(PZT(:)-XTT)) ) )  ! NIWETG
+   ZZW1(:,6) = MIN( PRSS1D(:),                                    &
+               ZZW1(:,3) / (XCOLSG*EXP(XCOLEXSG*(PZT(:)-XTT)) ) ) ! RSWETG
 !
-  ZZW(:) = PRVT1D(:)*PPRES(:)/((XMV/XMD)+PRVT1D(:)) ! Vapor pressure
-  ZZW(:) =  PKA(:)*(XTT-PZT(:)) +                                  &
-            ( PDV(:)*(XLVTT + ( XCPV - XCL ) * ( PZT(:) - XTT ))   &
-                          *(XESTT-ZZW(:))/(XRV*PZT(:))             )
 !
+   ZZNW1(:,6) = MIN( PCSS1D(:),                      &       
+               ZZNW1(:,3) / (XCOLSG*EXP(XCOLEXSG*(PZT(:)-XTT)) ) )  ! NSWETG
+!
+   ZZW(:) = PRVT1D(:)*PPRES(:)/((XMV/XMD)+PRVT1D(:)) ! Vapor pressure
+   ZZW(:) =  PKA(:)*(XTT-PZT(:)) +                                  &
+                ( PDV(:)*(XLVTT + ( XCPV - XCL ) * ( PZT(:) - XTT ))   &
+                           *(XESTT-ZZW(:))/(XRV*PZT(:))             )
+!  
 ! compute RWETG
 !
-  ZRWETG(:)  = MAX( 0.0,                                               &
-                  ( ZZW(:) * ( X0DEPG*       PLBDAG(:)**XEX0DEPG +     &
-                               X1DEPG*PCJ(:)*PLBDAG(:)**XEX1DEPG ) +   &
-                  ( ZZW1(:,5)+ZZW1(:,6) ) *                            &
-                  ( PRHODREF(:)*(XLMTT+(XCI-XCL)*(XTT-PZT(:)))   ) ) / &
-                                  ( PRHODREF(:)*(XLMTT-XCL*(XTT-PZT(:))) )   )
+   ZRWETG(:)  = MAX( 0.0,                                               &
+                   ( ZZW(:) * PCGT1D(:) * ( X0DEPG* PLBDAG(:)**XEX0DEPG + &
+                    X1DEPG*PCJ(:)*PLBDAG(:)**XEX1DEPG ) +   &
+                   ( ZZW1(:,5)+ZZW1(:,6) ) *                            &
+                   ( PRHODREF(:)*(XLMTT+(XCI-XCL)*(XTT-PZT(:)))   ) ) / &
+                              ( PRHODREF(:)*(XLMTT-XCL*(XTT-PZT(:)))  ) )
   !We must agregate, at least, the cold species
    ZRWETG(:)=MAX(ZRWETG(:), ZZW1(:,5)+ZZW1(:,6))
 END WHERE
@@ -1305,7 +1518,9 @@ DO JJ=1, SIZE(PRGT1D)
       ZZW1(JJ,7) = MAX( 0.0,MIN( ZZW(JJ),PRRS1D(JJ)+ZZW1(JJ,1) ) )
       ZZX(JJ)    = ZZW1(JJ,7) / ZZW(JJ)
       ZZW1(JJ,5) = ZZW1(JJ,5)*ZZX(JJ)
+      ZZNW1(:,5) = ZZNW1(JJ,5)*ZZX(JJ)
       ZZW1(JJ,6) = ZZW1(JJ,6)*ZZX(JJ)
+      ZZNW1(JJ,6) = ZZNW1(JJ,6)*ZZX(JJ)
       ZRWETG(JJ) = ZZW1(JJ,7) + ZZW1(JJ,5) + ZZW1(JJ,6)
 !   
       PRCS1D(JJ) = PRCS1D(JJ) - ZZW1(JJ,1)
@@ -1323,9 +1538,13 @@ DO JJ=1, SIZE(PRGT1D)
                                                 ! f(L_f*(RCWETG+RRWETG))
 !
       PCCS1D(JJ) = MAX( PCCS1D(JJ)-ZZW1(JJ,1)*(PCCT1D(JJ)/MAX(PRCT1D(JJ),XRTMIN(2))),0.0 )
-      PCIS1D(JJ) = MAX( PCIS1D(JJ)-ZZW1(JJ,5)*(PCIT1D(JJ)/MAX(PRIT1D(JJ),XRTMIN(4))),0.0 )
+      PCIS1D(JJ) = MAX( PCIS1D(JJ)-ZZNW1(JJ,5),0.0 )
       PCRS1D(JJ) = MAX( PCRS1D(JJ)-MAX( ZZW1(JJ,7)-ZZW1(JJ,1),0.0 )                 &
-                                      *(PCRT1D(JJ)/MAX(PRRT1D(JJ),XRTMIN(3))),0.0 )
+           *(PCRT1D(JJ)/MAX(PRRT1D(JJ),XRTMIN(3))),0.0 )
+      PCSS1D(JJ) = MAX( PCSS1D(JJ)-ZZNW1(JJ,6),0.0 )
+      ZZNW(JJ)  = PCGS1D(JJ)*ZRDRYG(JJ)*NHAIL/(ZRWETG(JJ)+ZRDRYG(JJ))
+      PCGS1D(JJ) = MAX( PCGS1D(JJ)-ZZNW(JJ),0.0 )
+      PCHS1D(JJ) = MAX( PCHS1D(JJ)+ZZNW(JJ),0.0 )
    END IF
 END DO
 !
@@ -1352,6 +1571,14 @@ if ( nbumod == kmi .and. lbu_enable ) then
                                          Unpack( pcrs1d(:), mask = gmicro(:, :, :), field = pcrs(:, :, :) ) * prhodj(:, :, :) )
                   call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'WETG', &
                                          Unpack( pcis1d(:), mask = gmicro(:, :, :), field = pcis(:, :, :) ) * prhodj(:, :, :) )
+       if(M2_ICE) then
+                  call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ns), 'WETG', &
+                                         Unpack( pcss1d(:), mask = gmicro(:, :, :), field = pcss(:, :, :) ) * prhodj(:, :, :) )
+                  call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ng), 'WETG', &
+                                         Unpack( pcgs1d(:), mask = gmicro(:, :, :), field = pcgs(:, :, :) ) * prhodj(:, :, :) )
+                  if (LHAIL) call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nh), 'WETG', &
+                                         Unpack( pchs1d(:), mask = gmicro(:, :, :), field = pchs(:, :, :) ) * prhodj(:, :, :) )
+       end if
   end if
 end if
 !
@@ -1377,23 +1604,25 @@ if ( nbumod == kmi .and. lbu_enable ) then
                                           Unpack( pcrs1d(:), mask = gmicro(:, :, :), field = pcrs(:, :, :) ) * prhodj(:, :, :) )
                   call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'DRYG', &
                                           Unpack( pcis1d(:), mask = gmicro(:, :, :), field = pcis(:, :, :) ) * prhodj(:, :, :) )
+    if (M2_ICE)   call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ns), 'DRYG', &
+                                          Unpack( pcss1d(:), mask = gmicro(:, :, :), field = pcss(:, :, :) ) * prhodj(:, :, :) )
   end if
 end if
 !
-WHERE( PRGT1D(:)>XRTMIN(6) .AND. PZT(:)<XTT .AND. &
-       (ZRDRYG(:)-ZZW1(:,2)-ZZW1(:,3))<(ZRWETG(:)-ZZW1(:,5)-ZZW1(:,6)) .AND. ZRDRYG(:)>0.0 )
-  PRCS1D(:) = PRCS1D(:) - ZZW1(:,1)
-  PRIS1D(:) = PRIS1D(:) - ZZW1(:,2)
-  PRSS1D(:) = PRSS1D(:) - ZZW1(:,3)
-  PRRS1D(:) = PRRS1D(:) - ZZW1(:,4)
-  PRGS1D(:) = PRGS1D(:) + ZRDRYG(:)
-  PTHS1D(:) = PTHS1D(:) + (ZZW1(:,1)+ZZW1(:,4)) * (PLSFACT(:) - PLVFACT(:)) !
-                                                        ! f(L_f*(RCDRYG+RRDRYG))
+WHERE( PRGT1D(:)>XRTMIN(6) .AND. PZT(:)<XTT                              &
+     .AND. (ZRDRYG(:)-ZZW1(:,2)-ZZW1(:,3))<(ZRWETG(:)-ZZW1(:,5)-ZZW1(:,6)) .AND. ZRDRYG(:)>0.0 ) ! case
+   PRCS1D(:) = PRCS1D(:) - ZZW1(:,1)
+   PRIS1D(:) = PRIS1D(:) - ZZW1(:,2)
+   PRSS1D(:) = PRSS1D(:) - ZZW1(:,3)
+   PRRS1D(:) = PRRS1D(:) - ZZW1(:,4)
+   PRGS1D(:) = PRGS1D(:) + ZRDRYG(:)
+   PTHS1D(:) = PTHS1D(:) + (ZZW1(:,1)+ZZW1(:,4))*(PLSFACT(:)-PLVFACT(:)) !
+  						        ! f(L_f*(RCDRYG+RRDRYG))
 !
-  PCCS1D(:) = MAX( PCCS1D(:)-ZZW1(:,1)*(PCCT1D(:)/MAX(PRCT1D(:),XRTMIN(2))),0.0 )
-  PCIS1D(:) = MAX( PCIS1D(:)-ZZW1(:,2)*(PCIT1D(:)/MAX(PRIT1D(:),XRTMIN(4))),0.0 )
-  PCRS1D(:) = MAX( PCRS1D(:)-ZZW1(:,4)*(PCRT1D(:)/MAX(PRRT1D(:),XRTMIN(3))),0.0 ) 
-                                                        ! Approximate rates
+   PCCS1D(:) = MAX( PCCS1D(:)-ZZNW1(:,1),0.0 )                                    
+   PCIS1D(:) = MAX( PCIS1D(:)-ZZNW1(:,2),0.0 )                                     
+   PCRS1D(:) = MAX( PCRS1D(:)-ZZNW1(:,4),0.0 )                                    
+   PCSS1D(:) = MAX( PCSS1D(:)-ZZNW1(:,3),0.0 )
 END WHERE
 !
 ! Budget storage
@@ -1417,6 +1646,8 @@ if ( nbumod == kmi .and. lbu_enable ) then
                                          Unpack( pcrs1d(:), mask = gmicro(:, :, :), field = pcrs(:, :, :) ) * prhodj(:, :, :) )
                   call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'DRYG', &
                                          Unpack( pcis1d(:), mask = gmicro(:, :, :), field = pcis(:, :, :) ) * prhodj(:, :, :) )
+    if (M2_ICE) call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ns), 'DRYG', &
+                                         Unpack( pcss1d(:), mask = gmicro(:, :, :), field = pcss(:, :, :) ) * prhodj(:, :, :) )
   end if
 end if
 !
@@ -1487,31 +1718,33 @@ if ( nbumod == kmi .and. lbu_enable ) then
                                           Unpack( prgs1d(:), mask = gmicro(:, :, :), field = prgs(:, :, :) ) * prhodj(:, :, :) )
   if ( lbudget_sv ) call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nr), 'GMLT', &
                                           Unpack( pcrs1d(:), mask = gmicro(:, :, :), field = pcrs(:, :, :) ) * prhodj(:, :, :) )
+  if ( lbudget_sv .and. M2_ICE) call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ng), 'GMLT', &
+                                          Unpack( pcgs1d(:), mask = gmicro(:, :, :), field = pcgs(:, :, :) ) * prhodj(:, :, :) )              
 end if
 
 ZZW(:) = 0.0
-WHERE( (PRGT1D(:)>XRTMIN(6)) .AND. (PRGS1D(:)>XRTMIN(6)/PTSTEP) .AND. (PZT(:)>XTT) )
-  ZZW(:) = PRVT1D(:)*PPRES(:)/((XMV/XMD)+PRVT1D(:)) ! Vapor pressure
-  ZZW(:) =  PKA(:)*(XTT-PZT(:)) +                                 &
-             ( PDV(:)*(XLVTT + ( XCPV - XCL ) * ( PZT(:) - XTT )) &
-                         *(XESTT-ZZW(:))/(XRV*PZT(:))             )
+   WHERE( (PRGT1D(:)>XRTMIN(6)) .AND. (PRGS1D(:)>XRTMIN(6)/PTSTEP) .AND. (PZT(:)>XTT) )
+      ZZW(:) = PRVT1D(:)*PPRES(:)/((XMV/XMD)+PRVT1D(:)) ! Vapor pressure
+      ZZW(:) =  PKA(:)*(XTT-PZT(:)) +                                 &
+              ( PDV(:)*(XLVTT + ( XCPV - XCL ) * ( PZT(:) - XTT )) &
+                          *(XESTT-ZZW(:))/(XRV*PZT(:))             )
 !
 ! compute RGMLTR
 !
-  ZZW(:)  = MIN( PRGS1D(:), MAX( 0.0,( -ZZW(:) *                     &
-                         ( X0DEPG*       PLBDAG(:)**XEX0DEPG +     &
-                           X1DEPG*PCJ(:)*PLBDAG(:)**XEX1DEPG ) -   &
-                                   ( ZZW1(:,1)+ZZW1(:,4) ) *       &
-                            ( PRHODREF(:)*XCL*(XTT-PZT(:))) ) /    &
-                                           ( PRHODREF(:)*XLMTT ) ) )
-  PRRS1D(:) = PRRS1D(:) + ZZW(:)
-  PRGS1D(:) = PRGS1D(:) - ZZW(:)
-  PTHS1D(:) = PTHS1D(:) - ZZW(:) * (PLSFACT(:) - PLVFACT(:)) ! f(L_f*(-RGMLTR))
+      ZZW(:)  = MIN( PRGS1D(:), MAX( 0.0,( -ZZW(:) * PCGT1D(:) *           & 
+                          ( X0DEPG*       PLBDAG(:)**XEX0DEPG +     &
+                            X1DEPG*PCJ(:)*PLBDAG(:)**XEX1DEPG ) -   &
+                                    ( ZZW1(:,1)+ZZW1(:,4) ) *       &
+                             ( PRHODREF(:)*XCL*(XTT-PZT(:))) ) /    &
+                                            ( PRHODREF(:)*XLMTT ) ) )
+      PRRS1D(:) = PRRS1D(:) + ZZW(:)
+      PRGS1D(:) = PRGS1D(:) - ZZW(:)
+      PTHS1D(:) = PTHS1D(:) - ZZW(:)*(PLSFACT(:)-PLVFACT(:)) ! f(L_f*(-RGMLTR))
 !
-!   PCRS1D(:) = MAX( PCRS1D(:) + ZZW(:)*(XCCG*PLBDAG(:)**XCXG/PRGT1D(:)),0.0 )
-  PCRS1D(:) = PCRS1D(:) + ZZW(:)*5.0E6  ! obtained after averaging
-                                    ! Dshed=1mm and 500 microns
-END WHERE
+      PCRS1D(:) = PCRS1D(:) + ZZW(:)*5.0E6  ! obtained after averaging
+                                        ! Dshed=1mm and 500 microns
+      PCGS1D(:) = MAX( PCGS1D(:) - ZZW(:)*5.0E6, 0.0)
+   END WHERE    
 !
 if ( nbumod == kmi .and. lbu_enable ) then
   if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'GMLT', &
@@ -1522,6 +1755,8 @@ if ( nbumod == kmi .and. lbu_enable ) then
                                          Unpack( prgs1d(:), mask = gmicro(:, :, :), field = prgs(:, :, :) ) * prhodj(:, :, :) )
   if ( lbudget_sv ) call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nr), 'GMLT', &
                                          Unpack( pcrs1d(:), mask = gmicro(:, :, :), field = pcrs(:, :, :) ) * prhodj(:, :, :) )
+  if ( lbudget_sv .and. M2_ICE) call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ng), 'GMLT', &
+                                          Unpack( pcgs1d(:), mask = gmicro(:, :, :), field = pcgs(:, :, :) ) * prhodj(:, :, :) )
 end if
 !
 !
@@ -1534,7 +1769,7 @@ end if
 !
 HAIL: IF (LHAIL) THEN
 !
-GHAIL(:) = PRTH1D(:)>XRTMIN(7)
+GHAIL(:) = PRHT1D(:)>XRTMIN(7)
 IHAIL = COUNT(GHAIL(:))
 !
 IF( IHAIL>0 ) THEN
@@ -1564,15 +1799,24 @@ IF( IHAIL>0 ) THEN
                                             Unpack( pcrs1d(:), mask = gmicro(:, :, :), field = pcrs(:, :, :) ) * prhodj(:, :, :) )
                     call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'WETH', &
                                             Unpack( pcis1d(:), mask = gmicro(:, :, :), field = pcis(:, :, :) ) * prhodj(:, :, :) )
+      if (M2_ICE) then
+                    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ns), 'WETH', &
+                                           Unpack( pcss1d(:), mask = gmicro(:, :, :), field = pcss(:, :, :) ) * prhodj(:, :, :) )
+                    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ng), 'WETH', &
+                                           Unpack( pcgs1d(:), mask = gmicro(:, :, :), field = pcgs(:, :, :) ) * prhodj(:, :, :) )                                     
+      end if
     end if
   end if
 
   ZZW1(:,:) = 0.0
-  WHERE( GHAIL(:) .AND. ( (PRCT1D(:)>XRTMIN(2) .AND. PRCS1D(:)>XRTMIN(2)/PTSTEP) .OR. &
-                          (PRIT1D(:)>XRTMIN(4) .AND. PRIS1D(:)>XRTMIN(4)/PTSTEP) )    )    
-    ZZW(:) = PLBDAH(:)**(XCXH-XDH-2.0) * PRHODREF(:)**(-XCEXVT)
-    ZZW1(:,1) = MIN( PRCS1D(:),XFWETH * PRCT1D(:) * ZZW(:) )             ! RCWETH
-    ZZW1(:,2) = MIN( PRIS1D(:),XFWETH * PRIT1D(:) * ZZW(:) )             ! RIWETH
+  ZZNW1(:,:) = 0.0
+  WHERE( GHAIL(:) .AND. ( (PRCT1D(:)>XRTMIN(2) .AND. PRCS1D(:)>XRTMIN(2)/PTSTEP ) .OR. &
+                              (PRIT1D(:)>XRTMIN(4) .AND. PRIS1D(:)>XRTMIN(4)/PTSTEP)  )    )   
+     ZZW(:) = PCHT1D(:) * PLBDAH(:)**(-XDH-2.0) * PRHODREF(:)**(1-XCEXVT)
+     ZZW1(:,1) = MIN( PRCS1D(:),XFWETH * PRCT1D(:) * ZZW(:) )             ! RCWETH
+     ZZNW1(:,1) = MIN( PCCS1D(:),XFWETH * PCCT1D(:) * ZZW(:) ) !ZZW1(:,1) * ZCCT(:) / MAX(ZRCT(:),XRTMIN(2)) )            ! NCWETH 
+     ZZW1(:,2) = MIN( PRIS1D(:),XFWETH * PRIT1D(:) * ZZW(:) )             ! RIWETH
+     ZZNW1(:,2) = MIN( PCIS1D(:),XFWETH * PCIT1D(:) * ZZW(:) ) !ZZW1(:,2) * ZCIT(:) / MAX(ZRIT(:),XRTMIN(4)) )      ! NIWETH 
   END WHERE
 !
 !*       3.1.1  accretion of aggregates on the hailstones
@@ -1624,12 +1868,33 @@ IF( IHAIL>0 ) THEN
     ZZW(:) = UNPACK( VECTOR=ZVEC3(:),MASK=GWET,FIELD=0.0 )
 !
     WHERE( GWET(:) )
-      ZZW1(:,3) = MIN( PRSS1D(:),XFSWETH*ZZW(:)                       & ! RSWETH
-                      *( PRST1D(:))*( PLBDAH(:)**XCXH )  &
-                        *( PRHODREF(:)**(-XCEXVT) )               &
-                         *( XLBSWETH1/( PLBDAH(:)**2              ) + &
-                            XLBSWETH2/( PLBDAH(:)   * PLBDAS(:)   ) + &
-                            XLBSWETH3/(               PLBDAS(:)**2) ) )
+       ZZW1(:,3) = MIN( PRSS1D(:),XFSWETH*ZZW(:) * PRST1D(:) * PCHT1D(:)  & 
+            *( PRHODREF(:)**(-XCEXVT+1.) )               &
+            *( XLBSWETH1/( PLBDAH(:)**2              ) + &
+            XLBSWETH2/( PLBDAH(:)   * PLBDAS(:)   ) + &
+            XLBSWETH3/(               PLBDAS(:)**2) ) )   
+    END WHERE
+!
+!*       3.1.5b  perform the bilinear interpolation of the normalized
+!               SWETH-kernel FOR CONCENTRATION
+!
+    DO JJ = 1,IGWET
+       ZVEC3(JJ) = (  XKER_N_SWETH(IVEC1(JJ)+1,IVEC2(JJ)+1)* ZVEC2(JJ)          &
+                     - XKER_N_SWETH(IVEC1(JJ)+1,IVEC2(JJ)  )*(ZVEC2(JJ) - 1.0) ) &
+        		 	                                   * ZVEC1(JJ) &
+                   - ( XKER_N_SWETH(IVEC1(JJ)  ,IVEC2(JJ)+1)* ZVEC2(JJ)          &
+                     - XKER_N_SWETH(IVEC1(JJ)  ,IVEC2(JJ)  )*(ZVEC2(JJ) - 1.0) ) &
+         		                                     * (ZVEC1(JJ) - 1.0)
+    END DO
+    ZZNW(:) = UNPACK( VECTOR=ZVEC3(:),MASK=GWET,FIELD=0.0 )
+!
+    WHERE( GWET(:) )
+       ZZNW1(:,3) = MIN( PCSS1D(:),XFNSWETH*ZZNW(:) * PCST1D(:)            & ! NSWETH
+                                              *( PCHT1D(:) )              & 
+       	                 *( PRHODREF(:)**(-XCEXVT+1.) )               &
+                         *( XLBNSWETH1/( PLBDAH(:)**2              ) + &
+                            XLBNSWETH2/( PLBDAH(:)   * PLBDAS(:)   ) + &
+                            XLBNSWETH3/(               PLBDAS(:)**2) ) )
     END WHERE
     DEALLOCATE(IVEC2)
     DEALLOCATE(IVEC1)
@@ -1687,13 +1952,34 @@ IF( IHAIL>0 ) THEN
     ZZW(:) = UNPACK( VECTOR=ZVEC3(:),MASK=GWET,FIELD=0.0 )
 !
     WHERE( GWET(:) )
-      ZZW1(:,5) = MAX(MIN( PRGS1D(:),XFGWETH*ZZW(:)                       & ! RGWETH
-                    *( PLBDAG(:)**(XCXG-XBG) )*( PLBDAH(:)**XCXH )  &
-                       *( PRHODREF(:)**(-XCEXVT-1.) )               &
-                       *( XLBGWETH1/( PLBDAH(:)**2              ) + &
-                          XLBGWETH2/( PLBDAH(:)   * PLBDAG(:)   ) + &
-                          XLBGWETH3/(               PLBDAG(:)**2) ) ),0. )
+       ZZW1(:,5) = MAX(MIN( PRGS1D(:),XFGWETH*ZZW(:) * PRGT1D(:) * PCHT1D(:) &  
+            *( PRHODREF(:)**(-XCEXVT+1.) )               &
+            *( XLBGWETH1/( PLBDAH(:)**2              ) + &
+            XLBGWETH2/( PLBDAH(:)   * PLBDAG(:)   ) + &
+            XLBGWETH3/(               PLBDAG(:)**2) ) ),0. )
     END WHERE
+!*       3.1.10b perform the bilinear interpolation of the normalized
+!               GWETH-kernel FOR CONCENTRATION
+!
+    DO JJ = 1,IGWET
+       ZVEC3(JJ) = (  XKER_N_GWETH(IVEC1(JJ)+1,IVEC2(JJ)+1)* ZVEC2(JJ)          &
+                        - XKER_N_GWETH(IVEC1(JJ)+1,IVEC2(JJ)  )*(ZVEC2(JJ) - 1.0) ) &
+                          			 	                   * ZVEC1(JJ) &
+                     - (  XKER_N_GWETH(IVEC1(JJ)  ,IVEC2(JJ)+1)* ZVEC2(JJ)          &
+                        - XKER_N_GWETH(IVEC1(JJ)  ,IVEC2(JJ)  )*(ZVEC2(JJ) - 1.0) ) &
+                                    			     * (ZVEC1(JJ) - 1.0)
+    END DO
+    ZZNW(:) = UNPACK( VECTOR=ZVEC3(:),MASK=GWET,FIELD=0.0 )
+!
+    WHERE( GWET(:) )
+       ZZNW1(:,5) = MAX(MIN( PCGS1D(:),XFNGWETH*ZZNW(:) * PCGT1D(:)       & ! NGWETH
+                                                   *( PCHT1D(:) )        &
+                         *( PRHODREF(:)**(-XCEXVT+1.) )               &
+                         *( XLBNGWETH1/( PLBDAH(:)**2              ) + &
+                            XLBNGWETH2/( PLBDAH(:)   * PLBDAG(:)   ) + &
+                            XLBNGWETH3/(               PLBDAG(:)**2) ) ),0. )
+    END WHERE
+! 
     DEALLOCATE(IVEC2)
     DEALLOCATE(IVEC1)
     DEALLOCATE(ZVEC3)
@@ -1707,31 +1993,34 @@ IF( IHAIL>0 ) THEN
 !
   ZZW(:) = 0.0
   WHERE( GHAIL(:) .AND. PZT(:)<XTT )
-    ZZW(:) = PRVT1D(:) * PPRES(:) / ((XMV / XMD) + PRVT1D(:)) ! Vapor pressure
-    ZZW(:) = PKA(:) * (XTT - PZT(:)) +                            &
-           ( PDV(:) * (XLVTT + ( XCPV - XCL ) * ( PZT(:) - XTT )) &
-                    * (XESTT-ZZW(:))/(XRV*PZT(:))             )
+     ZZW(:) = PRVT1D(:)*PPRES(:)/((XMV/XMD)+PRVT1D(:)) ! Vapor pressure
+     ZZW(:) = PKA(:)*(XTT-PZT(:)) +                                 &
+                    ( PDV(:)*(XLVTT + ( XCPV - XCL ) * ( PZT(:) - XTT )) &
+                                *(XESTT-ZZW(:))/(XRV*PZT(:))             )
 !
 ! compute RWETH
 !
-     ZZW(:)  =  MAX(0.,  ( ZZW(:) * ( X0DEPH*       PLBDAH(:)**XEX0DEPH +     &
-                               X1DEPH*PCJ(:)*PLBDAH(:)**XEX1DEPH ) +   &
-                  ( ZZW1(:,2)+ZZW1(:,3)+ZZW1(:,5) ) *                  &
-                  ( PRHODREF(:)*(XLMTT+(XCI-XCL)*(XTT-PZT(:)))   ) ) / &
-                        ( PRHODREF(:)*(XLMTT-XCL*(XTT-PZT(:))) ) )
+     ZZW(:)  =  MAX(0.,  ( ZZW(:) * PCHT1D(:) * ( X0DEPH*       PLBDAH(:)**XEX0DEPH +     &  
+                                    X1DEPH*PCJ(:)*PLBDAH(:)**XEX1DEPH ) +   &
+                       ( ZZW1(:,2)+ZZW1(:,3)+ZZW1(:,5) ) *                  &
+                       ( PRHODREF(:)*(XLMTT+(XCI-XCL)*(XTT-PZT(:)))   ) ) / &
+                             ( PRHODREF(:)*(XLMTT-XCL*(XTT-PZT(:))) ) )            
 !
-     ZZW1(:,6) = MAX( ZZW(:) - ZZW1(:,2) - ZZW1(:,3) - ZZW1(:,5),0.) ! RCWETH+RRWETH
-   END WHERE
+     ZZW1(:,6) = MAX( ZZW(:) - ZZW1(:,2) - ZZW1(:,3) - ZZW1(:,5),0.) !RCWETH+RRWETH
+  END WHERE
    !
-   WHERE ( GHAIL(:) .AND. PZT(:)<XTT  .AND. ZZW1(:,6)/=0.)
+  WHERE ( GHAIL(:) .AND. PZT(:)<XTT  .AND. ZZW1(:,6)/=0.)
 !
 ! limitation of the available rainwater mixing ratio (RRWETH < RRS !)
 !
      ZZW1(:,4) = MAX( 0.0,MIN( ZZW1(:,6),PRRS1D(:)+ZZW1(:,1) ) )
      ZZX(:)    = ZZW1(:,4) / ZZW1(:,6)
      ZZW1(:,2) = ZZW1(:,2) * ZZX(:)
+     ZZNW1(:,2) = ZZNW1(:,2)*ZZX(:) 
      ZZW1(:,3) = ZZW1(:,3) * ZZX(:)
+     ZZNW1(:,3) = ZZNW1(:,3)*ZZX(:)
      ZZW1(:,5) = ZZW1(:,5) * ZZX(:)
+     ZZNW1(:,5) = ZZNW1(:,5)*ZZX(:)  
      ZZW(:)    = ZZW1(:,4) + ZZW1(:,2) + ZZW1(:,3) + ZZW1(:,5)
 !
 !*       3.2.1  integrate the Wet growth of hail
@@ -1745,10 +2034,12 @@ IF( IHAIL>0 ) THEN
      PTHS1D(:) = PTHS1D(:) + ZZW1(:,4) * (PLSFACT(:) - PLVFACT(:)) 
                                                 ! f(L_f*(RCWETH+RRWETH))
 !
-     PCCS1D(:) = MAX( PCCS1D(:)-ZZW1(:,1)*(PCCT1D(:)/MAX(PRCT1D(:),XRTMIN(2))),0.0 )
-     PCIS1D(:) = MAX( PCIS1D(:)-ZZW1(:,2)*(PCIT1D(:)/MAX(PRIT1D(:),XRTMIN(4))),0.0 )
      PCRS1D(:) = MAX( PCRS1D(:)-MAX( ZZW1(:,4)-ZZW1(:,1),0.0 )                 &
-                                     *(PCRT1D(:)/MAX(PRRT1D(:),XRTMIN(3))),0.0 )
+                                       *(PCRT1D(:)/MAX(PRRT1D(:),XRTMIN(3))),0.0 )
+     PCSS1D(:) = MAX( PCSS1D(:)-ZZNW1(:,3),0.0 ) 
+     PCGS1D(:) = MAX( PCGS1D(:)-ZZNW1(:,5),0.0 )   
+     PCCS1D(:) = MAX( PCCS1D(:)-ZZNW1(:,1),0.0 )       
+     PCIS1D(:) = MAX( PCIS1D(:)-ZZNW1(:,2),0.0 )
   END WHERE
 !
   if ( nbumod == kmi .and. lbu_enable ) then
@@ -1773,6 +2064,12 @@ IF( IHAIL>0 ) THEN
                                            Unpack( pcrs1d(:), mask = gmicro(:, :, :), field = pcrs(:, :, :) ) * prhodj(:, :, :) )
                     call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'WETH', &
                                            Unpack( pcis1d(:), mask = gmicro(:, :, :), field = pcis(:, :, :) ) * prhodj(:, :, :) )
+      if (M2_ICE) then
+                    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ns), 'WETH', &
+                                           Unpack( pcss1d(:), mask = gmicro(:, :, :), field = pcss(:, :, :) ) * prhodj(:, :, :) )
+                    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ng), 'WETH', &
+                                           Unpack( pcgs1d(:), mask = gmicro(:, :, :), field = pcgs(:, :, :) ) * prhodj(:, :, :) ) 
+      end if
     end if
   end if
 END IF ! IHAIL>0
@@ -1789,13 +2086,19 @@ IF ( IHAIL>0 ) THEN
                                             Unpack( prgs1d(:), mask = gmicro(:, :, :), field = prgs(:, :, :) ) * prhodj(:, :, :) )
     if ( lbudget_rh ) call Budget_store_init( tbudgets(NBUDGET_RH), 'COHG', &
                                             Unpack( prhs1d(:), mask = gmicro(:, :, :), field = prhs(:, :, :) ) * prhodj(:, :, :) )
+    if (lbudget_sv .and. M2_ICE) then
+                      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ng), 'COHG', &
+                                           Unpack( pcgs1d(:), mask = gmicro(:, :, :), field = pcgs(:, :, :) ) * prhodj(:, :, :) ) 
+                      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nh), 'COHG', &
+                                           Unpack( pchs1d(:), mask = gmicro(:, :, :), field = pchs(:, :, :) ) * prhodj(:, :, :) )  
+    end if
   end if
 !
   ZTHRH = 0.01E-3
   ZTHRC = 0.001E-3
   ZZW(:) = 0.0
 !
-  WHERE( PRTH1D(:)<ZTHRH .AND. PRCT1D(:)<ZTHRC .AND. PZT(:)<XTT )
+  WHERE( PRHT1D(:)<ZTHRH .AND. PRCT1D(:)<ZTHRC .AND. PZT(:)<XTT )
     ZZW(:) = MIN( 1.0,MAX( 0.0,1.0-(PRCT1D(:)/ZTHRC) ) )
 !
 ! assume a linear percent conversion rate of hail into graupel
@@ -1804,12 +2107,24 @@ IF ( IHAIL>0 ) THEN
     PRGS1D(:) = PRGS1D(:) + ZZW(:)                      !   partial conversion
     PRHS1D(:) = PRHS1D(:) - ZZW(:)                      ! of hail into graupel
   END WHERE
+    if (M2_ICE) then
+       WHERE( PRHT1D(:)<ZTHRH .AND. PRCT1D(:)<ZTHRC .AND. PZT(:)<XTT )
+          PCGS1D(:) = PCGS1D(:) + ZZW(:)* PCHS1D(:)/MAX(PRHS1D(:),XRTMIN(7)) 
+          PCHS1D(:) = MAX( PCHS1D(:) - ZZW(:)* PCHS1D(:)/MAX(PRHS1D(:),XRTMIN(7)), 0.0 ) 
+       END WHERE
+    end if
 !
   if ( nbumod == kmi .and. lbu_enable ) then
     if ( lbudget_rg ) call Budget_store_end( tbudgets(NBUDGET_RG), 'COHG', &
                                            Unpack( prgs1d(:), mask = gmicro(:, :, :), field = prgs(:, :, :) ) * prhodj(:, :, :) )
     if ( lbudget_rh ) call Budget_store_end( tbudgets(NBUDGET_RH), 'COHG', &
                                            Unpack( prhs1d(:), mask = gmicro(:, :, :), field = prhs(:, :, :) ) * prhodj(:, :, :) )
+    if (lbudget_sv .and. M2_ICE) then
+                      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ng), 'COHG', &
+                                           Unpack( pcgs1d(:), mask = gmicro(:, :, :), field = pcgs(:, :, :) ) * prhodj(:, :, :) ) 
+                      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nh), 'COHG', &
+                                           Unpack( pchs1d(:), mask = gmicro(:, :, :), field = pchs(:, :, :) ) * prhodj(:, :, :) )                                   
+    end if
   end if
 END IF
 !
@@ -1817,51 +2132,127 @@ END IF
 !*       3.4    Melting of the hailstones
 !
 IF ( IHAIL>0 ) THEN
-  if ( nbumod == kmi .and. lbu_enable ) then
-    if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'HMLT', &
-                                            Unpack( pths1d(:), mask = gmicro(:, :, :), field = pths(:, :, :) ) * prhodj(:, :, :) )
-    if ( lbudget_rr ) call Budget_store_init( tbudgets(NBUDGET_RR), 'HMLT', &
-                                            Unpack( prrs1d(:), mask = gmicro(:, :, :), field = prrs(:, :, :) ) * prhodj(:, :, :) )
-    if ( lbudget_rh ) call Budget_store_init( tbudgets(NBUDGET_RH), 'HMLT', &
-                                            Unpack( prhs1d(:), mask = gmicro(:, :, :), field = prhs(:, :, :) ) * prhodj(:, :, :) )
-    if ( lbudget_sv ) call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nr), 'HMLT', &
-                                            Unpack( pcrs1d(:), mask = gmicro(:, :, :), field = pcrs(:, :, :) ) * prhodj(:, :, :) )
-  end if
+   if ( nbumod == kmi .and. lbu_enable ) then
+      if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'HMLT', &
+           Unpack( pths1d(:), mask = gmicro(:, :, :), field = pths(:, :, :) ) * prhodj(:, :, :) )
+      if ( lbudget_rr ) call Budget_store_init( tbudgets(NBUDGET_RR), 'HMLT', &
+           Unpack( prrs1d(:), mask = gmicro(:, :, :), field = prrs(:, :, :) ) * prhodj(:, :, :) )
+      if ( lbudget_rh ) call Budget_store_init( tbudgets(NBUDGET_RH), 'HMLT', &
+           Unpack( prhs1d(:), mask = gmicro(:, :, :), field = prhs(:, :, :) ) * prhodj(:, :, :) )
+      if ( lbudget_sv ) call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nr), 'HMLT', &
+           Unpack( pcrs1d(:), mask = gmicro(:, :, :), field = pcrs(:, :, :) ) * prhodj(:, :, :) )
+      if ( lbudget_sv .and. M2_ICE ) call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nh), 'HMLT', &
+           Unpack( pchs1d(:), mask = gmicro(:, :, :), field = pchs(:, :, :) ) * prhodj(:, :, :) )                                    
+   end if
 !
-  ZZW(:) = 0.0
-  WHERE( GHAIL(:) .AND. (PRHS1D(:)>XRTMIN(7)/PTSTEP) .AND. (PRTH1D(:)>XRTMIN(7)) .AND. (PZT(:)>XTT) )
-    ZZW(:) = PRVT1D(:) * PPRES(:) / ((XMV / XMD) + PRVT1D(:)) ! Vapor pressure
-    ZZW(:) = PKA(:) * (XTT - PZT(:)) +                              &
-           ( PDV(:) * (XLVTT + ( XCPV - XCL ) * ( PZT(:) - XTT )) &
-                    * (XESTT - ZZW(:)) / (XRV * PZT(:)) )
+   ZZW(:) = 0.0
+   WHERE( GHAIL(:) .AND. (PRHS1D(:)>XRTMIN(7)/PTSTEP) .AND. (PRHT1D(:)>XRTMIN(7)) .AND. (PZT(:)>XTT) )
+      ZZW(:) = PRVT1D(:)*PPRES(:)/((XMV/XMD)+PRVT1D(:)) ! Vapor pressure
+      ZZW(:) = PKA(:)*(XTT-PZT(:)) +                              &
+              ( PDV(:)*(XLVTT + ( XCPV - XCL ) * ( PZT(:) - XTT )) &
+              *(XESTT-ZZW(:))/(XRV*PZT(:))         )
 !
 ! compute RHMLTR
 !
-    ZZW(:)  = MIN( PRHS1D(:), MAX( 0.0,( -ZZW(:) *                     &
-                           ( X0DEPH*       PLBDAH(:)**XEX0DEPH +     &
-                             X1DEPH*PCJ(:)*PLBDAH(:)**XEX1DEPH ) -   &
-                    ZZW1(:,6)*( PRHODREF(:)*XCL*(XTT-PZT(:))) ) /    &
-                                             ( PRHODREF(:)*XLMTT ) ) )
-    PRRS1D(:) = PRRS1D(:) + ZZW(:)
-    PRHS1D(:) = PRHS1D(:) - ZZW(:)
-    PTHS1D(:) = PTHS1D(:) - ZZW(:) * (PLSFACT(:) - PLVFACT(:)) ! f(L_f*(-RHMLTR))
+      ZZW(:)  = MIN( PRHS1D(:), MAX( 0.0,( -ZZW(:) * PCHT1D(:) *           &
+              ( X0DEPH*       PLBDAH(:)**XEX0DEPH +     &
+              X1DEPH*PCJ(:)*PLBDAH(:)**XEX1DEPH ) -   &
+              ZZW1(:,6)*( PRHODREF(:)*XCL*(XTT-PZT(:))) ) /    &
+              ( PRHODREF(:)*XLMTT ) ) )  
+      PRRS1D(:) = PRRS1D(:) + ZZW(:)
+      PRHS1D(:) = PRHS1D(:) - ZZW(:)
+      PTHS1D(:) = PTHS1D(:) - ZZW(:)*(PLSFACT(:)-PLVFACT(:)) ! f(L_f*(-RHMLTR))
 !
-    PCRS1D(:) = MAX( PCRS1D(:) + ZZW(:)*(XCCH*PLBDAH(:)**XCXH/PRTH1D(:)),0.0 )
-  END WHERE
+      PCRS1D(:) = MAX( PCRS1D(:) + ZZW(:)*(PCHT1D(:)/PRHT1D(:)),0.0 )
+      PCHS1D(:) = MAX( PCHS1D(:) - ZZW(:)*(PCHT1D(:)/PRHT1D(:)),0.0 )
 !
-  if ( nbumod == kmi .and. lbu_enable ) then
-    if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'HMLT', &
-                                           Unpack( pths1d(:), mask = gmicro(:, :, :), field = pths(:, :, :) ) * prhodj(:, :, :) )
-    if ( lbudget_rr ) call Budget_store_end( tbudgets(NBUDGET_RR), 'HMLT', &
-                                           Unpack( prrs1d(:), mask = gmicro(:, :, :), field = prrs(:, :, :) ) * prhodj(:, :, :) )
-    if ( lbudget_rh ) call Budget_store_end( tbudgets(NBUDGET_RH), 'HMLT', &
-                                           Unpack( prhs1d(:), mask = gmicro(:, :, :), field = prhs(:, :, :) ) * prhodj(:, :, :) )
-    if ( lbudget_sv ) call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nr), 'HMLT', &
-                                           Unpack( pcrs1d(:), mask = gmicro(:, :, :), field = pcrs(:, :, :) ) * prhodj(:, :, :) )
-  end if
+   END WHERE
+!
+   if ( nbumod == kmi .and. lbu_enable ) then
+      if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'HMLT', &
+           Unpack( pths1d(:), mask = gmicro(:, :, :), field = pths(:, :, :) ) * prhodj(:, :, :) )
+      if ( lbudget_rr ) call Budget_store_end( tbudgets(NBUDGET_RR), 'HMLT', &
+           Unpack( prrs1d(:), mask = gmicro(:, :, :), field = prrs(:, :, :) ) * prhodj(:, :, :) )
+      if ( lbudget_rh ) call Budget_store_end( tbudgets(NBUDGET_RH), 'HMLT', &
+           Unpack( prhs1d(:), mask = gmicro(:, :, :), field = prhs(:, :, :) ) * prhodj(:, :, :) )
+      if ( lbudget_sv ) call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nr), 'HMLT', &
+           Unpack( pcrs1d(:), mask = gmicro(:, :, :), field = pcrs(:, :, :) ) * prhodj(:, :, :) )
+      if ( lbudget_sv .and. M2_ICE ) call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nh), 'HMLT', &
+           Unpack( pchs1d(:), mask = gmicro(:, :, :), field = pchs(:, :, :) ) * prhodj(:, :, :) )
+   end if
 END IF
 !
 END IF HAIL
+!
+!
+!
+if( M2_ICE) then
+   if ( nbumod == kmi .and. lbu_enable ) then
+      if ( lbudget_sv ) call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ns), 'SSC', &
+           Unpack( pcss1d(:), mask = gmicro(:, :, :), field = pcss(:, :, :) ) * prhodj(:, :, :) )
+   end if
+!*       1.3NEW  Aggregates self-collection  
+!        -------------------------------
+!
+   ZZNW1(:,:) = 0.0
+!
+   GACC(:) = PCST1D(:)>XCTMIN(5) .AND. PRST1D(:)>XRTMIN(5) .AND. PZT(:)<XTT
+   IGACC = COUNT( GACC(:) )
+!
+   IF( IGACC>0 ) THEN
+!
+!        1.3N.0  allocations
+!
+      ALLOCATE(ZVEC1(IGACC))
+      ALLOCATE(IVEC1(IGACC))
+!
+!        1.3N.1  select the (ZLBDAS,ZLBDAS) couplet
+!
+      ZVEC1(:) = PACK( PLBDAS(:),MASK=GACC(:) )
+!
+!        1.3N.2  find the next lower indice for the ZLBDAS and for the ZLBDAS
+!               in the geometrical set of (Lbda_s,Lbda_s) couplet use to
+!               tabulate the SACCS-kernel
+!
+      ZVEC1(1:IGACC) = MAX( 1.0001, MIN( FLOAT(NSCLBDAS)-0.0001,           &
+           XSCINTP1S * LOG( ZVEC1(1:IGACC) ) + XSCINTP2S ) )
+      IVEC1(1:IGACC) = INT( ZVEC1(1:IGACC) )
+      ZVEC1(1:IGACC) = ZVEC1(1:IGACC) - FLOAT( IVEC1(1:IGACC) )
+!
+!        1.3N.3 perform the bilinear interpolation of the normalized
+!               SSCS-kernel
+!
+      ALLOCATE(ZVEC3(IGACC))
+      DO JJ = 1,IGACC
+         ZVEC3(JJ) =  (   XKER_N_SSCS(IVEC1(JJ)+1,IVEC1(JJ)+1)* ZVEC1(JJ)          &
+                    -  XKER_N_SSCS(IVEC1(JJ)+1,IVEC1(JJ)  )*(ZVEC1(JJ) - 1.0) ) &
+                                                                         * ZVEC1(JJ) &
+                 - (   XKER_N_SSCS(IVEC1(JJ)  ,IVEC1(JJ)+1)* ZVEC1(JJ)          &
+                    -  XKER_N_SSCS(IVEC1(JJ)  ,IVEC1(JJ)  )*(ZVEC1(JJ) - 1.0) ) &
+                                                           * (ZVEC1(JJ) - 1.0)
+      END DO
+      ZZNW(:) = UNPACK( VECTOR=ZVEC3(:),MASK=GACC(:),FIELD=0.0 ) !! NSACCS
+      DEALLOCATE(ZVEC3)
+!
+      WHERE( GACC(:) )               
+!          ZZNW1(:,5) = XSSC * (PRST1D(:) * PRHODREF(:))**EXPRS * PCST1D(:)**EXPNS      
+         ZZNW1(:,5) = MIN( PCSS1D(:),XFNSSCS*ZZNW(:)                       & ! NSSCS
+                                      * EXP( XCOLEXSS*(PZT(:)-XTT) )  &
+                    *( PCST1D(:)                     )**( 2 )           &  
+                    *( PRHODREF(:)**(-XCEXVT-1.) )                    &
+                         *( XLBNSSCS1/( PLBDAS(:)**2             ) +  &
+                            XLBNSSCS2/( PLBDAS(:)**2 ) )            )
+!                                                                           
+         PCSS1D(:) = MAX( PCSS1D(:)-ZZNW1(:,5),0.0 )    
+      END WHERE
+      DEALLOCATE(IVEC1)
+      DEALLOCATE(ZVEC1)
+   END IF
+   if ( nbumod == kmi .and. lbu_enable ) then
+      if ( lbudget_sv ) call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ns), 'SSC', &
+           Unpack( pcss1d(:), mask = gmicro(:, :, :), field = pcss(:, :, :) ) * prhodj(:, :, :) )
+   end if
+end if
 !
 !------------------------------------------------------------------------------
 !

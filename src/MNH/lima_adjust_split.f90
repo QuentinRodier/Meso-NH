@@ -11,8 +11,8 @@ INTERFACE
 !
       SUBROUTINE LIMA_ADJUST_SPLIT(KRR, KMI, TPFILE, HCONDENS, HLAMBDA3,        &
                              OSUBG_COND, OSIGMAS, PTSTEP, PSIGQSAT,             &
-                             PRHODREF, PRHODJ, PEXNREF, PPABSM, PSIGS, PMFCONV, &
-                             PPABST, PZZ, PDTHRAD, PW_NU,                       &
+                             PRHODREF, PRHODJ, PEXNREF, PSIGS, PMFCONV,         &
+                             PPABST, PPABSTT, PZZ, PDTHRAD, PW_NU,              &
                              PRT, PRS, PSVT, PSVS,                              &
                              PTHS, PSRCS, PCLDFR, PICEFR, PRC_MF, PRI_MF, PCF_MF)
 !
@@ -36,10 +36,10 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PRHODREF  ! Dry density of the
                                                      ! reference state
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PRHODJ    ! Dry density * Jacobian
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PEXNREF   ! Reference Exner function
-REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PPABSM    ! Absolute Pressure at t-dt
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PSIGS     ! Sigma_s at time t
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PMFCONV   ! 
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PPABST    ! Absolute Pressure at t     
+REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PPABSTT   ! Absolute Pressure at t+dt     
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PZZ       !     
 REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PDTHRAD   ! Radiative temperature tendency
 REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PW_NU     ! updraft velocity used for
@@ -72,8 +72,8 @@ END MODULE MODI_LIMA_ADJUST_SPLIT
 !     ###########################################################################
       SUBROUTINE LIMA_ADJUST_SPLIT(KRR, KMI, TPFILE, HCONDENS, HLAMBDA3,        &
                              OSUBG_COND, OSIGMAS, PTSTEP, PSIGQSAT,             &
-                             PRHODREF, PRHODJ, PEXNREF, PPABSM, PSIGS, PMFCONV, &
-                             PPABST, PZZ, PDTHRAD, PW_NU,                       &
+                             PRHODREF, PRHODJ, PEXNREF, PSIGS, PMFCONV,         &
+                             PPABST, PPABSTT, PZZ, PDTHRAD, PW_NU,              &
                              PRT, PRS, PSVT, PSVS,                              &
                              PTHS, PSRCS, PCLDFR, PICEFR, PRC_MF, PRI_MF, PCF_MF)
 !     ###########################################################################
@@ -198,10 +198,10 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PRHODREF  ! Dry density of the
                                                      ! reference state
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PRHODJ    ! Dry density * Jacobian
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PEXNREF   ! Reference Exner function
-REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PPABSM    ! Absolute Pressure at t-dt
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PSIGS     ! Sigma_s at time t
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PMFCONV   ! 
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PPABST    ! Absolute Pressure at t     
+REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PPABSTT   ! Absolute Pressure at t+dt     
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PZZ       !     
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PDTHRAD   ! Radiative temperature tendency
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PW_NU     ! updraft velocity used for
@@ -374,11 +374,11 @@ PCIT(:,:,:) = 0.
 PCCS(:,:,:) = 0.
 ! PCIS(:,:,:) = 0.
 !
-IF ( LWARM ) PCCT(:,:,:) = PSVS(:,:,:,NSV_LIMA_NC)*PTSTEP
-IF ( LCOLD ) PCIT(:,:,:) = PSVT(:,:,:,NSV_LIMA_NI)
+IF ( LWARM .AND. NMOM_C.GE.2 ) PCCT(:,:,:) = PSVS(:,:,:,NSV_LIMA_NC)*PTSTEP
+IF ( LCOLD .AND. NMOM_I.GE.2 ) PCIT(:,:,:) = PSVT(:,:,:,NSV_LIMA_NI)
 !
-IF ( LWARM ) PCCS(:,:,:) = PSVS(:,:,:,NSV_LIMA_NC)
-! IF ( LCOLD ) PCIS(:,:,:) = PSVS(:,:,:,NSV_LIMA_NI)
+IF ( LWARM .AND. NMOM_C.GE.2 ) PCCS(:,:,:) = PSVS(:,:,:,NSV_LIMA_NC)
+! IF ( LCOLD .AND. NMOM_I.GE.2 ) PCIS(:,:,:) = PSVS(:,:,:,NSV_LIMA_NI)
 !
 IF ( LSCAV .AND. LAERO_MASS ) PMAS(:,:,:) = PSVS(:,:,:,NSV_LIMA_SCAVMASS)
 ! 
@@ -413,7 +413,7 @@ if ( nbumod == kmi .and. lbu_enable ) then
   !Remark: PRIS is not modified but source term kept for better coherence with lima_adjust and lima_notadjust
   if ( lbudget_ri ) call Budget_store_init( tbudgets(NBUDGET_RI), 'CEDS', pris(:, :, :) * prhodj(:, :, :) )
   if ( lbudget_sv ) then
-    if ( lwarm ) &
+    if ( lwarm .and. nmom_c.ge.2) &
       call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'CEDS', pccs(:, :, :) * prhodj(:, :, :) )
     if ( lscav .and. laero_mass ) &
       call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_scavmass), 'CEDS', pmas(:, :, :) * prhodj(:, :, :) )
@@ -462,7 +462,7 @@ END WHERE
 !
 !*       2.2    estimate the Exner function at t+1
 !
-ZEXNS(:,:,:) = ( (2. * PPABST(:,:,:) - PPABSM(:,:,:)) / XP00 ) ** (XRD/XCPD)  
+ZEXNS(:,:,:) = ( PPABSTT(:,:,:) / XP00 ) ** (XRD/XCPD)  
 !
 !    beginning of the iterative loop
 !
@@ -519,7 +519,7 @@ DO JITER =1,ITERMAX
            Z_SIGS, PMFCONV, PCLDFR, Z_SRCS, GUSERI, G_SIGMAS,                  &
            Z_SIGQSAT, PLV=ZLV, PLS=ZLS, PCPH=ZCPH )
    END IF
-   IF (OSUBG_COND) THEN
+   IF (OSUBG_COND .AND. NMOM_C.GE.2 .AND. LACTI) THEN
       PSRCS=Z_SRCS
       ZW_MF=0.
       CALL LIMA_CCN_ACTIVATION (TPFILE,                          &
@@ -630,13 +630,15 @@ END IF
 !
 ZMASK(:,:,:) = 0.0
 ZW(:,:,:) = 0.
-WHERE (PRCS(:,:,:) <= ZRTMIN(2) .OR. PCCS(:,:,:) <= ZCTMIN(2)) 
-   PRVS(:,:,:) = PRVS(:,:,:) + PRCS(:,:,:) 
-   PTHS(:,:,:) = PTHS(:,:,:) - PRCS(:,:,:)*ZLV(:,:,:)/(ZCPH(:,:,:)*ZEXNS(:,:,:))
-   PRCS(:,:,:) = 0.0
-   ZW(:,:,:)   = MAX(PCCS(:,:,:),0.)
-   PCCS(:,:,:) = 0.0
-END WHERE
+IF (NMOM_C .GE. 2) THEN
+   WHERE (PRCS(:,:,:) <= ZRTMIN(2) .OR. PCCS(:,:,:) <=0.) 
+      PRVS(:,:,:) = PRVS(:,:,:) + PRCS(:,:,:) 
+      PTHS(:,:,:) = PTHS(:,:,:) - PRCS(:,:,:)*ZLV(:,:,:)/(ZCPH(:,:,:)*ZEXNS(:,:,:))
+      PRCS(:,:,:) = 0.0
+      ZW(:,:,:)   = MAX(PCCS(:,:,:),0.)
+      PCCS(:,:,:) = 0.0
+   END WHERE
+END IF
 !
 ZW1(:,:,:) = 0.
 IF (LWARM .AND. NMOD_CCN.GE.1) ZW1(:,:,:) = SUM(PNAS,DIM=4)
@@ -696,8 +698,8 @@ IF ( KRR .GE. 6 ) PRS(:,:,:,6) = PRGS(:,:,:)
 !
 ! Prepare 3D number concentrations
 !
-IF ( LWARM ) PSVS(:,:,:,NSV_LIMA_NC) = PCCS(:,:,:)
-! IF ( LCOLD ) PSVS(:,:,:,NSV_LIMA_NI) = PCIS(:,:,:)
+IF ( LWARM .AND. NMOM_C.GE.2 ) PSVS(:,:,:,NSV_LIMA_NC) = PCCS(:,:,:)
+! IF ( LCOLD .AND. NMOM_I.GE.2 ) PSVS(:,:,:,NSV_LIMA_NI) = PCIS(:,:,:)
 !
 IF ( LSCAV .AND. LAERO_MASS ) PSVS(:,:,:,NSV_LIMA_SCAVMASS) = PMAS(:,:,:)
 ! 
@@ -720,7 +722,7 @@ END IF
 IF ( tpfile%lopened ) THEN
    ZT(:,:,:) = ( PTHS(:,:,:) * ZDT ) * ZEXNS(:,:,:)
    ZW(:,:,:) = EXP( XALPI - XBETAI/ZT(:,:,:) - XGAMI*ALOG(ZT(:,:,:) ) )
-   ZW1(:,:,:)= 2.0*PPABST(:,:,:)-PPABSM(:,:,:)
+   ZW1(:,:,:)= PPABSTT(:,:,:)
    ZW(:,:,:) = PRVT(:,:,:)*( ZW1(:,:,:)-ZW(:,:,:) ) / ( (XMV/XMD) * ZW(:,:,:) ) - 1.0
    
    TZFIELD%CMNHNAME   = 'SSI'
@@ -746,7 +748,7 @@ if ( nbumod == kmi .and. lbu_enable ) then
   if ( lbudget_rc ) call Budget_store_end( tbudgets(NBUDGET_RC), 'CEDS', prcs(:, :, :) * prhodj(:, :, :) )
   if ( lbudget_ri ) call Budget_store_end( tbudgets(NBUDGET_RI), 'CEDS', pris(:, :, :) * prhodj(:, :, :) )
   if ( lbudget_sv ) then
-    if ( lwarm ) &
+    if ( lwarm .and. nmom_c.ge.2) &
       call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'CEDS', pccs(:, :, :) * prhodj(:, :, :) )
     if ( lscav .and. laero_mass ) &
       call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_scavmass), 'CEDS', pmas(:, :, :) * prhodj(:, :, :) )

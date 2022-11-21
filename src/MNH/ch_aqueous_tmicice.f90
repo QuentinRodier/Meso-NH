@@ -573,8 +573,8 @@ IF( IMICRO >= 1 ) THEN
    ZZW2(:,:) = 0.0
    DO JL = 1,IMICRO
      IF ( GRIM(JL) ) THEN
-       ZZW1(JL,1) = MIN( ZZRCS(JL), XCRIMSS * ZZW(JL) * ZRCT(JL)   & ! RCRIMSS
-                         * ZLBDAS(JL)**XEXCRIMSS * ZRHODREF(JL)**(-XCEXVT) )
+       ZZW1(JL,1) = MIN( ZZRCS(JL), XCRIMSS * ZZW(JL) * ZRCT(JL) * ZRST(JL)  & ! RCRIMSS
+                         * ZLBDAS(JL)**(XBS+XEXCRIMSS) * ZRHODREF(JL)**(-XCEXVT+1) )
        ZZW2(JL,:) = ZZW1(JL,1) * ZCSVT(JL,:)/ZRCT(JL)
        ZZW2(JL,:) = MAX(MIN(ZZW2(JL,:),(ZCSVT(JL,:)/PTSTEP)),0.0)
        ZCRSVS(JL,:) = ZCRSVS(JL,:) - ZZW2(JL,:)
@@ -622,8 +622,8 @@ IF( IMICRO >= 1 ) THEN
    ZZW2(:,:) = 0.0
    DO JL = 1,IMICRO
      IF ( GRIM(JL) .AND. (ZZRSS(JL)>0.0) ) THEN
-       ZZW1(JL,2) = MIN( ZZRCS(JL), XCRIMSG * ZRCT(JL) * ZLBDAS(JL)**XEXCRIMSG  & ! RCRIMSG
-                        * ZRHODREF(JL)**(-XCEXVT) - ZZW1(JL,1) )
+       ZZW1(JL,2) = MIN( ZZRCS(JL), XCRIMSG * ZRCT(JL) * ZRST(JL) * ZLBDAS(JL)**(XBS+XEXCRIMSG)  & ! RCRIMSG
+                        * ZRHODREF(JL)**(-XCEXVT+1) - ZZW1(JL,1) )
        ZZW2(JL,:) = ZZW1(JL,2) * ZCSVT(JL,:)/ZRCT(JL)
        ZZW2(JL,:) = MAX(MIN(ZZW2(JL,:),(ZCSVT(JL,:)/PTSTEP)),0.0)
        ZCRSVS(JL,:) = ZCRSVS(JL,:) - ZZW2(JL,:)
@@ -731,7 +731,7 @@ IF( IMICRO >= 1 ) THEN
    DO JL = 1,IMICRO
      IF ( GACC(JL) ) THEN
        ZZW1(JL,2) =                                            & !! coef of RRACCS
-              XFRACCSS*( ZLBDAS(JL)**XCXS )*( ZRHODREF(JL)**(-XCEXVT-1.) ) &
+              XFRACCSS*( ZRST(JL)*ZLBDAS(JL)**XBS )*( ZRHODREF(JL)**(-XCEXVT) ) &
          *( XLBRACCS1/((ZLBDAS(JL)**2)               ) +                  &
             XLBRACCS2/( ZLBDAS(JL)    * ZLBDAR(JL)    ) +                  &
             XLBRACCS3/(               (ZLBDAR(JL)**2)) )/ZLBDAR(JL)**4
@@ -971,8 +971,8 @@ IF( IMICRO >= 1 ) THEN
    WHERE( GDRY(:) )
      ZZW1(:,3) = MIN( ZZRSS(:),XFSDRYG*ZZW(:)                         & ! RSDRYG
                                      * EXP( XCOLEXSG*(ZZT(:)-XTT) )  &
-                   *( ZLBDAS(:)**(XCXS-XBS) )*( ZLBDAG(:)**XCXG )    &
-                   *( ZRHODREF(:)**(-XCEXVT-1.) )                    &
+                   *ZRST(:)*( ZLBDAG(:)**XCXG )    &
+                   *( ZRHODREF(:)**(-XCEXVT) )                    &
                         *( XLBSDRYG1/( ZLBDAG(:)**2              ) + &
                            XLBSDRYG2/( ZLBDAG(:)   * ZLBDAS(:)   ) + &
                            XLBSDRYG3/(               ZLBDAS(:)**2) ) )

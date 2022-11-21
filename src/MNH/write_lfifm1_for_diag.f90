@@ -196,7 +196,7 @@ USE MODD_PARAM_LIMA,      ONLY : NMOD_CCN, NMOD_IFN, NMOD_IMM, NINDICE_CCN_IMM,&
                                  LSCAV, LHHONI, LAERO_MASS,                    &
                                  LLIMA_DIAG,                                   &
                                  NSPECIE, XMDIAM_IFN, XSIGMA_IFN, ZFRAC=>XFRAC,&
-                                 XR_MEAN_CCN, XLOGSIG_CCN 
+                                 XR_MEAN_CCN, XLOGSIG_CCN, NMOM_S, NMOM_G, NMOM_H 
 USE MODD_PARAM_LIMA_WARM, ONLY : CLIMA_WARM_CONC, CAERO_MASS
 USE MODD_PARAM_LIMA_COLD, ONLY : CLIMA_COLD_CONC
 USE MODD_LG,              ONLY : CLGNAMES
@@ -333,7 +333,7 @@ INTEGER           :: IACCMODE
 !
 !-------------------------------------------------------------------------------
 INTEGER :: IAUX ! work variable 
-REAL,DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3)) :: ZWORK35,ZWORK36
+REAL,DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3)) :: ZWORK35,ZWORK36, ZW1, ZW2, ZW3
 REAL,DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2))              :: ZWORK25,ZWORK26
 REAL    :: ZEAU ! Mean precipitable water
 INTEGER, DIMENSION(SIZE(XZZ,1),SIZE(XZZ,2))          ::IKTOP ! level in which is the altitude 3000m
@@ -751,7 +751,7 @@ IF (LVAR_PR ) THEN
 ENDIF
 !
 !
-!* Flux d'humidité et d'hydrométéores
+!* Flux d'humidite et d'hydrometeores
 IF (LHU_FLX) THEN
   ZWORK35(:,:,:) = XRHODREF(:,:,:) * XRT(:,:,:,1)
   ZWORK31(:,:,:) = MXM(ZWORK35(:,:,:)) * XUT(:,:,:)
@@ -815,7 +815,7 @@ IF (LHU_FLX) THEN
     ENDDO
   ENDIF
   ! Ecriture
-  !  composantes U et V du flux surfacique d'humidité  
+  !  composantes U et V du flux surfacique d'humidite 
   TZFIELD%CMNHNAME   = 'UM90'
   TZFIELD%CSTDNAME   = ''
   TZFIELD%CLONGNAME  = 'UM90'
@@ -839,7 +839,7 @@ IF (LHU_FLX) THEN
   TZFIELD%NDIMS      = 3
   TZFIELD%LTIMEDEP   = .TRUE.
   CALL IO_Field_write(TPFILE,TZFIELD,ZWORK32)
-  !  composantes U et V du flux d'humidité intégré sur 3000 metres
+  !  composantes U et V du flux d'humidite integre sur 3000 metres
   TZFIELD%CMNHNAME   = 'UM91'
   TZFIELD%CSTDNAME   = ''
   TZFIELD%CLONGNAME  = 'UM91'
@@ -864,7 +864,7 @@ IF (LHU_FLX) THEN
   TZFIELD%LTIMEDEP   = .TRUE.
   CALL IO_Field_write(TPFILE,TZFIELD,ZWORK22)
   !
-  !   Convergence d'humidité
+  !   Convergence d'humidite
   TZFIELD%CMNHNAME   = 'HMCONV'
   TZFIELD%CSTDNAME   = ''
   TZFIELD%CLONGNAME  = 'HMCONV'
@@ -877,7 +877,7 @@ IF (LHU_FLX) THEN
   TZFIELD%LTIMEDEP   = .TRUE.
   CALL IO_Field_write(TPFILE,TZFIELD,-ZWORK35)
   !
-  !   Convergence d'humidité intégré sur 3000 mètres
+  !   Convergence d'humidite integre sur 3000 metres
   TZFIELD%CMNHNAME   = 'HMCONV3000'
   TZFIELD%CSTDNAME   = ''
   TZFIELD%CLONGNAME  = 'HMCONV3000'
@@ -891,7 +891,7 @@ IF (LHU_FLX) THEN
   CALL IO_Field_write(TPFILE,TZFIELD,-ZWORK25)
   !
   IF  (CCLOUD(1:3) == 'ICE' .OR. CCLOUD == 'LIMA') THEN
-    !  composantes U et V du flux surfacique d'hydrométéores  
+    !  composantes U et V du flux surfacique d'hydrometeores  
     TZFIELD%CMNHNAME   = 'UM92'
     TZFIELD%CSTDNAME   = ''
     TZFIELD%CLONGNAME  = 'UM92'
@@ -915,7 +915,7 @@ IF (LHU_FLX) THEN
     TZFIELD%NDIMS      = 3
     TZFIELD%LTIMEDEP   = .TRUE.
     CALL IO_Field_write(TPFILE,TZFIELD,ZWORK34)
-    !  composantes U et V du flux d'hydrométéores intégré sur 3000 metres
+    !  composantes U et V du flux d'hydrometeores integre sur 3000 metres
     TZFIELD%CMNHNAME   = 'UM93'
     TZFIELD%CSTDNAME   = ''
     TZFIELD%CLONGNAME  = 'UM93'
@@ -939,7 +939,7 @@ IF (LHU_FLX) THEN
     TZFIELD%NDIMS      = 2
     TZFIELD%LTIMEDEP   = .TRUE.
     CALL IO_Field_write(TPFILE,TZFIELD,ZWORK24)
-    !   Convergence d'hydrométéores
+    !   Convergence d'hydrometeores
     TZFIELD%CMNHNAME   = 'HMCONV_TT'
     TZFIELD%CSTDNAME   = ''
     TZFIELD%CLONGNAME  = 'HMCONV_TT'
@@ -951,7 +951,7 @@ IF (LHU_FLX) THEN
     TZFIELD%NDIMS      = 3
     TZFIELD%LTIMEDEP   = .TRUE.
     CALL IO_Field_write(TPFILE,TZFIELD,-ZWORK36)
-    !   Convergence d'hydrométéores intégré sur 3000 mètres
+    !   Convergence d'hydrometeores integre sur 3000 metres
     TZFIELD%CMNHNAME   = 'HMCONV3000_TT'
     TZFIELD%CSTDNAME   = ''
     TZFIELD%CLONGNAME  = 'HMCONV3000_TT'
@@ -1152,24 +1152,36 @@ IF (LLIMA_DIAG) THEN
     IF (JSV .EQ. NSV_LIMA_NI) THEN
       TZFIELD%CMNHNAME   = TRIM(CLIMA_COLD_CONC(1))//'T'
     END IF
+! Ns
+    IF (JSV .EQ. NSV_LIMA_NS) THEN
+      TZFIELD%CMNHNAME   = TRIM(CLIMA_COLD_CONC(2))//'T'
+    END IF
+! Ng
+    IF (JSV .EQ. NSV_LIMA_NG) THEN
+      TZFIELD%CMNHNAME   = TRIM(CLIMA_COLD_CONC(3))//'T'
+    END IF
+! Nh
+    IF (JSV .EQ. NSV_LIMA_NH) THEN
+      TZFIELD%CMNHNAME   = TRIM(CLIMA_COLD_CONC(4))//'T'
+    END IF
 ! N IFN free
     IF (JSV .GE. NSV_LIMA_IFN_FREE .AND. JSV .LT. NSV_LIMA_IFN_NUCL) THEN
       WRITE(INDICE,'(I2.2)')(JSV - NSV_LIMA_IFN_FREE + 1)
-      TZFIELD%CMNHNAME   = TRIM(CLIMA_COLD_CONC(2))//INDICE//'T'
+      TZFIELD%CMNHNAME   = TRIM(CLIMA_COLD_CONC(5))//INDICE//'T'
     END IF
 ! N IFN nucl
     IF (JSV .GE. NSV_LIMA_IFN_NUCL .AND. JSV .LT. NSV_LIMA_IFN_NUCL + NMOD_IFN) THEN
       WRITE(INDICE,'(I2.2)')(JSV - NSV_LIMA_IFN_NUCL + 1)
-      TZFIELD%CMNHNAME   = TRIM(CLIMA_COLD_CONC(3))//INDICE//'T'
+      TZFIELD%CMNHNAME   = TRIM(CLIMA_COLD_CONC(6))//INDICE//'T'
     END IF
 ! N IMM nucl
     IF (JSV .GE. NSV_LIMA_IMM_NUCL .AND. JSV .LT. NSV_LIMA_IMM_NUCL + NMOD_IMM) THEN
       WRITE(INDICE,'(I2.2)')(NINDICE_CCN_IMM(JSV - NSV_LIMA_IMM_NUCL + 1))
-      TZFIELD%CMNHNAME   = TRIM(CLIMA_COLD_CONC(4))//INDICE//'T'
+      TZFIELD%CMNHNAME   = TRIM(CLIMA_COLD_CONC(7))//INDICE//'T'
     END IF
 ! Hom. freez. of CCN
     IF (JSV .EQ. NSV_LIMA_HOM_HAZE) THEN
-      TZFIELD%CMNHNAME   = TRIM(CLIMA_COLD_CONC(5))//'T'
+      TZFIELD%CMNHNAME   = TRIM(CLIMA_COLD_CONC(8))//'T'
     END IF
     !
 ! Supersaturation          
@@ -3637,13 +3649,17 @@ IF(LRADAR .AND. LUSERR) THEN
     XCIT(:,:,:)=XSVT(:,:,:,NSV_LIMA_NI)
     CALL INI_RADAR('PLAT')
   END IF
-!       
+! 
+  IF (NMOM_S.GE.2) ZW1(:,:,:)=XSVT(:,:,:,NSV_LIMA_NS)
+  IF (NMOM_G.GE.2) ZW2(:,:,:)=XSVT(:,:,:,NSV_LIMA_NG)
+  IF (NMOM_H.GE.2) ZW3(:,:,:)=XSVT(:,:,:,NSV_LIMA_NH)
   IF (NVERSION_RAD == 1) THEN 
 ! original version of radar diagnostics 
       WRITE(ILUOUT0,*) 'radar diagnostics from RADAR_RAIN_ICE routine'
     IF (CCLOUD=='LIMA') THEN
-      CALL RADAR_RAIN_ICE (XRT, XCIT, XRHODREF, ZTEMP, ZWORK31, ZWORK32, &
-                       ZWORK33, ZWORK34,XSVT(:,:,:,NSV_LIMA_NR) )
+        CALL RADAR_RAIN_ICE (XRT, XCIT, XRHODREF, ZTEMP, ZWORK31, ZWORK32, &
+                         ZWORK33, ZWORK34,XSVT(:,:,:,NSV_LIMA_NR),         &
+                         ZW1(:,:,:),ZW2(:,:,:),ZW3(:,:,:) )
     ELSE          
       CALL RADAR_RAIN_ICE (XRT, XCIT, XRHODREF, ZTEMP, ZWORK31, ZWORK32, &
                                                          ZWORK33, ZWORK34 )
@@ -4025,7 +4041,7 @@ END IF
 !
 IF (CBLTOP == 'THETA') THEN
   !
-  ! méthode de la parcelle
+  ! methode de la parcelle
   !
   ALLOCATE(ZSHMIX(IIU,IJU))
 
@@ -4064,7 +4080,7 @@ IF (CBLTOP == 'THETA') THEN
   DEALLOCATE(ZSHMIX)
 ELSEIF (CBLTOP == 'RICHA') THEN
   !
-  ! méthode du "bulk Richardson number"
+  ! methode du "bulk Richardson number"
   !
   ALLOCATE(ZRIB(IIU,IJU,IKU))
   ALLOCATE(ZSHMIX(IIU,IJU))

@@ -13,7 +13,7 @@ INTERFACE
                             PZZ, PRHODJ,                                        &
                             PRHODREF, PEXNREF,                                  &
                             PPABST, PTHT, PRVT, PRCT,                           &
-                            PRRT, PTHM, PRCM, PPABSM,                           &
+                            PRRT, PTHM, PRCM, PPABSTT,                           &
                             PW_NU,PDTHRAD, PTHS, PRVS, PRCS, PRRS,              &
                             PCNT, PCCT, PCRT, PCNS, PCCS, PCRS,                 &
                             PINPRC, PINPRR, PINPRR3D, PEVAP3D,PAEROT,           &
@@ -48,7 +48,7 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRVT    ! Water vapor m.r. at t
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRCT    ! Cloud water m.r. at t 
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRRT    ! Rain water m.r. at t 
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHM    ! Theta at time t-Dt
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PPABSM   ! Pressure time t-Dt
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PPABSTT   ! Pressure time t+Dt
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRCM    ! Cloud water m.r. at time t-Dt
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PW_NU   ! updraft velocity used for
@@ -87,7 +87,7 @@ END MODULE MODI_RAIN_C2R2_KHKO
                             KMI, TPFILE, PZZ, PRHODJ,                           &
                             PRHODREF, PEXNREF,                                  &
                             PPABST, PTHT, PRVT,  PRCT,                          &
-                            PRRT, PTHM, PRCM, PPABSM,                           &
+                            PRRT, PTHM, PRCM, PPABSTT,                           &
                             PW_NU,PDTHRAD, PTHS, PRVS, PRCS, PRRS,              &
                             PCNT, PCCT,  PCRT, PCNS, PCCS, PCRS,                &
                             PINPRC, PINPRR, PINPRR3D, PEVAP3D,PAEROT,           &
@@ -274,7 +274,7 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRVT    ! Water vapor m.r. at t
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRCT    ! Cloud water m.r. at t
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRRT    ! Rain water m.r. at t
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHM    ! Theta at time t-Dt
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PPABSM  ! Pressure time t-Dt
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PPABSTT  ! Pressure time t+Dt
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRCM    ! Cloud water m.r. at time t-Dt
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PW_NU   ! updraft velocity used for
@@ -622,7 +622,7 @@ ZZW1LOG(:,:,:)= 0. ! supersaturation
 ZTDT(:,:,:)   = 0.
 ZDRC(:,:,:)   = 0.
 IF (OACTIT) THEN
-  ZTM(:,:,:)    = PTHM(:,:,:) * (PPABSM(:,:,:)/XP00)**(XRD/XCPD)
+  ZTM(:,:,:)    = PTHM(:,:,:) * (PPABST(:,:,:)/XP00)**(XRD/XCPD)
   ZTDT(:,:,:)   = (ZT(:,:,:)-ZTM(:,:,:))/PTSTEP                              ! dT/dt
   ZDRC(:,:,:)   = (PRCT(:,:,:)-PRCM(:,:,:))/PTSTEP                           ! drc/dt
 ! Modif M.Mazoyer
@@ -946,7 +946,7 @@ ZZW1LOG(:,:,:)= 0. ! supersaturation
 ZTDT(:,:,:)   = 0.
 ZDRC(:,:,:)   = 0.
 IF (OACTIT) THEN
-  ZTM(:,:,:)    = PTHM(:,:,:) * (PPABSM(:,:,:)/XP00)**(XRD/XCPD)
+  ZTM(:,:,:)    = PTHM(:,:,:) * (PPABST(:,:,:)/XP00)**(XRD/XCPD)
   ZTDT(:,:,:)   = (ZT(:,:,:)-ZTM(:,:,:))/PTSTEP                              ! dT/dt
   ZDRC(:,:,:)   = (PRCT(:,:,:)-PRCM(:,:,:))/PTSTEP                           ! drc/dt
   ZTDT(:,:,:)   = MIN(0.,ZTDT(:,:,:)+(XG*PW_NU(:,:,:))/XCPD- &

@@ -61,11 +61,14 @@ LOGICAL, SAVE :: LHAIL                  ! TRUE to enable hail
 LOGICAL, SAVE :: LMEYERS                ! TRUE to use Meyers nucleation
 LOGICAL, SAVE :: LCIBU                  ! TRUE to use collisional ice breakup
 LOGICAL, SAVE :: LRDSF                  ! TRUE to use rain drop shattering by freezing
+INTEGER, SAVE :: NMOM_I                 ! Number of moments for pristine ice
+INTEGER, SAVE :: NMOM_S                 ! Number of moments for snow
+INTEGER, SAVE :: NMOM_G                 ! Number of moments for graupel
+INTEGER, SAVE :: NMOM_H                 ! Number of moments for hail
 !
 ! 1.2 IFN initialisation
 !
 INTEGER, SAVE          :: NMOD_IFN               ! Number of IFN modes
-INTEGER, SAVE          :: NMOM_I                 ! Number of moments for pristine ice
 REAL, DIMENSION(JPLIMAIFNMAX), SAVE :: XIFN_CONC ! Ref. concentration of IFN(#/L)
 LOGICAL, SAVE          :: LIFN_HOM               ! True for z-homogeneous IFN concentrations
 CHARACTER(LEN=8), SAVE :: CIFN_SPECIES           ! Internal mixing species definitions
@@ -145,6 +148,10 @@ LOGICAL, SAVE :: LACTTKE       ! TRUE to take into account TKE in W for activati
 LOGICAL, SAVE :: LADJ          ! TRUE for adjustment procedure + Smax (false for diagnostic supersaturation)
 LOGICAL, SAVE :: LSPRO         ! TRUE for prognostic supersaturation                     
 LOGICAL, SAVE :: LKHKO         ! TRUE for Scu simulation (replicates the previous KHKO scheme)                     
+LOGICAL, SAVE :: LKESSLERAC    ! TRUE for Kessler autoconversion (if NMOM_C=1)
+!
+INTEGER, SAVE :: NMOM_C        ! Number of moments for cloud droplets
+INTEGER, SAVE :: NMOM_R        ! Number of moments for rain drops
 !
 ! 2.2 CCN initialisation
 !

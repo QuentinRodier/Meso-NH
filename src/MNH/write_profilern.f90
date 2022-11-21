@@ -231,17 +231,23 @@ if ( Size( tprofiler%sv, 4 ) > 0  ) then
       yunits = 'kg kg-1'
     else if ( jsv == nsv_lima_ni ) then
       yname = Trim( clima_cold_names(1) ) // 'T'
+    else if ( jsv == nsv_lima_ns ) then
+      yname = Trim( clima_cold_names(2) ) // 'T'
+    else if ( jsv == nsv_lima_ng ) then
+      yname = Trim( clima_cold_names(3) ) // 'T'
+    else if ( jsv == nsv_lima_nh ) then
+      yname = Trim( clima_cold_names(4) ) // 'T'
     else if ( jsv >= nsv_lima_ifn_free .and. jsv < nsv_lima_ifn_free + nmod_ifn ) then
       Write( yidx, '( i2.2 )' ) jsv - nsv_lima_ifn_free + 1
-      yname = Trim( clima_cold_names(2) ) // yidx // 'T'
+      yname = Trim( clima_cold_names(5) ) // yidx // 'T'
     else if ( jsv >= nsv_lima_ifn_nucl .and. jsv < nsv_lima_ifn_nucl + nmod_ifn ) then
       Write( yidx, '( i2.2 )' ) jsv - nsv_lima_ifn_nucl + 1
-      yname = Trim( clima_cold_names(3) ) // yidx // 'T'
+      yname = Trim( clima_cold_names(6) ) // yidx // 'T'
     else if ( jsv >= nsv_lima_imm_nucl .and. jsv < nsv_lima_imm_nucl + nmod_imm ) then
       write( yidx, '( i2.2 )' ) nindice_ccn_imm(jsv - nsv_lima_imm_nucl + 1)
-      yname = Trim( clima_cold_names(4) ) // yidx // 'T'
+      yname = Trim( clima_cold_names(7) ) // yidx // 'T'
     else if ( jsv == nsv_lima_hom_haze ) then
-      yname = Trim( clima_cold_names(5) ) // 'T'
+      yname = Trim( clima_cold_names(8) ) // 'T'
     else if ( jsv == nsv_lima_spro ) then
       yname = Trim( clima_warm_names(5) ) // 'T'
     end if

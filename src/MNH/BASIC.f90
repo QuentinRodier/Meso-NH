@@ -41685,7 +41685,7 @@ IMPLICIT NONE
 !!    ---------------------
 ! check if output array is large enough
 IF (KSPARSEDIM.LT.457) THEN
-+  call Print_msg( NVERB_FATAL, 'GEN', 'CH_SPARSE_GAZ', 'array KSPARSE is too small' )
+  call Print_msg( NVERB_FATAL, 'GEN', 'CH_SPARSE_GAZ', 'array KSPARSE is too small' )
 END IF
 !O3/O3
  KSPARSE(1, 1)=1
