@@ -136,7 +136,8 @@ END MODULE MODI_READ_ALL_DATA_GRIB_CASE
 !  Q. Rodier   21/04/2020: correction GFS u and v wind component written in the right vertical order
 !  Q. Rodier   02/09/2020: Read and interpol geopotential height for interpolation on isobaric surface Grid of NCEP
 !  P. Wautelet 09/03/2021: move some chemistry initializations to ini_nsv
-!JP Chaboureau 02/08/2021: add ERA5 reanlysis in pressure levels
+!JP Chaboureau 02/08/2021: add ERA5 reanalysis in pressure levels
+!JP Chaboureau 18/10/2022: correction on vertical level for GFS and ERA5 reanalyses in pressure levels
 !-------------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -925,6 +926,9 @@ ALLOCATE (ZEXNM_G(INI,INLEVEL))
 ZEXNM_G(:,1:INLEVEL-1) = (ZEXNF_G(:,1:INLEVEL-1)-ZEXNF_G(:,2:INLEVEL)) / &
                      (LOG(ZEXNF_G(:,1:INLEVEL-1))-LOG(ZEXNF_G(:,2:INLEVEL)))
 ZEXNM_G(:,INLEVEL) = (ZPF_G(:,INLEVEL)/2./XP00)**(XRD/XCPD)
+!
+IF (IMODEL==10.OR.IMODEL==11) ZEXNM_G(:,:)=ZEXNF_G(:,:) ! for GFS and ERA5 on pressure levels
+!
 DEALLOCATE (ZEXNF_G)
 DEALLOCATE (ZPF_G)
 !
@@ -1010,8 +1014,6 @@ ALLOCATE (ZRV_G(INI))
 ALLOCATE (ZOUT(INO))
 IF (IMODEL/=10) THEN ! others than NCEP
   DO JLOOP1=1, INLEVEL
-    !WRITE (ILUOUT0,*) 'JLOOP1=',JLOOP1,MINVAL(ZPM_G(:,JLOOP1)),MINVAL(ZT_G(:,JLOOP1)),MINVAL(ZQ_G(:,JLOOP1))
-    !WRITE (ILUOUT0,*) '                     ',MAXVAL(ZPM_G(:,JLOOP1)),MAXVAL(ZT_G(:,JLOOP1)),MAXVAL(ZQ_G(:,JLOOP1))
     !
     ! Compute Theta V and relative humidity on grib grid
     !
@@ -1039,17 +1041,13 @@ IF (IMODEL/=10) THEN ! others than NCEP
     CALL ARRAY_1D_TO_2D (INO,ZOUT,IIU,IJU,ZTHV_LS(:,:,JLOOP1))
     !
   END DO
-ELSE !NCEP
+ELSE !GFS and ERA5 on pressure levels
   DO JLOOP1=1, INLEVEL
-    !WRITE (ILUOUT0,*) 'JLOOP1=',JLOOP1,MINVAL(ZPM_G(:,JLOOP1)),MINVAL(ZT_G(:,JLOOP1)),MINVAL(ZQ_G(:,JLOOP1))
-    !WRITE (ILUOUT0,*) '                     ',MAXVAL(ZPM_G(:,JLOOP1)),MAXVAL(ZT_G(:,JLOOP1)),MAXVAL(ZQ_G(:,JLOOP1))
     ZH_G(:)  =ZQ_G(:,JLOOP1)
     ZRV_G(:) = (XRD/XRV)*SM_FOES(ZT_G(:,JLOOP1))*0.01*ZH_G(:) &
                         /(ZPM_G(:,JLOOP1) -SM_FOES(ZT_G(:,JLOOP1))*0.01*ZH_G(:))
-    !WRITE (ILUOUT0,*) '                     ',MINVAL(ZRV_G(:)),MAXVAL(ZRV_G(:))
     ZTHV_G(:)=ZT_G(:,JLOOP1) * ((XP00/ZPM_G(:,JLOOP1))**(XRD/XCPD)) * &
                                ((1. + XRV*ZRV_G(:)/XRD) / (1. + ZRV_G(:)))
-    !WRITE (ILUOUT0,*) '                     ',MINVAL(ZTHV_G(:)),MAXVAL(ZTHV_G(:))
     !
     ! Interpolation : H           
     CALL HORIBL(ZPARAM(3),ZPARAM(4),ZPARAM(5),ZPARAM(6),INT(ZPARAM(2)),IINLO,INI, &
@@ -1140,6 +1138,9 @@ ALLOCATE (ZEXNM_LS(IIU,IJU,INLEVEL))
 ZEXNM_LS(:,:,1:INLEVEL-1) = (ZEXNF_LS(:,:,1:INLEVEL-1)-ZEXNF_LS(:,:,2:INLEVEL)) / &
                      (LOG(ZEXNF_LS(:,:,1:INLEVEL-1))-LOG(ZEXNF_LS(:,:,2:INLEVEL)))
 ZEXNM_LS(:,:,INLEVEL) = (ZPF_LS(:,:,INLEVEL)/2./XP00)**(XRD/XCPD)
+!
+IF (IMODEL==10.OR.IMODEL==11) ZEXNM_LS(:,:,:)=ZEXNF_LS(:,:,:) ! for GFS and ERA5 on pressure levels
+!
 DEALLOCATE (ZEXNF_LS)
 DEALLOCATE (ZPF_LS)
 !

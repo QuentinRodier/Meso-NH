@@ -340,6 +340,19 @@ export CC=gcc
                 export NEED_NCARG=${NEED_NCARG:-NO}
                 export NEED_TOOLS=NO
               ;;
+'Linux lxenm'*) #PC Linux ENM
+                export MNH_ARCH=`echo $ARCH | grep LX`
+                export     ARCH=${MNH_ARCH:-LXgfortran}
+                export  VER_MPI=${VER_MPI:-MPIVIDE}
+                export OPTLEVEL=${OPTLEVEL:-DEBUG}
+                export MVWORK=${MVWORK:-NO}
+                export VER_CDF=${VER_CDF:-CDFAUTO}
+		export NEED_NCARG=${NEED_NCARG:-YES}
+		export NEED_TOOLS=NO
+		export MNHENV=${MNHENV:-"
+export PATH=/opt/gcc-9.4.0/bin:\$PATH
+"}
+		;;
 'Linux lx'*|'Linux sx'*|'Linux px'*) #CNRM
                 export MNH_ARCH=`echo $ARCH | grep LX`
                 export     ARCH=${MNH_ARCH:-LXgfortran}
