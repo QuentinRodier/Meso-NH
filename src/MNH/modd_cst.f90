@@ -94,7 +94,7 @@ REAL,SAVE :: XD2=23.
 !REAL,SAVE :: XD1=0.35
 !REAL,SAVE :: XD2=23.
 
-REAL,SAVE :: XRHOLI             ! Volumic mass of liquid water
+REAL,SAVE :: XRHOLI             ! Volumic mass of ice
 !
 INTEGER, SAVE :: NDAYSEC        ! Number of seconds in a day
 !
