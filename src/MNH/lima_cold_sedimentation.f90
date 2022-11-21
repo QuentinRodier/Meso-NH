@@ -194,7 +194,7 @@ DO JN = 1 , KSPLITG
    END IF
 !
    ISEDIM = COUNTJV( GSEDIM(:,:,:),I1(:),I2(:),I3(:))
-   IF( ISEDIM >= 1 ) THEN
+   IF( ISEDIM >= 0 ) THEN
 !
       IF( JN==1 ) THEN
          IF( OSEDI ) THEN
@@ -343,7 +343,7 @@ DO JN = 1 , KSPLITG
          PRGS(:,:,:) = PRGS(:,:,:) / PTSTEP
          PRHS(:,:,:) = PRHS(:,:,:) / PTSTEP
       END IF
-   END IF
+   END IF ! ISEDIM
 END DO
 !++cb++
 DEALLOCATE(ZRTMIN)
