@@ -50,6 +50,7 @@ END MODULE MODI_INI_MEAN_FIELD
 !!                      10/2016 (C.Lac) Add max values
 !!                      02/2021 (T.Nagel) add passive scalar (XSVT) and UW wind component
 !!                      05/2021 (PA.Joulin) add wind turbine variables
+!!                      11/2022 (E. Jezequel) add covariances
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -79,13 +80,18 @@ IF (CTURB /= 'NONE') XTKEM_MEAN = 0.0
 XPABSM_MEAN = 0.0
 XSVT_MEAN = 0.0
 !
-XU2_MEAN  = 0.0
-XV2_MEAN  = 0.0
-XW2_MEAN  = 0.0
-XUW_MEAN  = 0.0
-XTH2_MEAN = 0.0
-XTEMP2_MEAN = 0.0
-XPABS2_MEAN = 0.0
+XU2_M2    = 0.0
+XV2_M2    = 0.0
+XW2_M2    = 0.0
+IF (LCOV_FIELD) THEN
+  XUV_MEAN  = 0.0
+  XUW_MEAN  = 0.0
+  XVW_MEAN  = 0.0
+  XWTH_MEAN = 0.0
+END IF
+XTH2_M2   = 0.0
+XTEMP2_M2 = 0.0
+XPABS2_M2 = 0.0
 !
 IMI = GET_CURRENT_MODEL_INDEX()
 IF (LMAIN_EOL .AND. IMI==NMODEL_EOL) THEN
