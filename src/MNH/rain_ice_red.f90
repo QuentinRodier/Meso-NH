@@ -1736,8 +1736,7 @@ IF(LSEDIM_AFTER) THEN
     IF(KRR==7) THEN
       CALL ICE4_SEDIMENTATION_SPLIT(IIB, IIE, KIT, IJB, IJE, KJT, IKB, IKE, IKTB, IKTE, KKT, KKL, &
                                    &PTSTEP, KRR, OSEDIC, LDEPOSC, XVDEPOSC, PDZZ, &
-                                   &PRHODREF, PPABST, PTHT, PRHODJ, &
-                                   &ZLBDAS, &			   
+                                   &PRHODREF, PPABST, PTHT, ZT, PRHODJ, &
                                    &PRCS, PRCT, PRRS, PRRT, PRIS, PRIT, PRSS, PRST, PRGS, PRGT,&
                                    &PINPRC, PINDEP, PINPRR, ZINPRI, PINPRS, PINPRG, &
                                    &PSEA=PSEA, PTOWN=PTOWN, &
@@ -1745,8 +1744,7 @@ IF(LSEDIM_AFTER) THEN
     ELSE
       CALL ICE4_SEDIMENTATION_SPLIT(IIB, IIE, KIT, IJB, IJE, KJT, IKB, IKE, IKTB, IKTE, KKT, KKL, &
                                    &PTSTEP, KRR, OSEDIC, LDEPOSC, XVDEPOSC, PDZZ, &
-                                   &PRHODREF, PPABST, PTHT, PRHODJ, &
-                                   &ZLBDAS, &			   
+                                   &PRHODREF, PPABST, PTHT, ZT, PRHODJ, &
                                    &PRCS, PRCT, PRRS, PRRT, PRIS, PRIT, PRSS, PRST, PRGS, PRGT,&
                                    &PINPRC, PINDEP, PINPRR, ZINPRI, PINPRS, PINPRG, &
                                    &PSEA=PSEA, PTOWN=PTOWN, &
