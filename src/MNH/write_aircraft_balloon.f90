@@ -155,6 +155,7 @@ INTEGER :: JRR      ! loop counter
 INTEGER :: JSV      ! loop counter
 INTEGER :: JPT      ! loop counter
 INTEGER :: IKU
+REAL, DIMENSION(:), ALLOCATABLE :: ZLWC ! Temporary array to store/compute Liquid Water Content at flyer position
 type(tbudiachrometadata) :: tzbudiachro
 type(tfieldmetadata_base), dimension(:), allocatable :: tzfields
 !
@@ -171,7 +172,7 @@ IF ( IMI /= TPFLYER%NMODEL ) RETURN
 !
 IKU = SIZE(TPFLYER%XRTZ,2) !number of vertical levels
 !
-IPROC = 20 + IRR + SIZE(TPFLYER%XSV,2) &
+IPROC = 21 + IRR + SIZE(TPFLYER%XSV,2) &
        + 2 + SIZE(TPFLYER%XSVW_FLUX,2)
 IPROCZ = SIZE(TPFLYER%XRTZ,2)+ SIZE(TPFLYER%XRZ,2)+ SIZE(TPFLYER%XRZ,3)+  SIZE(TPFLYER%XCRARE,2)+ &
          SIZE(TPFLYER%XCRARE_ATT,2)+ SIZE(TPFLYER%XWZ,2) + SIZE(TPFLYER%XFFZ,2)+ &
@@ -211,6 +212,7 @@ SELECT TYPE ( TPFLYER )
 
 END SELECT
 !
+call Add_point( 'MODEL',    'model on which data was computed', '1', REAL( tpflyer%nmodelhist(:) ) )
 call Add_point( 'LON',      'longitude',             'degree', tpflyer%xlon(:) )
 call Add_point( 'LAT',      'latitude',              'degree', tpflyer%xlat(:) )
 call Add_point( 'ZON_WIND', 'zonal wind',            'm s-1',  tpflyer%xzon(:) )
@@ -228,8 +230,9 @@ if ( irr >= 7 ) call Add_point( 'Rh', 'Hail mixing ratio',               'kg kg-
 !
 !add cloud liquid water content in g/m3 to compare to measurements from FSSP
 !IF (.NOT.(ANY(TPFLYER%XP(:) == 0.))) THEN
-ALLOCATE (ZRHO(1,1,ISTORE))
 IF ( IRR > 1 ) THEN !cloud water is present
+  ALLOCATE( ZRHO(1, 1, ISTORE) )
+  ALLOCATE( ZLWC(ISTORE) )
   ZRHO(1,1,:) = 0.
   DO JRR = 1, IRR
     ZRHO(1,1,:) = ZRHO(1,1,:) + TPFLYER%XR(:,JRR)
@@ -237,17 +240,21 @@ IF ( IRR > 1 ) THEN !cloud water is present
   ZRHO(1,1,:) = TPFLYER%XTH(:) * ( 1. + XRV/XRD*TPFLYER%XR(:,1) )  &
                                 / ( 1. + ZRHO(1,1,:)              )
   DO JPT=1,ISTORE
-    IF (TPFLYER%XP(JPT) == 0.) THEN
-      ZRHO(1,1,JPT) = 0.
+    IF ( TPFLYER%NMODELHIST(JPT) > 0 ) THEN !Compute LWC only if flyer is flying
+      IF (TPFLYER%XP(JPT) == 0.) THEN
+        ZRHO(1,1,JPT) = 0.
+      ELSE
+        ZRHO(1,1,JPT) = TPFLYER%XP(JPT) / &
+                        (XRD *ZRHO(1,1,JPT) *((TPFLYER%XP(JPT)/XP00)**(XRD/XCPD))  )
+      ENDIF
+      ZLWC(JPT) = TPFLYER%XR(JPT,2) * ZRHO(1,1,JPT) * 1.E3
     ELSE
-      ZRHO(1,1,JPT) =  TPFLYER%XP(JPT) / &
-               (XRD *ZRHO(1,1,JPT) *((TPFLYER%XP(JPT)/XP00)**(XRD/XCPD))  )
-    ENDIF
-  ENDDO
-  call Add_point( 'LWC', 'cloud liquid water content', 'g m-3', tpflyer%xr(:,2)*ZRHO(1,1,:)*1.E3 )
-  DEALLOCATE (ZRHO)
-ENDIF
-!ENDIF
+      ZLWC(JPT) = XUNDEF
+    END IF
+  END DO
+  call Add_point( 'LWC', 'cloud liquid water content', 'g m-3', ZLWC(:) )
+  DEALLOCATE( ZLWC, ZRHO )
+END IF
 !
 IF (SIZE(TPFLYER%XTKE)>0) call Add_point( 'Tke', 'Turbulent kinetic energy', 'm2 s-2', tpflyer%xtke(:) )
 !
