@@ -109,7 +109,6 @@ INTEGER :: ISTORE ! number of storage instants
 INTEGER :: ILUOUT ! logical unit
 INTEGER :: IRESP  ! return code
 INTEGER :: JI
-INTEGER :: JSEG   ! loop counter
 TYPE(TFIELDMETADATA) :: TZFIELD
 !
 !----------------------------------------------------------------------------
@@ -197,6 +196,7 @@ ENDIF
 !
 !
 allocate( tpflyer%tflyer_time%tpdates(istore) )
+ALLOCATE(TPFLYER%NMODELHIST(ISTORE))
 ALLOCATE(TPFLYER%XX   (ISTORE))
 ALLOCATE(TPFLYER%XY   (ISTORE))
 ALLOCATE(TPFLYER%XZ   (ISTORE))
@@ -236,6 +236,7 @@ ALLOCATE(TPFLYER%XTHW_FLUX(ISTORE))
 ALLOCATE(TPFLYER%XRCW_FLUX(ISTORE))
 ALLOCATE(TPFLYER%XSVW_FLUX(ISTORE,KSV))
 !
+TPFLYER%NMODELHIST = NNEGUNDEF
 TPFLYER%XX   = XUNDEF
 TPFLYER%XY   = XUNDEF
 TPFLYER%XZ   = XUNDEF
@@ -301,6 +302,7 @@ INTEGER(KIND=CDFINT) :: IGROUPID
 INTEGER(KIND=CDFINT) :: ISTATUS
 INTEGER(KIND=CDFINT), DIMENSION(2) :: IDATA ! Intermediate array to allow merge of 2 MPI broadcasts
 #endif
+INTEGER :: IMODEL
 LOGICAL :: GREAD ! True if balloon position was read in synchronous file
 REAL :: ZLAT ! latitude of the balloon
 REAL :: ZLON ! longitude of the balloon
@@ -310,8 +312,11 @@ TYPE(TFILEDATA) :: TZFILE
 
 IF ( IMI /= TPFLYER%NMODEL ) RETURN
 
+LFLYER = .TRUE.
+
 GREAD = .FALSE.
-LFLYER=.TRUE.
+
+CALL SM_XYHAT( PLATOR, PLONOR, TPFLYER%XLATLAUNCH, TPFLYER%XLONLAUNCH, TPFLYER%XXLAUNCH, TPFLYER%XYLAUNCH )
 
 IF ( CPROGRAM == 'MESONH' .OR. CPROGRAM == 'SPAWN ' .OR. CPROGRAM == 'REAL  ' ) THEN
   ! Read the current location in the synchronous file
@@ -490,12 +495,26 @@ IF ( CPROGRAM == 'MESONH' .OR. CPROGRAM == 'SPAWN ' .OR. CPROGRAM == 'REAL  ' ) 
       WRITE( CMNHMSG(2), * ) " Lat=", ZLAT, " Lon=", ZLON, " Rho=", TPFLYER%XRHO
     END IF
     CALL PRINT_MSG( NVERB_INFO, 'GEN', 'INI_LAUNCH' )
-
-    TPFLYER%TFLYER_TIME%XTSTEP  = MAX ( PTSTEP, TPFLYER%TFLYER_TIME%XTSTEP )
   ELSE
     ! The position is not found, data is not in the synchronous file
     ! Use the position given in namelist
     CALL PRINT_MSG( NVERB_INFO, 'GEN', 'INI_LAUNCH', 'initial location taken from namelist for ' // TRIM( TPFLYER%CTITLE ) )
+  END IF
+
+  ! Correct timestep if necessary
+  ! This has to be done at first pass (when IMI=1) to have the correct value as soon as possible
+  ! If 'MOB', set balloon store timestep to be at least the timestep of the coarser model (IMI=1) (with higher timestep)
+  ! as the balloon can fly on any model
+  ! If 'FIX', set balloon store timestep to be at least the timestep of its model
+  ! It should also need to be a multiple of the model timestep
+  IF ( IMI == 1 ) THEN
+    IF ( TPFLYER%CMODEL == 'MOB' ) THEN
+      IMODEL = 1
+    ELSE
+      IMODEL = TPFLYER%NMODEL
+    END IF
+
+    CALL FLYER_TIMESTEP_CORRECT( DYN_MODEL(IMODEL)%XTSTEP, TPFLYER )
   END IF
   !
 ELSE IF ( CPROGRAM == 'DIAG  ' ) THEN
@@ -513,19 +532,10 @@ ELSE IF ( CPROGRAM == 'DIAG  ' ) THEN
       CALL PRINT_MSG( NVERB_INFO, 'GEN', 'INI_LAUNCH' )
     END IF
     !
-    TPFLYER%TFLYER_TIME%XTSTEP  = MAX (XSTEP_AIRCRAFT_BALLOON , TPFLYER%TFLYER_TIME%XTSTEP )
+    CALL FLYER_TIMESTEP_CORRECT( XSTEP_AIRCRAFT_BALLOON, TPFLYER )
   END IF
 END IF
-!
-IF ( TPFLYER%XLATLAUNCH == XUNDEF .OR. TPFLYER%XLONLAUNCH == XUNDEF ) THEN
-  CMNHMSG(1) = 'Error in balloon initial position (balloon ' // TRIM( TPFLYER%CTITLE ) // ' )'
-  CMNHMSG(2) = 'either LATitude or LONgitude is not given'
-  CMNHMSG(3) = 'Check your INI_BALLOON routine'
-  CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'INI_AIRCRAFT_BALLOON' )
-END IF
-!
-CALL SM_XYHAT( PLATOR, PLONOR, TPFLYER%XLATLAUNCH, TPFLYER%XLONLAUNCH, TPFLYER%XXLAUNCH, TPFLYER%XYLAUNCH )
-!
+
 END SUBROUTINE INI_LAUNCH
 !----------------------------------------------------------------------------
 !----------------------------------------------------------------------------
@@ -533,50 +543,61 @@ SUBROUTINE INI_FLIGHT(KNBR,TPFLYER)
 !
 INTEGER,              INTENT(IN)    :: KNBR
 CLASS(TAIRCRAFTDATA), INTENT(INOUT) :: TPFLYER
-!
-IF (TPFLYER%CMODEL == 'MOB' .AND. TPFLYER%NMODEL /= 0) TPFLYER%NMODEL=1
-IF (TPFLYER%NMODEL > NMODEL) TPFLYER%NMODEL=0
+
+INTEGER :: IMODEL
+INTEGER :: JSEG   ! loop counter
+
 IF ( IMI /= TPFLYER%NMODEL ) RETURN
-!
+
 LFLYER=.TRUE.
-!
-TPFLYER%TFLYER_TIME%XTSTEP  = MAX ( PTSTEP, TPFLYER%TFLYER_TIME%XTSTEP )
 
-IF (TPFLYER%CTITLE=='          ') THEN
-  WRITE(TPFLYER%CTITLE,FMT='(A6,I2.2)') TPFLYER%CTYPE,KNBR
+! Correct timestep if necessary
+! This has to be done at first pass (when IMI=1) to have the correct value as soon as possible
+! If 'MOB', set balloon store timestep to be at least the timestep of the coarser model (IMI=1) (with higher timestep)
+! as the balloon can fly on any model
+! If 'FIX', set balloon store timestep to be at least the timestep of its model
+! It should also need to be a multiple of the model timestep
+IF ( IMI == 1 ) THEN
+  IF ( TPFLYER%CMODEL == 'MOB' ) THEN
+    IMODEL = 1
+  ELSE
+    IMODEL = TPFLYER%NMODEL
+  END IF
+
+  CALL FLYER_TIMESTEP_CORRECT( DYN_MODEL(IMODEL)%XTSTEP, TPFLYER )
 END IF
 
-IF ( TPFLYER%NSEG == 0 ) THEN
-  CMNHMSG(1) = 'Error in aircraft flight path (aircraft ' // TRIM( TPFLYER%CTITLE ) // ' )'
-  CMNHMSG(2) = 'There is ZERO flight segment defined.'
-  CMNHMSG(3) = 'Check your INI_AIRCRAFT routine'
-  CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'INI_FLIGHT' )
-END IF
-!
-IF ( ANY(TPFLYER%XSEGLAT(:)==XUNDEF) .OR. ANY(TPFLYER%XSEGLON(:)==XUNDEF) ) THEN
-  CMNHMSG(1) = 'Error in aircraft flight path (aircraft ' // TRIM( TPFLYER%CTITLE ) // ' )'
-  CMNHMSG(2) = 'either LATitude or LONgitude segment'
-  CMNHMSG(3) = 'definiton is not complete.'
-  CMNHMSG(4) = 'Check your INI_AIRCRAFT routine'
-  CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'INI_FLIGHT' )
-END IF
-!
-ALLOCATE(TPFLYER%XSEGX(TPFLYER%NSEG+1))
-ALLOCATE(TPFLYER%XSEGY(TPFLYER%NSEG+1))
-!
-DO JSEG=1,TPFLYER%NSEG+1
-  CALL SM_XYHAT( PLATOR, PLONOR, TPFLYER%XSEGLAT(JSEG), TPFLYER%XSEGLON(JSEG), TPFLYER%XSEGX(JSEG), TPFLYER%XSEGY(JSEG) )
+ALLOCATE(TPFLYER%XPOSX(TPFLYER%NPOS))
+ALLOCATE(TPFLYER%XPOSY(TPFLYER%NPOS))
+
+DO JSEG = 1, TPFLYER%NPOS
+  CALL SM_XYHAT( PLATOR, PLONOR, TPFLYER%XPOSLAT(JSEG), TPFLYER%XPOSLON(JSEG), TPFLYER%XPOSX(JSEG), TPFLYER%XPOSY(JSEG) )
 END DO
-!
-IF ( ANY(TPFLYER%XSEGTIME(:)==XUNDEF) ) THEN
-  CMNHMSG(1) = 'Error in aircraft flight path (aircraft ' // TRIM( TPFLYER%CTITLE ) // ' )'
-  CMNHMSG(2) = 'definiton of segment duration is not complete.'
-  CMNHMSG(3) = 'Check your INI_AIRCRAFT routine'
-  CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'INI_AIRCRAFT_BALLOON' )
-END IF
 
 END SUBROUTINE INI_FLIGHT
 !----------------------------------------------------------------------------
+!----------------------------------------------------------------------------
+SUBROUTINE FLYER_TIMESTEP_CORRECT( PTSTEP_MODEL, TPFLYER )
+! Timestep is set to a multiple of the PTSTEP_MODEL value
+REAL,              INTENT(IN)    :: PTSTEP_MODEL
+CLASS(TFLYERDATA), INTENT(INOUT) :: TPFLYER
+
+REAL :: ZTSTEP_OLD
+
+ZTSTEP_OLD = TPFLYER%TFLYER_TIME%XTSTEP
+
+TPFLYER%TFLYER_TIME%XTSTEP = MAX ( PTSTEP_MODEL, TPFLYER%TFLYER_TIME%XTSTEP )
+TPFLYER%TFLYER_TIME%XTSTEP = NINT( TPFLYER%TFLYER_TIME%XTSTEP / PTSTEP_MODEL ) * PTSTEP_MODEL
+
+IF ( ABS( TPFLYER%TFLYER_TIME%XTSTEP - ZTSTEP_OLD ) > 1E-6 ) THEN
+  WRITE( CMNHMSG(1), '( "Timestep for flyer ", A, " is set to ", EN12.3, " (instead of ", EN12.3, ")" )' ) &
+         TPFLYER%CTITLE, TPFLYER%TFLYER_TIME%XTSTEP, ZTSTEP_OLD
+  CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'INI_LAUNCH' )
+END IF
+
+END SUBROUTINE FLYER_TIMESTEP_CORRECT
+!----------------------------------------------------------------------------
+
 !----------------------------------------------------------------------------
 !
 END SUBROUTINE INI_AIRCRAFT_BALLOON

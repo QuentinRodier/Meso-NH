@@ -118,10 +118,12 @@ IMPLICIT NONE
 
 INTEGER :: JI
 
-ALLOCATE( TBALLOONS (NBALLOONS)  )
+ALLOCATE( TBALLOONS(NBALLOONS) )
 
 !Treat balloon data read in namelist
 DO JI = 1, NBALLOONS
+  TBALLOONS(JI)%NID = JI
+
   IF ( CTITLE(JI) == '' ) THEN
     WRITE( CTITLE(JI), FMT = '( A, I3.3) ') TRIM( CTYPE(JI) ), JI
 
@@ -143,6 +145,8 @@ DO JI = 1, NBALLOONS
       CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'INI_BALLOON', &
                       'NMODEL is set to 1 at start for a CMODEL="MOB" balloon (balloon ' // TRIM( CTITLE(JI) ) // ')' )
     END IF
+    IF ( NMODEL_NEST == 1 ) CMODEL(JI) = 'FIX' ! If only one model, FIX and MOB are the same
+    ! NMODEL set temporarily to 1. Will be set to the launch model in INI_LAUNCH
     NMODEL(JI) = 1
   ELSE
     CMNHMSG(1) = 'invalid CMODEL (' // TRIM( CMODEL(JI) ) // ') for balloon ' // TRIM( CTITLE(JI) )

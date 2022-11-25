@@ -9,15 +9,12 @@ MODULE MODI_AIRCRAFT_BALLOON
 !
 INTERFACE
 !
-      SUBROUTINE AIRCRAFT_BALLOON(PTSTEP,                               &
-                                  PXHAT, PYHAT, PZ,                     &
-                                  PMAP, PLONOR, PLATOR,                 &
-                                  PU, PV, PW, PP, PTH, PR, PSV, PTKE,   &
-                                  PTS, PRHODREF, PCIT, PSEA)
+      SUBROUTINE AIRCRAFT_BALLOON(PTSTEP, PZ,                         &
+                                  PMAP, PLONOR, PLATOR,               &
+                                  PU, PV, PW, PP, PTH, PR, PSV, PTKE, &
+                                  PTS, PRHODREF, PCIT, PSEA           )
 !
 REAL,                     INTENT(IN)     :: PTSTEP ! time step
-REAL, DIMENSION(:),       INTENT(IN)     :: PXHAT  ! x coordinate
-REAL, DIMENSION(:),       INTENT(IN)     :: PYHAT  ! y coordinate
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PZ     ! z
 REAL, DIMENSION(:,:),     INTENT(IN)     :: PMAP   ! map factor
 REAL,                     INTENT(IN)     :: PLONOR ! origine longitude
@@ -31,11 +28,9 @@ REAL, DIMENSION(:,:,:,:), INTENT(IN)     :: PR     ! water mixing ratios
 REAL, DIMENSION(:,:,:,:), INTENT(IN)     :: PSV    ! Scalar variables
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PTKE   ! turbulent kinetic energy
 REAL, DIMENSION(:,:),     INTENT(IN)     :: PTS    ! surface temperature
-! ++ OC
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PRHODREF ! dry air density of the reference state
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PCIT     ! pristine ice concentration
-REAL, DIMENSION(:,:),OPTIONAL,INTENT(IN) :: PSEA
-! -- OC
+REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN) :: PSEA
 !
 !-------------------------------------------------------------------------------
 !
@@ -52,13 +47,12 @@ END INTERFACE
 !
 END MODULE MODI_AIRCRAFT_BALLOON
 !
-!     ###################################################################
-      SUBROUTINE AIRCRAFT_BALLOON(PTSTEP,                               &
-                                  PXHAT, PYHAT, PZ,                     &
-                                  PMAP, PLONOR, PLATOR,                 &
-                                  PU, PV, PW, PP, PTH, PR, PSV, PTKE,   &
-                                  PTS, PRHODREF, PCIT,  PSEA)
-!     ###################################################################
+!     #################################################################
+      SUBROUTINE AIRCRAFT_BALLOON(PTSTEP, PZ,                         &
+                                  PMAP, PLONOR, PLATOR,               &
+                                  PU, PV, PW, PP, PTH, PR, PSV, PTKE, &
+                                  PTS, PRHODREF, PCIT, PSEA           )
+!     #################################################################
 !
 !
 !!****  *AIRCRAFT_BALLOON* - monitor for balloons and aircrafts
@@ -101,8 +95,8 @@ END MODULE MODI_AIRCRAFT_BALLOON
 USE MODD_AIRCRAFT_BALLOON
 !
 USE MODD_TURB_FLUX_AIRCRAFT_BALLOON
-USE MODI_AIRCRAFT_BALLOON_EVOL
 !
+USE MODE_AIRCRAFT_BALLOON_EVOL,      ONLY: AIRCRAFT_BALLOON_EVOL
 USE MODE_ll
 !
 !
@@ -113,8 +107,6 @@ IMPLICIT NONE
 !
 !
 REAL,                     INTENT(IN)     :: PTSTEP ! time step
-REAL, DIMENSION(:),       INTENT(IN)     :: PXHAT  ! x coordinate
-REAL, DIMENSION(:),       INTENT(IN)     :: PYHAT  ! y coordinate
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PZ     ! z array
 REAL, DIMENSION(:,:),     INTENT(IN)     :: PMAP   ! map factor
 REAL,                     INTENT(IN)     :: PLONOR ! origine longitude
@@ -130,7 +122,7 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PTKE   ! turbulent kinetic energy
 REAL, DIMENSION(:,:),     INTENT(IN)     :: PTS    ! surface temperature
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PRHODREF ! dry air density of the reference state
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PCIT     ! pristine ice concentration
-REAL, DIMENSION(:,:),     INTENT(IN)     :: PSEA
+REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN) :: PSEA
 !
 !-------------------------------------------------------------------------------
 !
@@ -146,13 +138,13 @@ IF(.NOT. ALLOCATED(XSVW_FLUX)) &
 ALLOCATE(XSVW_FLUX(SIZE(PSV,1),SIZE(PSV,2),SIZE(PSV,3),SIZE(PSV,4)))
 !
 DO JI = 1, NBALLOONS
-  CALL AIRCRAFT_BALLOON_EVOL( PTSTEP, PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,          &
+  CALL AIRCRAFT_BALLOON_EVOL( PTSTEP, PZ, PMAP, PLONOR, PLATOR,                        &
                               PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT, &
                               TBALLOONS(JI), PSEA                                      )
 END DO
 !
 DO JI = 1, NAIRCRAFTS
-  CALL AIRCRAFT_BALLOON_EVOL( PTSTEP, PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,          &
+  CALL AIRCRAFT_BALLOON_EVOL( PTSTEP, PZ, PMAP, PLONOR, PLATOR,                        &
                               PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT, &
                               TAIRCRAFTS(JI), PSEA                                     )
 END DO

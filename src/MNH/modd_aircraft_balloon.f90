@@ -41,18 +41,23 @@
 !             ------------
 !
 !
-use modd_parameters,    only: XNEGUNDEF, XUNDEF
+use modd_parameters,    only: NNEGUNDEF, XNEGUNDEF, XUNDEF
 USE MODD_TYPE_STATPROF, ONLY: TSTATPROFTIME
 use modd_type_date,     only: date_time
+
+USE MODE_DATETIME,      ONLY: TPREFERENCE_DATE
 
 implicit none
 
 save
 
-!-------------------------------------------------------------------------------------------
-!
+INTEGER, PARAMETER :: NCRASH_NO        = 0 ! Not crashed
+INTEGER, PARAMETER :: NCRASH_OUT_HORIZ = 1 ! Flyer is outside of horizontal domain
+INTEGER, PARAMETER :: NCRASH_OUT_LOW   = 2 ! Flyer crashed on ground (or sea!)
+INTEGER, PARAMETER :: NCRASH_OUT_HIGH  = 3 ! Flyer is too high (outside of domain)
+
 LOGICAL :: LFLYER = .FALSE. ! flag to use aircraft/balloons
-!
+
 TYPE :: TFLYERDATA
   !
   !* general information
@@ -62,18 +67,21 @@ TYPE :: TFLYERDATA
                                      ! 'MOB' : change od model depends of the
                                      !         balloon/aircraft location
   INTEGER          :: NMODEL = 0 ! model number for each balloon/aircraft
+  INTEGER          :: NID    = 0 ! Identification number
   CHARACTER(LEN=6) :: CTYPE = ''  ! flyer type:
                                   ! 'RADIOS' : radiosounding balloon
                                   ! 'ISODEN' : iso-density balloon
                                   ! 'AIRCRA' : aircraft
                                   ! 'CVBALL' : Constant Volume balloon
   CHARACTER(LEN=10) :: CTITLE = ''  ! title or name for the balloon/aircraft
-  TYPE(DATE_TIME)   :: TLAUNCH      ! launch/takeoff date and time
+  TYPE(DATE_TIME)   :: TLAUNCH = TPREFERENCE_DATE ! launch/takeoff date and time
   LOGICAL           :: LCRASH = .FALSE. ! occurence of crash
+  INTEGER           :: NCRASH = NCRASH_NO
   LOGICAL           :: LFLY   = .FALSE. ! occurence of flying
   !
   !* storage monitoring
   !
+  LOGICAL             :: LSTORE = .FALSE. ! Do we have to store data now
   TYPE(TSTATPROFTIME) :: TFLYER_TIME ! Time management for flyer
   !
   !* current position of the balloon/aircraft
@@ -82,10 +90,11 @@ TYPE :: TFLYERDATA
   REAL :: XY_CUR = XNEGUNDEF ! current y
   REAL :: XZ_CUR = XNEGUNDEF ! current z (if 'RADIOS' or 'AIRCRA' and 'ALTDEF' = T)
   REAL :: XP_CUR = XNEGUNDEF ! current p (if 'AIRCRA' and 'ALTDEF' = F)
+  INTEGER :: NRANK_CUR = NNEGUNDEF ! Rank of the process where the flyer is
   !
   !* data records
   !
-
+  INTEGER, DIMENSION(:),  ALLOCATABLE :: NMODELHIST ! List of models where data has been computed
   REAL, DIMENSION(:),     ALLOCATABLE :: XX         ! X(n)
   REAL, DIMENSION(:),     ALLOCATABLE :: XY         ! Y(n)
   REAL, DIMENSION(:),     ALLOCATABLE :: XZ         ! Z(n)
@@ -126,16 +135,16 @@ TYPE, EXTENDS( TFLYERDATA ) :: TAIRCRAFTDATA
   !
   !* aircraft flight definition
   !
-  INTEGER :: NSEG     = 0  ! number of aircraft flight segments
-  INTEGER :: NSEGCURN = 1  ! current flight segment number
-  REAL    :: XSEGCURT = 0. ! current flight segment time spent
-  REAL, DIMENSION(:), ALLOCATABLE :: XSEGLAT  ! latitude of flight segment extremities  (LEG+1)
-  REAL, DIMENSION(:), ALLOCATABLE :: XSEGLON  ! longitude of flight segment extremities (LEG+1)
-  REAL, DIMENSION(:), ALLOCATABLE :: XSEGX    ! X of flight segment extremities         (LEG+1)
-  REAL, DIMENSION(:), ALLOCATABLE :: XSEGY    ! Y of flight segment extremities         (LEG+1)
-  REAL, DIMENSION(:), ALLOCATABLE :: XSEGP    ! pressure of flight segment extremities  (LEG+1)
-  REAL, DIMENSION(:), ALLOCATABLE :: XSEGZ    ! altitude of flight segment extremities  (LEG+1)
-  REAL, DIMENSION(:), ALLOCATABLE :: XSEGTIME ! duration of flight segments             (LEG  )
+  INTEGER :: NPOS     = 0  ! number of aircraft positions (segment extremities)
+  INTEGER :: NPOSCUR  = 1  ! current flight segment number
+  REAL, DIMENSION(:), ALLOCATABLE :: XPOSLAT  ! latitude of flight segment extremities  (LEG+1)
+  REAL, DIMENSION(:), ALLOCATABLE :: XPOSLON  ! longitude of flight segment extremities (LEG+1)
+  REAL, DIMENSION(:), ALLOCATABLE :: XPOSX    ! X of flight segment extremities         (LEG+1)
+  REAL, DIMENSION(:), ALLOCATABLE :: XPOSY    ! Y of flight segment extremities         (LEG+1)
+  REAL, DIMENSION(:), ALLOCATABLE :: XPOSP    ! pressure of flight segment extremities  (LEG+1)
+  REAL, DIMENSION(:), ALLOCATABLE :: XPOSZ    ! altitude of flight segment extremities  (LEG+1)
+  REAL, DIMENSION(:), ALLOCATABLE :: XPOSTIME ! time since launch (corresponding to flight segments extremities (LEG+1)
+  TYPE(DATE_TIME) :: TLAND =  TPREFERENCE_DATE    ! landing / end of flight date and time
   !
   !* aircraft altitude type definition
   !
@@ -159,6 +168,9 @@ TYPE, EXTENDS( TFLYERDATA ) :: TBALLOONDATA
   REAL :: XINDDRAG   = XNEGUNDEF ! induced drag coefficient (i.e. air shifted by the balloon) (if 'CVBALL')
   REAL :: XVOLUME    = XNEGUNDEF ! volume of the balloon (m3) (if 'CVBALL')
   REAL :: XMASS      = XNEGUNDEF ! mass of the balloon (kg) (if 'CVBALL')
+
+  TYPE(DATE_TIME) :: TPOS_CUR = TPREFERENCE_DATE ! Time corresponding to the current position (XX_CUR, XY_CUR...)
+
 END TYPE TBALLOONDATA
 
 INTEGER :: NAIRCRAFTS = 0 ! Total number of aircrafts

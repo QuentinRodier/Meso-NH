@@ -2112,16 +2112,14 @@ IF (LFLYER) THEN
     ALLOCATE(ZSEA(IIU,IJU))
     ZSEA(:,:) = 0.
     CALL MNHGET_SURF_PARAM_n (PSEA=ZSEA(:,:))
-    CALL AIRCRAFT_BALLOON(XTSTEP,                                             &
-                      XXHAT, XYHAT, XZZ, XMAP, XLONORI, XLATORI,              &
-                      XUT, XVT, XWT, XPABST, XTHT, XRT, XSVT, XTKET, XTSRAD,  &
-                      XRHODREF,XCIT,PSEA=ZSEA(:,:))
+    CALL AIRCRAFT_BALLOON( XTSTEP, XZZ, XMAP, XLONORI, XLATORI,                   &
+                           XUT, XVT, XWT, XPABST, XTHT, XRT, XSVT, XTKET, XTSRAD, &
+                           XRHODREF, XCIT, PSEA = ZSEA(:,:)                       )
     DEALLOCATE(ZSEA)
   ELSE
-    CALL AIRCRAFT_BALLOON(XTSTEP,                                             &
-                      XXHAT, XYHAT, XZZ, XMAP, XLONORI, XLATORI,              &
-                      XUT, XVT, XWT, XPABST, XTHT, XRT, XSVT, XTKET, XTSRAD,  &
-                      XRHODREF,XCIT)
+    CALL AIRCRAFT_BALLOON( XTSTEP, XZZ, XMAP, XLONORI, XLATORI,                   &
+                           XUT, XVT, XWT, XPABST, XTHT, XRT, XSVT, XTKET, XTSRAD, &
+                           XRHODREF, XCIT                                         )
   END IF
 END IF
 
