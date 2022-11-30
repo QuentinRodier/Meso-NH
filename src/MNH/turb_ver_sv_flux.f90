@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -263,11 +263,13 @@ END MODULE MODI_TURB_VER_SV_FLUX
 !!                                   to avoid unknwon values outside physical domain
 !!                                   and avoid negative values in sv tendencies
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 30/11/2022: compute PWSV only when needed
 !!--------------------------------------------------------------------------
 !       
 !*      0. DECLARATIONS
 !          ------------
 !
+USE MODD_AIRCRAFT_BALLOON, ONLY: LFLYER
 USE MODD_CST
 USE MODD_CTURB
 use modd_field,          only: tfieldmetadata, TYPEREAL
@@ -445,11 +447,14 @@ DO JSV=1,ISV
     ! extrapolates the flux under the ground so that the vertical average with
     ! the IKB flux gives the ground value
     ZFLXZ(:,:,KKA) = ZFLXZ(:,:,IKB)
-    DO JK=IKTB+1,IKTE-1
-      PWSV(:,:,JK,JSV)=0.5*(ZFLXZ(:,:,JK)+ZFLXZ(:,:,JK+KKL))
-    END DO
-    PWSV(:,:,IKB,JSV)=0.5*(ZFLXZ(:,:,IKB)+ZFLXZ(:,:,IKB+KKL))
-    PWSV(:,:,IKE,JSV)=PWSV(:,:,IKE-KKL,JSV)
+
+    IF ( LFLYER ) THEN
+      DO JK=IKTB+1,IKTE-1
+        PWSV(:,:,JK,JSV)=0.5*(ZFLXZ(:,:,JK)+ZFLXZ(:,:,JK+KKL))
+      END DO
+      PWSV(:,:,IKB,JSV)=0.5*(ZFLXZ(:,:,IKB)+ZFLXZ(:,:,IKB+KKL))
+      PWSV(:,:,IKE,JSV)=PWSV(:,:,IKE-KKL,JSV)
+    END IF
  END IF
   !
   IF (OTURB_FLX .AND. tpfile%lopened) THEN

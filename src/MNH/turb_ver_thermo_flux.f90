@@ -331,11 +331,13 @@ END MODULE MODI_TURB_VER_THERMO_FLUX
 !!                     June 2020 (B. Vie) Patch preventing negative rc and ri in 2.3 and 3.3
 !! JL Redelsperger  : 03/2021: Ocean and Autocoupling O-A LES Cases
 !!                             Sfc flux shape for LDEEPOC Case
+!  P. Wautelet 30/11/2022: compute PWTH and PWRC only when needed
 !!--------------------------------------------------------------------------
 !       
 !*      0. DECLARATIONS
 !          ------------
 !
+USE MODD_AIRCRAFT_BALLOON, ONLY: LFLYER
 USE MODD_CST
 USE MODD_CTURB
 use modd_field,          only: tfieldmetadata, TYPEREAL
@@ -722,19 +724,24 @@ IF (LOCEAN) THEN
   ZFLXZ(:,:,KKU) = ZFLXZ(:,:,IKE)
 END IF
 !  
-DO JK=IKTB+1,IKTE-1
-  PWTH(:,:,JK)=0.5*(ZFLXZ(:,:,JK)+ZFLXZ(:,:,JK+KKL))
-END DO
-!
-PWTH(:,:,IKB)=0.5*(ZFLXZ(:,:,IKB)+ZFLXZ(:,:,IKB+KKL)) 
-!
-IF (LOCEAN) THEN
-  PWTH(:,:,IKE)=0.5*(ZFLXZ(:,:,IKE)+ZFLXZ(:,:,IKE+KKL))
-  PWTH(:,:,KKA)=0. 
-  PWTH(:,:,KKU)=ZFLXZ(:,:,KKU)
-ELSE
-  PWTH(:,:,IKE)=PWTH(:,:,IKE-KKL)
-  PWTH(:,:,KKA)=0.5*(ZFLXZ(:,:,KKA)+ZFLXZ(:,:,KKA+KKL))
+IF ( LFLYER ) THEN
+  PWTH(:,:,:IKTB) = XUNDEF
+  PWTH(:,:,IKTE:) = XUNDEF
+  !
+  DO JK=IKTB+1,IKTE-1
+    PWTH(:,:,JK)=0.5*(ZFLXZ(:,:,JK)+ZFLXZ(:,:,JK+KKL))
+  END DO
+  !
+  PWTH(:,:,IKB)=0.5*(ZFLXZ(:,:,IKB)+ZFLXZ(:,:,IKB+KKL))
+  !
+  IF (LOCEAN) THEN
+    PWTH(:,:,IKE)=0.5*(ZFLXZ(:,:,IKE)+ZFLXZ(:,:,IKE+KKL))
+    PWTH(:,:,KKA)=0.
+    PWTH(:,:,KKU)=ZFLXZ(:,:,KKU)
+  ELSE
+    PWTH(:,:,IKE)=PWTH(:,:,IKE-KKL)
+    PWTH(:,:,KKA)=0.5*(ZFLXZ(:,:,KKA)+ZFLXZ(:,:,KKA+KKL))
+  END IF
 END IF
 !
 IF ( OTURB_FLX .AND. tpfile%lopened ) THEN
@@ -966,12 +973,14 @@ IF (KRR /= 0) THEN
   !
   ZFLXZ(:,:,KKA) = ZFLXZ(:,:,IKB) 
   !
-  DO JK=IKTB+1,IKTE-1
-   PWRC(:,:,JK)=0.5*(ZFLXZ(:,:,JK)+ZFLXZ(:,:,JK+KKL))
-  END DO
-  PWRC(:,:,IKB)=0.5*(ZFLXZ(:,:,IKB)+ZFLXZ(:,:,IKB+KKL))
-  PWRC(:,:,KKA)=0.5*(ZFLXZ(:,:,KKA)+ZFLXZ(:,:,KKA+KKL))
-  PWRC(:,:,IKE)=PWRC(:,:,IKE-KKL)
+  IF ( LFLYER ) THEN
+    DO JK=IKTB+1,IKTE-1
+     PWRC(:,:,JK)=0.5*(ZFLXZ(:,:,JK)+ZFLXZ(:,:,JK+KKL))
+    END DO
+    PWRC(:,:,IKB)=0.5*(ZFLXZ(:,:,IKB)+ZFLXZ(:,:,IKB+KKL))
+    PWRC(:,:,KKA)=0.5*(ZFLXZ(:,:,KKA)+ZFLXZ(:,:,KKA+KKL))
+    PWRC(:,:,IKE)=PWRC(:,:,IKE-KKL)
+  END IF
   !
   !
   IF ( OTURB_FLX .AND. tpfile%lopened ) THEN

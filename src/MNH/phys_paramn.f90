@@ -237,12 +237,14 @@ END MODULE MODI_PHYS_PARAM_n
 !  C. Lac         11/2019: correction in the drag formula and application to building in addition to tree
 !  F. Auguste     02/2021: add IBM
 !  JL Redelsperger 03/2021: add the SW flux penetration for Ocean model case
+!  P. Wautelet 30/11/2022: compute XTHW_FLUX, XRCW_FLUX and XSVW_FLUX only when needed
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
 !               ------------
 !
 USE MODD_ADV_n,            ONLY : XRTKEMS
+USE MODD_AIRCRAFT_BALLOON, ONLY: LFLYER
 USE MODD_ARGSLIST_ll, ONLY : LIST_ll
 use modd_budget,            only: lbudget_th, lbudget_rv, lbudget_rc, lbudget_ri, lbudget_sv,  &
                                   NBUDGET_TH, NBUDGET_RV, NBUDGET_RC, NBUDGET_RI, NBUDGET_SV1, &
@@ -1460,25 +1462,25 @@ IF ( CTURB == 'TKEL' ) THEN
   END IF
 !
 !
-IF(ALLOCATED(XTHW_FLUX))  THEN
- DEALLOCATE(XTHW_FLUX)
- ALLOCATE(XTHW_FLUX(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3)))
+IF ( ALLOCATED( XTHW_FLUX ) ) DEALLOCATE( XTHW_FLUX )
+IF ( LFLYER ) THEN
+  ALLOCATE( XTHW_FLUX(SIZE( XTHT, 1 ), SIZE( XTHT, 2 ), SIZE( XTHT, 3 )) )
 ELSE
- ALLOCATE(XTHW_FLUX(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3)))
+  ALLOCATE( XTHW_FLUX(0, 0, 0) )
 END IF
 
-IF(ALLOCATED(XRCW_FLUX))  THEN
- DEALLOCATE(XRCW_FLUX)
- ALLOCATE(XRCW_FLUX(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3)))
+IF ( ALLOCATED( XRCW_FLUX ) ) DEALLOCATE( XRCW_FLUX )
+IF ( LFLYER ) THEN
+  ALLOCATE( XRCW_FLUX(SIZE( XTHT, 1 ), SIZE( XTHT, 2 ), SIZE( XTHT, 3 )) )
 ELSE
- ALLOCATE(XRCW_FLUX(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3)))
+  ALLOCATE( XRCW_FLUX(0, 0, 0) )
 END IF
-!
-IF(ALLOCATED(XSVW_FLUX))  THEN
- DEALLOCATE(XSVW_FLUX)
- ALLOCATE(XSVW_FLUX(SIZE(XSVT,1),SIZE(XSVT,2),SIZE(XSVT,3),SIZE(XSVT,4)))
+
+IF ( ALLOCATED( XSVW_FLUX ) ) DEALLOCATE( XSVW_FLUX )
+IF ( LFLYER ) THEN
+  ALLOCATE( XSVW_FLUX(SIZE( XSVT, 1 ), SIZE( XSVT, 2 ), SIZE( XSVT, 3 ), SIZE( XSVT, 4 )) )
 ELSE
- ALLOCATE(XSVW_FLUX(SIZE(XSVT,1),SIZE(XSVT,2),SIZE(XSVT,3),SIZE(XSVT,4)))
+  ALLOCATE( XSVW_FLUX(0, 0, 0, 0) )
 END IF
 !
    CALL TURB( 1, IKU, 1, IMI, NRR, NRRL, NRRI, CLBCX, CLBCY, 1, NMODEL_CLOUD,        &
