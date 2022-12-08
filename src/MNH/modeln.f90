@@ -272,6 +272,7 @@ END MODULE MODI_MODEL_n
 !  T. Nagel    01/02/2021: add turbulence recycling
 !  P. Wautelet 19/02/2021: add NEGA2 term for SV budgets
 !  J.L. Redelsperger 03/2021: add Call NHOA_COUPLN (coupling O & A LES version)
+!  P. Wautelet 08/12/2022: bugfix if no TDADFILE
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -479,6 +480,7 @@ REAL(kind=MNHTIME), DIMENSION(2) :: ZTIME_STEP,ZTIME_STEP_PTS
 CHARACTER                 :: YMI
 INTEGER                   :: IPOINTS
 CHARACTER(len=16)         :: YTCOUNT,YPOINTS
+CHARACTER(LEN=:), ALLOCATABLE :: YDADNAME
 !
 INTEGER :: ISYNCHRO          ! model synchronic index relative to its father
                              ! = 1  for the first time step in phase with DAD
@@ -973,7 +975,13 @@ IF ( nfile_backup_current < NBAK_NUMB ) THEN
     !
     CALL WRITE_DESFM_n(IMI,TZBAKFILE)
     CALL IO_Header_write( TBACKUPN(nfile_backup_current)%TFILE )
-    CALL WRITE_LFIFM_n( TBACKUPN(nfile_backup_current)%TFILE, TBACKUPN(nfile_backup_current)%TFILE%TDADFILE%CNAME )
+    IF ( ASSOCIATED( TBACKUPN(nfile_backup_current)%TFILE%TDADFILE ) ) THEN
+      YDADNAME = TBACKUPN(nfile_backup_current)%TFILE%TDADFILE%CNAME
+    ELSE
+      ! Set a dummy name for the dad file. Its non-zero size will allow the writing of some data in the backup file
+      YDADNAME = 'DUMMY'
+    END IF
+    CALL WRITE_LFIFM_n( TBACKUPN(nfile_backup_current)%TFILE, TRIM( YDADNAME ) )
     TOUTDATAFILE => TZBAKFILE
     CALL MNHWRITE_ZS_DUMMY_n(TZBAKFILE)
     IF (CSURF=='EXTE') THEN
