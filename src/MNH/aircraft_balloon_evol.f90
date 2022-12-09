@@ -304,7 +304,8 @@ SELECT TYPE ( TPFLYER )
     ! Initialize model number (and rank)
     ! This is not done in initialisation phase because some data is not yet available at this early stage
     ! (XXHAT_ll of all models are needed by FIND_PROCESS_AND_MODEL_FROM_XY_POS)
-    IF ( .NOT. TPFLYER%LFLY .AND. .NOT. TPFLYER%LCRASH .AND. TPFLYER%NRANK_CUR < 0 ) THEN
+    IF ( .NOT. TPFLYER%LPOSITION_INIT ) THEN
+      TPFLYER%LPOSITION_INIT = .TRUE.
       ! Get rank of the process where the balloon is and the model number
       CALL FLYER_GET_RANK_MODEL_ISCRASHED( TPFLYER, PX = TPFLYER%XXLAUNCH, PY = TPFLYER%XYLAUNCH )
       IF ( TPFLYER%LCRASH ) THEN

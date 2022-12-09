@@ -152,6 +152,7 @@ TYPE, EXTENDS( TFLYERDATA ) :: TAIRCRAFTDATA
 END TYPE TAIRCRAFTDATA
 
 TYPE, EXTENDS( TFLYERDATA ) :: TBALLOONDATA
+  LOGICAL :: LPOSITION_INIT = .FALSE. ! True if initial position has been computed
   !
   !* balloon dynamical characteristics
   !
