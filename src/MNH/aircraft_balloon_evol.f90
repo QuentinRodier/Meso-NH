@@ -1673,7 +1673,7 @@ CALL FIND_PROCESS_AND_MODEL_FROM_XY_POS( ZX, ZY, IRANK, IMODEL )
 
 IF ( IRANK < 1 ) THEN
   ! Flyer is outside of horizontal domain
-  TPFLYER%NMODEL    = 1 !Set to 1 because it is always a valid model (to prevent crash if NDAD(TPFLYER%NMODEL) )
+  ! TPFLYER%NMODEL !Do not change to keep a valid value
   TPFLYER%LCRASH    = .TRUE.
   TPFLYER%NCRASH    = NCRASH_OUT_HORIZ
   TPFLYER%LFLY      = .FALSE.
