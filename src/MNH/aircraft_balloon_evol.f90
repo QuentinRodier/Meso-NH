@@ -239,8 +239,12 @@ CALL GET_MODEL_NUMBER_ll(IMI)
 
 SELECT TYPE ( TPFLYER )
   CLASS IS ( TAIRCRAFTDATA)
-    !Do the positioning only if model 1 (data will be available to others after)
-    MODEL1AIR: IF ( IMI == 1 ) THEN
+    ! For 'MOB' aircrafts, do the positioning only if model 1 (data will be available to others after)
+    !     aircraft store timestep is always a multiple of model 1 timestep
+    ! For 'FIX' aircrafts, do the computation only on the correct model
+    !     (important especially if store timestep is smaller than model 1 timestep)
+    IF (      ( TPFLYER%CMODEL == 'MOB' .AND. IMI == 1              ) &
+         .OR. ( TPFLYER%CMODEL == 'FIX' .AND. IMI == TPFLYER%NMODEL ) ) THEN
       !Do we have to store aircraft data?
       CALL FLYER_CHECK_STORESTEP( TPFLYER )
 
@@ -256,7 +260,8 @@ SELECT TYPE ( TPFLYER )
       ELSE
         TPFLYER%LFLY = .FALSE.
       END IF
-    END IF MODEL1AIR
+
+    END IF
 
     ! For aircrafts, data has only to be computed at store moments
     IF ( IMI == TPFLYER%NMODEL .AND. TPFLYER%LFLY .AND. TPFLYER%LSTORE ) THEN
