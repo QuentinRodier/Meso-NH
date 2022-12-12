@@ -132,6 +132,7 @@ TYPE :: TFLYERDATA
 END TYPE TFLYERDATA
 
 TYPE, EXTENDS( TFLYERDATA ) :: TAIRCRAFTDATA
+  LOGICAL :: LTOOKOFF = .FALSE. ! Set to true once the aircraft takes off
   !
   !* aircraft flight definition
   !

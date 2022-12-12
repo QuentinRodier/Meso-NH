@@ -231,7 +231,7 @@ INTEGER :: IINFO_ll ! return code
 !
 INTEGER :: IMODEL
 REAL    :: ZTSTEP
-
+TYPE(DATE_TIME) :: TZNEXT ! Time for next position
 !----------------------------------------------------------------------------
 IKU = SIZE(PZ,3)
 
@@ -239,33 +239,34 @@ CALL GET_MODEL_NUMBER_ll(IMI)
 
 SELECT TYPE ( TPFLYER )
   CLASS IS ( TAIRCRAFTDATA)
-    ! For 'MOB' aircrafts, do the positioning only if model 1 (data will be available to others after)
-    !     aircraft store timestep is always a multiple of model 1 timestep
-    ! For 'FIX' aircrafts, do the computation only on the correct model
-    !     (important especially if store timestep is smaller than model 1 timestep)
-    IF (      ( TPFLYER%CMODEL == 'MOB' .AND. IMI == 1              ) &
-         .OR. ( TPFLYER%CMODEL == 'FIX' .AND. IMI == TPFLYER%NMODEL ) ) THEN
-      !Do we have to store aircraft data?
-      CALL FLYER_CHECK_STORESTEP( TPFLYER )
+    ! Take-off?
+    TAKEOFF: IF ( .NOT. TPFLYER%LTOOKOFF ) THEN
+      ! Do the take-off positioning only once
+      ! (on model 1 for 'MOB', if aircraft is on an other model, data will be available on the right one anyway)
+      IF (      ( TPFLYER%CMODEL == 'MOB' .AND. IMI == 1              ) &
+           .OR. ( TPFLYER%CMODEL == 'FIX' .AND. IMI == TPFLYER%NMODEL ) ) THEN
+        ! Is the aircraft in flight ?
+        IF ( TDTCUR >= TPFLYER%TLAUNCH .AND. TDTCUR <= TPFLYER%TLAND ) THEN
+          TPFLYER%LFLY     = .TRUE.
+          TPFLYER%LTOOKOFF = .TRUE.
 
-      ! Is the aircraft in flight ?
-      IF ( TDTCUR >= TPFLYER%TLAUNCH .AND. TDTCUR <= TPFLYER%TLAND ) THEN
-        TPFLYER%LFLY = .TRUE.
+          ! Compute current position
+          CALL AIRCRAFT_COMPUTE_POSITION( TDTCUR, TPFLYER )
 
-        ! Compute current position
-        CALL AIRCRAFT_COMPUTE_POSITION( TDTCUR, TPFLYER )
-
-        ! Get rank of the process where the aircraft is and the model number
-        CALL FLYER_GET_RANK_MODEL_ISCRASHED( TPFLYER )
-      ELSE
-        TPFLYER%LFLY = .FALSE.
+          ! Get rank of the process where the aircraft is and the model number
+          CALL FLYER_GET_RANK_MODEL_ISCRASHED( TPFLYER )
+        END IF
       END IF
+    END IF TAKEOFF
 
+    IF ( IMI == TPFLYER%NMODEL ) THEN
+       !Do we have to store aircraft data?
+      CALL FLYER_CHECK_STORESTEP( TPFLYER )
     END IF
 
     ! For aircrafts, data has only to be computed at store moments
+    ISTORE = TPFLYER%TFLYER_TIME%N_CUR
     IF ( IMI == TPFLYER%NMODEL .AND. TPFLYER%LFLY .AND. TPFLYER%LSTORE ) THEN
-      ISTORE = TPFLYER%TFLYER_TIME%N_CUR
       ! Check if it is the right moment to store data
       IF ( ABS( TDTCUR - TPFLYER%TFLYER_TIME%TPDATES(ISTORE) ) < 1e-10 ) THEN
         ISOWNERAIR: IF ( TPFLYER%NRANK_CUR == ISP ) THEN
@@ -294,6 +295,33 @@ SELECT TYPE ( TPFLYER )
         END IF ISOWNERAIR
 
         CALL FLYER_COMMUNICATE_DATA( )
+
+        ! Store has been done
+        TPFLYER%LSTORE = .FALSE.
+      END IF
+    END IF
+
+    ! Compute next position if the previous store has just been done (right moment on right model)
+    IF ( IMI == TPFLYER%NMODEL .AND. ISTORE > 0 ) THEN
+      ! This condition may only be tested if ISTORE > 0
+      IF (ABS( TDTCUR - TPFLYER%TFLYER_TIME%TPDATES(ISTORE) ) < 1e-10 ) THEN
+        ! Next store moment
+        TZNEXT = TDTCUR + TPFLYER%TFLYER_TIME%XTSTEP
+
+        ! Is the aircraft in flight ?
+        IF ( TZNEXT >= TPFLYER%TLAUNCH .AND. TZNEXT <= TPFLYER%TLAND ) THEN
+          TPFLYER%LFLY = .TRUE.
+          ! Force LTOOKOFF to prevent to do it again (at a next timestep)
+          TPFLYER%LTOOKOFF = .TRUE.
+
+          ! Compute next position
+          CALL AIRCRAFT_COMPUTE_POSITION( TZNEXT, TPFLYER )
+
+          ! Get rank of the process where the aircraft is and the model number
+          CALL FLYER_GET_RANK_MODEL_ISCRASHED( TPFLYER )
+        ELSE
+          TPFLYER%LFLY = .FALSE.
+        END IF
       END IF
     END IF
 
