@@ -117,12 +117,16 @@ USE MODN_BALLOONS
 IMPLICIT NONE
 
 INTEGER :: JI
+TYPE(TBALLOONDATA), POINTER :: TZBALLOON
 
 ALLOCATE( TBALLOONS(NBALLOONS) )
 
 !Treat balloon data read in namelist
 DO JI = 1, NBALLOONS
-  TBALLOONS(JI)%NID = JI
+  ALLOCATE( TBALLOONS(JI)%TBALLOON )
+  TZBALLOON => TBALLOONS(JI)%TBALLOON
+
+  TZBALLOON%NID = JI
 
   IF ( CTITLE(JI) == '' ) THEN
     WRITE( CTITLE(JI), FMT = '( A, I3.3) ') TRIM( CTYPE(JI) ), JI
@@ -131,7 +135,7 @@ DO JI = 1, NBALLOONS
     CMNHMSG(2) = 'title set to ' // TRIM( CTITLE(JI) )
     CALL PRINT_MSG( NVERB_INFO, 'GEN', 'INI_BALLOON' )
   END IF
-  TBALLOONS(JI)%CTITLE = CTITLE(JI)
+  TZBALLOON%CTITLE = CTITLE(JI)
 
   IF ( CMODEL(JI) == 'FIX' ) THEN
     IF ( NMODEL(JI) < 1 .OR. NMODEL(JI) > NMODEL_NEST ) THEN
@@ -155,23 +159,23 @@ DO JI = 1, NBALLOONS
     CMODEL(JI) = 'FIX'
     NMODEL(JI) = 1
   END IF
-  TBALLOONS(JI)%CMODEL = CMODEL(JI)
-  TBALLOONS(JI)%NMODEL = NMODEL(JI)
+  TZBALLOON%CMODEL = CMODEL(JI)
+  TZBALLOON%NMODEL = NMODEL(JI)
 
-  TBALLOONS(JI)%CTYPE = CTYPE(JI)
+  TZBALLOON%CTYPE = CTYPE(JI)
 
   IF ( .NOT. TLAUNCH(JI)%CHECK( TRIM( CTITLE(JI) ) ) ) &
         CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'INI_BALLOON', &
                         'problem with TLAUNCH (not set or incorrect values) for balloon ' // TRIM( CTITLE(JI) ) )
-  TBALLOONS(JI)%TLAUNCH  = TLAUNCH(JI)
+  TZBALLOON%TLAUNCH  = TLAUNCH(JI)
 
   IF ( XLATLAUNCH(JI) == XUNDEF ) &
     CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'INI_BALLOON', 'XLATLAUNCH not provided for balloon ' // TRIM( CTITLE(JI) ) )
-  TBALLOONS(JI)%XLATLAUNCH = XLATLAUNCH(JI)
+  TZBALLOON%XLATLAUNCH = XLATLAUNCH(JI)
 
   IF ( XLONLAUNCH(JI) == XUNDEF ) &
     CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'INI_BALLOON', 'XLONLAUNCH not provided for balloon ' // TRIM( CTITLE(JI) ) )
-  TBALLOONS(JI)%XLONLAUNCH = XLONLAUNCH(JI)
+  TZBALLOON%XLONLAUNCH = XLONLAUNCH(JI)
 
   IF ( XTSTEP(JI) == XNEGUNDEF ) THEN
     CALL PRINT_MSG( NVERB_INFO, 'GEN', 'INI_BALLOON', &
@@ -181,7 +185,7 @@ DO JI = 1, NBALLOONS
     CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'INI_BALLOON', 'invalid data storage frequency for balloon ' // TRIM( CTITLE(JI) ) )
     XTSTEP(JI) = 60.
   END IF
-  TBALLOONS(JI)%TFLYER_TIME%XTSTEP = XTSTEP(JI)
+  TZBALLOON%TFLYER_TIME%XTSTEP = XTSTEP(JI)
 
   SELECT CASE ( CTYPE(JI) )
     CASE ( 'CVBALL' )
@@ -193,15 +197,15 @@ DO JI = 1, NBALLOONS
       IF ( XALTLAUNCH(JI) /= XNEGUNDEF .AND. XPRES(JI) /= XNEGUNDEF ) &
         CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'INI_BALLOON', &
                         'altitude or pressure at launch (not both) must be provided for ISODEN balloon ' // TRIM( CTITLE(JI) ) )
-      TBALLOONS(JI)%XALTLAUNCH = XALTLAUNCH(JI)
-      TBALLOONS(JI)%XPRES      = XPRES(JI)
+      TZBALLOON%XALTLAUNCH = XALTLAUNCH(JI)
+      TZBALLOON%XPRES      = XPRES(JI)
 
       IF ( XWASCENT(JI) == XNEGUNDEF ) THEN
         CALL PRINT_MSG( NVERB_INFO, 'GEN', 'INI_BALLOON', &
                         'initial vertical speed not provided for CVBALL balloon ' // TRIM( CTITLE(JI) ) // ' => set to 0.' )
         XWASCENT(JI) = 0.
       END IF
-      TBALLOONS(JI)%XWASCENT = XWASCENT(JI)
+      TZBALLOON%XWASCENT = XWASCENT(JI)
 
 
       IF ( XAERODRAG(JI) == XNEGUNDEF ) THEN
@@ -209,29 +213,29 @@ DO JI = 1, NBALLOONS
                         'aerodynamic drag coefficient not provided for CVBALL balloon ' // TRIM( CTITLE(JI) ) // ' => set to 0.44' )
         XAERODRAG(JI) = 0.44
       END IF
-      TBALLOONS(JI)%XAERODRAG = XAERODRAG(JI)
+      TZBALLOON%XAERODRAG = XAERODRAG(JI)
 
       IF ( XINDDRAG(JI) == XNEGUNDEF ) THEN
         CALL PRINT_MSG( NVERB_INFO, 'GEN', 'INI_BALLOON', &
                         'induced drag coefficient not provided for CVBALL balloon ' // TRIM( CTITLE(JI) ) // ' => set to 0.014' )
         XINDDRAG(JI) = 0.014
       END IF
-      TBALLOONS(JI)%XINDDRAG = XINDDRAG(JI)
+      TZBALLOON%XINDDRAG = XINDDRAG(JI)
 
       IF ( XMASS(JI) == XNEGUNDEF ) &
         CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'INI_BALLOON', 'mass not provided for CVBALL balloon ' // TRIM( CTITLE(JI) ) )
-      TBALLOONS(JI)%XMASS = XMASS(JI)
+      TZBALLOON%XMASS = XMASS(JI)
 
       IF ( XDIAMETER(JI) <= 0. .AND. XVOLUME(JI) <= 0. ) &
         CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'INI_BALLOON', &
                         'diameter or volume not provided for CVBALL balloon ' // TRIM( CTITLE(JI) ) )
 
       IF ( XDIAMETER(JI) <= 0. ) THEN
-        TBALLOONS(JI)%XVOLUME          = XVOLUME(JI)
-        TBALLOONS(JI)%XDIAMETER        = ( (3. * XVOLUME(JI) ) / ( 4. * XPI ) ) ** ( 1. / 3. )
+        TZBALLOON%XVOLUME          = XVOLUME(JI)
+        TZBALLOON%XDIAMETER        = ( (3. * XVOLUME(JI) ) / ( 4. * XPI ) ) ** ( 1. / 3. )
       ELSE IF ( XVOLUME(JI) <= 0 ) THEN
-        TBALLOONS(JI)%XDIAMETER        = XDIAMETER(JI)
-        TBALLOONS(JI)%XVOLUME          = XPI / 6 * XDIAMETER(JI)**3
+        TZBALLOON%XDIAMETER        = XDIAMETER(JI)
+        TZBALLOON%XVOLUME          = XPI / 6 * XDIAMETER(JI)**3
       ELSE
         CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'INI_BALLOON', &
                         'diameter or volume (not both) must be provided for CVBALL balloon ' // TRIM( CTITLE(JI) ) )
@@ -245,15 +249,15 @@ DO JI = 1, NBALLOONS
       IF ( XALTLAUNCH(JI) /= XNEGUNDEF .AND. XPRES(JI) /= XNEGUNDEF ) &
         CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'INI_BALLOON', &
                         'altitude or pressure at launch (not both) must be provided for ISODEN balloon ' // TRIM( CTITLE(JI) ) )
-      TBALLOONS(JI)%XALTLAUNCH = XALTLAUNCH(JI)
-      TBALLOONS(JI)%XPRES      = XPRES(JI)
+      TZBALLOON%XALTLAUNCH = XALTLAUNCH(JI)
+      TZBALLOON%XPRES      = XPRES(JI)
 
       IF ( XWASCENT(JI) /= XNEGUNDEF ) THEN
         CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'INI_BALLOON', &
                         'initial vertical speed is not needed for ISODEN balloon ' // TRIM( CTITLE(JI) ) // ' => ignored' )
         XWASCENT(JI) = XNEGUNDEF
       END IF
-      TBALLOONS(JI)%XWASCENT = XWASCENT(JI)
+      TZBALLOON%XWASCENT = XWASCENT(JI)
 
 
       IF ( XAERODRAG(JI) /= XNEGUNDEF ) THEN
@@ -261,49 +265,49 @@ DO JI = 1, NBALLOONS
                         'aerodynamic drag coefficient is not needed for ISODEN balloon ' // TRIM( CTITLE(JI) ) // ' => ignored' )
         XAERODRAG(JI) = XNEGUNDEF
       END IF
-      TBALLOONS(JI)%XAERODRAG = XAERODRAG(JI)
+      TZBALLOON%XAERODRAG = XAERODRAG(JI)
 
       IF ( XINDDRAG(JI) /= XNEGUNDEF ) THEN
         CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'INI_BALLOON', &
                         'induced drag coefficient is not needed for ISODEN balloon ' // TRIM( CTITLE(JI) ) // ' => ignored' )
         XINDDRAG(JI) = XNEGUNDEF
       END IF
-      TBALLOONS(JI)%XINDDRAG = XINDDRAG(JI)
+      TZBALLOON%XINDDRAG = XINDDRAG(JI)
 
       IF ( XMASS(JI) /= XNEGUNDEF ) THEN
         CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'INI_BALLOON', &
                         'mass is not needed for ISODEN balloon ' // TRIM( CTITLE(JI) ) // ' => ignored' )
         XMASS(JI) = XNEGUNDEF
       END IF
-      TBALLOONS(JI)%XMASS = XMASS(JI)
+      TZBALLOON%XMASS = XMASS(JI)
 
       IF ( XDIAMETER(JI) /= XNEGUNDEF ) THEN
         CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'INI_BALLOON', &
                         'diameter is not needed for ISODEN balloon ' // TRIM( CTITLE(JI) ) // ' => ignored' )
         XDIAMETER(JI) = XNEGUNDEF
       END IF
-      TBALLOONS(JI)%XDIAMETER = XDIAMETER(JI)
+      TZBALLOON%XDIAMETER = XDIAMETER(JI)
 
       IF ( XVOLUME(JI) /= XNEGUNDEF ) THEN
         CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'INI_BALLOON', &
                         'volume is not needed for ISODEN balloon ' // TRIM( CTITLE(JI) ) // ' => ignored' )
         XVOLUME(JI) = XNEGUNDEF
       END IF
-      TBALLOONS(JI)%XVOLUME = XVOLUME(JI)
+      TZBALLOON%XVOLUME = XVOLUME(JI)
 
 
     CASE ( 'RADIOS' )
       IF ( XALTLAUNCH(JI) == XNEGUNDEF ) &
         CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'INI_BALLOON', &
                         'altitude of launch must be provided for radiosounding balloon ' // TRIM( CTITLE(JI) ) )
-      TBALLOONS(JI)%XALTLAUNCH = XALTLAUNCH(JI)
+      TZBALLOON%XALTLAUNCH = XALTLAUNCH(JI)
 
       IF ( XWASCENT(JI) == XNEGUNDEF ) THEN
         CALL PRINT_MSG( NVERB_INFO, 'GEN', 'INI_BALLOON', &
                         'initial vertical speed not provided for balloon ' // TRIM( CTITLE(JI) ) // ' => set to 5.' )
         XWASCENT(JI) = 5.
       END IF
-      TBALLOONS(JI)%XWASCENT = XWASCENT(JI)
+      TZBALLOON%XWASCENT = XWASCENT(JI)
 
       IF ( XPRES(JI) /= XNEGUNDEF ) THEN
         CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'INI_BALLOON',                        &
@@ -311,7 +315,7 @@ DO JI = 1, NBALLOONS
                         // TRIM( CTITLE(JI) ) // ' => ignored' )
         XPRES(JI) = XNEGUNDEF
       END IF
-      TBALLOONS(JI)%XAERODRAG = XAERODRAG(JI)
+      TZBALLOON%XAERODRAG = XAERODRAG(JI)
 
       IF ( XAERODRAG(JI) /= XNEGUNDEF ) THEN
         CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'INI_BALLOON',                                    &
@@ -319,7 +323,7 @@ DO JI = 1, NBALLOONS
                         // TRIM( CTITLE(JI) ) // ' => ignored' )
         XAERODRAG(JI) = XNEGUNDEF
       END IF
-      TBALLOONS(JI)%XAERODRAG = XAERODRAG(JI)
+      TZBALLOON%XAERODRAG = XAERODRAG(JI)
 
       IF ( XINDDRAG(JI) /= XNEGUNDEF ) THEN
         CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'INI_BALLOON',                                &
@@ -327,28 +331,28 @@ DO JI = 1, NBALLOONS
                         // TRIM( CTITLE(JI) ) // ' => ignored' )
         XINDDRAG(JI) = XNEGUNDEF
       END IF
-      TBALLOONS(JI)%XINDDRAG = XINDDRAG(JI)
+      TZBALLOON%XINDDRAG = XINDDRAG(JI)
 
       IF ( XMASS(JI) /= XNEGUNDEF ) THEN
         CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'INI_BALLOON', &
                         'mass is not needed for radiosounding balloon ' // TRIM( CTITLE(JI) ) // ' => ignored' )
         XMASS(JI) = XNEGUNDEF
       END IF
-      TBALLOONS(JI)%XMASS = XMASS(JI)
+      TZBALLOON%XMASS = XMASS(JI)
 
       IF ( XDIAMETER(JI) /= XNEGUNDEF ) THEN
         CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'INI_BALLOON', &
                         'diameter is not needed for radiosounding balloon ' // TRIM( CTITLE(JI) ) // ' => ignored' )
         XDIAMETER(JI) = XNEGUNDEF
       END IF
-      TBALLOONS(JI)%XDIAMETER = XDIAMETER(JI)
+      TZBALLOON%XDIAMETER = XDIAMETER(JI)
 
       IF ( XVOLUME(JI) /= XNEGUNDEF ) THEN
         CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'INI_BALLOON', &
                         'volume is not needed for radiosounding balloon ' // TRIM( CTITLE(JI) ) // ' => ignored' )
         XVOLUME(JI) = XNEGUNDEF
       END IF
-      TBALLOONS(JI)%XVOLUME = XVOLUME(JI)
+      TZBALLOON%XVOLUME = XVOLUME(JI)
 
 
     CASE DEFAULT

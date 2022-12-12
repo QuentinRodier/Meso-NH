@@ -138,7 +138,7 @@ ENDIF
 IF (IMI == 1) CALL INI_BALLOON
 !
 DO JI = 1, NBALLOONS
-  CALL INI_LAUNCH( JI, TBALLOONS(JI) )
+  CALL INI_LAUNCH( JI, TBALLOONS(JI)%TBALLOON )
 END DO
 !
 !----------------------------------------------------------------------------
@@ -149,7 +149,7 @@ END DO
 IF (IMI == 1) CALL INI_AIRCRAFT
 !
 DO JI = 1, NAIRCRAFTS
-  CALL INI_FLIGHT( JI, TAIRCRAFTS(JI) )
+  CALL INI_FLIGHT( JI, TAIRCRAFTS(JI)%TAIRCRAFT )
 END DO
 !
 !----------------------------------------------------------------------------
@@ -160,11 +160,11 @@ END DO
 IF (.NOT. LFLYER) RETURN
 !
 DO JI = 1, NBALLOONS
-  CALL ALLOCATE_FLYER( TBALLOONS(JI) )
+  CALL ALLOCATE_FLYER( TBALLOONS(JI)%TBALLOON )
 END DO
 !
 DO JI = 1, NAIRCRAFTS
-  CALL ALLOCATE_FLYER( TAIRCRAFTS(JI) )
+  CALL ALLOCATE_FLYER( TAIRCRAFTS(JI)%TAIRCRAFT )
 END DO
 !
 !----------------------------------------------------------------------------

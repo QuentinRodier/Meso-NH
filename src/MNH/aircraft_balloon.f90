@@ -140,13 +140,13 @@ ALLOCATE(XSVW_FLUX(SIZE(PSV,1),SIZE(PSV,2),SIZE(PSV,3),SIZE(PSV,4)))
 DO JI = 1, NBALLOONS
   CALL AIRCRAFT_BALLOON_EVOL( PTSTEP, PZ, PMAP, PLONOR, PLATOR,                        &
                               PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT, &
-                              TBALLOONS(JI), PSEA                                      )
+                              TBALLOONS(JI)%TBALLOON, PSEA                             )
 END DO
 !
 DO JI = 1, NAIRCRAFTS
   CALL AIRCRAFT_BALLOON_EVOL( PTSTEP, PZ, PMAP, PLONOR, PLATOR,                        &
                               PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT, &
-                              TAIRCRAFTS(JI), PSEA                                     )
+                              TAIRCRAFTS(JI)%TAIRCRAFT, PSEA                           )
 END DO
 !
 !----------------------------------------------------------------------------

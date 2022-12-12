@@ -1862,11 +1862,11 @@ if ( tpfile%lmaster ) then
 
     if ( lflyer ) then
       do ji = 1, nballoons
-        call Write_flyer_time_coord( tballoons(ji) )
+        call Write_flyer_time_coord( tballoons(ji)%tballoon )
       end do
 
       do ji = 1, naircrafts
-        call Write_flyer_time_coord( taircrafts(ji) )
+        call Write_flyer_time_coord( taircrafts(ji)%taircraft )
       end do
     end if
 
