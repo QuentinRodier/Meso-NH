@@ -120,7 +120,7 @@ USE MODD_PARAM_LIMA,       ONLY: XALPHAR_L=>XALPHAR,XNUR_L=>XNUR,XALPHAS_L=>XALP
 USE MODD_PARAM_LIMA_COLD,  ONLY: XDI_L=>XDI,XLBEXI_L=>XLBEXI,XLBI_L=>XLBI,XAI_L=>XAI,XBI_L=>XBI,XC_I_L=>XC_I,&
                                  XLBEXS_L=>XLBEXS,XLBS_L=>XLBS,XCCS_L=>XCCS,XNS_L=>XNS,&
                                  XAS_L=>XAS,XBS_L=>XBS,XCXS_L=>XCXS,        &
-                                 XLBDAS_MIN,XLBDAS_MAX
+                                 XLBDAS_MAX_L=>XLBDAS_MAX,XLBDAS_MIN_L=>XLBDAS_MIN,XTRANS_MP_GAMMAS_L=>XTRANS_MP_GAMMAS
 USE MODD_PARAM_LIMA_MIXED, ONLY: XDG_L=>XDG,XLBEXG_L=>XLBEXG,XLBG_L=>XLBG,XCCG_L=>XCCG,&
                                  XAG_L=>XAG,XBG_L=>XBG,XCXG_L=>XCXG,XCG_L=>XCG
 USE MODD_PARAM_LIMA_WARM,  ONLY: XLBEXR_L=>XLBEXR,XLBR_L=>XLBR,XBR_L=>XBR,XAR_L=>XAR,&
@@ -137,7 +137,8 @@ USE MODD_RAIN_ICE_DESCR,   ONLY: XALPHAR_I=>XALPHAR,XNUR_I=>XNUR,XLBEXR_I=>XLBEX
                                  XLBG_I=>XLBG,XCCG_I=>XCCG,XAG_I=>XAG,XBG_I=>XBG,XCXG_I=>XCXG,XCG_I=>XCG,&
                                  XALPHAI_I=>XALPHAI,XNUI_I=>XNUI,XDI_I=>XDI,XLBEXI_I=>XLBEXI,&
                                  XLBI_I=>XLBI,XAI_I=>XAI,XBI_I=>XBI,XC_I_I=>XC_I,&
-                                 XRTMIN_I=>XRTMIN,XCONC_LAND,XCONC_SEA
+                                 XRTMIN_I=>XRTMIN,XCONC_LAND,XCONC_SEA,        &
+                                 XLBDAS_MAX_I=>XLBDAS_MAX,XLBDAS_MIN_I=>XLBDAS_MIN,XTRANS_MP_GAMMAS_I=>XTRANS_MP_GAMMAS
 !
 !
 IMPLICIT NONE
@@ -746,12 +747,18 @@ IF (GSTORE) THEN
                     ZLB=( ZA*ZCC*MOMG(ZALPHA,ZNU,ZB) )**(-ZLBEX)
                   ENDIF
             END SELECT
-            IF (JLOOP.EQ.5 .AND. ( (CCLOUD=='LIMA'.AND.LSNOW_T_L).OR. &
-                                   (CCLOUD=='ICE3'.AND.LSNOW_T_I) ) ) THEN
-               IF (ZTEMPZ(JK)>-10.) THEN
-                  ZLBDA = MAX(MIN(XLBDAS_MAX, 10**(14.554-0.0423*(ZTEMPZ(JK)+273.15))),XLBDAS_MIN)
+            IF (JLOOP.EQ.5 .AND. (CCLOUD=='LIMA'.AND.LSNOW_T_L) ) THEN
+               IF (ZTEMPZ(JK)>263.15) THEN
+                  ZLBDA = MAX(MIN(XLBDAS_MAX_L, 10**(14.554-0.0423*ZTEMPZ(JK))),XLBDAS_MIN_L)*XTRANS_MP_GAMMAS_L
                ELSE
-                  ZLBDA = MAX(MIN(XLBDAS_MAX, 10**(6.226-0.0106*(ZTEMPZ(JK)+273.15))),XLBDAS_MIN)
+                  ZLBDA = MAX(MIN(XLBDAS_MAX_L, 10**(6.226-0.0106*ZTEMPZ(JK))),XLBDAS_MIN_L)*XTRANS_MP_GAMMAS_L
+               END IF
+               ZN=ZNS*ZRHODREFZ(JK)*ZRZ(JK,JLOOP)*ZLBDA**ZB
+            ELSE IF (JLOOP.EQ.5 .AND. (CCLOUD=='ICE3'.AND.LSNOW_T_I) ) THEN
+               IF (ZTEMPZ(JK)>263.15) THEN
+                  ZLBDA = MAX(MIN(XLBDAS_MAX_I, 10**(14.554-0.0423*ZTEMPZ(JK))),XLBDAS_MIN_I)*XTRANS_MP_GAMMAS_I
+               ELSE
+                  ZLBDA = MAX(MIN(XLBDAS_MAX_I, 10**(6.226-0.0106*ZTEMPZ(JK))),XLBDAS_MIN_I)*XTRANS_MP_GAMMAS_I
                END IF
                ZN=ZNS*ZRHODREFZ(JK)*ZRZ(JK,JLOOP)*ZLBDA**ZB
             ELSE
