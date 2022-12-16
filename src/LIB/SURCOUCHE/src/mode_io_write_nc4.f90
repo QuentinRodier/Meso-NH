@@ -2266,9 +2266,9 @@ subroutine Write_flyer_time_coord( tpflyer )
   use modd_aircraft_balloon
   use modd_parameters,       only: NBUNAMELGTMAX, XUNDEF
 
+  use mode_aircraft_balloon, only: Aircraft_balloon_longtype_get
   use mode_io_tools_nc4,     only: IO_Mnhname_clean
 
-  use modi_aircraft_balloon, only: Aircraft_balloon_longtype_get
 
   class(tflyerdata), intent(in) :: tpflyer
 

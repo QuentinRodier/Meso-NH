@@ -125,12 +125,12 @@ USE MODD_PARAMETERS,       ONLY: XUNDEF
 USE MODD_PARAM_n,          ONLY: CCLOUD
 
 USE MODE_AERO_PSD
+use mode_aircraft_balloon, only: Aircraft_balloon_longtype_get
 USE MODE_DUST_PSD
 USE MODE_MODELN_HANDLER,   ONLY: GET_CURRENT_MODEL_INDEX
 use mode_msg
 use mode_write_diachro,    only: Write_diachro
 
-use modi_aircraft_balloon, only: Aircraft_balloon_longtype_get
 
 TYPE(TFILEDATA),   INTENT(IN) :: TPDIAFILE ! file to write
 CLASS(TFLYERDATA), INTENT(IN) :: TPFLYER

@@ -4,48 +4,18 @@
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !      #####################
-MODULE MODI_AIRCRAFT_BALLOON
+MODULE MODE_AIRCRAFT_BALLOON
 !      #####################
-!
-INTERFACE
-!
-      SUBROUTINE AIRCRAFT_BALLOON(PTSTEP, PZ,                         &
-                                  PMAP, PLONOR, PLATOR,               &
-                                  PU, PV, PW, PP, PTH, PR, PSV, PTKE, &
-                                  PTS, PRHODREF, PCIT, PSEA           )
-!
-REAL,                     INTENT(IN)     :: PTSTEP ! time step
-REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PZ     ! z
-REAL, DIMENSION(:,:),     INTENT(IN)     :: PMAP   ! map factor
-REAL,                     INTENT(IN)     :: PLONOR ! origine longitude
-REAL,                     INTENT(IN)     :: PLATOR ! origine latitude
-REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PU     ! horizontal wind X component
-REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PV     ! horizontal wind Y component
-REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PW     ! vertical wind
-REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PP     ! pressure
-REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PTH    ! potential temperature
-REAL, DIMENSION(:,:,:,:), INTENT(IN)     :: PR     ! water mixing ratios
-REAL, DIMENSION(:,:,:,:), INTENT(IN)     :: PSV    ! Scalar variables
-REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PTKE   ! turbulent kinetic energy
-REAL, DIMENSION(:,:),     INTENT(IN)     :: PTS    ! surface temperature
-REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PRHODREF ! dry air density of the reference state
-REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PCIT     ! pristine ice concentration
-REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN) :: PSEA
-!
-!-------------------------------------------------------------------------------
-!
-END SUBROUTINE AIRCRAFT_BALLOON
-!
-SUBROUTINE AIRCRAFT_BALLOON_LONGTYPE_GET( TPFLYER, HLONGTYPE )
-  USE MODD_AIRCRAFT_BALLOON, ONLY: TFLYERDATA
 
-  CLASS(TFLYERDATA), INTENT(IN)  :: TPFLYER
-  CHARACTER(LEN=*),  INTENT(OUT) :: HLONGTYPE
-END SUBROUTINE AIRCRAFT_BALLOON_LONGTYPE_GET
+IMPLICIT NONE
 
-END INTERFACE
-!
-END MODULE MODI_AIRCRAFT_BALLOON
+PRIVATE
+
+PUBLIC :: AIRCRAFT_BALLOON
+
+PUBLIC :: AIRCRAFT_BALLOON_LONGTYPE_GET
+
+CONTAINS
 !
 !     #################################################################
       SUBROUTINE AIRCRAFT_BALLOON(PTSTEP, PZ,                         &
@@ -192,3 +162,5 @@ if ( Len_trim( ytype ) > Len( HLONGTYPE ) ) &
 HLONGTYPE = Trim( ytype )
 
 END SUBROUTINE AIRCRAFT_BALLOON_LONGTYPE_GET
+
+END MODULE MODE_AIRCRAFT_BALLOON
