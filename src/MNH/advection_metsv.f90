@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -47,7 +47,8 @@ REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PRT , PSVT
                                                   ! Variables at t
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHVREF   ! Virtual Temperature
                                           ! of the reference state
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PDXX,PDYY,PDZZ,PDZX,PDZY
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PDXX,PDYY,PDZZ
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PDZX,PDZY
                                                   !  metric coefficients
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRTHS, PRTKES
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRRS , PRSVS
@@ -212,7 +213,8 @@ REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PRT , PSVT
                                                   ! Variables at t
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHVREF   ! Virtual Temperature
                                           ! of the reference state
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PDXX,PDYY,PDZZ,PDZX,PDZY
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PDXX,PDYY,PDZZ
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PDZX,PDZY
                                                   !  metric coefficients
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRTHS, PRTKES
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRRS , PRSVS
