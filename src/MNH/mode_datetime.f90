@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2018-2022 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2018-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -8,6 +8,7 @@
 !  P. Wautelet 19/04/2019: use modd_precision kinds
 !  P. Wautelet 20/07/2021: modify DATETIME_TIME2REFERENCE and DATETIME_DISTANCE to allow correct computation with 32-bit floats
 !  P. Wautelet 27/10/2022: add +, -, <= and > operators and improve older comparison subroutines (more robust but slower)
+!  P. Wautelet 05/01/2023: fix: DATETIME_DISTANCE: need 64 bits integers computation for very distant dates
 !-----------------------------------------------------------------
 MODULE MODE_DATETIME
 !
@@ -141,6 +142,8 @@ SUBROUTINE DATETIME_DISTANCE(TPDATEBEG,TPDATEEND,PDIST)
 !
 !Compute distance (in seconds) between 2 dates
 !
+use modd_precision, only: MNHINT64
+!
 TYPE(DATE_TIME), INTENT(IN)  :: TPDATEBEG
 TYPE(DATE_TIME), INTENT(IN)  :: TPDATEEND
 REAL,            INTENT(OUT) :: PDIST
@@ -158,7 +161,7 @@ IF ( ZSECEND < ZSECBEG ) THEN
   IF ( ZSECEND < ZSECBEG ) CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'DATETIME_DISTANCE', 'unexpected: ZSECEND is too small' )
 END IF
 !
-PDIST = REAL( ( IDAYSEND - IDAYSBEG ) * (24*60*60) ) + ZSECEND - ZSECBEG
+PDIST = REAL( INT( IDAYSEND - IDAYSBEG, KIND=MNHINT64 ) * 24*60*60 ) + ZSECEND - ZSECBEG
 !
 END SUBROUTINE DATETIME_DISTANCE
 !
