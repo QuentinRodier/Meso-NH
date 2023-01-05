@@ -3,33 +3,14 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-MODULE MODI_ICE4_RSRIMCG_OLD
-INTERFACE
-SUBROUTINE ICE4_RSRIMCG_OLD(KSIZE, ODSOFT, ODCOMPUTE, &
-                           &PRHODREF, &
-                           &PLBDAS, &
-                           &PT, PRCT, PRST, &
-                           &PRSRIMCG_MR, PB_RS, PB_RG)
+MODULE MODE_ICE4_RSRIMCG_OLD
 IMPLICIT NONE
-INTEGER, INTENT(IN) :: KSIZE
-LOGICAL,                      INTENT(IN)    :: ODSOFT
-LOGICAL, DIMENSION(KSIZE),    INTENT(IN)    :: ODCOMPUTE
-REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PRHODREF ! Reference density
-REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PLBDAS   ! Slope parameter of the aggregate distribution
-REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PT       ! Temperature
-REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PRCT     ! Cloud water m.r. at t
-REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PRST     ! Snow/aggregate m.r. at t
-REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PRSRIMCG_MR ! Mr change due to cloud droplet riming of the aggregates
-REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PB_RS
-REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PB_RG
-END SUBROUTINE ICE4_RSRIMCG_OLD
-END INTERFACE
-END MODULE MODI_ICE4_RSRIMCG_OLD
-SUBROUTINE ICE4_RSRIMCG_OLD(KSIZE, ODSOFT, ODCOMPUTE, &
+CONTAINS
+SUBROUTINE ICE4_RSRIMCG_OLD(CST, ICEP, ICED, KPROMA, KSIZE, LDSOFT, LDCOMPUTE, &
                            &PRHODREF, &
                            &PLBDAS, &
                            &PT, PRCT, PRST, &
-                           &PRSRIMCG_MR, PB_RS, PB_RG)
+                           &PRSRIMCG_MR)
 !!
 !!**  PURPOSE
 !!    -------
@@ -44,43 +25,46 @@ SUBROUTINE ICE4_RSRIMCG_OLD(KSIZE, ODSOFT, ODCOMPUTE, &
 !!
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !  P. Wautelet 29/05/2019: remove PACK/UNPACK intrinsics (to get more performance and better OpenACC support)
-!  J. Wurtz       03/2022: New snow characteristics with LSNOW_T
 !
 !
 !*      0. DECLARATIONS
 !          ------------
 !
-USE MODD_CST,            ONLY: XTT
-USE MODD_PARAM_ICE,      ONLY: CSNOWRIMING
-USE MODD_RAIN_ICE_DESCR, ONLY: XRTMIN
-USE MODD_RAIN_ICE_PARAM, ONLY: NGAMINC,XEXSRIMCG,XGAMINC_RIM2,XRIMINTP1,XRIMINTP2,XSRIMCG
+USE MODD_CST,            ONLY: CST_t
+USE MODD_RAIN_ICE_DESCR, ONLY: RAIN_ICE_DESCR_t
+USE MODD_RAIN_ICE_PARAM, ONLY: RAIN_ICE_PARAM_t
+USE PARKIND1, ONLY : JPRB
+USE YOMHOOK , ONLY : LHOOK, DR_HOOK
 !
 IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :
 !
-INTEGER, INTENT(IN) :: KSIZE
-LOGICAL,                      INTENT(IN)    :: ODSOFT
-LOGICAL, DIMENSION(KSIZE),    INTENT(IN)    :: ODCOMPUTE
-REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PRHODREF ! Reference density
-REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PLBDAS   ! Slope parameter of the aggregate distribution
-REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PT       ! Temperature
-REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PRCT     ! Cloud water m.r. at t
-REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PRST     ! Snow/aggregate m.r. at t
-REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PRSRIMCG_MR ! Mr change due to cloud droplet riming of the aggregates
-REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PB_RS
-REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PB_RG
+TYPE(CST_t),              INTENT(IN)    :: CST
+TYPE(RAIN_ICE_PARAM_t),   INTENT(IN)    :: ICEP
+TYPE(RAIN_ICE_DESCR_t),   INTENT(IN)    :: ICED
+INTEGER, INTENT(IN) :: KPROMA, KSIZE
+LOGICAL,                       INTENT(IN)    :: LDSOFT
+LOGICAL, DIMENSION(KPROMA),    INTENT(IN)    :: LDCOMPUTE
+REAL, DIMENSION(KPROMA),       INTENT(IN)    :: PRHODREF ! Reference density
+REAL, DIMENSION(KPROMA),       INTENT(IN)    :: PLBDAS   ! Slope parameter of the aggregate distribution
+REAL, DIMENSION(KPROMA),       INTENT(IN)    :: PT       ! Temperature
+REAL, DIMENSION(KPROMA),       INTENT(IN)    :: PRCT     ! Cloud water m.r. at t
+REAL, DIMENSION(KPROMA),       INTENT(IN)    :: PRST     ! Snow/aggregate m.r. at t
+REAL, DIMENSION(KPROMA),       INTENT(OUT)   :: PRSRIMCG_MR ! Mr change due to cloud droplet riming of the aggregates
 !
 !*       0.2  declaration of local variables
 !
-LOGICAL, DIMENSION(KSIZE) :: GRIM
+LOGICAL, DIMENSION(KPROMA) :: GRIM
 INTEGER :: IGRIM
-REAL, DIMENSION(KSIZE) :: ZVEC1, ZVEC2
-INTEGER, DIMENSION(KSIZE) :: IVEC2, IVEC1
-REAL, DIMENSION(KSIZE) :: ZZW
+REAL, DIMENSION(KPROMA) :: ZVEC1, ZVEC2
+INTEGER, DIMENSION(KPROMA) :: IVEC1, IVEC2
+REAL, DIMENSION(KPROMA) :: ZZW
 INTEGER :: JL
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------
 !
+IF (LHOOK) CALL DR_HOOK('ICE4_RSRIMCG_OLD', 0, ZHOOK_HANDLE)
 !
 !-------------------------------------------------------------------------------
 !
@@ -88,16 +72,17 @@ INTEGER :: JL
 !
 PRSRIMCG_MR(:)=0.
 !
-IF(.NOT. ODSOFT) THEN
+IF(.NOT. LDSOFT) THEN
   IGRIM = 0
-  GRIM(:) = .FALSE.
-  DO JL = 1, SIZE(GRIM)
-    IF ( PRCT(JL)>XRTMIN(2) .AND. PRST(JL)>XRTMIN(5) .AND. ODCOMPUTE(JL) .AND. PT(JL)<XTT ) THEN
+  DO JL = 1, KSIZE
+    IF(PRCT(JL)>ICED%XRTMIN(2) .AND. PRST(JL)>ICED%XRTMIN(5) .AND. LDCOMPUTE(JL) .AND. PT(JL)<CST%XTT) THEN
       IGRIM = IGRIM + 1
-      IVEC1(IGRIM) = Jl
+      IVEC1(IGRIM) = JL
       GRIM(JL) = .TRUE.
-    END IF
-  END DO
+    ELSE
+      GRIM(JL) = .FALSE.
+    ENDIF
+  ENDDO
   !
   IF(IGRIM>0) THEN
     !
@@ -105,14 +90,14 @@ IF(.NOT. ODSOFT) THEN
     !
     DO JL = 1, IGRIM
       ZVEC1(JL) = PLBDAS(IVEC1(JL))
-    END DO
+    ENDDO
     !
     !        5.1.2  find the next lower indice for the PLBDAS in the geometrical
     !               set of Lbda_s used to tabulate some moments of the incomplete
     !               gamma function
     !
-    ZVEC2(1:IGRIM) = MAX( 1.00001, MIN( REAL(NGAMINC)-0.00001,           &
-                          XRIMINTP1 * LOG( ZVEC1(1:IGRIM) ) + XRIMINTP2 ) )
+    ZVEC2(1:IGRIM) = MAX( 1.00001, MIN(REAL(ICEP%NGAMINC)-0.00001,           &
+                          ICEP%XRIMINTP1 * LOG( ZVEC1(1:IGRIM) ) + ICEP%XRIMINTP2 ) )
     IVEC2(1:IGRIM) = INT( ZVEC2(1:IGRIM) )
     ZVEC2(1:IGRIM) = ZVEC2(1:IGRIM) - REAL( IVEC2(1:IGRIM) )
 
@@ -120,26 +105,32 @@ IF(.NOT. ODSOFT) THEN
     !        5.1.5  perform the linear interpolation of the normalized
     !               "XBS"-moment of the incomplete gamma function (XGAMINC_RIM2)
     !
-    ZVEC1(1:IGRIM) =  XGAMINC_RIM2( IVEC2(1:IGRIM)+1 )* ZVEC2(1:IGRIM)      &
-                    - XGAMINC_RIM2( IVEC2(1:IGRIM)   )*(ZVEC2(1:IGRIM) - 1.0)
+    ZVEC1(1:IGRIM) =  ICEP%XGAMINC_RIM2( IVEC2(1:IGRIM)+1 )* ZVEC2(1:IGRIM)      &
+                    - ICEP%XGAMINC_RIM2( IVEC2(1:IGRIM)   )*(ZVEC2(1:IGRIM) - 1.0)
     ZZW(:) = 0.
     DO JL = 1, IGRIM
       ZZW(IVEC1(JL)) = ZVEC1(JL)
-    END DO
+    ENDDO
 
     !
     !        5.1.6  riming-conversion of the large sized aggregates into graupeln
     !
     !
-    WHERE(GRIM(:))
-      PRSRIMCG_MR(:) = XSRIMCG * PLBDAS(:)**XEXSRIMCG   & ! RSRIMCG
-                               * (1.0 - ZZW(:) )*PRST(:)
-      PRSRIMCG_MR(:)=MIN(PRST(:), PRSRIMCG_MR(:))
+    !$mnh_expand_where(JL=1:KSIZE)
+    WHERE(GRIM(1:KSIZE))
+      PRSRIMCG_MR(1:KSIZE) = ICEP%XSRIMCG * PLBDAS(1:KSIZE)**ICEP%XEXSRIMCG   & ! RSRIMCG
+#if defined(REPRO48) || defined(REPRO55)
+                               * (1.0 - ZZW(1:KSIZE) )/PRHODREF(1:KSIZE)
+#else
+                               * (1.0 - ZZW(1:KSIZE) )*PRST(1:KSIZE)
+#endif
+      PRSRIMCG_MR(1:KSIZE)=MIN(PRST(1:KSIZE), PRSRIMCG_MR(1:KSIZE))
     END WHERE
+    !$mnh_end_expand_where(JL=1:KSIZE)
   END IF
 ENDIF
-PB_RS(:) = PB_RS(:) - PRSRIMCG_MR(:)
-PB_RG(:) = PB_RG(:) + PRSRIMCG_MR(:)
 !
+IF (LHOOK) CALL DR_HOOK('ICE4_RSRIMCG_OLD', 1, ZHOOK_HANDLE)
 !
 END SUBROUTINE ICE4_RSRIMCG_OLD
+END MODULE MODE_ICE4_RSRIMCG_OLD

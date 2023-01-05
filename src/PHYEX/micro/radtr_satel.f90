@@ -111,9 +111,14 @@ END MODULE MODI_RADTR_SATEL
 USE MODD_CST
 USE MODD_PARAMETERS
 USE MODD_GRID_n
+USE MODD_RAIN_ICE_PARAM,   ONLY: RAIN_ICE_PARAM
+USE MODD_NEB,              ONLY: NEB
+USE MODD_TURB_n,           ONLY: TURBN
+USE MODD_DIMPHYEX,         ONLY: DIMPHYEX_t
 !
 USE MODD_RAD_TRANSF
 USE MODE_ll
+USE MODE_FILL_DIMPHYEX,   ONLY: FILL_DIMPHYEX
 !
 USE MODI_INIT_NBMOD
 USE MODI_DETER_ANGLE
@@ -254,10 +259,12 @@ REAL :: ZFLWP, ZFIWP, ZANGCOR, ZRADLP, ZMULTS, ZTMP, ZKI
 REAL, DIMENSION(:,:,:), ALLOCATABLE  :: ZTEMP  ! Temperature
 REAL, DIMENSION(:,:,:), ALLOCATABLE  :: ZSIGRC ! s r_c / sig_s^2
 REAL, DIMENSION(:,:,:), ALLOCATABLE  :: ZNCLD  ! grid scale cloud fraction
-REAL, DIMENSION(:,:,:), ALLOCATABLE  :: ZRC    ! grid scale r_c mixing ratio (kg/kg)
-REAL, DIMENSION(:,:,:), ALLOCATABLE  :: ZRI    ! grid scale r_i (kg/kg)
-REAL, DIMENSION(:,:,:), ALLOCATABLE  :: ZRV    ! grid scale r_v (kg/kg)
+REAL, DIMENSION(:,:,:), ALLOCATABLE  :: ZRC_IN, ZRC_OUT ! grid scale r_c mixing ratio (kg/kg)
+REAL, DIMENSION(:,:,:), ALLOCATABLE  :: ZRI_IN, ZRI_OUT ! grid scale r_i (kg/kg)
+REAL, DIMENSION(:,:,:), ALLOCATABLE  :: ZRV_IN, ZRV_OUT ! grid scale r_v (kg/kg)
 REAL, DIMENSION(:,:,:), ALLOCATABLE  :: ZRHO
+REAL, DIMENSION(SIZE(PPABST,1),SIZE(PPABST,2)) :: ZSIGQSAT2D, ZDUM
+TYPE(DIMPHYEX_t)    :: D
 !----------------------------------------------------------------------------
 !
 !*       1.    INITIALIZATION OF CONSTANTS FOR TRANSFERT CODE
@@ -279,6 +286,7 @@ IKU = SIZE(PTHT,3)
 CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IKB = 1 + JPVEXT
 IKE = IKU - JPVEXT
+CALL FILL_DIMPHYEX(D, IIU, IJU, IKU)
 !
 IKSTAE = SIZE(PSTATM,1)
 IKUP   = IKE-JPVEXT+1
@@ -465,24 +473,38 @@ ZCLDLU = 0.
 !
 IF( SIZE(PRT(:,:,:,:),4) >= 2 ) THEN
   ALLOCATE(ZNCLD(IIU,IJU,IKU))
-  ALLOCATE(ZRC(IIU,IJU,IKU))
-  ZRC=PRT(:,:,:,2)
-  ALLOCATE(ZRI(IIU,IJU,IKU))
-  ZRI=0.
-  IF( OUSERI ) ZRI=PRT(:,:,:,4)
+  ALLOCATE(ZRC_IN(IIU,IJU,IKU))
+  ALLOCATE(ZRC_OUT(IIU,IJU,IKU))
+  ZRC_IN=PRT(:,:,:,2)
+  ALLOCATE(ZRI_IN(IIU,IJU,IKU))
+  ALLOCATE(ZRI_OUT(IIU,IJU,IKU))
+  ZRI_IN=0.
+  IF( OUSERI ) ZRI_IN=PRT(:,:,:,4)
   IF ( .NOT. OSUBG_COND .AND. ORAD_SUBG_COND) THEN
     PRINT*,' THE SUBGRID CONDENSATION SCHEME IN DIAGNOSTIC MODE IS ACTIVATED'
     ALLOCATE(ZTEMP(IIU,IJU,IKU))
     ZTEMP=PTHT*ZEXNT
     ALLOCATE(ZSIGRC(IIU,IJU,IKU))
-    ALLOCATE(ZRV(IIU,IJU,IKU))
-    ZRV=PRT(:,:,:,1)
+    ALLOCATE(ZRV_IN(IIU,IJU,IKU))
+
+    ZRV_IN=PRT(:,:,:,1)
     ALLOCATE(ZRHO(IIU,IJU,IKU))
     ZRHO=1. !unused
-    CALL CONDENSATION( IIU, IJU, IKU, IIB, IIE, IJB, IJE, IKB, IKE, 1, 'T', 'CB02', 'CB',&
-         PPABST, PZZ, ZRHO, ZTEMP, ZRV, ZRC, ZRI, PRT(:,:,:,5), PRT(:,:,:,6), PSIGS,&
-         PMFCONV, ZNCLD, ZSIGRC, OUSERI, OSIGMAS,PSIGQSAT )
+    ZSIGQSAT2D(:,:)=PSIGQSAT
+    !CALL CONDENSATION( IIU, IJU, IKU, IIB, IIE, IJB, IJE, IKB, IKE, 1, &
+    !     'T', 'CB02', 'CB',&
+    !     PPABST, PZZ, ZRHO, ZTEMP, ZRV_IN, ZRV_OUT, ZRC_IN, ZRC_OUT, ZRI_IN, ZRI_OUT, &
+    !     PRT(:,:,:,2), PRT(:,:,:,5), PRT(:,:,:,6), PSIGS, PMFCONV, ZNCLD, &
+    !     ZSIGRC, OUSERI, OSIGMAS, .FALSE., .FALSE., &
+    !     ZDUM, ZDUM, ZDUM, ZDUM, ZDUM, ZSIGQSAT2D )
+    CALL CONDENSATION(D, CST, RAIN_ICE_PARAM, NEB, TURBN, &                                                                         
+                     &'T', 'CB02', 'CB',                                                  &                                         
+                     &PPABST, PZZ, ZRHO, ZTEMP, ZRV_IN, ZRV_OUT, ZRC_IN, ZRC_OUT, ZRI_IN, ZRI_OUT,    &                                             
+                     &PRT(:,:,:,2), PRT(:,:,:,5), PRT(:,:,:,6), PSIGS, .FALSE., PMFCONV, ZNCLD, ZSIGRC, .FALSE.,                 &     
+                     &OSIGMAS, .FALSE., .FALSE.,                                                        &                           
+                     &ZDUM, ZDUM, ZDUM, ZDUM, ZDUM, ZSIGQSAT2D)
     DEALLOCATE(ZTEMP,ZSIGRC)
+    DEALLOCATE(ZRV_OUT)
   ELSE
     ZNCLD=PCLDFR
   END IF
@@ -492,10 +514,10 @@ IF( SIZE(PRT(:,:,:,:),4) >= 2 ) THEN
       DO JI=IIB,IIE
         IIJ = 1 + (JI-IIB) + (IIE-IIB+1)*(JJ-IJB)
         IF ( ZVIEW(IIJ) /= XUNDEF .AND. &
-             (ZRC(JI,JJ,JK)  > 0. .OR. ZRI(JI,JJ,JK) > 0. ) ) THEN
-          ZFLWP = ZRC(JI,JJ,JK) / XG /MAX(1.E-10,ZNCLD(JI,JJ,JK)) &
+             (ZRC_OUT(JI,JJ,JK)  > 0. .OR. ZRI_OUT(JI,JJ,JK) > 0. ) ) THEN
+          ZFLWP = ZRC_OUT(JI,JJ,JK) / XG /MAX(1.E-10,ZNCLD(JI,JJ,JK)) &
                * (PPABST(JI,JJ,JK)-PPABST(JI,JJ,JK+1))
-          ZFIWP = ZRI(JI,JJ,JK) / XG /MAX(1.E-10,ZNCLD(JI,JJ,JK)) &
+          ZFIWP = ZRI_OUT(JI,JJ,JK) / XG /MAX(1.E-10,ZNCLD(JI,JJ,JK)) &
                * (PPABST(JI,JJ,JK)-PPABST(JI,JJ,JK+1))
           ZANGCOR = ZVIEW(IIJ) / 1.66
           !!!Parametrization following Ou and Chou, 1995 (Atmos. Res.)
@@ -512,7 +534,7 @@ IF( SIZE(PRT(:,:,:,:),4) >= 2 ) THEN
         END DO
       END DO
     END DO
-  DEALLOCATE(ZNCLD,ZRC,ZRI)
+  DEALLOCATE(ZNCLD,ZRC_OUT,ZRI_OUT)
 END IF
 !
 DEALLOCATE(ZEXNT)

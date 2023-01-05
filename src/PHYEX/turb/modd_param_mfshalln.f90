@@ -13,7 +13,7 @@
 !!    PURPOSE
 !!    -------
 !!    The purpose of this declarative module is to declare the
-!     variables that may be set by namelist for the mass flux scheme
+!!    variables that may be set by namelist for the mass flux scheme
 !!
 !!**  IMPLICIT ARGUMENTS
 !!    ------------------
@@ -29,7 +29,7 @@
 !!
 !!    MODIFICATIONS
 !!    -------------
-!!      Original    01/02/07  
+!!      Original    01/02/07
 !!      10/16 R.Honnert Update with AROME
 !!      01/2019 R.Honnert add parameters for the reduction of mass-flux surface closure with resolution
 !-------------------------------------------------------------------------------
@@ -40,7 +40,7 @@
 USE MODD_PARAMETERS, ONLY: JPMODELMAX
 IMPLICIT NONE
 
-TYPE PARAM_MFSHALL_t 
+TYPE PARAM_MFSHALL_t
 
 REAL               :: XIMPL_MF     ! degre of implicitness
       
@@ -74,27 +74,27 @@ REAL          :: XALPHA_MF   ! coefficient for cloudy fraction
 REAL          :: XSIGMA_MF   ! coefficient for sigma computation
 REAL          :: XFRAC_UP_MAX! maximum Updraft fraction
 !
-! Tuning variables for RHCJ10 updraft :
-REAL          :: XA1 
+!  Parameter for Rio et al (2010) formulation for entrainment and detrainment (RHCJ10)
+REAL          :: XA1
 REAL          :: XB
-REAL          :: XC  
+REAL          :: XC
 REAL          :: XBETA1
+!
 !  Parameters for closure assumption of Hourdin et al 2002
 
 REAL          :: XR      ! Aspect ratio of updraft
 !
 !  Grey Zone 
-
 LOGICAL       :: LGZ      ! Grey Zone Surface Closure
 REAL          :: XGZ      ! Tuning of the surface initialisation
 !
 !  Thermodynamic parameter
-
 REAL          :: XLAMBDA_MF      ! Lambda to compute ThetaS1 from ThetaL
 
 END TYPE PARAM_MFSHALL_t
 
 TYPE(PARAM_MFSHALL_t), DIMENSION(JPMODELMAX), TARGET, SAVE :: PARAM_MFSHALL_MODEL
+TYPE(PARAM_MFSHALL_t), POINTER, SAVE :: PARAM_MFSHALLN => NULL()
                                      
 REAL             , POINTER :: XIMPL_MF=>NULL()
 CHARACTER (LEN=4), POINTER :: CMF_UPDRAFT=>NULL() 
@@ -131,6 +131,8 @@ CONTAINS
 
 SUBROUTINE PARAM_MFSHALL_GOTO_MODEL(KFROM, KTO)
 INTEGER, INTENT(IN) :: KFROM, KTO
+!
+PARAM_MFSHALLN => PARAM_MFSHALL_MODEL(KTO)
 !
 ! Save current state for allocated arrays
 !

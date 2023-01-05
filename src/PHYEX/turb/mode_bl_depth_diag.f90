@@ -1,80 +1,19 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 turb 2006/05/18 13:07:25
-!-----------------------------------------------------------------
-!    ################ 
-     MODULE MODI_BL_DEPTH_DIAG  
-!    ################ 
+MODULE MODE_BL_DEPTH_DIAG
 !
 INTERFACE BL_DEPTH_DIAG  
-!
-!
-      FUNCTION BL_DEPTH_DIAG_3D(KKB,KKE,PSURF,PZS,PFLUX,PZZ,PFTOP_O_FSURF)
-
-INTEGER,                INTENT(IN)           :: KKB          ! bottom point
-INTEGER,                INTENT(IN)           :: KKE          ! top point
-REAL, DIMENSION(:,:),   INTENT(IN)           :: PSURF        ! surface flux
-REAL, DIMENSION(:,:),   INTENT(IN)           :: PZS          ! orography
-REAL, DIMENSION(:,:,:), INTENT(IN)           :: PFLUX        ! flux
-REAL, DIMENSION(:,:,:), INTENT(IN)           :: PZZ          ! altitude of flux points
-REAL,                   INTENT(IN)           :: PFTOP_O_FSURF! Flux at BL top / Surface flux
-REAL, DIMENSION(SIZE(PSURF,1),SIZE(PSURF,2)) :: BL_DEPTH_DIAG_3D
-!
-END FUNCTION BL_DEPTH_DIAG_3D
-!
-!
-      FUNCTION BL_DEPTH_DIAG_1D(KKB,KKE,PSURF,PZS,PFLUX,PZZ,PFTOP_O_FSURF)
-INTEGER,                INTENT(IN)           :: KKB          ! bottom point
-INTEGER,                INTENT(IN)           :: KKE          ! top point
-REAL,                   INTENT(IN)           :: PSURF        ! surface flux
-REAL,                   INTENT(IN)           :: PZS          ! orography
-REAL, DIMENSION(:),     INTENT(IN)           :: PFLUX        ! flux
-REAL, DIMENSION(:),     INTENT(IN)           :: PZZ          ! altitude of flux points
-REAL,                   INTENT(IN)           :: PFTOP_O_FSURF! Flux at BL top / Surface flux
-REAL                                         :: BL_DEPTH_DIAG_1D
-!
-END FUNCTION BL_DEPTH_DIAG_1D
-!
+      MODULE PROCEDURE BL_DEPTH_DIAG_3D
+      MODULE PROCEDURE BL_DEPTH_DIAG_1D
 END INTERFACE
 !
-END MODULE MODI_BL_DEPTH_DIAG
+CONTAINS
 !
-!-------------------------------------------------------------------------------
-!
-!    ################ 
-     MODULE MODI_BL_DEPTH_DIAG_3D  
-!    ################ 
-!
-!
-INTERFACE
-!
-!
-      FUNCTION BL_DEPTH_DIAG_3D(KKB,KKE,PSURF,PZS,PFLUX,PZZ,PFTOP_O_FSURF)
-INTEGER,                INTENT(IN)           :: KKB          ! bottom point
-INTEGER,                INTENT(IN)           :: KKE          ! top point
-REAL, DIMENSION(:,:),   INTENT(IN)           :: PSURF        ! surface flux
-REAL, DIMENSION(:,:),   INTENT(IN)           :: PZS          ! orography
-REAL, DIMENSION(:,:,:), INTENT(IN)           :: PFLUX        ! flux
-REAL, DIMENSION(:,:,:), INTENT(IN)           :: PZZ          ! altitude of flux points
-REAL,                   INTENT(IN)           :: PFTOP_O_FSURF! Flux at BL top / Surface flux
-REAL, DIMENSION(SIZE(PSURF,1),SIZE(PSURF,2)) :: BL_DEPTH_DIAG_3D
-!
-END FUNCTION BL_DEPTH_DIAG_3D
-!
-!
-END INTERFACE
-!
-END MODULE MODI_BL_DEPTH_DIAG_3D
-!
-!-------------------------------------------------------------------------------
-!
-FUNCTION BL_DEPTH_DIAG_3D(KKB,KKE,PSURF,PZS,PFLUX,PZZ,PFTOP_O_FSURF)
+SUBROUTINE BL_DEPTH_DIAG_3D(D,PSURF,PZS,PFLUX,PZZ,PFTOP_O_FSURF,BL_DEPTH_DIAG3D)
+USE PARKIND1, ONLY : JPRB
+USE YOMHOOK , ONLY : LHOOK, DR_HOOK
 !
 !
 !!****  *SBL_DEPTH* - computes SBL depth
@@ -112,89 +51,97 @@ FUNCTION BL_DEPTH_DIAG_3D(KKB,KKE,PSURF,PZS,PFLUX,PZZ,PFTOP_O_FSURF)
 !
 !*      0.1  declarations of arguments
 !
+USE MODD_DIMPHYEX, ONLY: DIMPHYEX_t
+!
 IMPLICIT NONE
 !
-INTEGER,                INTENT(IN)           :: KKB          ! bottom point
-INTEGER,                INTENT(IN)           :: KKE          ! top point
-REAL, DIMENSION(:,:),   INTENT(IN)           :: PSURF        ! surface flux
-REAL, DIMENSION(:,:),   INTENT(IN)           :: PZS          ! orography
-REAL, DIMENSION(:,:,:), INTENT(IN)           :: PFLUX        ! flux
-REAL, DIMENSION(:,:,:), INTENT(IN)           :: PZZ          ! altitude of flux points
-REAL,                   INTENT(IN)           :: PFTOP_O_FSURF! Flux at BL top / Surface flux
-REAL, DIMENSION(SIZE(PSURF,1),SIZE(PSURF,2)) :: BL_DEPTH_DIAG_3D
+TYPE(DIMPHYEX_t),              INTENT(IN)           :: D
+REAL, DIMENSION(D%NIJT),       INTENT(IN)           :: PSURF        ! surface flux
+REAL, DIMENSION(D%NIJT),       INTENT(IN)           :: PZS          ! orography
+REAL, DIMENSION(D%NIJT,D%NKT), INTENT(IN)           :: PFLUX        ! flux
+REAL, DIMENSION(D%NIJT,D%NKT), INTENT(IN)           :: PZZ          ! altitude of flux points
+REAL,                          INTENT(IN)           :: PFTOP_O_FSURF! Flux at BL top / Surface flux
+REAL, DIMENSION(D%NIJT),       INTENT(OUT)          :: BL_DEPTH_DIAG3D
 !
 !
 !       0.2  declaration of local variables
 !
-INTEGER :: JI,JJ,JK ! loop counters
-INTEGER :: IKL      ! +1 : MesoNH levels -1: Arome
+INTEGER :: JIJ,JK ! loop counters
+INTEGER :: IKB,IKE,IIJB,IIJE,IKL
 REAL    :: ZFLX     ! flux at top of BL
 !
 !----------------------------------------------------------------------------
 !
-IF (KKB < KKE) THEN
-  IKL=1
-ELSE
-  IKL=-1
-ENDIF
-
-BL_DEPTH_DIAG_3D(:,:) = 0.
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+IF (LHOOK) CALL DR_HOOK('BL_DEPTH_DIAG_3D',0,ZHOOK_HANDLE)
+IKB=D%NKTB
+IKE=D%NKTE
+IKL=D%NKL
+IIJE=D%NIJE
+IIJB=D%NIJB 
+!
+BL_DEPTH_DIAG3D(:) = 0.
 !
 
-DO JJ=1,SIZE(PSURF,2)
-  DO JI=1,SIZE(PSURF,1)
-    IF (PSURF(JI,JJ)==0.) CYCLE
-    DO JK=KKB,KKE,IKL
-      IF (PZZ(JI,JJ,JK-IKL)<=PZS(JI,JJ)) CYCLE
-      ZFLX = PSURF(JI,JJ) * PFTOP_O_FSURF
-      IF ( (PFLUX(JI,JJ,JK)-ZFLX)*(PFLUX(JI,JJ,JK-IKL)-ZFLX) <= 0. ) THEN
-        BL_DEPTH_DIAG_3D(JI,JJ) = (PZZ  (JI,JJ,JK-IKL) - PZS(JI,JJ))     &
-                         + (PZZ  (JI,JJ,JK) - PZZ  (JI,JJ,JK-IKL))    &
-                         * (ZFLX            - PFLUX(JI,JJ,JK-IKL)  )  &
-                         / (PFLUX(JI,JJ,JK) - PFLUX(JI,JJ,JK-IKL)   )
+DO JIJ=IIJB,IIJE
+    IF (PSURF(JIJ)==0.) CYCLE
+    DO JK=IKB,IKE,IKL
+      IF (PZZ(JIJ,JK-IKL)<=PZS(JIJ)) CYCLE
+      ZFLX = PSURF(JIJ) * PFTOP_O_FSURF
+      IF ( (PFLUX(JIJ,JK)-ZFLX)*(PFLUX(JIJ,JK-IKL)-ZFLX) <= 0. ) THEN
+        BL_DEPTH_DIAG3D(JIJ) = (PZZ  (JIJ,JK-IKL) - PZS(JIJ))     &
+                         + (PZZ  (JIJ,JK) - PZZ  (JIJ,JK-IKL))    &
+                         * (ZFLX          - PFLUX(JIJ,JK-IKL)  )  &
+                         / (PFLUX(JIJ,JK) - PFLUX(JIJ,JK-IKL)   )
         EXIT
       END IF
     END DO
-  END DO
 END DO
 !
-BL_DEPTH_DIAG_3D(:,:) = BL_DEPTH_DIAG_3D(:,:) / (1. - PFTOP_O_FSURF)
+!$mnh_expand_array(JIJ=IIJB:IIJE)
+BL_DEPTH_DIAG3D(IIJB:IIJE) = BL_DEPTH_DIAG3D(IIJB:IIJE) / (1. - PFTOP_O_FSURF)
+!$mnh_end_expand_array(JIJ=IIJB:IIJE)
 !
-END FUNCTION BL_DEPTH_DIAG_3D
+IF (LHOOK) CALL DR_HOOK('BL_DEPTH_DIAG_3D',1,ZHOOK_HANDLE)
+END SUBROUTINE BL_DEPTH_DIAG_3D
 !
+SUBROUTINE BL_DEPTH_DIAG_1D(D,PSURF,PZS,PFLUX,PZZ,PFTOP_O_FSURF,BL_DEPTH_DIAG1D)
+USE PARKIND1, ONLY : JPRB
+USE YOMHOOK , ONLY : LHOOK, DR_HOOK
 !
-!-------------------------------------------------------------------------------
-!-------------------------------------------------------------------------------
+USE MODD_DIMPHYEX, ONLY: DIMPHYEX_t
 !
-FUNCTION BL_DEPTH_DIAG_1D(KKB,KKE,PSURF,PZS,PFLUX,PZZ,PFTOP_O_FSURF)
-!
-USE MODI_BL_DEPTH_DIAG_3D
 IMPLICIT NONE
 !
-INTEGER,                INTENT(IN)           :: KKB          ! bottom point
-INTEGER,                INTENT(IN)           :: KKE          ! top point
+TYPE(DIMPHYEX_t),       INTENT(IN)           :: D
 REAL,                   INTENT(IN)           :: PSURF        ! surface flux
 REAL,                   INTENT(IN)           :: PZS          ! orography
-REAL, DIMENSION(:),     INTENT(IN)           :: PFLUX        ! flux
-REAL, DIMENSION(:),     INTENT(IN)           :: PZZ          ! altitude of flux points
+REAL, DIMENSION(D%NKT), INTENT(IN)           :: PFLUX        ! flux
+REAL, DIMENSION(D%NKT), INTENT(IN)           :: PZZ          ! altitude of flux points
 REAL,                   INTENT(IN)           :: PFTOP_O_FSURF! Flux at BL top / Surface flux
-REAL                                         :: BL_DEPTH_DIAG_1D
+REAL,                   INTENT(OUT)          :: BL_DEPTH_DIAG1D
 !
 REAL, DIMENSION(1,1)             :: ZSURF
 REAL, DIMENSION(1,1)             :: ZZS
-REAL, DIMENSION(1,1,SIZE(PFLUX)) :: ZFLUX
-REAL, DIMENSION(1,1,SIZE(PZZ))   :: ZZZ
+REAL, DIMENSION(1,1,D%NKT)       :: ZFLUX
+REAL, DIMENSION(1,1,D%NKT)       :: ZZZ
 REAL, DIMENSION(1,1)             :: ZBL_DEPTH_DIAG
 !
+INTEGER :: IKT
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+IF (LHOOK) CALL DR_HOOK('BL_DEPTH_DIAG_1D',0,ZHOOK_HANDLE)
+IKT=D%NKT
 ZSURF        = PSURF
 ZZS          = PZS
-ZFLUX(1,1,:) = PFLUX(:)
-ZZZ  (1,1,:) = PZZ  (:)
+ZFLUX(1,1,1:IKT) = PFLUX(1:IKT)
+ZZZ  (1,1,1:IKT) = PZZ  (1:IKT)
 !
-ZBL_DEPTH_DIAG = BL_DEPTH_DIAG_3D(KKB,KKE,ZSURF,ZZS,ZFLUX,ZZZ,PFTOP_O_FSURF)
+CALL BL_DEPTH_DIAG_3D(D,ZSURF,ZZS,ZFLUX,ZZZ,PFTOP_O_FSURF,ZBL_DEPTH_DIAG)
 !
-BL_DEPTH_DIAG_1D = ZBL_DEPTH_DIAG(1,1)
+BL_DEPTH_DIAG1D = ZBL_DEPTH_DIAG(1,1)
 !
 !-------------------------------------------------------------------------------
 !
-END FUNCTION BL_DEPTH_DIAG_1D
+IF (LHOOK) CALL DR_HOOK('BL_DEPTH_DIAG_1D',1,ZHOOK_HANDLE)
+END SUBROUTINE BL_DEPTH_DIAG_1D
+END MODULE MODE_BL_DEPTH_DIAG

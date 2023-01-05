@@ -3,71 +3,12 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-!    ################################
-     MODULE MODI_TURB_HOR_THERMO_CORR
-!    ################################
-!
-INTERFACE  
-!
-      SUBROUTINE TURB_HOR_THERMO_CORR(KRR, KRRL, KRRI,               &
-                      OTURB_FLX,OSUBG_COND,                          &
-                      TPFILE,                                        &
-                      PINV_PDXX,PINV_PDYY,                           &
-                      PDXX,PDYY,PDZZ,PDZX,PDZY,                      &
-                      PTHVREF,                                       &
-                      PWM,PTHLM,PRM,                                 &
-                      PTKEM,PLM,PLEPS,                               &
-                      PLOCPEXNM,PATHETA,PAMOIST,PSRCM,               &
-                      PSIGS                                          )
-!
-USE MODD_IO, ONLY: TFILEDATA
-!
-INTEGER,                INTENT(IN)   :: KRR           ! number of moist var.
-INTEGER,                INTENT(IN)   :: KRRL          ! number of liquid water var.
-INTEGER,                INTENT(IN)   :: KRRI          ! number of ice water var.
-LOGICAL,                  INTENT(IN)    ::  OTURB_FLX    ! switch to write the
-                                 ! turbulent fluxes in the syncronous FM-file
-LOGICAL,                 INTENT(IN)  ::   OSUBG_COND ! Switch for sub-grid
-!                                                    condensation
-TYPE(TFILEDATA),          INTENT(IN)    ::  TPFILE       ! Output file
-!
-REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PINV_PDXX   ! 1./PDXX
-REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PINV_PDYY   ! 1./PDYY
-REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PDXX, PDYY, PDZZ, PDZX, PDZY 
-                                                         ! Metric coefficients
-REAL, DIMENSION(:,:,:), INTENT(IN)   ::  PTHVREF      ! ref. state Virtual 
-                                                      ! Potential Temperature
-!
-! Variables at t-1
-REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PWM 
-REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PTHLM 
-REAL, DIMENSION(:,:,:,:), INTENT(IN)    ::  PRM          ! mixing ratios at t-1,
-                              !  where PRM(:,:,:,1) = conservative mixing ratio
-!
-REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PTKEM        ! Turb. Kin. Energy
-REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PLM          ! Turb. mixing length
-REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PLEPS        ! dissipative length
-REAL, DIMENSION(:,:,:), INTENT(IN)   ::  PLOCPEXNM    ! Lv(T)/Cp/Exnref at time t-1
-REAL, DIMENSION(:,:,:), INTENT(IN)   ::  PATHETA      ! coefficients between 
-REAL, DIMENSION(:,:,:), INTENT(IN)   ::  PAMOIST      ! s and Thetal and Rnp
-REAL, DIMENSION(:,:,:), INTENT(IN)   ::  PSRCM        ! normalized 
-                  ! 2nd-order flux s'r'c/2Sigma_s2 at t-1 multiplied by Lambda_3
-!
-!
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) ::  PSIGS
-                                  ! IN: Vertical part of Sigma_s at t
-                                  ! OUT: Total Sigma_s at t
-!
-!
-!
-END SUBROUTINE TURB_HOR_THERMO_CORR
-!
-END INTERFACE
-!
-END MODULE MODI_TURB_HOR_THERMO_CORR
-!     ################################################################
-      SUBROUTINE TURB_HOR_THERMO_CORR(KRR, KRRL, KRRI,               &
-                      OTURB_FLX,OSUBG_COND,                          &
+MODULE MODE_TURB_HOR_THERMO_CORR
+IMPLICIT NONE
+CONTAINS
+      SUBROUTINE TURB_HOR_THERMO_CORR(D,CST,TURBN,TLES,              &
+                      KRR, KRRL, KRRI,                               &
+                      OOCEAN,OCOMPUTE_SRC,O2D,                       &
                       TPFILE,                                        &
                       PINV_PDXX,PINV_PDYY,                           &
                       PDXX,PDYY,PDZZ,PDZX,PDZY,                      &
@@ -118,15 +59,16 @@ END MODULE MODI_TURB_HOR_THERMO_CORR
 !*      0. DECLARATIONS
 !          ------------
 !
-USE MODD_CST
-USE MODD_CONF
+USE MODD_CST, ONLY : CST_t
 USE MODD_CTURB
-use modd_field,          only: tfielddata, TYPEREAL
+USE MODD_FIELD,          ONLY: TFIELDDATA, TYPEREAL
+USE MODD_DIMPHYEX,   ONLY: DIMPHYEX_t
+USE MODD_TURB_n, ONLY: TURB_t
 USE MODD_IO,             ONLY: TFILEDATA
 USE MODD_PARAMETERS
-USE MODD_LES
+USE MODD_LES, ONLY: TLES_t
 !
-USE MODE_IO_FIELD_WRITE, only: IO_Field_write
+USE MODE_IO_FIELD_WRITE, ONLY: IO_FIELD_WRITE
 !
 USE MODI_GRADIENT_M
 USE MODI_GRADIENT_U
@@ -135,8 +77,8 @@ USE MODI_GRADIENT_W
 USE MODI_SHUMAN 
 USE MODI_LES_MEAN_SUBGRID
 !
-USE MODI_EMOIST
-USE MODI_ETHETA
+USE MODE_EMOIST, ONLY: EMOIST
+USE MODE_ETHETA, ONLY: ETHETA
 !
 USE MODI_SECOND_MNH
 !
@@ -147,13 +89,16 @@ IMPLICIT NONE
 !
 !
 !
+TYPE(DIMPHYEX_t),       INTENT(IN)   :: D
+TYPE(CST_t),            INTENT(IN)   :: CST
+TYPE(TURB_t),           INTENT(IN)   :: TURBN
+TYPE(TLES_t),           INTENT(INOUT):: TLES          ! modd_les structure
 INTEGER,                INTENT(IN)   :: KRR           ! number of moist var.
 INTEGER,                INTENT(IN)   :: KRRL          ! number of liquid water var.
 INTEGER,                INTENT(IN)   :: KRRI          ! number of ice water var.
-LOGICAL,                  INTENT(IN)    ::  OTURB_FLX    ! switch to write the
-                                 ! turbulent fluxes in the syncronous FM-file
-LOGICAL,                 INTENT(IN)  ::   OSUBG_COND ! Switch for sub-grid
-!                                                    condensation
+LOGICAL,                INTENT(IN)   ::  OOCEAN       ! switch for Ocean model version
+LOGICAL,                INTENT(IN)   ::  OCOMPUTE_SRC ! flag to define dimensions of SIGS and SRCT variables
+LOGICAL,                INTENT(IN)   ::  O2D          ! Logical for 2D model version (modd_conf)
 TYPE(TFILEDATA),          INTENT(IN)    ::  TPFILE       ! Output file
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PINV_PDXX   ! 1./PDXX
@@ -224,13 +169,13 @@ ZCOEFF(:,:,IKB)= - (PDZZ(:,:,IKB+2)+2.*PDZZ(:,:,IKB+1)) /      &
 !
 !
 !
-IF ( ( KRRL > 0 .AND. OSUBG_COND) .OR. ( OTURB_FLX .AND. tpfile%lopened ) &
-                                  .OR. ( LLES_CALL )                  ) THEN
+IF ( ( KRRL > 0 .AND. TURBN%LSUBG_COND) .OR. ( TURBN%LTURB_FLX .AND. TPFILE%LOPENED ) &
+                                  .OR. ( TLES%LLES_CALL )                  ) THEN
 !
 !*       8.1  <THl THl>
 !
   ! Computes the horizontal variance <THl THl>
-  IF (.NOT. L2D) THEN
+  IF (.NOT. O2D) THEN
     ZFLX(:,:,:) = XCTV * PLM(:,:,:) * PLEPS(:,:,:) *                           &
        ( GX_M_M(PTHLM,PDXX,PDZZ,PDZX)**2 + GY_M_M(PTHLM,PDYY,PDZZ,PDZY)**2 )
   ELSE
@@ -265,7 +210,7 @@ IF ( ( KRRL > 0 .AND. OSUBG_COND) .OR. ( OTURB_FLX .AND. tpfile%lopened ) &
   END IF
   !
   ! stores <THl THl>
-  IF ( OTURB_FLX .AND. tpfile%lopened ) THEN
+  IF ( TURBN%LTURB_FLX .AND. TPFILE%LOPENED ) THEN
     TZFIELD%CMNHNAME   = 'THL_HVAR'
     TZFIELD%CSTDNAME   = ''
     TZFIELD%CLONGNAME  = 'THL_HVAR'
@@ -276,21 +221,21 @@ IF ( ( KRRL > 0 .AND. OSUBG_COND) .OR. ( OTURB_FLX .AND. tpfile%lopened ) &
     TZFIELD%NTYPE      = TYPEREAL
     TZFIELD%NDIMS      = 3
     TZFIELD%LTIMEDEP   = .TRUE.
-    CALL IO_Field_write(TPFILE,TZFIELD,ZFLX)
+    CALL IO_FIELD_WRITE(TPFILE,TZFIELD,ZFLX)
   END IF
 !
 ! Storage in the LES configuration (addition to TURB_VER computation)
 !
-  IF (LLES_CALL) THEN
+  IF (TLES%LLES_CALL) THEN
     CALL SECOND_MNH(ZTIME1)
-    CALL LES_MEAN_SUBGRID( ZFLX, X_LES_SUBGRID_Thl2, .TRUE. ) 
-    CALL LES_MEAN_SUBGRID( MZF(PWM)*ZFLX, X_LES_RES_W_SBG_Thl2, .TRUE. )
-    CALL LES_MEAN_SUBGRID( -2.*XCTD*SQRT(PTKEM)*ZFLX/PLEPS ,X_LES_SUBGRID_DISS_Thl2, .TRUE. )
-    ZA(:,:,:)   =  ETHETA(KRR,KRRI,PTHLM,PRM,PLOCPEXNM,PATHETA,PSRCM)
-    CALL LES_MEAN_SUBGRID( ZA*ZFLX, X_LES_SUBGRID_ThlThv, .TRUE. ) 
-    CALL LES_MEAN_SUBGRID( -XG/PTHVREF/3.*ZA*ZFLX, X_LES_SUBGRID_ThlPz, .TRUE. )
+    CALL LES_MEAN_SUBGRID( ZFLX, TLES%X_LES_SUBGRID_Thl2, .TRUE. ) 
+    CALL LES_MEAN_SUBGRID( MZF(PWM)*ZFLX, TLES%X_LES_RES_W_SBG_Thl2, .TRUE. )
+    CALL LES_MEAN_SUBGRID( -2.*XCTD*SQRT(PTKEM)*ZFLX/PLEPS ,TLES%X_LES_SUBGRID_DISS_Thl2, .TRUE. )
+    CALL ETHETA(D,CST,KRR,KRRI,PTHLM,PRM,PLOCPEXNM,PATHETA,PSRCM,OOCEAN,OCOMPUTE_SRC,ZA)
+    CALL LES_MEAN_SUBGRID( ZA*ZFLX, TLES%X_LES_SUBGRID_ThlThv, .TRUE. ) 
+    CALL LES_MEAN_SUBGRID( -CST%XG/PTHVREF/3.*ZA*ZFLX, TLES%X_LES_SUBGRID_ThlPz, .TRUE. )
     CALL SECOND_MNH(ZTIME2)
-    XTIME_LES = XTIME_LES + ZTIME2 - ZTIME1
+    TLES%XTIME_LES = TLES%XTIME_LES + ZTIME2 - ZTIME1
   END IF
 !
   IF ( KRR /= 0 ) THEN
@@ -298,7 +243,7 @@ IF ( ( KRRL > 0 .AND. OSUBG_COND) .OR. ( OTURB_FLX .AND. tpfile%lopened ) &
 !*       8.3  <THl Rnp>
 !
     ! Computes the horizontal correlation <THl Rnp>
-    IF (.NOT. L2D) THEN
+    IF (.NOT. O2D) THEN
       ZFLX(:,:,:)=                                                               &
             PLM(:,:,:) * PLEPS(:,:,:) *                                          &
             (GX_M_M(PTHLM,PDXX,PDZZ,PDZX) * GX_M_M(PRM(:,:,:,1),PDXX,PDZZ,PDZX)  &
@@ -353,7 +298,7 @@ IF ( ( KRRL > 0 .AND. OSUBG_COND) .OR. ( OTURB_FLX .AND. tpfile%lopened ) &
     END IF                    
     !
     ! stores <THl Rnp>
-    IF ( OTURB_FLX .AND. tpfile%lopened ) THEN
+    IF ( TURBN%LTURB_FLX .AND. TPFILE%LOPENED ) THEN
       TZFIELD%CMNHNAME   = 'THLR_HCOR'
       TZFIELD%CSTDNAME   = ''
       TZFIELD%CLONGNAME  = 'THLR_HCOR'
@@ -364,29 +309,29 @@ IF ( ( KRRL > 0 .AND. OSUBG_COND) .OR. ( OTURB_FLX .AND. tpfile%lopened ) &
       TZFIELD%NTYPE      = TYPEREAL
       TZFIELD%NDIMS      = 3
       TZFIELD%LTIMEDEP   = .TRUE.
-      CALL IO_Field_write(TPFILE,TZFIELD,ZFLX)
+      CALL IO_FIELD_WRITE(TPFILE,TZFIELD,ZFLX)
     END IF
 !
 !   Storage in the LES configuration (addition to TURB_VER computation)
 !
-    IF (LLES_CALL) THEN
+    IF (TLES%LLES_CALL) THEN
       CALL SECOND_MNH(ZTIME1)
-      CALL LES_MEAN_SUBGRID( ZFLX, X_LES_SUBGRID_ThlRt, .TRUE. ) 
-      CALL LES_MEAN_SUBGRID( MZF(PWM)*ZFLX, X_LES_RES_W_SBG_ThlRt, .TRUE. )
-      CALL LES_MEAN_SUBGRID( -XCTD*SQRT(PTKEM)*ZFLX/PLEPS ,X_LES_SUBGRID_DISS_ThlRt, .TRUE. )
-      CALL LES_MEAN_SUBGRID( ZA*ZFLX, X_LES_SUBGRID_RtThv, .TRUE. ) 
-      CALL LES_MEAN_SUBGRID( -XG/PTHVREF/3.*ZA*ZFLX, X_LES_SUBGRID_RtPz,.TRUE.)
-      ZA(:,:,:)   =  EMOIST(KRR,KRRI,PTHLM,PRM,PLOCPEXNM,PAMOIST,PSRCM)
-      CALL LES_MEAN_SUBGRID( ZA*ZFLX, X_LES_SUBGRID_ThlThv, .TRUE. ) 
-      CALL LES_MEAN_SUBGRID( -XG/PTHVREF/3.*ZA*ZFLX, X_LES_SUBGRID_ThlPz,.TRUE.)
+      CALL LES_MEAN_SUBGRID( ZFLX, TLES%X_LES_SUBGRID_ThlRt, .TRUE. ) 
+      CALL LES_MEAN_SUBGRID( MZF(PWM)*ZFLX, TLES%X_LES_RES_W_SBG_ThlRt, .TRUE. )
+      CALL LES_MEAN_SUBGRID( -XCTD*SQRT(PTKEM)*ZFLX/PLEPS ,TLES%X_LES_SUBGRID_DISS_ThlRt, .TRUE. )
+      CALL LES_MEAN_SUBGRID( ZA*ZFLX, TLES%X_LES_SUBGRID_RtThv, .TRUE. ) 
+      CALL LES_MEAN_SUBGRID( -CST%XG/PTHVREF/3.*ZA*ZFLX, TLES%X_LES_SUBGRID_RtPz,.TRUE.)
+      CALL EMOIST(D,CST,KRR,KRRI,PTHLM,PRM,PLOCPEXNM,PAMOIST,PSRCM,OOCEAN,ZA)
+      CALL LES_MEAN_SUBGRID( ZA*ZFLX, TLES%X_LES_SUBGRID_ThlThv, .TRUE. ) 
+      CALL LES_MEAN_SUBGRID( -CST%XG/PTHVREF/3.*ZA*ZFLX, TLES%X_LES_SUBGRID_ThlPz,.TRUE.)
       CALL SECOND_MNH(ZTIME2)
-      XTIME_LES = XTIME_LES + ZTIME2 - ZTIME1
+      TLES%XTIME_LES = TLES%XTIME_LES + ZTIME2 - ZTIME1
     END IF
 !
 !*       8.4  <Rnp Rnp>
 !
     ! Computes the horizontal variance <Rnp Rnp>
-    IF (.NOT. L2D) THEN
+    IF (.NOT. O2D) THEN
       ZFLX(:,:,:) = XCHV * PLM(:,:,:) * PLEPS(:,:,:) *                      &
            ( GX_M_M(PRM(:,:,:,1),PDXX,PDZZ,PDZX)**2 +                       &
              GY_M_M(PRM(:,:,:,1),PDYY,PDZZ,PDZY)**2 )
@@ -421,7 +366,7 @@ IF ( ( KRRL > 0 .AND. OSUBG_COND) .OR. ( OTURB_FLX .AND. tpfile%lopened ) &
     END IF
     !
     ! stores <Rnp Rnp>
-    IF ( OTURB_FLX .AND. tpfile%lopened ) THEN
+    IF ( TURBN%LTURB_FLX .AND. TPFILE%LOPENED ) THEN
       TZFIELD%CMNHNAME   = 'R_HVAR'
       TZFIELD%CSTDNAME   = ''
       TZFIELD%CLONGNAME  = 'R_HVAR'
@@ -432,20 +377,20 @@ IF ( ( KRRL > 0 .AND. OSUBG_COND) .OR. ( OTURB_FLX .AND. tpfile%lopened ) &
       TZFIELD%NTYPE      = TYPEREAL
       TZFIELD%NDIMS      = 3
       TZFIELD%LTIMEDEP   = .TRUE.
-      CALL IO_Field_write(TPFILE,TZFIELD,ZFLX)
+      CALL IO_FIELD_WRITE(TPFILE,TZFIELD,ZFLX)
     END IF
     !
     !   Storage in the LES configuration (addition to TURB_VER computation)
     !
-    IF (LLES_CALL) THEN
+    IF (TLES%LLES_CALL) THEN
       CALL SECOND_MNH(ZTIME1)
-      CALL LES_MEAN_SUBGRID( ZFLX, X_LES_SUBGRID_Rt2, .TRUE. ) 
-      CALL LES_MEAN_SUBGRID( MZF(PWM)*ZFLX, X_LES_RES_W_SBG_Rt2, .TRUE. )
-      CALL LES_MEAN_SUBGRID( ZA*ZFLX, X_LES_SUBGRID_RtThv, .TRUE. ) 
-      CALL LES_MEAN_SUBGRID( -XG/PTHVREF/3.*ZA*ZFLX, X_LES_SUBGRID_RtPz,.TRUE.)
-      CALL LES_MEAN_SUBGRID( -2.*XCTD*SQRT(PTKEM)*ZFLX/PLEPS, X_LES_SUBGRID_DISS_Rt2, .TRUE. )
+      CALL LES_MEAN_SUBGRID( ZFLX, TLES%X_LES_SUBGRID_Rt2, .TRUE. ) 
+      CALL LES_MEAN_SUBGRID( MZF(PWM)*ZFLX, TLES%X_LES_RES_W_SBG_Rt2, .TRUE. )
+      CALL LES_MEAN_SUBGRID( ZA*ZFLX, TLES%X_LES_SUBGRID_RtThv, .TRUE. ) 
+      CALL LES_MEAN_SUBGRID( -CST%XG/PTHVREF/3.*ZA*ZFLX, TLES%X_LES_SUBGRID_RtPz,.TRUE.)
+      CALL LES_MEAN_SUBGRID( -2.*XCTD*SQRT(PTKEM)*ZFLX/PLEPS, TLES%X_LES_SUBGRID_DISS_Rt2, .TRUE. )
       CALL SECOND_MNH(ZTIME2)
-      XTIME_LES = XTIME_LES + ZTIME2 - ZTIME1
+      TLES%XTIME_LES = TLES%XTIME_LES + ZTIME2 - ZTIME1
     END IF
   !
   END IF
@@ -466,3 +411,4 @@ END IF
 !
 !
 END SUBROUTINE TURB_HOR_THERMO_CORR
+END MODULE MODE_TURB_HOR_THERMO_CORR

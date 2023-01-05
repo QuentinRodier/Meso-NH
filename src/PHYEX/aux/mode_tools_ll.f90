@@ -658,7 +658,7 @@ CONTAINS
       END SUBROUTINE GET_OR_ll
 !
 !     ####################################################
-      SUBROUTINE GET_INDICE_ll( KXOR, KYOR, KXEND, KYEND )
+      SUBROUTINE GET_INDICE_ll( KXOR, KYOR, KXEND, KYEND, KSIZE1, KSIZE2 )
 !     ####################################################
 !
 !!****  *GET_INDICE_ll* - returns the origin's coordinates and the end's
@@ -709,6 +709,7 @@ CONTAINS
 !*       0.1   declarations of arguments
 !
   INTEGER, INTENT(OUT) :: KXOR, KYOR, KXEND, KYEND
+  INTEGER, INTENT(IN),OPTIONAL  :: KSIZE1, KSIZE2
 !
 !*       0.2   declarations of local variables
 !

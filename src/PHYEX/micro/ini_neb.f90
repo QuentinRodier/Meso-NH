@@ -3,18 +3,6 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
 !     ######spl
-        MODULE MODI_INI_NEB
-!       #####################
-!
-INTERFACE
-!
-SUBROUTINE INI_NEB
-END SUBROUTINE INI_NEB
-!
-END INTERFACE
-!
-END MODULE MODI_INI_NEB
-!     ######spl
         SUBROUTINE INI_NEB
 !       #######################
 !
@@ -65,6 +53,9 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !         1. SETTING THE NUMERICAL VALUES
 !
 IF (LHOOK) CALL DR_HOOK('INI_NEB',0,ZHOOK_HANDLE)
+!
+CALL NEB_ASSOCIATE()
+!
 !Freezing between 0 and -20. Other possibilities are 0/-40 or -5/-25
 XTMAXMIX    = 273.16
 XTMINMIX    = 253.16

@@ -2,110 +2,14 @@
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!    #########################  
-     MODULE MODI_TURB_HOR_SPLT
-!    #########################  
-!
-INTERFACE  
-!
-      SUBROUTINE TURB_HOR_SPLT(KSPLIT, KRR, KRRL, KRRI, PTSTEP,      &
-                      HLBCX,HLBCY,OTURB_FLX,OSUBG_COND,              &
-                      TPFILE,                                        &
-                      PDXX,PDYY,PDZZ,PDZX,PDZY,PZZ,                  &
-                      PDIRCOSXW,PDIRCOSYW,PDIRCOSZW,                 &
-                      PCOSSLOPE,PSINSLOPE,                           &
-                      PRHODJ,PTHVREF,                                & 
-                      PSFTHM,PSFRM,PSFSVM,                           &
-                      PCDUEFF,PTAU11M,PTAU12M,PTAU22M,PTAU33M,       &
-                      PUM,PVM,PWM,PUSLOPEM,PVSLOPEM,PTHLM,PRM,PSVM,  &
-                      PTKEM,PLM,PLEPS,                               &
-                      PLOCPEXNM,PATHETA,PAMOIST,PSRCM,PFRAC_ICE,     &
-                      PDP,PTP,PSIGS,                                 &
-                      PTRH,                                          &
-                      PRUS,PRVS,PRWS,PRTHLS,PRRS,PRSVS               )
-
-!
-USE MODD_IO, ONLY: TFILEDATA
-!
-INTEGER,                INTENT(IN)   :: KSPLIT        ! number of time splitting
-INTEGER,                INTENT(IN)   :: KRR           ! number of moist var.
-INTEGER,                INTENT(IN)   :: KRRL          ! number of liquid water var.
-INTEGER,                INTENT(IN)   :: KRRI          ! number of ice water var.
-REAL,                   INTENT(IN)   ::  PTSTEP       ! timestep 
-CHARACTER (LEN=*), DIMENSION(:), INTENT(IN)       ::  HLBCX,HLBCY
-LOGICAL,                  INTENT(IN)    ::  OTURB_FLX    ! switch to write the
-                                 ! turbulent fluxes in the syncronous FM-file
-LOGICAL,                 INTENT(IN)  ::   OSUBG_COND ! Switch for sub-grid 
-!                                                    condensation
-TYPE(TFILEDATA),          INTENT(IN)    ::  TPFILE       ! Output file
-!
-REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PDXX, PDYY, PDZZ, PDZX, PDZY 
-                                                         ! Metric coefficients
-REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PZZ          ! vertical grid
-REAL, DIMENSION(:,:),     INTENT(IN)    ::  PDIRCOSXW, PDIRCOSYW, PDIRCOSZW
-! Director Cosinus along x, y and z directions at surface w-point
-REAL, DIMENSION(:,:),   INTENT(IN)   ::  PCOSSLOPE       ! cosinus of the angle 
-                                      ! between i and the slope vector
-REAL, DIMENSION(:,:),   INTENT(IN)   ::  PSINSLOPE       ! sinus of the angle 
-                                      ! between i and the slope vector
-REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PRHODJ       ! density * grid volume
-REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PTHVREF      ! ref. state VPT       
-!
-REAL, DIMENSION(:,:),     INTENT(IN)    ::  PSFTHM,PSFRM
-REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PSFSVM       ! surface fluxes
-!
-REAL, DIMENSION(:,:),   INTENT(IN)   ::  PCDUEFF      ! Cd * || u || at time t
-REAL, DIMENSION(:,:),   INTENT(IN)   ::  PTAU11M      ! <uu> in the axes linked 
-       ! to the maximum slope direction and the surface normal and the binormal 
-       ! at time t - dt
-REAL, DIMENSION(:,:),   INTENT(IN)   ::  PTAU12M      ! <uv> in the same axes
-REAL, DIMENSION(:,:),   INTENT(IN)   ::  PTAU22M      ! <vv> in the same axes
-REAL, DIMENSION(:,:),   INTENT(IN)   ::  PTAU33M      ! <ww> in the same axes
-!
-! Variables at t-1
-REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PUM,PVM,PWM,PTHLM 
-REAL, DIMENSION(:,:,:,:), INTENT(IN)    ::  PRM          ! mixing ratios at t-1,
-                              !  where PRM(:,:,:,1) = conservative mixing ratio
-REAL, DIMENSION(:,:,:,:), INTENT(IN)    ::  PSVM         ! scalar var. at t-1
-REAL, DIMENSION(:,:),      INTENT(IN)   ::  PUSLOPEM     ! wind component along the 
-                                     ! maximum slope direction
-REAL, DIMENSION(:,:),      INTENT(IN)   ::  PVSLOPEM     ! wind component along the 
-                                     ! direction normal to the maximum slope one
-!
-REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PTKEM        ! TKE at time t- dt
-REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PLM          ! Turb. mixing length
-REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PLEPS        ! dissipative length
-REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PLOCPEXNM    ! Lv(T)/Cp/Exner at time t-1
-REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PATHETA      ! coefficients between 
-REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PAMOIST      ! s and Thetal and Rnp
-
-REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PSRCM
-                                  ! normalized 2nd-order flux
-                                  ! s'r'c/2Sigma_s2 at t-1 multiplied by Lambda_3
-!
-REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PFRAC_ICE    ! ri fraction of rc+ri
-!
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) ::  PRUS, PRVS, PRWS, PRTHLS
-REAL, DIMENSION(:,:,:,:), INTENT(INOUT) ::  PRSVS,PRRS   ! var. at t+1 -split-
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) ::  PDP,PTP      ! TKE production terms
-REAL, DIMENSION(:,:,:),   INTENT(OUT)   ::  PTRH
-
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) ::  PSIGS
-                                  ! IN: Vertical part of Sigma_s at t
-                                  ! OUT: Total Sigma_s at t
-!
-!
-!
-END SUBROUTINE TURB_HOR_SPLT
-!
-END INTERFACE
-!
-END MODULE MODI_TURB_HOR_SPLT
-!     ################################################################
-      SUBROUTINE TURB_HOR_SPLT(KSPLIT, KRR, KRRL, KRRI, PTSTEP,      &
-                      HLBCX,HLBCY,OTURB_FLX,OSUBG_COND,              &
-                      TPFILE,                                        &
+MODULE MODE_TURB_HOR_SPLT
+IMPLICIT NONE
+CONTAINS
+           SUBROUTINE TURB_HOR_SPLT(D,CST,CSTURB,TURBN,TLES,         &
+                      KSPLIT, KRR,KRRL,KRRI,KSV, KSV_LGBEG,KSV_LGEND,&
+                      PTSTEP,HLBCX,HLBCY, OFLAT, O2D, ONOMIXLG,      &
+                      OOCEAN,OCOMPUTE_SRC,OBLOWSNOW,PRSNOW,          &
+                      TPFILE, HPROGRAM, KHALO,                       &
                       PDXX,PDYY,PDZZ,PDZX,PDZY,PZZ,                  &
                       PDIRCOSXW,PDIRCOSYW,PDIRCOSZW,                 &
                       PCOSSLOPE,PSINSLOPE,                           &
@@ -210,7 +114,7 @@ END MODULE MODI_TURB_HOR_SPLT
 !!
 !!      Module MODD_CONF
 !!
-!!           CPROGRAM
+!!           HPROGRAM
 !!           
 !!
 !!    REFERENCE
@@ -253,16 +157,19 @@ END MODULE MODI_TURB_HOR_SPLT
 !*      0. DECLARATIONS
 !          ------------
 !
-USE MODD_CONF
-USE MODD_CST
-USE MODD_CTURB
+USE MODD_CST, ONLY: CST_t
+USE MODD_CTURB, ONLY: CSTURB_t
+USE MODD_DIMPHYEX, ONLY : DIMPHYEX_t
+USE MODD_LES, ONLY: TLES_t
+USE MODD_TURB_n, ONLY: TURB_t
+!
 USE MODD_IO, ONLY: TFILEDATA
 USE MODD_PARAMETERS
 !
 !
 USE MODI_SHUMAN 
-USE MODI_TURB_HOR
-USE MODI_TURB_HOR_TKE
+USE MODE_TURB_HOR
+USE MODE_TURB_HOR_TKE
 !
 USE MODE_ll
 !
@@ -272,69 +179,81 @@ IMPLICIT NONE
 !*       0.1  declaration of arguments
 !
 !
+TYPE(DIMPHYEX_t),       INTENT(IN)   :: D
+TYPE(CST_t),            INTENT(IN)   :: CST
+TYPE(CSTURB_t),         INTENT(IN)   :: CSTURB
+TYPE(TURB_t),           INTENT(IN)   :: TURBN
+TYPE(TLES_t),           INTENT(INOUT):: TLES          ! modd_les structure
 INTEGER,                INTENT(IN)   :: KSPLIT        ! number of time splitting
 INTEGER,                INTENT(IN)   :: KRR           ! number of moist var.
 INTEGER,                INTENT(IN)   :: KRRL          ! number of liquid water var.
 INTEGER,                INTENT(IN)   :: KRRI          ! number of ice water var.
+INTEGER,                INTENT(IN)   :: KSV,KSV_LGBEG,KSV_LGEND ! number of sv var.
 REAL,                   INTENT(IN)   ::  PTSTEP       ! timestep 
 CHARACTER (LEN=*), DIMENSION(:), INTENT(IN)       ::  HLBCX,HLBCY
-LOGICAL,                  INTENT(IN)    ::  OTURB_FLX    ! switch to write the
-                                 ! turbulent fluxes in the syncronous FM-file
-LOGICAL,                 INTENT(IN)  ::   OSUBG_COND ! Switch for sub-grid 
-!                                                    condensation
+LOGICAL,                INTENT(IN)   ::  OFLAT        ! Logical for zero ororography
+LOGICAL,                INTENT(IN)   ::  ONOMIXLG     ! to use turbulence for lagrangian variables (modd_conf)
+LOGICAL,                INTENT(IN)   ::  O2D          ! Logical for 2D model version (modd_conf)
+LOGICAL,                INTENT(IN)   ::  OOCEAN       ! switch for Ocean model version
+LOGICAL,                INTENT(IN)   ::  OCOMPUTE_SRC ! flag to define dimensions of SIGS and SRCT variables
+LOGICAL,                INTENT(IN)   ::  OBLOWSNOW    ! switch to activate pronostic blowing snow
+CHARACTER(LEN=6), INTENT(IN) :: HPROGRAM ! HPROGRAM is the program currently running (modd_conf)
+INTEGER,                INTENT(IN)   ::  KHALO        ! Size of the halo for parallel distribution
+REAL,                   INTENT(IN)   ::  PRSNOW       ! Ratio for diffusion coeff. scalar (blowing snow)
 TYPE(TFILEDATA),          INTENT(IN)    ::  TPFILE       ! Output file
 !
-REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PDXX, PDYY, PDZZ, PDZX, PDZY 
+REAL, DIMENSION(D%NIT,D%NJT,D%NKT),   INTENT(IN)    ::  PDXX, PDYY, PDZZ, PDZX, PDZY 
                                                          ! Metric coefficients
-REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PZZ          ! vertical grid
-REAL, DIMENSION(:,:),     INTENT(IN)    ::  PDIRCOSXW, PDIRCOSYW, PDIRCOSZW
+REAL, DIMENSION(D%NIT,D%NJT,D%NKT),   INTENT(IN)    ::  PZZ          ! vertical grid
+REAL, DIMENSION(D%NIT,D%NJT),     INTENT(IN)    ::  PDIRCOSXW, PDIRCOSYW, PDIRCOSZW
 ! Director Cosinus along x, y and z directions at surface w-point
-REAL, DIMENSION(:,:),   INTENT(IN)   ::  PCOSSLOPE       ! cosinus of the angle 
+REAL, DIMENSION(D%NIT,D%NJT),   INTENT(IN)   ::  PCOSSLOPE       ! cosinus of the angle 
                                       ! between i and the slope vector
-REAL, DIMENSION(:,:),   INTENT(IN)   ::  PSINSLOPE       ! sinus of the angle 
+REAL, DIMENSION(D%NIT,D%NJT),   INTENT(IN)   ::  PSINSLOPE       ! sinus of the angle 
                                       ! between i and the slope vector
-REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PRHODJ       ! density * grid volume
-REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PTHVREF      ! ref. state VPT       
+REAL, DIMENSION(D%NIT,D%NJT,D%NKT),   INTENT(IN)    ::  PRHODJ       ! density * grid volume
+REAL, DIMENSION(D%NIT,D%NJT,D%NKT),   INTENT(IN)    ::  PTHVREF      ! ref. state VPT       
 !
-REAL, DIMENSION(:,:),     INTENT(IN)    ::  PSFTHM,PSFRM
-REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PSFSVM       ! surface fluxes
+REAL, DIMENSION(D%NIT,D%NJT),     INTENT(IN)    ::  PSFTHM,PSFRM
+REAL, DIMENSION(D%NIT,D%NJT,KSV),   INTENT(IN)    ::  PSFSVM       ! surface fluxes
 !
-REAL, DIMENSION(:,:),   INTENT(IN)   ::  PCDUEFF      ! Cd * || u || at time t
-REAL, DIMENSION(:,:),   INTENT(IN)   ::  PTAU11M      ! <uu> in the axes linked 
+REAL, DIMENSION(D%NIT,D%NJT),   INTENT(IN)   ::  PCDUEFF      ! Cd * || u || at time t
+REAL, DIMENSION(D%NIT,D%NJT),   INTENT(IN)   ::  PTAU11M      ! <uu> in the axes linked 
        ! to the maximum slope direction and the surface normal and the binormal 
        ! at time t - dt
-REAL, DIMENSION(:,:),   INTENT(IN)   ::  PTAU12M      ! <uv> in the same axes
-REAL, DIMENSION(:,:),   INTENT(IN)   ::  PTAU22M      ! <vv> in the same axes
-REAL, DIMENSION(:,:),   INTENT(IN)   ::  PTAU33M      ! <ww> in the same axes
+REAL, DIMENSION(D%NIT,D%NJT),   INTENT(IN)   ::  PTAU12M      ! <uv> in the same axes
+REAL, DIMENSION(D%NIT,D%NJT),   INTENT(IN)   ::  PTAU22M      ! <vv> in the same axes
+REAL, DIMENSION(D%NIT,D%NJT),   INTENT(IN)   ::  PTAU33M      ! <ww> in the same axes
 !
 ! Variables at t-1
-REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PUM,PVM,PWM,PTHLM 
-REAL, DIMENSION(:,:,:,:), INTENT(IN)    ::  PRM          ! mixing ratios at t-1,
+REAL, DIMENSION(D%NIT,D%NJT,D%NKT),   INTENT(IN)    ::  PUM,PVM,PWM,PTHLM 
+REAL, DIMENSION(D%NIT,D%NJT,D%NKT,KRR), INTENT(IN)    ::  PRM          ! mixing ratios at t-1,
                               !  where PRM(:,:,:,1) = conservative mixing ratio
-REAL, DIMENSION(:,:,:,:), INTENT(IN)    ::  PSVM         ! scalar var. at t-1
-REAL, DIMENSION(:,:),      INTENT(IN)   ::  PUSLOPEM     ! wind component along the 
+REAL, DIMENSION(D%NIT,D%NJT,D%NKT,KSV), INTENT(IN)    ::  PSVM         ! scalar var. at t-1
+REAL, DIMENSION(D%NIT,D%NJT),      INTENT(IN)   ::  PUSLOPEM     ! wind component along the 
                                      ! maximum slope direction
-REAL, DIMENSION(:,:),      INTENT(IN)   ::  PVSLOPEM     ! wind component along the 
+REAL, DIMENSION(D%NIT,D%NJT),      INTENT(IN)   ::  PVSLOPEM     ! wind component along the 
                                      ! direction normal to the maximum slope one
 !
-REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PTKEM        ! TKE at time t- dt
-REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PLM          ! Turb. mixing length
-REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PLEPS        ! dissipative length
-REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PLOCPEXNM    ! Lv(T)/Cp/Exner at time t-1
-REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PATHETA      ! coefficients between 
-REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PAMOIST      ! s and Thetal and Rnp
+REAL, DIMENSION(D%NIT,D%NJT,D%NKT),   INTENT(IN)    ::  PTKEM        ! TKE at time t- dt
+REAL, DIMENSION(D%NIT,D%NJT,D%NKT),   INTENT(IN)    ::  PLM          ! Turb. mixing length
+REAL, DIMENSION(D%NIT,D%NJT,D%NKT),   INTENT(IN)    ::  PLEPS        ! dissipative length
+REAL, DIMENSION(D%NIT,D%NJT,D%NKT),   INTENT(IN)    ::  PLOCPEXNM    ! Lv(T)/Cp/Exner at time t-1
+REAL, DIMENSION(D%NIT,D%NJT,D%NKT),   INTENT(IN)    ::  PATHETA      ! coefficients between 
+REAL, DIMENSION(D%NIT,D%NJT,D%NKT),   INTENT(IN)    ::  PAMOIST      ! s and Thetal and Rnp
 
-REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PSRCM
+REAL, DIMENSION(D%NIT,D%NJT,D%NKT),   INTENT(IN)    ::  PSRCM
                                   ! normalized 2nd-order flux
                                   ! s'r'c/2Sigma_s2 at t-1 multiplied by Lambda_3
 !
-REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PFRAC_ICE    ! ri fraction of rc+ri
+REAL, DIMENSION(D%NIT,D%NJT,D%NKT),   INTENT(IN)    ::  PFRAC_ICE    ! ri fraction of rc+ri
 !
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) ::  PRUS, PRVS, PRWS, PRTHLS
-REAL, DIMENSION(:,:,:,:), INTENT(INOUT) ::  PRSVS,PRRS   ! var. at t+1 -split-
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) ::  PDP,PTP      ! TKE production terms
-REAL, DIMENSION(:,:,:),   INTENT(OUT)   ::  PTRH
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) ::  PSIGS
+REAL, DIMENSION(D%NIT,D%NJT,D%NKT),   INTENT(INOUT) ::  PRUS, PRVS, PRWS, PRTHLS
+REAL, DIMENSION(D%NIT,D%NJT,D%NKT,KRR), INTENT(INOUT) ::  PRRS    ! var. at t+1 -split-
+REAL, DIMENSION(D%NIT,D%NJT,D%NKT,KSV), INTENT(INOUT) ::  PRSVS   ! var. at t+1 -split-
+REAL, DIMENSION(D%NIT,D%NJT,D%NKT),   INTENT(INOUT) ::  PDP,PTP      ! TKE production terms
+REAL, DIMENSION(D%NIT,D%NJT,D%NKT),   INTENT(OUT)   ::  PTRH
+REAL, DIMENSION(D%NIT,D%NJT,D%NKT),   INTENT(INOUT) ::  PSIGS
                                   ! IN: Vertical part of Sigma_s at t
                                   ! OUT: Total Sigma_s at t
 !
@@ -395,7 +314,7 @@ NULLIFY(TZFIELDS_ll)
 !*       2.   SPLIT PROCESS LOOP
 !             ------------------
 !
-IF (KSPLIT>1 .AND. CPROGRAM=='MESONH') THEN
+IF (KSPLIT>1 .AND. HPROGRAM=='MESONH') THEN
 !
 !*       2.1  allocations
 !             -----------
@@ -453,10 +372,12 @@ IF (KSPLIT>1 .AND. CPROGRAM=='MESONH') THEN
   DO JSPLT=1,KSPLIT
 !
 ! compute the turbulent tendencies for the small time step
-    CALL TURB_HOR(JSPLT, KRR, KRRL, KRRI, PTSTEP,                 &
-                   OTURB_FLX,OSUBG_COND,                          &
+    CALL TURB_HOR(D,CST,CSTURB,TURBN,TLES,                        &
+                   JSPLT, KRR, KRRL, KRRI, PTSTEP,                &
+                   KSV, KSV_LGBEG, KSV_LGEND, OFLAT,O2D, ONOMIXLG,&
+                   OOCEAN,OCOMPUTE_SRC,OBLOWSNOW,                 &
                    TPFILE,                                        &
-                   PDXX,PDYY,PDZZ,PDZX,PDZY,PZZ,                  &
+                   PDXX,PDYY,PDZZ,PDZX,PDZY,PZZ,PRSNOW,           &
                    PDIRCOSXW,PDIRCOSYW,PDIRCOSZW,                 &
                    PCOSSLOPE,PSINSLOPE,                           &
                    ZINV_PDXX, ZINV_PDYY, ZINV_PDZZ, ZMZM_PRHODJ,  &
@@ -472,7 +393,7 @@ IF (KSPLIT>1 .AND. CPROGRAM=='MESONH') THEN
 !
 ! horizontal transport of Tke
 !
-  CALL   TURB_HOR_TKE(JSPLT,                                         &
+  CALL   TURB_HOR_TKE(JSPLT,TLES,OFLAT,O2D,                          &
                       PDXX,PDYY,PDZZ,PDZX,PDZY,                      &
                       ZINV_PDXX, ZINV_PDYY, ZINV_PDZZ, ZMZM_PRHODJ,  &
                       ZK, PRHODJ, ZTKEM,                             &
@@ -497,7 +418,7 @@ IF (KSPLIT>1 .AND. CPROGRAM=='MESONH') THEN
 !
 ! reinforce boundary conditions
 !
-    IF (JSPLT<KSPLIT-NHALO+1) CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
+    IF (JSPLT<KSPLIT-KHALO+1) CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
     !
     IF ( HLBCX(1) /= "CYCL" .AND. LWEST_ll()) THEN
        ZUM(IIB  ,:,:)=PUM(IIB  ,:,:)
@@ -594,10 +515,12 @@ IF (KSPLIT>1 .AND. CPROGRAM=='MESONH') THEN
 !
 ELSE
 !
-  CALL TURB_HOR(1, KRR, KRRL, KRRI,  PTSTEP,                   &
-                OTURB_FLX,OSUBG_COND,                          &
+  CALL TURB_HOR(D,CST,CSTURB,TURBN,TLES,                       &
+                1, KRR, KRRL, KRRI,  PTSTEP,                   &
+                KSV, KSV_LGBEG, KSV_LGEND, OFLAT,O2D, ONOMIXLG,&                
+                OOCEAN,OCOMPUTE_SRC,OBLOWSNOW,                 &
                 TPFILE,                                        &
-                PDXX,PDYY,PDZZ,PDZX,PDZY,PZZ,                  &
+                PDXX,PDYY,PDZZ,PDZX,PDZY,PZZ,PRSNOW,           &
                 PDIRCOSXW,PDIRCOSYW,PDIRCOSZW,                 &
                 PCOSSLOPE,PSINSLOPE,                           &
                 ZINV_PDXX, ZINV_PDYY, ZINV_PDZZ, ZMZM_PRHODJ,  &
@@ -614,7 +537,7 @@ ELSE
 ! horizontal transport of Tke
 !
 
-  CALL   TURB_HOR_TKE(1,                                             &
+  CALL   TURB_HOR_TKE(1,TLES,OFLAT,O2D,                              &
                       PDXX,PDYY,PDZZ,PDZX,PDZY,                      &
                       ZINV_PDXX, ZINV_PDYY, ZINV_PDZZ, ZMZM_PRHODJ,  &
                       ZK, PRHODJ, PTKEM,                             &
@@ -630,3 +553,4 @@ DEALLOCATE(ZINV_PDZZ)
 DEALLOCATE(ZMZM_PRHODJ)
 !
 END SUBROUTINE TURB_HOR_SPLT
+END MODULE MODE_TURB_HOR_SPLT

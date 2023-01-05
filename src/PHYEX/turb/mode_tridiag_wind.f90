@@ -2,45 +2,13 @@
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 turb 2006/06/06 09:36:38
-!-----------------------------------------------------------------
-!     ########################
-      MODULE MODI_TRIDIAG_WIND
-!     ########################
-INTERFACE
-!
-       SUBROUTINE TRIDIAG_WIND(KKA,KKU,KKL,PVARM,PA,PCOEFS,PTSTEP,PEXPL,PIMPL, &
+MODULE MODE_TRIDIAG_WIND
+IMPLICIT NONE
+CONTAINS       
+SUBROUTINE TRIDIAG_WIND(D,PVARM,PA,PCOEFS,PTSTEP,PEXPL,PIMPL, &
                                              PRHODJA,PSOURCE,PVARP )
-!
-INTEGER,                  INTENT(IN)   :: KKA           !near ground array index  
-INTEGER,                  INTENT(IN)   :: KKU           !uppest atmosphere array index
-INTEGER,                  INTENT(IN)   :: KKL           !vert. levels type 1=MNH -1=AR
-REAL, DIMENSION(:,:,:),    INTENT(IN)  :: PVARM       ! variable at t-1  
-REAL, DIMENSION(:,:,:),    INTENT(IN)  :: PA          ! upper diag. elements
-REAL, DIMENSION(:,:),      INTENT(IN)  :: PCOEFS      ! implicit coeff for the
-                                                      ! surface flux
-REAL,                      INTENT(IN)  :: PTSTEP      ! Double time step
-REAL,                      INTENT(IN)  :: PEXPL,PIMPL ! weights of the temporal scheme
-REAL, DIMENSION(:,:,:),    INTENT(IN)  :: PRHODJA     ! (dry rho)*J averaged
-REAL, DIMENSION(:,:,:),    INTENT(IN)  :: PSOURCE     ! source term of PVAR    
-!
-REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PVARP       ! variable at t+1        
-!
-END SUBROUTINE TRIDIAG_WIND
-!
-END INTERFACE
-!
-END MODULE MODI_TRIDIAG_WIND
-!
-!
-!
-!      #############################################################
-       SUBROUTINE TRIDIAG_WIND(KKA,KKU,KKL,PVARM,PA,PCOEFS,PTSTEP,PEXPL,PIMPL, &
-                                             PRHODJA,PSOURCE,PVARP )
+       USE PARKIND1, ONLY : JPRB
+       USE YOMHOOK , ONLY : LHOOK, DR_HOOK
 !      #############################################################
 !
 !
@@ -150,62 +118,78 @@ END MODULE MODI_TRIDIAG_WIND
 !*       0. DECLARATIONS
 !
 USE MODD_PARAMETERS
+USE MODD_DIMPHYEX,   ONLY: DIMPHYEX_t
 !
 IMPLICIT NONE
 !
 !
 !*       0.1 declarations of arguments
 !
-INTEGER,                  INTENT(IN)   :: KKA         !near ground array index  
-INTEGER,                  INTENT(IN)   :: KKU         !uppest atmosphere array index
-INTEGER,                  INTENT(IN)   :: KKL         !vert. levels type 1=MNH -1=ARO
-REAL, DIMENSION(:,:,:),    INTENT(IN)  :: PVARM       ! variable at t-1  
-REAL, DIMENSION(:,:,:),    INTENT(IN)  :: PA          ! upper diag. elements
-REAL, DIMENSION(:,:),      INTENT(IN)  :: PCOEFS      ! implicit coeff for the
+TYPE(DIMPHYEX_t),     INTENT(IN)   :: D
+REAL, DIMENSION(D%NIJT,D%NKT),    INTENT(IN)  :: PVARM       ! variable at t-1  
+REAL, DIMENSION(D%NIJT,D%NKT),    INTENT(IN)  :: PA          ! upper diag. elements
+REAL, DIMENSION(D%NIJT),      INTENT(IN)  :: PCOEFS      ! implicit coeff for the
                                                       ! surface flux
 REAL,                      INTENT(IN)  :: PTSTEP      ! Double time step
 REAL,                      INTENT(IN)  :: PEXPL,PIMPL ! weights of the temporal scheme
-REAL, DIMENSION(:,:,:),    INTENT(IN)  :: PRHODJA     ! (dry rho)*J averaged 
-REAL, DIMENSION(:,:,:),    INTENT(IN)  :: PSOURCE     ! source term of PVAR    
+REAL, DIMENSION(D%NIJT,D%NKT),    INTENT(IN)  :: PRHODJA     ! (dry rho)*J averaged 
+REAL, DIMENSION(D%NIJT,D%NKT),    INTENT(IN)  :: PSOURCE     ! source term of PVAR    
 !
-REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PVARP       ! variable at t+1        
+REAL, DIMENSION(D%NIJT,D%NKT),    INTENT(OUT) :: PVARP       ! variable at t+1        
 !
 !*       0.2 declarations of local variables
 !
-REAL, DIMENSION(SIZE(PVARM,1),SIZE(PVARM,2),SIZE(PVARM,3))  :: ZY ,ZGAM 
+REAL, DIMENSION(D%NIJT,D%NKT)  :: ZY ,ZGAM 
                                          ! RHS of the equation, 3D work array
-REAL, DIMENSION(SIZE(PVARM,1),SIZE(PVARM,2))                :: ZBET
+REAL, DIMENSION(D%NIJT)                :: ZBET
                                          ! 2D work array
-INTEGER             :: JK            ! loop counter
-INTEGER             :: IKB,IKE       ! inner vertical limits
-INTEGER             :: IKT          ! array size in k direction
+INTEGER             :: JIJ,JK       ! loop counter
+INTEGER             :: IKB,IKE      ! inner vertical limits
+INTEGER             :: IKT,IKA,IKU  ! array size in k direction
 INTEGER             :: IKTB,IKTE    ! start, end of k loops in physical domain 
+INTEGER             :: IIJB, IIJE   ! start, end of ij loops in physical domain
+INTEGER             :: IKL
 !
 ! ---------------------------------------------------------------------------
 !                                              
 !*      1.  COMPUTE THE RIGHT HAND SIDE
 !           ---------------------------
 !
-IKT=SIZE(PVARM,3)          
-IKTB=1+JPVEXT_TURB              
-IKTE=IKT-JPVEXT_TURB
-IKB=KKA+JPVEXT_TURB*KKL
-IKE=KKU-JPVEXT_TURB*KKL
-
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+IF (LHOOK) CALL DR_HOOK('TRIDIAG_WIND',0,ZHOOK_HANDLE)
 !
-! 
-ZY(:,:,IKB) = PVARM(:,:,IKB)  + PTSTEP*PSOURCE(:,:,IKB) -   &
-  PEXPL / PRHODJA(:,:,IKB) * PA(:,:,IKB+KKL) * (PVARM(:,:,IKB+KKL) - PVARM(:,:,IKB))
+IKT=D%NKT
+IKTB=D%NKTB
+IKTE=D%NKTE
+IKB=D%NKB
+IKE=D%NKE
+IKA=D%NKA
+IKU=D%NKU
+IKL=D%NKL
+IIJB=D%NIJB
+IIJE=D%NIJE
 !
-  ZY(:,:,IKTB+1:IKTE-1)= PVARM(:,:,IKTB+1:IKTE-1)  + PTSTEP*PSOURCE(:,:,IKTB+1:IKTE-1) -               &
-      PEXPL / PRHODJA(:,:,IKTB+1:IKTE-1) *                                          &
-                             ( PVARM(:,:,IKTB+1-KKL:IKTE-1-KKL)*PA(:,:,IKTB+1:IKTE-1)                &
-                              -PVARM(:,:,IKTB+1:IKTE-1)*(PA(:,:,IKTB+1:IKTE-1)+PA(:,:,IKTB+1+KKL:IKTE-1+KKL))   &
-                              +PVARM(:,:,IKTB+1+KKL:IKTE-1+KKL)*PA(:,:,IKTB+1+KKL:IKTE-1+KKL)              &
+!$mnh_expand_array(JIJ=IIJB:IIJE)
+ZY(IIJB:IIJE,IKB) = PVARM(IIJB:IIJE,IKB)  + PTSTEP*PSOURCE(IIJB:IIJE,IKB) -   &
+  PEXPL / PRHODJA(IIJB:IIJE,IKB) * PA(IIJB:IIJE,IKB+IKL) * &
+  (PVARM(IIJB:IIJE,IKB+IKL) - PVARM(IIJB:IIJE,IKB))
+!$mnh_end_expand_array(JIJ=IIJB:IIJE)
+!
+DO JK=IKTB+1,IKTE-1
+  !$mnh_expand_array(JIJ=IIJB:IIJE)
+  ZY(IIJB:IIJE,JK)= PVARM(IIJB:IIJE,JK)  + PTSTEP*PSOURCE(IIJB:IIJE,JK) -               &
+      PEXPL / PRHODJA(IIJB:IIJE,JK) *                                          &
+                             ( PVARM(IIJB:IIJE,JK-IKL)*PA(IIJB:IIJE,JK)                &
+                              -PVARM(IIJB:IIJE,JK)*(PA(IIJB:IIJE,JK)+PA(IIJB:IIJE,JK+IKL))   &
+                              +PVARM(IIJB:IIJE,JK+IKL)*PA(IIJB:IIJE,JK+IKL)              &
                              ) 
+  !$mnh_end_expand_array(JIJ=IIJB:IIJE)
+END DO
 ! 
-ZY(:,:,IKE)= PVARM(:,:,IKE) + PTSTEP*PSOURCE(:,:,IKE) +               &
-  PEXPL / PRHODJA(:,:,IKE) * PA(:,:,IKE) * (PVARM(:,:,IKE)-PVARM(:,:,IKE-KKL))
+!$mnh_expand_array(JIJ=IIJB:IIJE)
+ZY(IIJB:IIJE,IKE)= PVARM(IIJB:IIJE,IKE) + PTSTEP*PSOURCE(IIJB:IIJE,IKE) +               &
+  PEXPL / PRHODJA(IIJB:IIJE,IKE) * PA(IIJB:IIJE,IKE) * (PVARM(IIJB:IIJE,IKE)-PVARM(IIJB:IIJE,IKE-IKL))
+!$mnh_end_expand_array(JIJ=IIJB:IIJE)
 !
 !
 !*       2.  INVERSION OF THE TRIDIAGONAL SYSTEM
@@ -216,42 +200,54 @@ IF ( PIMPL > 1.E-10 ) THEN
   !
   !  going up
   !
-  ZBET(:,:) = 1. - PIMPL * (  PA(:,:,IKB+KKL) / PRHODJA(:,:,IKB) &  
-                            + PCOEFS(:,:) *  PTSTEP        )   ! bet = b(ikb)
-  PVARP(:,:,IKB) = ZY(:,:,IKB) / ZBET(:,:)                
+  !$mnh_expand_array(JIJ=IIJB:IIJE)
+  ZBET(IIJB:IIJE) = 1. - PIMPL * (  PA(IIJB:IIJE,IKB+IKL) / PRHODJA(IIJB:IIJE,IKB) &  
+                            + PCOEFS(IIJB:IIJE) *  PTSTEP        )   ! bet = b(ikb)
+  PVARP(IIJB:IIJE,IKB) = ZY(IIJB:IIJE,IKB) / ZBET(IIJB:IIJE)
+  !$mnh_end_expand_array(JIJ=IIJB:IIJE)               
   !
-  DO JK = IKB+KKL,IKE-KKL,KKL
-    ZGAM(:,:,JK) = PIMPL * PA(:,:,JK) / PRHODJA(:,:,JK-KKL) / ZBET(:,:)  
+  DO JK = IKB+IKL,IKE-IKL,IKL
+    !$mnh_expand_array(JIJ=IIJB:IIJE)
+    ZGAM(IIJB:IIJE,JK) = PIMPL * PA(IIJB:IIJE,JK) / PRHODJA(IIJB:IIJE,JK-IKL) / ZBET(IIJB:IIJE)  
                                                     ! gam(k) = c(k-1) / bet
-    ZBET(:,:)    = 1. - PIMPL * (  PA(:,:,JK) * (1. + ZGAM(:,:,JK))  &
-                                 + PA(:,:,JK+KKL)                      &
-                                ) / PRHODJA(:,:,JK)  
+    ZBET(IIJB:IIJE)    = 1. - PIMPL * (  PA(IIJB:IIJE,JK) * (1. + ZGAM(IIJB:IIJE,JK))  &
+                                 + PA(IIJB:IIJE,JK+IKL)                      &
+                                ) / PRHODJA(IIJB:IIJE,JK)  
                                                     ! bet = b(k) - a(k)* gam(k)  
-    PVARP(:,:,JK)= ( ZY(:,:,JK) - PIMPL * PA(:,:,JK) / PRHODJA(:,:,JK) &
-                    * PVARP(:,:,JK-KKL)                                  &
-                   ) / ZBET(:,:)
+    PVARP(IIJB:IIJE,JK)= ( ZY(IIJB:IIJE,JK) - PIMPL * PA(IIJB:IIJE,JK) / PRHODJA(IIJB:IIJE,JK) &
+                    * PVARP(IIJB:IIJE,JK-IKL)                                 &
+                   ) / ZBET(IIJB:IIJE)
                                         ! res(k) = (y(k) -a(k)*res(k-1))/ bet 
+    !$mnh_end_expand_array(JIJ=IIJB:IIJE)
   END DO
+  !$mnh_expand_array(JIJ=IIJB:IIJE)
   ! special treatment for the last level
-  ZGAM(:,:,IKE) = PIMPL * PA(:,:,IKE) / PRHODJA(:,:,IKE-KKL) / ZBET(:,:) 
+  ZGAM(IIJB:IIJE,IKE) = PIMPL * PA(IIJB:IIJE,IKE) / PRHODJA(IIJB:IIJE,IKE-IKL) / ZBET(IIJB:IIJE) 
                                                     ! gam(k) = c(k-1) / bet
-  ZBET(:,:)    = 1. - PIMPL * (  PA(:,:,IKE) * (1. + ZGAM(:,:,IKE))  &
-                              ) / PRHODJA(:,:,IKE)  
+  ZBET(IIJB:IIJE)    = 1. - PIMPL * (  PA(IIJB:IIJE,IKE) * (1. + ZGAM(IIJB:IIJE,IKE))  &
+                              ) / PRHODJA(IIJB:IIJE,IKE)  
                                                     ! bet = b(k) - a(k)* gam(k)  
-  PVARP(:,:,IKE)= ( ZY(:,:,IKE) - PIMPL * PA(:,:,IKE) / PRHODJA(:,:,IKE) &
-                                 * PVARP(:,:,IKE-KKL)                      &
-                  ) / ZBET(:,:)
+  PVARP(IIJB:IIJE,IKE)= ( ZY(IIJB:IIJE,IKE) - PIMPL * PA(IIJB:IIJE,IKE) / PRHODJA(IIJB:IIJE,IKE) &
+                                 * PVARP(IIJB:IIJE,IKE-IKL)                      &
+                  ) / ZBET(IIJB:IIJE)
                                         ! res(k) = (y(k) -a(k)*res(k-1))/ bet 
   !
-  !  going down 
+  !  going down
   !
-  DO JK = IKE-KKL,IKB,-1*KKL
-    PVARP(:,:,JK) = PVARP(:,:,JK) - ZGAM(:,:,JK+KKL) * PVARP(:,:,JK+KKL) 
+  !$mnh_end_expand_array(JIJ=IIJB:IIJE)
+  DO JK = IKE-IKL,IKB,-1*IKL
+  !$mnh_expand_array(JIJ=IIJB:IIJE)
+    PVARP(IIJB:IIJE,JK) = PVARP(IIJB:IIJE,JK) - ZGAM(IIJB:IIJE,JK+IKL) * PVARP(IIJB:IIJE,JK+IKL) 
+  !$mnh_end_expand_array(JIJ=IIJB:IIJE)
   END DO
 !
 ELSE
 ! 
-  PVARP(:,:,IKTB:IKTE) = ZY(:,:,IKTB:IKTE)
+  DO JK=IKTB,IKTE
+    !$mnh_expand_array(JIJ=IIJB:IIJE)
+    PVARP(IIJB:IIJE,JK) = ZY(IIJB:IIJE,JK)
+    !$mnh_end_expand_array(JIJ=IIJB:IIJE)
+  END DO
 !
 END IF 
 !
@@ -259,9 +255,13 @@ END IF
 !*       3.  FILL THE UPPER AND LOWER EXTERNAL VALUES
 !            ----------------------------------------
 !
-PVARP(:,:,KKA)=PVARP(:,:,IKB)
-PVARP(:,:,KKU)=PVARP(:,:,IKE)
+!$mnh_expand_array(JIJ=IIJB:IIJE)
+PVARP(IIJB:IIJE,IKA)=PVARP(IIJB:IIJE,IKB)
+PVARP(IIJB:IIJE,IKU)=PVARP(IIJB:IIJE,IKE)
+!$mnh_end_expand_array(JIJ=IIJB:IIJE)
 !
 !-------------------------------------------------------------------------------
-! 
+!
+IF (LHOOK) CALL DR_HOOK('TRIDIAG_WIND',1,ZHOOK_HANDLE)
 END SUBROUTINE TRIDIAG_WIND
+END MODULE MODE_TRIDIAG_WIND

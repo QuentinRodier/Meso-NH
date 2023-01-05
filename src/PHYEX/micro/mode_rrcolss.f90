@@ -4,55 +4,17 @@
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ###################
-      MODULE MODI_RRCOLSS
+      MODULE MODE_RRCOLSS
 !     ###################
 !
-INTERFACE
-!
+IMPLICIT NONE
+CONTAINS
       SUBROUTINE RRCOLSS( KND, PALPHAS, PNUS, PALPHAR, PNUR,                 &
                          PESR, PEXMASSR, PFALLS, PEXFALLS, PFALLEXPS, PFALLR, PEXFALLR, &
                          PLBDASMAX, PLBDARMAX, PLBDASMIN, PLBDARMIN,         &
                          PDINFTY, PRRCOLSS, PAG, PBS, PAS                    )
-!
-INTEGER, INTENT(IN) :: KND    ! Number of discrete size intervals in DS and DR  
-!
-REAL, INTENT(IN) :: PALPHAS   ! First shape parameter of the aggregates 
-                              ! size distribution (generalized gamma law)
-REAL, INTENT(IN) :: PNUS      ! Second shape parameter of the aggregates
-                              ! size distribution (generalized gamma law)
-REAL, INTENT(IN) :: PALPHAR   ! First shape parameter of the rain  
-                              ! size distribution (generalized gamma law)
-REAL, INTENT(IN) :: PNUR      ! Second shape parameter of the rain 
-                              ! size distribution (generalized gamma law)
-REAL, INTENT(IN) :: PESR      ! Efficiency of aggregates collecting rain 
-REAL, INTENT(IN) :: PEXMASSR  ! Mass exponent of rain 
-REAL, INTENT(IN) :: PFALLS    ! Fall speed constant of aggregates
-REAL, INTENT(IN) :: PEXFALLS  ! Fall speed exponent of aggregates
-REAL, INTENT(IN) :: PFALLEXPS ! Fall speed exponential of aggregates (Thompson 2008)
-REAL, INTENT(IN) :: PFALLR    ! Fall speed constant of rain 
-REAL, INTENT(IN) :: PEXFALLR  ! Fall speed exponent of rain 
-REAL, INTENT(IN) :: PLBDASMAX ! Maximun slope of size distribution of aggregates
-REAL, INTENT(IN) :: PLBDARMAX ! Maximun slope of size distribution of rain 
-REAL, INTENT(IN) :: PLBDASMIN ! Minimun slope of size distribution of aggregates
-REAL, INTENT(IN) :: PLBDARMIN ! Minimun slope of size distribution of rain 
-REAL, INTENT(IN) :: PDINFTY   ! Factor to define the largest diameter up to
-                              ! which the diameter integration is performed
-REAL, INTENT(IN) :: PAG, PBS, PAS
-!
-REAL, DIMENSION(:,:), INTENT(INOUT) :: PRRCOLSS! Scaled fall speed difference in
-                                               ! the mass collection kernel as a
-                                               ! function of LAMBDAX and LAMBDAZ
-!
-      END SUBROUTINE RRCOLSS
-!
-END INTERFACE
-!
-      END MODULE MODI_RRCOLSS
-!     ########################################################################
-      SUBROUTINE RRCOLSS( KND, PALPHAS, PNUS, PALPHAR, PNUR,                 &
-                         PESR, PEXMASSR, PFALLS, PEXFALLS, PFALLEXPS, PFALLR, PEXFALLR, &
-                         PLBDASMAX, PLBDARMAX, PLBDASMIN, PLBDARMIN,         &
-                         PDINFTY, PRRCOLSS, PAG, PBS, PAS                    )
+      USE PARKIND1, ONLY : JPRB
+      USE YOMHOOK , ONLY : LHOOK, DR_HOOK
 !     ########################################################################
 !
 !
@@ -215,6 +177,8 @@ REAL :: ZCST1
 !
 !*       1.0     Initialization
 !
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+IF (LHOOK) CALL DR_HOOK('RRCOLSS',0,ZHOOK_HANDLE)
 PRRCOLSS(:,:) = 0.0
 ZCST1 = (3.0/XPI)/XRHOLW
 !
@@ -280,11 +244,19 @@ DO JLBDAS = 1,SIZE(PRRCOLSS(:,:),1)
           DO JDR = 1,INR-1
             ZDR = ZDDCOLLR * REAL(JDR)
             ZCOLLR = ZCOLLR + (ZDS+ZDR)**2 * ZDR**PEXMASSR                     &
+#if defined(REPRO48) || defined(REPRO55)
+                       * PESR * ABS(PFALLS*ZDS**PEXFALLS-PFALLR*ZDR**PEXFALLR) &
+#else
                        * PESR * ABS(PFALLS*ZDS**PEXFALLS * EXP(-(PFALLEXPS*ZDS)**PALPHAS)-PFALLR*ZDR**PEXFALLR) &
+#endif
                                       * GENERAL_GAMMA(PALPHAR,PNUR,ZLBDAR,ZDR)
           END DO
           ZCOLLDRMAX = (ZDS+ZDRMAX)**2 * ZDRMAX**PEXMASSR                      &
+#if defined(REPRO48) || defined(REPRO55)
+                    * PESR * ABS(PFALLS*ZDS**PEXFALLS-PFALLR*ZDRMAX**PEXFALLR) &
+#else
                     * PESR * ABS(PFALLS*ZDS**PEXFALLS* EXP(-(PFALLEXPS*ZDS)**PALPHAS)-PFALLR*ZDRMAX**PEXFALLR) &
+#endif
                                    * GENERAL_GAMMA(PALPHAR,PNUR,ZLBDAR,ZDRMAX)
           ZCOLLR = (ZCOLLR + 0.5*ZCOLLDRMAX)*(ZDDCOLLR/ZDDSCALR)
 !
@@ -312,4 +284,6 @@ DO JLBDAS = 1,SIZE(PRRCOLSS(:,:),1)
   END DO
 END DO
 !
+IF (LHOOK) CALL DR_HOOK('RRCOLSS',1,ZHOOK_HANDLE)
 END SUBROUTINE RRCOLSS
+END MODULE MODE_RRCOLSS

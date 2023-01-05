@@ -1,67 +1,19 @@
-!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!     ###########################
-      MODULE MODI_TKE_EPS_SOURCES
-!     ###########################
-INTERFACE
-!
-      SUBROUTINE TKE_EPS_SOURCES(KKA,KKU,KKL,KMI,PTKEM,PLM,PLEPS,PDP,PTRH,  &
-                      PRHODJ,PDZZ,PDXX,PDYY,PDZX,PDZY,PZZ,                  &
-                      PTSTEP,PIMPL,PEXPL,                                   &
-                      HTURBLEN,HTURBDIM,                                    &
-                      TPFILE,OTURB_DIAG,                                    &
-                      PTP,PRTKES,PRTKESM, PRTHLS,PCOEF_DISS,PTR,PDISS       )
-!
-USE MODD_IO, ONLY: TFILEDATA
-!
-INTEGER,                 INTENT(IN)   ::  KKA          !near ground array index  
-INTEGER,                 INTENT(IN)   ::  KKU          !uppest atmosphere array index
-INTEGER,                 INTENT(IN)   ::  KKL          !vert. levels type 1=MNH -1=ARO
-INTEGER,                 INTENT(IN)   ::  KMI          ! model index number  
-REAL, DIMENSION(:,:,:),  INTENT(IN)   ::  PTKEM        ! TKE at t-deltat
-REAL, DIMENSION(:,:,:),  INTENT(IN)   ::  PLM          ! mixing length         
-REAL, DIMENSION(:,:,:),  INTENT(IN)   ::  PLEPS        ! dissipative length
-REAL, DIMENSION(:,:,:),  INTENT(IN)   ::  PRHODJ       ! density * grid volume
-REAL, DIMENSION(:,:,:),  INTENT(IN)   ::  PDXX,PDYY,PDZZ,PDZX,PDZY
-                                                       ! metric coefficients
-REAL, DIMENSION(:,:,:),  INTENT(IN)   ::  PZZ          ! physical height w-pt
-REAL,                    INTENT(IN)   ::  PTSTEP       ! Time step 
-REAL,                    INTENT(IN)   ::  PEXPL, PIMPL ! Coef. temporal. disc.
-CHARACTER(len=4),        INTENT(IN)   ::  HTURBDIM     ! dimensionality of the
-                                                       ! turbulence scheme
-CHARACTER(len=4),        INTENT(IN)   ::  HTURBLEN     ! kind of mixing length
-TYPE(TFILEDATA),         INTENT(IN)   ::  TPFILE       ! Output file
-LOGICAL,                 INTENT(IN)   ::  OTURB_DIAG   ! switch to write some
-                                  ! diagnostic fields in the syncronous FM-file
-REAL, DIMENSION(:,:,:),  INTENT(INOUT)::  PDP          ! Dyn. prod. of TKE
-REAL, DIMENSION(:,:,:),  INTENT(IN)   ::  PTRH
-REAL, DIMENSION(:,:,:),  INTENT(IN)   ::  PTP          ! Ther. prod. of TKE
-REAL, DIMENSION(:,:,:),  INTENT(INOUT)::  PRTKES       ! RHOD * Jacobian *
-                                                       ! TKE at t+deltat
-REAL, DIMENSION(:,:,:),  INTENT(IN)   ::  PRTKESM      ! Advection source 
-REAL, DIMENSION(:,:,:),  INTENT(INOUT)::  PRTHLS       ! Source of Theta_l
-REAL, DIMENSION(:,:,:),  INTENT(IN)   ::  PCOEF_DISS   ! 1/(Cph*Exner)
-REAL, DIMENSION(:,:,:),  INTENT(OUT)  ::  PTR          ! Transport prod. of TKE
-REAL, DIMENSION(:,:,:),  INTENT(OUT)  ::  PDISS        ! Dissipati prod. of TKE
-!
-!
-!
-END SUBROUTINE TKE_EPS_SOURCES
-!
-END INTERFACE
-!
-END MODULE MODI_TKE_EPS_SOURCES
-!
-!     ##################################################################
-      SUBROUTINE TKE_EPS_SOURCES(KKA,KKU,KKL,KMI,PTKEM,PLM,PLEPS,PDP,  &
-                      PTRH,PRHODJ,PDZZ,PDXX,PDYY,PDZX,PDZY,PZZ,        &
-                      PTSTEP,PIMPL,PEXPL,                              &
-                      HTURBLEN,HTURBDIM,                               &
-                      TPFILE,OTURB_DIAG,                               &
-                      PTP,PRTKES,PRTKESM, PRTHLS,PCOEF_DISS,PTR,PDISS  )
+MODULE MODE_TKE_EPS_SOURCES
+IMPLICIT NONE
+CONTAINS
+      SUBROUTINE TKE_EPS_SOURCES(D,CST,CSTURB,BUCONF,TURBN,TLES,       &
+                    & HPROGRAM, KMI,PTKEM,PLM,PLEPS,PDP,               &
+                    & PTRH,PRHODJ,PDZZ,PDXX,PDYY,PDZX,PDZY,PZZ,        &
+                    & PTSTEP,PEXPL,                                    &
+                    & TPFILE,ODIAG_IN_RUN,OOCEAN,                      &
+                    & PSFUM,PSFVM,                                     &
+                    & PTP,PRTKES,PRTHLS,PCOEF_DISS,PTDIFF,PTDISS,PRTKEMS,&
+                    & TBUDGETS, KBUDGETS,                              &
+                    & PEDR, PTR,PDISS, PCURRENT_TKE_DISS               )
 !     ##################################################################
 !
 !
@@ -84,7 +36,7 @@ END MODULE MODI_TKE_EPS_SOURCES
 !!      In high resolution, the horizontal transport terms are also
 !!    calculated, but explicitly. 
 !!      The evolution of the dissipation as a variable is made if 
-!!    the parameter HTURBLEN is set equal to KEPS. The same reasoning 
+!!    the parameter TURBN%CTURBLEN is set equal to KEPS. The same reasoning 
 !!    made for TKE applies.
 !!
 !!    EXTERNAL
@@ -95,6 +47,8 @@ END MODULE MODI_TKE_EPS_SOURCES
 !!      MXF,MXM.MYF,MYM,MZF,MZM:  Shuman functions (mean operators)
 !!      DZF                    :  Shuman functions (difference operators)     
 !!
+!!      SUBROUTINE TRIDIAG     :  to solve an implicit temporal scheme
+!!      
 !!
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
@@ -105,15 +59,15 @@ END MODULE MODI_TKE_EPS_SOURCES
 !!      Module MODD_CTURB: contains the set of constants for
 !!                        the turbulence scheme
 !!
-!!           XCET,XCED  : transport and dissipation cts. for the TKE
+!!           CSTURB%XCET,CSTURB%XCED  : transport and dissipation cts. for the TKE
 !!           XCDP,XCDD,XCDT: constants from the parameterization of
 !!                        the K-epsilon equation
-!!           XTKEMIN,XEPSMIN : minimum values for the TKE and its
+!!           CSTURB%XTKEMIN,XEPSMIN : minimum values for the TKE and its
 !!                        dissipation
 !!
 !!      Module MODD_PARAMETERS: 
 !!
-!!           JPVEXT
+!!           JPVEXT_TURB
 !!      Module MODD_BUDGET:
 !!         NBUMOD       : model in which budget is calculated
 !!         CBUTYPE      : type of desired budget
@@ -161,6 +115,8 @@ END MODULE MODI_TKE_EPS_SOURCES
 !!                                              change of YCOMMENT
 !!                     2012-02 Y. Seity,  add possibility to run with reversed 
 !!                                    vertical levels
+!!                     2014-11 Y. Seity,  add output terms for TKE DDHs budgets
+!! --------------------------------------------------------------------------
 !!                     2015-01 (J. Escobar) missing get_halo(ZRES) for JPHEXT<> 1 
 !!     J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
@@ -171,29 +127,30 @@ END MODULE MODI_TKE_EPS_SOURCES
 !*       0.   DECLARATIONS
 !             ------------
 !
-USE MODD_ARGSLIST_ll,    ONLY: LIST_ll
-use modd_budget,         only: lbudget_tke, lbudget_th, NBUDGET_TKE, NBUDGET_TH, tbudgets
-USE MODD_CONF
-USE MODD_CST
-USE MODD_CTURB
-USE MODD_DIAG_IN_RUN,    ONLY: LDIAG_IN_RUN, XCURRENT_TKE_DISS
-use modd_field,          only: tfielddata, TYPEREAL
-USE MODD_IO,             ONLY: TFILEDATA
-USE MODD_LES
-USE MODD_PARAMETERS
+USE PARKIND1, ONLY : JPRB
+USE YOMHOOK , ONLY : LHOOK, DR_HOOK
 !
-use mode_budget,         only: Budget_store_add, Budget_store_end, Budget_store_init
-USE MODE_IO_FIELD_WRITE, only: IO_Field_write
+USE MODD_ARGSLIST_ll,    ONLY: LIST_ll
+USE MODD_BUDGET, ONLY: TBUDGETCONF_t, NBUDGET_TKE, NBUDGET_TH, TBUDGETDATA
+USE MODD_CST, ONLY: CST_t
+USE MODD_CTURB, ONLY: CSTURB_t
+USE MODD_TURB_n, ONLY: TURB_t
+USE MODD_DIMPHYEX, ONLY: DIMPHYEX_t
+USE MODD_FIELD, ONLY: TFIELDDATA, TYPEREAL
+USE MODD_IO, ONLY: TFILEDATA
+USE MODD_LES, ONLY: TLES_t
+USE MODD_PARAMETERS, ONLY: JPVEXT_TURB
+!
+USE MODE_BUDGET, ONLY: BUDGET_STORE_ADD_PHY, BUDGET_STORE_END_PHY, BUDGET_STORE_INIT_PHY
+USE MODE_IO_FIELD_WRITE, ONLY: IO_FIELD_WRITE_PHY
 USE MODE_ll
 !
+USE SHUMAN_PHY, ONLY: MZM_PHY, MZF_PHY, DZF_PHY, DZM_PHY
+!
 USE MODI_GET_HALO
-USE MODI_GRADIENT_M
-USE MODI_GRADIENT_U
-USE MODI_GRADIENT_V
-USE MODI_GRADIENT_W
-USE MODI_LES_MEAN_SUBGRID
-USE MODI_SHUMAN
-USE MODI_TRIDIAG_TKE
+USE MODI_LES_MEAN_SUBGRID_PHY
+USE MODE_TRIDIAG_TKE, ONLY: TRIDIAG_TKE
+!
 !
 IMPLICIT NONE
 !
@@ -201,42 +158,49 @@ IMPLICIT NONE
 !*       0.1  declarations of arguments
 !
 !
-INTEGER,                 INTENT(IN)   :: KKA           !near ground array index  
-INTEGER,                 INTENT(IN)   :: KKU           !uppest atmosphere array index
-INTEGER,                 INTENT(IN)   :: KKL           !vert. levels type 1=MNH -1=ARO
-
+TYPE(DIMPHYEX_t),        INTENT(IN)   :: D
+TYPE(CST_t),             INTENT(IN)   :: CST
+TYPE(CSTURB_t),          INTENT(IN)   :: CSTURB
+TYPE(TBUDGETCONF_t),     INTENT(IN)   :: BUCONF
+TYPE(TURB_t),            INTENT(IN)   :: TURBN
+TYPE(TLES_t),            INTENT(INOUT):: TLES
 INTEGER,                 INTENT(IN)   ::  KMI          ! model index number  
-REAL, DIMENSION(:,:,:),  INTENT(IN)   ::  PTKEM        ! TKE at t-deltat
-REAL, DIMENSION(:,:,:),  INTENT(IN)   ::  PLM          ! mixing length         
-REAL, DIMENSION(:,:,:),  INTENT(IN)   ::  PLEPS        ! dissipative length
-REAL, DIMENSION(:,:,:),  INTENT(IN)   ::  PRHODJ       ! density * grid volume
-REAL, DIMENSION(:,:,:),  INTENT(IN)   ::  PDXX,PDYY,PDZZ,PDZX,PDZY
+REAL, DIMENSION(D%NIJT,D%NKT),  INTENT(IN)   ::  PTKEM        ! TKE at t-deltat
+REAL, DIMENSION(D%NIJT,D%NKT),  INTENT(IN)   ::  PLM          ! mixing length         
+REAL, DIMENSION(D%NIJT,D%NKT),  INTENT(IN)   ::  PLEPS        ! dissipative length
+REAL, DIMENSION(D%NIJT,D%NKT),  INTENT(IN)   ::  PRHODJ       ! density * grid volume
+REAL, DIMENSION(D%NIJT,D%NKT),  INTENT(IN)   ::  PDXX,PDYY,PDZZ,PDZX,PDZY
                                                        ! metric coefficients
-REAL, DIMENSION(:,:,:),  INTENT(IN)   ::  PZZ          ! physical height w-pt
+REAL, DIMENSION(D%NIJT,D%NKT),  INTENT(IN)   ::  PZZ          ! physical height w-pt
 REAL,                    INTENT(IN)   ::  PTSTEP       ! Time step 
-REAL,                    INTENT(IN)   ::  PEXPL, PIMPL ! Coef. temporal. disc.
-CHARACTER(len=4),        INTENT(IN)   ::  HTURBDIM     ! dimensionality of the
-                                                       ! turbulence scheme
-CHARACTER(len=4),        INTENT(IN)   ::  HTURBLEN     ! kind of mixing length
+REAL,                    INTENT(IN)   ::  PEXPL        ! Coef. temporal. disc.
+CHARACTER(LEN=6),        INTENT(IN)   ::  HPROGRAM     ! CPROGRAM is the program currently running (modd_conf)
 TYPE(TFILEDATA),         INTENT(IN)   ::  TPFILE       ! Output file
-LOGICAL,                 INTENT(IN)   ::  OTURB_DIAG   ! switch to write some
-                                  ! diagnostic fields in the syncronous FM-file
-REAL, DIMENSION(:,:,:),  INTENT(INOUT)::  PDP          ! Dyn. prod. of TKE
-REAL, DIMENSION(:,:,:),  INTENT(IN)   ::  PTRH
-REAL, DIMENSION(:,:,:),  INTENT(IN)   ::  PTP          ! Ther. prod. of TKE
-REAL, DIMENSION(:,:,:),  INTENT(INOUT)::  PRTKES       ! RHOD * Jacobian *
+LOGICAL,                 INTENT(IN)   ::  ODIAG_IN_RUN ! switch to activate online diagnostics (mesonh)
+LOGICAL,                INTENT(IN)   ::  OOCEAN       ! switch for Ocean model version
+REAL, DIMENSION(D%NIJT,D%NKT),  INTENT(INOUT)::  PDP          ! Dyn. prod. of TKE
+REAL, DIMENSION(D%NIJT,D%NKT),  INTENT(IN)   ::  PTRH
+REAL, DIMENSION(D%NIJT,D%NKT),  INTENT(IN)   ::  PTP          ! Ther. prod. of TKE
+REAL, DIMENSION(D%NIJT,D%NKT),  INTENT(INOUT)::  PRTKES       ! RHOD * Jacobian *
                                                        ! TKE at t+deltat
-REAL, DIMENSION(:,:,:),  INTENT(INOUT)::  PRTHLS       ! Source of Theta_l
-REAL, DIMENSION(:,:,:),  INTENT(IN)   ::  PCOEF_DISS   ! 1/(Cph*Exner)
-REAL, DIMENSION(:,:,:),  INTENT(IN)   ::  PRTKESM      ! Advection source 
-REAL, DIMENSION(:,:,:),  INTENT(OUT)  ::  PTR          ! Transport prod. of TKE
-REAL, DIMENSION(:,:,:),  INTENT(OUT)  ::  PDISS        ! Dissipati prod. of TKE
+REAL, DIMENSION(D%NIJT,D%NKT),  INTENT(INOUT)::  PRTHLS       ! Source of Theta_l
+REAL, DIMENSION(D%NIJT,D%NKT),  INTENT(IN)   ::  PCOEF_DISS   ! 1/(Cph*Exner)
+REAL, DIMENSION(D%NIJT,D%NKT),  INTENT(OUT)  ::  PTDIFF       ! Diffusion TKE term
+REAL, DIMENSION(D%NIJT,D%NKT),  INTENT(OUT)  ::  PTDISS       ! Dissipation TKE term
+REAL, DIMENSION(D%NIJT,D%NKT),  INTENT(IN)  ::  PRTKEMS      ! Advection source
+TYPE(TBUDGETDATA), DIMENSION(KBUDGETS), INTENT(INOUT) :: TBUDGETS
+INTEGER, INTENT(IN) :: KBUDGETS
+REAL, DIMENSION(D%NIJT,D%NKT),  INTENT(OUT), OPTIONAL  ::  PTR          ! Transport prod. of TKE
+REAL, DIMENSION(D%NIJT,D%NKT),  INTENT(OUT), OPTIONAL  ::  PDISS        ! Dissipation of TKE
+REAL, DIMENSION(D%NIJT,D%NKT),  INTENT(OUT), OPTIONAL  ::  PEDR         ! EDR 
+REAL, DIMENSION(D%NIJT,D%NKT),  INTENT(INOUT), OPTIONAL  ::  PCURRENT_TKE_DISS ! if ODIAG_IN_RUN in mesonh
+REAL, DIMENSION(D%NIJT),   INTENT(IN)    :: PSFUM,PSFVM ! momentum sfc flux
 !
 !
 !
 !*       0.2  declaration of local variables
 !
-REAL, DIMENSION(SIZE(PTKEM,1),SIZE(PTKEM,2),SIZE(PTKEM,3))::         &
+REAL, DIMENSION(D%NIJT,D%NKT) ::         &
        ZA,       & ! under diagonal elements of the tri-diagonal matrix involved
                    ! in the temporal implicit scheme
        ZRES,     & ! treated variable at t+ deltat when the turbu-
@@ -245,17 +209,20 @@ REAL, DIMENSION(SIZE(PTKEM,1),SIZE(PTKEM,2),SIZE(PTKEM,3))::         &
                    ! temporarily store some diagnostics stored in FM file
        ZFLX,     & ! horizontal or vertical flux of the treated variable
        ZSOURCE,  & ! source of evolution for the treated variable
-       ZKEFF       ! effectif diffusion coeff = LT * SQRT( TKE )
-!LOGICAL,DIMENSION(SIZE(PTKEM,1),SIZE(PTKEM,2),SIZE(PTKEM,3)) :: GTKENEG
-!                   ! 3D mask .T. if TKE < XTKEMIN
-INTEGER             :: IIB,IIE,IJB,IJE,IKB,IKE
-                                    ! Index values for the Beginning and End
-                                    ! mass points of the domain 
-INTEGER             :: IIU,IJU,IKU  ! array size in the 3 dimensions 
+       ZKEFF,    & ! effectif diffusion coeff = LT * SQRT( TKE )
+       ZTR,      & ! Transport term
+       ZMWORK1,ZMWORK2,& ! working var. for MZM/MZF operators (array syntax)
+       ZDWORK1,ZDWORK2   ! working var. for DZM/DZF operators (array syntax)
+
+LOGICAL,DIMENSION(D%NIJT,D%NKT) :: GTKENEG
+                   ! 3D mask .T. if TKE < CSTURB%XTKEMIN
+INTEGER             :: IIJB,IIJE,IKB,IKE,IKT,IKA,IKL  ! Index value for the mass points of the domain 
 !
 TYPE(LIST_ll), POINTER :: TZFIELDDISS_ll ! list of fields to exchange
 INTEGER                :: IINFO_ll       ! return code of parallel routine
 TYPE(TFIELDDATA) :: TZFIELD
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+INTEGER :: JIJ,JK
 !
 !----------------------------------------------------------------------------
 NULLIFY(TZFIELDDISS_ll)
@@ -263,17 +230,21 @@ NULLIFY(TZFIELDDISS_ll)
 !*       1.   PRELIMINARY COMPUTATIONS
 !             ------------------------
 !
-CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
-IIU=SIZE(PTKEM,1)
-IJU=SIZE(PTKEM,2)
-IKB=KKA+JPVEXT_TURB*KKL
-IKE=KKU-JPVEXT_TURB*KKL
+IF (LHOOK) CALL DR_HOOK('TKE_EPS_SOURCES',0,ZHOOK_HANDLE)
+!
+IKB=D%NKB
+IKE=D%NKE
+IIJB=D%NIJB
+IIJE=D%NIJE
+IKT=D%NKT
+IKA=D%NKA
+IKL=D%NKL
 !
 ! compute the effective diffusion coefficient at the mass point
-ZKEFF(:,:,:) = PLM(:,:,:) * SQRT(PTKEM(:,:,:)) 
-
-if (lbudget_th)  call Budget_store_init( tbudgets(NBUDGET_TH),  'DISSH', prthls(:, :, :) )
-
+!$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
+ZKEFF(IIJB:IIJE,1:IKT) = PLM(IIJB:IIJE,1:IKT) * SQRT(PTKEM(IIJB:IIJE,1:IKT))
+!$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
+!
 !----------------------------------------------------------------------------
 !
 !*       2.   TKE EQUATION  
@@ -284,134 +255,224 @@ if (lbudget_th)  call Budget_store_init( tbudgets(NBUDGET_TH),  'DISSH', prthls(
 !
 ! Complete the sources of TKE with the horizontal turbulent explicit transport
 !
-IF (HTURBDIM=='3DIM') THEN
-  PTR=PTRH
+IF (TURBN%CTURBDIM=='3DIM') THEN
+  ZTR(IIJB:IIJE,1:IKT)=PTRH(IIJB:IIJE,1:IKT)
 ELSE
-  PTR=0.
+  ZTR(IIJB:IIJE,1:IKT)=0.
 END IF
-!
 !
 !
 !*       2.2  Explicit TKE sources except horizontal turbulent transport 
 !
-!
 ! extrapolate the dynamic production with a 1/Z law from its value at the 
-! W(IKB+1) value stored in PDP(IKB) to the mass localization tke(IKB)
-PDP(:,:,IKB) = PDP(:,:,IKB) * (1. + PDZZ(:,:,IKB+KKL)/PDZZ(:,:,IKB))
+IF (OOCEAN) THEN
+  ! W(IKE) value stored in PDP(IKE) to the mass localization of tke(IKE)
+  !$mnh_expand_array(JIJ=IIJB:IIJE)  
+  PDP(IIJB:IIJE,IKE) = PDP(IIJB:IIJE,IKE) * (1. + PDZZ(IIJB:IIJE,IKE)/PDZZ(IIJB:IIJE,IKE+1))
+  !$mnh_end_expand_array(JIJ=IIJB:IIJE)  
+ELSE
+  ! W(IKB+1) value stored in PDP(IKB) to the mass localization tke(IKB)
+  !$mnh_expand_array(JIJ=IIJB:IIJE)
+  PDP(IIJB:IIJE,IKB) = PDP(IIJB:IIJE,IKB) * (1. + PDZZ(IIJB:IIJE,IKB+IKL)/PDZZ(IIJB:IIJE,IKB))
+  !$mnh_end_expand_array(JIJ=IIJB:IIJE)
+END IF
 !
 ! Compute the source terms for TKE: ( ADVECtion + NUMerical DIFFusion + ..)
 ! + (Dynamical Production) + (Thermal Production) - (dissipation) 
-ZFLX(:,:,:) = XCED * SQRT(PTKEM(:,:,:)) / PLEPS(:,:,:)
-ZSOURCE(:,:,:) = ( PRTKES(:,:,:) +  PRTKESM(:,:,:) ) / PRHODJ(:,:,:) &
-   - PTKEM(:,:,:) / PTSTEP &
-   + PDP(:,:,:) + PTP(:,:,:) + PTR(:,:,:) - PEXPL * ZFLX(:,:,:) * PTKEM(:,:,:)
+!
+CALL MZM_PHY(D,ZKEFF,ZMWORK1)
+CALL MZM_PHY(D,PRHODJ,ZMWORK2)
+!
+!$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
+ZFLX(IIJB:IIJE,1:IKT) = CSTURB%XCED * SQRT(PTKEM(IIJB:IIJE,1:IKT)) / PLEPS(IIJB:IIJE,1:IKT)
+ZSOURCE(IIJB:IIJE,1:IKT) = ( PRTKES(IIJB:IIJE,1:IKT) +  PRTKEMS(IIJB:IIJE,1:IKT) ) &
+                                     / PRHODJ(IIJB:IIJE,1:IKT) - PTKEM(IIJB:IIJE,1:IKT) / PTSTEP &
+   + PDP(IIJB:IIJE,1:IKT) + PTP(IIJB:IIJE,1:IKT) + ZTR(IIJB:IIJE,1:IKT) & 
+   - PEXPL * ZFLX(IIJB:IIJE,1:IKT) * PTKEM(IIJB:IIJE,1:IKT)
+!$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
 !
 !*       2.2  implicit vertical TKE transport
 !
 !
+! To add here in ZSOURCE surface flux of TKE 
+!(assumed to be 0 for ATM, 
+IF (OOCEAN) THEN
+  !for ocean:wave breaking  simple/very rough param wE = 100 Ustar**3 where ustar is the Tau_atmi/rhocea  
+  !$mnh_expand_array(JIJ=IIJB:IIJE)
+  ZSOURCE (IIJB:IIJE,IKE)=ZSOURCE(IIJB:IIJE,IKE)-1.E2*((PSFUM(IIJB:IIJE)**2 + PSFVM(IIJB:IIJE)**2)**1.5) /PDZZ(IIJB:IIJE,IKE)
+  !$mnh_end_expand_array(JIJ=IIJB:IIJE)  
+END IF
 ! Compute the vector giving the elements just under the diagonal for the 
 ! matrix inverted in TRIDIAG 
 !
-ZA(:,:,:)     = - PTSTEP * XCET * &
-                MZM(ZKEFF) * MZM(PRHODJ) / PDZZ**2
+!$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
+ZA(IIJB:IIJE,1:IKT)     = - PTSTEP * CSTURB%XCET * ZMWORK1(IIJB:IIJE,1:IKT) & 
+                                    * ZMWORK2(IIJB:IIJE,1:IKT) / PDZZ(IIJB:IIJE,1:IKT)**2
+!$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
 !
 ! Compute TKE at time t+deltat: ( stored in ZRES )
 !
-CALL TRIDIAG_TKE(KKA,KKU,KKL,PTKEM,ZA,PTSTEP,PEXPL,PIMPL,PRHODJ,&
-            & ZSOURCE,PTSTEP*ZFLX,ZRES)
-CALL GET_HALO(ZRES)
+CALL TRIDIAG_TKE(D,PTKEM,ZA,PTSTEP,PEXPL,TURBN%XIMPL,PRHODJ,ZSOURCE,PTSTEP*ZFLX,ZRES)
+CALL GET_HALO_PHY(D,ZRES)
 !
 !* diagnose the dissipation
 !
-IF (LDIAG_IN_RUN) THEN
-  XCURRENT_TKE_DISS = ZFLX(:,:,:) * PTKEM(:,:,:) &
-                                  *(PEXPL*PTKEM(:,:,:) + PIMPL*ZRES(:,:,:))
-  CALL ADD3DFIELD_ll( TZFIELDDISS_ll, XCURRENT_TKE_DISS, 'TKE_EPS_SOURCES::XCURRENT_TKE_DISS' )
+IF (ODIAG_IN_RUN) THEN
+  !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
+  PCURRENT_TKE_DISS(IIJB:IIJE,1:IKT) = ZFLX(IIJB:IIJE,1:IKT) * PTKEM(IIJB:IIJE,1:IKT) &
+                                  *(PEXPL*PTKEM(IIJB:IIJE,1:IKT) + TURBN%XIMPL*ZRES(IIJB:IIJE,1:IKT))
+  !$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
+!
+  CALL ADD2DFIELD_ll(TZFIELDDISS_ll, PCURRENT_TKE_DISS, 'TKE_EPS_SOURCES::PCURRENT_TKE_DISS' )
   CALL UPDATE_HALO_ll(TZFIELDDISS_ll,IINFO_ll)
   CALL CLEANLIST_ll(TZFIELDDISS_ll)
 ENDIF
 !
 ! TKE must be greater than its minimum value
+! CL : Now done at the end of the time step in ADVECTION_METSV for MesoNH
+IF(HPROGRAM/='MESONH') THEN
+ !$mnh_expand_where(JIJ=IIJB:IIJE,JK=1:IKT)
+ GTKENEG(IIJB:IIJE,1:IKT) =  ZRES(IIJB:IIJE,1:IKT) <= CSTURB%XTKEMIN
+ WHERE ( GTKENEG(IIJB:IIJE,1:IKT) ) 
+   ZRES(IIJB:IIJE,1:IKT) = CSTURB%XTKEMIN
+ END WHERE
+ !$mnh_end_expand_where(JIJ=IIJB:IIJE,JK=1:IKT)
+END IF
 !
-! CL : Now done at the end of the time step in ADVECTION_METSV
-!GTKENEG =  ZRES <= XTKEMIN 
-!WHERE ( GTKENEG ) 
-!  ZRES = XTKEMIN
-!END WHERE
+!$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
+PTDISS(IIJB:IIJE,1:IKT) = - ZFLX(IIJB:IIJE,1:IKT)*(PEXPL*PTKEM(IIJB:IIJE,1:IKT) &
+                                      + TURBN%XIMPL*ZRES(IIJB:IIJE,1:IKT))
+!$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
 !
-IF ( LLES_CALL .OR.                         &
-     (OTURB_DIAG .AND. tpfile%lopened)  ) THEN
+IF ( TLES%LLES_CALL .OR.                         &
+     (TURBN%LTURB_DIAG .AND. TPFILE%LOPENED)  ) THEN
 !
 ! Compute the cartesian vertical flux of TKE in ZFLX
 !
-
-  ZFLX(:,:,:)   = - XCET * MZM(ZKEFF) *   &
-                  DZM(PIMPL * ZRES + PEXPL * PTKEM ) / PDZZ
+  CALL MZM_PHY(D,ZKEFF,ZMWORK1)
+  !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
+  ZDWORK1(IIJB:IIJE,1:IKT) = TURBN%XIMPL * ZRES(IIJB:IIJE,1:IKT) + PEXPL * PTKEM(IIJB:IIJE,1:IKT)
+  !$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
+  CALL DZM_PHY(D,ZDWORK1,ZDWORK2)
+  !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
+  ZFLX(IIJB:IIJE,1:IKT)  = - CSTURB%XCET * ZMWORK1(IIJB:IIJE,1:IKT) &
+                                     * ZDWORK2(IIJB:IIJE,1:IKT) / PDZZ(IIJB:IIJE,1:IKT)
+  !$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
 !
-  ZFLX(:,:,IKB) = 0.
-  ZFLX(:,:,KKA) = 0.
+  ZFLX(IIJB:IIJE,IKB) = 0.
+  ZFLX(IIJB:IIJE,IKA) = 0.
 !
 ! Compute the whole turbulent TRansport of TKE:
 !
-  PTR(:,:,:)= PTR - DZF( MZM(PRHODJ) * ZFLX / PDZZ ) /PRHODJ
+  CALL MZM_PHY(D,PRHODJ,ZMWORK1)
+  !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
+  ZMWORK2(IIJB:IIJE,1:IKT) = ZMWORK1(IIJB:IIJE,1:IKT) * ZFLX(IIJB:IIJE,1:IKT) &
+                                       / PDZZ(IIJB:IIJE,1:IKT)
+  !$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
+  CALL DZF_PHY(D,ZMWORK2,ZDWORK1)
+  !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
+  ZTR(IIJB:IIJE,1:IKT)= ZTR(IIJB:IIJE,1:IKT) - ZDWORK1(IIJB:IIJE,1:IKT) &
+                                  /PRHODJ(IIJB:IIJE,1:IKT)
+  !$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
 !
 ! Storage in the LES configuration
 !
-  IF (LLES_CALL) THEN
-    CALL LES_MEAN_SUBGRID( MZF(ZFLX), X_LES_SUBGRID_WTke )
-    CALL LES_MEAN_SUBGRID( -PTR, X_LES_SUBGRID_ddz_WTke )
+  IF (TLES%LLES_CALL) THEN
+    CALL MZF_PHY(D,ZFLX,ZMWORK1)
+    CALL LES_MEAN_SUBGRID_PHY(D,TLES,ZMWORK1, TLES%X_LES_SUBGRID_WTke )
+    CALL LES_MEAN_SUBGRID_PHY(D,TLES, -ZTR, TLES%X_LES_SUBGRID_ddz_WTke )
   END IF
 !
 END IF
 !
 !*       2.4  stores the explicit sources for budget purposes
 !
-if (lbudget_tke) then
+IF (BUCONF%LBUDGET_TKE) THEN
   ! Dynamical production
-  call Budget_store_add( tbudgets(NBUDGET_TKE), 'DP', pdp(:, :, :) * prhodj(:, :, :) )
+  !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
+  ZMWORK1(IIJB:IIJE,1:IKT) = PDP(IIJB:IIJE,1:IKT) * PRHODJ(IIJB:IIJE,1:IKT)
+  !$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
+  CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_TKE), 'DP', ZMWORK1)
+  !
   ! Thermal production
-  call Budget_store_add( tbudgets(NBUDGET_TKE), 'TP', ptp(:, :, :) * prhodj(:, :, :) )
+  !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
+  ZMWORK1(IIJB:IIJE,1:IKT) = PTP(IIJB:IIJE,1:IKT) * PRHODJ(IIJB:IIJE,1:IKT)
+  !$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
+  CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_TKE), 'TP', ZMWORK1)
+  !
   ! Dissipation
-  call Budget_store_add( tbudgets(NBUDGET_TKE), 'DISS', -xced * sqrt( ptkem(:, :, :) ) / pleps(:, :, :) &
-                         * ( pexpl * ptkem(:, :, :) + pimpl * zres(:, :, :) ) * prhodj(:, :, :) )
-end if
+  !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
+  ZMWORK1(IIJB:IIJE,1:IKT) = -CSTURB%XCED * SQRT(PTKEM(IIJB:IIJE,1:IKT))/PLEPS(IIJB:IIJE,1:IKT) * &
+                (PEXPL*PTKEM(IIJB:IIJE,1:IKT) + TURBN%XIMPL*ZRES(IIJB:IIJE,1:IKT))*PRHODJ(IIJB:IIJE,1:IKT)
+  !$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT) 
+  CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_TKE), 'DISS',ZMWORK1)
+END IF 
 !
 !*       2.5  computes the final RTKE and stores the whole turbulent transport
-!              with the removal of the advection part 
+!              with the removal of the advection part for MesoNH
 
-if (lbudget_tke) then
-  !Store the previous source terms in prtkes before initializing the next one
-  PRTKES(:,:,:) = PRTKES(:,:,:) + PRHODJ(:,:,:) *                                                           &
-                  ( PDP(:,:,:) + PTP(:,:,:)                                                                 &
-                    - XCED * SQRT(PTKEM(:,:,:)) / PLEPS(:,:,:) * ( PEXPL*PTKEM(:,:,:) + PIMPL*ZRES(:,:,:) ) )
-
-  call Budget_store_init( tbudgets(NBUDGET_TKE), 'TR', prtkes(:, :, :) )
-end if
-
-PRTKES(:,:,:) = ZRES(:,:,:) * PRHODJ(:,:,:) / PTSTEP -  PRTKESM(:,:,:)
+!Should be in IF LBUDGET_TKE only. Was removed out for a correct comput. of PTDIFF in case of LBUDGET_TKE=F in AROME
+!$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
+#ifdef REPRO48
+IF (BUCONF%LBUDGET_TKE) THEN
+PRTKES(IIJB:IIJE,1:IKT) = PRTKES(IIJB:IIJE,1:IKT) + PDP(IIJB:IIJE,1:IKT) * PRHODJ(IIJB:IIJE,1:IKT)
+PRTKES(IIJB:IIJE,1:IKT) = PRTKES(IIJB:IIJE,1:IKT) + PTP(IIJB:IIJE,1:IKT) * PRHODJ(IIJB:IIJE,1:IKT)
+PRTKES(IIJB:IIJE,1:IKT) = PRTKES(IIJB:IIJE,1:IKT) - CSTURB%XCED * SQRT(PTKEM(IIJB:IIJE,1:IKT)) / PLEPS(IIJB:IIJE,1:IKT) * &
+                (PEXPL*PTKEM(IIJB:IIJE,1:IKT) + TURBN%XIMPL*ZRES(IIJB:IIJE,1:IKT)) * PRHODJ(IIJB:IIJE,1:IKT)
+END IF
+#else
+PRTKES(IIJB:IIJE,1:IKT) = PRTKES(IIJB:IIJE,1:IKT) + PRHODJ(IIJB:IIJE,1:IKT) * &
+                ( PDP(IIJB:IIJE,1:IKT) + PTP(IIJB:IIJE,1:IKT)                           &
+                  - CSTURB%XCED * SQRT(PTKEM(IIJB:IIJE,1:IKT)) / PLEPS(IIJB:IIJE,1:IKT) &
+                  * ( PEXPL*PTKEM(IIJB:IIJE,1:IKT) + TURBN%XIMPL*ZRES(IIJB:IIJE,1:IKT) ) )
+#endif
+!
+PTDIFF(IIJB:IIJE,1:IKT) =  ZRES(IIJB:IIJE,1:IKT) / PTSTEP - PRTKES(IIJB:IIJE,1:IKT)&
+                                     /PRHODJ(IIJB:IIJE,1:IKT) &
+                           & - PDP(IIJB:IIJE,1:IKT)- PTP(IIJB:IIJE,1:IKT) - PTDISS(IIJB:IIJE,1:IKT)
+!$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
+!
+IF (BUCONF%LBUDGET_TKE) CALL BUDGET_STORE_INIT_PHY(D, TBUDGETS(NBUDGET_TKE), 'TR', PRTKES)
+!
+!$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
+PRTKES(IIJB:IIJE,1:IKT) = ZRES(IIJB:IIJE,1:IKT) * PRHODJ(IIJB:IIJE,1:IKT) / PTSTEP &
+                                    -  PRTKEMS(IIJB:IIJE,1:IKT)
+!$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
 !
 ! stores the whole turbulent transport
 !
-if (lbudget_tke) call Budget_store_end( tbudgets(NBUDGET_TKE), 'TR', prtkes(:, :, :) )
-
+IF (BUCONF%LBUDGET_TKE) CALL BUDGET_STORE_END_PHY(D, TBUDGETS(NBUDGET_TKE), 'TR', PRTKES)
+!
 !----------------------------------------------------------------------------
 !
 !*       3.   COMPUTE THE DISSIPATIVE HEATING
 !             -------------------------------
 !
-PRTHLS(:,:,:) = PRTHLS(:,:,:) + XCED * SQRT(PTKEM(:,:,:)) / PLEPS(:,:,:) * &
-                (PEXPL*PTKEM(:,:,:) + PIMPL*ZRES(:,:,:)) * PRHODJ(:,:,:) * PCOEF_DISS(:,:,:)
-
-if (lbudget_th) call Budget_store_end( tbudgets(NBUDGET_TH), 'DISSH', prthls(:, :, :) )
-
+!$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
+PRTHLS(IIJB:IIJE,1:IKT) = PRTHLS(IIJB:IIJE,1:IKT) + &
+                                    CSTURB%XCED * SQRT(PTKEM(IIJB:IIJE,1:IKT)) / PLEPS(IIJB:IIJE,1:IKT) * &
+                (PEXPL*PTKEM(IIJB:IIJE,1:IKT) + TURBN%XIMPL*ZRES(IIJB:IIJE,1:IKT)) &
+                * PRHODJ(IIJB:IIJE,1:IKT) * PCOEF_DISS(IIJB:IIJE,1:IKT)
+!$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
 !----------------------------------------------------------------------------
 !
 !*       4.   STORES SOME DIAGNOSTICS
 !             -----------------------
 !
-PDISS(:,:,:) =  -XCED * (PTKEM(:,:,:)**1.5) / PLEPS(:,:,:)
+IF(PRESENT(PTR)) PTR=ZTR
+IF(PRESENT(PDISS)) THEN
+  !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
+  PDISS(IIJB:IIJE,1:IKT) =  -CSTURB%XCED * (PTKEM(IIJB:IIJE,1:IKT)**1.5) / PLEPS(IIJB:IIJE,1:IKT)
+  !$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
+END IF
 !
-IF ( OTURB_DIAG .AND. tpfile%lopened ) THEN
+IF(PRESENT(PEDR)) THEN
+  !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
+  PEDR(IIJB:IIJE,1:IKT) = CSTURB%XCED * (PTKEM(IIJB:IIJE,1:IKT)**1.5) / PLEPS(IIJB:IIJE,1:IKT)
+  !$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
+END IF
+!
+IF ( TURBN%LTURB_DIAG .AND. TPFILE%LOPENED ) THEN
 !
 ! stores the dynamic production 
 !
@@ -425,7 +486,7 @@ IF ( OTURB_DIAG .AND. tpfile%lopened ) THEN
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
   TZFIELD%LTIMEDEP   = .TRUE.
-  CALL IO_Field_write(TPFILE,TZFIELD,PDP)
+  CALL IO_FIELD_WRITE_PHY(D,TPFILE,TZFIELD,PDP)
 !
 ! stores the thermal production 
 !
@@ -439,7 +500,7 @@ IF ( OTURB_DIAG .AND. tpfile%lopened ) THEN
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
   TZFIELD%LTIMEDEP   = .TRUE.
-  CALL IO_Field_write(TPFILE,TZFIELD,PTP)
+  CALL IO_FIELD_WRITE_PHY(D,TPFILE,TZFIELD,PTP)
 !
 ! stores the whole turbulent transport
 !
@@ -453,7 +514,7 @@ IF ( OTURB_DIAG .AND. tpfile%lopened ) THEN
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
   TZFIELD%LTIMEDEP   = .TRUE.
-  CALL IO_Field_write(TPFILE,TZFIELD,PTR)
+  CALL IO_FIELD_WRITE_PHY(D,TPFILE,TZFIELD,ZTR)
 !
 ! stores the dissipation of TKE 
 !
@@ -467,19 +528,18 @@ IF ( OTURB_DIAG .AND. tpfile%lopened ) THEN
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
   TZFIELD%LTIMEDEP   = .TRUE.
-  CALL IO_Field_write(TPFILE,TZFIELD,PDISS)
+  CALL IO_FIELD_WRITE_PHY(D,TPFILE,TZFIELD,PDISS)
 END IF
 !
 ! Storage in the LES configuration of the Dynamic Production of TKE and
 ! the dissipation of TKE 
 ! 
-IF (LLES_CALL ) THEN
-  CALL LES_MEAN_SUBGRID( PDISS, X_LES_SUBGRID_DISS_Tke )
+IF (TLES%LLES_CALL ) THEN
+  CALL LES_MEAN_SUBGRID_PHY(D,TLES, PDISS, TLES%X_LES_SUBGRID_DISS_Tke )
 END IF
 !
 !----------------------------------------------------------------------------
-! 
 !
-!----------------------------------------------------------------------------
-!
+IF (LHOOK) CALL DR_HOOK('TKE_EPS_SOURCES',1,ZHOOK_HANDLE)
 END SUBROUTINE TKE_EPS_SOURCES
+END MODULE MODE_TKE_EPS_SOURCES

@@ -36,8 +36,21 @@
 !
 IMPLICIT NONE
 !
-REAL,SAVE          :: XTMINMIX   ! minimum temperature of mixed phase
-REAL,SAVE          :: XTMAXMIX   ! maximum temperature of mixed phase
+TYPE NEB_t
+  REAL          :: XTMINMIX   ! minimum temperature of mixed phase
+  REAL          :: XTMAXMIX   ! maximum temperature of mixed phase
+END TYPE NEB_t
+
+TYPE(NEB_t), SAVE, TARGET :: NEB
+
+REAL, POINTER :: XTMINMIX=>NULL(), &
+                 XTMAXMIX=>NULL()
 !
+CONTAINS
+SUBROUTINE NEB_ASSOCIATE()
+  IMPLICIT NONE
+  XTMINMIX => NEB%XTMINMIX
+  XTMAXMIX => NEB%XTMAXMIX
+END SUBROUTINE NEB_ASSOCIATE
 !
 END MODULE MODD_NEB

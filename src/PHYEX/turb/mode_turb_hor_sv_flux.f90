@@ -3,64 +3,13 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-!    ############################
-     MODULE MODI_TURB_HOR_SV_FLUX
-!    ############################
-!
-INTERFACE  
-!
-      SUBROUTINE TURB_HOR_SV_FLUX(KSPLT,                             &
-                      OTURB_FLX,                                     &
-                      TPFILE,                                        &
+MODULE MODE_TURB_HOR_SV_FLUX
+IMPLICIT NONE
+CONTAINS
+      SUBROUTINE TURB_HOR_SV_FLUX(TURBN,TLES,KSPLT,OBLOWSNOW,OFLAT,  &
+                      TPFILE,KSV_LGBEG,KSV_LGEND,O2D,ONOMIXLG,       &
                       PK,PINV_PDXX,PINV_PDYY,PINV_PDZZ,PMZM_PRHODJ,  &
-                      PDXX,PDYY,PDZZ,PDZX,PDZY,                      &
-                      PDIRCOSXW,PDIRCOSYW,                           &
-                      PRHODJ,PWM,                                    &
-                      PSFSVM,                                        &
-                      PSVM,                                          &
-                      PRSVS                                          )
-!
-USE MODD_IO, ONLY: TFILEDATA
-!
-INTEGER,                  INTENT(IN)    ::  KSPLT        ! split process index
-LOGICAL,                  INTENT(IN)    ::  OTURB_FLX    ! switch to write the
-                                 ! turbulent fluxes in the syncronous FM-file
-TYPE(TFILEDATA),          INTENT(IN)    ::  TPFILE       ! Output file
-!
-REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PK          ! Turbulent diffusion doef.
-                                                        ! PK = PLM * SQRT(PTKEM)
-REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PINV_PDXX   ! 1./PDXX
-REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PINV_PDYY   ! 1./PDYY
-REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PINV_PDZZ   ! 1./PDZZ
-REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PMZM_PRHODJ ! MZM(PRHODJ)
-REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PDXX, PDYY, PDZZ, PDZX, PDZY 
-                                                         ! Metric coefficients
-REAL, DIMENSION(:,:),     INTENT(IN)    ::  PDIRCOSXW, PDIRCOSYW
-! Director Cosinus along x and y directions at surface w-point
-REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PRHODJ       ! density * grid volume
-REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PWM          ! vertical wind
-!
-REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PSFSVM       ! surface fluxes
-!
-!
-! Variables at t-1
-REAL, DIMENSION(:,:,:,:), INTENT(IN)    ::  PSVM         ! scalar var. at t-1
-!
-REAL, DIMENSION(:,:,:,:), INTENT(INOUT) ::  PRSVS        ! var. at t+1 -split-
-!
-!
-!
-END SUBROUTINE TURB_HOR_SV_FLUX
-!
-END INTERFACE
-!
-END MODULE MODI_TURB_HOR_SV_FLUX
-!     ################################################################
-      SUBROUTINE TURB_HOR_SV_FLUX(KSPLT,                             &
-                      OTURB_FLX,                                     &
-                      TPFILE,                                        &
-                      PK,PINV_PDXX,PINV_PDYY,PINV_PDZZ,PMZM_PRHODJ,  &
-                      PDXX,PDYY,PDZZ,PDZX,PDZY,                      &
+                      PDXX,PDYY,PDZZ,PDZX,PDZY,PRSNOW,               &
                       PDIRCOSXW,PDIRCOSYW,                           &
                       PRHODJ,PWM,                                    &
                       PSFSVM,                                        &
@@ -98,7 +47,7 @@ END MODULE MODI_TURB_HOR_SV_FLUX
 !!    -------------
 !!                     Aug    , 1997 (V. Saravane) spliting of TURB_HOR
 !!                     Nov  27, 1997 (V. Masson) clearing of the routine
-!!                     Oct  18, 2000 (V. Masson) LES computations + LFLAT swith
+!!                     Oct  18, 2000 (V. Masson) LES computations + OFLAT swith
 !!                                              + bug on Y scalar flux
 !!                     Jun  20, 2001 (J Stein) case of lagragian variables
 !!                     Nov  06, 2002 (V. Masson) LES budgets
@@ -110,24 +59,23 @@ END MODULE MODI_TURB_HOR_SV_FLUX
 !*      0. DECLARATIONS
 !          ------------
 !
+USE MODD_TURB_n, ONLY: TURB_t
+!
 USE MODD_CST
-USE MODD_CONF
 USE MODD_CTURB
-use modd_field,          only: tfielddata, TYPEREAL
+USE MODD_FIELD,          ONLY: TFIELDDATA, TYPEREAL
 USE MODD_IO,             ONLY: TFILEDATA
 USE MODD_PARAMETERS
-USE MODD_NSV,            ONLY: NSV_LGBEG, NSV_LGEND
-USE MODD_LES
-USE MODD_BLOWSNOW
+USE MODD_LES, ONLY: TLES_t
 !
-USE MODE_IO_FIELD_WRITE, only: IO_Field_write
+USE MODE_IO_FIELD_WRITE, ONLY: IO_FIELD_WRITE
 !
 USE MODI_GRADIENT_M
 USE MODI_GRADIENT_U
 USE MODI_GRADIENT_V
 USE MODI_GRADIENT_W
 USE MODI_SHUMAN 
-USE MODI_COEFJ
+USE MODE_COEFJ, ONLY: COEFJ
 USE MODI_LES_MEAN_SUBGRID
 !
 USE MODI_SECOND_MNH
@@ -139,13 +87,19 @@ IMPLICIT NONE
 !
 !
 !
+TYPE(TURB_t),             INTENT(IN)    :: TURBN
+TYPE(TLES_t),             INTENT(INOUT) :: TLES          ! modd_les structure
 INTEGER,                  INTENT(IN)    ::  KSPLT        ! split process index
-LOGICAL,                  INTENT(IN)    ::  OTURB_FLX    ! switch to write the
-                                 ! turbulent fluxes in the syncronous FM-file
 TYPE(TFILEDATA),          INTENT(IN)    ::  TPFILE       ! Output file
+INTEGER,                  INTENT(IN)    ::  KSV_LGBEG,KSV_LGEND ! number of sv var.
+LOGICAL,                  INTENT(IN)    ::  OFLAT        ! Logical for zero ororography
+LOGICAL,                  INTENT(IN)    ::  ONOMIXLG     ! to use turbulence for lagrangian variables (modd_conf)
+LOGICAL,                  INTENT(IN)    ::  O2D          ! Logical for 2D model version (modd_conf)
+LOGICAL,                  INTENT(IN)    ::  OBLOWSNOW    ! switch to activate pronostic blowing snow
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PK          ! Turbulent diffusion doef.
                                                         ! PK = PLM * SQRT(PTKEM)
+REAL,                     INTENT(IN)    ::  PRSNOW       ! Ratio for diffusion coeff. scalar (blowing snow)
 REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PINV_PDXX   ! 1./PDXX
 REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PINV_PDYY   ! 1./PDYY
 REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PINV_PDZZ   ! 1./PDZZ
@@ -199,9 +153,9 @@ IKU = SIZE(PSVM,3)
 !
 ISV = SIZE(PSVM,4)
 !
-IF(LBLOWSNOW) THEN
+IF(OBLOWSNOW) THEN
 ! See Vionnet (PhD, 2012) for a complete discussion around the value of the Schmidt number for blowing snow variables              
-   ZCSV= XCHF/XRSNOW
+   ZCSV= XCHF/PRSNOW
 ELSE
    ZCSV= XCHF
 ENDIF
@@ -222,7 +176,7 @@ ZCOEFF(:,:,IKB)= - (PDZZ(:,:,IKB+2)+2.*PDZZ(:,:,IKB+1)) /      &
 !
 DO JSV=1,ISV
 !
-  IF (LNOMIXLG .AND. JSV >= NSV_LGBEG .AND. JSV<= NSV_LGEND) CYCLE
+  IF (ONOMIXLG .AND. JSV >= KSV_LGBEG .AND. JSV<= KSV_LGEND) CYCLE
 !
 !       15.1   <U' SVth'>
 !              ----------
@@ -247,7 +201,7 @@ DO JSV=1,ISV
   ZFLXX(:,:,IKB-1:IKB-1) = 2. * MXM( ZWORK2D(:,:,1:1) ) - ZFLXX(:,:,IKB:IKB)
   !
   ! stores  <U SVth>
-  IF ( tpfile%lopened .AND. OTURB_FLX ) THEN
+  IF ( TPFILE%LOPENED .AND. TURBN%LTURB_FLX ) THEN
     WRITE(TZFIELD%CMNHNAME,'("USV_FLX_",I3.3)') JSV
     TZFIELD%CSTDNAME   = ''
     TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
@@ -258,24 +212,24 @@ DO JSV=1,ISV
     TZFIELD%NTYPE      = TYPEREAL
     TZFIELD%NDIMS      = 3
     TZFIELD%LTIMEDEP   = .TRUE.
-    CALL IO_Field_write(TPFILE,TZFIELD,ZFLXX)
+    CALL IO_FIELD_WRITE(TPFILE,TZFIELD,ZFLXX)
   END IF
 !
-  IF (LLES_CALL .AND. KSPLT==1) THEN
+  IF (TLES%LLES_CALL .AND. KSPLT==1) THEN
     CALL SECOND_MNH(ZTIME1)
-    CALL LES_MEAN_SUBGRID( MXF(ZFLXX), X_LES_SUBGRID_USv(:,:,:,JSV) ) 
+    CALL LES_MEAN_SUBGRID( MXF(ZFLXX), TLES%X_LES_SUBGRID_USv(:,:,:,JSV) ) 
     CALL LES_MEAN_SUBGRID( MZF(MXF(GX_W_UW(PWM,PDXX,PDZZ,PDZX)*MZM(ZFLXX))), &
-                           X_LES_RES_ddxa_W_SBG_UaSv(:,:,:,JSV) , .TRUE. )
+                           TLES%X_LES_RES_ddxa_W_SBG_UaSv(:,:,:,JSV) , .TRUE. )
     CALL LES_MEAN_SUBGRID( GX_M_M(PSVM(:,:,:,JSV),PDXX,PDZZ,PDZX)*MXF(ZFLXX), &
-                           X_LES_RES_ddxa_Sv_SBG_UaSv(:,:,:,JSV), .TRUE. )
+                           TLES%X_LES_RES_ddxa_Sv_SBG_UaSv(:,:,:,JSV), .TRUE. )
     CALL SECOND_MNH(ZTIME2)
-    XTIME_LES = XTIME_LES + ZTIME2 - ZTIME1
+    TLES%XTIME_LES = TLES%XTIME_LES + ZTIME2 - ZTIME1
   END IF
 !
 !       15.2   <V' SVth'>
 !              ----------
 !
-  IF (.NOT. L2D) THEN
+  IF (.NOT. O2D) THEN
 !
 ! Computes the flux in the Y direction
     ZFLXY(:,:,:)=-ZCSV * MYM(PK) * GY_M_V(1,IKU,1,PSVM(:,:,:,JSV),PDYY,PDZZ,PDZY)
@@ -298,7 +252,7 @@ DO JSV=1,ISV
     ZFLXY(:,:,IKB-1:IKB-1) = 2. * MYM( ZWORK2D(:,:,1:1) ) - ZFLXY(:,:,IKB:IKB)
   !
   ! stores  <V SVth>
-    IF ( tpfile%lopened .AND. OTURB_FLX ) THEN
+    IF ( TPFILE%LOPENED .AND. TURBN%LTURB_FLX ) THEN
       WRITE(TZFIELD%CMNHNAME,'("VSV_FLX_",I3.3)') JSV
       TZFIELD%CSTDNAME   = ''
       TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
@@ -309,30 +263,30 @@ DO JSV=1,ISV
       TZFIELD%NTYPE      = TYPEREAL
       TZFIELD%NDIMS      = 3
       TZFIELD%LTIMEDEP   = .TRUE.
-      CALL IO_Field_write(TPFILE,TZFIELD,ZFLXY)
+      CALL IO_FIELD_WRITE(TPFILE,TZFIELD,ZFLXY)
     END IF
 !
   ELSE
     ZFLXY=0.
   END IF
 !
-  IF (LLES_CALL .AND. KSPLT==1) THEN
+  IF (TLES%LLES_CALL .AND. KSPLT==1) THEN
     CALL SECOND_MNH(ZTIME1)
-    CALL LES_MEAN_SUBGRID( MYF(ZFLXY), X_LES_SUBGRID_VSv(:,:,:,JSV) ) 
+    CALL LES_MEAN_SUBGRID( MYF(ZFLXY), TLES%X_LES_SUBGRID_VSv(:,:,:,JSV) ) 
     CALL LES_MEAN_SUBGRID( MZF(MYF(GY_W_VW(PWM,PDYY,PDZZ,PDZY)*MZM(ZFLXY))), &
-                           X_LES_RES_ddxa_W_SBG_UaSv(:,:,:,JSV) , .TRUE. )
+                           TLES%X_LES_RES_ddxa_W_SBG_UaSv(:,:,:,JSV) , .TRUE. )
     CALL LES_MEAN_SUBGRID( GY_M_M(PSVM(:,:,:,JSV),PDYY,PDZZ,PDZY)*MYF(ZFLXY), &
-                           X_LES_RES_ddxa_Sv_SBG_UaSv(:,:,:,JSV) , .TRUE. )
+                           TLES%X_LES_RES_ddxa_Sv_SBG_UaSv(:,:,:,JSV) , .TRUE. )
     CALL SECOND_MNH(ZTIME2)
-    XTIME_LES = XTIME_LES + ZTIME2 - ZTIME1
+    TLES%XTIME_LES = TLES%XTIME_LES + ZTIME2 - ZTIME1
   END IF
 !
 !
 !       15.3   Horizontal source terms
 !              -----------------------
 !
-  IF (.NOT. L2D) THEN
-    IF (.NOT. LFLAT) THEN
+  IF (.NOT. O2D) THEN
+    IF (.NOT. OFLAT) THEN
       PRSVS(:,:,:,JSV)=   PRSVS(:,:,:,JSV)                                          &
         -DXF( MXM(PRHODJ) * ZFLXX * PINV_PDXX  )                                    &
         -DYF( MYM(PRHODJ) * ZFLXY * PINV_PDYY  )                                    &
@@ -345,7 +299,7 @@ DO JSV=1,ISV
         -DYF( MYM(PRHODJ) * ZFLXY * PINV_PDYY  )
     END IF
   ELSE
-    IF (.NOT. LFLAT) THEN
+    IF (.NOT. OFLAT) THEN
       PRSVS(:,:,:,JSV)=   PRSVS(:,:,:,JSV)                                          &
         -DXF( MXM(PRHODJ) * ZFLXX * PINV_PDXX  )                                    &
         +DZF( PMZM_PRHODJ * PINV_PDZZ *                                             &
@@ -362,3 +316,4 @@ END DO    ! end loop JSV
 !
 !
 END SUBROUTINE TURB_HOR_SV_FLUX
+END MODULE MODE_TURB_HOR_SV_FLUX

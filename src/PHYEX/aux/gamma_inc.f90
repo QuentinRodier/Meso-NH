@@ -2,33 +2,18 @@
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!####################
-MODULE MODI_GAMMA_INC
-!####################
-!
-INTERFACE
-!
-FUNCTION GAMMA_INC(PA,PX)  RESULT(PGAMMA_INC)
-REAL, INTENT(IN)                                  :: PA
-REAL, INTENT(IN)                                  :: PX
-REAL                                              :: PGAMMA_INC
-END FUNCTION GAMMA_INC
-!
-END INTERFACE
-!
-END MODULE MODI_GAMMA_INC
-!     #############################################
       FUNCTION GAMMA_INC(PA,PX)  RESULT(PGAMMA_INC)
+      USE PARKIND1, ONLY : JPRB
+      USE YOMHOOK , ONLY : LHOOK, DR_HOOK
 !     #############################################
-!     
 !
-!!****  *GAMMA_INC * -  Generalized gamma  function  
-!!                   
+!
+!!****  *GAMMA_INC * -  Generalized gamma  function
+!!
 !!
 !!    PURPOSE
 !!    -------
-!       The purpose of this function is to compute the generalized 
+!       The purpose of this function is to compute the generalized
 !!   incomplete Gamma function of its argument.
 !!
 !!                             /X
@@ -55,7 +40,7 @@ END MODULE MODI_GAMMA_INC
 !!
 !!    AUTHOR
 !!    ------
-!!	   Jean-Pierre Pinty *LA/OMP*
+!!     Jean-Pierre Pinty *LA/OMP*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -66,7 +51,7 @@ END MODULE MODI_GAMMA_INC
 !*       0. DECLARATIONS
 !           ------------
 !
-use mode_msg
+USE MODE_MSG
 !
 USE MODI_GAMMA
 !
@@ -87,7 +72,11 @@ REAL                                 :: ZFPMIN=1.E-30
 REAL                                 :: ZAP,ZDEL,ZSUM
 REAL                                 :: ZAN,ZB,ZC,ZD,ZH
 !
-IF( PX<0.0 .OR. PA<=0.0 ) call Print_msg(NVERB_FATAL,'GEN','GAMMA_INC','invalid arguments: PX<0.0 .OR. PA<=0.0')
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+IF (LHOOK) CALL DR_HOOK('GAMMA_INC',0,ZHOOK_HANDLE)
+IF(PX<0.0 .OR. PA<=0.0) THEN
+  CALL PRINT_MSG(NVERB_FATAL, 'GEN', 'GAMMA_INC', 'invalid arguments: PX<0.0 .OR. PA<=0.0')
+END IF
 !
 IF( (PX.LT.PA+1.0) ) THEN
   ZAP = PA
@@ -102,7 +91,7 @@ IF( (PX.LT.PA+1.0) ) THEN
     IF( ABS(ZDEL).LT.ABS(ZSUM)*ZEPS ) EXIT LOOP_SERIES
     JN = JN + 1
     IF( JN.GT.ITMAX ) THEN
-      call Print_msg(NVERB_FATAL,'GEN','GAMMA_INC','PA argument is too large or ITMAX is too small,'// &
+      CALL PRINT_MSG(NVERB_FATAL, 'GEN', 'GAMMA_INC', 'PA argument is too large or ITMAX is too small,'// &
                      ' the incomplete GAMMA_INC function cannot be evaluated correctly'// &
                      ' by the series method')
     END IF
@@ -134,7 +123,7 @@ IF( (PX.LT.PA+1.0) ) THEN
     IF( ABS(ZDEL-1.0).LT.ZEPS ) EXIT LOOP_FRACTION
     JN = JN + 1
     IF( JN.GT.ITMAX ) THEN
-      call Print_msg(NVERB_FATAL,'GEN','GAMMA_INC','PA argument is too large or ITMAX is too small,'// &
+      CALL PRINT_MSG(NVERB_FATAL, 'GEN', 'GAMMA_INC', 'PA argument is too large or ITMAX is too small,'// &
                      ' the incomplete GAMMA_INC function cannot be evaluated correctly'// &
                      ' by the continuous fraction method')
     END IF
@@ -143,6 +132,7 @@ IF( (PX.LT.PA+1.0) ) THEN
 !
 END IF
 !
+IF (LHOOK) CALL DR_HOOK('GAMMA_INC',1,ZHOOK_HANDLE)
 RETURN
 !
 END FUNCTION GAMMA_INC

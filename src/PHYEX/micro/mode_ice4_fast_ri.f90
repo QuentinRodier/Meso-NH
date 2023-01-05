@@ -3,51 +3,15 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-------------------------------------------------------------------------------
-MODULE MODI_ICE4_FAST_RI
-INTERFACE
-SUBROUTINE ICE4_FAST_RI(KSIZE, LDSOFT, PCOMPUTE, &
-                       &PRHODREF, PLVFACT, PLSFACT, &
-                       &PAI, PCJ, PCIT, &
-                       &PSSI, &
-                       &PRCT, PRIT, &
-                       &PRCBERI, PA_TH, PA_RC, PA_RI)
-!
-!*      0. DECLARATIONS
-!          ------------
-!
-USE MODD_CST
-USE MODD_RAIN_ICE_PARAM
-USE MODD_RAIN_ICE_DESCR
-!
+MODULE MODE_ICE4_FAST_RI
 IMPLICIT NONE
-!
-!*       0.1   Declarations of dummy arguments :
-!
-INTEGER,                      INTENT(IN)    :: KSIZE
-LOGICAL,                      INTENT(IN)    :: LDSOFT
-REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PCOMPUTE
-REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PRHODREF ! Reference density
-REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PLVFACT
-REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PLSFACT
-REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PAI      ! Thermodynamical function
-REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PCJ      ! Function to compute the ventilation coefficient
-REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PCIT     ! Pristine ice conc. at t
-REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PSSI     ! Supersaturation over ice
-REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PRCT     ! Cloud water m.r. at t
-REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PRIT     ! Pristine ice m.r. at t
-REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PRCBERI  ! Bergeron-Findeisen effect
-REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PA_TH
-REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PA_RC
-REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PA_RI
-END SUBROUTINE ICE4_FAST_RI
-END INTERFACE
-END MODULE MODI_ICE4_FAST_RI
-SUBROUTINE ICE4_FAST_RI(KSIZE, LDSOFT, PCOMPUTE, &
+CONTAINS
+SUBROUTINE ICE4_FAST_RI(ICEP, ICED, KPROMA, KSIZE, LDSOFT, LDCOMPUTE, &
                        &PRHODREF, PLVFACT, PLSFACT, &
                        &PAI, PCJ, PCIT, &
                        &PSSI, &
                        &PRCT, PRIT, &
-                       &PRCBERI, PA_TH, PA_RC, PA_RI)
+                       &PRCBERI)
 !!
 !!**  PURPOSE
 !!    -------
@@ -59,71 +23,68 @@ SUBROUTINE ICE4_FAST_RI(KSIZE, LDSOFT, PCOMPUTE, &
 !!
 !!    MODIFICATIONS
 !!    -------------
+!!     S. Riette, 11/2021: loop instead of array syntax
 !!
 !
 !
 !*      0. DECLARATIONS
 !          ------------
 !
-USE MODD_RAIN_ICE_DESCR, ONLY: XDI,XLBEXI,XLBI,XRTMIN
-USE MODD_RAIN_ICE_PARAM, ONLY: X0DEPI,X2DEPI
+USE MODD_RAIN_ICE_DESCR, ONLY: RAIN_ICE_DESCR_t
+USE MODD_RAIN_ICE_PARAM, ONLY: RAIN_ICE_PARAM_t
+USE PARKIND1, ONLY : JPRB
+USE YOMHOOK , ONLY : LHOOK, DR_HOOK
 !
 IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :
 !
-INTEGER,                      INTENT(IN)    :: KSIZE
+TYPE(RAIN_ICE_PARAM_t),       INTENT(IN)    :: ICEP
+TYPE(RAIN_ICE_DESCR_t),       INTENT(IN)    :: ICED
+INTEGER,                      INTENT(IN)    :: KPROMA, KSIZE
 LOGICAL,                      INTENT(IN)    :: LDSOFT
-REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PCOMPUTE
-REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PRHODREF ! Reference density
-REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PLVFACT
-REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PLSFACT
-REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PAI      ! Thermodynamical function
-REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PCJ      ! Function to compute the ventilation coefficient
-REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PCIT     ! Pristine ice conc. at t
-REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PSSI     ! Supersaturation over ice
-REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PRCT     ! Cloud water m.r. at t
-REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PRIT     ! Pristine ice m.r. at t
-REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PRCBERI  ! Bergeron-Findeisen effect
-REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PA_TH
-REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PA_RC
-REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PA_RI
+LOGICAL, DIMENSION(KPROMA),   INTENT(IN)    :: LDCOMPUTE
+REAL, DIMENSION(KPROMA),      INTENT(IN)    :: PRHODREF ! Reference density
+REAL, DIMENSION(KPROMA),      INTENT(IN)    :: PLVFACT
+REAL, DIMENSION(KPROMA),      INTENT(IN)    :: PLSFACT
+REAL, DIMENSION(KPROMA),      INTENT(IN)    :: PAI      ! Thermodynamical function
+REAL, DIMENSION(KPROMA),      INTENT(IN)    :: PCJ      ! Function to compute the ventilation coefficient
+REAL, DIMENSION(KPROMA),      INTENT(IN)    :: PCIT     ! Pristine ice conc. at t
+REAL, DIMENSION(KPROMA),      INTENT(IN)    :: PSSI     ! Supersaturation over ice
+REAL, DIMENSION(KPROMA),      INTENT(IN)    :: PRCT     ! Cloud water m.r. at t
+REAL, DIMENSION(KPROMA),      INTENT(IN)    :: PRIT     ! Pristine ice m.r. at t
+REAL, DIMENSION(KPROMA),      INTENT(INOUT) :: PRCBERI  ! Bergeron-Findeisen effect
 !
 !*       0.2  declaration of local variables
 !
-REAL, DIMENSION(KSIZE) :: ZMASK
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
 INTEGER :: JL
 !
 !-------------------------------------------------------------------------------
+IF (LHOOK) CALL DR_HOOK('ICE4_FAST_RI',0,ZHOOK_HANDLE)
 !
 !-------------------------------------------------------------------------------
 !
 !*       7.2    Bergeron-Findeisen effect: RCBERI
 !
 DO JL=1, KSIZE
-  ZMASK(JL)=MAX(0., -SIGN(1., -PSSI(JL))) * &          ! PSSI(:)>0.
-           &MAX(0., -SIGN(1., XRTMIN(2)-PRCT(JL))) * & ! PRCT(:)>XRTMIN(2)
-           &MAX(0., -SIGN(1., XRTMIN(4)-PRIT(JL))) * & ! PRIT(:)>XRTMIN(4)
-           &MAX(0., -SIGN(1., 1.E-20-PCIT(JL))) * &          ! PCIT(:)>0.
-           &PCOMPUTE(JL)
-ENDDO
-IF(LDSOFT) THEN
-  DO JL=1, KSIZE
-    PRCBERI(JL) = PRCBERI(JL) * ZMASK(JL)
-  ENDDO
-ELSE
-  PRCBERI(:) = 0.
-  WHERE(ZMASK(:)==1.)
-    PRCBERI(:) = MIN(1.E8, XLBI*(PRHODREF(:)*PRIT(:)/PCIT(:))**XLBEXI) ! Lbda_i
-    PRCBERI(:) = ( PSSI(:) / (PRHODREF(:)*PAI(:)) ) * PCIT(:) * &
-                 ( X0DEPI/PRCBERI(:) + X2DEPI*PCJ(:)*PCJ(:)/PRCBERI(:)**(XDI+2.0) )
-  END WHERE
-ENDIF
-DO JL=1, KSIZE
-  PA_RC(JL) = PA_RC(JL) - PRCBERI(JL)
-  PA_RI(JL) = PA_RI(JL) + PRCBERI(JL)
-  PA_TH(JL) = PA_TH(JL) + PRCBERI(JL)*(PLSFACT(JL)-PLVFACT(JL))
+  IF(PSSI(JL)>0. .AND. PRCT(JL)>ICED%XRTMIN(2) .AND. PRIT(JL)>ICED%XRTMIN(4) &
+#ifdef REPRO48
+     .AND. PCIT(JL)>0. .AND. LDCOMPUTE(JL)) THEN
+#else
+     .AND. PCIT(JL)>1.E-20 .AND. LDCOMPUTE(JL)) THEN
+#endif
+    IF(.NOT. LDSOFT) THEN
+      PRCBERI(JL) = MIN(1.E8, ICED%XLBI*(PRHODREF(JL)*PRIT(JL)/PCIT(JL))**ICED%XLBEXI) ! Lbda_i
+      PRCBERI(JL) = ( PSSI(JL) / (PRHODREF(JL)*PAI(JL)) ) * PCIT(JL) * &
+                    ( ICEP%X0DEPI/PRCBERI(JL) + ICEP%X2DEPI*PCJ(JL)*PCJ(JL)/PRCBERI(JL)**(ICED%XDI+2.0) )
+    ENDIF
+  ELSE
+    PRCBERI(JL) = 0.
+  ENDIF
 ENDDO
 !
+IF (LHOOK) CALL DR_HOOK('ICE4_FAST_RI', 1, ZHOOK_HANDLE)
 !
 END SUBROUTINE ICE4_FAST_RI
+END MODULE MODE_ICE4_FAST_RI

@@ -1,34 +1,14 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!    ################ 
-     MODULE MODI_SBL_DEPTH  
-!    ################ 
-!
-INTERFACE
-!
-      SUBROUTINE SBL_DEPTH(KKB,KKE,PZZ,PFLXU,PFLXV,PWTHV,PLMO,PSBL_DEPTH)
-!
-INTEGER,                INTENT(IN)    :: KKB       ! first physical level
-INTEGER,                INTENT(IN)    :: KKE       ! upper physical level
-REAL, DIMENSION(:,:,:), INTENT(IN)    :: PZZ       ! altitude of flux levels
-REAL, DIMENSION(:,:,:), INTENT(IN)    :: PFLXU     ! u'w'
-REAL, DIMENSION(:,:,:), INTENT(IN)    :: PFLXV     ! v'w'
-REAL, DIMENSION(:,:,:), INTENT(IN)    :: PWTHV     ! buoyancy flux
-REAL, DIMENSION(:,:),   INTENT(IN)    :: PLMO      ! Monin-Obukhov length
-REAL, DIMENSION(:,:),   INTENT(INOUT) :: PSBL_DEPTH! boundary layer height
-!
-!-------------------------------------------------------------------------------
-!
-END SUBROUTINE SBL_DEPTH
-!
-END INTERFACE
-!
-END MODULE MODI_SBL_DEPTH
-!
-!     #################################################################
-      SUBROUTINE SBL_DEPTH(KKB,KKE,PZZ,PFLXU,PFLXV,PWTHV,PLMO,PSBL_DEPTH)
+MODULE MODE_SBL_DEPTH
+IMPLICIT NONE
+CONTAINS
+!     ######spl
+      SUBROUTINE SBL_DEPTH(D,CSTURB,PZZ,PFLXU,PFLXV,PWTHV,PLMO,PSBL_DEPTH)
+      USE PARKIND1, ONLY : JPRB
+      USE YOMHOOK , ONLY : LHOOK, DR_HOOK
 !     #################################################################
 !
 !
@@ -65,81 +45,129 @@ END MODULE MODI_SBL_DEPTH
 !*      0. DECLARATIONS
 !          ------------
 !
+USE MODD_CTURB, ONLY: CSTURB_t
+USE MODD_DIMPHYEX, ONLY: DIMPHYEX_t
 USE MODD_PARAMETERS, ONLY : XUNDEF
-USE MODD_CTURB,      ONLY : XFTOP_O_FSURF, XSBL_O_BL
 !
-USE MODI_BL_DEPTH_DIAG
+USE MODE_BL_DEPTH_DIAG, ONLY : BL_DEPTH_DIAG
 !
 IMPLICIT NONE
 !
 !
 !*      0.1  declarations of arguments
 !
-INTEGER,                INTENT(IN)    :: KKB       ! first physical level
-INTEGER,                INTENT(IN)    :: KKE       ! upper physical level
-REAL, DIMENSION(:,:,:), INTENT(IN)    :: PZZ       ! altitude of flux levels
-REAL, DIMENSION(:,:,:), INTENT(IN)    :: PFLXU     ! u'w'
-REAL, DIMENSION(:,:,:), INTENT(IN)    :: PFLXV     ! v'w'
-REAL, DIMENSION(:,:,:), INTENT(IN)    :: PWTHV     ! buoyancy flux
-REAL, DIMENSION(:,:),   INTENT(IN)    :: PLMO      ! Monin-Obukhov length
-REAL, DIMENSION(:,:),   INTENT(INOUT) :: PSBL_DEPTH! boundary layer height
+TYPE(DIMPHYEX_t),       INTENT(IN)    :: D
+TYPE(CSTURB_t),         INTENT(IN)    :: CSTURB
+REAL, DIMENSION(D%NIJT,D%NKT), INTENT(IN)    :: PZZ       ! altitude of flux levels
+REAL, DIMENSION(D%NIJT,D%NKT), INTENT(IN)    :: PFLXU     ! u'w'
+REAL, DIMENSION(D%NIJT,D%NKT), INTENT(IN)    :: PFLXV     ! v'w'
+REAL, DIMENSION(D%NIJT,D%NKT), INTENT(IN)    :: PWTHV     ! buoyancy flux
+REAL, DIMENSION(D%NIJT),   INTENT(IN)    :: PLMO      ! Monin-Obukhov length
+REAL, DIMENSION(D%NIJT),   INTENT(INOUT) :: PSBL_DEPTH! boundary layer height
 !
 !-------------------------------------------------------------------------------
 !
 !       0.2  declaration of local variables
 !
 !
-INTEGER                                  :: JLOOP    ! loop counter
-REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2)) :: ZQ0      ! surface buoyancy flux
-REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2)) :: ZWU      ! surface friction u'w'
-REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2)) :: ZWV      ! surface friction v'w'
-REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2)) :: ZUSTAR2  ! surface friction
-REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2)) :: ZSBL_DYN ! SBL wih dynamical criteria
-REAL, DIMENSION(SIZE(PFLXU,1),SIZE(PFLXU,2),SIZE(PFLXU,3)) :: ZWIND
+INTEGER                                  :: JLOOP,JIJ,JK    ! loop counter
+INTEGER :: IKB,IKE,IIJB,IIJE,IKT   ! index value for the Beginning
+REAL, DIMENSION(D%NIJT) :: ZQ0      ! surface buoyancy flux
+REAL, DIMENSION(D%NIJT) :: ZWU      ! surface friction u'w'
+REAL, DIMENSION(D%NIJT) :: ZWV      ! surface friction v'w'
+REAL, DIMENSION(D%NIJT) :: ZUSTAR2  ! surface friction
+REAL, DIMENSION(D%NIJT) :: ZSBL_DYN ! SBL wih dynamical criteria
+REAL, DIMENSION(D%NIJT,D%NKT) :: ZWIND
                                          ! intermediate wind for SBL calculation
-REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2)) :: ZSBL_THER! SBL wih thermal   criteria
-REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2)) :: ZA       ! ponderation coefficient
+REAL, DIMENSION(D%NIJT) :: ZSBL_THER! SBL wih thermal   criteria
+REAL, DIMENSION(D%NIJT) :: ZA       ! ponderation coefficient
 !----------------------------------------------------------------------------
 !
 !* initialisations
 !
 !
-ZWU (:,:) = PFLXU(:,:,KKB)
-ZWV (:,:) = PFLXV(:,:,KKB)
-ZQ0 (:,:) = PWTHV(:,:,KKB)
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+IF (LHOOK) CALL DR_HOOK('SBL_DEPTH',0,ZHOOK_HANDLE)
 !
-ZUSTAR2(:,:) = SQRT(ZWU**2+ZWV**2)
+IKB=D%NKTB
+IKE=D%NKTE
+IIJE=D%NIJE
+IIJB=D%NIJB
+IKT=D%NKT
 !
+!$mnh_expand_array(JIJ=IIJB:IIJE)
+ZWU(IIJB:IIJE) = PFLXU(IIJB:IIJE,IKB)
+ZWV(IIJB:IIJE) = PFLXV(IIJB:IIJE,IKB)
+ZQ0(IIJB:IIJE) = PWTHV(IIJB:IIJE,IKB)
+!
+ZUSTAR2(IIJB:IIJE) = SQRT(ZWU(IIJB:IIJE)**2+ZWV(IIJB:IIJE)**2)
+!
+!$mnh_end_expand_array(JIJ=IIJB:IIJE)
 !----------------------------------------------------------------------------
 !
 !* BL and SBL diagnosed with friction criteria
 !
-ZWIND=SQRT(PFLXU**2+PFLXV**2)
-ZSBL_DYN = XSBL_O_BL * BL_DEPTH_DIAG(KKB,KKE,ZUSTAR2,PZZ(:,:,KKB),ZWIND,PZZ,XFTOP_O_FSURF) 
+!$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
+ZWIND(IIJB:IIJE,1:IKT)=SQRT(PFLXU(IIJB:IIJE,1:IKT)**2+PFLXV(IIJB:IIJE,1:IKT)**2)
+!$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
+CALL BL_DEPTH_DIAG(D,ZUSTAR2,PZZ(:,IKB),ZWIND,PZZ,CSTURB%XFTOP_O_FSURF,ZSBL_DYN)
+!$mnh_expand_array(JIJ=IIJB:IIJE)
+ZSBL_DYN(IIJB:IIJE) = CSTURB%XSBL_O_BL * ZSBL_DYN(IIJB:IIJE)
+!$mnh_end_expand_array(JIJ=IIJB:IIJE)
 !
 !----------------------------------------------------------------------------
 !
 !* BL and SBL diagnosed with buoyancy flux criteria
 !
-ZSBL_THER= XSBL_O_BL * BL_DEPTH_DIAG(KKB,KKE,ZQ0,PZZ(:,:,KKB),PWTHV,PZZ,XFTOP_O_FSURF)
+CALL BL_DEPTH_DIAG(D,ZQ0,PZZ(:,IKB),PWTHV,PZZ,CSTURB%XFTOP_O_FSURF,ZSBL_THER)
+!$mnh_expand_array(JIJ=IIJB:IIJE)
+ZSBL_THER(IIJB:IIJE)= CSTURB%XSBL_O_BL * ZSBL_THER(IIJB:IIJE)
+!$mnh_end_expand_array(JIJ=IIJB:IIJE)
 !
 !----------------------------------------------------------------------------
 !
 !* SBL depth
 !
-PSBL_DEPTH = 0.
-WHERE (ZSBL_THER> 0. .AND. ZSBL_DYN> 0.) PSBL_DEPTH = MIN(ZSBL_THER(:,:),ZSBL_DYN(:,:))
-WHERE (ZSBL_THER> 0. .AND. ZSBL_DYN==0.) PSBL_DEPTH = ZSBL_THER(:,:)
-WHERE (ZSBL_THER==0. .AND. ZSBL_DYN> 0.) PSBL_DEPTH = ZSBL_DYN(:,:)
+PSBL_DEPTH(:) = 0.
+!$mnh_expand_where(JIJ=IIJB:IIJE)
+WHERE (ZSBL_THER(IIJB:IIJE)> 0. .AND. ZSBL_DYN(IIJB:IIJE)> 0.) 
+  PSBL_DEPTH = MIN(ZSBL_THER(IIJB:IIJE),ZSBL_DYN(IIJB:IIJE))
+END WHERE
+!$mnh_end_expand_where(JIJ=IIJB:IIJE)
+!
+!$mnh_expand_where(JIJ=IIJB:IIJE)
+WHERE (ZSBL_THER(IIJB:IIJE)> 0. .AND. ZSBL_DYN(IIJB:IIJE)==0.) 
+  PSBL_DEPTH(IIJB:IIJE) = ZSBL_THER(IIJB:IIJE)
+END WHERE
+!$mnh_end_expand_where(JIJ=IIJB:IIJE)
+!
+!$mnh_expand_where(JIJ=IIJB:IIJE)
+WHERE (ZSBL_THER(IIJB:IIJE)==0. .AND. ZSBL_DYN(IIJB:IIJE)> 0.) 
+  PSBL_DEPTH(IIJB:IIJE) = ZSBL_DYN(IIJB:IIJE)
+END WHERE
+!$mnh_end_expand_where(JIJ=IIJB:IIJE)
 !
 DO JLOOP=1,5
-  WHERE (PLMO(:,:)/=XUNDEF .AND. ABS(PLMO(:,:))>=0.01 )
-    ZA = TANH(2.*PSBL_DEPTH/PLMO)**2
-    PSBL_DEPTH = 0.2 * PSBL_DEPTH + 0.8 * ((1.-ZA) * ZSBL_DYN + ZA * ZSBL_THER )
+  !$mnh_expand_where(JIJ=IIJB:IIJE)
+  WHERE (PLMO(IIJB:IIJE)/=XUNDEF .AND. ABS(PLMO(IIJB:IIJE))>=0.01 )
+    ZA(IIJB:IIJE) = TANH(2.*PSBL_DEPTH(IIJB:IIJE)/PLMO(IIJB:IIJE))**2
+    PSBL_DEPTH(IIJB:IIJE) = 0.2 * PSBL_DEPTH(IIJB:IIJE) + 0.8 * ((1.-ZA(IIJB:IIJE)) &
+                                * ZSBL_DYN(IIJB:IIJE) + ZA(IIJB:IIJE) * ZSBL_THER(IIJB:IIJE) )
   END WHERE
+  !$mnh_end_expand_where(JIJ=IIJB:IIJE)
 END DO
-WHERE (ABS(PLMO(:,:))<=0.01 )     PSBL_DEPTH = ZSBL_THER
-WHERE (PLMO(:,:)==XUNDEF) PSBL_DEPTH = ZSBL_DYN
+!$mnh_expand_where(JIJ=IIJB:IIJE)
+WHERE (ABS(PLMO(IIJB:IIJE))<=0.01 ) 
+  PSBL_DEPTH(IIJB:IIJE) = ZSBL_THER(IIJB:IIJE)
+END WHERE
+!$mnh_end_expand_where(JIJ=IIJB:IIJE)
+!$mnh_expand_where(JIJ=IIJB:IIJE)
+WHERE (PLMO(IIJB:IIJE)==XUNDEF)
+  PSBL_DEPTH(IIJB:IIJE) = ZSBL_DYN(IIJB:IIJE)
+END WHERE
+!$mnh_end_expand_where(JIJ=IIJB:IIJE)
 !
 !----------------------------------------------------------------------------
+IF (LHOOK) CALL DR_HOOK('SBL_DEPTH',1,ZHOOK_HANDLE)
 END SUBROUTINE SBL_DEPTH
+END MODULE MODE_SBL_DEPTH

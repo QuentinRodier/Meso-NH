@@ -9,31 +9,9 @@
 ! MASDEV4_7 turb 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !################
-MODULE MODI_COEFJ
-!################
-!
-INTERFACE
-!
-       FUNCTION COEFJ(PTHL,PEXNREF,PFRAC_ICE)   RESULT(PCOEFJ)
-! 
-REAL, DIMENSION(:,:,:),  INTENT(IN)  ::   PTHL     ! Temperature variable
-REAL, DIMENSION(:,:,:),  INTENT(IN)  ::   PEXNREF  ! Exner function of the 
-!                                                          reference state
-REAL, DIMENSION(:,:,:),  INTENT(IN), OPTIONAL ::   PFRAC_ICE 
-                                                   ! Fraction of ri in the 
-                                                   !   non-precipating
-                                                   !  "rc+ri" condensate
-!
-REAL,DIMENSION(SIZE(PTHL,1),SIZE(PTHL,2),SIZE(PTHL,3)):: PCOEFJ ! result
-!
-END FUNCTION COEFJ
-!
-END INTERFACE
-!
-END MODULE MODI_COEFJ
-!
-!
-!
+MODULE MODE_COEFJ
+IMPLICIT NONE
+CONTAINS
 !    #######################################################
      FUNCTION COEFJ(PTHL,PEXNREF,PFRAC_ICE)   RESULT(PCOEFJ)
 !    #######################################################
@@ -154,3 +132,4 @@ END IF
 !---------------------------------------------------------------------------
 !
 END FUNCTION COEFJ
+END MODULE MODE_COEFJ

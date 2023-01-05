@@ -4,29 +4,6 @@
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ######spl
-       MODULE MODI_INI_RAIN_ICE
-!      ########################
-!
-INTERFACE
-      SUBROUTINE INI_RAIN_ICE ( KLUOUT, PTSTEP, PDZMIN, KSPLITR, HCLOUD )
-!
-INTEGER,                 INTENT(IN) :: KLUOUT    ! Logical unit number for prints
-INTEGER,                 INTENT(OUT):: KSPLITR   ! Number of small time step
-                                                 ! integration for  rain
-                                                 ! sedimendation
-!
-REAL,                    INTENT(IN) :: PTSTEP    ! Effective Time step
-!
-REAL,                    INTENT(IN) :: PDZMIN    ! minimun vertical mesh size
-!
-CHARACTER (LEN=4), INTENT(IN)       :: HCLOUD    ! Indicator of the cloud scheme
-!
-END SUBROUTINE INI_RAIN_ICE
-!
-END INTERFACE
-!
-END MODULE MODI_INI_RAIN_ICE
-!     ######spl
       SUBROUTINE INI_RAIN_ICE ( KLUOUT, PTSTEP, PDZMIN, KSPLITR, HCLOUD )
 !     ###########################################################
 !
@@ -119,15 +96,18 @@ USE MODD_REF
 !
 USE MODI_GAMMA
 USE MODI_GAMMA_INC
-USE MODI_RRCOLSS
-USE MODI_RZCOLX
-USE MODI_RSCOLRG
-USE MODI_READ_XKER_RACCS
-USE MODI_READ_XKER_SDRYG
-USE MODI_READ_XKER_RDRYG
-USE MODI_READ_XKER_SWETH
-USE MODI_READ_XKER_GWETH
-USE MODI_READ_XKER_RWETH
+USE MODE_RRCOLSS, ONLY: RRCOLSS
+USE MODE_RZCOLX, ONLY: RZCOLX
+USE MODE_RSCOLRG, ONLY: RSCOLRG
+USE MODE_READ_XKER_RACCS, ONLY: READ_XKER_RACCS
+USE MODE_READ_XKER_SDRYG, ONLY: READ_XKER_SDRYG
+USE MODE_READ_XKER_RDRYG, ONLY: READ_XKER_RDRYG
+USE MODE_READ_XKER_SWETH, ONLY: READ_XKER_SWETH
+USE MODE_READ_XKER_GWETH, ONLY: READ_XKER_GWETH
+USE MODE_READ_XKER_RWETH, ONLY: READ_XKER_RWETH
+!
+USE PARKIND1, ONLY : JPRB
+USE YOMHOOK , ONLY : LHOOK, DR_HOOK
 !
 IMPLICIT NONE
 !
@@ -192,7 +172,13 @@ REAL     :: PDRYLBDAG_MAX,PDRYLBDAS_MAX,PDRYLBDAG_MIN,PDRYLBDAS_MIN
 REAL     :: PDRYLBDAR_MAX,PDRYLBDAR_MIN
 REAL     :: PWETLBDAS_MAX,PWETLBDAG_MAX,PWETLBDAS_MIN,PWETLBDAG_MIN
 REAL     :: PWETLBDAR_MAX,PWETLBDAH_MAX,PWETLBDAR_MIN,PWETLBDAH_MIN
+!
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------
+IF (LHOOK) CALL DR_HOOK('INI_RAIN_ICE',0,ZHOOK_HANDLE)
+!
+IF(.NOT.ASSOCIATED(XCEXVT)) CALL RAIN_ICE_DESCR_ASSOCIATE()
+IF(.NOT.ASSOCIATED(XFSEDC)) CALL RAIN_ICE_PARAM_ASSOCIATE()
 !
 !
 !*       0.     FUNCTION STATEMENTS
@@ -213,7 +199,7 @@ IF (CSEDIM == 'SPLI' .AND. .NOT. LRED ) THEN
   ZVTRMAX = 40.
  ELSE IF (HCLOUD == 'ICE3') THEN
   ZVTRMAX = 10.
- END IF 
+ END IF
 END IF
 !
 !*       1.2    Compute the number of small time step integration
@@ -227,12 +213,26 @@ IF (CSEDIM == 'SPLI' .AND. .NOT. LRED ) THEN
  END DO SPLIT
 END IF
 !
-IF (ALLOCATED(XRTMIN)) THEN       ! In case of nesting microphysics constants of
+IF (ASSOCIATED(XRTMIN)) THEN       ! In case of nesting microphysics constants of
                                   ! MODD_RAIN_ICE_PARAM are computed only once,
                                   ! but if INI_RAIN_ICE has been called already
                                   ! one must change the XRTMIN size.
-  DEALLOCATE(XRTMIN)
+  CALL RAIN_ICE_DESCR_DEALLOCATE()
 END IF
+!
+IF (HCLOUD == 'ICE4') THEN
+  CALL RAIN_ICE_DESCR_ALLOCATE(7)
+ELSE IF (HCLOUD == 'ICE3') THEN
+  CALL RAIN_ICE_DESCR_ALLOCATE(6)
+END IF
+!
+XRTMIN(1) = 1.0E-20
+XRTMIN(2) = 1.0E-20
+XRTMIN(3) = 1.0E-20
+XRTMIN(4) = 1.0E-20
+XRTMIN(5) = 1.0E-15
+XRTMIN(6) = 1.0E-15
+IF (HCLOUD == 'ICE4') XRTMIN(7) = 1.0E-15
 !
 !-------------------------------------------------------------------------------
 !
@@ -299,23 +299,23 @@ XF2I = 0.14
 XAS = 0.02
 XBS = 1.9
 IF (LSNOW_T) THEN
-!Cas Gamma generalisee
-XCS = 11.52
-XDS = 0.39
-XFVELOS =0.097
-!Cas MP
-!XCS = 13.2
-!XDS = 0.423       
-!XFVELOS = 25.14
+  !Cas Gamma generalisee
+  XCS = 11.52
+  XDS = 0.39
+  XFVELOS =0.097
+  !Cas MP
+  !XCS = 13.2
+  !XDS = 0.423       
+  !XFVELOS = 25.14
 ELSE
-XCS = 5.
-XDS = 0.27
-XFVELOS = 0.
+  XCS = 5.1
+  XDS = 0.27
+  XFVELOS = 0.
 END IF
 !
 IF (.NOT. LSNOW_T) THEN
-XCCS = 5.0
-XCXS = 1.0
+  XCCS = 5.0
+  XCXS = 1.0
 END IF
 !
 XF0S = 0.86
@@ -424,7 +424,10 @@ XLBR   = ( XAR*XCCR*MOMG(XALPHAR,XNUR,XBR) )**(-XLBEXR)
 XLBEXI = 1.0/(-XBI)
 XLBI   = ( XAI*MOMG(XALPHAI,XNUI,XBI) )**(-XLBEXI)
 !
+#if defined(REPRO48) || defined(REPRO55)
+#else
 XNS   = 1.0/(XAS*MOMG(XALPHAS,XNUS,XBS))
+#endif
 XLBEXS = 1.0/(XCXS-XBS)
 XLBS   = ( XAS*XCCS*MOMG(XALPHAS,XNUS,XBS) )**(-XLBEXS)
 !
@@ -439,22 +442,12 @@ XLBH   = ( XAH*XCCH*MOMG(XALPHAH,XNUH,XBH) )**(-XLBEXH)
 XLBDAS_MAX = 100000.0
 !
 ZCONC_MAX  = 1.E6 ! Maximal concentration for falling particules set to 1 per cc
+#if defined(REPRO48) || defined(REPRO55)
+IF(XCCS>0. .AND. XCXS>0. )XLBDAS_MAX = ( ZCONC_MAX/XCCS )**(1./XCXS)
+#else
 XLBDAS_MAX = 1.E6
 XLBDAS_MIN = 1000.
-!
-IF (HCLOUD == 'ICE4') THEN
-  ALLOCATE( XRTMIN(7) )
-ELSE IF (HCLOUD == 'ICE3') THEN
-  ALLOCATE( XRTMIN(6) )
-END IF
-!
-XRTMIN(1) = 1.0E-20
-XRTMIN(2) = 1.0E-20
-XRTMIN(3) = 1.0E-20
-XRTMIN(4) = 1.0E-20
-XRTMIN(5) = 1.0E-15
-XRTMIN(6) = 1.0E-15
-IF (HCLOUD == 'ICE4') XRTMIN(7) = 1.0E-15
+#endif
 !
 XCONC_SEA=1E8 ! 100/cm3
 XCONC_LAND=3E8 ! 300/cm3
@@ -507,6 +500,11 @@ XEXCSEDI =-0.9324*3.0
 WRITE (KLUOUT,FMT=*)' PRISTINE ICE SEDIMENTATION for columns XFSEDI =',XFSEDI
 !
 !
+#if defined(REPRO48) || defined(REPRO55)
+XEXSEDS = (XBS+XDS-XCXS)/(XBS-XCXS)
+XFSEDS  = XCS*XAS*XCCS*MOMG(XALPHAS,XNUS,XBS+XDS)*                         &
+         (XAS*XCCS*MOMG(XALPHAS,XNUS,XBS))**(-XEXSEDS)*(ZRHO00)**XCEXVT
+#else
 IF (LRED) THEN
    XEXSEDS = -XDS-XBS
    XFSEDS  = XCS*MOMG(XALPHAS,XNUS,XBS+XDS)/(MOMG(XALPHAS,XNUS,XBS))    &
@@ -516,6 +514,7 @@ ELSE
    XFSEDS  = XCS*XAS*XCCS*MOMG(XALPHAS,XNUS,XBS+XDS)*                         &
             (XAS*XCCS*MOMG(XALPHAS,XNUS,XBS))**(-XEXSEDS)*(ZRHO00)**XCEXVT
 END IF
+#endif
 !
 XEXSEDG = (XBG+XDG-XCXG)/(XBG-XCXG)
 XFSEDG  = XCG*XAG*XCCG*MOMG(XALPHAG,XNUG,XBG+XDG)*                         &
@@ -588,20 +587,37 @@ XSCFAC = (0.63**(1./3.))*SQRT((ZRHO00)**XCEXVT) ! One assumes Sc=0.63
 X0DEPI = (4.0*XPI)*XC1I*XF0I*MOMG(XALPHAI,XNUI,1.)
 X2DEPI = (4.0*XPI)*XC1I*XF2I*XC_I*MOMG(XALPHAI,XNUI,XDI+2.0)
 !
+#if defined(REPRO48) || defined(REPRO55)
+X0DEPS = (4.0*XPI)*XCCS*XC1S*XF0S*MOMG(XALPHAS,XNUS,1.)
+X1DEPS = (4.0*XPI)*XCCS*XC1S*XF1S*SQRT(XCS)*MOMG(XALPHAS,XNUS,0.5*XDS+1.5)
+XEX0DEPS = XCXS-1.0
+XEX1DEPS = XCXS-0.5*(XDS+3.0)
+XRDEPSRED = 1.0
+#else
 X0DEPS = XNS*(4.0*XPI)*XC1S*XF0S*MOMG(XALPHAS,XNUS,1.)
 X1DEPS = XNS*(4.0*XPI)*XC1S*XF1S*SQRT(XCS)*MOMG(XALPHAS,XNUS,0.5*XDS+1.5)
 XEX0DEPS = -1.0
 XEX1DEPS = -0.5*(XDS+3.0)
+#endif
 !
 X0DEPG = (4.0*XPI)*XCCG*XC1G*XF0G*MOMG(XALPHAG,XNUG,1.)
 X1DEPG = (4.0*XPI)*XCCG*XC1G*XF1G*SQRT(XCG)*MOMG(XALPHAG,XNUG,0.5*XDG+1.5)
 XEX0DEPG = XCXG-1.0
 XEX1DEPG = XCXG-0.5*(XDG+3.0)
+XRDEPGRED = 1.0
 !
 X0DEPH = (4.0*XPI)*XCCH*XC1H*XF0H*MOMG(XALPHAH,XNUH,1.)
 X1DEPH = (4.0*XPI)*XCCH*XC1H*XF1H*SQRT(XCH)*MOMG(XALPHAH,XNUH,0.5*XDH+1.5)
 XEX0DEPH = XCXH-1.0
 XEX1DEPH = XCXH-0.5*(XDH+3.0)
+
+GFLAG = .TRUE.
+IF (GFLAG) THEN
+  WRITE(UNIT=KLUOUT,FMT='("      factors sublimation snow/groupel")')
+  WRITE(UNIT=KLUOUT,FMT='(" mod sublim snow =",E13.6)') XRDEPSRED
+  WRITE(UNIT=KLUOUT,FMT='(" mod sublim graupel =",E13.6)') XRDEPGRED
+END IF
+
 !
 !*       5.3    Constants for pristine ice autoconversion
 !
@@ -631,8 +647,13 @@ END IF
 !
 XCOLIS   = 0.25 ! Collection efficiency of I+S
 XCOLEXIS = 0.05 ! Temperature factor of the I+S collection efficiency
+#if defined(REPRO48) || defined(REPRO55)
+XFIAGGS  = (XPI/4.0)*XCOLIS*XCCS*XCS*(ZRHO00**XCEXVT)*MOMG(XALPHAS,XNUS,XDS+2.0)
+XEXIAGGS = XCXS-XDS-2.0
+#else
 XFIAGGS  = XNS*(XPI/4.0)*XCOLIS*XCS*(ZRHO00**XCEXVT)*MOMG(XALPHAS,XNUS,XDS+2.0)
 XEXIAGGS = -XDS - 2.0 ! GAMMGEN LH_EXTENDED
+#endif
 !
 GFLAG = .TRUE.
 IF (GFLAG) THEN
@@ -683,15 +704,28 @@ XEX1EVAR = -1.0-0.5*(XDR+3.0)
 !
 XDCSLIM  = 0.007 ! D_cs^lim = 7 mm as suggested by Farley et al. (1989)
 XCOLCS   = 1.0
+#if defined(REPRO48) || defined(REPRO55)
+XEXCRIMSS= XCXS-XDS-2.0
+XCRIMSS  = (XPI/4.0)*XCOLCS*XCCS*XCS*(ZRHO00**XCEXVT)*MOMG(XALPHAS,XNUS,XDS+2.0)
+#else
 XEXCRIMSS= -XDS-2.0
 XCRIMSS  = XNS * (XPI/4.0)*XCOLCS*XCS*(ZRHO00**XCEXVT)*MOMG(XALPHAS,XNUS,XDS+2.0)
+#endif
 XEXCRIMSG= XEXCRIMSS
 XCRIMSG  = XCRIMSS
+#if defined(REPRO48) || defined(REPRO55)
+XSRIMCG  = XCCS*XAS*MOMG(XALPHAS,XNUS,XBS)
+XEXSRIMCG= XCXS-XBS
+XSRIMCG2 = XCCS*XAG*MOMG(XALPHAS,XNUS,XBG)
+XSRIMCG3 = XFRACM90
+XEXSRIMCG2=XCXS-XBG
+#else
 XSRIMCG  = XNS*XAS*MOMG(XALPHAS,XNUS,XBS)
 XEXSRIMCG = -XBS
 XSRIMCG2 = XNS*XAG*MOMG(XALPHAS,XNUS,XBG)
 XSRIMCG3 = XFRACM90
 XEXSRIMCG2=XBS-XBG
+#endif
 !
 GFLAG = .TRUE.
 IF (GFLAG) THEN
@@ -705,9 +739,9 @@ XGAMINC_BOUND_MIN = 1.0E-1 ! Minimal value of (Lbda * D_cs^lim)**alpha
 XGAMINC_BOUND_MAX = 1.0E7  ! Maximal value of (Lbda * D_cs^lim)**alpha
 ZRATE = EXP(LOG(XGAMINC_BOUND_MAX/XGAMINC_BOUND_MIN)/REAL(NGAMINC-1))
 !
-IF( .NOT.ALLOCATED(XGAMINC_RIM1) ) ALLOCATE( XGAMINC_RIM1(NGAMINC) )
-IF( .NOT.ALLOCATED(XGAMINC_RIM2) ) ALLOCATE( XGAMINC_RIM2(NGAMINC) )
-IF( .NOT.ALLOCATED(XGAMINC_RIM4) ) ALLOCATE( XGAMINC_RIM4(NGAMINC) )
+IF( .NOT.ASSOCIATED(XGAMINC_RIM1) ) CALL RAIN_ICE_PARAM_ALLOCATE('XGAMINC_RIM1', NGAMINC)
+IF( .NOT.ASSOCIATED(XGAMINC_RIM2) ) CALL RAIN_ICE_PARAM_ALLOCATE('XGAMINC_RIM2', NGAMINC)
+IF( .NOT.ASSOCIATED(XGAMINC_RIM4) ) CALL RAIN_ICE_PARAM_ALLOCATE('XGAMINC_RIM4', NGAMINC)
 !
 DO J1=1,NGAMINC
   ZBOUND = XGAMINC_BOUND_MIN*ZRATE**(J1-1)
@@ -721,13 +755,21 @@ XRIMINTP2 = 1.0 + XRIMINTP1*LOG( XDCSLIM/(XGAMINC_BOUND_MIN)**(1.0/XALPHAS) )
 !
 !*       7.2    Constants for the accretion of raindrops onto aggregates
 !
+#if defined(REPRO48) || defined(REPRO55)
+XFRACCSS = ((XPI**2)/24.0)*XCCS*XCCR*XRHOLW*(ZRHO00**XCEXVT)
+#else
 XFRACCSS = XNS*((XPI**2)/24.0)*XCCR*XRHOLW*(ZRHO00**XCEXVT)
+#endif
 !
 XLBRACCS1   =    MOMG(XALPHAS,XNUS,2.)*MOMG(XALPHAR,XNUR,3.)
 XLBRACCS2   = 2.*MOMG(XALPHAS,XNUS,1.)*MOMG(XALPHAR,XNUR,4.)
 XLBRACCS3   =                          MOMG(XALPHAR,XNUR,5.)
 !
+#if defined(REPRO48) || defined(REPRO55)
+XFSACCRG = (XPI/4.0)*XAS*XCCS*XCCR*(ZRHO00**XCEXVT)
+#else
 XFSACCRG = XNS*(XPI/4.0)*XAS*XCCR*(ZRHO00**XCEXVT)
+#endif
 !
 XLBSACCR1   =    MOMG(XALPHAR,XNUR,2.)*MOMG(XALPHAS,XNUS,XBS)
 XLBSACCR2   = 2.*MOMG(XALPHAR,XNUR,1.)*MOMG(XALPHAS,XNUS,XBS+1.)
@@ -757,9 +799,9 @@ IND      = 50    ! Interval number, collection efficiency and infinite diameter
 ZESR     = 1.0   ! factor used to integrate the dimensional distributions when
 ZFDINFTY = 20.0  ! computing the kernels XKER_RACCSS, XKER_RACCS and XKER_SACCRG
 !
-IF( .NOT.ALLOCATED(XKER_RACCSS) ) ALLOCATE( XKER_RACCSS(NACCLBDAS,NACCLBDAR) )
-IF( .NOT.ALLOCATED(XKER_RACCS ) ) ALLOCATE( XKER_RACCS (NACCLBDAS,NACCLBDAR) )
-IF( .NOT.ALLOCATED(XKER_SACCRG) ) ALLOCATE( XKER_SACCRG(NACCLBDAR,NACCLBDAS) )
+IF( .NOT.ASSOCIATED(XKER_RACCSS) ) CALL RAIN_ICE_PARAM_ALLOCATE('XKER_RACCSS', NACCLBDAS,NACCLBDAR)
+IF( .NOT.ASSOCIATED(XKER_RACCS ) ) CALL RAIN_ICE_PARAM_ALLOCATE('XKER_RACCS', NACCLBDAS,NACCLBDAR)
+IF( .NOT.ASSOCIATED(XKER_SACCRG) ) CALL RAIN_ICE_PARAM_ALLOCATE('XKER_SACCRG', NACCLBDAR,NACCLBDAS)
 !
 CALL READ_XKER_RACCS (KACCLBDAS,KACCLBDAR,KND,                                        &
                       PALPHAS,PNUS,PALPHAR,PNUR,PESR,PBS,PBR,PCS,PDS,PFVELOS,PCR,PDR, &
@@ -920,7 +962,11 @@ XCOLSG   = 0.01 ! Collection efficiency of S+G
 XCOLEXSG = 0.1  ! Temperature factor of the S+G collection efficiency
 WRITE (KLUOUT, FMT=*) ' NEW Constants for the aggregate collection by the graupeln'
 WRITE (KLUOUT, FMT=*) ' XCOLSG, XCOLEXSG  = ',XCOLSG,XCOLEXSG
+#if defined(REPRO48) || defined(REPRO55)
+XFSDRYG = (XPI/4.0)*XCOLSG*XCCG*XCCS*XAS*(ZRHO00**XCEXVT)
+#else
 XFSDRYG = XNS*(XPI/4.0)*XCOLSG*XCCG*XAS*(ZRHO00**XCEXVT)
+#endif
 !
 XLBSDRYG1   =    MOMG(XALPHAG,XNUG,2.)*MOMG(XALPHAS,XNUS,XBS)
 XLBSDRYG2   = 2.*MOMG(XALPHAG,XNUG,1.)*MOMG(XALPHAS,XNUS,XBS+1.)
@@ -968,7 +1014,7 @@ IND      = 50    ! Interval number, collection efficiency and infinite diameter
 ZEGS     = 1.0   ! factor used to integrate the dimensional distributions when
 ZFDINFTY = 20.0  ! computing the kernels XKER_SDRYG
 !
-IF( .NOT.ALLOCATED(XKER_SDRYG) ) ALLOCATE( XKER_SDRYG(NDRYLBDAG,NDRYLBDAS) )
+IF( .NOT.ASSOCIATED(XKER_SDRYG) ) CALL RAIN_ICE_PARAM_ALLOCATE('XKER_SDRYG', NDRYLBDAG,NDRYLBDAS)
 !
 CALL READ_XKER_SDRYG (KDRYLBDAG,KDRYLBDAS,KND,                              &
                    PALPHAG,PNUG,PALPHAS,PNUS,PEGS,PBS,PCG,PDG,PCS,PDS,PFVELOS, &
@@ -1035,7 +1081,7 @@ IND      = 50    ! Number of interval used to integrate the dimensional
 ZEGR     = 1.0   ! distributions when computing the kernel XKER_RDRYG
 ZFDINFTY = 20.0
 !
-IF( .NOT.ALLOCATED(XKER_RDRYG) ) ALLOCATE( XKER_RDRYG(NDRYLBDAG,NDRYLBDAR) )
+IF( .NOT.ASSOCIATED(XKER_RDRYG) ) CALL RAIN_ICE_PARAM_ALLOCATE('XKER_RDRYG', NDRYLBDAG,NDRYLBDAR)
 !
 CALL READ_XKER_RDRYG (KDRYLBDAG,KDRYLBDAR,KND,                              &
                    PALPHAG,PNUG,PALPHAR,PNUR,PEGR,PBR,PCG,PDG,PCR,PDR,      &
@@ -1095,6 +1141,26 @@ IF( (KDRYLBDAG/=NDRYLBDAG) .OR. (KDRYLBDAR/=NDRYLBDAR) .OR. (KND/=IND) .OR. &
                      PFDINFTY,XKER_RDRYG                                      )
   WRITE(UNIT=KLUOUT,FMT='(" Read XKER_RDRYG")')
 END IF
+         
+!          8.2.6 Constants for possible modifying some processes related to 
+!                graupeln in XFRMIN(1:8),  IN - concentration in XFRMIN(9) and Kogan 
+!                autoconversion in XFRMIN(10:11). May be used for e.g. ensemble spread
+  XFRMIN(1:6)=0.
+  XFRMIN(7:9)=1.
+  XFRMIN(10) =10.
+  XFRMIN(11) =1.
+  XFRMIN(12) =100. !0 in suparar
+  XFRMIN(13) =1.0E-15
+  XFRMIN(14) =120.
+  XFRMIN(15) =1.0E-4
+  XFRMIN(16:20)=0.
+  XFRMIN(21:22)=1.
+  XFRMIN(23)=0.5
+  XFRMIN(24)=1.5
+  XFRMIN(25)=30.
+  XFRMIN(26:38)=0.
+  XFRMIN(39)=0.25
+  XFRMIN(40)=0.15
 !
 !
 !-------------------------------------------------------------------------------
@@ -1116,8 +1182,11 @@ XFWETH = (XPI/4.0)*XCCH*XCH*(ZRHO00**XCEXVT)*MOMG(XALPHAH,XNUH,XDH+2.0)
 !
 XCOLSH   = 0.01 ! Collection efficiency of S+H
 XCOLEXSH = 0.1  ! Temperature factor of the S+H collection efficiency
-!XFSWETH = (XPI/4.0)*XCCH*XCCS*XAS*(ZRHO00**XCEXVT)
+#if defined(REPRO48) || defined(REPRO55)
+XFSWETH = (XPI/4.0)*XCCH*XCCS*XAS*(ZRHO00**XCEXVT)
+#else
 XFSWETH = XNS*(XPI/4.0)*XCCH*XAS*(ZRHO00**XCEXVT) ! Wurtz
+#endif
 !
 XLBSWETH1   =    MOMG(XALPHAH,XNUH,2.)*MOMG(XALPHAS,XNUS,XBS)
 XLBSWETH2   = 2.*MOMG(XALPHAH,XNUH,1.)*MOMG(XALPHAS,XNUS,XBS+1.)
@@ -1174,7 +1243,7 @@ IND      = 50    ! Interval number, collection efficiency and infinite diameter
 ZEHS     = 1.0   ! factor used to integrate the dimensional distributions when
 ZFDINFTY = 20.0  ! computing the kernels XKER_SWETH
 !
-IF( .NOT.ALLOCATED(XKER_SWETH) ) ALLOCATE( XKER_SWETH(NWETLBDAH,NWETLBDAS) )
+IF( .NOT.ASSOCIATED(XKER_SWETH) ) CALL RAIN_ICE_PARAM_ALLOCATE('XKER_SWETH', NWETLBDAH,NWETLBDAS)
 !
 CALL READ_XKER_SWETH (KWETLBDAH,KWETLBDAS,KND,                              &
                    PALPHAH,PNUH,PALPHAS,PNUS,PEHS,PBS,PCH,PDH,PCS,PDS,PFVELOS, &
@@ -1241,7 +1310,7 @@ IND      = 50    ! Number of interval used to integrate the dimensional
 ZEHG     = 1.0   ! distributions when computing the kernel XKER_GWETH
 ZFDINFTY = 20.0
 !
-IF( .NOT.ALLOCATED(XKER_GWETH) ) ALLOCATE( XKER_GWETH(NWETLBDAH,NWETLBDAG) )
+IF( .NOT.ASSOCIATED(XKER_GWETH) ) CALL RAIN_ICE_PARAM_ALLOCATE('XKER_GWETH', NWETLBDAH,NWETLBDAG)
 !
 CALL READ_XKER_GWETH (KWETLBDAH,KWETLBDAG,KND,                              &
                    PALPHAH,PNUH,PALPHAG,PNUG,PEHG,PBG,PCH,PDH,PCG,PDG,      &
@@ -1307,7 +1376,7 @@ IND      = 50    ! Number of interval used to integrate the dimensional
 ZEHR     = 1.0   ! distributions when computing the kernel XKER_RWETH
 ZFDINFTY = 20.0
 !
-IF( .NOT.ALLOCATED(XKER_RWETH) ) ALLOCATE( XKER_RWETH(NWETLBDAH,NWETLBDAR) )
+IF( .NOT.ASSOCIATED(XKER_RWETH) ) CALL RAIN_ICE_PARAM_ALLOCATE('XKER_RWETH', NWETLBDAH,NWETLBDAR)
 !
 CALL READ_XKER_RWETH (KWETLBDAH,KWETLBDAR,KND,                              &
                    PALPHAH,PNUH,PALPHAR,PNUR,PEHR,PBR,PCH,PDH,PCR,PDR,      &
@@ -1413,6 +1482,7 @@ IF (GFLAG) THEN
   WRITE(UNIT=KLUOUT,FMT='("            distribution:AL=",E13.6,"NU=",E13.6)') &
                                                       XALPHAH,XNUH
 END IF
+IF (LHOOK) CALL DR_HOOK('INI_RAIN_ICE',1,ZHOOK_HANDLE)
 CONTAINS
 !
 !------------------------------------------------------------------------------

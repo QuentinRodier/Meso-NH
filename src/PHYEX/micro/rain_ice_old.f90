@@ -4,11 +4,11 @@
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ######spl
-       MODULE MODI_RAIN_ICE
+       MODULE MODI_RAIN_ICE_OLD
 !      ####################
 !
 INTERFACE
-      SUBROUTINE RAIN_ICE ( OSEDIC,HSEDIM, HSUBG_AUCV, OWARM, KKA, KKU, KKL,      &
+      SUBROUTINE RAIN_ICE_OLD (D, OSEDIC,HSEDIM, HSUBG_AUCV, OWARM, KKA, KKU, KKL,      &
                             KSPLITR, PTSTEP, KRR,                            &
                             PDZZ, PRHODJ, PRHODREF, PEXNREF, PPABST, PCIT, PCLDFR,&
                             PTHT, PRVT, PRCT, PRRT, PRIT, PRST, &
@@ -17,7 +17,9 @@ INTERFACE
                             PINPRS, PINPRG, PSIGS, PINDEP, PRAINFR, PSEA, PTOWN,  &
                             PRHT, PRHS, PINPRH, PFPR                        )
 !
+USE MODD_DIMPHYEX,   ONLY: DIMPHYEX_t
 !
+TYPE(DIMPHYEX_t),         INTENT(IN)    :: D
 LOGICAL,                  INTENT(IN)    :: OSEDIC ! Switch for droplet sedim.
 CHARACTER(LEN=4),         INTENT(IN)    :: HSEDIM ! Sedimentation scheme
 CHARACTER(LEN=4),         INTENT(IN)    :: HSUBG_AUCV ! Switch for rc->rr Subgrid autoconversion
@@ -77,11 +79,11 @@ REAL, DIMENSION(:,:,:),   OPTIONAL, INTENT(INOUT) :: PRHS    ! Hail m.r. source
 REAL, DIMENSION(:,:),     OPTIONAL, INTENT(INOUT) :: PINPRH! Hail instant precip
 REAL, DIMENSION(:,:,:,:), OPTIONAL, INTENT(OUT)   :: PFPR ! upper-air precipitation fluxes
 !
-END SUBROUTINE RAIN_ICE
+END SUBROUTINE RAIN_ICE_OLD
 END INTERFACE
-END MODULE MODI_RAIN_ICE
+END MODULE MODI_RAIN_ICE_OLD
 !     ######spl
-      SUBROUTINE RAIN_ICE ( OSEDIC,HSEDIM, HSUBG_AUCV, OWARM, KKA, KKU, KKL,      &
+      SUBROUTINE RAIN_ICE_OLD (D, OSEDIC,HSEDIM, HSUBG_AUCV, OWARM, KKA, KKU, KKL,      &
                             KSPLITR, PTSTEP, KRR,                            &
                             PDZZ, PRHODJ, PRHODREF, PEXNREF, PPABST, PCIT, PCLDFR,&
                             PTHT, PRVT, PRCT, PRRT, PRIT, PRST, &
@@ -139,7 +141,7 @@ END MODULE MODI_RAIN_ICE
 !!    REFERENCE
 !!    ---------
 !!
-!!      Book1 and Book2 of documentation ( routine RAIN_ICE )
+!!      Book1 and Book2 of documentation ( routine RAIN_ICE_OLD )
 !!
 !!    AUTHOR
 !!    ------
@@ -229,8 +231,9 @@ use MODD_CST,            only: XCI, XCL, XCPD, XCPV, XLSTT, XLVTT, XTT, &
 use MODD_LES,            only: LLES_CALL
 use MODD_PARAMETERS,     only: JPVEXT
 use MODD_PARAM_ICE,      only: CSUBG_PR_PDF, LDEPOSC
-use MODD_RAIN_ICE_DESCR, only: XLBEXR, XLBR, XRTMIN
+use MODD_RAIN_ICE_DESCR, only: RAIN_ICE_DESCR, XLBEXR, XLBR, XRTMIN
 use MODD_RAIN_ICE_PARAM, only: XCRIAUTC
+USE MODD_DIMPHYEX,       ONLY: DIMPHYEX_t
 
 use MODE_MSG
 use MODE_RAIN_ICE_FAST_RG,             only: RAIN_ICE_FAST_RG
@@ -245,7 +248,8 @@ use MODE_RAIN_ICE_WARM,                only: RAIN_ICE_WARM
 use mode_tools,                        only: Countjv
 use mode_tools_ll,                     only: GET_INDICE_ll
 
-USE MODI_ICE4_RAINFR_VERT
+USE MODE_ICE4_RAINFR_VERT
+!
 
 IMPLICIT NONE
 !
@@ -253,6 +257,7 @@ IMPLICIT NONE
 !
 !
 !
+TYPE(DIMPHYEX_t),         INTENT(IN)    :: D
 LOGICAL,                  INTENT(IN)    :: OSEDIC ! Switch for droplet sedim.
 CHARACTER(LEN=4),         INTENT(IN)    :: HSEDIM ! Sedimentation scheme
 CHARACTER(LEN=4),         INTENT(IN)    :: HSUBG_AUCV ! Switch for rc->rr Subgrid autoconversion
@@ -738,12 +743,12 @@ IF( IMICRO >= 0 ) THEN
     ELSE
       !wrong CSUBG_PR_PDF case
       WRITE(*,*) 'wrong CSUBG_PR_PDF case'
-      CALL PRINT_MSG(NVERB_FATAL,'GEN','RAIN_ICE','')      
+      CALL PRINT_MSG(NVERB_FATAL,'GEN','RAIN_ICE_OLD','')      
     ENDIF
   ELSE
     !wrong HSUBG_AUCV case
     WRITE(*,*)'wrong HSUBG_AUCV case'
-    CALL PRINT_MSG(NVERB_FATAL,'GEN','RAIN_ICE','')  
+    CALL PRINT_MSG(NVERB_FATAL,'GEN','RAIN_ICE_OLD','')  
   ENDIF
 
   !Diagnostic of precipitation fraction
@@ -751,7 +756,7 @@ IF( IMICRO >= 0 ) THEN
   DO JL=1,IMICRO
     PRAINFR(I1(JL),I2(JL),I3(JL)) = ZRF(JL)
   END DO
-  CALL ICE4_RAINFR_VERT( IIB, IIE, IIT, IJB, IJE, IJT, IKB, IKE, IKT, KKL, PRAINFR, PRRT(:,:,:),      &
+  CALL ICE4_RAINFR_VERT(D, RAIN_ICE_DESCR, PRAINFR, PRRT(:,:,:),      &
                          RESHAPE( SOURCE = [ ( 0., JL = 1, SIZE( PRSS ) ) ], SHAPE = SHAPE( PRSS ) ), &
                          RESHAPE( SOURCE = [ ( 0., JL = 1, SIZE( PRGS ) ) ], SHAPE = SHAPE( PRGS ) )  )
   DO JL=1,IMICRO
@@ -934,12 +939,12 @@ ELSEIF (HSEDIM == 'SPLI') THEN
   KRR,OSEDIC,LDEPOSC,PINPRC,PINDEP,PINPRR,PINPRS,PINPRG,PDZZ,PRHODREF,PPABST,PTHT,PRHODJ,&
       PINPRR3D,PRCS,PRCT,PRRS,PRRT,PRIS,PRIT,PRSS,PRST,PRGS,PRGT,PSEA,PTOWN,PINPRH,PRHS,PRHT,PFPR)
 ELSE
-  call Print_msg( NVERB_FATAL, 'GEN', 'RAIN_ICE', 'no sedimentation scheme for HSEDIM='//HSEDIM )
+  call Print_msg( NVERB_FATAL, 'GEN', 'RAIN_ICE_OLD', 'no sedimentation scheme for HSEDIM='//HSEDIM )
 END IF
 !sedimentation of rain fraction
-CALL ICE4_RAINFR_VERT(IIB, IIE, IIT, IJB, IJE, IJT, IKB, IKE, IKT, KKL, PRAINFR, PRRS(:,:,:)*PTSTEP,  &
+CALL ICE4_RAINFR_VERT(D, RAIN_ICE_DESCR, PRAINFR, PRRS(:,:,:)*PTSTEP,  &
                       PRSS(:,:,:)*PTSTEP, PRGS(:,:,:)*PTSTEP)
 !
 !-------------------------------------------------------------------------------
 !
-END SUBROUTINE RAIN_ICE
+END SUBROUTINE RAIN_ICE_OLD

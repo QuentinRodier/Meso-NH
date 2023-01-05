@@ -15,10 +15,34 @@ implicit none
 
 private
 
-public :: Sources_neg_correct
+public :: Sources_neg_correct,Sources_neg_correct_phy
 
 contains
 
+subroutine Sources_neg_correct_phy(D, KSV, hcloud, hbudname, KRR, ptstep, ppabst, ptht, prt, prths, prrs, prsvs, prhodj)
+!
+USE MODD_DIMPHYEX, ONLY: DIMPHYEX_t
+!
+IMPLICIT NONE
+!
+TYPE(DIMPHYEX_t),            INTENT(IN) :: D
+INTEGER,                     INTENT(IN) :: KSV
+character(len=*),            intent(in)           :: hcloud   ! Kind of cloud parameterization
+character(len=*),            intent(in)           :: hbudname ! Budget name
+integer,                     intent(in)           :: KRR      ! Number of moist variables
+real,                        intent(in)           :: ptstep   ! Timestep
+real, dimension(D%NIT,D%NJT,D%NKT),    intent(in)           :: ppabst   ! Absolute pressure at time t
+real, dimension(D%NIT,D%NJT,D%NKT),    intent(in)           :: ptht     ! Theta at time t
+real, dimension(D%NIT,D%NJT,D%NKT, KRR), intent(in)           :: prt      ! Moist variables at time t
+real, dimension(D%NIT,D%NJT,D%NKT),    intent(inout)        :: prths    ! Source terms
+real, dimension(D%NIT,D%NJT,D%NKT, KRR), intent(inout)        :: prrs     ! Source terms
+real, dimension(D%NIT,D%NJT,D%NKT, KSV), intent(inout)        :: prsvs    ! Source terms
+real, dimension(D%NIT,D%NJT,D%NKT),    intent(in), optional :: prhodj   ! Dry density * jacobian
+!
+CALL SOURCES_NEG_CORRECT(HCLOUD, 'NETUR',KRR,PTSTEP,PPABST,PTHT,PRT,PRTHS,PRRS,PRSVS)
+!
+end subroutine Sources_neg_correct_phy
+!
 subroutine Sources_neg_correct( hcloud, hbudname, krr, ptstep, ppabst, ptht, prt, prths, prrs, prsvs, prhodj )
 
 use modd_budget,     only: lbudget_th, lbudget_rv, lbudget_rc, lbudget_rr, lbudget_ri, &

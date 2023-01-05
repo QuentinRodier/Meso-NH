@@ -2,50 +2,18 @@
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 microph 2006/05/18 13:07:25
-!-----------------------------------------------------------------
 !     ###########################
-      MODULE MODI_READ_XKER_GWETH
+      MODULE MODE_READ_XKER_GWETH
 !     ###########################
-!
-INTERFACE
+IMPLICIT NONE
+CONTAINS
       SUBROUTINE READ_XKER_GWETH (KWETLBDAH,KWETLBDAG,KND,                   &
                     PALPHAH,PNUH,PALPHAG,PNUG,PEHG,PBG,PCH,PDH,PCG,PDG,      &
                     PWETLBDAH_MAX,PWETLBDAG_MAX,PWETLBDAH_MIN,PWETLBDAG_MIN, &
                     PFDINFTY,PKER_GWETH                                      )
-!
-INTEGER, INTENT(OUT) :: KND,KWETLBDAH,KWETLBDAG
-REAL,    INTENT(OUT) :: PALPHAH
-REAL,    INTENT(OUT) :: PNUH
-REAL,    INTENT(OUT) :: PALPHAG
-REAL,    INTENT(OUT) :: PNUG
-REAL,    INTENT(OUT) :: PEHG
-REAL,    INTENT(OUT) :: PBG
-REAL,    INTENT(OUT) :: PCH
-REAL,    INTENT(OUT) :: PDH
-REAL,    INTENT(OUT) :: PCG
-REAL,    INTENT(OUT) :: PDG
-REAL,    INTENT(OUT) :: PWETLBDAH_MAX
-REAL,    INTENT(OUT) :: PWETLBDAG_MAX
-REAL,    INTENT(OUT) :: PWETLBDAH_MIN
-REAL,    INTENT(OUT) :: PWETLBDAG_MIN
-REAL,    INTENT(OUT) :: PFDINFTY
-REAL, DIMENSION(:,:), INTENT(OUT), OPTIONAL :: PKER_GWETH 
-!
-END SUBROUTINE 
-!
-END INTERFACE
-!
-END MODULE MODI_READ_XKER_GWETH
-!     ########################################################################
-      SUBROUTINE READ_XKER_GWETH (KWETLBDAH,KWETLBDAG,KND,                   &
-                    PALPHAH,PNUH,PALPHAG,PNUG,PEHG,PBG,PCH,PDH,PCG,PDG,      &
-                    PWETLBDAH_MAX,PWETLBDAG_MAX,PWETLBDAH_MIN,PWETLBDAG_MIN, &
-                    PFDINFTY,PKER_GWETH                                      )
+!DEC$ OPTIMIZE:0
+      USE PARKIND1, ONLY : JPRB
+      USE YOMHOOK , ONLY : LHOOK, DR_HOOK
 !     ########################################################################
 !
 !!****  * * - initialize the kernels for the graupel-hail wet growth process
@@ -81,6 +49,7 @@ END MODULE MODI_READ_XKER_GWETH
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    19/04/97
+!!      14-Feb-2014 R. El Khatib optimise for compile time on Intel
 !!
 !-------------------------------------------------------------------------------
 !
@@ -112,6 +81,8 @@ REAL, DIMENSION(:,:), INTENT(OUT), OPTIONAL :: PKER_GWETH
 ! #INSERT HERE THE OUTPUT OF INI_RAIN_ICE_HAIL IF THE KERNELS ARE UPDATED#
 ! ########################################################################
 !
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+IF (LHOOK) CALL DR_HOOK('READ_XKER_GWETH',0,ZHOOK_HANDLE)
 KND= 50
 KWETLBDAH= 40
 KWETLBDAG= 40
@@ -1734,4 +1705,6 @@ IF( PRESENT(PKER_GWETH) ) THEN
   PKER_GWETH( 40, 40) =  0.204855E-01
 END IF
 !
+IF (LHOOK) CALL DR_HOOK('READ_XKER_GWETH',1,ZHOOK_HANDLE)
 END SUBROUTINE READ_XKER_GWETH
+END MODULE MODE_READ_XKER_GWETH

@@ -173,9 +173,14 @@ USE MODD_ELEC_DESCR, ONLY : XRTMIN_ELEC, XQTMIN, XFC, XFI, XECHARGE
 USE MODD_NSV, ONLY : NSV_ELECBEG, NSV_ELECEND
 USE MODD_PARAMETERS
 USE MODD_RAIN_ICE_DESCR, ONLY : XRTMIN, XBI
+USE MODD_RAIN_ICE_PARAM,   ONLY: RAIN_ICE_PARAM
+USE MODD_NEB,              ONLY: NEB
+USE MODD_TURB_n,           ONLY: TURBN
+USE MODD_DIMPHYEX,         ONLY: DIMPHYEX_t
 
 use mode_budget,          only: Budget_store_init, Budget_store_end
 use mode_tools_ll,        only: GET_INDICE_ll
+USE MODE_FILL_DIMPHYEX,   ONLY: FILL_DIMPHYEX
 
 USE MODI_CONDENSATION
 USE MODI_GET_HALO
@@ -263,6 +268,7 @@ REAL, DIMENSION(SIZE(PEXNREF,1),SIZE(PEXNREF,2),SIZE(PEXNREF,3)) &
                             ZLV,  &  ! guess of the Lv at t+1
                             ZLS,  &  ! guess of the Ls at t+1
       ZW1,ZW2,ZW3,ZW4,ZW5,ZW6,ZW7,&  ! Work arrays for intermediate fields
+    ZW1_IN, ZW2_IN, ZW3_IN, ZDUM, &
                             ZCND     ! CND=(T-T00)/(T0-T00) cf sc doc and TAO etal (89)
 REAL, DIMENSION(SIZE(PEXNREF,1),SIZE(PEXNREF,2),SIZE(PEXNREF,3)) &
                          :: ZWE1, &
@@ -273,7 +279,8 @@ REAL, DIMENSION(SIZE(PEXNREF,1),SIZE(PEXNREF,2),SIZE(PEXNREF,3)) &
                             ZADD             ! ratio (0 or 1) of ZION_NUMBER 
                                              ! to add to positive
                                              ! or negative ion number
-!
+REAL, DIMENSION(SIZE(PEXNREF,1),SIZE(PEXNREF,2)) :: ZSIGQSAT2D
+                                             !
 INTEGER             :: IIU,IJU,IKU! dimensions of dummy arrays
 INTEGER             :: IIB,IJB    ! Horz index values of the first inner mass points
 INTEGER             :: IIE,IJE    ! Horz index values of the last inner mass points
@@ -282,6 +289,8 @@ INTEGER             :: IKE        ! K index value of the last inner mass point
 INTEGER             :: JITER,ITERMAX ! iterative loop for first order adjustment
 !
 LOGICAL             :: LPRETREATMENT, LNEW_ADJUST
+!
+TYPE(DIMPHYEX_t)    :: D
 !
 !-------------------------------------------------------------------------------
 !
@@ -294,6 +303,7 @@ IKU = SIZE(PEXNREF,3)
 CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IKB = 1 + JPVEXT
 IKE = IKU - JPVEXT
+CALL FILL_DIMPHYEX(D, IIU, IJU, IKU)
 !
 ZEPS = XMV / XMD
 !
@@ -368,14 +378,20 @@ DO JITER = 1, ITERMAX
 !
 !*       3.1    compute condensate, cloud fraction
 !
-  !   ZW3=water vapor    ZW1=rc (INOUT)  ZW2=ri (INOUT)   PSRC= s'rci'/Sigma_s^2
-    ZW3 = PRVS * PTSTEP;     ZW1 = PRCS * PTSTEP;  ZW2 = PRIS * PTSTEP
+  !   ZW3=water vapor    ZW1=rc (OUT)  ZW2=ri (OUT)   PSRC= s'rci'/Sigma_s^2
+  ! ZW3_IN/ZW2_IN/ZW1_IN (IN)
+    ZW3_IN = PRVS * PTSTEP;     ZW1_IN = PRCS * PTSTEP;  ZW2_IN = PRIS * PTSTEP
+    ZW3=ZW3_IN; ZW2=ZW2_IN; ZW1=ZW1_IN 
+    ZSIGQSAT2D(:,:)=PSIGQSAT
     ZW4 = 1. ! PRODREF is not used if HL variables are not present
 !
-    CALL CONDENSATION( IIU, IJU, IKU, IIB, IIE, IJB, IJE, IKB, IKE,1, 'T', 'CB02', 'CB',   &
-       PPABST, PZZ, ZW4, ZT, ZW3, ZW1, ZW2, PRSS*PTSTEP, PRGS*PTSTEP, &
-       PSIGS, PMFCONV, PCLDFR, PSRCS, .TRUE., &
-       OSIGMAS, PSIGQSAT, PLV=ZLV, PLS=ZLS, PCPH=ZCPH )
+    CALL CONDENSATION(D, CST, RAIN_ICE_PARAM, NEB, TURBN, &
+                     &'T', 'CB02', 'CB',                                                  &
+                     &PPABST, PZZ, ZW4, ZT, ZW3_IN, ZW3, ZW1_IN, ZW1, ZW2_IN, ZW2,    &
+                     &PRRS*PTSTEP, PRSS*PTSTEP, PRGS*PTSTEP, PSIGS, .FALSE., PMFCONV, PCLDFR, PSRCS, .FALSE.,                 &
+                     &OSIGMAS, .FALSE., .FALSE.,                                                        &
+                     &ZDUM, ZDUM, ZDUM, ZDUM, ZDUM, ZSIGQSAT2D, &
+                     &ZLV, ZLS, ZCPH)
 !
 !*       3.2    compute the variation of mixing ratio
 !

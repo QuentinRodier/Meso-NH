@@ -2,46 +2,18 @@
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!     ######spl
-      MODULE MODI_READ_XKER_RWETH
+!     #####s#####################
+      MODULE MODE_READ_XKER_RWETH
 !     ###########################
-!
-INTERFACE
-      SUBROUTINE READ_XKER_RWETH (KWETLBDAH,KWETLBDAR,KND,                   &
-                    PALPHAH,PNUH,PALPHAR,PNUR,PEHR,PBR,PCH,PDH,PCR,PDR,      &
-                    PWETLBDAH_MAX,PWETLBDAR_MAX,PWETLBDAH_MIN,PWETLBDAR_MIN, &
-                    PFDINFTY,PKER_RWETH                                      )
-!
 IMPLICIT NONE
-INTEGER, INTENT(OUT) :: KND,KWETLBDAH,KWETLBDAR
-REAL,    INTENT(OUT) :: PALPHAH
-REAL,    INTENT(OUT) :: PNUH
-REAL,    INTENT(OUT) :: PALPHAR
-REAL,    INTENT(OUT) :: PNUR
-REAL,    INTENT(OUT) :: PEHR
-REAL,    INTENT(OUT) :: PBR
-REAL,    INTENT(OUT) :: PCH
-REAL,    INTENT(OUT) :: PDH
-REAL,    INTENT(OUT) :: PCR
-REAL,    INTENT(OUT) :: PDR
-REAL,    INTENT(OUT) :: PWETLBDAH_MAX
-REAL,    INTENT(OUT) :: PWETLBDAR_MAX
-REAL,    INTENT(OUT) :: PWETLBDAH_MIN
-REAL,    INTENT(OUT) :: PWETLBDAR_MIN
-REAL,    INTENT(OUT) :: PFDINFTY
-REAL, DIMENSION(:,:), INTENT(OUT), OPTIONAL :: PKER_RWETH
-!
-END SUBROUTINE 
-!
-END INTERFACE
-!
-END MODULE MODI_READ_XKER_RWETH
-!     ######spl
+CONTAINS
       SUBROUTINE READ_XKER_RWETH (KWETLBDAH,KWETLBDAR,KND,                   &
                     PALPHAH,PNUH,PALPHAR,PNUR,PEHR,PBR,PCH,PDH,PCR,PDR,      &
                     PWETLBDAH_MAX,PWETLBDAR_MAX,PWETLBDAH_MIN,PWETLBDAR_MIN, &
                     PFDINFTY,PKER_RWETH                                      )
 !DEC$ OPTIMIZE:0
+      USE PARKIND1, ONLY : JPRB
+      USE YOMHOOK , ONLY : LHOOK, DR_HOOK
 !     ########################################################################
 !
 !!****  * * - initialize the kernels for the rain-hail wet growth process
@@ -108,6 +80,8 @@ REAL, DIMENSION(:,:), INTENT(OUT), OPTIONAL :: PKER_RWETH
 ! #INSERT HERE THE OUTPUT OF INI_RAIN_ICE IF THE KERNELS ARE UPDATED#
 ! ###################################################################
 !
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+IF (LHOOK) CALL DR_HOOK('READ_XKER_RWETH',0,ZHOOK_HANDLE)
 KND= 50
 KWETLBDAH= 40
 KWETLBDAR= 40
@@ -1730,4 +1704,6 @@ IF( PRESENT(PKER_RWETH) ) THEN
   PKER_RWETH( 40, 40) =  0.210656E-01
 END IF
 !
+IF (LHOOK) CALL DR_HOOK('READ_XKER_RWETH',1,ZHOOK_HANDLE)
 END SUBROUTINE READ_XKER_RWETH
+END MODULE MODE_READ_XKER_RWETH

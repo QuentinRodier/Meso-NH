@@ -3,29 +3,10 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-!     ###################
-      MODULE MODI_UPDATE_LM
-!     ###################
-INTERFACE
-!
-SUBROUTINE UPDATE_LM(HLBCX,HLBCY,PLM,PLEPS)
-!
-CHARACTER(LEN=4), DIMENSION(2), INTENT(IN) :: HLBCX ! X boundary type
-CHARACTER(LEN=4), DIMENSION(2), INTENT(IN) :: HLBCY ! Y boundary type
-!
-REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PLM   ! mixing length
-REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PLEPS ! dissipative length
-!
-END SUBROUTINE UPDATE_LM
-!
-END INTERFACE
-!
-END MODULE MODI_UPDATE_LM
-!
-!
-!
-!     #################################################################
-      SUBROUTINE UPDATE_LM(HLBCX,HLBCY,PLM,PLEPS)
+      MODULE MODE_UPDATE_LM
+IMPLICIT NONE
+CONTAINS
+SUBROUTINE UPDATE_LM(D,HLBCX,HLBCY,PLM,PLEPS)
 !     #################################################################
 !
 !!****  *UPDATE_LM* - routine to set external points for mixing length
@@ -60,8 +41,8 @@ END MODULE MODI_UPDATE_LM
 !
 !*       0.    DECLARATIONS
 !         
-USE MODD_CONF
 USE MODD_PARAMETERS
+USE MODD_DIMPHYEX,   ONLY: DIMPHYEX_t
 !
 USE MODE_ll
 USE MODD_ARGSLIST_ll, ONLY : LIST_ll
@@ -71,11 +52,12 @@ IMPLICIT NONE
 !
 !*       0.1   declarations of arguments
 !
+TYPE(DIMPHYEX_t),       INTENT(IN)    :: D
 CHARACTER(LEN=4), DIMENSION(2), INTENT(IN) :: HLBCX ! X boundary type
 CHARACTER(LEN=4), DIMENSION(2), INTENT(IN) :: HLBCY ! Y boundary type
 !
-REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PLM   ! mixing length
-REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PLEPS ! dissipative length
+REAL, DIMENSION(D%NIT,D%NJT,D%NKT), INTENT(INOUT) :: PLM   ! mixing length
+REAL, DIMENSION(D%NIT,D%NJT,D%NKT), INTENT(INOUT) :: PLEPS ! dissipative length
 !
 !*       0.2   declarations of local variables
 !
@@ -92,7 +74,10 @@ INTEGER                :: IINFO_ll       ! return code of parallel routine
 !
 !*       1.    COMPUTE DIMENSIONS OF ARRAYS :
 !              ----------------------------
-CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
+IIB = D%NIB
+IIE = D%NIE
+IJB = D%NJB
+IJE = D%NJE
 NULLIFY(TZLM_ll)
 !
 !-------------------------------------------------------------------------------
@@ -135,3 +120,4 @@ IF ( HLBCY(2) /= "CYCL" .AND. LNORTH_ll()) THEN
 END IF
 !-----------------------------------------------------------------------------
 END SUBROUTINE UPDATE_LM
+END MODULE MODE_UPDATE_LM

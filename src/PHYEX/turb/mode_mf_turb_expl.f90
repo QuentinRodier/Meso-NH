@@ -3,68 +3,12 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
 !    ######################
-     MODULE MODI_MF_TURB_EXPL
+     MODULE MODE_MF_TURB_EXPL
 !    ######################
-!
-INTERFACE
-!
-!     #################################################################
-      SUBROUTINE MF_TURB_EXPL(KKA,KKB,KKE,KKU,KKL,OMIXUV,             &
-                PRHODJ,                                               &
-                PTHLM,PTHVM,PRTM,PUM,PVM,                             &
-                PTHLDT,PRTDT,PUDT,PVDT,                               &
-                PEMF,PTHL_UP,PTHV_UP,PRT_UP,PU_UP,PV_UP,              &
-                PFLXZTHLMF,PFLXZTHVMF,PFLXZRMF,PFLXZUMF,PFLXZVMF)
-!     #################################################################
-!
-!*                    1.1  Declaration of Arguments
-!
-!
-INTEGER,                INTENT(IN)   :: KKA          ! near ground array index
-INTEGER,                INTENT(IN)   :: KKB          ! near ground physical index
-INTEGER,                INTENT(IN)   :: KKE          ! uppest atmosphere physical index
-INTEGER,                INTENT(IN)   :: KKU          ! uppest atmosphere array index
-INTEGER,                INTENT(IN)   :: KKL          ! +1 if grid goes from ground to atmosphere top, -1 otherwise
-LOGICAL,                INTENT(IN)   :: OMIXUV      ! True if mixing of momentum
-
-REAL, DIMENSION(:,:), INTENT(IN)   :: PRHODJ      ! dry density * Grid size
-
-!   Conservative var. at t-dt
-REAL, DIMENSION(:,:), INTENT(IN) ::  PTHLM        ! conservative pot. temp.
-REAL, DIMENSION(:,:), INTENT(IN) ::  PRTM         ! water var.  where 
-
-!  Virtual potential temperature at t-dt
-REAL, DIMENSION(:,:), INTENT(IN) ::  PTHVM 
-!  Momentum at t-dt
-REAL, DIMENSION(:,:), INTENT(IN) ::  PUM
-REAL, DIMENSION(:,:), INTENT(IN) ::  PVM
-!
-! Tendencies of conservative variables
-REAL, DIMENSION(:,:),   INTENT(OUT) ::  PTHLDT
-
-REAL, DIMENSION(:,:),   INTENT(OUT) ::  PRTDT 
-
-! Tendencies of momentum
-REAL, DIMENSION(:,:),   INTENT(OUT) ::  PUDT
-REAL, DIMENSION(:,:),   INTENT(OUT) ::  PVDT
-
-! Updraft characteritics
-REAL, DIMENSION(:,:), INTENT(IN)   ::  PEMF,PTHL_UP,PTHV_UP,PRT_UP,PU_UP,PV_UP
-
-! Fluxes
-REAL, DIMENSION(:,:), INTENT(OUT)  ::  PFLXZTHLMF,PFLXZTHVMF,PFLXZRMF,PFLXZUMF,PFLXZVMF
-
-END SUBROUTINE MF_TURB_EXPL
-
-END INTERFACE
-!
-END MODULE MODI_MF_TURB_EXPL
-!
-
-!     ######spl
-      SUBROUTINE MF_TURB_EXPL(KKA,KKB,KKE,KKU,KKL,OMIXUV,             &
-                PRHODJ,                                               &
-                PTHLM,PTHVM,PRTM,PUM,PVM,                             &
+IMPLICIT NONE
+CONTAINS
+      SUBROUTINE MF_TURB_EXPL(D, PARAMMF,                             &
+                PRHODJ,PTHLM,PTHVM,PRTM,PUM,PVM,                      &
                 PTHLDT,PRTDT,PUDT,PVDT,                               &
                 PEMF,PTHL_UP,PTHV_UP,PRT_UP,PU_UP,PV_UP,              &
                 PFLXZTHLMF,PFLXZTHVMF,PFLXZRMF,PFLXZUMF,PFLXZVMF)
@@ -106,9 +50,12 @@ END MODULE MODI_MF_TURB_EXPL
 !       
 !*      0. DECLARATIONS
 !          ------------
-
-USE MODD_PARAM_MFSHALL_n
-USE MODI_SHUMAN_MF
+USE MODD_DIMPHYEX,        ONLY: DIMPHYEX_t
+USE MODD_PARAM_MFSHALL_n, ONLY: PARAM_MFSHALL_t
+!
+USE PARKIND1, ONLY : JPRB
+USE YOMHOOK , ONLY : LHOOK, DR_HOOK
+USE MODI_SHUMAN_MF, ONLY: MZM_MF
 
 IMPLICIT NONE
 
@@ -116,51 +63,59 @@ IMPLICIT NONE
 !*      0.1  declarations of arguments
 
 
-INTEGER,                INTENT(IN)   :: KKA          ! near ground array index
-INTEGER,                INTENT(IN)   :: KKB          ! near ground physical index
-INTEGER,                INTENT(IN)   :: KKE          ! uppest atmosphere physical index
-INTEGER,                INTENT(IN)   :: KKU          ! uppest atmosphere array index
-INTEGER,                INTENT(IN)   :: KKL          ! +1 if grid goes from ground to atmosphere top, -1 otherwise
-LOGICAL,                INTENT(IN)   :: OMIXUV      ! True if mixing of momentum
+TYPE(DIMPHYEX_t),       INTENT(IN)   :: D
+TYPE(PARAM_MFSHALL_t),  INTENT(IN)   :: PARAMMF
 
-REAL, DIMENSION(:,:), INTENT(IN)   :: PRHODJ      ! dry density * Grid size
+REAL, DIMENSION(D%NIJT,D%NKT), INTENT(IN)   :: PRHODJ      ! dry density * Grid size
 
 !   Conservative var. at t-dt
-REAL, DIMENSION(:,:), INTENT(IN) ::  PTHLM        ! conservative pot. temp.
-REAL, DIMENSION(:,:), INTENT(IN) ::  PRTM         ! water var.  where 
+REAL, DIMENSION(D%NIJT,D%NKT), INTENT(IN) ::  PTHLM        ! conservative pot. temp.
+REAL, DIMENSION(D%NIJT,D%NKT), INTENT(IN) ::  PRTM         ! water var.  where 
 
 !  Virtual potential temperature at t-dt
-REAL, DIMENSION(:,:), INTENT(IN) ::  PTHVM 
+REAL, DIMENSION(D%NIJT,D%NKT), INTENT(IN) ::  PTHVM 
 !  Momentum at t-dt
-REAL, DIMENSION(:,:), INTENT(IN) ::  PUM
-REAL, DIMENSION(:,:), INTENT(IN) ::  PVM
+REAL, DIMENSION(D%NIJT,D%NKT), INTENT(IN) ::  PUM
+REAL, DIMENSION(D%NIJT,D%NKT), INTENT(IN) ::  PVM
 !
 ! Tendencies of conservative variables
-REAL, DIMENSION(:,:),   INTENT(OUT) ::  PTHLDT
+REAL, DIMENSION(D%NIJT,D%NKT),   INTENT(OUT) ::  PTHLDT
 
-REAL, DIMENSION(:,:),   INTENT(OUT) ::  PRTDT 
+REAL, DIMENSION(D%NIJT,D%NKT),   INTENT(OUT) ::  PRTDT 
 
 ! Tendencies of momentum
-REAL, DIMENSION(:,:),   INTENT(OUT) ::  PUDT
-REAL, DIMENSION(:,:),   INTENT(OUT) ::  PVDT
+REAL, DIMENSION(D%NIJT,D%NKT),   INTENT(OUT) ::  PUDT
+REAL, DIMENSION(D%NIJT,D%NKT),   INTENT(OUT) ::  PVDT
 
 ! Updraft characteritics
-REAL, DIMENSION(:,:), INTENT(IN)   ::  PEMF,PTHL_UP,PTHV_UP,PRT_UP,PU_UP,PV_UP
+REAL, DIMENSION(D%NIJT,D%NKT), INTENT(IN)   ::  PEMF,PTHL_UP,PTHV_UP,PRT_UP,PU_UP,PV_UP
 
 ! Fluxes
-REAL, DIMENSION(:,:), INTENT(OUT)  ::  PFLXZTHLMF,PFLXZTHVMF,PFLXZRMF,PFLXZUMF,PFLXZVMF
+REAL, DIMENSION(D%NIJT,D%NKT), INTENT(OUT)  ::  PFLXZTHLMF,PFLXZTHVMF,PFLXZRMF,PFLXZUMF,PFLXZVMF
 
-REAL, DIMENSION(SIZE(PFLXZTHLMF,1),SIZE(PFLXZTHLMF,2)) :: ZFLXZTHSMF,ZTHS_UP,ZTHSM  ! Theta S flux
-REAL, DIMENSION(SIZE(PFLXZTHLMF,1),SIZE(PFLXZTHLMF,2)) :: ZQT_UP,ZQTM,ZTHSDT,ZQTDT
-REAL, DIMENSION(SIZE(PFLXZTHLMF,1),SIZE(PFLXZTHLMF,2)) :: ZTHLM_F,ZRTM_F
+REAL, DIMENSION(D%NIJT,D%NKT) :: ZFLXZTHSMF,ZTHS_UP,ZTHSM  ! Theta S flux
+REAL, DIMENSION(D%NIJT,D%NKT) :: ZQT_UP,ZQTM,ZTHSDT,ZQTDT
+REAL, DIMENSION(D%NIJT,D%NKT) :: ZTHLM_F,ZRTM_F
 
-INTEGER                              :: JK            ! loop counter
+INTEGER                              :: JK, JIJ            ! loop counter
+INTEGER :: IIJB,IIJE ! physical horizontal domain indices
+INTEGER :: IKT,IKB,IKE,IKL
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
 
 !----------------------------------------------------------------------------
 !
 !*      1.PRELIMINARIES
 !         -------------
 
+IF (LHOOK) CALL DR_HOOK('MF_TURB_EXPL',0,ZHOOK_HANDLE)
+!
+IIJE=D%NIJE
+IIJB=D%NIJB
+IKT=D%NKT
+IKB=D%NKB
+IKE=D%NKE
+IKL=D%NKL
+!
 PFLXZRMF   = 0.
 PFLXZTHVMF = 0.
 PFLXZTHLMF = 0.
@@ -180,22 +135,33 @@ PVDT   = 0.
 !          -----------------------------------------------
 !   ( Resulting fluxes are in flux level (w-point) as PEMF and PTHL_UP )
 
-ZRTM_F (:,:) = MZM_MF(KKA,KKU,KKL,PRTM (:,:))
-ZTHLM_F(:,:) = MZM_MF(KKA,KKU,KKL,PTHLM(:,:))
-ZQTM   (:,:) = ZRTM_F (:,:)/(1.+ZRTM_F (:,:))
-ZQT_UP (:,:) = PRT_UP (:,:)/(1.+PRT_UP (:,:))
-ZTHS_UP(:,:) = PTHL_UP(:,:)*(1.+XLAMBDA_MF*ZQT_UP(:,:))
-ZTHSM  (:,:) = ZTHLM_F(:,:)*(1.+XLAMBDA_MF*ZQTM(:,:))
+CALL MZM_MF(D, PRTM (:,:), ZRTM_F(:,:))
+CALL MZM_MF(D, PTHLM(:,:), ZTHLM_F(:,:))
+!$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
+ZQTM(IIJB:IIJE,1:IKT)   = ZRTM_F(IIJB:IIJE,1:IKT)/(1.+ZRTM_F(IIJB:IIJE,1:IKT))
+ZQT_UP(IIJB:IIJE,1:IKT) = PRT_UP(IIJB:IIJE,1:IKT)/(1.+PRT_UP(IIJB:IIJE,1:IKT))
+ZTHS_UP(IIJB:IIJE,1:IKT)= PTHL_UP(IIJB:IIJE,1:IKT)*(1.+PARAMMF%XLAMBDA_MF*ZQT_UP(IIJB:IIJE,1:IKT))
+ZTHSM(IIJB:IIJE,1:IKT)  = ZTHLM_F(IIJB:IIJE,1:IKT)*(1.+PARAMMF%XLAMBDA_MF*ZQTM(IIJB:IIJE,1:IKT))
+!$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
 
-PFLXZTHLMF(:,:)  = PEMF(:,:)*(PTHL_UP(:,:)-MZM_MF(KKA,KKU,KKL,PTHLM(:,:)))  ! ThetaL
-PFLXZRMF(:,:)    = PEMF(:,:)*(PRT_UP (:,:)-MZM_MF(KKA,KKU,KKL,PRTM (:,:)))  ! Rt
-PFLXZTHVMF(:,:)  = PEMF(:,:)*(PTHV_UP(:,:)-MZM_MF(KKA,KKU,KKL,PTHVM(:,:)))  ! ThetaV
+CALL MZM_MF(D, PTHLM(:,:), PFLXZTHLMF(:,:))
+CALL MZM_MF(D, PRTM(:,:), PFLXZRMF(:,:))
+CALL MZM_MF(D, PTHVM(:,:), PFLXZTHVMF(:,:))
+!$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
+PFLXZTHLMF(IIJB:IIJE,1:IKT)  = PEMF(IIJB:IIJE,1:IKT)*(PTHL_UP(IIJB:IIJE,1:IKT)-PFLXZTHLMF(IIJB:IIJE,1:IKT))  ! ThetaL
+PFLXZRMF(IIJB:IIJE,1:IKT)    = PEMF(IIJB:IIJE,1:IKT)*(PRT_UP(IIJB:IIJE,1:IKT)-PFLXZRMF(IIJB:IIJE,1:IKT))  ! Rt
+PFLXZTHVMF(IIJB:IIJE,1:IKT)  = PEMF(IIJB:IIJE,1:IKT)*(PTHV_UP(IIJB:IIJE,1:IKT)-PFLXZTHVMF(IIJB:IIJE,1:IKT))  ! ThetaV
 
-ZFLXZTHSMF(:,:)  = PEMF(:,:)*(ZTHS_UP(:,:)-ZTHSM(:,:))    ! Theta S flux
+ZFLXZTHSMF(IIJB:IIJE,1:IKT)  = PEMF(IIJB:IIJE,1:IKT)*(ZTHS_UP(IIJB:IIJE,1:IKT)-ZTHSM(IIJB:IIJE,1:IKT))    ! Theta S flux
+!$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
 
-IF (OMIXUV) THEN
-  PFLXZUMF(:,:) =  PEMF(:,:)*(PU_UP(:,:)-MZM_MF(KKA,KKU,KKL,PUM(:,:)))  ! U
-  PFLXZVMF(:,:) =  PEMF(:,:)*(PV_UP(:,:)-MZM_MF(KKA,KKU,KKL,PVM(:,:)))  ! V
+IF (PARAMMF%LMIXUV) THEN
+  CALL MZM_MF(D, PUM(:,:), PFLXZUMF(:,:))
+  CALL MZM_MF(D, PVM(:,:), PFLXZVMF(:,:))
+  !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
+  PFLXZUMF(IIJB:IIJE,1:IKT) =  PEMF(IIJB:IIJE,1:IKT)*(PU_UP(IIJB:IIJE,1:IKT)-PFLXZUMF(IIJB:IIJE,1:IKT))  ! U
+  PFLXZVMF(IIJB:IIJE,1:IKT) =  PEMF(IIJB:IIJE,1:IKT)*(PV_UP(IIJB:IIJE,1:IKT)-PFLXZVMF(IIJB:IIJE,1:IKT))  ! V
+  !$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
 ELSE
   PFLXZUMF(:,:) = 0.
   PFLXZVMF(:,:) = 0.
@@ -208,20 +174,26 @@ ENDIF
 !          (explicit formulation)
 !          --------------------------------------------
 
-DO JK=KKB,KKE-KKL,KKL
-!  PTHLDT(:,JK) = (PFLXZTHLMF(:,JK  ) - PFLXZTHLMF(:,JK+KKL)) / PRHODJ(:,JK)
-  PRTDT (:,JK) = (PFLXZRMF  (:,JK  ) - PFLXZRMF  (:,JK+KKL)) / PRHODJ(:,JK)
-  ZQTDT (:,JK) = PRTDT (:,JK)/(1.+ ZRTM_F (:,JK)*ZRTM_F (:,JK))
-  ZTHSDT(:,JK) = (ZFLXZTHSMF(:,JK  ) - ZFLXZTHSMF(:,JK+KKL)) / PRHODJ(:,JK)
-  PTHLDT(:,JK) = ZTHSDT(:,JK)/(1.+XLAMBDA_MF*ZQTM(:,JK)) - ZTHLM_F(:,JK)*XLAMBDA_MF*ZQTDT(:,JK)
+DO JK=IKB,IKE-IKL,IKL
+  DO JIJ=IIJB,IIJE
+    !PTHLDT(JIJ,JK) = (PFLXZTHLMF(JIJ,JK  ) - PFLXZTHLMF(JIJ,JK+IKL)) / PRHODJ(JIJ,JK)
+    PRTDT(JIJ,JK) = (PFLXZRMF(JIJ,JK) - PFLXZRMF(JIJ,JK+IKL)) / PRHODJ(JIJ,JK)
+    ZQTDT(JIJ,JK) = PRTDT(JIJ,JK)/(1.+ ZRTM_F(JIJ,JK)*ZRTM_F(JIJ,JK))
+    ZTHSDT(JIJ,JK)= (ZFLXZTHSMF(JIJ,JK) - ZFLXZTHSMF(JIJ,JK+IKL)) / PRHODJ(JIJ,JK)
+    PTHLDT(JIJ,JK) = ZTHSDT(JIJ,JK)/(1.+PARAMMF%XLAMBDA_MF*ZQTM(JIJ,JK)) - ZTHLM_F(JIJ,JK)*PARAMMF%XLAMBDA_MF*ZQTDT(JIJ,JK)
+  ENDDO
 END DO
 
-IF (OMIXUV) THEN
-  DO JK=KKB,KKE-KKL,KKL
-    PUDT(:,JK) = (PFLXZUMF(:,JK  ) - PFLXZUMF(:,JK+KKL)) / PRHODJ(:,JK)
-    PVDT(:,JK) = (PFLXZVMF(:,JK  ) - PFLXZVMF(:,JK+KKL)) / PRHODJ(:,JK)
+IF (PARAMMF%LMIXUV) THEN
+  DO JK=IKB,IKE-IKL,IKL
+    DO JIJ=IIJB,IIJE
+      PUDT(JIJ,JK) = (PFLXZUMF(JIJ,JK) - PFLXZUMF(JIJ,JK+IKL)) / PRHODJ(JIJ,JK)
+      PVDT(JIJ,JK) = (PFLXZVMF(JIJ,JK) - PFLXZVMF(JIJ,JK+IKL)) / PRHODJ(JIJ,JK)
+    ENDDO
   END DO
 ENDIF  
 
 
+IF (LHOOK) CALL DR_HOOK('MF_TURB_EXPL',1,ZHOOK_HANDLE)
 END SUBROUTINE MF_TURB_EXPL
+END MODULE MODE_MF_TURB_EXPL

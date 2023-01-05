@@ -73,6 +73,8 @@ TYPE TURB_t
   LOGICAL            :: LSIGMAS   ! Switch for using Sigma_s from turbulence scheme
   LOGICAL            :: LSIG_CONV ! Switch for computing Sigma_s due to convection
 !
+  LOGICAL            :: LHARAT
+  LOGICAL            :: LSTATNW   ! SWITCH LSTATNW
   LOGICAL            :: LRMC01    ! Switch for computing separate mixing
 !                                    ! and dissipative length in the SBL
 !                                    ! according to Redelsperger, Mahe &
@@ -99,7 +101,7 @@ TYPE TURB_t
   REAL, DIMENSION(:,:,:), POINTER :: XSSVFL_C=>NULL() ! O-A interface flux for v
   REAL, DIMENSION(:,:,:), POINTER :: XSSTFL_C=>NULL() ! O-A interface flux for theta
   REAL, DIMENSION(:,:,:), POINTER :: XSSRFL_C=>NULL() ! O-A interface flux for vapor
-  LOGICAL            :: LHGRAD ! logical switch for the computation of the Leornard Terms
+  LOGICAL            :: LLEONARD ! logical switch for the computation of the Leornard Terms
   REAL               :: XCOEFHGRADTHL  ! coeff applied to thl contribution
   REAL               :: XCOEFHGRADRM  ! coeff applied to mixing ratio contribution
   REAL               :: XALTHGRAD  ! altitude from which to apply the Leonard terms
@@ -110,7 +112,7 @@ TYPE TURB_t
 END TYPE TURB_t
 
 TYPE(TURB_t), DIMENSION(JPMODELMAX), TARGET, SAVE :: TURB_MODEL
-
+TYPE(TURB_t), POINTER, SAVE :: TURBN => NULL()
 REAL, POINTER :: XIMPL=>NULL()
 REAL, POINTER :: XKEMIN=>NULL()
 REAL, POINTER :: XCEDIS=>NULL()
@@ -123,6 +125,8 @@ LOGICAL, POINTER :: LSUBG_COND=>NULL()
 LOGICAL, POINTER :: LSIGMAS=>NULL()
 LOGICAL, POINTER :: LSIG_CONV=>NULL()
 LOGICAL, POINTER :: LRMC01=>NULL()
+LOGICAL, POINTER :: LHARAT=>NULL()
+LOGICAL, POINTER :: LSTATNW=>NULL()
 CHARACTER(LEN=4),POINTER :: CTOM=>NULL()
 CHARACTER(LEN=4),POINTER :: CSUBG_AUCV=>NULL()
 CHARACTER(LEN=80),POINTER :: CSUBG_AUCV_RI=>NULL()
@@ -142,7 +146,7 @@ REAL, DIMENSION(:,:,:), POINTER :: XSSUFL_C=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XSSVFL_C=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XSSTFL_C=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XSSRFL_C=>NULL()
-LOGICAL, POINTER :: LHGRAD=>NULL()
+LOGICAL, POINTER :: LLEONARD=>NULL()
 REAL, POINTER :: XCOEFHGRADTHL=>NULL()
 REAL, POINTER :: XCOEFHGRADRM=>NULL()
 REAL, POINTER :: XALTHGRAD=>NULL()
@@ -152,6 +156,8 @@ CONTAINS
 
 SUBROUTINE TURB_GOTO_MODEL(KFROM, KTO)
 INTEGER, INTENT(IN) :: KFROM, KTO
+!
+TURBN => TURB_MODEL(KTO)
 !
 ! Save current state for allocated arrays
 !
@@ -176,6 +182,8 @@ XCADAP=>TURB_MODEL(KTO)%XCADAP
 CTURBLEN=>TURB_MODEL(KTO)%CTURBLEN
 CTURBDIM=>TURB_MODEL(KTO)%CTURBDIM
 LTURB_FLX=>TURB_MODEL(KTO)%LTURB_FLX
+LHARAT=>TURB_MODEL(KTO)%LHARAT
+LSTATNW=>TURB_MODEL(KTO)%LSTATNW
 LTURB_DIAG=>TURB_MODEL(KTO)%LTURB_DIAG
 LSUBG_COND=>TURB_MODEL(KTO)%LSUBG_COND
 LSIGMAS=>TURB_MODEL(KTO)%LSIGMAS
@@ -200,7 +208,7 @@ XSSUFL_C=>TURB_MODEL(KTO)%XSSUFL_C
 XSSVFL_C=>TURB_MODEL(KTO)%XSSVFL_C
 XSSTFL_C=>TURB_MODEL(KTO)%XSSTFL_C
 XSSRFL_C=>TURB_MODEL(KTO)%XSSRFL_C
-LHGRAD=>TURB_MODEL(KTO)%LHGRAD
+LLEONARD=>TURB_MODEL(KTO)%LLEONARD
 XCOEFHGRADTHL=>TURB_MODEL(KTO)%XCOEFHGRADTHL
 XCOEFHGRADRM=>TURB_MODEL(KTO)%XCOEFHGRADRM
 XALTHGRAD=>TURB_MODEL(KTO)%XALTHGRAD

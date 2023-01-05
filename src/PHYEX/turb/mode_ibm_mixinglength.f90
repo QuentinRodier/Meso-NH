@@ -4,28 +4,10 @@
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !
-!     ############################
-MODULE MODI_IBM_MIXINGLENGTH
-  !     ############################
-  !
-  INTERFACE 
-     !
-     SUBROUTINE IBM_MIXINGLENGTH(PLM,PLEPS,PMU,PHI,PTKE)
-       !
-       REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PLM
-       REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PLEPS
-       REAL, DIMENSION(:,:,:), INTENT(OUT)   :: PMU
-       REAL, DIMENSION(:,:,:), INTENT(IN)    :: PHI
-       REAL, DIMENSION(:,:,:), INTENT(IN)    :: PTKE
-       !
-     END SUBROUTINE IBM_MIXINGLENGTH
-     !
-  END INTERFACE
-  !
-END MODULE MODI_IBM_MIXINGLENGTH
-!
-!     ###################################################
-SUBROUTINE IBM_MIXINGLENGTH(PLM,PLEPS,PMU,PHI,PTKE)
+MODULE MODE_IBM_MIXINGLENGTH
+IMPLICIT NONE
+CONTAINS
+SUBROUTINE IBM_MIXINGLENGTH(D,PLM,PLEPS,PMU,PHI,PTKE)
   !     ###################################################
   !
   !****  *IBM_MIXINGLENGTH* - Alteration of the mixing lenght (IBM)
@@ -63,10 +45,8 @@ SUBROUTINE IBM_MIXINGLENGTH(PLM,PLEPS,PMU,PHI,PTKE)
   !     ------------------
   !
   ! module
-  USE MODE_POS
   USE MODE_ll
-  USE MODE_IO
-  USE MODD_ARGSLIST_ll, ONLY : LIST_ll
+  USE MODD_DIMPHYEX,   ONLY: DIMPHYEX_t
   !
   ! declaration
   USE MODD_FIELD_n
@@ -84,27 +64,30 @@ SUBROUTINE IBM_MIXINGLENGTH(PLM,PLEPS,PMU,PHI,PTKE)
   !------------------------------------------------------------------------------
   !
   !       0.1   Declaration of arguments
-  REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PLM
-  REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PLEPS
-  REAL, DIMENSION(:,:,:), INTENT(OUT)   :: PMU
-  REAL, DIMENSION(:,:,:), INTENT(IN)    :: PHI
-  REAL, DIMENSION(:,:,:), INTENT(IN)    :: PTKE
+  TYPE(DIMPHYEX_t),       INTENT(IN)    :: D
+  REAL, DIMENSION(D%NIT,D%NJT,D%NKT), INTENT(INOUT) :: PLM
+  REAL, DIMENSION(D%NIT,D%NJT,D%NKT), INTENT(INOUT) :: PLEPS
+  REAL, DIMENSION(D%NIT,D%NJT,D%NKT), INTENT(OUT)   :: PMU
+  REAL, DIMENSION(D%NIT,D%NJT,D%NKT), INTENT(IN)    :: PHI
+  REAL, DIMENSION(D%NIT,D%NJT,D%NKT), INTENT(IN)    :: PTKE
   !
   !------------------------------------------------------------------------------
   !
   !       0.2   Declaration of local variables
-  REAL,   DIMENSION(size(PLM,1),size(PLM,2),size(PLM,3)) :: ZALPHA,ZBETA
-  REAL,   DIMENSION(size(PLM,1),size(PLM,2),size(PLM,3)) :: ZLM,ZMU,ZLN
-  TYPE(LIST_ll), POINTER                                 :: TZFIELDS_ll   
-  INTEGER                                                :: IINFO_ll,IKU,IKB,IKE,IIB,IIE,IJB,IJE
+  REAL,   DIMENSION(D%NIT,D%NJT,D%NKT) :: ZALPHA,ZBETA
+  REAL,   DIMENSION(D%NIT,D%NJT,D%NKT) :: ZLM,ZMU,ZLN
+  INTEGER                                                :: IKU,IKB,IKE,IIB,IIE,IJB,IJE
   REAL                                                   :: ZKARMAN
   !
   !-------------------------------------------------------------------------------
   !
-  IKU=SIZE(PLM,3)
-  IKE = IKU - JPVEXT
-  IKB =   1 + JPVEXT
-  CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
+  IKU = D%NKT
+  IKE = D%NKE
+  IKB = D%NKB
+  IIB = D%NIB
+  IIE = D%NIE
+  IJB = D%NJB
+  IJE = D%NJE
   !
   !  Turbulent velocity
   !
@@ -159,6 +142,5 @@ SUBROUTINE IBM_MIXINGLENGTH(PLM,PLEPS,PMU,PHI,PTKE)
   PLEPS(:,:,:) = PLM(:,:,:) 
   PMU(:,:,:) = ZMU(:,:,:)
   !
-  RETURN
-  !
 END SUBROUTINE IBM_MIXINGLENGTH
+END MODULE MODE_IBM_MIXINGLENGTH

@@ -9,7 +9,7 @@
 !
 INTERFACE
 !
-      SUBROUTINE LIMA_ADJUST_SPLIT(KRR, KMI, TPFILE, HCONDENS, HLAMBDA3,        &
+      SUBROUTINE LIMA_ADJUST_SPLIT(D, KRR, KMI, TPFILE, HCONDENS, HLAMBDA3,        &
                              OSUBG_COND, OSIGMAS, PTSTEP, PSIGQSAT,             &
                              PRHODREF, PRHODJ, PEXNREF, PSIGS, PMFCONV,         &
                              PPABST, PPABSTT, PZZ, PDTHRAD, PW_NU,              &
@@ -18,7 +18,9 @@ INTERFACE
 !
 USE MODD_IO,    ONLY: TFILEDATA
 USE MODD_NSV,   only: NSV_LIMA_BEG
+USE MODD_DIMPHYEX,       ONLY: DIMPHYEX_t
 !
+TYPE(DIMPHYEX_t),         INTENT(IN)   :: D
 INTEGER,                  INTENT(IN)   :: KRR        ! Number of moist variables
 INTEGER,                  INTENT(IN)   :: KMI        ! Model index 
 TYPE(TFILEDATA),          INTENT(IN)   :: TPFILE     ! Output file
@@ -70,7 +72,7 @@ END INTERFACE
 END MODULE MODI_LIMA_ADJUST_SPLIT
 !
 !     ###########################################################################
-      SUBROUTINE LIMA_ADJUST_SPLIT(KRR, KMI, TPFILE, HCONDENS, HLAMBDA3,        &
+      SUBROUTINE LIMA_ADJUST_SPLIT(D, KRR, KMI, TPFILE, HCONDENS, HLAMBDA3,        &
                              OSUBG_COND, OSIGMAS, PTSTEP, PSIGQSAT,             &
                              PRHODREF, PRHODJ, PEXNREF, PSIGS, PMFCONV,         &
                              PPABST, PPABSTT, PZZ, PDTHRAD, PW_NU,              &
@@ -165,6 +167,10 @@ USE MODD_PARAM_LIMA
 USE MODD_PARAM_LIMA_COLD
 USE MODD_PARAM_LIMA_MIXED
 USE MODD_PARAM_LIMA_WARM
+USE MODD_RAIN_ICE_PARAM,   ONLY: RAIN_ICE_PARAM
+USE MODD_NEB,              ONLY: NEB
+USE MODD_TURB_n,           ONLY: TURBN
+USE MODD_DIMPHYEX,         ONLY: DIMPHYEX_t
 !
 use mode_budget,           only: Budget_store_init, Budget_store_end
 USE MODE_IO_FIELD_WRITE,   only: IO_Field_write
@@ -181,6 +187,7 @@ IMPLICIT NONE
 !*       0.1   Declarations of dummy arguments :
 !
 !
+TYPE(DIMPHYEX_t),         INTENT(IN)   :: D
 INTEGER,                  INTENT(IN)   :: KRR        ! Number of moist variables
 INTEGER,                  INTENT(IN)   :: KMI        ! Model index 
 TYPE(TFILEDATA),          INTENT(IN)   :: TPFILE     ! Output file
@@ -275,12 +282,13 @@ REAL, DIMENSION(SIZE(PRHODJ,1),SIZE(PRHODJ,2),SIZE(PRHODJ,3)) &
                             ZLV,  &      ! guess of the Lv at t+1
                             ZLS,  &      ! guess of the Ls at t+1
                             ZMASK,&
-                            ZRV, ZRV2,  &
-                            ZRC, ZRC2,  &
-                            ZRI,  &
+                            ZRV, ZRV2,ZRV_IN,  &
+                            ZRC, ZRC2,ZRC_IN,  &
+                            ZRI, ZRI_IN,  &
                             Z_SIGS, Z_SRCS, &
                             ZW_MF, &
                             ZCND, ZS, ZVEC1
+REAL, DIMENSION(SIZE(PRHODJ,1),SIZE(PRHODJ,2)) :: ZSIGQSAT2D, ZDUM
 !
 INTEGER, DIMENSION(SIZE(PRHODJ,1),SIZE(PRHODJ,2),SIZE(PRHODJ,3)) :: IVEC1
 !
@@ -303,7 +311,6 @@ INTEGER                           :: JMOD, JMOD_IFN, JMOD_IMM
 !
 TYPE(TFIELDDATA)  :: TZFIELD
 LOGICAL :: G_SIGMAS, GUSERI
-REAL :: Z_SIGQSAT
 !
 !-------------------------------------------------------------------------------
 !
@@ -495,6 +502,9 @@ DO JITER =1,ITERMAX
    ZRC=PRCS*PTSTEP
    ZRV2=PRVT
    ZRC2=PRCT
+   ZRV_IN=ZRV
+   ZRC_IN=ZRC
+   ZRI_IN=0.
    IF (NMOM_I.EQ.1) THEN
       ZRI=PRIS*PTSTEP
       GUSERI=.TRUE.
@@ -505,19 +515,21 @@ DO JITER =1,ITERMAX
    IF (OSUBG_COND) THEN
       Z_SIGS=PSIGS
       G_SIGMAS=OSIGMAS
-      Z_SIGQSAT=PSIGQSAT
+      ZSIGQSAT2D(:,:)=PSIGQSAT
    ELSE
       Z_SIGS=0.
       G_SIGMAS=.TRUE.
-      Z_SIGQSAT=0.
+      ZSIGQSAT2D(:,:)=0.
    END IF
 
    IF (LADJ) THEN
-      CALL CONDENSATION(IIU, IJU, IKU, IIB, IIE, IJB, IJE, IKB, IKE, 1, 'S',   &
-           HCONDENS, HLAMBDA3,                                                 &
-           PPABST, PZZ, PRHODREF, ZT, ZRV, ZRC, ZRI, PRSS*PTSTEP, PRGS*PTSTEP, &
-           Z_SIGS, PMFCONV, PCLDFR, Z_SRCS, GUSERI, G_SIGMAS,                  &
-           Z_SIGQSAT, PLV=ZLV, PLS=ZLS, PCPH=ZCPH )
+      CALL CONDENSATION(D, CST, RAIN_ICE_PARAM, NEB, TURBN,                    &
+          'S', HCONDENS, HLAMBDA3,                                             &
+           PPABST, PZZ, PRHODREF, ZT, ZRV_IN, ZRV, ZRC_IN, ZRC, ZRI_IN, ZRI,   &
+           PRRS*PTSTEP,PRSS*PTSTEP, PRGS*PTSTEP, &
+           Z_SIGS, .FALSE., PMFCONV, PCLDFR, Z_SRCS, GUSERI, G_SIGMAS, .FALSE., .FALSE.,&
+           ZDUM, ZDUM, ZDUM, ZDUM, ZDUM,              &
+           ZSIGQSAT2D, PLV=ZLV, PLS=ZLS, PCPH=ZCPH )
    END IF
    IF (OSUBG_COND .AND. NMOM_C.GE.2 .AND. LACTI) THEN
       PSRCS=Z_SRCS

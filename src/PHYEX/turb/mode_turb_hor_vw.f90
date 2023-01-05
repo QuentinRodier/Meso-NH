@@ -3,60 +3,11 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-!    #######################
-     MODULE MODI_TURB_HOR_VW
-!    #######################
-!
-INTERFACE  
-!
-      SUBROUTINE TURB_HOR_VW(KSPLT,                                  &
-                      OTURB_FLX,KRR,                                 &
-                      TPFILE,                                        &
-                      PK,PINV_PDYY,PINV_PDZZ,PMZM_PRHODJ,            &
-                      PDYY,PDZZ,PDZY,                                &
-                      PRHODJ,PTHVREF,                                &
-                      PVM,PWM,PTHLM,PRM,PSVM,                        &
-                      PTKEM,PLM,                                     &
-                      PDP,                                           &
-                      PRVS,PRWS                                      )
-!
-USE MODD_IO, ONLY: TFILEDATA
-!
-INTEGER,                  INTENT(IN)    ::  KSPLT        ! split process index
-LOGICAL,                  INTENT(IN)    ::  OTURB_FLX    ! switch to write the
-                                 ! turbulent fluxes in the syncronous FM-file
-INTEGER,                  INTENT(IN)    ::  KRR          ! number of moist var.
-TYPE(TFILEDATA),          INTENT(IN)    ::  TPFILE       ! Output file
-!
-REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PK          ! Turbulent diffusion doef.
-                                                        ! PK = PLM * SQRT(PTKEM)
-REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PINV_PDYY   ! 1./PDYY
-REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PINV_PDZZ   ! 1./PDZZ
-REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PMZM_PRHODJ ! MZM(PRHODJ)
-REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PDYY, PDZZ, PDZY 
-                                                         ! Metric coefficients
-REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PRHODJ       ! density * grid volume
-REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PTHVREF      ! ref. state VPT       
-!
-! Variables at t-1
-REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PVM,PWM,PTHLM
-REAL, DIMENSION(:,:,:,:), INTENT(IN)    ::  PRM
-REAL, DIMENSION(:,:,:,:), INTENT(IN)    ::  PSVM
-!
-REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PTKEM        ! TKE at time t- dt
-REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PLM          ! Turb. mixing length
-!
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) ::  PRVS, PRWS   ! var. at t+1 -split-
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) ::  PDP          ! TKE production terms
-!
-END SUBROUTINE TURB_HOR_VW
-!
-END INTERFACE
-!
-END MODULE MODI_TURB_HOR_VW
-!     ################################################################
-      SUBROUTINE TURB_HOR_VW(KSPLT,                                  &
-                      OTURB_FLX,KRR,                                 &
+MODULE MODE_TURB_HOR_VW
+IMPLICIT NONE
+CONTAINS
+      SUBROUTINE TURB_HOR_VW(TURBN,TLES,KSPLT,                       &
+                      KRR,KSV,OFLAT,O2D,                             &
                       TPFILE,                                        &
                       PK,PINV_PDYY,PINV_PDZZ,PMZM_PRHODJ,            &
                       PDYY,PDZZ,PDZY,                                &
@@ -97,7 +48,7 @@ END MODULE MODI_TURB_HOR_VW
 !!    -------------
 !!                     Aug    , 1997 (V. Saravane) spliting of TURB_HOR
 !!                     Nov  27, 1997 (V. Masson) clearing of the routine
-!!                     Oct  18, 2000 (V. Masson) LES computations + LFLAT switch
+!!                     Oct  18, 2000 (V. Masson) LES computations + OFLAT switch
 !!                     Feb  14, 2001 (V. Masson and J. Stein) DZF bug on PRWS
 !!                                + remove the use of W=0 at the ground
 !!                                + extrapolataion under the ground
@@ -110,23 +61,23 @@ END MODULE MODI_TURB_HOR_VW
 !*      0. DECLARATIONS
 !          ------------
 !
+USE MODD_TURB_n, ONLY: TURB_t
+!
 USE MODD_CST
-USE MODD_CONF
 USE MODD_CTURB
-use modd_field,          only: tfielddata, TYPEREAL
+USE MODD_FIELD,          ONLY: TFIELDDATA, TYPEREAL
 USE MODD_IO,             ONLY: TFILEDATA
 USE MODD_PARAMETERS
-USE MODD_LES
-USE MODD_NSV
+USE MODD_LES, ONLY: TLES_t
 !
-USE MODE_IO_FIELD_WRITE, only: IO_Field_write
+USE MODE_IO_FIELD_WRITE, ONLY: IO_FIELD_WRITE
 !
 USE MODI_GRADIENT_M
 USE MODI_GRADIENT_U
 USE MODI_GRADIENT_V
 USE MODI_GRADIENT_W
 USE MODI_SHUMAN 
-USE MODI_COEFJ
+USE MODE_COEFJ, ONLY: COEFJ
 USE MODI_LES_MEAN_SUBGRID
 !
 USE MODI_SECOND_MNH
@@ -138,10 +89,13 @@ IMPLICIT NONE
 !
 !
 !
+TYPE(TURB_t),             INTENT(IN)    :: TURBN
+TYPE(TLES_t),             INTENT(INOUT) :: TLES          ! modd_les structure
 INTEGER,                  INTENT(IN)    ::  KSPLT        ! split process index
-LOGICAL,                  INTENT(IN)    ::  OTURB_FLX    ! switch to write the
-                                 ! turbulent fluxes in the syncronous FM-file
 INTEGER,                  INTENT(IN)    ::  KRR          ! number of moist var.
+INTEGER,                  INTENT(IN)    ::  KSV          ! number of sv var.
+LOGICAL,                  INTENT(IN)    ::  OFLAT        ! Logical for zero ororography
+LOGICAL,                  INTENT(IN)    ::  O2D          ! Logical for 2D model version (modd_conf)
 TYPE(TFILEDATA),          INTENT(IN)    ::  TPFILE       ! Output file
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PK          ! Turbulent diffusion doef.
@@ -193,7 +147,7 @@ IKE = SIZE(PWM,3)-JPVEXT
 IKU = SIZE(PWM,3)
 !
 !
-IF (.NOT. L2D) GY_W_VW_PWM = GY_W_VW(PWM,PDYY,PDZZ,PDZY)
+IF (.NOT. O2D) GY_W_VW_PWM = GY_W_VW(PWM,PDYY,PDZZ,PDZY)
 !
 !
 !*      14.   < V'W'>
@@ -201,7 +155,7 @@ IF (.NOT. L2D) GY_W_VW_PWM = GY_W_VW(PWM,PDYY,PDZZ,PDZY)
 !
 ! residual part of < V'W'> depending on dw/dy
 !
-IF (.NOT. L2D) THEN
+IF (.NOT. O2D) THEN
   ZFLX(:,:,:) =                                                      &
     - XCMFS * MYM(MZM(PK)) * GY_W_VW_PWM
   !! &  to be tested
@@ -221,7 +175,7 @@ ZFLX(:,:,IKB) = 0.
 ZFLX(:,:,IKB-1)= 2.*ZFLX(:,:,IKB) - ZFLX(:,:,IKB+1)
 !
 ! stores  <V W>
-IF ( tpfile%lopened .AND. OTURB_FLX ) THEN
+IF ( TPFILE%LOPENED .AND. TURBN%LTURB_FLX ) THEN
   TZFIELD%CMNHNAME   = 'VW_HFLX'
   TZFIELD%CSTDNAME   = ''
   TZFIELD%CLONGNAME  = 'VW_HFLX'
@@ -232,17 +186,17 @@ IF ( tpfile%lopened .AND. OTURB_FLX ) THEN
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
   TZFIELD%LTIMEDEP   = .TRUE.
-  CALL IO_Field_write(TPFILE,TZFIELD,ZFLX)
+  CALL IO_FIELD_WRITE(TPFILE,TZFIELD,ZFLX)
 END IF
 !
 ! compute the source for rho*V due to this residual flux ( the other part is
 ! taken into account in TURB_VER)
-IF (.NOT. L2D) &
+IF (.NOT. O2D) &
 PRVS(:,:,:) = PRVS(:,:,:) - DZF( ZFLX* MYM( PMZM_PRHODJ ) / MYM ( PDZZ ) )
 !
 !computation of the source for rho*W due to this flux
-IF (.NOT. L2D) THEN 
-  IF (.NOT. LFLAT) THEN
+IF (.NOT. O2D) THEN 
+  IF (.NOT. OFLAT) THEN
     PRWS(:,:,:) = PRWS(:,:,:)                              &
           -DYF( MZM( MYM(PRHODJ) * PINV_PDYY) * ZFLX)           &
           +DZM( PRHODJ * MYF( MZF( ZFLX*PDZY ) * PINV_PDYY ) / MZF(PDZZ) )
@@ -255,7 +209,7 @@ IF (KSPLT==1) THEN
   ! 
   !Contribution to the dynamic production of TKE:
   !
-  IF (.NOT. L2D) THEN
+  IF (.NOT. O2D) THEN
     ZWORK(:,:,:) =-MZF( MYF( ZFLX *( GZ_V_VW(PVM,PDZZ) + GY_W_VW_PWM ) ) )
   !
   !
@@ -274,34 +228,35 @@ IF (KSPLT==1) THEN
   ENDIF
   !
   ! dynamic production computation
-  IF (.NOT. L2D) &
+  IF (.NOT. O2D) &
   PDP(:,:,:) = PDP(:,:,:) + ZWORK(:,:,:)  
   !
 END IF
 !
 ! Storage in the LES configuration (addition to TURB_VER computation)
 !
-IF (LLES_CALL .AND. KSPLT==1) THEN
+IF (TLES%LLES_CALL .AND. KSPLT==1) THEN
   CALL SECOND_MNH(ZTIME1)
-  CALL LES_MEAN_SUBGRID( MZF(MYF(ZFLX)), X_LES_SUBGRID_WV , .TRUE. )
+  CALL LES_MEAN_SUBGRID( MZF(MYF(ZFLX)), TLES%X_LES_SUBGRID_WV , .TRUE. )
   CALL LES_MEAN_SUBGRID( MZF(MYF(GZ_V_VW(PVM,PDZZ)*ZFLX)),&
-                         X_LES_RES_ddxa_V_SBG_UaV , .TRUE.)
+                         TLES%X_LES_RES_ddxa_V_SBG_UaV , .TRUE.)
   CALL LES_MEAN_SUBGRID( MZF(MYF(GY_W_VW(PWM,PDYY,PDZZ,PDZY)*ZFLX)),&
-                         X_LES_RES_ddxa_W_SBG_UaW , .TRUE.)
+                         TLES%X_LES_RES_ddxa_W_SBG_UaW , .TRUE.)
   CALL LES_MEAN_SUBGRID( MXF(GY_M_V(1,IKU,1,PTHLM,PDYY,PDZZ,PDZY)*MZF(ZFLX)),&
-                         X_LES_RES_ddxa_Thl_SBG_UaW , .TRUE.)
+                         TLES%X_LES_RES_ddxa_Thl_SBG_UaW , .TRUE.)
   IF (KRR>=1) THEN
     CALL LES_MEAN_SUBGRID( MXF(GY_M_V(1,IKU,1,PRM(:,:,:,1),PDYY,PDZZ,PDZY)*MZF(ZFLX)), &
-                           X_LES_RES_ddxa_Rt_SBG_UaW , .TRUE.)
+                           TLES%X_LES_RES_ddxa_Rt_SBG_UaW , .TRUE.)
   END IF
-  DO JSV=1,NSV
+  DO JSV=1,KSV
     CALL LES_MEAN_SUBGRID( MXF(GY_M_V(1,IKU,1,PSVM(:,:,:,JSV),PDYY,PDZZ,PDZY)*MZF(ZFLX)), &
-                           X_LES_RES_ddxa_Sv_SBG_UaW(:,:,:,JSV), .TRUE.)
+                           TLES%X_LES_RES_ddxa_Sv_SBG_UaW(:,:,:,JSV), .TRUE.)
   END DO
   CALL SECOND_MNH(ZTIME2)
-  XTIME_LES = XTIME_LES + ZTIME2 - ZTIME1
+  TLES%XTIME_LES = TLES%XTIME_LES + ZTIME2 - ZTIME1
 END IF
 !
 !
 !
 END SUBROUTINE TURB_HOR_VW
+END MODULE MODE_TURB_HOR_VW

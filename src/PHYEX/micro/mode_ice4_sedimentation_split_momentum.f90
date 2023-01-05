@@ -3,57 +3,15 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-MODULE MODI_ICE4_SEDIMENTATION_SPLIT_MOMENTUM
-INTERFACE
-SUBROUTINE ICE4_SEDIMENTATION_SPLIT_MOMENTUM(KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKTB, KKTE, KKT, KKL, &
-                                   &PTSTEP, KRR, OSEDIC, OMOMENTUM, &
-                                   &PSEA, PTOWN, PDZZ, &
-                                   &PRHODREF, PPABST, PTHT, PRHODJ, &
-                                   &PRCS, PRCT, PRRS, PRRT, PRIS, PRIT, PRSS, PRST, PRGS, PRGT,&
-                                   &PINPRC, PINPRR, PINPRI, PINPRS, PINPRG, &
-                                   &PINPRH, PRHT, PRHS, PFPR)
+MODULE MODE_ICE4_SEDIMENTATION_SPLIT_MOMENTUM
 IMPLICIT NONE
-INTEGER, INTENT(IN) :: KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKTB, KKTE, KKT
-INTEGER,                      INTENT(IN)              :: KKL     !vert. levels type 1=MNH -1=ARO
-REAL,                         INTENT(IN)              :: PTSTEP  ! Double Time step (single if cold start)
-INTEGER,                      INTENT(IN)              :: KRR     ! Number of moist variable
-LOGICAL,                      INTENT(IN)              :: OSEDIC  ! Switch for droplet sedim.
-LOGICAL,                      INTENT(IN)              :: OMOMENTUM  ! Switch to use momentum flux
-REAL, DIMENSION(KIT,KJT),     INTENT(IN)              :: PSEA    ! Sea Mask
-REAL, DIMENSION(KIT,KJT),     INTENT(IN)              :: PTOWN   ! Fraction that is town
-REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PDZZ    ! Layer thikness (m)
-REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PRHODREF! Reference density
-REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PPABST  ! absolute pressure at t
-REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PTHT    ! Theta at time t
-REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PRHODJ  ! Dry density * Jacobian
-REAL, DIMENSION(KIT,KJT,KKT), INTENT(INOUT)           :: PRCS    ! Cloud water m.r. source
-REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PRCT    ! Cloud water m.r. at t
-REAL, DIMENSION(KIT,KJT,KKT), INTENT(INOUT)           :: PRRS    ! Rain water m.r. source
-REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PRRT    ! Rain water m.r. at t
-REAL, DIMENSION(KIT,KJT,KKT), INTENT(INOUT)           :: PRIS    ! Pristine ice m.r. source
-REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PRIT    ! Pristine ice m.r. at t
-REAL, DIMENSION(KIT,KJT,KKT), INTENT(INOUT)           :: PRSS    ! Snow/aggregate m.r. source
-REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PRST    ! Snow/aggregate m.r. at t
-REAL, DIMENSION(KIT,KJT,KKT), INTENT(INOUT)           :: PRGS    ! Graupel m.r. source
-REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PRGT    ! Graupel/hail m.r. at t
-REAL, DIMENSION(KIT,KJT),     INTENT(OUT)             :: PINPRC  ! Cloud instant precip
-REAL, DIMENSION(KIT,KJT),     INTENT(OUT)             :: PINPRR  ! Rain instant precip
-REAL, DIMENSION(KIT,KJT),     INTENT(OUT)             :: PINPRI  ! Pristine ice instant precip
-REAL, DIMENSION(KIT,KJT),     INTENT(OUT)             :: PINPRS  ! Snow instant precip
-REAL, DIMENSION(KIT,KJT),     INTENT(OUT)             :: PINPRG  ! Graupel instant precip
-REAL, DIMENSION(KIT,KJT),         OPTIONAL, INTENT(OUT)   :: PINPRH  ! Hail instant precip
-REAL, DIMENSION(KIT,KJT,KKT),     OPTIONAL, INTENT(IN)    :: PRHT    ! Hail m.r. at t
-REAL, DIMENSION(KIT,KJT,KKT),     OPTIONAL, INTENT(INOUT) :: PRHS    ! Hail m.r. source
-REAL, DIMENSION(KIT,KJT,KKT,KRR), OPTIONAL, INTENT(OUT)   :: PFPR    ! upper-air precipitation fluxes
-END SUBROUTINE ICE4_SEDIMENTATION_SPLIT_MOMENTUM
-END INTERFACE
-END MODULE MODI_ICE4_SEDIMENTATION_SPLIT_MOMENTUM
+CONTAINS
 SUBROUTINE ICE4_SEDIMENTATION_SPLIT_MOMENTUM(KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKTB, KKTE, KKT, KKL, &
-                                   &PTSTEP, KRR, OSEDIC, OMOMENTUM, &
-                                   &PSEA, PTOWN, PDZZ, &
+                                   &PTSTEP, KRR, OSEDIC, OMOMENTUM, PDZZ, &
                                    &PRHODREF, PPABST, PTHT, PRHODJ, &
                                    &PRCS, PRCT, PRRS, PRRT, PRIS, PRIT, PRSS, PRST, PRGS, PRGT,&
                                    &PINPRC, PINPRR, PINPRI, PINPRS, PINPRG, &
+                                   &PSEA, PTOWN,  &
                                    &PINPRH, PRHT, PRHS, PFPR)
 !!
 !!**  PURPOSE
@@ -95,8 +53,6 @@ REAL,                         INTENT(IN)              :: PTSTEP  ! Double Time s
 INTEGER,                      INTENT(IN)              :: KRR     ! Number of moist variable
 LOGICAL,                      INTENT(IN)              :: OSEDIC  ! Switch for droplet sedim.
 LOGICAL,                      INTENT(IN)              :: OMOMENTUM  ! Switch to use momentum flux
-REAL, DIMENSION(KIT,KJT),     INTENT(IN)              :: PSEA    ! Sea Mask
-REAL, DIMENSION(KIT,KJT),     INTENT(IN)              :: PTOWN   ! Fraction that is town
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PDZZ    ! Layer thikness (m)
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PRHODREF! Reference density
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PPABST  ! absolute pressure at t
@@ -117,6 +73,8 @@ REAL, DIMENSION(KIT,KJT),     INTENT(OUT)             :: PINPRR  ! Rain instant 
 REAL, DIMENSION(KIT,KJT),     INTENT(OUT)             :: PINPRI  ! Pristine ice instant precip
 REAL, DIMENSION(KIT,KJT),     INTENT(OUT)             :: PINPRS  ! Snow instant precip
 REAL, DIMENSION(KIT,KJT),     INTENT(OUT)             :: PINPRG  ! Graupel instant precip
+REAL, DIMENSION(KIT,KJT),         OPTIONAL, INTENT(IN)    :: PSEA    ! Sea Mask
+REAL, DIMENSION(KIT,KJT),         OPTIONAL, INTENT(IN)    :: PTOWN   ! Fraction that is town
 REAL, DIMENSION(KIT,KJT),         OPTIONAL, INTENT(OUT)   :: PINPRH  ! Hail instant precip
 REAL, DIMENSION(KIT,KJT,KKT),     OPTIONAL, INTENT(IN)    :: PRHT    ! Hail m.r. at t
 REAL, DIMENSION(KIT,KJT,KKT),     OPTIONAL, INTENT(INOUT) :: PRHS    ! Hail m.r. source
@@ -173,16 +131,24 @@ IF (PRESENT(PFPR)) PFPR(:,:,:,:) = 0.
 !
 IF (OSEDIC) THEN
   ZRAY(:,:,:)   = 0.
-  ZCONC_TMP(:,:)=PSEA(:,:)*XCONC_SEA+(1.-PSEA(:,:))*XCONC_LAND
-
-  DO JK=KKTB, KKTE
-    ZLBC(:,:,JK)   = PSEA(:,:)*XLBC(2)+(1.-PSEA(:,:))*XLBC(1)
-    ZFSEDC(:,:,JK) = (PSEA(:,:)*XFSEDC(2)+(1.-PSEA(:,:))*XFSEDC(1))
-    ZFSEDC(:,:,JK) = MAX(MIN(XFSEDC(1),XFSEDC(2)),ZFSEDC(:,:,JK))
-    ZCONC3D(:,:,JK)= (1.-PTOWN(:,:))*ZCONC_TMP(:,:)+PTOWN(:,:)*XCONC_URBAN
-    ZRAY(:,:,JK)   = 0.5*((1.-PSEA(:,:))*GAMMA(XNUC+1.0/XALPHAC)/(GAMMA(XNUC)) + &
-            PSEA(:,:)*GAMMA(XNUC2+1.0/XALPHAC2)/(GAMMA(XNUC2)))
-  END DO
+  ZLBC(:,:,:)   = XLBC(1)
+  ZFSEDC(:,:,:) = XFSEDC(1)
+  ZCONC3D(:,:,:)= XCONC_LAND
+  ZCONC_TMP(:,:)= XCONC_LAND
+  IF (PRESENT(PSEA)) THEN
+    ZCONC_TMP(:,:)=PSEA(:,:)*XCONC_SEA+(1.-PSEA(:,:))*XCONC_LAND
+    DO JK=KKTB, KKTE
+      ZLBC(:,:,JK)   = PSEA(:,:)*XLBC(2)+(1.-PSEA(:,:))*XLBC(1)
+      ZFSEDC(:,:,JK) = (PSEA(:,:)*XFSEDC(2)+(1.-PSEA(:,:))*XFSEDC(1))
+      ZFSEDC(:,:,JK) = MAX(MIN(XFSEDC(1),XFSEDC(2)),ZFSEDC(:,:,JK))
+      ZCONC3D(:,:,JK)= (1.-PTOWN(:,:))*ZCONC_TMP(:,:)+PTOWN(:,:)*XCONC_URBAN
+      ZRAY(:,:,JK)   = 0.5*((1.-PSEA(:,:))*GAMMA(XNUC+1.0/XALPHAC)/(GAMMA(XNUC)) + &
+                     & PSEA(:,:)*GAMMA(XNUC2+1.0/XALPHAC2)/(GAMMA(XNUC2)))
+    END DO
+  ELSE
+    ZCONC3D(:,:,:) = XCONC_LAND
+    ZRAY(:,:,:)  = 0.5*(GAMMA(XNUC+1.0/XALPHAC)/(GAMMA(XNUC)))
+  END IF
   ZRAY(:,:,:)      = MAX(1.,ZRAY(:,:,:))
   ZLBC(:,:,:)      = MAX(MIN(XLBC(1),XLBC(2)),ZLBC(:,:,:))
 ENDIF
@@ -194,12 +160,16 @@ ENDIF
 !  For optimization we consider each variable separately
 !
 ! External tendecies
-IF (OSEDIC) ZPRCS(:,:,:) = PRCS(:,:,:)-PRCT(:,:,:)*ZINVTSTEP
+IF (OSEDIC) THEN
+  ZPRCS(:,:,:) = PRCS(:,:,:)-PRCT(:,:,:)*ZINVTSTEP
+ENDIF
 ZPRRS(:,:,:) = PRRS(:,:,:)-PRRT(:,:,:)*ZINVTSTEP
 ZPRIS(:,:,:) = PRIS(:,:,:)-PRIT(:,:,:)*ZINVTSTEP
 ZPRSS(:,:,:) = PRSS(:,:,:)-PRST(:,:,:)*ZINVTSTEP
 ZPRGS(:,:,:) = PRGS(:,:,:)-PRGT(:,:,:)*ZINVTSTEP
-IF ( KRR == 7 ) ZPRHS(:,:,:) = PRHS(:,:,:)-PRHT(:,:,:)*ZINVTSTEP
+IF ( KRR == 7 ) THEN
+  ZPRHS(:,:,:) = PRHS(:,:,:)-PRHT(:,:,:)*ZINVTSTEP
+END IF
 !
 ! mr values inside the time-splitting loop
 ZRCT(:,:,:) = PRCT(:,:,:)
@@ -207,7 +177,9 @@ ZRRT(:,:,:) = PRRT(:,:,:)
 ZRIT(:,:,:) = PRIT(:,:,:)
 ZRST(:,:,:) = PRST(:,:,:)
 ZRGT(:,:,:) = PRGT(:,:,:)
-IF (KRR==7) ZRHT(:,:,:) = PRHT(:,:,:)
+IF (KRR==7) THEN
+  ZRHT(:,:,:) = PRHT(:,:,:)
+END IF
 !
 DO JK = KKTB , KKTE
   ZW(:,:,JK) =1./(PRHODREF(:,:,JK)* PDZZ(:,:,JK))
@@ -231,7 +203,7 @@ IF (OSEDIC) THEN
     CALL INTERNAL_SEDIM_SPLI(KIT, KJT, KKB, KKTB, KKTE, KKT, KKL, KRR, &
                           &OMOMENTUM, FIRST .AND. OMOMENTUM, &
                           &ISEDIM, GSEDIM, I1, I2, I3, XSPLIT_MAXCFL, ZREMAINT, &
-                          &PRHODREF, ZW, PDZZ, PPABST, PTHT, PSEA, PTOWN, PTSTEP, &
+                          &PRHODREF, ZW, PDZZ, PPABST, PTHT, PTSTEP, &
                           &2, &
                           &ZRCT, PRCS, ZWSED, PINPRC, ZPRCS, ZMOMC, ZMOMC_EXT, &
                           &ZRAY, ZLBC, ZFSEDC, ZCONC3D, PFPR=PFPR)
@@ -255,7 +227,7 @@ DO WHILE (ANY(ZREMAINT>0.))
   CALL INTERNAL_SEDIM_SPLI(KIT, KJT, KKB, KKTB, KKTE, KKT, KKL, KRR, &
                           &OMOMENTUM, FIRST .AND. OMOMENTUM, &
                           &ISEDIM, GSEDIM, I1, I2, I3, XSPLIT_MAXCFL, ZREMAINT, &
-                          &PRHODREF, ZW, PDZZ, PPABST, PTHT, PSEA, PTOWN, PTSTEP, &
+                          &PRHODREF, ZW, PDZZ, PPABST, PTHT, PTSTEP, &
                           &3, &
                           &ZRRT, PRRS, ZWSED, PINPRR, ZPRRS, ZMOMR, ZMOMR_EXT, &
                           &PFPR=PFPR)
@@ -278,7 +250,7 @@ DO WHILE (ANY(ZREMAINT>0.))
   CALL INTERNAL_SEDIM_SPLI(KIT, KJT, KKB, KKTB, KKTE, KKT, KKL, KRR, &
                           &OMOMENTUM, FIRST .AND. OMOMENTUM, &
                           &ISEDIM, GSEDIM, I1, I2, I3, XSPLIT_MAXCFL, ZREMAINT, &
-                          &PRHODREF, ZW, PDZZ, PPABST, PTHT, PSEA, PTOWN, PTSTEP, &
+                          &PRHODREF, ZW, PDZZ, PPABST, PTHT, PTSTEP, &
                           &4, &
                           &ZRIT, PRIS, ZWSED, PINPRI, ZPRIS, ZMOMI, ZMOMI_EXT, PFPR=PFPR)
   FIRST = .FALSE.
@@ -300,7 +272,7 @@ DO WHILE (ANY(ZREMAINT>0.))
   CALL INTERNAL_SEDIM_SPLI(KIT, KJT, KKB, KKTB, KKTE, KKT, KKL, KRR, &
                           &OMOMENTUM, FIRST .AND. OMOMENTUM, &
                           &ISEDIM, GSEDIM, I1, I2, I3, XSPLIT_MAXCFL, ZREMAINT, &
-                          &PRHODREF, ZW, PDZZ, PPABST, PTHT, PSEA, PTOWN, PTSTEP, &
+                          &PRHODREF, ZW, PDZZ, PPABST, PTHT, PTSTEP, &
                           &5, &
                           &ZRST, PRSS, ZWSED, PINPRS, ZPRSS, ZMOMS, ZMOMS_EXT, PFPR=PFPR)
   FIRST = .FALSE.
@@ -322,7 +294,7 @@ DO WHILE (ANY(ZREMAINT>0.))
   CALL INTERNAL_SEDIM_SPLI(KIT, KJT, KKB, KKTB, KKTE, KKT, KKL, KRR, &
                           &OMOMENTUM, FIRST .AND. OMOMENTUM, &
                           &ISEDIM, GSEDIM, I1, I2, I3, XSPLIT_MAXCFL, ZREMAINT, &
-                          &PRHODREF, ZW, PDZZ, PPABST, PTHT, PSEA, PTOWN, PTSTEP, &
+                          &PRHODREF, ZW, PDZZ, PPABST, PTHT, PTSTEP, &
                           &6, &
                           &ZRGT, PRGS, ZWSED, PINPRG, ZPRGS, ZMOMG, ZMOMG_EXT, PFPR=PFPR)
   FIRST = .FALSE.
@@ -345,7 +317,7 @@ IF (KRR==7) THEN
     CALL INTERNAL_SEDIM_SPLI(KIT, KJT, KKB, KKTB, KKTE, KKT, KKL, KRR, &
                             &OMOMENTUM, FIRST .AND. OMOMENTUM, &
                             &ISEDIM, GSEDIM, I1, I2, I3, XSPLIT_MAXCFL, ZREMAINT, &
-                            &PRHODREF, ZW, PDZZ, PPABST, PTHT, PSEA, PTOWN, PTSTEP, &
+                            &PRHODREF, ZW, PDZZ, PPABST, PTHT, PTSTEP, &
                             &7, &
                             &ZRHT, PRHS, ZWSED, PINPRH, ZPRHS, ZMOMH, ZMOMH_EXT, PFPR=PFPR)
     FIRST = .FALSE.
@@ -362,7 +334,7 @@ CONTAINS
   SUBROUTINE INTERNAL_SEDIM_SPLI(KIT, KJT, KKB, KKTB, KKTE, KKT, KKL, KRR, &
                                 &OMOMENTUM, OCOMPUTE_MOM, &
                                 &KSEDIM, LDSEDIM, I1, I2, I3, PMAXCFL, PREMAINT, &
-                                &PRHODREF, POORHODZ, PDZZ, PPABST, PTHT, PSEA, PTOWN, PTSTEP, &
+                                &PRHODREF, POORHODZ, PDZZ, PPABST, PTHT, PTSTEP, &
                                 &KSPE, &
                                 &PRXT, PRXS, PWSED, PINPRX, PPRXS, PMOM, PMOM_EXT, &
                                 &PRAY, PLBC, PFSEDC, PCONC3D, PFPR)
@@ -388,8 +360,6 @@ CONTAINS
     REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: POORHODZ ! One Over (Rhodref times delta Z)
     REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PDZZ ! layer thikness (m)
     REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PPABST
-    REAL, DIMENSION(KIT,KJT),     INTENT(IN)              :: PSEA    ! Sea Mask
-    REAL, DIMENSION(KIT,KJT),     INTENT(IN)              :: PTOWN   ! Fraction that is town
     REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PTHT
     REAL,                         INTENT(IN)              :: PTSTEP  ! total timestep
     INTEGER,                      INTENT(IN)              :: KSPE ! 1 for rc, 2 for rr...
@@ -575,3 +545,5 @@ CONTAINS
   END SUBROUTINE INTERNAL_SEDIM_SPLI
   !
 END SUBROUTINE ICE4_SEDIMENTATION_SPLIT_MOMENTUM
+!
+END MODULE MODE_ICE4_SEDIMENTATION_SPLIT_MOMENTUM

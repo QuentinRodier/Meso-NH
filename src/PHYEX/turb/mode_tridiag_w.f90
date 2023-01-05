@@ -4,27 +4,10 @@
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ###################
-      MODULE MODI_TRIDIAG_W
+      MODULE MODE_TRIDIAG_W
 !     ###################
-INTERFACE
-!
-       SUBROUTINE TRIDIAG_W(PVARM,PF,PDFDDWDZ,PTSTEP,  &
-                                 PMZF_DZZ,PRHODJ,PVARP )
-!
-REAL, DIMENSION(:,:,:), INTENT(IN) :: PVARM   ! variable at t-1      at flux point
-REAL, DIMENSION(:,:,:), INTENT(IN) :: PF      ! flux in dT/dt=-dF/dz at mass point
-REAL, DIMENSION(:,:,:), INTENT(IN) :: PDFDDWDZ! dF/d(dW/dz)          at mass point
-REAL,                   INTENT(IN) :: PTSTEP  ! Double time step
-REAL, DIMENSION(:,:,:), INTENT(IN) :: PMZF_DZZ! Dz                   at mass point
-REAL, DIMENSION(:,:,:), INTENT(IN) :: PRHODJ  ! (dry rho)*J          at mass point
-!
-REAL, DIMENSION(:,:,:), INTENT(OUT):: PVARP   ! variable at t+1      at flux point
-!
-END SUBROUTINE TRIDIAG_W
-!
-END INTERFACE
-!
-END MODULE MODI_TRIDIAG_W 
+IMPLICIT NONE
+CONTAINS
 !
 !
 !
@@ -296,3 +279,5 @@ PVARP(:,:,IKE+1)=0.
 !-------------------------------------------------------------------------------
 !
 END SUBROUTINE TRIDIAG_W
+!
+END MODULE MODE_TRIDIAG_W
