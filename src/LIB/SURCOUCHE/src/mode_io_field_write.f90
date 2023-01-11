@@ -1426,7 +1426,7 @@ end subroutine IO_Ndimlist_reduce
 ! end of MNH_GA
 #endif
         !Not global reduction because a broadcast is done in IO_Field_write_error_check
-        call MPI_REDUCE( -Abs( [ iresp_lfi, iresp_nc4 ] ), iresps(:), 1, MNHINT_MPI, MPI_MIN, &
+        call MPI_REDUCE( -Abs( [ iresp_lfi, iresp_nc4 ] ), iresps(:), 2, MNHINT_MPI, MPI_MIN, &
                          tpfile%nmaster_rank - 1, tpfile%nmpicomm, ierr )
         iresp_lfi = iresps(1)
         iresp_nc4 = iresps(2)
