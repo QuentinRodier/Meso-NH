@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2000-2022 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2000-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -115,8 +115,6 @@ IMPLICIT NONE
 INTEGER :: JI
 TYPE(TAIRCRAFTDATA), POINTER :: TZAIRCRAFT
 
-ALLOCATE( TAIRCRAFTS(NAIRCRAFTS) )
-
 !Treat aircraft data read in namelist
 DO JI = 1, NAIRCRAFTS
     ALLOCATE( TAIRCRAFTS(JI)%TAIRCRAFT )
@@ -129,7 +127,7 @@ DO JI = 1, NAIRCRAFTS
 
     WRITE( CMNHMSG(1), FMT = '( A, I4 )' ) 'no title given to aircraft number ', JI
     CMNHMSG(2) = 'title set to ' // TRIM( CTITLE(JI) )
-    CALL PRINT_MSG( NVERB_INFO, 'GEN', 'INI_AIRCRAFT' )
+    CALL PRINT_MSG( NVERB_INFO, 'GEN', 'INI_AIRCRAFT', OLOCAL = .TRUE. )
   END IF
   TZAIRCRAFT%CTITLE = CTITLE(JI)
 
@@ -137,20 +135,21 @@ DO JI = 1, NAIRCRAFTS
     IF ( NMODEL(JI) < 1 .OR. NMODEL(JI) > NMODEL_NEST ) THEN
       CMNHMSG(1) = 'invalid NMODEL aircraft ' // TRIM( CTITLE(JI) )
       CMNHMSG(2) = 'NMODEL must be between 1 and the last nested model number'
-      CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'INI_AIRCRAFT' )
+      CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'INI_AIRCRAFT', OLOCAL = .TRUE. )
       NMODEL(JI) = 1
     END IF
   ELSE IF ( CMODEL(JI) == 'MOB' ) THEN
     IF ( NMODEL(JI) /= 0 .AND. NMODEL(JI) /= 1 ) THEN
       CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'INI_AIRCRAFT', &
-                      'NMODEL is set to 1 at start for a CMODEL="MOB" aircraft (aircraft ' // TRIM( CTITLE(JI) ) // ')' )
+                      'NMODEL is set to 1 at start for a CMODEL="MOB" aircraft (aircraft ' // TRIM( CTITLE(JI) ) // ')', &
+                      OLOCAL = .TRUE. )
     END IF
     IF ( NMODEL_NEST == 1 ) CMODEL(JI) = 'FIX' ! If only one model, FIX and MOB are the same
     NMODEL(JI) = 1
   ELSE
     CMNHMSG(1) = 'invalid CMODEL (' // TRIM( CMODEL(JI) ) // ') for aircraft ' // TRIM( CTITLE(JI) )
     CMNHMSG(2) = 'CMODEL must be FIX or MOB (default="FIX")'
-    CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'INI_AIRCRAFT' )
+    CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'INI_AIRCRAFT', OLOCAL = .TRUE. )
     CMODEL(JI) = 'FIX'
     NMODEL(JI) = 1
   END IF
@@ -161,21 +160,23 @@ DO JI = 1, NAIRCRAFTS
 
   IF ( .NOT. TLAUNCH(JI)%CHECK( TRIM( CTITLE(JI) ) ) ) &
         CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'INI_AIRCRAFT', &
-                        'problem with TLAUNCH (not set or incorrect values) for aircraft ' // TRIM( CTITLE(JI) ) )
+                        'problem with TLAUNCH (not set or incorrect values) for aircraft ' // TRIM( CTITLE(JI) ), OLOCAL = .TRUE. )
   TZAIRCRAFT%TLAUNCH  = TLAUNCH(JI)
 
   IF ( XTSTEP(JI) == XNEGUNDEF ) THEN
     CALL PRINT_MSG( NVERB_INFO, 'GEN', 'INI_AIRCRAFT', &
-                    'data storage frequency not provided for aircraft ' // TRIM( CTITLE(JI) ) // ' => set to 60s' )
+                    'data storage frequency not provided for aircraft ' // TRIM( CTITLE(JI) ) // ' => set to 60s', OLOCAL = .TRUE. )
     XTSTEP(JI) = 60.
   ELSE IF ( XTSTEP(JI) <=0. ) THEN
-    CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'INI_AIRCRAFT', 'invalid data storage frequency for aircraft ' // TRIM( CTITLE(JI) ) )
+    CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'INI_AIRCRAFT', 'invalid data storage frequency for aircraft ' // TRIM( CTITLE(JI) ), &
+                    OLOCAL = .TRUE. )
     XTSTEP(JI) = 60.
   END IF
   TZAIRCRAFT%TFLYER_TIME%XTSTEP = XTSTEP(JI)
 
   IF ( NPOS(JI) < 2 ) THEN
-    CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'INI_AIRCRAFT', 'NPOS should be at least 2 for aircraft ' // TRIM( CTITLE(JI) ) )
+    CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'INI_AIRCRAFT', 'NPOS should be at least 2 for aircraft ' // TRIM( CTITLE(JI) ), &
+                    OLOCAL = .TRUE. )
   END IF
   TZAIRCRAFT%NPOS = NPOS(JI)
 
@@ -183,7 +184,7 @@ DO JI = 1, NAIRCRAFTS
 
   IF ( CFILE(JI) == '' ) &
     CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'INI_AIRCRAFT', 'name of CSV file with trajectory not provided for aircraft ' &
-                    // TRIM( CTITLE(JI) ) )
+                    // TRIM( CTITLE(JI) ), OLOCAL = .TRUE. )
 
   ! Allocate trajectory data
   ALLOCATE( TZAIRCRAFT%XPOSTIME(TZAIRCRAFT%NPOS) ); TZAIRCRAFT%XPOSTIME(:) = XNEGUNDEF
@@ -252,7 +253,7 @@ END DO
 CLOSE( ILU )
 
 IF ( JI < TPAIRCRAFT%NPOS ) &
-  CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'AIRCRAFT_CSV_READ', 'Data not found in file ' // TRIM( HFILE ) )
+  CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'AIRCRAFT_CSV_READ', 'Data not found in file ' // TRIM( HFILE ), OLOCAL = .TRUE. )
 
 TPAIRCRAFT%TLAND = TPAIRCRAFT%TLAUNCH + TPAIRCRAFT%XPOSTIME(TPAIRCRAFT%NPOS)
 

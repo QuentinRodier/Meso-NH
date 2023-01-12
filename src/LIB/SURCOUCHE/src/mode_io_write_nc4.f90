@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -1861,12 +1861,22 @@ if ( tpfile%lmaster ) then
     end if
 
     if ( lflyer ) then
+      ! Remark: to work flyer data must be on the file master rank
+      ! This is currently ensured in WRITE_AIRCRAFT_BALLOON subroutine
       do ji = 1, nballoons
-        call Write_flyer_time_coord( tballoons(ji)%tballoon )
+        if ( associated( tballoons(ji)%tballoon ) ) then
+          call Write_flyer_time_coord( tballoons(ji)%tballoon )
+        else
+          call Print_msg( NVERB_ERROR, 'IO', 'IO_Coordvar_write_nc4','tballoon not associated' )
+        end if
       end do
 
       do ji = 1, naircrafts
-        call Write_flyer_time_coord( taircrafts(ji)%taircraft )
+        if ( associated( taircrafts(ji)%taircraft ) ) then
+          call Write_flyer_time_coord( taircrafts(ji)%taircraft )
+        else
+          call Print_msg( NVERB_ERROR, 'IO', 'IO_Coordvar_write_nc4','taircraft not associated' )
+        end if
       end do
     end if
 

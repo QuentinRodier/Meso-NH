@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -2232,6 +2232,8 @@ IF (OEXIT) THEN
     CALL MENU_DIACHRO(TDIAFILE,'END')
 #endif
     CALL IO_File_close(TDIAFILE)
+    ! Free memory of flyer that is not present on the master process of the file (was allocated in WRITE_AIRCRAFT_BALLOON)
+    CALL AIRCRAFT_BALLOON_FREE_NONLOCAL( TDIAFILE )
   END IF
   !
   CALL IO_File_close(TINIFILE)

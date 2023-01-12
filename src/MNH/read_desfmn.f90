@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -268,6 +268,7 @@ USE MODN_PROFILER_n
 USE MODN_STATION_n
 !
 USE MODN_PARAM_LIMA
+! USE MODN_FLYERS
 !
 USE MODE_MSG
 USE MODE_POS
@@ -546,7 +547,7 @@ IF (KMI == 1) THEN
     READ(UNIT=ILUDES,NML=NAM_OUTPUT)
   END IF
 ! Note: it is not useful to read the budget namelists in the .des files
-! The value here (if present in file) don't need to be compared with the ones in the EXSEGn files
+! The values here (if present in file) don't need to be compared with the ones in the EXSEGn files
 !   CALL POSNAM(ILUDES,'NAM_BUDGET',GFOUND)
 !   IF (GFOUND) READ(UNIT=ILUDES,NML=NAM_BUDGET)
 !   CALL POSNAM(ILUDES,'NAM_BU_RU',GFOUND)
@@ -622,7 +623,15 @@ IF (KMI == 1) THEN
   IF (GFOUND) READ(UNIT=ILUDES,NML=NAM_LATZ_EDFLX)
   CALL POSNAM(ILUDES,'NAM_VISC',GFOUND,ILUOUT)
   IF (GFOUND) READ(UNIT=ILUDES,NML=NAM_VISC)
-END IF                                                       
+! Note: it is not useful to read the FLYERS/AIRCRAFTS/BALLOONS namelists in the .des files
+! The values here (if present in file) don't need to be compared with the ones in the EXSEGn files
+!   CALL POSNAM(ILUDES,'NAM_FLYERS',GFOUND,ILUOUT)
+!   IF (GFOUND) READ(UNIT=ILUDES,NML=NAM_FLYERS)
+!   CALL POSNAM(ILUSEG,'NAM_AIRCRAFTS',GFOUND,ILUOUT)
+!   IF (GFOUND) READ(UNIT=ILUSEG,NML=NAM_AIRCRAFTS)
+!   CALL POSNAM(ILUSEG,'NAM_BALLOONS',GFOUND,ILUOUT)
+!   IF (GFOUND) READ(UNIT=ILUSEG,NML=NAM_BALLOONS)
+END IF
 !
 !-------------------------------------------------------------------------------
 !

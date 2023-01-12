@@ -1,7 +1,30 @@
-!MNH_LIC Copyright 2000-2022 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2000-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
+! Author: Valery Masson (Meteo-France *)
+!     Original 15/05/2000
+! Modifications:
+!  G. Jaubert  19/04/2001: add CVBALL type
+!  P. Lacarrere   03/2008: add 3D fluxes
+!  M. Leriche  12/12/2008: move ZTDIST out from if.not.(tpflyer%fly)
+!  V. Masson   15/12/2008: correct do while aircraft move
+!  O. Caumont     03/2013: add radar reflectivities
+!  C. Lac         04/2014: allow RARE calculation only if CCLOUD=ICE3
+!  O. Caumont     05/2014: modify RARE for hydrometeors containing ice + add bright band calculation for RARE
+!  C. Lac 02/2015: correction to prevent aircraft crash
+!  O. Nuissier/F. Duffourg 07/2015: add microphysics diagnostic for aircraft, ballon and profiler
+!  G. Delautier   10/2016: LIMA
+!  P. Wautelet 28/03/2018: replace TEMPORAL_DIST by DATETIME_DISTANCE
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
+!  P. Wautelet 01/10/2020: bugfix: initialize GSTORE
+!  P. Wautelet 14/01/2021: bugfixes: -ZXCOEF and ZYCOEF were not computed if CVBALL
+!                                    -PCIT was used if CCLOUD/=ICEx (not allocated)
+!                                    -PSEA was always used even if not allocated (CSURF/=EXTE)
+!                                    -do not use PMAP if cartesian domain
+!  P. Wautelet    06/2022: reorganize flyers
 !-----------------------------------------------------------------
 !      ##########################
 MODULE MODE_AIRCRAFT_BALLOON_EVOL
@@ -15,12 +38,17 @@ PRIVATE
 
 PUBLIC :: AIRCRAFT_BALLOON_EVOL
 
+PUBLIC :: AIRCRAFT_COMPUTE_POSITION
+
+PUBLIC :: FLYER_GET_RANK_MODEL_ISCRASHED
+
 CONTAINS
 !     ########################################################
       SUBROUTINE AIRCRAFT_BALLOON_EVOL(PTSTEP,               &
                        PZ, PMAP, PLONOR, PLATOR,             &
                        PU, PV, PW, PP, PTH, PR, PSV, PTKE,   &
-                       PTS, PRHODREF, PCIT,TPFLYER, PSEA     )
+                       PTS, PRHODREF, PCIT, TPFLYER,         &
+                       KRANK_CUR, KRANK_NXT, PSEA            )
 !     ########################################################
 !
 !
@@ -68,60 +96,19 @@ CONTAINS
 !!    REFERENCE
 !!    ---------
 !!
-!!    AUTHOR
-!!    ------
-!!      Valery Masson             * Meteo-France *
-!!
-!!    MODIFICATIONS
-!!    -------------
-!!     Original 15/05/2000
-!!     Apr,19, 2001 (G.Jaubert) add CVBALL type
-!!     March, 2008 (P.Lacarrere) Add 3D fluxes
-!!     Dec,12, 2008 (M. Leriche) move ZTDIST out from if.not.(tpflyer%fly)
-!!     Dec,15, 2008 (V. Masson) correct do while aircraft move
-!!     March, 2013 (O.Caumont) add radar reflectivities
-!!     April, 2014 (C.Lac) allow RARE calculation only if CCLOUD=ICE3
-!!     May, 2014 (O.Caumont) modify RARE for hydrometeors containing ice
-!!                           add bright band calculation for RARE
-!!     Feb, 2015 (C.Lac) Correction to prevent aircraft crash
-!!     July, 2015 (O.Nuissier/F.Duffourg) Add microphysics diagnostic for
-!!                                      aircraft, ballon and profiler
-!!      October, 2016 (G.DELAUTIER) LIMA
-!!     March,28, 2018 (P. Wautelet) replace TEMPORAL_DIST by DATETIME_DISTANCE
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
-!  P. Wautelet 01/10/2020: bugfix: initialize GSTORE
-!  P. Wautelet 14/01/2021: bugfixes: -ZXCOEF and ZYCOEF were not computed if CVBALL
-!                                    -PCIT was used if CCLOUD/=ICEx (not allocated)
-!                                    -PSEA was always used even if not allocated (CSURF/=EXTE)
-!                                    -do not use PMAP if cartesian domain
-!  P. Wautelet    06/2022: reorganize flyers
 !! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
 !          ------------
 !
 USE MODD_AIRCRAFT_BALLOON
-USE MODD_CONF,             ONLY: LCARTESIAN
-USE MODD_CST
-USE MODD_DIAG_IN_RUN
-USE MODD_GRID
-USE MODD_GRID_n
+USE MODD_CST,              ONLY: XCPD, XLVTT
 USE MODD_IO,               ONLY: ISP
-USE MODD_LUNIT_n,          ONLY: TLUOUT
-USE MODD_NESTING
-USE MODD_PARAMETERS
-USE MODD_PARAM_n,          ONLY: CCLOUD, CSURF
-USE MODD_REF_n,            ONLY: XRHODREF
-USE MODD_TIME,             only: TDTSEG
-USE MODD_TIME_n,           only: tdtcur
-USE MODD_TURB_FLUX_AIRCRAFT_BALLOON
+USE MODD_TIME_n,           ONLY: TDTCUR
+USE MODD_TURB_FLUX_AIRCRAFT_BALLOON, ONLY: XRCW_FLUX, XSVW_FLUX, XTHW_FLUX
 !
 USE MODE_DATETIME
-USE MODE_FGAU,             ONLY: GAULAG
-USE MODE_FSCATTER,         ONLY: QEPSW,QEPSI,BHMIE,MOMG,MG
-USE MODE_GRIDPROJ
-USE MODE_ll
+USE MODE_NEST_ll,          ONLY: GET_MODEL_NUMBER_ll
 !
 IMPLICIT NONE
 !
@@ -146,7 +133,9 @@ REAL, DIMENSION(:,:),     INTENT(IN)     :: PTS    ! surface temperature
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PRHODREF ! dry air density of the reference state
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PCIT     ! pristine ice concentration
 !
-CLASS(TFLYERDATA),        INTENT(INOUT)  :: TPFLYER! balloon/aircraft
+CLASS(TFLYERDATA),        INTENT(INOUT)  :: TPFLYER ! balloon/aircraft
+INTEGER,                  INTENT(IN)     :: KRANK_CUR
+INTEGER,                  INTENT(OUT)    :: KRANK_NXT
 REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN) :: PSEA
 !
 !-------------------------------------------------------------------------------
@@ -155,36 +144,30 @@ REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN) :: PSEA
 !
 !
 INTEGER :: IMI        ! model index
-REAL    :: ZTHIS_PROC ! 1 if balloon is currently treated by this proc., else 0
-!
 INTEGER :: IKB        ! vertical domain sizes
 INTEGER :: IKE
 INTEGER :: IKU
-!
-INTEGER :: JK         ! loop index
 !
 REAL, DIMENSION(2,2,SIZE(PZ,3))     :: ZZM    ! mass point coordinates
 REAL, DIMENSION(2,2,SIZE(PZ,3))     :: ZZU    ! U points z coordinates
 REAL, DIMENSION(2,2,SIZE(PZ,3))     :: ZZV    ! V points z coordinates
 REAL, DIMENSION(2,2,SIZE(PZ,3))     :: ZWM    ! mass point wind
 !
-REAL, DIMENSION(2,2,SIZE(PTH,3))    :: ZTEMP  ! temperature
 REAL, DIMENSION(2,2,SIZE(PTH,3))    :: ZEXN   ! Exner function
 REAL, DIMENSION(2,2,SIZE(PTH,3))    :: ZRHO   ! air density
 REAL                                :: ZFLYER_EXN ! balloon/aircraft Exner func.
 REAL, DIMENSION(2,2,SIZE(PTH,3))    :: ZTHW_FLUX  !
 REAL, DIMENSION(2,2,SIZE(PTH,3))    :: ZRCW_FLUX  !
-REAL, DIMENSION(2,2,SIZE(PSV,3),SIZE(PSV,4))    :: ZSVW_FLUX
+REAL, DIMENSION(2,2,SIZE(PSV,3),SIZE(PSV,4)) :: ZSVW_FLUX
 !
 LOGICAL :: GLAUNCH  ! launch/takeoff is effective at this time-step (if true)
 LOGICAL :: GSTORE   ! storage occurs at this time step
+LOGICAL :: GOWNER_CUR ! The process is the current owner of the flyer
 !
 INTEGER :: II_M     ! mass balloon position (x index)
 INTEGER :: IJ_M     ! mass balloon position (y index)
 INTEGER :: II_U     ! U flux point balloon position (x index)
 INTEGER :: IJ_V     ! V flux point balloon position (y index)
-INTEGER :: IDU      ! difference between II_U and II_M
-INTEGER :: IDV      ! difference between IJ_V and IJ_M
 !
 INTEGER :: IK00     ! balloon position for II_M  , IJ_M
 INTEGER :: IK01     ! balloon position for II_M  , IJ_M+1
@@ -218,24 +201,24 @@ REAL :: ZVCOEF10    ! Z direction interpolation coefficient for II_M+1, IJ_V
 REAL :: ZVCOEF11    ! Z direction interpolation coefficient for II_M+1, IJ_V+1
 !
 INTEGER :: ISTORE          ! time index for storage
-INTEGER :: JLOOP,JLOOP2    ! loop counter
 !
-REAL    :: ZU_BAL   ! horizontal wind speed at balloon location (along x)
-REAL    :: ZV_BAL   ! horizontal wind speed at balloon location (along y)
-REAL    :: ZW_BAL   ! vertical   wind speed at balloon location (along z)
-REAL    :: ZMAP     ! map factor at balloon location
-REAL    :: ZGAM     ! rotation between meso-nh base and spherical lat-lon base.
-REAL    :: ZRO_BAL  ! air density at balloon location
-!
-INTEGER :: IINFO_ll ! return code
-!
-INTEGER :: IMODEL
 REAL    :: ZTSTEP
 TYPE(DATE_TIME) :: TZNEXT ! Time for next position
 !----------------------------------------------------------------------------
 IKU = SIZE(PZ,3)
 
 CALL GET_MODEL_NUMBER_ll(IMI)
+
+! Set initial value for KRANK_NXT
+! It needs to be 0 on all processes except the one where it is when this subroutine is called
+! If the flyer flies to an other process, KRANK_NXT will be set accordingly by the current owner
+IF ( TPFLYER%NRANK_CUR == ISP ) THEN
+  GOWNER_CUR = .TRUE. ! This variable is set and used because NRANK_CUR could change in this subroutine
+  KRANK_NXT = ISP
+ELSE
+  GOWNER_CUR = .FALSE.
+  KRANK_NXT = 0
+END IF
 
 SELECT TYPE ( TPFLYER )
   CLASS IS ( TAIRCRAFTDATA)
@@ -249,20 +232,12 @@ SELECT TYPE ( TPFLYER )
         IF ( TDTCUR >= TPFLYER%TLAUNCH .AND. TDTCUR <= TPFLYER%TLAND ) THEN
           TPFLYER%LFLY     = .TRUE.
           TPFLYER%LTOOKOFF = .TRUE.
-
-          ! Compute current position
-          CALL AIRCRAFT_COMPUTE_POSITION( TDTCUR, TPFLYER )
-
-          ! Get rank of the process where the aircraft is and the model number
-          CALL FLYER_GET_RANK_MODEL_ISCRASHED( TPFLYER )
         END IF
       END IF
     END IF TAKEOFF
 
-    IF ( IMI == TPFLYER%NMODEL ) THEN
-       !Do we have to store aircraft data?
-      CALL FLYER_CHECK_STORESTEP( TPFLYER )
-    END IF
+    !Do we have to store aircraft data?
+    IF ( IMI == TPFLYER%NMODEL ) CALL FLYER_CHECK_STORESTEP( TPFLYER )
 
     ! For aircrafts, data has only to be computed at store moments
     ISTORE = TPFLYER%TFLYER_TIME%N_CUR
@@ -270,8 +245,6 @@ SELECT TYPE ( TPFLYER )
       ! Check if it is the right moment to store data
       IF ( ABS( TDTCUR - TPFLYER%TFLYER_TIME%TPDATES(ISTORE) ) < 1e-10 ) THEN
         ISOWNERAIR: IF ( TPFLYER%NRANK_CUR == ISP ) THEN
-          ZTHIS_PROC = 1.
-
           CALL FLYER_INTERP_TO_MASSPOINTS()
 
           ZEXN(:,:,:) = FLYER_COMPUTE_EXNER( )
@@ -289,12 +262,7 @@ SELECT TYPE ( TPFLYER )
           CALL FLYER_COMPUTE_INTERP_COEFF_HOR_STAGE2( )
 
           CALL FLYER_RECORD_DATA( )
-        ELSE ISOWNERAIR
-          !Not owner branch
-          ZTHIS_PROC = 0.
         END IF ISOWNERAIR
-
-        CALL FLYER_COMMUNICATE_DATA( )
 
         ! Store has been done
         TPFLYER%LSTORE = .FALSE.
@@ -325,22 +293,10 @@ SELECT TYPE ( TPFLYER )
       END IF
     END IF
 
+    IF ( GOWNER_CUR ) KRANK_NXT = TPFLYER%NRANK_CUR
 
   CLASS IS ( TBALLOONDATA)
     GLAUNCH = .FALSE. !Set to true only at the launch instant (set to false in flight after launch)
-
-    ! Initialize model number (and rank)
-    ! This is not done in initialisation phase because some data is not yet available at this early stage
-    ! (XXHAT_ll of all models are needed by FIND_PROCESS_AND_MODEL_FROM_XY_POS)
-    IF ( .NOT. TPFLYER%LPOSITION_INIT ) THEN
-      TPFLYER%LPOSITION_INIT = .TRUE.
-      ! Get rank of the process where the balloon is and the model number
-      CALL FLYER_GET_RANK_MODEL_ISCRASHED( TPFLYER, PX = TPFLYER%XXLAUNCH, PY = TPFLYER%XYLAUNCH )
-      IF ( TPFLYER%LCRASH ) THEN
-        CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'AIRCRAFT_BALLOON_EVOL', 'balloon ' // TRIM( TPFLYER%CTITLE ) &
-                        // ': launch coordinates are outside of horizontal physical domain' )
-      END IF
-    END IF
 
     ! Launch?
     LAUNCH: IF ( .NOT. TPFLYER%LFLY .AND. .NOT. TPFLYER%LCRASH .AND. TPFLYER%NMODEL == IMI ) THEN
@@ -352,15 +308,6 @@ SELECT TYPE ( TPFLYER )
         TPFLYER%XX_CUR = TPFLYER%XXLAUNCH
         TPFLYER%XY_CUR = TPFLYER%XYLAUNCH
         TPFLYER%TPOS_CUR = TDTCUR
-
-        ! Get rank of the process where the balloon is and the model number
-        CALL FLYER_GET_RANK_MODEL_ISCRASHED( TPFLYER )
-        IF ( TPFLYER%LCRASH ) THEN
-          WRITE( CMNHMSG(1), "( 'Balloon ', A, ' crashed the ', I2, '/', I2, '/', I4, ' at ', F18.12, &
-                              's (out of the horizontal boundaries)' )" ) &
-             TRIM( TPFLYER%CTITLE ), TDTCUR%NDAY, TDTCUR%NMONTH, TDTCUR%NYEAR, TDTCUR%XTIME
-          CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'AIRCRAFT_BALLOON_EVOL' )
-        END IF
       END IF LAUNCHTIME
     END IF LAUNCH
 
@@ -376,8 +323,6 @@ SELECT TYPE ( TPFLYER )
     INFLIGHTONMODEL: IF ( TPFLYER%LFLY .AND. .NOT. TPFLYER%LCRASH .AND. TPFLYER%NMODEL == IMI &
                           .AND. ABS( TPFLYER%TPOS_CUR - TDTCUR ) < 1.e-8 ) THEN
       ISOWNERBAL: IF ( TPFLYER%NRANK_CUR == ISP ) THEN
-        ZTHIS_PROC = 1.
-
         CALL FLYER_INTERP_TO_MASSPOINTS()
 
         ZEXN(:,:,:) = FLYER_COMPUTE_EXNER( )
@@ -423,22 +368,19 @@ SELECT TYPE ( TPFLYER )
 
           TPFLYER%TPOS_CUR = TDTCUR + ZTSTEP
         END IF CRASH_VERT !end of no vertical crash branch
-      ELSE ISOWNERBAL
-        !The balloon is not present on this MPI process
-        ZTHIS_PROC = 0.
       END IF ISOWNERBAL
-
-      CALL FLYER_COMMUNICATE_DATA( )
     END IF INFLIGHTONMODEL
 
+    IF ( GOWNER_CUR ) KRANK_NXT = TPFLYER%NRANK_CUR
 END SELECT
 
-
 CONTAINS
-!
+
 !----------------------------------------------------------------------------
 !----------------------------------------------------------------------------
 SUBROUTINE BALLOON_COMPUTE_INITIAL_VERTICAL_POSITION( TPBALLOON )
+
+USE MODD_CST, ONLY: XCPD, XP00, XRD
 
 IMPLICIT NONE
 
@@ -554,15 +496,23 @@ END SUBROUTINE BALLOON_COMPUTE_INITIAL_VERTICAL_POSITION
 SUBROUTINE BALLOON_ADVECTION_HOR( TPBALLOON )
 
 USE MODD_AIRCRAFT_BALLOON, ONLY: TBALLOONDATA
+USE MODD_CONF,             ONLY: LCARTESIAN
+USE MODD_NESTING,          ONLY: NDAD, NDTRATIO
+USE MODD_TIME,             only: TDTSEG
+USE MODD_TIME_n,           ONLY: TDTCUR
 
 IMPLICIT NONE
 
 CLASS(TBALLOONDATA), INTENT(INOUT) :: TPBALLOON
 
+INTEGER :: IMODEL
 INTEGER :: IMODEL_OLD
 REAL    :: ZX_OLD, ZY_OLD
 REAL    :: ZDELTATIME
 REAL    :: ZDIVTMP
+REAL    :: ZMAP     ! map factor at balloon location
+REAL    :: ZU_BAL   ! horizontal wind speed at balloon location (along x)
+REAL    :: ZV_BAL   ! horizontal wind speed at balloon location (along y)
 
 ZTSTEP = PTSTEP
 
@@ -668,10 +618,15 @@ END SUBROUTINE BALLOON_ADVECTION_HOR
 SUBROUTINE BALLOON_ADVECTION_VER( TPBALLOON )
 
 USE MODD_AIRCRAFT_BALLOON, ONLY: TBALLOONDATA
+USE MODD_CST,              ONLY: XG
 
 IMPLICIT NONE
 
 CLASS(TBALLOONDATA), INTENT(INOUT) :: TPBALLOON
+
+INTEGER :: JK ! loop index
+REAL    :: ZRO_BAL  ! air density at balloon location
+REAL    :: ZW_BAL   ! vertical   wind speed at balloon location (along z)
 
 IF ( TPBALLOON%CTYPE == 'RADIOS' ) THEN
   ZW_BAL = FLYER_INTERP(ZWM)
@@ -709,7 +664,13 @@ END SUBROUTINE BALLOON_ADVECTION_VER
 !----------------------------------------------------------------------------
 SUBROUTINE FLYER_INTERP_TO_MASSPOINTS()
 
+USE MODD_GRID_n,     ONLY: XXHAT, XXHATM, XYHAT, XYHATM
+USE MODD_PARAMETERS, ONLY: JPVEXT
+
 IMPLICIT NONE
+
+INTEGER :: IDU      ! difference between II_U and II_M
+INTEGER :: IDV      ! difference between IJ_V and IJ_M
 
 ! Indices
 IKB =   1   + JPVEXT
@@ -748,6 +709,8 @@ END SUBROUTINE FLYER_INTERP_TO_MASSPOINTS
 !----------------------------------------------------------------------------
 PURE FUNCTION FLYER_COMPUTE_EXNER( ) RESULT( PEXN )
 
+USE MODD_CST, ONLY: XCPD, XP00, XRD
+
 IMPLICIT NONE
 
 REAL, DIMENSION(2,2,SIZE(PTH,3)) :: PEXN
@@ -766,6 +729,8 @@ END FUNCTION FLYER_COMPUTE_EXNER
 !----------------------------------------------------------------------------
 !----------------------------------------------------------------------------
 PURE FUNCTION FLYER_COMPUTE_RHO( ) RESULT( PRHO )
+
+USE MODD_CST, ONLY: XRD, XRV
 
 USE MODI_WATER_SUM
 
@@ -795,6 +760,8 @@ END FUNCTION FLYER_COMPUTE_RHO
 SUBROUTINE FLYER_COMPUTE_INTERP_COEFF_HOR_STAGE1( )
 ! Compute coefficents for horizontal interpolations (1st stage)
 
+USE MODD_GRID_n, ONLY: XXHAT, XXHATM, XYHAT, XYHATM
+
 IMPLICIT NONE
 
 ! Interpolation coefficient for X
@@ -818,6 +785,9 @@ END SUBROUTINE FLYER_COMPUTE_INTERP_COEFF_HOR_STAGE1
 !----------------------------------------------------------------------------
 SUBROUTINE FLYER_COMPUTE_INTERP_COEFF_VER( )
 ! Compute coefficent for vertical interpolations
+
+USE MODD_CST,    ONLY: XCPD, XP00, XRD
+USE MODD_TIME_n, ONLY: TDTCUR
 
 IMPLICIT NONE
 
@@ -950,7 +920,11 @@ END SUBROUTINE FLYER_COMPUTE_INTERP_COEFF_HOR_STAGE2
 !----------------------------------------------------------------------------
 SUBROUTINE FLYER_RECORD_DATA( )
 
+USE MODD_CST,              ONLY: XCPD, XLAM_CRAD, XLIGHTSPEED, XP00, XPI, XRD, XRHOLW, XTT
+USE MODD_DIAG_IN_RUN,      ONLY: LDIAG_IN_RUN, XCURRENT_TKE_DISS
+USE MODD_GRID,             ONLY: XBETA, XLON0, XRPK
 USE MODD_NSV,              ONLY: NSV_LIMA_NC, NSV_LIMA_NR, NSV_LIMA_NI
+USE MODD_PARAMETERS,       ONLY: JPVEXT
 USE MODD_PARAM_LIMA,       ONLY: XALPHAR_L => XALPHAR, XNUR_L => XNUR, XALPHAS_L => XALPHAS, XNUS_L => XNUS, &
                                  XALPHAG_L => XALPHAG, XNUG_L => XNUG, XALPHAI_L => XALPHAI, XNUI_L => XNUI, &
                                  XRTMIN_L => XRTMIN, XALPHAC_L => XALPHAC, XNUC_L => XNUC
@@ -958,6 +932,7 @@ USE MODD_PARAM_LIMA_COLD,  ONLY: XAI_L => XAI, XBI_L => XBI, XLBEXS_L => XLBEXS,
                                  XAS_L => XAS, XBS_L => XBS, XCXS_L => XCXS
 USE MODD_PARAM_LIMA_MIXED, ONLY: XLBEXG_L => XLBEXG, XLBG_L => XLBG, XCCG_L => XCCG, XAG_L => XAG, XBG_L => XBG, XCXG_L => XCXG
 USE MODD_PARAM_LIMA_WARM,  ONLY: XAC_L => XAC, XAR_L => XAR, XBC_L => XBC, XBR_L => XBR
+USE MODD_PARAM_n,          ONLY: CCLOUD, CSURF
 USE MODD_RAIN_ICE_DESCR,   ONLY: XALPHAR_I => XALPHAR, XNUR_I => XNUR, XLBEXR_I => XLBEXR,                   &
                                  XLBR_I => XLBR, XCCR_I => XCCR, XBR_I => XBR, XAR_I => XAR,                 &
                                  XALPHAC_I => XALPHAC, XNUC_I => XNUC, XBC_I => XBC, XAC_I => XAC,           &
@@ -970,12 +945,18 @@ USE MODD_RAIN_ICE_DESCR,   ONLY: XALPHAR_I => XALPHAR, XNUR_I => XNUR, XLBEXR_I 
                                  XLBI_I => XLBI, XAI_I => XAI, XBI_I => XBI,                                 &
                                  XRTMIN_I => XRTMIN, XCONC_LAND, XCONC_SEA
 
+USE MODE_FGAU,             ONLY: GAULAG
+USE MODE_FSCATTER,         ONLY: BHMIE, MOMG, MG, QEPSI, QEPSW
+USE MODE_GRIDPROJ,         ONLY: SM_LATLON
+
 USE MODI_GAMMA,            ONLY: GAMMA
 
 IMPLICIT NONE
 
 INTEGER, PARAMETER :: JPTS_GAULAG = 7 ! number of points for Gauss-Laguerre quadrature
 
+INTEGER                        :: JK         ! loop index
+INTEGER                        :: JLOOP    ! loop counter
 REAL, DIMENSION(SIZE(PR,3))    :: ZTEMPZ! vertical profile of temperature
 REAL, DIMENSION(SIZE(PR,3))    :: ZRHODREFZ ! vertical profile of dry air density of the reference state
 REAL, DIMENSION(SIZE(PR,3))    :: ZCIT     ! pristine ice concentration
@@ -994,6 +975,9 @@ REAL                           :: ZFPW ! weight for mixed-phase reflectivity
 REAL,DIMENSION(:),ALLOCATABLE  :: ZX,ZW ! Gauss-Laguerre points and weights
 REAL,DIMENSION(:),ALLOCATABLE  :: ZRTMIN ! local values for XRTMIN
 LOGICAL                        :: GCALC
+REAL                           :: ZGAM     ! rotation between meso-nh base and spherical lat-lon base.
+REAL                           :: ZU_BAL   ! horizontal wind speed at balloon location (along x)
+REAL                           :: ZV_BAL   ! horizontal wind speed at balloon location (along y)
 
 TPFLYER%NMODELHIST(ISTORE) = TPFLYER%NMODEL
 
@@ -1350,101 +1334,6 @@ END DO
 END SUBROUTINE FLYER_RECORD_DATA
 !----------------------------------------------------------------------------
 !----------------------------------------------------------------------------
-SUBROUTINE FLYER_COMMUNICATE_DATA( )
-! Exchange of information between processes
-
-IMPLICIT NONE
-
-SELECT TYPE ( TPFLYER )
-  CLASS IS ( TBALLOONDATA)
-    IF ( TPFLYER%CMODEL == 'MOB' ) THEN
-      CALL DISTRIBUTE_FLYER_N(TPFLYER%NMODEL)
-    END IF
-    CALL DISTRIBUTE_FLYER_N(TPFLYER%NRANK_CUR)
-    CALL DISTRIBUTE_FLYER_L(TPFLYER%LFLY)
-    CALL DISTRIBUTE_FLYER_L(TPFLYER%LCRASH)
-    CALL DISTRIBUTE_FLYER_L(TPFLYER%LSTORE)
-    CALL DISTRIBUTE_FLYER(TPFLYER%XX_CUR)
-    CALL DISTRIBUTE_FLYER(TPFLYER%XY_CUR)
-    CALL DISTRIBUTE_FLYER_N(TPFLYER%TPOS_CUR%NYEAR)
-    CALL DISTRIBUTE_FLYER_N(TPFLYER%TPOS_CUR%NMONTH)
-    CALL DISTRIBUTE_FLYER_N(TPFLYER%TPOS_CUR%NDAY)
-    CALL DISTRIBUTE_FLYER  (TPFLYER%TPOS_CUR%XTIME)
-
-    CALL DISTRIBUTE_FLYER_N(TPFLYER%TFLYER_TIME%N_CUR)
-
-    IF ( TPFLYER%CTYPE == 'CVBALL' ) THEN
-      CALL DISTRIBUTE_FLYER(TPFLYER%XZ_CUR)
-      CALL DISTRIBUTE_FLYER(TPFLYER%XWASCENT)
-    ELSE IF ( TPFLYER%CTYPE == 'RADIOS' ) THEN
-      CALL DISTRIBUTE_FLYER(TPFLYER%XZ_CUR)
-    ELSE IF ( TPFLYER%CTYPE == 'ISODEN' ) THEN
-      CALL DISTRIBUTE_FLYER(TPFLYER%XRHO)
-    END IF
-
-END SELECT
-
-IF ( TPFLYER%LSTORE ) THEN
-  ! Data stored
-  ISTORE = TPFLYER%TFLYER_TIME%N_CUR
-
-  SELECT TYPE ( TPFLYER )
-    CLASS IS ( TBALLOONDATA)
-      CALL DISTRIBUTE_FLYER_N(TPFLYER%TFLYER_TIME%TPDATES(ISTORE)%NYEAR)
-      CALL DISTRIBUTE_FLYER_N(TPFLYER%TFLYER_TIME%TPDATES(ISTORE)%NMONTH)
-      CALL DISTRIBUTE_FLYER_N(TPFLYER%TFLYER_TIME%TPDATES(ISTORE)%NDAY)
-      CALL DISTRIBUTE_FLYER  (TPFLYER%TFLYER_TIME%TPDATES(ISTORE)%XTIME)
-  END SELECT
-
-  CALL DISTRIBUTE_FLYER_N(TPFLYER%NMODELHIST(ISTORE))
-  CALL DISTRIBUTE_FLYER(TPFLYER%XX  (ISTORE))
-  CALL DISTRIBUTE_FLYER(TPFLYER%XY  (ISTORE))
-  CALL DISTRIBUTE_FLYER(TPFLYER%XZ  (ISTORE))
-  CALL DISTRIBUTE_FLYER(TPFLYER%XLON(ISTORE))
-  CALL DISTRIBUTE_FLYER(TPFLYER%XLAT(ISTORE))
-  CALL DISTRIBUTE_FLYER(TPFLYER%XZON(ISTORE))
-  CALL DISTRIBUTE_FLYER(TPFLYER%XMER(ISTORE))
-  CALL DISTRIBUTE_FLYER(TPFLYER%XW  (ISTORE))
-  CALL DISTRIBUTE_FLYER(TPFLYER%XP  (ISTORE))
-  CALL DISTRIBUTE_FLYER(TPFLYER%XTH (ISTORE))
-  DO JLOOP=1,SIZE(PR,4)
-    CALL DISTRIBUTE_FLYER(TPFLYER%XR   (ISTORE,JLOOP))
-  END DO
-  DO JLOOP=1,SIZE(PSV,4)
-    CALL DISTRIBUTE_FLYER(TPFLYER%XSV  (ISTORE,JLOOP))
-  END DO
-  DO JLOOP=1,IKU
-    CALL DISTRIBUTE_FLYER(TPFLYER%XRTZ (ISTORE,JLOOP))
-    DO JLOOP2=1,SIZE(PR,4)
-      CALL DISTRIBUTE_FLYER(TPFLYER%XRZ (ISTORE,JLOOP,JLOOP2))
-    END DO
-    CALL DISTRIBUTE_FLYER(TPFLYER%XFFZ (ISTORE,JLOOP))
-    CALL DISTRIBUTE_FLYER(TPFLYER%XCIZ (ISTORE,JLOOP))
-    IF (CCLOUD== 'LIMA' ) THEN
-      CALL DISTRIBUTE_FLYER(TPFLYER%XCRZ (ISTORE,JLOOP))
-      CALL DISTRIBUTE_FLYER(TPFLYER%XCCZ (ISTORE,JLOOP))
-    END IF
-    CALL DISTRIBUTE_FLYER(TPFLYER%XIWCZ (ISTORE,JLOOP))
-    CALL DISTRIBUTE_FLYER(TPFLYER%XLWCZ (ISTORE,JLOOP))
-    CALL DISTRIBUTE_FLYER(TPFLYER%XCRARE (ISTORE,JLOOP))
-    CALL DISTRIBUTE_FLYER(TPFLYER%XCRARE_ATT (ISTORE,JLOOP))
-    CALL DISTRIBUTE_FLYER(TPFLYER%XWZ (ISTORE,JLOOP))
-    CALL DISTRIBUTE_FLYER(TPFLYER%XZZ (ISTORE,JLOOP))
-  END DO
-  IF (SIZE(PTKE)>0) CALL DISTRIBUTE_FLYER(TPFLYER%XTKE  (ISTORE))
-  IF (SIZE(PTS) >0) CALL DISTRIBUTE_FLYER(TPFLYER%XTSRAD(ISTORE))
-  IF (LDIAG_IN_RUN) CALL DISTRIBUTE_FLYER(TPFLYER%XTKE_DISS(ISTORE))
-  CALL DISTRIBUTE_FLYER(TPFLYER%XZS  (ISTORE))
-  CALL DISTRIBUTE_FLYER(TPFLYER%XTHW_FLUX(ISTORE))
-  CALL DISTRIBUTE_FLYER(TPFLYER%XRCW_FLUX(ISTORE))
-  DO JLOOP=1,SIZE(PSV,4)
-    CALL DISTRIBUTE_FLYER(TPFLYER%XSVW_FLUX(ISTORE,JLOOP))
-  END DO
-END IF
-
-END SUBROUTINE FLYER_COMMUNICATE_DATA
-!----------------------------------------------------------------------------
-!----------------------------------------------------------------------------
 FUNCTION FLYER_INTERP(PA) RESULT(PB)
 !
 REAL, DIMENSION(:,:,:), INTENT(IN) :: PA
@@ -1566,51 +1455,6 @@ PB = (1.- ZYCOEF) * (1.-ZXCOEF) * PA(JI  ,JJ  ) &
 !
 END FUNCTION FLYER_INTERP_2D
 !----------------------------------------------------------------------------
-!----------------------------------------------------------------------------
-SUBROUTINE DISTRIBUTE_FLYER(PA)
-!
-REAL, INTENT(INOUT) :: PA
-!
-PA = PA * ZTHIS_PROC
-CALL REDUCESUM_ll(PA,IINFO_ll)
-!
-END SUBROUTINE DISTRIBUTE_FLYER
-!----------------------------------------------------------------------------
-!----------------------------------------------------------------------------
-SUBROUTINE DISTRIBUTE_FLYER_N(KA)
-!
-INTEGER, INTENT(INOUT) :: KA
-REAL                   :: ZA
-!
-ZA=KA
-!
-ZA = ZA * ZTHIS_PROC
-CALL REDUCESUM_ll(ZA,IINFO_ll)
-!
-IF (NINT(ZA)/=0) KA=NINT(ZA)
-!
-END SUBROUTINE DISTRIBUTE_FLYER_N
-!----------------------------------------------------------------------------
-!----------------------------------------------------------------------------
-SUBROUTINE DISTRIBUTE_FLYER_L(OA)
-!
-LOGICAL, INTENT(INOUT) :: OA
-REAL                   :: ZA
-!
-ZA=0.
-IF (OA) ZA=1.
-!
-CALL REDUCESUM_ll(ZA,IINFO_ll)
-!
-IF (ZA==0.) THEN
-  OA=.FALSE.
-ELSE
-  OA=.TRUE.
-END IF
-!
-END SUBROUTINE DISTRIBUTE_FLYER_L
-!----------------------------------------------------------------------------
-
 
 END SUBROUTINE AIRCRAFT_BALLOON_EVOL
 !----------------------------------------------------------------------------

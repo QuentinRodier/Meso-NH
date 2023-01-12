@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2000-2022 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2000-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -9,10 +9,13 @@ MODULE MODE_WRITE_AIRCRAFT_BALLOON
 
 use modd_parameters, only: NCOMMENTLGTMAX, NMNHNAMELGTMAX, NUNITLGTMAX
 
+use mode_msg
+
 implicit none
 
 private
 
+PUBLIC :: AIRCRAFT_BALLOON_FREE_NONLOCAL
 public :: WRITE_AIRCRAFT_BALLOON
 
 CHARACTER(LEN=NCOMMENTLGTMAX), DIMENSION(:), ALLOCATABLE :: CCOMMENT ! comment string(
@@ -80,7 +83,9 @@ SUBROUTINE WRITE_AIRCRAFT_BALLOON(TPDIAFILE)
 !          ------------
 !
 USE MODD_AIRCRAFT_BALLOON
-USE MODD_IO,              ONLY: TFILEDATA
+USE MODD_IO,               ONLY: ISP, TFILEDATA
+!
+USE MODE_AIRCRAFT_BALLOON, ONLY: FLYER_RECV_AND_ALLOCATE, FLYER_SEND
 !
 IMPLICIT NONE
 !
@@ -96,17 +101,100 @@ TYPE(TFILEDATA), INTENT(IN) :: TPDIAFILE ! file to write
 INTEGER :: JI
 !
 !----------------------------------------------------------------------------
-!
+
 DO JI = 1, NBALLOONS
-  CALL FLYER_DIACHRO( TPDIAFILE, TBALLOONS(JI)%TBALLOON )
+  ! The balloon data is only available on the process where it is physically located => transfer it if necessary
+
+  ! Send data from owner to writer if necessary
+  IF ( ISP == NRANKCUR_BALLOON(JI) .AND. NRANKCUR_BALLOON(JI) /= TPDIAFILE%NMASTER_RANK ) THEN
+    CALL FLYER_SEND( TBALLOONS(JI)%TBALLOON, TPDIAFILE%NMASTER_RANK )
+  END IF
+
+  IF ( ISP == TPDIAFILE%NMASTER_RANK ) THEN
+    ! Receive data from owner if not available on the writer process
+    IF ( NRANKCUR_BALLOON(JI) /= TPDIAFILE%NMASTER_RANK ) THEN
+      IF ( ASSOCIATED( TBALLOONS(JI)%TBALLOON ) ) &
+        call Print_msg( NVERB_FATAL, 'GEN', 'WRITE_AIRCRAFT_BALLOON', 'balloon already associated' )
+      ALLOCATE( TBALLOONS(JI)%TBALLOON )
+      CALL FLYER_RECV_AND_ALLOCATE( TBALLOONS(JI)%TBALLOON, NRANKCUR_BALLOON(JI) )
+    END IF
+
+    ! Write data
+    CALL FLYER_DIACHRO( TPDIAFILE, TBALLOONS(JI)%TBALLOON )
+
+    ! Remark: release of memory is done later by a call to AIRCRAFT_BALLOON_FREE_NONLOCAL
+    !         This call must be done after the file is closed because flyer data is needed on the
+    !         file master process at this last stage (coordinates writing)
+  END IF
 END DO
 
 DO JI = 1, NAIRCRAFTS
-  CALL FLYER_DIACHRO( TPDIAFILE, TAIRCRAFTS(JI)%TAIRCRAFT )
+  ! The aircraft data is only available on the process where it is physically located => transfer it if necessary
+
+  ! Send data from owner to writer if necessary
+  IF ( ISP == NRANKCUR_AIRCRAFT(JI) .AND. NRANKCUR_AIRCRAFT(JI) /= TPDIAFILE%NMASTER_RANK ) THEN
+    CALL FLYER_SEND( TAIRCRAFTS(JI)%TAIRCRAFT, TPDIAFILE%NMASTER_RANK )
+  END IF
+
+  IF ( ISP == TPDIAFILE%NMASTER_RANK ) THEN
+    ! Receive data from owner if not available on the writer process (need to be done only for the first model)
+    IF ( NRANKCUR_AIRCRAFT(JI) /= TPDIAFILE%NMASTER_RANK ) THEN
+      IF ( ASSOCIATED( TAIRCRAFTS(JI)%TAIRCRAFT ) ) &
+        call Print_msg( NVERB_FATAL, 'GEN', 'WRITE_AIRCRAFT_BALLOON', 'aircraft already associated' )
+      ALLOCATE( TAIRCRAFTS(JI)%TAIRCRAFT )
+      CALL FLYER_RECV_AND_ALLOCATE( TAIRCRAFTS(JI)%TAIRCRAFT, NRANKCUR_AIRCRAFT(JI) )
+    END IF
+
+    ! Write data
+    CALL FLYER_DIACHRO( TPDIAFILE, TAIRCRAFTS(JI)%TAIRCRAFT )
+
+    ! Remark: release of memory is done later by a call to AIRCRAFT_BALLOON_FREE_NONLOCAL
+    !         This call must be done after the file is closed because flyer data is needed on the
+    !         file master process at this last stage (coordinates writing)
+  END IF
 END DO
-!
+
 END SUBROUTINE WRITE_AIRCRAFT_BALLOON
-!
+
+
+! ####################################################
+SUBROUTINE AIRCRAFT_BALLOON_FREE_NONLOCAL( TPDIAFILE )
+! ####################################################
+
+USE MODD_AIRCRAFT_BALLOON,     ONLY: NAIRCRAFTS, NBALLOONS, NRANKCUR_AIRCRAFT, NRANKCUR_BALLOON, TAIRCRAFTS, TBALLOONS
+USE MODD_IO,                   ONLY: ISP, TFILEDATA
+
+USE MODE_INI_AIRCRAFT_BALLOON, ONLY: DEALLOCATE_FLYER
+
+IMPLICIT NONE
+
+TYPE(TFILEDATA), INTENT(IN) :: TPDIAFILE
+
+INTEGER :: JI
+
+CALL PRINT_MSG( NVERB_DEBUG, 'GEN', 'AIRCRAFT_BALLOON_FREE_NONLOCAL', 'called for ' // TRIM(TPDIAFILE%CNAME) )
+
+IF ( ISP == TPDIAFILE%NMASTER_RANK ) THEN
+  DO JI = 1, NBALLOONS
+    ! Free ballon data if it was not stored on this process
+    IF ( NRANKCUR_BALLOON(JI) /= TPDIAFILE%NMASTER_RANK ) THEN
+      CALL DEALLOCATE_FLYER( TBALLOONS(JI)%TBALLOON )
+      DEALLOCATE( TBALLOONS(JI)%TBALLOON )
+    END IF
+  END DO
+
+  DO JI = 1, NAIRCRAFTS
+    ! Free aircraft data if it was not stored on this process
+    IF ( NRANKCUR_AIRCRAFT(JI) /= TPDIAFILE%NMASTER_RANK ) THEN
+      CALL DEALLOCATE_FLYER( TAIRCRAFTS(JI)%TAIRCRAFT )
+      DEALLOCATE( TAIRCRAFTS(JI)%TAIRCRAFT )
+    END IF
+  END DO
+END IF
+
+END SUBROUTINE AIRCRAFT_BALLOON_FREE_NONLOCAL
+
+
 ! ############################################
 SUBROUTINE FLYER_DIACHRO( TPDIAFILE, TPFLYER )
 ! ############################################
@@ -128,7 +216,6 @@ USE MODE_AERO_PSD
 use mode_aircraft_balloon, only: Aircraft_balloon_longtype_get
 USE MODE_DUST_PSD
 USE MODE_MODELN_HANDLER,   ONLY: GET_CURRENT_MODEL_INDEX
-use mode_msg
 use mode_write_diachro,    only: Write_diachro
 
 
@@ -634,9 +721,8 @@ DEALLOCATE (CUNIT   )
 
 contains
 
-subroutine Add_profile( htitle, hcomment, hunits, pfield )
 
-use mode_msg
+subroutine Add_profile( htitle, hcomment, hunits, pfield )
 
 character(len=*),     intent(in) :: htitle
 character(len=*),     intent(in) :: hcomment
@@ -661,8 +747,6 @@ end subroutine Add_profile
 
 
 subroutine Add_point( htitle, hcomment, hunits, pfield )
-
-use mode_msg
 
 character(len=*),   intent(in) :: htitle
 character(len=*),   intent(in) :: hcomment

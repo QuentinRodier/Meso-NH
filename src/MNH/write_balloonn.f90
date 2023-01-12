@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2001-2022 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2001-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -44,7 +44,7 @@ CONTAINS
 !!
 !!    AUTHOR
 !!    ------
-!!  	G.Jaubert   *Meteo France* 
+!!  	G.Jaubert   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -57,9 +57,11 @@ CONTAINS
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_AIRCRAFT_BALLOON, only: NBALLOONS, TBALLOONS
-USE MODD_IO,               ONLY: TFILEDATA
+USE MODD_AIRCRAFT_BALLOON, only: NBALLOONS, NRANKCUR_BALLOON, TBALLOONS
+USE MODD_IO,               ONLY: GSMONOPROC, ISP, TFILEDATA
 !
+USE MODE_AIRCRAFT_BALLOON,     ONLY: FLYER_RECV_AND_ALLOCATE, FLYER_SEND
+USE MODE_INI_AIRCRAFT_BALLOON, ONLY: DEALLOCATE_FLYER
 !
 IMPLICIT NONE
 !
@@ -71,10 +73,41 @@ TYPE(TFILEDATA),   INTENT(IN) :: TPFILE ! File characteristics
 !
 !
 INTEGER :: JI
+LOGICAL :: OMONOPROC_SAVE ! Copy of true value of GSMONOPROC
+
+! Save GSMONOPROC value
+OMONOPROC_SAVE = GSMONOPROC
+! Force GSMONOPROC to true to allow IO_Field_write on only 1 process! (not very clean hack)
+GSMONOPROC = .TRUE.
 
 DO JI = 1, NBALLOONS
-  IF ( TBALLOONS(JI)%TBALLOON%LFLY ) CALL WRITE_BALLOON_POSITION( TPFILE, TBALLOONS(JI)%TBALLOON )
+  ! The balloon data is only available on the process where it is physically located => transfer it if necessary
+
+  ! Send data from owner to writer if necessary
+  IF ( ISP == NRANKCUR_BALLOON(JI) .AND. NRANKCUR_BALLOON(JI) /= TPFILE%NMASTER_RANK ) THEN
+    CALL FLYER_SEND( TBALLOONS(JI)%TBALLOON, TPFILE%NMASTER_RANK )
+  END IF
+
+  IF ( ISP == TPFILE%NMASTER_RANK ) THEN
+    ! Receive data from owner if not available on the writer process
+    IF ( NRANKCUR_BALLOON(JI) /= TPFILE%NMASTER_RANK ) THEN
+      ALLOCATE( TBALLOONS(JI)%TBALLOON )
+      CALL FLYER_RECV_AND_ALLOCATE( TBALLOONS(JI)%TBALLOON, NRANKCUR_BALLOON(JI) )
+    END IF
+
+    ! Write data
+    IF ( TBALLOONS(JI)%TBALLOON%LFLY ) CALL WRITE_BALLOON_POSITION( TPFILE, TBALLOONS(JI)%TBALLOON )
+
+    ! Free ballon data if it was not stored on this process
+    IF ( NRANKCUR_BALLOON(JI) /= TPFILE%NMASTER_RANK ) THEN
+      CALL DEALLOCATE_FLYER( TBALLOONS(JI)%TBALLOON )
+      DEALLOCATE( TBALLOONS(JI)%TBALLOON )
+    END IF
+  END IF
 END DO
+
+! Restore correct value of GSMONOPROC
+GSMONOPROC = OMONOPROC_SAVE
 
 END SUBROUTINE WRITE_BALLOON_n
 !-------------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -1795,6 +1795,7 @@ IF ( LUV_FLX) CALL IO_Field_write(TPFILE,'VU_FLX',XVU_FLUX_M)
 !*       1.14   Balloon variables
 !
 !
+! Write balloon coordinates in backup file to allow restart with current balloon position
 IF (LFLYER) CALL WRITE_BALLOON_n(TPFILE)
 !
 !

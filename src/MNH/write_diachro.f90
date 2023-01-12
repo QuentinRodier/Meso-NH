@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1996-2022 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1996-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -100,7 +100,7 @@ use modd_aircraft_balloon, only: tflyerdata
 use modd_budget,           only: tbudiachrometadata
 use modd_conf,             only: lpack
 use modd_field,            only: tfieldmetadata_base
-use modd_io,               only: tfiledata
+use modd_io,               only: gsmonoproc, tfiledata
 use modd_type_date,        only: date_time
 !
 IMPLICIT NONE
@@ -117,6 +117,7 @@ class(tflyerdata),                                  intent(in), optional :: tpfl
 !
 !*       0.1   Local variables
 !              ---------------
+logical :: omonoproc_save ! Copy of true value of gsmonoproc
 logical :: gpack
 !------------------------------------------------------------------------------
 
@@ -124,6 +125,15 @@ call Print_msg( NVERB_DEBUG, 'BUD', 'Write_diachro', 'called' )
 
 gpack = lpack
 lpack = .false.
+
+if ( present( tpflyer ) ) then
+  ! Save gsmonoproc value
+  omonoproc_save = gsmonoproc
+
+  ! Force gsmonoproc to true to allow IO_Field_write on only 1 process! (not very clean hack)
+  ! This is necessary for flyers because their data is local to 1 one process (and has been copied on the master rank of the file)
+  gsmonoproc = .true.
+end if
 
 #ifdef MNH_IOLFI
 if ( tpdiafile%cformat == 'LFI' .or. tpdiafile%cformat == 'LFICDF4' ) &
@@ -137,6 +147,12 @@ if ( tpdiafile%cformat == 'NETCDF4' .or. tpdiafile%cformat == 'LFICDF4' ) &
 
 lpack = gpack
 
+if ( present( tpflyer ) ) then
+  ! Restore correct value of gsmonoproc
+  gsmonoproc = omonoproc_save
+end if
+
+! end subroutine Write_diachro_1
 end subroutine Write_diachro
 
 #ifdef MNH_IOLFI

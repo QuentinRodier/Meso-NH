@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2000-2022 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2000-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -56,6 +56,8 @@ INTEGER, PARAMETER :: NCRASH_OUT_HORIZ = 1 ! Flyer is outside of horizontal doma
 INTEGER, PARAMETER :: NCRASH_OUT_LOW   = 2 ! Flyer crashed on ground (or sea!)
 INTEGER, PARAMETER :: NCRASH_OUT_HIGH  = 3 ! Flyer is too high (outside of domain)
 
+INTEGER, PARAMETER :: NFLYER_DEFAULT_RANK = 1
+
 LOGICAL :: LFLYER = .FALSE. ! flag to use aircraft/balloons
 
 TYPE :: TFLYERDATA
@@ -90,7 +92,7 @@ TYPE :: TFLYERDATA
   REAL :: XY_CUR = XNEGUNDEF ! current y
   REAL :: XZ_CUR = XNEGUNDEF ! current z (if 'RADIOS' or 'AIRCRA' and 'ALTDEF' = T)
   REAL :: XP_CUR = XNEGUNDEF ! current p (if 'AIRCRA' and 'ALTDEF' = F)
-  INTEGER :: NRANK_CUR = NNEGUNDEF ! Rank of the process where the flyer is
+  INTEGER :: NRANK_CUR = NFLYER_DEFAULT_RANK ! Rank of the process where the flyer is
   !
   !* data records
   !
@@ -121,8 +123,6 @@ TYPE :: TFLYERDATA
   REAL, DIMENSION(:,:),   ALLOCATABLE :: XCRARE_ATT ! attenuated (= more realistic) cloud radar reflectivity
   REAL, DIMENSION(:,:),   ALLOCATABLE :: XWZ        ! vertical profile of vertical velocity
   REAL, DIMENSION(:,:),   ALLOCATABLE :: XZZ        ! vertical profile of mass point altitude (above sea)
-  REAL, DIMENSION(:,:),   ALLOCATABLE :: XAER       ! Extinction at 550 nm
-  REAL, DIMENSION(:,:),   ALLOCATABLE :: XDST_WL    ! Extinction by wavelength
   REAL, DIMENSION(:),     ALLOCATABLE :: XZS        ! zs(n)
   REAL, DIMENSION(:),     ALLOCATABLE :: XTSRAD     ! Ts(n)
   !
@@ -190,5 +190,10 @@ TYPE(TAIRCRAFT_PTR), DIMENSION(:), ALLOCATABLE :: TAIRCRAFTS ! characteristics a
 
 TYPE(TBALLOON_PTR),  DIMENSION(:), ALLOCATABLE :: TBALLOONS  ! characteristics and records of the balloons
 
+INTEGER, DIMENSION(:), ALLOCATABLE :: NRANKCUR_AIRCRAFT ! Array to store the rank of the process where a given aircraft is present
+INTEGER, DIMENSION(:), ALLOCATABLE :: NRANKNXT_AIRCRAFT ! Array to store the rank of the process where a given aircraft is going
+
+INTEGER, DIMENSION(:), ALLOCATABLE :: NRANKCUR_BALLOON  ! Array to store the rank of the process where a given ballon is present
+INTEGER, DIMENSION(:), ALLOCATABLE :: NRANKNXT_BALLOON  ! Array to store the rank of the process where a given ballon is going
 
 END MODULE MODD_AIRCRAFT_BALLOON
