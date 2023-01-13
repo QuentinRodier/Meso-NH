@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -77,6 +77,7 @@
 !!      J. Pianezze               01/08/2016  add sfxoasis coupling functions
 !!      P. Wautelet          05/2016-04/2018  new data structures and calls for I/O
 !!      P. Wautelet               06/07/2021  use FINALIZE_MNH
+!  P. Wautelet 13/01/2023: close backup files outside MODEL_n (to control close order)
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -89,14 +90,17 @@
 #endif
 !
 USE MODD_CONF,             only: CPROGRAM, NMODEL
-USE MODD_NESTING
 USE MODD_CONF_n
+USE MODD_IO,               ONLY: TFILEDATA
+USE MODD_NESTING
+USE MODD_TYPE_DATE,        ONLY: DATE_TIME
 !
 USE MODI_MODEL_n
 USE MODI_KID_MODEL
 !
 USE MODE_FINALIZE_MNH,     only: FINALIZE_MNH
 USE MODE_IO,               only: IO_Init
+USE MODE_IO_FILE,          only: IO_FILE_CLOSE
 USE MODE_ll
 USE MODE_MODELN_HANDLER
 !
@@ -121,6 +125,8 @@ INTEGER       :: ITEMP_MODEL1                 ! loop increment
 LOGICAL       :: GEXIT                        ! flag for the end of the
                                               ! temporal loop       
 INTEGER       :: IINFO_ll                     ! return code of // routines
+TYPE(TFILEDATA), POINTER :: TZBAKFILE         ! Backup file
+TYPE(DATE_TIME)          :: TZDTMODELN        ! Date/time of current model computation
 !
 #ifdef CPLOASIS
   CHARACTER(LEN=28)  :: CNAMELIST
@@ -190,7 +196,11 @@ DO JMODEL=1,NMODEL
   CALL GO_TOMODEL_ll(JMODEL,IINFO_ll)
   CALL GOTO_MODEL(JMODEL)
   CSTORAGE_TYPE='TT'
-  CALL MODEL_n(1,GEXIT)
+  CALL MODEL_n( 1, TZBAKFILE, TZDTMODELN, GEXIT )
+  IF ( TZBAKFILE%LOPENED ) THEN
+    CALL IO_FILE_CLOSE( TZBAKFILE, TPDTMODELN = TZDTMODELN )
+    NULLIFY( TZBAKFILE )
+  END IF
 END DO
 !
 IF(GEXIT) THEN
@@ -205,9 +215,14 @@ DO
   !
   CALL GO_TOMODEL_ll(1,IINFO_ll)
   CALL GOTO_MODEL(1)
-  CALL MODEL_n(ITEMP_MODEL1,GEXIT)
+  CALL MODEL_n( ITEMP_MODEL1, TZBAKFILE, TZDTMODELN, GEXIT )
   !
   CALL KID_MODEL(1,ITEMP_MODEL1,GEXIT)
+  !
+  IF ( TZBAKFILE%LOPENED ) THEN
+    CALL IO_FILE_CLOSE( TZBAKFILE, TPDTMODELN = TZDTMODELN )
+    NULLIFY( TZBAKFILE )
+  END IF
   !
   IF(GEXIT) EXIT
   !

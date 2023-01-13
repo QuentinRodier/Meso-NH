@@ -9,10 +9,15 @@
 !
 INTERFACE
 !
-       SUBROUTINE MODEL_n(KTCOUNT,OEXIT)
+       SUBROUTINE MODEL_n( KTCOUNT, TPBAKFILE, TPDTMODELN, OEXIT )
 !
-INTEGER, INTENT(IN)   :: KTCOUNT  ! temporal loop index of model KMODEL
-LOGICAL, INTENT(INOUT):: OEXIT    ! switch for the end of the temporal loop
+USE MODD_IO,        ONLY: TFILEDATA
+USE MODD_TYPE_DATE, ONLY: DATE_TIME
+!
+INTEGER,                  INTENT(IN)    :: KTCOUNT    ! Temporal loop index of model KMODEL
+TYPE(TFILEDATA), POINTER, INTENT(OUT)   :: TPBAKFILE  ! Pointer for backup file
+TYPE(DATE_TIME),          INTENT(OUT)   :: TPDTMODELN ! Time of current model computation
+LOGICAL,                  INTENT(INOUT) :: OEXIT      ! Switch for the end of the temporal loop
 !
 END SUBROUTINE MODEL_n
 !
@@ -21,7 +26,7 @@ END INTERFACE
 END MODULE MODI_MODEL_n
 
 !     ################################### 
-      SUBROUTINE MODEL_n(KTCOUNT, OEXIT) 
+      SUBROUTINE MODEL_n( KTCOUNT, TPBAKFILE, TPDTMODELN, OEXIT )
 !     ###################################
 !
 !!****  *MODEL_n * -monitor of the model version _n 
@@ -273,6 +278,8 @@ END MODULE MODI_MODEL_n
 !  P. Wautelet 19/02/2021: add NEGA2 term for SV budgets
 !  J.L. Redelsperger 03/2021: add Call NHOA_COUPLN (coupling O & A LES version)
 !  P. Wautelet 08/12/2022: bugfix if no TDADFILE
+!  P. Wautelet 13/01/2023: manage close of backup files outside of MODEL_n
+!                          (useful to close them in reverse model order (child before parent, needed by WRITE_BALLOON_n)
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -362,6 +369,7 @@ USE MODD_TIME_n
 USE MODD_TIMEZ
 USE MODD_TURB_CLOUD,     ONLY: NMODEL_CLOUD,CTURBLEN_CLOUD,XCEI
 USE MODD_TURB_n
+USE MODD_TYPE_DATE,      ONLY: DATE_TIME
 USE MODD_VISCOSITY
 !
 USE MODE_AIRCRAFT_BALLOON
@@ -460,8 +468,10 @@ IMPLICIT NONE
 !
 !
 !
-INTEGER, INTENT(IN)   :: KTCOUNT
-LOGICAL, INTENT(INOUT):: OEXIT
+INTEGER,                  INTENT(IN)    :: KTCOUNT    ! Temporal loop index of model KMODEL
+TYPE(TFILEDATA), POINTER, INTENT(OUT)   :: TPBAKFILE  ! Pointer for backup file
+TYPE(DATE_TIME),          INTENT(OUT)   :: TPDTMODELN ! Time of current model computation
+LOGICAL,                  INTENT(INOUT) :: OEXIT      ! Switch for the end of the temporal loop
 !
 !*       0.2   declarations of local variables
 !
@@ -551,15 +561,15 @@ LOGICAL :: GCLD                     ! conditionnal call for dust wet deposition
 LOGICAL :: GCLOUD_ONLY              ! conditionnal radiation computations for
                                 !      the only cloudy columns
 REAL, DIMENSION(SIZE(XRSVS,1), SIZE(XRSVS,2), SIZE(XRSVS,3), NSV_AER)  :: ZWETDEPAER
-
-
 !
-TYPE(TFILEDATA),POINTER :: TZBAKFILE, TZOUTFILE
+TYPE(TFILEDATA),POINTER :: TZOUTFILE
 ! TYPE(TFILEDATA),SAVE    :: TZDIACFILE
 !-------------------------------------------------------------------------------
 !
-TZBAKFILE=> NULL()
+TPBAKFILE=> NULL()
 TZOUTFILE=> NULL()
+!
+TPDTMODELN = TDTCUR
 !
 !*       0.    MICROPHYSICAL SCHEME
 !              ------------------- 
@@ -968,12 +978,12 @@ IF ( nfile_backup_current < NBAK_NUMB ) THEN
   IF ( KTCOUNT == TBACKUPN(nfile_backup_current + 1)%NSTEP ) THEN
     nfile_backup_current = nfile_backup_current + 1
     !
-    TZBAKFILE => TBACKUPN(nfile_backup_current)%TFILE
-    IVERB    = TZBAKFILE%NLFIVERB
+    TPBAKFILE => TBACKUPN(nfile_backup_current)%TFILE
+    IVERB    = TPBAKFILE%NLFIVERB
     !
-    CALL IO_File_open(TZBAKFILE)
+    CALL IO_File_open(TPBAKFILE)
     !
-    CALL WRITE_DESFM_n(IMI,TZBAKFILE)
+    CALL WRITE_DESFM_n(IMI,TPBAKFILE)
     CALL IO_Header_write( TBACKUPN(nfile_backup_current)%TFILE )
     IF ( ASSOCIATED( TBACKUPN(nfile_backup_current)%TFILE%TDADFILE ) ) THEN
       YDADNAME = TBACKUPN(nfile_backup_current)%TFILE%TDADFILE%CNAME
@@ -982,10 +992,10 @@ IF ( nfile_backup_current < NBAK_NUMB ) THEN
       YDADNAME = 'DUMMY'
     END IF
     CALL WRITE_LFIFM_n( TBACKUPN(nfile_backup_current)%TFILE, TRIM( YDADNAME ) )
-    TOUTDATAFILE => TZBAKFILE
-    CALL MNHWRITE_ZS_DUMMY_n(TZBAKFILE)
+    TOUTDATAFILE => TPBAKFILE
+    CALL MNHWRITE_ZS_DUMMY_n(TPBAKFILE)
     IF (CSURF=='EXTE') THEN
-      TFILE_SURFEX => TZBAKFILE
+      TFILE_SURFEX => TPBAKFILE
       CALL GOTO_SURFEX(IMI)
       CALL WRITE_SURF_ATM_n(YSURF_CUR,'MESONH','ALL',.FALSE.)
       IF ( KTCOUNT > 1) THEN
@@ -1000,7 +1010,7 @@ IF ( nfile_backup_current < NBAK_NUMB ) THEN
       CALL INI_LG( XXHATM, XYHATM, XZZ, XSVT, XLBXSVM, XLBYSVM )
       IF (IVERB>=5) THEN
         WRITE(UNIT=ILUOUT,FMT=*) '************************************'
-        WRITE(UNIT=ILUOUT,FMT=*) '*** Lagrangian variables refreshed after ',TRIM(TZBAKFILE%CNAME),' backup'
+        WRITE(UNIT=ILUOUT,FMT=*) '*** Lagrangian variables refreshed after ',TRIM(TPBAKFILE%CNAME),' backup'
         WRITE(UNIT=ILUOUT,FMT=*) '************************************'
       END IF
     END IF
@@ -1011,11 +1021,11 @@ IF ( nfile_backup_current < NBAK_NUMB ) THEN
 !
   ELSE
     !Necessary to have a 'valid' CNAME when calling some subroutines
-    TZBAKFILE => TFILE_DUMMY
+    TPBAKFILE => TFILE_DUMMY
   END IF
 ELSE
   !Necessary to have a 'valid' CNAME when calling some subroutines
-  TZBAKFILE => TFILE_DUMMY
+  TPBAKFILE => TFILE_DUMMY
 END IF
 !
 IF ( nfile_output_current < NOUT_NUMB ) THEN
@@ -1434,7 +1444,7 @@ XT_RELAX = XT_RELAX + ZTIME2 - ZTIME1 &
 !
 ZTIME1 = ZTIME2
 !
-CALL PHYS_PARAM_n( KTCOUNT, TZBAKFILE,                            &
+CALL PHYS_PARAM_n( KTCOUNT, TPBAKFILE,                            &
                    XT_RAD,  XT_SHADOWS, XT_DCONV, XT_GROUND,      &
                    XT_MAFL, XT_DRAG, XT_EOL, XT_TURB,  XT_TRACER, &
                    ZTIME, ZWETDEPAER, GMASKkids, GCLOUD_ONLY      )
@@ -1609,7 +1619,7 @@ XTIME_LES_BU_PROCESS = 0.
 !
 CALL MPPDB_CHECK3DM("before ADVEC_METSV:XU/V/W/TH/TKE/T,XRHODJ",PRECISION,&
                    &  XUT, XVT, XWT, XTHT, XTKET,XRHODJ)
- CALL ADVECTION_METSV ( TZBAKFILE, CUVW_ADV_SCHEME,                    &
+ CALL ADVECTION_METSV ( TPBAKFILE, CUVW_ADV_SCHEME,                    &
                  CMET_ADV_SCHEME, CSV_ADV_SCHEME, CCLOUD, NSPLIT,      &
                  LSPLIT_CFL, XSPLIT_CFL, LCFL_WRIT,                    &
                  CLBCX, CLBCY, NRR, NSV, TDTCUR, XTSTEP,               &
@@ -1711,7 +1721,7 @@ XT_ADVUVW = XT_ADVUVW + ZTIME2 - ZTIME1 - XTIME_LES_BU_PROCESS - XTIME_BU_PROCES
 !-------------------------------------------------------------------------------
 !
 IF (NMODEL_CLOUD==IMI .AND. CTURBLEN_CLOUD/='NONE') THEN
-  CALL TURB_CLOUD_INDEX( XTSTEP, TZBAKFILE,                               &
+  CALL TURB_CLOUD_INDEX( XTSTEP, TPBAKFILE,                               &
                          LTURB_DIAG, NRRI,                                &
                          XRRS, XRT, XRHODJ, XDXX, XDYY, XDZZ, XDZX, XDZY, &
                          XCEI                                             )
@@ -1898,7 +1908,7 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
     CALL MNHGET_SURF_PARAM_n (PSEA=ZSEA(:,:),PTOWN=ZTOWN(:,:))
     CALL RESOLVED_CLOUD ( CCLOUD, CACTCCN, CSCONV, CMF_CLOUD, NRR, NSPLITR,    &
                           NSPLITG, IMI, KTCOUNT,                               &
-                          CLBCX,CLBCY,TZBAKFILE, CRAD, CTURBDIM,               &
+                          CLBCX,CLBCY,TPBAKFILE, CRAD, CTURBDIM,               &
                           LSUBG_COND,LSIGMAS,CSUBG_AUCV,XTSTEP,                &
                           XZZ, XRHODJ, XRHODREF, XEXNREF,                      &
                           ZPABST, XTHT,XRT,XSIGS,VSIGQSAT,XMFCONV,XTHM,XRCM,   &
@@ -1918,7 +1928,7 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
   ELSE
     CALL RESOLVED_CLOUD ( CCLOUD, CACTCCN, CSCONV, CMF_CLOUD, NRR, NSPLITR,    &
                           NSPLITG, IMI, KTCOUNT,                               &
-                          CLBCX,CLBCY,TZBAKFILE, CRAD, CTURBDIM,               &
+                          CLBCX,CLBCY,TPBAKFILE, CRAD, CTURBDIM,               &
                           LSUBG_COND,LSIGMAS,CSUBG_AUCV,                       &
                           XTSTEP,XZZ, XRHODJ, XRHODREF, XEXNREF,               &
                           ZPABST, XTHT,XRT,XSIGS,VSIGQSAT,XMFCONV,XTHM,XRCM,   &
@@ -2189,15 +2199,6 @@ END IF
 CALL SECOND_MNH2(ZTIME2)
 !
 XT_STEP_BUD = XT_STEP_BUD + ZTIME2 - ZTIME1 + XTIME_BU
-!
-!-------------------------------------------------------------------------------
-!
-!*       26.    FM FILE CLOSURE
-!               ---------------
-!
-IF ( tzbakfile%lopened ) THEN
-  CALL IO_File_close(TZBAKFILE)
-END IF
 !
 !-------------------------------------------------------------------------------
 !
