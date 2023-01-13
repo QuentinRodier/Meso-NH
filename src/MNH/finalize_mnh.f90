@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2021-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2021-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -6,7 +6,7 @@
 ! Author:
 !  P. Wautelet 06/07/2021
 ! Modifications:
-!
+!  P. Wautelet 13/01/2023: fix for LCHECK
 !-----------------------------------------------------------------
 MODULE MODE_FINALIZE_MNH
 
@@ -53,17 +53,14 @@ SUBROUTINE FINALIZE_MNH
     END IF
   END DO
 
+  IF ( LCHECK ) CALL MPPDB_BARRIER()
+
   !Finalize the parallel libraries
-  IF ( LCHECK ) THEN
-    CALL MPPDB_BARRIER()
-  ELSE
-    CALL END_PARA_ll( IRESP )
+  CALL END_PARA_ll( IRESP )
+
 #ifdef CPLOASIS
-    IF ( LOASIS ) THEN
-      CALL SFX_OASIS_END()
-    END IF
+  IF ( LOASIS ) CALL SFX_OASIS_END()
 #endif
-  END IF
 
   !Free SURFEX structures if necessary
   CALL SURFEX_DEALLO_LIST()
