@@ -31,6 +31,7 @@
 !  P. Wautelet 22/03/2022: correct time_les_avg and time_les_avg_bounds coordinates
 !  P. Wautelet    06/2022: reorganize flyers
 !  P. Wautelet 21/06/2022: bugfix: time_budget was not computed correctly (tdtexp -> tdtseg)
+!  P. Wautelet 13/01/2023: IO_Coordvar_write_nc4: add optional dummy argument TPDTMODELN to force written model time
 !-----------------------------------------------------------------
 #ifdef MNH_IOCDF4
 module mode_io_write_nc4
@@ -1429,7 +1430,7 @@ if ( Present( kvertlevel ) ) deallocate( tzfield )
 end subroutine IO_Field_partial_write_nc4_N4
 
 
-subroutine IO_Coordvar_write_nc4( tpfile, hprogram_orig )
+subroutine IO_Coordvar_write_nc4( tpfile, hprogram_orig, tpdtmodeln )
 use modd_aircraft_balloon
 use modd_budget,     only: cbutype, lbu_icp, lbu_jcp, lbu_kcp, nbuih, nbuil, nbujh, nbujl, nbukh, nbukl, nbukmax, &
                            nbustep, nbutotwrite
@@ -1472,6 +1473,7 @@ use mode_nest_ll,    only: Get_model_number_ll, Go_tomodel_ll
 
 type(tfiledata),            intent(in) :: tpfile
 character(len=*), optional, intent(in) :: hprogram_orig !To emulate a file coming from this program
+type(date_time),  optional, intent(in) :: tpdtmodeln    !Time of model (to force model date written in file)
 
 character(len=:),                         allocatable :: ystdnameprefix
 character(len=:),                         allocatable :: yprogram
@@ -1661,8 +1663,13 @@ END IF
 if ( tpfile%lmaster ) then !time scale is the same on all processes
   if ( Trim( yprogram ) /= 'PGD' .and. Trim( yprogram ) /= 'NESPGD' .and. Trim( yprogram ) /= 'ZOOMPG' &
       .and. .not. ( Trim( yprogram ) == 'REAL' .and. cstorage_type == 'SU' ) ) then !condition to detect prep_surfex
-    if ( tpfile%ctype /= 'MNHDIACHRONIC' .and. Associated( tdtcur ) ) &
-      call Write_time_coord( tpfile%tncdims%tdims(nmnhdim_time), 'time axis', [ tdtcur ] )
+    if ( tpfile%ctype /= 'MNHDIACHRONIC' ) then
+      if ( Present( tpdtmodeln ) ) then
+        call Write_time_coord( tpfile%tncdims%tdims(nmnhdim_time), 'time axis', [ tpdtmodeln ] )
+      else if ( Associated( tdtcur ) ) then
+        call Write_time_coord( tpfile%tncdims%tdims(nmnhdim_time), 'time axis', [ tdtcur ] )
+      end if
+    end if
   end if
 end if
 
