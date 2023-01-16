@@ -21,7 +21,7 @@ INTERFACE
                    OCONDSAMP,OBLOWSNOW,                                            &
                    KRIMX,KRIMY, KSV_USER,                                          &
                    HTURB,HTOM,ORMC01,HRAD,HDCONV,HSCONV,HCLOUD,HELEC,              &
-                   HEQNSYS,PTSTEP_ALL,HSTORAGE_TYPE,HINIFILEPGD                    )
+                   HEQNSYS,PTSTEP_ALL,HINIFILEPGD                                  )
 !
 USE MODD_IO,   ONLY: TFILEDATA
 !
@@ -72,7 +72,6 @@ CHARACTER (LEN=4),  INTENT(IN) :: HCLOUD ! Kind of microphysical scheme
 CHARACTER (LEN=4),  INTENT(IN) :: HELEC  ! Kind of electrical scheme
 CHARACTER (LEN=*),  INTENT(IN) :: HEQNSYS! type of equations' system
 REAL,DIMENSION(:),  INTENT(INOUT):: PTSTEP_ALL ! Time STEP of ALL models
-CHARACTER (LEN=*),  INTENT(IN) :: HSTORAGE_TYPE ! type of initial file
 CHARACTER (LEN=*),  INTENT(IN) :: HINIFILEPGD ! name of PGD file
 !
 END SUBROUTINE READ_EXSEG_n
@@ -95,7 +94,7 @@ END MODULE MODI_READ_EXSEG_n
                    OCONDSAMP, OBLOWSNOW,                                           &
                    KRIMX,KRIMY, KSV_USER,                                          &
                    HTURB,HTOM,ORMC01,HRAD,HDCONV,HSCONV,HCLOUD,HELEC,              &
-                   HEQNSYS,PTSTEP_ALL,HSTORAGE_TYPE,HINIFILEPGD                    )
+                   HEQNSYS,PTSTEP_ALL,HINIFILEPGD                                  )
 !     #########################################################################
 !
 !!****  *READ_EXSEG_n * - routine to read  the descriptor file EXSEG
@@ -305,6 +304,7 @@ END MODULE MODI_READ_EXSEG_n
 !  R. Honnert  23/04/2021: add ADAP mixing length and delete HRIO and BOUT from CMF_UPDRAFT
 !  S. Riette   11/05/2021  HighLow cloud
 !  A. Costes      12/2021: add Blaze fire model
+!  P. Wautelet 24/06/2022: remove check on CSTORAGE_TYPE for restart of ForeFire variables
 !------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -315,7 +315,6 @@ USE MODD_CH_AEROSOL
 USE MODD_CH_M9_n, ONLY : NEQ
 USE MODD_CONDSAMP
 USE MODD_CONF
-USE MODD_CONF_n,  ONLY: CSTORAGE_TYPE
 USE MODD_CONFZ
 ! USE MODD_DRAG_n
 USE MODD_DUST
@@ -459,7 +458,6 @@ CHARACTER (LEN=4),  INTENT(IN) :: HCLOUD ! Kind of microphysical scheme
 CHARACTER (LEN=4),  INTENT(IN) :: HELEC  ! Kind of electrical scheme
 CHARACTER (LEN=*),  INTENT(IN) :: HEQNSYS! type of equations' system
 REAL,DIMENSION(:),  INTENT(INOUT):: PTSTEP_ALL ! Time STEP of ALL models
-CHARACTER (LEN=*),  INTENT(IN) :: HSTORAGE_TYPE ! type of initial file
 CHARACTER (LEN=*),  INTENT(IN) :: HINIFILEPGD ! name of PGD file
 !
 !*       0.2   declarations of local variables
@@ -1785,7 +1783,6 @@ END IF
 IF (CCLOUD == 'LIMA') THEN
   IF (HCLOUD == 'LIMA') THEN
     CGETSVT(NSV_LIMA_BEG:NSV_LIMA_END)='READ'
-!!JPP    IF(HSTORAGE_TYPE=='TT') CGETSVT(NSV_LIMA_BEG:NSV_LIMA_END)='INIT'
   ELSE
     WRITE(UNIT=ILUOUT,FMT=9001) KMI
     WRITE(UNIT=ILUOUT,FMT='("THERE IS NO SCALAR VARIABLES FOR LIMA &
@@ -2080,9 +2077,6 @@ END IF
 IF (LFOREFIRE) THEN
   IF (OFOREFIRE) THEN
     CGETSVT(NSV_FFBEG:NSV_FFEND)='READ'
-    IF(HSTORAGE_TYPE=='TT') THEN
-      CGETSVT(NSV_FFBEG:NSV_FFEND)='INIT'
-    END IF
   ELSE
     WRITE(UNIT=ILUOUT,FMT=9001) KMI
     WRITE(UNIT=ILUOUT,FMT='("THERE IS NO FOREFIRE SCALAR VARIABLES IN INITIAL FMFILE",/,&
@@ -2096,9 +2090,6 @@ END IF
 IF (LBLAZE) THEN
   IF (OFIRE) THEN
     CGETSVT(NSV_FIREBEG:NSV_FIREEND)='READ'
-    IF(HSTORAGE_TYPE=='TT') THEN
-      CGETSVT(NSV_FIREBEG:NSV_FIREEND)='INIT'
-    END IF
   ELSE
     WRITE(UNIT=ILUOUT,FMT=9001) KMI
     WRITE(UNIT=ILUOUT,FMT='("THERE IS NO BLAZE SCALAR VARIABLES IN INITIAL FMFILE",/,&
