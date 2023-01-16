@@ -1822,7 +1822,7 @@ gles = lles_mean .or. lles_resolved  .or. lles_subgrid .or. lles_updraft &
 if ( ( cbutype /= "NONE" .and. nbumod == kmi ) .or. ( ( gles .or. lcheck ) .and. kmi == 1 ) ) THEN
   call Budget_preallocate()
 end if
-
+CALL TBUCONF_ASSOCIATE()
 IF ( CBUTYPE /= "NONE" .AND. NBUMOD == KMI ) THEN
   CALL Ini_budget(ILUOUT,XTSTEP,NSV,NRR,                                      &
              LNUMDIFU,LNUMDIFTH,LNUMDIFSV,                                    &
