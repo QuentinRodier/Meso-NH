@@ -62,6 +62,7 @@ USE MODD_IO,               ONLY: GSMONOPROC, ISP, TFILEDATA
 !
 USE MODE_AIRCRAFT_BALLOON,     ONLY: FLYER_RECV_AND_ALLOCATE, FLYER_SEND
 USE MODE_INI_AIRCRAFT_BALLOON, ONLY: DEALLOCATE_FLYER
+USE MODE_MODELN_HANDLER,       ONLY: GET_CURRENT_MODEL_INDEX
 !
 IMPLICIT NONE
 !
@@ -72,8 +73,11 @@ TYPE(TFILEDATA),   INTENT(IN) :: TPFILE ! File characteristics
 !*       0.2   Declarations of local variables
 !
 !
+INTEGER :: IMI
 INTEGER :: JI
 LOGICAL :: OMONOPROC_SAVE ! Copy of true value of GSMONOPROC
+
+IMI = GET_CURRENT_MODEL_INDEX()
 
 ! Save GSMONOPROC value
 OMONOPROC_SAVE = GSMONOPROC
@@ -95,8 +99,9 @@ DO JI = 1, NBALLOONS
       CALL FLYER_RECV_AND_ALLOCATE( TBALLOONS(JI)%TBALLOON, NRANKCUR_BALLOON(JI) )
     END IF
 
-    ! Write data
-    IF ( TBALLOONS(JI)%TBALLOON%LFLY ) CALL WRITE_BALLOON_POSITION( TPFILE, TBALLOONS(JI)%TBALLOON )
+    ! Write data (only if flyer is on the current model)
+    ! It will also be written in the ancestry model files
+    IF ( TBALLOONS(JI)%TBALLOON%NMODEL == IMI ) CALL WRITE_BALLOON_POSITION( TPFILE, TBALLOONS(JI)%TBALLOON )
 
     ! Free ballon data if it was not stored on this process
     IF ( NRANKCUR_BALLOON(JI) /= TPFILE%NMASTER_RANK ) THEN
@@ -113,7 +118,7 @@ END SUBROUTINE WRITE_BALLOON_n
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
-SUBROUTINE WRITE_BALLOON_POSITION( TPFILE, TPFLYER )
+RECURSIVE SUBROUTINE WRITE_BALLOON_POSITION( TPFILE, TPFLYER )
 !
 #ifdef MNH_IOCDF4
 use NETCDF,              only: NF90_DEF_GRP, NF90_GLOBAL, NF90_INQ_NCID, NF90_NOERR, NF90_PUT_ATT
@@ -126,7 +131,9 @@ use modd_io,             only: isp, tfiledata
 #ifdef MNH_IOCDF4
 use modd_precision,      only: CDFINT
 #endif
+USE MODD_TIME_n,         ONLY: TDTCUR
 
+USE MODE_DATETIME
 USE MODE_GRIDPROJ,       ONLY: SM_LATLON
 USE MODE_IO_FIELD_WRITE, only: IO_Field_write
 #ifdef MNH_IOCDF4
@@ -136,10 +143,7 @@ use mode_msg
 
 TYPE(TFILEDATA),    INTENT(IN) :: TPFILE ! File characteristics
 TYPE(TBALLOONDATA), INTENT(IN) :: TPFLYER
-!
-!
-!*       0.2   Declarations of local variables
-!
+
 #ifdef MNH_IOCDF4
 integer(kind=CDFINT) :: igroupid
 integer(kind=CDFINT) :: istatus
@@ -148,6 +152,22 @@ REAL                 :: ZLAT          ! latitude of the balloon
 REAL                 :: ZLON          ! longitude of the balloon
 type(tfiledata)      :: tzfile
 TYPE(TFIELDMETADATA) :: TZFIELD
+
+! Do not write balloon position if not yet in fly or crashed
+IF ( .NOT.TPFLYER%LFLY .OR. TPFLYER%LCRASH ) RETURN
+
+! Check if current model time is the same as the time corresponding to the balloon position
+IF ( ABS( TDTCUR - TPFLYER%TPOS_CUR ) > 1.e-6 ) &
+  call Print_msg( NVERB_WARNING, 'IO', 'WRITE_BALLOON_POSITION', 'position time does not corresponds to current time for balloon ' &
+  // Trim( tpflyer%ctitle ) )
+
+! Recursive call up to grand parent file
+! This way balloon position is also available on all ancestry model files (useful for restart with different number of models)
+! This is done by a recursive call instead of a more standard loop on all the models to ensure that the balloon position
+! corresponds to the correct instant.
+IF ( ASSOCIATED( TPFILE%TDADFILE ) ) THEN
+  IF ( TRIM( TPFILE%TDADFILE%CNAME ) /= TRIM( TPFILE%CNAME ) ) CALL WRITE_BALLOON_POSITION( TPFILE%TDADFILE, TPFLYER )
+END IF
 
 CALL SM_LATLON( XLATORI, XLONORI, TPFLYER%XX_CUR, TPFLYER%XY_CUR, ZLAT, ZLON )
 
