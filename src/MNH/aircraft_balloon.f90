@@ -240,7 +240,12 @@ IF ( ISP == NFLYER_DEFAULT_RANK ) THEN
     IF ( .NOT. TZBALLOON%LPOSITION_INIT ) THEN
       TZBALLOON%LPOSITION_INIT = .TRUE.
       ! Get rank of the process where the balloon is and the model number
-      CALL FLYER_GET_RANK_MODEL_ISCRASHED( TZBALLOON, PX = TZBALLOON%XXLAUNCH, PY = TZBALLOON%XYLAUNCH )
+      IF ( TZBALLOON%LFLY ) THEN
+        ! In this case, we are in a restart and the balloon position was read in the restart file
+        CALL FLYER_GET_RANK_MODEL_ISCRASHED( TZBALLOON )
+      ELSE
+        CALL FLYER_GET_RANK_MODEL_ISCRASHED( TZBALLOON, PX = TZBALLOON%XXLAUNCH, PY = TZBALLOON%XYLAUNCH )
+      END IF
       IF ( TZBALLOON%LCRASH ) THEN
         CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'AIRCRAFT_BALLOON', 'balloon ' // TRIM( TZBALLOON%CTITLE ) &
                         // ': launch coordinates are outside of horizontal physical domain' )
