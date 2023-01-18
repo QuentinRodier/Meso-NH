@@ -120,13 +120,17 @@ IMPLICIT NONE
 !
 !*       0.1    declarations of local variables
 !
+TYPE TFILEPTR
+  TYPE(TFILEDATA), POINTER :: TPFILE
+END TYPE TFILEPTR
+!
 INTEGER       :: JMODEL                       ! loop index 
 INTEGER       :: ITEMP_MODEL1                 ! loop increment 
-LOGICAL       :: GEXIT                        ! flag for the end of the
-                                              ! temporal loop       
+LOGICAL       :: GEXIT                        ! flag for the end of the temporal loop
 INTEGER       :: IINFO_ll                     ! return code of // routines
 TYPE(TFILEDATA), POINTER :: TZBAKFILE         ! Backup file
 TYPE(DATE_TIME)          :: TZDTMODELN        ! Date/time of current model computation
+TYPE(TFILEPTR), DIMENSION(:), ALLOCATABLE :: TZBAKFILES ! Array of pointers to backup files
 !
 #ifdef CPLOASIS
   CHARACTER(LEN=28)  :: CNAMELIST
@@ -192,16 +196,26 @@ END IF
 !*       2.    TEMPORAL LOOP 
 !              -------------
 !
+ALLOCATE( TZBAKFILES( NMODEL ) )
+!
 DO JMODEL=1,NMODEL
   CALL GO_TOMODEL_ll(JMODEL,IINFO_ll)
   CALL GOTO_MODEL(JMODEL)
   CSTORAGE_TYPE='TT'
-  CALL MODEL_n( 1, TZBAKFILE, TZDTMODELN, GEXIT )
+  CALL MODEL_n( 1, TZBAKFILES(JMODEL)%TPFILE, TZDTMODELN, GEXIT )
+END DO
+!
+! Close backup files
+! This is done after previous loop because parent files must stay open for child files (ie to write balloon positions in restarts)
+DO JMODEL = 1, NMODEL
+  TZBAKFILE => TZBAKFILES(JMODEL)%TPFILE
   IF ( TZBAKFILE%LOPENED ) THEN
     CALL IO_FILE_CLOSE( TZBAKFILE, TPDTMODELN = TZDTMODELN )
     NULLIFY( TZBAKFILE )
   END IF
 END DO
+!
+DEALLOCATE( TZBAKFILES )
 !
 IF(GEXIT) THEN
    !callabortstop
