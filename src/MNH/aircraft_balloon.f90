@@ -256,7 +256,7 @@ END IF
 
 CALL BALLOONS_MOVE_TO_NEW_RANKS()
 
-END SUBROUTINE BALLOONS_INIT_POSITIONs
+END SUBROUTINE BALLOONS_INIT_POSITIONS
 !----------------------------------------------------------------------------
 !----------------------------------------------------------------------------
 SUBROUTINE BALLOONS_MOVE_TO_NEW_RANKS()
@@ -372,7 +372,7 @@ ISTORE_CUR = TPFLYER%TFLYER_TIME%N_CUR
 
 ! Determine size of data to send
 ! Characters, integers and logicals will be converted to reals. CMODEL and CTYPE will be coded by 1 real
-IPACKSIZE = 16 + LEN(TPFLYER%CTITLE) + ISTORE_CUR * ( 18 + NSV * 2 + IKU * ( 9 + NRR * 2 ) )
+IPACKSIZE = 16 + LEN(TPFLYER%CTITLE) + ISTORE_CUR * ( 18 + NRR + NSV * 2 + IKU * ( 9 + NRR ) )
 IF (  CCLOUD == 'LIMA' ) IPACKSIZE = IPACKSIZE + ISTORE_CUR * IKU * 2
 
 SELECT TYPE ( TPFLYER )
