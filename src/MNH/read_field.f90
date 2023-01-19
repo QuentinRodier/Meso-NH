@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -1007,7 +1007,13 @@ CALL INI_LB(TPINIFILE,GLSOURCE,ISV,                                   &
 !
 CALL IO_Field_read(TPINIFILE,'DRYMASST',PDRYMASST) ! dry mass
 IF (CCONF=='RESTA') THEN
-  CALL IO_Field_read(TPINIFILE,'DRYMASSS',PDRYMASSS) ! dry mass tendency
+  CALL IO_Field_read(TPINIFILE,'DRYMASSS',PDRYMASSS,IRESP) ! dry mass tendency
+
+  ! DRYMASSS was not written in backup files before MesoNH 5.5.1
+  IF ( IRESP /= 0 ) THEN
+    CALL PRINT_MSG( NVERB_WARNING, 'IO', 'READ_FIELD', 'PDRYMASSS set to 0 for ' // TRIM( TZFIELD%CMNHNAME ) )
+    PDRYMASSS = 0.
+  END IF
 ELSE
   PDRYMASSS=XUNDEF   ! should not be used
 END IF
