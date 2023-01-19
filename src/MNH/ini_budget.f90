@@ -228,6 +228,7 @@ use modd_dyn,           only: lcorio, xseglen
 use modd_dyn_n,         only: xtstep, locean
 use modd_elec_descr,    only: linductive, lrelax2fw_ion
 use modd_field,         only: TYPEREAL
+use modd_fire,          only: lblaze
 use modd_nsv,           only: csvnames,                                                                            &
                               nsv_aerbeg, nsv_aerend, nsv_aerdepbeg, nsv_aerdepend, nsv_c2r2beg, nsv_c2r2end,      &
                               nsv_chembeg, nsv_chemend, nsv_chicbeg, nsv_chicend, nsv_csbeg, nsv_csend,            &
@@ -1270,6 +1271,11 @@ if ( lbu_rth ) then
                         .and. celec == 'NONE'
   call Budget_source_add( tbudgets(NBUDGET_TH), tzsource )
 
+  tzsource%cmnhname   = 'BLAZE'
+  tzsource%clongname  = 'blaze fire model contribution'
+  tzsource%lavailable = lblaze
+  call Budget_source_add( tbudgets(NBUDGET_TH), tzsource )
+
 
   call Sourcelist_sort_compact( tbudgets(NBUDGET_TH) )
 
@@ -1593,6 +1599,10 @@ if ( tbudgets(NBUDGET_RV)%lenabled ) then
                         .and. celec == 'NONE'
   call Budget_source_add( tbudgets(NBUDGET_RV), tzsource )
 
+  tzsource%cmnhname   = 'BLAZE'
+  tzsource%clongname  = 'blaze fire model contribution'
+  tzsource%lavailable = lblaze
+  call Budget_source_add( tbudgets(NBUDGET_RV), tzsource )
 
   call Sourcelist_sort_compact( tbudgets(NBUDGET_RV) )
 
