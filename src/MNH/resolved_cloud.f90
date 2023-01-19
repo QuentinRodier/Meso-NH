@@ -1084,6 +1084,10 @@ SELECT CASE ( HCLOUD )
    ENDIF
 !
 END SELECT
+! TODO: code a generic routine to update vertical lower and upper levels to 0, a
+! specific value or to IKB or IKE and apply it to every output prognostic variable of physics
+PCIT(:,:,1)=0.
+PCIT(:,:,IKE+1)=0.
 !
 IF(HCLOUD=='ICE3' .OR. HCLOUD=='ICE4' ) THEN
   PINPRC3D=ZFPR(:,:,:,2) / CST%XRHOLW
