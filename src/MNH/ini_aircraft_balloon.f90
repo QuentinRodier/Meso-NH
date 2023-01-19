@@ -273,8 +273,6 @@ IF ( CPROGRAM == 'MESONH' .OR. CPROGRAM == 'SPAWN ' .OR. CPROGRAM == 'REAL  ' ) 
         LTIMEDEP   = .TRUE.                       )
       CALL IO_Field_read(TPINIFILE,TZFIELD,TPFLYER%XZ_CUR)
 
-      TPFLYER%XP_CUR   = XUNDEF
-
       TZFIELD = TFIELDMETADATA(                       &
         CMNHNAME   = TRIM(TPFLYER%CTITLE)//'WASCENT', &
         CSTDNAME   = '',                              &
@@ -352,8 +350,6 @@ IF ( CPROGRAM == 'MESONH' .OR. CPROGRAM == 'SPAWN ' .OR. CPROGRAM == 'REAL  ' ) 
         NDIMS      = 0,          &
         LTIMEDEP   = .TRUE.      )
       CALL IO_Field_read(TZFILE,TZFIELD,TPFLYER%XZ_CUR)
-
-      TPFLYER%XP_CUR   = XUNDEF
 
       TZFIELD = TFIELDMETADATA(               &
         CMNHNAME   = 'WASCENT',               &

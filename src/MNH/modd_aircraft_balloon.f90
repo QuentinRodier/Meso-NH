@@ -68,7 +68,7 @@ TYPE :: TFLYERDATA
                                      ! 'FIX' : NMODEL used during the run
                                      ! 'MOB' : change od model depends of the
                                      !         balloon/aircraft location
-  INTEGER          :: NMODEL = 0 ! model number for each balloon/aircraft
+  INTEGER          :: NMODEL = 0 ! model number for each balloon/aircraft (may change if CMODEL='MOB')
   INTEGER          :: NID    = 0 ! Identification number
   CHARACTER(LEN=6) :: CTYPE = ''  ! flyer type:
                                   ! 'RADIOS' : radiosounding balloon
@@ -91,7 +91,6 @@ TYPE :: TFLYERDATA
   REAL :: XX_CUR = XNEGUNDEF ! current x
   REAL :: XY_CUR = XNEGUNDEF ! current y
   REAL :: XZ_CUR = XNEGUNDEF ! current z (if 'RADIOS' or 'AIRCRA' and 'ALTDEF' = T)
-  REAL :: XP_CUR = XNEGUNDEF ! current p (if 'AIRCRA' and 'ALTDEF' = F)
   INTEGER :: NRANK_CUR = NFLYER_DEFAULT_RANK ! Rank of the process where the flyer is
   !
   !* data records
@@ -150,6 +149,7 @@ TYPE, EXTENDS( TFLYERDATA ) :: TAIRCRAFTDATA
   !* aircraft altitude type definition
   !
   LOGICAL :: LALTDEF = .FALSE.  ! TRUE == altitude given in pressure
+  REAL    :: XP_CUR = XNEGUNDEF ! current p (only if LALTDEF = F)
 END TYPE TAIRCRAFTDATA
 
 TYPE, EXTENDS( TFLYERDATA ) :: TBALLOONDATA
