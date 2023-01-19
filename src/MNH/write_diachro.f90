@@ -1509,7 +1509,7 @@ select case ( idims )
 end select
 
 !Write X and Y position of the flyer
-if ( Present( tpflyer ) ) then
+if ( Present( tpflyer ) .and. yshape == 'Point' ) then
   if ( lcartesian ) then
     ystdnameprefix = 'plane'
   else
