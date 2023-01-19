@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
@@ -148,12 +148,16 @@ END MODULE MODI_WRITE_DESFM_n
 !!                     E.Jezequel     02/2021  add stations read from CSV file
 !  P. Wautelet 27/04/2022: add namelist for profilers
 !  P. Wautelet 13/07/2022: add namelist for flyers and balloons
+!  P. Wautelet 19/01/2023: bugfix for ForeFire
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 USE MODD_CONF
 USE MODD_DYN_n,      ONLY: LHORELAX_SVLIMA
+#ifdef MNH_FOREFIRE
+USE MODD_FOREFIRE,   ONLY: LFOREFIRE
+#endif
 USE MODD_IBM_LSF,    ONLY: LIBM_LSF
 USE MODD_IO,         ONLY: TFILEDATA
 USE MODD_LUNIT_n,    ONLY: TLUOUT
@@ -206,7 +210,6 @@ USE MODN_2D_FRC
 USE MODN_LATZ_EDFLX
 #ifdef MNH_FOREFIRE
 USE MODN_FOREFIRE
-USE MODD_FOREFIRE_n, ONLY : FFCOUPLING
 #endif
 USE MODN_BLOWSNOW_n
 USE MODN_BLOWSNOW
@@ -407,7 +410,7 @@ IF(LDUST) WRITE(UNIT=ILUSEG,NML=NAM_DUST)
 IF(LSALT) WRITE(UNIT=ILUSEG,NML=NAM_SALT)
 IF(LPASPOL) WRITE(UNIT=ILUSEG,NML=NAM_PASPOL)
 #ifdef MNH_FOREFIRE
-IF(FFCOUPLING) WRITE(UNIT=ILUSEG,NML=NAM_FOREFIRE)
+IF(LFOREFIRE) WRITE(UNIT=ILUSEG,NML=NAM_FOREFIRE)
 #endif
 IF(LCONDSAMP) WRITE(UNIT=ILUSEG,NML=NAM_CONDSAMP)
 IF(LORILAM.AND.LUSECHEM) WRITE(UNIT=ILUSEG,NML=NAM_CH_ORILAM)
