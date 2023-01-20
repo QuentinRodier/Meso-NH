@@ -1,5 +1,5 @@
 #!/bin/bash
-#MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
+#MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
 #MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 #MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 #MNH_LIC for details. version 1.
@@ -12,11 +12,11 @@ export VERSION_MASTER=${VERSION_MASTER:-MNH-V5-5}
 export VERSION_BUG=${VERSION_BUG:-1}
 export VERSION_XYZ=${VERSION_XYZ:-${VERSION_MASTER}-${VERSION_BUG}${VER_OASIS:+-${VER_OASIS}}}
 export VERSION_DATE=${VERSION_DATE:-"19/03/2021"}
-export VERSION_LIBAEC=${VERSION_LIBAEC:-"0.3.4"}
-export VERSION_HDF=${VERSION_HDF:-"1.12.0"}
-export VERSION_CDFC=${VERSION_CDFC:-"4.7.4"}
+export VERSION_LIBAEC=${VERSION_LIBAEC:-"v1.0.6"}
+export VERSION_HDF=${VERSION_HDF:-"1.14.0"}
+export VERSION_CDFC=${VERSION_CDFC:-"4.9.0"}
 export VERSION_CDFCXX=${VERSION_CDFCXX:-"4.3.1"}
-export VERSION_CDFF=${VERSION_CDFF:-"4.5.3"}
+export VERSION_CDFF=${VERSION_CDFF:-"4.6.0"}
 export VERSION_GRIBAPI=${VERSION_GRIBAPI:-"1.26.0-Source"}
 export VERSION_ECCODES=${VERSION_ECCODES:-"2.18.0"}
 export ECCODES_DEFINITION_PATH=${ECCODES_DEFINITION_PATH:-${SRC_MESONH}/src/LIB/eccodes-${VERSION_ECCODES}"/definitions/"}

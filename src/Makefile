@@ -1,4 +1,4 @@
-#MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
+#MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
 #MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 #MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 #MNH_LIC for details. version 1.
@@ -342,7 +342,7 @@ NETCDF_OPT ?= ${OPT_BASE_I4:-$OPT_BASE}
 #
 cdf : $(CDF_MOD)
 $(CDF_MOD) :
-	cd ${DIR_LIBAEC} && ./configure --disable-shared --prefix=${CDF_PATH} --libdir=${CDF_PATH}/lib64 CC="$(CC)" CFLAGS="$(HDF_OPT)" && \
+	cd ${DIR_LIBAEC} && autoreconf -i && ./configure --disable-shared --prefix=${CDF_PATH} --libdir=${CDF_PATH}/lib64 CC="$(CC)" CFLAGS="$(HDF_OPT)" && \
 	$(MAKE) && $(MAKE) install && $(MAKE) clean
 	cd ${DIR_HDF} && ./configure --enable-fortran --disable-shared --prefix=${CDF_PATH} --libdir=${CDF_PATH}/lib64 --with-szlib=${CDF_PATH}/include,${CDF_PATH}/lib64 \
 	CC="$(CC)" CFLAGS="$(HDF_OPT)" FC="$(FC)" FCFLAGS="$(NETCDF_OPT)" LDFLAGS="-L${CDF_PATH}/lib64" LIBS="-lsz -laec -lz" && \
