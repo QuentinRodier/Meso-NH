@@ -33,12 +33,14 @@
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    04/2012
+!!      Jean Wurtz  05/2022 Adding check for compartment, initialization to 1 with 6 compartment cause invalid budget in BEM
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
 !
+USE MODD_CSTS, ONLY : XSURF_EPSILON
 USE MODD_SURFEX_n, ONLY : TEB_GARDEN_MODEL_t
 USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
 !
@@ -89,6 +91,8 @@ CHARACTER(LEN=3)    , INTENT(IN) :: HINIT       ! choice of fields to initialize
 !
 INTEGER :: JJ         ! counter
 INTEGER :: JCOMP      ! counter
+INTEGER :: JLIST      ! counter
+INTEGER :: II         ! counter
 INTEGER :: ILU        ! sizes of TEB arrays
 INTEGER :: NDAY_SCHED ! Number of schedules for day of week
 INTEGER :: NCRE_SCHED ! Number of schedules per day
@@ -274,6 +278,44 @@ CASE("BEM")
    ENDDO
    !
 END SELECT
+
+DO JLIST=1,SIZE( B%XFRACOMP,1)
+      !
+      ! Check whether the individual compartment fractions by more than 1.0E-6 wrong
+      !
+      DO II=1,SIZE( B%XFRACOMP,2)
+         IF (( B%XFRACOMP(JLIST,II).LT.-1.0E-6).OR.( B%XFRACOMP(JLIST,II).GT.(1.0+1.0E-6))) THEN
+		  CALL ABOR1_SFX("INIT_BEMN: Wrong fraction of compartments")
+         ENDIF
+      ENDDO
+      !
+      ! Very small deviations from 0.0 or 1.0 are corrected
+      !
+      WHERE ( B%XFRACOMP(JLIST,:).LT.0.0)
+          B%XFRACOMP(JLIST,:) = 0.0
+      ELSEWHERE ( B%XFRACOMP(JLIST,:).GT.1.0)
+          B%XFRACOMP(JLIST,:) = 1.0
+      ENDWHERE
+      !
+      ! Check whether the sum is far from 1.0
+      !
+      IF (ABS(SUM( B%XFRACOMP(JLIST,:))-1.0) .GT. 1.0E-6) THEN
+		  CALL ABOR1_SFX("INIT_BEMN : Wrong initial sum of compartment fractions, ensure usage are given if NCOMP>1")
+      ENDIF
+      !
+      ! Renormalise the sum
+      !
+       B%XFRACOMP(JLIST,:) =  B%XFRACOMP(JLIST,:)/SUM( B%XFRACOMP(JLIST,:))
+      !
+      ! Check whether the renormalised sum is exactly 1.0
+      !
+      IF (ABS(SUM( B%XFRACOMP(JLIST,:))-1.0).GT.XSURF_EPSILON) THEN
+		  CALL ABOR1_SFX("INIT_BEMN : Wrong final sum of compartment fractions, ensure usage are given if NCOMP>1")
+      ENDIF
+      !
+
+ENDDO
+
 !
 !-------------------------------------------------------------------------------
 !
