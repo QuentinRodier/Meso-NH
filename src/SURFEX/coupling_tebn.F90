@@ -746,8 +746,8 @@ IF (TOP%LCANOPY) THEN
        !
        DO JLAYER=1,(SB%NLVL-1)
           !
-          IF ( (SB%XZ(JJ,JLAYER  ) .LT. ZAVG_BLD_HEIGHT(JJ)) .AND. &
-               (SB%XZ(JJ,JLAYER+1) .LE. ZAVG_BLD_HEIGHT(JJ)) ) THEN
+          IF ( (SB%XZ(JJ,JLAYER  ) .LE. ZAVG_BLD_HEIGHT(JJ)) .AND. &
+               (SB%XZ(JJ,JLAYER+1) .LT. ZAVG_BLD_HEIGHT(JJ)) ) THEN
              !
              ZWEIGHT = ZWEIGHT + (SB%XZF(JJ,JLAYER+1)-SB%XZF(JJ,JLAYER))
              !
