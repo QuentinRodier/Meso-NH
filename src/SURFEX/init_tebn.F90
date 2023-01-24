@@ -651,28 +651,29 @@ DO JP=1,TOP%NTEB_PATCH
   !
   ! coherence check on coverage fractions
   !
-  ZSUM_FRAC = NT%AL(JP)%XBLD + NT%AL(JP)%XROAD + NT%AL(JP)%XFRAC_LVEG + NT%AL(JP)%XFRAC_NVEG
-  IF (ANY(ABS(ZSUM_FRAC-1.)>1.E-6)) THEN
-     WRITE(ILUOUT,*) 'The sum of fraction building (BLD), road (ROAD), low vegetation (FRAC_LVEG) and no vegetation (FRAC_NVEG)'
-     WRITE(ILUOUT,*) 'are not equal to 1. Please check your input data and options in PGD namelists.'
-     CALL ABOR1_SFX('INIT_TEBN: INCOHERENCE BETWEEN BLD, ROAD, LOW and NO URBAN VEGETATION FRACTIONS')
-  ELSE
-     NT%AL(JP)%XBLD       = NT%AL(JP)%XBLD       / ZSUM_FRAC
-     NT%AL(JP)%XROAD      = NT%AL(JP)%XROAD      / ZSUM_FRAC
-     NT%AL(JP)%XFRAC_LVEG = NT%AL(JP)%XFRAC_LVEG / ZSUM_FRAC
-     NT%AL(JP)%XFRAC_NVEG = NT%AL(JP)%XFRAC_NVEG / ZSUM_FRAC
-     NT%AL(JP)%XFRAC_HVEG = NT%AL(JP)%XFRAC_HVEG / ZSUM_FRAC
-  END IF
-  !----------------------------------------------------------------------------------!
-  !
-  ! cohernece check on HVEG fraction
+  IF (TOP%CURBTREE/='NONE') THEN
+	  ZSUM_FRAC = NT%AL(JP)%XBLD + NT%AL(JP)%XROAD + NT%AL(JP)%XFRAC_LVEG + NT%AL(JP)%XFRAC_NVEG
+	  IF (ANY(ABS(ZSUM_FRAC-1.)>1.E-6)) THEN
+	     WRITE(ILUOUT,*) 'The sum of fraction building (BLD), road (ROAD), low vegetation (FRAC_LVEG) and no vegetation (FRAC_NVEG)'
+	     WRITE(ILUOUT,*) 'are not equal to 1. Please check your input data and options in PGD namelists.'
+	     CALL ABOR1_SFX('INIT_TEBN: INCOHERENCE BETWEEN BLD, ROAD, LOW and NO URBAN VEGETATION FRACTIONS')
+	  ELSE
+	     NT%AL(JP)%XBLD       = NT%AL(JP)%XBLD       / ZSUM_FRAC
+	     NT%AL(JP)%XROAD      = NT%AL(JP)%XROAD      / ZSUM_FRAC
+	     NT%AL(JP)%XFRAC_LVEG = NT%AL(JP)%XFRAC_LVEG / ZSUM_FRAC
+	     NT%AL(JP)%XFRAC_NVEG = NT%AL(JP)%XFRAC_NVEG / ZSUM_FRAC
+	     NT%AL(JP)%XFRAC_HVEG = NT%AL(JP)%XFRAC_HVEG / ZSUM_FRAC
+	  END IF
+	  !----------------------------------------------------------------------------------!
+	  !
+	  ! coherence check on HVEG fraction
 
-  IF (ANY(NT%AL(JP)%XFRAC_HVEG > 1. - NT%AL(JP)%XBLD)) THEN
-    WRITE(ILUOUT,*) 'The high vegetation must be contained entirely in the canyon'
-    WRITE(ILUOUT,*) 'Therefore, FRAC_HVEG must be smaller than 1-BLD (1-building fraction).'
-    CALL ABOR1_SFX('INIT_TEBN: FRACTION OF HIGH VEGETATION IS LARGER THAN CANYON FRACTION') 
+	  IF (ANY(NT%AL(JP)%XFRAC_HVEG > 1. - NT%AL(JP)%XBLD)) THEN
+	    WRITE(ILUOUT,*) 'The high vegetation must be contained entirely in the canyon'
+	    WRITE(ILUOUT,*) 'Therefore, FRAC_HVEG must be smaller than 1-BLD (1-building fraction).'
+	    CALL ABOR1_SFX('INIT_TEBN: FRACTION OF HIGH VEGETATION IS LARGER THAN CANYON FRACTION') 
+	  END IF
   END IF
-
   !----------------------------------------------------------------------------------!
 
   ! computation of XTOTS_O_HORS
