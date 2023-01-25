@@ -37,6 +37,8 @@ IMPLICIT NONE
 SAVE
 !--------------------------------------------------------------------------
 !
+ INTEGER, PARAMETER :: NVEGTYPE_MAX = 20
+
  CHARACTER(LEN=28) :: CFILE_ISBA     ! input file name
  CHARACTER(LEN=6)  :: CTYPE          ! input file type
  CHARACTER(LEN=28) :: CFILEPGD_ISBA  ! input file name
@@ -55,6 +57,34 @@ SAVE
  CHARACTER(LEN=28) :: CFILE_TG_SURF  ! input file name for TG_SURF
  CHARACTER(LEN=28) :: CFILE_TG_ROOT  ! input file name for TG_ROOT
  CHARACTER(LEN=28) :: CFILE_TG_DEEP  ! input file name for TG_DEEP
+ CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX) :: CFILE_HUG_1 ! input file name for HUG_1
+ CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX) :: CFILE_HUG_2 ! input file name for HUG_2
+ CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX) :: CFILE_HUG_3 ! input file name for HUG_3
+ CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX) :: CFILE_HUG_4 ! input file name for HUG_4
+ CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX) :: CFILE_HUG_5 ! input file name for HUG_5
+ CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX) :: CFILE_HUG_6 ! input file name for HUG_6
+ CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX) :: CFILE_HUG_7 ! input file name for HUG_7
+ CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX) :: CFILE_HUG_8 ! input file name for HUG_8
+ CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX) :: CFILE_HUG_9 ! input file name for HUG_9
+ CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX) :: CFILE_HUG_10 ! input file name for HUG_10
+ CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX) :: CFILE_HUG_11 ! input file name for HUG_11
+ CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX) :: CFILE_HUG_12 ! input file name for HUG_12
+ CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX) :: CFILE_HUG_13 ! input file name for HUG_13
+ CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX) :: CFILE_HUG_14 ! input file name for HUG_14
+ CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX) :: CFILE_TG_1  ! input file name for TG_1
+ CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX) :: CFILE_TG_2  ! input file name for TG_2
+ CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX) :: CFILE_TG_3  ! input file name for TG_3
+ CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX) :: CFILE_TG_4  ! input file name for TG_4
+ CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX) :: CFILE_TG_5  ! input file name for TG_5
+ CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX) :: CFILE_TG_6  ! input file name for TG_6
+ CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX) :: CFILE_TG_7  ! input file name for TG_7
+ CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX) :: CFILE_TG_8  ! input file name for TG_8
+ CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX) :: CFILE_TG_9  ! input file name for TG_9
+ CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX) :: CFILE_TG_10  ! input file name for TG_10
+ CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX) :: CFILE_TG_11  ! input file name for TG_11
+ CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX) :: CFILE_TG_12  ! input file name for TG_12
+ CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX) :: CFILE_TG_13  ! input file name for TG_13
+ CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX) :: CFILE_TG_14  ! input file name for TG_14
 !
 REAL              :: XHUG_SURF      ! surface relative soil humidity
 REAL              :: XHUG_ROOT      ! root layer relative soil humidity
@@ -84,7 +114,6 @@ REAL, DIMENSION(NGRID_LEVEL) :: XGRID_SOIL = &
 !
 LOGICAL :: LSNOW_IDEAL 
 !
-
 REAL, DIMENSION(:), POINTER :: XWSNOW         ! Snow reservoir
 REAL, DIMENSION(:), POINTER :: XRSNOW         ! snow density
 REAL, DIMENSION(:), POINTER :: XTSNOW         ! snow temperature
@@ -102,6 +131,7 @@ LOGICAL           :: LEXTRAP_TG     ! extrapolate TG points where LSM < 0.5 (buf
 LOGICAL           :: LEXTRAP_WG     ! extrapolate WG points where LSM < 0.5 (buffer only)  
 LOGICAL           :: LEXTRAP_WGI    ! extrapolate WGI points where LSM < 0.5 (buffer only) 
 LOGICAL           :: LEXTRAP_SN     ! extrapolate SNOW (SWE/depth) points where LSM < 0.5 (buffer only) 
+
 END MODULE MODD_PREP_ISBA
 
 
