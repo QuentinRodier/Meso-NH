@@ -273,6 +273,7 @@ END MODULE MODI_MODEL_n
 !  P. Wautelet 19/02/2021: add NEGA2 term for SV budgets
 !  J.L. Redelsperger 03/2021: add Call NHOA_COUPLN (coupling O & A LES version)
 !  R. Schoetter    12/2021  multi-level coupling between MesoNH and SURFEX  
+!  J. Wurtz 01/2023 Correction for mean in SURFEX outputs
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -983,7 +984,7 @@ IF ( nfile_backup_current < NBAK_NUMB ) THEN
       CALL WRITE_SURF_ATM_n(YSURF_CUR,'MESONH','ALL',.FALSE.)
       IF ( KTCOUNT > 1) THEN
         CALL DIAG_SURF_ATM_n(YSURF_CUR,'MESONH')
-        CALL WRITE_DIAG_SURF_ATM_n(YSURF_CUR,'MESONH','ALL')
+        CALL WRITE_DIAG_SURF_ATM_n(YSURF_CUR,'MESONH','ALL', KTCOUNT/nfile_backup_current)
       END IF
       NULLIFY(TFILE_SURFEX)
     END IF
