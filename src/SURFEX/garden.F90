@@ -7,7 +7,7 @@
                        HIMPLICIT_WIND, TPTIME, PTSUN, PPEW_A_COEF, PPEW_B_COEF, &
                        PPET_A_COEF, PPEQ_A_COEF, PPET_B_COEF, PPEQ_B_COEF,      &
                        PTSTEP, PZREF, PTA, PQA, PEXNS, PRHOA, PCO2, PPS, PRR,   &
-                       PSR, PZENITH, PSW, PLW, PLE_HVEG, PVMOD, PALBNIR_TVEG, &
+                       PSR, PZENITH, PAZIM, PSW, PLW, PLE_HVEG, PVMOD, PALBNIR_TVEG, &
                        PALBVIS_TVEG, PALBNIR_TSOIL, PALBVIS_TSOIL,              &
                        PSFCO2, PUW,                                             &
                        PAC, PQSAT, PTSRAD, PAC_AGG, PHU_AGG, PIRRIG,            &
@@ -154,6 +154,7 @@ REAL, DIMENSION(:)  , INTENT(IN)    :: PCO2               ! CO2 concentration in
 REAL, DIMENSION(:)  , INTENT(IN)    :: PRR                ! rain rate
 REAL, DIMENSION(:)  , INTENT(IN)    :: PSR                ! snow rate
 REAL, DIMENSION(:)  , INTENT(IN)    :: PZENITH            ! solar zenithal angle
+REAL, DIMENSION(:)  , INTENT(IN)    :: PAZIM              ! solar azimuth angle
 REAL, DIMENSION(:)  , INTENT(IN)    :: PSW                ! incoming total solar rad on an horizontal surface
 REAL, DIMENSION(:)  , INTENT(IN)    :: PLW                ! atmospheric infrared radiation
 REAL, DIMENSION(:,:), INTENT(IN)    :: PLE_HVEG           ! Latent Heat flux from high veg
@@ -210,7 +211,6 @@ REAL, DIMENSION(SIZE(PPS)) :: ZRNSHADE, ZRNSUNLIT ! RN leaves
 REAL, DIMENSION(SIZE(PPS)) :: ZP_MEB_SCA_SW, ZPALPHAN, ZZ0G_WITHOUT_SNOW, &
                               ZZ0_MEBV, ZZ0H_MEBV, ZZ0EFF_MEBV, ZZ0_MEBN, &
                               ZZ0H_MEBN, ZZ0EFF_MEBN
-REAL, DIMENSION(SIZE(PPS)) :: ZP_ANGL_NORM   ! angle between the normal to the surface and the sun used in snowcro
 INTEGER                    :: ILU
 INTEGER :: JL, JI
 LOGICAL :: GMASK, GALB, GECOSG
@@ -226,9 +226,9 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 IF (LHOOK) CALL DR_HOOK('GARDEN',0,ZHOOK_HANDLE)
 ILU = SIZE(PPS)
 !
-ZDIRCOSZW = 1.
-ZSLOPEDIR = -1.
-ZWINDDIR  = -1.
+ZDIRCOSZW(:) = 1._JPRB
+ZSLOPEDIR(:) = -1._JPRB
+ZWINDDIR(:)  = -1._JPRB
 !
 KTAB_SYT=0
 !
@@ -294,7 +294,7 @@ ALLOCATE(GB%XIACAN(SIZE(PPS),SIZE(S%XABC)))
            GB%XIACAN, .FALSE., PTSTEP, HIMPLICIT_WIND, PZREF, PZREF,           &
            ZDIRCOSZW, XCVHEATF, ZSLOPEDIR, PEK%TSNOW%GRAN2(:,:),               &
            PEK%TSNOW%GRAN2(:,:), PTA, PQA, PEXNS, PRHOA, PPS, PEXNS, PRR, PSR, &
-           PZENITH,ZP_ANGL_NORM,ZP_MEB_SCA_SW, PSW, PLW, PLE_HVEG, PVMOD,      &
+           PZENITH,PAZIM,ZP_MEB_SCA_SW, PSW, PLW, PLE_HVEG, PVMOD,      &
            ZWINDDIR, PPEW_A_COEF, PPEW_B_COEF, PPET_A_COEF, PPEQ_A_COEF,&
            PPET_B_COEF, PPEQ_B_COEF, AT, PALBNIR_TVEG, PALBVIS_TVEG, PALBNIR_TSOIL,&
            PALBVIS_TSOIL, ZPALPHAN, ZZ0G_WITHOUT_SNOW, ZZ0_MEBV, ZZ0H_MEBV,    &

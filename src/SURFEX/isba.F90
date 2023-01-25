@@ -399,7 +399,7 @@ REAL, DIMENSION(SIZE(PEK%XWR))           :: ZLITCOR   ! A possible ice (in litte
 !
 ! Misc :
 !
-
+REAL, DIMENSION(SIZE(PZENITH,1))        :: ZZENITH
 REAL, DIMENSION(SIZE(PEK%XWR))          :: ZANGL_ILLUM ! BC : moved here from snow3L_isba.F90
                                            !ZANGL_ILLUM  = Effective illumination angle, angle between the normal to the ground and the sun (=zenith for flat simulation)
                                            !used only in TARTES for now
@@ -481,11 +481,13 @@ ZLEL3L          = 0.0
 !Misc : 
 !
 ZANGL_ILLUM(:) = PZENITH(:) ! BC 
+ZZENITH(:) = PZENITH(:) 
 !
-DO JJ=1, SIZE(PEK%XWR) ! BC computation of illuminaiton angle from Tuzet calc.
-!
-    ZANGL_ILLUM(JJ) = ACOS((COS(PZENITH(JJ))*COS(ACOS(PDIRCOSZW(JJ))))+ &
-      (SIN(PZENITH(JJ))*SIN(ACOS(PDIRCOSZW(JJ))*COS(PAZIM(JJ)-(PSLOPE_DIR(JJ)*XPI/180))))) !Compute the effective illumination angle     
+DO JJ=1,SIZE(ZZENITH,1) ! BC computation of illuminaiton angle from Tuzet calc.
+   !
+   ZANGL_ILLUM(JJ) = ACOS( MIN(1.0_JPRB,MAX(-1.0_JPRB, COS(ZZENITH(JJ))*COS(ACOS(MIN(1.0_JPRB,MAX(-1.0_JPRB,PDIRCOSZW(JJ))))) + &
+      SIN(ZZENITH(JJ))*SIN(ACOS(MIN(1.0_JPRB,MAX(-1.0_JPRB,PDIRCOSZW(JJ))))*COS(PAZIM(JJ)-(PSLOPE_DIR(JJ)*XPI/180.0_JPRB))) ))) !Compute the effective illumination angle    
+   !
 ENDDO
 !
 IF(OMEB)THEN
@@ -534,7 +536,7 @@ IF(OMEB)THEN
   IF (PRESENT(PBLOWSNW_FLUX)) THEN
    CALL ISBA_MEB(IO, KK, PK, PEK, DK, DEK, DMK, G, AG,                         &
                  TPTIME, OMEB, GSHADE, HIMPLICIT_WIND, PTSTEP,                 &
-                 ZSOILHCAPZ, ZSOILCONDZ, ZFROZEN1, PPS, PZENITH,ZANGL_ILLUM,   &
+                 ZSOILHCAPZ, ZSOILCONDZ, ZFROZEN1, PPS, ZZENITH,ZANGL_ILLUM,   &
                  PSCA_SW, PSW_RAD, PVMOD, PVDIR, PRR, PSR, PRHOA, PTA, PQA,    &
                  PDIRCOSZW, PSLOPE_DIR, PEXNS, PEXNA, PPET_A_COEF, PPET_B_COEF,&
                  PPEQ_A_COEF, PPEQ_B_COEF, PPEW_A_COEF, PPEW_B_COEF, AT,       &
@@ -552,7 +554,7 @@ IF(OMEB)THEN
   ELSE
    CALL ISBA_MEB(IO, KK, PK, PEK, DK, DEK, DMK, G, AG,                         &
                  TPTIME, OMEB, GSHADE, HIMPLICIT_WIND, PTSTEP,                 &
-                 ZSOILHCAPZ, ZSOILCONDZ, ZFROZEN1, PPS, PZENITH,ZANGL_ILLUM,   &
+                 ZSOILHCAPZ, ZSOILCONDZ, ZFROZEN1, PPS, ZZENITH,ZANGL_ILLUM,   &
                  PSCA_SW, PSW_RAD, PVMOD, PVDIR, PRR, PSR, PRHOA, PTA, PQA,    &
                  PDIRCOSZW, PSLOPE_DIR, PEXNS, PEXNA, PPET_A_COEF, PPET_B_COEF,&
                  PPEQ_A_COEF, PPEQ_B_COEF, PPEW_A_COEF, PPEW_B_COEF, AT,       &
@@ -579,7 +581,7 @@ ELSE
   IF (IO%LTR_ML) THEN
     CALL RADIATIVE_TRANSFERT(IO%LAGRI_TO_GRASS, PK%XVEGTYPE_PATCH, PALBVIS_TVEG,    &
                              PALBVIS_TSOIL, PALBNIR_TVEG, PALBNIR_TSOIL, PSW_RAD,   &
-                             PEK%XLAI, PZENITH, PABC, PEK%XFAPARC, PEK%XFAPIRC,     &
+                             PEK%XLAI, ZZENITH, PABC, PEK%XFAPARC, PEK%XFAPIRC,     &
                              PEK%XMUS, PEK%XLAI_EFFC, GSHADE, PIACAN, ZIACAN_SUNLIT,&
                              ZIACAN_SHADE, ZFRAC_SUN, DMK%XFAPAR, DMK%XFAPIR,       &
                              DMK%XFAPAR_BS, DMK%XFAPIR_BS, NPAR_VEG_IRR_USE,        &
@@ -607,7 +609,7 @@ ELSE
                     PK%XDG, PK%XDZG, PPEW_A_COEF, PPEW_B_COEF, PPET_A_COEF,    &
                     PPEQ_A_COEF,PPET_B_COEF, PPEQ_B_COEF, ZSNOW_THRUFAL_SOIL,  &
                     ZGRNDFLUX, ZFLSN_COR,ZGSFCSNOW, ZEVAPCOR, ZLES3L, ZLEL3L,  &
-                    ZEVAP3L, ZSNOWSFCH, ZDELHEATN,ZDELHEATN_SFC,ZRI3L,PZENITH, &
+                    ZEVAP3L, ZSNOWSFCH, ZDELHEATN,ZDELHEATN_SFC,ZRI3L,ZZENITH, &
                     ZANGL_ILLUM, ZDELHEATG, ZDELHEATG_SFC, ZQS3L,              &
                     NPAR_VEG_IRR_USE,KTAB_SYT,P_DIR_SW,P_SCA_SW,PIMPWET,PIMPDRY,&
                     PBLOWSNW_FLUX,PBLOWSNW_CONC     )
@@ -620,7 +622,7 @@ CALL SNOW3L_ISBA(IO, G, PK, PEK, DK, DEK, DMK, OMEB, HIMPLICIT_WIND,        &
                     PK%XDG, PK%XDZG, PPEW_A_COEF, PPEW_B_COEF, PPET_A_COEF,    &
                     PPEQ_A_COEF,PPET_B_COEF, PPEQ_B_COEF, ZSNOW_THRUFAL_SOIL,  &
                     ZGRNDFLUX, ZFLSN_COR,ZGSFCSNOW, ZEVAPCOR, ZLES3L, ZLEL3L,  &
-                    ZEVAP3L, ZSNOWSFCH, ZDELHEATN,ZDELHEATN_SFC,ZRI3L,PZENITH, &
+                    ZEVAP3L, ZSNOWSFCH, ZDELHEATN,ZDELHEATN_SFC,ZRI3L,ZZENITH, &
                     ZANGL_ILLUM, ZDELHEATG, ZDELHEATG_SFC, ZQS3L,              &
                     NPAR_VEG_IRR_USE,KTAB_SYT,P_DIR_SW,P_SCA_SW,PIMPWET,PIMPDRY)
   END IF
@@ -634,7 +636,7 @@ CALL SNOW3L_ISBA(IO, G, PK, PEK, DK, DEK, DMK, OMEB, HIMPLICIT_WIND,        &
    ELSE IF (MAXVAL(PEK%XGMES(:)).NE.XUNDEF .OR. MINVAL(PEK%XGMES(:)).NE.XUNDEF) THEN
       ZQSAT(:)=QSAT(PEK%XTG(:,1),PPS(:))  
       CALL COTWORES(PTSTEP, IO, GSHADE, PK, PEK, PK%XDMAX, PPOI, PCSP, PEK%XTG(:,1),  &
-                    ZF2, PSW_RAD, PQA, ZQSAT, PEK%XPSNV, ZDELTA, PRHOA, PZENITH,      &
+                    ZF2, PSW_RAD, PQA, ZQSAT, PEK%XPSNV, ZDELTA, PRHOA, ZZENITH,      &
                     KK%XFFV, NPAR_VEG_IRR_USE, ZIACAN_SUNLIT, ZIACAN_SHADE, ZFRAC_SUN,&
                     PIACAN, PABC, DMK%XRS, DEK%XGPP, PRESP_BIOMASS_INST(:,1))
    ELSE
