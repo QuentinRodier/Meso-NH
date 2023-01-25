@@ -934,7 +934,9 @@ ELSE
   DTT%XPAR_FRAC_NVEG = 0.
 END IF
 !
-IF (DTT%LDATA_BLD) THEN
+IF (TOP%CURBTREE/='NONE') THEN
+
+ IF (DTT%LDATA_BLD) THEN
    !
    ! Check building fraction
    !
@@ -985,8 +987,7 @@ IF (DTT%LDATA_BLD) THEN
    !
    ! Checks coherence between high vegetation fraction and other vegetation fractions
    !
-   IF (TOP%CURBTREE/='NONE') THEN
-     IF (ANY(DTT%XPAR_FRAC_HVEG>5.*(DTT%XPAR_FRAC_LVEG+DTT%XPAR_FRAC_NVEG))) THEN
+   IF (ANY(DTT%XPAR_FRAC_HVEG>5.*(DTT%XPAR_FRAC_LVEG+DTT%XPAR_FRAC_NVEG))) THEN
         WRITE(ILUOUT,*) '----------------------------------------------------------------------------------------'
         WRITE(ILUOUT,*) 'The URBTREE option is activated '
         WRITE(ILUOUT,*) 'However, there is at least one grind point with high vegetation '
