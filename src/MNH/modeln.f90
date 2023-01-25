@@ -272,6 +272,7 @@ END MODULE MODI_MODEL_n
 !  T. Nagel    01/02/2021: add turbulence recycling
 !  P. Wautelet 19/02/2021: add NEGA2 term for SV budgets
 !  J.L. Redelsperger 03/2021: add Call NHOA_COUPLN (coupling O & A LES version)
+!  R. Schoetter    12/2021  multi-level coupling between MesoNH and SURFEX  
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -1719,7 +1720,7 @@ CALL MPPDB_CHECK3DM("before RAD_BOUND :XRU/V/WS",PRECISION,XRUS,XRVS,XRWS)
 ZRUS=XRUS
 ZRVS=XRVS
 ZRWS=XRWS
-!
+
 if ( .not. l1d ) then
   if ( lbudget_u ) call Budget_store_init( tbudgets(NBUDGET_U), 'PRES', xrus(:, :, :) )
   if ( lbudget_v ) call Budget_store_init( tbudgets(NBUDGET_V), 'PRES', xrvs(:, :, :) )
@@ -2050,7 +2051,7 @@ XT_SPECTRA = XT_SPECTRA + ZTIME2 - ZTIME1 + XTIME_LES_BU + XTIME_LES
 !               --------------------
 !
 IF (LMEAN_FIELD) THEN
-   CALL MEAN_FIELD(XUT, XVT, XWT, XTHT, XTKET, XPABST, XSVT(:,:,:,1))
+   CALL MEAN_FIELD(XUT, XVT, XWT, XTHT, XTKET, XPABST, XRT(:,:,:,1), XSVT(:,:,:,1))
 END IF
 !
 !-------------------------------------------------------------------------------
