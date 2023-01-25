@@ -150,12 +150,12 @@ IF ( MOD(MIN(TTIME%TDATE%DAY,30),10)==1 .AND. TTIME%TIME - PTSTEP < 0.) THEN
       !
       CALL CONVERT_PATCH_ISBA(DTCO, DTV, IO, KMONTH, KDAY, IDECADE, IDECADE2, PCOVER, OCOVER, &
                               OAGRIP, OECOSG, OIRRIGMODE, HSFTYPE, KPATCH, KK, PK, PEK,       &
-                              .FALSE., .TRUE., .TRUE., .TRUE., .FALSE., .FALSE., OALB)
+                              .FALSE., .TRUE., .TRUE., .TRUE., .FALSE., OALB, .FALSE.)
       !
     ELSE
       CALL CONVERT_PATCH_ISBA(DTCO, DTV, IO, KMONTH, KDAY, IDECADE, IDECADE2, PCOVER, OCOVER, &
                               OAGRIP, OECOSG, OIRRIGMODE, HSFTYPE, KPATCH, KK, PK, PEK,       &
-                             .FALSE., .TRUE., .FALSE., .FALSE., .FALSE., .FALSE., OALB)
+                             .FALSE., .TRUE., .FALSE., .FALSE., .FALSE., OALB, .FALSE.)
     ENDIF
     !
     IF ( IO%CALBEDO=='CM13') THEN
