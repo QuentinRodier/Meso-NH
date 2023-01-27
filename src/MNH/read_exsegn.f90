@@ -301,7 +301,7 @@ END MODULE MODI_READ_EXSEG_n
 !  P. Wautelet 09/03/2021: simplify allocation of scalar variable names
 !  P. Wautelet 09/03/2021: move some chemistry initializations to ini_nsv
 !  P. Wautelet 10/03/2021: move scalar variable name initializations to ini_nsv
-!  R. Honnert  23/04/2021: add ADAP mixing length and delete HRIO and BOUT from CMF_UPDRAFT
+!  R. Honnert  23/04/2021: add HM21 mixing length and delete HRIO and BOUT from CMF_UPDRAFT
 !  S. Riette   11/05/2021  HighLow cloud
 !  A. Costes      12/2021: add Blaze fire model
 !  P. Wautelet 24/06/2022: remove check on CSTORAGE_TYPE for restart of ForeFire variables
@@ -890,7 +890,7 @@ CALL TEST_NAM_VAR(ILUOUT,'CLBCY(1)',CLBCY(1),'CYCL','WALL','OPEN')
 CALL TEST_NAM_VAR(ILUOUT,'CLBCY(2)',CLBCY(2),'CYCL','WALL','OPEN')
 !
 CALL TEST_NAM_VAR(ILUOUT,'CTURBDIM',CTURBDIM,'1DIM','3DIM')
-CALL TEST_NAM_VAR(ILUOUT,'CTURBLEN',CTURBLEN,'DELT','BL89','RM17','DEAR','BLKR','ADAP')
+CALL TEST_NAM_VAR(ILUOUT,'CTURBLEN',CTURBLEN,'DELT','BL89','RM17','DEAR','BLKR','HM21')
 CALL TEST_NAM_VAR(ILUOUT,'CTOM',CTOM,'NONE','TM06')
 CALL TEST_NAM_VAR(ILUOUT,'CSUBG_AUCV',CSUBG_AUCV,'NONE','CLFR','SIGM','PDF','ADJU')
 CALL TEST_NAM_VAR(ILUOUT,'CSUBG_AUCV_RI',CSUBG_AUCV_RI,'NONE','CLFR','ADJU')
@@ -1644,7 +1644,7 @@ ELSE
   END IF
 END IF
 !
-IF(CTURBLEN=='RM17' .OR. CTURBLEN=='ADAP') THEN
+IF(CTURBLEN=='RM17' .OR. CTURBLEN=='HM21') THEN
   XCEDIS=0.34
 ELSE
   XCEDIS=0.84
