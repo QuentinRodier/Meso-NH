@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2004-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2004-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -204,8 +204,6 @@ REAL                                     :: ZCLAT0,ZSLAT0          ! cos and sin
 REAL                                     :: ZMAP     ! Map factor
 REAL                                     :: ZGAMMA,ZCOSG,ZSING  ! angle of projection and its cos and sin values
 !
-REAL, DIMENSION(:),          ALLOCATABLE :: ZXHATM ! X values of the mass points
-REAL, DIMENSION(:),          ALLOCATABLE :: ZYHATM ! Y values of the mass points
 REAL, DIMENSION(:,:,:),      ALLOCATABLE :: ZZM    ! Z values of the mass points
 REAL, DIMENSION(:,:,:,:,:,:),ALLOCATABLE, TARGET :: ZT_RAY  ! temperature interpolated along the rays
 REAL, DIMENSION(:,:,:,:,:,:),ALLOCATABLE, TARGET :: ZR_RAY  ! rain            mixing ratio interpolated along the rays
@@ -519,15 +517,7 @@ ZSLAT0 = SIN(ZRDSDG*ZLAT0)
 !
 !  Positions of the mass points in the MESO-NH conformal projection 
 !
-ALLOCATE(ZXHATM(IIU))
-ALLOCATE(ZYHATM(IJU)) 
 ALLOCATE(ZZM(IIU,IJU,IKU))
-!
-ZXHATM(1:IIU-1) = .5*(XXHAT(1:IIU-1)+XXHAT(2:IIU))
-ZXHATM(IIU)     = 2.*XXHAT(IIU)-ZXHATM(IIU-1)
-!
-ZYHATM(1:IJU-1) = .5*(XYHAT(1:IJU-1)+XYHAT(2:IJU))
-ZYHATM(IJU)     = 2.*XYHAT(IJU)-ZYHATM(IJU-1)
 !
 ZZM(:,:,1:IKU-1)= .5*(XZZ(:,:,1:IKU-1)+XZZ(:,:,2:IKU))
 ZZM(:,:,IKU)= 2. * XZZ(:,:,IKU) - ZZM(:,:,IKU-1)
@@ -626,7 +616,7 @@ DO JI=1,NBRAD
               ! first compute vertical position (height)          
               ! compute the index of refraction at the radar gate boundaries
               CALL INTERPOL_BEAM(ZN(:,:,:),ZN1,ZX_RAY(JI,JEL,JAZ,JL,JH,JV),&
-              ZY_RAY(JI,JEL,JAZ,JL,JH,JV),ZZ_RAY(JI,JEL,JAZ,JL,JH,JV),ZXHATM(:),ZYHATM(:),ZZM(:,:,:))
+              ZY_RAY(JI,JEL,JAZ,JL,JH,JV),ZZ_RAY(JI,JEL,JAZ,JL,JH,JV),XXHATM(:),XYHATM(:),ZZM(:,:,:))
               IF(LREFR) ZN_RAY(JI,JEL,JAZ,JL,JH,JV)=(ZN1-1.)*1.E6 !LREFR: if true writes out refractivity (N ≡ (n − 1) × 106)
               IF(LDNDZ) THEN !LDNDZ: if true writes out vertical gradient of refractivity
                 IF(JL==1) THEN
@@ -654,7 +644,7 @@ DO JI=1,NBRAD
                   ZDNDZ1=(ZN1-ZN0)/(ZZ_RAY(JI,JEL,JAZ,JL,1,1)-ZZ_RAY(JI,JEL,JAZ,JL-1,1,1))
                 ELSE ! for first gate DNDZ1 is the local value at radar
                   CALL INTERPOL_BEAM(ZDNDZ(:,:,:),ZDNDZ1,ZX_RAY(JI,JEL,JAZ,JL,JH,JV),&
-                            ZY_RAY(JI,JEL,JAZ,JL,JH,JV),ZZ_RAY(JI,JEL,JAZ,JL,JH,JV),ZXHATM(:),ZYHATM(:),ZZM(:,:,:))
+                            ZY_RAY(JI,JEL,JAZ,JL,JH,JV),ZZ_RAY(JI,JEL,JAZ,JL,JH,JV),XXHATM(:),XYHATM(:),ZZM(:,:,:))
                 END IF
                 IF(ZDNDZ1>-ZN1/XRADIUS/COS(ZELEV(JI,JEL,JL,JV))) THEN
                   ZKE=1./(1.+XRADIUS/ZN1*ZDNDZ1*COS(ZELEV(JI,JEL,JL,JV)))
@@ -802,10 +792,10 @@ ENDIF
 !interpolation from TVARMOD to TVARRAD of the model variables in the radar projection, using the position (ZX_RAY, ZY_RAY, ZZ_RAY)
 !of the beam in the model grid 
 CALL INTERPOL_BEAM(TVARMOD,TVARRAD,ZX_RAY(:,:,:,:,:,:),&
-     ZY_RAY(:,:,:,:,:,:),ZZ_RAY(:,:,:,:,:,:),ZXHATM(:),ZYHATM(:),ZZM(:,:,:)) 
+     ZY_RAY(:,:,:,:,:,:),ZZ_RAY(:,:,:,:,:,:),XXHATM(:),XYHATM(:),ZZM(:,:,:))
 !
 DEALLOCATE(ZBU_MASK)
-DEALLOCATE(ZXHATM,ZYHATM,ZZM)
+DEALLOCATE(ZZM)
 DEALLOCATE(ZX_RAY,ZY_RAY)
 DEALLOCATE(TVARMOD,TVARRAD)
 !

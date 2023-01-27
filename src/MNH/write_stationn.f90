@@ -1,97 +1,61 @@
-!MNH_LIC Copyright 2002-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-!      ###########################
-MODULE MODI_WRITE_STATION_n
-!      ###########################
+! Author:
+!  P. Tulet    15/02/2002
 !
-INTERFACE
-!
-      SUBROUTINE WRITE_STATION_n(TPDIAFILE)
-!
-USE MODD_IO, ONLY: TFILEDATA
-!
-TYPE(TFILEDATA),  INTENT(IN) :: TPDIAFILE ! diachronic file to write
-!
-END SUBROUTINE WRITE_STATION_n
-!
-END INTERFACE
-!
-END MODULE MODI_WRITE_STATION_n
-!
-!     ##########################################
-      SUBROUTINE WRITE_STATION_n(TPDIAFILE)
-!     ##########################################
-!
-!
-!!****  *WRITE_STATION* - write the balloon and aircraft trajectories and records
-!!                      in the diachronic file
-!!
-!!    PURPOSE
-!!    -------
-!
-!
-!!**  METHOD
-!!    ------
-!!    
-!!
-!!
-!!
-!!
-!!    EXTERNAL
-!!    --------
-!!
-!!    IMPLICIT ARGUMENTS
-!!    ------------------
-!!
-!!    REFERENCE
-!!    ---------
-!!
-!!    AUTHOR
-!!    ------
-!!      Pierre TULET             * Meteo-France *
-!!
-!!    MODIFICATIONS
-!!    -------------
-!!     Original 15/02/2002
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  Modifications
+!  P. Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
 !  P. Wautelet 09/10/2020: Write_diachro: use new datatype tpfields
 !  P. Wautelet 03/03/2021: budgets: add tbudiachrometadata type (useful to pass more information to Write_diachro)
+!  P. Wautelet 04/02/2022: use TSVLIST to manage metadata of scalar variables
+!  P. Wautelet    04/2022: restructure stations for better performance, reduce memory usage and correct some problems/bugs
 ! --------------------------------------------------------------------------
+!      ###########################
+MODULE MODE_WRITE_STATION_n
+!      ###########################
+
+use modd_parameters, only: NCOMMENTLGTMAX, NMNHNAMELGTMAX, NUNITLGTMAX
+
+implicit none
+
+private
+
+public :: WRITE_STATION_n
+
+CHARACTER(LEN=NCOMMENTLGTMAX), DIMENSION(:), ALLOCATABLE :: CCOMMENT ! comment string
+CHARACTER(LEN=NMNHNAMELGTMAX), DIMENSION(:), ALLOCATABLE :: CTITLE   ! title
+CHARACTER(LEN=NUNITLGTMAX),    DIMENSION(:), ALLOCATABLE :: CUNIT    ! physical unit
+
+REAL, DIMENSION(:,:,:,:,:,:), ALLOCATABLE :: XWORK6   ! contains temporal serie
+
+contains
+!
+! #####################################
+SUBROUTINE WRITE_STATION_n( TPDIAFILE )
+! #####################################
+!
+!
+!****  *WRITE_STATION* - write the stations records in the diachronic file
 !
 !*      0. DECLARATIONS
 !          ------------
 !
-use MODD_BUDGET,          ONLY: tbudiachrometadata
-USE MODD_CH_M9_n,         ONLY: CNAMES
-USE MODD_CH_AEROSOL,      ONLY: CAERONAMES, LORILAM, JPMODE
-USE MODD_CONF
-USE MODD_CST
-USE MODD_DIAG_IN_RUN
-USE MODD_DIM_n
-USE MODD_DUST,            ONLY: CDUSTNAMES, LDUST, NMODE_DST
-USE MODD_ELEC_DESCR,      ONLY: CELECNAMES
-USE MODD_GRID_n
-USE MODD_ICE_C1R3_DESCR,  ONLY: C1R3NAMES
-USE MODD_IO,              ONLY: TFILEDATA
-USE MODD_LG,              ONLY: CLGNAMES
-USE MODD_LUNIT
-USE MODD_NSV
-USE MODD_PARAMETERS
-USE MODD_PARAM_n,         ONLY: CRAD, CSURF
-USE MODD_PASPOL
-USE MODD_RAIN_C2R2_DESCR, ONLY: C2R2NAMES
-USE MODD_SALT,            ONLY: CSALTNAMES, LSALT, NMODE_SLT
-USE MODD_STATION_n
 USE MODD_ALLSTATION_n,    ONLY: LDIAG_SURFRAD
+USE MODD_CONF_n,          ONLY: NRR
+USE MODD_IO,              ONLY: ISNPROC, ISP, TFILEDATA
+USE MODD_MPIF
+USE MODD_NSV,             ONLY: nsv
+USE MODD_PARAM_n,         ONLY: CRAD, CSURF, CTURB
+USE MODD_PRECISION,       ONLY: MNHINT_MPI, MNHREAL_MPI
+USE MODD_STATION_n,       only: NUMBSTAT_LOC, TSTATIONS, tstations_time
+USE MODD_TYPE_STATPROF,   ONLY: TSTATIONDATA
 !
-USE MODE_AERO_PSD
-USE MODE_DUST_PSD
-USE MODE_SALT_PSD
-use MODE_WRITE_DIACHRO,   ONLY: Write_diachro
+USE MODE_MSG
+USE MODE_STATPROF_TOOLS,  ONLY: STATION_ALLOCATE
 !
 IMPLICIT NONE
 !
@@ -104,653 +68,569 @@ TYPE(TFILEDATA),  INTENT(IN) :: TPDIAFILE ! diachronic file to write
 !
 !       0.2  declaration of local variables
 !
-INTEGER     ::  II  ! loop
-INTEGER     ::  K   ! loop
+INTEGER, PARAMETER :: ITAG = 100
+INTEGER :: IERR
+INTEGER :: JP, JS
+INTEGER :: IDX
+INTEGER :: INUMSTAT  ! Total number of stations (for the current model)
+INTEGER :: IPACKSIZE ! Size of the ZPACK buffer
+INTEGER :: IPOS      ! Position in the ZPACK buffer
+INTEGER :: ISTORE
+INTEGER, DIMENSION(:), ALLOCATABLE :: INSTATPRC    ! Array to store the number of stations per process (for the current model)
+INTEGER, DIMENSION(:), ALLOCATABLE :: ISTATIDS     ! Intermediate array for MPI communication
+INTEGER, DIMENSION(:), ALLOCATABLE :: ISTATPRCRANK ! Array to store the ranks of the processes where the stations are
+INTEGER, DIMENSION(:), ALLOCATABLE :: IDS          ! Array to store the station number to send
+INTEGER, DIMENSION(:), ALLOCATABLE :: IDISP        ! Array to store the displacements for MPI communications
+REAL,    DIMENSION(:), ALLOCATABLE :: ZPACK        ! Buffer to store raw data of a station (used for MPI communication)
+TYPE(TSTATIONDATA) :: TZSTATION
 !
 !----------------------------------------------------------------------------
-!
-DO II=1,NUMBSTAT
-CALL STATION_DIACHRO_n(TSTATION, II)
-ENDDO
-!
-!----------------------------------------------------------------------------
-!----------------------------------------------------------------------------
-!
-CONTAINS
-!
-!----------------------------------------------------------------------------
-!----------------------------------------------------------------------------
-!
-!----------------------------------------------------------------------------
-SUBROUTINE STATION_DIACHRO_n(TSTATION,II)
 
-use modd_budget, only: NLVL_CATEGORY, NLVL_SUBCATEGORY, NLVL_GROUP, NLVL_SHAPE, NLVL_TIMEAVG, NLVL_NORM, NLVL_MASK
-use modd_field,  only: NMNHDIM_STATION_TIME, NMNHDIM_STATION_PROC, NMNHDIM_UNUSED, &
-                       tfield_metadata_base, TYPEREAL
+ALLOCATE( INSTATPRC(ISNPROC) )
+ALLOCATE( IDS(NUMBSTAT_LOC) )
 
-TYPE(STATION),        INTENT(IN)       :: TSTATION
-INTEGER,              INTENT(IN)       :: II
+!Gather number of station present on each process
+CALL MPI_ALLGATHER( NUMBSTAT_LOC, 1, MNHINT_MPI, INSTATPRC, 1, MNHINT_MPI, TPDIAFILE%NMPICOMM, IERR )
+
+!Store the identification number of local stations (these numbers are globals)
+DO JS = 1, NUMBSTAT_LOC
+  IDS(JS) = TSTATIONS(JS)%NID
+END DO
+
+ALLOCATE( IDISP(ISNPROC) )
+IDISP(1) = 0
+DO JP = 2, ISNPROC
+  IDISP(JP) = IDISP(JP-1) + INSTATPRC(JP-1)
+END DO
+
+INUMSTAT = SUM( INSTATPRC(:) )
+ALLOCATE( ISTATIDS(INUMSTAT) )
+ALLOCATE( ISTATPRCRANK(INUMSTAT) )
+
+!Gather the list of all the stations of all processes
+CALL MPI_ALLGATHERV( IDS(:), NUMBSTAT_LOC, MNHINT_MPI, ISTATIDS(:), INSTATPRC(:), &
+                     IDISP(:), MNHINT_MPI, TPDIAFILE%NMPICOMM, IERR )
+
+!Store the rank of each process corresponding to a given station
+IDX = 1
+ISTATPRCRANK(:) = -1
+DO JP = 1, ISNPROC
+  DO JS = 1, INSTATPRC(JP)
+    ISTATPRCRANK(ISTATIDS(IDX)) = JP
+    IDX = IDX + 1
+  END DO
+END DO
+
+CALL STATION_ALLOCATE( TZSTATION, SIZE( tstations_time%tpdates ) )
+
+!Determine the size of the ZPACK buffer used to transfer station data in 1 MPI communication
+IF ( ISNPROC > 1 ) THEN
+  ISTORE = SIZE( TSTATIONS_TIME%TPDATES )
+  IPACKSIZE = 7
+  IPACKSIZE = IPACKSIZE + ISTORE * ( 5 + NRR + NSV )
+  IF ( CTURB == 'TKEL') IPACKSIZE = IPACKSIZE + ISTORE !Tke term
+  IF ( CRAD /= 'NONE' ) IPACKSIZE = IPACKSIZE + ISTORE !XTSRAD term
+  IF ( LDIAG_SURFRAD ) THEN
+    IF ( CSURF == 'EXTE' ) IPACKSIZE = IPACKSIZE + ISTORE * 10
+    IF ( CRAD /= 'NONE' )  IPACKSIZE = IPACKSIZE + ISTORE * 7
+    IPACKSIZE = IPACKSIZE + ISTORE !XSFCO2 term
+  END IF
+
+  ALLOCATE( ZPACK(IPACKSIZE) )
+END IF
+
+IDX = 1
+
+STATION: DO JS = 1, INUMSTAT
+  IF ( ISTATPRCRANK(JS) == TPDIAFILE%NMASTER_RANK ) THEN
+    !No communication necessary, the station data is already on the writer process
+    IF ( ISP == TPDIAFILE%NMASTER_RANK ) THEN
+      TZSTATION = TSTATIONS(IDX)
+      IDX = IDX + 1
+    END IF
+  ELSE
+    !The station data is not on the writer process
+    IF ( ISP == ISTATPRCRANK(JS) ) THEN
+      ! This process has the data and needs to send it to the writer process
+      IPOS = 1
+      ZPACK(IPOS) = TSTATIONS(IDX)%NID;  IPOS = IPOS + 1
+      ZPACK(IPOS) = TSTATIONS(IDX)%XX;   IPOS = IPOS + 1
+      ZPACK(IPOS) = TSTATIONS(IDX)%XY;   IPOS = IPOS + 1
+      ZPACK(IPOS) = TSTATIONS(IDX)%XZ;   IPOS = IPOS + 1
+      ZPACK(IPOS) = TSTATIONS(IDX)%XLON; IPOS = IPOS + 1
+      ZPACK(IPOS) = TSTATIONS(IDX)%XLAT; IPOS = IPOS + 1
+      ZPACK(IPOS) = TSTATIONS(IDX)%XZS;  IPOS = IPOS + 1
+      ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XZON(:); IPOS = IPOS + ISTORE
+      ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XMER(:); IPOS = IPOS + ISTORE
+      ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XW(:);   IPOS = IPOS + ISTORE
+      ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XP(:);   IPOS = IPOS + ISTORE
+      IF ( CTURB == 'TKEL') THEN
+        ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XTKE(:); IPOS = IPOS + ISTORE
+      END IF
+      ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XTH(:);  IPOS = IPOS + ISTORE
+      ZPACK(IPOS:IPOS+ISTORE*NRR-1) = RESHAPE( TSTATIONS(IDX)%XR(:,:),  [ISTORE*NRR] ); IPOS = IPOS + ISTORE * NRR
+      ZPACK(IPOS:IPOS+ISTORE*NSV-1) = RESHAPE( TSTATIONS(IDX)%XSV(:,:), [ISTORE*NSV] ); IPOS = IPOS + ISTORE * NSV
+      IF ( CRAD /= 'NONE' ) THEN
+        ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XTSRAD(:); IPOS = IPOS + ISTORE
+      END IF
+      IF ( LDIAG_SURFRAD ) THEN
+        IF ( CSURF == 'EXTE') THEN
+          ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XT2M;    IPOS = IPOS + ISTORE
+          ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XQ2M;    IPOS = IPOS + ISTORE
+          ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XHU2M;   IPOS = IPOS + ISTORE
+          ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XZON10M; IPOS = IPOS + ISTORE
+          ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XMER10M; IPOS = IPOS + ISTORE
+          ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XRN;     IPOS = IPOS + ISTORE
+          ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XH;      IPOS = IPOS + ISTORE
+          ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XLE;     IPOS = IPOS + ISTORE
+          ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XGFLUX;  IPOS = IPOS + ISTORE
+          ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XLEI;    IPOS = IPOS + ISTORE
+        END IF
+        IF ( CRAD /= 'NONE' ) THEN
+          ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XSWD;    IPOS = IPOS + ISTORE
+          ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XSWU;    IPOS = IPOS + ISTORE
+          ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XLWD;    IPOS = IPOS + ISTORE
+          ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XLWU;    IPOS = IPOS + ISTORE
+          ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XSWDIR;  IPOS = IPOS + ISTORE
+          ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XSWDIFF; IPOS = IPOS + ISTORE
+          ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XDSTAOD; IPOS = IPOS + ISTORE
+        END IF
+        ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XSFCO2;    IPOS = IPOS + ISTORE
+      END IF
+
+      IF ( IPOS-1 /= IPACKSIZE ) &
+        call Print_msg( NVERB_WARNING, 'IO', 'WRITE_STATION_n', 'IPOS-1 /= IPACKSIZE (sender side)', OLOCAL = .TRUE. )
+
+      CALL MPI_SEND( TSTATIONS(IDX)%CNAME, LEN(TSTATIONS(IDX)%CNAME), MPI_CHARACTER, TPDIAFILE%NMASTER_RANK - 1, &
+                     ITAG, TPDIAFILE%NMPICOMM, IERR )
+      CALL MPI_SEND( ZPACK, IPACKSIZE, MNHREAL_MPI, TPDIAFILE%NMASTER_RANK - 1, ITAG, TPDIAFILE%NMPICOMM, IERR )
+
+      IDX = IDX + 1
+
+    ELSE IF ( ISP == TPDIAFILE%NMASTER_RANK ) THEN
+      ! This process is the writer and will receive the station data from its owner
+      CALL MPI_RECV( TZSTATION%CNAME, LEN(TZSTATION%CNAME), MPI_CHARACTER, &
+                                                    ISTATPRCRANK(JS) - 1, ITAG, TPDIAFILE%NMPICOMM, MPI_STATUS_IGNORE, IERR )
+      CALL MPI_RECV( ZPACK, IPACKSIZE, MNHREAL_MPI, ISTATPRCRANK(JS) - 1, ITAG, TPDIAFILE%NMPICOMM, MPI_STATUS_IGNORE, IERR )
+
+      IPOS = 1
+      TZSTATION%NID  = NINT( ZPACK(IPOS) ); IPOS = IPOS + 1
+      TZSTATION%XX   = ZPACK(IPOS);         IPOS = IPOS + 1
+      TZSTATION%XY   = ZPACK(IPOS);         IPOS = IPOS + 1
+      TZSTATION%XZ   = ZPACK(IPOS);         IPOS = IPOS + 1
+      TZSTATION%XLON = ZPACK(IPOS);         IPOS = IPOS + 1
+      TZSTATION%XLAT = ZPACK(IPOS);         IPOS = IPOS + 1
+      TZSTATION%XZS  = ZPACK(IPOS);         IPOS = IPOS + 1
+      TZSTATION%XZON(:) = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+      TZSTATION%XMER(:) = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+      TZSTATION%XW(:)   = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+      TZSTATION%XP(:)   = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+      IF ( CTURB == 'TKEL') THEN
+        TZSTATION%XTKE(:) = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+      END IF
+      TZSTATION%XTH(:) = ZPACK(IPOS:IPOS+ISTORE-1);  IPOS = IPOS + ISTORE
+      TZSTATION%XR(:,:)  = RESHAPE( ZPACK(IPOS:IPOS+ISTORE*NRR-1), [ ISTORE, NRR ] ); IPOS = IPOS + ISTORE * NRR
+      TZSTATION%XSV(:,:) = RESHAPE( ZPACK(IPOS:IPOS+ISTORE*NSV-1), [ ISTORE, NSV ] ); IPOS = IPOS + ISTORE * NSV
+      IF ( CRAD /= 'NONE' ) THEN
+        TZSTATION%XTSRAD(:) = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+      END IF
+      IF ( LDIAG_SURFRAD ) THEN
+        IF ( CSURF == 'EXTE' ) THEN
+          TZSTATION%XT2M    = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+          TZSTATION%XQ2M    = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+          TZSTATION%XHU2M   = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+          TZSTATION%XZON10M = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+          TZSTATION%XMER10M = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+          TZSTATION%XRN     = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+          TZSTATION%XH      = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+          TZSTATION%XLE     = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+          TZSTATION%XGFLUX  = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+          TZSTATION%XLEI    = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+        END IF
+        IF ( CRAD /= 'NONE' ) THEN
+          TZSTATION%XSWD    = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+          TZSTATION%XSWU    = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+          TZSTATION%XLWD    = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+          TZSTATION%XLWU    = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+          TZSTATION%XSWDIR  = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+          TZSTATION%XSWDIFF = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+          TZSTATION%XDSTAOD = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+        END IF
+        TZSTATION%XSFCO2 =    ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+      END IF
+
+      IF ( IPOS-1 /= IPACKSIZE ) &
+        call Print_msg( NVERB_WARNING, 'IO', 'WRITE_STATION_n', 'IPOS-1 /= IPACKSIZE (receiver side)', OLOCAL = .TRUE. )
+    END IF
+  END IF
+
+  CALL STATION_DIACHRO_n( TPDIAFILE, TZSTATION )
+
+END DO STATION
+
+END SUBROUTINE WRITE_STATION_n
+
+! ##################################################
+SUBROUTINE STATION_DIACHRO_n( TPDIAFILE, TPSTATION )
+! ##################################################
+
+USE MODD_ALLSTATION_n,  ONLY: LDIAG_SURFRAD
+use modd_budget,        only: NLVL_CATEGORY, NLVL_SUBCATEGORY, NLVL_GROUP, NLVL_SHAPE, NLVL_TIMEAVG, NLVL_NORM, NLVL_MASK, &
+                              tbudiachrometadata
+USE MODD_CONF,          ONLY: LCARTESIAN
+USE MODD_CST,           ONLY: XRV
+use modd_field,         only: NMNHDIM_STATION_TIME, NMNHDIM_STATION_PROC, NMNHDIM_UNUSED, &
+                              tfieldmetadata_base, TYPEREAL
+USE MODD_IO,            ONLY: TFILEDATA
+USE MODD_NSV,           ONLY: nsv, nsv_aer, nsv_aerbeg, nsv_aerend, &
+                              nsv_dst, nsv_dstbeg, nsv_dstend, nsv_slt, nsv_sltbeg, nsv_sltend, &
+                              tsvlist
+USE MODD_PARAM_n,       ONLY: CRAD, CSURF, CTURB
+use modd_station_n,     only: tstations_time
+use modd_type_statprof, only: tstationdata
+
+USE MODE_AERO_PSD
+USE MODE_DUST_PSD
+USE MODE_SALT_PSD
+use MODE_WRITE_DIACHRO, ONLY: Write_diachro
+
+TYPE(TFILEDATA),    INTENT(IN) :: TPDIAFILE ! diachronic file to write
+TYPE(TSTATIONDATA), INTENT(IN) :: TPSTATION
 !
 !*      0.2  declaration of local variables for diachro
 !
-REAL, DIMENSION(:,:,:,:,:,:), ALLOCATABLE :: ZWORK6 ! contains temporal series
-REAL, DIMENSION(:,:,:,:,:,:), ALLOCATABLE :: ZW6    ! contains temporal series to write
+REAL, DIMENSION(:,:,:,:,:,:), ALLOCATABLE :: XWORK6 ! contains temporal series
 REAL, DIMENSION(:,:,:,:),     ALLOCATABLE :: ZSV, ZN0, ZSIG, ZRG
-REAL, DIMENSION(:,:,:,:,:),     ALLOCATABLE :: ZPTOTA
+REAL, DIMENSION(:,:,:,:,:),   ALLOCATABLE :: ZPTOTA
 REAL, DIMENSION(:,:,:),       ALLOCATABLE :: ZRHO
 !
-INTEGER, DIMENSION(:),            ALLOCATABLE :: IGRID    ! grid indicator
-CHARACTER(LEN=  8)                            :: YGROUP   ! group title
-CHARACTER(LEN=100), DIMENSION(:), ALLOCATABLE :: YCOMMENT ! comment string
-CHARACTER(LEN=100), DIMENSION(:), ALLOCATABLE :: YTITLE   ! title
-CHARACTER(LEN=100), DIMENSION(:), ALLOCATABLE :: YUNIT    ! physical unit
+CHARACTER(LEN=NCOMMENTLGTMAX)     :: YCOMMENT ! comment string
+CHARACTER(LEN=NMNHNAMELGTMAX)     :: YTITLE   ! title
 !
 !!! do not forget to increment the IPROC value if you add diagnostic !!!
 INTEGER :: IPROC    ! number of variables records
 !!! do not forget to increment the JPROC value if you add diagnostic !!!
+INTEGER :: ISTORE
 INTEGER :: JPROC    ! loop counter
 INTEGER :: JRR      ! loop counter
 INTEGER :: JSV      ! loop counter
-type(tbudiachrometadata)                              :: tzbudiachro
-type(tfield_metadata_base), dimension(:), allocatable :: tzfields
+type(tbudiachrometadata)                             :: tzbudiachro
+type(tfieldmetadata_base), dimension(:), allocatable :: tzfields
 !
 !----------------------------------------------------------------------------
-IF (TSTATION%X(II)==XUNDEF) RETURN
-IF (TSTATION%Y(II)==XUNDEF) RETURN
 !
-IPROC = 8 + SIZE(TSTATION%R,3) + SIZE(TSTATION%SV,3)
+IPROC = 8 + SIZE(TPSTATION%XR,2) + SIZE(TPSTATION%XSV,2)
 
-IF (TSTATION%X(II)==XUNDEF) IPROC = IPROC + 2
-IF (SIZE(TSTATION%TKE  )>0) IPROC = IPROC + 1
+IF ( CTURB == 'TKEL' ) IPROC = IPROC + 1
 IF (LDIAG_SURFRAD) THEN
   IF(CSURF=="EXTE") IPROC = IPROC + 10
   IF(CRAD/="NONE")  IPROC = IPROC + 7
+  IPROC = IPROC + 1 ! XSFCO2 term
 END IF
 IF (LORILAM) IPROC = IPROC + JPMODE*(3+NSOA+NCARB+NSP)
 IF (LDUST) IPROC = IPROC + NMODE_DST*3
 IF (LSALT) IPROC = IPROC + NMODE_SLT*3
-IF (ANY(TSTATION%TSRAD(:,:)/=XUNDEF))  IPROC = IPROC + 1
-IF (ANY(TSTATION%SFCO2(:,:)/=XUNDEF))  IPROC = IPROC + 1
+IF ( CRAD /= 'NONE' )  IPROC = IPROC + 1
 !
-ALLOCATE (ZWORK6(1,1,1,SIZE(tstation%tpdates),1,IPROC))
-ALLOCATE (YCOMMENT(IPROC))
-ALLOCATE (YTITLE  (IPROC))
-ALLOCATE (YUNIT   (IPROC))
-ALLOCATE (IGRID   (IPROC))
+ISTORE = SIZE( TSTATIONS_TIME%TPDATES )
+
+ALLOCATE( XWORK6(1, 1, 1, ISTORE, 1, IPROC) )
+ALLOCATE( CCOMMENT(IPROC) )
+ALLOCATE( CTITLE  (IPROC) )
+ALLOCATE( CUNIT   (IPROC) )
 !
-IGRID  = 1
-YGROUP = TSTATION%NAME(II)
 JPROC = 0
 !
 !----------------------------------------------------------------------------
 !
-JPROC = JPROC + 1
-YTITLE   (JPROC) = 'ZS'
-YUNIT    (JPROC) = 'm'
-YCOMMENT (JPROC) = 'Orography'
-ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%ZS(II)
-!
-JPROC = JPROC + 1
-YTITLE   (JPROC) = 'P'
-YUNIT    (JPROC) = 'Pa'
-YCOMMENT (JPROC) = 'Pressure' 
-ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%P(:,II)
-!
-!JPROC = JPROC + 1
-!YTITLE   (JPROC) = 'Z'
-!YUNIT    (JPROC) = 'm'
-!YCOMMENT (JPROC) = 'Z Pos'
-!ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%Z(II)
-!
-IF (LCARTESIAN) THEN
-  JPROC = JPROC + 1
-  YTITLE   (JPROC) = 'X'
-  YUNIT    (JPROC) = 'm'
-  YCOMMENT (JPROC) = 'X Pos'
-  ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%X(II)
-  !
-  JPROC = JPROC + 1
-  YTITLE   (JPROC) = 'Y'
-  YUNIT    (JPROC) = 'm'
-  YCOMMENT (JPROC) = 'Y Pos'
-  ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%Y(II)
-  !
-  JPROC = JPROC + 1
-  YTITLE   (JPROC) = 'U'
-  YUNIT    (JPROC) = 'm s-1'
-  YCOMMENT (JPROC) = 'Axial velocity'
-  ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%ZON(:,II)
-  !
-  JPROC = JPROC + 1
-  YTITLE   (JPROC) = 'V'
-  YUNIT    (JPROC) = 'm s-1'
-  YCOMMENT (JPROC) = 'Transversal velocity'
-  ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%MER(:,II)
-ELSE
-  JPROC = JPROC + 1
-  YTITLE   (JPROC) = 'LON'
-  YUNIT    (JPROC) = 'degree'
-  YCOMMENT (JPROC) = 'Longitude'
-  ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%LON(II)
-  !
-  JPROC = JPROC + 1
-  YTITLE   (JPROC) = 'LAT'
-  YUNIT    (JPROC) = 'degree'
-  YCOMMENT (JPROC) = 'Latitude'
-  ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%LAT(II)
-  !
-  JPROC = JPROC + 1
-  YTITLE   (JPROC) = 'ZON_WIND'
-  YUNIT    (JPROC) = 'm s-1'
-  YCOMMENT (JPROC) = 'Zonal wind'
-  ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%ZON(:,II)
-  !
-  JPROC = JPROC + 1
-  YTITLE   (JPROC) = 'MER_WIND'
-  YUNIT    (JPROC) = 'm s-1'
-  YCOMMENT (JPROC) = 'Meridional wind'
-  ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%MER(:,II)
-ENDIF
-!
-JPROC = JPROC + 1
-YTITLE   (JPROC) = 'W'
-YUNIT    (JPROC) = 'm s-1'
-YCOMMENT (JPROC) = 'Air vertical speed' 
-ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%W(:,II)
-!
-JPROC = JPROC + 1
-YTITLE   (JPROC) = 'Th'
-YUNIT    (JPROC) = 'K'
-YCOMMENT (JPROC) = 'Potential temperature' 
-ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%TH(:,II)
-!
-IF (LDIAG_SURFRAD) THEN
-  IF (CSURF=="EXTE") THEN
-    JPROC = JPROC + 1
-    YTITLE   (JPROC) = 'T2m'
-    YUNIT    (JPROC) = 'K'
-    YCOMMENT (JPROC) = '2-m temperature' 
-    ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%T2M(:,II)
-    !
-    JPROC = JPROC + 1
-    YTITLE   (JPROC) = 'Q2m'
-    YUNIT    (JPROC) = 'kg kg-1'
-    YCOMMENT (JPROC) = '2-m humidity' 
-    ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%Q2M(:,II)
-    !
-    JPROC = JPROC + 1
-    YTITLE   (JPROC) = 'HU2m'
-    YUNIT    (JPROC) = 'percent'
-    YCOMMENT (JPROC) = '2-m relative humidity' 
-    ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%HU2M(:,II)
-    !
-    JPROC = JPROC + 1
-    YTITLE   (JPROC) = 'zon10m'
-    YUNIT    (JPROC) = 'm s-1'
-    YCOMMENT (JPROC) = '10-m zonal wind' 
-    ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%ZON10M(:,II)
-    !       
-    JPROC = JPROC + 1
-    YTITLE   (JPROC) = 'mer10m'
-    YUNIT    (JPROC) = 'm s-1'
-    YCOMMENT (JPROC) = '10-m meridian wind' 
-    ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%MER10M(:,II)
-    !
-    JPROC = JPROC + 1
-    YTITLE   (JPROC) = 'RN'  
-    YUNIT    (JPROC) = 'W m-2'
-    YCOMMENT (JPROC) = 'Net radiation'         
-    ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%RN(:,II)
-    !
-    JPROC = JPROC + 1
-    YTITLE   (JPROC) = 'H'   
-    YUNIT    (JPROC) = 'W m-2'
-    YCOMMENT (JPROC) = 'Sensible heat flux'
-    ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%H(:,II)
-    !       
-    JPROC = JPROC + 1
-    YTITLE   (JPROC) = 'LE'  
-    YUNIT    (JPROC) = 'W m-2'
-    YCOMMENT (JPROC) = 'Total Latent heat flux'   
-    ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%LE(:,II)
-    !
-    JPROC = JPROC + 1
-    YTITLE   (JPROC) = 'G'    
-    YUNIT    (JPROC) = 'W m-2'
-    YCOMMENT (JPROC) = 'Storage heat flux'     
-    ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%GFLUX(:,II)
-    !
-    JPROC = JPROC + 1
-    YTITLE   (JPROC) = 'LEI'  
-    YUNIT    (JPROC) = 'W m-2'
-    YCOMMENT (JPROC) = 'Solid Latent heat flux'   
-    ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%LEI(:,II)
-  END IF
- IF (CRAD /= 'NONE') THEN
-  JPROC = JPROC + 1
-  YTITLE   (JPROC) = 'SWD'   
-  YUNIT    (JPROC) = 'W m-2'
-  YCOMMENT (JPROC) = 'Downward short-wave radiation' 
-  ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%SWD(:,II)
-  !       
-  JPROC = JPROC + 1
-  YTITLE   (JPROC) = 'SWU'   
-  YUNIT    (JPROC) = 'W m-2'
-  YCOMMENT (JPROC) = 'Upward short-wave radiation' 
-  ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%SWU(:,II)
-  !       
-  JPROC = JPROC + 1
-  YTITLE   (JPROC) = 'LWD'  
-  YUNIT    (JPROC) = 'W m-2'
-  YCOMMENT (JPROC) = 'Downward long-wave radiation'
-  ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%LWD(:,II)
-  !       
-  JPROC = JPROC + 1
-  YTITLE   (JPROC) = 'LWU'  
-  YUNIT    (JPROC) = 'W m-2'
-  YCOMMENT (JPROC) = 'Upward long-wave radiation'
-  ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%LWU(:,II)
-  JPROC = JPROC + 1
-  !
-  YTITLE   (JPROC) = 'SWDIR'   
-  YUNIT    (JPROC) = 'W m-2'
-  YCOMMENT (JPROC) = 'Downward direct short-wave radiation' 
-  ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%SWDIR(:,II)
-  !
-  JPROC = JPROC + 1
-  YTITLE   (JPROC) = 'SWDIFF'   
-  YUNIT    (JPROC) = 'W m-2'
-  YCOMMENT (JPROC) = 'Downward diffuse short-wave radiation' 
-  ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%SWDIFF(:,II)  
-  !       
-  JPROC = JPROC + 1
-  YTITLE   (JPROC) = 'DSTAOD'  
-  YUNIT    (JPROC) = 'm'
-  YCOMMENT (JPROC) = 'Dust aerosol optical depth'
-  ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%DSTAOD(:,II)
-  !
- END IF
-ENDIF
-!
-DO JRR=1,SIZE(TSTATION%R,3)
-  JPROC = JPROC+1
-  YUNIT    (JPROC) = 'kg kg-1'
-  ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%R(:,II,JRR)
-  IF (JRR==1) THEN
-    YTITLE   (JPROC) = 'Rv'
-    YCOMMENT (JPROC) = 'Water vapor mixing ratio' 
-  ELSE IF (JRR==2) THEN
-    YTITLE   (JPROC) = 'Rc'
-    YCOMMENT (JPROC) = 'Liquid cloud water mixing ratio' 
-  ELSE IF (JRR==3) THEN
-    YTITLE   (JPROC) = 'Rr'
-    YCOMMENT (JPROC) = 'Rain water mixing ratio' 
-  ELSE IF (JRR==4) THEN
-    YTITLE   (JPROC) = 'Ri'
-    YCOMMENT (JPROC) = 'Ice cloud water mixing ratio' 
-  ELSE IF (JRR==5) THEN
-    YTITLE   (JPROC) = 'Rs'
-    YCOMMENT (JPROC) = 'Snow mixing ratio' 
-  ELSE IF (JRR==6) THEN
-    YTITLE   (JPROC) = 'Rg'
-    YCOMMENT (JPROC) = 'Graupel mixing ratio' 
-  ELSE IF (JRR==7) THEN
-    YTITLE   (JPROC) = 'Rh'
-    YCOMMENT (JPROC) = 'Hail mixing ratio' 
-  END IF
-END DO
-!
-IF (SIZE(TSTATION%TKE,1)>0) THEN
-  JPROC = JPROC+1
-  YTITLE   (JPROC) = 'Tke'
-  YUNIT    (JPROC) = 'm2 s-2'
-  YCOMMENT (JPROC) = 'Turbulent kinetic energy'
-  ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%TKE(:,II)
-END IF
-!
-!
-IF (LPASPOL) THEN
-    JSV=1
-    JPROC = JPROC+1
-    WRITE (YTITLE(JPROC),FMT='(A2,I3.3)')   'Sv',JSV
-    YUNIT    (JPROC) = 'kg kg-1'
-    YCOMMENT (JPROC) = ' '
-    ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%SV(:,II,JSV)
-ENDIF
-!
-IF (SIZE(TSTATION%SV,3)>=1) THEN
-  ! User scalar variables
-  DO JSV = 1,NSV_USER
-    JPROC = JPROC+1
-    WRITE (YTITLE(JPROC),FMT='(A2,I3.3)')   'Sv',JSV
-    YUNIT    (JPROC) = 'kg kg-1'
-    YCOMMENT (JPROC) = ' '
-    ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%SV(:,II,JSV)
-  END DO
-  ! microphysical C2R2 scheme scalar variables
-  DO JSV = NSV_C2R2BEG,NSV_C2R2END
-    JPROC = JPROC+1
-    YTITLE(JPROC)= TRIM(C2R2NAMES(JSV-NSV_C2R2BEG+1))
-    YUNIT    (JPROC) = 'm-3'
-    YCOMMENT (JPROC) = ' '
-    ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%SV(:,II,JSV)
-  END DO
-  ! microphysical C3R5 scheme additional scalar variables
-  DO JSV = NSV_C1R3BEG,NSV_C1R3END
-    JPROC = JPROC+1
-    YTITLE(JPROC)= TRIM(C1R3NAMES(JSV-NSV_C1R3BEG+1))
-    YUNIT    (JPROC) = 'm-3'
-    YCOMMENT (JPROC) = ' '
-    ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%SV(:,II,JSV)
-  END DO
-  ! electrical scalar variables
-  DO JSV = NSV_ELECBEG,NSV_ELECEND
-    JPROC = JPROC+1
-    YTITLE(JPROC)= TRIM(CELECNAMES(JSV-NSV_ELECBEG+1))
-    YUNIT    (JPROC) = 'C'
-    YCOMMENT (JPROC) = ' '
-    ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%SV(:,II,JSV)
-  END DO
-  ! chemical scalar variables
-  DO JSV = NSV_CHEMBEG,NSV_CHEMEND
-    JPROC = JPROC+1
-    YTITLE(JPROC)= TRIM(CNAMES(JSV-NSV_CHEMBEG+1))
-    YUNIT    (JPROC) = 'ppb'
-    WRITE(YCOMMENT (JPROC),'(A5,A3,I3.3)') 'T(s) ','SVT',JSV
-    ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%SV(:,II,JSV) * 1.E9
-  END DO
-  ! LiNOX passive tracer
-  DO JSV = NSV_LNOXBEG,NSV_LNOXEND
-    JPROC = JPROC+1
-    WRITE (YTITLE(JPROC),FMT='(A5)') 'LiNOx'
-    YUNIT    (JPROC) = 'ppb'
-    YCOMMENT (JPROC) = ' '
-    ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%SV(:,II,JSV) * 1.E9
-  END DO
-  ! aerosol scalar variables
-  DO JSV = NSV_AERBEG,NSV_AEREND
-    JPROC = JPROC+1
-    YTITLE(JPROC)= TRIM(CAERONAMES(JSV-NSV_AERBEG+1))
-    YUNIT    (JPROC) = 'ppb'
-    YCOMMENT (JPROC) = ' '
-    ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%SV(:,II,JSV) *1.E9
-  END DO
+call Add_point( 'ZS', 'Orography', 'm',  SPREAD( tpstation%xzs, 1, istore ) )
+call Add_point( 'P',  'Pressure',  'Pa', tpstation%xp(:) )
+! call Add_point( 'Z', 'Z Pos', 'm', SPREAD( tpstation%xz, 1, istore ) )
 
-  IF ((LORILAM).AND. .NOT.(ANY(TSTATION%P(:,II) == 0.))) THEN
-    ALLOCATE (ZSV(1,1,SIZE(tstation%tpdates),NSV_AER))
-    ALLOCATE (ZRHO(1,1,SIZE(tstation%tpdates)))
-    ALLOCATE (ZN0(1,1,SIZE(tstation%tpdates),JPMODE))
-    ALLOCATE (ZRG(1,1,SIZE(tstation%tpdates),JPMODE))
-    ALLOCATE (ZSIG(1,1,SIZE(tstation%tpdates),JPMODE))
-    ALLOCATE (ZPTOTA(1,1,SIZE(tstation%tpdates),NSP+NCARB+NSOA,JPMODE))
-    ZSV(1,1,:,1:NSV_AER) = TSTATION%SV(:,II,NSV_AERBEG:NSV_AEREND)
-    IF (SIZE(TSTATION%R,3) >0) THEN
-      ZRHO(1,1,:) = 0.
-      DO JRR=1,SIZE(TSTATION%R,3)
-        ZRHO(1,1,:) = ZRHO(1,1,:) + TSTATION%R(:,II,JRR)
-      ENDDO
-      ZRHO(1,1,:) = TSTATION%TH(:,II) * ( 1. + XRV/XRD*TSTATION%R(:,II,1) )  &
-                                      / ( 1. + ZRHO(1,1,:)                ) 
+if ( lcartesian ) then
+  call Add_point( 'X', 'X Pos', 'm', SPREAD( tpstation%xx, 1, istore ) )
+  call Add_point( 'Y', 'Y Pos', 'm', SPREAD( tpstation%xy, 1, istore ) )
+  call Add_point( 'U', 'Axial velocity',       'm s-1', tpstation%xzon(:) )
+  call Add_point( 'V', 'Transversal velocity', 'm s-1', tpstation%xmer(:) )
+else
+  call Add_point( 'LON', 'Longitude', 'degree', SPREAD( tpstation%xlon, 1, istore ) )
+  call Add_point( 'LAT', 'Latitude',  'degree', SPREAD( tpstation%xlat, 1, istore ) )
+  call Add_point( 'ZON_WIND', 'Zonal wind',      'm s-1', tpstation%xzon(:) )
+  call Add_point( 'MER_WIND', 'Meridional wind', 'm s-1', tpstation%xmer(:) )
+end if
+
+call Add_point( 'W',  'Air vertical speed',    'm s-1', tpstation%xw(:)  )
+call Add_point( 'Th', 'Potential temperature', 'K',     tpstation%xth(:) )
+
+if ( ldiag_surfrad ) then
+  if ( csurf == "EXTE" ) then
+    call Add_point( 'T2m',    '2-m temperature',        'K',       tpstation%xt2m(:)    )
+    call Add_point( 'Q2m',    '2-m humidity',           'kg kg-1', tpstation%xq2m(:)    )
+    call Add_point( 'HU2m',   '2-m relative humidity',  'percent', tpstation%xhu2m(:)   )
+    call Add_point( 'zon10m', '10-m zonal wind',        'm s-1',   tpstation%xzon10m(:) )
+    call Add_point( 'mer10m', '10-m meridian wind',     'm s-1',   tpstation%xmer10m(:) )
+    call Add_point( 'RN',     'Net radiation',          'W m-2',   tpstation%xrn(:)     )
+    call Add_point( 'H',      'Sensible heat flux',     'W m-2',   tpstation%xh(:)      )
+    call Add_point( 'LE',     'Total Latent heat flux', 'W m-2',   tpstation%xle(:)     )
+    call Add_point( 'G',      'Storage heat flux',      'W m-2',   tpstation%xgflux(:)  )
+    call Add_point( 'LEI',    'Solid Latent heat flux', 'W m-2',   tpstation%xlei(:)    )
+  end if
+  if ( crad /= 'NONE' ) then
+    call Add_point( 'SWD',    'Downward short-wave radiation',         'W m-2', tpstation%xswd(:)    )
+    call Add_point( 'SWU',    'Upward short-wave radiation',           'W m-2', tpstation%xswu(:)    )
+    call Add_point( 'LWD',    'Downward long-wave radiation',          'W m-2', tpstation%xlwd(:)    )
+    call Add_point( 'LWU',    'Upward long-wave radiation',            'W m-2', tpstation%xlwu(:)    )
+    call Add_point( 'SWDIR',  'Downward direct short-wave radiation',  'W m-2', tpstation%xswdir(:)  )
+    call Add_point( 'SWDIFF', 'Downward diffuse short-wave radiation', 'W m-2', tpstation%xswdiff(:) )
+    call Add_point( 'DSTAOD', 'Dust aerosol optical depth',            'm',     tpstation%xdstaod(:) )
+  end if
+end if
+
+do jrr = 1, SIZE( tpstation%xr, 2 )
+  select case( jrr )
+    case (1)
+      call Add_point( 'Rv', 'Water vapor mixing ratio',        'kg kg-1', tpstation%xr(:,jrr) )
+    case (2)
+      call Add_point( 'Rc', 'Liquid cloud water mixing ratio', 'kg kg-1', tpstation%xr(:,jrr) )
+    case (3)
+      call Add_point( 'Rr', 'Rain water mixing ratio',         'kg kg-1', tpstation%xr(:,jrr) )
+    case (4)
+      call Add_point( 'Ri', 'Ice cloud water mixing ratio',    'kg kg-1', tpstation%xr(:,jrr) )
+    case (5)
+      call Add_point( 'Rs', 'Snow mixing ratio',               'kg kg-1', tpstation%xr(:,jrr) )
+    case (6)
+      call Add_point( 'Rg', 'Graupel mixing ratio',            'kg kg-1', tpstation%xr(:,jrr) )
+    case (7)
+      call Add_point( 'Rh', 'Hail mixing ratio',               'kg kg-1', tpstation%xr(:,jrr) )
+  end select
+end do
+
+if ( cturb == 'TKEL' ) call Add_point( 'Tke', 'Turbulent kinetic energy', 'm2 s-2', tpstation%xtke(:) )
+
+if ( nsv > 0 ) then
+  ! Scalar variables
+  DO JSV = 1, NSV
+    IF ( TRIM( TSVLIST(JSV)%CUNITS ) == 'ppv' ) THEN
+      !*1e9 for conversion ppv->ppb
+      call Add_point( TRIM( TSVLIST(JSV)%CMNHNAME ), '', 'ppb', TPSTATION%XSV(:,JSV) * 1.e9 )
     ELSE
-      ZRHO(1,1,:) = TSTATION%TH(:,II)
+      call Add_point( TRIM( TSVLIST(JSV)%CMNHNAME ), '', TSVLIST(JSV)%CUNITS, TPSTATION%XSV(:,JSV) )
+    END IF
+  END DO
+
+  IF ((LORILAM).AND. .NOT.(ANY(TPSTATION%XP(:) == 0.))) THEN
+    ALLOCATE (ZSV(1,1,ISTORE,NSV_AER))
+    ALLOCATE (ZRHO(1,1,ISTORE))
+    ALLOCATE (ZN0(1,1,ISTORE,JPMODE))
+    ALLOCATE (ZRG(1,1,ISTORE,JPMODE))
+    ALLOCATE (ZSIG(1,1,ISTORE,JPMODE))
+    ALLOCATE (ZPTOTA(1,1,ISTORE,NSP+NCARB+NSOA,JPMODE))
+    ZSV(1,1,:,1:NSV_AER) = TPSTATION%XSV(:,NSV_AERBEG:NSV_AEREND)
+    IF (SIZE(TPSTATION%XR,2) >0) THEN
+      ZRHO(1,1,:) = 0.
+      DO JRR=1,SIZE(TPSTATION%XR,2)
+        ZRHO(1,1,:) = ZRHO(1,1,:) + TPSTATION%XR(:,JRR)
+      ENDDO
+      ZRHO(1,1,:) = TPSTATION%XTH(:) * ( 1. + XRV/XRD*TPSTATION%XR(:,1) )  &
+                                      / ( 1. + ZRHO(1,1,:)                )
+    ELSE
+      ZRHO(1,1,:) = TPSTATION%XTH(:)
     ENDIF
-    ZRHO(1,1,:) =  TSTATION%P(:,II) / &
-                  (XRD *ZRHO(1,1,:) *((TSTATION%P(:,II)/XP00)**(XRD/XCPD)) )
+    ZRHO(1,1,:) =  TPSTATION%XP(:) / &
+                  (XRD *ZRHO(1,1,:) *((TPSTATION%XP(:)/XP00)**(XRD/XCPD)) )
 
-
-   CALL PPP2AERO(ZSV,ZRHO, PSIG3D=ZSIG, PRG3D=ZRG, PN3D=ZN0,PCTOTA=ZPTOTA)
+    CALL PPP2AERO(ZSV,ZRHO, PSIG3D=ZSIG, PRG3D=ZRG, PN3D=ZN0,PCTOTA=ZPTOTA)
 
     DO JSV=1,JPMODE
       ! mean radius
-      JPROC = JPROC+1
-      WRITE(YTITLE(JPROC),'(A6,I1)')'AERRGA',JSV
-      YUNIT    (JPROC) = 'um'
-      WRITE(YCOMMENT(JPROC),'(A18,I1)')'RG (nb) AERO MODE ',JSV
-      ZWORK6 (1,1,1,:,1,JPROC) = ZRG(1,1,:,JSV)
+      WRITE(YTITLE,'(A6,I1)')'AERRGA',JSV
+      WRITE(YCOMMENT,'(A18,I1)')'RG (nb) AERO MODE ',JSV
+      call Add_point( ytitle, ycomment, 'um', ZRG(1,1,:,JSV) )
+
       ! standard deviation
-      JPROC = JPROC+1
-      WRITE(YTITLE(JPROC),'(A7,I1)')'AERSIGA',JSV
-      YUNIT    (JPROC) = '  '
-      WRITE(YCOMMENT(JPROC),'(A16,I1)')'SIGMA AERO MODE ',JSV
-      ZWORK6 (1,1,1,:,1,JPROC) = ZSIG(1,1,:,JSV)
+      WRITE(YTITLE,'(A7,I1)')'AERSIGA',JSV
+      WRITE(YCOMMENT,'(A16,I1)')'SIGMA AERO MODE ',JSV
+      call Add_point( ytitle, ycomment, '',ZSIG(1,1,:,JSV) )
+
       ! particles number
-      JPROC = JPROC+1
-      WRITE(YTITLE(JPROC),'(A6,I1)')'AERN0A',JSV
-      YUNIT    (JPROC) = 'm-3'
-      WRITE(YCOMMENT(JPROC),'(A13,I1)')'N0 AERO MODE ',JSV
-      ZWORK6 (1,1,1,:,1,JPROC) = ZN0(1,1,:,JSV)
-      JPROC = JPROC+1
-      WRITE(YTITLE(JPROC),'(A5,I1)')'MOC  ',JSV
-      YUNIT    (JPROC) = 'ug m-3'
-      WRITE(YCOMMENT,'(A23,I1)')'MASS OC   AEROSOL MODE ',JSV
-      ZWORK6(1,1,1,:,1,JPROC)=ZPTOTA(1,1,:,JP_AER_OC,JSV)
+      WRITE(YTITLE,'(A6,I1)')'AERN0A',JSV
+      WRITE(YCOMMENT,'(A13,I1)')'N0 AERO MODE ',JSV
+      call Add_point( ytitle, ycomment, 'm-3', ZN0(1,1,:,JSV) )
 
-      JPROC = JPROC+1
-      WRITE(YTITLE(JPROC),'(A5,I1)')'MBC  ',JSV
-      YUNIT    (JPROC) = 'ug m-3'
-      WRITE(YCOMMENT,'(A23,I1)')'MASS BC   AEROSOL MODE ',JSV
-      ZWORK6(1,1,1,:,1,JPROC)=ZPTOTA(1,1,:,JP_AER_BC,JSV)
+      WRITE(YTITLE,'(A5,I1)')'MOC  ',JSV
+      WRITE(CCOMMENT,'(A23,I1)')'MASS OC   AEROSOL MODE ',JSV
+      call Add_point( ytitle, ycomment, 'ug m-3', ZPTOTA(1,1,:,JP_AER_OC,JSV) )
 
-      JPROC = JPROC+1
-      WRITE(YTITLE(JPROC),'(A5,I1)')'MDST  ',JSV
-      YUNIT    (JPROC) = 'ug m-3'
-      WRITE(YCOMMENT,'(A23,I1)')'MASS DST   AEROSOL MODE ',JSV
-      ZWORK6(1,1,1,:,1,JPROC)=ZPTOTA(1,1,:,JP_AER_DST,JSV)
+      WRITE(YTITLE,'(A5,I1)')'MBC  ',JSV
+      WRITE(CCOMMENT,'(A23,I1)')'MASS BC   AEROSOL MODE ',JSV
+      call Add_point( ytitle, ycomment, 'ug m-3', ZPTOTA(1,1,:,JP_AER_BC,JSV) )
 
-      JPROC = JPROC+1
-      WRITE(YTITLE(JPROC),'(A5,I1)')'MSO4 ',JSV
-      YUNIT    (JPROC) = 'ug m-3'
-      WRITE(YCOMMENT,'(A23,I1)')'MASS SO4  AEROSOL MODE ',JSV
-      ZWORK6(1,1,1,:,1,JPROC)=ZPTOTA(1,1,:,JP_AER_SO4,JSV)
+      WRITE(YTITLE,'(A5,I1)')'MDST  ',JSV
+      WRITE(CCOMMENT,'(A23,I1)')'MASS DST   AEROSOL MODE ',JSV
+      call Add_point( ytitle, ycomment, 'ug m-3', ZPTOTA(1,1,:,JP_AER_DST,JSV) )
 
-      JPROC = JPROC+1
-      WRITE(YTITLE(JPROC),'(A5,I1)')'MNO3 ',JSV
-      YUNIT    (JPROC) = 'ug m-3'
-      WRITE(YCOMMENT,'(A23,I1)')'MASS NO3  AEROSOL MODE ',JSV
-      ZWORK6(1,1,1,:,1,JPROC)=ZPTOTA(1,1,:,JP_AER_NO3,JSV)
+      WRITE(YTITLE,'(A5,I1)')'MSO4 ',JSV
+      WRITE(CCOMMENT,'(A23,I1)')'MASS SO4  AEROSOL MODE ',JSV
+      call Add_point( ytitle, ycomment, 'ug m-3', ZPTOTA(1,1,:,JP_AER_SO4,JSV) )
 
-      JPROC = JPROC+1
-      WRITE(YTITLE(JPROC),'(A5,I1)')'MH2O ',JSV
-      YUNIT    (JPROC) = 'ug m-3'
-      WRITE(YCOMMENT,'(A23,I1)')'MASS H2O  AEROSOL MODE ',JSV
-      ZWORK6(1,1,1,:,1,JPROC)=ZPTOTA(1,1,:,JP_AER_H2O,JSV)
-      JPROC = JPROC+1
-      WRITE(YTITLE(JPROC),'(A5,I1)')'MNH3 ',JSV
-      YUNIT    (JPROC) = 'ug m-3'
-      WRITE(YCOMMENT,'(A23,I1)')'MASS NH3  AEROSOL MODE ',JSV
-      ZWORK6(1,1,1,:,1,JPROC)=ZPTOTA(1,1,:,JP_AER_NH3,JSV)
-      JPROC = JPROC+1
-      IF (NSOA == 10) THEN
-      WRITE(YTITLE(JPROC),'(A5,I1)')'MSOA1',JSV
-      YUNIT    (JPROC) = 'ug m-3'
-      WRITE(YCOMMENT,'(A23,I1)')'MASS SOA1 AEROSOL MODE ',JSV
-      ZWORK6(1,1,1,:,1,JPROC)=ZPTOTA(1,1,:,JP_AER_SOA1,JSV)
-      JPROC = JPROC+1
-      WRITE(YTITLE(JPROC),'(A5,I1)')'MSOA2',JSV
-      YUNIT    (JPROC) = 'ug m-3'
-      WRITE(YCOMMENT,'(A23,I1)')'MASS SOA2 AEROSOL MODE ',JSV
-      ZWORK6(1,1,1,:,1,JPROC)=ZPTOTA(1,1,:,JP_AER_SOA2,JSV)
-      JPROC = JPROC+1
-      WRITE(YTITLE(JPROC),'(A5,I1)')'MSOA3',JSV
-      YUNIT    (JPROC) = 'ug m-3'
-      WRITE(YCOMMENT,'(A23,I1)')'MASS SOA3 AEROSOL MODE ',JSV
-      ZWORK6(1,1,1,:,1,JPROC)=ZPTOTA(1,1,:,JP_AER_SOA3,JSV)
-      JPROC = JPROC+1
-      WRITE(YTITLE(JPROC),'(A5,I1)')'MSOA4',JSV
-      YUNIT    (JPROC) = 'ug m-3'
-      WRITE(YCOMMENT,'(A23,I1)')'MASS SOA4 AEROSOL MODE ',JSV
-      ZWORK6(1,1,1,:,1,JPROC)=ZPTOTA(1,1,:,JP_AER_SOA4,JSV)
-      JPROC = JPROC+1
-      WRITE(YTITLE(JPROC),'(A5,I1)')'MSOA5',JSV
-      YUNIT    (JPROC) = 'ug m-3'
-      WRITE(YCOMMENT,'(A23,I1)')'MASS SOA5 AEROSOL MODE ',JSV
-      ZWORK6(1,1,1,:,1,JPROC)=ZPTOTA(1,1,:,JP_AER_SOA5,JSV)
-      JPROC = JPROC+1
-      WRITE(YTITLE(JPROC),'(A5,I1)')'MSOA6',JSV
-      YUNIT    (JPROC) = 'ug m-3'
-      WRITE(YCOMMENT,'(A23,I1)')'MASS SOA6 AEROSOL MODE ',JSV
-      ZWORK6(1,1,1,:,1,JPROC)=ZPTOTA(1,1,:,JP_AER_SOA6,JSV)
-      JPROC = JPROC+1
-      WRITE(YTITLE(JPROC),'(A5,I1)')'MSOA7',JSV
-      YUNIT    (JPROC) = 'ug m-3'
-      WRITE(YCOMMENT,'(A23,I1)')'MASS SOA7 AEROSOL MODE ',JSV
-      ZWORK6(1,1,1,:,1,JPROC)=ZPTOTA(1,1,:,JP_AER_SOA7,JSV)
-      JPROC = JPROC+1
-      WRITE(YTITLE(JPROC),'(A5,I1)')'MSOA8',JSV
-      YUNIT    (JPROC) = 'ug m-3'
-      WRITE(YCOMMENT,'(A23,I1)')'MASS SOA8 AEROSOL MODE ',JSV
-      ZWORK6(1,1,1,:,1,JPROC)=ZPTOTA(1,1,:,JP_AER_SOA8,JSV)
-      JPROC = JPROC+1
-      WRITE(YTITLE(JPROC),'(A5,I1)')'MSOA9',JSV
-      YUNIT    (JPROC) = 'ug m-3'
-      WRITE(YCOMMENT,'(A23,I1)')'MASS SOA9 AEROSOL MODE ',JSV
-      ZWORK6(1,1,1,:,1,JPROC)=ZPTOTA(1,1,:,JP_AER_SOA9,JSV)
-      JPROC = JPROC+1
-      WRITE(YTITLE(JPROC),'(A6,I1)')'MSOA10',JSV
-      YUNIT    (JPROC) = 'ug m-3'
-      WRITE(YCOMMENT,'(A24,I1)')'MASS SOA10 AEROSOL MODE ',JSV
-      ZWORK6(1,1,1,:,1,JPROC)=ZPTOTA(1,1,:,JP_AER_SOA10,JSV)
+      WRITE(YTITLE,'(A5,I1)')'MNO3 ',JSV
+      WRITE(CCOMMENT,'(A23,I1)')'MASS NO3  AEROSOL MODE ',JSV
+      call Add_point( ytitle, ycomment, 'ug m-3', ZPTOTA(1,1,:,JP_AER_NO3,JSV) )
+
+      WRITE(YTITLE,'(A5,I1)')'MH2O ',JSV
+      WRITE(CCOMMENT,'(A23,I1)')'MASS H2O  AEROSOL MODE ',JSV
+      call Add_point( ytitle, ycomment, 'ug m-3', ZPTOTA(1,1,:,JP_AER_H2O,JSV) )
+
+      WRITE(YTITLE,'(A5,I1)')'MNH3 ',JSV
+      WRITE(CCOMMENT,'(A23,I1)')'MASS NH3  AEROSOL MODE ',JSV
+      call Add_point( ytitle, ycomment, 'ug m-3', ZPTOTA(1,1,:,JP_AER_NH3,JSV) )
+
+      IF ( NSOA == 10 ) THEN
+        WRITE(YTITLE,'(A5,I1)')'MSOA1',JSV
+        WRITE(CCOMMENT,'(A23,I1)')'MASS SOA1 AEROSOL MODE ',JSV
+        call Add_point( ytitle, ycomment, 'ug m-3', ZPTOTA(1,1,:,JP_AER_SOA1,JSV) )
+
+        WRITE(YTITLE,'(A5,I1)')'MSOA2',JSV
+        WRITE(CCOMMENT,'(A23,I1)')'MASS SOA2 AEROSOL MODE ',JSV
+        call Add_point( ytitle, ycomment, 'ug m-3', ZPTOTA(1,1,:,JP_AER_SOA2,JSV) )
+
+        WRITE(YTITLE,'(A5,I1)')'MSOA3',JSV
+        WRITE(CCOMMENT,'(A23,I1)')'MASS SOA3 AEROSOL MODE ',JSV
+        call Add_point( ytitle, ycomment, 'ug m-3', ZPTOTA(1,1,:,JP_AER_SOA3,JSV) )
+
+        WRITE(YTITLE,'(A5,I1)')'MSOA4',JSV
+        WRITE(CCOMMENT,'(A23,I1)')'MASS SOA4 AEROSOL MODE ',JSV
+        call Add_point( ytitle, ycomment, 'ug m-3', ZPTOTA(1,1,:,JP_AER_SOA4,JSV) )
+
+        WRITE(YTITLE,'(A5,I1)')'MSOA5',JSV
+        WRITE(CCOMMENT,'(A23,I1)')'MASS SOA5 AEROSOL MODE ',JSV
+        call Add_point( ytitle, ycomment, 'ug m-3', ZPTOTA(1,1,:,JP_AER_SOA5,JSV) )
+
+        WRITE(YTITLE,'(A5,I1)')'MSOA6',JSV
+        WRITE(CCOMMENT,'(A23,I1)')'MASS SOA6 AEROSOL MODE ',JSV
+        call Add_point( ytitle, ycomment, 'ug m-3', ZPTOTA(1,1,:,JP_AER_SOA6,JSV) )
+
+        WRITE(YTITLE,'(A5,I1)')'MSOA7',JSV
+        WRITE(CCOMMENT,'(A23,I1)')'MASS SOA7 AEROSOL MODE ',JSV
+        call Add_point( ytitle, ycomment, 'ug m-3', ZPTOTA(1,1,:,JP_AER_SOA7,JSV) )
+
+        WRITE(YTITLE,'(A5,I1)')'MSOA8',JSV
+        WRITE(CCOMMENT,'(A23,I1)')'MASS SOA8 AEROSOL MODE ',JSV
+        call Add_point( ytitle, ycomment, 'ug m-3', ZPTOTA(1,1,:,JP_AER_SOA8,JSV) )
+
+        WRITE(YTITLE,'(A5,I1)')'MSOA9',JSV
+        WRITE(CCOMMENT,'(A23,I1)')'MASS SOA9 AEROSOL MODE ',JSV
+        call Add_point( ytitle, ycomment, 'ug m-3', ZPTOTA(1,1,:,JP_AER_SOA9,JSV) )
+
+        WRITE(YTITLE,'(A6,I1)')'MSOA10',JSV
+        WRITE(CCOMMENT,'(A24,I1)')'MASS SOA10 AEROSOL MODE ',JSV
+        call Add_point( ytitle, ycomment, 'ug m-3', ZPTOTA(1,1,:,JP_AER_SOA10,JSV) )
       END IF
-      ENDDO
+    END DO
 
-    DEALLOCATE (ZSV,ZRHO) 
-    DEALLOCATE (ZN0,ZRG,ZSIG) 
+    DEALLOCATE (ZSV,ZRHO)
+    DEALLOCATE (ZN0,ZRG,ZSIG)
   END IF
-  ! dust scalar variables
-  DO JSV = NSV_DSTBEG,NSV_DSTEND
-    JPROC = JPROC+1
-    YTITLE(JPROC)= TRIM(CDUSTNAMES(JSV-NSV_DSTBEG+1))
-    YUNIT    (JPROC) = 'ppb'
-    YCOMMENT (JPROC) = ' '
-    ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%SV(:,II,JSV) *1.E9
-  END DO
-  IF ((LDUST).AND. .NOT.(ANY(TSTATION%P(:,II) == 0.))) THEN
-    ALLOCATE (ZSV(1,1,SIZE(tstation%tpdates),NSV_DST))
-    ALLOCATE (ZRHO(1,1,SIZE(tstation%tpdates)))
-    ALLOCATE (ZN0(1,1,SIZE(tstation%tpdates),NMODE_DST))
-    ALLOCATE (ZRG(1,1,SIZE(tstation%tpdates),NMODE_DST))
-    ALLOCATE (ZSIG(1,1,SIZE(tstation%tpdates),NMODE_DST))
-    ZSV(1,1,:,1:NSV_DST) = TSTATION%SV(:,II,NSV_DSTBEG:NSV_DSTEND)
-    IF (SIZE(TSTATION%R,3) >0) THEN
+
+  IF ((LDUST).AND. .NOT.(ANY(TPSTATION%XP(:) == 0.))) THEN
+    ALLOCATE (ZSV(1,1,ISTORE,NSV_DST))
+    ALLOCATE (ZRHO(1,1,ISTORE))
+    ALLOCATE (ZN0(1,1,ISTORE,NMODE_DST))
+    ALLOCATE (ZRG(1,1,ISTORE,NMODE_DST))
+    ALLOCATE (ZSIG(1,1,ISTORE,NMODE_DST))
+    ZSV(1,1,:,1:NSV_DST) = TPSTATION%XSV(:,NSV_DSTBEG:NSV_DSTEND)
+    IF (SIZE(TPSTATION%XR,2) >0) THEN
       ZRHO(1,1,:) = 0.
-      DO JRR=1,SIZE(TSTATION%R,3)
-        ZRHO(1,1,:) = ZRHO(1,1,:) + TSTATION%R(:,II,JRR)
+      DO JRR=1,SIZE(TPSTATION%XR,2)
+        ZRHO(1,1,:) = ZRHO(1,1,:) + TPSTATION%XR(:,JRR)
       ENDDO
-      ZRHO(1,1,:) = TSTATION%TH(:,II) * ( 1. + XRV/XRD*TSTATION%R(:,II,1) )  &
-                                      / ( 1. + ZRHO(1,1,:)                ) 
+      ZRHO(1,1,:) = TPSTATION%XTH(:) * ( 1. + XRV/XRD*TPSTATION%XR(:,1) )  &
+                                      / ( 1. + ZRHO(1,1,:)                )
     ELSE
-      ZRHO(1,1,:) = TSTATION%TH(:,II)
+      ZRHO(1,1,:) = TPSTATION%XTH(:)
     ENDIF
-    ZRHO(1,1,:) =  TSTATION%P(:,II) / &
-                  (XRD *ZRHO(1,1,:) *((TSTATION%P(:,II)/XP00)**(XRD/XCPD)) )
+    ZRHO(1,1,:) =  TPSTATION%XP(:) / &
+                  (XRD *ZRHO(1,1,:) *((TPSTATION%XP(:)/XP00)**(XRD/XCPD)) )
     CALL PPP2DUST(ZSV,ZRHO, PSIG3D=ZSIG, PRG3D=ZRG, PN3D=ZN0)
     DO JSV=1,NMODE_DST
       ! mean radius
       JPROC = JPROC+1
-      WRITE(YTITLE(JPROC),'(A6,I1)')'DSTRGA',JSV
-      YUNIT    (JPROC) = 'um'
-      WRITE(YCOMMENT(JPROC),'(A18,I1)')'RG (nb) DUST MODE ',JSV
-      ZWORK6 (1,1,1,:,1,JPROC) = ZRG(1,1,:,JSV)
+      WRITE(CTITLE(JPROC),'(A6,I1)')'DSTRGA',JSV
+      CUNIT    (JPROC) = 'um'
+      WRITE(CCOMMENT(JPROC),'(A18,I1)')'RG (nb) DUST MODE ',JSV
+      XWORK6 (1,1,1,:,1,JPROC) = ZRG(1,1,:,JSV)
       ! standard deviation
       JPROC = JPROC+1
-      WRITE(YTITLE(JPROC),'(A7,I1)')'DSTSIGA',JSV
-      YUNIT    (JPROC) = '  '
-      WRITE(YCOMMENT(JPROC),'(A16,I1)')'SIGMA DUST MODE ',JSV
-      ZWORK6 (1,1,1,:,1,JPROC) = ZSIG(1,1,:,JSV)
+      WRITE(CTITLE(JPROC),'(A7,I1)')'DSTSIGA',JSV
+      CUNIT    (JPROC) = '  '
+      WRITE(CCOMMENT(JPROC),'(A16,I1)')'SIGMA DUST MODE ',JSV
+      XWORK6 (1,1,1,:,1,JPROC) = ZSIG(1,1,:,JSV)
       ! particles number
       JPROC = JPROC+1
-      WRITE(YTITLE(JPROC),'(A6,I1)')'DSTN0A',JSV
-      YUNIT    (JPROC) = 'm-3'
-      WRITE(YCOMMENT(JPROC),'(A13,I1)')'N0 DUST MODE ',JSV
-      ZWORK6 (1,1,1,:,1,JPROC) = ZN0(1,1,:,JSV)
+      WRITE(CTITLE(JPROC),'(A6,I1)')'DSTN0A',JSV
+      CUNIT    (JPROC) = 'm-3'
+      WRITE(CCOMMENT(JPROC),'(A13,I1)')'N0 DUST MODE ',JSV
+      XWORK6 (1,1,1,:,1,JPROC) = ZN0(1,1,:,JSV)
     ENDDO
-    DEALLOCATE (ZSV,ZRHO) 
-    DEALLOCATE (ZN0,ZRG,ZSIG) 
+    DEALLOCATE (ZSV,ZRHO)
+    DEALLOCATE (ZN0,ZRG,ZSIG)
   END IF
-  ! sea salt scalar variables
-  DO JSV = NSV_SLTBEG,NSV_SLTEND
-    JPROC = JPROC+1
-    YTITLE(JPROC)= TRIM(CSALTNAMES(JSV-NSV_SLTBEG+1))
-    YUNIT    (JPROC) = 'ppb'
-    YCOMMENT (JPROC) = ' '
-    ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%SV(:,II,JSV) *1.E9
-  END DO
-ENDIF
-!
-  IF ((LSALT).AND. .NOT.(ANY(TSTATION%P(:,II) == 0.))) THEN
-    ALLOCATE (ZSV(1,1,SIZE(tstation%tpdates),NSV_SLT))
-    ALLOCATE (ZRHO(1,1,SIZE(tstation%tpdates)))
-    ALLOCATE (ZN0(1,1,SIZE(tstation%tpdates),NMODE_SLT))
-    ALLOCATE (ZRG(1,1,SIZE(tstation%tpdates),NMODE_SLT))
-    ALLOCATE (ZSIG(1,1,SIZE(tstation%tpdates),NMODE_SLT))
-    ZSV(1,1,:,1:NSV_SLT) = TSTATION%SV(:,II,NSV_SLTBEG:NSV_SLTEND)
-    IF (SIZE(TSTATION%R,3) >0) THEN
+
+  IF ((LSALT).AND. .NOT.(ANY(TPSTATION%XP(:) == 0.))) THEN
+    ALLOCATE (ZSV(1,1,ISTORE,NSV_SLT))
+    ALLOCATE (ZRHO(1,1,ISTORE))
+    ALLOCATE (ZN0(1,1,ISTORE,NMODE_SLT))
+    ALLOCATE (ZRG(1,1,ISTORE,NMODE_SLT))
+    ALLOCATE (ZSIG(1,1,ISTORE,NMODE_SLT))
+    ZSV(1,1,:,1:NSV_SLT) = TPSTATION%XSV(:,NSV_SLTBEG:NSV_SLTEND)
+    IF (SIZE(TPSTATION%XR,2) >0) THEN
       ZRHO(1,1,:) = 0.
-      DO JRR=1,SIZE(TSTATION%R,3)
-        ZRHO(1,1,:) = ZRHO(1,1,:) + TSTATION%R(:,II,JRR)
+      DO JRR=1,SIZE(TPSTATION%XR,2)
+        ZRHO(1,1,:) = ZRHO(1,1,:) + TPSTATION%XR(:,JRR)
       ENDDO
-      ZRHO(1,1,:) = TSTATION%TH(:,II) * ( 1. + XRV/XRD*TSTATION%R(:,II,1) )  &
-                                      / ( 1. + ZRHO(1,1,:)                ) 
+      ZRHO(1,1,:) = TPSTATION%XTH(:) * ( 1. + XRV/XRD*TPSTATION%XR(:,1) )  &
+                                      / ( 1. + ZRHO(1,1,:)                )
     ELSE
-      ZRHO(1,1,:) = TSTATION%TH(:,II)
+      ZRHO(1,1,:) = TPSTATION%XTH(:)
     ENDIF
-    ZRHO(1,1,:) =  TSTATION%P(:,II) / &
-                  (XRD *ZRHO(1,1,:) *((TSTATION%P(:,II)/XP00)**(XRD/XCPD)) )
+    ZRHO(1,1,:) =  TPSTATION%XP(:) / &
+                  (XRD *ZRHO(1,1,:) *((TPSTATION%XP(:)/XP00)**(XRD/XCPD)) )
     CALL PPP2SALT(ZSV,ZRHO, PSIG3D=ZSIG, PRG3D=ZRG, PN3D=ZN0)
     DO JSV=1,NMODE_SLT
       ! mean radius
-      JPROC = JPROC+1
-      WRITE(YTITLE(JPROC),'(A6,I1)')'SLTRGA',JSV
-      YUNIT    (JPROC) = 'um'
-      WRITE(YCOMMENT(JPROC),'(A18,I1)')'RG (nb) SALT MODE ',JSV
-      ZWORK6 (1,1,1,:,1,JPROC) = ZRG(1,1,:,JSV)
-      ! standard deviation
-      JPROC = JPROC+1
-      WRITE(YTITLE(JPROC),'(A7,I1)')'SLTSIGA',JSV
-      YUNIT    (JPROC) = '  '
-      WRITE(YCOMMENT(JPROC),'(A16,I1)')'SIGMA DUST MODE ',JSV
-      ZWORK6 (1,1,1,:,1,JPROC) = ZSIG(1,1,:,JSV)
-      ! particles number
-      JPROC = JPROC+1
-      WRITE(YTITLE(JPROC),'(A6,I1)')'SLTN0A',JSV
-      YUNIT    (JPROC) = 'm-3'
-      WRITE(YCOMMENT(JPROC),'(A13,I1)')'N0 DUST MODE ',JSV
-      ZWORK6 (1,1,1,:,1,JPROC) = ZN0(1,1,:,JSV)
-    ENDDO
-    DEALLOCATE (ZSV,ZRHO) 
-    DEALLOCATE (ZN0,ZRG,ZSIG) 
-  END IF
+      WRITE(CTITLE(JPROC),'(A6,I1)')'SLTRGA',JSV
+      WRITE(CCOMMENT(JPROC),'(A18,I1)')'RG (nb) SALT MODE ',JSV
+      call Add_point( ytitle, ycomment, 'um', ZRG(1,1,:,JSV) )
 
-IF (ANY(TSTATION%TSRAD(:,:)/=XUNDEF)) THEN
-  JPROC = JPROC+1
-  YTITLE   (JPROC) = 'Tsrad'
-  YUNIT    (JPROC) = 'K'
-  YCOMMENT (JPROC) = 'Radiative Surface Temperature'
-  ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%TSRAD(:,II)
-END IF
-!
-IF (ANY(TSTATION%SFCO2(:,:)/=XUNDEF)) THEN
-  JPROC = JPROC+1
-  YTITLE   (JPROC) = 'SFCO2'
-  YUNIT    (JPROC) = 'mg m-2 s-1'
-  YCOMMENT (JPROC) = 'CO2 Surface Flux'
-  ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%SFCO2(:,II)
-END IF
+      ! standard deviation
+      WRITE(CTITLE(JPROC),'(A7,I1)')'SLTSIGA',JSV
+      WRITE(CCOMMENT(JPROC),'(A16,I1)')'SIGMA DUST MODE ',JSV
+      call Add_point( ytitle, ycomment, '',ZSIG(1,1,:,JSV) )
+
+      ! particles number
+      WRITE(CTITLE(JPROC),'(A6,I1)')'SLTN0A',JSV
+      WRITE(CCOMMENT(JPROC),'(A13,I1)')'N0 DUST MODE ',JSV
+      call Add_point( ytitle, ycomment, 'm-3', ZN0(1,1,:,JSV) )
+    ENDDO
+    DEALLOCATE (ZSV,ZRHO)
+    DEALLOCATE (ZN0,ZRG,ZSIG)
+  END IF
+end if
+
+if ( crad /= 'NONE' ) call Add_point( 'Tsrad', 'Radiative Surface Temperature', 'K', tpstation%xtsrad(:) )
+
+if ( ldiag_surfrad ) call Add_point( 'SFCO2', 'CO2 Surface Flux', 'mg m-2 s-1', tpstation%xsfco2(:) )
 !
 !----------------------------------------------------------------------------
 !
 !
-ALLOCATE (ZW6(1,1,1,SIZE(tstation%tpdates),1,JPROC))
-ZW6 = ZWORK6(:,:,:,:,:,:JPROC)
-DEALLOCATE(ZWORK6)
-!
 allocate( tzfields( jproc ) )
 
-tzfields(:)%cmnhname  = ytitle(1 : jproc)
+tzfields(:)%cmnhname  = ctitle(1 : jproc)
 tzfields(:)%cstdname  = ''
-tzfields(:)%clongname = ytitle(1 : jproc)
-tzfields(:)%cunits    = yunit(1 : jproc)
-tzfields(:)%ccomment  = ycomment(1 : jproc)
+tzfields(:)%clongname = ctitle(1 : jproc)
+tzfields(:)%cunits    = cunit(1 : jproc)
+tzfields(:)%ccomment  = ccomment(1 : jproc)
 tzfields(:)%ngrid     = 0
 tzfields(:)%ntype     = TYPEREAL
 tzfields(:)%ndims     = 2
@@ -770,12 +650,12 @@ tzbudiachro%clevels  (NLVL_SUBCATEGORY) = ''
 tzbudiachro%ccomments(NLVL_SUBCATEGORY) = ''
 
 tzbudiachro%lleveluse(NLVL_GROUP)       = .true.
-tzbudiachro%clevels  (NLVL_GROUP)       = ygroup
-tzbudiachro%ccomments(NLVL_GROUP)       = 'Values at position of station ' // Trim( ygroup )
+tzbudiachro%clevels  (NLVL_GROUP)       = tpstation%cname
+tzbudiachro%ccomments(NLVL_GROUP)       = 'Values at position of station ' // Trim( tpstation%cname )
 
 tzbudiachro%lleveluse(NLVL_SHAPE)       = .false.
 tzbudiachro%clevels  (NLVL_SHAPE)       = 'Point'
-tzbudiachro%ccomments(NLVL_SHAPE)       = 'Values at position of station ' // Trim( ygroup )
+tzbudiachro%ccomments(NLVL_SHAPE)       = 'Values at position of station ' // Trim( tpstation%cname )
 
 tzbudiachro%lleveluse(NLVL_TIMEAVG)     = .false.
 tzbudiachro%clevels  (NLVL_TIMEAVG)     = 'Not_time_averaged'
@@ -807,18 +687,45 @@ tzbudiachro%njh        = 1
 tzbudiachro%nkl        = 1
 tzbudiachro%nkh        = 1
 
-call Write_diachro( tpdiafile, tzbudiachro, tzfields, tstation%tpdates, zw6 )
+call Write_diachro( tpdiafile, tzbudiachro, tzfields, tstations_time%tpdates, xwork6(:,:,:,:,:,:jproc) )
 
 deallocate( tzfields )
 
-DEALLOCATE (ZW6)
-DEALLOCATE (YCOMMENT)
-DEALLOCATE (YTITLE  )
-DEALLOCATE (YUNIT   )
-DEALLOCATE (IGRID   )
+!Necessary because global variables (private inside module)
+Deallocate( xwork6  )
+Deallocate (ccomment)
+Deallocate (ctitle  )
+Deallocate (cunit   )
+
 !----------------------------------------------------------------------------
+
+contains
+
+! ######################################################
+subroutine Add_point( htitle, hcomment, hunits, pfield )
+! ######################################################
+
+use mode_msg
+
+character(len=*),   intent(in) :: htitle
+character(len=*),   intent(in) :: hcomment
+character(len=*),   intent(in) :: hunits
+real, dimension(:), intent(in) :: pfield
+
+integer :: jk
+
+jproc = jproc + 1
+
+if ( jproc > iproc ) call Print_msg( NVERB_FATAL, 'IO', 'Add_point', 'more processes than expected' )
+
+ctitle(jproc)   = Trim( htitle)
+ccomment(jproc) = Trim( hcomment )
+cunit(jproc)    = Trim( hunits )
+
+xwork6(1, 1, 1, :, 1, jproc) = pfield(:)
+
+end subroutine Add_point
+
 END SUBROUTINE STATION_DIACHRO_n
-!----------------------------------------------------------------------------
-!----------------------------------------------------------------------------
-!
-END SUBROUTINE WRITE_STATION_n
+
+END MODULE MODE_WRITE_STATION_n

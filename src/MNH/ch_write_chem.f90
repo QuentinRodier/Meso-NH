@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -93,10 +93,10 @@ OPEN(NEWUNIT =  ILU,        &
      STATUS  = 'UNKNOWN'    )
 !
 DO JI = 1, NEQ
-  WRITE(UNIT=ILU,FMT='(3A,E20.8)') "'", CNAMES(JI), "' ", PCONC(JI)*1.E9 ! convert ppp to ppb
+  WRITE(UNIT=ILU,FMT='(3A,E20.8)') "'", CNAMES(JI), "' ", PCONC(JI)*1.E9 ! convert ppv to ppb
 ENDDO
 IF (LORILAM) THEN
-!Conversion  ppp to microgram/m3
+!Conversion  ppv to microgram/m3
 ZMD    = 28.9644E-3
 ! Constants initialization
 ZMI(:) = 250.

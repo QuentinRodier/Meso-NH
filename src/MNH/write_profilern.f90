@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2002-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -10,7 +10,6 @@
 !  G. Delautier      2016: LIMA
 !  C. Lac         10/2016: add visibility diagnostics for fog
 !  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
-!  J. Escobar  16/08/2018: From Pierre & Maud , correction use CNAMES(JSV-NSV_CHEMBEG+1)
 !  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
 !  P. Wautelet 09/10/2020: Write_diachro: use new datatype tpfields
 !  P. Wautelet 03/03/2021: budgets: add tbudiachrometadata type (useful to pass more information to Write_diachro)
@@ -19,38 +18,54 @@
 !  M. Taufour     07/2021: modify RARE for hydrometeors containing ice and add bright band calculation for RARE
 !  P. Wautelet 01/09/2021: fix: correct vertical dimension for ALT and W
 !  P. Wautelet 19/11/2021: bugfix in units for LIMA variables
+!  P. Wautelet 04/02/2022: use TSVLIST to manage metadata of scalar variables
+!  P. Wautelet    04/2022: restructure profilers for better performance, reduce memory usage and correct some problems/bugs
 !-----------------------------------------------------------------
 !      ###########################
 MODULE MODE_WRITE_PROFILER_n
 !      ###########################
-!
+
+use modd_parameters, only: NCOMMENTLGTMAX, NMNHNAMELGTMAX, NUNITLGTMAX
+
 implicit none
 
 private
 
 public :: WRITE_PROFILER_n
 
-CHARACTER(LEN=100), DIMENSION(:), ALLOCATABLE :: CCOMMENT ! comment string
-CHARACTER(LEN=100), DIMENSION(:), ALLOCATABLE :: CTITLE   ! title
-CHARACTER(LEN=100), DIMENSION(:), ALLOCATABLE :: CUNIT    ! physical unit
+CHARACTER(LEN=NCOMMENTLGTMAX), DIMENSION(:), ALLOCATABLE :: CCOMMENT ! comment string
+CHARACTER(LEN=NMNHNAMELGTMAX), DIMENSION(:), ALLOCATABLE :: CTITLE   ! title
+CHARACTER(LEN=NUNITLGTMAX),    DIMENSION(:), ALLOCATABLE :: CUNIT    ! physical unit
 
 REAL, DIMENSION(:,:,:,:,:,:), ALLOCATABLE :: XWORK6   ! contains temporal serie
 
 contains
 !
-!#####################################
-SUBROUTINE WRITE_PROFILER_n(TPDIAFILE)
-!#####################################
+!#######################################
+SUBROUTINE WRITE_PROFILER_n( TPDIAFILE )
+!#######################################
 !
 !
-!****  *WRITE_PROFILER* - write the balloon and aircraft trajectories and records
-!                      in the diachronic file
+!****  *WRITE_PROFILER* - write the profilers records in the diachronic file
 !
 !*      0. DECLARATIONS
 !          ------------
 !
-USE MODD_IO,         ONLY: TFILEDATA
-use MODD_PROFILER_n, only: NUMBPROFILER
+USE MODD_CONF_n,          ONLY: NRR
+USE MODD_DIM_n,           ONLY: NKMAX
+USE MODD_IO,              ONLY: ISNPROC, ISP, TFILEDATA
+USE MODD_DIAG_IN_RUN,     ONLY: LDIAG_IN_RUN
+USE MODD_MPIF
+USE MODD_NSV,             ONLY: NSV
+USE MODD_PARAMETERS,      ONLY: JPVEXT
+USE MODD_PARAM_n,         ONLY: CCLOUD, CRAD, CTURB
+USE MODD_PRECISION,       ONLY: MNHINT_MPI, MNHREAL_MPI
+USE MODD_PROFILER_n,      only: NUMBPROFILER_LOC, TPROFILERS, tprofilers_time
+USE MODD_RADIATIONS_n,    ONLY: NAER
+USE MODD_TYPE_STATPROF,   ONLY: TPROFILERDATA
+!
+USE MODE_MSG
+USE MODE_STATPROF_TOOLS,  ONLY: PROFILER_ALLOCATE
 !
 IMPLICIT NONE
 !
@@ -63,231 +78,408 @@ TYPE(TFILEDATA),  INTENT(IN) :: TPDIAFILE ! diachronic file to write
 !
 !       0.2  declaration of local variables
 !
-INTEGER :: JI
+INTEGER, PARAMETER :: ITAG = 100
+INTEGER :: IERR
+INTEGER :: IKU
+INTEGER :: JP, JS
+INTEGER :: IDX
+INTEGER :: INUMPROF  ! Total number of profilers (for the current model)
+INTEGER :: IPACKSIZE ! Size of the ZPACK buffer
+INTEGER :: IPOS      ! Position in the ZPACK buffer
+INTEGER :: ISTORE
+INTEGER, DIMENSION(:), ALLOCATABLE :: INPROFPRC    ! Array to store the number of profilers per process (for the current model)
+INTEGER, DIMENSION(:), ALLOCATABLE :: IPROFIDS     ! Intermediate array for MPI communication
+INTEGER, DIMENSION(:), ALLOCATABLE :: IPROFPRCRANK ! Array to store the ranks of the processes where the profilers are
+INTEGER, DIMENSION(:), ALLOCATABLE :: IDS          ! Array to store the profiler number to send
+INTEGER, DIMENSION(:), ALLOCATABLE :: IDISP        ! Array to store the displacements for MPI communications
+REAL,    DIMENSION(:), ALLOCATABLE :: ZPACK        ! Buffer to store raw data of a profiler (used for MPI communication)
+TYPE(TPROFILERDATA) :: TZPROFILER
 !
 !----------------------------------------------------------------------------
 !
-DO JI = 1, NUMBPROFILER
-  CALL PROFILER_DIACHRO_n( TPDIAFILE, JI )
-ENDDO
-!
-!----------------------------------------------------------------------------
+IKU = NKMAX + 2 * JPVEXT
+
+ALLOCATE( INPROFPRC(ISNPROC) )
+ALLOCATE( IDS(NUMBPROFILER_LOC) )
+
+!Gather number of profiler present on each process
+CALL MPI_ALLGATHER( NUMBPROFILER_LOC, 1, MNHINT_MPI, INPROFPRC, 1, MNHINT_MPI, TPDIAFILE%NMPICOMM, IERR )
+
+!Store the identification number of local profilers (these numbers are globals)
+DO JS = 1, NUMBPROFILER_LOC
+  IDS(JS) = TPROFILERS(JS)%NID
+END DO
+
+ALLOCATE( IDISP(ISNPROC) )
+IDISP(1) = 0
+DO JP = 2, ISNPROC
+  IDISP(JP) = IDISP(JP-1) + INPROFPRC(JP-1)
+END DO
+
+INUMPROF = SUM( INPROFPRC(:) )
+ALLOCATE( IPROFIDS(INUMPROF) )
+ALLOCATE( IPROFPRCRANK(INUMPROF) )
+
+!Gather the list of all the profilers of all processes
+CALL MPI_ALLGATHERV( IDS(:), NUMBPROFILER_LOC, MNHINT_MPI, IPROFIDS(:), INPROFPRC(:), &
+                     IDISP(:), MNHINT_MPI, TPDIAFILE%NMPICOMM, IERR )
+
+!Store the rank of each process corresponding to a given profiler
+IDX = 1
+IPROFPRCRANK(:) = -1
+DO JP = 1, ISNPROC
+  DO JS = 1, INPROFPRC(JP)
+    IPROFPRCRANK(IPROFIDS(IDX)) = JP
+    IDX = IDX + 1
+  END DO
+END DO
+
+CALL PROFILER_ALLOCATE( TZPROFILER, SIZE( tprofilers_time%tpdates ) )
+
+!Determine the size of the ZPACK buffer used to transfer profiler data in 1 MPI communication
+IF ( ISNPROC > 1 ) THEN
+  ISTORE = SIZE( TPROFILERS_TIME%TPDATES )
+  IPACKSIZE = 6
+  IPACKSIZE = IPACKSIZE + ISTORE * IKU * ( 14 + NRR + NSV + NAER )
+  IF ( CCLOUD == 'C2R2' .OR. CCLOUD == 'KHKO' )  IPACKSIZE = IPACKSIZE + ISTORE * IKU !VISIGUL
+  IF ( CCLOUD /= 'NONE' .AND. CCLOUD /= 'REVE' ) IPACKSIZE = IPACKSIZE + ISTORE * IKU !VISIKUN
+  IF ( CTURB == 'TKEL') IPACKSIZE = IPACKSIZE + ISTORE * IKU !Tke term
+  IF ( CCLOUD == 'ICE3' .OR. CCLOUD == 'ICE4' ) IPACKSIZE = IPACKSIZE + ISTORE * IKU  !CIZ term
+  IPACKSIZE = IPACKSIZE + 4 * ISTORE
+  IF ( LDIAG_IN_RUN ) THEN
+    IPACKSIZE = IPACKSIZE + ISTORE * 10
+    IF ( CRAD /= 'NONE' )  IPACKSIZE = IPACKSIZE + ISTORE * 4
+    IPACKSIZE = IPACKSIZE + ISTORE * IKU !XTKE_DISS term
+  END IF
+
+  ALLOCATE( ZPACK(IPACKSIZE) )
+END IF
+
+IDX = 1
+
+PROFILER: DO JS = 1, INUMPROF
+  IF ( IPROFPRCRANK(JS) == TPDIAFILE%NMASTER_RANK ) THEN
+    !No communication necessary, the profiler data is already on the writer process
+    IF ( ISP == TPDIAFILE%NMASTER_RANK ) THEN
+      TZPROFILER = TPROFILERS(IDX)
+      IDX = IDX + 1
+    END IF
+  ELSE
+    !The profiler data is not on the writer process
+    IF ( ISP == IPROFPRCRANK(JS) ) THEN
+      ! This process has the data and needs to send it to the writer process
+      IPOS = 1
+      ZPACK(IPOS) = TPROFILERS(IDX)%NID;  IPOS = IPOS + 1
+      ZPACK(IPOS) = TPROFILERS(IDX)%XX;   IPOS = IPOS + 1
+      ZPACK(IPOS) = TPROFILERS(IDX)%XY;   IPOS = IPOS + 1
+      ZPACK(IPOS) = TPROFILERS(IDX)%XZ;   IPOS = IPOS + 1
+      ZPACK(IPOS) = TPROFILERS(IDX)%XLON; IPOS = IPOS + 1
+      ZPACK(IPOS) = TPROFILERS(IDX)%XLAT; IPOS = IPOS + 1
+
+      ZPACK(IPOS:IPOS+ISTORE*IKU-1) = RESHAPE( TPROFILERS(IDX)%XZON(:,:), [ISTORE*IKU] ) ; IPOS = IPOS + ISTORE * IKU
+      ZPACK(IPOS:IPOS+ISTORE*IKU-1) = RESHAPE( TPROFILERS(IDX)%XMER(:,:), [ISTORE*IKU] ) ; IPOS = IPOS + ISTORE * IKU
+      ZPACK(IPOS:IPOS+ISTORE*IKU-1) = RESHAPE( TPROFILERS(IDX)%XFF(:,:),  [ISTORE*IKU] ) ; IPOS = IPOS + ISTORE * IKU
+      ZPACK(IPOS:IPOS+ISTORE*IKU-1) = RESHAPE( TPROFILERS(IDX)%XDD(:,:),  [ISTORE*IKU] ) ; IPOS = IPOS + ISTORE * IKU
+      ZPACK(IPOS:IPOS+ISTORE*IKU-1) = RESHAPE( TPROFILERS(IDX)%XW(:,:),   [ISTORE*IKU] ) ; IPOS = IPOS + ISTORE * IKU
+      ZPACK(IPOS:IPOS+ISTORE*IKU-1) = RESHAPE( TPROFILERS(IDX)%XP(:,:),   [ISTORE*IKU] ) ; IPOS = IPOS + ISTORE * IKU
+      ZPACK(IPOS:IPOS+ISTORE*IKU-1) = RESHAPE( TPROFILERS(IDX)%XZZ(:,:),  [ISTORE*IKU] ) ; IPOS = IPOS + ISTORE * IKU
+      IF ( CTURB == 'TKEL') THEN
+        ZPACK(IPOS:IPOS+ISTORE*IKU-1) = RESHAPE( TPROFILERS(IDX)%XTKE(:,:), [ISTORE*IKU] ) ; IPOS = IPOS + ISTORE * IKU
+      END IF
+      ZPACK(IPOS:IPOS+ISTORE*IKU-1) = RESHAPE( TPROFILERS(IDX)%XTH(:,:),        [ISTORE*IKU] ) ; IPOS = IPOS + ISTORE * IKU
+      ZPACK(IPOS:IPOS+ISTORE*IKU-1) = RESHAPE( TPROFILERS(IDX)%XTHV(:,:),       [ISTORE*IKU] ) ; IPOS = IPOS + ISTORE * IKU
+      IF ( CCLOUD == 'C2R2' .OR. CCLOUD == 'KHKO' ) THEN
+        ZPACK(IPOS:IPOS+ISTORE*IKU-1) = RESHAPE( TPROFILERS(IDX)%XVISIGUL(:,:), [ISTORE*IKU] ) ; IPOS = IPOS + ISTORE * IKU
+      END IF
+      IF ( CCLOUD /= 'NONE' .AND. CCLOUD /= 'REVE' ) THEN
+        ZPACK(IPOS:IPOS+ISTORE*IKU-1) = RESHAPE( TPROFILERS(IDX)%XVISIKUN(:,:), [ISTORE*IKU] ) ; IPOS = IPOS + ISTORE * IKU
+      END IF
+      ZPACK(IPOS:IPOS+ISTORE*IKU-1) = RESHAPE( TPROFILERS(IDX)%XCRARE(:,:),     [ISTORE*IKU] ) ; IPOS = IPOS + ISTORE * IKU
+      ZPACK(IPOS:IPOS+ISTORE*IKU-1) = RESHAPE( TPROFILERS(IDX)%XCRARE_ATT(:,:), [ISTORE*IKU] ) ; IPOS = IPOS + ISTORE * IKU
+      IF ( CCLOUD == 'ICE3' .OR. CCLOUD == 'ICE4' ) THEN
+        ZPACK(IPOS:IPOS+ISTORE*IKU-1) = RESHAPE( TPROFILERS(IDX)%XCIZ(:,:), [ISTORE*IKU] ) ; IPOS = IPOS + ISTORE * IKU
+      END IF
+      ZPACK(IPOS:IPOS+ISTORE*IKU-1) = RESHAPE( TPROFILERS(IDX)%XLWCZ(:,:), [ISTORE*IKU] ) ; IPOS = IPOS + ISTORE * IKU
+      ZPACK(IPOS:IPOS+ISTORE*IKU-1) = RESHAPE( TPROFILERS(IDX)%XIWCZ(:,:), [ISTORE*IKU] ) ; IPOS = IPOS + ISTORE * IKU
+      ZPACK(IPOS:IPOS+ISTORE*IKU-1) = RESHAPE( TPROFILERS(IDX)%XRHOD(:,:), [ISTORE*IKU] ) ; IPOS = IPOS + ISTORE * IKU
+
+      ZPACK(IPOS:IPOS+ISTORE*IKU*NRR-1)  = RESHAPE( TPROFILERS(IDX)%XR(:,:,:),   [ISTORE*IKU*NRR]  )
+      IPOS = IPOS + ISTORE * IKU * NRR
+      ZPACK(IPOS:IPOS+ISTORE*IKU*NSV-1)  = RESHAPE( TPROFILERS(IDX)%XSV(:,:,:),  [ISTORE*IKU*NSV]  )
+      IPOS = IPOS + ISTORE * IKU * NSV
+      ZPACK(IPOS:IPOS+ISTORE*IKU*NAER-1) = RESHAPE( TPROFILERS(IDX)%XAER(:,:,:), [ISTORE*IKU*NAER] )
+      IPOS = IPOS + ISTORE * IKU * NAER
+
+      ZPACK(IPOS:IPOS+ISTORE-1) = TPROFILERS(IDX)%XIWV(:); IPOS = IPOS + ISTORE
+      ZPACK(IPOS:IPOS+ISTORE-1) = TPROFILERS(IDX)%XZTD(:); IPOS = IPOS + ISTORE
+      ZPACK(IPOS:IPOS+ISTORE-1) = TPROFILERS(IDX)%XZWD(:); IPOS = IPOS + ISTORE
+      ZPACK(IPOS:IPOS+ISTORE-1) = TPROFILERS(IDX)%XZHD(:); IPOS = IPOS + ISTORE
+
+      IF ( LDIAG_IN_RUN ) THEN
+        ZPACK(IPOS:IPOS+ISTORE-1) = TPROFILERS(IDX)%XT2M;    IPOS = IPOS + ISTORE
+        ZPACK(IPOS:IPOS+ISTORE-1) = TPROFILERS(IDX)%XQ2M;    IPOS = IPOS + ISTORE
+        ZPACK(IPOS:IPOS+ISTORE-1) = TPROFILERS(IDX)%XHU2M;   IPOS = IPOS + ISTORE
+        ZPACK(IPOS:IPOS+ISTORE-1) = TPROFILERS(IDX)%XZON10M; IPOS = IPOS + ISTORE
+        ZPACK(IPOS:IPOS+ISTORE-1) = TPROFILERS(IDX)%XMER10M; IPOS = IPOS + ISTORE
+        ZPACK(IPOS:IPOS+ISTORE-1) = TPROFILERS(IDX)%XRN;     IPOS = IPOS + ISTORE
+        ZPACK(IPOS:IPOS+ISTORE-1) = TPROFILERS(IDX)%XH;      IPOS = IPOS + ISTORE
+        ZPACK(IPOS:IPOS+ISTORE-1) = TPROFILERS(IDX)%XLE;     IPOS = IPOS + ISTORE
+        ZPACK(IPOS:IPOS+ISTORE-1) = TPROFILERS(IDX)%XGFLUX;  IPOS = IPOS + ISTORE
+        ZPACK(IPOS:IPOS+ISTORE-1) = TPROFILERS(IDX)%XLEI;    IPOS = IPOS + ISTORE
+        IF ( CRAD /= 'NONE' ) THEN
+          ZPACK(IPOS:IPOS+ISTORE-1) = TPROFILERS(IDX)%XSWD;    IPOS = IPOS + ISTORE
+          ZPACK(IPOS:IPOS+ISTORE-1) = TPROFILERS(IDX)%XSWU;    IPOS = IPOS + ISTORE
+          ZPACK(IPOS:IPOS+ISTORE-1) = TPROFILERS(IDX)%XLWD;    IPOS = IPOS + ISTORE
+          ZPACK(IPOS:IPOS+ISTORE-1) = TPROFILERS(IDX)%XLWU;    IPOS = IPOS + ISTORE
+        END IF
+        ZPACK(IPOS:IPOS+ISTORE*IKU-1) = RESHAPE( TPROFILERS(IDX)%XTKE_DISS(:,:), [ISTORE*IKU] ) ; IPOS = IPOS + ISTORE * IKU
+      END IF
+
+      IF ( IPOS-1 /= IPACKSIZE ) &
+        call Print_msg( NVERB_WARNING, 'IO', 'WRITE_PROFILER_n', 'IPOS-1 /= IPACKSIZE (sender side)', OLOCAL = .TRUE. )
+
+      CALL MPI_SEND( TPROFILERS(IDX)%CNAME, LEN(TPROFILERS(IDX)%CNAME), MPI_CHARACTER, TPDIAFILE%NMASTER_RANK - 1, &
+                     ITAG, TPDIAFILE%NMPICOMM, IERR )
+      CALL MPI_SEND( ZPACK, IPACKSIZE, MNHREAL_MPI, TPDIAFILE%NMASTER_RANK - 1, ITAG, TPDIAFILE%NMPICOMM, IERR )
+
+      IDX = IDX + 1
+
+    ELSE IF ( ISP == TPDIAFILE%NMASTER_RANK ) THEN
+      ! This process is the writer and will receive the profiler data from its owner
+      CALL MPI_RECV( TZPROFILER%CNAME, LEN(TZPROFILER%CNAME), MPI_CHARACTER, &
+                                                    IPROFPRCRANK(JS) - 1, ITAG, TPDIAFILE%NMPICOMM, MPI_STATUS_IGNORE, IERR )
+      CALL MPI_RECV( ZPACK, IPACKSIZE, MNHREAL_MPI, IPROFPRCRANK(JS) - 1, ITAG, TPDIAFILE%NMPICOMM, MPI_STATUS_IGNORE, IERR )
+
+      IPOS = 1
+      TZPROFILER%NID  = NINT( ZPACK(IPOS) ); IPOS = IPOS + 1
+      TZPROFILER%XX   = ZPACK(IPOS);         IPOS = IPOS + 1
+      TZPROFILER%XY   = ZPACK(IPOS);         IPOS = IPOS + 1
+      TZPROFILER%XZ   = ZPACK(IPOS);         IPOS = IPOS + 1
+      TZPROFILER%XLON = ZPACK(IPOS);         IPOS = IPOS + 1
+      TZPROFILER%XLAT = ZPACK(IPOS);         IPOS = IPOS + 1
+
+      TZPROFILER%XZON(:,:) = RESHAPE( ZPACK(IPOS:IPOS+ISTORE*IKU-1), [ ISTORE, IKU ] ) ; IPOS = IPOS + ISTORE * IKU
+      TZPROFILER%XMER(:,:) = RESHAPE( ZPACK(IPOS:IPOS+ISTORE*IKU-1), [ ISTORE, IKU ] ) ; IPOS = IPOS + ISTORE * IKU
+      TZPROFILER%XFF(:,:)  = RESHAPE( ZPACK(IPOS:IPOS+ISTORE*IKU-1), [ ISTORE, IKU ] ) ; IPOS = IPOS + ISTORE * IKU
+      TZPROFILER%XDD(:,:)  = RESHAPE( ZPACK(IPOS:IPOS+ISTORE*IKU-1), [ ISTORE, IKU ] ) ; IPOS = IPOS + ISTORE * IKU
+      TZPROFILER%XW(:,:)   = RESHAPE( ZPACK(IPOS:IPOS+ISTORE*IKU-1), [ ISTORE, IKU ] ) ; IPOS = IPOS + ISTORE * IKU
+      TZPROFILER%XP(:,:)   = RESHAPE( ZPACK(IPOS:IPOS+ISTORE*IKU-1), [ ISTORE, IKU ] ) ; IPOS = IPOS + ISTORE * IKU
+      TZPROFILER%XZZ(:,:)  = RESHAPE( ZPACK(IPOS:IPOS+ISTORE*IKU-1), [ ISTORE, IKU ] ) ; IPOS = IPOS + ISTORE * IKU
+      IF ( CTURB == 'TKEL') THEN
+         TZPROFILER%XTKE(:,:) = RESHAPE( ZPACK(IPOS:IPOS+ISTORE*IKU-1), [ ISTORE, IKU ] ) ; IPOS = IPOS + ISTORE * IKU
+      END IF
+      TZPROFILER%XTH(:,:)        = RESHAPE( ZPACK(IPOS:IPOS+ISTORE*IKU-1), [ ISTORE, IKU ] ) ; IPOS = IPOS + ISTORE * IKU
+      TZPROFILER%XTHV(:,:)       = RESHAPE( ZPACK(IPOS:IPOS+ISTORE*IKU-1), [ ISTORE, IKU ] ) ; IPOS = IPOS + ISTORE * IKU
+      IF ( CCLOUD == 'C2R2' .OR. CCLOUD == 'KHKO' ) THEN
+        TZPROFILER%XVISIGUL(:,:) = RESHAPE( ZPACK(IPOS:IPOS+ISTORE*IKU-1), [ ISTORE, IKU ] ) ; IPOS = IPOS + ISTORE * IKU
+      END IF
+      IF ( CCLOUD /= 'NONE' .AND. CCLOUD /= 'REVE' ) THEN
+        TZPROFILER%XVISIKUN(:,:) = RESHAPE( ZPACK(IPOS:IPOS+ISTORE*IKU-1), [ ISTORE, IKU ] ) ; IPOS = IPOS + ISTORE * IKU
+      END IF
+      TZPROFILER%XCRARE(:,:)     = RESHAPE( ZPACK(IPOS:IPOS+ISTORE*IKU-1), [ ISTORE, IKU ] ) ; IPOS = IPOS + ISTORE * IKU
+      TZPROFILER%XCRARE_ATT(:,:) = RESHAPE( ZPACK(IPOS:IPOS+ISTORE*IKU-1), [ ISTORE, IKU ] ) ; IPOS = IPOS + ISTORE * IKU
+      IF ( CCLOUD == 'ICE3' .OR. CCLOUD == 'ICE4' ) THEN
+        TZPROFILER%XCIZ(:,:) = RESHAPE( ZPACK(IPOS:IPOS+ISTORE*IKU-1), [ ISTORE, IKU ] ) ; IPOS = IPOS + ISTORE * IKU
+      END IF
+      TZPROFILER%XLWCZ(:,:) = RESHAPE( ZPACK(IPOS:IPOS+ISTORE*IKU-1), [ ISTORE, IKU ] ) ; IPOS = IPOS + ISTORE * IKU
+      TZPROFILER%XIWCZ(:,:) = RESHAPE( ZPACK(IPOS:IPOS+ISTORE*IKU-1), [ ISTORE, IKU ] ) ; IPOS = IPOS + ISTORE * IKU
+      TZPROFILER%XRHOD(:,:) = RESHAPE( ZPACK(IPOS:IPOS+ISTORE*IKU-1), [ ISTORE, IKU ] ) ; IPOS = IPOS + ISTORE * IKU
+
+      TZPROFILER%XR(:,:,:)   = RESHAPE( ZPACK(IPOS:IPOS+ISTORE*IKU*NRR-1),  [ ISTORE, IKU, NRR ] )
+      IPOS = IPOS + ISTORE * IKU * NRR
+      TZPROFILER%XSV(:,:,:)  = RESHAPE( ZPACK(IPOS:IPOS+ISTORE*IKU*NSV-1),  [ ISTORE, IKU, NSV ] )
+      IPOS = IPOS + ISTORE * IKU * NSV
+      TZPROFILER%XAER(:,:,:) = RESHAPE( ZPACK(IPOS:IPOS+ISTORE*IKU*NAER-1), [ ISTORE, IKU, NAER ] )
+      IPOS = IPOS + ISTORE * IKU * NAER
+
+      TZPROFILER%XIWV(:) = ZPACK(IPOS:IPOS+ISTORE-1) ; IPOS = IPOS + ISTORE
+      TZPROFILER%XZTD(:) = ZPACK(IPOS:IPOS+ISTORE-1) ; IPOS = IPOS + ISTORE
+      TZPROFILER%XZWD(:) = ZPACK(IPOS:IPOS+ISTORE-1) ; IPOS = IPOS + ISTORE
+      TZPROFILER%XZHD(:) = ZPACK(IPOS:IPOS+ISTORE-1) ; IPOS = IPOS + ISTORE
+
+      IF ( LDIAG_IN_RUN ) THEN
+        TZPROFILER%XT2M    = ZPACK(IPOS:IPOS+ISTORE-1) ; IPOS = IPOS + ISTORE
+        TZPROFILER%XQ2M    = ZPACK(IPOS:IPOS+ISTORE-1) ; IPOS = IPOS + ISTORE
+        TZPROFILER%XHU2M   = ZPACK(IPOS:IPOS+ISTORE-1) ; IPOS = IPOS + ISTORE
+        TZPROFILER%XZON10M = ZPACK(IPOS:IPOS+ISTORE-1) ; IPOS = IPOS + ISTORE
+        TZPROFILER%XMER10M = ZPACK(IPOS:IPOS+ISTORE-1) ; IPOS = IPOS + ISTORE
+        TZPROFILER%XRN     = ZPACK(IPOS:IPOS+ISTORE-1) ; IPOS = IPOS + ISTORE
+        TZPROFILER%XH      = ZPACK(IPOS:IPOS+ISTORE-1) ; IPOS = IPOS + ISTORE
+        TZPROFILER%XLE     = ZPACK(IPOS:IPOS+ISTORE-1) ; IPOS = IPOS + ISTORE
+        TZPROFILER%XGFLUX  = ZPACK(IPOS:IPOS+ISTORE-1) ; IPOS = IPOS + ISTORE
+        TZPROFILER%XLEI    = ZPACK(IPOS:IPOS+ISTORE-1) ; IPOS = IPOS + ISTORE
+        IF ( CRAD /= 'NONE' ) THEN
+          TZPROFILER%XSWD = ZPACK(IPOS:IPOS+ISTORE-1) ; IPOS = IPOS + ISTORE
+          TZPROFILER%XSWU = ZPACK(IPOS:IPOS+ISTORE-1) ; IPOS = IPOS + ISTORE
+          TZPROFILER%XLWD = ZPACK(IPOS:IPOS+ISTORE-1) ; IPOS = IPOS + ISTORE
+          TZPROFILER%XLWU = ZPACK(IPOS:IPOS+ISTORE-1) ; IPOS = IPOS + ISTORE
+        END IF
+        TZPROFILER%XTKE_DISS(:,:) = RESHAPE( ZPACK(IPOS:IPOS+ISTORE*IKU-1), [ ISTORE, IKU ] ) ; IPOS = IPOS + ISTORE * IKU
+      END IF
+
+      IF ( IPOS-1 /= IPACKSIZE ) &
+        call Print_msg( NVERB_WARNING, 'IO', 'WRITE_PROFILER_n', 'IPOS-1 /= IPACKSIZE (receiver side)', OLOCAL = .TRUE. )
+    END IF
+  END IF
+
+  CALL PROFILER_DIACHRO_n( TPDIAFILE, TZPROFILER )
+
+END DO PROFILER
+
+
 END SUBROUTINE WRITE_PROFILER_n
-!----------------------------------------------------------------------------
 
 
-!----------------------------------------------------------------------------
-SUBROUTINE PROFILER_DIACHRO_n( TPDIAFILE, KI )
+! ####################################################
+SUBROUTINE PROFILER_DIACHRO_n( TPDIAFILE, TPPROFILER )
+! ####################################################
 
 use modd_budget,          only: NLVL_CATEGORY, NLVL_SUBCATEGORY, NLVL_GROUP, NLVL_SHAPE, NLVL_TIMEAVG, NLVL_NORM, NLVL_MASK, &
                                 tbudiachrometadata
-USE MODD_DIAG_IN_RUN,     only: LDIAG_IN_RUN
-USE MODD_DUST,            ONLY: CDUSTNAMES, LDUST, NMODE_DST
-USE MODD_CH_AEROSOL,      ONLY: CAERONAMES, LORILAM, JPMODE
-USE MODD_CH_M9_n,         ONLY: CNAMES
+USE MODD_CH_AEROSOL,      ONLY: LORILAM, JPMODE
+USE MODD_CONF_n,          ONLY: NRR
 USE MODD_CST,             ONLY: XRV
-USE MODD_ELEC_DESCR,      ONLY: CELECNAMES
+USE MODD_DIAG_IN_RUN,     only: LDIAG_IN_RUN
+USE MODD_DUST,            ONLY: LDUST, NMODE_DST
+USE MODD_DIM_n,           ONLY: NKMAX
 use modd_field,           only: NMNHDIM_LEVEL, NMNHDIM_LEVEL_W, NMNHDIM_PROFILER_TIME, NMNHDIM_PROFILER_PROC, NMNHDIM_UNUSED, &
-                                tfield_metadata_base, TYPEREAL
-USE MODD_ICE_C1R3_DESCR,  ONLY: C1R3NAMES
+                                tfieldmetadata_base, TYPEREAL
 USE MODD_IO,              ONLY: TFILEDATA
-USE MODD_LG,              ONLY: CLGNAMES
-USE MODD_NSV
-USE MODD_PARAMETERS,      ONLY: XUNDEF
-USE MODD_PARAM_LIMA,      ONLY: NINDICE_CCN_IMM,NMOD_CCN,NMOD_IFN,NMOD_IMM
-USE MODD_PARAM_LIMA_COLD, ONLY: CLIMA_COLD_NAMES
-USE MODD_PARAM_LIMA_WARM, ONLY: CLIMA_WARM_NAMES, CAERO_MASS
-USE MODD_PARAM_n,         ONLY: CRAD
+USE MODD_NSV,             ONLY: tsvlist, nsv, nsv_aer, nsv_aerbeg, nsv_aerend, nsv_dst, nsv_dstbeg, nsv_dstend
+USE MODD_PARAMETERS,      ONLY: JPVEXT, XUNDEF
+USE MODD_PARAM_n,         ONLY: CCLOUD, CRAD, CTURB
 USE MODD_PROFILER_n
 USE MODD_RADIATIONS_n,    ONLY: NAER
-USE MODD_RAIN_C2R2_DESCR, ONLY: C2R2NAMES
-USE MODD_SALT,            ONLY: CSALTNAMES, LSALT
-USE MODD_TYPE_PROFILER
+USE MODD_SALT,            ONLY: LSALT
+USE MODD_TYPE_STATPROF
 !
 USE MODE_AERO_PSD
 USE MODE_DUST_PSD
 use mode_write_diachro,   only: Write_diachro
 !
-TYPE(TFILEDATA),  INTENT(IN) :: TPDIAFILE ! diachronic file to write
-INTEGER,          INTENT(IN) :: KI
+TYPE(TFILEDATA),     INTENT(IN) :: TPDIAFILE ! diachronic file to write
+TYPE(TPROFILERDATA), INTENT(IN) :: TPPROFILER
 !
 !*      0.2  declaration of local variables for diachro
 !
-character(len=2)                                      :: yidx
-character(len=100)                                    :: ycomment
-character(len=100)                                    :: yname
-character(len=40)                                     :: yunits
-CHARACTER(LEN=:),                         allocatable :: YGROUP   ! group title
-INTEGER                                               :: IKU
-INTEGER                                               :: IPROC    ! number of variables records
-INTEGER                                               :: JPROC
-integer                                               :: jproc_alt, jproc_w
-INTEGER                                               :: JRR      ! loop counter
-INTEGER                                               :: JSV      ! loop counter
-integer                                               :: ji
-integer                                               :: irr !Number of moist variables
-REAL, DIMENSION(:,:,:),                   ALLOCATABLE :: ZRHO
-REAL, DIMENSION(:,:,:,:),                 ALLOCATABLE :: ZSV, ZN0, ZSIG, ZRG
-type(tbudiachrometadata)                              :: tzbudiachro
-type(tfield_metadata_base), dimension(:), allocatable :: tzfields
+character(len=NMNHNAMELGTMAX)                        :: yname
+character(len=NUNITLGTMAX)                           :: yunits
+INTEGER                                              :: IKU
+INTEGER                                              :: IPROC    ! number of variables records
+INTEGER                                              :: JPROC
+integer                                              :: jproc_alt, jproc_w
+INTEGER                                              :: JRR      ! loop counter
+INTEGER                                              :: JSV      ! loop counter
+integer                                              :: ji
+INTEGER                                              :: ISTORE
+REAL, DIMENSION(:,:,:),                  ALLOCATABLE :: ZRHO
+REAL, DIMENSION(:,:),                    ALLOCATABLE :: ZWORK
+REAL, DIMENSION(:,:,:,:),                ALLOCATABLE :: ZSV, ZN0, ZSIG, ZRG
+type(tbudiachrometadata)                             :: tzbudiachro
+type(tfieldmetadata_base), dimension(:), allocatable :: tzfields
 !
 !----------------------------------------------------------------------------
-!
-IF (TPROFILER%X(KI)==XUNDEF) RETURN
-IF (TPROFILER%Y(KI)==XUNDEF) RETURN
-!
-IKU = SIZE(TPROFILER%W,2) !Number of vertical levels
+
+IKU = NKMAX + 2 * JPVEXT !Number of vertical levels
 !
 !IPROC is too large (not a big problem) due to the separation between vertical profiles and point values
-IPROC = 25 + SIZE(TPROFILER%R,4) + SIZE(TPROFILER%SV,4)
+IPROC = 25 + NRR + NSV
 IF (LDIAG_IN_RUN) IPROC = IPROC + 15
 IF (LORILAM) IPROC = IPROC + JPMODE*3
 IF (LDUST) IPROC = IPROC + NMODE_DST*3
 IF (LDUST .OR. LORILAM .OR. LSALT) IPROC=IPROC+NAER
-IF (SIZE(TPROFILER%TKE  )>0) IPROC = IPROC + 1
-!
-ALLOCATE (XWORK6(1,1,IKU,size(tprofiler%tpdates),1,IPROC))
-ALLOCATE (CCOMMENT(IPROC))
-ALLOCATE (CTITLE  (IPROC))
-ALLOCATE (CUNIT   (IPROC))
-!
-YGROUP = TPROFILER%NAME(KI)
+IF ( CTURB == 'TKEL' ) IPROC = IPROC + 1
+
+ISTORE = SIZE( TPROFILERS_TIME%TPDATES )
+
+ALLOCATE ( XWORK6(1, 1, IKU, ISTORE, 1, IPROC) )
+ALLOCATE ( CCOMMENT(IPROC) )
+ALLOCATE ( CTITLE  (IPROC) )
+ALLOCATE ( CUNIT   (IPROC) )
 !
 !----------------------------------------------------------------------------
 !Treat vertical profiles
 jproc = 0
 
-call Add_profile( 'Th',       'Potential temperature',         'K',      tprofiler%th        )
-call Add_profile( 'Thv',      'Virtual Potential temperature', 'K',      tprofiler%thv       )
-call Add_profile( 'VISI',     'Visibility',                    'km',     tprofiler%visi      )
-call Add_profile( 'VISIKUN',  'Visibility Kunkel',             'km',     tprofiler%visikun   )
-call Add_profile( 'RARE',     'Radar reflectivity',            'dBZ',    tprofiler%crare     )
-call Add_profile( 'RAREatt',  'Radar attenuated reflectivity', 'dBZ',    tprofiler%crare_att )
-call Add_profile( 'P',        'Pressure',                      'Pa',     tprofiler%p         )
-call Add_profile( 'ALT',      'Altitude',                      'm',      tprofiler%zz        )
+call Add_profile( 'Th',       'Potential temperature',         'K',      tpprofiler%xth        )
+call Add_profile( 'Thv',      'Virtual Potential temperature', 'K',      tpprofiler%xthv       )
+if ( ccloud == 'C2R2' .or. ccloud == 'KHKO' ) &
+  call Add_profile( 'VISIGUL', 'Visibility Gultepe',           'km',     tpprofiler%xvisigul   )
+if ( ccloud /= 'NONE' .and. ccloud /= 'REVE' ) &
+  call Add_profile( 'VISIKUN', 'Visibility Kunkel',            'km',     tpprofiler%xvisikun   )
+call Add_profile( 'RARE',     'Radar reflectivity',            'dBZ',    tpprofiler%xcrare     )
+call Add_profile( 'RAREatt',  'Radar attenuated reflectivity', 'dBZ',    tpprofiler%xcrare_att )
+call Add_profile( 'P',        'Pressure',                      'Pa',     tpprofiler%xp         )
+call Add_profile( 'ALT',      'Altitude',                      'm',      tpprofiler%xzz        )
 !Store position of ALT in the field list. Useful because it is not computed on the same Arakawa-grid points
 jproc_alt = jproc
-call Add_profile( 'ZON_WIND', 'Zonal wind',                    'm s-1',  tprofiler%zon       )
-call Add_profile( 'MER_WIND', 'Meridional wind',               'm s-1',  tprofiler%mer       )
-call Add_profile( 'FF',       'Wind intensity',                'm s-1',  tprofiler%ff        )
-call Add_profile( 'DD',       'Wind direction',                'degree', tprofiler%dd        )
-call Add_profile( 'W',        'Air vertical speed',            'm s-1',  tprofiler%w         )
+call Add_profile( 'ZON_WIND', 'Zonal wind',                    'm s-1',  tpprofiler%xzon       )
+call Add_profile( 'MER_WIND', 'Meridional wind',               'm s-1',  tpprofiler%xmer       )
+call Add_profile( 'FF',       'Wind intensity',                'm s-1',  tpprofiler%xff        )
+call Add_profile( 'DD',       'Wind direction',                'degree', tpprofiler%xdd        )
+call Add_profile( 'W',        'Air vertical speed',            'm s-1',  tpprofiler%xw         )
 !Store position of W in the field list. Useful because it is not computed on the same Arakawa-grid points
 jproc_w = jproc
 
 if ( ldiag_in_run ) &
-  call Add_profile( 'TKE_DISS', 'TKE dissipation rate', 'm2 s-2', tprofiler% tke_diss )
+  call Add_profile( 'TKE_DISS', 'TKE dissipation rate', 'm2 s-2', tpprofiler%xtke_diss )
 
-if ( Size( tprofiler%ciz, 1 ) > 0 ) &
-  call Add_profile( 'CIT',      'Ice concentration',    'kg-3',   tprofiler%ciz )
+if ( ccloud == 'ICE3' .or. ccloud == 'ICE4' ) &
+  call Add_profile( 'CIT',      'Ice concentration',    'kg-3',   tpprofiler%xciz )
 
-irr = Size( tprofiler%r )
-if ( irr >= 1 ) call Add_profile( 'Rv', 'Water vapor mixing ratio',        'kg kg-1', tprofiler%r(:,:,:,1) )
-if ( irr >= 2 ) call Add_profile( 'Rc', 'Liquid cloud water mixing ratio', 'kg kg-1', tprofiler%r(:,:,:,2) )
-if ( irr >= 3 ) call Add_profile( 'Rr', 'Rain water mixing ratio',         'kg kg-1', tprofiler%r(:,:,:,3) )
-if ( irr >= 4 ) call Add_profile( 'Ri', 'Ice cloud water mixing ratio',    'kg kg-1', tprofiler%r(:,:,:,4) )
-if ( irr >= 5 ) call Add_profile( 'Rs', 'Snow mixing ratio',               'kg kg-1', tprofiler%r(:,:,:,5) )
-if ( irr >= 6 ) call Add_profile( 'Rg', 'Graupel mixing ratio',            'kg kg-1', tprofiler%r(:,:,:,6) )
-if ( irr >= 7 ) call Add_profile( 'Rh', 'Hail mixing ratio',               'kg kg-1', tprofiler%r(:,:,:,7) )
+if ( nrr >= 1 ) call Add_profile( 'Rv', 'Water vapor mixing ratio',        'kg kg-1', tpprofiler%xr(:,:,1) )
+if ( nrr >= 2 ) call Add_profile( 'Rc', 'Liquid cloud water mixing ratio', 'kg kg-1', tpprofiler%xr(:,:,2) )
+if ( nrr >= 3 ) call Add_profile( 'Rr', 'Rain water mixing ratio',         'kg kg-1', tpprofiler%xr(:,:,3) )
+if ( nrr >= 4 ) call Add_profile( 'Ri', 'Ice cloud water mixing ratio',    'kg kg-1', tpprofiler%xr(:,:,4) )
+if ( nrr >= 5 ) call Add_profile( 'Rs', 'Snow mixing ratio',               'kg kg-1', tpprofiler%xr(:,:,5) )
+if ( nrr >= 6 ) call Add_profile( 'Rg', 'Graupel mixing ratio',            'kg kg-1', tpprofiler%xr(:,:,6) )
+if ( nrr >= 7 ) call Add_profile( 'Rh', 'Hail mixing ratio',               'kg kg-1', tpprofiler%xr(:,:,7) )
 
-call Add_profile( 'Rhod', 'Density of dry air in moist', 'kg m-3', tprofiler%rhod )
-if ( Size( tprofiler%tke, 1 ) > 0 ) &
-  call Add_profile( 'Tke', 'Turbulent kinetic energy', 'm2 s-2', tprofiler%tke )
+call Add_profile( 'Rhod', 'Density of dry air in moist', 'kg m-3', tpprofiler%xrhod )
+if ( cturb == 'TKEL') &
+  call Add_profile( 'Tke', 'Turbulent kinetic energy', 'm2 s-2', tpprofiler%xtke )
 
-if ( Size( tprofiler%sv, 4 ) > 0  ) then
-  ! User scalar variables
-  do jsv = 1, nsv_user
-    Write ( yname, fmt = '( a2, i3.3 )' ) 'Sv', jsv
-    call Add_profile( yname, '', 'kg kg-1', tprofiler%sv(:,:,:,jsv) )
-  end do
- ! Passive pollutant  scalar variables
-  do jsv = nsv_ppbeg, nsv_ppend
-    Write ( yname, fmt = '( a2, i3.3 )' ) 'Sv', jsv
-    call Add_profile( yname, '', '1', tprofiler%sv(:,:,:,jsv) )
-  end do
- ! microphysical C2R2 scheme scalar variables
-  do jsv = nsv_ppbeg, nsv_ppend
-    call Add_profile( Trim( c2r2names(jsv - nsv_c2r2beg + 1) ), '', 'm-3', tprofiler%sv(:,:,:,jsv) )
-  end do
-  ! microphysical C3R5 scheme additional scalar variables
-  do jsv = nsv_c1r3beg, nsv_c1r3end
-    call Add_profile( Trim( c1r3names(jsv - nsv_c1r3beg + 1) ), '', 'm-3', tprofiler%sv(:,:,:,jsv) )
-  end do
-  ! LIMA variables
-  do jsv = nsv_lima_beg, nsv_lima_end
-    yunits = 'kg-1'
-    if ( jsv == nsv_lima_nc ) then
-      yname = Trim( clima_warm_names(1) ) // 'T'
-    else if ( jsv == nsv_lima_nr ) then
-      yname = Trim( clima_warm_names(2) ) // 'T'
-    else if ( jsv >= nsv_lima_ccn_free .and. jsv < nsv_lima_ccn_free + nmod_ccn ) then
-      Write( yidx, '( i2.2 )' ) jsv - nsv_lima_ccn_free + 1
-      yname = Trim( clima_warm_names(3) ) // yidx // 'T'
-    else if ( jsv >= nsv_lima_ccn_acti .and. jsv < nsv_lima_ccn_acti + nmod_ccn ) then
-      Write( yidx, '( i2.2 )' ) jsv - nsv_lima_ccn_acti + 1
-      yname = Trim( clima_warm_names(4) ) // yidx // 'T'
-    else if ( jsv == nsv_lima_scavmass ) then
-      yname = Trim( caero_mass(1) ) // 'T'
-      yunits = 'kg kg-1'
-    else if ( jsv == nsv_lima_ni ) then
-      yname = Trim( clima_cold_names(1) ) // 'T'
-    else if ( jsv == nsv_lima_ns ) then
-      yname = Trim( clima_cold_names(2) ) // 'T'
-    else if ( jsv == nsv_lima_ng ) then
-      yname = Trim( clima_cold_names(3) ) // 'T'
-    else if ( jsv == nsv_lima_nh ) then
-      yname = Trim( clima_cold_names(4) ) // 'T'
-    else if ( jsv >= nsv_lima_ifn_free .and. jsv < nsv_lima_ifn_free + nmod_ifn ) then
-      Write( yidx, '( i2.2 )' ) jsv - nsv_lima_ifn_free + 1
-      yname = Trim( clima_cold_names(5) ) // yidx // 'T'
-    else if ( jsv >= nsv_lima_ifn_nucl .and. jsv < nsv_lima_ifn_nucl + nmod_ifn ) then
-      Write( yidx, '( i2.2 )' ) jsv - nsv_lima_ifn_nucl + 1
-      yname = Trim( clima_cold_names(6) ) // yidx // 'T'
-    else if ( jsv >= nsv_lima_imm_nucl .and. jsv < nsv_lima_imm_nucl + nmod_imm ) then
-      write( yidx, '( i2.2 )' ) nindice_ccn_imm(jsv - nsv_lima_imm_nucl + 1)
-      yname = Trim( clima_cold_names(7) ) // yidx // 'T'
-    else if ( jsv == nsv_lima_hom_haze ) then
-      yname = Trim( clima_cold_names(8) ) // 'T'
-    else if ( jsv == nsv_lima_spro ) then
-      yname = Trim( clima_warm_names(5) ) // 'T'
+if ( nsv > 0  ) then
+  ! Scalar variables
+  Allocate( zwork, mold = tpprofiler%xsv(:,:,1) )
+  do jsv = 1, nsv
+    if ( Trim( tsvlist(jsv)%cunits ) == 'ppv' ) then
+      yunits = 'ppb'
+      zwork = tpprofiler%xsv(:,:,jsv) * 1.e9 !*1e9 for conversion ppv->ppb
+    else
+      yunits = Trim( tsvlist(jsv)%cunits )
+      zwork = tpprofiler%xsv(:,:,jsv)
     end if
-    call Add_profile( yname, '', yunits, tprofiler%sv(:,:,:,jsv) )
+    call Add_profile( tsvlist(jsv)%cmnhname, '', yunits, zwork )
   end do
-  ! electrical scalar variables
-  do jsv = nsv_elecbeg, nsv_elecend
-    call Add_profile( Trim( celecnames(jsv - nsv_elecbeg + 1) ), '', 'C', tprofiler%sv(:,:,:,jsv) )
-  end do
-  ! chemical scalar variables
-  do jsv = nsv_chembeg, nsv_chemend
-    Write( ycomment, '( a5, a3, i3.3 )' ) 'T(s) ', 'SVT', jsv
-    call Add_profile( Trim( cnames(jsv - nsv_chembeg + 1) ), ycomment, 'ppb', tprofiler%sv(:,:,:,jsv) * 1.e9 )
-  end do
-  IF ( LORILAM .AND. .NOT.(ANY(TPROFILER%P(:,:,KI) == 0.)) ) THEN
-    ALLOCATE (ZSV (1,iku,size(tprofiler%tpdates),NSV_AER))
-    ALLOCATE (ZRHO(1,iku,size(tprofiler%tpdates)))
-    ALLOCATE (ZN0 (1,iku,size(tprofiler%tpdates),JPMODE))
-    ALLOCATE (ZRG (1,iku,size(tprofiler%tpdates),JPMODE))
-    ALLOCATE (ZSIG(1,iku,size(tprofiler%tpdates),JPMODE))
+  Deallocate( zwork )
+
+  IF ( LORILAM .AND. .NOT.(ANY(TPPROFILER%XP(:,:) == 0.)) ) THEN
+    ALLOCATE (ZSV (1,iku,ISTORE,NSV_AER))
+    ALLOCATE (ZRHO(1,iku,ISTORE))
+    ALLOCATE (ZN0 (1,iku,ISTORE,JPMODE))
+    ALLOCATE (ZRG (1,iku,ISTORE,JPMODE))
+    ALLOCATE (ZSIG(1,iku,ISTORE,JPMODE))
     do ji = 1, iku
-      ZSV(1,ji,:,1:NSV_AER) = TPROFILER%SV(:,ji,KI,NSV_AERBEG:NSV_AEREND)
+      ZSV(1,ji,:,1:NSV_AER) = TPPROFILER%XSV(:,ji,NSV_AERBEG:NSV_AEREND)
     end do
-    IF (SIZE(TPROFILER%R,4) >0) THEN
+    IF ( NRR  > 0) THEN
       ZRHO(1,:,:) = 0.
       do ji = 1, iku
-        DO JRR=1,SIZE(TPROFILER%R,4)
-          ZRHO(1,ji,:) = ZRHO(1,ji,:) + TPROFILER%R(:,ji,KI,JRR)
+        DO JRR = 1, NRR
+          ZRHO(1,ji,:) = ZRHO(1,ji,:) + TPPROFILER%XR(:,ji,JRR)
         ENDDO
-        ZRHO(1,ji,:) = TPROFILER%TH(:,ji,KI) * ( 1. + XRV/XRD*TPROFILER%R(:,ji,KI,1) )  &
+        ZRHO(1,ji,:) = TPPROFILER%XTH(:,ji) * ( 1. + XRV/XRD*TPPROFILER%XR(:,ji,1) )  &
                                              / ( 1. + ZRHO(1,ji,:)                )
       end do
     ELSE
       do ji = 1, iku
-        ZRHO(1,ji,:) = TPROFILER%TH(:,ji,KI)
+        ZRHO(1,ji,:) = TPPROFILER%XTH(:,ji)
       end do
     ENDIF
     do ji = 1, iku
-      ZRHO(1,ji,:) =  TPROFILER%P(:,ji,KI) / &
-                      (XRD *ZRHO(1,ji,:) *((TPROFILER%P(:,ji,KI)/XP00)**(XRD/XCPD)) )
+      ZRHO(1,ji,:) =  TPPROFILER%XP(:,ji) / &
+                      (XRD *ZRHO(1,ji,:) *((TPPROFILER%XP(:,ji)/XP00)**(XRD/XCPD)) )
     end do
     CALL PPP2AERO(ZSV,ZRHO, PSIG3D=ZSIG, PRG3D=ZRG, PN3D=ZN0)
     DO JSV=1,JPMODE
@@ -319,36 +511,32 @@ if ( Size( tprofiler%sv, 4 ) > 0  ) then
     DEALLOCATE (ZSV,ZRHO)
     DEALLOCATE (ZN0,ZRG,ZSIG)
   END IF
-  ! dust scalar variables
-  do jsv = nsv_dstbeg, nsv_dstend
-    call Add_profile( Trim( cdustnames(jsv - nsv_dstbeg + 1) ), '', 'ppb', tprofiler%sv(:,:,:,jsv) * 1.e9 )
-  end do
-  IF ((LDUST).AND. .NOT.(ANY(TPROFILER%P(:,:,KI) == 0.))) THEN
-    ALLOCATE (ZSV (1,iku,size(tprofiler%tpdates),NSV_DST))
-    ALLOCATE (ZRHO(1,iku,size(tprofiler%tpdates)))
-    ALLOCATE (ZN0 (1,iku,size(tprofiler%tpdates),NMODE_DST))
-    ALLOCATE (ZRG (1,iku,size(tprofiler%tpdates),NMODE_DST))
-    ALLOCATE (ZSIG(1,iku,size(tprofiler%tpdates),NMODE_DST))
+  IF ((LDUST).AND. .NOT.(ANY(TPPROFILER%XP(:,:) == 0.))) THEN
+    ALLOCATE (ZSV (1,iku,ISTORE,NSV_DST))
+    ALLOCATE (ZRHO(1,iku,ISTORE))
+    ALLOCATE (ZN0 (1,iku,ISTORE,NMODE_DST))
+    ALLOCATE (ZRG (1,iku,ISTORE,NMODE_DST))
+    ALLOCATE (ZSIG(1,iku,ISTORE,NMODE_DST))
     do ji = 1, iku
-      ZSV(1,ji,:,1:NSV_DST) = TPROFILER%SV(:,ji,KI,NSV_DSTBEG:NSV_DSTEND)
+      ZSV(1,ji,:,1:NSV_DST) = TPPROFILER%XSV(:,ji,NSV_DSTBEG:NSV_DSTEND)
     end do
-    IF (SIZE(TPROFILER%R,4) >0) THEN
+    IF ( NRR > 0 ) THEN
       ZRHO(1,:,:) = 0.
       do ji = 1, iku
-        DO JRR=1,SIZE(TPROFILER%R,4)
-          ZRHO(1,ji,:) = ZRHO(1,ji,:) + TPROFILER%R(:,ji,KI,JRR)
+        DO JRR = 1, NRR
+          ZRHO(1,ji,:) = ZRHO(1,ji,:) + TPPROFILER%XR(:,ji,JRR)
         ENDDO
-        ZRHO(1,ji,:) = TPROFILER%TH(:,ji,KI) * ( 1. + XRV/XRD*TPROFILER%R(:,ji,KI,1) )  &
+        ZRHO(1,ji,:) = TPPROFILER%XTH(:,ji) * ( 1. + XRV/XRD*TPPROFILER%XR(:,ji,1) )  &
                                              / ( 1. + ZRHO(1,ji,:)                )
       end do
     ELSE
       do ji = 1, iku
-        ZRHO(1,ji,:) = TPROFILER%TH(:,ji,KI)
+        ZRHO(1,ji,:) = TPPROFILER%XTH(:,ji)
       end do
     ENDIF
     do ji = 1, iku
-      ZRHO(1,ji,:) =  TPROFILER%P(:,ji,KI) / &
-                     (XRD *ZRHO(1,ji,:) *((TPROFILER%P(:,ji,KI)/XP00)**(XRD/XCPD)) )
+      ZRHO(1,ji,:) =  TPPROFILER%XP(:,ji) / &
+                     (XRD *ZRHO(1,ji,:) *((TPPROFILER%XP(:,ji)/XP00)**(XRD/XCPD)) )
     end do
     CALL PPP2DUST(ZSV,ZRHO, PSIG3D=ZSIG, PRG3D=ZRG, PN3D=ZN0)
     DO JSV=1,NMODE_DST
@@ -380,14 +568,10 @@ if ( Size( tprofiler%sv, 4 ) > 0  ) then
     DEALLOCATE (ZSV,ZRHO)
     DEALLOCATE (ZN0,ZRG,ZSIG)
   END IF
-  ! sea salt scalar variables
-  do jsv = nsv_sltbeg, nsv_sltend
-    call Add_profile( Trim( csaltnames(jsv - nsv_sltbeg + 1) ), '', 'ppb', tprofiler%sv(:,:,:,jsv) * 1.e9 )
-  end do
   if ( ldust .or. lorilam .or. lsalt ) then
     do jsv = 1, naer
       Write( yname, '( a, i1 )' ) 'AEREXT', jsv
-      call Add_profile( yname, 'Aerosol Extinction', '1', tprofiler%aer(:,:,:,jsv) )
+      call Add_profile( yname, 'Aerosol Extinction', '1', tpprofiler%xaer(:,:,jsv) )
     end do
   end if
 end if
@@ -420,12 +604,12 @@ tzbudiachro%clevels  (NLVL_SUBCATEGORY) = ''
 tzbudiachro%ccomments(NLVL_SUBCATEGORY) = ''
 
 tzbudiachro%lleveluse(NLVL_GROUP)       = .true.
-tzbudiachro%clevels  (NLVL_GROUP)       = ygroup
-tzbudiachro%ccomments(NLVL_GROUP)       = 'Data at position of profiler ' // Trim( ygroup )
+tzbudiachro%clevels  (NLVL_GROUP)       = tpprofiler%cname
+tzbudiachro%ccomments(NLVL_GROUP)       = 'Data at position of profiler ' // Trim( tpprofiler%cname )
 
 tzbudiachro%lleveluse(NLVL_SHAPE)       = .true.
 tzbudiachro%clevels  (NLVL_SHAPE)       = 'Vertical_profile'
-tzbudiachro%ccomments(NLVL_SHAPE)       = 'Vertical profiles at position of profiler ' // Trim( ygroup )
+tzbudiachro%ccomments(NLVL_SHAPE)       = 'Vertical profiles at position of profiler ' // Trim( tpprofiler%cname )
 
 tzbudiachro%lleveluse(NLVL_TIMEAVG)     = .false.
 tzbudiachro%clevels  (NLVL_TIMEAVG)     = 'Not_time_averaged'
@@ -461,7 +645,7 @@ tzbudiachro%njh        = 1
 tzbudiachro%nkl        = 1
 tzbudiachro%nkh        = iku
 
-call Write_diachro( tpdiafile, tzbudiachro, tzfields, tprofiler%tpdates, xwork6(:,:,:,:,:,:jproc) )
+call Write_diachro( tpdiafile, tzbudiachro, tzfields, tprofilers_time%tpdates, xwork6(:,:,:,:,:,:jproc) )
 
 Deallocate( tzfields )
 Deallocate( xwork6 )
@@ -469,33 +653,33 @@ Deallocate( xwork6 )
 !----------------------------------------------------------------------------
 !Treat point values
 
-ALLOCATE (XWORK6(1,1,1,size(tprofiler%tpdates),1,IPROC))
+ALLOCATE ( XWORK6(1, 1, 1, ISTORE, 1, IPROC) )
 
 jproc = 0
 
 if ( ldiag_in_run ) then
-  call Add_point( 'T2m',    '2-m temperature',               'K',       tprofiler%t2m    )
-  call Add_point( 'Q2m',    '2-m humidity',                  'kg kg-1', tprofiler%q2m    )
-  call Add_point( 'HU2m',   '2-m relative humidity',         'percent', tprofiler%hu2m   )
-  call Add_point( 'zon10m', '10-m zonal wind',               'm s-1',   tprofiler%zon10m )
-  call Add_point( 'mer10m', '10-m meridian wind',            'm s-1',   tprofiler%mer10m )
-  call Add_point( 'RN',     'Net radiation',                 'W m-2',   tprofiler%rn     )
-  call Add_point( 'H',      'Sensible heat flux',            'W m-2',   tprofiler%h      )
-  call Add_point( 'LE',     'Total Latent heat flux',        'W m-2',   tprofiler%le     )
-  call Add_point( 'G',      'Storage heat flux',             'W m-2',   tprofiler%gflux  )
+  call Add_point( 'T2m',    '2-m temperature',               'K',       tpprofiler%xt2m    )
+  call Add_point( 'Q2m',    '2-m humidity',                  'kg kg-1', tpprofiler%xq2m    )
+  call Add_point( 'HU2m',   '2-m relative humidity',         'percent', tpprofiler%xhu2m   )
+  call Add_point( 'zon10m', '10-m zonal wind',               'm s-1',   tpprofiler%xzon10m )
+  call Add_point( 'mer10m', '10-m meridian wind',            'm s-1',   tpprofiler%xmer10m )
+  call Add_point( 'RN',     'Net radiation',                 'W m-2',   tpprofiler%xrn     )
+  call Add_point( 'H',      'Sensible heat flux',            'W m-2',   tpprofiler%xh      )
+  call Add_point( 'LE',     'Total Latent heat flux',        'W m-2',   tpprofiler%xle     )
+  call Add_point( 'G',      'Storage heat flux',             'W m-2',   tpprofiler%xgflux  )
   if ( crad /= 'NONE' ) then
-    call Add_point( 'SWD',  'Downward short-wave radiation', 'W m-2',   tprofiler%swd    )
-    call Add_point( 'SWU',  'Upward short-wave radiation',   'W m-2',   tprofiler%swu    )
-    call Add_point( 'LWD',  'Downward long-wave radiation',  'W m-2',   tprofiler%lwd    )
-    call Add_point( 'LWU',  'Upward long-wave radiation',    'W m-2',   tprofiler%lwu    )
+    call Add_point( 'SWD',  'Downward short-wave radiation', 'W m-2',   tpprofiler%xswd    )
+    call Add_point( 'SWU',  'Upward short-wave radiation',   'W m-2',   tpprofiler%xswu    )
+    call Add_point( 'LWD',  'Downward long-wave radiation',  'W m-2',   tpprofiler%xlwd    )
+    call Add_point( 'LWU',  'Upward long-wave radiation',    'W m-2',   tpprofiler%xlwu    )
   end if
-  call Add_point( 'LEI',    'Solid Latent heat flux',        'W m-2',   tprofiler%lei    )
+  call Add_point( 'LEI',    'Solid Latent heat flux',        'W m-2',   tpprofiler%xlei    )
 end if
 
-call Add_point( 'IWV', 'Integrated Water Vapour',   'kg m-2', tprofiler%iwv )
-call Add_point( 'ZTD', 'Zenith Tropospheric Delay', 'm',      tprofiler%ztd )
-call Add_point( 'ZWD', 'Zenith Wet Delay',          'm',      tprofiler%zwd )
-call Add_point( 'ZHD', 'Zenith Hydrostatic Delay',  'm',      tprofiler%zhd )
+call Add_point( 'IWV', 'Integrated Water Vapour',   'kg m-2', tpprofiler%xiwv )
+call Add_point( 'ZTD', 'Zenith Tropospheric Delay', 'm',      tpprofiler%xztd )
+call Add_point( 'ZWD', 'Zenith Wet Delay',          'm',      tpprofiler%xzwd )
+call Add_point( 'ZHD', 'Zenith Hydrostatic Delay',  'm',      tpprofiler%xzhd )
 
 Allocate( tzfields( jproc ) )
 
@@ -523,12 +707,12 @@ tzbudiachro%clevels  (NLVL_SUBCATEGORY) = ''
 tzbudiachro%ccomments(NLVL_SUBCATEGORY) = ''
 
 tzbudiachro%lleveluse(NLVL_GROUP)       = .true.
-tzbudiachro%clevels  (NLVL_GROUP)       = ygroup
-tzbudiachro%ccomments(NLVL_GROUP)       = 'Data at position of profiler ' // Trim( ygroup )
+tzbudiachro%clevels  (NLVL_GROUP)       = tpprofiler%cname
+tzbudiachro%ccomments(NLVL_GROUP)       = 'Data at position of profiler ' // Trim( tpprofiler%cname )
 
 tzbudiachro%lleveluse(NLVL_SHAPE)       = .true.
 tzbudiachro%clevels  (NLVL_SHAPE)       = 'Point'
-tzbudiachro%ccomments(NLVL_SHAPE)       = 'Values at position of profiler ' // Trim( ygroup )
+tzbudiachro%ccomments(NLVL_SHAPE)       = 'Values at position of profiler ' // Trim( tpprofiler%cname )
 
 tzbudiachro%lleveluse(NLVL_TIMEAVG)     = .false.
 tzbudiachro%clevels  (NLVL_TIMEAVG)     = 'Not_time_averaged'
@@ -560,7 +744,7 @@ tzbudiachro%njh        = 1
 tzbudiachro%nkl        = 1
 tzbudiachro%nkh        = 1
 
-call Write_diachro( tpdiafile, tzbudiachro, tzfields, tprofiler%tpdates, xwork6(:,:,:,:,:,:jproc) )
+call Write_diachro( tpdiafile, tzbudiachro, tzfields, tprofilers_time%tpdates, xwork6(:,:,:,:,:,:jproc) )
 
 Deallocate( tzfields )
 
@@ -574,13 +758,13 @@ JPROC = JPROC + 1
 CTITLE   (JPROC) = 'LON'
 CUNIT    (JPROC) = 'degree'
 CCOMMENT (JPROC) = 'Longitude'
-XWORK6 (1,1,1,:,1,JPROC) = TPROFILER%LON(KI)
+XWORK6 (1,1,1,:,1,JPROC) = TPPROFILER%XLON
 
 JPROC = JPROC + 1
 CTITLE   (JPROC) = 'LAT'
 CUNIT    (JPROC) = 'degree'
 CCOMMENT (JPROC) = 'Latitude'
-XWORK6 (1,1,1,:,1,JPROC) = TPROFILER%LAT(KI)
+XWORK6 (1,1,1,:,1,JPROC) = TPPROFILER%XLAT
 
 Allocate( tzfields( jproc ) )
 
@@ -599,7 +783,7 @@ tzfields(:)%ndimlist(4) = NMNHDIM_UNUSED
 tzfields(:)%ndimlist(5) = NMNHDIM_UNUSED
 tzfields(:)%ndimlist(6) = NMNHDIM_PROFILER_PROC
 
-call Write_diachro( tpdiafile, tzbudiachro, tzfields, tprofiler%tpdates, xwork6(:,:,:,:,:,:jproc) )
+call Write_diachro( tpdiafile, tzbudiachro, tzfields, tprofilers_time%tpdates, xwork6(:,:,:,:,:,:jproc) )
 
 
 !Necessary because global variables (private inside module)
@@ -608,37 +792,10 @@ Deallocate (ccomment)
 Deallocate (ctitle  )
 Deallocate (cunit   )
 
-
 contains
 
 
 subroutine Add_profile( htitle, hcomment, hunits, pfield )
-
-use mode_msg
-
-character(len=*),       intent(in) :: htitle
-character(len=*),       intent(in) :: hcomment
-character(len=*),       intent(in) :: hunits
-real, dimension(:,:,:), intent(in) :: pfield
-
-integer :: jk
-
-jproc = jproc + 1
-
-if ( jproc > iproc ) call Print_msg( NVERB_FATAL, 'IO', 'Add_profile', 'more profiles than expected' )
-
-ctitle(jproc)   = Trim( htitle)
-ccomment(jproc) = Trim( hcomment )
-cunit(jproc)    = Trim( hunits )
-
-do jk = 1, iku
-  xwork6(1, 1, jk, :, 1, jproc) = pfield(:, jk, ki)
-end do
-
-end subroutine Add_profile
-
-
-subroutine Add_point( htitle, hcomment, hunits, pfield )
 
 use mode_msg
 
@@ -651,13 +808,39 @@ integer :: jk
 
 jproc = jproc + 1
 
-if ( jproc > iproc ) call Print_msg( NVERB_FATAL, 'IO', 'Add_profile', 'more profiles than expected' )
+if ( jproc > iproc ) call Print_msg( NVERB_FATAL, 'IO', 'Add_profile', 'more processes than expected' )
+
+ctitle(jproc)   = Trim( htitle )
+ccomment(jproc) = Trim( hcomment )
+cunit(jproc)    = Trim( hunits )
+
+do jk = 1, iku
+  xwork6(1, 1, jk, :, 1, jproc) = pfield(:, jk)
+end do
+
+end subroutine Add_profile
+
+
+subroutine Add_point( htitle, hcomment, hunits, pfield )
+
+use mode_msg
+
+character(len=*),   intent(in) :: htitle
+character(len=*),   intent(in) :: hcomment
+character(len=*),   intent(in) :: hunits
+real, dimension(:), intent(in) :: pfield
+
+integer :: jk
+
+jproc = jproc + 1
+
+if ( jproc > iproc ) call Print_msg( NVERB_FATAL, 'IO', 'Add_point', 'more processes than expected' )
 
 ctitle(jproc)   = Trim( htitle)
 ccomment(jproc) = Trim( hcomment )
 cunit(jproc)    = Trim( hunits )
 
-xwork6(1, 1, 1, :, 1, jproc) = pfield(:, ki)
+xwork6(1, 1, 1, :, 1, jproc) = pfield(:)
 
 end subroutine Add_point
 

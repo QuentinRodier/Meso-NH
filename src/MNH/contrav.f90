@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -21,8 +21,8 @@ REAL, DIMENSION(:,:,:),  INTENT(IN)    ::  PRWT       ! Cartesian comp along z
 REAL, DIMENSION(:,:,:),  INTENT(IN)    ::  PDXX       ! Metric coefficients
 REAL, DIMENSION(:,:,:),  INTENT(IN)    ::  PDYY       ! Metric coefficients
 REAL, DIMENSION(:,:,:),  INTENT(IN)    ::  PDZZ       ! Metric coefficients
-REAL, DIMENSION(:,:,:),  INTENT(IN)    ::  PDZX       ! Metric coefficients
-REAL, DIMENSION(:,:,:),  INTENT(IN)    ::  PDZY       ! Metric coefficients
+REAL, DIMENSION(:,:,:),  INTENT(INOUT) ::  PDZX     ! Metric coefficients
+REAL, DIMENSION(:,:,:),  INTENT(INOUT) ::  PDZY     ! Metric coefficients
 REAL, DIMENSION(:,:,:),  INTENT(OUT)   ::  PRUCT      ! Contrav comp along x-bar
 REAL, DIMENSION(:,:,:),  INTENT(OUT)   ::  PRVCT      ! Contrav comp along y-bar
 REAL, DIMENSION(:,:,:),  INTENT(OUT)   ::  PRWCT      ! Contrav comp along z-bar
@@ -127,8 +127,8 @@ REAL, DIMENSION(:,:,:),  INTENT(IN)    ::  PRWT     ! Cartesian comp along z
 REAL, DIMENSION(:,:,:),  INTENT(IN)    ::  PDXX     ! Metric coefficients
 REAL, DIMENSION(:,:,:),  INTENT(IN)    ::  PDYY     ! Metric coefficients
 REAL, DIMENSION(:,:,:),  INTENT(IN)    ::  PDZZ     ! Metric coefficients
-REAL, DIMENSION(:,:,:),  INTENT(IN)    ::  PDZX     ! Metric coefficients
-REAL, DIMENSION(:,:,:),  INTENT(IN)    ::  PDZY     ! Metric coefficients
+REAL, DIMENSION(:,:,:),  INTENT(INOUT) ::  PDZX     ! Metric coefficients
+REAL, DIMENSION(:,:,:),  INTENT(INOUT) ::  PDZY     ! Metric coefficients
 !
 !
 REAL, DIMENSION(:,:,:),  INTENT(OUT)   ::  PRUCT    ! Contrav comp along x-bar

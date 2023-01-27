@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2018-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
@@ -32,7 +32,7 @@ CONTAINS
 !
 !!   ############################################################
   SUBROUTINE PPP2SNOW(             &
-       PSVT                         & !I [ppp] input scalar variables (moment of distribution)
+       PSVT                         & !I [ppv] input scalar variables (moment of distribution)
        , PRHODREF                   & !I [kg/m3] density of air       
        , PBET3D                     & !O [m] scale parameter of snow distribution
        , PRG3D                      & !O [um] mean radius of snow  distribution
@@ -72,7 +72,7 @@ CONTAINS
 !
 !*      0.1    declarations of arguments
 !
-REAL,       DIMENSION(:,:,:,:),  INTENT(INOUT)  :: PSVT      !I [ppp] first moment
+REAL,       DIMENSION(:,:,:,:),  INTENT(INOUT)  :: PSVT      !I [ppv] first moment
 REAL,       DIMENSION(:,:,:),    INTENT(IN)     :: PRHODREF !I [kg/m3] density of air
 
 REAL,       DIMENSION(:,:,:),  OPTIONAL, INTENT(OUT)     :: PBET3D   !O [-] scale parameter

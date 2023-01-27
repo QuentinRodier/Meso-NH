@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -228,7 +228,7 @@ firstcall: IF (GSFIRSTCALL) THEN
   CALL CH_OPEN_INPUT(CCHEM_INPUT_FILE, "NORMINIT", TZFILE, KLUOUT, KVERB)
   ICHANNEL = TZFILE%NLU
 !
-! read units for initial data (may be "CON" for molec./cm3 or "MIX" for ppp)
+! read units for initial data (may be "CON" for molec./cm3 or "MIX" for ppv)
   READ(ICHANNEL,"(A)") HUNIT
   IF (HUNIT .EQ. "CON") THEN
     IF (KVERB >= 5) THEN

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2019-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2019-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -57,6 +57,7 @@ SUBROUTINE IBM_BALANCE(PPHI,PVOL,PRUS,PRVS,PRWS,PBAL)
   !    MODIFICATIONS
   !    -------------
   !      Original         01/01/2019
+  !  P. Wautelet 31/08/2022: use XDXHAT and XDYHAT instead of XXHAT and XYHAT
   !
   !------------------------------------------------------------------------------
   !       
@@ -69,7 +70,7 @@ SUBROUTINE IBM_BALANCE(PPHI,PVOL,PRUS,PRVS,PRWS,PBAL)
   ! declaration
   USE MODD_CST, ONLY: XPI
   USE MODD_IBM_PARAM_n
-  USE MODD_GRID_n, ONLY: XXHAT,XYHAT,XZHAT,XZZ 
+  USE MODD_GRID_n,     ONLY: XDXHAT, XDYHAT, XZZ
   USE MODD_PARAMETERS, ONLY: JPVEXT,JPHEXT
   USE MODD_LBC_n
   USE MODD_REF_n
@@ -140,7 +141,7 @@ SUBROUTINE IBM_BALANCE(PPHI,PVOL,PRUS,PRVS,PRWS,PBAL)
               JL = 2
               JI2 = JI
               ZIBM_FLUX(JI2,JJ,JK,JL-1) = 0.
-              ZDEL = SQRT((XYHAT(JJ+1)-XYHAT(JJ))*0.5*(XZZ(JI2,JJ,JK+1)-XZZ(JI2,JJ,JK)+XZZ(JI2-1,JJ,JK+1)-XZZ(JI2-1,JJ,JK)))
+              ZDEL = SQRT( XDYHAT(JJ) * 0.5 * (XZZ(JI2,JJ,JK+1)-XZZ(JI2,JJ,JK)+XZZ(JI2-1,JJ,JK+1)-XZZ(JI2-1,JJ,JK)) )
               ZPH1 = PPHI(JI2 ,JJ  ,JK  ,JL)
               ZSIG1 = max(0.,-ZPH1/abs(ZPH1))
               ZVIT1 = ZSIG1*PRUS(JI2,JJ ,JK )
@@ -206,7 +207,7 @@ SUBROUTINE IBM_BALANCE(PPHI,PVOL,PRUS,PRVS,PRWS,PBAL)
               JL = 2
               JI2 = JI+1
               ZIBM_FLUX(JI2,JJ,JK,JL-1) = 0.
-              ZDEL = SQRT((XYHAT(JJ+1)-XYHAT(JJ))*0.5*(XZZ(JI2,JJ,JK+1)-XZZ(JI2,JJ,JK)+XZZ(JI2-1,JJ,JK+1)-XZZ(JI2-1,JJ,JK)))
+              ZDEL = SQRT( XDYHAT(JJ) * 0.5 * (XZZ(JI2,JJ,JK+1)-XZZ(JI2,JJ,JK)+XZZ(JI2-1,JJ,JK+1)-XZZ(JI2-1,JJ,JK)) )
               ZPH1 = PPHI(JI2  ,JJ  ,JK  ,JL)
               ZSIG1 = max(0.,-ZPH1/abs(ZPH1))
               ZVIT1 = ZSIG1*PRUS(JI2,JJ ,JK )
@@ -270,7 +271,7 @@ SUBROUTINE IBM_BALANCE(PPHI,PVOL,PRUS,PRVS,PRWS,PBAL)
               JL = 3 
               JJ2 = JJ
               ZIBM_FLUX(JI,JJ2,JK,JL-1) = 0.
-              ZDEL = SQRT((XXHAT(JI+1)-XXHAT(JI))*0.5*(XZZ(JI,JJ2,JK+1)-XZZ(JI,JJ2,JK)+XZZ(JI,JJ2-1,JK+1)-XZZ(JI,JJ2-1,JK)))
+              ZDEL = SQRT( XDXHAT(JI) * 0.5 * (XZZ(JI,JJ2,JK+1)-XZZ(JI,JJ2,JK)+XZZ(JI,JJ2-1,JK+1)-XZZ(JI,JJ2-1,JK)) )
               ZPH1 = PPHI(JI  ,JJ2  ,JK  ,JL)
               ZSIG1 = max(0.,-ZPH1/abs(ZPH1))
               ZVIT1 = ZSIG1*PRVS(JI ,JJ2,JK )
@@ -335,7 +336,7 @@ SUBROUTINE IBM_BALANCE(PPHI,PVOL,PRUS,PRVS,PRWS,PBAL)
               JL = 3 
               JJ2 = JJ+1
               ZIBM_FLUX(JI,JJ2,JK,JL-1) = 0.
-              ZDEL = SQRT((XXHAT(JI+1)-XXHAT(JI))*0.5*(XZZ(JI,JJ2,JK+1)-XZZ(JI,JJ2,JK)+XZZ(JI,JJ2-1,JK+1)-XZZ(JI,JJ2-1,JK)))
+              ZDEL = SQRT( XDXHAT(JI) * 0.5 * (XZZ(JI,JJ2,JK+1)-XZZ(JI,JJ2,JK)+XZZ(JI,JJ2-1,JK+1)-XZZ(JI,JJ2-1,JK)) )
               ZPH1 = PPHI(JI  ,JJ2  ,JK  ,JL)
               ZSIG1 = max(0.,-ZPH1/abs(ZPH1))
               ZVIT1 = ZSIG1*PRVS(JI ,JJ2,JK )
@@ -401,7 +402,7 @@ SUBROUTINE IBM_BALANCE(PPHI,PVOL,PRUS,PRVS,PRWS,PBAL)
               JL = 4 
               JK2 = JK
               ZIBM_FLUX(JI,JJ,JK2,JL-1) = 0.
-              ZDEL = SQRT((XXHAT(JI+1)-XXHAT(JI))*(XYHAT(JJ+1)-XYHAT(JJ)))
+              ZDEL = SQRT( XDXHAT(JI) * XDYHAT(JJ) )
               ZPH1 = PPHI(JI  ,JJ  ,JK2 ,JL)
               ZSIG1 = max(0.,-ZPH1/abs(ZPH1))
               ZVIT1 = ZSIG1*PRWS(JI ,JJ ,JK2)
@@ -467,7 +468,7 @@ SUBROUTINE IBM_BALANCE(PPHI,PVOL,PRUS,PRVS,PRWS,PBAL)
               JL = 4 
               JK2 = JK+1
               ZIBM_FLUX(JI,JJ,JK2,JL-1) = 0.
-              ZDEL = SQRT((XXHAT(JI+1)-XXHAT(JI))*(XYHAT(JJ+1)-XYHAT(JJ)))
+              ZDEL = SQRT( XDXHAT(JI) * XDYHAT(JJ) )
               ZPH1 = PPHI(JI  ,JJ  ,JK2 ,JL)
               ZSIG1 = max(0.,-ZPH1/abs(ZPH1))
               ZVIT1 = ZSIG1*PRWS(JI ,JJ ,JK2)

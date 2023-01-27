@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -109,7 +109,6 @@ USE MODD_TYPE_DATE
 USE MODD_NESTING
 USE MODD_IO, ONLY: TFILEDATA
 !
-USE MODE_GATHER_ll
 USE MODE_GRIDPROJ
 USE MODE_IO_FIELD_WRITE, only: IO_Field_write
 USE MODE_ll
@@ -127,11 +126,6 @@ INTEGER                           :: IRESP          ! return-code!
 LOGICAL                           :: GPACK
 !
 REAL                              :: ZLATOR, ZLONOR ! geographical coordinates of 1st mass point
-REAL                              :: ZXHATM, ZYHATM ! conformal    coordinates of 1st mass point
-REAL, DIMENSION(:), ALLOCATABLE   :: ZXHAT_ll       !  Position x in the conformal
-                                                    ! plane (array on the complete domain)
-REAL, DIMENSION(:), ALLOCATABLE   :: ZYHAT_ll       !   Position y in the conformal
-                                                    ! plane (array on the complete domain)
 !
 !-------------------------------------------------------------------------------
 !
@@ -163,13 +157,7 @@ IF (.NOT.LCARTESIAN) THEN
   !
   !* diagnostic of 1st mass point
   !
-  ALLOCATE(ZXHAT_ll(NIMAX_ll+ 2 * JPHEXT),ZYHAT_ll(NJMAX_ll+2 * JPHEXT))
-  CALL GATHERALL_FIELD_ll('XX',XXHAT,ZXHAT_ll,IRESP) !//
-  CALL GATHERALL_FIELD_ll('YY',XYHAT,ZYHAT_ll,IRESP) !//
-  ZXHATM = 0.5 * (ZXHAT_ll(1)+ZXHAT_ll(2))
-  ZYHATM = 0.5 * (ZYHAT_ll(1)+ZYHAT_ll(2))
-  CALL SM_LATLON(XLATORI,XLONORI,ZXHATM,ZYHATM,ZLATOR,ZLONOR)
-  DEALLOCATE(ZXHAT_ll,ZYHAT_ll)
+  CALL SM_LATLON( XLATORI, XLONORI, XHATM_BOUND(NEXTE_XMIN), XHATM_BOUND(NEXTE_YMIN), ZLATOR, ZLONOR )
 !
   CALL IO_Field_write(TPFILE,'LONOR',ZLONOR)
   CALL IO_Field_write(TPFILE,'LATOR',ZLATOR)

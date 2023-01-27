@@ -1,4 +1,4 @@
-!ORILAM_LIC Copyright 2008-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!ORILAM_LIC Copyright 2008-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !ORILAM_LIC This is part of the ORILAM software governed by the CeCILL-C licence
 !ORILAM_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !ORILAM_LIC for details.
@@ -214,7 +214,7 @@ IF (LDUST.AND.LSEDIMDUST) THEN
                   XRHODREF(IIB:IIE,IJB:IJE,IKB:IKE), &
                   XPABST(IIB:IIE,IJB:IJE,IKB:IKE), &
                   XZZ(IIB:IIE,IJB:IJE,IKB:IKE+1),    &
-                  ZSVT(IIB:IIE,IJB:IJE,IKB:IKE,:)) !ppp (concentration)
+                  ZSVT(IIB:IIE,IJB:IJE,IKB:IKE,:)) !ppv (concentration)
 !
 DO JSV = NSV_DSTBEG, NSV_DSTEND
     XRSVS(IIB:IIE,IJB:IJE,IKB:IKE,JSV) = ZSVT(IIB:IIE,IJB:IJE,IKB:IKE,JSV-NSV_DSTBEG+1)  *&
@@ -240,7 +240,7 @@ IF ((LSALT).AND.(LSEDIMSALT)) THEN
                   XRHODREF(IIB:IIE,IJB:IJE,IKB:IKE), &
                   XPABST(IIB:IIE,IJB:IJE,IKB:IKE), &
                   XZZ(IIB:IIE,IJB:IJE,IKB:IKE+1),    &
-                  ZSVT(IIB:IIE,IJB:IJE,IKB:IKE,:))  !ppp (concentration)
+                  ZSVT(IIB:IIE,IJB:IJE,IKB:IKE,:))  !ppv (concentration)
 ! -- JORIS DEBUG --
 
 DO JSV = NSV_SLTBEG, NSV_SLTEND

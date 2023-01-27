@@ -1,12 +1,7 @@
-!ORILAM_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!ORILAM_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !ORILAM_LIC This is part of the ORILAM software governed by the CeCILL-C licence
 !ORILAM_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !ORILAM_LIC for details.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 chimie 2006/06/16 13:28:57
 !-----------------------------------------------------------------
 !!   ########################
      MODULE MODI_CH_AER_REALLFI_n
@@ -155,8 +150,8 @@ IF (LINITPM) THEN
 !ZVALOC=2.304978E-9 ! value in kg/m3 (escompte values)
 !ZVALBC=1.E-9  ! value in kg/m3 (default values)
 !ZVALOC=2.E-9 ! value in kg/m3  (default values)
-!ZVALBC= ZVALBC *24.47 / 12. ! conversion into ppp 
-!ZVALOC= ZVALOC *24.47 / 12. ! conversion into ppp
+!ZVALBC= ZVALBC *24.47 / 12. ! conversion into ppv
+!ZVALOC= ZVALOC *24.47 / 12. ! conversion into ppv
 !ZCOEFAEROBC=ZVALBC/ZSUMAEROCO
 !ZCOEFAEROOC=ZVALOC/ZSUMAEROCO
 
@@ -317,7 +312,7 @@ DO JN=1,JPMODE
 !
 ENDDO
 !
-!conversion into ppp
+!conversion into ppv
 DO JJ=1,NSV_AER
   PSV(:,:,:,JJ) =  PSV(:,:,:,JJ) /  (ZDEN2MOL*PRHODREF(:,:,:)) 
 ENDDO

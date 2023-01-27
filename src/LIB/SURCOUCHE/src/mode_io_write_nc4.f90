@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -29,12 +29,14 @@
 !                          IO_Field_partial_write_nc4_N3 and IO_Field_partial_write_nc4_N4 subroutines
 !  P. Wautelet 30/03/2021: budgets: LES cartesian subdomain limits are defined in the physical domain
 !  P. Wautelet 22/03/2022: correct time_les_avg and time_les_avg_bounds coordinates
+!  P. Wautelet    06/2022: reorganize flyers
 !  P. Wautelet 21/06/2022: bugfix: time_budget was not computed correctly (tdtexp -> tdtseg)
+!  P. Wautelet 13/01/2023: IO_Coordvar_write_nc4: add optional dummy argument TPDTMODELN to force written model time
 !-----------------------------------------------------------------
 #ifdef MNH_IOCDF4
 module mode_io_write_nc4
 
-use modd_field,        only: tfielddata
+use modd_field,        only: tfieldmetadata
 use modd_io,           only: gsmonoproc, tfiledata
 use modd_parameters,   only: NMNHNAMELGTMAX
 use modd_precision,    only: CDFINT, MNHINT_NF90, MNHREAL32, MNHREAL_MPI, MNHREAL_NF90
@@ -91,7 +93,7 @@ use mode_tools_ll,   only: Get_globaldims_ll
 use NETCDF,          only: NF90_FLOAT
 
 type(tfiledata),       intent(in) :: tpfile
-type(tfielddata),      intent(in) :: tpfield
+class(tfieldmetadata), intent(in) :: tpfield
 integer,               intent(in) :: knblocks
 
 character(len=len(tpfield%cmnhname))  :: yvarname
@@ -185,7 +187,7 @@ USE MODD_CONF_n, ONLY: CSTORAGE_TYPE
 use modd_field,  only: NMNHDIM_ARAKAWA, TYPEINT, TYPEREAL
 !
 TYPE(TFILEDATA),                              INTENT(IN) :: TPFILE
-TYPE(TFIELDDATA),                             INTENT(IN) :: TPFIELD
+CLASS(TFIELDMETADATA),                        INTENT(IN) :: TPFIELD
 INTEGER(KIND=CDFINT),                         INTENT(IN) :: KVARID
 LOGICAL,                                      INTENT(IN) :: OEXISTED !True if variable was already defined
 INTEGER(KIND=CDFINT), DIMENSION(:), OPTIONAL, INTENT(IN) :: KSHAPE
@@ -381,7 +383,7 @@ use modd_field,     only: NMNHDIM_TIME, TYPECHAR, TYPEDATE, TYPEINT, TYPELOG, TY
 use modd_precision, only: MNHINT_NF90, MNHREAL_NF90
 
 type(tfiledata),       intent(in)            :: tpfile
-type(tfielddata),      intent(in)            :: tpfield
+class(tfieldmetadata), intent(in)            :: tpfield
 integer, dimension(:), intent(in),  optional :: kshape
 character(len=*),      intent(in),  optional :: hcalendar
 logical,               intent(in),  optional :: oiscoord   ! Is a coordinate variable (->do not write coordinates attribute)
@@ -533,7 +535,7 @@ end subroutine IO_Field_create_nc4
 SUBROUTINE IO_Field_write_nc4_X0(TPFILE,TPFIELD,PFIELD,KRESP)
 !
 TYPE(TFILEDATA),       INTENT(IN) :: TPFILE
-TYPE(TFIELDDATA),      INTENT(IN) :: TPFIELD
+CLASS(TFIELDMETADATA), INTENT(IN) :: TPFIELD
 REAL,                  INTENT(IN) :: PFIELD
 INTEGER,               INTENT(OUT):: KRESP
 !
@@ -556,7 +558,7 @@ END SUBROUTINE IO_Field_write_nc4_X0
 SUBROUTINE IO_Field_write_nc4_X1(TPFILE,TPFIELD,PFIELD,KRESP)
 !
 TYPE(TFILEDATA),TARGET,INTENT(IN) :: TPFILE
-TYPE(TFIELDDATA),      INTENT(IN) :: TPFIELD
+CLASS(TFIELDMETADATA), INTENT(IN) :: TPFIELD
 REAL,DIMENSION(:),     INTENT(IN) :: PFIELD   ! array containing the data field
 INTEGER,               INTENT(OUT):: KRESP
 !
@@ -582,19 +584,19 @@ END SUBROUTINE IO_Field_write_nc4_X1
 SUBROUTINE IO_Field_write_nc4_X2(TPFILE,TPFIELD,PFIELD,KRESP,KVERTLEVEL,KZFILE,OISCOORD)
 !
 TYPE(TFILEDATA),       INTENT(IN) :: TPFILE
-TYPE(TFIELDDATA),      INTENT(IN) :: TPFIELD
+CLASS(TFIELDMETADATA), INTENT(IN) :: TPFIELD
 REAL,DIMENSION(:,:),   INTENT(IN) :: PFIELD   ! array containing the data field
 INTEGER,               INTENT(OUT):: KRESP
 INTEGER,OPTIONAL,      INTENT(IN) :: KVERTLEVEL ! Number of the vertical level (needed for Z-level split files)
 INTEGER,OPTIONAL,      INTENT(IN) :: KZFILE     ! Number of the Z-level split file
 LOGICAL,OPTIONAL,      INTENT(IN) :: OISCOORD   ! Is a coordinate variable (->do not write coordinates attribute)
 !
-INTEGER(KIND=CDFINT)      :: istatus
-CHARACTER(LEN=4)          :: YSUFFIX
-INTEGER(KIND=CDFINT)      :: IVARID
-logical                   :: gisempty
-TYPE(TFIELDDATA), pointer :: TZFIELD
-TYPE(TFILEDATA),  POINTER :: TZFILE
+CHARACTER(LEN=4)               :: YSUFFIX
+INTEGER(KIND=CDFINT)           :: istatus
+INTEGER(KIND=CDFINT)           :: IVARID
+logical                        :: gisempty
+CLASS(TFIELDMETADATA), pointer :: TZFIELD
+TYPE(TFILEDATA),       POINTER :: TZFILE
 !
 KRESP = 0
 !
@@ -618,7 +620,7 @@ END SUBROUTINE IO_Field_write_nc4_X2
 SUBROUTINE IO_Field_write_nc4_X3(TPFILE,TPFIELD,PFIELD,KRESP)
 !
 TYPE(TFILEDATA),       INTENT(IN) :: TPFILE
-TYPE(TFIELDDATA),      INTENT(IN) :: TPFIELD
+CLASS(TFIELDMETADATA), INTENT(IN) :: TPFIELD
 REAL,DIMENSION(:,:,:), INTENT(IN) :: PFIELD   ! array containing the data field
 INTEGER,               INTENT(OUT):: KRESP
 !
@@ -644,7 +646,7 @@ END SUBROUTINE IO_Field_write_nc4_X3
 SUBROUTINE IO_Field_write_nc4_X4(TPFILE,TPFIELD,PFIELD,KRESP)
 !
 TYPE(TFILEDATA),           INTENT(IN) :: TPFILE
-TYPE(TFIELDDATA),          INTENT(IN) :: TPFIELD
+CLASS(TFIELDMETADATA),     INTENT(IN) :: TPFIELD
 REAL,DIMENSION(:,:,:,:),   INTENT(IN) :: PFIELD   ! array containing the data field
 INTEGER,                   INTENT(OUT):: KRESP
 !
@@ -670,7 +672,7 @@ END SUBROUTINE IO_Field_write_nc4_X4
 SUBROUTINE IO_Field_write_nc4_X5(TPFILE,TPFIELD,PFIELD,KRESP)
 !
 TYPE(TFILEDATA),           INTENT(IN) :: TPFILE
-TYPE(TFIELDDATA),          INTENT(IN) :: TPFIELD
+CLASS(TFIELDMETADATA),     INTENT(IN) :: TPFIELD
 REAL,DIMENSION(:,:,:,:,:), INTENT(IN) :: PFIELD   ! array containing the data field
 INTEGER,                   INTENT(OUT):: KRESP
 !
@@ -696,7 +698,7 @@ END SUBROUTINE IO_Field_write_nc4_X5
 SUBROUTINE IO_Field_write_nc4_X6(TPFILE,TPFIELD,PFIELD,KRESP)
 !
 TYPE(TFILEDATA),             INTENT(IN) :: TPFILE
-TYPE(TFIELDDATA),            INTENT(IN) :: TPFIELD
+CLASS(TFIELDMETADATA),       INTENT(IN) :: TPFIELD
 REAL,DIMENSION(:,:,:,:,:,:), INTENT(IN) :: PFIELD   ! array containing the data field
 INTEGER,                     INTENT(OUT):: KRESP
 !
@@ -731,7 +733,7 @@ USE MODD_PARAMETERS_ll,  ONLY: JPVEXT
 #endif
 !
 TYPE(TFILEDATA),       INTENT(IN) :: TPFILE
-TYPE(TFIELDDATA),      INTENT(IN) :: TPFIELD
+CLASS(TFIELDMETADATA), INTENT(IN) :: TPFIELD
 INTEGER,               INTENT(IN) :: KFIELD
 INTEGER,               INTENT(OUT):: KRESP
 !
@@ -781,7 +783,7 @@ USE MODD_PARAMETERS_ll,  ONLY: JPVEXT
 #endif
 !
 TYPE(TFILEDATA),       INTENT(IN) :: TPFILE
-TYPE(TFIELDDATA),      INTENT(IN) :: TPFIELD
+CLASS(TFIELDMETADATA), INTENT(IN) :: TPFIELD
 INTEGER, DIMENSION(:), INTENT(IN) :: KFIELD
 INTEGER,               INTENT(OUT):: KRESP
 !
@@ -807,7 +809,7 @@ END SUBROUTINE IO_Field_write_nc4_N1
 SUBROUTINE IO_Field_write_nc4_N2(TPFILE,TPFIELD,KFIELD,KRESP)
 !
 TYPE(TFILEDATA),TARGET,INTENT(IN) :: TPFILE
-TYPE(TFIELDDATA),      INTENT(IN) :: TPFIELD
+CLASS(TFIELDMETADATA), INTENT(IN) :: TPFIELD
 INTEGER,DIMENSION(:,:),INTENT(IN) :: KFIELD   ! array containing the data field
 INTEGER,               INTENT(OUT):: KRESP
 !
@@ -833,7 +835,7 @@ END SUBROUTINE IO_Field_write_nc4_N2
 SUBROUTINE IO_Field_write_nc4_N3(TPFILE,TPFIELD,KFIELD,KRESP)
 !
 TYPE(TFILEDATA),TARGET,  INTENT(IN) :: TPFILE
-TYPE(TFIELDDATA),        INTENT(IN) :: TPFIELD
+CLASS(TFIELDMETADATA),   INTENT(IN) :: TPFIELD
 INTEGER,DIMENSION(:,:,:),INTENT(IN) :: KFIELD   ! array containing the data field
 INTEGER,                 INTENT(OUT):: KRESP
 !
@@ -859,7 +861,7 @@ END SUBROUTINE IO_Field_write_nc4_N3
 SUBROUTINE IO_Field_write_nc4_N4(TPFILE,TPFIELD,KFIELD,KRESP)
 !
 TYPE(TFILEDATA),TARGET,    INTENT(IN) :: TPFILE
-TYPE(TFIELDDATA),          INTENT(IN) :: TPFIELD
+CLASS(TFIELDMETADATA),     INTENT(IN) :: TPFIELD
 INTEGER,DIMENSION(:,:,:,:),INTENT(IN) :: KFIELD   ! array containing the data field
 INTEGER,                   INTENT(OUT):: KRESP
 !
@@ -885,7 +887,7 @@ END SUBROUTINE IO_Field_write_nc4_N4
 SUBROUTINE IO_Field_write_nc4_L0(TPFILE,TPFIELD,OFIELD,KRESP)
 !
 TYPE(TFILEDATA),       INTENT(IN) :: TPFILE
-TYPE(TFIELDDATA),      INTENT(IN) :: TPFIELD
+CLASS(TFIELDMETADATA), INTENT(IN) :: TPFIELD
 LOGICAL,               INTENT(IN) :: OFIELD
 INTEGER,               INTENT(OUT):: KRESP
 !
@@ -916,7 +918,7 @@ END SUBROUTINE IO_Field_write_nc4_L0
 SUBROUTINE IO_Field_write_nc4_L1(TPFILE,TPFIELD,OFIELD,KRESP)
 !
 TYPE(TFILEDATA),       INTENT(IN) :: TPFILE
-TYPE(TFIELDDATA),      INTENT(IN) :: TPFIELD
+CLASS(TFIELDMETADATA), INTENT(IN) :: TPFIELD
 LOGICAL, DIMENSION(:), INTENT(IN) :: OFIELD
 INTEGER,               INTENT(OUT):: KRESP
 !
@@ -950,7 +952,7 @@ END SUBROUTINE IO_Field_write_nc4_L1
 SUBROUTINE IO_Field_write_nc4_C0(TPFILE,TPFIELD,HFIELD,KRESP)
 !
 TYPE(TFILEDATA),       INTENT(IN) :: TPFILE
-TYPE(TFIELDDATA),      INTENT(IN) :: TPFIELD
+CLASS(TFIELDMETADATA), INTENT(IN) :: TPFIELD
 CHARACTER(LEN=*),      INTENT(IN) :: HFIELD
 INTEGER,               INTENT(OUT):: KRESP
 !
@@ -988,7 +990,7 @@ SUBROUTINE IO_Field_write_nc4_C1(TPFILE,TPFIELD,HFIELD,KRESP)
 !    J.Escobar : 25/04/2018 : missing 'IF ALLOCATED(IVDIMSTMP)' DEALLOCATE
 !----------------------------------------------------------------
 TYPE(TFILEDATA),              INTENT(IN)  :: TPFILE
-TYPE(TFIELDDATA),             INTENT(IN)  :: TPFIELD
+CLASS(TFIELDMETADATA),        INTENT(IN) :: TPFIELD
 CHARACTER(LEN=*),DIMENSION(:),INTENT(IN)  :: HFIELD
 INTEGER,                      INTENT(OUT) :: KRESP
 !
@@ -1025,22 +1027,22 @@ USE MODD_TYPE_DATE
 USE MODE_DATETIME
 !
 TYPE(TFILEDATA),       INTENT(IN) :: TPFILE
-TYPE(TFIELDDATA),      INTENT(IN) :: TPFIELD
+CLASS(TFIELDMETADATA), INTENT(IN) :: TPFIELD
 TYPE (DATE_TIME),      INTENT(IN) :: TPDATA
 INTEGER,               INTENT(OUT):: KRESP
 !
-INTEGER(KIND=CDFINT) :: istatus
-INTEGER(KIND=CDFINT) :: IVARID
-TYPE(TFIELDDATA)     :: TZFIELD
-CHARACTER(LEN=40)    :: YUNITS
-REAL                 :: ZDELTATIME !Distance in seconds since reference date and time
-TYPE(DATE_TIME)      :: TZREF
+CHARACTER(LEN=40)                  :: YUNITS
+INTEGER(KIND=CDFINT)               :: istatus
+INTEGER(KIND=CDFINT)               :: IVARID
+REAL                               :: ZDELTATIME !Distance in seconds since reference date and time
+CLASS(TFIELDMETADATA), ALLOCATABLE :: TZFIELD
+TYPE(DATE_TIME)                    :: TZREF
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_nc4_T0',TRIM(TPFILE%CNAME)//': writing '//TRIM(TPFIELD%CMNHNAME))
 !
 KRESP = 0
 !
-TZFIELD = TPFIELD
+Allocate( TZFIELD, source = TPFIELD )
 !
 ! Model beginning date (TDTMOD%TDATE) is used as the reference date
 ! Reference time is set to 0.
@@ -1079,24 +1081,24 @@ USE MODD_TYPE_DATE
 USE MODE_DATETIME
 !
 TYPE(TFILEDATA),                INTENT(IN) :: TPFILE
-TYPE(TFIELDDATA),               INTENT(IN) :: TPFIELD
+CLASS(TFIELDMETADATA),          INTENT(IN) :: TPFIELD
 TYPE (DATE_TIME), DIMENSION(:), INTENT(IN) :: TPDATA
 INTEGER,                        INTENT(OUT):: KRESP
 !
-CHARACTER(LEN=40)               :: YUNITS
-INTEGER                         :: JI
-INTEGER(KIND=CDFINT)            :: istatus
-INTEGER(KIND=CDFINT)            :: IVARID
-logical                         :: gisempty
-REAL, DIMENSION(:), ALLOCATABLE :: ZDELTATIME !Distance in seconds since reference date and time
-TYPE(DATE_TIME)                 :: TZREF
-TYPE(TFIELDDATA)                :: TZFIELD
+CHARACTER(LEN=40)                  :: YUNITS
+INTEGER                            :: JI
+INTEGER(KIND=CDFINT)               :: istatus
+INTEGER(KIND=CDFINT)               :: IVARID
+logical                            :: gisempty
+REAL, DIMENSION(:),    ALLOCATABLE :: ZDELTATIME !Distance in seconds since reference date and time
+CLASS(TFIELDMETADATA), ALLOCATABLE :: TZFIELD
+TYPE(DATE_TIME)                    :: TZREF
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_nc4_T1',TRIM(TPFILE%CNAME)//': writing '//TRIM(TPFIELD%CMNHNAME))
 !
 KRESP = 0
 !
-TZFIELD = TPFIELD
+Allocate( TZFIELD, source = TPFIELD )
 !
 ! Model beginning date (TDTMOD%TDATE) is used as the reference date
 ! Reference time is set to 0.
@@ -1136,7 +1138,7 @@ END SUBROUTINE IO_Field_write_nc4_T1
 subroutine IO_Field_partial_write_nc4_X1( tpfile, tpfield, pfield, koffset, kresp )
 
 type(tfiledata),                intent(in)  :: tpfile
-type(tfielddata),               intent(in)  :: tpfield
+class(tfieldmetadata),          intent(in)  :: tpfield
 real,             dimension(:), intent(in)  :: pfield   ! array containing the data field
 integer,          dimension(1), intent(in)  :: koffset
 integer,                        intent(out) :: kresp
@@ -1173,20 +1175,20 @@ end subroutine IO_Field_partial_write_nc4_X1
 subroutine IO_Field_partial_write_nc4_X2( tpfile, tpfield, pfield, koffset, kresp, kvertlevel, kzfile )
 
 type(tfiledata),                  intent(in)  :: tpfile
-type(tfielddata),                 intent(in)  :: tpfield
+class(tfieldmetadata),            intent(in)  :: tpfield
 real,             dimension(:,:), intent(in)  :: pfield   ! array containing the data field
 integer,          dimension(2),   intent(in)  :: koffset
 integer,                          intent(out) :: kresp
 integer,                optional, intent(in)  :: kvertlevel ! Number of the vertical level (needed for Z-level split files)
 integer,                optional, intent(in)  :: kzfile     ! Number of the Z-level split file
 
-character(len=4)                   :: ysuffix
-character(len=NMNHNAMELGTMAX)      :: yvarname
-integer(kind=CDFINT)               :: istatus
-integer(kind=CDFINT)               :: ivarid
-integer(kind=CDFINT), dimension(2) :: istarts
-type(tfielddata),     pointer      :: tzfield
-type(tfiledata),      pointer      :: tzfile
+character(len=4)                    :: ysuffix
+character(len=NMNHNAMELGTMAX)       :: yvarname
+integer(kind=CDFINT)                :: istatus
+integer(kind=CDFINT)                :: ivarid
+integer(kind=CDFINT),  dimension(2) :: istarts
+class(tfieldmetadata), pointer      :: tzfield
+type(tfiledata),       pointer      :: tzfile
 
 kresp = 0
 
@@ -1219,7 +1221,7 @@ end subroutine IO_Field_partial_write_nc4_X2
 subroutine IO_Field_partial_write_nc4_X3( tpfile, tpfield, pfield, koffset, kresp )
 
 type(tfiledata),                    intent(in)  :: tpfile
-type(tfielddata),                   intent(in)  :: tpfield
+class(tfieldmetadata),              intent(in)  :: tpfield
 real,             dimension(:,:,:), intent(in)  :: pfield   ! array containing the data field
 integer,          dimension(3),     intent(in)  :: koffset
 integer,                            intent(out) :: kresp
@@ -1256,7 +1258,7 @@ end subroutine IO_Field_partial_write_nc4_X3
 subroutine IO_Field_partial_write_nc4_X4( tpfile, tpfield, pfield, koffset, kresp )
 
 type(tfiledata),                      intent(in)  :: tpfile
-type(tfielddata),                     intent(in)  :: tpfield
+class(tfieldmetadata),                intent(in)  :: tpfield
 real,             dimension(:,:,:,:), intent(in)  :: pfield   ! array containing the data field
 integer,          dimension(4),       intent(in)  :: koffset
 integer,                              intent(out) :: kresp
@@ -1293,20 +1295,20 @@ end subroutine IO_Field_partial_write_nc4_X4
 subroutine IO_Field_partial_write_nc4_N2( tpfile, tpfield, kfield, koffset, kresp, kvertlevel, kzfile )
 
 type(tfiledata),                  intent(in)  :: tpfile
-type(tfielddata),                 intent(in)  :: tpfield
+class(tfieldmetadata),            intent(in)  :: tpfield
 integer,          dimension(:,:), intent(in)  :: kfield   ! array containing the data field
 integer,          dimension(2),   intent(in)  :: koffset
 integer,                          intent(out) :: kresp
 integer,                optional, intent(in)  :: kvertlevel ! Number of the vertical level (needed for Z-level split files)
 integer,                optional, intent(in)  :: kzfile     ! Number of the Z-level split file
 
-character(len=4)                   :: ysuffix
-character(len=NMNHNAMELGTMAX)      :: yvarname
-integer(kind=CDFINT)               :: istatus
-integer(kind=CDFINT)               :: ivarid
-integer(kind=CDFINT), dimension(2) :: istarts
-type(tfielddata),     pointer      :: tzfield
-type(tfiledata),      pointer      :: tzfile
+character(len=4)                    :: ysuffix
+character(len=NMNHNAMELGTMAX)       :: yvarname
+integer(kind=CDFINT)                :: istatus
+integer(kind=CDFINT)                :: ivarid
+integer(kind=CDFINT),  dimension(2) :: istarts
+class(tfieldmetadata), pointer      :: tzfield
+type(tfiledata),       pointer      :: tzfile
 
 kresp = 0
 
@@ -1339,20 +1341,20 @@ end subroutine IO_Field_partial_write_nc4_N2
 subroutine IO_Field_partial_write_nc4_N3( tpfile, tpfield, kfield, koffset, kresp, kvertlevel, kzfile )
 
 type(tfiledata),                    intent(in)  :: tpfile
-type(tfielddata),                   intent(in)  :: tpfield
+class(tfieldmetadata),              intent(in)  :: tpfield
 integer,          dimension(:,:,:), intent(in)  :: kfield   ! array containing the data field
 integer,          dimension(3),     intent(in)  :: koffset
 integer,                            intent(out) :: kresp
 integer,                  optional, intent(in)  :: kvertlevel ! Number of the vertical level (needed for Z-level split files)
 integer,                  optional, intent(in)  :: kzfile     ! Number of the Z-level split file
 
-character(len=4)                   :: ysuffix
-character(len=NMNHNAMELGTMAX)      :: yvarname
-integer(kind=CDFINT)               :: istatus
-integer(kind=CDFINT)               :: ivarid
-integer(kind=CDFINT), dimension(3) :: istarts
-type(tfielddata),     pointer      :: tzfield
-type(tfiledata),      pointer      :: tzfile
+character(len=4)                    :: ysuffix
+character(len=NMNHNAMELGTMAX)       :: yvarname
+integer(kind=CDFINT)                :: istatus
+integer(kind=CDFINT)                :: ivarid
+integer(kind=CDFINT),  dimension(3) :: istarts
+class(tfieldmetadata), pointer      :: tzfield
+type(tfiledata),       pointer      :: tzfile
 
 kresp = 0
 
@@ -1385,20 +1387,20 @@ end subroutine IO_Field_partial_write_nc4_N3
 subroutine IO_Field_partial_write_nc4_N4( tpfile, tpfield, kfield, koffset, kresp, kvertlevel, kzfile )
 
 type(tfiledata),                      intent(in)  :: tpfile
-type(tfielddata),                     intent(in)  :: tpfield
+class(tfieldmetadata),                intent(in)  :: tpfield
 integer,          dimension(:,:,:,:), intent(in)  :: kfield   ! array containing the data field
 integer,          dimension(4),       intent(in)  :: koffset
 integer,                              intent(out) :: kresp
 integer,                    optional, intent(in)  :: kvertlevel ! Number of the vertical level (needed for Z-level split files)
 integer,                    optional, intent(in)  :: kzfile     ! Number of the Z-level split file
 
-character(len=4)                   :: ysuffix
-character(len=NMNHNAMELGTMAX)      :: yvarname
-integer(kind=CDFINT)               :: istatus
-integer(kind=CDFINT)               :: ivarid
-integer(kind=CDFINT), dimension(4) :: istarts
-type(tfielddata),     pointer      :: tzfield
-type(tfiledata),      pointer      :: tzfile
+character(len=4)                    :: ysuffix
+character(len=NMNHNAMELGTMAX)       :: yvarname
+integer(kind=CDFINT)                :: istatus
+integer(kind=CDFINT)                :: ivarid
+integer(kind=CDFINT),  dimension(4) :: istarts
+class(tfieldmetadata), pointer      :: tzfield
+type(tfiledata),       pointer      :: tzfile
 
 kresp = 0
 
@@ -1428,7 +1430,7 @@ if ( Present( kvertlevel ) ) deallocate( tzfield )
 end subroutine IO_Field_partial_write_nc4_N4
 
 
-subroutine IO_Coordvar_write_nc4( tpfile, hprogram_orig )
+subroutine IO_Coordvar_write_nc4( tpfile, hprogram_orig, tpdtmodeln )
 use modd_aircraft_balloon
 use modd_budget,     only: cbutype, lbu_icp, lbu_jcp, lbu_kcp, nbuih, nbuil, nbujh, nbujl, nbukh, nbukl, nbukmax, &
                            nbustep, nbutotwrite
@@ -1449,7 +1451,7 @@ use modd_field,      only: NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NI_U, NMNHDIM_NJ_U, N
                            NMNHDIM_PROFILER_TIME, NMNHDIM_STATION_TIME,                                    &
                            tfieldlist
 use modd_grid,       only: xlatori, xlonori
-use modd_grid_n,     only: lsleve, xxhat, xyhat, xzhat
+use modd_grid_n,     only: lsleve, xxhat, xxhatm, xyhat, xyhatm, xzhat, xzhatm, xxhat_ll, xyhat_ll, xxhatm_ll, xyhatm_ll
 use modd_les,        only: cles_level_type, cspectra_level_type, nlesn_iinf, nlesn_isup, nlesn_jinf, nlesn_jsup, &
                            nles_k, nles_levels, nspectra_k, nspectra_levels,                                     &
                            xles_altitudes, xspectra_altitudes
@@ -1457,10 +1459,10 @@ use modd_les_n,      only: nles_dtcount, nles_mean_end, nles_mean_start, nles_me
                            nles_times, nspectra_ni, nspectra_nj, tles_dates, xles_times
 use modd_netcdf,     only: tdimnc
 use modd_parameters, only: jphext, JPVEXT
-use modd_profiler_n, only: numbprofiler, tprofiler
+use modd_profiler_n, only: lprofiler, tprofilers_time
 use modd_series,     only: lseries
 use modd_series_n,   only: nsnbstept, tpsdates
-use modd_station_n,  only: numbstat, tstation
+use modd_station_n,  only: lstation, tstations_time
 use modd_time,       only: tdtseg
 use modd_time_n,     only: tdtcur
 use modd_type_date,  only: date_time
@@ -1471,10 +1473,11 @@ use mode_nest_ll,    only: Get_model_number_ll, Go_tomodel_ll
 
 type(tfiledata),            intent(in) :: tpfile
 character(len=*), optional, intent(in) :: hprogram_orig !To emulate a file coming from this program
+type(date_time),  optional, intent(in) :: tpdtmodeln    !Time of model (to force model date written in file)
 
 character(len=:),                         allocatable :: ystdnameprefix
 character(len=:),                         allocatable :: yprogram
-integer                                               :: iiu, iju, iku
+integer                                               :: iiu, iju
 integer                                               :: id, iid, iresp
 integer                                               :: imi
 integer                                               :: ji
@@ -1485,7 +1488,7 @@ logical                                               :: gchangemodel
 logical                                               :: gdealloc
 logical,                         pointer              :: gsleve
 real,            dimension(:),   pointer              :: zxhat, zyhat, zzhat
-real,            dimension(:),            allocatable :: zxhatm, zyhatm, zzhatm !Coordinates at mass points in the transformed space
+real,            dimension(:),   pointer              :: zxhatm, zyhatm, zzhatm !Coordinates at mass points in the transformed space
 real,            dimension(:),            allocatable :: zles_levels
 real,            dimension(:),            allocatable :: zspectra_levels
 real,            dimension(:,:), pointer              :: zlat, zlon
@@ -1493,9 +1496,9 @@ type(tdimnc),                    pointer              :: tzdim_ni, tzdim_nj, tzd
 type(date_time), dimension(:),            allocatable :: tzdates
 type(date_time), dimension(:,:),          allocatable :: tzdates_bound
 
+real, dimension(:),   pointer :: zxhat_glob,  zyhat_glob
+real, dimension(:),   pointer :: zxhatm_glob, zyhatm_glob
 !These variables are save: they are populated once for the master Z-split file and freed after the last file has been written
-real, dimension(:),   pointer, save :: zxhat_glob  => null(), zyhat_glob  => null()
-real, dimension(:),   pointer, save :: zxhatm_glob => null(), zyhatm_glob => null()
 real, dimension(:,:), pointer, save :: zlatm_glob  => null(), zlonm_glob  => null()
 real, dimension(:,:), pointer, save :: zlatu_glob  => null(), zlonu_glob  => null()
 real, dimension(:,:), pointer, save :: zlatv_glob  => null(), zlonv_glob  => null()
@@ -1504,9 +1507,16 @@ real, dimension(:,:), pointer, save :: zlatf_glob  => null(), zlonf_glob  => nul
 
 call Print_msg( NVERB_DEBUG, 'IO', 'IO_Coordvar_write_nc4', 'called for ' // Trim( tpfile%cname ) )
 
-zxhat => null()
-zyhat => null()
-zzhat => null()
+zxhat  => null()
+zyhat  => null()
+zzhat  => null()
+zxhatm => null()
+zyhatm => null()
+zzhatm => null()
+zxhat_glob  => null()
+zyhat_glob  => null()
+zxhatm_glob => null()
+zyhatm_glob => null()
 
 gchangemodel = .false.
 
@@ -1526,8 +1536,22 @@ if ( tpfile%nmodel > 0 ) then
   zxhat => tfieldlist(iid)%tfield_x1d(tpfile%nmodel)%data
   call Find_field_id_from_mnhname( 'YHAT', iid, iresp )
   zyhat => tfieldlist(iid)%tfield_x1d(tpfile%nmodel)%data
+  call Find_field_id_from_mnhname( 'XHATM', iid, iresp )
+  zxhatm => tfieldlist(iid)%tfield_x1d(tpfile%nmodel)%data
+  call Find_field_id_from_mnhname( 'YHATM', iid, iresp )
+  zyhatm => tfieldlist(iid)%tfield_x1d(tpfile%nmodel)%data
   call Find_field_id_from_mnhname( 'ZHAT', iid, iresp )
   zzhat => tfieldlist(iid)%tfield_x1d(tpfile%nmodel)%data
+  call Find_field_id_from_mnhname( 'ZHATM', iid, iresp )
+  zzhatm => tfieldlist(iid)%tfield_x1d(tpfile%nmodel)%data
+  call Find_field_id_from_mnhname( 'XHAT_ll', iid, iresp )
+  zxhat_glob => tfieldlist(iid)%tfield_x1d(tpfile%nmodel)%data
+  call Find_field_id_from_mnhname( 'YHAT_ll', iid, iresp )
+  zyhat_glob => tfieldlist(iid)%tfield_x1d(tpfile%nmodel)%data
+  call Find_field_id_from_mnhname( 'XHATM_ll', iid, iresp )
+  zxhatm_glob => tfieldlist(iid)%tfield_x1d(tpfile%nmodel)%data
+  call Find_field_id_from_mnhname( 'YHATM_ll', iid, iresp )
+  zyhatm_glob => tfieldlist(iid)%tfield_x1d(tpfile%nmodel)%data
   call Find_field_id_from_mnhname( 'SLEVE', iid, iresp )
   gsleve => tfieldlist(iid)%tfield_l0d(tpfile%nmodel)%data
 
@@ -1537,21 +1561,21 @@ if ( tpfile%nmodel > 0 ) then
     gchangemodel = .true.
   end if
 else
-  zxhat => xxhat
-  zyhat => xyhat
-  zzhat => xzhat
+  zxhat  => xxhat
+  zyhat  => xyhat
+  zzhat  => xzhat
+  zxhatm => xxhatm
+  zyhatm => xyhatm
+  zzhatm => xzhatm
+  zxhat_glob  => xxhat_ll
+  zyhat_glob  => xyhat_ll
+  zxhatm_glob => xxhatm_ll
+  zyhatm_glob => xyhatm_ll
   gsleve => lsleve
 end if
 
 iiu = Size( zxhat )
 iju = Size( zyhat )
-Allocate( zxhatm(iiu), zyhatm(iju) )
-!zxhatm(iiu) and zyhatm(iju) are correct only on some processes
-!but it is OK due to the way Gather_xxfield is done
-zxhatm(1 : iiu - 1) = 0.5 * ( zxhat(1 : iiu - 1) + zxhat(2 : iiu) )
-zxhatm(iiu)         = 2. * zxhat(iiu) - zxhatm(iiu - 1)
-zyhatm(1 : iju - 1) = 0.5 * ( zyhat(1 : iju - 1) + zyhat(2 : iju) )
-zyhatm(iju)         = 2. * zyhat(iju) - zyhatm(iju - 1)
 
 if ( lcartesian ) then
   ystdnameprefix = 'plane'
@@ -1575,14 +1599,6 @@ else
   tzdim_nj_v => Null()
 end if
 
-!If the file is a Z-split subfile, coordinates are already collected
-if ( .not. Associated( tpfile%tmainfile ) ) then
-  call Gather_hor_coord1d( 'X', zxhat,  zxhat_glob  )
-  call Gather_hor_coord1d( 'X', zxhatm, zxhatm_glob )
-  call Gather_hor_coord1d( 'Y', zyhat,  zyhat_glob  )
-  call Gather_hor_coord1d( 'Y', zyhatm, zyhatm_glob )
-end if
-
 call Write_hor_coord1d( tzdim_ni,   'x-dimension of the grid', &
                         trim(ystdnameprefix)//'_x_coordinate',               'X', 0.,   jphext, jphext, zxhatm_glob )
 call Write_hor_coord1d( tzdim_nj,   'y-dimension of the grid', &
@@ -1596,7 +1612,6 @@ call Write_hor_coord1d( tzdim_ni_v, 'x-dimension of the grid at v location', &
 call Write_hor_coord1d( tzdim_nj_v, 'y-dimension of the grid at v location', &
                         trim(ystdnameprefix)//'_y_coordinate_at_v_location', 'Y', -0.5, jphext, 0,      zyhat_glob  )
 
-!The z?hat*_glob were allocated in Gather_hor_coord1d calls
 !Deallocate only if it is a non Z-split file or the last Z-split subfile
 gdealloc = .false.
 if ( Associated( tpfile%tmainfile ) ) then
@@ -1633,16 +1648,9 @@ if ( .not. lcartesian ) then
   if ( gdealloc ) Deallocate( zlatm_glob, zlonm_glob, zlatu_glob, zlonu_glob, zlatv_glob, zlonv_glob, zlatf_glob, zlonf_glob )
 end if
 
-Deallocate( zxhatm, zyhatm )
-
 if ( tpfile%lmaster ) then !vertical coordinates in the transformed space are the same on all processes
   if ( Trim( yprogram ) /= 'PGD' .and. Trim( yprogram ) /= 'NESPGD' .and. Trim( yprogram ) /= 'ZOOMPG' &
       .and. .not. ( Trim( yprogram ) == 'REAL' .and. cstorage_type == 'SU') ) then !condition to detect prep_surfex
-
-    iku = Size( zzhat )
-    Allocate( zzhatm(iku) )
-    zzhatm(1 : iku - 1) = 0.5 * ( zzhat(2 : iku) + zzhat(1 : iku - 1) )
-    zzhatm(iku)         = 2.* zzhat(iku) - zzhatm(iku - 1)
 
     call Write_ver_coord( tpfile%tncdims%tdims(NMNHDIM_LEVEL),  'position z in the transformed space',              '', &
                           'altitude',                0.,  JPVEXT, JPVEXT, ZZHATM )
@@ -1655,8 +1663,13 @@ END IF
 if ( tpfile%lmaster ) then !time scale is the same on all processes
   if ( Trim( yprogram ) /= 'PGD' .and. Trim( yprogram ) /= 'NESPGD' .and. Trim( yprogram ) /= 'ZOOMPG' &
       .and. .not. ( Trim( yprogram ) == 'REAL' .and. cstorage_type == 'SU' ) ) then !condition to detect prep_surfex
-    if ( tpfile%ctype /= 'MNHDIACHRONIC' .and. Associated( tdtcur ) ) &
-      call Write_time_coord( tpfile%tncdims%tdims(nmnhdim_time), 'time axis', [ tdtcur ] )
+    if ( tpfile%ctype /= 'MNHDIACHRONIC' ) then
+      if ( Present( tpdtmodeln ) ) then
+        call Write_time_coord( tpfile%tncdims%tdims(nmnhdim_time), 'time axis', [ tpdtmodeln ] )
+      else if ( Associated( tdtcur ) ) then
+        call Write_time_coord( tpfile%tncdims%tdims(nmnhdim_time), 'time axis', [ tdtcur ] )
+      end if
+    end if
   end if
 end if
 
@@ -1836,12 +1849,12 @@ if ( tpfile%lmaster ) then
     end if
 
     !Coordinates for the number of profiler times
-    if ( numbprofiler > 0 ) &
-      call Write_time_coord( tpfile%tncdims%tdims(NMNHDIM_PROFILER_TIME), 'time axis for profilers', tprofiler%tpdates )
+    if ( lprofiler ) &
+      call Write_time_coord( tpfile%tncdims%tdims(NMNHDIM_PROFILER_TIME), 'time axis for profilers', tprofilers_time%tpdates )
 
     !Coordinates for the number of station times
-    if ( numbstat > 0 ) &
-      call Write_time_coord( tpfile%tncdims%tdims(NMNHDIM_STATION_TIME), 'time axis for stations', tstation%tpdates )
+    if ( lstation ) &
+      call Write_time_coord( tpfile%tncdims%tdims(NMNHDIM_STATION_TIME), 'time axis for stations', tstations_time%tpdates )
 
     !Dimension for the number of series times
     if ( lseries .and. nsnbstept > 0 ) then
@@ -1855,59 +1868,37 @@ if ( tpfile%lmaster ) then
     end if
 
     if ( lflyer ) then
-      call Write_flyer_time_coord( tballoon1 )
-      call Write_flyer_time_coord( tballoon2 )
-      call Write_flyer_time_coord( tballoon3 )
-      call Write_flyer_time_coord( tballoon4 )
-      call Write_flyer_time_coord( tballoon5 )
-      call Write_flyer_time_coord( tballoon6 )
-      call Write_flyer_time_coord( tballoon7 )
-      call Write_flyer_time_coord( tballoon8 )
-      call Write_flyer_time_coord( tballoon9 )
+      ! Remark: to work flyer data must be on the file master rank
+      ! This is currently ensured in WRITE_AIRCRAFT_BALLOON subroutine
+      do ji = 1, nballoons
+        if ( associated( tballoons(ji)%tballoon ) ) then
+          call Write_flyer_time_coord( tballoons(ji)%tballoon )
+        else
+          call Print_msg( NVERB_ERROR, 'IO', 'IO_Coordvar_write_nc4','tballoon not associated' )
+        end if
+      end do
 
-      call Write_flyer_time_coord( taircraft1 )
-      call Write_flyer_time_coord( taircraft2 )
-      call Write_flyer_time_coord( taircraft3 )
-      call Write_flyer_time_coord( taircraft4 )
-      call Write_flyer_time_coord( taircraft5 )
-      call Write_flyer_time_coord( taircraft6 )
-      call Write_flyer_time_coord( taircraft7 )
-      call Write_flyer_time_coord( taircraft8 )
-      call Write_flyer_time_coord( taircraft9 )
-      call Write_flyer_time_coord( taircraft10 )
-      call Write_flyer_time_coord( taircraft11 )
-      call Write_flyer_time_coord( taircraft12 )
-      call Write_flyer_time_coord( taircraft13 )
-      call Write_flyer_time_coord( taircraft14 )
-      call Write_flyer_time_coord( taircraft15 )
-      call Write_flyer_time_coord( taircraft16 )
-      call Write_flyer_time_coord( taircraft17 )
-      call Write_flyer_time_coord( taircraft18 )
-      call Write_flyer_time_coord( taircraft19 )
-      call Write_flyer_time_coord( taircraft20 )
-      call Write_flyer_time_coord( taircraft21 )
-      call Write_flyer_time_coord( taircraft22 )
-      call Write_flyer_time_coord( taircraft23 )
-      call Write_flyer_time_coord( taircraft24 )
-      call Write_flyer_time_coord( taircraft25 )
-      call Write_flyer_time_coord( taircraft26 )
-      call Write_flyer_time_coord( taircraft27 )
-      call Write_flyer_time_coord( taircraft28 )
-      call Write_flyer_time_coord( taircraft29 )
-      call Write_flyer_time_coord( taircraft30 )
+      do ji = 1, naircrafts
+        if ( associated( taircrafts(ji)%taircraft ) ) then
+          call Write_flyer_time_coord( taircrafts(ji)%taircraft )
+        else
+          call Print_msg( NVERB_ERROR, 'IO', 'IO_Coordvar_write_nc4','taircraft not associated' )
+        end if
+      end do
     end if
 
   end if !MNHDIACHRONIC
 
 end if
 
-if ( gdealloc ) deallocate( zxhat_glob, zxhatm_glob, zyhat_glob, zyhatm_glob )
 
 if ( gchangemodel ) call Go_tomodel_ll( imi, iresp )
 
 
 contains
 
+#if 0
+!Not used anymore
 subroutine Gather_hor_coord1d( haxis, pcoords_loc, pcoords_glob )
   use mode_allocbuffer_ll, only: Allocbuffer_ll
   use mode_gather_ll,      only: Gather_xxfield
@@ -1951,7 +1942,9 @@ subroutine Gather_hor_coord1d( haxis, pcoords_loc, pcoords_glob )
   !PW: TODO: broadcast only to subfile writers
   if ( tpfile%nsubfiles_ioz > 0 ) &
     call MPI_BCAST( pcoords_glob, size( pcoords_glob ), MNHREAL_MPI, tpfile%nmaster_rank - 1,  tpfile%nmpicomm, ierr )
+
 end subroutine Gather_hor_coord1d
+#endif
 
 
 subroutine Gather_hor_coord2d( px, py, plat_glob, plon_glob )
@@ -2290,11 +2283,11 @@ subroutine Write_flyer_time_coord( tpflyer )
   use modd_aircraft_balloon
   use modd_parameters,       only: NBUNAMELGTMAX, XUNDEF
 
+  use mode_aircraft_balloon, only: Aircraft_balloon_longtype_get
   use mode_io_tools_nc4,     only: IO_Mnhname_clean
 
-  use modi_aircraft_balloon, only: Aircraft_balloon_longtype_get
 
-  type(flyer), intent(in) :: tpflyer
+  class(tflyerdata), intent(in) :: tpflyer
 
   character(len=NBUNAMELGTMAX) :: ytype
   character(len=NBUNAMELGTMAX) :: ytype_clean
@@ -2305,7 +2298,7 @@ subroutine Write_flyer_time_coord( tpflyer )
   type(tdimnc),        pointer :: tzdim
 
   !Do it only if correct model level and has really flown
-  if ( tpflyer%nmodel == imi .and. Count( tpflyer%x /= XUNDEF) > 1 ) then
+  if ( tpflyer%nmodel == imi .and. Count( tpflyer%xx /= XUNDEF) > 1 ) then
     Allocate( tzdim )
 
     istatus = NF90_INQ_NCID( tpfile%nncid, 'Flyers', icatid )
@@ -2322,16 +2315,16 @@ subroutine Write_flyer_time_coord( tpflyer )
                       Trim( tpfile%cname ) // ': group ' // Trim( ytype_clean ) // ' not found' )
     end if
 
-    istatus = NF90_INQ_NCID( isubcatid, Trim( tpflyer%title ), incid )
+    istatus = NF90_INQ_NCID( isubcatid, Trim( tpflyer%ctitle ), incid )
     if ( istatus /= NF90_NOERR ) then
       call Print_msg( NVERB_ERROR, 'IO', 'Write_flyer_time_coord', &
-                      Trim( tpfile%cname ) // ': group '// Trim( tpflyer%title ) // ' not found' )
+                      Trim( tpfile%cname ) // ': group '// Trim( tpflyer%ctitle ) // ' not found' )
     end if
 
     istatus = NF90_INQ_DIMID( incid, 'time_flyer', idimid )
     if ( istatus /= NF90_NOERR ) then
       call Print_msg( NVERB_ERROR, 'IO', 'Write_flyer_time_coord', &
-                      Trim( tpfile%cname ) // ': group ' // Trim( tpflyer%title ) // ' time_flyer dimension not found' )
+                      Trim( tpfile%cname ) // ': group ' // Trim( tpflyer%ctitle ) // ' time_flyer dimension not found' )
     end if
 
     tzdim%cname = 'time_flyer'
@@ -2339,7 +2332,7 @@ subroutine Write_flyer_time_coord( tpflyer )
     tzdim%nid = idimid
 
     !Remark: incid is used in Write_time_coord
-    call Write_time_coord( tzdim, 'time axis for flyer', tpflyer%tpdates )
+    call Write_time_coord( tzdim, 'time axis for flyer', tpflyer%tflyer_time%tpdates )
 
     Deallocate( tzdim )
 
@@ -2363,7 +2356,7 @@ IF (TRIM(TPFILE%CFORMAT)/='NETCDF4' .AND. TRIM(TPFILE%CFORMAT)/='LFICDF4') RETUR
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Header_write_nc4','called for file '//TRIM(TPFILE%CNAME))
 !
 IF (TPFILE%LMASTER)  THEN
-  ISTATUS = NF90_PUT_ATT(TPFILE%NNCID, NF90_GLOBAL, 'Conventions', 'CF-1.7 COMODO-1.4')
+  ISTATUS = NF90_PUT_ATT(TPFILE%NNCID, NF90_GLOBAL, 'Conventions', 'CF-1.10 COMODO-1.4')
   IF (ISTATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_FILE_WRITE_HEADER','NF90_PUT_ATT','Conventions')
 
 #if (MNH_REAL == 8)
@@ -2463,8 +2456,8 @@ END SUBROUTINE IO_History_append_nc4
 
 subroutine IO_Select_split_file( tpfile, tpfield, tpfileout, tpfieldout, kvertlevel, kzfile )
 type(tfiledata),  target,         intent(in)  :: tpfile
-type(tfielddata), target,         intent(in)  :: tpfield
-type(tfielddata), pointer,        intent(out) :: tpfieldout
+class(tfieldmetadata), target,    intent(in)  :: tpfield
+class(tfieldmetadata), pointer,   intent(out) :: tpfieldout
 type(tfiledata),  pointer,        intent(out) :: tpfileout
 integer,                optional, intent(in)  :: kvertlevel ! Number of the vertical level (needed for Z-level split files)
 integer,                optional, intent(in)  :: kzfile     ! Number of the Z-level split file
@@ -2478,9 +2471,8 @@ if ( Present( kvertlevel ) ) then
 
   Write( ysuffix, '( i4.4 )' ) kvertlevel
   tpfileout => tpfile%tfiles_ioz(kzfile)%tfile
-  !Copy the values of tpfield to the pointer tpfieldout (new tfielddata)
-  Allocate( tpfieldout )
-  tpfieldout = tpfield
+  !Copy the values of tpfield to the pointer tpfieldout
+  Allocate( tpfieldout, source = tpfield )
   tpfieldout%cmnhname  = Trim( tpfieldout%cmnhname ) // ysuffix
   if ( Len_trim( tpfieldout%cstdname  ) > 0 )  tpfieldout%cstdname  = Trim( tpfieldout%cstdname  ) // '_at_level_' // ysuffix
   if ( Len_trim( tpfieldout%clongname ) > 0 )  tpfieldout%clongname = Trim( tpfieldout%clongname ) // ' at level ' // ysuffix

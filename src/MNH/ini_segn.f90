@@ -164,7 +164,7 @@ END MODULE MODI_INI_SEG_n
 !!                       07/2017   add GBLOWSNOW (V. Vionnet)
 !  P. Wautelet 07/02/2019: force TYPE to a known value for IO_File_add2list
 !  P. Wautelet 14/02/2019: remove CLUOUT/CLUOUT0 and associated variables
-!  P. Wautelet 19/06/2019: add Fieldlist_nmodel_resize subroutine + provide KMODEL to INI_FIELD_LIST when known
+!  P. Wautelet 19/06/2019: provide KMODEL to INI_FIELD_LIST when known
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -183,7 +183,7 @@ USE MODD_PARAM_ICE
 USE MODD_PARAMETERS
 USE MODD_REF,              ONLY: LBOUSS
 !
-use mode_field,            only: Fieldlist_nmodel_resize, Ini_field_list, Ini_field_scalars
+use mode_field,            only: Ini_field_list, Ini_field_scalars
 USE MODE_IO_FIELD_READ,    only: IO_Field_read
 USE MODE_IO_FILE,          ONLY: IO_File_close, IO_File_open
 USE MODE_IO,               only: IO_Config_set
@@ -378,13 +378,11 @@ CALL READ_DESFM_n(KMI,TPINIFILE,YCONF,GFLAT,GUSERV,GUSERC,                  &
 !             --------------------
 !
 IF (KMI==1) THEN !Do this only 1 time
-  IF (CPROGRAM=='SPAWN ') THEN
-    CALL INI_FIELD_LIST(2)
-  ELSE IF (CPROGRAM=='DIAG  ' .OR. CPROGRAM=='SPEC  ') THEN
-    CALL INI_FIELD_LIST(1)
-  ELSE IF (CPROGRAM/='REAL  ' .AND. CPROGRAM/='IDEAL ' ) THEN
+  IF (      CPROGRAM=='SPAWN ' .OR. CPROGRAM=='DIAG  ' .OR. CPROGRAM=='SPEC  ' &
+       .OR. ( CPROGRAM/='REAL  ' .AND. CPROGRAM/='IDEAL ' )                    ) THEN
     CALL INI_FIELD_LIST()
   END IF
+
   IF (CPROGRAM=='SPAWN ' .OR. CPROGRAM=='DIAG  ' .OR. CPROGRAM=='SPEC  ' .OR. CPROGRAM=='MESONH') THEN
     CALL INI_FIELD_SCALARS()
   END IF
@@ -464,11 +462,7 @@ CALL READ_EXSEG_n(KMI,TZFILE_DES,YCONF,GFLAT,GUSERV,GUSERC,                 &
                 GLNOX_EXPLICIT,                                             &
                 GCONDSAMP,GBLOWSNOW, IRIMX,IRIMY,ISV, &
                 YTURB,YTOM,GRMC01,YRAD,YDCONV,YSCONV,YCLOUD,YELEC,YEQNSYS,  &
-                PTSTEP_ALL,CINIFILEPGD_n                                     )
-!
-if ( cprogram == 'MESONH' .and. kmi == 1 ) then !Do this only once
-  call Fieldlist_nmodel_resize(NMODEL)
-end if
+                PTSTEP_ALL,CINIFILEPGD_n                                    )
 !
 IF (CPROGRAM=='SPAWN ' .OR. CPROGRAM=='DIAG  ' .OR. CPROGRAM=='SPEC  '      &
      .OR. CPROGRAM=='REAL  ') THEN

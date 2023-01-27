@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2016-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/modd_ch_flxn.f90,v $ $Revision: 1.1 $
-! MASDEV5_2 modd 2016/06/27 14:05:40
 !-----------------------------------------------------------------
 !     #####################
       MODULE MODD_CH_FLX_n
@@ -42,7 +37,7 @@ IMPLICIT NONE
 
 TYPE CH_FLX_t
 !
-  REAL, DIMENSION(:,:,:), POINTER :: XCHFLX=>NULL() ! chemical fluxes ppp.m/s at t
+  REAL, DIMENSION(:,:,:), POINTER :: XCHFLX=>NULL() ! chemical fluxes ppv.m/s at t
 !
 END TYPE CH_FLX_t
 

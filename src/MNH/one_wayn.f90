@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1996-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1996-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -137,7 +137,9 @@ USE MODD_NSV,            only: NSV_A, NSV_C1R3BEG_A, NSV_C1R3_A, NSV_C2R2BEG_A, 
                                NSV_PPBEG_A, NSV_PP_A,                                                                     &
                                NSV_SLTBEG_A, NSV_SLT_A, NSV_USER_A,                                                       &
                                NSV_AERBEG_A, NSV_AER_A, NSV_CSBEG_A, NSV_CS_A
-
+#ifdef MNH_FOREFIRE
+USE MODD_NSV,            only: NSV_FF_A, NSV_FFBEG_A
+#endif
 USE MODD_PARAMETERS,     only: JPHEXT, JPVEXT
 USE MODD_PARAM_n,        only: CCLOUD
 USE MODD_REF,            ONLY: LCOUPLES

@@ -90,7 +90,7 @@ USE MODD_CST
 USE MODD_PARAMETERS
 USE MODD_GRID_n
 USE MODD_IO, ONLY: TFILEDATA
-USE MODD_FIELD, ONLY: TFIELDDATA, TYPEREAL
+USE MODD_FIELD, ONLY: TFIELDMETADATA, TYPEREAL
 USE MODD_LUNIT_n
 USE MODD_LBC_n
 USE MODD_DEEP_CONVECTION_n
@@ -262,8 +262,9 @@ real    (kind=jprb) :: zenangle
 integer (kind=jpim), parameter :: fin = 10
 character (len=256) :: outstring
 ! -----------------------------------------------------------------------------
+CHARACTER(LEN=:), ALLOCATABLE :: YMNHNAME, YUNITS, YCOMMENT
 REAL, DIMENSION(SIZE(PTHT,1),SIZE(PTHT,2),SIZE(PTHT,3)) :: ZTEMP
-TYPE(TFIELDDATA) :: TZFIELD
+TYPE(TFIELDMETADATA) :: TZFIELD
 !-------------------------------------------------------------------------------
 !
 !*       0.     ARRAYS BOUNDS INITIALIZATION
@@ -696,21 +697,25 @@ DO JSAT=1,IJSAT ! loop over sensors
     thermal = coefs%coef%ss_val_chn(ichan) < 2
 !   solar   = coefs%coef%ss_val_chn(ichan) > 0
     IF (thermal) THEN
-      TZFIELD%CMNHNAME   = TRIM(YBEG)//'_'//TRIM(YEND)//'BT'
-      TZFIELD%CUNITS     = 'K'
-      TZFIELD%CCOMMENT   = TRIM(YBEG)//'_'//TRIM(YEND)//' brightness temperature'
+      YMNHNAME   = TRIM(YBEG)//'_'//TRIM(YEND)//'BT'
+      YUNITS     = 'K'
+      YCOMMENT   = TRIM(YBEG)//'_'//TRIM(YEND)//' brightness temperature'
     ELSE
-      TZFIELD%CMNHNAME   = TRIM(YBEG)//'_'//TRIM(YEND)//'refl'
-      TZFIELD%CUNITS     = '-'
-      TZFIELD%CCOMMENT   = TRIM(YBEG)//'_'//TRIM(YEND)//' bidirectional reflectance factor'
+      YMNHNAME   = TRIM(YBEG)//'_'//TRIM(YEND)//'refl'
+      YUNITS     = '-'
+      YCOMMENT   = TRIM(YBEG)//'_'//TRIM(YEND)//' bidirectional reflectance factor'
     END IF
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 2
-    TZFIELD%LTIMEDEP   = .TRUE.
+    TZFIELD = TFIELDMETADATA(                      &
+      CMNHNAME   = TRIM( YMNHNAME ),               &
+      CSTDNAME   = '',                             &
+      CLONGNAME  = 'MesoNH: ' // TRIM( YMNHNAME ), &
+      CUNITS     = TRIM( YUNITS ),                 &
+      CDIR       = 'XY',                           &
+      CCOMMENT   = TRIM( YCOMMENT ),               &
+      NGRID      = 1,                              &
+      NTYPE      = TYPEREAL,                       &
+      NDIMS      = 2,                              &
+      LTIMEDEP   = .TRUE.                          )
 !   ZOUT(:,:,JCH) = ZOUT(:,:,JCH) *ZCOSZEN(:,:)
     CALL IO_Field_write(TPFILE,TZFIELD,ZOUT(:,:,JCH))
   END DO

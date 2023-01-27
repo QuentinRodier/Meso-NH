@@ -101,7 +101,7 @@ use modd_budget,          only: lbudget_th, lbudget_rv, lbudget_rc, lbudget_sv, 
                                 tbudgets
 USE MODD_CONF
 USE MODD_CST
-use modd_field,           only: TFIELDDATA,TYPEREAL
+use modd_field,           only: TFIELDMETADATA, TYPEREAL
 USE MODD_IO,              ONLY: TFILEDATA
 USE MODD_LUNIT_n,         ONLY: TLUOUT
 USE MODD_NSV,             ONLY: NSV_C2R2BEG
@@ -183,8 +183,8 @@ INTEGER, DIMENSION(:), ALLOCATABLE :: IVEC1             ! Vectors of indices for
 REAL, DIMENSION(SIZE(PRHODREF,1),SIZE(PRHODREF,2),SIZE(PRHODREF,3)) ::&
                        ZEXNT,ZEXNS,ZT,ZRVSAT,ZWORK,ZLV,ZCPH, ZW1,        &
                        ZACT, ZDZ
-INTEGER           :: JK            ! For loop
-TYPE(TFIELDDATA)  :: TZFIELD
+INTEGER              :: JK            ! For loop
+TYPE(TFIELDMETADATA) :: TZFIELD
 
 !-------------------------------------------------------------------------------
 !
@@ -389,28 +389,30 @@ END IF
   PNPRO(:,:,:) = ZACT(:,:,:) 
 !
 IF ( tpfile%lopened ) THEN
-  TZFIELD%CMNHNAME   = 'SURSAT'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'SURSAT'
-  TZFIELD%CUNITS     = '1'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_Z_NEB'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .FALSE.
+  TZFIELD = TFIELDMETADATA(   &
+    CMNHNAME   = 'SURSAT',    &
+    CSTDNAME   = '',          &
+    CLONGNAME  = 'SURSAT',    &
+    CUNITS     = '1',         &
+    CDIR       = 'XY',        &
+    CCOMMENT   = 'X_Y_Z_NEB', &
+    NGRID      = 1,           &
+    NTYPE      = TYPEREAL,    &
+    NDIMS      = 3,           &
+    LTIMEDEP   = .FALSE.      )
   CALL IO_Field_write(TPFILE,TZFIELD,ZWORK)
   !
-  TZFIELD%CMNHNAME   = 'ACT_OD'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'ACT_OD'
-  TZFIELD%CUNITS     = '1'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_Z_NEB'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .FALSE.
+  TZFIELD = TFIELDMETADATA(   &
+    CMNHNAME   = 'ACT_OD',    &
+    CSTDNAME   = '',          &
+    CLONGNAME  = 'ACT_OD',    &
+    CUNITS     = '1',         &
+    CDIR       = 'XY',        &
+    CCOMMENT   = 'X_Y_Z_NEB', &
+    NGRID      = 1,           &
+    NTYPE      = TYPEREAL,    &
+    NDIMS      = 3,           &
+    LTIMEDEP   = .FALSE.      )
   CALL IO_Field_write(TPFILE,TZFIELD,ZACT)
 END IF
 !

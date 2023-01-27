@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -237,13 +237,15 @@ END MODULE MODI_PHYS_PARAM_n
 !  C. Lac         11/2019: correction in the drag formula and application to building in addition to tree
 !  F. Auguste     02/2021: add IBM
 !  JL Redelsperger 03/2021: add the SW flux penetration for Ocean model case
+!  P. Wautelet 30/11/2022: compute XTHW_FLUX, XRCW_FLUX and XSVW_FLUX only when needed
 !  A. Costes      12/2021: add Blaze fire model
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
 !               ------------
 !
-USE MODD_ADV_n,       ONLY : XRTKEMS
+USE MODD_ADV_n,            ONLY : XRTKEMS
+USE MODD_AIRCRAFT_BALLOON, ONLY: LFLYER
 USE MODD_ARGSLIST_ll, ONLY : LIST_ll
 USE MODD_BLOWSNOW,    ONLY : LBLOWSNOW,XRSNOW
 USE MODD_BUDGET,      ONLY: NBUDGET_TH, NBUDGET_RV, NBUDGET_RC, NBUDGET_RI, NBUDGET_SV1, &
@@ -807,9 +809,9 @@ CALL SUNPOS_n   ( XZENITH, ZCOSZEN, ZSINZEN, ZAZIMSOL )
 !
   ZTIME1 = ZTIME2
 !
-  CALL SURF_RAD_MODIF (XMAP, XXHAT, XYHAT,                 &
-                  ZCOSZEN, ZSINZEN, ZAZIMSOL, XZS, XZS_XY, &
-                  XDIRFLASWD, XDIRSRFSWD                   )
+  CALL SURF_RAD_MODIF (XMAP, XDXHAT, XDYHAT, XXHATM, XYHATM, &
+                  ZCOSZEN, ZSINZEN, ZAZIMSOL, XZS, XZS_XY,   &
+                  XDIRFLASWD, XDIRSRFSWD                     )
 !
 !* Azimuthal angle to be sent later to surface processes
 !  Defined in radian, clockwise, from North
@@ -1510,25 +1512,25 @@ IF ( CTURB == 'TKEL' ) THEN
   END IF
 !
 !
-IF(ALLOCATED(XTHW_FLUX))  THEN
- DEALLOCATE(XTHW_FLUX)
- ALLOCATE(XTHW_FLUX(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3)))
+IF ( ALLOCATED( XTHW_FLUX ) ) DEALLOCATE( XTHW_FLUX )
+IF ( LFLYER ) THEN
+  ALLOCATE( XTHW_FLUX(SIZE( XTHT, 1 ), SIZE( XTHT, 2 ), SIZE( XTHT, 3 )) )
 ELSE
- ALLOCATE(XTHW_FLUX(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3)))
+  ALLOCATE( XTHW_FLUX(0, 0, 0) )
 END IF
 
-IF(ALLOCATED(XRCW_FLUX))  THEN
- DEALLOCATE(XRCW_FLUX)
- ALLOCATE(XRCW_FLUX(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3)))
+IF ( ALLOCATED( XRCW_FLUX ) ) DEALLOCATE( XRCW_FLUX )
+IF ( LFLYER ) THEN
+  ALLOCATE( XRCW_FLUX(SIZE( XTHT, 1 ), SIZE( XTHT, 2 ), SIZE( XTHT, 3 )) )
 ELSE
- ALLOCATE(XRCW_FLUX(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3)))
+  ALLOCATE( XRCW_FLUX(0, 0, 0) )
 END IF
-!
-IF(ALLOCATED(XSVW_FLUX))  THEN
- DEALLOCATE(XSVW_FLUX)
- ALLOCATE(XSVW_FLUX(SIZE(XSVT,1),SIZE(XSVT,2),SIZE(XSVT,3),SIZE(XSVT,4)))
+
+IF ( ALLOCATED( XSVW_FLUX ) ) DEALLOCATE( XSVW_FLUX )
+IF ( LFLYER ) THEN
+  ALLOCATE( XSVW_FLUX(SIZE( XSVT, 1 ), SIZE( XSVT, 2 ), SIZE( XSVT, 3 ), SIZE( XSVT, 4 )) )
 ELSE
- ALLOCATE(XSVW_FLUX(SIZE(XSVT,1),SIZE(XSVT,2),SIZE(XSVT,3),SIZE(XSVT,4)))
+  ALLOCATE( XSVW_FLUX(0, 0, 0, 0) )
 END IF
 !
 GCOMPUTE_SRC=SIZE(XSIGS, 3)/=0

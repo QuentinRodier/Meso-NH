@@ -128,7 +128,7 @@ USE MODE_FILL_DIMPHYEX, ONLY: FILL_DIMPHYEX
 USE MODD_BUDGET,          ONLY: TBUDGETS,TBUCONF,lbudget_th,nbudget_th
 USE MODD_CONF
 USE MODD_IO,              ONLY: TFILEDATA
-USE modd_field,           ONLY: tfielddata, TYPEREAL
+use modd_field,           only: tfieldmetadata, TYPEREAL
 USE MODD_NSV,             ONLY: XSVMIN, NSV_LGBEG, NSV_LGEND
 USE MODD_PARAMETERS
 USE MODD_PARAM_ICE,       ONLY: CFRAC_ICE_SHALLOW_MF
@@ -181,6 +181,7 @@ REAL, DIMENSION(:,:,:), INTENT(OUT)     ::  PSIGMF,PRC_MF,PRI_MF,PCF_MF ! cloud 
 REAL, DIMENSION(:,:,:), INTENT(OUT)     ::  PFLXZTHVMF           ! Thermal production for TKE scheme
 !
 REAL, INTENT(IN) :: PDX,PDY ! Size of mesh in X/Y directions
+!
 !                     0.2  Declaration of local variables
 !
 REAL, DIMENSION(SIZE(PTHM,1),SIZE(PTHM,2),SIZE(PTHM,3)) ::  ZDUDT_TURB   ! tendency of U   by turbulence only
@@ -219,12 +220,11 @@ INTEGER,DIMENSION(SIZE(PTHM,1)*SIZE(PTHM,2))     :: IKLCL,IKETL,IKCTL ! level of
 INTEGER :: IIU, IJU, IKU, IKB, IKE, IRR, ISV  
 INTEGER :: JK,JRR,JSV                          ! Loop counters
 
-
 LOGICAL :: LSTATNW  !  switch for HARMONIE-AROME turb physics option
                     ! TODO: linked with modd_turbn + init at default_desfmn 
 
-TYPE(TFIELDDATA) :: TZFIELD
-TYPE(DIMPHYEX_t) :: YLDIMPHYEXPACK
+TYPE(TFIELDMETADATA) :: TZFIELD
+TYPE(DIMPHYEX_t)     :: YLDIMPHYEXPACK
 !------------------------------------------------------------------------
 !
 !!! 1. Initialisation
@@ -301,69 +301,74 @@ END DO
 !
 IF ( OMF_FLX .AND. tpfile%lopened ) THEN
   ! stores the conservative potential temperature vertical flux
-  TZFIELD%CMNHNAME   = 'MF_THW_FLX'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'MF_THW_FLX'
-  TZFIELD%CUNITS     = 'K m s-1'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_Z_MF_THW_FLX'
-  TZFIELD%NGRID      = 4
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDMETADATA(          &
+    CMNHNAME   = 'MF_THW_FLX',       &
+    CSTDNAME   = '',                 &
+    CLONGNAME  = 'MF_THW_FLX',       &
+    CUNITS     = 'K m s-1',          &
+    CDIR       = 'XY',               &
+    CCOMMENT   = 'X_Y_Z_MF_THW_FLX', &
+    NGRID      = 4,                  &
+    NTYPE      = TYPEREAL,           &
+    NDIMS      = 3,                  &
+    LTIMEDEP   = .TRUE.              )
   CALL IO_Field_write(TPFILE,TZFIELD,ZFLXZTHMF)
   !
   ! stores the conservative mixing ratio vertical flux
-  TZFIELD%CMNHNAME   = 'MF_RCONSW_FLX'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'MF_RCONSW_FLX'
-  TZFIELD%CUNITS     = 'K m s-1'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_Z_MF_RCONSW_FLX'
-  TZFIELD%NGRID      = 4
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+    TZFIELD = TFIELDMETADATA(             &
+      CMNHNAME   = 'MF_RCONSW_FLX',       &
+      CSTDNAME   = '',                    &
+      CLONGNAME  = 'MF_RCONSW_FLX',       &
+      CUNITS     = 'K m s-1',             &
+      CDIR       = 'XY',                  &
+      CCOMMENT   = 'X_Y_Z_MF_RCONSW_FLX', &
+      NGRID      = 4,                     &
+      NTYPE      = TYPEREAL,              &
+      NDIMS      = 3,                     &
+      LTIMEDEP   = .TRUE.                 )
   CALL IO_Field_write(TPFILE,TZFIELD,ZFLXZRMF)
   !
   ! stores the theta_v vertical flux
-  TZFIELD%CMNHNAME   = 'MF_THVW_FLX'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'MF_THVW_FLX'
-  TZFIELD%CUNITS     = 'K m s-1'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_Z_MF_THVW_FLX'
-  TZFIELD%NGRID      = 4
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDMETADATA(           &
+    CMNHNAME   = 'MF_THVW_FLX',       &
+    CSTDNAME   = '',                  &
+    CLONGNAME  = 'MF_THVW_FLX',       &
+    CUNITS     = 'K m s-1',           &
+    CDIR       = 'XY',                &
+    CCOMMENT   = 'X_Y_Z_MF_THVW_FLX', &
+    NGRID      = 4,                   &
+    NTYPE      = TYPEREAL,            &
+    NDIMS      = 3,                   &
+    LTIMEDEP   = .TRUE.               )
   CALL IO_Field_write(TPFILE,TZFIELD,PFLXZTHVMF)
   !
  IF (PARAM_MFSHALLN%LMIXUV) THEN
   ! stores the U momentum vertical flux
-  TZFIELD%CMNHNAME   = 'MF_UW_FLX'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'MF_UW_FLX'
-  TZFIELD%CUNITS     = 'm2 s-2'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_Z_MF_UW_FLX'
-  TZFIELD%NGRID      = 4
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDMETADATA(         &
+    CMNHNAME   = 'MF_UW_FLX',       &
+    CSTDNAME   = '',                &
+    CLONGNAME  = 'MF_UW_FLX',       &
+    CUNITS     = 'm2 s-2',          &
+    CDIR       = 'XY',              &
+    CCOMMENT   = 'X_Y_Z_MF_UW_FLX', &
+    NGRID      = 4,                 &
+    NTYPE      = TYPEREAL,          &
+    NDIMS      = 3,                 &
+    LTIMEDEP   = .TRUE.             )
   CALL IO_Field_write(TPFILE,TZFIELD,ZFLXZUMF)
   !
   ! stores the V momentum vertical flux
-  TZFIELD%CMNHNAME   = 'MF_VW_FLX'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'MF_VW_FLX'
-  TZFIELD%CUNITS     = 'm2 s-2'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_Z_MF_VW_FLX'
-  TZFIELD%NGRID      = 4
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDMETADATA(         &
+    CMNHNAME   = 'MF_VW_FLX',       &
+    CSTDNAME   = '',                &
+    CLONGNAME  = 'MF_VW_FLX',       &
+    CUNITS     = 'm2 s-2',          &
+    CDIR       = 'XY',              &
+    CCOMMENT   = 'X_Y_Z_MF_VW_FLX', &
+    NGRID      = 4,                 &
+    NTYPE      = TYPEREAL,          &
+    NDIMS      = 3,                 &
+    LTIMEDEP   = .TRUE.             )
   CALL IO_Field_write(TPFILE,TZFIELD,ZFLXZVMF)
   !
  END IF

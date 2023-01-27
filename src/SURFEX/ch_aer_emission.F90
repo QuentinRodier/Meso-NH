@@ -1,4 +1,4 @@
-!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
@@ -249,7 +249,7 @@ ZFM(:,3) = ZFM(:,1) * (ZEMISRADIUSI**6) *EXP(18 *(LOG(XEMISSIGI))**2)
 !
 ZFM(:,6) = ZFM(:,4) * (ZEMISRADIUSJ**6) *EXP(18 *(LOG(XEMISSIGJ))**2)
 !
-!*       1.4    conversion en ppp.m.s-1
+!*       1.4    conversion en ppv.m.s-1
 !
 ! conversion in atmospheric unit only for moments 0 and 6 
 PFLUX(:,I_CH_M0i) = ZFM(:,1) * 1E-6 / (ZDEN2MOL * PRHODREF(:))
@@ -275,7 +275,7 @@ PFLUX(:,I_CH_BCj) = PFLUX(:,I_CH_BCj) * ZCONVERSION(:) / (ZMI(JP_AER_BC)*1E-3)
 PFLUX(:,I_CH_DSTi) = PFLUX(:,I_CH_DSTi) * ZCONVERSION(:) / (ZMI(JP_AER_DST)*1E-3)
 PFLUX(:,I_CH_DSTj) = PFLUX(:,I_CH_DSTj) * ZCONVERSION(:) / (ZMI(JP_AER_DST)*1E-3)
 !
-! conversion M0 and M6  ppp.m.s-1 into  molecules.m-2.s-1
+! conversion M0 and M6  ppv.m.s-1 into  molecules.m-2.s-1
 PFLUX(:,I_CH_M0i) = PFLUX(:,I_CH_M0i) * ZCONVERSION(:)
 PFLUX(:,I_CH_M0j) = PFLUX(:,I_CH_M0j) * ZCONVERSION(:)
 !

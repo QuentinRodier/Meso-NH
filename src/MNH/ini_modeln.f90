@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -395,6 +395,7 @@ use MODD_SALT_OPT_LKT,      only: NMAX_RADIUS_LKT_SALT=>NMAX_RADIUS_LKT, NMAX_SI
 USE MODD_SERIES,            only: LSERIES
 USE MODD_SHADOWS_n
 USE MODD_STAND_ATM,         only: XSTROATM, XSMLSATM, XSMLWATM, XSPOSATM, XSPOWATM
+USE MODD_SURF_PAR,          only: XUNDEF_SFX => XUNDEF
 USE MODD_TIME
 USE MODD_TIME_n
 USE MODD_TURB_CLOUD,        only: NMODEL_CLOUD, CTURBLEN_CLOUD,XCEI
@@ -402,6 +403,7 @@ USE MODD_TURB_n
 USE MODD_VAR_ll,            only: IP
 
 USE MODE_GATHER_ll
+USE MODE_INI_AIRCRAFT_BALLOON, only: INI_AIRCRAFT_BALLOON
 use mode_ini_budget,        only: Budget_preallocate, Ini_budget
 USE MODE_INI_ONE_WAY_n
 USE MODE_IO
@@ -412,6 +414,7 @@ USE MODE_ll
 USE MODE_MODELN_HANDLER
 USE MODE_MPPDB
 USE MODE_MSG
+USE MODE_SET_GRID
 USE MODE_SPLITTINGZ_ll,     only: GET_DIM_EXTZ_ll
 USE MODE_TYPE_ZDIFFU
 USE MODE_FIELD,             ONLY: INI_FIELD_LIST
@@ -429,8 +432,6 @@ USE MODI_INI_AEROSET3
 USE MODI_INI_AEROSET4
 USE MODI_INI_AEROSET5
 USE MODI_INI_AEROSET6
-USE MODI_INI_AIRCRAFT_BALLOON
-USE MODI_INI_AIRCRAFT_BALLOON
 USE MODI_INI_BIKHARDT_n
 USE MODI_INI_CPL
 USE MODI_INI_DEEP_CONVECTION
@@ -463,7 +464,6 @@ USE MODI_MNHGET_SURF_PARAM_n
 USE MODI_MNHREAD_ZS_DUMMY_n
 USE MODI_READ_FIELD
 USE MODI_SET_DIRCOS
-USE MODI_SET_GRID
 USE MODI_SET_REF
 #ifdef CPLOASIS
 USE MODI_SFX_OASIS_READ_NAM
@@ -1023,10 +1023,13 @@ ALLOCATE(XXHAT(IIU))
 ALLOCATE(XDXHAT(IIU))
 ALLOCATE(XYHAT(IJU))
 ALLOCATE(XDYHAT(IJU))
+ALLOCATE(XXHATM(IIU))
+ALLOCATE(XYHATM(IJU))
 ALLOCATE(XZS(IIU,IJU))
 ALLOCATE(XZSMT(IIU,IJU))
 ALLOCATE(XZZ(IIU,IJU,IKU))
 ALLOCATE(XZHAT(IKU))
+ALLOCATE(XZHATM(IKU))
 ALLOCATE(XDIRCOSZW(IIU,IJU))
 ALLOCATE(XDIRCOSXW(IIU,IJU))
 ALLOCATE(XDIRCOSYW(IIU,IJU))
@@ -1513,7 +1516,7 @@ IF (CRAD /= 'NONE') THEN
   ALLOCATE(XDIR_ALB(IIU,IJU,NSWB_MNH))
   ALLOCATE(XSCA_ALB(IIU,IJU,NSWB_MNH))
   ALLOCATE(XEMIS  (IIU,IJU,NLWB_MNH))
-  ALLOCATE(XTSRAD (IIU,IJU))    ; XTSRAD = 0.0
+  ALLOCATE(XTSRAD (IIU,IJU))    ; XTSRAD = XUNDEF_SFX
   ALLOCATE(XSEA (IIU,IJU))
   ALLOCATE(XZS_XY (IIU,IJU))
   ALLOCATE(NCLEARCOL_TM1(IIU,IJU))
@@ -1874,13 +1877,15 @@ END IF
 !*       7.    INITIALIZE GRIDS AND METRIC COEFFICIENTS
 !              ----------------------------------------
 !
-CALL SET_GRID(KMI,TPINIFILE,IKU,NIMAX_ll,NJMAX_ll,                       &
-              XTSTEP,XSEGLEN,                                            &
-              XLONORI,XLATORI,XLON,XLAT,                                 &
-              XXHAT,XYHAT,XDXHAT,XDYHAT, XMAP,                           &
-              XZS,XZZ,XZHAT,XZTOP,LSLEVE,XLEN1,XLEN2,XZSMT,              &
-              ZJ,                                                        &
-              TDTMOD,TDTCUR,NSTOP,NBAK_NUMB,NOUT_NUMB,TBACKUPN,TOUTPUTN)
+CALL SET_GRID( KMI, TPINIFILE, IKU, NIMAX_ll, NJMAX_ll,                        &
+               XTSTEP, XSEGLEN,                                                &
+               XLONORI, XLATORI, XLON, XLAT,                                   &
+               XXHAT, XYHAT, XDXHAT, XDYHAT, XXHATM, XYHATM,                   &
+               XXHAT_ll, XYHAT_ll, XXHATM_ll, XYHATM_ll,                       &
+               XHAT_BOUND, XHATM_BOUND,                                        &
+               XMAP, XZS, XZZ, XZHAT, XZHATM, XZTOP, LSLEVE,                   &
+               XLEN1, XLEN2, XZSMT, ZJ,                                        &
+               TDTMOD, TDTCUR, NSTOP, NBAK_NUMB, NOUT_NUMB, TBACKUPN, TOUTPUTN )
 !
 CALL METRICS(XMAP,XDXHAT,XDYHAT,XZZ,XDXX,XDYY,XDZX,XDZY,XDZZ)
 !
@@ -2158,10 +2163,10 @@ CALL READ_FIELD(KMI,TPINIFILE,IIU,IJU,IKU,                                    &
 !              ---------------------------
 !
 !
-CALL SET_REF(KMI,TPINIFILE,                         &
-             XZZ,XZHAT,ZJ,XDXX,XDYY,CLBCX,CLBCY,    &
-             XREFMASS,XMASS_O_PHI0,XLINMASS,        &
-             XRHODREF,XTHVREF,XRVREF,XEXNREF,XRHODJ )
+CALL SET_REF( KMI, TPINIFILE,                            &
+              XZZ, XZHATM, ZJ, XDXX, XDYY, CLBCX, CLBCY, &
+              XREFMASS, XMASS_O_PHI0, XLINMASS,          &
+              XRHODREF, XTHVREF, XRVREF, XEXNREF, XRHODJ )
 !
 !-------------------------------------------------------------------------------
 !
@@ -2413,7 +2418,7 @@ END IF
 !               -------------------------------
 !
 IF (LLG .AND. LINIT_LG .AND. CPROGRAM=='MESONH') &
-  CALL INI_LG(XXHAT,XYHAT,XZZ,XSVT,XLBXSVM,XLBYSVM)
+  CALL INI_LG( XXHATM, XYHATM, XZZ, XSVT, XLBXSVM, XLBYSVM )
 
 !
 !-------------------------------------------------------------------------------
@@ -2422,7 +2427,7 @@ IF (LLG .AND. LINIT_LG .AND. CPROGRAM=='MESONH') &
 !               ------------------------------------------
 !
 CALL INI_DYNAMICS(XLON,XLAT,XRHODJ,XTHVREF,XMAP,XZZ,XDXHAT,XDYHAT,            &
-             XZHAT,CLBCX,CLBCY,XTSTEP,                                        &
+             XZHAT,XZHATM,CLBCX,CLBCY,XTSTEP,                                 &
              LVE_RELAX,LVE_RELAX_GRD,LHORELAX_UVWTH,LHORELAX_RV,              &
              LHORELAX_RC,LHORELAX_RR,LHORELAX_RI,LHORELAX_RS,LHORELAX_RG,     &
              LHORELAX_RH,LHORELAX_TKE,LHORELAX_SV,                            &
@@ -2485,15 +2490,11 @@ IF (CRAD   /= 'NONE') THEN
   IF (GINIRAD) CALL SUNPOS_n(XZENITH,PAZIMSOL=XAZIM)
   CALL SURF_SOLAR_GEOM    (XZS, XZS_XY)
   !
-  ALLOCATE(XXHAT_ll                 (IIU_ll))
-  ALLOCATE(XYHAT_ll                 (IJU_ll))
   ALLOCATE(XZS_ll                   (IIU_ll,IJU_ll))
   ALLOCATE(XZS_XY_ll                (IIU_ll,IJU_ll))
   !
   CALL GATHERALL_FIELD_ll('XY',XZS,XZS_ll,IRESP)
   CALL GATHERALL_FIELD_ll('XY',XZS_XY,XZS_XY_ll,IRESP)
-  CALL GATHERALL_FIELD_ll('XX',XXHAT,XXHAT_ll,IRESP)
-  CALL GATHERALL_FIELD_ll('YY',XYHAT,XYHAT_ll,IRESP)
   XZS_MAX_ll=MAXVAL(XZS_ll)
 ELSE
   XAZIM       = XPI
@@ -2781,27 +2782,21 @@ DEALLOCATE(XSPOWATM)
 !*      23.     BALLOON and AIRCRAFT initializations
 !              ------------------------------------
 !
-CALL INI_AIRCRAFT_BALLOON(TPINIFILE,XTSTEP, TDTSEG, XSEGLEN, NRR, NSV, &
-                          IKU,CTURB=="TKEL" ,                          &
-                          XLATORI, XLONORI                             )
+CALL INI_AIRCRAFT_BALLOON( TPINIFILE, XLATORI, XLONORI )
 !
 !-------------------------------------------------------------------------------
 !
 !*      24.     STATION initializations
 !              -----------------------
 !
-CALL INI_SURFSTATION_n(XTSTEP, XSEGLEN, NRR, NSV, &
-                       CTURB=="TKEL" , KMI,       &
-                       XLATORI, XLONORI           )
+CALL INI_SURFSTATION_n( )
 !
 !-------------------------------------------------------------------------------
 !
 !*      25.     PROFILER initializations
 !              ------------------------
 !
-CALL INI_POSPROFILER_n(XTSTEP, XSEGLEN, NRR, NSV,  &
-                       CTURB=="TKEL",              &
-                       XLATORI, XLONORI            )
+CALL INI_POSPROFILER_n( )
 !
 !-------------------------------------------------------------------------------
 !

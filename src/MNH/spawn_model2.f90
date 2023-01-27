@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -737,6 +737,7 @@ END IF
 !*       4.4   Grid variables (module MODD_GRID2 and MODD_METRICS2):
 !
 ALLOCATE(XXHAT(IIU),XYHAT(IJU),XZHAT(IKU))
+ALLOCATE(XXHATM(IIU),XYHATM(IJU),XZHATM(IKU))
 ALLOCATE(XZTOP)
 ALLOCATE(XMAP(IIU,IJU))
 ALLOCATE(XLAT(IIU,IJU))
@@ -1061,9 +1062,12 @@ ELSE
         NYEND_TMP = NYEND
 ENDIF
 XZS=0.
-CALL SPAWN_GRID2 (NXOR,NYOR,NXEND,NYEND,NDXRATIO,NDYRATIO,                    &
-                  XLONORI,XLATORI,XXHAT,XYHAT,XZHAT,XZTOP,LSLEVE,XLEN1,XLEN2, &
-                  XZS,XZSMT,ZZS_LS,ZZSMT_LS,TDTMOD,TDTCUR                     )
+CALL SPAWN_GRID2( NXOR, NYOR, NXEND, NYEND, NDXRATIO, NDYRATIO,                  &
+                  XLONORI, XLATORI, XXHAT, XYHAT, XZHAT, XXHATM, XYHATM, XZHATM, &
+                  XXHAT_ll, XYHAT_ll, XXHATM_ll, XYHATM_ll,                      &
+                  XHAT_BOUND, XHATM_BOUND,                                       &
+                  XZTOP, LSLEVE, XLEN1, XLEN2,                                   &
+                  XZS, XZSMT, ZZS_LS, ZZSMT_LS, TDTMOD, TDTCUR                   )
 !
 CALL MPPDB_CHECK2D(ZZS_LS,"SPAWN_MOD2:ZZS_LS",PRECISION)
 CALL MPPDB_CHECK2D(ZZSMT_LS,"SPAWN_MOD2:ZZSMT_LS",PRECISION)
@@ -1082,10 +1086,12 @@ IF (LCARTESIAN) THEN
   CALL SM_GRIDCART(XXHAT,XYHAT,XZHAT,ZZS_LS,LSLEVE,XLEN1,XLEN2,ZZSMT_LS,XDXHAT,XDYHAT,ZZZ_LS,ZJ)
   CALL SM_GRIDCART(XXHAT,XYHAT,XZHAT,XZS   ,LSLEVE,XLEN1,XLEN2,XZSMT   ,XDXHAT,XDYHAT,XZZ   ,ZJ)
 ELSE
-  CALL SM_GRIDPROJ(XXHAT,XYHAT,XZHAT,ZZS_LS,LSLEVE,XLEN1,XLEN2,ZZSMT_LS,&
-                   XLATORI,XLONORI,XMAP,XLAT,XLON,XDXHAT,XDYHAT,ZZZ_LS,ZJ)
-  CALL SM_GRIDPROJ(XXHAT,XYHAT,XZHAT,XZS   ,LSLEVE,XLEN1,XLEN2,XZSMT   ,&
-                   XLATORI,XLONORI,XMAP,XLAT,XLON,XDXHAT,XDYHAT,XZZ   ,ZJ)
+  CALL SM_GRIDPROJ( XXHAT, XYHAT, XZHAT, XXHATM, XYHATM, ZZS_LS,      &
+                    LSLEVE, XLEN1, XLEN2, ZZSMT_LS, XLATORI, XLONORI, &
+                    XMAP, XLAT, XLON, XDXHAT, XDYHAT, ZZZ_LS, ZJ      )
+  CALL SM_GRIDPROJ( XXHAT, XYHAT, XZHAT, XXHATM, XYHATM, XZS,         &
+                    LSLEVE, XLEN1, XLEN2, XZSMT,    XLATORI, XLONORI, &
+                    XMAP, XLAT, XLON, XDXHAT, XDYHAT, XZZ,    ZJ      )
 END IF
 !
 !*       5.4  Compute the metric coefficients
@@ -1111,10 +1117,10 @@ CALL MPPDB_CHECK3D(XDZY,"spawnmod2-aftrupdate_metrics:XDZY",PRECISION)
 !
 !*       5.5    3D Reference state variables :
 !
-CALL SET_REF(0,TFILE_DUMMY,                        &
-             XZZ,XZHAT,ZJ,XDXX,XDYY,CLBCX,CLBCY,   &
-             XREFMASS,XMASS_O_PHI0,XLINMASS,       &
-             XRHODREF,XTHVREF,XRVREF,XEXNREF,XRHODJ)
+CALL SET_REF( 0, TFILE_DUMMY,                            &
+              XZZ, XZHATM, ZJ, XDXX, XDYY, CLBCX, CLBCY, &
+              XREFMASS, XMASS_O_PHI0, XLINMASS,          &
+              XRHODREF, XTHVREF, XRVREF, XEXNREF, XRHODJ )
 !
 CALL SECOND_MNH(ZTIME2)
 !

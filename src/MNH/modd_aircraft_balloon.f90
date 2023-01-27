@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2000-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2000-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -34,165 +34,166 @@
 !!              Oct,2016 : G.DELAUTIER LIMA
 !  P. Wautelet 08/02/2019: add missing NULL association for pointers
 !  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
+!  P. Wautelet    06/2022: reorganize flyers
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
 !             ------------
 !
 !
-use modd_type_date, only: date_time
+use modd_parameters,    only: NNEGUNDEF, XNEGUNDEF, XUNDEF
+USE MODD_TYPE_STATPROF, ONLY: TSTATPROFTIME
+use modd_type_date,     only: date_time
+
+USE MODE_DATETIME,      ONLY: TPREFERENCE_DATE
 
 implicit none
 
-TYPE FLYER
-!
-!
-!* general information
-!
-CHARACTER(LEN=3)              :: MODEL  ! type of model used for each balloon/aircraft
-                                        ! 'FIX' : NMODEL used during the run
-                                        ! 'MOB' : change od model depends of the 
-                                        !         balloon/aircraft location
-INTEGER                       :: NMODEL ! model number for each balloon/aircraft
-CHARACTER(LEN=6)              :: TYPE   ! flyer type:
-                                        ! 'RADIOS' : radiosounding balloon
-                                        ! 'ISODEN' : iso-density balloon
-                                        ! 'AIRCRA' : aircraft
-                                        ! 'CVBALL' : Constant Volume balloon
-CHARACTER(LEN=10)             :: TITLE  ! title or name for the balloon/aircraft
-TYPE(DATE_TIME)               :: LAUNCH ! launch/takeoff date and time
-LOGICAL                       :: CRASH  ! occurence of crash
-LOGICAL                       :: FLY    ! occurence of flying
-!
-!* storage monitoring
-!
-REAL                          :: T_CUR  ! current time since last storage
-INTEGER                       :: N_CUR  ! current step of storage
-REAL                          :: STEP   ! storage time step
-!
-!* balloon dynamical characteristics
-!
-REAL                          :: LAT    ! latitude of launch
-REAL                          :: LON    ! lontitude of launch
-REAL                          :: XLAUNCH! X coordinate of launch
-REAL                          :: YLAUNCH! Y coordinate of launch
-REAL                          :: ALT    ! altitude of launch (if 'RADIOS' or 'ISODEN' or 'CVBALL')
-REAL                          :: WASCENT! ascent vertical speed (if 'RADIOS')
-REAL                          :: RHO    ! density of launch (if 'ISODEN')
-REAL                          :: PRES   ! pressure of launch (if 'ISODEN')
-REAL                          :: DIAMETER! apparent diameter of the balloon (m) (if 'CVBALL')
-REAL                          :: AERODRAG! aerodynamic drag coefficient of the balloon (if 'CVBALL')
-REAL                          :: INDDRAG! induced drag coefficient (i.e. air shifted by the balloon) (if 'CVBALL')
-REAL                          :: VOLUME ! volume of the balloon (m3) (if 'CVBALL')
-REAL                          :: MASS   ! mass of the balloon (kg) (if 'CVBALL')
-!
-!* aircraft flight definition
-!
-INTEGER                       :: SEG      ! number of aircraft flight segments
-INTEGER                       :: SEGCURN  ! current flight segment number
-REAL                          :: SEGCURT  ! current flight segment time spent
-REAL, DIMENSION(:),   POINTER :: SEGLAT  => NULL() ! latitude of flight segment extremities  (LEG+1)
-REAL, DIMENSION(:),   POINTER :: SEGLON  => NULL() ! longitude of flight segment extremities (LEG+1)
-REAL, DIMENSION(:),   POINTER :: SEGX    => NULL() ! X of flight segment extremities         (LEG+1)
-REAL, DIMENSION(:),   POINTER :: SEGY    => NULL() ! Y of flight segment extremities         (LEG+1)
-REAL, DIMENSION(:),   POINTER :: SEGP    => NULL() ! pressure of flight segment extremities  (LEG+1)
-REAL, DIMENSION(:),   POINTER :: SEGZ    => NULL() ! altitude of flight segment extremities  (LEG+1)
-REAL, DIMENSION(:),   POINTER :: SEGTIME => NULL() ! duration of flight segments             (LEG  )
-!
-!* aircraft altitude type definition
-!
-LOGICAL                       :: ALTDEF   ! TRUE == altitude given in pressure
-!
-!* current position of the balloon/aircraft
-!
-REAL                          :: X_CUR    ! current x
-REAL                          :: Y_CUR    ! current y
-REAL                          :: Z_CUR    ! current z (if 'RADIOS' or 'AIRCRA' and 'ALTDEF' = T)
-REAL                          :: P_CUR    ! current p (if 'AIRCRA' and 'ALTDEF' = F)
-!
-!* data records
-!
-type(date_time), dimension(:), pointer :: tpdates => NULL() ! dates(n) (n: recording instants)
-REAL, DIMENSION(:),    POINTER :: X         => NULL() ! X(n)
-REAL, DIMENSION(:),    POINTER :: Y         => NULL() ! Y(n)
-REAL, DIMENSION(:),    POINTER :: Z         => NULL() ! Z(n)
-REAL, DIMENSION(:),    POINTER :: XLON      => NULL() ! longitude(n)
-REAL, DIMENSION(:),    POINTER :: YLAT      => NULL() ! latitude (n)
-REAL, DIMENSION(:),    POINTER :: ZON       => NULL() ! zonal wind(n)
-REAL, DIMENSION(:),    POINTER :: MER       => NULL() ! meridian wind(n)
-REAL, DIMENSION(:),    POINTER :: W         => NULL() ! w(n)  (air vertical speed)
-REAL, DIMENSION(:),    POINTER :: P         => NULL() ! p(n)
-REAL, DIMENSION(:),    POINTER :: TKE       => NULL() ! tke(n)
-REAL, DIMENSION(:),    POINTER :: TKE_DISS  => NULL() ! tke dissipation rate
-REAL, DIMENSION(:),    POINTER :: TH        => NULL() ! th(n)
-REAL, DIMENSION(:,:),  POINTER :: R         => NULL() ! r*(n)
-REAL, DIMENSION(:,:),  POINTER :: SV        => NULL() ! Sv*(n)
-REAL, DIMENSION(:,:),  POINTER :: RTZ       => NULL() ! tot hydrometeor mixing ratio
-REAL, DIMENSION(:,:,:),POINTER :: RZ        => NULL() ! water vapour mixing ratio
-REAL, DIMENSION(:,:),  POINTER :: FFZ       => NULL() ! horizontal wind
-REAL, DIMENSION(:,:),  POINTER :: IWCZ      => NULL() ! ice water content
-REAL, DIMENSION(:,:),  POINTER :: LWCZ      => NULL() ! liquid water content
-REAL, DIMENSION(:,:),  POINTER :: CIZ       => NULL() ! Ice concentration
-REAL, DIMENSION(:,:),  POINTER :: CCZ       => NULL() ! Cloud concentration (LIMA)
-REAL, DIMENSION(:,:),  POINTER :: CRZ       => NULL() ! Rain concentration (LIMA)
-REAL, DIMENSION(:,:),  POINTER :: CRARE     => NULL() ! cloud radar reflectivity
-REAL, DIMENSION(:,:),  POINTER :: CRARE_ATT => NULL() ! attenuated (= more realistic) cloud radar reflectivity
-REAL, DIMENSION(:,:),  POINTER :: WZ        => NULL() ! vertical profile of vertical velocity
-REAL, DIMENSION(:,:),  POINTER :: ZZ        => NULL() ! vertical profile of mass point altitude (above sea)
-REAL, DIMENSION(:,:),  POINTER :: AER       => NULL() ! Extinction at 550 nm
-REAL, DIMENSION(:,:),  POINTER :: DST_WL    => NULL() ! Extinction by wavelength
-REAL, DIMENSION(:),    POINTER :: ZS        => NULL() ! zs(n)
-REAL, DIMENSION(:),    POINTER :: TSRAD     => NULL() ! Ts(n)
-!
-REAL, DIMENSION(:)  ,   POINTER :: THW_FLUX => NULL() ! thw_flux(n)
-REAL, DIMENSION(:)  ,   POINTER :: RCW_FLUX => NULL() ! rcw_flux(n)
-REAL, DIMENSION(:,:),   POINTER :: SVW_FLUX => NULL() ! psw_flux(n)
-END TYPE FLYER
-REAL :: XLAM_CRAD ! cloud radar wavelength (m)
-!
-!-------------------------------------------------------------------------------------------
-!
-LOGICAL     :: LFLYER    ! flag to use aircraft/balloons
-!
-TYPE(FLYER) :: TBALLOON1 ! characteristics and records of a balloon
-TYPE(FLYER) :: TBALLOON2 ! characteristics and records of a balloon
-TYPE(FLYER) :: TBALLOON3 ! characteristics and records of a balloon
-TYPE(FLYER) :: TBALLOON4 ! characteristics and records of a balloon
-TYPE(FLYER) :: TBALLOON5 ! characteristics and records of a balloon
-TYPE(FLYER) :: TBALLOON6 ! characteristics and records of a balloon
-TYPE(FLYER) :: TBALLOON7 ! characteristics and records of a balloon
-TYPE(FLYER) :: TBALLOON8 ! characteristics and records of a balloon
-TYPE(FLYER) :: TBALLOON9 ! characteristics and records of a balloon
-!
-TYPE(FLYER) :: TAIRCRAFT1 ! characteristics and records of an aircraft
-TYPE(FLYER) :: TAIRCRAFT2 ! characteristics and records of an aircraft
-TYPE(FLYER) :: TAIRCRAFT3 ! characteristics and records of an aircraft
-TYPE(FLYER) :: TAIRCRAFT4 ! characteristics and records of an aircraft
-TYPE(FLYER) :: TAIRCRAFT5 ! characteristics and records of an aircraft
-TYPE(FLYER) :: TAIRCRAFT6 ! characteristics and records of an aircraft
-TYPE(FLYER) :: TAIRCRAFT7 ! characteristics and records of an aircraft
-TYPE(FLYER) :: TAIRCRAFT8 ! characteristics and records of an aircraft
-TYPE(FLYER) :: TAIRCRAFT9 ! characteristics and records of an aircraft
-TYPE(FLYER) :: TAIRCRAFT10! characteristics and records of an aircraft
-TYPE(FLYER) :: TAIRCRAFT11! characteristics and records of an aircraft
-TYPE(FLYER) :: TAIRCRAFT12! characteristics and records of an aircraft
-TYPE(FLYER) :: TAIRCRAFT13! characteristics and records of an aircraft
-TYPE(FLYER) :: TAIRCRAFT14! characteristics and records of an aircraft
-TYPE(FLYER) :: TAIRCRAFT15! characteristics and records of an aircraft
-TYPE(FLYER) :: TAIRCRAFT16! characteristics and records of an aircraft
-TYPE(FLYER) :: TAIRCRAFT17! characteristics and records of an aircraft
-TYPE(FLYER) :: TAIRCRAFT18! characteristics and records of an aircraft
-TYPE(FLYER) :: TAIRCRAFT19! characteristics and records of an aircraft
-TYPE(FLYER) :: TAIRCRAFT20! characteristics and records of an aircraft
-TYPE(FLYER) :: TAIRCRAFT21! characteristics and records of an aircraft
-TYPE(FLYER) :: TAIRCRAFT22! characteristics and records of an aircraft
-TYPE(FLYER) :: TAIRCRAFT23! characteristics and records of an aircraft
-TYPE(FLYER) :: TAIRCRAFT24! characteristics and records of an aircraft
-TYPE(FLYER) :: TAIRCRAFT25! characteristics and records of an aircraft
-TYPE(FLYER) :: TAIRCRAFT26! characteristics and records of an aircraft
-TYPE(FLYER) :: TAIRCRAFT27! characteristics and records of an aircraft
-TYPE(FLYER) :: TAIRCRAFT28! characteristics and records of an aircraft
-TYPE(FLYER) :: TAIRCRAFT29! characteristics and records of an aircraft
-TYPE(FLYER) :: TAIRCRAFT30! characteristics and records of an aircraft
-!
+save
+
+INTEGER, PARAMETER :: NCRASH_NO        = 0 ! Not crashed
+INTEGER, PARAMETER :: NCRASH_OUT_HORIZ = 1 ! Flyer is outside of horizontal domain
+INTEGER, PARAMETER :: NCRASH_OUT_LOW   = 2 ! Flyer crashed on ground (or sea!)
+INTEGER, PARAMETER :: NCRASH_OUT_HIGH  = 3 ! Flyer is too high (outside of domain)
+
+INTEGER, PARAMETER :: NFLYER_DEFAULT_RANK = 1
+
+LOGICAL :: LFLYER = .FALSE. ! flag to use aircraft/balloons
+
+TYPE :: TFLYERDATA
+  !
+  !* general information
+  !
+  CHARACTER(LEN=3) :: CMODEL = 'FIX' ! type of model used for each balloon/aircraft
+                                     ! 'FIX' : NMODEL used during the run
+                                     ! 'MOB' : change od model depends of the
+                                     !         balloon/aircraft location
+  INTEGER          :: NMODEL = 0 ! model number for each balloon/aircraft (may change if CMODEL='MOB')
+  INTEGER          :: NID    = 0 ! Identification number
+  CHARACTER(LEN=6) :: CTYPE = ''  ! flyer type:
+                                  ! 'RADIOS' : radiosounding balloon
+                                  ! 'ISODEN' : iso-density balloon
+                                  ! 'AIRCRA' : aircraft
+                                  ! 'CVBALL' : Constant Volume balloon
+  CHARACTER(LEN=10) :: CTITLE = ''  ! title or name for the balloon/aircraft
+  TYPE(DATE_TIME)   :: TLAUNCH = TPREFERENCE_DATE ! launch/takeoff date and time
+  LOGICAL           :: LCRASH = .FALSE. ! occurence of crash
+  INTEGER           :: NCRASH = NCRASH_NO
+  LOGICAL           :: LFLY   = .FALSE. ! occurence of flying
+  !
+  !* storage monitoring
+  !
+  LOGICAL             :: LSTORE = .FALSE. ! Do we have to store data now
+  TYPE(TSTATPROFTIME) :: TFLYER_TIME ! Time management for flyer
+  !
+  !* current position of the balloon/aircraft
+  !
+  REAL :: XX_CUR = XNEGUNDEF ! current x
+  REAL :: XY_CUR = XNEGUNDEF ! current y
+  REAL :: XZ_CUR = XNEGUNDEF ! current z (if 'RADIOS' or 'AIRCRA' and 'ALTDEF' = T)
+  INTEGER :: NRANK_CUR = NFLYER_DEFAULT_RANK ! Rank of the process where the flyer is
+  !
+  !* data records
+  !
+  INTEGER, DIMENSION(:),  ALLOCATABLE :: NMODELHIST ! List of models where data has been computed
+  REAL, DIMENSION(:),     ALLOCATABLE :: XX         ! X(n)
+  REAL, DIMENSION(:),     ALLOCATABLE :: XY         ! Y(n)
+  REAL, DIMENSION(:),     ALLOCATABLE :: XZ         ! Z(n)
+  REAL, DIMENSION(:),     ALLOCATABLE :: XLAT       ! latitude (n)
+  REAL, DIMENSION(:),     ALLOCATABLE :: XLON       ! longitude(n)
+  REAL, DIMENSION(:),     ALLOCATABLE :: XZON       ! zonal wind(n)
+  REAL, DIMENSION(:),     ALLOCATABLE :: XMER       ! meridian wind(n)
+  REAL, DIMENSION(:),     ALLOCATABLE :: XW         ! w(n)  (air vertical speed)
+  REAL, DIMENSION(:),     ALLOCATABLE :: XP         ! p(n)
+  REAL, DIMENSION(:),     ALLOCATABLE :: XTKE       ! tke(n)
+  REAL, DIMENSION(:),     ALLOCATABLE :: XTKE_DISS  ! tke dissipation rate
+  REAL, DIMENSION(:),     ALLOCATABLE :: XTH        ! th(n)
+  REAL, DIMENSION(:,:),   ALLOCATABLE :: XR         ! r*(n)
+  REAL, DIMENSION(:,:),   ALLOCATABLE :: XSV        ! Sv*(n)
+  REAL, DIMENSION(:,:),   ALLOCATABLE :: XRTZ       ! tot hydrometeor mixing ratio
+  REAL, DIMENSION(:,:,:), ALLOCATABLE :: XRZ        ! water vapour mixing ratio
+  REAL, DIMENSION(:,:),   ALLOCATABLE :: XFFZ       ! horizontal wind
+  REAL, DIMENSION(:,:),   ALLOCATABLE :: XIWCZ      ! ice water content
+  REAL, DIMENSION(:,:),   ALLOCATABLE :: XLWCZ      ! liquid water content
+  REAL, DIMENSION(:,:),   ALLOCATABLE :: XCIZ       ! Ice concentration
+  REAL, DIMENSION(:,:),   ALLOCATABLE :: XCCZ       ! Cloud concentration (LIMA)
+  REAL, DIMENSION(:,:),   ALLOCATABLE :: XCRZ       ! Rain concentration (LIMA)
+  REAL, DIMENSION(:,:),   ALLOCATABLE :: XCRARE     ! cloud radar reflectivity
+  REAL, DIMENSION(:,:),   ALLOCATABLE :: XCRARE_ATT ! attenuated (= more realistic) cloud radar reflectivity
+  REAL, DIMENSION(:,:),   ALLOCATABLE :: XWZ        ! vertical profile of vertical velocity
+  REAL, DIMENSION(:,:),   ALLOCATABLE :: XZZ        ! vertical profile of mass point altitude (above sea)
+  REAL, DIMENSION(:),     ALLOCATABLE :: XZS        ! zs(n)
+  REAL, DIMENSION(:),     ALLOCATABLE :: XTSRAD     ! Ts(n)
+  !
+  REAL, DIMENSION(:),     ALLOCATABLE :: XTHW_FLUX  ! thw_flux(n)
+  REAL, DIMENSION(:),     ALLOCATABLE :: XRCW_FLUX  ! rcw_flux(n)
+  REAL, DIMENSION(:,:),   ALLOCATABLE :: XSVW_FLUX  ! psw_flux(n)
+END TYPE TFLYERDATA
+
+TYPE, EXTENDS( TFLYERDATA ) :: TAIRCRAFTDATA
+  LOGICAL :: LTOOKOFF = .FALSE. ! Set to true once the aircraft takes off
+  !
+  !* aircraft flight definition
+  !
+  INTEGER :: NPOS     = 0  ! number of aircraft positions (segment extremities)
+  INTEGER :: NPOSCUR  = 1  ! current flight segment number
+  REAL, DIMENSION(:), ALLOCATABLE :: XPOSLAT  ! latitude of flight segment extremities  (LEG+1)
+  REAL, DIMENSION(:), ALLOCATABLE :: XPOSLON  ! longitude of flight segment extremities (LEG+1)
+  REAL, DIMENSION(:), ALLOCATABLE :: XPOSX    ! X of flight segment extremities         (LEG+1)
+  REAL, DIMENSION(:), ALLOCATABLE :: XPOSY    ! Y of flight segment extremities         (LEG+1)
+  REAL, DIMENSION(:), ALLOCATABLE :: XPOSP    ! pressure of flight segment extremities  (LEG+1)
+  REAL, DIMENSION(:), ALLOCATABLE :: XPOSZ    ! altitude of flight segment extremities  (LEG+1)
+  REAL, DIMENSION(:), ALLOCATABLE :: XPOSTIME ! time since launch (corresponding to flight segments extremities (LEG+1)
+  TYPE(DATE_TIME) :: TLAND =  TPREFERENCE_DATE    ! landing / end of flight date and time
+  !
+  !* aircraft altitude type definition
+  !
+  LOGICAL :: LALTDEF = .FALSE.  ! TRUE == altitude given in pressure
+  REAL    :: XP_CUR = XNEGUNDEF ! current p (only if LALTDEF = F)
+END TYPE TAIRCRAFTDATA
+
+TYPE, EXTENDS( TFLYERDATA ) :: TBALLOONDATA
+  LOGICAL :: LPOSITION_INIT = .FALSE. ! True if initial position has been computed
+  !
+  !* balloon dynamical characteristics
+  !
+  REAL :: XLATLAUNCH = XUNDEF ! latitude of launch
+  REAL :: XLONLAUNCH = XUNDEF ! lontitude of launch
+  REAL :: XXLAUNCH   = XUNDEF ! X coordinate of launch
+  REAL :: XYLAUNCH   = XUNDEF ! Y coordinate of launch
+  REAL :: XALTLAUNCH = XNEGUNDEF ! altitude of launch (if 'RADIOS' or 'ISODEN' or 'CVBALL')
+  REAL :: XWASCENT   = XNEGUNDEF ! ascent vertical speed, m/s (constant if 'RADIOS' or variable if 'CVBALL')
+  REAL :: XRHO       = XNEGUNDEF ! density of launch (if 'ISODEN')
+  REAL :: XPRES      = XNEGUNDEF ! pressure of launch (if 'ISODEN' or 'CVBALL')
+  REAL :: XDIAMETER  = XNEGUNDEF ! apparent diameter of the balloon (m) (if 'CVBALL')
+  REAL :: XAERODRAG  = XNEGUNDEF ! aerodynamic drag coefficient of the balloon (if 'CVBALL')
+  REAL :: XINDDRAG   = XNEGUNDEF ! induced drag coefficient (i.e. air shifted by the balloon) (if 'CVBALL')
+  REAL :: XVOLUME    = XNEGUNDEF ! volume of the balloon (m3) (if 'CVBALL')
+  REAL :: XMASS      = XNEGUNDEF ! mass of the balloon (kg) (if 'CVBALL')
+
+  TYPE(DATE_TIME) :: TPOS_CUR = TPREFERENCE_DATE ! Time corresponding to the current position (XX_CUR, XY_CUR...)
+
+END TYPE TBALLOONDATA
+
+INTEGER :: NAIRCRAFTS = 0 ! Total number of aircrafts
+INTEGER :: NBALLOONS  = 0 ! Total number of balloons
+
+TYPE TAIRCRAFT_PTR
+  TYPE(TAIRCRAFTDATA), POINTER :: TAIRCRAFT => NULL()
+END TYPE TAIRCRAFT_PTR
+
+TYPE TBALLOON_PTR
+  TYPE(TBALLOONDATA), POINTER :: TBALLOON => NULL()
+END TYPE TBALLOON_PTR
+
+TYPE(TAIRCRAFT_PTR), DIMENSION(:), ALLOCATABLE :: TAIRCRAFTS ! characteristics and records of the aircrafts
+
+TYPE(TBALLOON_PTR),  DIMENSION(:), ALLOCATABLE :: TBALLOONS  ! characteristics and records of the balloons
+
+INTEGER, DIMENSION(:), ALLOCATABLE :: NRANKCUR_AIRCRAFT ! Array to store the rank of the process where a given aircraft is present
+INTEGER, DIMENSION(:), ALLOCATABLE :: NRANKNXT_AIRCRAFT ! Array to store the rank of the process where a given aircraft is going
+
+INTEGER, DIMENSION(:), ALLOCATABLE :: NRANKCUR_BALLOON  ! Array to store the rank of the process where a given ballon is present
+INTEGER, DIMENSION(:), ALLOCATABLE :: NRANKNXT_BALLOON  ! Array to store the rank of the process where a given ballon is going
+
 END MODULE MODD_AIRCRAFT_BALLOON

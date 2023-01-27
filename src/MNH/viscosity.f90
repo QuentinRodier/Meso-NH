@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -51,11 +51,11 @@ INTERFACE
 !
       REAL, DIMENSION(:,:), INTENT(IN) :: PDRAG ! Array -1/1 defining where the no-slipcondition is applied
 ! metric coefficients
-     REAL, DIMENSION(:,:,:), INTENT(IN) :: PDXX
-     REAL, DIMENSION(:,:,:), INTENT(IN) :: PDYY
-     REAL, DIMENSION(:,:,:), INTENT(IN) :: PDZZ
-     REAL, DIMENSION(:,:,:), INTENT(IN) :: PDZX
-     REAL, DIMENSION(:,:,:), INTENT(IN) :: PDZY
+     REAL, DIMENSION(:,:,:), INTENT(IN)    :: PDXX
+     REAL, DIMENSION(:,:,:), INTENT(IN)    :: PDYY
+     REAL, DIMENSION(:,:,:), INTENT(IN)    :: PDZZ
+     REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PDZX
+     REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PDZY
 !
 ! output source terms
      REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PRUS, PRVS, PRWS
@@ -150,12 +150,12 @@ SUBROUTINE VISCOSITY(HLBCX, HLBCY, KRR, KSV, PNU, PPRANDTL,          &
 !
 !
 REAL, DIMENSION(:,:), INTENT(IN) :: PDRAG ! Array -1/1 defining where the no-slip condition is applied
-
-     REAL, DIMENSION(:,:,:), INTENT(IN) :: PDXX
-     REAL, DIMENSION(:,:,:), INTENT(IN) :: PDYY
-     REAL, DIMENSION(:,:,:), INTENT(IN) :: PDZZ
-     REAL, DIMENSION(:,:,:), INTENT(IN) :: PDZX
-     REAL, DIMENSION(:,:,:), INTENT(IN) :: PDZY
+! metric coefficients
+     REAL, DIMENSION(:,:,:), INTENT(IN)    :: PDXX
+     REAL, DIMENSION(:,:,:), INTENT(IN)    :: PDYY
+     REAL, DIMENSION(:,:,:), INTENT(IN)    :: PDZZ
+     REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PDZX
+     REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PDZY
 !
 ! output source terms
      REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PRUS, PRVS, PRWS

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2000-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2000-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -93,9 +93,6 @@ INTEGER,            INTENT(OUT) :: KLES_JSUP !
 !       0.2  declaration of local variables
 !
 !
-INTEGER :: IIMAX_ll  ! total physical father domain I size
-INTEGER :: IJMAX_ll  ! total physical father domain J size
-!
 INTEGER :: IIB_ll    ! son domain index
 INTEGER :: IIE_ll    ! son domain index
 INTEGER :: IJB_ll    ! son domain index
@@ -103,12 +100,12 @@ INTEGER :: IJE_ll    ! son domain index
 !
 INTEGER :: JI, JJ    ! loop counters
 !
-REAL    :: ZX, ZY    ! coordinates of msak boundaries
+REAL    :: ZX, ZY    ! coordinates of mask boundaries
 !
-INTEGER :: IINFO_ll, IRESP
+INTEGER :: IINFO_ll
 !
-REAL, DIMENSION(:), ALLOCATABLE :: ZXHAT_ll ! father model coordinates
-REAL, DIMENSION(:), ALLOCATABLE :: ZYHAT_ll !
+REAL, DIMENSION(:), POINTER :: ZXHAT_ll ! father model coordinates
+REAL, DIMENSION(:), POINTER :: ZYHAT_ll !
 INTEGER :: IMI
 !
 IMI = GET_CURRENT_MODEL_INDEX()
@@ -118,11 +115,8 @@ IMI = GET_CURRENT_MODEL_INDEX()
 !            --------------------------
 !
 CALL GO_TOMODEL_ll(IMI, IINFO_ll)
-CALL GET_GLOBALDIMS_ll(IIMAX_ll,IJMAX_ll) 
-ALLOCATE(ZXHAT_ll(IIMAX_ll+ 2 * JPHEXT))
-ALLOCATE(ZYHAT_ll(IJMAX_ll+ 2 * JPHEXT))
-CALL GATHERALL_FIELD_ll('XX',XXHAT,ZXHAT_ll,IRESP)
-CALL GATHERALL_FIELD_ll('YY',XYHAT,ZYHAT_ll,IRESP)
+ZXHAT_ll => XXHAT_ll
+ZYHAT_ll => XYHAT_ll
 !
 CALL GO_TOMODEL_ll(KMI, IINFO_ll)
 !
@@ -208,9 +202,6 @@ ELSE
 END IF
 !
 !-------------------------------------------------------------------------------
-DEALLOCATE(ZXHAT_ll)
-DEALLOCATE(ZYHAT_ll)
-!-------------------------------------------------------------------------------
 !
   CONTAINS
 !
@@ -219,8 +210,6 @@ DEALLOCATE(ZYHAT_ll)
     KLES_ISUP=IIE_ll-JPHEXT
     KLES_JINF=IJB_ll-JPHEXT
     KLES_JSUP=IJE_ll-JPHEXT
-    DEALLOCATE(ZXHAT_ll)
-    DEALLOCATE(ZYHAT_ll)
   END SUBROUTINE MASK_OVER_ALL_DOMAIN
 !
 END SUBROUTINE INI_LES_CART_MASK_n   

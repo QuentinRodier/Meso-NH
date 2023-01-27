@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 param 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !    ##########################
      MODULE MODI_SURF_SOLAR_SUM 
@@ -14,11 +9,11 @@
 !
 INTERFACE 
 !
-      SUBROUTINE SURF_SOLAR_SUM ( PXHAT, PYHAT, PMAP, PDIRSWD, PENERGY )
+      SUBROUTINE SURF_SOLAR_SUM ( PDXHAT, PDYHAT, PMAP, PDIRSWD, PENERGY )
 !
 !
-REAL, DIMENSION(:),   INTENT(IN) :: PXHAT    ! X coordinate
-REAL, DIMENSION(:),   INTENT(IN) :: PYHAT    ! Y coordinate
+REAL, DIMENSION(:),   INTENT(IN) :: PDXHAT   ! horizontal stretching in x
+REAL, DIMENSION(:),   INTENT(IN) :: PDYHAT   ! horizontal stretching in y
 REAL, DIMENSION(:,:), INTENT(IN) :: PMAP     ! map factor
 REAL, DIMENSION(:,:), INTENT(IN) :: PDIRSWD  ! direct SW flux on hor. surf.
 REAL,                 INTENT(OUT):: PENERGY  ! energy received by the surface
@@ -30,9 +25,9 @@ END INTERFACE
 !
 END MODULE MODI_SURF_SOLAR_SUM
 !
-!     ##################################################################
-      SUBROUTINE SURF_SOLAR_SUM ( PXHAT, PYHAT, PMAP, PDIRSWD, PENERGY )
-!     ##################################################################
+!     ####################################################################
+      SUBROUTINE SURF_SOLAR_SUM ( PDXHAT, PDYHAT, PMAP, PDIRSWD, PENERGY )
+!     ####################################################################
 !
 !!****  * SURF_SOLAR_SUM * - computes the sum of energy received by
 !!                           the surface from direct solar radiation
@@ -78,8 +73,8 @@ IMPLICIT NONE
 !*       0.1   DECLARATIONS OF DUMMY ARGUMENTS :
 !
 !
-REAL, DIMENSION(:),   INTENT(IN) :: PXHAT    ! X coordinate
-REAL, DIMENSION(:),   INTENT(IN) :: PYHAT    ! Y coordinate
+REAL, DIMENSION(:),   INTENT(IN) :: PDXHAT   ! horizontal stretching in x
+REAL, DIMENSION(:),   INTENT(IN) :: PDYHAT   ! horizontal stretching in y
 REAL, DIMENSION(:,:), INTENT(IN) :: PMAP     ! map factor
 REAL, DIMENSION(:,:), INTENT(IN) :: PDIRSWD  ! direct SW flux on hor. surf.
 REAL,                 INTENT(OUT):: PENERGY  ! energy received by the surface
@@ -109,9 +104,7 @@ ALLOCATE(ZENERGY_2D(IIB:IIE,IJB:IJE))
 !
 DO JJ=IJB,IJE
   DO JI=IIB,IIE
-    ZENERGY_2D(JI,JJ) = PDIRSWD(JI,JJ)*(PXHAT(JI+1)-PXHAT(JI)) &
-                                      *(PYHAT(JJ+1)-PYHAT(JJ)) &
-                                      /PMAP(JI,JJ)**2
+    ZENERGY_2D(JI,JJ) = PDIRSWD(JI,JJ) * PDXHAT(JI) * PDYHAT(JJ) / PMAP(JI,JJ)**2
   END DO
 END DO
 !

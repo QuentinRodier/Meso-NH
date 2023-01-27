@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1996-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1996-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -80,7 +80,7 @@ END MODULE MODI_READ_HGRID_n
 !
 USE MODD_CONF
 USE MODD_DIM_n
-use modd_field,         only: tfielddata, tfieldlist
+use modd_field,         only: tfieldmetadata, tfieldlist
 USE MODD_GRID
 USE MODD_GRID_n
 USE MODD_IO,            ONLY: TFILEDATA
@@ -93,6 +93,7 @@ USE MODE_IO,            only: IO_Pack_set
 USE MODE_IO_FIELD_READ, only: IO_Field_read
 USE MODE_MSG
 USE MODE_MODELN_HANDLER
+USE MODE_SET_GRID,       only: INTERP_HORGRID_TO_MASSPOINTS, STORE_GLOB_HORGRID
 use MODE_TOOLS_ll,       only: GET_DIM_EXT_ll, GET_DIM_PHYS_ll, GET_INDICE_ll
 !
 IMPLICIT NONE
@@ -106,21 +107,21 @@ CHARACTER(LEN=2) , INTENT(OUT) :: HSTORAGE_TYPE
 !
 !*       0.2   declarations of local variables
 !
-INTEGER             :: ILUOUT
-INTEGER             :: IRESP
-REAL                :: ZLAT0,ZLON0,ZRPK,ZBETA
-REAL                :: ZEPS = 1.E-10
-INTEGER             :: IID, IMI
+INTEGER              :: ILUOUT
+INTEGER              :: IRESP
+REAL                 :: ZLAT0,ZLON0,ZRPK,ZBETA
+REAL                 :: ZEPS = 1.E-10
+INTEGER              :: IID, IMI
 !
 !-------------------------------------------------------------------------------
 REAL :: ZLATOR, ZLONOR, ZXHATM, ZYHATM
 !-------------------------------------------------------------------------------
 !JUAN REALZ
-INTEGER             :: IIU,IJU
+INTEGER              :: IIU,IJU
 !JUAN REALZ
-INTEGER             :: IXOR, IYOR, IXEND, IYEND
-INTEGER             :: IJPHEXT
-TYPE(TFIELDDATA)    :: TZFIELD
+INTEGER              :: IXOR, IYOR, IXEND, IYEND
+INTEGER              :: IJPHEXT
+TYPE(TFIELDMETADATA) :: TZFIELD
 !
 ILUOUT = TLUOUT%NLU
 !
@@ -250,7 +251,16 @@ ENDIF
 
 CALL IO_Field_read(TPFMFILE,'XHAT',XXHAT)
 CALL IO_Field_read(TPFMFILE,'YHAT',XYHAT)
-!
+
+IF ( .NOT. ASSOCIATED(XXHATM) ) ALLOCATE( XXHATM(SIZE( XXHAT )) )
+IF ( .NOT. ASSOCIATED(XYHATM) ) ALLOCATE( XYHATM(SIZE( XYHAT )) )
+
+! Interpolations of positions to mass points
+CALL INTERP_HORGRID_TO_MASSPOINTS( XXHAT, XYHAT, XXHATM, XYHATM )
+
+! Collect global domain boundaries
+CALL STORE_GLOB_HORGRID( XXHAT, XYHAT, XXHATM, XYHATM, XXHAT_ll, XYHAT_ll, XXHATM_ll, XYHATM_ll, XHAT_BOUND, XHATM_BOUND )
+
 !JUAN REALZ
 IF ( CPROGRAM .EQ. "REAL  " ) THEN
 IF (.NOT. (ASSOCIATED(XZS))) ALLOCATE(XZS(IIU,IJU))
@@ -279,12 +289,12 @@ END IF
 !-------------------------------------------------------------------------------
 IF (TPFMFILE%NMNHVERSION(1)<4 .OR. (TPFMFILE%NMNHVERSION(1)==4 .AND. TPFMFILE%NMNHVERSION(2)<=5)) THEN
   CALL FIND_FIELD_ID_FROM_MNHNAME('LONORI',IID,IRESP)
-  TZFIELD = TFIELDLIST(IID)
+  TZFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
   TZFIELD%CMNHNAME = 'LONOR'
   CALL IO_Field_read(TPFMFILE,TZFIELD,XLONORI)
   !
   CALL FIND_FIELD_ID_FROM_MNHNAME('LATORI',IID,IRESP)
-  TZFIELD = TFIELDLIST(IID)
+  TZFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
   TZFIELD%CMNHNAME = 'LATOR'
   CALL IO_Field_read(TPFMFILE,TZFIELD,XLATORI)
   !

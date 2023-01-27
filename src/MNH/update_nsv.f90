@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2001-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2001-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -26,11 +26,14 @@ END MODULE MODI_UPDATE_NSV
 !!  Modify (Vie) 2016 : add LIMA
 !!         V. Vionnet 7/2017 : add blowing snow var
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
-!  P. Wautelet 10/03/2021: add CSVNAMES and CSVNAMES_A to store the name of all the scalar variables
+!  P. Wautelet 26/11/2021: add TSVLIST and TSVLIST_A to store the metadata of all the scalar variables
+!  P. Wautelet 14/01/2022: add CSV_CHEM_LIST(_A) to store the list of all chemical variables
 !-------------------------------------------------------------------------------
 !
-USE MODD_CONF, ONLY : NVERB
+USE MODD_CONF,       ONLY: NVERB
+USE MODD_FIELD,      ONLY: tfieldmetadata
 USE MODD_NSV
+USE MODD_PARAMETERS, ONLY: JPSVNAMELGTMAX, NMNHNAMELGTMAX
 
 use mode_msg
 
@@ -39,10 +42,12 @@ IMPLICIT NONE
 INTEGER, INTENT(IN) :: KMI ! Model index
 
 CHARACTER(LEN=JPSVNAMELGTMAX), DIMENSION(:,:), ALLOCATABLE :: YSVNAMES_TMP
+CHARACTER(LEN=NMNHNAMELGTMAX), DIMENSION(:,:), ALLOCATABLE :: YSVCHEM_LIST_TMP
 INTEGER :: JI, JJ
+TYPE(tfieldmetadata), DIMENSION(:,:), ALLOCATABLE :: YSVLIST_TMP
 !
 ! STOP if INI_NSV has not be called yet
-IF (.NOT. LINI_NSV) THEN
+IF ( .NOT. LINI_NSV(KMI) ) THEN
   call Print_msg( NVERB_FATAL, 'GEN', 'UPDATE_NSV', 'can not continue because INI_NSV was not called' )
 END IF
 !
@@ -50,20 +55,35 @@ END IF
 ! that have been initialized in ini_nsv.f90 for model KMI
 !
 
-! Allocate/reallocate CSVNAMES_A
-IF ( .NOT. ALLOCATED( CSVNAMES_A ) ) ALLOCATE( CSVNAMES_A( NSV_A(KMI), KMI) )
-!If CSVNAMES_A is too small, enlarge it and transfer data
-IF ( SIZE( CSVNAMES_A, 1 ) < NSV_A(KMI) .OR. SIZE( CSVNAMES_A, 2 ) < KMI ) THEN
-  ALLOCATE( YSVNAMES_TMP(NSV_A(KMI), KMI) )
-  DO JJ = 1, SIZE( CSVNAMES_A, 2 )
-    DO JI = 1, SIZE( CSVNAMES_A, 1 )
-      YSVNAMES_TMP(JI, JJ) = CSVNAMES_A(JI, JJ)
+! Allocate/reallocate CSV_CHEM_LIST_A
+IF ( .NOT. ALLOCATED( CSV_CHEM_LIST_A ) ) ALLOCATE( CSV_CHEM_LIST_A( NSV_CHEM_LIST_A(KMI), KMI) )
+!If CSV_CHEM_LIST_A is too small, enlarge it and transfer data
+IF ( SIZE( CSV_CHEM_LIST_A, 1 ) < NSV_CHEM_LIST_A(KMI) .OR. SIZE( CSV_CHEM_LIST_A, 2 ) < KMI ) THEN
+  ALLOCATE( YSVCHEM_LIST_TMP(NSV_CHEM_LIST_A(KMI), KMI) )
+  DO JJ = 1, SIZE( CSV_CHEM_LIST_A, 2 )
+    DO JI = 1, SIZE( CSV_CHEM_LIST_A, 1 )
+      YSVCHEM_LIST_TMP(JI, JJ) = CSV_CHEM_LIST_A(JI, JJ)
     END DO
   END DO
-  CALL MOVE_ALLOC( FROM = YSVNAMES_TMP, TO = CSVNAMES_A )
+  CALL MOVE_ALLOC( FROM = YSVCHEM_LIST_TMP, TO = CSV_CHEM_LIST_A )
 END IF
 
-CSVNAMES => CSVNAMES_A(:,KMI)
+CSV_CHEM_LIST => CSV_CHEM_LIST_A(:,KMI)
+
+! Allocate/reallocate TSVLIST_A
+IF ( .NOT. ALLOCATED( TSVLIST_A ) ) ALLOCATE( TSVLIST_A( NSV_A(KMI), KMI) )
+!If TSVLIST_A is too small, enlarge it and transfer data
+IF ( SIZE( TSVLIST_A, 1 ) < NSV_A(KMI) .OR. SIZE( TSVLIST_A, 2 ) < KMI ) THEN
+  ALLOCATE( YSVLIST_TMP(NSV_A(KMI), KMI) )
+  DO JJ = 1, SIZE( TSVLIST_A, 2 )
+    DO JI = 1, SIZE( TSVLIST_A, 1 )
+      YSVLIST_TMP(JI, JJ) = TSVLIST_A(JI, JJ)
+    END DO
+  END DO
+  CALL MOVE_ALLOC( FROM = YSVLIST_TMP, TO = TSVLIST_A )
+END IF
+
+TSVLIST => TSVLIST_A(:,KMI)
 
 NSV         = NSV_A(KMI)
 NSV_USER    = NSV_USER_A(KMI)

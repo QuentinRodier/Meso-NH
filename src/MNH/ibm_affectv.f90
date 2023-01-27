@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2019-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2019-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -129,7 +129,7 @@ SUBROUTINE IBM_AFFECTV(PVAR,PVAR2,PVAR3,HVAR,KIBM_LAYER,HIBM_MODE_INTE3,&
   USE MODD_IBM_PARAM_n
   USE MODD_FIELD_n
   USE MODD_PARAM_n, ONLY: CTURB
-  USE MODD_GRID_n, ONLY: XXHAT,XYHAT,XZZ
+  USE MODD_GRID_n,  ONLY: XDXHAT, XDYHAT
   USE MODD_VAR_ll,  ONLY: IP
   USE MODD_LBC_n
   USE MODD_REF_n, ONLY: XRHODJ,XRHODREF
@@ -290,7 +290,7 @@ SUBROUTINE IBM_AFFECTV(PVAR,PVAR2,PVAR3,HVAR,KIBM_LAYER,HIBM_MODE_INTE3,&
         DO JN = 1,3
            !
            Z_LOCAT_IMAG(JN,:)= XIBM_IMAGE_V(JM,JMM,JH  ,JN,:)
-           Z_DELTA_IMAG      = ((XXHAT(JI+1)-XXHAT(JI))*(XYHAT(JJ+1)-XYHAT(JJ)))**0.5
+           Z_DELTA_IMAG      = ( XDXHAT(JI) * XDYHAT(JJ) ) ** 0.5
            !
            DO JLL=1,3
               I_INDEX_CORN(:)       = NIBM_IMAGE_V(JM,JMM,JH,JLL,JN,:)

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2010-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2010-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -101,6 +101,7 @@ END MODULE MODI_FLASH_GEOM_ELEC_n
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !  P. Wautelet 18/09/2019: correct support of 64bit integers (MNH_INT=8)
+!  P. Wautelet 31/08/2022: remove ZXMASS and ZYMASS (use XXHATM and XYHATM instead)
 !-------------------------------------------------------------------------------
 !
 !*      0.      DECLARATIONS
@@ -119,7 +120,7 @@ USE MODD_ELEC_PARAM,     ONLY: XFQLIGHTR, XEXQLIGHTR, &
                                XFQLIGHTH, XEXQLIGHTH, &
                                XFQLIGHTC
 USE MODD_GRID,           ONLY: XLATORI,XLONORI
-USE MODD_GRID_n,         ONLY: XXHAT, XYHAT, XZHAT
+USE MODD_GRID_n,         ONLY: XXHATM, XYHATM, XZHAT
 USE MODD_IO,             ONLY: TFILEDATA
 USE MODD_LMA_SIMULATOR
 USE MODD_METRICS_n,      ONLY: XDXX, XDYY, XDZZ ! in linox_production
@@ -352,8 +353,6 @@ INBFTS_MAX = ANINT(1000 * PTSTEP / 60)
 !
 IF (GEFIRSTCALL) THEN
   GEFIRSTCALL = .FALSE.
-  ALLOCATE (ZXMASS(SIZE(XXHAT)))
-  ALLOCATE (ZYMASS(SIZE(XYHAT)))
   ALLOCATE (ZZMASS(SIZE(PZZ,1), SIZE(PZZ,2), SIZE(PZZ,3)))
   ALLOCATE (ZPRES_COEF(SIZE(PZZ,1), SIZE(PZZ,2), SIZE(PZZ,3)))
   IF(LLMA) THEN
@@ -379,8 +378,6 @@ IF (GEFIRSTCALL) THEN
   ALLOCATE (ZSNEUT_POS(NFLASH_WRITE))
   ALLOCATE (ZSNEUT_NEG(NFLASH_WRITE))
 !
-  ZXMASS(IIB:IIE) = 0.5 * (XXHAT(IIB:IIE) + XXHAT(IIB+1:IIE+1))
-  ZYMASS(IJB:IJE) = 0.5 * (XYHAT(IJB:IJE) + XYHAT(IJB+1:IJE+1))
   ZZMASS = MZF(PZZ)
   ZPRES_COEF = EXP(ZZMASS/8400.)
   ZSCOORD_SEG(:,:,:) = 0.0
@@ -588,9 +585,8 @@ DEALLOCATE (ZEMAX)
 IF (INB_CELL .GE. 1) THEN
 !
 ! mean mesh size
-  ZMEAN_GRID = (XDXHATM**2 + XDYHATM**2 +                            &
-               (SUM(XZHAT(2:SIZE(PRT,3)) - XZHAT(1:SIZE(PRT,3)-1)) / &
-               (SIZE(PRT,3)-1.))**2)**0.5
+  ZMEAN_GRID = (XDXHATM**2 + XDYHATM**2 +                                       &
+                ( ( XZHAT(UBOUND(XZHAT,1)) - XZHAT(1) ) / (SIZE(PRT,3)-1.) )**2 )**0.5
 ! chaque proc calcule son propre zmean_grid
 ! mais cette valeur peut etre differente sur chaque proc (ex: relief)
 ! laisse tel quel pour le moment
@@ -913,8 +909,8 @@ ENDIF
             DO IJ = IJB, IJE
               DO IK = IKB, IKE
                 IF (GPROP(II,IJ,IK,IL)) THEN
-                  ZDIST(II,IJ,IK) = ((ZXMASS(II) - ZCOORD_TRIG(1,IL))**2 + &
-                                     (ZYMASS(IJ) - ZCOORD_TRIG(2,IL))**2 + &
+                  ZDIST(II,IJ,IK) = ((XXHATM(II) - ZCOORD_TRIG(1,IL))**2 + &
+                                     (XYHATM(IJ) - ZCOORD_TRIG(2,IL))**2 + &
                                      (ZZMASS(II,IJ,IK) - ZCOORD_TRIG(3,IL))**2)**0.5
                 END IF
               END DO
@@ -1664,8 +1660,8 @@ DO IL = 1, INB_CELL
           ISEG_GLOB(2,IL) = IJ_TRIG_GLOB
           ISEG_GLOB(3,IL) = IK_TRIG
 !
-          ZCOORD_TRIG(1,IL) = ZXMASS(II_TRIG_LOC)
-          ZCOORD_TRIG(2,IL) = ZYMASS(IJ_TRIG_LOC)
+          ZCOORD_TRIG(1,IL) = XXHATM(II_TRIG_LOC)
+          ZCOORD_TRIG(2,IL) = XYHATM(IJ_TRIG_LOC)
           ZCOORD_TRIG(3,IL) = ZZMASS(II_TRIG_LOC, IJ_TRIG_LOC, IK_TRIG)
 !
           ZCOORD_SEG(1:3,IL) = ZCOORD_TRIG(1:3,IL)
@@ -1767,8 +1763,8 @@ IF (IPROC .EQ. IPROC_TRIG(IL)) THEN
     ISEG_GLOB(IIDECAL+2,IL) = IJBL_LOC + IYOR - 1
     ISEG_GLOB(IIDECAL+3,IL) = IKBL
 !
-    ZCOORD_SEG(IIDECAL+1,IL) = ZXMASS(IIBL_LOC)
-    ZCOORD_SEG(IIDECAL+2,IL) = ZYMASS(IJBL_LOC)
+    ZCOORD_SEG(IIDECAL+1,IL) = XXHATM(IIBL_LOC)
+    ZCOORD_SEG(IIDECAL+2,IL) = XYHATM(IJBL_LOC)
     ZCOORD_SEG(IIDECAL+3,IL) = ZZMASS(IIBL_LOC, IJBL_LOC, IKBL)
 !
     INBSEG(IL) = INBSEG(IL) + 1
@@ -2239,8 +2235,8 @@ IF (INB_SEG_AFT .GT. INB_SEG_BEF) THEN
           ISEG_GLOB(IIDECALB+2,IL) = IJ + IYOR - 1
           ISEG_GLOB(IIDECALB+3,IL) = IK
 !
-          ZCOORD_SEG(IIDECALB+1,IL) = ZXMASS(II)
-          ZCOORD_SEG(IIDECALB+2,IL) = ZYMASS(IJ)
+          ZCOORD_SEG(IIDECALB+1,IL) = XXHATM(II)
+          ZCOORD_SEG(IIDECALB+2,IL) = XYHATM(IJ)
           ZCOORD_SEG(IIDECALB+3,IL) = ZZMASS(II,IJ,IK)
           INBSEG(IL) = INBSEG(IL) + 1
         END IF

@@ -14,7 +14,7 @@
 !-----------------------------------------------------------------
 module mode_io_write_lfi
 !
-use modd_field,      only: tfielddata
+use modd_field,      only: tfieldmetadata_base
 USE MODD_IO
 USE MODD_PARAMETERS, ONLY: NLFIMAXCOMMENTLENGTH
 use modd_precision,  only: LFIINT, MNHINT64, MNHREAL64
@@ -53,7 +53,7 @@ IMPLICIT NONE
 !*      0.1   Declarations of arguments
 !
 TYPE(TFILEDATA),       INTENT(IN) :: TPFILE
-TYPE(TFIELDDATA),      INTENT(IN) :: TPFIELD
+CLASS(tfieldmetadata_base), INTENT(IN) :: TPFIELD
 REAL,                  INTENT(IN) :: PFIELD ! array containing the data field
 INTEGER,               INTENT(OUT):: KRESP  ! return-code if problems araised
 !
@@ -92,7 +92,7 @@ IMPLICIT NONE
 !*      0.1   Declarations of arguments
 !
 TYPE(TFILEDATA),       INTENT(IN) :: TPFILE
-TYPE(TFIELDDATA),      INTENT(IN) :: TPFIELD
+CLASS(tfieldmetadata_base), INTENT(IN) :: TPFIELD
 REAL,DIMENSION(:),     INTENT(IN) :: PFIELD ! array containing the data field
 INTEGER,               INTENT(OUT):: KRESP  ! return-code if problems araised
 !
@@ -137,7 +137,7 @@ IMPLICIT NONE
 !*      0.1   Declarations of arguments
 !
 TYPE(TFILEDATA),TARGET,INTENT(IN) :: TPFILE
-TYPE(TFIELDDATA),      INTENT(IN) :: TPFIELD
+CLASS(tfieldmetadata_base), INTENT(IN) :: TPFIELD
 REAL,DIMENSION(:,:),   INTENT(IN) :: PFIELD ! array containing the data field
 INTEGER,               INTENT(OUT):: KRESP  ! return-code if problems araised
 INTEGER,OPTIONAL,      INTENT(IN) :: KVERTLEVEL ! Number of the vertical level (needed for Z-level split files)
@@ -203,7 +203,7 @@ IMPLICIT NONE
 !*      0.1   Declarations of arguments
 !
 TYPE(TFILEDATA),         INTENT(IN) :: TPFILE
-TYPE(TFIELDDATA),        INTENT(IN) :: TPFIELD
+CLASS(tfieldmetadata_base), INTENT(IN) :: TPFIELD
 REAL,DIMENSION(:,:,:),   INTENT(IN) :: PFIELD ! array containing the data field
 INTEGER,                 INTENT(OUT):: KRESP  ! return-code if problems araised
 !
@@ -248,7 +248,7 @@ IMPLICIT NONE
 !*      0.1   Declarations of arguments
 !
 TYPE(TFILEDATA),          INTENT(IN) :: TPFILE
-TYPE(TFIELDDATA),         INTENT(IN) :: TPFIELD
+CLASS(tfieldmetadata_base), INTENT(IN) :: TPFIELD
 REAL,DIMENSION(:,:,:,:),  INTENT(IN) :: PFIELD ! array containing the data field
 INTEGER,                  INTENT(OUT):: KRESP  ! return-code if problems araised
 !
@@ -293,7 +293,7 @@ IMPLICIT NONE
 !*      0.1   Declarations of arguments
 !
 TYPE(TFILEDATA),          INTENT(IN) :: TPFILE
-TYPE(TFIELDDATA),         INTENT(IN) :: TPFIELD
+CLASS(tfieldmetadata_base), INTENT(IN) :: TPFIELD
 REAL,DIMENSION(:,:,:,:,:),INTENT(IN) :: PFIELD ! array containing the data field
 INTEGER,                  INTENT(OUT):: KRESP  ! return-code if problems araised
 !
@@ -338,7 +338,7 @@ IMPLICIT NONE
 !*      0.1   Declarations of arguments
 !
 TYPE(TFILEDATA),            INTENT(IN) :: TPFILE
-TYPE(TFIELDDATA),           INTENT(IN) :: TPFIELD
+CLASS(tfieldmetadata_base), INTENT(IN) :: TPFIELD
 REAL,DIMENSION(:,:,:,:,:,:),INTENT(IN) :: PFIELD ! array containing the data field
 INTEGER,                    INTENT(OUT):: KRESP  ! return-code if problems araised
 !
@@ -383,7 +383,7 @@ IMPLICIT NONE
 !*      0.1   Declarations of arguments
 !
 TYPE(TFILEDATA),         INTENT(IN) :: TPFILE
-TYPE(TFIELDDATA),        INTENT(IN) :: TPFIELD
+CLASS(tfieldmetadata_base), INTENT(IN) :: TPFIELD
 INTEGER,                 INTENT(IN) :: KFIELD ! array containing the data field
 INTEGER,                 INTENT(OUT):: KRESP  ! return-code if problems araised
 !
@@ -422,7 +422,7 @@ IMPLICIT NONE
 !*      0.1   Declarations of arguments
 !
 TYPE(TFILEDATA),         INTENT(IN) :: TPFILE
-TYPE(TFIELDDATA),        INTENT(IN) :: TPFIELD
+CLASS(tfieldmetadata_base), INTENT(IN) :: TPFIELD
 INTEGER,DIMENSION(:),    INTENT(IN) :: KFIELD ! array containing the data field
 INTEGER,                 INTENT(OUT):: KRESP  ! return-code if problems araised
 !
@@ -467,7 +467,7 @@ IMPLICIT NONE
 !*      0.1   Declarations of arguments
 !
 TYPE(TFILEDATA),       INTENT(IN) :: TPFILE
-TYPE(TFIELDDATA),      INTENT(IN) :: TPFIELD
+CLASS(tfieldmetadata_base), INTENT(IN) :: TPFIELD
 INTEGER,DIMENSION(:,:),INTENT(IN) :: KFIELD ! array containing the data field
 INTEGER,               INTENT(OUT):: KRESP  ! return-code if problems araised
 !
@@ -512,7 +512,7 @@ IMPLICIT NONE
 !*      0.1   Declarations of arguments
 !
 TYPE(TFILEDATA),         INTENT(IN) :: TPFILE
-TYPE(TFIELDDATA),        INTENT(IN) :: TPFIELD
+CLASS(tfieldmetadata_base), INTENT(IN) :: TPFIELD
 INTEGER,DIMENSION(:,:,:),INTENT(IN) :: KFIELD ! array containing the data field
 INTEGER,                 INTENT(OUT):: KRESP  ! return-code if problems araised
 !
@@ -558,7 +558,7 @@ IMPLICIT NONE
 !*      0.1   Declarations of arguments
 !
 TYPE(TFILEDATA),           INTENT(IN) :: TPFILE
-TYPE(TFIELDDATA),          INTENT(IN) :: TPFIELD
+CLASS(tfieldmetadata_base), INTENT(IN) :: TPFIELD
 INTEGER,DIMENSION(:,:,:,:),INTENT(IN) :: KFIELD ! array containing the data field
 INTEGER,                   INTENT(OUT):: KRESP  ! return-code if problems araised
 !
@@ -604,7 +604,7 @@ IMPLICIT NONE
 !*      0.1   Declarations of arguments
 !
 TYPE(TFILEDATA),         INTENT(IN) :: TPFILE
-TYPE(TFIELDDATA),        INTENT(IN) :: TPFIELD
+CLASS(tfieldmetadata_base), INTENT(IN) :: TPFIELD
 LOGICAL,                 INTENT(IN) :: OFIELD ! array containing the data field
 INTEGER,                 INTENT(OUT):: KRESP  ! return-code if problems araised
 !
@@ -651,7 +651,7 @@ IMPLICIT NONE
 !*      0.1   Declarations of arguments
 !
 TYPE(TFILEDATA),         INTENT(IN) :: TPFILE
-TYPE(TFIELDDATA),        INTENT(IN) :: TPFIELD
+CLASS(tfieldmetadata_base), INTENT(IN) :: TPFIELD
 LOGICAL,DIMENSION(:),    INTENT(IN) :: OFIELD ! array containing the data field
 INTEGER,                 INTENT(OUT):: KRESP  ! return-code if problems araised
 !
@@ -706,7 +706,7 @@ IMPLICIT NONE
 !*      0.1   Declarations of arguments
 !
 TYPE(TFILEDATA),         INTENT(IN) :: TPFILE
-TYPE(TFIELDDATA),        INTENT(IN) :: TPFIELD
+CLASS(tfieldmetadata_base), INTENT(IN) :: TPFIELD
 CHARACTER(LEN=*),        INTENT(IN) :: HFIELD ! array containing the data field
 INTEGER,                 INTENT(OUT):: KRESP  ! return-code if problems araised
 !
@@ -764,7 +764,7 @@ IMPLICIT NONE
 !*      0.1   Declarations of arguments
 !
 TYPE(TFILEDATA),         INTENT(IN) :: TPFILE
-TYPE(TFIELDDATA),        INTENT(IN) :: TPFIELD
+CLASS(tfieldmetadata_base), INTENT(IN) :: TPFIELD
 TYPE (DATE_TIME),        INTENT(IN) :: TPDATA ! array containing the data field
 INTEGER,                 INTENT(OUT):: KRESP  ! return-code if problems araised
 !
@@ -772,14 +772,14 @@ INTEGER,                 INTENT(OUT):: KRESP  ! return-code if problems araised
 !
 INTEGER                                         :: ILENG
 INTEGER(kind=LFIINT)                            :: IRESP, ITOTAL
-TYPE(TFIELDDATA)                                :: TZFIELD
+CLASS(tfieldmetadata_base), ALLOCATABLE         :: TZFIELD
 INTEGER, DIMENSION(3)                           :: ITDATE    ! date array
 INTEGER(KIND=MNHINT64),DIMENSION(:),ALLOCATABLE :: IWORK
 CHARACTER(LEN=LEN_HREC)                         :: YRECFM
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_lfi_T0','writing '//TRIM(TPFIELD%CMNHNAME))
 !
-TZFIELD = TPFIELD
+Allocate( TZFIELD, source = TPFIELD )
 !
 ! Write date
 !
@@ -840,7 +840,7 @@ IMPLICIT NONE
 !*      0.1   Declarations of arguments
 !
 TYPE(TFILEDATA),                INTENT(IN) :: TPFILE
-TYPE(TFIELDDATA),               INTENT(IN) :: TPFIELD
+CLASS(tfieldmetadata_base), INTENT(IN) :: TPFIELD
 TYPE (DATE_TIME), DIMENSION(:), INTENT(IN) :: TPDATA ! array containing the data field
 INTEGER,                        INTENT(OUT):: KRESP  ! return-code if problems araised
 !
@@ -849,7 +849,7 @@ INTEGER,                        INTENT(OUT):: KRESP  ! return-code if problems a
 INTEGER                                         :: ILENG, IPOS
 INTEGER                                         :: JI
 INTEGER(kind=LFIINT)                            :: IRESP, ITOTAL
-TYPE(TFIELDDATA)                                :: TZFIELD
+CLASS(tfieldmetadata_base), ALLOCATABLE         :: TZFIELD
 INTEGER, DIMENSION(:), ALLOCATABLE              :: ITDATE    ! date array
 INTEGER(KIND=MNHINT64),DIMENSION(:),ALLOCATABLE :: IWORK
 CHARACTER(LEN=LEN_HREC)                         :: YRECFM
@@ -866,7 +866,7 @@ END IF
 !
 ALLOCATE( ITDATE( ILENG ) )
 !
-TZFIELD = TPFIELD
+Allocate( TZFIELD, source = TPFIELD )
 !
 ! Write date
 !
@@ -924,7 +924,7 @@ END SUBROUTINE IO_Field_write_lfi_T1
 !
 SUBROUTINE WRITE_PREPARE(TPFIELD,KLENG,KWORK,KTOTAL,KRESP)
 !
-TYPE(TFIELDDATA),                               INTENT(IN)    :: TPFIELD
+CLASS(tfieldmetadata_base),                     INTENT(IN)    :: TPFIELD
 INTEGER,                                        INTENT(IN)    :: KLENG
 INTEGER(KIND=MNHINT64),DIMENSION(:),ALLOCATABLE,INTENT(INOUT) :: KWORK
 INTEGER(kind=LFIINT),                           INTENT(OUT)   :: KTOTAL

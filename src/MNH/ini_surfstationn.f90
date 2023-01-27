@@ -9,21 +9,7 @@ MODULE MODI_INI_SURFSTATION_n
 !
 INTERFACE
 !
-      SUBROUTINE INI_SURFSTATION_n(PTSTEP, PSEGLEN,          &
-                                   KRR, KSV, OUSETKE, KMI,   &
-                                   PLATOR, PLONOR            )
-!
-USE MODD_TYPE_DATE
-REAL,               INTENT(IN) :: PTSTEP  ! time step
-REAL,               INTENT(IN) :: PSEGLEN ! segment length
-INTEGER,            INTENT(IN) :: KRR     ! number of moist variables
-INTEGER,            INTENT(IN) :: KSV     ! number of scalar variables
-LOGICAL,            INTENT(IN) :: OUSETKE ! flag to use tke
-REAL,               INTENT(IN) :: PLATOR  ! latitude of origine point
-REAL,               INTENT(IN) :: PLONOR  ! longitude of origine point
-INTEGER,            INTENT(IN) :: KMI     ! MODEL NUMBER
-!
-!-------------------------------------------------------------------------------
+      SUBROUTINE INI_SURFSTATION_n( )
 !
 END SUBROUTINE INI_SURFSTATION_n
 !
@@ -31,11 +17,9 @@ END INTERFACE
 !
 END MODULE MODI_INI_SURFSTATION_n
 !
-!     ########################################################
-      SUBROUTINE INI_SURFSTATION_n(PTSTEP, PSEGLEN,          &
-                                   KRR, KSV, OUSETKE, KMI,   &
-                                   PLATOR, PLONOR            )
-!     ########################################################
+!     ###############################
+      SUBROUTINE INI_SURFSTATION_n( )
+!     ###############################
 !
 !
 !!****  *INI_SURFSTATION_n* - 
@@ -63,214 +47,101 @@ END MODULE MODI_INI_SURFSTATION_n
 !!
 !!    MODIFICATIONS
 !!    -------------
-!!     P. Tulet 15/01/2002 
-!!     A. Lemonsu 19/11/2002 
+!  P. Tulet     15/01/2002
+!  A. Lemonsu   19/11/2002
 !  P. Wautelet  05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet  13/09/2019: budget: simplify and modernize date/time management
 !  R. Schoetter    11/2019: work for cartesian coordinates + parallel.
 !  E.Jezequel      02/2021: read stations from CVS file
-!! --------------------------------------------------------------------------
+!  P. Wautelet     04/2022: restructure stations for better performance, reduce memory usage and correct some problems/bugs
+! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
 !          ------------
 !
 USE MODD_ALLSTATION_n
-USE MODD_CONF
-USE MODD_DIM_n
-USE MODD_DYN_n
-USE MODD_GRID
-USE MODD_GRID_n
-USE MODD_LUNIT_n, ONLY: TLUOUT
-USE MODD_NESTING
-USE MODD_PARAMETERS
-USE MODD_SHADOWS_n
+USE MODD_CONF,           ONLY: LCARTESIAN
+USE MODD_DYN,            ONLY: XSEGLEN
+USE MODD_DYN_n,          ONLY: DYN_MODEL, XTSTEP
 USE MODD_STATION_n
-USE MODD_TYPE_DATE
-USE MODD_VAR_ll,          ONLY: IP
+USE MODD_TYPE_STATPROF
 !
-USE MODE_GATHER_ll
-USE MODE_GRIDPROJ
-USE MODE_ll
 USE MODE_MSG
-!
-USE MODI_INI_STATION_N
+USE MODE_STATPROF_READER, ONLY: STATPROF_CSV_READ
+USE MODE_STATPROF_TOOLS,  ONLY: STATION_ADD, STATION_ALLOCATE, STATPROF_INI_INTERP, STATPROF_POSITION
 !
 IMPLICIT NONE
 !
 !
 !*      0.1  declarations of arguments
 !
-!
-REAL,               INTENT(IN) :: PTSTEP  ! time step
-REAL,               INTENT(IN) :: PSEGLEN ! segment length
-INTEGER,            INTENT(IN) :: KRR     ! number of moist variables
-INTEGER,            INTENT(IN) :: KSV     ! number of scalar variables
-LOGICAL,            INTENT(IN) :: OUSETKE ! flag to use tke
-REAL,               INTENT(IN) :: PLATOR  ! latitude of origine point
-REAL,               INTENT(IN) :: PLONOR  ! longitude of origine point
-INTEGER,            INTENT(IN) :: KMI     ! MODEL NUMBER
+! NONE
 !
 !-------------------------------------------------------------------------------
 !
 !       0.2  declaration of local variables
 !
-INTEGER :: ISTORE ! number of storage instants
-INTEGER :: ILUOUT ! logical unit
-INTEGER :: IIU_ll,IJU_ll,IRESP
+INTEGER :: INUMBSTAT                        ! Total number of stations (inside physical domain of model)
+INTEGER :: ISTORE                           ! number of storage instants
+INTEGER :: JI
+LOGICAL :: GINSIDE                          ! True if station is inside physical domain of model
+LOGICAL :: GPRESENT                         ! True if station is present on the current process
+TYPE(TSTATIONDATA)           :: TZSTATION
 !
 !----------------------------------------------------------------------------
-ILUOUT = TLUOUT%NLU
-!----------------------------------------------------------------------------
-!
-!*      1.   Default values
-!            --------------
-!
-CALL DEFAULT_STATION_n(TSTATION)
-!
-!
-!*      3.   Stations initialization
-!            -----------------------
-!
-CALL INI_STATION_n
-LSTATION = (NUMBSTAT>0)
-!
-!----------------------------------------------------------------------------
-!
-!*      4.   Allocations of storage arrays
-!            -----------------------------
-!
-IF(NUMBSTAT>0) THEN
-  CALL ALLOCATE_STATION_n(TSTATION,KMI)
-  IF (.NOT. LCARTESIAN) CALL INI_INTERP_STATION_n(TSTATION)
-ENDIF
-!----------------------------------------------------------------------------
-!
-CONTAINS
-!
-!----------------------------------------------------------------------------
-SUBROUTINE DEFAULT_STATION_n(TSTATION)
-!
-TYPE(STATION), INTENT(INOUT) :: TSTATION
-!
-NUMBSTAT   = 0
-!
-TSTATION%T_CUR  = XUNDEF
-TSTATION%N_CUR  = 0
-TSTATION%STEP   = XTSTEP  
-!
-END SUBROUTINE DEFAULT_STATION_n
-!----------------------------------------------------------------------------
-!----------------------------------------------------------------------------
-SUBROUTINE ALLOCATE_STATION_n(TSTATION,KMI)
-!
-TYPE(STATION), INTENT(INOUT) :: TSTATION   ! 
-INTEGER,       INTENT(IN)    :: KMI        ! Model Index
-!
-if ( tstation%step < xtstep ) then
-  call Print_msg( NVERB_ERROR, 'GEN', 'INI_SURFSTATION_n', 'TSTATION%STEP smaller than XTSTEP' )
-  tstation%step = xtstep
+
+TSTATIONS_TIME%XTSTEP = XSTEP_STAT
+
+if ( tstations_time%xtstep < xtstep ) then
+  call Print_msg( NVERB_WARNING, 'GEN', 'INI_SURFSTATION_n', 'Timestep for stations was smaller than model timestep' )
+  tstations_time%xtstep = xtstep
 end if
 
-ISTORE = NINT ( ( PSEGLEN - DYN_MODEL(1)%XTSTEP ) / TSTATION%STEP ) + 1
+ISTORE = NINT ( ( XSEGLEN - DYN_MODEL(1)%XTSTEP ) / TSTATIONS_TIME%XTSTEP ) + 1
 
-allocate( tstation%tpdates( istore ) )
-ALLOCATE(TSTATION%ERROR (NUMBSTAT))
-ALLOCATE(TSTATION%X   (NUMBSTAT))
-ALLOCATE(TSTATION%Y   (NUMBSTAT))
-ALLOCATE(TSTATION%SV  (ISTORE,NUMBSTAT,KSV))
-ALLOCATE(TSTATION%TSRAD (ISTORE,NUMBSTAT))
-ALLOCATE(TSTATION%ZS  (NUMBSTAT))
-ALLOCATE(TSTATION%ZON   (ISTORE,NUMBSTAT))
-ALLOCATE(TSTATION%MER   (ISTORE,NUMBSTAT))
-ALLOCATE(TSTATION%W     (ISTORE,NUMBSTAT))
-ALLOCATE(TSTATION%P     (ISTORE,NUMBSTAT))
-ALLOCATE(TSTATION%TH    (ISTORE,NUMBSTAT))
-ALLOCATE(TSTATION%R     (ISTORE,NUMBSTAT,KRR))
-IF (OUSETKE) THEN
-  ALLOCATE(TSTATION%TKE (ISTORE,NUMBSTAT))
+allocate( tstations_time%tpdates(istore) )
+!
+! Stations initialization
+!
+NUMBSTAT_LOC = 0
+
+IF (CFILE_STAT=="NO_INPUT_CSV") THEN
+  ! Treat namelist
+  INUMBSTAT = 0
+  IF ( NNUMB_STAT > 0 ) THEN
+    DO JI = 1, NNUMB_STAT
+      IF ( LCARTESIAN ) THEN
+        TZSTATION%XX = XX_STAT(JI)
+        TZSTATION%XY = XY_STAT(JI)
+      ELSE
+        TZSTATION%XLAT = XLAT_STAT(JI)
+        TZSTATION%XLON = XLON_STAT(JI)
+        CALL STATPROF_INI_INTERP( TZSTATION )
+      END IF
+      TZSTATION%XZ    = XZ_STAT(JI)
+      TZSTATION%CNAME = CNAME_STAT(JI)
+
+      CALL STATPROF_POSITION( TZSTATION, GINSIDE, GPRESENT )
+
+      IF ( GINSIDE ) THEN
+        INUMBSTAT = INUMBSTAT + 1
+        TZSTATION%NID = INUMBSTAT
+      END IF
+
+      IF ( GPRESENT ) CALL STATION_ADD( TZSTATION )
+    END DO
+  END IF
 ELSE
-  ALLOCATE(TSTATION%TKE (0,0))
+  !Treat CSV datafile
+  CALL STATPROF_CSV_READ( TZSTATION, CFILE_STAT, INUMBSTAT )
 END IF
-ALLOCATE(TSTATION%T2M     (ISTORE,NUMBSTAT))
-ALLOCATE(TSTATION%Q2M     (ISTORE,NUMBSTAT))
-ALLOCATE(TSTATION%HU2M    (ISTORE,NUMBSTAT))
-ALLOCATE(TSTATION%ZON10M  (ISTORE,NUMBSTAT))
-ALLOCATE(TSTATION%MER10M  (ISTORE,NUMBSTAT))
-ALLOCATE(TSTATION%RN      (ISTORE,NUMBSTAT))
-ALLOCATE(TSTATION%H       (ISTORE,NUMBSTAT))
-ALLOCATE(TSTATION%LE      (ISTORE,NUMBSTAT))
-ALLOCATE(TSTATION%GFLUX   (ISTORE,NUMBSTAT))
-ALLOCATE(TSTATION%LEI     (ISTORE,NUMBSTAT))
-ALLOCATE(TSTATION%SWD     (ISTORE,NUMBSTAT))
-ALLOCATE(TSTATION%SWU     (ISTORE,NUMBSTAT))
-ALLOCATE(TSTATION%SWDIR   (ISTORE,NUMBSTAT))
-ALLOCATE(TSTATION%SWDIFF  (ISTORE,NUMBSTAT))
-ALLOCATE(TSTATION%LWD     (ISTORE,NUMBSTAT))
-ALLOCATE(TSTATION%LWU     (ISTORE,NUMBSTAT))
-ALLOCATE(TSTATION%DSTAOD  (ISTORE,NUMBSTAT))
-ALLOCATE(TSTATION%SFCO2   (ISTORE,NUMBSTAT))
-!
-TSTATION%ERROR = .FALSE.
-TSTATION%ZON   = XUNDEF
-TSTATION%MER   = XUNDEF
-TSTATION%W     = XUNDEF
-TSTATION%P     = XUNDEF
-TSTATION%TH    = XUNDEF
-TSTATION%R     = XUNDEF
-TSTATION%SV    = XUNDEF
-TSTATION%TKE   = XUNDEF
-TSTATION%TSRAD = XUNDEF
-TSTATION%ZS    = XUNDEF
-TSTATION%T2M     = XUNDEF
-TSTATION%Q2M     = XUNDEF
-TSTATION%HU2M    = XUNDEF
-TSTATION%ZON10M  = XUNDEF
-TSTATION%MER10M  = XUNDEF
-TSTATION%RN      = XUNDEF
-TSTATION%H       = XUNDEF
-TSTATION%LE      = XUNDEF
-TSTATION%GFLUX   = XUNDEF
-TSTATION%LEI     = XUNDEF
-TSTATION%SWD     = XUNDEF
-TSTATION%SWU     = XUNDEF
-TSTATION%SWDIR   = XUNDEF
-TSTATION%SWDIFF  = XUNDEF
-TSTATION%LWD     = XUNDEF
-TSTATION%LWU     = XUNDEF
-TSTATION%DSTAOD  = XUNDEF
-TSTATION%SFCO2   = XUNDEF
-!
-END SUBROUTINE ALLOCATE_STATION_n
+
+LSTATION = ( INUMBSTAT > 0 )
+
+DO JI = 1, NUMBSTAT_LOC
+  CALL STATION_ALLOCATE( TSTATIONS(JI), ISTORE )
+END DO
+
 !----------------------------------------------------------------------------
-!----------------------------------------------------------------------------
-SUBROUTINE INI_INTERP_STATION_n(TSTATION)
-!
-TYPE(STATION), INTENT(INOUT) :: TSTATION   ! 
-INTEGER :: JII                             ! 
-INTEGER :: IIU, IJU                        !   
-!
-IF ( ALL(TSTATION%LAT(:)/=XUNDEF) .AND. ALL(TSTATION%LON(:)/=XUNDEF) ) THEN
- DO JII=1,NUMBSTAT
-   CALL GET_DIM_EXT_ll ('B',IIU,IJU)
-   CALL SM_XYHAT(PLATOR,PLONOR,                        &
-                 TSTATION%LAT(JII), TSTATION%LON(JII), &
-                 TSTATION%X(JII),   TSTATION%Y(JII)    )
- ENDDO
-ELSE
-!
-  WRITE(ILUOUT,*) 'Error in station position '
-  WRITE(ILUOUT,*) 'either LATitude or LONgitude segment'
-  WRITE(ILUOUT,*) 'or I and J segment'
-  WRITE(ILUOUT,*) 'definition is not complete.'
-!callabortstop
-  CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_SURFSTATION_n','')
-END IF
-!
-TSTATION%STEP  = MAX ( PTSTEP, TSTATION%STEP )
-!
-!
-END SUBROUTINE INI_INTERP_STATION_n
-!----------------------------------------------------------------------------
-!----------------------------------------------------------------------------
-!
+
 END SUBROUTINE INI_SURFSTATION_n

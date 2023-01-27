@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -196,7 +196,8 @@ END MODULE MODI_READ_DESFM_n
 !!      Modification   02/2021   (F.Auguste)  add IBM
 !!                               (T.Nagel)    add turbulence recycling
 !!                               (E.Jezequel) add stations read from CSV file
-!!      Modifications  12/2021   (A. Costes)  add Blaze fire model
+!  A. Costes      12/2021: add Blaze fire model
+!  P. Wautelet 27/04/2022: add namelist for profilers
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -265,9 +266,11 @@ USE MODN_LATZ_EDFLX
 USE MODN_2D_FRC
 USE MODN_BLOWSNOW_n
 USE MODN_BLOWSNOW
+USE MODN_PROFILER_n
 USE MODN_STATION_n
 !
 USE MODN_PARAM_LIMA
+! USE MODN_FLYERS
 !
 USE MODE_MSG
 USE MODE_POS
@@ -477,6 +480,12 @@ IF (GFOUND) THEN
   READ(UNIT=ILUDES,NML=NAM_BLANKn)
   CALL UPDATE_NAM_BLANKn
 END IF
+CALL POSNAM(ILUDES,'NAM_PROFILERN',GFOUND,ILUOUT)
+CALL INIT_NAM_PROFILERn
+IF (GFOUND) THEN
+  READ(UNIT=ILUDES,NML=NAM_PROFILERN)
+  CALL UPDATE_NAM_PROFILERn
+END IF
 CALL POSNAM(ILUDES,'NAM_STATIONN',GFOUND,ILUOUT)
 CALL INIT_NAM_STATIONn
 IF (GFOUND) THEN
@@ -544,7 +553,7 @@ IF (KMI == 1) THEN
     READ(UNIT=ILUDES,NML=NAM_OUTPUT)
   END IF
 ! Note: it is not useful to read the budget namelists in the .des files
-! The value here (if present in file) don't need to be compared with the ones in the EXSEGn files
+! The values here (if present in file) don't need to be compared with the ones in the EXSEGn files
 !   CALL POSNAM(ILUDES,'NAM_BUDGET',GFOUND)
 !   IF (GFOUND) READ(UNIT=ILUDES,NML=NAM_BUDGET)
 !   CALL POSNAM(ILUDES,'NAM_BU_RU',GFOUND)
@@ -622,7 +631,15 @@ IF (KMI == 1) THEN
   IF (GFOUND) READ(UNIT=ILUDES,NML=NAM_LATZ_EDFLX)
   CALL POSNAM(ILUDES,'NAM_VISC',GFOUND,ILUOUT)
   IF (GFOUND) READ(UNIT=ILUDES,NML=NAM_VISC)
-END IF                                                       
+! Note: it is not useful to read the FLYERS/AIRCRAFTS/BALLOONS namelists in the .des files
+! The values here (if present in file) don't need to be compared with the ones in the EXSEGn files
+!   CALL POSNAM(ILUDES,'NAM_FLYERS',GFOUND,ILUOUT)
+!   IF (GFOUND) READ(UNIT=ILUDES,NML=NAM_FLYERS)
+!   CALL POSNAM(ILUSEG,'NAM_AIRCRAFTS',GFOUND,ILUOUT)
+!   IF (GFOUND) READ(UNIT=ILUSEG,NML=NAM_AIRCRAFTS)
+!   CALL POSNAM(ILUSEG,'NAM_BALLOONS',GFOUND,ILUOUT)
+!   IF (GFOUND) READ(UNIT=ILUSEG,NML=NAM_BALLOONS)
+END IF
 !
 !-------------------------------------------------------------------------------
 !
@@ -652,7 +669,7 @@ OSALT    = LSALT
 OORILAM  = LORILAM
 OLG      = LLG
 OPASPOL  = LPASPOL
-OFIRE  = LBLAZE
+OFIRE    = LBLAZE
 #ifdef MNH_FOREFIRE
 OFOREFIRE  = LFOREFIRE
 #endif
@@ -742,6 +759,9 @@ IF (NVERB >= 10) THEN
   WRITE(UNIT=ILUOUT,FMT="('********** BLANKn ******************')")
   WRITE(UNIT=ILUOUT,NML=NAM_BLANKn)
 !
+  WRITE(UNIT=ILUOUT,FMT="('********** PROFILERn *****************')")
+  WRITE(UNIT=ILUOUT,NML=NAM_PROFILERn)
+!
   WRITE(UNIT=ILUOUT,FMT="('********** STATIONn ******************')")
   WRITE(UNIT=ILUOUT,NML=NAM_STATIONn)
 !
@@ -826,16 +846,16 @@ IF (NVERB >= 10) THEN
     WRITE(UNIT=ILUOUT,NML=NAM_VISC)
 !
 #ifdef MNH_FOREFIRE
-	WRITE(UNIT=ILUOUT,FMT="('************ FOREFIRE  ***************')")
-	WRITE(UNIT=ILUOUT,NML=NAM_FOREFIRE)
+    WRITE(UNIT=ILUOUT,FMT="('************ FOREFIRE  ***************')")
+    WRITE(UNIT=ILUOUT,NML=NAM_FOREFIRE)
 !
-#endif	
+#endif
 !
-IF (LBLAZE) THEN
-  WRITE(UNIT=ILUOUT,FMT="('******************** BLAZE ********************')")
-  WRITE(UNIT=ILUOUT,NML=NAM_FIRE)
-END IF
-!	
+    IF ( LBLAZE ) THEN
+      WRITE(UNIT=ILUOUT,FMT="('******************** BLAZE ********************')")
+      WRITE(UNIT=ILUOUT,NML=NAM_FIRE)
+    END IF
+!
     WRITE(UNIT=ILUOUT,FMT="('************ CONDITIONAL SAMPLING *************')")
     WRITE(UNIT=ILUOUT,NML=NAM_CONDSAMP)
  !

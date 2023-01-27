@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1999-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 adiab 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !####################
 MODULE MODI_KID_MODEL
@@ -76,20 +71,23 @@ RECURSIVE SUBROUTINE KID_MODEL(KMODEL,KTEMP_MODEL,OEXIT)
 !!    -------------
 !!
 !!      Original    09/04/99 
-!!
-!!
+!
+!  P. Wautelet 13/01/2023: close backup files outside MODEL_n (to control close order)
+!
 !
 !*       0.     DECLARATIONS
 !               ------------
 !
 USE MODD_CONF
+USE MODD_IO,             ONLY: TFILEDATA
 USE MODD_NESTING
+USE MODD_TYPE_DATE,      ONLY: DATE_TIME
 !
-USE MODI_MODEL_n
+USE MODE_IO_FILE,        ONLY: IO_FILE_CLOSE
 USE MODE_MODELN_HANDLER
-!
 USE MODE_ll
 !
+USE MODI_MODEL_n
 !
 !*       0.1    declarations of arguments
 !
@@ -105,6 +103,8 @@ INTEGER :: JTEMP_KID     ! nested temporal loop for the kid model
 INTEGER :: ITEMP_LOOP    ! number of the temporal iteration for the kid model
 LOGICAL :: GEXIT         ! return value of the EXIT signal from MODEL
 INTEGER :: IINFO_ll      ! return code of // routines
+TYPE(TFILEDATA), POINTER :: TZBAKFILE  ! Backup file
+TYPE(DATE_TIME)          :: TZDTMODELN ! Date/time of current model computation
 !
 !
 !-------------------------------------------------------------------------------
@@ -112,7 +112,7 @@ INTEGER :: IINFO_ll      ! return code of // routines
 !*       1.    INITIALIZATION
 !              --------------
 !
-DO JKID=KMODEL+1,NMODEL   
+DO JKID=KMODEL+1,NMODEL
   !
   IF ( NDAD(JKID)==KMODEL ) THEN
     !
@@ -127,11 +127,15 @@ DO JKID=KMODEL+1,NMODEL
       ! call the model$n corresponding to JKID
       CALL GO_TOMODEL_ll(JKID,IINFO_ll)
       CALL GOTO_MODEL(JKID)
-      CALL MODEL_n(ITEMP_LOOP,GEXIT)
+      CALL MODEL_n( ITEMP_LOOP, TZBAKFILE, TZDTMODELN, GEXIT )
       !
       ! call to the kid models of model JKID
       CALL KID_MODEL(JKID,ITEMP_LOOP,GEXIT)
       !
+      IF ( TZBAKFILE%LOPENED ) THEN
+        CALL IO_FILE_CLOSE( TZBAKFILE, TPDTMODELN = TZDTMODELN )
+        NULLIFY( TZBAKFILE )
+      END IF
     END DO
     !
   END IF

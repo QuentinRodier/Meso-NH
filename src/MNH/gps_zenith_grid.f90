@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2004-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !##########################################
@@ -66,8 +66,8 @@ END MODULE MODI_GPS_ZENITH_GRID
 !!      Modified    4/12/2007
 !!              July, 2015 (O.Nuissier/F.Duffourg) Add microphysics diagnostic for
 !!                                      aircraft, ballon and profiler
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 31/08/2022: remove ZXHATM and ZYHATM (unused variables)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -107,7 +107,6 @@ INTEGER :: IJB,IJE          ! Loop limits for coordinate Y
 INTEGER :: IKB,IKE          ! Loop limits for coordinate Z
 INTEGER :: JK               ! Loop variables of control
 INTEGER :: IIU,IJU,IKU      ! Loop variables of model 
-REAL,  DIMENSION(:),ALLOCATABLE         :: ZXHATM,ZYHATM   ! mass-point positions 
 REAL,  DIMENSION(:,:,:),ALLOCATABLE     :: ZZHATM   ! mass level altitude  
 !-------- Physical parameters for the integration ----------------------------
 REAL, DIMENSION(:,:,:),ALLOCATABLE ::  ZE              !  Partial pressure of water vapor
@@ -135,8 +134,6 @@ IKU = SIZE (PTEMP,3)
 IKB = JPVEXT + 1
 IKE = IKU - JPVEXT
 !
-ALLOCATE(ZXHATM(IIU))
-ALLOCATE(ZYHATM(IJU))
 ALLOCATE(ZZHATM(IIU,IJU,IKU))
 ALLOCATE(ZE(IIU,IJU,IKU))
 ALLOCATE(ZTV(IIU,IJU,IKU))
@@ -172,10 +169,6 @@ ZRDSRV=XRD/XRV
 !              ------------------- 
 !
 ! 
-ZXHATM(1:IIU-1) = 0.5*(XXHAT(1:IIU-1)+XXHAT(2:IIU))
-ZXHATM(IIU)     = 2.*XXHAT(IIU)-ZXHATM(IIU-1)
-ZYHATM(1:IJU-1) = 0.5*(XYHAT(1:IJU-1)+XYHAT(2:IJU))
-ZYHATM(IJU)     = 2.*XYHAT(IJU)-ZYHATM(IJU-1)  
 ZZHATM(:,:,1:IKU-1)=0.5*(XZZ(:,:,1:IKU-1)+XZZ(:,:,2:IKU))
 ZZHATM(:,:,IKU)    = 2.*XZZ(:,:,IKU) -ZZHATM(:,:,IKU-1)
 ! 

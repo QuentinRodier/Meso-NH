@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2017-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2017-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -12,6 +12,7 @@
 !  P. Wautelet 17/01/2020: add 'BUD' category for Print_msg
 !  P. Wautelet 08/04/2020: add multiline Print_msg
 !  P. Wautelet 01/07/2021: add counters for the number of prints + subroutine Msg_stats
+!  P. Wautelet 01/07/2022: add olocal optional argument to force Print_msg on current process
 !-----------------------------------------------------------------
 module mode_msg
 
@@ -37,22 +38,24 @@ end interface Print_msg
 
 contains
 
-subroutine Print_msg_1line( kverb, hdomain, hsubr, hmsg )
-  integer,          intent(in) :: kverb   !Verbosity level
-  character(len=*), intent(in) :: hdomain !Domain/category of message
-  character(len=*), intent(in) :: hsubr   !Subroutine/function name
-  character(len=*), intent(in) :: hmsg    !Message
+subroutine Print_msg_1line( kverb, hdomain, hsubr, hmsg, olocal )
+  integer,           intent(in) :: kverb   !Verbosity level
+  character(len=*),  intent(in) :: hdomain !Domain/category of message
+  character(len=*),  intent(in) :: hsubr   !Subroutine/function name
+  character(len=*),  intent(in) :: hmsg    !Message
+  logical, optional, intent(in) :: olocal  !true to force print on this process (if verbosity level is high enough)
 
-  call Print_msg_multi( kverb, hdomain, hsubr, [hmsg] )
+  call Print_msg_multi( kverb, hdomain, hsubr, [hmsg], olocal )
 
 end subroutine Print_msg_1line
 
 
-subroutine Print_msg_multi_cmnhmsg( kverb, hdomain, hsubr )
+subroutine Print_msg_multi_cmnhmsg( kverb, hdomain, hsubr, olocal )
 
-  integer,          intent(in) :: kverb   !Verbosity level
-  character(len=*), intent(in) :: hdomain !Domain/category of message
-  character(len=*), intent(in) :: hsubr   !Subroutine/function name
+  integer,           intent(in) :: kverb   !Verbosity level
+  character(len=*),  intent(in) :: hdomain !Domain/category of message
+  character(len=*),  intent(in) :: hsubr   !Subroutine/function name
+  logical, optional, intent(in) :: olocal  !true to force print on this process (if verbosity level is high enough)
 
   integer :: ilines
 
@@ -71,7 +74,7 @@ subroutine Print_msg_multi_cmnhmsg( kverb, hdomain, hsubr )
 end subroutine Print_msg_multi_cmnhmsg
 
 
-subroutine Print_msg_multi( KVERB, HDOMAIN, HSUBR, HMSG )
+subroutine Print_msg_multi( KVERB, HDOMAIN, HSUBR, HMSG, OLOCAL )
 !
 USE ISO_FORTRAN_ENV, ONLY: ERROR_UNIT, OUTPUT_UNIT
 !
@@ -87,6 +90,7 @@ INTEGER,                        INTENT(IN) :: KVERB   !Verbosity level
 CHARACTER(LEN=*),               INTENT(IN) :: HDOMAIN !Domain/category of message
 CHARACTER(LEN=*),               INTENT(IN) :: HSUBR   !Subroutine/function name
 CHARACTER(LEN=*), dimension(:), INTENT(IN) :: HMSG    !Message
+LOGICAL, OPTIONAL,              INTENT(IN) :: OLOCAL  !true to force print on this process (if verbosity level is high enough)
 !
 character(len=2)  :: ysz
 CHARACTER(LEN=2)  :: YPRC
@@ -98,12 +102,19 @@ INTEGER :: IERR, IMAXVERB,IABORTLEVEL
 INTEGER :: ILU
 integer :: ji
 integer :: ilines
+logical :: glocal
 LOGICAL :: GWRITE_OUTLST,GWRITE_STDOUT
-!
+
+if ( present( olocal ) ) then
+  glocal = olocal
+else
+  glocal = .false.
+end if
+
 !Determine if the process will write
 GWRITE_OUTLST = .FALSE.
 GWRITE_STDOUT = .FALSE.
-IF (IP == 1 .OR. LVERB_ALLPRC) THEN
+IF ( IP == 1 .OR. LVERB_ALLPRC .OR. GLOCAL ) THEN
   IF (LVERB_OUTLST) GWRITE_OUTLST = .TRUE.
   IF (LVERB_STDOUT) GWRITE_STDOUT = .TRUE.
 END IF
@@ -178,7 +189,7 @@ else
   ysz = 'I4'
 end if
 
-if ( lverb_allprc ) then
+if ( lverb_allprc .or. glocal ) then
   if ( nproc < 10 ) then
     yprc = 'I1'
   else if ( nproc < 100 ) then
@@ -222,9 +233,9 @@ if ( lverb_allprc ) then
 else
   if ( gwrite_stdout ) then
     if ( ilines == 1 ) then
-        Write( unit = output_unit, fmt = "(a9,a30,a)" ) ypre, ysubr, Trim( hmsg(1) )
+        Write( unit = output_unit, fmt = "('0: ',a9,a30,a)" ) ypre, ysubr, Trim( hmsg(1) )
     else
-      yformat = '(a9,a30,' // ysz // ',''/'',' // ysz // ','': '',a)'
+      yformat = '("0: ",a9,a30,' // ysz // ',''/'',' // ysz // ','': '',a)'
       do ji = 1, ilines
         Write(unit = output_unit, fmt = yformat ) ypre, ysubr, ji, ilines, Trim( hmsg(ji) )
       end do
@@ -232,9 +243,9 @@ else
   end if
   if ( gwrite_outlst ) then
     if ( ilines == 1 ) then
-        Write( unit = ilu, fmt = "(a9,a30,a)") ypre, ysubr, Trim( hmsg(1) )
+        Write( unit = ilu, fmt = "('0: ',a9,a30,a)") ypre, ysubr, Trim( hmsg(1) )
     else
-      yformat = '(a9,a30,' // ysz // ',''/'',' // ysz // ','': '',a)'
+      yformat = '("0: ",a9,a30,' // ysz // ',''/'',' // ysz // ','': '',a)'
       do ji = 1, ilines
         Write( unit = ilu, fmt = yformat) ypre, ysubr, ji, ilines, Trim( hmsg(ji) )
       end do

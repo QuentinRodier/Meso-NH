@@ -153,7 +153,7 @@ use modd_budget,     only: lbudget_u,  lbudget_v,  lbudget_w,  lbudget_th, lbudg
                            NBUDGET_RR, NBUDGET_RI, NBUDGET_RS, NBUDGET_RG, NBUDGET_RH,  NBUDGET_SV1,             &
                            lbu_beg, lbu_enable, tbudgets
 USE MODD_CONF
-use modd_conf_n, only: luserv
+use modd_conf_n,     only: luserv
 USE MODD_GRID_n
 
 use mode_budget,     only: Budget_store_init, Budget_store_end

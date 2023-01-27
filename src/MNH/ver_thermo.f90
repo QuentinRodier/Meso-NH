@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -159,7 +159,7 @@ USE MODD_CONF
 USE MODD_CONF_n
 USE MODD_CST
 USE MODD_DYN_n
-use modd_field,          only: tfielddata, TYPEREAL
+use modd_field,          only: tfieldmetadata, TYPEREAL
 USE MODD_FIELD_n,        ONLY: XTHT,XRT,XPABST,XDRYMASST
 USE MODD_GRID_n
 USE MODD_IO,             ONLY: TFILEDATA,TFILE_DUMMY
@@ -227,7 +227,7 @@ INTEGER :: IISIZEXF,IJSIZEXF,IISIZEXFU,IJSIZEXFU     ! dimensions of the
 INTEGER :: IISIZEX4,IJSIZEX4,IISIZEX2,IJSIZEX2       ! West-east LB arrays
 INTEGER :: IISIZEYF,IJSIZEYF,IISIZEYFV,IJSIZEYFV     ! dimensions of the
 INTEGER :: IISIZEY4,IJSIZEY4,IISIZEY2,IJSIZEY2       ! North-south LB arrays
-TYPE(TFIELDDATA) :: TZFIELD
+TYPE(TFIELDMETADATA) :: TZFIELD
 
 !-------------------------------------------------------------------------------
 !
@@ -295,16 +295,17 @@ DO JRR=1,SIZE(XRT,4)
 END DO
 !
 IF (NVERB>=10) THEN
-  TZFIELD%CMNHNAME   = 'THV'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'THV'
-  TZFIELD%CUNITS     = 'K'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_Z_THV'
-  TZFIELD%NGRID      = 4
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDMETADATA(   &
+    CMNHNAME   = 'THV',       &
+    CSTDNAME   = '',          &
+    CLONGNAME  = 'THV',       &
+    CUNITS     = 'K',         &
+    CDIR       = 'XY',        &
+    CCOMMENT   = 'X_Y_Z_THV', &
+    NGRID      = 4,           &
+    NTYPE      = TYPEREAL,    &
+    NDIMS      = 3,           &
+    LTIMEDEP   = .TRUE.       )
   CALL IO_Field_write(TPFILE,TZFIELD,ZTHV)
 END IF
 !-------------------------------------------------------------------------------
@@ -331,9 +332,9 @@ ALLOCATE(XRVREF(IIU,IJU,IKU))
 ALLOCATE(XEXNREF(IIU,IJU,IKU))
 ALLOCATE(XRHODJ(IIU,IJU,IKU))
 XRVREF(:,:,:) = 0.
-CALL SET_REF(0,TFILE_DUMMY,XZZ,XZHAT,PJ,PDXX,PDYY,CLBCX,CLBCY,       &
-             XREFMASS,XMASS_O_PHI0,XLINMASS,XRHODREF,XTHVREF,XRVREF, &
-             XEXNREF,XRHODJ)
+CALL SET_REF( 0, TFILE_DUMMY, XZZ, XZHATM, PJ, PDXX, PDYY, CLBCX, CLBCY,   &
+              XREFMASS, XMASS_O_PHI0, XLINMASS, XRHODREF, XTHVREF, XRVREF, &
+              XEXNREF, XRHODJ                                              )
 
 CALL MPPDB_CHECK3D(XRHODREF,"VERTHERMO::XRHODREF",PRECISION)
 CALL MPPDB_CHECK3D(XTHVREF,"VERTHERMO::XTHVREF",PRECISION)

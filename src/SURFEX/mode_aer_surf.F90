@@ -1,4 +1,4 @@
-!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
@@ -7,7 +7,7 @@ MODULE MODE_AER_SURF
 !!   ########################
 !!
 !! MODULE DUST PSD (Particle Size Distribution)
-!! Purpose: Contains subroutines to convert from transported variables (ppp)
+!! Purpose: Contains subroutines to convert from transported variables (ppv)
 !! to understandable aerosol variables, e.g. #/m3, kg/m3, sigma, R_{n}
 !-------------------------------------------------------------------------------
 !!    MODIFICATIONS
@@ -147,7 +147,7 @@ END SUBROUTINE INIT_VAR
 !
 !!   ############################################################
 SUBROUTINE PPP2AERO_SURF(             &
-          PSVT,                       &!I [ppp] input scalar variables (moment of distribution)
+          PSVT,                       &!I [ppv] input scalar variables (moment of distribution)
           PRHODREF,                   &!I [kg/m3] density of air       
           PSIG1D,                     &!O [-] standard deviation of aerosol distribution
           PRG1D,                      &!O [um] number median diameter of aerosol distribution
@@ -160,7 +160,7 @@ SUBROUTINE PPP2AERO_SURF(             &
 !!
 !!    PURPOSE
 !!    -------
-!!    Translate the three moments M0, M3 and M6 given in ppp into
+!!    Translate the three moments M0, M3 and M6 given in ppv into
 !!    Values which can be understood more easily (R, sigma, N, M)
 !! 
 !!    CALLING STRUCTURE NOTE: OPTIONAL VARIABLES
@@ -353,7 +353,7 @@ IF (LHOOK) CALL DR_HOOK('MODE_AER_SURF:PPP2AERO_SURF',1,ZHOOK_HANDLE)
 END SUBROUTINE PPP2AERO_SURF
 !!   ############################################################
 SUBROUTINE AERO2PPP_SURF(    &
-            PSVT,            &!IO [ppp] input scalar variables (moment of distribution)
+            PSVT,            &!IO [ppv] input scalar variables (moment of distribution)
             PRHODREF,        &!I [kg/m3] density of air       
             PSIG1D,          &!I [-] standard deviation of aerosol distribution
             PRG1D            &!I [um] number median diameter of aerosol distribution
@@ -363,7 +363,7 @@ SUBROUTINE AERO2PPP_SURF(    &
 !!
 !!    PURPOSE
 !!    -------
-!!    Translate the aerosol Mass, RG and SIGMA in the  three moments M0, M3 and M6 given in ppp 
+!!    Translate the aerosol Mass, RG and SIGMA in the  three moments M0, M3 and M6 given in ppv 
 !!
 !!    REFERENCE
 !!    ---------
@@ -440,7 +440,7 @@ ZM(:,4)= ZM(:,5)/ ( (PRG1D(:,2)**3)*EXP(4.5 * LOG(PSIG1D(:,2))**2) )
 ZM(:,3) = ZM(:,1)*(PRG1D(:,1)**6) * EXP(18 *(LOG(PSIG1D(:,1)))**2)  
 ZM(:,6) = ZM(:,4)*(PRG1D(:,2)**6) * EXP(18 *(LOG(PSIG1D(:,2)))**2)  
 !
-!*       6    return to ppp
+!*       6    return to ppv
 !
 PSVT(:,JP_CH_M0i) = ZM(:,1) * 1E-6 
 PSVT(:,JP_CH_M0j) = ZM(:,4) * 1E-6

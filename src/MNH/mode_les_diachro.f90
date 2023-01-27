@@ -9,7 +9,7 @@
 !  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
 !  P. Wautelet 20/09/2019: rewrite normalization of LES budgets
 !  P. Wautelet 14/08/2020: deduplicate LES_DIACHRO* subroutines
-!  P. Wautelet    10/2020: restructure subroutines to use tfield_metadata_base type
+!  P. Wautelet    10/2020: restructure subroutines to use tfieldmetadata_base type
 !  P. Wautelet 03/03/2021: budgets: add tbudiachrometadata type (useful to pass more information to Write_diachro)
 !  P. Wautelet 11/03/2021: budgets: remove ptrajx/y/z optional dummy arguments of Write_diachro
 !  P. Wautelet 22/03/2022: LES averaging periods are more reliable (compute with integers instead of reals)
@@ -631,18 +631,18 @@ end function Les_time_avg_1pt
 subroutine Les_diachro_1D( tpdiafile, tpfield, hgroup, hgroupcomment, odoavg, odonorm, pfield )
 !##############################################################################################
 
-use modd_field, only: NMNHDIM_BUDGET_LES_TIME, NMNHDIM_UNUSED, tfield_metadata_base
+use modd_field, only: NMNHDIM_BUDGET_LES_TIME, NMNHDIM_UNUSED, tfieldmetadata_base
 use modd_io,    only: tfiledata
 
 type(tfiledata),                       intent(in) :: tpdiafile  ! File to write
-type(tfield_metadata_base),            intent(in) :: tpfield    ! Metadata of field
+type(tfieldmetadata_base),             intent(in) :: tpfield    ! Metadata of field
 character(len=*),                      intent(in) :: hgroup     ! Group of the field
 character(len=*),                      intent(in) :: hgroupcomment
 logical,                               intent(in) :: odoavg     ! Compute and store time average
 logical,                               intent(in) :: odonorm    ! Compute and store normalized field
 real,                    dimension(:), intent(in) :: pfield     ! Data array
 
-type(tfield_metadata_base) :: tzfield
+type(tfieldmetadata_base) :: tzfield
 
 tzfield = tpfield
 
@@ -676,18 +676,18 @@ subroutine Les_diachro_2D( tpdiafile, tpfield, hgroup, hgroupcomment, odoavg, od
 !##############################################################################################
 
 use modd_field, only: NMNHDIM_BUDGET_LES_LEVEL, NMNHDIM_BUDGET_LES_SV, NMNHDIM_BUDGET_LES_TIME, NMNHDIM_UNUSED, &
-                      tfield_metadata_base
+                      tfieldmetadata_base
 use modd_io,    only: tfiledata
 
 type(tfiledata),                         intent(in) :: tpdiafile  ! File to write
-type(tfield_metadata_base),              intent(in) :: tpfield    ! Metadata of field
+type(tfieldmetadata_base),               intent(in) :: tpfield    ! Metadata of field
 character(len=*),                        intent(in) :: hgroup     ! Group of the field
 character(len=*),                        intent(in) :: hgroupcomment
 logical,                                 intent(in) :: odoavg     ! Compute and store time average
 logical,                                 intent(in) :: odonorm    ! Compute and store normalized field
 real,                    dimension(:,:), intent(in) :: pfield     ! Data array
 
-type(tfield_metadata_base) :: tzfield
+type(tfieldmetadata_base) :: tzfield
 
 tzfield = tpfield
 
@@ -733,11 +733,11 @@ subroutine Les_diachro_3D( tpdiafile, tpfield, hgroup, hgroupcomment, odoavg, od
 
 use modd_field, only: NMNHDIM_BUDGET_LES_LEVEL, NMNHDIM_BUDGET_LES_MASK, NMNHDIM_BUDGET_LES_SV, &
                       NMNHDIM_BUDGET_LES_TIME,  NMNHDIM_BUDGET_TERM,     NMNHDIM_UNUSED,        &
-                      tfield_metadata_base
+                      tfieldmetadata_base
 use modd_io,    only: tfiledata
 
 type(tfiledata),                           intent(in) :: tpdiafile  ! File to write
-type(tfield_metadata_base),                intent(in) :: tpfield    ! Metadata of field
+type(tfieldmetadata_base),                 intent(in) :: tpfield    ! Metadata of field
 character(len=*),                          intent(in) :: hgroup     ! Group of the field
 character(len=*),                          intent(in) :: hgroupcomment
 logical,                                   intent(in) :: odoavg     ! Compute and store time average
@@ -747,7 +747,7 @@ character(len=*),        dimension(:),     optional, intent(in) :: hfieldnames
 character(len=*),        dimension(:),     optional, intent(in) :: hfieldcomments
 character(len=*),        dimension(:),     optional, intent(in) :: hmasks
 
-type(tfield_metadata_base) :: tzfield
+type(tfieldmetadata_base) :: tzfield
 
 tzfield = tpfield
 
@@ -831,11 +831,11 @@ subroutine Les_diachro_4D( tpdiafile, tpfield, hgroup, hgroupcomment, odoavg, od
 
 use modd_field, only: NMNHDIM_BUDGET_LES_LEVEL, NMNHDIM_BUDGET_LES_MASK, NMNHDIM_BUDGET_LES_PDF,  NMNHDIM_BUDGET_LES_SV, &
                       NMNHDIM_BUDGET_LES_TIME,  NMNHDIM_BUDGET_TERM,     NMNHDIM_UNUSED,                                 &
-                      tfield_metadata_base
+                      tfieldmetadata_base
 use modd_io,    only: tfiledata
 
 type(tfiledata),                             intent(in) :: tpdiafile  ! File to write
-type(tfield_metadata_base),                  intent(in) :: tpfield ! Metadata of field
+type(tfieldmetadata_base),                   intent(in) :: tpfield ! Metadata of field
 character(len=*),                            intent(in) :: hgroup     ! Group of the field
 character(len=*),                            intent(in) :: hgroupcomment
 logical,                                     intent(in) :: odoavg     ! Compute and store time average
@@ -845,7 +845,7 @@ character(len=*),        dimension(:),     optional, intent(in) :: hfieldnames
 character(len=*),        dimension(:),     optional, intent(in) :: hfieldcomments
 character(len=*),        dimension(:),     optional, intent(in) :: hmasks
 
-type(tfield_metadata_base) :: tzfield
+type(tfieldmetadata_base) :: tzfield
 
 tzfield = tpfield
 
@@ -935,7 +935,7 @@ subroutine Les_diachro_common( tpdiafile, tpfield, hgroup, hgroupcomment, pfield
                                hfieldnames, hfieldcomments, hmasks )
 !###################################################################################################
 
-use modd_field,         only: tfield_metadata_base
+use modd_field,         only: tfieldmetadata_base
 use modd_io,            only: tfiledata
 use modd_les,           only: nles_current_iinf, nles_current_isup, nles_current_jinf, nles_current_jsup, &
                               nles_levels, xles_current_z
@@ -944,25 +944,25 @@ use modd_type_date,     only: date_time
 
 implicit none
 
-type(tfiledata),                                          intent(in) :: tpdiafile ! File to write
-type(tfield_metadata_base),                               intent(in) :: tpfield
-character(len=*),                                         intent(in) :: hgroup    ! Group of the field
-character(len=*),                                         intent(in) :: hgroupcomment
-real,                       dimension(:,:,:,:),           intent(in) :: pfield    ! Data array
-logical,                                                  intent(in) :: odoavg    ! Compute and store time average
-logical,                                                  intent(in) :: odonorm   ! Compute and store normalized field
-character(len=*),           dimension(:),       optional, intent(in) :: hfieldnames
-character(len=*),           dimension(:),       optional, intent(in) :: hfieldcomments
-character(len=*),           dimension(:),       optional, intent(in) :: hmasks
+type(tfiledata),                                         intent(in) :: tpdiafile ! File to write
+type(tfieldmetadata_base),                               intent(in) :: tpfield
+character(len=*),                                        intent(in) :: hgroup    ! Group of the field
+character(len=*),                                        intent(in) :: hgroupcomment
+real,                      dimension(:,:,:,:),           intent(in) :: pfield    ! Data array
+logical,                                                 intent(in) :: odoavg    ! Compute and store time average
+logical,                                                 intent(in) :: odonorm   ! Compute and store normalized field
+character(len=*),          dimension(:),       optional, intent(in) :: hfieldnames
+character(len=*),          dimension(:),       optional, intent(in) :: hfieldcomments
+character(len=*),          dimension(:),       optional, intent(in) :: hmasks
 
-character(len=100),         dimension(:),     allocatable :: ycomment                      ! Comment string
-character(len=100),         dimension(:),     allocatable :: ytitle                        ! Title
-integer                                                   :: iles_k                        ! Number of vertical levels
-integer                                                   :: iil, iih, ijl, ijh, ikl, ikh  ! Cartesian area relatively to the
-                                                                                           ! entire domain
-integer                                                   :: jp                            ! Process loop counter
-real,                       dimension(:,:,:), allocatable :: ztrajz                        ! x and y are not used for LES
-type(tfield_metadata_base), dimension(:),     allocatable :: tzfields
+character(len=100),        dimension(:),     allocatable :: ycomment                      ! Comment string
+character(len=100),        dimension(:),     allocatable :: ytitle                        ! Title
+integer                                                  :: iles_k                        ! Number of vertical levels
+integer                                                  :: iil, iih, ijl, ijh, ikl, ikh  ! Cartesian area relatively to the
+                                                                                          ! entire domain
+integer                                                  :: jp                            ! Process loop counter
+real,                      dimension(:,:,:), allocatable :: ztrajz                        ! x and y are not used for LES
+type(tfieldmetadata_base), dimension(:),     allocatable :: tzfields
 !------------------------------------------------------------------------------
 
 iles_k = Size( pfield, 1 )
@@ -1215,7 +1215,7 @@ subroutine Les_diachro_2pt( tpdiafile, tpfieldx, tpfieldy, pfieldx, pfieldy )
 !
 !
 use modd_conf,       only: l2d
-use modd_field,      only: tfield_metadata_base
+use modd_field,      only: tfieldmetadata_base
 use modd_io,         only: tfiledata
 use modd_les,        only: xles_temp_mean_start, xles_temp_mean_end
 use modd_parameters, only: XUNDEF
@@ -1226,8 +1226,8 @@ IMPLICIT NONE
 !*      0.1  declarations of arguments
 !
 type(tfiledata),                    intent(in) :: tpdiafile! file to write
-type(tfield_metadata_base),         intent(in) :: tpfieldx ! Metadata of field pfieldx
-type(tfield_metadata_base),         intent(in) :: tpfieldy ! Metadata of field pfieldy
+type(tfieldmetadata_base),          intent(in) :: tpfieldx ! Metadata of field pfieldx
+type(tfieldmetadata_base),          intent(in) :: tpfieldy ! Metadata of field pfieldy
 real,             dimension(:,:,:), intent(in) :: pfieldx
 real,             dimension(:,:,:), intent(in) :: pfieldy
 !-------------------------------------------------------------------------------
@@ -1250,7 +1250,7 @@ subroutine Les_diachro_2pt_1d_intern( tpdiafile, tpfield, gavg, pfield )
 
 use modd_field,         only: NMNHDIM_BUDGET_LES_AVG_TIME, NMNHDIM_BUDGET_LES_TIME, NMNHDIM_UNUSED, &
                               NMNHDIM_SPECTRA_2PTS_NI, NMNHDIM_SPECTRA_2PTS_NJ,                     &
-                              NMNHMAXDIMS, tfield_metadata_base
+                              NMNHMAXDIMS, tfieldmetadata_base
 use modd_io,            only: tfiledata
 use modd_les,           only: nles_current_iinf, nles_current_isup, nles_current_jinf, nles_current_jsup, &
                               nles_current_times, nspectra_k, xles_current_domegax, xles_current_domegay
@@ -1259,7 +1259,7 @@ use modd_type_date,     only: date_time
 use mode_write_diachro, only: Write_diachro
 
 type(tfiledata),                    intent(in) :: tpdiafile! file to write
-type(tfield_metadata_base),         intent(in) :: tpfield ! Metadata of field pfield
+type(tfieldmetadata_base),          intent(in) :: tpfield ! Metadata of field pfield
 logical,                            intent(in) :: gavg
 real,             dimension(:,:,:), intent(in) :: pfield
 
@@ -1274,7 +1274,7 @@ integer                                              :: jk       ! level counter
 real,            dimension(:,:,:,:,:,:), allocatable :: zwork6 ! contains physical field
 type(date_time), dimension(:),           allocatable :: tzdates
 type(tbudiachrometadata)                             :: tzbudiachro
-type(tfield_metadata_base)                           :: tzfield
+type(tfieldmetadata_base)                            :: tzfield
 
 !*      1.0  Initialization of diachro variables for LES (z,t) profiles
 !            ----------------------------------------------------------
@@ -1423,14 +1423,14 @@ subroutine Les_diachro_spec( tpdiafile, tpfieldx, tpfieldy, pspectrax, pspectray
 !
 !
 use modd_conf,  only: l2d
-use modd_field, only: tfield_metadata_base
+use modd_field, only: tfieldmetadata_base
 use modd_io,    only: tfiledata
 
 implicit none
 
 type(tfiledata),                      intent(in) :: tpdiafile! file to write
-type(tfield_metadata_base),           intent(in) :: tpfieldx ! metadata of field pfieldx
-type(tfield_metadata_base),           intent(in) :: tpfieldy ! metadata of field pfieldy
+type(tfieldmetadata_base),            intent(in) :: tpfieldx ! metadata of field pfieldx
+type(tfieldmetadata_base),            intent(in) :: tpfieldy ! metadata of field pfieldy
 real,             dimension(:,:,:,:), intent(in) :: pspectrax! spectra in x
 real,             dimension(:,:,:,:), intent(in) :: pspectray! and y directions
 
@@ -1446,7 +1446,7 @@ subroutine Les_diachro_spec_1D_intern( tpdiafile, tpfield, pspectra )
 
 use modd_field,         only: NMNHDIM_BUDGET_LES_AVG_TIME, NMNHDIM_BUDGET_LES_TIME, NMNHDIM_UNUSED, &
                               NMNHDIM_SPECTRA_SPEC_NI, NMNHDIM_SPECTRA_SPEC_NJ,                     &
-                              NMNHMAXDIMS, tfield_metadata_base
+                              NMNHMAXDIMS, tfieldmetadata_base
 use modd_io,            only: tfiledata
 use modd_les,           only: nles_current_iinf, nles_current_isup, nles_current_jinf, nles_current_jsup, &
                               nles_current_times, nspectra_k, &
@@ -1459,7 +1459,7 @@ use mode_write_diachro, only: Write_diachro
 implicit none
 
 type(tfiledata),             intent(in) :: tpdiafile ! file to write
-type(tfield_metadata_base),  intent(in) :: tpfield   ! metadata of field pfield
+type(tfieldmetadata_base),   intent(in) :: tpfield   ! metadata of field pfield
 real, dimension(:,:,:,:),    intent(in) :: pspectra
 
 character(len=10)                                    :: ygroup   ! group title
@@ -1473,7 +1473,7 @@ integer                                              :: jk       ! level counter
 real,            dimension(:,:,:,:,:,:), allocatable :: zwork6   ! physical field
 type(date_time), dimension(:),           allocatable :: tzdates
 type(tbudiachrometadata)                             :: tzbudiachro
-type(tfield_metadata_base)                           :: tzfield
+type(tfieldmetadata_base)                            :: tzfield
 !
 !*      1.0  Initialization of diachro variables for LES (z,t) profiles
 !            ----------------------------------------------------------

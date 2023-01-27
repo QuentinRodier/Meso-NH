@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -17,7 +17,7 @@
 #ifdef MNH_IOCDF4
 module mode_io_read_nc4
 
-use modd_field,        only: tfielddata
+use modd_field,        only: tfieldmetadata, tfieldmetadata_base
 use modd_io,           only: tfiledata
 use modd_precision,    only: CDFINT
 
@@ -53,11 +53,11 @@ SUBROUTINE IO_Field_attr_read_check_nc4(TPFILE,TPFIELD,KVARID,KRESP,HCALENDAR)
 !
 USE MODD_PARAMETERS, ONLY: NGRIDUNKNOWN
 !
-TYPE(TFILEDATA),          INTENT(IN)    :: TPFILE
-TYPE(TFIELDDATA),         INTENT(INOUT) :: TPFIELD
-INTEGER(KIND=CDFINT),     INTENT(IN)    :: KVARID
-INTEGER,                  INTENT(OUT)   :: KRESP  ! return-code
-CHARACTER(LEN=*),OPTIONAL,INTENT(IN)    :: HCALENDAR
+TYPE(TFILEDATA),            INTENT(IN)    :: TPFILE
+CLASS(tfieldmetadata_base), INTENT(INOUT) :: TPFIELD
+INTEGER(KIND=CDFINT),       INTENT(IN)    :: KVARID
+INTEGER,                    INTENT(OUT)   :: KRESP  ! return-code
+CHARACTER(LEN=*), OPTIONAL, INTENT(IN)    :: HCALENDAR
 !
 INTEGER                      :: IERRLEVEL
 INTEGER                      :: IGRID
@@ -204,10 +204,20 @@ IF (istatus == NF90_NOERR) THEN
   istatus = NF90_GET_ATT(INCID, KVARID, 'units', YVALUE)
   IF (TRIM(YVALUE)/=TRIM(TPFIELD%CUNITS)) THEN
     IF(.NOT.PRESENT(HCALENDAR)) THEN
-      CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Field_attr_read_check_nc4',TRIM(TPFILE%CNAME)// &
-                     ': expected UNITS ('//TRIM(TPFIELD%CUNITS)//                           &
-                     ') is different than found ('//TRIM(YVALUE)//') in file for field '//TRIM(TPFIELD%CMNHNAME))
-      KRESP = -111 !Used later to broadcast modified metadata
+      if ( Trim( tpfield%cunits ) == 'ppv' .and. Trim( yvalue ) == 'ppp' ) then
+        ! 'ppp' (non-existing unit) was used in old Meso-NH files (before 5.5.1 version) instead of 'ppv'
+        CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_attr_read_check_nc4',TRIM(TPFILE%CNAME)// &
+                       ': expected UNITS    found in file for field '//TRIM(TPFIELD%CMNHNAME))
+      else if ( Trim( tpfield%cunits ) == 'ppb' .and. Trim( yvalue ) == 'ppbv' ) then
+        ! 'ppbv' was used in old Meso-NH files (before 5.5.1 version). It is strictly equivalent to 'ppb'
+        CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_attr_read_check_nc4',TRIM(TPFILE%CNAME)// &
+                       ': expected UNITS    found in file for field '//TRIM(TPFIELD%CMNHNAME))
+      else
+        CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Field_attr_read_check_nc4',TRIM(TPFILE%CNAME)// &
+                       ': expected UNITS ('//TRIM(TPFIELD%CUNITS)//                           &
+                       ') is different than found ('//TRIM(YVALUE)//') in file for field '//TRIM(TPFIELD%CMNHNAME))
+        KRESP = -111 !Used later to broadcast modified metadata
+      end if
     ELSE
       CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_attr_read_check_nc4',TRIM(TPFILE%CNAME)// &
                      ': UNITS found in file for field '//TRIM(TPFIELD%CMNHNAME)//' (will be analysed later)')
@@ -260,10 +270,10 @@ END SUBROUTINE IO_Field_attr_read_check_nc4
 
 
 SUBROUTINE IO_Field_read_nc4_X0(TPFILE, TPFIELD, PFIELD, KRESP)
-TYPE(TFILEDATA),  INTENT(IN)    :: TPFILE
-TYPE(TFIELDDATA), INTENT(INOUT) :: TPFIELD
-REAL,             INTENT(INOUT) :: PFIELD
-INTEGER,          INTENT(OUT)   :: KRESP  ! return-code
+TYPE(TFILEDATA),       INTENT(IN)    :: TPFILE
+CLASS(tfieldmetadata), INTENT(INOUT) :: TPFIELD
+REAL,                  INTENT(INOUT) :: PFIELD
+INTEGER,               INTENT(OUT)   :: KRESP  ! return-code
 
 INTEGER(KIND=CDFINT) :: istatus
 INTEGER(KIND=CDFINT) :: INCID
@@ -315,10 +325,10 @@ END SUBROUTINE IO_Field_read_nc4_X0
 
 
 SUBROUTINE IO_Field_read_nc4_X1(TPFILE, TPFIELD, PFIELD, KRESP)
-TYPE(TFILEDATA),  INTENT(IN)    :: TPFILE
-TYPE(TFIELDDATA), INTENT(INOUT) :: TPFIELD
-REAL,DIMENSION(:),INTENT(INOUT) :: PFIELD
-INTEGER,          INTENT(OUT)   :: KRESP  ! return-code
+TYPE(TFILEDATA),       INTENT(IN)    :: TPFILE
+CLASS(tfieldmetadata), INTENT(INOUT) :: TPFIELD
+REAL, DIMENSION(:),    INTENT(INOUT) :: PFIELD
+INTEGER,               INTENT(OUT)   :: KRESP  ! return-code
 
 INTEGER(KIND=CDFINT) :: istatus
 INTEGER(KIND=CDFINT) :: INCID
@@ -382,10 +392,10 @@ END SUBROUTINE IO_Field_read_nc4_X1
 
 
 SUBROUTINE IO_Field_read_nc4_X2(TPFILE, TPFIELD, PFIELD, KRESP)
-TYPE(TFILEDATA),    INTENT(IN)    :: TPFILE
-TYPE(TFIELDDATA),   INTENT(INOUT) :: TPFIELD
-REAL,DIMENSION(:,:),INTENT(INOUT) :: PFIELD
-INTEGER,            INTENT(OUT)   :: KRESP  ! return-code
+TYPE(TFILEDATA),       INTENT(IN)    :: TPFILE
+CLASS(tfieldmetadata), INTENT(INOUT) :: TPFIELD
+REAL, DIMENSION(:,:),  INTENT(INOUT) :: PFIELD
+INTEGER,               INTENT(OUT)   :: KRESP  ! return-code
 
 INTEGER(KIND=CDFINT) :: istatus
 INTEGER(KIND=CDFINT) :: INCID
@@ -464,10 +474,10 @@ END SUBROUTINE IO_Field_read_nc4_X2
 
 
 SUBROUTINE IO_Field_read_nc4_X3(TPFILE, TPFIELD, PFIELD, KRESP)
-TYPE(TFILEDATA),      INTENT(IN)    :: TPFILE
-TYPE(TFIELDDATA),     INTENT(INOUT) :: TPFIELD
-REAL,DIMENSION(:,:,:),INTENT(INOUT) :: PFIELD
-INTEGER,              INTENT(OUT)   :: KRESP  ! return-code
+TYPE(TFILEDATA),        INTENT(IN)    :: TPFILE
+CLASS(tfieldmetadata),  INTENT(INOUT) :: TPFIELD
+REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PFIELD
+INTEGER,                INTENT(OUT)   :: KRESP  ! return-code
 
 INTEGER(KIND=CDFINT)                              :: istatus
 INTEGER(KIND=CDFINT)                              :: INCID
@@ -536,7 +546,7 @@ END SUBROUTINE IO_Field_read_nc4_X3
 
 SUBROUTINE IO_Field_read_nc4_X4(TPFILE, TPFIELD, PFIELD, KRESP)
 TYPE(TFILEDATA),        INTENT(IN)    :: TPFILE
-TYPE(TFIELDDATA),       INTENT(INOUT) :: TPFIELD
+CLASS(tfieldmetadata),  INTENT(INOUT) :: TPFIELD
 REAL,DIMENSION(:,:,:,:),INTENT(INOUT) :: PFIELD
 INTEGER,                INTENT(OUT)   :: KRESP  ! return-code
 
@@ -610,7 +620,7 @@ END SUBROUTINE IO_Field_read_nc4_X4
 
 SUBROUTINE IO_Field_read_nc4_X5(TPFILE, TPFIELD, PFIELD, KRESP)
 TYPE(TFILEDATA),          INTENT(IN)    :: TPFILE
-TYPE(TFIELDDATA),         INTENT(INOUT) :: TPFIELD
+CLASS(tfieldmetadata),    INTENT(INOUT) :: TPFIELD
 REAL,DIMENSION(:,:,:,:,:),INTENT(INOUT) :: PFIELD
 INTEGER,                  INTENT(OUT)   :: KRESP  ! return-code
 
@@ -687,7 +697,7 @@ END SUBROUTINE IO_Field_read_nc4_X5
 
 SUBROUTINE IO_Field_read_nc4_X6(TPFILE, TPFIELD, PFIELD, KRESP)
 TYPE(TFILEDATA),            INTENT(IN)    :: TPFILE
-TYPE(TFIELDDATA),           INTENT(INOUT) :: TPFIELD
+CLASS(tfieldmetadata),      INTENT(INOUT) :: TPFIELD
 REAL,DIMENSION(:,:,:,:,:,:),INTENT(INOUT) :: PFIELD
 INTEGER,                    INTENT(OUT)   :: KRESP  ! return-code
 
@@ -765,10 +775,10 @@ END SUBROUTINE IO_Field_read_nc4_X6
 
 
 SUBROUTINE IO_Field_read_nc4_N0(TPFILE, TPFIELD, KFIELD, KRESP)
-TYPE(TFILEDATA),  INTENT(IN)    :: TPFILE
-TYPE(TFIELDDATA), INTENT(INOUT) :: TPFIELD
-INTEGER,          INTENT(INOUT) :: KFIELD
-INTEGER,          INTENT(OUT)   :: KRESP  ! return-code
+TYPE(TFILEDATA),       INTENT(IN)    :: TPFILE
+CLASS(tfieldmetadata), INTENT(INOUT) :: TPFIELD
+INTEGER,               INTENT(INOUT) :: KFIELD
+INTEGER,               INTENT(OUT)   :: KRESP  ! return-code
 
 INTEGER(KIND=CDFINT) :: istatus
 INTEGER(KIND=CDFINT) :: INCID
@@ -822,7 +832,7 @@ END SUBROUTINE IO_Field_read_nc4_N0
 
 SUBROUTINE IO_Field_read_nc4_N1(TPFILE, TPFIELD, KFIELD, KRESP)
 TYPE(TFILEDATA),         INTENT(IN)    :: TPFILE
-TYPE(TFIELDDATA),        INTENT(INOUT) :: TPFIELD
+CLASS(tfieldmetadata),   INTENT(INOUT) :: TPFIELD
 INTEGER, DIMENSION(:),   INTENT(INOUT) :: KFIELD
 INTEGER,                 INTENT(OUT)   :: KRESP  ! return-code
 
@@ -890,7 +900,7 @@ END SUBROUTINE IO_Field_read_nc4_N1
 
 SUBROUTINE IO_Field_read_nc4_N2(TPFILE, TPFIELD, KFIELD, KRESP)
 TYPE(TFILEDATA),         INTENT(IN)    :: TPFILE
-TYPE(TFIELDDATA),        INTENT(INOUT) :: TPFIELD
+CLASS(tfieldmetadata),   INTENT(INOUT) :: TPFIELD
 INTEGER, DIMENSION(:,:), INTENT(INOUT) :: KFIELD
 INTEGER,                 INTENT(OUT)   :: KRESP  ! return-code
 
@@ -972,7 +982,7 @@ END SUBROUTINE IO_Field_read_nc4_N2
 
 SUBROUTINE IO_Field_read_nc4_N3(TPFILE, TPFIELD, KFIELD, KRESP)
 TYPE(TFILEDATA),           INTENT(IN)    :: TPFILE
-TYPE(TFIELDDATA),          INTENT(INOUT) :: TPFIELD
+CLASS(tfieldmetadata),     INTENT(INOUT) :: TPFIELD
 INTEGER, DIMENSION(:,:,:), INTENT(INOUT) :: KFIELD
 INTEGER,                   INTENT(OUT)   :: KRESP  ! return-code
 
@@ -1042,10 +1052,10 @@ KRESP = IRESP
 END SUBROUTINE IO_Field_read_nc4_N3
 
 SUBROUTINE IO_Field_read_nc4_L0(TPFILE, TPFIELD, OFIELD, KRESP)
-TYPE(TFILEDATA),  INTENT(IN)    :: TPFILE
-TYPE(TFIELDDATA), INTENT(INOUT) :: TPFIELD
-LOGICAL,          INTENT(INOUT) :: OFIELD
-INTEGER,          INTENT(OUT)   :: KRESP  ! return-code
+TYPE(TFILEDATA),       INTENT(IN)    :: TPFILE
+CLASS(tfieldmetadata), INTENT(INOUT) :: TPFIELD
+LOGICAL,               INTENT(INOUT) :: OFIELD
+INTEGER,               INTENT(OUT)   :: KRESP  ! return-code
 
 INTEGER(KIND=CDFINT) :: istatus
 INTEGER(KIND=CDFINT) :: INCID
@@ -1112,10 +1122,10 @@ END SUBROUTINE IO_Field_read_nc4_L0
 
 
 SUBROUTINE IO_Field_read_nc4_L1(TPFILE, TPFIELD, OFIELD, KRESP)
-TYPE(TFILEDATA),     INTENT(IN)    :: TPFILE
-TYPE(TFIELDDATA),    INTENT(INOUT) :: TPFIELD
-LOGICAL,DIMENSION(:),INTENT(INOUT) :: OFIELD
-INTEGER,             INTENT(OUT)   :: KRESP  ! return-code
+TYPE(TFILEDATA),       INTENT(IN)    :: TPFILE
+CLASS(tfieldmetadata), INTENT(INOUT) :: TPFIELD
+LOGICAL, DIMENSION(:), INTENT(INOUT) :: OFIELD
+INTEGER,               INTENT(OUT)   :: KRESP  ! return-code
 
 INTEGER(KIND=CDFINT)                              :: istatus
 INTEGER(KIND=CDFINT)                              :: INCID
@@ -1199,10 +1209,10 @@ END SUBROUTINE IO_Field_read_nc4_L1
 
 
 SUBROUTINE IO_Field_read_nc4_C0(TPFILE, TPFIELD, HFIELD, KRESP)
-TYPE(TFILEDATA),  INTENT(IN)    :: TPFILE
-TYPE(TFIELDDATA), INTENT(INOUT) :: TPFIELD
-CHARACTER(LEN=*), INTENT(INOUT) :: HFIELD
-INTEGER,          INTENT(OUT)   :: KRESP  ! return-code
+TYPE(TFILEDATA),       INTENT(IN)    :: TPFILE
+CLASS(tfieldmetadata), INTENT(INOUT) :: TPFIELD
+CHARACTER(LEN=*),      INTENT(INOUT) :: HFIELD
+INTEGER,               INTENT(OUT)   :: KRESP  ! return-code
 
 INTEGER(KIND=CDFINT)                              :: istatus
 INTEGER(KIND=CDFINT)                              :: INCID
@@ -1268,10 +1278,10 @@ USE MODD_TYPE_DATE
 !
 USE MODE_DATETIME
 !
-TYPE(TFILEDATA),  INTENT(IN)    :: TPFILE
-TYPE(TFIELDDATA), INTENT(INOUT) :: TPFIELD
-TYPE (DATE_TIME), INTENT(INOUT) :: TPDATA
-INTEGER,          INTENT(OUT)   :: KRESP  ! return-code
+TYPE(TFILEDATA),       INTENT(IN)    :: TPFILE
+CLASS(tfieldmetadata), INTENT(INOUT) :: TPFIELD
+TYPE (DATE_TIME),      INTENT(INOUT) :: TPDATA
+INTEGER,               INTENT(OUT)   :: KRESP  ! return-code
 
 INTEGER(KIND=CDFINT)         :: istatus
 INTEGER(KIND=CDFINT)         :: INCID

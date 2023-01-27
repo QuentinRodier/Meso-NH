@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 param 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !    ##########################
      MODULE MODI_SURF_RAD_MODIF 
@@ -14,13 +9,15 @@
 !
 INTERFACE 
 !
-      SUBROUTINE SURF_RAD_MODIF ( PMAP, PXHAT, PYHAT,            &
-                  PCOSZEN, PSINZEN, PAZIMSOL,PZS,PZS_XY,         &
-                  PDIRFLASWD, PDIRSRFSWD                         )
+      SUBROUTINE SURF_RAD_MODIF ( PMAP, PDXHAT, PDYHAT, PXHATM, PYHATM,  &
+                                  PCOSZEN, PSINZEN, PAZIMSOL,PZS,PZS_XY, &
+                                  PDIRFLASWD, PDIRSRFSWD                 )
 !
 REAL, DIMENSION(:,:),     INTENT(IN) :: PMAP       ! map factor
-REAL, DIMENSION(:),       INTENT(IN) :: PXHAT      ! X coordinate
-REAL, DIMENSION(:),       INTENT(IN) :: PYHAT      ! Y coordinate
+REAL, DIMENSION(:),       INTENT(IN) :: PDXHAT     ! horizontal stretching in x
+REAL, DIMENSION(:),       INTENT(IN) :: PDYHAT     ! horizontal stretching in y
+REAL, DIMENSION(:),       INTENT(IN) :: PXHATM     ! X coordinates at mass points
+REAL, DIMENSION(:),       INTENT(IN) :: PYHATM     ! Y coordinates at mass points
 REAL, DIMENSION(:,:),     INTENT(IN) :: PCOSZEN    ! COS(zenithal solar angle)
 REAL, DIMENSION(:,:),     INTENT(IN) :: PSINZEN    ! SIN(zenithal solar angle)
 REAL, DIMENSION(:,:),     INTENT(IN) :: PAZIMSOL   ! azimuthal solar angle
@@ -36,11 +33,11 @@ END INTERFACE
 !
 END MODULE MODI_SURF_RAD_MODIF
 !
-!     ###################################################################
-      SUBROUTINE SURF_RAD_MODIF ( PMAP, PXHAT, PYHAT,            &
-                  PCOSZEN, PSINZEN, PAZIMSOL,PZS,PZS_XY,         &
-                  PDIRFLASWD, PDIRSRFSWD                         )
-!     ###################################################################
+!     ####################################################################
+      SUBROUTINE SURF_RAD_MODIF ( PMAP, PDXHAT, PDYHAT, PXHATM, PYHATM,  &
+                                  PCOSZEN, PSINZEN, PAZIMSOL,PZS,PZS_XY, &
+                                  PDIRFLASWD, PDIRSRFSWD                 )
+!     ####################################################################
 !
 !!****  * SURF_RAD_MODIF * - computes the modifications to the downwards
 !!                           radiative fluxes at the surface, due to
@@ -113,8 +110,10 @@ IMPLICIT NONE
 !
 !
 REAL, DIMENSION(:,:),     INTENT(IN) :: PMAP       ! map factor
-REAL, DIMENSION(:),       INTENT(IN) :: PXHAT      ! X coordinate
-REAL, DIMENSION(:),       INTENT(IN) :: PYHAT      ! Y coordinate
+REAL, DIMENSION(:),       INTENT(IN) :: PDXHAT     ! horizontal stretching in x
+REAL, DIMENSION(:),       INTENT(IN) :: PDYHAT     ! horizontal stretching in y
+REAL, DIMENSION(:),       INTENT(IN) :: PXHATM     ! X coordinates at mass points
+REAL, DIMENSION(:),       INTENT(IN) :: PYHATM     ! Y coordinates at mass points
 REAL, DIMENSION(:,:),     INTENT(IN) :: PCOSZEN    ! COS(zenithal solar angle)
 REAL, DIMENSION(:,:),     INTENT(IN) :: PSINZEN    ! SIN(zenithal solar angle)
 REAL, DIMENSION(:,:),     INTENT(IN) :: PAZIMSOL   ! azimuthal solar angle
@@ -158,14 +157,14 @@ ISWB = SIZE(PDIRFLASWD,3)
 !-------------------------------------------------------------------------------
 !
 DO JSWB = 1, ISWB
-  CALL SURF_SOLAR_SUM     (PXHAT, PYHAT, ZMAP, PDIRFLASWD(:,:,JSWB), ZENERGY1(JSWB) )
+  CALL SURF_SOLAR_SUM     (PDXHAT, PDYHAT, ZMAP, PDIRFLASWD(:,:,JSWB), ZENERGY1(JSWB) )
 END DO
 !
 !
 !*       2.    Slope direction direct SW effects
 !              ---------------------------------
 !
-CALL SURF_SOLAR_SLOPES  (ZMAP, PXHAT, PYHAT,                 &
+CALL SURF_SOLAR_SLOPES  (ZMAP, PDXHAT, PDYHAT,               &
                          PCOSZEN, PSINZEN, PAZIMSOL,         &
                          PZS, PZS_XY, PDIRFLASWD, ZDIRSWDT   )
 
@@ -173,7 +172,7 @@ CALL SURF_SOLAR_SLOPES  (ZMAP, PXHAT, PYHAT,                 &
 !*       3.    RESOLVED shadows for direct solar radiation
 !              -------------------------------------------
 !
-CALL SURF_SOLAR_SHADOWS (ZMAP, PXHAT, PYHAT,           &
+CALL SURF_SOLAR_SHADOWS (ZMAP, PXHATM, PYHATM,         &
                          PCOSZEN, PSINZEN, PAZIMSOL,   &
                          PZS, PZS_XY, ZDIRSWDT, ZDIRSWD)
 !
@@ -182,11 +181,11 @@ CALL SURF_SOLAR_SHADOWS (ZMAP, PXHAT, PYHAT,           &
 !              -------------------
 !
 DO JSWB = 1, ISWB
-  CALL SURF_SOLAR_SUM(PXHAT, PYHAT, ZMAP,  &
+  CALL SURF_SOLAR_SUM(PDXHAT, PDYHAT, ZMAP,  &
                       ZDIRSWD(:,:,JSWB),   &
                       ZENERGY2(JSWB)       )
   !
-  CALL SURF_SOLAR_SUM(PXHAT, PYHAT, ZMAP,                             &
+  CALL SURF_SOLAR_SUM(PDXHAT, PDYHAT, ZMAP,                             &
                       MAX(ZDIRSWD(:,:,JSWB)-PDIRFLASWD(:,:,JSWB),0.), &
                       ZENERGYP(JSWB)                                  )
   !
