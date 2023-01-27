@@ -931,7 +931,9 @@ USE MODD_PARAM_LIMA,       ONLY: LSNOW_T_L => LSNOW_T,                          
                                  XALPHAG_L => XALPHAG, XNUG_L => XNUG, XALPHAI_L => XALPHAI, XNUI_L => XNUI, &
                                  XRTMIN_L => XRTMIN, XALPHAC_L => XALPHAC, XNUC_L => XNUC
 USE MODD_PARAM_LIMA_COLD,  ONLY: XAI_L => XAI, XBI_L => XBI, XLBEXS_L => XLBEXS,XLBS_L => XLBS,XCCS_L => XCCS,    &
-                                 XAS_L => XAS, XBS_L => XBS, XCXS_L => XCXS, XLBDAS_MAX, XLBDAS_MIN, XNS_L => XNS
+                                 XAS_L => XAS, XBS_L => XBS, XCXS_L => XCXS,                                      &
+                                 XLBDAS_MAX_L => XLBDAS_MAX, XLBDAS_MIN_L => XLBDAS_MIN,                          &
+                                 XNS_L => XNS, XTRANS_MP_GAMMAS_L=>XTRANS_MP_GAMMAS
 USE MODD_PARAM_LIMA_MIXED, ONLY: XLBEXG_L => XLBEXG, XLBG_L => XLBG, XCCG_L => XCCG, XAG_L => XAG, XBG_L => XBG, XCXG_L => XCXG
 USE MODD_PARAM_LIMA_WARM,  ONLY: XAC_L => XAC, XAR_L => XAR, XBC_L => XBC, XBR_L => XBR
 USE MODD_PARAM_n,          ONLY: CCLOUD, CSURF
@@ -945,7 +947,9 @@ USE MODD_RAIN_ICE_DESCR,   ONLY: XALPHAR_I => XALPHAR, XNUR_I => XNUR, XLBEXR_I 
                                  XLBG_I => XLBG, XCCG_I => XCCG, XAG_I => XAG, XBG_I => XBG, XCXG_I => XCXG, &
                                  XALPHAI_I => XALPHAI, XNUI_I => XNUI, XLBEXI_I => XLBEXI,                   &
                                  XLBI_I => XLBI, XAI_I => XAI, XBI_I => XBI,                                 &
-                                 XNS_I => XNS, XRTMIN_I => XRTMIN, XCONC_LAND, XCONC_SEA
+                                 XNS_I => XNS, XRTMIN_I => XRTMIN, XCONC_LAND, XCONC_SEA,                    &
+                                 XLBDAS_MAX_I => XLBDAS_MAX, XLBDAS_MIN_I => XLBDAS_MIN,                     &
+                                 XTRANS_MP_GAMMAS_I => XTRANS_MP_GAMMAS
 
 USE MODE_FGAU,             ONLY: GAULAG
 USE MODE_FSCATTER,         ONLY: BHMIE, MOMG, MG, QEPSI, QEPSW
@@ -1230,12 +1234,18 @@ IF (CCLOUD=="LIMA" .OR. CCLOUD=="ICE3" ) THEN ! only for ICE3 and LIMA
               ZLB=( ZA*ZCC*MOMG(ZALPHA,ZNU,ZB) )**(-ZLBEX)
             ENDIF
         END SELECT
-        ZLBDA=ZLB*(ZRHODREFZ(JK)*ZRZ(JK,JLOOP))**ZLBEX
-        IF ( JLOOP ==  5 .AND. ( (CCLOUD=='LIMA'.AND.LSNOW_T_L) .OR. &
-                                 (CCLOUD=='ICE3'.AND.LSNOW_T_I) ) ) THEN
-            ZLBDA = MAX(MIN(XLBDAS_MAX, 10**(14.554-0.0423*(ZTEMPZ(JK)+273.15))),XLBDAS_MIN)
+        IF ( JLOOP ==  5 .AND. CCLOUD=='LIMA'.AND.LSNOW_T_L ) THEN
+          IF (ZTEMPZ(JK)>XTT-10.) THEN
+            ZLBDA = MAX(MIN(XLBDAS_MAX_L, 10**(14.554-0.0423*ZTEMPZ(JK))),XLBDAS_MIN_L)*XTRANS_MP_GAMMAS_L
           ELSE
-            ZLBDA = MAX(MIN(XLBDAS_MAX, 10**(6.226-0.0106*(ZTEMPZ(JK)+273.15))),XLBDAS_MIN)
+            ZLBDA = MAX(MIN(XLBDAS_MAX_L, 10**(6.226-0.0106*ZTEMPZ(JK))),XLBDAS_MIN_L)*XTRANS_MP_GAMMAS_L
+          END IF
+          ZN=ZNS*ZRHODREFZ(JK)*ZRZ(JK,JLOOP)*ZLBDA**ZB
+        ELSE IF (JLOOP.EQ.5 .AND. (CCLOUD=='ICE3'.AND.LSNOW_T_I) ) THEN
+          IF (ZTEMPZ(JK)>XTT-10.) THEN
+            ZLBDA = MAX(MIN(XLBDAS_MAX_I, 10**(14.554-0.0423*ZTEMPZ(JK))),XLBDAS_MIN_I)*XTRANS_MP_GAMMAS_I
+          ELSE
+            ZLBDA = MAX(MIN(XLBDAS_MAX_I, 10**(6.226-0.0106*ZTEMPZ(JK))),XLBDAS_MIN_I)*XTRANS_MP_GAMMAS_I
           END IF
           ZN=ZNS*ZRHODREFZ(JK)*ZRZ(JK,JLOOP)*ZLBDA**ZB
         ELSE

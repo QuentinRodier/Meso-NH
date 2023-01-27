@@ -17,7 +17,7 @@ REAL,                     INTENT(IN) :: PALT    ! Altitude of the lidar source
 REAL,                     INTENT(IN) :: PWVL    ! Wavelength of the lidar source
 REAL, DIMENSION(:,:,:),   INTENT(IN) :: PZZ     ! Altitude
 REAL, DIMENSION(:,:,:),   INTENT(IN) :: PRHO    ! Air density
-REAL, DIMENSION(:,:,:),   INTENT(IN) :: PT      ! Air temperature (C)
+REAL, DIMENSION(:,:,:),   INTENT(IN) :: PT      ! Air temperature
 REAL, DIMENSION(:,:,:),   INTENT(IN) :: PCLDFR  ! Cloud fraction
 REAL, DIMENSION(:,:,:,:), INTENT(IN) :: PRT     ! Moist variables at t
 REAL, DIMENSION(:,:,:),  INTENT(OUT) :: PLIDAROUT ! Lidar output
@@ -101,10 +101,11 @@ USE MODD_PARAM_C2R2,      ONLY : YALPHAC=>XALPHAC,YNUC=>XNUC, &
                                  YALPHAR=>XALPHAR,YNUR=>XNUR
 USE MODD_PARAM_ICE,        ONLY: WSNOW_T=>LSNOW_T
 USE MODD_RAIN_ICE_DESCR,  ONLY : XCCR, WLBEXR=>XLBEXR, XLBR, &
-                                 XCCS, XCXS,   XLBEXS, XLBS, XNS, &
+                                 XCCS, XCXS,   XLBEXS, XLBS, WNS=>XNS, WBS=>XBS, &
                                  XCCG, XCXG,   XLBEXG, XLBG, &
                                  XCCH, XCXH,   XLBEXH, XLBH, &
-                                 WRTMIN=>XRTMIN
+                                 WRTMIN=>XRTMIN,   &
+                                 WLBDAS_MAX=>XLBDAS_MAX,WLBDAS_MIN=>XLBDAS_MIN,WTRANS_MP_GAMMAS=>XTRANS_MP_GAMMAS
 USE MODD_ICE_C1R3_DESCR,  ONLY : XLBEXI,                      &
                                  YRTMIN=>XRTMIN, YCTMIN=>XCTMIN
 !
@@ -114,8 +115,8 @@ USE MODD_PARAM_LIMA,      ONLY : URTMIN=>XRTMIN, UCTMIN=>XCTMIN, &
                                  UALPHAI=>XALPHAI,UNUI=>XNUI, &
                                  USNOW_T=>LSNOW_T
 USE MODD_PARAM_LIMA_COLD, ONLY : UCCS=>XCCS, UCXS=>XCXS, ULBEXS=>XLBEXS, & 
-                                                ULBS=>XLBS, UNS=>XNS,    &
-                                 XLBDAS_MAX,XLBDAS_MIN,  UBS=>XBS
+                                                ULBS=>XLBS, UNS=>XNS, UBS=>XBS,   &
+                                 ULBDAS_MAX=>XLBDAS_MAX,ULBDAS_MIN=>XLBDAS_MIN,UTRANS_MP_GAMMAS=>XTRANS_MP_GAMMAS
 USE MODD_PARAM_LIMA_MIXED,ONLY : UCCG=>XCCG, UCXG=>XCXG, ULBEXG=>XLBEXG, &
                                                          ULBG=>XLBG
 
@@ -134,7 +135,7 @@ REAL,                     INTENT(IN) :: PALT    ! Altitude of the lidar source
 REAL,                     INTENT(IN) :: PWVL    ! Wavelength of the lidar source
 REAL, DIMENSION(:,:,:),   INTENT(IN) :: PZZ     ! Altitude
 REAL, DIMENSION(:,:,:),   INTENT(IN) :: PRHO    ! Air density
-REAL, DIMENSION(:,:,:),   INTENT(IN) :: PT      ! Air temperature (C)
+REAL, DIMENSION(:,:,:),   INTENT(IN) :: PT      ! Air temperature
 REAL, DIMENSION(:,:,:),   INTENT(IN) :: PCLDFR  ! Cloud fraction
 REAL, DIMENSION(:,:,:,:), INTENT(IN) :: PRT     ! Moist variables at t
 REAL, DIMENSION(:,:,:),  INTENT(OUT) :: PLIDAROUT ! Lidar output
@@ -273,7 +274,7 @@ SELECT CASE ( HCLOUD )
     ZCXS    = XCXS
     ZLBEXS  = XLBEXS
     ZLBS    = XLBS
-    ZNS     = XNS
+    ZNS     = WNS
     ZCCG    = XCCG
     ZCXG    = XCXG
     ZLBEXG  = XLBEXG
@@ -530,14 +531,20 @@ SELECT CASE ( HCLOUD )
 !
             YDSD = 'MONOD'
             ZIWC    = PRHO(JI,JJ,JK)*PRT(JI,JJ,JK,5)
-            IF ( (HCLOUD=='LIMA' .AND. USNOW_T) .OR. &
-                 (HCLOUD=='ICE3' .AND. WSNOW_T) ) THEN
-               IF (PT(JI,JJ,JK)>-10.) THEN
-                  ZLBDAS = MAX(MIN(XLBDAS_MAX, 10**(14.554-0.0423*(PT(JI,JJ,JK)+273.15))),XLBDAS_MIN)
+            IF (HCLOUD=='LIMA' .AND. USNOW_T) THEN
+               IF (PT(JI,JJ,JK)>263.15) THEN
+                  ZLBDAS = MAX(MIN(ULBDAS_MAX, 10**(14.554-0.0423*PT(JI,JJ,JK))),ULBDAS_MIN)*UTRANS_MP_GAMMAS
                ELSE
-                  ZLBDAS = MAX(MIN(XLBDAS_MAX, 10**(6.226-0.0106*(PT(JI,JJ,JK)+273.15))),XLBDAS_MIN)
+                  ZLBDAS = MAX(MIN(ULBDAS_MAX, 10**(6.226-0.0106*PT(JI,JJ,JK))),ULBDAS_MIN)*UTRANS_MP_GAMMAS
                END IF
                ZCONC=ZNS*ZIWC*ZLBDAS**UBS
+            ELSE IF (HCLOUD=='ICE3' .AND. WSNOW_T) THEN
+               IF (PT(JI,JJ,JK)>263.15) THEN
+                  ZLBDAS = MAX(MIN(WLBDAS_MAX, 10**(14.554-0.0423*PT(JI,JJ,JK))),WLBDAS_MIN)*WTRANS_MP_GAMMAS
+               ELSE
+                  ZLBDAS = MAX(MIN(WLBDAS_MAX, 10**(6.226-0.0106*PT(JI,JJ,JK))),WLBDAS_MIN)*WTRANS_MP_GAMMAS
+               END IF
+               ZCONC=ZNS*ZIWC*ZLBDAS**WBS
             ELSE
                ZLBDAS  = ZLBS*(ZIWC)**ZLBEXS
                ZCONC   = ZCCS*(ZLBDAS)**ZCXS
