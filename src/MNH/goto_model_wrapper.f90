@@ -18,6 +18,8 @@
 !                  11/2019 C.Lac correction in the drag formula and application to building in addition to tree
 !  F. Auguste     02/21: add IBM
 !  T. Nagel       02/21: add turbulence recycling
+
+  ! R. Schoetter    12/2021  multi-level coupling between MesoNH and SURFEX  
 !-----------------------------------------------------------------
 MODULE MODI_GOTO_MODEL_WRAPPER
 
@@ -57,6 +59,7 @@ USE MODD_DIM_n
 USE MODD_DRAG_n
 USE MODD_DRAGTREE_n
 USE MODD_DRAGBLDG_n
+USE MODD_COUPLING_LEVELS_n
 USE MODD_DUMMY_GR_FIELD_n
 USE MODD_DYN_n
 USE MODD_DYNZD_n
@@ -152,6 +155,7 @@ CALL CURVCOR_GOTO_MODEL(KFROM, KTO)
 CALL DIM_GOTO_MODEL(KFROM, KTO)
 CALL DRAGTREE_GOTO_MODEL(KFROM, KTO)
 CALL DRAGBLDG_GOTO_MODEL(KFROM, KTO)
+CALL COUPLING_MULT_GOTO_MODEL(KFROM, KTO)
 CALL DUMMY_GR_FIELD_GOTO_MODEL(KFROM, KTO)
 CALL DYN_GOTO_MODEL(KFROM, KTO)
 CALL DYNZD_GOTO_MODEL(KFROM,KTO)

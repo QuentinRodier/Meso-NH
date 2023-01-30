@@ -219,6 +219,7 @@ END MODULE MODI_DEFAULT_DESFM_n
 !  Q. Rodier      06/2021: modify default value to LGZ=F (grey-zone corr.), LSEDI and OSEDC=T (LIMA sedimentation)
 !  F. Couvreux    06/2021: add LRELAX_UVMEAN_FRC
 !  Q. Rodier      07/2021: modify XPOND=1
+! R. Schoetter    12/2021  multi-level coupling between MesoNH and SURFEX  
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -266,6 +267,7 @@ USE MODD_CONDSAMP
 USE MODD_MEAN_FIELD
 USE MODD_DRAGTREE_n
 USE MODD_DRAGBLDG_n
+USE MODD_COUPLING_LEVELS_n
 USE MODD_EOL_MAIN
 USE MODD_EOL_ADNR
 USE MODD_EOL_ALM
@@ -558,6 +560,19 @@ XCLDTHOLD = -1.0
 LDRAGTREE = .FALSE.
 LDEPOTREE = .FALSE.
 XVDEPOTREE = 0.02 ! 2 cm/s 
+!------------------------------------------------------------------------------
+!
+!*      10b.   SET DEFAULT VALUES FOR MODD_DRAGBLDG_n :
+!             ----------------------------------
+!
+LDRAGBLDG   = .FALSE.
+LFLUXBLDG   = .FALSE.
+LDRAGURBVEG = .FALSE.
+!
+!*      10c.   SET DEFAULT VALUES FOR MODD_COUPLING_LEVELS_n :
+!             ----------------------------------
+!
+NLEV_COUPLE = 1
 !------------------------------------------------------------------------------
 !
 !*      10c.   SET DEFAULT VALUES FOR MODD_DRAGB

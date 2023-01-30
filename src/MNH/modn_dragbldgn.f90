@@ -5,48 +5,57 @@
 !-----------------------------------------------------------------------------
 !!
 !!    #####################
-      MODULE MODN_DRAGBLDG_n
-!!    #####################
-!!
-!!*** *MODN_DRAGBLDG*
-!!
-!!    PURPOSE
-!!    -------
-!       Namelist to take into account building drag in the atmospheric model
-!              instead of SURFEX. 
-!!
-!!**  AUTHOR
-!!    ------
-!!    R.Schoetter                   *CNRM*
-!
-!!    MODIFICATIONS
-!!    -------------
-!!    Original 09/2019
-!!
-!!    IMPLICIT ARGUMENTS
-!!    ------------------
-!
-USE MODD_DRAGBLDG_n, ONLY :    &
-    LDRAGBLDG_n => LDRAGBLDG   
-!
-!-----------------------------------------------------------------------------
-!
-!*       0.   DECLARATIONS
-!        -----------------
-IMPLICIT NONE
-!
-LOGICAL, SAVE :: LDRAGBLDG
-!
-NAMELIST /NAM_DRAGBLDGn/LDRAGBLDG
-!
+MODULE MODN_DRAGBLDG_n
+  !!    #####################
+  !!
+  !!*** *MODN_DRAGBLDG*
+  !!
+  !!    PURPOSE
+  !!    -------
+  !       Namelist to take into account building drag in the atmospheric model
+  !              instead of SURFEX. 
+  !!
+  !!**  AUTHOR
+  !!    ------
+  !!    R.Schoetter                   *CNRM*
+  !
+  !!    MODIFICATIONS
+  !!    -------------
+  !!    Original 09/2019
+  ! R. Schoetter    12/2021  multi-level coupling between MesoNH and SURFEX  
+  !!
+  !!    IMPLICIT ARGUMENTS
+  !!    ------------------
+  !
+  USE MODD_DRAGBLDG_n, ONLY :      &
+       LDRAGBLDG_n   => LDRAGBLDG,  &
+       LFLUXBLDG_n   => LFLUXBLDG,  &
+       LDRAGURBVEG_n => LDRAGURBVEG
+  !
+  !-----------------------------------------------------------------------------
+  !
+  !*       0.   DECLARATIONS
+  !        -----------------
+  IMPLICIT NONE
+  !
+  LOGICAL, SAVE :: LDRAGBLDG
+  LOGICAL, SAVE :: LFLUXBLDG
+  LOGICAL, SAVE :: LDRAGURBVEG
+  !
+  NAMELIST /NAM_DRAGBLDGn/LDRAGBLDG,LFLUXBLDG,LDRAGURBVEG
+  !
 CONTAINS
-!
-SUBROUTINE INIT_NAM_DRAGBLDGn
-   LDRAGBLDG = LDRAGBLDG_n
-END SUBROUTINE INIT_NAM_DRAGBLDGn
-!
-SUBROUTINE UPDATE_NAM_DRAGBLDGn
-   LDRAGBLDG_n = LDRAGBLDG
-END SUBROUTINE UPDATE_NAM_DRAGBLDGn
-!
+  !
+  SUBROUTINE INIT_NAM_DRAGBLDGn
+    LDRAGBLDG = LDRAGBLDG_n
+    LFLUXBLDG = LFLUXBLDG_n
+    LDRAGURBVEG = LDRAGURBVEG_n
+  END SUBROUTINE INIT_NAM_DRAGBLDGn
+  !
+  SUBROUTINE UPDATE_NAM_DRAGBLDGn
+    LDRAGBLDG_n = LDRAGBLDG
+    LFLUXBLDG_n = LFLUXBLDG
+    LDRAGURBVEG_n = LDRAGURBVEG
+  END SUBROUTINE UPDATE_NAM_DRAGBLDGn
+  !
 END MODULE MODN_DRAGBLDG_n

@@ -10,11 +10,12 @@
 !
 INTERFACE
 
-      SUBROUTINE MEAN_FIELD( PUT, PVT, PWT, PTHT, PTKET, PPABST, PSVT )
+      SUBROUTINE MEAN_FIELD( PUT, PVT, PWT, PTHT, PTKET, PPABST, PRT, PSVT )
 
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PUT, PVT, PWT   ! variables
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHT, PTKET   ! variables
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PPABST   ! variables
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRT      ! variables
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PSVT   ! Passive scalar variables
 
 END SUBROUTINE MEAN_FIELD
@@ -23,9 +24,9 @@ END INTERFACE
 
 END MODULE MODI_MEAN_FIELD
 !
-!     #################################################################
-      SUBROUTINE MEAN_FIELD( PUT, PVT, PWT, PTHT, PTKET, PPABST, PSVT )
-!     #################################################################
+!     ######################################################################
+      SUBROUTINE MEAN_FIELD( PUT, PVT, PWT, PTHT, PTKET, PPABST, PRT, PSVT )
+!     ######################################################################
 !
 !!****  *MEAN_FIELD * -
 !!
@@ -48,6 +49,7 @@ END MODULE MODI_MEAN_FIELD
 !!      Original    07/2009
 !!      (C.Lac)     09/2016 Max values
 !!      (PA.Joulin) 12/2020 Wind turbine variables
+!!                      12/2021 (R. Schoetter) adds humidity and other mean diagnostics
 !!---------------------------------------------------------------
 !
 !
@@ -60,6 +62,8 @@ USE MODD_PARAM_n
 USE MODD_MEAN_FIELD
 USE MODD_CST
 USE MODD_PASPOL
+USE MODE_THERMO
+USE MODI_SHUMAN
 !
 USE MODD_EOL_MAIN, ONLY: LMAIN_EOL, CMETH_EOL, NMODEL_EOL
 USE MODD_EOL_SHARED_IO, ONLY: XTHRUT, XTORQT, XPOWT
@@ -75,6 +79,7 @@ IMPLICIT NONE
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PUT, PVT, PWT   ! variables
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHT, PTKET   ! variables
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PPABST   ! variables
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRT      ! variables
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PSVT
 
 !
@@ -82,6 +87,20 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PSVT
 REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)) ::  ZTEMPT
 INTEGER           :: IIU,IJU,IKU,IIB,IJB,IKB,IIE,IJE,IKE ! Arrays bounds
 INTEGER           :: JI,JJ,JK   ! Loop indexes
+!
+REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)) ::  ZRT
+REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)) ::  ZQSAT_W
+REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)) ::  ZQSAT_I
+REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)) ::  ZQACT
+REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)) ::  ZRH_W
+REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)) ::  ZRH_I
+REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)) ::  ZRH_P
+REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)) ::  ZFRAC
+REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)) ::  ZAUX_WIFF
+REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)) ::  ZAUX_WIDD
+REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2))             ::  ZRH_W_MAXCOL
+REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2))             ::  ZRH_I_MAXCOL
+REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2))             ::  ZRH_P_MAXCOL
 !
 INTEGER :: IMI !Current model index
 !
@@ -103,6 +122,44 @@ IKE=IKU-JPVEXT
 !
    ZTEMPT = PTHT*(((PPABST)/XP00)**(XRD/XCPD))
 !
+!
+! Calculation of saturation specific humidity over water/ice
+!
+ZQSAT_W = QSAT (ZTEMPT, PPABST)
+ZQSAT_I = QSATI(ZTEMPT, PPABST)
+!
+! Conversion mixing ratio -> specfic humidity
+!
+ZRT(:,:,:) = -9999.0
+WHERE (PRT(:,:,:).LT.1.0E-6)
+   ZRT(:,:,:) = 1.0E-6
+ELSEWHERE
+   ZRT(:,:,:) = PRT(:,:,:)
+ENDWHERE
+!
+ZQACT(:,:,:) = 1.0 / ( 1.0 + 1.0/ZRT(:,:,:) )
+!
+! Calculation of relative humidity with respect to water/ice
+!
+ZRH_W(:,:,:) = 100.0*ZQACT(:,:,:)/ZQSAT_W(:,:,:)
+ZRH_I(:,:,:) = 100.0*ZQACT(:,:,:)/ZQSAT_I(:,:,:)
+!
+! Fractional partitioning between liquid and solid cloud water
+! as assumed in condensations
+!
+ZFRAC(:,:,:) = ( XTT - ZTEMPT(:,:,:) ) / 20.
+ZFRAC(:,:,:) = MAX( 0., MIN(1., ZFRAC(:,:,:) ) )
+!
+! Calculation of weighted average between water and ice value
+!
+ZRH_P(:,:,:) = ZFRAC(:,:,:) * ZRH_I(:,:,:) + (1.0-ZFRAC(:,:,:)) * ZRH_W(:,:,:)
+!
+! Calculation of the column maximum of relative humidity
+!
+ZRH_W_MAXCOL(:,:) = MAXVAL(ZRH_W(:,:,:),DIM=3)
+ZRH_I_MAXCOL(:,:) = MAXVAL(ZRH_I(:,:,:),DIM=3)
+ZRH_P_MAXCOL(:,:) = MAXVAL(ZRH_P(:,:,:),DIM=3)
+!
    XUM_MEAN  = PUT + XUM_MEAN 
    XVM_MEAN  = PVT + XVM_MEAN
    XWM_MEAN  = PWT + XWM_MEAN
@@ -111,6 +168,13 @@ IKE=IKU-JPVEXT
    IF (LPASPOL)  XSVT_MEAN  = PSVT + XSVT_MEAN
    IF (CTURB/='NONE') XTKEM_MEAN = PTKET + XTKEM_MEAN
    XPABSM_MEAN = PPABST + XPABSM_MEAN
+   XQ_MEAN     = XQ_MEAN + ZQACT
+   XRH_W_MEAN    = XRH_W_MEAN + ZRH_W
+   XRH_I_MEAN    = XRH_I_MEAN + ZRH_I
+   XRH_P_MEAN    = XRH_P_MEAN + ZRH_P
+   XRH_W_MAXCOL_MEAN = XRH_W_MAXCOL_MEAN + ZRH_W_MAXCOL
+   XRH_I_MAXCOL_MEAN = XRH_I_MAXCOL_MEAN + ZRH_I_MAXCOL
+   XRH_P_MAXCOL_MEAN = XRH_P_MAXCOL_MEAN + ZRH_P_MAXCOL
 !
    XU2_MEAN  = PUT**2 + XU2_MEAN 
    XV2_MEAN  = PVT**2 + XV2_MEAN
@@ -142,19 +206,36 @@ IKE=IKU-JPVEXT
 !
 !*       2. MAX
 !
+  !
+  ! Calculation of horizontal wind speed for maximum wind speed diagnostics
+  !
+  ZAUX_WIFF(:,:,:) = SQRT(MXF(PUT(:,:,:))**2 + MYF(PVT(:,:,:))**2)
+  ZAUX_WIDD(:,:,:) = 180.0 + (90.0 - 180.0*ATAN2(MYF(PVT(:,:,:)),MXF(PUT(:,:,:)))/XPI)
+  !
+  WHERE (ZAUX_WIDD(:,:,:).GT.360.0) ZAUX_WIDD(:,:,:) = ZAUX_WIDD(:,:,:) - 360.0
+  !
+  ! Get maximum diagnostics
+  !
   DO JK=IKB,IKE
-   DO JJ=IJB,IJE
-    DO JI=IIB,IIE
-      XUM_MAX(JI,JJ,JK) = MAX(XUM_MAX(JI,JJ,JK),PUT(JI,JJ,JK))
-      XVM_MAX(JI,JJ,JK) = MAX(XVM_MAX(JI,JJ,JK),PVT(JI,JJ,JK))
-      XWM_MAX(JI,JJ,JK) = MAX(XWM_MAX(JI,JJ,JK),PWT(JI,JJ,JK))
-      XTHM_MAX(JI,JJ,JK) = MAX(XTHM_MAX(JI,JJ,JK),PTHT(JI,JJ,JK))
-      XTEMPM_MAX(JI,JJ,JK) = MAX(XTEMPM_MAX(JI,JJ,JK),ZTEMPT(JI,JJ,JK))
-      IF (CTURB/='NONE') XTKEM_MAX(JI,JJ,JK) =  &
-              MAX(XTKEM_MAX(JI,JJ,JK),PTKET(JI,JJ,JK))
-      XPABSM_MAX(JI,JJ,JK) = MAX(XPABSM_MAX(JI,JJ,JK),PPABST(JI,JJ,JK))
-    END DO
-   END DO
-  END DO
+    DO JJ=IJB,IJE
+      DO JI=IIB,IIE
+        !
+        XUM_MAX(JI,JJ,JK) = MAX(XUM_MAX(JI,JJ,JK),PUT(JI,JJ,JK))
+        XVM_MAX(JI,JJ,JK) = MAX(XVM_MAX(JI,JJ,JK),PVT(JI,JJ,JK))
+        XWM_MAX(JI,JJ,JK) = MAX(XWM_MAX(JI,JJ,JK),PWT(JI,JJ,JK))
+        XTHM_MAX(JI,JJ,JK) = MAX(XTHM_MAX(JI,JJ,JK),PTHT(JI,JJ,JK))
+        XTEMPM_MAX(JI,JJ,JK) = MAX(XTEMPM_MAX(JI,JJ,JK),ZTEMPT(JI,JJ,JK))
+        IF (CTURB/='NONE') XTKEM_MAX(JI,JJ,JK) =  &
+           MAX(XTKEM_MAX(JI,JJ,JK),PTKET(JI,JJ,JK))
+          XPABSM_MAX(JI,JJ,JK) = MAX(XPABSM_MAX(JI,JJ,JK),PPABST(JI,JJ,JK))
+        !
+        IF (ZAUX_WIFF(JI,JJ,JK).GE.XWIFF_MAX(JI,JJ,JK)) THEN
+           XWIFF_MAX(JI,JJ,JK) = ZAUX_WIFF(JI,JJ,JK)
+           XWIDD_MAX(JI,JJ,JK) = ZAUX_WIDD(JI,JJ,JK)
+        ENDIF
+        !
+      ENDDO
+    ENDDO
+  ENDDO
 !
 END SUBROUTINE MEAN_FIELD

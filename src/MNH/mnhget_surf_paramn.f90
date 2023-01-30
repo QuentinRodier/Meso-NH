@@ -7,10 +7,11 @@
       MODULE MODI_MNHGET_SURF_PARAM_n
 !     #######################
 INTERFACE
-      SUBROUTINE MNHGET_SURF_PARAM_n(PCOVER,PSEA,KCOVER,PRN,PH,PLE,PLEI,PGFLUX, &
-                                     PT2M,PQ2M,PHU2M,PZON10M,PMER10M,PZS,PTOWN,&
-                                     PBARE, PLAI_TREE, PH_TREE, PWALL_O_HOR,    &
-                                     PBUILD_HEIGHT,PNATURE )
+      SUBROUTINE MNHGET_SURF_PARAM_n(PCOVER,PSEA,KCOVER,PRN,PH,PLE,PLEI,PGFLUX,  &
+                                     PT2M,PQ2M,PHU2M,PZON10M,PMER10M,PZS,PTOWN,  &
+                                     PBARE,PLAI_TREE,PH_TREE,PWALL_O_HOR,        &
+                                     PBUILD_HEIGHT,PNATURE,PLAI_HVEG,PH_URBTREE, &
+                                     PHTRUNK_HVEG,PFRAC_HVEG)
 !
 REAL, DIMENSION(:,:,:), INTENT(OUT), OPTIONAL :: PCOVER  ! cover types
 REAL, DIMENSION(:,:),   INTENT(OUT), OPTIONAL :: PSEA    ! sea fraction
@@ -22,6 +23,10 @@ REAL, DIMENSION(:,:),   INTENT(OUT), OPTIONAL :: PLAI_TREE       ! Tree leaf are
 REAL, DIMENSION(:,:),   INTENT(OUT), OPTIONAL :: PH_TREE         ! Tree height [m]
 REAL, DIMENSION(:,:),   INTENT(OUT), OPTIONAL :: PWALL_O_HOR     ! Facade area density [m^2(fac.)/m^2(town)]
 REAL, DIMENSION(:,:),   INTENT(OUT), OPTIONAL :: PBUILD_HEIGHT   ! Building height [m] 
+REAL, DIMENSION(:,:),   INTENT(OUT), OPTIONAL :: PLAI_HVEG       ! LAI of urban vegetation
+REAL, DIMENSION(:,:),   INTENT(OUT), OPTIONAL :: PH_URBTREE      ! Height of urban vegetation
+REAL, DIMENSION(:,:),   INTENT(OUT), OPTIONAL :: PHTRUNK_HVEG    ! Trunk height of urban vegetation
+REAL, DIMENSION(:,:),   INTENT(OUT), OPTIONAL :: PFRAC_HVEG      ! Fraction of high vegetation
 REAL, DIMENSION(:),     INTENT(INOUT), OPTIONAL :: PRN           ! Net radiation at surface    (W/m2)
 REAL, DIMENSION(:),     INTENT(INOUT), OPTIONAL :: PH            ! Sensible heat flux          (W/m2)
 REAL, DIMENSION(:),     INTENT(INOUT), OPTIONAL :: PLE           ! Total Latent heat flux      (W/m2)
@@ -40,10 +45,11 @@ END INTERFACE
 END MODULE MODI_MNHGET_SURF_PARAM_n
 !
 !     ########################################
-      SUBROUTINE MNHGET_SURF_PARAM_n(PCOVER,PSEA,KCOVER,PRN,PH,PLE,PLEI,PGFLUX, &
-                                     PT2M,PQ2M,PHU2M,PZON10M,PMER10M,PZS,PTOWN,&
-                                     PBARE, PLAI_TREE, PH_TREE, PWALL_O_HOR,    &
-                                     PBUILD_HEIGHT,PNATURE )
+      SUBROUTINE MNHGET_SURF_PARAM_n(PCOVER,PSEA,KCOVER,PRN,PH,PLE,PLEI,PGFLUX,  &
+                                     PT2M,PQ2M,PHU2M,PZON10M,PMER10M,PZS,PTOWN,  &
+                                     PBARE, PLAI_TREE, PH_TREE, PWALL_O_HOR,     &
+                                     PBUILD_HEIGHT,PNATURE,PLAI_HVEG,PH_URBTREE, &
+                                     PHTRUNK_HVEG,PFRAC_HVEG )
 !     ########################################
 !
 !!****  *MNHGET_SURF_PARAM_n* - gets some surface fields on MESONH grid
@@ -81,6 +87,7 @@ END MODULE MODI_MNHGET_SURF_PARAM_n
 !!  01/2018      (G.Delautier) SURFEX 8.1
 ! C. Lac         11/2019: correction in the drag formula and application to building in addition to tree
 ! P. Wautelet 11/03/2020: bugfix: add present checks before working on optional arrays
+  ! R. Schoetter    12/2021  multi-level coupling between MesoNH and SURFEX  
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -115,6 +122,10 @@ REAL, DIMENSION(:,:),   INTENT(OUT), OPTIONAL :: PLAI_TREE       !
 REAL, DIMENSION(:,:),   INTENT(OUT), OPTIONAL :: PH_TREE         !
 REAL, DIMENSION(:,:),   INTENT(OUT), OPTIONAL :: PWALL_O_HOR     ! Facade area density [m^2(fac.)/m^2(town)]
 REAL, DIMENSION(:,:),   INTENT(OUT), OPTIONAL :: PBUILD_HEIGHT   ! Building height [m] 
+REAL, DIMENSION(:,:),   INTENT(OUT), OPTIONAL :: PLAI_HVEG       ! LAI of urban vegetation
+REAL, DIMENSION(:,:),   INTENT(OUT), OPTIONAL :: PH_URBTREE      ! Height of urban vegetation
+REAL, DIMENSION(:,:),   INTENT(OUT), OPTIONAL :: PHTRUNK_HVEG    ! Trunk height of urban vegetation
+REAL, DIMENSION(:,:),   INTENT(OUT), OPTIONAL :: PFRAC_HVEG      ! Fraction of high vegetation
 REAL, DIMENSION(:),     INTENT(INOUT), OPTIONAL :: PRN           ! Net radiation at surface    (W/m2)
 REAL, DIMENSION(:),     INTENT(INOUT), OPTIONAL :: PH            ! Sensible heat flux          (W/m2)
 REAL, DIMENSION(:),     INTENT(INOUT), OPTIONAL :: PLE           ! Total Latent heat flux      (W/m2)
@@ -141,13 +152,17 @@ INTEGER :: ILU      ! total number of physical points (including halo)
 INTEGER :: ILM      ! total number of physical points
 !
 REAL, DIMENSION(:), ALLOCATABLE :: ZCOVER ! cover field
-REAL, DIMENSION(:),   ALLOCATABLE :: ZSEA   ! sea    fraction
-REAL, DIMENSION(:),   ALLOCATABLE :: ZWATER ! lake   fraction
-REAL, DIMENSION(:),   ALLOCATABLE :: ZNATURE! nature fraction
-REAL, DIMENSION(:),   ALLOCATABLE :: ZTOWN  ! town   fraction
-REAL, DIMENSION(:),   ALLOCATABLE :: ZVH     
-REAL, DIMENSION(:),   ALLOCATABLE :: ZLAI
-REAL, DIMENSION(:),   ALLOCATABLE :: ZWALL_O_HOR   ! Facade surface density [m^2(fac.)/m^2(town)]
+REAL, DIMENSION(:), ALLOCATABLE :: ZSEA   ! sea    fraction
+REAL, DIMENSION(:), ALLOCATABLE :: ZWATER ! lake   fraction
+REAL, DIMENSION(:), ALLOCATABLE :: ZNATURE! nature fraction
+REAL, DIMENSION(:), ALLOCATABLE :: ZTOWN  ! town   fraction
+REAL, DIMENSION(:), ALLOCATABLE :: ZVH     
+REAL, DIMENSION(:), ALLOCATABLE :: ZLAI
+REAL, DIMENSION(:), ALLOCATABLE :: ZWALL_O_HOR  ! Facade surface density [m^2(fac.)/m^2(town)]
+REAL, DIMENSION(:), ALLOCATABLE :: ZLAI_HVEG    ! LAI of urban vegetation
+REAL, DIMENSION(:), ALLOCATABLE :: ZH_URBTREE   ! Height of urban vegetation
+REAL, DIMENSION(:), ALLOCATABLE :: ZHTRUNK_HVEG ! Trunk height of urban vegetation
+REAL, DIMENSION(:), ALLOCATABLE :: ZFRAC_HVEG   ! Fraction of high vegetation
 REAL, DIMENSION(:),   ALLOCATABLE :: ZBUILD_HEIGHT ! Building height [m]
 REAL, DIMENSION(:),   ALLOCATABLE :: ZBARE  ! bare soil fraction
 REAL, DIMENSION(:),   ALLOCATABLE :: ZZS    ! orography
@@ -182,9 +197,12 @@ IF (PRESENT(PCOVER)) THEN
   DEALLOCATE(ZCOVER)
 END IF
 !
-IF (PRESENT(PSEA) .OR. PRESENT(PTOWN) .OR. PRESENT(PNATURE) .OR. &
-    PRESENT(PBARE) .OR. PRESENT(PLAI_TREE) .OR. PRESENT(PH_TREE) .OR. &
-    PRESENT(PWALL_O_HOR) .OR. PRESENT(PBUILD_HEIGHT) ) THEN
+IF ( PRESENT(PSEA) .OR. PRESENT(PTOWN) .OR. PRESENT(PNATURE) .OR. &
+     PRESENT(PBARE) .OR. PRESENT(PLAI_TREE) .OR. PRESENT(PH_TREE) .OR. &
+     PRESENT(PWALL_O_HOR) .OR. PRESENT(PBUILD_HEIGHT) .OR. &
+     PRESENT(PLAI_HVEG) .OR. PRESENT(PH_URBTREE) .OR. &
+     PRESENT(PHTRUNK_HVEG) .OR. PRESENT(PFRAC_HVEG) ) THEN
+  !
   ALLOCATE(ZSEA   ( ILU ))
   ALLOCATE(ZWATER ( ILU ))
   ALLOCATE(ZNATURE( ILU ))
@@ -203,10 +221,10 @@ END IF
 !
 IF (PRESENT(PBARE)) THEN
   ALLOCATE(ZBARE  ( ILU ))
-  CALL GET_SURF_VAR_n(YSURF_CUR%FM,YSURF_CUR%IM,YSURF_CUR%SM,YSURF_CUR%TM, &
-                      YSURF_CUR%GDM,YSURF_CUR%WM,YSURF_CUR%DUO,YSURF_CUR%DU,&
-                      YSURF_CUR%UG, YSURF_CUR%U,YSURF_CUR%USS,&
-                      'MESONH', ILU, 1, PNATURE=ZNATURE, PBARE=ZBARE)
+  CALL GET_SURF_VAR_n(YSURF_CUR%FM, YSURF_CUR%IM, YSURF_CUR%SM, YSURF_CUR%TM,   &
+                      YSURF_CUR%GDM, YSURF_CUR%WM, YSURF_CUR%DUO, YSURF_CUR%DU, &
+                      YSURF_CUR%UG, YSURF_CUR%U, YSURF_CUR%USS, 'MESONH', ILU,  &
+                      1, PNATURE=ZNATURE, PBARE=ZBARE )
   CALL REMOVE_HALO(ZBARE,PBARE)
   DEALLOCATE(ZBARE)
 END IF
@@ -254,30 +272,55 @@ IF (PRESENT(PH_TREE)  .OR.PRESENT(PLAI_TREE)) THEN
   PLAI_TREE(:,:) = XUNDEF
   ALLOCATE(ZVH  ( ILU ))
   ALLOCATE(ZLAI  ( ILU ))
-  CALL GET_SURF_VAR_n(YSURF_CUR%FM,YSURF_CUR%IM,YSURF_CUR%SM,YSURF_CUR%TM, &
-                      YSURF_CUR%GDM,YSURF_CUR%WM,YSURF_CUR%DUO,YSURF_CUR%DU,&
-                      YSURF_CUR%UG,YSURF_CUR%U,YSURF_CUR%USS,&
-                      'MESONH',ILU,1,PNATURE=ZNATURE,PLAI_TREE=ZLAI,PH_TREE=ZVH)
+  CALL GET_SURF_VAR_n(YSURF_CUR%FM,YSURF_CUR%IM,YSURF_CUR%SM,YSURF_CUR%TM,    &
+                      YSURF_CUR%GDM, YSURF_CUR%WM,YSURF_CUR%DUO,YSURF_CUR%DU, &
+                      YSURF_CUR%UG, YSURF_CUR%U,YSURF_CUR%USS, 'MESONH',ILU,1,&
+                      PNATURE=ZNATURE, PLAI_TREE=ZLAI, PH_TREE=ZVH            )
   IF ( PRESENT( PLAI_TREE ) )  CALL REMOVE_HALO(ZLAI,PLAI_TREE)
   IF ( PRESENT( PH_TREE )   ) CALL REMOVE_HALO(ZVH,PH_TREE)
   DEALLOCATE(ZVH)
   DEALLOCATE(ZLAI)
 END IF
 !
-IF (PRESENT(PWALL_O_HOR) .OR. PRESENT(PBUILD_HEIGHT)) THEN
-  IF ( PRESENT ( PBUILD_HEIGHT ) ) PBUILD_HEIGHT(:,:) = XUNDEF
-  IF ( PRESENT ( PWALL_O_HOR )   ) PWALL_O_HOR(:,:) = XUNDEF
-  ALLOCATE(ZBUILD_HEIGHT ( ILU ))
-  ALLOCATE(ZWALL_O_HOR   ( ILU ))
-  CALL GET_SURF_VAR_n(YSURF_CUR%FM,YSURF_CUR%IM,YSURF_CUR%SM,YSURF_CUR%TM, &
-                      YSURF_CUR%GDM,YSURF_CUR%WM,YSURF_CUR%DUO,YSURF_CUR%DU,&
-                      YSURF_CUR%UG,YSURF_CUR%U,YSURF_CUR%USS,&
-                       'MESONH',ILU,1,PTOWN=ZTOWN,                       &
-                       PWALL_O_HOR=ZWALL_O_HOR,PBUILD_HEIGHT=ZBUILD_HEIGHT )
-  IF ( PRESENT ( PBUILD_HEIGHT ) ) CALL REMOVE_HALO(ZBUILD_HEIGHT,PBUILD_HEIGHT)
-  IF ( PRESENT ( PWALL_O_HOR )   ) CALL REMOVE_HALO(ZWALL_O_HOR,PWALL_O_HOR)
-  DEALLOCATE(ZBUILD_HEIGHT)
-  DEALLOCATE(ZWALL_O_HOR)
+IF ( PRESENT(PWALL_O_HOR) .OR. PRESENT(PBUILD_HEIGHT) .OR. PRESENT(PLAI_HVEG) .OR. &
+     PRESENT(PH_URBTREE)  .OR. PRESENT(PHTRUNK_HVEG)  .OR. PRESENT(PFRAC_HVEG) ) THEN
+   !
+   IF (PRESENT(PBUILD_HEIGHT)) PBUILD_HEIGHT (:,:) = XUNDEF
+   IF (PRESENT(PWALL_O_HOR))   PWALL_O_HOR   (:,:) = XUNDEF
+   IF (PRESENT(PLAI_HVEG))     PLAI_HVEG     (:,:) = XUNDEF
+   IF (PRESENT(PH_URBTREE))    PH_URBTREE    (:,:) = XUNDEF
+   IF (PRESENT(PHTRUNK_HVEG))  PHTRUNK_HVEG  (:,:) = XUNDEF
+   IF (PRESENT(PFRAC_HVEG))    PFRAC_HVEG    (:,:) = XUNDEF
+   !
+   ALLOCATE(ZBUILD_HEIGHT ( ILU ))
+   ALLOCATE(ZWALL_O_HOR   ( ILU ))
+   ALLOCATE(ZLAI_HVEG     ( ILU ))
+   ALLOCATE(ZH_URBTREE    ( ILU ))
+   ALLOCATE(ZHTRUNK_HVEG  ( ILU ))
+   ALLOCATE(ZFRAC_HVEG    ( ILU ))
+   !
+  CALL GET_SURF_VAR_n(YSURF_CUR%FM,YSURF_CUR%IM,YSURF_CUR%SM,YSURF_CUR%TM,   &
+                      YSURF_CUR%GDM, YSURF_CUR%WM,YSURF_CUR%DUO,YSURF_CUR%DU,&
+                      YSURF_CUR%UG, YSURF_CUR%U,YSURF_CUR%USS, 'MESONH',ILU, &
+                      1,PTOWN=ZTOWN, PWALL_O_HOR=ZWALL_O_HOR,                &
+                      PBUILD_HEIGHT=ZBUILD_HEIGHT, PLAI_HVEG=ZLAI_HVEG,      &
+                      PH_URBTREE=ZH_URBTREE, PHTRUNK_HVEG=ZHTRUNK_HVEG,      &
+                      PFRAC_HVEG=ZFRAC_HVEG                                  )
+   !
+   IF (PRESENT(PBUILD_HEIGHT)) CALL REMOVE_HALO(ZBUILD_HEIGHT,PBUILD_HEIGHT)
+   IF (PRESENT(PWALL_O_HOR))   CALL REMOVE_HALO(ZWALL_O_HOR,PWALL_O_HOR)
+   IF (PRESENT(PLAI_HVEG))     CALL REMOVE_HALO(ZLAI_HVEG,PLAI_HVEG)
+   IF (PRESENT(PH_URBTREE))    CALL REMOVE_HALO(ZH_URBTREE,PH_URBTREE)
+   IF (PRESENT(PHTRUNK_HVEG))  CALL REMOVE_HALO(ZHTRUNK_HVEG,PHTRUNK_HVEG)
+   IF (PRESENT(PFRAC_HVEG))    CALL REMOVE_HALO(ZFRAC_HVEG,PFRAC_HVEG)
+   !
+   DEALLOCATE(ZBUILD_HEIGHT)
+   DEALLOCATE(ZWALL_O_HOR)
+   DEALLOCATE(ZLAI_HVEG)
+   DEALLOCATE(ZH_URBTREE)
+   DEALLOCATE(ZHTRUNK_HVEG)
+   DEALLOCATE(ZFRAC_HVEG)
+   !
 END IF
 !
 IF (ALLOCATED(ZSEA)) THEN

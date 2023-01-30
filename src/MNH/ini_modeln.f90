@@ -293,6 +293,8 @@ END MODULE MODI_INI_MODEL_n
 !  F. Auguste     02/2021: add IBM
 !  T.Nigel        02/2021: add turbulence recycling
 ! J.L.Redelsperger 06/2011: OCEAN case
+  ! R. Schoetter    12/2021  multi-level coupling between MesoNH and SURFEX  
+!!                      12/2021 (R. Schoetter) adds humidity and other mean diagnostics
 !---------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -333,6 +335,7 @@ USE MODD_DIAG_FLAG,         only: LCHEMDIAG, CSPEC_BU_DIAG
 USE MODD_DIM_n
 USE MODD_DRAG_n
 USE MODD_DRAGTREE_n
+USE MODD_DRAGBLDG_n
 USE MODD_DUST
 use MODD_DUST_OPT_LKT,      only: NMAX_RADIUS_LKT_DUST=>NMAX_RADIUS_LKT, NMAX_SIGMA_LKT_DUST=>NMAX_SIGMA_LKT,               &
                                   NMAX_WVL_SW_DUST=>NMAX_WVL_SW,                                                            &
@@ -772,6 +775,17 @@ IF (LMEAN_FIELD) THEN
     ALLOCATE(XTKEM_MEAN(0,0,0))
   END IF
   ALLOCATE(XPABSM_MEAN(IIU,IJU,IKU))   ; XPABSM_MEAN = 0.0
+  ALLOCATE(XQ_MEAN(IIU,IJU,IKU))       ; XQ_MEAN = 0.0
+  ALLOCATE(XRH_W_MEAN(IIU,IJU,IKU))    ; XRH_W_MEAN = 0.0
+  ALLOCATE(XRH_I_MEAN(IIU,IJU,IKU))    ; XRH_I_MEAN = 0.0
+  ALLOCATE(XRH_P_MEAN(IIU,IJU,IKU))    ; XRH_P_MEAN = 0.0
+  ALLOCATE(XRH_W_MAXCOL_MEAN(IIU,IJU)) ; XRH_W_MAXCOL_MEAN = 0.0
+  ALLOCATE(XRH_I_MAXCOL_MEAN(IIU,IJU)) ; XRH_I_MAXCOL_MEAN = 0.0
+  ALLOCATE(XRH_P_MAXCOL_MEAN(IIU,IJU)) ; XRH_P_MAXCOL_MEAN = 0.0
+  ALLOCATE(XWIFF_MEAN(IIU,IJU,IKU))    ; XWIFF_MEAN = 0.0
+  ALLOCATE(XWIDD_MEAN(IIU,IJU,IKU))    ; XWIDD_MEAN = 0.0
+  ALLOCATE(XWIFF_MAX (IIU,IJU,IKU))    ; XWIFF_MAX  = 0.0
+  ALLOCATE(XWIDD_MAX (IIU,IJU,IKU))    ; XWIDD_MAX  = 0.0
 !
   ALLOCATE(XU2_MEAN(IIU,IJU,IKU))      ; XU2_MEAN  = 0.0
   ALLOCATE(XV2_MEAN(IIU,IJU,IKU))      ; XV2_MEAN  = 0.0
@@ -1808,7 +1822,7 @@ IF ( CBUTYPE /= "NONE" .AND. NBUMOD == KMI ) THEN
              LHORELAX_UVWTH,LHORELAX_RV, LHORELAX_RC,LHORELAX_RR,             &
              LHORELAX_RI,LHORELAX_RS,LHORELAX_RG, LHORELAX_RH,LHORELAX_TKE,   &
              LHORELAX_SV, LVE_RELAX, LVE_RELAX_GRD,                           &
-             LCHTRANS,LNUDGING,LDRAGTREE,LDEPOTREE,LMAIN_EOL,                 &
+             LCHTRANS,LNUDGING,LDRAGTREE,LDEPOTREE,LDRAGBLDG,LMAIN_EOL,       &
              CRAD,CDCONV,CSCONV,CTURB,CTURBDIM,CCLOUD                         )
 END IF
 !
