@@ -1197,11 +1197,28 @@ DO JP = 1,TOP%NTEB_PATCH
   !
   IF (CT%LCHECK_TEB) CALL CHECK_TEB (TOP, BOP, NT, NB, TD, TPN, TIR, GDM, GRM, HM, CT, &
                                      HPROGRAM, KI, JP, PTSTEP, PTSUN, PRAIN, PSN       )
+  
+
+  ! Additionnal security to ensure no problem during spin-up
+  ! Only possible when LCHECK_TEB=F
+
+IF (.NOT.CT%LCHECK_TEB) THEN
+WHERE(NT%AL(JP)%XT_ROOF .GT. XTT+100.)
+NT%AL(JP)%XT_ROOF(:,:) = 99.9
+END WHERE
+  WHERE(NT%AL(JP)%XT_WALL_A .GT. XTT+100.)
+NT%AL(JP)%XT_WALL_A(:,:) = 99.9
+END WHERE
+  WHERE(NT%AL(JP)%XT_ROAD .GT. XTT+100.)
+NT%AL(JP)%XT_ROAD(:,:) = 99.9
+END WHERE
+END IF
+
   !
   !
-  ! Check for realistic temperatures
+  ! Check for realistic temperatures (only if LCHECK_TEB)
   !
-  IF (ANY(NT%AL(JP)%XT_ROOF .GT. XTT+100.) .OR. ANY(NT%AL(JP)%XT_WALL_A .GT. XTT+100. ) &
+  IF ((CT%LCHECK_TEB) .AND.  ANY(NT%AL(JP)%XT_ROOF .GT. XTT+100.) .OR. ANY(NT%AL(JP)%XT_WALL_A .GT. XTT+100. ) &
              .OR. ANY(NT%AL(JP)%XT_ROAD .GT. XTT+100. )) THEN
       CALL GET_LUOUT(HPROGRAM,ILUOUT)
       WRITE(ILUOUT,*) '--------------------------------------------------------'
