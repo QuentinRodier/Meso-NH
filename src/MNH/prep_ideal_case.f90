@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -329,6 +329,7 @@
 !
 USE MODD_PARAMETERS       ! Declarative modules
 USE MODD_ARGSLIST_ll, ONLY : LIST_ll
+USE MODD_BUDGET,           ONLY: TBUCONF_ASSOCIATE
 USE MODD_DIM_n
 USE MODD_CONF
 USE MODD_CST
@@ -656,6 +657,7 @@ CALL INI_NEB
 !
 CALL ALLOC_FIELD_SCALARS()
 CALL PARAM_ICE_ASSOCIATE()
+CALL TBUCONF_ASSOCIATE()
 CALL LES_ASSOCIATE()
 CALL DEFAULT_DESFM_n(1)
 !
