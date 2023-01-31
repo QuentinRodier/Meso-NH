@@ -1375,6 +1375,7 @@ END DO
     INTEGER(KIND=CDFINT)                     :: IVAR_ID
     INTEGER(KIND=CDFINT),DIMENSION(NF90_MAX_VAR_DIMS) :: IDIMS_ID
     LOGICAL                                  :: GSPLIT_AT_ENTRY
+    LOGICAL                                  :: GSPLIT_INFO_AVAILABLE
 
     CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Metadata_get_nc4','called')
 
@@ -1390,8 +1391,11 @@ END DO
     if ( istatus /= NF90_NOERR ) call IO_Err_handle_nc4( istatus, 'IO_Metadata_get_nc4', 'NF90_INQUIRE_VARIABLE', '' )
 
     !split_variable and other attributes were added in MesoNH > 5.4.2
+    GSPLIT_INFO_AVAILABLE = .FALSE.
     ISTATUS = NF90_INQUIRE_ATTRIBUTE(IFILE_ID, KVAR_ID, 'split_variable', LEN=ILENG)
     IF (ISTATUS == NF90_NOERR) THEN
+      GSPLIT_INFO_AVAILABLE = .TRUE.
+
       IF (GSPLIT_AT_ENTRY) CALL PRINT_MSG(NVERB_ERROR,'IO','IO_Metadata_get_nc4','split variable delcaration inside a split file')
 
       ALLOCATE(CHARACTER(LEN=ILENG) :: YSPLIT)
@@ -1552,8 +1556,15 @@ END DO
       END IF
 
       IF (TPREC%LSPLIT) THEN
+#if 0
         IF(     (.NOT.TPREC%TFIELD%LTIMEDEP .AND.  TPREC%NDIMS_FILE/=2)   &
             .OR. (     TPREC%TFIELD%LTIMEDEP .AND.  TPREC%NDIMS_FILE/=3) ) &
+#else
+        IF(      (      GSPLIT_INFO_AVAILABLE .AND.  TPREC%NDIMS_FILE/=3 )               &
+            .OR. ( .NOT.GSPLIT_INFO_AVAILABLE .AND.                                      &
+                            ( (.NOT.TPREC%TFIELD%LTIMEDEP .AND.  TPREC%NDIMS_FILE/=2)    &
+                      .OR. (     TPREC%TFIELD%LTIMEDEP .AND.  TPREC%NDIMS_FILE/=3) ) ) ) &
+#endif
           CALL PRINT_MSG(NVERB_FATAL,'IO','IO_Metadata_get_nc4',trim(TPREC%NAME)//': split variables can only be 3D')
         !Split variables are Z-split
         !Move time dimension to last (4th) position

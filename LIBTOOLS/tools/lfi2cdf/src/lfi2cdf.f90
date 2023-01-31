@@ -17,6 +17,7 @@ program LFI2CDF
   use mode_field,         only: Ini_field_list
   USE MODE_IO,            ONLY: IO_Init, IO_Config_set
   use mode_ll
+  use mode_modeln_handler, only: Goto_model
   USE mode_options
   USE MODE_SPLITTINGZ_ll, ONLY: INI_PARAZ_ll
   USE mode_util
@@ -47,6 +48,8 @@ program LFI2CDF
 
 
   CPROGRAM = 'LFICDF'
+
+  CALL Goto_model(1)
 
   CALL IO_Init()
   CALL VERSION
