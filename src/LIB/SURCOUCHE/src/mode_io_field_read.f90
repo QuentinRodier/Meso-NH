@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -773,6 +773,7 @@ IF (IRESP==0) THEN
     INB_PROC_REAL = MIN(TPFILE%NSUBFILES_IOZ,ISNPROC)
     ALLOCATE(IREQ_TAB((ISNPROC-1)*INB_PROC_REAL))
     ALLOCATE(T_TX2DP((ISNPROC-1)*INB_PROC_REAL))
+    Allocate( tzfield, mold = tpfield )
     Z_SLICE: DO JK=1,SIZE(PFIELD,3),INB_PROC_REAL
       !
       ! read the data
@@ -780,7 +781,6 @@ IF (IRESP==0) THEN
       JK_MAX=MIN(SIZE(PFIELD,3),JK+INB_PROC_REAL-1)
       !
       INB_REQ=0
-      Allocate( tzfield, mold = tpfield )
       DO JKK=JK,JK_MAX
         IF (TPFILE%NSUBFILES_IOZ .GT. 1 ) THEN
           IK_FILE = IO_Level2filenumber_get(JKK,TPFILE%NSUBFILES_IOZ)
