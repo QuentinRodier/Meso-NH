@@ -123,7 +123,7 @@ REAL, DIMENSION(:), ALLOCATABLE   :: XSKEW_WORK
 !*        0.4    Variables for the Majority aggregation rule
 !                -------------------------------------------
 !
-INTEGER, PARAMETER :: JPVALMAX=40  ! Maximum number of different values 
+INTEGER, PARAMETER :: JPVALMAX=20  ! Maximum number of different values 
 !                                  ! in each grid mesh
 INTEGER, DIMENSION(:,:),   ALLOCATABLE :: NVALNBR
 !                                  ! number of different values 

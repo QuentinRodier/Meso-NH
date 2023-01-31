@@ -70,6 +70,9 @@ SELECT CASE(HSURF)
 !*      3.1    Profile of soil relative humidity
 !
   CASE('WG     ')
+    IF(XHUG_SURF==XUNDEF.OR.XHUG_ROOT==XUNDEF.OR.XHUG_DEEP==XUNDEF)THEN
+      CALL ABOR1_SFX('PREP_ISBA_UNIF: No values for '//TRIM(HSURF)//' check your namelist and NAM_PREP_ISBA !')
+    ENDIF          
     ALLOCATE(PFIELD(1,3,1))
     PFIELD(:,1,1) = XHUG_SURF
     PFIELD(:,2,1) = XHUG_ROOT
@@ -86,6 +89,9 @@ SELECT CASE(HSURF)
 !*      3.3    Profile of temperatures
 
   CASE('TG     ')
+    IF(XTG_SURF==XUNDEF.OR.XTG_ROOT==XUNDEF.OR.XTG_DEEP==XUNDEF)THEN
+      CALL ABOR1_SFX('PREP_ISBA_UNIF: No values for '//TRIM(HSURF)//' check your namelist and NAM_PREP_ISBA !')
+    ENDIF
     ALLOCATE(PFIELD(1,3,1))
     PFIELD(:,1,1) = XTG_SURF
     PFIELD(:,2,1) = XTG_ROOT

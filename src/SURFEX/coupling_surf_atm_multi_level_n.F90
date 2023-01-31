@@ -13,7 +13,7 @@ SUBROUTINE COUPLING_SURF_ATM_MULTI_LEVEL_n (YSC, HPROGRAM, HCOUPLING, PTIMEC, PT
      PZWS, HTEST )
 !     #################################################################################
 !
-!!****  *COUPLING_INLAND_WATER_n * - Driver to call the schemes for the 
+!!****  *COUPLING_SURF_ATM_MULTI_LEVEL_n* - Driver to call the schemes for the 
 !!       four surface types (SEA, WATER, NATURE, TOWN)
 !!
 !!    PURPOSE
@@ -41,7 +41,9 @@ SUBROUTINE COUPLING_SURF_ATM_MULTI_LEVEL_n (YSC, HPROGRAM, HCOUPLING, PTIMEC, PT
 !!      A. Mary     04/2016 add ORORAD
 !!      M. Goret    03/2017 correct unity comment mistakes
 !!      P. Wautelet 02/2019 bug correction KI->KSIZE for size of KMASK argument in TREAT_SURF
-!!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
+!!      Bielli S.   02/2019 Sea salt : significant sea wave height influences salt emission; 5 salt modes
+!!      B. Decharme 05/2017 Average CO2 fluxes to couple with atm
+!!      B. Decharme 05/2017 Radiative temperature except open ocean
 !!-------------------------------------------------------------
 !
 !
@@ -66,6 +68,8 @@ USE MODI_ADD_FORECAST_TO_DATE_SURF
 USE MODI_AVERAGE_FLUX
 USE MODI_AVERAGE_PHY
 USE MODI_AVERAGE_RAD
+USE MODI_AVERAGE_CO2
+USE MODI_AVERAGE_TSLSI
 USE MODI_DIAG_INLINE_SURF_ATM_n
 USE MODI_CH_EMISSION_FLUX_n
 USE MODI_CH_EMISSION_SNAP_n
@@ -99,21 +103,21 @@ INCLUDE 'mpif.h'
 !
 TYPE(SURFEX_t), INTENT(INOUT) :: YSC
 !
- CHARACTER(LEN=6),    INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
- CHARACTER(LEN=1),    INTENT(IN)  :: HCOUPLING ! type of coupling
-                                              ! 'E' : explicit
-                                              ! 'I' : implicit
-REAL,                INTENT(IN)  :: PTIMEC    ! cumulated time since beginning of simulation
-INTEGER,             INTENT(INOUT)  :: KYEAR     ! current year (UTC)
-INTEGER,             INTENT(INOUT)  :: KMONTH    ! current month (UTC)
-INTEGER,             INTENT(INOUT)  :: KDAY      ! current day (UTC)
-REAL,                INTENT(IN)  :: PTIME     ! current time since midnight (UTC, s)
-INTEGER,             INTENT(IN)  :: KI        ! number of points
-INTEGER,             INTENT(IN)  :: KSV       ! number of scalars
-INTEGER,             INTENT(IN)  :: KSW       ! number of short-wave spectral bands
-INTEGER,             INTENT(IN)  :: KLEV      ! number of levels that are coupled between surface and atmosphere
-REAL, DIMENSION(KI), INTENT(IN)  :: PTSUN     ! solar time                    (s from midnight)
-REAL,                INTENT(IN)  :: PTSTEP    ! atmospheric time-step                 (s)
+CHARACTER(LEN=6),    INTENT(IN)    :: HPROGRAM  ! program calling surf. schemes
+CHARACTER(LEN=1),    INTENT(IN)    :: HCOUPLING ! type of coupling
+                                                ! 'E' : explicit
+                                                ! 'I' : implicit
+REAL,                INTENT(IN)    :: PTIMEC    ! cumulated time since beginning of simulation
+INTEGER,             INTENT(INOUT) :: KYEAR     ! current year (UTC)
+INTEGER,             INTENT(INOUT) :: KMONTH    ! current month (UTC)
+INTEGER,             INTENT(INOUT) :: KDAY      ! current day (UTC)
+REAL,                INTENT(IN)    :: PTIME     ! current time since midnight (UTC, s)
+INTEGER,             INTENT(IN)    :: KI        ! number of points
+INTEGER,             INTENT(IN)    :: KSV       ! number of scalars
+INTEGER,             INTENT(IN)    :: KSW       ! number of short-wave spectral bands
+INTEGER,             INTENT(IN)    :: KLEV      ! number of levels that are coupled between surface and atmosphere
+REAL, DIMENSION(KI), INTENT(IN)    :: PTSUN     ! solar time                    (s from midnight)
+REAL,                INTENT(IN)    :: PTSTEP    ! atmospheric time-step                 (s)
 !
 ! Variables that are coupled on several levels
 !
@@ -128,10 +132,10 @@ REAL, DIMENSION(KI,KLEV), INTENT(IN) :: PRHOA   ! air density                   
 REAL, DIMENSION(KI,KLEV), INTENT(IN) :: PU      ! zonal wind                            (m/s)
 REAL, DIMENSION(KI,KLEV), INTENT(IN) :: PV      ! meridian wind                         (m/s)
 !
-REAL, DIMENSION(KI,KSV),INTENT(IN) :: PSV     ! scalar variables
-!                                             ! chemistry:   first char. in HSV: '#'  (molecule/m3)
-!                                             !
- CHARACTER(LEN=6), DIMENSION(KSV),INTENT(IN):: HSV  ! name of all scalar variables
+REAL, DIMENSION(KI,KSV),  INTENT(IN) :: PSV     ! scalar variables
+!                                               ! chemistry:   first char. in HSV: '#'  (molecule/m3)
+!
+CHARACTER(LEN=6), DIMENSION(KSV), INTENT(IN) :: HSV  ! name of all scalar variables
 !
 REAL, DIMENSION(KI,KSW),INTENT(INOUT) :: PDIR_SW ! direct  solar radiation (on horizontal surf.) (W/m2)
 REAL, DIMENSION(KI,KSW),INTENT(INOUT) :: PSCA_SW ! diffuse solar radiation (on horizontal surf.) (W/m2)
@@ -197,6 +201,11 @@ REAL, DIMENSION(KI)  :: ZPEQ_A_COEF
 REAL, DIMENSION(KI)  :: ZPET_B_COEF
 REAL, DIMENSION(KI)  :: ZPEQ_B_COEF
 !
+REAL, DIMENSION(KI)  :: ZTSLSI      ! skin temperature of all surfaces except open ocean (K)
+!
+REAL, DIMENSION(KI)  :: ZSFCO2NAT   ! natural CO2 flux to atm (kgC/m2/s)
+REAL, DIMENSION(KI)  :: ZSFCO2ANT   ! total anthoprogenic CO2 flux to atm (kgC/m2/s)
+!
 ! Tile outputs:
 !
 REAL, DIMENSION(KI,NTILESFC) :: ZSFTH_TILE     ! surface heat flux (Km/s)
@@ -225,8 +234,9 @@ REAL, DIMENSION(KI,KSW,NTILESFC) :: ZSCA_ALB_TILE ! diffuse albedo
 !
 REAL :: XTIME0
 !
-INTEGER :: IINDEXEND
+INTEGER :: IINDEXEND, ISEA
 INTEGER :: INBTS, JI , JIMP
+!
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !-------------------------------------------------------------------------------------
@@ -269,7 +279,7 @@ ZSFTH_TILE(:,:)      = XUNDEF
 ZSFTH_SURF_TOWN(:)   = XUNDEF
 ZSFTH_WALL_TOWN(:)   = XUNDEF
 ZSFTH_ROOF_TOWN(:)   = XUNDEF
-ZCD_ROOF_TOWN(:)   = XUNDEF
+ZCD_ROOF_TOWN(:)     = XUNDEF
 ZTRAD_TILE(:,:)      = XUNDEF
 ZDIR_ALB_TILE(:,:,:) = XUNDEF
 ZSCA_ALB_TILE(:,:,:) = XUNDEF
@@ -286,6 +296,8 @@ ZTSURF_TILE(:,:)      = XUNDEF
 ZZ0_TILE(:,:)         = XUNDEF
 ZZ0H_TILE(:,:)        = XUNDEF
 ZQSURF_TILE(:,:)      = XUNDEF
+!
+ZTSLSI(:)             = XUNDEF
 !
 ! Fractions for each tile:
 !
@@ -316,16 +328,15 @@ END IF
 #ifdef SFX_MPI
 XTIME0 = MPI_WTIME()
 #endif
-! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-! - - - - 
+!
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 ! Orographic shadowing 
-! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-! - - - - 
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 !
 ZLW(:)=PLW(:)
-IF (YSC%USS%LDSV .OR. YSC%USS%LDSH .OR. YSC%USS%LDSL) &
-        CALL ORORAD(YSC%USS,PZENITH,PAZIM,PSCA_ALB,PTRAD,PEMIS,PDIR_SW,PSCA_SW,ZLW)
-
+IF (YSC%USS%LDSV .OR. YSC%USS%LDSH .OR. YSC%USS%LDSL) THEN
+   CALL ORORAD(YSC%USS,PZENITH,PAZIM,PSCA_ALB,PTRAD,PEMIS,PDIR_SW,PSCA_SW,ZLW)
+ENDIF
 !
 !
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -335,6 +346,8 @@ IF (YSC%USS%LDSV .OR. YSC%USS%LDSH .OR. YSC%USS%LDSL) &
 ! first, pack vector...then call ALMA routine
 !
 JTILE = JTILE + 1
+!
+ISEA = JTILE
 !
 IF(GSEA)THEN
 !
@@ -394,20 +407,29 @@ XTIME0 = MPI_WTIME()
 JTILE = JTILE + 1
 !
 IF(GTOWN)THEN
-!
-  ZFRAC_TILE(:,JTILE) = YSC%U%XTOWN(:)
-!
-  CALL TREAT_SURF(JTILE,YSC%U%NSIZE_TOWN,KLEV,YSC%U%NR_TOWN)
-!
-  PSFTH_SURF = ZFRAC_TILE(:,JTILE) * ZSFTH_SURF_TOWN
-  PSFTH_WALL = ZFRAC_TILE(:,JTILE) * ZSFTH_WALL_TOWN
-  PSFTH_ROOF = ZFRAC_TILE(:,JTILE) * ZSFTH_ROOF_TOWN
-  PCD_ROOF   = ZFRAC_TILE(:,JTILE) * ZCD_ROOF_TOWN
-!
-  PSFTQ_SURF = ZFRAC_TILE(:,JTILE) * ZSFTQ_SURF_TOWN
-  PSFTQ_WALL = ZFRAC_TILE(:,JTILE) * ZSFTQ_WALL_TOWN
-  PSFTQ_ROOF = ZFRAC_TILE(:,JTILE) * ZSFTQ_ROOF_TOWN
-!
+   !
+   ZFRAC_TILE(:,JTILE) = YSC%U%XTOWN(:)
+   !
+   CALL TREAT_SURF(JTILE,YSC%U%NSIZE_TOWN,KLEV,YSC%U%NR_TOWN)
+   !
+   PSFTH_SURF(:) = ZFRAC_TILE(:,JTILE) * ZSFTH_SURF_TOWN(:)
+   PSFTH_WALL(:) = ZFRAC_TILE(:,JTILE) * ZSFTH_WALL_TOWN(:)
+   PSFTH_ROOF(:) = ZFRAC_TILE(:,JTILE) * ZSFTH_ROOF_TOWN(:)
+   PSFTQ_SURF(:) = ZFRAC_TILE(:,JTILE) * ZSFTQ_SURF_TOWN(:)
+   PSFTQ_WALL(:) = ZFRAC_TILE(:,JTILE) * ZSFTQ_WALL_TOWN(:)
+   PSFTQ_ROOF(:) = ZFRAC_TILE(:,JTILE) * ZSFTQ_ROOF_TOWN(:)
+   PCD_ROOF(:)   = ZFRAC_TILE(:,JTILE) * ZCD_ROOF_TOWN(:)
+   !
+ELSE
+   !
+   PSFTH_SURF(:) = 0.0
+   PSFTH_WALL(:) = 0.0
+   PSFTH_ROOF(:) = 0.0
+   PSFTQ_SURF(:) = 0.0
+   PSFTQ_WALL(:) = 0.0
+   PSFTQ_ROOF(:) = 0.0
+   PCD_ROOF  (:) = 0.0
+   !
 ENDIF
 !
 #ifdef SFX_MPI
@@ -418,8 +440,8 @@ XTIME_TOWN = XTIME_TOWN + (MPI_WTIME() - XTIME0)*100./MAX(1,YSC%U%NSIZE_TOWN)
 ! Grid box average fluxes/properties:
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 !
- CALL AVERAGE_FLUX(ZFRAC_TILE, ZSFTH_TILE, ZSFTQ_TILE, ZSFTS_TILE, ZSFCO2_TILE, &
-                   ZSFU_TILE, ZSFV_TILE, PSFTH, PSFTQ, PSFTS, PSFCO2, PSFU, PSFV )
+CALL AVERAGE_FLUX(ZFRAC_TILE, ZSFTH_TILE, ZSFTQ_TILE, ZSFTS_TILE, ZSFCO2_TILE, &
+                  ZSFU_TILE, ZSFV_TILE, PSFTH, PSFTQ, PSFTS, PSFCO2, PSFU, PSFV )
 !
 ! - - - - -- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 ! Chemical Emissions:                  
@@ -446,9 +468,14 @@ IF ((YSC%SV%NBEQ > 0).AND.(YSC%CHU%LCH_SURF_EMIS)) THEN
 END IF
 !
 WHERE(PSFTS(:,:)==XUNDEF)  PSFTS(:,:)=0.
+!
 ! - - - - -- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 ! CO2 Flux : adds biogenic and anthropogenic emissions
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+!
+! Add fossil fuel and land-use emissions
+CALL AVERAGE_CO2(YSC%U, YSC%IM, PRHOA(:,1), PSFCO2, ZSFCO2NAT, ZSFCO2ANT)
+!
 ! CO2 FLUXES  : PSFTS(:,YSC%SV%CSV(JI)=="CO2")  in molecules/m2/s
 !               PSFCO2 in (m/s*kg_CO2/kg_air)
 ! (molecules/m2/s) = (m/s*kg_CO2/kg_air)*rhoa*Navogadro*1E3/Mco2(44g/mol)
@@ -465,16 +492,19 @@ END DO
 ! - - - - -- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 ! Radiative fluxes
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
- CALL AVERAGE_RAD(ZFRAC_TILE, ZDIR_ALB_TILE, ZSCA_ALB_TILE, &
-                  ZEMIS_TILE, ZTRAD_TILE, PDIR_ALB, PSCA_ALB,&
-                  PEMIS, PTRAD)
+CALL AVERAGE_RAD(ZFRAC_TILE, ZDIR_ALB_TILE, ZSCA_ALB_TILE, ZEMIS_TILE, &
+                 ZTRAD_TILE, PDIR_ALB, PSCA_ALB, PEMIS, PTRAD          )
+!
+! - - - - -- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+! Radiative temperature except open ocean
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+CALL AVERAGE_TSLSI(YSC%U, YSC%SM, ISEA, ZFRAC_TILE, ZEMIS_TILE, ZTRAD_TILE, ZTSLSI)
 !
 ! - - - - -- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 ! Physical properties
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
- CALL AVERAGE_PHY(ZFRAC_TILE, ZTSURF_TILE, ZZ0_TILE,       &
-                  ZZ0H_TILE, ZQSURF_TILE,                  &    
-                  PUREF(:,1), PZREF(:,1), PTSURF, PZ0, PZ0H, PQSURF  )
+CALL AVERAGE_PHY(ZFRAC_TILE, ZTSURF_TILE, ZZ0_TILE, ZZ0H_TILE, ZQSURF_TILE, &    
+                 PUREF(:,1), PZREF(:,1), PTSURF, PZ0, PZ0H, PQSURF          )
 !
 ! store these field to write in restart file (important for AGCM)
 !
@@ -499,8 +529,12 @@ END IF
 ! Inline diagnostics for full surface
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 !
- CALL DIAG_INLINE_SURF_ATM_n(YSC%DUO, YSC%DU, &
-                     PUREF(:,1), PZREF(:,1), PPS, PRHOA(:,1), PTRAD, PEMIS, PSFU, PSFV, PSFCO2)
+CALL DIAG_INLINE_SURF_ATM_n(YSC%DUO, YSC%DU, PUREF(:,1), PZREF(:,1),  &
+                            PPS, PRHOA(:,1), PTRAD, PEMIS,            &
+                            PSFU, PSFV, PSFCO2, PZS, PSCA_SW, ZTSLSI, &
+                            PDIR_ALB, PSCA_ALB, ZSFCO2NAT, ZSFCO2ANT, &
+                            PTA(:,1), PQA(:,1), PU(:,1), PV(:,1),     &
+                            PRAIN(:), PSNOW(:), PCO2(:)               )
 !
 IF (LHOOK) CALL DR_HOOK('COUPLING_SURF_ATM_MULTI_LEVEL_N',1,ZHOOK_HANDLE)
 !

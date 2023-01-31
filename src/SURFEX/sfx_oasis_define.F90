@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !#########
-SUBROUTINE SFX_OASIS_DEFINE (IO, U, HPROGRAM,KNPTS,KPARAL)
+SUBROUTINE SFX_OASIS_DEFINE (IO, U, UG, HPROGRAM,KNPTS,KPARAL)
 !###################################################
 !
 !!****  *SFX_OASIS_DEFINE* - Definitions for exchange of coupling fields
@@ -35,6 +35,7 @@ SUBROUTINE SFX_OASIS_DEFINE (IO, U, HPROGRAM,KNPTS,KPARAL)
 !!    10/2016 B. Decharme : bug surface/groundwater coupling
 !!      Modified    11/2014 : J. Pianezze - add wave coupling parameters
 !!                                          and surface pressure for ocean coupling
+!!      R. Séférian    11/16 : Implement carbon cycle coupling (Earth system model)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -44,6 +45,7 @@ SUBROUTINE SFX_OASIS_DEFINE (IO, U, HPROGRAM,KNPTS,KPARAL)
 !
 USE MODD_ISBA_OPTIONS_n, ONLY : ISBA_OPTIONS_t
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
+USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
 !
 USE MODD_SURF_PAR,  ONLY : NUNDEF
 !
@@ -53,6 +55,12 @@ USE MODD_SFX_OASIS
 USE MODI_GET_LUOUT
 USE MODI_ABOR1_SFX
 USE MODI_SFX_OASIS_CHECK
+!
+USE MODE_GRIDTYPE_CARTESIAN
+USE MODE_GRIDTYPE_CONF_PROJ
+USE MODE_GRIDTYPE_IGN
+USE MODE_GRIDTYPE_LONLAT_REG
+USE MODE_GRIDTYPE_LONLAT_ROT
 !
 #ifdef CPLOASIS
 USE MOD_OASIS
@@ -69,6 +77,7 @@ IMPLICIT NONE
 !
 TYPE(ISBA_OPTIONS_t), INTENT(INOUT) :: IO
 TYPE(SURF_ATM_t), INTENT(INOUT) :: U
+TYPE(SURF_ATM_GRID_t), INTENT(INOUT) :: UG
 !
 CHARACTER(LEN=6),        INTENT(IN) :: HPROGRAM    ! program calling surf. schemes
 INTEGER,                 INTENT(IN) :: KNPTS  ! Number of grid point on this proc
@@ -89,7 +98,9 @@ INTEGER, DIMENSION(2)          :: IVAR_SHAPE  ! indexes for the coupling field l
 INTEGER                        :: IPART_ID ! Local partition ID
 INTEGER                        :: IERR     ! Error info
 !
-INTEGER                        :: ILUOUT, IFLAG
+INTEGER                        :: ILUOUT, IFLAG, IX, IY
+!
+LOGICAL :: O2D_GRID
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
@@ -126,8 +137,31 @@ ENDIF
 !*       2.     Coupling fields shape :
 !               -----------------------
 !
-IVAR_SHAPE(1)= 1
-IVAR_SHAPE(2)= KNPTS
+O2D_GRID=.FALSE.
+IF (UG%G%CGRID=='CONF PROJ'.OR.UG%G%CGRID=='CARTESIAN' .OR.UG%G%CGRID=='IGN'       &
+                           .OR.UG%G%CGRID=='LONLAT REG'.OR.UG%G%CGRID=='LONLAT ROT')THEN
+    O2D_GRID=.TRUE.
+ENDIF
+!
+IF (O2D_GRID) THEN
+  SELECT CASE (UG%G%CGRID)
+     CASE('CARTESIAN')
+       CALL GET_GRIDTYPE_CARTESIAN(UG%G%XGRID_PAR,KIMAX=IX,KJMAX=IY)
+     CASE('CONF PROJ')
+       CALL GET_GRIDTYPE_CONF_PROJ(UG%G%XGRID_PAR,KIMAX=IX,KJMAX=IY)
+     CASE('IGN')
+       CALL GET_GRIDTYPE_IGN(UG%G%XGRID_PAR,KDIMX=IX,KDIMY=IY)
+     CASE('LONLAT REG')
+       CALL GET_GRIDTYPE_LONLAT_REG(UG%G%XGRID_PAR,KLON=IX,KLAT=IY)
+     CASE('LONLAT ROT')
+       CALL GET_GRIDTYPE_LONLAT_ROT(UG%G%XGRID_PAR,KLON=IX,KLAT=IY)
+  END SELECT
+  IVAR_SHAPE(1)= IX
+  IVAR_SHAPE(2)= IY
+ELSE
+  IVAR_SHAPE(1)= 1
+  IVAR_SHAPE(2)= KNPTS
+ENDIF
 !
 !-------------------------------------------------------------------------------
 !
@@ -278,6 +312,26 @@ IF(LCPL_SEA)THEN
 !
   ENDIF
 !
+! Particular case due to carbon cycle coupling
+!
+  IF(LCPL_SEACARB)THEN
+!
+!   Sea Output fields
+!
+    IF(LEN_TRIM(CSEA_CO2)/=0)THEN
+      CALL OASIS_DEF_VAR(NSEA_CO2_ID,CSEA_CO2,IPART_ID,IVAR_NODIMS,OASIS_OUT,IVAR_SHAPE,OASIS_DOUBLE,IERR)
+      IF(IERR/=OASIS_OK) CALL ABOR1_SFX('SFX_OASIS_DEFINE: OASIS def var problem for sea carbon concentration')
+    ELSE
+      NSEA_CO2_ID=NUNDEF
+    ENDIF
+!
+! Sea intput fields
+!
+    CALL OASIS_DEF_VAR(NSEA_FCO2_ID,CSEA_FCO2,IPART_ID,IVAR_NODIMS,OASIS_IN,IVAR_SHAPE,OASIS_DOUBLE,IERR)
+    IF(IERR/=OASIS_OK) CALL ABOR1_SFX('SFX_OASIS_DEFINE: OASIS def var problem for Sea carbon flux')
+!
+  ENDIF
+!
 ENDIF
 !
 !-------------------------------------------------------------------------------
@@ -346,6 +400,15 @@ IF(LCPL_LAND)THEN
   CALL OASIS_DEF_VAR(NDRAIN_ID,CDRAIN,IPART_ID,IVAR_NODIMS,OASIS_OUT,IVAR_SHAPE,OASIS_DOUBLE,IERR)  
   IF(IERR/=OASIS_OK) CALL ABOR1_SFX('SFX_OASIS_DEFINE: OASIS def var problem for land Deep drainage')
 !
+! Input TWS
+!
+  IF(LEN_TRIM(CTWS)/=0)THEN
+    CALL OASIS_DEF_VAR(NTWS_ID,CTWS,IPART_ID,IVAR_NODIMS,OASIS_IN,IVAR_SHAPE,OASIS_DOUBLE,IERR)  
+    IF(IERR/=OASIS_OK) CALL ABOR1_SFX('SFX_OASIS_DEFINE: OASIS def var problem for land Terrestrial Water Storage')
+  ELSE
+    NTWS_ID=NUNDEF
+  ENDIF      
+!
 ! Particular case due to water table depth / surface coupling
 !
   IF(LCPL_GW)THEN
@@ -378,6 +441,17 @@ IF(LCPL_LAND)THEN
 !    
   ENDIF
 !
+! Output Riverine carbon flux
+!
+  IF(LCPL_RIVCARB)THEN
+!
+!     Output Calving flux
+      CALL OASIS_DEF_VAR(NDOCFLUX_ID,CDOCFLUX,IPART_ID,IVAR_NODIMS,OASIS_OUT,IVAR_SHAPE,OASIS_DOUBLE,IERR)  
+      IF(IERR/=OASIS_OK) CALL ABOR1_SFX('SFX_OASIS_DEFINE: OASIS def var problem for land to riverine DOC flux')
+!
+  ENDIF  
+!
+
 ENDIF
 !
 !-------------------------------------------------------------------------------

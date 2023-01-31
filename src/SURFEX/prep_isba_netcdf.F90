@@ -33,7 +33,7 @@ SUBROUTINE PREP_ISBA_NETCDF (DTCO, U, HPROGRAM,HSURF,HFILE,KLUOUT,PFIELD)
 !
 USE GRIB_API, ONLY : kindOfInt
 !
-use modd_netcdf_sfx, only: CDFINT
+use modd_netcdf_sfx, only: IDCDF_KIND
 USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 !
@@ -80,10 +80,10 @@ INTEGER(kind=kindOfInt)::IERROR !error status
 INTEGER::JJ,JK,JLOOP ! loop counters
 INTEGER::INLAYERS ! vertical dimension length
 INTEGER::IL ! nature dimension length
-INTEGER(kind=CDFINT)::ID_FILE,ID_VAR ! Netcdf IDs for file and variable
-INTEGER(kind=CDFINT)::INVARDIMS !number of dimensions of netcdf input variable
-INTEGER(kind=CDFINT),DIMENSION(:),ALLOCATABLE::IVARDIMSID
-INTEGER(kind=CDFINT)::ILENDIM,ILENDIM1,ILENDIM2
+INTEGER(kind=IDCDF_KIND)::ID_FILE,ID_VAR ! Netcdf IDs for file and variable
+INTEGER(kind=IDCDF_KIND)::INVARDIMS !number of dimensions of netcdf input variable
+INTEGER(kind=IDCDF_KIND),DIMENSION(:),ALLOCATABLE::IVARDIMSID
+INTEGER(kind=IDCDF_KIND)::ILENDIM,ILENDIM1,ILENDIM2
 
 SELECT CASE (TRIM(HSURF))
   CASE ('TG','WG','WGI')

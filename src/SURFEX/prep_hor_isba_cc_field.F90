@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-SUBROUTINE PREP_HOR_ISBA_CC_FIELD (DTCO, U, GCP, KLAT, IO, S, NK, NP, NPE, NPAR_VEG_IRR_USE,  &
+SUBROUTINE PREP_HOR_ISBA_CC_FIELD (DTCO, U, GCP, KNI, IO, S, NK, NP, NPE, NPAR_VEG_IRR_USE,  &
                                    HPROGRAM,HSURF,HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE,YDCTL)
 !     #################################################################################
 !
@@ -29,6 +29,7 @@ SUBROUTINE PREP_HOR_ISBA_CC_FIELD (DTCO, U, GCP, KLAT, IO, S, NK, NP, NPE, NPAR_
 !!      Original      05/2014
 !!      P. Marguinaud 10/2014, Support for a 2-part PREP
 !!      A. Druel      02/2019, Adapt the code and transmit NPAR_VEG_IRR_USE for irrigation
+!!      B. Decharme   02/2016  Add LRESET_CSOIL to initilyze isba physic but not soil carbon
 !!
 !!------------------------------------------------------------------
 !
@@ -43,6 +44,8 @@ USE MODD_ISBA_n, ONLY : ISBA_NK_t, ISBA_NP_t, ISBA_NPE_t, ISBA_K_t, ISBA_S_t, &
 USE MODD_CO2V_PAR,  ONLY : XCA_NIT, XCC_NIT
 !
 USE MODD_PREP,      ONLY : LINTERP, CMASK
+!
+USE MODD_PREP_ISBA, ONLY : LRESET_CSOIL
 !
 USE MODD_SURFEX_MPI, ONLY : NRANK, NPIO, NCOMM, NPROC
 !
@@ -77,7 +80,6 @@ TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
 TYPE(SURF_ATM_t), INTENT(INOUT) :: U
 TYPE(GRID_CONF_PROJ_t),INTENT(INOUT) :: GCP
 !
-INTEGER, INTENT(IN) :: KLAT
 TYPE(ISBA_OPTIONS_t), INTENT(INOUT) :: IO
 TYPE(ISBA_S_t), INTENT(INOUT) :: S
 TYPE(ISBA_NK_t), INTENT(INOUT) :: NK
@@ -85,12 +87,13 @@ TYPE(ISBA_NP_t), INTENT(INOUT) :: NP
 TYPE(ISBA_NPE_t), INTENT(INOUT) :: NPE
 TYPE (PREP_CTL),    INTENT(INOUT) :: YDCTL
 !
- CHARACTER(LEN=6),   INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
- CHARACTER(LEN=8),   INTENT(IN)  :: HSURF     ! type of field
- CHARACTER(LEN=28),  INTENT(IN)  :: HATMFILE    ! name of the Atmospheric file
- CHARACTER(LEN=6),   INTENT(IN)  :: HATMFILETYPE! type of the Atmospheric file
- CHARACTER(LEN=28),  INTENT(IN)  :: HPGDFILE    ! name of the Atmospheric file
- CHARACTER(LEN=6),   INTENT(IN)  :: HPGDFILETYPE! type of the Atmospheric file
+INTEGER, INTENT(IN)             :: KNI         ! number of grid cell
+CHARACTER(LEN=6),   INTENT(IN)  :: HPROGRAM    ! program calling surf. schemes
+CHARACTER(LEN=8),   INTENT(IN)  :: HSURF       ! type of field
+CHARACTER(LEN=28),  INTENT(IN)  :: HATMFILE    ! name of the Atmospheric file
+CHARACTER(LEN=6),   INTENT(IN)  :: HATMFILETYPE! type of the Atmospheric file
+CHARACTER(LEN=28),  INTENT(IN)  :: HPGDFILE    ! name of the Atmospheric file
+CHARACTER(LEN=6),   INTENT(IN)  :: HPGDFILETYPE! type of the Atmospheric file
 !
 !*      0.2    declarations of local variables
 !
@@ -107,10 +110,10 @@ TYPE(ISBA_P_t), POINTER :: PK
 TYPE(ISBA_PE_t), POINTER :: PEK
 !
 INTEGER,DIMENSION(:),INTENT(IN) :: NPAR_VEG_IRR_USE ! vegtype with irrigation
- CHARACTER(LEN=6)               :: YFILETYPE    ! type of input file
- CHARACTER(LEN=28)              :: YFILE        ! name of file
- CHARACTER(LEN=6)               :: YFILEPGDTYPE ! type of input file
- CHARACTER(LEN=28)              :: YFILEPGD     ! name of file
+CHARACTER(LEN=6)               :: YFILETYPE    ! type of input file
+CHARACTER(LEN=28)              :: YFILE        ! name of file
+CHARACTER(LEN=6)               :: YFILEPGDTYPE ! type of input file
+CHARACTER(LEN=28)              :: YFILEPGD     ! name of file
 REAL, POINTER, DIMENSION(:,:,:) :: ZFIELDIN     ! field to interpolate horizontally
 REAL, POINTER, DIMENSION(:,:,:) :: ZFIELDOUTP   ! field interpolated   horizontally
 REAL, POINTER, DIMENSION(:,:,:) :: ZFIELDOUTV ! field interpolated   horizontally
@@ -151,6 +154,8 @@ NULLIFY (ZFIELDIN, ZFIELDOUTP, ZFIELDOUTV)
 !
 IF (YDCTL%LPART1) THEN
 !
+  IF(LRESET_CSOIL)GUNIF=.TRUE.
+!
   IF (GUNIF) THEN
     GPREP_AGS = .FALSE.
   ELSE IF (YFILETYPE=='ASCLLV') THEN
@@ -176,7 +181,7 @@ ENDIF
 !
 !*      3.     Horizontal interpolation
 !
- CALL PREP_CTL_INT_PART2 (YDCTL, HSURF, CMASK, 'NATURE', ZFIELDIN)
+CALL PREP_CTL_INT_PART2 (YDCTL, HSURF, CMASK, 'NATURE', ZFIELDIN)
 !
 IF (YDCTL%LPART3) THEN
 !
@@ -195,18 +200,18 @@ IF (YDCTL%LPART3) THEN
       CALL MPI_BCAST(INP,KIND(INP)/4,MPI_INTEGER,NPIO,NCOMM,INFOMPI)
 #endif
     ENDIF
-    ALLOCATE(ZFIELDOUTP(KLAT,INL,INP))
-  !
-  ! ZPATCH is the array of output patches put on the input patches
-    ALLOCATE(ZPATCH(KLAT,INP))
+    ALLOCATE(ZFIELDOUTP(KNI,INL,INP))
+    !
+    !ZPATCH is the array of output patches put on the input patches
+    ALLOCATE(ZPATCH(KNI,INP))
     ZPATCH(:,:) = 0.
-!
+    !
     CALL GET_PREP_INTERP(INP,IO%NPATCH,S%XVEGTYPE,S%XPATCH,ZPATCH,NPAR_VEG_IRR_USE)
-  
+    !
     DO JP = 1, INP
-  ! we interpolate each point the output patch is present
+      !we interpolate each point the output patch is present
       LINTERP(:) = (ZPATCH(:,JP) > 0.)
-      CALL HOR_INTERPOL(DTCO, U, GCP, ILUOUT,ZFIELDIN(:,:,JP),ZFIELDOUTP(:,:,JP))
+      CALL HOR_INTERPOL(DTCO,U,GCP,ILUOUT,ZFIELDIN(:,:,JP),ZFIELDOUTP(:,:,JP))
       LINTERP = .TRUE.
     END DO
 !
@@ -216,7 +221,7 @@ IF (YDCTL%LPART3) THEN
   !
 ENDIF
 !
- CALL PREP_CTL_INT_PART4 (YDCTL, HSURF, 'NATURE', CMASK, ZFIELDIN, ZFIELDOUTP)
+CALL PREP_CTL_INT_PART4 (YDCTL, HSURF, 'NATURE', CMASK, ZFIELDIN, ZFIELDOUTP)
 !
 IF (YDCTL%LPART5) THEN
 
@@ -229,16 +234,14 @@ IF (YDCTL%LPART5) THEN
 
     IF (IO%NPATCH/=INP) THEN
 
-      ALLOCATE(ZFIELDOUTV(KLAT,INL,NVEGTYPE+NVEG_IRR))
-      CALL PUT_ON_ALL_VEGTYPES(KLAT,INL,INP,NVEGTYPE,NPAR_VEG_IRR_USE,ZFIELDOUTP,ZFIELDOUTV)
+      ALLOCATE(ZFIELDOUTV(KNI,INL,NVEGTYPE+NVEG_IRR))
+      CALL PUT_ON_ALL_VEGTYPES(KNI,INL,INP,NVEGTYPE,NPAR_VEG_IRR_USE,ZFIELDOUTP,ZFIELDOUTV)
 !
       DEALLOCATE(ZFIELDOUTP)
 !
-!-------------------------------------------------------------------------------------
+!*  Transformation from vegtype grid to patch grid
 !
-!*      6.     Transformation from vegtype grid to patch grid
 !
-    !
       DO JP = 1,IO%NPATCH
         PK => NP%AL(JP)
         !

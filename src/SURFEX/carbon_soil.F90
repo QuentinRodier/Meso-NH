@@ -3,9 +3,9 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-SUBROUTINE CARBON_SOIL (PTSTEP, PSAND,                                      &
-                          PSOILCARBON_INPUT, PCONTROL_TEMP, PCONTROL_MOIST, &
-                          PSOILCARB, PRESP_HETERO_SOIL)  
+SUBROUTINE CARBON_SOIL(PTSTEP, KSPINS, PSAND, PSOILCARBON_INPUT,      &
+                       PCONTROL_TEMP, PCONTROL_MOIST, PCONTROL_LEACH, &
+                       PSOILCARB, PRESP_HETERO_SOIL, PTSOILPOOL       )  
 
 !   ###############################################################
 !!**  CARBON_SOIL 
@@ -42,6 +42,7 @@ SUBROUTINE CARBON_SOIL (PTSTEP, PSAND,                                      &
 !!    -------------
 !!      Original    23/06/09
 !!      B. Decharme 05/2012 : Optimization
+!!      R. Séférian & C. Delire 10/2016 : add doc leaching
 !!
 !-------------------------------------------------------------------------------
 !
@@ -49,7 +50,6 @@ SUBROUTINE CARBON_SOIL (PTSTEP, PSAND,                                      &
 !               ------------
 !
 USE MODD_CO2V_PAR,       ONLY : XTAU_SOILCARB
-USE MODD_CSTS,           ONLY : XDAY
 !
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -62,15 +62,19 @@ IMPLICIT NONE
 
 ! time step in s
 REAL, INTENT(IN)                                                  :: PTSTEP
+! (spinup) number of times is called for each time step
+INTEGER, INTENT(IN)                                               :: KSPINS
 ! sand fraction (between 0 and 1)
 REAL, DIMENSION(:), INTENT(IN)                                    :: PSAND
 ! quantity of carbon going into carbon pools from litter decomposition
-!   (gC/m**2/day)
+!   (gC/m**2/s)
 REAL, DIMENSION(:,:), INTENT(IN)                                  :: PSOILCARBON_INPUT
 ! temperature control of heterotrophic respiration
 REAL, DIMENSION(:,:), INTENT(IN)                                  :: PCONTROL_TEMP
 ! moisture control of heterotrophic respiration
 REAL, DIMENSION(:,:), INTENT(IN)                                  :: PCONTROL_MOIST
+! leaching transfer function for doc 
+REAL, DIMENSION(:,:), INTENT(IN)                                  :: PCONTROL_LEACH
 
 !*       0.2 modified fields
 
@@ -79,13 +83,16 @@ REAL, DIMENSION(:,:), INTENT(INOUT)                               :: PSOILCARB
 
 !*       0.3 output
 
-! soil heterotrophic respiration (in gC/day/m**2)
+! soil heterotrophic respiration (in gC/s/m**2)
 REAL, DIMENSION(:), INTENT(OUT)                                   :: PRESP_HETERO_SOIL
+
+! soil turn-over frequency (s-1)
+REAL, DIMENSION(:,:), INTENT(OUT)                                 :: PTSOILPOOL
 
 !*       0.4 local
 
-! time step in days
-REAL                                                              :: ZDT
+! time step in s
+REAL                                                                   :: ZDT, ZSPIN
 ! flux fractions within carbon pools
 REAL, DIMENSION(SIZE(PSOILCARB,1),SIZE(PSOILCARB,2),SIZE(PSOILCARB,2)) :: ZFRAC_CARB
 ! fraction of carbon flux which goes into heterotrophic respiration
@@ -95,7 +102,7 @@ REAL, DIMENSION(SIZE(PSOILCARB,1),SIZE(PSOILCARB,2))                   :: ZFLUXT
 ! fluxes between carbon pools (gC/m**2)
 REAL, DIMENSION(SIZE(PSOILCARB,1),SIZE(PSOILCARB,2),SIZE(PSOILCARB,2)) :: ZFLUX
 !
-REAL, DIMENSION(SIZE(PSOILCARB,1))                                     :: ZWORK ! Work array
+REAL, DIMENSION(SIZE(PSOILCARB,1))                                     :: ZWORK, ZCONTROL ! Work array
 !
 ! dimensions
 INTEGER                                                           :: INI, INSOILCARB
@@ -111,17 +118,19 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 ! SL_SLOW = 2
 ! SL_PASSIVE = 3
 !-------------------------------------------------------------------------------
-
-!
-!*       1 Initialisations
-!
-!
-!*       1.1 dimensions
 !
 IF (LHOOK) CALL DR_HOOK('CARBON_SOIL',0,ZHOOK_HANDLE)
 !
+!*       1 Initialisations
+!
+!*       1.1 dimensions
+!
 INI        = SIZE(PSOILCARB,1)
 INSOILCARB = SIZE(PSOILCARB,2)
+!
+ZSPIN      = REAL(KSPINS)
+!
+ZDT        = PTSTEP*ZSPIN
 !
 !*       1.2 get soil "constants"
 !
@@ -148,11 +157,10 @@ ZFRAC_CARB(:,3,2) = .0
 !*       1.3 set output to zero
 !
 PRESP_HETERO_SOIL(:) = 0.0
+PTSOILPOOL     (:,:) = 0.0
 !
 !
 !*       2 input into carbon pools
-!
-ZDT = PTSTEP/XDAY
 !
 PSOILCARB(:,:) = PSOILCARB(:,:) + PSOILCARBON_INPUT(:,:) * ZDT
 !
@@ -171,15 +179,24 @@ ZFRAC_RESP(:,:) = 1. - ZFRAC_CARB(:,:,1) - ZFRAC_CARB(:,:,2) - ZFRAC_CARB(:,:,3)
 !soil property dependance (1.0-0.75*(1.0-PSAND(:)))
 ZWORK(:)=0.25+0.75*PSAND(:)
 !
-! determine total flux out of pool
-ZFLUXTOT(:,1) = PTSTEP/XTAU_SOILCARB(1)*PSOILCARB(:,1)*PCONTROL_MOIST(:,2)*PCONTROL_TEMP(:,2)*ZWORK(:) 
-ZFLUXTOT(:,2) = PTSTEP/XTAU_SOILCARB(2)*PSOILCARB(:,2)*PCONTROL_MOIST(:,2)*PCONTROL_TEMP(:,2) 
-ZFLUXTOT(:,3) = PTSTEP/XTAU_SOILCARB(3)*PSOILCARB(:,3)*PCONTROL_MOIST(:,2)*PCONTROL_TEMP(:,2) 
+!soil temperature and moisture dependance
+ZCONTROL(:) = (1.0-PCONTROL_LEACH(:,2))*PCONTROL_MOIST(:,2)*PCONTROL_TEMP(:,2)
+!
+!Compute Effective Turn-over frequency (s-1)
+PTSOILPOOL(:,1) = ZWORK(:)*ZCONTROL(:)/XTAU_SOILCARB(1)
+PTSOILPOOL(:,2) =          ZCONTROL(:)/XTAU_SOILCARB(2)
+PTSOILPOOL(:,3) =          ZCONTROL(:)/XTAU_SOILCARB(3)
+!
+!determine total flux out of pool
+ZFLUXTOT(:,1) = ZDT * PTSOILPOOL(:,1) * PSOILCARB(:,1)
+ZFLUXTOT(:,2) = ZDT * PTSOILPOOL(:,2) * PSOILCARB(:,2)
+ZFLUXTOT(:,3) = ZDT * PTSOILPOOL(:,3) * PSOILCARB(:,3)
 !
 !decrease this carbon pool
 PSOILCARB(:,:) = PSOILCARB(:,:) - ZFLUXTOT(:,:)
 !
 !fluxes towards the other pools (k -> kk)
+
 DO JL=1,INSOILCARB
    DO JI=1,INI
       ZFLUX(JI,1,JL) = ZFRAC_CARB(JI,1,JL) * ZFLUXTOT(JI,1)

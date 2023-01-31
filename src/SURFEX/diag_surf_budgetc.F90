@@ -50,16 +50,18 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !-------------------------------------------------------------------------------------
 !
-!* total incoming and outgoing SW
-!
 IF (LHOOK) CALL DR_HOOK('DIAG_SURF_BUDGETC_FLAKE',0,ZHOOK_HANDLE)
 !
-IF (ONOTICE) DC%XSWD(:) = DC%XSWD(:) + D%XSWD(:) * PTSTEP
+!* incoming SW and LW
+!
+IF(ONOTICE)THEN
+  DC%XSWD(:) = DC%XSWD(:) + D%XSWD(:) * PTSTEP
+  DC%XLWD(:) = DC%XLWD(:) + D%XLWD(:) * PTSTEP
+ENDIF
+!
+!* outgoing SW and LW
+!
 DC%XSWU(:) = DC%XSWU(:) + D%XSWU(:) * PTSTEP
-!
-!*incoming outgoing LW
-!
-IF (ONOTICE) DC%XLWD(:) = DC%XLWD(:) + D%XLWD(:) * PTSTEP
 DC%XLWU(:) = DC%XLWU(:) + D%XLWU(:) * PTSTEP
 !
 !* net radiation
@@ -70,19 +72,18 @@ DC%XRN(:) = DC%XRN(:) + D%XRN(:) * PTSTEP
 !
 DC%XH(:) = DC%XH(:) + D%XH(:) * PTSTEP 
 !
-IF (ONOTICE) THEN
-  !
-  !* latent heat flux
-  !
-  DC%XLE (:) = DC%XLE (:) + D%XLE (:) * PTSTEP 
-  DC%XLEI(:) = DC%XLEI(:) + D%XLEI(:) * PTSTEP 
-  !
-  !* evaporation and sublimation (kg/m2)
-  !
-  DC%XEVAP(:) = DC%XEVAP(:) + D%XEVAP(:) * PTSTEP
-  DC%XSUBL(:) = DC%XSUBL(:) + D%XSUBL(:) * PTSTEP
-  !
-ENDIF
+!* latent heat flux
+!
+DC%XLE (:) = DC%XLE (:) + D%XLE (:) * PTSTEP 
+!
+!* sublimation heat flux (J/m2)
+!
+DC%XLEI(:) = DC%XLEI(:) + D%XLEI(:) * PTSTEP 
+!
+!* evaporation and sublimation (kg/m2)
+!
+DC%XEVAP(:) = DC%XEVAP(:) + D%XEVAP(:) * PTSTEP
+DC%XSUBL(:) = DC%XSUBL(:) + D%XSUBL(:) * PTSTEP
 !
 !* storage flux
 !

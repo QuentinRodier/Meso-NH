@@ -12,7 +12,7 @@
                                  PZS, PSERIES, PTWSNOW, PSSO_STDEV, PLON, PLAT, &
                                  PBARE, PLAI_TREE, PH_TREE, PWALL_O_HOR,        &
                                  PBUILD_HEIGHT, PLAI_HVEG, PH_URBTREE,          &
-                                 PHTRUNK_HVEG, PFRAC_HVEG                      )
+                                 PHTRUNK_HVEG, PFRAC_HVEG, PSWI1, PVEGT         )
 !
 !     #######################################################################
 !
@@ -56,14 +56,15 @@
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_SURFEX_n, ONLY : FLAKE_MODEL_t, ISBA_MODEL_t, SEAFLUX_MODEL_t, &
-                          TEB_MODEL_t, WATFLUX_MODEL_t, TEB_GARDEN_MODEL_t
-USE MODD_DIAG_n, ONLY : DIAG_t, DIAG_OPTIONS_t
+USE MODD_SURFEX_n,        ONLY : FLAKE_MODEL_t, ISBA_MODEL_t, SEAFLUX_MODEL_t,   &
+                                 TEB_MODEL_t, WATFLUX_MODEL_t, TEB_GARDEN_MODEL_t
+USE MODD_DIAG_n,          ONLY : DIAG_t, DIAG_OPTIONS_t
 USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
-USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
-USE MODD_SSO_n, ONLY : SSO_t
+USE MODD_SURF_ATM_n,      ONLY : SURF_ATM_t
+USE MODD_SSO_n,           ONLY : SSO_t
 !
 USE MODD_SURF_PAR,     ONLY : XUNDEF
+!
 USE MODI_GET_LUOUT
 USE MODI_GET_FLUX_n
 USE MODI_GET_FRAC_n
@@ -76,34 +77,34 @@ USE MODI_GET_VAR_TOWN_n
 USE MODI_GET_ZS_n
 USE MODI_GET_SERIES_n
 !
-USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
-USE PARKIND1  ,ONLY : JPRB
-!
 USE MODI_ABOR1_SFX
 USE MODI_GET_SSO_STDEV_n
 USE MODI_GET_1D_MASK
 USE MODI_GET_COORD_n
 USE MODI_GET_VEG_n
 !
+USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+USE PARKIND1  ,ONLY : JPRB
+!
 IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments
 !              -------------------------
 !
-TYPE(FLAKE_MODEL_t), INTENT(INOUT) :: FM
-TYPE(ISBA_MODEL_t), INTENT(INOUT) :: IM
-TYPE(SEAFLUX_MODEL_t), INTENT(INOUT) :: SM
-TYPE(TEB_MODEL_t), INTENT(INOUT) :: TM
-TYPE(WATFLUX_MODEL_t), INTENT(INOUT) :: WM
+TYPE(FLAKE_MODEL_t),      INTENT(INOUT) :: FM
+TYPE(ISBA_MODEL_t),       INTENT(INOUT) :: IM
+TYPE(SEAFLUX_MODEL_t),    INTENT(INOUT) :: SM
+TYPE(TEB_MODEL_t),        INTENT(INOUT) :: TM
+TYPE(WATFLUX_MODEL_t),    INTENT(INOUT) :: WM
 TYPE(TEB_GARDEN_MODEL_t), INTENT(INOUT) :: GDM
 !
-TYPE(DIAG_OPTIONS_t), INTENT(INOUT) :: DGO
-TYPE(DIAG_t), INTENT(INOUT) :: D
+TYPE(DIAG_OPTIONS_t),  INTENT(INOUT) :: DGO
+TYPE(DIAG_t),          INTENT(INOUT) :: D
 TYPE(SURF_ATM_GRID_t), INTENT(INOUT) :: UG
-TYPE(SURF_ATM_t), INTENT(INOUT) :: U
-TYPE(SSO_t), INTENT(INOUT) :: USS
+TYPE(SURF_ATM_t),      INTENT(INOUT) :: U
+TYPE(SSO_t),           INTENT(INOUT) :: USS
 !
- CHARACTER(LEN=6),   INTENT(IN)            :: HPROGRAM    
+CHARACTER(LEN=6),   INTENT(IN)            :: HPROGRAM    
 INTEGER,            INTENT(IN)            :: KI         ! number of points
 INTEGER,            INTENT(IN)            :: KS         ! number of points
 !
@@ -151,6 +152,8 @@ REAL, DIMENSION(:), INTENT(OUT), OPTIONAL :: PLAT       ! latitude
 REAL, DIMENSION(:), INTENT(OUT), OPTIONAL :: PBARE      ! bare soil fraction on grid mesh     (-)
 REAL, DIMENSION(:), INTENT(OUT), OPTIONAL :: PLAI_TREE  ! Leaf Area Index    on grid mesh     (-)
 REAL, DIMENSION(:), INTENT(OUT), OPTIONAL :: PH_TREE    ! Height of trees    on grid mesh     (-)
+REAL, DIMENSION(:), INTENT(OUT), OPTIONAL :: PSWI1        ! Average SWI on the first layer
+REAL, DIMENSION(:), INTENT(OUT), OPTIONAL :: PVEGT        ! Total vegetation fraction (sum of fractions over the patches)
 !
 REAL, DIMENSION(:), INTENT(OUT), OPTIONAL :: PWALL_O_HOR   ! Facade area density on grid mesh [m^2(fac.)/m^2(town)] 
 REAL, DIMENSION(:), INTENT(OUT), OPTIONAL :: PBUILD_HEIGHT ! Building height on grid mesh [m] 
@@ -165,10 +168,10 @@ REAL, DIMENSION(:), INTENT(OUT), OPTIONAL :: PFRAC_HVEG
 !*       0.2   Declarations of local variables
 !              -------------------------------
 !
-REAL, DIMENSION(KI)    :: ZFIELD1, ZFIELD2, ZFIELD3, ZFIELD4, ZFIELD5, ZFIELD6
-REAL, DIMENSION(KI)    :: ZFIELD7, ZFIELD8, ZFIELD9
-REAL, DIMENSION(KI,KS) :: ZSERIES
-INTEGER, DIMENSION(KI) :: IMASK
+REAL,    DIMENSION(KI)    :: ZFIELD1, ZFIELD2, ZFIELD3, ZFIELD4, ZFIELD5, ZFIELD6
+REAL,    DIMENSION(KI)    :: ZFIELD7, ZFIELD8, ZFIELD9, ZFIELD10
+REAL,    DIMENSION(KI,KS) :: ZSERIES
+INTEGER, DIMENSION(KI)    :: IMASK
 !
 INTEGER :: KI_SEA    ! dimension of sea tile
 INTEGER :: KI_WATER  ! dimension of water tile
@@ -181,10 +184,11 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !-------------------------------------------------------------------------------
 !
+IF (LHOOK) CALL DR_HOOK('GET_SURF_VAR_N',0,ZHOOK_HANDLE)
+!
 !*   0. Logical unit for writing out
 !
-IF (LHOOK) CALL DR_HOOK('GET_SURF_VAR_N',0,ZHOOK_HANDLE)
- CALL GET_LUOUT(HPROGRAM,ILUOUT)
+CALL GET_LUOUT(HPROGRAM,ILUOUT)
 !
 !*   1. Fraction of each tile
 !
@@ -282,9 +286,9 @@ IF ( PRESENT(PQS_SEA) .OR. PRESENT(PZ0_SEA) .OR. PRESENT(PZ0H_SEA) ) THEN
    ENDIF
    !
 ENDIF
-   !
-   !-------------------------------------------------------------------------------
-   !
+!
+!-------------------------------------------------------------------------------
+!
 IF ( PRESENT(PQS_WATER) .OR. PRESENT(PZ0_WATER) .OR. PRESENT(PZ0H_WATER) ) THEN
    !
    ! Get parameters over water tile
@@ -324,11 +328,12 @@ IF ( PRESENT(PQS_WATER) .OR. PRESENT(PZ0_WATER) .OR. PRESENT(PZ0H_WATER) ) THEN
    ENDIF
    !
 ENDIF
-   !
-   !-------------------------------------------------------------------------------
-   !
+!
+!-------------------------------------------------------------------------------
+!
 IF ( PRESENT(PQS_NATURE) .OR. PRESENT(PPSNG) .OR. PRESENT(PPSNV) .OR.  PRESENT(PZ0EFF).OR. &
-     PRESENT(PTWSNOW) .OR. PRESENT(PBARE) .OR. PRESENT(PLAI_TREE) .OR. PRESENT(PH_TREE) ) THEN
+     PRESENT(PTWSNOW) .OR. PRESENT(PBARE) .OR. PRESENT(PLAI_TREE) .OR. PRESENT(PH_TREE).OR.&
+     PRESENT(PSWI1).OR.PRESENT(PVEGT) ) THEN
    !
    ! Get parameters over nature tile
    !
@@ -345,10 +350,10 @@ IF ( PRESENT(PQS_NATURE) .OR. PRESENT(PPSNG) .OR. PRESENT(PPSNV) .OR.  PRESENT(P
    CALL GET_1D_MASK(KI_NATURE, KI, PNATURE, IMASK(1:KI_NATURE))
    !
    IF (KI_NATURE>0) THEN
-     CALL GET_VAR_NATURE_n(IM%S, IM%ID%O, IM%ID%D, IM%ID%DM, HPROGRAM, KI_NATURE, &
-                           ZFIELD1(1:KI_NATURE), ZFIELD2(1:KI_NATURE), ZFIELD3(1:KI_NATURE), &
-                           ZFIELD4(1:KI_NATURE), ZFIELD5(1:KI_NATURE), ZFIELD6(1:KI_NATURE), &
-                           ZFIELD7(1:KI_NATURE), ZFIELD8(1:KI_NATURE))
+     CALL GET_VAR_NATURE_n(IM%S, IM%O, IM%NP, IM%NPE, IM%ID%O, IM%ID%D, IM%ID%DM, HPROGRAM, KI_NATURE,             &
+                           ZFIELD1(1:KI_NATURE), ZFIELD2(1:KI_NATURE), ZFIELD3(1:KI_NATURE), ZFIELD4(1:KI_NATURE), &
+                           ZFIELD5(1:KI_NATURE), ZFIELD6(1:KI_NATURE), ZFIELD7(1:KI_NATURE), ZFIELD8(1:KI_NATURE), &
+                           ZFIELD9(1:KI_NATURE), ZFIELD10(1:KI_NATURE)                                             )
    ENDIF
    !
    IF(PRESENT(PQS_NATURE))THEN
@@ -394,7 +399,7 @@ IF ( PRESENT(PQS_NATURE) .OR. PRESENT(PPSNG) .OR. PRESENT(PPSNV) .OR.  PRESENT(P
    ENDIF
    !
    IF(PRESENT(PTWSNOW)) THEN
-     PTWSNOW    (:) = XUNDEF
+     PTWSNOW    (:) = 0.0
      DO JI = 1, KI_NATURE
        PTWSNOW   (IMASK(JI)) = ZFIELD7(JI)
      ENDDO
@@ -403,11 +408,29 @@ IF ( PRESENT(PQS_NATURE) .OR. PRESENT(PPSNG) .OR. PRESENT(PPSNV) .OR.  PRESENT(P
    !* bare soil fraction
    !
    IF(PRESENT(PBARE)) THEN
-     PBARE    (:) = XUNDEF
+     PBARE    (:) = 0.0
      DO JI = 1, KI_NATURE
        PBARE   (IMASK(JI)) = ZFIELD8(JI)
      ENDDO
      PBARE(:) = PBARE(:) * U%XNATURE(:) ! averages bare soil fraction on whole grid mesh
+   ENDIF
+   !
+   ! * Average SWI of the first layer
+   !
+    IF(PRESENT(PSWI1)) THEN
+     PSWI1    (:) = 0.0
+     DO JI = 1, KI_NATURE
+       PSWI1   (IMASK(JI)) = ZFIELD9(JI)
+     ENDDO
+   ENDIF
+   !
+   ! * Vegetation fraction  
+   !
+    IF(PRESENT(PVEGT)) THEN
+     PVEGT    (:) = 0.0
+     DO JI = 1, KI_NATURE
+       PVEGT   (IMASK(JI)) = ZFIELD10(JI)
+     ENDDO
    ENDIF
    !
    !*   LAI and height of trees
@@ -435,9 +458,9 @@ IF ( PRESENT(PQS_NATURE) .OR. PRESENT(PPSNG) .OR. PRESENT(PPSNV) .OR.  PRESENT(P
    END IF   
    !   
 ENDIF
-   !
-   !-------------------------------------------------------------------------------
-   !
+!
+!-------------------------------------------------------------------------------
+!
 IF (U%CTOWN=='TEB') THEN
  IF ( PRESENT(PQS_TOWN) .OR. PRESENT(PZ0_TOWN) .OR. PRESENT(PZ0H_TOWN) .OR. &
      PRESENT(PWALL_O_HOR) .OR. PRESENT (PBUILD_HEIGHT) .OR. PRESENT(PLAI_HVEG) .OR. &

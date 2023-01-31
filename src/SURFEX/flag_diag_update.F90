@@ -8,7 +8,7 @@ SUBROUTINE FLAG_DIAG_UPDATE (FM, IM, SM, TM, WM, DGO, U, SV, &
                              OSURF_VARS, KBEQ, KDSTEQ, ODIAG_OCEAN, ODIAG_MISC_SEAICE,  &
                              OWATER_PROFILE, OSURF_EVAP_BUDGET, OFLOOD,  OPGD_ISBA,     &
                              OCH_NO_FLUX_ISBA, OSURF_MISC_BUDGET_ISBA, OPGD_TEB,        &
-                             OSURF_MISC_BUDGET_TEB    )
+                             OSURF_MISC_BUDGET_TEB, OLUTILES_BUDGET                     )
 !     ############################################################
 !
 !!****  *FLAG_DIAG_UPDATE* - routine to modify selection of output fields
@@ -41,6 +41,7 @@ SUBROUTINE FLAG_DIAG_UPDATE (FM, IM, SM, TM, WM, DGO, U, SV, &
 !       B.Decharme  10/2009 flag to desactivate writing of pgd 
 !!      Modified    04/2013, P. Le Moigne: FLake chemistry
 !!      Modified    01/2014, S. Senesi   : introduce sea-ice model
+!!      Modified    08/2016, R. Séférian : add land use diag key
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -91,6 +92,7 @@ LOGICAL, INTENT(IN) :: OCH_NO_FLUX_ISBA
 LOGICAL, INTENT(IN) :: OPGD_ISBA
 LOGICAL, INTENT(IN) :: OSURF_MISC_BUDGET_TEB
 LOGICAL, INTENT(IN) :: OPGD_TEB
+LOGICAL, INTENT(IN) :: OLUTILES_BUDGET
 !
 !*       0.2   Declarations of local variables
 !              -------------------------------
@@ -118,7 +120,7 @@ IF (U%CWATER =='FLAKE ') CALL FLAG_FLAKE_UPDATE(KBEQ, OWATER_PROFILE, DGO%LSURF_
 IF (U%CWATER =='WATFLX') CALL FLAG_WATER_UPDATE(KBEQ, DGO%LSURF_BUDGETC, DGO%LRAD_BUDGET, K2M)
 IF (U%CNATURE=='ISBA  ') CALL FLAG_ISBA_UPDATE(KBEQ, KDSTEQ, OSURF_EVAP_BUDGET, OFLOOD, &
                                     OPGD_ISBA, OCH_NO_FLUX_ISBA, OSURF_MISC_BUDGET_ISBA,&
-                                    DGO%LSURF_BUDGETC, DGO%LRAD_BUDGET, K2M)
+                                    DGO%LSURF_BUDGETC, DGO%LRAD_BUDGET, OLUTILES_BUDGET, K2M)
 IF (U%CTOWN  =='TEB   ') CALL FLAG_TEB_UPDATE(KBEQ, OPGD_TEB, OSURF_MISC_BUDGET_TEB, DGO%LRAD_BUDGET, K2M)
 !
 IF (LHOOK) CALL DR_HOOK('FLAG_DIAG_UPDATE',1,ZHOOK_HANDLE)
@@ -196,7 +198,7 @@ END SUBROUTINE FLAG_FLAKE_UPDATE
 !
 SUBROUTINE FLAG_ISBA_UPDATE(KBEQ, KDSTEQ, OSURF_EVAP_BUDGET, OFLOOD, &
                             OPGD, OCH_NO_FLUX, OSURF_MISC_BUDGET, &
-                            OSURF_BUDGETC, ORAD_BUDGET, K2M)
+                            OSURF_BUDGETC, ORAD_BUDGET, OLUTILES_BUDGET, K2M)
 !
 !
 IMPLICIT NONE
@@ -210,6 +212,7 @@ LOGICAL, INTENT(IN) :: OCH_NO_FLUX
 LOGICAL, INTENT(IN) :: OSURF_MISC_BUDGET
 LOGICAL, INTENT(IN) :: OSURF_BUDGETC
 LOGICAL, INTENT(IN) :: ORAD_BUDGET
+LOGICAL, INTENT(IN) :: OLUTILES_BUDGET
 INTEGER, INTENT(IN) :: K2M
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
@@ -225,6 +228,7 @@ IM%ID%DM%LSURF_MISC_BUDGET = OSURF_MISC_BUDGET
 IM%ID%O%LSURF_BUDGETC = OSURF_BUDGETC
 IM%ID%O%LPATCH_BUDGET = OSURF_BUDGETC
 IM%ID%O%LRAD_BUDGET = ORAD_BUDGET
+IM%ID%O%LLUTILES_BUDGET = OLUTILES_BUDGET
 IM%ID%O%N2M = K2M
 IF (LHOOK) CALL DR_HOOK('FLAG_DIAG_UPDATE:FLAG_ISBA_UPDATE',1,ZHOOK_HANDLE)
 !

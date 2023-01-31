@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-SUBROUTINE SOILSTRESS( HISBA, PF2, KK, PK, PEK, PF2WGHT, PF5        )  
+SUBROUTINE SOILSTRESS(KK, PK, PEK, HISBA, PF2, PF2WGHT, PF5)  
 !     ####################################################################
 !
 !!****  *SOILSTRESS*  
@@ -68,39 +68,31 @@ IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
 !
-!
- CHARACTER(LEN=*),     INTENT(IN)   :: HISBA   ! type of soil (Force-Restore OR Diffusion)
-!                                             ! '2-L'
-!                                             ! '3-L'
-!                                             ! 'DIF'   ISBA-DF
-!
-REAL, DIMENSION(:), INTENT(OUT)  :: PF2      ! water stress coefficient
-!
-TYPE(ISBA_K_t), INTENT(INOUT) :: KK
-TYPE(ISBA_P_t), INTENT(INOUT) :: PK
+TYPE(ISBA_K_t),  INTENT(INOUT) :: KK
+TYPE(ISBA_P_t),  INTENT(INOUT) :: PK
 TYPE(ISBA_PE_t), INTENT(INOUT) :: PEK
 !
-REAL, DIMENSION(:), INTENT(OUT)  :: PF5      ! water stress coefficient for Hv (based on F2):
-!                                            ! Verify that Etv=>0 as F2=>0
-!
-REAL, DIMENSION(:,:), INTENT(OUT):: PF2WGHT  ! water stress coefficient profile (ISBA-DF)
+CHARACTER(LEN=*),     INTENT(IN)  :: HISBA   ! type of soil (Force-Restore OR Diffusion)
+!                                            ! '2-L'
+!                                            ! '3-L'
+!                                            ! 'DIF'
+REAL, DIMENSION(:),   INTENT(OUT) :: PF2     ! water stress coefficient
+REAL, DIMENSION(:),   INTENT(OUT) :: PF5     ! water stress coefficient for Hv (based on F2): Verify that Etv=>0 as F2=>0
+REAL, DIMENSION(:,:), INTENT(OUT) :: PF2WGHT ! water stress coefficient profile (ISBA-DF)
 !
 !
 !*      0.2    declarations of local variables
 !
 !
-REAL, DIMENSION(SIZE(KK%XWFC,1)) ::  ZWFC_AVGZ, ZWSAT_AVGZ, ZWWILT_AVGZ
-!                                  ZWFC_AVGZ   = field capacity averaged over entire soil column
-!                                  ZWSAT_AVGZ  = porosity averaged over entire soil column
-!                                  ZWWILT_AVGZ = wilting point averaged over entire soil column
+REAL, DIMENSION(SIZE(KK%XWFC,1)) :: ZWFC_AVGZ, ZWSAT_AVGZ, ZWWILT_AVGZ
+!                                   ZWFC_AVGZ   = field capacity averaged over entire soil column
+!                                   ZWSAT_AVGZ  = porosity averaged over entire soil column
+!                                   ZWWILT_AVGZ = wilting point averaged over entire soil column
 !
 REAL    :: ZROOTFRACN
 !          ZROOTFRACN = Normalized root fraction weights
 !
 INTEGER :: INI, INL, JJ, JL, IDEPTH
-!
-!
-!*      0.3    declarations of local parameters:
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
@@ -112,17 +104,17 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 IF (LHOOK) CALL DR_HOOK('SOILSTRESS',0,ZHOOK_HANDLE)
 !
 INI=SIZE(PEK%XWG,1)
-IF (SIZE(PK%NWG_LAYER)>0) THEN
+!
+IF(SIZE(PK%NWG_LAYER)>0)THEN
   INL=MAXVAL(PK%NWG_LAYER(:))
 ELSE
   INL=0
 ENDIF
 !
-PF2    (:)      = 0.0
-PF2WGHT(:,:)    = 0.0
+PF2    (:  ) = 0.0
 !
-ZWFC_AVGZ(:)    = 0.
-ZWSAT_AVGZ(:)   = 0.
+ZWFC_AVGZ  (:)  = 0.
+ZWSAT_AVGZ (:)  = 0.
 ZWWILT_AVGZ(:)  = 0.
 !
 !-------------------------------------------------------------------------------
@@ -142,6 +134,8 @@ IF(HISBA =='DIF')THEN
 !
 ! If using the diffusion option, then calculate transpiration weights
 ! and the mean root-zone soil water stress factor F2:
+!
+  PF2WGHT(:,:) = 0.0
 !
 !---------------------------------------------------------
 ! First layer

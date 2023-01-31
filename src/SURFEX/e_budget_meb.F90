@@ -3,9 +3,10 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     ##########################################################################
-      SUBROUTINE E_BUDGET_MEB(IO, KK, PK, PEK, DK, DEK, DMK,     &
-                              PTSTEP, PLTT, PPS, PCT, PTDEEP_A, PD_G, PSOILCONDZ,   &
-                              PSOILHCAPZ, PSNOWRHO, PSNOWCONDZ, PSNOWHCAPZ, PTAU_N, &
+      SUBROUTINE E_BUDGET_MEB(IO, KK, PK, PEK, DK, DEK, DMK,               &
+                              PTSTEP, PLTT, PPS, PRHOA,                    &
+                              PCT, PTDEEP_A, PD_G, PSOILCONDZ, PSOILHCAPZ, &
+                              PSNOWRHO, PSNOWCONDZ, PSNOWHCAPZ, PTAU_N,    &
                               PLWNET_V_DTV, PLWNET_V_DTG, PLWNET_V_DTN,    &
                               PLWNET_G_DTV, PLWNET_G_DTG, PLWNET_G_DTN,    &
                               PLWNET_N_DTV, PLWNET_N_DTG, PLWNET_N_DTN,    &
@@ -18,11 +19,11 @@
                               PCHEATN, PLEG_DELTA, PLEGI_DELTA, PHUGI,     &
                               PHVG, PHVN, PFROZEN1, PFLXC_C_A, PFLXC_G_C,  &
                               PFLXC_VG_C, PFLXC_VN_C, PFLXC_N_C, PFLXC_N_A,&
-                              PFLXC_MOM, PTG, PSNOWLIQ, PFLXC_V_C, PHVGS, PHVNS, & 
-                              PDQSAT_G, PDQSAT_V, PDQSATI_N, PTA_IC,       &
+                              PFLXC_MOM, PTG, PSNOWLIQ, PFLXC_V_C, PHVGS,  & 
+                              PHVNS, PDQSAT_G, PDQSAT_V, PDQSATI_N, PTA_IC,&
                               PQA_IC, PUSTAR2_IC, PVMOD, PDELTAT_G,        &
                               PDELTAT_V, PDELTAT_N, PGRNDFLUX, PDEEP_FLUX, &
-                              PDELHEATV_SFC, PDELHEATG_SFC, PDELHEATG     )
+                              PDELHEATV_SFC                                )
 !     ##########################################################################
 !
 !!****  *E_BUDGET*  
@@ -132,8 +133,9 @@ REAL, DIMENSION(:), INTENT(IN)     :: PTDEEP_A
 !                                      Tdeep = IP%XTDEEP + PTDEEP_A * PDEEP_FLUX
 !                                              (with PDEEP_FLUX in W/m2)
 !
-REAL, DIMENSION(:),   INTENT(IN)   :: PPS
-!                                     PPS  = surface pressure (Pa)
+REAL, DIMENSION(:),   INTENT(IN)   :: PPS, PRHOA
+!                                     PPS   = surface pressure (Pa)
+!                                     PRHOA = forcing level air density (kg m-3)
 !
 REAL, DIMENSION(:,:), INTENT(IN)   :: PD_G, PSOILCONDZ, PSOILHCAPZ
 !                                     PD_G       = soil layer depth      (m)
@@ -264,10 +266,8 @@ REAL, DIMENSION(:),   INTENT(OUT)  :: PGRNDFLUX
 !
 REAL, DIMENSION(:),  INTENT(OUT)   :: PDEEP_FLUX ! Heat flux at bottom of ISBA (W/m2)
 !
-REAL, DIMENSION(:),  INTENT(OUT)   :: PDELHEATV_SFC, PDELHEATG_SFC, PDELHEATG
+REAL, DIMENSION(:),  INTENT(OUT)   :: PDELHEATV_SFC
 !                                     PDELHEATV_SFC = change in heat storage of the vegetation canopy layer over the current time step (W m-2)
-!                                     PDELHEATG_SFC = change in heat storage of the surface soil layer over the current time step (W m-2)
-!                                     PDELHEATG     = change in heat storage of the entire soil column over the current time step (W m-2)
 !
 !*      0.2    declarations of local variables
 !
@@ -331,7 +331,7 @@ ZTVO(:)   = PEK%XTV(:)
 ! To prevent possible numerical problems in the limit as psna==>1, we
 ! limit the value for certain computations:
 
-ZPSNA(:)  = MIN(1.0-ZERTOL, PPSNA(:))
+ZPSNA(:)     = MIN(1.0-ZERTOL, PPSNA(:))
 
 JNSNOW       = SIZE(DMK%XSNOWTEMP,2)
 JNGRND       = SIZE(PTG,2)
@@ -397,16 +397,15 @@ DEK%XMELTADV(:)  = 0.0   ! W m-2
 !
 ! - Implicit wind speed at lowest atmospheric level for this patch:
 !
-ZUSTAR2(:)   =    (PFLXC_MOM(:)*PPEW_B_COEF(:))/        &
-              (1.0-PFLXC_MOM(:)*PPEW_A_COEF(:))
+ZWORK(:)     = PFLXC_MOM(:)/PRHOA(:)
+ZUSTAR2(:)   = ZWORK(:) * PPEW_B_COEF(:) / (1.0-PFLXC_MOM(:)*PPEW_A_COEF(:))
+ZVMOD(:)     = PRHOA(:)*PPEW_A_COEF(:)*ZUSTAR2(:) + PPEW_B_COEF(:)
+PVMOD(:)     = MAX(ZVMOD(:),0.)
 !
-ZVMOD(:)     = PPEW_A_COEF(:)*ZUSTAR2(:) + PPEW_B_COEF(:)
-!
-PVMOD(:)     = MAX(ZVMOD,0.)
-!
-WHERE (PPEW_A_COEF(:) /= 0.) 
-     ZUSTAR2(:) = MAX(0., ( PVMOD(:) - PPEW_B_COEF(:) ) / PPEW_A_COEF(:) )
-END WHERE
+WHERE(PPEW_A_COEF(:)/= 0.)
+      ZUSTAR2(:) = MAX( ( PVMOD(:) - PPEW_B_COEF(:) ) / (PRHOA(:)*PPEW_A_COEF(:)), 0.)
+ENDWHERE
+ZUSTAR2(:)   = MAX(ZUSTAR2(:),0.)
 !
 PUSTAR2_IC(:)= ZUSTAR2(:) 
 !
@@ -548,7 +547,7 @@ ZTCONDA_DELZ_NG(:) = 2/((DMK%XSNOWDZ(:,JNSNOW)/PSNOWCONDZ(:,JNSNOW))+(PD_G(:,1)/
 ! Compute the average flux heat exchange coefficient for the canopy: (kg m-2 s-1)
 ! Numerical: let get very small (fluxes can become essentially negligible), but not zero
 !
-PFLXC_V_C(:)   = PFLXC_VG_C(:)*(1.-PEK%XPSN(:)) + PFLXC_VN_C(:)*PEK%XPSN(:)*(1.-ZPSNA(:))
+PFLXC_V_C(:)   = PFLXC_VG_C(:)*(1.-PEK%XPSN(:)) + PFLXC_VN_C(:)*PEK%XPSN(:)*(1.-PPSNA(:))
 PFLXC_V_C(:)   = MAX(PFLXC_V_C(:), ZERTOL_FLX_C)
 
 ! Understory vegetation and ground factors:
@@ -572,10 +571,10 @@ ZHS(:)         = ZHS(:)/MAX(1.0 - PEK%XPSN(:) , ZERTOL)
 
 ! Vegetation canopy factors:
 
-PHVGS(:)       = (1.-ZPSNA(:))*PEK%XPSN(:) *PHVN(:)*(PFLXC_VN_C(:)/PFLXC_V_C(:)) + &
+PHVGS(:)       = (1.-PPSNA(:))*PEK%XPSN(:) *PHVN(:)*(PFLXC_VN_C(:)/PFLXC_V_C(:)) + &
                            (1.-PEK%XPSN(:))*PHVG(:)*(PFLXC_VG_C(:)/PFLXC_V_C(:))
 
-PHVNS(:)       = (1.-ZPSNA(:))*PEK%XPSN(:) *        (PFLXC_VN_C(:)/PFLXC_V_C(:)) + &
+PHVNS(:)       = (1.-PPSNA(:))*PEK%XPSN(:) *        (PFLXC_VN_C(:)/PFLXC_V_C(:)) + &
                            (1.-PEK%XPSN(:))*        (PFLXC_VG_C(:)/PFLXC_V_C(:))
 
 ! - total canopy H factor (including intercepted snow)
@@ -607,8 +606,8 @@ ZWORK(:)          = PTHRMA_TA(:)*( 1.0 + PPET_A_COEF(:)*(                       
 ZPET_A_COEF_P(:)  =   PPET_A_COEF(:)*PFLXC_C_A(:)*ZPSNAG(:)*PTHRMA_TC(:)/ZWORK(:)
 ZPET_B_COEF_P(:)  = ( PPET_B_COEF(:) - PTHRMB_TA(:) +                                            &
                       PPET_A_COEF(:)*(PFLXC_C_A(:)*ZPSNAG(:)*(PTHRMB_TC(:)-PTHRMB_TA(:)) +       &
-                           PFLXC_N_A(:)*PEK%XPSN(:)*PPSNA(:)*(PTHRMB_TN(:)-PTHRMB_TA(:)) ) ) /ZWORK(:)
-ZPET_C_COEF_P(:)  =   PPET_A_COEF(:)*PFLXC_N_A(:)*PEK%XPSN(:)*PPSNA(:)*PTHRMA_TN(:)       /ZWORK(:)
+                      PFLXC_N_A(:)*PEK%XPSN(:)*PPSNA(:)*(PTHRMB_TN(:)-PTHRMB_TA(:)) ) ) /ZWORK(:)
+ZPET_C_COEF_P(:)  =   PPET_A_COEF(:)*PFLXC_N_A(:)*PEK%XPSN(:)*PPSNA(:)*PTHRMA_TN(:)     /ZWORK(:)
 
 ! q coefficients:
 
@@ -628,19 +627,19 @@ ZPEQ_C_COEF_P(:)  = PPEQ_A_COEF(:)*PFLXC_N_A(:)*PEK%XPSN(:)*PPSNA(:)*ZHNS/ZWORK(
 ZWORK(:)     = PFLXC_C_A(:) *(PTHRMA_TC(:)-PTHRMA_TA(:)*ZPET_A_COEF_P(:))*ZPSNAG(:)                 &
                    + PFLXC_V_C(:) *PTHRMA_TC(:)                                                     &
                    + PFLXC_G_C(:) *PTHRMA_TC(:)*(1.0-PEK%XPSN(:))                                       &
-                   + PFLXC_N_C(:) *PTHRMA_TC(:)*     PEK%XPSN(:) *(1.0-PPSNA(:))
+                   + PFLXC_N_C(:) *PTHRMA_TC(:)*     PEK%XPSN(:) *(1.0-ZPSNA(:))
 
 ZCOEFA_TC(:) = (PFLXC_C_A(:) * ZPSNAG(:) *(PTHRMA_TA(:)*ZPET_B_COEF_P(:)-PTHRMB_TC(:)+PTHRMB_TA(:)) &    
                    + PFLXC_V_C(:) * (PTHRMB_TV(:)-PTHRMB_TC(:))                                     &
                    + PFLXC_G_C(:) * (PTHRMB_TG(:)-PTHRMB_TC(:))*(1.0-PEK%XPSN(:))                       &
-                   + PFLXC_N_C(:) * (PTHRMB_TN(:)-PTHRMB_TC(:))*     PEK%XPSN(:) *(1.0-PPSNA(:))        &
+                   + PFLXC_N_C(:) * (PTHRMB_TN(:)-PTHRMB_TC(:))*     PEK%XPSN(:) *(1.0-ZPSNA(:))        &
                                                                       )/ZWORK(:)
 
 ZCOEFB_TC(:) = PFLXC_V_C(:)*PTHRMA_TV(:)/ZWORK(:)
 
 ZCOEFC_TC(:) = PFLXC_G_C(:)*PTHRMA_TG(:)*(1.0-PEK%XPSN(:))/ZWORK(:)
 
-ZCOEFD_TC(:) =(PFLXC_N_C(:)*PTHRMA_TN(:)*PEK%XPSN(:)*(1.0-PPSNA(:)) +                         &
+ZCOEFD_TC(:) =(PFLXC_N_C(:)*PTHRMA_TN(:)*PEK%XPSN(:)*(1.0-ZPSNA(:)) +                         &
                PFLXC_C_A(:) *PTHRMA_TA(:)*ZPET_C_COEF_P(:)*ZPSNAG(:) ) /ZWORK(:)
 
 !-  Canopy air q coefs, where : QC = COEFA_QC + COEFB_QC*TV + COEFC_QC*TG + COEFD_QC*TN
@@ -648,21 +647,21 @@ ZCOEFD_TC(:) =(PFLXC_N_C(:)*PTHRMA_TN(:)*PEK%XPSN(:)*(1.0-PPSNA(:)) +           
 ZWORK(:)       = PFLXC_C_A(:) *(1.-ZPEQ_A_COEF_P(:))*ZPSNAG(:)                                      &
                    + PFLXC_V_C(:)* ZHVS(:)                                                          &
                    + PFLXC_G_C(:) *ZHN(:) *(1.0-PEK%XPSN(:))                                       &
-                   + PFLXC_N_C(:) *ZHNS(:)*     PEK%XPSN(:) *(1.0-PPSNA(:))
+                   + PFLXC_N_C(:) *ZHNS(:)*     PEK%XPSN(:) *(1.0-ZPSNA(:))
 ZWORK(:)       = MAX(ZERTOL, ZWORK(:))
 
 ZCOEFA_QC(:)   = ( PFLXC_C_A(:) *ZPEQ_B_COEF_P(:)*ZPSNAG(:)                                         &
                  + PFLXC_V_C(:) *ZHVS(:)*(PQSAT_V(:)-PDQSAT_V(:)*ZTVO(:)  )                         &
                  + PFLXC_G_C(:) *ZHS(:) *(PQSAT_G(:)-PDQSAT_G(:)*ZTGO(:,1))*(1.0-PEK%XPSN(:))      &
                  + PFLXC_N_C(:) *ZHNS(:)*(PQSATI_N(:)-PDQSATI_N(:)*ZTNO(:,1))*                      &
-                                                                      PEK%XPSN(:)*(1.0-PPSNA(:))   &
+                                                                      PEK%XPSN(:)*(1.0-ZPSNA(:))   &
                                                                                 )/ZWORK(:) 
 
 ZCOEFB_QC(:)   = PFLXC_V_C(:) *ZHVS(:)*PDQSAT_V(:) /ZWORK(:)
 
 ZCOEFC_QC(:)   = PFLXC_G_C(:) *ZHS(:) *PDQSAT_G(:)*(1.0-PEK%XPSN(:))/ZWORK(:)
 
-ZCOEFD_QC(:)   = PFLXC_N_C(:) *ZHNS(:)*PDQSATI_N(:)*     PEK%XPSN(:)*(1.0-PPSNA(:))/ZWORK(:)
+ZCOEFD_QC(:)   = PFLXC_N_C(:) *ZHNS(:)*PDQSATI_N(:)*     PEK%XPSN(:)*(1.0-ZPSNA(:))/ZWORK(:)
 
 !*       6.     Surface Energy Budget(s) coefficients
 !               -------------------------------------
@@ -721,32 +720,32 @@ ZGAMMA_G(:) =  (PLWNET_G_DTN(:) + PFLXC_G_C(:)*(1.0-PEK%XPSN(:))*( PTHRMA_TC(:)*
 ! Tn coefs, where TN = BETA_N + ALPHA_N*TV + GAMMA_N*TG
 
 ZWORK(:)    =   (PCHEATN(:)/PTSTEP) - ZRNET_N_DTNN(:)                                                     &
-              + PFLXC_N_C(:)*(1.-PPSNA(:))*( PTHRMA_TN(:) - PTHRMA_TC(:)*ZCOEFD_TC(:)                     &
+              + PFLXC_N_C(:)*(1.-ZPSNA(:))*( PTHRMA_TN(:) - PTHRMA_TC(:)*ZCOEFD_TC(:)                     &
               + (PLTT(:)*ZHNS)*(PDQSATI_N(:) - ZCOEFD_QC(:)) )                                              &
-              + PFLXC_N_A(:)*    PPSNA(:)*(                                                               &
+              + PFLXC_N_A(:)*    ZPSNA(:)*(                                                               &
                 PTHRMA_TN(:) - PTHRMA_TA(:)*(ZPET_A_COEF_P(:)*ZCOEFD_TC(:) + ZPET_C_COEF_P(:))            &
               + (PLTT(:)*ZHNS)*(PDQSATI_N(:)*(1.0-ZPEQ_C_COEF_P(:)) - ZPEQ_A_COEF_P(:)*ZCOEFD_QC(:)) )      &
               + ZTCONDA_DELZ_N(:)*(1.0-ZSNOW_COEF_A(:,2))
 
 ZBETA_N(:)  = ( (PCHEATN(:)/PTSTEP)*ZTNO(:,1)  + ZRNET_NN(:) + DMK%XHPSNOW(:) + DEK%XMELTADV(:)        &
               - ZRNET_N_DTVN(:)*ZTVO(:) - ZRNET_N_DTGN(:)*ZTGO(:,1) - ZRNET_N_DTNN(:)*ZTNO(:,1)           &
-              - PFLXC_N_C(:)*(1.-PPSNA(:))*( PTHRMB_TN(:) - PTHRMB_TC(:) - PTHRMA_TC(:)*ZCOEFA_TC(:)      &
+              - PFLXC_N_C(:)*(1.-ZPSNA(:))*( PTHRMB_TN(:) - PTHRMB_TC(:) - PTHRMA_TC(:)*ZCOEFA_TC(:)      &
               + (PLTT(:)*ZHNS)*(PQSATI_N(:) - PDQSATI_N(:)*ZTNO(:,1)                                        &
               - ZCOEFA_QC(:)) )                                                                           &
-              - PFLXC_N_A(:)*PPSNA(:)*( PTHRMB_TC(:) - PTHRMB_TA(:) -                                     &
+              - PFLXC_N_A(:)*ZPSNA(:)*( PTHRMB_TC(:) - PTHRMB_TA(:) -                                     &
                                           PTHRMA_TA(:)*(ZPET_B_COEF_P(:) + ZCOEFA_TC(:)*ZPET_A_COEF_P(:)) &
               + (PLTT(:)*ZHNS)*((PQSATI_N(:) - PDQSATI_N(:)*ZTNO(:,1))*(1.0-ZPEQ_C_COEF_P(:))               &
               - ZPEQ_B_COEF_P(:) - ZPEQ_A_COEF_P(:)*ZCOEFA_QC(:)) )                                       &
               + ZTCONDA_DELZ_N(:)*ZSNOW_COEF_B(:,2) )/ZWORK(:)
 
-ZALPHA_N(:) = ( ZRNET_N_DTVN(:) + PFLXC_N_C(:)*(1.-PPSNA(:))*( PTHRMA_TC(:)*ZCOEFB_TC(:)                  &
+ZALPHA_N(:) = ( ZRNET_N_DTVN(:) + PFLXC_N_C(:)*(1.-ZPSNA(:))*( PTHRMA_TC(:)*ZCOEFB_TC(:)                  &
               + (PLTT(:)*ZHNS)*ZCOEFB_QC(:) )                                                               &
-              + PFLXC_N_A(:)*    PPSNA(:) *( PTHRMA_TA(:)*ZCOEFB_TC(:)*ZPET_A_COEF_P(:)                   &
+              + PFLXC_N_A(:)*    ZPSNA(:) *( PTHRMA_TA(:)*ZCOEFB_TC(:)*ZPET_A_COEF_P(:)                   &
               + (PLTT(:)*ZHNS)*ZCOEFB_QC(:)*ZPEQ_A_COEF_P(:) ) )/ZWORK(:)
 
-ZGAMMA_N(:) = ( ZRNET_N_DTGN(:) + PFLXC_N_C(:)*(1.-PPSNA(:))*( PTHRMA_TC(:)*ZCOEFC_TC(:)                  &
+ZGAMMA_N(:) = ( ZRNET_N_DTGN(:) + PFLXC_N_C(:)*(1.-ZPSNA(:))*( PTHRMA_TC(:)*ZCOEFC_TC(:)                  &
               + (PLTT(:)*ZHNS)*ZCOEFC_QC(:))                                                                &
-              + PFLXC_N_A(:)*    PPSNA(:) *( PTHRMA_TA(:)*ZCOEFC_TC(:)*ZPET_A_COEF_P(:)                   &
+              + PFLXC_N_A(:)*    ZPSNA(:) *( PTHRMA_TA(:)*ZCOEFC_TC(:)*ZPET_A_COEF_P(:)                   &
               + (PLTT(:)*ZHNS)*ZCOEFC_QC(:)*ZPEQ_A_COEF_P(:) ) )/ZWORK(:)
 
 !*       7.     Solve multiple energy budgets simultaneously (using an implicit time scheme)
@@ -940,8 +939,8 @@ PGRNDFLUX(:)    = PEK%XPSN(:)*ZTCONDA_DELZ_NG(:)*( DMK%XSNOWTEMP(:,JNSNOW) - PTG
 !*      12.     Energy Storage Diagnostics (W m-2)
 !               ----------------------------------
 !
-PDELHEATG_SFC(:) = PCHEATG(:)*PDELTAT_G(:)/PTSTEP 
-PDELHEATV_SFC(:) = PCHEATV(:)*PDELTAT_V(:)/PTSTEP 
+DEK%XDELHEATG_SFC(:) = PCHEATG(:)*PDELTAT_G(:)/PTSTEP 
+PDELHEATV_SFC    (:) = PCHEATV(:)*PDELTAT_V(:)/PTSTEP 
 !
 IF(IO%CISBA == 'DIF')THEN
 
@@ -957,11 +956,11 @@ IF(IO%CISBA == 'DIF')THEN
 ! These terms are used for computing energy budget diagnostics.
 !
 !
-   PDELHEATG(:)        = PDELHEATG_SFC(:) ! initialize
+   DEK%XDELHEATG(:)        = DEK%XDELHEATG_SFC(:) ! initialize
    DO JK=2,JNGRND
       DO JJ=1,JNPTS
-         PDELHEATG(JJ) =  PDELHEATG(JJ) + PSOILHCAPZ(JJ,JK)*(PD_G(JJ,JK)-PD_G(JJ,JK-1))*    &
-                          (PTG(JJ,JK) - ZTGO(JJ,JK))/PTSTEP
+         DEK%XDELHEATG(JJ) =  DEK%XDELHEATG(JJ) + PSOILHCAPZ(JJ,JK)*(PD_G(JJ,JK)-PD_G(JJ,JK-1))*    &
+                              (PTG(JJ,JK) - ZTGO(JJ,JK))/PTSTEP
       ENDDO
    ENDDO
 !
@@ -976,7 +975,7 @@ ELSE
 
 ! These terms are used for computing energy budget diagnostics.
 !
-   PDELHEATG(:) = PDELHEATG_SFC(:) + DEK%XRESTORE(:)
+   DEK%XDELHEATG(:) = DEK%XDELHEATG_SFC(:) + DEK%XRESTORE(:)
 !
 ENDIF
 

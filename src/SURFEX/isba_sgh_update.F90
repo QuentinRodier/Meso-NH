@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #######################################################################
-      SUBROUTINE ISBA_SGH_UPDATE (PMESH_SIZE, IO, S, K, NK, NP, NPE, PRAIN )
+      SUBROUTINE ISBA_SGH_UPDATE (IG, IO, S, K, NK, NP, NPE, PRAIN )
 !     #######################################################################
 !
 !!****  *SGH_UPDATE*  
@@ -48,12 +48,13 @@
 !*       0.     DECLARATIONS
 !               ------------
 !
+USE MODD_SFX_GRID_n,     ONLY : GRID_t
 USE MODD_ISBA_OPTIONS_n, ONLY : ISBA_OPTIONS_t
-USE MODD_ISBA_n, ONLY : ISBA_S_t, ISBA_K_t, ISBA_NK_t, ISBA_NP_t, ISBA_NPE_t, &
-                        ISBA_P_t, ISBA_PE_t
+USE MODD_ISBA_n,         ONLY : ISBA_S_t, ISBA_K_t, ISBA_NK_t, ISBA_NP_t,  &
+                                ISBA_NPE_t, ISBA_P_t, ISBA_PE_t
 !
-USE MODD_SGH_PAR,     ONLY : NDIMTAB, XMTOKM, XSTOHR, X001,   &
-                             XMUREGP, XMUREGA
+USE MODD_SGH_PAR,    ONLY : NDIMTAB, XMTOKM, XSTOHR, X001,   &
+                            XMUREGP, XMUREGA
 !
 USE MODD_SURF_PAR,   ONLY : XUNDEF
 !
@@ -62,57 +63,58 @@ USE PARKIND1  ,ONLY : JPRB
 !
 IMPLICIT NONE
 !
+!
 !*      0.1    declarations of arguments
 !
 !
-REAL, DIMENSION(:), INTENT(IN) :: PMESH_SIZE
+TYPE(GRID_t),         INTENT(INOUT) :: IG
 TYPE(ISBA_OPTIONS_t), INTENT(INOUT) :: IO
-TYPE(ISBA_S_t), INTENT(INOUT) :: S
-TYPE(ISBA_K_t), INTENT(INOUT) :: K
-TYPE(ISBA_NK_t), INTENT(INOUT) :: NK
-TYPE(ISBA_NP_t), INTENT(INOUT) :: NP
-TYPE(ISBA_NPE_t), INTENT(INOUT) :: NPE
-
+TYPE(ISBA_S_t),       INTENT(INOUT) :: S
+TYPE(ISBA_K_t),       INTENT(INOUT) :: K
+TYPE(ISBA_NK_t),      INTENT(INOUT) :: NK
+TYPE(ISBA_NP_t),      INTENT(INOUT) :: NP
+TYPE(ISBA_NPE_t),     INTENT(INOUT) :: NPE
 !
 REAL, DIMENSION(:), INTENT(IN)   :: PRAIN
 !                                   PRAIN   = rain rate (kg/m2/s)
 !
 !*      0.2    declarations of local variables
 !
-REAL, DIMENSION(SIZE(PRAIN))          :: ZDIST, ZBETA, ZFSAT    ! IO%CRAIN = SGH
-!                                        ZDIST  = the cell scale (in km)
-!                                        ZBETA  = cell scale dependency parameter
-!
-REAL, DIMENSION(SIZE(PRAIN))          :: ZD_TOP, ZW_TOP, ZQTOP  ! IO%CRUNOFF = SGH
-!                                        ZW_TOP = ative TOPMODEL-soil moisture at 't' (m3 m-3)
-!                                        ZD_TOP = Topmodel active layer
-!                                        ZQTOP  = Topmodel lateral sub-surface flow (-)
-!
-INTEGER, DIMENSION(SIZE(PRAIN))       :: IUP,IDOWN  ! IO%CRUNOFF = SGH
-!                                        change in xsat (or fsat) index
-!
-INTEGER, DIMENSION(SIZE(PRAIN))       :: NMASK      ! indices correspondance between arrays
-!
-REAL, DIMENSION(SIZE(PRAIN))          :: ZWSAT_AVG, ZWWILT_AVG
-!                                        Average soil properties content
-!
-TYPE(ISBA_P_t), POINTER :: PK
-TYPE(ISBA_K_t), POINTER :: KK
+TYPE(ISBA_K_t),  POINTER :: KK
+TYPE(ISBA_P_t),  POINTER :: PK
 TYPE(ISBA_PE_t), POINTER :: PEK
 !
-REAL                                  :: ZW_UP, ZW_DOWN
-REAL                                  :: ZF_UP, ZF_DOWN, ZSLOPEF
-REAL                                  :: ZQ_UP, ZQ_DOWN, ZSLOPEQ
+REAL, DIMENSION(SIZE(PRAIN))    :: ZDIST, ZBETA, ZFSAT
+!                                  ZDIST  = the cell scale (in km)
+!                                  ZBETA  = cell scale dependency parameter
+!                                  ZFSAT  = work array
 !
-INTEGER                               :: INJ, JJ, JI, JP, JTAB, ICOUNT, &
-                                         JL, IMASK
+REAL, DIMENSION(SIZE(PRAIN))    :: ZD_TOP, ZW_TOP, ZQTOP
+!                                  ZW_TOP = ative TOPMODEL-soil moisture at 't' (m3 m-3)
+!                                  ZD_TOP = Topmodel active layer
+!                                  ZQTOP  = Topmodel lateral sub-surface flow (-)
+!
+INTEGER, DIMENSION(SIZE(PRAIN)) :: IUP,IDOWN  ! change in xsat (or fsat) index
+!
+INTEGER, DIMENSION(SIZE(PRAIN)) :: NMASK ! indices correspondance between arrays
+!
+REAL, DIMENSION(SIZE(PRAIN))    :: ZWSAT_AVG, ZWWILT_AVG !Average soil properties content
+!
+REAL                            :: ZW_UP, ZW_DOWN
+REAL                            :: ZF_UP, ZF_DOWN, ZSLOPEF
+REAL                            :: ZQ_UP, ZQ_DOWN, ZSLOPEQ
+!
+INTEGER                         :: INI, INP, JJ, JI, JP, JTAB, ICOUNT, &
+                                   JL, IMASK
+!
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !-------------------------------------------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('ISBA_SGH_UPDATE',0,ZHOOK_HANDLE)
 !
-INJ=SIZE(PRAIN,1)
+INI=SIZE(PRAIN,1)
+INP=IO%NPATCH
 !
 ZFSAT(:) = 0.0
 !
@@ -126,35 +128,29 @@ IF(IO%CRAIN=='SGH')THEN
   ELSEWHERE
     K%XMUF (:) =0.0
   ENDWHERE
-
 !        
 ! calculate the cell scale (in km)
 !
-  ZDIST(:) = SQRT(PMESH_SIZE(:))/XMTOKM
+  ZDIST(:) = SQRT(IG%XMESH_SIZE(:))/XMTOKM
 !
   WHERE(ZDIST(:)>=15.0)
-!
-!       calculate beta for the mu calculation
-!         
-    ZBETA (:) = XMUREGA + XMUREGP * EXP(-X001*ZDIST(:))
-!
+!       calculate beta for the mu calculation 
+        ZBETA (:) = XMUREGA + XMUREGP * EXP(-X001*ZDIST(:))
 !       calculate mu, precip is in mm/hr
-!   
-    K%XMUF (:) = 1.0 - EXP(-ZBETA(:)*(PRAIN(:)*XSTOHR))
-!
+        K%XMUF (:) = 1.0 - EXP(-ZBETA(:)*(PRAIN(:)*XSTOHR))
   ENDWHERE
 !
-    DO JP = 1,IO%NPATCH
-      PK => NP%AL(JP)
-      KK => NK%AL(JP)
-      IF (PK%NSIZE_P>0 )THEN
-        DO JI = 1,PK%NSIZE_P
-          IMASK = PK%NR_P(JI)
-          KK%XMUF(JI) = K%XMUF(IMASK)
-        ENDDO
-      ENDIF
+    DO JP = 1,INP
+       PK => NP%AL(JP)
+       KK => NK%AL(JP)
+       IF (PK%NSIZE_P>0 )THEN
+          DO JI = 1,PK%NSIZE_P
+             IMASK = PK%NR_P(JI)
+             KK%XMUF(JI) = K%XMUF(IMASK)
+          ENDDO
+       ENDIF
     ENDDO
-
+!
 ENDIF
 !
 !*   2.0 Computation of the saturated fraction given by TOPMODEL 
@@ -172,25 +168,28 @@ IF(IO%CRUNOFF=='SGH')THEN
 !
   IF(IO%CISBA=='DIF')THEN        
 !
-    DO JP = 1,IO%NPATCH
-      KK => NK%AL(JP)
-      PK => NP%AL(JP)
-      PEK => NPE%AL(JP)
-
+    DO JP = 1,INP
+!
+       KK => NK%AL(JP)
+       PK => NP%AL(JP)
+       PEK => NPE%AL(JP)
+!
       IF (PK%NSIZE_P>0 )THEN
-
-        DO JL = 1,IO%NLAYER_DUN
-          DO JI = 1,PK%NSIZE_P
-            IMASK = PK%NR_P(JI)
-            !
-            ZD_TOP    (IMASK) = ZD_TOP    (IMASK) + PK%XPATCH(JI)*PK%XSOILWGHT(JI,JL)
-            ZWSAT_AVG (IMASK) = ZWSAT_AVG (IMASK) + PK%XPATCH(JI)*PK%XSOILWGHT(JI,JL)*K%XWSAT(IMASK,JL)
-            ZWWILT_AVG(IMASK) = ZWWILT_AVG(IMASK) + PK%XPATCH(JI)*PK%XSOILWGHT(JI,JL)*K%XWD0 (IMASK,JL)
-            ZW_TOP    (IMASK) = ZW_TOP    (IMASK) + PK%XPATCH(JI)*PK%XSOILWGHT(JI,JL)*PEK%XWG (JI,JL)
-            !
-          ENDDO
-        ENDDO
+!
+         DO JL = 1,IO%NLAYER_DUN
+            DO JI = 1,PK%NSIZE_P
+               IMASK = PK%NR_P(JI)
+               !
+               ZD_TOP    (IMASK) = ZD_TOP    (IMASK) + PK%XPATCH(JI)*PK%XSOILWGHT(JI,JL)
+               ZWSAT_AVG (IMASK) = ZWSAT_AVG (IMASK) + PK%XPATCH(JI)*PK%XSOILWGHT(JI,JL)*K%XWSAT(IMASK,JL)
+               ZWWILT_AVG(IMASK) = ZWWILT_AVG(IMASK) + PK%XPATCH(JI)*PK%XSOILWGHT(JI,JL)*K%XWD0 (IMASK,JL)
+               ZW_TOP    (IMASK) = ZW_TOP    (IMASK) + PK%XPATCH(JI)*PK%XSOILWGHT(JI,JL)*PEK%XWG(JI,JL)
+              !
+            ENDDO
+         ENDDO
+!
       ENDIF
+!
     ENDDO
 !
     WHERE(ZD_TOP(:)>0.0)
@@ -200,20 +199,25 @@ IF(IO%CRUNOFF=='SGH')THEN
     ENDWHERE
 !
   ELSE
-!    
-    DO JP = 1,IO%NPATCH
-      PK => NP%AL(JP)
-      PEK => NPE%AL(JP)
-
-      IF (PK%NSIZE_P>0 )THEN
-        DO JI = 1,PK%NSIZE_P
-          IMASK = PK%NR_P(JI)
-          !          
-          ZD_TOP(IMASK) = ZD_TOP(IMASK)+PK%XRUNOFFD(JI)*PK%XPATCH(JI)
-          ZW_TOP(IMASK) = ZW_TOP(IMASK)+PK%XRUNOFFD(JI)*PK%XPATCH(JI)*PEK%XWG(JI,2)
-          !
-        ENDDO
-      ENDIF
+!
+    DO JP = 1,INP
+!
+       PK => NP%AL(JP)
+       PEK => NPE%AL(JP)
+!
+       IF (PK%NSIZE_P>0 )THEN
+!
+          DO JI = 1,PK%NSIZE_P
+             !
+             IMASK = PK%NR_P(JI)
+             !          
+             ZD_TOP(IMASK) = ZD_TOP(IMASK)+PK%XRUNOFFD(JI)*PK%XPATCH(JI)
+             ZW_TOP(IMASK) = ZW_TOP(IMASK)+PK%XRUNOFFD(JI)*PK%XPATCH(JI)*PEK%XWG(JI,2)
+             !
+         ENDDO
+!  
+       ENDIF
+!  
     ENDDO
 !  
     WHERE(ZD_TOP(:)>0.0)
@@ -230,7 +234,7 @@ IF(IO%CRUNOFF=='SGH')THEN
 !
   NMASK(:)=0
   ICOUNT=0
-  DO JI=1,INJ  
+  DO JI=1,INI  
      IF((S%XTI_MEAN(JI)/=XUNDEF.AND.ZW_TOP(JI)<ZWSAT_AVG(JI).AND.ZW_TOP(JI)>ZWWILT_AVG(JI))) THEN
        ICOUNT=ICOUNT+1
        NMASK(ICOUNT)=JI       
@@ -286,13 +290,13 @@ IF(IO%CRUNOFF=='SGH')THEN
 !     
   ENDDO
 !
-  DO JP=1,IO%NPATCH
+  DO JP=1,INP
     KK => NK%AL(JP)
     PK => NP%AL(JP)
     IF(PK%NSIZE_P>0)THEN
       DO JI=1,PK%NSIZE_P
-        IMASK = PK%NR_P(JI)
-        KK%XFSAT(JI) = ZFSAT(IMASK)
+         IMASK = PK%NR_P(JI)
+         KK%XFSAT(JI) = ZFSAT(IMASK)
       ENDDO
     ENDIF
   ENDDO
@@ -302,7 +306,7 @@ IF(IO%CRUNOFF=='SGH')THEN
 !
   IF(IO%CISBA=='DIF')THEN        
 !
-    DO JP=1,IO%NPATCH
+    DO JP=1,INP
       KK => NK%AL(JP)
       PK => NP%AL(JP)
       IF(PK%NSIZE_P>0)THEN
@@ -310,7 +314,7 @@ IF(IO%CRUNOFF=='SGH')THEN
           DO JI=1,PK%NSIZE_P
             IMASK = PK%NR_P(JI)
             PK%XTOPQS(JI,JL) = K%XKANISO(IMASK,JL) * PK%XCONDSAT(JI,1) * ZQTOP(IMASK) * &
-                                       PK%XSOILWGHT(JI,JL) / PK%XRUNOFFD(JI)
+                               PK%XSOILWGHT(JI,JL) / PK%XRUNOFFD(JI)
            ENDDO
         ENDDO
       ENDIF

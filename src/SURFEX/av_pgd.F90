@@ -1355,7 +1355,7 @@ DO JJ=1,ICOVER
      CASE('BAR')
        DO JVEG=1,NVEGTYPE  
          ZWEIGHT(JVEG)=DTCO%XDATA_NATURE(JJ)*DTCO%XDATA_VEGTYPE(JJ,JVEG)*&
-                             (1.-XDATA_VEG(JJ,KDECADE,JVEG)) 
+                             (1.-MIN(0.999,XDATA_VEG(JJ,KDECADE,JVEG))) 
        END DO
 
      CASE('GRV')

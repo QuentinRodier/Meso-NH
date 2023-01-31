@@ -31,8 +31,8 @@
 !!      Modified    08/2009 : LSURF_BUDGETC
 !!      Modified    01/2014 : S. Senesi : introduce sea-ice model
 !!      Modified    03/2014 : S. Belamari - add NZ0 (to choose PZ0SEA formulation)
-!!      Modified    03/2014 : M.N. Bouin  ! possibility of wave parameters
-!!                                        ! from external source
+!!      Modified    03/2014 : M.N. Bouin  possibility of wave parameters from external source
+!!      Modified    04/2016 : R. Séférian  Implement carbon cycle coupling (Earth system model)
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -46,8 +46,9 @@ USE PARKIND1  ,ONLY : JPRB
 !
 IMPLICIT NONE
 !
- CHARACTER(LEN=6)  :: CSEA_FLUX
- CHARACTER(LEN=4)  :: CSEA_ALB
+CHARACTER(LEN=6)  :: CSEA_FLUX
+CHARACTER(LEN=4)  :: CSEA_ALB
+CHARACTER(LEN=4)  :: CSEA_SFCO2
 REAL     :: XTSTEP
 REAL     :: XOUT_TSTEP
 REAL     :: XDIAG_TSTEP
@@ -84,7 +85,7 @@ REAL     :: XCD_ICE_CST
 REAL     :: XSI_FLX_DRV
 !
 NAMELIST/NAM_SEAFLUXn/CSEA_FLUX,CSEA_ALB, LPWG, LPRECIP, LPWEBB, NGRVWAVES, &
-                      NZ0, LPROGSST, XOCEAN_TSTEP, XICHCE, &
+                      NZ0, LPROGSST, XOCEAN_TSTEP, XICHCE, CSEA_SFCO2, &
                       CINTERPOL_SST, CINTERPOL_SSS, LPERTFLUX, LWAVEWIND
 NAMELIST/NAM_DIAG_SURFn/N2M,L2M_MIN_ZS,LSURF_BUDGET,LRAD_BUDGET, &
                           LSURF_BUDGETC,LRESET_BUDGETC,LCOEF,LSURF_VARS  
@@ -113,6 +114,7 @@ SUBROUTINE INIT_NAM_SEAFLUXn (O, S)
   XOUT_TSTEP = S%XOUT_TSTEP
   CSEA_FLUX = S%CSEA_FLUX
   CSEA_ALB = S%CSEA_ALB
+  CSEA_SFCO2 = S%CSEA_SFCO2
   LPWG = S%LPWG
   LPRECIP = S%LPRECIP
   CINTERPOL_SST = S%CINTERPOL_SST
@@ -145,6 +147,7 @@ SUBROUTINE UPDATE_NAM_SEAFLUXn (O, S)
   S%XOUT_TSTEP = XOUT_TSTEP  
   S%CSEA_FLUX = CSEA_FLUX
   S%CSEA_ALB = CSEA_ALB
+  S%CSEA_SFCO2 = CSEA_SFCO2
   S%LPWG = LPWG
   S%LPRECIP = LPRECIP
   S%CINTERPOL_SST = CINTERPOL_SST

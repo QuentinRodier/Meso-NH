@@ -75,7 +75,6 @@ USE MODI_ISBA_HVEG
 USE MODI_VEGETATION_UPDATE
 USE MODE_THERMOS
 !
-USE MODI_CARBON_EVOL
 USE MODI_VEGETATION_EVOL
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -126,6 +125,8 @@ REAL, DIMENSION(:,:),  INTENT(OUT) :: PLE_HVEG    ! soil profile of transpiratio
 !
 !*      0.2    Declarations of local variables
 !
+!TYPE(DIAG_EVAP_ISBA_t), POINTER :: GDDE
+!
 REAL, DIMENSION(SIZE(PPS),GDM%O%NNBIOMASS) :: ZRESP_BIOMASS_INST       ! instantaneous biomass respiration (kgCO2/kgair m/s)
 !
 TYPE(SSO_t)            :: YSS
@@ -141,7 +142,6 @@ INTEGER                    :: ILU
 INTEGER                    :: JI, JLAYER
 REAL                       :: ZWORK1, ZWORK2
 LOGICAL                    :: GUPDATED
-LOGICAL                    :: GALB
 REAL, DIMENSION(SIZE(PTA),SB%NLVL):: ZH         ! Foliage thickness in vertical layers of canopy grid
 REAL, DIMENSION(SIZE(PTA),SB%NLVL):: ZZ         ! Lower limit of layers from CANOPY grid
 REAL, DIMENSION(SIZE(PTA),SB%NLVL):: ZLAD_PCHV  ! vertical profile of percentage of Leaf Area Density on canopy grid
@@ -158,6 +158,8 @@ IF (LHOOK) CALL DR_HOOK('GARDEN',0,ZHOOK_HANDLE)
 ILU = SIZE(PPS)
 ZEMIS_HVEG = XEMISVEG
 !
+!GDDE => GDM%VD%NDE%AL(KTEB_P)
+!
 ! --------------------------------------------------------------------------------------
 !
 !       2.     Vegetation update (in case of non-interactive vegetation)
@@ -165,14 +167,11 @@ ZEMIS_HVEG = XEMISVEG
 !
 !
 GUPDATED=.FALSE.
-GALB = .FALSE.
 CALL SSO_INIT(YSS)
-!
-IF (GDM%O%CPHOTO=='NIT'.OR.GDM%O%CPHOTO=='NCB') GALB = .TRUE.
 !
 CALL VEGETATION_UPDATE(DTCO, GDM%DTHV, G%NDIM, GDM%O, GDM%K, GDM%PHV, GDM%NPEHV%AL(KTEB_P), &
                        1, 1, 1, PTSTEP, TPTIME, TOP%XCOVER, TOP%LCOVER, .FALSE., &
-                       .FALSE., .FALSE.,'GRD', GALB, YSS, GUPDATED, OABSENT=(T%XGARDEN==0.),&
+                       .FALSE., .FALSE.,'GRD', YSS, GUPDATED, OABSENT=(T%XGARDEN==0.),&
                        OHG=TOP%LGARDEN, OHV=TOP%CURBTREE/='NONE'                   )
 !
 ! --------------------------------------------------------------------------------------
@@ -278,16 +277,17 @@ IF (GDM%O%CPHOTO=='NIT') THEN
   GDM%NPEHV%AL(KTEB_P)%XTG(:,1) = GDM%NPEHV%AL(KTEB_P)%XTV
   GDM%PHV%XDG                   = GDM%P%XDG
   IF (GDM%O%CISBA=='DIF') THEN
-    ALLOCATE(GDM%PHV%XDZG            (ILU,GDM%O%NGROUND_LAYER))
-    GDM%PHV%XDZG                  = GDM%P%XDZG
+    ALLOCATE(GDM%PHV%XDZG (ILU,GDM%O%NGROUND_LAYER))
+    GDM%PHV%XDZG = GDM%P%XDZG
   ELSE
-    ALLOCATE(GDM%PHV%XDZG            (0,0))
+    ALLOCATE(GDM%PHV%XDZG (0,0))
   END IF
   !
   ! evolution of LAI
   !
-  CALL VEGETATION_EVOL(GDM%O, GDM%DTHV, GDM%PHV, GDM%NPEHV%AL(KTEB_P), .FALSE., PTSTEP, TPTIME%TDATE%MONTH, TPTIME%TDATE%DAY, &
-                       TPTIME%TIME, G%XLAT, PRHOA, PCO2, YSS, ZRESP_BIOMASS_INST, .FALSE., OHVEG_ONLY=.TRUE. )         
+  CALL VEGETATION_EVOL(GDM%O, GDM%DTHV, GDM%PHV, GDM%NPEHV%AL(KTEB_P), GDM%VD%NDE%AL(KTEB_P),&
+                       .FALSE., PTSTEP, TPTIME%TDATE%MONTH, TPTIME%TDATE%DAY, TPTIME%TIME,   &
+                       G%XLAT, PCO2, YSS, ZRESP_BIOMASS_INST, .FALSE., OTEB_HVEG_ONLY=.TRUE. )         
   !
   DEALLOCATE(GDM%NPEHV%AL(KTEB_P)%XTG)
   DEALLOCATE(GDM%PHV%XDG)

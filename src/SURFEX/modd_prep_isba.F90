@@ -28,6 +28,7 @@
 !!    -------------
 !!      Original       01/2004
 !!      P Samuelsson   02/2012  MEB
+!!      B Decharme     08/2020  Add key To reset soil carbon initialization from a previous prep file
 !
 !*       0.   DECLARATIONS
 !             ------------
@@ -131,7 +132,14 @@ LOGICAL           :: LEXTRAP_TG     ! extrapolate TG points where LSM < 0.5 (buf
 LOGICAL           :: LEXTRAP_WG     ! extrapolate WG points where LSM < 0.5 (buffer only)  
 LOGICAL           :: LEXTRAP_WGI    ! extrapolate WGI points where LSM < 0.5 (buffer only) 
 LOGICAL           :: LEXTRAP_SN     ! extrapolate SNOW (SWE/depth) points where LSM < 0.5 (buffer only) 
-
+!
+!--------------------------------------------------------------------------
+!
+LOGICAL           :: LRESET_CSOIL   ! To reset soil carbon initialization from a previous prep file
+!                                   ! Allowing physic initialization only
+!
+!--------------------------------------------------------------------------
+!
 END MODULE MODD_PREP_ISBA
 
 

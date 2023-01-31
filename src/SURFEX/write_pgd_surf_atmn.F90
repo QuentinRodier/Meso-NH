@@ -97,7 +97,7 @@ IF (LHOOK) CALL DR_HOOK('WRITE_PGD_SURF_ATM_N',0,ZHOOK_HANDLE)
 !
 CPROGNAME = HPROGRAM
 !
- CALL FLAG_UPDATE(YSC%IM%ID%O, YSC%DUO, .FALSE.,.TRUE.,.FALSE.,.FALSE.)
+ CALL FLAG_UPDATE(YSC%IM%ID%O, YSC%DUO, .FALSE.,.TRUE.,.FALSE.,.FALSE.,.FALSE.)
 !
 !*       1.     Configuration and cover fields:
 !               ------------------------------

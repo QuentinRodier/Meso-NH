@@ -35,15 +35,17 @@
 !!    -------------
 !!      Original    15/06/09
 !!      B. Decharme   2012    variable must be allocated once by run
+!!      B. Decharme   2021    Residence times year -> s
 !!
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_CO2V_PAR,       ONLY : XCN, XLC, XFRAC_LITTER, XTAU_LITTER,  &
-                                  XFRAC_SOILCARB, XTAU_SOILCARB  
-USE MODD_SURF_PAR,       ONLY : XUNDEF
+USE MODD_CSTS,     ONLY : XSIYEA
+USE MODD_CO2V_PAR, ONLY : XCN, XLC, XFRAC_LITTER, XTAU_LITTER,  &
+                          XFRAC_SOILCARB, XTAU_SOILCARB  
+USE MODD_SURF_PAR, ONLY : XUNDEF
 !
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -87,9 +89,9 @@ XFRAC_LITTER(:,2) = 1. - XFRAC_LITTER(:,1)
 !*       3.     LITTER CONSTANTS
 !               ----------------
 !        
-! Residence times in litter pools (s)
-XTAU_LITTER(1) = 0.066*365.0*86400.0
-XTAU_LITTER(2) = 0.245*365.0*86400.0
+! Residence times in litter pools (year -> s)
+XTAU_LITTER(1) = 0.066*XSIYEA
+XTAU_LITTER(2) = 0.245*XSIYEA
 !  
 ! Fraction of litter decomposition flux that goes into soil.
 ! The rest goes into the atmosphere
@@ -111,10 +113,10 @@ XFRAC_SOILCARB(1,1,2) = 0.45
 !*       4.     SOIL CONSTANTS
 !               --------------
 !  
-! Residence times in carbon pools (s)
-XTAU_SOILCARB(1) = 0.149*365.0*86400.0
-XTAU_SOILCARB(2) = 5.480*365.0*86400.0
-XTAU_SOILCARB(3) = 241.0*365.0*86400.0
+! Residence times in carbon pools (year -> s)
+XTAU_SOILCARB(1) = 0.149*XSIYEA
+XTAU_SOILCARB(2) = 5.480*XSIYEA
+XTAU_SOILCARB(3) = 241.0*XSIYEA
 !
 IF (LHOOK) CALL DR_HOOK('CARBON_INIT',1,ZHOOK_HANDLE)
 !

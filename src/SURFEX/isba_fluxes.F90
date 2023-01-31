@@ -3,12 +3,13 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     ######spl
-      SUBROUTINE ISBA_FLUXES(IO, KK, PK, PEK, DMK, PTSTEP, &
-                             PSW_RAD, PLW_RAD, PTA, PQA, PRHOA, PEXNS, PEXNA, &
-                             PHUG, PHUI, PLEG_DELTA, PLEGI_DELTA, PDELTA, PF5, PCS, PTSM, PT2M, &
-                             PFROZEN1, PALBT, PEMIST, PQSAT, PDQSAT, PSNOW_THRUFAL, &
-                             PRN, PH, PLE, PLEG, PLEGI, PLEV,  PLES, PLER, PLETR, PEVAP, &
-                             PGFLUX, PMELTADV, PMELT, PSOILCONDZ, PLE_FLOOD, PLEI_FLOOD)
+      SUBROUTINE ISBA_FLUXES(IO, KK, PK, PEK, DMK, PTSTEP,                     &
+                             PSW_RAD, PLW_RAD, PTA, PQA, PRHOA, PEXNS, PEXNA,  &
+                             PHUG, PHUI, PLEG_DELTA, PLEGI_DELTA, PDELTA, PF5, &
+                             PCS, PTSM, PT2M, PFROZEN1, PALBT, PEMIST, PQSAT,  &
+                             PDQSAT, PSNOW_THRUFAL, PRN, PH, PLE, PLEG, PLEGI, &
+                             PLEV,  PLES, PLER, PLETR, PEVAP, PEPOT, PGFLUX,   &
+                             PMELTADV, PMELT, PSOILCONDZ, PLE_FLOOD, PLEI_FLOOD)
 !     ##########################################################################
 !
 !!****  *ISBA_FLUXES*  
@@ -74,14 +75,16 @@
 !!      (A.Boone)    02/2013  Split soil phase changes into seperate routine
 !!      (B. Decharme)04/2013  Pass soil phase changes routines in hydro.F90
 !!      (B. Decharme)04/2013  Delete PTS_RAD because wrong diagnostic
-!!      (B. Decharme)10/14    "Restore" flux computed in e_budget
+!!      (B. Decharme)10/2014  "Restore" flux computed in e_budget
+!!      (B. Decharme)10/2020  Potential evapotranspiration
+!!
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
 !               ------------
 !
-USE MODD_ISBA_OPTIONS_n, ONLY : ISBA_OPTIONS_t
-USE MODD_ISBA_n, ONLY : ISBA_K_t, ISBA_P_t, ISBA_PE_t
+USE MODD_ISBA_OPTIONS_n,   ONLY : ISBA_OPTIONS_t
+USE MODD_ISBA_n,           ONLY : ISBA_K_t, ISBA_P_t, ISBA_PE_t
 USE MODD_DIAG_MISC_ISBA_n, ONLY : DIAG_MISC_ISBA_t
 !
 USE MODD_CSTS,       ONLY : XSTEFAN, XCPD, XLSTT, XLVTT, XCL, XTT, XPI, XDAY, &
@@ -101,134 +104,121 @@ IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
 !
-TYPE(ISBA_OPTIONS_t), INTENT(INOUT) :: IO
-TYPE(ISBA_K_t), INTENT(INOUT) :: KK
-TYPE(ISBA_P_t), INTENT(INOUT) :: PK
-TYPE(ISBA_PE_t), INTENT(INOUT) :: PEK
+TYPE(ISBA_OPTIONS_t),   INTENT(INOUT) :: IO
+TYPE(ISBA_K_t),         INTENT(INOUT) :: KK
+TYPE(ISBA_P_t),         INTENT(INOUT) :: PK
+TYPE(ISBA_PE_t),        INTENT(INOUT) :: PEK
 TYPE(DIAG_MISC_ISBA_t), INTENT(INOUT) :: DMK
 !
-REAL, INTENT (IN)                   :: PTSTEP     ! model time step (s)
 !
-REAL, DIMENSION(:), INTENT (IN)     :: PSW_RAD, PLW_RAD, PTA, PQA, PRHOA
-!                                      PSW_RAD = incoming solar radiation
-!                                      PLW_RAD = atmospheric infrared radiation
-!                                      PTA = near-ground air temperature
-!                                      PQA = near-ground air specific humidity
-!                                      PRHOA = near-ground air density
+REAL, INTENT (IN)                :: PTSTEP     ! model time step (s)
 !
-REAL, DIMENSION(:), INTENT(IN)      :: PEXNS, PEXNA
-REAL, DIMENSION(:), INTENT(IN)      :: PHUG, PHUI, PDELTA, PF5
-REAL, DIMENSION(:), INTENT(IN)      :: PFROZEN1
-REAL, DIMENSION(:), INTENT(IN)      :: PALBT, PEMIST
-REAL, DIMENSION(:), INTENT(IN)      :: PQSAT, PDQSAT
-REAL, DIMENSION(:), INTENT(IN)      :: PLEG_DELTA, PLEGI_DELTA
-!                                      PHUG = relative humidity of the soil
-!                                      PF5 = water stress numerical correction factor (based on F2)
-!                                      PDELTA = fraction of the foliage covered
-!                                               by intercepted water
-!                                      PFROZEN1 = fraction of ice in near-surface
-!                                                 ground
-!                                      PALBT = area averaged albedo
-!                                      PEMIST = area averaged emissivity
-!                                      PQSAT = stauration vapor humidity at 't'
-!                                      PDQSAT= stauration vapor humidity derivative at 't'
-!                                      PLEG_DELTA = soil evaporation delta fn
-!                                      PLEGI_DELTA = soil evaporation delta fn
+REAL, DIMENSION(:), INTENT (IN)  :: PSW_RAD, PLW_RAD, PTA, PQA, PRHOA
+!                                   PSW_RAD = incoming solar radiation
+!                                   PLW_RAD = atmospheric infrared radiation
+!                                   PTA = near-ground air temperature
+!                                   PQA = near-ground air specific humidity
+!                                   PRHOA = near-ground air density
 !
-REAL, DIMENSION(:), INTENT (IN)     :: PCS, PT2M, PTSM
-!                                      PCS    = heat capacity of the snow (K m2 J-1)
-!                                      PT2M   = mean surface (or restore) temperature at start 
-!                                               of time step (K)
-!                                      PTSM   = surface temperature at start 
-!                                               of time step (K)
-REAL, DIMENSION(:), INTENT(IN)      :: PSNOW_THRUFAL
-!                                      PSNOW_THRUFAL = rate that liquid water leaves snow pack: 
-!                                                     ISBA-ES [kg/(m2 s)]
-REAL, DIMENSION(:,:), INTENT(IN)    :: PSOILCONDZ
-!                                      PSOILCONDZ= ISBA-DF Soil conductivity profile  [W/(m K)]
+REAL, DIMENSION(:), INTENT(IN)   :: PEXNS, PEXNA
+REAL, DIMENSION(:), INTENT(IN)   :: PHUG, PHUI, PDELTA, PF5
+REAL, DIMENSION(:), INTENT(IN)   :: PFROZEN1
+REAL, DIMENSION(:), INTENT(IN)   :: PALBT, PEMIST
+REAL, DIMENSION(:), INTENT(IN)   :: PQSAT, PDQSAT
+REAL, DIMENSION(:), INTENT(IN)   :: PLEG_DELTA, PLEGI_DELTA
+!                                   PHUG = relative humidity of the soil
+!                                   PF5 = water stress numerical correction factor (based on F2)
+!                                   PDELTA = fraction of the foliage covered by intercepted water
+!                                   PFROZEN1 = fraction of ice in near-surfaceground
+!                                   PALBT = area averaged albedo
+!                                   PEMIST = area averaged emissivity
+!                                   PQSAT = stauration vapor humidity at 't'
+!                                   PDQSAT= stauration vapor humidity derivative at 't'
+!                                   PLEG_DELTA = soil evaporation delta fn
+!                                   PLEGI_DELTA = soil evaporation delta fn
 !
-REAL, DIMENSION(:), INTENT(OUT)     :: PLE_FLOOD, PLEI_FLOOD !Floodplains latent heat flux [W/m²]
+REAL, DIMENSION(:), INTENT (IN)  :: PCS, PT2M, PTSM
+!                                   PCS    = heat capacity of the snow (K m2 J-1)
+!                                   PT2M   = mean surface (or restore) temperature at start of time step (K)
+!                                   PTSM   = surface temperature at start of time step (K)
 !
-REAL, DIMENSION(:), INTENT(OUT)     :: PRN, PH, PLE, PLEG, PLEV, PLES
-REAL, DIMENSION(:), INTENT(OUT)     :: PLER, PLETR, PEVAP, PGFLUX, PMELTADV, PMELT
-!                                     PRN = net radiation at the surface
-!                                     PH = sensible heat flux
-!                                     PLE = latent heat flux
-!                                     PLEG = latent heat flux from the soil surface
-!                                     PLEV = latent heat flux from the vegetation
-!                                     PLES = latent heat flux from the snow
-!                                     PLER = direct evaporation from the fraction
-!                                            delta of the foliage
-!                                     PLETR = transpiration of the remaining
-!                                             part of the leaves
-!                                     PEVAP = total evaporative flux (kg/m2/s)
-!                                     PGFLUX = ground flux
-!                                     PMELTADV = heat advection by melting snow
-!                                                (acts to restore temperature to
-!                                                 melting point) (W/m2)
-!                                     PMELT = melting rate of snow (kg m-2 s-1)
+REAL, DIMENSION(:), INTENT(IN)   :: PSNOW_THRUFAL
+!                                   PSNOW_THRUFAL = rate that liquid water leaves snow pack: ISBA-ES [kg/(m2 s)]
 !
-REAL, DIMENSION(:), INTENT(OUT)     :: PLEGI
-!                                      PLEGI   = sublimation component of the 
-!                                                latent heat flux from the soil surface
+REAL, DIMENSION(:,:), INTENT(IN) :: PSOILCONDZ
+!                                   PSOILCONDZ= ISBA-DF Soil conductivity profile  [W/(m K)]
 !
-!*      0.2    declarations of local variables
+REAL, DIMENSION(:), INTENT(OUT)  :: PLE_FLOOD, PLEI_FLOOD !Floodplains latent heat flux [W/m²]
 !
-REAL                        :: ZKSOIL     ! coefficient for soil freeze/thaw
+REAL, DIMENSION(:), INTENT(OUT)  :: PRN, PH, PLE, PGFLUX 
+!                                   PRN    = net radiation at the surface
+!                                   PH     = sensible heat flux
+!                                   PLE    = latent heat flux
+!                                   PGFLUX = ground flux
 !
-REAL, DIMENSION(SIZE(PTA))  :: ZZHV, ZTN, ZDT
-!                                      ZZHV = for the calculation of the latent
-!                                             heat of evapotranspiration
-!!                                     ZTN  = average temperature used in 
-!                                             the calculation of the 
-!                                             melting effect
-!                                      ZDT  = temperature change (K)
+REAL, DIMENSION(:), INTENT(OUT)  :: PLER, PLETR, PLEG, PLEGI, PLEV, PLES
+!                                   PLEG  = latent heat flux from the soil surface
+!                                   PLEGI = sublimation component of the latent heat flux from the soil surface
+!                                   PLEV  = latent heat flux from the vegetation
+!                                   PLES  = latent heat flux from the snow
+!                                   PLER  = direct evaporation from the fraction delta of the foliage
+!                                   PLETR = transpiration of the remaining part of the leaves
 !
-REAL, DIMENSION(SIZE(PTA))  ::  ZPSN, ZPSNV, ZPSNG, ZFRAC
-!                               ZPSN, ZPSNV, ZPSNG = snow fractions corresponding to
-!                                                    dummy arguments PEK%XPSN(:), PEK%XPSNG(:), PEK%XPSNV(:)
-!                                                    if PEK%TSNOW%SCHEME = 'DEF' (composite
-!                                                    or Force-Restore snow scheme), else
-!                                                    they are zero for explicit snow case
-!                                                    as snow fluxes calculated outside of
-!                                                    this routine using the 
-!                                                    PEK%TSNOW%SCHEME = '3-L' option.
+REAL, DIMENSION(:), INTENT(OUT)  :: PEVAP, PEPOT
+!                                   PEVAP = total evaporative flux (kg/m2/s)
+!                                   PEPOT = total potential evaporative flux (kg/m2/s)
 !
-REAL, DIMENSION(SIZE(PTA))  ::  ZNEXTSNOW
-!                               ZNEXTSNOW = Future snow reservoir to close the
-!                                           energy budget (see hydro_snow.f90)
-!
-REAL, DIMENSION(SIZE(PTA))  ::  ZCONDAVG
-!                               ZCONDAVG   = average thermal conductivity of surface
-!                                            and sub-surface layers (W m-1 K-1)
+REAL, DIMENSION(:), INTENT(OUT)  :: PMELTADV, PMELT
+!                                   PMELTADV = heat advection by melting snow (acts to restore temperature to melting point) (W/m2)
+!                                   PMELT = melting rate of snow (kg m-2 s-1)
 !
 !
-!*      0.2    local arrays for EBA scheme
+!*      0.2    declarations of local parameter
 !
-REAL                            :: ZEPS1
+REAL                       :: ZEPS1 = 1.0E-8
 !
-!*      0.3    declarations of local parameters
 !
-INTEGER         :: JJ
+!*      0.3    declarations of local variables
 !
-REAL, DIMENSION(SIZE(PTA))      :: ZWORK1, ZWORK2, ZWORK3
+!
+REAL, DIMENSION(SIZE(PTA)) :: ZWORK1, ZWORK2 ! work arrays
+!
+REAL, DIMENSION(SIZE(PTA)) :: ZZHV, ZTN, ZDT, ZCONDAVG, ZNEXTSNOW
+!                             ZZHV      = for the calculation of the latent heat of evapotranspiration
+!                             ZTN       = average temperature used in the calculation of the melting effect
+!                             ZDT       = temperature change (K)
+!                             ZCONDAVG  = average thermal conductivity of surface and sub-surface layers (W m-1 K-1)
+!                             ZNEXTSNOW = Future snow reservoir to close the energy budget (see hydro_snow.f90)
+!
+REAL, DIMENSION(SIZE(PTA)) :: ZPSN, ZPSNV, ZPSNG, ZFRAC
+!                             ZPSN, ZPSNV, ZPSNG = snow fractions corresponding to
+!                                                  dummy arguments PEK%XPSN(:), PEK%XPSNG(:), PEK%XPSNV(:)
+!                                                  if PEK%TSNOW%SCHEME = 'DEF' (composite
+!                                                  or Force-Restore snow scheme), else
+!                                                  they are zero for explicit snow case
+!                                                  as snow fluxes calculated outside of
+!                                                  this routine using the 
+!                                                  PEK%TSNOW%SCHEME = '3-L' option.
+!
+INTEGER :: INI, JI
+!
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
-!-------------------------------------------------------------------------------
 !
+!-------------------------------------------------------------------------------
+IF (LHOOK) CALL DR_HOOK('ISBA_FLUXES',0,ZHOOK_HANDLE)
 !-------------------------------------------------------------------------------
 !
 !*       0.     Initialization
 !               --------------
-IF (LHOOK) CALL DR_HOOK('ISBA_FLUXES',0,ZHOOK_HANDLE)
 !
-IF (PEK%TSNOW%SCHEME == 'EBA') ZEPS1=1.0E-8
+INI = SIZE(PTA)
 !
-PMELT(:)        = 0.0
-PLER(:)         = 0.0 
+PMELT(:) = 0.0
+PLER(:)  = 0.0 
 !
-ZTN(:)          = 0.0
-ZDT(:)          = 0.0
+ZTN(:)   = 0.0
+ZDT(:)   = 0.0
 !
 ! If ISBA-ES option in use, then snow covered surface
 ! fluxes calculated outside of this routine, so set
@@ -250,92 +240,88 @@ ENDIF
 !*       1.     FLUX CALCULATIONS
 !               -----------------
 !
-DO JJ=1,SIZE(PEK%XTG,1)
-!                                            temperature change
-  ZDT(JJ) = PEK%XTG(JJ,1) - PTSM(JJ)
+DO JI=1,INI
 !
-!                                            net radiation
+! temperature change (K)
 !
-  PRN(JJ) = (1. - PALBT(JJ)) * PSW_RAD(JJ) + PEMIST(JJ) *      &
-           (PLW_RAD(JJ) - XSTEFAN * (PTSM(JJ)** 3)*(4.*PEK%XTG(JJ,1) - 3.*PTSM(JJ)))
+  ZDT(JI) = PEK%XTG(JI,1) - PTSM(JI)
 !
-!                                            sensible heat flux
+! net surface radiation (W/m²)
 !
-  PH(JJ) = PRHOA(JJ) * PK%XCPS(JJ) * (PEK%XTG(JJ,1) - PTA(JJ)*PEXNS(JJ)/PEXNA(JJ)) &
-           / PEK%XRESA(JJ) / PEXNS(JJ)
+  PRN(JI) = (1. - PALBT(JI)) * PSW_RAD(JI) + PEMIST(JI) *      &
+           (PLW_RAD(JI) - XSTEFAN * (PTSM(JI)** 3)*(4.*PEK%XTG(JI,1) - 3.*PTSM(JI)))
 !
-  ZWORK1(JJ) = PRHOA(JJ) * (1.-PEK%XVEG(JJ))*(1.-ZPSNG(JJ)) / PEK%XRESA(JJ)
-  ZWORK2(JJ) = PQSAT(JJ)+PDQSAT(JJ)*ZDT(JJ) 
-!                                            latent heat of sublimation from
-!                                            the ground
+! sensible heat flux (W/m²)
 !
-  PLEGI(JJ) = ZWORK1(JJ) * PK%XLSTT(JJ) * ( PHUI(JJ) * ZWORK2(JJ) - PQA(JJ)) * PFROZEN1(JJ) * PLEGI_DELTA(JJ)
+  PH(JI) = PRHOA(JI) * PK%XCPS(JI) * (PEK%XTG(JI,1) - PTA(JI)*PEXNS(JI)/PEXNA(JI)) &
+         / PEK%XRESA(JI) / PEXNS(JI)
 !
-!                                            total latent heat of evaporation from
-!                                            the ground
+  ZWORK1(JI) = PRHOA(JI) * (1.-PEK%XVEG(JI))*(1.-ZPSNG(JI)) / PEK%XRESA(JI)
+  ZWORK2(JI) = PQSAT(JI)+PDQSAT(JI)*ZDT(JI) 
 !
-  PLEG(JJ) = ZWORK1(JJ) * PK%XLVTT(JJ) * ( PHUG(JJ) * ZWORK2(JJ) - PQA(JJ)) * (1.-PFROZEN1(JJ)) * PLEG_DELTA(JJ)
+! latent heat of sublimation from the ground (W/m²)
 !
-  ZWORK2(JJ) = PRHOA(JJ) * (ZWORK2(JJ) - PQA(JJ))
-  ZWORK3(JJ) = ZWORK2(JJ) / PEK%XRESA(JJ)
-!                                            latent heat of evaporation from 
-!                                            the snow canopy
+  PLEGI(JI) = ZWORK1(JI) * PK%XLSTT(JI) * ( PHUI(JI) * ZWORK2(JI) - PQA(JI)) * PFROZEN1(JI) * PLEGI_DELTA(JI)
 !
-  PLES(JJ)     = PK%XLSTT(JJ) * ZPSN(JJ) * ZWORK3(JJ)
+! total latent heat of evaporation from the ground (W/m²)
 !
-!                                            latent heat of evaporation from
-!                                            evaporation
+  PLEG(JI) = ZWORK1(JI) * PK%XLVTT(JI) * ( PHUG(JI) * ZWORK2(JI) - PQA(JI)) * (1.-PFROZEN1(JI)) * PLEG_DELTA(JI)
 !
-  PLEV(JJ)     = PK%XLVTT(JJ) * PEK%XVEG(JJ)*(1.-ZPSNV(JJ)) * DMK%XHV(JJ) * ZWORK3(JJ)
+  ZWORK2(JI) = PRHOA(JI) * (ZWORK2(JI) - PQA(JI))
 !
-!                                            latent heat of evapotranspiration
+! potential evaporative flux (kg/m2/s)
+!
+  PEPOT(JI)  = ZWORK2(JI) / PEK%XRESA(JI)
+!
+! latent heat of evaporation from the snow canopy (W/m²)
+!
+  PLES(JI) = PK%XLSTT(JI) * ZPSN(JI) * PEPOT(JI)
+!
+! latent heat of total evaporation from vegetation (W/m²)
+!
+  PLEV(JI) = PK%XLVTT(JI) * PEK%XVEG(JI)*(1.-ZPSNV(JI)) * DMK%XHV(JI) * PEPOT(JI)
+!
+! latent heat of transpiration (W/m²)
 !                                            
-  ZZHV (JJ) = MAX(0., SIGN(1.,PQSAT(JJ) - PQA(JJ)))
-  PLETR(JJ) = ZZHV(JJ) * (1. - PDELTA(JJ)) * PK%XLVTT(JJ) * PEK%XVEG(JJ)*(1-ZPSNV(JJ))          &
-              * ZWORK2(JJ) *( (1/(PEK%XRESA(JJ) + DMK%XRS(JJ))) - ((1.-PF5(JJ))/(PEK%XRESA(JJ) + XRS_MAX)) )
-!               
+  ZZHV (JI) = MAX(0., SIGN(1.,PQSAT(JI) - PQA(JI)))
+  PLETR(JI) = ZZHV(JI) * (1. - PDELTA(JI)) * PK%XLVTT(JI) * PEK%XVEG(JI)*(1-ZPSNV(JI))          &
+              * ZWORK2(JI) *( (1/(PEK%XRESA(JI) + DMK%XRS(JI))) - ((1.-PF5(JI))/(PEK%XRESA(JI) + XRS_MAX)) )
 !
-  PLER(JJ)     = PLEV(JJ) - PLETR(JJ)
+! latent heat of direct evaporation from vegetation canopy (W/m²)
 !
-!                                            latent heat of free water (floodplains)
+  PLER(JI) = PLEV(JI) - PLETR(JI)
 !
-  PLE_FLOOD(JJ)  = PK%XLVTT(JJ) * (1.-KK%XFFROZEN(JJ)) * KK%XFF(JJ) * ZWORK3(JJ) 
+! latent heat of free water (floodplains) (W/m²)
 !
-  PLEI_FLOOD(JJ) = PK%XLSTT(JJ) * KK%XFFROZEN(JJ) * KK%XFF(JJ) * ZWORK3(JJ) 
+  PLE_FLOOD(JI)  = PK%XLVTT(JI) * (1.-KK%XFFROZEN(JI)) * PEPOT(JI) 
 !
-!                                            total latent heat of evaporation
-!                                            without flood
+  PLEI_FLOOD(JI) = PK%XLSTT(JI) * KK%XFFROZEN(JI) * PEPOT(JI) 
 !
-  PLE(JJ)      = PLEG(JJ) + PLEV(JJ) + PLES(JJ) + PLEGI(JJ)
+! total latent heat of evaporation without flood (W/m²)
 !
-!                                            heat flux into the ground
-!                                            without flood
+  PLE(JI) = PLEG(JI) + PLEV(JI) + PLES(JI) + PLEGI(JI)
 !
-  PGFLUX(JJ)   = PRN(JJ) - PH(JJ) - PLE(JJ)
+! balance of energy fluxes at the land surface without flood (W/m²)
 !
-!                                            heat flux due to snow melt
-!                                            (ISBA-ES/SNOW3L)
+  PGFLUX(JI) = PRN(JI) - PH(JI) - PLE(JI)
 !
-  PMELTADV(JJ) = PSNOW_THRUFAL(JJ)*XCL*(XTT - PEK%XTG(JJ,1))
+! heat flux due to snow melt (ISBA-ES/SNOW3L)
 !
-!                                            restore heat flux in FR mode,
-!                                            or surface to sub-surface heat
-!                                            flux using the DIF mode.
+  PMELTADV(JI) = PSNOW_THRUFAL(JI)*XCL*(XTT - PEK%XTG(JI,1))
 !
+! total evaporative flux (kg/m2/s) without flood
 !
-  PEVAP(JJ)    = ((PLEV(JJ) + PLEG(JJ))/PK%XLVTT(JJ)) + ((PLEGI(JJ) + PLES(JJ))/PK%XLSTT(JJ))
-!                                            total evaporative flux (kg/m2/s)
-!                                            without flood
+  PEVAP(JI) = ((PLEV(JI) + PLEG(JI))/PK%XLVTT(JI)) + ((PLEGI(JI) + PLES(JI))/PK%XLSTT(JI))
 !
 ENDDO
 !
 !-------------------------------------------------------------------------------
 !
 IF(PEK%TSNOW%SCHEME == 'D95')THEN
-  DO JJ=1,SIZE(PEK%XTG,1)
-    PLE    (JJ)  = PLE    (JJ) + PLE_FLOOD(JJ) + PLEI_FLOOD(JJ)
-    PGFLUX (JJ)  = PGFLUX (JJ) - PLE_FLOOD(JJ) - PLEI_FLOOD(JJ)
-    PEVAP  (JJ)  = PEVAP  (JJ) + PLE_FLOOD(JJ)/PK%XLVTT(JJ) + PLEI_FLOOD(JJ)/PK%XLSTT(JJ)
+  DO JI=1,INI
+    PLE    (JI)  = PLE    (JI) + KK%XFF(JI)*(PLE_FLOOD(JI)+PLEI_FLOOD(JI))
+    PGFLUX (JI)  = PGFLUX (JI) - KK%XFF(JI)*(PLE_FLOOD(JI)+PLEI_FLOOD(JI))
+    PEVAP  (JI)  = PEVAP  (JI) + KK%XFF(JI)*(PLE_FLOOD(JI)/PK%XLVTT(JI)+PLEI_FLOOD(JI)/PK%XLSTT(JI))
   ENDDO
 ENDIF
 !

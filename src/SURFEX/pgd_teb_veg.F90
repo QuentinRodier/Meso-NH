@@ -41,6 +41,7 @@
 !!    P. Samuelsson 02/2014 Introduced dummy variable in call to READ_NAM_PGD_ISBA for MEB
 !!    B. Decharme     08/16 : soil grdi optimization key
 !!    M. Goret    03/2017   add test on CTYPE_HVEG/CTYPE_LVEG/CTYPE_NVEG
+!!    R. Séférian 08/2016   Add landuse key
 !!
 !----------------------------------------------------------------------------
 !
@@ -112,22 +113,22 @@ INTEGER                  :: JLAYER    ! loop counter
 !
 INTEGER                  :: IPATCH           ! number of patches
 INTEGER                  :: IGROUND_LAYER    ! number of soil layers
- CHARACTER(LEN=3)         :: YISBA            ! ISBA option
- CHARACTER(LEN=4)         :: YPEDOTF          ! Pedo-transfert function for DIF
- CHARACTER(LEN=3)         :: YPHOTO           ! photosynthesis option
+CHARACTER(LEN=3)         :: YISBA            ! ISBA option
+CHARACTER(LEN=4)         :: YPEDOTF          ! Pedo-transfert function for DIF
+CHARACTER(LEN=3)         :: YPHOTO           ! photosynthesis option
 LOGICAL                  :: GTR_ML           ! new radiative transfert
- CHARACTER(LEN=4)         :: YALBEDO
+CHARACTER(LEN=4)         :: YALBEDO
 REAL                     :: ZRM_PATCH        ! threshold to remove little fractions of patches
- CHARACTER(LEN=28)        :: YSAND            ! file name for sand fraction
- CHARACTER(LEN=28)        :: YCLAY            ! file name for clay fraction
- CHARACTER(LEN=28)        :: YCTI             ! file name for topographic index
- CHARACTER(LEN=28)        :: YRUNOFFB         ! file name for runoffb parameter
- CHARACTER(LEN=28)        :: YWDRAIN          ! file name for wdrain parameter
- CHARACTER(LEN=6)         :: YSANDFILETYPE    ! sand data file type
- CHARACTER(LEN=6)         :: YCLAYFILETYPE    ! clay data file type
- CHARACTER(LEN=6)         :: YCTIFILETYPE     ! topographic index data file type
- CHARACTER(LEN=6)         :: YRUNOFFBFILETYPE ! subgrid runoff data file type
- CHARACTER(LEN=6)         :: YWDRAINFILETYPE  ! subgrid drainage data file type
+CHARACTER(LEN=28)        :: YSAND            ! file name for sand fraction
+CHARACTER(LEN=28)        :: YCLAY            ! file name for clay fraction
+CHARACTER(LEN=28)        :: YCTI             ! file name for topographic index
+CHARACTER(LEN=28)        :: YRUNOFFB         ! file name for runoffb parameter
+CHARACTER(LEN=28)        :: YWDRAIN          ! file name for wdrain parameter
+CHARACTER(LEN=6)         :: YSANDFILETYPE    ! sand data file type
+CHARACTER(LEN=6)         :: YCLAYFILETYPE    ! clay data file type
+CHARACTER(LEN=6)         :: YCTIFILETYPE     ! topographic index data file type
+CHARACTER(LEN=6)         :: YRUNOFFBFILETYPE ! subgrid runoff data file type
+CHARACTER(LEN=6)         :: YWDRAINFILETYPE  ! subgrid drainage data file type
 REAL                     :: XUNIF_SAND       ! uniform value of sand fraction
 REAL                     :: XUNIF_CLAY       ! uniform value of clay fraction
 REAL                     :: XUNIF_RUNOFFB    ! uniform value of subgrid runoff coefficient
@@ -139,23 +140,24 @@ REAL, DIMENSION(150)     :: ZSOILGRID        ! Soil layer thickness for DIF
 !
 ! Not used in TEB garden
 !
- CHARACTER(LEN=28)        :: YSOC_TOP      ! file name for organic carbon
- CHARACTER(LEN=28)        :: YSOC_SUB      ! file name for organic carbon
- CHARACTER(LEN=28)        :: YPERM         ! file name for permafrost distribution
- CHARACTER(LEN=6)         :: YSOCFILETYPE  ! organic carbon data file type
- CHARACTER(LEN=6)         :: YPERMFILETYPE ! permafrost distribution data file type
+CHARACTER(LEN=28)        :: YSOC_TOP      ! file name for organic carbon
+CHARACTER(LEN=28)        :: YSOC_SUB      ! file name for organic carbon
+CHARACTER(LEN=28)        :: YPERM         ! file name for permafrost distribution
+CHARACTER(LEN=6)         :: YSOCFILETYPE  ! organic carbon data file type
+CHARACTER(LEN=6)         :: YPERMFILETYPE ! permafrost distribution data file type
 REAL                     :: XUNIF_SOC_TOP ! uniform value of organic carbon top soil (kg/m2)
 REAL                     :: XUNIF_SOC_SUB ! uniform value of organic carbon sub soil (kg/m2)
 REAL                     :: XUNIF_PERM    ! uniform permafrost distribution
 LOGICAL                  :: LIMP_SOC      ! Imposed maps of organic carbon
 LOGICAL                  :: LIMP_PERM     ! Imposed maps of permafrost distribution
 LOGICAL                  :: GMEB          ! Multi-energy balance (MEB)
- CHARACTER(LEN=28)        :: YPH           ! file name for pH
- CHARACTER(LEN=28)        :: YFERT         ! file name for fertilisation rate
- CHARACTER(LEN=6)         :: YPHFILETYPE   ! pH data file type
- CHARACTER(LEN=6)         :: YFERTFILETYPE ! fertilisation data file type
+CHARACTER(LEN=28)        :: YPH           ! file name for pH
+CHARACTER(LEN=28)        :: YFERT         ! file name for fertilisation rate
+CHARACTER(LEN=6)         :: YPHFILETYPE   ! pH data file type
+CHARACTER(LEN=6)         :: YFERTFILETYPE ! fertilisation data file type
 REAL                     :: XUNIF_PH      ! uniform value of pH
 REAL                     :: XUNIF_FERT    ! uniform value of fertilisation rate
+LOGICAL                  :: GLULCC        ! land-use scheme activation key   
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------
@@ -179,7 +181,7 @@ CALL READ_NAM_PGD_ISBA(HPROGRAM, IPATCH, IGROUND_LAYER,                         
                        YRUNOFFB, YRUNOFFBFILETYPE, XUNIF_RUNOFFB,               &
                        YWDRAIN,  YWDRAINFILETYPE , XUNIF_WDRAIN, ZSOILGRID,     &
                        YPH, YPHFILETYPE, XUNIF_PH, YFERT, YFERTFILETYPE,        &
-                       XUNIF_FERT                                               )  
+                       XUNIF_FERT, GLULCC                                       )  
 !
 GDO%NPATCH = 1
 GDO%NGROUND_LAYER = IGROUND_LAYER

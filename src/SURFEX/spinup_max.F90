@@ -39,8 +39,6 @@
 !*       0.     DECLARATIONS
 !               ------------
 !
-USE MODD_CO2V_PAR,  ONLY : XSPIN_CO2
-!
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
@@ -61,10 +59,9 @@ INTEGER, INTENT(OUT)             :: KSPIN
 !
 !*      0.2    declarations of local variables
 !
-!We assume that 10% of the spinup period is for ramping up CO2 concentration
-!from XCO2_START to XCO2_END
+!We assume that 10% of the spinup period is for acceleration
 !
-REAL, PARAMETER  :: ZSPIN_MAX      = 0.6  ! spin up soil at its maximum PSPINMAX
+REAL, PARAMETER  :: ZSPIN_MAX      = 0.8  ! spin up soil at its maximum PSPINMAX
 REAL             :: ZSPIN_DECREASE        ! fraction of KNBYEARSPIN period used to
 !
 REAL             :: ZSLOPE
@@ -83,7 +80,7 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 IF (LHOOK) CALL DR_HOOK('SPINUP_MAX',0,ZHOOK_HANDLE)
 !
-ZSPIN_DECREASE=1.0-ZSPIN_MAX-XSPIN_CO2
+ZSPIN_DECREASE=1.0-ZSPIN_MAX
 !
 ZMAX = ZSPIN_MAX*REAL(KNBYEARSPIN)
 IMAX = NINT(ZMAX)

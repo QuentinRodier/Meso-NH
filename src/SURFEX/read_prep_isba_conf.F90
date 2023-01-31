@@ -46,20 +46,10 @@ USE MODN_PREP_ISBA
 USE MODD_PREP_ISBA,  ONLY : CFILE_ISBA, CTYPE, CFILEPGD_ISBA, CTYPEPGD,        &
                             CFILE_HUG, CTYPE_HUG,                              &
                             CFILE_HUG_SURF, CFILE_HUG_ROOT, CFILE_HUG_DEEP,    &
-                            CFILE_HUG_1, CFILE_HUG_2, CFILE_HUG_3,             &
-                            CFILE_HUG_4, CFILE_HUG_5, CFILE_HUG_6,             &
-                            CFILE_HUG_7, CFILE_HUG_8, CFILE_HUG_9,             &
-                            CFILE_HUG_10, CFILE_HUG_11, CFILE_HUG_12,          &
-                            CFILE_HUG_13, CFILE_HUG_14,                        &
                             XHUG_SURF, XHUG_ROOT, XHUG_DEEP,                   &
                             XHUGI_SURF, XHUGI_ROOT, XHUGI_DEEP,                &
                             CFILE_TG, CTYPE_TG,                                &
                             CFILE_TG_SURF, CFILE_TG_ROOT, CFILE_TG_DEEP,       &
-                            CFILE_TG_1, CFILE_TG_2, CFILE_TG_3,                &
-                            CFILE_TG_4, CFILE_TG_5, CFILE_TG_6,                &
-                            CFILE_TG_7, CFILE_TG_8, CFILE_TG_9,                &
-                            CFILE_TG_10, CFILE_TG_11, CFILE_TG_12,             &
-                            CFILE_TG_13, CFILE_TG_14,                          &
                             XTG_SURF, XTG_ROOT, XTG_DEEP,                      &  
                             XWSNOW, XTSNOW, XRSNOW, XASNOW
 !
@@ -111,8 +101,6 @@ OUNIF    = .FALSE.
 !* choice of input file
 !  --------------------
 !
-
-
 SELECT CASE (HVAR)
   CASE ('WG     ','WGI    ')
     IF (LEN_TRIM(CFILE_HUG)>0 .AND. LEN_TRIM(CTYPE_HUG)>0 ) THEN
@@ -151,19 +139,11 @@ END IF
 !
 SELECT CASE (HVAR)
   CASE ('WG     ','WGI    ')
-!    IF ( LEN_TRIM(CTYPE_HUG )>0       .AND. &
-!           ((LEN_TRIM(CFILE_HUG_SURF)>0   .AND. &
-!           LEN_TRIM(CFILE_HUG_ROOT)>0   .AND. &
-!           LEN_TRIM(CFILE_HUG_DEEP)>0) .OR. (LEN_TRIM(CFILE_HUG_1)>0 ))      ) THEN  
-    IF (LEN_TRIM(CTYPE_HUG)>0) THEN
-      IF ((LEN_TRIM(CFILE_HUG_SURF)>0)   .AND. &
-         (LEN_TRIM(CFILE_HUG_ROOT)>0)   .AND. &
-         (LEN_TRIM(CFILE_HUG_DEEP)>0)) THEN
-        HFILETYPE = CTYPE_HUG 
-      END IF
-      IF (LEN_TRIM(CFILE_HUG_1(1))>0) THEN
-        HFILETYPE = CTYPE_HUG 
-      END IF
+    IF ( LEN_TRIM(CTYPE_HUG )>0       .AND. &
+           LEN_TRIM(CFILE_HUG_SURF)>0   .AND. &
+           LEN_TRIM(CFILE_HUG_ROOT)>0   .AND. &
+           LEN_TRIM(CFILE_HUG_DEEP)>0         ) THEN  
+       HFILETYPE = CTYPE_HUG 
     END IF
     IF (HVAR=='WGI    ' .AND. HFILETYPE=='ASCLLV') THEN
        OUNIF = .TRUE.
@@ -174,19 +154,11 @@ SELECT CASE (HVAR)
        RETURN
     ENDIF
   CASE ('TG     ','TV     ','TC     ')
-!    IF ( LEN_TRIM(CTYPE_TG )>0       .AND. &
-!           ((LEN_TRIM(CFILE_TG_SURF)>0   .AND. &
-!           LEN_TRIM(CFILE_TG_ROOT)>0   .AND. &
-!           LEN_TRIM(CFILE_TG_DEEP)>0)  .OR. (LEN_TRIM(CFILE_TG_1)>0 ))       ) THEN  
-    IF (LEN_TRIM(CTYPE_TG)>0) THEN
-      IF ((LEN_TRIM(CFILE_TG_SURF)>0)   .AND. &
-         (LEN_TRIM(CFILE_TG_ROOT)>0)   .AND. &
-         (LEN_TRIM(CFILE_TG_DEEP)>0)) THEN
-        HFILETYPE = CTYPE_TG 
-      END IF
-      IF (LEN_TRIM(CFILE_TG_1(1))>0) THEN
-        HFILETYPE = CTYPE_TG 
-      END IF
+    IF ( LEN_TRIM(CTYPE_TG )>0       .AND. &
+           LEN_TRIM(CFILE_TG_SURF)>0   .AND. &
+           LEN_TRIM(CFILE_TG_ROOT)>0   .AND. &
+           LEN_TRIM(CFILE_TG_DEEP)>0         ) THEN  
+       HFILETYPE = CTYPE_TG 
     END IF
 END SELECT
 !

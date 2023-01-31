@@ -4,7 +4,7 @@
 !SFX_LIC for details. version 1.
 !     #########
       SUBROUTINE INI_VAR_FROM_VEGTYPE_DATA (DTCO, DTV, UG, U, &
-                                            HPROGRAM,ILUOUT,HNAME,PFIELD,PDEF)
+                                            HPROGRAM,ILUOUT,HNAME,PFIELD,PDEF,KNPTS)
 !     ##############################################################
 !!
 !!    PURPOSE
@@ -31,6 +31,7 @@
 !!    MODIFICATION
 !!    ------------
 !!    Original    12/2010
+!!    Modified    08/2016 R. Séférian optimizing to 1 nearest point for some fields
 !!
 !----------------------------------------------------------------------------
 !!*    0.     DECLARATION
@@ -70,6 +71,7 @@ INTEGER,                      INTENT(IN   ) :: ILUOUT
  CHARACTER(LEN=*),             INTENT(IN   ) :: HNAME
 REAL, DIMENSION(:,:),         INTENT(INOUT) :: PFIELD
 REAL, DIMENSION(:), OPTIONAL, INTENT(IN   ) :: PDEF 
+INTEGER, OPTIONAL,            INTENT(IN   ) :: KNPTS
 !
 !*    0.2    Declaration of local variables
 !            ------------------------------
@@ -107,8 +109,13 @@ DO JVEGTYPE=1,IVEGTYPE
   CALL UNPACK_SAME_RANK(IMASK,NSIZE,NSIZE_TOT,-1)
   CALL UNPACK_SAME_RANK(IMASK,PFIELD(:,JVEGTYPE),ZFIELD_TOT)
   IF(PRESENT(PDEF))THEN
-    CALL INTERPOL_FIELD(UG, U, &
-                        HPROGRAM,ILUOUT,NSIZE_TOT,ZFIELD_TOT,HNAME,PDEF=PDEF(JVEGTYPE))
+    IF(PRESENT(KNPTS))THEN
+      CALL INTERPOL_FIELD(UG, U, &
+                          HPROGRAM,ILUOUT,NSIZE_TOT,ZFIELD_TOT,HNAME,PDEF=PDEF(JVEGTYPE),KNPTS=KNPTS)
+    ELSE
+      CALL INTERPOL_FIELD(UG, U, &
+                          HPROGRAM,ILUOUT,NSIZE_TOT,ZFIELD_TOT,HNAME,PDEF=PDEF(JVEGTYPE))
+    ENDIF
   ELSE
     CALL INTERPOL_FIELD(UG, U, &
                         HPROGRAM,ILUOUT,NSIZE_TOT,ZFIELD_TOT,HNAME)

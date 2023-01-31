@@ -35,7 +35,7 @@ USE MODD_SURF_ATM, ONLY : XCISMIN, XVMODMIN, LALDTHRES, &
                             XRRSCALE, XRRGAMMA,           &
                             XUTILGUST, LCPL_ARP, LQVNPLUS,&
                             LVSHIFT_LW, LVSHIFT_PRCP,     &
-                            XCO2UNCPL, LARP_PN         
+                            XCO2UNCPL, LARP_PN, LCO2FOS         
 !
 !-----------------------------------------------------------------------------
 !
@@ -55,6 +55,6 @@ NAMELIST /NAM_SURF_ATM/XCISMIN, XVMODMIN, LALDTHRES, &
                          XRRSCALE, XRRGAMMA,           &
                          XUTILGUST, LCPL_ARP, LQVNPLUS,&
                          LVSHIFT_LW, LVSHIFT_PRCP,     &
-                         XCO2UNCPL, LARP_PN         
+                         XCO2UNCPL, LARP_PN, LCO2FOS         
 !
 END MODULE MODN_SURF_ATM

@@ -32,12 +32,13 @@
 !!    -------------
 !!      Original       02/2008                
 !  P. Wautelet 19/09/2019: correct support of 64bit integers (MNH_INT=8)
+!  B. Decharme 25/03/2018: XSNOWDZMIN very small to better close energy budget with ISBA
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
 !             ------------
 !
-use modd_netcdf_sfx, only: CDFINT
+use modd_netcdf_sfx, only: IDCDF_KIND
 !
 IMPLICIT NONE
 !
@@ -45,7 +46,7 @@ IMPLICIT NONE
 !
 ! minimum snow layer thickness for thermal calculations.
 ! Used to prevent numerical problems as snow becomes vanishingly thin.
-REAL, PARAMETER                 :: XSNOWDZMIN = 0.0001
+REAL, PARAMETER                 :: XSNOWDZMIN = 1.E-9 !0.0001
 !
 ! Optical diameter properties
 REAL, PARAMETER                 :: XDIAET = 1.E-4
@@ -145,11 +146,11 @@ REAL, PARAMETER                 :: XVTELV1 = 0.005
 !
 INTEGER,PARAMETER               :: NVDENT1 = 3
 !
-INTEGER(kind=CDFINT) :: NVARDIMS !number of dimensions of netcdf input variable
-INTEGER(kind=CDFINT) :: NLENDIM1,NLENDIM2,NLENDIM3
-INTEGER(kind=CDFINT) :: NID_VAR ! Netcdf IDs for  variable
+INTEGER(kind=IDCDF_KIND) :: NVARDIMS !number of dimensions of netcdf input variable
+INTEGER(kind=IDCDF_KIND) :: NLENDIM1,NLENDIM2,NLENDIM3
+INTEGER(kind=IDCDF_KIND) :: NID_VAR ! Netcdf IDs for  variable
 !
-INTEGER(kind=CDFINT) :: NID_FILE
+INTEGER(kind=IDCDF_KIND) :: NID_FILE
 REAL, DIMENSION(:,:,:), POINTER :: XDRDT0,XTAU,XKAPPA   ! field read
 !
 END MODULE MODD_SNOW_METAMO

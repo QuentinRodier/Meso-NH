@@ -201,7 +201,6 @@ REAL :: ZIMP_LW
 INTEGER                         :: JJ, JI, JCOMPT_SNOW1, JCOMPT_SNOW2, JCOMPT_SNOW3, JCOMPT_FLUX
 INTEGER :: ILUOUT         ! logical unit of output file
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
-CHARACTER(LEN=3)  ::YSNOWRES ='RIL'!<bber default value for HSNOWRES>
 !-------------------------------------------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('SNOW_COVER_1LAYER',0,ZHOOK_HANDLE)
@@ -354,13 +353,13 @@ ZQSAT(:) = QSATI(ZTS_SNOW(:), PPS(:) )
 !* snow is present on all the considered surface.
 !* computation occurs where snow is and/or falls.
 !
- CALL SURFACE_RI(ZTS_SNOW, ZQSAT, ZEXNS, ZEXNA, PTA, PQA, &
-                  PZREF, PUREF, ZDIRCOSZW, PVMOD, ZRI      )  
+CALL SURFACE_RI(ZTS_SNOW, ZQSAT, ZEXNS, ZEXNA, PTA, PQA, &
+                PZREF, PUREF, ZDIRCOSZW, PVMOD, ZRI      )  
 !
 !*      1.2.4  Aerodynamical conductance
 !              -------------------------
 !
- CALL SURFACE_AERO_COND(ZRI, PZREF, PUREF, PVMOD, ZZ0, ZZ0H, ZAC, ZRA, ZCH, YSNOWRES )!<bber>
+CALL SURFACE_AERO_COND(ZRI, PZREF, PUREF, PVMOD, ZZ0, ZZ0H, ZAC, ZRA, ZCH)
 !
 !-------------------------------------------------------------------------------
 !

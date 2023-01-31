@@ -92,7 +92,7 @@ CHARACTER(LEN=3)    , INTENT(IN) :: HINIT       ! choice of fields to initialize
 INTEGER :: JJ         ! counter
 INTEGER :: JCOMP      ! counter
 INTEGER :: JLIST      ! counter
-INTEGER :: II         ! counter
+INTEGER :: JI         ! counter
 INTEGER :: ILU        ! sizes of TEB arrays
 INTEGER :: NDAY_SCHED ! Number of schedules for day of week
 INTEGER :: NCRE_SCHED ! Number of schedules per day
@@ -283,8 +283,8 @@ DO JLIST=1,SIZE( B%XFRACOMP,1)
       !
       ! Check whether the individual compartment fractions by more than 1.0E-6 wrong
       !
-      DO II=1,SIZE( B%XFRACOMP,2)
-         IF (( B%XFRACOMP(JLIST,II).LT.-1.0E-6).OR.( B%XFRACOMP(JLIST,II).GT.(1.0+1.0E-6))) THEN
+      DO JI=1,SIZE( B%XFRACOMP,2)
+         IF (( B%XFRACOMP(JLIST,JI).LT.-1.0E-6).OR.( B%XFRACOMP(JLIST,JI).GT.(1.0+1.0E-6))) THEN
 		  CALL ABOR1_SFX("INIT_BEMN: Wrong fraction of compartments")
          ENDIF
       ENDDO

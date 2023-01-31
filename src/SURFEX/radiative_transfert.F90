@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-SUBROUTINE RADIATIVE_TRANSFERT(OAGRI_TO_GRASS, PVEGTYPE,          &
+SUBROUTINE RADIATIVE_TRANSFERT(PVEGTYPE,                          &
             PALBVIS_VEG, PALBVIS_SOIL, PALBNIR_VEG, PALBNIR_SOIL, &
             PSW_RAD, PLAI, PZENITH, PABC,                         &
             PFAPARC, PFAPIRC, PMUS, PLAI_EFFC, OSHADE, PIACAN,    &             
@@ -86,8 +86,6 @@ IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
 !
-LOGICAL,             INTENT(IN)  :: OAGRI_TO_GRASS
-!
 REAL, DIMENSION(:,:),INTENT(IN)  :: PVEGTYPE     ! PVEGTYPE  = type de vegetation (1 a 9)
 !
 REAL, DIMENSION(:), INTENT(IN)   :: PALBVIS_VEG  ! visible snow free albedo of vegetation
@@ -153,8 +151,6 @@ DO JJ = 1, SIZE(PLAI)
   IDMAX = MAXLOC(PVEGTYPE(JJ,:))
   IF ( IDMAX(1) > NVEGTYPE ) IDMAX(1) = NPAR_VEG_IRR_USE( IDMAX(1) - NVEGTYPE )
   !
-  IF ( OAGRI_TO_GRASS .AND. (IDMAX(1)==NVT_C3 .OR. IDMAX(1)==NVT_C3W .OR. IDMAX(1)==NVT_C3S .OR. &
-                             IDMAX(1)==NVT_C4 .OR. IDMAX(1)==NVT_IRR)) IDMAX(1) = NVT_GRAS
   IDMAX2(1) = IDMAX(1)
   !
   IF (NVEGTYPE==NVEGTYPE_ECOSG) IDMAX2(1) = ITRANSFERT_ESG(IDMAX(1))

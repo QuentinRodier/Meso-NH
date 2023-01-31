@@ -34,6 +34,7 @@
 !!    MODIFICATIONS
 !!    -------------
 !!      Original      03/26/2012
+!!      B. Decharme   05/23/2018 Simplify carbon spinup procedure
 !!
 !-------------------------------------------------------------------------------
 !
@@ -65,23 +66,18 @@ IF (LHOOK) CALL DR_HOOK('CARBON_SPINUP',0,ZHOOK_HANDLE)
 !       1.     Initializations
 !              ---------------
 !
+IF (TPTIME%TDATE%MONTH == 1 .AND. TPTIME%TDATE%DAY==1 .AND. TPTIME%TIME == 0.0 )THEN
+   IO%NNBYEARSOLD = IO%NNBYEARSOLD + 1
+ELSEIF(IO%NNBYEARSOLD==0.0)THEN
+   IO%NNBYEARSOLD = 1
+ENDIF
+!
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ! number of times CARBON_SOIL subroutine is called for each time step
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 IO%NSPINS =1
-IF ( IO%LSPINUPCARBS .AND. IO%CPHOTO/='NON' .AND. IO%CRESPSL=='CNT' ) THEN
+IF ( IO%LSPINUPCARBS .AND. IO%CPHOTO/='NON' .AND. (IO%CRESPSL=='CNT'.OR.IO%CRESPSL=='DIF') ) THEN
    CALL SPINUP_MAX(IO%XSPINMAXS,IO%NNBYEARSPINS,IO%NNBYEARSOLD,IO%NSPINS)
-ENDIF
-! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-! number of times  WOOD carbon subroutine is called for each time step
-! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-IO%NSPINW=1
-IF ( IO%LSPINUPCARBW .AND. IO%CPHOTO=='NCB' ) THEN
-   CALL SPINUP_MAX(IO%XSPINMAXW,IO%NNBYEARSPINW,IO%NNBYEARSOLD,IO%NSPINW)
-ENDIF
-!
-IF (TPTIME%TDATE%MONTH == 1 .AND. TPTIME%TDATE%DAY==1 .AND. TPTIME%TIME == 0.0 )THEN
-   IO%NNBYEARSOLD = IO%NNBYEARSOLD + 1
 ENDIF
 !
 IF (LHOOK) CALL DR_HOOK('CARBON_SPINUP',1,ZHOOK_HANDLE)

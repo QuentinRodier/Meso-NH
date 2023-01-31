@@ -27,6 +27,7 @@ SUBROUTINE HVAC_AUTOSIZE (B, BOP, G, T, TOP, GDM, KI, KSW, KLUOUT)
 !!                10/2017 add hot water
 !!                13/02/2018: comment OpenMP include/use if compiled without OpenMP (P. Wautelet)
 !!                04.2020 completes energy check for high vegetation IR exchanges (V. Masson)
+!!                06/2022 SIZE(YDMT%XWSNOW_GARDEN_INI,2) not defined (B. Decharme)
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS

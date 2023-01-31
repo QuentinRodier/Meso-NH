@@ -6,16 +6,53 @@
 MODULE MODE_DIAG
 !   #####################
 !
+!
+!!****  *MODE_DIAG*  
+!!
+!!    PURPOSE
+!!    -------
+!     Routines used for diag
+!     
+!!**  METHOD
+!!    ------
+!
+!!    EXTERNAL
+!!    --------
+!!
+!!    IMPLICIT ARGUMENTS
+!!    ------------------ 
+!!
+!!      
+!!    REFERENCE
+!!    ---------
+!!      
+!!    AUTHOR
+!!    ------
+!!      S. Faroux           * Meteo-France *
+!!
+!!    MODIFICATIONS
+!!    -------------
+!!      Original     03/2018
+!!      B. Decharme  02/2021: Move carbon diag from INIT_EVAP_BUD to INIT_CC_BUD
+!-------------------------------------------------------------------------------
+!
+!*       0.     DECLARATIONS
+!               ------------
+!
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
-USE MODD_SURF_PAR, ONLY : XUNDEF
-USE MODD_DIAG_n, ONLY : DIAG_t, DIAG_OPTIONS_t
+USE MODD_SURF_PAR,         ONLY : XUNDEF
+USE MODD_DIAG_n,           ONLY : DIAG_t, DIAG_OPTIONS_t
 USE MODD_DIAG_EVAP_ISBA_n, ONLY : DIAG_EVAP_ISBA_t
+USE MODD_ISBA_OPTIONS_n,   ONLY : ISBA_OPTIONS_t
+!
 !
 IMPLICIT NONE
 !
+!-------------------------------------------------------------------------------------
 CONTAINS 
+!-------------------------------------------------------------------------------------
 !
 SUBROUTINE ALLOC_SURF_BUD(DA,KLUA,KLUAC,KSWA)
 !
@@ -69,6 +106,8 @@ IF (LHOOK) CALL DR_HOOK('MODE_DIAG:ALLOC_SURF_BUD',1,ZHOOK_HANDLE)
 !
 END SUBROUTINE ALLOC_SURF_BUD
 !
+!-------------------------------------------------------------------------------------
+!
 SUBROUTINE ALLOC_N2M_BUD(DA,KLUA)
 !
 TYPE(DIAG_t), INTENT(INOUT) :: DA
@@ -78,6 +117,7 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 IF (LHOOK) CALL DR_HOOK('MODE_DIAG:ALLOC_N2M_BUD',0,ZHOOK_HANDLE)
 !
 ALLOCATE(DA%XRI           (KLUA))
+ALLOCATE(DA%XARES         (KLUA))
 ALLOCATE(DA%XT2M          (KLUA))
 ALLOCATE(DA%XT2M_MIN      (KLUA))
 ALLOCATE(DA%XT2M_MEAN     (KLUA))
@@ -100,6 +140,7 @@ ALLOCATE(DA%XWIDD_MEAN    (KLUA))
 !
 IF (KLUA>0) THEN
   DA%XRI      = XUNDEF
+  DA%XARES    = XUNDEF
   DA%XT2M     = XUNDEF
   DA%XT2M_MIN = XUNDEF
   DA%XT2M_MEAN= 0.0
@@ -126,6 +167,8 @@ IF (LHOOK) CALL DR_HOOK('MODE_DIAG:ALLOC_N2M_BUD',1,ZHOOK_HANDLE)
 !
 END SUBROUTINE ALLOC_N2M_BUD
 !
+!-------------------------------------------------------------------------------------
+!
 SUBROUTINE ALLOC_COEF_BUD(DA,KLUA)
 !
 TYPE(DIAG_t), INTENT(INOUT) :: DA
@@ -151,6 +194,8 @@ ENDIF
 IF (LHOOK) CALL DR_HOOK('MODE_DIAG:ALLOC_COEF_BUD',1,ZHOOK_HANDLE)
 !
 END SUBROUTINE ALLOC_COEF_BUD
+!
+!-------------------------------------------------------------------------------------
 !
 SUBROUTINE ALLOC_BUD(DGO,DA,KLU,KSW)
 !
@@ -200,6 +245,8 @@ IF (LHOOK) CALL DR_HOOK('MODE_DIAG:ALLOC_BUD',1,ZHOOK_HANDLE)
 !
 END SUBROUTINE ALLOC_BUD
 !
+!-------------------------------------------------------------------------------------
+!
 SUBROUTINE INIT_BUD(DGO,DA,DAC,PVAL)
 !
 TYPE(DIAG_OPTIONS_t), INTENT(IN) :: DGO
@@ -227,6 +274,8 @@ DA%XTS = PVAL
 IF (LHOOK) CALL DR_HOOK('MODE_DIAG:INIT_BUD',1,ZHOOK_HANDLE)
 !
 END SUBROUTINE INIT_BUD
+!
+!-------------------------------------------------------------------------------------
 !
 SUBROUTINE INIT_SURF_BUD(DA,PVAL)
 !
@@ -259,6 +308,8 @@ IF (LHOOK) CALL DR_HOOK('MODE_DIAG:INIT_SURF_BUD',1,ZHOOK_HANDLE)
 !
 END SUBROUTINE INIT_SURF_BUD
 !
+!-------------------------------------------------------------------------------------
+!
 SUBROUTINE INIT_N2M_BUD(DA,PVAL)
 !
 TYPE(DIAG_t), INTENT(INOUT) :: DA
@@ -268,6 +319,7 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 IF (LHOOK) CALL DR_HOOK('MODE_DIAG:INIT_N2M_BUD',0,ZHOOK_HANDLE)
 !
 DA%XRI      = PVAL
+DA%XARES    = PVAL
 DA%XT2M     = PVAL
 DA%XT2M_MIN = PVAL
 DA%XT2M_MAX = PVAL
@@ -284,6 +336,8 @@ DA%XSFCO2       = PVAL
 IF (LHOOK) CALL DR_HOOK('MODE_DIAG:INIT_N2M_BUD',1,ZHOOK_HANDLE)
 !
 END SUBROUTINE INIT_N2M_BUD
+!
+!-------------------------------------------------------------------------------------
 !
 SUBROUTINE INIT_COEF_BUD(DA,PVAL)
 !
@@ -304,6 +358,8 @@ IF (LHOOK) CALL DR_HOOK('MODE_DIAG:INIT_COEF_BUD',1,ZHOOK_HANDLE)
 !
 END SUBROUTINE INIT_COEF_BUD
 !
+!-------------------------------------------------------------------------------------
+!
 SUBROUTINE DIAG_EVAP(DGO, DA, DAC, HPROGRAM, DAUP, DAUPC, KMASK )
 !
 IMPLICIT NONE
@@ -323,7 +379,7 @@ IF (LHOOK) CALL DR_HOOK('MODE_DIAG:DIAG_EVAP',0,ZHOOK_HANDLE)
 !
 ISIZE = SIZE(KMASK)
 !
- CALL DIAG_CUMUL(DGO, DA, DAC, HPROGRAM, DAUP, DAUPC, KMASK)
+CALL DIAG_CUMUL(DGO, DA, DAC, HPROGRAM, DAUP, DAUPC, KMASK)
 !
 IF (DGO%LSURF_BUDGET) THEN
   DO JJ=1,ISIZE
@@ -335,6 +391,8 @@ END IF
 IF (LHOOK) CALL DR_HOOK('MODE_DIAG:DIAG_EVAP',1,ZHOOK_HANDLE)
 !
 END SUBROUTINE DIAG_EVAP
+!
+!-------------------------------------------------------------------------------------
 !
 SUBROUTINE DIAG_CUMUL(DGO, DA, DAC, HPROGRAM, DAUP, DAUPC, KMASK )
 !
@@ -380,6 +438,8 @@ IF (LHOOK) CALL DR_HOOK('MODE_DIAG:DIAG_CUMUL',1,ZHOOK_HANDLE)
 !
 END SUBROUTINE DIAG_CUMUL
 !
+!-------------------------------------------------------------------------------------
+!
 SUBROUTINE DIAG(DGO, DA, HPROGRAM, DAUP, KMASK )
 !
 IMPLICIT NONE
@@ -418,54 +478,57 @@ END IF
 !
 IF (DGO%N2M>=1 .OR. DGO%LSURF_BUDGET) THEN
   DO JJ=1,ISIZE
-    DAUP%XTS       (KMASK(JJ))  = DA%XTS      (JJ)
+    DAUP%XTS(KMASK(JJ)) = DA%XTS(JJ)
   ENDDO        
 ENDIF
 !
 IF (DGO%N2M>=1) THEN
   DO JJ=1,ISIZE
-    DAUP%XRI      (KMASK(JJ))  = DA%XRI       (JJ)
-    DAUP%XT2M     (KMASK(JJ))  = DA%XT2M      (JJ)
-    DAUP%XT2M_MIN (KMASK(JJ))  = DA%XT2M_MIN  (JJ)
-    DAUP%XT2M_MEAN(KMASK(JJ))  = DA%XT2M_MEAN (JJ)
-    DAUP%XT2M_MAX (KMASK(JJ))  = DA%XT2M_MAX  (JJ)
-    DAUP%XQ2M     (KMASK(JJ))  = DA%XQ2M      (JJ)
-    DAUP%XQ2M_MEAN(KMASK(JJ))  = DA%XQ2M_MEAN (JJ)
-    DAUP%XHU2M    (KMASK(JJ))  = DA%XHU2M     (JJ)
-    DAUP%XHU2M_MIN(KMASK(JJ))  = DA%XHU2M_MIN (JJ)
-    DAUP%XHU2M_MEAN(KMASK(JJ)) = DA%XHU2M_MEAN(JJ)
-    DAUP%XHU2M_MAX(KMASK(JJ))  = DA%XHU2M_MAX (JJ)
-    DAUP%XZON10M  (KMASK(JJ))  = DA%XZON10M   (JJ)
-    DAUP%XMER10M  (KMASK(JJ))  = DA%XMER10M   (JJ)
-    DAUP%XWIND10M (KMASK(JJ))  = DA%XWIND10M   (JJ)
-    DAUP%XWIND10M_MAX (KMASK(JJ))  = DA%XWIND10M_MAX   (JJ)
-    DAUP%XMER10M_MEAN (KMASK(JJ))  = DA%XMER10M_MEAN   (JJ)
-    DAUP%XZON10M_MEAN (KMASK(JJ))  = DA%XZON10M_MEAN   (JJ)
-    DAUP%XWIND10M_MEAN(KMASK(JJ))  = DA%XWIND10M_MEAN  (JJ)
-    DAUP%XWIFF_MEAN(KMASK(JJ))     = DA%XWIFF_MEAN     (JJ)
-    DAUP%XWIDD_MEAN(KMASK(JJ))     = DA%XWIDD_MEAN     (JJ)
+    DAUP%XRI          (KMASK(JJ)) = DA%XRI          (JJ)
+    DAUP%XARES        (KMASK(JJ)) = DA%XARES        (JJ)
+    DAUP%XT2M         (KMASK(JJ)) = DA%XT2M         (JJ)
+    DAUP%XT2M_MIN     (KMASK(JJ)) = DA%XT2M_MIN     (JJ)
+    DAUP%XT2M_MEAN    (KMASK(JJ)) = DA%XT2M_MEAN    (JJ)
+    DAUP%XT2M_MAX     (KMASK(JJ)) = DA%XT2M_MAX     (JJ)
+    DAUP%XQ2M         (KMASK(JJ)) = DA%XQ2M         (JJ)
+    DAUP%XQ2M_MEAN    (KMASK(JJ)) = DA%XQ2M_MEAN    (JJ)
+    DAUP%XHU2M        (KMASK(JJ)) = DA%XHU2M        (JJ)
+    DAUP%XHU2M_MIN    (KMASK(JJ)) = DA%XHU2M_MIN    (JJ)
+    DAUP%XHU2M_MEAN   (KMASK(JJ)) = DA%XHU2M_MEAN   (JJ)
+    DAUP%XHU2M_MAX    (KMASK(JJ)) = DA%XHU2M_MAX    (JJ)
+    DAUP%XZON10M      (KMASK(JJ)) = DA%XZON10M      (JJ)
+    DAUP%XMER10M      (KMASK(JJ)) = DA%XMER10M      (JJ)
+    DAUP%XWIND10M     (KMASK(JJ)) = DA%XWIND10M     (JJ)
+    DAUP%XWIND10M_MAX (KMASK(JJ)) = DA%XWIND10M_MAX (JJ)
+    DAUP%XMER10M_MEAN (KMASK(JJ)) = DA%XMER10M_MEAN (JJ)
+    DAUP%XZON10M_MEAN (KMASK(JJ)) = DA%XZON10M_MEAN (JJ)
+    DAUP%XWIND10M_MEAN(KMASK(JJ)) = DA%XWIND10M_MEAN(JJ)
+    DAUP%XWIFF_MEAN   (KMASK(JJ)) = DA%XWIFF_MEAN   (JJ)
+    DAUP%XWIDD_MEAN   (KMASK(JJ)) = DA%XWIDD_MEAN   (JJ)
   ENDDO        
 END IF 
 !
 IF (DGO%LCOEF) THEN
   DO JJ=1,ISIZE
-    DAUP%XCD      (KMASK(JJ))  = DA%XCD       (JJ)
-    DAUP%XCH      (KMASK(JJ))  = DA%XCH       (JJ)
-    DAUP%XCE      (KMASK(JJ))  = DA%XCE       (JJ)
-    DAUP%XZ0      (KMASK(JJ))  = DA%XZ0       (JJ)
-    DAUP%XZ0H     (KMASK(JJ))  = DA%XZ0H      (JJ)
+    DAUP%XCD (KMASK(JJ))  = DA%XCD       (JJ)
+    DAUP%XCH (KMASK(JJ))  = DA%XCH       (JJ)
+    DAUP%XCE (KMASK(JJ))  = DA%XCE       (JJ)
+    DAUP%XZ0 (KMASK(JJ))  = DA%XZ0       (JJ)
+    DAUP%XZ0H(KMASK(JJ))  = DA%XZ0H      (JJ)
   ENDDO        
 END IF
 !
 IF (DGO%LSURF_VARS) THEN
   DO JJ=1,ISIZE
-    DAUP%XQS      (KMASK(JJ))  = DA%XQS       (JJ)
+    DAUP%XQS(KMASK(JJ))  = DA%XQS       (JJ)
   ENDDO          
 ENDIF
 !
 IF (LHOOK) CALL DR_HOOK('MODE_DIAG:DIAG',1,ZHOOK_HANDLE)
 !
 END SUBROUTINE DIAG
+!
+!-------------------------------------------------------------------------------------
 !
 SUBROUTINE INIT_EVAP_BUD(DEA)
 !
@@ -474,6 +537,8 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 IF (LHOOK) CALL DR_HOOK('MODE_DIAG:INIT_EVAP_BUD',0,ZHOOK_HANDLE)
 !
+DEA%XEPOT       = 0.0
+!
 DEA%XLEG        = 0.0
 DEA%XLEGI       = 0.0
 DEA%XLEV        = 0.0
@@ -481,6 +546,8 @@ DEA%XLES        = 0.0
 !
 DEA%XLESL       = 0.0
 DEA%XSNDRIFT    = 0.0
+DEA%XSNFREE_SWU = 0.0
+DEA%XSNREFREEZ  = 0.0
 !
 DEA%XLER        = 0.0
 DEA%XLETR       = 0.0
@@ -490,12 +557,10 @@ DEA%XRUNOFF     = 0.0
 DEA%XDRIP       = 0.0
 DEA%XRRVEG      = 0.0
 DEA%XMELT       = 0.0
+DEA%XMELTSTOT   = 0.0
+DEA%XICEFLUX    = 0.0
 !
 DEA%XIRRIG_FLUX = 0.0
-!
-DEA%XGPP        = 0.0
-DEA%XRESP_AUTO  = 0.0
-DEA%XRESP_ECO   = 0.0  
 !
 DEA%XQSB        = 0.0
 DEA%XHORT       = 0.0
@@ -504,6 +569,10 @@ DEA%XIFLOOD    = 0.0
 DEA%XPFLOOD    = 0.0
 DEA%XLE_FLOOD  = 0.0
 DEA%XLEI_FLOOD = 0.0
+!
+DEA%XSWNET_N   = 0.0
+DEA%XSWNET_NS  = 0.0
+DEA%XLWNET_N   = 0.0
 !
 DEA%XRN_SN_FR    = 0.0
 DEA%XH_SN_FR     = 0.0
@@ -520,6 +589,74 @@ DEA%XLER_SN_FR   = 0.0
 IF (LHOOK) CALL DR_HOOK('MODE_DIAG:INIT_EVAP_BUD',1,ZHOOK_HANDLE)
 !
 END SUBROUTINE INIT_EVAP_BUD
+!
+!-------------------------------------------------------------------------------------
+!
+SUBROUTINE INIT_CC_BUD(DEA,IO)
+!
+TYPE(DIAG_EVAP_ISBA_t), INTENT(INOUT) :: DEA
+TYPE(ISBA_OPTIONS_t),   INTENT(IN   ) :: IO
+!
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+!
+IF (LHOOK) CALL DR_HOOK('MODE_DIAG:INIT_CC_BUD',0,ZHOOK_HANDLE)
+!
+DEA%XGPP        = 0.0
+DEA%XRESP_AUTO  = 0.0
+DEA%XRESP_ECO   = 0.0  
+DEA%XTURNVTOT   = 0.0  
+DEA%XFLTOSCARB  = 0.0  
+DEA%XRESPSCARB  = 0.0  
+DEA%XRESPLIT    = 0.0  
+!
+IF(IO%LCLEACH)THEN
+  !
+  DEA%XFDOC    = 0.0
+  DEA%XFDOCLIT = 0.0
+  !
+ENDIF
+!
+IF(IO%LFIRE)THEN
+  !
+  DEA%XFIRETURNOVER = 0.0
+  DEA%XFIRECO2      = 0.0
+  DEA%XFIREBCS      = 0.0
+  !
+ENDIF
+!
+IF(IO%LLULCC)THEN
+  !
+  DEA%XFHARVEST = 0.0
+  !
+ENDIF
+!
+IF(IO%LSOILGAS)THEN
+  !
+  DEA%XO2FLUX   = 0.0
+  DEA%XCH4FLUX  = 0.0
+  DEA%XSURF_O2  = 0.0
+  DEA%XSURF_CO2 = 0.0
+  DEA%XSURF_CH4 = 0.0
+  DEA%XEVAP_O2  = 0.0
+  DEA%XEVAP_CO2 = 0.0
+  DEA%XEVAP_CH4 = 0.0
+  DEA%XPMT_O2   = 0.0
+  DEA%XPMT_CO2  = 0.0
+  DEA%XPMT_CH4  = 0.0
+  DEA%XEBU_CH4  = 0.0
+  !
+  DEA%XFCONS_O2  = 0.0
+  DEA%XFPROD_CO2 = 0.0
+  DEA%XFMT_CH4   = 0.0
+  DEA%XFMG_CH4   = 0.0
+  !
+ENDIF
+!
+IF (LHOOK) CALL DR_HOOK('MODE_DIAG:INIT_CC_BUD',1,ZHOOK_HANDLE)
+!
+END SUBROUTINE INIT_CC_BUD
+!
+!-------------------------------------------------------------------------------------
 !
 SUBROUTINE INIT_MEB_BUD(DEA)
 !
@@ -562,15 +699,14 @@ DEA%XLWUP          = 0.0
 !
 DEA%XSWNET_V       = 0.0
 DEA%XSWNET_G       = 0.0
-DEA%XSWNET_N       = 0.0
-DEA%XSWNET_NS      = 0.0
 DEA%XLWNET_V       = 0.0
 DEA%XLWNET_G       = 0.0
-DEA%XLWNET_N       = 0.0
 !
 IF (LHOOK) CALL DR_HOOK('MODE_DIAG:INIT_MEB_BUD',1,ZHOOK_HANDLE)
 !
 END SUBROUTINE INIT_MEB_BUD
+!
+!-------------------------------------------------------------------------------------
 !
 SUBROUTINE INIT_WATER_BUD(DEA)
 !
@@ -579,15 +715,45 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 IF (LHOOK) CALL DR_HOOK('MODE_DIAG:INIT_WATER_BUD',0,ZHOOK_HANDLE)
 !
-DEA%XDWG    = 0.0
-DEA%XDWGI   = 0.0
-DEA%XDWR    = 0.0
-DEA%XDSWE   = 0.0
-DEA%XWATBUD = 0.0
+DEA%XDWG     = 0.0
+DEA%XDWGI    = 0.0
+DEA%XDWR     = 0.0
+DEA%XDSWE    = 0.0
+DEA%XDSWFREE = 0.0
+DEA%XWATBUD  = 0.0
 !
 IF (LHOOK) CALL DR_HOOK('MODE_DIAG:INIT_WATER_BUD',1,ZHOOK_HANDLE)
 !
 END SUBROUTINE INIT_WATER_BUD
+!
+!-------------------------------------------------------------------------------------
+!
+SUBROUTINE INIT_ENERGY_BUD(DEA)
+!
+TYPE(DIAG_EVAP_ISBA_t), INTENT(INOUT) :: DEA
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+!
+IF (LHOOK) CALL DR_HOOK('MODE_DIAG:INIT_ENERGY_BUD',0,ZHOOK_HANDLE)
+!
+DEA%XNRJBUD        = 0
+DEA%XNRJBUD_SFC    = 0
+DEA%XGRNDFLUX      = 0
+DEA%XRESTORE       = 0 
+DEA%XRESTOREN      = 0 
+DEA%XDELHEATG      = 0 
+DEA%XDELHEATN      = 0 
+DEA%XDELPHASEG     = 0 
+DEA%XDELPHASEN     = 0 
+DEA%XDELHEATG_SFC  = 0 
+DEA%XDELHEATN_SFC  = 0 
+DEA%XDELPHASEG_SFC = 0 
+DEA%XDELPHASEN_SFC = 0
+!
+IF (LHOOK) CALL DR_HOOK('MODE_DIAG:INIT_ENERGY_BUD',1,ZHOOK_HANDLE)
+!
+END SUBROUTINE INIT_ENERGY_BUD
+!
+!-------------------------------------------------------------------------------------
 !
 SUBROUTINE AVG_DIAG_TSTEP_EVAP(PTSTEP, DEAC, DEA)
 !
@@ -603,22 +769,29 @@ DEA%XLEGI   (:) = DEAC%XLEGI   (:)/PTSTEP
 DEA%XLEV    (:) = DEAC%XLEV    (:)/PTSTEP
 DEA%XLES    (:) = DEAC%XLES    (:)/PTSTEP
 !
-DEA%XLESL   (:) = DEAC%XLESL   (:)/PTSTEP
-DEA%XSNDRIFT(:) = DEAC%XSNDRIFT(:)/PTSTEP
+DEA%XLESL      (:) = DEAC%XLESL      (:)/PTSTEP
+DEA%XSNDRIFT   (:) = DEAC%XSNDRIFT   (:)/PTSTEP
+DEA%XSNFREE_SWU(:) = DEAC%XSNFREE_SWU(:)/PTSTEP
 !
-DEA%XLER    (:) = DEAC%XLER    (:)/PTSTEP
-DEA%XLETR   (:) = DEAC%XLETR   (:)/PTSTEP
-DEA%XDRAIN  (:) = DEAC%XDRAIN  (:)/PTSTEP
-DEA%XQSB    (:) = DEAC%XQSB    (:)/PTSTEP
-DEA%XRUNOFF (:) = DEAC%XRUNOFF (:)/PTSTEP
-DEA%XHORT   (:) = DEAC%XHORT   (:)/PTSTEP
-DEA%XDRIP   (:) = DEAC%XDRIP   (:)/PTSTEP
-DEA%XRRVEG  (:) = DEAC%XRRVEG  (:)/PTSTEP
-DEA%XMELT   (:) = DEAC%XMELT   (:)/PTSTEP
+DEA%XEPOT     (:) = DEAC%XEPOT     (:)/PTSTEP
+DEA%XLER      (:) = DEAC%XLER      (:)/PTSTEP
+DEA%XLETR     (:) = DEAC%XLETR     (:)/PTSTEP
+DEA%XDRAIN    (:) = DEAC%XDRAIN    (:)/PTSTEP
+DEA%XQSB      (:) = DEAC%XQSB      (:)/PTSTEP
+DEA%XRUNOFF   (:) = DEAC%XRUNOFF   (:)/PTSTEP
+DEA%XHORT     (:) = DEAC%XHORT     (:)/PTSTEP
+DEA%XDRIP     (:) = DEAC%XDRIP     (:)/PTSTEP
+DEA%XRRVEG    (:) = DEAC%XRRVEG    (:)/PTSTEP
+DEA%XMELT     (:) = DEAC%XMELT     (:)/PTSTEP
+DEA%XMELTSTOT (:) = DEAC%XMELTSTOT (:)/PTSTEP
+DEA%XSNREFREEZ(:) = DEAC%XSNREFREEZ(:)/PTSTEP
+DEA%XICEFLUX  (:) = DEAC%XICEFLUX  (:)/PTSTEP
 !
 IF (LHOOK) CALL DR_HOOK('MODE_DIAG:AVG_DIAG_TSTEP_EVAP',1,ZHOOK_HANDLE)
 !
 END SUBROUTINE AVG_DIAG_TSTEP_EVAP
+!
+!-------------------------------------------------------------------------------------
 !
 SUBROUTINE AVG_DIAG_TSTEP_WATER(PTSTEP, DEAC, DEA)
 !
@@ -629,15 +802,18 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 IF (LHOOK) CALL DR_HOOK('MODE_DIAG:AVG_DIAG_TSTEP_WATER',0,ZHOOK_HANDLE)
 !
-DEA%XDWG   (:) = DEAC%XDWG   (:)/PTSTEP
-DEA%XDWGI  (:) = DEAC%XDWGI  (:)/PTSTEP
-DEA%XDWR   (:) = DEAC%XDWR   (:)/PTSTEP
-DEA%XDSWE  (:) = DEAC%XDSWE  (:)/PTSTEP
-DEA%XWATBUD(:) = DEAC%XWATBUD(:)/PTSTEP
+DEA%XDWG    (:) = DEAC%XDWG    (:)/PTSTEP
+DEA%XDWGI   (:) = DEAC%XDWGI   (:)/PTSTEP
+DEA%XDWR    (:) = DEAC%XDWR    (:)/PTSTEP
+DEA%XDSWE   (:) = DEAC%XDSWE   (:)/PTSTEP
+DEA%XDSWFREE(:) = DEAC%XDSWFREE(:)/PTSTEP
+DEA%XWATBUD (:) = DEAC%XWATBUD (:)/PTSTEP
 !
 IF (LHOOK) CALL DR_HOOK('MODE_DIAG:AVG_DIAG_TSTEP_WATER',1,ZHOOK_HANDLE)
 !
 END SUBROUTINE AVG_DIAG_TSTEP_WATER
+!
+!-------------------------------------------------------------------------------------
 !
 SUBROUTINE AVG_DIAG_TSTEP_SURF(PTSTEP, DAC, DA)
 !

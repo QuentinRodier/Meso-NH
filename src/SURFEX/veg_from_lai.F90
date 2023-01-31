@@ -8,11 +8,10 @@ MODULE MODI_VEG_FROM_LAI
 !
 INTERFACE VEG_FROM_LAI
 !
-    FUNCTION VEG_FROM_LAI_0D(PLAI,PVEGTYPE,OAGRI_TO_GRASS,NPAR_VEG_IRR_USE) RESULT(PVEG)
+    FUNCTION VEG_FROM_LAI_0D(PLAI,PVEGTYPE,NPAR_VEG_IRR_USE) RESULT(PVEG)
 !
 REAL,                 INTENT(IN) :: PLAI         ! Leaf area Index
 REAL,   DIMENSION(:), INTENT(IN) :: PVEGTYPE     ! type of vegetation
-LOGICAL,              INTENT(IN) :: OAGRI_TO_GRASS
 INTEGER,DIMENSION(:), INTENT(IN) :: NPAR_VEG_IRR_USE ! vegtype with irrigation
 !
 REAL                             :: PVEG         ! vegetation fraction
@@ -20,11 +19,10 @@ REAL                             :: PVEG         ! vegetation fraction
 END FUNCTION VEG_FROM_LAI_0D
 !
 !
-    FUNCTION VEG_FROM_LAI_1D(PLAI,PVEGTYPE,OAGRI_TO_GRASS,NPAR_VEG_IRR_USE) RESULT(PVEG)
+    FUNCTION VEG_FROM_LAI_1D(PLAI,PVEGTYPE,NPAR_VEG_IRR_USE) RESULT(PVEG)
 !
 REAL,   DIMENSION(:),   INTENT(IN) :: PLAI         ! Leaf area Index
 REAL,   DIMENSION(:,:), INTENT(IN) :: PVEGTYPE     ! type of vegetation
-LOGICAL,                INTENT(IN) :: OAGRI_TO_GRASS
 INTEGER,DIMENSION(:), INTENT(IN) :: NPAR_VEG_IRR_USE ! vegtype with irrigation
 !
 REAL,   DIMENSION(SIZE(PLAI))      :: PVEG         ! vegetation fraction
@@ -32,21 +30,19 @@ REAL,   DIMENSION(SIZE(PLAI))      :: PVEG         ! vegetation fraction
 END FUNCTION VEG_FROM_LAI_1D
 !
 !
-    FUNCTION VEG_FROM_LAI_2D(PLAI,PVEGTYPE,OAGRI_TO_GRASS) RESULT(PVEG) ! #notused? A. Druel: Never use ?
+    FUNCTION VEG_FROM_LAI_2D(PLAI,PVEGTYPE) RESULT(PVEG) ! #notused? A. Druel: Never use ?
 !
 REAL,   DIMENSION(:,:),   INTENT(IN) :: PLAI         ! Leaf area Index
 REAL,   DIMENSION(:,:,:), INTENT(IN) :: PVEGTYPE     ! type of vegetation
-LOGICAL,                  INTENT(IN) :: OAGRI_TO_GRASS
 !
 REAL,   DIMENSION(SIZE(PLAI,1),SIZE(PLAI,2)) :: PVEG ! vegetation fraction
 !
 END FUNCTION VEG_FROM_LAI_2D
 !
 
-    FUNCTION VEG_FROM_LAI_VEGTYPE_1D(PLAI,OAGRI_TO_GRASS) RESULT(PVEG)
+    FUNCTION VEG_FROM_LAI_VEGTYPE_1D(PLAI) RESULT(PVEG)
 !
 REAL,   DIMENSION(:), INTENT(IN) :: PLAI         ! Leaf area Index for each vegtype
-LOGICAL,              INTENT(IN) :: OAGRI_TO_GRASS
 !
 REAL,   DIMENSION(SIZE(PLAI)) :: PVEG ! vegetation fraction
 !
@@ -57,7 +53,7 @@ END INTERFACE
 END MODULE MODI_VEG_FROM_LAI
 !
 !   ####################################################
-    FUNCTION VEG_FROM_LAI_0D(PLAI,PVEGTYPE,OAGRI_TO_GRASS,NPAR_VEG_IRR_USE) RESULT(PVEG)
+    FUNCTION VEG_FROM_LAI_0D(PLAI,PVEGTYPE,NPAR_VEG_IRR_USE) RESULT(PVEG)
 !   ####################################################
 !!
 !!    PURPOSE
@@ -122,7 +118,6 @@ IMPLICIT NONE
 !
 REAL,                 INTENT(IN) :: PLAI         ! Leaf area Index
 REAL,   DIMENSION(:), INTENT(IN) :: PVEGTYPE     ! type of vegetation
-LOGICAL,              INTENT(IN) :: OAGRI_TO_GRASS
 INTEGER,DIMENSION(:), INTENT(IN) :: NPAR_VEG_IRR_USE ! vegtype with irrigation
 !
 REAL                             :: PVEG         ! vegetation fraction
@@ -151,11 +146,7 @@ ELSE
   IF ( ZNOVEG < 1.) ZLAI = PLAI / (1. - ZNOVEG)
 ENDIF
 !
-IF(OAGRI_TO_GRASS)THEN
-  ZAGRI = 0.95
-ELSE
-  ZAGRI = (1. - EXP( -0.6 * ZLAI ))
-ENDIF
+ZAGRI = (1. - EXP( -0.6 * ZLAI ))
 !
 IF ( NVEG_IRR == 0 ) THEN
   ZSUM1 = PVEGTYPE(NVT_C4)
@@ -231,7 +222,7 @@ IF (LHOOK) CALL DR_HOOK('MODI_VEG_FROM_LAI:VEG_FROM_LAI_0D',1,ZHOOK_HANDLE)
 END FUNCTION VEG_FROM_LAI_0D
 !
 !   ####################################################
-    FUNCTION VEG_FROM_LAI_1D(PLAI,PVEGTYPE,OAGRI_TO_GRASS,NPAR_VEG_IRR_USE) RESULT(PVEG)
+    FUNCTION VEG_FROM_LAI_1D(PLAI,PVEGTYPE,NPAR_VEG_IRR_USE) RESULT(PVEG)
 !   ####################################################
 !!
 !!    PURPOSE
@@ -293,7 +284,6 @@ IMPLICIT NONE
 !
 REAL,   DIMENSION(:),   INTENT(IN) :: PLAI         ! Leaf area Index
 REAL,   DIMENSION(:,:), INTENT(IN) :: PVEGTYPE     ! type of vegetation
-LOGICAL,                INTENT(IN) :: OAGRI_TO_GRASS
 INTEGER,DIMENSION(:),   INTENT(IN) :: NPAR_VEG_IRR_USE ! vegtype with irrigation
 !
 REAL,   DIMENSION(SIZE(PLAI))      :: PVEG         ! vegetation fraction
@@ -321,11 +311,7 @@ ELSE
   WHERE ( ZNOVEG(:) < 1.) ZLAI(:) = PLAI(:) / (1. - ZNOVEG(:) )
 ENDIF
 !
-IF(OAGRI_TO_GRASS)THEN
-  ZAGRI(:) = 0.95
-ELSE
-  ZAGRI(:) = (1. - EXP( -0.6 * ZLAI(:) ))
-ENDIF
+ZAGRI(:) = (1. - EXP( -0.6 * ZLAI(:) ))
 !
 IF ( NVEG_IRR == 0 ) THEN
   ZSUM1(:) = PVEGTYPE(:,NVT_C4)
@@ -403,7 +389,7 @@ IF (LHOOK) CALL DR_HOOK('MODI_VEG_FROM_LAI:VEG_FROM_LAI_1D',1,ZHOOK_HANDLE)
 END FUNCTION VEG_FROM_LAI_1D
 !
 !   ####################################################
-    FUNCTION VEG_FROM_LAI_2D(PLAI,PVEGTYPE,OAGRI_TO_GRASS) RESULT(PVEG)
+    FUNCTION VEG_FROM_LAI_2D(PLAI,PVEGTYPE) RESULT(PVEG)
 !   ####################################################
 !!
 !!    PURPOSE
@@ -463,7 +449,6 @@ IMPLICIT NONE
 !
 REAL,   DIMENSION(:,:),   INTENT(IN) :: PLAI         ! Leaf area Index
 REAL,   DIMENSION(:,:,:), INTENT(IN) :: PVEGTYPE     ! type of vegetation
-LOGICAL,                  INTENT(IN) :: OAGRI_TO_GRASS
 !
 REAL,   DIMENSION(SIZE(PLAI,1),SIZE(PLAI,2)) :: PVEG ! vegetation fraction
 !
@@ -480,15 +465,11 @@ END WHERE
 !
 PVEG(:,:) = XUNDEF
 !
-IF(OAGRI_TO_GRASS)THEN
-  ZAGRI(:,:) = 0.95
-ELSE
-  WHERE (PLAI(:,:) /= XUNDEF)
-        ZAGRI(:,:) = (1. - EXP( -0.6 * ZLAI(:,:) ))
-  ELSEWHERE
-        ZAGRI(:,:) = XUNDEF
-  ENDWHERE
-ENDIF
+WHERE (PLAI(:,:) /= XUNDEF)
+      ZAGRI(:,:) = (1. - EXP( -0.6 * ZLAI(:,:) ))
+ELSEWHERE
+      ZAGRI(:,:) = XUNDEF
+ENDWHERE
 !
 ZSUM1(:,:) = PVEGTYPE(:,:,NVT_C4)
 IF (NVT_IRR>0 .AND. NVT_C3>0) THEN
@@ -527,7 +508,7 @@ END FUNCTION VEG_FROM_LAI_2D
 !
 !
 !   ####################################################
-    FUNCTION VEG_FROM_LAI_VEGTYPE_1D(PLAI,OAGRI_TO_GRASS) RESULT(PVEG)
+    FUNCTION VEG_FROM_LAI_VEGTYPE_1D(PLAI) RESULT(PVEG)
 !   ####################################################
 !!
 !!    PURPOSE
@@ -586,7 +567,6 @@ IMPLICIT NONE
 !*      0.1    declarations of arguments
 !
 REAL,   DIMENSION(:), INTENT(IN) :: PLAI         ! Leaf area Index
-LOGICAL,              INTENT(IN) :: OAGRI_TO_GRASS
 !
 REAL,   DIMENSION(SIZE(PLAI)) :: PVEG ! vegetation fraction
 !
@@ -597,28 +577,15 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 IF (LHOOK) CALL DR_HOOK('MODI_VEG_FROM_LAI:VEG_FROM_LAI_VEGTYPE_1D',0,ZHOOK_HANDLE)
 PVEG(:) = XUNDEF
 !
-IF(OAGRI_TO_GRASS)THEN
-  PVEG(NVT_C4  )= 0.95
-  IF (NVT_IRR>0) THEN
-    PVEG(NVT_IRR )= 0.95
-  ENDIF
-  IF (NVT_C3>0) THEN
-    PVEG(NVT_C3  )= 0.95
-  ELSEIF (NVT_C3W>0 .AND. NVT_C3S>0) THEN
-    PVEG(NVT_C3W )= 0.95
-    PVEG(NVT_C3S )= 0.95
-  ENDIF
-ELSE
-  IF (PLAI(NVT_C4)/=XUNDEF) PVEG(NVT_C4  )= 1. - EXP( -0.6 * PLAI(NVT_C4  ) )
-  IF (NVT_IRR>0) THEN
-    IF (PLAI(NVT_IRR)/=XUNDEF) PVEG(NVT_IRR )= 1. - EXP( -0.6 * PLAI(NVT_IRR ) )
-  ENDIF
-  IF (NVT_C3>0) THEN
-    IF (PLAI(NVT_C3)/=XUNDEF) PVEG(NVT_C3  )= 1. - EXP( -0.6 * PLAI(NVT_C3  ) )
-  ELSEIF (NVT_C3W>0 .AND. NVT_C3S>0) THEN
-    IF (PLAI(NVT_C3W)/=XUNDEF) PVEG(NVT_C3W )= 1. - EXP( -0.6 * PLAI(NVT_C3W ) )
-    IF (PLAI(NVT_C3S)/=XUNDEF) PVEG(NVT_C3S )= 1. - EXP( -0.6 * PLAI(NVT_C3S ) )
-  ENDIF
+IF (PLAI(NVT_C4)/=XUNDEF) PVEG(NVT_C4  )= 1. - EXP( -0.6 * PLAI(NVT_C4  ) )
+IF (NVT_IRR>0) THEN
+   IF (PLAI(NVT_IRR)/=XUNDEF) PVEG(NVT_IRR )= 1. - EXP( -0.6 * PLAI(NVT_IRR ) )
+ENDIF
+IF (NVT_C3>0) THEN
+   IF (PLAI(NVT_C3)/=XUNDEF) PVEG(NVT_C3  )= 1. - EXP( -0.6 * PLAI(NVT_C3  ) )
+ELSEIF (NVT_C3W>0 .AND. NVT_C3S>0) THEN
+   IF (PLAI(NVT_C3W)/=XUNDEF) PVEG(NVT_C3W )= 1. - EXP( -0.6 * PLAI(NVT_C3W ) )
+   IF (PLAI(NVT_C3S)/=XUNDEF) PVEG(NVT_C3S )= 1. - EXP( -0.6 * PLAI(NVT_C3S ) )
 ENDIF
 !
 PVEG(NVT_TEBD)=  0.95

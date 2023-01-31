@@ -55,6 +55,7 @@
 !     B. Decharme       01/2015 - Added optical snow grain size diameter
 !     B. Cluzet         08/2015 - deleted unused procedures SNOWCROHOLD_3,2,1D
 !                               - added lwc options (functions SNOWO04HOLD_0D, SNOWS02HOLD_0D) 
+!     A. Alias          03/2019 - Bugfix in SNOW3LGRID_2D and SNOW3LGRID_1D (linked with optional PSNOWDZ_OLD)
 !----------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -163,6 +164,7 @@ END INTERFACE
 INTERFACE SNOW3LCOMPACTN
   MODULE PROCEDURE SNOW3LCOMPACTN
 END INTERFACE
+!
 !-------------------------------------------------------------------------------
 CONTAINS
 !
@@ -474,7 +476,7 @@ PWHOLDMAX = ZHOLDMAXR*PSNOWDZ*ZSNOWRHO/XRHOLW
 IF (LHOOK) CALL DR_HOOK('MODE_SNOW3L:SNOW3LHOLD_0D',1,ZHOOK_HANDLE)
 !
 END FUNCTION SNOW3LHOLD_0D
-
+!
 !####################################################################
       FUNCTION SNOWCROHOLD_3D(PSNOWRHO,PSNOWLIQ,PSNOWDZ) RESULT(PWHOLDMAX)
 !
@@ -1260,7 +1262,7 @@ ENDDO
 !
 IF (PRESENT(PSNOWDZ_OLD)) THEN
   DO JI=1,INI
-    IF (.NOT.GREGRID(JI)) PSNOWDZ(JI,:)=PSNOWDZ_OLD(JI,:) 
+    IF((PSNOW(JI)/=XUNDEF).AND.(.NOT.GREGRID(JI))) PSNOWDZ(JI,:)=PSNOWDZ_OLD(JI,:)
   ENDDO
 ENDIF
 !
@@ -1555,7 +1557,7 @@ ENDIF
 IF (PSNOW==XUNDEF) PSNOWDZ(:) = XUNDEF
 !
 IF (PRESENT(PSNOWDZ_OLD)) THEN
-  IF (.NOT.GREGRID) PSNOWDZ(:) = PSNOWDZ_OLD(:)
+  IF ((PSNOW==XUNDEF).AND.(.NOT.GREGRID)) PSNOWDZ(:) = PSNOWDZ_OLD(:)
 ENDIF
 !
 IF (LHOOK) CALL DR_HOOK('MODE_SNOW3L:SNOW3LGRID_1D',1,ZHOOK_HANDLE)
@@ -2933,7 +2935,7 @@ END SUBROUTINE SNOW3LALB
 !####################################################################
 !####################################################################
 SUBROUTINE SNOW3LFALL(PTSTEP,PSR,PTA,PVMOD,PSNOW,PSNOWRHO,PSNOWDZ,        &
-                      PSNOWHEAT,PSNOWHMASS,PSNOWAGE,PPERMSNOWFRAC)  
+                      PSNOWHEAT,PSNOWHMASS,PSNOWHMASS1,PSNOWAGE,PPERMSNOWFRAC)  
 !
 !!    PURPOSE
 !!    -------
@@ -2942,11 +2944,13 @@ SUBROUTINE SNOW3LFALL(PTSTEP,PSR,PTA,PVMOD,PSNOW,PSNOWRHO,PSNOWDZ,        &
 !
 !
 USE MODD_CSTS,     ONLY : XLMTT, XTT, XCI
-USE MODD_SNOW_PAR, ONLY : XRHOSMIN_ES, XSNOWDMIN, &
+USE MODD_SNOW_PAR, ONLY : XRHOSMIN_ES,            &
                           XSNOWFALL_A_SN,         &
                           XSNOWFALL_B_SN,         &
                           XSNOWFALL_C_SN
-!                   
+!
+USE MODD_SNOW_METAMO, ONLY : XSNOWDZMIN
+!
 USE YOMHOOK   ,    ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,    ONLY : JPRB
 !
@@ -2962,7 +2966,7 @@ REAL, DIMENSION(:), INTENT(INOUT)   :: PSNOW
 !
 REAL, DIMENSION(:,:), INTENT(INOUT) :: PSNOWRHO, PSNOWDZ, PSNOWHEAT, PSNOWAGE
 !
-REAL, DIMENSION(:), INTENT(OUT)     :: PSNOWHMASS
+REAL, DIMENSION(:), INTENT(OUT)     :: PSNOWHMASS, PSNOWHMASS1
 !
 !
 !*      0.2    declarations of local variables
@@ -2995,7 +2999,8 @@ ZSNOWFALL(:)    = 0.0
 ZSCAP(:)        = 0.0
 ZSNOW(:)        = PSNOW(:)
 !
-PSNOWHMASS(:)   = 0.0
+PSNOWHMASS (:)   = 0.0
+PSNOWHMASS1(:)   = 0.0
 !
 ! 1. Incorporate snowfall into snowpack:
 ! --------------------------------------
@@ -3015,7 +3020,7 @@ ZSCAP    (:)  = SNOW3LSCAP(PSNOWRHO(:,1))
 WHERE (PSR(:) > 0.0 .AND. PSNOWDZ(:,1)>0.)
   ZSNOWTEMP(:)  = XTT + (PSNOWHEAT(:,1) +                              &
                     XLMTT*PSNOWRHO(:,1)*PSNOWDZ(:,1))/                   &
-                    (ZSCAP(:)*MAX(XSNOWDMIN/INLVLS,PSNOWDZ(:,1)))  
+                    (ZSCAP(:)*MAX(XSNOWDZMIN,PSNOWDZ(:,1)))  
   ZSNOWTEMP(:)  = MIN(XTT, ZSNOWTEMP(:))
 END WHERE
 !
@@ -3090,6 +3095,9 @@ DO JJ=1,INLVLS
    ENDDO
 ENDDO
 !
+PSNOWHMASS1(:) = (1.0-ZSNOWFALL_DELTA(:)) * PSNOWHMASS(:)  &
+               +      ZSNOWFALL_DELTA(:)  * PSNOWHMASS(:)/INLVLS 
+!
 IF (LHOOK) CALL DR_HOOK('MODE_SNOW3L:SNOW3LFALL',1,ZHOOK_HANDLE)
 !
 !
@@ -3097,7 +3105,7 @@ END SUBROUTINE SNOW3LFALL
 !####################################################################
 !####################################################################
 !####################################################################
-SUBROUTINE SNOW3LCOMPACTN(PTSTEP,PSNOWDZMIN,PSNOWRHO,PSNOWDZ,PSNOWTEMP,PSNOW,PSNOWLIQ)  
+SUBROUTINE SNOW3LCOMPACTN(PTSTEP,PSNOWRHO,PSNOWDZ,PSNOWTEMP,PSNOW,PSNOWLIQ)  
 !
 !!    PURPOSE
 !!    -------
@@ -3123,7 +3131,6 @@ IMPLICIT NONE
 !*      0.1    declarations of arguments
 !
 REAL, INTENT(IN)                    :: PTSTEP
-REAL, INTENT(IN)                    :: PSNOWDZMIN
 !
 REAL, DIMENSION(:,:), INTENT(IN)    :: PSNOWTEMP, PSNOWLIQ
 !
@@ -3140,9 +3147,8 @@ INTEGER                             :: INI
 INTEGER                             :: INLVLS
 !
 REAL, DIMENSION(SIZE(PSNOWRHO,1),SIZE(PSNOWRHO,2)) :: ZSNOWRHO2, ZVISCOCITY, ZF1, &
-                                                      ZTEMP, ZSMASS, ZSNOWDZ,     &
-                                                      ZWSNOWDZ, ZWHOLDMAX
-!
+                                                      ZTEMP, ZSMASS, ZWSNOWDZ,    &
+                                                      ZWHOLDMAX
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
@@ -3157,7 +3163,6 @@ INI             = SIZE(PSNOWDZ(:,:),1)
 INLVLS          = SIZE(PSNOWDZ(:,:),2)
 !
 ZSNOWRHO2 (:,:) = PSNOWRHO(:,:)
-ZSNOWDZ   (:,:) = MAX(PSNOWDZMIN,PSNOWDZ(:,:))
 ZVISCOCITY(:,:) = 0.0
 ZTEMP     (:,:) = 0.0
 !
@@ -3179,7 +3184,6 @@ ZSMASS(:,1) = 0.5 * PSNOWDZ(:,1) * PSNOWRHO(:,1)
 !Liquid water effect
 !
 ZWHOLDMAX(:,:) = SNOW3LHOLD(PSNOWRHO,PSNOWDZ)
-ZWHOLDMAX(:,:) = MAX(1.E-10, ZWHOLDMAX(:,:))
 ZF1(:,:) = 1.0/(XVVISC5+10.*MIN(1.0,PSNOWLIQ(:,:)/ZWHOLDMAX(:,:)))
 !
 !Snow viscocity, density and grid thicknesses

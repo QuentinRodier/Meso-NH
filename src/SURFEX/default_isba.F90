@@ -8,10 +8,10 @@
                               HC1DRY, HSOILFRZ, HDIFSFCOND, HSNOWRES,    &
                               HCPSURF, PCGMAX, PCDRAG, HKSAT, OSOC,      &
                               HRAIN, HHORT, OGLACIER, OCANOPY_DRAG,      &
-                              OVEGUPD, OSPINUPCARBS, OSPINUPCARBW,       &
-                              PSPINMAXS, PSPINMAXW, PCO2_START, PCO2_END,&
-                              KNBYEARSPINS, KNBYEARSPINW,                &
-                              ONITRO_DILU, PCVHEATF                      )
+                              OVEGUPD, OSPINUPCARBS, PSPINMAXS,          &
+                              KNBYEARSPINS, ONITRO_DILU, PCVHEATF,       &
+                              OFIRE, OCLEACH, OADVECT_SOC, OCRYOTURB,    &
+                              OBIOTURB, PMISSFCO2, PCNLIM , ODOWNREGU    )
 !     ########################################################################
 !
 !!****  *DEFAULT_ISBA* - routine to set default values for the configuration for ISBA
@@ -42,6 +42,9 @@
 !!      Original    01/2004 
 !!      B.Decharme  04/2013 delete HTOPREG (never used)
 !!                          water table / surface coupling 
+!!      R. Séférian 08/2016 introduce logical to activate fire and carbon leaching module 
+!!      R. Séférian    11/16 : Implement carbon cycle coupling (Earth system model)
+!!      R. Seferian    11/17 : downregulation parameterization of CO2 assimilation
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -130,17 +133,28 @@ LOGICAL, INTENT(OUT)          :: OVEGUPD   ! T: update vegetation parameters
                                            !    constant in time
 !
 LOGICAL, INTENT(OUT)          :: OSPINUPCARBS ! T: carbon spinup soil
-LOGICAL, INTENT(OUT)          :: OSPINUPCARBW ! T: carbon spinup wood
 REAL,    INTENT(OUT)          :: PSPINMAXS    ! max number of times CARBON_SOIL subroutine is called
-REAL,    INTENT(OUT)          :: PSPINMAXW    ! max number of times the wood is accelerated 
-REAL,    INTENT(OUT)          :: PCO2_START   ! Pre-industrial CO2 concentration
-REAL,    INTENT(OUT)          :: PCO2_END     ! Begin-transient CO2 concentration
 INTEGER, INTENT(OUT)          :: KNBYEARSPINS ! nbr years needed to reaches soil equilibrium
-INTEGER, INTENT(OUT)          :: KNBYEARSPINW ! nbr years needed to reaches wood equilibrium
 !
 LOGICAL, INTENT(OUT)          :: ONITRO_DILU ! nitrogen dilution fct of CO2 (Calvet et al. 2008)
 !
-REAL, INTENT(OUT) :: PCVHEATF
+REAL,    INTENT(OUT)          :: PCVHEATF
+!
+LOGICAL, INTENT(OUT)          :: OFIRE       ! Fire model based on Thonickle et al., 2001
+!
+LOGICAL, INTENT(OUT)          :: OCLEACH     ! carbon leaching scheme
+!
+LOGICAL, INTENT(OUT)          :: OADVECT_SOC ! soil carbon advection for wet soil
+!
+LOGICAL, INTENT(OUT)          :: OCRYOTURB   ! soil carbon bioturbation
+!
+LOGICAL, INTENT(OUT)          :: OBIOTURB    ! soil carbon cryoturbation
+!
+REAL,    INTENT(OUT)          :: PMISSFCO2   ! missing co2 fluxes (keeling hypothesis)
+!
+REAL,    INTENT(OUT)          :: PCNLIM      ! carbon-nitrogen limitation (Yin 2002)
+!
+LOGICAL, INTENT(OUT)          :: ODOWNREGU   ! downregulation parameterization of CO2 assimilation
 !
 !*       0.2   Declarations of local variables
 !              -------------------------------
@@ -180,16 +194,24 @@ OCANOPY_DRAG = .FALSE.
 OVEGUPD = .TRUE.
 !
 OSPINUPCARBS = .FALSE.
-OSPINUPCARBW = .FALSE.
-!
-PSPINMAXS = 0.
-PSPINMAXW = 0.
-PCO2_START= XUNDEF
-PCO2_END  = XUNDEF
+PSPINMAXS    = 0.
 KNBYEARSPINS = 0
-KNBYEARSPINW = 0
 !
 ONITRO_DILU = .FALSE.
+!
+OFIRE       = .FALSE.
+!
+OCLEACH     = .FALSE.
+!
+OADVECT_SOC = .FALSE.
+OCRYOTURB   = .FALSE.
+OBIOTURB    = .FALSE.
+!
+PMISSFCO2   = XUNDEF
+!
+PCNLIM      = -0.048 ! (Yin GBC 2002)
+!
+ODOWNREGU   = .FALSE.
 !
 IF (LHOOK) CALL DR_HOOK('DEFAULT_ISBA',1,ZHOOK_HANDLE)
 !

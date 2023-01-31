@@ -712,7 +712,8 @@ IF (LHOOK) CALL DR_HOOK('MODE_GRIDTYPE_GAUSS:XY_GAUSS',1,ZHOOK_HANDLE_OMP)
     !*     0.     DECLARATIONS
     !             ------------
     !
-    USE EGGANGLES,ONLY : LOLA, ANGLE_DOMAIN
+    USE MODD_CSTS,     ONLY : XRADIUS, XPI
+    USE EGGANGLES,     ONLY : LOLA, ANGLE_DOMAIN
     USE MODE_GEO_GAUSS,ONLY : MAP_FAC
     !
     IMPLICIT NONE
@@ -733,7 +734,6 @@ IF (LHOOK) CALL DR_HOOK('MODE_GRIDTYPE_GAUSS:XY_GAUSS',1,ZHOOK_HANDLE_OMP)
     TYPE(LOLA)                          :: TZPOLE
     TYPE(LOLA), DIMENSION(SIZE(PLAT))   :: TZPTCI
     !
-    REAL :: ZPI
     REAL :: ZDR
     REAL(KIND=JPRB) :: ZHOOK_HANDLE
     !-------------------------------------------------------------------------------
@@ -742,8 +742,8 @@ IF (LHOOK) CALL DR_HOOK('MODE_GRIDTYPE_GAUSS:XY_GAUSS',1,ZHOOK_HANDLE_OMP)
     !             -----------------------
     !
     IF (LHOOK) CALL DR_HOOK('MODE_GRIDTYPE_GAUSS:MAP_FACTOR_GAUSS',0,ZHOOK_HANDLE)
-    ZPI = 4.*ATAN(1.)
-    ZDR = ZPI / 180.
+    !
+    ZDR = XPI / 180.
     !
     TZPTCI(:)%LON = ANGLE_DOMAIN(PLON(:),DOM='0+',UNIT='D') * ZDR
     TZPTCI(:)%LAT = PLAT(:) * ZDR
@@ -765,7 +765,9 @@ IF (LHOOK) CALL DR_HOOK('MODE_GRIDTYPE_GAUSS:XY_GAUSS',1,ZHOOK_HANDLE_OMP)
   !##################################
   SUBROUTINE LATITUDES_GAUSS(KN,PL,PDL,PW)
   !##################################
-
+  !
+  USE MODD_CSTS, ONLY : XRADIUS, XPI
+  !
   !**** *SUGAW36 * - Routine to initialize the Gaussian
   !                  abcissa and the associated weights
   !                  Frozen CY36 version.
@@ -847,7 +849,7 @@ IF (LHOOK) CALL DR_HOOK('MODE_GRIDTYPE_GAUSS:XY_GAUSS',1,ZHOOK_HANDLE_OMP)
   REAL, DIMENSION(KN) :: ZREG, ZLI, ZT, ZMOD, ZM, ZR
 
   REAL :: ZFNN, ZACOS
-  REAL ::  ZPI, Z, ZRA, ZEPS, ZW, ZX, ZXN
+  REAL :: Z, ZEPS, ZW, ZX, ZXN
   REAL :: ZDLX, ZDLXN, ZDLK, ZDLLDN, ZZDLXN, ZDLMOD
 
   INTEGER, DIMENSION(KN) :: ITER
@@ -892,10 +894,9 @@ IF (LHOOK) CALL DR_HOOK('MODE_GRIDTYPE_GAUSS:XY_GAUSS',1,ZHOOK_HANDLE_OMP)
 
   !*       1.2 Find first approximation of the roots of the
   !            Legendre polynomial of degree KN.
-  ZPI=2.0*ASIN(1.0) ! Constant Pi
   INS2 = KN/2+MOD(KN,2)
   DO JGL=1,INS2
-    Z = (4*JGL-1)*ZPI/(4*KN+2)
+    Z = (4*JGL-1)*XPI/(4*KN+2)
     PL(JGL) = Z+1.0/(TAN(Z)*8*(KN**2))
     ZREG(JGL) = COS(Z)
     ZLI (JGL) = COS(PL(JGL))
@@ -990,12 +991,12 @@ IF (LHOOK) CALL DR_HOOK('MODE_GRIDTYPE_GAUSS:XY_GAUSS',1,ZHOOK_HANDLE_OMP)
   !*      3. Diagnostics.
   !          ------------
 
-    ZRA=6371229.         ! Earth radius
+    !DEC$ NOVECTOR
     DO JGL=1,INS2
       ZACOS = ACOS(PL(JGL))
-      ZM(JGL) = (ZACOS-ACOS(ZLI (JGL)))*ZRA
-      ZR(JGL) = (ZACOS-ACOS(ZREG(JGL)))*ZRA
-      ZT(JGL) =  ZACOS*180./ZPI
+      ZM(JGL) = (ZACOS-ACOS(ZLI (JGL)))*XRADIUS
+      ZR(JGL) = (ZACOS-ACOS(ZREG(JGL)))*XRADIUS
+      ZT(JGL) =  ZACOS*180./XPI
     ENDDO
 
   IALLOW = 10

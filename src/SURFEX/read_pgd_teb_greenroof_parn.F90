@@ -82,8 +82,6 @@ INTEGER                               :: JI             ! loop index
 INTEGER                               :: JTIME          ! loop index
 INTEGER                               :: JLAYER         ! loop index
 !
-LOGICAL :: GAGRI_TO_GRASS
-!
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !-------------------------------------------------------------------------------
@@ -92,8 +90,6 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !              --------------------
 !
 IF (LHOOK) CALL DR_HOOK('READ_PGD_TEB_GREENROOF_PAR_N',0,ZHOOK_HANDLE)
-!
-GAGRI_TO_GRASS=.FALSE.
 !
 YRECFM='GR_NTIME'
  CALL READ_SURF(HPROGRAM,YRECFM,DTV%NTIME,IRESP)
@@ -340,7 +336,7 @@ DO JTIME=1,DTV%NTIME
 ! Fraction of vegetation on greenroof
 !* Will need to be refined for greenroofs *)
   !XPAR_VEG (JI,1,JTIME) = VEG_FROM_LAI (XPAR_LAI_GR(JI,JTIME),   &
-  !                                       XPAR_VEGTYPE(JI,:),GAGRI_TO_GRASS)  
+  !                                       XPAR_VEGTYPE(JI,:)      )  
  IF(DTV%XPAR_VEGTYPE(JI,NVT_GRAS)>0. )   DTV%XPAR_VEG (JI,JTIME,:) = 0.9
  !IF(XPAR_VEGTYPE(JI,NVT_TROG)>0. )   XPAR_VEG (JI,JTIME) = 1.0
  IF(DTV%XPAR_VEGTYPE(JI,NVT_TROG)>0. )   DTV%XPAR_VEG (JI,JTIME,:) = 0.95

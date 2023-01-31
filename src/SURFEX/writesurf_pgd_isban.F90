@@ -44,6 +44,7 @@
 !!      M. Moge      02/2015   parallelization using WRITE_LCOVER
 !!      B. Decharme  10/2016 : bug surface/groundwater coupling   
 !!      A. Druel     02/2019 : Add variables for irrigation
+!!      R. Séférian   08/2016 : inclusion of a new landuse key in the pgd file
 !!
 !-------------------------------------------------------------------------------
 !
@@ -146,6 +147,12 @@ YRECFM='ALBEDO'
 YCOMMENT=YRECFM
  CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,IO%CALBEDO,IRESP,HCOMMENT=YCOMMENT)
 !
+!* land-use scheme
+!
+YRECFM='LULCC'
+YCOMMENT=YRECFM
+ CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,IO%LLULCC,IRESP,HCOMMENT=YCOMMENT)
+!
 !* threshold to remove little fractions of patches
 !
 YRECFM='RM_PATCH'
@@ -183,9 +190,6 @@ YCOMMENT=YRECFM
 !
 !* Name of eatch tile (patch) 
 !
-ALLOCATE(DTV%CPATCH_NAME(IO%NPATCH,2))
-DTV%CPATCH_NAME(:,1) = '-'
-DTV%CPATCH_NAME(:,2) = ''
 YCOMMENT='npatch name'
 DO JJ=1,IO%NPATCH
   WRITE(YRECFM,FMT='(A10,I2.2)') 'NPATCH_NAM',JJ

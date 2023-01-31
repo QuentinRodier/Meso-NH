@@ -4,7 +4,7 @@
 !SFX_LIC for details. version 1.
 !     #########
       SUBROUTINE READ_PGD_ISBA_n (CHI, DTCO, DTV, DTZ, GB, IG, ISS, IO, S, K, &
-                                  UG, U, USS, GCP, SV, HPROGRAM, OLAND_USE, TPDATE_END)
+                                  UG, U, USS, GCP, SV, HPROGRAM, TPDATE_END   )
 !     #########################################
 !
 !!****  *READ_PGD_ISBA_n* - routine to initialise ISBA physiographic variables 
@@ -45,6 +45,8 @@
 !!      M. Leriche   06/2017 add SOLMON option for biogenic emissions
 !!                           warning this option do not work anymore -> to be debug
 !!      A. Druel     02/2019  : adapt the code to be compatible with irrigation (and new patches)
+!!      J. Colin        08/16 : Mask for snow and soil moisture nudging
+!!      B. Decharme     08/16 : change landuse implementation 
 !!
 !-------------------------------------------------------------------------------
 !
@@ -122,7 +124,6 @@ TYPE(GRID_CONF_PROJ_t),INTENT(INOUT) :: GCP
 TYPE(SV_t),            INTENT(INOUT) :: SV
 !
 CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM ! calling program
-LOGICAL,           INTENT(IN)  :: OLAND_USE ! 
 TYPE(DATE),        INTENT(IN) :: TPDATE_END
 !
 !*       0.2   Declarations of local variables
@@ -179,6 +180,7 @@ LOGICAL                  :: LIMP_CLAY        ! Imposed maps of Clay
 LOGICAL                  :: LIMP_SOC         ! Imposed maps of organic carbon
 LOGICAL                  :: LIMP_CTI         ! Imposed maps of topographic index statistics
 LOGICAL                  :: LIMP_PERM        ! Imposed maps of permafrost distribution
+LOGICAL                  :: GLULCC
 REAL, DIMENSION(150)     :: ZSOILGRID        ! Soil grid reference for DIF
 CHARACTER(LEN=28)        :: YPH           ! file name for pH
 CHARACTER(LEN=28)        :: YFERT         ! file name for fertilisation rate
@@ -188,8 +190,8 @@ REAL                     :: XUNIF_PH      ! uniform value of pH
 REAL                     :: XUNIF_FERT    ! uniform value of fertilisation rate
 LOGICAL                  :: GMEB      ! Multi-energy balance (MEB)
 !
-CHARACTER(LEN=NCAR_FILES):: CWORK
-CHARACTER(LEN=1)         :: YWORK
+CHARACTER(LEN=NCAR_FILES):: YWORK
+CHARACTER(LEN=1)         :: YWK
 !
 LOGICAL :: GECOSG
 !
@@ -197,17 +199,18 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !-------------------------------------------------------------------------------
 !
+IF (LHOOK) CALL DR_HOOK('READ_PGD_ISBA_N',0,ZHOOK_HANDLE)
+!
 !* 1D physical dimension
 !
-IF (LHOOK) CALL DR_HOOK('READ_PGD_ISBA_N',0,ZHOOK_HANDLE)
 YRECFM='SIZE_NATURE'
- CALL GET_TYPE_DIM_n(DTCO, U, 'NATURE',IG%NDIM)
+CALL GET_TYPE_DIM_n(DTCO, U, 'NATURE',IG%NDIM)
 !
 YRECFM='VERSION'
- CALL READ_SURF(HPROGRAM,YRECFM,IVERSION,IRESP)
+CALL READ_SURF(HPROGRAM,YRECFM,IVERSION,IRESP)
 !
 YRECFM='BUG'
- CALL READ_SURF(HPROGRAM,YRECFM,IBUGFIX,IRESP)
+CALL READ_SURF(HPROGRAM,YRECFM,IBUGFIX,IRESP)
 !
 !*       2.     Dimension initializations:
 !               -------------------------
@@ -215,7 +218,7 @@ YRECFM='BUG'
 !* soil scheme
 !
 YRECFM='ISBA'
- CALL READ_SURF(HPROGRAM,YRECFM,IO%CISBA,IRESP)
+CALL READ_SURF(HPROGRAM,YRECFM,IO%CISBA,IRESP)
 !
 IF (IVERSION>=7) THEN
   !
@@ -231,7 +234,7 @@ ENDIF
 !* type of photosynthesis
 !
 YRECFM='PHOTO'
- CALL READ_SURF(HPROGRAM,YRECFM,IO%CPHOTO,IRESP)
+CALL READ_SURF(HPROGRAM,YRECFM,IO%CPHOTO,IRESP)
 !
 !* new radiative transfert
 !
@@ -261,7 +264,7 @@ ELSE
                        YRUNOFFB, YRUNOFFBFILETYPE, XUNIF_RUNOFFB,                &
                        YWDRAIN,  YWDRAINFILETYPE , XUNIF_WDRAIN, ZSOILGRID,      &
                        YPH, YPHFILETYPE, XUNIF_PH, YFERT, YFERTFILETYPE,         &
-                       XUNIF_FERT                          )  
+                       XUNIF_FERT, GLULCC                                        )  
   IO%CALBEDO = YALBEDO
   !
 ENDIF
@@ -280,11 +283,12 @@ ENDIF
 !* number of soil layers
 !
 YRECFM='GROUND_LAYER'
- CALL READ_SURF(HPROGRAM,YRECFM,IO%NGROUND_LAYER,IRESP)
+CALL READ_SURF(HPROGRAM,YRECFM,IO%NGROUND_LAYER,IRESP)
 !
 !* Reference grid for DIF
 !
 IF(IO%CISBA=='DIF') THEN
+!
   ALLOCATE(IO%XSOILGRID(IO%NGROUND_LAYER))
   IO%XSOILGRID=XUNDEF
   IF (IVERSION>=8) THEN
@@ -299,8 +303,11 @@ IF(IO%CISBA=='DIF') THEN
   ELSE
     IO%XSOILGRID(1:IO%NGROUND_LAYER)=XOPTIMGRID(1:IO%NGROUND_LAYER)
   ENDIF
+!
 ELSE
+!
   ALLOCATE(IO%XSOILGRID(0))
+!
 ENDIF
 !
 !* number of biomass pools
@@ -319,20 +326,31 @@ ELSE
   END SELECT
 ENDIF
 !
+!* Land-use scheme
+!
+IF (IVERSION>=9) THEN
+  YRECFM='LULCC'
+  CALL READ_SURF(HPROGRAM,YRECFM,IO%LLULCC,IRESP)
+ELSE
+  IO%LLULCC = .FALSE.
+ENDIF
+!
 !* number of tiles
 !
 YRECFM='PATCH_NUMBER'
- CALL READ_SURF(HPROGRAM,YRECFM,IO%NPATCH,IRESP)
+CALL READ_SURF(HPROGRAM,YRECFM,IO%NPATCH,IRESP)
 !
 !!* Name of eatch tile (patch) #remove with 160character in output
 !!
-!ALLOCATE(DTV%CPATCH_NAME(IO%NPATCH,2))
-!DO JLAYER=1,IO%NPATCH
-!  WRITE(YRECFM,FMT='(A7,I2.2)') 'NPATCH_',JLAYER
-!  CALL READ_SURF(HPROGRAM,YRECFM,CWORK,IRESP)
-!  DTV%CPATCH_NAME(JLAYER,1) = CWORK(1:INDEX(CWORK,'-')-1)
-!  DTV%CPATCH_NAME(JLAYER,2) = CWORK(INDEX(CWORK,'-')+1:LEN_TRIM(CWORK))
-!ENDDO
+ALLOCATE(DTV%CPATCH_NAME(IO%NPATCH,2))
+DO JLAYER=1,IO%NPATCH
+  WRITE(YRECFM,FMT='(A10,I2.2)') 'NPATCH_NAM',JLAYER
+  CALL READ_SURF(HPROGRAM,YRECFM,DTV%CPATCH_NAME(JLAYER,1),IRESP)
+  !
+!* Composition of each patch (True / False liste + if ecosg and irrigated 'IRRIG ')  
+  WRITE(YRECFM,FMT='(A10,I2.2)') 'NPATCH_VEG',JLAYER
+  CALL READ_SURF(HPROGRAM,YRECFM,DTV%CPATCH_NAME(JLAYER,2),IRESP)
+ENDDO
 !
 !* logical vector indicating for which patches MEB should be applied
 !
@@ -629,13 +647,13 @@ IF ( NVEG_IRR /= 0 ) THEN
   !
   !* liste of irrigated vegtype
   YRECFM='LIST_VEG_IRR'
-  CALL READ_SURF(HPROGRAM,YRECFM,CWORK,IRESP)
+  CALL READ_SURF(HPROGRAM,YRECFM,YWORK,IRESP)
   ALLOCATE(DTV%NPAR_VEG_IRR_USE(NVEG_IRR))
   DTV%NPAR_VEG_IRR_USE(:)=0
   II=0
-  DO JLAYER=1,LEN_TRIM(CWORK)
-    READ(CWORK(JLAYER:JLAYER),'(A1)') YWORK
-    IF ( YWORK == 'T' ) THEN
+  DO JLAYER=1,LEN_TRIM(YWORK)
+    READ(YWORK(JLAYER:JLAYER),'(A1)') YWK
+    IF ( YWK == 'T' ) THEN
       II=II+1
       DTV%NPAR_VEG_IRR_USE(II)=JLAYER
     ENDIF
@@ -650,13 +668,13 @@ ENDIF
 IF ( IVERSION>=9 .AND. LIRRIGMODE ) THEN
   ! Threshold on f2 for irrigation
   YRECFM='XTHRESHOLD'
-  CALL READ_SURF(HPROGRAM,YRECFM,CWORK,IRESP)
-  CWORK = CWORK(3:LEN_TRIM(CWORK))
+  CALL READ_SURF(HPROGRAM,YRECFM,YWORK,IRESP)
+  YWORK = YWORK(3:LEN_TRIM(YWORK))
   DO JLAYER=1,SIZE(XTHRESHOLD)-1
-    READ(CWORK(1:INDEX(CWORK,',')-1),'(F6.3)') XTHRESHOLD(JLAYER)
-    CWORK = CWORK(INDEX(CWORK,',')+1:LEN_TRIM(CWORK))
+    READ(YWORK(1:INDEX(YWORK,',')-1),'(F6.3)') XTHRESHOLD(JLAYER)
+    YWORK = YWORK(INDEX(YWORK,',')+1:LEN_TRIM(YWORK))
   ENDDO
-  READ(CWORK(1:INDEX(CWORK,'/')-1),'(F6.3)') XTHRESHOLD(JLAYER)
+  READ(YWORK(1:INDEX(YWORK,'/')-1),'(F6.3)') XTHRESHOLD(JLAYER)
   !
 ELSEIF ( LIRRIGMODE ) THEN
   XTHRESHOLD = XTHRESHOLD_DEFAULT
@@ -664,9 +682,20 @@ ENDIF
 !
 !       4. c. Others (Only with DTV)
 !
-CALL READ_PGD_ISBA_PAR_n(DTCO, U, GCP, DTV, IG%NDIM, IO, HPROGRAM,IG%NDIM, OLAND_USE, S%TTIME%TDATE, TPDATE_END)
+CALL READ_PGD_ISBA_PAR_n(DTCO, U, GCP, DTV, IG%NDIM, IO, HPROGRAM,IG%NDIM, S%TTIME%TDATE, TPDATE_END)
 !
 IF (U%CNATURE == 'TSZ0') CALL READ_PGD_TSZ0_PAR_n(DTZ, HPROGRAM)
+!
+!-------------------------------------------------------------------------------
+!
+!*       5.     Nudging mask
+!               ---------------------------------------------------------
+ALLOCATE(K%XNUDG_MASK(IG%NDIM))
+K%XNUDG_MASK(:)=0.
+IF (IO%LNUDG_SWE_MASK.OR.IO%LNUDG_WG_MASK) THEN
+   YRECFM='MASK_N'
+   CALL READ_SURF(HPROGRAM,YRECFM,K%XNUDG_MASK(:),IRESP)
+END IF
 !
 IF (LHOOK) CALL DR_HOOK('READ_PGD_ISBA_N',1,ZHOOK_HANDLE)
 !-------------------------------------------------------------------------------

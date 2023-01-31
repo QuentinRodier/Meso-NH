@@ -45,6 +45,7 @@
 !!    P. Samuelsson 02/2012 : MEB
 !!    B. Decharme   10/2016 : bug surface/groundwater coupling
 !!    A. Druel      02/2019 : adapt the code to be compatible with irrigation and new patches (add new verification)
+!!    R. Séférian   08/2016 : land-use key
 !!
 !----------------------------------------------------------------------------
 !
@@ -202,6 +203,7 @@ LOGICAL                  :: LIMP_CLAY        ! Imposed maps of Clay
 LOGICAL                  :: LIMP_SOC         ! Imposed maps of organic carbon
 LOGICAL                  :: LIMP_CTI         ! Imposed maps of topographic index statistics
 LOGICAL                  :: LIMP_PERM        ! Imposed maps of permafrost distribution
+LOGICAL                  :: GLULCC           ! land-use scheme activation key
 REAL, DIMENSION(150)     :: ZSOILGRID        ! Soil grid reference for DIF
 CHARACTER(LEN=28)        :: YPH           ! file name for pH
 CHARACTER(LEN=28)        :: YFERT         ! file name for fertilisation rate
@@ -234,7 +236,7 @@ CALL READ_NAM_PGD_ISBA(HPROGRAM, IPATCH, IGROUND_LAYER,                         
                        YRUNOFFB, YRUNOFFBFILETYPE, XUNIF_RUNOFFB,                &
                        YWDRAIN,  YWDRAINFILETYPE , XUNIF_WDRAIN, ZSOILGRID,      &
                        YPH, YPHFILETYPE, XUNIF_PH, YFERT, YFERTFILETYPE,         &
-                       XUNIF_FERT                          )  
+                       XUNIF_FERT, GLULCC                         )  
 !
 IO%NPATCH        = IPATCH
 IO%NGROUND_LAYER = IGROUND_LAYER
@@ -244,6 +246,7 @@ IO%CPHOTO        = YPHOTO
 IO%LTR_ML        = GTR_ML
 IO%CALBEDO       = YALBEDO
 IO%XRM_PATCH     = MAX(MIN(ZRM_PATCH,1.),0.)
+IO%LLULCC        = GLULCC
 !
 !
  CALL READ_NAMELISTS_ISBA(HPROGRAM)
@@ -259,6 +262,22 @@ IF (IO%NPATCH<1) THEN
   WRITE(ILUOUT,*) '* You have chosen NPATCH = ', IO%NPATCH
   WRITE(ILUOUT,*) '*****************************************'
   CALL ABOR1_SFX('PGD_ISBA: NPATCH MUST BE SUPERIOR OR EQUAL TO 1')
+END IF
+!
+IF (IO%LLULCC .AND. U%LECOSG) THEN
+  WRITE(ILUOUT,*) '************************************************'
+  WRITE(ILUOUT,*) '* With the LULCC option, ECOSG can not be used *'
+  WRITE(ILUOUT,*) '************************************************'
+  CALL ABOR1_SFX('PGD_ISBA: LULCC INCONSISTENT WITH ECOSG')
+END IF
+!
+IF (IO%LLULCC .AND. IO%NPATCH<12) THEN
+  WRITE(ILUOUT,*) '*********************************************'
+  WRITE(ILUOUT,*) '* With the LULCC option, the number         *'
+  WRITE(ILUOUT,*) '* of patch must be equal or greater than 12 *'
+  WRITE(ILUOUT,*) '* You have chosen NPATCH = ', IO%NPATCH,'    *'
+  WRITE(ILUOUT,*) '*********************************************'
+  CALL ABOR1_SFX('PGD_ISBA: NPATCH INCONSISTENT WITH LAND-USE OPTIONS')
 END IF
 !
 ALLOCATE(IO%LMEB_PATCH(IO%NPATCH))

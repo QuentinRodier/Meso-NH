@@ -3,9 +3,9 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE CONVERT_PATCH_ISBA (DTCO, DTV, IO, KMONTH, KDAY, KDEC, KDEC2, PCOVER, OCOVER,              &
-                                     OAGRIP, OECOSG, OIRRIGMODE, HSFTYPE, KPATCH, KK, PK, PEK, OFIX, OTIME, &
-                                     OMEB, OIRR, OALB, OUPDATE_ALB, OURBTREE, PSOILGRID, PWG1, PWSAT, PPERM )
+      SUBROUTINE CONVERT_PATCH_ISBA (DTCO, DTV, IO, KMONTH, KDAY, KDEC, KDEC2, PCOVER, OCOVER,                &
+                                     OAGRIP, OECOSG, OIRRIGMODE, HSFTYPE, KPATCH, KK, PK, PEK, OFIX, OTIME,   &
+                                     OMEB, OIRR, OURBTREE, PSOILGRID, PPERM )
 !     ##############################################################
 !
 !!**** *CONVERT_PATCH_ISBA* 
@@ -48,8 +48,10 @@
 !!    J. ETchanchu  01/2018  add irrigation parameters
 !!    A. Druel      02/2019  Adapt the code to be compatible with irrigation (mainly for CALL and 
 !!                            new parameters)
-!  P. Wautelet 15/02/2019: bugfix: allocate ZSTRESS only when its size has a meaning
-!!  11/2019 C.Lac correction in the drag formula and application to building in addition to tree
+!!  P. Wautelet     15/02/2019: bugfix: allocate ZSTRESS only when its size has a meaning
+!!  C.Lac           11/2019 correction in the drag formula and application to building in addition to tree
+!!    B. Decharme  16/06/22 split vegetation albedo computation to convert_patch_alb_isba.F90
+
 !
 !----------------------------------------------------------------------------
 !
@@ -57,17 +59,16 @@
 !            -----------
 !
 !
-USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
-USE MODD_DATA_ISBA_n, ONLY : DATA_ISBA_t
+USE MODD_DATA_COVER_n,   ONLY : DATA_COVER_t
+USE MODD_DATA_ISBA_n,    ONLY : DATA_ISBA_t
 USE MODD_ISBA_OPTIONS_n, ONLY : ISBA_OPTIONS_t
+USE MODD_ISBA_n,         ONLY : ISBA_P_t, ISBA_PE_t, ISBA_K_t
 !
-USE MODD_ISBA_n, ONLY : ISBA_P_t, ISBA_PE_t, ISBA_K_t
+USE MODD_TYPE_DATE_SURF
 !
 USE MODD_DATA_COVER_PAR, ONLY : NVEGTYPE, NVT_NO, NVT_ROCK, NVT_SNOW, JPCOVER
 !
-USE MODD_SURF_PAR, ONLY : XUNDEF, NUNDEF
-USE MODD_TYPE_DATE_SURF
-!
+USE MODD_SURF_PAR,       ONLY : XUNDEF, NUNDEF
 !
 USE MODD_DATA_COVER,     ONLY : XDATA_LAI, XDATA_H_TREE,                &
                                 XDATA_VEG, XDATA_Z0, XDATA_Z0_O_Z0H,    &
@@ -85,13 +86,15 @@ USE MODD_DATA_COVER,     ONLY : XDATA_LAI, XDATA_H_TREE,                &
                                 XDATA_GMES_ST, XDATA_BSLAI_ST,          &
                                 XDATA_SEFOLD_ST, XDATA_GC_ST,           &
                                 XDATA_DMAX_ST, XDATA_WATSUP,            &
-                                XDATA_GNDLITTER, XDATA_Z0LITTER, XDATA_H_VEG,  &
-                                TDATA_SEED, TDATA_REAP,XDATA_IRRIGTYPE, &
+                                XDATA_GNDLITTER, XDATA_Z0LITTER,        &
+                                XDATA_H_VEG, TDATA_SEED,                &
+                                TDATA_REAP, XDATA_IRRIGTYPE,            &
                                 XDATA_IRRIGFRAC, XDATA_IRRIGFREQ,       &
                                 XDATA_IRRIGTIME, XDATA_F2THRESHOLD,     &
                                 XDATA_ROOT_DEPTH, XDATA_GROUND_DEPTH,   &
                                 XDATA_ROOT_EXTINCTION, XDATA_ROOT_LIN
 !   
+USE MODD_AGRI,           ONLY : NVEG_IRR, LMULTI_SEASON
 !
 USE MODD_TREEDRAG,       ONLY : LTREEDRAG
 !
@@ -99,7 +102,6 @@ USE MODI_AV_PGD_PARAM
 USE MODI_AV_PGD_1P
 USE MODI_SOIL_ALBEDO
 !
-USE MODD_AGRI,           ONLY : NVEG_IRR, LMULTI_SEASON
 USE MODI_VEGTYPE_TO_PATCH_IRRIG
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -110,47 +112,43 @@ IMPLICIT NONE
 !*    0.1    Declaration of arguments
 !            ------------------------
 !
+TYPE(DATA_COVER_t),   INTENT(INOUT) :: DTCO
+TYPE(DATA_ISBA_t),    INTENT(IN)    :: DTV
+TYPE(ISBA_OPTIONS_t), INTENT(IN)    :: IO
+TYPE(ISBA_K_t),       INTENT(INOUT) :: KK
+TYPE(ISBA_P_t),       INTENT(INOUT) :: PK
+TYPE(ISBA_PE_t),      INTENT(INOUT) :: PEK
 !
-TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
-TYPE(DATA_ISBA_t), INTENT(IN)     :: DTV
-TYPE(ISBA_OPTIONS_t), INTENT(IN)  :: IO
 !
-INTEGER,                INTENT(IN)    :: KMONTH    ! Month
-INTEGER,                INTENT(IN)    :: KDAY      ! Day
-INTEGER,                INTENT(IN)    :: KDEC
-INTEGER,                INTENT(IN)    :: KDEC2
-REAL, DIMENSION(:,:),   INTENT(IN)    :: PCOVER
-LOGICAL, DIMENSION(:),  INTENT(IN)    :: OCOVER
-LOGICAL,                INTENT(IN)    :: OAGRIP
-LOGICAL,                INTENT(IN)    :: OURBTREE
-LOGICAL,                INTENT(IN)    :: OECOSG
-LOGICAL,                INTENT(IN)    :: OIRRIGMODE
-CHARACTER(LEN=*),       INTENT(IN)    :: HSFTYPE ! nature / garden
-INTEGER, INTENT(IN) :: KPATCH
+INTEGER,                 INTENT(IN) :: KMONTH    ! Month
+INTEGER,                 INTENT(IN) :: KDAY      ! Day
+INTEGER,                 INTENT(IN) :: KDEC
+INTEGER,                 INTENT(IN) :: KDEC2
+REAL,    DIMENSION(:,:), INTENT(IN) :: PCOVER
+LOGICAL, DIMENSION(:),   INTENT(IN) :: OCOVER
+LOGICAL,                 INTENT(IN) :: OAGRIP
+LOGICAL,                 INTENT(IN) :: OECOSG
+LOGICAL,                 INTENT(IN) :: OIRRIGMODE
+CHARACTER(LEN=*),        INTENT(IN) :: HSFTYPE ! nature / garden
+INTEGER,                 INTENT(IN) :: KPATCH
 !
-TYPE(ISBA_K_t), INTENT(INOUT) :: KK
-TYPE(ISBA_P_t), INTENT(INOUT) :: PK
-TYPE(ISBA_PE_t), INTENT(INOUT) :: PEK
+LOGICAL,                 INTENT(IN) :: OFIX      ! update fixed fields
+LOGICAL,                 INTENT(IN) :: OTIME     ! update time varing fields
+LOGICAL,                 INTENT(IN) :: OMEB      ! update meb fields
+LOGICAL,                 INTENT(IN) :: OIRR      ! update irrigation fields
+LOGICAL,                 INTENT(IN) :: OURBTREE  ! update urban tree fields
 !
-LOGICAL, INTENT(IN) :: OFIX
-LOGICAL, INTENT(IN) :: OTIME
-LOGICAL, INTENT(IN) :: OMEB
-LOGICAL, INTENT(IN) :: OIRR
-LOGICAL, INTENT(IN) :: OALB
-LOGICAL, INTENT(IN) :: OUPDATE_ALB
-!
-REAL, DIMENSION(:),   OPTIONAL, INTENT(IN)   :: PWG1
-REAL, DIMENSION(:,:),   OPTIONAL, INTENT(IN)   :: PWSAT
-REAL, DIMENSION(:),   OPTIONAL, INTENT(IN)   :: PPERM
-!
-REAL, DIMENSION(:)  ,   OPTIONAL, INTENT(IN)    :: PSOILGRID
+REAL, DIMENSION(:),   OPTIONAL, INTENT(IN) :: PPERM
+REAL, DIMENSION(:)  , OPTIONAL, INTENT(IN) :: PSOILGRID
 !
 !*    0.2    Declaration of local variables
 !            ------------------------------
 !
+REAL,    DIMENSION(:), ALLOCATABLE :: ZH_VEG
 REAL,    DIMENSION(:), ALLOCATABLE :: ZWORKI
 INTEGER, DIMENSION(:), ALLOCATABLE :: ISEASON
- CHARACTER(LEN=3)  :: YTREE, YNAT, YLAI, YVEG, YBAR, YDIF
+!
+CHARACTER(LEN=3)  :: YTREE, YNAT, YLAI, YVEG, YBAR, YDIF
 !
 INTEGER               :: JLAYER    ! loop counter on layers
 INTEGER               :: JVEG, JK  ! loop counter on vegtypes
@@ -164,13 +162,8 @@ INTEGER               :: JJ        ! loop counter
 !
 INTEGER               :: ISIZE_LMEB_PATCH  ! Number of patches with MEB=true
 !
-REAL, ALLOCATABLE, DIMENSION(:) :: ZH_VEG
-!
-!
-!*    0.3    Declaration of namelists
-!            ------------------------
-!
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
+!
 !-------------------------------------------------------------------------------
 !
 !*    1.      Initializations
@@ -181,37 +174,49 @@ IF (LHOOK) CALL DR_HOOK('CONVERT_PATCH_ISBA',0,ZHOOK_HANDLE)
 IF (ASSOCIATED(DTCO%XDATA_WEIGHT)) DEALLOCATE(DTCO%XDATA_WEIGHT)
 !
 IF (HSFTYPE=='NAT') THEN
-  YNAT='NAT'
-  YTREE='TRE'
-  YLAI='LAI'
-  YVEG='VEG'
-  YBAR='BAR'
-  YDIF='DVG'
-  GDATA=.TRUE.
+!
+  YNAT  = 'NAT'
+  YTREE = 'TRE'
+  YLAI  = 'LAI'
+  YVEG  = 'VEG'
+  YBAR  = 'BAR'
+  YDIF  = 'DVG'
+  GDATA = .TRUE.
+!
   ISIZE_LMEB_PATCH = COUNT(IO%LMEB_PATCH(:))
+!
 ELSEIF (HSFTYPE=='GRD') THEN
-  YNAT='GRD'
-  YTREE='GRT'
-  YLAI='GRL'
-  YVEG='GRV'
-  YBAR='GRB'
-  YDIF='GDV'
-  GDATA=.FALSE.
+!
+  YNAT  = 'GRD'
+  YTREE = 'GRT'
+  YLAI  = 'GRL'
+  YVEG  = 'GRV'
+  YBAR  = 'GRB'
+  YDIF  = 'GDV'
+  GDATA = .FALSE.
+!
   ISIZE_LMEB_PATCH = 0
+!
 ENDIF
+!
+!
+!-------------------------------------------------------------------------------
+!
+!*    2.      Fixed fields
+!             ------------
 !
 IF (OFIX) THEN
   !
   !* soil layers and root fraction
-!  -----------------------------
+  !  -----------------------------
   !
   !   compute soil layers (and root fraction if DIF)
   !
   CALL SET_GRID_PARAM(SIZE(PK%XDG,1),SIZE(PK%XDG,2))
-!
-!        D ICE
-!        -----
-!
+  !
+  !* D ICE
+  !  -----
+  !
   IF (IO%CISBA/='DIF') THEN
     IF (GDATA .AND. ANY(DTV%LDATA_DICE)) THEN
       CALL AV_PGD_PARAM(DTV%XPAR_LAI, DTV%XPAR_VEG, &
@@ -221,9 +226,10 @@ IF (OFIX) THEN
                 PK%NR_P,IO%NPATCH,KPATCH,KDECADE=KDEC)
     ENDIF
   ENDIF
-!
-! roughness length
-!
+  !
+  !* roughness length
+  !  ----------------
+  !
   IF (GDATA .AND. ANY(DTV%LDATA_Z0_O_Z0H)) THEN
     CALL AV_PGD_PARAM(DTV%XPAR_LAI, DTV%XPAR_VEG, &
                       PK%XZ0_O_Z0H,DTV%XPAR_VEGTYPE2,DTV%XPAR_Z0_O_Z0H,DTV%NPAR_VEG_IRR_USE,YNAT,'ARI',PK%NR_P,IO%NPATCH,KPATCH)
@@ -231,10 +237,10 @@ IF (OFIX) THEN
     CALL AV_PGD_1P(DTCO, PK%XZ0_O_Z0H,PCOVER,XDATA_Z0_O_Z0H,DTV%XPAR_IRRIGFRAC,DTV%NPAR_VEG_IRR_USE,YNAT,'ARI',OCOVER,&
                 PK%NR_P,IO%NPATCH,KPATCH,KDECADE=KDEC)
   ENDIF
-!
-!
-! tree height
-!
+  !
+  !* tree height
+  !  -----------
+  !
   IF (OURBTREE .OR. IO%CPHOTO/='NON'.OR.LTREEDRAG) THEN
     IF (GDATA .AND. ANY(DTV%LDATA_H_TREE)) THEN
       CALL AV_PGD_PARAM(DTV%XPAR_LAI, DTV%XPAR_VEG, &
@@ -245,9 +251,10 @@ IF (OFIX) THEN
                 PK%NR_P,IO%NPATCH,KPATCH,KDECADE=KDEC)
     ENDIF
   ENDIF
-!
-! Urban trees
-!
+  !
+  !* Urban trees
+  !  -----------
+  !
   IF (OURBTREE) THEN
     IF (GDATA .AND. ANY(DTV%LDATA_H_TREE)) THEN
       CALL AV_PGD_PARAM(DTV%XPAR_LAI, DTV%XPAR_VEG, &
@@ -263,9 +270,10 @@ IF (OFIX) THEN
               YTREE,'ARI',OCOVER,PK%NR_P,IO%NPATCH,KPATCH,KDECADE=KDEC)
     ENDIF
   ENDIF
-
-! AGS parameters
-!
+  !
+  !* AGS parameters (interactive vegetation)
+  !  ---------------------------------------
+  !
   IF (IO%CPHOTO/='NON') THEN
     !
     IF (SIZE(PK%XRE25)>0) THEN
@@ -291,96 +299,78 @@ IF (OFIX) THEN
     ENDIF
     !
   ENDIF
-!
+  !
 ENDIF
 !
+!-------------------------------------------------------------------------------
+!
+!*    3.      Time varying fields other than vegetation albedo
+!             ------------------------------------------------
+!
 IF (OTIME) THEN
-!
- IF (.NOT.OUPDATE_ALB) THEN
-!   VEG
-!   ----
+  !
+  !* VEG fraction
+  !  ------------
+  !
   IF (GDATA .AND. ANY(DTV%LDATA_VEG)) THEN
-    CALL AV_PGD_PARAM(DTV%XPAR_LAI, DTV%XPAR_VEG, PEK%XVEG,DTV%XPAR_VEGTYPE2,DTV%XPAR_VEG(:,KDEC2,:),&
-            DTV%NPAR_VEG_IRR_USE,YNAT,'ARI',PK%NR_P,IO%NPATCH,KPATCH)
+     CALL AV_PGD_PARAM(DTV%XPAR_LAI, DTV%XPAR_VEG, PEK%XVEG,DTV%XPAR_VEGTYPE2,DTV%XPAR_VEG(:,KDEC2,:),&
+                       DTV%NPAR_VEG_IRR_USE,YNAT,'ARI',PK%NR_P,IO%NPATCH,KPATCH)
   ELSE
-    CALL AV_PGD_1P(DTCO, PEK%XVEG,PCOVER,XDATA_VEG(:,KDEC,:),DTV%XPAR_IRRIGFRAC,DTV%NPAR_VEG_IRR_USE,YNAT,'ARI',OCOVER,&
-                PK%NR_P,IO%NPATCH,KPATCH,KDECADE=KDEC)
+     CALL AV_PGD_1P(DTCO, PEK%XVEG,PCOVER,XDATA_VEG(:,KDEC,:),DTV%XPAR_IRRIGFRAC,DTV%NPAR_VEG_IRR_USE,YNAT,'ARI',OCOVER,&
+                    PK%NR_P,IO%NPATCH,KPATCH,KDECADE=KDEC)
   ENDIF
-!
-!   LAI
-!   ----
+  !
+  !* LAI
+  !  ---
+  !
   IF (GDATA .AND. ANY(DTV%LDATA_LAI)) THEN
-    CALL AV_PGD_PARAM(DTV%XPAR_LAI, DTV%XPAR_VEG, &
-                      PEK%XLAI,DTV%XPAR_VEGTYPE2,DTV%XPAR_LAI(:,KDEC2,:),DTV%NPAR_VEG_IRR_USE,YVEG,'ARI',&
-                      PK%NR_P,IO%NPATCH,KPATCH,KDECADE=KDEC2)
+     CALL AV_PGD_PARAM(DTV%XPAR_LAI, DTV%XPAR_VEG, &
+                       PEK%XLAI,DTV%XPAR_VEGTYPE2,DTV%XPAR_LAI(:,KDEC2,:),DTV%NPAR_VEG_IRR_USE,YVEG,'ARI',&
+                       PK%NR_P,IO%NPATCH,KPATCH,KDECADE=KDEC2)
   ELSE
-    CALL AV_PGD_1P(DTCO, PEK%XLAI,PCOVER,XDATA_LAI(:,KDEC,:),DTV%XPAR_IRRIGFRAC,DTV%NPAR_VEG_IRR_USE,YVEG,'ARI',OCOVER,&
-            PK%NR_P,IO%NPATCH,KPATCH,KDECADE=KDEC)
+     CALL AV_PGD_1P(DTCO, PEK%XLAI,PCOVER,XDATA_LAI(:,KDEC,:),DTV%XPAR_IRRIGFRAC,DTV%NPAR_VEG_IRR_USE,YVEG,'ARI',OCOVER,&
+                    PK%NR_P,IO%NPATCH,KPATCH,KDECADE=KDEC)
   ENDIF
-!
-!           EMIS
-!           ----
-!emis needs VEG by vegtypes is changed at this step
+  !
+  !* EMIS (emis needs VEG by vegtypes is changed at this step)
+  !  ---------------------------------------------------------
+  !
   IF (GDATA .AND. ANY(DTV%LDATA_EMIS)) THEN
-    CALL AV_PGD_PARAM(DTV%XPAR_LAI, DTV%XPAR_VEG, &
-                      PEK%XEMIS ,DTV%XPAR_VEGTYPE2,DTV%XPAR_EMIS(:,KDEC2,:),DTV%NPAR_VEG_IRR_USE,YNAT,'ARI',&
-                      PK%NR_P,IO%NPATCH,KPATCH)
+     CALL AV_PGD_PARAM(DTV%XPAR_LAI, DTV%XPAR_VEG, &
+                       PEK%XEMIS ,DTV%XPAR_VEGTYPE2,DTV%XPAR_EMIS(:,KDEC2,:),DTV%NPAR_VEG_IRR_USE,YNAT,'ARI',&
+                       PK%NR_P,IO%NPATCH,KPATCH)
   ELSE
-    CALL AV_PGD_1P(DTCO, PEK%XEMIS ,PCOVER ,XDATA_EMIS_ECO (:,KDEC,:),DTV%XPAR_IRRIGFRAC,DTV%NPAR_VEG_IRR_USE,YNAT,'ARI',OCOVER,&
-            PK%NR_P,IO%NPATCH,KPATCH,KDECADE=KDEC)
+     CALL AV_PGD_1P(DTCO, PEK%XEMIS ,PCOVER ,XDATA_EMIS_ECO (:,KDEC,:),DTV%XPAR_IRRIGFRAC,DTV%NPAR_VEG_IRR_USE, &
+                    YNAT,'ARI',OCOVER,PK%NR_P,IO%NPATCH,KPATCH,KDECADE=KDEC)
   ENDIF
-!
-!    Z0V
-!    ----
+  !
+  !* H_VEG
+  !  -----
+  !
+  IF (GDATA .AND. ANY(DTV%LDATA_H_VEG)) THEN
+     CALL AV_PGD_PARAM(DTV%XPAR_LAI, DTV%XPAR_VEG, &
+                       PEK%XH_VEG,DTV%XPAR_VEGTYPE2,DTV%XPAR_H_VEG(:,KDEC2,:),DTV%NPAR_VEG_IRR_USE,YVEG,'ARI',&
+                       PK%NR_P,IO%NPATCH,KPATCH,KDECADE=KDEC2)
+  ELSE
+     CALL AV_PGD_1P(DTCO, PEK%XH_VEG,PCOVER,XDATA_H_VEG(:,KDEC,:),DTV%XPAR_IRRIGFRAC,DTV%NPAR_VEG_IRR_USE, &
+                   YVEG,'ARI',OCOVER,PK%NR_P,IO%NPATCH,KPATCH,KDECADE=KDEC)
+  ENDIF
+  !
+  !* Z0V
+  !  ---
+  !
   IF (GDATA .AND. ANY(DTV%LDATA_Z0)) THEN
-    CALL AV_PGD_PARAM(DTV%XPAR_LAI, DTV%XPAR_VEG, &
-                      PEK%XZ0,DTV%XPAR_VEGTYPE2,DTV%XPAR_Z0(:,KDEC2,:),DTV%NPAR_VEG_IRR_USE,YNAT,'CDN',&
-                      PK%NR_P,IO%NPATCH,KPATCH)
+     CALL AV_PGD_PARAM(DTV%XPAR_LAI, DTV%XPAR_VEG, &
+                       PEK%XZ0,DTV%XPAR_VEGTYPE2,DTV%XPAR_Z0(:,KDEC2,:),DTV%NPAR_VEG_IRR_USE,YNAT,'CDN',&
+                       PK%NR_P,IO%NPATCH,KPATCH)
   ELSE
-    CALL AV_PGD_1P(DTCO, PEK%XZ0 ,PCOVER ,XDATA_Z0 (:,KDEC,:),DTV%XPAR_IRRIGFRAC,DTV%NPAR_VEG_IRR_USE,YNAT,'CDN',OCOVER,&
-            PK%NR_P,IO%NPATCH,KPATCH,KDECADE=KDEC)
+     CALL AV_PGD_1P(DTCO, PEK%XZ0 ,PCOVER ,XDATA_Z0 (:,KDEC,:),DTV%XPAR_IRRIGFRAC,DTV%NPAR_VEG_IRR_USE, &
+                    YNAT,'CDN',OCOVER,PK%NR_P,IO%NPATCH,KPATCH,KDECADE=KDEC)
   ENDIF
-!
- ENDIF
-
-  IF (GDATA .AND. ANY(DTV%LDATA_ALBNIR_VEG)) THEN
-    CALL AV_PGD_PARAM(DTV%XPAR_LAI, DTV%XPAR_VEG, &
-                      PEK%XALBNIR_VEG,DTV%XPAR_VEGTYPE2,DTV%XPAR_ALBNIR_VEG(:,KDEC2,:),DTV%NPAR_VEG_IRR_USE,YVEG,'ARI',&
-                      PK%NR_P,IO%NPATCH,KPATCH,KDECADE=KDEC2)
-  ELSEIF (IO%CALBEDO=='CM13') THEN
-    CALL AV_PGD_1P(DTCO, PEK%XALBNIR_VEG,PCOVER,XDATA_ALB_VEG_NIR(:,KDEC,:),DTV%XPAR_IRRIGFRAC,DTV%NPAR_VEG_IRR_USE, &
-            YVEG,'ARI',OCOVER,PK%NR_P,IO%NPATCH,KPATCH,KDECADE=KDEC)    
-  ELSE
-    CALL AV_PGD_1P(DTCO, PEK%XALBNIR_VEG,PCOVER,XDATA_ALBNIR_VEG,DTV%XPAR_IRRIGFRAC,DTV%NPAR_VEG_IRR_USE,YVEG,'ARI',OCOVER,&
-            PK%NR_P,IO%NPATCH,KPATCH,KDECADE=KDEC)  
-  ENDIF
-!
-  IF (GDATA .AND. ANY(DTV%LDATA_ALBVIS_VEG)) THEN
-    CALL AV_PGD_PARAM(DTV%XPAR_LAI, DTV%XPAR_VEG, &
-                      PEK%XALBVIS_VEG,DTV%XPAR_VEGTYPE2,DTV%XPAR_ALBVIS_VEG(:,KDEC2,:),DTV%NPAR_VEG_IRR_USE,YVEG,'ARI',&
-                      PK%NR_P,IO%NPATCH,KPATCH,KDECADE=KDEC2)
-  ELSEIF (IO%CALBEDO=='CM13') THEN
-    CALL AV_PGD_1P(DTCO, PEK%XALBVIS_VEG,PCOVER,XDATA_ALB_VEG_VIS(:,KDEC,:),DTV%XPAR_IRRIGFRAC,DTV%NPAR_VEG_IRR_USE, &
-            YVEG,'ARI',OCOVER,PK%NR_P,IO%NPATCH,KPATCH,KDECADE=KDEC)      
-  ELSE
-    CALL AV_PGD_1P(DTCO, PEK%XALBVIS_VEG,PCOVER,XDATA_ALBVIS_VEG,DTV%XPAR_IRRIGFRAC,DTV%NPAR_VEG_IRR_USE,YVEG,'ARI',OCOVER,&
-            PK%NR_P,IO%NPATCH,KPATCH,KDECADE=KDEC)  
-  ENDIF
-!
-  IF ((IO%CALBEDO=='CM13'.OR.IO%LTR_ML)) THEN
-    PEK%XALBUV_VEG(:)=PEK%XALBVIS_VEG(:)
-  ELSEIF (GDATA .AND. ANY(DTV%LDATA_ALBUV_VEG)) THEN
-    CALL AV_PGD_PARAM(DTV%XPAR_LAI, DTV%XPAR_VEG, &
-                      PEK%XALBUV_VEG,DTV%XPAR_VEGTYPE2,DTV%XPAR_ALBUV_VEG(:,KDEC2,:),DTV%NPAR_VEG_IRR_USE,YVEG,'ARI',&
-                      PK%NR_P,IO%NPATCH,KPATCH,KDECADE=KDEC2)
-  ELSE
-    CALL AV_PGD_1P(DTCO, PEK%XALBUV_VEG,PCOVER,XDATA_ALBUV_VEG,DTV%XPAR_IRRIGFRAC,DTV%NPAR_VEG_IRR_USE,YVEG,'ARI',OCOVER,&
-            PK%NR_P,IO%NPATCH,KPATCH,KDECADE=KDEC)  
-  ENDIF
-!
- IF (.NOT.OUPDATE_ALB) THEN
-!        Other parameters
-!        ----------------
+  !
+  !* RSMIN
+  !  -----
+  !
   IF( SIZE(PEK%XRSMIN)>0) THEN
     IF (GDATA .AND. ANY(DTV%LDATA_RSMIN)) THEN
       CALL AV_PGD_PARAM(DTV%XPAR_LAI, DTV%XPAR_VEG, &
@@ -391,7 +381,10 @@ IF (OTIME) THEN
               OCOVER,PK%NR_P,IO%NPATCH,KPATCH,KDECADE=KDEC)  
     ENDIF
   ENDIF
-!
+  !
+  !* GAMMA
+  !  -----
+  !
   IF (GDATA .AND. ANY(DTV%LDATA_GAMMA)) THEN
     CALL AV_PGD_PARAM(DTV%XPAR_LAI, DTV%XPAR_VEG, &
                       PEK%XGAMMA,DTV%XPAR_VEGTYPE2,DTV%XPAR_GAMMA,DTV%NPAR_VEG_IRR_USE,YVEG,'ARI',&
@@ -400,7 +393,10 @@ IF (OTIME) THEN
     CALL AV_PGD_1P(DTCO, PEK%XGAMMA,PCOVER,XDATA_GAMMA,DTV%XPAR_IRRIGFRAC,DTV%NPAR_VEG_IRR_USE,YVEG,'ARI',OCOVER,&
             PK%NR_P,IO%NPATCH,KPATCH,KDECADE=KDEC)  
   ENDIF
-!
+  !
+  !* WRMAX
+  !  -----
+  !
   IF (GDATA .AND. ANY(DTV%LDATA_WRMAX_CF)) THEN
     CALL AV_PGD_PARAM(DTV%XPAR_LAI, DTV%XPAR_VEG, &
                       PEK%XWRMAX_CF,DTV%XPAR_VEGTYPE2,DTV%XPAR_WRMAX_CF,DTV%NPAR_VEG_IRR_USE,YVEG,'ARI',&
@@ -409,7 +405,10 @@ IF (OTIME) THEN
     CALL AV_PGD_1P(DTCO, PEK%XWRMAX_CF,PCOVER,XDATA_WRMAX_CF,DTV%XPAR_IRRIGFRAC,DTV%NPAR_VEG_IRR_USE,YVEG,'ARI',OCOVER,&
             PK%NR_P,IO%NPATCH,KPATCH,KDECADE=KDEC)  
   ENDIF
-!
+  !
+  !* RGL
+  !  ---
+  !
   IF (GDATA .AND. ANY(DTV%LDATA_RGL)) THEN
     CALL AV_PGD_PARAM(DTV%XPAR_LAI, DTV%XPAR_VEG, &
                       PEK%XRGL,DTV%XPAR_VEGTYPE2,DTV%XPAR_RGL,DTV%NPAR_VEG_IRR_USE,YVEG,'ARI',&
@@ -418,7 +417,10 @@ IF (OTIME) THEN
     CALL AV_PGD_1P(DTCO, PEK%XRGL,PCOVER,XDATA_RGL,DTV%XPAR_IRRIGFRAC,DTV%NPAR_VEG_IRR_USE,YVEG,'ARI',OCOVER,&
             PK%NR_P,IO%NPATCH,KPATCH,KDECADE=KDEC)  
   ENDIF
-!
+  !
+  !* CV
+  !  --
+  !
   IF (GDATA .AND. ANY(DTV%LDATA_CV)) THEN
     CALL AV_PGD_PARAM(DTV%XPAR_LAI, DTV%XPAR_VEG, &
                       PEK%XCV,DTV%XPAR_VEGTYPE2,DTV%XPAR_CV,DTV%NPAR_VEG_IRR_USE,YVEG,'INV',&
@@ -427,23 +429,26 @@ IF (OTIME) THEN
     CALL AV_PGD_1P(DTCO, PEK%XCV,PCOVER,XDATA_CV,DTV%XPAR_IRRIGFRAC,DTV%NPAR_VEG_IRR_USE,YVEG,'INV',OCOVER,&
             PK%NR_P,IO%NPATCH,KPATCH,KDECADE=KDEC)  
   ENDIF
-!
-  IF (ISIZE_LMEB_PATCH>0 .OR. IO%CPHOTO/='NON') THEN
-
-    IF( SIZE(PEK%XBSLAI)>0) THEN
-      IF (GDATA .AND. ANY(DTV%LDATA_BSLAI)) THEN
+  !
+  !* BSLAI
+  !  -----
+  !
+  IF (SIZE(PEK%XBSLAI)>0.AND.(ISIZE_LMEB_PATCH>0.OR.IO%CPHOTO/='NON')) THEN
+     IF (GDATA .AND. ANY(DTV%LDATA_BSLAI)) THEN
         CALL AV_PGD_PARAM(DTV%XPAR_LAI, DTV%XPAR_VEG, &
                       PEK%XBSLAI,DTV%XPAR_VEGTYPE2,DTV%XPAR_BSLAI,DTV%NPAR_VEG_IRR_USE,YVEG,'ARI',&
                       PK%NR_P,IO%NPATCH,KPATCH,KDECADE=KDEC2)
-      ELSE
+     ELSE
         CALL AV_PGD_1P(DTCO, PEK%XBSLAI,PCOVER,XDATA_BSLAI_ST,DTV%XPAR_IRRIGFRAC,DTV%NPAR_VEG_IRR_USE,YVEG,'ARI',OCOVER,&
                 PK%NR_P,IO%NPATCH,KPATCH,KDECADE=KDEC)  
-      ENDIF
-    ENDIF
+     ENDIF
   ENDIF
-!
-  IF (IO%CPHOTO/='NON') THEN
   !
+  !* Interactive vegetation parameters
+  !  ---------------------------------
+  !
+  IF (IO%CPHOTO/='NON') THEN
+    !
     IF (SIZE(PEK%XLAIMIN)>0) THEN
       IF (GDATA .AND. ANY(DTV%LDATA_LAIMIN)) THEN
         CALL AV_PGD_PARAM(DTV%XPAR_LAI, DTV%XPAR_VEG, &
@@ -454,7 +459,7 @@ IF (OTIME) THEN
                 PK%NR_P,IO%NPATCH,KPATCH,KDECADE=KDEC)  
       ENDIF
     ENDIF    
-  !
+    !
     IF (SIZE(PEK%XSEFOLD)>0) THEN
       IF (GDATA .AND. ANY(DTV%LDATA_SEFOLD)) THEN
         CALL AV_PGD_PARAM(DTV%XPAR_LAI, DTV%XPAR_VEG, &
@@ -499,7 +504,7 @@ IF (OTIME) THEN
       ENDIF
     ENDIF
     !
-    IF (IO%CPHOTO=='NIT' .OR. IO%CPHOTO=='NCB') THEN
+    IF (IO%CPHOTO=='NIT'.OR.IO%CPHOTO=='NCB') THEN
       !
       IF (SIZE(PEK%XCE_NITRO)>0) THEN
         IF (GDATA .AND. ANY(DTV%LDATA_CE_NITRO)) THEN
@@ -537,21 +542,26 @@ IF (OTIME) THEN
     ENDIF
     !
   ENDIF
-!
-!       STRESS
-!       --------
+  !
+  !* STRESS
+  !  ------
+  !
   IF (SIZE(PEK%LSTRESS)>0) THEN
     CALL SET_STRESS
   ENDIF
-!
- ENDIF
-!
+  !
 ENDIF
 !
-IF (OMEB .AND. .NOT.OUPDATE_ALB) THEN
+!-------------------------------------------------------------------------------
+!
+!*    4.      MEB parameters other than vegetation albedo
+!             -------------------------------------------
+!
+IF (OMEB) THEN
   !
-!   GNDLITTER
-!   ---------
+  !* GNDLITTER
+  !  ---------
+  !
   IF (GDATA .AND. ANY(DTV%LDATA_GNDLITTER)) THEN
     CALL AV_PGD_PARAM(DTV%XPAR_LAI, DTV%XPAR_VEG, PEK%XGNDLITTER,DTV%XPAR_VEGTYPE2,&
                         DTV%XPAR_GNDLITTER(:,KDEC2,:),DTV%NPAR_VEG_IRR_USE,YNAT,'ARI',PK%NR_P,IO%NPATCH,KPATCH,KDECADE=KDEC2)
@@ -559,29 +569,10 @@ IF (OMEB .AND. .NOT.OUPDATE_ALB) THEN
     CALL AV_PGD_1P(DTCO, PEK%XGNDLITTER,PCOVER,XDATA_GNDLITTER(:,KDEC,:),DTV%XPAR_IRRIGFRAC,DTV%NPAR_VEG_IRR_USE,YNAT,'ARI',OCOVER,&
             PK%NR_P,IO%NPATCH,KPATCH,KDECADE=KDEC)
   ENDIF
-!
-!        H_VEG
-!        -----
-  IF (GDATA .AND. ANY(DTV%LDATA_H_VEG)) THEN
-    CALL AV_PGD_PARAM(DTV%XPAR_LAI, DTV%XPAR_VEG, &
-                      PEK%XH_VEG,DTV%XPAR_VEGTYPE2,DTV%XPAR_H_VEG(:,KDEC2,:),DTV%NPAR_VEG_IRR_USE,YVEG,'ARI',&
-                      PK%NR_P,IO%NPATCH,KPATCH,KDECADE=KDEC2)
-  ELSE
-    CALL AV_PGD_1P(DTCO, PEK%XH_VEG,PCOVER,XDATA_H_VEG(:,KDEC,:),DTV%XPAR_IRRIGFRAC,DTV%NPAR_VEG_IRR_USE,YVEG,'ARI',OCOVER,&
-            PK%NR_P,IO%NPATCH,KPATCH,KDECADE=KDEC)
-  ENDIF
-! In case of MEB, force 0<PH_VEG<XUNDEF for those patches where LMEB_PATCH=.T.
-  IF(IO%LMEB_PATCH(KPATCH))THEN
-    ALLOCATE(ZH_VEG(SIZE(PEK%XH_VEG)))
-    ZH_VEG=PEK%XH_VEG(:)
-    WHERE(ZH_VEG>1000.) ZH_VEG=0.
-    ZH_VEG=MAX(ZH_VEG,1.0E-3)
-    PEK%XH_VEG(:)=ZH_VEG
-    DEALLOCATE(ZH_VEG)
-  ENDIF
-!
-!    Z0LITTER
-!    --------
+  !
+  !* Z0LITTER
+  !  --------
+  !
   IF (GDATA .AND. ANY(DTV%LDATA_Z0LITTER)) THEN
     CALL AV_PGD_PARAM(DTV%XPAR_LAI, DTV%XPAR_VEG, &
                       PEK%XZ0LITTER,DTV%XPAR_VEGTYPE2,DTV%XPAR_Z0LITTER(:,KDEC2,:),DTV%NPAR_VEG_IRR_USE,YNAT,'CDN',&
@@ -590,11 +581,29 @@ IF (OMEB .AND. .NOT.OUPDATE_ALB) THEN
     CALL AV_PGD_1P(DTCO, PEK%XZ0LITTER ,PCOVER ,XDATA_Z0LITTER (:,KDEC,:),DTV%XPAR_IRRIGFRAC,DTV%NPAR_VEG_IRR_USE, &
             YNAT,'CDN',OCOVER,PK%NR_P,IO%NPATCH,KPATCH,KDECADE=KDEC)
   ENDIF
-!
+  !
+  !* H_VEG
+  !  -----
+  !
+  ! In case of MEB, force 0<PH_VEG<XUNDEF for those patches where LMEB_PATCH=.T.
+  ! Suspicious code, should be investigated
+  IF(OTIME.AND.IO%LMEB_PATCH(KPATCH))THEN
+    ALLOCATE(ZH_VEG(SIZE(PEK%XH_VEG)))
+    ZH_VEG=PEK%XH_VEG(:)
+    WHERE(ZH_VEG>1000.) ZH_VEG=0.
+    ZH_VEG=MAX(ZH_VEG,1.0E-3)
+    PEK%XH_VEG(:)=ZH_VEG
+    DEALLOCATE(ZH_VEG)
+  ENDIF
+  !
 ENDIF
 !
+!-------------------------------------------------------------------------------
 !
-IF (OIRR .AND. .NOT.OUPDATE_ALB) THEN
+!*    5.      Irrigation parameters other than vegetation albedo
+!             --------------------------------------------------
+!
+IF (OIRR) THEN
   !
   IF ( OAGRIP .OR. OIRRIGMODE )  THEN
     !
@@ -988,44 +997,6 @@ IF (OIRR .AND. .NOT.OUPDATE_ALB) THEN
   !
 ENDIF
 !
-!
-IF (OALB) THEN
-!
-  IF (GDATA .AND. ANY(DTV%LDATA_ALBNIR_SOIL)) THEN
-    CALL AV_PGD_PARAM(DTV%XPAR_LAI, DTV%XPAR_VEG, &
-                      PEK%XALBNIR_SOIL,DTV%XPAR_VEGTYPE2,DTV%XPAR_ALBNIR_SOIL(:,KDEC2,:),DTV%NPAR_VEG_IRR_USE,YBAR,'ARI',&
-                      PK%NR_P,IO%NPATCH,KPATCH,KDECADE=KDEC2)
-  ELSEIF (IO%CALBEDO=='CM13') THEN
-    CALL AV_PGD_1P(DTCO, PEK%XALBNIR_SOIL,PCOVER,XDATA_ALB_SOIL_NIR(:,KDEC,:),DTV%XPAR_IRRIGFRAC,DTV%NPAR_VEG_IRR_USE, &
-            YBAR,'ARI',OCOVER,PK%NR_P,IO%NPATCH,KPATCH,KDECADE=KDEC)
-  ELSE
-    CALL SOIL_ALBEDO (IO%CALBEDO, PWSAT(:,1), PWG1, KK, PEK, "NIR" )  
-  ENDIF
-!
-  IF (GDATA .AND. ANY(DTV%LDATA_ALBVIS_SOIL)) THEN
-    CALL AV_PGD_PARAM(DTV%XPAR_LAI, DTV%XPAR_VEG, &
-                      PEK%XALBVIS_SOIL,DTV%XPAR_VEGTYPE2,DTV%XPAR_ALBVIS_SOIL(:,KDEC2,:),DTV%NPAR_VEG_IRR_USE,YBAR,'ARI',&
-                      PK%NR_P,IO%NPATCH,KPATCH,KDECADE=KDEC2)
-  ELSEIF (IO%CALBEDO=='CM13') THEN
-    CALL AV_PGD_1P(DTCO, PEK%XALBVIS_SOIL,PCOVER,XDATA_ALB_SOIL_VIS(:,KDEC,:),DTV%XPAR_IRRIGFRAC,DTV%NPAR_VEG_IRR_USE, &
-            YBAR,'ARI',OCOVER,PK%NR_P,IO%NPATCH,KPATCH,KDECADE=KDEC)
-  ELSE
-    CALL SOIL_ALBEDO (IO%CALBEDO, PWSAT(:,1), PWG1, KK, PEK, "VIS" )
-  ENDIF
-!
-
-  IF (IO%CALBEDO=='CM13'.OR.IO%LTR_ML) THEN
-    PEK%XALBUV_SOIL(:)=PEK%XALBVIS_SOIL(:)
-  ELSEIF (GDATA .AND. ANY(DTV%LDATA_ALBUV_SOIL)) THEN
-    CALL AV_PGD_PARAM(DTV%XPAR_LAI, DTV%XPAR_VEG, &
-                      PEK%XALBUV_SOIL,DTV%XPAR_VEGTYPE2,DTV%XPAR_ALBUV_SOIL(:,KDEC2,:),DTV%NPAR_VEG_IRR_USE,YNAT,'ARI',&
-                      PK%NR_P,IO%NPATCH,KPATCH,KDECADE=KDEC2)
-  ELSE
-    CALL SOIL_ALBEDO (IO%CALBEDO, PWSAT(:,1), PWG1, KK, PEK, "UV"  )  
-  ENDIF
-!
-ENDIF
-!
 IF (ASSOCIATED(DTCO%XDATA_WEIGHT)) DEALLOCATE(DTCO%XDATA_WEIGHT)
 !
 IF (LHOOK) CALL DR_HOOK('CONVERT_PATCH_ISBA',1,ZHOOK_HANDLE)
@@ -1068,9 +1039,11 @@ ELSEWHERE
 END WHERE
 !
 IF (LHOOK) CALL DR_HOOK('CONVERT_PATCH_ISBA:SET_STRESS',1,ZHOOK_HANDLE)
+!
 END SUBROUTINE SET_STRESS
 !
 !-------------------------------------------------------------------------------
+!
 SUBROUTINE SET_GRID_PARAM(KNI,KGROUND)
 !
 USE MODD_PGDWORK, ONLY : XPREC
@@ -1368,5 +1341,7 @@ ENDIF
 IF (LHOOK) CALL DR_HOOK('CONVERT_PATCH_ISBA:SET_GRID_PARAM',1,ZHOOK_HANDLE)
 !
 END SUBROUTINE SET_GRID_PARAM
+!
 !-------------------------------------------------------------------------------
+!
 END SUBROUTINE CONVERT_PATCH_ISBA

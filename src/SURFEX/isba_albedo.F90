@@ -4,9 +4,9 @@
 !SFX_LIC for details. version 1.
 !     #########
       SUBROUTINE ISBA_ALBEDO(PEK, OTR_ML, OMEB, PDIR_SW, PSCA_SW, PSW_BANDS, KSW, &
-                             PFALB, PFFV, PFFG, PGLOBAL_SW,           &
-                             PMEB_SCA_SW, PALBNIR_TVEG, PALBVIS_TVEG,               &
-                               PALBNIR_TSOIL, PALBVIS_TSOIL               )
+                             PFALB, PFFV, PFFG, PGLOBAL_SW,                       &
+                             PMEB_SCA_SW, PALBNIR_TVEG, PALBVIS_TVEG,             &
+                             PALBNIR_TSOIL, PALBVIS_TSOIL, PSNFREE_SWU            )
 !     ##########################################################################
 !
 !!****  *ISBA_ALBEDO*  
@@ -33,6 +33,7 @@
 !!    -------------
 !!      Original    
 !!      P. Samuelsson  02/2012  MEB
+!!      B. Decharme    02/2019  Add PSNFREE_SWU
 !!
 !-------------------------------------------------------------------------------
 !
@@ -75,6 +76,8 @@ REAL, DIMENSION(:)  , INTENT(OUT)  :: PALBVIS_TVEG       ! visible veg tot albed
 REAL, DIMENSION(:)  , INTENT(OUT)  :: PALBNIR_TSOIL      ! nearIR  soil tot albedo
 REAL, DIMENSION(:)  , INTENT(OUT)  :: PALBVIS_TSOIL      ! visible soil tot albedo
 !
+REAL, DIMENSION(:)  , INTENT(OUT), OPTIONAL  :: PSNFREE_SWU ! upward snow-free SW
+!
 !-------------------------------------------------------------------------------
 !
 !*      0.     Local variables
@@ -93,12 +96,12 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !-------------------------------------------------------------------------------
 !
-!*      2.     Compute snow-free albedo
+IF (LHOOK) CALL DR_HOOK('ISBA_ALBEDO',0,ZHOOK_HANDLE)
+!
+!*      1.     Compute snow-free albedo
 !              ------------------------
 !
 !* Snow-free surface albedo for each wavelength
-!
-IF (LHOOK) CALL DR_HOOK('ISBA_ALBEDO',0,ZHOOK_HANDLE)
 !
 IF (OTR_ML )THEN
    IF (OMEB) THEN
@@ -120,15 +123,14 @@ ELSE
 ENDIF
 !
  CALL ALBEDO_FROM_NIR_VIS(PSW_BANDS, PEK%XALBNIR(:), PEK%XALBVIS(:), PEK%XALBUV(:),  &
-                           ZDIR_ALB_WITHOUT_SNOW, ZSCA_ALB_WITHOUT_SNOW )  
+                          ZDIR_ALB_WITHOUT_SNOW, ZSCA_ALB_WITHOUT_SNOW               )  
 !
 !* total shortwave incoming radiation
 !
-  PGLOBAL_SW(:) = 0.
+  PGLOBAL_SW (:) = 0.
   PMEB_SCA_SW(:) = 0.
-  
   DO JSWB=1,KSW
-    PGLOBAL_SW(:) = PGLOBAL_SW(:) + (PDIR_SW(:,JSWB) + PSCA_SW(:,JSWB))
+    PGLOBAL_SW (:) = PGLOBAL_SW (:) + (PDIR_SW(:,JSWB) + PSCA_SW(:,JSWB))
     PMEB_SCA_SW(:) = PMEB_SCA_SW(:) + (PSCA_SW(:,JSWB))
   END DO
 !
@@ -136,41 +138,54 @@ ENDIF
 !
   ZSW_UP(:) = 0. 
   DO JSWB=1,KSW
-    ZSW_UP(:) =  ZSW_UP(:)                                       &
-                 + ZDIR_ALB_WITHOUT_SNOW(:,JSWB) * PDIR_SW(:,JSWB) &
-                 + ZSCA_ALB_WITHOUT_SNOW(:,JSWB) * PSCA_SW(:,JSWB)  
+    ZSW_UP(:) = ZSW_UP(:)                                       &
+              + ZDIR_ALB_WITHOUT_SNOW(:,JSWB) * PDIR_SW(:,JSWB) &
+              + ZSCA_ALB_WITHOUT_SNOW(:,JSWB) * PSCA_SW(:,JSWB)  
   END DO
-PEK%XSNOWFREE_ALB(:) = XUNDEF
+!
+  PEK%XSNOWFREE_ALB(:) = XUNDEF
   WHERE(PGLOBAL_SW(:)>0.)  
-  PEK%XSNOWFREE_ALB(:) = ZSW_UP(:) / PGLOBAL_SW(:)
+        PEK%XSNOWFREE_ALB(:) = ZSW_UP(:) / PGLOBAL_SW(:)
   ELSEWHERE
-  PEK%XSNOWFREE_ALB(:) = ZDIR_ALB_WITHOUT_SNOW(:,1)
+        PEK%XSNOWFREE_ALB(:) = ZDIR_ALB_WITHOUT_SNOW(:,1)
   END WHERE
 !
-IF(PEK%TSNOW%SCHEME == 'EBA') THEN
+  IF(PRESENT(PSNFREE_SWU))THEN
+     PSNFREE_SWU(:) = ZSW_UP(:)
+  ENDIF
+!
+  IF(PEK%TSNOW%SCHEME == 'EBA') THEN
+!
      CALL ALBEDO_FROM_NIR_VIS(PSW_BANDS,            &
             PEK%XALBNIR_VEG(:), PEK%XALBVIS_VEG(:), PEK%XALBUV_VEG(:), &
             ZDIR_ALB_VEG_WITHOUT_SNOW, ZSCA_ALB_VEG_WITHOUT_SNOW )  
-     ZSW_UP(:) = 0.
-     DO JSWB=1,KSW
-        ZSW_UP(:) =  ZSW_UP(:)                                           &
-                     + ZDIR_ALB_VEG_WITHOUT_SNOW(:,JSWB) * PDIR_SW(:,JSWB) &
-                     + ZSCA_ALB_VEG_WITHOUT_SNOW(:,JSWB) * PSCA_SW(:,JSWB)  
-     END DO
-  PEK%XSNOWFREE_ALB_VEG(:) = XUNDEF
-  WHERE(PGLOBAL_SW(:)>0.)  PEK%XSNOWFREE_ALB_VEG(:) = ZSW_UP(:) / PGLOBAL_SW(:)
 !
-     CALL ALBEDO_FROM_NIR_VIS(PSW_BANDS,               &
-            PEK%XALBNIR_SOIL(:), PEK%XALBVIS_SOIL(:), PEK%XALBUV_SOIL(:), &
-            ZDIR_ALB_SOIL_WITHOUT_SNOW, ZSCA_ALB_SOIL_WITHOUT_SNOW    )  
      ZSW_UP(:) = 0.
      DO JSWB=1,KSW
-        ZSW_UP(:) =  ZSW_UP(:)                                            &
-                     + ZDIR_ALB_SOIL_WITHOUT_SNOW(:,JSWB) * PDIR_SW(:,JSWB) &
-                     + ZSCA_ALB_SOIL_WITHOUT_SNOW(:,JSWB) * PSCA_SW(:,JSWB)  
+        ZSW_UP(:) = ZSW_UP(:)                                           &
+                  + ZDIR_ALB_VEG_WITHOUT_SNOW(:,JSWB) * PDIR_SW(:,JSWB) &
+                  + ZSCA_ALB_VEG_WITHOUT_SNOW(:,JSWB) * PSCA_SW(:,JSWB)  
      END DO
-  PEK%XSNOWFREE_ALB_SOIL(:) = XUNDEF
-  WHERE(PGLOBAL_SW(:)>0.)  PEK%XSNOWFREE_ALB_SOIL(:) = ZSW_UP(:) / PGLOBAL_SW(:)             
+!
+     PEK%XSNOWFREE_ALB_VEG(:) = XUNDEF
+     WHERE(PGLOBAL_SW(:)>0.)
+           PEK%XSNOWFREE_ALB_VEG(:) = ZSW_UP(:) / PGLOBAL_SW(:)
+     ENDWHERE
+!
+     CALL ALBEDO_FROM_NIR_VIS(PSW_BANDS, PEK%XALBNIR_SOIL(:), PEK%XALBVIS_SOIL(:),PEK%XALBUV_SOIL(:),  &
+                              ZDIR_ALB_SOIL_WITHOUT_SNOW, ZSCA_ALB_SOIL_WITHOUT_SNOW                   )
+     ZSW_UP(:) = 0.
+     DO JSWB=1,KSW
+        ZSW_UP(:) = ZSW_UP(:)                                            &
+                  + ZDIR_ALB_SOIL_WITHOUT_SNOW(:,JSWB) * PDIR_SW(:,JSWB) &
+                  + ZSCA_ALB_SOIL_WITHOUT_SNOW(:,JSWB) * PSCA_SW(:,JSWB)  
+     END DO
+!
+     PEK%XSNOWFREE_ALB_SOIL(:) = XUNDEF
+     WHERE(PGLOBAL_SW(:)>0.)  
+           PEK%XSNOWFREE_ALB_SOIL(:) = ZSW_UP(:) / PGLOBAL_SW(:)
+     ENDWHERE
+!
   ENDIF
 !
 IF (LHOOK) CALL DR_HOOK('ISBA_ALBEDO',1,ZHOOK_HANDLE)

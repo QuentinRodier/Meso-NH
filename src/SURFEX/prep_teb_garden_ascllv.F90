@@ -125,10 +125,10 @@ CATYPE = 'ARI'
  CALL GET_TYPE_DIM_n(DTCO, U, &
                      'FULL  ',NL)
 !
-!*      2.    get nature dimension
+!*      2.    get town dimension
 !
- CALL GET_TYPE_DIM_n(DTCO, U, &
-                     'NATURE',IL)
+CALL GET_TYPE_DIM_n(DTCO, U, &
+                     'TOWN  ',IL)
 !
 ALLOCATE(ZFIELD(IL,3))
 !
@@ -146,13 +146,13 @@ SELECT CASE(HSURF)
   CASE('WG     ')
 
     CALL PGD_FIELD(DTCO, UG, U, USS, &
-                   HPROGRAM,'HUG_SURF: relative humidity','NAT',CFILE_HUG_SURF_GD,   &
+                   HPROGRAM,'HUG_SURF: relative humidity','TWN',CFILE_HUG_SURF_GD,   &
                         CTYPE_HUG,XUNDEF,ZFIELD(:,1))  
     CALL PGD_FIELD(DTCO, UG, U, USS, &
-                   HPROGRAM,'HUG_ROOT: relative humidity','NAT',CFILE_HUG_ROOT_GD,   &
+                   HPROGRAM,'HUG_ROOT: relative humidity','TWN',CFILE_HUG_ROOT_GD,   &
                         CTYPE_HUG,XUNDEF,ZFIELD(:,2))  
     CALL PGD_FIELD(DTCO, UG, U, USS, &
-                   HPROGRAM,'HUG_DEEP: relative humidity','NAT',CFILE_HUG_DEEP_GD,   &
+                   HPROGRAM,'HUG_DEEP: relative humidity','TWN',CFILE_HUG_DEEP_GD,   &
                         CTYPE_HUG,XUNDEF,ZFIELD(:,3))  
 
     ALLOCATE(PFIELD(IL,3,NVEGTYPE))
@@ -167,13 +167,13 @@ SELECT CASE(HSURF)
   CASE('TG     ')
 
     CALL PGD_FIELD(DTCO, UG, U, USS, &
-                   HPROGRAM,'TG_SURF: temperature','NAT',CFILE_TG_SURF_GD,   &
+                   HPROGRAM,'TG_SURF: temperature','TWN',CFILE_TG_SURF_GD,   &
                         CTYPE_TG,XUNDEF,ZFIELD(:,1))  
     CALL PGD_FIELD(DTCO, UG, U, USS, &
-                   HPROGRAM,'TG_ROOT: temperature','NAT',CFILE_TG_ROOT_GD,   &
+                   HPROGRAM,'TG_ROOT: temperature','TWN',CFILE_TG_ROOT_GD,   &
                         CTYPE_TG,XUNDEF,ZFIELD(:,2))  
     CALL PGD_FIELD(DTCO, UG, U, USS, &
-                   HPROGRAM,'TG_DEEP: temperature','NAT',CFILE_TG_DEEP_GD,   &
+                   HPROGRAM,'TG_DEEP: temperature','TWN',CFILE_TG_DEEP_GD,   &
                         CTYPE_TG,XUNDEF,ZFIELD(:,3))  
 
     ALLOCATE(PFIELD(IL,3,NVEGTYPE))

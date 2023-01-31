@@ -4,8 +4,8 @@
 !SFX_LIC for details. version 1.
 !     #########
 SUBROUTINE REPROJ_DIAG_ISBA_n (DK, DEK, DMK, PEK, OSURF_BUDGET, OSURF_EVAP_BUDGET, &
-                               OWATER_BUDGET, OSURF_MISC_BUDGET, OPROSNOW, OSNOWSYTRON, &
-                               OMEB_PATCH, PSLOPECOS )  
+                               OWATER_BUDGET, OSURF_MISC_BUDGET, OPROSNOW,         &
+                               OSNOWSYTRON, OMEB_PATCH, PSLOPECOS                  )  
 !     ###############################################################################
 !
 !!****  *REPROJ_DIAG-ISBA_n * - additional diagnostics for ISBA
@@ -26,11 +26,11 @@ SUBROUTINE REPROJ_DIAG_ISBA_n (DK, DEK, DMK, PEK, OSURF_BUDGET, OSURF_EVAP_BUDGE
 !!
 !!------------------------------------------------------------------
 !
-USE MODD_DIAG_n, ONLY : DIAG_t
+USE MODD_DIAG_n,           ONLY : DIAG_t
 USE MODD_DIAG_EVAP_ISBA_n, ONLY : DIAG_EVAP_ISBA_t
 USE MODD_DIAG_MISC_ISBA_n, ONLY : DIAG_MISC_ISBA_t
-USE MODD_ISBA_n, ONLY : ISBA_PE_t
-USE MODD_SURF_PAR, ONLY : XUNDEF
+USE MODD_ISBA_n,           ONLY : ISBA_PE_t
+USE MODD_SURF_PAR,         ONLY : XUNDEF
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -39,10 +39,10 @@ IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
 !
-TYPE(DIAG_t), INTENT(INOUT) :: DK
+TYPE(DIAG_t),           INTENT(INOUT) :: DK
 TYPE(DIAG_EVAP_ISBA_t), INTENT(INOUT) :: DEK
 TYPE(DIAG_MISC_ISBA_t), INTENT(INOUT) :: DMK
-TYPE(ISBA_PE_t), INTENT(INOUT) :: PEK
+TYPE(ISBA_PE_t),        INTENT(INOUT) :: PEK
 !
 LOGICAL, INTENT(IN) :: OSURF_BUDGET
 LOGICAL, INTENT(IN) :: OSURF_EVAP_BUDGET 
@@ -60,7 +60,8 @@ REAL, DIMENSION(:), INTENT(IN) :: PSLOPECOS ! cosine of the slope for Crocus
 REAL, DIMENSION(SIZE(PEK%XPSN))    :: ZCORR_SLOPE
 REAL, DIMENSION(SIZE(PEK%TSNOW%WSNOW,1),SIZE(PEK%TSNOW%WSNOW,2)) :: ZCORR_SLOPE_2D
 !
-INTEGER :: JL, JSW
+INTEGER :: INI, INS
+INTEGER :: JI, JL, JSW
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !-------------------------------------------------------------------------------------
@@ -69,14 +70,20 @@ IF (LHOOK) CALL DR_HOOK('REPROJ_DIAG_ISBA_N',0,ZHOOK_HANDLE)
 !
 IF ( OPROSNOW ) THEN
   !
+  INI = SIZE(PEK%TSNOW%WSNOW,1)
+  INS = SIZE(PEK%TSNOW%WSNOW,2)
+  !
   !this variable is used further to project diagnostics on the verticale
+  !
   ZCORR_SLOPE(:) = 1. / PSLOPECOS(:)
-  DO JL = 1,SIZE(PEK%TSNOW%WSNOW,2)
-    WHERE (PEK%TSNOW%WSNOW(:,JL)>0.) 
-      ZCORR_SLOPE_2D(:,JL) = ZCORR_SLOPE(:)
-    ELSEWHERE
-      ZCORR_SLOPE_2D(:,JL) = 1.
-    ENDWHERE
+  DO JL = 1,INS
+     DO JI = 1,INI
+        IF (PEK%TSNOW%WSNOW(JI,JL)>0.) THEN
+           ZCORR_SLOPE_2D(JI,JL) = ZCORR_SLOPE(JI)
+        ELSE
+           ZCORR_SLOPE_2D(JI,JL) = 1.
+        ENDIF
+     ENDDO
   ENDDO
   !
   IF ( OSURF_BUDGET ) THEN
@@ -190,7 +197,6 @@ IF ( OPROSNOW ) THEN
       !
       IF ( PEK%TSNOW%SCHEME=='CRO' ) THEN
         !PRINT*,ZCORR_SLOPE(:)
-        !PRINT*,DMK%XSNDPT_1DY     (:)
         !PRINT*,DMK%XTDSNOW(:)
         !PRINT*,DMK%XTSNOW(:)
         WHERE(DMK%XTWSNOW>0.)
@@ -213,6 +219,7 @@ IF ( OPROSNOW ) THEN
   ENDIF
   !
 ENDIF
+!
 IF ( PEK%TSNOW%SCHEME=='CRO' .AND. OSNOWSYTRON ) THEN
   DMK%XSYTMASS (:)  =  DMK%XSYTMASS (:)  *ZCORR_SLOPE(:)
 ENDIF

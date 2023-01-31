@@ -4,7 +4,7 @@
 !SFX_LIC for details. version 1.
 !     #########
       SUBROUTINE WRITESURF_ISBA_n (HSELECT, OSNOWDIMNC, CHI, MGN, NDST, &
-                                   IO, S, NP, NPE, NAG, KI, HPROGRAM, OLAND_USE)
+                                   IO, S, NP, NPE, NAG, KI, HPROGRAM   )
 !     #####################################
 !
 !!****  *WRITESURF_ISBA_n* - writes ISBA prognostic fields
@@ -49,6 +49,10 @@
 !!      P. Tulet  06/2016 : add XEF et XPFT for MEGAN coupling
 !!      M. Leriche 06/2017: comment write XEF & XPFT bug
 !!      A. Druel     02/2019 : Add NIRR_TSC and NIRRINUM (with NAG) for irrigation
+!!      Séférian/Decharme  08/16  : fire scheme ; change landuse implementation
+!!      B. Decharme    02/17 : exact computation of saturation deficit near the leaf surface
+!!      B. Decharme    02/21 : explicit soil carbon and gas scheme:browse confirm wa
+
 !!
 !-------------------------------------------------------------------------------
 !
@@ -75,6 +79,8 @@ USE MODD_ASSIM,          ONLY : LASSIM, CASSIM, CASSIM_ISBA, NIE, NENS, &
 !
 USE MODD_AGRI,           ONLY : LIRRIGMODE
 !
+USE MODD_DATA_COVER_PAR, ONLY : NVEGTYPE
+!
 USE MODD_DST_SURF
 !
 USE MODI_WRITE_FIELD_1D_PATCH
@@ -91,7 +97,7 @@ IMPLICIT NONE
 !*       0.1   Declarations of arguments
 !              -------------------------
 !
- CHARACTER(LEN=*), DIMENSION(:), INTENT(IN) :: HSELECT 
+CHARACTER(LEN=*), DIMENSION(:), INTENT(IN) :: HSELECT 
 LOGICAL,              INTENT(IN)    :: OSNOWDIMNC  
 !
 TYPE(CH_ISBA_t),      INTENT(INOUT) :: CHI
@@ -105,21 +111,20 @@ TYPE(ISBA_NPE_t),     INTENT(INOUT) :: NPE
 TYPE(AGRI_NP_t),      INTENT(INOUT) :: NAG
 INTEGER,              INTENT(IN)    :: KI
 !
- CHARACTER(LEN=6),    INTENT(IN)    :: HPROGRAM ! program calling
-LOGICAL,              INTENT(IN)    :: OLAND_USE !
+CHARACTER(LEN=6),    INTENT(IN)    :: HPROGRAM ! program calling
 !
 !*       0.2   Declarations of local variables
 !              -------------------------------
 !
 INTEGER           :: IRESP          ! IRESP  : return-code if a problem appears
- CHARACTER(LEN=LEN_HREC) :: YRECFM         ! Name of the article to be read
- CHARACTER(LEN=4 ) :: YLVL
- CHARACTER(LEN=3 ) :: YVAR
- CHARACTER(LEN=100):: YCOMMENT       ! Comment string
- CHARACTER(LEN=25) :: YFORM          ! Writing format
-  CHARACTER(LEN=2) :: YPAT
+CHARACTER(LEN=LEN_HREC) :: YRECFM         ! Name of the article to be read
+CHARACTER(LEN=4 ) :: YLVL
+CHARACTER(LEN=3 ) :: YVAR
+CHARACTER(LEN=100):: YCOMMENT       ! Comment string
+CHARACTER(LEN=25) :: YFORM          ! Writing format
+CHARACTER(LEN=2) :: YPAT
 !
-INTEGER :: JJ, JL, JP, JNB, JNL, JNS, JNLV  ! loop counter on levels
+INTEGER :: JJ, JL, JP, JNB, JNL, JNC, JNLV  ! loop counter on levels
 INTEGER :: IWORK   ! Work integer
 INTEGER :: JSV
 INTEGER :: ISIZE_LMEB_PATCH
@@ -199,6 +204,16 @@ DO JP = 1,IO%NPATCH
   CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
                 NP%AL(JP)%NR_P,NPE%AL(JP)%XWR(:),KI,S%XWORK_WR)    
 ENDDO
+!
+!* vegetation canopy air specific humidity
+!
+YRECFM='QC'
+YCOMMENT='X_Y_QC (kg/kg)'
+DO JP = 1,IO%NPATCH
+   CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+                  NP%AL(JP)%NR_P,NPE%AL(JP)%XQC(:),KI,S%XWORK_WR)    
+ENDDO
+!
 !
 !* Glacier ice storage
 !
@@ -366,16 +381,8 @@ IF (ISIZE_LMEB_PATCH>0) THEN
                   NP%AL(JP)%NR_P,NPE%AL(JP)%XTC(:),KI,S%XWORK_WR)    
   ENDDO
 !
-!* vegetation canopy air specific humidity
-!
-  YRECFM='QC'
-  YCOMMENT='X_Y_QC (kg/kg)'
-  DO JP = 1,IO%NPATCH
-    CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
-                  NP%AL(JP)%NR_P,NPE%AL(JP)%XQC(:),KI,S%XWORK_WR)    
-  ENDDO
-!
 ENDIF
+!
 !
 !-------------------------------------------------------------------------------
 !
@@ -409,19 +416,14 @@ ENDDO
 !
 !* Land use variables
 !
-IF(OLAND_USE .OR. LWRITE_EXTERN)THEN
+IF(IO%LLULCC .OR. LWRITE_EXTERN)THEN
 !
   DO JL=1,IO%NGROUND_LAYER
     WRITE(YLVL,'(I4)') JL
+    YRECFM='DG'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
     YFORM='(A6,I1.1,A8)'
     IF (JL >= 10)  YFORM='(A6,I2.2,A8)'
-    IF (OLAND_USE) THEN
-      YRECFM='OLD_DG'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
-      WRITE(YCOMMENT,FMT=YFORM) 'X_Y_OLD_DG',JL,' (m)'
-    ELSE
-      YRECFM='DG'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
-      WRITE(YCOMMENT,FMT=YFORM) 'X_Y_DG',JL,' (m)'
-    ENDIF
+    WRITE(YCOMMENT,FMT=YFORM) 'X_Y_DG',JL,' (m)'
     DO JP = 1,IO%NPATCH
       CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
                       NP%AL(JP)%NR_P,NP%AL(JP)%XDG(:,JL),KI,S%XWORK_WR)    
@@ -430,7 +432,23 @@ IF(OLAND_USE .OR. LWRITE_EXTERN)THEN
 !
 ENDIF
 !
-!* ISBA-AGS variables
+IF(IO%LLULCC)THEN
+!
+  DO JL=1,NVEGTYPE
+    WRITE(YLVL,'(I4)') JL
+    YRECFM='VEGTYPE'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
+    YCOMMENT='fraction of each vegetation type in the grid cell'
+    CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,S%XVEGTYPE(:,JL),IRESP,HCOMMENT=YCOMMENT)
+  ENDDO
+!
+ENDIF
+!
+!
+!-------------------------------------------------------------------------------
+!
+!*       5.  ISBA-AGS variables
+!            ------------------
+!
 !
 IF (IO%CPHOTO/='NON') THEN
   YRECFM='AN'
@@ -454,12 +472,6 @@ IF (IO%CPHOTO/='NON') THEN
                     NP%AL(JP)%NR_P,NPE%AL(JP)%XANFM(:),KI,S%XWORK_WR)    
   ENDDO    
 !
-  YRECFM='LE_AGS'
-  YCOMMENT='X_Y_LE_AGS (W/m2)'
-  DO JP = 1,IO%NPATCH
-    CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
-                    NP%AL(JP)%NR_P,NPE%AL(JP)%XLE(:),KI,S%XWORK_WR)    
-  ENDDO    
 END IF
 !
 !
@@ -490,32 +502,33 @@ IF (IO%CPHOTO=='NIT' .OR. IO%CPHOTO=='NCB') THEN
   !
 END IF
 !
-!* Soil carbon
+!-------------------------------------------------------------------------------
+!
+!*       6. ISBA-CC
+!           -------
+!
 !
 YRECFM = 'RESPSL'
 YCOMMENT=YRECFM
- CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,IO%CRESPSL,IRESP,HCOMMENT=YCOMMENT)
+CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,IO%CRESPSL,IRESP,HCOMMENT=YCOMMENT)
 !
-YRECFM='NLITTER'
+YRECFM = 'SOILGAS'
 YCOMMENT=YRECFM
- CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,IO%NNLITTER,IRESP,HCOMMENT=YCOMMENT)
+CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,IO%LSOILGAS,IRESP,HCOMMENT=YCOMMENT)
 !
-YRECFM='NLITTLEVS'
-YCOMMENT=YRECFM
- CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,IO%NNLITTLEVS,IRESP,HCOMMENT=YCOMMENT)
-!
-YRECFM='NSOILCARB'
-YCOMMENT=YRECFM
- CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,IO%NNSOILCARB,IRESP,HCOMMENT=YCOMMENT)
-!
-IF(IO%LSPINUPCARBS.OR.IO%LSPINUPCARBW)THEN
+IF(IO%LSPINUPCARBS)THEN
   YRECFM='NBYEARSOLD'
   YCOMMENT='yrs'
   CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,IO%NNBYEARSOLD,IRESP,HCOMMENT=YCOMMENT)
 ENDIF
 !
+!
 IF (IO%CRESPSL=='CNT') THEN
-  !
+!
+!
+!*       6.1 Bulk Soil carbon
+!
+!
   DO JNL=1,IO%NNLITTER
     DO JNLV=1,IO%NNLITTLEVS
       WRITE(YLVL,'(I1,A1,I1)') JNL,'_',JNLV
@@ -528,15 +541,15 @@ IF (IO%CRESPSL=='CNT') THEN
       ENDDO        
     END DO
   END DO
-
-  DO JNS=1,IO%NNSOILCARB
-    WRITE(YLVL,'(I4)') JNS
+!
+  DO JNC=1,IO%NNSOILCARB
+    WRITE(YLVL,'(I4)') JNC
     YRECFM='SOILCARB'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
     YFORM='(A8,I1.1,A8)'
-    WRITE(YCOMMENT,FMT=YFORM) 'X_Y_SOILCARB',JNS,' (gC/m2)'
+    WRITE(YCOMMENT,FMT=YFORM) 'X_Y_SOILCARB',JNC,' (gC/m2)'
     DO JP = 1,IO%NPATCH
       CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
-                      NP%AL(JP)%NR_P,NPE%AL(JP)%XSOILCARB(:,JNS),KI,S%XWORK_WR)    
+                      NP%AL(JP)%NR_P,NPE%AL(JP)%XSOILCARB(:,JNC),KI,S%XWORK_WR)    
     ENDDO     
   END DO
 !
@@ -551,8 +564,210 @@ IF (IO%CRESPSL=='CNT') THEN
     ENDDO       
   END DO
 !
+ELSEIF (IO%CRESPSL=='DIF') THEN
+!
+!
+!*       6.2 Multi-layer Soil carbon
+!
+!
+  YRECFM='SURF_LIGN'
+  YCOMMENT='X_Y_SURFACE_LIGNIN_STRUC'
+  DO JP = 1,IO%NPATCH
+      CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+                      NP%AL(JP)%NR_P,NPE%AL(JP)%XSURFACE_LIGNIN_STRUC(:),KI,S%XWORK_WR)    
+  ENDDO
+!
+  DO JNL=1,IO%NNLITTER
+     WRITE(YLVL,'(I1)') JNL
+     YRECFM='SURF_LIT'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
+     YCOMMENT='X_Y_SURFACE_LITTER'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))//' (gC/m2)'
+     DO JP = 1,IO%NPATCH
+        CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+                      NP%AL(JP)%NR_P,NPE%AL(JP)%XSURFACE_LITTER(:,JNL),KI,S%XWORK_WR)    
+     ENDDO
+  END DO
+!
+  DO JL=1,IO%NGROUND_LAYER
+     WRITE(YLVL,'(I2.2)') JL
+     YRECFM='DFLIGN'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
+     YCOMMENT='X_Y_Z_SOIL_LIGNIN_STRUC'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
+     DO JP = 1,IO%NPATCH
+        CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+                      NP%AL(JP)%NR_P,NPE%AL(JP)%XSOILDIF_LIGNIN_STRUC(:,JL),KI,S%XWORK_WR)    
+     ENDDO    
+  END DO
+!
+  DO JNL=1,IO%NNLITTER
+    DO JL=1,IO%NGROUND_LAYER
+       WRITE(YLVL,'(I1,A1,I2.2)') JNL,'L',JL
+       YRECFM='DFLIT'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
+       YCOMMENT='X_Y_Z_SOIL_LITTER'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))//' (gC/m2)'
+       DO JP = 1,IO%NPATCH
+          CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+                        NP%AL(JP)%NR_P,NPE%AL(JP)%XSOILDIF_LITTER(:,JL,JNL),KI,S%XWORK_WR)    
+       ENDDO      
+    END DO
+  END DO
+!
+  DO JNC=1,IO%NNSOILCARB
+      DO JL=1,IO%NGROUND_LAYER
+         WRITE(YLVL,'(I1,A1,I2.2)')JNC,'L',JL
+         YRECFM='DFCARB'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
+         YCOMMENT='X_Y_Z_SOILCARB'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))//' (gC/m2)'
+         DO JP = 1,IO%NPATCH
+            CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+                          NP%AL(JP)%NR_P,NPE%AL(JP)%XSOILDIF_CARB(:,JL,JNC),KI,S%XWORK_WR)    
+         ENDDO        
+      ENDDO
+  END DO
+!
 ENDIF
 !
+!
+!*       6.3 Multi-layer Soil gas
+!
+!
+IF (IO%CRESPSL=='DIF'.AND.IO%LSOILGAS) THEN
+!
+  DO JL=1,IO%NGROUND_LAYER
+     WRITE(YLVL,'(I2.2)') JL
+     YRECFM='SGASO2L'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
+     YCOMMENT='X_Y_Z_SGASO2L'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))//' (g/m3)'
+     DO JP = 1,IO%NPATCH
+        CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+                      NP%AL(JP)%NR_P,NPE%AL(JP)%XSGASO2(:,JL),KI,S%XWORK_WR)    
+     ENDDO    
+  END DO
+!
+  DO JL=1,IO%NGROUND_LAYER
+     WRITE(YLVL,'(I2.2)') JL
+     YRECFM='SGASCO2L'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
+     YCOMMENT='X_Y_Z_SGASCO2L'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))//' (g/m3)'
+     DO JP = 1,IO%NPATCH
+        CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+                      NP%AL(JP)%NR_P,NPE%AL(JP)%XSGASCO2(:,JL),KI,S%XWORK_WR)    
+     ENDDO
+  END DO
+!
+  DO JL=1,IO%NGROUND_LAYER
+     WRITE(YLVL,'(I2.2)') JL
+     YRECFM='SGASCH4L'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
+     YCOMMENT='X_Y_Z_SGASCH4L'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))//' (g/m3)'
+     DO JP = 1,IO%NPATCH
+        CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+                      NP%AL(JP)%NR_P,NPE%AL(JP)%XSGASCH4(:,JL),KI,S%XWORK_WR)    
+     ENDDO
+  END DO
+!
+ENDIF
+!
+!
+!*       6.4 Fire scheme
+!
+!
+IF (IO%LFIRE) THEN
+!
+  YRECFM = 'FIREIND'
+  YCOMMENT=YRECFM
+  DO JP = 1,IO%NPATCH
+     CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+                   NP%AL(JP)%NR_P,NPE%AL(JP)%XFIREIND,KI,S%XWORK_WR)    
+  ENDDO
+!
+  YRECFM='MOISTLITFIRE'
+  YCOMMENT=YRECFM
+  DO JP = 1,IO%NPATCH
+     CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+                   NP%AL(JP)%NR_P,NPE%AL(JP)%XMOISTLIT_FIRE,KI,S%XWORK_WR)    
+  ENDDO
+!
+  YRECFM='TEMPLITFIRE'
+  YCOMMENT=YRECFM
+  DO JP = 1,IO%NPATCH
+     CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+                   NP%AL(JP)%NR_P,NPE%AL(JP)%XTEMPLIT_FIRE,KI,S%XWORK_WR)    
+  ENDDO
+!
+END IF
+!
+!
+!*       6.5 Land-use Land Cover change carbon Managing
+!           -------------------------------------------
+!
+IF (IO%CPHOTO=='NCB' .AND. (IO%CRESPSL=='CNT'.OR.IO%CRESPSL=='DIF') .AND. IO%LLULCC) THEN
+!
+  YRECFM = 'FLUATM'
+  YCOMMENT=YRECFM
+  DO JP = 1,IO%NPATCH
+     CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+                   NP%AL(JP)%NR_P,NPE%AL(JP)%XFLUATM,KI,S%XWORK_WR)    
+  ENDDO
+!
+  YRECFM = 'FLURES'
+  YCOMMENT=YRECFM
+  DO JP = 1,IO%NPATCH
+     CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+                   NP%AL(JP)%NR_P,NPE%AL(JP)%XFLURES,KI,S%XWORK_WR)    
+  ENDDO
+!
+  YRECFM = 'FLUANT'
+  YCOMMENT=YRECFM
+  DO JP = 1,IO%NPATCH
+     CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+                   NP%AL(JP)%NR_P,NPE%AL(JP)%XFLUANT,KI,S%XWORK_WR)    
+  ENDDO
+!
+  YRECFM = 'FANTATM'
+  YCOMMENT=YRECFM
+  DO JP = 1,IO%NPATCH
+     CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+                   NP%AL(JP)%NR_P,NPE%AL(JP)%XFANTATM,KI,S%XWORK_WR)    
+  ENDDO
+!
+  DO JNC=1,IO%NNDECADAL
+     WRITE(YLVL,'(I4)') JNC
+     YFORM='(A10,I1.1,A10)'
+     IF (JNC >= 10)  YFORM='(A10,I2.2,A10)'
+     YRECFM='CANTD'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
+     WRITE(YCOMMENT,FMT=YFORM) 'X_Y_CANTD',JNC,' (kgC/m2)'
+     DO JP = 1,IO%NPATCH
+        CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+                      NP%AL(JP)%NR_P,NPE%AL(JP)%XCSTOCK_DECADAL(:,JNC),KI,S%XWORK_WR)    
+     ENDDO
+     YRECFM='CEXPD'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
+     WRITE(YCOMMENT,FMT=YFORM) 'X_Y_CEXPD',JNC,' (kgC/m2/yr)'
+     DO JP = 1,IO%NPATCH
+        CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+                      NP%AL(JP)%NR_P,NPE%AL(JP)%XEXPORT_DECADAL(:,JNC),KI,S%XWORK_WR)    
+     ENDDO
+  END DO
+!
+  DO JNC=1,IO%NNCENTURY
+     WRITE(YLVL,'(I4)') JNC
+     YFORM='(A10,I1.1,A10)'
+     IF (JNC >= 10)   YFORM='(A10,I2.2,A10)'
+     IF (JNC >= 100)  YFORM='(A10,I3.3,A10)'
+     YRECFM='CANTC'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
+     WRITE(YCOMMENT,FMT=YFORM) 'X_Y_CANTC',JNC,' (kgC/m2)'
+     DO JP = 1,IO%NPATCH
+        CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+                      NP%AL(JP)%NR_P,NPE%AL(JP)%XCSTOCK_CENTURY(:,JNC),KI,S%XWORK_WR)    
+     ENDDO
+     YRECFM='CEXPC'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
+     WRITE(YCOMMENT,FMT=YFORM) 'X_Y_CEXPC',JNC,' (kgC/m2/yr)'
+     DO JP = 1,IO%NPATCH
+        CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+                      NP%AL(JP)%NR_P,NPE%AL(JP)%XEXPORT_CENTURY(:,JNC),KI,S%XWORK_WR)    
+     ENDDO
+  END DO
+END IF
+!
+!-------------------------------------------------------------------------------
+!
+!*       8.  Other
+!            ----------------
+!
+! * Dust
 !
 IF (CHI%SVI%NDSTEQ > 0)THEN
   DO JSV = 1,NDSTMDE ! for all dust modes
@@ -567,7 +782,7 @@ ENDIF
 !
 !-------------------------------------------------------------------------------
 
-!*       5.  Time
+!*       9.  Time
 !            ----
 !
 YRECFM='DTCUR'

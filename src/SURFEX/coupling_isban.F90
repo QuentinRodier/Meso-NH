@@ -4,15 +4,15 @@
 !SFX_LIC for details. version 1.
 !     ###############################################################################
 SUBROUTINE COUPLING_ISBA_n (DTCO, UG, U, USS, NAG, CHI, NCHI, MGN, MSF,  DTI, ID, NGB,  &
-                            GB, ISS, NISS, IG, NIG, IO, S, K, NK, NP, NPE, AT, NDST,DST,SLT,&
-                            HPROGRAM, HCOUPLING, PTSTEP,  KYEAR, KMONTH, KDAY, PTIME,   &
-                            KI, KSV, KSW, PTSUN, PZENITH, PZENITH2, PAZIM, PZREF, PUREF,&
-                            PZS, PU, PV, PQA, PTA, PRHOA, PSV, PCO2, PIMPWET,PIMPDRY,   &
-                            HSV, PRAIN, PSNOW, PLW,                                     &
+                            GB, ISS, NISS, IG, NIG, IO, S, K, NK, NP, NPE, AT, NDST,    &
+                            DST,SLT, HPROGRAM, HCOUPLING, PTSTEP, KYEAR, KMONTH, KDAY,  &
+                            PTIME, KI, KSV, KSW, PTSUN, PZENITH, PZENITH2, PAZIM,       &
+                            PZREF,PUREF, PZS, PU, PV, PQA, PTA, PRHOA, PSV, PCO2,       &
+                            PIMPWET, PIMPDRY, HSV, PRAIN, PSNOW, PLW,                   &
                             PDIR_SW, PSCA_SW, PSW_BANDS, PPS, PPA, PSFTQ, PSFTH, PSFTS, &
                             PSFCO2, PSFU, PSFV, PTRAD, PDIR_ALB, PSCA_ALB, PEMIS,       &
                             PTSURF, PZ0, PZ0H, PQSURF, PPEW_A_COEF, PPEW_B_COEF,        &
-                            PPET_A_COEF, PPEQ_A_COEF, PPET_B_COEF, PPEQ_B_COEF, HTEST    )  
+                            PPET_A_COEF, PPEQ_A_COEF, PPET_B_COEF, PPEQ_B_COEF, HTEST   )  
 !     ###############################################################################
 !
 !!****  *COUPLING_ISBA_n * - Driver for ISBA time step   
@@ -74,6 +74,12 @@ SUBROUTINE COUPLING_ISBA_n (DTCO, UG, U, USS, NAG, CHI, NCHI, MGN, MSF,  DTI, ID
 !!      A. Druel     02/2019 : Adapt the code to be compatible with new irrigation
 !!                             and avoid agricultural pratices for trees / shrubs
 !!      J. Pianezzej 02/2019 : correction for use of MEGAN
+!!      J. Colin       08/16 : Add the snow and soil moisture nudging
+!!      R. Séférian    11/16 : Fire scheme
+!!      R. Séférian    11/16 : Implement carbon cycle coupling (Earth system model)
+!!      B. Decharme  02/2019 : Explicit soil carbon and gas schemes
+!!                             Delete wood carbon spinup
+!!                             ISBA-CC diag in DIAG_CC_CUMUL_ISBA and AVERAGE_DIAG_EVAP_ISBA_CC
 !!-------------------------------------------------------------------
 !
 USE MODD_PREP_SNOW, ONLY    : NIMPUR
@@ -96,15 +102,16 @@ USE MODD_GR_BIOG_n,       ONLY : GR_BIOG_t, GR_BIOG_NP_t
 USE MODD_SSO_n,           ONLY : SSO_t, SSO_NP_t
 USE MODD_SFX_GRID_n,      ONLY : GRID_t, GRID_NP_t
 USE MODD_ISBA_OPTIONS_n,  ONLY : ISBA_OPTIONS_t
-USE MODD_ISBA_n,          ONLY : ISBA_S_t, ISBA_K_t, ISBA_P_t, ISBA_PE_t, ISBA_NK_t, ISBA_NP_t, ISBA_NPE_t
+USE MODD_ISBA_n,          ONLY : ISBA_S_t, ISBA_K_t, ISBA_P_t, ISBA_PE_t, &
+                                 ISBA_NK_t, ISBA_NP_t, ISBA_NPE_t
 !
 USE MODD_DST_n,           ONLY : DST_NP_t, DST_t
 USE MODD_SLT_n,           ONLY : SLT_t
 !
 USE MODD_REPROD_OPER,     ONLY : CIMPLICIT_WIND
 !
-USE MODD_CSTS,            ONLY : XRD, XP00, XCPD, XPI, XAVOGADRO, XMD
-USE MODD_CO2V_PAR,        ONLY : XMCO2, XSPIN_CO2
+USE MODD_CSTS,            ONLY : XRD, XP00, XCPD, XPI, XAVOGADRO, XMD, XDAY
+USE MODD_CO2V_PAR,        ONLY : XMCO2, XMCO2, XMC, XGTOKG
 !
 USE MODD_SURF_PAR,        ONLY : XUNDEF
 USE MODD_TYPE_DATE_SURF
@@ -119,6 +126,7 @@ USE MODE_MEB
 USE MODD_DATA_COVER_PAR, ONLY : NVT_TEBD, NVT_BONE, NVT_TRBE, NVT_TRBD, &
                                 NVT_TEBE, NVT_TENE, NVT_BOBD, NVT_BOND, &
                                 NVT_SHRB, NVT_FLTR, NVEGTYPE
+!
 USE MODD_AGRI,            ONLY : LAGRIP, LIRRIGMODE, LMULTI_SEASON, NVEG_IRR
 USE MODD_DEEPSOIL,        ONLY : LDEEPSOIL
 !
@@ -138,11 +146,13 @@ USE MODI_AVERAGE_DIAG_ISBA_n
 USE MODI_VEGETATION_EVOL
 USE MODI_VEGETATION_UPDATE
 USE MODI_CARBON_EVOL
+USE MODI_CARBON_EVOL_DIF
 USE MODI_SUBSCALE_Z0EFF
 USE MODI_SOIL_ALBEDO
 USE MODI_ALBEDO
 USE MODI_DIAG_INLINE_ISBA_n
 USE MODI_DIAG_EVAP_CUMUL_ISBA_n
+USE MODI_DIAG_CC_CUMUL_ISBA_n
 USE MODI_DIAG_MISC_ISBA_n
 USE MODI_REPROJ_DIAG_ISBA_n
 !
@@ -157,6 +167,7 @@ USE MODI_CARBON_SPINUP
 USE MODI_CH_AER_DEP
 USE MODI_ABOR1_SFX
 USE MODI_AVERAGE_DIAG_EVAP_ISBA_n
+USE MODI_AVERAGE_DIAG_CC_ISBA_n
 USE MODI_AVERAGE_DIAG_MISC_ISBA_n
 USE MODI_CH_BVOCEM_n
 USE MODI_SOILEMISNO_n
@@ -166,10 +177,13 @@ USE MODI_COUPLING_DST_n
 USE MODI_COUPLING_SURF_TOPD
 USE MODI_ISBA_BUDGET_INIT
 USE MODI_ISBA_BUDGET
-USE MODI_UNPACK_DIAG_PATCH_n
+USE MODI_UNPACK_DIAG_CPL_ESM_ISBA
 USE MODD_SYTRON_PAR, ONLY : NTAB_SYT
 USE MODI_VEGTYPE_TO_PATCH_IRRIG
 USE MODI_COUPLING_MEGAN_n
+USE MODI_FIRE_DISTURBANCE
+USE MODI_NUDGING_ISBA_SNOW
+USE MODI_NUDGING_ISBA_SOIL
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -208,8 +222,8 @@ TYPE(DST_t), INTENT(INOUT) :: DST
 TYPE(DST_NP_t), INTENT(INOUT) :: NDST
 TYPE(SLT_t), INTENT(INOUT) :: SLT
 !
- CHARACTER(LEN=6),    INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
- CHARACTER(LEN=1),    INTENT(IN)  :: HCOUPLING ! type of coupling
+CHARACTER(LEN=6),    INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
+CHARACTER(LEN=1),    INTENT(IN)  :: HCOUPLING ! type of coupling
                                               ! 'E' : explicit
                                               ! 'I' : implicit
 INTEGER,             INTENT(IN)  :: KYEAR     ! current year (UTC)
@@ -283,10 +297,10 @@ REAL, DIMENSION(KI), INTENT(IN) :: PPEQ_B_COEF
 !
 !* forcing variables
 !
-TYPE(ISBA_K_t), POINTER :: KK
-TYPE(ISBA_P_t), POINTER :: PK
+TYPE(ISBA_K_t),  POINTER :: KK
+TYPE(ISBA_P_t),  POINTER :: PK
 TYPE(ISBA_PE_t), POINTER :: PEK
-TYPE(SSO_t), POINTER :: ISSK
+TYPE(SSO_t),     POINTER :: ISSK
 !
 REAL, DIMENSION(KI)     :: ZWIND    ! lowest atmospheric level wind speed           (m/s)
 REAL, DIMENSION(KI)     :: ZDIR     ! wind direction                        (rad from N clockwise)
@@ -295,11 +309,8 @@ REAL, DIMENSION(KI)     :: ZEXNS    ! Exner function at surface                 
 REAL, DIMENSION(KI)     :: ZALFA    ! Wind direction                                (-)
 REAL, DIMENSION(KI)     :: ZQA      ! specific humidity                             (kg/kg)
 REAL, DIMENSION(KI)     :: ZCO2     ! CO2 concentration                             (kg/kg)
-REAL                    :: ZSPINCO2 ! CO2 concentration                             (ppmv)
 REAL, DIMENSION(KI)     :: ZPEQ_A_COEF ! specific humidity implicit
 REAL, DIMENSION(KI)     :: ZPEQ_B_COEF ! coefficients (hum. in kg/kg)
-!
-INTEGER                 ::ISPINEND
 !
 ! Patch outputs:
 !
@@ -323,7 +334,8 @@ REAL, DIMENSION(KI, IO%NPATCH) :: ZCPL_RUNOFF    ! For the coupling with TRIP
 REAL, DIMENSION(KI, IO%NPATCH) :: ZCPL_EFLOOD    ! For the coupling with TRIP
 REAL, DIMENSION(KI, IO%NPATCH) :: ZCPL_PFLOOD    ! For the coupling with TRIP
 REAL, DIMENSION(KI, IO%NPATCH) :: ZCPL_IFLOOD    ! For the coupling with TRIP
-REAL, DIMENSION(KI, IO%NPATCH) :: ZCPL_ICEFLUX
+REAL, DIMENSION(KI, IO%NPATCH) :: ZCPL_ICEFLUX   ! For the coupling with TRIP
+REAL, DIMENSION(KI, IO%NPATCH) :: ZCPL_DOCFLUX   ! For the coupling with TRIP
 !
 ! for chemical computations
 !
@@ -353,12 +365,13 @@ LOGICAL :: LIS_TREE
 ! logical units
 !
 INTEGER :: JJ, IBEG, IEND, ISIZE
-LOGICAL :: GUPDATED, GALB             ! T if VEGETATION_UPDATE has reset fields
+LOGICAL :: GUPDATED  ! return F if VEGETATION_UPDATE has reset fields
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 ! --------------------------------------------------------------------------------------
 IF (LHOOK) CALL DR_HOOK('COUPLING_ISBA_N',0,ZHOOK_HANDLE)
+!
 IF (HTEST/='OK') THEN
   CALL ABOR1_SFX('COUPLING_ISBAN: FATAL ERROR DURING ARGUMENT TRANSFER')
 END IF
@@ -392,6 +405,7 @@ ZCPL_EFLOOD(:,:)  = 0.0
 ZCPL_PFLOOD(:,:)  = 0.0
 ZCPL_IFLOOD(:,:)  = 0.0
 ZCPL_ICEFLUX(:,:) = 0.0
+ZCPL_DOCFLUX(:,:) = 0.0
 !
 ZSW_FORBIO(:,:)   =  XUNDEF
 !
@@ -415,8 +429,9 @@ DO JJ=1,SIZE(PQA)
 !
 ! Other forcing variables depending on incoming forcing (argument list)JJ
 !
-  ZEXNS(JJ)   = (PPS(JJ)/XP00)**(XRD/XCPD)
-  ZEXNA(JJ)   = (PPA(JJ)/XP00)**(XRD/XCPD)
+! Optimization : X**n = EXP(n*LOG(X))
+  ZEXNS(JJ)   = EXP((XRD/XCPD)*LOG(PPS(JJ)/XP00))
+  ZEXNA(JJ)   = EXP((XRD/XCPD)*LOG(PPA(JJ)/XP00))
 !
 !* wind strength
 !
@@ -439,12 +454,23 @@ ENDDO
 !
 ISWB = KSW
 !
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+!* Soil moisture nudging
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+!
+IF (IO%CNUDG_WG/='DEF') THEN   
+   CALL NUDGING_ISBA_SOIL(IO, K, NK, NP, NPE, ID%DM, ID%NDM, S%TTIME%TDATE%YEAR, KMONTH, KDAY, PTSTEP)
+ENDIF
+!
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 !* Actualization of the SGH variable (Fmu, Fsat)
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 !
- CALL ISBA_SGH_UPDATE(IG%XMESH_SIZE, IO, S, K, NK, NP, NPE, PRAIN )
+CALL ISBA_SGH_UPDATE(IG, IO, S, K, NK, NP, NPE, PRAIN )
 !
-!
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 !* Actualization of deep soil characteristics
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 !
 IF (LDEEPSOIL) THEN
   DO JP = 1,IO%NPATCH
@@ -453,35 +479,14 @@ IF (LDEEPSOIL) THEN
   ENDDO
 ENDIF
 !
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 !* Actualization of soil and wood carbon spinup
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 !
-! During soil carbon spinup with ISBA-CC: 
-!        (1) Atmospheric CO2 concentration fixed to Pre-industrial CO2 consentration XCO2_START
-!        (2) Atmospheric CO2 concentration rampin up from XCO2_START to XCO2_END
-!
-IF(IO%LSPINUPCARBS.OR.IO%LSPINUPCARBW)THEN
-!
-  ISPINEND = IO%NNBYEARSPINS-NINT(IO%NNBYEARSPINS*XSPIN_CO2)
-!  
-  IO%LAGRI_TO_GRASS = .FALSE.
-!
-  IF ( IO%LSPINUPCARBS .AND. (IO%NNBYEARSOLD <= ISPINEND) ) THEN
-!
-   IO%LAGRI_TO_GRASS = .TRUE.
-!
-   ZCO2(:) = IO%XCO2_START * 1.E-6 * XMCO2 / XMD
-!
-  ELSEIF(IO%LSPINUPCARBS .AND. (IO%NNBYEARSOLD > ISPINEND) .AND. (IO%NNBYEARSOLD <= IO%NNBYEARSPINS) )THEN
-!
-   ZSPINCO2 = IO%XCO2_START + (IO%XCO2_END-IO%XCO2_START) * &
-                REAL(IO%NNBYEARSOLD - ISPINEND) / REAL(IO%NNBYEARSPINS - ISPINEND)
-!
-   ZCO2 (:) = ZSPINCO2 * 1.E-6 * XMCO2 / XMD
-!
-  ENDIF
-!
+IF(IO%LSPINUPCARBS)THEN
   CALL CARBON_SPINUP( S%TTIME, IO )
-!
+ELSE
+  IO%NSPINS = 1
 ENDIF
 !
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -489,7 +494,7 @@ ENDIF
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 !
 S%TTIME%TIME = S%TTIME%TIME + PTSTEP
- CALL ADD_FORECAST_TO_DATE_SURF(S%TTIME%TDATE%YEAR,S%TTIME%TDATE%MONTH,S%TTIME%TDATE%DAY,S%TTIME%TIME)
+CALL ADD_FORECAST_TO_DATE_SURF(S%TTIME%TDATE%YEAR,S%TTIME%TDATE%MONTH,S%TTIME%TDATE%DAY,S%TTIME%TIME)
 !
 ! --------------------------------------------------------------------------------------
 !
@@ -534,8 +539,9 @@ ENDDO PATCH_LOOP
 ! --------------------------------------------------------------------------------------
 !
 IF(IO%LCPL_RRM)THEN
-  CALL DIAG_CPL_ESM_ISBA(IO, S, NK, NP, PTSTEP, ZCPL_DRAIN, ZCPL_RUNOFF, &
-                         ZCPL_EFLOOD, ZCPL_PFLOOD, ZCPL_IFLOOD, ZCPL_ICEFLUX  )  
+  CALL DIAG_CPL_ESM_ISBA(IG, IO, S, NK, NP, PTSTEP, ZCPL_DRAIN, ZCPL_RUNOFF, &
+                         ZCPL_EFLOOD, ZCPL_PFLOOD, ZCPL_IFLOOD, ZCPL_ICEFLUX,&
+                         ZCPL_DOCFLUX                                        )  
 ENDIF
 !
 ! --------------------------------------------------------------------------------------
@@ -547,41 +553,46 @@ ENDIF
 GUPDATED=.FALSE.
 !
 IF (IO%LVEGUPD) THEN
-  GALB = .FALSE. 
-  IF (IO%CPHOTO=='NIT'.OR.IO%CPHOTO=='NCB') GALB = .TRUE.
-  DO JP = 1,IO%NPATCH
-    CALL VEGETATION_UPDATE(DTCO, DTI, IG%NDIM, IO, NK%AL(JP), NP%AL(JP), NPE%AL(JP), KMONTH, KDAY, JP, &
-                         PTSTEP, S%TTIME, S%XCOVER, S%LCOVER,  LAGRIP, U%LECOSG, LIRRIGMODE,           &
-                         'NAT', GALB, NISS%AL(JP), GUPDATED             )  
-  ENDDO
-!
+   DO JP = 1,IO%NPATCH
+      CALL VEGETATION_UPDATE(DTCO, DTI, IG%NDIM, IO, NK%AL(JP), NP%AL(JP), NPE%AL(JP), &
+                             KMONTH, KDAY, JP, PTSTEP, S%TTIME, S%XCOVER, S%LCOVER,    &
+                             LAGRIP, U%LECOSG, LIRRIGMODE, 'NAT', NISS%AL(JP), GUPDATED)  
+   ENDDO
 ENDIF
 !
 IF(IO%LPERTSURF.AND.GUPDATED) THEN
+  !
   DO JP = 1,IO%NPATCH
-    PK => NP%AL(JP)
-    PEK => NPE%AL(JP)
-    ISSK => NISS%AL(JP)
-
-    DO JI = 1,PK%NSIZE_P
-      IMASK = PK%NR_P(JI)
-      !
-      ! random perturbation for ensembles:
-      ! reset these fields to their original values, as in compute_isba_parameters
-      PEK%XVEG(JI) = S%XPERTVEG(IMASK)
-      PEK%XLAI(JI) = S%XPERTLAI(IMASK)
-      PEK%XCV (JI) = S%XPERTCV (IMASK)
-      ! reapply original perturbation patterns
-      IF(PEK%XALBNIR(JI)/=XUNDEF)   PEK%XALBNIR(JI)   = PEK%XALBNIR(JI) *( 1.+ S%XPERTALB(IMASK) )
-      IF(PEK%XALBVIS(JI)/=XUNDEF)   PEK%XALBVIS(JI)   = PEK%XALBVIS(JI) *( 1.+ S%XPERTALB(IMASK) )
-      IF(PEK%XALBUV(JI)/=XUNDEF)    PEK%XALBUV (JI)   = PEK%XALBUV (JI) *( 1.+ S%XPERTALB(IMASK) )
-      IF(PEK%XZ0(JI)/=XUNDEF)       PEK%XZ0(JI)       = PEK%XZ0(JI)     *( 1.+ S%XPERTZ0(IMASK) )
-      IF(ISSK%XZ0EFFIP(JI)/=XUNDEF) ISSK%XZ0EFFIP(JI) = ISSK%XZ0EFFIP(JI)*( 1.+ S%XPERTZ0(IMASK) )
-      IF(ISSK%XZ0EFFIM(JI)/=XUNDEF) ISSK%XZ0EFFIM(JI) = ISSK%XZ0EFFIM(JI)*( 1.+ S%XPERTZ0(IMASK) )
-      IF(ISSK%XZ0EFFJP(JI)/=XUNDEF) ISSK%XZ0EFFJP(JI) = ISSK%XZ0EFFJP(JI)*( 1.+ S%XPERTZ0(IMASK) )
-      IF(ISSK%XZ0EFFJM(JI)/=XUNDEF) ISSK%XZ0EFFJM(JI) = ISSK%XZ0EFFJM(JI)*( 1.+ S%XPERTZ0(IMASK) )
-    ENDDO
+     !
+     PK => NP%AL(JP)
+     PEK => NPE%AL(JP)
+     ISSK => NISS%AL(JP)
+     DO JI = 1,PK%NSIZE_P
+        !
+        IMASK = PK%NR_P(JI)
+        !
+        ! random perturbation for ensembles:
+        ! reset these fields to their original values, as in compute_isba_parameters
+        !
+        PEK%XVEG(JI) = S%XPERTVEG(IMASK)
+        PEK%XLAI(JI) = S%XPERTLAI(IMASK)
+        PEK%XCV (JI) = S%XPERTCV (IMASK)
+        !
+        ! reapply original perturbation patterns
+        !
+        IF(PEK%XALBNIR(JI)/=XUNDEF)   PEK%XALBNIR(JI)   = PEK%XALBNIR(JI) *( 1.+ S%XPERTALB(IMASK) )
+        IF(PEK%XALBVIS(JI)/=XUNDEF)   PEK%XALBVIS(JI)   = PEK%XALBVIS(JI) *( 1.+ S%XPERTALB(IMASK) )
+        IF(PEK%XALBUV(JI)/=XUNDEF)    PEK%XALBUV (JI)   = PEK%XALBUV (JI) *( 1.+ S%XPERTALB(IMASK) )
+        IF(PEK%XZ0(JI)/=XUNDEF)       PEK%XZ0(JI)       = PEK%XZ0(JI)     *( 1.+ S%XPERTZ0(IMASK) )
+        IF(ISSK%XZ0EFFIP(JI)/=XUNDEF) ISSK%XZ0EFFIP(JI) = ISSK%XZ0EFFIP(JI)*( 1.+ S%XPERTZ0(IMASK) )
+        IF(ISSK%XZ0EFFIM(JI)/=XUNDEF) ISSK%XZ0EFFIM(JI) = ISSK%XZ0EFFIM(JI)*( 1.+ S%XPERTZ0(IMASK) )
+        IF(ISSK%XZ0EFFJP(JI)/=XUNDEF) ISSK%XZ0EFFJP(JI) = ISSK%XZ0EFFJP(JI)*( 1.+ S%XPERTZ0(IMASK) )
+        IF(ISSK%XZ0EFFJM(JI)/=XUNDEF) ISSK%XZ0EFFJM(JI) = ISSK%XZ0EFFJM(JI)*( 1.+ S%XPERTZ0(IMASK) )
+        !
+     ENDDO
+     !
   ENDDO
+  !
 ENDIF
 !
 ! --------------------------------------------------------------------------------------
@@ -589,9 +600,9 @@ ENDIF
 ! --------------------------------------------------------------------------------------
 ! Grid box average fluxes/properties: Arguments and standard diagnostics at time t+1
 !
- CALL AVERAGE_FLUX(S%XPATCH, ZSFTH_TILE, ZSFTQ_TILE, ZSFTS_TILE, &
-                   ZSFCO2_TILE, ZSFU_TILE, ZSFV_TILE, PSFTH, PSFTQ,&
-                   PSFTS, PSFCO2, PSFU, PSFV    )  
+CALL AVERAGE_FLUX(S%XPATCH, ZSFTH_TILE, ZSFTQ_TILE, ZSFTS_TILE,   &
+                  ZSFCO2_TILE, ZSFU_TILE, ZSFV_TILE, PSFTH, PSFTQ,&
+                  PSFTS, PSFCO2, PSFU, PSFV                       )  
 !
 !
 !-------------------------------------------------------------------------------
@@ -600,8 +611,8 @@ ENDIF
 !difficult to do. Maybe it will be done later. However, Ts is at time t+1
 !-------------------------------------------------------------------------------
 !   
- CALL AVERAGE_PHY(S%XPATCH, ZTSURF_TILE, ZZ0_TILE, ZZ0H_TILE, &
-                  ZQSURF_TILE, PUREF, PZREF, PTSURF, PZ0, PZ0H, PQSURF )
+CALL AVERAGE_PHY(S%XPATCH, ZTSURF_TILE, ZZ0_TILE, ZZ0H_TILE,          &
+                 ZQSURF_TILE, PUREF, PZREF, PTSURF, PZ0, PZ0H, PQSURF )
 !
 !-------------------------------------------------------------------------------------
 !Radiative properties at time t+1 (see by the atmosphere) in order to close
@@ -609,13 +620,14 @@ ENDIF
 !-------------------------------------------------------------------------------------
 !
 DO JP = 1,IO%NPATCH
-  CALL UPDATE_RAD_ISBA_n(IO, S, NK%AL(JP), NP%AL(JP), NPE%AL(JP), JP, PZENITH2, PSW_BANDS,  &
-                         DTI%NPAR_VEG_IRR_USE, ZDIR_ALB_TILE(:,:,JP), ZSCA_ALB_TILE(:,:,JP),&
-                         ZEMIS_TILE(:,JP), ZRNSHADE, ZRNSUNLIT, PDIR_SW, PSCA_SW)
+   CALL UPDATE_RAD_ISBA_n(IO, S, NK%AL(JP), NP%AL(JP), NPE%AL(JP), JP, PZENITH2, PSW_BANDS,  &
+                          DTI%NPAR_VEG_IRR_USE, ZDIR_ALB_TILE(:,:,JP), ZSCA_ALB_TILE(:,:,JP),&
+                          ZEMIS_TILE(:,JP), ZRNSHADE, ZRNSUNLIT, PDIR_SW, PSCA_SW)
 ENDDO
 !
- CALL AVERAGE_RAD(S%XPATCH, ZDIR_ALB_TILE, ZSCA_ALB_TILE, ZEMIS_TILE, &
-                  ZTRAD_TILE, PDIR_ALB, PSCA_ALB, S%XEMIS_NAT, S%XTSRAD_NAT  )  
+!
+CALL AVERAGE_RAD(S%XPATCH, ZDIR_ALB_TILE, ZSCA_ALB_TILE, ZEMIS_TILE, &
+                 ZTRAD_TILE, PDIR_ALB, PSCA_ALB, S%XEMIS_NAT, S%XTSRAD_NAT  )  
 !
 PEMIS = S%XEMIS_NAT
 PTRAD = S%XTSRAD_NAT
@@ -624,22 +636,28 @@ PTRAD = S%XTSRAD_NAT
 !
 ! Any additional diagnostics (stored in MODD_DIAG_ISBA_n)
 !
- CALL AVERAGE_DIAG_ISBA_n(ID%O, ID%D, ID%DC, ID%ND, ID%NDC, NP, IO%NPATCH, &
-                          ID%O%LSURF_BUDGETC, IO%LCANOPY, PUREF, PZREF, PSFCO2, PTRAD)
+CALL AVERAGE_DIAG_ISBA_n(IO, ID%O, ID%D, ID%DC, ID%ND, ID%NDC, NP,&
+                         PUREF, PZREF, PSFCO2                     )
 !
-! Cumulated diagnostics (stored in MODD_DIAG_EVAP_ISBA_n)
+! Water and energy fluxes diagnostics (stored in MODD_DIAG_EVAP_ISBA_n)
 !
- CALL AVERAGE_DIAG_EVAP_ISBA_n(ID%O%LSURF_BUDGETC, ID%DE, ID%DEC, ID%NDE, ID%NDEC, NP,  &
-                               IO%NPATCH, IO%LGLACIER, IO%LMEB_PATCH, PTSTEP, PRAIN, PSNOW)
+CALL AVERAGE_DIAG_EVAP_ISBA_n(IO, ID%O, ID%DE, ID%DEC, ID%NDE, ID%NDEC, NP,&
+                              PTSTEP, PRAIN, PSNOW                         )
+!
+! Carbon fluxes diagnostics (stored in MODD_DIAG_EVAP_ISBA_n)
+!
+CALL AVERAGE_DIAG_CC_ISBA_n(IO, ID%O, ID%DE, ID%DEC, ID%NDE, ID%NDEC, NP)
 !
 ! Miscellaneous diagnostics (stored in MODD_DIAG_MISC_ISBA_n)
 !
- CALL AVERAGE_DIAG_MISC_ISBA_n(ID%DM, ID%NDM, IO, NP, NPE)
+IF (ID%DM%LSURF_MISC_BUDGET) THEN
+   CALL AVERAGE_DIAG_MISC_ISBA_n(ID%DM, ID%NDM, IO, NK, NP, NPE)
+ENDIF
 !
 !--------------------------------------------------------------------------------------
 !
- CALL COUPLING_SURF_TOPD(ID%DE, ID%DEC, ID%DC, ID%DM, IG, &
-                         IO, S, K, NK, NP, NPE, UG, U, HPROGRAM, U%NDIM_FULL)
+CALL COUPLING_SURF_TOPD(ID%DE, ID%DEC, ID%DC, ID%DM, IG, &
+                        IO, S, K, NK, NP, NPE, UG, U, HPROGRAM, U%NDIM_FULL)
 !
 ! --------------------------------------------------------------------------------------
 ! Snow/Flood fractions, albedo and emissivity update :
@@ -649,8 +667,7 @@ PTRAD = S%XTSRAD_NAT
 ! Chemical fluxes :
 ! --------------------------------------------------------------------------------------
 !
-IF (CHI%SVI%NBEQ>0 .AND. CHI%LCH_BIO_FLUX) THEN
-  IF (TRIM(CHI%CPARAMBVOC)=='SOLMON') &
+IF (CHI%SVI%NBEQ>0 .AND. CHI%LCH_BIO_FLUX .AND. TRIM(CHI%CPARAMBVOC)=='SOLMON' ) THEN
     CALL CH_BVOCEM_n(CHI%SVI, NGB, GB, IO, S, NP, NPE, ZSW_FORBIO, PRHOA, DTI%NPAR_VEG_IRR_USE, PSFTS)
 ENDIF
 !
@@ -799,11 +816,12 @@ REAL, DIMENSION(PK%NSIZE_P) :: ZP_RNSUNLIT
 !
 ! miscellaneous
 !
-REAL, DIMENSION(PK%NSIZE_P)               :: ZP_DEEP_FLUX ! Flux at the bottom of the soil
-REAL, DIMENSION(PK%NSIZE_P)               :: ZP_TDEEP_A   ! coefficient for implicitation of Tdeep
-REAL, DIMENSION(PK%NSIZE_P)               :: ZIRRIG_GR    ! green roof ground irrigation rate 
+REAL, DIMENSION(PK%NSIZE_P) :: ZP_DEEP_FLUX ! Flux at the bottom of the soil
+REAL, DIMENSION(PK%NSIZE_P) :: ZP_TDEEP_A   ! coefficient for implicitation of Tdeep
+REAL, DIMENSION(PK%NSIZE_P) :: ZIRRIG_GR    ! green roof ground irrigation rate 
 !
 REAL, DIMENSION(PK%NSIZE_P) :: ZP_AZIM  ! azimuthal angle      (radian from North, clockwise)
+!
 ! For multi-energy balance
 LOGICAL :: GMEB  ! True if multi-energy balance should be used for the specific patch
 !
@@ -981,19 +999,19 @@ ENDIF
 ! Blowing snow scheme
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 IF(CHI%SVI%NSNWEQ>0.) THEN
-	ZP_BLOWSNW_CONC(:,:) =  ZP_SV(:,CHI%SVI%NSV_SNWBEG:CHI%SVI%NSV_SNWEND)
-	ZP_BLOWSNW_FLUX(:,:) =  ZP_SV(:,CHI%SVI%N2D_SNWBEG:CHI%SVI%N2D_SNWEND)
-!     ZP_BLOWSNW_FLUX           IN : fluxes sent from Canopy:
-!                                            [1] number sedim. flux (#/m2/s)
-!                                            [2] mass sedim flux (kg{snow}/m2/s)
-!                                            [3] contrib. saltation (kg{snow}/m2/s)
-!                               OUT : fluxes towards Canopy:
-!                                            [1] number turbulent flux (#/m2/s)
-!                                            [2] mass turbulent flux (kg{snow}/m2/s)
-!                                            [3] updated streamwise saltation flux (kg{snow}/m2/s)
+   ZP_BLOWSNW_CONC(:,:) =  ZP_SV(:,CHI%SVI%NSV_SNWBEG:CHI%SVI%NSV_SNWEND)
+   ZP_BLOWSNW_FLUX(:,:) =  ZP_SV(:,CHI%SVI%N2D_SNWBEG:CHI%SVI%N2D_SNWEND)
+!  ZP_BLOWSNW_FLUX           IN : fluxes sent from Canopy:
+!                                         [1] number sedim. flux (#/m2/s)
+!                                         [2] mass sedim flux (kg{snow}/m2/s)
+!                                         [3] contrib. saltation (kg{snow}/m2/s)
+!                            OUT : fluxes towards Canopy:
+!                                         [1] number turbulent flux (#/m2/s)
+!                                         [2] mass turbulent flux (kg{snow}/m2/s)
+!                                         [3] updated streamwise saltation flux (kg{snow}/m2/s)
 ELSE
-	ZP_BLOWSNW_CONC(:,:) =  XUNDEF
-	ZP_BLOWSNW_FLUX(:,:) =  XUNDEF
+   ZP_BLOWSNW_CONC(:,:) =  XUNDEF
+   ZP_BLOWSNW_FLUX(:,:) =  XUNDEF
 END IF
 !
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -1024,11 +1042,11 @@ ENDIF
 !
 !* effective roughness
 !
- CALL Z0EFF(PEK%TSNOW%SCHEME, GMEB, ZP_ALFA, ZP_ZREF, ZP_UREF,             &
-            PEK%XZ0, ISSK%XZ0REL, PEK%XPSN, ZPALPHAN, PEK%XZ0LITTER,       &
-            PEK%TSNOW%WSNOW(:,1), ISSK, KK%XFF, ZP_Z0FLOOD, PK%XZ0_O_Z0H,  &
-            DK%XZ0, DK%XZ0H, DK%XZ0EFF, ZZ0G_WITHOUT_SNOW,                 &
-            ZZ0_MEBV, ZZ0H_MEBV, ZZ0EFF_MEBV, ZZ0_MEBN, ZZ0H_MEBN, ZZ0EFF_MEBN )
+CALL Z0EFF(PEK%TSNOW%SCHEME, GMEB, ZP_ALFA, ZP_ZREF, ZP_UREF,             &
+           PEK%XZ0, ISSK%XZ0REL, PEK%XPSN, ZPALPHAN, PEK%XZ0LITTER,       &
+           PEK%TSNOW%WSNOW(:,1), ISSK, KK%XFF, ZP_Z0FLOOD, PK%XZ0_O_Z0H,  &
+           DK%XZ0, DK%XZ0H, DK%XZ0EFF, ZZ0G_WITHOUT_SNOW,                 &
+           ZZ0_MEBV, ZZ0H_MEBV, ZZ0EFF_MEBV, ZZ0_MEBN, ZZ0H_MEBN, ZZ0EFF_MEBN )
 !
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ! Shortwave computations for outputs (albedo for radiative scheme)
@@ -1048,17 +1066,24 @@ ENDIF
 !
 !* Snow-free surface albedo for each wavelength
 !
- CALL ISBA_ALBEDO(PEK, IO%LTR_ML, GMEB, ZP_DIR_SW, ZP_SCA_SW,                &
-                  PSW_BANDS, ISWB, KK%XALBF, KK%XFFV, KK%XFFG, ZP_GLOBAL_SW, &
-                  ZP_MEB_SCA_SW, ZP_ALBNIR_TVEG, ZP_ALBVIS_TVEG,             &
-                  ZP_ALBNIR_TSOIL, ZP_ALBVIS_TSOIL                   )  
+CALL ISBA_ALBEDO(PEK, IO%LTR_ML, GMEB, ZP_DIR_SW, ZP_SCA_SW,                  &
+                 PSW_BANDS, ISWB, KK%XALBF, KK%XFFV, KK%XFFG, ZP_GLOBAL_SW,   &
+                 ZP_MEB_SCA_SW, ZP_ALBNIR_TVEG, ZP_ALBVIS_TVEG,               &
+                 ZP_ALBNIR_TSOIL, ZP_ALBVIS_TSOIL, PSNFREE_SWU=DEK%XSNFREE_SWU)  
 !
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+! Nudge the snow
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+!
+IF (IO%LNUDG_SWE) THEN
+   CALL NUDGING_ISBA_SNOW(IO, KK, PK, PEK, DMK, S%TTIME%TDATE%YEAR, KMONTH, KDAY, PTSTEP, ZP_SNOW)
+ENDIF
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ! Intialize computation of ISBA water and energy budget
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 !
- CALL ISBA_BUDGET_INIT(ID%DE%LWATER_BUDGET, IO%CISBA, PEK, PK%XDG, PK%XDZG, &
-                      ZP_WG_INI, ZP_WGI_INI, ZP_WR_INI, ZP_SWE_INI  )
+CALL ISBA_BUDGET_INIT(ID%DE%LWATER_BUDGET, IO%CISBA, PEK, PK%XDG, PK%XDZG, &
+                     ZP_WG_INI, ZP_WGI_INI, ZP_WR_INI, ZP_SWE_INI  )
 !
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ! Over Natural Land Surfaces:
@@ -1066,91 +1091,143 @@ ENDIF
 ZIRRIG_GR(:)= 0.
 ZLE_HVEG(:,:) = 0.
 !
- CALL ISBA(IO, KK, PK, PEK, GK, AGK, DK, DEK, DMK, S%TTIME, S%XPOI, S%XABC,     &
-            GBK%XIACAN, GMEB, PTSTEP, CIMPLICIT_WIND, ZP_ZREF, ZP_UREF,         &
-            ZP_SLOPE_COS, IO%XCVHEATF, ZP_SLOPE_DIR,ZP_IMPWET,ZP_IMPDRY,        &
-            ZP_TA, ZP_QA, ZP_EXNA, ZP_RHOA, ZP_PS, ZP_EXNS, ZP_RAIN,            &
-            ZP_SNOW, ZP_ZENITH,ZP_AZIM, ZP_MEB_SCA_SW, ZP_GLOBAL_SW, ZP_LW,     &
-            ZLE_HVEG, ZP_WIND, ZP_DIR, ZP_PEW_A_COEF, ZP_PEW_B_COEF, ZP_PET_A_COEF,       &
-            ZP_PEQ_A_COEF, ZP_PET_B_COEF, ZP_PEQ_B_COEF, AT, ZP_ALBNIR_TVEG,    &
-            ZP_ALBVIS_TVEG, ZP_ALBNIR_TSOIL, ZP_ALBVIS_TSOIL, ZPALPHAN,         &
-            ZZ0G_WITHOUT_SNOW, ZZ0_MEBV, ZZ0H_MEBV, ZZ0EFF_MEBV,                &
-            ZZ0_MEBN, ZZ0H_MEBN, ZZ0EFF_MEBN, ZP_TDEEP_A, ZP_CO2, ZP_FFGNOS,    &
-            ZP_FFVNOS, ZP_EMIS, ZP_USTAR, ZP_AC_AGG, ZP_HU_AGG,                 &
-            ZP_RESP_BIOMASS_INST, ZP_DEEP_FLUX, ZIRRIG_GR, DTI%NPAR_VEG_IRR_USE,&
-            NTAB_SYT, ZP_DIR_SW, ZP_SCA_SW,                                     &
-            ZP_RNSHADE, ZP_RNSUNLIT, ZP_BLOWSNW_FLUX, ZP_BLOWSNW_CONC)
+CALL ISBA(IO, KK, PK, PEK, GK, AGK, DK, DEK, DMK, S%TTIME, S%XPOI, S%XABC,     &
+           GBK%XIACAN, GMEB, PTSTEP, CIMPLICIT_WIND, ZP_ZREF, ZP_UREF,         &
+           ZP_SLOPE_COS, IO%XCVHEATF, ZP_SLOPE_DIR,ZP_IMPWET,ZP_IMPDRY,        &
+           ZP_TA, ZP_QA, ZP_EXNA, ZP_RHOA, ZP_PS, ZP_EXNS, ZP_RAIN,            &
+           ZP_SNOW, ZP_ZENITH,ZP_AZIM, ZP_MEB_SCA_SW, ZP_GLOBAL_SW, ZP_LW,     &
+           ZLE_HVEG, ZP_WIND, ZP_DIR, ZP_PEW_A_COEF, ZP_PEW_B_COEF, ZP_PET_A_COEF,       &
+           ZP_PEQ_A_COEF, ZP_PET_B_COEF, ZP_PEQ_B_COEF, AT, ZP_ALBNIR_TVEG,    &
+           ZP_ALBVIS_TVEG, ZP_ALBNIR_TSOIL, ZP_ALBVIS_TSOIL, ZPALPHAN,         &
+           ZZ0G_WITHOUT_SNOW, ZZ0_MEBV, ZZ0H_MEBV, ZZ0EFF_MEBV,                &
+           ZZ0_MEBN, ZZ0H_MEBN, ZZ0EFF_MEBN, ZP_TDEEP_A, ZP_CO2, ZP_FFGNOS,    &
+           ZP_FFVNOS, ZP_EMIS, ZP_USTAR, ZP_AC_AGG, ZP_HU_AGG,                 &
+           ZP_RESP_BIOMASS_INST, ZP_DEEP_FLUX, ZIRRIG_GR, DTI%NPAR_VEG_IRR_USE,&
+           NTAB_SYT, ZP_DIR_SW, ZP_SCA_SW,                                     &
+           ZP_RNSHADE, ZP_RNSUNLIT, ZP_BLOWSNW_FLUX, ZP_BLOWSNW_CONC)
 !
 ZP_TRAD = DK%XTSRAD
-DK%XLE  = PEK%XLE
 !
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ! Glacier : ice runoff flux (especally for Earth System Model)
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 !
-IF(IO%LGLACIER) CALL HYDRO_GLACIER(PTSTEP, ZP_SNOW, PEK, DEK%XICEFLUX)
+IF (IO%LGLACIER) THEN
+  !
+  CALL HYDRO_GLACIER(PTSTEP, ZP_SNOW, PEK, DEK%XICEFLUX)
+  !
+ENDIF
 !
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ! Calculation of ISBA water and energy budget (and time tendencies of each reservoir)
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 !
-CALL ISBA_BUDGET(IO, PK, PEK, DEK, ID%DE%LWATER_BUDGET, PTSTEP, ZP_WG_INI, ZP_WGI_INI,  &
-                 ZP_WR_INI, ZP_SWE_INI, ZP_RAIN, ZP_SNOW, DK%XEVAP   )
+CALL ISBA_BUDGET(IO, PK, PEK, DK, DEK, ID%DE, PTSTEP, ZP_WG_INI,     &
+                 ZP_WGI_INI, ZP_WR_INI, ZP_SWE_INI, ZP_RAIN, ZP_SNOW )
 !
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ! Evolution of soil albedo, when depending on surface soil wetness:
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 !
 IF (IO%CALBEDO=='EVOL' .AND. IO%LECOCLIMAP) THEN
+  !
   CALL SOIL_ALBEDO(IO%CALBEDO, KK%XWSAT(:,1),PEK%XWG(:,1), KK, PEK, "ALL")  
   !
-  CALL ALBEDO(IO%CALBEDO, PEK )  
+  CALL ALBEDO(IO%CALBEDO,PEK)  
+  !
 END IF
 !
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ! Vegetation evolution for interactive LAI
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 !
-IF (IO%CPHOTO=='NIT' .OR. IO%CPHOTO=='NCB' .OR. ( LIRRIGMODE .AND. LMULTI_SEASON )) THEN
-  CALL VEGETATION_EVOL(IO, DTI, PK, PEK, LAGRIP, PTSTEP, KMONTH, KDAY, PTIME, GK%XLAT, &
-                       ZP_RHOA, ZP_CO2, ISSK, ZP_RESP_BIOMASS_INST, .NOT.LIS_TREE,     &
-                       ! add optional for accurate dependency to nitrogen
-                       ! limitation
-                        PSWDIR=ZP_GLOBAL_SW ) 
+IF (IO%CPHOTO=='NIT' .OR. IO%CPHOTO=='NCB') THEN
+  !
+  CALL VEGETATION_EVOL(IO, DTI, PK, PEK, DEK, LAGRIP, PTSTEP, KMONTH, KDAY, PTIME, &
+                       GK%XLAT, ZP_CO2, ISSK, ZP_RESP_BIOMASS_INST,(.NOT.LIS_TREE) ) 
+  !
 ELSEIF ( LIRRIGMODE .AND. LMULTI_SEASON ) THEN
-  CALL VEGETATION_EVOL(IO, DTI, PK, PEK, LAGRIP, PTSTEP, KMONTH, KDAY, PTIME, GK%XLAT, &
-                       ZP_RHOA, ZP_CO2, ISSK, ZP_RESP_BIOMASS_INST, .NOT.LIS_TREE,     &
-                       ! add optional for accurate dependency to nitrogen
-                       ! limitation
-                        ONLY_MULTIS=.TRUE. )
+  !
+  ! Update irrigation only if no interavtive vegetation  
+  CALL VEGETATION_EVOL(IO, DTI, PK, PEK, DEK, LAGRIP, PTSTEP, KMONTH, KDAY, PTIME, GK%XLAT, &
+                      ZP_CO2, ISSK, ZP_RESP_BIOMASS_INST,(.NOT.LIS_TREE),OIRRIG_ONLY=.TRUE. )
+  !
 END IF
 !
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ! Diagnostic of respiration carbon fluxes and soil carbon evolution
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-!ii
-ZP_SFCO2      (:) = 0.
-DEK%XRESP_ECO (:) = 0.
-DEK%XRESP_AUTO(:) = 0.
+!
+ZP_SFCO2      (:)  = 0.
+DEK%XRESP_ECO (:)  = 0.
+DEK%XRESP_AUTO(:)  = 0.
+DEK%XTURNVTOT (:)  = 0.
+DEK%XFDOC     (:)  = 0.
+DEK%XFDOCLIT  (:)  = 0.
+DEK%XFLTOSCARB(:)  = 0.
+DEK%XRESPSCARB(:)  = 0.
+DEK%XRESPLIT  (:)  = 0.
+!
+DMK%XTSOILPOOL(:,:)= 0.
+!
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+! Vegetation Disturbance due to wild fire
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+!
+IF (IO%LFIRE) THEN
+   CALL FIRE_DISTURBANCE(IO, KK, PK, PEK, DEK, DMK, HPROGRAM, PTSTEP, PTIME)
+ENDIF
+!
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+! Soil carbon evolution
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 !
 IF ( IO%CPHOTO/='NON' .AND. IO%CRESPSL/='NON' .AND. ANY(PEK%XLAI(:)/=XUNDEF) ) THEN
-  CALL CARBON_EVOL(IO, KK, PK, PEK, DEK, PTSTEP, ZP_RHOA, ZP_RESP_BIOMASS_INST )  
-  ! calculation of vegetation CO2 flux
-  ! Positive toward the atmosphere
-  ZP_SFCO2(:) = DEK%XRESP_ECO(:) - DEK%XGPP(:)  
-END IF
+   !
+   IF ( IO%CRESPSL=='DIF')THEN
+      !
+      !Multi-layer soil carbon and gas schemes
+      !
+      CALL CARBON_EVOL_DIF(IO, KK, PK, PEK, DK, DEK, DMK, HPROGRAM, PTSTEP,    & 
+                           ZP_RHOA, ZP_CO2, ZP_PS, ZP_TA, ZP_RESP_BIOMASS_INST )           
+      !
+   ELSE
+      !
+      !Simple 1-layer soil carbon scheme
+      !          
+      CALL CARBON_EVOL(IO, KK, PK, PEK, DEK, DMK, PTSTEP, ZP_RESP_BIOMASS_INST)
+      !
+   ENDIF
+   !
+ENDIF
 !
-IF ( IO%CPHOTO/='NON') THEN
-  DEK%XGPP(:) = DEK%XGPP(:) * ZP_RHOA(:)
-  DEK%XRESP_ECO(:) = DEK%XRESP_ECO(:) * ZP_RHOA(:)
-  DEK%XRESP_AUTO(:) = DEK%XRESP_AUTO(:) * ZP_RHOA(:)
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+! Update of net carbon flux toward the atmosphere
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+! Note: Positive toward the atmosphere (kgCO2/kgAir m/s)
+!
+IF (IO%CPHOTO/='NON'.AND.ANY(PEK%XLAI(:)/=XUNDEF))THEN
+   !
+   ! Calculation of vegetation CO2 flux :
+   ZP_SFCO2(:) = (DEK%XRESP_ECO(:)-DEK%XGPP(:))/ZP_RHOA(:) ! kgC/m2/s -> kgC02/kgAir m/s
+   !
+   ! Accouting for missing flux (required to satisfied keeling hypothesis at preindustrial state= net land-ocean co2 flux ~ 0.0)
+   IF (IO%XMISSFCO2/=XUNDEF) THEN
+      ZP_SFCO2(:) = ZP_SFCO2(:) + (IO%XMISSFCO2*XMCO2/XMC)/ZP_RHOA(:) ! kgC/m2/s -> kgC02/kgAir m/s
+   ENDIF
+   !
+   ! Accounting for natural fire co2 emissions (accounting for black carbon emissions) :
+   IF (IO%LFIRE) THEN
+      ZP_SFCO2(:) = ZP_SFCO2(:) + ((DEK%XFIRECO2(:)+DEK%XFIREBCS(:))/ZP_RHOA(:))*(XMCO2/XMC) ! kgC/m2/s -> kgC02/kgAir m/s 
+   ENDIF
+   !
 ENDIF
 !
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ! Reset effecitve roughness lentgh to its nominal value when snow has just disappeared
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 !
- CALL SUBSCALE_Z0EFF(ISSK,PEK%XZ0(:),.FALSE.,OMASK=(PEK%TSNOW%WSNOW(:,1)==0. .AND. PEK%XPSN(:)>0.)  )   
+CALL SUBSCALE_Z0EFF(ISSK,PEK%XZ0(:),.FALSE.,OMASK=(PEK%TSNOW%WSNOW(:,1)==0. .AND. PEK%XPSN(:)>0.)  )   
 !
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ! Turbulent fluxes
@@ -1175,24 +1252,29 @@ ZP_SFTS(:,:) = 0.
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ! Blowing snow scheme
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+!
 IF(CHI%SVI%NSNWEQ>0) THEN
 ! Store emitted turbulent flux  1: number (#/m2/s); 2: mass (kg/m2/s)
   ZP_SFTS(:,CHI%SVI%NSV_SNWBEG:CHI%SVI%NSV_SNWEND) = ZP_BLOWSNW_FLUX(:,1:CHI%SVI%NSNWEQ)
 ! Store streamwise saltation flux  (kg/m/s)
   ZP_SFTS(:,CHI%SVI%N2D_SNWEND) = ZP_BLOWSNW_FLUX(:,CHI%SVI%NSNWEQ+1)
 END IF
+!
 ! --------------------------------------------------------------------------------------
 ! Chemical dry deposition :
 ! --------------------------------------------------------------------------------------
+!
 IF (CHI%SVI%NBEQ>0) THEN
+!
   ZP_SFTS(:,CHI%SVI%NSV_CHSBEG:CHI%SVI%NSV_CHSEND) = 0.
   ZP_SFTS(:,CHI%SVI%NSV_AERBEG:CHI%SVI%NSV_AEREND) = 0.        
+!
   IF( CHI%CCH_DRY_DEP == "WES89") THEN
-
+!
     IBEG = CHI%SVI%NSV_CHSBEG
     IEND = CHI%SVI%NSV_CHSEND 
     ISIZE = IEND - IBEG + 1 
-
+!
     IF (ANY(PEK%XLAI(:)/=XUNDEF) ) THEN
       CALL CH_DEP_ISBA(KK, PK, PEK, DK, DMK, CHIK, &
                      ZP_USTAR, ZP_TA, ZP_PA, ZP_TRAD(:), ISIZE, DTI%NPAR_VEG_IRR_USE )  
@@ -1205,15 +1287,15 @@ IF (CHI%SVI%NBEQ>0) THEN
         IEND = CHI%SVI%NSV_AEREND
         CALL CH_AER_DEP(ZP_SV(:,IBEG:IEND), ZP_SFTS(:,IBEG:IEND), ZP_USTAR, PEK%XRESA, ZP_TA, ZP_RHOA)     
       END IF
-    ENDIF
-    
+    ENDIF    
+!
   ELSE
-
+!
     IBEG = CHI%SVI%NSV_AERBEG
     IEND = CHI%SVI%NSV_AEREND
     ZP_SFTS(:,IBEG:IEND) = 0.
     ZP_SFTS(:,IBEG:IEND) = 0.
-
+!
   ENDIF
 ENDIF
 !
@@ -1221,32 +1303,34 @@ ENDIF
 ! Chemical natural flux (BVOC, NOx) from MEGAN:
 ! --------------------------------------------------------------------------------------
 IF (CHI%SVI%NBEQ>0 .AND. CHI%LCH_BIO_FLUX) THEN
- IF ((TRIM(CHI%CPARAMBVOC) == 'MEGAN').AND.(ANY(PEK%XLAI(:)/=XUNDEF))) THEN
-
-!UPG*PT
- WHERE (GBK%XIACAN > 2000.) ! non physical values
-  GBK%XIACAN = 0.
- END WHERE
-!UPG*PT
-
- CALL COUPLING_MEGAN_n(MGN, CHI, GK, PEK, &
-                       KYEAR, KMONTH, KDAY, PTIME, IO%LTR_ML, &
-                       IP_SLTYP, ZP_PFT, ZP_EF, &
-                       ZP_TA, GBK%XIACAN, ZP_TRAD, ZP_RNSUNLIT, ZP_RNSHADE, &
-                       ZP_WIND, ZP_PA, ZP_QA, ZP_SFTS)
-
- END IF
+!
+   IF ((TRIM(CHI%CPARAMBVOC) == 'MEGAN').AND.(ANY(PEK%XLAI(:)/=XUNDEF))) THEN
+!
+!     UPG*PT
+      WHERE(GBK%XIACAN > 2000.) ! non physical values
+            GBK%XIACAN = 0.
+      END WHERE
+!     UPG*PT
+!
+      CALL COUPLING_MEGAN_n(MGN, CHI, GK, PEK, &
+                            KYEAR, KMONTH, KDAY, PTIME, IO%LTR_ML, &
+                            IP_SLTYP, ZP_PFT, ZP_EF, &
+                            ZP_TA, GBK%XIACAN, ZP_TRAD, ZP_RNSUNLIT, ZP_RNSHADE, &
+                            ZP_WIND, ZP_PA, ZP_QA, ZP_SFTS)
+!
+   END IF
+!
 ENDIF
 ! --------------------------------------------------------------------------------------
 ! Dust deposition and emission:
 ! --------------------------------------------------------------------------------------
 !
 IF(CHI%SVI%NDSTEQ>0)THEN
-
+!
   IBEG = CHI%SVI%NSV_DSTBEG
   IEND = CHI%SVI%NSV_DSTEND
   IDST = IEND - IBEG + 1
-
+!
 !IRM 16/07/2019
   CALL COUPLING_DST_n(DSTK, DST, KK, PK, PEK, DK, &
             HPROGRAM,                    &!I [char] Name of program
@@ -1343,9 +1427,9 @@ ENDIF !Check on CSLTYN
 ! Inline diagnostics
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 !
- CALL DIAG_INLINE_ISBA_n(ID%O, KK, DK, IO%LCANOPY, ZP_TA, ZP_QA, ZP_PA,         &
-                         ZP_PS, ZP_RHOA, ZP_U, ZP_V, ZP_ZREF, ZP_UREF, ZP_SFTH, &
-                         ZP_SFTQ, ZP_SFU, ZP_SFV, ZP_DIR_SW, ZP_SCA_SW, ZP_LW )  
+CALL DIAG_INLINE_ISBA_n(ID%O, KK, DK, IO%LCANOPY, ZP_TA, ZP_QA, ZP_PA,         &
+                        ZP_PS, ZP_RHOA, ZP_U, ZP_V, ZP_ZREF, ZP_UREF, ZP_SFTH, &
+                        ZP_SFTQ, ZP_SFU, ZP_SFV, ZP_DIR_SW, ZP_SCA_SW, ZP_LW )  
 !
 !
 !-------------------------------------------------------------------------------
@@ -1365,23 +1449,30 @@ ZP_QSURF (:) = DK%XQS (:)
 ! Isba offline diagnostics for each patch
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 !
- CALL DIAG_EVAP_CUMUL_ISBA_n(ID%O%LSURF_BUDGETC, ID%DE, DECK, DCK, DEK, DK, PEK, &
-                             IO, PTSTEP, PK%NSIZE_P, JP, ZP_RHOA)
+IF(ID%O%LSURF_BUDGETC)THEN
+!
+!  Water and energy fluxes
+   CALL DIAG_EVAP_CUMUL_ISBA_n(ID%DE, DECK, DCK, DEK, DK, PEK, &
+                               IO, PTSTEP, PK%NSIZE_P, JP      )
+!
+!  Carbon fluxes
+   CALL DIAG_CC_CUMUL_ISBA_n(DECK, DCK, DEK, DK, IO, PTSTEP, PK%NSIZE_P)
+!
+ENDIF
 !
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ! Isba offline diagnostics for miscellaneous terms over each patch
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 !
- CALL DIAG_MISC_ISBA_n(DMK, KK, PK, PEK, AGK, IO, ID%DM%LSURF_MISC_BUDGET, &
-                       ID%DM%LVOLUMETRIC_SNOWLIQ, PTSTEP, PTIME, PK%NSIZE_P, ZP_SLOPE_COS)
+IF(ID%DM%LSURF_MISC_BUDGET)THEN
+  CALL DIAG_MISC_ISBA_n(DMK, KK, PK, PEK, AGK, IO, ID%DM%LVOLUMETRIC_SNOWLIQ, PTSTEP, PTIME)
+ENDIF
 !
- CALL REPROJ_DIAG_ISBA_n(DK, DEK, DMK, PEK, ID%O%LSURF_BUDGET, ID%DE%LSURF_EVAP_BUDGET, &
-                         ID%DE%LWATER_BUDGET, ID%DM%LSURF_MISC_BUDGET, ID%DM%LPROSNOW,  &
-                         IO%LSNOWSYTRON, IO%LMEB_PATCH(JP), ZP_SLOPE_COS)
-!
-! Unpack ISBA diagnostics (modd_diag_isban) for each patch:ISIZE_MAX = MAXVAL(NSIZE_NATURE_P)
-
-!  (MUST be done BEFORE UNPACK_ISBA_PATCH, because of XP_LE)
+IF (PEK%TSNOW%SCHEME=='CRO') THEN
+  CALL REPROJ_DIAG_ISBA_n(DK, DEK, DMK, PEK, ID%O%LSURF_BUDGET, ID%DE%LSURF_EVAP_BUDGET, &
+                          ID%DE%LWATER_BUDGET, ID%DM%LSURF_MISC_BUDGET, ID%DM%LPROSNOW,  &
+                          IO%LSNOWSYTRON, IO%LMEB_PATCH(JP), ZP_SLOPE_COS                )
+ENDIF
 !
 IF (PEK%TSNOW%SCHEME=='3-L'.OR.PEK%TSNOW%SCHEME=='CRO') THEN
   PEK%TSNOW%TEMP(:,:) = DMK%XSNOWTEMP(:,:)
@@ -1389,9 +1480,9 @@ IF (PEK%TSNOW%SCHEME=='3-L'.OR.PEK%TSNOW%SCHEME=='CRO') THEN
 ENDIF
 !
 
- CALL UNPACK_DIAG_PATCH_n(IO, DEK, PK, PK%NR_P, PK%NSIZE_P, IO%NPATCH, JP,    &
-                          ZCPL_DRAIN, ZCPL_RUNOFF, ZCPL_EFLOOD, ZCPL_PFLOOD,  &
-                          ZCPL_IFLOOD, ZCPL_ICEFLUX)  
+CALL UNPACK_DIAG_CPL_ESM_ISBA(IO, DEK, PK, PK%NR_P, PK%NSIZE_P, IO%NPATCH, JP,    &
+                              ZCPL_DRAIN, ZCPL_RUNOFF, ZCPL_EFLOOD, ZCPL_PFLOOD,  &
+                              ZCPL_IFLOOD, ZCPL_ICEFLUX, ZCPL_DOCFLUX             )  
 !
 !----------------------------------------------------------------------
 !

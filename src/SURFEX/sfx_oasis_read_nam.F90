@@ -36,6 +36,7 @@ SUBROUTINE SFX_OASIS_READ_NAM(HPROGRAM,PTSTEP_SURF,HINIT)
 !!      Modified    11/2014 : J. Pianezze - add wave coupling parameters
 !!                                          and surface pressure for ocean coupling
 !!                  01/2020 : C. Lebeaupin - new check options before stopping
+!!      R. Séférian    11/16 : Implement carbon cycle coupling (Earth system model)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -43,10 +44,11 @@ SUBROUTINE SFX_OASIS_READ_NAM(HPROGRAM,PTSTEP_SURF,HINIT)
 !
 USE MODN_SFX_OASIS
 !
-USE MODD_SFX_OASIS, ONLY : LOASIS, XRUNTIME,               &
-                           LCPL_LAND, LCPL_GW, LCPL_FLOOD, &
-                           LCPL_CALVING, LCPL_LAKE,        &
-                           LCPL_SEA, LCPL_SEAICE, LCPL_WAVE
+USE MODD_SFX_OASIS, ONLY : LOASIS, XRUNTIME,                &
+                           LCPL_LAND, LCPL_GW, LCPL_FLOOD,  &
+                           LCPL_CALVING, LCPL_LAKE,         &
+                           LCPL_SEA, LCPL_SEAICE, LCPL_WAVE,&
+                           LCPL_RIVCARB, LCPL_SEACARB
 !
 USE MODE_POS_SURF
 !
@@ -74,6 +76,7 @@ CHARACTER(LEN=*), INTENT(IN), OPTIONAL :: HINIT       ! choice of fields to init
 INTEGER,          PARAMETER :: KIN   = 1
 INTEGER,          PARAMETER :: KOUT  = 0
 CHARACTER(LEN=5), PARAMETER :: YLAND = 'land'
+ CHARACTER(LEN=5), PARAMETER :: YDIAG = 'diag'
 CHARACTER(LEN=5), PARAMETER :: YLAKE = 'lake'
 CHARACTER(LEN=5), PARAMETER :: YSEA  = 'ocean'
 CHARACTER(LEN=5), PARAMETER :: YWAVE = 'wave'
@@ -106,6 +109,9 @@ LCPL_LAKE    = .FALSE.
 LCPL_SEA     = .FALSE.
 LCPL_SEAICE  = .FALSE.
 LCPL_WAVE    = .FALSE.
+!
+LCPL_RIVCARB = .FALSE.
+LCPL_SEACARB = .FALSE.
 !
 IF(.NOT.LOASIS)THEN
   IF (LHOOK) CALL DR_HOOK('SFX_OASIS_READ_NAM',1,ZHOOK_HANDLE)
@@ -221,6 +227,12 @@ IF(LCPL_LAND)THEN
   YCOMMENT='Deep drainage'
   CALL CHECK_FIELD(CDRAIN,YKEY,YCOMMENT,YLAND,KOUT)
 !
+! River routing model part of TWS
+!
+  YKEY  ='CTWS'
+  YCOMMENT='terrestrial water storage'
+  CALL CHECK_FIELD(CTWS,YKEY,YCOMMENT,YDIAG,KIN)
+!
 ! Particular case due to calving case
 !
   IF(LEN_TRIM(CCALVING)>0)THEN
@@ -277,6 +289,18 @@ IF(LCPL_LAND)THEN
     YCOMMENT='Flood potential infiltration'
     CALL CHECK_FIELD(CPIFLOOD,YKEY,YCOMMENT,YLAND,KIN)
 !
+  ENDIF
+!
+! Particular case due to riverine carbon cycle case
+!
+  IF(LEN_TRIM(CDOCFLUX)>0)THEN
+    LCPL_RIVCARB = .TRUE.
+  ENDIF
+!
+  IF(LCPL_RIVCARB)THEN
+    YKEY  ='CDOCFLUX'
+    YCOMMENT='Riverine DOC flux'
+    CALL CHECK_FIELD(CDOCFLUX,YKEY,YCOMMENT,YLAND,KOUT)
   ENDIF
 !
 ENDIF
@@ -434,7 +458,29 @@ IF(LCPL_SEA)THEN
     CALL CHECK_FIELD(CSEAICE_ALB,YKEY,YCOMMENT,YSEA,KIN)
 !
   ENDIF
-!  
+!
+! Sea-Land-Atm carbon cycle coupling
+!
+  IF(LEN_TRIM(CSEA_CO2 )>0 .OR. LEN_TRIM(CSEA_FCO2)>0     )THEN
+     LCPL_SEACARB=.TRUE.
+  ENDIF
+!
+  IF(LCPL_SEACARB)THEN
+!
+!   Output variables required for marine biogeochemistry
+!
+    YKEY  ='CSEA_CO2'
+    YCOMMENT='Surface atmospheric CO2 concentration (ppm)'
+    CALL CHECK_FIELD(CSEA_CO2,YKEY,YCOMMENT,YSEA,KOUT)
+!
+!   marine biogeochemistry Input variables required for carbon cycle coupling
+!
+    YKEY  ='CSEA_FCO2'
+    YCOMMENT='Sea carbon flux (molC m-2 s-1)'
+    CALL CHECK_FIELD(CSEA_FCO2,YKEY,YCOMMENT,YSEA,KIN)
+!
+  ENDIF
+!
 ENDIF
 !
 !-------------------------------------------------------------------------------
@@ -523,7 +569,7 @@ IF(LEN_TRIM(HFIELD)==0)THEN
   ENDIF
 !
   SELECT CASE (HTYP)
-     CASE(YLAND)
+     CASE(YLAND,YDIAG)
           YNAMELIST='NAM_SFX_LAND_CPL'
      CASE(YSEA)
           YNAMELIST='NAM_SFX_SEA_CPL'
@@ -544,7 +590,7 @@ IF(LEN_TRIM(HFIELD)==0)THEN
 ! For oceanic coupling do not stop the model if a field from surfex to ocean is
 ! not  done because many particular case can be used
 !
-  IF((KID==0.OR.KID==1).AND.HTYP/=YLAND)THEN
+  IF(HTYP==YDIAG.OR.(KID==0.AND.HTYP/=YLAND))THEN
     LSTOP=.FALSE.
   ELSEIF((KID==0).AND.(HTYP==YSEA))THEN
     LSTOP=.FALSE.
@@ -553,7 +599,7 @@ IF(LEN_TRIM(HFIELD)==0)THEN
   ELSE
     LSTOP=.TRUE.
   ENDIF
-
+!
   IF(LSTOP)THEN
     CALL ABOR1_SFX(YCOMMENT1)
   ENDIF

@@ -56,6 +56,7 @@
 !!      R. Alkama     05/2012    add 7 new vegtype (19  instead 12)
 !!      C. Delire     01/2014    Define a dummy LAI from top and total lai for Dark respiration 
 !!      A. Druel      02/2019    Adapt the code to be compatible with new irrigation
+!!      B. Decharme   01/2021    Add XSIYEA to compute exactly XTAU_WOOD from year to s
 !!
 !-------------------------------------------------------------------------------
 !
@@ -67,7 +68,7 @@ USE MODD_ISBA_n, ONLY : ISBA_P_t, ISBA_S_t, ISBA_PE_t
 USE MODD_DATA_COVER_PAR, ONLY : NVEGTYPE_ECOSG, NVEGTYPE, NVT_C3, NVT_C3W, NVT_C3S, NVT_C4, NVT_IRR, &
                                 NVT_TROG, NVT_TEBD, NVT_BONE, NVT_TRBE, NVT_TRBD,    &
                                 NVT_TEBE, NVT_TENE, NVT_BOBD, NVT_BOND, NVT_SHRB, NVT_GRAS
-USE MODD_CSTS,           ONLY : XMD
+USE MODD_CSTS,           ONLY : XMD, XSIYEA
 USE MODD_CO2V_PAR,       ONLY : XTOPT, XFZERO1, XFZERO2, XFZEROTROP, XEPSO, XGAMM, XQDGAMM, &
                                   XQDGMES, XT1GMES, XT2GMES, XAMAX, ITRANSFERT_ESG,         &
                                   XQDAMAX, XT1AMAX, XT2AMAX, XAH, XBH,            &
@@ -100,7 +101,6 @@ INTEGER, DIMENSION(:), INTENT(IN)   :: NPAR_VEG_IRR_USE ! vegtype with irrigatio
 !*      0.2    declaration of local variables
 !
 INTEGER                           :: JCLASS    ! indexes for loops
-INTEGER                           :: ICLASS    ! indexes for loops
 INTEGER                           :: JCLASS2   ! Change index with irrigation (and ECOSG)
 INTEGER                           :: ICO2TYPE  ! type of CO2 vegetation
 INTEGER                           :: IRAD      ! with or without new radiative transfer
@@ -176,7 +176,6 @@ DO JCLASS=1,NVEGTYPE+NVEG_IRR
   ELSE
     ICO2TYPE = 1   ! C3 type
   END IF
-  IF(IO%LAGRI_TO_GRASS.AND.(JCLASS2==NVT_C4 .OR. JCLASS2==NVT_IRR)) ICO2TYPE = 1
   IF (IO%LTR_ML) THEN
     IRAD = 1   ! running with new radiative transfer
   ELSE
@@ -206,19 +205,12 @@ DO JCLASS=1,NVEGTYPE+NVEG_IRR
   PK%XAH    (:) = PK%XAH    (:) + XAH    (ICO2TYPE) * PK%XVEGTYPE_PATCH(:,JCLASS)
   PK%XBH    (:) = PK%XBH    (:) + XBH    (ICO2TYPE) * PK%XVEGTYPE_PATCH(:,JCLASS)
   !
-  IF(IO%LAGRI_TO_GRASS.AND.(JCLASS2==NVT_C3 .OR. JCLASS2==NVT_C3W .OR. JCLASS2==NVT_C3S .OR. &
-                            JCLASS2==NVT_C4 .OR. JCLASS2==NVT_IRR))THEN
-    ICLASS=NVT_GRAS
-  ELSE
-    ICLASS=JCLASS2
-  ENDIF    
-  !
   IF (NVEGTYPE==NVEGTYPE_ECOSG) THEN
-    PK%XTAU_WOOD(:) = PK%XTAU_WOOD(:) + XTAU_WOOD(ITRANSFERT_ESG(ICLASS)) * PK%XVEGTYPE_PATCH(:,JCLASS)
-    PK%XAMAX    (:) = PK%XAMAX    (:) + XAMAX    (ITRANSFERT_ESG(ICLASS)) * PK%XVEGTYPE_PATCH(:,JCLASS)          
+    PK%XTAU_WOOD(:) = PK%XTAU_WOOD(:) + (XTAU_WOOD(ITRANSFERT_ESG(JCLASS2))*XSIYEA) * PK%XVEGTYPE_PATCH(:,JCLASS)
+    PK%XAMAX    (:) = PK%XAMAX    (:) + XAMAX     (ITRANSFERT_ESG(JCLASS2))         * PK%XVEGTYPE_PATCH(:,JCLASS)          
   ELSE
-    PK%XTAU_WOOD(:) = PK%XTAU_WOOD(:) + XTAU_WOOD(ICLASS) * PK%XVEGTYPE_PATCH(:,JCLASS)
-    PK%XAMAX    (:) = PK%XAMAX    (:) + XAMAX    (ICLASS) * PK%XVEGTYPE_PATCH(:,JCLASS)
+    PK%XTAU_WOOD(:) = PK%XTAU_WOOD(:) + (XTAU_WOOD(JCLASS2)*XSIYEA) * PK%XVEGTYPE_PATCH(:,JCLASS)
+    PK%XAMAX    (:) = PK%XAMAX    (:) + XAMAX     (JCLASS2)         * PK%XVEGTYPE_PATCH(:,JCLASS)
   ENDIF
   !
 END DO

@@ -39,6 +39,7 @@
 !!      Modified    03/2014 : M.N. Bouin  ! possibility of wave parameters
 !!                                        ! from external source
 !!      Modified    11/2014 : J. Pianezze ! add currents and charnock coefficient
+!!      A. Voldoire 09/2016 : Switch to tile the fluxes calculation over sea and seaice
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -54,6 +55,8 @@ USE MODD_SEAFLUX_n, ONLY : SEAFLUX_t
 !
 USE MODD_SFX_OASIS,  ONLY : LCPL_WAVE, LCPL_SEA
 !
+USE MODN_SFX_OASIS,  ONLY : LSEAICE_2FLX
+!
 USE MODI_WRITE_SURF
 USE MODI_WRITESURF_OCEAN_n
 USE MODI_WRITESURF_SEAICE_n
@@ -66,25 +69,28 @@ IMPLICIT NONE
 !*       0.1   Declarations of arguments
 !              -------------------------
 !
- CHARACTER(LEN=*), DIMENSION(:), INTENT(IN) :: HSELECT 
+CHARACTER(LEN=*), DIMENSION(:), INTENT(IN) :: HSELECT 
 !
 TYPE(OCEAN_t), INTENT(INOUT) :: O
 TYPE(OCEAN_REL_t), INTENT(INOUT) :: OR
 TYPE(SEAFLUX_t), INTENT(INOUT) :: S
 !
- CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM ! program calling
-
+CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM ! program calling
+!
 !
 !*       0.2   Declarations of local variables
 !              -------------------------------
 !
 INTEGER           :: JMTH, INMTH
- CHARACTER(LEN=2 ) :: YMTH
+CHARACTER(LEN=2 ) :: YMTH
 !
 INTEGER           :: IRESP          ! IRESP  : return-code if a problem appears
- CHARACTER(LEN=LEN_HREC) :: YRECFM         ! Name of the article to be read
- CHARACTER(LEN=100):: YCOMMENT       ! Comment string
-REAL(KIND=JPRB) :: ZHOOK_HANDLE
+CHARACTER(LEN=LEN_HREC) :: YRECFM   ! Name of the article to be read
+CHARACTER(LEN=100):: YCOMMENT       ! Comment string
+!
+LOGICAL           :: GHANDLE_SIC
+!
+REAL(KIND=JPRB)   :: ZHOOK_HANDLE
 !
 !-------------------------------------------------------------------------------
 !
@@ -98,10 +104,15 @@ IF (LHOOK) CALL DR_HOOK('WRITESURF_SEAFLUX_N',0,ZHOOK_HANDLE)
 !
 !* flag to tell if Sea Ice model is used
 !
-YCOMMENT='flag to handle sea ice cover'
- CALL WRITE_SURF(HSELECT, HPROGRAM,'HANDLE_SIC',S%LHANDLE_SIC,IRESP,YCOMMENT)
+GHANDLE_SIC = S%LHANDLE_SIC
 !
-IF (S%LHANDLE_SIC) CALL WRITESURF_SEAICE_n(HSELECT, S, HPROGRAM)
+!coupled configuration case : HANDLE_SIC must be false in the restar file
+IF (LSEAICE_2FLX) GHANDLE_SIC = .FALSE.
+!
+YCOMMENT='flag to handle sea ice cover'
+CALL WRITE_SURF(HSELECT, HPROGRAM,'HANDLE_SIC',S%LHANDLE_SIC,IRESP,YCOMMENT)
+!
+IF (GHANDLE_SIC) CALL WRITESURF_SEAICE_n(HSELECT, S, HPROGRAM)
 !
 !
 !*       3.     Prognostic fields:
@@ -124,7 +135,7 @@ ENDIF
 !
 YRECFM='SST'
 YCOMMENT='SST (K)'
- CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,S%XSST(:),IRESP,HCOMMENT=YCOMMENT)  
+CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,S%XSST(:),IRESP,HCOMMENT=YCOMMENT)  
 !
 !-------------------------------------------------------------------------------
 !
@@ -135,19 +146,19 @@ YCOMMENT='SST (K)'
 !
 YRECFM='Z0SEA'
 YCOMMENT='Z0SEA (m)'
- CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,S%XZ0(:),IRESP,HCOMMENT=YCOMMENT)
- !
+CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,S%XZ0(:),IRESP,HCOMMENT=YCOMMENT)
+!
 !* significant height
 !
 YRECFM='HS'
 YCOMMENT='HS (m)'
- CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,S%XHS(:),IRESP,HCOMMENT=YCOMMENT)
+CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,S%XHS(:),IRESP,HCOMMENT=YCOMMENT)
 !
 !* peak period
 !
 YRECFM='TP'
 YCOMMENT='TP (s)'
- CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,S%XTP(:),IRESP,HCOMMENT=YCOMMENT)
+CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,S%XTP(:),IRESP,HCOMMENT=YCOMMENT)
 !
 !
 IF (LCPL_WAVE) THEN
@@ -193,7 +204,7 @@ ENDIF
 !
 YRECFM='SSS'
 YCOMMENT='Sea Surface Salinity (psu)'
- CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,S%XSSS(:),IRESP,HCOMMENT=YCOMMENT)  
+CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,S%XSSS(:),IRESP,HCOMMENT=YCOMMENT)  
 !
 !
 !* ocean surface albedo (direct and diffuse fraction)
@@ -202,11 +213,11 @@ IF(S%CSEA_ALB=='RS14')THEN
 !
   YRECFM='OSA_DIR'
   YCOMMENT='direct ocean surface albedo (-)'
-  CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,S%XDIR_ALB(:),IRESP,HCOMMENT=YCOMMENT)
+  CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,S%XDIR_ALB_SEA(:),IRESP,HCOMMENT=YCOMMENT)
 !
   YRECFM='OSA_SCA'
   YCOMMENT='diffuse ocean surface albedo (-)'
-  CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,S%XSCA_ALB(:),IRESP,HCOMMENT=YCOMMENT)
+  CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,S%XSCA_ALB_SEA(:),IRESP,HCOMMENT=YCOMMENT)
 !
 ENDIF
 !
@@ -217,7 +228,7 @@ ENDIF
 !
 YRECFM='DTCUR'
 YCOMMENT='s'
- CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,S%TTIME,IRESP,HCOMMENT=YCOMMENT)
+CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,S%TTIME,IRESP,HCOMMENT=YCOMMENT)
 !
 IF (LHOOK) CALL DR_HOOK('WRITESURF_SEAFLUX_N',1,ZHOOK_HANDLE)
 !

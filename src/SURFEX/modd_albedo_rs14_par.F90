@@ -35,6 +35,9 @@ INTEGER, PARAMETER   :: NNWL = 381
 ! absorption coefficients for seawater et 440 nm
 REAL, PARAMETER      :: XAW440 =  0.00635
 !
+! uniform incidence of shortwave at surface
+REAL, PARAMETER      :: XUE =  0.676
+!
 ! table of wavelength discretization (by 10nm apart)
 REAL, PARAMETER, DIMENSION(NNWL)::  XAKWL= &
     (/ 200.0, 210.0, 220.0, 230.0, 240.0, 250.0, 260.0, 270.0, 280.0,  &

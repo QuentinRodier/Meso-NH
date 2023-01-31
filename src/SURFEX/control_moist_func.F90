@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !   #############
-FUNCTION CONTROL_MOIST_FUNC (PMOIST,PSAT) RESULT (PMOISTFUNC)
+FUNCTION CONTROL_MOIST_FUNC (PMOIST,PSAT,OSOILGAS) RESULT (PMOISTFUNC)
 
 !   ###############################################################
 !!**   CONTROL_MOIST_FUNC
@@ -40,12 +40,15 @@ FUNCTION CONTROL_MOIST_FUNC (PMOIST,PSAT) RESULT (PMOISTFUNC)
 !!    -------------
 !!      Original    23/06/09
 !!      B. Decharme 05/2012 : Optimization and ISBA-DIF coupling
+!!      B. Decharme 05/2017 : Correction of saturation case (<1)
+!!      B. Decharme 05/2021 : Soil gas scheme compatibility
 !!      
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
 !               ------------
 !
+USE MODD_SURF_PAR,       ONLY : XUNDEF
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -57,6 +60,8 @@ IMPLICIT NONE
 REAL, DIMENSION(:), INTENT(IN)   :: PMOIST ! soil moisture index (-)
 REAL, DIMENSION(:), INTENT(IN)   :: PSAT   ! soil saturated index (-)
 !
+LOGICAL, INTENT(IN), OPTIONAL    ::OSOILGAS
+!
 !*      0.2    declarations of local variables
 !
 REAL, PARAMETER               :: ZMOIST_LIM = 0.05
@@ -66,6 +71,9 @@ REAL, PARAMETER               :: ZCOEF1 = 2.40
 REAL, PARAMETER               :: ZCOEF2 = 1.10
 REAL, PARAMETER               :: ZCOEF3 = 0.29
 !
+LOGICAL :: GSOILGAS
+!
+REAL, DIMENSION(SIZE(PMOIST)) :: ZMOISTFUNC    ! moisture control factor
 REAL, DIMENSION(SIZE(PMOIST)) :: PMOISTFUNC    ! moisture control factor
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
@@ -74,12 +82,23 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 IF (LHOOK) CALL DR_HOOK('CONTROL_MOIST_FUNC',0,ZHOOK_HANDLE)
 !
-WHERE(PMOIST(:)<=1.0)
-      PMOISTFUNC(:)=MIN(1.0,ZCOEF1*PMOIST(:)-ZCOEF2*PMOIST(:)*PMOIST(:)-ZCOEF3)
-      PMOISTFUNC(:)=MAX(ZMOIST_LIM,PMOISTFUNC(:))
-ELSEWHERE
-      PMOISTFUNC(:)=MAX(ZSAT_LIM,1.0-0.5*PSAT(:))
-ENDWHERE
+GSOILGAS=.FALSE.
+IF(PRESENT(OSOILGAS))THEN
+  GSOILGAS=OSOILGAS
+ENDIF
+!
+ZMOISTFUNC(:)=MAX(ZMOIST_LIM,MIN(1.0,ZCOEF1*PMOIST(:)-ZCOEF2*PMOIST(:)*PMOIST(:)-ZCOEF3))
+!
+IF(GSOILGAS)THEN
+  PMOISTFUNC(:)=ZMOISTFUNC(:)
+ELSE
+  WHERE(PMOIST(:)<1.0)
+        PMOISTFUNC(:)=ZMOISTFUNC(:)
+        PMOISTFUNC(:)=ZMOISTFUNC(:)
+  ELSEWHERE
+        PMOISTFUNC(:)=MAX(ZSAT_LIM,1.0-0.5*PSAT(:))
+  ENDWHERE
+ENDIF
 !
 IF (LHOOK) CALL DR_HOOK('CONTROL_MOIST_FUNC',1,ZHOOK_HANDLE)
 

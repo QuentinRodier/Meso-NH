@@ -26,14 +26,17 @@
 !!
 !!    MODIFICATIONS
 !!    -------------
-!!      Original    01/2004                   
+!!      Original       01/2004                   
+!!      B. Decharme    04/2020 : Soil gas scheme (Morel et al. 2019 JAMES) under LSOILGAS = T
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
 !             ------------
 !
 IMPLICIT NONE
-
- CHARACTER(LEN=3)  :: CRESPSL        ! Soil respiration
+!
+CHARACTER(LEN=3)  :: CRESPSL        ! Soil respiration
+!
+LOGICAL           :: LSOILGAS       ! Soil gas scheme (Morel et al. 2019)
 !
 END MODULE MODN_PREP_ISBA_CARBON

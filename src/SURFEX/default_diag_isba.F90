@@ -8,8 +8,9 @@
                                    OSURF_MISC_BUDGET,OSURF_DIAG_ALBEDO,     &
                                    OSURF_BUDGETC,OSURF_MISC_DIF,            &
                                    OPATCH_BUDGET,OUTCI, OPGD,ORESET_BUDGETC,&
-                                   OWATER_BUDGET,OPROSNOW,OPROBANDS,        &
-                                   OVOLUMETRIC_SNOWLIQ,PDIAG_TSTEP          )  
+                                   OWATER_BUDGET,OENERGY_BUDGET,OPROSNOW,   &
+                                   OPROBANDS,OVOLUMETRIC_SNOWLIQ,PDIAG_TSTEP,&
+                                   OLUTILES_BUDGET  )
 !     #################################################################################################################
 !
 !!****  *DEFAULT_DIAG_ISBA* - routine to set default values for the choice of diagnostics
@@ -41,11 +42,11 @@
 !!      Modified by P. Le Moigne, 11/2004: add budget switch 
 !!      Modified by B. Decharme , 06/2009: add patch budget switch 
 !!      Modified by A.L. Gibelin, 04/2009: add carbon spinup
-!!      Modified by B. Decharme , 05/2012: move carbon spinup to NAM_SPINUP_CARB
-!!                                         add miscellaneous field key for dif
+!!      Modified by B. Decharme , 05/2012: add miscellaneous field key for dif
 !!                                         add isba water budget key
 !!      Modif M. Lafaysse 09/2015: OPROSNOW, OVOLUMETRIC_SNOWLIQ
 !!      Modif M. Dumont 11/15 : OPROBANDS
+!!      Modified by B. Decharme , 08/2016: add isba energy and land use diag key  
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -75,6 +76,7 @@ LOGICAL,  INTENT(OUT) :: OSURF_DIAG_ALBEDO  ! flag for albedo
 LOGICAL,  INTENT(OUT) :: OSURF_BUDGETC      ! flag for cumulated surface budget
 LOGICAL,  INTENT(OUT) :: OSURF_MISC_DIF     ! flag for surface miscellaneous dif variables
 LOGICAL,  INTENT(OUT) :: OPATCH_BUDGET      ! flag for patch output
+LOGICAL,  INTENT(OUT) :: OLUTILES_BUDGET    ! flag for land use tiles diag
 LOGICAL,  INTENT(OUT) :: OUTCI              ! flag for UTCI fields
 LOGICAL,  INTENT(OUT) :: OPGD               ! flag for PGD fields
 LOGICAL,  INTENT(OUT) :: ORESET_BUDGETC     ! flag for cumulated surface budget
@@ -82,11 +84,13 @@ LOGICAL,  INTENT(OUT) :: OWATER_BUDGET      ! flag for isba water budget
 LOGICAL,  INTENT(OUT) :: OPROSNOW           ! flag for Crocus-MEPRA diagnostics
 LOGICAL, INTENT(OUT)  :: OPROBANDS          ! flag for Crocus spectral output
 LOGICAL,  INTENT(OUT) :: OVOLUMETRIC_SNOWLIQ ! volumetric snow liquid water content (kg m-3)
+LOGICAL,  INTENT(OUT) :: OENERGY_BUDGET     ! flag for isba energy budget
 REAL,     INTENT(OUT) :: PDIAG_TSTEP        ! time-step for writing
-REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !*       0.2   Declarations of local variables
 !              -------------------------------
+!
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !-------------------------------------------------------------------------------
 !
@@ -116,13 +120,17 @@ OPGD              = .FALSE.
 ORESET_BUDGETC    = .FALSE.
 !
 OWATER_BUDGET     = .FALSE.
+OENERGY_BUDGET    = .FALSE.
 !
 OPROSNOW          = .FALSE.
-OPROBANDS         =.FALSE.
+OPROBANDS         = .FALSE.
 !
 OVOLUMETRIC_SNOWLIQ = .FALSE.
 !
+OLUTILES_BUDGET   = .FALSE.
+!
 PDIAG_TSTEP       = XUNDEF
+!
 IF (LHOOK) CALL DR_HOOK('DEFAULT_DIAG_ISBA',1,ZHOOK_HANDLE)
 !
 !-------------------------------------------------------------------------------

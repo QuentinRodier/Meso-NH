@@ -7,7 +7,8 @@ SUBROUTINE PUT_SFXCPL_n (F, IM, S, U, W, TM, GDM, GRM, &
                          HPROGRAM,KI,KSW,PSW_BANDS,PZENITH, &
                         PLAND_WTD,PLAND_FWTD,PLAND_FFLOOD, &
                         PLAND_PIFLOOD,PSEA_SST,PSEA_UCU,   &
-                        PSEA_VCU,PSEAICE_SIT,PSEAICE_CVR,  &
+                        PSEA_VCU,PSEA_FCO2,                &
+                        PSEAICE_SIT,PSEAICE_CVR,           &
                         PSEAICE_ALB,PTSRAD,                &
                         PDIR_ALB,PSCA_ALB,PEMIS,PTSURF,    & 
                         PWAVE_CHA,PWAVE_UCU,PWAVE_VCU,     &
@@ -43,6 +44,8 @@ SUBROUTINE PUT_SFXCPL_n (F, IM, S, U, W, TM, GDM, GRM, &
 !!    -------------
 !!      Original    08/2009
 !!      Modified       11/2014 : J. Pianezze - add wave coupling parameters
+!!      A. Voldoire 09/2016 : Switch to tile the fluxes calculation over sea and seaice
+!!      R. Séférian    11/16 : Implement carbon cycle coupling (Earth system model)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -57,10 +60,11 @@ USE MODD_WATFLUX_n, ONLY : WATFLUX_t
 !
 USE MODD_SURF_PAR,   ONLY : XUNDEF
 !
-USE MODN_SFX_OASIS,  ONLY : LWATER
-USE MODD_SFX_OASIS,  ONLY : LCPL_SEA, LCPL_SEAICE, &
-                            LCPL_LAND, LCPL_GW,    &
-                            LCPL_FLOOD, LCPL_WAVE
+USE MODN_SFX_OASIS,  ONLY : LWATER, LSEAICE_2FLX
+USE MODD_SFX_OASIS,  ONLY : LCPL_SEA, LCPL_SEAICE,  &
+                            LCPL_LAND, LCPL_GW,     &
+                            LCPL_FLOOD,LCPL_SEACARB,&
+                            LCPL_WAVE
 !                          
 USE MODI_GET_LUOUT
 !
@@ -108,6 +112,8 @@ REAL, DIMENSION(KI),      INTENT(IN) :: PSEAICE_SIT ! Sea-ice Temperature (K)
 REAL, DIMENSION(KI),      INTENT(IN) :: PSEAICE_CVR ! Sea-ice cover (-)
 REAL, DIMENSION(KI),      INTENT(IN) :: PSEAICE_ALB ! Sea-ice albedo (-)
 !
+REAL, DIMENSION(KI),      INTENT(IN) :: PSEA_FCO2 ! Ocean carbon flux (molC/m2/s from PISCES)
+!
 REAL, DIMENSION(KI),      INTENT(IN) :: PWAVE_CHA ! Charnock coefficient (-)
 REAL, DIMENSION(KI),      INTENT(IN) :: PWAVE_UCU ! u-current velocity   (m/s)
 REAL, DIMENSION(KI),      INTENT(IN) :: PWAVE_VCU ! v-current velocity   (m/s)
@@ -124,14 +130,19 @@ REAL, DIMENSION(KI,KSW), INTENT(OUT) :: PSCA_ALB ! Total diffus albedo see by th
 !*       0.2   Declarations of local variables
 !              -------------------------------
 !
+REAL, DIMENSION(KI) :: ZLAND_TWS
 !
-INTEGER :: ILU, ILUOUT
+INTEGER         :: ILU, ILUOUT
+!
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !-------------------------------------------------------------------------------
 IF (LHOOK) CALL DR_HOOK('PUT_SFXCL_N',0,ZHOOK_HANDLE)
 !
 CALL GET_LUOUT(HPROGRAM,ILUOUT)
+!
+ZLAND_TWS(:) = 0.0
+!
 !-------------------------------------------------------------------------------
 !
 ! Global argument
@@ -147,8 +158,9 @@ ENDIF
 !-------------------------------------------------------------------------------
 !
 IF(LCPL_LAND)THEN
-  CALL PUT_SFX_LAND(IM%O, IM%S, IM%K, IM%NK, IM%NP, U, ILUOUT, LCPL_GW, LCPL_FLOOD, &
-                    PLAND_WTD(:), PLAND_FWTD(:),PLAND_FFLOOD(:),PLAND_PIFLOOD(:))        
+  CALL PUT_SFX_LAND(IM%O, IM%S, IM%K, IM%NK, IM%NP, U, ILUOUT, LCPL_GW, LCPL_FLOOD,&
+                    PLAND_WTD(:), PLAND_FWTD(:),PLAND_FFLOOD(:),PLAND_PIFLOOD(:),  &
+                    ZLAND_TWS(:)                                                   )
 ENDIF
 !
 !-------------------------------------------------------------------------------
@@ -157,8 +169,9 @@ ENDIF
 !
 IF(LCPL_SEA)THEN
 !
-  CALL PUT_SFX_SEA(S, U, W, ILUOUT,LCPL_SEAICE,LWATER,PSEA_SST(:),PSEA_UCU(:), &
-                   PSEA_VCU(:),PSEAICE_SIT(:),PSEAICE_CVR(:),PSEAICE_ALB(:) )
+  CALL PUT_SFX_SEA(S, U, W, ILUOUT,LCPL_SEAICE,LWATER,LCPL_SEACARB,LSEAICE_2FLX,   &
+                   PSEA_SST(:),PSEA_UCU(:),PSEA_VCU(:),PSEA_FCO2(:),PSEAICE_SIT(:),&
+                   PSEAICE_CVR(:),PSEAICE_ALB(:) )
 !
 ENDIF
 !

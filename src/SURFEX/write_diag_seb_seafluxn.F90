@@ -41,9 +41,9 @@
 !              ------------
 !
 USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
-USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
+USE MODD_SURF_ATM_n,   ONLY : SURF_ATM_t
 USE MODD_CH_SEAFLUX_n, ONLY : CH_SEAFLUX_t
-USE MODD_DIAG_n, ONLY : DIAG_t, DIAG_OPTIONS_t
+USE MODD_DIAG_n,       ONLY : DIAG_t, DIAG_OPTIONS_t
 !
 #ifdef SFX_ARO
 USE MODD_IO_SURF_ARO,   ONLY : NBLOCK
@@ -75,24 +75,25 @@ IMPLICIT NONE
 !              -------------------------
 !
 !
-TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
+TYPE(DATA_COVER_t),   INTENT(INOUT) :: DTCO
 TYPE(DIAG_OPTIONS_t), INTENT(INOUT) :: DUO
-TYPE(SURF_ATM_t), INTENT(INOUT) :: U
-TYPE(CH_SEAFLUX_t), INTENT(INOUT) :: CHS
+TYPE(SURF_ATM_t),     INTENT(INOUT) :: U
+TYPE(CH_SEAFLUX_t),   INTENT(INOUT) :: CHS
 TYPE(DIAG_OPTIONS_t), INTENT(INOUT) :: DSO
-TYPE(DIAG_t), INTENT(INOUT) :: D
-TYPE(DIAG_t), INTENT(INOUT) :: DC
+TYPE(DIAG_t),         INTENT(INOUT) :: D
+TYPE(DIAG_t),         INTENT(INOUT) :: DC
+!
 LOGICAL, INTENT(IN) :: OHANDLE_SIC
 !
- CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM ! program calling
+CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM ! program calling
 !
 !*       0.2   Declarations of local variables
 !              -------------------------------
 !
-INTEGER           :: IRESP          ! IRESP  : return-code if a problem appears
- CHARACTER(LEN=LEN_HREC) :: YRECFM         ! Name of the article to be read
- CHARACTER(LEN=100):: YCOMMENT       ! Comment string
- CHARACTER(LEN=2)  :: YNUM
+INTEGER                 :: IRESP          ! IRESP  : return-code if a problem appears
+CHARACTER(LEN=LEN_HREC) :: YRECFM         ! Name of the article to be read
+CHARACTER(LEN=100)      :: YCOMMENT       ! Comment string
+CHARACTER(LEN=2)        :: YNUM
 !
 LOGICAL           :: GRESET
 INTEGER           :: JSV, JSW
@@ -117,7 +118,7 @@ IF (.NOT. LRESET_DIAG_ol) GRESET = .FALSE.
 IF (.NOT. LRESET_DIAG_nc) GRESET = .FALSE.
 #endif
 !
- CALL INIT_IO_SURF_n(DTCO, U,HPROGRAM,'SEA   ','SEAFLX','WRITE','SEAFLUX_DIAGNOSTICS.OUT.nc')
+CALL INIT_IO_SURF_n(DTCO, U,HPROGRAM,'SEA   ','SEAFLX','WRITE','SEAFLUX_DIAGNOSTICS.OUT.nc')
 !
 !
 !*       1.     Surface temperature :

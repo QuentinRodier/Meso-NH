@@ -38,6 +38,9 @@
 !                   computation for diffuse and direct albedo
 !                   09/2014 R. Séférian & B. Sunghye :: Adaptation to spectral
 !                   bands compatible with 6-bands RRTM radiative code
+!                   09/2016 R. Séférian : optimizing algorithm
+!                   01/2017 B. Decharme : optimizing algorithm
+!                   08/2018 A. Voldoire : Numerical wind limitation
 !       
 !-------------------------------------------------------------------------------
 !
@@ -45,7 +48,8 @@
 !            ------------
 !
 USE MODD_ALBEDO_RS14_PAR
-USE MODD_CSTS, ONLY : XPI
+!
+USE MODD_CSTS, ONLY : XPI, XSURF_EPSILON
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -55,163 +59,239 @@ IMPLICIT NONE
 !*      0.1    declarations of arguments
 !              -------------------------
 !
-REAL, DIMENSION(:), INTENT(IN)  :: PZENITH                  ! zenithal angle (radian)
-REAL, DIMENSION(:), INTENT(IN)  :: PWIND                      ! surface wind (m s-1)
+REAL, DIMENSION(:), INTENT(IN)  :: PZENITH              ! zenithal angle (radian)
+REAL, DIMENSION(:), INTENT(IN)  :: PWIND                ! surface wind (m s-1)
 REAL, DIMENSION(:), INTENT(OUT) :: PDIR_ALB             ! direct  ocean surface albedo
 REAL, DIMENSION(:), INTENT(OUT) :: PSCA_ALB             ! diffuse ocean surface albedo
 !
 !*      0.2    declarations of local variables
 !              -------------------------
 !
-REAL, DIMENSION(SIZE(PZENITH))               :: ZCHL             ! surface chlorophyll
-REAL, DIMENSION(SIZE(PZENITH))               :: ZDIR_ALB    ! direct  ocean surface albedo (spectral)
-REAL, DIMENSION(SIZE(PZENITH))               :: ZSCA_ALB    ! diffuse ocean surface albedo (spectral)
+REAL, DIMENSION(SIZE(PZENITH))       :: ZCHL                             ! surface chlorophyll
 !
-INTEGER                         :: JI, JWL                                                      ! indexes
-REAL                            :: ZWL                                                               ! input parameter: wavelength and diffuse/direct fraction of light
-REAL:: ZSIG, ZREFM, ZXX2, ZR00, ZRR0, ZRRR                          ! computation variables
-REAL:: ZR22, ZUE, ZUE2, ZR11DF, ZALBT, ZFWC                     ! computation variables
-REAL:: ZCHLABS, ZAW, ZBW, ZAP, ZYLMD, ZBP550                ! computation variables
-REAL:: ZBBP, ZNU, ZHB                                                                     ! computation variables
-REAL:: ZCOSZEN                                                                                  ! Cosine of the zenith solar angle
-REAL:: ZR11, ZRW, ZRWDF, ZRDF                                                 ! 4 components of the OSA
-
+REAL, DIMENSION(SIZE(PZENITH))       :: ZR22, ZSIG, ZUE, ZUE2, ZUE3,  &
+                                        ZR11DF,ZFWC, ZNU, ZBP550         ! computation variables
 ! 
-REAL            :: ZWORK                                                                        ! dummy variable
+REAL, DIMENSION(SIZE(PZENITH))       :: ZWORK1, ZWORK2, ZWORK3, &
+                                        ZWORK4, ZWORK5                   ! work array
+!
+REAL, DIMENSION(SIZE(PZENITH))       :: ZCOSZEN, ZCOSZEN2, ZCOSZEN3      ! Cosine of the zenith solar angle
+!
+REAL, DIMENSION(SIZE(PZENITH),NNWL)  :: ZAP, ZBBP, ZHB                   ! computation variables
+REAL, DIMENSION(SIZE(PZENITH),NNWL)  :: ZRR0, ZRRR, ZR00           ! computation variables
+REAL, DIMENSION(SIZE(PZENITH),NNWL)  :: ZR11, ZRDF, ZRW, ZRWDF           ! 4 components of the OSA
+!
+REAL, DIMENSION(NNWL)                :: ZAKREFM2, ZYLMD                  ! coeffs
 ! 
+INTEGER                              :: INI, JI, JWL                     ! indexes
+!
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !-------------------------------------------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('ALBEDO_RS14',0,ZHOOK_HANDLE)
 !
+!---------------------------------------------------------------------------------
 ! Initiliazing :
+!---------------------------------------------------------------------------------
+!
+INI=SIZE(PZENITH)
 !
 PDIR_ALB(:) = 0. 
 PSCA_ALB(:) = 0. 
 !
-ZDIR_ALB(:) = 0. 
-ZSCA_ALB(:) = 0.
+! * averaged global values for surface chlorophyll
+!   (need to include bgc coupling in earth system model configuration)
 !
+ZCHL(:) = 0.05
 !
-ZCHL(:) = 0.05 ! averaged global values for surface chlorophyll
-               ! need to include bgc coupling in earth system model configuration
+!---------------------------------------------------------------------------------
+! 0- Compute baseline values
+!---------------------------------------------------------------------------------
 !
-DO JWL=1,NNWL           ! loop over the wavelength
+! * compute the cosine of the solar zenith angle
 !
-  DO JI=1,SIZE(PZENITH)   ! loop over the grid points
-  
-    !---------------------------------------------------------------------------------
-    ! 0- Compute baseline values
-    !---------------------------------------------------------------------------------
-    ! Get refractive index for the correspoding wavelength
-    ZWL=XAKWL(JWL)
-    ZREFM= XAKREFM(JWL)
-    !
-    ! compute the cosine of the solar zenith angle
-    ZCOSZEN = MAX(COS(PZENITH(JI)),0.)
-    ! Compute sigma derived from wind speed (Cox & Munk reflectance model)
-    ZSIG=SQRT(0.003+0.00512*PWIND(JI))
-    !
-    !---------------------------------------------------------------------------------
-    ! 1- Compute direct surface albedo (ZR11)
-    !---------------------------------------------------------------------------------
-    ZXX2=SQRT(1.0-(1.0-ZCOSZEN**2)/ZREFM**2)
-    ZRR0=0.50*(((ZXX2-ZREFM*ZCOSZEN)/(ZXX2+ZREFM*ZCOSZEN))**2 +((ZCOSZEN-ZREFM*ZXX2)/(ZCOSZEN+ZREFM*ZXX2))**2)
-    ZRRR=0.50*(((ZXX2-1.34*ZCOSZEN)/(ZXX2+1.34*ZCOSZEN))**2 +((ZCOSZEN-1.34*ZXX2)/(ZCOSZEN+1.34*ZXX2))**2)
-    ZR11=ZRR0-(0.0152-1.7873*ZCOSZEN+6.8972*ZCOSZEN**2-8.5778*ZCOSZEN**3+4.071*ZSIG-7.6446*ZCOSZEN*ZSIG) &
-        & * EXP(0.1643-7.8409*ZCOSZEN-3.5639*ZCOSZEN**2-2.3588*ZSIG+10.0538*ZCOSZEN*ZSIG)*ZRR0/ZRRR
-    ! 
-    !---------------------------------------------------------------------------------
-    ! 2- Compute surface diffuse albedo (ZRDF)
-    !---------------------------------------------------------------------------------
-    ! Diffuse albedo from Jin et al., 2006 + estimation from diffuse fraction of
-    ! light (relying later on AOD)
-    ! old: ZRDF=-0.1482-0.012*ZSIG+0.1609*ZREFM-0.0244*ZSIG*ZREFM ! surface diffuse (Eq 5a)
-    ZRDF = -0.1479 + 0.1502*ZREFM - 0.0176*ZSIG*ZREFM      ! surface diffuse (Eq 5b)
-    !
-    !---------------------------------------------------------------------------------
-    ! *- Determine absorption and backscattering
-    ! coefficients to determine reflectance below the surface (Ro) once for all
-    !
-    ! *.1- Absorption by chlorophyll
-    ZCHLABS= XAKACHL(JWL) 
-    ! *.2- Absorption by seawater 
-    ZAW= XAKAW3(JWL) 
-    ! *.3- Backscattering by seawater
-    ZBW= XAKBW(JWL) 
-    ! *.4- Backscattering by chlorophyll
-    ZYLMD = EXP(0.014*(440.0-ZWL))
-    ZWORK= EXP(LOG(ZCHL(JI))*0.65)
-    ZAP = 0.06*ZCHLABS*ZWORK +0.2*(XAW440+0.06*ZWORK)*ZYLMD
-    ZBP550 = 0.416 * EXP(LOG(ZCHL(JI))*0.766)
-   !
-    IF ( ZCHL(JI) > 2. ) THEN
-      ZNU=0.
-    ELSE
-      IF ( ZCHL(JI) > 0.02 ) THEN
-        ZWORK=LOG10(MAX(MIN(ZCHL(JI),2.),0.02))
-        ZNU=0.5*(ZWORK-0.3)
-        ZBBP=(0.002+0.01*(0.5-0.25*ZWORK)*(ZWL/550.)**ZNU)*ZBP550
-      ELSE
-        ZBBP=0.019*(550./ZWL)*ZBP550       !ZBBPf=0.0113 at chl<=0.02
-      ENDIF
-    ENDIF
-    !
-    ! Morel-Gentili(1991), Eq (12)
-    ! ZHB=h/(h+2*ZBBPf*(1.-h))        
-    ZHB=0.5*ZBW/(0.5*ZBW+ZBBP)
-    !
-    !---------------------------------------------------------------------------------
-    ! 3- Compute direct water-leaving albedo (ZRW)
-    !---------------------------------------------------------------------------------
-    ! Based on Morel & Gentilli 1991 parametrization
-    ZR22=0.48168549-0.014894708*ZSIG-0.20703885*ZSIG**2
-    ! Use Morel 91 formula to compute the direct reflectance
-    ! below the surface
-    ZR00=(0.5*ZBW+ZBBP)/(ZAW+ZAP) *(0.6279-0.2227*ZHB-0.0513*ZHB**2 + (-0.3119+0.2465*ZHB)*ZCOSZEN)
-    ! ZRW=ZR00*(1.-ZR22)*(1.-ZR11)/(1.-ZR00*ZR22)
-    ZRW=ZR00*(1.-ZR22)/(1.-ZR00*ZR22) ! accurate formulation
-    !
-    !---------------------------------------------------------------------------------
-    ! 4- Compute diffuse water-leaving albedo (ZRWDF)
-    !---------------------------------------------------------------------------------
-    ! as previous water-leaving computation but assumes a uniform incidence of
-    ! shortwave at surface (ue)
-    ZUE=0.676               ! equivalent u_unif for diffuse incidence
-    ZUE2=SQRT(1.0-(1.0-ZUE**2)/ZREFM**2)
-    ZRR0=0.50*(((ZUE2-ZREFM*ZUE)/(ZUE2+ZREFM*ZUE))**2 +((ZUE-ZREFM*ZUE2)/(ZUE+ZREFM*ZUE2))**2)
-    ZRRR=0.50*(((ZUE2-1.34*ZUE)/(ZUE2+1.34*ZUE))**2 +((ZUE-1.34*ZUE2)/(ZUE+1.34*ZUE2))**2)
-    ZR11DF=ZRR0-(0.0152-1.7873*ZUE+6.8972*ZUE**2-8.5778*ZUE**3+4.071*ZSIG-7.6446*ZUE*ZSIG) &
-          & * EXP(0.1643-7.8409*ZUE-3.5639*ZUE**2-2.3588*ZSIG+10.0538*ZUE*ZSIG)*ZRR0/ZRRR
-    ! Use Morel 91 formula to compute the diffuse
-    ! reflectance below the surface
-    ZR00=(0.5*ZBW+ZBBP)/(ZAW+ZAP) *(0.6279-0.2227*ZHB-0.0513*ZHB**2 + (-0.3119+0.2465*ZHB)*ZUE)
-    ZRWDF=ZR00*(1.-ZR22)*(1.-ZR11DF)/(1.-ZR00*ZR22)
-    !
-    ! original : correction for foam Monahanand and Muircheartaigh (1980) Eq 16-17
-    ! new: Salisbury 2014 eq(2) at 37GHz, value in fraction
-    ZFWC=3.97e-4*PWIND(JI)**(1.59) 
-    ! has to be update once we have information from wave model (discussion with G. Madec)
-    !
-    ! --------------------------------------------------------------------
-    !  *- OSA estimation
-    ! --------------------------------------------------------------------
-    ! partitionning direct and diffuse albedo
-    !
-    ZDIR_ALB(JI) = ZDIR_ALB(JI) + XFRWL(JWL) *((1.-ZFWC) * (ZR11+ZRW  ) + ZFWC*XRWC(JWL))
-    ZSCA_ALB(JI) = ZSCA_ALB(JI) + XFRWL(JWL) *((1.-ZFWC) * (ZRDF+ZRWDF) + ZFWC*XRWC(JWL))
-    !
-    ENDDO ! end of the loop over grid points
-   !
-ENDDO ! ending loop over wavelengths
+ZCOSZEN(:) = MAX(COS(PZENITH(:)),0.)
 !
-! --------------------------------------------------------------------
-!  *- OSA estimation
-! --------------------------------------------------------------------
+! * Compute sigma derived from wind speed (Cox & Munk reflectance model)
 !
-PDIR_ALB(:)=ZDIR_ALB(:)
-PSCA_ALB(:)=ZSCA_ALB(:)
+ZSIG(:) = SQRT(0.003+0.00512*PWIND(:))
+!
+! * Correction for foam Monahanand and Muircheartaigh (1980) Eq 16-17
+!   new: Salisbury 2014 eq(2) at 37GHz, value in fraction
+!   has to be update once we have information from wave model (discussion with G. Madec)
+!
+ZWORK1(:) = MAX(PWIND(:),XSURF_EPSILON)
+ZFWC  (:) = 3.97E-4*EXP(1.59*LOG(ZWORK1(:)))
+!
+! * Backscattering by chlorophyll
+!
+ZYLMD(:) = EXP(0.014*(440.0-XAKWL(:)))
+!
+! * uniform incidence of shortwave at surface (ue)
+!
+ZUE (:)=XUE
+ZUE2(:)=XUE**2
+ZUE3(:)=XUE**3
+!
+!---------------------------------------------------------------------------------
+! 1- Compute direct surface albedo ZR11
+!---------------------------------------------------------------------------------
+!
+ZAKREFM2(:) = XAKREFM(:)*XAKREFM(:)
+ZCOSZEN2(:) = ZCOSZEN(:)*ZCOSZEN(:)
+ZCOSZEN3(:) = ZCOSZEN(:)*ZCOSZEN(:)*ZCOSZEN(:)
+!
+ZWORK4(:)=0.0152-1.7873*ZCOSZEN(:)+6.8972*ZCOSZEN2(:)-8.5778*ZCOSZEN3(:)+4.071*ZSIG(:)-7.6446*ZCOSZEN(:)*ZSIG(:)
+ZWORK5(:)=EXP(0.1643-7.8409*ZCOSZEN(:)-3.5639*ZCOSZEN2(:)-2.3588*ZSIG(:)+10.0538*ZCOSZEN(:)*ZSIG(:))
+!
+DO JWL=1,NNWL
+   DO JI=1,INI
+!
+      ZWORK1(JI)=SQRT(1.0-(1.0-ZCOSZEN2(JI))/ZAKREFM2(JWL))
+!  
+      ZWORK2(JI)=(ZWORK1(JI)-XAKREFM(JWL)*ZCOSZEN(JI))/(ZWORK1(JI)+XAKREFM(JWL)*ZCOSZEN(JI))
+      ZWORK2(JI)=ZWORK2(JI)*ZWORK2(JI)
+      ZWORK3(JI)=(ZCOSZEN(JI)-XAKREFM(JWL)*ZWORK1(JI))/(ZCOSZEN(JI)+XAKREFM(JWL)*ZWORK1(JI))
+      ZWORK3(JI)=ZWORK3(JI)*ZWORK3(JI)
+!
+      ZRR0(JI,JWL)=0.50*(ZWORK2(JI)+ZWORK3(JI))
+!  
+      ZWORK2(JI)=(ZWORK1(JI)-1.34*ZCOSZEN(JI))/(ZWORK1(JI)+1.34*ZCOSZEN(JI))
+      ZWORK2(JI)=ZWORK2(JI)*ZWORK2(JI)
+      ZWORK3(JI)=(ZCOSZEN(JI)-1.34*ZWORK1(JI))/(ZCOSZEN(JI)+1.34*ZWORK1(JI))
+      ZWORK3(JI)=ZWORK3(JI)*ZWORK3(JI)
+!       
+      ZRRR(JI,JWL)=0.50*(ZWORK2(JI)+ZWORK3(JI))
+!  
+!     direct albedo
+      ZR11(JI,JWL)=ZRR0(JI,JWL)-ZWORK4(JI)*ZWORK5(JI)*ZRR0(JI,JWL)/ZRRR(JI,JWL)
+!
+   ENDDO
+ENDDO
+!
+!---------------------------------------------------------------------------------
+! 2- Compute surface diffuse albedo ZRDF
+!---------------------------------------------------------------------------------
+!
+! * Diffuse albedo from Jin et al., 2006 (Eq 5b) 
+!
+DO JWL=1,NNWL
+   DO JI=1,INI
+      ZRDF(JI,JWL) = -0.1479 + 0.1502*XAKREFM(JWL) - 0.0176*ZSIG(JI)*XAKREFM(JWL)
+   ENDDO
+ENDDO
+!
+!---------------------------------------------------------------------------------
+! 3- Compute direct water-leaving albedo ZRW
+!---------------------------------------------------------------------------------
+!
+! * Chlorophyll derived values
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!when Chlorophyll will be coupled ZCHL(1) SHOULD BE ZCHL(:)
+ZWORK4(:)= EXP(LOG(ZCHL(1))*0.65)
+ZWORK5(:)= LOG10(ZCHL(1))  
+ZBP550(:)= 0.416 * EXP(LOG(ZCHL(1))*0.766) 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! * Direct reflectance partitioning based on Morel & Gentilli 1991
+!
+ZR22(:)=0.48168549-0.014894708*ZSIG(:)-0.20703885*ZSIG(:)*ZSIG(:)
+!
+DO JWL=1,NNWL
+   DO JI=1,INI
+!
+!     Determine absorption and backscattering
+!     coefficients to determine reflectance below the surface (Ro) once for all
+      ZAP(JI,JWL) = 0.06*XAKACHL(JWL)*ZWORK4(JI) + 0.2*(XAW440+0.06*ZWORK4(JI))*ZYLMD(JWL)
+!
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      !when Chlorophyll will be coupled this condition should be activated
+      !IF(ZCHL(JI)>2.)THEN
+      !  ZBBP(JI,JWL)=(0.002+0.01*(0.5-0.25*ZWORK5(JI)))*ZBP550(JI)
+      !ELSEIF(ZCHL(JI) < 0.02)THEN
+      !  ZBBP(JI,JWL)=0.019*(550./XAKWL(JWL))*ZBP550(JI)
+      !ELSE
+        ZNU   (JI)     = 0.5*(ZWORK5(JI)-0.3)
+        ZWORK1(JI)     = EXP(ZNU(JI)*LOG(XAKWL(JWL)/550.))
+        ZBBP  (JI,JWL) = (0.002+0.01*(0.5-0.25*ZWORK5(JI))*ZWORK1(JI))*ZBP550(JI)
+      !ENDIF
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!     Morel-Gentili(1991), Eq (12)
+      ZHB(JI,JWL)=0.5*XAKBW(JWL)/(0.5*XAKBW(JWL)+ZBBP(JI,JWL))
+!
+!     Use Morel 91 formula to compute the direct reflectance below the surface
+      ZWORK2(JI)=(0.5*XAKBW(JWL)+ZBBP(JI,JWL))/(XAKAW3(JWL)+ZAP(JI,JWL))
+      ZWORK3(JI)=(0.6279-0.2227*ZHB(JI,JWL)-0.0513*ZHB(JI,JWL)*ZHB(JI,JWL) &
+                -0.3119*ZCOSZEN(JI))+0.2465*ZHB(JI,JWL)*ZCOSZEN(JI)
+      ZR00(JI,JWL)=ZWORK2(JI)*ZWORK3(JI)
+!
+!     water-leaving albedo
+      ZRW(JI,JWL)=ZR00(JI,JWL)*(1.-ZR22(JI))/(1.-ZR00(JI,JWL)*ZR22(JI))
+!
+   ENDDO
+ENDDO
+!
+!---------------------------------------------------------------------------------
+! 4- Compute diffuse water-leaving albedo ZRWDF
+!---------------------------------------------------------------------------------
+!
+ZWORK4(:)=0.0152-1.7873*ZUE(:)+6.8972*ZUE2(:)-8.5778*ZUE3(:)+4.071*ZSIG(:)-7.6446*ZUE(:)*ZSIG(:)
+ZWORK5(:)=EXP(0.1643-7.8409*ZUE(:)-3.5639*ZUE2(:)-2.3588*ZSIG(:)+10.0538*ZUE(:)*ZSIG(:))
+!
+DO JWL=1,NNWL
+   DO JI=1,INI
+!
+!     as previous water-leaving computation but assumes a uniform incidence of shortwave at surface (ue)
+!
+      ZWORK1(JI)=SQRT(1.0-(1.0-ZUE2(JI))/ZAKREFM2(JWL))    
+!
+      ZWORK2(JI)=(ZWORK1(JI)-XAKREFM(JWL)*ZUE(JI))/(ZWORK1(JI)+XAKREFM(JWL)*ZUE(JI))
+      ZWORK2(JI)=ZWORK2(JI)*ZWORK2(JI)
+      ZWORK3(JI)=(ZUE(JI)-XAKREFM(JWL)*ZWORK1(JI))/(ZUE(JI)+XAKREFM(JWL)*ZWORK1(JI))
+      ZWORK3(JI)=ZWORK3(JI)*ZWORK3(JI)   
+!
+      ZRR0(JI,JWL)=0.50*(ZWORK2(JI)+ZWORK3(JI))
+!
+      ZWORK2(JI)=(ZWORK1(JI)-1.34*ZUE(JI))/(ZWORK1(JI)+1.34*ZUE(JI))
+      ZWORK2(JI)=ZWORK2(JI)*ZWORK2(JI)
+      ZWORK3(JI)=(ZUE(JI)-1.34*ZWORK1(JI))/(ZUE(JI)+1.34*ZWORK1(JI))
+      ZWORK3(JI)=ZWORK3(JI)*ZWORK3(JI)   
+!
+      ZRRR(JI,JWL)=0.50*(ZWORK2(JI)+ZWORK3(JI))
+      ZR11DF(JI)=ZRR0(JI,JWL)-ZWORK4(JI)*ZWORK5(JI)*ZRR0(JI,JWL)/ZRRR(JI,JWL)
+!
+!     Use Morel 91 formula to compute the diffuse
+!     reflectance below the surface
+      ZWORK2(JI)=(0.5*XAKBW(JWL)+ZBBP(JI,JWL))/(XAKAW3(JWL)+ZAP(JI,JWL))
+      ZWORK3(JI)=0.6279-0.2227*ZHB(JI,JWL)-0.0513*ZHB(JI,JWL)*ZHB(JI,JWL) &
+                -0.3119*ZUE(JI)+0.2465*ZHB(JI,JWL)*ZUE(JI)
+      ZR00(JI,JWL)=ZWORK2(JI)*ZWORK3(JI)
+!
+!     diffuse albedo
+      ZRWDF(JI,JWL)=ZR00(JI,JWL)*(1.-ZR22(JI))*(1.-ZR11DF(JI))/(1.-ZR00(JI,JWL)*ZR22(JI))
+!
+  ENDDO
+ENDDO 
+!
+!---------------------------------------------------------------------------------
+! 5- OSA estimation
+!---------------------------------------------------------------------------------
+!
+! partitionning direct and diffuse albedo and accounts for foam spectral properties
+!
+DO JWL=1,NNWL
+   DO JI=1,INI
+      PDIR_ALB(JI) = PDIR_ALB(JI) + XFRWL(JWL) * ((1.-ZFWC(JI))*(ZR11(JI,JWL)+ZRW  (JI,JWL))+ZFWC(JI)*XRWC(JWL))
+      PSCA_ALB(JI) = PSCA_ALB(JI) + XFRWL(JWL) * ((1.-ZFWC(JI))*(ZRDF(JI,JWL)+ZRWDF(JI,JWL))+ZFWC(JI)*XRWC(JWL))
+  ENDDO 
+ENDDO 
 !
 IF (LHOOK) CALL DR_HOOK('ALBEDO_RS14',1,ZHOOK_HANDLE)
 !

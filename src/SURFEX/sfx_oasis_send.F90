@@ -6,12 +6,12 @@
 SUBROUTINE SFX_OASIS_SEND(KLUOUT,KGPTOT,KI,KDATE,                               &
                           OSEND_LAND,OSEND_LAKE,OSEND_SEA,OSEND_WAVE,  &
                           PLAND_RUNOFF,PLAND_DRAIN,PLAND_CALVING,               &
-                          PLAND_SRCFLOOD,                                       &
+                          PLAND_SRCFLOOD,PLAND_DOCFLUX,                         &
                           PLAKE_EVAP,PLAKE_RAIN,PLAKE_SNOW,PLAKE_WATF,          &
                           PSEA_FWSU,PSEA_FWSV,PSEA_HEAT,PSEA_SNET,PSEA_WIND,    &
-                          PSEA_FWSM,PSEA_EVAP,PSEA_RAIN,PSEA_SNOW,              &
-                          PSEA_WATF,PSEA_PRES,PSEAICE_HEAT,PSEAICE_SNET,        &
-                          PSEAICE_EVAP,PWAVE_U10,PWAVE_V10            )
+                          PSEA_FWSM,PSEA_EVAP,PSEA_RAIN,PSEA_SNOW,PSEA_WATF,    &
+                          PSEA_PRES,PSEA_CO2,PSEAICE_HEAT,PSEAICE_SNET,         &
+                          PSEAICE_EVAP,PWAVE_U10,PWAVE_V10                      )
 !###########################################
 !
 !!****  *SFX_OASIS_SEND* - Send coupling fields
@@ -48,6 +48,8 @@ SUBROUTINE SFX_OASIS_SEND(KLUOUT,KGPTOT,KI,KDATE,                               
 !!                                          and surface pressure for ocean coupling
 !!    10/2016 B. Decharme : bug surface/groundwater coupling
 !!    02/2020 C. Lebeaupin : sfxsnd subroutine, KGPTOT entry
+!!    08/2016 R. Séférian : Add riverine carbon cycle coupling 
+!!    11/2016 R. Séférian : Implement carbon cycle coupling (Earth system model)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -87,6 +89,7 @@ REAL, DIMENSION(KI), INTENT(IN) :: PLAND_RUNOFF    ! Cumulated Surface runoff   
 REAL, DIMENSION(KI), INTENT(IN) :: PLAND_DRAIN     ! Cumulated Deep drainage              (kg/m2)
 REAL, DIMENSION(KI), INTENT(IN) :: PLAND_CALVING   ! Cumulated Calving flux               (kg/m2)
 REAL, DIMENSION(KI), INTENT(IN) :: PLAND_SRCFLOOD  ! Cumulated flood freshwater flux      (kg/m2)
+REAL, DIMENSION(KI), INTENT(IN) :: PLAND_DOCFLUX   ! Cumulated riverine DOC flux          (kgC/m2)
 !
 REAL, DIMENSION(KI), INTENT(IN) :: PLAKE_EVAP  ! Cumulated Evaporation              (kg/m2)
 REAL, DIMENSION(KI), INTENT(IN) :: PLAKE_RAIN  ! Cumulated Rainfall rate            (kg/m2)
@@ -104,6 +107,7 @@ REAL, DIMENSION(KI), INTENT(IN) :: PSEA_RAIN  ! Cumulated Rainfall rate         
 REAL, DIMENSION(KI), INTENT(IN) :: PSEA_SNOW  ! Cumulated Snowfall rate           (kg/m2)
 REAL, DIMENSION(KI), INTENT(IN) :: PSEA_WATF  ! Cumulated freshwater flux         (kg/m2)
 REAL, DIMENSION(KI), INTENT(IN) :: PSEA_PRES  ! Cumulated Surface pressure        (Pa.s)
+REAL, DIMENSION(KI), INTENT(IN) :: PSEA_CO2   ! Cumulated atmospheric CO2         (ppm.s)
 !
 REAL, DIMENSION(KI), INTENT(IN) :: PSEAICE_HEAT ! Cumulated Sea-ice non solar net heat flux (J/m2)
 REAL, DIMENSION(KI), INTENT(IN) :: PSEAICE_SNET ! Cumulated Sea-ice solar net heat flux     (J/m2)
@@ -159,6 +163,12 @@ IF(OSEND_LAND)THEN
     YCOMMENT='flood freshwater flux over land (P-E-I)'
     CALL SFXSND(KI,KGPTOT,KLUOUT,KDATE,YCOMMENT,XTSTEP_CPL_LAND,&
                 NSRCFLOOD_ID,PLAND_SRCFLOOD,GCUM)
+  ENDIF
+!
+  IF(LCPL_RIVCARB)THEN
+    YCOMMENT='riverine DOC flux over land (kg/m2/s)'
+    CALL SFXSND(KI,KGPTOT,KLUOUT,KDATE,YCOMMENT,XTSTEP_CPL_LAND,&
+                NDOCFLUX_ID,PLAND_DOCFLUX,GCUM)
   ENDIF
 !
 ENDIF
@@ -261,6 +271,16 @@ IF(OSEND_SEA)THEN
     YCOMMENT='Sea-ice sublimation over sea-ice'
     CALL SFXSND(KI,KGPTOT,KLUOUT,KDATE,YCOMMENT,XTSTEP_CPL_SEA,&
                 NSEAICE_EVAP_ID,PSEAICE_EVAP,GCUM)
+!
+  ENDIF
+!
+! * carbon cycle output fields (in ppm.s)
+!
+  IF(LCPL_SEACARB)THEN
+!
+    YCOMMENT='atmospheric CO2 over sea'
+    CALL SFXSND(KI,KGPTOT,KLUOUT,KDATE,YCOMMENT,XTSTEP_CPL_SEA,&
+                NSEA_CO2_ID,PSEA_CO2,GCUM)
 !
   ENDIF
 !

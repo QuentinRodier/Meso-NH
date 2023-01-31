@@ -31,6 +31,7 @@ SUBROUTINE UPDATE_RAD_SEA(S,PZENITH,PTT,PDIR_ALB_ATMOS,PSCA_ALB_ATMOS,PEMIS_ATMO
 !!      Modified    01/2014 : S. Senesi : handle fractional seaice
 !!      Modified    02/2014 : split from update_rad_seawat.F90
 !!      Modified    01/2015 : introduce interactive ocean surface albedo (R.Séférian)
+!!      A. Voldoire 09/2016 : Switch to tile the fluxes calculation over sea and seaice
 !!------------------------------------------------------------------
 !
 USE MODD_SEAFLUX_n, ONLY : SEAFLUX_t
@@ -38,8 +39,9 @@ USE MODD_SEAFLUX_n, ONLY : SEAFLUX_t
 USE MODD_WATER_PAR, ONLY : XEMISWAT, XEMISWATICE, &
                            XALBWAT, XALBSCA_WAT,  &
                            XALBSEAICE
+USE MODD_SURF_PAR,  ONLY : XUNDEF
 !
-USE MODD_SFX_OASIS, ONLY : LCPL_SEA
+USE MODD_SFX_OASIS, ONLY : LCPL_SEAICE
 !
 USE MODI_ALBEDO_TA96
 USE MODI_ALBEDO_MK10
@@ -65,128 +67,150 @@ REAL, DIMENSION(:),     INTENT(OUT)  :: PTRAD          ! radiative temp at t+1 f
 REAL, DIMENSION(:),     INTENT(IN)   , OPTIONAL :: PU        ! zonal wind (m/s)
 REAL, DIMENSION(:),     INTENT(IN)   , OPTIONAL :: PV        ! meridian wind (m/s)
 !
-!*      0.2    declarations of local variables
+! *      0.2    declarations of local variables
+!
+REAL, DIMENSION(SIZE(PZENITH)) :: ZALBDIR_SEA
+REAL, DIMENSION(SIZE(PZENITH)) :: ZALBSCA_SEA
+REAL, DIMENSION(SIZE(PZENITH)) :: ZWIND
+REAL, DIMENSION(SIZE(PZENITH)) :: ZT4
 !
 INTEGER :: JSWB
-REAL, DIMENSION(SIZE(PZENITH)) :: ZALBDIR
-REAL, DIMENSION(SIZE(PZENITH)) :: ZALBSCA
-REAL, DIMENSION(SIZE(PZENITH)) :: ZWIND
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !-------------------------------------------------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('UPDATE_RAD_SEA',0,ZHOOK_HANDLE)
+!-------------------------------------------------------------------------------------
 !
-ZALBDIR(:) = 0.
-ZALBSCA(:) = 0.
+! *      1.0 init
+!        ---------
 !
-IF (S%CSEA_ALB=='TA96') THEN
-!        
-  ZALBDIR(:) = ALBEDO_TA96(PZENITH(:))
-  ZALBSCA(:) = XALBSCA_WAT
+ZALBDIR_SEA(:) = XUNDEF
+ZALBSCA_SEA(:) = XUNDEF
+!
+!-------------------------------------------------------------------------------------
+!
+! *      2.0 computation of sea (ice-free) albedo
+!        ----------------------------------------
+!
+IF (S%CSEA_ALB=='UNIF') THEN
+!
+! Uniform
+!
+  ZALBDIR_SEA(:) = XALBWAT
+  ZALBSCA_SEA(:) = XALBWAT
+!
+ELSEIF (S%CSEA_ALB=='TA96') THEN
+!
+! Taylor et al 1996
+!
+  ZALBDIR_SEA(:) = ALBEDO_TA96(PZENITH(:))
+  ZALBSCA_SEA(:) = XALBSCA_WAT
 !  
 ELSEIF (S%CSEA_ALB=='MK10') THEN
-!        
-  ZALBDIR(:) = ALBEDO_MK10(PZENITH(:))
-  ZALBSCA(:) = XALBSCA_WAT
+!      
+! Khairoutdinov
+!
+  ZALBDIR_SEA(:) = ALBEDO_MK10(PZENITH(:))
+  ZALBSCA_SEA(:) = XALBSCA_WAT
 !  
 ELSEIF (S%CSEA_ALB=='RS14') THEN
-!        
+!
+! Seferian et al 2017
+!
   IF (PRESENT(PU).AND.PRESENT(PV)) THEN
      ZWIND(:) = SQRT(PU(:)**2+PV(:)**2)
-     CALL ALBEDO_RS14(PZENITH(:),ZWIND(:),ZALBDIR(:),ZALBSCA(:))
-  ELSE
-     ZALBDIR(:) = S%XDIR_ALB(:)
-     ZALBSCA(:) = S%XSCA_ALB(:)
+     CALL ALBEDO_RS14(PZENITH(:),ZWIND(:),S%XDIR_ALB_SEA(:),S%XSCA_ALB_SEA(:))
   ENDIF
+!
+  ZALBDIR_SEA(:) = S%XDIR_ALB_SEA(:)
+  ZALBSCA_SEA(:) = S%XSCA_ALB_SEA(:)
 !
 ENDIF
 !
-IF(LCPL_SEA)THEN !Earth System Model
+!-------------------------------------------------------------------------------------
 !
-!Sea and/or ice albedo already given by coupled seaice model
-!Except for Taylor et al (1996) and MK10 formulation
+! *      3.0 computation of sea (including) sea-ice radiative properties
+!        ---------------------------------------------------------------
+!
+IF(LCPL_SEAICE.AND..NOT.(S%LHANDLE_SIC))THEN
+!
+! For Earth System Model in CNRM-CM5 : Single fluxes
 !
   WHERE (S%XSST(:)>=PTT  )
     !* open water
     S%XEMIS   (:) = XEMISWAT
+    S%XDIR_ALB(:) = ZALBDIR_SEA(:)
+    S%XSCA_ALB(:) = ZALBSCA_SEA(:)
   ELSEWHERE
     !* sea ice
     S%XEMIS   (:) = XEMISWATICE
+    S%XDIR_ALB(:) = S%XICE_ALB(:)
+    S%XSCA_ALB(:) = S%XICE_ALB(:)
   END WHERE
-  !
-  IF (S%CSEA_ALB=='TA96' .OR. S%CSEA_ALB=='MK10' .OR. S%CSEA_ALB=='RS14') THEN
-    !* Taylor et al 1996
-    !* open water
-    WHERE (S%XSST(:)>=PTT) S%XDIR_ALB(:) = ZALBDIR(:)
-    WHERE (S%XSST(:)>=PTT) S%XSCA_ALB(:) = ZALBSCA(:)
-  ENDIF
-  !
+!
 ELSEIF(S%LHANDLE_SIC) THEN 
-  ! Returned values are an average of open sea and seaice properties
-  ! weighted by the seaice cover
-  S%XEMIS   (:) = ( 1 - S%XSIC(:)) * XEMISWAT    + S%XSIC(:) * XEMISWATICE
-  IF (S%CSEA_ALB=='UNIF') THEN
-     S%XDIR_ALB(:) = ( 1 - S%XSIC(:)) * XALBWAT     + S%XSIC(:) * S%XICE_ALB(:)
-     S%XSCA_ALB(:) = ( 1 - S%XSIC(:)) * XALBWAT     + S%XSIC(:) * S%XICE_ALB(:)
-  ELSE IF (S%CSEA_ALB=='TA96' .OR. S%CSEA_ALB=='MK10' .OR. S%CSEA_ALB=='RS14') THEN
-     S%XDIR_ALB(:) = ( 1 - S%XSIC(:)) * ZALBDIR(:) + S%XSIC(:) * S%XICE_ALB(:)
-     S%XSCA_ALB(:) = ( 1 - S%XSIC(:)) * ZALBSCA(:) + S%XSIC(:) * S%XICE_ALB(:)
-  ENDIF
+!
+! Gelato 1D case or Double fluxes in CNRM-CM6 Earth System Model :
+! Returned values are an average of open sea and seaice properties
+! weighted by the seaice cover
+!
+  S%XEMIS   (:) = (1.0 - S%XSIC(:)) * XEMISWAT       + S%XSIC(:) * XEMISWATICE
+  S%XDIR_ALB(:) = (1.0 - S%XSIC(:)) * ZALBDIR_SEA(:) + S%XSIC(:) * S%XICE_ALB(:)
+  S%XSCA_ALB(:) = (1.0 - S%XSIC(:)) * ZALBSCA_SEA(:) + S%XSIC(:) * S%XICE_ALB(:)
+!
 ELSE
-  !
-  IF (S%CSEA_ALB=='UNIF') THEN
-  !* uniform albedo
-    WHERE (S%XSST(:)>=PTT  )
-    !* open water
-      S%XDIR_ALB  (:) = XALBWAT
-      S%XSCA_ALB  (:) = XALBWAT
-      S%XEMIS     (:) = XEMISWAT
-    ELSEWHERE
-    !* sea ice
-      S%XDIR_ALB(:) = XALBSEAICE
-      S%XSCA_ALB(:) = XALBSEAICE
-      S%XEMIS   (:) = XEMISWATICE
-    END WHERE
-  !
-  ELSE IF (S%CSEA_ALB=='TA96' .OR. S%CSEA_ALB=='MK10' .OR. S%CSEA_ALB=='RS14') THEN
-    !* Taylor et al 1996
-    !
-    WHERE (S%XSST(:)>=PTT)
-    !* open water
-      S%XDIR_ALB  (:) = ZALBDIR(:)
-      S%XSCA_ALB  (:) = ZALBSCA(:)
-      S%XEMIS     (:) = XEMISWAT
-    ELSEWHERE
-    !* sea ice
-      S%XDIR_ALB(:) = XALBSEAICE
-      S%XSCA_ALB(:) = XALBSEAICE
-      S%XEMIS   (:) = XEMISWATICE
-    END WHERE
-    !
-  ENDIF
-  !
+!
+! Default case without sea ice scheme :
+! Ice albedo is imposed
+!
+  WHERE (S%XSST(:)>=PTT)
+  !* open water
+    S%XDIR_ALB  (:) = ZALBDIR_SEA(:)
+    S%XSCA_ALB  (:) = ZALBSCA_SEA(:)
+    S%XEMIS     (:) = XEMISWAT
+  ELSEWHERE
+  !* sea ic should not be theree
+    S%XDIR_ALB(:) = XALBSEAICE
+    S%XSCA_ALB(:) = XALBSEAICE
+    S%XEMIS   (:) = XEMISWATICE
+  END WHERE
+!
 ENDIF
 !
 !-------------------------------------------------------------------------------------
+!
+! *      4.0 Final diag
+!        --------------
+!
+! Albedo
 !
 DO JSWB=1,SIZE(PDIR_ALB_ATMOS,2)
   PDIR_ALB_ATMOS(:,JSWB) = S%XDIR_ALB(:)
   PSCA_ALB_ATMOS(:,JSWB) = S%XSCA_ALB(:)
 END DO
 !
+! Emissivity
+!
 PEMIS_ATMOS(:) = S%XEMIS(:)
+!
+! Radiative temperature
+!
 IF(S%LHANDLE_SIC) THEN 
-   PTRAD(:) = (((1 - S%XSIC(:)) * XEMISWAT    * S%XSST (:)**4 + &
-                     S%XSIC(:)  * XEMISWATICE * S%XTICE(:)**4)/ &
-              S%XEMIS(:)) ** 0.25
+!
+   ZT4  (:) = (1.0 - S%XSIC(:)) * XEMISWAT * S%XSST (:)**4 + S%XSIC(:) * XEMISWATICE * S%XTICE(:)**4
+!
+   PTRAD(:) = EXP(0.25*LOG(ZT4(:)/S%XEMIS(:)))
+!
 ELSE
+!
    PTRAD(:) = S%XSST (:)
+!
 END IF
 !
+!-------------------------------------------------------------------------------------
 IF (LHOOK) CALL DR_HOOK('UPDATE_RAD_SEA',1,ZHOOK_HANDLE)
-!
 !-------------------------------------------------------------------------------------
 !
 END SUBROUTINE UPDATE_RAD_SEA

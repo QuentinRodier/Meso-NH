@@ -46,7 +46,7 @@
 !               ------------
 !
 USE MODD_ISBA_OPTIONS_n, ONLY : ISBA_OPTIONS_t
-USE MODD_ISBA_n, ONLY : ISBA_K_t, ISBA_P_t, ISBA_PE_t
+USE MODD_ISBA_n,         ONLY : ISBA_K_t, ISBA_P_t, ISBA_PE_t
 !
 USE MODD_CO2V_PAR,       ONLY : XMC, XMCO2, XPCCO2
 USE MODD_SURF_PAR,       ONLY : XUNDEF
@@ -224,7 +224,7 @@ ZSW_RAD = PABS_SW / (0.5*(PEK%XALBNIR_VEG + PEK%XALBVIS_VEG)) ! incoming solar r
 !*      2.0    Plant stress due to soil water deficit
 !              --------------------------------------
 !
-CALL SOILSTRESS(IO%CISBA, ZF2, KK, PK, PEK, ZF2WGHT, ZF5 )  
+CALL SOILSTRESS(KK, PK, PEK, IO%CISBA, ZF2, ZF2WGHT, ZF5 )  
 !
 !-------------------------------------------------------------------------------
 !
@@ -240,10 +240,10 @@ IF (IO%CPHOTO=='NON') THEN
    PGPP(:) = 0.0
 ELSE IF (MAXVAL(PEK%XGMES(:)).NE.XUNDEF .OR. MINVAL(PEK%XGMES(:)).NE.XUNDEF) THEN
    ZQSAT(:)=QSAT(PEK%XTV(:),PPS(:))  
-   CALL COTWORES(PTSTEP, IO, GSHADE, PK, PEK, PK%XDMAX, PPOI, PCSP, PEK%XTV(:),   &
-                 ZF2, ZSW_RAD, PQA, ZQSAT, ZPSNV, ZDELTA, PRHOA, PZENITH,         &
-                 ZFFV, NPAR_VEG_IRR_USE, ZIACAN_SUNLIT, ZIACAN_SHADE, ZFRAC_SUN,  &
-                 PIACAN, PABC, ZRS, PGPP, PRESP_BIOMASS_INST(:,1)                 )
+   CALL COTWORES(PTSTEP, IO, GSHADE, PK, PEK, PK%XDMAX, PPOI, PCSP, PEK%XTV,       &
+                 ZF2, ZSW_RAD, PQA, ZQSAT, PEK%XPSN, ZPSNV, ZDELTA, PRHOA, PZENITH,&
+                 ZFFV, NPAR_VEG_IRR_USE, ZIACAN_SUNLIT, ZIACAN_SHADE, ZFRAC_SUN,   &
+                 PIACAN, PABC, ZRS, PGPP, PRESP_BIOMASS_INST(:,1)                  )
 ELSE
    PRESP_BIOMASS_INST(:,1) = 0.0
    PGPP(:) = 0.0
@@ -274,7 +274,7 @@ ZUREF=0.1  ! typîcal distance between air and leaves for thermal exchanges
 !
 ZVMOD=PVMOD
 !
-CALL SURFACE_AERO_COND(ZRI, ZUREF, ZUREF, ZVMOD, ZZ0, ZZ0, ZAC,PEK%XRESA , ZCH, 'DEF')
+CALL SURFACE_AERO_COND(ZRI, ZUREF, ZUREF, ZVMOD, ZZ0, ZZ0, ZAC, PEK%XRESA, ZCH)
 !
 !
 !*            HALSTEAD COEFFICIENT (RELATIVE HUMIDITY OF THE VEGETATION)
@@ -356,12 +356,20 @@ ZDT = (  PABS_SW(:)+PABS_LW(:)                                     &
 
     PG_HVEG  (:) = ZVEG * ZCHEATV * ZDT / PTSTEP
 !
-!
 !         Evolution of temperature of foliage
 !         -----------------------------------
 !
 PEK%XTV = PEK%XTV + ZDT
 !
+!
+!         Evolution of pseudo canopy humidity
+!         -----------------------------------
+!
+! New ISBA composite energy budget: Qc (canopy humidity) is taken as the surface specific humidity
+! It is computed at t+1 using the resulting total evaporation because
+! E = (Rhoa/Ra) * (Qs - Qa) so Qs = (E*Ra/Rhoa) + qa
+!
+PEK%XQC(:) = PQA(:) + PLE_HVEG(:)*PEK%XRESA(:)/(PRHOA(:)*XLVTT)
 !
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 !-------------------------------------------------------------------------------

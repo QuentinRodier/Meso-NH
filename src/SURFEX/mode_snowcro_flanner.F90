@@ -27,7 +27,7 @@ MODULE MODE_SNOWCRO_FLANNER
 ! Modifications:
 !  P. Wautelet 19/09/2019: correct support of 64bit integers (MNH_INT=8)
 !
-use modd_netcdf_sfx, only : CDFINT
+use modd_netcdf_sfx, only : IDCDF_KIND
 USE MODD_SURFEX_OMP, ONLY : NBLOCK
 USE MODD_SURFEX_MPI, ONLY : NRANK, NPIO, NPROC, NCOMM
 !
@@ -76,7 +76,7 @@ IMPLICIT NONE
 !*      2.    declarations of local variables
 !
 INTEGER :: INFOMPI
-INTEGER(kind=CDFINT) :: IERROR !error status
+INTEGER(kind=IDCDF_KIND) :: IERROR !error status
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
@@ -119,14 +119,14 @@ USE NETCDF
 !
 IMPLICIT NONE
 !
-INTEGER(kind=CDFINT),INTENT(IN) :: ID_FILE
+INTEGER(kind=IDCDF_KIND),INTENT(IN) :: ID_FILE
  CHARACTER(LEN=5),INTENT(IN) :: HSURF
 REAL, DIMENSION(:,:,:), POINTER :: PVAR
 !
 INTEGER :: INFOMPI
-INTEGER(kind=CDFINT), DIMENSION(:), ALLOCATABLE :: IVARDIMSID
+INTEGER(kind=IDCDF_KIND), DIMENSION(:), ALLOCATABLE :: IVARDIMSID
 !
-INTEGER(kind=CDFINT) :: IERROR !error status
+INTEGER(kind=IDCDF_KIND) :: IERROR !error status
 !
 IF (NRANK==NPIO) THEN
   ! Look for variable ID

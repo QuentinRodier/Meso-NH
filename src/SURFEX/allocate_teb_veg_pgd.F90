@@ -50,6 +50,7 @@ ALLOCATE(PEK%XLAI                    (KLU))
 ALLOCATE(PEK%XVEG                    (KLU)) 
 ALLOCATE(PEK%XEMIS                   (KLU)) 
 ALLOCATE(PEK%XZ0                     (KLU)) 
+ALLOCATE(PEK%XH_VEG                  (KLU)) 
 !
 ! - vegetation: default option (Jarvis) and general parameters:
 !

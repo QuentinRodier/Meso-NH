@@ -133,6 +133,7 @@ LOGICAL                  :: LIMP_CLAY        ! Imposed maps of Clay
 LOGICAL                  :: LIMP_SOC         ! Imposed maps of organic carbon
 LOGICAL                  :: LIMP_CTI         ! Imposed maps of topographic index statistics
 LOGICAL                  :: LIMP_PERM        ! Imposed maps of permafrost distribution
+LOGICAL                  :: LLULCC           ! land-use scheme activation key
 REAL, DIMENSION(150)     :: ZSOILGRID        ! Soil grid reference for DIF
 CHARACTER(LEN=28)        :: YPH           ! file name for pH
 CHARACTER(LEN=28)        :: YFERT         ! file name for fertilisation rate
@@ -141,6 +142,8 @@ CHARACTER(LEN=6)         :: YFERTFILETYPE ! fertilisation data file type
 REAL                     :: XUNIF_PH      ! uniform value of pH
 REAL                     :: XUNIF_FERT    ! uniform value of fertilisation rate
 LOGICAL                  :: GMEB      ! Multi-energy balance (MEB)
+LOGICAL                  :: GFIRE, GCLEACH, GADVECT_SOC, GCRYOTURB, GBIOTURB, GSOILGAS
+REAL                     :: ZMISSFCO2
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
@@ -172,8 +175,9 @@ IF (LNAM_READ) THEN
                    GDO%CDIFSFCOND, GDO%CSNOWRES, GDO%CCPSURF, GDO%XCGMAX, &
                    GDO%XCDRAG, GDO%CKSAT, GDO%LSOC, GDO%CRAIN, GDO%CHORT, &
                    GDO%LGLACIER, GDO%LCANOPY_DRAG, GDO%LVEGUPD, GDO%LSPINUPCARBS, &
-                   GDO%LSPINUPCARBW, GDO%XSPINMAXS, GDO%XSPINMAXW, GDO%XCO2_START,&
-                   GDO%XCO2_END, GDO%NNBYEARSPINS, GDO%NNBYEARSPINW, GDO%LNITRO_DILU,ZCVHEATF )
+                   GDO%XSPINMAXS, GDO%NNBYEARSPINS, GDO%LNITRO_DILU, ZCVHEATF, &
+                   GFIRE, GCLEACH, GADVECT_SOC, GCRYOTURB, GBIOTURB, ZMISSFCO2, &
+                   GDO%XCNLIM, GDO%LDOWNREGU)
  !
  CALL DEFAULT_CH_BIO_FLUX(CHT%LCH_BIO_FLUX)
  !
@@ -192,7 +196,7 @@ ENDIF
 !
 !-------------------------------------------------------------------------------
 IF (HINIT=='PRE') THEN
- CALL READ_PREP_ISBA_CARBON(HPROGRAM,GDO%CRESPSL)
+ CALL READ_PREP_ISBA_CARBON(HPROGRAM,GDO%CRESPSL,GSOILGAS)
   IF (GDO%CRESPSL=='CNT') THEN
     GDO%CRESPSL = 'PRM'
     WRITE(ILUOUT,*) '****************************************************************'
@@ -281,7 +285,7 @@ ELSE
                        YRUNOFFB, YRUNOFFBFILETYPE, XUNIF_RUNOFFB,                &
                        YWDRAIN,  YWDRAINFILETYPE , XUNIF_WDRAIN, ZSOILGRID,      &
                        YPH, YPHFILETYPE, XUNIF_PH, YFERT, YFERTFILETYPE,         &
-                       XUNIF_FERT                          )  
+                       XUNIF_FERT, LLULCC                                        )  
   GDO%CALBEDO = YALBEDO
   !
 ENDIF
@@ -335,14 +339,10 @@ IF (OGREENROOF) THEN
   GRO%LCANOPY_DRAG = GDO%LCANOPY_DRAG
   GRO%LVEGUPD = GDO%LVEGUPD
   GRO%LSPINUPCARBS = GDO%LSPINUPCARBS
-  GRO%LSPINUPCARBW = GDO%LSPINUPCARBW
   GRO%XSPINMAXS = GDO%XSPINMAXS
-  GRO%XSPINMAXW = GDO%XSPINMAXW
-  GRO%XCO2_START = GDO%XCO2_START
-  GRO%XCO2_END = GDO%XCO2_END
   GRO%NNBYEARSPINS = GDO%NNBYEARSPINS
-  GRO%NNBYEARSPINW = GDO%NNBYEARSPINW
   GRO%LNITRO_DILU = GDO%LNITRO_DILU
+  GRO%LDOWNREGU = GDO%LDOWNREGU
   !
   !
   GRO%LMEB_GNDRES = GDO%LMEB_GNDRES

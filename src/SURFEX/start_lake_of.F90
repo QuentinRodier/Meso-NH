@@ -53,7 +53,7 @@ USE MODD_DATA_LAKE, ONLY : CLAKELTA, NLONG, NLATG, XFIRSTLAT, &
                            XAUXT_SNOW, XAUXT_ICE, XAUXT_MNW, XAUXT_WML, XAUXT_BOT, &
                            XAUXT_B1, XAUXCT, XAUXH_SNOW, XAUXH_ICE, XAUXH_ML, &
                            XAUXH_B1, XAUXT_SFC
-use modd_netcdf_sfx, only : CDFINT
+use modd_netcdf_sfx, only : IDCDF_KIND
 !
 USE MODI_ABOR1_SFX
 !
@@ -100,7 +100,7 @@ REAL :: ZWLON, ZWLAT, ZWDEPTH
 !
 LOGICAL :: LEXIST
 !
- INTEGER(kind=CDFINT) :: ID_LAKELTA, ID_MONTH, &  ! IDs for NetCDF
+ INTEGER(kind=IDCDF_KIND) :: ID_LAKELTA, ID_MONTH, &  ! IDs for NetCDF
             ID_DEC, ID_LON, ID_LAT, ID_DEPTH, &
             ID_T_SNOW, ID_T_ICE, ID_T_MNW, ID_T_WML, ID_T_BOT, ID_T_B1, ID_CT, &
             ID_H_SNOW, ID_H_ICE, ID_H_ML, ID_H_B1, ID_T_SFC
@@ -108,9 +108,9 @@ LOGICAL :: LEXIST
  INTEGER :: ILON, ILAT ! Numbers of the "lake" grid boxes in longitude and latitude
  INTEGER :: IDEPTH ! Number of the lake class in depth
  INTEGER, DIMENSION(1) :: ILOC_DEPTH
- INTEGER(kind=CDFINT) :: IRET
- INTEGER(kind=CDFINT) :: IMONTHN, IDECN, ILONN, ILATN, IDEPTHN
- INTEGER(kind=CDFINT), DIMENSION(5) :: NINDEX
+ INTEGER(kind=IDCDF_KIND) :: IRET
+ INTEGER(kind=IDCDF_KIND) :: IMONTHN, IDECN, ILONN, ILATN, IDEPTHN
+ INTEGER(kind=IDCDF_KIND), DIMENSION(5) :: NINDEX
  REAL(KIND=JPRB) :: ZHOOK_HANDLE
 ! ----------------------------------------------------------------------------------------------
 !

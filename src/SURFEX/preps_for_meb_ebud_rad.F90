@@ -122,7 +122,7 @@ ELSEWHERE
 ENDWHERE
 !
 ZSNOWFALL(:)     = PSR(:)*PTSTEP/XRHOSMAX_ES
-
+!
 ZSNOW(:)         = 0.0
 DO JK=1,INLVLS
    DO JI=1,INI
@@ -130,7 +130,6 @@ DO JK=1,INLVLS
    ENDDO
 ENDDO
 !
-
 ! Here, as in snow3l (ISBA-ES), we account for several processes
 ! on the snowpack before surface energy budget computations
 ! (i.e. snowfall on albedo, density, thickness, and compaction etc...)
@@ -140,10 +139,9 @@ ENDDO
 !              exceeding a minimum threshold OR if the equivalent
 !              snow depth falling during the current time step exceeds 
 !              this limit.
-
+!
 ! counts the number of points where the computations will be made
-
-
+!
 !
 ISIZE_SNOW = 0
 NMASK(:)   = 0
@@ -156,11 +154,11 @@ DO JJ=1,INI
 ENDDO
 !
 IF (ISIZE_SNOW>0) THEN
-   CALL CALL_SNOW_ROUTINES(ISIZE_SNOW,INLVLS,NMASK, HSNOWCOND)
+   CALL CALL_SNOW_ROUTINES(ISIZE_SNOW,INLVLS,NMASK,HSNOWCOND)
 ENDIF
 !
 ! ===============================================================
-
+!
 !
 ! View factor: (1 - shielding factor)
 !
@@ -183,10 +181,11 @@ SUBROUTINE CALL_SNOW_ROUTINES(KSIZE1,KSIZE2,KMASK,HSNOWCOND)
 !
 IMPLICIT NONE
 !
-INTEGER, INTENT(IN) :: KSIZE1
-INTEGER, INTENT(IN) :: KSIZE2
+INTEGER,               INTENT(IN) :: KSIZE1
+INTEGER,               INTENT(IN) :: KSIZE2
 INTEGER, DIMENSION(:), INTENT(IN) :: KMASK
-CHARACTER(LEN=*),     INTENT(IN)    :: HSNOWCOND
+!
+CHARACTER(LEN=*),      INTENT(IN) :: HSNOWCOND
 !
 REAL, DIMENSION(KSIZE1,KSIZE2) :: ZP_SNOWSWE
 REAL, DIMENSION(KSIZE1,KSIZE2) :: ZP_SNOWRHO
@@ -205,6 +204,7 @@ REAL, DIMENSION(KSIZE1)        :: ZP_PS
 REAL, DIMENSION(KSIZE1)        :: ZP_SR
 REAL, DIMENSION(KSIZE1)        :: ZP_TA
 REAL, DIMENSION(KSIZE1)        :: ZP_VMOD
+REAL, DIMENSION(KSIZE1)        :: ZP_WORK
 !
 INTEGER         :: JWRK, JJ, JI
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
@@ -236,24 +236,26 @@ DO JJ=1,KSIZE1
    ZP_PERMSNOWFRAC(JJ) = PPERMSNOWFRAC(JI)
 ENDDO
 !
-! ---------------------------------------------------------------
+!---------------------------------------------------------------
 !
 ! Local working:
 !
 ZP_SNOWHEAT(:,:)   = ZP_SNOWHEAT(:,:)*ZP_SNOWDZ(:,:) ! J/m3 to J/m2
 !
 !
-IF (HSNOW_ISBA =="CRO") THEN
-
- ! à voir ce qu'on garde ici
-
+IF(HSNOW_ISBA =="CRO")THEN
+!
+! à voir ce qu'on garde ici
+!
 ELSE
-	CALL SNOW3LFALL(PTSTEP,ZP_SR,ZP_TA,ZP_VMOD,ZP_SNOW,ZP_SNOWRHO,ZP_SNOWDZ,          &
-		               ZP_SNOWHEAT,ZP_SNOWHMASS,ZP_SNOWAGE,ZP_PERMSNOWFRAC)
-	!
-	CALL SNOW3LGRID(ZP_SNOWDZN,ZP_SNOW,PSNOWDZ_OLD=ZP_SNOWDZ)
-	!
-	CALL SNOW3LTRANSF(ZP_SNOW,ZP_SNOWDZ,ZP_SNOWDZN,ZP_SNOWRHO,ZP_SNOWHEAT,ZP_SNOWAGE)
+!
+  CALL SNOW3LFALL(PTSTEP,ZP_SR,ZP_TA,ZP_VMOD,ZP_SNOW,ZP_SNOWRHO,ZP_SNOWDZ,          &
+                   ZP_SNOWHEAT,ZP_SNOWHMASS,ZP_WORK,ZP_SNOWAGE,ZP_PERMSNOWFRAC)
+!
+  CALL SNOW3LGRID(ZP_SNOWDZN,ZP_SNOW,PSNOWDZ_OLD=ZP_SNOWDZ)
+!
+  CALL SNOW3LTRANSF(ZP_SNOW,ZP_SNOWDZ,ZP_SNOWDZN,ZP_SNOWRHO,ZP_SNOWHEAT,ZP_SNOWAGE)
+!
 END IF
 !
 ! Snow heat capacity:
@@ -274,22 +276,22 @@ ZP_SNOWTEMP(:,:)   = MIN(XTT,ZP_SNOWTEMP(:,:))
 !
 ZP_SNOWSWE(:,:)  = ZP_SNOWDZ(:,:)*ZP_SNOWRHO(:,:)             
 !
-IF (HSNOW_ISBA=="CRO") THEN
-  ! à voir ce qu'on garde ici
-  CALL SNOWCROTHRM(ZP_SNOWRHO,ZP_SCOND,ZP_SNOWTEMP,ZP_PS,ZP_SNOWLIQ, &
-                       HSNOWCOND                  )
+IF(HSNOW_ISBA=="CRO")THEN
+!
+! à voir ce qu'on garde ici
+  CALL SNOWCROTHRM(ZP_SNOWRHO,ZP_SCOND,ZP_SNOWTEMP,ZP_PS,ZP_SNOWLIQ,HSNOWCOND)
 ELSE
 !
-	CALL SNOW3LCOMPACTN(PTSTEP,XSNOWDZMIN,ZP_SNOWRHO,ZP_SNOWDZ,ZP_SNOWTEMP,ZP_SNOW,ZP_SNOWLIQ)
+  CALL SNOW3LCOMPACTN(PTSTEP,ZP_SNOWRHO,ZP_SNOWDZ,ZP_SNOWTEMP,ZP_SNOW,ZP_SNOWLIQ)
 !
 ! Snow thermal conductivity:
 !
-	CALL SNOW3LTHRM(ZP_SNOWRHO,ZP_SCOND,ZP_SNOWTEMP,ZP_PS)
+  CALL SNOW3LTHRM(ZP_SNOWRHO,ZP_SCOND,ZP_SNOWTEMP,ZP_PS)
 !
 ENDIF
-
+!
 !----------------------------------------------------------------
-!             
+!
 ! Unpack:
 !
 DO JWRK=1,KSIZE2
@@ -303,12 +305,12 @@ DO JWRK=1,KSIZE2
       PSNOWLIQ (JI,JWRK) = ZP_SNOWLIQ (JJ,JWRK)
       PSCOND   (JI,JWRK) = ZP_SCOND   (JJ,JWRK)
       PHEATCAPS(JI,JWRK) = ZP_HEATCAPS(JJ,JWRK)
-     ENDDO
-  ENDDO
+   ENDDO
+ENDDO
 !
 IF (LHOOK) CALL DR_HOOK('PREPS_FOR_MEB_EBUD_RAD:CALL_SNOW_ROUTINES',1,ZHOOK_HANDLE)
 !
 END SUBROUTINE CALL_SNOW_ROUTINES
 !================================================================  
-
+!
 END SUBROUTINE PREPS_FOR_MEB_EBUD_RAD

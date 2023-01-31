@@ -52,6 +52,7 @@
 !!    P. Samuelsson  10/2014  Introduced dummy variables in call to ISBA for MEB
 !     P. Tulet    06/2016 add RN leaves to call ISBA (MEGAN coupling)
 !!    A. Druel       02/2019  Transmit NPAR_VEG_IRR_USE for irrigation
+!!    B. Decharme    10/2021 instantaneous biomass respiration in kgCO2/m2/s
 !!
 !-------------------------------------------------------------------------------
 !
@@ -178,10 +179,10 @@ REAL, DIMENSION(SIZE(PPS)) :: ZWINDDIR            ! wind direction (=-1 in TEB)
 INTEGER, DIMENSION(SIZE(PPS))  :: KTAB_SYT        ! array of index containing
                                                   ! opposite direction for
                                                   ! Sytron  (=0 in TEB)
-REAL, DIMENSION(SIZE(PPS),GRO%NNBIOMASS) :: ZRESP_BIOMASS_INST       ! instantaneous biomass respiration (kgCO2/kgair m/s)
-REAL, DIMENSION(SIZE(PPS))   :: ZUSTAR
-REAL, DIMENSION(SIZE(PPS),1) :: ZP_DIR_SW ! spectral direct and diffuse irradiance used in snow cro 
-REAL, DIMENSION(SIZE(PPS),1) :: ZP_SCA_SW
+REAL, DIMENSION(SIZE(PPS),GRO%NNBIOMASS)     :: ZRESP_BIOMASS_INST       ! instantaneous biomass respiration (kgCO2/m²/s)
+REAL, DIMENSION(SIZE(PPS))                   :: ZUSTAR
+REAL, DIMENSION(SIZE(PPS),1)                 :: ZP_DIR_SW ! spectral direct and diffuse irradiance used in snow cro 
+REAL, DIMENSION(SIZE(PPS),1)                 :: ZP_SCA_SW
 REAL, DIMENSION(SIZE(PPS),GRO%NGROUND_LAYER) :: ZLE_HVEG     ! Latent heat profile from high veg
 !
 !  temperatures
@@ -203,9 +204,15 @@ REAL, DIMENSION(SIZE(PPS)) :: ZP_MEB_SCA_SW, ZPALPHAN, ZZ0G_WITHOUT_SNOW, &
                               ZZ0_MEBV, ZZ0H_MEBV, ZZ0EFF_MEBV, ZZ0_MEBN, &
                               ZZ0H_MEBN, ZZ0EFF_MEBN
 !
+! Dummy variables for Crocus
+REAL, DIMENSION(SIZE(PPS),0) :: ZBLOWSNW_FLUX      ! blowing snow fluxes
+REAL, DIMENSION(SIZE(PPS),0) :: ZBLOWSNW_CONC      ! blowing snow concentration
+!
+!
+!
 INTEGER                    :: ILU
 !
-LOGICAL :: GUPDATED, GALB
+LOGICAL :: GUPDATED
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
@@ -259,12 +266,10 @@ CALL TEB_IRRIG(TIR%LPAR_GR_IRRIG, PTSTEP, TPTIME%TDATE%MONTH, PTSUN,         &
 S%TTIME = TPTIME
 !
 GUPDATED=.FALSE.
-GALB = .FALSE. 
-IF (GRO%CPHOTO=='NIT'.OR.GRO%CPHOTO=='NCB') GALB = .TRUE.
 !
   CALL VEGETATION_UPDATE(DTCO, DTV, G%NDIM, GRO, K, P, PEK, 1, 1, 1,                         &
                          PTSTEP, S%TTIME, TOP%XCOVER, TOP%LCOVER,  .FALSE., .FALSE., .FALSE.,&
-                         'GNR', GALB, YSS, GUPDATED, OABSENT=(T%XGREENROOF==0.)  )
+                         'GNR', YSS, GUPDATED, OABSENT=(T%XGREENROOF==0.)  )
 !
 !*      9.2    Call ISBA for greenroofs
 !              ------------------------
@@ -291,7 +296,8 @@ ALLOCATE(GB%XIACAN(SIZE(PPS),SIZE(S%XABC)))
            ZZ0EFF_MEBV, ZZ0_MEBN, ZZ0H_MEBN, ZZ0EFF_MEBN, ZTDEEP_A, PCO2,      &
            K%XFFG(:), K%XFFV(:), ZEMISF, ZUSTAR, PAC_AGG, PHU_AGG,             &
            ZRESP_BIOMASS_INST, PDEEP_FLUX,PIRRIG, DTV%NPAR_VEG_IRR_USE,        &
-           KTAB_SYT, ZP_DIR_SW, ZP_SCA_SW, ZRNSHADE, ZRNSUNLIT)
+           KTAB_SYT, ZP_DIR_SW, ZP_SCA_SW, ZRNSHADE, ZRNSUNLIT,                &
+           ZBLOWSNW_FLUX, ZBLOWSNW_CONC                                        )
 !
 IF (PEK%TSNOW%SCHEME=='3-L' .OR. PEK%TSNOW%SCHEME=='CRO') PEK%TSNOW%TS(:) = DMK%XSNOWTEMP(:,1)
 !
@@ -304,8 +310,8 @@ IF (PEK%TSNOW%SCHEME=='3-L' .OR. PEK%TSNOW%SCHEME=='CRO') PEK%TSNOW%TS(:) = DMK%
 !
 !
 IF (GRO%CPHOTO=='NIT') THEN
-  CALL VEGETATION_EVOL(GRO, DTV, P, PEK, .FALSE., PTSTEP, TPTIME%TDATE%MONTH, TPTIME%TDATE%DAY,     &  ! OAGRIP = FALSE
-                       TPTIME%TIME, G%XLAT, PRHOA, PCO2, YSS, ZRESP_BIOMASS_INST, .FALSE.)             ! LBIOM_REAP        
+  CALL VEGETATION_EVOL(GRO, DTV, P, PEK, DEK, .FALSE., PTSTEP, TPTIME%TDATE%MONTH,                 &  ! OAGRIP = FALSE
+                       TPTIME%TDATE%DAY,TPTIME%TIME, G%XLAT, PCO2, YSS, ZRESP_BIOMASS_INST, .FALSE.)  ! LBIOM_REAP        
 END IF
 !
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -316,10 +322,10 @@ DEK%XRESP_AUTO(:) = 0.
 !
 IF (GRO%CPHOTO/='NON' .AND. GRO%CRESPSL/='NON' .AND. ANY(PEK%XLAI(:)/=XUNDEF)) THEN
   ! faire intervenir le type de vegetation du greenroof ? (CTYP_GR)
-  CALL CARBON_EVOL(GRO, K, P, PEK, DEK, PTSTEP, PRHOA, ZRESP_BIOMASS_INST  )
-  ! calculation of vegetation CO2 flux
-  ! Positive toward the atmosphere
-  PSFCO2(:) = DEK%XRESP_ECO(:) - DEK%XGPP(:)
+  ! Computation is now done in kgC/m2/s
+  CALL CARBON_EVOL(GRO, K, P, PEK, DEK, DMK, PTSTEP, ZRESP_BIOMASS_INST  )
+  ! calculation of vegetation CO2 flux (Positive toward the atmosphere)
+  PSFCO2(:) = ( DEK%XRESP_ECO(:) - DEK%XGPP(:) ) / PRHOA(:) ! kgC/m2/s -> kgC02/kgAir m/s
 END IF
 !
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -338,10 +344,6 @@ END IF
 !              -----------------------
 !
 WHERE (T%XGREENROOF/=0.)
-  !
-  ! energy balance
-  !
-  DK%XLE(:) = PEK%XLE(:)
   !
   ! Estimate of green area aerodynamic conductance recomputed from heat flux,
   ! surface (radiative) temp. and forcing air temperature (estimated at future time step)

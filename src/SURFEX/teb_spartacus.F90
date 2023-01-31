@@ -67,7 +67,7 @@ SUBROUTINE TEB_SPARTACUS (TOP, SPAOP, T, B, DMT, GDP, SB, TPN, PDIR_SW, PSCA_SW,
   USE MODI_INTERPOL_SBL
   USE MODI_WINDOW_SHADING
   !
-  USE RADSURF_BOUNDARY_CONDS_OUT, ONLY : BOUNDARY_CONDS_OUT_TYPE
+  USE RADSURF_BOUNDARY_CONDS_OUT, ONLY : BOUNDARY_CONDS_OUT_TYPE, ALLOCATE_BOUNDARY_CONDS_OUT
   USE RADSURF_CANOPY_FLUX, ONLY : CANOPY_FLUX_TYPE
   USE RADSURF_CANOPY_PROPERTIES, ONLY : CANOPY_PROPERTIES_TYPE
   USE RADSURF_CONFIG, ONLY : CONFIG_TYPE
@@ -190,6 +190,7 @@ SUBROUTINE TEB_SPARTACUS (TOP, SPAOP, T, B, DMT, GDP, SB, TPN, PDIR_SW, PSCA_SW,
   REAL :: ZDZ_SP
   REAL :: ZH_COUNT
   REAL :: ZALB_HVEG
+  REAL :: ZHEIGHT_ELEMENT1, ZHEIGHT_ELEMENT2
   !
   INTEGER, PARAMETER :: NMAX_LAYER = 50
   !
@@ -197,7 +198,8 @@ SUBROUTINE TEB_SPARTACUS (TOP, SPAOP, T, B, DMT, GDP, SB, TPN, PDIR_SW, PSCA_SW,
   INTEGER, DIMENSION(SIZE(SB%XZ,1)) :: ISTART_LAY
   !
   REAL, DIMENSION(SIZE(SB%XZ,1),NMAX_LAYER) :: ZDZ_LAY
-  REAL, DIMENSION(SIZE(SB%XZ,1),NMAX_LAYER) :: ZHMEAN_LAYER  
+  REAL, DIMENSION(SIZE(SB%XZ,1),NMAX_LAYER) :: ZHMEAN_LAYER
+  REAL, DIMENSION(SIZE(SB%XZ,1)) :: ZH_TREE
   !
   REAL(KIND=JPRB) :: ZHOOK_HANDLE
   !
@@ -212,7 +214,7 @@ SUBROUTINE TEB_SPARTACUS (TOP, SPAOP, T, B, DMT, GDP, SB, TPN, PDIR_SW, PSCA_SW,
   ! FIXME:
   ! The height of the SPARTACUS layers is hardcoded here at the moment
   !
-  ZDZ_SP = 10.0
+  ZDZ_SP = 5.0
   !
   CONFIG%DO_SW = SPAOP%LDO_SW 
   CONFIG%DO_LW = SPAOP%LDO_LW
@@ -243,7 +245,16 @@ SUBROUTINE TEB_SPARTACUS (TOP, SPAOP, T, B, DMT, GDP, SB, TPN, PDIR_SW, PSCA_SW,
   ZDZ_LAY(:,:)  = -9999.0
   ZHMEAN_LAYER(:,:) = XUNDEF
   !
-  ! The layer discretisation takes into account building and tree height
+  IF (TOP%CURBTREE/="NONE") THEN
+     ZH_TREE(:) = GDP%XH_TREE(:)
+  ELSE
+     ZH_TREE(:) = 0.0
+  ENDIF
+  !
+  ! The layer discretisation takes into account the building and tree height
+  ! Depending on whether trees or buildings are lower, first layers
+  ! up to the building/tree height are created and are continued
+  ! up to the higher of the two elements.
   !
   DO JI = 1, NCOL
      !
@@ -252,26 +263,27 @@ SUBROUTINE TEB_SPARTACUS (TOP, SPAOP, T, B, DMT, GDP, SB, TPN, PDIR_SW, PSCA_SW,
      !
      ZH_COUNT=0.0
      !
-     ! In URBTREE case: create layers up to the tree height
+     ZHEIGHT_ELEMENT1 = MIN(ZH_TREE(JI),T%XBLD_HEIGHT(JI))
+     ZHEIGHT_ELEMENT2 = MAX(ZH_TREE(JI),T%XBLD_HEIGHT(JI))
      !
-     IF (TOP%CURBTREE/="NONE") THEN
-        !
-        ! FIXME: At the moment no trees higher than buildings
-        !
-        IF (GDP%XH_TREE(JI).GT.T%XBLD_HEIGHT(JI)) THEN
-           WRITE(1012,*) "GDP%XH_TREE(JI)   ",GDP%XH_TREE(JI)
-           WRITE(1012,*) "T%XBLD_HEIGHT(JI) ",T%XBLD_HEIGHT(JI)
-           CALL FLUSH(1012)
-           STOP ("Trees higher than the buildings are not foreseen at the moment")
-        ENDIF
+     IF ((ZHEIGHT_ELEMENT1.LT.XSURF_EPSILON).AND.(ZHEIGHT_ELEMENT2.LT.XSURF_EPSILON)) THEN
+        WRITE(1012,*) "ZHEIGHT_ELEMENT1 ",ZHEIGHT_ELEMENT1
+        WRITE(1012,*) "ZHEIGHT_ELEMENT2 ",ZHEIGHT_ELEMENT2
+        CALL FLUSH(1012)
+        CALL ABOR1_SFX ("TEB-SPARTACUS: Tree and building height cannot be both 0.0")
+     ENDIF        
+     !
+     ! Create layers up to the first element height
+     !
+     IF (ZHEIGHT_ELEMENT1.GT.XSURF_EPSILON) THEN
         !
         DO JLAYER = 1, NMAX_LAYER
            !
-           IF ( GDP%XH_TREE(JI).LE.(ZH_COUNT + ZDZ_SP) ) THEN
+           IF ( ZHEIGHT_ELEMENT1.LE.(ZH_COUNT + ZDZ_SP) ) THEN
               ICOUNT_LAY(JI) = ICOUNT_LAY(JI) + 1
-              ZDZ_LAY(JI,ICOUNT_LAY(JI)) = GDP%XH_TREE(JI)-ZH_COUNT
-              ZHMEAN_LAYER(JI,ICOUNT_LAY(JI)) = ZH_COUNT + 0.5 * ( GDP%XH_TREE(JI)-ZH_COUNT )
-              ZH_COUNT = ZH_COUNT + ( GDP%XH_TREE(JI)-ZH_COUNT )
+              ZDZ_LAY(JI,ICOUNT_LAY(JI)) = ZHEIGHT_ELEMENT1-ZH_COUNT
+              ZHMEAN_LAYER(JI,ICOUNT_LAY(JI)) = ZH_COUNT + 0.5 * ( ZHEIGHT_ELEMENT1-ZH_COUNT )
+              ZH_COUNT = ZH_COUNT + ( ZHEIGHT_ELEMENT1-ZH_COUNT )
               EXIT
            ELSE
               ICOUNT_LAY(JI) = ICOUNT_LAY(JI) + 1
@@ -280,49 +292,53 @@ SUBROUTINE TEB_SPARTACUS (TOP, SPAOP, T, B, DMT, GDP, SB, TPN, PDIR_SW, PSCA_SW,
               ZH_COUNT = ZH_COUNT + ZDZ_SP
            ENDIF
            !
-           IF (JLAYER.EQ.NMAX_LAYER) STOP ("Tree too high to be represented")
+           IF (JLAYER.EQ.NMAX_LAYER) CALL ABOR1_SFX ("Element 1 too high to be represented")
            !
         ENDDO
         !
-        IF (GDP%XH_TREE(JI).NE.ZH_COUNT) THEN
-           WRITE(1012,*) "                "
-           WRITE(1012,*) "GDP%XH_TREE(JI) ",GDP%XH_TREE(JI)
-           WRITE(1012,*) "ZH_COUNT        ",ZH_COUNT
+        IF (ZHEIGHT_ELEMENT1.NE.ZH_COUNT) THEN
+           WRITE(1012,*) "                 "
+           WRITE(1012,*) "ZHEIGHT_ELEMENT1 ",ZHEIGHT_ELEMENT1
+           WRITE(1012,*) "ZH_COUNT         ",ZH_COUNT
            CALL FLUSH(1012)
-           STOP ("Tree height not well captured by SPARTACUS layers")
+           CALL ABOR1_SFX ("First element in city is not well captured by SPARTACUS layers")
         ENDIF
         !
-     ENDIF
+     END IF 
      !
-     ! Create layers up to the mean building height
+     ! Create layers up to the second element height
      !
-     DO JLAYER = 1, NMAX_LAYER
+     IF (ZHEIGHT_ELEMENT2.GT.(ZHEIGHT_ELEMENT1+XSURF_EPSILON)) THEN
         !
-        IF ( T%XBLD_HEIGHT(JI).LE.(ZH_COUNT + 1.0e-6) ) EXIT
+        DO JLAYER = 1, NMAX_LAYER
+           !
+           IF ( ZHEIGHT_ELEMENT2.LE.(ZH_COUNT + 1.0e-6) ) EXIT
+           !
+           IF ( ZHEIGHT_ELEMENT2.LE.(ZH_COUNT + ZDZ_SP) ) THEN
+              ICOUNT_LAY(JI) = ICOUNT_LAY(JI) + 1
+              ZDZ_LAY(JI,ICOUNT_LAY(JI)) = ZHEIGHT_ELEMENT2-ZH_COUNT
+              ZHMEAN_LAYER(JI,ICOUNT_LAY(JI)) = ZH_COUNT + 0.5 * ( ZHEIGHT_ELEMENT2 - ZH_COUNT )
+              ZH_COUNT = ZH_COUNT + (ZHEIGHT_ELEMENT2-ZH_COUNT)
+              EXIT
+           ELSE
+              ICOUNT_LAY(JI) = ICOUNT_LAY(JI) + 1
+              ZDZ_LAY(JI,ICOUNT_LAY(JI)) = ZDZ_SP
+              ZHMEAN_LAYER(JI,ICOUNT_LAY(JI)) = ZH_COUNT + 0.5 * ZDZ_SP
+              ZH_COUNT = ZH_COUNT + ZDZ_SP
+           ENDIF
+           !
+           IF (JLAYER.EQ.NMAX_LAYER) CALL ABOR1_SFX ("Element 2 too high to be represented")
+           !
+        ENDDO
         !
-        IF ( T%XBLD_HEIGHT(JI).LE.(ZH_COUNT + ZDZ_SP) ) THEN
-           ICOUNT_LAY(JI) = ICOUNT_LAY(JI) + 1
-           ZDZ_LAY(JI,ICOUNT_LAY(JI)) = T%XBLD_HEIGHT(JI)-ZH_COUNT
-           ZHMEAN_LAYER(JI,ICOUNT_LAY(JI)) = ZH_COUNT + 0.5 * ( T%XBLD_HEIGHT(JI) - ZH_COUNT )
-           ZH_COUNT = ZH_COUNT + (T%XBLD_HEIGHT(JI)-ZH_COUNT)
-           EXIT
-        ELSE
-           ICOUNT_LAY(JI) = ICOUNT_LAY(JI) + 1
-           ZDZ_LAY(JI,ICOUNT_LAY(JI)) = ZDZ_SP
-           ZHMEAN_LAYER(JI,ICOUNT_LAY(JI)) = ZH_COUNT + 0.5 * ZDZ_SP
-           ZH_COUNT = ZH_COUNT + ZDZ_SP
+        IF ( ABS(ZHEIGHT_ELEMENT2-ZH_COUNT).GT.1.0e-5 ) THEN
+           WRITE(1012,*) "                  "
+           WRITE(1012,*) "ZHEIGHT_ELEMENT2  ",ZHEIGHT_ELEMENT2
+           WRITE(1012,*) "ZH_COUNT          ",ZH_COUNT
+           CALL FLUSH(1012)
+           CALL ABOR1_SFX ("Element 2 too high to be captured by SPARTACUS layers")
         ENDIF
         !
-        IF (JLAYER.EQ.NMAX_LAYER) STOP ("Buildings too high to be represented")
-        !
-     ENDDO
-     !
-     IF ( ABS(T%XBLD_HEIGHT(JI)-ZH_COUNT).GT.1.0e-5 ) THEN
-        WRITE(1012,*) "                  "
-        WRITE(1012,*) "T%XBLD_HEIGHT(JI) ",T%XBLD_HEIGHT(JI)
-        WRITE(1012,*) "ZH_COUNT          ",ZH_COUNT
-        CALL FLUSH(1012)
-        STOP ("Building height not well captured by SPARTACUS layers")
      ENDIF
      !
   ENDDO
@@ -341,7 +357,7 @@ SUBROUTINE TEB_SPARTACUS (TOP, SPAOP, T, B, DMT, GDP, SB, TPN, PDIR_SW, PSCA_SW,
      WHERE (T%XFRAC_HVEG(:).GT.CONFIG%MIN_VEGETATION_FRACTION)
         CANOPY_PROPS%I_REPRESENTATION(:) = 3
      ELSEWHERE
-        CANOPY_PROPS%I_REPRESENTATION(:) = 2        
+        CANOPY_PROPS%I_REPRESENTATION(:) = 2
      ENDWHERE
   ENDIF
   !
@@ -360,14 +376,6 @@ SUBROUTINE TEB_SPARTACUS (TOP, SPAOP, T, B, DMT, GDP, SB, TPN, PDIR_SW, PSCA_SW,
   CANOPY_PROPS%ISTARTLAY(:) = ISTART_LAY(:)
   CANOPY_PROPS%NLAY(:)      = ICOUNT_LAY(:)
   !
-  !WRITE(1012,*) " "
-  !WRITE(1012,*) "CANOPY_PROPS%NLAY : ",CANOPY_PROPS%NLAY
-  !CALL FLUSH(1012)
-  !
-  !WRITE(1012,*) " "
-  !WRITE(1012,*) "CANOPY_PROPS%ISTARTLAY : ",CANOPY_PROPS%ISTARTLAY
-  !CALL FLUSH(1012)
-  !
   ! Layer thickness [m] (ntotlay)
   !
   DO JI = 1, NCOL
@@ -375,17 +383,9 @@ SUBROUTINE TEB_SPARTACUS (TOP, SPAOP, T, B, DMT, GDP, SB, TPN, PDIR_SW, PSCA_SW,
           (CANOPY_PROPS%ISTARTLAY(JI)+CANOPY_PROPS%NLAY(JI)-1)) = ZDZ_LAY(JI,1:ICOUNT_LAY(JI))
   ENDDO
   !
-  !WRITE(1012,*) " "
-  !WRITE(1012,*) "CANOPY_PROPS%DZ : ",CANOPY_PROPS%DZ
-  !CALL FLUSH(1012)
-  !
   ! Cosine of solar zenith angle (ncol)
   !
   CANOPY_PROPS%COS_SZA(:) = COS(PZENITH)
-  !
-  !WRITE(1012,*) " "
-  !WRITE(1012,*) "CANOPY_PROPS%COS_SZA : ",CANOPY_PROPS%COS_SZA
-  !CALL FLUSH(1012)
   !
   ! Skin temperature of the ground, aggregated for low vegetation, snow free and snow covered roads [K] (ncol)
   !
@@ -402,11 +402,6 @@ SUBROUTINE TEB_SPARTACUS (TOP, SPAOP, T, B, DMT, GDP, SB, TPN, PDIR_SW, PSCA_SW,
   END WHERE
   !
   CANOPY_PROPS%GROUND_TEMPERATURE(:) = ZTSUR_AGG(:)
-  !
-  !WRITE(1012,*) " "
-  !WRITE(1012,*) "MINVAL(CANOPY_PROPS%GROUND_TEMPERATURE) : ",MINVAL(CANOPY_PROPS%GROUND_TEMPERATURE)
-  !WRITE(1012,*) "MAXVAL(CANOPY_PROPS%GROUND_TEMPERATURE) : ",MAXVAL(CANOPY_PROPS%GROUND_TEMPERATURE)  
-  !CALL FLUSH(1012)
   !
   ! Skin temperature of the roofs, aggregated for snow free and snow covered roofs, green roofs, and solar panels [K] (ntotlay)
   ! FIXME: Not discretised in the vertical direction at the moment
@@ -431,11 +426,6 @@ SUBROUTINE TEB_SPARTACUS (TOP, SPAOP, T, B, DMT, GDP, SB, TPN, PDIR_SW, PSCA_SW,
           (CANOPY_PROPS%ISTARTLAY(JI)+CANOPY_PROPS%NLAY(JI)-1)) = ZTSUR_AGG(JI)
   ENDDO
   !
-  !WRITE(1012,*) " "
-  !WRITE(1012,*) "MINVAL(CANOPY_PROPS%ROOF_TEMPERATURE) : ",MINVAL(CANOPY_PROPS%ROOF_TEMPERATURE)
-  !WRITE(1012,*) "MAXVAL(CANOPY_PROPS%ROOF_TEMPERATURE) : ",MAXVAL(CANOPY_PROPS%ROOF_TEMPERATURE)  
-  !CALL FLUSH(1012)
-  !
   ! Skin temperature of the walls aggregated for WALL A, B and the windows [K] (ntotlay)
   ! FIXME: Not discretised in the vertical direction at the moment
   !
@@ -451,11 +441,6 @@ SUBROUTINE TEB_SPARTACUS (TOP, SPAOP, T, B, DMT, GDP, SB, TPN, PDIR_SW, PSCA_SW,
           (CANOPY_PROPS%ISTARTLAY(JI)+CANOPY_PROPS%NLAY(JI)-1)) = ZTSUR_AGG(JI)
   ENDDO
   !
-  !WRITE(1012,*) " "
-  !WRITE(1012,*) "MINVAL(CANOPY_PROPS%WALL_TEMPERATURE) : ",MINVAL(CANOPY_PROPS%WALL_TEMPERATURE)
-  !WRITE(1012,*) "MAXVAL(CANOPY_PROPS%WALL_TEMPERATURE) : ",MAXVAL(CANOPY_PROPS%WALL_TEMPERATURE)  
-  !CALL FLUSH(1012)
-  !
   ! Air temperature in canopy, separately specifying the temperature of the air
   ! in the clear and vegetated part of a layer, and the leaves [K] (ntotlay)
   ! FIXME: At the moment "veg" and "veg_air" not different from "air"
@@ -467,11 +452,6 @@ SUBROUTINE TEB_SPARTACUS (TOP, SPAOP, T, B, DMT, GDP, SB, TPN, PDIR_SW, PSCA_SW,
      ENDDO
   ENDDO
   !
-  !WRITE(1012,*) " "
-  !WRITE(1012,*) "MINVAL(CANOPY_PROPS%CLEAR_AIR_TEMPERATURE) : ",MINVAL(CANOPY_PROPS%CLEAR_AIR_TEMPERATURE)
-  !WRITE(1012,*) "MAXVAL(CANOPY_PROPS%CLEAR_AIR_TEMPERATURE) : ",MAXVAL(CANOPY_PROPS%CLEAR_AIR_TEMPERATURE)
-  !CALL FLUSH(1012)
-  !
   IF (TOP%CURBTREE/="NONE") THEN
      !
      DO JI = 1, NCOL
@@ -479,45 +459,35 @@ SUBROUTINE TEB_SPARTACUS (TOP, SPAOP, T, B, DMT, GDP, SB, TPN, PDIR_SW, PSCA_SW,
           (CANOPY_PROPS%ISTARTLAY(JI)+CANOPY_PROPS%NLAY(JI)-1)) = PTHVEG(JI)
      ENDDO
      !
+     WRITE(1012,*) "CANOPY_PROPS%VEG_TEMPERATURE ",CANOPY_PROPS%VEG_TEMPERATURE
+     CALL FLUSH(1012)
+     !
      CANOPY_PROPS%VEG_AIR_TEMPERATURE(:) = CANOPY_PROPS%CLEAR_AIR_TEMPERATURE(:)
-     !
-     !WRITE(1012,*) " "
-     !WRITE(1012,*) "MINVAL(CANOPY_PROPS%VEG_TEMPERATURE) : ",MINVAL(CANOPY_PROPS%VEG_TEMPERATURE)
-     !WRITE(1012,*) "MAXVAL(CANOPY_PROPS%VEG_TEMPERATURE) : ",MAXVAL(CANOPY_PROPS%VEG_TEMPERATURE)
-     !CALL FLUSH(1012)
-     !
-     !WRITE(1012,*) " "
-     !WRITE(1012,*) "MINVAL(CANOPY_PROPS%VEG_AIR_TEMPERATURE) : ",MINVAL(CANOPY_PROPS%VEG_AIR_TEMPERATURE)
-     !WRITE(1012,*) "MAXVAL(CANOPY_PROPS%VEG_AIR_TEMPERATURE) : ",MAXVAL(CANOPY_PROPS%VEG_AIR_TEMPERATURE)
-     !CALL FLUSH(1012)
      !
   ENDIF
   !
   ! Fractional coverage of buildings (ntotlay)
   ! FIXME: At the moment not discretised in the vertical direction
-  ! FIXME: At the momen no partly occupied layer
   !
-  DO JI = 1, NCOL  
+  DO JI = 1, NCOL
      DO JLAYER = 1, CANOPY_PROPS%NLAY(JI)
-        CANOPY_PROPS%BUILDING_FRACTION(CANOPY_PROPS%ISTARTLAY(JI)+JLAYER-1) = T%XBLD(JI)
+        IF (ZHMEAN_LAYER(JI,JLAYER).LT.T%XBLD_HEIGHT(JI)) THEN
+           CANOPY_PROPS%BUILDING_FRACTION(CANOPY_PROPS%ISTARTLAY(JI)+JLAYER-1) = T%XBLD(JI)
+        ELSE
+           CANOPY_PROPS%BUILDING_FRACTION(CANOPY_PROPS%ISTARTLAY(JI)+JLAYER-1) = 0.0
+        ENDIF
      ENDDO
   ENDDO
   !
-  !WRITE(1012,*) " "
-  !WRITE(1012,*) "MINVAL(CANOPY_PROPS%BUILDING_FRACTION) : ",MINVAL(CANOPY_PROPS%BUILDING_FRACTION)
-  !WRITE(1012,*) "MAXVAL(CANOPY_PROPS%BUILDING_FRACTION) : ",MAXVAL(CANOPY_PROPS%BUILDING_FRACTION)
-  !CALL FLUSH(1012)
-  !
   ! Fractional coverage of urban trees
   ! FIXME: At the moment not discretised in the vertical direction
-  ! FIXME: At the moment last grid point not discretised
   !
   IF (TOP%CURBTREE/="NONE") THEN
      !
      DO JI = 1, NCOL
         !
         IF ( (CANOPY_PROPS%I_REPRESENTATION(JI).EQ.3).AND.(T%XFRAC_HVEG(JI).LT.CONFIG%MIN_VEGETATION_FRACTION)) THEN
-           STOP ("TEB_SPARTACUS: fraction of high vegetation is below, but vegetated urban shall be done")
+           CALL ABOR1_SFX ("TEB_SPARTACUS: fraction of high vegetation is below, but vegetated urban shall be done")
         ENDIF
         !
         DO JLAYER = 1, CANOPY_PROPS%NLAY(JI)
@@ -530,11 +500,6 @@ SUBROUTINE TEB_SPARTACUS (TOP, SPAOP, T, B, DMT, GDP, SB, TPN, PDIR_SW, PSCA_SW,
         !
      ENDDO
      !
-     !WRITE(1012,*) " "
-     !WRITE(1012,*) "MINVAL(CANOPY_PROPS%VEG_FRACTION) : ",MINVAL(CANOPY_PROPS%VEG_FRACTION)
-     !WRITE(1012,*) "MAXVAL(CANOPY_PROPS%VEG_FRACTION) : ",MAXVAL(CANOPY_PROPS%VEG_FRACTION)    
-     !CALL FLUSH(1012)
-     !
   ENDIF
   !
   ! Horizontal scale of buildings [m] (ntotlay)
@@ -542,15 +507,14 @@ SUBROUTINE TEB_SPARTACUS (TOP, SPAOP, T, B, DMT, GDP, SB, TPN, PDIR_SW, PSCA_SW,
   !
   DO JI = 1, NCOL  
      DO JLAYER = 1, CANOPY_PROPS%NLAY(JI)
-        CANOPY_PROPS%BUILDING_SCALE(CANOPY_PROPS%ISTARTLAY(JI)+JLAYER-1) = &
+        IF (ZHMEAN_LAYER(JI,JLAYER).LT.T%XBLD_HEIGHT(JI)) THEN
+           CANOPY_PROPS%BUILDING_SCALE(CANOPY_PROPS%ISTARTLAY(JI)+JLAYER-1) = &
                 4.0 * T%XBLD(JI) * T%XBLD_HEIGHT(JI) / T%XWALL_O_HOR(JI)
+        ELSE
+           CANOPY_PROPS%BUILDING_SCALE(CANOPY_PROPS%ISTARTLAY(JI)+JLAYER-1) = 0.0
+        ENDIF
      ENDDO
   ENDDO
-  !
-  !WRITE(1012,*) "                              "
-  !WRITE(1012,*) "MINVAL(CANOPY_PROPS%BUILDING_SCALE) : ",MINVAL(CANOPY_PROPS%BUILDING_SCALE)
-  !WRITE(1012,*) "MAXVAL(CANOPY_PROPS%BUILDING_SCALE) : ",MAXVAL(CANOPY_PROPS%BUILDING_SCALE) 
-  !CALL FLUSH(1012)
   !
   ! Horizontal scale of urban vegetation [m] (ntotlay)
   ! FIXME: At the moment not discretised in the vertical direction
@@ -563,15 +527,10 @@ SUBROUTINE TEB_SPARTACUS (TOP, SPAOP, T, B, DMT, GDP, SB, TPN, PDIR_SW, PSCA_SW,
            IF (ZHMEAN_LAYER(JI,JLAYER).LT.GDP%XH_TREE(JI)) THEN
               CANOPY_PROPS%VEG_SCALE(CANOPY_PROPS%ISTARTLAY(JI)+JLAYER-1) = 5.0
            ELSE
-              CANOPY_PROPS%VEG_SCALE(CANOPY_PROPS%ISTARTLAY(JI)+JLAYER-1) = 0.0
+              CANOPY_PROPS%VEG_SCALE(CANOPY_PROPS%ISTARTLAY(JI)+JLAYER-1) = 5.0
            ENDIF
         ENDDO
      ENDDO
-     !
-     !WRITE(1012,*) " "
-     !WRITE(1012,*) "MINVAL(CANOPY_PROPS%VEG_SCALE) : ",MINVAL(CANOPY_PROPS%VEG_SCALE)
-     !WRITE(1012,*) "MAXVAL(CANOPY_PROPS%VEG_SCALE) : ",MAXVAL(CANOPY_PROPS%VEG_SCALE)    
-     !CALL FLUSH(1012)
      !
   ENDIF
   !
@@ -583,12 +542,10 @@ SUBROUTINE TEB_SPARTACUS (TOP, SPAOP, T, B, DMT, GDP, SB, TPN, PDIR_SW, PSCA_SW,
      !
      DO JI=1, NCOL
         !
-        ! FIXME: A minimum value of the LAI is imposed here
-        !
         IF (T%XURBTREE(JI).GT.0.) THEN
            ZLAD_MEAN = MAX(1.0e-6,PLAI_HVEG(JI)) / GDP%XH_TREE(JI)
         ELSE
-           ZLAD_MEAN = 0.0
+           ZLAD_MEAN = 1.0E-6
         ENDIF
         !
         DO JLAYER = 1, CANOPY_PROPS%NLAY(JI)
@@ -602,11 +559,6 @@ SUBROUTINE TEB_SPARTACUS (TOP, SPAOP, T, B, DMT, GDP, SB, TPN, PDIR_SW, PSCA_SW,
         ENDDO
         !
      ENDDO
-     !
-     !WRITE(1012,*) " "
-     !WRITE(1012,*) "VEG_EXT "
-     !WRITE(1012,*) CANOPY_PROPS%VEG_EXT
-     !CALL FLUSH(1012)
      !
   ENDIF
   !
@@ -622,13 +574,19 @@ SUBROUTINE TEB_SPARTACUS (TOP, SPAOP, T, B, DMT, GDP, SB, TPN, PDIR_SW, PSCA_SW,
      ENDIF
   ENDIF
   !
-  ! Fraction of vegetation edge in contact with walls rather than air (ntotlay)
-  ! FIXME: hardcoded to 0.0 here, but a high spatial variability can be expected.
+  ! Fraction of building wall in contact with vegetation (ntotlay)
+  ! Its default value is the fraction of the non-building area that is vegetation
+  ! Calculated assuming a random positioning of the trees in the urban canyon.
+  ! veg_contact_fraction = veg_fraction / (1-building_fraction).
   !
   IF (TOP%CURBTREE/='NONE') THEN
-     DO JI = 1, NCOL
-        CANOPY_PROPS%VEG_CONTACT_FRACTION(CANOPY_PROPS%ISTARTLAY(JI):    &
-             (CANOPY_PROPS%ISTARTLAY(JI)+CANOPY_PROPS%NLAY(JI)-1)) = 0.0
+     DO JI = 1, NCOL 
+        CANOPY_PROPS%VEG_CONTACT_FRACTION(CANOPY_PROPS%ISTARTLAY(JI):     &
+             (CANOPY_PROPS%ISTARTLAY(JI)+CANOPY_PROPS%NLAY(JI)-1)) =      &
+        MIN(1.0, CANOPY_PROPS%VEG_FRACTION(CANOPY_PROPS%ISTARTLAY(JI):    &
+        (CANOPY_PROPS%ISTARTLAY(JI)+CANOPY_PROPS%NLAY(JI)-1)) /           &
+        (1.0 - CANOPY_PROPS%BUILDING_FRACTION(CANOPY_PROPS%ISTARTLAY(JI): &
+        (CANOPY_PROPS%ISTARTLAY(JI)+CANOPY_PROPS%NLAY(JI)-1))))
      ENDDO
   ENDIF
   !
@@ -642,27 +600,20 @@ SUBROUTINE TEB_SPARTACUS (TOP, SPAOP, T, B, DMT, GDP, SB, TPN, PDIR_SW, PSCA_SW,
   DO JSW = 1, CONFIG%NSW
      DO JI = 1, NCOL
         SW_SPECTRAL_PROPS%AIR_EXT(JSW,CANOPY_PROPS%ISTARTLAY(JI): &
-             (CANOPY_PROPS%ISTARTLAY(JI)+CANOPY_PROPS%NLAY(JI)-1)) = 0.0
+             (CANOPY_PROPS%ISTARTLAY(JI)+CANOPY_PROPS%NLAY(JI)-1)) = 1.0E-6
      ENDDO
   ENDDO
   !
-  !WRITE(1012,*) " "
-  !WRITE(1012,*) "SW_SPECTRAL_PROPS%AIR_EXT : ",SW_SPECTRAL_PROPS%AIR_EXT
-  !CALL FLUSH(1012)
-  !
   ! Single scattering albedo of air (NSW,NTOTLAY)
-  ! FIXME: Set to 0.0 here since no gas optics scheme anyway.
+  ! FIXME: Set to 1.0E-6 here since no gas optics scheme, but not
+  !        set to 0.0 to avoid completely empty layers
   !
   DO JSW = 1, CONFIG%NSW
      DO JI = 1, NCOL
         SW_SPECTRAL_PROPS%AIR_SSA(JSW,CANOPY_PROPS%ISTARTLAY(JI):  &
-             (CANOPY_PROPS%ISTARTLAY(JI)+CANOPY_PROPS%NLAY(JI)-1)) = 0.0
+             (CANOPY_PROPS%ISTARTLAY(JI)+CANOPY_PROPS%NLAY(JI)-1)) = 1.0E-6
      ENDDO
   ENDDO
-  !
-  !WRITE(1012,*) " "
-  !WRITE(1012,*) "SW_SPECTRAL_PROPS%AIR_SSA : ",SW_SPECTRAL_PROPS%AIR_SSA
-  !CALL FLUSH(1012)
   !
   ! Single scattering albedo of urban trees (NSW,NTOTLAY)
   ! FIXME: Set to the albedo of urban trees
@@ -678,14 +629,10 @@ SUBROUTINE TEB_SPARTACUS (TOP, SPAOP, T, B, DMT, GDP, SB, TPN, PDIR_SW, PSCA_SW,
         DO JI = 1, NCOL
            IF (CANOPY_PROPS%I_REPRESENTATION(JI).EQ.3) THEN
               SW_SPECTRAL_PROPS%VEG_SSA(JSW,CANOPY_PROPS%ISTARTLAY(JI):  &
-                   (CANOPY_PROPS%ISTARTLAY(JI)+CANOPY_PROPS%NLAY(JI)-1)) = ZALB_HVEG ! PALB_HVEG(JI)
+                   (CANOPY_PROPS%ISTARTLAY(JI)+CANOPY_PROPS%NLAY(JI)-1)) = ZALB_HVEG
            ENDIF
         ENDDO
      ENDDO
-     !
-     !WRITE(1012,*) " "
-     !WRITE(1012,*) "SW_SPECTRAL_PROPS%VEG_SSA : ",SW_SPECTRAL_PROPS%VEG_SSA
-     !CALL FLUSH(1012)
      !
   ENDIF
   !
@@ -703,10 +650,6 @@ SUBROUTINE TEB_SPARTACUS (TOP, SPAOP, T, B, DMT, GDP, SB, TPN, PDIR_SW, PSCA_SW,
      SW_SPECTRAL_PROPS%GROUND_ALBEDO(JSW,:) = ZALB_AGG_GROUND(:)
   ENDDO
   !
-  !WRITE(1012,*) " "
-  !WRITE(1012,*) "SW_SPECTRAL_PROPS%GROUND_ALBEDO : ",SW_SPECTRAL_PROPS%GROUND_ALBEDO
-  !CALL FLUSH(1012)
-  !
   ! Roof albedo as composite of snow covered and snow free roofs, green roofs, and solar panels (NSW,NTOTLAY)
   ! FIXME: Not considering the vertical dependency
   ! FIXME: Not considering the spectral dependency
@@ -722,10 +665,6 @@ SUBROUTINE TEB_SPARTACUS (TOP, SPAOP, T, B, DMT, GDP, SB, TPN, PDIR_SW, PSCA_SW,
              (CANOPY_PROPS%ISTARTLAY(JI)+CANOPY_PROPS%NLAY(JI)-1)) =ZALB_AGG_ROOF(JI)
      ENDDO
   ENDDO
-  !
-  !WRITE(1012,*) " "
-  !WRITE(1012,*) "SW_SPECTRAL_PROPS%ROOF_ALBEDO : ",SW_SPECTRAL_PROPS%ROOF_ALBEDO
-  !CALL FLUSH(1012)
   !
   ! Wall albedo as composite between walls and windows (NSW,NTOTLAY)
   ! FIXME: Not considering vertical dependency
@@ -821,19 +760,10 @@ SUBROUTINE TEB_SPARTACUS (TOP, SPAOP, T, B, DMT, GDP, SB, TPN, PDIR_SW, PSCA_SW,
      !
      SW_SPECTRAL_PROPS%GROUND_ALBEDO_DIR(:,:)=SW_SPECTRAL_PROPS%GROUND_ALBEDO(:,:)
      !
-     !WRITE(1012,*) " "
-     !WRITE(1012,*) "MINVAL(SW_SPECTRAL_PROPS%GROUND_ALBEDO_DIR) : ",MINVAL(SW_SPECTRAL_PROPS%GROUND_ALBEDO_DIR)
-     !WRITE(1012,*) "MAXVAL(SW_SPECTRAL_PROPS%GROUND_ALBEDO_DIR) : ",MAXVAL(SW_SPECTRAL_PROPS%GROUND_ALBEDO_DIR)
-     !CALL FLUSH(1012) 
-     !
      ! Roof albedo, direct beam (CONFIG%NSW,NTOTLAY)
      ! FIXME: Set equal to roof albedo
      !
      SW_SPECTRAL_PROPS%ROOF_ALBEDO_DIR(:,:)=SW_SPECTRAL_PROPS%ROOF_ALBEDO(:,:)
-     !
-     !WRITE(1012,*) " "
-     !WRITE(1012,*) "SW_SPECTRAL_PROPS%ROOF_ALBEDO_DIR : ",SW_SPECTRAL_PROPS%ROOF_ALBEDO_DIR
-     !CALL FLUSH(1012)
      !
   ENDIF
   !
@@ -841,10 +771,6 @@ SUBROUTINE TEB_SPARTACUS (TOP, SPAOP, T, B, DMT, GDP, SB, TPN, PDIR_SW, PSCA_SW,
   ! FIXME: Hardcoded to 0.0, set as a function of glazing ratio
   !
   SW_SPECTRAL_PROPS%WALL_SPECULAR_FRAC(:,:)=0.0
-  !
-  !WRITE(1012,*) " "
-  !WRITE(1012,*) "SW_SPECTRAL_PROPS%WALL_SPECULAR_FRAC : ",SW_SPECTRAL_PROPS%WALL_SPECULAR_FRAC
-  !CALL FLUSH(1012)
   !
   ! Initialise the longwave spectral properties
   ! FIXME: This call is not like in the documentation
@@ -855,23 +781,16 @@ SUBROUTINE TEB_SPARTACUS (TOP, SPAOP, T, B, DMT, GDP, SB, TPN, PDIR_SW, PSCA_SW,
   ! FIXME: Set to 0.0 since no gas optics scheme anyway
   !
   DO JLW = 1, CONFIG%NLW
-     LW_SPECTRAL_PROPS%AIR_EXT(JLW,:) = 0.0
+     LW_SPECTRAL_PROPS%AIR_EXT(JLW,:) = 1.0E-6
   ENDDO
-  !
-  !WRITE(1012,*) " "
-  !WRITE(1012,*) "LW_SPECTRAL_PROPS%AIR_EXT : ",LW_SPECTRAL_PROPS%AIR_EXT
-  !CALL FLUSH(1012)
   !
   ! Air single scattering albedo (NLW,NTOTLAY)
-  ! FIXME: Set to 0.0 since no gas optics scheme
+  ! FIXME: Set to 1.0E-6 since no gas optics scheme, but not to 0.0 to avoid
+  !        completely empty layers.
   !
   DO JLW = 1, CONFIG%NLW
-     LW_SPECTRAL_PROPS%AIR_SSA(JLW,:) = 0.0
+     LW_SPECTRAL_PROPS%AIR_SSA(JLW,:) = 1.0E-6
   ENDDO
-  !
-  !WRITE(1012,*) " "
-  !WRITE(1012,*) "LW_SPECTRAL_PROPS%AIR_SSA : ",LW_SPECTRAL_PROPS%AIR_SSA
-  !CALL FLUSH(1012)   
   !
   ! Urban vegetation single scattering albedo (NLW,NTOTLAY)
   ! FIXME Neglect spectral dependency
@@ -887,10 +806,6 @@ SUBROUTINE TEB_SPARTACUS (TOP, SPAOP, T, B, DMT, GDP, SB, TPN, PDIR_SW, PSCA_SW,
         ENDDO
      ENDDO
      !
-     !WRITE(1012,*) " "
-     !WRITE(1012,*) "LW_SPECTRAL_PROPS%VEG_SSA : ",LW_SPECTRAL_PROPS%VEG_SSA
-     !CALL FLUSH(1012)
-     !
   ENDIF
   !
   ! Ground emissivity as composite of snow free and snow covered road, and urban vegetation (NLW,NCOL)
@@ -901,10 +816,6 @@ SUBROUTINE TEB_SPARTACUS (TOP, SPAOP, T, B, DMT, GDP, SB, TPN, PDIR_SW, PSCA_SW,
         LW_SPECTRAL_PROPS%GROUND_EMISSIVITY(JLW,JI) = ZEMIS_AGG_GROUND(JI)
      ENDDO
   ENDDO
-  !
-  !WRITE(1012,*) " "
-  !WRITE(1012,*) "LW_SPECTRAL_PROPS%GROUND_EMISSIVITY : ",LW_SPECTRAL_PROPS%GROUND_EMISSIVITY
-  !CALL FLUSH(1012)
   !
   ! Roof emissivity as composite of snow free and snow covered roof, green roofs, and solar panels (NLW,NTOTLAY)
   ! FIXME: Neglect vertical dependency
@@ -917,10 +828,6 @@ SUBROUTINE TEB_SPARTACUS (TOP, SPAOP, T, B, DMT, GDP, SB, TPN, PDIR_SW, PSCA_SW,
      ENDDO
   ENDDO
   !
-  !WRITE(1012,*) " "
-  !WRITE(1012,*) "LW_SPECTRAL_PROPS%ROOF_EMISSIVITY : ",LW_SPECTRAL_PROPS%ROOF_EMISSIVITY
-  !CALL FLUSH(1012)
-  !
   ! Wall emissivity as composite of walls and windows (NWM,NTOTLAY)
   ! FIXME: Neglect vertical dependency
   ! FIXME: Neglect spectral dependency
@@ -931,10 +838,6 @@ SUBROUTINE TEB_SPARTACUS (TOP, SPAOP, T, B, DMT, GDP, SB, TPN, PDIR_SW, PSCA_SW,
              (CANOPY_PROPS%ISTARTLAY(JI)+CANOPY_PROPS%NLAY(JI)-1)) = ZEMIS_AGG_FACADE(JI)
      ENDDO
   ENDDO
-  !
-  !WRITE(1012,*) " "
-  !WRITE(1012,*) "LW_SPECTRAL_PROPS%WALL_EMISSIVITY : ",LW_SPECTRAL_PROPS%WALL_EMISSIVITY
-  !CALL FLUSH(1012)
   !
   ! Initialise the longwave emission
   !
@@ -949,7 +852,7 @@ SUBROUTINE TEB_SPARTACUS (TOP, SPAOP, T, B, DMT, GDP, SB, TPN, PDIR_SW, PSCA_SW,
   !
   ! Allocate SPARTACUS-Surface output arrays
   !
-  CALL BC_OUT%ALLOCATE(NCOL, CONFIG%NSW, CONFIG%NLW)
+  CALL ALLOCATE_BOUNDARY_CONDS_OUT(BC_OUT, NCOL, CONFIG%NSW, CONFIG%NLW)
   CALL SW_NORM_DIFF%ALLOCATE(CONFIG, NCOL, NTOTLAY, CONFIG%NSW, USE_DIRECT=.TRUE.)
   CALL SW_NORM_DIR%ALLOCATE(CONFIG, NCOL, NTOTLAY, CONFIG%NSW, USE_DIRECT=.TRUE.)
   CALL LW_INTERNAL%ALLOCATE(CONFIG, NCOL, NTOTLAY, CONFIG%NLW, USE_DIRECT=.FALSE.)
@@ -967,25 +870,36 @@ SUBROUTINE TEB_SPARTACUS (TOP, SPAOP, T, B, DMT, GDP, SB, TPN, PDIR_SW, PSCA_SW,
   IF (IENDCOL.GE.1) THEN
      !
      CALL RADSURF(CONFIG, CANOPY_PROPS, SW_SPECTRAL_PROPS, LW_SPECTRAL_PROPS, & ! Inputs
-       BC_OUT,                                                     & ! Outputs
-       ISTARTCOL, IENDCOL,                                         & ! Optional inputs
-       SW_NORM_DIR, SW_NORM_DIFF, LW_INTERNAL, LW_NORM)              ! Optional outputs
+       BC_OUT,                                                                & ! Outputs
+       ISTARTCOL, IENDCOL,                                                    & ! Optional inputs
+       SW_NORM_DIR, SW_NORM_DIFF, LW_INTERNAL, LW_NORM)                         ! Optional outputs
      !
   ENDIF
-  !
-  !WRITE(1012,*) "                      "
-  !WRITE(1012,*) "After CALL of RADSURF "
-  !WRITE(1012,*) "BC_OUT%SW_ALBEDO      ",BC_OUT%SW_ALBEDO(:,:)
-  !WRITE(1012,*) "BC_OUT%SW_ALBEDO_DIR  ",BC_OUT%SW_ALBEDO_DIR(:,:)
-  !WRITE(1012,*) "BC_OUT%LW_EMISSIVITY  ",BC_OUT%LW_EMISSIVITY(:,:)
-  !WRITE(1012,*) "BC_OUT%LW_EMISSION    ",BC_OUT%LW_EMISSION(:,:)
-  !CALL FLUSH(1012)
   !
   ! Assign the values of town equivalent direct and diffuse albedo
   ! FIXME: Spectral dependency is neglected
   !
   PDIR_ALB_TWN(:) = BC_OUT%SW_ALBEDO_DIR(1,:)
   PSCA_ALB_TWN(:) = BC_OUT%SW_ALBEDO(1,:)
+  !
+  ! FIXME: Unplausible values when sun below the horizon: set to 0.0
+  !
+  WHERE(PDIR_SW(:).LT.XSURF_EPSILON) PDIR_ALB_TWN(:) = 0.0
+  WHERE(PSCA_SW(:).LT.XSURF_EPSILON) PSCA_ALB_TWN(:) = 0.0
+  !
+  ! Check whether plausible values are coupled with the atmospheric model
+  !
+  IF ( (MINVAL(PDIR_ALB_TWN).LT.0.0_JPRB).OR.(MAXVAL(PDIR_ALB_TWN).GT.1.0_JPRB) ) THEN
+     WRITE(1012,*) "PDIR_ALB_TWN ",PDIR_ALB_TWN
+     CALL FLUSH(1012)   
+     CALL ABOR1_SFX("TEB_SPARTACUS: Unplausible value of TOWN albedo for direct solar radiation")
+  ENDIF
+  !
+  IF ( (MINVAL(PSCA_ALB_TWN).LT.0.0_JPRB).OR.(MAXVAL(PSCA_ALB_TWN).GT.1.0_JPRB) ) THEN
+     WRITE(1012,*) "PSCA_ALB_TWN ",PSCA_ALB_TWN
+     CALL FLUSH(1012)   
+     CALL ABOR1_SFX("TEB_SPARTACUS: Unplausible value of TOWN albedo for scattered solar radiation")
+  ENDIF
   !
   ! Rescale the outputs
   !
@@ -998,9 +912,6 @@ SUBROUTINE TEB_SPARTACUS (TOP, SPAOP, T, B, DMT, GDP, SB, TPN, PDIR_SW, PSCA_SW,
   ALLOCATE(ZTOP_FLUX_DN_DIRECT_SW(CONFIG%NSW,NCOL))
   ALLOCATE(ZTOP_FLUX_DN_LW(CONFIG%NLW,NCOL))
   !
-  !WRITE(1012,*) "PLW_RAD : ",PLW_RAD
-  !CALL FLUSH(1012)
-  !
   DO JLW = 1, CONFIG%NLW
      ZTOP_FLUX_DN_LW(JLW,:) = PLW_RAD(:)
   ENDDO
@@ -1009,15 +920,6 @@ SUBROUTINE TEB_SPARTACUS (TOP, SPAOP, T, B, DMT, GDP, SB, TPN, PDIR_SW, PSCA_SW,
      ZTOP_FLUX_DN_DIFFUSE_SW(JSW,:) = PSCA_SW(:)
      ZTOP_FLUX_DN_DIRECT_SW(JSW,:)  = PDIR_SW(:)
   ENDDO
-  !
-  !WRITE(1012,*) "                                   "
-  !WRITE(1012,*) "The downwelling atmospheric fluxes "
-  !WRITE(1012,*) "                                   "
-  !
-  !WRITE(1012,*) "Direct SW  : ",ZTOP_FLUX_DN_DIRECT_SW(:,:)
-  !WRITE(1012,*) "Diffuse SW : ",ZTOP_FLUX_DN_DIFFUSE_SW(:,:)
-  !WRITE(1012,*) "LW         : ",ZTOP_FLUX_DN_LW(:,:)
-  !CALL FLUSH(1012)
   !
   CALL SW_NORM_DIFF%SCALE(CANOPY_PROPS%NLAY, ZTOP_FLUX_DN_DIFFUSE_SW)
   CALL SW_NORM_DIR%SCALE(CANOPY_PROPS%NLAY, ZTOP_FLUX_DN_DIRECT_SW)
@@ -1220,58 +1122,6 @@ SUBROUTINE TEB_SPARTACUS (TOP, SPAOP, T, B, DMT, GDP, SB, TPN, PDIR_SW, PSCA_SW,
      !
   ENDIF
   !
-  ! FIXME: Include plausibility checks for outputs
-  !
-  !WRITE(1012,*) " "
-  !WRITE(1012,*) "Check the shortwave radiation outputs by SPARTACUS-Surface "
-  !WRITE(1012,*) " " 
-  !WRITE(1012,*) "DMT%XABS_SW_ROAD : ",DMT%XABS_SW_ROAD
-  !WRITE(1012,*) " " 
-  !WRITE(1012,*) "DMT%XABS_SW_SNOW_ROAD : ",DMT%XABS_SW_SNOW_ROAD
-  !WRITE(1012,*) " " 
-  !WRITE(1012,*) "DMT%XABS_SW_GARDEN : ",DMT%XABS_SW_GARDEN
-  !WRITE(1012,*) " " 
-  !WRITE(1012,*) "DMT%XABS_SW_ROOF : ",DMT%XABS_SW_ROOF
-  !WRITE(1012,*) " " 
-  !WRITE(1012,*) "DMT%XABS_SW_GREENROOF : ",DMT%XABS_SW_GREENROOF
-  !WRITE(1012,*) " " 
-  !WRITE(1012,*) "DMT%XABS_SW_PANEL : ",DMT%XABS_SW_PANEL
-  !WRITE(1012,*) " " 
-  !WRITE(1012,*) "DMT%XABS_SW_SNOW_ROOF : ",DMT%XABS_SW_SNOW_ROOF
-  !WRITE(1012,*) " " 
-  !WRITE(1012,*) "DMT%XABS_SW_WALL_A : ",DMT%XABS_SW_WALL_A
-  !WRITE(1012,*) " " 
-  !WRITE(1012,*) "DMT%XABS_SW_WALL_B : ",DMT%XABS_SW_WALL_B
-  !WRITE(1012,*) " " 
-  !WRITE(1012,*) "DMT%XABS_SW_WIN : ",DMT%XABS_SW_WIN
-  !WRITE(1012,*) " " 
-  !WRITE(1012,*) "DMT%XABS_SW_HVEG : ",DMT%XABS_SW_HVEG
-  !WRITE(1012,*) " " 
-  !WRITE(1012,*) "PREC_SW_RF : ",PREC_SW_RF
-  !WRITE(1012,*) " "
-  !WRITE(1012,*) "DMT%XREC_SW_WALL : ",DMT%XREC_SW_WALL
-  !WRITE(1012,*) " "
-  !WRITE(1012,*) "DMT%XREC_SW_GARDEN ",DMT%XREC_SW_GARDEN
-  !WRITE(1012,*) " "
-  !WRITE(1012,*) "ZREC_SW_WIN : ",ZREC_SW_WIN
-  !WRITE(1012,*) " " 
-  !WRITE(1012,*) "DMT%XDIR_SW_ROAD : ",DMT%XDIR_SW_ROAD
-  !WRITE(1012,*) " " 
-  !WRITE(1012,*) "DMT%XDIR_SW_GARDEN : ",DMT%XDIR_SW_GARDEN
-  !WRITE(1012,*) " " 
-  !WRITE(1012,*) "PREF_SW_GRND : ",PREF_SW_GRND
-  !WRITE(1012,*) " " 
-  !WRITE(1012,*) "PREF_SW_FAC : ",PREF_SW_FAC
-  !WRITE(1012,*) " " 
-  !WRITE(1012,*) "DMT%XROAD_SHADE(:) : ",DMT%XROAD_SHADE(:)
-  !WRITE(1012,*) " " 
-  !WRITE(1012,*) "DMT%XTR_SW_WIN : ",DMT%XTR_SW_WIN
-  !WRITE(1012,*) " " 
-  !WRITE(1012,*) "PE_SHADING : ",PE_SHADING
-  !WRITE(1012,*) " " 
-  !WRITE(1012,*) "DMT%XREC_SW_HVEG : ",DMT%XREC_SW_HVEG
-  !CALL FLUSH(1012)
-  !
   ! Some old shortwave diagnostics not further used in the remaining code are not calculated.
   !
   DMT%XSW_UP_ROOF      (:) = -XUNDEF
@@ -1372,26 +1222,6 @@ SUBROUTINE TEB_SPARTACUS (TOP, SPAOP, T, B, DMT, GDP, SB, TPN, PDIR_SW, PSCA_SW,
              (CANOPY_PROPS%ISTARTLAY(JI)+CANOPY_PROPS%NLAY(JI)-1))) / T%XWALL_O_HOR(JI) - &
              XSTEFAN * T%XT_WALL_A(JI,1)**4 )
         !
-        IF (DMT%XABS_LW_WALL_A(JI).LT.-250.0) THEN
-           WRITE(1012,*) " "
-           WRITE(1012,*) "DMT%XABS_LW_WALL_A(JI)  ",DMT%XABS_LW_WALL_A(JI) 
-           WRITE(1012,*) "T%XBLD(JI)              ",T%XBLD(JI)
-           WRITE(1012,*) "T%XWALL_O_HOR(JI)       ",T%XWALL_O_HOR(JI)
-           WRITE(1012,*) "T%XBLD_HEIGHT(JI)       ",T%XBLD_HEIGHT(JI)
-           WRITE(1012,*) "CANOPY_PROPS%NLAY(JI)   ",CANOPY_PROPS%NLAY(JI)       
-           WRITE(1012,*) "T%XT_WALL_A(JI,1)       ",T%XT_WALL_A(JI,1)
-           WRITE(1012,*) "SB%XZF(JI,:)            ",SB%XZF(JI,:)
-           WRITE(1012,*) "LW_WALL_IN              ",LW_FLUX%WALL_IN(JLW,CANOPY_PROPS%ISTARTLAY(JI): &
-                (CANOPY_PROPS%ISTARTLAY(JI)+CANOPY_PROPS%NLAY(JI)-1))
-           WRITE(1012,*) "DZ                      ",CANOPY_PROPS%DZ(CANOPY_PROPS%ISTARTLAY(JI): &
-                (CANOPY_PROPS%ISTARTLAY(JI)+CANOPY_PROPS%NLAY(JI)-1))
-           WRITE(1012,*) "BUILDING Fraction       ",CANOPY_PROPS%BUILDING_FRACTION(CANOPY_PROPS%ISTARTLAY(JI): &
-                (CANOPY_PROPS%ISTARTLAY(JI)+CANOPY_PROPS%NLAY(JI)-1))
-           WRITE(1012,*) "BUILDING scale          ",CANOPY_PROPS%BUILDING_SCALE(CANOPY_PROPS%ISTARTLAY(JI): &
-                (CANOPY_PROPS%ISTARTLAY(JI)+CANOPY_PROPS%NLAY(JI)-1))          
-           STOP ("Check suspicious wall longwave flux")
-        ENDIF
-        !
         DMT%XABS_LW_WALL_B(JI) = DMT%XABS_LW_WALL_B(JI) +        &
              T%XEMIS_WALL(JI) * (                                &
              SUM(LW_FLUX%WALL_IN(JLW,CANOPY_PROPS%ISTARTLAY(JI): &
@@ -1403,20 +1233,6 @@ SUBROUTINE TEB_SPARTACUS (TOP, SPAOP, T, B, DMT, GDP, SB, TPN, PDIR_SW, PSCA_SW,
              SUM(LW_FLUX%WALL_IN(JLW,CANOPY_PROPS%ISTARTLAY(JI): &
              (CANOPY_PROPS%ISTARTLAY(JI)+CANOPY_PROPS%NLAY(JI)-1))) / T%XWALL_O_HOR(JI) - &
              XSTEFAN * B%XT_WIN1(JI)**4 )        
-        !
-        !IF ((DMT%XABS_LW_WIN(JI).GT.100.0).OR.(DMT%XABS_LW_WIN(JI).LT.-400.0)) THEN
-        !   !
-        !   WRITE(1012,*) "                                    "
-        !   WRITE(1012,*) "Unplausible absorption by the window"
-        !   WRITE(1012,*) "T%XWALL_O_HOR(JI)     ",T%XWALL_O_HOR(JI)
-        !   WRITE(1012,*) "B%XT_WIN1(JI)         ",B%XT_WIN1(JI)
-        !   WRITE(1012,*) "WALL_IN               ",LW_FLUX%WALL_IN(JLW,CANOPY_PROPS%ISTARTLAY(JI): &
-        !     (CANOPY_PROPS%ISTARTLAY(JI)+CANOPY_PROPS%NLAY(JI)-1))
-        !   WRITE(1012,*) "CANOPY_PROPS%NLAY(JI) ",CANOPY_PROPS%NLAY(JI)
-        !   WRITE(1012,*) "XEMIS_WIN_CST         ",XEMIS_WIN_CST
-        !   CALL FLUSH(1012)
-        !   !
-        !ENDIF
         !
         IF (PDN_RF(JI).GT.0.0) THEN
            !
@@ -1449,18 +1265,6 @@ SUBROUTINE TEB_SPARTACUS (TOP, SPAOP, T, B, DMT, GDP, SB, TPN, PDIR_SW, PSCA_SW,
                    SUM(LW_FLUX%VEG_ABS(JLW,CANOPY_PROPS%ISTARTLAY(JI):                      &
                    (CANOPY_PROPS%ISTARTLAY(JI)+CANOPY_PROPS%NLAY(JI)-1))) / T%XFRAC_HVEG(JI)
               !
-              !IF ( (DMT%XABS_LW_HVEG(JI).LT.-500.0).OR.(DMT%XABS_LW_HVEG(JI).GT.100.0) ) THEN
-              !   !
-              !   WRITE(1012,*) "PTHVEG(JI)           ",PTHVEG(JI)
-              !   WRITE(1012,*) "T%XFRAC_HVEG(JI)     ",T%XFRAC_HVEG(JI)
-              !   WRITE(1012,*) "VEG_ABS              ", &
-              !      LW_FLUX%VEG_ABS(JLW,CANOPY_PROPS%ISTARTLAY(JI):(CANOPY_PROPS%ISTARTLAY(JI)+CANOPY_PROPS%NLAY(JI)-1))
-              !   WRITE(1012,*) "DMT%XABS_LW_HVEG(JI) ",DMT%XABS_LW_HVEG(JI)
-              !   CALL FLUSH(1012)
-              !   STOP ("Unplausible value for XABS_LW_HVEG")
-              !   !
-              !ENDIF
-              !
               ! FIXME: division by zero is possible here
               !
               DO JLAYER = 1, CANOPY_PROPS%NLAY(JI)
@@ -1477,36 +1281,6 @@ SUBROUTINE TEB_SPARTACUS (TOP, SPAOP, T, B, DMT, GDP, SB, TPN, PDIR_SW, PSCA_SW,
                  ENDIF
                  !
               ENDDO
-              !
-              !IF ( (DMT%XREC_LW_HVEG(JI).LT.150.0).OR.(DMT%XREC_LW_HVEG(JI).GT.700.0) ) THEN
-              !   !
-              !   WRITE(1012,*) "                                        "
-              !   WRITE(1012,*) "Check unplausible value for REC_LW_HVEG "
-              !   WRITE(1012,*) "                                        "
-              !   WRITE(1012,*) "DMT%XREC_LW_HVEG(JI)  ",DMT%XREC_LW_HVEG(JI)
-              !   WRITE(1012,*) "T%XFRAC_HVEG(JI)      ",T%XFRAC_HVEG(JI)
-              !   WRITE(1012,*) "CANOPY_PROPS%NLAY(JI) ",CANOPY_PROPS%NLAY(JI)
-              !   WRITE(1012,*) "T%XBLD_HEIGHT(JI)     ",T%XBLD_HEIGHT(JI)
-              !   WRITE(1012,*) "T%XWALL_O_HOR(JI)     ",T%XWALL_O_HOR(JI)
-              !   WRITE(1012,*) "GDP%XH_TREE(JI)       ",GDP%XH_TREE(JI)
-              !   WRITE(1012,*) "LW_ABS : ",LW_FLUX%VEG_ABS(JLW,CANOPY_PROPS%ISTARTLAY(JI): &
-              !        (CANOPY_PROPS%ISTARTLAY(JI)+CANOPY_PROPS%NLAY(JI)-1)) / T%XFRAC_HVEG(JI)
-              !   WRITE(1012,*) "VEG_SSA ",LW_SPECTRAL_PROPS%VEG_SSA(JLW,CANOPY_PROPS%ISTARTLAY(JI): &
-              !        (CANOPY_PROPS%ISTARTLAY(JI)+CANOPY_PROPS%NLAY(JI)-1))
-              !   WRITE(1012,*) "VEG_TEMPERATURE ",CANOPY_PROPS%VEG_TEMPERATURE(CANOPY_PROPS%ISTARTLAY(JI): &
-              !        (CANOPY_PROPS%ISTARTLAY(JI)+CANOPY_PROPS%NLAY(JI)-1))
-              !   WRITE(1012,*) "DZ              ",CANOPY_PROPS%DZ(CANOPY_PROPS%ISTARTLAY(JI): &
-              !        (CANOPY_PROPS%ISTARTLAY(JI)+CANOPY_PROPS%NLAY(JI)-1))
-              !   WRITE(1012,*) "T%XT_ROAD(JI,1)     ",T%XT_ROAD(JI,1)
-              !   WRITE(1012,*) "T%TSNOW_ROAD%TS(JI) ",T%TSNOW_ROAD%TS(JI)
-              !   WRITE(1012,*) "PTSRAD_GD(JI)       ",PTSRAD_GD(JI)
-              !   WRITE(1012,*) "T%XT_WALL_A(JI,1)   ",T%XT_WALL_A(JI,1)
-              !   WRITE(1012,*) "T%XT_WALL_B(JI,1)   ",T%XT_WALL_B(JI,1)
-              !   WRITE(1012,*) "B%XT_WIN1(JI)       ",B%XT_WIN1(JI)
-              !   CALL FLUSH(1012)
-              !   ! STOP ("Check calculation of REC_LW_HVEG")
-              !   !
-              !ENDIF
               !
            ELSE
               DMT%XABS_LW_HVEG(JI) = 0.0
@@ -1561,106 +1335,6 @@ SUBROUTINE TEB_SPARTACUS (TOP, SPAOP, T, B, DMT, GDP, SB, TPN, PDIR_SW, PSCA_SW,
   DMT%XLW_UP_ROOF(:)  = -XUNDEF
   DMT%XABS_LW_SKY(:)  = -XUNDEF
   DMT%XNET_LW_HVEG(:) = -XUNDEF
-  !
-  ! Plausibility checks for the most relevant outputs
-  !
-  !IF ( (MAXVAL(DMT%XABS_LW_ROAD).GT.100.0).OR.(MINVAL(DMT%XABS_LW_ROAD).LT.-400.0)) THEN
-  !   WRITE(1012,*) DMT%XABS_LW_ROAD
-  !   CALL FLUSH(1012)
-  !   STOP ("Unplausible value for DMT%XABS_LW_ROAD")
-  !ENDIF
-  !
-  !WRITE(1012,*) "                     "
-  !WRITE(1012,*) "DMT%XABS_LW_ROAD   : ",DMT%XABS_LW_ROAD
-  !WRITE(1012,*) "                     "
-  !
-  !IF ( (MAXVAL(DMT%XABS_LW_ROOF).GT.100.0).OR.(MINVAL(DMT%XABS_LW_ROOF).LT.-400.0)) THEN
-  !   WRITE(1012,*) DMT%XABS_LW_ROOF
-  !   CALL FLUSH(1012)    
-  !   STOP ("Unplausible value for DMT%XABS_LW_ROOF")
-  !ENDIF
-  !
-  !WRITE(1012,*) "DMT%XABS_LW_ROOF   : ",DMT%XABS_LW_ROOF
-  !WRITE(1012,*) "                     "
-  !
-  !IF ( (MAXVAL(DMT%XABS_LW_WALL_A).GT.100.0).OR.(MINVAL(DMT%XABS_LW_WALL_A).LT.-400.0)) THEN
-  !   WRITE(1012,*) DMT%XABS_LW_WALL_A
-  !   CALL FLUSH(1012)     
-  !   STOP ("Unplausible value for DMT%XABS_LW_WALL_A")
-  !ENDIF
-  !
-  !WRITE(1012,*) "DMT%XABS_LW_WALL_A : ",DMT%XABS_LW_WALL_A
-  !WRITE(1012,*) "                     "
-  !
-  !IF ( (MAXVAL(DMT%XABS_LW_WALL_B).GT.100.0).OR.(MINVAL(DMT%XABS_LW_WALL_B).LT.-400.0)) THEN
-  !   WRITE(1012,*) DMT%XABS_LW_WALL_B
-  !   CALL FLUSH(1012)     
-  !   STOP ("Unplausible value for DMT%XABS_LW_WALL_B")
-  !ENDIF
-  !
-  !WRITE(1012,*) "DMT%XABS_LW_WALL_B : ",DMT%XABS_LW_WALL_B
-  !WRITE(1012,*) "                     "
-  !
-  !IF ( (MAXVAL(DMT%XABS_LW_GARDEN).GT.100.0).OR.(MINVAL(DMT%XABS_LW_GARDEN).LT.-500.0)) THEN
-  !   WRITE(1012,*) DMT%XABS_LW_GARDEN
-  !   CALL FLUSH(1012)      
-  !   STOP ("Unplausible value for DMT%XABS_LW_GARDEN")
-  !ENDIF
-  !  
-  !WRITE(1012,*) "DMT%XABS_LW_GARDEN : ",DMT%XABS_LW_GARDEN
-  !WRITE(1012,*) "                     "
-  !
-  !IF ( (MAXVAL(DMT%XABS_LW_WIN).GT.100.0).OR.(MINVAL(DMT%XABS_LW_WIN).LT.-400.0)) THEN
-  !   WRITE(1012,*) DMT%XABS_LW_WIN
-  !   CALL FLUSH(1012)      
-  !   STOP ("Unplausible value for DMT%XABS_LW_WIN")
-  !ENDIF
-  !  
-  !WRITE(1012,*) "DMT%XABS_LW_WIN : ",DMT%XABS_LW_WIN
-  !WRITE(1012,*) "                     "
-  !
-  !IF ( (MAXVAL(DMT%XABS_LW_HVEG).GT.100.0).OR.(MINVAL(DMT%XABS_LW_HVEG).LT.-500.0)) THEN
-  !   WRITE(1012,*) DMT%XABS_LW_HVEG
-  !   CALL FLUSH(1012) 
-  !   STOP ("Unplausible value for DMT%XABS_LW_HVEG")
-  !ENDIF
-  !
-  !WRITE(1012,*) "DMT%XABS_LW_HVEG : ",DMT%XABS_LW_HVEG
-  !WRITE(1012,*) "                     "
-  !WRITE(1012,*) "DMT%XABS_LW_SNOW_ROAD : ",DMT%XABS_LW_SNOW_ROAD
-  !WRITE(1012,*) "                     " 
-  !WRITE(1012,*) "DMT%XABS_LW_SNOW_ROOF : ",DMT%XABS_LW_SNOW_ROOF
-  !WRITE(1012,*) "                     "
-  !WRITE(1012,*) "DMT%XABS_LW_GREENROOF : ",DMT%XABS_LW_GREENROOF
-  !WRITE(1012,*) "                     "
-  !WRITE(1012,*) "DMT%XABS_LW_PANEL : ",DMT%XABS_LW_PANEL
-  !WRITE(1012,*) "                     "
-  !
-  !IF ( (MAXVAL(DMT%XREC_LW_GARDEN).GT.700.0).OR.(MINVAL(DMT%XREC_LW_GARDEN).LT.150.0)) THEN
-  !   WRITE(1012,*) DMT%XREC_LW_GARDEN
-  !   CALL FLUSH(1012)      
-  !   STOP ("Unplausible value for DMT%XREC_LW_GARDEN")
-  !ENDIF
-  !
-  !WRITE(1012,*) "DMT%XREC_LW_GARDEN : ",DMT%XREC_LW_GARDEN
-  !WRITE(1012,*) "                     "
-  !
-  !IF (TOP%CURBTREE/="NONE") THEN
-  !   IF ( (MAXVAL(DMT%XREC_LW_HVEG).GT.700.0).OR.(MINVAL(DMT%XREC_LW_HVEG).LT.150.0)) THEN
-  !      WRITE(1012,*) DMT%XREC_LW_HVEG
-  !      CALL FLUSH(1012)         
-  !      STOP ("Unplausible value for DMT%XREC_LW_HVEG")
-  !   ENDIF
-  !ENDIF
-  !
-  !WRITE(1012,*) "DMT%XREC_LW_HVEG : ",DMT%XREC_LW_HVEG
-  !WRITE(1012,*) "                     "
-  !  
-  !WRITE(1012,*) "DMT%XEMIT_LW_GRND : ",DMT%XEMIT_LW_GRND
-  !WRITE(1012,*) "                     "
-  !
-  !WRITE(1012,*) "DMT%XEMIT_LW_FAC : ",DMT%XEMIT_LW_FAC  
-  !CALL FLUSH(1012)
   !
   IF (LHOOK) CALL DR_HOOK('TEB_SPARTACUS',1,ZHOOK_HANDLE)
   !

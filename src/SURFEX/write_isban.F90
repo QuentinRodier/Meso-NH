@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE WRITE_ISBA_n (DTCO, HSELECT, OSNOWDIMNC, U, IM, NDST, HPROGRAM, HWRITE, OLAND_USE)
+      SUBROUTINE WRITE_ISBA_n (DTCO, HSELECT, OSNOWDIMNC, U, IM, NDST, HPROGRAM, HWRITE)
 !     ####################################
 !
 !!****  *WRITE_ISBA_n* - routine to write surface variables in their respective files
@@ -35,6 +35,7 @@
 !!      B. Decharme 07/2011 : Suppress pgd output
 !!      B. Decharme 07/2011 : land_use key for writing semi-prognostic variables
 !!      A. Druel    02/2019 : Change CALL of WRITESURF_ISBA_n
+!       R. Séférian 08/2016 : remove land use key
 !!
 !-------------------------------------------------------------------------------
 !
@@ -73,8 +74,7 @@ TYPE(DST_NP_t),     INTENT(INOUT) :: NDST
 !
  CHARACTER(LEN=6),    INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
  CHARACTER(LEN=3),    INTENT(IN)  :: HWRITE    ! 'PREP' : does not write SBL XUNDEF fields
-!                                             ! 'ALL' : all fields are written
-LOGICAL,              INTENT(IN)  :: OLAND_USE !
+!                                              ! 'ALL' : all fields are written
 !
 !*       0.2   Declarations of local variables
 !              -------------------------------
@@ -94,7 +94,7 @@ IF (LHOOK) CALL DR_HOOK('WRITE_ISBA_N',0,ZHOOK_HANDLE)
  CALL INIT_IO_SURF_n(DTCO, U, HPROGRAM,'NATURE','ISBA  ','WRITE','ISBA_PROGNOSTIC.OUT.nc')
 !
  CALL WRITESURF_ISBA_n(HSELECT, OSNOWDIMNC, IM%CHI, IM%MGN, NDST, IM%O, IM%S, IM%NP, &
-                       IM%NPE, IM%NAG, U%NSIZE_NATURE, HPROGRAM,OLAND_USE)
+                       IM%NPE, IM%NAG, U%NSIZE_NATURE, HPROGRAM                      )
 !
 IF ((.NOT.LNOWRITE_CANOPY).OR.SIZE(HSELECT)>0) THEN
   CALL WRITESURF_SBL_n(HSELECT, IM%O%LCANOPY, IM%SB, HPROGRAM, HWRITE, "NATURE",SV=IM%CHI%SVI)

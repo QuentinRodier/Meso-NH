@@ -124,9 +124,8 @@ REAL, DIMENSION(SIZE(PTA)) :: ZRA       ! Aerodynamical resistance
 REAL, DIMENSION(SIZE(PTA)) :: ZDIRCOSZW ! orography slope cosine (=1 on water!)
 REAL, DIMENSION(SIZE(PTA)) :: ZFP       ! working variable
 REAL, DIMENSION(SIZE(PTA)) :: ZRRCOR    ! correction od CD, CH, CDN due to moist-gustiness
+!
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
-CHARACTER(LEN=3)  ::YSNOWRES ='RIL'!<Cluzet defaultvaue for HSNOWRES>
-
 !
 !-------------------------------------------------------------------------------
 !
@@ -192,7 +191,7 @@ IF ( XCD_ICE_CST == 0.0 ) THEN
 
      CALL SURFACE_CD(PRI, PZREF, PUREF, PZ0ICE, PZ0HICE, PCD, PCDN)
 !
-     CALL SURFACE_AERO_COND(PRI, PZREF, PUREF, ZVMOD, PZ0ICE, PZ0HICE, ZAC, ZRA, PCH, YSNOWRES)
+     CALL SURFACE_AERO_COND(PRI, PZREF, PUREF, ZVMOD, PZ0ICE, PZ0HICE, ZAC, ZRA, PCH)
 !
   ENDIF
 !

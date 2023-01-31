@@ -76,6 +76,7 @@ USE MODI_GET_LUOUT
 USE MODI_ALLOCATE_TEB_VEG_PGD
 USE MODI_READ_PGD_TEB_GARDEN_n
 USE MODI_CONVERT_PATCH_ISBA
+USE MODI_CONVERT_PATCH_ALB_ISBA
 USE MODI_INIT_FROM_DATA_TEB_VEG_n
 USE MODI_INIT_VEG_PGD_n
 USE MODI_EXP_DECAY_SOIL_FR
@@ -148,7 +149,7 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 IF (LHOOK) CALL DR_HOOK('INIT_TEB_GARDEN_PGD_n',0,ZHOOK_HANDLE)
 !
- CALL GET_LUOUT(HPROGRAM,ILUOUT)
+CALL GET_LUOUT(HPROGRAM,ILUOUT)
 !
 CALL SSO_INIT(YSS)
 !
@@ -172,9 +173,9 @@ ENDIF
 !
 !* allocation of urban green area variables
 !
- CALL ALLOCATE_TEB_VEG_PGD(PEK, S, K, P, OPATCH1, KI, NVEGTYPE, IO%NGROUND_LAYER, TOP%LGARDEN, .FALSE. )  
- IF (TOP%CURBTREE/='NONE' ) &
- CALL ALLOCATE_TEB_VEG_PGD(PEKHV, S, K, PHV, OPATCH1, KI, NVEGTYPE, IO%NGROUND_LAYER, TOP%LGARDEN, .TRUE. )  
+CALL ALLOCATE_TEB_VEG_PGD(PEK, S, K, P, OPATCH1, KI, NVEGTYPE, IO%NGROUND_LAYER, TOP%LGARDEN, .FALSE. )  
+IF (TOP%CURBTREE/='NONE' ) &
+   CALL ALLOCATE_TEB_VEG_PGD(PEKHV, S, K, PHV, OPATCH1, KI, NVEGTYPE, IO%NGROUND_LAYER, TOP%LGARDEN, .TRUE. )  
 !
 !
 IF (TOP%TTIME%TDATE%MONTH /= NUNDEF) THEN
@@ -398,12 +399,10 @@ IF (IO%LPAR) THEN
     IF (TOP%CURBTREE/='NONE' ) &
     CALL CONVERT_PATCH_ISBA(DTCO, DTHV, IO, 1, 1, IDECADE, IDECADE, TOP%XCOVER, TOP%LCOVER,&
                         .FALSE., .FALSE., .FALSE.,'GRD', 1, K, PHV, PEKHV, &
-                        .TRUE., .FALSE., .FALSE., .FALSE., .FALSE., .FALSE., .TRUE., &
-                        PSOILGRID=IO%XSOILGRID  )   
+                        .TRUE., .FALSE., .FALSE., .FALSE., .TRUE., PSOILGRID=IO%XSOILGRID  )   
     CALL CONVERT_PATCH_ISBA(DTCO, DTV, IO, 1, 1, IDECADE, IDECADE, TOP%XCOVER, TOP%LCOVER,&
                         .FALSE.,.FALSE.,.FALSE.,'GRD', 1, K, P, PEK, &
-                        .TRUE., .FALSE., .FALSE., .FALSE., .FALSE., .FALSE., .FALSE.,&
-                        PSOILGRID=IO%XSOILGRID  )   
+                        .TRUE., .FALSE., .FALSE., .FALSE., .FALSE.,PSOILGRID=IO%XSOILGRID  )   
     ! specific INDIVIDUAL fields being specified by user (only RE25 for the time being)
     IF (IO%CPHOTO/='NON' .AND. DTV%LDATA_RE25(1)) P%XRE25(:) = DTV%XPAR_RE25(:,1)
     IF (IO%CPHOTO/='NON' .AND. DTV%LDATA_RE25(1) .AND. TOP%CURBTREE/='NONE') PHV%XRE25(:) = DTHV%XPAR_RE25(:,1)
@@ -445,23 +444,36 @@ END IF
 !
 IF (.NOT. IO%LPAR) THEN
     IF (TOP%CURBTREE=='NONE') THEN
+      !
+      ! Initialize general parameters (without vegetation albedo)
+      !    
       CALL CONVERT_PATCH_ISBA(DTCO, DTV, IO, 1, 1, IDECADE, IDECADE, TOP%XCOVER, TOP%LCOVER,&
                         .FALSE.,.FALSE.,.FALSE.,'GRD', 1, K, P, PEK, &
-                        .FALSE., .TRUE., .FALSE., .FALSE., .FALSE., .FALSE., .FALSE.  )   
-                    ! LAI fields for low and hight vegetation
-     ELSE
+                        .FALSE., .TRUE., .FALSE., .FALSE., .FALSE.  )   
+      !
+      ! Initialize vegetation albedo only
+      !
+      CALL CONVERT_PATCH_ALB_ISBA(DTCO, DTV, IO, IDECADE, IDECADE, TOP%XCOVER, TOP%LCOVER, &
+                                 'GRD', 1, K, P, PEK, .FALSE., .TRUE.                      )
+      !        
+     ELSE ! LAI fields for low and hight vegetation
+      !          
       !       
       ! sets number of patches to 2 JUST for this calculation of parameters
       IO%NPATCH=2
       !
-                    ! LAI fields for low vegetation
+      ! LAI and vegetation albedo fields for low vegetation
       CALL CONVERT_PATCH_ISBA(DTCO, DTV, IO, 1, 1, IDECADE, IDECADE, TOP%XCOVER, TOP%LCOVER,&
                         .FALSE.,.FALSE.,.FALSE.,'GRD', 1, K, P, PEK, &
-                        .FALSE., .TRUE., .FALSE., .FALSE., .FALSE., .FALSE., .FALSE.  )   
-                    ! LAI fields for high vegetation
+                        .FALSE., .TRUE., .FALSE., .FALSE., .FALSE.  )
+      CALL CONVERT_PATCH_ALB_ISBA(DTCO, DTV, IO, IDECADE, IDECADE, TOP%XCOVER, TOP%LCOVER, &
+                                 'GRD', 1, K, P, PEK, .FALSE., .TRUE.                      )               
+      ! LAI and vegetation albedo fields for high vegetation
       CALL CONVERT_PATCH_ISBA(DTCO, DTHV, IO, 1, 1, IDECADE, IDECADE, TOP%XCOVER, TOP%LCOVER,&
                         .FALSE.,.FALSE.,.FALSE.,'GRD', 2, K, PHV, PEKHV, &
-                        .FALSE., .TRUE., .FALSE., .FALSE., .FALSE., .FALSE., .FALSE.  )
+                        .FALSE., .TRUE., .FALSE., .FALSE., .FALSE.  )
+      CALL CONVERT_PATCH_ALB_ISBA(DTCO, DTHV, IO, IDECADE, IDECADE, TOP%XCOVER, TOP%LCOVER, &
+                                 'GRD', 2, K, PHV, PEKHV, .FALSE., .TRUE.                   )
       !
       ! comes back to only one patch
       IO%NPATCH=1
@@ -493,7 +505,7 @@ END IF
 !*       7.     Diagnostic Physiographic fields
 !               -------------------------------
 !
- CALL INIT_IF_NOVEG(PGARDEN, IO, S, P, PEK)
+CALL INIT_IF_NOVEG(PGARDEN, IO, S, P, PEK)
 !
 ALLOCATE(K%XVEGTYPE(KI,NVEGTYPE))
 K%XVEGTYPE = S%XVEGTYPE

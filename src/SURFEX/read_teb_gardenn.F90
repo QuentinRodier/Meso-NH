@@ -51,8 +51,12 @@ USE MODD_DIAG_n, ONLY : DIAG_t
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 USE MODD_ISBA_OPTIONS_n, ONLY : ISBA_OPTIONS_t
 USE MODD_ISBA_n, ONLY : ISBA_PE_t, ISBA_P_t
+!
 USE MODD_CO2V_PAR,       ONLY : XANFMINIT, XCONDCTMIN
 USE MODD_SURF_PAR,       ONLY : XUNDEF, NUNDEF, LEN_HREC
+USE MODD_CSTS,           ONLY : XG, XRD, XP00
+!
+USE MODE_THERMOS
 !
 USE MODI_READ_SURF
 !
@@ -62,11 +66,10 @@ USE MODI_END_IO_SURF_n
 USE MODI_TOWN_PRESENCE
 USE MODI_ALLOCATE_GR_SNOW
 USE MODI_READ_GR_SNOW
+USE MODI_GET_TYPE_DIM_n
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
-!
-USE MODI_GET_TYPE_DIM_n
 !
 IMPLICIT NONE
 !
@@ -81,8 +84,8 @@ TYPE(ISBA_OPTIONS_t), INTENT(INOUT) :: IO
 TYPE(ISBA_P_t), INTENT(INOUT) :: P
 TYPE(ISBA_PE_t), INTENT(INOUT) :: PEK, PEHV
 !
- CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM ! calling program
- CHARACTER(LEN=3),  INTENT(IN)  :: HPATCH   ! current TEB patch identificator
+CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM ! calling program
+CHARACTER(LEN=3),  INTENT(IN)  :: HPATCH   ! current TEB patch identificator
 !
 !*       0.2   Declarations of local variables
 !              -------------------------------
@@ -91,13 +94,14 @@ LOGICAL           :: GTOWN          ! town variables written in the file
 INTEGER           :: IVERSION, IBUGFIX
 INTEGER           :: ILU            ! 1D physical dimension
 INTEGER           :: IRESP          ! Error code after redding
- CHARACTER(LEN=LEN_HREC) :: YRECFM         ! Name of the article to be read
- CHARACTER(LEN=4)  :: YLVL
+CHARACTER(LEN=LEN_HREC) :: YRECFM         ! Name of the article to be read
+CHARACTER(LEN=4)  :: YLVL
 REAL, DIMENSION(:),ALLOCATABLE  :: ZWORK      ! 2D array to write data in file
 !
 INTEGER :: IWORK   ! Work integer
 !
 INTEGER :: JL, JNBIOMASS  ! loop counter on layers
+!
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !-------------------------------------------------------------------------------
@@ -175,9 +179,19 @@ ELSE
   YRECFM='TWN_WR'
 ENDIF
 YRECFM=ADJUSTL(YRECFM)
- CALL READ_SURF(HPROGRAM,YRECFM,PEK%XWR(:),IRESP)
+CALL READ_SURF(HPROGRAM,YRECFM,PEK%XWR(:),IRESP)
 !
-
+!* vegetation canopy air specific humidity
+!
+ALLOCATE(PEK%XQC(ILU))
+IF(IVERSION>=9)THEN
+  YRECFM = HPATCH//'GD_QC'
+  YRECFM=ADJUSTL(YRECFM)
+  CALL READ_SURF(HPROGRAM,YRECFM,PEK%XQC(:),IRESP)
+ELSE
+  ZWORK  (:)=XP00*EXP(-(XG/XRD/PEK%XTG(:,1))*TOP%XZS(:))
+  PEK%XQC(:)=QSAT(PEK%XTG(:,1),ZWORK)
+ENDIF
 !
 !* snow mantel
 !
@@ -220,19 +234,33 @@ CALL LAI_AND_SEMI_PROGNOSTIC_FIELDS(PEK,'GD')
 !* Urban trees
 !
 IF (TOP%CURBTREE/='NONE') THEN
-  CALL LAI_AND_SEMI_PROGNOSTIC_FIELDS(PEHV,'GH')
+   !
+   CALL LAI_AND_SEMI_PROGNOSTIC_FIELDS(PEHV,'GH')
+   !
+   !* temperature of high vegetation
+   !
+   ALLOCATE(PEHV%XTV(ILU))
+   !IF (IVERSION>8 .OR. IVERSION==8 .AND. IBUGFIX>=2) THEN
+   IF (IVERSION>=9) THEN
+      YRECFM=HPATCH//'GH_TV'
+      YRECFM=ADJUSTL(YRECFM)
+      CALL READ_SURF(HPROGRAM,YRECFM,PEHV%XTV(:),IRESP)
+   ELSE
+      PEHV%XTV(:) = PEK%XTG(:,1)
+   END IF
+   !
+   !* vegetation canopy air specific humidity (for Ags computation)
+   !
+   ALLOCATE(PEHV%XQC(ILU))
+   IF(IVERSION>=9)THEN
+     YRECFM = HPATCH//'GH_QC'
+     YRECFM=ADJUSTL(YRECFM)
+     CALL READ_SURF(HPROGRAM,YRECFM,PEHV%XQC(:),IRESP)
+   ELSE
+     ZWORK  (:)=XP00*EXP(-(XG/XRD/PEHV%XTV(:))*TOP%XZS(:))
+     PEK%XQC(:)=QSAT(PEHV%XTV(:),ZWORK)
+   ENDIF
 !
-! temperature of high vegetation
-!
-  ALLOCATE(PEHV%XTV(ILU))
-  !IF (IVERSION>8 .OR. IVERSION==8 .AND. IBUGFIX>=2) THEN
-  IF (IVERSION>=9) THEN
-    YRECFM=HPATCH//'GH_TV'
-    YRECFM=ADJUSTL(YRECFM)
-    CALL READ_SURF(HPROGRAM,YRECFM,PEHV%XTV(:),IRESP)
-  ELSE
-    PEHV%XTV(:) = PEK%XTG(:,1)
-  END IF
 END IF
 !
 !
@@ -275,9 +303,6 @@ YRECFM=ADJUSTL(YRECFM)
 PE%XRESA(:) = 100.
  CALL READ_SURF(HPROGRAM,YRECFM,PE%XRESA(:),IRESP)
 !
-ALLOCATE(PE%XLE(ILU))
-PE%XLE(:) = XUNDEF
-!
 !* ISBA-AGS variables
 !
 IF (IO%CPHOTO/='NON') THEN
@@ -287,7 +312,6 @@ IF (IO%CPHOTO/='NON') THEN
   PE%XAN(:)    = 0.
   PE%XANDAY(:) = 0.
   PE%XANFM(:)  = XANFMINIT
-  PE%XLE(:)    = 0.
 ELSE
   ALLOCATE(PE%XAN   (0)) 
   ALLOCATE(PE%XANDAY(0)) 

@@ -4,7 +4,7 @@
 !SFX_LIC for details. version 1.
 !     #########
       SUBROUTINE FLAG_UPDATE (DIO, DUO, &
-                              ONOWRITE_CANOPY,OPGD,OPROVAR_TO_DIAG,OSELECT)
+                              ONOWRITE_CANOPY,OPGD,OPROVAR_TO_DIAG,OSELECT,ODIAG_MIP)
 !     ############################################################
 !
 !!****  *FLAG_UPDATE* - routine to modify selection of output fields
@@ -62,10 +62,12 @@ LOGICAL, INTENT(IN) :: ONOWRITE_CANOPY ! flag to (des)activate writing of canopy
 LOGICAL, INTENT(IN) :: OPGD            ! flag to (des)activate writing of pgd field
 LOGICAL, INTENT(IN) :: OPROVAR_TO_DIAG ! flag to (des)activate writing of diag of prognostic field
 LOGICAL, INTENT(IN) :: OSELECT         ! flag to (des)activate control which fields are written
-REAL(KIND=JPRB) :: ZHOOK_HANDLE
+LOGICAL, INTENT(IN) :: ODIAG_MIP       ! flag to (des)activate all mip (CMIP, LMIP, SnowMIP, ...) diag style
 !
 !*       0.2   Declarations of local variables
 !              -------------------------------
+!
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !-------------------------------------------------------------------------------
 IF (LHOOK) CALL DR_HOOK('FLAG_UPDATE',0,ZHOOK_HANDLE)
@@ -73,6 +75,7 @@ LNOWRITE_CANOPY = ONOWRITE_CANOPY
 DIO%LPGD            = OPGD
 DUO%LPROVAR_TO_DIAG = OPROVAR_TO_DIAG
 DUO%LSELECT         = OSELECT
+DUO%LDIAG_MIP       = ODIAG_MIP
 IF (LHOOK) CALL DR_HOOK('FLAG_UPDATE',1,ZHOOK_HANDLE)
 !-------------------------------------------------------------------------------
 !

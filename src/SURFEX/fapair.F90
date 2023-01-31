@@ -47,12 +47,14 @@ SUBROUTINE FAPAIR(PABC, PFD_SKY, PIA, PLAI, PXMUS, PSSA_SUP, PSSA_INF, &
 !!      C. Delire   08/13 : moved calculation of diffuse fraction from here to radiative_transfert.F90
 !!      A. Boone    02/17 : corrected computation of PFAPR_BS
 !!      P. Tulet 06/2016 : add RN leaves computation (shade and sunlit) for MEGAN
+!!      J.F. Gueremy 02/17: numerical security in ZWEIGHT
 !!
 !!-------------------------------------------------------------------------------
-USE MODD_SURF_PAR,       ONLY : XUNDEF
+USE MODD_SURF_PAR,   ONLY : XUNDEF
 USE MODD_CO2V_PAR,   ONLY : XK_SUP, XK_INF, XXSI_SUP, XXSI_INF ! clumping index parameters (Carrer et al 2.1.3)
-!
+USE MODD_ISBA_PAR,   ONLY : XDENOM_MIN
 USE MODD_SURFEX_MPI, ONLY : NRANK
+!
 USE MODI_CCETR_PAIR  
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -220,10 +222,12 @@ DO JINT = SIZE(PABC),1,-1
       !
       !sunlit leaves
       !absorbed PAR of an equivalent canopy representative of the layer of leaves  eq. (8)
-      ZCOEF = (1.0-ZFD_SUP(I))/ZTR(I)+ ZFD_SUP(I)    
-      ZIACAN_SUNLIT(I,JINT) =             ZCOEF/(ZWEIGHT*MAX(0.0001,PLAI(I)))*ZIACAN(I,JINT)    
+      ZCOEF = (1.0-ZFD_SUP(I))/ZTR(I)+ ZFD_SUP(I)
+      !
+      ZIACAN_SUNLIT(I,JINT) =             ZCOEF*ZIACAN(I,JINT)/MAX(XDENOM_MIN,ZWEIGHT*PLAI(I))
+      !
       !not sunlit leaves
-      ZIACAN_SHADE(I,JINT)  = MAX(0.,ZFD_SUP(I)/(ZWEIGHT*MAX(0.0001,PLAI(I)))*ZIACAN(I,JINT))
+      ZIACAN_SHADE(I,JINT)  = MAX(0.,ZFD_SUP(I)*ZIACAN(I,JINT)/MAX(XDENOM_MIN,ZWEIGHT*PLAI(I)))
       !
       ZXIA_SUNLIT(I) = ZXIA_SUNLIT(I) + ZWEIGHT*ZTR(I)      *ZIACAN_SUNLIT(I,JINT)
       ZLAI_SUNLIT(I) = ZLAI_SUNLIT(I) + ZWEIGHT*ZTR(I)*ZCOEF*PLAI(I)
@@ -235,7 +239,7 @@ DO JINT = SIZE(PABC),1,-1
       !      
     ELSE
       !
-      ZIACAN_SUNLIT(I,JINT) = MAX(0.,ZIACAN(I,JINT)/(ZWEIGHT*MAX(0.0001,PLAI(I))))
+      ZIACAN_SUNLIT(I,JINT) = MAX(0.,ZIACAN(I,JINT)/MAX(XDENOM_MIN,ZWEIGHT*PLAI(I)))
       ZLAI_SUNLIT(I) = ZLAI_SUNLIT(I) + ZWEIGHT*PLAI(I)
       !
     ENDIF
