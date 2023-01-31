@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2000-2022 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2000-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -106,7 +106,9 @@ USE MODD_DIAG_IN_RUN,       ONLY: XCURRENT_ZON10M, XCURRENT_MER10M,           &
                                   XCURRENT_SFCO2, XCURRENT_SWD, XCURRENT_LWD, &
                                   XCURRENT_SWU, XCURRENT_LWU
 USE MODD_DUST,              ONLY: LDUST
-use modd_field,             only: NMNHDIM_UNUSED, tfieldmetadata, tfieldlist, TYPEINT, TYPEREAL
+use modd_field,             only: NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NOTLISTED, NMNHDIM_UNUSED, &
+                                  tfieldmetadata, tfieldlist, TYPEINT, TYPEREAL
+use modd_field
 USE MODD_IO,                ONLY: TFILEDATA
 USE MODD_CONF,              ONLY: LCARTESIAN
 USE MODD_CONF_n,            ONLY: LUSERC, LUSERI, NRR
@@ -1248,6 +1250,7 @@ IF (LISOAL .AND.XISOAL(1)/=0.) THEN
     NGRID      = 1,               &
     NTYPE      = TYPEREAL,        &
     NDIMS      = 3,               &
+    NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NOTLISTED ], &
     LTIMEDEP   = .TRUE.           )
   CALL IO_Field_write(TPFILE,TZFIELD,ZWAL)
 ! *********************
@@ -1271,6 +1274,7 @@ IF (LISOAL .AND.XISOAL(1)/=0.) THEN
     NGRID      = 1,                       &
     NTYPE      = TYPEREAL,                &
     NDIMS      = 3,                       &
+    NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NOTLISTED ], &
     LTIMEDEP   = .TRUE.                   )
   CALL IO_Field_write(TPFILE,TZFIELD,ZWAL)
 ! *********************
@@ -1288,6 +1292,7 @@ IF (LISOAL .AND.XISOAL(1)/=0.) THEN
     NGRID      = 1,                               &
     NTYPE      = TYPEREAL,                        &
     NDIMS      = 3,                               &
+    NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NOTLISTED ], &
     LTIMEDEP   = .TRUE.                           )
   CALL IO_Field_write(TPFILE,TZFIELD,ZWAL)
 ! *********************
@@ -1305,6 +1310,7 @@ IF (LISOAL .AND.XISOAL(1)/=0.) THEN
     NGRID      = 1,                  &
     NTYPE      = TYPEREAL,           &
     NDIMS      = 3,                  &
+    NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NOTLISTED ], &
     LTIMEDEP   = .TRUE.              )
   CALL IO_Field_write(TPFILE,TZFIELD,ZWAL)
 ! *********************
@@ -1339,6 +1345,7 @@ IF (LISOAL .AND.XISOAL(1)/=0.) THEN
     NGRID      = 1,                             &
     NTYPE      = TYPEREAL,                      &
     NDIMS      = 3,                             &
+    NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NOTLISTED ], &
     LTIMEDEP   = .TRUE.                         )
   CALL IO_Field_write(TPFILE,TZFIELD,ZWAL)
 ! *********************
@@ -1357,6 +1364,7 @@ IF (LISOAL .AND.XISOAL(1)/=0.) THEN
     NGRID      = 1,                             &
     NTYPE      = TYPEREAL,                      &
     NDIMS      = 3,                             &
+    NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NOTLISTED ], &
     LTIMEDEP   = .TRUE.                         )
   CALL IO_Field_write(TPFILE,TZFIELD,ZWAL)
   !
@@ -1373,6 +1381,7 @@ IF (LISOAL .AND.XISOAL(1)/=0.) THEN
     NGRID      = 1,                             &
     NTYPE      = TYPEREAL,                      &
     NDIMS      = 3,                             &
+    NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NOTLISTED ], &
     LTIMEDEP   = .TRUE.                         )
   CALL IO_Field_write(TPFILE,TZFIELD,ZWAL)
 ! *********************
@@ -1395,6 +1404,7 @@ IF (LISOAL .AND.XISOAL(1)/=0.) THEN
       NGRID      = 1,                         &
       NTYPE      = TYPEREAL,                  &
       NDIMS      = 3,                         &
+      NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NOTLISTED ], &
       LTIMEDEP   = .TRUE.                     )
     CALL IO_Field_write(TPFILE,TZFIELD,ZWAL)
   END IF
