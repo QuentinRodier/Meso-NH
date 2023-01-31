@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2016-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2016-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -260,6 +260,7 @@ end interface TFIELDMETADATA
 
 interface TFIELDDATA
   module procedure :: Fill_tfielddata
+  module procedure :: Fill_tfielddata_from_tfieldmetadata
 end interface TFIELDDATA
 
 contains
@@ -531,12 +532,35 @@ type(tfieldmetadata) function Fill_tfieldmetadata_from_tfielddata( tpfieldin ) r
 end function Fill_tfieldmetadata_from_tfielddata
 
 
+type(tfielddata) function Fill_tfielddata_from_tfieldmetadata( tpfieldin ) result(tpfield)
+  type(tfieldmetadata), intent(in) :: tpfieldin
+
+  tpfield%CMNHNAME =   tpfieldin%CMNHNAME
+  tpfield%CSTDNAME =   tpfieldin%CSTDNAME
+  tpfield%CLONGNAME =  tpfieldin%CLONGNAME
+  tpfield%CUNITS =     tpfieldin%CUNITS
+  tpfield%CCOMMENT =   tpfieldin%CCOMMENT
+  tpfield%NGRID =      tpfieldin%NGRID
+  tpfield%NTYPE =      tpfieldin%NTYPE
+  tpfield%NDIMS =      tpfieldin%NDIMS
+  tpfield%NDIMLIST =   tpfieldin%NDIMLIST
+  tpfield%NFILLVALUE = tpfieldin%NFILLVALUE
+  tpfield%XFILLVALUE = tpfieldin%XFILLVALUE
+  tpfield%NVALIDMIN =  tpfieldin%NVALIDMIN
+  tpfield%NVALIDMAX =  tpfieldin%NVALIDMAX
+  tpfield%XVALIDMIN =  tpfieldin%XVALIDMIN
+  tpfield%XVALIDMAX =  tpfieldin%XVALIDMAX
+  tpfield%CDIR =       tpfieldin%CDIR
+  tpfield%CLBTYPE =    tpfieldin%CLBTYPE
+  tpfield%LTIMEDEP =   tpfieldin%LTIMEDEP
+
+end function Fill_tfielddata_from_tfieldmetadata
+
+
 type(tfielddata) function Fill_tfielddata( cmnhname, cstdname, clongname, cunits, ccomment,                    &
                                            ngrid, ntype, ndims, ndimlist,                                      &
                                            nfillvalue, xfillvalue, nvalidmin, nvalidmax, xvalidmin, xvalidmax, &
                                            cdir, clbtype, ltimedep ) result(tpfield)
-
-  use mode_msg
 
   character(len=*),      optional, intent(in) :: cmnhname
   character(len=*),      optional, intent(in) :: cstdname
@@ -558,7 +582,9 @@ type(tfielddata) function Fill_tfielddata( cmnhname, cstdname, clongname, cunits
   character(len=*),      optional, intent(in) :: clbtype
   logical,               optional, intent(in) :: ltimedep
 
-
+#if 0
+!Works with GCC (10.4)
+!Does not works with Intel ifort 18.0.2.199, NVHPC 22.11
   !Use the tfieldmetadata custom constructor and modify nmodelmax
   !The data structures tfield_xyd are not set (null)
   tpfield = tfielddata ( tfieldmetadata = tfieldmetadata( &
@@ -600,6 +626,31 @@ type(tfielddata) function Fill_tfielddata( cmnhname, cstdname, clongname, cunits
                          tfield_x6d = null(),             &
                          tfield_t0d = null(),             &
                          tfield_t1d = null()              )
+#else
+  tpfield = tfielddata( tfieldmetadata( &
+        cmnhname   = cmnhname,          &
+        cstdname   = cstdname,          &
+        clongname  = clongname,         &
+        cunits     = cunits,            &
+        ccomment   = ccomment,          &
+        ngrid      = ngrid,             &
+        ntype      = ntype,             &
+        ndims      = ndims,             &
+        ndimlist   = ndimlist,          &
+        nfillvalue = nfillvalue,        &
+        xfillvalue = xfillvalue,        &
+        nvalidmin  = nvalidmin,         &
+        nvalidmax  = nvalidmax,         &
+        xvalidmin  = xvalidmin,         &
+        xvalidmax  = xvalidmax,         &
+        cdir       = cdir,              &
+        clbtype    = clbtype,           &
+        ltimedep   = ltimedep           ) )
+
+  ! Set nmodelmax to 0 instead of -1 by default.
+  ! This value can therefore be used to determine if the field was initialized by calling this constructor.
+  tpfield%nmodelmax = 0
+#endif
 
 end function Fill_tfielddata
 
