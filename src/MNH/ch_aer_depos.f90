@@ -63,7 +63,7 @@ USE MODE_AERO_PSD
 USE MODD_CST,       ONLY: XMD,       &! Molar mass of dry air
                           XPI
 USE MODD_NSV,  ONLY : NSV_C2R2BEG, NSV_AERBEG,NSV_AEREND,NSV_AER, &
-                      NSV_AERDEP, NSV_AERDEPBEG
+                      NSV_AERDEP, NSV_AERDEPBEG, NSV_LIMA_NC, NSV_LIMA_NR
 USE MODD_PARAM_n,    ONLY: CCLOUD
 USE MODI_AER_WET_DEP_KMT_WARM
 
@@ -156,7 +156,7 @@ DO JN=1,JPMODE*2
 ENDDO
 
 DO JN=1,JPMODE
-   ZSVAER(:,:,:,JN) =   ZPM(:,:,:,JN*3-1) * XMD * XPI * &
+   ZSVAER(:,:,:,JN) =   ZPM(:,:,:,NM3(JN)) * XMD * XPI * &
                         4./3. * ZRHOP(:,:,:,JN)  /      &
                        (ZMI(:,:,:,JN)*1.d15*PRHODREF(:,:,:))
 ENDDO
@@ -180,6 +180,15 @@ SELECT CASE (CCLOUD)
                               PSEA=ZSEA, PTOWN=ZTOWN,            &
                               PCCT=PSVT(:,:,:,NSV_C2R2BEG+1),    &
                               PCRT=PSVT(:,:,:,NSV_C2R2BEG+2) )
+  CASE ('LIMA')
+! Two moment cloud scheme
+  CALL AER_WET_DEP_KMT_WARM  (NSPLITR, PTSTEP, PZZ, PRHODREF,    &
+                              PRT(:,:,:,2), PRT(:,:,:,3), ZRCS,  &
+                              ZRRS, ZSVAER, PTHT, PPABST,  ZRG,  &
+                              PEVAP3D, JPMODE,ZRHOP, ZMASSMIN,   &
+                              PSEA=ZSEA, PTOWN=ZTOWN,            &
+                              PCCT=PSVT(:,:,:,NSV_LIMA_NC),      &
+                              PCRT=PSVT(:,:,:,NSV_LIMA_NR) )
 
 END SELECT
 
@@ -190,32 +199,38 @@ ENDDO
 
 DO JN=1,JPMODE
    ! Return from dry mass on m3
-   ZPM(:,:,:,JN*3-1) = ZSVAER(:,:,:,JN)  *                    &
+   ! Compute  m0 and m6 using m3, Rg and sigma
+
+   !ZPM(:,:,:,JN*3-1) = ZSVAER(:,:,:,JN)  *                    &
+   ZPM(:,:,:,NM3(JN)) = ZSVAER(:,:,:,JN)  *                    &
                        ZMI(:,:,:,JN)*1.d15*PRHODREF(:,:,:) /  &
                       (XMD * XPI * 4./3. * ZRHOP(:,:,:,JN) )
-
-   ! Compute  m0 and m6 using m3, Rg and sigma
-   ZPM(:,:,:,JN*3-2) = ZPM(:,:,:,JN*3-1)/                     &
+   !ZPM(:,:,:,JN*3-2) = ZPM(:,:,:,JN*3-1)/                     &
+   ZPM(:,:,:,NM0(JN)) = ZPM(:,:,:,NM3(JN)) /                   &
               ( (ZRG(:,:,:,JN)**3)*EXP(4.5 * LOG(ZSIG(:,:,:,JN))**2) ) 
 
-   ZPM(:,:,:,JN*3)   =  ZPM(:,:,:,JN*3-2)*(ZRG(:,:,:,JN)**6) * &
+   !ZPM(:,:,:,JN*3)   =  ZPM(:,:,:,JN*3-2)*(ZRG(:,:,:,JN)**6) * &
+   ZPM(:,:,:,NM6(JN))   =  ZPM(:,:,:,NM0(JN))*(ZRG(:,:,:,JN)**6) * &
                         EXP(18 *(LOG(ZSIG(:,:,:,JN)))**2)
+
 ENDDO
 
 ! Filter minimum values
-!DO JN=1,JPMODE
-!  WHERE ((ZPM(:,:,:,NM0(JN)) .LE. ZPMIN(NM0(JN))).OR.&
-!         (ZPM(:,:,:,NM3(JN)) .LE. ZPMIN(NM3(JN))).OR.& 
-!         (ZPM(:,:,:,NM6(JN)) .LE. ZPMIN(NM6(JN)))) 
-!    ZPM(:,:,:,NM0(JN)) = ZPMOLD(:,:,:,NM0(JN)) 
-!    ZPM(:,:,:,NM3(JN)) = ZPMOLD(:,:,:,NM3(JN)) 
-!    ZPM(:,:,:,NM6(JN)) = ZPMOLD(:,:,:,NM6(JN)) 
-!  END WHERE
-!ENDDO 
+DO JN=1,JPMODE
+  WHERE ((ZPM(:,:,:,NM0(JN)) .LE. ZPMIN(NM0(JN))).OR.&
+         (ZPM(:,:,:,NM3(JN)) .LE. ZPMIN(NM3(JN))).OR.&
+         (ZPM(:,:,:,NM6(JN)) .LE. ZPMIN(NM6(JN))))
+    ZPM(:,:,:,NM0(JN)) = ZPMOLD(:,:,:,NM0(JN))
+    ZPM(:,:,:,NM3(JN)) = ZPMOLD(:,:,:,NM3(JN))
+    ZPM(:,:,:,NM6(JN)) = ZPMOLD(:,:,:,NM6(JN))
+  END WHERE
+ENDDO
 
   ! Compute final sedimentation tendency with adding acqueous sedimentation
 DO JN=1,JPIN
  PSEDA(:,:,:,JN) = PSEDA(:,:,:,JN) + (ZPM(:,:,:,JN) - ZPMOLD(:,:,:,JN)) / PTSTEP
 END DO
+
 !
+
 END SUBROUTINE CH_AER_DEPOS
