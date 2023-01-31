@@ -3,7 +3,8 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE CH_INIT_SNAP_n (CHN, HSV, HPROGRAM,KLU,HINIT,PRHOA,HCHEM_SURF_FILE)
+      SUBROUTINE CH_INIT_SNAP_n (CHN, HSV, HPROGRAM,KLU,HINIT,PRHOA,HCHEM_SURF_FILE,&
+                                 LCH_SURF_EMIS, KEQ)
 !     #######################################
 !
 !!****  *CH_INIT_EMIISION_TEMP_n* - routine to initialize chemical emissions data structure
@@ -66,6 +67,9 @@ INTEGER,           INTENT(IN)  :: KLU      ! number of points
 !                                          !         an initial file
 REAL, DIMENSION(:),INTENT(IN)  :: PRHOA    ! air density
 CHARACTER(LEN=28), INTENT(IN)  :: HCHEM_SURF_FILE ! ascii file for chemistry aggregation
+LOGICAL, INTENT(IN)            :: LCH_SURF_EMIS
+INTEGER, INTENT(IN)  :: KEQ
+
 !
 !*       0.2   declarations of local variables
 !
@@ -185,6 +189,7 @@ IF (HPROGRAM=="NC    ") DEALLOCATE(ZTEMP)
 !*      3.     Conversion factor
 !              -----------------
 !
+IF ((LCH_SURF_EMIS).AND.(KEQ > 0)) THEN
 IF (HINIT=='ALL') THEN
   CALL OPEN_NAMELIST(HPROGRAM,ICH,HFILE=HCHEM_SURF_FILE)
   CALL CH_OPEN_INPUTB("EMISUNIT", ICH, ILUOUT)
@@ -205,6 +210,7 @@ IF (HINIT=='ALL') THEN
 !
   CALL CLOSE_NAMELIST(HPROGRAM,ICH)
 !-------------------------------------------------------------------------------
+END IF
 END IF
 !
 IF (LHOOK) CALL DR_HOOK('CH_INIT_SNAP_N',1,ZHOOK_HANDLE)
