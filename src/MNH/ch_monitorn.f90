@@ -1028,6 +1028,8 @@ DO JL=1,ISVECNMASK
     END DO
   END IF
 !
+  ZCHEM(:,:) = MAX(ZCHEM, XMNH_TINY)
+!
 !*       4.2   transfer meteo data into chemical core system
 !
   SELECT CASE ( CCLOUD )

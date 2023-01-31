@@ -574,6 +574,7 @@ ENDIF
 IF (CHI%SVI%NBEQ>0 .AND. CHI%LCH_BIO_FLUX) THEN
   IF (TRIM(CHI%CPARAMBVOC) == 'MEGAN') THEN
         ! Get output Isoprene flux
+        IF (MGN%CMECHANISM == "RELACS") THEN
          DO II=1,SIZE(MGN%XBIOFLX,1)
             IF ((S%XPATCH(II,1) + S%XPATCH(II,2) + S%XPATCH(II,3)) .LT. 1.) THEN
                MGN%XBIOFLX(II) = PSFTS(II,MGN%NBIO)/(1. - S%XPATCH(II,1) - S%XPATCH(II,2) - S%XPATCH(II,3))
@@ -581,6 +582,16 @@ IF (CHI%SVI%NBEQ>0 .AND. CHI%LCH_BIO_FLUX) THEN
                MGN%XBIOFLX(:) = PSFTS(:,MGN%NBIO)
             ENDIF
          ENDDO
+        END IF 
+        IF ((MGN%CMECHANISM == "RELACS2").OR.(MGN%CMECHANISM == "CACM")) THEN
+         DO II=1,SIZE(MGN%XBIOFLX,1)
+            IF ((S%XPATCH(II,1) + S%XPATCH(II,2) + S%XPATCH(II,3)) .LT. 1.) THEN
+               MGN%XBIOFLX(II) = PSFTS(II,MGN%NISOP)/(1. - S%XPATCH(II,1) - S%XPATCH(II,2) - S%XPATCH(II,3))
+            ELSE
+               MGN%XBIOFLX(:) = PSFTS(:,MGN%NISOP)
+            ENDIF
+         ENDDO
+        END IF 
   ENDIF
 ENDIF
 

@@ -163,7 +163,6 @@ DO JN=1,NMODE_DST
      ZM(:,:,:,NM6(JN)) = ZM(:,:,:,NM0(JN)) * (ZINIRADIUS(JN)**6) * &
                EXP(18 *(LOG(ZINISIGMA(JN)))**2)
 
-     IF (LVARSIG) THEN
      WHERE ((ZM(:,:,:,NM0(JN)) .LT. ZMMIN(NM0(JN))).OR.&
             (ZM(:,:,:,NM3(JN)) .LT. ZMMIN(NM3(JN))).OR.&
             (ZM(:,:,:,NM6(JN)) .LT. ZMMIN(NM6(JN))))
@@ -171,15 +170,6 @@ DO JN=1,NMODE_DST
      ZM(:,:,:,NM3(JN)) = ZMMIN(NM3(JN))
      ZM(:,:,:,NM6(JN)) = ZMMIN(NM6(JN))
      END WHERE
-
-     ELSE IF (.NOT.(LRGFIX_DST)) THEN
-
-     WHERE ((ZM(:,:,:,NM0(JN)) .LT. ZMMIN(NM0(JN))).OR.&
-            (ZM(:,:,:,NM3(JN)) .LT. ZMMIN(NM3(JN))))
-     ZM(:,:,:,NM0(JN)) = ZMMIN(NM0(JN))
-     ZM(:,:,:,NM3(JN)) = ZMMIN(NM3(JN))
-     END WHERE
-     ENDIF
 
     ! return to concentration #/m3 =>  (#/molec_{air}
      IF (LVARSIG) THEN

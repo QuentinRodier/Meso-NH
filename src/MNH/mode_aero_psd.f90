@@ -662,6 +662,12 @@ ELSE
     END IF
 ENDIF
 
+! Cf Ackermann (all to black carbon except water)
+!Set molecular weightn g/mol 
+ZRHOI(:) = 1.8e3
+ZRHOI(JP_AER_H2O) = 1.0e3   ! water
+ZRHOI(JP_AER_DST) = XDENSITY_DUST  ! dusts
+
 ! conversion into mol.cm-3
 ZDEN2MOL = 1E-6 * XAVOGADRO  / XMD
 DO JJ=1, SIZE(PSVT, 4)
@@ -892,6 +898,12 @@ ELSE
     ZMI(:,JP_AER_SOA10) = 210.
     END IF
 ENDIF
+
+! Cf Ackermann (all to black carbon except water)
+!Set molecular weightn g/mol 
+ZRHOI(:) = 1.8e3
+ZRHOI(JP_AER_H2O) = 1.0e3   ! water
+ZRHOI(JP_AER_DST) = XDENSITY_DUST  ! dusts
 
 ! conversion into mol.cm-3
 ZDEN2MOL = 1E-6 * XAVOGADRO  / XMD

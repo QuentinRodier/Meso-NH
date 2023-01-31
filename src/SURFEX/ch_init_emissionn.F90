@@ -3,7 +3,8 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE CH_INIT_EMISSION_n (CHE, PCONVERSION, HSV, HPROGRAM,KLU,HINIT,PRHOA,HCHEM_SURF_FILE)
+      SUBROUTINE CH_INIT_EMISSION_n (CHE, PCONVERSION, HSV, HPROGRAM,KLU,HINIT,PRHOA,&
+                                     HCHEM_SURF_FILE, LCH_SURF_EMIS, KEQ)
 !     #######################################
 !
 !!****  *CH_INIT_EMIISION_n* - routine to initialize chemical emissions data structure
@@ -68,6 +69,8 @@ CHARACTER(LEN=3),  INTENT(IN)  :: HINIT    ! Flag to know if one initializes:
 !                                          !         an initial file
 REAL, DIMENSION(:),INTENT(IN)  :: PRHOA    ! air density
 CHARACTER(LEN=28), INTENT(IN)  :: HCHEM_SURF_FILE ! ascii file for chemistry aggregation
+LOGICAL, INTENT(IN)  :: LCH_SURF_EMIS
+INTEGER, INTENT(IN)  :: KEQ
 !
 !*       0.2   declarations of local variables
 !
@@ -223,6 +226,7 @@ IVERB=6
 
 !*      3.     Conversion and aggregation
 
+IF ((LCH_SURF_EMIS).AND.(KEQ > 0)) THEN
 IF (HINIT == "ALL") THEN
   IF (INBOFF > 0) THEN
     CALL OPEN_NAMELIST(HPROGRAM,ICH,HFILE=HCHEM_SURF_FILE)
@@ -242,6 +246,7 @@ IF (HINIT == "ALL") THEN
     NULLIFY(CHE%TSPRONOSLIST)
   END IF
 ENDIF
+END IF
 
 DEALLOCATE(ITIMES,INBTIMES,IOFFNDX)
 WRITE(ILUOUT,*) '------ Leaving CH_INIT_EMISSION ------'

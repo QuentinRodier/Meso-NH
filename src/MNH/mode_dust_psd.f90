@@ -256,15 +256,15 @@ DO JN=1,NMODE_DST
          * PRHODREF(:,:,:)                       !==>#/m3
 
     ! Limit concentration to minimum values
-!    WHERE ((ZM(:,:,:,NM0(JN)) < ZMMIN(NM0(JN)) ).OR. &
-!           (ZM(:,:,:,NM3(JN)) < ZMMIN(NM3(JN)) )) 
-!       ZM(:,:,:,NM0(JN)) = ZMMIN(NM0(JN))
-!       ZM(:,:,:,NM3(JN)) = ZMMIN(NM3(JN))
-!       PSVT(:,:,:,1+(JN-1)*2) = ZM(:,:,:,NM0(JN)) * XMD / &
-!       (XAVOGADRO * PRHODREF(:,:,:) )
-!       PSVT(:,:,:,2+(JN-1)*2) = ZM(:,:,:,NM3(JN)) * XMD * XPI * 4./3. * ZRHOI  / &
-!                              (ZMI*PRHODREF(:,:,:)*XM3TOUM3)
-!    ENDWHERE
+    WHERE ((ZM(:,:,:,NM0(JN)) < ZMMIN(NM0(JN)) ).OR. &
+           (ZM(:,:,:,NM3(JN)) < ZMMIN(NM3(JN)) )) 
+       ZM(:,:,:,NM0(JN)) = ZMMIN(NM0(JN))
+       ZM(:,:,:,NM3(JN)) = ZMMIN(NM3(JN))
+       PSVT(:,:,:,1+(JN-1)*2) = ZM(:,:,:,NM0(JN)) * XMD / &
+       (XAVOGADRO * PRHODREF(:,:,:) )
+       PSVT(:,:,:,2+(JN-1)*2) = ZM(:,:,:,NM3(JN)) * XMD * XPI * 4./3. * ZRHOI  / &
+                              (ZMI*PRHODREF(:,:,:)*XM3TOUM3)
+    ENDWHERE
     END IF
 
     ! 

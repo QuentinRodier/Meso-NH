@@ -96,10 +96,10 @@
     !LOCAL VARIABLES
   INTEGER :: NMODE_AER
   REAL, DIMENSION(SIZE(PSVTA,1),SIZE(PSVTA,2),SIZE(PSVTA,3),SIZE(PSVTA,4)) :: ZSVT
-  REAL, DIMENSION(SIZE(PSVTA,1),SIZE(PSVTA,2),SIZE(PSVTA,3),16 ,2) :: ZMASS         ![kg/m3] mass of aerosol mode
-  REAL, DIMENSION(SIZE(PSVTA,1),SIZE(PSVTA,2),SIZE(PSVTA,3) ,2) :: ZMASSeq         ![kg/m3] mass of aerosol mode
-  REAL, DIMENSION(SIZE(PSVTA,1),SIZE(PSVTA,2),SIZE(PSVTA,3), 2) :: ZRADIUS       ![um] number median radius ofaerosol mode
-  REAL, DIMENSION(SIZE(PSVTA,1),SIZE(PSVTA,2),SIZE(PSVTA,3), 2) :: ZSIGMA        ![-] dispersion coefficientaerosol mode
+  REAL, DIMENSION(SIZE(PSVTA,1),SIZE(PSVTA,2),SIZE(PSVTA,3),NSP+NCARB+NSOA ,JPMODE) :: ZMASS         ![kg/m3] mass of aerosol mode
+  REAL, DIMENSION(SIZE(PSVTA,1),SIZE(PSVTA,2),SIZE(PSVTA,3) , JPMODE) :: ZMASSeq         ![kg/m3] mass of aerosol mode
+  REAL, DIMENSION(SIZE(PSVTA,1),SIZE(PSVTA,2),SIZE(PSVTA,3), JPMODE) :: ZRADIUS       ![um] number median radius ofaerosol mode
+  REAL, DIMENSION(SIZE(PSVTA,1),SIZE(PSVTA,2),SIZE(PSVTA,3), JPMODE) :: ZSIGMA        ![-] dispersion coefficientaerosol mode
   REAL, ALLOCATABLE, DIMENSION(:,:,:,:)                   :: ZTAU550_MDE   ![-] opt.depth 550nm one mode
   REAL, ALLOCATABLE, DIMENSION(:,:,:,:,:)                 :: ZTAU_WVL_MDE  ![-] opt.depth @ wvl, one mode
   REAL, ALLOCATABLE, DIMENSION(:,:,:,:,:)                 :: ZPIZA_WVL_MDE ![-] single scattering albedo @ wvl, one mode
@@ -133,13 +133,13 @@
   COMPLEX, DIMENSION(size(ZMASS,1),size(ZMASS,2),size(ZMASS,3),6)::Req !  Equivalent refractive index
   REAL, PARAMETER           :: EPSILON=1.d-8                     ![um] a small number used to avoid zero
   
-  INTEGER ::JJJ
+  INTEGER ::JJJ, JI, JSV
  
 !-------------------------------------------------------------------------
 !-------------------------------------------------------------------------
 !-------------------------------------------------------------------------
 !
-  NMODE_AER=2
+NMODE_AER=JPMODE  ! in case of ORILAM
 
   
   !Allocate arrays which size depend on number of modes
@@ -148,6 +148,7 @@
   ALLOCATE(ZPIZA_WVL_MDE(SIZE(PTAU550,1),SIZE(PTAU550,2),SIZE(PTAU550,3),KSWB,NMODE_AER))
   ALLOCATE(ZCGA_WVL_MDE(SIZE(PTAU550,1),SIZE(PTAU550,2),SIZE(PTAU550,3),KSWB,NMODE_AER))
   ZSVT(:,:,:,:)=PSVTA(:,:,:,:)   
+  
   CALL PPP2AERO(     &
        ZSVT                                   & !I [moments/molec_{air}] moments of aerosol for all modes
        ,PRHODREFA                              & !I [kg/m3] air density
@@ -157,8 +158,8 @@
        )
      
 
-    ZMASS(:,:,:,:,:)=ZMASS(:,:,:,:,:)*1.E-9   
-
+    ZMASS(:,:,:,:,:)=MAX(ZMASS(:,:,:,:,:)*1.E-9, 1E-20)   
+    
   DO JMDE=1,NMODE_AER
 
       Ri(1,1)=CMPLX(1.80,-7.40E-1,kind=kind(Ri(1,1)))
@@ -207,30 +208,35 @@
 ! Computation of the refractive index for the whole aerosol mode according to
 ! Maxwell-Garnett mixing rule
 !    IF (LDUST) THEN
-!      VDDST(:,:,:)=(ZMASS(:,:,:,JP_AER_DST,JMDE))/XFAC(JP_AER_DST)
 !    ELSE
-       VDDST(:,:,:)=0.
+!       VDDST(:,:,:)=0.
 !    ENDIF
 
-     VOC(:,:,:)=(ZMASS(:,:,:,5,JMDE))/XFAC(5)
-     VH2O(:,:,:)=(ZMASS(:,:,:,4,JMDE))/XFAC(4)
-     VAM(:,:,:)=(ZMASS(:,:,:,3,JMDE))/XFAC(3)
-     VSU(:,:,:)=(ZMASS(:,:,:,1,JMDE))/XFAC(1)
-     VNI(:,:,:)=(ZMASS(:,:,:,2,JMDE))/XFAC(2)
-     VBC(:,:,:)=(ZMASS(:,:,:,6,JMDE))/XFAC(6)
-     VSOA1(:,:,:)=(ZMASS(:,:,:,7,JMDE))/XFAC(7)
-     VSOA2(:,:,:)=(ZMASS(:,:,:,8,JMDE))/XFAC(8)
-     VSOA3(:,:,:)=(ZMASS(:,:,:,9,JMDE))/XFAC(9)
-     VSOA4(:,:,:)=(ZMASS(:,:,:,10,JMDE))/XFAC(10)
-     VSOA5(:,:,:)=(ZMASS(:,:,:,11,JMDE))/XFAC(11)
-     VSOA6(:,:,:)=(ZMASS(:,:,:,12,JMDE))/XFAC(12)
-     VSOA7(:,:,:)=(ZMASS(:,:,:,13,JMDE))/XFAC(13)
-     VSOA8(:,:,:)=(ZMASS(:,:,:,14,JMDE))/XFAC(14)
-     VSOA9(:,:,:)=(ZMASS(:,:,:,15,JMDE))/XFAC(15)
-     VSOA10(:,:,:)=(ZMASS(:,:,:,16,JMDE))/XFAC(16)
+
+     VOC(:,:,:)=(ZMASS(:,:,:,JP_AER_OC,JMDE))/XFAC(JP_AER_OC)
+     VH2O(:,:,:)=(ZMASS(:,:,:,JP_AER_H2O,JMDE))/XFAC(JP_AER_H2O)
+     VAM(:,:,:)=(ZMASS(:,:,:,JP_AER_NH3,JMDE))/XFAC(JP_AER_NH3)
+     VSU(:,:,:)=(ZMASS(:,:,:,JP_AER_SO4,JMDE))/XFAC(JP_AER_SO4)
+     VNI(:,:,:)=(ZMASS(:,:,:,JP_AER_NO3,JMDE))/XFAC(JP_AER_NO3)
+     VBC(:,:,:)=(ZMASS(:,:,:,JP_AER_BC,JMDE))/XFAC(JP_AER_BC)
+     VDDST(:,:,:)=(ZMASS(:,:,:,JP_AER_DST,JMDE))/XFAC(JP_AER_DST)
+    IF (NSOA .EQ. 10) THEN 
+     VSOA1(:,:,:)=(ZMASS(:,:,:,JP_AER_SOA1,JMDE))/XFAC(JP_AER_SOA1)
+     VSOA2(:,:,:)=(ZMASS(:,:,:,JP_AER_SOA2,JMDE))/XFAC(JP_AER_SOA2)
+     VSOA3(:,:,:)=(ZMASS(:,:,:,JP_AER_SOA3,JMDE))/XFAC(JP_AER_SOA3)
+     VSOA4(:,:,:)=(ZMASS(:,:,:,JP_AER_SOA4,JMDE))/XFAC(JP_AER_SOA4)
+     VSOA5(:,:,:)=(ZMASS(:,:,:,JP_AER_SOA5,JMDE))/XFAC(JP_AER_SOA5)
+     VSOA6(:,:,:)=(ZMASS(:,:,:,JP_AER_SOA6,JMDE))/XFAC(JP_AER_SOA6)
+     VSOA7(:,:,:)=(ZMASS(:,:,:,JP_AER_SOA7,JMDE))/XFAC(JP_AER_SOA7)
+     VSOA8(:,:,:)=(ZMASS(:,:,:,JP_AER_SOA8,JMDE))/XFAC(JP_AER_SOA8)
+     VSOA9(:,:,:)=(ZMASS(:,:,:,JP_AER_SOA9,JMDE))/XFAC(JP_AER_SOA9)
+     VSOA10(:,:,:)=(ZMASS(:,:,:,JP_AER_SOA10,JMDE))/XFAC(JP_AER_SOA10)
      VSOA(:,:,:)=VSOA1(:,:,:)+VSOA2(:,:,:)+VSOA3(:,:,:)+VSOA4(:,:,:)+&
                  VSOA5(:,:,:)+VSOA6(:,:,:)+VSOA7(:,:,:)+VSOA8(:,:,:)+&
                  VSOA9(:,:,:)+VSOA10(:,:,:)
+    ELSE
+     VSOA(:,:,:)=0.
+    END IF
 
      VEXTR(:,:,:)=VSOA(:,:,:)+VH2O(:,:,:)+VAM(:,:,:)+VSU(:,:,:)+VNI(:,:,:)
      
@@ -251,11 +257,11 @@
      ENDWHERE
 
      ENDDO   
-        ZMASSeq(:,:,:,JMDE)=ZMASS(:,:,:,1,JMDE)+ZMASS(:,:,:,2,JMDE)+ZMASS(:,:,:,3,JMDE)&
-                         +ZMASS(:,:,:,4,JMDE)+ZMASS(:,:,:,5,JMDE)+ZMASS(:,:,:,6,JMDE)+ZMASS(:,:,:,7,JMDE)&
-                         +ZMASS(:,:,:,8,JMDE)+ZMASS(:,:,:,9,JMDE)+ZMASS(:,:,:,10,JMDE)+ZMASS(:,:,:,11,JMDE)&
-                         +ZMASS(:,:,:,12,JMDE)+ZMASS(:,:,:,13,JMDE)+ZMASS(:,:,:,14,JMDE)+ZMASS(:,:,:,15,JMDE)&
-                         +ZMASS(:,:,:,16,JMDE)    
+     ZMASSeq(:,:,:,JMDE)=0.
+     DO JSV=1,NSP+NCARB+NSOA
+       ZMASSeq(:,:,:,JMDE)=ZMASSeq(:,:,:,JMDE)+ ZMASS(:,:,:,JSV,JMDE)
+     END DO
+
      PII(:,:,:,:) = aimag(CMPLX(Req(:,:,:,:),kind=kind(PII(1,1,1,1))))
      PIR(:,:,:,:) = real( CMPLX(Req(:,:,:,:),kind=kind(PIR(1,1,1,1))))
      !Get aerosol optical properties from look up tables
