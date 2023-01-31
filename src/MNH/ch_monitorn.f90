@@ -652,7 +652,6 @@ SELECT CASE (CCH_TDISCRETIZATION)
 END SELECT
 !
 !
-IF (LEN_TRIM(CSPEC_BU_DIAG)/=0.OR.LEN_TRIM(CSPEC_DIAG)/=0) GSPLIT=.FALSE.  ! Modif. for DIAG
 IF (CPROGRAM=='DIAG  ') GSPLIT=.FALSE.  ! Modif. for DIAG
 !
 !
@@ -1028,6 +1027,8 @@ DO JL=1,ISVECNMASK
       END DO 
     END DO
   END IF
+!
+  ZCHEM(:,:) = MAX(ZCHEM, XMNH_TINY)
 !
 !*       4.2   transfer meteo data into chemical core system
 !
