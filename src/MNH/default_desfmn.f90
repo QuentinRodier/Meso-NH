@@ -996,7 +996,7 @@ ENDIF
 !                ----------------------------------------
 !
 IF (KMI == 1) THEN
-   LPTSPLIT     = .FALSE.
+   LPTSPLIT     = .TRUE.
    L_LFEEDBACKT = .TRUE.
    L_NMAXITER   = 1
    L_XMRSTEP    = 0.
