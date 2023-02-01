@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2019-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -1957,18 +1957,12 @@ SUBROUTINE FIRE_READFUEL( TPFILE, PFIREFUELMAP, PFMIGNITION, PFMWALKIG )
   !*       0.    DECLARATIONS
   !!             ============
   !
-  USE MODD_FIRE
-  USE MODD_CONF,    ONLY : NVERB
-  USE MODD_FIELD
-  USE MODD_IO,      ONLY: TFILEDATA
-  USE MODD_LUNIT_n, ONLY: TLUOUT
-  USE MODE_FIELD
+  USE MODD_FIELD,            ONLY: TFIELDMETADATA, TYPEREAL
+  USE MODD_IO,               ONLY: TFILEDATA
+  USE MODE_IO_FIELD_READ,    ONLY: IO_Field_read
+  USE MODE_IO_FILE,          ONLY: IO_File_close, IO_File_open
   USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_ADD2LIST
-  use NETCDF,            ONLY: NF90_FLOAT
-  USE MODE_IO_FIELD_READ,ONLY: IO_Field_read
-  USE MODE_IO_FILE,      ONLY: IO_File_close, IO_File_open
-  !
-  USE MODE_MPPDB
+  USE MODD_LUNIT_n,          ONLY: TLUOUT
   !
   IMPLICIT NONE
   !
@@ -1982,23 +1976,15 @@ SUBROUTINE FIRE_READFUEL( TPFILE, PFIREFUELMAP, PFMIGNITION, PFMWALKIG )
 
   !*       0.2   declarations of local variables
 
-  REAL,	DIMENSION(SIZE(PFIREFUELMAP,1),SIZE(PFIREFUELMAP,2),SIZE(PFIREFUELMAP,3))	  ::	ZWORK          ! Working array
-
   CHARACTER(LEN=6) :: YFUELNAME
-  INTEGER                               :: IID             ! File management variable
-  INTEGER                               :: IRESP           ! Return code of FM routines
-  INTEGER                               :: IGRID           ! C-grid indicator in LFIFM file
-  INTEGER                               :: ILENCH          ! Length of comment string in LFIFM file
-  CHARACTER (LEN=100)                   :: YCOMMENT        ! comment string in LFIFM file
   INTEGER                               :: ILUOUT          ! Logical unit number for the output listing
-  INTEGER                               :: IIU, IJU        ! max array size
-  TYPE(TFILEDATA),POINTER               :: TFUELFILE => NULL()      ! FuelMap file
-  TYPE(TFIELDDATA)                      :: TZFIELD         ! Field type
+  TYPE(TFILEDATA), POINTER              :: TFUELFILE       ! FuelMap file
+  TYPE(TFIELDMETADATA)                  :: TZFIELD         ! Field type
   ! loop, tests
   INTEGER :: JFUEL
   !----------------------------------------------------------------------------------------------
   !
-
+  TFUELFILE => NULL()
   !*      1. Get logical number for Outputlisting
 
   ILUOUT = TLUOUT%NLU
@@ -2012,23 +1998,26 @@ SUBROUTINE FIRE_READFUEL( TPFILE, PFIREFUELMAP, PFMIGNITION, PFMWALKIG )
   CALL IO_FILE_ADD2LIST( TFUELFILE, 'FuelMap', 'MNH', 'READ', HFORMAT='NETCDF4' )
   CALL IO_File_open( TFUELFILE )
 
-  TFUELFILE%NLFITYPE = 0
-
   !*      3. Read fuels properties
 
-  CALL FIND_FIELD_ID_FROM_MNHNAME( 'UT', IID, IRESP )
-  TZFIELD = TFIELDLIST(IID)
+    TZFIELD = TFIELDMETADATA( &
+      CMNHNAME   = 'generic', &
+      CSTDNAME   = '',        &
+      CLONGNAME  = 'generic', &
+      !CUNITS     = '',        &
+      CDIR       = 'XY',      &
+      NGRID      = 4,         &
+      NTYPE      = TYPEREAL,  &
+      NDIMS      = 3,         &
+      LTIMEDEP   = .FALSE.,   &
+      CCOMMENT   = ''         )
 
   DO JFUEL = 1, 22
     WRITE(YFUELNAME,'(A4,I2.2)')'Fuel',JFUEL
     WRITE(UNIT=ILUOUT,FMT=*) 'Extract ', YFUELNAME
-    ! change field properties
-    TZFIELD%CMNHNAME = YFUELNAME
-    TZFIELD%CSTDNAME = YFUELNAME
-    TZFIELD%NDIMS = 3
-    TZFIELD%NTYPE = NF90_FLOAT
-    TZFIELD%LTIMEDEP = .FALSE.
-    TZFIELD%NGRID = 4
+    TZFIELD%CMNHNAME  = YFUELNAME
+    TZFIELD%CLONGNAME = YFUELNAME
+
     ! Import data from file
     CALL IO_Field_read( TFUELFILE, TZFIELD, PFIREFUELMAP(:,:,:,JFUEL) )
   END DO
@@ -2038,8 +2027,8 @@ SUBROUTINE FIRE_READFUEL( TPFILE, PFIREFUELMAP, PFMIGNITION, PFMWALKIG )
   WRITE(UNIT=ILUOUT,FMT=*) 'Extract Ignition'
 
   ! change field properties
-  TZFIELD%CMNHNAME = 'Ignition'
-  TZFIELD%CSTDNAME = 'Ignition'
+  TZFIELD%CMNHNAME  = 'Ignition'
+  TZFIELD%CLONGNAME = 'Ignition'
 
   ! Import data from file
   CALL IO_Field_read( TFUELFILE, TZFIELD, PFMIGNITION )
@@ -2049,8 +2038,8 @@ SUBROUTINE FIRE_READFUEL( TPFILE, PFIREFUELMAP, PFMIGNITION, PFMWALKIG )
   WRITE(UNIT=ILUOUT,FMT=*) 'Extract Walking Ignition'
 
   ! change field properties
-  TZFIELD%CMNHNAME = 'WalkingIgnition'
-  TZFIELD%CSTDNAME = 'WalkingIgnition'
+  TZFIELD%CMNHNAME  = 'WalkingIgnition'
+  TZFIELD%CLONGNAME = 'WalkingIgnition'
 
   ! Import data from file
   CALL IO_Field_read( TFUELFILE, TZFIELD, PFMWALKIG )
@@ -2095,18 +2084,12 @@ SUBROUTINE FIRE_READBMAP(TPFILE, PBMAP)
   !*       0.    DECLARATIONS
   !!             ============
   !
-  USE MODD_FIRE
-  USE MODD_CONF,    ONLY : NVERB
-  USE MODD_FIELD
-  USE MODD_IO,      ONLY: TFILEDATA
-  USE MODD_LUNIT_n, ONLY: TLUOUT
-  USE MODE_FIELD
+  USE MODD_FIRE,             ONLY: CBMAPFILE
+  USE MODD_IO,               ONLY: TFILEDATA
+  USE MODE_IO_FIELD_READ,    ONLY: IO_Field_read
+  USE MODE_IO_FILE,          ONLY: IO_File_close, IO_File_open
   USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_ADD2LIST
-  use NETCDF,            only: NF90_FLOAT
-  USE MODE_IO_FIELD_READ,ONLY: IO_Field_read
-  USE MODE_IO_FILE,      ONLY: IO_File_close, IO_File_open
-  !
-  USE MODE_MPPDB
+  USE MODD_LUNIT_n,          ONLY: TLUOUT
   !
   IMPLICIT NONE
   !
@@ -2118,21 +2101,11 @@ SUBROUTINE FIRE_READBMAP(TPFILE, PBMAP)
 
   !*       0.2   declarations of local variables
 
-  CHARACTER(LEN=6) :: YFUELNAME
-  INTEGER                               :: IID                  ! File management variable
-  INTEGER                               :: IRESP                ! Return code of FM routines
-  INTEGER                               :: IGRID                ! C-grid indicator in LFIFM file
-  INTEGER                               :: ILENCH               ! Length of comment string in LFIFM file
-  CHARACTER (LEN=100)                   :: YCOMMENT             ! comment string in LFIFM file
   INTEGER                               :: ILUOUT               ! Logical unit number for the output listing
-  INTEGER                               :: IIU, IJU             ! max array size
-  TYPE(TFILEDATA),POINTER               :: TFUELFILE => NULL()  ! FuelMap file
-  TYPE(TFIELDDATA)                      :: TZFIELD              ! Field type
-  ! loop, tests
-  INTEGER :: JFUEL
+  TYPE(TFILEDATA), POINTER              :: TFUELFILE            ! FuelMap file
   !----------------------------------------------------------------------------------------------
   !
-
+  TFUELFILE => NULL()
   !*      1. Get logical number for Outputlisting
 
   ILUOUT = TLUOUT%NLU
@@ -2146,24 +2119,12 @@ SUBROUTINE FIRE_READBMAP(TPFILE, PBMAP)
   CALL IO_FILE_ADD2LIST( TFUELFILE, CBMAPFILE, 'MNH', 'READ', HFORMAT='NETCDF4' )
   CALL IO_File_open( TFUELFILE )
 
-  TFUELFILE%NLFITYPE = 0
-
   !*      4. read Burning map file
 
   WRITE(UNIT=ILUOUT,FMT=*) 'Extract BMap'
 
-  CALL FIND_FIELD_ID_FROM_MNHNAME( 'UT', IID, IRESP )
-  TZFIELD = TFIELDLIST(IID)
-  ! changes properties
-  TZFIELD%CMNHNAME = 'BMAP'
-  TZFIELD%CSTDNAME = 'BMAP'
-  TZFIELD%NDIMS = 3
-  TZFIELD%NTYPE = NF90_FLOAT
-  TZFIELD%LTIMEDEP = .TRUE.
-  TZFIELD%NGRID = 1
-
   ! Import data from file
-  CALL IO_Field_read( TFUELFILE, TZFIELD, PBMAP )
+  CALL IO_Field_read( TFUELFILE, 'BMAP', PBMAP )
 
   !*      5. Close file
 
