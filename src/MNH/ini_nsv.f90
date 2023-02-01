@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2001-2022 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2001-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -1052,6 +1052,22 @@ DO JSV = NSV_FFBEG_A(KMI), NSV_FFEND_A(KMI)
     LTIMEDEP   = .TRUE.                      )
 END DO
 #endif
+
+DO JSV = NSV_FIREBEG_A(KMI), NSV_FIREEND_A(KMI)
+  WRITE( YNUM3, '( I3.3 )' ) JSV-NSV_FIREBEG_A(KMI)+1
+
+  TSVLIST_A(JSV, KMI) = TFIELDMETADATA(      &
+    CMNHNAME   = 'SVFIRE' // YNUM3,          &
+    CSTDNAME   = '',                         &
+    CLONGNAME  = 'SVFIRE' // YNUM3,          &
+    CUNITS     = 'kg kg-1',                  &
+    CDIR       = 'XY',                       &
+    CCOMMENT   = 'X_Y_Z_' // 'SVT' // YNUM3, &
+    NGRID      = 1,                          &
+    NTYPE      = TYPEREAL,                   &
+    NDIMS      = 3,                          &
+    LTIMEDEP   = .TRUE.                      )
+END DO
 
 DO JSV = NSV_CSBEG_A(KMI), NSV_CSEND_A(KMI)
   WRITE( YNUM3, '( I3.3 )' ) JSV-NSV_CSBEG_A(KMI)
