@@ -179,6 +179,7 @@ USE MODD_CSTS_SALT,  ONLY : XMOLARWEIGHT_SALT
 USE MODD_CH_FLX_n, ONLY : XCHFLX
 USE MODD_DIAG_FLAG, ONLY : LCHEMDIAG
 USE MODD_SURF_PAR,   ONLY: XUNDEF_SFX => XUNDEF
+USE MODD_PRECISION,      ONLY: MNHTIME
 !
 USE MODI_NORMAL_INTERPOL
 USE MODE_ROTATE_WIND, ONLY: ROTATE_WIND
@@ -386,11 +387,11 @@ REAL                              :: ZTIMEC
 INTEGER           :: ILUOUT         ! logical unit
 !
 ! Fire model
-REAL, DIMENSION(2)                    :: ZFIRETIME1, ZFIRETIME2           ! CPU time for Blaze perf profiling
-REAL, DIMENSION(2)                    :: ZGRADTIME1, ZGRADTIME2           ! CPU time for Blaze perf profiling
-REAL, DIMENSION(2)                    :: ZPROPAGTIME1, ZPROPAGTIME2       ! CPU time for Blaze perf profiling
-REAL, DIMENSION(2)                    :: ZFLUXTIME1, ZFLUXTIME2           ! CPU time for Blaze perf profiling
-REAL, DIMENSION(2)                    :: ZROSWINDTIME1, ZROSWINDTIME2     ! CPU time for Blaze perf profiling
+REAL(KIND=MNHTIME), DIMENSION(2)      :: ZFIRETIME1, ZFIRETIME2           ! CPU time for Blaze perf profiling
+REAL(KIND=MNHTIME), DIMENSION(2)      :: ZGRADTIME1, ZGRADTIME2           ! CPU time for Blaze perf profiling
+REAL(KIND=MNHTIME), DIMENSION(2)      :: ZPROPAGTIME1, ZPROPAGTIME2       ! CPU time for Blaze perf profiling
+REAL(KIND=MNHTIME), DIMENSION(2)      :: ZFLUXTIME1, ZFLUXTIME2           ! CPU time for Blaze perf profiling
+REAL(KIND=MNHTIME), DIMENSION(2)      :: ZROSWINDTIME1, ZROSWINDTIME2     ! CPU time for Blaze perf profiling
 REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: ZFIREFUELMAP                     ! Fuel map
 CHARACTER(LEN=7)                      :: YFUELMAPFILE                     ! Fuel Map file name
 TYPE(LIST_ll), POINTER                :: TZFIELDFIRE_ll                   ! list of fields to exchange

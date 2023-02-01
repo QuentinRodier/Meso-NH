@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2019-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -16,7 +16,6 @@
 !!
 !!**  IMPLICIT ARGUMENTS
 !!    ------------------
-!!      Module MODD_PARAMETERS : contains the maximum number of coupling files
 !!
 !!    REFERENCE
 !!    ---------
@@ -33,7 +32,7 @@
 !*       0.   DECLARATIONS
 !             ------------
 !
-USE MODD_PARAMETERS
+USE MODD_PRECISION, ONLY: MNHTIME
 !
 IMPLICIT NONE
 !
@@ -78,12 +77,12 @@ INTEGER		,	SAVE	::    NNBSMOKETRACER
 !
 ! Parameters not in the namelist
 !
-REAL              ,     SAVE  ::    XFIREMESHSIZE(2)        ! Fire Mesh size [dxf,dyf]
-REAL              ,     SAVE  ::    XFIREPERF(2)            ! Blaze fire model performance
-REAL              ,     SAVE  ::    XGRADPERF(2)            ! Grad computation performance
-REAL              ,     SAVE  ::    XROSWINDPERF(2)         ! ROS and wind interpolation computation performance
-REAL              ,     SAVE  ::    XPROPAGPERF(2)          ! Propagation computation performance
-REAL              ,     SAVE  ::    XFLUXPERF(2)            ! Heat fluxes computation performance
+REAL,               DIMENSION(2), SAVE ::  XFIREMESHSIZE    ! Fire Mesh size [dxf,dyf]
+REAL(KIND=MNHTIME), DIMENSION(2), SAVE :: XFIREPERF         ! Blaze fire model performance
+REAL(KIND=MNHTIME), DIMENSION(2), SAVE :: XGRADPERF         ! Grad computation performance
+REAL(KIND=MNHTIME), DIMENSION(2), SAVE :: XROSWINDPERF      ! ROS and wind interpolation computation performance
+REAL(KIND=MNHTIME), DIMENSION(2), SAVE :: XPROPAGPERF       ! Propagation computation performance
+REAL(KIND=MNHTIME), DIMENSION(2), SAVE :: XFLUXPERF         ! Heat fluxes computation performance
 LOGICAL           ,     SAVE  ::    LRESTA_ASE              ! Flag for using ASE in RESTA file
 LOGICAL           ,     SAVE  ::    LRESTA_AWC              ! Flag for using AWC in RESTA file
 LOGICAL           ,     SAVE  ::    LRESTA_EWAM             ! Flag for using EWAM in RESTA file

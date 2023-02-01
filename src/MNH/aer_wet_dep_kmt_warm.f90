@@ -1,4 +1,4 @@
-!ORILAM_LIC Copyright 2007-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!ORILAM_LIC Copyright 2007-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !ORILAM_LIC This is part of the ORILAM software governed by the CeCILL-C licence
 !ORILAM_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !ORILAM_LIC for details.
@@ -787,6 +787,8 @@ END SUBROUTINE AER_WET_DEP_KMT_WARM_SEDIMENT
 !
 !*      0. DECLARATIONS
 !
+USE MODD_CST, ONLY: XMNH_HUGE
+
 IMPLICIT NONE
 !
 !-------------------------------------------------------------------------------
@@ -801,7 +803,7 @@ ZZRCT(:,:,:) = MAX(ZZRCT(:,:,:), KRTMIN(2)/2.)
 IF (PRESENT(PCRT)) THEN  ! 2-moment schemes
 !
 ! from lima_warm_coal.f90 (AUTO)
-  ZLBDC3(:,:,:) = 1.E45
+  ZLBDC3(:,:,:) = XMNH_HUGE
   ZLBDC(:,:,:)  = 1.E15
   WHERE (ZZRCT(:,:,:) > KRTMIN(2) .AND. PCCT(:,:,:) > XCTMIN(2))
     ZLBDC3(:,:,:) = KLBC * PCCT(:,:,:) / PRCT(:,:,:)
