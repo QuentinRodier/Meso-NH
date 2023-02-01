@@ -7,7 +7,7 @@
               & KMI,KRR,KRRL,KRRI,HLBCX,HLBCY,KGRADIENTS,KHALO,       &
               & KSPLIT,KMODEL_CL,KSV,KSV_LGBEG,KSV_LGEND,HPROGRAM,    &
               & KSV_LIMA_NR, KSV_LIMA_NS, KSV_LIMA_NG, KSV_LIMA_NH,   &
-              & O2D,ONOMIXLG,OFLAT,OCOUPLES,OBLOWSNOW,OIBM,           &
+              & O2D,ONOMIXLG,OFLAT,OCOUPLES,OBLOWSNOW,OIBM,OFLYER,    &
               & OCOMPUTE_SRC, PRSNOW,                                 &
               & OOCEAN,ODEEPOC,ODIAG_IN_RUN,                          &
               & HTURBLEN_CL,HCLOUD,                                   &
@@ -272,7 +272,7 @@ USE MODE_SOURCES_NEG_CORRECT, ONLY: SOURCES_NEG_CORRECT_PHY
 USE MODE_TM06,                ONLY: TM06
 USE MODE_TKE_EPS_SOURCES,     ONLY: TKE_EPS_SOURCES
 USE MODE_TURB_HOR_SPLT,       ONLY: TURB_HOR_SPLT
-USE MODE_TURB_VER,            ONLY : TURB_VER
+USE MODE_TURB_VER,            ONLY: TURB_VER
 USE MODE_UPDATE_LM,           ONLY: UPDATE_LM
 !
 USE MODI_LES_MEAN_SUBGRID_PHY
@@ -304,6 +304,7 @@ INTEGER,                INTENT(IN)   :: KMODEL_CL     ! model number for cloud m
 LOGICAL,                INTENT(IN)   ::  OCOMPUTE_SRC ! flag to define dimensions of SIGS and SRCT variables
 LOGICAL,                INTENT(IN)   ::  OOCEAN       ! switch for Ocean model version
 LOGICAL,                INTENT(IN)   ::  ODEEPOC      ! activates sfc forcing for ideal ocean deep conv
+LOGICAL,                INTENT(IN)   ::  OFLYER       ! MesoNH flyer diagnostic
 LOGICAL,                INTENT(IN)   ::  OFLAT        ! Logical for zero ororography
 LOGICAL,                INTENT(IN)   ::  OCOUPLES     ! switch to activate atmos-ocean LES version 
 LOGICAL,                INTENT(IN)   ::  OBLOWSNOW    ! switch to activate pronostic blowing snow
@@ -1007,7 +1008,7 @@ CALL TURB_VER(D,CST,CSTURB,TURBN,TLES,                   &
           OOCEAN, ODEEPOC, OCOMPUTE_SRC,                 &
           KSV,KSV_LGBEG,KSV_LGEND,                       &
           ZEXPL,HPROGRAM, O2D, ONOMIXLG, OFLAT,          &
-          OCOUPLES,OBLOWSNOW, PRSNOW,                    &
+          OCOUPLES,OBLOWSNOW,OFLYER, PRSNOW,             &
           PTSTEP,TPFILE,                                 &
           PDXX,PDYY,PDZZ,PDZX,PDZY,PDIRCOSZW,PZZ,        &
           PCOSSLOPE,PSINSLOPE,                           &

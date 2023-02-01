@@ -8,7 +8,7 @@ IMPLICIT NONE
 CONTAINS
 SUBROUTINE TURB_VER_THERMO_FLUX(D,CST,CSTURB,TURBN,TLES,            &
                       KRR,KRRL,KRRI,KSV,KGRADIENTS,                 &
-                      OOCEAN,ODEEPOC,                               &
+                      OOCEAN,ODEEPOC,OFLYER,                        &
                       OCOUPLES, OCOMPUTE_SRC,                       &
                       PEXPL,PTSTEP,HPROGRAM,                        &
                       TPFILE,                                       &
@@ -233,7 +233,6 @@ USE PARKIND1,   ONLY: JPRB
 USE SHUMAN_PHY, ONLY: DZF_PHY, DZM_PHY, MXF_PHY, MYF_PHY, MZF_PHY, MZM_PHY
 USE YOMHOOK,    ONLY: LHOOK, DR_HOOK
 !
-USE MODD_AIRCRAFT_BALLOON, ONLY: LFLYER
 USE MODD_CST,              ONLY: CST_t
 USE MODD_CTURB,            ONLY: CSTURB_t
 USE MODD_DIMPHYEX,         ONLY: DIMPHYEX_t
@@ -270,6 +269,7 @@ INTEGER,                INTENT(IN)   :: KSV           ! number of scalar var.
 INTEGER,                INTENT(IN)   :: KGRADIENTS    ! Number of stored horizontal gradients
 LOGICAL,                INTENT(IN)   ::  OOCEAN       ! switch for Ocean model version
 LOGICAL,                INTENT(IN)   ::  ODEEPOC      ! activates sfc forcing for ideal ocean deep conv
+LOGICAL,                INTENT(IN)   ::  OFLYER       ! MesoNH flyer diagnostic
 LOGICAL,                INTENT(IN)   ::  OCOUPLES     ! switch to activate atmos-ocean LES version 
 LOGICAL,                INTENT(IN)   ::  OCOMPUTE_SRC ! flag to define dimensions of SIGS and
 REAL,                   INTENT(IN)   ::  PEXPL        ! Coef. for temporal disc.
@@ -663,7 +663,7 @@ ELSE
   !$mnh_end_expand_array(JIJ=IIJB:IIJE)
 END IF
 !
-IF ( LFLYER ) THEN
+IF ( OFLYER ) THEN
   PWTH(:,:IKTB) = XUNDEF
   PWTH(:,IKTE:) = XUNDEF
   !
@@ -1058,7 +1058,7 @@ IF (KRR /= 0) THEN
     ZFLXZ(IIJB:IIJE,IKU) = ZFLXZ(IIJB:IIJE,IKE)
   END IF
   !
-  IF ( LFLYER ) THEN
+  IF ( OFLYER ) THEN
     DO JK=IKTB+1,IKTE-1
       !$mnh_expand_array(JIJ=IIJB:IIJE)
       PWRC(IIJB:IIJE,JK)=0.5*(ZFLXZ(IIJB:IIJE,JK)+ZFLXZ(IIJB:IIJE,JK+IKL))

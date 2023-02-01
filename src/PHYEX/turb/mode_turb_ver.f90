@@ -10,7 +10,7 @@ SUBROUTINE TURB_VER(D,CST,CSTURB,TURBN,TLES,KRR,KRRL,KRRI,KGRADIENTS,&
                       OOCEAN,ODEEPOC,OCOMPUTE_SRC,                  &
                       KSV,KSV_LGBEG,KSV_LGEND,                      &
                       PEXPL, HPROGRAM, O2D, ONOMIXLG, OFLAT,        &
-                      OCOUPLES,OBLOWSNOW,PRSNOW,                    & 
+                      OCOUPLES,OBLOWSNOW,OFLYER,PRSNOW,             & 
                       PTSTEP, TPFILE,                               &
                       PDXX,PDYY,PDZZ,PDZX,PDZY,PDIRCOSZW,PZZ,       &
                       PCOSSLOPE,PSINSLOPE,                          &
@@ -253,6 +253,7 @@ INTEGER,                INTENT(IN)   :: KRRI          ! number of ice water var.
 INTEGER,                INTENT(IN)   :: KSV, KSV_LGBEG, KSV_LGEND ! number of scalar variables
 LOGICAL,                INTENT(IN)   ::  OOCEAN       ! switch for Ocean model version
 LOGICAL,                INTENT(IN)   ::  ODEEPOC      ! activates sfc forcing for ideal ocean deep conv
+LOGICAL,                INTENT(IN)   ::  OFLYER       ! MesoNH flyer diagnostic
 LOGICAL,                INTENT(IN)   ::  OCOMPUTE_SRC ! flag to define dimensions of SIGS and SRCT variables
 LOGICAL,                INTENT(IN)   ::  OFLAT        ! Logical for zero ororography
 LOGICAL,                INTENT(IN)   ::  OCOUPLES     ! switch to activate atmos-ocean LES version 
@@ -503,7 +504,7 @@ ENDIF
 !
   CALL  TURB_VER_THERMO_FLUX(D,CST,CSTURB,TURBN,TLES,                 &
                         KRR,KRRL,KRRI,KSV,KGRADIENTS,                 &
-                        OOCEAN,ODEEPOC,                               &
+                        OOCEAN,ODEEPOC,OFLYER,                        &
                         OCOUPLES,OCOMPUTE_SRC,                        &
                         PEXPL,PTSTEP,HPROGRAM,TPFILE,                 &
                         PDXX,PDYY,PDZZ,PDZX,PDZY,PDIRCOSZW,PZZ,       &
@@ -576,7 +577,7 @@ IF (TURBN%LHARAT) ZLM(:,:)=PLENGTHH(:,:)
 IF (KSV>0)                                                          &
 CALL  TURB_VER_SV_FLUX(D,CST,CSTURB,TURBN,TLES,ONOMIXLG,            &
                       KSV,KSV_LGBEG,KSV_LGEND,                      &
-                      OBLOWSNOW,                                    &
+                      OBLOWSNOW,OFLYER,                             &
                       PEXPL,PTSTEP,TPFILE,PRSNOW,                   &
                       PDZZ,PDIRCOSZW,                               &
                       PRHODJ,PWM,                                   &
