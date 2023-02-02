@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -10,6 +10,7 @@ program LFI2CDF
   USE MODD_CONF,          ONLY: CPROGRAM
   USE MODD_CONFZ,         ONLY: NB_PROCIO_R
   USE MODD_DIM_n,         ONLY: NIMAX_ll, NJMAX_ll, NKMAX
+  USE MODD_GRID_n,        ONLY: XXHAT, XXHATM, XYHAT, XYHATM
   USE MODD_IO,            ONLY: LVERB_OUTLST, LVERB_STDOUT, NIO_ABORT_LEVEL, NIO_VERB, NGEN_ABORT_LEVEL, NGEN_VERB
   USE MODD_PARAMETERS,    ONLY: JPHEXT, JPVEXT
   USE MODD_TIMEZ,         ONLY: TIMEZ
@@ -19,6 +20,7 @@ program LFI2CDF
   use mode_ll
   use mode_modeln_handler, only: Goto_model
   USE mode_options
+  USE MODE_SET_GRID,      ONLY: INTERP_HORGRID_TO_MASSPOINTS
   USE MODE_SPLITTINGZ_ll, ONLY: INI_PARAZ_ll
   USE mode_util
 
@@ -110,6 +112,12 @@ program LFI2CDF
   CALL SET_YOR_ll(1, 1)
   CALL SET_YEND_ll(NJMAX_ll+2*JPHEXT, 1)
   CALL INI_PARAZ_ll(IINFO_ll)
+
+  ! This has to be done after INI_PARAZ_ll and after reading of XXHAT and XYHAT (in OPEN_FILES)
+  ALLOCATE(XXHATM(NIMAX_ll+2*JPHEXT))
+  ALLOCATE(XYHATM(NJMAX_ll+2*JPHEXT))
+  ! Interpolations of positions to mass points
+  CALL INTERP_HORGRID_TO_MASSPOINTS( XXHAT, XYHAT, XXHATM, XYHATM )
 
   IF (runmode == MODELFI2CDF .OR. runmode == MODECDF2CDF) THEN
      IF (options(OPTVAR)%set) THEN
