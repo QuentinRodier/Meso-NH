@@ -1,4 +1,4 @@
-!iMNH_LIC Copyright 2012-2017 CNRS, Meteo-France and Universite Paul Sabatier
+!iMNH_LIC Copyright 2012-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
@@ -89,6 +89,7 @@ END MODULE MODI_READ_CHEM_DATA_CAMS_CASE
 !!      M. Leriche 26/02/2021 : add initialization for dust and sea salt
 !!      P. Tulet   01/02/2022 : unit conversion for aerosols (SALTCAMn, AEROCAMn, DUSTCAMn)
 !!      M. Leriche 02/02/2022 : compute air density from CAMS
+!  P. Wautelet 02/02/2023: correct support of 64bit integers (MNH_INT=8)
 !-------------------------------------------------------------------------------
 !
 !*       0. DECLARATIONS
@@ -183,7 +184,7 @@ REAL,DIMENSION(:,:),ALLOCATABLE    :: ZVALUE        ! Intermediate array
 REAL,DIMENSION(:),ALLOCATABLE      :: ZVALUE1D      ! Intermediate array
 REAL,DIMENSION(:,:),ALLOCATABLE    :: ZOUT          ! Intermediate arrays
 REAL,DIMENSION(:),ALLOCATABLE      :: ZOUT1D        ! Intermediate arrays
-INTEGER                            :: ind_netcdf    ! Indice for netcdf var.
+INTEGER(kind=CDFINT)               :: ind_netcdf    ! Indice for netcdf var.
 !chemistry field infile CAM1.nam
 INTEGER                                       :: ICHANNEL
 CHARACTER(LEN=8)                              :: YCAM="CAM1.nam"
@@ -213,15 +214,15 @@ integer(kind=CDFINT) :: lat_varid, lon_varid, lev_varid
 integer(kind=CDFINT) :: t_varid, q_varid, ps_varid 
 integer(kind=CDFINT) :: recid, latid, lonid, levid
 integer(kind=CDFINT) :: latlen, lonlen, levlen
-integer(kind=CDFINT) :: KILEN
-integer :: mmr_dust1_varid, mmr_dust2_varid, mmr_dust3_varid ! for init. dust
-integer :: mmr_seasalt1_varid, mmr_seasalt2_varid, mmr_seasalt3_varid ! for init sea salt
+integer :: KILEN
+integer(kind=CDFINT) :: mmr_dust1_varid, mmr_dust2_varid, mmr_dust3_varid ! for init. dust
+integer(kind=CDFINT) :: mmr_seasalt1_varid, mmr_seasalt2_varid, mmr_seasalt3_varid ! for init sea salt
 CHARACTER(LEN=40)                     :: recname
 REAL, DIMENSION(:), ALLOCATABLE       :: lats
 REAL, DIMENSION(:), ALLOCATABLE       :: lons 
 REAL, DIMENSION(:), ALLOCATABLE       :: levs 
-INTEGER, DIMENSION(:), ALLOCATABLE    :: count3d, start3d
-INTEGER, DIMENSION(:), ALLOCATABLE    :: count2d, start2d 
+INTEGER(kind=CDFINT), DIMENSION(:), ALLOCATABLE :: count3d, start3d
+INTEGER(kind=CDFINT), DIMENSION(:), ALLOCATABLE :: count2d, start2d 
 INTEGER, DIMENSION(:), ALLOCATABLE    :: kinlo 
 REAL, DIMENSION(:,:,:), ALLOCATABLE   :: vartemp3d,vartemp3dbis,vartemp3dter 
 REAL, DIMENSION(:,:,:), ALLOCATABLE   :: vartemp3dquater 
@@ -503,7 +504,7 @@ DO JK = 1, levlen
     JLOOP1 = JLOOP1 + lonlen
   ENDDO
   CALL HORIBL(lats(1),lons(1),lats(latlen),lons(lonlen), &
-              latlen,kinlo,KILEN,                        &
+              int(latlen,kind=kind(1)),kinlo,KILEN,      &
               ZVALUE(JK,:),INO,ZLONOUT,ZLATOUT,          &
               ZOUT(JK,:),.FALSE.,PTIME_HORI,.FALSE.)
 !
@@ -518,8 +519,8 @@ DO JK = 1, levlen
     JLOOP1 = JLOOP1 + lonlen
   ENDDO
   CALL HORIBL(lats(1),lons(1),lats(latlen),lons(lonlen), &
-              latlen,kinlo,KILEN,                                &
-              ZVALUE(JK,:),INO,ZLONOUT,ZLATOUT,                  &
+              int(latlen,kind=kind(1)),kinlo,KILEN,      &
+              ZVALUE(JK,:),INO,ZLONOUT,ZLATOUT,          &
               ZOUT(JK,:),.FALSE.,PTIME_HORI,.FALSE.)
 !
    CALL ARRAY_1D_TO_2D(INO,ZOUT(JK,:),IIU,IJU,                    &
@@ -533,8 +534,8 @@ DO JK = 1, levlen
     JLOOP1 = JLOOP1 + lonlen
   ENDDO
   CALL HORIBL(lats(1),lons(1),lats(latlen),lons(lonlen), &
-              latlen,kinlo,KILEN,                                &
-              ZVALUE(JK,:),INO,ZLONOUT,ZLATOUT,                  &
+              int(latlen,kind=kind(1)),kinlo,KILEN,      &
+              ZVALUE(JK,:),INO,ZLONOUT,ZLATOUT,          &
               ZOUT(JK,:),.FALSE.,PTIME_HORI,.FALSE.)
 !
    CALL ARRAY_1D_TO_2D(INO,ZOUT(JK,:),IIU,IJU,                    &
@@ -547,8 +548,8 @@ DO JJ = 1, latlen
   JLOOP1 = JLOOP1 + lonlen
 ENDDO
 CALL HORIBL(lats(1),lons(1),lats(latlen),lons(lonlen), &
-            latlen,kinlo,KILEN,                                &
-            ZVALUE1D(:),INO,ZLONOUT,ZLATOUT,                  &
+            int(latlen,kind=kind(1)),kinlo,KILEN,      &
+            ZVALUE1D(:),INO,ZLONOUT,ZLATOUT,           &
             ZOUT1D(:),.FALSE.,PTIME_HORI,.FALSE.)
 !
 CALL ARRAY_1D_TO_2D(INO,ZOUT1D(:),IIU,IJU,                    &
@@ -737,7 +738,7 @@ IF (OUSECHEM) THEN
             JLOOP1 = JLOOP1+lonlen
           ENDDO                                                                                           
           CALL HORIBL(lats(1),lons(1),lats(latlen),lons(lonlen), &
-                      latlen,kinlo,KILEN,                        &
+                      int(latlen,kind=kind(1)),kinlo,KILEN,      &
                       ZVALUE(JK,:),INO,ZLONOUT,ZLATOUT,          &
                       ZOUT(JK,:),.FALSE.,PTIME_HORI,.TRUE.)
           CALL ARRAY_1D_TO_2D(INO,ZOUT(JK,:),IIU,IJU, &
@@ -841,7 +842,7 @@ IF (OUSECHEM) THEN
             JLOOP1 = JLOOP1+lonlen
           ENDDO                                                                                           
           CALL HORIBL(lats(1),lons(1),lats(latlen),lons(lonlen), &
-                      latlen,kinlo,KILEN,                        &
+                      int(latlen,kind=kind(1)),kinlo,KILEN,      &
                       ZVALUE(JK,:),INO,ZLONOUT,ZLATOUT,          &
                       ZOUT(JK,:),.FALSE.,PTIME_HORI,.TRUE.)
           CALL ARRAY_1D_TO_2D(INO,ZOUT(JK,:),IIU,IJU, &
@@ -904,7 +905,7 @@ IF (LDUST .AND. LDSTCAMS)  THEN
         JLOOP1 = JLOOP1 + lonlen
       ENDDO
       CALL HORIBL(lats(1),lons(1),lats(latlen),lons(lonlen), &
-                  latlen,kinlo,KILEN,                        &
+                  int(latlen,kind=kind(1)),kinlo,KILEN,      &
                   ZVALUE(JK,:),INO,ZLONOUT,ZLATOUT,          &
                   ZOUT(JK,:),.FALSE.,PTIME_HORI,.TRUE. )
       CALL ARRAY_1D_TO_2D(INO,ZOUT(JK,:),IIU,IJU,ZMASS2(:,:,JK,JN))
@@ -956,7 +957,7 @@ IF (LSALT .AND. LSLTCAMS)  THEN
         JLOOP1 = JLOOP1 + lonlen
       ENDDO
       CALL HORIBL(lats(1),lons(1),lats(latlen),lons(lonlen), &
-                  latlen,kinlo,KILEN,                        &
+                  int(latlen,kind=kind(1)),kinlo,KILEN,      &
                   ZVALUE(JK,:),INO,ZLONOUT,ZLATOUT,          &
                   ZOUT(JK,:),.FALSE.,PTIME_HORI,.TRUE. )
       CALL ARRAY_1D_TO_2D(INO,ZOUT(JK,:),IIU,IJU,ZMASS2(:,:,JK,JN))
