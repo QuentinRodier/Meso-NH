@@ -26,7 +26,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	A. Costes      *Meteo France*
+!!  A. Costes      *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
