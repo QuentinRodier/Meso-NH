@@ -126,6 +126,17 @@ export VERSION_NCL=${VERSION_NCL}
 #
 export MNH_MEGAN=${MNH_MEGAN}
 #
+#  Use MNH_EXPAND if VER_MNHEXP=MNHEXPAUTO
+#
+export VER_MNHEXP=${VER_MNHEXP}
+if [ "x${VER_MNHEXP}" == "xMNHEXPAUTO" ] ;then
+export VERSION_MNHEXP=${VERSION_MNHEXP}  
+export VERSION_FILEPP=${VERSION_FILEPP}
+export FILEPP=\${SRC_MESONH}/pub/FILEPP
+export PATH=\${FILEPP}/MNH_Expand_Array-\${VERSION_MNHEXP}:\${PATH}
+export PATH=\${FILEPP}/FILEPP-\${VERSION_FILEPP}/bin:\${PATH}
+export MANPATH=\${FILEPP}/FILEPP-\${VERSION_FILEPP}/share/man:\${MANPATH}
+fi
 ##########################################################
 ##########################################################
 ##########################################################

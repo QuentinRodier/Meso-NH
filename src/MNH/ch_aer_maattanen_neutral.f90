@@ -189,50 +189,50 @@ DO II = 1, SIZE(PSULF,1)
                     & 3.3827029855551838 * PTEMP(II) - &
                     & 3.2423555796175563e-2 * PTEMP(II)**2 +  &
                     & 7.0120069477221989e-5 * PTEMP(II)**3 + &
-                    & 8.0286874752695141 / ZAL(II) + &
+                    & 8.0286874752695141 / ZAL(II) &
                     & -2.6939840579762231e-1 * LOG(PRH(II)) + &
-                    & 1.6079879299099518 * PTEMP(II) * LOG(PRH(II)) +  &
+                    & 1.6079879299099518 * PTEMP(II) * LOG(PRH(II)) &
                     & -1.9667486968141933e-2 * PTEMP(II)**2 * LOG(PRH(II)) +  &
                     & 5.5244755979770844e-5 * PTEMP(II)**3 * LOG(PRH(II)) + &
                     & (7.8884704837892468 * LOG(PRH(II))) / ZAL(II) + &
                     & 4.6374659198909596 * LOG(PRH(II))**2 - &
                     & 8.2002809894792153e-2 * PTEMP(II) * LOG(PRH(II))**2 +  &
-                    & 8.5077424451172196e-4 * PTEMP(II)**2 * LOG(PRH(II))**2 +  &
+                    & 8.5077424451172196e-4 * PTEMP(II)**2 * LOG(PRH(II))**2   &
                     & -2.6518510168987462e-6 * PTEMP(II)**3 * LOG(PRH(II))**2 +  &
                     & (-1.4625482500575278 * LOG(PRH(II))**2)/ZAL(II) - &
                     & 5.2413002989192037e-1 * LOG(PRH(II))**3 +  &
-                    & 5.2755117653715865e-3 * PTEMP(II) * LOG(PRH(II))**3 +  &
-                    & -2.9491061332113830e-6 * PTEMP(II)**2 * LOG(PRH(II))**3 +  &
+                    & 5.2755117653715865e-3 * PTEMP(II) * LOG(PRH(II))**3   &
+                    & -2.9491061332113830e-6 * PTEMP(II)**2 * LOG(PRH(II))**3   &
                     & -2.4815454194486752e-8 * PTEMP(II)**3 * LOG(PRH(II))**3 +  &
                     & (-5.2663760117394626e-2 * LOG(PRH(II))**3) / ZAL(II) +  &
-                    & 1.6496664658266762 * LOG(ZSULF(II)) +  &
+                    & 1.6496664658266762 * LOG(ZSULF(II))   &
                     & -8.0809397859218401e-1 * PTEMP(II) * LOG(ZSULF(II)) +  &
-                    & 8.9302927091946642e-3 * PTEMP(II)**2 * LOG(ZSULF(II)) +  &
+                    & 8.9302927091946642e-3 * PTEMP(II)**2 * LOG(ZSULF(II))   &
                     & -1.9583649496497497e-5 * PTEMP(II)**3 * LOG(ZSULF(II)) +  &
-                    & (-8.9505572676891685 * LOG(ZSULF(II))) / ZAL(II) +  &
+                    & (-8.9505572676891685 * LOG(ZSULF(II))) / ZAL(II)   &
                     & -3.0025283601622881e+1 * LOG(PRH(II)) * LOG(ZSULF(II)) +  &
-                    & 3.0783365644763633e-1 * PTEMP(II) * LOG(PRH(II)) * LOG(ZSULF(II)) +  &
-                    & -7.4521756337984706e-4 * PTEMP(II)**2 * LOG(PRH(II)) * LOG(ZSULF(II)) +  &
+                    & 3.0783365644763633e-1 * PTEMP(II) * LOG(PRH(II)) * LOG(ZSULF(II))   &
+                    & -7.4521756337984706e-4 * PTEMP(II)**2 * LOG(PRH(II)) * LOG(ZSULF(II))   &
                     & -5.7651433870681853e-7 * PTEMP(II)**3 * LOG(PRH(II)) * LOG(ZSULF(II)) +  &
-                    & (1.2872868529673207 * LOG(PRH(II)) * LOG(ZSULF(II))) / ZAL(II) +  &
+                    & (1.2872868529673207 * LOG(PRH(II)) * LOG(ZSULF(II))) / ZAL(II)   &
                     & -6.1739867501526535e-1 * LOG(PRH(II))**2 * LOG(ZSULF(II)) +  &
-                    & 7.2347385705333975e-3 * PTEMP(II) * LOG(PRH(II))**2 * LOG(ZSULF(II)) +  &
+                    & 7.2347385705333975e-3 * PTEMP(II) * LOG(PRH(II))**2 * LOG(ZSULF(II))   &
                     & -3.0640494530822439e-5 * PTEMP(II)**2 * LOG(PRH(II))**2 * LOG(ZSULF(II)) +  &
                     & 6.5944609194346214e-8 * PTEMP(II)**3 * LOG(PRH(II))**2 * LOG(ZSULF(II)) +  &
                     & (-2.8681650332461055e-2 * LOG(PRH(II))**2 * LOG(ZSULF(II))) / ZAL(II) +  &
-                    & 6.5213802375160306 * LOG(ZSULF(II))**2 +  &
-                    & -4.7907162004793016e-2 * PTEMP(II) * LOG(ZSULF(II))**2 +  &
+                    & 6.5213802375160306 * LOG(ZSULF(II))**2   &
+                    & -4.7907162004793016e-2 * PTEMP(II) * LOG(ZSULF(II))**2   &
                     & -1.0727890114215117e-4 * PTEMP(II)**2 * LOG(ZSULF(II))**2 +  &
                     & 5.6401818280534507e-7 * PTEMP(II)**3 * LOG(ZSULF(II))**2 +  &
                     & (5.4113070888923009e-1 * LOG(ZSULF(II))**2) / ZAL(II) +  &
-                    & 5.2062808476476330e-1 * LOG(PRH(II)) * LOG(ZSULF(II))**2 +  &
+                    & 5.2062808476476330e-1 * LOG(PRH(II)) * LOG(ZSULF(II))**2   &
                     & -6.0696882500824584e-3 * PTEMP(II) * LOG(PRH(II)) * LOG(ZSULF(II))**2 +  &
-                    & 2.3851383302608477e-5 * PTEMP(II)**2 * LOG(PRH(II)) * LOG(ZSULF(II))**2 +  &
+                    & 2.3851383302608477e-5 * PTEMP(II)**2 * LOG(PRH(II)) * LOG(ZSULF(II))**2   &
                     & -1.5243837103067096e-8 * PTEMP(II)**3 * LOG(PRH(II)) * LOG(ZSULF(II))**2 +  &
-                    & (-5.6543192378015687e-2 * LOG(PRH(II)) * LOG(ZSULF(II))**2) / ZAL(II) +  &
+                    & (-5.6543192378015687e-2 * LOG(PRH(II)) * LOG(ZSULF(II))**2) / ZAL(II)   &
                     & -1.1630806410696815e-1 * LOG(ZSULF(II))**3 +  &
-                    & 1.3806404273119610e-3 * PTEMP(II) * LOG(ZSULF(II))**3 +  &
-                    & -2.0199865087650833e-6 * PTEMP(II)**2 * LOG(ZSULF(II))**3 +  &
+                    & 1.3806404273119610e-3 * PTEMP(II) * LOG(ZSULF(II))**3   &
+                    & -2.0199865087650833e-6 * PTEMP(II)**2 * LOG(ZSULF(II))**3   &
                     & -3.0200284885763192e-9 * PTEMP(II)**3 * LOG(ZSULF(II))**3 +  &
                     & (-6.9425267104126316e-3 * LOG(ZSULF(II))**3) / ZAL(II)
           !
@@ -252,41 +252,41 @@ DO II = 1, SIZE(PSULF,1)
                      & 7.5641448594711666e-7*PTEMP(II)**3*LOG(PRH(II)) + &
                      & (-2.0668639384228818e-02*LOG(PRH(II)))/ZAL(II) - &
                      & 3.7593072011595188e-2*LOG(PRH(II))**2 + &
-                     & 8.0993182774415718e-4*PTEMP(II)*LOG(PRH(II))**2 + &
+                     & 8.0993182774415718e-4*PTEMP(II)*LOG(PRH(II))**2  &
                      & -9.5698412164297149e-6*PTEMP(II)**2*LOG(PRH(II))**2 + &
                      & 3.7163166416110421e-8*PTEMP(II)**3*LOG(PRH(II))**2 + &
                      & (1.1026579525210847e-2*LOG(PRH(II))**2)/ZAL(II) + &
-                     & 1.1530844115561925e-2*LOG(PRH(II))**3 + &
-                     & - 1.8083253906466668e-4*PTEMP(II)*LOG(PRH(II))**3 +&
-                     & 8.0213604053330654e-7*PTEMP(II)**2*LOG(PRH(II))**3 +  &
+                     & 1.1530844115561925e-2*LOG(PRH(II))**3  &
+                     & -1.8083253906466668e-4*PTEMP(II)*LOG(PRH(II))**3 +&
+                     & 8.0213604053330654e-7*PTEMP(II)**2*LOG(PRH(II))**3  &
                      & -8.5797885383051337e-10*PTEMP(II)**3*LOG(PRH(II))**3 + &
-                     & (1.0243693899717402e-3*LOG(PRH(II))**3)/ZAL(II) + &
+                     & (1.0243693899717402e-3*LOG(PRH(II))**3)/ZAL(II) &
                      & -1.7248695296299649e-2*LOG(ZSULF(II)) + &
-                     & 1.1294004162437157e-2*PTEMP(II)*LOG(ZSULF(II)) + &
+                     & 1.1294004162437157e-2*PTEMP(II)*LOG(ZSULF(II)) &
                      & -1.2283640163189278e-4*PTEMP(II)**2*LOG(ZSULF(II)) + &
                      & 2.7391732258259009e-7*PTEMP(II)**3*LOG(ZSULF(II)) +  &
                      & (6.8505583974029602e-2*LOG(ZSULF(II)))/ZAL(II) + &
-                     & 2.9750968179523635e-1*LOG(PRH(II))*LOG(ZSULF(II)) + &
+                     & 2.9750968179523635e-1*LOG(PRH(II))*LOG(ZSULF(II)) &
                      & -3.6681154503992296e-3*PTEMP(II)*LOG(PRH(II))*LOG(ZSULF(II)) + &
                      & 1.0636473034653114e-5*PTEMP(II)**2*LOG(PRH(II))*LOG(ZSULF(II)) +  &
                      & 5.8687098466515866e-9*PTEMP(II)**3*LOG(PRH(II))*LOG(ZSULF(II)) + &
                      & (-5.2028866094191509e-3*LOG(PRH(II))*LOG(ZSULF(II)))/ZAL(II) +  &
                      & 7.6971988880587231e-4*LOG(PRH(II))**2*LOG(ZSULF(II)) - &
                      & 2.4605575820433763e-5*PTEMP(II)*LOG(PRH(II))**2*LOG(ZSULF(II)) +  &
-                     & 2.3818484400893008e-7*PTEMP(II)**2*LOG(PRH(II))**2*LOG(ZSULF(II)) +  &
+                     & 2.3818484400893008e-7*PTEMP(II)**2*LOG(PRH(II))**2*LOG(ZSULF(II))   &
                      & -8.8474102392445200e-10*PTEMP(II)**3*LOG(PRH(II))**2*LOG(ZSULF(II)) +  &
                      & (-1.6640566678168968e-4*LOG(PRH(II))**2*LOG(ZSULF(II)))/ZAL(II) - &
                      & 7.7390093776705471e-2*LOG(ZSULF(II))**2 + &
                      & 5.8220163188828482e-4*PTEMP(II)*LOG(ZSULF(II))**2 + &
-                     & 1.2291679321523287e-6*PTEMP(II)**2*LOG(ZSULF(II))**2 + &
+                     & 1.2291679321523287e-6*PTEMP(II)**2*LOG(ZSULF(II))**2  &
                      & -7.4690997508075749e-9*PTEMP(II)**3*LOG(ZSULF(II))**2 + &
-                     & (-5.6357941220497648e-3*LOG(ZSULF(II))**2)/ZAL(II) + &
+                     & (-5.6357941220497648e-3*LOG(ZSULF(II))**2)/ZAL(II)  &
                      & -4.7170109625089768e-3*LOG(PRH(II))*LOG(ZSULF(II))**2 + & 
-                     & 6.9828868534370193e-5*PTEMP(II)*LOG(PRH(II))*LOG(ZSULF(II))**2 + &
+                     & 6.9828868534370193e-5*PTEMP(II)*LOG(PRH(II))*LOG(ZSULF(II))**2  &
                      & -3.1738912157036403e-7*PTEMP(II)**2*LOG(PRH(II))*LOG(ZSULF(II))**2 + &
                      & 2.3975538706787416e-10*PTEMP(II)**3*LOG(PRH(II))*LOG(ZSULF(II))**2 + &
                      & (4.2304213386288567e-4*LOG(PRH(II))*LOG(ZSULF(II))**2)/ZAL(II) + &
-                     & 1.3696520973423231e-3*LOG(ZSULF(II))**3 + &
+                     & 1.3696520973423231e-3*LOG(ZSULF(II))**3  &
                      & -1.6863387574788199e-5*PTEMP(II)*LOG(ZSULF(II))**3 + &
                      & 2.7959499278844516e-8*PTEMP(II)**2*LOG(ZSULF(II))**3 + &
                      & 3.9423927013227455e-11*PTEMP(II)**3*LOG(ZSULF(II))**3 + &

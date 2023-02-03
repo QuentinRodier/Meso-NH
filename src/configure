@@ -9,7 +9,7 @@ if [ "x$XYZ" = "x" ]
 then
 # 
 export VERSION_MASTER=${VERSION_MASTER:-MNH-V5-6}
-export VERSION_BUG=${VERSION_BUG:-0}
+export VERSION_BUG=${VERSION_BUG:-00}
 export VERSION_XYZ=${VERSION_XYZ:-${VERSION_MASTER}-${VERSION_BUG}${VER_OASIS:+-${VER_OASIS}}}
 export VERSION_DATE=${VERSION_DATE:-"31/01/2023"}
 export VERSION_LIBAEC=${VERSION_LIBAEC:-"v1.0.6"}
@@ -32,6 +32,13 @@ export VERSION_NCL=${VERSION_NCL:-"ncl-6.4.0"}
 export VERSION_ECRAD=${VERSION_ECRAD:-"1.4.0"}
 export VER_ECRAD=${VERSION_ECRAD//./}
 
+#
+#  Install MNH_EXPAND if VER_MNHEXP=MNHEXPAUTO
+#
+export VER_MNHEXP=${VER_MNHEXP:-"MNHEXPAUTO"}
+export VERSION_MNHEXP=${VERSION_MNHEXP:-"MNH_EXPAND_1-2-2"}
+export VERSION_FILEPP=${VERSION_FILEPP:-"1.8.0"}
+
 export LEN_HREC=${LEN_HREC:-16}
 
 #
@@ -45,6 +52,83 @@ cd ${LOCAL}/conf
 TARG=$(uname -s -n)
 #
 case "$TARG" in
+'Linux login'*)
+                export ARCH=${ARCH:-LXcray}
+                export VER_MPI=${VER_MPI:-MPICRAY}
+                export OPTLEVEL=${OPTLEVEL:-OPENACC}
+                export MVWORK=${MVWORK:-NO}
+                export VER_CDF=${VER_CDF:-CDFAUTO}
+if [ "${VER_MPI}" == "MPICRAY" ] 
+then	
+export MNHENV=${MNHENV:-"
+module purge
+module load craype-x86-trento
+module load craype-network-ofi
+module load PrgEnv-cray/8.3.3
+module load cce/15.0.0
+module load craype/2.7.19
+module load cray-mpich/8.1.21
+module load libfabric/1.15.2.0
+module load craype-accel-amd-gfx90a
+module load rocm/5.2.3
+
+export CCE_ALIAS_NONE=:on
+export CCE_NO_PTR_TO_PTR_ALIAS=:on
+
+module list
+"}
+else
+export MNHENV=${MNHENV:-"
+module purge
+module use /lus/home/NAT/gda2203/SHARED/escobar/my_modules >& /dev/null
+module load craype-x86-trento
+module load PrgEnv-cray/8.3.3
+module load craype/2.7.19
+module load craype-accel-amd-gfx90a 
+export version=5.2.3
+module load rocm/${version}
+module rm craype-network-ofi cray-mpich cray-libsci cray-dsmml
+module load ompij/4.1.2-cray-15.0.0-ucx_rocm
+
+export CCE_ALIAS_NONE=:on
+export CCE_NO_PTR_TO_PTR_ALIAS=:on
+
+module list
+"}	 
+fi
+
+              ;;
+
+'Linux login2'*)
+                export ARCH=${ARCH:-LXcray}
+                export VER_MPI=${VER_MPI:-MPICRAY}
+                #export VER_MPI=${VER_MPI:-MPIAUTO}
+                #export OPTLEVEL=${OPTLEVEL:-MANAGED02}
+               export OPTLEVEL=${OPTLEVEL:-OPENACC}
+               # export OPTLEVEL=${OPTLEVEL:-OPENACCDEFONLY}
+                export MVWORK=${MVWORK:-NO}
+                export VER_CDF=${VER_CDF:-CDFAUTO}
+                #export VER_USER=${VER_USER:-ZSOLVER}
+                export MNHENV=${MNHENV:-"
+module purge
+module load craype-x86-trento
+module load craype-network-ofi
+module load PrgEnv-cray/8.3.3
+
+module load libfabric/1.15.0.0
+module load xpmem/2.4.4-2.3_2.12__gff0e1d9.shasta
+module load cray-pmi/6.1.2
+module load craype-accel-amd-gfx90a
+module load rocm
+
+
+ulimit -s unlimited
+
+
+#export CRAY_ACC_DEBUG=2
+"}
+              ;;
+
 'Linux jean-zay'*|'Linux idrsrv'*)
                 export ARCH=${ARCH:-LXifort}
                 export VER_MPI=${VER_MPI:-MPIINTEL}
@@ -511,7 +595,22 @@ if [ "x${NEED_TOOLS}" == "xYES" ] ; then
 	   ;;
   esac
 fi
-
+#
+#  Install MNH_EXPAND if VER_MNHEXP=MNHEXPAUTO
+#
+if [ "x${VER_MNHEXP}" == "xMNHEXPAUTO" ] ;then
+    (
+	cd $LOCAL/pub/FILEPP
+	if [ ! -d MNH_Expand_Array-${VERSION_MNHEXP} ] ; then
+	    tar xvf  ${VERSION_MNHEXP}.tar.gz
+	    tar xvf  filepp-${VERSION_FILEPP}.tar.gz
+	    cd filepp-${VERSION_FILEPP}
+	    FILEPP=$LOCAL/pub/FILEPP
+	    ./configure --prefix=${FILEPP}/FILEPP-${VERSION_FILEPP}
+	    make install
+	fi
+    )
+fi 
 #
 # Generate profile_mesonh
 #

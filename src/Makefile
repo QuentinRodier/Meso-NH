@@ -324,7 +324,7 @@ $(ECCODES_MOD) :
 	AEC_PATH=$(CDF_PATH) cmake ${DIR_ECCODES_SRC} -DCMAKE_INSTALL_PREFIX=${DIR_ECCODES_INSTALL} -DBUILD_SHARED_LIBS=OFF \
 	-DENABLE_NETCDF=OFF -DENABLE_JPG=OFF -DENABLE_PYTHON=OFF -DENABLE_EXAMPLES=OFF \
 	-DCMAKE_Fortran_COMPILER=$(FC) -DCMAKE_C_COMPILER=$(CC) \
-	-DCMAKE_Fortran_FLAGS=$(ECCODES_FFLAGS) -DCMAKE_C_FLAGS=$(ECCODES_CFLAGS) && \
+	-DCMAKE_Fortran_FLAGS=$(ECCODES_FFLAGS) -DCMAKE_C_FLAGS=$(ECCODES_CFLAGS) ${EC_CONF} && \
 	$(MAKE) && $(MAKE) install && $(MAKE) clean
 
 eccodes_lib_clean :
@@ -342,10 +342,10 @@ NETCDF_OPT ?= ${OPT_BASE_I4:-$OPT_BASE}
 #
 cdf : $(CDF_MOD)
 $(CDF_MOD) :
-	cd ${DIR_LIBAEC} && ./configure --disable-shared --prefix=${CDF_PATH} --libdir=${CDF_PATH}/lib64 CC="$(CC)" CFLAGS="$(HDF_OPT)" && \
+	cd ${DIR_LIBAEC} && autoreconf -i && ./configure --disable-shared --prefix=${CDF_PATH} --libdir=${CDF_PATH}/lib64 CC="$(CC)" CFLAGS="$(HDF_OPT)" ${CDF_CONF} && \
 	$(MAKE) && $(MAKE) install && $(MAKE) clean
 	cd ${DIR_HDF} && ./configure --enable-fortran --disable-shared --prefix=${CDF_PATH} --libdir=${CDF_PATH}/lib64 --with-szlib=${CDF_PATH}/include,${CDF_PATH}/lib64 \
-	CC="$(CC)" CFLAGS="$(HDF_OPT)" FC="$(FC)" FCFLAGS="$(NETCDF_OPT)" LDFLAGS="-L${CDF_PATH}/lib64" LIBS="-lsz -laec -lz -ldl " && \
+	CC="$(CC)" CFLAGS="$(HDF_OPT)" ${HDF_CONF} FC="$(FC)" FCFLAGS="$(NETCDF_OPT)" LDFLAGS="-L${CDF_PATH}/lib64" LIBS="-lsz -laec -lz" && \
 	$(MAKE) && $(MAKE) install && $(MAKE) clean
 	cd ${DIR_CDFC} && ./configure --disable-shared --prefix=${CDF_PATH} --libdir=${CDF_PATH}/lib64 --disable-dap \
 	CC="$(CC)" CFLAGS="$(NETCDF_OPT)" CPPFLAGS="${INC_NETCDF}" ${CDF_CONF} LDFLAGS="-L${CDF_PATH}/lib64" LIBS="-lhdf5_hl -lhdf5 -lsz -laec -lz -ldl " && \
@@ -524,48 +524,48 @@ ARFLAGS=r
 #
 #  GENERATION OF DEPENDANCE FILES : *.D
 # 
-
+SPLL ?= spll
 %.D:%.F90
 	$(CPP) $(INC) $(CPPFLAGS) $< >  $(OBJDIR)/$(*F).f90 
-	spll $(NSOURCE) $(OBJDIR)/$(*F).f90 
+	$(SPLL) $(NSOURCE) $(OBJDIR)/$(*F).f90 
 	rm -f $(OBJDIR)/$(*F).f90 
 
 %.D:%.f90
 	$(CPP) $(INC) $(CPPFLAGS) $< >  $(OBJDIR)/$(*F).f90 
-	spll $(NSOURCE) $(OBJDIR)/$(*F).f90 
+	$(SPLL) $(NSOURCE) $(OBJDIR)/$(*F).f90 
 	rm -f $(OBJDIR)/$(*F).f90 
 
 %.D:%.fx90
 	$(CPP)  $(INC) $(CPPFLAGS) $< > $(OBJDIR)/$(*F).fx90
-	spll $(NSOURCE) $(OBJDIR)/$(*F).fx90 
+	$(SPLL) $(NSOURCE) $(OBJDIR)/$(*F).fx90 
 	rm -f $(OBJDIR)/$(*F).fx90
  
 %.D:%.f
 	$(CPP)  $(INC) $(CPPFLAGS) $< > $(OBJDIR)/$(*F).f
-	spll $(NSOURCE) $(OBJDIR)/$(*F).f 
+	$(SPLL) $(NSOURCE) $(OBJDIR)/$(*F).f 
 	rm -f $(OBJDIR)/$(*F).f
  
 #
 # GENERATION OF OBJET FILES : *.o
 #
 
-%.o:%.f90
-	echo "inc=$(INC)"
-	$(F90) -I$(OBJDIR) $(INC) -c $(F90FLAGS) $< 
-	-mv  $(*F).o $(OBJDIR)/. || echo OK $(*F).o
+#%.o:%.f90
+#	echo "inc=$(INC)"
+#	$(F90) -I$(OBJDIR) $(INC) -c $(F90FLAGS) $< 
+#	-mv  $(*F).o $(OBJDIR)/. || echo OK $(*F).o
 
 %.o:%.f
 	echo "inc=$(INC)"
 	$(F77) -I$(OBJDIR) $(INC) -c $(F77FLAGS)  $<  
 	-mv  $(*F).o $(OBJDIR)/. || echo OK $(*F).o
 
-%.o:%.fx90
-	cp $< $(OBJDIR)/$(*F).f 
-	$(FX90) -I$(OBJDIR) $(INC) -c $(FX90FLAGS) $(OBJDIR)/$(*F).f   
-	-mv  $(*F).o $(OBJDIR)/. || echo OK $(*F).o
+#%.o:%.fx90
+#	cp $< $(OBJDIR)/$(*F).f 
+#	$(FX90) -I$(OBJDIR) $(INC) -c $(FX90FLAGS) $(OBJDIR)/$(*F).f   
+#	-mv  $(*F).o $(OBJDIR)/. || echo OK $(*F).o
 
 %.o : %.c
-	$(CC) $(INC) $(CFLAGS) $(CPPFLAGS) -c $< -o $(OBJDIR)/$(*F).o
+	$(CC) $(INC) $(CFLAGS) $(CPPFLAGS_C) -c $< -o $(OBJDIR)/$(*F).o
 	-mv  $(*F).o $(OBJDIR)/. || echo OK $(*F).o
 
 ifeq "$(DO_COMP_MASTER)" "YES"
