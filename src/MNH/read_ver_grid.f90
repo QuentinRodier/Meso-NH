@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -215,7 +215,10 @@ SELECT CASE(YZGRID_TYPE)
 !
 CASE('SAMEGR')
   IF (PRESENT(PZHAT) .AND. PRESENT(OSLEVE) .AND. PRESENT(PLEN1) .AND.  PRESENT(PLEN2)) THEN
-    IF (NKMAX_n==0)  NKMAX_n=SIZE(PZHAT)-2*JPVEXT
+    IF (NKMAX_n==0)  THEN
+      NKMAX_n=SIZE(PZHAT)-2*JPVEXT
+      IKU = SIZE(PZHAT)
+    END IF
     ALLOCATE( XZHAT (IKU) )
     ALLOCATE( XZHATM(IKU) )
 
