@@ -698,10 +698,9 @@ IF (MEAN_COUNT /= 0) THEN
     CSTDNAME   = '',                                 &
     CDIR       = 'XY',                               &
     NTYPE      = TYPEREAL,                           &
+    NGRID      = 2,                                  &
     NDIMS      = 3,                                  &
     LTIMEDEP   = .TRUE.                              )
-!
-  TZFIELD%NGRID      = 2
 !
   TZFIELD%CMNHNAME   = 'UMME'
   TZFIELD%CLONGNAME  = 'UMME'
@@ -754,7 +753,15 @@ IF (MEAN_COUNT /= 0) THEN
     CALL IO_Field_write(TPFILE,TZFIELD,ZWORK3D)
     !
   END IF
-  TZFIELD%NGRID      = 3
+!
+  TZFIELD = TFIELDMETADATA(                          &
+    CMNHNAME   = 'generic for mean_count variables', & !Temporary name to ease identification
+    CSTDNAME   = '',                                 &
+    CDIR       = 'XY',                               &
+    NTYPE      = TYPEREAL,                           &
+    NGRID      = 3,                                  &
+    NDIMS      = 3,                                  &
+    LTIMEDEP   = .TRUE.                              )
 !
   TZFIELD%CMNHNAME   = 'VMME'
   TZFIELD%CLONGNAME  = 'VMME'
@@ -776,7 +783,14 @@ IF (MEAN_COUNT /= 0) THEN
   TZFIELD%CCOMMENT   = 'X_Y_Z_V component of max wind'
   CALL IO_Field_write(TPFILE,TZFIELD,XVM_MAX)
 !
-  TZFIELD%NGRID      = 4
+  TZFIELD = TFIELDMETADATA(                          &
+    CMNHNAME   = 'generic for mean_count variables', & !Temporary name to ease identification
+    CSTDNAME   = '',                                 &
+    CDIR       = 'XY',                               &
+    NTYPE      = TYPEREAL,                           &
+    NGRID      = 4,                                  &
+    NDIMS      = 3,                                  &
+    LTIMEDEP   = .TRUE.                              )
 !
   TZFIELD%CMNHNAME   = 'WMME'
   TZFIELD%CLONGNAME  = 'WMME'
@@ -798,7 +812,14 @@ IF (MEAN_COUNT /= 0) THEN
   TZFIELD%CCOMMENT   = 'X_Y_Z_vertical max wind'
   CALL IO_Field_write(TPFILE,TZFIELD,XWM_MAX)
 !
-  TZFIELD%NGRID      = 1
+  TZFIELD = TFIELDMETADATA(                          &
+    CMNHNAME   = 'generic for mean_count variables', & !Temporary name to ease identification
+    CSTDNAME   = '',                                 &
+    CDIR       = 'XY',                               &
+    NTYPE      = TYPEREAL,                           &
+    NGRID      = 1,                                  &
+    NDIMS      = 3,                                  &
+    LTIMEDEP   = .TRUE.                              )
 !
   TZFIELD%CMNHNAME   = 'CMME'
   TZFIELD%CLONGNAME  = 'CMME'
@@ -1048,6 +1069,8 @@ IF (NSV >= 1 ) THEN
         TZFIELD%CUNITS     = 'mol m-2'
         TZFIELD%CCOMMENT   = 'X_Y_Accumulated moles of aqueous species at the surface'
         TZFIELD%NDIMS      = 2
+        TZFIELD%NDIMLIST(3)  = TZFIELD%NDIMLIST(4) ! Necessary if LTIMEDEP=.TRUE.
+        TZFIELD%NDIMLIST(4:) = NMNHDIM_UNUSED
         ZWORK2D(:,:)  = XACPRAQ(:,:,JSV-NSV_CHACBEG-NSV_CHAC/2+1)
         CALL IO_Field_write(TPFILE,TZFIELD,ZWORK2D)
       END DO
@@ -1066,16 +1089,17 @@ IF (NSV >= 1 ) THEN
         WHERE ((ZWORK2D(:,:) < 1E-1).AND.(ZWORK2D(:,:) > 1E-14))
           ZWORK2D(:,:) = -LOG10(ZWORK2D(:,:))           ! mean pH of surface water
         END WHERE
-        TZFIELD%CMNHNAME   = 'MEANPHR'
-        TZFIELD%CSTDNAME   = ''
-        TZFIELD%CLONGNAME  = 'MEANPHR'
-        TZFIELD%CUNITS     = '1'
-        TZFIELD%CDIR       = 'XY'
-        TZFIELD%CCOMMENT   = 'X_Y_MEAN_PH'
-        TZFIELD%NGRID      = 1
-        TZFIELD%NTYPE      = TYPEREAL
-        TZFIELD%NDIMS      = 2
-        TZFIELD%LTIMEDEP = .TRUE.
+        TZFIELD = TFIELDMETADATA(     &
+          CMNHNAME   = 'MEANPHR',     &
+          CSTDNAME   = '',            &
+          CLONGNAME  = 'MEANPHR',     &
+          CUNITS     = '1',           &
+          CDIR       = 'XY',          &
+          CCOMMENT   = 'X_Y_MEAN_PH', &
+          NGRID      = 1,             &
+          NTYPE      = TYPEREAL,      &
+          NDIMS      = 2,             &
+          LTIMEDEP = .TRUE.           )
         CALL IO_Field_write(TPFILE,TZFIELD,ZWORK2D)
       ENDIF
     ENDIF
@@ -2013,9 +2037,8 @@ SELECT CASE(CMETH_EOL)
       CDIR       = '--',                        &
       NGRID      = 1,                           &
       NTYPE      = TYPEREAL,                    &
+      NDIMS      = 1,                           &
       LTIMEDEP   = .TRUE.                       )
-!
-    TZFIELD%NDIMS      = 1
 !
     TZFIELD%CMNHNAME   = 'THRUT'
     TZFIELD%CLONGNAME  = 'THRUSTT_EOL'
@@ -2035,7 +2058,14 @@ SELECT CASE(CMETH_EOL)
     TZFIELD%CCOMMENT   = 'RID instantaneous power (W) of wind turbines'
     CALL IO_Field_write(TPFILE,TZFIELD,XPOWT)
 !
-    TZFIELD%NDIMS      = 3
+    TZFIELD = TFIELDMETADATA(                   &
+      CMNHNAME   = 'generic for ALM variables', & !Temporary name to ease identification
+      CSTDNAME   = '',                          &
+      CDIR       = '--',                        &
+      NGRID      = 1,                           &
+      NTYPE      = TYPEREAL,                    &
+      NDIMS      = 3,                           &
+      LTIMEDEP   = .TRUE.                       )
 !
     TZFIELD%CMNHNAME   = 'ELT_RAD'
     TZFIELD%CLONGNAME  = 'ELT_RAD'
@@ -2061,7 +2091,14 @@ SELECT CASE(CMETH_EOL)
     TZFIELD%CCOMMENT   = 'RID_BID_EID instantaneous drag (N) in relative frame'
     CALL IO_Field_write(TPFILE,TZFIELD,XFDRAG_GLB)
 !
-    TZFIELD%NDIMS      = 4
+    TZFIELD = TFIELDMETADATA(                   &
+      CMNHNAME   = 'generic for ALM variables', & !Temporary name to ease identification
+      CSTDNAME   = '',                          &
+      CDIR       = '--',                        &
+      NGRID      = 1,                           &
+      NTYPE      = TYPEREAL,                    &
+      NDIMS      = 4,                           &
+      LTIMEDEP   = .TRUE.                       )
 !
     TZFIELD%CMNHNAME   = 'FAERO_RE'
     TZFIELD%CLONGNAME  = 'AERODYNAMIC FORCE RE'
@@ -2083,9 +2120,8 @@ SELECT CASE(CMETH_EOL)
         CDIR       = '--',                             &
         NGRID      = 1,                                &
         NTYPE      = TYPEREAL,                         &
+        NDIMS      = 1,                                &
         LTIMEDEP   = .TRUE.                            )
-!
-      TZFIELD%NDIMS      = 1
 !
       TZFIELD%CMNHNAME   = 'THRUMME'
       TZFIELD%CLONGNAME  = 'MEAN_THRUST_EOL'
@@ -2105,20 +2141,30 @@ SELECT CASE(CMETH_EOL)
       TZFIELD%CCOMMENT   = 'RID mean power of the wind turbines (W)'
       CALL IO_Field_write(TPFILE,TZFIELD,XPOW_SUM/MEAN_COUNT)
 !
-      TZFIELD%NDIMS      = 3
-!
-      TZFIELD%CMNHNAME   = 'AOAMME'
-      TZFIELD%CLONGNAME  = 'MEAN_ANGLE_OF_ATTACK'
-      TZFIELD%CUNITS     = 'rad'
-      TZFIELD%CCOMMENT   = 'RID_BID_EID mean angle of attack (rad)'
+      TZFIELD = TFIELDMETADATA(                                &
+        CMNHNAME   = 'AOAMME',                                 &
+        CSTDNAME   = '',                                       &
+        CLONGNAME  = 'MEAN_ANGLE_OF_ATTACK',                   &
+        CUNITS     = 'rad',                                    &
+        CDIR       = '--',                                     &
+        CCOMMENT   = 'RID_BID_EID mean angle of attack (rad)', &
+        NGRID      = 1,                                        &
+        NTYPE      = TYPEREAL,                                 &
+        NDIMS      = 3,                                        &
+        LTIMEDEP   = .TRUE.                                    )
       CALL IO_Field_write(TPFILE,TZFIELD,XAOA_SUM/MEAN_COUNT)
 !
-      TZFIELD%NDIMS      = 4
-!
-      TZFIELD%CMNHNAME   = 'FAEROMME_RE'
-      TZFIELD%CLONGNAME  = 'MEAN_AERODYNAMIC_FORCE_RE'
-      TZFIELD%CUNITS     = 'N'
-      TZFIELD%CCOMMENT   = 'RID_BID_EID_XYZ mean forces (N) in RE'
+      TZFIELD = TFIELDMETADATA(                               &
+        CMNHNAME   = 'FAEROMME_RE',                           &
+        CSTDNAME   = '',                                      &
+        CLONGNAME  = 'MEAN_AERODYNAMIC_FORCE_RE',             &
+        CUNITS     = 'N',                                     &
+        CDIR       = '--',                                    &
+        CCOMMENT   = 'RID_BID_EID_XYZ mean forces (N) in RE', &
+        NGRID      = 1,                                       &
+        NTYPE      = TYPEREAL,                                &
+        NDIMS      = 4,                                       &
+        LTIMEDEP   = .TRUE.                                   )
       CALL IO_Field_write(TPFILE,TZFIELD,XFAERO_RE_SUM/MEAN_COUNT)
 !
     END IF

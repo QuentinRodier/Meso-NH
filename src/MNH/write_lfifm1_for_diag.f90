@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -323,7 +323,7 @@ INTEGER :: ILUOUT0 ! Logical unit number for output-listing
 CHARACTER(LEN=2)  :: INDICE
 CHARACTER(LEN=100) :: YMSG
 INTEGER           :: IID
-TYPE(TFIELDMETADATA)               :: TZFIELD
+TYPE(TFIELDMETADATA)               :: TZFIELD, TZFIELD2D
 TYPE(TFIELDMETADATA), DIMENSION(2) :: TZFIELD2
 !
 ! LIMA LIDAR
@@ -1513,6 +1513,15 @@ IF (LDUST) THEN
     NDIMS      = 3,                        &
     LTIMEDEP   = .TRUE.                    )
 
+  TZFIELD2D = TFIELDMETADATA(              &
+    CMNHNAME   = 'generic for dust modes', &
+    CSTDNAME   = '',                       &
+    CDIR       = 'XY',                     &
+    NGRID      = 1,                        &
+    NTYPE      = TYPEREAL,                 &
+    NDIMS      = 2,                        &
+    LTIMEDEP   = .TRUE.                    )
+
   DO JJ=1,NMODE_DST
     WRITE(TZFIELD%CMNHNAME,'(A6,I1)')'DSTRGA',JJ
     TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
@@ -1553,6 +1562,7 @@ IF (LDUST) THEN
       ZWORK31(:,:,JK) = ZWORK31(:,:,JK) *(XZZ(:,:,JK+1)-XZZ(:,:,JK))      &
                        *1.d-6 ! Convert to ug/m2-->g/m2 in each layer
     END DO
+    !
     DO JK=IKB,IKE
       DO JT=IJB,IJE
         DO JI=IIB,IIE
@@ -1560,14 +1570,11 @@ IF (LDUST) THEN
         ENDDO
       ENDDO
     ENDDO
-    WRITE(TZFIELD%CMNHNAME,'(A7,I1)')'DSTBRDN',JJ
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'g m-2'
-    WRITE(TZFIELD%CCOMMENT,'(A6,I1)')'BURDEN',JJ
-    TZFIELD%NDIMS      = 2
-    CALL IO_Field_write(TPFILE,TZFIELD,ZWORK21)
-    !
-    TZFIELD%NDIMS      = 3
+    WRITE(TZFIELD2D%CMNHNAME,'(A7,I1)')'DSTBRDN',JJ
+    TZFIELD2D%CLONGNAME  = TRIM(TZFIELD2D%CMNHNAME)
+    TZFIELD2D%CUNITS     = 'g m-2'
+    WRITE(TZFIELD2D%CCOMMENT,'(A6,I1)')'BURDEN',JJ
+    CALL IO_Field_write(TPFILE,TZFIELD2D,ZWORK21)
   ENDDO
 END IF
 IF (LDUST.AND.LDEPOS_DST(IMI)) THEN
@@ -1695,6 +1702,15 @@ IF (LSALT) THEN
     NDIMS      = 3,                        &
     LTIMEDEP   = .TRUE.                    )
   !
+  TZFIELD2D = TFIELDMETADATA(              &
+    CMNHNAME   = 'generic for salt modes', &
+    CSTDNAME   = '',                       &
+    CDIR       = 'XY',                     &
+    NGRID      = 1,                        &
+    NTYPE      = TYPEREAL,                 &
+    NDIMS      = 2,                        &
+    LTIMEDEP   = .TRUE.                    )
+  !
   DO JJ=1,NMODE_SLT
     WRITE(TZFIELD%CMNHNAME,'(A6,I1)')'SLTRGA',JJ
     TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
@@ -1735,6 +1751,7 @@ IF (LSALT) THEN
       ZWORK31(:,:,JK) = ZWORK31(:,:,JK) *(XZZ(:,:,JK+1)-XZZ(:,:,JK))      &
                        *1.d-6 ! Convert to ug/m2-->g/m2 in each layer
     END DO
+    !
     DO JK=IKB,IKE
       DO JT=IJB,IJE
         DO JI=IIB,IIE
@@ -1742,14 +1759,11 @@ IF (LSALT) THEN
         ENDDO
       ENDDO
     ENDDO
-    WRITE(TZFIELD%CMNHNAME,'(A7,I1)')'SLTBRDN',JJ
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'g m-2'
-    WRITE(TZFIELD%CCOMMENT,'(A6,I1)')'BURDEN',JJ
-    TZFIELD%NDIMS      = 2
-    CALL IO_Field_write(TPFILE,TZFIELD,ZWORK21)
-    !
-    TZFIELD%NDIMS      = 3
+    WRITE(TZFIELD2D%CMNHNAME,'(A7,I1)')'SLTBRDN',JJ
+    TZFIELD2D%CLONGNAME  = TRIM(TZFIELD2D%CMNHNAME)
+    TZFIELD2D%CUNITS     = 'g m-2'
+    WRITE(TZFIELD2D%CCOMMENT,'(A6,I1)')'BURDEN',JJ
+    CALL IO_Field_write(TPFILE,TZFIELD2D,ZWORK21)
   ENDDO
 END IF
 IF (LSALT.AND.LDEPOS_SLT(IMI)) THEN
