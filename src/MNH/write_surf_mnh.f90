@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1997-2022 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1997-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -11,7 +11,7 @@ CONTAINS
 
 SUBROUTINE PREPARE_METADATA_WRITE_SURF(HREC,HDIR,HCOMMENT,KGRID,KTYPE,KDIMS,HSUBR,TPFIELD)
 !
-use modd_field, only: tfieldmetadata, tfieldlist
+use modd_field, only: tfieldmetadata, tfieldlist, NMNHDIM_UNUSED
 
 use mode_field, only: Find_field_id_from_mnhname
 USE MODE_MSG
@@ -89,6 +89,8 @@ IF (IRESP==0) THEN
     !Special (temporary) treatment for EMIS
     CALL PRINT_MSG(NVERB_INFO,'IO',TRIM(HSUBR),'NDIMS forced to 2 for EMIS')
     TPFIELD%NDIMS = 2
+    TPFIELD%NDIMLIST(3)  = TPFIELD%NDIMLIST(4) ! Necessary if LTIMEDEP=.TRUE.
+    TPFIELD%NDIMLIST(4:) = NMNHDIM_UNUSED
   END IF
   !
   IF (TPFIELD%NDIMS/=KDIMS) THEN
