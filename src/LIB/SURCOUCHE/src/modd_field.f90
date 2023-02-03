@@ -368,7 +368,7 @@ type(tfieldmetadata) function Fill_tfieldmetadata( cmnhname, cstdname, clongname
           call Print_msg( NVERB_ERROR, 'GEN', 'Fill_tfielddata', 'invalid value of ndims for variable ' &
                           // Trim( ymnhname ) // ' of type TYPELOG' )
       case ( TYPEINT )
-        if ( ndims < 0 .or. ndims > 3 )                                                                 &
+        if ( ndims < 0 .or. ndims > 4 )                                                                 &
           call Print_msg( NVERB_ERROR, 'GEN', 'Fill_tfielddata', 'invalid value of ndims for variable ' &
                           // Trim( ymnhname ) // ' of type TYPEINT' )
       case ( TYPEREAL )
