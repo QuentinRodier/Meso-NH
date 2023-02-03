@@ -84,16 +84,16 @@ CHARACTER(LEN=4), SAVE   :: SURF_TYPE
 !
 NAMELIST/NAM_PARAM_ECRADn/NSWSOLVER,NLWSOLVER,NRADLP,NRADIP,&
                           NLIQOPT,NICEOPT,NOVLP,NGAS,NREG,XCLOUD_FRAC_STD,&
-                          NLWSCATTERING, NAERMACC &
+                          NLWSCATTERING & 
 #ifndef MNH_ECRAD
-                          & 
+                          ,NAERMACC 
 #else
 #if ( VER_ECRAD == 140 )
-                          , LSPEC_ALB, LSPEC_EMISS, &
+                           ,NAERMACC , LSPEC_ALB, LSPEC_EMISS, &
 !                          USER_ALB_DIFF, USER_ALB_DIR, USER_EMISS, &
                           SURF_TYPE
 #else
-                          & 
+                          ,NAERMACC                       
 #endif
 #endif
 !
