@@ -389,19 +389,20 @@ type(tfieldmetadata) function Fill_tfieldmetadata( cmnhname, cstdname, clongname
 
   ! ndimlist
   if ( Present( ndimlist ) ) then
-    if ( Size( ndimlist ) /= ndims ) &
+    if ( Size( ndimlist ) /= tpfield%ndims ) &
       call Print_msg( NVERB_ERROR, 'GEN', 'Fill_tfielddata', 'ndimlist size different of ndims for variable ' // Trim( ymnhname ) )
 
-    tpfield%ndimlist(1:ndims)  = ndimlist(:)
-    tpfield%ndimlist(ndims+1:) = NMNHDIM_UNUSED
+    tpfield%ndimlist(1:tpfield%ndims)  = ndimlist(:)
+    tpfield%ndimlist(tpfield%ndims+1:) = NMNHDIM_UNUSED
   else
     !If ndimlist is not provided, it is possible to fill it if some information is available
     if ( Present( cdir ) ) then
       if ( cdir == 'XY' ) then
-        if ( ndims == 2 ) then
-          tpfield%ndimlist(1:2) = NMNHDIM_ARAKAWA(ngrid,1:2)
-        else if ( ndims == 3 ) then
-          tpfield%ndimlist(1:3) = NMNHDIM_ARAKAWA(ngrid,1:3)
+        ! Check also on NGRIDUNKNOWN (this happens if the optional ngrid argument is not provided)
+        if ( tpfield%ndims == 2 .and. tpfield%ngrid /= NGRIDUNKNOWN ) then
+          tpfield%ndimlist(1:2) = NMNHDIM_ARAKAWA(tpfield%ngrid,1:2)
+        else if ( tpfield%ndims == 3 .and. tpfield%ngrid /= NGRIDUNKNOWN ) then
+          tpfield%ndimlist(1:3) = NMNHDIM_ARAKAWA(tpfield%ngrid,1:3)
         else
           call Print_msg( NVERB_DEBUG, 'GEN', 'Fill_tfielddata', 'ndimlist not filled for variable ' // Trim( ymnhname ) )
         end if
@@ -414,14 +415,14 @@ type(tfieldmetadata) function Fill_tfieldmetadata( cmnhname, cstdname, clongname
   end if
   if ( Present( ltimedep ) ) then
     if ( ltimedep ) then
-      if ( ndims == NMNHMAXDIMS )                                                                        &
+      if ( tpfield%ndims == NMNHMAXDIMS )                                                                        &
         call Print_msg( NVERB_ERROR, 'GEN', 'Fill_tfielddata',                                           &
                         'ltimedep=T not possible if ndims=NMNHMAXDIMS for variable ' // Trim( ymnhname ) )
-      !Set this dimension only if ndimlist already filled up or ndims = 0
-      if ( ndims == 0 ) then
-        tpfield%ndimlist( ndims + 1 ) = NMNHDIM_TIME
-      else if ( tpfield%ndimlist(ndims) /= NMNHDIM_UNKNOWN ) then
-        tpfield%ndimlist( ndims + 1 ) = NMNHDIM_TIME
+      !Set this dimension only if ndimlist already filled up or tpfield%ndims = 0
+      if ( tpfield%ndims == 0 ) then
+        tpfield%ndimlist( tpfield%ndims + 1 ) = NMNHDIM_TIME
+      else if ( tpfield%ndimlist(tpfield%ndims) /= NMNHDIM_UNKNOWN ) then
+        tpfield%ndimlist( tpfield%ndims + 1 ) = NMNHDIM_TIME
       end if
     end if
   end if
