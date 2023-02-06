@@ -14,7 +14,7 @@ CFV=$(shell crayftn --version | grep -E -m1 -o ' [[:digit:]\.]{2,}( |$$)'  | sed
 #OBJDIR_PATH=/home/escj/azertyuiopqsdfghjklm/wxcvbn/azertyuiopqsdfghjklmwxcvbn
 #
 OPT_BASE   =  -hpic -emf -h acc_model=auto_async_none:no_fast_addr:no_deep_copy -halias=none
-OPT_PERF0  =  -O0 -g
+OPT_PERF0  =  -G0 -O0 
 OPT_PERF1  =  -G2 -O1 -hflex_mp=intolerant -Ofp0 -hnofma -hnoomp -K trap=fp -hipa0 
 OPT_PERF2  =  -G2 -O2 -hflex_mp=intolerant -Ofp0 -hnofma -hnoomp -hipa0 
 #
@@ -55,7 +55,7 @@ ifeq "$(OPTLEVEL)" "DEBUG"
 OPT       = $(OPT_BASE) $(OPT_PERF0) $(OPT_CHECK)
 OPT0      = $(OPT_BASE) $(OPT_PERF0) $(OPT_CHECK)
 OPT_NOCB  = $(OPT_BASE) $(OPT_PERF0)
-CFLAGS   += -g
+CFLAGS   += -g -gdwarf-4
 endif
 #
 ifeq "$(OPTLEVEL)" "OPENACC"
