@@ -172,6 +172,7 @@ LDFLAGS    =   -Wl,--allow-multiple-definition -Wl,-warn-once $(PAR) -Wl,-rpath=
 #
 CPP = cpp -P -traditional -Wcomment
 #
+CPPFLAGS_C         = -DLITTLE_endian
 CPPFLAGS_SURFEX    =
 CPPFLAGS_SURCOUCHE += -DDEV_NULL
 CPPFLAGS_RAD       =

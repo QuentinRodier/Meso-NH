@@ -75,6 +75,7 @@ FX90FLAGS     =  $(OPT)
 #
 CPP = cpp -P -traditional -Wcomment
 #
+CPPFLAGS_C         = -DLITTLE_endian
 CPPFLAGS_SURFEX    =
 CPPFLAGS_SURCOUCHE += -DDEV_NULL
 CPPFLAGS_RAD       =
