@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1998-2022 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1998-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -485,7 +485,7 @@ DO JSV = 1, NSV
       YMNHNAME_BASE  = TRIM( TZFIELD%CMNHNAME  )
       YLONGNAME_BASE = TRIM( TZFIELD%CLONGNAME )
 
-      IF ( KSIZELBXSV_ll /= 0 .AND. SIZE( PLBXSVM, 1 ) /= 0 ) THEN
+      IF ( KSIZELBXSV_ll /= 0 ) THEN
         TZFIELD%CMNHNAME  = 'LBX_' // TRIM( YMNHNAME_BASE  )
         TZFIELD%CLONGNAME = 'LBX_' // TRIM( YLONGNAME_BASE )
 
@@ -569,7 +569,7 @@ DO JSV = 1, NSV
         END IF
       END IF
 
-      IF ( KSIZELBYSV_ll /= 0 .AND. SIZE( PLBYSVM, 1 ) /= 0 ) THEN
+      IF ( KSIZELBYSV_ll /= 0 ) THEN
         TZFIELD%CMNHNAME  = 'LBY_' // TRIM( YMNHNAME_BASE  )
         TZFIELD%CLONGNAME = 'LBY_' // TRIM( YLONGNAME_BASE )
 
