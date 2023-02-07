@@ -21,7 +21,7 @@ INTERFACE
                    OCONDSAMP,OBLOWSNOW,                                            &
                    KRIMX,KRIMY, KSV_USER,                                          &
                    HTURB,HTOM,ORMC01,HRAD,HDCONV,HSCONV,HCLOUD,HELEC,              &
-                   HEQNSYS,PTSTEP_ALL,HSTORAGE_TYPE,HINIFILEPGD                    )
+                   HEQNSYS,PTSTEP_ALL,HINIFILEPGD                    )
 !
 USE MODD_IO,   ONLY: TFILEDATA
 !
@@ -71,7 +71,6 @@ CHARACTER (LEN=4),  INTENT(IN) :: HCLOUD ! Kind of microphysical scheme
 CHARACTER (LEN=4),  INTENT(IN) :: HELEC  ! Kind of electrical scheme
 CHARACTER (LEN=*),  INTENT(IN) :: HEQNSYS! type of equations' system
 REAL,DIMENSION(:),  INTENT(INOUT):: PTSTEP_ALL ! Time STEP of ALL models
-CHARACTER (LEN=*),  INTENT(IN) :: HSTORAGE_TYPE ! type of initial file
 CHARACTER (LEN=*),  INTENT(IN) :: HINIFILEPGD ! name of PGD file
 !
 END SUBROUTINE READ_EXSEG_n
@@ -94,7 +93,7 @@ END MODULE MODI_READ_EXSEG_n
                    OCONDSAMP, OBLOWSNOW,                                           &
                    KRIMX,KRIMY, KSV_USER,                                          &
                    HTURB,HTOM,ORMC01,HRAD,HDCONV,HSCONV,HCLOUD,HELEC,              &
-                   HEQNSYS,PTSTEP_ALL,HSTORAGE_TYPE,HINIFILEPGD                    )
+                   HEQNSYS,PTSTEP_ALL,HINIFILEPGD                    )
 !     #########################################################################
 !
 !!****  *READ_EXSEG_n * - routine to read  the descriptor file EXSEG
@@ -456,7 +455,6 @@ CHARACTER (LEN=4),  INTENT(IN) :: HCLOUD ! Kind of microphysical scheme
 CHARACTER (LEN=4),  INTENT(IN) :: HELEC  ! Kind of electrical scheme
 CHARACTER (LEN=*),  INTENT(IN) :: HEQNSYS! type of equations' system
 REAL,DIMENSION(:),  INTENT(INOUT):: PTSTEP_ALL ! Time STEP of ALL models
-CHARACTER (LEN=*),  INTENT(IN) :: HSTORAGE_TYPE ! type of initial file
 CHARACTER (LEN=*),  INTENT(IN) :: HINIFILEPGD ! name of PGD file
 !
 !*       0.2   declarations of local variables
