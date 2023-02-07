@@ -148,6 +148,11 @@ LOGICAL          :: LWATER = .FALSE.
 !
 LOGICAL          :: LSEAICE_2FLX = .FALSE.
 !
+!
+! Switch to activate sea carbon coupling
+!
+LOGICAL          :: LSEACARB = .FALSE.
+!
 !-------------------------------------------------------------------------------
 !
 !*       1.    NAMELISTS FOR LAND SURFACE FIELD
@@ -175,7 +180,7 @@ NAMELIST/NAM_SFX_SEA_CPL/XTSTEP_CPL_SEA, LWATER, LSEAICE_2FLX,                 &
                           CSEA_WATF,CSEA_PRES,CSEAICE_HEAT,CSEAICE_SNET,       &
                           CSEAICE_EVAP,CSEA_SST,CSEA_UCU,CSEA_VCU,             &
                           CSEAICE_SIT,CSEAICE_CVR,CSEAICE_ALB,                 &
-                          CSEA_CO2,CSEA_FCO2
+                          CSEA_CO2,CSEA_FCO2, LSEACARB !not sure about the name of this namelist
 !
 !*       4.    NAMELISTS FOR WAVE FIELD
 !              ---------------------------------------------------------------

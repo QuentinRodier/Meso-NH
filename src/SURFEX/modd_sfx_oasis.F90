@@ -104,6 +104,7 @@ INTEGER             :: NLAKE_WATF_ID ! Freshwater id
 LOGICAL             :: LCPL_SEA     = .FALSE. ! Fields to/from surfex sea/water area
 LOGICAL             :: LCPL_SEAICE  = .FALSE. ! Fields to/from surfex sea-ice area (e.g. GELATO 3D, ...)
 LOGICAL             :: LCPL_SEACARB = .FALSE. ! Fields to/from surfex related to carbon cycle (e.g. PISCES 3D, ...)
+LOGICAL             :: LSEAICE_2FLX  = .FALSE. ! Fields to/from surfex sea-ice area
 !
 ! Sea Output variables
 !

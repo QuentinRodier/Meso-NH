@@ -75,13 +75,14 @@ SUBROUTINE MNH_OASIS_RECV   (HPROGRAM,KI,KSW,PTIMEC,PTSTEP_SURF,   &
 USE MODN_SFX_OASIS,  ONLY : XTSTEP_CPL_LAND, &
                             XTSTEP_CPL_SEA,  &
                             XTSTEP_CPL_WAVE,  &
-                            LWATER
+                            LWATER, LSEACARB
 !
 USE MODD_SFX_OASIS,  ONLY : LCPL_LAND,         &
                             LCPL_GW,LCPL_FLOOD,&
                             LCPL_SEA,          &
                             LCPL_SEAICE,       &
-                            LCPL_WAVE
+                            LCPL_WAVE,         &
+                            LSEAICE_2FLX
 !
 USE MODD_SURF_PAR,   ONLY : XUNDEF
 USE MODD_MNH_SURFEX_n
@@ -122,12 +123,14 @@ REAL, DIMENSION(KI) :: ZLAND_WTD     ! Land water table depth (m)
 REAL, DIMENSION(KI) :: ZLAND_FWTD    ! Land grid-cell fraction of water table rise (-)
 REAL, DIMENSION(KI) :: ZLAND_FFLOOD  ! Land Floodplains fraction (-)
 REAL, DIMENSION(KI) :: ZLAND_PIFLOOD ! Land Potential flood infiltration(kg/m2/s)
+REAL, DIMENSION(KI) :: ZLAND_TWS     ! RRM terrestrial water storage (kg/m2)
 REAL, DIMENSION(KI) :: ZSEA_SST      ! Sea surface temperature (K)
 REAL, DIMENSION(KI) :: ZSEA_UCU      ! Sea u-current stress (Pa)
 REAL, DIMENSION(KI) :: ZSEA_VCU      ! Sea v-current stress (Pa)
 REAL, DIMENSION(KI) :: ZSEAICE_SIT   ! Sea-ice Temperature (K)
 REAL, DIMENSION(KI) :: ZSEAICE_CVR   ! Sea-ice cover (-)
 REAL, DIMENSION(KI) :: ZSEAICE_ALB   ! Sea-ice albedo (-)
+REAL, DIMENSION(KI) :: ZSEA_FCO2     ! Sea CO2 Flux
 REAL, DIMENSION(KI) :: ZWAVE_CHA     ! Charnock coefficient (-)
 REAL, DIMENSION(KI) :: ZWAVE_UCU     ! u-current velocity (m/s)
 REAL, DIMENSION(KI) :: ZWAVE_VCU     ! v-current velocity (m/s)
@@ -161,6 +164,7 @@ IF(GRECV_LAND)THEN
   ZLAND_FWTD   (:) = XUNDEF
   ZLAND_FFLOOD (:) = XUNDEF
   ZLAND_PIFLOOD(:) = XUNDEF
+  ZLAND_TWS    (:) = XUNDEF
 ENDIF
 !
 IF(GRECV_SEA)THEN
@@ -170,6 +174,7 @@ IF(GRECV_SEA)THEN
   ZSEAICE_SIT(:) = XUNDEF
   ZSEAICE_CVR(:) = XUNDEF
   ZSEAICE_ALB(:) = XUNDEF
+  ZSEA_FCO2(:) = XUNDEF
 ENDIF
 !
 IF(GRECV_WAVE)THEN
@@ -189,8 +194,10 @@ CALL SFX_OASIS_RECV(HPROGRAM,IGPTOT,KI,KSW,ZTIME_CPL,  &
                     GRECV_LAND, GRECV_SEA, GRECV_WAVE, &
                     ZLAND_WTD    (:),ZLAND_FWTD   (:), &
                     ZLAND_FFLOOD (:),ZLAND_PIFLOOD(:), &
-                    ZSEA_SST     (:),ZSEA_UCU     (:), &
-                    ZSEA_VCU     (:),ZSEAICE_SIT  (:), &
+                    ZLAND_TWS    (:),                  &
+                    ZSEA_SST     (:),                  &
+                    ZSEA_UCU     (:),ZSEA_VCU     (:), &
+                    ZSEA_FCO2    (:),ZSEAICE_SIT  (:), &
                     ZSEAICE_CVR  (:),ZSEAICE_ALB  (:), &
                     ZWAVE_CHA    (:),ZWAVE_UCU    (:), &
                     ZWAVE_VCU    (:),ZWAVE_HS     (:), &
@@ -209,7 +216,7 @@ IF(GRECV_LAND)THEN
                     YSURF_CUR%IM%NK, YSURF_CUR%IM%NP, YSURF_CUR%U,      &
                     ILUOUT,LCPL_GW,LCPL_FLOOD,        &
                     ZLAND_WTD   (:),ZLAND_FWTD   (:), &
-                    ZLAND_FFLOOD(:),ZLAND_PIFLOOD(:)  )        
+                    ZLAND_FFLOOD(:),ZLAND_PIFLOOD(:), ZLAND_TWS  )        
 ENDIF
 !
 !-------------------------------------------------------------------------------
@@ -218,10 +225,10 @@ ENDIF
 !
 IF(GRECV_SEA)THEN
   CALL PUT_SFX_SEA(YSURF_CUR%SM%S, YSURF_CUR%U, YSURF_CUR%WM%W, &
-                   ILUOUT,LCPL_SEAICE,LWATER,                   &
+                   ILUOUT,LCPL_SEAICE, LSEAICE_2FLX,LWATER, LSEACARB,         &
                    ZSEA_SST   (:),ZSEA_UCU   (:),               &
-                   ZSEA_VCU   (:),ZSEAICE_SIT(:),               &
-                   ZSEAICE_CVR(:),ZSEAICE_ALB(:)                )
+                   ZSEA_VCU   (:), ZSEA_FCO2(:), ZSEAICE_SIT(:),               &
+                   ZSEAICE_CVR(:), ZSEAICE_ALB(:)                )
 ENDIF
 !
 !-------------------------------------------------------------------------------
