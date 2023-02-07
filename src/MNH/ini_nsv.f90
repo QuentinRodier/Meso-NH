@@ -758,43 +758,49 @@ IF ( LDUST ) THEN
   IF ( NMODE_DST < 1 .OR. NMODE_DST > 3 ) CALL Print_msg( NVERB_FATAL, 'GEN', 'INI_NSV', 'NMODE_DST must in the 1 to 3 interval' )
 
   ! Initialization of dust names
+  ! Was allocated for previous KMI
+  ! We assume that if LDUST=T on a model, NSV_DST_A(KMI) is the same for all
   IF( .NOT. ALLOCATED( CDUSTNAMES ) ) THEN
     ALLOCATE( CDUSTNAMES(NSV_DST_A(KMI)) )
-    ALLOCATE( YDUSTLONGNAMES(NSV_DST_A(KMI)) )
-    !Loop on all dust modes
-    IF ( INMOMENTS_DST == 1 ) THEN
-      DO JMODE = 1, NMODE_DST
-        IMODEIDX = JPDUSTORDER(JMODE)
-        JSV_NAME = ( IMODEIDX - 1 ) * 3 + 2
-        CDUSTNAMES(JMODE) = YPDUST_INI(JSV_NAME)
-        !Add meaning of the ppv unit (here for moment 3)
-        YDUSTLONGNAMES(JMODE) = TRIM( YPDUST_INI(JSV_NAME) ) // ' [molec_{aer}/molec_{air}]'
-      END DO
-    ELSE
-      DO JMODE = 1,NMODE_DST
-        !Find which mode we are dealing with
-        IMODEIDX = JPDUSTORDER(JMODE)
-        DO JMOM = 1, INMOMENTS_DST
-          !Find which number this is of the list of scalars
-          JSV = ( JMODE - 1 ) * INMOMENTS_DST + JMOM
-          !Find what name this corresponds to, always 3 moments assumed in YPDUST_INI
-          JSV_NAME = ( IMODEIDX - 1) * 3 + JMOM
-          !Get the right CDUSTNAMES which should follow the list of scalars transported in XSVM/XSVT
-          CDUSTNAMES(JSV) = YPDUST_INI(JSV_NAME)
-          !Add meaning of the ppv unit
-          IF ( JMOM == 1 ) THEN !Corresponds to moment 0
-            YDUSTLONGNAMES(JSV) = TRIM( YPDUST_INI(JSV_NAME) ) // ' [nb_aerosols/molec_{air}]'
-          ELSE IF ( JMOM == 2 ) THEN !Corresponds to moment 3
-            YDUSTLONGNAMES(JSV) = TRIM( YPDUST_INI(JSV_NAME) ) // ' [molec_{aer}/molec_{air}]'
-          ELSE IF ( JMOM == 3 ) THEN !Corresponds to moment 6
-            YDUSTLONGNAMES(JSV) = TRIM( YPDUST_INI(JSV_NAME) ) // ' [um6/molec_{air}*(cm3/m3)]'
-          ELSE
-            CALL Print_msg( NVERB_WARNING, 'GEN', 'INI_NSV', 'unknown moment for DUST' )
-            YDUSTLONGNAMES(JMODE) = TRIM( YPDUST_INI(JSV_NAME) )
-          END IF
-        ENDDO ! Loop on moments
-      ENDDO    ! Loop on dust modes
-    END IF
+  ELSE IF ( SIZE( CDUSTNAMES ) /= NSV_DST_A(KMI) ) THEN
+    CALL Print_msg( NVERB_ERROR, 'GEN', 'INI_NSV', 'NSV_DST not the same for different model (if LDUST=T)' )
+    DEALLOCATE( CDUSTNAMES )
+    ALLOCATE( CDUSTNAMES(NSV_DST_A(KMI)) )
+  END IF
+  ALLOCATE( YDUSTLONGNAMES(NSV_DST_A(KMI)) )
+  !Loop on all dust modes
+  IF ( INMOMENTS_DST == 1 ) THEN
+    DO JMODE = 1, NMODE_DST
+      IMODEIDX = JPDUSTORDER(JMODE)
+      JSV_NAME = ( IMODEIDX - 1 ) * 3 + 2
+      CDUSTNAMES(JMODE) = YPDUST_INI(JSV_NAME)
+      !Add meaning of the ppv unit (here for moment 3)
+      YDUSTLONGNAMES(JMODE) = TRIM( YPDUST_INI(JSV_NAME) ) // ' [molec_{aer}/molec_{air}]'
+    END DO
+  ELSE
+    DO JMODE = 1,NMODE_DST
+      !Find which mode we are dealing with
+      IMODEIDX = JPDUSTORDER(JMODE)
+      DO JMOM = 1, INMOMENTS_DST
+        !Find which number this is of the list of scalars
+        JSV = ( JMODE - 1 ) * INMOMENTS_DST + JMOM
+        !Find what name this corresponds to, always 3 moments assumed in YPDUST_INI
+        JSV_NAME = ( IMODEIDX - 1) * 3 + JMOM
+        !Get the right CDUSTNAMES which should follow the list of scalars transported in XSVM/XSVT
+        CDUSTNAMES(JSV) = YPDUST_INI(JSV_NAME)
+        !Add meaning of the ppv unit
+        IF ( JMOM == 1 ) THEN !Corresponds to moment 0
+          YDUSTLONGNAMES(JSV) = TRIM( YPDUST_INI(JSV_NAME) ) // ' [nb_aerosols/molec_{air}]'
+        ELSE IF ( JMOM == 2 ) THEN !Corresponds to moment 3
+          YDUSTLONGNAMES(JSV) = TRIM( YPDUST_INI(JSV_NAME) ) // ' [molec_{aer}/molec_{air}]'
+        ELSE IF ( JMOM == 3 ) THEN !Corresponds to moment 6
+          YDUSTLONGNAMES(JSV) = TRIM( YPDUST_INI(JSV_NAME) ) // ' [um6/molec_{air}*(cm3/m3)]'
+        ELSE
+          CALL Print_msg( NVERB_WARNING, 'GEN', 'INI_NSV', 'unknown moment for DUST' )
+          YDUSTLONGNAMES(JMODE) = TRIM( YPDUST_INI(JSV_NAME) )
+        END IF
+      ENDDO ! Loop on moments
+    ENDDO    ! Loop on dust modes
   END IF
 
   ! Initialization of deposition scheme names
@@ -814,44 +820,51 @@ END IF
 IF ( LSALT ) THEN
   IF ( NMODE_SLT < 1 .OR. NMODE_SLT > 8 ) CALL Print_msg( NVERB_FATAL, 'GEN', 'INI_NSV', 'NMODE_SLT must in the 1 to 8 interval' )
 
+  ! Was allocated for previous KMI
+  ! We assume that if LSALT=T on a model, NSV_SLT_A(KMI) is the same for all
   IF( .NOT. ALLOCATED( CSALTNAMES ) ) THEN
     ALLOCATE( CSALTNAMES(NSV_SLT_A(KMI)) )
-    ALLOCATE( YSALTLONGNAMES(NSV_SLT_A(KMI)) )
-    !Loop on all dust modes
-    IF ( INMOMENTS_SLT == 1 ) THEN
-      DO JMODE = 1, NMODE_SLT
-        IMODEIDX = JPSALTORDER(JMODE)
-        JSV_NAME = ( IMODEIDX - 1 ) * 3 + 2
-        CSALTNAMES(JMODE) = YPSALT_INI(JSV_NAME)
-        !Add meaning of the ppv unit (here for moment 3)
-        YSALTLONGNAMES(JMODE) = TRIM( YPSALT_INI(JSV_NAME) ) // ' [molec_{aer}/molec_{air}]'
-      END DO
-    ELSE
-      DO JMODE = 1, NMODE_SLT
-        !Find which mode we are dealing with
-        IMODEIDX = JPSALTORDER(JMODE)
-        DO JMOM = 1, INMOMENTS_SLT
-          !Find which number this is of the list of scalars
-          JSV = ( JMODE - 1 ) * INMOMENTS_SLT + JMOM
-          !Find what name this corresponds to, always 3 moments assumed in YPSALT_INI
-          JSV_NAME = ( IMODEIDX - 1 ) * 3 + JMOM
-          !Get the right CSALTNAMES which should follow the list of scalars transported in XSVM/XSVT
-          CSALTNAMES(JSV) = YPSALT_INI(JSV_NAME)
-          !Add meaning of the ppv unit
-          IF ( JMOM == 1 ) THEN !Corresponds to moment 0
-            YSALTLONGNAMES(JSV) = TRIM( YPSALT_INI(JSV_NAME) ) // ' [nb_aerosols/molec_{air}]'
-          ELSE IF ( JMOM == 2 ) THEN !Corresponds to moment 3
-            YSALTLONGNAMES(JSV) = TRIM( YPSALT_INI(JSV_NAME) ) // ' [molec_{aer}/molec_{air}]'
-          ELSE IF ( JMOM == 3 ) THEN !Corresponds to moment 6
-            YSALTLONGNAMES(JSV) = TRIM( YPSALT_INI(JSV_NAME) ) // ' [um6/molec_{air}*(cm3/m3)]'
-          ELSE
-            CALL Print_msg( NVERB_WARNING, 'GEN', 'INI_NSV', 'unknown moment for SALT' )
-            YSALTLONGNAMES(JMODE) = TRIM( YPSALT_INI(JSV_NAME) )
-          END IF
-        ENDDO ! Loop on moments
-      ENDDO    ! Loop on dust modes
-    END IF
+  ELSE IF ( SIZE( CSALTNAMES ) /= NSV_SLT_A(KMI) ) THEN
+    CALL Print_msg( NVERB_ERROR, 'GEN', 'INI_NSV', 'NSV_SLT not the same for different model (if LSALT=T)' )
+    DEALLOCATE( CSALTNAMES )
+    ALLOCATE( CSALTNAMES(NSV_SLT_A(KMI)) )
   END IF
+  ALLOCATE( YSALTLONGNAMES(NSV_SLT_A(KMI)) )
+  !Loop on all dust modes
+  IF ( INMOMENTS_SLT == 1 ) THEN
+    DO JMODE = 1, NMODE_SLT
+      IMODEIDX = JPSALTORDER(JMODE)
+      JSV_NAME = ( IMODEIDX - 1 ) * 3 + 2
+      CSALTNAMES(JMODE) = YPSALT_INI(JSV_NAME)
+      !Add meaning of the ppv unit (here for moment 3)
+      YSALTLONGNAMES(JMODE) = TRIM( YPSALT_INI(JSV_NAME) ) // ' [molec_{aer}/molec_{air}]'
+    END DO
+  ELSE
+    DO JMODE = 1, NMODE_SLT
+      !Find which mode we are dealing with
+      IMODEIDX = JPSALTORDER(JMODE)
+      DO JMOM = 1, INMOMENTS_SLT
+        !Find which number this is of the list of scalars
+        JSV = ( JMODE - 1 ) * INMOMENTS_SLT + JMOM
+        !Find what name this corresponds to, always 3 moments assumed in YPSALT_INI
+        JSV_NAME = ( IMODEIDX - 1 ) * 3 + JMOM
+        !Get the right CSALTNAMES which should follow the list of scalars transported in XSVM/XSVT
+        CSALTNAMES(JSV) = YPSALT_INI(JSV_NAME)
+        !Add meaning of the ppv unit
+        IF ( JMOM == 1 ) THEN !Corresponds to moment 0
+          YSALTLONGNAMES(JSV) = TRIM( YPSALT_INI(JSV_NAME) ) // ' [nb_aerosols/molec_{air}]'
+        ELSE IF ( JMOM == 2 ) THEN !Corresponds to moment 3
+          YSALTLONGNAMES(JSV) = TRIM( YPSALT_INI(JSV_NAME) ) // ' [molec_{aer}/molec_{air}]'
+        ELSE IF ( JMOM == 3 ) THEN !Corresponds to moment 6
+          YSALTLONGNAMES(JSV) = TRIM( YPSALT_INI(JSV_NAME) ) // ' [um6/molec_{air}*(cm3/m3)]'
+        ELSE
+          CALL Print_msg( NVERB_WARNING, 'GEN', 'INI_NSV', 'unknown moment for SALT' )
+          YSALTLONGNAMES(JMODE) = TRIM( YPSALT_INI(JSV_NAME) )
+        END IF
+      ENDDO ! Loop on moments
+    ENDDO    ! Loop on dust modes
+  END IF
+
   ! Initialization of deposition scheme
   IF ( LDEPOS_SLT(KMI) ) THEN
     IF( .NOT. ALLOCATED( CDESLTNAMES ) ) THEN
