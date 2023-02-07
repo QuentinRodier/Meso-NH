@@ -221,7 +221,7 @@ ELSE
     ALLOCATE(YSV_SURF(ISV))
     YSV_SURF(:)     = HSV(:)
 ENDIF
-CALL INIT_SURF_ATM_n(YSURF_CUR,'MESONH',HINIT,.FALSE.,                  &
+CALL INIT_SURF_ATM_n(YSURF_CUR,'MESONH',HINIT,                          &
                      ILU,ISV,SIZE(PSW_BANDS),                           &
                      YSV_SURF,ZCO2,ZRHODREF,                            &
                      ZZENITH,ZAZIM,PSW_BANDS,ZDIR_ALB,ZSCA_ALB,         &
