@@ -701,6 +701,8 @@ IF (LRECYCL) THEN
       LTIMEDEP   = .TRUE.,                                       &
       CCOMMENT   = 'WMEAN-SOUTH side plan for recycling purpose' )
     !
+    CALL IO_Field_write(TPFILE,TZFIELD,XWMEANS(:,:,:))
+    !
   ENDIF  
 ENDIF
 !
