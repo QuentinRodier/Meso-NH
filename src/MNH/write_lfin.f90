@@ -217,7 +217,8 @@ USE MODD_EOL_ALM
 USE MODD_EOL_MAIN
 USE MODD_EOL_SHARED_IO
 USE MODD_FIELD_n
-use modd_field,       only: NMNHDIM_UNUSED, tfieldmetadata, tfieldlist, TYPECHAR, TYPEDATE, TYPEINT, TYPELOG, TYPEREAL
+use modd_field,       only: NMNHDIM_UNUSED, tfieldmetadata, tfieldlist, NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NOTLISTED, &
+                            TYPECHAR, TYPEDATE, TYPEINT, TYPELOG, TYPEREAL
 USE MODD_FIRE
 #ifdef MNH_FOREFIRE
 USE MODD_FOREFIRE
@@ -538,6 +539,7 @@ IF (LRECYCL) THEN
       NGRID      = 2,                                           &
       NTYPE      = TYPEREAL,                                    &
       NDIMS      = 3,                                           &
+      NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NOTLISTED ], &
       LTIMEDEP   = .TRUE.,                                      &
       CCOMMENT   = 'UMEAN-WEST side plan for recycling purpose' )
     !
@@ -552,6 +554,7 @@ IF (LRECYCL) THEN
       NGRID      = 3,                                           &
       NTYPE      = TYPEREAL,                                    &
       NDIMS      = 3,                                           &
+      NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NOTLISTED ], &
       LTIMEDEP   = .TRUE.,                                      &
       CCOMMENT   = 'VMEAN-WEST side plan for recycling purpose' )
     !
@@ -566,6 +569,7 @@ IF (LRECYCL) THEN
       NGRID      = 4,                                           &
       NTYPE      = TYPEREAL,                                    &
       NDIMS      = 3,                                           &
+      NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NOTLISTED ], &
       LTIMEDEP   = .TRUE.,                                      &
       CCOMMENT   = 'WMEAN-WEST side plan for recycling purpose' )
     !
@@ -582,6 +586,7 @@ IF (LRECYCL) THEN
       NGRID      = 2,                                            &
       NTYPE      = TYPEREAL,                                     &
       NDIMS      = 3,                                            &
+      NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NOTLISTED ], &
       LTIMEDEP   = .TRUE.,                                       &
       CCOMMENT   = 'UMEAN-NORTH side plan for recycling purpose' )
     !
@@ -596,6 +601,7 @@ IF (LRECYCL) THEN
       NGRID      = 3,                                            &
       NTYPE      = TYPEREAL,                                     &
       NDIMS      = 3,                                            &
+      NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NOTLISTED ], &
       LTIMEDEP   = .TRUE.,                                       &
       CCOMMENT   = 'VMEAN-NORTH side plan for recycling purpose' )
     !
@@ -610,6 +616,7 @@ IF (LRECYCL) THEN
       NGRID      = 4,                                            &
       NTYPE      = TYPEREAL,                                     &
       NDIMS      = 3,                                            &
+      NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NOTLISTED ], &
       LTIMEDEP   = .TRUE.,                                       &
       CCOMMENT   = 'WMEAN-NORTH side plan for recycling purpose' )
     !
@@ -626,6 +633,7 @@ IF (LRECYCL) THEN
       NGRID      = 2,                                           &
       NTYPE      = TYPEREAL,                                    &
       NDIMS      = 3,                                           &
+      NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NOTLISTED ], &
       LTIMEDEP   = .TRUE.,                                      &
       CCOMMENT   = 'UMEAN-EAST side plan for recycling purpose' )
     !
@@ -640,6 +648,7 @@ IF (LRECYCL) THEN
       NGRID      = 3,                                           &
       NTYPE      = TYPEREAL,                                    &
       NDIMS      = 3,                                           &
+      NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NOTLISTED ], &
       LTIMEDEP   = .TRUE.,                                      &
       CCOMMENT   = 'VMEAN-EAST side plan for recycling purpose' )
     !
@@ -654,6 +663,7 @@ IF (LRECYCL) THEN
       NGRID      = 4,                                           &
       NTYPE      = TYPEREAL,                                    &
       NDIMS      = 3,                                           &
+      NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NOTLISTED ], &
       LTIMEDEP   = .TRUE.,                                      &
       CCOMMENT   = 'WMEAN-EAST side plan for recycling purpose' )
     !
@@ -670,6 +680,7 @@ IF (LRECYCL) THEN
       NGRID      = 2,                                            &
       NTYPE      = TYPEREAL,                                     &
       NDIMS      = 3,                                            &
+      NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NOTLISTED ], &
       LTIMEDEP   = .TRUE.,                                       &
       CCOMMENT   = 'UMEAN-SOUTH side plan for recycling purpose' )
     !
@@ -684,6 +695,7 @@ IF (LRECYCL) THEN
       NGRID      = 3,                                            &
       NTYPE      = TYPEREAL,                                     &
       NDIMS      = 3,                                            &
+      NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NOTLISTED ], &
       LTIMEDEP   = .TRUE.,                                       &
       CCOMMENT   = 'VMEAN-SOUTH side plan for recycling purpose' )
     !
@@ -698,6 +710,7 @@ IF (LRECYCL) THEN
       NGRID      = 4,                                            &
       NTYPE      = TYPEREAL,                                     &
       NDIMS      = 3,                                            &
+      NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NOTLISTED ], &
       LTIMEDEP   = .TRUE.,                                       &
       CCOMMENT   = 'WMEAN-SOUTH side plan for recycling purpose' )
     !

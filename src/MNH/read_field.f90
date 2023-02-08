@@ -285,7 +285,8 @@ USE MODD_CONF_n,          ONLY: IDX_RVT, IDX_RCT, IDX_RRT, IDX_RIT, IDX_RST, IDX
 USE MODD_CST,             ONLY: XALPW, XBETAW, XCPD, XGAMW, XMD, XMV, XP00, XRD
 USE MODD_CTURB,           ONLY: XTKEMIN
 USE MODD_DYN_n,           ONLY: LOCEAN
-use modd_field,           only: tfieldmetadata, tfieldlist, TYPEDATE, TYPEREAL, TYPELOG, TYPEINT
+use modd_field,           only: tfieldmetadata, tfieldlist, NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NOTLISTED, &
+                                TYPEDATE, TYPEREAL, TYPELOG, TYPEINT
 USE MODD_FIELD_n,         only: XZWS_DEFAULT
 USE MODD_FIRE,            ONLY: CWINDFILTER, LBLAZE, LRESTA_ASE, LRESTA_AWC, LRESTA_EWAM, LRESTA_WLIM, LWINDFILTER
 USE MODD_IBM_PARAM_n,     ONLY: LIBM
@@ -689,142 +690,178 @@ IF (ZLRECYCL) THEN
   !
   IF (NR_COUNT .NE. 0) THEN
     IF (LRECYCLW) THEN 
-      TZFIELD%CMNHNAME   = 'URECYCLW'
-      TZFIELD%CLONGNAME  = 'URECYCLW'
-      TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'm s-1'
-      TZFIELD%CDIR       = 'XY'
-      TZFIELD%NGRID      = 2
-      TZFIELD%NTYPE      = TYPEREAL
-      TZFIELD%NDIMS      = 3
-      TZFIELD%LTIMEDEP   = .TRUE.
+      TZFIELD = TFIELDMETADATA(                                   &
+        CMNHNAME   = 'URECYCLW',                                  &
+        CLONGNAME  = 'URECYCLW',                                  &
+        CSTDNAME   = '',                                          &
+        CUNITS     = 'm s-1',                                     &
+        CDIR       = 'XY',                                        &
+        NGRID      = 2,                                           &
+        NTYPE      = TYPEREAL,                                    &
+        NDIMS      = 3,                                           &
+        NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NOTLISTED ], &
+        LTIMEDEP   = .TRUE.,                                      &
+        CCOMMENT   = 'UMEAN-WEST side plan for recycling purpose' )
       CALL IO_Field_read(TPINIFILE,TZFIELD,PUMEANW)
       !
-      TZFIELD%CMNHNAME   = 'VRECYCLW'
-      TZFIELD%CLONGNAME  = 'VRECYCLW'
-      TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'm s-1'
-      TZFIELD%CDIR       = 'XY'
-      TZFIELD%NGRID      = 3
-      TZFIELD%NTYPE      = TYPEREAL
-      TZFIELD%NDIMS      = 3
-      TZFIELD%LTIMEDEP   = .TRUE.
+    TZFIELD = TFIELDMETADATA(                                   &
+        CMNHNAME   = 'VRECYCLW',                                  &
+        CLONGNAME  = 'VRECYCLW',                                  &
+        CSTDNAME   = '',                                          &
+        CUNITS     = 'm s-1',                                     &
+        CDIR       = 'XY',                                        &
+        NGRID      = 3,                                           &
+        NTYPE      = TYPEREAL,                                    &
+        NDIMS      = 3,                                           &
+        NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NOTLISTED ], &
+        LTIMEDEP   = .TRUE.,                                      &
+        CCOMMENT   = 'VMEAN-WEST side plan for recycling purpose' )
       CALL IO_Field_read(TPINIFILE,TZFIELD,PVMEANW)
       !
-      TZFIELD%CMNHNAME   = 'WRECYCLW'
-      TZFIELD%CLONGNAME  = 'WRECYCLW'
-      TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'm s-1'
-      TZFIELD%CDIR       = 'XY'
-      TZFIELD%NGRID      = 4
-      TZFIELD%NTYPE      = TYPEREAL
-      TZFIELD%NDIMS      = 3
-      TZFIELD%LTIMEDEP   = .TRUE.
+      TZFIELD = TFIELDMETADATA(                                   &
+        CMNHNAME   = 'WRECYCLW',                                  &
+        CLONGNAME  = 'WRECYCLW',                                  &
+        CSTDNAME   = '',                                          &
+        CUNITS     = 'm s-1',                                     &
+        CDIR       = 'XY',                                        &
+        NGRID      = 4,                                           &
+        NTYPE      = TYPEREAL,                                    &
+        NDIMS      = 3,                                           &
+        NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NOTLISTED ], &
+        LTIMEDEP   = .TRUE.,                                      &
+        CCOMMENT   = 'WMEAN-WEST side plan for recycling purpose' )
       CALL IO_Field_read(TPINIFILE,TZFIELD,PWMEANW)
       !
     ENDIF  
     IF (LRECYCLN) THEN
-      TZFIELD%CMNHNAME   = 'URECYCLN'
-      TZFIELD%CLONGNAME  = 'URECYCLN'
-      TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'm s-1'
-      TZFIELD%CDIR       = 'XY'
-      TZFIELD%NGRID      = 2
-      TZFIELD%NTYPE      = TYPEREAL
-      TZFIELD%NDIMS      = 3
-      TZFIELD%LTIMEDEP   = .TRUE.
+      TZFIELD = TFIELDMETADATA(                                    &
+        CMNHNAME   = 'URECYCLN',                                   &
+        CLONGNAME  = 'URECYCLN',                                   &
+        CSTDNAME   = '',                                           &
+        CUNITS     = 'm s-1',                                      &
+        CDIR       = 'XY',                                         &
+        NGRID      = 2,                                            &
+        NTYPE      = TYPEREAL,                                     &
+        NDIMS      = 3,                                            &
+        NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NOTLISTED ], &
+        LTIMEDEP   = .TRUE.,                                       &
+        CCOMMENT   = 'UMEAN-NORTH side plan for recycling purpose' )
       CALL IO_Field_read(TPINIFILE,TZFIELD,PUMEANN)
       !
-      TZFIELD%CMNHNAME   = 'VRECYCLN'
-      TZFIELD%CLONGNAME  = 'VRECYCLN'
-      TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'm s-1'
-      TZFIELD%CDIR       = 'XY'
-      TZFIELD%NGRID      = 3
-      TZFIELD%NTYPE      = TYPEREAL
-      TZFIELD%NDIMS      = 3
-      TZFIELD%LTIMEDEP   = .TRUE.
+      TZFIELD = TFIELDMETADATA(                                    &
+        CMNHNAME   = 'VRECYCLN',                                   &
+        CLONGNAME  = 'VRECYCLN',                                   &
+        CSTDNAME   = '',                                           &
+        CUNITS     = 'm s-1',                                      &
+        CDIR       = 'XY',                                         &
+        NGRID      = 3,                                            &
+        NTYPE      = TYPEREAL,                                     &
+        NDIMS      = 3,                                            &
+        NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NOTLISTED ], &
+        LTIMEDEP   = .TRUE.,                                       &
+        CCOMMENT   = 'VMEAN-NORTH side plan for recycling purpose' )
       CALL IO_Field_read(TPINIFILE,TZFIELD,PVMEANN)
       !
-      TZFIELD%CMNHNAME   = 'WRECYCLN'
-      TZFIELD%CLONGNAME  = 'WRECYCLN'
-      TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'm s-1'
-      TZFIELD%CDIR       = 'XY'
-      TZFIELD%NGRID      = 4
-      TZFIELD%NTYPE      = TYPEREAL
-      TZFIELD%NDIMS      = 3
-      TZFIELD%LTIMEDEP   = .TRUE.
+      TZFIELD = TFIELDMETADATA(                                    &
+        CMNHNAME   = 'WRECYCLN',                                   &
+        CLONGNAME  = 'WRECYCLN',                                   &
+        CSTDNAME   = '',                                           &
+        CUNITS     = 'm s-1',                                      &
+        CDIR       = 'XY',                                         &
+        NGRID      = 4,                                            &
+        NTYPE      = TYPEREAL,                                     &
+        NDIMS      = 3,                                            &
+        NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NOTLISTED ], &
+        LTIMEDEP   = .TRUE.,                                       &
+        CCOMMENT   = 'WMEAN-NORTH side plan for recycling purpose' )
       CALL IO_Field_read(TPINIFILE,TZFIELD,PWMEANN)
       !
     ENDIF
     IF (LRECYCLE) THEN  
-      TZFIELD%CMNHNAME   = 'URECYCLE'
-      TZFIELD%CLONGNAME  = 'URECYCLE'
-      TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'm s-1'
-      TZFIELD%CDIR       = 'XY'
-      TZFIELD%NGRID      = 2
-      TZFIELD%NTYPE      = TYPEREAL
-      TZFIELD%NDIMS      = 3
-      TZFIELD%LTIMEDEP   = .TRUE.
+      TZFIELD = TFIELDMETADATA(                                   &
+        CMNHNAME   = 'URECYCLE',                                  &
+        CLONGNAME  = 'URECYCLE',                                  &
+        CSTDNAME   = '',                                          &
+        CUNITS     = 'm s-1',                                     &
+        CDIR       = 'XY',                                        &
+        NGRID      = 2,                                           &
+        NTYPE      = TYPEREAL,                                    &
+        NDIMS      = 3,                                           &
+        NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NOTLISTED ], &
+        LTIMEDEP   = .TRUE.,                                      &
+        CCOMMENT   = 'UMEAN-EAST side plan for recycling purpose' )
       CALL IO_Field_read(TPINIFILE,TZFIELD,PUMEANE)
       !
-      TZFIELD%CMNHNAME   = 'VRECYCLE'
-      TZFIELD%CLONGNAME  = 'VRECYCLE'
-      TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'm s-1'
-      TZFIELD%CDIR       = 'XY'
-      TZFIELD%NGRID      = 3
-      TZFIELD%NTYPE      = TYPEREAL
-      TZFIELD%NDIMS      = 3
-      TZFIELD%LTIMEDEP   = .TRUE.
+      TZFIELD = TFIELDMETADATA(                                   &
+        CMNHNAME   = 'VRECYCLE',                                  &
+        CLONGNAME  = 'VRECYCLE',                                  &
+        CSTDNAME   = '',                                          &
+        CUNITS     = 'm s-1',                                     &
+        CDIR       = 'XY',                                        &
+        NGRID      = 3,                                           &
+        NTYPE      = TYPEREAL,                                    &
+        NDIMS      = 3,                                           &
+        NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NOTLISTED ], &
+        LTIMEDEP   = .TRUE.,                                      &
+        CCOMMENT   = 'VMEAN-EAST side plan for recycling purpose' )
       CALL IO_Field_read(TPINIFILE,TZFIELD,PVMEANE)
       !
-      TZFIELD%CMNHNAME   = 'WRECYCLE'
-      TZFIELD%CLONGNAME  = 'WRECYCLE'
-      TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'm s-1'
-      TZFIELD%CDIR       = 'XY'
-      TZFIELD%NGRID      = 4
-      TZFIELD%NTYPE      = TYPEREAL
-      TZFIELD%NDIMS      = 3
-      TZFIELD%LTIMEDEP   = .TRUE.
+      TZFIELD = TFIELDMETADATA(                                   &
+        CMNHNAME   = 'WRECYCLE',                                  &
+        CLONGNAME  = 'WRECYCLE',                                  &
+        CSTDNAME   = '',                                          &
+        CUNITS     = 'm s-1',                                     &
+        CDIR       = 'XY',                                        &
+        NGRID      = 4,                                           &
+        NTYPE      = TYPEREAL,                                    &
+        NDIMS      = 3,                                           &
+        NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NOTLISTED ], &
+        LTIMEDEP   = .TRUE.,                                      &
+        CCOMMENT   = 'WMEAN-EAST side plan for recycling purpose' )
       CALL IO_Field_read(TPINIFILE,TZFIELD,PWMEANE)
       !
     ENDIF  
     IF (LRECYCLS) THEN
-      TZFIELD%CMNHNAME   = 'URECYCLS'
-      TZFIELD%CLONGNAME  = 'URECYCLS'
-      TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'm s-1'
-      TZFIELD%CDIR       = 'XY'
-      TZFIELD%NGRID      = 2
-      TZFIELD%NTYPE      = TYPEREAL
-      TZFIELD%NDIMS      = 3
-      TZFIELD%LTIMEDEP   = .TRUE.
+      TZFIELD = TFIELDMETADATA(                                    &
+        CMNHNAME   = 'URECYCLS',                                   &
+        CLONGNAME  = 'URECYCLS',                                   &
+        CSTDNAME   = '',                                           &
+        CUNITS     = 'm s-1',                                      &
+        CDIR       = 'XY',                                         &
+        NGRID      = 2,                                            &
+        NTYPE      = TYPEREAL,                                     &
+        NDIMS      = 3,                                            &
+        NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NOTLISTED ], &
+        LTIMEDEP   = .TRUE.,                                       &
+        CCOMMENT   = 'UMEAN-SOUTH side plan for recycling purpose' )
       CALL IO_Field_read(TPINIFILE,TZFIELD,PUMEANS)
       !
-      TZFIELD%CMNHNAME   = 'VRECYCLS'
-      TZFIELD%CLONGNAME  = 'VRECYCLS'
-      TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'm s-1'
-      TZFIELD%CDIR       = 'XY'
-      TZFIELD%NGRID      = 3
-      TZFIELD%NTYPE      = TYPEREAL
-      TZFIELD%NDIMS      = 3
-      TZFIELD%LTIMEDEP   = .TRUE.
+      TZFIELD = TFIELDMETADATA(                                    &
+        CMNHNAME   = 'VRECYCLS',                                   &
+        CLONGNAME  = 'VRECYCLS',                                   &
+        CSTDNAME   = '',                                           &
+        CUNITS     = 'm s-1',                                      &
+        CDIR       = 'XY',                                         &
+        NGRID      = 3,                                            &
+        NTYPE      = TYPEREAL,                                     &
+        NDIMS      = 3,                                            &
+        NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NOTLISTED ], &
+        LTIMEDEP   = .TRUE.,                                       &
+        CCOMMENT   = 'VMEAN-SOUTH side plan for recycling purpose' )
       CALL IO_Field_read(TPINIFILE,TZFIELD,PVMEANS)
       !
-      TZFIELD%CMNHNAME   = 'WRECYCLS'
-      TZFIELD%CLONGNAME  = 'WRECYCLS'
-      TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'm s-1'
-      TZFIELD%CDIR       = 'XY'
-      TZFIELD%NGRID      = 4
-      TZFIELD%NTYPE      = TYPEREAL
-      TZFIELD%NDIMS      = 3
-      TZFIELD%LTIMEDEP   = .TRUE.
+      TZFIELD = TFIELDMETADATA(                                    &
+        CMNHNAME   = 'WRECYCLS',                                   &
+        CLONGNAME  = 'WRECYCLS',                                   &
+        CSTDNAME   = '',                                           &
+        CUNITS     = 'm s-1',                                      &
+        CDIR       = 'XY',                                         &
+        NGRID      = 4,                                            &
+        NTYPE      = TYPEREAL,                                     &
+        NDIMS      = 3,                                            &
+        NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NOTLISTED ], &
+        LTIMEDEP   = .TRUE.,                                       &
+        CCOMMENT   = 'WMEAN-SOUTH side plan for recycling purpose' )
       CALL IO_Field_read(TPINIFILE,TZFIELD,PWMEANS)
     ENDIF
   ENDIF  
