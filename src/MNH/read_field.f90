@@ -636,56 +636,62 @@ END SELECT
 !
 IF (LIBM .AND. CPROGRAM=='MESONH') THEN
    !
-   TZFIELD%CMNHNAME  = 'LSFP'
-   TZFIELD%CLONGNAME = 'LSFP'
-   TZFIELD%CSTDNAME  = ''
-   TZFIELD%CUNITS    = 'm'
-   TZFIELD%CDIR      = 'XY'
-   TZFIELD%NGRID     = 1
-   TZFIELD%NTYPE     = TYPEREAL
-   TZFIELD%NDIMS     = 3
-   TZFIELD%LTIMEDEP  = .TRUE.
+  TZFIELD = TFIELDMETADATA( &
+    CMNHNAME   = 'LSFP',    &
+    CLONGNAME  = 'LSFP',    &
+    CSTDNAME   = '',        &
+    CUNITS     = 'm',       &
+    CDIR       = 'XY',      &
+    NGRID      = 1,         &
+    NTYPE      = TYPEREAL,  &
+    NDIMS      = 3,         &
+    LTIMEDEP   = .TRUE.     )
    !
    CALL IO_Field_read(TPINIFILE,TZFIELD,PIBM_LSF)
    !
-   TZFIELD%CMNHNAME  = 'XMUT'
-   TZFIELD%CLONGNAME = 'XMUT'
-   TZFIELD%CSTDNAME  = ''
-   TZFIELD%CUNITS    = 'm2 s-1'
-   TZFIELD%CDIR      = 'XY'
-   TZFIELD%NGRID     = 1
-   TZFIELD%NTYPE     = TYPEREAL
-   TZFIELD%NDIMS     = 3
-   TZFIELD%LTIMEDEP  = .TRUE.
+  TZFIELD = TFIELDMETADATA( &
+    CMNHNAME   = 'XMUT',    &
+    CLONGNAME  = 'XMUT',    &
+    CSTDNAME   = '',        &
+    CUNITS     = 'm2 s-1',  &
+    CDIR       = 'XY',      &
+    NGRID      = 1,         &
+    NTYPE      = TYPEREAL,  &
+    NDIMS      = 3,         &
+    LTIMEDEP   = .TRUE.     )
    !
    CALL IO_Field_read(TPINIFILE,TZFIELD,PIBM_XMUT)
    !
 ENDIF
 !
-TZFIELD%CMNHNAME   = 'RECYCLING'
-TZFIELD%CLONGNAME  = 'RECYCLING'
-TZFIELD%CSTDNAME   = ''
-TZFIELD%CUNITS     = ''
-TZFIELD%CDIR       = '--'
-TZFIELD%NGRID      = 1
-TZFIELD%NTYPE      = TYPELOG
-TZFIELD%NDIMS      = 0
-TZFIELD%LTIMEDEP   = .FALSE. 
+TZFIELD = TFIELDMETADATA(   &
+  CMNHNAME   = 'RECYCLING', &
+  CLONGNAME  = 'RECYCLING', &
+  CSTDNAME   = '',          &
+  CUNITS     = '',          &
+  CDIR       = '--',        &
+  CCOMMENT   = '',          &
+  NGRID      = 1,           &
+  NTYPE      = TYPELOG,     &
+  NDIMS      = 0,           &
+  LTIMEDEP   = .FALSE.      )
 CALL IO_Field_read(TPINIFILE,TZFIELD,ZLRECYCL,IRESP)
 !If field not found (file from older version of MesoNH) => set ZLRECYCL to false
 IF ( IRESP /= 0 ) ZLRECYCL = .FALSE.
 
 IF (ZLRECYCL) THEN
   !
-  TZFIELD%CMNHNAME   = 'RCOUNT'
-  TZFIELD%CLONGNAME  = 'RCOUNT'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CUNITS     = ''
-  TZFIELD%CDIR       = '--'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEINT
-  TZFIELD%NDIMS      = 0
-  TZFIELD%LTIMEDEP   = .TRUE.
+    TZFIELD = TFIELDMETADATA(                                  &
+      CMNHNAME   = 'RCOUNT',                                   &
+      CLONGNAME  = 'RCOUNT',                                   &
+      CSTDNAME   = '',                                         &
+      CUNITS     = '',                                         &
+      CDIR       = '--',                                       &
+      NGRID      = 1,                                          &
+      NTYPE      = TYPEINT,                                    &
+      NDIMS      = 0,                                          &
+      LTIMEDEP   = .TRUE.,                                     &
+      CCOMMENT   = 'Incremental counter for averaging purpose' )
   CALL IO_Field_read(TPINIFILE,TZFIELD,NR_COUNT)
   !
   IF (NR_COUNT .NE. 0) THEN
@@ -1030,13 +1036,14 @@ DO JSV = NSV_PPBEG, NSV_PPEND
 END DO
 
 IF ( NSV_SNW >= 1 ) THEN
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CUNITS     = 'kg kg-1'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 2
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDMETADATA(                &
+    CMNHNAME   = 'generic for SNOWCANO_M', &
+    CUNITS     = 'kg kg-1',                &
+    CDIR       = 'XY',                     &
+    NGRID      = 1,                        &
+    NTYPE      = TYPEREAL,                 &
+    NDIMS      = 2,                        &
+    LTIMEDEP   = .TRUE.                    )
   DO JSV = 1, NSV_SNW
     SELECT CASE(HGETSVT(JSV))
       CASE ('READ')
@@ -1080,29 +1087,31 @@ IF (CCONF == 'RESTA') THEN
     END DO
     DO JSV = NSV_C2R2BEG,NSV_C2R2END
       IF (JSV == NSV_C2R2BEG ) THEN
-        TZFIELD%CMNHNAME   = 'RSVS_CLD1'
-        TZFIELD%CSTDNAME   = ''
-        TZFIELD%CLONGNAME  = 'RSVS_CLD1'
-        TZFIELD%CUNITS     = '1'
-        TZFIELD%CDIR       = 'XY'
-        TZFIELD%CCOMMENT   = 'X_Y_Z_RHS_CLD'
-        TZFIELD%NGRID      = 1
-        TZFIELD%NTYPE      = TYPEREAL
-        TZFIELD%NDIMS      = 3
-        TZFIELD%LTIMEDEP   = .TRUE.
+        TZFIELD = TFIELDMETADATA(       &
+          CMNHNAME   = 'RSVS_CLD1',     &
+          CSTDNAME   = '',              &
+          CLONGNAME  = 'RSVS_CLD1',     &
+          CUNITS     = '1',             &
+          CDIR       = 'XY',            &
+          CCOMMENT   = 'X_Y_Z_RHS_CLD', &
+          NGRID      = 1,               &
+          NTYPE      = TYPEREAL,        &
+          NDIMS      = 3,               &
+          LTIMEDEP   = .TRUE.           )
         CALL IO_Field_read(TPINIFILE,TZFIELD,PRSVS_CLD(:,:,:,JSV))
       END IF
       IF (JSV == NSV_C2R2BEG ) THEN
-        TZFIELD%CMNHNAME   = 'RSVS_CLD2'
-        TZFIELD%CSTDNAME   = ''
-        TZFIELD%CLONGNAME  = 'RSVS_CLD2'
-        TZFIELD%CUNITS     = '1'
-        TZFIELD%CDIR       = 'XY'
-        TZFIELD%CCOMMENT   = 'X_Y_Z_RHS_CLD'
-        TZFIELD%NGRID      = 1
-        TZFIELD%NTYPE      = TYPEREAL
-        TZFIELD%NDIMS      = 3
-        TZFIELD%LTIMEDEP   = .TRUE.
+        TZFIELD = TFIELDMETADATA(       &
+          CMNHNAME   = 'RSVS_CLD2',     &
+          CSTDNAME   = '',              &
+          CLONGNAME  = 'RSVS_CLD2',     &
+          CUNITS     = '1',             &
+          CDIR       = 'XY',            &
+          CCOMMENT   = 'X_Y_Z_RHS_CLD', &
+          NGRID      = 1,               &
+          NTYPE      = TYPEREAL,        &
+          NDIMS      = 3,               &
+          LTIMEDEP   = .TRUE.           )
         CALL IO_Field_read(TPINIFILE,TZFIELD,PRSVS_CLD(:,:,:,JSV))
       END IF
     END DO
@@ -1261,59 +1270,63 @@ END SELECT
 ! READ FIELD ONLY FOR MODEL1 (identical for all model in GN)
 IF (LOCEAN .AND. (.NOT.LCOUPLES) .AND. (KOCEMI==1)) THEN
 !
- CALL IO_Field_read(TPINIFILE,'NFRCLT',NFRCLT)
- CALL IO_Field_read(TPINIFILE,'NINFRT',NINFRT)
+  CALL IO_Field_read(TPINIFILE,'NFRCLT',NFRCLT)
+  CALL IO_Field_read(TPINIFILE,'NINFRT',NINFRT)
 !
- TZFIELD%CMNHNAME   = 'SSUFL_T'
- TZFIELD%CSTDNAME   = ''
- TZFIELD%CLONGNAME  = 'SSUFL'
- TZFIELD%CUNITS     = 'kg m-1 s-1'
- TZFIELD%CDIR       = '--'
- TZFIELD%CCOMMENT   = 'sfc stress along U to force ocean LES '
- TZFIELD%NGRID      = 0
- TZFIELD%NTYPE      = TYPEREAL
- TZFIELD%NDIMS      = 1
- TZFIELD%LTIMEDEP   = .FALSE.
- ALLOCATE(XSSUFL_T(NFRCLT))
+  TZFIELD = TFIELDMETADATA(                               &
+    CMNHNAME   = 'SSUFL_T',                               &
+    CSTDNAME   = '',                                      &
+    CLONGNAME  = 'SSUFL',                                 &
+    CUNITS     = 'kg m-1 s-1',                            &
+    CDIR       = '--',                                    &
+    CCOMMENT   = 'sfc stress along U to force ocean LES', &
+    NGRID      = 0,                                       &
+    NTYPE      = TYPEREAL,                                &
+    NDIMS      = 1,                                       &
+    LTIMEDEP   = .FALSE.                                  )
+  ALLOCATE(XSSUFL_T(NFRCLT))
   CALL IO_Field_read(TPINIFILE,TZFIELD,XSSUFL_T(:))
 !
- TZFIELD%CMNHNAME   = 'SSVFL_T'
- TZFIELD%CSTDNAME   = ''
- TZFIELD%CLONGNAME  = 'SSVFL'
- TZFIELD%CUNITS     = 'kg m-1 s-1'
- TZFIELD%CDIR       = '--'
- TZFIELD%CCOMMENT   = 'sfc stress along V to force ocean LES '
- TZFIELD%NGRID      = 0
- TZFIELD%NTYPE      = TYPEREAL
- TZFIELD%NDIMS      = 1
- TZFIELD%LTIMEDEP   = .FALSE.
-ALLOCATE(XSSVFL_T(NFRCLT))
+  TZFIELD = TFIELDMETADATA(                               &
+    CMNHNAME   = 'SSVFL_T',                               &
+    CSTDNAME   = '',                                      &
+    CLONGNAME  = 'SSVFL',                                 &
+    CUNITS     = 'kg m-1 s-1',                            &
+    CDIR       = '--',                                    &
+    CCOMMENT   = 'sfc stress along V to force ocean LES', &
+    NGRID      = 0,                                       &
+    NTYPE      = TYPEREAL,                                &
+    NDIMS      = 1,                                       &
+    LTIMEDEP   = .FALSE.                                  )
+  ALLOCATE(XSSVFL_T(NFRCLT))
   CALL IO_Field_read(TPINIFILE,TZFIELD,XSSVFL_T(:))
 !
- TZFIELD%CMNHNAME   = 'SSTFL_T'
- TZFIELD%CSTDNAME   = ''
- TZFIELD%CLONGNAME  = 'SSTFL'
- TZFIELD%CUNITS     = 'kg m3 K m s-1'
- TZFIELD%CDIR       = '--'
- TZFIELD%CCOMMENT   = 'sfc total heat flux to force ocean LES '
- TZFIELD%NGRID      = 0
- TZFIELD%NTYPE      = TYPEREAL
- TZFIELD%NDIMS      = 1
- TZFIELD%LTIMEDEP   = .FALSE.
- ALLOCATE(XSSTFL_T(NFRCLT))
+  TZFIELD = TFIELDMETADATA(                                &
+    CMNHNAME   = 'SSTFL_T',                                &
+    CSTDNAME   = '',                                       &
+    CLONGNAME  = 'SSTFL',                                  &
+    CUNITS     = 'kg m3 K m s-1',                          &
+    CDIR       = '--',                                     &
+    CCOMMENT   = 'sfc total heat flux to force ocean LES', &
+    NGRID      = 0,                                        &
+    NTYPE      = TYPEREAL,                                 &
+    NDIMS      = 1,                                        &
+    LTIMEDEP   = .FALSE.                                   )
+  ALLOCATE(XSSTFL_T(NFRCLT))
   CALL IO_Field_read(TPINIFILE,TZFIELD,XSSTFL_T(:))
 ! 
- TZFIELD%CMNHNAME   = 'SSOLA_T'
- TZFIELD%CSTDNAME   = ''
- TZFIELD%CLONGNAME  = 'SSOLA'
- TZFIELD%CUNITS     = 'kg m3 K m s-1'
- TZFIELD%CDIR       = '--'
- TZFIELD%CCOMMENT   = 'sfc solar flux at sfc to force ocean LES '
- TZFIELD%NGRID      = 0
- TZFIELD%NTYPE      = TYPEREAL
- TZFIELD%NDIMS      = 1
- TZFIELD%LTIMEDEP   = .FALSE.
- ALLOCATE(XSSOLA_T(NFRCLT))
+  TZFIELD = TFIELDMETADATA(                           &
+    CMNHNAME   = 'SSOLA_T',                           &
+    CSTDNAME   = '',                                  &
+    CLONGNAME  = 'SSOLA',                             &
+    CUNITS     = 'kg m3 K m s-1',                     &
+    CDIR       = '--',                                &
+    CCOMMENT   = 'sfc solar flux to force ocean LES', &
+    NGRID      = 0,                                   &
+    NTYPE      = TYPEREAL,                            &
+    NDIMS      = 1,                                   &
+    LTIMEDEP   = .FALSE.                              )
+  ALLOCATE(XSSOLA_T(NFRCLT))
   CALL IO_Field_read(TPINIFILE,TZFIELD,XSSOLA_T(:))
 !
 END IF ! ocean sfc forcing end    
@@ -1324,160 +1337,173 @@ IF ( LFORCING ) THEN
 !
     WRITE (YFRC,'(I3.3)') JT
 !
-    TZFIELD%CMNHNAME   = 'DTFRC'//YFRC
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'seconds since YYYY-MM-DD HH:MM:SS.S'
-    TZFIELD%CDIR       = '--'
-    TZFIELD%CCOMMENT   = 'Date of forcing profile '//YFRC
-    TZFIELD%NGRID      = 0
-    TZFIELD%NTYPE      = TYPEDATE
-    TZFIELD%NDIMS      = 0
-    TZFIELD%LTIMEDEP   = .FALSE.
+    TZFIELD = TFIELDMETADATA(                             &
+      CMNHNAME   = 'DTFRC'//YFRC,                         &
+      CSTDNAME   = '',                                    &
+      CLONGNAME  = 'DTFRC'//YFRC,                         &
+      CUNITS     = 'seconds since YYYY-MM-DD HH:MM:SS.S', &
+      CDIR       = '--',                                  &
+      CCOMMENT   = 'Date of forcing profile '//YFRC,      &
+      NGRID      = 0,                                     &
+      NTYPE      = TYPEDATE,                              &
+      NDIMS      = 0,                                     &
+      LTIMEDEP   = .FALSE.                                )
     CALL IO_Field_read(TPINIFILE,TZFIELD,TPDTFRC(JT))
 !
-    TZFIELD%CMNHNAME   = 'UFRC'//YFRC
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'm s-1'
-    TZFIELD%CDIR       = '--'
-    TZFIELD%CCOMMENT   = 'Zonal component of horizontal forcing wind'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 1
-    TZFIELD%LTIMEDEP   = .FALSE.
+    TZFIELD = TFIELDMETADATA(                                    &
+      CMNHNAME   = 'UFRC'//YFRC,                                 &
+      CSTDNAME   = '',                                           &
+      CLONGNAME  = 'UFRC'//YFRC,                                 &
+      CUNITS     = 'm s-1',                                      &
+      CDIR       = '--',                                         &
+      CCOMMENT   = 'Zonal component of horizontal forcing wind', &
+      NGRID      = 1,                                            &
+      NTYPE      = TYPEREAL,                                     &
+      NDIMS      = 1,                                            &
+      LTIMEDEP   = .FALSE.                                       )
     CALL IO_Field_read(TPINIFILE,TZFIELD,PUFRC(:,JT))
 !
-    TZFIELD%CMNHNAME   = 'VFRC'//YFRC
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'm s-1'
-    TZFIELD%CDIR       = '--'
-    TZFIELD%CCOMMENT   = 'Meridian component of horizontal forcing wind'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 1
-    TZFIELD%LTIMEDEP   = .FALSE.
+    TZFIELD = TFIELDMETADATA(                                       &
+      CMNHNAME   = 'VFRC'//YFRC,                                    &
+      CSTDNAME   = '',                                              &
+      CLONGNAME  = 'VFRC'//YFRC,                                    &
+      CUNITS     = 'm s-1',                                         &
+      CDIR       = '--',                                            &
+      CCOMMENT   = 'Meridian component of horizontal forcing wind', &
+      NGRID      = 1,                                               &
+      NTYPE      = TYPEREAL,                                        &
+      NDIMS      = 1,                                               &
+      LTIMEDEP   = .FALSE.                                          )
     CALL IO_Field_read(TPINIFILE,TZFIELD,PVFRC(:,JT))
 !
-    TZFIELD%CMNHNAME   = 'WFRC'//YFRC
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'm s-1'
-    TZFIELD%CDIR       = '--'
-    TZFIELD%CCOMMENT   = 'Vertical forcing wind'
-    TZFIELD%NGRID      = 4
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 1
-    TZFIELD%LTIMEDEP   = .FALSE.
+    TZFIELD = TFIELDMETADATA(               &
+      CMNHNAME   = 'WFRC'//YFRC,            &
+      CSTDNAME   = '',                      &
+      CLONGNAME  = 'WFRC'//YFRC,            &
+      CUNITS     = 'm s-1',                 &
+      CDIR       = '--',                    &
+      CCOMMENT   = 'Vertical forcing wind', &
+      NGRID      = 4,                       &
+      NTYPE      = TYPEREAL,                &
+      NDIMS      = 1,                       &
+      LTIMEDEP   = .FALSE.                  )
     CALL IO_Field_read(TPINIFILE,TZFIELD,PWFRC(:,JT))
 !
-    TZFIELD%CMNHNAME   = 'THFRC'//YFRC
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'K'
-    TZFIELD%CDIR       = '--'
-    TZFIELD%CCOMMENT   = 'Forcing potential temperature'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 1
-    TZFIELD%LTIMEDEP   = .FALSE.
+    TZFIELD = TFIELDMETADATA(                       &
+      CMNHNAME   = 'THFRC'//YFRC,                   &
+      CSTDNAME   = '',                              &
+      CLONGNAME  = 'THFRC'//YFRC,                   &
+      CUNITS     = 'K',                             &
+      CDIR       = '--',                            &
+      CCOMMENT   = 'Forcing potential temperature', &
+      NGRID      = 1,                               &
+      NTYPE      = TYPEREAL,                        &
+      NDIMS      = 1,                               &
+      LTIMEDEP   = .FALSE.                          )
     CALL IO_Field_read(TPINIFILE,TZFIELD,PTHFRC(:,JT))
 !
-    TZFIELD%CMNHNAME   = 'RVFRC'//YFRC
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'kg kg-1'
-    TZFIELD%CDIR       = '--'
-    TZFIELD%CCOMMENT   = 'Forcing vapor mixing ratio'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 1
-    TZFIELD%LTIMEDEP   = .FALSE.
+    TZFIELD = TFIELDMETADATA(                    &
+      CMNHNAME   = 'RVFRC'//YFRC,                &
+      CSTDNAME   = '',                           &
+      CLONGNAME  = 'RVFRC'//YFRC,                &
+      CUNITS     = 'kg kg-1',                    &
+      CDIR       = '--',                         &
+      CCOMMENT   = 'Forcing vapor mixing ratio', &
+      NGRID      = 1,                            &
+      NTYPE      = TYPEREAL,                     &
+      NDIMS      = 1,                            &
+      LTIMEDEP   = .FALSE.                       )
     CALL IO_Field_read(TPINIFILE,TZFIELD,PRVFRC(:,JT))
 !
-    TZFIELD%CMNHNAME   = 'TENDTHFRC'//YFRC
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'K s-1'
-    TZFIELD%CDIR       = '--'
-    TZFIELD%CCOMMENT   = 'Large-scale potential temperature tendency for forcing'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 1
-    TZFIELD%LTIMEDEP   = .FALSE.
+    TZFIELD = TFIELDMETADATA(                                                &
+      CMNHNAME   = 'TENDTHFRC'//YFRC,                                        &
+      CSTDNAME   = '',                                                       &
+      CLONGNAME  = 'TENDTHFRC'//YFRC,                                        &
+      CUNITS     = 'K s-1',                                                  &
+      CDIR       = '--',                                                     &
+      CCOMMENT   = 'Large-scale potential temperature tendency for forcing', &
+      NGRID      = 1,                                                        &
+      NTYPE      = TYPEREAL,                                                 &
+      NDIMS      = 1,                                                        &
+      LTIMEDEP   = .FALSE.                                                   )
     CALL IO_Field_read(TPINIFILE,TZFIELD,PTENDTHFRC(:,JT))
 !
-    TZFIELD%CMNHNAME   = 'TENDRVFRC'//YFRC
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'kg kg-1 s-1'
-    TZFIELD%CDIR       = '--'
-    TZFIELD%CCOMMENT   = 'Large-scale vapor mixing ratio tendency for forcing'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 1
-    TZFIELD%LTIMEDEP   = .FALSE.
+    TZFIELD = TFIELDMETADATA(                                             &
+      CMNHNAME   = 'TENDRVFRC'//YFRC,                                     &
+      CSTDNAME   = '',                                                    &
+      CLONGNAME  = 'TENDRVFRC'//YFRC,                                     &
+      CUNITS     = 'kg kg-1 s-1',                                         &
+      CDIR       = '--',                                                  &
+      CCOMMENT   = 'Large-scale vapor mixing ratio tendency for forcing', &
+      NGRID      = 1,                                                     &
+      NTYPE      = TYPEREAL,                                              &
+      NDIMS      = 1,                                                     &
+      LTIMEDEP   = .FALSE.                                                )
     CALL IO_Field_read(TPINIFILE,TZFIELD,PTENDRVFRC(:,JT))
 !
-    TZFIELD%CMNHNAME   = 'GXTHFRC'//YFRC
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'K m-1'
-    TZFIELD%CDIR       = '--'
-    TZFIELD%CCOMMENT   = 'Large-scale potential temperature gradient for forcing'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 1
-    TZFIELD%LTIMEDEP   = .FALSE.
+    TZFIELD = TFIELDMETADATA(                                                &
+      CMNHNAME   = 'GXTHFRC'//YFRC,                                          &
+      CSTDNAME   = '',                                                       &
+      CLONGNAME  = 'GXTHFRC'//YFRC,                                          &
+      CUNITS     = 'K m-1',                                                  &
+      CDIR       = '--',                                                     &
+      CCOMMENT   = 'Large-scale potential temperature gradient for forcing', &
+      NGRID      = 1,                                                        &
+      NTYPE      = TYPEREAL,                                                 &
+      NDIMS      = 1,                                                        &
+      LTIMEDEP   = .FALSE.                                                   )
     CALL IO_Field_read(TPINIFILE,TZFIELD,PGXTHFRC(:,JT))
 !
-    TZFIELD%CMNHNAME   = 'GYTHFRC'//YFRC
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'K m-1'
-    TZFIELD%CDIR       = '--'
-    TZFIELD%CCOMMENT   = 'Large-scale potential temperature gradient for forcing'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 1
-    TZFIELD%LTIMEDEP   = .FALSE.
+    TZFIELD = TFIELDMETADATA(                                                &
+      CMNHNAME   = 'GYTHFRC'//YFRC,                                          &
+      CSTDNAME   = '',                                                       &
+      CLONGNAME  = 'GYTHFRC'//YFRC,                                          &
+      CUNITS     = 'K m-1',                                                  &
+      CDIR       = '--',                                                     &
+      CCOMMENT   = 'Large-scale potential temperature gradient for forcing', &
+      NGRID      = 1,                                                        &
+      NTYPE      = TYPEREAL,                                                 &
+      NDIMS      = 1,                                                        &
+      LTIMEDEP   = .FALSE.                                                   )
     CALL IO_Field_read(TPINIFILE,TZFIELD,PGYTHFRC(:,JT))
 !
-    TZFIELD%CMNHNAME   = 'PGROUNDFRC'//YFRC
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'Pa'
-    TZFIELD%CDIR       = '--'
-    TZFIELD%CCOMMENT   = 'Forcing ground pressure'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 0
-    TZFIELD%LTIMEDEP   = .FALSE.
+    TZFIELD = TFIELDMETADATA(                 &
+      CMNHNAME   = 'PGROUNDFRC'//YFRC,        &
+      CSTDNAME   = '',                        &
+      CLONGNAME  = 'PGROUNDFRC'//YFRC,        &
+      CUNITS     = 'Pa',                      &
+      CDIR       = '--',                      &
+      CCOMMENT   = 'Forcing ground pressure', &
+      NGRID      = 1,                         &
+      NTYPE      = TYPEREAL,                  &
+      NDIMS      = 0,                         &
+      LTIMEDEP   = .FALSE.                    )
     CALL IO_Field_read(TPINIFILE,TZFIELD,PPGROUNDFRC(JT))
 !
-    TZFIELD%CMNHNAME   = 'TENDUFRC'//YFRC
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'm s-1'
-    TZFIELD%CDIR       = '--'
-    TZFIELD%CCOMMENT   = 'Large-scale U tendency for forcing'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 1
-    TZFIELD%LTIMEDEP   = .FALSE.
+    TZFIELD = TFIELDMETADATA(                            &
+      CMNHNAME   = 'TENDUFRC'//YFRC,                     &
+      CSTDNAME   = '',                                   &
+      CLONGNAME  = 'TENDUFRC'//YFRC,                     &
+      CUNITS     = 'm s-1',                              &
+      CDIR       = '--',                                 &
+      CCOMMENT   = 'Large-scale U tendency for forcing', &
+      NGRID      = 1,                                    &
+      NTYPE      = TYPEREAL,                             &
+      NDIMS      = 1,                                    &
+      LTIMEDEP   = .FALSE.                               )
     CALL IO_Field_read(TPINIFILE,TZFIELD,PTENDUFRC(:,JT))
 !
-    TZFIELD%CMNHNAME   = 'TENDVFRC'//YFRC
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'm s-1'
-    TZFIELD%CDIR       = '--'
-    TZFIELD%CCOMMENT   = 'Large-scale V tendency for forcing'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 1
-    TZFIELD%LTIMEDEP   = .FALSE.
+    TZFIELD = TFIELDMETADATA(                            &
+      CMNHNAME   = 'TENDVFRC'//YFRC,                     &
+      CSTDNAME   = '',                                   &
+      CLONGNAME  = 'TENDVFRC'//YFRC,                     &
+      CUNITS     = 'm s-1',                              &
+      CDIR       = '--',                                 &
+      CCOMMENT   = 'Large-scale V tendency for forcing', &
+      NGRID      = 1,                                    &
+      NTYPE      = TYPEREAL,                             &
+      NDIMS      = 1,                                    &
+      LTIMEDEP   = .FALSE.                               )
     CALL IO_Field_read(TPINIFILE,TZFIELD,PTENDVFRC(:,JT))
   END DO
 END IF
@@ -1488,40 +1514,43 @@ IF (L2D_ADV_FRC) THEN
   DO JT=1,KADVFRC  
     WRITE (YFRC,'(I3.3)') JT
     !
-    TZFIELD%CMNHNAME   = 'DTADV'//YFRC
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'seconds since YYYY-MM-DD HH:MM:SS.S'
-    TZFIELD%CDIR       = '--'
-    TZFIELD%CCOMMENT   = 'Date and time of the advecting forcing '//YFRC
-    TZFIELD%NGRID      = 0
-    TZFIELD%NTYPE      = TYPEDATE
-    TZFIELD%NDIMS      = 0
-    TZFIELD%LTIMEDEP   = .FALSE.
+    TZFIELD = TFIELDMETADATA(                                       &
+      CMNHNAME   = 'DTADV'//YFRC,                                   &
+      CSTDNAME   = '',                                              &
+      CLONGNAME  = 'DTADV'//YFRC,                                   &
+      CUNITS     = 'seconds since YYYY-MM-DD HH:MM:SS.S',           &
+      CDIR       = '--',                                            &
+      CCOMMENT   = 'Date and time of the advecting forcing '//YFRC, &
+      NGRID      = 0,                                               &
+      NTYPE      = TYPEDATE,                                        &
+      NDIMS      = 0,                                               &
+      LTIMEDEP   = .FALSE.                                          )
     CALL IO_Field_read(TPINIFILE,TZFIELD,TPDTADVFRC(JT))
     !
-    TZFIELD%CMNHNAME   = 'TH_ADV'//YFRC
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'K s-1'
-    TZFIELD%CDIR       = '--'
-    TZFIELD%CCOMMENT   = ''
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .FALSE.
+    TZFIELD = TFIELDMETADATA(      &
+      CMNHNAME   = 'TH_ADV'//YFRC, &
+      CSTDNAME   = '',             &
+      CLONGNAME  = 'TH_ADV'//YFRC, &
+      CUNITS     = 'K s-1',        &
+      CDIR       = '--',           &
+      CCOMMENT   = '',             &
+      NGRID      = 1,              &
+      NTYPE      = TYPEREAL,       &
+      NDIMS      = 3,              &
+      LTIMEDEP   = .FALSE.         )
     CALL IO_Field_read(TPINIFILE,TZFIELD,PDTHFRC(:,:,:,JT))
     !
-    TZFIELD%CMNHNAME   = 'Q_ADV'//YFRC
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'kg kg-1 s-1'
-    TZFIELD%CDIR       = '--'
-    TZFIELD%CCOMMENT   = ''
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .FALSE.
+    TZFIELD = TFIELDMETADATA(     &
+      CMNHNAME   = 'Q_ADV'//YFRC, &
+      CSTDNAME   = '',            &
+      CLONGNAME  = 'Q_ADV'//YFRC, &
+      CUNITS     = 'kg kg-1 s-1', &
+      CDIR       = '--',          &
+      CCOMMENT   = '',            &
+      NGRID      = 1,             &
+      NTYPE      = TYPEREAL,      &
+      NDIMS      = 3,             &
+      LTIMEDEP   = .FALSE.        )
     CALL IO_Field_read(TPINIFILE,TZFIELD,PDRVFRC(:,:,:,JT))
   ENDDO
 ENDIF
@@ -1531,41 +1560,44 @@ IF (L2D_REL_FRC) THEN
   DO JT=1,KRELFRC  
     WRITE (YFRC,'(I3.3)') JT
     !
-    TZFIELD%CMNHNAME   = 'DTREL'//YFRC
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'seconds since YYYY-MM-DD HH:MM:SS.S'
-    TZFIELD%CDIR       = '--'
-    TZFIELD%CCOMMENT   = 'Date and time of the relaxation forcing '//YFRC
-    TZFIELD%NGRID      = 0
-    TZFIELD%NTYPE      = TYPEDATE
-    TZFIELD%NDIMS      = 0
-    TZFIELD%LTIMEDEP   = .FALSE.
+    TZFIELD = TFIELDMETADATA(                                        &
+      CMNHNAME   = 'DTREL'//YFRC,                                    &
+      CSTDNAME   = '',                                               &
+      CLONGNAME  = 'DTREL'//YFRC,                                    &
+      CUNITS     = 'seconds since YYYY-MM-DD HH:MM:SS.S',            &
+      CDIR       = '--',                                             &
+      CCOMMENT   = 'Date and time of the relaxation forcing '//YFRC, &
+      NGRID      = 0,                                                &
+      NTYPE      = TYPEDATE,                                         &
+      NDIMS      = 0,                                                &
+      LTIMEDEP   = .FALSE.                                           )
     CALL IO_Field_read(TPINIFILE,TZFIELD,TPDTRELFRC(JT))
     !
     ! Relaxation
-    TZFIELD%CMNHNAME   = 'TH_REL'//YFRC
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'K'
-    TZFIELD%CDIR       = '--'
-    TZFIELD%CCOMMENT   = ''
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .FALSE.
+    TZFIELD = TFIELDMETADATA(      &
+      CMNHNAME   = 'TH_REL'//YFRC, &
+      CSTDNAME   = '',             &
+      CLONGNAME  = 'TH_REL'//YFRC, &
+      CUNITS     = 'K',            &
+      CDIR       = '--',           &
+      CCOMMENT   = '',             &
+      NGRID      = 1,              &
+      NTYPE      = TYPEREAL,       &
+      NDIMS      = 3,              &
+      LTIMEDEP   = .FALSE.         )
     CALL IO_Field_read(TPINIFILE,TZFIELD,PTHREL(:,:,:,JT))
     !
-    TZFIELD%CMNHNAME   = 'Q_REL'//YFRC
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'kg kg-1'
-    TZFIELD%CDIR       = '--'
-    TZFIELD%CCOMMENT   = ''
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .FALSE.
+    TZFIELD = TFIELDMETADATA(     &
+      CMNHNAME   = 'Q_REL'//YFRC, &
+      CSTDNAME   = '',            &
+      CLONGNAME  = 'Q_REL'//YFRC, &
+      CUNITS     = 'kg kg-1',     &
+      CDIR       = '--',          &
+      CCOMMENT   = '',            &
+      NGRID      = 1,             &
+      NTYPE      = TYPEREAL,      &
+      NDIMS      = 3,             &
+      LTIMEDEP   = .FALSE.        )
     CALL IO_Field_read(TPINIFILE,TZFIELD,PRVREL(:,:,:,JT))
   ENDDO
 ENDIF
