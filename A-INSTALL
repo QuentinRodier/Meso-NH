@@ -992,22 +992,22 @@ git clone -b 2014.01 https://github.com/forefireAPI/firefront.git
 # because it needs a licence agrement.
 #
 # ----------------------------------
-# OPTION 1: Use version 13.0 of RTTOV 
+# OPTION 1: Use version 13.2 of RTTOV 
 # -----------------------------------
 #
 # Run the 'configure' script preceded with the setting of the MNH_RTTOV variable:
 #
 cd MNH.../src/
 export MNH_RTTOV=1
-export VER_RTTOV=13.0
+export VER_RTTOV=13.2
 #
-# Download the RTTOV package rttov130.tar.xz by following the instructions given on https://nwpsaf.eu/site/software/rttov/
+# Download the RTTOV package rttov132.tar.xz by following the instructions given on https://nwpsaf.eu/site/software/rttov/
 #
-# Install the RTTOV package rttov130.tar.xz
+# Install the RTTOV package rttov132.tar.xz
 cd MNH.../src/LIB
-mkdir RTTOV-13.0
-cd RTTOV-13.0
-tar xJf rttov130.tar.xz
+mkdir RTTOV-13.2
+cd RTTOV-13.2
+tar xJf rttov132.tar.xz
 cd build
 edit Makefile.local and set HDF5_PREFIX, FFLAGS_HDF5 and LDFLAGS_HDF5 as shown below
 "
