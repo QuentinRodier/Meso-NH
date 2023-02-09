@@ -2393,6 +2393,7 @@ call Add_field2list( TFIELDDATA(     &
   NGRID      = 1,                    &
   NTYPE      = TYPEREAL,             &
   NDIMS      = 3,                    &
+  NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NOTLISTED ], &
   LTIMEDEP   = .TRUE.                ) )
 
 call Add_field2list( TFIELDDATA(   &
@@ -2405,6 +2406,7 @@ call Add_field2list( TFIELDDATA(   &
   NGRID      = 1,                  &
   NTYPE      = TYPEREAL,           &
   NDIMS      = 3,                  &
+  NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NOTLISTED ], &
   LTIMEDEP   = .TRUE.              ) )
 
 call Add_field2list( TFIELDDATA(                       &
@@ -2417,6 +2419,7 @@ call Add_field2list( TFIELDDATA(                       &
   NGRID      = 1,                                      &
   NTYPE      = TYPEREAL,                               &
   NDIMS      = 3,                                      &
+  NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NOTLISTED ], &
   LTIMEDEP   = .TRUE.                                 ) )
 
 call Add_field2list( TFIELDDATA(                     &
@@ -2429,6 +2432,7 @@ call Add_field2list( TFIELDDATA(                     &
   NGRID      = 1,                                   &
   NTYPE      = TYPEREAL,                            &
   NDIMS      = 3,                                   &
+  NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NOTLISTED ], &
   LTIMEDEP   = .TRUE.                               ) )
 
 call Add_field2list( TFIELDDATA(             &
@@ -2441,6 +2445,7 @@ call Add_field2list( TFIELDDATA(             &
   NGRID      = 1,                            &
   NTYPE      = TYPEREAL,                     &
   NDIMS      = 3,                            &
+  NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NOTLISTED ], &
   LTIMEDEP   = .TRUE.                        ) )
 
 call Add_field2list( TFIELDDATA(             &
@@ -2453,6 +2458,7 @@ call Add_field2list( TFIELDDATA(             &
   NGRID      = 1,                            &
   NTYPE      = TYPEREAL,                     &
   NDIMS      = 3,                            &
+  NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NOTLISTED ], &
   LTIMEDEP   = .TRUE.                        ) )
 
 call Add_field2list( TFIELDDATA(             &
@@ -2465,6 +2471,7 @@ call Add_field2list( TFIELDDATA(             &
   NGRID      = 1,                            &
   NTYPE      = TYPEREAL,                     &
   NDIMS      = 3,                            &
+  NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NOTLISTED ], &
   LTIMEDEP   = .TRUE.                        ) )
 
 call Add_field2list( TFIELDDATA(                            &
@@ -2477,6 +2484,7 @@ call Add_field2list( TFIELDDATA(                            &
   NGRID      = 1,                                           &
   NTYPE      = TYPEREAL,                                    &
   NDIMS      = 3,                                           &
+  NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NOTLISTED ], &
   LTIMEDEP   = .TRUE.                                       ) )
 
 call Add_field2list( TFIELDDATA(      &
@@ -2489,6 +2497,7 @@ call Add_field2list( TFIELDDATA(      &
   NGRID      = 1,                     &
   NTYPE      = TYPEREAL,              &
   NDIMS      = 3,                     &
+  NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NOTLISTED ], &
   LTIMEDEP   = .TRUE.                 ) )
 
 call Add_field2list( TFIELDDATA(              &
@@ -2501,6 +2510,7 @@ call Add_field2list( TFIELDDATA(              &
   NGRID      = 1,                             &
   NTYPE      = TYPEREAL,                      &
   NDIMS      = 3,                             &
+  NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NOTLISTED ], &
   LTIMEDEP   = .TRUE.                         ) )
 
 call Add_field2list( TFIELDDATA(          &
@@ -2513,6 +2523,7 @@ call Add_field2list( TFIELDDATA(          &
   NGRID      = 1,                         &
   NTYPE      = TYPEREAL,                  &
   NDIMS      = 3,                         &
+  NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NOTLISTED ], &
   LTIMEDEP   = .TRUE.                     ) )
 
 call Add_field2list( TFIELDDATA(        &
@@ -2525,6 +2536,7 @@ call Add_field2list( TFIELDDATA(        &
   NGRID      = 1,                       &
   NTYPE      = TYPEREAL,                &
   NDIMS      = 3,                       &
+  NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NOTLISTED ], &
   LTIMEDEP   = .TRUE.                   ) )
 
 call Add_field2list( TFIELDDATA( &
@@ -2538,6 +2550,7 @@ call Add_field2list( TFIELDDATA( &
   NGRID      = 1,                &
   NTYPE      = TYPEREAL,         &
   NDIMS      = 3,                &
+  NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NOTLISTED ], &
   LTIMEDEP   = .TRUE.            ) )
 
 call Add_field2list( TFIELDDATA( &
@@ -2551,6 +2564,7 @@ call Add_field2list( TFIELDDATA( &
   NGRID      = 1,                &
   NTYPE      = TYPEREAL,         &
   NDIMS      = 3,                &
+  NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NOTLISTED ], &
   LTIMEDEP   = .TRUE.            ) )
 !
 ! end of Blaze fields
