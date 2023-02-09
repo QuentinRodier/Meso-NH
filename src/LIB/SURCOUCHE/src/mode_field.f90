@@ -2409,31 +2409,31 @@ call Add_field2list( TFIELDDATA(   &
   NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NOTLISTED ], &
   LTIMEDEP   = .TRUE.              ) )
 
-call Add_field2list( TFIELDDATA(                       &
-  CMNHNAME   = 'FMASE',                                &
-  CSTDNAME   = '',                                     &
-  CLONGNAME  = 'fire model available sensible energy', &
-  CUNITS     = 'kJ m-2',                               &
-  CDIR       = 'XY',                                   &
+call Add_field2list( TFIELDDATA(            &
+  CMNHNAME   = 'FMASE',                     &
+  CSTDNAME   = '',                          &
+  CLONGNAME  = 'available sensible energy', &
+  CUNITS     = 'kJ m-2',                    &
+  CDIR       = 'XY',                        &
   CCOMMENT   = 'X_Y_F Blaze fire model available sensible energy of vegetation | fire grid ('//YFIREDIMX//','//YFIREDIMY//')', &
-  NGRID      = 1,                                      &
-  NTYPE      = TYPEREAL,                               &
-  NDIMS      = 3,                                      &
+  NGRID      = 1,                           &
+  NTYPE      = TYPEREAL,                    &
+  NDIMS      = 3,                           &
   NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NOTLISTED ], &
-  LTIMEDEP   = .TRUE.                                 ) )
+  LTIMEDEP   = .TRUE.                       ) )
 
-call Add_field2list( TFIELDDATA(                     &
-  CMNHNAME   = 'FMAWC',                              &
-  CSTDNAME   = '',                                   &
-  CLONGNAME  = 'fire model available water content', &
-  CUNITS     = 'kg m-2',                             &
-  CDIR       = 'XY',                                 &
+call Add_field2list( TFIELDDATA(          &
+  CMNHNAME   = 'FMAWC',                   &
+  CSTDNAME   = '',                        &
+  CLONGNAME  = 'available water content', &
+  CUNITS     = 'kg m-2',                  &
+  CDIR       = 'XY',                      &
   CCOMMENT   = 'X_Y_F Blaze fire model available liquid water of vegetation | fire grid ('//YFIREDIMX//','//YFIREDIMY//')', &
-  NGRID      = 1,                                   &
-  NTYPE      = TYPEREAL,                            &
-  NDIMS      = 3,                                   &
+  NGRID      = 1,                         &
+  NTYPE      = TYPEREAL,                  &
+  NDIMS      = 3,                         &
   NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NOTLISTED ], &
-  LTIMEDEP   = .TRUE.                               ) )
+  LTIMEDEP   = .TRUE.                     ) )
 
 call Add_field2list( TFIELDDATA(             &
   CMNHNAME   = 'FMWINDU',                    &
@@ -2474,18 +2474,18 @@ call Add_field2list( TFIELDDATA(             &
   NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NOTLISTED ], &
   LTIMEDEP   = .TRUE.                        ) )
 
-call Add_field2list( TFIELDDATA(                            &
-  CMNHNAME   = 'FMHWS',                                     &
-  CSTDNAME   = '',                                          &
-  CLONGNAME  = 'fire model filtered horizontal wind speed', &
-  CUNITS     = 'm s-1',                                     &
-  CDIR       = 'XY',                                        &
+call Add_field2list( TFIELDDATA(                 &
+  CMNHNAME   = 'FMHWS',                          &
+  CSTDNAME   = '',                               &
+  CLONGNAME  = 'filtered horizontal wind speed', &
+  CUNITS     = 'm s-1',                          &
+  CDIR       = 'XY',                             &
   CCOMMENT   = 'X_Y_F Blaze filtered horizontal wind speed | fire grid ('//YFIREDIMX//','//YFIREDIMY//')', &
-  NGRID      = 1,                                           &
-  NTYPE      = TYPEREAL,                                    &
-  NDIMS      = 3,                                           &
+  NGRID      = 1,                                &
+  NTYPE      = TYPEREAL,                         &
+  NDIMS      = 3,                                &
   NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NOTLISTED ], &
-  LTIMEDEP   = .TRUE.                                       ) )
+  LTIMEDEP   = .TRUE.                            ) )
 
 call Add_field2list( TFIELDDATA(      &
   CMNHNAME   = 'FIRERW',              &
@@ -2539,33 +2539,33 @@ call Add_field2list( TFIELDDATA(        &
   NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NOTLISTED ], &
   LTIMEDEP   = .TRUE.                   ) )
 
-call Add_field2list( TFIELDDATA( &
-  CMNHNAME   = 'FMGRADOROX',     &
-  CSTDNAME   = '',               &
-  CLONGNAME  = 'orographic gradient on x direction on fire mesh', &
-  CUNITS     = '',               &
-  CDIR       = 'XY',             &
+call Add_field2list( TFIELDDATA(        &
+  CMNHNAME   = 'FMGRADOROX',            &
+  CSTDNAME   = '',                      &
+  CLONGNAME  = 'orographic x-gradient', &
+  CUNITS     = '',                      &
+  CDIR       = 'XY',                    &
   CCOMMENT   = 'X_Y_F Blaze fire model orographic gradient on x direction on fire mesh | fire grid (' &
                 //YFIREDIMX//','//YFIREDIMY//')', &
-  NGRID      = 1,                &
-  NTYPE      = TYPEREAL,         &
-  NDIMS      = 3,                &
+  NGRID      = 1,                       &
+  NTYPE      = TYPEREAL,                &
+  NDIMS      = 3,                       &
   NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NOTLISTED ], &
-  LTIMEDEP   = .TRUE.            ) )
+  LTIMEDEP   = .TRUE.                   ) )
 
-call Add_field2list( TFIELDDATA( &
-  CMNHNAME   = 'FMGRADOROY',     &
-  CSTDNAME   = '',               &
-  CLONGNAME  = 'orographic gradient on y direction on fire mesh', &
-  CUNITS     = '',               &
-  CDIR       = 'XY',             &
+call Add_field2list( TFIELDDATA(        &
+  CMNHNAME   = 'FMGRADOROY',            &
+  CSTDNAME   = '',                      &
+  CLONGNAME  = 'orographic y-gradient', &
+  CUNITS     = '',                      &
+  CDIR       = 'XY',                    &
   CCOMMENT   = 'X_Y_F Blaze fire model orographic gradient on y direction on fire mesh | fire grid (' &
                //YFIREDIMX//','//YFIREDIMY//')', &
-  NGRID      = 1,                &
-  NTYPE      = TYPEREAL,         &
-  NDIMS      = 3,                &
+  NGRID      = 1,                       &
+  NTYPE      = TYPEREAL,                &
+  NDIMS      = 3,                       &
   NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NOTLISTED ], &
-  LTIMEDEP   = .TRUE.            ) )
+  LTIMEDEP   = .TRUE.                   ) )
 !
 ! end of Blaze fields
 !
