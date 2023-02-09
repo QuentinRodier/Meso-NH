@@ -205,6 +205,7 @@ REAL :: ZZH, zdeg_to_rad, zrad_to_deg, zbeta, zalpha
 REAL :: XFILLVALUE =  9.9692099683868690e+36 
 
 ! Other arrays for zenithal solar angle 
+LOGICAL                             :: LCOSZENOUT
 REAL, DIMENSION(:,:),   ALLOCATABLE :: ZCOSZEN, ZSINZEN, ZAZIMSOL
 
 ! -----------------------------------------------------------------------------
@@ -310,6 +311,7 @@ opts % config % verbose       = .FALSE.  ! Enable printing of warnings
 opts_scatt % config % verbose = .FALSE. ! Disable printing of warnings
 opts_scatt % lusercfrac = .FALSE.
 
+LCOSZENOUT=.TRUE.
 ALLOCATE(ZCOSZEN(IIU,IJU))
 ALLOCATE(ZSINZEN(IIU,IJU))
 ALLOCATE(ZAZIMSOL(IIU,IJU))
@@ -778,8 +780,25 @@ DO JSAT=1,IJSAT ! loop over sensors
       NTYPE      = TYPEREAL,                       &
       NDIMS      = 2,                              &
       LTIMEDEP   = .TRUE.                          )
-!     ZOUT(:,:,JCH) = ZOUT(:,:,JCH) *ZCOSZEN(:,:)
       CALL IO_Field_write(TPFILE,TZFIELD,ZOUT(:,:,JCH))
+      IF (opts%rt_ir%addsolar .AND. LCOSZENOUT) THEN
+        YMNHNAME   = 'COSZEN'
+        YUNITS     = '-'
+        YCOMMENT   = 'Cosine of solar zenith angle'
+        TZFIELD = TFIELDMETADATA(                    &
+        CMNHNAME   = TRIM( YMNHNAME ),               &
+        CSTDNAME   = '',                             &
+        CLONGNAME  = 'MesoNH: ' // TRIM( YMNHNAME ), &
+        CUNITS     = TRIM( YUNITS ),                 &
+        CDIR       = 'XY',                           &
+        CCOMMENT   = TRIM( YCOMMENT ),               &
+        NGRID      = 1,                              &
+        NTYPE      = TYPEREAL,                       &
+        NDIMS      = 2,                              &
+        LTIMEDEP   = .TRUE.                          )
+        CALL IO_Field_write(TPFILE,TZFIELD,ZCOSZEN)
+        LCOSZENOUT=.FALSE.
+      END IF
     ELSE
       YMNHNAME   = TRIM(YBEG)//'_'//TRIM(YEND)//'refl'
       YUNITS     = 'dBZ'
