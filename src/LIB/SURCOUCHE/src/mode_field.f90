@@ -25,7 +25,7 @@ use modd_conf,       only: cprogram
 use modd_field
 use modd_io,         only: NVERB_DEBUG, NVERB_INFO, NVERB_WARNING, NVERB_ERROR, NVERB_FATAL
 use modd_parameters, only: JPMODELMAX
-use modd_fire,       only: NREFINX, NREFINY
+use modd_fire_n,     only: NREFINX, NREFINY
 
 use mode_msg
 
@@ -3667,7 +3667,7 @@ USE MODD_DEF_EDDYUV_FLUX_n
 USE MODD_DYN_n
 USE MODD_ELEC_n
 USE MODD_FIELD_n
-USE MODD_FIRE
+USE MODD_FIRE_n
 USE MODD_GR_FIELD_n
 USE MODD_GRID_n
 USE MODD_HURR_FIELD_n

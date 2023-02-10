@@ -478,7 +478,7 @@ USE YOERDI   , ONLY :RCCO2
 #endif
 #endif
 !
-USE MODD_FIRE
+USE MODD_FIRE_n
 IMPLICIT NONE
 !
 !*       0.1   declarations of arguments

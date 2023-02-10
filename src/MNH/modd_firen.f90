@@ -4,10 +4,10 @@
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ################
-      MODULE MODD_FIRE
+      MODULE MODD_FIRE_n
 !     ################
 !
-!!****  *MODD_FIRE* - declaration of Fire model parameters
+!!****  *MODD_FIRE_n* - declaration of Fire model parameters
 !!
 !!    PURPOSE
 !!    -------
@@ -187,4 +187,4 @@ SUBROUTINE FIRE_GOTO_MODEL(KFROM, KTO)
   XFIRERW2D     => TFIRE_MODEL(KTO)%XFIRERW2D
 END SUBROUTINE FIRE_GOTO_MODEL
 
-END MODULE MODD_FIRE
+END MODULE MODD_FIRE_n

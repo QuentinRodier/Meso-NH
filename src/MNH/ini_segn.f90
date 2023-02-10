@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -198,7 +198,7 @@ USE MODI_WRITE_DESFM_n
 !
 USE MODN_CONFIO,           ONLY: NAM_CONFIO
 USE MODN_LUNIT_n
-USE MODN_FIRE
+USE MODN_FIRE_n
 !
 IMPLICIT NONE
 !
@@ -344,8 +344,8 @@ IF (CPROGRAM=='MESONH') THEN
       IF (GFOUND) READ(UNIT=ILUSEG,NML=NAM_CONFIO)
       CALL IO_Config_set()
       ! read Blaze namelist to get NREFINX and NREFINY before INI_FIELD_LIST
-      CALL POSNAM(ILUSEG,'NAM_FIRE',GFOUND,ILUOUT)
-      IF (GFOUND) READ(UNIT=ILUSEG,NML=NAM_FIRE)
+      CALL POSNAM(ILUSEG,'NAM_FIREn',GFOUND,ILUOUT)
+      IF (GFOUND) READ(UNIT=ILUSEG,NML=NAM_FIREn)
    END IF
   HINIFILEPGD=CINIFILEPGD_n
   YINIFILE=CINIFILE_n

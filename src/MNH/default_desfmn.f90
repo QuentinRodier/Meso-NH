@@ -311,7 +311,7 @@ USE MODD_IBM_LSF
 #ifdef MNH_FOREFIRE
 USE MODD_FOREFIRE
 #endif
-USE MODD_FIRE
+USE MODD_FIRE_n
 !
 IMPLICIT NONE
 !
@@ -1440,8 +1440,8 @@ ENDIF
 !
 !-------------------------------------------------------------------------------
 !
-!*      33.   SET DEFAULT VALUES FOR MODD_FIRE
-!             --------------------------------
+!*      33.   SET DEFAULT VALUES FOR MODD_FIRE_n
+!             ----------------------------------
 !
 ! Blaze fire model namelist
 !
