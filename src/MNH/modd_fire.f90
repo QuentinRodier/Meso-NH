@@ -37,7 +37,9 @@ USE MODD_PRECISION, ONLY: MNHTIME
 IMPLICIT NONE
 !
 SAVE
-!
+
+INTEGER, PARAMETER :: NFIREENTRIES = 22
+
 LOGICAL           :: LBLAZE               ! Flag for Fire model use, default FALSE
 
 CHARACTER(LEN=11) :: CPROPAG_MODEL        ! Fire propagation model (default SANTONI2011)

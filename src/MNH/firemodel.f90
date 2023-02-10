@@ -1957,12 +1957,14 @@ SUBROUTINE FIRE_READFUEL( TPFILE, PFIREFUELMAP, PFMIGNITION, PFMWALKIG )
   !*       0.    DECLARATIONS
   !!             ============
   !
-  USE MODD_FIELD,            ONLY: TFIELDMETADATA, TYPEREAL
+  USE MODD_FIELD,            ONLY: NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NOTLISTED, TFIELDMETADATA, TYPEREAL
+  USE MODD_FIRE,             ONLY: NFIREENTRIES
   USE MODD_IO,               ONLY: TFILEDATA
   USE MODE_IO_FIELD_READ,    ONLY: IO_Field_read
   USE MODE_IO_FILE,          ONLY: IO_File_close, IO_File_open
   USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_ADD2LIST
   USE MODD_LUNIT_n,          ONLY: TLUOUT
+  USE MODD_PARAMETERS,       ONLY: NMNHNAMELGTMAX, NUNITLGTMAX
   !
   IMPLICIT NONE
   !
@@ -1975,6 +1977,25 @@ SUBROUTINE FIRE_READFUEL( TPFILE, PFIREFUELMAP, PFMIGNITION, PFMWALKIG )
   REAL,  DIMENSION(:,:,:),    INTENT(OUT)   :: PFMWALKIG      ! Walking Ignition map
 
   !*       0.2   declarations of local variables
+
+  CHARACTER(LEN=NMNHNAMELGTMAX), DIMENSION(NFIREENTRIES), PARAMETER ::  &
+    CFIREFUELMAP_NAME = [                                               &
+      'Fuel_type', 'rhod     ', 'rhol     ', 'Md       ', 'Ml       ',  &
+      'sd       ', 'sl       ', 'sigmad   ', 'sigmal   ', 'e        ',  &
+      'Ti       ', 'Ta       ', 'DeltaH   ', 'Deltah   ', 'tau0     ',  &
+      'stoch    ', 'rhoa     ', 'cp       ', 'cpa      ', 'X0       ',  &
+      'LAI      ', 'r00      ' ]
+
+  CHARACTER(LEN=NUNITLGTMAX), DIMENSION(NFIREENTRIES), PARAMETER ::         &
+    CFIREFUELMAP_UNITS = [                                                  &
+      '1         ', 'kg m-3    ', 'kg m-3    ', '-         ', '-         ', &
+      'm-1       ', 'm-1       ', 'kg m-2    ', 'kg m-2    ', 'm         ', &
+      'K         ', 'K         ', 'J kg-1    ', 'J kg-1    ', 's m-1     ', &
+      '-         ', 'kg m-3    ', 'J K-1 kg-1', 'J K-1 kg-1', '-         ', &
+      '-         ', '-         ' ]
+
+  ! Comments not stored (not very useful and not necessary for checks at reading)
+  ! CHARACTER(LEN=NCOMMENTLGTMAX), DIMENSION(NFIREENTRIES), PARAMETER :: CFIREFUELMAP_COMMENT
 
   CHARACTER(LEN=6) :: YFUELNAME
   INTEGER                               :: ILUOUT          ! Logical unit number for the output listing
@@ -2000,23 +2021,20 @@ SUBROUTINE FIRE_READFUEL( TPFILE, PFIREFUELMAP, PFMIGNITION, PFMWALKIG )
 
   !*      3. Read fuels properties
 
+  DO JFUEL = 1, NFIREENTRIES
     TZFIELD = TFIELDMETADATA( &
-      CMNHNAME   = 'generic', &
+      CMNHNAME   = TRIM( CFIREFUELMAP_NAME(JFUEL) ), &
       CSTDNAME   = '',        &
-      CLONGNAME  = 'generic', &
-      !CUNITS     = '',        &
+      CLONGNAME  = TRIM( CFIREFUELMAP_NAME(JFUEL) ), &
+      CUNITS     = TRIM( CFIREFUELMAP_UNITS(JFUEL) ),        &
       CDIR       = 'XY',      &
       NGRID      = 4,         &
       NTYPE      = TYPEREAL,  &
       NDIMS      = 3,         &
-      LTIMEDEP   = .FALSE.,   &
-      CCOMMENT   = ''         )
+      NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NOTLISTED ], &
+      LTIMEDEP   = .FALSE.    )
 
-  DO JFUEL = 1, 22
-    WRITE(YFUELNAME,'(A4,I2.2)')'Fuel',JFUEL
-    WRITE(UNIT=ILUOUT,FMT=*) 'Extract ', YFUELNAME
-    TZFIELD%CMNHNAME  = YFUELNAME
-    TZFIELD%CLONGNAME = YFUELNAME
+    WRITE(UNIT=ILUOUT,FMT=*) 'Extract ', TRIM( CFIREFUELMAP_NAME(JFUEL) )
 
     ! Import data from file
     CALL IO_Field_read( TFUELFILE, TZFIELD, PFIREFUELMAP(:,:,:,JFUEL) )
@@ -2026,9 +2044,18 @@ SUBROUTINE FIRE_READFUEL( TPFILE, PFIREFUELMAP, PFMIGNITION, PFMWALKIG )
 
   WRITE(UNIT=ILUOUT,FMT=*) 'Extract Ignition'
 
-  ! change field properties
-  TZFIELD%CMNHNAME  = 'Ignition'
-  TZFIELD%CLONGNAME = 'Ignition'
+  TZFIELD = TFIELDMETADATA(       &
+    CMNHNAME   = 'Ignition',      &
+    CSTDNAME   = '',              &
+    CLONGNAME  = 'Ignition time', &
+    CUNITS     = 's',             &
+    CDIR       = 'XY',            &
+    NGRID      = 4,               &
+    NTYPE      = TYPEREAL,        &
+    NDIMS      = 3,               &
+    NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NOTLISTED ], &
+    LTIMEDEP   = .FALSE.,         &
+    CCOMMENT   = 'Ignition map'   )
 
   ! Import data from file
   CALL IO_Field_read( TFUELFILE, TZFIELD, PFMIGNITION )
@@ -2037,9 +2064,18 @@ SUBROUTINE FIRE_READFUEL( TPFILE, PFIREFUELMAP, PFMIGNITION, PFMWALKIG )
 
   WRITE(UNIT=ILUOUT,FMT=*) 'Extract Walking Ignition'
 
-  ! change field properties
-  TZFIELD%CMNHNAME  = 'WalkingIgnition'
-  TZFIELD%CLONGNAME = 'WalkingIgnition'
+  TZFIELD = TFIELDMETADATA(               &
+    CMNHNAME   = 'WalkingIgnition',       &
+    CSTDNAME   = '',                      &
+    CLONGNAME  = 'Walking ignition time', &
+    CUNITS     = 's',                     &
+    CDIR       = 'XY',                    &
+    NGRID      = 4,                       &
+    NTYPE      = TYPEREAL,                &
+    NDIMS      = 3,                       &
+    NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NOTLISTED ], &
+    LTIMEDEP   = .FALSE.,                 &
+    CCOMMENT   = 'WalkingIgnition map'    )
 
   ! Import data from file
   CALL IO_Field_read( TFUELFILE, TZFIELD, PFMWALKIG )
