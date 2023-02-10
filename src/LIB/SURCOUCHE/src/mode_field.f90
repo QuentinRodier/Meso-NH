@@ -3667,6 +3667,7 @@ USE MODD_DEF_EDDYUV_FLUX_n
 USE MODD_DYN_n
 USE MODD_ELEC_n
 USE MODD_FIELD_n
+USE MODD_FIRE
 USE MODD_GR_FIELD_n
 USE MODD_GRID_n
 USE MODD_HURR_FIELD_n
@@ -3989,7 +3990,7 @@ IF (CPROGRAM=='MESONH') THEN
   call Goto_model_1field( 'TSRAD',        kfrom, kto, XTSRAD        )
 END IF
 !
-! MODD_FIRE variables
+! MODD_FIRE_n variables
 !
 IF (     TRIM(CPROGRAM) == 'MESONH' .OR. TRIM(CPROGRAM) == 'DIAG'  .OR. TRIM(CPROGRAM) == 'REAL' &
     .OR. TRIM(CPROGRAM) == 'LFICDF' .OR. TRIM(CPROGRAM) == 'SPAWN'                               ) THEN

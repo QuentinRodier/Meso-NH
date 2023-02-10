@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -19,6 +19,7 @@
 !  F. Auguste     02/21: add IBM
 !  T. Nagel       02/21: add turbulence recycling
 !  P. Wautelet 27/04/2022: add namelist for profilers
+!  P. Wautelet 10/02/2023: add Blaze variables
 !-----------------------------------------------------------------
 MODULE MODI_GOTO_MODEL_WRAPPER
 
@@ -64,6 +65,7 @@ USE MODD_DYN_n
 USE MODD_DYNZD_n
 USE MODD_ELEC_n
 USE MODD_FIELD_n
+USE MODD_FIRE
 #ifdef MNH_FOREFIRE
 USE MODD_FOREFIRE_n
 #endif
@@ -188,6 +190,7 @@ CALL PASPOL_GOTO_MODEL(KFROM, KTO)
 #ifdef MNH_FOREFIRE
 CALL FOREFIRE_GOTO_MODEL(KFROM, KTO)
 #endif
+CALL FIRE_GOTO_MODEL( KFROM, KTO )
 !CALL PRECIP_GOTO_MODEL(KFROM, KTO)
 CALL ELEC_GOTO_MODEL(KFROM, KTO)
 CALL RADIATIONS_GOTO_MODEL(KFROM, KTO)
