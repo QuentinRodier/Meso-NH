@@ -3,435 +3,15 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-!###################
-MODULE MODI_FIRE_MODEL
-!###################
+!#####################
+MODULE MODE_FIRE_MODEL
+!#####################
 
-INTERFACE
+USE MODD_FIRE_n
 
+IMPLICIT NONE
 
-SUBROUTINE FIRE_GRADPHI( PLSPHI, PGRADLSPHIX, PGRADLSPHIY )
-  
-  IMPLICIT NONE
-
-  !! Level Set function
-  REAL,  DIMENSION(:,:,:),      INTENT(IN)  ::  PLSPHI       ! Level Set function
-
-  !! Gradient of LS function
-  REAL,  DIMENSION(:,:,:),      INTENT(OUT)  :: PGRADLSPHIX  ! Grad of Phi on x direction
-  REAL,  DIMENSION(:,:,:),      INTENT(OUT)  :: PGRADLSPHIY  ! Grad of Phi on y direction
-
-END SUBROUTINE FIRE_GRADPHI
-
-
-SUBROUTINE FIRE_PROPAGATE( PLSPHI, PBMAP, PFMIGNITION, PFMWALKIG, PGRADLSPHIX, PGRADLSPHIY, PATMDT, PFIRERW )
-
-  IMPLICIT NONE
-
-  !! Level Set related
-  REAL,  DIMENSION(:,:,:),      INTENT(INOUT)  ::  PLSPHI       ! Level Set function
-  REAL,  DIMENSION(:,:,:),      INTENT(INOUT)  ::  PBMAP       ! Burning map
-  REAL,  DIMENSION(:,:,:),      INTENT(INOUT)  ::  PFMIGNITION  ! Ignition map
-  REAL,  DIMENSION(:,:,:),      INTENT(INOUT)  ::  PFMWALKIG    ! Walking ignition map
-
-  !! Gradient of LS
-  REAL,  DIMENSION(:,:,:),      INTENT(IN)    :: PGRADLSPHIX  ! Grad of Phi on x direction
-  REAL,  DIMENSION(:,:,:),      INTENT(IN)    :: PGRADLSPHIY  ! Grad of Phi on y direction
-
-  !! Others
-  REAL,  DIMENSION(:,:,:),      INTENT(IN)    :: PFIRERW      ! Rate of spread with wind
-  REAL,                       INTENT(IN)    :: PATMDT       ! Atm time step
-
-END SUBROUTINE FIRE_PROPAGATE
-
-
-SUBROUTINE FIRE_NOWINDROS( PFIREFUELMAP, PFMR0, PFMRFA, PFMWF0, PFMR00, PFMFUELTYPE, &
-                           PFIRETAU, PFLUXPARAMH, PFLUXPARAMW, PFMASE, PFMAWC )
-  
-  IMPLICIT NONE
-
-  !! Fuel map
-  REAL,  DIMENSION(:,:,:,:),    INTENT(IN)      ::  PFIREFUELMAP  ! Fuel map
-
-  !! Rate of spread and factors
-  REAL,  DIMENSION(:,:,:),      INTENT(OUT)      ::  PFMR0          ! Rate of spread without wind (R0)
-  REAL,  DIMENSION(:,:,:),      INTENT(OUT)      ::  PFMRFA         ! Radiant factor (A)
-  REAL,  DIMENSION(:,:,:),      INTENT(OUT)      ::  PFMWF0         ! Vertical flame velocity (v0)
-  REAL,  DIMENSION(:,:,:),      INTENT(OUT)      ::  PFMR00         ! Flame thickness speed factor (r0)
-  REAL,  DIMENSION(:,:,:),      INTENT(INOUT)   ::  PFMFUELTYPE    ! Fuel type
-  REAL,  DIMENSION(:,:,:),      INTENT(OUT)     ::  PFIRETAU      ! Residence time
-  REAL,  DIMENSION(:,:,:,:),    INTENT(OUT)     ::  PFLUXPARAMH    ! params sensible heat flux model
-  REAL,  DIMENSION(:,:,:,:),    INTENT(OUT)     ::  PFLUXPARAMW    ! params latent heat flux model
-  REAL,  DIMENSION(:,:,:),      INTENT(OUT)     ::  PFMASE        ! Available sensible energy (J/m2)
-  REAL,  DIMENSION(:,:,:),      INTENT(OUT)     ::  PFMAWC        ! Available water content (kg/m2)
-
-END SUBROUTINE FIRE_NOWINDROS
-
-
-SUBROUTINE FIRE_GETWIND( PUT, PVT, PWT, PGRADLSPHIX, PGRADLSPHIY, PFIREWIND, KTCOUNT, PATMDT, PFMGRADOROX, PFMGRADOROY )
-
-  IMPLICIT NONE
-
-  !! Atm wind
-  REAL,  DIMENSION(:,:,:),    INTENT(IN)      ::  PUT              ! U Wind on atm grid
-  REAL,  DIMENSION(:,:,:),    INTENT(IN)      ::  PVT              ! V Wind on atm grid
-  REAL,  DIMENSION(:,:,:),    INTENT(IN)      ::  PWT              ! W Wind on atm grid
-  !! Grad of Phi
-  REAL,  DIMENSION(:,:,:),    INTENT(IN)      ::  PGRADLSPHIX     ! Grad Phi on x direction
-  REAL,  DIMENSION(:,:,:),    INTENT(IN)      ::  PGRADLSPHIY     ! Grad Phi on y direction
-  !! Wind on fire grid
-  REAL,  DIMENSION(:,:,:),    INTENT(OUT)      ::  PFIREWIND       ! Wind Value on fire grid in -grad Phi direction
-  !
-  INTEGER,                  INTENT(IN)      ::  KTCOUNT          ! Iteration number
-  REAL   ,                  INTENT(IN)      ::  PATMDT          ! Atmospheric Time step
-  REAL,  DIMENSION(:,:,:),    INTENT(IN)      ::  PFMGRADOROX     ! Orography gradient on x direction (dz/dx) [m/m]
-  REAL,  DIMENSION(:,:,:),    INTENT(IN)      ::  PFMGRADOROY     ! Orography gradient on y direction (dz/dy) [m/m]
-
-END SUBROUTINE FIRE_GETWIND
-
-
-SUBROUTINE FIRE_RATEOFSPREAD( PFMFUELTYPE, PFMR0, PFMRFA, PFMWF0, PFMR00, PFIREWIND, &
-                              PGRADLSPHIX, PGRADLSPHIY, PFMGRADOROX, PFMGRADOROY, PFIRERW )
-
-  IMPLICIT NONE
-
-  !! Wind on fire grid
-  REAL,  DIMENSION(:,:,:),    INTENT(IN)      ::  PFIREWIND       ! Wind on fire grid on -grad(phi) direction
-
-  !! Rate of spread and factors
-  REAL,  DIMENSION(:,:,:),    INTENT(IN)      ::  PFMR0            ! Rate of spread without wind (R0)
-  REAL,  DIMENSION(:,:,:),    INTENT(IN)      ::  PFMRFA           ! Radiant factor (A)
-  REAL,  DIMENSION(:,:,:),    INTENT(IN)      ::  PFMWF0           ! Vertical flame velocity (v0)
-  REAL,  DIMENSION(:,:,:),    INTENT(IN)      ::  PFMR00           ! Flame thickness speed factor (r0)
-
-  !! Fuel type
-  REAL,  DIMENSION(:,:,:),    INTENT(IN)      ::  PFMFUELTYPE      ! Fuel type
-
-  !! Slope related
-  REAL,  DIMENSION(:,:,:),    INTENT(IN)      ::  PGRADLSPHIX     ! Grad Phi on x direction
-  REAL,  DIMENSION(:,:,:),    INTENT(IN)      ::  PGRADLSPHIY     ! Grad Phi on y direction
-  REAL,  DIMENSION(:,:,:),    INTENT(IN)      ::  PFMGRADOROX     ! Orography gradient on x direction (dz/dx) [m/m]
-  REAL,  DIMENSION(:,:,:),    INTENT(IN)      ::  PFMGRADOROY     ! Orography gradient on y direction (dz/dy) [m/m]
-
-  !! ROS
-  REAL,  DIMENSION(:,:,:),    INTENT(INOUT)   ::  PFIRERW          ! Rate of spread with wind and slope (R)
-
-END SUBROUTINE FIRE_RATEOFSPREAD
-
-
-SUBROUTINE FIRE_HEATFLUXES( PLSPHI, PBMAP, PFIRETAU, PATMDT, PFLUXPARAMH, PFLUXPARAMW, PFMFLUXHDH, PFMFLUXHDW, PFMASE, PFMAWC )
-  
-  IMPLICIT NONE
-
-  !! LS related
-  REAL,  DIMENSION(:,:,:),    INTENT(IN)    ::  PLSPHI         ! Level Set function
-  REAL,  DIMENSION(:,:,:),    INTENT(IN)    ::  PBMAP         ! Burning map
-
-  !! Heat Flux param
-  REAL,  DIMENSION(:,:,:,:), INTENT(INOUT) ::  PFLUXPARAMH   ! Sensible heat flux parameters
-  REAL,  DIMENSION(:,:,:,:),  INTENT(INOUT) ::  PFLUXPARAMW   ! Latent heat flux parameters
-
-  !! Heat Flux out
-  REAL,  DIMENSION(:,:,:),    INTENT(INOUT)  ::  PFMFLUXHDH    ! Surface sensible heat flux (W/m2), fire grid
-  REAL,  DIMENSION(:,:,:),    INTENT(INOUT)  ::  PFMFLUXHDW     ! Surface water flux (kg/m2/s), fire grid
-
-  !! Available energy
-  REAL,  DIMENSION(:,:,:),    INTENT(INOUT) ::  PFMASE        ! Available sensible energy (J/m2)
-  REAL,  DIMENSION(:,:,:),    INTENT(INOUT) ::  PFMAWC        ! Available water content (kg/m2)
-
-  !! others
-  REAL,  DIMENSION(:,:,:),    INTENT(IN)    ::  PFIRETAU      ! Residence time and fluxes parameters map
-  REAL,                     INTENT(IN)    ::  PATMDT        ! Atm time step
-
-END SUBROUTINE FIRE_HEATFLUXES
-
-
-SUBROUTINE FIRE_VERTICALFLUXDISTRIB( PFMFLUXHDH, PFMFLUXHDW, PRTHS, PRRS, PSFTS, PEXNREF, PRHODJ, PRT, PRHODREF )
-
-  IMPLICIT NONE
-
-  !! Heat Flux in
-  REAL,  DIMENSION(:,:,:),    INTENT(IN)    ::  PFMFLUXHDH    ! Surface sensible heat flux (W/m2), fire grid
-  REAL,  DIMENSION(:,:,:),    INTENT(IN)    ::  PFMFLUXHDW     ! Surface water flux (kg/m2/s), fire grid
-
-  !! Sources
-  REAL,  DIMENSION(:,:,:),    INTENT(INOUT) ::  PRTHS          ! Potential temperature increment (K kg/s)
-  REAL,  DIMENSION(:,:,:,:),  INTENT(INOUT) ::  PRRS          ! Water content increment (kg/s)
-  REAL,  DIMENSION(:,:,:),    INTENT(INOUT) ::  PSFTS          ! smoke flux (kg/kg/m2)
-
-  !! Others
-  REAL,  DIMENSION(:,:,:),    INTENT(IN)    ::  PEXNREF        ! Exner function
-  REAL,  DIMENSION(:,:,:),    INTENT(IN)    ::  PRHODJ        ! density times atm cell volume rho*J
-  REAL,  DIMENSION(:,:,:,:),  INTENT(IN)    ::  PRT            ! Water content (kg/kg)
-  REAL,  DIMENSION(:,:,:),    INTENT(IN)    ::  PRHODREF      ! reference profile of density
-
-END SUBROUTINE FIRE_VERTICALFLUXDISTRIB
-
-
-SUBROUTINE FIRE_READFUEL( TPFILE, PFIREFUELMAP, PFMIGNITION, PFMWALKIG )
-
-  USE MODD_IO,   ONLY: TFILEDATA
-  
-  IMPLICIT NONE
-
-  TYPE(TFILEDATA),          INTENT(IN)    :: TPFILE       ! Synchronous output file
-  REAL,  DIMENSION(:,:,:,:), INTENT(OUT)   :: PFIREFUELMAP ! Fuel map
-  REAL,  DIMENSION(:,:,:),    INTENT(OUT)   :: PFMIGNITION  ! Ignition map
-  REAL,  DIMENSION(:,:,:),    INTENT(OUT)   :: PFMWALKIG    ! Walking Ignition map
-
-END SUBROUTINE FIRE_READFUEL
-
-
-SUBROUTINE FIRE_READBMAP( TPFILE, PBMAP )
-
-  USE MODD_IO,   ONLY: TFILEDATA
-
-  IMPLICIT NONE
-
-  TYPE(TFILEDATA),          INTENT(IN)    :: TPFILE ! Synchronous output file
-  REAL,  DIMENSION(:,:,:),    INTENT(OUT)   :: PBMAP  ! Ignition map
-
-END SUBROUTINE FIRE_READBMAP
-
-
-SUBROUTINE FIRE_RK( PLSPHI, PLSPHI1, PGRADLSPHIX, PGRADLSPHIY, PFIRERW, PFIREDT )
-
-  IMPLICIT NONE
-
-  !! Level Set function
-  REAL,  DIMENSION(:,:,:),    INTENT(IN)    ::  PLSPHI       ! Level Set function at time t
-  REAL,  DIMENSION(:,:,:),    INTENT(OUT)    ::  PLSPHI1      ! Level Set function at time t+dtfire
-
-  !! Gradient of LS function
-  REAL,  DIMENSION(:,:,:),    INTENT(IN)    :: PGRADLSPHIX  ! Grad of Phi on x direction
-  REAL,  DIMENSION(:,:,:),    INTENT(IN)    :: PGRADLSPHIY  ! Grad of Phi on y direction
-  
-  !! others
-  REAL,  DIMENSION(:,:,:),    INTENT(IN)    :: PFIRERW      ! Rate of spread with wind
-  REAL,                     INTENT(IN)    :: PFIREDT      ! Fire time step dtfire
-
-END SUBROUTINE FIRE_RK
-
-
-SUBROUTINE FIRE_WENO_1( PLSPHI2D, PGRADLSPHIX2D, PGRADLSPHIY2D, PGRADMASKX, PGRADMASKY )
-  
-  IMPLICIT NONE
-
-  !! Level Set function
-  REAL,  DIMENSION(:,:), INTENT(IN)  ::  PLSPHI2D       ! Level Set function
-
-  !! Gradient of LS function
-  REAL,  DIMENSION(:,:),  INTENT(OUT) ::  PGRADLSPHIX2D ! Grad of Phi on x direction
-  REAL,  DIMENSION(:,:),  INTENT(OUT)  ::  PGRADLSPHIY2D  ! Grad of Phi on y direction
-
-  !! others
-  REAL,  DIMENSION(:,:),  INTENT(IN)  ::  PGRADMASKX    ! mask value x
-  REAL,  DIMENSION(:,:),  INTENT(IN)  ::  PGRADMASKY    ! mask value y
-
-END SUBROUTINE FIRE_WENO_1
-
-
-SUBROUTINE FIRE_GRADMASK( PLSPHI2D, PGRADMASKX, PGRADMASKY, KMASKORDER )
-  
-  IMPLICIT NONE
-
-  !! Level Set function
-  REAL,  DIMENSION(:,:), INTENT(IN)  ::  PLSPHI2D     ! Level Set function
-
-  !! Gradient of LS function
-  REAL,  DIMENSION(:,:),  INTENT(OUT)  ::  PGRADMASKX  ! mask value x
-  REAL,  DIMENSION(:,:),  INTENT(OUT)  ::  PGRADMASKY  ! mask value y
-
-  !! others
-  INTEGER,              INTENT(IN)  ::  KMASKORDER  ! Difference order
-
-END SUBROUTINE FIRE_GRADMASK
-
-
-SUBROUTINE FIRE_WENO_3( PLSPHI2D, PGRADLSPHIX2D, PGRADLSPHIY2D, PGRADMASKX, PGRADMASKY )
-  
-  IMPLICIT NONE
-
-  !! Level Set function
-  REAL,  DIMENSION(:,:), INTENT(IN)  ::  PLSPHI2D       ! Level Set function
-
-  !! Gradient of LS function
-  REAL,  DIMENSION(:,:), INTENT(OUT)  :: PGRADLSPHIX2D  ! Grad of Phi on x direction
-  REAL,  DIMENSION(:,:), INTENT(OUT)  :: PGRADLSPHIY2D  ! Grad of Phi on y direction
-
-  !! others
-  REAL,  DIMENSION(:,:), INTENT(IN)  :: PGRADMASKX      ! mask value x
-  REAL,  DIMENSION(:,:), INTENT(IN)  :: PGRADMASKY      ! mask value y
-
-END SUBROUTINE FIRE_WENO_3
-
-
-SUBROUTINE FIRE_LSDIFFU( PLSPHI, PLSDIFFUX, PLSDIFFUY )
-
-  IMPLICIT NONE
-
-  !! Level Set function
-  REAL,  DIMENSION(:,:,:), INTENT(IN)  ::  PLSPHI     ! Level Set function
-
-  !! Gradient of LS function
-  REAL,  DIMENSION(:,:,:),  INTENT(OUT)  ::  PLSDIFFUX  ! Laplacian of Phi on x direction
-  REAL,  DIMENSION(:,:,:),  INTENT(OUT)  ::  PLSDIFFUY  ! Laplacian of Phi on y direction
-
-END SUBROUTINE FIRE_LSDIFFU
-
-
-SUBROUTINE FIRE_ROSDIFFU( PFIRERW )
-
-  IMPLICIT NONE
-
-  !! Level Set function
-  REAL,  DIMENSION(:,:,:), INTENT(INOUT)  ::  PFIRERW ! ROS
-
-END SUBROUTINE FIRE_ROSDIFFU
-
-
-SUBROUTINE FIRE_SUBGRIDSURFACE( PLSPHI2D, PSURFRATIO2D )
-  
-  IMPLICIT NONE
-
-  REAL,  DIMENSION(:,:), INTENT(IN)  ::  PLSPHI2D       ! Level Set function in 2D array
-  REAL,  DIMENSION(:,:), INTENT(OUT) ::  PSURFRATIO2D  ! Surface ratio in 2D array
-
-END SUBROUTINE FIRE_SUBGRIDSURFACE
-
-
-SUBROUTINE FIRE_QUANDRANTSURFACE( PPHI1, PPHI2, PPHI3, PPHI4, PSURFRATIO2D )
-  
-  IMPLICIT NONE
-
-  !! LS value
-  REAL,DIMENSION(:,:),    INTENT(IN)     ::  PPHI1         ! Phi at south west point
-  REAL,DIMENSION(:,:),    INTENT(IN)     ::  PPHI2         ! Phi at south east point
-  REAL,DIMENSION(:,:),    INTENT(IN)     ::  PPHI3         ! Phi at north east point
-  REAL,DIMENSION(:,:),    INTENT(IN)     ::  PPHI4         ! Phi at north west point
-
-  !! bruning area 
-  REAL,DIMENSION(:,:),    INTENT(INOUT) ::  PSURFRATIO2D  ! Subgrid burning surface for cell
-
-END SUBROUTINE FIRE_QUANDRANTSURFACE
-
-
-SUBROUTINE FIRE_LS_RECONSTRUCTION_FROM_BMAP( PLSPHI, PBMAP, PATMDT )
-
-  IMPLICIT NONE
-
-  !! Level Set function
-  REAL,  DIMENSION(:,:,:),    INTENT(OUT)  ::  PLSPHI     ! Level Set function
-  REAL,  DIMENSION(:,:,:),    INTENT(IN)  ::  PBMAP     ! Burning map
-  REAL,                     INTENT(IN)  ::  PATMDT    ! Atm time step
-
-END SUBROUTINE FIRE_LS_RECONSTRUCTION_FROM_BMAP
-
-
-SUBROUTINE FIRE_GRAD_OROGRAPHY( PZS, PFMGRADOROX, PFMGRADOROY )
-
-  IMPLICIT NONE
-
-  REAL,  DIMENSION(:,:),     INTENT(IN)  ::  PZS           ! MNH orography (atm resolution) [m]
-  REAL,  DIMENSION(:,:,:),    INTENT(OUT)  ::  PFMGRADOROX   ! Orography gradient on x direction (dz/dx) [m/m]
-  REAL,  DIMENSION(:,:,:),    INTENT(OUT)  ::  PFMGRADOROY   ! Orography gradient on y direction (dz/dy) [m/m]
-
-END SUBROUTINE FIRE_GRAD_OROGRAPHY
-
-
-FUNCTION FIRE_SURF_68( PPHI1, PPHI2, PPHI3, PPHI4 ) RESULT( PSURF )
-
-  IMPLICIT NONE
-
-  REAL,    INTENT(IN)     ::  PPHI1 ! Phi1
-  REAL,    INTENT(IN)     ::  PPHI2 ! Phi2
-  REAL,    INTENT(IN)     ::  PPHI3 ! Phi2
-  REAL,    INTENT(IN)     ::  PPHI4 ! Phi4
-
-  REAL                  ::  PSURF ! Surface ratio
-
-END FUNCTION FIRE_SURF_68
-
-
-FUNCTION FIRE_SURF_70( PPHI1, PPHI2, PPHI3, PPHI4 ) RESULT( PSURF )
-
-  IMPLICIT NONE
-
-  REAL,    INTENT(IN)     ::  PPHI1 ! Phi1
-  REAL,    INTENT(IN)     ::  PPHI2 ! Phi2
-  REAL,    INTENT(IN)     ::  PPHI3 ! Phi2
-  REAL,    INTENT(IN)     ::  PPHI4 ! Phi4
-
-  REAL                  ::  PSURF ! Surface ratio
-END FUNCTION FIRE_SURF_70
-
-
-FUNCTION FIRE_SURF_22( PPHI1, PPHI2, PPHI3, PPHI4 ) RESULT( PSURF )
-
-  IMPLICIT NONE
-
-  REAL,    INTENT(IN)     ::  PPHI1 ! Phi1
-  REAL,    INTENT(IN)     ::  PPHI2 ! Phi2
-  REAL,    INTENT(IN)     ::  PPHI3 ! Phi2
-  REAL,    INTENT(IN)     ::  PPHI4 ! Phi4
-
-  REAL                  ::  PSURF ! Surface ratio
-END FUNCTION FIRE_SURF_22
-
-
-FUNCTION FIRE_SURF_28( PPHI1, PPHI2, PPHI3, PPHI4 ) RESULT( PSURF )
-
-  IMPLICIT NONE
-
-  REAL,    INTENT(IN)     ::  PPHI1 ! Phi1
-  REAL,    INTENT(IN)     ::  PPHI2 ! Phi2
-  REAL,    INTENT(IN)     ::  PPHI3 ! Phi2
-  REAL,    INTENT(IN)     ::  PPHI4 ! Phi4
-
-  REAL                  ::  PSURF ! Surface ratio
-END FUNCTION FIRE_SURF_28
-
-
-! ************************ deprecated ************************
-FUNCTION FGET_I( PLINDEX, PMINDEX ) RESULT( POUTINDEX )
-
-  IMPLICIT NONE
-
-  INTEGER,    INTENT(IN)     ::  PLINDEX             ! l fire index
-  INTEGER,    INTENT(IN)     ::  PMINDEX             ! m fire index
-
-  INTEGER                   ::  POUTINDEX           ! i atm index
-
-END FUNCTION FGET_I
-
-
-FUNCTION FGET_J( PLINDEX, PMINDEX ) RESULT( POUTINDEX )
-
-  IMPLICIT NONE
-
-  INTEGER,    INTENT(IN)     ::  PLINDEX             ! l fire index
-  INTEGER,    INTENT(IN)     ::  PMINDEX             ! m fire index
-
-  INTEGER                    ::  POUTINDEX           ! i atm index
-
-END FUNCTION FGET_J
-
-
-FUNCTION FGET_K( PLINDEX, PMINDEX ) RESULT( POUTINDEX )
-
-  IMPLICIT NONE
-
-  INTEGER,    INTENT(IN)     ::  PLINDEX             ! l fire index
-  INTEGER,    INTENT(IN)     ::  PMINDEX             ! m fire index
-
-  INTEGER                   ::  POUTINDEX           ! i atm index
-
-END FUNCTION FGET_K
-! ************************************************************
-
-
-END INTERFACE
-END MODULE MODI_FIRE_MODEL
+CONTAINS
 
 SUBROUTINE FIRE_GRADPHI( PLSPHI, PGRADLSPHIX, PGRADLSPHIY )
   !!****  *FIRE_GRADPHI* - Fire model computation of Level set function gradient
@@ -476,7 +56,6 @@ SUBROUTINE FIRE_GRADPHI( PLSPHI, PGRADLSPHIX, PGRADLSPHIY )
   USE MODD_CST
   !
   USE MODD_FIRE_n
-  USE MODI_FIRE_MODEL, ONLY: FIRE_GRADMASK, FIRE_WENO_1, FIRE_WENO_3
   !
   USE MODE_MPPDB
   USE MODD_TIME_n, ONLY : TDTCUR
@@ -630,7 +209,6 @@ SUBROUTINE FIRE_PROPAGATE( PLSPHI, PBMAP, PFMIGNITION, PFMWALKIG, PGRADLSPHIX, P
   
   USE MODD_FIRE_n
   USE MODD_TIME_n, ONLY : TDTCUR
-  USE MODI_FIRE_MODEL, ONLY: FIRE_RK, FIRE_LS_RECONSTRUCTION_FROM_BMAP
   USE MODD_LUNIT_n, ONLY: TLUOUT
   
   USE MODE_MPPDB
@@ -1355,7 +933,6 @@ SUBROUTINE FIRE_RATEOFSPREAD( PFMFUELTYPE, PFMR0, PFMRFA, PFMWF0, PFMR00, PFIREW
   !!             ============
   !
   USE MODD_FIRE_n
-  USE MODI_FIRE_MODEL, ONLY: FIRE_ROSDIFFU
   USE MODE_MPPDB
   USE MODD_TIME_n, ONLY : TDTCUR
 
@@ -1516,7 +1093,6 @@ SUBROUTINE FIRE_HEATFLUXES( PLSPHI, PBMAP, PFIRETAU, PATMDT, PFLUXPARAMH, PFLUXP
   !
   USE MODD_FIRE_n
   USE MODD_TIME_n, ONLY : TDTCUR
-  USE MODI_FIRE_MODEL, ONLY: FIRE_SUBGRIDSURFACE
   !
   USE MODE_MPPDB
   !
@@ -1780,7 +1356,6 @@ SUBROUTINE FIRE_VERTICALFLUXDISTRIB( PFMFLUXHDH, PFMFLUXHDW, PRTHS, PRRS, PSFTS,
   USE MODD_CST
   USE MODD_FIRE_n
   USE MODD_TIME_n, ONLY : TDTCUR
-  !USE MODI_FIRE_MODEL
   USE MODD_GRID_n, ONLY : XZS, XZZ
   USE MODD_NSV
   !
@@ -2209,7 +1784,6 @@ SUBROUTINE FIRE_RK( PLSPHI, PLSPHI1, PGRADLSPHIX, PGRADLSPHIY, PFIRERW, PFIREDT 
   USE MODE_MPPDB
   USE MODE_MSG
   USE MODD_FIRE_n
-  USE MODI_FIRE_MODEL, ONLY: FIRE_GRADPHI, FIRE_LSDIFFU
   use MODE_MNH_TIMING,  ONLY : SECOND_MNH2
   !
   IMPLICIT NONE
@@ -2474,7 +2048,6 @@ SUBROUTINE FIRE_WENO_1( PLSPHI2D, PGRADLSPHIX2D, PGRADLSPHIY2D, PGRADMASKX, PGRA
   !
   USE MODD_FIRE_n
   USE MODD_TIME_n, ONLY : TDTCUR
-  !USE MODI_FIRE_MODEL
   !
   USE MODE_MPPDB
   !
@@ -2561,7 +2134,6 @@ SUBROUTINE FIRE_GRADMASK( PLSPHI2D, PGRADMASKX, PGRADMASKY, KMASKORDER )
   USE MODD_CST
   USE MODD_FIRE_n
   USE MODD_TIME_n, ONLY : TDTCUR
-  !USE MODI_FIRE_MODEL
   !
   USE MODE_MPPDB
   !
@@ -2666,7 +2238,6 @@ SUBROUTINE FIRE_WENO_3( PLSPHI2D, PGRADLSPHIX2D, PGRADLSPHIY2D, PGRADMASKX, PGRA
   !
   USE MODD_FIRE_n
   USE MODD_TIME_n, ONLY : TDTCUR
-  !USE MODI_FIRE_MODEL
   !
   USE MODE_MPPDB
   !
@@ -2975,7 +2546,6 @@ SUBROUTINE FIRE_LSDIFFU( PLSPHI, PLSDIFFUX, PLSDIFFUY )
   USE MODD_CST
   !
   USE MODD_FIRE_n
-  !USE MODI_FIRE_MODEL
   !
   USE MODE_MPPDB
   USE MODD_TIME_n, ONLY : TDTCUR
@@ -3114,7 +2684,6 @@ SUBROUTINE FIRE_ROSDIFFU( PFIRERW )
   USE MODD_CST
   !
   USE MODD_FIRE_n
-  !USE MODI_FIRE_MODEL
   !
   USE MODE_MPPDB
   USE MODD_TIME_n, ONLY : TDTCUR
@@ -3256,7 +2825,6 @@ SUBROUTINE FIRE_SUBGRIDSURFACE( PLSPHI2D, PSURFRATIO2D )
   !
   USE MODD_FIRE_n
   USE MODD_TIME_n, ONLY : TDTCUR
-  USE MODI_FIRE_MODEL, ONLY: FIRE_QUANDRANTSURFACE
   !
   USE MODE_MPPDB
   !
@@ -3384,7 +2952,6 @@ SUBROUTINE FIRE_QUANDRANTSURFACE( PPHI1, PPHI2, PPHI3, PPHI4, PSURFRATIO2D )
   !
   USE MODD_FIRE_n
   USE MODD_TIME_n, ONLY : TDTCUR
-  USE MODI_FIRE_MODEL, ONLY: FIRE_SURF_68,FIRE_SURF_70,FIRE_SURF_22,FIRE_SURF_28
   !
   USE MODE_MPPDB
   !
@@ -3747,7 +3314,6 @@ SUBROUTINE FIRE_LS_RECONSTRUCTION_FROM_BMAP( PLSPHI, PBMAP, PATMDT )
   !
   USE MODD_FIRE_n
   USE MODD_TIME_n, ONLY : TDTCUR
-  !USE MODI_FIRE_MODEL
   !
   USE MODE_MPPDB
   !
@@ -4204,3 +3770,5 @@ FUNCTION FGET_K(PLINDEX,PMINDEX) RESULT(POUTINDEX)
 
 END FUNCTION FGET_K
 !! -----------------------------------------------------------------------------
+
+END MODULE MODE_FIRE_MODEL
