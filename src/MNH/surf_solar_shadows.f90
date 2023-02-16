@@ -9,14 +9,14 @@
 !
 INTERFACE 
 !
-      SUBROUTINE SURF_SOLAR_SHADOWS ( PMAP, PXHATM, PYHATM,                   &
+      SUBROUTINE SURF_SOLAR_SHADOWS ( PMAP, PXHAT, PYHAT,                     &
                   PCOSZEN, PSINZEN, PAZIMSOL,                                 &
                   PZS, PZS_XY, PDIRSWDT, PDIRSRFSWD                           )
 !
 !
 REAL, DIMENSION(:,:),     INTENT(IN) :: PMAP         ! map factor
-REAL, DIMENSION(:),       INTENT(IN) :: PXHATM       ! X coordinate at mass points
-REAL, DIMENSION(:),       INTENT(IN) :: PYHATM       ! Y coordinate at mass points
+REAL, DIMENSION(:),       INTENT(IN) :: PXHAT        ! X coordinate
+REAL, DIMENSION(:),       INTENT(IN) :: PYHAT        ! Y coordinate
 REAL, DIMENSION(:,:),     INTENT(IN) :: PCOSZEN ! COS(zenithal solar angle)
 REAL, DIMENSION(:,:),     INTENT(IN) :: PSINZEN ! SIN(zenithal solar angle)
 REAL, DIMENSION(:,:),     INTENT(IN) :: PAZIMSOL! azimuthal solar angle
@@ -34,7 +34,7 @@ END INTERFACE
 !
 END MODULE MODI_SURF_SOLAR_SHADOWS
 !     #########################################################################
-      SUBROUTINE SURF_SOLAR_SHADOWS ( PMAP, PXHATM, PYHATM,                   &
+      SUBROUTINE SURF_SOLAR_SHADOWS ( PMAP, PXHAT, PYHAT,                     &
                   PCOSZEN, PSINZEN, PAZIMSOL,                                 &
                   PZS, PZS_XY, PDIRSWDT, PDIRSRFSWD                           )
 !     #########################################################################
@@ -91,8 +91,8 @@ IMPLICIT NONE
 !
 !
 REAL, DIMENSION(:,:),     INTENT(IN) :: PMAP         ! map factor
-REAL, DIMENSION(:),       INTENT(IN) :: PXHATM       ! X coordinate at mass points
-REAL, DIMENSION(:),       INTENT(IN) :: PYHATM       ! Y coordinate at mass points
+REAL, DIMENSION(:),       INTENT(IN) :: PXHAT        ! X coordinate
+REAL, DIMENSION(:),       INTENT(IN) :: PYHAT        ! Y coordinate
 REAL, DIMENSION(:,:),     INTENT(IN) :: PCOSZEN ! COS(zenithal solar angle)
 REAL, DIMENSION(:,:),     INTENT(IN) :: PSINZEN ! SIN(zenithal solar angle)
 REAL, DIMENSION(:,:),     INTENT(IN) :: PAZIMSOL! azimuthal solar angle
@@ -227,20 +227,20 @@ DO JJ=IJB,IJE
 !
       SELECT CASE (JT)
        CASE (1)
-         ZX=PXHATM(JI)/6.
-         ZY=PYHATM(JJ)
+         ZX=(5.*PXHAT(JI)+PXHAT(JI+1))/6.
+         ZY=0.5*(PYHAT(JJ)+PYHAT(JJ+1))
          ZZ=(PZS(JI,JJ)+PZS_XY(JI,JJ)+PZS_XY(JI,JJ+1))/3.
        CASE (2)
-         ZX=PXHATM(JI)
-         ZY=PYHATM(JJ)/6.
+         ZX=0.5*(PXHAT(JI)+PXHAT(JI+1))
+         ZY=(5.*PYHAT(JJ+1)+PYHAT(JJ))/6.
          ZZ=(PZS(JI,JJ)+PZS_XY(JI,JJ+1)+PZS_XY(JI+1,JJ+1))/3.
        CASE (3)
-         ZX=PXHATM(JI)/6.
-         ZY=PYHATM(JJ)
+         ZX=(5.*PXHAT(JI+1)+PXHAT(JI))/6.
+         ZY=0.5*(PYHAT(JJ)+PYHAT(JJ+1))
          ZZ=(PZS(JI,JJ)+PZS_XY(JI+1,JJ)+PZS_XY(JI+1,JJ+1))/3.
        CASE (4)
-         ZX=PXHATM(JI)
-         ZY=PYHATM(JJ)/6.
+         ZX=0.5*(PXHAT(JI)+PXHAT(JI+1))
+         ZY=(5.*PYHAT(JJ)+PYHAT(JJ+1))/6.
          ZZ=(PZS(JI,JJ)+PZS_XY(JI,JJ)+PZS_XY(JI+1,JJ))/3.
       END SELECT
 !
