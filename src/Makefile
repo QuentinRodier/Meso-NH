@@ -454,20 +454,8 @@ chimie : $(EXAMPLES_CHIMIE)
 $(EXAMPLES) $(EXAMPLES_CHIMIE) 012_dust :
 	cd $(PWD_KTEST)/$@ ; run_$@
 
-EXAMPLES_NCL=004_Reunion 007_16janvier
-
-ncl1_examples :  $(patsubst %,%_ncl1,$(EXAMPLES_NCL))
-
-ncl2_examples :  $(patsubst %,%_ncl2,$(EXAMPLES_NCL))
-
 examplesclean :  $(patsubst %,%_clean,$(EXAMPLES))
 
-
-%_ncl1 : 
-	cd $(PWD_KTEST)/$(*F) ; run_$(*F) all_ncl_extractdia
-
-%_ncl2 : 
-	cd $(PWD_KTEST)/$(*F) ; run_$(*F) all_ncl_lfi2cdf
 
 %_clean : 
 	cd $(PWD_KTEST)/$(*F) ; $(MAKE) clean

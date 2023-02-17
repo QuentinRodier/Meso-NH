@@ -27,7 +27,6 @@ export MNH_IOCDF4=${MNH_IOCDF4:-1}
 
 export VERSION_OASIS=${VERSION_OASIS:-"mct_v3"}
 export VERSION_TOY=${VERSION_TOY:-"v1-0"}
-export VERSION_NCL=${VERSION_NCL:-"ncl-6.4.0"}
 
 export VERSION_ECRAD=${VERSION_ECRAD:-"1.4.0"}
 export VER_ECRAD=${VERSION_ECRAD//./}
@@ -169,7 +168,6 @@ export I_MPI_CC=gcc
 'Linux service'*)
                 export     ARCH=${ARCH:-LXifort}
                 export  VER_MPI=${VER_MPI:-MPIICE}
-		export NEED_NCARG=${NEED_NCARG:-YES}
                 export MVWORK=${MVWORK:-NO}
 	        domain=$(grep .fr /etc/hosts | head -1 )
                 case "${domain}" in
@@ -177,7 +175,6 @@ export I_MPI_CC=gcc
                 export OPTLEVEL=${OPTLEVEL:-O2}
                 export MVWORK=${MVWORK:-NO}
 		export VER_CDF=${VER_CDF:-CDFICE}
-		export NEED_NCARG=${NEED_NCARG:-YES}
                 export MNHENV=${MNHENV:-"
 module rm netcdf ; module load netcdf/4.0
 module rm MPT    ; module load MPT/2.02
@@ -205,7 +202,6 @@ export MPI_DSM_CPULIST=0-7:allhosts
                 export MVWORK=${MVWORK:-NO}
 		export VER_CDF=${VER_CDF:-CDFAUTO}
                 export MNHENV=${MNHENV:-"
-module load ncl_ncarg/6.3.0
 "}
               ;;
 'Linux irene'*)
@@ -258,7 +254,6 @@ export ARMCI_SHR_BUF_METHOD=COPY
                 export OPTLEVEL=${OPTLEVEL:-O3}
                 export MVWORK=${MVWORK:-NO}
                 export VER_CDF=${VER_CDF:-CDFAUTO}
-                export NEED_NCARG=${NEED_NCARG:-YES}
                 export NEED_TOOLS=YES
                 export MNHENV=${MNHENV:-"
 module purge
@@ -266,22 +261,6 @@ module load intel/2019.5.281
 module load openmpi/intel/4.0.2.2
 module load cmake/3.15.4
 unset CC CXX
-"}
-              ;;
-'Linux beaufix'*|'Linux prolix'*)
-                export     ARCH=${ARCH:-LXifort}
-                export  VER_MPI=${VER_MPI:-MPIINTEL}
-                export OPTLEVEL=${OPTLEVEL:-O3}
-                export MVWORK=${MVWORK:-NO}
-		export VER_CDF=${VER_CDF:-CDFBFIX}
-                export NEED_NCARG=${NEED_NCARG:-NO}
-		export NEED_TOOLS=NO
-                export MNHENV=${MNHENV:-"
-module rm intel    ; module load intel/16.1.150 ;
-module rm intelmpi ; module load intelmpi/5.1.2.150 ;
-module rm netcdf ; module load netcdf/4.4.0 ;
-module rm grib_api ; module load grib_api/1.14.5 ;
-export GRIBAPI_PATH=/opt/softs/libraries/ICC16.1.150/grib_api-1.14.5
 "}
               ;;
 'Linux login0'*|'Linux compute'*)
@@ -421,7 +400,6 @@ export CC=gcc
                 export   OPTLEVEL=${OPTLEVEL:-DEBUG}
                 export     MVWORK=${MVWORK:-NO}
                 export    VER_CDF=${VER_CDF:-CDFCTI}
-                export NEED_NCARG=${NEED_NCARG:-NO}
                 export NEED_TOOLS=NO
               ;;
 'Linux lxenm'*) #PC Linux ENM
@@ -431,7 +409,6 @@ export CC=gcc
                 export OPTLEVEL=${OPTLEVEL:-DEBUG}
                 export MVWORK=${MVWORK:-NO}
                 export VER_CDF=${VER_CDF:-CDFAUTO}
-		export NEED_NCARG=${NEED_NCARG:-YES}
 		export NEED_TOOLS=NO
 		export MNHENV=${MNHENV:-"
 export PATH=/opt/gcc-9.4.0/bin:\$PATH
@@ -444,7 +421,6 @@ export PATH=/opt/gcc-9.4.0/bin:\$PATH
                 export OPTLEVEL=${OPTLEVEL:-DEBUG}
                 export MVWORK=${MVWORK:-NO}
                 export VER_CDF=${VER_CDF:-CDFCTI}
-		export NEED_NCARG=${NEED_NCARG:-YES}
 		export NEED_TOOLS=NO
               ;;
 'Linux nuwa'*)
@@ -453,7 +429,6 @@ export PATH=/opt/gcc-9.4.0/bin:\$PATH
                 export OPTLEVEL=${OPTLEVEL:-O2}
                 export MVWORK=${MVWORK:-NO}
 		export VER_CDF=${VER_CDF:-CDFAUTO}
-		export NEED_NCARG=${NEED_NCARG:-YES}
                       export MNHENV=${MNHENV:-"
 . /home/tools/intel/psxe2018/bin/ifortvars.sh intel64
 export MPI_ROOT=/usr/local/openmpi/3.1.4/ifort18.0.2.199
@@ -472,7 +447,7 @@ conda activate mnh-env_nuwa
 		export VER_CDF=${VER_CDF:-CDFAUTO}
                 export   MNHENV=${MNHENV:-"
 module purge
-module load intel/17.0.4 intelmpi/2017.3.196 ncl/6.2.0
+module load intel/17.0.4 intelmpi/2017.3.196
 export SLURM_CPU_BIND=none
 export I_MPI_PIN_PROCESSOR_LIST=all:map=spread
 "}
@@ -498,7 +473,6 @@ Linux*)
                 export MVWORK=${MVWORK:-NO}
 		#export VER_CDF=${VER_CDF:-CDFGFOR}
 		export VER_CDF=${VER_CDF:-CDFAUTO}
-		export NEED_NCARG=${NEED_NCARG:-YES}
               ;;
 Darwin*)
                 echo "WARNING:: Darwin for Mac not tested "
@@ -507,7 +481,6 @@ Darwin*)
                 export OPTLEVEL=${OPTLEVEL:-DEBUG}
                 export MVWORK=${MVWORK:-NO}
 		export VER_CDF=${VER_CDF:-CDFAUTO}
-		export NEED_NCARG=${NEED_NCARG:-NO}
               ;;
 *)
                 echo "WARNING ; system not yet tested "
@@ -642,10 +615,6 @@ if [ "x${MVWORK}" == "xYES" ] ; then
       done
    fi
 fi
-if [ "x${NEED_NCARG}" != "xNO" ] ; then
-( cd $LOCAL/pub ; [ ! -d ${VERSION_NCL} ] && ( tar xvfz ${VERSION_NCL}.tar.gz ) )
-fi
-
 #
 #  Install CDF if VER_CDF=CDFAUTO
 #
