@@ -68,7 +68,6 @@ SUBROUTINE INI_FIELD_LIST()
 !------------------------------------------------
 
 CHARACTER(LEN=64) :: YMSG
-CHARACTER(LEN=3)  :: YFIREDIMX, YFIREDIMY
 
 CALL PRINT_MSG(NVERB_DEBUG,'GEN','INI_FIELD_LIST','called')
 IF (LFIELDLIST_ISINIT) THEN
@@ -2375,13 +2374,31 @@ END IF !CPROGRAM=MESONH .OR. DIAG .OR. LFICDF .OR. SPAWN
 IF (     TRIM(CPROGRAM) == 'MESONH' .OR. TRIM(CPROGRAM) == 'DIAG'  .OR. TRIM(CPROGRAM) == 'REAL' &
     .OR. TRIM(CPROGRAM) == 'LFICDF' .OR. TRIM(CPROGRAM) == 'SPAWN'                               ) THEN
 !
-!
 ! Blaze fire model fields
 !
-! get string of fire refinement ratio
-IF ( NREFINX > 999 .OR. NREFINY > 999 ) CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'INI_FIELD_LIST', 'NREFINX or NREFINY > 999' )
-WRITE( YFIREDIMX, '(I3)' ) NREFINX
-WRITE( YFIREDIMY, '(I3)' ) NREFINY
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'FMREFINRATIOX',  &
+  CLONGNAME  = 'FMREFINRATIOX',  &
+  CSTDNAME   = '',               &
+  CUNITS     = '1',              &
+  CDIR       = '--',             &
+  CCOMMENT   = 'Blaze fire model: grid refinement ratio (x direction)', &
+  NGRID      = 0,                &
+  NTYPE      = TYPEINT,          &
+  NDIMS      = 0,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'FMREFINRATIOY',  &
+  CLONGNAME  = 'FMREFINRATIOY',  &
+  CSTDNAME   = '',               &
+  CUNITS     = '1',              &
+  CDIR       = '--',             &
+  CCOMMENT   = 'Blaze fire model: grid refinement ratio (y direction)', &
+  NGRID      = 0,                &
+  NTYPE      = TYPEINT,          &
+  NDIMS      = 0,                &
+  LTIMEDEP   = .FALSE.           ) )
 
 call Add_field2list( TFIELDDATA(     &
   CMNHNAME   = 'LSPHI',              &
@@ -2389,7 +2406,7 @@ call Add_field2list( TFIELDDATA(     &
   CLONGNAME  = 'level set function', &
   CUNITS     = '',                   &
   CDIR       = 'XY',                 &
-  CCOMMENT   = 'X_Y_F Blaze fire model level set function | fire grid ('//YFIREDIMX//','//YFIREDIMY//')', &
+  CCOMMENT   = 'X_Y_F Blaze fire model level set function', &
   NGRID      = 1,                    &
   NTYPE      = TYPEREAL,             &
   NDIMS      = 3,                    &
@@ -2402,7 +2419,7 @@ call Add_field2list( TFIELDDATA(   &
   CLONGNAME  = 'fire burning map', &
   CUNITS     = 's',                &
   CDIR       = 'XY',               &
-  CCOMMENT   = 'X_Y_F Blaze fire model burning map, i.e. arrival time matrix | fire grid ('//YFIREDIMX//','//YFIREDIMY//')', &
+  CCOMMENT   = 'X_Y_F Blaze fire model burning map, i.e. arrival time matrix', &
   NGRID      = 1,                  &
   NTYPE      = TYPEREAL,           &
   NDIMS      = 3,                  &
@@ -2415,7 +2432,7 @@ call Add_field2list( TFIELDDATA(            &
   CLONGNAME  = 'available sensible energy', &
   CUNITS     = 'kJ m-2',                    &
   CDIR       = 'XY',                        &
-  CCOMMENT   = 'X_Y_F Blaze fire model available sensible energy of vegetation | fire grid ('//YFIREDIMX//','//YFIREDIMY//')', &
+  CCOMMENT   = 'X_Y_F Blaze fire model available sensible energy of vegetation', &
   NGRID      = 1,                           &
   NTYPE      = TYPEREAL,                    &
   NDIMS      = 3,                           &
@@ -2428,7 +2445,7 @@ call Add_field2list( TFIELDDATA(          &
   CLONGNAME  = 'available water content', &
   CUNITS     = 'kg m-2',                  &
   CDIR       = 'XY',                      &
-  CCOMMENT   = 'X_Y_F Blaze fire model available liquid water of vegetation | fire grid ('//YFIREDIMX//','//YFIREDIMY//')', &
+  CCOMMENT   = 'X_Y_F Blaze fire model available liquid water of vegetation', &
   NGRID      = 1,                         &
   NTYPE      = TYPEREAL,                  &
   NDIMS      = 3,                         &
@@ -2441,7 +2458,7 @@ call Add_field2list( TFIELDDATA(             &
   CLONGNAME  = 'fire model filtered wind u', &
   CUNITS     = 'm s-1',                      &
   CDIR       = 'XY',                         &
-  CCOMMENT   = 'X_Y_F Blaze fire model EWAM filtered u wind | fire grid ('//YFIREDIMX//','//YFIREDIMY//')', &
+  CCOMMENT   = 'X_Y_F Blaze fire model EWAM filtered u wind', &
   NGRID      = 1,                            &
   NTYPE      = TYPEREAL,                     &
   NDIMS      = 3,                            &
@@ -2454,7 +2471,7 @@ call Add_field2list( TFIELDDATA(             &
   CLONGNAME  = 'fire model filtered wind v', &
   CUNITS     = 'm s-1',                      &
   CDIR       = 'XY',                         &
-  CCOMMENT   = 'X_Y_F Blaze fire model EWAM filtered v wind | fire grid ('//YFIREDIMX//','//YFIREDIMY//')', &
+  CCOMMENT   = 'X_Y_F Blaze fire model EWAM filtered v wind', &
   NGRID      = 1,                            &
   NTYPE      = TYPEREAL,                     &
   NDIMS      = 3,                            &
@@ -2467,7 +2484,7 @@ call Add_field2list( TFIELDDATA(             &
   CLONGNAME  = 'fire model filtered wind w', &
   CUNITS     = 'm s-1',                      &
   CDIR       = 'XY',                         &
-  CCOMMENT   = 'X_Y_F Blaze fire model EWAM filtered w wind | fire grid ('//YFIREDIMX//','//YFIREDIMY//')', &
+  CCOMMENT   = 'X_Y_F Blaze fire model EWAM filtered w wind', &
   NGRID      = 1,                            &
   NTYPE      = TYPEREAL,                     &
   NDIMS      = 3,                            &
@@ -2480,7 +2497,7 @@ call Add_field2list( TFIELDDATA(                 &
   CLONGNAME  = 'filtered horizontal wind speed', &
   CUNITS     = 'm s-1',                          &
   CDIR       = 'XY',                             &
-  CCOMMENT   = 'X_Y_F Blaze filtered horizontal wind speed | fire grid ('//YFIREDIMX//','//YFIREDIMY//')', &
+  CCOMMENT   = 'X_Y_F Blaze filtered horizontal wind speed', &
   NGRID      = 1,                                &
   NTYPE      = TYPEREAL,                         &
   NDIMS      = 3,                                &
@@ -2493,7 +2510,7 @@ call Add_field2list( TFIELDDATA(      &
   CLONGNAME  = 'fire rate of spread', &
   CUNITS     = 'm s-1',               &
   CDIR       = 'XY',                  &
-  CCOMMENT   = 'X_Y_F Blaze fire model rate of spread | fire grid ('//YFIREDIMX//','//YFIREDIMY//')', &
+  CCOMMENT   = 'X_Y_F Blaze fire model rate of spread', &
   NGRID      = 1,                     &
   NTYPE      = TYPEREAL,              &
   NDIMS      = 3,                     &
@@ -2506,7 +2523,7 @@ call Add_field2list( TFIELDDATA(              &
   CLONGNAME  = 'fire rate of spread no wind', &
   CUNITS     = 'm s-1',                       &
   CDIR       = 'XY',                          &
-  CCOMMENT   = 'X_Y_F Blaze fire model rate of spread without wind and slope | fire grid ('//YFIREDIMX//','//YFIREDIMY//')', &
+  CCOMMENT   = 'X_Y_F Blaze fire model rate of spread without wind and slope', &
   NGRID      = 1,                             &
   NTYPE      = TYPEREAL,                      &
   NDIMS      = 3,                             &
@@ -2519,7 +2536,7 @@ call Add_field2list( TFIELDDATA(          &
   CLONGNAME  = 'fire sensible heat flux', &
   CUNITS     = 'W m-2',                   &
   CDIR       = 'XY',                      &
-  CCOMMENT   = 'X_Y_F Blaze fire model sensible heat flux | fire grid ('//YFIREDIMX//','//YFIREDIMY//')', &
+  CCOMMENT   = 'X_Y_F Blaze fire model sensible heat flux', &
   NGRID      = 1,                         &
   NTYPE      = TYPEREAL,                  &
   NDIMS      = 3,                         &
@@ -2532,7 +2549,7 @@ call Add_field2list( TFIELDDATA(        &
   CLONGNAME  = 'fire latent heat flux', &
   CUNITS     = 'kg m-2 s-1',            &
   CDIR       = 'XY',                    &
-  CCOMMENT   = 'X_Y_F Blaze fire model latent heat flux | fire grid ('//YFIREDIMX//','//YFIREDIMY//')', &
+  CCOMMENT   = 'X_Y_F Blaze fire model latent heat flux', &
   NGRID      = 1,                       &
   NTYPE      = TYPEREAL,                &
   NDIMS      = 3,                       &
@@ -2545,8 +2562,7 @@ call Add_field2list( TFIELDDATA(        &
   CLONGNAME  = 'orographic x-gradient', &
   CUNITS     = '',                      &
   CDIR       = 'XY',                    &
-  CCOMMENT   = 'X_Y_F Blaze fire model orographic gradient on x direction on fire mesh | fire grid (' &
-                //YFIREDIMX//','//YFIREDIMY//')', &
+  CCOMMENT   = 'X_Y_F Blaze fire model orographic gradient on x direction on fire mesh', &
   NGRID      = 1,                       &
   NTYPE      = TYPEREAL,                &
   NDIMS      = 3,                       &
@@ -2559,8 +2575,7 @@ call Add_field2list( TFIELDDATA(        &
   CLONGNAME  = 'orographic y-gradient', &
   CUNITS     = '',                      &
   CDIR       = 'XY',                    &
-  CCOMMENT   = 'X_Y_F Blaze fire model orographic gradient on y direction on fire mesh | fire grid (' &
-               //YFIREDIMX//','//YFIREDIMY//')', &
+  CCOMMENT   = 'X_Y_F Blaze fire model orographic gradient on y direction on fire mesh', &
   NGRID      = 1,                       &
   NTYPE      = TYPEREAL,                &
   NDIMS      = 3,                       &
@@ -3994,6 +4009,8 @@ END IF
 !
 IF (     TRIM(CPROGRAM) == 'MESONH' .OR. TRIM(CPROGRAM) == 'DIAG'  .OR. TRIM(CPROGRAM) == 'REAL' &
     .OR. TRIM(CPROGRAM) == 'LFICDF' .OR. TRIM(CPROGRAM) == 'SPAWN'                               ) THEN
+  call Goto_model_1field( 'FMREFINRATIOX', kfrom, kto, NREFINX )
+  call Goto_model_1field( 'FMREFINRATIOY', kfrom, kto, NREFINY )
   call Goto_model_1field( 'LSPHI', kfrom, kto, XLSPHI )
   call Goto_model_1field( 'BMAP', kfrom, kto, XBMAP )
   call Goto_model_1field( 'FMASE', kfrom, kto, XFMASE )
