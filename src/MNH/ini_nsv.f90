@@ -1155,7 +1155,7 @@ DO JSV = NSV_AERBEG_A(KMI), NSV_AEREND_A(KMI)
                                   JP_CH_SOA8i, JP_CH_SOA8j, JP_CH_SOA9i, JP_CH_SOA9j, JP_CH_SOA10i, JP_CH_SOA10j ] )       ) ) THEN
     !Moment 3
     YAEROLONGNAMES = TRIM( CAERONAMES(JAER) ) // ' [molec_{aer}/molec_{air}]'
-  ELSE IF ( ( LVARSIGI .AND. JSV == JP_CH_M6i ) .OR. ( LVARSIGJ .AND. JSV == JP_CH_M6j ) ) THEN
+  ELSE IF ( ( LVARSIGI .AND. JAER == JP_CH_M6i ) .OR. ( LVARSIGJ .AND. JAER == JP_CH_M6j ) ) THEN
     !Moment 6
     YAEROLONGNAMES = TRIM( CAERONAMES(JAER) ) // ' [um6/molec_{air}*(cm3/m3)]'
   ELSE
