@@ -28,7 +28,7 @@ END MODULE MODI_UPDATE_NSV
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !  P. Wautelet 26/11/2021: add TSVLIST and TSVLIST_A to store the metadata of all the scalar variables
 !  P. Wautelet 14/01/2022: add CSV_CHEM_LIST(_A) to store the list of all chemical variables
-!  P. Wautelet 20/02/2023: bugfix: reallocate size was wrong in some scenarii
+!  P. Wautelet 20/02/2023: manage CSV(_A) + bugfix: reallocate size was wrong in some scenarii
 !-------------------------------------------------------------------------------
 !
 USE MODD_CONF,       ONLY: NVERB
@@ -43,6 +43,7 @@ IMPLICIT NONE
 INTEGER, INTENT(IN) :: KMI ! Model index
 
 CHARACTER(LEN=JPSVNAMELGTMAX), DIMENSION(:,:), ALLOCATABLE :: YSVNAMES_TMP
+CHARACTER(LEN=6),              DIMENSION(:,:), ALLOCATABLE :: YSV_TMP
 CHARACTER(LEN=NMNHNAMELGTMAX), DIMENSION(:,:), ALLOCATABLE :: YSVCHEM_LIST_TMP
 INTEGER :: JI, JJ
 TYPE(tfieldmetadata), DIMENSION(:,:), ALLOCATABLE :: YSVLIST_TMP
@@ -70,6 +71,21 @@ IF ( SIZE( CSV_CHEM_LIST_A, 1 ) < NSV_CHEM_LIST_A(KMI) .OR. SIZE( CSV_CHEM_LIST_
 END IF
 
 CSV_CHEM_LIST => CSV_CHEM_LIST_A(:,KMI)
+
+! Allocate/reallocate CSV_A
+IF ( .NOT. ALLOCATED( CSV_A ) ) ALLOCATE( CSV_A( NSV_A(KMI), KMI) )
+!If CSV_A is too small, enlarge it and transfer data
+IF ( SIZE( CSV_A, 1 ) < NSV_A(KMI) .OR. SIZE( CSV_A, 2 ) < KMI ) THEN
+  ALLOCATE( YSV_TMP( MAX( SIZE(CSV_A,1), NSV_A(KMI) ), MAX( SIZE(CSV_A,2), KMI ) ) )
+  DO JJ = 1, SIZE( CSV_A, 2 )
+    DO JI = 1, SIZE( CSV_A, 1 )
+      YSV_TMP(JI, JJ) = CSV_A(JI, JJ)
+    END DO
+  END DO
+  CALL MOVE_ALLOC( FROM = YSV_TMP, TO = CSV_A )
+END IF
+
+CSV => CSV_A(:,KMI)
 
 ! Allocate/reallocate TSVLIST_A
 IF ( .NOT. ALLOCATED( TSVLIST_A ) ) ALLOCATE( TSVLIST_A( NSV_A(KMI), KMI) )

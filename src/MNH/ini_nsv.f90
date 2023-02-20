@@ -744,13 +744,11 @@ IF (LBLOWSNOW) XSVMIN(NSV_SNWBEG_A(KMI):NSV_SNWEND_A(KMI))=XMNH_TINY
 !
 !  NAME OF THE SCALAR VARIABLES IN THE DIFFERENT SV GROUPS
 !
-IF (ALLOCATED(CSV)) DEALLOCATE(CSV)
-ALLOCATE(CSV(NSV))
-CSV(:) = '      '
+CSV_A(:, KMI) = '      '
 IF (LLG) THEN
-  CSV(NSV_LGBEG_A(KMI)  ) = 'X0     '
-  CSV(NSV_LGBEG_A(KMI)+1) = 'Y0     '
-  CSV(NSV_LGEND_A(KMI)  ) = 'Z0     '
+  CSV_A(NSV_LGBEG_A(KMI),   KMI) = 'X0     '
+  CSV_A(NSV_LGBEG_A(KMI)+1, KMI) = 'Y0     '
+  CSV_A(NSV_LGEND_A(KMI),   KMI) = 'Z0     '
 ENDIF
 
 ! Initialize scalar variable names for dust

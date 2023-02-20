@@ -590,7 +590,7 @@ IF(LBLOWSNOW) THEN
 ELSE
     KSV_SURF = NSV
     ALLOCATE(YSV_SURF(KSV_SURF))
-    YSV_SURF(:)     = CSV(:)
+    YSV_SURF(:)     = CSV(1:NSV)
 ENDIF
 !
 !-------------------------------------------------------------------------------
