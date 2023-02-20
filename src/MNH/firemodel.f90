@@ -1694,7 +1694,7 @@ SUBROUTINE FIRE_READBMAP(TPFILE, PBMAP)
   WRITE(UNIT=ILUOUT,FMT=*) 'Extract BMap'
 
   ! Import data from file
-  CALL IO_Field_read( TFUELFILE, 'BMAP', PBMAP )
+  CALL IO_Field_read( TFUELFILE, 'FMBMAP', PBMAP )
 
   !*      5. Close file
 

@@ -877,9 +877,9 @@ ENDIF
 IF (LBLAZE .AND. CCONF=='RESTA') THEN
   ! Blaze is not compliant with MNHVERSION(1)<5
   ! Blaze begins with MNH 5.3.1
-  CALL IO_Field_read(TPINIFILE,'LSPHI',PLSPHI,IRESP)
+  CALL IO_Field_read(TPINIFILE,'FMPHI',PLSPHI,IRESP)
   IF (IRESP /= 0) PLSPHI(:,:,:) = 0.
-  CALL IO_Field_read(TPINIFILE,'BMAP',PBMAP,IRESP)
+  CALL IO_Field_read(TPINIFILE,'FMBMAP',PBMAP,IRESP)
   IF (IRESP /= 0) PBMAP(:,:,:) = -1.
   CALL IO_Field_read(TPINIFILE,'FMASE',PFMASE,IRESP)
   IF(IRESP == 0) THEN

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2016-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2016-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -2401,7 +2401,7 @@ call Add_field2list( TFIELDDATA( &
   LTIMEDEP   = .FALSE.           ) )
 
 call Add_field2list( TFIELDDATA(     &
-  CMNHNAME   = 'LSPHI',              &
+  CMNHNAME   = 'FMPHI',              &
   CSTDNAME   = '',                   &
   CLONGNAME  = 'level set function', &
   CUNITS     = '',                   &
@@ -2414,7 +2414,7 @@ call Add_field2list( TFIELDDATA(     &
   LTIMEDEP   = .TRUE.                ) )
 
 call Add_field2list( TFIELDDATA(   &
-  CMNHNAME   = 'BMAP',             &
+  CMNHNAME   = 'FMBMAP',           &
   CSTDNAME   = '',                 &
   CLONGNAME  = 'fire burning map', &
   CUNITS     = 's',                &
@@ -2505,7 +2505,7 @@ call Add_field2list( TFIELDDATA(                 &
   LTIMEDEP   = .TRUE.                            ) )
 
 call Add_field2list( TFIELDDATA(      &
-  CMNHNAME   = 'FIRERW',              &
+  CMNHNAME   = 'FMROS',               &
   CSTDNAME   = '',                    &
   CLONGNAME  = 'fire rate of spread', &
   CUNITS     = 'm s-1',               &
@@ -2518,7 +2518,7 @@ call Add_field2list( TFIELDDATA(      &
   LTIMEDEP   = .TRUE.                 ) )
 
 call Add_field2list( TFIELDDATA(              &
-  CMNHNAME   = 'FMR0',                        &
+  CMNHNAME   = 'FMROS0',                      &
   CSTDNAME   = '',                            &
   CLONGNAME  = 'fire rate of spread no wind', &
   CUNITS     = 'm s-1',                       &
@@ -4011,16 +4011,16 @@ IF (     TRIM(CPROGRAM) == 'MESONH' .OR. TRIM(CPROGRAM) == 'DIAG'  .OR. TRIM(CPR
     .OR. TRIM(CPROGRAM) == 'LFICDF' .OR. TRIM(CPROGRAM) == 'SPAWN'                               ) THEN
   call Goto_model_1field( 'FMREFINRATIOX', kfrom, kto, NREFINX )
   call Goto_model_1field( 'FMREFINRATIOY', kfrom, kto, NREFINY )
-  call Goto_model_1field( 'LSPHI', kfrom, kto, XLSPHI )
-  call Goto_model_1field( 'BMAP', kfrom, kto, XBMAP )
-  call Goto_model_1field( 'FMASE', kfrom, kto, XFMASE )
-  call Goto_model_1field( 'FMAWC', kfrom, kto, XFMAWC )
+  call Goto_model_1field( 'FMPHI',  kfrom, kto, XLSPHI )
+  call Goto_model_1field( 'FMBMAP', kfrom, kto, XBMAP )
+  call Goto_model_1field( 'FMASE',  kfrom, kto, XFMASE )
+  call Goto_model_1field( 'FMAWC',  kfrom, kto, XFMAWC )
   call Goto_model_1field( 'FMWINDU', kfrom, kto, XFMWINDU )
   call Goto_model_1field( 'FMWINDV', kfrom, kto, XFMWINDV )
   call Goto_model_1field( 'FMWINDW', kfrom, kto, XFMWINDW )
-  call Goto_model_1field( 'FMHWS', kfrom, kto, XFMHWS )
-  call Goto_model_1field( 'FIRERW', kfrom, kto, XFIRERW )
-  call Goto_model_1field( 'FMR0', kfrom, kto, XFMR0 )
+  call Goto_model_1field( 'FMHWS',  kfrom, kto, XFMHWS )
+  call Goto_model_1field( 'FMROS',  kfrom, kto, XFIRERW )
+  call Goto_model_1field( 'FMROS0', kfrom, kto, XFMR0 )
   call Goto_model_1field( 'FMFLUXHDH', kfrom, kto, XFMFLUXHDH )
   call Goto_model_1field( 'FMFLUXHDW', kfrom, kto, XFMFLUXHDW )
   call Goto_model_1field( 'FMGRADOROX', kfrom, kto, XFMGRADOROX )
