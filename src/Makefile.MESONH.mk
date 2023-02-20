@@ -67,7 +67,7 @@ OBJS_NOCB +=  spll_dxf.o spll_dxm.o spll_dyf.o spll_dym.o \
         spll_gx_m_m.o spll_gx_m_u.o spll_gy_m_m.o \
         spll_gy_m_v.o spll_gz_m_m.o spll_gz_m_w.o \
         spll_dzf_mf.o spll_dzm_mf.o spll_mzf_mf.o spll_mzm_mf.o \
-        spll_modi_gradient_m_d.o spll_shuman_phy.o
+        spll_modi_gradient_m_d.o spll_mode_shuman_phy.o
 
 $(OBJS_NOCB) : OPT = $(OPT_NOCB)
 
