@@ -11,12 +11,13 @@ CONTAINS
 
 SUBROUTINE PREPARE_METADATA_WRITE_SURF(HREC,HDIR,HCOMMENT,KGRID,KTYPE,KDIMS,HSUBR,TPFIELD)
 !
-use modd_field, only: tfieldmetadata, tfieldlist, NMNHDIM_UNUSED
+use modd_field,      only: tfieldmetadata, tfieldlist, NMNHDIM_UNUSED
+use modd_parameters, only: NMNHNAMELGTMAX
 
-use mode_field, only: Find_field_id_from_mnhname
+use mode_field,      only: Find_field_id_from_mnhname
 USE MODE_MSG
 !
-CHARACTER(LEN=LEN_HREC),INTENT(IN)  :: HREC     ! name of the article to write
+CHARACTER(LEN=*),       INTENT(IN)  :: HREC     ! name of the article to write
 CHARACTER(LEN=2),       INTENT(IN)  :: HDIR     ! Expected type of the data field (XX,XY,--...)
 CHARACTER(LEN=100),     INTENT(IN)  :: HCOMMENT ! Comment string
 INTEGER,                INTENT(IN)  :: KGRID    ! Localization on the model grid
@@ -29,6 +30,9 @@ CHARACTER(LEN=32) :: YTXT
 INTEGER           :: IDX,IID, IRESP
 LOGICAL           :: GWARN
 !
+IF ( LEN_TRIM( HREC ) > NMNHNAMELGTMAX ) &
+  CALL PRINT_MSG( NVERB_WARNING, 'IO', TRIM(HSUBR), 'HREC is too long (' // TRIM(HREC) // ')' )
+
 CALL FIND_FIELD_ID_FROM_MNHNAME(TRIM(HREC),IID,IRESP,ONOWARNING=.TRUE.)
 IF (IRESP==0) THEN
   TPFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
@@ -1356,6 +1360,8 @@ CHARACTER(LEN=100),     INTENT(IN)  :: HCOMMENT ! Comment string
 !
 !*      0.2   Declarations of local variables
 !
+CHARACTER(LEN=4), PARAMETER :: YSUFFIX = '_SFX'
+
 CHARACTER(LEN=5)     :: YMSG
 TYPE(TFIELDMETADATA) :: TZFIELD
 !
@@ -1366,7 +1372,10 @@ IF( (CMASK /= 'FULL  ').AND. (HREC=='COVER') ) THEN
                  TRIM(CMASK)//' not written in file by externalized surface')
   RETURN
 ELSE
-  CALL PREPARE_METADATA_WRITE_SURF(HREC,'--',HCOMMENT,0,TYPELOG,0,'WRITE_SURFL0_MNH',TZFIELD)
+  ! Add a suffix to logical variables coming from SURFEX
+  ! This is done because some variables can have the same name than MesoNH variables
+  ! This suffix has been added in MesoNH 5.6.0
+  CALL PREPARE_METADATA_WRITE_SURF(TRIM(HREC)//YSUFFIX,'--',HCOMMENT,0,TYPELOG,0,'WRITE_SURFL0_MNH',TZFIELD)
   CALL IO_Field_write(TFILE_SURFEX,TZFIELD,OFIELD,KRESP)
 END IF
 !

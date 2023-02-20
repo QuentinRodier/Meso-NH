@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2003-2022 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2003-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -18,10 +18,12 @@ CONTAINS
 
 SUBROUTINE PREPARE_METADATA_READ_SURF(HREC,HDIR,KGRID,KTYPE,KDIMS,HSUBR,TPFIELD)
 !
-use modd_field, only: tfieldmetadata, tfieldlist
-use mode_field, only: Find_field_id_from_mnhname
+use modd_field,      only: tfieldmetadata, tfieldlist
+use modd_parameters, only: NMNHNAMELGTMAX
+
+use mode_field,      only: Find_field_id_from_mnhname
 !
-CHARACTER(LEN=LEN_HREC),INTENT(IN)  :: HREC     ! name of the article to write
+CHARACTER(LEN=*),       INTENT(IN)  :: HREC     ! name of the article to write
 CHARACTER(LEN=2),       INTENT(IN)  :: HDIR     ! Expected type of the data field (XX,XY,--...)
 INTEGER,                INTENT(IN)  :: KGRID    ! Localization on the model grid
 INTEGER,                INTENT(IN)  :: KTYPE    ! Datatype
@@ -32,6 +34,9 @@ TYPE(TFIELDMETADATA),       INTENT(OUT) :: TPFIELD  ! metadata of field
 CHARACTER(LEN=32) :: YTXT
 INTEGER           :: IID, IRESP
 !
+IF ( LEN_TRIM( HREC ) > NMNHNAMELGTMAX ) &
+  CALL PRINT_MSG( NVERB_WARNING, 'IO', TRIM(HSUBR), 'HREC is too long (' // TRIM(HREC) // ')' )
+
 CALL FIND_FIELD_ID_FROM_MNHNAME(TRIM(HREC),IID,IRESP,ONOWARNING=.TRUE.)
 IF (IRESP==0) THEN
   TPFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
@@ -1591,6 +1596,8 @@ CHARACTER(LEN=*),       INTENT(OUT) :: HCOMMENT ! comment
 !
 !*      0.2   Declarations of local variables
 !
+CHARACTER(LEN=4), PARAMETER :: YSUFFIX = '_SFX'
+
 INTEGER           :: ILUOUT
 TYPE(TFIELDMETADATA)  :: TZFIELD
 !-------------------------------------------------------------------------------
@@ -1614,8 +1621,23 @@ IF (HREC=='ECOCLIMAP') THEN
   END IF
 END IF
 !
-CALL PREPARE_METADATA_READ_SURF(HREC,'--',0,TYPELOG,0,'READ_SURFL0_MNH',TZFIELD)
-CALL IO_Field_read(TPINFILE,TZFIELD,OFIELD,KRESP)
+IF ( TPINFILE%NMNHVERSION(1) < 5 .OR. ( TPINFILE%NMNHVERSION(1) == 5 .AND. TPINFILE%NMNHVERSION(2) < 6 ) ) THEN
+  CALL PREPARE_METADATA_READ_SURF(HREC,'--',0,TYPELOG,0,'READ_SURFL0_MNH',TZFIELD)
+  CALL IO_Field_read(TPINFILE,TZFIELD,OFIELD,KRESP)
+ELSE
+  ! Add a suffix to logical variables coming from SURFEX
+  ! This is done because some variables can have the same name than MesoNH variables
+  ! This suffix has been added in MesoNH 5.6.0
+  CALL PREPARE_METADATA_READ_SURF(TRIM(HREC)//YSUFFIX,'--',0,TYPELOG,0,'READ_SURFL0_MNH',TZFIELD)
+  CALL IO_Field_read(TPINFILE,TZFIELD,OFIELD,KRESP)
+
+  IF ( KRESP /= 0 ) THEN
+    ! Retries without the suffix
+    ! Potentially useful if tpinfile was not written with MesoNH
+    CALL PREPARE_METADATA_READ_SURF(HREC,'--',0,TYPELOG,0,'READ_SURFL0_MNH',TZFIELD)
+    CALL IO_Field_read(TPINFILE,TZFIELD,OFIELD,KRESP)
+  END IF
+END IF
 HCOMMENT = TZFIELD%CCOMMENT
 !
 IF (KRESP /=0) THEN
