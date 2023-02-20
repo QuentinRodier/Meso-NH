@@ -671,7 +671,7 @@ TZFIELD = TFIELDMETADATA(   &
   CUNITS     = '',          &
   CDIR       = '--',        &
   CCOMMENT   = '',          &
-  NGRID      = 0,           &
+  NGRID      = 1,           &
   NTYPE      = TYPELOG,     &
   NDIMS      = 0,           &
   LTIMEDEP   = .FALSE.      )
@@ -1474,7 +1474,7 @@ IF ( LFORCING ) THEN
       CUNITS     = 'Pa',                      &
       CDIR       = '--',                      &
       CCOMMENT   = 'Forcing ground pressure', &
-      NGRID      = 0,                         &
+      NGRID      = 1,                         &
       NTYPE      = TYPEREAL,                  &
       NDIMS      = 0,                         &
       LTIMEDEP   = .FALSE.                    )
