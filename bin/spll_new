@@ -28,7 +28,12 @@ extern_userio.f90|fmreadwrit.f90|fm_read_ll.f90|poub.f90|\
 mode_glt.*.F90|\
 rrtm_.*.F90|srtm_.*.F90|\
 libs4py.f90|\
-ec_meminfo.F90"
+ec_meminfo.F90|\
+turb.f90|shallow_mf.f90|rain_ice.f90|lima.f90|\
+lima_adjust_split.f90|lima_precip_scavenging.f90|ini_tiwmx.f90|\
+ini_snow.f90|ini_rain_ice.f90|ini_neb.f90|ini_cst.f90|\
+ice_adjust.f90|gradient_u.f90|gradient_v.f90|gradient_w|\
+gamma.f90|gamma_inc.f90|general_gamma.f90|condensation.f90"
 #
 
 if [ "$SUF" = "f" ]
