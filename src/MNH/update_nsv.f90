@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2001-2022 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2001-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -28,6 +28,7 @@ END MODULE MODI_UPDATE_NSV
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !  P. Wautelet 26/11/2021: add TSVLIST and TSVLIST_A to store the metadata of all the scalar variables
 !  P. Wautelet 14/01/2022: add CSV_CHEM_LIST(_A) to store the list of all chemical variables
+!  P. Wautelet 20/02/2023: bugfix: reallocate size was wrong in some scenarii
 !-------------------------------------------------------------------------------
 !
 USE MODD_CONF,       ONLY: NVERB
@@ -59,7 +60,7 @@ END IF
 IF ( .NOT. ALLOCATED( CSV_CHEM_LIST_A ) ) ALLOCATE( CSV_CHEM_LIST_A( NSV_CHEM_LIST_A(KMI), KMI) )
 !If CSV_CHEM_LIST_A is too small, enlarge it and transfer data
 IF ( SIZE( CSV_CHEM_LIST_A, 1 ) < NSV_CHEM_LIST_A(KMI) .OR. SIZE( CSV_CHEM_LIST_A, 2 ) < KMI ) THEN
-  ALLOCATE( YSVCHEM_LIST_TMP(NSV_CHEM_LIST_A(KMI), KMI) )
+  ALLOCATE( YSVCHEM_LIST_TMP( MAX( SIZE(CSV_CHEM_LIST_A,1), NSV_CHEM_LIST_A(KMI) ), MAX( SIZE(CSV_CHEM_LIST_A,2), KMI ) ) )
   DO JJ = 1, SIZE( CSV_CHEM_LIST_A, 2 )
     DO JI = 1, SIZE( CSV_CHEM_LIST_A, 1 )
       YSVCHEM_LIST_TMP(JI, JJ) = CSV_CHEM_LIST_A(JI, JJ)
@@ -74,7 +75,7 @@ CSV_CHEM_LIST => CSV_CHEM_LIST_A(:,KMI)
 IF ( .NOT. ALLOCATED( TSVLIST_A ) ) ALLOCATE( TSVLIST_A( NSV_A(KMI), KMI) )
 !If TSVLIST_A is too small, enlarge it and transfer data
 IF ( SIZE( TSVLIST_A, 1 ) < NSV_A(KMI) .OR. SIZE( TSVLIST_A, 2 ) < KMI ) THEN
-  ALLOCATE( YSVLIST_TMP(NSV_A(KMI), KMI) )
+  ALLOCATE( YSVLIST_TMP( MAX( SIZE(TSVLIST_A,1), NSV_A(KMI) ), MAX( SIZE(TSVLIST_A,2), KMI ) ) )
   DO JJ = 1, SIZE( TSVLIST_A, 2 )
     DO JI = 1, SIZE( TSVLIST_A, 1 )
       YSVLIST_TMP(JI, JJ) = TSVLIST_A(JI, JJ)
