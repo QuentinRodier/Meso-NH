@@ -53,9 +53,9 @@ END MODULE MODI_INIT_AEROSOL_CONCENTRATION
 !
 USE MODD_NSV
 USE MODD_PARAM_n,    ONLY : CCLOUD
-USE MODD_PARAM_LIMA, ONLY : LWARM, LACTI, NMOD_CCN, LSCAV, LAERO_MASS,      &
+USE MODD_PARAM_LIMA, ONLY : NMOM_C, LACTI, NMOD_CCN, LSCAV, LAERO_MASS,     &
                             XCCN_CONC, LCCN_HOM,                            &
-                            LCOLD, LNUCL, NMOD_IFN, LMEYERS,                &
+                            NMOM_I, LNUCL, NMOD_IFN, LMEYERS,               &
                             XIFN_CONC, LIFN_HOM
 USE MODD_PARAMETERS, ONLY : JPVEXT
 USE MODD_BLANK_n,      ONLY : CDUMMY2, NDUMMY1, NDUMMY2, XDUMMY8
@@ -78,7 +78,7 @@ INTEGER                                 :: IKB, IKE
 !*initialization of N_FREE_CCN/N_ACTIVATED_CCN et N_FREE_IN/N_ACTIVATED_IN
 !
 !
-IF ( LWARM .AND. LACTI ) THEN
+IF ( NMOM_C.GE.2 .AND. LACTI ) THEN
   DO JSV = NSV_LIMA_CCN_FREE, NSV_LIMA_CCN_ACTI+NMOD_CCN-1
     PSVT(:,:,:,JSV) = 0.0
   ENDDO
@@ -111,7 +111,7 @@ END IF ! LWARM AND LACTI
 !
 ! Initialisation des concentrations en IFN
 !
-IF ( LCOLD .AND. LNUCL .AND. (.NOT. LMEYERS) ) THEN
+IF ( NMOM_I.GE.2 .AND. LNUCL .AND. (.NOT. LMEYERS) ) THEN
   DO JSV = NSV_LIMA_IFN_FREE, NSV_LIMA_IFN_NUCL+NMOD_IFN-1
     PSVT(:,:,:,JSV) = 0.0
   ENDDO

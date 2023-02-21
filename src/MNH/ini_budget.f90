@@ -247,12 +247,12 @@ use modd_parameters,   only: jphext
 use modd_param_c2r2,   only: ldepoc_c2r2 => ldepoc, lrain_c2r2 => lrain, lsedc_c2r2 => lsedc, lsupsat_c2r2 => lsupsat
 use modd_param_ice,    only: ladj_after, ladj_before, ldeposc_ice => ldeposc, lred, lsedic_ice => lsedic, lwarm_ice => lwarm
 use modd_param_n,      only: cactccn, celec
-use modd_param_lima,   only: laero_mass_lima => laero_mass, lacti_lima => lacti, lcibu, lcold_lima => lcold,             &
-                             ldepoc_lima => ldepoc, lhail_lima => lhail, lhhoni_lima => lhhoni, lmeyers_lima => lmeyers, &
-                             lnucl_lima => lnucl, lptsplit,                                                              &
-                             lrain_lima => lrain, lrdsf, lscav_lima => lscav, lsedc_lima => lsedc, lsedi_lima => lsedi,  &
-                             lsnow_lima => lsnow, lspro_lima => lspro,  lwarm_lima => lwarm,                             &
-                             nmod_ccn, nmod_ifn, nmod_imm, nmom_i
+use modd_param_lima,   only: laero_mass_lima => laero_mass, lacti_lima => lacti, ldepoc_lima => ldepoc, &
+                             lhhoni_lima => lhhoni, lmeyers_lima => lmeyers, lnucl_lima => lnucl,       &
+                             lptsplit,                                                                                       &
+                             lscav_lima => lscav, lsedc_lima => lsedc, lsedi_lima => lsedi,             &
+                             lspro_lima => lspro,  lcibu, lrdsf,           &
+                             nmom_c, nmom_r, nmom_i, nmom_s, nmom_g, nmom_h, nmod_ccn, nmod_ifn, nmod_imm
 use modd_ref,          only: lcouples
 use modd_salt,         only: lsalt
 use modd_turb_n,       only: lsubg_cond
@@ -1104,7 +1104,7 @@ if ( lbu_rth ) then
   tzsource%cmnhname   = 'HENU'
   tzsource%clongname  = 'heterogeneous nucleation'
   gtmp = cactccn == 'ABRK' .and. (lorilam .or. ldust .or. lsalt )
-  tzsource%lavailable =      ( hcloud      == 'LIMA' .and. lwarm_lima .and. lacti_lima .and. nmod_ccn >= 1   &
+  tzsource%lavailable =      ( hcloud      == 'LIMA' .and. nmom_c.ge.1 .and. lacti_lima .and. nmod_ccn >= 1   &
                                                      .and. ( .not.lptsplit .or. .not.lsubg_cond )          ) &
                         .or. ( hcloud      == 'C2R2' .and. ( gtmp .or. .not.lsupsat_c2r2 ) )                 &
                         .or. ( hcloud      == 'KHKO' .and. ( gtmp .or. .not.lsupsat_c2r2 ) )
@@ -1112,26 +1112,26 @@ if ( lbu_rth ) then
 
   tzsource%cmnhname   = 'REVA'
   tzsource%clongname  = 'rain evaporation'
-  tzsource%lavailable =     ( hcloud      == 'LIMA' .and. ( ( .not. lptsplit .and. lwarm_lima .and. lrain_lima ) .or. lptsplit ) ) &
-                       .or. ( hcloud(1:3) == 'ICE'  .and. lwarm_ice )                                                              &
-                       .or. ( hcloud      == 'C2R2' .and. lrain_c2r2 )                                                             &
-                       .or. ( hcloud      == 'KHKO' .and. lrain_c2r2 )                                                             &
+  tzsource%lavailable =     ( hcloud      == 'LIMA' .and. ( ( .not. lptsplit .and. nmom_r.ge.1 ) .or. lptsplit ) ) &
+                       .or. ( hcloud(1:3) == 'ICE'  .and. lwarm_ice )                                              &
+                       .or. ( hcloud      == 'C2R2' .and. lrain_c2r2 )                                             &
+                       .or. ( hcloud      == 'KHKO' .and. lrain_c2r2 )                                             &
                        .or.   hcloud      == 'KESS'
   call Budget_source_add( tbudgets(NBUDGET_TH), tzsource )
 
   tzsource%cmnhname   = 'HIN'
   tzsource%clongname  = 'heterogeneous ice nucleation'
-  tzsource%lavailable = hcloud(1:3) == 'ICE' .or. ( hcloud == 'LIMA' .and. nmom_i == 1 )
+  tzsource%lavailable = hcloud(1:3) == 'ICE' .or. (hcloud == 'LIMA' .and. nmom_i == 1)
   call Budget_source_add( tbudgets(NBUDGET_TH), tzsource )
 
   tzsource%cmnhname   = 'HIND'
   tzsource%clongname  = 'heterogeneous nucleation by deposition'
-  tzsource%lavailable = hcloud == 'LIMA' .and. lcold_lima .and. lnucl_lima
+  tzsource%lavailable = hcloud == 'LIMA' .and. nmom_i.ge.1 .and. lnucl_lima
   call Budget_source_add( tbudgets(NBUDGET_TH), tzsource )
 
   tzsource%cmnhname   = 'HINC'
   tzsource%clongname  = 'heterogeneous nucleation by contact'
-  tzsource%lavailable = hcloud == 'LIMA' .and. lcold_lima .and. lnucl_lima
+  tzsource%lavailable = hcloud == 'LIMA' .and. nmom_i.ge.1 .and. lnucl_lima
   call Budget_source_add( tbudgets(NBUDGET_TH), tzsource )
 
   tzsource%cmnhname   = 'HON'
@@ -1141,17 +1141,17 @@ if ( lbu_rth ) then
 
   tzsource%cmnhname   = 'HONH'
   tzsource%clongname  = 'haze homogeneous nucleation'
-  tzsource%lavailable = hcloud == 'LIMA' .and. lcold_lima .and. lnucl_lima .and. lhhoni_lima .and. nmod_ccn >= 1
+  tzsource%lavailable = hcloud == 'LIMA' .and. nmom_i.ge.1 .and. lnucl_lima .and. lhhoni_lima .and. nmod_ccn >= 1
   call Budget_source_add( tbudgets(NBUDGET_TH), tzsource )
 
   tzsource%cmnhname   = 'HONC'
   tzsource%clongname  = 'droplet homogeneous freezing'
-  tzsource%lavailable = hcloud == 'LIMA' .and. ( lptsplit .or. ( lcold_lima .and. lwarm_lima .and. lnucl_lima ) )
+  tzsource%lavailable = hcloud == 'LIMA' .and. ( lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1 .and. lnucl_lima ) )
   call Budget_source_add( tbudgets(NBUDGET_TH), tzsource )
 
   tzsource%cmnhname   = 'HONR'
   tzsource%clongname  = 'raindrop homogeneous freezing'
-  tzsource%lavailable = hcloud == 'LIMA' .and. ( lptsplit .or. ( lcold_lima .and. lwarm_lima .and. lnucl_lima .and. lrain_lima ) )
+  tzsource%lavailable = hcloud == 'LIMA' .and. ( lptsplit .or. ( nmom_i.ge.1 .and. lnucl_lima .and. nmom_r.ge.1 ) )
   call Budget_source_add( tbudgets(NBUDGET_TH), tzsource )
 
   tzsource%cmnhname   = 'SFR'
@@ -1161,72 +1161,72 @@ if ( lbu_rth ) then
 
   tzsource%cmnhname   = 'DEPS'
   tzsource%clongname  = 'deposition on snow'
-  tzsource%lavailable = ( hcloud == 'LIMA' .and. ( lptsplit .or. ( lcold_lima .and. lsnow_lima ) ) ) .or. hcloud(1:3) == 'ICE'
+  tzsource%lavailable = ( hcloud == 'LIMA' .and. ( lptsplit .or. ( nmom_i.ge.1 .and. nmom_s.ge.1 ) ) ) .or. hcloud(1:3) == 'ICE'
   call Budget_source_add( tbudgets(NBUDGET_TH), tzsource )
 
   tzsource%cmnhname   = 'DEPG'
   tzsource%clongname  = 'deposition on graupel'
-  tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. ( lcold_lima .and. lwarm_lima .and. lsnow_lima ) ) ) &
+  tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1 .and. nmom_s.ge.1 ) ) ) &
                         .or. hcloud(1:3) == 'ICE'
   call Budget_source_add( tbudgets(NBUDGET_TH), tzsource )
 
   tzsource%cmnhname   = 'DEPH'
   tzsource%clongname  = 'deposition on hail'
-  tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. lhail_lima ) ) &
+  tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. nmom_h.ge.1 ) ) &
                         .or. hcloud == 'ICE4'
   call Budget_source_add( tbudgets(NBUDGET_TH), tzsource )
 
   tzsource%cmnhname   = 'IMLT'
   tzsource%clongname  = 'melting of ice'
-  tzsource%lavailable = ( hcloud == 'LIMA' .and. ( lptsplit .or. ( lcold_lima .and. lwarm_lima ) ) ) .or. hcloud(1:3) == 'ICE'
+  tzsource%lavailable = ( hcloud == 'LIMA' .and. ( lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1 ) ) ) .or. hcloud(1:3) == 'ICE'
   call Budget_source_add( tbudgets(NBUDGET_TH), tzsource )
 
   tzsource%cmnhname   = 'BERFI'
   tzsource%clongname  = 'Bergeron-Findeisen'
-  tzsource%lavailable = ( hcloud == 'LIMA' .and. ( lptsplit .or. ( lcold_lima .and. lwarm_lima ) ) ) .or. hcloud(1:3) == 'ICE'
+  tzsource%lavailable = ( hcloud == 'LIMA' .and. ( lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1 ) ) ) .or. hcloud(1:3) == 'ICE'
   call Budget_source_add( tbudgets(NBUDGET_TH), tzsource )
 
   tzsource%cmnhname   = 'RIM'
   tzsource%clongname  = 'riming of cloud water'
-  tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. ( lcold_lima .and. lwarm_lima .and. lsnow_lima ) ) ) &
+  tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1 .and. nmom_s.ge.1 ) ) ) &
                         .or. hcloud(1:3) == 'ICE'
   call Budget_source_add( tbudgets(NBUDGET_TH), tzsource )
 
   tzsource%cmnhname   = 'ACC'
   tzsource%clongname  = 'accretion of rain on aggregates'
   tzsource%lavailable =      ( hcloud == 'LIMA' .and. (        lptsplit                                                            &
-                                                        .or. ( lcold_lima .and. lwarm_lima .and. lsnow_lima .and. lrain_lima ) ) ) &
+                                                        .or. ( nmom_s.ge.1 .and. nmom_r.ge.1 ) ) ) &
                         .or.   hcloud(1:3) == 'ICE'
   call Budget_source_add( tbudgets(NBUDGET_TH), tzsource )
 
   tzsource%cmnhname   = 'CFRZ'
   tzsource%clongname  = 'conversion freezing of rain'
-  tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. ( lcold_lima .and. lwarm_lima .and. lsnow_lima ) ) ) &
+  tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1 .and. nmom_s.ge.1 ) ) ) &
                         .or. hcloud(1:3) == 'ICE'
   call Budget_source_add( tbudgets(NBUDGET_TH), tzsource )
 
   tzsource%cmnhname   = 'WETG'
   tzsource%clongname  = 'wet growth of graupel'
-  tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. ( lcold_lima .and. lwarm_lima .and. lsnow_lima ) ) ) &
+  tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1 .and. nmom_s.ge.1 ) ) ) &
                         .or. hcloud(1:3) == 'ICE'
   call Budget_source_add( tbudgets(NBUDGET_TH), tzsource )
 
   tzsource%cmnhname   = 'DRYG'
   tzsource%clongname  = 'dry growth of graupel'
-  tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. ( lcold_lima .and. lwarm_lima .and. lsnow_lima ) ) ) &
+  tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1 .and. nmom_s.ge.1 ) ) ) &
                         .or. hcloud(1:3) == 'ICE'
   call Budget_source_add( tbudgets(NBUDGET_TH), tzsource )
 
   tzsource%cmnhname   = 'GMLT'
   tzsource%clongname  = 'graupel melting'
-  tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. ( lcold_lima .and. lwarm_lima .and. lsnow_lima ) ) ) &
+  tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1 .and. nmom_s.ge.1 ) ) ) &
                         .or. hcloud(1:3) == 'ICE'
   call Budget_source_add( tbudgets(NBUDGET_TH), tzsource )
 
   tzsource%cmnhname   = 'WETH'
   tzsource%clongname  = 'wet growth of hail'
-  tzsource%lavailable =      ( hcloud == 'LIMA' .and. .not.lptsplit .and. lhail_lima .and. lcold_lima &
-                                                .and. lwarm_lima    .and. lsnow_lima )                   &
+  tzsource%lavailable =      ( hcloud == 'LIMA' .and. .not.lptsplit .and. nmom_h.ge.1 .and. nmom_i.ge.1 &
+                                                .and. nmom_c.ge.1    .and. nmom_s.ge.1 )                   &
                         .or. ( hcloud == 'LIMA' .and. lptsplit ) &
                         .or.   hcloud == 'ICE4' 
   call Budget_source_add( tbudgets(NBUDGET_TH), tzsource )
@@ -1238,8 +1238,8 @@ if ( lbu_rth ) then
 
   tzsource%cmnhname   = 'HMLT'
   tzsource%clongname  = 'melting of hail'
-  tzsource%lavailable =      ( hcloud == 'LIMA' .and. .not.lptsplit .and. lhail_lima .and. lcold_lima &
-                                                .and. lwarm_lima    .and. lsnow_lima ) &
+  tzsource%lavailable =      ( hcloud == 'LIMA' .and. .not.lptsplit .and. nmom_h.ge.1 .and. nmom_i.ge.1 &
+                                                .and. nmom_c.ge.1    .and. nmom_s.ge.1 ) &
                         .or. ( hcloud == 'LIMA' .and. lptsplit ) &
                         .or.   hcloud == 'ICE4'
   call Budget_source_add( tbudgets(NBUDGET_TH), tzsource )
@@ -1519,7 +1519,7 @@ if ( tbudgets(NBUDGET_RV)%lenabled ) then
   tzsource%cmnhname   = 'HENU'
   tzsource%clongname  = 'heterogeneous nucleation'
   gtmp = cactccn == 'ABRK' .and. (lorilam .or. ldust .or. lsalt )
-  tzsource%lavailable =      ( hcloud      == 'LIMA' .and. lwarm_lima .and. lacti_lima .and. nmod_ccn >= 1   &
+  tzsource%lavailable =      ( hcloud      == 'LIMA' .and. nmom_c.ge.1 .and. lacti_lima .and. nmod_ccn >= 1   &
                                                      .and. ( .not.lptsplit .or. .not.lsubg_cond )          ) &
                         .or. ( hcloud      == 'C2R2' .and. ( gtmp .or. .not.lsupsat_c2r2 ) )                 &
                         .or. ( hcloud      == 'KHKO' .and. ( gtmp .or. .not.lsupsat_c2r2 ) )
@@ -1527,7 +1527,7 @@ if ( tbudgets(NBUDGET_RV)%lenabled ) then
 
   tzsource%cmnhname   = 'REVA'
   tzsource%clongname  = 'rain evaporation'
-  tzsource%lavailable =      ( hcloud      == 'LIMA' .and. ( ( .not. lptsplit .and. lwarm_lima .and. lrain_lima ) &
+  tzsource%lavailable =      ( hcloud      == 'LIMA' .and. ( ( .not. lptsplit .and. nmom_c.ge.1 .and. nmom_r.ge.1 ) &
                                                              .or.    lptsplit ) )                                 &
                         .or. ( hcloud(1:3) == 'ICE'  .and. lwarm_ice )                                            &
                         .or. ( hcloud      == 'C2R2' .and. lrain_c2r2 )                                           &
@@ -1542,28 +1542,28 @@ if ( tbudgets(NBUDGET_RV)%lenabled ) then
 
   tzsource%cmnhname   = 'HIND'
   tzsource%clongname  = 'heterogeneous nucleation by deposition'
-  tzsource%lavailable = hcloud == 'LIMA' .and. lcold_lima .and. lnucl_lima
+  tzsource%lavailable = hcloud == 'LIMA' .and. nmom_i.ge.1 .and. lnucl_lima
   call Budget_source_add( tbudgets(NBUDGET_RV), tzsource )
 
   tzsource%cmnhname   = 'HONH'
   tzsource%clongname  = 'haze homogeneous nucleation'
-  tzsource%lavailable = hcloud == 'LIMA' .and. lcold_lima .and. lnucl_lima .and. lhhoni_lima .and. nmod_ccn >= 1
+  tzsource%lavailable = hcloud == 'LIMA' .and. nmom_i.ge.1 .and. lnucl_lima .and. lhhoni_lima .and. nmod_ccn >= 1
   call Budget_source_add( tbudgets(NBUDGET_RV), tzsource )
 
   tzsource%cmnhname   = 'DEPS'
   tzsource%clongname  = 'deposition on snow'
-  tzsource%lavailable = ( hcloud == 'LIMA' .and. ( lptsplit .or. ( lcold_lima .and. lsnow_lima ) ) ) .or. hcloud(1:3) == 'ICE'
+  tzsource%lavailable = ( hcloud == 'LIMA' .and. ( lptsplit .or. ( nmom_i.ge.1 .and. nmom_s.ge.1 ) ) ) .or. hcloud(1:3) == 'ICE'
   call Budget_source_add( tbudgets(NBUDGET_RV), tzsource )
 
   tzsource%cmnhname   = 'DEPG'
   tzsource%clongname  = 'deposition on graupel'
-  tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. ( lcold_lima .and. lwarm_lima .and. lsnow_lima ) ) ) &
+  tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1 .and. nmom_s.ge.1 ) ) ) &
                         .or. hcloud(1:3) == 'ICE'
   call Budget_source_add( tbudgets(NBUDGET_RV), tzsource )
 
   tzsource%cmnhname   = 'DEPH'
   tzsource%clongname  = 'deposition on HAIL'
-  tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. lhail_lima )  &
+  tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. nmom_h.ge.1 )  &
                         .or. hcloud == 'ICE4' )
   call Budget_source_add( tbudgets(NBUDGET_RV), tzsource )
 
@@ -1727,14 +1727,14 @@ if ( tbudgets(NBUDGET_RC)%lenabled ) then
 
   tzsource%cmnhname   = 'CORR'
   tzsource%clongname  = 'correction'
-!   tzsource%lavailable =       ( hcloud      == 'LIMA' .and. lptsplit .and. lwarm_lima .and. lrain_lima ) &
+!   tzsource%lavailable =       ( hcloud      == 'LIMA' .and. lptsplit .and. nmom_c.ge.1 .and. nmom_r.ge.1 ) &
 !                          .or. ( hcloud(1:3) == 'ICE' .and. lred .and. celec == 'NONE' )
   tzsource%lavailable =  hcloud(1:3) == 'ICE' .and. lred .and. celec == 'NONE'
   call Budget_source_add( tbudgets(NBUDGET_RC), tzsource )
 
   tzsource%cmnhname   = 'SEDI'
   tzsource%clongname  = 'sedimentation of cloud'
-  tzsource%lavailable =    ( hcloud      == 'LIMA' .and. lwarm_lima .and. lsedc_lima ) &
+  tzsource%lavailable =    ( hcloud      == 'LIMA' .and. nmom_c.ge.1 .and. lsedc_lima ) &
                       .or. ( hcloud(1:3) == 'ICE'  .and. lsedic_ice )                  &
                       .or. ( hcloud      == 'C2R2' .and. lsedc_c2r2 )                  &
                       .or. ( hcloud      == 'KHKO' .and. lsedc_c2r2 )
@@ -1742,7 +1742,7 @@ if ( tbudgets(NBUDGET_RC)%lenabled ) then
 
   tzsource%cmnhname   = 'DEPO'
   tzsource%clongname  = 'surface droplet deposition'
-  tzsource%lavailable =      ( hcloud == 'LIMA' .and. lwarm_lima .and. ldepoc_lima ) &
+  tzsource%lavailable =      ( hcloud == 'LIMA' .and. nmom_c.ge.1 .and. ldepoc_lima ) &
                         .or. ( hcloud      == 'C2R2' .and. ldepoc_c2r2 )             &
                         .or. ( hcloud      == 'KHKO' .and. ldepoc_c2r2 )             &
                         .or. ( hcloud(1:3) == 'ICE'  .and. ldeposc_ice .and. celec == 'NONE' )
@@ -1750,13 +1750,13 @@ if ( tbudgets(NBUDGET_RC)%lenabled ) then
 
   tzsource%cmnhname   = 'R2C1'
   tzsource%clongname  = 'rain to cloud change after sedimentation'
-  tzsource%lavailable = hcloud == 'LIMA' .and. lptsplit .and. lwarm_lima .and. lrain_lima
+  tzsource%lavailable = hcloud == 'LIMA' .and. lptsplit .and. nmom_c.ge.1 .and. nmom_r.ge.1
   call Budget_source_add( tbudgets(NBUDGET_RC), tzsource )
 
   tzsource%cmnhname   = 'HENU'
   tzsource%clongname  = 'CCN activation'
   gtmp = cactccn == 'ABRK' .and. (lorilam .or. ldust .or. lsalt )
-  tzsource%lavailable =      ( hcloud      == 'LIMA' .and. lwarm_lima .and. lacti_lima .and. nmod_ccn >= 1   &
+  tzsource%lavailable =      ( hcloud      == 'LIMA' .and. nmom_c.ge.1 .and. lacti_lima .and. nmod_ccn >= 1   &
                                                      .and. ( .not.lptsplit .or. .not.lsubg_cond )          ) &
                         .or. ( hcloud      == 'C2R2' .and. ( gtmp .or. .not.lsupsat_c2r2 ) )                 &
                         .or. ( hcloud      == 'KHKO' .and. ( gtmp .or. .not.lsupsat_c2r2 ) )
@@ -1764,7 +1764,7 @@ if ( tbudgets(NBUDGET_RC)%lenabled ) then
 
   tzsource%cmnhname   = 'HINC'
   tzsource%clongname  = 'heterogeneous nucleation by contact'
-  tzsource%lavailable = hcloud == 'LIMA' .and. lcold_lima .and. lnucl_lima
+  tzsource%lavailable = hcloud == 'LIMA' .and. nmom_i.ge.1 .and. lnucl_lima
   call Budget_source_add( tbudgets(NBUDGET_RC), tzsource )
 
   tzsource%cmnhname   = 'ADJU'
@@ -1779,7 +1779,7 @@ if ( tbudgets(NBUDGET_RC)%lenabled ) then
 
   tzsource%cmnhname   = 'AUTO'
   tzsource%clongname  = 'autoconversion into rain'
-  tzsource%lavailable =       ( hcloud      == 'LIMA' .and. ( lptsplit .or. ( lwarm_lima .and. lrain_lima ) ) ) &
+  tzsource%lavailable =       ( hcloud      == 'LIMA' .and. ( lptsplit .or. ( nmom_c.ge.1 .and. nmom_r.ge.1 ) ) ) &
                          .or.   hcloud      == 'KESS'                                                           &
                          .or. ( hcloud(1:3) == 'ICE'  .and. lwarm_ice )                                         &
                          .or. ( hcloud      == 'C2R2' .and. lrain_c2r2 )                                        &
@@ -1788,7 +1788,7 @@ if ( tbudgets(NBUDGET_RC)%lenabled ) then
 
   tzsource%cmnhname   = 'ACCR'
   tzsource%clongname  = 'accretion of cloud droplets'
-  tzsource%lavailable =       ( hcloud == 'LIMA' .and. ( lptsplit .or. ( lwarm_lima .and. lrain_lima ) ) ) &
+  tzsource%lavailable =       ( hcloud == 'LIMA' .and. ( lptsplit .or. ( nmom_c.ge.1 .and. nmom_r.ge.1 ) ) ) &
                          .or.   hcloud      == 'KESS'                                                      &
                          .or. ( hcloud(1:3) == 'ICE'  .and. lwarm_ice )                                    &
                          .or. ( hcloud      == 'C2R2' .and. lrain_c2r2 )                                   &
@@ -1797,27 +1797,27 @@ if ( tbudgets(NBUDGET_RC)%lenabled ) then
 
   tzsource%cmnhname   = 'REVA'
   tzsource%clongname  = 'rain evaporation'
-  tzsource%lavailable =  hcloud == 'LIMA' .and. ( lptsplit .or. ( lwarm_lima .and. lrain_lima ) )
+  tzsource%lavailable =  hcloud == 'LIMA' .and. ( lptsplit .or. ( nmom_c.ge.1 .and. nmom_r.ge.1 ) )
   call Budget_source_add( tbudgets(NBUDGET_RC), tzsource )
 
   tzsource%cmnhname   = 'HONC'
   tzsource%clongname  = 'droplet homogeneous freezing'
-  tzsource%lavailable = hcloud == 'LIMA' .and. ( lptsplit .or. ( lcold_lima .and. lwarm_lima .and. lnucl_lima ) )
+  tzsource%lavailable = hcloud == 'LIMA' .and. ( lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1 .and. lnucl_lima ) )
   call Budget_source_add( tbudgets(NBUDGET_RC), tzsource )
 
   tzsource%cmnhname   = 'IMLT'
   tzsource%clongname  = 'melting of ice'
-  tzsource%lavailable = ( hcloud == 'LIMA' .and. ( lptsplit .or. ( lcold_lima .and. lwarm_lima ) ) ) .or. hcloud(1:3) == 'ICE'
+  tzsource%lavailable = ( hcloud == 'LIMA' .and. ( lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1 ) ) ) .or. hcloud(1:3) == 'ICE'
   call Budget_source_add( tbudgets(NBUDGET_RC), tzsource )
 
   tzsource%cmnhname   = 'BERFI'
   tzsource%clongname  = 'Bergeron-Findeisen'
-  tzsource%lavailable = ( hcloud == 'LIMA' .and. ( lptsplit .or. (lcold_lima .and. lwarm_lima) ) ) .or. hcloud(1:3) == 'ICE'
+  tzsource%lavailable = ( hcloud == 'LIMA' .and. ( lptsplit .or. (nmom_i.ge.1 .and. nmom_c.ge.1) ) ) .or. hcloud(1:3) == 'ICE'
   call Budget_source_add( tbudgets(NBUDGET_RC), tzsource )
 
   tzsource%cmnhname   = 'RIM'
   tzsource%clongname  = 'riming of cloud water'
-  tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. ( lcold_lima .and. lwarm_lima .and. lsnow_lima ) ) ) &
+  tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1 .and. nmom_s.ge.1 ) ) ) &
                         .or. hcloud(1:3) == 'ICE'
   call Budget_source_add( tbudgets(NBUDGET_RC), tzsource )
 
@@ -1828,13 +1828,13 @@ if ( tbudgets(NBUDGET_RC)%lenabled ) then
 
   tzsource%cmnhname   = 'WETG'
   tzsource%clongname  = 'wet growth of graupel'
-  tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. (lcold_lima .and. lwarm_lima .and. lsnow_lima) ) ) &
+  tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. (nmom_i.ge.1 .and. nmom_c.ge.1 .and. nmom_s.ge.1) ) ) &
                         .or. hcloud(1:3) == 'ICE'
   call Budget_source_add( tbudgets(NBUDGET_RC), tzsource )
 
   tzsource%cmnhname   = 'DRYG'
   tzsource%clongname  = 'dry growth of graupel'
-  tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. (lcold_lima .and. lwarm_lima .and. lsnow_lima) ) ) &
+  tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. (nmom_i.ge.1 .and. nmom_c.ge.1 .and. nmom_s.ge.1) ) ) &
                         .or. hcloud(1:3) == 'ICE'
   call Budget_source_add( tbudgets(NBUDGET_RC), tzsource )
 
@@ -1845,8 +1845,8 @@ if ( tbudgets(NBUDGET_RC)%lenabled ) then
 
   tzsource%cmnhname   = 'WETH'
   tzsource%clongname  = 'wet growth of hail'
-  tzsource%lavailable =      ( hcloud == 'LIMA' .and. .not.lptsplit .and. lhail_lima .and. lcold_lima  &
-                                                .and. lwarm_lima    .and. lsnow_lima )                 &
+  tzsource%lavailable =      ( hcloud == 'LIMA' .and. .not.lptsplit .and. nmom_h.ge.1 .and. nmom_i.ge.1  &
+                                                .and. nmom_c.ge.1    .and. nmom_s.ge.1 )                 &
                         .or. ( hcloud == 'LIMA' .and. lptsplit ) &
                         .or.   hcloud == 'ICE4'
   call Budget_source_add( tbudgets(NBUDGET_RC), tzsource )
@@ -1980,14 +1980,14 @@ if ( tbudgets(NBUDGET_RR)%lenabled ) then
 
   tzsource%cmnhname   = 'CORR'
   tzsource%clongname  = 'correction'
-!   tzsource%lavailable =       ( hcloud      == 'LIMA' .and. lptsplit .and. lwarm_lima .and. lrain_lima ) &
+!   tzsource%lavailable =       ( hcloud      == 'LIMA' .and. lptsplit .and. nmom_c.ge.1 .and. nmom_r.ge.1 ) &
 !                          .or. ( hcloud(1:3) == 'ICE' .and. lred .and. celec == 'NONE' )
   tzsource%lavailable = hcloud(1:3) == 'ICE' .and. lred .and. celec == 'NONE'
   call Budget_source_add( tbudgets(NBUDGET_RR), tzsource )
 
   tzsource%cmnhname   = 'SEDI'
   tzsource%clongname  = 'sedimentation of rain drops'
-  tzsource%lavailable =      ( hcloud      == 'LIMA' .and. lwarm_lima .and. lrain_lima ) &
+  tzsource%lavailable =      ( hcloud      == 'LIMA' .and. nmom_c.ge.1 .and. nmom_r.ge.1 ) &
                         .or.   hcloud      == 'KESS'                                     &
                         .or.   hcloud(1:3) == 'ICE'                                      &
                         .or.   hcloud      == 'C2R2'                                     &
@@ -1996,12 +1996,12 @@ if ( tbudgets(NBUDGET_RR)%lenabled ) then
 
   tzsource%cmnhname   = 'R2C1'
   tzsource%clongname  = 'rain to cloud change after sedimentation'
-  tzsource%lavailable = hcloud == 'LIMA' .and. lptsplit .and. lwarm_lima .and. lrain_lima
+  tzsource%lavailable = hcloud == 'LIMA' .and. lptsplit .and. nmom_c.ge.1 .and. nmom_r.ge.1
   call Budget_source_add( tbudgets(NBUDGET_RR), tzsource )
 
   tzsource%cmnhname   = 'AUTO'
   tzsource%clongname  = 'autoconversion into rain'
-  tzsource%lavailable =       ( hcloud      == 'LIMA' .and. ( lptsplit .or. ( lwarm_lima .and. lrain_lima ) ) ) &
+  tzsource%lavailable =       ( hcloud      == 'LIMA' .and. ( lptsplit .or. ( nmom_c.ge.1 .and. nmom_r.ge.1 ) ) ) &
                          .or.   hcloud      == 'KESS'                                                           &
                          .or. ( hcloud(1:3) == 'ICE'  .and. lwarm_ice )                                         &
                          .or. ( hcloud      == 'C2R2' .and. lrain_c2r2 )                                        &
@@ -2010,7 +2010,7 @@ if ( tbudgets(NBUDGET_RR)%lenabled ) then
 
   tzsource%cmnhname   = 'ACCR'
   tzsource%clongname  = 'accretion of cloud droplets'
-  tzsource%lavailable =       ( hcloud == 'LIMA' .and. ( lptsplit .or. ( lwarm_lima .and. lrain_lima ) ) ) &
+  tzsource%lavailable =       ( hcloud == 'LIMA' .and. ( lptsplit .or. ( nmom_c.ge.1 .and. nmom_r.ge.1 ) ) ) &
                          .or.   hcloud      == 'KESS'                                                      &
                          .or. ( hcloud(1:3) == 'ICE'  .and. lwarm_ice )                                    &
                          .or. ( hcloud      == 'C2R2' .and. lrain_c2r2 )                                   &
@@ -2019,7 +2019,7 @@ if ( tbudgets(NBUDGET_RR)%lenabled ) then
 
   tzsource%cmnhname   = 'REVA'
   tzsource%clongname  = 'rain evaporation'
-  tzsource%lavailable =      ( hcloud      == 'LIMA' .and. ( lptsplit .or. ( lwarm_lima .and. lrain_lima ) ) ) &
+  tzsource%lavailable =      ( hcloud      == 'LIMA' .and. ( lptsplit .or. ( nmom_c.ge.1 .and. nmom_r.ge.1 ) ) ) &
                         .or.   hcloud      == 'KESS'                                                           &
                         .or. ( hcloud(1:3) == 'ICE'  .and. lwarm_ice )                                         &
                         .or. ( hcloud      == 'C2R2' .and. lrain_c2r2 )                                        &
@@ -2028,14 +2028,14 @@ if ( tbudgets(NBUDGET_RR)%lenabled ) then
 
   tzsource%cmnhname   = 'HONR'
   tzsource%clongname  = 'rain homogeneous freezing'
-  tzsource%lavailable = hcloud == 'LIMA' .and. ( lptsplit .or. ( lcold_lima .and. lwarm_lima .and. lnucl_lima .and. lrain_lima ) )
+  tzsource%lavailable = hcloud == 'LIMA' .and. ( lptsplit .or. ( nmom_i.ge.1 .and. lnucl_lima .and. nmom_r.ge.1 ) )
   call Budget_source_add( tbudgets(NBUDGET_RR), tzsource )
 
 
   tzsource%cmnhname   = 'ACC'
   tzsource%clongname  = 'accretion of rain on aggregates'
-  tzsource%lavailable =      ( hcloud == 'LIMA' .and. ( lptsplit .or. (       lcold_lima .and. lwarm_lima      &
-                                                                        .and. lsnow_lima .and. lrain_lima) ) ) &
+  tzsource%lavailable =      ( hcloud == 'LIMA' .and. ( lptsplit .or. (       nmom_i.ge.1 .and. nmom_c.ge.1      &
+                                                                        .and. nmom_s.ge.1 .and. nmom_r.ge.1) ) ) &
                         .or.   hcloud(1:3) == 'ICE'
   call Budget_source_add( tbudgets(NBUDGET_RR), tzsource )
 
@@ -2046,25 +2046,25 @@ if ( tbudgets(NBUDGET_RR)%lenabled ) then
 
   tzsource%cmnhname   = 'CFRZ'
   tzsource%clongname  = 'conversion freezing of rain'
-  tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. (lcold_lima .and. lwarm_lima .and. lsnow_lima) ) ) &
+  tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. (nmom_i.ge.1 .and. nmom_c.ge.1 .and. nmom_s.ge.1) ) ) &
                         .or. hcloud(1:3) == 'ICE'
   call Budget_source_add( tbudgets(NBUDGET_RR), tzsource )
 
   tzsource%cmnhname   = 'WETG'
   tzsource%clongname  = 'wet growth of graupel'
-  tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. (lcold_lima .and. lwarm_lima .and. lsnow_lima) ) ) &
+  tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. (nmom_i.ge.1 .and. nmom_c.ge.1 .and. nmom_s.ge.1) ) ) &
                         .or. hcloud(1:3) == 'ICE'
   call Budget_source_add( tbudgets(NBUDGET_RR), tzsource )
 
   tzsource%cmnhname   = 'DRYG'
   tzsource%clongname  = 'dry growth of graupel'
-  tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. (lcold_lima .and. lwarm_lima .and. lsnow_lima) ) ) &
+  tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. (nmom_i.ge.1 .and. nmom_c.ge.1 .and. nmom_s.ge.1) ) ) &
                         .or. hcloud(1:3) == 'ICE'
   call Budget_source_add( tbudgets(NBUDGET_RR), tzsource )
 
   tzsource%cmnhname   = 'GMLT'
   tzsource%clongname  = 'graupel melting'
-  tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. (lcold_lima .and. lwarm_lima .and. lsnow_lima) ) ) &
+  tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. (nmom_i.ge.1 .and. nmom_c.ge.1 .and. nmom_s.ge.1) ) ) &
                         .or. hcloud(1:3) == 'ICE'
   call Budget_source_add( tbudgets(NBUDGET_RR), tzsource )
 
@@ -2075,8 +2075,8 @@ if ( tbudgets(NBUDGET_RR)%lenabled ) then
 
   tzsource%cmnhname   = 'WETH'
   tzsource%clongname  = 'wet growth of hail'
-  tzsource%lavailable =      ( hcloud == 'LIMA' .and. .not.lptsplit .and. lhail_lima .and. lcold_lima &
-                                                .and. lwarm_lima    .and. lsnow_lima )                &
+  tzsource%lavailable =      ( hcloud == 'LIMA' .and. .not.lptsplit .and. nmom_h.ge.1 .and. nmom_i.ge.1 &
+                                                .and. nmom_c.ge.1    .and. nmom_s.ge.1 )                &
                         .or. ( hcloud == 'LIMA' .and. lptsplit ) &
                         .or.   hcloud == 'ICE4'
   call Budget_source_add( tbudgets(NBUDGET_RR), tzsource )
@@ -2088,8 +2088,8 @@ if ( tbudgets(NBUDGET_RR)%lenabled ) then
 
   tzsource%cmnhname   = 'HMLT'
   tzsource%clongname  = 'melting of hail'
-  tzsource%lavailable =       ( hcloud == 'LIMA' .and. .not.lptsplit .and. lhail_lima .and. lcold_lima &
-                                                .and. lwarm_lima    .and. lsnow_lima )                &
+  tzsource%lavailable =       ( hcloud == 'LIMA' .and. .not.lptsplit .and. nmom_h.ge.1 .and. nmom_i.ge.1 &
+                                                .and. nmom_c.ge.1    .and. nmom_s.ge.1 )                &
                         .or. ( hcloud == 'LIMA' .and. lptsplit ) &
                          .or.   hcloud == 'ICE4'
   call Budget_source_add( tbudgets(NBUDGET_RR), tzsource )
@@ -2222,7 +2222,7 @@ if ( tbudgets(NBUDGET_RI)%lenabled ) then
 
   tzsource%cmnhname   = 'CORR'
   tzsource%clongname  = 'correction'
-!   tzsource%lavailable =       ( hcloud      == 'LIMA' .and. lptsplit .and. lcold_lima .and. lsnow_lima ) &
+!   tzsource%lavailable =       ( hcloud      == 'LIMA' .and. lptsplit .and. nmom_i.ge.1 .and. nmom_s.ge.1 ) &
 !                          .or. ( hcloud(1:3) == 'ICE' .and. lred .and. celec == 'NONE' )
   tzsource%lavailable = hcloud(1:3) == 'ICE' .and. lred .and. celec == 'NONE'
   call Budget_source_add( tbudgets(NBUDGET_RI), tzsource )
@@ -2234,7 +2234,7 @@ if ( tbudgets(NBUDGET_RI)%lenabled ) then
 
   tzsource%cmnhname   = 'SEDI'
   tzsource%clongname  = 'sedimentation of rain drops'
-  tzsource%lavailable =      ( hcloud      == 'LIMA' .and. lcold_lima .and. lsedi_lima ) &
+  tzsource%lavailable =      ( hcloud      == 'LIMA' .and. nmom_i.ge.1 .and. lsedi_lima ) &
                         .or.   hcloud(1:3) == 'ICE'
   call Budget_source_add( tbudgets(NBUDGET_RI), tzsource )
 
@@ -2245,12 +2245,12 @@ if ( tbudgets(NBUDGET_RI)%lenabled ) then
 
   tzsource%cmnhname   = 'HIND'
   tzsource%clongname  = 'heterogeneous nucleation by deposition'
-  tzsource%lavailable = hcloud == 'LIMA' .and. lcold_lima .and. lnucl_lima
+  tzsource%lavailable = hcloud == 'LIMA' .and. nmom_i.ge.1 .and. lnucl_lima
   call Budget_source_add( tbudgets(NBUDGET_RI), tzsource )
 
   tzsource%cmnhname   = 'HINC'
   tzsource%clongname  = 'heterogeneous nucleation by contact'
-  tzsource%lavailable = hcloud == 'LIMA' .and. lcold_lima .and. lnucl_lima
+  tzsource%lavailable = hcloud == 'LIMA' .and. nmom_i.ge.1 .and. lnucl_lima
   call Budget_source_add( tbudgets(NBUDGET_RI), tzsource )
 
   tzsource%cmnhname   = 'HON'
@@ -2260,27 +2260,27 @@ if ( tbudgets(NBUDGET_RI)%lenabled ) then
 
   tzsource%cmnhname   = 'HONH'
   tzsource%clongname  = 'haze homogeneous nucleation'
-  tzsource%lavailable = hcloud == 'LIMA' .and. lcold_lima .and. lnucl_lima .and. lhhoni_lima .and. nmod_ccn >= 1
+  tzsource%lavailable = hcloud == 'LIMA' .and. nmom_i.ge.1 .and. lnucl_lima .and. lhhoni_lima .and. nmod_ccn >= 1
   call Budget_source_add( tbudgets(NBUDGET_RI), tzsource )
 
   tzsource%cmnhname   = 'HONC'
   tzsource%clongname  = 'droplet homogeneous freezing'
-  tzsource%lavailable = hcloud == 'LIMA' .and. ( lptsplit .or. ( lcold_lima .and. lwarm_lima .and. lnucl_lima ) )
+  tzsource%lavailable = hcloud == 'LIMA' .and. ( lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1 .and. lnucl_lima ) )
   call Budget_source_add( tbudgets(NBUDGET_RI), tzsource )
 
   tzsource%cmnhname   = 'CNVI'
   tzsource%clongname  = 'conversion of snow to cloud ice'
-  tzsource%lavailable = hcloud == 'LIMA' .and. ( lptsplit .or. ( lcold_lima .and. lsnow_lima ) )
+  tzsource%lavailable = hcloud == 'LIMA' .and. ( lptsplit .or. ( nmom_i.ge.1 .and. nmom_s.ge.1 ) )
   call Budget_source_add( tbudgets(NBUDGET_RI), tzsource )
 
   tzsource%cmnhname   = 'CNVS'
   tzsource%clongname  = 'conversion of pristine ice to snow'
-  tzsource%lavailable = hcloud == 'LIMA' .and. ( lptsplit .or. ( lcold_lima .and. lsnow_lima ) )
+  tzsource%lavailable = hcloud == 'LIMA' .and. ( lptsplit .or. ( nmom_i.ge.1 .and. nmom_s.ge.1 ) )
   call Budget_source_add( tbudgets(NBUDGET_RI), tzsource )
 
   tzsource%cmnhname   = 'AGGS'
   tzsource%clongname  = 'aggregation of snow'
-  tzsource%lavailable = ( hcloud == 'LIMA' .and. ( lptsplit .or. ( lcold_lima .and. lsnow_lima ) ) ) .or. hcloud(1:3) == 'ICE'
+  tzsource%lavailable = ( hcloud == 'LIMA' .and. ( lptsplit .or. ( nmom_i.ge.1 .and. nmom_s.ge.1 ) ) ) .or. hcloud(1:3) == 'ICE'
   call Budget_source_add( tbudgets(NBUDGET_RI), tzsource )
 
   tzsource%cmnhname   = 'AUTS'
@@ -2290,56 +2290,56 @@ if ( tbudgets(NBUDGET_RI)%lenabled ) then
 
   tzsource%cmnhname   = 'IMLT'
   tzsource%clongname  = 'melting of ice'
-  tzsource%lavailable = ( hcloud == 'LIMA' .and. ( lptsplit .or. ( lcold_lima .and. lwarm_lima ) ) ) .or. hcloud(1:3) == 'ICE'
+  tzsource%lavailable = ( hcloud == 'LIMA' .and. ( lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1 ) ) ) .or. hcloud(1:3) == 'ICE'
   call Budget_source_add( tbudgets(NBUDGET_RI), tzsource )
 
   tzsource%cmnhname   = 'BERFI'
   tzsource%clongname  = 'Bergeron-Findeisen'
-  tzsource%lavailable = ( hcloud == 'LIMA' .and. ( lptsplit .or. ( lcold_lima .and. lwarm_lima ) ) ) .or. hcloud(1:3) == 'ICE'
+  tzsource%lavailable = ( hcloud == 'LIMA' .and. ( lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1 ) ) ) .or. hcloud(1:3) == 'ICE'
   call Budget_source_add( tbudgets(NBUDGET_RI), tzsource )
 
   tzsource%cmnhname   = 'HMS'
   tzsource%clongname  = 'Hallett-Mossop ice multiplication process due to snow riming'
-  tzsource%lavailable = hcloud == 'LIMA' .and. ( lptsplit .or. ( lcold_lima .and. lwarm_lima .and. lsnow_lima ) )
+  tzsource%lavailable = hcloud == 'LIMA' .and. ( lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1 .and. nmom_s.ge.1 ) )
   call Budget_source_add( tbudgets(NBUDGET_RI), tzsource )
 
   tzsource%cmnhname   = 'CIBU'
   tzsource%clongname  = 'ice multiplication process due to ice collisional breakup'
-  tzsource%lavailable = hcloud == 'LIMA' .and. ( lptsplit .or. ( lcold_lima .and. lwarm_lima .and. lsnow_lima .and. lcibu ) )
+  tzsource%lavailable = hcloud == 'LIMA' .and. ( lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1 .and. nmom_s.ge.1 .and. lcibu ) )
   call Budget_source_add( tbudgets(NBUDGET_RI), tzsource )
 
   tzsource%cmnhname   = 'CFRZ'
   tzsource%clongname  = 'conversion freezing of rain'
-  tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. ( lcold_lima .and. lwarm_lima .and. lsnow_lima ) ) ) &
+  tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1 .and. nmom_s.ge.1 ) ) ) &
                         .or. hcloud(1:3) == 'ICE'
   call Budget_source_add( tbudgets(NBUDGET_RI), tzsource )
 
   tzsource%cmnhname   = 'RDSF'
   tzsource%clongname  = 'ice multiplication process following rain contact freezing'
-  tzsource%lavailable = hcloud == 'LIMA' .and. ( lptsplit .or. ( lcold_lima .and. lwarm_lima .and. lsnow_lima .and. lrdsf ) )
+  tzsource%lavailable = hcloud == 'LIMA' .and. ( lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1 .and. nmom_s.ge.1 .and. lrdsf ) )
   call Budget_source_add( tbudgets(NBUDGET_RI), tzsource )
 
   tzsource%cmnhname   = 'WETG'
   tzsource%clongname  = 'wet growth of graupel'
-  tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. ( lcold_lima .and. lwarm_lima .and. lsnow_lima ) ) ) &
+  tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1 .and. nmom_s.ge.1 ) ) ) &
                         .or. hcloud(1:3) == 'ICE'
   call Budget_source_add( tbudgets(NBUDGET_RI), tzsource )
 
   tzsource%cmnhname   = 'DRYG'
   tzsource%clongname  = 'dry growth of graupel'
-  tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. ( lcold_lima .and. lwarm_lima .and. lsnow_lima ) ) ) &
+  tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1 .and. nmom_s.ge.1 ) ) ) &
                         .or. hcloud(1:3) == 'ICE'
   call Budget_source_add( tbudgets(NBUDGET_RI), tzsource )
 
   tzsource%cmnhname   = 'HMG'
   tzsource%clongname  = 'Hallett-Mossop ice multiplication process due to graupel riming'
-  tzsource%lavailable = hcloud == 'LIMA' .and. ( lptsplit .or. ( lcold_lima .and. lwarm_lima .and. lsnow_lima ) )
+  tzsource%lavailable = hcloud == 'LIMA' .and. ( lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1 .and. nmom_s.ge.1 ) )
   call Budget_source_add( tbudgets(NBUDGET_RI), tzsource )
 
   tzsource%cmnhname   = 'WETH'
   tzsource%clongname  = 'wet growth of hail'
-  tzsource%lavailable =      ( hcloud == 'LIMA' .and. .not.lptsplit .and. lhail_lima .and. lcold_lima &
-                                                .and. lwarm_lima    .and. lsnow_lima )                &
+  tzsource%lavailable =      ( hcloud == 'LIMA' .and. .not.lptsplit .and. nmom_h.ge.1 .and. nmom_i.ge.1 &
+                                                .and. nmom_c.ge.1    .and. nmom_s.ge.1 )                &
                         .or. ( hcloud == 'LIMA' .and. lptsplit ) &
                         .or.   hcloud == 'ICE4'
   call Budget_source_add( tbudgets(NBUDGET_RI), tzsource )
@@ -2466,35 +2466,35 @@ if ( tbudgets(NBUDGET_RS)%lenabled ) then
 
   tzsource%cmnhname   = 'CORR'
   tzsource%clongname  = 'correction'
-!   tzsource%lavailable =       ( hcloud      == 'LIMA' .and. lptsplit .and. lcold_lima .and. lsnow_lima ) &
+!   tzsource%lavailable =       ( hcloud      == 'LIMA' .and. lptsplit .and. nmom_i.ge.1 .and. nmom_s.ge.1 ) &
 !                          .or. ( hcloud(1:3) == 'ICE' .and. lred .and. celec == 'NONE' )
   tzsource%lavailable = hcloud(1:3) == 'ICE' .and. lred .and. celec == 'NONE'
   call Budget_source_add( tbudgets(NBUDGET_RS), tzsource )
 
   tzsource%cmnhname   = 'SEDI'
   tzsource%clongname  = 'sedimentation'
-  tzsource%lavailable =      ( hcloud      == 'LIMA' .and. lcold_lima .and. lsnow_lima ) &
+  tzsource%lavailable =      ( hcloud      == 'LIMA' .and. nmom_i.ge.1 .and. nmom_s.ge.1 ) &
                         .or.   hcloud(1:3) == 'ICE'
   call Budget_source_add( tbudgets(NBUDGET_RS), tzsource )
 
   tzsource%cmnhname   = 'CNVI'
   tzsource%clongname  = 'conversion of snow to cloud ice'
-  tzsource%lavailable = hcloud == 'LIMA' .and. ( lptsplit .or. ( lcold_lima .and. lsnow_lima ) )
+  tzsource%lavailable = hcloud == 'LIMA' .and. ( lptsplit .or. ( nmom_i.ge.1 .and. nmom_s.ge.1 ) )
   call Budget_source_add( tbudgets(NBUDGET_RS), tzsource )
 
   tzsource%cmnhname   = 'DEPS'
   tzsource%clongname  = 'deposition on snow'
-  tzsource%lavailable = ( hcloud == 'LIMA' .and. ( lptsplit .or. ( lcold_lima .and. lsnow_lima ) ) ) .or. hcloud(1:3) == 'ICE'
+  tzsource%lavailable = ( hcloud == 'LIMA' .and. ( lptsplit .or. ( nmom_i.ge.1 .and. nmom_s.ge.1 ) ) ) .or. hcloud(1:3) == 'ICE'
   call Budget_source_add( tbudgets(NBUDGET_RS), tzsource )
 
   tzsource%cmnhname   = 'CNVS'
   tzsource%clongname  = 'conversion of pristine ice to snow'
-  tzsource%lavailable = hcloud == 'LIMA' .and. ( lptsplit .or. ( lcold_lima .and. lsnow_lima ) )
+  tzsource%lavailable = hcloud == 'LIMA' .and. ( lptsplit .or. ( nmom_i.ge.1 .and. nmom_s.ge.1 ) )
   call Budget_source_add( tbudgets(NBUDGET_RS), tzsource )
 
   tzsource%cmnhname   = 'AGGS'
   tzsource%clongname  = 'aggregation of snow'
-  tzsource%lavailable = ( hcloud == 'LIMA' .and. ( lptsplit .or. ( lcold_lima .and. lsnow_lima ) ) ) .or. hcloud(1:3) == 'ICE'
+  tzsource%lavailable = ( hcloud == 'LIMA' .and. ( lptsplit .or. ( nmom_i.ge.1 .and. nmom_s.ge.1 ) ) ) .or. hcloud(1:3) == 'ICE'
   call Budget_source_add( tbudgets(NBUDGET_RS), tzsource )
 
   tzsource%cmnhname   = 'AUTS'
@@ -2504,49 +2504,49 @@ if ( tbudgets(NBUDGET_RS)%lenabled ) then
 
   tzsource%cmnhname   = 'RIM'
   tzsource%clongname  = 'riming of cloud water'
-  tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. ( lcold_lima .and. lwarm_lima .and. lsnow_lima ) ) ) &
+  tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1 .and. nmom_s.ge.1 ) ) ) &
                         .or. hcloud(1:3) == 'ICE'
   call Budget_source_add( tbudgets(NBUDGET_RS), tzsource )
 
   tzsource%cmnhname   = 'HMS'
   tzsource%clongname  = 'Hallett-Mossop ice multiplication process due to snow riming'
-  tzsource%lavailable = hcloud == 'LIMA' .and. ( lptsplit .or. (lcold_lima .and. lwarm_lima .and. lsnow_lima ) )
+  tzsource%lavailable = hcloud == 'LIMA' .and. ( lptsplit .or. (nmom_i.ge.1 .and. nmom_c.ge.1 .and. nmom_s.ge.1 ) )
   call Budget_source_add( tbudgets(NBUDGET_RS), tzsource )
 
   tzsource%cmnhname   = 'CIBU'
   tzsource%clongname  = 'ice multiplication process due to ice collisional breakup'
-  tzsource%lavailable = hcloud == 'LIMA' .and. ( lptsplit .or. ( lcold_lima .and. lwarm_lima .and. lsnow_lima .and. lcibu ) )
+  tzsource%lavailable = hcloud == 'LIMA' .and. ( lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1 .and. nmom_s.ge.1 .and. lcibu ) )
   call Budget_source_add( tbudgets(NBUDGET_RS), tzsource )
 
   tzsource%cmnhname   = 'ACC'
   tzsource%clongname  = 'accretion of rain on snow'
-  tzsource%lavailable =       ( hcloud == 'LIMA' .and. ( lptsplit .or. (       lcold_lima .and. lwarm_lima      &
-                                                                         .and. lsnow_lima .and. lrain_lima) ) ) &
+  tzsource%lavailable =       ( hcloud == 'LIMA' .and. ( lptsplit .or. (       nmom_i.ge.1 .and. nmom_c.ge.1      &
+                                                                         .and. nmom_s.ge.1 .and. nmom_r.ge.1) ) ) &
                          .or.   hcloud(1:3) == 'ICE'
   call Budget_source_add( tbudgets(NBUDGET_RS), tzsource )
 
   tzsource%cmnhname   = 'CMEL'
   tzsource%clongname  = 'conversion melting'
-  tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. ( lcold_lima .and. lwarm_lima .and. lsnow_lima ) ) ) &
+  tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1 .and. nmom_s.ge.1 ) ) ) &
                         .or. hcloud(1:3) == 'ICE'
   call Budget_source_add( tbudgets(NBUDGET_RS), tzsource )
 
   tzsource%cmnhname   = 'WETG'
   tzsource%clongname  = 'wet growth of graupel'
-  tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. ( lcold_lima .and. lwarm_lima .and. lsnow_lima ) ) ) &
+  tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1 .and. nmom_s.ge.1 ) ) ) &
                         .or. hcloud(1:3) == 'ICE'
   call Budget_source_add( tbudgets(NBUDGET_RS), tzsource )
 
   tzsource%cmnhname   = 'DRYG'
   tzsource%clongname  = 'dry growth of graupel'
-  tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. ( lcold_lima .and. lwarm_lima .and. lsnow_lima ) ) ) &
+  tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1 .and. nmom_s.ge.1 ) ) ) &
                         .or. hcloud(1:3) == 'ICE'
   call Budget_source_add( tbudgets(NBUDGET_RS), tzsource )
 
   tzsource%cmnhname   = 'WETH'
   tzsource%clongname  = 'wet growth of hail'
-  tzsource%lavailable =      ( hcloud == 'LIMA' .and. .not.lptsplit .and. lhail_lima .and. lcold_lima &
-                                                .and. lwarm_lima    .and. lsnow_lima )                &
+  tzsource%lavailable =      ( hcloud == 'LIMA' .and. .not.lptsplit .and. nmom_h.ge.1 .and. nmom_i.ge.1 &
+                                                .and. nmom_c.ge.1    .and. nmom_s.ge.1 )                &
                         .or. ( hcloud == 'LIMA' .and. lptsplit ) &
                         .or.   hcloud == 'ICE4'
   call Budget_source_add( tbudgets(NBUDGET_RS), tzsource )
@@ -2662,13 +2662,13 @@ if ( tbudgets(NBUDGET_RG)%lenabled ) then
 
   tzsource%cmnhname   = 'SEDI'
   tzsource%clongname  = 'sedimentation'
-  tzsource%lavailable =      ( hcloud      == 'LIMA' .and. lcold_lima .and. lsnow_lima ) &
+  tzsource%lavailable =      ( hcloud      == 'LIMA' .and. nmom_i.ge.1 .and. nmom_s.ge.1 ) &
                         .or.   hcloud(1:3) == 'ICE'
   call Budget_source_add( tbudgets(NBUDGET_RG), tzsource )
 
   tzsource%cmnhname   = 'HONR'
   tzsource%clongname  = 'rain homogeneous freezing'
-  tzsource%lavailable = hcloud == 'LIMA' .and. ( lptsplit .or. ( lcold_lima .and. lwarm_lima .and. lnucl_lima .and. lrain_lima ) )
+  tzsource%lavailable = hcloud == 'LIMA' .and. ( lptsplit .or. ( nmom_i.ge.1 .and. lnucl_lima .and. nmom_r.ge.1 ) )
   call Budget_source_add( tbudgets(NBUDGET_RG), tzsource )
 
   tzsource%cmnhname   = 'SFR'
@@ -2678,43 +2678,43 @@ if ( tbudgets(NBUDGET_RG)%lenabled ) then
 
   tzsource%cmnhname   = 'DEPG'
   tzsource%clongname  = 'deposition on graupel'
-  tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. ( lcold_lima .and. lwarm_lima .and. lsnow_lima ) ) ) &
+  tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1 .and. nmom_s.ge.1 ) ) ) &
                         .or. hcloud(1:3) == 'ICE'
   call Budget_source_add( tbudgets(NBUDGET_RG), tzsource )
 
   tzsource%cmnhname   = 'RIM'
   tzsource%clongname  = 'riming of cloud water'
-  tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. ( lcold_lima .and. lwarm_lima .and. lsnow_lima ) ) ) &
+  tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1 .and. nmom_s.ge.1 ) ) ) &
                         .or. hcloud(1:3) == 'ICE'
   call Budget_source_add( tbudgets(NBUDGET_RG), tzsource )
 
   tzsource%cmnhname   = 'ACC'
   tzsource%clongname  = 'accretion of rain on graupel'
-  tzsource%lavailable =      ( hcloud == 'LIMA' .and. ( lptsplit .or. (       lcold_lima .and. lwarm_lima      &
-                                                                        .and. lsnow_lima .and. lrain_lima) ) ) &
+  tzsource%lavailable =      ( hcloud == 'LIMA' .and. ( lptsplit .or. (       nmom_i.ge.1 .and. nmom_c.ge.1      &
+                                                                        .and. nmom_s.ge.1 .and. nmom_r.ge.1) ) ) &
                         .or.   hcloud(1:3) == 'ICE'
   call Budget_source_add( tbudgets(NBUDGET_RG), tzsource )
 
   tzsource%cmnhname   = 'CMEL'
   tzsource%clongname  = 'conversion melting of snow'
-  tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. (lcold_lima .and. lwarm_lima .and. lsnow_lima) ) ) &
+  tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. (nmom_i.ge.1 .and. nmom_c.ge.1 .and. nmom_s.ge.1) ) ) &
                         .or. hcloud(1:3) == 'ICE'
   call Budget_source_add( tbudgets(NBUDGET_RG), tzsource )
 
   tzsource%cmnhname   = 'CFRZ'
   tzsource%clongname  = 'conversion freezing of rain'
-  tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. (lcold_lima .and. lwarm_lima .and. lsnow_lima) ) ) &
+  tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. (nmom_i.ge.1 .and. nmom_c.ge.1 .and. nmom_s.ge.1) ) ) &
                         .or. hcloud(1:3) == 'ICE'
   call Budget_source_add( tbudgets(NBUDGET_RG), tzsource )
 
   tzsource%cmnhname   = 'RDSF'
   tzsource%clongname  = 'ice multiplication process following rain contact freezing'
-  tzsource%lavailable = hcloud == 'LIMA' .and. ( lptsplit .or. ( lcold_lima .and. lwarm_lima .and. lsnow_lima .and. lrdsf ) )
+  tzsource%lavailable = hcloud == 'LIMA' .and. ( lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1 .and. nmom_s.ge.1 .and. lrdsf ) )
   call Budget_source_add( tbudgets(NBUDGET_RG), tzsource )  
 
   tzsource%cmnhname   = 'WETG'
   tzsource%clongname  = 'wet growth of graupel'
-  tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. (lcold_lima .and. lwarm_lima .and. lsnow_lima) ) ) &
+  tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. (nmom_i.ge.1 .and. nmom_c.ge.1 .and. nmom_s.ge.1) ) ) &
                         .or. hcloud(1:3) == 'ICE'
   call Budget_source_add( tbudgets(NBUDGET_RG), tzsource )
 
@@ -2725,32 +2725,32 @@ if ( tbudgets(NBUDGET_RG)%lenabled ) then
 
   tzsource%cmnhname   = 'DRYG'
   tzsource%clongname  = 'dry growth of graupel'
-  tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. (lcold_lima .and. lwarm_lima .and. lsnow_lima) ) ) &
+  tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. (nmom_i.ge.1 .and. nmom_c.ge.1 .and. nmom_s.ge.1) ) ) &
                         .or. hcloud(1:3) == 'ICE'
   call Budget_source_add( tbudgets(NBUDGET_RG), tzsource )
 
   tzsource%cmnhname   = 'HMG'
   tzsource%clongname  = 'Hallett-Mossop ice multiplication process due to graupel riming'
-  tzsource%lavailable = hcloud == 'LIMA' .and. ( lptsplit .or. (lcold_lima .and. lwarm_lima .and. lsnow_lima ) )
+  tzsource%lavailable = hcloud == 'LIMA' .and. ( lptsplit .or. (nmom_i.ge.1 .and. nmom_c.ge.1 .and. nmom_s.ge.1 ) )
   call Budget_source_add( tbudgets(NBUDGET_RG), tzsource )
 
   tzsource%cmnhname   = 'GMLT'
   tzsource%clongname  = 'graupel melting'
-  tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. (lcold_lima .and. lwarm_lima .and. lsnow_lima) ) ) &
+  tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. (nmom_i.ge.1 .and. nmom_c.ge.1 .and. nmom_s.ge.1) ) ) &
                         .or. hcloud(1:3) == 'ICE'
   call Budget_source_add( tbudgets(NBUDGET_RG), tzsource )
 
   tzsource%cmnhname   = 'WETH'
   tzsource%clongname  = 'wet growth of hail'
-  tzsource%lavailable =      ( hcloud == 'LIMA' .and. .not.lptsplit .and. lhail_lima .and. lcold_lima &
-                                                .and. lwarm_lima    .and. lsnow_lima )                &
+  tzsource%lavailable =      ( hcloud == 'LIMA' .and. .not.lptsplit .and. nmom_h.ge.1 .and. nmom_i.ge.1 &
+                                                .and. nmom_c.ge.1    .and. nmom_s.ge.1 )                &
                         .or. ( hcloud == 'LIMA' .and. lptsplit ) &
                         .or.   hcloud == 'ICE4'
   call Budget_source_add( tbudgets(NBUDGET_RG), tzsource )
 
   tzsource%cmnhname   = 'COHG'
   tzsource%clongname  = 'conversion of hail to graupel'
-  tzsource%lavailable = hcloud == 'LIMA' .and. (lptsplit .or. (lhail_lima .and. lcold_lima .and. lwarm_lima .and. lsnow_lima) )
+  tzsource%lavailable = hcloud == 'LIMA' .and. (lptsplit .or. (nmom_h.ge.1 .and. nmom_i.ge.1 .and. nmom_c.ge.1 .and. nmom_s.ge.1) )
   call Budget_source_add( tbudgets(NBUDGET_RG), tzsource )
 
   tzsource%cmnhname   = 'HGCV'
@@ -2866,13 +2866,13 @@ if ( tbudgets(NBUDGET_RH)%lenabled ) then
 
   tzsource%cmnhname   = 'SEDI'
   tzsource%clongname  = 'sedimentation'
-  tzsource%lavailable =      ( hcloud == 'LIMA' .and. lcold_lima .and. lhail_lima ) &
+  tzsource%lavailable =      ( hcloud == 'LIMA' .and. nmom_i.ge.1 .and. nmom_h.ge.1 ) &
                         .or.   hcloud == 'ICE4'
   call Budget_source_add( tbudgets(NBUDGET_RH), tzsource )
 
   tzsource%cmnhname   = 'DEPH'
   tzsource%clongname  = 'deposition on hail'
-  tzsource%lavailable =      ( hcloud == 'LIMA' .and. lhail_lima ) 
+  tzsource%lavailable =      ( hcloud == 'LIMA' .and. nmom_h.ge.1 ) 
   call Budget_source_add( tbudgets(NBUDGET_RH), tzsource )
 
 
@@ -2883,23 +2883,23 @@ if ( tbudgets(NBUDGET_RH)%lenabled ) then
 
   tzsource%cmnhname   = 'WETG'
   tzsource%clongname  = 'wet growth of graupel'
-  tzsource%lavailable =      ( hcloud == 'LIMA' .and. lhail_lima                                                            &
-                                                .and. ( lptsplit .or. ( lcold_lima .and. lwarm_lima .and. lsnow_lima ) ) ) &
+  tzsource%lavailable =      ( hcloud == 'LIMA' .and. nmom_h.ge.1                                                            &
+                                                .and. ( lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1 .and. nmom_s.ge.1 ) ) ) &
                         .or. ( hcloud == 'ICE4' .and. ( .not. lred .or. celec /= 'NONE' ) )
   call Budget_source_add( tbudgets(NBUDGET_RH), tzsource )
 
   tzsource%cmnhname   = 'WETH'
   tzsource%clongname  = 'wet growth of hail'
-  tzsource%lavailable =      ( hcloud == 'LIMA' .and. .not.lptsplit .and. lhail_lima .and. lcold_lima    &
-                                                                    .and. lwarm_lima .and. lsnow_lima ) &
+  tzsource%lavailable =      ( hcloud == 'LIMA' .and. .not.lptsplit .and. nmom_h.ge.1 .and. nmom_i.ge.1    &
+                                                                    .and. nmom_c.ge.1 .and. nmom_s.ge.1 ) &
                         .or. ( hcloud == 'LIMA' .and. lptsplit ) &
                         .or.   hcloud == 'ICE4'
   call Budget_source_add( tbudgets(NBUDGET_RH), tzsource )
 
   tzsource%cmnhname   = 'COHG'
   tzsource%clongname  = 'conversion from hail to graupel'
-  tzsource%lavailable = hcloud == 'LIMA' .and. ( lptsplit .or. (       lhail_lima .and. lcold_lima   &
-                                                                 .and. lwarm_lima .and. lsnow_lima ) )
+  tzsource%lavailable = hcloud == 'LIMA' .and. ( lptsplit .or. (nmom_h.ge.1 .and. nmom_i.ge.1 &
+                                                             .and. nmom_c.ge.1 .and. nmom_s.ge.1) )
   call Budget_source_add( tbudgets(NBUDGET_RH), tzsource )
 
   tzsource%cmnhname   = 'HGCV'
@@ -2914,8 +2914,8 @@ if ( tbudgets(NBUDGET_RH)%lenabled ) then
 
   tzsource%cmnhname   = 'HMLT'
   tzsource%clongname  = 'melting of hail'
-  tzsource%lavailable =      ( hcloud == 'LIMA' .and. .not. lptsplit .and. lhail_lima .and. lcold_lima   &
-                                                                     .and. lwarm_lima .and. lsnow_lima ) &
+  tzsource%lavailable =      ( hcloud == 'LIMA' .and. .not. lptsplit .and. nmom_h.ge.1 .and. nmom_i.ge.1   &
+                                                                     .and. nmom_c.ge.1 .and. nmom_s.ge.1 ) &
                         .or. ( hcloud == 'LIMA' .and. lptsplit ) &
                         .or.   hcloud == 'ICE4'
   call Budget_source_add( tbudgets(NBUDGET_RH), tzsource )
@@ -3199,77 +3199,77 @@ SV_BUDGETS: do jsv = 1, ksv
 
 !         tzsource%cmnhname   = 'CORR'
 !         tzsource%clongname  = 'correction'
-!         tzsource%lavailable = lptsplit .and. lwarm_lima  .and. lrain_lima
+!         tzsource%lavailable = lptsplit .and. nmom_c.ge.1  .and. nmom_r.ge.1
 !         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'SEDI'
         tzsource%clongname  = 'sedimentation'
-        tzsource%lavailable = lwarm_lima  .and. lsedc_lima
+        tzsource%lavailable = nmom_c.ge.1  .and. lsedc_lima
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'DEPO'
         tzsource%clongname  = 'surface droplet deposition'
-        tzsource%lavailable = lwarm_lima  .and. ldepoc_lima
+        tzsource%lavailable = nmom_c.ge.1  .and. ldepoc_lima
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'R2C1'
         tzsource%clongname  = 'rain to cloud change after sedimentation'
-        tzsource%lavailable = lptsplit .and. lwarm_lima  .and. lrain_lima
+        tzsource%lavailable = lptsplit .and. nmom_c.ge.1  .and. nmom_r.ge.1
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'HENU'
         tzsource%clongname  = 'CCN activation'
-        tzsource%lavailable = lwarm_lima  .and. lacti_lima .and. nmod_ccn >= 1 .and. ( .not.lptsplit .or. .not.lsubg_cond )
+        tzsource%lavailable = nmom_c.ge.1  .and. lacti_lima .and. nmod_ccn >= 1 .and. ( .not.lptsplit .or. .not.lsubg_cond )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'HINC'
         tzsource%clongname  = 'heterogeneous nucleation by contact'
-        tzsource%lavailable = lcold_lima .and. lnucl_lima
+        tzsource%lavailable = nmom_i.ge.1 .and. lnucl_lima
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'SELF'
         tzsource%clongname  = 'self-collection of cloud droplets'
-        tzsource%lavailable = lptsplit .or. (lwarm_lima .and. lrain_lima)
+        tzsource%lavailable = lptsplit .or. (nmom_c.ge.1 .and. nmom_r.ge.1)
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'AUTO'
         tzsource%clongname  = 'autoconversion into rain'
-        tzsource%lavailable = lptsplit .or. ( lwarm_lima  .and. lrain_lima )
+        tzsource%lavailable = lptsplit .or. ( nmom_c.ge.1  .and. nmom_r.ge.1 )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'ACCR'
         tzsource%clongname  = 'accretion of cloud droplets'
-        tzsource%lavailable = lptsplit .or. ( lwarm_lima  .and. lrain_lima )
+        tzsource%lavailable = lptsplit .or. ( nmom_c.ge.1  .and. nmom_r.ge.1 )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'REVA'
         tzsource%clongname  = 'rain evaporation'
-        tzsource%lavailable = lptsplit .or. ( lwarm_lima  .and. lrain_lima )
+        tzsource%lavailable = lptsplit .or. ( nmom_c.ge.1  .and. nmom_r.ge.1 )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'HONC'
         tzsource%clongname  = 'droplet homogeneous freezing'
-        tzsource%lavailable = lptsplit .or. ( lcold_lima .and. lwarm_lima  .and. lnucl_lima )
+        tzsource%lavailable = lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1  .and. lnucl_lima )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'IMLT'
         tzsource%clongname  = 'melting of ice'
-        tzsource%lavailable = lptsplit .or. ( lcold_lima .and. lwarm_lima  )
+        tzsource%lavailable = lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1  )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'RIM'
         tzsource%clongname  = 'riming of cloud water'
-        tzsource%lavailable = lptsplit .or. ( lcold_lima .and. lwarm_lima  .and. lsnow_lima )
+        tzsource%lavailable = lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1  .and. nmom_s.ge.1 )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'WETG'
         tzsource%clongname  = 'wet growth of graupel'
-        tzsource%lavailable = lptsplit .or. ( lcold_lima .and. lwarm_lima  .and. lsnow_lima )
+        tzsource%lavailable = lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1  .and. nmom_s.ge.1 )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'DRYG'
         tzsource%clongname  = 'dry growth of graupel'
-        tzsource%lavailable = lptsplit .or. ( lcold_lima .and. lwarm_lima  .and. lsnow_lima )
+        tzsource%lavailable = lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1  .and. nmom_s.ge.1 )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'CVRC'
@@ -3279,7 +3279,7 @@ SV_BUDGETS: do jsv = 1, ksv
 
         tzsource%cmnhname   = 'WETH'
         tzsource%clongname  = 'wet growth of hail'
-        tzsource%lavailable = lptsplit .or. lhail_lima
+        tzsource%lavailable = lptsplit .or. nmom_h.ge.1
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'CORR2'
@@ -3289,7 +3289,7 @@ SV_BUDGETS: do jsv = 1, ksv
 
         tzsource%cmnhname   = 'CEDS'
         tzsource%clongname  = 'adjustment to saturation'
-        tzsource%lavailable = lwarm_lima
+        tzsource%lavailable = nmom_c.ge.1
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
 
@@ -3297,67 +3297,67 @@ SV_BUDGETS: do jsv = 1, ksv
         ! Rain drops concentration
 !         tzsource%cmnhname   = 'CORR'
 !         tzsource%clongname  = 'correction'
-!         tzsource%lavailable = lptsplit .and. lwarm_lima  .and. lrain_lima
+!         tzsource%lavailable = lptsplit .and. nmom_c.ge.1  .and. nmom_r.ge.1
 !         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'SEDI'
         tzsource%clongname  = 'sedimentation'
-        tzsource%lavailable = lwarm_lima  .and. lrain_lima
+        tzsource%lavailable = nmom_c.ge.1  .and. nmom_r.ge.1
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'R2C1'
         tzsource%clongname  = 'rain to cloud change after sedimentation'
-        tzsource%lavailable = lptsplit .and. lwarm_lima  .and. lrain_lima
+        tzsource%lavailable = lptsplit .and. nmom_c.ge.1  .and. nmom_r.ge.1
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'AUTO'
         tzsource%clongname  = 'autoconversion into rain'
-        tzsource%lavailable = lptsplit .or. (lwarm_lima  .and. lrain_lima)
+        tzsource%lavailable = lptsplit .or. (nmom_c.ge.1  .and. nmom_r.ge.1)
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'SCBU'
         tzsource%clongname  = 'self collection - coalescence/break-up'
-        tzsource%lavailable = lptsplit .or. (lwarm_lima  .and. lrain_lima)
+        tzsource%lavailable = lptsplit .or. (nmom_c.ge.1  .and. nmom_r.ge.1)
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'REVA'
         tzsource%clongname  = 'rain evaporation'
-        tzsource%lavailable = lptsplit .or. (lwarm_lima  .and. lrain_lima)
+        tzsource%lavailable = lptsplit .or. (nmom_c.ge.1  .and. nmom_r.ge.1)
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'BRKU'
         tzsource%clongname  = 'spontaneous break-up'
-        tzsource%lavailable = lptsplit .or. (lwarm_lima  .and. lrain_lima)
+        tzsource%lavailable = lptsplit .or. (nmom_c.ge.1  .and. nmom_r.ge.1)
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'HONR'
         tzsource%clongname  = 'rain homogeneous freezing'
-        tzsource%lavailable = lptsplit .or. ( lcold_lima .and. lwarm_lima  .and. lrain_lima .and. lnucl_lima )
+        tzsource%lavailable = lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1  .and. nmom_r.ge.1 .and. lnucl_lima )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'ACC'
         tzsource%clongname  = 'accretion of rain  on aggregates'
-        tzsource%lavailable = lptsplit .or. ( lcold_lima .and. lwarm_lima  .and. lsnow_lima .and. lrain_lima )
+        tzsource%lavailable = lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1  .and. nmom_s.ge.1 .and. nmom_r.ge.1 )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'CFRZ'
         tzsource%clongname  = 'conversion freezing of rain'
-        tzsource%lavailable = lptsplit .or. ( lcold_lima .and. lwarm_lima  .and. lsnow_lima )
+        tzsource%lavailable = lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1  .and. nmom_s.ge.1 )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'WETG'
         tzsource%clongname  = 'wet growth of graupel'
-        tzsource%lavailable = lptsplit .or. ( lcold_lima .and. lwarm_lima  .and. lsnow_lima )
+        tzsource%lavailable = lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1  .and. nmom_s.ge.1 )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'DRYG'
         tzsource%clongname  = 'dry growth of graupel'
-        tzsource%lavailable = lptsplit .or. ( lcold_lima .and. lwarm_lima  .and. lsnow_lima )
+        tzsource%lavailable = lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1  .and. nmom_s.ge.1 )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'GMLT'
         tzsource%clongname  = 'graupel melting'
-        tzsource%lavailable = lptsplit .or. ( lcold_lima .and. lwarm_lima  .and. lsnow_lima )
+        tzsource%lavailable = lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1  .and. nmom_s.ge.1 )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'CVRC'
@@ -3367,12 +3367,12 @@ SV_BUDGETS: do jsv = 1, ksv
 
         tzsource%cmnhname   = 'WETH'
         tzsource%clongname  = 'wet growth of hail'
-        tzsource%lavailable = lptsplit .or. lhail_lima
+        tzsource%lavailable = lptsplit .or. nmom_h.ge.1
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'HMLT'
         tzsource%clongname  = 'melting of hail'
-        tzsource%lavailable = lptsplit .or. lhail_lima
+        tzsource%lavailable = lptsplit .or. nmom_h.ge.1
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'CORR2'
@@ -3385,17 +3385,17 @@ SV_BUDGETS: do jsv = 1, ksv
         ! Free CCN concentration
         tzsource%cmnhname   = 'HENU'
         tzsource%clongname  = 'CCN activation'
-        tzsource%lavailable = lwarm_lima  .and. lacti_lima .and. nmod_ccn >= 1 .and. ( .not.lptsplit .or. .not.lsubg_cond )
+        tzsource%lavailable = nmom_c.ge.1  .and. lacti_lima .and. nmod_ccn >= 1 .and. ( .not.lptsplit .or. .not.lsubg_cond )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'HONH'
         tzsource%clongname  = 'haze homogeneous nucleation'
-        tzsource%lavailable = lcold_lima .and. lnucl_lima .and. lhhoni_lima .and. nmod_ccn >= 1
+        tzsource%lavailable = nmom_i.ge.1 .and. lnucl_lima .and. lhhoni_lima .and. nmod_ccn >= 1
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'CEDS'
         tzsource%clongname  = 'adjustment to saturation'
-        tzsource%lavailable = lwarm_lima
+        tzsource%lavailable = nmom_c.ge.1
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'SCAV'
@@ -3408,17 +3408,17 @@ SV_BUDGETS: do jsv = 1, ksv
         ! Activated CCN concentration
         tzsource%cmnhname   = 'HENU'
         tzsource%clongname  = 'CCN activation'
-        tzsource%lavailable = lwarm_lima  .and. lacti_lima .and. nmod_ccn >= 1 .and. ( .not.lptsplit .or. .not.lsubg_cond )
+        tzsource%lavailable = nmom_c.ge.1  .and. lacti_lima .and. nmod_ccn >= 1 .and. ( .not.lptsplit .or. .not.lsubg_cond )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'HINC'
         tzsource%clongname  = 'heterogeneous nucleation by contact'
-        tzsource%lavailable = lcold_lima .and. lnucl_lima .and. .not. lmeyers_lima
+        tzsource%lavailable = nmom_i.ge.1 .and. lnucl_lima .and. .not. lmeyers_lima
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'CEDS'
         tzsource%clongname  = 'adjustment to saturation'
-        tzsource%lavailable = lwarm_lima
+        tzsource%lavailable = nmom_c.ge.1
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
 
@@ -3439,97 +3439,97 @@ SV_BUDGETS: do jsv = 1, ksv
         ! Pristine ice crystals concentration
 !         tzsource%cmnhname   = 'CORR'
 !         tzsource%clongname  = 'correction'
-!         tzsource%lavailable = lptsplit .and. lcold_lima .and. lsnow_lima
+!         tzsource%lavailable = lptsplit .and. nmom_i.ge.1 .and. nmom_s.ge.1
 !         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'SEDI'
         tzsource%clongname  = 'sedimentation'
-        tzsource%lavailable = lcold_lima .and. lsedi_lima
+        tzsource%lavailable = nmom_i.ge.1 .and. lsedi_lima
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'HIND'
         tzsource%clongname  = 'heterogeneous nucleation by deposition'
-        tzsource%lavailable = lcold_lima .and. lnucl_lima
+        tzsource%lavailable = nmom_i.ge.1 .and. lnucl_lima
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'HINC'
         tzsource%clongname  = 'heterogeneous nucleation by contact'
-        tzsource%lavailable = lcold_lima .and. lnucl_lima
+        tzsource%lavailable = nmom_i.ge.1 .and. lnucl_lima
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'HONH'
         tzsource%clongname  = 'haze homogeneous nucleation'
-        tzsource%lavailable = lcold_lima .and. lnucl_lima .and. lhhoni_lima .and. nmod_ccn >= 1
+        tzsource%lavailable = nmom_i.ge.1 .and. lnucl_lima .and. lhhoni_lima .and. nmod_ccn >= 1
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'HONC'
         tzsource%clongname  = 'droplet homogeneous freezing'
-        tzsource%lavailable = lptsplit .or. ( lcold_lima .and. lwarm_lima  .and. lnucl_lima )
+        tzsource%lavailable = lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1  .and. lnucl_lima )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'CNVI'
         tzsource%clongname  = 'conversion of snow to cloud ice'
-        tzsource%lavailable = lptsplit .or. ( lcold_lima .and. lsnow_lima )
+        tzsource%lavailable = lptsplit .or. ( nmom_i.ge.1 .and. nmom_s.ge.1 )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'CNVS'
         tzsource%clongname  = 'conversion of pristine ice to snow'
-        tzsource%lavailable = lptsplit .or. ( lcold_lima .and. lsnow_lima )
+        tzsource%lavailable = lptsplit .or. ( nmom_i.ge.1 .and. nmom_s.ge.1 )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'AGGS'
         tzsource%clongname  = 'aggregation of snow'
-        tzsource%lavailable = lptsplit .or. ( lcold_lima .and. lsnow_lima )
+        tzsource%lavailable = lptsplit .or. ( nmom_i.ge.1 .and. nmom_s.ge.1 )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'IMLT'
         tzsource%clongname  = 'melting of ice'
-        tzsource%lavailable = lptsplit .or. ( lcold_lima .and. lwarm_lima  )
+        tzsource%lavailable = lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1  )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'HMS'
         tzsource%clongname  = 'Hallett-Mossop ice multiplication process due to snow riming'
-        tzsource%lavailable = lptsplit .or. ( lcold_lima .and. lwarm_lima  .and. lsnow_lima )
+        tzsource%lavailable = lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1  .and. nmom_s.ge.1 )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'CIBU'
         tzsource%clongname  = 'ice multiplication process due to ice collisional breakup'
-        tzsource%lavailable = lptsplit .or. ( lcold_lima .and. lwarm_lima .and. lsnow_lima .and. lcibu )
+        tzsource%lavailable = lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1 .and. nmom_s.ge.1 .and. lcibu )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'CFRZ'
         tzsource%clongname  = 'conversion freezing of rain'
-        tzsource%lavailable = lptsplit .or. ( lcold_lima .and. lwarm_lima  .and. lsnow_lima )
+        tzsource%lavailable = lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1  .and. nmom_s.ge.1 )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'RDSF'
         tzsource%clongname  = 'ice multiplication process following rain contact freezing'
-        tzsource%lavailable = lptsplit .or. ( lcold_lima .and. lwarm_lima .and. lsnow_lima .and. lrdsf )
+        tzsource%lavailable = lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1 .and. nmom_s.ge.1 .and. lrdsf )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'WETG'
         tzsource%clongname  = 'wet growth of graupel'
-        tzsource%lavailable = lptsplit .or. ( lcold_lima .and. lwarm_lima  .and. lsnow_lima )
+        tzsource%lavailable = lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1  .and. nmom_s.ge.1 )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'DRYG'
         tzsource%clongname  = 'dry growth of graupel'
-        tzsource%lavailable = lptsplit .or. ( lcold_lima .and. lwarm_lima  .and. lsnow_lima )
+        tzsource%lavailable = lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1  .and. nmom_s.ge.1 )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'HMG'
         tzsource%clongname  = 'Hallett-Mossop ice multiplication process due to graupel riming'
-        tzsource%lavailable = lptsplit .or. ( lcold_lima .and. lwarm_lima  .and. lsnow_lima )
+        tzsource%lavailable = lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1  .and. nmom_s.ge.1 )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'WETH'
         tzsource%clongname  = 'wet growth of hail'
-        tzsource%lavailable = lptsplit .or. lhail_lima
+        tzsource%lavailable = lptsplit .or. nmom_h.ge.1
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'CEDS'
         tzsource%clongname  = 'adjustment to saturation'
-        tzsource%lavailable = lcold_lima .and. .not.lptsplit .and. .not.lspro_lima
+        tzsource%lavailable = nmom_i.ge.1 .and. .not.lptsplit .and. .not.lspro_lima
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'CORR2'
@@ -3541,148 +3541,148 @@ SV_BUDGETS: do jsv = 1, ksv
 
         tzsource%cmnhname   = 'SEDI'
         tzsource%clongname  = 'sedimentation'
-        tzsource%lavailable = lcold_lima .or. ( lcold_lima .and. lsnow_lima )
+        tzsource%lavailable = lptsplit .or. ( nmom_s.ge.2 )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'CNVI'
         tzsource%clongname  = 'conversion of snow to cloud ice'
-        tzsource%lavailable = lptsplit .or. ( lcold_lima .and. lsnow_lima )
+        tzsource%lavailable = lptsplit .or. ( nmom_i.ge.1 .and. nmom_s.ge.1 )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'CNVS'
         tzsource%clongname  = 'conversion of pristine ice to snow'
-        tzsource%lavailable = lptsplit .or. ( lcold_lima .and. lsnow_lima )
+        tzsource%lavailable = lptsplit .or. ( nmom_i.ge.1 .and. nmom_s.ge.1 )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'BRKU'
         tzsource%clongname  = 'break up of snow'
-        tzsource%lavailable = lptsplit .or. ( lcold_lima .and. lsnow_lima )
+        tzsource%lavailable = lptsplit .or. ( nmom_i.ge.1 .and. nmom_s.ge.1 )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'RIM'
         tzsource%clongname  = 'heavy riming of cloud droplet on snow'
-        tzsource%lavailable = lptsplit .or. ( lcold_lima .and. lwarm_lima .and. lsnow_lima )
+        tzsource%lavailable = lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1 .and. nmom_s.ge.1 )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'ACC'
         tzsource%clongname  = 'accretion of rain on snow'
-        tzsource%lavailable = lptsplit .or. ( lcold_lima .and. lwarm_lima  .and. lsnow_lima )
+        tzsource%lavailable = lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1  .and. nmom_s.ge.1 )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'CMEL'
         tzsource%clongname  = 'conversion melting of snow'
-        tzsource%lavailable = lptsplit .or. ( lcold_lima .and. lwarm_lima  .and. lsnow_lima )
+        tzsource%lavailable = lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1  .and. nmom_s.ge.1 )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'WETG'
         tzsource%clongname  = 'wet growth of graupel'
-        tzsource%lavailable = lptsplit .or. ( lcold_lima .and. lwarm_lima  .and. lsnow_lima )
+        tzsource%lavailable = lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1  .and. nmom_s.ge.1 )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'DRYG'
         tzsource%clongname  = 'dry growth of graupel'
-        tzsource%lavailable = lptsplit .or. ( lcold_lima .and. lwarm_lima  .and. lsnow_lima )
+        tzsource%lavailable = lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1  .and. nmom_s.ge.1 )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'WETH'
         tzsource%clongname  = 'wet growth of hail'
-        tzsource%lavailable = lptsplit .or. lhail_lima
+        tzsource%lavailable = lptsplit .or. nmom_h.ge.1
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'SSC'
         tzsource%clongname  = 'snow self collection'
-        tzsource%lavailable = lptsplit  .or. ( lcold_lima .and. lsnow_lima )
+        tzsource%lavailable = lptsplit  .or. ( nmom_i.ge.1 .and. nmom_s.ge.1 )
         call Budget_source_add( tbudgets(ibudget), tzsource )
         
         tzsource%cmnhname   = 'CEDS'
         tzsource%clongname  = 'adjustment to saturation'
-        tzsource%lavailable = lcold_lima .and. .not.lptsplit .and. .not.lspro_lima
+        tzsource%lavailable = nmom_i.ge.1 .and. .not.lptsplit .and. .not.lspro_lima
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
       else if ( jsv == nsv_lima_ng ) then SV_LIMA
 
         tzsource%cmnhname   = 'SEDI'
         tzsource%clongname  = 'sedimentation'
-        tzsource%lavailable = lcold_lima .or. ( lcold_lima .and. lsnow_lima )
+        tzsource%lavailable = nmom_i.ge.1 .or. ( nmom_s.ge.1 )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'RIM'
         tzsource%clongname  = 'heavy riming of cloud droplet on snow'
-        tzsource%lavailable = lptsplit .or. ( lcold_lima .and. lwarm_lima .and. lsnow_lima )
+        tzsource%lavailable = lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1 .and. nmom_s.ge.1 )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'ACC'
         tzsource%clongname  = 'accretion of rain on snow'
-        tzsource%lavailable = lptsplit .or. ( lcold_lima .and. lwarm_lima  .and. lsnow_lima )
+        tzsource%lavailable = lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1  .and. nmom_s.ge.1 )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'CMEL'
         tzsource%clongname  = 'conversion melting of snow'
-        tzsource%lavailable = lptsplit .or. ( lcold_lima .and. lwarm_lima  .and. lsnow_lima )
+        tzsource%lavailable = lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1  .and. nmom_s.ge.1 )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'CFRZ'
         tzsource%clongname  = 'conversion freezing of raindrop'
-        tzsource%lavailable = lptsplit .or. ( lcold_lima .and. lwarm_lima  .and. lsnow_lima )
+        tzsource%lavailable = lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1  .and. nmom_s.ge.1 )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'WETG'
         tzsource%clongname  = 'wet growth of graupel'
-        tzsource%lavailable = lptsplit .or. ( lcold_lima .and. lwarm_lima  .and. lsnow_lima )
+        tzsource%lavailable = lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1  .and. nmom_s.ge.1 )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'GMLT'
         tzsource%clongname  = 'graupel melting'
-        tzsource%lavailable = lptsplit .or. ( lcold_lima .and. lwarm_lima  .and. lsnow_lima )
+        tzsource%lavailable = lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1  .and. nmom_s.ge.1 )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'WETH'
         tzsource%clongname  = 'wet growth of hail'
-        tzsource%lavailable = lptsplit .or. lhail_lima
+        tzsource%lavailable = lptsplit .or. nmom_h.ge.1
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'COHG'
         tzsource%clongname  = 'conversion hail graupel'
-        tzsource%lavailable = lptsplit .or. lhail_lima
+        tzsource%lavailable = lptsplit .or. nmom_h.ge.1
         call Budget_source_add( tbudgets(ibudget), tzsource )
         
         tzsource%cmnhname   = 'CEDS'
         tzsource%clongname  = 'adjustment to saturation'
-        tzsource%lavailable = lcold_lima .and. .not.lptsplit .and. .not.lspro_lima
+        tzsource%lavailable = nmom_i.ge.1 .and. .not.lptsplit .and. .not.lspro_lima
         call Budget_source_add( tbudgets(ibudget), tzsource )   
 
-      else if ( jsv == nsv_lima_nh .and. lhail_lima) then SV_LIMA
+      else if ( jsv == nsv_lima_nh .and. nmom_h.ge.1) then SV_LIMA
 
         tzsource%cmnhname   = 'SEDI'
         tzsource%clongname  = 'sedimentation'
-        tzsource%lavailable = lcold_lima .or. ( lcold_lima .and. lsnow_lima .and. lhail_lima )
+        tzsource%lavailable = nmom_i.ge.1 .or. ( nmom_i.ge.1 .and. nmom_s.ge.1 .and. nmom_h.ge.1 )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'WETG'
         tzsource%clongname  = 'wet growth of graupel'
-        tzsource%lavailable = lptsplit .or. lhail_lima
+        tzsource%lavailable = lptsplit .or. nmom_h.ge.1
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'COHG'
         tzsource%clongname  = 'conversion hail graupel'
-        tzsource%lavailable = lptsplit .or. lhail_lima
+        tzsource%lavailable = lptsplit .or. nmom_h.ge.1
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'HMLT'
         tzsource%clongname  = 'hail melting'
-        tzsource%lavailable = lptsplit .or. lhail_lima
+        tzsource%lavailable = lptsplit .or. nmom_h.ge.1
         call Budget_source_add( tbudgets(ibudget), tzsource )
         
       else if ( jsv >= nsv_lima_ifn_free .and. jsv <= nsv_lima_ifn_free + nmod_ifn - 1 ) then SV_LIMA
         ! Free IFN concentration
         tzsource%cmnhname   = 'HIND'
         tzsource%clongname  = 'heterogeneous nucleation by deposition'
-        tzsource%lavailable = lcold_lima .and. lnucl_lima .and. .not. lmeyers_lima
+        tzsource%lavailable = nmom_i.ge.1 .and. lnucl_lima .and. .not. lmeyers_lima
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'CEDS'
         tzsource%clongname  = 'adjustment to saturation'
-        tzsource%lavailable = lcold_lima .and. .not.lptsplit .and. .not.lspro_lima
+        tzsource%lavailable = nmom_i.ge.1 .and. .not.lptsplit .and. .not.lspro_lima
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'SCAV'
@@ -3695,23 +3695,23 @@ SV_BUDGETS: do jsv = 1, ksv
         ! Nucleated IFN concentration
         tzsource%cmnhname   = 'HIND'
         tzsource%clongname  = 'heterogeneous nucleation by deposition'
-        tzsource%lavailable = lcold_lima .and. lnucl_lima                                                     &
+        tzsource%lavailable = nmom_i.ge.1 .and. lnucl_lima                                                     &
                               .and. ( ( lmeyers_lima .and. jsv == nsv_lima_ifn_nucl ) .or. .not. lmeyers_lima )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'HINC'
         tzsource%clongname  = 'heterogeneous nucleation by contact'
-        tzsource%lavailable = lcold_lima .and. lnucl_lima .and. lmeyers_lima .and. jsv == nsv_lima_ifn_nucl
+        tzsource%lavailable = nmom_i.ge.1 .and. lnucl_lima .and. lmeyers_lima .and. jsv == nsv_lima_ifn_nucl
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'IMLT'
         tzsource%clongname  = 'melting of ice'
-        tzsource%lavailable = lptsplit .or. ( lcold_lima .and. lwarm_lima )
+        tzsource%lavailable = lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1 )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'CEDS'
         tzsource%clongname  = 'adjustment to saturation'
-        tzsource%lavailable = lcold_lima .and. .not.lptsplit .and. .not.lspro_lima
+        tzsource%lavailable = nmom_i.ge.1 .and. .not.lptsplit .and. .not.lspro_lima
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
 
@@ -3719,12 +3719,12 @@ SV_BUDGETS: do jsv = 1, ksv
         ! Nucleated IMM concentration
         tzsource%cmnhname   = 'HINC'
         tzsource%clongname  = 'heterogeneous nucleation by contact'
-        tzsource%lavailable = lcold_lima .and. lnucl_lima .and. .not. lmeyers_lima
+        tzsource%lavailable = nmom_i.ge.1 .and. lnucl_lima .and. .not. lmeyers_lima
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'CEDS'
         tzsource%clongname  = 'adjustment to saturation'
-        tzsource%lavailable = lcold_lima .and. .not.lptsplit .and. .not.lspro_lima
+        tzsource%lavailable = nmom_i.ge.1 .and. .not.lptsplit .and. .not.lspro_lima
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
 
@@ -3732,8 +3732,8 @@ SV_BUDGETS: do jsv = 1, ksv
         ! Homogeneous freezing of CCN
         tzsource%cmnhname   = 'HONH'
         tzsource%clongname  = 'haze homogeneous nucleation'
-        tzsource%lavailable = lcold_lima .and. lnucl_lima .and.                                             &
-                              ( ( lhhoni_lima .and. nmod_ccn >= 1 ) .or. ( .not.lptsplit .and. lwarm_lima ) )
+        tzsource%lavailable = nmom_i.ge.1 .and. lnucl_lima .and.                                             &
+                              ( ( lhhoni_lima .and. nmod_ccn >= 1 ) .or. ( .not.lptsplit .and. nmom_c.ge.1 ) )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
 

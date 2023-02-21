@@ -113,8 +113,8 @@ USE MODD_NSV
 USE MODD_PARAM_C2R2,      ONLY: LSUPSAT
 USE MODD_PARAMETERS,      ONLY: NCOMMENTLGTMAX, NLONGNAMELGTMAX, NUNITLGTMAX
 USE MODD_PARAM_LIMA,      ONLY: NINDICE_CCN_IMM, NIMM, NMOD_CCN, LSCAV, LAERO_MASS, &
-                                NMOD_IFN, NMOD_IMM, LHHONI, LSNOW, LHAIL,      &
-                                LWARM, LCOLD, LRAIN, LSPRO,                    &
+                                NMOD_IFN, NMOD_IMM, LHHONI, &
+                                LSPRO,  &
                                 NMOM_C, NMOM_R, NMOM_I, NMOM_S, NMOM_G, NMOM_H
 USE MODD_PARAM_LIMA_COLD, ONLY: CLIMA_COLD_NAMES
 USE MODD_PARAM_LIMA_WARM, ONLY: CAERO_MASS, CLIMA_WARM_NAMES
@@ -211,15 +211,15 @@ END IF
 IF (CCLOUD == 'LIMA' ) THEN
    ISV = ISV+1
    NSV_LIMA_BEG_A(KMI) = ISV
-   IF ( LWARM .AND. NMOM_C >= 2 ) THEN
+   IF (NMOM_C.GE.2) THEN
 ! Nc
       NSV_LIMA_NC_A(KMI) = ISV
       ISV = ISV+1
    END IF
 ! Nr
-   IF ( LWARM .AND. LRAIN .AND. NMOM_R >= 2 ) THEN
-     NSV_LIMA_NR_A(KMI) = ISV
-     ISV = ISV+1
+   IF (NMOM_R.GE.2) THEN
+      NSV_LIMA_NR_A(KMI) = ISV
+      ISV = ISV+1
    END IF
 ! CCN
    IF (NMOD_CCN .GT. 0) THEN
@@ -234,22 +234,22 @@ IF (CCLOUD == 'LIMA' ) THEN
       ISV = ISV+1
    END IF
 ! Ni
-   IF ( LCOLD .AND. NMOM_I >= 2 ) THEN
+   IF (NMOM_I.GE.2) THEN
       NSV_LIMA_NI_A(KMI) = ISV
       ISV = ISV+1
    END IF
 ! Ns
-   IF ( LCOLD .AND. LSNOW .AND. NMOM_S >= 2 ) THEN
+   IF (NMOM_S.GE.2) THEN
       NSV_LIMA_NS_A(KMI) = ISV
       ISV = ISV+1
    END IF
 ! Ng
-   IF ( LCOLD .AND. LWARM .AND. LSNOW .AND. NMOM_G >= 2) THEN
+   IF (NMOM_G.GE.2) THEN
       NSV_LIMA_NG_A(KMI) = ISV
       ISV = ISV+1
    END IF
 ! Nh
-   IF ( LCOLD .AND. LWARM .AND. LSNOW .AND. LHAIL .AND. NMOM_H >= 2 ) THEN
+   IF (NMOM_H.GE.2) THEN
       NSV_LIMA_NH_A(KMI) = ISV
       ISV = ISV+1
    END IF
@@ -283,7 +283,7 @@ IF (CCLOUD == 'LIMA' ) THEN
   END IF
 
 ! Homogeneous freezing of CCN
-   IF (LCOLD .AND. LHHONI) THEN
+   IF (LHHONI) THEN
       NSV_LIMA_HOM_HAZE_A(KMI) = ISV
       ISV = ISV + 1
    END IF

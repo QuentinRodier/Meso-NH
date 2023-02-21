@@ -298,7 +298,7 @@ USE MODD_BLOWSNOW
 USE MODD_BLOWSNOW_n
 use modd_budget,          only: cbutype, lbu_ru, lbu_rv, lbu_rw, lbudget_u, lbudget_v, lbudget_w, lbudget_sv, lbu_enable, &
                                 NBUDGET_U, NBUDGET_V, NBUDGET_W, NBUDGET_SV1, nbumod, nbutime,                            &
-                                tbudgets, tburhodj,                                                                       &
+                                tbudgets, tbuconf, tburhodj,                                                                       &
                                 xtime_bu, xtime_bu_process
 USE MODD_CH_AERO_n,      ONLY: XSOLORG, XMI
 USE MODD_CH_MNHC_n,      ONLY: LUSECHEM,LCH_CONV_LINOX,LUSECHAQ,LUSECHIC, &
@@ -307,9 +307,11 @@ USE MODD_CLOUD_MF_n
 USE MODD_CLOUDPAR_n
 USE MODD_CONF
 USE MODD_CONF_n
+USE MODD_CST,            ONLY: CST
 USE MODD_CURVCOR_n
 USE MODD_DEEP_CONVECTION_n
 USE MODD_DIM_n
+USE MODD_DIMPHYEX,       ONLY: DIMPHYEX_t
 USE MODD_DRAG_n
 USE MODD_DUST,           ONLY: LDUST
 USE MODD_DYN
@@ -346,9 +348,9 @@ USE MODD_PARAM_C1R3,     ONLY: NSEDI => LSEDI, NHHONI => LHHONI
 USE MODD_PARAM_C2R2,     ONLY: NSEDC => LSEDC, NRAIN => LRAIN, NACTIT => LACTIT,LACTTKE,LDEPOC
 USE MODD_PARAMETERS
 USE MODD_PARAM_ICE,      ONLY: LWARM,LSEDIC,LCONVHG,LDEPOSC
-USE MODD_PARAM_LIMA,     ONLY: MSEDC => LSEDC, MWARM => LWARM, MRAIN => LRAIN, &
-                               MACTIT => LACTIT, LSCAV, LCOLD,                 &
-                               MSEDI => LSEDI, MHHONI => LHHONI, LHAIL,        &
+USE MODD_PARAM_LIMA,     ONLY: MSEDC => LSEDC, NMOM_C, NMOM_R, &
+                               MACTIT => LACTIT, LSCAV, NMOM_I,                 &
+                               MSEDI => LSEDI, MHHONI => LHHONI, NMOM_H,        &
                                XRTMIN_LIMA=>XRTMIN, MACTTKE=>LACTTKE
 USE MODD_PARAM_MFSHALL_n
 USE MODD_PARAM_n
@@ -567,6 +569,7 @@ REAL, DIMENSION(SIZE(XRSVS,1), SIZE(XRSVS,2), SIZE(XRSVS,3), NSV_AER)  :: ZWETDE
 !
 TYPE(TFILEDATA),POINTER :: TZOUTFILE
 ! TYPE(TFILEDATA),SAVE    :: TZDIACFILE
+TYPE(DIMPHYEX_t) :: YLDIMPHYEX
 !-------------------------------------------------------------------------------
 !
 TPBAKFILE=> NULL()
@@ -586,8 +589,8 @@ CASE('C2R2','KHKO','C3R5')
   KSEDI  = NSEDI
   KHHONI = NHHONI
 CASE('LIMA')
-  KWARM  = MWARM        
-  KRAIN  = MRAIN
+   KRAIN  = NMOM_R.GE.1
+   KWARM  = NMOM_C.GE.1
   KSEDC  = MSEDC
   KACTIT = MACTIT
 !
@@ -1996,19 +1999,20 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
       IF (LDEPOSC .OR. LDEPOC) XACDEP = XACDEP + XINDEP * XTSTEP
     END IF
     IF (CCLOUD(1:3) == 'ICE' .OR. CCLOUD == 'C3R5' .OR. &
-                                 (CCLOUD == 'LIMA' .AND. LCOLD ) ) THEN
+                                 (CCLOUD == 'LIMA' .AND. NMOM_I.GE.1 ) ) THEN
       XACPRS = XACPRS + XINPRS * XTSTEP
       XACPRG = XACPRG + XINPRG * XTSTEP
-      IF (CCLOUD == 'ICE4' .OR. (CCLOUD == 'LIMA' .AND. LHAIL)) XACPRH = XACPRH + XINPRH * XTSTEP          
+      IF (CCLOUD == 'ICE4' .OR. (CCLOUD == 'LIMA' .AND. NMOM_H.GE.1)) XACPRH = XACPRH + XINPRH * XTSTEP          
     END IF
 !
 ! Lessivage des CCN et IFN nucléables par Slinn
 !
     IF (LSCAV .AND. (CCLOUD == 'LIMA')) THEN
-      CALL LIMA_PRECIP_SCAVENGING(CCLOUD, ILUOUT, KTCOUNT,XTSTEP,XRT(:,:,:,3), &
-                              XRHODREF, XRHODJ, XZZ, XPABST, XTHT,             &
-                              XSVT(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END),           &
-                              XRSVS(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END), XINPAP   )
+       CALL LIMA_PRECIP_SCAVENGING( YLDIMPHYEX,CST,TBUCONF,TBUDGETS,SIZE(TBUDGETS), &
+                                    CCLOUD, ILUOUT, KTCOUNT,XTSTEP,XRT(:,:,:,3),    &
+                                    XRHODREF, XRHODJ, XZZ, XPABST, XTHT,            &
+                                    XSVT(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END),          &
+                                    XRSVS(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END), XINPAP  )
 !
       XACPAP(:,:) = XACPAP(:,:) + XINPAP(:,:) * XTSTEP
     END IF

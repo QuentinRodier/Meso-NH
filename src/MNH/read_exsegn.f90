@@ -394,8 +394,8 @@ USE MODN_PARAM_ICE
 USE MODN_PARAM_KAFR_n
 USE MODN_PARAM_LIMA, ONLY : FINI_CCN=>HINI_CCN,NAM_PARAM_LIMA,NMOD_CCN,LSCAV, &
                             CPRISTINE_ICE_LIMA, CHEVRIMED_ICE_LIMA, NMOD_IFN, NMOD_IMM, &
-                            LCOLD, LACTI, LNUCL, XALPHAC, XNUC, LMEYERS, LHAIL,&
-                            LPTSPLIT, LSPRO, LADJ, LKHKO, LRAIN, LSNOW, FWARM=>LWARM,&
+                            LACTI, LNUCL, XALPHAC, XNUC, LMEYERS, &
+                            LPTSPLIT, LSPRO, LADJ, LKHKO, &
                             NMOM_C, NMOM_R, NMOM_I, NMOM_S, NMOM_G, NMOM_H
 USE MODN_PARAM_MFSHALL_n
 USE MODN_PARAM_n    ! realized in subroutine ini_model n
@@ -1298,49 +1298,26 @@ SELECT CASE ( CCLOUD )
       CGETCLOUD = 'READ' ! This is automatically done
     END IF
 !
-    IF (FWARM) THEN
+    IF (NMOM_C.GE.1) THEN
       LUSERV=.TRUE. ; LUSERC=.TRUE. ; LUSERR=.TRUE.
       LUSERI=.FALSE.; LUSERS=.FALSE. ; LUSERG=.FALSE.; LUSERH=.FALSE.
     END IF
 !
-    IF (LCOLD) THEN
+    IF (NMOM_I.GE.1) THEN
       LUSERV=.TRUE. ; LUSERC=.TRUE. ; LUSERR=.TRUE.
       LUSERI=.TRUE. ; LUSERS=.TRUE. ; LUSERG=.TRUE.
-      LUSERH=LHAIL
+      LUSERH= NMOM_H.GE.1
     END IF
     !
     IF (LSPRO) LADJ=.FALSE.
-    IF (.NOT.LRAIN) NMOM_R=0
-    IF (.NOT.LWARM) THEN
-       NMOM_C=0
-       NMOM_R=0
-    END IF
-    IF (.NOT.LSNOW) THEN
-       NMOM_S=0
-       NMOM_G=0
-       NMOM_H=0
-       LHAIL=.FALSE.
-    END IF
-    IF (.NOT.LHAIL) NMOM_H=0
-    IF (.NOT.LCOLD) THEN
-       NMOM_I=0
-       NMOM_S=0
-       NMOM_G=0
-       NMOM_H=0
-       LSNOW=.FALSE.
-       LHAIL=.FALSE.
-       LNUCL=.FALSE.
-       NMOD_IFN=0
-       NMOD_IMM=0
-    END IF
     IF (.NOT.LPTSPLIT) THEN
        IF (NMOM_C==1) NMOM_C=2
        IF (NMOM_R==1) NMOM_R=2
        IF (NMOM_I==1) NMOM_I=2
-       IF (NMOM_S==2 .OR. NMOM_G==2 .OR. (LHAIL .AND. NMOM_H==2)) THEN
+       IF (NMOM_S==2 .OR. NMOM_G==2 .OR. NMOM_H==2) THEN
           NMOM_S=2
           NMOM_G=2
-          IF (LHAIL) NMOM_H=2
+          IF (NMOM_H.GE.1) NMOM_H=2
        END IF
     END IF
 !
