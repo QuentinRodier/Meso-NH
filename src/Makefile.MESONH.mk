@@ -128,14 +128,6 @@ CPPFLAGS     += $(CPPFLAGS_SURCOUCHE)
 #ARCH_XYZ    := $(ARCH_XYZ)-$(VER_SURCOUCHE)
 endif
 ##########################################################
-#           Source MINPACK                             #
-##########################################################
-DIR_MINPACK += LIB/minpack
-#
-ifdef DIR_MINPACK
-DIR_MASTER   += $(DIR_MINPACK)
-endif
-##########################################################
 #           Source RAD                                   #
 ##########################################################
 # PRE_BUG TEST !!!
