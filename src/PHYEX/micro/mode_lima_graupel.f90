@@ -3,123 +3,24 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-!      #################################
-       MODULE MODI_LIMA_GRAUPEL
-!      #################################
-!
-INTERFACE
-   SUBROUTINE LIMA_GRAUPEL (PTSTEP, LDCOMPUTE,                                     &
-                            PRHODREF, PPRES, PT, PKA, PDV, PCJ,                    &
-                            PRVT, PRCT, PRRT, PRIT, PRST, PRGT,                    &
-                            PCCT, PCRT, PCIT, PCST, PCGT,                          &
-                            PLBDC, PLBDR, PLBDS, PLBDG,                            &
-                            PLVFACT, PLSFACT,                                      &
-                            P_TH_WETG, P_RC_WETG, P_CC_WETG, P_RR_WETG, P_CR_WETG, &
-                            P_RI_WETG, P_CI_WETG, P_RS_WETG, P_CS_WETG, P_RG_WETG, P_CG_WETG, P_RH_WETG, &
-                            P_TH_DRYG, P_RC_DRYG, P_CC_DRYG, P_RR_DRYG, P_CR_DRYG, &
-                            P_RI_DRYG, P_CI_DRYG, P_RS_DRYG, P_CS_DRYG, P_RG_DRYG, &
-                            P_RI_HMG, P_CI_HMG, P_RG_HMG,                          &
-                            P_TH_GMLT, P_RR_GMLT, P_CR_GMLT, P_CG_GMLT,            &
-                            PA_TH, PA_RC, PA_CC, PA_RR, PA_CR,                     &
-                            PA_RI, PA_CI, PA_RS, PA_CS, PA_RG, PA_CG, PA_RH, PA_CH )
-!
-REAL,                 INTENT(IN)    :: PTSTEP 
-LOGICAL, DIMENSION(:),INTENT(IN)    :: LDCOMPUTE
-!
-REAL, DIMENSION(:),   INTENT(IN)    :: PRHODREF    ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PPRES    ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PT   ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PKA   ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PDV   ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PCJ   ! 
-!
-REAL, DIMENSION(:),   INTENT(IN)    :: PRVT    ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PRCT    ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PRRT    ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PRIT    ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PRST    ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PRGT    !
-!
-REAL, DIMENSION(:),   INTENT(IN)    :: PCCT    !
-REAL, DIMENSION(:),   INTENT(IN)    :: PCRT    !
-REAL, DIMENSION(:),   INTENT(IN)    :: PCIT    !
-REAL, DIMENSION(:),   INTENT(IN)    :: PCST    !
-REAL, DIMENSION(:),   INTENT(IN)    :: PCGT    !
-!
-REAL, DIMENSION(:),   INTENT(IN)    :: PLBDC   ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PLBDR   ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PLBDS   ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PLBDG   ! 
-!
-REAL, DIMENSION(:),   INTENT(IN)    :: PLVFACT ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PLSFACT ! 
-!
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_TH_WETG
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_RC_WETG
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_CC_WETG
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_RR_WETG
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_CR_WETG
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_RI_WETG
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_CI_WETG
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_RS_WETG
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_CS_WETG
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_RG_WETG
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_CG_WETG
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_RH_WETG
-!
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_TH_DRYG
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_RC_DRYG
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_CC_DRYG
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_RR_DRYG
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_CR_DRYG
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_RI_DRYG
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_CI_DRYG
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_RS_DRYG
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_CS_DRYG
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_RG_DRYG
-!
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_RI_HMG
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_CI_HMG
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_RG_HMG
-!
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_TH_GMLT
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_RR_GMLT
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_CR_GMLT
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_CG_GMLT
-!
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_TH
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RC
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_CC
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RR
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_CR
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RI
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_CI
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RS
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_CS
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RG
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_CG
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RH
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_CH
-!
-END SUBROUTINE LIMA_GRAUPEL
-END INTERFACE
-END MODULE MODI_LIMA_GRAUPEL
-!
+MODULE MODE_LIMA_GRAUPEL
+  IMPLICIT NONE
+CONTAINS
 !     #################################################################################
-      SUBROUTINE LIMA_GRAUPEL (PTSTEP, LDCOMPUTE,                                     &
-                               PRHODREF, PPRES, PT, PKA, PDV, PCJ,                    &
-                               PRVT, PRCT, PRRT, PRIT, PRST, PRGT,                    &
-                               PCCT, PCRT, PCIT, PCST, PCGT,                          &
-                               PLBDC, PLBDR, PLBDS, PLBDG,                            &
-                               PLVFACT, PLSFACT,                                      &
-                               P_TH_WETG, P_RC_WETG, P_CC_WETG, P_RR_WETG, P_CR_WETG, &
-                               P_RI_WETG, P_CI_WETG, P_RS_WETG, P_CS_WETG, P_RG_WETG, P_CG_WETG, P_RH_WETG, &
-                               P_TH_DRYG, P_RC_DRYG, P_CC_DRYG, P_RR_DRYG, P_CR_DRYG, &
-                               P_RI_DRYG, P_CI_DRYG, P_RS_DRYG, P_CS_DRYG, P_RG_DRYG, &
-                               P_RI_HMG, P_CI_HMG, P_RG_HMG,                          &
-                               P_TH_GMLT, P_RR_GMLT, P_CR_GMLT, P_CG_GMLT,            &
-                               PA_TH, PA_RC, PA_CC, PA_RR, PA_CR,                     &
-                               PA_RI, PA_CI, PA_RS, PA_CS, PA_RG, PA_CG, PA_RH, PA_CH )
+  SUBROUTINE LIMA_GRAUPEL (PTSTEP, LDCOMPUTE,                                     &
+                           PRHODREF, PPRES, PT, PKA, PDV, PCJ,                    &
+                           PRVT, PRCT, PRRT, PRIT, PRST, PRGT,                    &
+                           PCCT, PCRT, PCIT, PCST, PCGT,                          &
+                           PLBDC, PLBDR, PLBDS, PLBDG,                            &
+                           PLVFACT, PLSFACT,                                      &
+                           P_TH_WETG, P_RC_WETG, P_CC_WETG, P_RR_WETG, P_CR_WETG, &
+                           P_RI_WETG, P_CI_WETG, P_RS_WETG, P_CS_WETG, P_RG_WETG, P_CG_WETG, P_RH_WETG, &
+                           P_TH_DRYG, P_RC_DRYG, P_CC_DRYG, P_RR_DRYG, P_CR_DRYG, &
+                           P_RI_DRYG, P_CI_DRYG, P_RS_DRYG, P_CS_DRYG, P_RG_DRYG, &
+                           P_RI_HMG, P_CI_HMG, P_RG_HMG,                          &
+                           P_TH_GMLT, P_RR_GMLT, P_CR_GMLT, P_CG_GMLT,            &
+                           PA_TH, PA_RC, PA_CC, PA_RR, PA_CR,                     &
+                           PA_RI, PA_CI, PA_RS, PA_CS, PA_RG, PA_CG, PA_RH, PA_CH )
 !     #################################################################################
 !
 !!    PURPOSE
@@ -146,7 +47,7 @@ END MODULE MODI_LIMA_GRAUPEL
 !              ------------
 !
 USE MODD_CST,              ONLY : XTT, XMD, XMV, XRD, XRV, XLVTT, XLMTT, XESTT, XCL, XCI, XCPV
-USE MODD_PARAM_LIMA,       ONLY : XRTMIN, XCTMIN, XCEXVT, LHAIL
+USE MODD_PARAM_LIMA,       ONLY : XRTMIN, XCTMIN, XCEXVT, NMOM_H
 USE MODD_PARAM_LIMA_MIXED, ONLY : XCXG, XDG, X0DEPG, X1DEPG, NGAMINC,                             &
                                   XFCDRYG, XFIDRYG, XCOLIG, XCOLSG, XCOLEXIG, XCOLEXSG,           &
                                   XFSDRYG, XLBSDRYG1, XLBSDRYG2, XLBSDRYG3, XKER_SDRYG,           &
@@ -487,7 +388,7 @@ END WHERE
 !
 ZZW(:) = 0.0
 NHAIL = 0.
-IF (LHAIL) NHAIL = 1. 
+IF (NMOM_H.GE.1) NHAIL = 1. 
 WHERE( LDCOMPUTE(:) .AND. PRGT(:)>XRTMIN(6) .AND. PCGT(:)>XCTMIN(6) .AND. PT(:)<XTT .AND. &
        (ZRDRYG(:)-ZZW2(:)-ZZW3(:))>=(ZRWETG(:)-ZZW5(:)-ZZW6(:)) .AND. ZRWETG(:)-ZZW5(:)-ZZW6(:)>0.0 ) 
 !
@@ -668,3 +569,4 @@ CONTAINS
 !-------------------------------------------------------------------------------
 !
 END SUBROUTINE LIMA_GRAUPEL
+END MODULE MODE_LIMA_GRAUPEL

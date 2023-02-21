@@ -2,56 +2,16 @@
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!      #################################
-       MODULE MODI_LIMA_ICE_MELTING
-!      #################################
-!
-INTERFACE
-      SUBROUTINE LIMA_ICE_MELTING (PTSTEP, LDCOMPUTE,                        &
-                                   PEXNREF, PPABST,                          &
-                                   PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT, &
-                                   PCIT, PINT,                               &
-                                   P_TH_IMLT, P_RC_IMLT, P_CC_IMLT,          &
-                                   PB_TH, PB_RC, PB_CC, PB_RI, PB_CI, PB_IFNN)
-!
-REAL,                 INTENT(IN)    :: PTSTEP 
-LOGICAL, DIMENSION(:),INTENT(IN)    :: LDCOMPUTE
-!
-REAL, DIMENSION(:),   INTENT(IN)    :: PEXNREF ! Reference Exner function
-REAL, DIMENSION(:),   INTENT(IN)    :: PPABST  ! abs. pressure at time t
-!
-REAL, DIMENSION(:),   INTENT(IN)    :: PTHT    ! Theta at time t
-REAL, DIMENSION(:),   INTENT(IN)    :: PRVT    ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PRCT    ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PRRT    ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PRIT    ! Cloud ice m.r. at t 
-REAL, DIMENSION(:),   INTENT(IN)    :: PRST    ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PRGT    ! 
-!
-REAL, DIMENSION(:),   INTENT(IN)    :: PCIT    ! Rain water C. at t
-REAL, DIMENSION(:,:), INTENT(IN)    :: PINT    ! Nucleated IFN C. at t
-!
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_TH_IMLT
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_RC_IMLT
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_CC_IMLT
-REAL, DIMENSION(:),   INTENT(INOUT) :: PB_TH
-REAL, DIMENSION(:),   INTENT(INOUT) :: PB_RC
-REAL, DIMENSION(:),   INTENT(INOUT) :: PB_CC
-REAL, DIMENSION(:),   INTENT(INOUT) :: PB_RI
-REAL, DIMENSION(:),   INTENT(INOUT) :: PB_CI
-REAL, DIMENSION(:,:), INTENT(INOUT) :: PB_IFNN
-!
-END SUBROUTINE LIMA_ICE_MELTING
-END INTERFACE
-END MODULE MODI_LIMA_ICE_MELTING
-!
+MODULE MODE_LIMA_ICE_MELTING
+  IMPLICIT NONE
+CONTAINS
 !     ########################################################################
-      SUBROUTINE LIMA_ICE_MELTING (PTSTEP, LDCOMPUTE,                        &
-                                   PEXNREF, PPABST,                          &
-                                   PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT, &
-                                   PCIT, PINT,                               &
-                                   P_TH_IMLT, P_RC_IMLT, P_CC_IMLT,          &
-                                   PB_TH, PB_RC, PB_CC, PB_RI, PB_CI, PB_IFNN)
+  SUBROUTINE LIMA_ICE_MELTING (PTSTEP, LDCOMPUTE,                        &
+                               PEXNREF, PPABST,                          &
+                               PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT, &
+                               PCIT, PINT,                               &
+                               P_TH_IMLT, P_RC_IMLT, P_CC_IMLT,          &
+                               PB_TH, PB_RC, PB_CC, PB_RI, PB_CI, PB_IFNN)
 !     ########################################################################
 !
 !!    PURPOSE
@@ -162,3 +122,4 @@ ENDDO
 !-------------------------------------------------------------------------------
 !
 END SUBROUTINE LIMA_ICE_MELTING
+END MODULE MODE_LIMA_ICE_MELTING

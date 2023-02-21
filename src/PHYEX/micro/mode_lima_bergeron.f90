@@ -2,41 +2,14 @@
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!      #################################
-       MODULE MODI_LIMA_BERGERON
-!      #################################
-!
-INTERFACE
-   SUBROUTINE LIMA_BERGERON (LDCOMPUTE,                         &
-                             PRCT, PRIT, PCIT, PLBDI,           &
-                             PSSIW, PAI, PCJ, PLVFACT, PLSFACT, &
-                             P_TH_BERFI, P_RC_BERFI             )
-!
-LOGICAL, DIMENSION(:),INTENT(IN)    :: LDCOMPUTE
-!
-REAL, DIMENSION(:),   INTENT(IN)    :: PRCT    ! Cloud water C. at t
-REAL, DIMENSION(:),   INTENT(IN)    :: PRIT    ! Cloud water C. at t
-REAL, DIMENSION(:),   INTENT(IN)    :: PCIT    ! Cloud water C. at t
-REAL, DIMENSION(:),   INTENT(IN)    :: PLBDI   ! 
-!
-REAL, DIMENSION(:),   INTENT(IN)    :: PSSIW   ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PAI     ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PCJ     ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PLVFACT ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PLSFACT ! 
-!
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_TH_BERFI
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_RC_BERFI
-!!
-END SUBROUTINE LIMA_BERGERON
-END INTERFACE
-END MODULE MODI_LIMA_BERGERON
-!
+MODULE MODE_LIMA_BERGERON
+  IMPLICIT NONE
+  CONTAINS
 !     #############################################################
-      SUBROUTINE LIMA_BERGERON( LDCOMPUTE,                        &
-                               PRCT, PRIT, PCIT, PLBDI,           &
-                               PSSIW, PAI, PCJ, PLVFACT, PLSFACT, &
-                               P_TH_BERFI, P_RC_BERFI             )
+    SUBROUTINE LIMA_BERGERON( LDCOMPUTE,                        &
+                              PRCT, PRIT, PCIT, PLBDI,           &
+                              PSSIW, PAI, PCJ, PLVFACT, PLSFACT, &
+                              P_TH_BERFI, P_RC_BERFI             )
 !     #############################################################
 !
 !!    PURPOSE
@@ -99,3 +72,4 @@ END WHERE
 !-------------------------------------------------------------------------------
 !
 END SUBROUTINE LIMA_BERGERON
+END MODULE MODE_LIMA_BERGERON

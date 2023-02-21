@@ -3,47 +3,14 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-!      #################################
-       MODULE MODI_LIMA_RAIN_ACCR_SNOW
-!      #################################
-!
-INTERFACE
-   SUBROUTINE LIMA_RAIN_ACCR_SNOW (PTSTEP, LDCOMPUTE,                                         &
-                                   PRHODREF, PT,                                              &
-                                   PRRT, PCRT, PRST, PCST, PLBDR, PLBDS, PLVFACT, PLSFACT,    &
-                                   P_TH_ACC, P_RR_ACC, P_CR_ACC, P_RS_ACC, P_CS_ACC, P_RG_ACC )
-!
-REAL,                 INTENT(IN)    :: PTSTEP 
-LOGICAL, DIMENSION(:),INTENT(IN)    :: LDCOMPUTE
-!
-REAL, DIMENSION(:),   INTENT(IN)    :: PRHODREF    ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PT   ! 
-!
-REAL, DIMENSION(:),   INTENT(IN)    :: PRRT    ! Rain mr at t
-REAL, DIMENSION(:),   INTENT(IN)    :: PCRT    ! Rain C. at t
-REAL, DIMENSION(:),   INTENT(IN)    :: PRST    ! Snow mr at t
-REAL, DIMENSION(:),   INTENT(IN)    :: PCST    ! Snow C. at t
-REAL, DIMENSION(:),   INTENT(IN)    :: PLBDR   ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PLBDS   ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PLVFACT ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PLSFACT ! 
-!
-REAL, DIMENSION(:),   INTENT(OUT)   :: P_TH_ACC
-REAL, DIMENSION(:),   INTENT(OUT)   :: P_RR_ACC
-REAL, DIMENSION(:),   INTENT(OUT)   :: P_CR_ACC
-REAL, DIMENSION(:),   INTENT(OUT)   :: P_RS_ACC
-REAL, DIMENSION(:),   INTENT(OUT)   :: P_CS_ACC
-REAL, DIMENSION(:),   INTENT(OUT)   :: P_RG_ACC
-!
-END SUBROUTINE LIMA_RAIN_ACCR_SNOW
-END INTERFACE
-END MODULE MODI_LIMA_RAIN_ACCR_SNOW
-!
+MODULE MODE_LIMA_RAIN_ACCR_SNOW
+  IMPLICIT NONE
+CONTAINS
 !     ###################################################################################
-      SUBROUTINE LIMA_RAIN_ACCR_SNOW (PTSTEP, LDCOMPUTE,                                         &
-                                      PRHODREF, PT,                                              &
-                                      PRRT, PCRT, PRST, PCST, PLBDR, PLBDS, PLVFACT, PLSFACT,    &
-                                      P_TH_ACC, P_RR_ACC, P_CR_ACC, P_RS_ACC, P_CS_ACC, P_RG_ACC )
+  SUBROUTINE LIMA_RAIN_ACCR_SNOW (PTSTEP, LDCOMPUTE,                                         &
+                                  PRHODREF, PT,                                              &
+                                  PRRT, PCRT, PRST, PCST, PLBDR, PLBDS, PLVFACT, PLSFACT,    &
+                                  P_TH_ACC, P_RR_ACC, P_CR_ACC, P_RS_ACC, P_CS_ACC, P_RG_ACC )
 !     ###################################################################################
 !
 !!    PURPOSE
@@ -398,3 +365,4 @@ CONTAINS
 !-------------------------------------------------------------------------------
 !
 END SUBROUTINE LIMA_RAIN_ACCR_SNOW
+END MODULE MODE_LIMA_RAIN_ACCR_SNOW

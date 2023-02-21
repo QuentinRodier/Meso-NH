@@ -3,62 +3,18 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-------------------------------------------------------------------------------
-!#######################################
-MODULE MODI_LIMA_COMPUTE_CLOUD_FRACTIONS
-!#######################################
-  INTERFACE
-     SUBROUTINE LIMA_COMPUTE_CLOUD_FRACTIONS (KIB, KIE, KJB, KJE, KKB, KKE, KKL, &
-                                              PCCT, PRCT,                        &
-                                              PCRT, PRRT,                        &
-                                              PCIT, PRIT,                        &
-                                              PCST, PRST,                        &
-                                              PCGT, PRGT,                        &
-                                              PCHT, PRHT,                        &
-                                              PCLDFR, PICEFR, PPRCFR             )
-       INTEGER,               INTENT(IN)    :: KIB           !  
-       INTEGER,               INTENT(IN)    :: KIE           !  
-       INTEGER,               INTENT(IN)    :: KJB           !  
-       INTEGER,               INTENT(IN)    :: KJE           !  
-       INTEGER,               INTENT(IN)    :: KKB           !  
-       INTEGER,               INTENT(IN)    :: KKE           !  
-       INTEGER,               INTENT(IN)    :: KKL           !  
-       !
-       REAL, DIMENSION(:,:,:),INTENT(IN)    :: PCCT          !
-       REAL, DIMENSION(:,:,:),INTENT(IN)    :: PRCT          !
-       !
-       REAL, DIMENSION(:,:,:),INTENT(IN)    :: PCRT          !
-       REAL, DIMENSION(:,:,:),INTENT(IN)    :: PRRT          !
-       !
-       REAL, DIMENSION(:,:,:),INTENT(IN)    :: PCIT          !
-       REAL, DIMENSION(:,:,:),INTENT(IN)    :: PRIT          !
-       !
-       REAL, DIMENSION(:,:,:),INTENT(IN)    :: PCST          !
-       REAL, DIMENSION(:,:,:),INTENT(IN)    :: PRST          !
-       !
-       REAL, DIMENSION(:,:,:),INTENT(IN)    :: PCGT          !
-       REAL, DIMENSION(:,:,:),INTENT(IN)    :: PRGT          !
-       !
-       REAL, DIMENSION(:,:,:),INTENT(IN)    :: PCHT          !
-       REAL, DIMENSION(:,:,:),INTENT(IN)    :: PRHT          !
-       !
-       REAL, DIMENSION(:,:,:),INTENT(INOUT) :: PCLDFR        ! 
-       REAL, DIMENSION(:,:,:),INTENT(INOUT) :: PICEFR        ! 
-       REAL, DIMENSION(:,:,:),INTENT(INOUT) :: PPRCFR        ! 
-       !
-     END SUBROUTINE LIMA_COMPUTE_CLOUD_FRACTIONS
-  END INTERFACE
-END MODULE MODI_LIMA_COMPUTE_CLOUD_FRACTIONS
-!
-!
+MODULE MODE_LIMA_COMPUTE_CLOUD_FRACTIONS
+  IMPLICIT NONE
+CONTAINS
 !################################################################
-SUBROUTINE LIMA_COMPUTE_CLOUD_FRACTIONS (KIB, KIE, KJB, KJE, KKB, KKE, KKL, &
-                                         PCCT, PRCT,                        &
-                                         PCRT, PRRT,                        &
-                                         PCIT, PRIT,                        &
-                                         PCST, PRST,                        &
-                                         PCGT, PRGT,                        &
-                                         PCHT, PRHT,                        &
-                                         PCLDFR, PICEFR, PPRCFR             )
+  SUBROUTINE LIMA_COMPUTE_CLOUD_FRACTIONS (D,                     &
+                                           PCCT, PRCT,            &
+                                           PCRT, PRRT,            &
+                                           PCIT, PRIT,            &
+                                           PCST, PRST,            &
+                                           PCGT, PRGT,            &
+                                           PCHT, PRHT,            &
+                                           PCLDFR, PICEFR, PPRCFR )
 !################################################################
 !
 !!
@@ -79,6 +35,7 @@ SUBROUTINE LIMA_COMPUTE_CLOUD_FRACTIONS (KIB, KIE, KJB, KJE, KKB, KKE, KKL, &
 !*       0.    DECLARATIONS
 !              ------------
 !
+USE MODD_DIMPHYEX, ONLY: DIMPHYEX_t
 USE MODD_PARAM_LIMA,      ONLY : XCTMIN, XRTMIN, &
                                  NMOM_C, NMOM_R, NMOM_I, NMOM_S, NMOM_G, NMOM_H
 !
@@ -86,13 +43,7 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :
 !
-INTEGER,               INTENT(IN)    :: KIB           !  
-INTEGER,               INTENT(IN)    :: KIE           !  
-INTEGER,               INTENT(IN)    :: KJB           !  
-INTEGER,               INTENT(IN)    :: KJE           !  
-INTEGER,               INTENT(IN)    :: KKB           !  
-INTEGER,               INTENT(IN)    :: KKE           !  
-INTEGER,               INTENT(IN)    :: KKL           !  
+TYPE(DIMPHYEX_t),      INTENT(IN)    :: D
 !
 REAL, DIMENSION(:,:,:),INTENT(IN)    :: PCCT          !
 REAL, DIMENSION(:,:,:),INTENT(IN)    :: PRCT          !
@@ -134,14 +85,14 @@ WHERE(PICEFR(:,:,:)<1.E-10 .AND. PRIT(:,:,:)>XRTMIN(4) .AND. (NMOM_I.EQ.1 .OR. P
 !
 ! Precipitation fraction
 !!$PPRCFR(:,:,:) = MAX(PCLDFR(:,:,:),PICEFR(:,:,:))
-!!$DO JI = KIB,KIE
-!!$   DO JJ = KJB, KJE
-!!$      DO JK=KKE-KKL, KKB, -KKL
+!!$DO JI = D%NIB,D%NIE
+!!$   DO JJ = D%NJB, D%NJE
+!!$      DO JK=D%NKE-D%NKL, D%NKB, -D%NKL
 !!$         IF ( (PRRT(JI,JJ,JK).GT.XRTMIN(3) .AND. PCRT(JI,JJ,JK).GT.XCTMIN(3)) .OR. &
 !!$               PRST(JI,JJ,JK).GT.XRTMIN(5)                                    .OR. &
 !!$               PRGT(JI,JJ,JK).GT.XRTMIN(6)                                    .OR. &
 !!$               PRHT(JI,JJ,JK).GT.XRTMIN(7)                                         ) THEN
-!!$            PPRCFR(JI,JJ,JK)=MAX(PPRCFR(JI,JJ,JK),PPRCFR(JI,JJ,JK+KKL))
+!!$            PPRCFR(JI,JJ,JK)=MAX(PPRCFR(JI,JJ,JK),PPRCFR(JI,JJ,JK+D%NKL))
 !!$            IF (PPRCFR(JI,JJ,JK)==0) THEN
 !!$               PPRCFR(JI,JJ,JK)=1.
 !!$            END IF
@@ -153,14 +104,14 @@ WHERE(PICEFR(:,:,:)<1.E-10 .AND. PRIT(:,:,:)>XRTMIN(4) .AND. (NMOM_I.EQ.1 .OR. P
 !!$END DO
 !!$
 !!$PPRCFR(:,:,:) = MAX(PCLDFR(:,:,:),PICEFR(:,:,:))
-!!$DO JI = KIB,KIE
-!!$   DO JJ = KJB, KJE
-!!$      DO JK=KKE-KKL, KKB, -KKL
+!!$DO JI = D%NIB,D%NIE
+!!$   DO JJ = D%NJB, D%NJE
+!!$      DO JK=D%NKE-D%NKL, D%NKB, -D%NKL
 !!$         IF ( (PRRT(JI,JJ,JK).GT.0. .AND. PCRT(JI,JJ,JK).GT.0.) .OR. &
 !!$               PRST(JI,JJ,JK).GT.0.                             .OR. &
 !!$               PRGT(JI,JJ,JK).GT.0.                             .OR. &
 !!$               PRHT(JI,JJ,JK).GT.0.                                  ) THEN
-!!$            PPRCFR(JI,JJ,JK)=MAX(PPRCFR(JI,JJ,JK),PPRCFR(JI,JJ,JK+KKL))
+!!$            PPRCFR(JI,JJ,JK)=MAX(PPRCFR(JI,JJ,JK),PPRCFR(JI,JJ,JK+D%NKL))
 !!$            IF (PPRCFR(JI,JJ,JK)==0) THEN
 !!$               PPRCFR(JI,JJ,JK)=1.
 !!$            END IF
@@ -186,3 +137,4 @@ WHERE ( (PRRT(:,:,:).GT.0. .AND. (NMOM_R.EQ.1 .OR. PCRT(:,:,:).GT.0.) ) .OR. &
 !-------------------------------------------------------------------------------
 !
 END SUBROUTINE LIMA_COMPUTE_CLOUD_FRACTIONS
+END MODULE MODE_LIMA_COMPUTE_CLOUD_FRACTIONS

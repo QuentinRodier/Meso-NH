@@ -3,36 +3,14 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-------------------------------------------------------------------------------
-!      #################################
-       MODULE MODI_LIMA_SNOW_SELF_COLLECTION
-!      #################################
-!
-INTERFACE
-   SUBROUTINE LIMA_SNOW_SELF_COLLECTION (LDCOMPUTE,          &
-                                         PRHODREF, PT,       &
-                                         PRST, PCST, PLBDS,  &
-                                         P_CS_SSC            )
-!
-LOGICAL, DIMENSION(:),INTENT(IN)    :: LDCOMPUTE
-!
-REAL, DIMENSION(:),   INTENT(IN)    :: PRHODREF ! Reference Exner function
-REAL, DIMENSION(:),   INTENT(IN)    :: PT       ! Temperature
-!
-REAL, DIMENSION(:),   INTENT(IN)    :: PRST    ! Snow mr at t
-REAL, DIMENSION(:),   INTENT(IN)    :: PCST    ! Snow C. at t
-REAL, DIMENSION(:),   INTENT(IN)    :: PLBDS   ! 
-!
-REAL, DIMENSION(:),   INTENT(OUT)   :: P_CS_SSC 
-!
-END SUBROUTINE LIMA_SNOW_SELF_COLLECTION
-END INTERFACE
-END MODULE MODI_LIMA_SNOW_SELF_COLLECTION
-!
+MODULE MODE_LIMA_SNOW_SELF_COLLECTION
+  IMPLICIT NONE
+CONTAINS
 !     #############################################################
-      SUBROUTINE LIMA_SNOW_SELF_COLLECTION (LDCOMPUTE,          &
-                                            PRHODREF, PT,       &
-                                            PRST, PCST, PLBDS,  &
-                                            P_CS_SSC            )
+  SUBROUTINE LIMA_SNOW_SELF_COLLECTION (LDCOMPUTE,          &
+                                        PRHODREF, PT,       &
+                                        PRST, PCST, PLBDS,  &
+                                        P_CS_SSC            )
 !     #############################################################
 !
 !!    PURPOSE
@@ -147,3 +125,4 @@ END IF
 !-------------------------------------------------------------------------------
 !
 END SUBROUTINE LIMA_SNOW_SELF_COLLECTION
+END MODULE MODE_LIMA_SNOW_SELF_COLLECTION

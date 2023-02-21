@@ -3,48 +3,15 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-------------------------------------------------------------------------------
-!      #####################
-       MODULE MODI_LIMA_ICE_DEPOSITION
-!      #####################
-!
-INTERFACE
-      SUBROUTINE LIMA_ICE_DEPOSITION (PTSTEP, LDCOMPUTE,                     &
-                                      PRHODREF, PT, PSSI, PAI, PCJ, PLSFACT, &
-                                      PRIT, PCIT, PLBDI,                     &
-                                      P_TH_DEPI, P_RI_DEPI,                  &
-                                      P_RI_CNVS, P_CI_CNVS                   )
-!
-REAL,                 INTENT(IN)    :: PTSTEP
-LOGICAL, DIMENSION(:),INTENT(IN)    :: LDCOMPUTE
-!
-REAL, DIMENSION(:),   INTENT(IN)    :: PRHODREF! Reference density
-REAL, DIMENSION(:),   INTENT(IN)    :: PT  ! abs. pressure at time t
-REAL, DIMENSION(:),   INTENT(IN)    :: PSSI  ! abs. pressure at time t
-REAL, DIMENSION(:),   INTENT(IN)    :: PAI  ! abs. pressure at time t
-REAL, DIMENSION(:),   INTENT(IN)    :: PCJ  ! abs. pressure at time t
-REAL, DIMENSION(:),   INTENT(IN)    :: PLSFACT  ! abs. pressure at time t
-!
-REAL, DIMENSION(:),   INTENT(IN)    :: PRIT    ! Cloud ice m.r. at t 
-!
-REAL, DIMENSION(:),   INTENT(IN)    :: PCIT    ! Ice crystal C. at t
-!
-REAL, DIMENSION(:),   INTENT(IN)    :: PLBDI    ! Graupel m.r. at t 
-!
-REAL, DIMENSION(:),   INTENT(OUT)   :: P_TH_DEPI
-REAL, DIMENSION(:),   INTENT(OUT)   :: P_RI_DEPI
-REAL, DIMENSION(:),   INTENT(OUT)   :: P_RI_CNVS
-REAL, DIMENSION(:),   INTENT(OUT)   :: P_CI_CNVS
-!
-END SUBROUTINE LIMA_ICE_DEPOSITION
-END INTERFACE
-END MODULE MODI_LIMA_ICE_DEPOSITION
-!
+MODULE MODE_LIMA_ICE_DEPOSITION
+  IMPLICIT NONE
+CONTAINS
 !     ##########################################################################
-SUBROUTINE LIMA_ICE_DEPOSITION (PTSTEP, LDCOMPUTE,                        &
-                                PRHODREF, PT,  PSSI, PAI, PCJ, PLSFACT,   &
-                                PRIT, PCIT, PLBDI,                        &
-                                P_TH_DEPI, P_RI_DEPI,                     &
-                                P_RI_CNVS, P_CI_CNVS                      )
+  SUBROUTINE LIMA_ICE_DEPOSITION (PTSTEP, LDCOMPUTE,                        &
+                                  PRHODREF, PT,  PSSI, PAI, PCJ, PLSFACT,   &
+                                  PRIT, PCIT, PLBDI,                        &
+                                  P_TH_DEPI, P_RI_DEPI,                     &
+                                  P_RI_CNVS, P_CI_CNVS                      )
 !     ##########################################################################
 !
 !!    PURPOSE
@@ -74,7 +41,7 @@ SUBROUTINE LIMA_ICE_DEPOSITION (PTSTEP, LDCOMPUTE,                        &
 !              ------------
 !
 USE MODD_PARAM_LIMA,      ONLY : XRTMIN, XCTMIN, XALPHAI, XALPHAS, XNUI, XNUS,&
-                                 LSNOW, NMOM_I 
+                                 NMOM_I, NMOM_S 
 USE MODD_PARAM_LIMA_COLD, ONLY : XCXS, XCCS,                                  &
                                  XLBDAS_MAX, XDSCNVI_LIM, XLBDASCNVI_MAX,     &
                                  XC0DEPSI, XC1DEPSI, XR0DEPSI, XR1DEPSI,      &
@@ -177,9 +144,10 @@ ELSE
    END WHERE
 END IF
 !
-IF (.NOT.LSNOW) THEN
+IF (NMOM_S.EQ.0) THEN
    P_RI_CNVS(:) = 0.
    P_CI_CNVS(:) = 0.
 END IF
 !
 END SUBROUTINE LIMA_ICE_DEPOSITION
+END MODULE MODE_LIMA_ICE_DEPOSITION

@@ -3,47 +3,15 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-!      ###############################
-       MODULE MODI_LIMA_CCN_ACTIVATION
-!      ###############################
-!
-INTERFACE
-   SUBROUTINE LIMA_CCN_ACTIVATION (TPFILE,                                        &
-                                   PRHODREF, PEXNREF, PPABST, PT, PDTHRAD, PW_NU, &
-                                   PTHT, PRVT, PRCT, PCCT, PRRT, PNFT, PNAT,      &
-                                   PCLDFR                                         )
-USE MODD_IO, ONLY: TFILEDATA
-!
-TYPE(TFILEDATA),          INTENT(IN)    :: TPFILE     ! Output file
-!
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODREF   ! Reference density
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PEXNREF    ! Reference Exner function
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PPABST     ! abs. pressure at time t
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PT         ! Temperature
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PDTHRAD    ! Radiative temperature tendency
-!
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PW_NU      ! updraft velocity used for
-                                                      ! the nucleation param.
-!   
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PTHT       ! Theta at t 
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRVT       ! Water vapor m.r. at t 
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRCT       ! Cloud water m.r. at t 
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PCCT       ! Cloud water m.r. at t 
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRRT       ! Cloud water m.r. at t 
-REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PNFT       ! CCN C. available at t
-REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PNAT       ! CCN C. activated at t
-!
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PCLDFR     ! Precipitation fraction
-!
-END SUBROUTINE LIMA_CCN_ACTIVATION
-END INTERFACE
-END MODULE MODI_LIMA_CCN_ACTIVATION
-!     #############################################################################
-   SUBROUTINE LIMA_CCN_ACTIVATION (TPFILE,                                        &
-                                   PRHODREF, PEXNREF, PPABST, PT, PDTHRAD, PW_NU, &
-                                   PTHT, PRVT, PRCT, PCCT, PRRT, PNFT, PNAT,      &
-                                   PCLDFR                                         )
-!     #############################################################################
+MODULE MODE_LIMA_CCN_ACTIVATION
+  IMPLICIT NONE
+CONTAINS
+!     ##############################################################################
+    SUBROUTINE LIMA_CCN_ACTIVATION (CST,                                           &
+                                    PRHODREF, PEXNREF, PPABST, PT, PDTHRAD, PW_NU, &
+                                    PTHT, PRVT, PRCT, PCCT, PRRT, PNFT, PNAT,      &
+                                    PCLDFR                                         )
+!     ##############################################################################
 !
 !!
 !!    PURPOSE
@@ -97,10 +65,10 @@ END MODULE MODI_LIMA_CCN_ACTIVATION
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_CST,             ONLY: XALPW, XBETAW, XCL, XCPD, XCPV, XGAMW, XLVTT, XMD, XMNH_EPSILON, XMV, XRV, XTT
-use modd_field,           only: TFIELDMETADATA, TYPEREAL
-USE MODD_IO,              ONLY: TFILEDATA
-USE MODD_LUNIT_n,         ONLY: TLUOUT
+USE MODD_CST,            ONLY: CST_t
+!use modd_field,           only: TFIELDDATA, TYPEREAL
+!USE MODD_IO,              ONLY: TFILEDATA
+!USE MODD_LUNIT_n,         ONLY: TLUOUT
 USE MODD_PARAMETERS,      ONLY: JPHEXT, JPVEXT
 USE MODD_PARAM_LIMA,      ONLY: LADJ, LACTIT, NMOD_CCN, XCTMIN, XKHEN_MULTI, XRTMIN, XLIMIT_FACTOR
 USE MODD_PARAM_LIMA_WARM, ONLY: XWMIN, NAHEN, NHYP, XAHENINTP1, XAHENINTP2, XCSTDCRIT, XHYPF12,      &
@@ -108,7 +76,7 @@ USE MODD_PARAM_LIMA_WARM, ONLY: XWMIN, NAHEN, NHYP, XAHENINTP1, XAHENINTP2, XCST
                                 XLBC, XLBEXC
 USE MODD_TURB_n,          ONLY: LSUBG_COND
 
-USE MODE_IO_FIELD_WRITE,  only: IO_Field_write
+!USE MODE_IO_FIELD_WRITE,  only: IO_Field_write
 use mode_tools,           only: Countjv
 
 USE MODI_GAMMA
@@ -117,7 +85,8 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :
 !
-TYPE(TFILEDATA),          INTENT(IN)    :: TPFILE     ! Output file
+TYPE(CST_t),              INTENT(IN)    :: CST
+!TYPE(TFILEDATA),          INTENT(IN)    :: TPFILE     ! Output file
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODREF   ! Reference density
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PEXNREF    ! Reference Exner function
@@ -180,11 +149,11 @@ REAL    :: ZS1, ZS2, ZXACC
 INTEGER :: JMOD
 INTEGER :: IIB, IIE, IJB, IJE, IKB, IKE        ! Physical domain
 !
-INTEGER                  :: ILUOUT     ! Logical unit of output listing 
-TYPE(TFIELDMETADATA) :: TZFIELD
+!!$INTEGER                  :: ILUOUT     ! Logical unit of output listing 
+!!$TYPE(TFIELDMETADATA) :: TZFIELD
 !-------------------------------------------------------------------------------
 !
-ILUOUT = TLUOUT%NLU
+!ILUOUT = TLUOUT%NLU
 !
 !*       1.     PREPARE COMPUTATIONS - PACK
 !   	        ---------------------------
@@ -198,8 +167,8 @@ IKE=SIZE(PRHODREF,3) - JPVEXT
 !
 !  Saturation vapor mixing ratio and radiative tendency                    
 !
-ZEPS= XMV / XMD
-ZRVSAT(:,:,:) = ZEPS / (PPABST(:,:,:)*EXP(-XALPW+XBETAW/PT(:,:,:)+XGAMW*ALOG(PT(:,:,:))) - 1.0)
+ZEPS= CST%XMV / CST%XMD
+ZRVSAT(:,:,:) = ZEPS / (PPABST(:,:,:)*EXP(-CST%XALPW+CST%XBETAW/PT(:,:,:)+CST%XGAMW*ALOG(PT(:,:,:))) - 1.0)
 ZTDT(:,:,:)   = 0.
 IF (LACTIT .AND. SIZE(PDTHRAD).GT.0) ZTDT(:,:,:)   = PDTHRAD(:,:,:) * PEXNREF(:,:,:)
 !
@@ -222,7 +191,7 @@ IF (LADJ) THEN
                                                 .OR. ZTDT(IIB:IIE,IJB:IJE,IKB:IKE)<XTMIN
 !
    GNUCT(IIB:IIE,IJB:IJE,IKB:IKE) =       GNUCT(IIB:IIE,IJB:IJE,IKB:IKE)                       &
-                                    .AND. PT(IIB:IIE,IJB:IJE,IKB:IKE)>(XTT-22.)                &
+                                    .AND. PT(IIB:IIE,IJB:IJE,IKB:IKE)>(CST%XTT-22.)                &
                                     .AND. ZCONC_TOT(IIB:IIE,IJB:IJE,IKB:IKE)>XCTMIN(2)
 !
    IF (LSUBG_COND) GNUCT(IIB:IIE,IJB:IJE,IKB:IKE) = GNUCT(IIB:IIE,IJB:IJE,IKB:IKE)       &
@@ -231,7 +200,7 @@ IF (LADJ) THEN
                                                     .AND. PRVT(IIB:IIE,IJB:IJE,IKB:IKE).GE.ZRVSAT(IIB:IIE,IJB:IJE,IKB:IKE)
 ELSE
    GNUCT(IIB:IIE,IJB:IJE,IKB:IKE) =       PRVT(IIB:IIE,IJB:IJE,IKB:IKE).GE.ZRVSAT(IIB:IIE,IJB:IJE,IKB:IKE) &
-                                    .AND. PT(IIB:IIE,IJB:IJE,IKB:IKE)>(XTT-22.)                            &
+                                    .AND. PT(IIB:IIE,IJB:IJE,IKB:IKE)>(CST%XTT-22.)                            &
                                     .AND. ZCONC_TOT(IIB:IIE,IJB:IJE,IKB:IKE)>XCTMIN(2)
 END IF
 !
@@ -285,7 +254,7 @@ IF( INUCT >= 1 ) THEN
    ALLOCATE(ZSMAX(INUCT))
    IF (LADJ) THEN
       ZZW1(:) = 1.0/ZEPS + 1.0/ZZW1(:)                                   &
-                + (((XLVTT+(XCPV-XCL)*(ZZT(:)-XTT))/ZZT(:))**2)/(XCPD*XRV) ! Psi2
+                + (((CST%XLVTT+(CST%XCPV-CST%XCL)*(ZZT(:)-CST%XTT))/ZZT(:))**2)/(CST%XCPD*CST%XRV) ! Psi2
 !
 !
 !-------------------------------------------------------------------------------
@@ -454,8 +423,8 @@ IF( INUCT >= 1 ) THEN
 !
    IF (.NOT.LSUBG_COND) THEN
       ZW(:,:,:) = MIN( UNPACK( ZZW1(:),MASK=GNUCT(:,:,:),FIELD=0.0 ),PRVT(:,:,:) )
-      PTHT(:,:,:) = PTHT(:,:,:) + ZW(:,:,:) * (XLVTT+(XCPV-XCL)*(PT(:,:,:)-XTT))/                &
-            (PEXNREF(:,:,:)*(XCPD+XCPV*PRVT(:,:,:)+XCL*(PRCT(:,:,:)+PRRT(:,:,:))))
+      PTHT(:,:,:) = PTHT(:,:,:) + ZW(:,:,:) * (CST%XLVTT+(CST%XCPV-CST%XCL)*(PT(:,:,:)-CST%XTT))/                &
+            (PEXNREF(:,:,:)*(CST%XCPD+CST%XCPV*PRVT(:,:,:)+CST%XCL*(PRCT(:,:,:)+PRRT(:,:,:))))
       PRVT(:,:,:) = PRVT(:,:,:) - ZW(:,:,:) 
       PRCT(:,:,:) = PRCT(:,:,:) + ZW(:,:,:) 
       PCCT(:,:,:) = PCCT(:,:,:) + UNPACK( ZZW6(:),MASK=GNUCT(:,:,:),FIELD=0. ) 
@@ -497,37 +466,36 @@ IF( INUCT >= 1 ) THEN
 !
 END IF ! INUCT
 !
-IF ( tpfile%lopened ) THEN
-  IF ( INUCT == 0 ) THEN
-    ZW (:,:,:) = 0.
-    ZW2(:,:,:) = 0.
-  END IF
-  TZFIELD = TFIELDMETADATA(    &
-    CMNHNAME   = 'SMAX',       &
-    CSTDNAME   = '',           &
-    CLONGNAME  = 'SMAX',       &
-    CUNITS     = '',           &
-    CDIR       = 'XY',         &
-    CCOMMENT   = 'X_Y_Z_SMAX', &
-    NGRID      = 1,            &
-    NTYPE      = TYPEREAL,     &
-    NDIMS      = 3,            &
-    LTIMEDEP   = .TRUE.        )
-  CALL IO_Field_write(TPFILE,TZFIELD,ZW)
-  !
-  TZFIELD = TFIELDMETADATA(    &
-    CMNHNAME   = 'NACT',       &
-    CSTDNAME   = '',           &
-    CLONGNAME  = 'NACT',       &
-    CUNITS     = 'kg-1',       &
-    CDIR       = 'XY',         &
-    CCOMMENT   = 'X_Y_Z_NACT', &
-    NGRID      = 1,            &
-    NTYPE      = TYPEREAL,     &
-    NDIMS      = 3,            &
-    LTIMEDEP   = .TRUE.        )
-  CALL IO_Field_write(TPFILE,TZFIELD,ZW2)
-END IF
+!!$IF ( tpfile%lopened ) THEN
+!!$  IF ( INUCT == 0 ) THEN
+!!$    ZW (:,:,:) = 0.
+!!$    ZW2(:,:,:) = 0.
+!!$  END IF
+!!$
+!!$  TZFIELD%CMNHNAME   ='SMAX'
+!!$  TZFIELD%CSTDNAME   = ''
+!!$  TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+!!$  TZFIELD%CUNITS     = ''
+!!$  TZFIELD%CDIR       = 'XY'
+!!$  TZFIELD%CCOMMENT   = 'X_Y_Z_SMAX'
+!!$  TZFIELD%NGRID      = 1
+!!$  TZFIELD%NTYPE      = TYPEREAL
+!!$  TZFIELD%NDIMS      = 3
+!!$  TZFIELD%LTIMEDEP   = .TRUE.
+!!$  CALL IO_Field_write(TPFILE,TZFIELD,ZW)
+!!$  !
+!!$  TZFIELD%CMNHNAME   ='NACT'
+!!$  TZFIELD%CSTDNAME   = ''
+!!$  TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+!!$  TZFIELD%CUNITS     = 'kg-1'
+!!$  TZFIELD%CDIR       = 'XY'
+!!$  TZFIELD%CCOMMENT   = 'X_Y_Z_NACT'
+!!$  TZFIELD%NGRID      = 1
+!!$  TZFIELD%NTYPE      = TYPEREAL
+!!$  TZFIELD%NDIMS      = 3
+!!$  TZFIELD%LTIMEDEP   = .TRUE.
+!!$  CALL IO_Field_write(TPFILE,TZFIELD,ZW2)
+!!$END IF
 !
 !
 !-------------------------------------------------------------------------------
@@ -770,7 +738,7 @@ INTEGER                        :: PIVEC1
 ALLOCATE(PFUNCSMAX(NPTS))
 !
 PFUNCSMAX(:) = 0.
-PZVEC1 = MAX( ( 1.0 + 10.0 * XMNH_EPSILON ) ,MIN( REAL(NHYP)*( 1.0 - 10.0 * XMNH_EPSILON ) ,               &
+PZVEC1 = MAX( ( 1.0 + 10.0 * CST%XMNH_EPSILON ) ,MIN( REAL(NHYP)*( 1.0 - 10.0 * CST%XMNH_EPSILON ) ,               &
                            XHYPINTP1*LOG(PPZSMAX)+XHYPINTP2 ) )
 PIVEC1 = INT( PZVEC1 )
 PZVEC1 = PZVEC1 - REAL( PIVEC1 )
@@ -849,3 +817,4 @@ END FUNCTION SINGL_FUNCSMAX
 !-----------------------------------------------------------------------------
 !
 END SUBROUTINE LIMA_CCN_ACTIVATION
+END MODULE MODE_LIMA_CCN_ACTIVATION

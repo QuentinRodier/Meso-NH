@@ -3,38 +3,14 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-------------------------------------------------------------------------------
-!      #################################
-       MODULE MODI_LIMA_DROPLETS_AUTOCONVERSION
-!      #################################
-!
-INTERFACE
-   SUBROUTINE LIMA_DROPLETS_AUTOCONVERSION (LDCOMPUTE,                      &
-                                            PRHODREF,                       &
-                                            PRCT, PCCT, PLBDC, PLBDR,       &
-                                            P_RC_AUTO, P_CC_AUTO, P_CR_AUTO )
-!
-LOGICAL, DIMENSION(:),INTENT(IN)    :: LDCOMPUTE
-!
-REAL, DIMENSION(:),   INTENT(IN)    :: PRHODREF ! Reference Exner function
-!
-REAL, DIMENSION(:),   INTENT(IN)    :: PRCT    ! Cloud water m.r. at t
-REAL, DIMENSION(:),   INTENT(IN)    :: PCCT    ! Cloud water conc. at t
-REAL, DIMENSION(:),   INTENT(IN)    :: PLBDC   ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PLBDR   ! 
-!
-REAL, DIMENSION(:),   INTENT(OUT)   :: P_RC_AUTO
-REAL, DIMENSION(:),   INTENT(OUT)   :: P_CC_AUTO
-REAL, DIMENSION(:),   INTENT(OUT)   :: P_CR_AUTO
-!
-END SUBROUTINE LIMA_DROPLETS_AUTOCONVERSION
-END INTERFACE
-END MODULE MODI_LIMA_DROPLETS_AUTOCONVERSION
-!
+MODULE MODE_LIMA_DROPLETS_AUTOCONVERSION
+  IMPLICIT NONE
+CONTAINS
 !     ##########################################################################
-      SUBROUTINE LIMA_DROPLETS_AUTOCONVERSION (LDCOMPUTE,                      &
-                                               PRHODREF,                       &
-                                               PRCT, PCCT, PLBDC, PLBDR,       &
-                                               P_RC_AUTO, P_CC_AUTO, P_CR_AUTO )
+  SUBROUTINE LIMA_DROPLETS_AUTOCONVERSION (LDCOMPUTE,                      &
+                                           PRHODREF,                       &
+                                           PRCT, PCCT, PLBDC, PLBDR,       &
+                                           P_RC_AUTO, P_CC_AUTO, P_CR_AUTO )
 !     ##########################################################################
 !
 !!    PURPOSE
@@ -100,8 +76,8 @@ IF (NMOM_C.EQ.1 .AND. LKESSLERAC) THEN
    P_RC_AUTO(:) = - 1.E-3 * MAX ( PRCT(:) - 0.5E-3 / PRHODREF(:), 0. )
 ELSE IF (LKHKO) THEN
 !
-!        1. Autoconversion of cloud droplets (Berry-Reinhardt parameterization)
-!   	 ----------------------------------------------------------------------
+!        1. Autoconversion of cloud droplets
+!   	 -----------------------------------
 !
    WHERE ( PRCT(:)>XRTMIN(2) .AND. PCCT(:)>XCTMIN(2) .AND. LDCOMPUTE(:) )
 !
@@ -148,3 +124,4 @@ END IF
 !-------------------------------------------------------------------------------
 !
 END SUBROUTINE LIMA_DROPLETS_AUTOCONVERSION
+END MODULE MODE_LIMA_DROPLETS_AUTOCONVERSION

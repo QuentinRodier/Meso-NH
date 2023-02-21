@@ -3,53 +3,15 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-------------------------------------------------------------------------------
-!      #################################
-       MODULE MODI_LIMA_DROPLETS_RIMING_SNOW
-!      #################################
-!
-INTERFACE
-   SUBROUTINE LIMA_DROPLETS_RIMING_SNOW (PTSTEP,  LDCOMPUTE,                                               &
-                                         PRHODREF, PT,                                                     &
-                                         PRCT, PCCT, PRST, PCST, PLBDC, PLBDS, PLVFACT, PLSFACT,           &
-                                         P_TH_RIM, P_RC_RIM, P_CC_RIM, P_RS_RIM, P_CS_RIM, P_RG_RIM,       &
-                                         P_RI_HMS, P_CI_HMS, P_RS_HMS                                      )
-!
-REAL,                 INTENT(IN)    :: PTSTEP 
-LOGICAL, DIMENSION(:),INTENT(IN)    :: LDCOMPUTE
-!
-REAL, DIMENSION(:),   INTENT(IN)    :: PRHODREF    ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PT   ! 
-!
-REAL, DIMENSION(:),   INTENT(IN)    :: PRCT    ! Cloud water mr at t
-REAL, DIMENSION(:),   INTENT(IN)    :: PCCT    ! Cloud water C. at t
-REAL, DIMENSION(:),   INTENT(IN)    :: PRST    ! Snow mr at t
-REAL, DIMENSION(:),   INTENT(IN)    :: PCST    ! Snow C. at t
-REAL, DIMENSION(:),   INTENT(IN)    :: PLBDC   ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PLBDS   ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PLVFACT ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PLSFACT ! 
-!
-REAL, DIMENSION(:),   INTENT(OUT)   :: P_TH_RIM
-REAL, DIMENSION(:),   INTENT(OUT)   :: P_RC_RIM
-REAL, DIMENSION(:),   INTENT(OUT)   :: P_CC_RIM
-REAL, DIMENSION(:),   INTENT(OUT)   :: P_RS_RIM
-REAL, DIMENSION(:),   INTENT(OUT)   :: P_CS_RIM
-REAL, DIMENSION(:),   INTENT(OUT)   :: P_RG_RIM
-!
-REAL, DIMENSION(:),   INTENT(OUT)   :: P_RI_HMS
-REAL, DIMENSION(:),   INTENT(OUT)   :: P_CI_HMS
-REAL, DIMENSION(:),   INTENT(OUT)   :: P_RS_HMS
-!
-END SUBROUTINE LIMA_DROPLETS_RIMING_SNOW
-END INTERFACE
-END MODULE MODI_LIMA_DROPLETS_RIMING_SNOW
-!
+MODULE MODE_LIMA_DROPLETS_RIMING_SNOW
+  IMPLICIT NONE
+CONTAINS
 !     #########################################################################################
-      SUBROUTINE LIMA_DROPLETS_RIMING_SNOW (PTSTEP, LDCOMPUTE,                                                &
-                                            PRHODREF, PT,                                                     &
-                                            PRCT, PCCT, PRST, PCST, PLBDC, PLBDS, PLVFACT, PLSFACT,           &
-                                            P_TH_RIM, P_RC_RIM, P_CC_RIM, P_RS_RIM, P_CS_RIM, P_RG_RIM,       &
-                                            P_RI_HMS, P_CI_HMS, P_RS_HMS                                      )
+  SUBROUTINE LIMA_DROPLETS_RIMING_SNOW (PTSTEP, LDCOMPUTE,                                                &
+                                        PRHODREF, PT,                                                     &
+                                        PRCT, PCCT, PRST, PCST, PLBDC, PLBDS, PLVFACT, PLSFACT,           &
+                                        P_TH_RIM, P_RC_RIM, P_CC_RIM, P_RS_RIM, P_CS_RIM, P_RG_RIM,       &
+                                        P_RI_HMS, P_CI_HMS, P_RS_HMS                                      )
 !     #########################################################################################
 !
 !!    PURPOSE
@@ -234,3 +196,4 @@ END DO
 !-------------------------------------------------------------------------------
 !
 END SUBROUTINE LIMA_DROPLETS_RIMING_SNOW
+END MODULE MODE_LIMA_DROPLETS_RIMING_SNOW

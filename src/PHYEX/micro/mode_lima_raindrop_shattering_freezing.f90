@@ -3,41 +3,15 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-------------------------------------------------------------------------------
-!      #############################################
-       MODULE MODI_LIMA_RAINDROP_SHATTERING_FREEZING
-!      #############################################
-!
-INTERFACE
-   SUBROUTINE LIMA_RAINDROP_SHATTERING_FREEZING (LDCOMPUTE,                    &
-                                                 PRHODREF,                     &
-                                                 PRRT, PCRT, PRIT, PCIT, PRGT, &
-                                                 PLBDR,                        &
-                                                 P_RI_RDSF, P_CI_RDSF          )
-!
-LOGICAL, DIMENSION(:),INTENT(IN)    :: LDCOMPUTE
-!
-REAL, DIMENSION(:),   INTENT(IN)    :: PRHODREF
-!
-REAL, DIMENSION(:),   INTENT(IN)    :: PRRT
-REAL, DIMENSION(:),   INTENT(IN)    :: PCRT
-REAL, DIMENSION(:),   INTENT(IN)    :: PRIT
-REAL, DIMENSION(:),   INTENT(IN)    :: PCIT
-REAL, DIMENSION(:),   INTENT(IN)    :: PRGT
-REAL, DIMENSION(:),   INTENT(IN)    :: PLBDR 
-!
-REAL, DIMENSION(:),   INTENT(OUT)   :: P_RI_RDSF
-REAL, DIMENSION(:),   INTENT(OUT)   :: P_CI_RDSF
-!
-END SUBROUTINE LIMA_RAINDROP_SHATTERING_FREEZING
-END INTERFACE
-END MODULE MODI_LIMA_RAINDROP_SHATTERING_FREEZING
-!
+MODULE MODE_LIMA_RAINDROP_SHATTERING_FREEZING
+  IMPLICIT NONE
+CONTAINS
 !     #######################################################################
-      SUBROUTINE LIMA_RAINDROP_SHATTERING_FREEZING (LDCOMPUTE,                    &
-                                                    PRHODREF,                     &
-                                                    PRRT, PCRT, PRIT, PCIT, PRGT, &
-                                                    PLBDR,                        &
-                                                    P_RI_RDSF, P_CI_RDSF          )
+  SUBROUTINE LIMA_RAINDROP_SHATTERING_FREEZING (LDCOMPUTE,                    &
+                                                PRHODREF,                     &
+                                                PRRT, PCRT, PRIT, PCIT, PRGT, &
+                                                PLBDR,                        &
+                                                P_RI_RDSF, P_CI_RDSF          )
 !     #######################################################################
 !
 !!    PURPOSE
@@ -157,3 +131,4 @@ ENDIF
 !-------------------------------------------------------------------------------
 !
 END SUBROUTINE LIMA_RAINDROP_SHATTERING_FREEZING
+END MODULE MODE_LIMA_RAINDROP_SHATTERING_FREEZING

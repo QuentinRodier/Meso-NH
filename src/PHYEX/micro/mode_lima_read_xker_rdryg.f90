@@ -3,49 +3,14 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 init 2006/05/18 13:07:25
-!-----------------------------------------------------------------
-!     ###########################
-      MODULE MODI_LIMA_READ_XKER_RDRYG
-!     ###########################
-!
-INTERFACE
-      SUBROUTINE LIMA_READ_XKER_RDRYG (KDRYLBDAG,KDRYLBDAR,KND,                   &
-                    PALPHAG,PNUG,PALPHAR,PNUR,PEGR,PBR,PCG,PDG,PCR,PDR,      &
-                    PDRYLBDAG_MAX,PDRYLBDAR_MAX,PDRYLBDAG_MIN,PDRYLBDAR_MIN, &
-                    PFDINFTY,PKER_RDRYG                                      )
-!
-INTEGER, INTENT(OUT) :: KND,KDRYLBDAG,KDRYLBDAR
-REAL,    INTENT(OUT) :: PALPHAG
-REAL,    INTENT(OUT) :: PNUG
-REAL,    INTENT(OUT) :: PALPHAR
-REAL,    INTENT(OUT) :: PNUR
-REAL,    INTENT(OUT) :: PEGR
-REAL,    INTENT(OUT) :: PBR
-REAL,    INTENT(OUT) :: PCG
-REAL,    INTENT(OUT) :: PDG
-REAL,    INTENT(OUT) :: PCR
-REAL,    INTENT(OUT) :: PDR
-REAL,    INTENT(OUT) :: PDRYLBDAG_MAX
-REAL,    INTENT(OUT) :: PDRYLBDAR_MAX
-REAL,    INTENT(OUT) :: PDRYLBDAG_MIN
-REAL,    INTENT(OUT) :: PDRYLBDAR_MIN
-REAL,    INTENT(OUT) :: PFDINFTY
-REAL, DIMENSION(:,:), INTENT(OUT), OPTIONAL :: PKER_RDRYG 
-!
-END SUBROUTINE LIMA_READ_XKER_RDRYG
-!
-END INTERFACE
-!
-END MODULE MODI_LIMA_READ_XKER_RDRYG
+MODULE MODE_LIMA_READ_XKER_RDRYG
+  IMPLICIT NONE
+CONTAINS
 !     ########################################################################
-      SUBROUTINE LIMA_READ_XKER_RDRYG (KDRYLBDAG,KDRYLBDAR,KND,                   &
-                    PALPHAG,PNUG,PALPHAR,PNUR,PEGR,PBR,PCG,PDG,PCR,PDR,      &
-                    PDRYLBDAG_MAX,PDRYLBDAR_MAX,PDRYLBDAG_MIN,PDRYLBDAR_MIN, &
-                    PFDINFTY,PKER_RDRYG                                      )
+  SUBROUTINE LIMA_READ_XKER_RDRYG (KDRYLBDAG,KDRYLBDAR,KND,                   &
+                                   PALPHAG,PNUG,PALPHAR,PNUR,PEGR,PBR,PCG,PDG,PCR,PDR,      &
+                                   PDRYLBDAG_MAX,PDRYLBDAR_MAX,PDRYLBDAG_MIN,PDRYLBDAR_MIN, &
+                                   PFDINFTY,PKER_RDRYG                                      )
 !     ########################################################################
 !
 !!****  * * - initialize the kernels for the snow-graupel dry growth process
@@ -1734,3 +1699,4 @@ PKER_RDRYG( 40, 40) =  0.603544E-02
 END IF
 !
 END SUBROUTINE LIMA_READ_XKER_RDRYG
+END MODULE MODE_LIMA_READ_XKER_RDRYG

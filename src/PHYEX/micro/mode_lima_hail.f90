@@ -3,110 +3,22 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-!      #################################
-       MODULE MODI_LIMA_HAIL
-!      #################################
-!
-INTERFACE
-   SUBROUTINE LIMA_HAIL (PTSTEP, LDCOMPUTE,                                     &
-                         PRHODREF, PPRES, PT, PKA, PDV, PCJ,                    &
-                         PRVT, PRCT, PRRT, PRIT, PRST, PRGT, PRHT,              &
-                         PCCT, PCRT, PCIT, PCST, PCGT, PCHT,                    &
-                         PLBDC, PLBDR, PLBDS, PLBDG, PLBDH,                     &
-                         PLVFACT, PLSFACT,                                      &
-                         P_TH_WETH, P_RC_WETH, P_CC_WETH, P_RR_WETH, P_CR_WETH, &
-                         P_RI_WETH, P_CI_WETH, P_RS_WETH, P_CS_WETH, P_RG_WETH, P_CG_WETH, P_RH_WETH, &
-                         P_RG_COHG, P_CG_COHG,                                  &
-                         P_TH_HMLT, P_RR_HMLT, P_CR_HMLT, P_CH_HMLT,            &
-                         PA_TH, PA_RC, PA_CC, PA_RR, PA_CR,                     &
-                         PA_RI, PA_CI, PA_RS, PA_CS, PA_RG, PA_CG, PA_RH, PA_CH )
-!
-REAL,                 INTENT(IN)    :: PTSTEP 
-LOGICAL, DIMENSION(:),INTENT(IN)    :: LDCOMPUTE
-!
-REAL, DIMENSION(:),   INTENT(IN)    :: PRHODREF    ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PPRES    ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PT   ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PKA   ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PDV   ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PCJ   ! 
-!
-REAL, DIMENSION(:),   INTENT(IN)    :: PRVT    ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PRCT    ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PRRT    ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PRIT    ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PRST    ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PRGT    !
-REAL, DIMENSION(:),   INTENT(IN)    :: PRHT    !
-!
-REAL, DIMENSION(:),   INTENT(IN)    :: PCCT    !
-REAL, DIMENSION(:),   INTENT(IN)    :: PCRT    !
-REAL, DIMENSION(:),   INTENT(IN)    :: PCIT    !
-REAL, DIMENSION(:),   INTENT(IN)    :: PCST    !
-REAL, DIMENSION(:),   INTENT(IN)    :: PCGT    !
-REAL, DIMENSION(:),   INTENT(IN)    :: PCHT    !
-!
-REAL, DIMENSION(:),   INTENT(IN)    :: PLBDC   ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PLBDR   ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PLBDS   ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PLBDG   ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PLBDH   ! 
-!
-REAL, DIMENSION(:),   INTENT(IN)    :: PLVFACT ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PLSFACT ! 
-!
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_TH_WETH
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_RC_WETH
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_CC_WETH
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_RR_WETH
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_CR_WETH
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_RI_WETH
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_CI_WETH
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_RS_WETH
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_CS_WETH
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_RG_WETH
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_CG_WETH
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_RH_WETH
-!
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_RG_COHG
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_CG_COHG
-!
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_TH_HMLT
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_RR_HMLT
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_CR_HMLT
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_CH_HMLT
-!
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_TH
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RC
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_CC
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RR
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_CR
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RI
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_CI
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RS
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_CS
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RG
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_CG
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RH
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_CH
-!
-END SUBROUTINE LIMA_HAIL
-END INTERFACE
-END MODULE MODI_LIMA_HAIL
-!
+MODULE MODE_LIMA_HAIL
+  IMPLICIT NONE
+CONTAINS
 !     #################################################################################
-      SUBROUTINE LIMA_HAIL (PTSTEP, LDCOMPUTE,                                     &
-                            PRHODREF, PPRES, PT, PKA, PDV, PCJ,                    &
-                            PRVT, PRCT, PRRT, PRIT, PRST, PRGT, PRHT,              &
-                            PCCT, PCRT, PCIT, PCST, PCGT, PCHT,                    &
-                            PLBDC, PLBDR, PLBDS, PLBDG, PLBDH,                     &
-                            PLVFACT, PLSFACT,                                      &
-                            P_TH_WETH, P_RC_WETH, P_CC_WETH, P_RR_WETH, P_CR_WETH, &
-                            P_RI_WETH, P_CI_WETH, P_RS_WETH, P_CS_WETH, P_RG_WETH, P_CG_WETH, P_RH_WETH, &
-                            P_RG_COHG, P_CG_COHG,                                  &
-                            P_TH_HMLT, P_RR_HMLT, P_CR_HMLT, P_CH_HMLT,            &
-                            PA_TH, PA_RC, PA_CC, PA_RR, PA_CR,                     &
-                            PA_RI, PA_CI, PA_RS, PA_CS, PA_RG, PA_CG, PA_RH, PA_CH )
+  SUBROUTINE LIMA_HAIL (PTSTEP, LDCOMPUTE,                                     &
+                        PRHODREF, PPRES, PT, PKA, PDV, PCJ,                    &
+                        PRVT, PRCT, PRRT, PRIT, PRST, PRGT, PRHT,              &
+                        PCCT, PCRT, PCIT, PCST, PCGT, PCHT,                    &
+                        PLBDC, PLBDR, PLBDS, PLBDG, PLBDH,                     &
+                        PLVFACT, PLSFACT,                                      &
+                        P_TH_WETH, P_RC_WETH, P_CC_WETH, P_RR_WETH, P_CR_WETH, &
+                        P_RI_WETH, P_CI_WETH, P_RS_WETH, P_CS_WETH, P_RG_WETH, P_CG_WETH, P_RH_WETH, &
+                        P_RG_COHG, P_CG_COHG,                                  &
+                        P_TH_HMLT, P_RR_HMLT, P_CR_HMLT, P_CH_HMLT,            &
+                        PA_TH, PA_RC, PA_CC, PA_RR, PA_CR,                     &
+                        PA_RI, PA_CI, PA_RS, PA_CS, PA_RG, PA_CG, PA_RH, PA_CH )
 !     #################################################################################
 !
 !!    PURPOSE
@@ -133,7 +45,7 @@ END MODULE MODI_LIMA_HAIL
 !              ------------
 !
 USE MODD_CST,              ONLY : XTT, XMD, XMV, XRD, XRV, XLVTT, XLMTT, XESTT, XCL, XCI, XCPV
-USE MODD_PARAM_LIMA,       ONLY : XRTMIN, XCTMIN, XCEXVT, LHAIL
+USE MODD_PARAM_LIMA,       ONLY : XRTMIN, XCTMIN, XCEXVT
 USE MODD_PARAM_LIMA_MIXED, ONLY : NWETLBDAG, XWETINTP1G, XWETINTP2G, &
                                   NWETLBDAH, X0DEPH, X1DEPH, XDH, XEX0DEPH, XEX1DEPH, &
                                   XFWETH, XWETINTP1H, XWETINTP2H, &
@@ -574,3 +486,4 @@ CONTAINS
 !-------------------------------------------------------------------------------
 !
 END SUBROUTINE LIMA_HAIL
+END MODULE MODE_LIMA_HAIL

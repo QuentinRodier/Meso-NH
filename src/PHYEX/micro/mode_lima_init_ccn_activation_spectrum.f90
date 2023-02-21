@@ -3,27 +3,11 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-------------------------------------------------------------------------------
-!      ####################
-       MODULE MODI_LIMA_INIT_CCN_ACTIVATION_SPECTRUM
-INTERFACE
-   SUBROUTINE LIMA_INIT_CCN_ACTIVATION_SPECTRUM (CTYPE_CCN,XD,XSIGMA,XLIMIT_FACTOR,XK,XMU,XBETA,XKAPPA)
-     !
-     CHARACTER(LEN=*), INTENT(IN)  :: CTYPE_CCN         ! Aerosol type
-     REAL,             INTENT(IN)  :: XD            ! Aerosol PSD modal diameter          
-     REAL,             INTENT(IN)  :: XSIGMA        ! Aerosol PSD width
-     REAL,             INTENT(OUT) :: XLIMIT_FACTOR ! C/Naer
-     REAL,             INTENT(OUT) :: XK            ! k
-     REAL,             INTENT(OUT) :: XMU           ! mu
-     REAL,             INTENT(OUT) :: XBETA         ! beta
-     REAL,             INTENT(OUT) :: XKAPPA        ! kappa
-!
-   END SUBROUTINE LIMA_INIT_CCN_ACTIVATION_SPECTRUM
-END INTERFACE
-END MODULE MODI_LIMA_INIT_CCN_ACTIVATION_SPECTRUM
-!      ####################
-!
+MODULE MODE_LIMA_INIT_CCN_ACTIVATION_SPECTRUM
+  IMPLICIT NONE
+CONTAINS
 !     #############################################################
-      SUBROUTINE LIMA_INIT_CCN_ACTIVATION_SPECTRUM (CTYPE_CCN,XD,XSIGMA,XLIMIT_FACTOR,XK,XMU,XBETA,XKAPPA)
+  SUBROUTINE LIMA_INIT_CCN_ACTIVATION_SPECTRUM (CTYPE_CCN,XD,XSIGMA,XLIMIT_FACTOR,XK,XMU,XBETA,XKAPPA)
 !     #############################################################
 
 !!
@@ -456,3 +440,4 @@ END FUNCTION DSDD
 !
 !------------------------------------------------------------------------------
 END SUBROUTINE LIMA_INIT_CCN_ACTIVATION_SPECTRUM
+END MODULE MODE_LIMA_INIT_CCN_ACTIVATION_SPECTRUM

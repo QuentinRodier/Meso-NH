@@ -3,35 +3,14 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-------------------------------------------------------------------------------
-!      #################################
-       MODULE MODI_LIMA_DROPS_SELF_COLLECTION
-!      #################################
-!
-INTERFACE
-   SUBROUTINE LIMA_DROPS_SELF_COLLECTION (LDCOMPUTE,           &
-                                          PRHODREF,            &
-                                          PCRT, PLBDR, PLBDR3, &
-                                          P_CR_SCBU            )
-!
-LOGICAL, DIMENSION(:),INTENT(IN)    :: LDCOMPUTE
-!
-REAL, DIMENSION(:),   INTENT(IN)    :: PRHODREF ! Reference Exner function
-!
-REAL, DIMENSION(:),   INTENT(IN)    :: PCRT    ! Cloud water C. at t
-REAL, DIMENSION(:),   INTENT(IN)    :: PLBDR   ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PLBDR3  ! 
-!
-REAL, DIMENSION(:),   INTENT(OUT)   :: P_CR_SCBU
-!
-END SUBROUTINE LIMA_DROPS_SELF_COLLECTION
-END INTERFACE
-END MODULE MODI_LIMA_DROPS_SELF_COLLECTION
-!
+MODULE MODE_LIMA_DROPS_SELF_COLLECTION
+  IMPLICIT NONE
+CONTAINS
 !     #############################################################
-      SUBROUTINE LIMA_DROPS_SELF_COLLECTION (LDCOMPUTE,           &
-                                             PRHODREF,            &
-                                             PCRT, PLBDR, PLBDR3, &
-                                             P_CR_SCBU            )
+  SUBROUTINE LIMA_DROPS_SELF_COLLECTION (LDCOMPUTE,           &
+                                         PRHODREF,            &
+                                         PCRT, PLBDR, PLBDR3, &
+                                         P_CR_SCBU            )
 !     #############################################################
 !
 !!    PURPOSE
@@ -121,3 +100,4 @@ P_CR_SCBU(:) = - ZW3(:) * PRHODREF(:)
 !-------------------------------------------------------------------------------
 !
 END SUBROUTINE LIMA_DROPS_SELF_COLLECTION
+END MODULE MODE_LIMA_DROPS_SELF_COLLECTION

@@ -3,45 +3,15 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-!      #####################
-       MODULE MODI_LIMA_SNOW_DEPOSITION
-!      #####################
-!
-INTERFACE
-      SUBROUTINE LIMA_SNOW_DEPOSITION (LDCOMPUTE,                         &
-                                       PRHODREF, PSSI, PAI, PCJ, PLSFACT, &
-                                       PRST, PCST, PLBDS,                 &
-                                       P_RI_CNVI, P_CI_CNVI,              &
-                                       P_TH_DEPS, P_RS_DEPS               )
-!
-LOGICAL, DIMENSION(:),INTENT(IN)    :: LDCOMPUTE
-!
-REAL, DIMENSION(:),   INTENT(IN)    :: PRHODREF! Reference density
-REAL, DIMENSION(:),   INTENT(IN)    :: PSSI  ! abs. pressure at time t
-REAL, DIMENSION(:),   INTENT(IN)    :: PAI  ! abs. pressure at time t
-REAL, DIMENSION(:),   INTENT(IN)    :: PCJ  ! abs. pressure at time t
-REAL, DIMENSION(:),   INTENT(IN)    :: PLSFACT  ! abs. pressure at time t
-!
-REAL, DIMENSION(:),   INTENT(IN)    :: PRST    ! Snow/aggregate m.r. at t 
-REAL, DIMENSION(:),   INTENT(IN)    :: PCST    ! Snow/aggregate concentration 
-!
-REAL, DIMENSION(:),   INTENT(IN)    :: PLBDS    ! Graupel m.r. at t 
-!
-REAL, DIMENSION(:),   INTENT(OUT)   :: P_RI_CNVI
-REAL, DIMENSION(:),   INTENT(OUT)   :: P_CI_CNVI
-REAL, DIMENSION(:),   INTENT(OUT)   :: P_TH_DEPS
-REAL, DIMENSION(:),   INTENT(OUT)   :: P_RS_DEPS
-!
-END SUBROUTINE LIMA_SNOW_DEPOSITION
-END INTERFACE
-END MODULE MODI_LIMA_SNOW_DEPOSITION
-!
+MODULE MODE_LIMA_SNOW_DEPOSITION
+  IMPLICIT NONE
+CONTAINS
 !     ##########################################################################
-SUBROUTINE LIMA_SNOW_DEPOSITION (LDCOMPUTE,                                &
-                                 PRHODREF,  PSSI, PAI, PCJ, PLSFACT,       &
-                                 PRST, PCST, PLBDS,                        &
-                                 P_RI_CNVI, P_CI_CNVI,                     &
-                                 P_TH_DEPS, P_RS_DEPS                      )
+  SUBROUTINE LIMA_SNOW_DEPOSITION (LDCOMPUTE,                                &
+                                   PRHODREF,  PSSI, PAI, PCJ, PLSFACT,       &
+                                   PRST, PCST, PLBDS,                        &
+                                   P_RI_CNVI, P_CI_CNVI,                     &
+                                   P_TH_DEPS, P_RS_DEPS                      )
 !     ##########################################################################
 !
 !!    PURPOSE
@@ -177,3 +147,4 @@ ELSE
 END IF
 !
 END SUBROUTINE LIMA_SNOW_DEPOSITION
+END MODULE MODE_LIMA_SNOW_DEPOSITION

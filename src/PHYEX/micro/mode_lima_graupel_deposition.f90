@@ -3,37 +3,13 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-------------------------------------------------------------------------------
-!      #################################
-       MODULE MODI_LIMA_GRAUPEL_DEPOSITION
-!      #################################
-!
-INTERFACE
-   SUBROUTINE LIMA_GRAUPEL_DEPOSITION (LDCOMPUTE, PRHODREF,                        &
-                                       PRGT, PCGT, PSSI, PLBDG, PAI, PCJ, PLSFACT, &
-                                       P_TH_DEPG, P_RG_DEPG                        )
-!
-LOGICAL, DIMENSION(:),INTENT(IN)    :: LDCOMPUTE
-REAL, DIMENSION(:),   INTENT(IN)    :: PRHODREF ! 
-!
-REAL, DIMENSION(:),   INTENT(IN)    :: PRGT     ! graupel mr
-REAL, DIMENSION(:),   INTENT(IN)    :: PCGT     ! graupel conc
-REAL, DIMENSION(:),   INTENT(IN)    :: PSSI     ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PLBDG    ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PAI      ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PCJ      ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PLSFACT  ! 
-!
-REAL, DIMENSION(:),   INTENT(OUT)   :: P_TH_DEPG
-REAL, DIMENSION(:),   INTENT(OUT)   :: P_RG_DEPG
-!!
-END SUBROUTINE LIMA_GRAUPEL_DEPOSITION
-END INTERFACE
-END MODULE MODI_LIMA_GRAUPEL_DEPOSITION
-!
+MODULE MODE_LIMA_GRAUPEL_DEPOSITION
+  IMPLICIT NONE
+CONTAINS
 !     ###########################################################################
-      SUBROUTINE LIMA_GRAUPEL_DEPOSITION (LDCOMPUTE, PRHODREF,                        &
-                                          PRGT, PCGT, PSSI, PLBDG, PAI, PCJ, PLSFACT, &
-                                          P_TH_DEPG, P_RG_DEPG                        )
+  SUBROUTINE LIMA_GRAUPEL_DEPOSITION (LDCOMPUTE, PRHODREF,                        &
+                                      PRGT, PCGT, PSSI, PLBDG, PAI, PCJ, PLSFACT, &
+                                      P_TH_DEPG, P_RG_DEPG                        )
 !     ###########################################################################
 !
 !!    PURPOSE
@@ -98,3 +74,4 @@ END WHERE
 !-------------------------------------------------------------------------------
 !
 END SUBROUTINE LIMA_GRAUPEL_DEPOSITION
+END MODULE MODE_LIMA_GRAUPEL_DEPOSITION

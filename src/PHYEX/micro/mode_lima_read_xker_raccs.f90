@@ -3,53 +3,14 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 init 2006/05/18 13:07:25
-!-----------------------------------------------------------------
-!     ###########################
-      MODULE MODI_LIMA_READ_XKER_RACCS 
-!     ###########################
-!
-INTERFACE
-      SUBROUTINE LIMA_READ_XKER_RACCS (KACCLBDAS,KACCLBDAR,KND,                        &
-                      PALPHAS,PNUS,PALPHAR,PNUR,PESR,PBS,PBR,PCS,PDS,PFVELOS,PCR,PDR,  &
-                      PACCLBDAS_MAX,PACCLBDAR_MAX,PACCLBDAS_MIN,PACCLBDAR_MIN,         &
-                      PFDINFTY,PKER_RACCSS,PKER_RACCS,PKER_SACCRG                      )
-!
-INTEGER, INTENT(OUT) :: KND,KACCLBDAS,KACCLBDAR
-REAL,    INTENT(OUT) :: PALPHAS
-REAL,    INTENT(OUT) :: PNUS
-REAL,    INTENT(OUT) :: PALPHAR
-REAL,    INTENT(OUT) :: PNUR
-REAL,    INTENT(OUT) :: PESR
-REAL,    INTENT(OUT) :: PBS
-REAL,    INTENT(OUT) :: PBR
-REAL,    INTENT(OUT) :: PCS
-REAL,    INTENT(OUT) :: PDS
-REAL,    INTENT(OUT) :: PFVELOS
-REAL,    INTENT(OUT) :: PCR
-REAL,    INTENT(OUT) :: PDR
-REAL,    INTENT(OUT) :: PACCLBDAS_MAX
-REAL,    INTENT(OUT) :: PACCLBDAR_MAX
-REAL,    INTENT(OUT) :: PACCLBDAS_MIN
-REAL,    INTENT(OUT) :: PACCLBDAR_MIN
-REAL,    INTENT(OUT) :: PFDINFTY
-REAL, DIMENSION(:,:), INTENT(OUT), OPTIONAL :: PKER_RACCSS
-REAL, DIMENSION(:,:), INTENT(OUT), OPTIONAL :: PKER_RACCS 
-REAL, DIMENSION(:,:), INTENT(OUT), OPTIONAL :: PKER_SACCRG
-!
-END SUBROUTINE LIMA_READ_XKER_RACCS
-!
-END INTERFACE
-!
-END MODULE MODI_LIMA_READ_XKER_RACCS
+MODULE MODE_LIMA_READ_XKER_RACCS
+  IMPLICIT NONE
+CONTAINS
 !     ##########################################################################
-      SUBROUTINE LIMA_READ_XKER_RACCS (KACCLBDAS,KACCLBDAR,KND,                        &
-                      PALPHAS,PNUS,PALPHAR,PNUR,PESR,PBS,PBR,PCS,PDS,PFVELOS,PCR,PDR,  &
-                      PACCLBDAS_MAX,PACCLBDAR_MAX,PACCLBDAS_MIN,PACCLBDAR_MIN,         &
-                      PFDINFTY,PKER_RACCSS,PKER_RACCS,PKER_SACCRG                      )
+  SUBROUTINE LIMA_READ_XKER_RACCS (KACCLBDAS,KACCLBDAR,KND,                                         &
+                                   PALPHAS,PNUS,PALPHAR,PNUR,PESR,PBS,PBR,PCS,PDS,PFVELOS,PCR,PDR,  &
+                                   PACCLBDAS_MAX,PACCLBDAR_MAX,PACCLBDAS_MIN,PACCLBDAR_MIN,         &
+                                   PFDINFTY,PKER_RACCSS,PKER_RACCS,PKER_SACCRG                      )
 !     ##########################################################################
 !
 !!****  * * - initialize the kernels for the rain-snow accretion process
@@ -4951,3 +4912,4 @@ IF( PRESENT(PKER_SACCRG) ) THEN
 END IF
 !
 END SUBROUTINE LIMA_READ_XKER_RACCS
+END MODULE MODE_LIMA_READ_XKER_RACCS

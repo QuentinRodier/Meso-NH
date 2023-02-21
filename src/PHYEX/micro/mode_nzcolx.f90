@@ -3,62 +3,15 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 init 2006/05/18 13:07:25
-!-----------------------------------------------------------------
-!     ##################
-      MODULE MODI_NZCOLX
-!     ##################
-!
-INTERFACE
-!
-      SUBROUTINE NZCOLX( KND, PALPHAX, PNUX, PALPHAZ, PNUZ,          &
-                         PEXZ, PFALLX, PEXFALLX, PFALLEXPX,          &
-                         PFALLZ, PEXFALLZ, PFALLEXPZ,                &
-		         PLBDAXMAX, PLBDAZMAX, PLBDAXMIN, PLBDAZMIN, &
-		         PDINFTY, PNZCOLX                            )
-!
-INTEGER, INTENT(IN) :: KND    ! Number of discrete size intervals in DX and DZ  
-!
-!
-REAL, INTENT(IN) :: PALPHAX   ! First shape parameter of the specy X 
-			      ! size distribution (generalized gamma law)
-REAL, INTENT(IN) :: PNUX      ! Second shape parameter of the specy X
-			      ! size distribution (generalized gamma law)
-REAL, INTENT(IN) :: PALPHAZ   ! First shape parameter of the specy Z 
-			      ! size distribution (generalized gamma law)
-REAL, INTENT(IN) :: PNUZ      ! Second shape parameter of the specy Z
-REAL, INTENT(IN) :: PEXZ      ! Efficiency of specy X collecting specy Z
-REAL, INTENT(IN) :: PFALLX    ! Fall speed constant of specy X
-REAL, INTENT(IN) :: PEXFALLX  ! Fall speed exponent of specy X
-REAL, INTENT(IN) :: PFALLEXPX ! Fall speed exponential constant of specy X
-REAL, INTENT(IN) :: PFALLZ    ! Fall speed constant of specy Z
-REAL, INTENT(IN) :: PEXFALLZ  ! Fall speed exponent of specy Z
-REAL, INTENT(IN) :: PFALLEXPZ ! Fall speed exponential constant of specy Z
-REAL, INTENT(IN) :: PLBDAXMAX ! Maximun slope of size distribution of specy X
-REAL, INTENT(IN) :: PLBDAZMAX ! Maximun slope of size distribution of specy Z
-REAL, INTENT(IN) :: PLBDAXMIN ! Minimun slope of size distribution of specy X
-REAL, INTENT(IN) :: PLBDAZMIN ! Minimun slope of size distribution of specy Z
-REAL, INTENT(IN) :: PDINFTY   ! Factor to define the largest diameter up to
-			      ! which the diameter integration is performed
-!
-REAL, DIMENSION(:,:), INTENT(INOUT) :: PNZCOLX ! Scaled fall speed difference in
-				               ! the mass collection kernel as a
-					       ! function of LAMBDAX and LAMBDAZ
-!
-      END SUBROUTINE NZCOLX
-!
-END INTERFACE
-!
-      END MODULE MODI_NZCOLX
+MODULE MODE_NZCOLX
+  IMPLICIT NONE
+CONTAINS
 !     ################################################################
-      SUBROUTINE NZCOLX( KND, PALPHAX, PNUX, PALPHAZ, PNUZ,          &
-                         PEXZ, PFALLX, PEXFALLX, PFALLEXPX,          &
-                         PFALLZ, PEXFALLZ, PFALLEXPZ,                &
-		         PLBDAXMAX, PLBDAZMAX, PLBDAXMIN, PLBDAZMIN, &
-		         PDINFTY, PNZCOLX                            )
+  SUBROUTINE NZCOLX( KND, PALPHAX, PNUX, PALPHAZ, PNUZ,          &
+                     PEXZ, PFALLX, PEXFALLX, PFALLEXPX,          &
+                     PFALLZ, PEXFALLZ, PFALLEXPZ,                &
+                     PLBDAXMAX, PLBDAZMAX, PLBDAXMIN, PLBDAZMIN, &
+                     PDINFTY, PNZCOLX                            )
 !     ################################################################
 !
 !
@@ -276,3 +229,4 @@ DO JLBDAX = 1,SIZE(PNZCOLX(:,:),1)
 END DO
 !
 END SUBROUTINE NZCOLX
+END MODULE MODE_NZCOLX

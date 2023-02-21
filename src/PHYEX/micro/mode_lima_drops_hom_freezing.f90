@@ -2,53 +2,16 @@
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!      #################################
-       MODULE MODI_LIMA_DROPS_HOM_FREEZING
-!      #################################
-!
-INTERFACE
-      SUBROUTINE LIMA_DROPS_HOM_FREEZING (PTSTEP, LDCOMPUTE,                        &
-                                          PEXNREF, PPABST,                          &
-                                          PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT, &
-                                          PCRT,                                     &
-                                          P_TH_HONR, P_RR_HONR, P_CR_HONR,          &
-                                          PB_TH, PB_RR, PB_CR, PB_RG                )
-!
-REAL,                  INTENT(IN)    :: PTSTEP 
-LOGICAL, DIMENSION(:), INTENT(IN)    :: LDCOMPUTE
-!
-REAL, DIMENSION(:),    INTENT(IN)    :: PEXNREF ! Reference Exner function
-REAL, DIMENSION(:),    INTENT(IN)    :: PPABST  ! abs. pressure at time t
-!
-REAL, DIMENSION(:),    INTENT(IN)    :: PTHT    ! Theta at time t
-REAL, DIMENSION(:),    INTENT(IN)    :: PRVT    ! Water vapor m.r. at t 
-REAL, DIMENSION(:),    INTENT(IN)    :: PRCT    ! Cloud water m.r. at t 
-REAL, DIMENSION(:),    INTENT(IN)    :: PRRT    ! Rain water m.r. at t 
-REAL, DIMENSION(:),    INTENT(IN)    :: PRIT    ! Cloud ice m.r. at t 
-REAL, DIMENSION(:),    INTENT(IN)    :: PRST    ! Snow/aggregate m.r. at t 
-REAL, DIMENSION(:),    INTENT(IN)    :: PRGT    ! Graupel m.r. at t 
-!
-REAL, DIMENSION(:),    INTENT(IN)    :: PCRT    ! Rain water C. at t
-!
-REAL, DIMENSION(:),    INTENT(INOUT) :: P_TH_HONR
-REAL, DIMENSION(:),    INTENT(INOUT) :: P_RR_HONR
-REAL, DIMENSION(:),    INTENT(INOUT) :: P_CR_HONR
-REAL, DIMENSION(:),    INTENT(INOUT) :: PB_TH
-REAL, DIMENSION(:),    INTENT(INOUT) :: PB_RR
-REAL, DIMENSION(:),    INTENT(INOUT) :: PB_CR
-REAL, DIMENSION(:),    INTENT(INOUT) :: PB_RG
-!
-END SUBROUTINE LIMA_DROPS_HOM_FREEZING
-END INTERFACE
-END MODULE MODI_LIMA_DROPS_HOM_FREEZING
-!
+MODULE MODE_LIMA_DROPS_HOM_FREEZING
+  IMPLICIT NONE
+CONTAINS
 !     ###############################################################################
-      SUBROUTINE LIMA_DROPS_HOM_FREEZING (PTSTEP, LDCOMPUTE,                        &
-                                          PEXNREF, PPABST,                          &
-                                          PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT, &
-                                          PCRT,                                     &
-                                          P_TH_HONR, P_RR_HONR, P_CR_HONR,          &
-                                          PB_TH, PB_RR, PB_CR, PB_RG                )
+  SUBROUTINE LIMA_DROPS_HOM_FREEZING (PTSTEP, LDCOMPUTE,                        &
+                                      PEXNREF, PPABST,                          &
+                                      PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT, &
+                                      PCRT,                                     &
+                                      P_TH_HONR, P_RR_HONR, P_CR_HONR,          &
+                                      PB_TH, PB_RR, PB_CR, PB_RG                )
 !     ###############################################################################
 !
 !!    PURPOSE
@@ -142,3 +105,4 @@ ENDWHERE
 !-------------------------------------------------------------------------------
 !
 END SUBROUTINE LIMA_DROPS_HOM_FREEZING
+END MODULE MODE_LIMA_DROPS_HOM_FREEZING

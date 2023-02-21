@@ -2,36 +2,14 @@
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!      ###############################
-       MODULE MODI_LIMA_DROPS_BREAK_UP
-!      ###############################
-!
-INTERFACE
-   SUBROUTINE LIMA_DROPS_BREAK_UP (LDCOMPUTE,  &
-                                   PCRT, PRRT, &
-                                   P_CR_BRKU,  &
-                                   PB_CR       )
-
-!
-LOGICAL, DIMENSION(:), INTENT(IN)    :: LDCOMPUTE  
-!
-REAL, DIMENSION(:),    INTENT(IN)    :: PCRT             !
-REAL, DIMENSION(:),    INTENT(IN)    :: PRRT             !
-!
-REAL, DIMENSION(:),    INTENT(INOUT) :: P_CR_BRKU        ! Concentration change (#/kg)
-REAL, DIMENSION(:),    INTENT(INOUT) :: PB_CR            ! Cumulated concentration change (#/kg)
-!
-END SUBROUTINE LIMA_DROPS_BREAK_UP
-END INTERFACE
-END MODULE MODI_LIMA_DROPS_BREAK_UP
-!
-!
+MODULE MODE_LIMA_DROPS_BREAK_UP
+  IMPLICIT NONE
+CONTAINS
 !     ##########################################
-   SUBROUTINE LIMA_DROPS_BREAK_UP (LDCOMPUTE,  &
-                                   PCRT, PRRT, &
-                                   P_CR_BRKU,  &
-                                   PB_CR       )
-
+  SUBROUTINE LIMA_DROPS_BREAK_UP (LDCOMPUTE,  &
+                                  PCRT, PRRT, &
+                                  P_CR_BRKU,  &
+                                  PB_CR       )
 !     ##########################################
 !
 !!
@@ -98,3 +76,4 @@ PB_CR(:) = PB_CR(:) + P_CR_BRKU(:)
 !-------------------------------------------------------------------------------
 !
 END SUBROUTINE LIMA_DROPS_BREAK_UP
+END MODULE MODE_LIMA_DROPS_BREAK_UP

@@ -3,48 +3,15 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-!      ##########################
-       MODULE MODI_LIMA_RAIN_EVAPORATION
-!      ##########################
-!
-INTERFACE
-      SUBROUTINE LIMA_RAIN_EVAPORATION (PTSTEP, LDCOMPUTE,                          &
-                                        PRHODREF, PT, PLV, PLVFACT, PEVSAT, PRVSAT, &
-                                        PRVT, PRCT, PRRT, PCRT, PLBDR,              &
-                                        P_TH_EVAP, P_RR_EVAP, P_CR_EVAP,            &
-                                        PEVAP3D                                     )
-!
-REAL,                 INTENT(IN)    :: PTSTEP     ! Time step
-LOGICAL, DIMENSION(:),INTENT(IN)    :: LDCOMPUTE  !
-!
-REAL, DIMENSION(:),   INTENT(IN)    :: PRHODREF   ! Reference density
-REAL, DIMENSION(:),   INTENT(IN)    :: PT         ! Temperature
-REAL, DIMENSION(:),   INTENT(IN)    :: PLV        ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PLVFACT    !
-REAL, DIMENSION(:),   INTENT(IN)    :: PEVSAT     !
-REAL, DIMENSION(:),   INTENT(IN)    :: PRVSAT     !
-!
-REAL, DIMENSION(:),   INTENT(IN)    :: PRVT       ! Water vapor m.r. at t 
-REAL, DIMENSION(:),   INTENT(IN)    :: PRCT       ! Cloud water m.r. at t 
-REAL, DIMENSION(:),   INTENT(IN)    :: PRRT       ! Rain water m.r. at t 
-REAL, DIMENSION(:),   INTENT(IN)    :: PCRT       ! Rain water conc at t 
-REAL, DIMENSION(:),   INTENT(IN)    :: PLBDR     ! Lambda(rain)
-!
-REAL, DIMENSION(:),   INTENT(OUT)   :: P_TH_EVAP
-REAL, DIMENSION(:),   INTENT(OUT)   :: P_RR_EVAP
-REAL, DIMENSION(:),   INTENT(OUT)   :: P_CR_EVAP
-!
-REAL, DIMENSION(:),   INTENT(INOUT) :: PEVAP3D    ! Rain evap profile
-!
-END SUBROUTINE LIMA_RAIN_EVAPORATION
-END INTERFACE
-END MODULE MODI_LIMA_RAIN_EVAPORATION
+MODULE MODE_LIMA_RAIN_EVAPORATION
+  IMPLICIT NONE
+CONTAINS
 !     ###############################################################################
-      SUBROUTINE LIMA_RAIN_EVAPORATION (PTSTEP, LDCOMPUTE,                          &
-                                        PRHODREF, PT, PLV, PLVFACT, PEVSAT, PRVSAT, &
-                                        PRVT, PRCT, PRRT, PCRT, PLBDR,              &
-                                        P_TH_EVAP, P_RR_EVAP, P_CR_EVAP,            &
-                                        PEVAP3D                                     )
+  SUBROUTINE LIMA_RAIN_EVAPORATION (PTSTEP, LDCOMPUTE,                          &
+                                    PRHODREF, PT, PLV, PLVFACT, PEVSAT, PRVSAT, &
+                                    PRVT, PRCT, PRRT, PCRT, PLBDR,              &
+                                    P_TH_EVAP, P_RR_EVAP, P_CR_EVAP,            &
+                                    PEVAP3D                                     )
 !     ###############################################################################
 !
 !!
@@ -168,3 +135,4 @@ END IF
 !-----------------------------------------------------------------------------
 !
 END SUBROUTINE LIMA_RAIN_EVAPORATION
+END MODULE MODE_LIMA_RAIN_EVAPORATION

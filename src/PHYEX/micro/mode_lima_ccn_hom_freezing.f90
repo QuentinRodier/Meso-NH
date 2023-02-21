@@ -3,48 +3,14 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-------------------------------------------------------------------------------
-!      #################################
-       MODULE MODI_LIMA_CCN_HOM_FREEZING
-!      #################################
-!
-INTERFACE
-   SUBROUTINE LIMA_CCN_HOM_FREEZING (PRHODREF, PEXNREF, PPABST, PW_NU,         &
-                                     PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT, &
-                                     PCCT, PCRT, PCIT, PNFT, PNHT,             &
-                                     PICEFR                                    )
-!
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODREF! Reference density
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PEXNREF ! Reference Exner function
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PPABST  ! abs. pressure at time t
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PW_NU   ! updraft velocity used for
-                                                   ! the nucleation param.
-!
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PTHT    ! Theta at time t
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRVT    ! Water vapor m.r. at t 
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRCT    ! Cloud water m.r. at t 
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRRT    ! Rain water m.r. at t 
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRIT    ! Cloud ice m.r. at t 
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRST    ! Snow/aggregate m.r. at t 
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRGT    ! Graupel m.r. at t 
-!
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PCCT    ! Cloud water C. at t
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PCRT    ! Rain water C. source
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PCIT    ! Ice crystal C. source
-!
-REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PNFT    ! Free CCN conc. 
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PNHT    ! haze homogeneous freezing
-!
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PICEFR  ! Ice fraction
-!
-END SUBROUTINE LIMA_CCN_HOM_FREEZING
-END INTERFACE
-END MODULE MODI_LIMA_CCN_HOM_FREEZING
-!
+MODULE MODE_LIMA_CCN_HOM_FREEZING
+  IMPLICIT NONE
+CONTAINS
 !     ##########################################################################
-   SUBROUTINE LIMA_CCN_HOM_FREEZING (PRHODREF, PEXNREF, PPABST, PW_NU,         &
-                                     PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT, &
-                                     PCCT, PCRT, PCIT, PNFT, PNHT ,            &
-                                     PICEFR                                    )
+  SUBROUTINE LIMA_CCN_HOM_FREEZING (CST, PRHODREF, PEXNREF, PPABST, PW_NU,    &
+                                    PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT, &
+                                    PCCT, PCRT, PCIT, PNFT, PNHT ,            &
+                                    PICEFR                                    )
 !     ##########################################################################
 !
 !!    PURPOSE
@@ -69,9 +35,7 @@ END MODULE MODI_LIMA_CCN_HOM_FREEZING
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_CST,             ONLY: XP00, XRD, XRV, XMV, XMD, XCPD, XCPV, XCL, XCI,   &
-                                XTT, XLSTT, XLVTT, XALPI, XBETAI, XGAMI,          &
-                                XG
+USE MODD_CST,            ONLY: CST_t
 USE MODD_NSV
 USE MODD_PARAMETERS,      ONLY: JPHEXT, JPVEXT
 USE MODD_PARAM_LIMA,      ONLY: NMOD_CCN, NMOD_IMM, XRTMIN, XCTMIN, XNUC
@@ -89,6 +53,7 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :
 !
+TYPE(CST_t),              INTENT(IN)    :: CST
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODREF! Reference density
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PEXNREF ! Reference Exner function
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PPABST  ! abs. pressure at time t
@@ -185,7 +150,7 @@ IKB=1+JPVEXT
 IKE=SIZE(PTHT,3) - JPVEXT
 !
 ! Temperature
-ZT(:,:,:) = PTHT(:,:,:) * ( PPABST(:,:,:)/XP00 ) ** (XRD/XCPD)
+ZT(:,:,:) = PTHT(:,:,:) * ( PPABST(:,:,:)/CST%XP00 ) ** (CST%XRD/CST%XCPD)
 !
 ZNHT(:,:,:) = PNHT(:,:,:)
 !
@@ -193,7 +158,7 @@ ZNHT(:,:,:) = PNHT(:,:,:)
 ! PACK variables
 !
 GNEGT(:,:,:) = .FALSE.
-GNEGT(IIB:IIE,IJB:IJE,IKB:IKE) = ZT(IIB:IIE,IJB:IJE,IKB:IKE)<XTT-35.0
+GNEGT(IIB:IIE,IJB:IJE,IKB:IKE) = ZT(IIB:IIE,IJB:IJE,IKB:IKE)<CST%XTT-35.0
 INEGT = COUNTJV( GNEGT(:,:,:),I1(:),I2(:),I3(:))
 !
 IF (INEGT.GT.0) THEN
@@ -256,14 +221,14 @@ IF (INEGT.GT.0) THEN
    ALLOCATE( ZZX (INEGT) ) ; ZZX(:) = 0.0
    ALLOCATE( ZZY (INEGT) ) ; ZZY(:) = 0.0
 !
-   ZTCELSIUS(:) = ZZT(:)-XTT                                    ! T [°C]
-   ZZW(:)  = ZEXNREF(:)*( XCPD+XCPV*ZRVT(:)+XCL*(ZRCT(:)+ZRRT(:)) &
-             +XCI*(ZRIT(:)+ZRST(:)+ZRGT(:)) )
-   ZLSFACT(:) = (XLSTT+(XCPV-XCI)*ZTCELSIUS(:))/ZZW(:)          ! L_s/(Pi_ref*C_ph)
-   ZLVFACT(:) = (XLVTT+(XCPV-XCL)*ZTCELSIUS(:))/ZZW(:)          ! L_v/(Pi_ref*C_ph)
+   ZTCELSIUS(:) = ZZT(:)-CST%XTT                                    ! T [°C]
+   ZZW(:)  = ZEXNREF(:)*( CST%XCPD+CST%XCPV*ZRVT(:)+CST%XCL*(ZRCT(:)+ZRRT(:)) &
+             +CST%XCI*(ZRIT(:)+ZRST(:)+ZRGT(:)) )
+   ZLSFACT(:) = (CST%XLSTT+(CST%XCPV-CST%XCI)*ZTCELSIUS(:))/ZZW(:)          ! L_s/(Pi_ref*C_ph)
+   ZLVFACT(:) = (CST%XLVTT+(CST%XCPV-CST%XCL)*ZTCELSIUS(:))/ZZW(:)          ! L_v/(Pi_ref*C_ph)
 !
-   ZZW(:)  = EXP( XALPI - XBETAI/ZZT(:) - XGAMI*ALOG(ZZT(:) ) ) ! es_i
-   ZSI(:)  = ZRVT(:)*(ZPRES(:)-ZZW(:))/((XMV/XMD)*ZZW(:))       ! Saturation over ice
+   ZZW(:)  = EXP( CST%XALPI - CST%XBETAI/ZZT(:) - CST%XGAMI*ALOG(ZZT(:) ) ) ! es_i
+   ZSI(:)  = ZRVT(:)*(ZPRES(:)-ZZW(:))/((CST%XMV/CST%XMD)*ZZW(:))       ! Saturation over ice
 !
 !
 !-------------------------------------------------------------------------------
@@ -293,7 +258,7 @@ IF (INEGT.GT.0) THEN
 !
       ZZW(:)  = 0.0
       ZZX(:)  = 0.0
-      ZEPS    = XMV / XMD
+      ZEPS    = CST%XMV / CST%XMD
       ZZY(:)  = XCRITSAT1_HONH -                              &  ! Critical Sat.
               (MIN( XTMAX_HONH,MAX( XTMIN_HONH,ZZT(:) ) )/XCRITSAT2_HONH)
 !
@@ -303,19 +268,19 @@ IF (INEGT.GT.0) THEN
       ALLOCATE(ZTAU(INEGT))
       ALLOCATE(ZBFACT(INEGT))
 !
-      WHERE( (ZZT(:)<XTT-35.0) .AND. (ZSI(:)>ZZY(:)) )
-            ZLS(:)   = XLSTT+(XCPV-XCI)*ZTCELSIUS(:)          ! Ls
+      WHERE( (ZZT(:)<CST%XTT-35.0) .AND. (ZSI(:)>ZZY(:)) )
+            ZLS(:)   = CST%XLSTT+(CST%XCPV-CST%XCI)*ZTCELSIUS(:)          ! Ls
 !
-            ZPSI1(:) = ZZY(:) * (XG/(XRD*ZZT(:)))*(ZEPS*ZLS(:)/(XCPD*ZZT(:))-1.)
+            ZPSI1(:) = ZZY(:) * (CST%XG/(CST%XRD*ZZT(:)))*(ZEPS*ZLS(:)/(CST%XCPD*ZZT(:))-1.)
 !                                                         ! Psi1 (a1*Scr in KL01)
 ! BV correction PSI2 enlever 1/ZEPS ?
 !            ZPSI2(:) = ZSI(:) * (1.0/ZEPS+1.0/ZRVT(:)) +                           &
             ZPSI2(:) = ZSI(:) * (1.0/ZRVT(:)) +                           &
-                 ZZY(:) * ((ZLS(:)/ZZT(:))**2)/(XCPD*XRV) 
+                 ZZY(:) * ((ZLS(:)/ZZT(:))**2)/(CST%XCPD*CST%XRV) 
 !                                                         ! Psi2 (a2+a3*Scr in KL01)
             ZTAU(:) = 1.0 / ( MAX( XC1_HONH,XC1_HONH*(XC2_HONH-XC3_HONH*ZZT(:)) ) *&
                  ABS( (XDLNJODT1_HONH - XDLNJODT2_HONH*ZZT(:))       *             &
-                 ((ZPRES(:)/XP00)**(XRD/XCPD))*ZTHT(:) ) )
+                 ((ZPRES(:)/CST%XP00)**(CST%XRD/CST%XCPD))*ZTHT(:) ) )
 !
             ZBFACT(:) = (XRHOI_HONH/ZRHODREF(:)) * (ZSI(:)/(ZZY(:)-1.0))           &
 ! BV correction ZBFACT enlever 1/ZEPS ?
@@ -395,3 +360,4 @@ END IF ! INEGT>0
 !-------------------------------------------------------------------------------
 !
 END SUBROUTINE LIMA_CCN_HOM_FREEZING
+END MODULE MODE_LIMA_CCN_HOM_FREEZING

@@ -3,43 +3,15 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-------------------------------------------------------------------------------
-!      ########################################
-       MODULE MODI_LIMA_COLLISIONAL_ICE_BREAKUP
-!      ########################################
-!
-INTERFACE
-   SUBROUTINE LIMA_COLLISIONAL_ICE_BREAKUP (LDCOMPUTE,              &
-                                            PRHODREF,               &
-                                            PRIT, PRST, PRGT, PCIT, PCST, PCGT, &
-                                            PLBDS, PLBDG,           &
-                                            P_RI_CIBU, P_CI_CIBU    )
-!
-LOGICAL, DIMENSION(:),INTENT(IN)    :: LDCOMPUTE
-!
-REAL, DIMENSION(:),   INTENT(IN)    :: PRHODREF
-!
-REAL, DIMENSION(:),   INTENT(IN)    :: PRIT
-REAL, DIMENSION(:),   INTENT(IN)    :: PRST
-REAL, DIMENSION(:),   INTENT(IN)    :: PRGT
-REAL, DIMENSION(:),   INTENT(IN)    :: PCIT
-REAL, DIMENSION(:),   INTENT(IN)    :: PCST
-REAL, DIMENSION(:),   INTENT(IN)    :: PCGT
-REAL, DIMENSION(:),   INTENT(IN)    :: PLBDS 
-REAL, DIMENSION(:),   INTENT(IN)    :: PLBDG 
-!
-REAL, DIMENSION(:),   INTENT(OUT)   :: P_RI_CIBU
-REAL, DIMENSION(:),   INTENT(OUT)   :: P_CI_CIBU
-!
-END SUBROUTINE LIMA_COLLISIONAL_ICE_BREAKUP
-END INTERFACE
-END MODULE MODI_LIMA_COLLISIONAL_ICE_BREAKUP
-!
+MODULE MODE_LIMA_COLLISIONAL_ICE_BREAKUP
+  IMPLICIT NONE
+CONTAINS
 !     #######################################################################
-      SUBROUTINE LIMA_COLLISIONAL_ICE_BREAKUP (LDCOMPUTE,              &
-                                               PRHODREF,               &
-                                               PRIT, PRST, PRGT, PCIT, PCST, PCGT, &
-                                               PLBDS, PLBDG,           &
-                                               P_RI_CIBU, P_CI_CIBU    )
+  SUBROUTINE LIMA_COLLISIONAL_ICE_BREAKUP (LDCOMPUTE,              &
+                                           PRHODREF,               &
+                                           PRIT, PRST, PRGT, PCIT, PCST, PCGT, &
+                                           PLBDS, PLBDG,           &
+                                           P_RI_CIBU, P_CI_CIBU    )
 !     #######################################################################
 !
 !!    PURPOSE
@@ -418,3 +390,4 @@ END IF
 !-------------------------------------------------------------------------------
 !
 END SUBROUTINE LIMA_COLLISIONAL_ICE_BREAKUP
+END MODULE MODE_LIMA_COLLISIONAL_ICE_BREAKUP

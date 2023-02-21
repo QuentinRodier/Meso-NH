@@ -3,37 +3,13 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-------------------------------------------------------------------------------
-!      #################################
-       MODULE MODI_LIMA_HAIL_DEPOSITION
-!      #################################
-!
-INTERFACE
-   SUBROUTINE LIMA_HAIL_DEPOSITION (LDCOMPUTE, PRHODREF,                        &
-                                    PRHT, PCHT, PSSI, PLBDH, PAI, PCJ, PLSFACT, &
-                                    P_TH_DEPH, P_RH_DEPH                        )
-!
-LOGICAL, DIMENSION(:),INTENT(IN)    :: LDCOMPUTE
-REAL, DIMENSION(:),   INTENT(IN)    :: PRHODREF ! 
-!
-REAL, DIMENSION(:),   INTENT(IN)    :: PRHT     ! hail mr
-REAL, DIMENSION(:),   INTENT(IN)    :: PCHT     ! hail conc
-REAL, DIMENSION(:),   INTENT(IN)    :: PSSI     ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PLBDH    ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PAI      ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PCJ      ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PLSFACT  ! 
-!
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_TH_DEPH
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_RH_DEPH
-!!
-END SUBROUTINE LIMA_HAIL_DEPOSITION
-END INTERFACE
-END MODULE MODI_LIMA_HAIL_DEPOSITION
-!
+MODULE MODE_LIMA_HAIL_DEPOSITION
+  IMPLICIT NONE
+CONTAINS
 !     ###########################################################################
-      SUBROUTINE LIMA_HAIL_DEPOSITION (LDCOMPUTE, PRHODREF,                        &
-                                       PRHT, PCHT, PSSI, PLBDH, PAI, PCJ, PLSFACT, &
-                                       P_TH_DEPH, P_RH_DEPH                        )
+  SUBROUTINE LIMA_HAIL_DEPOSITION (LDCOMPUTE, PRHODREF,                        &
+                                   PRHT, PCHT, PSSI, PLBDH, PAI, PCJ, PLSFACT, &
+                                   P_TH_DEPH, P_RH_DEPH                        )
 !     ###########################################################################
 !
 !!    PURPOSE
@@ -98,3 +74,4 @@ END WHERE
 !-------------------------------------------------------------------------------
 !
 END SUBROUTINE LIMA_HAIL_DEPOSITION
+END MODULE MODE_LIMA_HAIL_DEPOSITION

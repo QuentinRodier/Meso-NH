@@ -3,42 +3,14 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-------------------------------------------------------------------------------
-!      #################################
-       MODULE MODI_LIMA_CONVERSION_MELTING_SNOW
-!      #################################
-!
-INTERFACE
-   SUBROUTINE LIMA_CONVERSION_MELTING_SNOW (LDCOMPUTE,                          &
-                                            PRHODREF, PPRES, PT, PKA, PDV, PCJ, &
-                                            PRVT, PRST, PCST, PLBDS,            &
-                                            P_RS_CMEL, P_CS_CMEL                )
-!
-LOGICAL, DIMENSION(:),INTENT(IN)    :: LDCOMPUTE
-!
-REAL, DIMENSION(:),   INTENT(IN)    :: PRHODREF ! Reference Exner function
-REAL, DIMENSION(:),   INTENT(IN)    :: PPRES    !
-REAL, DIMENSION(:),   INTENT(IN)    :: PT       !
-REAL, DIMENSION(:),   INTENT(IN)    :: PKA      !
-REAL, DIMENSION(:),   INTENT(IN)    :: PDV      !
-REAL, DIMENSION(:),   INTENT(IN)    :: PCJ      !
-!
-REAL, DIMENSION(:),   INTENT(IN)    :: PRVT    ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PRST    ! Snow mr at t
-REAL, DIMENSION(:),   INTENT(IN)    :: PCST    ! Snow C. at t
-REAL, DIMENSION(:),   INTENT(IN)    :: PLBDS   ! 
-!
-REAL, DIMENSION(:),   INTENT(OUT)   :: P_RS_CMEL
-REAL, DIMENSION(:),   INTENT(OUT)   :: P_CS_CMEL
-!
-END SUBROUTINE LIMA_CONVERSION_MELTING_SNOW
-END INTERFACE
-END MODULE MODI_LIMA_CONVERSION_MELTING_SNOW
-!
+MODULE MODE_LIMA_CONVERSION_MELTING_SNOW
+  IMPLICIT NONE
+CONTAINS
 !     ##############################################################################
-      SUBROUTINE LIMA_CONVERSION_MELTING_SNOW (LDCOMPUTE,                          &
-                                               PRHODREF, PPRES, PT, PKA, PDV, PCJ, &
-                                               PRVT, PRST, PCST, PLBDS,            &
-                                               P_RS_CMEL, P_CS_CMEL                )
+  SUBROUTINE LIMA_CONVERSION_MELTING_SNOW (LDCOMPUTE,                          &
+                                           PRHODREF, PPRES, PT, PKA, PDV, PCJ, &
+                                           PRVT, PRST, PCST, PLBDS,            &
+                                           P_RS_CMEL, P_CS_CMEL                )
 !     ##############################################################################
 !
 !!    PURPOSE
@@ -127,3 +99,4 @@ END WHERE
 !-------------------------------------------------------------------------------
 !
 END SUBROUTINE LIMA_CONVERSION_MELTING_SNOW
+END MODULE MODE_LIMA_CONVERSION_MELTING_SNOW

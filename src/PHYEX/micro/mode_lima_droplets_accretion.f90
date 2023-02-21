@@ -3,43 +3,15 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-------------------------------------------------------------------------------
-!      #################################
-       MODULE MODI_LIMA_DROPLETS_ACCRETION
-!      #################################
-!
-INTERFACE
-   SUBROUTINE LIMA_DROPLETS_ACCRETION (LDCOMPUTE,                      &
-                                       PRHODREF,                       &
-                                       PRCT, PRRT, PCCT, PCRT,         &
-                                       PLBDC, PLBDC3, PLBDR, PLBDR3,   &
-                                       P_RC_ACCR, P_CC_ACCR            )
-!
-LOGICAL, DIMENSION(:),INTENT(IN)    :: LDCOMPUTE
-!
-REAL, DIMENSION(:),   INTENT(IN)    :: PRHODREF ! Reference Exner function
-!
-REAL, DIMENSION(:),   INTENT(IN)    :: PRCT    ! Cloud water m.r. at t
-REAL, DIMENSION(:),   INTENT(IN)    :: PRRT    ! Rain m.r. at t
-REAL, DIMENSION(:),   INTENT(IN)    :: PCCT    ! Cloud water conc. at t
-REAL, DIMENSION(:),   INTENT(IN)    :: PCRT    ! Rain conc. at t
-REAL, DIMENSION(:),   INTENT(IN)    :: PLBDC   ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PLBDC3  ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PLBDR   ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PLBDR3  ! 
-!
-REAL, DIMENSION(:),   INTENT(OUT)   :: P_RC_ACCR
-REAL, DIMENSION(:),   INTENT(OUT)   :: P_CC_ACCR
-!
-END SUBROUTINE LIMA_DROPLETS_ACCRETION
-END INTERFACE
-END MODULE MODI_LIMA_DROPLETS_ACCRETION
-!
+MODULE MODE_LIMA_DROPLETS_ACCRETION
+  IMPLICIT NONE
+CONTAINS
 !     #####################################################################
-      SUBROUTINE LIMA_DROPLETS_ACCRETION (LDCOMPUTE,                      &
-                                          PRHODREF,                       &
-                                          PRCT, PRRT, PCCT, PCRT,         &
-                                          PLBDC, PLBDC3, PLBDR, PLBDR3,   &
-                                          P_RC_ACCR, P_CC_ACCR            )
+  SUBROUTINE LIMA_DROPLETS_ACCRETION (LDCOMPUTE,                      &
+                                      PRHODREF,                       &
+                                      PRCT, PRRT, PCCT, PCRT,         &
+                                      PLBDC, PLBDC3, PLBDR, PLBDR3,   &
+                                      P_RC_ACCR, P_CC_ACCR            )
 !     #####################################################################
 !
 !!    PURPOSE
@@ -190,3 +162,4 @@ END IF
 !-------------------------------------------------------------------------------
 !
 END SUBROUTINE LIMA_DROPLETS_ACCRETION
+END MODULE MODE_LIMA_DROPLETS_ACCRETION

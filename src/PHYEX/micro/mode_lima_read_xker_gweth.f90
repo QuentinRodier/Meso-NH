@@ -3,49 +3,14 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 microph 2006/05/18 13:07:25
-!-----------------------------------------------------------------
-!     ###########################
-      MODULE MODI_LIMA_READ_XKER_GWETH
-!     ###########################
-!
-INTERFACE
-      SUBROUTINE LIMA_READ_XKER_GWETH (KWETLBDAH,KWETLBDAG,KND,                   &
-                    PALPHAH,PNUH,PALPHAG,PNUG,PEHG,PBG,PCH,PDH,PCG,PDG,      &
-                    PWETLBDAH_MAX,PWETLBDAG_MAX,PWETLBDAH_MIN,PWETLBDAG_MIN, &
-                    PFDINFTY,PKER_GWETH                                      )
-!
-INTEGER, INTENT(OUT) :: KND,KWETLBDAH,KWETLBDAG
-REAL,    INTENT(OUT) :: PALPHAH
-REAL,    INTENT(OUT) :: PNUH
-REAL,    INTENT(OUT) :: PALPHAG
-REAL,    INTENT(OUT) :: PNUG
-REAL,    INTENT(OUT) :: PEHG
-REAL,    INTENT(OUT) :: PBG
-REAL,    INTENT(OUT) :: PCH
-REAL,    INTENT(OUT) :: PDH
-REAL,    INTENT(OUT) :: PCG
-REAL,    INTENT(OUT) :: PDG
-REAL,    INTENT(OUT) :: PWETLBDAH_MAX
-REAL,    INTENT(OUT) :: PWETLBDAG_MAX
-REAL,    INTENT(OUT) :: PWETLBDAH_MIN
-REAL,    INTENT(OUT) :: PWETLBDAG_MIN
-REAL,    INTENT(OUT) :: PFDINFTY
-REAL, DIMENSION(:,:), INTENT(OUT), OPTIONAL :: PKER_GWETH 
-!
-END SUBROUTINE LIMA_READ_XKER_GWETH
-!
-END INTERFACE
-!
-END MODULE MODI_LIMA_READ_XKER_GWETH
+MODULE MODE_LIMA_READ_XKER_GWETH
+  IMPLICIT NONE
+CONTAINS
 !     ########################################################################
-      SUBROUTINE LIMA_READ_XKER_GWETH (KWETLBDAH,KWETLBDAG,KND,                   &
-                    PALPHAH,PNUH,PALPHAG,PNUG,PEHG,PBG,PCH,PDH,PCG,PDG,      &
-                    PWETLBDAH_MAX,PWETLBDAG_MAX,PWETLBDAH_MIN,PWETLBDAG_MIN, &
-                    PFDINFTY,PKER_GWETH                                      )
+  SUBROUTINE LIMA_READ_XKER_GWETH (KWETLBDAH,KWETLBDAG,KND,                                 &
+                                   PALPHAH,PNUH,PALPHAG,PNUG,PEHG,PBG,PCH,PDH,PCG,PDG,      &
+                                   PWETLBDAH_MAX,PWETLBDAG_MAX,PWETLBDAH_MIN,PWETLBDAG_MIN, &
+                                   PFDINFTY,PKER_GWETH                                      )
 !     ########################################################################
 !
 !!****  * * - initialize the kernels for the graupel-hail wet growth process
@@ -1735,3 +1700,4 @@ PKER_GWETH( 40, 40) =  0.197923E-01
 END IF
 !
 END SUBROUTINE LIMA_READ_XKER_GWETH
+END MODULE MODE_LIMA_READ_XKER_GWETH

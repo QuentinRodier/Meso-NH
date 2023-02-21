@@ -3,50 +3,14 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 microph 2006/05/18 13:07:25
-!-----------------------------------------------------------------
-!     ###########################
-      MODULE MODI_LIMA_READ_XKER_SWETH
-!     ###########################
-!
-INTERFACE
-      SUBROUTINE LIMA_READ_XKER_SWETH (KWETLBDAH,KWETLBDAS,KND,                 &
-                    PALPHAH,PNUH,PALPHAS,PNUS,PEHS,PBS,PCH,PDH,PCS,PDS,PFVELOS, &
-                    PWETLBDAH_MAX,PWETLBDAS_MAX,PWETLBDAH_MIN,PWETLBDAS_MIN,    &
-                    PFDINFTY,PKER_SWETH                                         )
-!
-INTEGER, INTENT(OUT) :: KND,KWETLBDAH,KWETLBDAS
-REAL,    INTENT(OUT) :: PALPHAH
-REAL,    INTENT(OUT) :: PNUH
-REAL,    INTENT(OUT) :: PALPHAS
-REAL,    INTENT(OUT) :: PNUS
-REAL,    INTENT(OUT) :: PEHS
-REAL,    INTENT(OUT) :: PBS
-REAL,    INTENT(OUT) :: PCH
-REAL,    INTENT(OUT) :: PDH
-REAL,    INTENT(OUT) :: PCS
-REAL,    INTENT(OUT) :: PDS
-REAL,    INTENT(OUT) :: PFVELOS
-REAL,    INTENT(OUT) :: PWETLBDAH_MAX
-REAL,    INTENT(OUT) :: PWETLBDAS_MAX
-REAL,    INTENT(OUT) :: PWETLBDAH_MIN
-REAL,    INTENT(OUT) :: PWETLBDAS_MIN
-REAL,    INTENT(OUT) :: PFDINFTY
-REAL, DIMENSION(:,:), INTENT(OUT), OPTIONAL :: PKER_SWETH 
-!
-END SUBROUTINE LIMA_READ_XKER_SWETH
-!
-END INTERFACE
-!
-END MODULE MODI_LIMA_READ_XKER_SWETH
+MODULE MODE_LIMA_READ_XKER_SWETH
+  IMPLICIT NONE
+CONTAINS
 !     ########################################################################
-      SUBROUTINE LIMA_READ_XKER_SWETH (KWETLBDAH,KWETLBDAS,KND,                 &
-                    PALPHAH,PNUH,PALPHAS,PNUS,PEHS,PBS,PCH,PDH,PCS,PDS,PFVELOS, &
-                    PWETLBDAH_MAX,PWETLBDAS_MAX,PWETLBDAH_MIN,PWETLBDAS_MIN,    &
-                    PFDINFTY,PKER_SWETH                                         )
+  SUBROUTINE LIMA_READ_XKER_SWETH (KWETLBDAH,KWETLBDAS,KND,                                    &
+                                   PALPHAH,PNUH,PALPHAS,PNUS,PEHS,PBS,PCH,PDH,PCS,PDS,PFVELOS, &
+                                   PWETLBDAH_MAX,PWETLBDAS_MAX,PWETLBDAH_MIN,PWETLBDAS_MIN,    &
+                                   PFDINFTY,PKER_SWETH                                         )
 !     ########################################################################
 !
 !!****  * * - initialize the kernels for the snow-hail wet growth process
@@ -3338,3 +3302,4 @@ PKER_SWETH( 40, 80) =  0.310319E+00
 END IF
 !
 END SUBROUTINE LIMA_READ_XKER_SWETH
+END MODULE MODE_LIMA_READ_XKER_SWETH

@@ -3,50 +3,14 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 init 2006/05/18 13:07:25
-!-----------------------------------------------------------------
-!     ###########################
-      MODULE MODI_LIMA_READ_XKER_SDRYG
-!     ###########################
-!
-INTERFACE
-      SUBROUTINE LIMA_READ_XKER_SDRYG (KDRYLBDAG,KDRYLBDAS,KND,                 &
-                    PALPHAG,PNUG,PALPHAS,PNUS,PEGS,PBS,PCG,PDG,PCS,PDS,PFVELOS, &
-                    PDRYLBDAG_MAX,PDRYLBDAS_MAX,PDRYLBDAG_MIN,PDRYLBDAS_MIN,    &
-                    PFDINFTY,PKER_SDRYG                                         )
-!
-INTEGER, INTENT(OUT) :: KND,KDRYLBDAG,KDRYLBDAS
-REAL,    INTENT(OUT) :: PALPHAG
-REAL,    INTENT(OUT) :: PNUG
-REAL,    INTENT(OUT) :: PALPHAS
-REAL,    INTENT(OUT) :: PNUS
-REAL,    INTENT(OUT) :: PEGS
-REAL,    INTENT(OUT) :: PBS
-REAL,    INTENT(OUT) :: PCG
-REAL,    INTENT(OUT) :: PDG
-REAL,    INTENT(OUT) :: PCS
-REAL,    INTENT(OUT) :: PDS
-REAL,    INTENT(OUT) :: PFVELOS
-REAL,    INTENT(OUT) :: PDRYLBDAG_MAX
-REAL,    INTENT(OUT) :: PDRYLBDAS_MAX
-REAL,    INTENT(OUT) :: PDRYLBDAG_MIN
-REAL,    INTENT(OUT) :: PDRYLBDAS_MIN
-REAL,    INTENT(OUT) :: PFDINFTY
-REAL, DIMENSION(:,:), INTENT(OUT), OPTIONAL :: PKER_SDRYG 
-!
-END SUBROUTINE LIMA_READ_XKER_SDRYG
-!
-END INTERFACE
-!
-END MODULE MODI_LIMA_READ_XKER_SDRYG
+MODULE MODE_LIMA_READ_XKER_SDRYG
+  IMPLICIT NONE
+CONTAINS
 !     ########################################################################
-      SUBROUTINE LIMA_READ_XKER_SDRYG (KDRYLBDAG,KDRYLBDAS,KND,                 &
-                    PALPHAG,PNUG,PALPHAS,PNUS,PEGS,PBS,PCG,PDG,PCS,PDS,PFVELOS, &
-                    PDRYLBDAG_MAX,PDRYLBDAS_MAX,PDRYLBDAG_MIN,PDRYLBDAS_MIN,    &
-                    PFDINFTY,PKER_SDRYG                                         )
+  SUBROUTINE LIMA_READ_XKER_SDRYG (KDRYLBDAG,KDRYLBDAS,KND,                                    &
+                                   PALPHAG,PNUG,PALPHAS,PNUS,PEGS,PBS,PCG,PDG,PCS,PDS,PFVELOS, &
+                                   PDRYLBDAG_MAX,PDRYLBDAS_MAX,PDRYLBDAG_MIN,PDRYLBDAS_MIN,    &
+                                   PFDINFTY,PKER_SDRYG                                         )
 !     ########################################################################
 !
 !!****  * * - initialize the kernels for the snow-graupel dry growth process
@@ -3338,3 +3302,4 @@ PKER_SDRYG( 40, 80) =  0.332823E+00
 END IF
 !
 END SUBROUTINE LIMA_READ_XKER_SDRYG
+END MODULE MODE_LIMA_READ_XKER_SDRYG

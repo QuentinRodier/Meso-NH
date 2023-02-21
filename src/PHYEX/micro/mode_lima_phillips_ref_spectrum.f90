@@ -1,21 +1,8 @@
-!      ######################################
-       MODULE MODI_LIMA_PHILLIPS_REF_SPECTRUM
-!      ######################################
-!
-INTERFACE
-      SUBROUTINE LIMA_PHILLIPS_REF_SPECTRUM (ZZT, ZSI, ZSI_W, ZZY)
-!
-REAL, DIMENSION(:), INTENT(IN)    :: ZZT    ! Temperature
-REAL, DIMENSION(:), INTENT(IN)    :: ZSI    ! Saturation over ice
-REAL, DIMENSION(:), INTENT(IN)    :: ZSI_W  ! Saturation over ice at water sat.
-REAL, DIMENSION(:), INTENT(INOUT) :: ZZY    ! Reference activity spectrum
-!
-END SUBROUTINE LIMA_PHILLIPS_REF_SPECTRUM
-END INTERFACE
-END MODULE MODI_LIMA_PHILLIPS_REF_SPECTRUM
-!
+MODULE MODE_LIMA_PHILLIPS_REF_SPECTRUM
+  IMPLICIT NONE
+CONTAINS
 !     ######################################################################
-      SUBROUTINE LIMA_PHILLIPS_REF_SPECTRUM (ZZT, ZSI, ZSI_W, ZZY)
+  SUBROUTINE LIMA_PHILLIPS_REF_SPECTRUM (CST, ZZT, ZSI, ZSI_W, ZZY)
 !     ######################################################################
 !!
 !!    PURPOSE
@@ -46,14 +33,15 @@ END MODULE MODI_LIMA_PHILLIPS_REF_SPECTRUM
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_CST,             ONLY : XTT
+USE MODD_CST,            ONLY: CST_t
 USE MODD_PARAM_LIMA,      ONLY : XGAMMA, XRHO_CFDC
-USE MODI_LIMA_FUNCTIONS,  ONLY : RECT, DELTA
+USE MODE_LIMA_FUNCTIONS,  ONLY : RECT, DELTA
 !
 IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :
 !
+TYPE(CST_t),              INTENT(IN)    :: CST
 REAL, DIMENSION(:), INTENT(IN)    :: ZZT    ! Temperature
 REAL, DIMENSION(:), INTENT(IN)    :: ZSI    ! Saturation over ice
 REAL, DIMENSION(:), INTENT(IN)    :: ZSI_W  ! Saturation over ice at water sat.
@@ -93,7 +81,7 @@ WHERE( ZSI(:)>1.0 )
 !
    ZZY(:)  =1000.*XGAMMA/XRHO_CFDC                  &
         * ( EXP(12.96*(MIN(ZSI2(:),7.)-1.1)) )**0.3          &
-        * RECT(1.,0.,ZZT(:),(XTT-80.),(XTT-35.))
+        * RECT(1.,0.,ZZT(:),(CST%XTT-80.),(CST%XTT-35.))
 !
 !* -35 C < T <= -25 C (in Appendix A) 
 !
@@ -106,13 +94,13 @@ WHERE( ZSI(:)>1.0 )
 !
    ZMAX(:) =1000.*XGAMMA/XRHO_CFDC                  &
         * ( EXP(12.96*(ZSI_W(:)-1.1)) )**0.3        &
-        * RECT(1.,0.,ZZT(:),(XTT-35.),(XTT-30.))
+        * RECT(1.,0.,ZZT(:),(CST%XTT-35.),(CST%XTT-30.))
 !
 !* -30 C < T <= -25 C
 !
    ZMAX(:) = ZMAX(:) +1000.*XPSI                    &
         * EXP( 12.96*(ZSI_W(:)-1.0)-0.639 )         &
-        * RECT(1.,0.,ZZT(:),(XTT-30.),(XTT-25.))
+        * RECT(1.,0.,ZZT(:),(CST%XTT-30.),(CST%XTT-25.))
    Z1(:)   = MIN(ZZY1(:), ZMAX(:)) 
    Z2(:)   = MIN(ZZY2(:), ZMAX(:)) 
 !
@@ -120,21 +108,20 @@ WHERE( ZSI(:)>1.0 )
 !
    ZZY(:)  = ZZY(:) + 1000.*XPSI                    &
         * EXP( 12.96*(MIN(ZSI2(:),7.)-1.0)-0.639 )           &
-        * RECT(1.,0.,ZZT(:),(XTT-25.),(XTT-2.))
+        * RECT(1.,0.,ZZT(:),(CST%XTT-25.),(CST%XTT-2.))
 END WHERE
 !
 WHERE (Z2(:)>0.0 .AND. Z1(:)>0.0)
-   ZMOY(:) = Z2(:)*(Z1(:)/Z2(:))**DELTA(1.,0.,ZZT(:),(XTT-35.),(XTT-25.))
+   ZMOY(:) = Z2(:)*(Z1(:)/Z2(:))**DELTA(1.,0.,ZZT(:),(CST%XTT-35.),(CST%XTT-25.))
    ZZY(:)  = ZZY(:) + MIN(ZMOY(:),ZMAX(:))  ! N_{IN,1,*}
 END WHERE
 !
-!++cb++
 DEALLOCATE(ZMAX)
 DEALLOCATE(ZMOY)
 DEALLOCATE(ZZY1)
 DEALLOCATE(ZZY2)
 DEALLOCATE(Z1)
 DEALLOCATE(Z2)
-!--cb--
 !
 END SUBROUTINE LIMA_PHILLIPS_REF_SPECTRUM
+END MODULE MODE_LIMA_PHILLIPS_REF_SPECTRUM

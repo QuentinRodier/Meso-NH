@@ -2,40 +2,14 @@
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!      #################################
-       MODULE MODI_LIMA_DROPLETS_HOM_FREEZING
-!      #################################
-!
-INTERFACE
-   SUBROUTINE LIMA_DROPLETS_HOM_FREEZING (PTSTEP, LDCOMPUTE,                &
-                                          PT, PLVFACT, PLSFACT,             &
-                                          PRCT, PCCT, PLBDC,                &
-                                          P_TH_HONC, P_RC_HONC, P_CC_HONC   )
-!
-REAL,                 INTENT(IN)    :: PTSTEP 
-LOGICAL, DIMENSION(:),INTENT(IN)    :: LDCOMPUTE
-!
-REAL, DIMENSION(:),   INTENT(IN)    :: PT       ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PLVFACT  ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PLSFACT  ! 
-!
-REAL, DIMENSION(:),   INTENT(IN)    :: PRCT    ! Cloud water m.r. at t 
-REAL, DIMENSION(:),   INTENT(IN)    :: PCCT    ! Cloud water C. at t
-REAL, DIMENSION(:),   INTENT(IN)    :: PLBDC   ! Cloud water lambda
-!
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_TH_HONC
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_RC_HONC
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_CC_HONC
-!
-END SUBROUTINE LIMA_DROPLETS_HOM_FREEZING
-END INTERFACE
-END MODULE MODI_LIMA_DROPLETS_HOM_FREEZING
-!
+MODULE MODE_LIMA_DROPLETS_HOM_FREEZING
+  IMPLICIT NONE
+CONTAINS
 !     ##########################################################################
-      SUBROUTINE LIMA_DROPLETS_HOM_FREEZING (PTSTEP,  LDCOMPUTE,               &
-                                             PT, PLVFACT, PLSFACT,             &
-                                             PRCT, PCCT, PLBDC,                &
-                                             P_TH_HONC, P_RC_HONC, P_CC_HONC   )
+  SUBROUTINE LIMA_DROPLETS_HOM_FREEZING (PTSTEP,  LDCOMPUTE,               &
+                                         PT, PLVFACT, PLSFACT,             &
+                                         PRCT, PCCT, PLBDC,                &
+                                         P_TH_HONC, P_RC_HONC, P_CC_HONC   )
 !     ##########################################################################
 !
 !!    PURPOSE
@@ -123,3 +97,4 @@ END WHERE
 !-------------------------------------------------------------------------------
 !
 END SUBROUTINE LIMA_DROPLETS_HOM_FREEZING
+END MODULE MODE_LIMA_DROPLETS_HOM_FREEZING

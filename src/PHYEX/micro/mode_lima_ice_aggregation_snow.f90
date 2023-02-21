@@ -3,40 +3,14 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-------------------------------------------------------------------------------
-!      #################################
-       MODULE MODI_LIMA_ICE_AGGREGATION_SNOW
-!      #################################
-!
-INTERFACE
-   SUBROUTINE LIMA_ICE_AGGREGATION_SNOW (LDCOMPUTE,                            &
-                                         PT, PRHODREF,                         &
-                                         PRIT, PRST, PCIT, PCST, PLBDI, PLBDS, &
-                                         P_RI_AGGS, P_CI_AGGS                  )
-!
-LOGICAL, DIMENSION(:),INTENT(IN)    :: LDCOMPUTE
-!
-REAL, DIMENSION(:),   INTENT(IN)    :: PT
-REAL, DIMENSION(:),   INTENT(IN)    :: PRHODREF
-!
-REAL, DIMENSION(:),   INTENT(IN)    :: PRIT
-REAL, DIMENSION(:),   INTENT(IN)    :: PRST
-REAL, DIMENSION(:),   INTENT(IN)    :: PCIT
-REAL, DIMENSION(:),   INTENT(IN)    :: PCST
-REAL, DIMENSION(:),   INTENT(IN)    :: PLBDI 
-REAL, DIMENSION(:),   INTENT(IN)    :: PLBDS 
-!
-REAL, DIMENSION(:),   INTENT(OUT)   :: P_RI_AGGS
-REAL, DIMENSION(:),   INTENT(OUT)   :: P_CI_AGGS
-!
-END SUBROUTINE LIMA_ICE_AGGREGATION_SNOW
-END INTERFACE
-END MODULE MODI_LIMA_ICE_AGGREGATION_SNOW
-!
+MODULE MODE_LIMA_ICE_AGGREGATION_SNOW
+  IMPLICIT NONE
+CONTAINS
 !     #######################################################################
-      SUBROUTINE LIMA_ICE_AGGREGATION_SNOW (LDCOMPUTE,                            &
-                                            PT, PRHODREF,                         &
-                                            PRIT, PRST, PCIT, PCST, PLBDI, PLBDS, &
-                                            P_RI_AGGS, P_CI_AGGS                  )
+  SUBROUTINE LIMA_ICE_AGGREGATION_SNOW (LDCOMPUTE,                            &
+                                        PT, PRHODREF,                         &
+                                        PRIT, PRST, PCIT, PCST, PLBDI, PLBDS, &
+                                        P_RI_AGGS, P_CI_AGGS                  )
 !     #######################################################################
 !
 !!    PURPOSE
@@ -134,3 +108,4 @@ END IF
 !-------------------------------------------------------------------------------
 !
 END SUBROUTINE LIMA_ICE_AGGREGATION_SNOW
+END MODULE MODE_LIMA_ICE_AGGREGATION_SNOW
