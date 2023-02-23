@@ -1058,7 +1058,7 @@ IF (KMI == 1) THEN
    NMOM_I = 2
    NMOM_S = 1
    NMOM_G = 1
-   NMOM_H = 1
+   NMOM_H = 0
    NMOD_IFN = 1
    NIND_SPECIE = 1
    LMEYERS = .FALSE.
