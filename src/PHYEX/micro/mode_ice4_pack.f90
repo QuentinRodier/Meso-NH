@@ -201,7 +201,7 @@ IF(PARAMI%LPACK_MICRO) THEN
   !  optimization by looking for locations where
   !  the microphysical fields are larger than a minimal value only !!!
   !
-  IF (KSIZE /= COUNT(ODMICRO(IIJB:IIJE,IKTB:IKTE))) THEN
+  IF (KSIZE /= COUNT(ODMICRO(:,:))) THEN
       CALL PRINT_MSG(NVERB_FATAL, 'GEN', 'ICE4_PACK', 'ICE4_PACK : KSIZE /= COUNT(ODMICRO)')
   ENDIF
   

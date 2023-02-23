@@ -212,17 +212,17 @@ IF (.NOT. OFLAT) THEN
   CALL DZM_PHY(D,PA,ZWORK3)
   CALL MXF_PHY(D,PDZX,ZWORK4)
   !$mnh_expand_array(JI=IIB:IIE,JJ=IJB:IJE,JK=1:IKT)    
-  ZWORK5(IIB:IIE,IJB:IJE,1:IKT) = ZWORK3(IIB:IIE,IJB:IJE,1:IKT) * ZWORK4(IIB:IIE,IJB:IJE,1:IKT) &
-                                    / PDZZ(IIB:IIE,IJB:IJE,1:IKT)
+  ZWORK5(IIB:IIE,IJB:IJE,:) = ZWORK3(IIB:IIE,IJB:IJE,:) * ZWORK4(IIB:IIE,IJB:IJE,:) &
+                                    / PDZZ(IIB:IIE,IJB:IJE,:)
   !$mnh_end_expand_array(JI=IIB:IIE,JJ=IJB:IJE,JK=1:IKT)    
   CALL MZF_PHY(D,ZWORK5,ZWORK6)
   !$mnh_expand_array(JI=IIB:IIE,JJ=IJB:IJE,JK=1:IKT)    
-  PGX_M_M(IIB:IIE,IJB:IJE,1:IKT)= (ZWORK2(IIB:IIE,IJB:IJE,1:IKT) - ZWORK6(IIB:IIE,IJB:IJE,1:IKT)) &
-                                    / ZMXF_PDXX(IIB:IIE,IJB:IJE,1:IKT)
+  PGX_M_M(IIB:IIE,IJB:IJE,:)= (ZWORK2(IIB:IIE,IJB:IJE,:) - ZWORK6(IIB:IIE,IJB:IJE,:)) &
+                                    / ZMXF_PDXX(IIB:IIE,IJB:IJE,:)
   !$mnh_end_expand_array(JI=IIB:IIE,JJ=IJB:IJE,JK=1:IKT)    
 ELSE
   !$mnh_expand_array(JI=IIB:IIE,JJ=IJB:IJE,JK=1:IKT)    
-  PGX_M_M(IIB:IIE,IJB:IJE,1:IKT)= ZWORK2(IIB:IIE,IJB:IJE,1:IKT) / ZMXF_PDXX(IIB:IIE,IJB:IJE,1:IKT) 
+  PGX_M_M(IIB:IIE,IJB:IJE,:)= ZWORK2(IIB:IIE,IJB:IJE,:) / ZMXF_PDXX(IIB:IIE,IJB:IJE,:) 
   !$mnh_end_expand_array(JI=IIB:IIE,JJ=IJB:IJE,JK=1:IKT)    
 END IF
 !
@@ -335,17 +335,17 @@ IF (.NOT. OFLAT) THEN
   CALL DZM_PHY(D,PA,ZWORK3)
   CALL MYF_PHY(D,PDZY,ZWORK4)
   !$mnh_expand_array(JI=IIB:IIE,JJ=IJB:IJE,JK=1:IKT)    
-  ZWORK5(IIB:IIE,IJB:IJE,1:IKT) = ZWORK4(IIB:IIE,IJB:IJE,1:IKT) * ZWORK3(IIB:IIE,IJB:IJE,1:IKT) &
-                                   / PDZZ(IIB:IIE,IJB:IJE,1:IKT)
+  ZWORK5(IIB:IIE,IJB:IJE,:) = ZWORK4(IIB:IIE,IJB:IJE,:) * ZWORK3(IIB:IIE,IJB:IJE,:) &
+                                   / PDZZ(IIB:IIE,IJB:IJE,:)
   !$mnh_end_expand_array(JI=IIB:IIE,JJ=IJB:IJE,JK=1:IKT)    
   CALL MZF_PHY(D,ZWORK5,ZWORK4)
   !$mnh_expand_array(JI=IIB:IIE,JJ=IJB:IJE,JK=1:IKT)    
-  PGY_M_M(IIB:IIE,IJB:IJE,1:IKT)= (ZWORK2(IIB:IIE,IJB:IJE,1:IKT)-ZWORK4(IIB:IIE,IJB:IJE,1:IKT)) &
-                                    /ZMYF_PDYY(IIB:IIE,IJB:IJE,1:IKT)
+  PGY_M_M(IIB:IIE,IJB:IJE,:)= (ZWORK2(IIB:IIE,IJB:IJE,:)-ZWORK4(IIB:IIE,IJB:IJE,:)) &
+                                    /ZMYF_PDYY(IIB:IIE,IJB:IJE,:)
   !$mnh_end_expand_array(JI=IIB:IIE,JJ=IJB:IJE,JK=1:IKT)    
 ELSE
   !$mnh_expand_array(JI=IIB:IIE,JJ=IJB:IJE,JK=1:IKT)    
-  PGY_M_M(IIB:IIE,IJB:IJE,1:IKT) = ZWORK2(IIB:IIE,IJB:IJE,1:IKT)/ZMYF_PDYY(IIB:IIE,IJB:IJE,1:IKT)
+  PGY_M_M(IIB:IIE,IJB:IJE,:) = ZWORK2(IIB:IIE,IJB:IJE,:)/ZMYF_PDYY(IIB:IIE,IJB:IJE,:)
   !$mnh_end_expand_array(JI=IIB:IIE,JJ=IJB:IJE,JK=1:IKT)    
 ENDIF  
 !

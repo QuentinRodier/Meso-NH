@@ -137,12 +137,12 @@ IKL=D%NKL
 !
 DO JK=2,IKT-1
   !$mnh_expand_array(JIJ=IIJB:IIJE)
-  PMZF(IIJB:IIJE,JK) = 0.5*( PA(IIJB:IIJE,JK)+PA(IIJB:IIJE,JK+IKL) )
+  PMZF(:,JK) = 0.5*( PA(:,JK)+PA(:,JK+IKL) )
   !$mnh_end_expand_array(JIJ=IIJB:IIJE)
 END DO
 !$mnh_expand_array(JIJ=IIJB:IIJE)
-PMZF(IIJB:IIJE,IKA) = 0.5*( PA(IIJB:IIJE,IKA)+PA(IIJB:IIJE,IKA+IKL) )
-PMZF(IIJB:IIJE,IKU) = PA(IIJB:IIJE,IKU)
+PMZF(:,IKA) = 0.5*( PA(:,IKA)+PA(:,IKA+IKL) )
+PMZF(:,IKU) = PA(:,IKU)
 !$mnh_end_expand_array(JIJ=IIJB:IIJE)
 !
 !-------------------------------------------------------------------------------
@@ -227,12 +227,12 @@ IKL=D%NKL
 !
 DO JK=2,IKT-1
   !$mnh_expand_array(JIJ=IIJB:IIJE)
-  PMZM(IIJB:IIJE,JK) = 0.5*( PA(IIJB:IIJE,JK)+PA(IIJB:IIJE,JK-IKL) )
+  PMZM(:,JK) = 0.5*( PA(:,JK)+PA(:,JK-IKL) )
   !$mnh_end_expand_array(JIJ=IIJB:IIJE)
 END DO
 !$mnh_expand_array(JIJ=IIJB:IIJE)
-PMZM(IIJB:IIJE,IKA) = PA(IIJB:IIJE,IKA)
-PMZM(IIJB:IIJE,IKU) = 0.5*( PA(IIJB:IIJE,IKU)+PA(IIJB:IIJE,IKU-IKL) )
+PMZM(:,IKA) = PA(:,IKA)
+PMZM(:,IKU) = 0.5*( PA(:,IKU)+PA(:,IKU-IKL) )
 !$mnh_end_expand_array(JIJ=IIJB:IIJE)
 !
 !-------------------------------------------------------------------------------
@@ -317,12 +317,12 @@ IKL=D%NKL
 !
 DO JK=2,IKT-1
   !$mnh_expand_array(JIJ=IIJB:IIJE)
-  PDZF(IIJB:IIJE,JK) = PA(IIJB:IIJE,JK+IKL) - PA(IIJB:IIJE,JK)
+  PDZF(:,JK) = PA(:,JK+IKL) - PA(:,JK)
   !$mnh_end_expand_array(JIJ=IIJB:IIJE)
 END DO
 !$mnh_expand_array(JIJ=IIJB:IIJE)
-PDZF(IIJB:IIJE,IKA) = PA(IIJB:IIJE,IKA+IKL) - PA(IIJB:IIJE,IKA)
-PDZF(IIJB:IIJE,IKU) = 0.
+PDZF(:,IKA) = PA(:,IKA+IKL) - PA(:,IKA)
+PDZF(:,IKU) = 0.
 !$mnh_end_expand_array(JIJ=IIJB:IIJE)
 !
 !-------------------------------------------------------------------------------
@@ -407,12 +407,12 @@ IKL=D%NKL
 !
 DO JK=2,IKT-1
   !$mnh_expand_array(JIJ=IIJB:IIJE)
-  PDZM(IIJB:IIJE,JK) = PA(IIJB:IIJE,JK) - PA(IIJB:IIJE,JK-IKL)
+  PDZM(:,JK) = PA(:,JK) - PA(:,JK-IKL)
   !$mnh_end_expand_array(JIJ=IIJB:IIJE)
 END DO
 !$mnh_expand_array(JIJ=IIJB:IIJE)
-PDZM(IIJB:IIJE,IKA) = 0.
-PDZM(IIJB:IIJE,IKU) = PA(IIJB:IIJE,IKU) - PA(IIJB:IIJE,IKU-IKL)
+PDZM(:,IKA) = 0.
+PDZM(:,IKU) = PA(:,IKU) - PA(:,IKU-IKL)
 !$mnh_end_expand_array(JIJ=IIJB:IIJE)
 !
 !-------------------------------------------------------------------------------
@@ -497,12 +497,12 @@ IKL=D%NKL
 !
 DO JK=2,IKT-1
   !$mnh_expand_array(JIJ=IIJB:IIJE)
-  PGZ_M_W(IIJB:IIJE,JK) = (PY(IIJB:IIJE,JK) - PY(IIJB:IIJE,JK-IKL)) / PDZZ(IIJB:IIJE,JK)
+  PGZ_M_W(:,JK) = (PY(:,JK) - PY(:,JK-IKL)) / PDZZ(:,JK)
   !$mnh_end_expand_array(JIJ=IIJB:IIJE)
 END DO
 !$mnh_expand_array(JIJ=IIJB:IIJE)
-PGZ_M_W(IIJB:IIJE,IKA) = 0.
-PGZ_M_W(IIJB:IIJE,IKU) = (PY(IIJB:IIJE,IKU) - PY(IIJB:IIJE,IKU-IKL)) / PDZZ(IIJB:IIJE,IKU)
+PGZ_M_W(:,IKA) = 0.
+PGZ_M_W(:,IKU) = (PY(:,IKU) - PY(:,IKU-IKL)) / PDZZ(:,IKU)
 !$mnh_end_expand_array(JIJ=IIJB:IIJE)
 !
 !-------------------------------------------------------------------------------

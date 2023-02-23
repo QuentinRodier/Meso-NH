@@ -55,6 +55,11 @@ USE MODD_PARAM_LIMA,      ONLY : NMOD_CCN, HINI_CCN, HTYPE_CCN,        &
                                  CINT_MIXING, NPHILLIPS,           &
                                  NIMM, NMOD_IMM, NINDICE_CCN_IMM
 !
+USE MODD_CH_AEROSOL
+USE MODD_SALT
+USE MODD_CSTS_SALT
+USE MODD_DUST
+USE MODD_CSTS_DUST
 use mode_msg
 !
 USE MODI_GAMMA
@@ -158,6 +163,40 @@ IF ( NMOD_CCN .GE. 1 ) THEN
       call Print_msg(NVERB_FATAL,'GEN','INIT_AEROSOL_PROPERTIES','CCN_MODES must be JUNGFRAU, COPT, CAMS, CAMS_JPP,'// &
                                                                  'CAMS_ACC, CAMS_AIT, SIRTA, CPS00, MOCAGE or FREETROP')
    ENDSELECT
+
+IF (LORILAM) THEN   ! for sulphates and hydrophilic aerosols
+  IF (.NOT.(ALLOCATED(XRHOI))) ALLOCATE(XRHOI(NSP+NSOA+NCARB))
+  XRHOI(:)          = 1.8e3
+  XRHOI(JP_AER_H2O) = 1.0e3   ! water
+  XRHOI(JP_AER_DST) = XDENSITY_DUST   ! water
+
+  ! assumption: we choose to put sulfates in mode J and hydrophilics compounds in mode I
+  IF (CRGUNIT=="MASS") THEN
+  RCCN(2)   = XINIRADIUSJ * EXP(-3.*(LOG(XINISIGJ))**2) * 1E-6 ! Sulfates
+  RCCN(3)   = XINIRADIUSI * EXP(-3.*(LOG(XINISIGI))**2) * 1E-6 ! Hydrophilic
+  ELSE
+  RCCN(2)   = XINIRADIUSJ * 1E-6  ! Sulfates
+  RCCN(3)   = XINIRADIUSI * 1E-6  ! Hydrophilic
+
+  END IF
+  LOGSIGCCN(2) = LOG(XINISIGJ)
+  LOGSIGCCN(3) = LOG(XINISIGI)
+  RHOCCN(2)    = XRHOI(JP_AER_SO4) 
+  RHOCCN(3)    = XRHOI(JP_AER_BC)
+END IF
+IF (LSALT) THEN ! for sea salts
+  JMOD = 1
+  IF (NMODE_SLT >= 5) JMOD = 5  ! choose mode 5 of Ovadnevaite 2014 (r = 0.415 µm, sigma = 1.85)
+  IF (NMODE_SLT == 3) JMOD = 1  ! choose mode 1 of Vig01 (r = 0.2 µm, sigma = 1.9) or Sch04 (r = 0.14 µm, sigma = 1.59)
+  IF (CRGUNITS=="MASS") THEN
+  RCCN(1)   = XINIRADIUS_SLT(JMOD) * EXP(-3.*(LOG(XINISIG_SLT(JMOD)))**2) * 1E-6
+  ELSE
+  RCCN(1)   = XINIRADIUS_SLT(JMOD) * 1E-6
+  END IF
+  LOGSIGCCN(1) = LOG(XINISIG_SLT(JMOD))
+  RHOCCN(1) = XDENSITY_SALT
+END IF
+
 !
   DO I=1, MIN(NMOD_CCN,3)
     XR_MEAN_CCN(I) = RCCN(I)
@@ -170,6 +209,15 @@ IF ( NMOD_CCN .GE. 1 ) THEN
     XR_MEAN_CCN(4) = 1.75E-6
     XLOGSIG_CCN(4) = 0.708
     XRHO_CCN(4)    = 2200.   
+    IF ((LSALT).AND.(NMODE_SLT > 5)) THEN
+      IF (CRGUNITS=="MASS") THEN
+       XR_MEAN_CCN(4) = XINIRADIUS_SLT(6) * EXP(-3.*(LOG(XINISIG_SLT(6)))**2) * 1E-6
+      ELSE
+       XR_MEAN_CCN(4) = XINIRADIUS_SLT(6) * 1E-6
+      END IF
+     XLOGSIG_CCN(4) = LOG(XINISIG_SLT(6))
+     XRHO_CCN(4)    = XDENSITY_SALT
+    END IF
   END IF
 !
 !
@@ -352,6 +400,34 @@ IF ( NMOD_IFN .GE. 1 ) THEN
          XRHO_IFN   = (/2300., 2300., 1860., 1000./)
       END IF
    ENDSELECT
+
+IF (LORILAM) THEN
+! assumption: only the aitken mode is considered as ifn
+  IF (CRGUNIT=="MASS") THEN
+  XMDIAM_IFN(3)   = 2 * XINIRADIUSI * EXP(-3.*(LOG(XINISIGI))**2) * 1E-6
+  XMDIAM_IFN(4)   = 2 * XINIRADIUSI * EXP(-3.*(LOG(XINISIGI))**2) * 1E-6
+  ELSE
+  XMDIAM_IFN(3)   = 2 * XINIRADIUSI * 1E-6
+  XMDIAM_IFN(4)   = 2 * XINIRADIUSI * 1E-6
+  END IF
+  LOGSIGCCN(3) = LOG(XINISIGJ)
+  LOGSIGCCN(4) = LOG(XINISIGJ)
+  XRHO_IFN(3)    = XRHOI(JP_AER_BC) 
+  XRHO_IFN(4)    = XRHOI(JP_AER_OC)
+END IF
+
+IF (LDUST) THEN
+! assumption: we considered the two finest dust modes as ifn
+  DO JMOD = 1,2
+  IF (CRGUNITD=="MASS") THEN
+    XMDIAM_IFN(JMOD) = 2 * XINIRADIUS(JPDUSTORDER(JMOD)) * EXP(-3.*(LOG(XINISIG(JPDUSTORDER(JMOD))))**2) * 1E-6 
+  ELSE
+    XMDIAM_IFN(JMOD) = 2 * XINIRADIUS(JPDUSTORDER(JMOD)) * 1E-6 
+  END IF
+  LOGSIGCCN(JMOD) = LOG(XINISIG(JPDUSTORDER(JMOD)))
+  RHOCCN(JMOD) = XDENSITY_DUST
+  ENDDO
+END IF
 !
 ! internal mixing
 !
@@ -431,22 +507,6 @@ IF ( NMOD_IFN .GE. 1 ) THEN
          XFRAC_REF(3)=0.28
          XFRAC_REF(4)=0.06
       END IF
-!
-! Immersion modes
-!
-   IF (.NOT.(ALLOCATED(NIMM))) ALLOCATE(NIMM(NMOD_CCN))
-   NIMM(:)=0
-   IF (ALLOCATED(NINDICE_CCN_IMM)) DEALLOCATE(NINDICE_CCN_IMM)
-   ALLOCATE(NINDICE_CCN_IMM(MAX(1,NMOD_IMM)))
-   IF (NMOD_IMM .GE. 1) THEN
-      DO J = 0, NMOD_IMM-1
-         NIMM(NMOD_CCN-J)=1
-         NINDICE_CCN_IMM(NMOD_IMM-J) = NMOD_CCN-J
-      END DO
-!   ELSE IF (NMOD_IMM == 0) THEN ! PNIS existe mais vaut 0, pour l'appel à resolved_cloud
-!      NMOD_IMM = 1
-!      NINDICE_CCN_IMM(1) = 0
-   END IF
 !
 END IF ! NMOD_IFN > 0
 ! 

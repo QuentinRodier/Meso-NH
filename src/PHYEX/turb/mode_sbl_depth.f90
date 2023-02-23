@@ -96,11 +96,11 @@ IIJB=D%NIJB
 IKT=D%NKT
 !
 !$mnh_expand_array(JIJ=IIJB:IIJE)
-ZWU(IIJB:IIJE) = PFLXU(IIJB:IIJE,IKB)
-ZWV(IIJB:IIJE) = PFLXV(IIJB:IIJE,IKB)
-ZQ0(IIJB:IIJE) = PWTHV(IIJB:IIJE,IKB)
+ZWU(:) = PFLXU(:,IKB)
+ZWV(:) = PFLXV(:,IKB)
+ZQ0(:) = PWTHV(:,IKB)
 !
-ZUSTAR2(IIJB:IIJE) = SQRT(ZWU(IIJB:IIJE)**2+ZWV(IIJB:IIJE)**2)
+ZUSTAR2(:) = SQRT(ZWU(:)**2+ZWV(:)**2)
 !
 !$mnh_end_expand_array(JIJ=IIJB:IIJE)
 !----------------------------------------------------------------------------
@@ -108,11 +108,11 @@ ZUSTAR2(IIJB:IIJE) = SQRT(ZWU(IIJB:IIJE)**2+ZWV(IIJB:IIJE)**2)
 !* BL and SBL diagnosed with friction criteria
 !
 !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
-ZWIND(IIJB:IIJE,1:IKT)=SQRT(PFLXU(IIJB:IIJE,1:IKT)**2+PFLXV(IIJB:IIJE,1:IKT)**2)
+ZWIND(:,:)=SQRT(PFLXU(:,:)**2+PFLXV(:,:)**2)
 !$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
 CALL BL_DEPTH_DIAG(D,ZUSTAR2,PZZ(:,IKB),ZWIND,PZZ,CSTURB%XFTOP_O_FSURF,ZSBL_DYN)
 !$mnh_expand_array(JIJ=IIJB:IIJE)
-ZSBL_DYN(IIJB:IIJE) = CSTURB%XSBL_O_BL * ZSBL_DYN(IIJB:IIJE)
+ZSBL_DYN(:) = CSTURB%XSBL_O_BL * ZSBL_DYN(:)
 !$mnh_end_expand_array(JIJ=IIJB:IIJE)
 !
 !----------------------------------------------------------------------------
@@ -121,7 +121,7 @@ ZSBL_DYN(IIJB:IIJE) = CSTURB%XSBL_O_BL * ZSBL_DYN(IIJB:IIJE)
 !
 CALL BL_DEPTH_DIAG(D,ZQ0,PZZ(:,IKB),PWTHV,PZZ,CSTURB%XFTOP_O_FSURF,ZSBL_THER)
 !$mnh_expand_array(JIJ=IIJB:IIJE)
-ZSBL_THER(IIJB:IIJE)= CSTURB%XSBL_O_BL * ZSBL_THER(IIJB:IIJE)
+ZSBL_THER(:)= CSTURB%XSBL_O_BL * ZSBL_THER(:)
 !$mnh_end_expand_array(JIJ=IIJB:IIJE)
 !
 !----------------------------------------------------------------------------
@@ -130,40 +130,40 @@ ZSBL_THER(IIJB:IIJE)= CSTURB%XSBL_O_BL * ZSBL_THER(IIJB:IIJE)
 !
 PSBL_DEPTH(:) = 0.
 !$mnh_expand_where(JIJ=IIJB:IIJE)
-WHERE (ZSBL_THER(IIJB:IIJE)> 0. .AND. ZSBL_DYN(IIJB:IIJE)> 0.) 
-  PSBL_DEPTH = MIN(ZSBL_THER(IIJB:IIJE),ZSBL_DYN(IIJB:IIJE))
+WHERE (ZSBL_THER(:)> 0. .AND. ZSBL_DYN(:)> 0.) 
+  PSBL_DEPTH = MIN(ZSBL_THER(:),ZSBL_DYN(:))
 END WHERE
 !$mnh_end_expand_where(JIJ=IIJB:IIJE)
 !
 !$mnh_expand_where(JIJ=IIJB:IIJE)
-WHERE (ZSBL_THER(IIJB:IIJE)> 0. .AND. ZSBL_DYN(IIJB:IIJE)==0.) 
-  PSBL_DEPTH(IIJB:IIJE) = ZSBL_THER(IIJB:IIJE)
+WHERE (ZSBL_THER(:)> 0. .AND. ZSBL_DYN(:)==0.) 
+  PSBL_DEPTH(:) = ZSBL_THER(:)
 END WHERE
 !$mnh_end_expand_where(JIJ=IIJB:IIJE)
 !
 !$mnh_expand_where(JIJ=IIJB:IIJE)
-WHERE (ZSBL_THER(IIJB:IIJE)==0. .AND. ZSBL_DYN(IIJB:IIJE)> 0.) 
-  PSBL_DEPTH(IIJB:IIJE) = ZSBL_DYN(IIJB:IIJE)
+WHERE (ZSBL_THER(:)==0. .AND. ZSBL_DYN(:)> 0.) 
+  PSBL_DEPTH(:) = ZSBL_DYN(:)
 END WHERE
 !$mnh_end_expand_where(JIJ=IIJB:IIJE)
 !
 DO JLOOP=1,5
   !$mnh_expand_where(JIJ=IIJB:IIJE)
-  WHERE (PLMO(IIJB:IIJE)/=XUNDEF .AND. ABS(PLMO(IIJB:IIJE))>=0.01 )
-    ZA(IIJB:IIJE) = TANH(2.*PSBL_DEPTH(IIJB:IIJE)/PLMO(IIJB:IIJE))**2
-    PSBL_DEPTH(IIJB:IIJE) = 0.2 * PSBL_DEPTH(IIJB:IIJE) + 0.8 * ((1.-ZA(IIJB:IIJE)) &
-                                * ZSBL_DYN(IIJB:IIJE) + ZA(IIJB:IIJE) * ZSBL_THER(IIJB:IIJE) )
+  WHERE (PLMO(:)/=XUNDEF .AND. ABS(PLMO(:))>=0.01 )
+    ZA(:) = TANH(2.*PSBL_DEPTH(:)/PLMO(:))**2
+    PSBL_DEPTH(:) = 0.2 * PSBL_DEPTH(:) + 0.8 * ((1.-ZA(:)) &
+                                * ZSBL_DYN(:) + ZA(:) * ZSBL_THER(:) )
   END WHERE
   !$mnh_end_expand_where(JIJ=IIJB:IIJE)
 END DO
 !$mnh_expand_where(JIJ=IIJB:IIJE)
-WHERE (ABS(PLMO(IIJB:IIJE))<=0.01 ) 
-  PSBL_DEPTH(IIJB:IIJE) = ZSBL_THER(IIJB:IIJE)
+WHERE (ABS(PLMO(:))<=0.01 ) 
+  PSBL_DEPTH(:) = ZSBL_THER(:)
 END WHERE
 !$mnh_end_expand_where(JIJ=IIJB:IIJE)
 !$mnh_expand_where(JIJ=IIJB:IIJE)
-WHERE (PLMO(IIJB:IIJE)==XUNDEF)
-  PSBL_DEPTH(IIJB:IIJE) = ZSBL_DYN(IIJB:IIJE)
+WHERE (PLMO(:)==XUNDEF)
+  PSBL_DEPTH(:) = ZSBL_DYN(:)
 END WHERE
 !$mnh_end_expand_where(JIJ=IIJB:IIJE)
 !

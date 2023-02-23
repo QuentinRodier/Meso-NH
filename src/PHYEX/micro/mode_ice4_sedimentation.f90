@@ -141,7 +141,7 @@ IF(PARAMI%CSEDIM=='STAT') THEN
                               &PINPRC, PINPRR, ZINPRI, PINPRS, PINPRG, &
                               &PSEA=PSEA, PTOWN=PTOWN, &
                               &PINPRH=PINPRH, PRHT=ZRHT, PRHS=PRHS, PFPR=PFPR)
-  PINPRS(IIJB:IIJE) = PINPRS(IIJB:IIJE) + ZINPRI(IIJB:IIJE)
+  PINPRS(:) = PINPRS(:) + ZINPRI(:)
   !No negativity correction here as we apply sedimentation on PR.S*PTSTEP variables
 ELSEIF(PARAMI%CSEDIM=='SPLI') THEN
   CALL ICE4_SEDIMENTATION_SPLIT(D, CST, ICEP, ICED, PARAMI, &
@@ -151,7 +151,7 @@ ELSEIF(PARAMI%CSEDIM=='SPLI') THEN
                                &PINPRC, PINPRR, ZINPRI, PINPRS, PINPRG, &
                                &PSEA=PSEA, PTOWN=PTOWN, &
                                &PINPRH=PINPRH, PRHT=PRHT, PRHS=PRHS, PFPR=PFPR)
-  PINPRS(IIJB:IIJE) = PINPRS(IIJB:IIJE) + ZINPRI(IIJB:IIJE)
+  PINPRS(:) = PINPRS(:) + ZINPRI(:)
   !We correct negativities with conservation
   !SPLI algorith uses a time-splitting. Inside the loop a temporary m.r. is used.
   !   It is initialized with the m.r. at T and is modified by two tendencies:

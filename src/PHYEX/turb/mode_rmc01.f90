@@ -121,12 +121,12 @@ CALL MZF_PHY(D,PZZ,ZZZ)
 ! replace by height of mass points
 DO JK=1,IKT
   !$mnh_expand_array(JIJ=IIJB:IIJE)
-  ZZZ(IIJB:IIJE,JK) = ZZZ(IIJB:IIJE,JK) - PZZ(IIJB:IIJE,IKB)
+  ZZZ(:,JK) = ZZZ(:,JK) - PZZ(:,IKB)
   !$mnh_end_expand_array(JIJ=IIJB:IIJE)
 END DO
 ! fill upper level with physical value
 !$mnh_expand_array(JIJ=IIJB:IIJE)
-ZZZ(IIJB:IIJE,IKU) = 2.*ZZZ(IIJB:IIJE,IKU-IKL) - ZZZ(IIJB:IIJE,IKU-2*IKL)
+ZZZ(:,IKU) = 2.*ZZZ(:,IKU-IKL) - ZZZ(:,IKU-2*IKL)
 !$mnh_end_expand_array(JIJ=IIJB:IIJE)
 !
 !-------------------------------------------------------------------------------
@@ -137,16 +137,16 @@ ZZZ(IIJB:IIJE,IKU) = 2.*ZZZ(IIJB:IIJE,IKU-IKL) - ZZZ(IIJB:IIJE,IKU-2*IKL)
 ! z/LMO
 DO JK=1,IKT
   !$mnh_expand_where(JIJ=IIJB:IIJE)
-  WHERE (PLMO(IIJB:IIJE)==XUNDEF)
-    ZZ_O_LMO(IIJB:IIJE,JK)=0.
+  WHERE (PLMO(:)==XUNDEF)
+    ZZ_O_LMO(:,JK)=0.
   ELSEWHERE
-    ZZ_O_LMO(IIJB:IIJE,JK)=ZZZ(IIJB:IIJE,JK)*PDIRCOSZW(IIJB:IIJE)/PLMO(IIJB:IIJE)
+    ZZ_O_LMO(:,JK)=ZZZ(:,JK)*PDIRCOSZW(:)/PLMO(:)
   END WHERE
   !$mnh_end_expand_where(JIJ=IIJB:IIJE)
 END DO
 !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
-ZZ_O_LMO(IIJB:IIJE,1:IKT) = MAX(ZZ_O_LMO(IIJB:IIJE,1:IKT),-10.)
-ZZ_O_LMO(IIJB:IIJE,1:IKT) = MIN(ZZ_O_LMO(IIJB:IIJE,1:IKT), 10.)
+ZZ_O_LMO(:,:) = MAX(ZZ_O_LMO(:,:),-10.)
+ZZ_O_LMO(:,:) = MIN(ZZ_O_LMO(:,:), 10.)
 !$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
 !
 !
@@ -172,40 +172,40 @@ SELECT CASE (HTURBLEN)
     CALL MXF_PHY(D,PDXX,ZWORK1)
     CALL MYF_PHY(D,PDYY,ZWORK2)
     !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
-    ZDH(IIJB:IIJE,1:IKT) = SQRT(ZWORK1(IIJB:IIJE,1:IKT)*ZWORK2(IIJB:IIJE,1:IKT))
+    ZDH(:,:) = SQRT(ZWORK1(:,:)*ZWORK2(:,:))
     !$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
     !
     CALL UPDATE_IIJU_PHY(D,ZZC)
     !
     DO JK=1,IKT
       !$mnh_expand_array(JIJ=IIJB:IIJE)
-      ZZC(IIJB:IIJE,JK) = 2.*MIN(ZPHIM(IIJB:IIJE,JK),1.)/CST%XKARMAN    &
-                            * MAX( PDZZ(IIJB:IIJE,JK)*PDIRCOSZW(IIJB:IIJE) , & 
-                            ZDH(IIJB:IIJE,JK)/PDIRCOSZW(IIJB:IIJE)/3. )
+      ZZC(:,JK) = 2.*MIN(ZPHIM(:,JK),1.)/CST%XKARMAN    &
+                            * MAX( PDZZ(:,JK)*PDIRCOSZW(:) , & 
+                            ZDH(:,JK)/PDIRCOSZW(:)/3. )
       !$mnh_end_expand_array(JIJ=IIJB:IIJE)
     END DO
     !
 !*     4. factor controling the transition between SBL and free isotropic turb. (3D case)
 !         --------------------------------------------------------------------
 !
-    ZGAM(IIJB:IIJE,IKA) = 0.
+    ZGAM(:,IKA) = 0.
     DO JK=IKTB,IKTE
       !$mnh_expand_array(JIJ=IIJB:IIJE)
-      ZGAM(IIJB:IIJE,JK) = 1.  - EXP( -3.*(ZZZ(IIJB:IIJE,JK)-ZZZ(IIJB:IIJE,IKB))/(ZZC(IIJB:IIJE,JK)) )
+      ZGAM(:,JK) = 1.  - EXP( -3.*(ZZZ(:,JK)-ZZZ(:,IKB))/(ZZC(:,JK)) )
       !$mnh_end_expand_array(JIJ=IIJB:IIJE)
       !$mnh_expand_where(JIJ=IIJB:IIJE)
-      WHERE (ZGAM(IIJB:IIJE,JK-IKL)>ZGAM(IIJB:IIJE,JK) .OR. ZGAM(IIJB:IIJE,JK-IKL)>0.99 ) 
-        ZGAM(IIJB:IIJE,JK) = 1.
+      WHERE (ZGAM(:,JK-IKL)>ZGAM(:,JK) .OR. ZGAM(:,JK-IKL)>0.99 ) 
+        ZGAM(:,JK) = 1.
       END WHERE
      !$mnh_end_expand_where(JIJ=IIJB:IIJE)
     END DO
     !$mnh_expand_array(JIJ=IIJB:IIJE)
-    ZGAM(IIJB:IIJE,IKU) = 1.  - EXP( -3.*(ZZZ(IIJB:IIJE,IKU)-ZZZ(IIJB:IIJE,IKB))& 
-                                   /(ZZC(IIJB:IIJE,IKU)) )
+    ZGAM(:,IKU) = 1.  - EXP( -3.*(ZZZ(:,IKU)-ZZZ(:,IKB))& 
+                                   /(ZZC(:,IKU)) )
     !$mnh_end_expand_array(JIJ=IIJB:IIJE)
     !$mnh_expand_where(JIJ=IIJB:IIJE)
-    WHERE (ZGAM(IIJB:IIJE,IKU-IKL)>ZGAM(IIJB:IIJE,IKU) .OR. ZGAM(IIJB:IIJE,IKU-IKL)>0.99 ) 
-      ZGAM(IIJB:IIJE,IKU) = 1.
+    WHERE (ZGAM(:,IKU-IKL)>ZGAM(:,IKU) .OR. ZGAM(:,IKU-IKL)>0.99 ) 
+      ZGAM(:,IKU) = 1.
     END WHERE
     !$mnh_end_expand_where(JIJ=IIJB:IIJE)
 !   
@@ -217,28 +217,28 @@ SELECT CASE (HTURBLEN)
 !
   CASE DEFAULT
 !* SBL depth is used
-    ZGAM(IIJB:IIJE,1:IKT) = 1.
-    ZGAM(IIJB:IIJE,IKA) = 0.
+    ZGAM(:,:) = 1.
+    ZGAM(:,IKA) = 0.
     DO JK=IKTB,IKTE
       !$mnh_expand_where(JIJ=IIJB:IIJE)
-      WHERE(PSBL_DEPTH(IIJB:IIJE)>0.)
-        ZGAM(IIJB:IIJE,JK) = TANH( (ZZZ(IIJB:IIJE,JK)-ZZZ(IIJB:IIJE,IKB))/PSBL_DEPTH(IIJB:IIJE) )
+      WHERE(PSBL_DEPTH(:)>0.)
+        ZGAM(:,JK) = TANH( (ZZZ(:,JK)-ZZZ(:,IKB))/PSBL_DEPTH(:) )
       END WHERE
       !$mnh_end_expand_where(JIJ=IIJB:IIJE)
       !$mnh_expand_where(JIJ=IIJB:IIJE)
-      WHERE (ZGAM(IIJB:IIJE,JK-IKL)>0.99 ) 
-        ZGAM(IIJB:IIJE,JK) = 1.
+      WHERE (ZGAM(:,JK-IKL)>0.99 ) 
+        ZGAM(:,JK) = 1.
       END WHERE
       !$mnh_end_expand_where(JIJ=IIJB:IIJE)
     END DO
     !$mnh_expand_where(JIJ=IIJB:IIJE)
-    WHERE(PSBL_DEPTH(IIJB:IIJE)>0.)
-      ZGAM(IIJB:IIJE,IKU) = TANH( (ZZZ(IIJB:IIJE,IKU)-ZZZ(IIJB:IIJE,IKB))/PSBL_DEPTH(IIJB:IIJE) )
+    WHERE(PSBL_DEPTH(:)>0.)
+      ZGAM(:,IKU) = TANH( (ZZZ(:,IKU)-ZZZ(:,IKB))/PSBL_DEPTH(:) )
     END WHERE
    !$mnh_end_expand_where(JIJ=IIJB:IIJE)
    !$mnh_expand_where(JIJ=IIJB:IIJE)
-    WHERE (ZGAM(IIJB:IIJE,IKU-IKL)>0.99 ) 
-      ZGAM(IIJB:IIJE,JK) = 1.
+    WHERE (ZGAM(:,IKU-IKL)>0.99 ) 
+      ZGAM(:,JK) = 1.
     END WHERE
     !$mnh_end_expand_where(JIJ=IIJB:IIJE)
 !
@@ -251,43 +251,43 @@ END SELECT
 !
 DO JK=1,IKT
 !$mnh_expand_array(JIJ=IIJB:IIJE)
-  ZL(IIJB:IIJE,JK) =  CST%XKARMAN/SQRT(CSTURB%XALPSBL)/CSTURB%XCMFS                                      &
-              * ZZZ(IIJB:IIJE,JK)*PDIRCOSZW(IIJB:IIJE)/(ZPHIM(IIJB:IIJE,JK)**2*SQRT(ZPHIE(IIJB:IIJE,JK)))
+  ZL(:,JK) =  CST%XKARMAN/SQRT(CSTURB%XALPSBL)/CSTURB%XCMFS                                      &
+              * ZZZ(:,JK)*PDIRCOSZW(:)/(ZPHIM(:,JK)**2*SQRT(ZPHIE(:,JK)))
 !$mnh_end_expand_array(JIJ=IIJB:IIJE)
 END DO
 !
 !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
-PLK(IIJB:IIJE,1:IKT)=(1.-ZGAM(IIJB:IIJE,1:IKT))*ZL(IIJB:IIJE,1:IKT) &
-                             +ZGAM(IIJB:IIJE,1:IKT)*PLK(IIJB:IIJE,1:IKT)
+PLK(:,:)=(1.-ZGAM(:,:))*ZL(:,:) &
+                             +ZGAM(:,:)*PLK(:,:)
 !$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
 !
-PLK(IIJB:IIJE,IKA) = PLK(IIJB:IIJE,IKB)
-PLK(IIJB:IIJE,IKU) = PLK(IIJB:IIJE,IKE)
+PLK(:,IKA) = PLK(:,IKB)
+PLK(:,IKU) = PLK(:,IKE)
 !-------------------------------------------------------------------------------
 !
 !*     7. Modification of the dissipative length
 !         --------------------------------------
 !
 !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
-ZL(IIJB:IIJE,1:IKT) = ZL(IIJB:IIJE,1:IKT) * (CSTURB%XALPSBL**(3./2.)*CST%XKARMAN*CSTURB%XCED) &
+ZL(:,:) = ZL(:,:) * (CSTURB%XALPSBL**(3./2.)*CST%XKARMAN*CSTURB%XCED) &
         / (CST%XKARMAN/SQRT(CSTURB%XALPSBL)/CSTURB%XCMFS)
 !$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
 !
 !$mnh_expand_where(JIJ=IIJB:IIJE,JK=1:IKT)
-WHERE (ZZ_O_LMO(IIJB:IIJE,1:IKT)<0.)
-  ZL(IIJB:IIJE,1:IKT) = ZL(IIJB:IIJE,1:IKT)/(1.-1.9*ZZ_O_LMO(IIJB:IIJE,1:IKT))
+WHERE (ZZ_O_LMO(:,:)<0.)
+  ZL(:,:) = ZL(:,:)/(1.-1.9*ZZ_O_LMO(:,:))
 ELSEWHERE
-  ZL(IIJB:IIJE,1:IKT) = ZL(IIJB:IIJE,1:IKT)/(1.-0.3*SQRT(ZZ_O_LMO(IIJB:IIJE,1:IKT)))
+  ZL(:,:) = ZL(:,:)/(1.-0.3*SQRT(ZZ_O_LMO(:,:)))
 END WHERE
 !$mnh_end_expand_where(JIJ=IIJB:IIJE,JK=1:IKT)
 !
 !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
-PLEPS(IIJB:IIJE,1:IKT)=(1.-ZGAM(IIJB:IIJE,1:IKT))*ZL(IIJB:IIJE,1:IKT) &
-                               +ZGAM(IIJB:IIJE,1:IKT)*PLEPS(IIJB:IIJE,1:IKT)
+PLEPS(:,:)=(1.-ZGAM(:,:))*ZL(:,:) &
+                               +ZGAM(:,:)*PLEPS(:,:)
 !$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
 !
-PLEPS(IIJB:IIJE,IKA) = PLEPS(IIJB:IIJE,IKB)
-PLEPS(IIJB:IIJE,IKU) = PLEPS(IIJB:IIJE,IKE)
+PLEPS(:,IKA) = PLEPS(:,IKB)
+PLEPS(:,IKU) = PLEPS(:,IKE)
 !-------------------------------------------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('RMC01',1,ZHOOK_HANDLE)

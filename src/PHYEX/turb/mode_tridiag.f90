@@ -165,25 +165,25 @@ IIJB=D%NIJB
 IIJE=D%NIJE
 !
 !$mnh_expand_array(JIJ=IIJB:IIJE)
-ZY(IIJB:IIJE,IKB) = PVARM(IIJB:IIJE,IKB)  + PTSTEP*PSOURCE(IIJB:IIJE,IKB) -   &
-  PEXPL / PRHODJ(IIJB:IIJE,IKB) * PA(IIJB:IIJE,IKB+IKL) * &
-  (PVARM(IIJB:IIJE,IKB+IKL) - PVARM(IIJB:IIJE,IKB))
+ZY(:,IKB) = PVARM(:,IKB)  + PTSTEP*PSOURCE(:,IKB) -   &
+  PEXPL / PRHODJ(:,IKB) * PA(:,IKB+IKL) * &
+  (PVARM(:,IKB+IKL) - PVARM(:,IKB))
 !$mnh_end_expand_array(JIJ=IIJB:IIJE)
 !
 DO JK=IKTB+1,IKTE-1
   !$mnh_expand_array(JIJ=IIJB:IIJE)
-  ZY(IIJB:IIJE,JK)= PVARM(IIJB:IIJE,JK)  + PTSTEP*PSOURCE(IIJB:IIJE,JK) -               &
-      PEXPL / PRHODJ(IIJB:IIJE,JK) *                                           &
-                             ( PVARM(IIJB:IIJE,JK-IKL)*PA(IIJB:IIJE,JK)                &
-                              -PVARM(IIJB:IIJE,JK)*(PA(IIJB:IIJE,JK)+PA(IIJB:IIJE,JK+IKL))   &
-                              +PVARM(IIJB:IIJE,JK+IKL)*PA(IIJB:IIJE,JK+IKL)              &
+  ZY(:,JK)= PVARM(:,JK)  + PTSTEP*PSOURCE(:,JK) -               &
+      PEXPL / PRHODJ(:,JK) *                                           &
+                             ( PVARM(:,JK-IKL)*PA(:,JK)                &
+                              -PVARM(:,JK)*(PA(:,JK)+PA(:,JK+IKL))   &
+                              +PVARM(:,JK+IKL)*PA(:,JK+IKL)              &
                              ) 
   !$mnh_end_expand_array(JIJ=IIJB:IIJE)
 END DO
 ! 
 !$mnh_expand_array(JIJ=IIJB:IIJE)
-ZY(IIJB:IIJE,IKE)= PVARM(IIJB:IIJE,IKE) + PTSTEP*PSOURCE(IIJB:IIJE,IKE) +               &
-  PEXPL / PRHODJ(IIJB:IIJE,IKE) * PA(IIJB:IIJE,IKE) * (PVARM(IIJB:IIJE,IKE)-PVARM(IIJB:IIJE,IKE-IKL))
+ZY(:,IKE)= PVARM(:,IKE) + PTSTEP*PSOURCE(:,IKE) +               &
+  PEXPL / PRHODJ(:,IKE) * PA(:,IKE) * (PVARM(:,IKE)-PVARM(:,IKE-IKL))
 !$mnh_end_expand_array(JIJ=IIJB:IIJE)
 !
 !
@@ -196,34 +196,34 @@ IF ( PIMPL > 1.E-10 ) THEN
   !  going up
   !
   !$mnh_expand_array(JIJ=IIJB:IIJE)
-  ZBET(IIJB:IIJE) = 1. - PIMPL * PA(IIJB:IIJE,IKB+IKL) / PRHODJ(IIJB:IIJE,IKB)  ! bet = b(ikb)
-  PVARP(IIJB:IIJE,IKB) = ZY(IIJB:IIJE,IKB) / ZBET(IIJB:IIJE)
+  ZBET(:) = 1. - PIMPL * PA(:,IKB+IKL) / PRHODJ(:,IKB)  ! bet = b(ikb)
+  PVARP(:,IKB) = ZY(:,IKB) / ZBET(:)
   !$mnh_end_expand_array(JIJ=IIJB:IIJE)               
   !
   DO JK = IKB+IKL,IKE-IKL,IKL
     !$mnh_expand_array(JIJ=IIJB:IIJE)
-    ZGAM(IIJB:IIJE,JK) = PIMPL * PA(IIJB:IIJE,JK) / PRHODJ(IIJB:IIJE,JK-IKL) / ZBET(IIJB:IIJE)  
+    ZGAM(:,JK) = PIMPL * PA(:,JK) / PRHODJ(:,JK-IKL) / ZBET(:)  
                                                     ! gam(k) = c(k-1) / bet
-    ZBET(IIJB:IIJE)    = 1. - PIMPL * (  PA(IIJB:IIJE,JK) * (1. + ZGAM(IIJB:IIJE,JK))  &
-                                 + PA(IIJB:IIJE,JK+IKL)                      &
-                                ) / PRHODJ(IIJB:IIJE,JK)  
+    ZBET(:)    = 1. - PIMPL * (  PA(:,JK) * (1. + ZGAM(:,JK))  &
+                                 + PA(:,JK+IKL)                      &
+                                ) / PRHODJ(:,JK)  
                                                     ! bet = b(k) - a(k)* gam(k)  
-    PVARP(IIJB:IIJE,JK)= ( ZY(IIJB:IIJE,JK) - PIMPL * PA(IIJB:IIJE,JK) / PRHODJ(IIJB:IIJE,JK) &
-                    * PVARP(IIJB:IIJE,JK-IKL)                                 &
-                   ) / ZBET(IIJB:IIJE)
+    PVARP(:,JK)= ( ZY(:,JK) - PIMPL * PA(:,JK) / PRHODJ(:,JK) &
+                    * PVARP(:,JK-IKL)                                 &
+                   ) / ZBET(:)
                                         ! res(k) = (y(k) -a(k)*res(k-1))/ bet 
     !$mnh_end_expand_array(JIJ=IIJB:IIJE)
   END DO
   !$mnh_expand_array(JIJ=IIJB:IIJE)
   ! special treatment for the last level
-  ZGAM(IIJB:IIJE,IKE) = PIMPL * PA(IIJB:IIJE,IKE) / PRHODJ(IIJB:IIJE,IKE-IKL) / ZBET(IIJB:IIJE) 
+  ZGAM(:,IKE) = PIMPL * PA(:,IKE) / PRHODJ(:,IKE-IKL) / ZBET(:) 
                                                     ! gam(k) = c(k-1) / bet
-  ZBET(IIJB:IIJE)    = 1. - PIMPL * (  PA(IIJB:IIJE,IKE) * (1. + ZGAM(IIJB:IIJE,IKE))  &
-                              ) / PRHODJ(IIJB:IIJE,IKE)  
+  ZBET(:)    = 1. - PIMPL * (  PA(:,IKE) * (1. + ZGAM(:,IKE))  &
+                              ) / PRHODJ(:,IKE)  
                                                     ! bet = b(k) - a(k)* gam(k)  
-  PVARP(IIJB:IIJE,IKE)= ( ZY(IIJB:IIJE,IKE) - PIMPL * PA(IIJB:IIJE,IKE) / PRHODJ(IIJB:IIJE,IKE) &
-                                * PVARP(IIJB:IIJE,IKE-IKL)                      &
-                 ) / ZBET(IIJB:IIJE)
+  PVARP(:,IKE)= ( ZY(:,IKE) - PIMPL * PA(:,IKE) / PRHODJ(:,IKE) &
+                                * PVARP(:,IKE-IKL)                      &
+                 ) / ZBET(:)
                                        ! res(k) = (y(k) -a(k)*res(k-1))/ bet 
   !
   !  going down
@@ -231,7 +231,7 @@ IF ( PIMPL > 1.E-10 ) THEN
   !$mnh_end_expand_array(JIJ=IIJB:IIJE)
   DO JK = IKE-IKL,IKB,-1*IKL
   !$mnh_expand_array(JIJ=IIJB:IIJE)
-    PVARP(IIJB:IIJE,JK) = PVARP(IIJB:IIJE,JK) - ZGAM(IIJB:IIJE,JK+IKL) * PVARP(IIJB:IIJE,JK+IKL) 
+    PVARP(:,JK) = PVARP(:,JK) - ZGAM(:,JK+IKL) * PVARP(:,JK+IKL) 
   !$mnh_end_expand_array(JIJ=IIJB:IIJE)
   END DO
 !
@@ -239,7 +239,7 @@ ELSE
 ! 
   DO JK=IKTB,IKTE
     !$mnh_expand_array(JIJ=IIJB:IIJE)
-    PVARP(IIJB:IIJE,JK) = ZY(IIJB:IIJE,JK)
+    PVARP(:,JK) = ZY(:,JK)
     !$mnh_end_expand_array(JIJ=IIJB:IIJE)
   END DO
 !
@@ -250,8 +250,8 @@ END IF
 !            ----------------------------------------
 !
 !$mnh_expand_array(JIJ=IIJB:IIJE)
-PVARP(IIJB:IIJE,IKA)=PVARP(IIJB:IIJE,IKB)
-PVARP(IIJB:IIJE,IKU)=PVARP(IIJB:IIJE,IKE)
+PVARP(:,IKA)=PVARP(:,IKB)
+PVARP(:,IKU)=PVARP(:,IKE)
 !$mnh_end_expand_array(JIJ=IIJB:IIJE)
 !
 !-------------------------------------------------------------------------------

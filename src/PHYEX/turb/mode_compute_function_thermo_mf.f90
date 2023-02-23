@@ -115,19 +115,19 @@ ZCP=CST%XCPD
 
 IF (KRR > 0) THEN
   !$mnh_expand_array(JIJ=IIJB:IIJE,JK=IKTB:IKTE)
-  ZCP(IIJB:IIJE,IKTB:IKTE) = ZCP(IIJB:IIJE,IKTB:IKTE) + CST%XCPV * PR(IIJB:IIJE,IKTB:IKTE,1)
+  ZCP(:,:) = ZCP(:,:) + CST%XCPV * PR(:,:,1)
   !$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=IKTB:IKTE)
 ENDIF
 
 DO JRR = 2,1+KRRL  ! loop on the liquid components
    !$mnh_expand_array(JIJ=IIJB:IIJE,JK=IKTB:IKTE)
-   ZCP(IIJB:IIJE,IKTB:IKTE)  = ZCP(IIJB:IIJE,IKTB:IKTE) + CST%XCL * PR(IIJB:IIJE,IKTB:IKTE,JRR)
+   ZCP(:,:)  = ZCP(:,:) + CST%XCL * PR(:,:,JRR)
    !$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=IKTB:IKTE)
 END DO
 
 DO JRR = 2+KRRL,1+KRRL+KRRI ! loop on the solid components
   !$mnh_expand_array(JIJ=IIJB:IIJE,JK=IKTB:IKTE)
-  ZCP(IIJB:IIJE,IKTB:IKTE)  = ZCP(IIJB:IIJE,IKTB:IKTE)  + CST%XCI * PR(IIJB:IIJE,IKTB:IKTE,JRR)
+  ZCP(:,:)  = ZCP(:,:)  + CST%XCI * PR(:,:,JRR)
   !$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=IKTB:IKTE)
 
 END DO
@@ -135,7 +135,7 @@ END DO
 !*      Temperature
 !
 !$mnh_expand_array(JIJ=IIJB:IIJE,JK=IKTB:IKTE)
-PT(IIJB:IIJE,IKTB:IKTE) =  PTH(IIJB:IIJE,IKTB:IKTE) * PEXN(IIJB:IIJE,IKTB:IKTE)
+PT(:,:) =  PTH(:,:) * PEXN(:,:)
 !$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=IKTB:IKTE)
 !
 !
@@ -146,42 +146,42 @@ IF ( KRRL >= 1 ) THEN
   !
   !*       Lv/Cph
   !
-  ZLVOCP(IIJB:IIJE,IKTB:IKTE) = (CST%XLVTT + (CST%XCPV-CST%XCL) *  (PT(IIJB:IIJE,IKTB:IKTE)-CST%XTT) ) / &
-                                      & ZCP(IIJB:IIJE,IKTB:IKTE)
+  ZLVOCP(:,:) = (CST%XLVTT + (CST%XCPV-CST%XCL) *  (PT(:,:)-CST%XTT) ) / &
+                                      & ZCP(:,:)
   !
   !*      Saturation vapor pressure with respect to water
   !
-  ZE(IIJB:IIJE,IKTB:IKTE) =  EXP(CST%XALPW - CST%XBETAW/PT(IIJB:IIJE,IKTB:IKTE) - &
-                                        &CST%XGAMW*ALOG( PT(IIJB:IIJE,IKTB:IKTE) ) )
+  ZE(:,:) =  EXP(CST%XALPW - CST%XBETAW/PT(:,:) - &
+                                        &CST%XGAMW*ALOG( PT(:,:) ) )
   !
   !*      Saturation  mixing ratio with respect to water
   !
-  ZE(IIJB:IIJE,IKTB:IKTE) =  ZE(IIJB:IIJE,IKTB:IKTE) * ZEPS / &
-                                  & ( PPABS(IIJB:IIJE,IKTB:IKTE) - ZE(IIJB:IIJE,IKTB:IKTE) )
+  ZE(:,:) =  ZE(:,:) * ZEPS / &
+                                  & ( PPABS(:,:) - ZE(:,:) )
   !
   !*      Compute the saturation mixing ratio derivative (rvs')
   !
-  ZDEDT(IIJB:IIJE,IKTB:IKTE) = (CST%XBETAW/PT(IIJB:IIJE,IKTB:IKTE)  - CST%XGAMW) / PT(IIJB:IIJE,IKTB:IKTE)&
-                 * ZE(IIJB:IIJE,IKTB:IKTE) * ( 1. + ZE(IIJB:IIJE,IKTB:IKTE) / ZEPS )
+  ZDEDT(:,:) = (CST%XBETAW/PT(:,:)  - CST%XGAMW) / PT(:,:)&
+                 * ZE(:,:) * ( 1. + ZE(:,:) / ZEPS )
   !
   !*      Compute Amoist and Atheta
   !
   IF (OSTATNW) THEN
-    ZAMOIST_W(IIJB:IIJE,IKTB:IKTE)=  1.0/( 1.0 + ZDEDT(IIJB:IIJE,IKTB:IKTE) * ZLVOCP(IIJB:IIJE,IKTB:IKTE))
-    ZATHETA_W(IIJB:IIJE,IKTB:IKTE)= ZAMOIST_W(IIJB:IIJE,IKTB:IKTE) * PEXN(IIJB:IIJE,IKTB:IKTE) &
-                                            * ZDEDT(IIJB:IIJE,IKTB:IKTE)
+    ZAMOIST_W(:,:)=  1.0/( 1.0 + ZDEDT(:,:) * ZLVOCP(:,:))
+    ZATHETA_W(:,:)= ZAMOIST_W(:,:) * PEXN(:,:) &
+                                            * ZDEDT(:,:)
   ELSE
-    ZAMOIST_W(IIJB:IIJE,IKTB:IKTE)= 0.5/( 1.0 + ZDEDT(IIJB:IIJE,IKTB:IKTE) * ZLVOCP(IIJB:IIJE,IKTB:IKTE) )
-    ZATHETA_W(IIJB:IIJE,IKTB:IKTE)= ZAMOIST_W(IIJB:IIJE,IKTB:IKTE) * PEXN(IIJB:IIJE,IKTB:IKTE) *         &
-          ( ( ZE(IIJB:IIJE,IKTB:IKTE) - PR(IIJB:IIJE,IKTB:IKTE,1) ) * ZLVOCP(IIJB:IIJE,IKTB:IKTE) /      &
-            ( 1. + ZDEDT(IIJB:IIJE,IKTB:IKTE) * ZLVOCP(IIJB:IIJE,IKTB:IKTE) )           *              &
+    ZAMOIST_W(:,:)= 0.5/( 1.0 + ZDEDT(:,:) * ZLVOCP(:,:) )
+    ZATHETA_W(:,:)= ZAMOIST_W(:,:) * PEXN(:,:) *         &
+          ( ( ZE(:,:) - PR(:,:,1) ) * ZLVOCP(:,:) /      &
+            ( 1. + ZDEDT(:,:) * ZLVOCP(:,:) )           *              &
             (                                                             &
-             ZE(IIJB:IIJE,IKTB:IKTE) * (1. + ZE(IIJB:IIJE,IKTB:IKTE)/ZEPS)                                &
-                            * ( -2.*CST%XBETAW/PT(IIJB:IIJE,IKTB:IKTE) + CST%XGAMW ) / PT(IIJB:IIJE,IKTB:IKTE)**2&
-            +ZDEDT(IIJB:IIJE,IKTB:IKTE) * (1. + 2. * ZE(IIJB:IIJE,IKTB:IKTE)/ZEPS)                        &
-                          * ( CST%XBETAW/PT(IIJB:IIJE,IKTB:IKTE) - CST%XGAMW ) / PT(IIJB:IIJE,IKTB:IKTE)         &
+             ZE(:,:) * (1. + ZE(:,:)/ZEPS)                                &
+                            * ( -2.*CST%XBETAW/PT(:,:) + CST%XGAMW ) / PT(:,:)**2&
+            +ZDEDT(:,:) * (1. + 2. * ZE(:,:)/ZEPS)                        &
+                          * ( CST%XBETAW/PT(:,:) - CST%XGAMW ) / PT(:,:)         &
             )                                                             &
-           - ZDEDT(IIJB:IIJE,IKTB:IKTE)                                                   &
+           - ZDEDT(:,:)                                                   &
           )
   END IF
   !$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=IKTB:IKTE)
@@ -193,61 +193,61 @@ IF ( KRRL >= 1 ) THEN
     !
     !*       Ls/Cph
     !
-    ZLSOCP(IIJB:IIJE,IKTB:IKTE) = (CST%XLSTT + (CST%XCPV-CST%XCI) *  (PT(IIJB:IIJE,IKTB:IKTE)-CST%XTT) ) / &
-                                        & ZCP(IIJB:IIJE,IKTB:IKTE)
+    ZLSOCP(:,:) = (CST%XLSTT + (CST%XCPV-CST%XCI) *  (PT(:,:)-CST%XTT) ) / &
+                                        & ZCP(:,:)
     !
     !*      Saturation vapor pressure with respect to ice
     !
-    ZE(IIJB:IIJE,IKTB:IKTE) =  EXP(CST%XALPI - CST%XBETAI/PT(IIJB:IIJE,IKTB:IKTE) - &
-                                          &CST%XGAMI*ALOG( PT(IIJB:IIJE,IKTB:IKTE) ) )
+    ZE(:,:) =  EXP(CST%XALPI - CST%XBETAI/PT(:,:) - &
+                                          &CST%XGAMI*ALOG( PT(:,:) ) )
     !
     !*      Saturation  mixing ratio with respect to ice
     !
-    ZE(IIJB:IIJE,IKTB:IKTE) =  ZE(IIJB:IIJE,IKTB:IKTE) * ZEPS / &
-                                    & ( PPABS(IIJB:IIJE,IKTB:IKTE) - ZE(IIJB:IIJE,IKTB:IKTE) )
+    ZE(:,:) =  ZE(:,:) * ZEPS / &
+                                    & ( PPABS(:,:) - ZE(:,:) )
     !
     !*      Compute the saturation mixing ratio derivative (rvs')
     !
-    ZDEDT(IIJB:IIJE,IKTB:IKTE) = (CST%XBETAI/PT(IIJB:IIJE,IKTB:IKTE)-CST%XGAMI) /PT(IIJB:IIJE,IKTB:IKTE)&
-                   * ZE(IIJB:IIJE,IKTB:IKTE) * ( 1. + ZE(IIJB:IIJE,IKTB:IKTE) / ZEPS )
+    ZDEDT(:,:) = (CST%XBETAI/PT(:,:)-CST%XGAMI) /PT(:,:)&
+                   * ZE(:,:) * ( 1. + ZE(:,:) / ZEPS )
     !
     !*      Compute Amoist and Atheta
     !
     IF (OSTATNW) THEN
-      ZAMOIST_I(IIJB:IIJE,IKTB:IKTE)= 1.0/( 1.0 + ZDEDT(IIJB:IIJE,IKTB:IKTE) *ZLVOCP(IIJB:IIJE,IKTB:IKTE))
-      ZATHETA_I(IIJB:IIJE,IKTB:IKTE)= ZAMOIST_I(IIJB:IIJE,IKTB:IKTE) * PEXN(IIJB:IIJE,IKTB:IKTE) &
-                                            * ZDEDT(IIJB:IIJE,IKTB:IKTE)
+      ZAMOIST_I(:,:)= 1.0/( 1.0 + ZDEDT(:,:) *ZLVOCP(:,:))
+      ZATHETA_I(:,:)= ZAMOIST_I(:,:) * PEXN(:,:) &
+                                            * ZDEDT(:,:)
     ELSE
-      ZAMOIST_I(IIJB:IIJE,IKTB:IKTE)= 0.5/(1.0 + ZDEDT(IIJB:IIJE,IKTB:IKTE) * ZLSOCP(IIJB:IIJE,IKTB:IKTE))
-      ZATHETA_I(IIJB:IIJE,IKTB:IKTE)= ZAMOIST_I(IIJB:IIJE,IKTB:IKTE) * PEXN(IIJB:IIJE,IKTB:IKTE) *      &
-        ( ( ZE(IIJB:IIJE,IKTB:IKTE) - PR(IIJB:IIJE,IKTB:IKTE,1) ) * ZLSOCP(IIJB:IIJE,IKTB:IKTE) /       &
-          ( 1. + ZDEDT(IIJB:IIJE,IKTB:IKTE) * ZLSOCP(IIJB:IIJE,IKTB:IKTE) )           *              &
+      ZAMOIST_I(:,:)= 0.5/(1.0 + ZDEDT(:,:) * ZLSOCP(:,:))
+      ZATHETA_I(:,:)= ZAMOIST_I(:,:) * PEXN(:,:) *      &
+        ( ( ZE(:,:) - PR(:,:,1) ) * ZLSOCP(:,:) /       &
+          ( 1. + ZDEDT(:,:) * ZLSOCP(:,:) )           *              &
           (                                                             &
-           ZE(IIJB:IIJE,IKTB:IKTE) * (1. + ZE(IIJB:IIJE,IKTB:IKTE)/ZEPS)                                &
-                        * ( -2.*CST%XBETAI/PT(IIJB:IIJE,IKTB:IKTE) + CST%XGAMI ) / PT(IIJB:IIJE,IKTB:IKTE)**2   &
-          +ZDEDT(IIJB:IIJE,IKTB:IKTE) * (1. + 2. * ZE(IIJB:IIJE,IKTB:IKTE)/ZEPS)                        &
-                        * ( CST%XBETAI/PT(IIJB:IIJE,IKTB:IKTE) - CST%XGAMI ) / PT(IIJB:IIJE,IKTB:IKTE)          &
+           ZE(:,:) * (1. + ZE(:,:)/ZEPS)                                &
+                        * ( -2.*CST%XBETAI/PT(:,:) + CST%XGAMI ) / PT(:,:)**2   &
+          +ZDEDT(:,:) * (1. + 2. * ZE(:,:)/ZEPS)                        &
+                        * ( CST%XBETAI/PT(:,:) - CST%XGAMI ) / PT(:,:)          &
           )                                                             &
-         - ZDEDT(IIJB:IIJE,IKTB:IKTE)                                                   &
+         - ZDEDT(:,:)                                                   &
         )
     END IF
     !$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=IKTB:IKTE)
 
   ELSE
-    ZAMOIST_I(IIJB:IIJE,IKTB:IKTE)=0.
-    ZATHETA_I(IIJB:IIJE,IKTB:IKTE)=0.
+    ZAMOIST_I(:,:)=0.
+    ZATHETA_I(:,:)=0.
   ENDIF
 
   !$mnh_expand_array(JIJ=IIJB:IIJE,JK=IKTB:IKTE)
-  PAMOIST(IIJB:IIJE,IKTB:IKTE) = (1.0-PFRAC_ICE(IIJB:IIJE,IKTB:IKTE))*ZAMOIST_W(IIJB:IIJE,IKTB:IKTE) &
-                         +PFRAC_ICE(IIJB:IIJE,IKTB:IKTE) *ZAMOIST_I(IIJB:IIJE,IKTB:IKTE)
-  PATHETA(IIJB:IIJE,IKTB:IKTE) = (1.0-PFRAC_ICE(IIJB:IIJE,IKTB:IKTE))*ZATHETA_W(IIJB:IIJE,IKTB:IKTE) &
-                         +PFRAC_ICE(IIJB:IIJE,IKTB:IKTE) *ZATHETA_I(IIJB:IIJE,IKTB:IKTE)
+  PAMOIST(:,:) = (1.0-PFRAC_ICE(:,:))*ZAMOIST_W(:,:) &
+                         +PFRAC_ICE(:,:) *ZAMOIST_I(:,:)
+  PATHETA(:,:) = (1.0-PFRAC_ICE(:,:))*ZATHETA_W(:,:) &
+                         +PFRAC_ICE(:,:) *ZATHETA_I(:,:)
   !$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=IKTB:IKTE)
   !
 ELSE
-  PAMOIST(IIJB:IIJE,IKTB:IKTE) = 0.
-  PATHETA(IIJB:IIJE,IKTB:IKTE) = 0.
+  PAMOIST(:,:) = 0.
+  PATHETA(:,:) = 0.
 ENDIF
 IF (LHOOK) CALL DR_HOOK('COMPUTE_FUNCTION_THERMO_MF',1,ZHOOK_HANDLE)
 END SUBROUTINE COMPUTE_FUNCTION_THERMO_MF

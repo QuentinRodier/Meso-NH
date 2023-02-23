@@ -155,7 +155,7 @@ ELSE !Atmosphere case
 END IF
 !
 !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
-ZSQRT_TKE(IIJB:IIJE,1:IKT) = SQRT(PTKEM(IIJB:IIJE,1:IKT))
+ZSQRT_TKE(:,:) = SQRT(PTKEM(:,:))
 !$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
 !
 !ZBL89EXP is defined here because (and not in ini_cturb) because CSTURB%XCED is defined in read_exseg (depending on BL89/RM17)
@@ -167,18 +167,18 @@ ZUSRBL89 = 1./ZBL89EXP
 !              -----------------------------------------------
 !
 IF(KRR /= 0) THEN
-  ZSUM(IIJB:IIJE,1:IKT) = 0.
+  ZSUM(:,:) = 0.
   DO JRR=1,KRR
     !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
-    ZSUM(IIJB:IIJE,1:IKT) = ZSUM(IIJB:IIJE,1:IKT)+PRM(IIJB:IIJE,1:IKT,JRR)
+    ZSUM(:,:) = ZSUM(:,:)+PRM(:,:,JRR)
     !$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
   ENDDO
   !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
-  ZVPT(IIJB:IIJE,1:IKT)=PTHLM(IIJB:IIJE,1:IKT) * ( 1. + ZRVORD*PRM(IIJB:IIJE,1:IKT,1) )  &
-                           / ( 1. + ZSUM(IIJB:IIJE,1:IKT) )
+  ZVPT(:,:)=PTHLM(:,:) * ( 1. + ZRVORD*PRM(:,:,1) )  &
+                           / ( 1. + ZSUM(:,:) )
   !$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
 ELSE
-  ZVPT(IIJB:IIJE,1:IKT)=PTHLM(IIJB:IIJE,1:IKT)
+  ZVPT(:,:)=PTHLM(:,:)
 END IF
 !
 !!!!!!!!!!!!
@@ -225,7 +225,7 @@ DO JK=IKTB,IKTE
 !
 !*       4.  mixing length for a downwards displacement
 !            ------------------------------------------
-  ZINTE(IIJB:IIJE)=PTKEM(IIJB:IIJE,JK)
+  ZINTE(:)=PTKEM(:,JK)
   ZLWORK=0.
   ZTESTM=1.
   DO JKK=JK,IKB,-IKL
@@ -274,8 +274,8 @@ DO JK=IKTB,IKTE
 !*       6.  mixing length for an upwards displacement
 !            -----------------------------------------
 !
-  ZINTE(IIJB:IIJE)=PTKEM(IIJB:IIJE,JK)
-  ZLWORK(IIJB:IIJE)=0.
+  ZINTE(:)=PTKEM(:,JK)
+  ZLWORK(:)=0.
   ZTESTM=1.
 !
   DO JKK=JK+IKL,IKE,IKL
@@ -340,9 +340,9 @@ END DO
 !*       9.  boundaries
 !            ----------
 !
-PLM(IIJB:IIJE,IKA)=PLM(IIJB:IIJE,IKB)
-PLM(IIJB:IIJE,IKE)=PLM(IIJB:IIJE,IKE-IKL)
-PLM(IIJB:IIJE,IKU)=PLM(IIJB:IIJE,IKE-IKL)
+PLM(:,IKA)=PLM(:,IKB)
+PLM(:,IKE)=PLM(:,IKE-IKL)
+PLM(:,IKU)=PLM(:,IKE-IKL)
 !
 !-------------------------------------------------------------------------------
 !

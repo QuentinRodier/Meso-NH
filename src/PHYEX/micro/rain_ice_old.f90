@@ -430,20 +430,20 @@ CALL RAIN_ICE_NUCLEATION(IIB, IIE, IJB, IJE, IKTB, IKTE,KRR,PTSTEP,&
 GMICRO(:,:,:) = .FALSE.
 
  IF ( KRR == 7 ) THEN
-  GMICRO(IIB:IIE,IJB:IJE,IKTB:IKTE) =                          &
-                PRCT(IIB:IIE,IJB:IJE,IKTB:IKTE)>XRTMIN(2) .OR. &
-                PRRT(IIB:IIE,IJB:IJE,IKTB:IKTE)>XRTMIN(3) .OR. &
-                PRIT(IIB:IIE,IJB:IJE,IKTB:IKTE)>XRTMIN(4) .OR. &
-                PRST(IIB:IIE,IJB:IJE,IKTB:IKTE)>XRTMIN(5) .OR. &
-                PRGT(IIB:IIE,IJB:IJE,IKTB:IKTE)>XRTMIN(6) .OR. &
-                PRHT(IIB:IIE,IJB:IJE,IKTB:IKTE)>XRTMIN(7)
+  GMICRO(IIB:IIE,IJB:IJE,:) =                          &
+                PRCT(IIB:IIE,IJB:IJE,:)>XRTMIN(2) .OR. &
+                PRRT(IIB:IIE,IJB:IJE,:)>XRTMIN(3) .OR. &
+                PRIT(IIB:IIE,IJB:IJE,:)>XRTMIN(4) .OR. &
+                PRST(IIB:IIE,IJB:IJE,:)>XRTMIN(5) .OR. &
+                PRGT(IIB:IIE,IJB:IJE,:)>XRTMIN(6) .OR. &
+                PRHT(IIB:IIE,IJB:IJE,:)>XRTMIN(7)
  ELSE IF( KRR == 6 ) THEN
-  GMICRO(IIB:IIE,IJB:IJE,IKTB:IKTE) =                          &
-                PRCT(IIB:IIE,IJB:IJE,IKTB:IKTE)>XRTMIN(2) .OR. &
-                PRRT(IIB:IIE,IJB:IJE,IKTB:IKTE)>XRTMIN(3) .OR. &
-                PRIT(IIB:IIE,IJB:IJE,IKTB:IKTE)>XRTMIN(4) .OR. &
-                PRST(IIB:IIE,IJB:IJE,IKTB:IKTE)>XRTMIN(5) .OR. &
-                PRGT(IIB:IIE,IJB:IJE,IKTB:IKTE)>XRTMIN(6)
+  GMICRO(IIB:IIE,IJB:IJE,:) =                          &
+                PRCT(IIB:IIE,IJB:IJE,:)>XRTMIN(2) .OR. &
+                PRRT(IIB:IIE,IJB:IJE,:)>XRTMIN(3) .OR. &
+                PRIT(IIB:IIE,IJB:IJE,:)>XRTMIN(4) .OR. &
+                PRST(IIB:IIE,IJB:IJE,:)>XRTMIN(5) .OR. &
+                PRGT(IIB:IIE,IJB:IJE,:)>XRTMIN(6)
  END IF
 
 IMICRO = COUNTJV( GMICRO(:,:,:),I1(:),I2(:),I3(:))

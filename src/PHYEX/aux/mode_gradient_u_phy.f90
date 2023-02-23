@@ -91,8 +91,8 @@ CALL DZM_PHY(D,PA,PA_WORK)
 CALL MXM_PHY(D,PDZZ,PDZZ_WORK)
 !
 !$mnh_expand_array(JI=IIB:IIE,JJ=IJB:IJE,JK=1:IKT)
-PGZ_U_UW(IIB:IIE,IJB:IJE,1:IKT)= PA_WORK(IIB:IIE,IJB:IJE,1:IKT) &
-                                               / PDZZ_WORK(IIB:IIE,IJB:IJE,1:IKT)
+PGZ_U_UW(IIB:IIE,IJB:IJE,:)= PA_WORK(IIB:IIE,IJB:IJE,:) &
+                                               / PDZZ_WORK(IIB:IIE,IJB:IJE,:)
 !$mnh_end_expand_array(JI=IIB:IIE,JJ=IJB:IJE,JK=1:IKT)
 !
 !----------------------------------------------------------------------------
@@ -204,20 +204,20 @@ CALL MXF_PHY(D,PDXX,ZWORK2)
 IF (.NOT. OFLAT) THEN
   CALL DZM_PHY(D,PA,ZWORK3)
   !$mnh_expand_array(JI=IIB:IIE,JJ=IJB:IJE,JK=1:IKT)
-  ZWORK3(IIB:IIE,IJB:IJE,1:IKT) = ZWORK3(IIB:IIE,IJB:IJE,1:IKT) * PDZX(IIB:IIE,IJB:IJE,1:IKT)
+  ZWORK3(IIB:IIE,IJB:IJE,:) = ZWORK3(IIB:IIE,IJB:IJE,:) * PDZX(IIB:IIE,IJB:IJE,:)
   !$mnh_end_expand_array(JI=IIB:IIE,JJ=IJB:IJE,JK=1:IKT)
   CALL MXF_PHY(D,ZWORK3,ZWORK4)
   !$mnh_expand_array(JI=IIB:IIE,JJ=IJB:IJE,JK=1:IKT)
-  ZWORK4(IIB:IIE,IJB:IJE,1:IKT) = ZWORK4(IIB:IIE,IJB:IJE,1:IKT) / PDZZ(IIB:IIE,IJB:IJE,1:IKT)
+  ZWORK4(IIB:IIE,IJB:IJE,:) = ZWORK4(IIB:IIE,IJB:IJE,:) / PDZZ(IIB:IIE,IJB:IJE,:)
   !$mnh_end_expand_array(JI=IIB:IIE,JJ=IJB:IJE,JK=1:IKT)
   CALL MZF_PHY(D,ZWORK4,ZWORK3)
   !$mnh_expand_array(JI=IIB:IIE,JJ=IJB:IJE,JK=1:IKT)
-  PGX_U_M(IIB:IIE,IJB:IJE,1:IKT) = ( ZWORK1(IIB:IIE,IJB:IJE,1:IKT) - ZWORK3(IIB:IIE,IJB:IJE,1:IKT)) &
-                                     / ZWORK2(IIB:IIE,IJB:IJE,1:IKT)
+  PGX_U_M(IIB:IIE,IJB:IJE,:) = ( ZWORK1(IIB:IIE,IJB:IJE,:) - ZWORK3(IIB:IIE,IJB:IJE,:)) &
+                                     / ZWORK2(IIB:IIE,IJB:IJE,:)
   !$mnh_end_expand_array(JI=IIB:IIE,JJ=IJB:IJE,JK=1:IKT)
 ELSE
   !$mnh_expand_array(JI=IIB:IIE,JJ=IJB:IJE,JK=1:IKT)
-  PGX_U_M(IIB:IIE,IJB:IJE,1:IKT)= ZWORK1(IIB:IIE,IJB:IJE,1:IKT) / ZWORK2(IIB:IIE,IJB:IJE,1:IKT)
+  PGX_U_M(IIB:IIE,IJB:IJE,:)= ZWORK1(IIB:IIE,IJB:IJE,:) / ZWORK2(IIB:IIE,IJB:IJE,:)
   !$mnh_end_expand_array(JI=IIB:IIE,JJ=IJB:IJE,JK=1:IKT)
 END IF
 !

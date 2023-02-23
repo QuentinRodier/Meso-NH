@@ -345,7 +345,7 @@ PINPRX(:) = 0.
 ZINVTSTEP=1./PTSTEP
 ZRSMIN(:) = ICED%XRTMIN(:) * ZINVTSTEP
 ZREMAINT(:) = 0.
-ZREMAINT(IIJB:IIJE) = PTSTEP
+ZREMAINT(:) = PTSTEP
 !
 DO WHILE (ANY(ZREMAINT>0.))
   !
@@ -387,7 +387,7 @@ DO WHILE (ANY(ZREMAINT>0.))
         ENDIF
       ENDDO
     ENDDO
-#if defined(REPRO48) || defined(REPRO55)
+#if defined(REPRO48) 
 #else
   ELSEIF(KSPE==5) THEN
     ! ******* for snow
@@ -418,7 +418,7 @@ DO WHILE (ANY(ZREMAINT>0.))
       CASE(3)
         ZFSED=ICEP%XFSEDR
         ZEXSED=ICEP%XEXSEDR
-#if defined(REPRO48) || defined(REPRO55)
+#if defined(REPRO48) 
       CASE(5)
         ZFSED=ICEP%XFSEDS
         ZEXSED=ICEP%XEXSEDS

@@ -424,18 +424,18 @@ CALL PRANDTL(D,CST,CSTURB,KRR,KSV,KRRI,TURBN%LTURB_FLX,  &
 !
 IF (OOCEAN) THEN
   !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
-  ZBETA(IIJB:IIJE,1:IKT) = CST%XG*CST%XALPHAOC
+  ZBETA(:,:) = CST%XG*CST%XALPHAOC
   !$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
 ELSE
   !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
-  ZBETA(IIJB:IIJE,1:IKT) = CST%XG/PTHVREF(IIJB:IIJE,1:IKT)
+  ZBETA(:,:) = CST%XG/PTHVREF(:,:)
   !$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
 END IF
 !
 ! Square root of Tke
 !
 !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
-ZSQRT_TKE(IIJB:IIJE,1:IKT) = SQRT(PTKEM(IIJB:IIJE,1:IKT))
+ZSQRT_TKE(:,:) = SQRT(PTKEM(:,:))
 !$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
 !
 ! gradients of mean quantities at previous time-step
@@ -449,12 +449,12 @@ IF (KRR>0) CALL GZ_M_W_PHY(D,PRM(:,:,1),PDZZ,ZDR_DZ)
 !
 IF (.NOT. TURBN%LHARAT) THEN
   !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
-  ZD(IIJB:IIJE,1:IKT) = (1.+ZREDTH1(IIJB:IIJE,1:IKT)+ZREDR1(IIJB:IIJE,1:IKT)) * &
-                               &(1.+0.5*(ZREDTH1(IIJB:IIJE,1:IKT)+ZREDR1(IIJB:IIJE,1:IKT)))
+  ZD(:,:) = (1.+ZREDTH1(:,:)+ZREDR1(:,:)) * &
+                               &(1.+0.5*(ZREDTH1(:,:)+ZREDR1(:,:)))
   !$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
 ELSE
   !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
-  ZD(IIJB:IIJE,1:IKT) = 1.
+  ZD(:,:) = 1.
   !$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
 ENDIF
 !

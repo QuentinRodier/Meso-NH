@@ -100,10 +100,10 @@ IKE=D%NKE
 IKL=D%NKL
 !
 CALL DZM_MF(D, PVPT(:,:), ZDELTVPT(:,:))
-ZDELTVPT(IIJB:IIJE,IKA)=0.
+ZDELTVPT(:,IKA)=0.
 !$mnh_expand_where(JIJ=IIJB:IIJE,JK=1:IKT)
-WHERE (ABS(ZDELTVPT(IIJB:IIJE,1:IKT))<CSTURB%XLINF)
-  ZDELTVPT(IIJB:IIJE,1:IKT)=CSTURB%XLINF
+WHERE (ABS(ZDELTVPT(:,:))<CSTURB%XLINF)
+  ZDELTVPT(:,:)=CSTURB%XLINF
 END WHERE
 !$mnh_end_expand_where(JIJ=IIJB:IIJE,JK=1:IKT)
 !
@@ -112,8 +112,8 @@ CALL MZM_MF(D, PVPT(:,:), ZHLVPT(:,:))
 !We consider that gradient between mass levels KKB and KKB+KKL is the same as
 !the gradient between flux level KKB and mass level KKB
 !$mnh_expand_array(JIJ=IIJB:IIJE)
-ZDELTVPT(IIJB:IIJE,IKB)=PDZZ2D(IIJB:IIJE,IKB)*ZDELTVPT(IIJB:IIJE,IKB+IKL)/PDZZ2D(IIJB:IIJE,IKB+IKL)
-ZHLVPT(IIJB:IIJE,IKB)=PVPT(IIJB:IIJE,IKB)-ZDELTVPT(IIJB:IIJE,IKB)*0.5
+ZDELTVPT(:,IKB)=PDZZ2D(:,IKB)*ZDELTVPT(:,IKB+IKL)/PDZZ2D(:,IKB+IKL)
+ZHLVPT(:,IKB)=PVPT(:,IKB)-ZDELTVPT(:,IKB)*0.5
 !$mnh_end_expand_array(JIJ=IIJB:IIJE)
 !
 !
@@ -124,13 +124,13 @@ ZHLVPT(IIJB:IIJE,IKB)=PVPT(IIJB:IIJE,IKB)-ZDELTVPT(IIJB:IIJE,IKB)*0.5
 
 IF (OUPORDN.EQV..TRUE.) THEN 
  !$mnh_expand_array(JIJ=IIJB:IIJE)
- ZINTE(IIJB:IIJE)=PTKEM_DEP(IIJB:IIJE)
+ ZINTE(:)=PTKEM_DEP(:)
  !$mnh_end_expand_array(JIJ=IIJB:IIJE)
  PLWORK=0.
  ZTESTM=1.
  IF(OFLUX)THEN
    !$mnh_expand_array(JIJ=IIJB:IIJE)
-   ZVPT_DEP(IIJB:IIJE)=ZHLVPT(IIJB:IIJE,KK) ! departure point is on flux level
+   ZVPT_DEP(:)=ZHLVPT(:,KK) ! departure point is on flux level
    !$mnh_end_expand_array(JIJ=IIJB:IIJE)
    !We must compute what happens between flux level KK and mass level KK
    DO J1D=IIJB,IIJE
@@ -162,7 +162,7 @@ IF (OUPORDN.EQV..TRUE.) THEN
    ENDDO
  ELSE
    !$mnh_expand_array(JIJ=IIJB:IIJE)
-   ZVPT_DEP(IIJB:IIJE)=PVPT(IIJB:IIJE,KK) ! departure point is on mass level
+   ZVPT_DEP(:)=PVPT(:,KK) ! departure point is on mass level
    !$mnh_end_expand_array(JIJ=IIJB:IIJE)
  ENDIF
 
@@ -203,7 +203,7 @@ ENDIF
 IF (OUPORDN.EQV..FALSE.) THEN 
  IF(OFLUX) CALL PRINT_MSG(NVERB_FATAL,'GEN','COMPUTE_BL89_ML','OFLUX option not coded for downward mixing length')
  !$mnh_expand_array(JIJ=IIJB:IIJE)
- ZINTE(IIJB:IIJE)=PTKEM_DEP(IIJB:IIJE)
+ ZINTE(:)=PTKEM_DEP(:)
  !$mnh_end_expand_array(JIJ=IIJB:IIJE)
  PLWORK=0.
  ZTESTM=1.

@@ -742,8 +742,8 @@ IKT=SIZE(PY,3)
 IKTB=1+JPVEXT_TURB              
 IKTE=IKT-JPVEXT_TURB
 
-PGZ_M_W(:,:,IKTB:IKTE) =  (PY(:,:,IKTB:IKTE)-PY(:,:,IKTB-KL:IKTE-KL))  &
-                           / PDZZ(:,:,IKTB:IKTE)
+PGZ_M_W(:,:,:) =  (PY(:,:,:)-PY(:,:,IKTB-KL:IKTE-KL))  &
+                           / PDZZ(:,:,:)
 PGZ_M_W(:,:,KKU)=  (PY(:,:,KKU)-PY(:,:,KKU-KL))  &
                            / PDZZ(:,:,KKU)
 PGZ_M_W(:,:,KKA)= PGZ_M_W(:,:,KKU) ! -999.

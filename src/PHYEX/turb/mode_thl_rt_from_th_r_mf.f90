@@ -93,20 +93,20 @@ IKT=D%NKT
 !
 !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
 !temperature
-ZT(IIJB:IIJE,:) = PTH(IIJB:IIJE,:) * PEXN(IIJB:IIJE,:)
+ZT(:,:) = PTH(:,:) * PEXN(:,:)
 
 !Cp
-ZCP(IIJB:IIJE,:)=CST%XCPD
-IF (KRR > 0) ZCP(IIJB:IIJE,:) = ZCP(IIJB:IIJE,:) + CST%XCPV * PR(IIJB:IIJE,:,1)
+ZCP(:,:)=CST%XCPD
+IF (KRR > 0) ZCP(:,:) = ZCP(:,:) + CST%XCPV * PR(:,:,1)
 !$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
 DO JRR = 2,1+KRRL  ! loop on the liquid components
   !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
-  ZCP(IIJB:IIJE,:)  = ZCP(IIJB:IIJE,:) + CST%XCL * PR(IIJB:IIJE,:,JRR)
+  ZCP(:,:)  = ZCP(:,:) + CST%XCL * PR(:,:,JRR)
   !$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
 END DO
 DO JRR = 2+KRRL,1+KRRL+KRRI ! loop on the solid components
   !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
-  ZCP(IIJB:IIJE,:)  = ZCP(IIJB:IIJE,:)  + CST%XCI * PR(IIJB:IIJE,:,JRR)
+  ZCP(:,:)  = ZCP(:,:)  + CST%XCI * PR(:,:,JRR)
   !$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
 END DO
 
@@ -114,33 +114,33 @@ IF ( KRRL >= 1 ) THEN
   IF ( KRRI >= 1 ) THEN
     !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
     !ZLVOCPEXN and ZLSOCPEXN
-    ZLVOCPEXN(IIJB:IIJE,:)=(CST%XLVTT + (CST%XCPV-CST%XCL) *  (ZT(IIJB:IIJE,:)-CST%XTT) ) & 
-                            &/ ZCP(IIJB:IIJE,:) / PEXN(IIJB:IIJE,:)
-    ZLSOCPEXN(IIJB:IIJE,:)=(CST%XLSTT + (CST%XCPV-CST%XCI) *  (ZT(IIJB:IIJE,:)-CST%XTT) ) &
-                            &/ ZCP(IIJB:IIJE,:) / PEXN(IIJB:IIJE,:)
+    ZLVOCPEXN(:,:)=(CST%XLVTT + (CST%XCPV-CST%XCL) *  (ZT(:,:)-CST%XTT) ) & 
+                            &/ ZCP(:,:) / PEXN(:,:)
+    ZLSOCPEXN(:,:)=(CST%XLSTT + (CST%XCPV-CST%XCI) *  (ZT(:,:)-CST%XTT) ) &
+                            &/ ZCP(:,:) / PEXN(:,:)
     ! Rnp 
-    PRT(IIJB:IIJE,:)  = PR(IIJB:IIJE,:,1)  + PR(IIJB:IIJE,:,2)  + PR(IIJB:IIJE,:,4)
+    PRT(:,:)  = PR(:,:,1)  + PR(:,:,2)  + PR(:,:,4)
     ! Theta_l 
-    PTHL(IIJB:IIJE,:)  = PTH(IIJB:IIJE,:)  - ZLVOCPEXN(IIJB:IIJE,:) * PR(IIJB:IIJE,:,2) &
-                           - ZLSOCPEXN(IIJB:IIJE,:) * PR(IIJB:IIJE,:,4)
+    PTHL(:,:)  = PTH(:,:)  - ZLVOCPEXN(:,:) * PR(:,:,2) &
+                           - ZLSOCPEXN(:,:) * PR(:,:,4)
     !$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
   ELSE
     !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
     !ZLVOCPEXN
-    ZLVOCPEXN(IIJB:IIJE,:)=(CST%XLVTT + (CST%XCPV-CST%XCL) *  (ZT(IIJB:IIJE,:)-CST%XTT) ) &
-                            &/ ZCP(IIJB:IIJE,:) / PEXN(IIJB:IIJE,:)
+    ZLVOCPEXN(:,:)=(CST%XLVTT + (CST%XCPV-CST%XCL) *  (ZT(:,:)-CST%XTT) ) &
+                            &/ ZCP(:,:) / PEXN(:,:)
     ! Rnp
-    PRT(IIJB:IIJE,:)  = PR(IIJB:IIJE,:,1)  + PR(IIJB:IIJE,:,2) 
+    PRT(:,:)  = PR(:,:,1)  + PR(:,:,2) 
     ! Theta_l
-    PTHL(IIJB:IIJE,:) = PTH(IIJB:IIJE,:)  - ZLVOCPEXN(IIJB:IIJE,:) * PR(IIJB:IIJE,:,2)
+    PTHL(:,:) = PTH(:,:)  - ZLVOCPEXN(:,:) * PR(:,:,2)
     !$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
   END IF
 ELSE
   !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
   ! Rnp = rv
-  PRT(IIJB:IIJE,:)  = PR(IIJB:IIJE,:,1)
+  PRT(:,:)  = PR(:,:,1)
   ! Theta_l = Theta
-  PTHL(IIJB:IIJE,:) = PTH(IIJB:IIJE,:)
+  PTHL(:,:) = PTH(:,:)
   !$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
 END IF
 IF (LHOOK) CALL DR_HOOK('THL_RT_FRM_TH_R_MF',1,ZHOOK_HANDLE)
