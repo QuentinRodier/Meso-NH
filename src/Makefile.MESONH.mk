@@ -43,7 +43,7 @@ INC_MNH += -I$(B)include
 #
 ifdef DIR_MNH
 DIR_MASTER += $(DIR_MNH)
-CPPFLAGS   += $(CPPFLAGS_MNH) -DREPRO55
+CPPFLAGS   += $(CPPFLAGS_MNH)
 INC        += $(INC_MNH)
 
 #
@@ -83,7 +83,7 @@ endif
 DIR_PHYEX += PHYEX/aux PHYEX/turb PHYEX/micro PHYEX/conv
 INC_PHYEX += -I$(B)PHYEX/micro -I$(B)PHYEX/turb -I$(B)PHYEX/aux
 
-CPPFLAGS_PHYEX += -DREPRO55
+#CPPFLAGS_PHYEX += 
 #
 DIR_MASTER += $(DIR_PHYEX)
 CPPFLAGS   += $(CPPFLAGS_PHYEX)
