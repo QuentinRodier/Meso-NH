@@ -277,5 +277,7 @@ INTEGER :: NSV_FIREEND = 0 ! NSV_FIREBEG...NSV_FIREEND
 INTEGER :: NSV_SNW     = 0 ! number of blowing snow scalar variables
 INTEGER :: NSV_SNWBEG  = 0 ! with indices in the range :
 INTEGER :: NSV_SNWEND  = 0 ! NSV_SNWBEG...NSV_SNWEND
-
+!
+INTEGER :: NSV_CO2     = 0  ! index for CO2
+!
 END MODULE MODD_NSV
