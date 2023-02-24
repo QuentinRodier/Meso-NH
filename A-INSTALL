@@ -574,12 +574,16 @@ cd MNH-V5-6-0/src
 #   ---------
 #
 
-#   - On JEAN-ZAY ( HPE ) the compilation is only possible in interactive :
+#   - On JEAN-ZAY ( HPE ) the compilation is in interactive :
 
 cd MNH-V5-6-0/src
 . ../conf/profile_mesonh-LXifort-R8I4-MNH-V5-6-0-MPIINTEL-O2
 make -j16 |& tee error$XYZ
 make installmaster
+
+# You could also use the 'compil' partition
+
+sbatch job_make_mesonh_HPE_jeanzay
 
 #   - to run the test case examples  run
 
@@ -587,7 +591,7 @@ sbatch -A {your_projet}@cpu job_make_examples_BullX_jeanzay
 
 #
 #   
-#   at CINES on OCCIGEN (BULLX)  :
+#   at CINES on ADASTRA (BULLX)  :
 #   -------------------------------------------------------
 # 
 #   - install the PACKAGE in your $HOME ( default 50Go  of quota )
@@ -630,28 +634,27 @@ ccc_msub -q knl job_make_examples_BullX_irene
 ccc_msub job_make_examples_BullX_irene_AMD
 
 # 
-#   at ECMWF on cca ( CRAY/XC30 ) :
-#   ----------------------------
+#   at ECMWF on hpc-login ( ATos/HPCF ) :
+#   ------------------------------------------
 #
-#   - to install MESONH go to your $PERM directory
-#     if you need more disk space than allowed for 'standard' user 
-#     Ask to Dominique Lucas, look this email :
-#    http://mesonh.aero.obs-mip.fr/mesonh/dir_interne/dir_mail_mesonh_cnrm/dir_mail/2009_09_24_15:31:54.eml
+#   - to install MESONH go to your $HPCPERM directory
 #
-#   - for the compilation use :
+#   - for the compilation :
+#   after the ./configure in the login node
+#
+#   connecte to an "interactive compute node"  via ( 16 core & 16GO of memory 
 
-qsub job_make_mesonh_CRAY_cca
+ecinteractive -c16 -m 16G -t 12:00:00
+
+etc ...
+
 
 #   - to run the test case examples  run
 
-qsub  job_make_examples_CRAY_cca
+sbatch  job_make_examples_Atos_HPCF
 
 #
-# REM : On CRAY computer cca , I switch the default compiler to the INTEL one .
-#      Some trouble with the is the CRAY one = crayftn .
-
-#
-#   - At Meteo-France DSI on beaufix (or prolix)
+#   - At Meteo-France DSI on belenos
 #
 #  to install the whole package on your "$HOME" directory
 #  untar the file "MNH-V5-6-0.tar.gz" from its location :
@@ -666,16 +669,16 @@ cd MNH-V5-6-0/src
 
 #
 #   Due to limitation in time & memory on interactive connection
-#   then compile the MESONH PACKAGE in batch mode with the job_make_mesonh_BullX file :
+#   then compile the MESONH PACKAGE in batch mode with the job_make_mesonh_BullX_belenos file :
 
-sbatch   job_make_mesonh_BullX
+sbatch   job_make_mesonh_BullX_belenos
 
 #   This job does : gmake -j 4
 #   then : make installmaster
 
 #   To run basic KTEST examples :
 
-sbatch   job_make_examples_BullX
+sbatch   job_make_examples_BullX_belenos
 
 #   Step-2 : configure/compiling with VER_USER=...
 # ----------------------------------------------
@@ -692,8 +695,7 @@ export VER_USER=MY_MODIF
 #   in job_make_mesonh_user_BullX insert " export VER_USER=MY_MODIF "
 #   then submit in batch mode
 
-sbatch  job_make_mesonh_user_BullX
-
+sbatch  job_make_mesonh_user_BullX_belenos
 
 #
 #   
@@ -701,7 +703,7 @@ sbatch  job_make_mesonh_user_BullX
 #   -------------------------------------------------------
 # 
 #   - install the PACKAGE in your /tmpdir/$USER
-#   - Compile in interactive mode ( see IDRIS )
+#   - Compile in interactive mode 
 #
 #   - to run the test case examples  run
 
