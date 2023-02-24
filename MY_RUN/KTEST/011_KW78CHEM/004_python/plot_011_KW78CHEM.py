@@ -23,8 +23,8 @@ Dvar_input = {
 'f1':['ZS', 'UT','VT', 'WT','THT',
       'ni_u','nj_u','level','ZTOP', 'ni','nj','level_w','time',
       'INPRR','ACPRR','PABST','RCT','RVT','RRT','RGT', 'LSTHM',
-      'COT','O3T','HCHOT','WC_HCHOT','IC_HCHOT', 'WR_HCHOT','SO2T','WC_SO2T','WR_SO2T',
-      'IC_SO2T','HNO3T','WC_HNO3T','WR_HNO3T','IC_HNO3T','PHC','PHR',],  
+      'CO','O3','HCHO','WC_HCHO','IC_HCHO', 'WR_HCHO','SO2','WC_SO2','WR_SO2',
+      'IC_SO2','HNO3','WC_HNO3','WR_HNO3','IC_HNO3','PHC','PHR',],  
 'f2':['ALT_CLOUD', 'ALT_U', 'ALT_V', 'ni','nj']
 }
 
@@ -91,12 +91,12 @@ Panel1.save_graph(1,fig2)
 ###############################################################
 Panel2 = PanelPlot(2,2, [20,20],'', titlepad=25, minmaxpad=1.04, timepad=-0.07, colorbarpad=0.01, colorbaraspect=40, labelcolorbarpad = 13)
 
-# Interpoler COT','O3T à 3000 et 5000m avec une moyenne sur 2 niveaux
-Dvar['f1']['COT3000m'] = (Dvar['f1']['COT'][6,:,:] + Dvar['f1']['COT'][5,:,:])/2.0
-Dvar['f1']['O3T3000m'] = (Dvar['f1']['O3T'][6,:,:] + Dvar['f1']['O3T'][5,:,:])/2.0
-Dvar['f1']['COT5000m'] = (Dvar['f1']['COT'][10,:,:] + Dvar['f1']['COT'][9,:,:])/2.0
-Dvar['f1']['O3T5000m'] = (Dvar['f1']['O3T'][10,:,:] + Dvar['f1']['O3T'][9,:,:])/2.0
-Lplot = [Dvar['f1']['COT3000m'], Dvar['f1']['O3T3000m'],Dvar['f1']['COT5000m'], Dvar['f1']['O3T5000m'] ]
+# Interpoler CO','O3 à 3000 et 5000m avec une moyenne sur 2 niveaux
+Dvar['f1']['CO3000m'] = (Dvar['f1']['CO'][6,:,:] + Dvar['f1']['CO'][5,:,:])/2.0
+Dvar['f1']['O33000m'] = (Dvar['f1']['O3'][6,:,:] + Dvar['f1']['O3'][5,:,:])/2.0
+Dvar['f1']['CO5000m'] = (Dvar['f1']['CO'][10,:,:] + Dvar['f1']['CO'][9,:,:])/2.0
+Dvar['f1']['O35000m'] = (Dvar['f1']['O3'][10,:,:] + Dvar['f1']['O3'][9,:,:])/2.0
+Lplot = [Dvar['f1']['CO3000m'], Dvar['f1']['O33000m'],Dvar['f1']['CO5000m'], Dvar['f1']['O35000m'] ]
 
 LaxeX = [Dvar['f1']['ni']]*len(Lplot)
 LaxeY = [Dvar['f1']['nj']]*len(Lplot)
@@ -200,24 +200,24 @@ Panel3.save_graph(3,fig5)
 Panel4 = PanelPlot(2,3, [25,14],'Oblique projection of chemical variables', titlepad=25, minmaxpad=1.04, timepad=-0.07, colorbarpad=0.01, colorbaraspect=40, labelcolorbarpad = 13)
 
 angle_sec1, RGT_sec1, axe_m1 = oblique_proj(Dvar['f1']['RGT'], Dvar['f1']['ni'], Dvar['f1']['nj'], Dvar['f1']['level'], i_beg, j_beg, i_end, j_end)
-angle_sec1, COT_sec1, axe_m1 = oblique_proj(Dvar['f1']['COT'], Dvar['f1']['ni'], Dvar['f1']['nj'], Dvar['f1']['level'], i_beg, j_beg, i_end, j_end)
-angle_sec1, O3T_sec1, axe_m1 = oblique_proj(Dvar['f1']['O3T'], Dvar['f1']['ni'], Dvar['f1']['nj'], Dvar['f1']['level'], i_beg, j_beg, i_end, j_end)
-angle_sec1, HCHOT_sec1, axe_m1 = oblique_proj(Dvar['f1']['HCHOT'], Dvar['f1']['ni'], Dvar['f1']['nj'], Dvar['f1']['level'], i_beg, j_beg, i_end, j_end)
-angle_sec1, WC_HCHOT_sec1, axe_m1 = oblique_proj(Dvar['f1']['WC_HCHOT'], Dvar['f1']['ni'], Dvar['f1']['nj'], Dvar['f1']['level'], i_beg, j_beg, i_end, j_end)
-angle_sec1, WR_HCHOT_sec1, axe_m1 = oblique_proj(Dvar['f1']['WR_HCHOT'], Dvar['f1']['ni'], Dvar['f1']['nj'], Dvar['f1']['level'], i_beg, j_beg, i_end, j_end)
-angle_sec1, SO2T_sec1, axe_m1 = oblique_proj(Dvar['f1']['SO2T'], Dvar['f1']['ni'], Dvar['f1']['nj'], Dvar['f1']['level'], i_beg, j_beg, i_end, j_end)
-angle_sec1, WC_SO2T_sec1, axe_m1 = oblique_proj(Dvar['f1']['WC_SO2T'], Dvar['f1']['ni'], Dvar['f1']['nj'], Dvar['f1']['level'], i_beg, j_beg, i_end, j_end)
-angle_sec1, WR_SO2T_sec1, axe_m1 = oblique_proj(Dvar['f1']['WR_SO2T'], Dvar['f1']['ni'], Dvar['f1']['nj'], Dvar['f1']['level'], i_beg, j_beg, i_end, j_end)
-angle_sec1, IC_SO2T_sec1, axe_m1 = oblique_proj(Dvar['f1']['IC_SO2T'], Dvar['f1']['ni'], Dvar['f1']['nj'], Dvar['f1']['level'], i_beg, j_beg, i_end, j_end)
-angle_sec1, IC_HCHOT_sec1, axe_m1 = oblique_proj(Dvar['f1']['IC_HCHOT'], Dvar['f1']['ni'], Dvar['f1']['nj'], Dvar['f1']['level'], i_beg, j_beg, i_end, j_end)
-angle_sec1, HNO3T_sec1, axe_m1 = oblique_proj(Dvar['f1']['HNO3T'], Dvar['f1']['ni'], Dvar['f1']['nj'], Dvar['f1']['level'], i_beg, j_beg, i_end, j_end)
-angle_sec1, WC_HNO3T_sec1, axe_m1 = oblique_proj(Dvar['f1']['WC_HNO3T'], Dvar['f1']['ni'], Dvar['f1']['nj'], Dvar['f1']['level'], i_beg, j_beg, i_end, j_end)
-angle_sec1, WR_HNO3T_sec1, axe_m1 = oblique_proj(Dvar['f1']['WR_HNO3T'], Dvar['f1']['ni'], Dvar['f1']['nj'], Dvar['f1']['level'], i_beg, j_beg, i_end, j_end)
-angle_sec1, IC_HNO3T_sec1, axe_m1 = oblique_proj(Dvar['f1']['IC_HNO3T'], Dvar['f1']['ni'], Dvar['f1']['nj'], Dvar['f1']['level'], i_beg, j_beg, i_end, j_end)
+angle_sec1, CO_sec1, axe_m1 = oblique_proj(Dvar['f1']['CO'], Dvar['f1']['ni'], Dvar['f1']['nj'], Dvar['f1']['level'], i_beg, j_beg, i_end, j_end)
+angle_sec1, O3_sec1, axe_m1 = oblique_proj(Dvar['f1']['O3'], Dvar['f1']['ni'], Dvar['f1']['nj'], Dvar['f1']['level'], i_beg, j_beg, i_end, j_end)
+angle_sec1, HCHO_sec1, axe_m1 = oblique_proj(Dvar['f1']['HCHO'], Dvar['f1']['ni'], Dvar['f1']['nj'], Dvar['f1']['level'], i_beg, j_beg, i_end, j_end)
+angle_sec1, WC_HCHO_sec1, axe_m1 = oblique_proj(Dvar['f1']['WC_HCHO'], Dvar['f1']['ni'], Dvar['f1']['nj'], Dvar['f1']['level'], i_beg, j_beg, i_end, j_end)
+angle_sec1, WR_HCHO_sec1, axe_m1 = oblique_proj(Dvar['f1']['WR_HCHO'], Dvar['f1']['ni'], Dvar['f1']['nj'], Dvar['f1']['level'], i_beg, j_beg, i_end, j_end)
+angle_sec1, SO2_sec1, axe_m1 = oblique_proj(Dvar['f1']['SO2'], Dvar['f1']['ni'], Dvar['f1']['nj'], Dvar['f1']['level'], i_beg, j_beg, i_end, j_end)
+angle_sec1, WC_SO2_sec1, axe_m1 = oblique_proj(Dvar['f1']['WC_SO2'], Dvar['f1']['ni'], Dvar['f1']['nj'], Dvar['f1']['level'], i_beg, j_beg, i_end, j_end)
+angle_sec1, WR_SO2_sec1, axe_m1 = oblique_proj(Dvar['f1']['WR_SO2'], Dvar['f1']['ni'], Dvar['f1']['nj'], Dvar['f1']['level'], i_beg, j_beg, i_end, j_end)
+angle_sec1, IC_SO2_sec1, axe_m1 = oblique_proj(Dvar['f1']['IC_SO2'], Dvar['f1']['ni'], Dvar['f1']['nj'], Dvar['f1']['level'], i_beg, j_beg, i_end, j_end)
+angle_sec1, IC_HCHO_sec1, axe_m1 = oblique_proj(Dvar['f1']['IC_HCHO'], Dvar['f1']['ni'], Dvar['f1']['nj'], Dvar['f1']['level'], i_beg, j_beg, i_end, j_end)
+angle_sec1, HNO3_sec1, axe_m1 = oblique_proj(Dvar['f1']['HNO3'], Dvar['f1']['ni'], Dvar['f1']['nj'], Dvar['f1']['level'], i_beg, j_beg, i_end, j_end)
+angle_sec1, WC_HNO3_sec1, axe_m1 = oblique_proj(Dvar['f1']['WC_HNO3'], Dvar['f1']['ni'], Dvar['f1']['nj'], Dvar['f1']['level'], i_beg, j_beg, i_end, j_end)
+angle_sec1, WR_HNO3_sec1, axe_m1 = oblique_proj(Dvar['f1']['WR_HNO3'], Dvar['f1']['ni'], Dvar['f1']['nj'], Dvar['f1']['level'], i_beg, j_beg, i_end, j_end)
+angle_sec1, IC_HNO3_sec1, axe_m1 = oblique_proj(Dvar['f1']['IC_HNO3'], Dvar['f1']['ni'], Dvar['f1']['nj'], Dvar['f1']['level'], i_beg, j_beg, i_end, j_end)
 angle_sec1, PHC_sec1, axe_m1 = oblique_proj(Dvar['f1']['PHC'], Dvar['f1']['ni'], Dvar['f1']['nj'], Dvar['f1']['level'], i_beg, j_beg, i_end, j_end)
 angle_sec1, PHR_sec1, axe_m1 = oblique_proj(Dvar['f1']['PHR'], Dvar['f1']['ni'], Dvar['f1']['nj'], Dvar['f1']['level'], i_beg, j_beg, i_end, j_end)
 
-Lplot = [COT_sec1, HCHOT_sec1, SO2T_sec1, HNO3T_sec1, PHC_sec1, PHR_sec1 ]
+Lplot = [CO_sec1, HCHO_sec1, SO2_sec1, HNO3_sec1, PHC_sec1, PHR_sec1 ]
 
 LaxeX = [axe_m1]*len(Lplot)
 LaxeZ = [Dvar['f1']['level']]*len(Lplot)
@@ -245,7 +245,7 @@ Panel4.save_graph(4,fig6)
 ###############################################################
 Panel5 = PanelPlot(3,3, [25,14],'', titlepad=25, minmaxpad=1.04, timepad=-0.07, colorbarpad=0.01, colorbaraspect=40, labelcolorbarpad = 13)
 
-Lplot = [WC_HCHOT_sec1, WR_HCHOT_sec1, IC_HCHOT_sec1, WC_SO2T_sec1, WR_SO2T_sec1, IC_SO2T_sec1, WC_HNO3T_sec1, WR_HNO3T_sec1, IC_HNO3T_sec1]
+Lplot = [WC_HCHO_sec1, WR_HCHO_sec1, IC_HCHO_sec1, WC_SO2_sec1, WR_SO2_sec1, IC_SO2_sec1, WC_HNO3_sec1, WR_HNO3_sec1, IC_HNO3_sec1]
 
 LaxeX = [axe_m1]*len(Lplot)
 LaxeZ = [Dvar['f1']['level']]*len(Lplot)

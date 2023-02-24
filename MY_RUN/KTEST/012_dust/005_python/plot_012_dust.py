@@ -22,7 +22,7 @@ path=""
 LnameFiles = ['DUST7.1.SEG02.004.nc']
 
 Dvar_input = {'f1':['ZS', 'UT','VT', 'WT','THT',
-      'DSTM03T','DSTM33T','DSTM02T','DSTM32T','DSTM01T','DSTM31T','F_DST001P1','F_DST002P1','F_DST003P1',
+      'DSTM03','DSTM33','DSTM02','DSTM32','DSTM01','DSTM31','F_DST001P1','F_DST002P1','F_DST003P1',
       'latitude','longitude','level',
       'INPRR','ACPRR','PABST','RCT','RVT','RRT','LSTHM']}
 
@@ -79,10 +79,10 @@ Panel1.save_graph(1,fig2)
 #########          PANEL 2
 ###############################################################
 Panel2 = PanelPlot(2,3, [25,14],'', titlepad=25, minmaxpad=1.04, timepad=-0.07, colorbarpad=0.03, labelcolorbarpad = 13, colorbaraspect=40)
-Lplot = [ Dvar['f1']['DSTM03T'],Dvar['f1']['DSTM33T'],Dvar['f1']['DSTM02T'],Dvar['f1']['DSTM32T'],Dvar['f1']['DSTM01T'],Dvar['f1']['DSTM31T']]
+Lplot = [ Dvar['f1']['DSTM03'],Dvar['f1']['DSTM33'],Dvar['f1']['DSTM02'],Dvar['f1']['DSTM32'],Dvar['f1']['DSTM01'],Dvar['f1']['DSTM31']]
 lon = [Dvar['f1']['longitude']]*len(Lplot)
 lat = [Dvar['f1']['latitude']]*len(Lplot)
-Ltitle = ['DSTM03T','DSTM33T','DSTM02T','DSTM32T','DSTM01T','DSTM31T']
+Ltitle = ['DSTM03','DSTM33','DSTM02','DSTM32','DSTM01','DSTM31']
 Lcbarlabel = ['kg/kg']*len(Lplot)
 Lxlab = ['longitude']*len(Lplot)
 Lylab = ['latitude']*len(Lplot)
