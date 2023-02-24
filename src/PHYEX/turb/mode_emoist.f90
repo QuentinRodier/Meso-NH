@@ -108,79 +108,79 @@ IKT=D%NKT
 IF (OOCEAN) THEN
  IF ( KRR == 0 ) THEN                                ! Unsalted
   !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
-   PEMOIST(IIJB:IIJE,:) = 0.
+   PEMOIST(:,:) = 0.
   !$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
  ELSE
    !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
-   PEMOIST(IIJB:IIJE,:) = 1.                              ! Salted case
+   PEMOIST(:,:) = 1.                              ! Salted case
    !$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
  END IF
 !
 ELSE
 !
  IF ( KRR == 0 ) THEN                                ! dry case
-   PEMOIST(IIJB:IIJE,:) = 0.
+   PEMOIST(:,:) = 0.
  ELSE IF ( KRR == 1 ) THEN                           ! only vapor
   ZDELTA = (CST%XRV/CST%XRD) - 1.
   !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
-  PEMOIST(IIJB:IIJE,:) = ZDELTA*PTHLM(IIJB:IIJE,:)
+  PEMOIST(:,:) = ZDELTA*PTHLM(:,:)
   !$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
  ELSE                                                ! liquid water & ice present
   ZDELTA = (CST%XRV/CST%XRD) - 1.
-  ZRW(IIJB:IIJE,:) = PRM(IIJB:IIJE,:,1)
+  ZRW(:,:) = PRM(:,:,1)
 !
   IF ( KRRI>0) THEN  ! rc and ri case
     !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
-    ZRW(IIJB:IIJE,:) = ZRW(IIJB:IIJE,:) + PRM(IIJB:IIJE,:,3)
+    ZRW(:,:) = ZRW(:,:) + PRM(:,:,3)
     !$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
     DO JRR=5,KRR
       !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
-      ZRW(IIJB:IIJE,:) = ZRW(IIJB:IIJE,:) + PRM(IIJB:IIJE,:,JRR)
+      ZRW(:,:) = ZRW(:,:) + PRM(:,:,JRR)
       !$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
     ENDDO
     !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
-    ZA(IIJB:IIJE,:) = 1. + (                                    &  ! Compute A
-              (1.+ZDELTA) * (PRM(IIJB:IIJE,:,1) - PRM(IIJB:IIJE,:,2) - PRM(IIJB:IIJE,:,4)) &
-              -ZRW(IIJB:IIJE,:)                                                &
-                     )  /  (1. + ZRW(IIJB:IIJE,:)) 
+    ZA(:,:) = 1. + (                                    &  ! Compute A
+              (1.+ZDELTA) * (PRM(:,:,1) - PRM(:,:,2) - PRM(:,:,4)) &
+              -ZRW(:,:)                                                &
+                     )  /  (1. + ZRW(:,:)) 
   !
   !   Emoist = ZB + ZC * Amoist
   !   ZB is computed from line 1 to line 2
   !   ZC is computed from line 3 to line 5
   !   Amoist* 2 * SRC is computed at line 6
   !
-    PEMOIST(IIJB:IIJE,:) = ZDELTA * (PTHLM(IIJB:IIJE,:) + PLOCPEXNM(IIJB:IIJE,:)*(           &
-                                                    PRM(IIJB:IIJE,:,2)+PRM(IIJB:IIJE,:,4)))&
-                            / (1. + ZRW(IIJB:IIJE,:))                                &
-        +( PLOCPEXNM(IIJB:IIJE,:) * ZA(IIJB:IIJE,:)                                        &
-               -(1.+ZDELTA) * (PTHLM(IIJB:IIJE,:) + PLOCPEXNM(IIJB:IIJE,:)*(               &
-                                                    PRM(IIJB:IIJE,:,2)+PRM(IIJB:IIJE,:,4)))&
-                            / (1. + ZRW(IIJB:IIJE,:))                                &
-         ) * PAMOIST(IIJB:IIJE,:) * 2. * PSRCM(IIJB:IIJE,:)
+    PEMOIST(:,:) = ZDELTA * (PTHLM(:,:) + PLOCPEXNM(:,:)*(           &
+                                                    PRM(:,:,2)+PRM(:,:,4)))&
+                            / (1. + ZRW(:,:))                                &
+        +( PLOCPEXNM(:,:) * ZA(:,:)                                        &
+               -(1.+ZDELTA) * (PTHLM(:,:) + PLOCPEXNM(:,:)*(               &
+                                                    PRM(:,:,2)+PRM(:,:,4)))&
+                            / (1. + ZRW(:,:))                                &
+         ) * PAMOIST(:,:) * 2. * PSRCM(:,:)
     !$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
   ELSE
     DO JRR=3,KRR
       !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
-      ZRW(IIJB:IIJE,:) = ZRW(IIJB:IIJE,:) + PRM(IIJB:IIJE,:,JRR)
+      ZRW(:,:) = ZRW(:,:) + PRM(:,:,JRR)
       !$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
     ENDDO
     !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
-    ZA(IIJB:IIJE,:) = 1. + (                                    &  ! Compute ZA
-              (1.+ZDELTA) * (PRM(IIJB:IIJE,:,1) - PRM(IIJB:IIJE,:,2)) &
-              -ZRW(IIJB:IIJE,:)                                 &
-                     )  /  (1. + ZRW(IIJB:IIJE,:)) 
+    ZA(:,:) = 1. + (                                    &  ! Compute ZA
+              (1.+ZDELTA) * (PRM(:,:,1) - PRM(:,:,2)) &
+              -ZRW(:,:)                                 &
+                     )  /  (1. + ZRW(:,:)) 
   !
   !   Emoist = ZB + ZC * Amoist
   !   ZB is computed from line 1 to line 2
   !   ZC is computed from line 3 to line 5
   !   Amoist* 2 * SRC is computed at line 6
   !
-    PEMOIST(IIJB:IIJE,:) = ZDELTA * (PTHLM(IIJB:IIJE,:) + PLOCPEXNM(IIJB:IIJE,:)* &
-                                       PRM(IIJB:IIJE,:,2)) / (1. + ZRW(IIJB:IIJE,:))          &
-        +( PLOCPEXNM(IIJB:IIJE,:) * ZA(IIJB:IIJE,:)                                        &
-               -(1.+ZDELTA) * (PTHLM(IIJB:IIJE,:) + PLOCPEXNM(IIJB:IIJE,:)* &
-               PRM(IIJB:IIJE,:,2)) / (1. + ZRW(IIJB:IIJE,:))                                &
-         ) * PAMOIST(IIJB:IIJE,:) * 2. * PSRCM(IIJB:IIJE,:)
+    PEMOIST(:,:) = ZDELTA * (PTHLM(:,:) + PLOCPEXNM(:,:)* &
+                                       PRM(:,:,2)) / (1. + ZRW(:,:))          &
+        +( PLOCPEXNM(:,:) * ZA(:,:)                                        &
+               -(1.+ZDELTA) * (PTHLM(:,:) + PLOCPEXNM(:,:)* &
+               PRM(:,:,2)) / (1. + ZRW(:,:))                                &
+         ) * PAMOIST(:,:) * 2. * PSRCM(:,:)
     !$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
   END IF
  END IF

@@ -111,71 +111,71 @@ IKT=D%NKT
 !
 IF (OOCEAN) THEN                                    ! ocean case
   !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
-  PETHETA(IIJB:IIJE,:) =  1.
+  PETHETA(:,:) =  1.
   !$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
 ELSE   
  IF ( KRR == 0) THEN                                ! dry case
  !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
-  PETHETA(IIJB:IIJE,:) = 1.
+  PETHETA(:,:) = 1.
  !$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
  ELSE IF ( KRR == 1 ) THEN                           ! only vapor
   ZDELTA = (CST%XRV/CST%XRD) - 1.
   !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
-  PETHETA(IIJB:IIJE,:) = 1. + ZDELTA*PRM(IIJB:IIJE,:,1)
+  PETHETA(:,:) = 1. + ZDELTA*PRM(:,:,1)
   !$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
  ELSE                                                ! liquid water & ice present
   ZDELTA = (CST%XRV/CST%XRD) - 1.
   !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
-  ZRW(IIJB:IIJE,:) = PRM(IIJB:IIJE,:,1)
+  ZRW(:,:) = PRM(:,:,1)
   !$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
 !
   IF ( KRRI>0 ) THEN  ! rc and ri case
     !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
-    ZRW(IIJB:IIJE,:) = ZRW(IIJB:IIJE,:) + PRM(IIJB:IIJE,:,3)
+    ZRW(:,:) = ZRW(:,:) + PRM(:,:,3)
     !$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
     DO JRR=5,KRR
       !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
-      ZRW(IIJB:IIJE,:) = ZRW(IIJB:IIJE,:) + PRM(IIJB:IIJE,:,JRR)
+      ZRW(:,:) = ZRW(:,:) + PRM(:,:,JRR)
       !$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
     ENDDO
     !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
-    ZA(IIJB:IIJE,:) = 1. + (                                    &  ! Compute A
-              (1.+ZDELTA) * (PRM(IIJB:IIJE,:,1) - PRM(IIJB:IIJE,:,2) - PRM(IIJB:IIJE,:,4)) &
-              -ZRW(IIJB:IIJE,:)                                                &
-                     )  /  (1. + ZRW(IIJB:IIJE,:))
+    ZA(:,:) = 1. + (                                    &  ! Compute A
+              (1.+ZDELTA) * (PRM(:,:,1) - PRM(:,:,2) - PRM(:,:,4)) &
+              -ZRW(:,:)                                                &
+                     )  /  (1. + ZRW(:,:))
   !
   !   Etheta = ZA + ZC * Atheta  
   !   ZC is computed from line 2 to line 5
   !   - Atheta * 2. * SRC is computed at line 6 
   !
-    PETHETA(IIJB:IIJE,:) = ZA(IIJB:IIJE,:)                                                 &
-        +( PLOCPEXNM(IIJB:IIJE,:) * ZA(IIJB:IIJE,:)                                        &
-               -(1.+ZDELTA) * (PTHLM(IIJB:IIJE,:) + PLOCPEXNM(IIJB:IIJE,:)*(               &
-                                                    PRM(IIJB:IIJE,:,2)+PRM(IIJB:IIJE,:,4)))&
-                            / (1. + ZRW(IIJB:IIJE,:))                                &
-         ) * PATHETA(IIJB:IIJE,:) * 2. * PSRCM(IIJB:IIJE,:)
+    PETHETA(:,:) = ZA(:,:)                                                 &
+        +( PLOCPEXNM(:,:) * ZA(:,:)                                        &
+               -(1.+ZDELTA) * (PTHLM(:,:) + PLOCPEXNM(:,:)*(               &
+                                                    PRM(:,:,2)+PRM(:,:,4)))&
+                            / (1. + ZRW(:,:))                                &
+         ) * PATHETA(:,:) * 2. * PSRCM(:,:)
     !$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
   ELSE
     DO JRR=3,KRR
       !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
-      ZRW(IIJB:IIJE,:) = ZRW(IIJB:IIJE,:) + PRM(IIJB:IIJE,:,JRR)
+      ZRW(:,:) = ZRW(:,:) + PRM(:,:,JRR)
       !$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
     ENDDO
     !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
-    ZA(IIJB:IIJE,:) = 1. + (                                    &  ! Compute A
-              (1.+ZDELTA) * (PRM(IIJB:IIJE,:,1) - PRM(IIJB:IIJE,:,2)) &
-              -ZRW(IIJB:IIJE,:)                                 &
-                     )  /  (1. + ZRW(IIJB:IIJE,:))
+    ZA(:,:) = 1. + (                                    &  ! Compute A
+              (1.+ZDELTA) * (PRM(:,:,1) - PRM(:,:,2)) &
+              -ZRW(:,:)                                 &
+                     )  /  (1. + ZRW(:,:))
   !
   !   Etheta = ZA + ZC * Atheta  
   !   ZC is computed from line 2 to line 5
   !   - Atheta * 2. * SRC is computed at line 6 
   !
-    PETHETA(IIJB:IIJE,:) = ZA(IIJB:IIJE,:)                                                 &
-        +( PLOCPEXNM(IIJB:IIJE,:) * ZA(IIJB:IIJE,:) -(1.+ZDELTA) * (PTHLM(IIJB:IIJE,:) &
-        + PLOCPEXNM(IIJB:IIJE,:)*PRM(IIJB:IIJE,:,2))   &
-         / (1. + ZRW(IIJB:IIJE,:))                                 &
-         ) * PATHETA(IIJB:IIJE,:) * 2. * PSRCM(IIJB:IIJE,:)
+    PETHETA(:,:) = ZA(:,:)                                                 &
+        +( PLOCPEXNM(:,:) * ZA(:,:) -(1.+ZDELTA) * (PTHLM(:,:) &
+        + PLOCPEXNM(:,:)*PRM(:,:,2))   &
+         / (1. + ZRW(:,:))                                 &
+         ) * PATHETA(:,:) * 2. * PSRCM(:,:)
     !$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
   END IF
  END IF
