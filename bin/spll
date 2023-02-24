@@ -32,7 +32,7 @@ ec_meminfo.F90|\
 turb.f90|shallow_mf.f90|rain_ice.f90|lima.f90|\
 lima_adjust_split.f90|lima_precip_scavenging.f90|ini_tiwmx.f90|\
 ini_snow.f90|ini_rain_ice.f90|ini_neb.f90|ini_cst.f90|\
-ice_adjust.f90|gradient_u.f90|gradient_v.f90|gradient_w|\
+ice_adjust.f90|gradient_u.f90|gradient_v.f90|gradient_w.f90|\
 gamma.f90|gamma_inc.f90|general_gamma.f90|condensation.f90"
 #
 
@@ -142,11 +142,12 @@ then
   cp $spllfile $DIRNAME/$spllfile
   touch $DIRNAME/$BASENAME2.D
 fi 
-dep=`egrep -i "^[[:space:]]*use "    $spllfile | sed -e 's/,/ /g' | awk '{ print '${TOCASE}'($2)".mod"}' | sort -u `
-mod=`egrep -i "^[[:space:]]*module " $spllfile | sed -e 's/,/ /g' | awk '{ print '${TOCASE}'($2)".mod"}' | sort -u | grep -iv procedure `
+dep=`egrep -i "^[[:space:]]*use "     $spllfile | sed -e 's/,/ /g' | awk '{ print '${TOCASE}'($2)".mod"}' | sort -u `
+mod=`egrep -i "^[[:space:]]*module "  $spllfile | sed -e 's/,/ /g' | awk '{ print '${TOCASE}'($2)".mod"}' | sort -u | grep -iv procedure `
+inc=`egrep -i "^[[:space:]]*include " $spllfile | sed -e 's/"//g'  | awk '{ print '${TOCASE}'($2)}' | sort -u | egrep -v 'mpif.h|netcdf.inc' `
 
-echo $mod        : $spllbase.o    >> $DIRNAME/$BASENAME2.D
-echo $spllbase.o : $spllfile $dep >> $DIRNAME/$BASENAME2.D
+echo $mod        : $spllbase.o         >> $DIRNAME/$BASENAME2.D
+echo $spllbase.o : $spllfile $dep $inc >> $DIRNAME/$BASENAME2.D
 
 if [ "$SUF" = "f90" ]
 then
@@ -162,7 +163,7 @@ do
 echo "	 -mv  $filemod "' $(OBJDIR)/MOD/. || '"echo OK $filemod " >> $DIRNAME/$BASENAME2.D
 done
 
-unset dep mod
+unset dep inc mod
 
 done
 touch $DIRNAME/$BASENAME2.D

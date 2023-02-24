@@ -67,11 +67,11 @@ OBJS_NOCB +=  spll_dxf.o spll_dxm.o spll_dyf.o spll_dym.o \
         spll_gx_m_m.o spll_gx_m_u.o spll_gy_m_m.o \
         spll_gy_m_v.o spll_gz_m_m.o spll_gz_m_w.o \
         spll_dzf_mf.o spll_dzm_mf.o spll_mzf_mf.o spll_mzm_mf.o \
-        spll_modi_gradient_m_d.o spll_mode_shuman_phy.o
+        spll_mode_shuman_phy.o mode_shuman_phy.mod
 
 $(OBJS_NOCB) : OPT = $(OPT_NOCB)
 
-OBJS0 += spll_switch_sbg_lesn.o spll_mode_mppdb.o
+OBJS0 += spll_switch_sbg_lesn.o spll_mode_mppdb.o mode_mppdb.mod
 
 $(OBJS0)     : OPT = $(OPT0) 
 
@@ -82,8 +82,8 @@ endif
 ##########################################################
 DIR_PHYEX += PHYEX/aux PHYEX/turb PHYEX/micro PHYEX/conv
 INC_PHYEX += -I$(B)PHYEX/micro -I$(B)PHYEX/turb -I$(B)PHYEX/aux
-
 #CPPFLAGS_PHYEX += 
+VPATH     += PHYEX/aux PHYEX/turb PHYEX/micro PHYEX/conv
 #
 DIR_MASTER += $(DIR_PHYEX)
 CPPFLAGS   += $(CPPFLAGS_PHYEX)
