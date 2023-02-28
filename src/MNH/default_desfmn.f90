@@ -1000,8 +1000,8 @@ ENDIF
 IF (KMI == 1) THEN
    LPTSPLIT     = .TRUE.
    L_LFEEDBACKT = .TRUE.
-   L_NMAXITER   = 1
-   L_XMRSTEP    = 0.
+   L_NMAXITER   = 5
+   L_XMRSTEP    = 0.005
    L_XTSTEP_TS  = 0.
 !
    YNUC    = 1.0
