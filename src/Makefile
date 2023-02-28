@@ -318,6 +318,9 @@ gribapi_clean :
 #                                                        #
 ##########################################################
 eccodes_lib : $(ECCODES_MOD)
+ifeq "$(VER_CDF)" "CDFAUTO"
+$(ECCODES_MOD) : $(CDF_MOD)
+endif
 $(ECCODES_MOD) :
 	- [ ! -d $(DIR_ECCODES_BUILD) ] && mkdir -p $(DIR_ECCODES_BUILD)
 	cd ${DIR_ECCODES_BUILD} && \
