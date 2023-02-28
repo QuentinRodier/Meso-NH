@@ -5,7 +5,7 @@
 #MSUB -o Examples.eo%j   #
 #MSUB -e Examples.eo%j   #
 #MSUB -T 3600        # time limit
-#MSUB -I             # do not propaget variable from interactif
+##MSUB -I             # do not propaget variable from interactif, /!\ problem with module load if activate
 #MSUB -m work,scratch,store # use this files system
 #MSUB -x #  exclusive usage of nodes
 #MSUB -X # enable X forwarding -> force 'ccc_msub -i ' to get it work
