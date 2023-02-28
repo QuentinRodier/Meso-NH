@@ -217,8 +217,8 @@ export MPI_DSM_CPULIST=0-7:allhosts
                 export MNHENV=${MNHENV:-"
 module purge
 module load cmake/3.18.1
-module load intel/19.0.5.281 
-module load mpi/openmpi/4.0.2
+module load inteloneapi/21.4.0
+module load mpi/openmpi/4.1.4
 export SLURM_CPU_BIND=none
 "}
 ;;
@@ -233,8 +233,8 @@ export SLURM_CPU_BIND=none
                 export MNHENV=${MNHENV:-"
 module purge
 module load cmake/3.18.1
-module load intel/19.0.5.281 
-module load mpi/openmpi/4.0.2
+module load inteloneapi/21.4.0
+module load mpi/openmpi/4.1.4
 export SLURM_CPU_BIND=none
 # Set some openmpi variable for pb with nb of cores >> 1024
 export OMPI_MCA_coll_hcoll_enable=0
