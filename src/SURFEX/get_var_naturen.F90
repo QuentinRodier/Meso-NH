@@ -37,6 +37,7 @@
 !       M. Jidane   08/2008 Z0 and Z0H recovery from nature tiles
 !       S. Riette   06/2010 TWSNOW added
 !       V. Masson   02/2015 adds LAI, height of trees, fraction of bare soil
+!       J. Wurtz    02/2023 uncomment baresoil initialization : needed for MNH init
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -127,9 +128,9 @@ ELSE
    PZ0      = XUNDEF      
    PZ0H     = XUNDEF
 ENDIF
-!
-!PBARE = S%XVEGTYPE(:,NVT_NO)
-!
+
+PBARE = S%XVEGTYPE(:,NVT_NO)
+
 PVEGT(:) = 0.
 DO JP=1,IO%NPATCH
    PK => NP%AL(JP)
