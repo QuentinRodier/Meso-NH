@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2002-2022 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -337,6 +337,7 @@ SUBROUTINE PROFILER_DIACHRO_n( TPDIAFILE, TPPROFILER )
 use modd_budget,          only: NLVL_CATEGORY, NLVL_SUBCATEGORY, NLVL_GROUP, NLVL_SHAPE, NLVL_TIMEAVG, NLVL_NORM, NLVL_MASK, &
                                 tbudiachrometadata
 USE MODD_CH_AEROSOL,      ONLY: LORILAM, JPMODE
+USE MODD_CONF,            ONLY: LCARTESIAN
 USE MODD_CONF_n,          ONLY: NRR
 USE MODD_CST,             ONLY: XRV
 USE MODD_DIAG_IN_RUN,     only: LDIAG_IN_RUN
@@ -754,17 +755,37 @@ Deallocate( tzfields )
 
 jproc = 0
 
-JPROC = JPROC + 1
-CTITLE   (JPROC) = 'LON'
-CUNIT    (JPROC) = 'degree'
-CCOMMENT (JPROC) = 'Longitude'
-XWORK6 (1,1,1,:,1,JPROC) = TPPROFILER%XLON
+if ( lcartesian ) then
+  JPROC = JPROC + 1
+  CTITLE   (JPROC) = 'X'
+  CUNIT    (JPROC) = 'm'
+  CCOMMENT (JPROC) = 'X Pos'
+  XWORK6 (1,1,1,:,1,JPROC) = TPPROFILER%XX
+
+  JPROC = JPROC + 1
+  CTITLE   (JPROC) = 'Y'
+  CUNIT    (JPROC) = 'm'
+  CCOMMENT (JPROC) = 'Y Pos'
+  XWORK6 (1,1,1,:,1,JPROC) = TPPROFILER%XY
+else
+  JPROC = JPROC + 1
+  CTITLE   (JPROC) = 'LON'
+  CUNIT    (JPROC) = 'degree'
+  CCOMMENT (JPROC) = 'Longitude'
+  XWORK6 (1,1,1,:,1,JPROC) = TPPROFILER%XLON
+
+  JPROC = JPROC + 1
+  CTITLE   (JPROC) = 'LAT'
+  CUNIT    (JPROC) = 'degree'
+  CCOMMENT (JPROC) = 'Latitude'
+  XWORK6 (1,1,1,:,1,JPROC) = TPPROFILER%XLAT
+end if
 
 JPROC = JPROC + 1
-CTITLE   (JPROC) = 'LAT'
-CUNIT    (JPROC) = 'degree'
-CCOMMENT (JPROC) = 'Latitude'
-XWORK6 (1,1,1,:,1,JPROC) = TPPROFILER%XLAT
+CTITLE   (JPROC) = 'Z'
+CUNIT    (JPROC) = 'm'
+CCOMMENT (JPROC) = 'altitude'
+XWORK6 (1,1,1,:,1,JPROC) = TPPROFILER%XZ
 
 Allocate( tzfields( jproc ) )
 
