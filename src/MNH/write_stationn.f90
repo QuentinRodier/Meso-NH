@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2002-2022 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -319,7 +319,7 @@ type(tfieldmetadata_base), dimension(:), allocatable :: tzfields
 !
 !----------------------------------------------------------------------------
 !
-IPROC = 8 + SIZE(TPSTATION%XR,2) + SIZE(TPSTATION%XSV,2)
+IPROC = 9 + SIZE(TPSTATION%XR,2) + SIZE(TPSTATION%XSV,2)
 
 IF ( CTURB == 'TKEL' ) IPROC = IPROC + 1
 IF (LDIAG_SURFRAD) THEN
@@ -350,11 +350,13 @@ call Add_point( 'P',  'Pressure',  'Pa', tpstation%xp(:) )
 if ( lcartesian ) then
   call Add_point( 'X', 'X Pos', 'm', SPREAD( tpstation%xx, 1, istore ) )
   call Add_point( 'Y', 'Y Pos', 'm', SPREAD( tpstation%xy, 1, istore ) )
+  call Add_point( 'Z', 'altitude', 'm', SPREAD( tpstation%xz, 1, istore ) )
   call Add_point( 'U', 'Axial velocity',       'm s-1', tpstation%xzon(:) )
   call Add_point( 'V', 'Transversal velocity', 'm s-1', tpstation%xmer(:) )
 else
   call Add_point( 'LON', 'Longitude', 'degree', SPREAD( tpstation%xlon, 1, istore ) )
   call Add_point( 'LAT', 'Latitude',  'degree', SPREAD( tpstation%xlat, 1, istore ) )
+  call Add_point( 'Z',   'altitude',  'm',      SPREAD( tpstation%xz,   1, istore ) )
   call Add_point( 'ZON_WIND', 'Zonal wind',      'm s-1', tpstation%xzon(:) )
   call Add_point( 'MER_WIND', 'Meridional wind', 'm s-1', tpstation%xmer(:) )
 end if
