@@ -281,6 +281,7 @@ USE MODD_CONF,          ONLY: LCARTESIAN
 USE MODD_CST,           ONLY: XRV
 use modd_field,         only: NMNHDIM_STATION_TIME, NMNHDIM_STATION_PROC, NMNHDIM_UNUSED, &
                               tfieldmetadata_base, TYPEREAL
+use modd_grid_n,        only: xzz
 USE MODD_IO,            ONLY: TFILEDATA
 USE MODD_NSV,           ONLY: nsv, nsv_aer, nsv_aerbeg, nsv_aerend, &
                               nsv_dst, nsv_dstbeg, nsv_dstend, nsv_slt, nsv_sltbeg, nsv_sltend, &
@@ -292,7 +293,8 @@ use modd_type_statprof, only: tstationdata
 USE MODE_AERO_PSD
 USE MODE_DUST_PSD
 USE MODE_SALT_PSD
-use MODE_WRITE_DIACHRO, ONLY: Write_diachro
+use mode_statprof_tools, only: Statprof_interp_2d
+use MODE_WRITE_DIACHRO,  ONLY: Write_diachro
 
 TYPE(TFILEDATA),    INTENT(IN) :: TPDIAFILE ! diachronic file to write
 TYPE(TSTATIONDATA), INTENT(IN) :: TPSTATION
@@ -314,12 +316,13 @@ INTEGER :: ISTORE
 INTEGER :: JPROC    ! loop counter
 INTEGER :: JRR      ! loop counter
 INTEGER :: JSV      ! loop counter
+real    :: zalt_meas ! True altitude for the station measurements
 type(tbudiachrometadata)                             :: tzbudiachro
 type(tfieldmetadata_base), dimension(:), allocatable :: tzfields
 !
 !----------------------------------------------------------------------------
 !
-IPROC = 9 + SIZE(TPSTATION%XR,2) + SIZE(TPSTATION%XSV,2)
+IPROC = 11 + SIZE(TPSTATION%XR,2) + SIZE(TPSTATION%XSV,2)
 
 IF ( CTURB == 'TKEL' ) IPROC = IPROC + 1
 IF (LDIAG_SURFRAD) THEN
@@ -345,18 +348,21 @@ JPROC = 0
 !
 call Add_point( 'ZS', 'Orography', 'm',  SPREAD( tpstation%xzs, 1, istore ) )
 call Add_point( 'P',  'Pressure',  'Pa', tpstation%xp(:) )
-! call Add_point( 'Z', 'Z Pos', 'm', SPREAD( tpstation%xz, 1, istore ) )
+call Add_point( 'Z',  'altitude', 'm', SPREAD( tpstation%xz, 1, istore ) )
+call Add_point( 'K',  'vertical model level used for computations', '1', SPREAD( REAL( tpstation%nk ), 1, istore ) )
+
+zalt_meas = Statprof_interp_2d( tpstation, xzz(:,:,tpstation%nk) )
+call Add_point( 'Zmeas', 'interpolated altitude used for measurements', 'm', SPREAD( zalt_meas, 1, istore ) )
+
 
 if ( lcartesian ) then
   call Add_point( 'X', 'X Pos', 'm', SPREAD( tpstation%xx, 1, istore ) )
   call Add_point( 'Y', 'Y Pos', 'm', SPREAD( tpstation%xy, 1, istore ) )
-  call Add_point( 'Z', 'altitude', 'm', SPREAD( tpstation%xz, 1, istore ) )
   call Add_point( 'U', 'Axial velocity',       'm s-1', tpstation%xzon(:) )
   call Add_point( 'V', 'Transversal velocity', 'm s-1', tpstation%xmer(:) )
 else
   call Add_point( 'LON', 'Longitude', 'degree', SPREAD( tpstation%xlon, 1, istore ) )
   call Add_point( 'LAT', 'Latitude',  'degree', SPREAD( tpstation%xlat, 1, istore ) )
-  call Add_point( 'Z',   'altitude',  'm',      SPREAD( tpstation%xz,   1, istore ) )
   call Add_point( 'ZON_WIND', 'Zonal wind',      'm s-1', tpstation%xzon(:) )
   call Add_point( 'MER_WIND', 'Meridional wind', 'm s-1', tpstation%xmer(:) )
 end if
