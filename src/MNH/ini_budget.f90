@@ -3541,57 +3541,57 @@ SV_BUDGETS: do jsv = 1, ksv
 
         tzsource%cmnhname   = 'SEDI'
         tzsource%clongname  = 'sedimentation'
-        tzsource%lavailable = lptsplit .or. ( nmom_s.ge.2 )
+        tzsource%lavailable = ( nmom_s.ge.2 )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'CNVI'
         tzsource%clongname  = 'conversion of snow to cloud ice'
-        tzsource%lavailable = lptsplit .or. ( nmom_i.ge.1 .and. nmom_s.ge.1 )
+        tzsource%lavailable = ( nmom_s.ge.2 )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'CNVS'
         tzsource%clongname  = 'conversion of pristine ice to snow'
-        tzsource%lavailable = lptsplit .or. ( nmom_i.ge.1 .and. nmom_s.ge.1 )
+        tzsource%lavailable = ( nmom_s.ge.2 )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'BRKU'
         tzsource%clongname  = 'break up of snow'
-        tzsource%lavailable = lptsplit .or. ( nmom_i.ge.1 .and. nmom_s.ge.1 )
+        tzsource%lavailable = ( nmom_s.ge.2 )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'RIM'
         tzsource%clongname  = 'heavy riming of cloud droplet on snow'
-        tzsource%lavailable = lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1 .and. nmom_s.ge.1 )
+        tzsource%lavailable = ( nmom_s.ge.2 )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'ACC'
         tzsource%clongname  = 'accretion of rain on snow'
-        tzsource%lavailable = lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1  .and. nmom_s.ge.1 )
+        tzsource%lavailable = ( nmom_s.ge.2 )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'CMEL'
         tzsource%clongname  = 'conversion melting of snow'
-        tzsource%lavailable = lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1  .and. nmom_s.ge.1 )
+        tzsource%lavailable = ( nmom_s.ge.2 )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'WETG'
         tzsource%clongname  = 'wet growth of graupel'
-        tzsource%lavailable = lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1  .and. nmom_s.ge.1 )
+        tzsource%lavailable = ( nmom_s.ge.2 )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'DRYG'
         tzsource%clongname  = 'dry growth of graupel'
-        tzsource%lavailable = lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1  .and. nmom_s.ge.1 )
+        tzsource%lavailable = ( nmom_s.ge.2 )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'WETH'
         tzsource%clongname  = 'wet growth of hail'
-        tzsource%lavailable = lptsplit .or. nmom_h.ge.1
+        tzsource%lavailable = nmom_s.ge.2
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'SSC'
         tzsource%clongname  = 'snow self collection'
-        tzsource%lavailable = lptsplit  .or. ( nmom_i.ge.1 .and. nmom_s.ge.1 )
+        tzsource%lavailable = ( nmom_s.ge.2 )
         call Budget_source_add( tbudgets(ibudget), tzsource )
         
         tzsource%cmnhname   = 'CEDS'
@@ -3603,47 +3603,47 @@ SV_BUDGETS: do jsv = 1, ksv
 
         tzsource%cmnhname   = 'SEDI'
         tzsource%clongname  = 'sedimentation'
-        tzsource%lavailable = nmom_i.ge.1 .or. ( nmom_s.ge.1 )
+        tzsource%lavailable = ( nmom_g.ge.2 )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'RIM'
         tzsource%clongname  = 'heavy riming of cloud droplet on snow'
-        tzsource%lavailable = lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1 .and. nmom_s.ge.1 )
+        tzsource%lavailable = ( nmom_g.ge.2 )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'ACC'
         tzsource%clongname  = 'accretion of rain on snow'
-        tzsource%lavailable = lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1  .and. nmom_s.ge.1 )
+        tzsource%lavailable = ( nmom_g.ge.2 )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'CMEL'
         tzsource%clongname  = 'conversion melting of snow'
-        tzsource%lavailable = lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1  .and. nmom_s.ge.1 )
+        tzsource%lavailable = ( nmom_g.ge.2 )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'CFRZ'
         tzsource%clongname  = 'conversion freezing of raindrop'
-        tzsource%lavailable = lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1  .and. nmom_s.ge.1 )
+        tzsource%lavailable = ( nmom_g.ge.2 )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'WETG'
         tzsource%clongname  = 'wet growth of graupel'
-        tzsource%lavailable = lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1  .and. nmom_s.ge.1 )
+        tzsource%lavailable = ( nmom_g.ge.2 )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'GMLT'
         tzsource%clongname  = 'graupel melting'
-        tzsource%lavailable = lptsplit .or. ( nmom_i.ge.1 .and. nmom_c.ge.1  .and. nmom_s.ge.1 )
+        tzsource%lavailable = ( nmom_g.ge.2 )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'WETH'
         tzsource%clongname  = 'wet growth of hail'
-        tzsource%lavailable = lptsplit .or. nmom_h.ge.1
+        tzsource%lavailable = nmom_g.ge.2
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'COHG'
         tzsource%clongname  = 'conversion hail graupel'
-        tzsource%lavailable = lptsplit .or. nmom_h.ge.1
+        tzsource%lavailable = nmom_g.ge.2
         call Budget_source_add( tbudgets(ibudget), tzsource )
         
         tzsource%cmnhname   = 'CEDS'
@@ -3655,22 +3655,22 @@ SV_BUDGETS: do jsv = 1, ksv
 
         tzsource%cmnhname   = 'SEDI'
         tzsource%clongname  = 'sedimentation'
-        tzsource%lavailable = nmom_i.ge.1 .or. ( nmom_i.ge.1 .and. nmom_s.ge.1 .and. nmom_h.ge.1 )
+        tzsource%lavailable = ( nmom_h.ge.2 )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'WETG'
         tzsource%clongname  = 'wet growth of graupel'
-        tzsource%lavailable = lptsplit .or. nmom_h.ge.1
+        tzsource%lavailable = nmom_h.ge.2
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'COHG'
         tzsource%clongname  = 'conversion hail graupel'
-        tzsource%lavailable = lptsplit .or. nmom_h.ge.1
+        tzsource%lavailable = nmom_h.ge.2
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'HMLT'
         tzsource%clongname  = 'hail melting'
-        tzsource%lavailable = lptsplit .or. nmom_h.ge.1
+        tzsource%lavailable = nmom_h.ge.2
         call Budget_source_add( tbudgets(ibudget), tzsource )
         
       else if ( jsv >= nsv_lima_ifn_free .and. jsv <= nsv_lima_ifn_free + nmod_ifn - 1 ) then SV_LIMA
