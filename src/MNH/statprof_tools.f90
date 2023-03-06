@@ -384,6 +384,7 @@ SUBROUTINE STATPROF_POSITION( TPSTATPROF, OINSIDE, OPRESENT )
         !If the station/profiler is nearer from the lower level, select it
         IF ( ( ZHIGH - TPSTATPROF%XZ ) > ( TPSTATPROF%XZ - ZLOW ) ) JK = JK - 1
         TPSTATPROF%NK = JK
+        TPSTATPROF%XZMEAS = STATPROF_INTERP_2D( TPSTATPROF, XZZ(:,:,JK) )
 
       CLASS DEFAULT
         CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'STATPROF_POSITION', 'unknown type for TPSTATPROF', OLOCAL = .TRUE. )
@@ -475,6 +476,7 @@ SUBROUTINE STATION_ADD( TPSTATION )
   TZSTATIONS(NUMBSTAT_LOC)%XXUCOEF = TPSTATION%XXUCOEF
   TZSTATIONS(NUMBSTAT_LOC)%XYVCOEF = TPSTATION%XYVCOEF
   TZSTATIONS(NUMBSTAT_LOC)%NK      = TPSTATION%NK
+  TZSTATIONS(NUMBSTAT_LOC)%XZMEAS  = TPSTATION%XZMEAS
 
   IF ( ASSOCIATED( TSTATIONS ) ) DEALLOCATE( TSTATIONS ) !Can be done without memory leak because allocatable arrays were
                                                          !not yet allocated (will be done in STATION_ALLOCATE)

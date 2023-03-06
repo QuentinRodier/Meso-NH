@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2002-2022 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -100,6 +100,7 @@ TYPE, EXTENDS( TSTATPROFDATA ) ::  TSTATIONDATA
   INTEGER :: NK = NNEGUNDEF ! Model level for altitude comparisons
 
   REAL :: XZS  = XUNDEF  ! zs(n)
+  REAL :: XZMEAS = XUNDEF ! interpolated altitude used for measurements
 
   ! (n: recording instants)
   REAL, DIMENSION(:),   ALLOCATABLE :: XZON    ! zonal wind(n)

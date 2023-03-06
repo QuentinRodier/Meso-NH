@@ -126,7 +126,7 @@ CALL STATION_ALLOCATE( TZSTATION, SIZE( tstations_time%tpdates ) )
 !Determine the size of the ZPACK buffer used to transfer station data in 1 MPI communication
 IF ( ISNPROC > 1 ) THEN
   ISTORE = SIZE( TSTATIONS_TIME%TPDATES )
-  IPACKSIZE = 7
+  IPACKSIZE = 9
   IPACKSIZE = IPACKSIZE + ISTORE * ( 5 + NRR + NSV )
   IF ( CTURB == 'TKEL') IPACKSIZE = IPACKSIZE + ISTORE !Tke term
   IF ( CRAD /= 'NONE' ) IPACKSIZE = IPACKSIZE + ISTORE !XTSRAD term
@@ -153,13 +153,15 @@ STATION: DO JS = 1, INUMSTAT
     IF ( ISP == ISTATPRCRANK(JS) ) THEN
       ! This process has the data and needs to send it to the writer process
       IPOS = 1
-      ZPACK(IPOS) = TSTATIONS(IDX)%NID;  IPOS = IPOS + 1
-      ZPACK(IPOS) = TSTATIONS(IDX)%XX;   IPOS = IPOS + 1
-      ZPACK(IPOS) = TSTATIONS(IDX)%XY;   IPOS = IPOS + 1
-      ZPACK(IPOS) = TSTATIONS(IDX)%XZ;   IPOS = IPOS + 1
-      ZPACK(IPOS) = TSTATIONS(IDX)%XLON; IPOS = IPOS + 1
-      ZPACK(IPOS) = TSTATIONS(IDX)%XLAT; IPOS = IPOS + 1
-      ZPACK(IPOS) = TSTATIONS(IDX)%XZS;  IPOS = IPOS + 1
+      ZPACK(IPOS) = TSTATIONS(IDX)%NID;    IPOS = IPOS + 1
+      ZPACK(IPOS) = TSTATIONS(IDX)%XX;     IPOS = IPOS + 1
+      ZPACK(IPOS) = TSTATIONS(IDX)%XY;     IPOS = IPOS + 1
+      ZPACK(IPOS) = TSTATIONS(IDX)%XZ;     IPOS = IPOS + 1
+      ZPACK(IPOS) = TSTATIONS(IDX)%XLON;   IPOS = IPOS + 1
+      ZPACK(IPOS) = TSTATIONS(IDX)%XLAT;   IPOS = IPOS + 1
+      ZPACK(IPOS) = TSTATIONS(IDX)%XZS;    IPOS = IPOS + 1
+      ZPACK(IPOS) = TSTATIONS(IDX)%NK;     IPOS = IPOS + 1
+      ZPACK(IPOS) = TSTATIONS(IDX)%XZMEAS; IPOS = IPOS + 1
       ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XZON(:); IPOS = IPOS + ISTORE
       ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XMER(:); IPOS = IPOS + ISTORE
       ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XW(:);   IPOS = IPOS + ISTORE
@@ -214,13 +216,15 @@ STATION: DO JS = 1, INUMSTAT
       CALL MPI_RECV( ZPACK, IPACKSIZE, MNHREAL_MPI, ISTATPRCRANK(JS) - 1, ITAG, TPDIAFILE%NMPICOMM, MPI_STATUS_IGNORE, IERR )
 
       IPOS = 1
-      TZSTATION%NID  = NINT( ZPACK(IPOS) ); IPOS = IPOS + 1
-      TZSTATION%XX   = ZPACK(IPOS);         IPOS = IPOS + 1
-      TZSTATION%XY   = ZPACK(IPOS);         IPOS = IPOS + 1
-      TZSTATION%XZ   = ZPACK(IPOS);         IPOS = IPOS + 1
-      TZSTATION%XLON = ZPACK(IPOS);         IPOS = IPOS + 1
-      TZSTATION%XLAT = ZPACK(IPOS);         IPOS = IPOS + 1
-      TZSTATION%XZS  = ZPACK(IPOS);         IPOS = IPOS + 1
+      TZSTATION%NID    = NINT( ZPACK(IPOS) ); IPOS = IPOS + 1
+      TZSTATION%XX     = ZPACK(IPOS);         IPOS = IPOS + 1
+      TZSTATION%XY     = ZPACK(IPOS);         IPOS = IPOS + 1
+      TZSTATION%XZ     = ZPACK(IPOS);         IPOS = IPOS + 1
+      TZSTATION%XLON   = ZPACK(IPOS);         IPOS = IPOS + 1
+      TZSTATION%XLAT   = ZPACK(IPOS);         IPOS = IPOS + 1
+      TZSTATION%XZS    = ZPACK(IPOS);         IPOS = IPOS + 1
+      TSTATIONS%NK     = NINT( ZPACK(IPOS) ); IPOS = IPOS + 1
+      TZSTATION%XZMEAS = ZPACK(IPOS);         IPOS = IPOS + 1
       TZSTATION%XZON(:) = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
       TZSTATION%XMER(:) = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
       TZSTATION%XW(:)   = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
@@ -281,7 +285,6 @@ USE MODD_CONF,          ONLY: LCARTESIAN
 USE MODD_CST,           ONLY: XRV
 use modd_field,         only: NMNHDIM_STATION_TIME, NMNHDIM_STATION_PROC, NMNHDIM_UNUSED, &
                               tfieldmetadata_base, TYPEREAL
-use modd_grid_n,        only: xzz
 USE MODD_IO,            ONLY: TFILEDATA
 USE MODD_NSV,           ONLY: nsv, nsv_aer, nsv_aerbeg, nsv_aerend, &
                               nsv_dst, nsv_dstbeg, nsv_dstend, nsv_slt, nsv_sltbeg, nsv_sltend, &
@@ -293,7 +296,6 @@ use modd_type_statprof, only: tstationdata
 USE MODE_AERO_PSD
 USE MODE_DUST_PSD
 USE MODE_SALT_PSD
-use mode_statprof_tools, only: Statprof_interp_2d
 use MODE_WRITE_DIACHRO,  ONLY: Write_diachro
 
 TYPE(TFILEDATA),    INTENT(IN) :: TPDIAFILE ! diachronic file to write
@@ -349,10 +351,8 @@ JPROC = 0
 call Add_point( 'ZS', 'Orography', 'm',  SPREAD( tpstation%xzs, 1, istore ) )
 call Add_point( 'P',  'Pressure',  'Pa', tpstation%xp(:) )
 call Add_point( 'Z',  'altitude', 'm', SPREAD( tpstation%xz, 1, istore ) )
+call Add_point( 'Zmeas', 'interpolated altitude used for measurements', 'm', SPREAD( tpstation%xzmeas, 1, istore ) )
 call Add_point( 'K',  'vertical model level used for computations', '1', SPREAD( REAL( tpstation%nk ), 1, istore ) )
-
-zalt_meas = Statprof_interp_2d( tpstation, xzz(:,:,tpstation%nk) )
-call Add_point( 'Zmeas', 'interpolated altitude used for measurements', 'm', SPREAD( zalt_meas, 1, istore ) )
 
 
 if ( lcartesian ) then
