@@ -223,7 +223,7 @@ STATION: DO JS = 1, INUMSTAT
       TZSTATION%XLON   = ZPACK(IPOS);         IPOS = IPOS + 1
       TZSTATION%XLAT   = ZPACK(IPOS);         IPOS = IPOS + 1
       TZSTATION%XZS    = ZPACK(IPOS);         IPOS = IPOS + 1
-      TSTATIONS%NK     = NINT( ZPACK(IPOS) ); IPOS = IPOS + 1
+      TZSTATION%NK     = NINT( ZPACK(IPOS) ); IPOS = IPOS + 1
       TZSTATION%XZMEAS = ZPACK(IPOS);         IPOS = IPOS + 1
       TZSTATION%XZON(:) = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
       TZSTATION%XMER(:) = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
@@ -324,7 +324,7 @@ type(tfieldmetadata_base), dimension(:), allocatable :: tzfields
 !
 !----------------------------------------------------------------------------
 !
-IPROC = 11 + SIZE(TPSTATION%XR,2) + SIZE(TPSTATION%XSV,2)
+IPROC = 5 + SIZE(TPSTATION%XR,2) + SIZE(TPSTATION%XSV,2)
 
 IF ( CTURB == 'TKEL' ) IPROC = IPROC + 1
 IF (LDIAG_SURFRAD) THEN
@@ -337,6 +337,8 @@ IF (LDUST) IPROC = IPROC + NMODE_DST*3
 IF (LSALT) IPROC = IPROC + NMODE_SLT*3
 IF ( CRAD /= 'NONE' )  IPROC = IPROC + 1
 !
+IPROC = MAX( IPROC, 6 ) !6 correspond to the number of fixed values written later
+!
 ISTORE = SIZE( TSTATIONS_TIME%TPDATES )
 
 ALLOCATE( XWORK6(1, 1, 1, ISTORE, 1, IPROC) )
@@ -348,21 +350,12 @@ JPROC = 0
 !
 !----------------------------------------------------------------------------
 !
-call Add_point( 'ZS', 'Orography', 'm',  SPREAD( tpstation%xzs, 1, istore ) )
 call Add_point( 'P',  'Pressure',  'Pa', tpstation%xp(:) )
-call Add_point( 'Z',  'altitude', 'm', SPREAD( tpstation%xz, 1, istore ) )
-call Add_point( 'Zmeas', 'interpolated altitude used for measurements', 'm', SPREAD( tpstation%xzmeas, 1, istore ) )
-call Add_point( 'K',  'vertical model level used for computations', '1', SPREAD( REAL( tpstation%nk ), 1, istore ) )
-
 
 if ( lcartesian ) then
-  call Add_point( 'X', 'X Pos', 'm', SPREAD( tpstation%xx, 1, istore ) )
-  call Add_point( 'Y', 'Y Pos', 'm', SPREAD( tpstation%xy, 1, istore ) )
   call Add_point( 'U', 'Axial velocity',       'm s-1', tpstation%xzon(:) )
   call Add_point( 'V', 'Transversal velocity', 'm s-1', tpstation%xmer(:) )
 else
-  call Add_point( 'LON', 'Longitude', 'degree', SPREAD( tpstation%xlon, 1, istore ) )
-  call Add_point( 'LAT', 'Latitude',  'degree', SPREAD( tpstation%xlat, 1, istore ) )
   call Add_point( 'ZON_WIND', 'Zonal wind',      'm s-1', tpstation%xzon(:) )
   call Add_point( 'MER_WIND', 'Meridional wind', 'm s-1', tpstation%xmer(:) )
 end if
@@ -698,6 +691,81 @@ tzbudiachro%nkh        = 1
 call Write_diachro( tpdiafile, tzbudiachro, tzfields, tstations_time%tpdates, xwork6(:,:,:,:,:,:jproc) )
 
 deallocate( tzfields )
+
+!----------------------------------------------------------------------------
+!Treat position and fix values (not changing during simulation)
+
+jproc = 0
+
+if ( lcartesian ) then
+  JPROC = JPROC + 1
+  CTITLE   (JPROC) = 'X'
+  CUNIT    (JPROC) = 'm'
+  CCOMMENT (JPROC) = 'X Pos'
+  XWORK6 (1,1,1,:,1,JPROC) = TPSTATION%XX
+
+  JPROC = JPROC + 1
+  CTITLE   (JPROC) = 'Y'
+  CUNIT    (JPROC) = 'm'
+  CCOMMENT (JPROC) = 'Y Pos'
+  XWORK6 (1,1,1,:,1,JPROC) = TPSTATION%XY
+else
+  JPROC = JPROC + 1
+  CTITLE   (JPROC) = 'LON'
+  CUNIT    (JPROC) = 'degree'
+  CCOMMENT (JPROC) = 'Longitude'
+  XWORK6 (1,1,1,:,1,JPROC) = TPSTATION%XLON
+
+  JPROC = JPROC + 1
+  CTITLE   (JPROC) = 'LAT'
+  CUNIT    (JPROC) = 'degree'
+  CCOMMENT (JPROC) = 'Latitude'
+  XWORK6 (1,1,1,:,1,JPROC) = TPSTATION%XLAT
+end if
+
+JPROC = JPROC + 1
+CTITLE   (JPROC) = 'Z'
+CUNIT    (JPROC) = 'm'
+CCOMMENT (JPROC) = 'Altitude'
+XWORK6 (1,1,1,:,1,JPROC) = TPSTATION%XZ
+
+JPROC = JPROC + 1
+CTITLE   (JPROC) = 'ZS'
+CUNIT    (JPROC) = 'm'
+CCOMMENT (JPROC) = 'Orography'
+XWORK6 (1,1,1,:,1,JPROC) = TPSTATION%XZS
+
+JPROC = JPROC + 1
+CTITLE   (JPROC) = 'Zmeas'
+CUNIT    (JPROC) = 'm'
+CCOMMENT (JPROC) = 'interpolated altitude used for measurements'
+XWORK6 (1,1,1,:,1,JPROC) = TPSTATION%XZMEAS
+
+JPROC = JPROC + 1
+CTITLE   (JPROC) = 'K'
+CUNIT    (JPROC) = '1'
+CCOMMENT (JPROC) = 'vertical model level used for computations'
+XWORK6 (1,1,1,:,1,JPROC) = REAL( TPSTATION%NK )
+
+Allocate( tzfields( jproc ) )
+
+tzfields(:)%cmnhname  = ctitle(1 : jproc)
+tzfields(:)%cstdname  = ''
+tzfields(:)%clongname = ctitle(1 : jproc)
+tzfields(:)%cunits    = cunit(1 : jproc)
+tzfields(:)%ccomment  = ccomment(1 : jproc)
+tzfields(:)%ngrid     = 0
+tzfields(:)%ntype     = TYPEREAL
+tzfields(:)%ndims     = 1
+tzfields(:)%ndimlist(1) = NMNHDIM_UNUSED
+tzfields(:)%ndimlist(2) = NMNHDIM_UNUSED
+tzfields(:)%ndimlist(3) = NMNHDIM_UNUSED
+tzfields(:)%ndimlist(4) = NMNHDIM_UNUSED
+tzfields(:)%ndimlist(5) = NMNHDIM_UNUSED
+tzfields(:)%ndimlist(6) = NMNHDIM_STATION_PROC
+
+call Write_diachro( tpdiafile, tzbudiachro, tzfields, tstations_time%tpdates, xwork6(:,:,:,:,:,:jproc) )
+
 
 !Necessary because global variables (private inside module)
 Deallocate( xwork6  )
