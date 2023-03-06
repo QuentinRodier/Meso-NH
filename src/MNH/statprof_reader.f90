@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2020-2022 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2020-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -80,6 +80,9 @@ READ( ILU, END = 101, FMT = '(A)' ) YSTRING ! Reading of header (skip it)
 DO
   ! Read station/profiler coordinates
   READ( ILU, END = 101, FMT = '(A)' ) YSTRING
+
+  ! Skip empty lines
+  IF ( LEN_TRIM( YSTRING ) == 0 ) CYCLE
 
   ! Check if record is written in French convention
   CALL FRENCH_TO_ENGLISH( YSTRING )
