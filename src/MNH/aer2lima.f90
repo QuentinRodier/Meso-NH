@@ -106,14 +106,16 @@ REAL, DIMENSION(NSV) :: ZMI
 INTEGER :: JSV, JJ, JI, II, IJ, IK, JK
 REAL :: ZCCNRADIUS, ZRATMASSH2O
 
-ZCCNRADIUS = 0.04 ! to suppress the aitken mode  (µm)
+ZCCNRADIUS = 0.03 ! to suppress the aitken mode  (µm)
 
 IF ((CPROGRAM=="REAL  ").OR.(CPROGRAM=="IDEAL ")) CMINERAL = "EQSAM"
-IF (CMINERAL /= 'NONE') THEN
-     ZRATMASSH2O = 0.05 
+
+IF (CMINERAL == 'EQSAM') THEN
+     ZRATMASSH2O = 0.02
 ELSE
-     ZRATMASSH2O = 0. 
+     ZRATMASSH2O = 0.
 END IF
+!
 ZMI(:) = 250.
 ZMI(JP_AER_SO4)  = 98.
 ZMI(JP_AER_NO3)  = 63.
@@ -121,7 +123,7 @@ ZMI(JP_AER_NH3)  = 17.
 ZMI(JP_AER_H2O)  = 18.
 ZCCN_SUM(:,:,:,:) = 0.
 ZIFN_SUM(:,:,:,:) = 0.
-
+!
 ! Anthopogenic part (orilam scheme)
 !
 IF (LORILAM) THEN
