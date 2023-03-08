@@ -1,4 +1,4 @@
-##!/usr/bin/python
+##!/usr/bin/python3
 # -*- coding: utf-8 -*-
 #
 ####################################################
@@ -23,9 +23,9 @@ import glob
 #$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 #$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 #
-print '=============================================='
+print('==============================================')
 curdir_path=os.path.abspath(os.curdir)+'/'
-print curdir_path
+print(curdir_path)
 #
 name_file_VAR1_TOY=glob.glob('*toyexe_01.nc')[0]
 name_file_VAR1_MOD=glob.glob('*mesonh_01.nc')[0]
@@ -40,16 +40,16 @@ name_file_GRIDS='grids.nc'
 #$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 #$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 
-print '=============================================='
+print('==============================================')
 try :
   os.mkdir(curdir_path+VAR1+'_'+VAR2+'/')
 except OSError:
-  print 'Directory already created'
+  print('Directory already created')
 else:
-  print 'Making directory'
+  print('Making directory')
 
-print '=============================================='
-print '~~~~ Plot these variables :', VAR1, VAR2
+print('==============================================')
+print('~~~~ Plot these variables :', VAR1, VAR2)
 
 file_VAR1_TOY = netCDF4.Dataset(name_file_VAR1_TOY)
 file_VAR1_MOD = netCDF4.Dataset(name_file_VAR1_MOD)
@@ -64,14 +64,14 @@ LAT_TOY=file_GRIDS.variables['toyt.lat']
 LON_TOY=file_GRIDS.variables['toyt.lon']
 DIM_LAT_TOY=np.shape(LAT_TOY)[0]
 DIM_LON_TOY=np.shape(LON_TOY)[1]
-print 'DIM_LAT_TOY, DIM_LON_TOY', DIM_LAT_TOY, DIM_LON_TOY
+print('DIM_LAT_TOY, DIM_LON_TOY', DIM_LAT_TOY, DIM_LON_TOY)
 
 #~~~~~ MOD
 LAT_MOD=file_GRIDS.variables['ssea.lat']
 LON_MOD=file_GRIDS.variables['ssea.lon']
 DIM_LAT_MOD=np.shape(LAT_MOD)[0]
 DIM_LON_MOD=np.shape(LON_MOD)[1]
-print 'DIM_LAT_MOD, DIM_LON_MOD', DIM_LAT_MOD, DIM_LON_MOD
+print('DIM_LAT_MOD, DIM_LON_MOD', DIM_LAT_MOD, DIM_LON_MOD)
 
 #~~~~~ VAR1/VAR2
 VAR1_TOY=file_VAR1_TOY.variables[name_file_VAR1_TOY[0:8]][:,:,:]
@@ -90,7 +90,7 @@ TIME_TOY=file_VAR1_TOY.variables['time'][:]
 
 #~~~~~ CONVERT VARIABLES
 if VAR2=='CHA':
-  print 'Multiply Charnock coefficient by 1000'
+  print('Multiply Charnock coefficient by 1000')
   VAR2_TOY[:,:,:]=VAR2_TOY[:,:,:]*1000.0
   VAR2_MOD[:,:,:]=VAR2_MOD[:,:,:]*1000.0
   OPVAR2='*1000.0'
@@ -99,10 +99,10 @@ if VAR2=='CHA':
 #=====================================================
 
 #-----------------------------------------------------
-print '~~~~ Temporal loop'
+print('~~~~ Temporal loop')
 #-----------------------------------------------------
-for ind_time in xrange(np.size(TIME_TOY)-1):
-  print '     ~~~~ Current time :', TIME_TOY[ind_time]
+for ind_time in range(np.size(TIME_TOY)-1):
+  print('     ~~~~ Current time :', TIME_TOY[ind_time])
 
   fig = plt.figure()
   fig.suptitle('Cumulated time : '+str(TIME_TOY[ind_time])+'s', fontsize=18)
@@ -156,4 +156,4 @@ for ind_time in xrange(np.size(TIME_TOY)-1):
   plt.savefig(curdir_path+VAR1+"_"+VAR2+"/"+VAR1+"_"+VAR2+"_MOD_TOY_T"+str(ind_time)+".png")
   plt.show()
   plt.close()
-print '=============================================='
+print('==============================================')

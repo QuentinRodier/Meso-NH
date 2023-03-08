@@ -1,7 +1,7 @@
 #!/bin/bash 
 
-ncl plot_coupling_model_toy.ncl
-#python plot_coupling_model_toy.py
+#ncl plot_coupling_model_toy.ncl
+python3 plot_coupling_model_toy.py
 
 ${POSTRUN} display */*0.png
 ${POSTRUN} display */*1.png
