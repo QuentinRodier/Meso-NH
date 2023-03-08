@@ -1002,7 +1002,7 @@ IF (KMI == 1) THEN
    L_LFEEDBACKT = .TRUE.
    L_NMAXITER   = 5
    L_XMRSTEP    = 0.005
-   L_XTSTEP_TS  = 0.
+   L_XTSTEP_TS  = 20.
 !
    YNUC    = 1.0
    YALPHAC = 3.0
