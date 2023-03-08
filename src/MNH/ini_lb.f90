@@ -544,16 +544,9 @@ DO JSV = 1, NSV
             PLBXSVM(:,:,:,JSV) = PLBXSVMM(:,:,:,JSV)
             CALL PRINT_MSG( NVERB_INFO, 'IO', 'INI_LB', 'PLBXSVM is initialized to PLBXSVMM for ' // TRIM( YMNHNAME_BASE ) )
           ELSE
-            IF ( GOLDFILEFORMAT .AND. JSV >= NSV_LIMA_BEG .AND. JSV <= NSV_LIMA_END ) THEN
-              !In pre 5.6 files, only CCN_FREE and IFN_FREE LIMA scalar variables were available (for LIMA scalar variables)
-              IF ( JSV >= NSV_LIMA_CCN_FREE .AND. JSV <= (NSV_LIMA_CCN_FREE+NMOD_CCN-1) ) THEN
-                CALL PRINT_MSG( NVERB_FATAL, 'IO', 'INI_LB', 'problem to initialize LIMA CCN_FREE PLBXSVM' )
-              ELSE IF ( JSV >= NSV_LIMA_IFN_FREE .AND. JSV <= (NSV_LIMA_IFN_FREE+NMOD_IFN-1) ) THEN
-                CALL PRINT_MSG( NVERB_FATAL, 'IO', 'INI_LB', 'problem to initialize LIMA IFN_FREE PLBXSVM' )
-              ELSE
-                PLBXSVM(:,:,:,JSV) = 0.
-                CALL PRINT_MSG( NVERB_WARNING, 'IO', 'INI_LB', 'PLBXSVM is initialized to 0 for ' // TRIM( YMNHNAME_BASE ) )
-              END IF
+            IF ( JSV >= NSV_LIMA_BEG .AND. JSV <= NSV_LIMA_END ) THEN
+               PLBXSVM(:,:,:,JSV) = 0.
+               CALL PRINT_MSG( NVERB_WARNING, 'IO', 'INI_LB', 'PLBXSVM is initialized to 0 for ' // TRIM( YMNHNAME_BASE ) )
             ELSE IF ( ( JSV >= NSV_PPBEG  .AND. JSV <= NSV_PPEND ) .OR. &
 #ifdef MNH_FOREFIRE
                       ( JSV >= NSV_FFBEG  .AND. JSV <= NSV_FFEND ) .OR. &
@@ -627,16 +620,9 @@ DO JSV = 1, NSV
             PLBYSVM(:,:,:,JSV) = PLBYSVMM(:,:,:,JSV)
             CALL PRINT_MSG( NVERB_INFO, 'IO', 'INI_LB', 'PLBYSVM is initialized to PLBYSVMM for ' // TRIM( YMNHNAME_BASE ) )
           ELSE
-            IF ( GOLDFILEFORMAT .AND. JSV >= NSV_LIMA_BEG .AND. JSV <= NSV_LIMA_END ) THEN
-              !In pre 5.6 files, only CCN_FREE and IFN_FREE LIMA scalar variables were available (for LIMA scalar variables)
-              IF ( JSV >= NSV_LIMA_CCN_FREE .AND. JSV <= (NSV_LIMA_CCN_FREE+NMOD_CCN-1) ) THEN
-                CALL PRINT_MSG( NVERB_FATAL, 'IO', 'INI_LB', 'problem to initialize LIMA CCN_FREE PLBYSVM' )
-              ELSE IF ( JSV >= NSV_LIMA_IFN_FREE .AND. JSV <= (NSV_LIMA_IFN_FREE+NMOD_IFN-1) ) THEN
-                CALL PRINT_MSG( NVERB_FATAL, 'IO', 'INI_LB', 'problem to initialize LIMA IFN_FREE PLBYSVM' )
-              ELSE
-                PLBYSVM(:,:,:,JSV) = 0.
-                CALL PRINT_MSG( NVERB_WARNING, 'IO', 'INI_LB', 'PLBYSVM is initialized to 0 for ' // TRIM( YMNHNAME_BASE ) )
-              END IF
+            IF ( JSV >= NSV_LIMA_BEG .AND. JSV <= NSV_LIMA_END ) THEN
+              PLBYSVM(:,:,:,JSV) = 0.
+              CALL PRINT_MSG( NVERB_WARNING, 'IO', 'INI_LB', 'PLBYSVM is initialized to 0 for ' // TRIM( YMNHNAME_BASE ) )
             ELSE IF ( ( JSV >= NSV_PPBEG  .AND. JSV <= NSV_PPEND ) .OR. &
 #ifdef MNH_FOREFIRE
                       ( JSV >= NSV_FFBEG  .AND. JSV <= NSV_FFEND ) .OR. &
