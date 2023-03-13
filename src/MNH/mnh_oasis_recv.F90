@@ -81,8 +81,9 @@ USE MODD_SFX_OASIS,  ONLY : LCPL_LAND,         &
                             LCPL_GW,LCPL_FLOOD,&
                             LCPL_SEA,          &
                             LCPL_SEAICE,       &
-                            LCPL_WAVE,         &
-                            LSEAICE_2FLX
+                            LCPL_WAVE
+
+USE MODN_SFX_OASIS,  ONLY : LSEAICE_2FLX
 !
 USE MODD_SURF_PAR,   ONLY : XUNDEF
 USE MODD_MNH_SURFEX_n
