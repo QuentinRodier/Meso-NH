@@ -1086,7 +1086,6 @@ IF (CCLOUD=="LIMA" .OR. CCLOUD=="ICE3" ) THEN ! only for ICE3 and LIMA
     ZRTMIN(7)=XRTMIN_I(2) ! cloud water over land
   ENDIF
   ! compute cloud radar reflectivity from vertical profiles of temperature and mixing ratios
-#if 0
   DO JK=1,IKU
     QMW=SQRT(QEPSW(ZTEMPZ(JK),XLIGHTSPEED/XLAM_CRAD))
     QMI=SQRT(QEPSI(ZTEMPZ(JK),XLIGHTSPEED/XLAM_CRAD))
@@ -1290,7 +1289,6 @@ IF (CCLOUD=="LIMA" .OR. CCLOUD=="ICE3" ) THEN ! only for ICE3 and LIMA
       END IF
     END DO
   END DO
-#endif
 
   ! apply attenuation
   ALLOCATE(ZZMZ(IKU))
