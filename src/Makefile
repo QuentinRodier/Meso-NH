@@ -16,14 +16,7 @@ dependance_flist = $(notdir $(shell find $(1) -follow -type f \
 obj_flist        = $(notdir $(shell find $(1) -follow -type f \
                -name 'spll_*.f*' | sed -e 's/\(.*\)\(\.\).*/\1.o/g' )) 
 #
-##########################################################
-#                                                        #
-# COMPILER & ARCHITECTURE CONFIGURATION                  #
-#                                                        #
-##########################################################
-#
-include Rules.$(ARCH)$(F).mk
-#
+
 ##########################################################
 ##########################################################
 ##########################################################
@@ -69,6 +62,30 @@ include Rules.$(ARCH)$(F).mk
 
 ##########################################################
 #                                                        #
+# DEP_USER : Automatique -->                             #
+#    Dependance file of MY source                        #
+#                                                        #
+##########################################################
+#
+ifdef VER_USER
+OBJDIR_USER=$(OBJDIR_ROOT)/$(VER_USER)
+#
+#  init VPATH depending on compilation phase
+#
+ifdef DO_DEP_USER
+DEP_USER= $(call dependance_flist,$(DIR_USER))
+VPATH += $(shell find $(DIR_USER) -follow -type d )
+VPATH += $(OBJDIR_USER)
+endif
+#
+ifdef DO_COMP_USER
+VPATH += $(VER_USER) $(OBJDIR_USER) $(OBJDIR_USER)/MOD $(OBJDIR_MASTER) $(OBJDIR_MASTER)/MOD
+INC += -I$(B)$(VER_USER) -I$(B)$(OBJDIR_USER)/MOD -I$(B)$(OBJDIR_MASTER)/MOD
+endif
+#
+endif
+##########################################################
+#                                                        #
 # DEP_MASTER : Automatique -->                           #
 #    Dependance file of MASTER source                    #
 #                                                        #
@@ -91,28 +108,12 @@ endif
 #
 ##########################################################
 #                                                        #
-# DEP_USER : Automatique -->                             #
-#    Dependance file of MY source                        #
+# COMPILER & ARCHITECTURE CONFIGURATION                  #
 #                                                        #
 ##########################################################
 #
-ifdef VER_USER
-OBJDIR_USER=$(OBJDIR_ROOT)/$(VER_USER)
+include Rules.$(ARCH)$(F).mk
 #
-#  init VPATH depending on compilation phase
-#
-ifdef DO_DEP_USER
-DEP_USER= $(call dependance_flist,$(DIR_USER))
-VPATH += $(shell find $(DIR_USER) -follow -type d )
-VPATH += $(OBJDIR_USER)
-endif
-#
-ifdef DO_COMP_USER
-VPATH += $(OBJDIR_USER) $(OBJDIR_USER)/MOD $(OBJDIR_MASTER) $(OBJDIR_MASTER)/MOD
-INC += -I$(B)$(OBJDIR_USER)/MOD -I$(B)$(OBJDIR_MASTER)/MOD
-endif
-#
-endif
 ##########################################################
 #                                                        #
 # VPATH ADJUSTEMENT :                                    #
