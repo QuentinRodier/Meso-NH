@@ -239,6 +239,7 @@ END MODULE MODI_PHYS_PARAM_n
 !  JL Redelsperger 03/2021: add the SW flux penetration for Ocean model case
 !  P. Wautelet 30/11/2022: compute XTHW_FLUX, XRCW_FLUX and XSVW_FLUX only when needed
 !  A. Costes      12/2021: add Blaze fire model
+!  Q. Rodier      2022:    integration with PHYEX
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -870,12 +871,6 @@ IF (LOCEAN) THEN
   ZIZOCE(IKU)   = XSSOLA_T(JSW+1)*(1.-ZSWA)+XSSOLA_T(JSW+2)*ZSWA
   ZPROSOL1(IKU) = CST%XROC*ZIZOCE(IKU)
   ZPROSOL2(IKU) = (1.-CST%XROC)*ZIZOCE(IKU)
-  IF(NVERB >= 5 ) THEN   
-!    WRITE(ILUOUT,*)'ZSWA JSW TDTCUR XTSTEP FT FU FV SolarR(IKU)', NINFRT, ZSWA,JSW,&
-!       TDTCUR%xtime, XTSTEP, ZSFTH(2,2), ZSFU(2,2),ZSFV(2,2),ZIZOCE(IKU)
-   WRITE(ILUOUT,*)'XSSTP1,XSSTP,NINFRT,ZSWA,JSW,TDTCUR%xtime,ZSFT', &
-      XSSTFL_T(JSW+1),XSSTFL_T(JSW),NINFRT,ZSWA,JSW, TDTCUR%xtime,ZSFTH(2,2)
-  END IF
   if ( TBUCONF%LBUDGET_th ) call Budget_store_init( TBUDGETS(NBUDGET_TH), 'OCEAN', xrths(:, :, :) ) 
   DO JKM=IKU-1,2,-1
     ZPROSOL1(JKM) = ZPROSOL1(JKM+1)* exp(-XDZZ(2,2,JKM)/CST%XD1)
