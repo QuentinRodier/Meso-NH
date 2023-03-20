@@ -156,7 +156,7 @@ CALL DEFAULT_DIAG_SURF_ATM(YSC%DUO%N2M, YSC%DUO%LT2MMW, YSC%DUO%LSURF_BUDGET,&
                            YSC%DUO%LRESET_BUDGETC, YSC%DUO%LSELECT, &
                            YSC%DUO%LPROVAR_TO_DIAG, YSC%DUO%LDIAG_GRID, &
                            YSC%DUO%LFRAC, YSC%DUO%XDIAG_TSTEP, &
-                           YSC%DUO%LSNOWDIMNC, YSC%DUO%LRESETCUMUL )                       
+                           YSC%DUO%LSNOWDIMNC, YSC%DUO%LRESETCUMUL, YSC%DUO%LDIAG_MIP)                       
 ENDIF
 !
 !        0.2. Defaults from file header

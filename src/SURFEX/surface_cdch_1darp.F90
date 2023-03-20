@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-SUBROUTINE SURFACE_CDCH_1DARP(PZREF, PZ0EFF, PZ0H, PVMOD, PTA, PTG, &
+SUBROUTINE SURFACE_CDCH_1DARP (PZREF, PZ0EFF, PZ0H, PVMOD, PTA, PTG, &
                                  PQA, PQS, AT, PCD, PCDN, PCH, PRI          )    
 !   ###################################################################
 !     Purpose :

@@ -4,9 +4,9 @@
 !SFX_LIC for details. version 1.
 !     #########
 SUBROUTINE COTWORES(PTSTEP, IO, OSHADE, PK, PEK, PDMAX, PPOI, PCSP,               &
-                    PTG, PF2, PSW_RAD, PQA, PQSAT, PPSNV, PDELTA, PRHOA,          &
+                    PTG, PF2, PSW_RAD, PQA, PQSAT, PPSN, PPSNV, PDELTA, PRHOA,    &
                     PZENITH, PFFV, NPAR_VEG_IRR_USE, PIACAN_SUNLIT, PIACAN_SHADE, & 
-                    PFRAC_SUN, PIACAN, PABC, PRS, PGPP, PRESP_LEAF     ) 
+                    PFRAC_SUN, PIACAN, PABC, PRS, PGPP, PRESP_LEAF                ) 
 !   #########################################################################
 !
 !!****  *COTWORES*  
@@ -72,11 +72,15 @@ SUBROUTINE COTWORES(PTSTEP, IO, OSHADE, PK, PEK, PDMAX, PPOI, PCSP,             
 !                              and (ii) exponential decrease of autothrophic respiration to all woody PFTs
 !!      B. Decharme  07/2015 : Suppress some numerical adjustement for F2 
 !!      A. Druel     02/2019 : Adapt the code to be compatible with new irrigation
+!!      B. Decharme    09/16 : All tropical trees in GTROP
+!!      B. Decharme    02/17 : exact computation of saturation deficit near the leaf surface
+!!      R. Seferian    11/17 : include downregulation parameterization of CO2 assimilation
+!!      B. Decharme    02/20 : Output in kgCO2/kgair m/s to kgCO2/m2/s
 !!
 !-------------------------------------------------------------------------------
 !
 USE MODD_ISBA_OPTIONS_n, ONLY : ISBA_OPTIONS_t
-USE MODD_ISBA_n, ONLY : ISBA_P_t, ISBA_PE_t
+USE MODD_ISBA_n,         ONLY : ISBA_P_t, ISBA_PE_t
 !
 USE MODD_CSTS,           ONLY : XMD, XTT, XLVTT
 USE MODD_ISBA_PAR,       ONLY : XRS_MAX, XDENOM_MIN
@@ -93,74 +97,85 @@ USE MODD_AGRI,           ONLY : NVEG_IRR
 USE MODI_CCETR
 USE MODI_COTWO
 !
-!*       0.     DECLARATIONS
-!               ------------
-!
-!
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
+!
+!-------------------------------------------------------------------------------
+!
+!*       0.     DECLARATIONS
+!               ------------
 !
 IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
 !
 !
-REAL,                INTENT(IN)  :: PTSTEP      ! time step
-!
 TYPE(ISBA_OPTIONS_t), INTENT(INOUT) :: IO
-TYPE(ISBA_P_t), INTENT(INOUT)       :: PK
-TYPE(ISBA_PE_t), INTENT(INOUT)      :: PEK
+TYPE(ISBA_P_t),       INTENT(INOUT) :: PK
+TYPE(ISBA_PE_t),      INTENT(INOUT) :: PEK
 !
-LOGICAL, DIMENSION(:),INTENT(IN) :: OSHADE
+REAL,                 INTENT(IN)    :: PTSTEP      ! time step
 !
-REAL, DIMENSION(:),  INTENT(IN)  :: PPOI     ! Gaussian weights (as above)
+LOGICAL, DIMENSION(:),INTENT(IN)    :: OSHADE
 !
-REAL,DIMENSION(:),   INTENT(IN)  :: PDMAX  
-!                                    PDMAX     = maximum saturation deficit of 
+REAL, DIMENSION(:),   INTENT(IN)    :: PPOI     ! Gaussian weights (as above)
+!
+REAL,DIMENSION(:),    INTENT(IN)    :: PDMAX  
+!                                      PDMAX     = maximum saturation deficit of 
 !                                                  atmosphere tolerate by vegetation
 !
-REAL,DIMENSION(:),   INTENT(IN)  :: PCSP, PTG, PF2, PSW_RAD 
-!                                    PCSP  = atmospheric concentration of CO2
-!                                    PTG   = updated leaf temperature
-!                                    PF2   = normalized soil water stress factor
-!                                    PSW_RAD = incident solar radiation
+REAL,DIMENSION(:),    INTENT(IN)    :: PCSP, PTG, PF2, PSW_RAD 
+!                                      PCSP  = atmospheric concentration of CO2
+!                                      PTG   = updated leaf temperature
+!                                      PF2   = normalized soil water stress factor
+!                                      PSW_RAD = incident solar radiation
 !
-REAL,DIMENSION(:),   INTENT(IN)  :: PQA, PQSAT, PPSNV, PDELTA, PRHOA
-!                                    PQA   = atmospheric mixing ratio
-!                                    PQSAT = surface saturation mixing ratio
-!                                    PPSNV = snow cover fraction
-!                                    PDELTA= fraction of the foliage covered
-!                                        by intercepted water
-!                                    PEK%XRESA = air density
+REAL,DIMENSION(:),    INTENT(IN)    :: PQA, PQSAT, PPSN, PPSNV, PDELTA, PRHOA
+!                                      PQA   = atmospheric mixing ratio
+!                                      PQSAT = surface saturation mixing ratio
+!                                      PPSN  = total snow cover fraction
+!                                      PPSNV = snow cover fraction over vegetation
+!                                      PDELTA= fraction of the foliage covered by intercepted water
+!                                      PEK%XRESA = air density
 !
-REAL,DIMENSION(:),    INTENT(IN)  :: PZENITH
-!                                    PZENITH = solar zenith angle needed 
-!                                    for computation of diffusuion of solar
-!                                    radiation: for CO2 model.
+REAL,DIMENSION(:),    INTENT(IN)    :: PZENITH
+!                                      PZENITH = solar zenith angle needed 
+!                                      for computation of diffusuion of solar
+!                                      radiation: for CO2 model.
 !
 REAL, DIMENSION(:,:), INTENT(IN)    :: PIACAN_SUNLIT, PIACAN_SHADE, PFRAC_SUN
 !
-REAL, DIMENSION(:), INTENT(IN)      :: PFFV ! Floodplain fraction over vegetation
+REAL, DIMENSION(:),   INTENT(IN)    :: PFFV ! Floodplain fraction over vegetation
 !
-INTEGER,DIMENSION(:),   INTENT(IN)  :: NPAR_VEG_IRR_USE ! vegtype with irrigation
+INTEGER,DIMENSION(:), INTENT(IN)    :: NPAR_VEG_IRR_USE ! vegtype with irrigation
 !
 REAL, DIMENSION(:,:), INTENT(INOUT) :: PIACAN ! PAR in the canopy at different gauss level
 !
-REAL,DIMENSION(:),  INTENT(INOUT) :: PABC, PRS, PGPP
-!                                    PABC  = Carrer radiative transfer: normalized heigh of considered layer (bottom=0, top=1)
-!                                            Calvet radiative transfer: abcissa of the 3-points Gaussian quadrature 
-!                                                (Goudriaan, Agric&For.Meteor, 38,1986)    
-!                                    PRS   = stomatal resistance
-!                                    PGPP  = Gross Primary Production (kg_CO2/kg_air * m/s)
+REAL,DIMENSION(:),    INTENT(INOUT) :: PABC, PRS, PGPP
+!                                      PABC  = Carrer radiative transfer: normalized heigh of considered layer (bottom=0, top=1)
+!                                              Calvet radiative transfer: abcissa of the 3-points Gaussian quadrature 
+!                                                  (Goudriaan, Agric&For.Meteor, 38,1986)    
+!                                      PRS   = stomatal resistance
+!                                      PGPP  = Gross Primary Production (kgCO2/m2/s)
 !
 REAL,DIMENSION(:),    INTENT(OUT) :: PRESP_LEAF
-!                                    PRESP_LEAF = dark respiration over canopy
+!                                    PRESP_LEAF = dark respiration over canopy (kgCO2/m2/s)
 !
-!*      0.2    declarations of local variables
+!
+!*      0.2    declarations of local parameter
+!
 !
 REAL, PARAMETER                :: ZRS_MIN     = 1.E-4  ! minimum canopy resistance (s m-1)
 !
-INTEGER                     :: JINT, JJ ! index for loops
+REAL, PARAMETER                :: ZCO2_REF     = 288.  ! reference preindustrial CO2 (ppm)
+REAL, PARAMETER                :: ZCOEF1       = 0.9   ! coef 1 for down regulation parameterization (ppm)
+REAL, PARAMETER                :: ZCOEF2       = 10.   ! coef 1 for down regulation parameterization (ppm)
+! -
+!!
+!*      0.2    declarations of local variables
+!
+!
+INTEGER                           :: JINT, JJ ! index for loops
 !
 REAL, DIMENSION(SIZE(PEK%XLAI,1)) :: ZANF ! ZANF  = total assimilation over canopy
 REAL, DIMENSION(SIZE(PEK%XLAI,1)) :: ZCONVE1, ZTSPC, ZIA
@@ -174,9 +189,9 @@ REAL, DIMENSION(SIZE(PEK%XLAI,1)) :: ZLAI, ZGMEST, ZFZERO, ZDMAX
 !                                           tolerate by vegetation
 !
 REAL, DIMENSION(SIZE(PEK%XLAI,1)) :: ZGAMMT, ZDSP, ZANMAX
-!                                 ZGAMMT  = compensation point 
-!                                 ZDSP    = saturation deficit of atmosphere 
-!                                           verses the leaf surface (with correction)
+!                                    ZGAMMT  = compensation point 
+!                                    ZDSP    = saturation deficit of atmosphere 
+!                                              verses the leaf surface (with correction)
 !
 REAL, DIMENSION(SIZE(PEK%XLAI,1)) :: ZXMUS, ZTAN, ZTGS, ZXIA, ZAN0, ZGS0, ZXTGS, ZRDK,ZLAITOP,ZTRDK,ZZLAI  
 !                                           ZXMUS = cosine of solar zenith angle
@@ -199,30 +214,32 @@ REAL, DIMENSION(SIZE(PEK%XLAI,1)) :: ZEPSO
 !                                           ZEPSO conversion of PEPSO in kgCO2/kgair m/s
 !
 REAL, DIMENSION(SIZE(PEK%XLAI,1)) :: ZDMAXSTAR, ZFZEROSTAR, ZFZERON, ZGMESTN  
-!                                 ZDMAXSTAR  = maximum saturation deficit of atmosphere
-!                                              tolerate by vegetation without soil water stress
-!                                 ZFZEROSTAR = initial optimal ratio Ci/Cs for woody vegetation
-!                                 ZFZERON    = minimum value for "fzero" in defensive woody strategy
-!                                 ZGMESTN    = gmest value at zf2=zf2i in offensive woody strategy
+!                                    ZDMAXSTAR  = maximum saturation deficit of atmosphere
+!                                                 tolerate by vegetation without soil water stress
+!                                    ZFZEROSTAR = initial optimal ratio Ci/Cs for woody vegetation
+!                                    ZFZERON    = minimum value for "fzero" in defensive woody strategy
+!                                    ZGMESTN    = gmest value at zf2=zf2i in offensive woody strategy
 !
 !
-REAL :: ZABC, ZWEIGHT
-!                                           ZABC    = abscissa needed for integration
-!                                                     of net assimilation and stomatal 
-!                                                     conductance over canopy depth 
-!                                                     (working scalar)
+REAL                              :: ZABC, ZWEIGHT
+!                                    ZABC    = abscissa needed for integration
+!                                              of net assimilation and stomatal 
+!                                              conductance over canopy depth 
+!                                             (working scalar)
 !
-REAL, DIMENSION(SIZE(PEK%XLAI,1))    :: ZWORK !Work array
+REAL, DIMENSION(SIZE(PEK%XLAI,1)) :: ZWORK, ZCO2, ZETA !Work array
 !
 LOGICAL, DIMENSION(SIZE(PEK%XLAI,1)) :: GHERB, GWOOD, GF2_INF_F2I, GTROP
 !
-REAL, DIMENSION(SIZE(PK%XVEGTYPE_PATCH,1)):: ZVEG_TRBE, ZVEG_TREES
-INTEGER                                   :: JTYPE, JTYPE2
+REAL, DIMENSION(SIZE(PK%XVEGTYPE_PATCH,1)):: ZVEG_TROP, ZVEG_TREES
+INTEGER :: JTYPE, JTYPE2, JI
 !
-INTEGER, DIMENSION(1)          :: IDMAX
+INTEGER, DIMENSION(1) :: IDMAX
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------
+!
+IF (LHOOK) CALL DR_HOOK('COTWORES',0,ZHOOK_HANDLE)
 !
 ! STOMATAL RESISTANCE: ENTRY VARIABLES TO CO2 ROUTINE:
 !   CS        = CO2 concentration (kgCO2 kgair-1) cs
@@ -232,9 +249,18 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 ! initialisation: convert from ppm to mg/m-3
 !
-IF (LHOOK) CALL DR_HOOK('COTWORES',0,ZHOOK_HANDLE)
 !
 ZCONVE1(:) = XMCO2*PRHOA/XMD
+!
+! Optional parameterization of downregulation of CO2 assimilation for NCB option only
+! produce a ratio of 0.46 with a an implicit nitrogen limitation of XCNLIM=-0.048 (default)
+! Applied on net assimilation as in Arora et al. 2009 param assumes change in light-use efficiency for C assimilation
+! in elevated CO2 as observed on several FACE expts (e.g., Norby et al., 2008)
+ZETA(:)   = 1.0
+IF(IO%CPHOTO=='NCB'.AND.IO%LDOWNREGU) THEN
+  ZCO2(:) = PCSP(:)/(XMCO2/XMD*1.E-6)  ! in ppm
+  ZETA(:) = (1.0+(1.0+IO%XCNLIM*ZCOEF2)*MAX(LOG(ZCO2(:)/ZCO2_REF),0.))/(1.0+ZCOEF1*MAX(LOG(ZCO2(:)/ZCO2_REF),0.)) 
+ENDIF
 !
 ! initialisation: convert from K to C
 !
@@ -246,23 +272,37 @@ ZFZERO(:) = PK%XFZERO(:)
 !
 !GTROP = linear stress in case of tropical evergreen forest 
 !        (with fixed f0=0.74 for Carrer rad. transf., f0=0.7 with Calvet rad. transf.)
-ZVEG_TRBE(:) = 0.
+ZVEG_TROP (:) = 0.
 ZVEG_TREES(:) = 0.
+!
 DO JTYPE = 1, SIZE(PK%XVEGTYPE_PATCH,2)
-  JTYPE2 = JTYPE
-  IF (JTYPE > NVEGTYPE) JTYPE2 = NPAR_VEG_IRR_USE( JTYPE - NVEGTYPE )
-  !
-  IF ( JTYPE2 == NVT_TRBE ) ZVEG_TRBE(:) = ZVEG_TRBE(:) + PK%XVEGTYPE_PATCH(:,JTYPE)
-  IF ( JTYPE2 == NVT_TEBD .OR. JTYPE2 == NVT_TRBE .OR. JTYPE2 == NVT_BONE .OR. JTYPE2 == NVT_TRBD .OR. JTYPE2 == NVT_TEBE .OR. &
-       JTYPE2 == NVT_TENE .OR. JTYPE2 == NVT_BOBD .OR. JTYPE2 == NVT_BOND .OR. JTYPE2 == NVT_SHRB )                            &
-    ZVEG_TREES(:) = ZVEG_TREES(:) + PK%XVEGTYPE_PATCH(:,JTYPE)
+   !
+   JTYPE2 = JTYPE
+   !
+   IF (JTYPE > NVEGTYPE) THEN
+      JTYPE2 = NPAR_VEG_IRR_USE( JTYPE - NVEGTYPE )
+   ENDIF
+   !
+   DO JI = 1, SIZE(PEK%XLAI,1)
+      !
+      IF (JTYPE2 == NVT_TRBE .OR. JTYPE2 == NVT_TRBD) THEN
+         ZVEG_TROP(JI) = ZVEG_TROP(JI) + PK%XVEGTYPE_PATCH(JI,JTYPE)
+      ENDIF
+      !
+      IF (JTYPE2 == NVT_TEBD .OR. JTYPE2 == NVT_TRBE .OR. JTYPE2 == NVT_BONE .OR. JTYPE2 == NVT_TRBD .OR. JTYPE2 == NVT_TEBE .OR. &
+          JTYPE2 == NVT_TENE .OR. JTYPE2 == NVT_BOBD .OR. JTYPE2 == NVT_BOND .OR. JTYPE2 == NVT_SHRB)THEN
+         ZVEG_TREES(JI) = ZVEG_TREES(JI) + PK%XVEGTYPE_PATCH(JI,JTYPE)
+      ENDIF
+      !
+   ENDDO
+   !
 ENDDO
 !
-GTROP(:) = ( ZVEG_TRBE(:) > 0.8 )
+GTROP(:) = ( ZVEG_TROP(:) > 0.8 )
 !
 GHERB(:) = ( ZVEG_TREES(:) < 0.5 )
 !
-GWOOD      (:) = (.NOT.GHERB (:))
+GWOOD(:) = (.NOT.GHERB (:))
 !
 !
 WHERE (PEK%XLAI(:)==XUNDEF) ZLAI(:)=0.0
@@ -366,7 +406,10 @@ ZGAMMT(:) = PK%XGAMM(:) * EXP(ZWORK(:))
 !
 ! specific humidity deficit (kg kg-1)
 !
-ZDSP(:)   = MAX( 0.0, PQSAT(:) - PQA(:) - PEK%XLE(:)*PEK%XRESA(:)/(PRHOA*XLVTT) )
+ZDSP(:) = MAX( 0.0, PQSAT(:) - PEK%XQC(:))
+IF(PEK%TSNOW%SCHEME == '3-L' .OR. PEK%TSNOW%SCHEME == 'CRO')THEN
+  ZDSP(:) = ZDSP(:) * (1.0-PPSN(:))
+ENDIF
 !
 ! cosine of solar zenith angle 
 !
@@ -462,9 +505,9 @@ DO JINT = 1, SIZE(PABC)
   ENDIF
   !
   ! kgCO2/kgair m/s
-  ZTAN (:) = ZTAN (:) + ZAN0(:)*ZWEIGHT
+  ZTAN (:) = ZTAN (:) + ZAN0(:)*ZWEIGHT*ZETA(:)
   ZTGS (:) = ZTGS (:) + ZGS0(:)*ZWEIGHT
-  ZTRDK(:) = ZTRDK(:) + ZRDK(:)*ZWEIGHT
+  ZTRDK(:) = ZTRDK(:) + ZRDK(:)*ZWEIGHT*ZETA(:)
   !
 END DO
 !
@@ -503,6 +546,11 @@ ZXTGS(:) = ZTGS(:)*ZLAI(:)
 PRS(:) = MIN( 1.0/(ZXTGS(:)+XDENOM_MIN), XRS_MAX)
 !
 PRS(:) = MAX( PRS(:), ZRS_MIN)
+!
+!     kgCO2/kgair m/s to kgCO2/m2/s
+!
+PRESP_LEAF(:) = PRESP_LEAF(:) * PRHOA(:)
+PGPP      (:) = PGPP      (:) * PRHOA(:)
 !
 IF (LHOOK) CALL DR_HOOK('COTWORES',1,ZHOOK_HANDLE)
 !

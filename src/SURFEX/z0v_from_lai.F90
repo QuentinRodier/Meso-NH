@@ -8,12 +8,11 @@ MODULE MODI_Z0V_FROM_LAI
 !
 INTERFACE Z0V_FROM_LAI
 !
-    FUNCTION Z0V_FROM_LAI_0D(PLAI,PH_TREE,PVEGTYPE,OAGRI_TO_GRASS,NPAR_VEG_IRR_USE) RESULT(PZ0)
+    FUNCTION Z0V_FROM_LAI_0D(PLAI,PH_TREE,PVEGTYPE,NPAR_VEG_IRR_USE) RESULT(PZ0)
 !
 REAL,                 INTENT(IN) :: PLAI         ! Leaf area Index
 REAL,                 INTENT(IN) :: PH_TREE      ! height of trees
 REAL,   DIMENSION(:), INTENT(IN) :: PVEGTYPE     ! type of vegetation
-LOGICAL,              INTENT(IN) :: OAGRI_TO_GRASS
 INTEGER,DIMENSION(:), INTENT(IN) :: NPAR_VEG_IRR_USE ! vegtype with irrigation
 !
 REAL                             :: PZ0          ! vegetation roughness
@@ -21,12 +20,11 @@ REAL                             :: PZ0          ! vegetation roughness
 END FUNCTION Z0V_FROM_LAI_0D
 !
 !
-    FUNCTION Z0V_FROM_LAI_1D(PLAI,PH_TREE,PVEGTYPE,OAGRI_TO_GRASS,NPAR_VEG_IRR_USE) RESULT(PZ0)
+    FUNCTION Z0V_FROM_LAI_1D(PLAI,PH_TREE,PVEGTYPE,NPAR_VEG_IRR_USE) RESULT(PZ0)
 !
 REAL,   DIMENSION(:),   INTENT(IN) :: PLAI         ! Leaf area Index
 REAL,   DIMENSION(:),   INTENT(IN) :: PH_TREE      ! height of trees
 REAL,   DIMENSION(:,:), INTENT(IN) :: PVEGTYPE     ! type of vegetation
-LOGICAL,                INTENT(IN) :: OAGRI_TO_GRASS
 INTEGER,DIMENSION(:), INTENT(IN) :: NPAR_VEG_IRR_USE ! vegtype with irrigation
 !
 REAL,   DIMENSION(SIZE(PLAI))      :: PZ0          ! vegetation roughness
@@ -34,22 +32,20 @@ REAL,   DIMENSION(SIZE(PLAI))      :: PZ0          ! vegetation roughness
 END FUNCTION Z0V_FROM_LAI_1D
 !
 !
-    FUNCTION Z0V_FROM_LAI_2D(PLAI,PH_TREE,PVEGTYPE,OAGRI_TO_GRASS) RESULT(PZ0)     !! #notused? Druel A. NEVER USED ?
+    FUNCTION Z0V_FROM_LAI_2D(PLAI,PH_TREE,PVEGTYPE) RESULT(PZ0)     !! #notused? Druel A. NEVER USED ?
 !
 REAL,   DIMENSION(:,:),   INTENT(IN) :: PLAI         ! Leaf area Index
 REAL,   DIMENSION(:,:),   INTENT(IN) :: PH_TREE      ! height of trees
 REAL,   DIMENSION(:,:,:), INTENT(IN) :: PVEGTYPE     ! type of vegetation
-LOGICAL,                  INTENT(IN) :: OAGRI_TO_GRASS
 !
 REAL,   DIMENSION(SIZE(PLAI,1),SIZE(PLAI,2)) :: PZ0  ! vegetation roughness
 !
 END FUNCTION Z0V_FROM_LAI_2D
 !
-    FUNCTION Z0V_FROM_LAI_VEGTYPE(PLAI,PH_TREE,OAGRI_TO_GRASS) RESULT(PZ0)
+    FUNCTION Z0V_FROM_LAI_VEGTYPE(PLAI,PH_TREE) RESULT(PZ0)
 !
 REAL,   DIMENSION(:),   INTENT(IN) :: PLAI         ! Leaf area Index
 REAL,   DIMENSION(:),   INTENT(IN) :: PH_TREE      ! height of trees
-LOGICAL,                INTENT(IN) :: OAGRI_TO_GRASS
 !
 REAL,   DIMENSION(SIZE(PLAI)) :: PZ0  ! vegetation roughness
 !
@@ -61,7 +57,7 @@ END MODULE MODI_Z0V_FROM_LAI
 !
 
 !   ###########################################################
-    FUNCTION Z0V_FROM_LAI_0D(PLAI,PH_TREE,PVEGTYPE,OAGRI_TO_GRASS,NPAR_VEG_IRR_USE) RESULT(PZ0)
+    FUNCTION Z0V_FROM_LAI_0D(PLAI,PH_TREE,PVEGTYPE,NPAR_VEG_IRR_USE) RESULT(PZ0)
 !   ###########################################################
 !!
 !!    PURPOSE
@@ -118,7 +114,6 @@ IMPLICIT NONE
 REAL,                 INTENT(IN) :: PLAI         ! Leaf area Index
 REAL,                 INTENT(IN) :: PH_TREE      ! height of trees
 REAL,   DIMENSION(:), INTENT(IN) :: PVEGTYPE     ! type of vegetation
-LOGICAL,              INTENT(IN) :: OAGRI_TO_GRASS
 INTEGER,DIMENSION(:), INTENT(IN) :: NPAR_VEG_IRR_USE ! vegtype with irrigation
 !
 REAL                             :: PZ0          ! vegetation roughness
@@ -136,7 +131,7 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 IF (LHOOK) CALL DR_HOOK('MODI_Z0V_FROM_LAI:Z0V_FROM_LAI_0D',0,ZHOOK_HANDLE)
 !
-ZH_VEG(:) = VEG_HEIGHT_FROM_LAI(PLAI,PH_TREE,PVEGTYPE,OAGRI_TO_GRASS,NPAR_VEG_IRR_USE)
+ZH_VEG(:) = VEG_HEIGHT_FROM_LAI(PLAI,PH_TREE,PVEGTYPE,NPAR_VEG_IRR_USE)
 !
 ZZREF = 10.
 ZAVG_H = 0.
@@ -155,7 +150,7 @@ IF (LHOOK) CALL DR_HOOK('MODI_Z0V_FROM_LAI:Z0V_FROM_LAI_0D',1,ZHOOK_HANDLE)
 END FUNCTION Z0V_FROM_LAI_0D
 !
 !   ###########################################################
-    FUNCTION Z0V_FROM_LAI_1D(PLAI,PH_TREE,PVEGTYPE,OAGRI_TO_GRASS,NPAR_VEG_IRR_USE) RESULT(PZ0)
+    FUNCTION Z0V_FROM_LAI_1D(PLAI,PH_TREE,PVEGTYPE,NPAR_VEG_IRR_USE) RESULT(PZ0)
 !   ###########################################################
 !!
 !!    PURPOSE
@@ -209,7 +204,6 @@ IMPLICIT NONE
 REAL,   DIMENSION(:),   INTENT(IN) :: PLAI         ! Leaf area Index
 REAL,   DIMENSION(:),   INTENT(IN) :: PH_TREE      ! height of trees
 REAL,   DIMENSION(:,:), INTENT(IN) :: PVEGTYPE     ! type of vegetation
-LOGICAL,                INTENT(IN) :: OAGRI_TO_GRASS
 INTEGER,DIMENSION(:),   INTENT(IN) :: NPAR_VEG_IRR_USE ! vegtype with irrigation
 !
 REAL,   DIMENSION(SIZE(PLAI))      :: PZ0          ! vegetation roughness
@@ -226,7 +220,7 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-----------------------------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('MODI_Z0V_FROM_LAI:Z0V_FROM_LAI_1D',0,ZHOOK_HANDLE)
-ZH_VEG(:,:) = VEG_HEIGHT_FROM_LAI(PLAI,PH_TREE,PVEGTYPE,OAGRI_TO_GRASS, NPAR_VEG_IRR_USE)
+ZH_VEG(:,:) = VEG_HEIGHT_FROM_LAI(PLAI,PH_TREE,PVEGTYPE, NPAR_VEG_IRR_USE)
 !
 ZZREF = 10.
 ZAVG_H(:) = 0.
@@ -245,7 +239,7 @@ IF (LHOOK) CALL DR_HOOK('MODI_Z0V_FROM_LAI:Z0V_FROM_LAI_1D',1,ZHOOK_HANDLE)
 END FUNCTION Z0V_FROM_LAI_1D
 !
 !   ###########################################################
-    FUNCTION Z0V_FROM_LAI_2D(PLAI,PH_TREE,PVEGTYPE,OAGRI_TO_GRASS) RESULT(PZ0) !  #notused? 
+    FUNCTION Z0V_FROM_LAI_2D(PLAI,PH_TREE,PVEGTYPE) RESULT(PZ0) !  #notused? 
 !   ###########################################################
 !!
 !!    PURPOSE
@@ -298,7 +292,6 @@ IMPLICIT NONE
 REAL,   DIMENSION(:,:),   INTENT(IN) :: PLAI         ! Leaf area Index
 REAL,   DIMENSION(:,:),   INTENT(IN) :: PH_TREE      ! height of trees
 REAL,   DIMENSION(:,:,:), INTENT(IN) :: PVEGTYPE     ! type of vegetation
-LOGICAL,                  INTENT(IN) :: OAGRI_TO_GRASS
 !
 REAL,   DIMENSION(SIZE(PLAI,1),SIZE(PLAI,2)) :: PZ0  ! vegetation roughness
 !
@@ -313,7 +306,7 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-----------------------------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('MODI_Z0V_FROM_LAI:Z0V_FROM_LAI_2D',0,ZHOOK_HANDLE)
-ZH_VEG(:,:,:) = VEG_HEIGHT_FROM_LAI(PLAI,PH_TREE,PVEGTYPE,OAGRI_TO_GRASS)
+ZH_VEG(:,:,:) = VEG_HEIGHT_FROM_LAI(PLAI,PH_TREE,PVEGTYPE)
 !
 ZZREF = 10.
 ZAVG_H(:,:) = 0.
@@ -336,7 +329,7 @@ END FUNCTION Z0V_FROM_LAI_2D
 !
 !
 !   ###########################################################
-    FUNCTION Z0V_FROM_LAI_VEGTYPE(PLAI,PH_TREE,OAGRI_TO_GRASS) RESULT(PZ0)
+    FUNCTION Z0V_FROM_LAI_VEGTYPE(PLAI,PH_TREE) RESULT(PZ0)
 !   ###########################################################
 !!
 !!    PURPOSE
@@ -388,7 +381,6 @@ IMPLICIT NONE
 !
 REAL,   DIMENSION(:),   INTENT(IN) :: PLAI         ! Leaf area Index
 REAL,   DIMENSION(:),   INTENT(IN) :: PH_TREE      ! height of trees
-LOGICAL,                INTENT(IN) :: OAGRI_TO_GRASS
 !
 REAL,   DIMENSION(SIZE(PLAI))      :: PZ0          ! vegetation roughness
 !
@@ -400,7 +392,7 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-----------------------------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('MODI_Z0V_FROM_LAI:Z0V_FROM_LAI_VEGTYPE',0,ZHOOK_HANDLE)
-ZH_VEG(:) = VEG_HEIGHT_FROM_LAI(PLAI,PH_TREE,OAGRI_TO_GRASS)
+ZH_VEG(:) = VEG_HEIGHT_FROM_LAI(PLAI,PH_TREE)
 !
 PZ0(:) = XUNDEF
 !

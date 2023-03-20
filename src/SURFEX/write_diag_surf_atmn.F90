@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #################################################################################
-SUBROUTINE WRITE_DIAG_SURF_ATM_n (YSC,HPROGRAM,HWRITE)
+SUBROUTINE WRITE_DIAG_SURF_ATM_n (YSC,HPROGRAM,HWRITE, KBACKUP_STEP)
 !     #################################################################################
 !
 !!****  *WRITE_DIAG_SURF_ATM_n * - Chooses the surface schemes for diagnostics writing
@@ -25,6 +25,8 @@ SUBROUTINE WRITE_DIAG_SURF_ATM_n (YSC,HPROGRAM,HWRITE)
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    01/2004
+!!      J. Wurtz  16/01/2023   modifiying call to diag_seb to pass diag_step for
+!!                 mean divisions 
 !!------------------------------------------------------------------
 !
 USE MODD_SURFEX_MPI, ONLY : NRANK, NPIO
@@ -57,6 +59,7 @@ IMPLICIT NONE
 !*      0.1    declarations of arguments
 !
 TYPE(SURFEX_t), INTENT(INOUT) :: YSC
+INTEGER, INTENT(IN), OPTIONAL :: KBACKUP_STEP
 !
  CHARACTER(LEN=6),   INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
  CHARACTER(LEN=3),   INTENT(IN)  :: HWRITE    ! 'PGD' : only physiographic fields are written
@@ -67,6 +70,8 @@ TYPE(SURFEX_t), INTENT(INOUT) :: YSC
 !
  CHARACTER(LEN=100) :: YCOMMENT
 INTEGER            :: IRESP
+INTEGER            :: IBACKUP_STEP
+
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------------
 !
@@ -74,6 +79,13 @@ IF (LHOOK) CALL DR_HOOK('WRITE_DIAG_SURF_ATM_N',0,ZHOOK_HANDLE)
 !
 CPROGNAME = HPROGRAM
 !
+IF (NOT(PRESENT(KBACKUP_STEP))) THEN
+IBACKUP_STEP=1 !J. Wurtz tip when optionnal argument not declared means will not be realistics
+ELSE
+IBACKUP_STEP = KBACKUP_STEP
+
+END IF
+
 IF (YSC%U%NDIM_SEA    >0) CALL WRITE_DIAG_SEA_n(YSC%DTCO, YSC%DUO, YSC%U, YSC%SM, & 
                                                 HPROGRAM,HWRITE)
 IF (YSC%U%NDIM_WATER  >0) CALL WRITE_DIAG_INLAND_WATER_n(YSC%DTCO, YSC%DUO, YSC%U, &
@@ -102,7 +114,7 @@ IF (YSC%DUO%XDIAG_TSTEP==XUNDEF .OR. &
   !
   IF (HWRITE/='PGD'.AND.YSC%DUO%LDIAG_GRID) &
           CALL WRITE_DIAG_SEB_SURF_ATM_n(YSC%DTCO, YSC%DUO, YSC%DU, YSC%DUC, YSC%U, &
-                                         YSC%UG%G%CGRID, HPROGRAM)
+                                         YSC%UG%G%CGRID,IBACKUP_STEP , HPROGRAM)
   !
   IF (YSC%CHU%LCH_EMIS .AND. YSC%SV%NBEQ>0 .AND. YSC%CHU%LCH_SURF_EMIS) THEN
     IF (YSC%CHU%CCH_EMIS=='AGGR') THEN 

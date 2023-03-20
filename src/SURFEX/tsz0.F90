@@ -44,6 +44,7 @@
 !!      V.Masson     15/03/99 some computations are now done in GROUND_PARAMn
 !!      V.Masson     04/01/00 all computations are now done in ISBA
 !!      P. Le Moigne 03/2015  tsz0 time management
+!!      B. Decharme  07/2022  X must be < 1.0 to compute ACOS(X)
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -55,6 +56,7 @@ USE MODD_DATA_TSZ0_n, ONLY : DATA_TSZ0_t
 !
 USE MODD_CSTS,       ONLY : XPI
 USE MODD_SURF_PAR,   ONLY : XUNDEF
+USE MODD_ISBA_PAR,   ONLY : XWGMIN
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -84,7 +86,7 @@ REAL,                   INTENT(IN)  :: PTSTEP     ! timestep of the integration
 !
 REAL    :: ZA,ZTIMEP    ! weigths and instant for the temporal interpolation
 INTEGER :: IHOURP       ! hourly data index for intant t +dt
-INTEGER :: JPATCH       ! loop counter on patches
+INTEGER :: JPATCH, JI, JL       ! loop counter on patches
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! enter here the temporal variations of the soil fields increments
@@ -126,10 +128,15 @@ END WHERE
 !
 ! temporal interpolation of the soil humidity increment at time t
 ZA= ZDHUGRD_HOUR /3600.* PTSTEP
+!
 WHERE (PEK%XWG(:,:)/=XUNDEF)
-  PEK%XWG(:,:)= ACOS( 1.                                                               &
-      - 2.* MIN( 0.5 * (1. - COS( XPI * MIN(PEK%XWG(:,:) /KK%XWFC(:,:),1.)  )) + ZA , 1.) &
-            ) / XPI * KK%XWFC(:,:)  
+!
+   PEK%XWG(:,:) = ACOS( 1.0 - 2.0 *                                                                      &
+                  MAX(0.0,MIN( 0.5 * (1. - COS( XPI * MIN(PEK%XWG(:,:) /KK%XWFC(:,:),1.)  )) + ZA , 1.)) &
+                  ) / XPI * KK%XWFC(:,:)  
+!
+   PEK%XWG(:,:)=MAX(PEK%XWG(:,:),XWGMIN)
+!
 END WHERE
 !
 IF (LHOOK) CALL DR_HOOK('TSZ0',1,ZHOOK_HANDLE)

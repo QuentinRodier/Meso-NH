@@ -3,9 +3,9 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-SUBROUTINE  DIAG_SURF_BUDGET_SEA(D, DI, S, PTT, PRHOA, PSFTH, PSFTH_ICE, &
-                                 PSFTQ, PSFTQ_ICE, PDIR_SW, PSCA_SW, PLW,    &
-                                 PDIR_ALB, PSCA_ALB, PEMIS, PTRAD,           &
+SUBROUTINE  DIAG_SURF_BUDGET_SEA(D, DI, S, PTT, PRHOA, PSFTH, PSFTH_ICE,  &
+                                 PSFTQ, PSFTQ_ICE, PDIR_SW, PSCA_SW, PLW, &
+                                 PDIR_ALB, PSCA_ALB, PEMIS, PTRAD,        &
                                  PSFZON, PSFZON_ICE, PSFMER, PSFMER_ICE   ) 
 
 
@@ -32,6 +32,7 @@ SUBROUTINE  DIAG_SURF_BUDGET_SEA(D, DI, S, PTT, PRHOA, PSFTH, PSFTH_ICE, &
 !!      Original    01/2004
 !       B. decharme 04/2013 : Add EVAP and SUBL diag
 !       S.Senesi    01/2014 : Handle fluxes on seaice
+!!      A.Voldoire  04/2018 : GELATO1D coupling and in regional model
 !!------------------------------------------------------------------
 !
 USE MODD_SEAFLUX_n, ONLY : SEAFLUX_t
@@ -49,8 +50,8 @@ IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
 !
-TYPE(DIAG_t), INTENT(INOUT) :: D
-TYPE(DIAG_t), INTENT(INOUT) :: DI
+TYPE(DIAG_t),    INTENT(INOUT) :: D
+TYPE(DIAG_t),    INTENT(INOUT) :: DI
 TYPE(SEAFLUX_t), INTENT(INOUT) :: S
 !
 REAL,               INTENT(IN) :: PTT       ! freezing temperature of water surface
@@ -79,7 +80,7 @@ REAL, DIMENSION(:), INTENT(IN) :: PSFMER_ICE! meridional friction
 !
 !*      0.2    declarations of local variables
 !
-INTEGER                      :: I
+INTEGER                      :: JI, INI
 INTEGER                      :: ISWB ! number of SW bands
 INTEGER                      :: JSWB ! loop counter on number of SW bands
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
@@ -87,20 +88,25 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 IF (LHOOK) CALL DR_HOOK('DIAG_SURF_BUDGET_SEA',0,ZHOOK_HANDLE)
 !
+INI  = SIZE(PDIR_SW,1)
 ISWB = SIZE(PDIR_SW,2)
 ! 
 !* total incoming and outgoing SW
 !
 DO JSWB=1,ISWB
-  D%XSWBD(:,JSWB) = PDIR_SW(:,JSWB)                    + PSCA_SW(:,JSWB)
-  D%XSWBU(:,JSWB) = PDIR_SW(:,JSWB) * PDIR_ALB(:,JSWB) + PSCA_SW(:,JSWB) * PSCA_ALB(:,JSWB) 
+   DO JI=1,INI
+      D%XSWBD(JI,JSWB) = PDIR_SW(JI,JSWB)                     + PSCA_SW(JI,JSWB)
+      D%XSWBU(JI,JSWB) = PDIR_SW(JI,JSWB) * PDIR_ALB(JI,JSWB) + PSCA_SW(JI,JSWB) * PSCA_ALB(JI,JSWB) 
+   ENDDO
 ENDDO
 !
 D%XSWD(:) = 0.
 D%XSWU(:) = 0.
 DO JSWB=1,ISWB
-   D%XSWD(:) = D%XSWD(:) + D%XSWBD(:,JSWB)
-   D%XSWU(:) = D%XSWU(:) + D%XSWBU(:,JSWB)
+   DO JI=1,INI
+      D%XSWD(JI) = D%XSWD(JI) + D%XSWBD(JI,JSWB)
+      D%XSWU(JI) = D%XSWU(JI) + D%XSWBU(JI,JSWB)
+   ENDDO
 ENDDO
 !
 !*incoming outgoing LW
@@ -114,45 +120,79 @@ D%XRN(:)    =   D%XSWD(:) - D%XSWU(:)     + D%XLWD(:) - D%XLWU    (:)
 !
 IF (.NOT.S%LHANDLE_SIC) THEN
   !
-  !* sensible heat flux
+  !* heat flux
   !
-  D%XH     = PSFTH
-  !
-  !* latent heat flux
-  !
-  WHERE (S%XSST<PTT  )
-     D%XLE    = PSFTQ * XLSTT
-     D%XLEI   = PSFTQ * XLSTT
-     D%XEVAP  = PSFTQ
-     D%XSUBL  = PSFTQ
+  WHERE (S%XSST(:)<PTT  )
+     D%XH    (:) = PSFTH(:)
+     DI%XH   (:) = PSFTH(:)
+     D%XLE   (:) = PSFTQ(:) * XLSTT
+     D%XLEI  (:) = PSFTQ(:) * XLSTT
+     DI%XLE  (:) = PSFTQ(:) * XLSTT
+     DI%XLEI (:) = PSFTQ(:) * XLSTT
+     D%XEVAP (:) = PSFTQ(:)
+     DI%XEVAP(:) = PSFTQ(:)
+     D%XSUBL (:) = PSFTQ(:)
+     DI%XSUBL(:) = PSFTQ(:)
   ELSEWHERE
-     D%XLE    = PSFTQ * XLVTT
-     D%XLEI   = 0.0
-     D%XEVAP  = PSFTQ
-     D%XSUBL  = 0.0
+     D%XH    (:) = PSFTH(:)
+     DI%XH   (:) = 0.0
+     D%XLE   (:) = PSFTQ(:) * XLVTT
+     D%XLEI  (:) = 0.0
+     DI%XLE  (:) = 0.0
+     DI%XLEI (:) = 0.0
+     D%XEVAP (:) = PSFTQ(:)
+     DI%XEVAP(:) = 0.0
+     D%XSUBL (:) = 0.0
+     DI%XSUBL(:) = 0.0
   END WHERE
   !
   !* wind stress
   !
-  D%XFMU = PSFZON
-  D%XFMV = PSFMER
+  D%XFMU(:) = PSFZON(:)
+  D%XFMV(:) = PSFMER(:)
   !
 ELSE
   !
   !---------------------------------------------------------------------------- 
-  ! Sea ice or mixed diag
+  ! Global mixed diag
   !---------------------------------------------------------------------------- 
   !
+  !* sensible heat flux
   !
-  !* total incoming and outgoing SW
+  D%XH(:) = (1.0-S%XSIC(:)) * PSFTH(:) + S%XSIC(:) * PSFTH_ICE(:) 
+  !
+  !* latent and sublimation heat fluxes
+  !
+  D%XLE (:) = (1.0-S%XSIC(:)) * PSFTQ(:) * XLVTT + S%XSIC(:) * PSFTQ_ICE(:) * XLSTT
+  D%XLEI(:) =                                      S%XSIC(:) * PSFTQ_ICE(:) * XLSTT
+  !
+  !* evaporation and sublimation flux
+  !
+  D%XEVAP(:) = (1.0-S%XSIC(:)) * PSFTQ(:) + S%XSIC(:) * PSFTQ_ICE(:) 
+  D%XSUBL(:) =                              S%XSIC(:) * PSFTQ_ICE(:) 
+  !
+  !* wind stress
+  !
+  D%XFMU(:) = (1.0-S%XSIC(:)) * PSFZON(:) + S%XSIC(:) * PSFZON_ICE(:)
+  D%XFMV(:) = (1.0-S%XSIC(:)) * PSFMER(:) + S%XSIC(:) * PSFMER_ICE(:)
+  !
+  !---------------------------------------------------------------------------- 
+  ! Sea ice diag (only)
+  !---------------------------------------------------------------------------- 
+  !
+  !* incoming and outgoing SW
   !
   DO JSWB=1,ISWB
-    DI%XSWBU(:,JSWB) = (PDIR_SW(:,JSWB) + PSCA_SW(:,JSWB)) * S%XICE_ALB(:) 
+     DO JI=1,INI
+        DI%XSWBU(JI,JSWB) = (PDIR_SW(JI,JSWB) + PSCA_SW(JI,JSWB)) * S%XICE_ALB(JI) 
+     ENDDO
   ENDDO
   !
   DI%XSWU(:) = 0.
   DO JSWB=1,ISWB
-     DI%XSWU(:) = DI%XSWU(:) + DI%XSWBU(:,JSWB)
+     DO JI=1,INI
+        DI%XSWU(JI) = DI%XSWU(JI) + DI%XSWBU(JI,JSWB)
+     ENDDO
   ENDDO
   !
   !*incoming outgoing LW
@@ -165,30 +205,30 @@ ELSE
   !
   !* sensible heat flux
   !
-  D%XH     = (1 - S%XSIC) * PSFTH + S%XSIC * PSFTH_ICE 
-  DI%XH    =                                 PSFTH_ICE
+  DI%XH(:) = PSFTH_ICE(:)
   !
   !* latent heat flux
   !
-  D%XLE     = (1 - S%XSIC) * PSFTQ * XLVTT + S%XSIC * PSFTQ_ICE * XLSTT
-  D%XLEI    =                                         PSFTQ_ICE * XLSTT
-  D%XEVAP   = (1 - S%XSIC) * PSFTQ         + S%XSIC * PSFTQ_ICE 
-  D%XSUBL   =                                S%XSIC * PSFTQ_ICE 
+  DI%XLE (:) = PSFTQ_ICE(:) * XLSTT
+  DI%XLEI(:) = PSFTQ_ICE(:) * XLSTT
+  !
+  !* evaporation & sublimation fluxes
+  !
+  DI%XEVAP(:) = PSFTQ_ICE(:)
+  DI%XSUBL(:) = PSFTQ_ICE(:) 
   !
   !* ice storage flux
   !
-  DI%XGFLUX = DI%XRN - DI%XH - D%XLEI
+  DI%XGFLUX(:) = DI%XRN(:) - DI%XH(:) - DI%XLE(:)
   !
   !* wind stress
   !
-  D%XFMU  = (1 - S%XSIC) * PSFZON + S%XSIC * PSFZON_ICE
-  DI%XFMU =                                  PSFZON_ICE
-  D%XFMV  = (1 - S%XSIC) * PSFMER + S%XSIC * PSFMER_ICE
-  DI%XFMV =                                  PSFMER_ICE
+  DI%XFMU(:) = PSFZON_ICE(:)
+  DI%XFMV(:) = PSFMER_ICE(:)
   !
 ENDIF
 !
-!* total storage flux
+!* Global mixed total storage flux
 !
 D%XGFLUX = D%XRN - D%XH - D%XLE
 !

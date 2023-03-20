@@ -31,6 +31,7 @@
 !!      S. Belamari   03/2014  Include NZ0
 !!      M.N. Bouin    03/2014  possibility of wave parameters from external source
 !!      J. Pianezze   11/2014  add surface pressure and charnock coefficient
+!!      B. Decharme   11/2016  Improved sea, seaice and carbon cycle coupling for ESM
 !
 !*       0.   DECLARATIONS
 !             ------------
@@ -79,6 +80,7 @@ TYPE SEAFLUX_t
 !
   CHARACTER(LEN=6)                  :: CSEA_FLUX   ! type of flux computation
   CHARACTER(LEN=4)                  :: CSEA_ALB    ! type of albedo
+  CHARACTER(LEN=4)                  :: CSEA_SFCO2  ! type of carbon cycle coupling (WIND=Wanninkhof medium hypothesis ; default=NONE)
   LOGICAL                           :: LPWG        ! flag for gust
   LOGICAL                           :: LPRECIP     ! flag for precip correction
   LOGICAL                           :: LPWEBB      ! flag for Webb correction
@@ -104,9 +106,12 @@ TYPE SEAFLUX_t
   REAL, POINTER, DIMENSION(:) :: XEMIS   ! emissivity
   REAL, POINTER, DIMENSION(:) :: XDIR_ALB! direct albedo
   REAL, POINTER, DIMENSION(:) :: XSCA_ALB! diffuse albedo
+  REAL, POINTER, DIMENSION(:) :: XDIR_ALB_SEA ! direct albedo over sea (excluding seaice)
+  REAL, POINTER, DIMENSION(:) :: XSCA_ALB_SEA ! diffuse albedo over sea (excluding seaice)
   REAL, POINTER, DIMENSION(:) :: XICE_ALB! sea-ice albedo from seaice model (ESM or embedded)
   REAL, POINTER, DIMENSION(:) :: XUMER   ! U component of sea current (for ESM coupling)
   REAL, POINTER, DIMENSION(:) :: XVMER   ! V component of sea current (for ESM coupling)
+  REAL, POINTER, DIMENSION(:) :: XSFCO2  ! ocean carbon flux (for ESM coupling)
 !
   REAL, POINTER, DIMENSION(:,:) :: XSST_MTH! monthly sea surface temperature (precedent, current and next)
   REAL, POINTER, DIMENSION(:,:) :: XSSS_MTH! monthly sea surface salinity    (precedent, current and next)
@@ -127,10 +132,21 @@ TYPE SEAFLUX_t
   REAL, POINTER, DIMENSION(:) :: XCPL_SEA_SNOW ! Snowfall for ESM coupling
   REAL, POINTER, DIMENSION(:) :: XCPL_SEA_FWSM ! wind stress for ESM coupling
   REAL, POINTER, DIMENSION(:) :: XCPL_SEA_PRES ! Surface pressure for ESM coupling
+  REAL, POINTER, DIMENSION(:) :: XCPL_SEA_CO2  ! atmospheric surface CO2 for ESM coupling
 !  
   REAL, POINTER, DIMENSION(:) :: XCPL_SEAICE_SNET ! Solar net heat flux for ESM coupling
   REAL, POINTER, DIMENSION(:) :: XCPL_SEAICE_HEAT ! Non solar net heat flux
   REAL, POINTER, DIMENSION(:) :: XCPL_SEAICE_EVAP ! Ice sublimation for ESM coupling
+!
+  REAL, POINTER, DIMENSION(:) :: XGLT_SEA_SNET ! Solar net heat flux for seaice embedded scheme
+  REAL, POINTER, DIMENSION(:) :: XGLT_SEA_HEAT ! Non solar net heat flux for seaice embedded scheme
+  REAL, POINTER, DIMENSION(:) :: XGLT_SEA_EVAP ! Evaporation for seaice embedded scheme 
+  REAL, POINTER, DIMENSION(:) :: XGLT_SEA_RAIN ! Rainfall for seaice embedded scheme
+  REAL, POINTER, DIMENSION(:) :: XGLT_SEA_SNOW ! Snowfall for seaice embedded scheme
+!  
+  REAL, POINTER, DIMENSION(:) :: XGLT_SEAICE_SNET ! Solar net heat flux for seaice embedded scheme
+  REAL, POINTER, DIMENSION(:) :: XGLT_SEAICE_HEAT ! Non solar net heat flux for seaice embedded scheme
+  REAL, POINTER, DIMENSION(:) :: XGLT_SEAICE_EVAP ! Ice sublimation for seaice embedded scheme
 !
   REAL, POINTER, DIMENSION(:) :: XPERTFLUX     ! Stochastic flux perturbation pattern
 !
@@ -185,9 +201,12 @@ IF (LHOOK) CALL DR_HOOK("MODD_SEAFLUX_N:SEAFLUX_INIT",0,ZHOOK_HANDLE)
   NULLIFY(YSEAFLUX%XEMIS)
   NULLIFY(YSEAFLUX%XDIR_ALB)
   NULLIFY(YSEAFLUX%XSCA_ALB)
+  NULLIFY(YSEAFLUX%XDIR_ALB_SEA)
+  NULLIFY(YSEAFLUX%XSCA_ALB_SEA)
   NULLIFY(YSEAFLUX%XICE_ALB)
   NULLIFY(YSEAFLUX%XUMER)
   NULLIFY(YSEAFLUX%XVMER)
+  NULLIFY(YSEAFLUX%XSFCO2)
   NULLIFY(YSEAFLUX%XSST_MTH)
   NULLIFY(YSEAFLUX%XSSS_MTH)
   NULLIFY(YSEAFLUX%XSIC_MTH)
@@ -204,9 +223,18 @@ IF (LHOOK) CALL DR_HOOK("MODD_SEAFLUX_N:SEAFLUX_INIT",0,ZHOOK_HANDLE)
   NULLIFY(YSEAFLUX%XCPL_SEA_SNOW)
   NULLIFY(YSEAFLUX%XCPL_SEA_FWSM)
   NULLIFY(YSEAFLUX%XCPL_SEA_PRES)
+  NULLIFY(YSEAFLUX%XCPL_SEA_CO2)
   NULLIFY(YSEAFLUX%XCPL_SEAICE_SNET)
   NULLIFY(YSEAFLUX%XCPL_SEAICE_HEAT)
   NULLIFY(YSEAFLUX%XCPL_SEAICE_EVAP)
+  NULLIFY(YSEAFLUX%XGLT_SEA_SNET)
+  NULLIFY(YSEAFLUX%XGLT_SEA_HEAT)
+  NULLIFY(YSEAFLUX%XGLT_SEA_EVAP)
+  NULLIFY(YSEAFLUX%XGLT_SEA_RAIN)
+  NULLIFY(YSEAFLUX%XGLT_SEA_SNOW)
+  NULLIFY(YSEAFLUX%XGLT_SEAICE_SNET)
+  NULLIFY(YSEAFLUX%XGLT_SEAICE_HEAT)
+  NULLIFY(YSEAFLUX%XGLT_SEAICE_EVAP)
   NULLIFY(YSEAFLUX%XPERTFLUX)
 YSEAFLUX%LSBL=.FALSE.
 YSEAFLUX%LHANDLE_SIC=.FALSE.
@@ -227,6 +255,7 @@ YSEAFLUX%XCD_ICE_CST=0.
 YSEAFLUX%XSI_FLX_DRV=-20. 
 YSEAFLUX%CSEA_FLUX=' '
 YSEAFLUX%CSEA_ALB=' '
+YSEAFLUX%CSEA_SFCO2=' '
 YSEAFLUX%LPWG=.FALSE.
 YSEAFLUX%LPRECIP=.FALSE.
 YSEAFLUX%LPWEBB=.FALSE.

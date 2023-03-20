@@ -3,12 +3,12 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE DIAG_ISBA_INIT_n (CHI, DE, DEC, NDE, NDEC, DGO, D, DC, ND, NDC, DM, NDM, DU, &
-                                   OREAD_BUDGETC, NGB, GB, IO, NP, HSNOW_SCHEME, KSNOW_NLAYER, &
-                                   KABC, HPROGRAM,KLU,KSW)
+      SUBROUTINE DIAG_ISBA_INIT_n (CHI, DE, DEC, NDE, NDEC, DGO, D, DC, ND, NDC,  &
+                                   OREAD_BUDGETC, NGB, GB, IO, NP, HSNOW_SCHEME, &
+                                   KABC, HPROGRAM, KLU, KSW)
 !     #####################
 !
-!!****  *DIAG_ISBA_INIT_n* - routine to initialize ISBA-AGS diagnostic variables
+!!****  *DIAG_ISBA_INIT_n* - routine to initialize ISBA diagnostic variables
 !!
 !!    PURPOSE
 !!    -------
@@ -53,37 +53,35 @@
 !!                               frozen layer thickness over non-permafrost
 !!      B. Vincendon   02/2014 : condition added for RAD_BUDGET variables (needed for
 !!                               restart mode)
-!       B. decharme    04/2013 : Add new diag for coupling
+!       B. Decharme    04/2013 : Add new diag for coupling
 !                                Delete XTSRAD (because same than XTSRAD_NAT)
 !!      P. Samuelsson  10/2014 : MEB
 !!      P. Hagenmuller 09/2017 : Mepra
 !!      A. Druel       02/2019 : Changes LARGIP flag to LIRRIGMODE flog for irrigation paramaters... (and delete XSEUIL)
+!!      B. Decharme    02/2022 : Rewrite the routine and split misc diag for more simplicity
 !!
 !-------------------------------------------------------------------------------
 !
 !*       0.0    DECLARATIONS
-!              ------------
+!              -------------
 !
 USE MODE_DIAG
 !
-USE MODD_CH_ISBA_n, ONLY : CH_ISBA_t
-USE MODD_DIAG_EVAP_ISBA_n, ONLY : DIAG_EVAP_ISBA_t, DIAG_EVAP_ISBA_NP_t
-USE MODD_DIAG_n, ONLY : DIAG_t, DIAG_NP_t, DIAG_OPTIONS_t
-USE MODD_DIAG_MISC_ISBA_n, ONLY : DIAG_MISC_ISBA_t, DIAG_MISC_ISBA_NP_t
-USE MODD_GR_BIOG_n, ONLY : GR_BIOG_NP_t, GR_BIOG_t
-USE MODD_ISBA_OPTIONS_n, ONLY : ISBA_OPTIONS_t
-USE MODD_ISBA_n, ONLY : ISBA_NP_t, ISBA_P_t
-USE MODD_DIAG_UTCI_n, ONLY : DIAG_UTCI_t
+USE MODD_TYPE_DATE_SURF
 !
-USE MODD_UTCI, ONLY : NUTCI_STRESS
+USE MODD_CH_ISBA_n,        ONLY : CH_ISBA_t
+USE MODD_DIAG_EVAP_ISBA_n, ONLY : DIAG_EVAP_ISBA_t, DIAG_EVAP_ISBA_NP_t
+USE MODD_DIAG_n,           ONLY : DIAG_t, DIAG_NP_t, DIAG_OPTIONS_t
+USE MODD_GR_BIOG_n,        ONLY : GR_BIOG_NP_t, GR_BIOG_t
+USE MODD_ISBA_OPTIONS_n,   ONLY : ISBA_OPTIONS_t
+USE MODD_ISBA_n,           ONLY : ISBA_NP_t, ISBA_P_t
+!
+USE MODD_SURF_PAR,         ONLY : XUNDEF, LEN_HREC
+USE MODD_AGRI,             ONLY : LIRRIGMODE
 !
 #ifdef SFX_OL
-USE MODN_IO_OFFLINE,     ONLY : LRESTART
+USE MODN_IO_OFFLINE,       ONLY : LRESTART
 #endif
-USE MODD_SURF_PAR,       ONLY : XUNDEF, LEN_HREC
-USE MODD_TYPE_DATE_SURF
-USE MODD_AGRI,           ONLY : LIRRIGMODE
-USE MODD_PREP_SNOW,      ONLY : NIMPUR
 !
 USE MODI_PACK_SAME_RANK
 USE MODI_MAKE_CHOICE_ARRAY
@@ -97,48 +95,73 @@ IMPLICIT NONE
 !*       0.01   Declarations of arguments
 !              -------------------------
 !
-TYPE(CH_ISBA_t), INTENT(INOUT) :: CHI
-TYPE(DIAG_EVAP_ISBA_t), INTENT(INOUT) :: DE
-TYPE(DIAG_EVAP_ISBA_t), INTENT(INOUT) :: DEC
+TYPE(CH_ISBA_t),           INTENT(INOUT) :: CHI
+TYPE(DIAG_EVAP_ISBA_t),    INTENT(INOUT) :: DE
+TYPE(DIAG_EVAP_ISBA_t),    INTENT(INOUT) :: DEC
 TYPE(DIAG_EVAP_ISBA_NP_t), INTENT(INOUT) :: NDE
 TYPE(DIAG_EVAP_ISBA_NP_t), INTENT(INOUT) :: NDEC
-TYPE(DIAG_OPTIONS_t), INTENT(IN) :: DGO
-TYPE(DIAG_t), INTENT(INOUT) :: D
-TYPE(DIAG_t), INTENT(INOUT) :: DC
-TYPE(DIAG_NP_t), INTENT(INOUT) :: ND
-TYPE(DIAG_NP_t), INTENT(INOUT) :: NDC
-TYPE(DIAG_UTCI_t), INTENT(INOUT) :: DU
-TYPE(DIAG_MISC_ISBA_t), INTENT(INOUT) :: DM
-TYPE(DIAG_MISC_ISBA_NP_t), INTENT(INOUT) :: NDM
-LOGICAL, INTENT(IN) :: OREAD_BUDGETC
-TYPE(GR_BIOG_NP_t), INTENT(INOUT) :: NGB
-TYPE(GR_BIOG_t), INTENT(INOUT) :: GB
-TYPE(ISBA_OPTIONS_t), INTENT(INOUT) :: IO
-TYPE(ISBA_NP_t), INTENT(INOUT) :: NP
- CHARACTER(LEN=*), INTENT(IN) :: HSNOW_SCHEME
-INTEGER, INTENT(IN) :: KSNOW_NLAYER
+TYPE(DIAG_OPTIONS_t),      INTENT(IN   ) :: DGO
+TYPE(DIAG_t),              INTENT(INOUT) :: D
+TYPE(DIAG_t),              INTENT(INOUT) :: DC
+TYPE(DIAG_NP_t),           INTENT(INOUT) :: ND
+TYPE(DIAG_NP_t),           INTENT(INOUT) :: NDC
+TYPE(GR_BIOG_NP_t),        INTENT(INOUT) :: NGB
+TYPE(GR_BIOG_t),           INTENT(INOUT) :: GB
+TYPE(ISBA_OPTIONS_t),      INTENT(INOUT) :: IO
+TYPE(ISBA_NP_t),           INTENT(INOUT) :: NP
 !
-INTEGER, INTENT(IN) :: KABC
-!
-INTEGER, INTENT(IN)         :: KLU       ! size of arrays
-INTEGER, INTENT(IN)         :: KSW       ! spectral bands
- CHARACTER(LEN=6), INTENT(IN):: HPROGRAM  ! program calling
+LOGICAL,          INTENT(IN) :: OREAD_BUDGETC
+CHARACTER(LEN=*), INTENT(IN) :: HSNOW_SCHEME
+INTEGER,          INTENT(IN) :: KABC
+INTEGER,          INTENT(IN) :: KLU       ! size of arrays
+INTEGER,          INTENT(IN) :: KSW       ! spectral bands
+CHARACTER(LEN=6), INTENT(IN) :: HPROGRAM  ! program calling
 !
 !*       0.02   Declarations of local variables
 !              -------------------------------
 !
-TYPE(DIAG_OPTIONS_t) :: YDO
+TYPE(DIAG_OPTIONS_t)   :: YDO
 TYPE(DIAG_EVAP_ISBA_t) :: YDE
-TYPE(DIAG_MISC_ISBA_t) :: YDM
-REAL, DIMENSION(:,:), ALLOCATABLE :: ZWORK
-LOGICAL :: GCUMUL, GDIM, GDIM2
-INTEGER :: JP
-INTEGER           :: IVERSION, IBUG
-INTEGER           :: IRESP          ! IRESP  : return-code if a problem appears
-INTEGER           :: ISIZE_LMEB_PATCH   ! Number of patches where multi-energy balance should be applied
- CHARACTER(LEN=LEN_HREC) :: YREC           ! Name of the article to be read
- CHARACTER(LEN=6) :: YREC2
-REAL(KIND=JPRB) :: ZHOOK_HANDLE
+!
+LOGICAL                 :: GCUMUL, GREAD_RESTART
+INTEGER                 :: JP
+INTEGER                 :: IVERSION, IBUG
+INTEGER                 :: IRESP            ! IRESP  : return-code if a problem appears
+INTEGER                 :: ISIZE_LMEB_PATCH ! Number of patches where multi-energy balance should be applied
+CHARACTER(LEN=LEN_HREC) :: YREC             ! Name of the article to be read
+REAL(KIND=JPRB)         :: ZHOOK_HANDLE
+!
+!-------------------------------------------------------------------------------
+!
+!/////////////////ATTRIBUTES INITIALISATIONS //////////////////////////
+!
+IF (LHOOK) CALL DR_HOOK('DIAG_ISBA_INIT_N',0,ZHOOK_HANDLE)
+!
+ISIZE_LMEB_PATCH=COUNT(IO%LMEB_PATCH(:))
+!
+YDO%LSURF_BUDGET = .TRUE.
+YDO%N2M          = 1
+YDO%LCOEF        = .TRUE.
+YDO%LSURF_VARS   = .TRUE.
+!
+YDE%LSURF_EVAP_BUDGET = .TRUE.
+!
+GREAD_RESTART= .FALSE.
+!
+#ifdef SFX_OL
+GCUMUL = (DGO%LSURF_BUDGETC .OR. (LRESTART .AND. .NOT.DGO%LRESET_BUDGETC))
+#else
+GCUMUL = (DGO%LSURF_BUDGETC .OR. .NOT.DGO%LRESET_BUDGETC)
+#endif
+!
+IF(GCUMUL)THEN
+  !
+  CALL READ_SURF(HPROGRAM,'VERSION',IVERSION,IRESP)
+  CALL READ_SURF(HPROGRAM,'BUG ',IBUG,IRESP)
+  !
+  GREAD_RESTART=(OREAD_BUDGETC .OR. (OREAD_BUDGETC.AND.(.NOT.DGO%LRESET_BUDGETC)))
+  !
+ENDIF
 !
 !-------------------------------------------------------------------------------
 !
@@ -146,101 +169,50 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !* surface energy budget
 !
-IF (LHOOK) CALL DR_HOOK('DIAG_ISBA_INIT_N',0,ZHOOK_HANDLE)
+CALL ALLOC_BUD(YDO,D,KLU,KSW)
 !
-ISIZE_LMEB_PATCH=COUNT(IO%LMEB_PATCH(:))
-!
-YDO%LSURF_BUDGET = .TRUE.
-YDO%N2M = 1
-YDO%LCOEF = .TRUE.
-YDO%LSURF_VARS = .TRUE.
-!
-YDE%LSURF_EVAP_BUDGET = .TRUE.
-!
-YDM%LSURF_MISC_BUDGET = .TRUE.
-!
- CALL ALLOC_BUD(YDO,D,KLU,KSW)
+ALLOCATE(D%XEVAP (KLU))
+ALLOCATE(D%XSUBL (KLU))
+ALLOCATE(D%XSFCO2(KLU))
+D%XEVAP  = XUNDEF
+D%XSUBL  = XUNDEF
+D%XSFCO2 = XUNDEF
 !
 DO JP = 1,IO%NPATCH
+  !
   CALL ALLOC_BUD(YDO,ND%AL(JP),NP%AL(JP)%NSIZE_P,KSW)
   !
-  ALLOCATE(ND%AL(JP)%XCDN(NP%AL(JP)%NSIZE_P))
-  ALLOCATE(ND%AL(JP)%XHUG(NP%AL(JP)%NSIZE_P))
-  ALLOCATE(ND%AL(JP)%XHU (NP%AL(JP)%NSIZE_P))
+  ALLOCATE(ND%AL(JP)%XCDN  (NP%AL(JP)%NSIZE_P))
+  ALLOCATE(ND%AL(JP)%XHUG  (NP%AL(JP)%NSIZE_P))
+  ALLOCATE(ND%AL(JP)%XHU   (NP%AL(JP)%NSIZE_P))
+  ALLOCATE(ND%AL(JP)%XEVAP (NP%AL(JP)%NSIZE_P))
+  ALLOCATE(ND%AL(JP)%XSUBL (NP%AL(JP)%NSIZE_P))  
+  ALLOCATE(ND%AL(JP)%XSFCO2(NP%AL(JP)%NSIZE_P))
   !
-  ND%AL(JP)%XCDN = XUNDEF
-  ND%AL(JP)%XHUG = XUNDEF
-  ND%AL(JP)%XHU  = XUNDEF
+  ND%AL(JP)%XCDN   = XUNDEF
+  ND%AL(JP)%XHUG   = XUNDEF
+  ND%AL(JP)%XHU    = XUNDEF
+  ND%AL(JP)%XEVAP  = XUNDEF
+  ND%AL(JP)%XSUBL  = XUNDEF
+  ND%AL(JP)%XSFCO2 = XUNDEF
   !
 ENDDO
 !
-IF (YDO%LSURF_BUDGET) THEN
-  !
-  ALLOCATE(D%XEVAP(KLU))
-  ALLOCATE(D%XSUBL(KLU))
-  D%XEVAP    = XUNDEF
-  D%XSUBL    = XUNDEF
-  !  
-  DO JP = 1,IO%NPATCH
-    ALLOCATE(ND%AL(JP)%XEVAP(NP%AL(JP)%NSIZE_P))
-    ALLOCATE(ND%AL(JP)%XSUBL(NP%AL(JP)%NSIZE_P))  
-    ND%AL(JP)%XEVAP = XUNDEF
-    ND%AL(JP)%XSUBL = XUNDEF
-  ENDDO
-  !
-ELSE
-  !
-  ALLOCATE(D%XEVAP(0))
-  ALLOCATE(D%XSUBL(0))
-  !  
-  DO JP = 1,IO%NPATCH
-    ALLOCATE(ND%AL(JP)%XEVAP(0))
-    ALLOCATE(ND%AL(JP)%XSUBL(0))     
-  ENDDO
-  !
-END IF
-!
-IF (YDO%N2M>=1) THEN
-  !
-  ALLOCATE(D%XSFCO2(KLU))
-  D%XSFCO2 = XUNDEF
-  DO JP = 1,IO%NPATCH
-    ALLOCATE(ND%AL(JP)%XSFCO2(NP%AL(JP)%NSIZE_P))
-    ND%AL(JP)%XSFCO2 = XUNDEF
-  ENDDO
-  !
-ELSE
-  !
-  ALLOCATE(D%XSFCO2(0))
-  DO JP=1,IO%NPATCH
-    ALLOCATE(ND%AL(JP)%XSFCO2(0))
-  ENDDO
-  !
-END IF
-!
 !* transfer coefficients
+!
+ALLOCATE(D%XZ0EFF(KLU))
+D%XZ0EFF = XUNDEF  
 !
 DO JP=1,IO%NPATCH
   ALLOCATE(ND%AL(JP)%XZ0EFF(NP%AL(JP)%NSIZE_P))
   ND%AL(JP)%XZ0EFF = XUNDEF
 ENDDO
 !
-IF (YDO%LCOEF) THEN
-  !
-  ALLOCATE(D%XZ0EFF(KLU))
-  D%XZ0EFF = XUNDEF  
-  !
-ELSE
-  !
-  ALLOCATE(D%XZ0EFF(0))
-  !
-END IF
-!
-!
 !* surface temperature and parameters at 2m
 !
 ALLOCATE(D%XALBT(KLU))
 D%XALBT = XUNDEF
+!
 DO JP=1,IO%NPATCH
   ALLOCATE(ND%AL(JP)%XTS    (NP%AL(JP)%NSIZE_P))
   ALLOCATE(ND%AL(JP)%XALBT  (NP%AL(JP)%NSIZE_P))
@@ -251,1256 +223,251 @@ DO JP=1,IO%NPATCH
 ENDDO
 !
 !* detailed surface energy budget
+!     
+ALLOCATE(DE%XRAINFALL  (KLU))
+ALLOCATE(DE%XSNOWFALL  (KLU))
+DE%XRAINFALL   = XUNDEF
+DE%XSNOWFALL   = XUNDEF
+! 
+CALL ALLOC_EVAP_DIAG  (DE,KLU,0)
+CALL ALLOC_CC_DIAG    (DE,KLU)
+CALL ALLOC_WATBUD_DIAG(DE,KLU)
+CALL ALLOC_NRJBUD_DIAG(DE,KLU)
+DO JP = 1,IO%NPATCH
+  CALL ALLOC_EVAP_DIAG  (NDE%AL(JP),NP%AL(JP)%NSIZE_P,NP%AL(JP)%NSIZE_P)
+  CALL ALLOC_CC_DIAG    (NDE%AL(JP),NP%AL(JP)%NSIZE_P)
+  CALL ALLOC_WATBUD_DIAG(NDE%AL(JP),NP%AL(JP)%NSIZE_P)
+  CALL ALLOC_NRJBUD_DIAG(NDE%AL(JP),NP%AL(JP)%NSIZE_P)
+ENDDO
 !
-IF (YDE%LSURF_EVAP_BUDGET) THEN
-  ! 
-  CALL ALLOC_EVAP_BUD(DE,KLU,0)
-  DO JP = 1,IO%NPATCH
-    CALL ALLOC_EVAP_BUD(NDE%AL(JP),NP%AL(JP)%NSIZE_P,NP%AL(JP)%NSIZE_P)
-  ENDDO
-  !
-  IF (ISIZE_LMEB_PATCH>0) THEN
-    !
-    CALL ALLOC_MEB_BUD(DE,KLU)
-    DO JP = 1,IO%NPATCH
-      CALL ALLOC_MEB_BUD(NDE%AL(JP),NP%AL(JP)%NSIZE_P)
-    ENDDO
-    !
-  ENDIF
-  !
-  IF(IO%LGLACIER)THEN
-    ALLOCATE(DE%XICEFLUX(KLU))
-    DE%XICEFLUX(:) = XUNDEF
-    DO JP=1,IO%NPATCH
-      ALLOCATE(NDE%AL(JP)%XICEFLUX(NP%AL(JP)%NSIZE_P))
-      NDE%AL(JP)%XICEFLUX(:) = XUNDEF
-    ENDDO
-  ENDIF
-  !  
-  IF(DE%LWATER_BUDGET)THEN
-    !      
-    ALLOCATE(DE%XRAINFALL  (KLU))
-    ALLOCATE(DE%XSNOWFALL  (KLU))
-    DE%XRAINFALL   = XUNDEF
-    DE%XSNOWFALL   = XUNDEF    
-    !
-    CALL ALLOC_WATER_BUD(DE,KLU)
-    DO JP=1,IO%NPATCH
-      CALL ALLOC_WATER_BUD(NDE%AL(JP),NP%AL(JP)%NSIZE_P)
-    ENDDO
-    ! 
-  ENDIF
-  !
+IF (ISIZE_LMEB_PATCH>0) THEN
+   CALL ALLOC_MEB_DIAG(DE,KLU)
+   DO JP = 1,IO%NPATCH
+      CALL ALLOC_MEB_DIAG(NDE%AL(JP),NP%AL(JP)%NSIZE_P)
+   ENDDO
 ELSE
-  !
-  CALL ALLOC_EVAP_BUD(DE,0,0)
-  DO JP=1,IO%NPATCH
-    CALL ALLOC_EVAP_BUD(NDE%AL(JP),0,0)
-  ENDDO
-  !
+   CALL ALLOC_MEB_DIAG(DE,0)
+   DO JP=1,IO%NPATCH
+      CALL ALLOC_MEB_DIAG(NDE%AL(JP),0)
+   ENDDO
 ENDIF
 !
-IF (.NOT. YDE%LSURF_EVAP_BUDGET .OR. .NOT.DE%LWATER_BUDGET) THEN
-  !
-  ALLOCATE(DE%XRAINFALL  (0))
-  ALLOCATE(DE%XSNOWFALL  (0))
-  !
-  CALL ALLOC_WATER_BUD(DE,0)
-  DO JP=1,IO%NPATCH
-    CALL ALLOC_WATER_BUD(NDE%AL(JP),0)
-  ENDDO
-  !
-ENDIF
-!
-IF (.NOT.YDE%LSURF_EVAP_BUDGET .OR. ISIZE_LMEB_PATCH<=0) THEN
-  !
-  CALL ALLOC_MEB_BUD(DE,0)
-  DO JP=1,IO%NPATCH
-    CALL ALLOC_MEB_BUD(NDE%AL(JP),0)
-  ENDDO
-  ! 
-END IF
-!
-IF(.NOT.YDE%LSURF_EVAP_BUDGET .OR. .NOT.IO%LGLACIER)THEN
-  ALLOCATE(DE%XICEFLUX(0))
-  DO JP=1,IO%NPATCH
-    ALLOCATE(NDE%AL(JP)%XICEFLUX(0))
-  ENDDO
-ENDIF
-!
-!////////////////CUMULATED DIAGNOSTICS//////////////////////////////
-!
-!* surface cumulated energy budget
-!
-#ifdef SFX_OL
-GCUMUL = (DGO%LSURF_BUDGETC .OR. (LRESTART .AND. .NOT.DGO%LRESET_BUDGETC))
-#else
-GCUMUL = (DGO%LSURF_BUDGETC .OR. .NOT.DGO%LRESET_BUDGETC)
-#endif
-!
-IF ( GCUMUL ) THEN
-  !
-  !///////////////////////ALLOCATIONS//////////////////////
-  !
-  CALL ALLOC_EVAP_BUD(DEC,KLU,0)
-  DO JP=1,IO%NPATCH
-    CALL ALLOC_EVAP_BUD(NDEC%AL(JP),NP%AL(JP)%NSIZE_P,0)
-  ENDDO
-    !
-  IF (ISIZE_LMEB_PATCH>0) THEN
-    !
-    CALL ALLOC_MEB_BUD(DEC,KLU)
-    DO JP=1,IO%NPATCH
-      CALL ALLOC_MEB_BUD(NDEC%AL(JP),NP%AL(JP)%NSIZE_P)
-    ENDDO
-    !
-  ENDIF
-  !
-  CALL ALLOC_SURF_BUD(DC,0,KLU,0)
-  ALLOCATE(DC%XEVAP(KLU))
-  ALLOCATE(DC%XSUBL(KLU))
-  DC%XEVAP    = XUNDEF
-  DC%XSUBL    = XUNDEF  
-  DO JP=1,IO%NPATCH
-    CALL ALLOC_SURF_BUD(NDC%AL(JP),0,NP%AL(JP)%NSIZE_P,0)
-    ALLOCATE(NDC%AL(JP)%XEVAP(NP%AL(JP)%NSIZE_P))
-    ALLOCATE(NDC%AL(JP)%XSUBL(NP%AL(JP)%NSIZE_P))  
-    NDC%AL(JP)%XEVAP = XUNDEF
-    NDC%AL(JP)%XSUBL = XUNDEF 
-  ENDDO
-  !
-  IF(IO%LGLACIER)THEN
-    ALLOCATE(DEC%XICEFLUX(KLU))
-    DO JP=1,IO%NPATCH
-      ALLOCATE(NDEC%AL(JP)%XICEFLUX(NP%AL(JP)%NSIZE_P))
-    ENDDO
-  ENDIF
-  !
-#ifdef SFX_OL
-  IF(DE%LWATER_BUDGET .OR. (LRESTART .AND. .NOT.DGO%LRESET_BUDGETC))THEN
-#else
-  IF(DE%LWATER_BUDGET .OR. .NOT.DGO%LRESET_BUDGETC)THEN
-#endif          
-    !      
-    ALLOCATE(DEC%XRAINFALL  (KLU))
-    ALLOCATE(DEC%XSNOWFALL  (KLU))
-    !
-    CALL ALLOC_WATER_BUD(DEC,KLU)
-    DO JP=1,IO%NPATCH
-      CALL ALLOC_WATER_BUD(NDEC%AL(JP),NP%AL(JP)%NSIZE_P)
-    ENDDO
-    !     
-  ENDIF
-  !
-  !/////////////////INITIALISATIONS//////////////////////////
-  !
-  CALL INIT_EVAP_BUD(DEC)
-  !
-  IF (ISIZE_LMEB_PATCH>0) THEN
-    !
-    CALL INIT_MEB_BUD(DEC)
-    !
-  ENDIF
-  !
-  CALL INIT_SURF_BUD(DC,0.)
-  DC%XEVAP = 0.
-  DC%XSUBL = 0.
-  !
-  IF(IO%LGLACIER) DEC%XICEFLUX = 0.0
-  !
-  IF (.NOT.OREAD_BUDGETC .OR. (OREAD_BUDGETC.AND.DGO%LRESET_BUDGETC)) THEN
-    !
-    DO JP=1,IO%NPATCH
-      CALL INIT_EVAP_BUD(NDEC%AL(JP))
-    ENDDO
-    !
-    IF (ISIZE_LMEB_PATCH>0) THEN
-      !
-      DO JP=1,IO%NPATCH
-        CALL INIT_MEB_BUD(NDEC%AL(JP))
-      ENDDO
-      !
-    ENDIF
-    !
-    DO JP=1,IO%NPATCH
-      CALL INIT_SURF_BUD(NDC%AL(JP),0.)
-      NDC%AL(JP)%XEVAP = 0.
-      NDC%AL(JP)%XSUBL = 0.        
-    ENDDO
-    !
-    IF(IO%LGLACIER)THEN
-       DO JP=1,IO%NPATCH
-         NDEC%AL(JP)%XICEFLUX     = 0.0
-       ENDDO
-    ENDIF
-    !
-#ifdef SFX_OL
-    IF(DE%LWATER_BUDGET .OR. (LRESTART .AND. .NOT.DGO%LRESET_BUDGETC))THEN
-#else
-    IF(DE%LWATER_BUDGET .OR. .NOT.DGO%LRESET_BUDGETC)THEN
-#endif      
-      !
-      CALL INIT_WATER_BUD(DEC)
-      DO JP=1,IO%NPATCH
-        CALL INIT_WATER_BUD(NDEC%AL(JP))
-      ENDDO
-      !
-      DEC%XRAINFALL   = 0.0
-      DEC%XSNOWFALL   = 0.0
-      !
-    ENDIF
-    !     
-  ELSE
-    !
-    CALL READ_SURF(HPROGRAM,'VERSION',IVERSION,IRESP)
-    CALL READ_SURF(HPROGRAM,'BUG ',IBUG,IRESP)
-    !
-    GDIM2 = (IVERSION>8 .OR. IVERSION==8 .AND. IBUG>0)
-    GDIM = GDIM2
-    IF (GDIM2) CALL READ_SURF(HPROGRAM,'SPLIT_PATCH',GDIM,IRESP)    
-    !
-#ifdef SFX_OL
-    IF(DE%LWATER_BUDGET .OR. (LRESTART .AND. .NOT.DGO%LRESET_BUDGETC))THEN
-#else
-    IF(DE%LWATER_BUDGET .OR. .NOT.DGO%LRESET_BUDGETC)THEN
-#endif     
-      IF(IVERSION>7 .OR. IVERSION==7 .AND. IBUG>=3)THEN 
-        YREC='RAINFC_ISBA'
-        CALL READ_SURF(HPROGRAM,YREC,DEC%XRAINFALL,IRESP)
-        YREC='SNOWFC_ISBA'
-        CALL READ_SURF(HPROGRAM,YREC,DEC%XSNOWFALL,IRESP)
-      ELSE
-        DEC%XRAINFALL = 0.0
-        DEC%XSNOWFALL = 0.0
-      ENDIF
-    ENDIF
-    !
-    IF(DGO%LPATCH_BUDGET .AND. IO%NPATCH>1)THEN
-      !
-      !
-      IF (GDIM) THEN
-        YREC2=''
-      ELSEIF (IVERSION<7 .OR. IVERSION==7 .AND. IBUG<3) THEN
-        YREC2='PATCH'
-      ELSE
-        YREC2='P'
-      ENDIF
-      !
-      ALLOCATE(ZWORK(KLU,IO%NPATCH))
-      !
-      !/////////////EVAP PATCH/////////////////////////////
-      !
-      YREC='LEGC_'//YREC2
-      CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-      DO JP = 1,IO%NPATCH
-        CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XLEG(:))
-      ENDDO
-      !
-      YREC='LEGIC_'//YREC2
-      CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-      DO JP = 1,IO%NPATCH
-        CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XLEGI(:))
-      ENDDO    
-      !
-      YREC='LEVC_'//YREC2
-      CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-      DO JP = 1,IO%NPATCH
-        CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XLEV(:))
-      ENDDO
-  
-      !
-      YREC='LESC_'//YREC2
-      CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-      DO JP = 1,IO%NPATCH
-        CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XLES(:))
-      ENDDO
-      !
-      IF(HSNOW_SCHEME=='3-L' .OR. HSNOW_SCHEME=='CRO')THEN
-         IF(IVERSION>7 .OR. IVERSION==7 .AND. IBUG>=3)THEN
-           !
-           YREC='LESLC_'//YREC2
-           CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-           DO JP = 1,IO%NPATCH
-             CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XLESL(:))
-           ENDDO
-           !
-         ELSE
-           !
-           DO JP=1,IO%NPATCH
-             NDEC%AL(JP)%XLESL(:) = 0.0
-           ENDDO
-           !
-         ENDIF
-         !
-         IF(IVERSION>=8)THEN
-           !
-           YREC='SNDRIFC_'//YREC2
-           CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-           DO JP = 1,IO%NPATCH
-             CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XSNDRIFT(:))
-           ENDDO
-           !        
-         ELSE
-           !
-           DO JP=1,IO%NPATCH
-             NDEC%AL(JP)%XSNDRIFT(:) = 0.0
-           ENDDO
-           !         
-         ENDIF  
-         !    
-      ELSE
-        !
-        DO JP=1,IO%NPATCH
-          NDEC%AL(JP)%XLESL(:) = 0.0
-          NDEC%AL(JP)%XSNDRIFT(:) = 0.0
-        ENDDO
-        !      
-      ENDIF
-      !
-      YREC='LERC_'//YREC2
-      CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-      DO JP = 1,IO%NPATCH
-        CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XLER(:))
-      ENDDO
-      !    
-      YREC='LETRC_'//YREC2
-      CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-      DO JP = 1,IO%NPATCH
-        CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XLETR(:))
-      ENDDO 
-      !    
-      YREC='EVAPC_'//YREC2
-      CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-      DO JP = 1,IO%NPATCH
-        CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDC%AL(JP)%XEVAP(:))
-      ENDDO
-      !    
-      IF (IVERSION<8)THEN
-        DO JP=1,IO%NPATCH
-          NDC%AL(JP)%XSUBL(:) = 0.0
-        ENDDO           
-      ELSE
-        YREC='SUBLC_'//YREC2
-        CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-        DO JP = 1,IO%NPATCH
-          CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDC%AL(JP)%XSUBL(:))
-        ENDDO      
-      ENDIF   
-      ! 
-      YREC='DRAINC_'//YREC2
-      CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-      DO JP = 1,IO%NPATCH
-        CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XDRAIN(:))
-      ENDDO   
-      !      
-      YREC='RUNOFFC_'//YREC2
-      CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-      DO JP = 1,IO%NPATCH
-        CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XRUNOFF(:))
-      ENDDO   
-      !      
-      YREC='DRIVEGC_'//YREC2
-      CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-      DO JP = 1,IO%NPATCH
-        CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XDRIP(:))
-      ENDDO
-      !      
-      YREC='RRVEGC_'//YREC2
-      CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-      DO JP = 1,IO%NPATCH
-        CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XRRVEG(:))
-      ENDDO  
-      !      
-      YREC='SNOMLTC_'//YREC2
-      CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-      DO JP = 1,IO%NPATCH
-        CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XMELT(:))
-      ENDDO          
-      !
-      IF (LIRRIGMODE) THEN
-        YREC='IRRIGC_'//YREC2
-        CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-        DO JP = 1,IO%NPATCH
-          CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XIRRIG_FLUX(:))
-        ENDDO          
-      ELSE
-        DO JP=1,IO%NPATCH
-          NDEC%AL(JP)%XIRRIG_FLUX(:) = 0.0
-        ENDDO                 
-      ENDIF
-      !
-      IF(IO%CPHOTO/='NON' .AND. (IVERSION>7 .OR. IVERSION==7 .AND. IBUG>=3))THEN
-        YREC='GPPC_'//YREC2
-        CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-        DO JP = 1,IO%NPATCH
-          CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XGPP(:))
-        ENDDO 
-        !        
-        YREC='RC_AUTO_'//YREC2
-        CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-        DO JP = 1,IO%NPATCH
-          CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XRESP_AUTO(:))
-        ENDDO
-        !        
-        YREC='RC_ECO_'//YREC2
-        CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-        DO JP = 1,IO%NPATCH
-          CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XRESP_ECO(:))
-        ENDDO         
-      ELSE
-        DO JP=1,IO%NPATCH
-          NDEC%AL(JP)%XGPP(:) = 0.0
-          NDEC%AL(JP)%XRESP_AUTO(:) = 0.0
-          NDEC%AL(JP)%XRESP_ECO(:) = 0.0
-        ENDDO                
-      ENDIF      
-      !
-      IF((IO%CRUNOFF=='SGH'.AND.IO%CISBA=='DIF').AND.IVERSION>=8)THEN
-        YREC='QSBC_'//YREC2
-        CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-        DO JP = 1,IO%NPATCH
-          CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XQSB(:))
-        ENDDO
-      ELSE
-        DE%XQSB = 0.0
-      ENDIF
-      !
-      IF(IO%CHORT=='SGH'.OR.IO%CISBA=='DIF')THEN
-        YREC='HORTONC_'//YREC2
-        CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-        DO JP = 1,IO%NPATCH
-          CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XHORT(:))
-        ENDDO          
-      ELSE
-        DO JP=1,IO%NPATCH
-          NDEC%AL(JP)%XHORT(:) = 0.0
-        ENDDO               
-      ENDIF
-      !
-      IF(IO%LFLOOD)THEN
-        YREC='IFLOODC_'//YREC2
-        CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-        DO JP = 1,IO%NPATCH
-          CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XIFLOOD(:))
-        ENDDO 
-        !        
-        YREC='PFLOODC_'//YREC2
-        CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-        DO JP = 1,IO%NPATCH
-          CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XPFLOOD(:))
-        ENDDO      
-        !        
-        YREC='LEFC_'//YREC2
-        CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-        DO JP = 1,IO%NPATCH
-          CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XLE_FLOOD(:))
-        ENDDO  
-        !        
-        YREC='LEIFC_'//YREC2
-        CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-        DO JP = 1,IO%NPATCH
-          CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XLEI_FLOOD(:))
-        ENDDO         
-      ELSE
-        DO JP=1,IO%NPATCH
-          NDEC%AL(JP)%XIFLOOD(:) = 0.0
-          NDEC%AL(JP)%XPFLOOD(:) = 0.0
-          NDEC%AL(JP)%XLE_FLOOD(:) = 0.0
-          NDEC%AL(JP)%XLEI_FLOOD(:) = 0.0
-        ENDDO                
-      ENDIF      
-      ! 
-      !       
-      IF (ISIZE_LMEB_PATCH>0) THEN
-        !
-        YREC='LEV_CVC_'//YREC2
-        CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-        DO JP = 1,IO%NPATCH
-          CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XLEV_CV(:))
-        ENDDO
-        !        
-        YREC='LES_CVC_'//YREC2
-        CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-        DO JP = 1,IO%NPATCH
-          CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XLES_CV(:))
-        ENDDO   
-        !       
-        YREC='LETR_CVC_'//YREC2
-        CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-        DO JP = 1,IO%NPATCH
-          CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XLETR_CV(:))
-        ENDDO   
-        !       
-        YREC='LER_CVC_'//YREC2
-        CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-        DO JP = 1,IO%NPATCH
-          CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XLER_CV(:))
-        ENDDO
-        !       
-        YREC='LE_CVC_'//YREC2
-        CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-        DO JP = 1,IO%NPATCH
-          CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XLE_CV(:))
-        ENDDO
-        !       
-        YREC='H_CVC_'//YREC2
-        CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-        DO JP = 1,IO%NPATCH
-          CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XH_CV(:))
-        ENDDO  
-        !       
-        YREC='MELT_CVC_'//YREC2
-        CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-        DO JP = 1,IO%NPATCH
-          CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XMELT_CV(:))
-        ENDDO
-        !        
-        YREC='FRZ_CVC_'//YREC2
-        CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-        DO JP = 1,IO%NPATCH
-          CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XFRZ_CV(:))
-        ENDDO        
-        !     
-        YREC='LE_GVC_'//YREC2
-        CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-        DO JP = 1,IO%NPATCH
-          CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XLE_GV(:))
-        ENDDO 
-        !
-        YREC='H_GVC_'//YREC2
-        CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-        DO JP = 1,IO%NPATCH
-          CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XH_GV(:))
-        ENDDO  
-        !      
-        YREC='LE_GNC_'//YREC2
-        CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-        DO JP = 1,IO%NPATCH
-          CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XLE_GN(:))
-        ENDDO          
-        !
-        YREC='H_GNC_'//YREC2
-        CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-        DO JP = 1,IO%NPATCH
-          CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XH_GN(:))
-        ENDDO  
-        !       
-        YREC='SR_GNC_'//YREC2
-        CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-        DO JP = 1,IO%NPATCH
-          CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XSR_GN(:))
-        ENDDO  
-        !        
-        YREC='SWDN_GNC_'//YREC2
-        CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-        DO JP = 1,IO%NPATCH
-          CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XSWDOWN_GN(:))
-        ENDDO  
-        !        
-        YREC='LWDN_GNC_'//YREC2
-        CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-        DO JP = 1,IO%NPATCH
-          CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XLWDOWN_GN(:))
-        ENDDO  
-        !
-        YREC='LE_CAC_'//YREC2
-        CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-        DO JP = 1,IO%NPATCH
-          CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XLE_CA(:))
-        ENDDO   
-        !   
-        YREC='H_CAC_'//YREC2
-        CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-        DO JP = 1,IO%NPATCH
-          CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XH_CA(:))
-        ENDDO
-        !          
-        YREC='SWNT_VC_'//YREC2
-        CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-        DO JP = 1,IO%NPATCH
-          CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XSWNET_V(:))
-        ENDDO  
-        !        
-        YREC='SWNT_GC_'//YREC2
-        CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-        DO JP = 1,IO%NPATCH
-          CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XSWNET_G(:))
-        ENDDO
-        !        
-        YREC='SWNT_NC_'//YREC2
-        CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-        DO JP = 1,IO%NPATCH
-          CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XSWNET_N(:))
-        ENDDO
-        !        
-        YREC='SWNT_NSC_'//YREC2
-        CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-        DO JP = 1,IO%NPATCH
-          CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XSWNET_NS(:))
-        ENDDO 
-        !        
-        YREC='LWNT_VC_'//YREC2
-        CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-        DO JP = 1,IO%NPATCH
-          CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XLWNET_V(:))
-        ENDDO 
-        !        
-        YREC='LWNT_GC_'//YREC2
-        CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-        DO JP = 1,IO%NPATCH
-          CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XLWNET_G(:))
-        ENDDO
-        !        
-        YREC='LWNT_NC_'//YREC2
-        CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-        DO JP = 1,IO%NPATCH
-          CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XLWNET_N(:))
-        ENDDO 
-        !             
-      ENDIF
-      !
-      YREC='RNC_'//YREC2
-      CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-      DO JP = 1,IO%NPATCH
-        CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDC%AL(JP)%XRN(:))
-      ENDDO
-      !
-      YREC='HC_'//YREC2
-      CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-      DO JP = 1,IO%NPATCH
-        CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDC%AL(JP)%XH(:))
-      ENDDO  
-      !      
-      YREC='LEC_'//YREC2
-      CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-      DO JP = 1,IO%NPATCH
-        CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDC%AL(JP)%XLE(:))
-      ENDDO   
-      !       
-      YREC='LEIC_'//YREC2
-      CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-      DO JP = 1,IO%NPATCH
-        CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDC%AL(JP)%XLEI(:))
-      ENDDO 
-      !       
-      YREC='GFLUXC_'//YREC2
-      CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-      DO JP = 1,IO%NPATCH
-        CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDC%AL(JP)%XGFLUX(:))
-      ENDDO         
-      !      
-      IF (DGO%LRAD_BUDGET) THEN
-        !
-        YREC='SWDC_'//YREC2
-        CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-        DO JP = 1,IO%NPATCH
-          CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDC%AL(JP)%XSWD(:))
-        ENDDO
-        !
-        YREC='SWUC_'//YREC2
-        CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-        DO JP = 1,IO%NPATCH
-          CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDC%AL(JP)%XSWU(:))
-        ENDDO 
-        !        
-        YREC='LWDC_'//YREC2
-        CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-        DO JP = 1,IO%NPATCH
-          CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDC%AL(JP)%XLWD(:))
-        ENDDO 
-        !        
-        YREC='LWUC_'//YREC2
-        CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-        DO JP = 1,IO%NPATCH
-          CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDC%AL(JP)%XLWU(:))
-        ENDDO
-        !        
-      ENDIF
-      !
-      YREC='FMUC_'//YREC2
-      CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-      DO JP = 1,IO%NPATCH
-        CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDC%AL(JP)%XFMU(:))
-      ENDDO
-      !      
-      YREC='FMVC_'//YREC2
-      CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-      DO JP = 1,IO%NPATCH
-        CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDC%AL(JP)%XFMV(:))
-      ENDDO   
-      !
-      IF(IO%LGLACIER)THEN
-        YREC='ICE_FC_'//YREC2 
-        CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-        DO JP = 1,IO%NPATCH
-          CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XICEFLUX(:))
-        ENDDO   
-      ENDIF
-      !
-      ! 
-#ifdef SFX_OL
-      IF(DE%LWATER_BUDGET .OR. (LRESTART .AND. .NOT.DGO%LRESET_BUDGETC))THEN
-#else
-      IF(DE%LWATER_BUDGET .OR. .NOT.DGO%LRESET_BUDGETC)THEN
-#endif       
-        IF(IVERSION>7 .OR. IVERSION==7 .AND. IBUG>=3)THEN 
-          !
-          YREC='DWGC_'//YREC2
-          CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-          DO JP = 1,IO%NPATCH
-              CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XDWG(:))
-          ENDDO
-          !        
-          YREC='DWGIC_'//YREC2
-          CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-          DO JP = 1,IO%NPATCH
-              CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XDWGI(:))
-          ENDDO
-          !        
-          YREC='DWRC_'//YREC2
-          CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-          DO JP = 1,IO%NPATCH
-              CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XDWR(:))
-          ENDDO
-          !        
-          YREC='DSWEC_'//YREC2
-          CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-          DO JP = 1,IO%NPATCH
-              CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XDSWE(:))
-          ENDDO  
-          !        
-          YREC='WATBUDC_'//YREC2
-          CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YREC, ZWORK)
-          DO JP = 1,IO%NPATCH
-              CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XWATBUD(:))
-          ENDDO
-          !        
-         ELSE
-          !
-          DO JP=1,IO%NPATCH
-              CALL INIT_WATER_BUD(NDEC%AL(JP))
-          ENDDO        
-          !       
-        ENDIF
-        !
-        DEALLOCATE(ZWORK)
-        !
-      ELSE
-        !
-        DO JP=1,IO%NPATCH
-          !
-          CALL INIT_EVAP_BUD(NDEC%AL(JP))
-          !
-          IF (ISIZE_LMEB_PATCH>0) THEN
-            CALL INIT_MEB_BUD(NDEC%AL(JP))
-          ENDIF
-          !
-          CALL INIT_SURF_BUD(DC,0.)
-          DC%XEVAP = 0.
-          DC%XSUBL = 0.
-          !
-        ENDDO
-        !
-        IF(IO%LGLACIER)THEN
-          DO JP=1,IO%NPATCH
-            NDEC%AL(JP)%XICEFLUX=0.0
-          ENDDO      
-        ENDIF
-        !  
-#ifdef SFX_OL
-        IF(DE%LWATER_BUDGET .OR. (LRESTART .AND. .NOT.DGO%LRESET_BUDGETC))THEN
-#else
-        IF(DE%LWATER_BUDGET .OR. .NOT.DGO%LRESET_BUDGETC)THEN
-#endif        
-          !
-          DO JP=1,IO%NPATCH
-            CALL INIT_WATER_BUD(NDEC%AL(JP))
-          ENDDO
-          !
-        ENDIF
-        !
-      ENDIF
-      !
-    ENDIF
-    !
-  ENDIF
-  !
-ELSE
-  !
-  CALL ALLOC_SURF_BUD(DC,0,0,0)
-  ALLOCATE(DC%XEVAP(0))
-  ALLOCATE(DC%XSUBL(0))  
-  !
-  CALL ALLOC_EVAP_BUD(DEC,0,0)
-  !
-  DO JP=1,IO%NPATCH
-    !
-    CALL ALLOC_SURF_BUD(NDC%AL(JP),0,0,0)
-    ALLOCATE(NDC%AL(JP)%XEVAP(0))
-    ALLOCATE(NDC%AL(JP)%XSUBL(0))     
-    !
-    CALL ALLOC_EVAP_BUD(NDEC%AL(JP),0,0)
-    !
-  ENDDO
-  !
-ENDIF
-!
-#ifdef SFX_OL
-IF(.NOT.GCUMUL .AND. (.NOT.DE%LWATER_BUDGET .OR. .NOT.LRESTART .OR. DGO%LRESET_BUDGETC))THEN
-#else
-IF(.NOT.GCUMUL .AND. (.NOT.DE%LWATER_BUDGET .OR. DGO%LRESET_BUDGETC))THEN
-#endif
-  !
-  ALLOCATE(DEC%XRAINFALL  (0))
-  ALLOCATE(DEC%XSNOWFALL  (0))
-  ! 
-  CALL ALLOC_WATER_BUD(DEC,0)
-  DO JP=1,IO%NPATCH
-    CALL ALLOC_WATER_BUD(NDEC%AL(JP),0)
-  ENDDO
-  !
-ENDIF
-!
-IF (.NOT.GCUMUL .OR. ISIZE_LMEB_PATCH<=0) THEN
-  !
-  CALL ALLOC_MEB_BUD(DEC,0)  
-  DO JP=1,IO%NPATCH
-    CALL ALLOC_MEB_BUD(NDEC%AL(JP),0)
-  ENDDO  
-  !
-ENDIF
-!
-IF(.NOT.IO%LGLACIER)THEN
-  ALLOCATE(DEC%XICEFLUX(0))
-  DO JP=1,IO%NPATCH
-    ALLOCATE(NDEC%AL(JP)%XICEFLUX(0))
-  ENDDO
-ENDIF
-!
-!* miscellaneous surface fields
-!
-IF (YDM%LSURF_MISC_BUDGET) THEN
-  !
-  CALL ALLOC_MISC_BUD(DM, KLU ,0 ,IO%NGROUND_LAYER ,0 ,DM%LPROSNOW, KSW)
-  DO JP=1,IO%NPATCH
-    CALL ALLOC_MISC_BUD(NDM%AL(JP), NP%AL(JP)%NSIZE_P, NP%AL(JP)%NSIZE_P, &
-                        IO%NGROUND_LAYER, KSNOW_NLAYER, DM%LPROSNOW, KSW)
-  ENDDO
-  !
-ELSE
-  !
-  CALL ALLOC_MISC_BUD(DM, 0, 0, 0, 0, DM%LPROSNOW, KSW)
-  DO JP=1,IO%NPATCH
-    CALL ALLOC_MISC_BUD(NDM%AL(JP), 0, 0, 0, 0, DM%LPROSNOW, KSW)
-  ENDDO  
-  !
-END IF
+!-------------------------------------------------------------------------------
 !
 !* Chemical fluxes
+!
 IF (CHI%SVI%NBEQ>0 .AND. CHI%LCH_BIO_FLUX) THEN
-  ALLOCATE(GB%XFISO(KLU))
-  ALLOCATE(GB%XFMONO(KLU))
-  !
-  GB%XFISO         = XUNDEF
-  GB%XFMONO        = XUNDEF
+   !
+   ALLOCATE(GB%XFISO(KLU))
+   ALLOCATE(GB%XFMONO(KLU))
+   !
+   GB%XFISO  = XUNDEF
+   GB%XFMONO = XUNDEF
 ELSE
-  ALLOCATE(GB%XFISO(0))
-  ALLOCATE(GB%XFMONO(0))
+   ALLOCATE(GB%XFISO(0))
+   ALLOCATE(GB%XFMONO(0))
 ENDIF
 !
 IF (IO%CPHOTO/='NON') THEN
-  DO JP = 1,IO%NPATCH
-    ALLOCATE(NGB%AL(JP)%XIACAN(NP%AL(JP)%NSIZE_P,KABC))
-    !
-    NGB%AL(JP)%XIACAN        = XUNDEF
+   !
+   DO JP = 1,IO%NPATCH
+      ALLOCATE(NGB%AL(JP)%XIACAN(NP%AL(JP)%NSIZE_P,KABC))
+      NGB%AL(JP)%XIACAN = XUNDEF
+   ENDDO
+   !
+ELSE
+   !
+   DO JP = 1,IO%NPATCH
+      ALLOCATE(NGB%AL(JP)%XIACAN(0,0))
+   ENDDO
+   !
+ENDIF
+!
+!-------------------------------------------------------------------------------
+!-------------------------------------------------------------------------------
+!-------------------------------------------------------------------------------
+!
+!
+!////////////////CUMULATED DIAGNOSTICS//////////////////////////////
+!
+!
+IF(GCUMUL)THEN
+  !
+  !
+  !///////////////////////ALLOCATIONS//////////////////////
+  !
+  !
+  ! * Alloc global
+  !
+  ALLOCATE(DC%XEVAP(KLU))
+  ALLOCATE(DC%XSUBL(KLU))
+  !
+  ALLOCATE(DEC%XRAINFALL(KLU))
+  ALLOCATE(DEC%XSNOWFALL(KLU))
+  !
+  CALL ALLOC_SURF_BUD   (DC,0,KLU,0)
+  CALL ALLOC_EVAP_DIAG  (DEC,KLU,0)
+  CALL ALLOC_CC_DIAG    (DEC,KLU)
+  CALL ALLOC_WATBUD_DIAG(DEC,KLU)
+  CALL ALLOC_NRJBUD_DIAG(DEC,KLU)
+  !
+  IF (ISIZE_LMEB_PATCH>0) THEN
+     CALL ALLOC_MEB_DIAG(DEC,KLU)
+  ENDIF
+  !
+  ! * Alloc per patch
+  !
+  DO JP=1,IO%NPATCH
+     !
+     ALLOCATE(NDC%AL(JP)%XEVAP(NP%AL(JP)%NSIZE_P))
+     ALLOCATE(NDC%AL(JP)%XSUBL(NP%AL(JP)%NSIZE_P))
+     !
+     CALL ALLOC_SURF_BUD   (NDC%AL(JP),0,NP%AL(JP)%NSIZE_P,0)  
+     CALL ALLOC_EVAP_DIAG  (NDEC%AL(JP),NP%AL(JP)%NSIZE_P,0)
+     CALL ALLOC_CC_DIAG    (NDEC%AL(JP),NP%AL(JP)%NSIZE_P)
+     CALL ALLOC_WATBUD_DIAG(NDEC%AL(JP),NP%AL(JP)%NSIZE_P)
+     CALL ALLOC_NRJBUD_DIAG(NDEC%AL(JP),NP%AL(JP)%NSIZE_P)
+     !
   ENDDO
   !
-ELSE
-  DO JP = 1,IO%NPATCH
-    ALLOCATE(NGB%AL(JP)%XIACAN(0,0))
+  IF (ISIZE_LMEB_PATCH>0) THEN
+     DO JP=1,IO%NPATCH
+        CALL ALLOC_MEB_DIAG(NDEC%AL(JP),NP%AL(JP)%NSIZE_P)
+     ENDDO
+  ENDIF
+  !
+  !
+  !/////////////////INITIALISATIONS//////////////////////////
+  !
+  !
+  ! * Init global
+  !
+  DC%XEVAP = 0.
+  DC%XSUBL = 0.
+  !
+  IF (GREAD_RESTART.AND.(IVERSION>7.OR.IVERSION==7.AND.IBUG>=3)) THEN 
+     YREC='RAINFC_ISBA'
+     CALL READ_SURF(HPROGRAM,YREC,DEC%XRAINFALL,IRESP)
+     YREC='SNOWFC_ISBA'
+     CALL READ_SURF(HPROGRAM,YREC,DEC%XSNOWFALL,IRESP)
+  ELSE
+     DEC%XRAINFALL = 0.0
+     DEC%XSNOWFALL = 0.0
+  ENDIF
+
+  CALL INIT_SURF_BUD  (DC,0.)
+  CALL INIT_EVAP_BUD  (DEC)
+  CALL INIT_CC_BUD    (DEC,IO)
+  CALL INIT_WATER_BUD (DEC)
+  CALL INIT_ENERGY_BUD(DEC)
+  !
+  IF (ISIZE_LMEB_PATCH>0) THEN
+     CALL INIT_MEB_BUD(DEC)
+  ENDIF
+  !
+  ! * Init per patch
+  !
+  DO JP=1,IO%NPATCH
+     !
+     NDC%AL(JP)%XEVAP = 0.
+     NDC%AL(JP)%XSUBL = 0.
+     !
+     CALL INIT_SURF_BUD(NDC%AL(JP),0.)
+     !
+     CALL INIT_EVAP_BUD  (NDEC%AL(JP))
+     CALL INIT_CC_BUD    (NDEC%AL(JP),IO)
+     CALL INIT_WATER_BUD (NDEC%AL(JP))
+     CALL INIT_ENERGY_BUD(NDEC%AL(JP))
+     !
   ENDDO
+  !
+  IF (ISIZE_LMEB_PATCH>0) THEN
+     DO JP=1,IO%NPATCH
+        CALL INIT_MEB_BUD(NDEC%AL(JP))
+     ENDDO
+  ENDIF
+  !
+  !
+  ! * OPTIONAL Read restart file per path
+  !
+  !
+  IF(GREAD_RESTART .AND. DGO%LPATCH_BUDGET .AND. IO%NPATCH>1)THEN
+    !
+    CALL READ_RESTART_PATCH(IO%NPATCH)
+    !
+  ENDIF
+  !
+  !
+ELSE
+  !
+  !///////////////////////NO CUMUL//////////////////////
+  !
+  ! * NO GCUMUL global
+  !
+  ALLOCATE(DC%XEVAP(0))
+  ALLOCATE(DC%XSUBL(0)) 
+  !
+  ALLOCATE(DEC%XRAINFALL(0))
+  ALLOCATE(DEC%XSNOWFALL(0))
+  !
+  CALL ALLOC_SURF_BUD(DC,0,0,0)
+  CALL ALLOC_EVAP_DIAG(DEC,0,0)
+  CALL ALLOC_CC_DIAG    (DEC,0)
+  CALL ALLOC_WATBUD_DIAG(DEC,0)
+  CALL ALLOC_NRJBUD_DIAG(DEC,0)
+  !
+  IF (ISIZE_LMEB_PATCH>0) THEN
+     CALL ALLOC_MEB_DIAG(DEC,0)  
+  ENDIF
+  !
+  ! * NO GCUMUL per patch
+  !
+  DO JP=1,IO%NPATCH
+    !
+    ALLOCATE(NDC%AL(JP)%XEVAP(0))
+    ALLOCATE(NDC%AL(JP)%XSUBL(0))
+    !
+    CALL ALLOC_SURF_BUD(NDC%AL(JP),0,0,0)     
+    !
+    CALL ALLOC_EVAP_DIAG(NDEC%AL(JP),0,0)
+    CALL ALLOC_CC_DIAG    (NDEC%AL(JP),0)
+    CALL ALLOC_WATBUD_DIAG(NDEC%AL(JP),0)
+    CALL ALLOC_NRJBUD_DIAG(NDEC%AL(JP),0)
+    !
+  ENDDO
+  !
+  IF (ISIZE_LMEB_PATCH>0) THEN
+     DO JP=1,IO%NPATCH
+        CALL ALLOC_MEB_DIAG(NDEC%AL(JP),0)
+     ENDDO
+  ENDIF
+  !
 ENDIF
+!
+!-------------------------------------------------------------------------------
+!-------------------------------------------------------------------------------
+!-------------------------------------------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('DIAG_ISBA_INIT_N',1,ZHOOK_HANDLE)
 !
+!-------------------------------------------------------------------------------
+!-------------------------------------------------------------------------------
 CONTAINS
+!-------------------------------------------------------------------------------
+!-------------------------------------------------------------------------------
 !
-!
-SUBROUTINE ALLOC_MISC_BUD(DMA, KLUA, KLUAP, KNLAYER, KSNLAYER, OPROSNOW, KSW)
-!
-TYPE(DIAG_MISC_ISBA_t), INTENT(INOUT) :: DMA
-INTEGER, INTENT(IN) :: KLUA
-INTEGER, INTENT(IN) :: KLUAP
-INTEGER, INTENT(IN) :: KNLAYER
-INTEGER, INTENT(IN) :: KSNLAYER
-LOGICAL, INTENT(IN) :: OPROSNOW
-INTEGER, INTENT(IN) :: KSW   
-REAL(KIND=JPRB) :: ZHOOK_HANDLE
-!
-IF (LHOOK) CALL DR_HOOK('DIAG_ISBA_INIT_N:ALLOC_MISC_BUD',0,ZHOOK_HANDLE)
-!
-!////////////DIAG DEFINED BY PATCH AND AVERAGED//////////
-!
-ALLOCATE(DMA%XHV           (KLUA))
-!
-ALLOCATE(DMA%XSWI          (KLUA,KNLAYER))
-ALLOCATE(DMA%XTSWI         (KLUA,KNLAYER))
-!
-ALLOCATE(DMA%XTWSNOW       (KLUA))
-ALLOCATE(DMA%XTDSNOW       (KLUA))
-ALLOCATE(DMA%XTTSNOW       (KLUA))
-!
-IF ( OPROSNOW .AND. HSNOW_SCHEME=="CRO" ) THEN
-  !
-  ALLOCATE(DMA%XSNOWDEND      (KLUAP,KSNLAYER))
-  ALLOCATE(DMA%XSNOWSPHER     (KLUAP,KSNLAYER))
-  ALLOCATE(DMA%XSNOWSIZE      (KLUAP,KSNLAYER))
-  ALLOCATE(DMA%XSNOWSSA       (KLUAP,KSNLAYER))
-  ALLOCATE(DMA%XSNOWTYPEMEPRA (KLUAP,KSNLAYER))
-  ALLOCATE(DMA%XSNOWRAM       (KLUAP,KSNLAYER))
-  ALLOCATE(DMA%XSNOWSHEAR     (KLUAP,KSNLAYER))
-  ALLOCATE(DMA%XACC_RAT       (KLUAP,KSNLAYER))
-  ALLOCATE(DMA%XNAT_RAT       (KLUAP,KSNLAYER))
-  ALLOCATE(DMA%XSNOWDZ        (KLUAP,KSNLAYER))
-  ALLOCATE(DMA%XSPEC_ALB      (KLUAP,KSW))
-  ALLOCATE(DMA%XDIFF_RATIO    (KLUAP,KSW))
-  ALLOCATE(DMA%XIMPUR_CONC    (KLUAP,KSNLAYER,NIMPUR))
-  !
-  ALLOCATE(DMA%XSNDPT_1DY     (KLUA))
-  ALLOCATE(DMA%XSNDPT_3DY     (KLUA))
-  ALLOCATE(DMA%XSNDPT_5DY     (KLUA))
-  ALLOCATE(DMA%XSNDPT_7DY     (KLUA))
-  ALLOCATE(DMA%XSNSWE_1DY     (KLUA))
-  ALLOCATE(DMA%XSNSWE_3DY     (KLUA))
-  ALLOCATE(DMA%XSNSWE_5DY     (KLUA))
-  ALLOCATE(DMA%XSNSWE_7DY     (KLUA))
-  ALLOCATE(DMA%XSNRAM_SONDE   (KLUA))
-  ALLOCATE(DMA%XSN_WETTHCKN   (KLUA))
-  ALLOCATE(DMA%XSN_REFRZNTHCKN(KLUA))
-  ALLOCATE(DMA%XDEP_HIG       (KLUA))
-  ALLOCATE(DMA%XDEP_MOD       (KLUA))
-  ALLOCATE(DMA%XACC_LEV       (KLUA))
-  ALLOCATE(DMA%XPRO_INF_TYP   (KLUA))
-  !
-ELSE
-  !
-  ALLOCATE(DMA%XSNOWDEND      (0,0))
-  ALLOCATE(DMA%XSNOWSPHER     (0,0))
-  ALLOCATE(DMA%XSNOWSIZE      (0,0))
-  ALLOCATE(DMA%XSNOWSSA       (0,0))
-  ALLOCATE(DMA%XSNOWTYPEMEPRA (0,0))
-  ALLOCATE(DMA%XSNOWRAM       (0,0))
-  ALLOCATE(DMA%XSNOWSHEAR     (0,0))
-  ALLOCATE(DMA%XACC_RAT       (0,0))
-  ALLOCATE(DMA%XNAT_RAT       (0,0))
-  !
-  ALLOCATE(DMA%XSNDPT_1DY     (0))
-  ALLOCATE(DMA%XSNDPT_3DY     (0))
-  ALLOCATE(DMA%XSNDPT_5DY     (0))
-  ALLOCATE(DMA%XSNDPT_7DY     (0))
-  ALLOCATE(DMA%XSNSWE_1DY     (0))
-  ALLOCATE(DMA%XSNSWE_3DY     (0))
-  ALLOCATE(DMA%XSNSWE_5DY     (0))
-  ALLOCATE(DMA%XSNSWE_7DY     (0))
-  ALLOCATE(DMA%XSNRAM_SONDE   (0))
-  ALLOCATE(DMA%XSN_WETTHCKN   (0))
-  ALLOCATE(DMA%XSN_REFRZNTHCKN(0))
-  ALLOCATE(DMA%XDEP_HIG       (0))
-  ALLOCATE(DMA%XDEP_MOD       (0))
-  ALLOCATE(DMA%XACC_LEV       (0))
-  ALLOCATE(DMA%XPRO_INF_TYP   (0))
-  !
-  ALLOCATE(DMA%XSNOWDZ        (0,0))
-  ALLOCATE(DMA%XIMPUR_CONC    (0,0,0)) 
-  ALLOCATE(DMA%XSPEC_ALB      (0,0))
-  ALLOCATE(DMA%XDIFF_RATIO    (0,0))   
-ENDIF
-  
-IF ( HSNOW_SCHEME=="CRO" .AND. IO%LSNOWSYTRON ) THEN
-  !
-  ALLOCATE(DMA%XSYTMASS (KLUA))
-  ALLOCATE(DMA%XSYTMASSC(KLUA))
-  !
-ELSE
-  !
-  ALLOCATE(DMA%XSYTMASS (0))
-  ALLOCATE(DMA%XSYTMASSC(0))
-  !
-ENDIF
-!
-ALLOCATE(DMA%XPSNG        (KLUA))
-ALLOCATE(DMA%XPSNV        (KLUA))
-ALLOCATE(DMA%XPSN         (KLUA))
-!
-ALLOCATE(DMA%XFSAT        (KLUA)) 
-!
-ALLOCATE(DMA%XFFG         (KLUA))
-ALLOCATE(DMA%XFFV         (KLUA))
-ALLOCATE(DMA%XFF          (KLUA))
-!
-IF (KLUA>0) THEN
-  DMA%XHV      = XUNDEF  
-  DMA%XSWI     = XUNDEF
-  DMA%XTSWI    = XUNDEF
-  DMA%XTWSNOW  = XUNDEF
-  DMA%XTDSNOW  = XUNDEF
-  DMA%XTTSNOW  = XUNDEF  
-  DMA%XPSNG    = XUNDEF
-  DMA%XPSNV    = XUNDEF
-  DMA%XPSN     = XUNDEF
-  DMA%XFSAT    = XUNDEF  
-  DMA%XFFG     = XUNDEF
-  DMA%XFFV     = XUNDEF
-  DMA%XFF      = XUNDEF
-ENDIF
-!
-IF ( OPROSNOW  .AND. HSNOW_SCHEME=="CRO" ) THEN
-  !
-  IF (KLUAP>0) THEN
-    DMA%XSNOWDEND      = XUNDEF
-    DMA%XSNOWSPHER     = XUNDEF
-    DMA%XSNOWSIZE      = XUNDEF
-    DMA%XSNOWSSA       = XUNDEF
-    DMA%XSNOWTYPEMEPRA = XUNDEF
-    DMA%XSNOWRAM       = XUNDEF
-    DMA%XSNOWSHEAR     = XUNDEF
-    DMA%XACC_RAT       = XUNDEF
-    DMA%XNAT_RAT       = XUNDEF
-  ENDIF
-  !
-  IF (KLUA>0) THEN
-    DMA%XSNDPT_1DY      = XUNDEF
-    DMA%XSNDPT_3DY      = XUNDEF
-    DMA%XSNDPT_5DY      = XUNDEF
-    DMA%XSNDPT_7DY      = XUNDEF
-    DMA%XSNSWE_1DY      = XUNDEF
-    DMA%XSNSWE_3DY      = XUNDEF
-    DMA%XSNSWE_5DY      = XUNDEF
-    DMA%XSNSWE_7DY      = XUNDEF
-    DMA%XSNRAM_SONDE    = XUNDEF
-    DMA%XSN_WETTHCKN    = XUNDEF
-    DMA%XSN_REFRZNTHCKN = XUNDEF
-    DMA%XDEP_HIG        = XUNDEF
-    DMA%XDEP_MOD        = XUNDEF
-    DMA%XACC_LEV        = XUNDEF
-    DMA%XPRO_INF_TYP    = XUNDEF
-  ENDIF
-  !
-  DMA%XSNOWDZ= XUNDEF
-  !IF (DMA%LPROBANDS) THEN
-  DMA%XSPEC_ALB=XUNDEF
-  DMA%XDIFF_RATIO=XUNDEF
-  !ENDIF 
-
-  DMA%XIMPUR_CONC= XUNDEF  
-ENDIF
-!
-IF ( HSNOW_SCHEME=="CRO" .AND. IO%LSNOWSYTRON ) THEN
-  DMA%XSYTMASS = XUNDEF
-  DMA%XSYTMASSC= 0.
-ENDIF
-!
-IF ( HSNOW_SCHEME=="CRO" .AND. IO%LSNOWMAK_BOOL ) THEN
-  ALLOCATE(DMA%XPRODCOUNT(KLUA))
-  DMA%XPRODCOUNT = XUNDEF
-ELSE
-  ALLOCATE(DMA%XPRODCOUNT(0))
-ENDIF
-!
-IF(IO%CISBA=='DIF')THEN
-  ALLOCATE(DMA%XALT(KLUA))
-  ALLOCATE(DMA%XFLT(KLUA))
-  IF (KLUA>0) THEN
-    DMA%XALT     = XUNDEF
-    DMA%XFLT     = XUNDEF        
-  ENDIF
-ELSE
-  ALLOCATE(DMA%XALT(0))
-  ALLOCATE(DMA%XFLT(0))
-ENDIF
-!
-!//////////////DIAG DEFINED ONLY BY PATCH//////////////
-!
-ALLOCATE(DMA%XSNOWLIQ   (KLUAP,KSNLAYER))
-ALLOCATE(DMA%XSNOWTEMP  (KLUAP,KSNLAYER))
-ALLOCATE(DMA%XSNOWDZ    (KLUAP,KSNLAYER))
-ALLOCATE(DMA%XSPEC_ALB  (KLUAP,KSW))
-ALLOCATE(DMA%XDIFF_RATIO(KLUAP,KSW))
-!
-IF (KLUAP>0) THEN
-  DMA%XSNOWLIQ    = XUNDEF
-  DMA%XSNOWTEMP   = XUNDEF
-  DMA%XSNOWDZ     = XUNDEF
-  DMA%XSPEC_ALB   = XUNDEF
-  DMA%XDIFF_RATIO = XUNDEF
-ENDIF
-!
-IF (IO%LTR_ML) THEN
-  ALLOCATE (DMA%XFAPAR      (KLUAP))
-  ALLOCATE (DMA%XFAPIR      (KLUAP))
-  ALLOCATE (DMA%XFAPAR_BS   (KLUAP))
-  ALLOCATE (DMA%XFAPIR_BS   (KLUAP))
-  ALLOCATE (DMA%XDFAPARC    (KLUAP))
-  ALLOCATE (DMA%XDFAPIRC    (KLUAP))
-  ALLOCATE (DMA%XDLAI_EFFC  (KLUAP))
-  !
-  IF (KLUAP>0) THEN
-    DMA%XFAPAR      = XUNDEF
-    DMA%XFAPIR      = XUNDEF
-    DMA%XFAPAR_BS   = XUNDEF
-    DMA%XFAPIR_BS   = XUNDEF
-    DMA%XDFAPARC    = 0.
-    DMA%XDFAPIRC    = 0.
-    DMA%XDLAI_EFFC  = 0.
-  ENDIF
-ELSE
-  ALLOCATE (DMA%XFAPAR      (0))
-  ALLOCATE (DMA%XFAPIR      (0))
-  ALLOCATE (DMA%XFAPAR_BS   (0))
-  ALLOCATE (DMA%XFAPIR_BS   (0))
-  ALLOCATE (DMA%XDFAPARC    (0))
-  ALLOCATE (DMA%XDFAPIRC    (0))
-  ALLOCATE (DMA%XDLAI_EFFC  (0))
-ENDIF
-!
-!
-ALLOCATE(DMA%XC1       (KLUAP))
-ALLOCATE(DMA%XC2       (KLUAP))
-ALLOCATE(DMA%XWGEQ     (KLUAP))
-ALLOCATE(DMA%XCG       (KLUAP))
-ALLOCATE(DMA%XCT       (KLUAP))
-ALLOCATE(DMA%XRS       (KLUAP))
-ALLOCATE(DMA%XGRNDFLUX (KLUAP))
-ALLOCATE(DMA%XSNOWHMASS(KLUAP))
-ALLOCATE(DMA%XSRSFC    (KLUAP))
-ALLOCATE(DMA%XRRSFC    (KLUAP))
-ALLOCATE(DMA%XRNSNOW   (KLUAP))
-ALLOCATE(DMA%XHSNOW    (KLUAP))
-ALLOCATE(DMA%XGFLUXSNOW(KLUAP))
-ALLOCATE(DMA%XHPSNOW   (KLUAP))
-ALLOCATE(DMA%XUSTARSNOW(KLUAP))
-ALLOCATE(DMA%XCDSNOW   (KLUAP))
-ALLOCATE(DMA%XCHSNOW   (KLUAP))
-!
-IF (KLUAP>0) THEN
-  DMA%XC1        = XUNDEF
-  DMA%XC2        = XUNDEF
-  DMA%XWGEQ      = XUNDEF
-  DMA%XCG        = XUNDEF
-  DMA%XCT        = XUNDEF
-  DMA%XRS        = XUNDEF
-  DMA%XGRNDFLUX  = XUNDEF
-  DMA%XSNOWHMASS = XUNDEF
-  DMA%XSRSFC     = XUNDEF
-  DMA%XRRSFC     = XUNDEF
-  DMA%XRNSNOW    = XUNDEF
-  DMA%XHSNOW     = XUNDEF
-  DMA%XGFLUXSNOW = XUNDEF
-  DMA%XHPSNOW    = XUNDEF
-  DMA%XUSTARSNOW = XUNDEF
-  DMA%XCDSNOW    = XUNDEF
-  DMA%XCHSNOW    = XUNDEF
-ENDIF
-!
-!////////////DIAG DEFINED ONLY AVERAGED//////////////
-!
-ALLOCATE(DMA%XLAI          (KLUA))
-!
-ALLOCATE(DMA%XSOIL_SWI         (KLUA))
-ALLOCATE(DMA%XSOIL_TSWI        (KLUA))
-ALLOCATE(DMA%XSOIL_TWG         (KLUA))
-ALLOCATE(DMA%XSOIL_TWGI        (KLUA))
-ALLOCATE(DMA%XSOIL_WG          (KLUA))
-ALLOCATE(DMA%XSOIL_WGI         (KLUA))
-!
-IF (KLUA>0) THEN
-  DMA%XLAI     = XUNDEF        
-  DMA%XSOIL_TSWI   = XUNDEF
-  DMA%XSOIL_SWI    = XUNDEF
-  DMA%XSOIL_TWG    = XUNDEF
-  DMA%XSOIL_TWGI   = XUNDEF
-  DMA%XSOIL_WG     = XUNDEF
-  DMA%XSOIL_WGI    = XUNDEF   
-ENDIF
-!
-IF(IO%CISBA=='DIF'.AND.DM%LSURF_MISC_DIF)THEN
-  ALLOCATE(DMA%XFRD2_TSWI(KLUA))
-  ALLOCATE(DMA%XFRD2_TWG (KLUA))
-  ALLOCATE(DMA%XFRD2_TWGI(KLUA))
-  ALLOCATE(DMA%XFRD3_TSWI(KLUA))
-  ALLOCATE(DMA%XFRD3_TWG (KLUA))
-  ALLOCATE(DMA%XFRD3_TWGI(KLUA))
-  !
-  IF (KLUA>0) THEN  
-    DMA%XFRD2_TSWI = XUNDEF
-    DMA%XFRD2_TWG  = XUNDEF
-    DMA%XFRD2_TWGI = XUNDEF
-    DMA%XFRD3_TSWI = XUNDEF
-    DMA%XFRD3_TWG  = XUNDEF
-    DMA%XFRD3_TWGI = XUNDEF 
-  ENDIF 
-  !
-ELSE
-  ALLOCATE(DMA%XFRD2_TSWI(0))
-  ALLOCATE(DMA%XFRD2_TWG (0))
-  ALLOCATE(DMA%XFRD2_TWGI(0))
-  ALLOCATE(DMA%XFRD3_TSWI(0))
-  ALLOCATE(DMA%XFRD3_TWG (0))
-  ALLOCATE(DMA%XFRD3_TWGI(0))          
-ENDIF
-!
-! UTCI
-!
-IF ((YDO%N2M.GT.0).AND.(DU%LUTCI)) THEN
-  !
-  ALLOCATE(DU%XUTCI_OUTSUN   (KLU))
-  ALLOCATE(DU%XUTCI_OUTSHADE (KLU))
-  ALLOCATE(DU%XUTCI_OUTSUN_MEAN (KLU))
-  ALLOCATE(DU%XUTCI_OUTSHADE_MEAN (KLU))
-  ALLOCATE(DU%XTRAD_SUN        (KLU))
-  ALLOCATE(DU%XTRAD_SHADE      (KLU))
-  ALLOCATE(DU%XTRAD_SUN_MEAN   (KLU))
-  ALLOCATE(DU%XTRAD_SHADE_MEAN (KLU))
-  ALLOCATE(DU%XUTCIC_OUTSUN    (KLU,NUTCI_STRESS))
-  ALLOCATE(DU%XUTCIC_OUTSHADE  (KLU,NUTCI_STRESS))
-  !
-  DU%XUTCI_OUTSUN    = XUNDEF
-  DU%XUTCI_OUTSHADE  = XUNDEF
-  DU%XUTCI_OUTSUN_MEAN  = 0.0
-  DU%XUTCI_OUTSHADE_MEAN= 0.0
-  DU%XTRAD_SUN       = XUNDEF
-  DU%XTRAD_SHADE     = XUNDEF
-  DU%XTRAD_SUN_MEAN  = 0.0
-  DU%XTRAD_SHADE_MEAN= 0.0
-  DU%XUTCIC_OUTSUN   = 0.
-  DU%XUTCIC_OUTSHADE = 0.
-  !  
-ELSE
-  ALLOCATE(DU%XUTCI_OUTSUN   (0))
-  ALLOCATE(DU%XUTCI_OUTSHADE (0))
-  ALLOCATE(DU%XUTCI_OUTSUN_MEAN   (0))
-  ALLOCATE(DU%XUTCI_OUTSHADE_MEAN (0))
-  ALLOCATE(DU%XTRAD_SUN      (0))
-  ALLOCATE(DU%XTRAD_SHADE    (0))        
-  ALLOCATE(DU%XTRAD_SUN_MEAN (0))
-  ALLOCATE(DU%XTRAD_SHADE_MEAN(0))  
-  ALLOCATE(DU%XUTCIC_OUTSUN  (0,0))
-  ALLOCATE(DU%XUTCIC_OUTSHADE(0,0))
-ENDIF
-!
-!
-IF (LHOOK) CALL DR_HOOK('DIAG_ISBA_INIT_N:ALLOC_MISC_BUD',1,ZHOOK_HANDLE)
-!
-END SUBROUTINE ALLOC_MISC_BUD
-!
-SUBROUTINE ALLOC_EVAP_BUD(DEA,KLUA,KLUAP)
+SUBROUTINE ALLOC_EVAP_DIAG(DEA,KLUA,KLUAP)
 !
 TYPE(DIAG_EVAP_ISBA_t), INTENT(INOUT) :: DEA
 INTEGER, INTENT(IN) :: KLUA
 INTEGER, INTENT(IN) :: KLUAP
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
-IF (LHOOK) CALL DR_HOOK('DIAG_ISBA_INIT_N:ALLOC_EVAP_BUD',0,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('DIAG_ISBA_INIT_N:ALLOC_EVAP_DIAG',0,ZHOOK_HANDLE)
+!
+!////////////DIAG DEFINED BY PATCH AND AVERAGED//////////
+!
+ALLOCATE(DEA%XEPOT      (KLUA))
 !
 ALLOCATE(DEA%XLEG       (KLUA))
 ALLOCATE(DEA%XLEGI      (KLUA))
@@ -1509,6 +476,7 @@ ALLOCATE(DEA%XLES       (KLUA))
 !
 ALLOCATE(DEA%XLESL      (KLUA))
 ALLOCATE(DEA%XSNDRIFT   (KLUA))
+ALLOCATE(DEA%XSNFREE_SWU(KLUA))
 !
 ALLOCATE(DEA%XLER       (KLUA))
 ALLOCATE(DEA%XLETR      (KLUA))
@@ -1518,12 +486,11 @@ ALLOCATE(DEA%XRUNOFF    (KLUA))
 ALLOCATE(DEA%XDRIP      (KLUA))
 ALLOCATE(DEA%XRRVEG     (KLUA))
 ALLOCATE(DEA%XMELT      (KLUA))
+ALLOCATE(DEA%XMELTSTOT  (KLUA))
+ALLOCATE(DEA%XSNREFREEZ (KLUA))
+ALLOCATE(DEA%XICEFLUX   (KLUA))
 !
 ALLOCATE(DEA%XIRRIG_FLUX(KLUA))
-!
-ALLOCATE(DEA%XGPP       (KLUA))
-ALLOCATE(DEA%XRESP_AUTO (KLUA))
-ALLOCATE(DEA%XRESP_ECO  (KLUA)) 
 !
 ALLOCATE(DEA%XQSB       (KLUA))
 ALLOCATE(DEA%XHORT      (KLUA)) 
@@ -1532,6 +499,53 @@ ALLOCATE(DEA%XIFLOOD   (KLUA))
 ALLOCATE(DEA%XPFLOOD   (KLUA))
 ALLOCATE(DEA%XLE_FLOOD (KLUA))
 ALLOCATE(DEA%XLEI_FLOOD(KLUA))
+!
+ALLOCATE(DEA%XSWNET_N  (KLUA))
+ALLOCATE(DEA%XSWNET_NS (KLUA))
+ALLOCATE(DEA%XLWNET_N  (KLUA))
+!
+IF (KLUA>0) THEN
+  !
+  DEA%XEPOT       = XUNDEF
+  !
+  DEA%XLEG        = XUNDEF
+  DEA%XLEGI       = XUNDEF
+  DEA%XLEV        = XUNDEF
+  DEA%XLES        = XUNDEF
+  !
+  DEA%XLESL       = XUNDEF
+  DEA%XSNDRIFT    = XUNDEF
+  DEA%XSNFREE_SWU = XUNDEF
+  !  
+  DEA%XLER        = XUNDEF
+  DEA%XLETR       = XUNDEF
+  !
+  DEA%XDRAIN      = XUNDEF
+  DEA%XRUNOFF     = XUNDEF
+  DEA%XDRIP       = XUNDEF
+  DEA%XRRVEG      = XUNDEF
+  DEA%XMELT       = XUNDEF
+  DEA%XMELTSTOT   = XUNDEF
+  DEA%XSNREFREEZ  = XUNDEF
+  DEA%XICEFLUX    = XUNDEF
+  !  
+  DEA%XIRRIG_FLUX = XUNDEF
+  !
+  DEA%XQSB        = XUNDEF
+  DEA%XHORT       = XUNDEF
+  !  
+  DEA%XIFLOOD     = XUNDEF
+  DEA%XPFLOOD     = XUNDEF
+  DEA%XLE_FLOOD   = XUNDEF
+  DEA%XLEI_FLOOD  = XUNDEF
+  !
+  DEA%XSWNET_N    = XUNDEF
+  DEA%XSWNET_NS   = XUNDEF
+  DEA%XLWNET_N    = XUNDEF
+  !
+ENDIF
+!
+!//////////////DIAG DEFINED ONLY BY PATCH//////////////
 !
 ALLOCATE(DEA%XRN_SN_FR   (KLUAP))
 ALLOCATE(DEA%XH_SN_FR    (KLUAP))
@@ -1546,41 +560,6 @@ ALLOCATE(DEA%XUSTAR_SN_FR(KLUAP))
 ALLOCATE(DEA%XLER_SN_FR  (KLUAP))
 !
 ALLOCATE(DEA%XMELTADV    (KLUAP))
-ALLOCATE(DEA%XRESTORE    (KLUAP))
-!
-IF (KLUA>0) THEN
-  DEA%XLEG        = XUNDEF
-  DEA%XLEGI       = XUNDEF
-  DEA%XLEV        = XUNDEF
-  DEA%XLES        = XUNDEF
-  !
-  DEA%XLESL       = XUNDEF
-  DEA%XSNDRIFT    = XUNDEF
-  !  
-  DEA%XLER        = XUNDEF
-  DEA%XLETR       = XUNDEF
-  !
-  DEA%XDRAIN      = XUNDEF
-  DEA%XRUNOFF     = XUNDEF
-  DEA%XDRIP       = XUNDEF
-  DEA%XRRVEG      = XUNDEF
-  DEA%XMELT       = XUNDEF
-  !  
-  DEA%XIRRIG_FLUX = XUNDEF
-  !
-  DEA%XGPP        = XUNDEF
-  DEA%XRESP_AUTO  = XUNDEF
-  DEA%XRESP_ECO   = XUNDEF  
-  !
-  DEA%XQSB        = XUNDEF
-  DEA%XHORT       = XUNDEF
-  !  
-  DEA%XIFLOOD    = XUNDEF
-  DEA%XPFLOOD    = XUNDEF
-  DEA%XLE_FLOOD  = XUNDEF
-  DEA%XLEI_FLOOD = XUNDEF
-  !
-ENDIF
 !
 IF (KLUAP>0) THEN
   DEA%XRN_SN_FR    = XUNDEF
@@ -1596,20 +575,176 @@ IF (KLUAP>0) THEN
   DEA%XLER_SN_FR   = XUNDEF
   !
   DEA%XMELTADV     = XUNDEF  
-  DEA%XRESTORE     = XUNDEF
+  !
 ENDIF
 !
-IF (LHOOK) CALL DR_HOOK('DIAG_ISBA_INIT_N:ALLOC_EVAP_BUD',1,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('DIAG_ISBA_INIT_N:ALLOC_EVAP_DIAG',1,ZHOOK_HANDLE)
 !
-END SUBROUTINE ALLOC_EVAP_BUD
+END SUBROUTINE ALLOC_EVAP_DIAG
 !
-SUBROUTINE ALLOC_MEB_BUD(DEA,KLUA)
+!-------------------------------------------------------------------------------
+!-------------------------------------------------------------------------------
+!
+SUBROUTINE ALLOC_CC_DIAG(DEA,KLUA)
 !
 TYPE(DIAG_EVAP_ISBA_t), INTENT(INOUT) :: DEA
 INTEGER, INTENT(IN) :: KLUA
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
-IF (LHOOK) CALL DR_HOOK('DIAG_ISBA_INIT_N:ALLOC_MEB_BUD',0,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('DIAG_ISBA_INIT_N:ALLOC_CC_DIAG',0,ZHOOK_HANDLE)
+!
+! * General diag
+!
+ALLOCATE(DEA%XGPP      (KLUA))
+ALLOCATE(DEA%XRESP_AUTO(KLUA))
+ALLOCATE(DEA%XRESP_ECO (KLUA))
+ALLOCATE(DEA%XTURNVTOT (KLUA))
+ALLOCATE(DEA%XFLTOSCARB(KLUA))
+ALLOCATE(DEA%XRESPSCARB(KLUA))
+ALLOCATE(DEA%XRESPLIT  (KLUA))
+!
+IF (KLUA>0) THEN
+  DEA%XGPP        = XUNDEF
+  DEA%XRESP_AUTO  = XUNDEF
+  DEA%XRESP_ECO   = XUNDEF 
+  DEA%XTURNVTOT   = XUNDEF 
+  DEA%XFLTOSCARB  = XUNDEF
+  DEA%XRESPSCARB  = XUNDEF
+  DEA%XRESPLIT    = XUNDEF
+ENDIF
+!
+! * Carbon leaching diag
+!
+IF(IO%LCLEACH)THEN
+  !
+  ALLOCATE(DEA%XFDOC   (KLUA))
+  ALLOCATE(DEA%XFDOCLIT(KLUA))
+  !
+  IF (KLUA>0) THEN
+    DEA%XFDOC    = XUNDEF
+    DEA%XFDOCLIT = XUNDEF
+  ENDIF
+  !
+ELSE
+  !
+  ALLOCATE(DEA%XFDOC   (0))
+  ALLOCATE(DEA%XFDOCLIT(0))
+  !
+ENDIF
+!
+! * Biomass fire diag
+!
+IF(IO%LFIRE)THEN
+  !
+  ALLOCATE(DEA%XFIRETURNOVER(KLUA))
+  ALLOCATE(DEA%XFIRECO2     (KLUA))
+  ALLOCATE(DEA%XFIREBCS     (KLUA))
+  !
+  IF (KLUA>0) THEN
+    DEA%XFIRETURNOVER = XUNDEF
+    DEA%XFIRECO2      = XUNDEF
+    DEA%XFIREBCS      = XUNDEF
+  ENDIF
+  !
+ELSE
+  !
+  ALLOCATE(DEA%XFIRETURNOVER(0))
+  ALLOCATE(DEA%XFIRECO2     (0))
+  ALLOCATE(DEA%XFIREBCS     (0))
+  !
+ENDIF
+!
+! * Land use land cover diag
+!
+IF(IO%LLULCC)THEN
+  ALLOCATE(DEA%XFHARVEST(KLUA))
+  IF (KLUA>0) THEN
+    DEA%XFHARVEST = XUNDEF
+  ENDIF
+ELSE
+  ALLOCATE(DEA%XFHARVEST(0))
+ENDIF
+!
+! * Soil gas scheme diag
+!
+IF(IO%LSOILGAS)THEN
+  !
+  ALLOCATE(DEA%XO2FLUX  (KLUA))
+  ALLOCATE(DEA%XCH4FLUX (KLUA))
+  ALLOCATE(DEA%XSURF_O2 (KLUA))
+  ALLOCATE(DEA%XSURF_CO2(KLUA))
+  ALLOCATE(DEA%XSURF_CH4(KLUA))
+  ALLOCATE(DEA%XEVAP_O2 (KLUA))
+  ALLOCATE(DEA%XEVAP_CO2(KLUA))
+  ALLOCATE(DEA%XEVAP_CH4(KLUA))
+  ALLOCATE(DEA%XPMT_O2  (KLUA))
+  ALLOCATE(DEA%XPMT_CO2 (KLUA))
+  ALLOCATE(DEA%XPMT_CH4 (KLUA))
+  ALLOCATE(DEA%XEBU_CH4 (KLUA))
+  !
+  ALLOCATE(DEA%XFCONS_O2 (KLUA))
+  ALLOCATE(DEA%XFPROD_CO2(KLUA))
+  ALLOCATE(DEA%XFMT_CH4  (KLUA))
+  ALLOCATE(DEA%XFMG_CH4  (KLUA))
+  !
+  IF (KLUA>0) THEN
+    !
+    DEA%XO2FLUX   = XUNDEF
+    DEA%XCH4FLUX  = XUNDEF
+    DEA%XSURF_O2  = XUNDEF
+    DEA%XSURF_CO2 = XUNDEF
+    DEA%XSURF_CH4 = XUNDEF
+    DEA%XEVAP_O2  = XUNDEF
+    DEA%XEVAP_CO2 = XUNDEF
+    DEA%XEVAP_CH4 = XUNDEF
+    DEA%XPMT_O2   = XUNDEF
+    DEA%XPMT_CO2  = XUNDEF
+    DEA%XPMT_CH4  = XUNDEF
+    DEA%XEBU_CH4  = XUNDEF
+    !
+    DEA%XFCONS_O2  = XUNDEF
+    DEA%XFPROD_CO2 = XUNDEF
+    DEA%XFMT_CH4   = XUNDEF
+    DEA%XFMG_CH4   = XUNDEF
+    !
+  ENDIF
+  !
+ELSE
+  !
+  ALLOCATE(DEA%XO2FLUX  (0))
+  ALLOCATE(DEA%XCH4FLUX (0))
+  ALLOCATE(DEA%XSURF_O2 (0))
+  ALLOCATE(DEA%XSURF_CO2(0))
+  ALLOCATE(DEA%XSURF_CH4(0))
+  ALLOCATE(DEA%XEVAP_O2 (0))
+  ALLOCATE(DEA%XEVAP_CO2(0))
+  ALLOCATE(DEA%XEVAP_CH4(0))
+  ALLOCATE(DEA%XPMT_O2  (0))
+  ALLOCATE(DEA%XPMT_CO2 (0))
+  ALLOCATE(DEA%XPMT_CH4 (0))
+  ALLOCATE(DEA%XEBU_CH4 (0))
+  !
+  ALLOCATE(DEA%XFCONS_O2 (0))
+  ALLOCATE(DEA%XFPROD_CO2(0))
+  ALLOCATE(DEA%XFMT_CH4  (0))
+  ALLOCATE(DEA%XFMG_CH4  (0))
+  !
+ENDIF
+!
+IF (LHOOK) CALL DR_HOOK('DIAG_ISBA_INIT_N:ALLOC_CC_DIAG',1,ZHOOK_HANDLE)
+!
+END SUBROUTINE ALLOC_CC_DIAG
+!
+!-------------------------------------------------------------------------------
+!-------------------------------------------------------------------------------
+!
+SUBROUTINE ALLOC_MEB_DIAG(DEA,KLUA)
+!
+TYPE(DIAG_EVAP_ISBA_t), INTENT(INOUT) :: DEA
+INTEGER, INTENT(IN) :: KLUA
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+!
+IF (LHOOK) CALL DR_HOOK('DIAG_ISBA_INIT_N:ALLOC_MEB_DIAG',0,ZHOOK_HANDLE)
 !
 ALLOCATE(DEA%XLELITTER (KLUA))
 ALLOCATE(DEA%XLELITTERI(KLUA))
@@ -1646,18 +781,16 @@ ALLOCATE(DEA%XLWUP(KLUA))
 !
 ALLOCATE(DEA%XSWNET_V    (KLUA))
 ALLOCATE(DEA%XSWNET_G    (KLUA))
-ALLOCATE(DEA%XSWNET_N    (KLUA))
-ALLOCATE(DEA%XSWNET_NS   (KLUA))
 ALLOCATE(DEA%XLWNET_V    (KLUA))
 ALLOCATE(DEA%XLWNET_G    (KLUA))
-ALLOCATE(DEA%XLWNET_N    (KLUA))
 !
 IF (KLUA>0) THEN
+  !
   DEA%XLELITTER      = XUNDEF
   DEA%XLELITTERI     = XUNDEF
   DEA%XDRIPLIT       = XUNDEF
   DEA%XRRLIT         = XUNDEF
-        
+  !        
   DEA%XLEV_CV      = XUNDEF
   DEA%XLES_CV      = XUNDEF
   DEA%XLETR_CV     = XUNDEF
@@ -1666,19 +799,19 @@ IF (KLUA>0) THEN
   DEA%XH_CV        = XUNDEF  
   DEA%XMELT_CV     = XUNDEF
   DEA%XFRZ_CV      = XUNDEF  
-
+  !
   DEA%XLETR_GV     = XUNDEF
   DEA%XLER_GV      = XUNDEF
   DEA%XLE_GV       = XUNDEF
   DEA%XH_GV        = XUNDEF
-
+  !
   DEA%XLE_GN       = XUNDEF
   DEA%XEVAP_GN     = XUNDEF
   DEA%XH_GN        = XUNDEF  
   DEA%XSR_GN       = XUNDEF
   DEA%XSWDOWN_GN   = XUNDEF
   DEA%XLWDOWN_GN   = XUNDEF
-  
+  !
   DEA%XEVAP_G      = XUNDEF
   DEA%XLE_CA       = XUNDEF
   DEA%XH_CA        = XUNDEF
@@ -1688,42 +821,577 @@ IF (KLUA>0) THEN
   !
   DEA%XSWNET_V       = XUNDEF
   DEA%XSWNET_G       = XUNDEF
-  DEA%XSWNET_N       = XUNDEF
-  DEA%XSWNET_NS      = XUNDEF
   DEA%XLWNET_V       = XUNDEF
   DEA%XLWNET_G       = XUNDEF
   DEA%XLWNET_N       = XUNDEF
+  !
 ENDIF
 !
-IF (LHOOK) CALL DR_HOOK('DIAG_ISBA_INIT_N:ALLOC_MEB_BUD',1,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('DIAG_ISBA_INIT_N:ALLOC_MEB_DIAG',1,ZHOOK_HANDLE)
 !
-END SUBROUTINE ALLOC_MEB_BUD
+END SUBROUTINE ALLOC_MEB_DIAG
 !
-SUBROUTINE ALLOC_WATER_BUD(DEA,KLUA)
+!-------------------------------------------------------------------------------
+!-------------------------------------------------------------------------------
+!
+SUBROUTINE ALLOC_WATBUD_DIAG(DEA,KLUA)
 !
 TYPE(DIAG_EVAP_ISBA_t), INTENT(INOUT) :: DEA
 INTEGER, INTENT(IN) :: KLUA
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
-IF (LHOOK) CALL DR_HOOK('DIAG_ISBA_INIT_N:ALLOC_WATER_BUD',0,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('DIAG_ISBA_INIT_N:ALLOC_WATBUD_DIAG',0,ZHOOK_HANDLE)
 !
-ALLOCATE(DEA%XDWG   (KLUA))
-ALLOCATE(DEA%XDWGI  (KLUA))
-ALLOCATE(DEA%XDWR   (KLUA))
-ALLOCATE(DEA%XDSWE  (KLUA))
-ALLOCATE(DEA%XWATBUD(KLUA))
+ALLOCATE(DEA%XDWG    (KLUA))
+ALLOCATE(DEA%XDWGI   (KLUA))
+ALLOCATE(DEA%XDWR    (KLUA))
+ALLOCATE(DEA%XDSWE   (KLUA))
+ALLOCATE(DEA%XDSWFREE(KLUA))
+ALLOCATE(DEA%XWATBUD (KLUA))
 !
 IF (KLUA>0) THEN
   DEA%XDWG    = XUNDEF
   DEA%XDWGI   = XUNDEF
   DEA%XDWR    = XUNDEF
   DEA%XDSWE   = XUNDEF
+  DEA%XDSWFREE= XUNDEF
   DEA%XWATBUD = XUNDEF
 ENDIF
 !
-IF (LHOOK) CALL DR_HOOK('DIAG_ISBA_INIT_N:ALLOC_WATER_BUD',1,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('DIAG_ISBA_INIT_N:ALLOC_WATBUD_DIAG',1,ZHOOK_HANDLE)
 !
-END SUBROUTINE ALLOC_WATER_BUD
+END SUBROUTINE ALLOC_WATBUD_DIAG
+!
+!-------------------------------------------------------------------------------
+!-------------------------------------------------------------------------------
+!
+SUBROUTINE ALLOC_NRJBUD_DIAG(DEA,KLUA)
+!
+TYPE(DIAG_EVAP_ISBA_t), INTENT(INOUT) :: DEA
+INTEGER, INTENT(IN) :: KLUA
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+!
+IF (LHOOK) CALL DR_HOOK('DIAG_ISBA_INIT_N:ALLOC_NRJBUD_DIAG',0,ZHOOK_HANDLE)
+!
+ALLOCATE(DEA%XNRJBUD       (KLUA))
+ALLOCATE(DEA%XNRJBUD_SFC   (KLUA))
+ALLOCATE(DEA%XGRNDFLUX     (KLUA))
+ALLOCATE(DEA%XRESTORE      (KLUA))
+ALLOCATE(DEA%XRESTOREN     (KLUA))
+ALLOCATE(DEA%XDELHEATG     (KLUA))
+ALLOCATE(DEA%XDELHEATN     (KLUA))
+ALLOCATE(DEA%XDELPHASEG    (KLUA))
+ALLOCATE(DEA%XDELPHASEN    (KLUA))
+ALLOCATE(DEA%XDELHEATG_SFC (KLUA))
+ALLOCATE(DEA%XDELHEATN_SFC (KLUA))
+ALLOCATE(DEA%XDELPHASEG_SFC(KLUA))
+ALLOCATE(DEA%XDELPHASEN_SFC(KLUA))
+!
+IF (KLUA>0) THEN
+  DEA%XNRJBUD        = XUNDEF
+  DEA%XNRJBUD_SFC    = XUNDEF
+  DEA%XGRNDFLUX      = XUNDEF
+  DEA%XRESTORE       = XUNDEF
+  DEA%XRESTOREN      = XUNDEF
+  DEA%XDELHEATG      = XUNDEF
+  DEA%XDELHEATN      = XUNDEF
+  DEA%XDELPHASEG     = XUNDEF
+  DEA%XDELPHASEN     = XUNDEF
+  DEA%XDELHEATG_SFC  = XUNDEF
+  DEA%XDELHEATN_SFC  = XUNDEF
+  DEA%XDELPHASEG_SFC = XUNDEF
+  DEA%XDELPHASEN_SFC = XUNDEF
+ENDIF
+!
+IF (LHOOK) CALL DR_HOOK('DIAG_ISBA_INIT_N:ALLOC_NRJBUD_DIAG',1,ZHOOK_HANDLE)
+!
+END SUBROUTINE ALLOC_NRJBUD_DIAG
+!
+!-------------------------------------------------------------------------------
+!-------------------------------------------------------------------------------
+!
+SUBROUTINE READ_RESTART_PATCH(KNP)
+!
+!* arguments
+!
+INTEGER, INTENT(IN)      :: KNP
+!
+!* local variables
+!
+REAL, DIMENSION(KLU,KNP) :: ZWORK
+!
+LOGICAL          :: GDIM
+CHARACTER(LEN=6) :: YREC2
+!
+REAL(KIND=JPRB)  :: ZHOOK_HANDLE
+!
+!* main code
+!
+IF (LHOOK) CALL DR_HOOK('DIAG_ISBA_INIT_N:READ_RESTART_PATCH',0,ZHOOK_HANDLE)
+!
+ZWORK(:,:) = XUNDEF
+!
+GDIM = (IVERSION>8 .OR. IVERSION==8 .AND. IBUG>0)
+!
+IF (GDIM) CALL READ_SURF(HPROGRAM,'SPLIT_PATCH',GDIM,IRESP) 
+!
+IF (GDIM) THEN
+   YREC2=''
+ELSEIF (IVERSION<7 .OR. IVERSION==7 .AND. IBUG<3) THEN
+   YREC2='PATCH'
+ELSE
+   YREC2='P'
+ENDIF
+!
+YREC='LEGC_'//YREC2
+CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+DO JP = 1,KNP
+   CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XLEG(:))
+ENDDO
+!
+YREC='LEGIC_'//YREC2
+CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+DO JP = 1,KNP
+   CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XLEGI(:))
+ENDDO
+!
+YREC='LEVC_'//YREC2
+CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+DO JP = 1,KNP
+   CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XLEV(:))
+ENDDO
+!
+YREC='LESC_'//YREC2
+CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+DO JP = 1,KNP
+   CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XLES(:))
+ENDDO
+!
+IF (HSNOW_SCHEME=='3-L' .OR. HSNOW_SCHEME=='CRO') THEN
+   !
+   IF(IVERSION>7 .OR. IVERSION==7 .AND. IBUG>=3)THEN
+     !
+     YREC='LESLC_'//YREC2
+     CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+     DO JP = 1,KNP
+        CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XLESL(:))
+     ENDDO
+     !
+   ENDIF
+   !
+   IF(IVERSION>=8)THEN
+     !
+     YREC='SNDRIFC_'//YREC2  
+     CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+     DO JP = 1,KNP
+        CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XSNDRIFT(:))
+     ENDDO
+     !
+   ENDIF  
+   !
+ENDIF   
+!
+YREC='LERC_'//YREC2
+CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+DO JP = 1,KNP
+   CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XLER(:))
+ENDDO
+!
+YREC='LETRC_'//YREC2
+CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+DO JP = 1,KNP
+   CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XLETR(:))
+ENDDO 
+!
+YREC='EVAPC_'//YREC2
+CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+DO JP = 1,KNP
+   CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDC%AL(JP)%XEVAP(:))
+ENDDO
+!
+IF (IVERSION>=8)THEN
+   YREC='SUBLC_'//YREC2
+   CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+   DO JP = 1,KNP
+      CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDC%AL(JP)%XSUBL(:))
+   ENDDO  
+ENDIF   
+! 
+YREC='DRAINC_'//YREC2
+CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+DO JP = 1,KNP
+   CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XDRAIN(:))
+ENDDO   
+!  
+YREC='RUNOFFC_'//YREC2
+CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+DO JP = 1,KNP
+   CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XRUNOFF(:))
+ENDDO   
+!  
+YREC='DRIVEGC_'//YREC2
+CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+DO JP = 1,KNP
+   CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XDRIP(:))
+ENDDO
+!  
+YREC='RRVEGC_'//YREC2
+CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+DO JP = 1,KNP
+   CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XRRVEG(:))
+ENDDO  
+!  
+YREC='SNOMLTC_'//YREC2
+CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+DO JP = 1,KNP
+   CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XMELT(:))
+ENDDO  
+!
+IF (LIRRIGMODE) THEN
+   YREC='IRRIGC_'//YREC2
+   CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+   DO JP = 1,KNP
+      CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XIRRIG_FLUX(:))
+   ENDDO  
+ENDIF
+!
+IF (IO%CPHOTO/='NON' .AND. (IVERSION>7 .OR. IVERSION==7 .AND. IBUG>=3)) THEN
+   !
+   YREC='GPPC_'//YREC2
+   CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+   DO JP = 1,KNP
+      CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XGPP(:))
+   ENDDO 
+   !
+   YREC='RC_AUTO_'//YREC2
+   CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+   DO JP = 1,KNP
+      CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XRESP_AUTO(:))
+   ENDDO
+   !
+   YREC='RC_ECO_'//YREC2
+   CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+   DO JP = 1,KNP
+      CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XRESP_ECO(:))
+   ENDDO 
+   !
+ENDIF
+!
+IF ((IO%CRUNOFF=='SGH'.AND.IO%CISBA=='DIF').AND.IVERSION>=8) THEN
+   YREC='QSBC_'//YREC2
+   CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+   DO JP = 1,KNP
+      CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XQSB(:))
+   ENDDO
+ENDIF
+!
+IF (IO%CHORT=='SGH'.OR.IO%CISBA=='DIF')THEN
+   YREC='HORTONC_'//YREC2
+   CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+   DO JP = 1,KNP
+      CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XHORT(:))
+   ENDDO  
+ENDIF
+!
+IF (IO%LFLOOD) THEN
+   !
+   YREC='IFLOODC_'//YREC2
+   CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+   DO JP = 1,KNP
+      CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XIFLOOD(:))
+   ENDDO 
+   !
+   YREC='PFLOODC_'//YREC2
+   CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+   DO JP = 1,KNP
+      CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XPFLOOD(:))
+   ENDDO  
+   !
+   YREC='LEFC_'//YREC2
+   CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+   DO JP = 1,KNP
+      CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XLE_FLOOD(:))
+   ENDDO  
+   !
+   YREC='LEIFC_'//YREC2
+   CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+   DO JP = 1,KNP
+      CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XLEI_FLOOD(:))
+   ENDDO
+   !
+ENDIF  
+!   
+IF (ISIZE_LMEB_PATCH>0) THEN
+   !
+   YREC='LEV_CVC_'//YREC2
+   CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+   DO JP = 1,KNP
+      CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XLEV_CV(:))
+   ENDDO
+   !
+   YREC='LES_CVC_'//YREC2
+   CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+   DO JP = 1,KNP
+      CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XLES_CV(:))
+   ENDDO   
+   !   
+   YREC='LETR_CVC_'//YREC2
+   CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+   DO JP = 1,KNP
+      CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XLETR_CV(:))
+   ENDDO   
+   !   
+   YREC='LER_CVC_'//YREC2
+   CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+   DO JP = 1,KNP
+      CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XLER_CV(:))
+   ENDDO
+   !   
+   YREC='LE_CVC_'//YREC2
+   CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+   DO JP = 1,KNP
+      CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XLE_CV(:))
+   ENDDO
+   !   
+   YREC='H_CVC_'//YREC2
+   CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+   DO JP = 1,KNP
+      CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XH_CV(:))
+   ENDDO  
+   !   
+   YREC='MELT_CVC_'//YREC2
+   CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+   DO JP = 1,KNP
+      CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XMELT_CV(:))
+   ENDDO
+   !
+   YREC='FRZ_CVC_'//YREC2
+   CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+   DO JP = 1,KNP
+      CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XFRZ_CV(:))
+   ENDDO
+   ! 
+   YREC='LE_GVC_'//YREC2
+   CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+   DO JP = 1,KNP
+      CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XLE_GV(:))
+   ENDDO 
+   !
+   YREC='H_GVC_'//YREC2
+   CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+   DO JP = 1,KNP
+      CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XH_GV(:))
+   ENDDO  
+   !  
+   YREC='LE_GNC_'//YREC2
+   CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+   DO JP = 1,KNP
+      CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XLE_GN(:))
+   ENDDO  
+   !
+   YREC='H_GNC_'//YREC2
+   CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+   DO JP = 1,KNP
+      CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XH_GN(:))
+   ENDDO  
+   !   
+   YREC='SR_GNC_'//YREC2
+   CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+   DO JP = 1,KNP
+      CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XSR_GN(:))
+   ENDDO  
+   !
+   YREC='SWDN_GNC_'//YREC2
+   CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+   DO JP = 1,KNP
+      CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XSWDOWN_GN(:))
+   ENDDO  
+   !
+   YREC='LWDN_GNC_'//YREC2
+   CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+   DO JP = 1,KNP
+      CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XLWDOWN_GN(:))
+   ENDDO  
+   !
+   YREC='LE_CAC_'//YREC2
+   CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+   DO JP = 1,KNP
+      CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XLE_CA(:))
+   ENDDO   
+   !   
+   YREC='H_CAC_'//YREC2
+   CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+   DO JP = 1,KNP
+      CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XH_CA(:))
+   ENDDO
+   !  
+   YREC='SWNT_VC_'//YREC2
+   CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+   DO JP = 1,KNP
+      CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XSWNET_V(:))
+   ENDDO  
+   !
+   YREC='SWNT_GC_'//YREC2
+   CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+   DO JP = 1,KNP
+      CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XSWNET_G(:))
+   ENDDO
+   !
+   YREC='SWNT_NC_'//YREC2
+   CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+   DO JP = 1,KNP
+      CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XSWNET_N(:))
+   ENDDO
+   !
+   YREC='SWNT_NSC_'//YREC2
+   CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+   DO JP = 1,KNP
+      CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XSWNET_NS(:))
+   ENDDO 
+   !
+   YREC='LWNT_VC_'//YREC2
+   CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+   DO JP = 1,KNP
+      CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XLWNET_V(:))
+   ENDDO 
+   !
+   YREC='LWNT_GC_'//YREC2
+   CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+   DO JP = 1,KNP
+      CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XLWNET_G(:))
+   ENDDO
+   !
+   YREC='LWNT_NC_'//YREC2
+   CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+   DO JP = 1,KNP
+      CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XLWNET_N(:))
+   ENDDO 
+   ! 
+ENDIF
+!
+YREC='RNC_'//YREC2
+CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+DO JP = 1,KNP
+   CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDC%AL(JP)%XRN(:))
+ENDDO
+!
+YREC='HC_'//YREC2
+CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+DO JP = 1,KNP
+   CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDC%AL(JP)%XH(:))
+ENDDO  
+!  
+YREC='LEC_'//YREC2
+CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+DO JP = 1,KNP
+   CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDC%AL(JP)%XLE(:))
+ENDDO   
+!   
+YREC='LEIC_'//YREC2
+CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+DO JP = 1,KNP
+   CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDC%AL(JP)%XLEI(:))
+ENDDO 
+!   
+YREC='GFLUXC_'//YREC2
+CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+DO JP = 1,KNP
+   CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDC%AL(JP)%XGFLUX(:))
+ENDDO 
+!  
+IF (DGO%LRAD_BUDGET) THEN
+   !
+   YREC='SWDC_'//YREC2
+   CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+   DO JP = 1,KNP
+      CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDC%AL(JP)%XSWD(:))
+   ENDDO
+   !
+   YREC='SWUC_'//YREC2
+   CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+   DO JP = 1,KNP
+      CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDC%AL(JP)%XSWU(:))
+   ENDDO 
+   !
+   YREC='LWDC_'//YREC2
+   CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+   DO JP = 1,KNP
+      CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDC%AL(JP)%XLWD(:))
+   ENDDO 
+   !
+   YREC='LWUC_'//YREC2
+   CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+   DO JP = 1,KNP
+      CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDC%AL(JP)%XLWU(:))
+   ENDDO
+   !
+ENDIF
+!
+YREC='FMUC_'//YREC2
+CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+DO JP = 1,KNP
+   CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDC%AL(JP)%XFMU(:))
+ENDDO
+!  
+YREC='FMVC_'//YREC2
+CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+DO JP = 1,KNP
+   CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDC%AL(JP)%XFMV(:))
+ENDDO   
+!
+IF (IO%LGLACIER) THEN
+   YREC='ICE_FC_'//YREC2 
+   CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+   DO JP = 1,KNP
+      CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XICEFLUX(:))
+   ENDDO   
+ENDIF
+!
+#ifdef SFX_OL
+IF (DE%LWATER_BUDGET .OR. (LRESTART .AND. .NOT.DGO%LRESET_BUDGETC)) THEN
+#else
+IF (DE%LWATER_BUDGET .OR. .NOT.DGO%LRESET_BUDGETC) THEN
+#endif
+   ! 
+   IF (IVERSION>7 .OR. IVERSION==7 .AND. IBUG>=3) THEN 
+      !
+      YREC='DWGC_'//YREC2
+      CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+      DO JP = 1,KNP
+      CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XDWG(:))
+      ENDDO
+      !    
+      YREC='DWGIC_'//YREC2
+      CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+      DO JP = 1,KNP
+          CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XDWGI(:))
+      ENDDO
+      !
+      YREC='DWRC_'//YREC2
+      CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+      DO JP = 1,KNP
+         CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XDWR(:))
+      ENDDO
+      !        
+      YREC='DSWEC_'//YREC2
+      CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+      DO JP = 1,KNP
+         CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XDSWE(:))
+      ENDDO  
+      !
+      YREC='WATBUDC_'//YREC2
+      CALL MAKE_CHOICE_ARRAY(HPROGRAM, KNP, GDIM, YREC, ZWORK)
+      DO JP = 1,KNP
+         CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NDEC%AL(JP)%XWATBUD(:))
+      ENDDO
+      !       
+   ENDIF
+   !
+ENDIF
+!
+IF (LHOOK) CALL DR_HOOK('DIAG_ISBA_INIT_N:READ_RESTART_PATCH',1,ZHOOK_HANDLE)
+!
+END SUBROUTINE READ_RESTART_PATCH
 !
 !-------------------------------------------------------------------------------
 !

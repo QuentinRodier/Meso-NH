@@ -180,6 +180,7 @@ END MODULE MODI_WRITE_LFIFM_n
 !  P. Wautelet 10/03/2021: use scalar variable names for dust and salt
 !  P. Wautelet 11/03/2021: bugfix: correct name for NSV_LIMA_IMM_NUCL
 !  J.L. Redelsperger 03/2021: add OCEAN and auto-coupled O-A LES cases
+!! R. Schoetter  12/2021 adds humidity and other mean diagnostics
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -268,6 +269,7 @@ USE MODI_SALTLFI_n
 USE MODI_CH_AER_REALLFI_n
 USE MODI_SALT_FILTER
 USE MODI_DUST_FILTER
+USE MODI_SHUMAN
 !
 !20131128
 USE MODE_MPPDB
@@ -765,6 +767,45 @@ IF (MEAN_COUNT /= 0) THEN
   TZFIELD%CCOMMENT   = 'X_Y_Z_vertical max wind'
   CALL IO_Field_write(TPFILE,TZFIELD,XWM_MAX)
 !
+  !
+  ! Calculation of mean horizontal wind speed and 
+  ! wind direction based on average components
+  !
+  XWIFF_MEAN = SQRT((MXF(XUM_MEAN)/MEAN_COUNT)**2 + (MYF(XVM_MEAN)/MEAN_COUNT)**2)
+  XWIDD_MEAN = 180.0 + (90.0 - 180.0*ATAN2(MYF(XVM_MEAN)/MEAN_COUNT,MXF(XUM_MEAN)/MEAN_COUNT)/XPI)
+  !
+  WHERE (XWIDD_MEAN(:,:,:).GT.360.0)
+     XWIDD_MEAN(:,:,:) = XWIDD_MEAN(:,:,:) - 360.0
+  ENDWHERE
+  !
+  IF ((MINVAL(XWIDD_MEAN).LT.0.0).OR.(MAXVAL(XWIDD_MEAN).GT.360.0)) STOP ("Wrong wind direction") 
+  !
+  TZFIELD%CMNHNAME   = 'WIFFME'
+  TZFIELD%CLONGNAME  = 'WIFFME'
+  TZFIELD%CUNITS     = 'm s-1'
+  TZFIELD%CCOMMENT   = 'X_Y_Z_horizontal mean wind speed'
+  CALL IO_Field_write(TPFILE,TZFIELD,XWIFF_MEAN)
+  !
+  TZFIELD%CMNHNAME   = 'WIDDME'
+  TZFIELD%CLONGNAME  = 'WIDDME'
+  TZFIELD%CUNITS     = 'm s-1'
+  TZFIELD%CCOMMENT   = 'X_Y_Z_horizontal mean wind direction (degrees from north)'
+  CALL IO_Field_write(TPFILE,TZFIELD,XWIDD_MEAN)  
+  !
+  TZFIELD%CMNHNAME   = 'WIFFMAX'
+  TZFIELD%CLONGNAME  = 'WIFFMAX'
+  TZFIELD%CUNITS     = 'm s-1'
+  TZFIELD%CCOMMENT   = 'X_Y_Z_horizontal maximum wind speed'
+  CALL IO_Field_write(TPFILE,TZFIELD,XWIFF_MAX)
+  XWIFF_MAX(:,:,:)=-XUNDEF
+  !
+  TZFIELD%CMNHNAME   = 'WIDDMAX'
+  TZFIELD%CLONGNAME  = 'WIDDMAX'
+  TZFIELD%CUNITS     = 'm s-1'
+  TZFIELD%CCOMMENT   = 'X_Y_Z_horizontal maximum wind direction'
+  CALL IO_Field_write(TPFILE,TZFIELD,XWIDD_MAX)
+  XWIDD_MAX(:,:,:)=-XUNDEF
+!  
   TZFIELD%NGRID      = 1
 !
   TZFIELD%CMNHNAME   = 'CMME'
@@ -813,6 +854,55 @@ IF (MEAN_COUNT /= 0) THEN
   TZFIELD%CUNITS     = 'K'
   TZFIELD%CCOMMENT   = 'X_Y_Z_max temperature'
   CALL IO_Field_write(TPFILE,TZFIELD,XTEMPM_MAX)
+!
+  TZFIELD%CMNHNAME   = 'QSPECME'
+  TZFIELD%CLONGNAME  = 'QSPECME'
+  TZFIELD%CUNITS     = 'kg/kg'
+  TZFIELD%CCOMMENT   = 'X_Y_Z_mean specific humidity'
+  ZWORK3D = XQ_MEAN/MEAN_COUNT
+  CALL IO_Field_write(TPFILE,TZFIELD,ZWORK3D)
+!
+  TZFIELD%CMNHNAME   = 'RHME'
+  TZFIELD%CLONGNAME  = 'RHME'
+  TZFIELD%CUNITS     = '%'
+  TZFIELD%CCOMMENT   = 'X_Y_Z_mean relative humidity, water'
+  ZWORK3D = XRH_W_MEAN/MEAN_COUNT
+  CALL IO_Field_write(TPFILE,TZFIELD,ZWORK3D)
+!
+  TZFIELD%CMNHNAME   = 'RHME_ICE'
+  TZFIELD%CLONGNAME  = 'RHME_ICE'
+  TZFIELD%CUNITS     = '%'
+  TZFIELD%CCOMMENT   = 'X_Y_Z_mean relative humidity, ice'
+  ZWORK3D = XRH_I_MEAN/MEAN_COUNT
+  CALL IO_Field_write(TPFILE,TZFIELD,ZWORK3D)
+!
+  TZFIELD%CMNHNAME   = 'RHME_WEIG'
+  TZFIELD%CLONGNAME  = 'RHME_WEIG'
+  TZFIELD%CUNITS     = '%'
+  TZFIELD%CCOMMENT   = 'X_Y_Z_mean relative humidity, weighted'
+  ZWORK3D = XRH_P_MEAN/MEAN_COUNT
+  CALL IO_Field_write(TPFILE,TZFIELD,ZWORK3D)
+!
+  TZFIELD%CMNHNAME   = 'RHMAXME'
+  TZFIELD%CLONGNAME  = 'RHMAXME'
+  TZFIELD%CUNITS     = '%'
+  TZFIELD%CCOMMENT   = 'X_Y_Z_mean column maximum relative humidity, water'
+  ZWORK2D = XRH_W_MAXCOL_MEAN/MEAN_COUNT
+  CALL IO_Field_write(TPFILE,TZFIELD,ZWORK3D)
+!
+  TZFIELD%CMNHNAME   = 'RHMAXME_ICE'
+  TZFIELD%CLONGNAME  = 'RHMAXME_ICE'
+  TZFIELD%CUNITS     = '%'
+  TZFIELD%CCOMMENT   = 'X_Y_Z_mean column maximum relative humidity, ice'
+  ZWORK2D = XRH_I_MAXCOL_MEAN/MEAN_COUNT
+  CALL IO_Field_write(TPFILE,TZFIELD,ZWORK3D)
+!
+  TZFIELD%CMNHNAME   = 'RHMAXME_WEIG'
+  TZFIELD%CLONGNAME  = 'RHMAXME_WEIG'
+  TZFIELD%CUNITS     = '%'
+  TZFIELD%CCOMMENT   = 'X_Y_Z_mean column maximum relative humidity, weighted'
+  ZWORK2D = XRH_P_MAXCOL_MEAN/MEAN_COUNT
+  CALL IO_Field_write(TPFILE,TZFIELD,ZWORK3D)
 !
   TZFIELD%CMNHNAME   = 'PABSMME'
   TZFIELD%CLONGNAME  = 'PABSMME'

@@ -101,7 +101,7 @@ IF (PRESENT(OINIFILEOPEN)) THEN
   !This is done here because model dimensions were not known before this call (for PREP_SURFEX)
   IF (OINIFILEOPEN) CALL IO_File_open(TINIFILE)
 END IF
-CALL WRITE_SURF_ATM_n(YSURF_CUR,'MESONH','PRE',.FALSE.)
+CALL WRITE_SURF_ATM_n(YSURF_CUR,'MESONH','PRE')
 CALL WRITE_DIAG_SURF_ATM_n(YSURF_CUR,'MESONH','PRE')
 !
 !----------------------------------------------------------

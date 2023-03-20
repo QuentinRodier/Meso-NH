@@ -253,6 +253,11 @@ SELECT CASE(HSURF)
        ALLOCATE(PFIELD(INI,1,1))
        PFIELD(:,:,:) = ZFIELD(:,:,:)
      ENDIF
+
+     WHERE (PFIELD(:,:,:)>XUNDEF)
+        PFIELD(:,:,:)=XUNDEF
+     END WHERE
+
      DEALLOCATE(ZFIELD)
 !
   CASE('LAI    ')

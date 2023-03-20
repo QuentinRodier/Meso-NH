@@ -154,7 +154,7 @@ ZSST=RESHAPE(glt_swfrzt2d(RESHAPE(S%XSSS,(/SIZE(S%XSSS),1/))) + XTT,(/SIZE(S%XSS
 ! Then replace freezing temp with Surfex-provided SST (S%XSST) where
 ! there is no (explicit or implicit) seaice and temperature is warmer
 ! than freezing point. And inits ZSIC accordingly
-IF (S%LINTERPOL_SIC) THEN  
+IF (S%LINTERPOL_SIC.OR.(S%CINTERPOL_SIC=='READAY')) THEN  
    ZSIC=S%XFSIC
    WHERE ( ZSIC(:) < 1.e-10 .AND. S%XSST(:) > ZSST(:) ) 
       ZSST(:)=S%XSST(:)
@@ -185,8 +185,8 @@ LP5 = (LWG.AND.NPRINTO>=5)
 DO JT=1,IT
    IF (SIZE(S%XSSS) > 0) THEN 
       S%TGLT%oce_all(:,1)%tml=ZSST(:)
-      IF (S%LINTERPOL_SIC) S%TGLT%sit_d(1,:,1)%fsi=ZSIC(:)
-      IF (S%LINTERPOL_SIT) S%TGLT%sit_d(1,:,1)%hsi=S%XFSIT(:)
+      IF (S%LINTERPOL_SIC.OR.(S%CINTERPOL_SIC=='READAY')) S%TGLT%sit_d(1,:,1)%fsi=ZSIC(:)
+      IF (S%LINTERPOL_SIT.OR.(S%CINTERPOL_SIT=='READAY')) S%TGLT%sit_d(1,:,1)%hsi=S%XFSIT(:)
       ! Gelato will compute heat flux from ocean by itself, thanks to 
       ! imposed namelist parameter nextqoc=0 
       S%TGLT%oce_all(:,1)%qoc=0. 
@@ -200,17 +200,17 @@ DO JT=1,IT
       !----------------
       ! Feed Gelato input structure with flux values from XCPL_xx
       ! 
-      S%TGLT%atm_all(:,1)%lip=S%XCPL_SEA_RAIN(:) / PTSTEP
-      S%TGLT%atm_all(:,1)%sop=S%XCPL_SEA_SNOW(:) / PTSTEP
+      S%TGLT%atm_all(:,1)%lip=S%XGLT_SEA_RAIN(:) / PTSTEP
+      S%TGLT%atm_all(:,1)%sop=S%XGLT_SEA_SNOW(:) / PTSTEP
       ! Fluxes over Sea water
-      S%TGLT%atm_wat(:,1)%eva=S%XCPL_SEA_EVAP(:) / PTSTEP
-      S%TGLT%atm_wat(:,1)%swa=S%XCPL_SEA_SNET(:) / PTSTEP 
-      S%TGLT%atm_wat(:,1)%nsf=S%XCPL_SEA_HEAT(:) / PTSTEP 
+      S%TGLT%atm_wat(:,1)%eva=S%XGLT_SEA_EVAP(:) / PTSTEP
+      S%TGLT%atm_wat(:,1)%swa=S%XGLT_SEA_SNET(:) / PTSTEP 
+      S%TGLT%atm_wat(:,1)%nsf=S%XGLT_SEA_HEAT(:) / PTSTEP 
       S%TGLT%atm_wat(:,1)%dfl=S%XSI_FLX_DRV ! W m-2 K-1    
       ! Fluxes over Sea ice
-      S%TGLT%atm_ice(1,:,1)%eva=S%XCPL_SEAICE_EVAP(:) / PTSTEP
-      S%TGLT%atm_ice(1,:,1)%swa=S%XCPL_SEAICE_SNET(:) / PTSTEP 
-      S%TGLT%atm_ice(1,:,1)%nsf=S%XCPL_SEAICE_HEAT(:) / PTSTEP 
+      S%TGLT%atm_ice(1,:,1)%eva=S%XGLT_SEAICE_EVAP(:) / PTSTEP
+      S%TGLT%atm_ice(1,:,1)%swa=S%XGLT_SEAICE_SNET(:) / PTSTEP 
+      S%TGLT%atm_ice(1,:,1)%nsf=S%XGLT_SEAICE_HEAT(:) / PTSTEP 
       S%TGLT%atm_ice(1,:,1)%dfl=S%XSI_FLX_DRV ! W m-2 K-1   
       ! (stress components are useless in Surfex 1D setting)
       !
@@ -245,17 +245,6 @@ END DO
 S%XSIC     = S%XSIC     / (IT * XTSTEP)
 S%XTICE    = S%XTICE    / (IT * XTSTEP) 
 S%XICE_ALB = S%XICE_ALB / (IT * XTSTEP) 
-!
-! Resets input accumulation fields for next step 
-!
-S%XCPL_SEA_RAIN=0.
-S%XCPL_SEA_SNOW=0.
-S%XCPL_SEA_EVAP=0.
-S%XCPL_SEA_SNET=0.
-S%XCPL_SEA_HEAT=0.
-S%XCPL_SEAICE_EVAP=0.
-S%XCPL_SEAICE_SNET=0.
-S%XCPL_SEAICE_HEAT=0.
 !
 IF (LHOOK) CALL DR_HOOK('SEAICE_GELATO1D',1,ZHOOK_HANDLE)
 !!-------------------------------------------------------------------------------

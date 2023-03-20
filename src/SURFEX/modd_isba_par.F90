@@ -62,7 +62,6 @@ REAL, PARAMETER       :: XRS_MAX   = 5000.
 ! Factor to restore explicit Cv value (DIF option)
 !
 REAL, PARAMETER       :: XCVHEATF  = 0.20
-!REAL, PARAMETER       :: XCVHEATF  = 1. !! 1. dans Tuzet. 2017 et 0.2 dans version par default, set to 0.2 for Jesus
 !
 ! Numerical factor to prevent division by 0 for F2 soilstress function
 !
@@ -133,6 +132,7 @@ REAL, PARAMETER       :: XFLXMAX = 5000.   ! [kg/(m**2*s)]
 REAL, PARAMETER       :: XLIMH       = 2.0 ! m
 !                        Minimum forcing height above vegetation top (turbulence computations)
 !
+!--------------------------------------------------------------------------------
 ! Soil geometry if DF option
 !--------------------------------------------------------------------------------
 !

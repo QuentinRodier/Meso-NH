@@ -26,6 +26,8 @@ SUBROUTINE PREP_SEAICE (UG, DTCO, DTS, O, OR, KLAT, S, U, GCP, &
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    01/2014
+!!
+!!      B. Decharme 12/2018 fsi = XSIC
 !!------------------------------------------------------------------
 !
 USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
@@ -184,6 +186,7 @@ S%TGLT%sit(:,:,1)%vmp=0.
 S%TGLT%sit(:,:,1)%asn=0.
 ! sea ice fraction 
 S%TGLT%sit(:,:,1)%fsi=0.
+S%TGLT%sit(1,:,1)%fsi=S%XSIC(:)
 ! sea ice thickness 
 S%TGLT%sit(:,:,1)%hsi=1.*S%TGLT%sit(:,:,1)%fsi
 ! sea ice salinity 

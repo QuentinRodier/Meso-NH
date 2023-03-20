@@ -1,4 +1,4 @@
-!SFX_LIC Copyright 2003-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC Copyright 2003-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !SFX_LIC for details. version 1.
@@ -37,6 +37,7 @@
 !!      P. Samuelsson 10/2014: MEB
 !!      P. Wautelet 01/2019: bug: write L_STRESS only if it exists
 !!      A. Druel     02/2019 : Add variables for irrigation
+!!      P. Wautelet 12/06/2020: bugfix: moved condition on LPAR_STRESS (LDATA_STRESS was not written)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS

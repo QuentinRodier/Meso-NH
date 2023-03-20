@@ -4,8 +4,8 @@
 !SFX_LIC for details. version 1.
 !     #########
       SUBROUTINE GET_SFX_LAND (IO, S, U, &
-                               OCPL_GW,OCPL_FLOOD,OCPL_CALVING,  &
-                               PRUNOFF,PDRAIN,PCALVING,PSRCFLOOD )  
+                               OCPL_GW,OCPL_FLOOD,OCPL_CALVING,OCPL_RIVCARB,&
+                               PRUNOFF,PDRAIN,PCALVING,PSRCFLOOD,PDOCFLUX   )  
 !     ###############################################################################
 !
 !!****  *GET_SFX_LAND* - routine to get some land surface variables from surfex
@@ -33,6 +33,7 @@
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    10/2013
+!!      Modified R. Séférian 08/2016 Introduce riverine carbon cycle coupling field
 !!    10/2016 B. Decharme : bug surface/groundwater coupling
 !-------------------------------------------------------------------------------
 !
@@ -64,11 +65,13 @@ TYPE(SURF_ATM_t), INTENT(INOUT) :: U
 LOGICAL,            INTENT(IN)  :: OCPL_GW     ! groundwater/surface key
 LOGICAL,            INTENT(IN)  :: OCPL_FLOOD   ! flood key
 LOGICAL,            INTENT(IN)  :: OCPL_CALVING ! calving key
+LOGICAL,            INTENT(IN)  :: OCPL_RIVCARB ! river-carbon cycle key
 !
 REAL, DIMENSION(:), INTENT(OUT) :: PRUNOFF    ! Cumulated Surface runoff             (kg/m2)
 REAL, DIMENSION(:), INTENT(OUT) :: PDRAIN     ! Cumulated Deep drainage              (kg/m2)
 REAL, DIMENSION(:), INTENT(OUT) :: PCALVING   ! Cumulated Calving flux               (kg/m2)
 REAL, DIMENSION(:), INTENT(OUT) :: PSRCFLOOD  ! Cumulated freshwater flux            (kg/m2)
+REAL, DIMENSION(:), INTENT(OUT) :: PDOCFLUX   ! Cumulated DOC flux                   (kgC/m2)
 !
 !*       0.2   Declarations of local variables
 !              -------------------------------
@@ -90,6 +93,7 @@ PRUNOFF  (:) = XUNDEF
 PDRAIN   (:) = XUNDEF
 PCALVING (:) = XUNDEF
 PSRCFLOOD(:) = XUNDEF
+PDOCFLUX (:) = XUNDEF
 !
 !*       2.0   Get variable over nature
 !              ------------------------
@@ -101,11 +105,6 @@ IF(U%NSIZE_NATURE>0)THEN
   CALL UNPACK_SAME_RANK(U%NR_NATURE,S%XCPL_RUNOFF(:),PRUNOFF(:),XUNDEF)
   S%XCPL_RUNOFF (:) = 0.0
 !
-! * deep drainage
-!
-  CALL UNPACK_SAME_RANK(U%NR_NATURE,S%XCPL_DRAIN(:),PDRAIN(:),XUNDEF)
-  S%XCPL_DRAIN(:) = 0.0
-!
 ! * Calving flux
 !
   IF(OCPL_CALVING)THEN
@@ -114,6 +113,20 @@ IF(U%NSIZE_NATURE>0)THEN
   ELSEIF(IO%LGLACIER)THEN
     S%XCPL_DRAIN  (:) = S%XCPL_DRAIN(:) + S%XCPL_ICEFLUX(:)
     S%XCPL_ICEFLUX(:) = 0.0
+  ENDIF
+!
+! * deep drainage
+!
+  CALL UNPACK_SAME_RANK(U%NR_NATURE,S%XCPL_DRAIN(:),PDRAIN(:),XUNDEF)
+  S%XCPL_DRAIN(:) = 0.0
+!
+! * Riverine carbon flux
+!
+  IF(OCPL_RIVCARB)THEN
+    CALL UNPACK_SAME_RANK(U%NR_NATURE,S%XCPL_DOCFLUX(:),PDOCFLUX(:),XUNDEF)
+    S%XCPL_DOCFLUX(:) = 0.0
+  ELSEIF(IO%LCLEACH)THEN
+    S%XCPL_DOCFLUX(:) = 0.0
   ENDIF
 !
 ! * floodplain source terms

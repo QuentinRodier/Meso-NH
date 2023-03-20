@@ -1020,7 +1020,6 @@ DO JP = 1,TOP%NTEB_PATCH
               ENDIF
            ENDDO
            IF (ZCTL.NE.1) THEN
-              print*,' CHECK 2 GDM%PHV%XH_LAI_MAX(',JI,') = ',GDM%PHV%XH_LAI_MAX(JI)
               CALL ABOR1_SFX("COUPLING_TEBN: Tree forcing temperature not attributed")
            ENDIF
         ENDDO

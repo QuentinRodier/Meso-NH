@@ -47,6 +47,10 @@ SUBROUTINE PREP_ISBA (DTCO, UG, U, USS, GCP, SB, IG, IO, S, NK, NP, NPE, NPAR_VE
 !!      P. Samuelsson            (10/2014): MEB
 !!      P. Marguinaud10/2014, Support for a 2-part PREP
 !!      A. Druel     02/2019, Adapt the code to be compatible with irrigation and transmit NPAR_VEG_IRR_USE
+!!      B. Decharme    02/17 : exact computation of saturation deficit near the leaf surface
+!!      R. Séférian    01/18 : Modify spin-up procedure for carbon cycle
+!!      B. Decharme 04/2020 : New soil carbon scheme (Morel et al. 2019 JAMES) under CRESPSL = DIF option
+!!      B. Decharme 04/2020 : Soil gas scheme (Morel et al. 2019 JAMES) under LSOILGAS = T
 !!
 !!------------------------------------------------------------------
 !
@@ -76,7 +80,7 @@ USE MODD_READ_NAMELIST,    ONLY : LNAM_READ
 USE MODD_SURF_ATM,         ONLY : LVERTSHIFT
 !          
 USE MODD_DEEPSOIL,         ONLY : LPHYSDOMC
-USE MODD_CSTS,             ONLY : XTT, XG, XLMTT
+USE MODD_CSTS,             ONLY : XTT, XG, XRD, XLMTT, XP00
 USE MODD_PREP,             ONLY : XZS_LS
 
 USE MODD_PREP_SNOW,        ONLY : LSNOW_PREP_PERM
@@ -94,9 +98,12 @@ USE MODI_PREP_PERM_SNOW
 USE MODI_INIT_SNOW_LW
 USE MODI_AVERAGED_ALBEDO_EMIS_ISBA
 USE MODI_PREP_HOR_ISBA_CC_FIELD
+USE MODI_PREP_HOR_ISBA_ESC_FIELD
 USE MODI_SOIL_ALBEDO
+USE MODE_THERMOS
 !
 USE MODI_CLEAN_PREP_OUTPUT_GRID
+USE MODI_PACK_SAME_RANK
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -123,11 +130,11 @@ TYPE(ISBA_NPE_t),      INTENT(INOUT) :: NPE
 TYPE (PREP_CTL),       INTENT(INOUT) :: YDCTL
 !
 INTEGER,DIMENSION(:), INTENT(IN) :: NPAR_VEG_IRR_USE ! vegtype with irrigation
- CHARACTER(LEN=6),   INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
- CHARACTER(LEN=28),  INTENT(IN)  :: HATMFILE    ! name of the Atmospheric file
- CHARACTER(LEN=6),   INTENT(IN)  :: HATMFILETYPE! type of the Atmospheric file
- CHARACTER(LEN=28),  INTENT(IN)  :: HPGDFILE    ! name of the Atmospheric file
- CHARACTER(LEN=6),   INTENT(IN)  :: HPGDFILETYPE! type of the Atmospheric file
+CHARACTER(LEN=6),   INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
+CHARACTER(LEN=28),  INTENT(IN)  :: HATMFILE    ! name of the Atmospheric file
+CHARACTER(LEN=6),   INTENT(IN)  :: HATMFILETYPE! type of the Atmospheric file
+CHARACTER(LEN=28),  INTENT(IN)  :: HPGDFILE    ! name of the Atmospheric file
+CHARACTER(LEN=6),   INTENT(IN)  :: HPGDFILETYPE! type of the Atmospheric file
 !
 !*      0.2    declarations of local variables
 !
@@ -135,27 +142,31 @@ TYPE(ISBA_K_t), POINTER  :: KK
 TYPE(ISBA_P_t), POINTER  :: PK
 TYPE(ISBA_PE_t), POINTER :: PEK
 !
-INTEGER :: ILUOUT, INI
-INTEGER :: JP, JL, JJ
-REAL    :: ZWORK, ZLOG, ZWTOT, ZMATPOT, ZWL
 LOGICAL, DIMENSION(IO%NPATCH)    :: L_IS_SNOW
 !
-REAL,             DIMENSION(1)   :: ZSW_BANDS ! middle wavelength of each band
-REAL,             DIMENSION(U%NSIZE_NATURE,IO%NPATCH) :: ZDIR_ALB, ZTG1  ! direct albedo for each band
-REAL,             DIMENSION(U%NSIZE_NATURE,IO%NPATCH) :: ZSCA_ALB  ! diffuse albedo for each band
-REAL,             DIMENSION(U%NSIZE_NATURE)   :: ZEMIS     ! emissivity
-REAL,             DIMENSION(U%NSIZE_NATURE)   :: ZZENITH   ! solar zenithal angle
-REAL,             DIMENSION(U%NSIZE_NATURE)   :: ZTSURF     ! surface effective temperature
+REAL,    DIMENSION(1)                        :: ZSW_BANDS ! middle wavelength of each band
+REAL,    DIMENSION(U%NSIZE_NATURE,IO%NPATCH) :: ZDIR_ALB  ! Unpacked direct albedo for each band
+REAL,    DIMENSION(U%NSIZE_NATURE,IO%NPATCH) :: ZSCA_ALB  ! Unpacked diffuse albedo for each band
+REAL,    DIMENSION(U%NSIZE_NATURE,IO%NPATCH) :: ZTG1      ! Unpacked surface temperature
 !
-LOGICAL         :: GPERMSNOW
+LOGICAL, DIMENSION(U%NSIZE_NATURE,IO%NPATCH) :: GWGI_ADJUST ! Adjust soil ice profile only if permanent snow is initialized
+!
+REAL,    DIMENSION(U%NSIZE_NATURE)   :: ZEMIS     ! Unpacked emissivity
+REAL,    DIMENSION(U%NSIZE_NATURE)   :: ZZENITH   ! Unpacked solar zenithal angle
+REAL,    DIMENSION(U%NSIZE_NATURE)   :: ZTSURF    ! Unpacked surface effective temperature
+!
+REAL,    DIMENSION(:), ALLOCATABLE   :: ZZS
+!
+LOGICAL         :: GPERMSNOW 
 LOGICAL         :: GTEMP2WGI
 LOGICAL         :: GWG
 LOGICAL         :: GWGI
 LOGICAL         :: GTG
 !
-REAL            :: SMAX
+REAL    :: ZWORK, ZLOG, ZWTOT, ZMATPOT, ZWL, ZSM
 !
-INTEGER         :: ISIZE_LMEB_PATCH, ISNOW
+INTEGER :: ILUOUT, INI, ISIZE_LMEB_PATCH, ISNOW, IVEGTYP
+INTEGER :: JP, JL, JJ, JVEGTYP
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
@@ -165,18 +176,22 @@ IF (LHOOK) CALL DR_HOOK('PREP_ISBA',0,ZHOOK_HANDLE)
 !
 !*      1.     Default of configuration
 !
+INI=U%NSIZE_NATURE
+!
 GPERMSNOW = .TRUE.
 GWG       = .TRUE.
 GWGI      = .TRUE.
 GTG       = .TRUE.
 !
+GWGI_ADJUST(:,:) = .FALSE.
+!
 ISIZE_LMEB_PATCH=COUNT(IO%LMEB_PATCH(:))
 !
 !*      1.1    Default
 !
- CALL GET_LUOUT(HPROGRAM,ILUOUT)
+CALL GET_LUOUT(HPROGRAM,ILUOUT)
 !
- CALL PREP_OUTPUT_GRID(UG%G, IG, U%NSIZE_FULL, ILUOUT)
+CALL PREP_OUTPUT_GRID(UG%G, IG, U%NSIZE_FULL, ILUOUT)
 !
 !-------------------------------------------------------------------------------------
 !
@@ -185,38 +200,38 @@ ISIZE_LMEB_PATCH=COUNT(IO%LMEB_PATCH(:))
 !
 !*      2.0    Large scale orography
 !
- CALL PREP_HOR_ISBA_FIELD(DTCO, UG, U, USS, GCP, IG, IO, S, NK, NP, NPE, S%TTIME, NPAR_VEG_IRR_USE, &
-                          HPROGRAM,'ZS     ',HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE,YDCTL)
+CALL PREP_HOR_ISBA_FIELD(DTCO, UG, U, USS, GCP, IG, IO, S, NK, NP, NPE, S%TTIME, NPAR_VEG_IRR_USE, &
+                         HPROGRAM,'ZS     ',HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE,YDCTL)
 !
 !*      2.1    Soil Water reservoirs
 !
- CALL PREP_HOR_ISBA_FIELD(DTCO, UG, U, USS, GCP, IG, IO, S, NK, NP, NPE, S%TTIME, NPAR_VEG_IRR_USE, &
-                          HPROGRAM,'WG     ',HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE,YDCTL,GWG)
+CALL PREP_HOR_ISBA_FIELD(DTCO, UG, U, USS, GCP, IG, IO, S, NK, NP, NPE, S%TTIME, NPAR_VEG_IRR_USE, &
+                         HPROGRAM,'WG     ',HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE,YDCTL,GWG)
 !
 !*      2.2    Soil ice reservoirs
 !
- CALL PREP_HOR_ISBA_FIELD(DTCO, UG, U, USS, GCP, IG, IO, S, NK, NP, NPE, S%TTIME, NPAR_VEG_IRR_USE, &
-                          HPROGRAM,'WGI    ',HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE,YDCTL,GWGI)
+CALL PREP_HOR_ISBA_FIELD(DTCO, UG, U, USS, GCP, IG, IO, S, NK, NP, NPE, S%TTIME, NPAR_VEG_IRR_USE, &
+                         HPROGRAM,'WGI    ',HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE,YDCTL,GWGI)
 !
 !*      2.3    Leaves interception water reservoir
 !
- CALL PREP_HOR_ISBA_FIELD(DTCO, UG, U, USS, GCP, IG, IO, S, NK, NP, NPE, S%TTIME, NPAR_VEG_IRR_USE, &
-                          HPROGRAM,'WR     ',HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE,YDCTL)
+CALL PREP_HOR_ISBA_FIELD(DTCO, UG, U, USS, GCP, IG, IO, S, NK, NP, NPE, S%TTIME, NPAR_VEG_IRR_USE, &
+                         HPROGRAM,'WR     ',HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE,YDCTL)
 !
 !*      2.4    Temperature profile
 !
- CALL PREP_HOR_ISBA_FIELD(DTCO, UG, U, USS, GCP, IG, IO, S, NK, NP, NPE, S%TTIME, NPAR_VEG_IRR_USE, &
-                          HPROGRAM,'TG     ',HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE,YDCTL,GTG)
+CALL PREP_HOR_ISBA_FIELD(DTCO, UG, U, USS, GCP, IG, IO, S, NK, NP, NPE, S%TTIME, NPAR_VEG_IRR_USE, &
+                         HPROGRAM,'TG     ',HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE,YDCTL,GTG)
 !
 !*      2.5    Snow variables
 !
- CALL PREP_HOR_ISBA_FIELD(DTCO, UG, U, USS, GCP, IG, IO, S, NK, NP, NPE, S%TTIME, NPAR_VEG_IRR_USE, &
-                          HPROGRAM,'SN_VEG ',HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE,YDCTL,GPERMSNOW)
+CALL PREP_HOR_ISBA_FIELD(DTCO, UG, U, USS, GCP, IG, IO, S, NK, NP, NPE, S%TTIME, NPAR_VEG_IRR_USE, &
+                         HPROGRAM,'SN_VEG ',HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE,YDCTL,GPERMSNOW)
 !
 !*      2.6    LAI
 !
- CALL PREP_HOR_ISBA_FIELD(DTCO, UG, U, USS, GCP, IG, IO, S, NK, NP, NPE, S%TTIME, NPAR_VEG_IRR_USE, &
-                          HPROGRAM,'LAI    ',HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE,YDCTL)
+CALL PREP_HOR_ISBA_FIELD(DTCO, UG, U, USS, GCP, IG, IO, S, NK, NP, NPE, S%TTIME, NPAR_VEG_IRR_USE, &
+                         HPROGRAM,'LAI    ',HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE,YDCTL)
 !
 !*      2.7    GLACIER
 !
@@ -231,7 +246,7 @@ IF(ISIZE_LMEB_PATCH>0)THEN
   CALL PREP_HOR_ISBA_FIELD(DTCO, UG, U, USS, GCP, IG, IO, S, NK, NP, NPE, S%TTIME, NPAR_VEG_IRR_USE, &
                           HPROGRAM,'TV     ',HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE,YDCTL)
   CALL PREP_HOR_ISBA_FIELD(DTCO, UG, U, USS, GCP, IG, IO, S, NK, NP, NPE, S%TTIME, NPAR_VEG_IRR_USE, &
-                        HPROGRAM,'TL     ',HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE,YDCTL)
+                          HPROGRAM,'TL     ',HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE,YDCTL)
   CALL PREP_HOR_ISBA_FIELD(DTCO, UG, U, USS, GCP, IG, IO, S, NK, NP, NPE, S%TTIME, NPAR_VEG_IRR_USE, &
                           HPROGRAM,'WRL    ',HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE,YDCTL)
   CALL PREP_HOR_ISBA_FIELD(DTCO, UG, U, USS, GCP, IG, IO, S, NK, NP, NPE, S%TTIME, NPAR_VEG_IRR_USE, &
@@ -244,34 +259,99 @@ IF(ISIZE_LMEB_PATCH>0)THEN
                           HPROGRAM,'QC     ',HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE,YDCTL)
 ENDIF
 !
-!*      7.     Isba-Ags prognostic fields
+IF(ISIZE_LMEB_PATCH==0)THEN
 !
-IF (IO%CPHOTO == 'NIT' .OR. IO%CPHOTO == 'NCB') THEN
-  CALL PREP_HOR_ISBA_CC_FIELD(DTCO, U, GCP, SIZE(IG%XLAT), IO, S, NK, NP, NPE, NPAR_VEG_IRR_USE, &
-                             HPROGRAM,'BIOMASS ',HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE,YDCTL)
+  DO JP = 1,IO%NPATCH
+!
+     PEK => NPE%AL(JP)
+     PK => NP%AL(JP)
+!
+     ALLOCATE(PEK%XQC(PK%NSIZE_P))
+     PEK%XQC(:)=0.0
+     ALLOCATE(ZZS(PK%NSIZE_P))
+     CALL PACK_SAME_RANK(PK%NR_P,S%XZS,ZZS)      
+!
+     DO JJ=1,PK%NSIZE_P
+        IF(PK%XPATCH(JJ)>0.0)THEN
+          ZWORK=XP00*EXP(-(XG/XRD/PEK%XTG(JJ,1))*ZZS(JJ))
+          PEK%XQC(JJ)=QSAT(PEK%XTG(JJ,1),ZWORK)  
+        ENDIF
+     ENDDO
+     DEALLOCATE(ZZS)
+!
+  ENDDO
+!
 ENDIF
 !
-!*      8.     Isba-CC prognostic fields
+!*      2.9    Isba-Ags prognostic fields
 !
-IF (IO%CPHOTO/='NON' .AND. IO%CRESPSL == 'CNT') THEN
-  !
-  !*      8.1    Litter
-  !
-    CALL PREP_HOR_ISBA_CC_FIELD(DTCO, U, GCP, SIZE(IG%XLAT), IO, S, NK, NP, NPE, NPAR_VEG_IRR_USE, &
-                                 HPROGRAM,'LITTER  ',HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE,YDCTL)
-  !
-  !*      8.2    Soil carbon
-  !
-    CALL PREP_HOR_ISBA_CC_FIELD(DTCO, U, GCP, SIZE(IG%XLAT), IO, S, NK, NP, NPE, NPAR_VEG_IRR_USE, &
+IF(IO%CPHOTO=='NIT'.OR.IO%CPHOTO=='NCB')THEN
+  CALL PREP_HOR_ISBA_CC_FIELD(DTCO, U, GCP, SIZE(IG%XLAT), IO, S, NK, NP, NPE, NPAR_VEG_IRR_USE,   &
+                              HPROGRAM,'BIOMASS ',HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE,YDCTL)
+ENDIF
+!
+!*      2.10   Isba-CC prognostic fields
+!
+IF(IO%CPHOTO/='NON'.AND.IO%CRESPSL=='CNT')THEN
+!
+!*Litter
+!
+  CALL PREP_HOR_ISBA_CC_FIELD(DTCO, U, GCP, SIZE(IG%XLAT), IO, S, NK, NP, NPE, NPAR_VEG_IRR_USE,   &
+                              HPROGRAM,'LITTER  ',HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE,YDCTL)
+!
+!*Soil carbon
+!
+  CALL PREP_HOR_ISBA_CC_FIELD(DTCO, U, GCP, SIZE(IG%XLAT), IO, S, NK, NP, NPE, NPAR_VEG_IRR_USE,   &
+                              HPROGRAM,'SOILCARB',HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE,YDCTL)
+!
+!*lignin
+!
+  CALL PREP_HOR_ISBA_CC_FIELD(DTCO, U, GCP, SIZE(IG%XLAT), IO, S, NK, NP, NPE, NPAR_VEG_IRR_USE,   &
+                              HPROGRAM,'LIGNIN  ',HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE,YDCTL)
+ENDIF
+!
+!*      2.11   Isba-CC Explicit Soil Carbon scheme prognostic fields
+!
+IF (IO%CPHOTO/='NON'.AND.IO%CRESPSL=='DIF') THEN
+!
+!*Surface litter and lignin
+!
+  CALL PREP_HOR_ISBA_ESC_FIELD(DTCO, UG, U, USS, GCP, IG, IO, S, NK, NP, NPE, NPAR_VEG_IRR_USE,     &
+                               HPROGRAM,'SURF_LIT',HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE,YDCTL)
+!
+  CALL PREP_HOR_ISBA_ESC_FIELD(DTCO, UG, U, USS, GCP, IG, IO, S, NK, NP, NPE, NPAR_VEG_IRR_USE,     &
+                               HPROGRAM,'SURF_LIG',HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE,YDCTL)
+
+!
+!*Soil carbon, litter and lignin
+!
+  CALL PREP_HOR_ISBA_ESC_FIELD(DTCO, UG, U, USS, GCP, IG, IO, S, NK, NP, NPE, NPAR_VEG_IRR_USE,     &
                                HPROGRAM,'SOILCARB',HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE,YDCTL)
-  !
-  !*      8.2    lignin
-  !
-   CALL PREP_HOR_ISBA_CC_FIELD(DTCO, U, GCP, SIZE(IG%XLAT), IO, S, NK, NP, NPE, NPAR_VEG_IRR_USE, &
-                               HPROGRAM,'LIGNIN  ',HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE,YDCTL)
+!
+  CALL PREP_HOR_ISBA_ESC_FIELD(DTCO, UG, U, USS, GCP, IG, IO, S, NK, NP, NPE, NPAR_VEG_IRR_USE,     &
+                               HPROGRAM,'SOIL_LIT',HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE,YDCTL)
+!
+  CALL PREP_HOR_ISBA_ESC_FIELD(DTCO, UG, U, USS, GCP, IG, IO, S, NK, NP, NPE, NPAR_VEG_IRR_USE,     &
+                               HPROGRAM,'SOIL_LIG',HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE,YDCTL)
+!
+!*Soil gas
+!
+  IF(IO%LSOILGAS)THEN
+!          
+    CALL PREP_HOR_ISBA_ESC_FIELD(DTCO, UG, U, USS, GCP, IG, IO, S, NK, NP, NPE, NPAR_VEG_IRR_USE,     &
+                                 HPROGRAM,'SGASO2  ',HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE,YDCTL)
+!
+    CALL PREP_HOR_ISBA_ESC_FIELD(DTCO, UG, U, USS, GCP, IG, IO, S, NK, NP, NPE, NPAR_VEG_IRR_USE,     &
+                                 HPROGRAM,'SGASCO2 ',HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE,YDCTL)
+!
+    CALL PREP_HOR_ISBA_ESC_FIELD(DTCO, UG, U, USS, GCP, IG, IO, S, NK, NP, NPE, NPAR_VEG_IRR_USE,     &
+                                 HPROGRAM,'SGASCH4 ',HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE,YDCTL)
+!
+  ENDIF
+!
 ENDIF
 !
- CALL CLEAN_PREP_OUTPUT_GRID
+CALL CLEAN_PREP_OUTPUT_GRID
 !
 IF (YDCTL%LPART6) THEN
 !-------------------------------------------------------------------------------------
@@ -279,28 +359,38 @@ IF (YDCTL%LPART6) THEN
 !*      3.    Physical limitation: 
 !
   DO JP=1,IO%NPATCH
-    PEK => NPE%AL(JP)
-    KK => NK%AL(JP)
-  !
-  ! No ice for force restore third layer:
-    IF (IO%CISBA == '3-L') THEN
-    !
-      WHERE(PEK%XWG(:,3) /= XUNDEF)
-        PEK%XWG(:,3) = MIN(PEK%XWG(:,3)+ PEK%XWGI(:,3),KK%XWSAT(:,3))
-        PEK%XWGI(:,3) = 0.
-      END WHERE
-    ENDIF
-  !
-  ! Total water content should not exceed saturation:
-    WHERE(PEK%XWG(:,:) /= XUNDEF .AND. (PEK%XWG(:,:) + PEK%XWGI(:,:)) > KK%XWSAT(:,:) )
-      PEK%XWGI(:,:) = KK%XWSAT(:,:) - PEK%XWG(:,:)
-    END WHERE
-
+!
+     PEK => NPE%AL(JP)
+     KK => NK%AL(JP)
+!
+!    No ice for force restore third layer:
+!
+     IF(IO%CISBA == '3-L')THEN
+       WHERE(PEK%XWG (:,3) /= XUNDEF)
+             PEK%XWG (:,3) = MIN(PEK%XWG(:,3)+ PEK%XWGI(:,3),KK%XWSAT(:,3))
+             PEK%XWGI(:,3) = 0.
+       END WHERE
+     ENDIF
+!
+!    Total water content should not exceed saturation:
+! 
+     WHERE(PEK%XWG(:,:) /= XUNDEF .AND. (PEK%XWG(:,:) + PEK%XWGI(:,:)) > KK%XWSAT(:,:) )
+          PEK%XWGI(:,:) = KK%XWSAT(:,:) - PEK%XWG(:,:)
+     ENDWHERE
+!
   ENDDO
+!
+! Soil temperature limited to 200K:
+  IF(IO%CISBA == 'DIF')THEN
+    DO JP=1,IO%NPATCH
+       PEK => NPE%AL(JP)
+       PEK%XTG(:,:)=MAX(PEK%XTG(:,:),200.)
+    ENDDO
+  ENDIF
 !
 !-------------------------------------------------------------------------------------
 !
-!*      3.     Vertical interpolations of all variables
+!*      4.     Vertical interpolations of all variables
 !
   IF(LVERTSHIFT)THEN
     CALL PREP_VER_ISBA(IO, NPE, S%XZS, NP)
@@ -309,59 +399,80 @@ IF (YDCTL%LPART6) THEN
   DEALLOCATE(XZS_LS)
 !-------------------------------------------------------------------------------------
 !
-!*      4.     Treatment of permanent snow
+!*      5.     Treatment of permanent snow
 !
-  IF (GPERMSNOW.AND.LSNOW_PREP_PERM) THEN
-    L_IS_SNOW = .FALSE.
-    DO JP=1, NVEGTYPE+NVEG_IRR 
-      JL = JP
-      IF ( JP > NVEGTYPE ) JL = NPAR_VEG_IRR_USE( JP - NVEGTYPE )
-      !
-      IF ( JL == NVT_SNOW ) THEN 
-        CALL VEGTYPE_TO_PATCH_IRRIG(JP,IO%NPATCH,NPAR_VEG_IRR_USE,ISNOW)
+  IF(LSNOW_PREP_PERM)THEN
+     GPERMSNOW = .TRUE.
+  ENDIF
+!
+  IF(GPERMSNOW)THEN
+!
+    L_IS_SNOW(:) = .FALSE.
+!
+    DO JVEGTYP=1,NVEGTYPE+NVEG_IRR 
+      IVEGTYP = JVEGTYP
+      IF(JVEGTYP>NVEGTYPE)THEN
+        IVEGTYP = NPAR_VEG_IRR_USE(JVEGTYP-NVEGTYPE)
+      ENDIF
+      IF ( IVEGTYP == NVT_SNOW ) THEN 
+        CALL VEGTYPE_TO_PATCH_IRRIG(JVEGTYP,IO%NPATCH,NPAR_VEG_IRR_USE,ISNOW)
         L_IS_SNOW(ISNOW) = .TRUE.
       ENDIF
-      !
     ENDDO
-    !
+!
     DO JP = 1,IO%NPATCH
-      IF ( L_IS_SNOW(JP) ) CALL PREP_PERM_SNOW(IO, NK%AL(JP), NP%AL(JP), NPE%AL(JP), NPAR_VEG_IRR_USE)
+       KK => NK%AL(JP)
+       PK => NP%AL(JP)
+       PEK => NPE%AL(JP)
+       IF(L_IS_SNOW(JP))THEN
+          CALL PREP_PERM_SNOW(IO,KK,PK,PEK,NPAR_VEG_IRR_USE,GWGI_ADJUST(1:PK%NSIZE_P,JP))
+       ENDIF
     ENDDO
-    !
+!
   ENDIF
 !
   DO JP = 1,IO%NPATCH
-    CALL INIT_SNOW_LW(XEMISSN,NPE%AL(JP)%TSNOW)
+     PEK => NPE%AL(JP)
+     CALL INIT_SNOW_LW(XEMISSN,PEK%TSNOW)
   ENDDO
 !
-  IF (LPHYSDOMC) THEN
+  IF(LPHYSDOMC)THEN
     DO JP = 1,IO%NPATCH
-      NPE%AL(JP)%TSNOW%WSNOW(:,:)=0.
+      PEK => NPE%AL(JP)
+      PEK%TSNOW%WSNOW(:,:)=0.
     ENDDO
   ENDIF 
+!
 !------------------------------------------------------------------------------------- 
 ! 
-!*      4.b     Possibility for setting an upper limit on the initial snow water equivalent field 
+!*      6    Possibility for setting an upper limit on the initial snow water equivalent field 
 !
-  IF (LSWEMAX) THEN 
+  IF(LSWEMAX)THEN 
     DO JP = 1,IO%NPATCH
-      SMAX = MAXVAL(NPE%AL(JP)%TSNOW%WSNOW(:,:)) 
-      WRITE(*,*) ' MAX(Snow content (kg/m2)): ', SMAX 
-      WRITE(*,*) ' Set MAX to', XSWEMAX, '(kg/m2)' 
-      NPE%AL(JP)%TSNOW%WSNOW(:,:) = MIN(NPE%AL(JP)%TSNOW%WSNOW(:,:),XSWEMAX) 
-      SMAX = MAXVAL(NPE%AL(JP)%TSNOW%WSNOW(:,:)) 
-      WRITE(*,*) ' MAX(Snow content (kg/m2)): ', SMAX 
+      PEK => NPE%AL(JP)
+      ZWORK = MAXVAL(PEK%TSNOW%WSNOW(:,:)) 
+      WRITE(ILUOUT,*) ' MAX(Snow content (kg/m2)): ', ZWORK 
+      WRITE(ILUOUT,*) ' Set MAX to', XSWEMAX, '(kg/m2)' 
+      PEK%TSNOW%WSNOW(:,:) = MIN(PEK%TSNOW%WSNOW(:,:),XSWEMAX) 
+      ZWORK = MAXVAL(PEK%TSNOW%WSNOW(:,:)) 
+      WRITE(ILUOUT,*) ' MAX(Snow content (kg/m2)): ', ZWORK 
     ENDDO
   ENDIF
 !
 !-------------------------------------------------------------------------------------
 !
-!*      5.     coherence between soil temperature and liquid/solid water
+!*      7.     coherence between soil temperature and liquid/solid water
 !
   GTEMP2WGI=(GWG.OR.GWGI.OR.GTG)
 !
-  IF (IO%CISBA == 'DIF'.AND.GTEMP2WGI) THEN
+  IF(GTEMP2WGI)THEN
+    GWGI_ADJUST(:,:) = .TRUE.
+  ENDIF
+!
+  IF(IO%CISBA=='DIF')THEN
+!          
     DO JP=1,IO%NPATCH
+!
       PEK => NPE%AL(JP)
       PK => NP%AL(JP)
       KK => NK%AL(JP)
@@ -370,9 +481,9 @@ IF (YDCTL%LPART6) THEN
         !
         DO JJ=1,PK%NSIZE_P
           !
-          IF(PEK%XWG(JJ,JL)/=XUNDEF)THEN
+          IF(PEK%XWG(JJ,JL)/=XUNDEF.AND.GWGI_ADJUST(JJ,JP))THEN
 !     
-!         total soil moisture
+!           total soil moisture
             ZWTOT = PEK%XWG(JJ,JL)+PEK%XWGI(JJ,JL)
             ZWTOT = MIN(ZWTOT,KK%XWSAT(JJ,JL))
 !                
@@ -382,8 +493,8 @@ IF (YDCTL%LPART6) THEN
             ZLOG    = KK%XBCOEF(JJ,JL)*LOG(ZWORK)
             ZMATPOT = KK%XMPOTSAT(JJ,JL)*EXP(-ZLOG)
 !
-!         soil liquid water content computation
-!         w=wsat*(psi/mpotsat)**(-1/bcoef)
+!           soil liquid water content computation
+!           w=wsat*(psi/mpotsat)**(-1/bcoef)
             ZMATPOT       = MIN(KK%XMPOTSAT(JJ,JL),XLMTT*(PEK%XTG(JJ,JL)-XTT)/(XG*PEK%XTG(JJ,JL)))
             ZWORK         = MAX(1.0,ZMATPOT/KK%XMPOTSAT(JJ,JL))
             ZLOG          = LOG(ZWORK)
@@ -391,10 +502,10 @@ IF (YDCTL%LPART6) THEN
             ZWL           = MAX(ZWL,XWGMIN)
             PEK%XWG(JJ,JL) = MIN(ZWL,ZWTOT )
 !
-!         soil ice computation    
+!           soil ice computation    
             PEK%XWGI(JJ,JL) = MAX(0.0,ZWTOT-PEK%XWG(JJ,JL))
 ! 
-!         supress numerical artefact
+!           supress numerical artefact
             IF(PEK%XTG(JJ,JL)>=XTT)THEN
               PEK%XWG (JJ,JL) = MIN(PEK%XWG(JJ,JL)+PEK%XWGI(JJ,JL),KK%XWSAT(JJ,JL))
               PEK%XWGI(JJ,JL) = 0.0
@@ -402,37 +513,39 @@ IF (YDCTL%LPART6) THEN
 !
           ENDIF
         ENDDO        
-      ENDDO        
+      ENDDO 
+!
     ENDDO
+!
   ENDIF
 !
 !-------------------------------------------------------------------------------------
 !
-!*      6.     Half prognostic fields
+!*      8.     Half prognostic fields
 !              The only variable used from the AVERAGED_ALBEDO_EMIS_ISBA call
 !              is XTSRAD_NAT. All other variables are treated as dummies.
 !
   DO JP = 1,IO%NPATCH
-  !
+!
     PEK => NPE%AL(JP)
     PK => NP%AL(JP)
     KK => NK%AL(JP)
-    !
+!
     ALLOCATE(PEK%XRESA(PK%NSIZE_P))
     PEK%XRESA = 100.
-    !
+!
     ALLOCATE(PEK%XALBNIR(PK%NSIZE_P))
     ALLOCATE(PEK%XALBVIS(PK%NSIZE_P))
     ALLOCATE(PEK%XALBUV(PK%NSIZE_P))
     PEK%XALBNIR = 0.0
     PEK%XALBVIS = 0.0
     PEK%XALBUV = 0.0
-    !
+!
     ALLOCATE(PEK%XALBNIR_SOIL(PK%NSIZE_P))
     ALLOCATE(PEK%XALBVIS_SOIL(PK%NSIZE_P))
     ALLOCATE(PEK%XALBUV_SOIL (PK%NSIZE_P))
     CALL SOIL_ALBEDO (IO%CALBEDO, KK%XWSAT(:,1),PEK%XWG(:,1), KK, PEK, "ALL" )
-    !
+!
     ALLOCATE(PEK%XPSN   (PK%NSIZE_P))
     ALLOCATE(PEK%XPSNG  (PK%NSIZE_P))
     ALLOCATE(PEK%XPSNV  (PK%NSIZE_P))
@@ -443,79 +556,156 @@ IF (YDCTL%LPART6) THEN
     PEK%XPSNV_A = 0.0
     ALLOCATE(KK%XDIR_ALB_WITH_SNOW(PK%NSIZE_P,1))
     ALLOCATE(KK%XSCA_ALB_WITH_SNOW(PK%NSIZE_P,1))
-    !
+!
     ZTG1(1:PK%NSIZE_P,JP) = PEK%XTG(:,1)
-    !
+!
   ENDDO
-  !
+!
   ALLOCATE(S%XTSRAD_NAT(U%NSIZE_NATURE))
   ZZENITH(:)=0.
   ZSW_BANDS(:)=0.
-  !
+!
   CALL AVERAGED_ALBEDO_EMIS_ISBA(IO, S, NK, NP, NPE,                                             &
                                  ZZENITH, ZTG1, ZSW_BANDS, NPAR_VEG_IRR_USE, ZDIR_ALB, ZSCA_ALB, &
                                  ZEMIS, S%XTSRAD_NAT, ZTSURF              )
-  !
+!
   DO JP = 1,IO%NPATCH
-    DEALLOCATE(NPE%AL(JP)%XPSN)
-    DEALLOCATE(NPE%AL(JP)%XPSNG)
-    DEALLOCATE(NPE%AL(JP)%XPSNV)
-    DEALLOCATE(NPE%AL(JP)%XPSNV_A)
-    DEALLOCATE(NK%AL(JP)%XDIR_ALB_WITH_SNOW)
-    DEALLOCATE(NK%AL(JP)%XSCA_ALB_WITH_SNOW)
+    KK => NK%AL(JP)
+    PEK => NPE%AL(JP)
+    DEALLOCATE(PEK%XPSN)
+    DEALLOCATE(PEK%XPSNG)
+    DEALLOCATE(PEK%XPSNV)
+    DEALLOCATE(PEK%XPSNV_A)
+    DEALLOCATE(KK%XDIR_ALB_WITH_SNOW)
+    DEALLOCATE(KK%XSCA_ALB_WITH_SNOW)
   ENDDO
-  !
-  !-------------------------------------------------------------------------------------
-  !
-  !*      7.     Isba-Ags prognostic fields
-  !
+!
+!-------------------------------------------------------------------------------------
+!
+!*      9.     Isba-Ags prognostic fields
+!
   IF (IO%CPHOTO /= 'NON') THEN
-  !
+!
     DO JP = 1,IO%NPATCH
-      !
+!
       PEK => NPE%AL(JP)
       PK => NP%AL(JP)
-      !
+!
       ALLOCATE(PEK%XAN(PK%NSIZE_P))
       PEK%XAN = 0.
-      !
+!
       ALLOCATE(PEK%XANDAY(PK%NSIZE_P))
       PEK%XANDAY = 0.
-      !
+!
       ALLOCATE(PEK%XANFM(PK%NSIZE_P))
       PEK%XANFM = XANFMINIT
-      !
-      ALLOCATE(PEK%XLE(PK%NSIZE_P))
-      PEK%XLE = 0.
-      !
+!
       ALLOCATE(PEK%XRESP_BIOMASS(PK%NSIZE_P,IO%NNBIOMASS))
       PEK%XRESP_BIOMASS(:,:) = 0.
-      !
+!
     ENDDO
-    !
+!
   ENDIF
-  !
+!
   IF (IO%CPHOTO == 'AST') THEN
-  !
+!
     DO JP = 1,IO%NPATCH
-      !
+!
       PEK => NPE%AL(JP)
       PK => NP%AL(JP)
-      !
+!
       ALLOCATE(PEK%XBIOMASS(PK%NSIZE_P,IO%NNBIOMASS))
       PEK%XBIOMASS(:,:) = 0.
-      !
+!
     ENDDO
-  !
+!
+  ENDIF
+!
+!
+!-------------------------------------------------------------------------------------
+!
+!*      10.     Isba-CC prognostic fields
+!
+!
+! Initialize year counter
+!
+  IF(IO%LSPINUPCARBS)THEN
+    IO%NNBYEARSOLD=0
+  ENDIF
+!
+  IF(IO%CPHOTO=='NCB'.AND.(IO%CRESPSL=='CNT'.OR.IO%CRESPSL=='DIF')) THEN
+!
+!   Fire disturbance
+!
+    IF(IO%LFIRE)THEN
+!
+      DO JP = 1,IO%NPATCH
+!
+         PEK => NPE%AL(JP)
+         PK => NP%AL(JP)
+!           
+         ALLOCATE(PEK%XFIREIND(PK%NSIZE_P))
+         PEK%XFIREIND(:)=0.0
+!           
+         ALLOCATE(PEK%XMOISTLIT_FIRE(PK%NSIZE_P))           
+         PEK%XMOISTLIT_FIRE(:)=PEK%XWG(:,1)+PEK%XWGI(:,1)
+!           
+         ALLOCATE(PEK%XTEMPLIT_FIRE(PK%NSIZE_P))
+         PEK%XTEMPLIT_FIRE(:)=PEK%XTG(:,1)
+! 
+      ENDDO
+!
+    ENDIF
+!
+!   Land-use Land Cover change
+!
+    IF(IO%LLULCC)THEN
+!
+      DO JP = 1,IO%NPATCH
+!
+         PEK => NPE%AL(JP)
+         PK => NP%AL(JP)
+!
+         ALLOCATE(PEK%XFLUATM(PK%NSIZE_P))
+         PEK%XFLUATM(:)=0.
+!
+         ALLOCATE(PEK%XFLURES(PK%NSIZE_P))
+         PEK%XFLURES(:)=0.
+!
+         ALLOCATE(PEK%XFLUANT(PK%NSIZE_P))
+         PEK%XFLUANT(:)=0.
+!
+         ALLOCATE(PEK%XFANTATM(PK%NSIZE_P))
+         PEK%XFANTATM(:)=0.
+!
+         ALLOCATE(PEK%XEXPORT_DECADAL(PK%NSIZE_P,IO%NNDECADAL))
+         PEK%XEXPORT_DECADAL(:,:)=0.
+!
+         ALLOCATE(PEK%XCSTOCK_DECADAL(PK%NSIZE_P,IO%NNDECADAL))
+         PEK%XCSTOCK_DECADAL(:,:)=0.
+!
+         ALLOCATE(PEK%XEXPORT_CENTURY(PK%NSIZE_P,IO%NNCENTURY))
+         PEK%XEXPORT_CENTURY(:,:)=0.
+!
+         ALLOCATE(PEK%XCSTOCK_CENTURY(PK%NSIZE_P,IO%NNCENTURY))
+         PEK%XCSTOCK_CENTURY(:,:)=0.
+!
+      ENDDO
+!
+    ENDIF
+!
   ENDIF
 !
 !-------------------------------------------------------------------------------------
 !
-!*      10.     Preparation of canopy air variables
+!*      11.     Preparation of canopy air variables
 !
 !
   IO%LCANOPY = LISBA_CANOPY
-  IF (IO%LCANOPY) CALL PREP_SBL(IG%NDIM, SB)
+!
+  IF(IO%LCANOPY)THEN
+    CALL PREP_SBL(IG%NDIM,SB)
+  ENDIF
 !
 ENDIF
 !

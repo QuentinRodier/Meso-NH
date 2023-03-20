@@ -7,6 +7,6 @@ module modd_netcdf_sfx
 
 implicit none
 
-integer, parameter :: CDFINT = selected_int_kind( 8 )
+integer, parameter :: IDCDF_KIND = selected_int_kind( 8 )
 
 end module modd_netcdf_sfx

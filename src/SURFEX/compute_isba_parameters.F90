@@ -6,8 +6,9 @@
 SUBROUTINE COMPUTE_ISBA_PARAMETERS (DTCO, OREAD_BUDGETC, UG, U,                &
                                     IO, DTI, SB, S, IG, K, NK, NIG, NP, NPE,   &
                                     NAG, NISS, ISS, NCHI, CHI, MGN, MSF,  ID,  &
-                                    GB, NGB, NDST, DST, SLT,BLOWSNW, SV, HPROGRAM,HINIT,    &
-                                    OLAND_USE,KI,KMONTH,KDAY,KSV,KSW,HSV,PCO2,PRHOA,    &
+                                    GB, NGB, NDST, DST, SLT,BLOWSNW, SV,       &
+                                    HPROGRAM,HINIT,                            &
+                                    KI,KMONTH,KDAY,KSV,KSW,HSV,PCO2,PRHOA,     &
                                     PZENITH,PSW_BANDS,PDIR_ALB,PSCA_ALB,       &
                                     PEMIS,PTSRAD,PTSURF, HTEST, PMEGAN_FIELDS  )  
 !#############################################################
@@ -62,6 +63,8 @@ SUBROUTINE COMPUTE_ISBA_PARAMETERS (DTCO, OREAD_BUDGETC, UG, U,                &
 !!      P. Tulet      06/2016 : call init_megan for coupling megan with surfex
 !!      R. Schoetter  01/2018  add UTCI
 !!      A. Druel      02/2019  Deep change to accept patch duplication (for irrigation or agricultural pratices), mainly for ECOCLIMAP-SG
+!!    Séférian/Decharme    08/16 : include fire , river-carbon cycle module + new land-use change implementation
+!!      B. Decharme   02/2022 : split init_diag_isba routine
 !!
 !-------------------------------------------------------------------------------
 !
@@ -91,7 +94,8 @@ USE MODD_BLOWSNW_n, ONLY : BLOWSNW_t
 USE MODD_MEGAN_n, ONLY : MEGAN_t
 USE MODD_MEGAN_SURF_FIELDS_n, ONLY : MEGAN_SURF_FIELDS_t
 !
-USE MODD_SFX_OASIS,  ONLY : LCPL_LAND, LCPL_FLOOD, LCPL_GW, LCPL_CALVING
+USE MODD_SFX_OASIS,  ONLY : LCPL_LAND, LCPL_FLOOD, LCPL_GW, LCPL_CALVING, &
+                            LCPL_RIVCARB
 !
 !
 #ifdef TOPD
@@ -121,6 +125,7 @@ USE MODI_INIT_IO_SURF_n
 USE MODI_ALLOCATE_PHYSIO
 USE MODI_INIT_ISBA_MIXPAR
 USE MODI_CONVERT_PATCH_ISBA
+USE MODI_CONVERT_PATCH_ALB_ISBA
 USE MODI_INIT_VEG_PGD_n
 USE MODI_INIT_TOP
 USE MODI_EXP_DECAY_SOIL_FR
@@ -131,7 +136,8 @@ USE MODI_END_IO_SURF_n
 USE MODI_MAKE_CHOICE_ARRAY
 USE MODI_READ_SURF
 USE MODI_READ_ISBA_n
-USE MODI_INIT_ISBA_LANDUSE
+USE MODI_READ_ISBA_NUDGING_n
+!USE MODI_INIT_ISBA_LANDUSE
 USE MODI_READ_SBL_n
 USE MODI_INIT_VEG_n
 USE MODI_INIT_CHEMICAL_n
@@ -142,10 +148,12 @@ USE MODI_INIT_DST
 USE MODI_INIT_SLT
 USE MODI_INIT_DST_VEG
 USE MODI_AVERAGED_ALBEDO_EMIS_ISBA
-USE MODI_DIAG_ISBA_INIT_n
 USE MODI_INIT_SURF_TOPD
 USE MODI_ISBA_SOC_PARAMETERS
 USE MODI_PACK_SAME_RANK
+!
+USE MODI_DIAG_ISBA_INIT_n
+USE MODI_DIAG_MISC_ISBA_INIT_n
 !
 USE MODI_READ_AND_SEND_MPI
 USE MODI_ISBA_TO_TOPD
@@ -197,15 +205,14 @@ TYPE(SLT_t),           INTENT(INOUT) :: SLT
 TYPE(SV_t),            INTENT(INOUT) :: SV
 TYPE(BLOWSNW_t), INTENT(INOUT) :: BLOWSNW
 !
- CHARACTER(LEN=6),                INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
- CHARACTER(LEN=3),                INTENT(IN)  :: HINIT     ! choice of fields to initialize
-LOGICAL,                          INTENT(IN)  :: OLAND_USE !
+CHARACTER(LEN=6),                 INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
+CHARACTER(LEN=3),                 INTENT(IN)  :: HINIT     ! choice of fields to initialize
 INTEGER,                          INTENT(IN)  :: KI        ! number of points
 INTEGER,                          INTENT(IN)  :: KMONTH    ! Month
 INTEGER,                          INTENT(IN)  :: KDAY      ! Day
 INTEGER,                          INTENT(IN)  :: KSV       ! number of scalars
 INTEGER,                          INTENT(IN)  :: KSW       ! number of short-wave spectral bands
- CHARACTER(LEN=6), DIMENSION(KSV),INTENT(IN)  :: HSV       ! name of all scalar variables
+CHARACTER(LEN=6), DIMENSION(KSV), INTENT(IN)  :: HSV       ! name of all scalar variables
 REAL,             DIMENSION(KI),  INTENT(IN)  :: PCO2      ! CO2 concentration (kg/m3)
 REAL,             DIMENSION(KI),  INTENT(IN)  :: PRHOA     ! air density
 REAL,             DIMENSION(KI),  INTENT(IN)  :: PZENITH   ! solar zenithal angle
@@ -251,11 +258,19 @@ INTEGER           :: IDECADE, IDECADE2  ! decade of simulation
 INTEGER           :: JP         ! loop counter on tiles
 INTEGER           :: ISIZE_LMEB_PATCH   ! Number of patches with MEB=true
 !
+LOGICAL :: GFIX      ! update fixed fields
+LOGICAL :: GTIME     ! update time varing fields
+LOGICAL :: GMEB      ! update meb fields
+LOGICAL :: GIRR      ! update irrigation fields
+LOGICAL :: GALBSOIL  ! update bare soil albedo fields
+LOGICAL :: GALBVEG   ! update only vegetation albedo
+LOGICAL :: GURBTREE  ! update urban tree fields
+!
 LOGICAL :: GDIM, GCAS1, GCAS2, GCAS3 
 INTEGER :: JVEG, IVERSION, IBUGFIX, IMASK, JMAXLOC
 !
- CHARACTER(LEN=4)  :: YLVL
- CHARACTER(LEN=LEN_HREC) :: YRECFM
+CHARACTER(LEN=4)        :: YLVL
+CHARACTER(LEN=LEN_HREC) :: YRECFM
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
@@ -264,7 +279,8 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !               Initialisation for IO
 !
 IF (LHOOK) CALL DR_HOOK('COMPUTE_ISBA_PARAMETERS',0,ZHOOK_HANDLE)
- CALL GET_LUOUT(HPROGRAM,ILUOUT)
+!
+CALL GET_LUOUT(HPROGRAM,ILUOUT)
 !
 IF (HTEST/='OK') THEN
   CALL ABOR1_SFX('COMPUTE_ISBA_PARAMETERS: FATAL ERROR DURING ARGUMENT TRANSFER')
@@ -288,7 +304,7 @@ END IF
 IDECADE2 = IDECADE
 !
 ! concern DATA_ISBA, so no dependence on patches
- CALL INIT_ISBA_MIXPAR(DTCO, DTI, IG%NDIM, IO, IDECADE, IDECADE2, S%XCOVER, S%LCOVER, 'NAT', U%LECOSG)
+CALL INIT_ISBA_MIXPAR(DTCO, DTI, IG%NDIM, IO, IDECADE, IDECADE2, S%XCOVER, S%LCOVER, 'NAT', U%LECOSG)
 !
 ISIZE_LMEB_PATCH=COUNT(IO%LMEB_PATCH(:))
 IF (ISIZE_LMEB_PATCH>0)  THEN
@@ -299,7 +315,9 @@ ENDIF
 !*       Soil carbon
 !        -----------                        
 !
-IF (HINIT == 'ALL' .AND. IO%CRESPSL=='CNT' .AND. IO%CPHOTO == 'NCB') CALL CARBON_INIT
+IF(HINIT=='ALL'.AND.(IO%CRESPSL=='CNT'.OR.IO%CRESPSL=='DIF').AND.IO%CPHOTO=='NCB')THEN
+  CALL CARBON_INIT
+ENDIF
 !
 !----------------------------------------------------------------------------------
 !----------------------------------------------------------------------------------
@@ -483,16 +501,36 @@ DO JP = 1, IO%NPATCH
   CALL PACK_SAME_RANK(PK%NR_P,ISS%XHO2JP,ISSK%XHO2JP)
   CALL PACK_SAME_RANK(PK%NR_P,ISS%XHO2JM,ISSK%XHO2JM)
   !
+  !-------------------------------------------------------------------------------
   !
   !*       2.5    Physiographic fields
   !               --------------------
   !
   CALL ALLOCATE_PHYSIO(IO, KK, PK, PEK, NVEGTYPE, U%LECOSG)
   !
+  !-------------------------------------------------------------------------------
+  !
+  ! Initialize general parameters
+  !
+  GFIX     = .TRUE.  ! update fixed fields
+  GTIME    = .TRUE.  ! update time varing fields
+  GMEB     = .TRUE.  ! update meb fields
+  GIRR     = .TRUE.  ! update irrigation fields
+  GURBTREE = .FALSE. ! update urban tree fields
+  !
   CALL CONVERT_PATCH_ISBA(DTCO, DTI, IO, KMONTH, KDAY, IDECADE, IDECADE2, S%XCOVER, S%LCOVER, &
-                          LAGRIP, U%LECOSG, LIRRIGMODE, 'NAT', JP, KK, PK, PEK,               &
-                          .TRUE., .TRUE., .TRUE., .TRUE., .FALSE., .FALSE., .FALSE.,          &
-                          PSOILGRID=IO%XSOILGRID, PPERM=KK%XPERM  )
+                          LAGRIP, U%LECOSG, LIRRIGMODE, 'NAT', JP, KK, PK, PEK, GFIX,         &
+                          GTIME, GMEB, GIRR, GURBTREE, PSOILGRID=IO%XSOILGRID, PPERM=KK%XPERM )
+  !
+  !-------------------------------------------------------------------------------
+  !
+  ! Initialize vegetation albedo only
+  !
+  GALBSOIL = .FALSE. ! update bare soil albedo fields
+  GALBVEG  = .TRUE.  ! update only vegetation albedo
+  !
+  CALL CONVERT_PATCH_ALB_ISBA(DTCO, DTI, IO, IDECADE, IDECADE2, S%XCOVER, S%LCOVER, &
+                              'NAT',JP, KK, PK, PEK, GALBSOIL, GALBVEG              )
   !
   !-------------------------------------------------------------------------------
   !
@@ -556,7 +594,7 @@ ENDIF
 !
 !
 ALLOCATE(ISS%XZ0REL(KI))
- CALL GET_Z0REL(ISS)
+CALL GET_Z0REL(ISS)
 !
 !-------------------------------------------------------------------------------
 !
@@ -806,17 +844,19 @@ IO%LFLOOD   = .FALSE.
 IO%LWTD     = .FALSE.
 !
 IF(LCPL_LAND)THEN
-!    
-  IO%LCPL_RRM = .TRUE.
 !
-  IF(LCPL_GW)THEN
-    IO%LWTD = .TRUE.
-  ENDIF
+! * River coupling
+!
+  IO%LCPL_RRM = .TRUE.
 !
   ALLOCATE(S%XCPL_DRAIN (KI))
   ALLOCATE(S%XCPL_RUNOFF(KI))
+  ALLOCATE(S%XCPL_TWS   (KI))
   S%XCPL_DRAIN (:) = 0.0
   S%XCPL_RUNOFF(:) = 0.0
+  S%XCPL_TWS   (:) = 0.0
+!
+! * Calving coupling
 !
   IF(IO%LGLACIER)THEN
      ALLOCATE(S%XCPL_ICEFLUX(KI))
@@ -824,6 +864,14 @@ IF(LCPL_LAND)THEN
   ELSE
      ALLOCATE(S%XCPL_ICEFLUX(0))
   ENDIF
+!
+! * Groundwater coupling
+!
+  IF(LCPL_GW)THEN
+    IO%LWTD = .TRUE.
+  ENDIF
+!
+! * Floodplains coupling
 !
   IF(LCPL_FLOOD)THEN
      IO%LFLOOD = .TRUE.
@@ -839,6 +887,15 @@ IF(LCPL_LAND)THEN
     ALLOCATE(S%XCPL_IFLOOD(0))     
   ENDIF     
 !
+! * Riverine-carbon cycle coupling
+!
+  IF(IO%LCLEACH)THEN
+     ALLOCATE(S%XCPL_DOCFLUX(KI))
+     S%XCPL_DOCFLUX(:) = 0.0
+  ELSE
+     ALLOCATE(S%XCPL_DOCFLUX(0))
+  ENDIF
+!
 ELSE
 !
   ALLOCATE(S%XCPL_RUNOFF  (0))
@@ -847,17 +904,23 @@ ELSE
   ALLOCATE(S%XCPL_EFLOOD  (0))
   ALLOCATE(S%XCPL_PFLOOD  (0))
   ALLOCATE(S%XCPL_IFLOOD  (0))
+  ALLOCATE(S%XCPL_DOCFLUX (0))
+  ALLOCATE(S%XCPL_TWS     (0))
 !
 ENDIF
 !
 !
 IF (LCPL_LAND) THEN
-  !
+!
+! * Groundwater coupling
+!
   ALLOCATE(K%XFWTD(KI))
   ALLOCATE(K%XWTD (KI))
   K%XFWTD(:) = 0.0
   K%XWTD (:) = XUNDEF
-  !
+!
+! * Floodplains coupling
+!
   IF(LCPL_FLOOD)THEN
     ALLOCATE(K%XFFLOOD (KI))
     ALLOCATE(K%XPIFLOOD(KI))
@@ -888,12 +951,24 @@ IF(LCPL_CALVING)THEN
    ENDIF
 ENDIF
 !
+IF(LCPL_RIVCARB)THEN
+   IF(.NOT.IO%LCLEACH)THEN
+     CALL ABOR1_SFX('COMPUTE_ISBA_PARAMETERS: LCLEACH MUST BE ACTIVATED IF LCPL_RIVCARB')
+   ENDIF
+ENDIF
+!
+IF(IO%LCLEACH.AND.IO%CPHOTO/='NCB')THEN
+  WRITE(ILUOUT,*)'COMPUTE_ISBA_PARAMETERS: Riverine - Carbon cycle coupling '
+  WRITE(ILUOUT,*)'COMPUTE_ISBA_PARAMETERS: Please check your prep namelist where CPHOTO must be NCB '
+  CALL ABOR1_SFX('COMPUTE_ISBA_PARAMETERS: Withe LCLEACH, NCB vegetation module is required')
+ENDIF
+!
 !-------------------------------------------------------------------------------
 !
 !*   6.D. ISBA time-varying deep force-restore temperature initialization
 !    --------------------------------------------------------------------
 !
- CALL SOILTEMP_ARP_PAR(IO, HPROGRAM)
+CALL SOILTEMP_ARP_PAR(IO, HPROGRAM)
 !
 !-------------------------------------------------------------------------------
 !-------------------------------------------------------------------------------
@@ -966,29 +1041,27 @@ DO JP = 1,IO%NPATCH
 ENDDO
 !
 ! Useledd fields from now on
-ISS%XAOSIP => NULL()
-ISS%XAOSIM => NULL()
-ISS%XAOSJP => NULL()
-ISS%XAOSJM => NULL()
-ISS%XHO2IP => NULL()
-ISS%XHO2IM => NULL()
-ISS%XHO2JP => NULL()
-ISS%XHO2JM => NULL()
+! J. Wurtz -> usefull for nesting
+!ISS%XAOSIP => NULL()
+!ISS%XAOSIM => NULL()
+!ISS%XAOSJP => NULL()
+!ISS%XAOSJM => NULL()
+!ISS%XHO2IP => NULL()
+!ISS%XHO2IM => NULL()
+!ISS%XHO2JP => NULL()
+!ISS%XHO2JM => NULL()
 !
-K%XMPOTSAT => NULL()
-K%XBCOEF   => NULL()
+!K%XCGSAT => NULL()
+!K%XC4B   => NULL()
+!K%XACOEF => NULL()
+!K%XPCOEF => NULL()  
 !
-K%XCGSAT => NULL()
-K%XC4B   => NULL()
-K%XACOEF => NULL()
-K%XPCOEF => NULL()  
+!K%XHCAPSOIL => NULL()
+!K%XCONDDRY  => NULL()
+!K%XCONDSLD  => NULL()
 !
-K%XHCAPSOIL => NULL()
-K%XCONDDRY  => NULL()
-K%XCONDSLD  => NULL()
-!
-K%XWDRAIN  => NULL()
-K%XRUNOFFB => NULL()
+!K%XWDRAIN  => NULL()
+!K%XRUNOFFB => NULL()
 !
 !-------------------------------------------------------------------------------
 !
@@ -1005,7 +1078,9 @@ END IF
 !        PART 8: Reading of prognostic variables
 !        ----------------------------------------
 !
-IF (CASSIM_ISBA=="ENKF ") CALL INIT_RANDOM_SEED()
+IF (CASSIM_ISBA=="ENKF ") THEN
+   CALL INIT_RANDOM_SEED()
+ENDIF
 !
 !
 CALL INIT_IO_SURF_n(DTCO, U, HPROGRAM,'NATURE','ISBA  ','READ ')
@@ -1013,7 +1088,7 @@ CALL INIT_IO_SURF_n(DTCO, U, HPROGRAM,'NATURE','ISBA  ','READ ')
 !*      10.     Prognostic and semi-prognostic fields
 !               -------------------------------------
 !
- CALL READ_ISBA_n(DTCO, IO, S, NP, NPE, NAG, K%XCLAY, U, HPROGRAM)
+CALL READ_ISBA_n(DTCO, IO, S, NP, NPE, NAG, K%XCLAY, U, HPROGRAM)
 !
 IF (HINIT/='ALL') THEN
   CALL END_IO_SURF_n(HPROGRAM)
@@ -1021,60 +1096,38 @@ IF (HINIT/='ALL') THEN
   RETURN
 END IF
 !
-IF (HINIT=='PRE' .AND. NPE%AL(1)%TSNOW%SCHEME.NE.'3-L' .AND. &
-        NPE%AL(1)%TSNOW%SCHEME.NE.'CRO' .AND. IO%CISBA=='DIF') &
+IF (HINIT=='PRE'.AND.IO%CISBA=='DIF'.AND.NPE%AL(1)%TSNOW%SCHEME.NE.'3-L' &
+                                    .AND.NPE%AL(1)%TSNOW%SCHEME.NE.'CRO' ) THEN
    CALL ABOR1_SFX("INIT_ISBAN: WITH CISBA = DIF, CSNOW MUST BE 3-L OR CRO")
+ENDIF
+!
+!*      11.     ISBA soil water and/or snow nudging fields
+!               ------------------------------------------
+!
+IF(IO%CNUDG_WG/='DEF'.OR.IO%LNUDG_SWE)THEN
+!
+  CALL READ_ISBA_NUDGING_n(DTCO, IO, S, NP, U, HPROGRAM)
+!
+  IF (IO%LNUDG_SWE_MASK.OR.IO%LNUDG_WG_MASK) THEN
+     ALLOCATE(KK%XNUDG_MASK(PK%NSIZE_P))
+     CALL PACK_SAME_RANK(PK%NR_P,K%XNUDG_MASK,KK%XNUDG_MASK)
+  ENDIF
+!
+ENDIF
 !
 !
-!*       Extrapolation of the prognostic and semi-prognostic fields
-!                           LAND USE case 
-!               -------------------------------------
+!*      13.     Land use land cover fields
+!               --------------------------
 !
-IF (OLAND_USE) THEN
-  !
-  CALL READ_SURF(HPROGRAM,'VERSION',IVERSION,IRESP)
-  CALL READ_SURF(HPROGRAM,'BUG',IBUGFIX,IRESP)
-  GDIM = (IVERSION>8 .OR. IVERSION==8 .AND. IBUGFIX>0)
-  IF (GDIM) CALL READ_SURF(HPROGRAM,'SPLIT_PATCH',GDIM,IRESP)
-  !  
-  ALLOCATE(ZWORK(KI,IO%NPATCH))
-  !
-  !* read old patch fraction
-  !
-  DO JP = 1,IO%NPATCH
-    ALLOCATE(NP%AL(JP)%XPATCH_OLD(NP%AL(JP)%NSIZE_P))
-  ENDDO
-  !
-  CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, 'PATCH', ZWORK)
-  DO JP = 1,IO%NPATCH
-    CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NP%AL(JP)%XPATCH_OLD(:))
-  ENDDO
-  !
-  !* read old soil layer thicknesses (m)
-  !
-  DO JP = 1,IO%NPATCH
-    ALLOCATE(NP%AL(JP)%XDG_OLD(NP%AL(JP)%NSIZE_P,IO%NGROUND_LAYER))
-  ENDDO
-  !
-  DO JL=1,IO%NGROUND_LAYER
-    WRITE(YLVL,'(I4)') JL
-    YRECFM='OLD_DG'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
-    CALL MAKE_CHOICE_ARRAY(HPROGRAM, IO%NPATCH, GDIM, YRECFM, ZWORK)
-    DO JP = 1,IO%NPATCH
-      CALL PACK_SAME_RANK(NP%AL(JP)%NR_P,ZWORK(:,JP),NP%AL(JP)%XDG_OLD(:,JL))
-    ENDDO
-  END DO
-  DEALLOCATE(ZWORK)
-  !
-   CALL INIT_ISBA_LANDUSE(DTCO, UG, U, IO, NK, NP, NPE, IG%XMESH_SIZE, &
-                          HPROGRAM)  
-END IF
+IF(IO%LLULCC)THEN
+  CALL INIT_ISBA_LANDUSE(IG, IO, S, K, NK, NP, NPE, DTI, HPROGRAM, KI)  
+ENDIF
 !
 !
-!*      12.     Canopy air fields:
+!*      13.     Canopy air fields:
 !               -----------------
 !
- CALL READ_SBL_n(DTCO, U, SB, IO%LCANOPY,HPROGRAM, "NATURE", SV=CHI%SVI,BLOWSNW=BLOWSNW)
+CALL READ_SBL_n(DTCO, U, SB, IO%LCANOPY,HPROGRAM, "NATURE", SV=CHI%SVI,BLOWSNW=BLOWSNW)
 !
 !-------------------------------------------------------------------------------
 !-------------------------------------------------------------------------------
@@ -1089,21 +1142,22 @@ DO JP=1,IO%NPATCH
   !
   ALLOCATE(KK%XDIR_ALB_WITH_SNOW(PK%NSIZE_P,KSW))
   ALLOCATE(KK%XSCA_ALB_WITH_SNOW(PK%NSIZE_P,KSW))
-  KK%XDIR_ALB_WITH_SNOW = 0.0
-  KK%XSCA_ALB_WITH_SNOW = 0.0
+  KK%XDIR_ALB_WITH_SNOW = XUNDEF
+  KK%XSCA_ALB_WITH_SNOW = XUNDEF
   !
   CALL INIT_VEG_n(IO, KK, PK, PEK, DTI, ID%DM%LSURF_DIAG_ALBEDO, PDIR_ALB, PSCA_ALB, PEMIS, PTSRAD )
   !
   ZWG1(1:PK%NSIZE_P)    = PEK%XWG(:,1)
   ZTG1(1:PK%NSIZE_P,JP) = PEK%XTG(:,1)
   !
-  CALL CONVERT_PATCH_ISBA(DTCO, DTI, IO, KMONTH, KDAY, IDECADE, IDECADE2, S%XCOVER, S%LCOVER, &
-                          LAGRIP, U%LECOSG, LIRRIGMODE, 'NAT', JP, KK, PK, PEK,               &
-                          .FALSE., .FALSE., .FALSE., .FALSE., .TRUE., .FALSE., .FALSE.,       &
-                          PWG1=ZWG1(1:PK%NSIZE_P), PWSAT=KK%XWSAT)
+  GALBSOIL = .TRUE. ! update bare soil albedo fields
+  GALBVEG  = .FALSE.! update only vegetation albedo
+  !
+  CALL CONVERT_PATCH_ALB_ISBA(DTCO, DTI, IO, IDECADE, IDECADE2, S%XCOVER, S%LCOVER, &
+                              'NAT',JP, KK, PK, PEK, GALBSOIL, GALBVEG,             &
+                              PWG1=ZWG1(1:PK%NSIZE_P), PWSAT=KK%XWSAT)
   !
 ENDDO
-!
 !
 ! Load randomly perturbed fields. Perturbation ratios are saved in case fields are reset later.
 IF(IO%LPERTSURF) THEN
@@ -1159,9 +1213,9 @@ ENDIF
 ALLOCATE(S%XEMIS_NAT   (KI))
 S%XEMIS_NAT (:) = XUNDEF
 !
- CALL AVERAGED_ALBEDO_EMIS_ISBA(IO, S, NK, NP, NPE,                                                 &
-                                PZENITH, ZTG1, PSW_BANDS, DTI%NPAR_VEG_IRR_USE, PDIR_ALB, PSCA_ALB, &
-                                S%XEMIS_NAT, ZTSRAD_NAT, ZTSURF_NAT        )  
+CALL AVERAGED_ALBEDO_EMIS_ISBA(IO, S, NK, NP, NPE,                                                 &
+                               PZENITH, ZTG1, PSW_BANDS, DTI%NPAR_VEG_IRR_USE, PDIR_ALB, PSCA_ALB, &
+                               S%XEMIS_NAT, ZTSRAD_NAT, ZTSURF_NAT        )  
 !
 PEMIS  = S%XEMIS_NAT
 PTSRAD = ZTSRAD_NAT
@@ -1184,20 +1238,22 @@ END IF
 !
 IF(IO%NPATCH<=1) ID%O%LPATCH_BUDGET=.FALSE.
 !
- CALL DIAG_ISBA_INIT_n(CHI, ID%DE, ID%DEC, ID%NDE, ID%NDEC, ID%O, &
-                       ID%D, ID%DC, ID%ND, ID%NDC, ID%DM, ID%NDM, ID%DU, &
-                       OREAD_BUDGETC, NGB, GB, IO, NP, NPE%AL(1)%TSNOW%SCHEME, &
-                       NPE%AL(1)%TSNOW%NLAYER, SIZE(S%XABC), HPROGRAM,KI,KSW)
+CALL DIAG_ISBA_INIT_n(CHI, ID%DE, ID%DEC, ID%NDE, ID%NDEC, ID%O, ID%D, ID%DC, ID%ND, ID%NDC, OREAD_BUDGETC, &
+                      NGB, GB, IO, NP, NPE%AL(1)%TSNOW%SCHEME, SIZE(S%XABC), HPROGRAM, KI, KSW              )
+!
+!* miscellaneous fields
+!
+CALL DIAG_MISC_ISBA_INIT_n (ID%DU, ID%DM, ID%NDM, IO, NP, NPE%AL(1)%TSNOW%SCHEME, NPE%AL(1)%TSNOW%NLAYER, KI,KSW)
 !
 !-------------------------------------------------------------------------------
 !
- CALL INIT_SURF_TOPD(ID%DEC, IO, S, K, NP, NPE, UG, U, HPROGRAM, U%NDIM_FULL)
+CALL INIT_SURF_TOPD(ID%DEC, IO, S, K, NP, NPE, UG, U, HPROGRAM, U%NDIM_FULL)
 !
 !-------------------------------------------------------------------------------
 !
 !         End of IO
 !
- CALL END_IO_SURF_n(HPROGRAM)
+CALL END_IO_SURF_n(HPROGRAM)
 !
 IF (LHOOK) CALL DR_HOOK('COMPUTE_ISBA_PARAMETERS',1,ZHOOK_HANDLE)
 !

@@ -21,7 +21,7 @@ INTERFACE
                    OCONDSAMP,OBLOWSNOW,                                            &
                    KRIMX,KRIMY, KSV_USER,                                          &
                    HTURB,HTOM,ORMC01,HRAD,HDCONV,HSCONV,HCLOUD,HELEC,              &
-                   HEQNSYS,PTSTEP_ALL,HINIFILEPGD                                  )
+                   HEQNSYS,PTSTEP_ALL,HINIFILEPGD                    )
 !
 USE MODD_IO,   ONLY: TFILEDATA
 !
@@ -93,7 +93,7 @@ END MODULE MODI_READ_EXSEG_n
                    OCONDSAMP, OBLOWSNOW,                                           &
                    KRIMX,KRIMY, KSV_USER,                                          &
                    HTURB,HTOM,ORMC01,HRAD,HDCONV,HSCONV,HCLOUD,HELEC,              &
-                   HEQNSYS,PTSTEP_ALL,HINIFILEPGD                                  )
+                   HEQNSYS,PTSTEP_ALL,HINIFILEPGD                    )
 !     #########################################################################
 !
 !!****  *READ_EXSEG_n * - routine to read  the descriptor file EXSEG
@@ -302,6 +302,7 @@ END MODULE MODI_READ_EXSEG_n
 !  P. Wautelet 10/03/2021: move scalar variable name initializations to ini_nsv
 !  R. Honnert  23/04/2021: add ADAP mixing length and delete HRIO and BOUT from CMF_UPDRAFT
 !  S. Riette   11/05/2021: HighLow cloud
+!  R. Schoetter    12/2021  multi-level coupling between MesoNH and SURFEX
 !  P. Wautelet 24/06/2022: remove check on CSTORAGE_TYPE for restart of ForeFire variables
 !------------------------------------------------------------------------------
 !
@@ -313,6 +314,7 @@ USE MODD_CH_AEROSOL
 USE MODD_CH_M9_n, ONLY : NEQ
 USE MODD_CONDSAMP
 USE MODD_CONF
+USE MODD_CONF_n,  ONLY: CSTORAGE_TYPE
 USE MODD_CONFZ
 ! USE MODD_DRAG_n
 USE MODD_DUST
@@ -353,6 +355,7 @@ USE MODN_CONF
 USE MODN_CONF_n
 USE MODN_CONFZ
 USE MODN_DRAGBLDG_n
+USE MODN_COUPLING_LEVELS_n
 USE MODN_DRAG_n
 USE MODN_DRAGTREE_n
 USE MODN_DUST
@@ -478,6 +481,7 @@ CALL INIT_NAM_DYNN
 CALL INIT_NAM_ADVN
 CALL INIT_NAM_DRAGTREEN
 CALL INIT_NAM_DRAGBLDGN
+CALL INIT_NAM_COUPLING_LEVELSN
 CALL INIT_NAM_PARAMN
 CALL INIT_NAM_PARAM_RADN
 #ifdef MNH_ECRAD
@@ -545,6 +549,8 @@ CALL POSNAM(ILUSEG,'NAM_DRAGTREEN',GFOUND,ILUOUT)
 IF (GFOUND) READ(UNIT=ILUSEG,NML=NAM_DRAGTREEn)
 CALL POSNAM(ILUSEG,'NAM_DRAGBLDGN',GFOUND,ILUOUT)
 IF (GFOUND) READ(UNIT=ILUSEG,NML=NAM_DRAGBLDGn)
+CALL POSNAM(ILUSEG,'NAM_COUPLING_LEVELSN',GFOUND,ILUOUT)
+IF (GFOUND) READ(UNIT=ILUSEG,NML=NAM_COUPLING_LEVELSn)
 CALL POSNAM(ILUSEG,'NAM_EOL',GFOUND,ILUOUT)
 IF (GFOUND) READ(UNIT=ILUSEG,NML=NAM_EOL)
 CALL POSNAM(ILUSEG,'NAM_EOL_ADNR',GFOUND,ILUOUT)
@@ -2951,6 +2957,7 @@ CALL UPDATE_NAM_LUNITN
 CALL UPDATE_NAM_CONFN
 CALL UPDATE_NAM_DRAGTREEN
 CALL UPDATE_NAM_DRAGBLDGN
+CALL UPDATE_NAM_COUPLING_LEVELSN
 CALL UPDATE_NAM_DYNN
 CALL UPDATE_NAM_ADVN
 CALL UPDATE_NAM_PARAMN

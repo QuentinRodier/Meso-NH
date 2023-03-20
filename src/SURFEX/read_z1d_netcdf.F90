@@ -28,7 +28,7 @@
 !*    0.     DECLARATION
 !            -----------
 !
-use modd_netcdf_sfx, only : CDFINT
+use modd_netcdf_sfx, only : IDCDF_KIND
 USE MODD_OCEAN_GRID
 USE MODD_SURF_PAR, ONLY : NUNDEF
 USE MODD_PREP_SEAFLUX, ONLY : CFILE_SEAFLX,CTYPE_SEAFLX
@@ -44,7 +44,7 @@ IMPLICIT NONE
 !
 CHARACTER (LEN=28) :: YFILENAME
 CHARACTER (LEN=28)  :: YNCVARNAME
-INTEGER(kind=CDFINT) :: JDIMENSION
+INTEGER(kind=IDCDF_KIND) :: JDIMENSION
 !
 !*    0.2    Declaration of local variables
 !            ------------------------------

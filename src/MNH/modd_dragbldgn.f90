@@ -21,6 +21,7 @@
 !!    MODIFICATIONS
 !!    -------------
 !!    Original 09/2019
+  ! R. Schoetter    12/2021  multi-level coupling between MesoNH and SURFEX  
 !-----------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -35,11 +36,17 @@ TYPE DRAGBLDG_t
   LOGICAL    ::     LDRAGBLDG    ! flag used to take into account building drag in 
   !                              ! the atmospheric model instead of SURFEX.
   !
+  LOGICAL    ::     LFLUXBLDG    ! Flag used to take into account heat and moisture fluxes in 
+  !                              ! the atmospheric model instead of SURFEX.
+  LOGICAL    ::     LDRAGURBVEG  ! Flag used to take into account drag of urban vegetation in 
+  !                              ! the atmospheric model instead of SURFEX.
 END TYPE DRAGBLDG_t
 !
 TYPE(DRAGBLDG_t), DIMENSION(JPMODELMAX), TARGET, SAVE :: DRAGBLDG_MODEL
 !
 LOGICAL, POINTER :: LDRAGBLDG=>NULL()
+LOGICAL, POINTER :: LFLUXBLDG=>NULL()
+LOGICAL, POINTER :: LDRAGURBVEG=>NULL()
 !
 CONTAINS
 !
@@ -48,6 +55,8 @@ SUBROUTINE DRAGBLDG_GOTO_MODEL(KFROM, KTO)
   INTEGER, INTENT(IN) :: KFROM, KTO
   !
   LDRAGBLDG=>DRAGBLDG_MODEL(KTO)%LDRAGBLDG
+  LFLUXBLDG=>DRAGBLDG_MODEL(KTO)%LFLUXBLDG
+  LDRAGURBVEG=>DRAGBLDG_MODEL(KTO)%LDRAGURBVEG
   !
 END SUBROUTINE DRAGBLDG_GOTO_MODEL
 !

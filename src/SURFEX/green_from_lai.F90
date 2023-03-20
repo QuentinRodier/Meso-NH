@@ -8,43 +8,39 @@ MODULE MODI_GREEN_FROM_LAI
 !
 INTERFACE GREEN_FROM_LAI
 !
-    FUNCTION GREEN_FROM_LAI_0D(PLAI,PVEGTYPE,OAGRI_TO_GRASS) RESULT(PGREEN) ! #notused?
+    FUNCTION GREEN_FROM_LAI_0D(PLAI,PVEGTYPE) RESULT(PGREEN) ! #notused?
 !
 REAL,                 INTENT(IN) :: PLAI         ! Leaf area Index
 REAL,   DIMENSION(:), INTENT(IN) :: PVEGTYPE     ! type of vegetation
-LOGICAL,              INTENT(IN) :: OAGRI_TO_GRASS
 !
 REAL                             :: PGREEN       ! greeness fraction
 !
 END FUNCTION GREEN_FROM_LAI_0D
 !
 !
-    FUNCTION GREEN_FROM_LAI_1D(PLAI,PVEGTYPE,OAGRI_TO_GRASS) RESULT(PGREEN) ! #notused?
+    FUNCTION GREEN_FROM_LAI_1D(PLAI,PVEGTYPE) RESULT(PGREEN) ! #notused?
 !
 REAL,   DIMENSION(:),   INTENT(IN) :: PLAI         ! Leaf area Index
 REAL,   DIMENSION(:,:), INTENT(IN) :: PVEGTYPE     ! type of vegetation
-LOGICAL,                INTENT(IN) :: OAGRI_TO_GRASS
 !
 REAL,   DIMENSION(SIZE(PLAI))      :: PGREEN       ! greeness fraction
 !
 END FUNCTION GREEN_FROM_LAI_1D
 !
 !
-    FUNCTION GREEN_FROM_LAI_2D(PLAI,PVEGTYPE,OAGRI_TO_GRASS) RESULT(PGREEN) ! #notused?
+    FUNCTION GREEN_FROM_LAI_2D(PLAI,PVEGTYPE) RESULT(PGREEN) ! #notused?
 !
 REAL,   DIMENSION(:,:),   INTENT(IN) :: PLAI         ! Leaf area Index
 REAL,   DIMENSION(:,:,:), INTENT(IN) :: PVEGTYPE     ! type of vegetation
-LOGICAL,                  INTENT(IN) :: OAGRI_TO_GRASS
 !
 REAL,   DIMENSION(SIZE(PLAI,1),SIZE(PLAI,2))::PGREEN ! greeness fraction
 !
 END FUNCTION GREEN_FROM_LAI_2D
 !
 
-    FUNCTION GREEN_FROM_LAI_VEGTYPE_1D(PLAI,OAGRI_TO_GRASS) RESULT(PGREEN)
+    FUNCTION GREEN_FROM_LAI_VEGTYPE_1D(PLAI) RESULT(PGREEN)
 !
 REAL,   DIMENSION(:), INTENT(IN) :: PLAI         ! Leaf area Index for each vegtype
-LOGICAL,              INTENT(IN) :: OAGRI_TO_GRASS
 !
 REAL,   DIMENSION(SIZE(PLAI)) :: PGREEN ! greeness fraction
 !
@@ -55,7 +51,7 @@ END INTERFACE
 END MODULE MODI_GREEN_FROM_LAI
 !
 !   ####################################################
-    FUNCTION GREEN_FROM_LAI_0D(PLAI,PVEGTYPE,OAGRI_TO_GRASS) RESULT(PGREEN)
+    FUNCTION GREEN_FROM_LAI_0D(PLAI,PVEGTYPE) RESULT(PGREEN)
 !   ####################################################
 !!
 !!    PURPOSE
@@ -114,7 +110,6 @@ IMPLICIT NONE
 !
 REAL,                 INTENT(IN) :: PLAI         ! Leaf area Index
 REAL,   DIMENSION(:), INTENT(IN) :: PVEGTYPE     ! type of vegetation
-LOGICAL,              INTENT(IN) :: OAGRI_TO_GRASS
 !
 REAL                             :: PGREEN       ! greeness fraction
 !
@@ -131,7 +126,6 @@ IF ( PVEGTYPE(NVT_NO  ) + PVEGTYPE(NVT_ROCK)< 1.) THEN
 END IF
 !
 ZAGRI=(1. - EXP( -0.6 * ZLAI ))
-IF(OAGRI_TO_GRASS)ZAGRI=MIN(ZAGRI,0.95)
 !
 PGREEN= ZAGRI                     *(PVEGTYPE(NVT_C4  ) +     &! C4 crops
                                     PVEGTYPE(NVT_IRR ) +   &! irrigated crops
@@ -161,7 +155,7 @@ IF (LHOOK) CALL DR_HOOK('MODI_GREEN_FROM_LAI:GREEN_FROM_LAI_0D',1,ZHOOK_HANDLE)
 END FUNCTION GREEN_FROM_LAI_0D
 !
 !   ####################################################
-    FUNCTION GREEN_FROM_LAI_1D(PLAI,PVEGTYPE,OAGRI_TO_GRASS) RESULT(PGREEN)
+    FUNCTION GREEN_FROM_LAI_1D(PLAI,PVEGTYPE) RESULT(PGREEN)
 !   ####################################################
 !!
 !!    PURPOSE
@@ -220,7 +214,6 @@ IMPLICIT NONE
 !
 REAL,   DIMENSION(:),   INTENT(IN) :: PLAI         ! Leaf area Index
 REAL,   DIMENSION(:,:), INTENT(IN) :: PVEGTYPE     ! type of vegetation
-LOGICAL,                INTENT(IN) :: OAGRI_TO_GRASS
 !
 REAL,   DIMENSION(SIZE(PLAI))      :: PGREEN       ! greeness fraction
 !
@@ -239,7 +232,6 @@ WHERE ( PVEGTYPE(:,NVT_NO  ) + PVEGTYPE(:,NVT_ROCK) + PVEGTYPE(:,NVT_SNOW) < 1.)
 END WHERE
 !
 ZAGRI(:)=(1. - EXP( -0.6 * ZLAI(:) ))
-IF(OAGRI_TO_GRASS)ZAGRI(:)=MIN(ZAGRI(:),0.95)
 !
 DO JJ = 1,SIZE(PGREEN)
   !
@@ -278,7 +270,7 @@ IF (LHOOK) CALL DR_HOOK('MODI_GREEN_FROM_LAI:GREEN_FROM_LAI_1D',1,ZHOOK_HANDLE)
 END FUNCTION GREEN_FROM_LAI_1D
 !
 !   ####################################################
-    FUNCTION GREEN_FROM_LAI_2D(PLAI,PVEGTYPE,OAGRI_TO_GRASS) RESULT(PGREEN)
+    FUNCTION GREEN_FROM_LAI_2D(PLAI,PVEGTYPE) RESULT(PGREEN)
 !   ####################################################
 !!
 !!    PURPOSE
@@ -337,7 +329,6 @@ IMPLICIT NONE
 !
 REAL,   DIMENSION(:,:),   INTENT(IN) :: PLAI         ! Leaf area Index
 REAL,   DIMENSION(:,:,:), INTENT(IN) :: PVEGTYPE     ! type of vegetation
-LOGICAL,                  INTENT(IN) :: OAGRI_TO_GRASS
 !
 REAL,   DIMENSION(SIZE(PLAI,1),SIZE(PLAI,2))::PGREEN ! greeness fraction
 !
@@ -360,7 +351,6 @@ ZAGRI (:,:) = XUNDEF
 WHERE (PLAI(:,:) /= XUNDEF)
       ZAGRI(:,:)=(1. - EXP( -0.6 * ZLAI(:,:) ))
 ENDWHERE
-IF(OAGRI_TO_GRASS)ZAGRI(:,:)=MIN(ZAGRI(:,:),0.95)
 !
 !
 DO JJ = 1,SIZE(PGREEN)
@@ -407,7 +397,7 @@ END FUNCTION GREEN_FROM_LAI_2D
 !
 !
 !   ####################################################
-    FUNCTION GREEN_FROM_LAI_VEGTYPE_1D(PLAI,OAGRI_TO_GRASS) RESULT(PGREEN)
+    FUNCTION GREEN_FROM_LAI_VEGTYPE_1D(PLAI) RESULT(PGREEN)
 !   ####################################################
 !!
 !!    PURPOSE
@@ -466,7 +456,6 @@ IMPLICIT NONE
 !*      0.1    declarations of arguments
 !
 REAL,   DIMENSION(:), INTENT(IN) :: PLAI         ! Leaf area Index
-LOGICAL,              INTENT(IN) :: OAGRI_TO_GRASS
 !
 REAL,   DIMENSION(SIZE(PLAI)) :: PGREEN ! greeness fraction
 !
@@ -477,24 +466,13 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 IF (LHOOK) CALL DR_HOOK('MODI_GREEN_FROM_LAI:GREEN_FROM_LAI_VEGTYPE_1D',0,ZHOOK_HANDLE)
 PGREEN(:) = XUNDEF
 !
-IF(OAGRI_TO_GRASS)THEN
-  IF (PLAI(NVT_C4  )/=XUNDEF) PGREEN(NVT_C4  )=  MIN(1. - EXP( -0.6 * PLAI(NVT_C4  ) ),0.95)
-  IF (NVT_IRR>0 .AND. NVT_C3>0) THEN
-    IF (PLAI(NVT_IRR )/=XUNDEF) PGREEN(NVT_IRR )=  MIN(1. - EXP( -0.6 * PLAI(NVT_IRR ) ),0.95)
-    IF (PLAI(NVT_C3  )/=XUNDEF) PGREEN(NVT_C3  )=  MIN(1. - EXP( -0.6 * PLAI(NVT_C3  ) ),0.95)
-  ELSEIF (NVT_C3W>0 .AND. NVT_C3S>0) THEN
-    IF (PLAI(NVT_C3W )/=XUNDEF) PGREEN(NVT_C3W )=  MIN(1. - EXP( -0.6 * PLAI(NVT_C3W ) ),0.95)
-    IF (PLAI(NVT_C3S )/=XUNDEF) PGREEN(NVT_C3S )=  MIN(1. - EXP( -0.6 * PLAI(NVT_C3S ) ),0.95)
-  ENDIF
-ELSE
-  IF (PLAI(NVT_C4  )/=XUNDEF) PGREEN(NVT_C4  )=  1. - EXP( -0.6 * PLAI(NVT_C4  ) )
-  IF (NVT_IRR>0 .AND. NVT_C3>0) THEN
-    IF (PLAI(NVT_IRR )/=XUNDEF) PGREEN(NVT_IRR )=  1. - EXP( -0.6 * PLAI(NVT_IRR ) )
-    IF (PLAI(NVT_C3  )/=XUNDEF) PGREEN(NVT_C3  )=  1. - EXP( -0.6 * PLAI(NVT_C3  ) )
-  ELSEIF (NVT_C3W>0 .AND. NVT_C3S>0) THEN
-    IF (PLAI(NVT_C3W )/=XUNDEF) PGREEN(NVT_C3W )=  1. - EXP( -0.6 * PLAI(NVT_C3W ) )
-    IF (PLAI(NVT_C3S )/=XUNDEF) PGREEN(NVT_C3S )=  1. - EXP( -0.6 * PLAI(NVT_C3S ) )
-  ENDIF
+IF (PLAI(NVT_C4  )/=XUNDEF) PGREEN(NVT_C4  )=  1. - EXP( -0.6 * PLAI(NVT_C4  ) )
+IF (NVT_IRR>0 .AND. NVT_C3>0) THEN
+   IF (PLAI(NVT_IRR )/=XUNDEF) PGREEN(NVT_IRR )=  1. - EXP( -0.6 * PLAI(NVT_IRR ) )
+   IF (PLAI(NVT_C3  )/=XUNDEF) PGREEN(NVT_C3  )=  1. - EXP( -0.6 * PLAI(NVT_C3  ) )
+ELSEIF (NVT_C3W>0 .AND. NVT_C3S>0) THEN
+   IF (PLAI(NVT_C3W )/=XUNDEF) PGREEN(NVT_C3W )=  1. - EXP( -0.6 * PLAI(NVT_C3W ) )
+   IF (PLAI(NVT_C3S )/=XUNDEF) PGREEN(NVT_C3S )=  1. - EXP( -0.6 * PLAI(NVT_C3S ) )
 ENDIF
 !
 IF (PLAI(NVT_TEBD)/=XUNDEF) PGREEN(NVT_TEBD)=  MIN(1. - EXP( -0.5 * PLAI(NVT_TEBD) ),0.95)

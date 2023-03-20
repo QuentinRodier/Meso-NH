@@ -51,7 +51,7 @@ USE MODI_PREP_VER_TEB_VEG
                                 ! IL FAUT RAJOUTER TSNOW
                                 ! ----------------------
 USE MODD_SURF_ATM,       ONLY : LVERTSHIFT
-USE MODD_CSTS,           ONLY : XTT
+USE MODD_CSTS,           ONLY : XTT, XG, XRD, XP00
 USE MODD_SNOW_PAR,       ONLY : XZ0SN
 USE MODD_ISBA_PAR,       ONLY : XWGMIN
 USE MODD_CO2V_PAR,       ONLY : XCC_NIT, XCA_NIT, XANFMINIT
@@ -61,6 +61,7 @@ USE MODE_PREP_CTL, ONLY : PREP_CTL
 !
 USE MODN_PREP_ISBA
 USE MODE_POS_SURF
+USE MODE_THERMOS
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -87,17 +88,20 @@ TYPE(TEB_OPTIONS_t),   INTENT(INOUT) :: TOP
 TYPE (PREP_CTL),       INTENT(INOUT) :: YDCTL
 !
 INTEGER,DIMENSION(:),INTENT(IN)  :: NPAR_VEG_IRR_USE ! vegtype with irrigation
- CHARACTER(LEN=6),   INTENT(IN)  :: HPROGRAM    ! program calling surf. schemes
- CHARACTER(LEN=28),  INTENT(IN)  :: HATMFILE    ! name of the Atmospheric file
- CHARACTER(LEN=6),   INTENT(IN)  :: HATMFILETYPE! type of the Atmospheric file
- CHARACTER(LEN=28),  INTENT(IN)  :: HPGDFILE    ! name of the Atmospheric file
- CHARACTER(LEN=6),   INTENT(IN)  :: HPGDFILETYPE! type of the Atmospheric file
+CHARACTER(LEN=6),    INTENT(IN)  :: HPROGRAM    ! program calling surf. schemes
+CHARACTER(LEN=28),   INTENT(IN)  :: HATMFILE    ! name of the Atmospheric file
+CHARACTER(LEN=6),    INTENT(IN)  :: HATMFILETYPE! type of the Atmospheric file
+CHARACTER(LEN=28),   INTENT(IN)  :: HPGDFILE    ! name of the Atmospheric file
+CHARACTER(LEN=6),    INTENT(IN)  :: HPGDFILETYPE! type of the Atmospheric file
 !
 INTEGER,            INTENT(IN)  :: KPATCH
 !
 !*      0.2    declarations of local variables
 !
+REAL, DIMENSION(SIZE(TG%XLAT)) :: ZWORK
+!
 INTEGER :: JP
+!
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !-------------------------------------------------------------------------------------
@@ -106,6 +110,7 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !*      1.1    Default
 !
+IF (LHOOK) CALL DR_HOOK('PREP_TEB_GREENROOF',0,ZHOOK_HANDLE)
 !
 !-------------------------------------------------------------------------------------
 !
@@ -114,35 +119,40 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !*      2.1    Soil Water reservoirs
 !
-IF (LHOOK) CALL DR_HOOK('PREP_TEB_GREENROOF',0,ZHOOK_HANDLE)
 !
- CALL PREP_HOR_TEB_GREENROOF_FIELD(DTCO, UG, U, USS, GCP, IO, S, K, P, PEK, TG, TOP, NPAR_VEG_IRR_USE, &
-                                   HPROGRAM,'WG     ',HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE,KPATCH,YDCTL)
+CALL PREP_HOR_TEB_GREENROOF_FIELD(DTCO, UG, U, USS, GCP, IO, S, K, P, PEK, TG, TOP, NPAR_VEG_IRR_USE, &
+                                  HPROGRAM,'WG     ',HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE,KPATCH,YDCTL)
 !
 !*      2.2    Soil ice reservoirs
 !
- CALL PREP_HOR_TEB_GREENROOF_FIELD(DTCO, UG, U, USS, GCP, IO, S, K, P, PEK, TG, TOP, NPAR_VEG_IRR_USE, &
-                                   HPROGRAM,'WGI    ',HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE,KPATCH,YDCTL)
+CALL PREP_HOR_TEB_GREENROOF_FIELD(DTCO, UG, U, USS, GCP, IO, S, K, P, PEK, TG, TOP, NPAR_VEG_IRR_USE, &
+                                  HPROGRAM,'WGI    ',HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE,KPATCH,YDCTL)
 !
 !*      2.3    Leaves interception water reservoir
 !
- CALL PREP_HOR_TEB_GREENROOF_FIELD(DTCO, UG, U, USS, GCP, IO, S, K, P, PEK, TG, TOP, NPAR_VEG_IRR_USE, &
-                                   HPROGRAM,'WR     ',HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE,KPATCH,YDCTL)
+CALL PREP_HOR_TEB_GREENROOF_FIELD(DTCO, UG, U, USS, GCP, IO, S, K, P, PEK, TG, TOP, NPAR_VEG_IRR_USE, &
+                                  HPROGRAM,'WR     ',HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE,KPATCH,YDCTL)
 !
 !*      2.4    Temperature profile
 !
- CALL PREP_HOR_TEB_GREENROOF_FIELD(DTCO, UG, U, USS, GCP, IO, S, K, P, PEK, TG, TOP, NPAR_VEG_IRR_USE, &
-                                   HPROGRAM,'TG     ',HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE,KPATCH,YDCTL)
+CALL PREP_HOR_TEB_GREENROOF_FIELD(DTCO, UG, U, USS, GCP, IO, S, K, P, PEK, TG, TOP, NPAR_VEG_IRR_USE, &
+                                  HPROGRAM,'TG     ',HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE,KPATCH,YDCTL)
 !
 !*      2.5    Snow variables
 !
- CALL PREP_HOR_TEB_GREENROOF_FIELD(DTCO, UG, U, USS, GCP, IO, S, K, P, PEK, TG, TOP, NPAR_VEG_IRR_USE, &
-                                   HPROGRAM,'SN_VEG ',HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE,KPATCH,YDCTL)
+CALL PREP_HOR_TEB_GREENROOF_FIELD(DTCO, UG, U, USS, GCP, IO, S, K, P, PEK, TG, TOP, NPAR_VEG_IRR_USE, &
+                                  HPROGRAM,'SN_VEG ',HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE,KPATCH,YDCTL)
 !
 !*      2.6    LAI
 !
- CALL PREP_HOR_TEB_GREENROOF_FIELD(DTCO, UG, U, USS, GCP, IO, S, K, P, PEK, TG, TOP, NPAR_VEG_IRR_USE, &
-                                   HPROGRAM,'LAI    ',HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE,KPATCH,YDCTL)
+CALL PREP_HOR_TEB_GREENROOF_FIELD(DTCO, UG, U, USS, GCP, IO, S, K, P, PEK, TG, TOP, NPAR_VEG_IRR_USE, &
+                                  HPROGRAM,'LAI    ',HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE,KPATCH,YDCTL)
+!
+!*      2.7    saturation deficit near the leaf surface
+!
+ALLOCATE(PEK%XQC(SIZE(TG%XLAT)))
+ZWORK  (:)=XP00*EXP(-(XG/XRD/PEK%XTG(:,1))*TOP%XZS(:))
+PEK%XQC(:)=QSAT(PEK%XTG(:,1),ZWORK)
 !
 !-------------------------------------------------------------------------------------
 !
@@ -194,9 +204,6 @@ IF (IO%CPHOTO /= 'NON') THEN
 !
    ALLOCATE(PEK%XANFM(SIZE(PEK%XLAI)))
    PEK%XANFM = XANFMINIT
-!
-   ALLOCATE(PEK%XLE(SIZE(PEK%XLAI)))
-   PEK%XLE = 0.
 !
 ENDIF
 !

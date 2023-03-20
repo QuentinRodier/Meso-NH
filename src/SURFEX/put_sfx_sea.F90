@@ -3,8 +3,9 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE PUT_SFX_SEA (S, U, W, KLUOUT,OCPL_SEAICE,OWATER,PSEA_SST,PSEA_UCU, &
-                             PSEA_VCU,PSEAICE_SIT,PSEAICE_CVR,PSEAICE_ALB )  
+      SUBROUTINE PUT_SFX_SEA (S, U, W, KLUOUT,OCPL_SEAICE,OWATER,OCPL_SEACARB,OSEAICE_2FLX,&
+                              PSEA_SST,PSEA_UCU,PSEA_VCU,PSEA_FCO2,PSEAICE_SIT,PSEAICE_CVR,&
+                              PSEAICE_ALB )  
 !     ####################################################
 !
 !!****  *PUT_SFX_SEA* - routine to put some variables from
@@ -36,6 +37,10 @@
 !!
 !!      Modified    
 !!        J. Pianezze 09/2014: add if conditions (NSEA_xx_ID)
+!!      A. Voldoire 09/2016 : Switch to tile the fluxes calculation over sea and seaice
+!!      R. Séférian    11/16 : Implement carbon cycle coupling (Earth system model)
+!!      A.Voldoire  04/2018  GELATO1D in regional model
+!
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -69,11 +74,14 @@ TYPE(WATFLUX_t), INTENT(INOUT) :: W
 !
 INTEGER,           INTENT(IN)  :: KLUOUT
 LOGICAL,           INTENT(IN)  :: OCPL_SEAICE
+LOGICAL,           INTENT(IN)  :: OSEAICE_2FLX
 LOGICAL,           INTENT(IN)  :: OWATER
+LOGICAL,           INTENT(IN)  :: OCPL_SEACARB
 !
 REAL, DIMENSION(:), INTENT(IN) :: PSEA_SST
 REAL, DIMENSION(:), INTENT(IN) :: PSEA_UCU
 REAL, DIMENSION(:), INTENT(IN) :: PSEA_VCU
+REAL, DIMENSION(:), INTENT(IN) :: PSEA_FCO2
 REAL, DIMENSION(:), INTENT(IN) :: PSEAICE_SIT
 REAL, DIMENSION(:), INTENT(IN) :: PSEAICE_CVR
 REAL, DIMENSION(:), INTENT(IN) :: PSEAICE_ALB
@@ -127,7 +135,9 @@ IMPLICIT NONE
 INTEGER,     INTENT(IN) :: KLU
 !
 REAL,    DIMENSION(KLU) :: ZSST     ! sea surface temperature
-REAL,    DIMENSION(KLU) :: ZICE_FRAC! ice fraction
+REAL,    DIMENSION(KLU) :: ZTICE    ! sea ice surface temperature
+REAL,    DIMENSION(KLU) :: ZSIC     ! sea ice cover
+REAL,    DIMENSION(KLU) :: ZICE_ALB ! sea ice albedo
 REAL                    :: ZTMIN    ! Minimum temperature over this proc
 REAL                    :: ZTMAX    ! Maximum temperature over this proc
 CHARACTER(LEN=50)       :: YCOMMENT
@@ -171,29 +181,37 @@ ENDIF
 IF(OCPL_SEAICE)THEN
 !
   YCOMMENT='Sea-ice Temperature'
-  CALL PACK_SAME_RANK(U%NR_SEA(:),PSEAICE_SIT(:),S%XTICE(:))
-  CALL CHECK_SEA(YCOMMENT,S%XTICE(:))
+  CALL PACK_SAME_RANK(U%NR_SEA(:),PSEAICE_SIT(:),ZTICE(:))
+  WHERE (ZSST(:)/=0.0) S%XTICE(:)=ZTICE(:)
 !
   YCOMMENT='Sea-ice cover'
-  CALL PACK_SAME_RANK(U%NR_SEA(:),PSEAICE_CVR(:),ZICE_FRAC(:))
-  CALL CHECK_SEA(YCOMMENT,ZICE_FRAC(:))
-!
-  WHERE(ZICE_FRAC(:)>=XICEC)
-    S%XSST(:) = MIN(S%XSST(:),XTTS-0.01)
-  ELSEWHERE
-    S%XSST(:) = MAX(S%XSST(:),XTTS)
-  ENDWHERE
+  CALL PACK_SAME_RANK(U%NR_SEA(:),PSEAICE_CVR(:),ZSIC(:))
+  WHERE (ZSST(:)/=0.0) S%XSIC(:)=ZSIC(:)
 !
   YCOMMENT='Sea-ice albedo'
-  CALL PACK_SAME_RANK(U%NR_SEA(:),PSEAICE_ALB(:),S%XICE_ALB(:))
+  CALL PACK_SAME_RANK(U%NR_SEA(:),PSEAICE_ALB(:),ZICE_ALB(:))
+  WHERE (ZSST(:)/=0.0) S%XICE_ALB(:)=ZICE_ALB(:)
+!
+  IF (.NOT.(OSEAICE_2FLX)) THEN
+    WHERE(S%XSIC(:)>=XICEC)
+      S%XSIC(:) = 1.0
+      S%XSST(:) = MIN(S%XSST(:),XTTS-0.01)
+    ELSEWHERE
+      S%XSIC(:) = 0.0
+      S%XSST(:) = MAX(S%XSST(:),XTTS)
+    ENDWHERE
+  ENDIF
+  CALL CHECK_SEA(YCOMMENT,S%XTICE(:))
+  CALL CHECK_SEA(YCOMMENT,S%XSIC(:))
   CALL CHECK_SEA(YCOMMENT,S%XICE_ALB(:))
 !
-! Fill the table with sea ice albedo where temperature is lower than the
-! freezing point
-  WHERE(S%XSST(:) < XTTS)
-    S%XDIR_ALB(:)=S%XICE_ALB(:)
-    S%XSCA_ALB(:)=S%XICE_ALB(:)
-  ENDWHERE
+ENDIF
+!
+IF(OCPL_SEACARB)THEN
+!
+  YCOMMENT='Sea Carbon Flux'
+  CALL PACK_SAME_RANK(U%NR_SEA(:),PSEA_FCO2(:),S%XSFCO2(:))
+  CALL CHECK_SEA(YCOMMENT,S%XSFCO2(:))
 !
 ENDIF
 !
@@ -243,6 +261,10 @@ CALL CHECK_SEA(YCOMMENT,W%XTICE(:))
 YCOMMENT='Water-ice cover'
 CALL PACK_SAME_RANK(U%NR_WATER(:),PSEAICE_CVR(:),ZICE_FRAC(:))
 CALL CHECK_SEA(YCOMMENT,ZICE_FRAC(:))
+!
+YCOMMENT='Water-ice albedo'
+CALL PACK_SAME_RANK(U%NR_WATER(:),PSEAICE_ALB(:),W%XICE_ALB(:))
+CALL CHECK_SEA(YCOMMENT,W%XICE_ALB(:))
 !
 WHERE(ZICE_FRAC(:)>=XICEC)
   W%XTS(:) = MIN(W%XTS(:),XTT-0.01)

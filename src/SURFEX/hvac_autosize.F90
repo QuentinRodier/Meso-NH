@@ -27,6 +27,7 @@ SUBROUTINE HVAC_AUTOSIZE (B, BOP, G, T, TOP, GDM, KI, KSW, KLUOUT)
 !!                10/2017 add hot water
 !!                13/02/2018: comment OpenMP include/use if compiled without OpenMP (P. Wautelet)
 !!                04.2020 completes energy check for high vegetation IR exchanges (V. Masson)
+!!                06/2022 SIZE(YDMT%XWSNOW_GARDEN_INI,2) not defined (B. Decharme)
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -663,7 +664,7 @@ ALLOCATE(YTH%XWGI_ROAD (KI,TOP%NTEB_SOIL))
 ALLOCATE(YTH%XWGI_BLD  (KI,TOP%NTEB_SOIL))
 ALLOCATE(YPE%XWGI      (KI,TOP%NTEB_SOIL))
 ALLOCATE(YPE%XWG       (KI,TOP%NTEB_SOIL))
-ALLOCATE(YPE%TSNOW%WSNOW(KI,SIZE(YDMT%XWSNOW_GARDEN_INI,2)))
+ALLOCATE(YPE%TSNOW%WSNOW(KI,1))
 ALLOCATE(YPE%XWR       (KI))
 ALLOCATE(YT%XWS_ROAD   (KI))
 ALLOCATE(YT%XWS_ROOF   (KI))
@@ -896,6 +897,17 @@ DEALLOCATE(B%XT_WIN2)
 !
 B%XF_WATER_COND(:) = ZF_WATER_COND(:)
 B%XAUX_MAX = ZAUX_MAX
+!
+DEALLOCATE(YTH%XWG_ROAD)
+DEALLOCATE(YTH%XWG_BLD)
+DEALLOCATE(YTH%XWGI_ROAD)
+DEALLOCATE(YTH%XWGI_BLD)
+DEALLOCATE(YPE%XWGI)
+DEALLOCATE(YPE%XWG)
+DEALLOCATE(YPE%TSNOW%WSNOW)
+DEALLOCATE(YPE%XWR)
+DEALLOCATE(YT%XWS_ROAD)
+DEALLOCATE(YT%XWS_ROOF)
 !
 !--------------------------------------------------------
 !

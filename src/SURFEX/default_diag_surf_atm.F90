@@ -6,7 +6,7 @@
       SUBROUTINE DEFAULT_DIAG_SURF_ATM(K2M, OT2MMW, OSURF_BUDGET, O2M_MIN_ZS, ORAD_BUDGET, &
                                        OCOEF, OSURF_VARS, OSURF_BUDGETC, ORESET_BUDGETC, &
                                        OSELECT, OPROVAR_TO_DIAG, ODIAG_GRID, OFRAC, &
-                                       PDIAG_TSTEP, OSNOWDIMNC, ORESETCUMUL, CSELECT  )                                         
+                                       PDIAG_TSTEP, OSNOWDIMNC, ORESETCUMUL, ODIAG_MIP, CSELECT  )                                         
 !     ########################################################################
 !
 !!****  *DEFAULT_DIAG_SURF_ATM* - routine to set default values for the choice of diagnostics
@@ -71,11 +71,14 @@ LOGICAL,  INTENT(OUT) :: ORESETCUMUL   ! if true reset cumulated variables at ea
 LOGICAL,  INTENT(OUT) :: ODIAG_GRID    ! flag for mean grid diag
 LOGICAL,  INTENT(OUT) :: OFRAC         ! flag for fractions of tiles
 REAL,     INTENT(OUT) :: PDIAG_TSTEP   ! time-step for writing
+LOGICAL,  INTENT(OUT) :: ODIAG_MIP     ! flag for write all mip (CMIP, LMIP, SnowMIP, ...) diag style
+!
 CHARACTER(LEN=LEN_HREC), DIMENSION(200), INTENT(OUT), OPTIONAL :: CSELECT  
-REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !*       0.2   Declarations of local variables
 !              -------------------------------
+!
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !-------------------------------------------------------------------------------
 !
@@ -92,15 +95,15 @@ ORAD_BUDGET  = .FALSE.
 OCOEF        = .FALSE.
 OSURF_VARS   = .FALSE.
 !
-OSURF_BUDGETC     = .FALSE.
-ORESET_BUDGETC    = .FALSE.
+OSURF_BUDGETC   = .FALSE.
+ORESET_BUDGETC  = .FALSE.
 !
-OSELECT            = .FALSE.
+OSELECT         = .FALSE.
 !
-OPROVAR_TO_DIAG    = .FALSE.
+OPROVAR_TO_DIAG = .FALSE.
 !
-OSNOWDIMNC = .FALSE.
-ORESETCUMUL = .FALSE.
+OSNOWDIMNC   = .FALSE.
+ORESETCUMUL  = .FALSE.
 !
 ODIAG_GRID   = .TRUE.
 !
@@ -108,7 +111,10 @@ OFRAC        = .FALSE.
 !
 PDIAG_TSTEP  = XUNDEF
 !
+ODIAG_MIP    = .FALSE.
+!
 IF (PRESENT(CSELECT)) CSELECT(:) = '            '
+!
 IF (LHOOK) CALL DR_HOOK('DEFAULT_DIAG_SURF_ATM',1,ZHOOK_HANDLE)
 !
 !-------------------------------------------------------------------------------

@@ -4,7 +4,6 @@
 !SFX_LIC for details. version 1.
 !   ################
 FUNCTION CONTROL_TEMP_FUNC (PTEMP_IN) RESULT (PTEMPFUNC_RESULT)
-
 !
 !   ###############################################################
 !!**   CONTROL_TEMP_FUNC
@@ -66,10 +65,11 @@ REAL, DIMENSION(SIZE(PTEMP_IN)) :: PTEMPFUNC_RESULT ! temperature control factor
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
-!
-!*       1 Calculates temperature control factor
+!-------------------------------------------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('CONTROL_TEMP_FUNC',0,ZHOOK_HANDLE)
+!
+!*       1 Calculates temperature control factor
 !
 ZCOEF1 = LOG(2.0)
 !
@@ -78,7 +78,6 @@ PTEMPFUNC_RESULT(:) = EXP( (ZCOEF1/ZCOEF2) * (PTEMP_IN(:)-ZCOEF3) )
 PTEMPFUNC_RESULT(:) = MIN( 1., PTEMPFUNC_RESULT(:) )
 !
 IF (LHOOK) CALL DR_HOOK('CONTROL_TEMP_FUNC',1,ZHOOK_HANDLE)
-
+!
+!-------------------------------------------------------------------------------
 END FUNCTION CONTROL_TEMP_FUNC
-
-

@@ -13,11 +13,9 @@ USE MODD_SURFEX_n, ONLY : TEB_MODEL_t
 USE MODD_ISBA_OPTIONS_n, ONLY : ISBA_OPTIONS_t
 !
 USE MODN_TEB_n                          
-USE MODN_TEB_VEG_n,            ONLY: CRUNOFF,CSCOND,                       &
-                                     CC1DRY, CSOILFRZ, CDIFSFCOND, CSNOWRES,       &
-                                     CCPSURF, XCGMAX, CKSAT,                       &
-                                     CRAIN, CHORT, LGLACIER,                       &
-                                     LCANOPY_DRAG, LVEGUPD, LNITRO_DILU
+USE MODN_TEB_VEG_n,            ONLY: CRUNOFF,CSCOND, CC1DRY, CSOILFRZ, CDIFSFCOND, CSNOWRES, &
+                                     CCPSURF, XCGMAX, CKSAT, CRAIN, CHORT, LGLACIER,         &
+                                     LCANOPY_DRAG, LVEGUPD, LNITRO_DILU, LDOWNREGU, XCNLIM
 USE MODN_TEB_GREENROOF_n,      ONLY: CRUNOFF_GR,CSCOND_GR,CKSAT_GR,CHORT_GR
 !
 USE MODI_DEFAULT_TEB
@@ -55,11 +53,9 @@ IF (LHOOK) CALL DR_HOOK('READ_NAMELISTS_TEB_N',0,ZHOOK_HANDLE)
 !
 CALL DEFAULT_TEB(CZ0H,CZ0EFF_GD,XTSTEP,XOUT_TSTEP, CCH_BEM, CURB_LM, CSOLAR_PANEL)
 !
- CALL DEFAULT_TEB_VEG(CRUNOFF, CSCOND,                 &
-                      CC1DRY, CSOILFRZ, CDIFSFCOND, CSNOWRES,   &
-                      CCPSURF, XCGMAX, CKSAT,                   &
-                      CRAIN, CHORT, LGLACIER,                   &
-                      LCANOPY_DRAG, LVEGUPD, LNITRO_DILU        )
+ CALL DEFAULT_TEB_VEG(CRUNOFF, CSCOND, CC1DRY, CSOILFRZ, CDIFSFCOND, CSNOWRES,&
+                      CCPSURF, XCGMAX, CKSAT, CRAIN, CHORT, LGLACIER,         &
+                      LCANOPY_DRAG, LVEGUPD, LNITRO_DILU, XCNLIM, LDOWNREGU)
 !
  CALL DEFAULT_GREENROOF(CRUNOFF_GR,CSCOND_GR, CKSAT_GR,CHORT_GR)
 !

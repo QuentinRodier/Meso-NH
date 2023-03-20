@@ -395,7 +395,7 @@ REAL                      :: ZRDSDG,ZCLAT0,ZSLAT0,ZCLATOR,ZSLATOR
 REAL                      :: ZXBM0,ZYBM0,ZRO0,ZGA0 
 REAL                      :: ZXP,ZYP,ZEPSI,ZT1,ZCGAM,ZSGAM,ZRACLAT0
 !
-REAL :: ZATA,ZRO2,ZT2,ZXMI0,ZYMI0, ZXI, ZYI, ZIRDSDG
+REAL :: ZATA,ZRO2,ZT2,ZXMI0,ZYMI0,ZXI,ZYI,ZIRDSDG,ZWORK
 REAL(KIND=JPRB) :: ZHOOK_HANDLE, ZHOOK_HANDLE_OMP
 !
 !--------------------------------------------------------------------------------
@@ -485,7 +485,9 @@ IF (LHOOK) CALL DR_HOOK('MODE_GRIDTYPE_CONF_PROJ:LATLON_CONF_PROJ_21',0,ZHOOK_HA
     !    
     ZT2  = (ZRPK**2*ZRO2)**(1./ZRPK)
     !
-    PLAT(JI) = (XPI/2.-ACOS((ZT1-ZT2)/(ZT1+ZT2)))*ZIRDSDG
+    ZWORK = ACOS((ZT1-ZT2)/(ZT1+ZT2))
+    !
+    PLAT(JI) = ((XPI/2.0)-ZWORK)*ZIRDSDG
     !
     IF (PRPK<0.) THEN     ! projection from north pole
       PLAT(JI)=-PLAT(JI)

@@ -38,6 +38,7 @@
 !!     V. Masson    01/2004 extrapolation in latitude and longitude
 !!     M. Jidane    11/2013 add OpenMP directives
 !!     Q. Rodier    06/2021 avoid abort for interpolation of ALL(PFIELD)=XUNDEF with ECOSG
+!!     A. Napoly    10/2022 add OpenMP directives and optimisations in loops
 !----------------------------------------------------------------------------
 !
 !*    0.     DECLARATION
@@ -87,17 +88,18 @@ REAL, DIMENSION(:,:), ALLOCATABLE :: ZFIELD
 REAL :: ZLAT  ! latitude of point to define
 REAL :: ZLON  ! longitude of point to define
 REAL :: ZDIST ! current distance to valid point (in lat/lon grid)
+REAL :: ZWORK
 REAL, DIMENSION(:,:), ALLOCATABLE :: ZNDIST! smallest distance to valid point
 REAL :: ZCOSLA! cosine of latitude
 REAL :: ZLONSC! longitude of valid point
 REAL :: ZIDLO, ZIDLOMAX, ZIDLOMIN, ZIDLAMAX, ZIDLAMIN
 REAL, DIMENSION(:,:), ALLOCATABLE :: ZCOOR
 REAL, DIMENSION(:), ALLOCATABLE :: ZIDLA
-REAL,    DIMENSION(:), ALLOCATABLE :: ZLA       ! input "latitude"  coordinate
-REAL,    DIMENSION(:), ALLOCATABLE :: ZLO       ! input "longitude" coordinate
+REAL, DIMENSION(:), ALLOCATABLE :: ZLA       ! input "latitude"  coordinate
+REAL, DIMENSION(:), ALLOCATABLE :: ZLO       ! input "longitude" coordinate
 REAL(KIND=JPRB) :: ZRAD ! conversion degrees to radians
 !
-INTEGER, DIMENSION(:), ALLOCATABLE :: IMASK, IMASKR
+INTEGER, DIMENSION(:), ALLOCATABLE :: IMASK
 INTEGER, DIMENSION(:,:), ALLOCATABLE :: IVAL_EXT
 INTEGER, DIMENSION(NPROC) :: INO_TAB
 INTEGER  :: INO     ! output array size
@@ -107,12 +109,16 @@ INTEGER :: ISIZE, ISIZE_MAX, J, ID0, ICOMPT, ICPT
 INTEGER :: INFOMPI, IDX, INL
 INTEGER  :: JI, JL, JLAT, JLON, JIPOS, JP   ! loop index on points
 INTEGER  :: JISC  ! loop index on valid points
+INTEGER, DIMENSION(SIZE(KP,2)) :: IKP
 #ifdef SFX_MPI
 INTEGER, DIMENSION(MPI_STATUS_SIZE) :: ISTATUS
 #endif
 LOGICAL  :: GLALO ! flag true is second coordinate is a longitude or pseudo-lon.
                   !      false if metric coordinates
 REAL(KIND=JPRB) :: ZHOOK_HANDLE, ZHOOK_HANDLE_OMP
+REAL :: ZWORK1,ZWORK2,ZWORK3,ZWORK4,ZWORK5,ZWORK6
+REAL, DIMENSION(KINLA) :: ZWORK7
+INTEGER, DIMENSION(KINLA) :: IWORK1
 !-------------------------------------------------------------------------------
 IF (LHOOK) CALL DR_HOOK('HOR_EXTRAPOL_SURF_1',0,ZHOOK_HANDLE)
 !
@@ -145,6 +151,14 @@ ENDIF
 ZIDLAMAX = MAXVAL(ABS(ZIDLA))
 ZIDLAMIN = MINVAL(ABS(ZIDLA(2:KINLA)))
 !
+ZWORK7(:)=0.
+DO JLAT=2,KINLA
+  ZWORK7(JLAT) = ZWORK7(JLAT-1) + ZIDLA(JLAT)
+ENDDO
+DO JLAT=1,KINLA
+  ZWORK7(JLAT) = PILA1 + ZWORK7(JLAT)
+ENDDO
+!
 DO JLAT=1,KINLA
   IF (GLALO) THEN
     ZIDLO = (PILO2-PILO1) / KINLO(JLAT)
@@ -153,7 +167,7 @@ DO JLAT=1,KINLA
   ENDIF
   DO JLON=1,KINLO(JLAT)
     JIPOS = JIPOS + 1
-    ZLA(JIPOS) = PILA1 + SUM(ZIDLA(2:JLAT))
+    ZLA(JIPOS) = ZWORK7(JLAT)
     ZLO(JIPOS) = PILO1 + (JLON-1) * ZIDLO 
   END DO
   ZIDLO = ABS(ZIDLO)
@@ -177,34 +191,52 @@ ZRAD=XPI/180.0_JPRB
 !1: ZTLONMIN, ZTLONMAX, ZTLATMIN, ZTLATMAX contain for each point to extrapol 
 ! the limits of the domain where to search for the valid points, according
 ! to NHALO_PREP
-ICPT = 0
 ISIZE_MAX = 0
 ISIZE = 0
+!
+ZWORK1=MINVAL(ZLO(:))
+ZWORK2=MAXVAL(ZLO(:))
+ZWORK3=MINVAL(ZLA(:))
+ZWORK4=MAXVAL(ZLA(:))
+ZWORK5=ZIDLOMAX*NHALO_PREP
+ZWORK6=ZIDLAMAX*NHALO_PREP
+!
+ICPT = 0
+ALLOCATE(IMASK(INO))
+IMASK(:)=0
 DO JI=1,INO
-  !
   IF (ALL(PFIELD(JI,:)/=XUNDEF)) CYCLE
   IF (.NOT. OINTERP(JI))  CYCLE
   ICPT = ICPT + 1
+  IMASK(ICPT) = JI
+ENDDO
+
+!number of points to extrapol and maximum number
+ITSIZE(1) = ICPT
+
+!$OMP PARALLEL DO PRIVATE(JP,ISIZE,IKP) REDUCTION(max:ISIZE_MAX)
+DO JP=1,ITSIZE(1)
+  !
+  JI=IMASK(JP)
   !
   IF (NHALO_PREP>0) THEN
-    ZTLONMIN(JI) = MINVAL(ZLO(KP(JI,:)))-ZIDLOMAX*NHALO_PREP
-    ZTLONMAX(JI) = MAXVAL(ZLO(KP(JI,:)))+ZIDLOMAX*NHALO_PREP
-    ZTLATMIN(JI) = MINVAL(ZLA(KP(JI,:)))-ZIDLAMAX*NHALO_PREP
-    ZTLATMAX(JI) = MAXVAL(ZLA(KP(JI,:)))+ZIDLAMAX*NHALO_PREP
+    IKP=KP(JI,:)
+    ZTLONMIN(JI) = MAX(ZWORK1,MINVAL(ZLO(IKP))-ZWORK5)
+    ZTLONMAX(JI) = MIN(ZWORK2,MAXVAL(ZLO(IKP))+ZWORK5)
+    ZTLATMIN(JI) = MAX(ZWORK3,MINVAL(ZLA(IKP))-ZWORK6)
+    ZTLATMAX(JI) = MIN(ZWORK4,MAXVAL(ZLA(IKP))+ZWORK6)
   ELSE
-    ZTLONMIN(JI) = MINVAL(ZLO(:))
-    ZTLONMAX(JI) = MAXVAL(ZLO(:))
-    ZTLATMIN(JI) = MINVAL(ZLA(:))
-    ZTLATMAX(JI) = MAXVAL(ZLA(:))
+    ZTLONMIN(JI) = ZWORK1
+    ZTLONMAX(JI) = ZWORK2
+    ZTLATMIN(JI) = ZWORK3
+    ZTLATMAX(JI) = ZWORK4
   ENDIF
   ISIZE = CEILING((ZTLONMAX(JI)-ZTLONMIN(JI)+1)/ZIDLOMIN)*&
           CEILING((ZTLATMAX(JI)-ZTLATMIN(JI)+1)/ZIDLAMIN)
-  IF (ISIZE>ISIZE_MAX) ISIZE_MAX = ISIZE
+  ISIZE_MAX = MAX(ISIZE_MAX,ISIZE)
   !
 ENDDO
-!
-!number of points to extrapol and maximum number of points to sound
-ITSIZE(1) = ICPT
+!number of points points to sound
 ITSIZE(2) = ISIZE_MAX
 !
 !NPIO knows the numbers of points to extrapolate for all tasks
@@ -218,11 +250,6 @@ ELSE
   IBOR(:,0) = ITSIZE(:)
 ENDIF
 !
-!imask associated the number of the point to extrapolate to its real index in
-!the field
-ALLOCATE(IMASK(ITSIZE(1)))
-IMASK(:) = 0
-!
 IF (NRANK==NPIO) THEN
   ALLOCATE(IVAL_EXT(MAXVAL(IBOR(1,:)),MAXVAL(IBOR(2,:))))
   ALLOCATE(ZCOOR   (MAXVAL(IBOR(1,:)),2))
@@ -233,59 +260,54 @@ ENDIF
 IVAL_EXT(:,:) = 0
 ZCOOR   (:,:) = 0.
 !
-!
-ICPT = 0
 !2: loop on the points 
-DO JI=1,INO
-  !
-  IF (ALL(PFIELD(JI,:)/=XUNDEF)) CYCLE
-  IF (.NOT. OINTERP(JI))  CYCLE
-  !
-  ICPT = ICPT + 1
-  !imask associated the number of the point to extrapolate to its real index in
-  !the field
-  IMASK(ICPT) = JI
+
+IF (KINLA >= 1) THEN
+  IWORK1(1) = 0
+  DO JLAT = 1, KINLA - 1
+    IWORK1(JLAT + 1) = IWORK1(JLAT) + KINLO(JLAT)
+  ENDDO
+ENDIF
+
+!$OMP PARALLEL DO PRIVATE(JP,ICOMPT,JI,ICPT,JLAT,ZLAT,ZIDLO,JLON) 
+DO JP=1,ITSIZE(1)
   !
   ICOMPT = 0
-  JISC = 0
-  !
+  JI=IMASK(JP)
+  ICPT=JP
   !coordinates of the point in the grid 
   ZCOOR(ICPT,1) = PLAT(JI)
   ZCOOR(ICPT,2) = PLON(JI)
   !
   !loop on the grid
   DO JLAT = 1,KINLA
-    ZLAT = PILA1 + SUM(ZIDLA(2:JLAT))
+    ZLAT = ZWORK7(JLAT)
     IF (ZLAT>=ZTLATMIN(JI) .AND. ZLAT<=ZTLATMAX(JI)) THEN
       IF (GLALO) THEN
         ZIDLO = (PILO2-PILO1) / KINLO(JLAT)
       ELSE
         ZIDLO = (PILO2-PILO1) / (KINLO(JLAT)-1)
       ENDIF
-      IF (JLAT>1) JISC = SUM(KINLO(1:JLAT-1))
       DO JLON = 1,KINLO(JLAT)
         ZLON = PILO1 + (JLON-1) * ZIDLO
         IF (ZLON>=ZTLONMIN(JI) .AND. ZLON<=ZTLONMAX(JI)) THEN
           ICOMPT = ICOMPT + 1
           !ival_ext contains the indexes of the points needed to interpolate
           !in the complete grid
-          IVAL_EXT(ICPT,ICOMPT) = JISC + JLON
+          IVAL_EXT(ICPT,ICOMPT) = IWORK1(JLAT) + JLON
         ENDIF
       ENDDO
     ENDIF
   ENDDO
   !
 ENDDO
+!$OMP END PARALLEL DO
 !
 DEALLOCATE(ZIDLA)
 !
 !
-IF (LHOOK) CALL DR_HOOK('HOR_EXTRAPOL_SURF_1',1,ZHOOK_HANDLE)
 !
 IF (NRANK/=NPIO) THEN
-
-  IF (LHOOK) CALL DR_HOOK('HOR_EXTRAPOL_SURF_2',0,ZHOOK_HANDLE)
-
   !if some points of this task need to be extrapolated
   IF (SUM(ITSIZE)/=0) THEN
 
@@ -309,33 +331,21 @@ IF (NRANK/=NPIO) THEN
 #ifdef SFX_MPI    
     CALL MPI_RECV(ZFIELD,SIZE(ZFIELD)*KIND(ZFIELD)/4,MPI_REAL,NPIO,IDX_I,NCOMM,ISTATUS,INFOMPI)
 #endif
-
     DO JI=1,ITSIZE(1)
       PFIELD(IMASK(JI),:) = ZFIELD(JI,:)
     ENDDO
     DEALLOCATE(ZFIELD)
-
   ELSE
     IDX_I = IDX_I + 3
   ENDIF
-
-  IF (LHOOK) CALL DR_HOOK('HOR_EXTRAPOL_SURF_2',1,ZHOOK_HANDLE)
-
 ELSE
-
-IF (LHOOK) CALL DR_HOOK('HOR_EXTRAPOL_SURF_31',0,ZHOOK_HANDLE_OMP)
   DO JP = NPIO,NPROC-1+NPIO
-
     J = JP
     IF (JP>NPROC-1) J = JP-NPROC
-
     IF (SUM(IBOR(:,J))/=0) THEN
-
       ALLOCATE(ZFIELD(IBOR(1,J),INL))
       ZFIELD=XUNDEF
-
       IF (J/=NPIO) THEN
-
         !receives indexes and coordinaites
 #ifdef SFX_MPI        
         CALL MPI_RECV(IVAL_EXT(1:IBOR(1,J),1:IBOR(2,J)), IBOR(1,J)*IBOR(2,J)*KIND(IVAL_EXT)/4, &
@@ -345,9 +355,7 @@ IF (LHOOK) CALL DR_HOOK('HOR_EXTRAPOL_SURF_31',0,ZHOOK_HANDLE_OMP)
 #endif
 
       ENDIF
-
       ALLOCATE(ZNDIST(IBOR(1,J),INL))
-   
 !$OMP PARALLEL DO PRIVATE(JI,IDX,ZCOSLA,JISC,JL,ID0,ZLONSC,ZDIST) 
         DO JI=1,IBOR(1,J)
           ZNDIST(JI,:) = XUNDEF
@@ -397,17 +405,10 @@ IF (LHOOK) CALL DR_HOOK('HOR_EXTRAPOL_SURF_31',0,ZHOOK_HANDLE_OMP)
     ENDIF
     !
   ENDDO
-IF (LHOOK) CALL DR_HOOK('HOR_EXTRAPOL_SURF_31',1,ZHOOK_HANDLE_OMP)
-!
-IF (LHOOK) CALL DR_HOOK('HOR_EXTRAPOL_SURF_32',0,ZHOOK_HANDLE)  
   !
   IDX_I = IDX_I + 3
   !
-IF (LHOOK) CALL DR_HOOK('HOR_EXTRAPOL_SURF_32',1,ZHOOK_HANDLE)  
-  !
 ENDIF
-!
-IF (LHOOK) CALL DR_HOOK('HOR_EXTRAPOL_SURF_4',0,ZHOOK_HANDLE)  
 !
 DEALLOCATE(ZCOOR)
 DEALLOCATE(IVAL_EXT)
@@ -426,6 +427,6 @@ DO JL=1,INL
 ENDDO
 !
 !-------------------------------------------------------------------------------
-IF (LHOOK) CALL DR_HOOK('HOR_EXTRAPOL_SURF_4',1,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('HOR_EXTRAPOL_SURF_1',1,ZHOOK_HANDLE)
 !
 END SUBROUTINE HOR_EXTRAPOL_SURF

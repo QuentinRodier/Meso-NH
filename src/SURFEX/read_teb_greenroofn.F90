@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE READ_TEB_GREENROOF_n (DTCO, U, IO, P, PEK, HPROGRAM,HPATCH)
+      SUBROUTINE READ_TEB_GREENROOF_n (TOP, DTCO, U, IO, P, PEK, HPROGRAM, HPATCH)
 !     ##################################
 !
 !!****  *READ_TEB_GREENROOF_n* - routine to initialise ISBA variables
@@ -40,21 +40,27 @@
 !*       0.    DECLARATIONS
 !              ------------
 !
+USE MODD_TEB_OPTION_n, ONLY : TEB_OPTIONS_t
 USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 USE MODD_ISBA_OPTIONS_n, ONLY : ISBA_OPTIONS_t
 USE MODD_ISBA_n, ONLY : ISBA_PE_t, ISBA_P_t
+!
 USE MODD_CO2V_PAR, ONLY : XANFMINIT, XCONDCTMIN       
 USE MODD_SURF_PAR, ONLY : XUNDEF
+USE MODD_CSTS,     ONLY : XG, XRD, XP00
+!
+USE MODE_THERMOS
 !
 USE MODI_READ_SURF
 !
 USE MODI_READ_GR_SNOW
 !
+USE MODI_GET_TYPE_DIM_n
+!
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
-USE MODI_GET_TYPE_DIM_n
 !
 IMPLICIT NONE
 !
@@ -62,6 +68,7 @@ IMPLICIT NONE
 !              -------------------------
 !
 !
+TYPE(TEB_OPTIONS_t), INTENT(INOUT) :: TOP
 TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
 TYPE(SURF_ATM_t), INTENT(INOUT) :: U
 !
@@ -79,8 +86,8 @@ INTEGER           :: IVERSION, IBUGFIX
 INTEGER           :: IRESP                           ! Error code after redding
 INTEGER           :: IWORK                           ! Work integer
 INTEGER           :: JLAYER, JNBIOMASS               ! loop counter on layers
- CHARACTER(LEN=30) :: YRECFM                          ! Name of the article to be read
- CHARACTER(LEN=4)  :: YLVL
+CHARACTER(LEN=30) :: YRECFM                          ! Name of the article to be read
+CHARACTER(LEN=4)  :: YLVL
 REAL, DIMENSION(:),ALLOCATABLE  :: ZWORK             ! 2D array to write data in file
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
@@ -141,7 +148,17 @@ END DO
 !
 YRECFM=HPATCH//'GR_WR'
 YRECFM=ADJUSTL(YRECFM)
- CALL READ_SURF(HPROGRAM,YRECFM,PEK%XWR(:),IRESP)
+CALL READ_SURF(HPROGRAM,YRECFM,PEK%XWR(:),IRESP)
+!
+ALLOCATE(PEK%XQC(ILU))
+IF(IVERSION>=9)THEN
+  YRECFM = HPATCH//'GR_QC'
+  YRECFM=ADJUSTL(YRECFM)
+  CALL READ_SURF(HPROGRAM,YRECFM,PEK%XQC(:),IRESP)
+ELSE
+  ZWORK  (:)=XP00*EXP(-(XG/XRD/PEK%XTG(:,1))*TOP%XZS(:))
+  PEK%XQC(:)=QSAT(PEK%XTG(:,1),ZWORK)
+ENDIF
 !
 !* Leaf Area Index
 !
@@ -183,15 +200,12 @@ ELSE
   PEK%XRESA(:) = 100.
 ENDIF
 !
-PEK%XLE(:) = XUNDEF
-!
 !* ISBA-AGS variables
 !
 IF (IO%CPHOTO/='NON') THEN
   PEK%XAN(:)    = 0.
   PEK%XANDAY(:) = 0.
   PEK%XANFM(:)  = XANFMINIT
-  PEK%XLE(:)    = 0.
 END IF
 !
 IF (IO%CPHOTO=='AST') THEN

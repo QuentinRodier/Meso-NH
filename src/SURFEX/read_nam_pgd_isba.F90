@@ -13,7 +13,7 @@
                                    HRUNOFFB, HRUNOFFBFILETYPE, PUNIF_RUNOFFB,               &
                                    HWDRAIN,  HWDRAINFILETYPE , PUNIF_WDRAIN, PSOILGRID,     &
                                    HPH, HPHFILETYPE, PUNIF_PH, HFERT, HFERTFILETYPE,        &
-                                   PUNIF_FERT      )  
+                                   PUNIF_FERT, OLULCC                                       )  
 !     ##############################################################
 !
 !!**** *READ_NAM_PGD_ISBA* reads namelist for ISBA
@@ -27,7 +27,7 @@
 !
 !!    EXTERNAL
 !!    --------
-!OTR_ML,                        !
+!!
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
 !!
@@ -50,6 +50,7 @@
 !!    07/2012 B. Decharme : files of data for permafrost area and for SOC top and sub soil
 !!    10/2014 P. Samuelsson: MEB
 !!    10/2016 B. Decharme : bug surface/groundwater coupling 
+!!    08/2016 R. Séférian  : landuse key 
 !----------------------------------------------------------------------------
 !
 !*    0.     DECLARATION
@@ -116,6 +117,7 @@ REAL, DIMENSION(:),  INTENT(OUT)   :: PSOILGRID     ! Soil layer thickness for D
  CHARACTER(LEN=6),    INTENT(OUT)   :: HFERTFILETYPE ! fertilisation data file type
 REAL,                INTENT(OUT)   :: PUNIF_PH      ! uniform value of pH
 REAL,                INTENT(OUT)   :: PUNIF_FERT    ! uniform value of fertilisation rate
+LOGICAL,             INTENT(OUT)   :: OLULCC        ! land-use land cover change scheme        
 !
 !
 !*    0.2    Declaration of local variables
@@ -173,6 +175,7 @@ REAL, DIMENSION(150)     :: XSOILGRID     ! Soil layer thickness for DIF
 REAL                     :: XUNIF_SOC_TOP ! uniform value of organic carbon (kg/m2)
 REAL                     :: XUNIF_SOC_SUB ! uniform value of organic carbon (kg/m2)
 LOGICAL                  :: LIMP_SOC      ! Imposed maps of organic carbon
+LOGICAL                  :: LLULCC        ! land-use land cover change scheme activation key
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
@@ -185,7 +188,7 @@ NAMELIST/NAM_ISBA/ NPATCH, NGROUND_LAYER, CISBA, CPEDO_FUNCTION, CPHOTO,   &
                    YRUNOFFB, YRUNOFFBFILETYPE, XUNIF_RUNOFFB,              &
                    YWDRAIN,  YWDRAINFILETYPE,  XUNIF_WDRAIN, XSOILGRID,    &
                    YPH, YPHFILETYPE, XUNIF_PH, YFERT, YFERTFILETYPE,       &
-                   XUNIF_FERT   
+                   XUNIF_FERT, LLULCC   
 !
 !-------------------------------------------------------------------------------
 !
@@ -242,6 +245,7 @@ LIMP_SOC         = .FALSE.
 LIMP_CTI         = .FALSE.
 LMEB             = .FALSE.
 LIMP_PERM        = .FALSE.
+LLULCC           = .FALSE.
 !
  CALL GET_LUOUT(HPROGRAM,ILUOUT)
 !
@@ -296,6 +300,7 @@ OIMP_SOC         = LIMP_SOC         ! Imposed values for organic carbon
 OIMP_CTI         = LIMP_CTI         ! Imposed values for topographic index statistics
 OIMP_PERM        = LIMP_PERM        ! Imposed values for permafrost distribution
 OMEB             = LMEB             ! MEB
+OLULCC           = LLULCC           ! land-use land cover change scheme activation key             
 !
 HPH           = YPH           ! file name for pH value
 HFERT         = YFERT         ! file name for fertilisation data

@@ -42,6 +42,8 @@
 !!      B. Decharme  05/2012 : Add XCC_NITRO and XBIOMASST_LIM (optimization)
 !!      R. Alkama    05/2012 : parameters for 19 vegtype rather than 12
 !!Seferian & Delire  06/2015 : updating XAMAX peding on TRY database Kattge et al. GCB 2011 
+!!      R. Séférian  01/2018 : simplify carbon spinup procedure (delete LAGRI_TO_GRASS XCO2_START XCO2_END)
+!!      B. Decharme  01/2021 : Methane 
 !!
 !-------------------------------------------------------------------------------
 !
@@ -55,14 +57,27 @@ USE MODD_DATA_COVER_PAR, ONLY : NVEGTYPE_OLD, NVEGTYPE_ECOSG
 !
 IMPLICIT NONE
 !
-REAL, PARAMETER                      :: XSPIN_CO2 = 0.1
-!                                       fraction of the total spinup period used
-!                                       to ramp up CO2 concentration from XCO2_START to XCO2_END
+REAL, PARAMETER                      :: XGTOKG = 1.E-3 
+!                                       g to kg transformation
 !
-REAL, PARAMETER                      :: XMCO2 = 44.0E-3, XMC   = 12.0E-3
-!                                       molecular mass of CO2, 
-!                                       and C (Carbon), respectively
-!                                       (used for conversions in kg) 
+REAL, PARAMETER                      :: XKGTOG = 1.E+3
+!                                       kg to g transformation
+!
+REAL, PARAMETER                      :: XMC   = 12.0E-3
+!                                       molecular mass of C (Carbon) (kg/mol) 
+!
+REAL, PARAMETER                      :: XMO2 = 32.0E-3
+!                                       molecular mass of O2 (kg/mol)
+!
+REAL, PARAMETER                      :: XMCO2 = 44.0E-3
+!                                       molecular mass of CO2 (kg/mol)
+!
+REAL, PARAMETER                      :: XMCH4 = 16.0E-3
+!                                       molecular mass of CH4 (kg/mol)
+!
+REAL, PARAMETER                      :: XDMAX_AGS = 0.045
+!                                       maximum specific humidity deficit (kg kg-1)
+!                                       for standard ISBA AGS (CPHOTO = 'AGS' or 'LAI')
 !
 REAL, PARAMETER                      :: XPARCF = 0.48
 !                                       coefficient: PAR fraction of incoming solar radiation
@@ -207,12 +222,26 @@ REAL, PARAMETER               :: XCOEFF_MAINT_RESP_ZERO = 1.19E-4/86400.
 REAL, PARAMETER               :: XSLOPE_MAINT_RESP = 0.16
 !                                slope for maintenance respiration for temperature dependance (1/C)
 !
-REAL, PARAMETER, DIMENSION(NVEGTYPE_OLD) :: XTAU_WOOD = &
-        (/ 0., 0., 0., 40.*365.*86400., 50.*365.*86400., 30.*365.*86400., 0., 0., 0., 0., &
-           0., 0., 40.*365.*86400., 40.*365.*86400., 50.*365.*86400., 40.*365.*86400.,    &
-           50.*365.*86400., 0., 40.*365.*86400. /)
-!                                 Residence time in woody pools (s) (YPHOTO='NCB')
-!
+! Residence time in woody pools (year) (YPHOTO='NCB')
+REAL, PARAMETER, DIMENSION(NVEGTYPE_OLD) :: XTAU_WOOD = (/ 0.,& ! NVT_NO
+                                                           0.,& ! NVT_ROCK
+                                                           0.,& ! NVT_SNOW
+                                                          40.,& ! NVT_TEBD
+                                                          50.,& ! NVT_BONE
+                                                          30.,& ! NVT_TRBE
+                                                           0.,& ! NVT_C3
+                                                           0.,& ! NVT_C4
+                                                           0.,& ! NVT_IRR
+                                                           0.,& ! NVT_GRAS
+                                                           0.,& ! NVT_TROG
+                                                           0.,& ! NVT_PARK
+                                                          40.,& ! NVT_TRBD
+                                                          40.,& ! NVT_TEBE
+                                                          50.,& ! NVT_TENE
+                                                          40.,& ! NVT_BOBD
+                                                          50.,& ! NVT_BOND
+                                                           0.,& ! NVT_BOGR
+                                                          40./) ! NVT_SHRB
 !
 ! Soil carbon (YPHOTO='NCB' and YRESPSL='CNT') parameters:
 !
@@ -233,6 +262,9 @@ REAL, DIMENSION(2,3,6)  :: XFRAC_SOILCARB
 !
 REAL, DIMENSION(3)      :: XTAU_SOILCARB
 !                                       Residence times in carbon pools (s)
+!
+REAL, PARAMETER         :: XALPHA_DOC = 5.0E-3
+!                                       the maximum fraction of litter or soil carbon mobilized and dissolved (-)
 !
 ! Radiative transfer parameters
 !
@@ -264,17 +296,37 @@ REAL, PARAMETER, DIMENSION(NVEGTYPE_OLD) :: XXB_INF = &       ! b_sup = 1/omega_
 !  1.81, 1.81, 2.56 /)
 !
 ! Kronecker flag for nitrogen dilution hypothesis (based on Yin et al., 2002)
+!   XDILUDEC=1 for deciduous woody species (based on Yin, GCB 2002 eq 6) 
+! and for C3 grass/crop based on Obermeier et al., 2016
+!
 REAL, PARAMETER, DIMENSION(NVEGTYPE_OLD) :: XDILUDEC = &
-(/ 0., 0., 0., 1., 0., 0., 1., 1., 1., 1., 1., 0., 1., 0., 0., 1., 1., 0., 1. /)
+(/ 0., 0., 0., 1., 0., 0., 1., 0., 0., 1., 1., 0., 1., 0., 0., 1., 0., 1., 1. /)
 !
 ! Maximum Leaf photosynthetic capacity (kgCO2 m-2 s-1)
 ! Modified according to Kattge et al., 2009 median Vcmax at 25C values, except for TRBE : median-std
 ! For C3 PFTs : Ammax = Vcmax / 2.     (Jacobs, p 150)
 ! For C4 PFTs : Ammax = Vcmax
 ! Units : [Vcmax]=micromols_CO2 m-2 s-1, [Ammax]=kgCO2 m-2 s-1 --> [Ammax] = [Vcmax] * 44e-3 * 1e-6
-REAL, PARAMETER, DIMENSION(NVEGTYPE_OLD) :: XAMAX   = &
-(/ 1., 1., 1., 1.3E-6, 1.4E-6, 0.484E-6, 2.2E-6, 1.7E-6, 1.7E-6, 1.7E-6, 1.7E-6, 1.7E-6, &
-   0.9E-6, 1.3E-6, 1.4E-6, 1.3E-6, 0.9E-6, 1.7E-6, 1.2E-6/)
+!
+REAL, PARAMETER, DIMENSION(NVEGTYPE_OLD) :: XAMAX   = (/1.00,    & ! NVT_NO
+                                                        1.00,    & ! NVT_ROCK
+                                                        1.00,    & ! NVT_SNOW
+                                                        1.30E-6, & ! NVT_TEBD
+                                                        1.40E-6, & ! NVT_BONE
+                                                        0.39E-6, & ! NVT_TRBE (old value 0.484E-6)
+                                                        2.20E-6, & ! NVT_C3
+                                                        1.70E-6, & ! NVT_C4
+                                                        1.70E-6, & ! NVT_IRR
+                                                        1.70E-6, & ! NVT_GRAS
+                                                        1.70E-6, & ! NVT_TROG
+                                                        1.70E-6, & ! NVT_PARK
+                                                        0.90E-6, & ! NVT_TRBD
+                                                        1.30E-6, & ! NVT_TEBE
+                                                        1.40E-6, & ! NVT_TENE
+                                                        1.30E-6, & ! NVT_BOBD
+                                                        0.90E-6, & ! NVT_BOND
+                                                        1.70E-6, & ! NVT_BOGR
+                                                        1.20E-6 /) ! NVT_SHRB
 !                           
 INTEGER, PARAMETER, DIMENSION(NVEGTYPE_ECOSG) :: ITRANSFERT_ESG = &
         (/1,2,3,16,4,13,14,6,5,15,17,19,18,10,11,7,7,8,4,12/)

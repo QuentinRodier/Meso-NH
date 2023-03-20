@@ -46,6 +46,8 @@
 !!      S. Belamari 03/2014 : add NZ0 (to choose PZ0SEA formulation)
 !!      R. Séférian 01/2015 : introduce interactive ocean surface albedo
 !!      J. Pianezze 11/2014 : add wave coupling flag for wave parameters
+!!      A. Voldoire 09/2016 : Switch to tile the fluxes calculation over sea and seaice
+!!      R. Séférian    11/16 : Implement carbon cycle coupling (Earth system model)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -54,11 +56,13 @@
 USE MODD_SURFEX_n, ONLY : SEAFLUX_MODEL_t
 !
 USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
+USE MODD_SURF_ATM_TURB_n, ONLY : SURF_ATM_TURB_t
 USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 USE MODD_GRID_CONF_PROJ_n, ONLY : GRID_CONF_PROJ_t
 !
-USE MODD_SFX_OASIS,      ONLY : LCPL_WAVE, LCPL_SEA, LCPL_SEAICE
+USE MODN_SFX_OASIS,      ONLY : LSEAICE_2FLX
+USE MODD_SFX_OASIS,      ONLY : LCPL_WAVE, LCPL_SEA, LCPL_SEAICE, LCPL_SEACARB
 !
 USE MODD_READ_NAMELIST,  ONLY : LNAM_READ
 USE MODD_CSTS,           ONLY : XTTS
@@ -67,7 +71,6 @@ USE MODD_SURF_PAR,       ONLY : XUNDEF, NUNDEF
 USE MODD_CHS_AEROSOL,    ONLY: LVARSIGI, LVARSIGJ
 USE MODD_DST_SURF,       ONLY: LVARSIG_DST, NDSTMDE, NDST_MDEBEG, LRGFIX_DST
 USE MODD_SLT_SURF,       ONLY: LVARSIG_SLT, NSLTMDE, NSLT_MDEBEG, LRGFIX_SLT
-USE MODD_SURF_ATM_TURB_n, ONLY : SURF_ATM_TURB_t
 !
 USE MODI_INIT_IO_SURF_n
 USE MODI_DEFAULT_CH_DEP
@@ -151,6 +154,8 @@ CHARACTER(LEN=2),                 INTENT(IN)  :: HTEST       ! must be equal to 
 INTEGER           :: ILU    ! sizes of SEAFLUX arrays
 INTEGER           :: ILUOUT ! unit of output listing file
 INTEGER           :: IRESP  ! return code
+LOGICAL           :: GSIC
+!
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !-------------------------------------------------------------------------------
@@ -185,7 +190,8 @@ IF (LNAM_READ) THEN
  !        0.1. Hard defaults
  !      
  
- CALL DEFAULT_SEAFLUX(SM%S%XTSTEP,SM%S%XOUT_TSTEP,SM%S%CSEA_ALB,SM%S%CSEA_FLUX,SM%S%LPWG,  &
+ CALL DEFAULT_SEAFLUX(SM%S%XTSTEP,SM%S%XOUT_TSTEP,SM%S%CSEA_ALB,SM%S%CSEA_FLUX,            &
+                      SM%S%CSEA_SFCO2, SM%S%LPWG,                                          &
                       SM%S%LPRECIP,SM%S%LPWEBB,SM%S%NZ0,SM%S%NGRVWAVES,SM%O%LPROGSST,      &
                       SM%O%XOCEAN_TSTEP,SM%S%XICHCE,SM%S%CINTERPOL_SST,SM%S%CINTERPOL_SSS, &
                       SM%S%LWAVEWIND                            )
@@ -219,25 +225,22 @@ SM%S%LINTERPOL_SIC=.FALSE.
 SM%S%LINTERPOL_SIT=.FALSE.
 !
 IF(LCPL_SEA)THEN 
-  IF(SM%SD%O%N2M<1)THEN
-     CALL ABOR1_SFX('INIT_SEAFLUX_n: N2M must be set >0 in case of LCPL_SEA')
-  ENDIF
 ! No STT / SSS interpolation in Earth System Model
   SM%S%CINTERPOL_SST='NONE  '
   SM%S%CINTERPOL_SSS='NONE  '
   SM%S%CINTERPOL_SIC='NONE  '
   SM%S%CINTERPOL_SIT='NONE  '
 ELSE
-   IF(TRIM(SM%S%CINTERPOL_SST)/='NONE')THEN
+   IF(TRIM(SM%S%CINTERPOL_SST)/='NONE'.AND.TRIM(SM%S%CINTERPOL_SST)/='READAY')THEN
       SM%S%LINTERPOL_SST=.TRUE.
    ENDIF
-   IF(TRIM(SM%S%CINTERPOL_SSS)/='NONE')THEN
+   IF(TRIM(SM%S%CINTERPOL_SSS)/='NONE'.AND.TRIM(SM%S%CINTERPOL_SSS)/='READAY')THEN
       SM%S%LINTERPOL_SSS=.TRUE.
    ENDIF
-   IF(TRIM(SM%S%CINTERPOL_SIC)/='NONE')THEN
+   IF(TRIM(SM%S%CINTERPOL_SIC)/='NONE'.AND.TRIM(SM%S%CINTERPOL_SIC)/='READAY')THEN
       SM%S%LINTERPOL_SIC=.TRUE.
    ENDIF
-   IF(TRIM(SM%S%CINTERPOL_SIT)/='NONE')THEN
+   IF(TRIM(SM%S%CINTERPOL_SIT)/='NONE'.AND.TRIM(SM%S%CINTERPOL_SIT)/='READAY')THEN
       SM%S%LINTERPOL_SIT=.TRUE.
    ENDIF
 ENDIF
@@ -341,24 +344,37 @@ ELSEWHERE
   SM%S%XZ0H(:) = XZ0HSN
 ENDWHERE
 !
+!* ocean surface albedo (direct and diffuse fraction)
+!
+ALLOCATE(SM%S%XDIR_ALB(ILU))
+ALLOCATE(SM%S%XSCA_ALB(ILU))
+!
+SM%S%XDIR_ALB(:) = XUNDEF
+SM%S%XSCA_ALB(:) = XUNDEF
+!
+!* sea-ice cover (default = 0)
+!
+ALLOCATE(SM%S%XSIC(ILU))
+SM%S%XSIC(:)=0.0
+!
 !-------------------------------------------------------------------------------
 !
 !*       3.     Specific fields when using earth system model or sea-ice scheme
 !               (Sea current and Sea-ice temperature)
 !               -----------------------------------------------------------------
 !
-IF(LCPL_SEA.OR.SM%S%LHANDLE_SIC.OR.LCPL_WAVE)THEN       
+IF(LCPL_SEA.OR.LCPL_WAVE)THEN       
 ! 
-  ALLOCATE(SM%S%XUMER   (ILU))
-  ALLOCATE(SM%S%XVMER   (ILU))
+  ALLOCATE(SM%S%XUMER(ILU))
+  ALLOCATE(SM%S%XVMER(ILU))
 !
-  SM%S%XUMER   (:)=0.
-  SM%S%XVMER   (:)=0.
+  SM%S%XUMER(:)=0.
+  SM%S%XVMER(:)=0.
 !
 ELSE
 ! 
-  ALLOCATE(SM%S%XUMER   (0))
-  ALLOCATE(SM%S%XVMER   (0))
+  ALLOCATE(SM%S%XUMER(0))
+  ALLOCATE(SM%S%XVMER(0))
 !
 ENDIF
 !
@@ -379,26 +395,43 @@ ELSE
   ALLOCATE(SM%S%XICE_ALB(0))
 ENDIF
 !
+IF(LCPL_SEACARB .AND. LCPL_SEA)THEN       
+  ALLOCATE(SM%S%XSFCO2(ILU))
+  SM%S%XSFCO2(:)=XUNDEF
+ELSE
+  ALLOCATE(SM%S%XSFCO2(0))
+ENDIF
+!
 !-------------------------------------------------------------------------------
 !
 !*       4.     Seaice prognostic variables and forcings :
 !
-CALL READ_SEAICE_n(SM%G, SM%S, HPROGRAM,ILU,ILUOUT)
+IF (SM%S%LHANDLE_SIC) THEN
+  CALL READ_SEAICE_n(SM%G, SM%S, HPROGRAM,ILU,ILUOUT)
+ENDIF
+!
+! Activation of double flux param for ESM
+!
+IF (LCPL_SEAICE.AND.LSEAICE_2FLX) SM%S%LHANDLE_SIC=.TRUE.
 !
 !-------------------------------------------------------------------------------
 !
 !*       5.     Albedo, emissivity and temperature fields on the mix (open sea + sea ice)
 !               -----------------------------------------------------------------
 !
-ALLOCATE(SM%S%XEMIS    (ILU))
-SM%S%XEMIS    = 0.0
+ALLOCATE(SM%S%XEMIS(ILU))
+SM%S%XEMIS(:) = 0.0
 !
-CALL UPDATE_RAD_SEA(SM%S,PZENITH,XTTS,PDIR_ALB,PSCA_ALB,PEMIS,PTSRAD )  
+IF (.NOT.LCPL_SEA) THEN
 !
-IF (SM%S%LHANDLE_SIC) THEN
-   PTSURF(:) = SM%S%XSST(:) * ( 1 - SM%S%XSIC(:)) + SM%S%XTICE(:) * SM%S%XSIC(:)
-ELSE
-   PTSURF(:) = SM%S%XSST(:)
+  CALL UPDATE_RAD_SEA(SM%S,PZENITH,XTTS,PDIR_ALB,PSCA_ALB,PEMIS,PTSRAD )  
+!
+  IF (SM%S%LHANDLE_SIC) THEN
+     PTSURF(:) = SM%S%XSST(:) * ( 1.0 - SM%S%XSIC(:)) + SM%S%XTICE(:) * SM%S%XSIC(:)
+  ELSE
+     PTSURF(:) = SM%S%XSST(:)
+  ENDIF
+!
 ENDIF
 !
 !-------------------------------------------------------------------------------
@@ -431,16 +464,39 @@ END IF
 !*       8.     diagnostics initialization
 !               --------------------------
 !
-IF(.NOT.(SM%S%LHANDLE_SIC.OR.LCPL_SEAICE))THEN
+GSIC=(SM%S%LHANDLE_SIC.AND.(SM%S%CSEAICE_SCHEME /= 'NONE  '))
+!
+IF(HINIT=='ALL'.AND.(SM%SD%O%LDIAG_MIP.OR.GSIC))THEN
+!
+  SM%SD%O%N2M           = 2
+  SM%SD%O%LSURF_BUDGET  = .TRUE.
+!
+  IF(SM%SD%O%LDIAG_MIP)THEN
+    SM%SD%O%LRAD_BUDGET   = .TRUE.
+    SM%SD%O%LSURF_BUDGETC = .FALSE.
+  ENDIF
+!
+  IF(LCPL_SEAICE)THEN
+    SM%SD%DMI%LDIAG_MISC_SEAICE = .FALSE.
+  ELSEIF(SM%S%LHANDLE_SIC)THEN
+    SM%SD%DMI%LDIAG_MISC_SEAICE = .TRUE.
+  ENDIF
+!
+ENDIF
+!
+IF(HINIT=='ALL'.AND.(.NOT.SM%S%LHANDLE_SIC).AND.(.NOT.LCPL_SEAICE))THEN
   SM%SD%DMI%LDIAG_MISC_SEAICE=.FALSE.
 ENDIF
 !
- CALL DIAG_SEAFLUX_INIT_n(SM%SD%GO, SM%SD%O, SM%SD%D, SM%SD%DC, OREAD_BUDGETC, SM%S, &
-                          HPROGRAM,ILU,KSW)
-IF (SM%S%LHANDLE_SIC.OR.LCPL_SEAICE) &
-        CALL DIAG_SEAICE_INIT_n(SM%SD%O, SM%SD%DI, SM%SD%DIC, SM%SD%DMI, &
-                               OREAD_BUDGETC, SM%S, HPROGRAM,ILU,KSW)
-                 
+IF(LCPL_SEA.AND.SM%SD%O%N2M<1)THEN
+   CALL ABOR1_SFX('INIT_SEAFLUX_n: N2M must be set >0 in case of LCPL_SEA')
+ENDIF
+!
+CALL DIAG_SEAFLUX_INIT_n(SM%SD%GO, SM%SD%O, SM%SD%D, SM%SD%DC, OREAD_BUDGETC, SM%S, &
+                         HPROGRAM,ILU,KSW)
+!
+CALL DIAG_SEAICE_INIT_n(SM%SD%O, SM%SD%DI, SM%SD%DIC, SM%SD%DMI, &
+                        OREAD_BUDGETC, SM%S, HPROGRAM,ILU,KSW    )
 !
 !-------------------------------------------------------------------------------
 !
@@ -448,12 +504,13 @@ IF (SM%S%LHANDLE_SIC.OR.LCPL_SEAICE) &
 !               ---------------------------------
 !
 SM%AT=AT
-
+!
 !-------------------------------------------------------------------------------
 !
 !         End of IO
 !
- CALL END_IO_SURF_n(HPROGRAM)
+CALL END_IO_SURF_n(HPROGRAM)
+!
 IF (LHOOK) CALL DR_HOOK('INIT_SEAFLUX_N',1,ZHOOK_HANDLE)
 !
 !

@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-SUBROUTINE PREP_PERM_SNOW (IO, KK, PK, PEK, NPAR_VEG_IRR_USE)
+SUBROUTINE PREP_PERM_SNOW (IO, KK, PK, PEK, NPAR_VEG_IRR_USE, OWGI_ADJUST)
 !          ################################################
 !
 !
@@ -32,6 +32,7 @@ SUBROUTINE PREP_PERM_SNOW (IO, KK, PK, PEK, NPAR_VEG_IRR_USE)
 !!      M. Lafaysse 09/2012: adaptation with new snow age in Crocus
 !!      M. dumont   02/2016: snow impurity content
 !!      A. Druel    02/2019: adapt the code to be compatible with irrigation (and new patches)
+!!      B. Decharme 07/2016: 3-L or Crocus adjustments
 !!
 !!------------------------------------------------------------------
 !
@@ -70,15 +71,17 @@ INCLUDE "mpif.h"
 !*      0.1    declarations of arguments
 !
 !
-TYPE(ISBA_OPTIONS_t), INTENT(INOUT) :: IO
-TYPE(ISBA_K_t), INTENT(INOUT)       :: KK
-TYPE(ISBA_P_t), INTENT(INOUT)       :: PK
-TYPE(ISBA_PE_t), INTENT(INOUT)      :: PEK
-INTEGER,DIMENSION(:),   INTENT(IN)  :: NPAR_VEG_IRR_USE ! vegtype with irrigation
+TYPE(ISBA_OPTIONS_t),  INTENT(INOUT) :: IO
+TYPE(ISBA_K_t),        INTENT(INOUT) :: KK
+TYPE(ISBA_P_t),        INTENT(INOUT) :: PK
+TYPE(ISBA_PE_t),       INTENT(INOUT) :: PEK
+!
+INTEGER, DIMENSION(:), INTENT(IN)    :: NPAR_VEG_IRR_USE ! vegtype with irrigation
+LOGICAL, DIMENSION(:), INTENT(INOUT) :: OWGI_ADJUST      ! Adjust wgi if new snow perm
 !
 !*      0.2    declarations of local parameter
 !
-REAL, PARAMETER :: ZRHOL1 = 150.
+REAL, DIMENSION(5), PARAMETER :: ZRHOL = (/100.,150.,250.,350.,500./)
 !
 !*      0.3    declarations of local variables
 !
@@ -132,7 +135,7 @@ DO JTYPE = 1, SIZE(PK%XVEGTYPE_PATCH,2)
   IF ( JTYPE2 == NVT_SNOW ) ZVEG_SNOW(:) = ZVEG_SNOW(:) + PK%XVEGTYPE_PATCH(:,JTYPE)
 ENDDO
 !
-ZPSN(:) = MIN ( ZVEG_SNOW(:) , 0.9999 )
+ZPSN(:) = MIN(ZVEG_SNOW(:),0.999999)
 !
 !* if no permanent snow present
 !
@@ -170,16 +173,20 @@ ENDIF
 !* permanent snow can be added only if deep soil temperature is below 5 C
 !  (glaciers on subgrid mountains tops that are contained in the grid mesh are neglected)
 !
-IF(.NOT.IO%LGLACIER)THEN
-  WHERE(PEK%XTG(:,SIZE(PEK%XTG,2))>XTT+5.) ZWSNOW_PERM(:) = 0.
-ENDIF
+WHERE(PEK%XTG(:,SIZE(PEK%XTG,2))>XTT+5.) ZWSNOW_PERM(:) = 0.
+!
+!* initial snow content
+!
+ALLOCATE(ZWSNOW(SIZE(PEK%XTG,1)))
+ZWSNOW(:) = 0.
+DO JL=1,PEK%TSNOW%NLAYER
+  ZWSNOW(:) = ZWSNOW(:) + PEK%TSNOW%WSNOW(:,JL) 
+END DO
 !
 !-------------------------------------------------------------------------------------
 !
 !*       2.    Other parameters of new snow, except temperature
 !              ------------------------------------------------
-!
-!* rho must be defined for snow 3-L before temperature and heat computations
 !
 ALLOCATE(GWORK(SIZE(PEK%XTG,1),PEK%TSNOW%NLAYER))
 !
@@ -190,14 +197,8 @@ DO JL=1,PEK%TSNOW%NLAYER
   IF(IO%LGLACIER)THEN
     WHERE(ZWSNOW_PERM(:)>0.)GWORK(:,JL)=.TRUE.
   ELSE
-    WHERE(ZWSNOW_PERM(:)>0..AND.PEK%TSNOW%WSNOW(:,JL)==0.)GWORK(:,JL)=.TRUE.
+    WHERE(ZWSNOW_PERM(:)>0..AND.ZWSNOW(:)==0.)GWORK(:,JL)=.TRUE.
   ENDIF
-!
-!* rho
-!
-  WHERE(GWORK(:,JL))
-    PEK%TSNOW%RHO(:,JL) = ZRHOSMAX
-  END WHERE
 !
 !* albedo
 !
@@ -211,30 +212,40 @@ DO JL=1,PEK%TSNOW%NLAYER
     END WHERE
   ENDIF
 !
-END DO
+ENDDO
+!
+!* rho must be defined for snow 3-L before temperature and heat computations
+!
+DO JL=1,PEK%TSNOW%NLAYER
+   WHERE(ZWSNOW_PERM(:)>0..AND.ZWSNOW(:)==0.)
+     PEK%TSNOW%RHO(:,JL) = ZRHOSMAX
+   END WHERE
+ENDDO
+!
+!* Optimizations
 !
 IF (PEK%TSNOW%SCHEME=='3-L'.OR.PEK%TSNOW%SCHEME=='CRO') THEN
 !
 ! * optimized rho perm snow profile
 !
   IF(IO%LGLACIER.AND.PEK%TSNOW%NLAYER>=6)THEN
-    WHERE(GWORK(:,1))
-      PEK%TSNOW%RHO(:,1) = ZRHOL1
-    END WHERE 
-    IF(PEK%TSNOW%NLAYER>=6.AND.PEK%TSNOW%NLAYER<12)THEN
-      WHERE(GWORK(:,2))
-       PEK%TSNOW%RHO(:,2) = ZRHOL1 + 100.
-      END WHERE 
-      WHERE(GWORK(:,3))
-       PEK%TSNOW%RHO(:,3) = ZRHOL1 + 250.
-      END WHERE 
-    ELSE
-      DO JL=2,PEK%TSNOW%NLAYER
-        WHERE(GWORK(:,JL))
-          PEK%TSNOW%RHO(:,JL) = MIN(ZRHOSMAX,PEK%TSNOW%RHO(:,JL-1)+100.)
-        END WHERE     
-      ENDDO
-    ENDIF
+    WHERE(ZWSNOW_PERM(:)>0.)
+      PEK%TSNOW%RHO(:,1) = MIN(ZRHOL(1),PEK%TSNOW%RHO(:,1))
+      PEK%TSNOW%RHO(:,2) = MIN(ZRHOL(2),PEK%TSNOW%RHO(:,2))
+      PEK%TSNOW%RHO(:,3) = MIN(ZRHOL(3),PEK%TSNOW%RHO(:,3))
+    END WHERE    
+  ENDIF
+!
+  IF(IO%LGLACIER.AND.PEK%TSNOW%NLAYER>=12)THEN
+    WHERE(ZWSNOW_PERM(:)>0.)
+      PEK%TSNOW%RHO(:,4) = MIN(ZRHOL(4),PEK%TSNOW%RHO(:,4))
+      PEK%TSNOW%RHO(:,5) = MIN(ZRHOL(5),PEK%TSNOW%RHO(:,5))
+    END WHERE    
+    DO JL=6,PEK%TSNOW%NLAYER
+       WHERE(GWORK(:,JL))
+             PEK%TSNOW%RHO(:,JL) = ZRHOSMAX
+       END WHERE     
+    ENDDO
   ENDIF
 !
 ! * Snow age profile
@@ -288,19 +299,10 @@ IF (PEK%TSNOW%SCHEME=='CRO') THEN
   ENDDO
 END IF
 !
-!
 !-------------------------------------------------------------------------------------
 !
 !*       3.    Modification of snow reservoir profile
 !              --------------------------------------
-!
-!* initial snow content
-!
-ALLOCATE(ZWSNOW(SIZE(PEK%XTG,1)))
-ZWSNOW(:) = 0.
-DO JL=1,PEK%TSNOW%NLAYER
-  ZWSNOW(:) = ZWSNOW(:) + PEK%TSNOW%WSNOW(:,JL) 
-END DO
 !
 !* new total snow content
 !
@@ -318,6 +320,7 @@ ZD(:) = ZD(:) + (ZWSNOW_PERM(:)-ZWSNOW(:))/ZRHOSMAX
 !* modified snow content profile
 !
 SELECT CASE(PEK%TSNOW%SCHEME)
+!
   CASE('D95','1-L','EBA')
     GWORK(:,1)=.FALSE.
     IF(IO%LGLACIER)THEN
@@ -328,31 +331,32 @@ SELECT CASE(PEK%TSNOW%SCHEME)
     WHERE(GWORK(:,1))
       PEK%TSNOW%WSNOW(:,1) = ZWSNOW_PERM(:)
     END WHERE
+!
+!* grid
+!
   CASE('3-L','CRO')
-    !* grid
-    !
-    ! Robert:
-    ! Creation of auxiliary variable for old snow layer depth
-    !
+!
     ALLOCATE(ZSNOWDZ_OLD(SIZE(PEK%XTG,1),PEK%TSNOW%NLAYER))
     DO JL=1,PEK%TSNOW%NLAYER
        ZSNOWDZ_OLD(:,JL)=ZD(:)/PEK%TSNOW%NLAYER
     ENDDO
-    !
+!
+! Robert: Creation of auxiliary variable for old snow layer depth
     ALLOCATE(ZDEPTH(SIZE(PEK%XTG,1),PEK%TSNOW%NLAYER))
     CALL SNOW3LGRID(ZDEPTH,ZD,ZSNOWDZ_OLD)
     DEALLOCATE(ZSNOWDZ_OLD)
-    !
+!
     DO JL=1,PEK%TSNOW%NLAYER
       WHERE(ZWSNOW(:)>= 0. .AND. PEK%TSNOW%WSNOW(:,JL)/=XUNDEF)
         PEK%TSNOW%WSNOW(:,JL) = ZDEPTH(:,JL) * PEK%TSNOW%RHO(:,JL)
       END WHERE
-   END DO
-   DEALLOCATE(ZDEPTH)
-
+    END DO
+    DEALLOCATE(ZDEPTH)
+!
 END SELECT
 !
 DEALLOCATE(ZD)
+!
 !-------------------------------------------------------------------------------------
 !
 !*       4.    Temperature of new snow
@@ -407,22 +411,26 @@ ALLOCATE(ZWAT(SIZE(PEK%XTG,1),SIZE(PEK%XTG,2)))
 IF(IO%LGLACIER)THEN
 !
   IF (IO%CISBA == 'DIF') THEN
-      IWORK=IO%NGROUND_LAYER
-      ZWAT(:,:)=KK%XWFC(:,:)
-  ELSE
-      IWORK=2
-      ZWAT(:,:)=KK%XWSAT(:,:)
-  ENDIF
 !
-  DO JL=1,IWORK
-     WHERE(ZVEG_SNOW>0.0)
-       PEK%XWGI(:,JL) = MAX(PEK%XWGI(:,JL),ZWAT(:,JL)*ZPSN(:))
-       PEK%XWG (:,JL) = MIN(PEK%XWG (:,JL), MAX(KK%XWSAT(:,JL)-PEK%XWGI(:,JL),XWGMIN))
+     WHERE(ZWSNOW_PERM(:)>0. .AND. ZWSNOW(:)==0)
+           OWGI_ADJUST(:) = .TRUE.
      END WHERE
-     WHERE(PEK%XWG(:,JL) /= XUNDEF .AND. (PEK%XWG(:,JL) + PEK%XWGI(:,JL)) > KK%XWSAT(:,JL) )
-       PEK%XWGI(:,JL) = KK%XWSAT(:,JL)-PEK%XWG (:,JL) !WGT<=WSAT
-     END WHERE
-  ENDDO
+!
+  ELSE
+!          
+    IWORK=2
+    ZWAT(:,:)=KK%XWSAT(:,:)
+    DO JL=1,IWORK
+       WHERE(ZVEG_SNOW>0.0)
+         PEK%XWGI(:,JL) = MAX(PEK%XWGI(:,JL),ZWAT(:,JL)*ZPSN(:))
+         PEK%XWG (:,JL) = MIN(PEK%XWG (:,JL), MAX(KK%XWSAT(:,JL)-PEK%XWGI(:,JL),XWGMIN))
+       END WHERE
+       WHERE(PEK%XWG(:,JL) /= XUNDEF .AND. (PEK%XWG(:,JL) + PEK%XWGI(:,JL)) > KK%XWSAT(:,JL) )
+         PEK%XWGI(:,JL) = KK%XWSAT(:,JL)-PEK%XWG (:,JL) !WGT<=WSAT
+       END WHERE
+    ENDDO    
+!
+  ENDIF
 !
 ENDIF
 !
@@ -434,7 +442,7 @@ DEALLOCATE(ZPSN)
 !*       6.    Masking where there is no snow
 !              ------------------------------
 !
- CALL MKFLAG_SNOW(PEK%TSNOW)
+CALL MKFLAG_SNOW(PEK%TSNOW)
 !
 IF (LHOOK) CALL DR_HOOK('PREP_PERM_SNOW',1,ZHOOK_HANDLE)
 !

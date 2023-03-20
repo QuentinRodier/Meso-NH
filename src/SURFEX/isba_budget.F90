@@ -3,8 +3,8 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-SUBROUTINE ISBA_BUDGET (IO, PK, PEK, DEK, OWATER_BUDGET, PTSTEP,&
-                       PWG_INI, PWGI_INI, PWR_INI, PSWE_INI, PRAIN, PSNOW, PEVAP  )
+SUBROUTINE ISBA_BUDGET (IO, PK, PEK, DK, DEK, DE, PTSTEP, PWG_INI, &
+                        PWGI_INI, PWR_INI, PSWE_INI, PRAIN, PSNOW  )
 !     ###############################################################################
 !
 !!****  *ISBA_BUDGET * - water and energy budget for ISBA
@@ -27,15 +27,16 @@ SUBROUTINE ISBA_BUDGET (IO, PK, PEK, DEK, OWATER_BUDGET, PTSTEP,&
 !!    -------------
 !!      Original    07/2012
 !!      B. Decharme    01/16 : Bug with flood budget
+!!      B. Decharme    01/20 : Add energy budget
 !!------------------------------------------------------------------
 !
-USE MODD_ISBA_OPTIONS_n, ONLY : ISBA_OPTIONS_t
-USE MODD_ISBA_n, ONLY : ISBA_P_t, ISBA_PE_t
+USE MODD_ISBA_OPTIONS_n,   ONLY : ISBA_OPTIONS_t
+USE MODD_ISBA_n,           ONLY : ISBA_P_t, ISBA_PE_t
+USE MODD_DIAG_n,           ONLY : DIAG_t
 USE MODD_DIAG_EVAP_ISBA_n, ONLY : DIAG_EVAP_ISBA_t
 !
 USE MODD_SURF_PAR,   ONLY : XUNDEF
-USE MODD_CSTS,       ONLY : XRHOLW
-!     
+USE MODD_CSTS,       ONLY : XRHOLW 
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -44,12 +45,13 @@ IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
 !
-TYPE(ISBA_OPTIONS_t), INTENT(INOUT) :: IO
-TYPE(ISBA_P_t), INTENT(INOUT) :: PK
-TYPE(ISBA_PE_t), INTENT(INOUT) :: PEK
+TYPE(ISBA_OPTIONS_t),   INTENT(INOUT) :: IO
+TYPE(ISBA_P_t),         INTENT(INOUT) :: PK
+TYPE(ISBA_PE_t),        INTENT(INOUT) :: PEK
+TYPE(DIAG_t),           INTENT(INOUT) :: DK
 TYPE(DIAG_EVAP_ISBA_t), INTENT(INOUT) :: DEK
+TYPE(DIAG_EVAP_ISBA_t), INTENT(INOUT) :: DE
 !
-LOGICAL, INTENT(IN) :: OWATER_BUDGET
 !
 REAL,                  INTENT(IN) :: PTSTEP     ! timestep of the integration    (s)
 !
@@ -60,7 +62,6 @@ REAL, DIMENSION(:),    INTENT(IN) :: PSWE_INI   ! total swe at t-1              
 !
 REAL, DIMENSION(:),    INTENT(IN)  :: PRAIN     ! Rain rate                      (kg/m2/s)
 REAL, DIMENSION(:),    INTENT(IN)  :: PSNOW     ! Snow rate                      (kg/m2/s)
-REAL, DIMENSION(:),    INTENT(IN)  :: PEVAP     ! total evaporative flux         (kg/m2/s)
 !
 !*      0.2    declarations of local variables
 !
@@ -93,6 +94,10 @@ DEK%XDWG (:) = XUNDEF
 DEK%XDWGI(:) = XUNDEF
 DEK%XDWR (:) = XUNDEF
 DEK%XDSWE(:) = XUNDEF
+DEK%XDSWFREE(:) = XUNDEF
+!
+DEK%XNRJBUD    (:) = XUNDEF
+DEK%XNRJBUD_SFC(:) = XUNDEF
 !
 IF (PEK%TSNOW%SCHEME=='3-L'.OR.PEK%TSNOW%SCHEME=='CRO') THEN
   ZSNDRIFT(:) = DEK%XSNDRIFT(:)
@@ -103,7 +108,10 @@ ENDIF
 !*      2.0    Comptut isba water budget in kg/m2/s
 !       -------------------------------------------
 !
-IF(OWATER_BUDGET)THEN
+IF(DE%LWATER_BUDGET)THEN
+!
+! Floodplains evaporation (kg/m2/s)
+  ZEFLOOD(:)=DEK%XLE_FLOOD(:)/PK%XLVTT(:)+DEK%XLEI_FLOOD(:)/PK%XLSTT(:)
 !
 ! total swe at t in kg/m2
   ZSWE_T(:)=0.0
@@ -136,8 +144,12 @@ IF(OWATER_BUDGET)THEN
 ! Comptut reservoir time tendencies in kg/m2/s
   DEK%XDWG (:) = (ZWG_T   (:)-PWG_INI (:))/PTSTEP
   DEK%XDWGI(:) = (ZWGI_T  (:)-PWGI_INI(:))/PTSTEP
-  DEK%XDWR (:) = (PEK%XWR(:)-PWR_INI (:))/PTSTEP
+  DEK%XDWR (:) = (PEK%XWR (:)-PWR_INI (:))/PTSTEP
   DEK%XDSWE(:) = (ZSWE_T  (:)-PSWE_INI(:))/PTSTEP
+!
+! Special case for inundations in kg/m2/s
+!
+  DEK%XDSWFREE(:) = DEK%XPFLOOD(:)-DEK%XIFLOOD(:)-ZEFLOOD(:)
 !
 ! ice calving flux if used
   IF(IO%LGLACIER)THEN
@@ -146,18 +158,15 @@ IF(OWATER_BUDGET)THEN
     ZICEFLUX(:)=0.0
   ENDIF
 !
-! Floodplains evaporation (kg/m2/s)
-  ZEFLOOD(:) = DEK%XLE_FLOOD(:)/PK%XLVTT(:)+DEK%XLEI_FLOOD(:)/PK%XLSTT(:)
-!
 ! total input water in the system at t
-  ZINPUT(:)=PRAIN(:)+PSNOW(:)+DEK%XIFLOOD(:)+DEK%XIRRIG_FLUX(:)
+  ZINPUT(:)=PRAIN(:)+PSNOW(:)+DEK%XIRRIG_FLUX(:)
 !
 ! total output water in the system at t
-  ZOUTPUT(:) = PEVAP  (:)+DEK%XDRAIN  (:)+DEK%XRUNOFF (:) &
-             + DEK%XPFLOOD(:)+ZICEFLUX(:)+ZSNDRIFT(:) - ZEFLOOD(:)
+  ZOUTPUT(:) = DK%XEVAP(:)+DEK%XDRAIN(:)+DEK%XRUNOFF(:) &
+             + ZICEFLUX(:)+ZSNDRIFT  (:) 
 !
 ! total reservoir time tendencies at "t - (t-1)"
-  ZTENDENCY(:) = DEK%XDWG(:)+DEK%XDWGI(:)+DEK%XDWR(:)+DEK%XDSWE(:)
+  ZTENDENCY(:) = DEK%XDWG(:)+DEK%XDWGI(:)+DEK%XDWR(:)+DEK%XDSWE(:)+DEK%XDSWFREE(:)
 !
 ! isba water budget (dw/dt=in-out) in kg/m2/s
   DEK%XWATBUD(:)=ZTENDENCY(:)-(ZINPUT(:)-ZOUTPUT(:))
@@ -167,7 +176,24 @@ ENDIF
 !*      3.0    Comptut isba energy budget in W/m2
 !       -----------------------------------------
 !
-! not yet implemented
+IF(DE%LENERGY_BUDGET)THEN
+!
+! surface layer isba energy budget
+!
+  ZTENDENCY      (:) = DEK%XDELHEATG_SFC(:)+DEK%XDELHEATN_SFC(:)+DEK%XDELPHASEG_SFC(:)+DEK%XDELPHASEN_SFC(:)
+  DEK%XNRJBUD_SFC(:) = ZTENDENCY(:)-DK%XRN(:)+DK%XH(:)+DK%XLE(:)+DEK%XRESTORE(:)+DEK%XRESTOREN(:)
+!
+! total isba energy budget
+!
+  IF(IO%CISBA=='DIF')THEN
+    ZTENDENCY  (:) = DEK%XDELHEATG(:)+DEK%XDELHEATN(:)+DEK%XDELPHASEG(:)+DEK%XDELPHASEN(:)
+    DEK%XNRJBUD(:) = ZTENDENCY(:)-DK%XRN(:)+DK%XH(:)+DK%XLE(:)
+  ELSE
+    DEK%XNRJBUD(:) = 0.0
+  ENDIF
+!
+ENDIF
+!
 !
 IF (LHOOK) CALL DR_HOOK('ISBA_BUDGET',1,ZHOOK_HANDLE)
 !-------------------------------------------------------------------------------------

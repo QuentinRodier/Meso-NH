@@ -11,7 +11,7 @@
                                     PVZIUSTAR0, ORRGUST_ARP, PRRSCALE, PRRGAMMA,        &
                                     PUTILGUST, OCPL_ARP, OQVNPLUS, OVERTSHIFT,          &
                                     OVSHIFT_LW, OVSHIFT_PRCP,                           &
-                                    PCO2UNCPL ,OARP_PN                                  )
+                                    PCO2UNCPL ,OARP_PN , OCO2FOS                        )
 !     ########################################################################
 !
 !!****  *DEFAULT_SURF_ATM* - routine to set default values for the choice of surface schemes
@@ -94,6 +94,7 @@ LOGICAL,           INTENT(OUT) :: OARP_PN   ! Flag to change Cv and TAUICE
 LOGICAL,           INTENT(OUT) :: OQVNPLUS
 LOGICAL,           INTENT(OUT) :: OCPL_GCM  ! Flag used to Read/Write some field from/into the restart file for coupling with ARPEGE/ALADIN
 REAL,              INTENT(OUT) :: PCO2UNCPL ! geochemical CO2 for photsynthesis (ppmv)
+LOGICAL,           INTENT(OUT) :: OCO2FOS   ! add fossil fuel to natural emission
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !                                                    from/into the restart file for ARPEGE/ALADIN run  
@@ -147,6 +148,8 @@ OARP_PN=.FALSE.
 OQVNPLUS=.FALSE.
 !
 PCO2UNCPL = XUNDEF
+!
+OCO2FOS = .FALSE.
 !
 IF (LHOOK) CALL DR_HOOK('DEFAULT_SURF_ATM',1,ZHOOK_HANDLE)
 !-------------------------------------------------------------------------------

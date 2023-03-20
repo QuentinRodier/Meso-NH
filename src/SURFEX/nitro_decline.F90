@@ -64,11 +64,12 @@ SUBROUTINE NITRO_DECLINE(IO, PK, PEK, OWOOD, PBSLAI_NITRO, PLAT, PBIOMASS_LEAF )
 !               ------------
 !
 USE MODD_ISBA_OPTIONS_n, ONLY : ISBA_OPTIONS_t
-USE MODD_ISBA_n, ONLY : ISBA_P_t, ISBA_PE_t
+USE MODD_ISBA_n,         ONLY : ISBA_P_t, ISBA_PE_t
 !
 USE MODD_CSTS,           ONLY : XPI, XDAY
-USE MODD_CO2V_PAR,       ONLY : XPCCO2, XCC_NIT, XCA_NIT, XMC, &
-                                XMCO2, XCC_NITRO, XBIOMASST_LIM 
+USE MODD_CO2V_PAR,       ONLY : XPCCO2, XCC_NIT, XCA_NIT, XMC,   &
+                                XMCO2, XCC_NITRO, XBIOMASST_LIM, & 
+                                XKGTOG
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -76,8 +77,8 @@ USE PARKIND1  ,ONLY : JPRB
 IMPLICIT NONE
 !
 TYPE(ISBA_OPTIONS_t), INTENT(INOUT) :: IO
-TYPE(ISBA_P_t), INTENT(INOUT) :: PK
-TYPE(ISBA_PE_t), INTENT(INOUT) :: PEK
+TYPE(ISBA_P_t),       INTENT(INOUT) :: PK
+TYPE(ISBA_PE_t),      INTENT(INOUT) :: PEK
 !
 !*      0.1    declarations of arguments
 !
@@ -90,24 +91,24 @@ REAL,   DIMENSION(:), INTENT(OUT)   :: PBIOMASS_LEAF ! temporary leaf biomass
 !
 !*      0.2    declarations of local variables
 !
-REAL                            :: ZBMCOEF
+REAL                                  :: ZBMCOEF         ! unit conversion coefficient (kg_DM / kg_CO2)
 REAL,    DIMENSION(SIZE(PEK%XLAI,1))  :: ZXSEFOLD        ! e-folding time for senescence corrected (days)
 REAL,    DIMENSION(SIZE(PEK%XLAI,1))  :: ZLAIB_NITRO     ! LAI correction parameter used in sefold calculation
-REAL,    DIMENSION(SIZE(PEK%XLAI,1))  :: ZASSIM          ! assimilation
+REAL,    DIMENSION(SIZE(PEK%XLAI,1))  :: ZASSIM          ! daily assimilation (kg_DM m-2 d-1)
 REAL,    DIMENSION(SIZE(PEK%XLAI,1))  :: ZBIOMASST       ! leaf + active structural biomass
 !
-REAL, DIMENSION(SIZE(PEK%XLAI,1),SIZE(PEK%XBIOMASS,2))  :: ZINCREASE
+REAL, DIMENSION(SIZE(PEK%XLAI,1),SIZE(PEK%XBIOMASS,2))  :: ZINCREASE     ! input flux to biomass pool (kgDM m-2 day-1)
 REAL, DIMENSION(SIZE(PEK%XLAI,1),SIZE(PEK%XBIOMASS,2))  :: ZBIOMASS      ! temporary biomass reservoirs
 REAL, DIMENSION(SIZE(PEK%XLAI,1),SIZE(PEK%XBIOMASS,2))  :: ZDECLINE      ! biomass decline (storage+mortality) (kgDM m-2 day-1)
 REAL, DIMENSION(SIZE(PEK%XLAI,1),SIZE(PEK%XBIOMASS,2))  :: ZSTORAGE      ! storage (part of decline kgDM m-2 day-1)
-REAL, DIMENSION(SIZE(PEK%XLAI,1))                   :: ZMORT_LEAF    ! leaf mortality
+REAL, DIMENSION(SIZE(PEK%XLAI,1))                       :: ZMORT_LEAF    ! leaf mortality
 !
-REAL, DIMENSION(SIZE(PEK%XLAI,1))                   :: ZWORK,ZRESP
-LOGICAL, DIMENSION(SIZE(PEK%XLAI,1))                :: GMASK_ASSIM
+REAL, DIMENSION(SIZE(PEK%XLAI,1))                       :: ZWORK,ZRESP
+LOGICAL, DIMENSION(SIZE(PEK%XLAI,1))                    :: GMASK_ASSIM
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
-INTEGER :: JSPIN, JI, INI
+INTEGER :: JSPIN, INI
 !
 ! correspondence between array indices and biomass compartments
 ! LEAF = 1
@@ -400,13 +401,13 @@ ELSEIF (IO%CPHOTO=='NCB') THEN
   !
   ! 4.2.3 - mortality (senescence - storage) and turnover
   !
-  IF (IO%CRESPSL=='CNT') THEN
-    PK%XTURNOVER(:,1) = ZMORT_LEAF(:)*1000.*XPCCO2/XDAY
-    PK%XTURNOVER(:,2) = (ZDECLINE(:,2) - ZSTORAGE(:,2))*1000.*XPCCO2/XDAY
-    PK%XTURNOVER(:,3) = (ZDECLINE(:,3) - ZSTORAGE(:,3))*1000.*XPCCO2/XDAY
-    PK%XTURNOVER(:,4) = (ZDECLINE(:,4) - ZSTORAGE(:,4))*1000.*XPCCO2/XDAY
-    PK%XTURNOVER(:,5) = (ZDECLINE(:,5) - ZSTORAGE(:,5))*1000.*XPCCO2/XDAY
-    PK%XTURNOVER(:,6) = (ZDECLINE(:,6) - ZSTORAGE(:,6))*1000.*XPCCO2/XDAY
+  IF(IO%CRESPSL=='CNT'.OR.IO%CRESPSL=='DIF')THEN
+    PK%XTURNOVER(:,1) = ZMORT_LEAF(:)                  *(XKGTOG*XPCCO2/XDAY)
+    PK%XTURNOVER(:,2) = (ZDECLINE(:,2) - ZSTORAGE(:,2))*(XKGTOG*XPCCO2/XDAY)
+    PK%XTURNOVER(:,3) = (ZDECLINE(:,3) - ZSTORAGE(:,3))*(XKGTOG*XPCCO2/XDAY)
+    PK%XTURNOVER(:,4) = (ZDECLINE(:,4) - ZSTORAGE(:,4))*(XKGTOG*XPCCO2/XDAY)
+    PK%XTURNOVER(:,5) = (ZDECLINE(:,5) - ZSTORAGE(:,5))*(XKGTOG*XPCCO2/XDAY)
+    PK%XTURNOVER(:,6) = (ZDECLINE(:,6) - ZSTORAGE(:,6))*(XKGTOG*XPCCO2/XDAY)
   ENDIF
   !
 ENDIF
@@ -443,25 +444,17 @@ ELSEIF (IO%CPHOTO=='NCB') THEN
 !
   ZBIOMASS(:,5) = PEK%XBIOMASS(:,5)
   ZBIOMASS(:,6) = PEK%XBIOMASS(:,6)
-  ZRESP(:) = PEK%XRESP_BIOMASS(:,5)
+  ZRESP   (:  ) = PEK%XRESP_BIOMASS(:,5)
 !
-  DO JSPIN = 1, IO%NSPINW
-    DO JI = 1,INI
-       IF(OWOOD(JI))THEN
-         !Woody
-         ZBIOMASS(JI,5) = ZBIOMASS(JI,5) + ZINCREASE(JI,5) - ZDECLINE(JI,5) - ZRESP(JI)
-         ZBIOMASS(JI,6) = ZBIOMASS(JI,6) + ZINCREASE(JI,6) - ZDECLINE(JI,6)
-         ZDECLINE(JI,5) = ZBIOMASS(JI,5)*(1.0-EXP((-1.0*XDAY)/PK%XTAU_WOOD(JI)))
-         ZDECLINE(JI,6) = ZBIOMASS(JI,6)*(1.0-EXP((-1.0*XDAY)/PK%XTAU_WOOD(JI)))
-         IF (PEK%XBIOMASS(JI,5).GT.0.0) &
-                 ZRESP(JI) = PEK%XRESP_BIOMASS(JI,5)/PEK%XBIOMASS(JI,5) * ZBIOMASS(JI,5)  
-       ELSE   
-         !Herbaceous
-         ZBIOMASS(JI,5) = 0.
-         ZBIOMASS(JI,6) = 0.
-       ENDIF
-    ENDDO
-  ENDDO
+  WHERE(OWOOD(:))
+    !Woody
+    ZBIOMASS(:,5) = ZBIOMASS(:,5) + ZINCREASE(:,5) - ZDECLINE(:,5) - ZRESP(:)
+    ZBIOMASS(:,6) = ZBIOMASS(:,6) + ZINCREASE(:,6) - ZDECLINE(:,6)
+  ELSEWHERE   
+    !Herbaceous
+    ZBIOMASS(:,5) = 0.
+    ZBIOMASS(:,6) = 0.
+  ENDWHERE
 !
   PEK%XBIOMASS(:,4) = ZBIOMASS(:,4)
   PEK%XBIOMASS(:,5) = ZBIOMASS(:,5)
@@ -471,7 +464,7 @@ ELSEIF (IO%CPHOTO=='NCB') THEN
   PEK%XRESP_BIOMASS(:,5) = 0.0
   !
   PK%XINCREASE(:,:) = ZINCREASE(:,:)
- 
+! 
 ENDIF
 !
 IF (LHOOK) CALL DR_HOOK('NITRO_DECLINE',1,ZHOOK_HANDLE)

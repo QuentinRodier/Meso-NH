@@ -36,6 +36,7 @@
 !!    -------------
 !!      Original    09/2009
 !!      B. Decharme 06/2013 new coupling variables
+!!      A. Voldoire 09/2016 : Switch to tile the fluxes calculation over sea and seaice
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -87,7 +88,11 @@ IF (LHOOK) CALL DR_HOOK('UPDATE_ESM_SEAFLUX_N',0,ZHOOK_HANDLE)
 !
 CALL UPDATE_RAD_SEA(S,PZENITH,XTTS,PDIR_ALB,PSCA_ALB,PEMIS,PTSRAD   ) 
 !
-PTSURF(:) = S%XSST(:)
+IF(S%LHANDLE_SIC)THEN
+  PTSURF(:) = S%XSST(:) * (1.0-S%XSIC(:)) + S%XTICE(:) * S%XSIC(:)
+ELSE
+  PTSURF(:) = S%XSST(:)
+ENDIF
 !
 IF (LHOOK) CALL DR_HOOK('UPDATE_ESM_SEAFLUX_N',1,ZHOOK_HANDLE)
 !

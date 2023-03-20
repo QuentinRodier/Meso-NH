@@ -53,7 +53,7 @@ IMPLICIT NONE
 !*    0.1    Declaration of arguments
 !            ------------------------
 !
- CHARACTER(LEN=*), INTENT(IN) :: HISBA   ! type of soil (Force-Restore OR Diffusion)
+CHARACTER(LEN=*), INTENT(IN) :: HISBA   ! type of soil (Force-Restore OR Diffusion)
 REAL, DIMENSION(:,:), INTENT(OUT) :: PDG_OUT
 !
 REAL, DIMENSION(:), OPTIONAL, INTENT(IN) :: PSURF

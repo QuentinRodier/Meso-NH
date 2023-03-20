@@ -7,7 +7,7 @@
                        HIMPLICIT_WIND, TPTIME, PTSUN, PPEW_A_COEF, PPEW_B_COEF, &
                        PPET_A_COEF, PPEQ_A_COEF, PPET_B_COEF, PPEQ_B_COEF,      &
                        PTSTEP, PZREF, PTA, PQA, PEXNS, PRHOA, PCO2, PPS, PRR,   &
-                       PSR, PZENITH, PSW, PLW, PLE_HVEG, PVMOD, PALBNIR_TVEG, &
+                       PSR, PZENITH, PAZIM, PSW, PLW, PLE_HVEG, PVMOD, PALBNIR_TVEG, &
                        PALBVIS_TVEG, PALBNIR_TSOIL, PALBVIS_TSOIL,              &
                        PSFCO2, PUW,                                             &
                        PAC, PQSAT, PTSRAD, PAC_AGG, PHU_AGG, PIRRIG,            &
@@ -53,8 +53,8 @@
 !!    M. Goret       08/2017  Add garden diagnostics fill in
 !!    P. Tulet       06/2016 add RN leaves to call ISBA (MEGAN coupling)
 !!    A. Druel       02/2019 - transmit NPAR_VEG_IRR_USE for irrigation
-!!    C. de Munck et E. Bernard 10/2019  Added runoff of roads and roofs not connected to sewer 
-!!                                       to garden irrigation (hydro) 
+!!    C. de Munck et E. Bernard 10/2019  Added runoff of roads and roofs not connected to sewer to garden irrigation (hydro)
+!!    B. Decharme    10/2021 instantaneous biomass respiration in kgCO2/m2/s
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -154,6 +154,7 @@ REAL, DIMENSION(:)  , INTENT(IN)    :: PCO2               ! CO2 concentration in
 REAL, DIMENSION(:)  , INTENT(IN)    :: PRR                ! rain rate
 REAL, DIMENSION(:)  , INTENT(IN)    :: PSR                ! snow rate
 REAL, DIMENSION(:)  , INTENT(IN)    :: PZENITH            ! solar zenithal angle
+REAL, DIMENSION(:)  , INTENT(IN)    :: PAZIM              ! solar azimuth angle
 REAL, DIMENSION(:)  , INTENT(IN)    :: PSW                ! incoming total solar rad on an horizontal surface
 REAL, DIMENSION(:)  , INTENT(IN)    :: PLW                ! atmospheric infrared radiation
 REAL, DIMENSION(:,:), INTENT(IN)    :: PLE_HVEG           ! Latent Heat flux from high veg
@@ -180,14 +181,14 @@ REAL, DIMENSION(:),   INTENT(OUT) :: PDEEP_FLUX ! Heat flux at base of the deep 
 TYPE(SSO_t)  :: YSS
 TYPE(AGRI_t) :: YAG
 !
-REAL, DIMENSION(SIZE(PPS))    :: ZDIRCOSZW           ! orography slope cosine (=1 in TEB)
-REAL, DIMENSION(SIZE(PPS),GDO%NNBIOMASS) :: ZRESP_BIOMASS_INST       ! instantaneous biomass respiration (kgCO2/kgair m/s)
-REAL, DIMENSION(SIZE(PPS))    :: ZUSTAR
-REAL, DIMENSION(SIZE(PPS))    :: ZIRRIG
-REAL, DIMENSION(SIZE(PPS))    :: ZSLOPEDIR           ! slope direction (=-1 in TEB)
-REAL, DIMENSION(SIZE(PPS))    :: ZWINDDIR            ! wind direction (=-1 in TEB)
-INTEGER, DIMENSION(SIZE(PPS)) :: KTAB_SYT            ! array of index containing
-                                                     ! opposite direction for Sytron  (=0 in TEB)
+REAL, DIMENSION(SIZE(PPS))               :: ZDIRCOSZW          ! orography slope cosine (=1 in TEB)
+REAL, DIMENSION(SIZE(PPS),GDO%NNBIOMASS) :: ZRESP_BIOMASS_INST ! instantaneous biomass respiration (kgCO2/m2/s)
+REAL, DIMENSION(SIZE(PPS))               :: ZUSTAR
+REAL, DIMENSION(SIZE(PPS))               :: ZIRRIG
+REAL, DIMENSION(SIZE(PPS))               :: ZSLOPEDIR           ! slope direction (=-1 in TEB)
+REAL, DIMENSION(SIZE(PPS))               :: ZWINDDIR            ! wind direction (=-1 in TEB)
+INTEGER, DIMENSION(SIZE(PPS))            :: KTAB_SYT            ! array of index containing
+                                                                ! opposite direction for Sytron  (=0 in TEB)
 !
 REAL, DIMENSION(SIZE(PPS),1) :: ZP_DIR_SW ! spectral direct and diffuse irradiance used in snow cro 
 REAL, DIMENSION(SIZE(PPS),1) :: ZP_SCA_SW !
@@ -210,10 +211,14 @@ REAL, DIMENSION(SIZE(PPS)) :: ZRNSHADE, ZRNSUNLIT ! RN leaves
 REAL, DIMENSION(SIZE(PPS)) :: ZP_MEB_SCA_SW, ZPALPHAN, ZZ0G_WITHOUT_SNOW, &
                               ZZ0_MEBV, ZZ0H_MEBV, ZZ0EFF_MEBV, ZZ0_MEBN, &
                               ZZ0H_MEBN, ZZ0EFF_MEBN
-REAL, DIMENSION(SIZE(PPS)) :: ZP_ANGL_NORM   ! angle between the normal to the surface and the sun used in snowcro
+!
+! Dummy variables for Crocus
+REAL, DIMENSION(SIZE(PPS),0) :: ZBLOWSNW_FLUX  ! blowing snow fluxes
+REAL, DIMENSION(SIZE(PPS),0) :: ZBLOWSNW_CONC  ! blowing snow concentration
+!
 INTEGER                    :: ILU
 INTEGER :: JL, JI
-LOGICAL :: GMASK, GALB, GECOSG
+LOGICAL :: GMASK, GECOSG
 LOGICAL :: GUPDATED
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
@@ -226,9 +231,9 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 IF (LHOOK) CALL DR_HOOK('GARDEN',0,ZHOOK_HANDLE)
 ILU = SIZE(PPS)
 !
-ZDIRCOSZW = 1.
-ZSLOPEDIR = -1.
-ZWINDDIR  = -1.
+ZDIRCOSZW(:) = 1._JPRB
+ZSLOPEDIR(:) = -1._JPRB
+ZWINDDIR(:)  = -1._JPRB
 !
 KTAB_SYT=0
 !
@@ -257,13 +262,11 @@ ZIRRIG(:) = PIRRIG(:) + PNOC_RF_RD(:)
 S%TTIME = TPTIME
 !
 GUPDATED=.FALSE.
-GALB = .FALSE.
 !
-IF (GDO%CPHOTO=='NIT'.OR.GDO%CPHOTO=='NCB') GALB = .TRUE.
 !
 CALL VEGETATION_UPDATE(DTCO, DTV, G%NDIM, GDO, K, P, PEK, 1, 1, 1,           &
                        PTSTEP, S%TTIME, TOP%XCOVER, TOP%LCOVER, .FALSE., .FALSE., .FALSE.,  &
-                       'GRD', GALB, YSS, GUPDATED, OABSENT=(T%XGARDEN==0.), OHG=TOP%LGARDEN,&
+                       'GRD', YSS, GUPDATED, OABSENT=(T%XGARDEN==0.), OHG=TOP%LGARDEN,&
                        OHV=TOP%CURBTREE/='NONE'                               )
 !
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -294,14 +297,15 @@ ALLOCATE(GB%XIACAN(SIZE(PPS),SIZE(S%XABC)))
            GB%XIACAN, .FALSE., PTSTEP, HIMPLICIT_WIND, PZREF, PZREF,           &
            ZDIRCOSZW, XCVHEATF, ZSLOPEDIR, PEK%TSNOW%GRAN2(:,:),               &
            PEK%TSNOW%GRAN2(:,:), PTA, PQA, PEXNS, PRHOA, PPS, PEXNS, PRR, PSR, &
-           PZENITH,ZP_ANGL_NORM,ZP_MEB_SCA_SW, PSW, PLW, PLE_HVEG, PVMOD,      &
+           PZENITH,PAZIM,ZP_MEB_SCA_SW, PSW, PLW, PLE_HVEG, PVMOD,      &
            ZWINDDIR, PPEW_A_COEF, PPEW_B_COEF, PPET_A_COEF, PPEQ_A_COEF,&
            PPET_B_COEF, PPEQ_B_COEF, AT, PALBNIR_TVEG, PALBVIS_TVEG, PALBNIR_TSOIL,&
            PALBVIS_TSOIL, ZPALPHAN, ZZ0G_WITHOUT_SNOW, ZZ0_MEBV, ZZ0H_MEBV,    &
            ZZ0EFF_MEBV, ZZ0_MEBN, ZZ0H_MEBN, ZZ0EFF_MEBN, ZTDEEP_A, PCO2,      &
            K%XFFG(:), K%XFFV(:), ZEMISF, ZUSTAR, PAC_AGG, PHU_AGG,             &
            ZRESP_BIOMASS_INST, PDEEP_FLUX, ZIRRIG,  DTV%NPAR_VEG_IRR_USE,      &
-           KTAB_SYT, ZP_DIR_SW, ZP_SCA_SW, ZRNSHADE, ZRNSUNLIT )
+           KTAB_SYT, ZP_DIR_SW, ZP_SCA_SW, ZRNSHADE, ZRNSUNLIT,                &
+           ZBLOWSNW_FLUX, ZBLOWSNW_CONC                                        )
 !
 DEALLOCATE(GB%XIACAN)
 !
@@ -322,8 +326,8 @@ ENDIF
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 !
 IF (GDO%CPHOTO=='NIT') THEN
-  CALL VEGETATION_EVOL(GDO, DTV, P, PEK, .FALSE., PTSTEP, TPTIME%TDATE%MONTH, TPTIME%TDATE%DAY, & ! OAGRIP = FALSE
-                       TPTIME%TIME, G%XLAT, PRHOA, PCO2, YSS, ZRESP_BIOMASS_INST, .FALSE.)        ! LBIOM_REAP  
+  CALL VEGETATION_EVOL(GDO, DTV, P, PEK, DEK, .FALSE., PTSTEP, TPTIME%TDATE%MONTH,                  & ! OAGRIP = FALSE
+                       TPTIME%TDATE%DAY, TPTIME%TIME, G%XLAT, PCO2, YSS, ZRESP_BIOMASS_INST, .FALSE.) ! LBIOM_REAP  
 END IF
 !
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -335,9 +339,10 @@ DEK%XRESP_ECO (:) = 0.
 DEK%XRESP_AUTO(:) = 0.
 !
 IF (GDO%CPHOTO/='NON' .AND. GDO%CRESPSL/='NON' .AND. ANY(PEK%XLAI(:)/=XUNDEF)) THEN
-  CALL CARBON_EVOL(GDO, K, P, PEK, DEK, PTSTEP, PRHOA, ZRESP_BIOMASS_INST  )
+  ! Computation is now done in kgC/m2/s
+  CALL CARBON_EVOL(GDO, K, P, PEK, DEK, DMK, PTSTEP, ZRESP_BIOMASS_INST  )
   ! calculation of vegetation CO2 flux
-  PSFCO2(:) = - DEK%XGPP(:) + DEK%XRESP_ECO(:)
+  PSFCO2(:) = ( DEK%XRESP_ECO(:) - DEK%XGPP(:) ) / PRHOA(:) ! kgC/m2/s -> kgC02/kgAir m/s
 END IF
 !
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -366,10 +371,6 @@ ENDDO
 !              -----------------------
 !
 WHERE (T%XGARDEN/=0.)
-  !
-  ! energy balance
-  !
-  DK%XLE(:) = PEK%XLE(:)
   !
   ! Estimate of green area aerodynamic conductance recomputed from heat flux,
   ! surface (radiative) temp. and forcing air temperature (estimated at future time step)

@@ -4,10 +4,10 @@
 !SFX_LIC for details. version 1.
 !####################################################################
     SUBROUTINE PREPS_FOR_MEB_DRAG(LCVEL, LFORC_MEASURE,                   &
-                             PZ0, PZ0H, PZ0EFF, PH_VEG, PZREF,           & 
+                             PZ0, PZ0H, PZ0EFF, PH_VEG, PZREF,            & 
                              PTC, PTA, PQC, PQA, PUREF, PVMOD,            &
                              PEXNA, PEXNS, PDIRCOSZW, PDISPH,             &
-                             PVELC, PZVMOD, AT, PRI, PRA,                     &
+                             PVELC, PZVMOD, AT, PRI, PRA,                 &
                              PCH,PCDN,PCD                                 )
 !
 ! typical values for nordic forest:
@@ -56,13 +56,12 @@
 USE MODD_CSTS,              ONLY : XPI, XKARMAN, XG, XCPD, XRD
 USE MODD_SURF_ATM,          ONLY : LDRAG_COEF_ARP, XRIMAX
 USE MODD_ISBA_PAR,          ONLY : XLIMH
-USE MODD_SURF_ATM_TURB_n, ONLY : SURF_ATM_TURB_t
+USE MODD_SURF_ATM_TURB_n,   ONLY : SURF_ATM_TURB_t
 !
 USE MODI_SURFACE_AERO_COND
 USE MODI_SURFACE_CD
 USE MODI_SURFACE_RI
 USE MODI_WIND_THRESHOLD
-!RJ: missing modi
 USE MODI_SURFACE_CDCH_1DARP
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -71,6 +70,8 @@ USE PARKIND1  ,ONLY : JPRB
 IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
+!
+TYPE(SURF_ATM_TURB_t), INTENT(IN) :: AT         ! atmospheric turbulence parameters
 !
 REAL, DIMENSION(:), INTENT(IN)   ::  PZ0, PZ0H, PZ0EFF,PH_VEG, PZREF, PUREF, PVMOD
 !                                     PZ0  = roughness length for momentum
@@ -96,8 +97,6 @@ REAL, DIMENSION(:), INTENT(IN)   ::  PEXNA, PEXNS, PDIRCOSZW, PDISPH
 !                                     PDIRCOSZW = Cosine of the angle between the normal
 !                                                 to the surface and the vertical
 !                                     PDISPH = displacement height
-!
-TYPE(SURF_ATM_TURB_t), INTENT(IN) :: AT         ! atmospheric turbulence parameters
 !
 REAL, DIMENSION(:), INTENT(OUT)  ::  PVELC, PZVMOD, PRI, PRA, PCH, PCDN, PCD
 !                                     PVELC  =  wind speed atr top of vegetation
@@ -174,14 +173,14 @@ PZVMOD = WIND_THRESHOLD(PVMOD,ZUCUR)
 IF (LDRAG_COEF_ARP) THEN
 
    CALL SURFACE_CDCH_1DARP(ZCUR, PZ0EFF, PZ0H, PZVMOD, PTA, PTC, &
-                           PQA, PQC, AT, PCD, PCDN, PCH,PRI              )
+                           PQA, PQC, AT, PCD, PCDN, PCH, PRI     )
    PRA(:) = 1. / ( PCH(:) * PZVMOD(:) )
 
 ELSE
 !
 !               -------------------------------------------------
 !
-   CALL SURFACE_AERO_COND(PRI, ZCUR, ZUCUR, PZVMOD, PZ0, PZ0H, ZAC, PRA, PCH, 'RIL')
+   CALL SURFACE_AERO_COND(PRI, ZCUR, ZUCUR, PZVMOD, PZ0, PZ0H, ZAC, PRA, PCH)
 !
 !-------------------------------------------------------------------------------
 !

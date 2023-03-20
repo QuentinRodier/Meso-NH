@@ -83,11 +83,11 @@ TYPE(OCEAN_t), INTENT(INOUT) :: O
 TYPE(OCEAN_REL_t), INTENT(INOUT) :: OR
 TYPE (PREP_CTL),    INTENT(INOUT) :: YDCTL
 !
- CHARACTER(LEN=6),   INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
- CHARACTER(LEN=28),  INTENT(IN)  :: HATMFILE    ! name of the Atmospheric file
- CHARACTER(LEN=6),   INTENT(IN)  :: HATMFILETYPE! type of the Atmospheric file
- CHARACTER(LEN=28),  INTENT(IN)  :: HPGDFILE    ! name of the Atmospheric file
- CHARACTER(LEN=6),   INTENT(IN)  :: HPGDFILETYPE! type of the Atmospheric file
+CHARACTER(LEN=6),   INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
+CHARACTER(LEN=28),  INTENT(IN)  :: HATMFILE    ! name of the Atmospheric file
+CHARACTER(LEN=6),   INTENT(IN)  :: HATMFILETYPE! type of the Atmospheric file
+CHARACTER(LEN=28),  INTENT(IN)  :: HPGDFILE    ! name of the Atmospheric file
+CHARACTER(LEN=6),   INTENT(IN)  :: HPGDFILETYPE! type of the Atmospheric file
 !
 !*      0.2    declarations of local variables
 !
@@ -96,7 +96,7 @@ INTEGER :: ILUOUT
 LOGICAL :: GFOUND         ! Return code when searching namelist
 INTEGER :: ILUNAM         ! logical unit of namelist file
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
-
+!
 !-------------------------------------------------------------------------------------
 !
 !*      0.     Default of configuration
@@ -105,7 +105,7 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 IF (LHOOK) CALL DR_HOOK('PREP_SEAFLUX',0,ZHOOK_HANDLE)
  CALL GET_LUOUT(HPROGRAM,ILUOUT)
 !
- CALL PREP_OUTPUT_GRID(UG%G, SG, U%NSIZE_FULL, ILUOUT)
+CALL PREP_OUTPUT_GRID(UG%G, SG, U%NSIZE_FULL, ILUOUT)
 !
 !-------------------------------------------------------------------------------------
 !
@@ -157,15 +157,15 @@ ENDIF
 !
 !*      2.2    Significant height and peak period
 !
- CALL PREP_HOR_SEAFLUX_FIELD(DTCO, UG, U, GCP, DTS, O, OR, SIZE(SG%XLAT), S, &
+CALL PREP_HOR_SEAFLUX_FIELD(DTCO, UG, U, GCP, DTS, O, OR, SIZE(SG%XLAT), S, &
                              HPROGRAM,'HS     ',HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE,YDCTL)
 !
- CALL PREP_HOR_SEAFLUX_FIELD(DTCO, UG, U, GCP, DTS, O, OR, SIZE(SG%XLAT), S, &
+CALL PREP_HOR_SEAFLUX_FIELD(DTCO, UG, U, GCP, DTS, O, OR, SIZE(SG%XLAT), S, &
                              HPROGRAM,'TP     ',HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE,YDCTL)
 !
 !
- CALL CLEAN_PREP_OUTPUT_GRID
-
+CALL CLEAN_PREP_OUTPUT_GRID
+!
 IF (YDCTL%LPART6) THEN
 !
 !*      2.2    Roughness
@@ -179,10 +179,10 @@ IF (YDCTL%LPART6) THEN
 !*      2.3   Ocean Surface Albedo
 !
   IF(S%CSEA_ALB=='RS14')THEN
-    ALLOCATE(S%XDIR_ALB(SIZE(S%XSST)))
-    ALLOCATE(S%XSCA_ALB(SIZE(S%XSST)))
-    S%XDIR_ALB = 0.065
-    S%XSCA_ALB = 0.065
+    ALLOCATE(S%XDIR_ALB_SEA(SIZE(S%XSST)))
+    ALLOCATE(S%XSCA_ALB_SEA(SIZE(S%XSST)))
+    S%XDIR_ALB_SEA = 0.065
+    S%XSCA_ALB_SEA = 0.065
   ENDIF
 !
 !-------------------------------------------------------------------------------------

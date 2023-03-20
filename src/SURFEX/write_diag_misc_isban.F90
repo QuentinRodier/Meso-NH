@@ -46,8 +46,9 @@
 !!                           delete NWG_SIZE
 !!                           water table depth
 !!      P. Hagenmuller 09/17 mepra output
-!!      J. Escoabr  09/18    change ZMAX,from automatic(error if DM%XSWI not initialized) to allocatable  
 !!      A. Druel     02/2019 for irrigation, add XF2THRESHOLD (and NPE), NIRRINUM (and NAG) and remove XSEUIL
+!!      B. Decharme 04/2022  Put LSURF_MISC_BUDGET in WRITE_DIAG_ISBA_n ; supress ZMAX
+!!      B. Decharme 04/2022  Add many diag
 !!
 !-------------------------------------------------------------------------------
 !
@@ -61,10 +62,10 @@ USE MODD_SURF_ATM_n,       ONLY : SURF_ATM_t
 USE MODD_DIAG_n,           ONLY : DIAG_t, DIAG_NP_t
 USE MODD_DIAG_MISC_ISBA_n, ONLY : DIAG_MISC_ISBA_t, DIAG_MISC_ISBA_NP_t
 USE MODD_ISBA_OPTIONS_n,   ONLY : ISBA_OPTIONS_t
-USE MODD_ISBA_n,           ONLY : ISBA_S_t, ISBA_K_t, ISBA_NP_t, ISBA_NPE_t
+USE MODD_ISBA_n,           ONLY : ISBA_S_t, ISBA_K_t, ISBA_NP_t, ISBA_NPE_t, ISBA_P_t, ISBA_PE_t
 USE MODD_AGRI_n,           ONLY : AGRI_NP_t
 !
-USE MODD_XIOS,             ONLY : LALLOW_ADD_DIM
+USE MODD_XIOS,             ONLY : LALLOW_ADD_DIM, YGROUND_LAYER_DIM_NAME, YSOIL_CARBON_POOL_DIM_NAME
 !
 USE MODD_SURF_PAR,         ONLY : NUNDEF, XUNDEF, LEN_HREC
 USE MODD_PREP_SNOW,        ONLY : NIMPUR,IMPTYP
@@ -72,6 +73,8 @@ USE MODD_PREP_SNOW,        ONLY : NIMPUR,IMPTYP
 USE MODD_ASSIM,            ONLY : LASSIM, CASSIM_ISBA, NVAR, CVAR, NOBSTYPE, NBOUTPUT, COBS
 !                                 
 USE MODD_AGRI,             ONLY : LAGRIP, LIRRIGMODE, XTHRESHOLD
+!
+USE MODD_SFX_OASIS,        ONLY : LCPL_LAND, NTWS_ID
 !
 USE MODI_INIT_IO_SURF_n
 USE MODI_WRITE_SURF
@@ -91,12 +94,8 @@ IMPLICIT NONE
 !*       0.1   Declarations of arguments
 !              -------------------------
 !
-!
 TYPE(DATA_COVER_t),        INTENT(INOUT) :: DTCO
- CHARACTER(LEN=*), DIMENSION(:), INTENT(IN) :: HSELECT
-LOGICAL,                   INTENT(IN)    :: OSNOWDIMNC, ORESETCUMUL
 TYPE(SURF_ATM_t),          INTENT(INOUT) :: U
-LOGICAL,                   INTENT(IN)    :: OPATCH_BUDGET
 TYPE(DIAG_t),              INTENT(INOUT) :: D
 TYPE(DIAG_NP_t),           INTENT(INOUT) :: ND
 TYPE(DIAG_MISC_ISBA_t),    INTENT(INOUT) :: DM
@@ -109,29 +108,38 @@ TYPE(ISBA_NPE_t),          INTENT(INOUT) :: NPE
 TYPE(AGRI_NP_t),           INTENT(INOUT) :: NAG
 TYPE(SURF_SNOW),           INTENT(IN)    :: TPSNOW
 !
- CHARACTER(LEN=6),  INTENT(IN)           :: HPROGRAM ! program calling
+CHARACTER(LEN=*), DIMENSION(:), INTENT(IN) :: HSELECT
+LOGICAL,                        INTENT(IN) :: OSNOWDIMNC, ORESETCUMUL
+LOGICAL,                        INTENT(IN) :: OPATCH_BUDGET
+CHARACTER(LEN=6),  INTENT(IN)              :: HPROGRAM ! program calling
 !
 !*       0.2   Declarations of local variables
 !              -------------------------------
 !
-INTEGER            :: IRESP            ! IRESP  : return-code if a problem appears
- CHARACTER(LEN=1)  :: YVAR, YOBS, YTIM
- CHARACTER(LEN=LEN_HREC) :: YRECFM,YREFIMPUR ! Name of the article to be read
- CHARACTER(LEN=100):: YCOMMENT         ! Comment string
- CHARACTER(LEN=2)  :: YLVL
- CHARACTER(LEN=20) :: YFORM
+TYPE(ISBA_P_t),  POINTER :: PK
+TYPE(ISBA_PE_t), POINTER :: PEK
 !
-REAL, DIMENSION(:) , ALLOCATABLE :: ZMAX
-INTEGER           :: JL, JJ, JVAR, JOBS, JP, JI, JT, JK, ISIZE, IDEPTH,JIMP
+REAL, DIMENSION(U%NSIZE_NATURE) :: ZTWS
+!
+INTEGER                 :: IRESP            ! IRESP  : return-code if a problem appears
+CHARACTER(LEN=1)        :: YVAR, YOBS, YTIM
+CHARACTER(LEN=LEN_HREC) :: YRECFM,YREFIMPUR ! Name of the article to be read
+CHARACTER(LEN=100)      :: YCOMMENT         ! Comment string
+CHARACTER(LEN=2)        :: YLVL
+CHARACTER(LEN=20)       :: YFORM
+!
 REAL, DIMENSION(:), ALLOCATABLE  :: ZWORK
+!
+INTEGER           :: ISIZE_LMEB_PATCH   ! Number of patches where multi-energy balance should be applied
+INTEGER           :: JL, JJ, JVAR, JOBS, JP, JI, JT, JK, ISIZE, IDEPTH, JIMP, IMASK
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !-------------------------------------------------------------------------------
 !
-!         Initialisation for IO
-!
 IF (LHOOK) CALL DR_HOOK('WRITE_DIAG_MISC_ISBA_N',0,ZHOOK_HANDLE)
+!
+!*       1.     Initialisation for IO :
 !
 IF ( DM%LPROSNOW ) THEN
   CALL INIT_IO_SURF_n(DTCO, U, HPROGRAM,'NATURE','ISBA  ','WRITE','ISBA_PROGNOSTIC.OUT.nc')
@@ -139,130 +147,147 @@ ELSE
   CALL INIT_IO_SURF_n(DTCO, U, HPROGRAM,'NATURE','ISBA  ','WRITE','ISBA_DIAGNOSTICS.OUT.nc')
 ENDIF
 !
+ISIZE_LMEB_PATCH=COUNT(IO%LMEB_PATCH(:))
+!
 !-------------------------------------------------------------------------------
 !
-IF (DM%LSURF_MISC_BUDGET) THEN
+!
+!*       2.     Miscellaneous fields :
+!
+!
+!        2.1    Halstead coefficient
+!               --------------------
+!
+YRECFM='HV_ISBA'
+YCOMMENT='Halstead coefficient averaged over tile nature (-)'
+CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XHV(:),IRESP,HCOMMENT=YCOMMENT)
+!
+!        2.2    Snow fractions
+!               --------------
+!
+YRECFM='PSNG_ISBA'
+YCOMMENT='snow fraction over ground averaged over tile nature (-)'
+CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XPSNG(:),IRESP,HCOMMENT=YCOMMENT)
+!
+YRECFM='PSNV_ISBA'
+YCOMMENT='snow fraction over vegetation averaged over tile nature (-)'
+CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XPSNV(:),IRESP,HCOMMENT=YCOMMENT)
+!
+YRECFM='PSN_ISBA'
+YCOMMENT='total snow fraction averaged over tile nature (-)'
+CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XPSN(:),IRESP,HCOMMENT=YCOMMENT)
+!
+!        2.3    Total Albedo and surface temperature
+!               ------------------------------------
+!
+IF (TPSNOW%SCHEME=='3-L' .OR. TPSNOW%SCHEME=='CRO') THEN
+  !        
+  YRECFM='TS_ISBA'
+  YCOMMENT='total surface temperature (isba+snow) over tile nature'
+  CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,D%XTS(:),IRESP,HCOMMENT=YCOMMENT)
   !
-  !*       2.     Miscellaneous fields :
+  YRECFM='TSRAD_ISBA'
+  YCOMMENT='total radiative surface temperature (isba+snow) over tile nature'
+  CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,S%XTSRAD_NAT(:),IRESP,HCOMMENT=YCOMMENT)
   !
-  !-------------------------------------------------------------------------------
-  !
-  !        2.1    Halstead coefficient
-  !               --------------------
-  !
-  YRECFM='HV_ISBA'
-  YCOMMENT='Halstead coefficient averaged over tile nature (-)'
-  CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XHV(:),IRESP,HCOMMENT=YCOMMENT)
-  !
-  !        2.2    Snow fractions
-  !               --------------
-  !
-  YRECFM='PSNG_ISBA'
-  YCOMMENT='snow fraction over ground averaged over tile nature (-)'
-  CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XPSNG(:),IRESP,HCOMMENT=YCOMMENT)
-  !
-  YRECFM='PSNV_ISBA'
-  YCOMMENT='snow fraction over vegetation averaged over tile nature (-)'
-  CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XPSNV(:),IRESP,HCOMMENT=YCOMMENT)
-  !
-  YRECFM='PSN_ISBA'
-  YCOMMENT='total snow fraction averaged over tile nature (-)'
-  CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XPSN(:),IRESP,HCOMMENT=YCOMMENT)
-  !
-  !        2.3    Total Albedo and surface temperature
-  !               ------------------------------------
-  !
-  IF (TPSNOW%SCHEME=='3-L' .OR. TPSNOW%SCHEME=='CRO') THEN
-    !        
-    YRECFM='TS_ISBA'
-    YCOMMENT='total surface temperature (isba+snow) over tile nature'
-    CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,D%XTS(:),IRESP,HCOMMENT=YCOMMENT)
-    !
-    YRECFM='TSRAD_ISBA'
-    YCOMMENT='total radiative surface temperature (isba+snow) over tile nature'
-    CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,S%XTSRAD_NAT(:),IRESP,HCOMMENT=YCOMMENT)
-    !
-  END IF
-  !
-  !        2.4    Soil Wetness Index, Water content and active layer depth
-  !               --------------------------------------------------------
-  !  
-  IF(IO%CISBA=='DIF')THEN
-    ALLOCATE( ZMAX(SIZE(DM%XSWI,1)))
-    ZMAX(:) = 0.
-    !
-    DO JP = 1,IO%NPATCH
-      DO JI = 1,NP%AL(JP)%NSIZE_P
-        JJ = NP%AL(JP)%NR_P(JI)
-        !
-        IF (NP%AL(JP)%NWG_LAYER(JI)/=NUNDEF.AND.NP%AL(JP)%NWG_LAYER(JI)>ZMAX(JJ)) THEN
-          ZMAX(JJ) = NP%AL(JP)%NWG_LAYER(JI)
-        ENDIF
+END IF
+!
+!        2.4    Soil Wetness Index, Water content and active layer depth
+!               --------------------------------------------------------
+!
+IF (LALLOW_ADD_DIM) THEN 
+!
+   YRECFM='SWI_ISBA'
+   YCOMMENT='soil wetness index excluding soil ice by layer (-)' 
+   CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,DM%XSWI(:,:),IRESP,YCOMMENT,HNAM_DIM=YGROUND_LAYER_DIM_NAME)
+!
+   YRECFM='TSWI_ISBA'
+   YCOMMENT='total soil wetness index (liquid+solid) by layer (-)' 
+   CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,DM%XTSWI(:,:),IRESP,YCOMMENT,HNAM_DIM=YGROUND_LAYER_DIM_NAME)
+!
+   IF (IO%CISBA=='DIF') THEN
+      YRECFM='F2VEGL_ISBA'
+      YCOMMENT='soil water stress index for plant transpiration by layer (-)'
+      CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,DM%XF2WGHT(:,:),IRESP,YCOMMENT,HNAM_DIM=YGROUND_LAYER_DIM_NAME)
+   ENDIF
+!
+ELSE
+!
+   DO JL=1,IO%NGROUND_LAYER
+      !
+      WRITE(YLVL,'(I2)') JL
+      !
+      YRECFM='SWI'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
+      YRECFM=YRECFM(:LEN_TRIM(YRECFM))//'_ISBA'
+      YFORM='(A29,I1.1,A4)'
+      IF (JL >= 10)  YFORM='(A29,I2.2,A4)'
+      WRITE(YCOMMENT,FMT=YFORM) 'soil wetness index for layer ',JL,' (-)'
+      CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XSWI(:,JL),IRESP,HCOMMENT=YCOMMENT)
+      !
+      YRECFM='TSWI'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
+      YRECFM=YRECFM(:LEN_TRIM(YRECFM))//'_ISBA'
+      YFORM='(A29,I1.1,A4)'
+      IF (JL >= 10)  YFORM='(A29,I2.2,A4)'
+      WRITE(YCOMMENT,FMT=YFORM) 'total swi (liquid+solid) for layer ',JL,' (-)'
+      CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XTSWI(:,JL),IRESP,HCOMMENT=YCOMMENT)
+      !
+   ENDDO
+!
+   IF (IO%CISBA=='DIF') THEN
+      DO JL=1,IO%NGROUND_LAYER
+         WRITE(YLVL,'(I2)') JL
+         YRECFM='F2VEGL'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
+         YRECFM=YRECFM(:LEN_TRIM(YRECFM))//'_ISBA'
+         YCOMMENT='soil water stress index for plant transpiration for layer '//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))//' (-)'
+         CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XF2WGHT(:,JL),IRESP,HCOMMENT=YCOMMENT)
       ENDDO
-    ENDDO
-    !
-    DO JJ=1,SIZE(DM%XSWI,1)
-
-      DO JL = 1,IO%NGROUND_LAYER
-        IF(JL>ZMAX(JJ))THEN  
-          DM%XSWI (JJ,JL) = XUNDEF
-          DM%XTSWI(JJ,JL) = XUNDEF
-        ENDIF
-      ENDDO 
-
-    ENDDO
-    DEALLOCATE(ZMAX)
-  ENDIF         
-  !
-  DO JL=1,IO%NGROUND_LAYER
-    !
-    WRITE(YLVL,'(I2)') JL
-    !
-    YRECFM='SWI'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
-    YRECFM=YRECFM(:LEN_TRIM(YRECFM))//'_ISBA'
-    YFORM='(A29,I1.1,A4)'
-    IF (JL >= 10)  YFORM='(A29,I2.2,A4)'
-    WRITE(YCOMMENT,FMT=YFORM) 'soil wetness index for layer ',JL,' (-)'
-    CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XSWI(:,JL),IRESP,HCOMMENT=YCOMMENT)
-    !
-    YRECFM='TSWI'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
-    YRECFM=YRECFM(:LEN_TRIM(YRECFM))//'_ISBA'
-    YFORM='(A29,I1.1,A4)'
-    IF (JL >= 10)  YFORM='(A29,I2.2,A4)'
-    WRITE(YCOMMENT,FMT=YFORM) 'total swi (liquid+solid) for layer ',JL,' (-)'
-    CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XTSWI(:,JL),IRESP,HCOMMENT=YCOMMENT)
-    !
-  END DO
-  !
-  YRECFM='SWI_T_ISBA'
-  YCOMMENT='soil wetness index over the soil column (-)'
-  CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XSOIL_SWI(:),IRESP,HCOMMENT=YCOMMENT)
-  !
-  YRECFM='TSWI_T_ISBA'
-  YCOMMENT='total soil wetness index over the soil column (-)'
-  CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XSOIL_TSWI(:),IRESP,HCOMMENT=YCOMMENT)
-  !
-  YRECFM='WGTOT_T_ISBA'
-  YCOMMENT='total water content (liquid+solid) over the soil column (kg/m2)'
-  CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XSOIL_TWG(:),IRESP,HCOMMENT=YCOMMENT)
-  !
-  YRECFM='WGI_T_ISBA'
-  YCOMMENT='total ice content (solid) over the soil column (kg/m2)'
-  CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XSOIL_TWGI(:),IRESP,HCOMMENT=YCOMMENT)
-  !
-  YRECFM='WGTOT_ISBA'
-  YCOMMENT='total volumetric water content (liquid+solid) over the soil column (m3/m3)'
-  CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XSOIL_WG(:),IRESP,HCOMMENT=YCOMMENT)
-  !
-  IF (.NOT.LALLOW_ADD_DIM) THEN
-    YRECFM='WGI_ISBA'
-    YCOMMENT='total volumetric ice content (solid) over the soil column (m3/m3)'
-    CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XSOIL_WGI(:),IRESP,HCOMMENT=YCOMMENT)
-  ENDIF
-  !
-  IF(IO%CISBA=='DIF') THEN
-    !
-    IF (DM%LSURF_MISC_DIF)THEN
+   ENDIF
+!
+ENDIF
+!
+YRECFM='SWI_T_ISBA'
+YCOMMENT='soil wetness index over the soil column (-)'
+CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XSOIL_SWI(:),IRESP,HCOMMENT=YCOMMENT)
+!
+YRECFM='TSWI_T_ISBA'
+YCOMMENT='total soil wetness index over the soil column (-)'
+CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XSOIL_TSWI(:),IRESP,HCOMMENT=YCOMMENT)
+!
+YRECFM='F2VEG_ISBA'
+YCOMMENT='soil water stress index for plant transpiration (-)'
+CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XF2(:),IRESP,HCOMMENT=YCOMMENT)
+!
+YRECFM='WGTOT_S_ISBA'
+IF (IO%CISBA=='DIF') THEN
+   YCOMMENT='total water content (liquid+solid) at surface over 10cm (kg/m2)'
+ELSE
+   YCOMMENT='total water content (liquid+solid) at surface over 1cm (kg/m2)'
+ENDIF
+CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XSURF_TWG(:),IRESP,HCOMMENT=YCOMMENT)
+!
+YRECFM='WGTOT_R_ISBA'
+YCOMMENT='total water content (liquid+solid) over the root zone (kg/m2)'
+CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XROOT_TWG(:),IRESP,HCOMMENT=YCOMMENT)
+!
+YRECFM='WGTOT_T_ISBA'
+YCOMMENT='total water content (liquid+solid) over the soil column (kg/m2)'
+CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XSOIL_TWG(:),IRESP,HCOMMENT=YCOMMENT)
+!
+YRECFM='WGI_T_ISBA'
+YCOMMENT='total ice content (solid) over the soil column (kg/m2)'
+CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XSOIL_TWGI(:),IRESP,HCOMMENT=YCOMMENT)
+!
+YRECFM='WGTOT_ISBA'
+YCOMMENT='total volumetric water content (liquid+solid) over the soil column (m3/m3)'
+CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XSOIL_WG(:),IRESP,HCOMMENT=YCOMMENT)
+!
+YRECFM='WGI_ISBA'
+YCOMMENT='total volumetric ice content (solid) over the soil column (m3/m3)'
+CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XSOIL_WGI(:),IRESP,HCOMMENT=YCOMMENT)
+!
+IF (IO%CISBA=='DIF') THEN
+   !
+   IF (DM%LSURF_MISC_DIF)THEN
       !
       YRECFM='TSWI_D2_ISBA'
       YCOMMENT='total soil wetness index over comparable FR-DG2 reservoir (-)'
@@ -288,85 +313,101 @@ IF (DM%LSURF_MISC_BUDGET) THEN
       YCOMMENT='ice content over comparable FR-DG3 reservoir (m3/m3)'
       CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XFRD3_TWGI(:),IRESP,HCOMMENT=YCOMMENT)  
       !
-    ENDIF
-    !
-    YRECFM='ALT_ISBA'
-    YCOMMENT='active layer thickness over permafrost (m)'
-    CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XALT(:),IRESP,HCOMMENT=YCOMMENT)
-    !
-    YRECFM='FLT_ISBA'
-    YCOMMENT='frozen layer thickness over non-permafrost (m)'
-    CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XFLT(:),IRESP,HCOMMENT=YCOMMENT)
-    !
-  ENDIF
-  !
-  !        2.5    Snow outputs
-  !               -------------
-  !
-  YRECFM='WSN_T_ISBA'
-  YCOMMENT='Total_snow_reservoir (kg/m2)'
-  CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XTWSNOW(:),IRESP,HCOMMENT=YCOMMENT)
-  !
-  YRECFM='DSN_T_ISBA'
-  YCOMMENT='Total_snow_depth (m)'
-  CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XTDSNOW(:),IRESP,HCOMMENT=YCOMMENT)
-  !
-  YRECFM='TSN_T_ISBA'
-  YCOMMENT='Total_snow_temperature (K)'
-  CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XTTSNOW(:),IRESP,HCOMMENT=YCOMMENT)
-  !
-  IF (TPSNOW%SCHEME=='CRO' .AND. DM%LPROSNOW) THEN
-    !
-    YCOMMENT='accumulated snow thickness for past 1 days'
-    CALL WRITE_SURF(HSELECT,HPROGRAM,'SD_1DY_ISBA',DM%XSNDPT_1DY(:),IRESP,HCOMMENT=YCOMMENT) 
-    !      
-    YCOMMENT='accumulated snow thickness for past 3 days'        
-    CALL WRITE_SURF(HSELECT,HPROGRAM,'SD_3DY_ISBA',DM%XSNDPT_3DY(:),IRESP,HCOMMENT=YCOMMENT)                 
-    !
-    YCOMMENT='accumulated snow thickness for past 5 days'
-    CALL WRITE_SURF(HSELECT,HPROGRAM,'SD_5DY_ISBA',DM%XSNDPT_5DY(:),IRESP,HCOMMENT=YCOMMENT)                  
-    !
-    YCOMMENT='accumulated snow thickness for past 7 days'  
-    CALL WRITE_SURF(HSELECT,HPROGRAM,'SD_7DY_ISBA',DM%XSNDPT_7DY(:),IRESP,HCOMMENT=YCOMMENT)                  
-    !
-    YCOMMENT='accumulated snow water equivalent for past 1 days'
-    CALL WRITE_SURF(HSELECT,HPROGRAM,'SWE_1DY_ISBA',DM%XSNSWE_1DY(:),IRESP,HCOMMENT=YCOMMENT) 
-    !      
-    YCOMMENT='accumulated snow water equivalent for past 3 days'
-    CALL WRITE_SURF(HSELECT,HPROGRAM,'SWE_3DY_ISBA',DM%XSNSWE_3DY(:),IRESP,HCOMMENT=YCOMMENT)
-    !      
-    YCOMMENT='accumulated snow water equivalent for past 5 days'
-    CALL WRITE_SURF(HSELECT,HPROGRAM,'SWE_5DY_ISBA',DM%XSNSWE_5DY(:),IRESP,HCOMMENT=YCOMMENT)
-    !
-    YCOMMENT='accumulated snow water equivalent for past 7 days'
-    CALL WRITE_SURF(HSELECT,HPROGRAM,'SWE_7DY_ISBA',DM%XSNSWE_7DY(:),IRESP,HCOMMENT=YCOMMENT)
-    !      
-    YCOMMENT='Penetration of ram resistance sensor (2 daN)'
-    CALL WRITE_SURF(HSELECT,HPROGRAM,'RAMSOND_ISBA',DM%XSNRAM_SONDE(:),IRESP,HCOMMENT=YCOMMENT)
-    !      
-    YCOMMENT='Thickness of wet snow at the top of the snowpack'
-    CALL WRITE_SURF(HSELECT,HPROGRAM,'WET_TH_ISBA',DM%XSN_WETTHCKN(:),IRESP,HCOMMENT=YCOMMENT)
-    !      
-    YCOMMENT='Thickness of refrozen snow at the top of the snowpack'
-    CALL WRITE_SURF(HSELECT,HPROGRAM,'REFRZTH_ISBA',DM%XSN_REFRZNTHCKN(:),IRESP,HCOMMENT=YCOMMENT)
-
-    YCOMMENT='Depth of high instability'
-    CALL WRITE_SURF(HSELECT,HPROGRAM,'DEP_HIG',DM%XDEP_HIG(:),IRESP,HCOMMENT=YCOMMENT)
-
-    YCOMMENT='Depth of moderate instability'
-    CALL WRITE_SURF(HSELECT,HPROGRAM,'DEP_MOD',DM%XDEP_MOD(:),IRESP,HCOMMENT=YCOMMENT)
-
-    YCOMMENT='Accidental risk index'
-    CALL WRITE_SURF(HSELECT,HPROGRAM,'ACC_LEV',DM%XACC_LEV(:),IRESP,HCOMMENT=YCOMMENT)
-
-    YCOMMENT='Type of inferior profile'
-    CALL WRITE_SURF(HSELECT,HPROGRAM,'PRO_INF_TYP',DM%XPRO_INF_TYP(:),IRESP,HCOMMENT=YCOMMENT)
-    ! 
-  ENDIF
-  !
-  IF (TPSNOW%SCHEME=='CRO') THEN
-    !
-    IF (IO%LSNOWSYTRON) THEN
+   ENDIF
+   !
+   YRECFM='PLT_ISBA'
+   YCOMMENT='permafrost layer thickness (m)'
+   CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XPLT(:),IRESP,HCOMMENT=YCOMMENT)
+   !
+   YRECFM='ALT_ISBA'
+   YCOMMENT='active layer thickness over permafrost (m)'
+   CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XALT(:),IRESP,HCOMMENT=YCOMMENT)
+   !
+   YRECFM='FLT_ISBA'
+   YCOMMENT='frozen layer thickness over non-permafrost (m)'
+   CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XFLT(:),IRESP,HCOMMENT=YCOMMENT)
+   !
+ENDIF
+!
+!        2.5    Snow outputs
+!               -------------
+!
+YRECFM='WSN_T_ISBA'
+YCOMMENT='Total_snow_reservoir (kg/m2)'
+CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XTWSNOW(:),IRESP,HCOMMENT=YCOMMENT)
+!
+YRECFM='DSN_T_ISBA'
+YCOMMENT='Total_snow_depth (m)'
+CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XTDSNOW(:),IRESP,HCOMMENT=YCOMMENT)
+!
+YRECFM='TSN_T_ISBA'
+YCOMMENT='Total_snow_temperature (K)'
+CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XTTSNOW(:),IRESP,HCOMMENT=YCOMMENT)
+!
+IF (TPSNOW%SCHEME=='3-L' .OR. TPSNOW%SCHEME=='CRO') THEN
+   !
+   YRECFM='WLSN_T_ISBA'
+   YCOMMENT='Total_liquid_water_in_snow (kg/m2)'
+   CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XTSNOWLIQ(:),IRESP,HCOMMENT=YCOMMENT)
+   !
+   YRECFM='AGESN_T_ISBA'
+   YCOMMENT='Mean_snow_pack_age (day)'
+   CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XTSNOWAGE(:),IRESP,HCOMMENT=YCOMMENT)
+   !
+ENDIF
+!
+IF (TPSNOW%SCHEME=='CRO' .AND. DM%LPROSNOW) THEN
+   !
+   YCOMMENT='accumulated snow thickness for past 1 days'
+   CALL WRITE_SURF(HSELECT,HPROGRAM,'SD_1DY_ISBA',DM%XSNDPT_1DY(:),IRESP,HCOMMENT=YCOMMENT) 
+   !      
+   YCOMMENT='accumulated snow thickness for past 3 days'        
+   CALL WRITE_SURF(HSELECT,HPROGRAM,'SD_3DY_ISBA',DM%XSNDPT_3DY(:),IRESP,HCOMMENT=YCOMMENT)                 
+   !
+   YCOMMENT='accumulated snow thickness for past 5 days'
+   CALL WRITE_SURF(HSELECT,HPROGRAM,'SD_5DY_ISBA',DM%XSNDPT_5DY(:),IRESP,HCOMMENT=YCOMMENT)                  
+   !
+   YCOMMENT='accumulated snow thickness for past 7 days'  
+   CALL WRITE_SURF(HSELECT,HPROGRAM,'SD_7DY_ISBA',DM%XSNDPT_7DY(:),IRESP,HCOMMENT=YCOMMENT)                  
+   !
+   YCOMMENT='accumulated snow water equivalent for past 1 days'
+   CALL WRITE_SURF(HSELECT,HPROGRAM,'SWE_1DY_ISBA',DM%XSNSWE_1DY(:),IRESP,HCOMMENT=YCOMMENT) 
+   !      
+   YCOMMENT='accumulated snow water equivalent for past 3 days'
+   CALL WRITE_SURF(HSELECT,HPROGRAM,'SWE_3DY_ISBA',DM%XSNSWE_3DY(:),IRESP,HCOMMENT=YCOMMENT)
+   !      
+   YCOMMENT='accumulated snow water equivalent for past 5 days'
+   CALL WRITE_SURF(HSELECT,HPROGRAM,'SWE_5DY_ISBA',DM%XSNSWE_5DY(:),IRESP,HCOMMENT=YCOMMENT)
+   !
+   YCOMMENT='accumulated snow water equivalent for past 7 days'
+   CALL WRITE_SURF(HSELECT,HPROGRAM,'SWE_7DY_ISBA',DM%XSNSWE_7DY(:),IRESP,HCOMMENT=YCOMMENT)
+   !      
+   YCOMMENT='Penetration of ram resistance sensor (2 daN)'
+   CALL WRITE_SURF(HSELECT,HPROGRAM,'RAMSOND_ISBA',DM%XSNRAM_SONDE(:),IRESP,HCOMMENT=YCOMMENT)
+   !      
+   YCOMMENT='Thickness of wet snow at the top of the snowpack'
+   CALL WRITE_SURF(HSELECT,HPROGRAM,'WET_TH_ISBA',DM%XSN_WETTHCKN(:),IRESP,HCOMMENT=YCOMMENT)
+   !      
+   YCOMMENT='Thickness of refrozen snow at the top of the snowpack'
+   CALL WRITE_SURF(HSELECT,HPROGRAM,'REFRZTH_ISBA',DM%XSN_REFRZNTHCKN(:),IRESP,HCOMMENT=YCOMMENT)
+   !
+   YCOMMENT='Depth of high instability'
+   CALL WRITE_SURF(HSELECT,HPROGRAM,'DEP_HIG',DM%XDEP_HIG(:),IRESP,HCOMMENT=YCOMMENT)
+   !
+   YCOMMENT='Depth of moderate instability'
+   CALL WRITE_SURF(HSELECT,HPROGRAM,'DEP_MOD',DM%XDEP_MOD(:),IRESP,HCOMMENT=YCOMMENT)
+   !
+   YCOMMENT='Accidental risk index'
+   CALL WRITE_SURF(HSELECT,HPROGRAM,'ACC_LEV',DM%XACC_LEV(:),IRESP,HCOMMENT=YCOMMENT)
+   !
+   YCOMMENT='Type of inferior profile'
+   CALL WRITE_SURF(HSELECT,HPROGRAM,'PRO_INF_TYP',DM%XPRO_INF_TYP(:),IRESP,HCOMMENT=YCOMMENT)
+   ! 
+ENDIF
+!
+IF (TPSNOW%SCHEME=='CRO') THEN
+   !
+   IF (IO%LSNOWSYTRON) THEN
       !      
       YRECFM='SYTFLX_ISBA'
       YCOMMENT='Sytron_erosion/accumulation_flux (kg/m2/s)'
@@ -376,180 +417,468 @@ IF (DM%LSURF_MISC_BUDGET) THEN
       YCOMMENT='Cumulated Sytron_erosion/accumulation_flux (kg/m2)'
       CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,DM%XSYTMASSC(:),IRESP,HCOMMENT=YCOMMENT) 
       !
-    ENDIF
-    !
-    IF (IO%LSNOWMAK_BOOL) THEN
+   ENDIF
+   !
+   IF (IO%LSNOWMAK_BOOL) THEN
       !        
       YRECFM='PCOUNT'
       YCOMMENT='Snow production counter (s)'
       CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,DM%XPRODCOUNT(:),IRESP,HCOMMENT=YCOMMENT)
       !
-    ENDIF
-    !
-  ENDIF
-  !
-  !        2.6    SGH scheme
-  !               ----------
-  !
-  IF(IO%CRUNOFF=='SGH '.OR.IO%CRUNOFF=='DT92')THEN     
-    YRECFM='FSAT_ISBA'
-    YCOMMENT='Soil saturated fraction (-)'
-    CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XFSAT(:),IRESP,HCOMMENT=YCOMMENT)
-  ENDIF
-  !
-  IF(IO%CRAIN=='SGH ')THEN
-    YRECFM='MUF_ISBA'
-    YCOMMENT='fraction of the grid cell reached by the rainfall (-)'
-    CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,K%XMUF(:),IRESP,HCOMMENT=YCOMMENT)
-  ENDIF
-  !
-  !        2.7    Flooding scheme
-  !               ---------------
-  !
-  IF(IO%LFLOOD)THEN
-    !
-    YRECFM='FFG_ISBA'
-    YCOMMENT='flood fraction over ground averaged over tile nature (-)'
-    CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XFFG(:),IRESP,HCOMMENT=YCOMMENT)
-    !
-    YRECFM='FFV_ISBA'
-    YCOMMENT='flood fraction over vegetation averaged over tile nature (-)'
-    CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XFFV(:),IRESP,HCOMMENT=YCOMMENT)
-    !
-    YRECFM='FF_ISBA'
-    YCOMMENT='total flood fraction averaged over tile nature (-)'
-    CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XFF(:),IRESP,HCOMMENT=YCOMMENT)
-    !
-    YRECFM='FFLOOD_ISBA'
-    YCOMMENT='Grid-cell potential flood fraction (-)'
-    CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,K%XFFLOOD(:),IRESP,HCOMMENT=YCOMMENT)
-    !
-    YRECFM='PIFLOOD_ISBA'
-    YCOMMENT='Grid-cell Potential_floodplain_infiltration (kg/m2/s)'
-    CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,K%XPIFLOOD(:),IRESP,HCOMMENT=YCOMMENT)
-    !
-  ENDIF
-  !
-  !        2.8    Total LAI
-  !               ---------
-  !
-  IF(IO%CPHOTO/='NON'.OR.IO%NPATCH>1)THEN        
-    YRECFM='LAI_ISBA'
-    YCOMMENT='leaf area index (m2/m2)'
-    CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XLAI(:),IRESP,HCOMMENT=YCOMMENT)
-  ENDIF
-  !
-  !        2.9    Water table depth
-  !               -----------------
-  !
-  IF(IO%LWTD)THEN
-    !
-    YRECFM='FWTD_ISBA'
-    YCOMMENT='grid-cell fraction of water table to rise'
-    CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,K%XFWTD(:),IRESP,HCOMMENT=YCOMMENT)
-    !
-    YRECFM='WTD_ISBA'
-    YCOMMENT='water table depth from RRM model or observation (m)'
-    CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,K%XWTD(:),IRESP,HCOMMENT=YCOMMENT)
-    !
-  ENDIF
-  !*       3.     Miscellaneous fields for each patch :
-  !               -------------------------------------
-  !
-  ISIZE = U%NSIZE_NATURE
-  !
-  !----------------------------------------------------------------------------
-  !User wants (or not) patch output
-  IF(OPATCH_BUDGET .AND. IO%NPATCH>1)THEN
-    !----------------------------------------------------------------------------
-    !
-    !        3.1    Soil Wetness Index and active layer depth
-    !               -----------------------------------------   
-    !
-    DO JL=1,IO%NGROUND_LAYER
+   ENDIF
+   !
+ENDIF
+!
+!        2.6    SGH scheme
+!               ----------
+!
+IF (IO%CRUNOFF=='SGH '.OR.IO%CRUNOFF=='DT92') THEN
+   YRECFM='FSAT_ISBA'
+   YCOMMENT='Soil saturated fraction (-)'
+   CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XFSAT(:),IRESP,HCOMMENT=YCOMMENT)
+ENDIF
+!
+IF (IO%CRAIN=='SGH') THEN
+   YRECFM='MUF_ISBA'
+   YCOMMENT='fraction of the grid cell reached by the rainfall (-)'
+   CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,K%XMUF(:),IRESP,HCOMMENT=YCOMMENT)
+ENDIF
+!
+!        2.7    Flooding scheme
+!               ---------------
+!
+IF (IO%LFLOOD) THEN
+   !
+   YRECFM='FFG_ISBA'
+   YCOMMENT='flood fraction over ground averaged over tile nature (-)'
+   CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XFFG(:),IRESP,HCOMMENT=YCOMMENT)
+   !
+   YRECFM='FFV_ISBA'
+   YCOMMENT='flood fraction over vegetation averaged over tile nature (-)'
+   CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XFFV(:),IRESP,HCOMMENT=YCOMMENT)
+   !
+   YRECFM='FF_ISBA'
+   YCOMMENT='total flood fraction averaged over tile nature (-)'
+   CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XFF(:),IRESP,HCOMMENT=YCOMMENT)
+   !
+   YRECFM='FFLOOD_ISBA'
+   YCOMMENT='Grid-cell potential flood fraction (-)'
+   CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,K%XFFLOOD(:),IRESP,HCOMMENT=YCOMMENT)
+   !
+   YRECFM='PIFLOOD_ISBA'
+   YCOMMENT='Grid-cell Potential_floodplain_infiltration (kg/m2/s)'
+   CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,K%XPIFLOOD(:),IRESP,HCOMMENT=YCOMMENT)
+   !
+ENDIF
+!
+!        2.8    Total LAI
+!               ---------
+!
+IF (IO%CPHOTO/='NON'.OR.IO%NPATCH>1) THEN        
+   YRECFM='LAI_ISBA'
+   YCOMMENT='leaf area index (m2/m2)'
+   CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XLAI(:),IRESP,HCOMMENT=YCOMMENT)
+ENDIF
+!
+!        2.9    Water table depth
+!               -----------------
+!
+IF (IO%LWTD) THEN
+   !
+   YRECFM='FWTD_ISBA'
+   YCOMMENT='grid-cell fraction of water table to rise'
+   CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,K%XFWTD(:),IRESP,HCOMMENT=YCOMMENT)
+   !
+   YRECFM='WTD_ISBA'
+   YCOMMENT='water table depth from RRM model or observation (m)'
+   CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,K%XWTD(:),IRESP,HCOMMENT=YCOMMENT)
+   !
+ENDIF
+!
+!
+!        2.10    water and snow intercepted on leaves
+!                ---------------------------
+!
+YRECFM='WR_ISBA'
+YCOMMENT='liquid water retained on canopy (kg/m2)'
+CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XWR(:),IRESP,HCOMMENT=YCOMMENT)
+!
+IF (ISIZE_LMEB_PATCH>0) THEN
+   YRECFM='WRVN_ISBA'
+   YCOMMENT='snow retained retained on canopy (kg/m2)'
+   CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XWRVN(:),IRESP,HCOMMENT=YCOMMENT)
+ENDIF
+!
+!        2.11    terrestrial water storage
+!                -------------------------
+!
+YRECFM='TWS_ISBA'
+YCOMMENT='Terrestrial Water Storage (kg/m2)'
+ZTWS(:)=DM%XWR(:)+DM%XTWSNOW(:)+DM%XSOIL_TWG(:)
+IF (ISIZE_LMEB_PATCH>0) THEN
+   ZTWS(:)=ZTWS(:)+DM%XWRVN(:)
+   IF(IO%LMEB_LITTER)THEN  
+     DO JP=1,IO%NPATCH
+        PK => NP%AL(JP)
+        PEK => NPE%AL(JP)
+        DO JI=1,PK%NSIZE_P
+           IMASK = PK%NR_P(JI)
+           ZTWS(IMASK)=ZTWS(IMASK)+PK%XPATCH(JI)*(PEK%XWRL(JI)+PEK%XWRLI(JI))
+        ENDDO
+     ENDDO 
+   ENDIF
+ENDIF
+IF (LCPL_LAND.AND.NTWS_ID/=NUNDEF) THEN
+   ZTWS(:)=ZTWS(:)+S%XCPL_TWS(:)
+ENDIF
+CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,ZTWS(:),IRESP,HCOMMENT=YCOMMENT)
+!
+!        2.12    ISBA-CC
+!                -------
+!
+IF (IO%LLULCC) THEN
+   !
+   YRECFM='WCONSRV_ISBA'
+   YCOMMENT='grid-cell land use water conservation (kg/m2)'
+   CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,S%XWCONSRV(:),IRESP,HCOMMENT=YCOMMENT)
+   !
+   YRECFM='CCONSRV_ISBA'
+   YCOMMENT='grid-cell land use carbon conservation (kg/m2)'
+   CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,S%XCCONSRV(:),IRESP,HCOMMENT=YCOMMENT)
+   !
+ENDIF 
+!
+IF (IO%LFIRE) THEN
+   !
+   YRECFM='FFIRE_ISBA'
+   YCOMMENT='natural burnt area fraction (-)'
+   CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XFIREFRA(:),IRESP,HCOMMENT=YCOMMENT)
+   !
+ENDIF
+!
+IF (IO%CRESPSL=='CNT'.OR.IO%CRESPSL=='DIF') THEN
+   !
+   IF (LALLOW_ADD_DIM) THEN 
+      !
+      YRECFM='TCARB_ISBA'
+      YCOMMENT='effective tunrover frequency of soil carbon by pool (s-1)'
+      CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,DM%XTSOILPOOL(:,:),IRESP,YCOMMENT,HNAM_DIM=YSOIL_CARBON_POOL_DIM_NAME)
+      !
+   ELSE
+      !
+      DO JL=1,IO%NNSOILCARB
+         WRITE(YLVL,'(I2 )') JL
+         YRECFM='TCARB_'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
+         YRECFM=YRECFM(:LEN_TRIM(YRECFM))//'_ISBA'
+         YCOMMENT='effective tunrover frequency of soil carbon pool '//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))//' (s-1)'
+         CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XTSOILPOOL(:,JL),IRESP,HCOMMENT=YCOMMENT)
+      ENDDO
+      !
+   ENDIF
+   !
+ENDIF
+!
+IF (IO%LSOILGAS) THEN
+   !
+   IF (LALLOW_ADD_DIM) THEN 
+      !
+      YRECFM='O2SOIL_ISBA'
+      YCOMMENT='Soil O2 content by layer (gO2/m3)' 
+      CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,DM%XSOILO2(:,:),IRESP,YCOMMENT,HNAM_DIM=YGROUND_LAYER_DIM_NAME)
+      !
+      YRECFM='CO2SOIL_ISBA'
+      YCOMMENT='Soil CO2 content by layer (gCO2/m3)' 
+      CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,DM%XSOILCO2(:,:),IRESP,YCOMMENT,HNAM_DIM=YGROUND_LAYER_DIM_NAME)
+      !
+      YRECFM='CH4SOIL_ISBA'
+      YCOMMENT='Soil CH4 content by layer (gCH4/m3)' 
+      CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,DM%XSOILCH4(:,:),IRESP,YCOMMENT,HNAM_DIM=YGROUND_LAYER_DIM_NAME)
+      !
+      YRECFM='O2OXI_ISBA'
+      YCOMMENT='O2 consumed during oxic decomposition by layers (kgO2/m2/s)' 
+      CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,DM%XOXIC_O2(:,:),IRESP,YCOMMENT,HNAM_DIM=YGROUND_LAYER_DIM_NAME)
+      !
+      YRECFM='CO2OXI_ISBA'
+      YCOMMENT='CO2 produced during oxic decomposition by layers (kgCO2/m2/s)' 
+      CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,DM%XOXIC_CO2(:,:),IRESP,YCOMMENT,HNAM_DIM=YGROUND_LAYER_DIM_NAME)
+      !
+      YRECFM='CH4MG_ISBA'
+      YCOMMENT='CH4 produced during methanogenis by layers (kgCH4/m2/s)' 
+      CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,DM%XMG_CH4(:,:),IRESP,YCOMMENT,HNAM_DIM=YGROUND_LAYER_DIM_NAME)
+      !
+      YRECFM='CH4MT_ISBA'
+      YCOMMENT='CH4 consumed during methanotrophy by layers (kgCH4/m2/s)' 
+      CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,DM%XMT_CH4(:,:),IRESP,YCOMMENT,HNAM_DIM=YGROUND_LAYER_DIM_NAME)
+      !
+   ELSE
+      !
+      DO JL=1,IO%NGROUND_LAYER
+         !
+         WRITE(YLVL,'(I2)') JL
+         !
+         YRECFM='O2SL'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
+         YRECFM=YRECFM(:LEN_TRIM(YRECFM))//'_ISBA'
+         YCOMMENT='Soil O2 content layer '//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))//' (gO2/m3)' 
+         CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XSOILO2(:,JL),IRESP,HCOMMENT=YCOMMENT)
+         !
+         YRECFM='CO2SL'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
+         YRECFM=YRECFM(:LEN_TRIM(YRECFM))//'_ISBA'
+         YCOMMENT='Soil CO2 content layer '//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))//' (gCO2/m3)' 
+         CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XSOILCO2(:,JL),IRESP,HCOMMENT=YCOMMENT)
+         !
+         YRECFM='CH4SL'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
+         YRECFM=YRECFM(:LEN_TRIM(YRECFM))//'_ISBA'
+         YCOMMENT='Soil CH4 content layer '//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))//' (gCH4/m3)' 
+         CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XSOILCH4(:,JL),IRESP,HCOMMENT=YCOMMENT)
+         !
+         YRECFM='O2OX'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
+         YRECFM=YRECFM(:LEN_TRIM(YRECFM))//'_ISBA'
+         YCOMMENT='O2 consumed during oxic decomposition layer '//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))//' (kgO2/m2/s)' 
+         CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XOXIC_O2(:,JL),IRESP,HCOMMENT=YCOMMENT)
+         !
+         YRECFM='CO2OX'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
+         YRECFM=YRECFM(:LEN_TRIM(YRECFM))//'_ISBA'
+         YCOMMENT='CO2 produced during oxic decomposition layer '//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))//' (kgCO2/m2/s)' 
+         CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XOXIC_CO2(:,JL),IRESP,HCOMMENT=YCOMMENT)
+         !
+         YRECFM='CH4MG'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
+         YRECFM=YRECFM(:LEN_TRIM(YRECFM))//'_ISBA'
+         YCOMMENT='CH4 produced during methanogenis layer '//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))//' (kgCH4/m2/s)' 
+         CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XMG_CH4(:,JL),IRESP,HCOMMENT=YCOMMENT)
+         !
+         YRECFM='CH4MT'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
+         YRECFM=YRECFM(:LEN_TRIM(YRECFM))//'_ISBA'
+         YCOMMENT='CH4 consumed during methanotrophy layer '//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))//' (kgCH4/m2/s)' 
+         CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XMT_CH4(:,JL),IRESP,HCOMMENT=YCOMMENT)
+         !
+      ENDDO
+      !          
+   ENDIF
+   !
+ENDIF
+ 
+!
+!        2.13    Soil and snow nudging scheme
+!                ----------------------------
+!
+IF (IO%CNUDG_WG/='DEF') THEN
+   !
+   YRECFM='NUDGSM_ISBA'
+   YCOMMENT='Nudging Increment of Water in Soil Mositure (kg m-2)'
+   CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XNUDGINCSM(:),IRESP,HCOMMENT=YCOMMENT)
+   !
+   IF (LALLOW_ADD_DIM) THEN
+      !
+      YRECFM='NUDGSML_ISBA'
+      YCOMMENT='Nudging Increment of Water in Soil Mositure by layers (kg m-2)'
+      CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,DM%XNUDGINCSML(:,:),IRESP,YCOMMENT,HNAM_DIM=YGROUND_LAYER_DIM_NAME)
+      !
+   ELSE
+      !
+      DO JL=1,IO%NGROUND_LAYER
+         !
+         WRITE(YLVL,'(I2)') JL
+         !
+         YRECFM='NUDGSML'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
+         YRECFM=YRECFM(:LEN_TRIM(YRECFM))//'_ISBA'
+         YCOMMENT='Nudging Increment of Water in Soil Mositure layer '//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))//' (kg m-2)'
+         CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XNUDGINCSML(:,JL),IRESP,HCOMMENT=YCOMMENT)
+         !
+      ENDDO
+      !
+   ENDIF
+   !
+ENDIF
+!
+IF(IO%LNUDG_SWE)THEN
+   !
+   YRECFM='NUDGSWE_ISBA'
+   YCOMMENT='Nudging Increment of Snow over land (kg m-2)'
+   CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,DM%XNUDGINCSWE(:),IRESP,HCOMMENT=YCOMMENT)
+   !
+ENDIF        
+!
+!----------------------------------------------------------------------------
+!
+!*       3.     Miscellaneous fields for each patch :
+!               -------------------------------------
+!
+ISIZE = U%NSIZE_NATURE
+!
+!User wants (or not) patch output
+IF (OPATCH_BUDGET .AND. IO%NPATCH>1) THEN
+   !
+   !        3.1    Soil Wetness Index and active layer depth
+   !               -----------------------------------------
+   !
+   YRECFM='SWI_T_'
+   YCOMMENT='soil wetness index over the soil column per patch (-)'
+   DO JP=1,IO%NPATCH
+      CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+           NP%AL(JP)%NR_P,NDM%AL(JP)%XSOIL_SWI(:),ISIZE,S%XWORK_WR)
+   ENDDO
+   !
+   YRECFM='TSWI_T_'
+   YCOMMENT='total soil wetness index over the soil column per patch (-)'
+   DO JP=1,IO%NPATCH
+      CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+           NP%AL(JP)%NR_P,NDM%AL(JP)%XSOIL_TSWI(:),ISIZE,S%XWORK_WR)
+   ENDDO
+   !
+   YRECFM='F2VEG_'
+   YCOMMENT='soil water stress index for plant transpiration per patch (-)'
+   DO JP=1,IO%NPATCH
+      CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+           NP%AL(JP)%NR_P,NDM%AL(JP)%XF2(:),ISIZE,S%XWORK_WR)
+   ENDDO
+   !
+   DO JL=1,IO%NGROUND_LAYER
       !
       WRITE(YLVL,'(I2.0)') JL
       !
       YRECFM='SWI'//TRIM(ADJUSTL(YLVL(:)))//'_'
       YFORM='(A39,I1.1,A4)'
-      IF (JL >= 10)  YFORM='(A39,I2.2,A4)'    
+      IF (JL >= 10) YFORM='(A39,I2.2,A4)' 
       WRITE(YCOMMENT,FMT=YFORM) 'soil wetness index per patch for layer ',JL,' (-)'
       DO JP=1,IO%NPATCH
-        CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
-            NP%AL(JP)%NR_P,NDM%AL(JP)%XSWI(:,JL),ISIZE,S%XWORK_WR)
-      ENDDO      
+         CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+              NP%AL(JP)%NR_P,NDM%AL(JP)%XSWI(:,JL),ISIZE,S%XWORK_WR)
+      ENDDO
       !
       YRECFM='TSWI'//TRIM(ADJUSTL(YLVL(:)))//'_'
       YFORM='(A39,I1.1,A4)'
-      IF (JL >= 10)  YFORM='(A39,I2.2,A4)'
+      IF (JL >= 10) YFORM='(A39,I2.2,A4)'
       WRITE(YCOMMENT,FMT=YFORM) 'total swi (liquid+solid) per patch for layer ',JL,' (-)'
       DO JP=1,IO%NPATCH
-        CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
-            NP%AL(JP)%NR_P,NDM%AL(JP)%XTSWI(:,JL),ISIZE,S%XWORK_WR)
-      ENDDO        
+         CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+              NP%AL(JP)%NR_P,NDM%AL(JP)%XTSWI(:,JL),ISIZE,S%XWORK_WR)
+      ENDDO
       !
-    END DO
-    !
-    IF(IO%CISBA=='DIF')THEN
+   END DO
+   !
+   YRECFM='WGTOT_S_'
+   IF (IO%CISBA=='DIF') THEN
+      YCOMMENT='total water content (liquid+solid) at surface over 10cm per patch (kg/m2)'
+   ELSE
+      YCOMMENT='total water content (liquid+solid) at surface over 1cm per patch (kg/m2)'
+   ENDIF
+   DO JP=1,IO%NPATCH
+      CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+           NP%AL(JP)%NR_P,NDM%AL(JP)%XSURF_TWG(:),ISIZE,S%XWORK_WR)
+   ENDDO
+   !
+   YRECFM='WGTOT_R_'
+   YCOMMENT='total water content (liquid+solid) over the root zone (kg/m2)'
+   DO JP=1,IO%NPATCH
+      CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+           NP%AL(JP)%NR_P,NDM%AL(JP)%XROOT_TWG(:),ISIZE,S%XWORK_WR)
+   ENDDO
+   !
+   YRECFM='WGTOT_T_'
+   YCOMMENT='total water content (liquid+solid) over the soil column (kg/m2)'
+   DO JP=1,IO%NPATCH
+      CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+           NP%AL(JP)%NR_P,NDM%AL(JP)%XSOIL_TWG(:),ISIZE,S%XWORK_WR)
+   ENDDO
+   !
+   YRECFM='WGI_T_'
+   YCOMMENT='total ice content (solid) over the soil column (kg/m2)'
+   DO JP=1,IO%NPATCH
+      CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+           NP%AL(JP)%NR_P,NDM%AL(JP)%XSOIL_TWGI(:),ISIZE,S%XWORK_WR)
+   ENDDO
+   !
+   YRECFM='WGTOT_'
+   YCOMMENT='total volumetric water content (liquid+solid) over the soil column (m3/m3)'
+   DO JP=1,IO%NPATCH
+      CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+           NP%AL(JP)%NR_P,NDM%AL(JP)%XSOIL_WG(:),ISIZE,S%XWORK_WR)
+   ENDDO
+   !
+   YRECFM='WGI_'
+   YCOMMENT='total volumetric ice content (solid) over the soil column (m3/m3)'
+   DO JP=1,IO%NPATCH
+      CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+           NP%AL(JP)%NR_P,NDM%AL(JP)%XSOIL_WGI(:),ISIZE,S%XWORK_WR)
+   ENDDO
+   !
+   IF (IO%CISBA=='DIF') THEN
       !
-   
+      DO JL=1,IO%NGROUND_LAYER
+         WRITE(YLVL,'(I2)') JL
+         YRECFM='F2VEGL'//TRIM(ADJUSTL(YLVL(:)))//'_'
+         YFORM='(A69,I1.1,A4)'
+         IF (JL >= 10) YFORM='(A69,I2.2,A4)' 
+         WRITE(YCOMMENT,FMT=YFORM) 'soil water stress index per patch for plant transpiration for layer ',JL,' (-)'
+         DO JP=1,IO%NPATCH
+            CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+                 NP%AL(JP)%NR_P,NDM%AL(JP)%XF2WGHT(:,JL),ISIZE,S%XWORK_WR)
+         ENDDO
+      ENDDO
+      !
+      YRECFM='PLT_'
+      YCOMMENT='permafrost layer thickness per patch (m)'
+      DO JP=1,IO%NPATCH
+         CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+              NP%AL(JP)%NR_P,NDM%AL(JP)%XPLT(:),ISIZE,S%XWORK_WR)
+      ENDDO
+      !
       YRECFM='ALT_'
       YCOMMENT='active layer thickness over permafrost per patch (m)'
-      WRITE(YCOMMENT,FMT=YFORM) 'total swi (liquid+solid) per patch for layer ',JL,' (-)'
       DO JP=1,IO%NPATCH
-        CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
-            NP%AL(JP)%NR_P,NDM%AL(JP)%XALT(:),ISIZE,S%XWORK_WR)
-      ENDDO          
+         CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+              NP%AL(JP)%NR_P,NDM%AL(JP)%XALT(:),ISIZE,S%XWORK_WR)
+      ENDDO
       !
       YRECFM='FLT_'
       YCOMMENT='frozen layer thickness over non-permafrost per patch (m)'
       DO JP=1,IO%NPATCH
-        CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
-            NP%AL(JP)%NR_P,NDM%AL(JP)%XFLT(:),ISIZE,S%XWORK_WR)
+         CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+              NP%AL(JP)%NR_P,NDM%AL(JP)%XFLT(:),ISIZE,S%XWORK_WR)
       ENDDO        
       !
-    ENDIF
-    !    
-    !        3.2    Snow fractions
-    !               --------------
-    !  
-    YRECFM='PSNG_'
-    YCOMMENT='snow fraction per patch over ground '
-    DO JP=1,IO%NPATCH
+   ENDIF
+   !    
+   !        3.2    Snow fractions
+   !               --------------
+   !  
+   YRECFM='PSNG_'
+   YCOMMENT='snow fraction per patch over ground '
+   DO JP=1,IO%NPATCH
       CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
           NP%AL(JP)%NR_P,NDM%AL(JP)%XPSNG(:),ISIZE,S%XWORK_WR)
-    ENDDO  
-    !   
-    YRECFM='PSNV_'
-    YCOMMENT='snow fraction per patch over vegetation'
-    DO JP=1,IO%NPATCH
+   ENDDO  
+   !   
+   YRECFM='PSNV_'
+   YCOMMENT='snow fraction per patch over vegetation'
+   DO JP=1,IO%NPATCH
       CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
           NP%AL(JP)%NR_P,NDM%AL(JP)%XPSNV(:),ISIZE,S%XWORK_WR)
-    ENDDO      
-    !
-    YRECFM='PSN_'
-    YCOMMENT='total snow fraction per patch'
-    DO JP=1,IO%NPATCH
+   ENDDO      
+   !
+   YRECFM='PSN_'
+   YCOMMENT='total snow fraction per patch'
+   DO JP=1,IO%NPATCH
       CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
           NP%AL(JP)%NR_P,NDM%AL(JP)%XPSN(:),ISIZE,S%XWORK_WR)
-    ENDDO      
-    !
-    !        3.3    SGH scheme
-    !               ----------
-    !
-    IF(IO%CRUNOFF=='SGH '.OR.IO%CRUNOFF=='DT92')THEN    
+   ENDDO      
+   !
+   !        3.3    SGH scheme
+   !               ----------
+   !
+   IF (IO%CRUNOFF=='SGH '.OR.IO%CRUNOFF=='DT92') THEN    
       YRECFM='FSAT_'
       YCOMMENT='Soil saturated fraction per patch (-)'
       DO JP=1,IO%NPATCH
-        CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
-            NP%AL(JP)%NR_P,NDM%AL(JP)%XFSAT(:),ISIZE,S%XWORK_WR)
+         CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+             NP%AL(JP)%NR_P,NDM%AL(JP)%XFSAT(:),ISIZE,S%XWORK_WR)
       ENDDO        
-    ENDIF
-    !
-    !        3.3    Flood fractions
-    !               --------------
-    !
-    IF(IO%LFLOOD)THEN
+   ENDIF
+   !
+   !        3.3    Flood fractions
+   !               --------------
+   !
+   IF (IO%LFLOOD) THEN
       !        
       YRECFM='FFG_'
       YCOMMENT='flood fraction per patch over ground '
@@ -572,13 +901,13 @@ IF (DM%LSURF_MISC_BUDGET) THEN
             NP%AL(JP)%NR_P,NDM%AL(JP)%XFF(:),ISIZE,S%XWORK_WR)
       ENDDO 
       !
-    ENDIF
-    !
-    !        3.4    Total Albedo
-    !               ------------
-    !
-    !
-    IF (TPSNOW%SCHEME=='3-L' .OR. TPSNOW%SCHEME=='CRO') THEN
+   ENDIF
+   !
+   !        3.4    Total Albedo
+   !               ------------
+   !
+   !
+   IF (TPSNOW%SCHEME=='3-L' .OR. TPSNOW%SCHEME=='CRO') THEN
       !
       YRECFM='TS_'
       YCOMMENT='total surface temperature (isba+snow) per patch'
@@ -594,43 +923,61 @@ IF (DM%LSURF_MISC_BUDGET) THEN
             NP%AL(JP)%NR_P,ND%AL(JP)%XTSRAD(:),ISIZE,S%XWORK_WR)
       ENDDO  
       !      
-    ENDIF
-    !
-    !        3.5    Halstead coefficient
-    !               --------------------
-    !
-    YRECFM='HV_'
-    YCOMMENT='Halstead coefficient per patch'
-    DO JP=1,IO%NPATCH
+   ENDIF
+   !
+   !        3.5    Halstead coefficient
+   !               --------------------
+   !
+   YRECFM='HV_'
+   YCOMMENT='Halstead coefficient per patch'
+   DO JP=1,IO%NPATCH
       CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
           NP%AL(JP)%NR_P,NDM%AL(JP)%XHV(:),ISIZE,S%XWORK_WR)
-    ENDDO      
-    !
-    !        3.6  Snow outputs 
-    !        -----------------
-    !
-    YRECFM='WSN_T_'
-    YCOMMENT='X_Y_WSNOW_TOT (kg/m2) per patch'
-    DO JP=1,IO%NPATCH
+   ENDDO      
+   !
+   !        3.6  Snow outputs 
+   !        -----------------
+   !
+   YRECFM='WSN_T_'
+   YCOMMENT='Total_snow_reservoir (kg/m2) per patch'
+   DO JP=1,IO%NPATCH
       CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
           NP%AL(JP)%NR_P,NDM%AL(JP)%XTWSNOW(:),ISIZE,S%XWORK_WR)
-    ENDDO      
-    !
-    YRECFM='DSN_T_'
-    YCOMMENT='X_Y_DSNOW_TOT (m) per patch'
-    DO JP=1,IO%NPATCH
+   ENDDO      
+   !
+   YRECFM='DSN_T_'
+   YCOMMENT='Total_snow_depth (m) per patch'
+   DO JP=1,IO%NPATCH
       CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
           NP%AL(JP)%NR_P,NDM%AL(JP)%XTDSNOW(:),ISIZE,S%XWORK_WR)
-    ENDDO      
-    !
-    YRECFM='TSN_T_'
-    YCOMMENT='X_Y_TSNOW_TOT (k) per patch'
-    DO JP=1,IO%NPATCH
+   ENDDO      
+   !
+   YRECFM='TSN_T_'
+   YCOMMENT='Total_snow_temperature (k) per patch'
+   DO JP=1,IO%NPATCH
       CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
           NP%AL(JP)%NR_P,NDM%AL(JP)%XTTSNOW(:),ISIZE,S%XWORK_WR)
-    ENDDO      
-    !
-    IF (TPSNOW%SCHEME=='CRO' .AND. DM%LPROSNOW) THEN
+   ENDDO      
+   !
+   IF (TPSNOW%SCHEME=='3-L' .OR. TPSNOW%SCHEME=='CRO') THEN
+      !
+      YRECFM='WLSN_T_'
+      YCOMMENT='Total_liquid_water_in_snow (kg/m2) per patch'
+      DO JP=1,IO%NPATCH
+         CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+              NP%AL(JP)%NR_P,NDM%AL(JP)%XTSNOWLIQ(:),ISIZE,S%XWORK_WR)
+      ENDDO
+      !
+      YRECFM='AGESN_T_'
+      YCOMMENT='Mean_snow_pack_age (day) per patch'
+      DO JP=1,IO%NPATCH
+         CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+              NP%AL(JP)%NR_P,NDM%AL(JP)%XTSNOWAGE(:),ISIZE,S%XWORK_WR)
+      ENDDO
+      !
+   ENDIF
+   !
+   IF (TPSNOW%SCHEME=='CRO' .AND. DM%LPROSNOW) THEN
       !
       YCOMMENT='accumulated snow thickness for past 1 days per patch'
       DO JP=1,IO%NPATCH
@@ -722,9 +1069,9 @@ IF (DM%LSURF_MISC_BUDGET) THEN
               NP%AL(JP)%NR_P,NDM%AL(JP)%XPRO_INF_TYP(:),ISIZE,S%XWORK_WR)
       ENDDO
       !
-    ENDIF
-    !
-    IF (TPSNOW%SCHEME=='CRO') THEN
+   ENDIF
+   !
+   IF (TPSNOW%SCHEME=='CRO') THEN
       !
       IF (IO%LSNOWMAK_BOOL) THEN
         YCOMMENT='Snow production counter (s)'
@@ -735,43 +1082,75 @@ IF (DM%LSURF_MISC_BUDGET) THEN
       ENDIF
       !
       IF (IO%LSNOWSYTRON) THEN    
-        !
-        YCOMMENT='Sytron_erosion/accumulation_flux (kg/m2/s)'
-        DO JP=1,IO%NPATCH
-          CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,'SYTFLX_',YCOMMENT,JP,&
-                NP%AL(JP)%NR_P,NDM%AL(JP)%XSYTMASS(:),ISIZE,S%XWORK_WR)
-        ENDDO
-        !
-        YCOMMENT='Cumulated Sytron_erosion/accumulation_flux (kg/m2)'
-        DO JP=1,IO%NPATCH
-          CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,'SYTFLXC_',YCOMMENT,JP,&
-                NP%AL(JP)%NR_P,NDM%AL(JP)%XSYTMASSC(:),ISIZE,S%XWORK_WR)
-        ENDDO
-        !
+         !
+         YCOMMENT='Sytron_erosion/accumulation_flux (kg/m2/s)'
+         DO JP=1,IO%NPATCH
+            CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,'SYTFLX_',YCOMMENT,JP,&
+                 NP%AL(JP)%NR_P,NDM%AL(JP)%XSYTMASS(:),ISIZE,S%XWORK_WR)
+          ENDDO
+         !
+         YCOMMENT='Cumulated Sytron_erosion/accumulation_flux (kg/m2)'
+         DO JP=1,IO%NPATCH
+            CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,'SYTFLXC_',YCOMMENT,JP,&
+                 NP%AL(JP)%NR_P,NDM%AL(JP)%XSYTMASSC(:),ISIZE,S%XWORK_WR)
+         ENDDO
+         !
       ENDIF
       !
-    ENDIF
-  ENDIF
-  !
-  IF((OPATCH_BUDGET.AND. IO%NPATCH>1).OR.IO%NPATCH==1)THEN
-    !
-    IF (TPSNOW%SCHEME=='CRO' .AND. DM%LPROBANDS) THEN
-        DO JP=1,IO%NPATCH          
-          YRECFM='SPEC_ALB'
-          YCOMMENT='Snow spectral albedo'
-          CALL WRITE_FIELD_2D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
-                      NP%AL(JP)%NR_P,NDM%AL(JP)%XSPEC_ALB(:,:),ISIZE,'bands',S%XBANDS_WR)
-        !
-        ENDDO 
-        DO JP=1,IO%NPATCH
-          YRECFM='DIFF_RATIO'
-          YCOMMENT='Diffuse to total spectral irradiance ratio'
-          CALL WRITE_FIELD_2D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
-                      NP%AL(JP)%NR_P,NDM%AL(JP)%XDIFF_RATIO(:,:),ISIZE,'bands',S%XBANDS_WR)
-        ENDDO 
-    ENDIF    
-    ! 
-    IF ( OSNOWDIMNC ) THEN
+   ENDIF
+   !
+   !
+   !        3.7    Others output
+   !               -------------
+   !
+   YRECFM='WR_'
+   YCOMMENT='liquid water retained on canopy (kg/m2) per patch'
+   DO JP=1,IO%NPATCH
+      CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+           NP%AL(JP)%NR_P,NDM%AL(JP)%XWR(:),ISIZE,S%XWORK_WR)
+    ENDDO
+   !
+   IF (ISIZE_LMEB_PATCH>0) THEN
+      YRECFM='WRVN_'
+      YCOMMENT='snow retained retained on canopy (kg/m2) per patch'
+      DO JP=1,IO%NPATCH
+         CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+              NP%AL(JP)%NR_P,NDM%AL(JP)%XWRVN(:),ISIZE,S%XWORK_WR)
+      ENDDO
+   ENDIF
+   !
+   IF (IO%LFIRE) THEN
+      !
+      YRECFM='FFIRE_'
+      YCOMMENT='natural burnt area fraction (-) per patch'
+      DO JP=1,IO%NPATCH
+         CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+              NP%AL(JP)%NR_P,NDM%AL(JP)%XFIREFRA(:),ISIZE,S%XWORK_WR)
+      ENDDO
+      !
+   ENDIF
+!   
+ENDIF
+!
+IF ((OPATCH_BUDGET.AND. IO%NPATCH>1).OR.IO%NPATCH==1) THEN
+   !
+   IF (TPSNOW%SCHEME=='CRO' .AND. DM%LPROBANDS) THEN
+      DO JP=1,IO%NPATCH          
+         YRECFM='SPEC_ALB'
+         YCOMMENT='Snow spectral albedo'
+         CALL WRITE_FIELD_2D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+                     NP%AL(JP)%NR_P,NDM%AL(JP)%XSPEC_ALB(:,:),ISIZE,'bands',S%XBANDS_WR)
+       !
+       ENDDO 
+       DO JP=1,IO%NPATCH
+         YRECFM='DIFF_RATIO'
+         YCOMMENT='Diffuse to total spectral irradiance ratio'
+         CALL WRITE_FIELD_2D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+                     NP%AL(JP)%NR_P,NDM%AL(JP)%XDIFF_RATIO(:,:),ISIZE,'bands',S%XBANDS_WR)
+       ENDDO 
+   ENDIF    
+   ! 
+   IF (OSNOWDIMNC) THEN
       !
       IF ( DM%LVOLUMETRIC_SNOWLIQ ) THEN
         YCOMMENT='snow liquid water (kg m-3)'
@@ -862,7 +1241,7 @@ IF (DM%LSURF_MISC_BUDGET) THEN
         !
       ENDIF
       !
-    ELSE
+   ELSE
       !
       DO JL=1,TPSNOW%NLAYER
         !
@@ -893,18 +1272,19 @@ IF (DM%LSURF_MISC_BUDGET) THEN
         !
       END DO
       !
-    ENDIF
+   ENDIF
     !
-  ENDIF
-  !
-  !        3.7    Irrigation output
-  !               -----------------
-  !
-  IF (LIRRIGMODE) THEN
-    !
-    YRECFM='IRRISEUIL'
-    YCOMMENT='irrigation threshold per patch'
-    DO JP=1,IO%NPATCH
+ENDIF
+!
+!
+!        3.7    Irrigation output
+!               -----------------
+!
+IF (LIRRIGMODE) THEN
+   !
+   YRECFM='IRRISEUIL'
+   YCOMMENT='irrigation threshold per patch'
+   DO JP=1,IO%NPATCH
       ALLOCATE(ZWORK(SIZE(NPE%AL(JP)%XF2THRESHOLD(:),1)))
       ZWORK(:)=NPE%AL(JP)%XF2THRESHOLD(:)
       WHERE ( ABS( (ZWORK(:)/XUNDEF) - 1 ) <= 1.E-5)
@@ -913,79 +1293,79 @@ IF (DM%LSURF_MISC_BUDGET) THEN
       CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
             NP%AL(JP)%NR_P,ZWORK(:),ISIZE,S%XWORK_WR)
       DEALLOCATE(ZWORK)
-    ENDDO
-    !
-    YRECFM='IRRIG_NUM'
-    YCOMMENT='irrigation number (for the season)'
-    DO JP=1,IO%NPATCH
+   ENDDO
+   !
+   YRECFM='IRRIG_NUM'
+   YCOMMENT='irrigation number (for the season)'
+   DO JP=1,IO%NPATCH
       ALLOCATE(ZWORK(SIZE(NAG%AL(JP)%NIRRINUM(:),1)))
       ZWORK(:)=NAG%AL(JP)%NIRRINUM(:)-1
       CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
             NP%AL(JP)%NR_P,ZWORK(:),ISIZE,S%XWORK_WR)
       DEALLOCATE(ZWORK)
-    ENDDO
+   ENDDO
     !
-  ENDIF
-  !
-  IF (IO%LTR_ML) THEN
-    !
-    YRECFM='FAPAR'
-    YCOMMENT='FAPAR (-)'
-    DO JP=1,IO%NPATCH
+ENDIF
+!
+IF (IO%LTR_ML) THEN
+   !
+   YRECFM='FAPAR'
+   YCOMMENT='FAPAR (-)'
+   DO JP=1,IO%NPATCH
       CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
           NP%AL(JP)%NR_P,NDM%AL(JP)%XFAPAR(:),ISIZE,S%XWORK_WR)
-    ENDDO
-    !
-    YRECFM='FAPIR'
-    YCOMMENT='FAPIR (-)'
-    DO JP=1,IO%NPATCH
+   ENDDO
+   !
+   YRECFM='FAPIR'
+   YCOMMENT='FAPIR (-)'
+   DO JP=1,IO%NPATCH
       CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
           NP%AL(JP)%NR_P,NDM%AL(JP)%XFAPIR(:),ISIZE,S%XWORK_WR)
-    ENDDO
-    !
-    YRECFM='FAPAR_BS'
-    YCOMMENT='FAPAR_BS (-)'
-    DO JP=1,IO%NPATCH
+   ENDDO
+   !
+   YRECFM='FAPAR_BS'
+   YCOMMENT='FAPAR_BS (-)'
+   DO JP=1,IO%NPATCH
       CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
           NP%AL(JP)%NR_P,NDM%AL(JP)%XFAPAR_BS(:),ISIZE,S%XWORK_WR)
-    ENDDO
-    !
-    YRECFM='FAPIR_BS'
-    YCOMMENT='FAPIR_BS (-)'
-    DO JP=1,IO%NPATCH
+   ENDDO
+   !
+   YRECFM='FAPIR_BS'
+   YCOMMENT='FAPIR_BS (-)'
+   DO JP=1,IO%NPATCH
       CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
           NP%AL(JP)%NR_P,NDM%AL(JP)%XFAPIR_BS(:),ISIZE,S%XWORK_WR)
-    ENDDO
-    !
-    YRECFM='DFAPARC'
-    YCOMMENT='DFAPARC (-)'
-    DO JP=1,IO%NPATCH
+   ENDDO
+   !
+   YRECFM='DFAPARC'
+   YCOMMENT='DFAPARC (-)'
+   DO JP=1,IO%NPATCH
       CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
           NP%AL(JP)%NR_P,NDM%AL(JP)%XDFAPARC(:),ISIZE,S%XWORK_WR)
-    ENDDO
-    !
-    YRECFM='DFAPIRC'
-    YCOMMENT='DFAPIRC (-)'
-    DO JP=1,IO%NPATCH
+   ENDDO
+   !
+   YRECFM='DFAPIRC'
+   YCOMMENT='DFAPIRC (-)'
+   DO JP=1,IO%NPATCH
       CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
           NP%AL(JP)%NR_P,NDM%AL(JP)%XDFAPIRC(:),ISIZE,S%XWORK_WR)
-    ENDDO
-    !
-    YRECFM='DLAI_EFFC'
-    YCOMMENT='DLAI_EFFC (m2/m2)'
-    DO JP=1,IO%NPATCH
+   ENDDO
+   !
+   YRECFM='DLAI_EFFC'
+   YCOMMENT='DLAI_EFFC (m2/m2)'
+   DO JP=1,IO%NPATCH
       CALL WRITE_FIELD_1D_PATCH(HSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
           NP%AL(JP)%NR_P,NDM%AL(JP)%XDLAI_EFFC(:),ISIZE,S%XWORK_WR)
-    ENDDO
-    !
-  ENDIF
-  ! 
-  IF (LASSIM .AND. CASSIM_ISBA=="EKF  ") THEN
-    !
-    CALL END_IO_SURF_n(HPROGRAM)
-    CALL INIT_IO_SURF_n(DTCO, U, HPROGRAM,'NATURE','ISBA  ','WRITE','ISBA_ANALYSIS.OUT.nc')
-    !
-    DO JVAR = 1,NVAR
+   ENDDO
+   !
+ENDIF
+! 
+IF (LASSIM .AND. CASSIM_ISBA=="EKF  ") THEN
+   !
+   CALL END_IO_SURF_n(HPROGRAM)
+   CALL INIT_IO_SURF_n(DTCO, U, HPROGRAM,'NATURE','ISBA  ','WRITE','ISBA_ANALYSIS.OUT.nc')
+   !
+   DO JVAR = 1,NVAR
       WRITE(YVAR,FMT='(I1.1)') JVAR
       YRECFM="ANA_INCR"//YVAR
       !YCOMMENT="by patch"
@@ -1010,9 +1390,9 @@ IF (DM%LSURF_MISC_BUDGET) THEN
           ENDDO
         ENDDO
       ENDDO
-    ENDDO
-    !
-    DO JT = 1,NBOUTPUT        
+   ENDDO
+   !
+   DO JT = 1,NBOUTPUT        
       WRITE(YTIM,FMT='(I1.1)') JT
       DO JOBS = 1,NOBSTYPE
         WRITE(YOBS,FMT='(I1.1)') JOBS
@@ -1022,9 +1402,9 @@ IF (DM%LSURF_MISC_BUDGET) THEN
         JK = (JT-1)*NOBSTYPE + JOBS
         CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,S%XINNOV(:,JK),IRESP,HCOMMENT=YCOMMENT)
       ENDDO
-    ENDDO
-    !
-    DO JT = 1,NBOUTPUT
+   ENDDO
+   !
+   DO JT = 1,NBOUTPUT
       WRITE(YTIM,FMT='(I1.1)') JT
       DO JOBS = 1,NOBSTYPE
         WRITE(YOBS,FMT='(I1.1)') JOBS
@@ -1034,15 +1414,13 @@ IF (DM%LSURF_MISC_BUDGET) THEN
         JK = (JT-1)*NOBSTYPE + JOBS
         CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,S%XRESID(:,JK),IRESP,HCOMMENT=YCOMMENT)
       ENDDO
-    ENDDO
-    !
-  ENDIF
-  !
+   ENDDO
+   !
 ENDIF
+!
 !         End of IO
 !
-!
- CALL END_IO_SURF_n(HPROGRAM)
+CALL END_IO_SURF_n(HPROGRAM)
 !
 IF (LHOOK) CALL DR_HOOK('WRITE_DIAG_MISC_ISBA_N',1,ZHOOK_HANDLE)
 !

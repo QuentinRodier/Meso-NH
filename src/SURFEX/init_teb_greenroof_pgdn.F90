@@ -71,6 +71,7 @@ USE MODI_GET_LUOUT
 USE MODI_ALLOCATE_TEB_VEG_PGD
 USE MODI_READ_PGD_TEB_GREENROOF_n
 USE MODI_CONVERT_PATCH_ISBA
+USE MODI_CONVERT_PATCH_ALB_ISBA
 USE MODI_INIT_FROM_DATA_TEB_VEG_n
 USE MODI_INIT_VEG_PGD_n
 USE MODI_EXP_DECAY_SOIL_FR
@@ -271,8 +272,7 @@ IF (OPATCH1) THEN
   IF (.NOT. IO%LPAR) THEN
     CALL CONVERT_PATCH_ISBA(DTCO, DTV, IO, 1, 1, IDECADE, IDECADE, TOP%XCOVER, TOP%LCOVER, &
                         .FALSE.,.FALSE.,.FALSE.,'GRD', 1, K, P, PEK,                       &
-                        .TRUE., .FALSE., .FALSE., .FALSE., .FALSE., .FALSE.,.FALSE., &
-                        PSOILGRID=IO%XSOILGRID  )   
+                        .TRUE., .FALSE., .FALSE., .FALSE., .FALSE., PSOILGRID=IO%XSOILGRID  )   
   ELSE
     CALL INIT_FROM_DATA_TEB_VEG_n(DTV, K, P, PEK, IDECADE, .FALSE., .TRUE., .FALSE.,.FALSE.)
   ENDIF
@@ -293,9 +293,18 @@ END IF
 !               -----------------------------------------
 !
 IF (.NOT. IO%LPAR) THEN
+  !
+  ! Initialize general parameters (without vegetation albedo)
+  !
   CALL CONVERT_PATCH_ISBA(DTCO, DTV, IO, 1, 1, IDECADE, IDECADE, TOP%XCOVER, TOP%LCOVER, &
                         .FALSE., .FALSE., .FALSE., 'GRD', 1, K, P, PEK,                  &
-                        .FALSE., .TRUE., .FALSE., .FALSE., .FALSE., .FALSE., .FALSE.  )   
+                        .FALSE., .TRUE., .FALSE., .FALSE., .FALSE.  )   
+  !
+  ! Initialize vegetation albedo only
+  !
+  CALL CONVERT_PATCH_ALB_ISBA(DTCO, DTV, IO, IDECADE, IDECADE, TOP%XCOVER, TOP%LCOVER, &
+                                 'GRD', 1, K, P, PEK, .FALSE., .TRUE.                  )
+  !
 ELSE
 
   CALL INIT_FROM_DATA_TEB_VEG_n(DTV, K, P, PEK, IDECADE, .FALSE., .FALSE., .TRUE.,.FALSE.)
@@ -311,7 +320,7 @@ K%XVEGTYPE = S%XVEGTYPE
 !
 ALLOCATE(YSS%XAOSIP(0))
 !
- CALL INIT_VEG_PGD_n(YSS, DTV, IO, S, K, K, P, PEK, YAG, KI,                     &
+CALL INIT_VEG_PGD_n(YSS, DTV, IO, S, K, K, P, PEK, YAG, KI,                     &
                       HPROGRAM, 'TOWN  ',ILUOUT, KI, TOP%TTIME%TDATE%MONTH, &
                       .TRUE.,.FALSE., .FALSE.,.TRUE.,.TRUE., ZTDEEP_CLI, ZGAMMAT_CLI,& 
                       .FALSE.,.FALSE., ZTHRESHOLD, HINIT, PCO2, PRHOA  )

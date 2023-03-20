@@ -7,7 +7,8 @@ SUBROUTINE SFX_OASIS_RECV(HPROGRAM,KGPTOT,KI,KSW,PTIMEC,         &
                           ORECV_LAND, ORECV_SEA, ORECV_WAVE,     &
                           PLAND_WTD,PLAND_FWTD,                  &
                           PLAND_FFLOOD,PLAND_PIFLOOD,            &
-                          PSEA_SST,PSEA_UCU,PSEA_VCU,            &
+                          PLAND_TWS,                             &
+                          PSEA_SST,PSEA_UCU,PSEA_VCU,PSEA_FCO2,  &
                           PSEAICE_SIT,PSEAICE_CVR,PSEAICE_ALB,   &
                           PWAVE_CHA,PWAVE_UCU,PWAVE_VCU,         &
                           PWAVE_HS,PWAVE_TP             )
@@ -43,6 +44,7 @@ SUBROUTINE SFX_OASIS_RECV(HPROGRAM,KGPTOT,KI,KSW,PTIMEC,         &
 !!                  01/2020 : C. Lebeaupin : 
 !!                              add sfxrcv with phys/spectral domain distinction for ARO
 !!                              current components inout (init to 0. before)
+!!      R. Séférian    11/16 : Implement carbon cycle coupling (Earth system model)
 !
 !-------------------------------------------------------------------------------
 !
@@ -81,10 +83,13 @@ REAL, DIMENSION(KI),    INTENT(OUT) :: PLAND_WTD     ! Land water table depth (m
 REAL, DIMENSION(KI),    INTENT(OUT) :: PLAND_FWTD    ! Land grid-cell fraction of water table rise (-)
 REAL, DIMENSION(KI),    INTENT(OUT) :: PLAND_FFLOOD  ! Land Floodplains fraction (-)
 REAL, DIMENSION(KI),    INTENT(OUT) :: PLAND_PIFLOOD ! Land Potential flood infiltration (kg/m2/s)
+REAL, DIMENSION(KI),    INTENT(OUT) :: PLAND_TWS     ! RRM terrestrial water storage (kg/m2)
 !
 REAL, DIMENSION(KI),    INTENT(OUT) :: PSEA_SST ! Sea surface temperature (K)
 REAL, DIMENSION(KI),    INTENT(INOUT) :: PSEA_UCU ! Sea u-current (m/s)
 REAL, DIMENSION(KI),    INTENT(INOUT) :: PSEA_VCU ! Sea v-current (m/s)
+!
+REAL, DIMENSION(KI),    INTENT(OUT) :: PSEA_FCO2   ! Sea carbon flux (molC m-2 s-1)
 !
 REAL, DIMENSION(KI),    INTENT(OUT) :: PSEAICE_SIT ! Sea-ice Temperature (K)
 REAL, DIMENSION(KI),    INTENT(OUT) :: PSEAICE_CVR ! Sea-ice cover (-)
@@ -98,6 +103,7 @@ REAL, DIMENSION(KI),    INTENT(OUT) :: PWAVE_TP  ! Peak period (s)
 !
 !*       0.2   Declarations of local variables
 !              -------------------------------
+!
 !
 INTEGER               :: IDATE  ! current coupling time step (s)
 INTEGER               :: IERR   ! Error info
@@ -117,7 +123,6 @@ IF (LHOOK) CALL DR_HOOK('SFX_OASIS_RECV',0,ZHOOK_HANDLE)
 !
 CALL GET_LUOUT(HPROGRAM,ILUOUT)
 #ifdef ARO
-!
 IF( KI /= KGPTOT ) THEN
   WRITE(ILUOUT,*) '**WARNING**: KI ', KI, 'is different from ',KGPTOT
   IF(HPROGRAM=='AROME ') WRITE(ILUOUT,*) 'SFX_OASIS_RECV: ARRAY REDUCED AFTER GET'
@@ -139,8 +144,18 @@ IF(ORECV_LAND)THEN
   PLAND_FWTD   (:) = XUNDEF
   PLAND_FFLOOD (:) = XUNDEF
   PLAND_PIFLOOD(:) = XUNDEF
+  PLAND_TWS    (:) = XUNDEF
 !
-! * Receive river input fields
+! * Receive RRM TWS input fields
+!
+  IF(NTWS_ID/=NUNDEF)THEN
+!
+    YCOMMENT='RRM terrestrial water storage'
+    CALL SFXRCV(KI,KGPTOT,ILUOUT,IDATE,HPROGRAM,YCOMMENT,NTWS_ID,PLAND_TWS)
+!    
+  ENDIF
+!
+! * Receive groundwater input fields
 !
   IF(LCPL_GW)THEN
 !
@@ -177,8 +192,8 @@ IF(ORECV_SEA)THEN
 ! * Init ocean input fields
 !
   PSEA_SST (:) = XUNDEF
-!  PSEA_UCU (:) = XUNDEF
-!  PSEA_VCU (:) = XUNDEF
+  PSEA_UCU (:) = XUNDEF
+  PSEA_VCU (:) = XUNDEF
 !
   PSEAICE_SIT (:) = XUNDEF
   PSEAICE_CVR (:) = XUNDEF
@@ -205,6 +220,13 @@ IF(ORECV_SEA)THEN
 !
     YCOMMENT='Sea-ice albedo'
     CALL SFXRCV(KI,KGPTOT,ILUOUT,IDATE,HPROGRAM,YCOMMENT,NSEAICE_ALB_ID,PSEAICE_ALB)
+!
+  ENDIF
+!
+  IF(LCPL_SEACARB)THEN
+!
+    YCOMMENT='Sea Carbon Flux '
+    CALL SFXRCV(KI,KGPTOT,ILUOUT,IDATE,HPROGRAM,YCOMMENT,NSEA_FCO2_ID,PSEA_FCO2)
 !
   ENDIF
 !

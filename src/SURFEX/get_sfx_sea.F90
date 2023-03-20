@@ -4,10 +4,10 @@
 !SFX_LIC for details. version 1.
 !     #########
       SUBROUTINE GET_SFX_SEA (S, U, W, &
-                              OCPL_SEAICE,OWATER,                       &
+                              OCPL_SEAICE,OWATER,OCPL_SEACARB,         &
                               PSEA_FWSU,PSEA_FWSV,PSEA_HEAT,PSEA_SNET, &
                               PSEA_WIND,PSEA_FWSM,PSEA_EVAP,PSEA_RAIN, &
-                              PSEA_SNOW,PSEA_WATF,PSEA_PRES,           &
+                              PSEA_SNOW,PSEA_WATF,PSEA_PRES,PSEA_CO2,  &
                               PSEAICE_HEAT,PSEAICE_SNET,PSEAICE_EVAP   )  
 !     ############################################################################
 !
@@ -38,6 +38,7 @@
 !!    -------------
 !!      Original    10/2013
 !!      Modified    11/2014 : J. Pianezze - Add surface pressure coupling parameter
+!!      R. Séférian   11/16 : Implement carbon cycle coupling (Earth system model)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -68,8 +69,9 @@ TYPE(SEAFLUX_t), INTENT(INOUT) :: S
 TYPE(SURF_ATM_t), INTENT(INOUT) :: U
 TYPE(WATFLUX_t), INTENT(INOUT) :: W
 !
-LOGICAL,            INTENT(IN)  :: OCPL_SEAICE ! sea-ice / ocean key
-LOGICAL,            INTENT(IN)  :: OWATER      ! water included in sea smask
+LOGICAL,            INTENT(IN)  :: OCPL_SEAICE  ! sea-ice / ocean key
+LOGICAL,            INTENT(IN)  :: OWATER       ! water included in sea smask
+LOGICAL,            INTENT(IN)  :: OCPL_SEACARB ! carbon cycle / ocean key
 !
 REAL, DIMENSION(:), INTENT(OUT) :: PSEA_FWSU  ! Cumulated zonal wind stress       (Pa.s)
 REAL, DIMENSION(:), INTENT(OUT) :: PSEA_FWSV  ! Cumulated meridian wind stress    (Pa.s)
@@ -82,6 +84,7 @@ REAL, DIMENSION(:), INTENT(OUT) :: PSEA_RAIN  ! Cumulated Rainfall rate         
 REAL, DIMENSION(:), INTENT(OUT) :: PSEA_SNOW  ! Cumulated Snowfall rate           (kg/m2)
 REAL, DIMENSION(:), INTENT(OUT) :: PSEA_WATF  ! Cumulated Net water flux (kg/m2)
 REAL, DIMENSION(:), INTENT(OUT) :: PSEA_PRES  ! Cumulated Surface pressure        (Pa.s)
+REAL, DIMENSION(:), INTENT(OUT) :: PSEA_CO2   ! Cumulated atmospheric co2         (ppm.s)
 !
 REAL, DIMENSION(:), INTENT(OUT) :: PSEAICE_HEAT ! Cumulated Sea-ice non solar net heat flux (J/m2)
 REAL, DIMENSION(:), INTENT(OUT) :: PSEAICE_SNET ! Cumulated Sea-ice solar net heat flux     (J/m2)
@@ -124,6 +127,8 @@ PSEA_EVAP (:) = XUNDEF
 PSEA_RAIN (:) = XUNDEF
 PSEA_SNOW (:) = XUNDEF
 PSEA_WATF (:) = XUNDEF
+PSEA_PRES (:) = XUNDEF
+PSEA_CO2  (:) = XUNDEF
 !
 PSEAICE_HEAT (:) = XUNDEF
 PSEAICE_SNET (:) = XUNDEF
@@ -177,6 +182,11 @@ IF(U%NSIZE_SEA>0)THEN
     S%XCPL_SEAICE_SNET(:) = 0.0
     S%XCPL_SEAICE_EVAP(:) = 0.0
     S%XCPL_SEAICE_HEAT(:) = 0.0  
+  ENDIF
+!
+  IF (OCPL_SEACARB) THEN
+    CALL UNPACK_SAME_RANK(U%NR_SEA(:),S%XCPL_SEA_CO2(:),PSEA_CO2(:),XUNDEF)
+    S%XCPL_SEA_CO2(:) = 0.0  
   ENDIF
 !
 ENDIF

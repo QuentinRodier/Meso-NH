@@ -30,7 +30,7 @@
 !            -----------
 !
 !
-use modd_netcdf_sfx, only : CDFINT
+use modd_netcdf_sfx, only : IDCDF_KIND
 USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 USE MODD_SSO_n, ONLY : SSO_t
@@ -75,7 +75,7 @@ REAL, DIMENSION(:),ALLOCATABLE :: ZLATI    ! array of values extract from netcdf
 !
 INTEGER      :: ILUOUT                     ! output listing
 INTEGER      :: JLOOP                      ! loop indice
-INTEGER(kind=CDFINT) :: JDIMENSION     ! dimensions of ZVALU,ZLAT,
+INTEGER(kind=IDCDF_KIND) :: JDIMENSION     ! dimensions of ZVALU,ZLAT,
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
                                            ! and ZLON arrays
 !----------------------------------------------------------------------------

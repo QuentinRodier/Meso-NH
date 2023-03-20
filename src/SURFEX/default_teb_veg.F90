@@ -3,12 +3,12 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE DEFAULT_TEB_VEG(HRUNOFF, HSCOND,               &
+      SUBROUTINE DEFAULT_TEB_VEG(HRUNOFF, HSCOND,                        &
                                  HC1DRY, HSOILFRZ, HDIFSFCOND, HSNOWRES, &
                                  HCPSURF, PCGMAX, HKSAT,                 &
                                  HRAIN, HHORT,                           &
                                  OGLACIER, OCANOPY_DRAG, OVEGUPD,        &
-                                 ONITRO_DILU                             )
+                                 ONITRO_DILU, PCNLIM, ODOWNREGU          )
 !     ########################################################################
 !
 !!****  *DEFAULT_TEB_VEG* - routine to set default values for the configuration for TEB scheme
@@ -72,6 +72,9 @@ LOGICAL, INTENT(OUT)           :: OVEGUPD      ! T: update vegetation parameters
 !                                              ! F: keep vegetation parameters constant in time
 REAL,    INTENT(OUT)           :: PCGMAX     ! maximum soil heat capacity
 LOGICAL, INTENT(OUT)           :: ONITRO_DILU ! nitrogen dilution fct of CO2 (Calvet et al. 2008)
+REAL,    INTENT(OUT)           :: PCNLIM      ! C-N limitation
+!
+LOGICAL, INTENT(OUT)           :: ODOWNREGU   ! downregulation parameterization of CO2 assimilation
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
@@ -103,6 +106,10 @@ OVEGUPD     = .TRUE.
 ONITRO_DILU = .FALSE.
 !
 OGLACIER  = .FALSE.
+!
+PCNLIM    = -0.048
+!
+ODOWNREGU   = .FALSE.
 !
 IF (LHOOK) CALL DR_HOOK('DEFAULT_TEB_VEG',1,ZHOOK_HANDLE)
 !

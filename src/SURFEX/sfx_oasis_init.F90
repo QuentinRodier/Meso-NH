@@ -166,7 +166,7 @@ IF (LXIOS) THEN
 ELSE  ! (i.e. .NOT. LXIOS)
 !
 #ifdef CPLOASIS
-
+!
   IF (LOASIS ) THEN
     IRANK=0
     CALL OASIS_INIT_COMP(ICOMP_ID,CMODEL_NAME,IERR)  
@@ -189,15 +189,17 @@ ELSE  ! (i.e. .NOT. LXIOS)
     ENDIF
 !
   ELSE
+!
     KLOCAL_COMM=0
     RETURN
+!
   ENDIF
-
+!
 #else
-
+!
   KLOCAL_COMM=0
   RETURN
-
+!
 #endif
 !
 ENDIF
@@ -215,7 +217,7 @@ ENDIF
 IF(YINIT=='PRE')THEN
    RETURN
 ENDIF
-
+!
 #ifdef CPLOASIS
 IF (LOASIS) THEN
 !

@@ -50,6 +50,7 @@ END MODULE MODI_INI_MEAN_FIELD
 !!                      10/2016 (C.Lac) Add max values
 !!                      02/2021 (T.Nagel) add passive scalar (XSVT) and UW wind component
 !!                      05/2021 (PA.Joulin) add wind turbine variables
+!!                      12/2021 (R. Schoetter) adds humidity and other mean diagnostics
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -78,6 +79,20 @@ XTEMPM_MEAN = 0.0
 IF (CTURB /= 'NONE') XTKEM_MEAN = 0.0
 XPABSM_MEAN = 0.0
 XSVT_MEAN = 0.0
+!
+XQ_MEAN  = 0.0
+XRH_W_MEAN   = 0.0
+XRH_I_MEAN   = 0.0
+XRH_P_MEAN   = 0.0
+XRH_W_MAXCOL_MEAN = 0.0
+XRH_I_MAXCOL_MEAN = 0.0
+XRH_P_MAXCOL_MEAN = 0.0
+!
+XWIFF_MEAN = 0.0
+XWIDD_MEAN = 0.0
+!
+XWIFF_MAX = 0.0
+XWIDD_MAX = 0.0
 !
 XU2_MEAN  = 0.0
 XV2_MEAN  = 0.0

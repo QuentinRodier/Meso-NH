@@ -48,13 +48,10 @@
 !*       0.    DECLARATIONS
 !              ------------
 !
-!
-!
-!
-!
-!
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 USE MODD_SURF_PAR, ONLY : LEN_HREC
+!
+USE MODD_SURF_ATM, ONLY : LCO2FOS
 !
 USE MODI_READ_SURF
 !
@@ -95,25 +92,28 @@ GCPL_GCM = .FALSE.
 !
 IF (HINIT=='PGD') THEN
 !     
-   ALLOCATE(U%XRAIN (0))
-   ALLOCATE(U%XSNOW (0))           
-   ALLOCATE(U%XZ0   (0))           
-   ALLOCATE(U%XZ0H  (0))           
-   ALLOCATE(U%XQSURF(0))           
+   ALLOCATE(U%XRAIN  (0))
+   ALLOCATE(U%XSNOW  (0))           
+   ALLOCATE(U%XZ0    (0))           
+   ALLOCATE(U%XZ0H   (0))           
+   ALLOCATE(U%XQSURF (0))           
+   ALLOCATE(U%XCO2FOS(0))           
 !     
 ELSE
 !
-   ALLOCATE(U%XRAIN (U%NSIZE_FULL))
-   ALLOCATE(U%XSNOW (U%NSIZE_FULL))
-   ALLOCATE(U%XZ0   (U%NSIZE_FULL))
-   ALLOCATE(U%XZ0H  (U%NSIZE_FULL))
-   ALLOCATE(U%XQSURF(U%NSIZE_FULL))
+   ALLOCATE(U%XRAIN  (U%NSIZE_FULL))
+   ALLOCATE(U%XSNOW  (U%NSIZE_FULL))
+   ALLOCATE(U%XZ0    (U%NSIZE_FULL))
+   ALLOCATE(U%XZ0H   (U%NSIZE_FULL))
+   ALLOCATE(U%XQSURF (U%NSIZE_FULL))
+   ALLOCATE(U%XCO2FOS(U%NSIZE_FULL))
 !
-   U%XRAIN (:) = 0.0
-   U%XSNOW (:) = 0.0
-   U%XZ0   (:) = 0.001
-   U%XZ0H  (:) = 0.001
-   U%XQSURF(:) = 0.0
+   U%XRAIN  (:) = 0.0
+   U%XSNOW  (:) = 0.0
+   U%XZ0    (:) = 0.001
+   U%XZ0H   (:) = 0.001
+   U%XQSURF (:) = 0.0
+   U%XCO2FOS(:) = 0.0
 !
 ENDIF
 !
@@ -145,6 +145,13 @@ IF (LREAD.AND.GCPL_GCM) THEN
    CALL READ_SURF(HPROGRAM,YRECFM,U%XQSURF(:),IRESP)
 !
 ENDIF        
+!
+IF(LREAD.AND.LCO2FOS)THEN
+!
+   YRECFM='CO2FOS'
+   CALL READ_SURF(HPROGRAM,YRECFM,U%XCO2FOS(:),IRESP)
+! 
+ENDIF
 !
 IF (LHOOK) CALL DR_HOOK('INIT_CPL_GCM_N',1,ZHOOK_HANDLE)
 !-------------------------------------------------------------------------------

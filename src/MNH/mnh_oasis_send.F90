@@ -63,10 +63,11 @@ USE MODN_SFX_OASIS,  ONLY : XTSTEP_CPL_LAND, &
                             XTSTEP_CPL_LAKE, &
                             XTSTEP_CPL_SEA , &
                             XTSTEP_CPL_WAVE, &
-                            LWATER
+                            LWATER,LSEACARB
 !
 USE MODD_SFX_OASIS,  ONLY : LCPL_LAND,LCPL_GW,       &
                             LCPL_FLOOD,LCPL_CALVING, &
+			    LCPL_RIVCARB,            &
                             LCPL_LAKE,               &
                             LCPL_SEA,LCPL_SEAICE,    &
                             LCPL_WAVE
@@ -97,7 +98,8 @@ REAL,                  INTENT(IN) :: PSTEP_SURF    ! Model time step (s)
 REAL, DIMENSION(KI)   :: ZLAND_RUNOFF    ! Cumulated Surface runoff             (kg/m2)
 REAL, DIMENSION(KI)   :: ZLAND_DRAIN     ! Cumulated Deep drainage              (kg/m2)
 REAL, DIMENSION(KI)   :: ZLAND_CALVING   ! Cumulated Calving flux               (kg/m2)
-REAL, DIMENSION(KI)   :: ZLAND_RECHARGE  ! Cumulated Recharge to groundwater    (kg/m2)
+REAL, DIMENSION(KI)   :: ZLAND_SRCFLOOD  ! Cumulated freshwater flux            (kg/m2)
+REAL, DIMENSION(KI)   :: ZLAND_DOCFLUX   ! Cumulated doc flux                   (kg/m2)
 !
 REAL, DIMENSION(KI)   :: ZLAKE_EVAP  ! Cumulated Evaporation             (kg/m2)
 REAL, DIMENSION(KI)   :: ZLAKE_RAIN  ! Cumulated Rainfall rate           (kg/m2)
@@ -119,6 +121,7 @@ REAL, DIMENSION(KI)   :: ZSEA_PRES  ! Cumulated Surface pressure        (Pa.s)
 REAL, DIMENSION(KI)   :: ZSEAICE_HEAT ! Cumulated Sea-ice non solar net heat flux (J/m2)
 REAL, DIMENSION(KI)   :: ZSEAICE_SNET ! Cumulated Sea-ice solar net heat flux     (J/m2)
 REAL, DIMENSION(KI)   :: ZSEAICE_EVAP ! Cumulated Sea-ice sublimation             (kg/m2)
+REAL, DIMENSION(KI)   :: ZSEA_CO2     !
 !
 REAL, DIMENSION(KI)   :: ZWAVE_U10    ! 10m u-wind speed (m/s)
 REAL, DIMENSION(KI)   :: ZWAVE_V10    ! 10m v-wind speed (m/s)
@@ -154,7 +157,6 @@ IF(GSEND_LAND)THEN
   ZLAND_RUNOFF  (:) = XUNDEF
   ZLAND_DRAIN   (:) = XUNDEF
   ZLAND_CALVING (:) = XUNDEF
-  ZLAND_RECHARGE(:) = XUNDEF
 ENDIF
 !
 IF(GSEND_LAKE)THEN
@@ -180,6 +182,7 @@ IF(GSEND_SEA)THEN
   ZSEAICE_HEAT (:) = XUNDEF
   ZSEAICE_SNET (:) = XUNDEF
   ZSEAICE_EVAP (:) = XUNDEF
+  ZSEA_CO2 (:) = XUNDEF
 ENDIF
 !
 IF(GSEND_WAVE)THEN
@@ -197,9 +200,9 @@ IF(GSEND_LAND)THEN
 ! * Get river output fields
 !
   CALL GET_SFX_LAND(YSURF_CUR%IM%O, YSURF_CUR%IM%S, YSURF_CUR%U,   &
-                    LCPL_GW,LCPL_FLOOD,LCPL_CALVING,    &
+                    LCPL_GW,LCPL_FLOOD,LCPL_CALVING, LCPL_RIVCARB,    &
                     ZLAND_RUNOFF (:),ZLAND_DRAIN   (:), &
-                    ZLAND_CALVING(:),ZLAND_RECHARGE(:)   )
+                    ZLAND_CALVING(:),ZLAND_SRCFLOOD(:), ZLAND_DOCFLUX(:)   )
 !
 ENDIF
 !
@@ -218,11 +221,11 @@ IF(GSEND_SEA)THEN
 ! * Get sea output fields
 !
   CALL GET_SFX_SEA(YSURF_CUR%SM%S, YSURF_CUR%U, YSURF_CUR%WM%W,     &
-                    LCPL_SEAICE, LWATER,                            &
+                    LCPL_SEAICE, LWATER, LSEACARB,              &
                     ZSEA_FWSU   (:),ZSEA_FWSV   (:),ZSEA_HEAT   (:),&
                     ZSEA_SNET   (:),ZSEA_WIND   (:),ZSEA_FWSM   (:),&
                     ZSEA_EVAP   (:),ZSEA_RAIN   (:),ZSEA_SNOW   (:),&
-                    ZSEA_WATF   (:),ZSEA_PRES   (:),                &
+                    ZSEA_WATF   (:),ZSEA_PRES   (:),ZSEA_CO2    (:),&
                     ZSEAICE_HEAT(:),ZSEAICE_SNET(:),ZSEAICE_EVAP(:) )
 !
 ENDIF
@@ -243,7 +246,8 @@ ENDIF
 !               ----------------------------------
 !
 CALL SFX_OASIS_SEND(ILUOUT,KI,IDATE,GSEND_LAND,GSEND_LAKE,GSEND_SEA,GSEND_WAVE, &
-                    ZLAND_RUNOFF,ZLAND_DRAIN,ZLAND_CALVING,ZLAND_RECHARGE,      &
+                    ZLAND_RUNOFF,ZLAND_DRAIN,ZLAND_CALVING,                     &
+                    ZLAND_SRCFLOOD,ZLAND_DOCFLUX,                               &
                     ZLAKE_EVAP,ZLAKE_RAIN,ZLAKE_SNOW,ZLAKE_WATF,                &
                     ZSEA_FWSU,ZSEA_FWSV,ZSEA_HEAT,ZSEA_SNET,ZSEA_WIND,          &
                     ZSEA_FWSM,ZSEA_EVAP,ZSEA_RAIN,ZSEA_SNOW,                    &

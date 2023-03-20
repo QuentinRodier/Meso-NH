@@ -4,7 +4,7 @@
 !SFX_LIC for details. version 1.
 !   ############################################################################
 !
-SUBROUTINE DRAG_MEB(IO, PEK, AT, DMK, DK, PTG, PTA, PQA, PVMOD, &
+SUBROUTINE DRAG_MEB(IO, PK, PEK, AT, DMK, DK, PTG, PTA, PQA, PVMOD,         &
                     PWG, PWGI, PWSAT, PWFC, PEXNS, PEXNA, PPS,  PRR, PSR,   &
                     PRHOA, PZ0G_WITHOUT_SNOW, PZ0_MEBV, PZ0H_MEBV,          &
                     PZ0EFF_MEBV, PZ0_MEBN, PZ0H_MEBN, PZ0EFF_MEBN, PSNOWSWE,&
@@ -60,10 +60,11 @@ SUBROUTINE DRAG_MEB(IO, PEK, AT, DMK, DK, PTG, PTA, PQA, PVMOD, &
 !*       0.     DECLARATIONS
 !               ------------
 !
-USE MODD_ISBA_OPTIONS_n, ONLY : ISBA_OPTIONS_t
-USE MODD_ISBA_n, ONLY : ISBA_PE_t
-USE MODD_DIAG_n, ONLY : DIAG_t
+USE MODD_ISBA_OPTIONS_n,   ONLY : ISBA_OPTIONS_t
+USE MODD_ISBA_n,           ONLY : ISBA_P_t,ISBA_PE_t
+USE MODD_DIAG_n,           ONLY : DIAG_t
 USE MODD_DIAG_MISC_ISBA_n, ONLY : DIAG_MISC_ISBA_t
+USE MODD_SURF_ATM_TURB_n,  ONLY : SURF_ATM_TURB_t
 !
 USE MODD_CSTS,     ONLY : XPI
 USE MODD_SNOW_PAR, ONLY : XZ0SN
@@ -71,9 +72,8 @@ USE MODD_ISBA_PAR, ONLY : XWGMIN
 USE MODD_SURF_ATM, ONLY : LDRAG_COEF_ARP, XRIMAX, LRRGUST_ARP, XRRSCALE,   &
                           XRRGAMMA, XUTILGUST, LCPL_ARP
 USE MODD_MEB_PAR,  ONLY : XKDELTA_WR
-USE MODD_SURF_ATM_TURB_n, ONLY : SURF_ATM_TURB_t
 !
-!USE MODI_SURFACE_CDCH_1DARP
+USE MODI_SURFACE_CDCH_1DARP
 USE MODI_WIND_THRESHOLD
 USE MODI_DISPH_FOR_MEB
 USE MODI_PREPS_FOR_MEB_DRAG
@@ -88,10 +88,11 @@ IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
 !
-TYPE(ISBA_OPTIONS_t), INTENT(INOUT) :: IO
-TYPE(ISBA_PE_t), INTENT(INOUT) :: PEK
-TYPE(SURF_ATM_TURB_t), INTENT(IN) :: AT         ! atmospheric turbulence parameters
-TYPE(DIAG_t), INTENT(INOUT) :: DK
+TYPE(ISBA_OPTIONS_t),   INTENT(INOUT) :: IO
+TYPE(ISBA_P_t),         INTENT(INOUT) :: PK
+TYPE(ISBA_PE_t),        INTENT(INOUT) :: PEK
+TYPE(SURF_ATM_TURB_t),  INTENT(IN   ) :: AT         ! atmospheric turbulence parameters
+TYPE(DIAG_t),           INTENT(INOUT) :: DK
 TYPE(DIAG_MISC_ISBA_t), INTENT(INOUT) :: DMK
 !
 REAL, INTENT(IN)                 ::   PTSTEP 
@@ -379,7 +380,7 @@ PFLXC_MOM(:)=ZCDCN(:)*ZVMOD(:)*PRHOA(:)
 !and canopy air, ZRA_G_C, and the conductance between the canopy and canopy air, ZG_VG_C
 !  
 CALL SURFACE_AIR_MEB(PZ0_MEBV, PZ0H_MEBV, PZ0G_WITHOUT_SNOW, PEK%XH_VEG, PEK%XLAI,   &
-                     PTG, PEK%XTC, PEK%XTV, PVELC, ZLW, ZDISPH,      &
+                     PK%XVEGTYPE_PATCH, PTG, PEK%XTC, PEK%XTV, PVELC, ZLW, ZDISPH,      &
                      ZRA_G_C, ZG_VG_C, ZUSTAR2G, ZCDG, ZCHG, ZRIG         )
 !
 !Compute the lai of the canopy that is above snow
@@ -391,8 +392,8 @@ ZLAISN(:)= PEK%XLAI(:)*(1.-PPALPHAN(:))
 ! The same as ZRA_G_C/ZG_VG_C but for the snow part (png) =>ZRA_N_C/ZG_VN_C
 !
 CALL SURFACE_AIR_MEB(PZ0_MEBN, PZ0H_MEBN, ZZ0SN, PEK%XH_VEG, ZLAISN,     &
-                     DMK%XSNOWTEMP(:,1), PEK%XTC, PEK%XTV,  &
-                     PVELC, ZLW, ZDISPH, ZRA_N_C, ZG_VN_C,           &
+                     PK%XVEGTYPE_PATCH, DMK%XSNOWTEMP(:,1), PEK%XTC,     &
+                     PEK%XTV, PVELC, ZLW, ZDISPH, ZRA_N_C, ZG_VN_C,      &
                      ZUSTAR2G, ZCDG, ZCHG, ZRIG                      )
 
 ! save values over snow for diagnostic purposes:
@@ -416,7 +417,7 @@ CALL PREPS_FOR_MEB_DRAG(.FALSE.,IO%LFORC_MEASURE,                        &
 IF (LRRGUST_ARP) THEN
 
    ZRRCOR(:)=SQRT(1.0+((((ZFP(:)/(ZFP(:)+XRRSCALE))**XRRGAMMA)*XUTILGUST)**2) &
-          /(ZCDNN(:)*ZVMOD(:)**2))
+            /(ZCDNN(:)*ZVMOD(:)**2))
 
    ZCDNN(:)  = ZCDNN(:)  * ZRRCOR(:)
    ZCHNN(:)  = ZCHNN(:)  * ZRRCOR(:)

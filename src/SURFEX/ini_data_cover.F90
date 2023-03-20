@@ -42,7 +42,7 @@
 !!    V. Masson    04/2013 merges Arrange cover & garden use option in arrange_cover routine
 !!    R.Alkama     05/2015 Add 7 new vegtype (19 rather than 12)
 !!    A. Druel     02/2019 Change default values and add new parameter for irrigation
-!!
+!!    J. Wurtz     01/2023 Passing LECOSG key to default urban frac
 !----------------------------------------------------------------------------
 !
 !*    0.     DECLARATION
@@ -1278,7 +1278,7 @@ IF (.NOT.U%LECOSG) CALL COVER301_573
 !
 !-------------------------------------------------------------------------------
 ! new definition of vegetation fractions
-CALL DEFAULT_URBAN_FRAC_VEG(XDATA_TOWN, XDATA_GARDEN,XDATA_VEGTYPE,          &
+CALL DEFAULT_URBAN_FRAC_VEG(XDATA_TOWN, XDATA_GARDEN,XDATA_VEGTYPE, U%LECOSG,         &
                             XDATA_FRAC_HVEG, XDATA_FRAC_LVEG, XDATA_FRAC_NVEG)
 !-------------------------------------------------------------------------------
 !

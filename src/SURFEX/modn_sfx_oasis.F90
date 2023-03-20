@@ -29,6 +29,9 @@ MODULE MODN_SFX_OASIS
 !!      Modified       11/2014 : J. Pianezze - add wave coupling parameters
 !!                                             and surface pressure parameter for ocean coupling
 !!    10/2016 B. Decharme : bug surface/groundwater coupling
+!!      A. Voldoire 09/2016 : Switch to tile the fluxes calculation over sea and seaice
+!!      R. Séférian    08/14 add riverine carbon cycle coupling
+!!      R. Séférian    11/16 : Implement carbon cycle coupling (Earth system model)
 !
 !*       0.   DECLARATIONS
 !             ------------
@@ -53,6 +56,7 @@ CHARACTER(LEN=8) :: CRUNOFF     = '        '   ! Surface runoff
 CHARACTER(LEN=8) :: CDRAIN      = '        '   ! Deep drainage 
 CHARACTER(LEN=8) :: CCALVING    = '        '   ! Calving flux 
 CHARACTER(LEN=8) :: CSRCFLOOD   = '        '   ! Floodplains freshwater flux
+CHARACTER(LEN=8) :: CDOCFLUX    = '        '   ! Riverine DOC flux
 !
 ! Input variables
 !
@@ -60,6 +64,7 @@ CHARACTER(LEN=8) :: CWTD        = '        '   ! water table depth
 CHARACTER(LEN=8) :: CFWTD       = '        '   ! grid-cell fraction of water table rise
 CHARACTER(LEN=8) :: CFFLOOD     = '        '   ! Floodplains fraction
 CHARACTER(LEN=8) :: CPIFLOOD    = '        '   ! Flood potential infiltartion
+CHARACTER(LEN=8) :: CTWS        = '        '   ! Terrestrial Water Storage 
 !
 REAL             :: XFLOOD_LIM = 0.01
 !
@@ -94,6 +99,7 @@ CHARACTER(LEN=8) :: CSEA_EVAP = '        '   ! Evaporation
 CHARACTER(LEN=8) :: CSEA_RAIN = '        '   ! Rainfall 
 CHARACTER(LEN=8) :: CSEA_SNOW = '        '   ! Snowfall 
 CHARACTER(LEN=8) :: CSEA_WATF = '        '   ! Net freshwater flux
+CHARACTER(LEN=8) :: CSEA_CO2  = '        '   ! atmospheric CO2
 CHARACTER(LEN=8) :: CSEA_PRES = '        '   ! Surface pressure 
 !
 ! Sea-ice Output variables
@@ -107,6 +113,7 @@ CHARACTER(LEN=8) :: CSEAICE_EVAP = '        '   ! Sea-ice sublimation
 CHARACTER(LEN=8) :: CSEA_SST    = '        ' ! Sea surface temperature
 CHARACTER(LEN=8) :: CSEA_UCU    = '        ' ! Sea u-current stress
 CHARACTER(LEN=8) :: CSEA_VCU    = '        ' ! Sea v-current stress
+CHARACTER(LEN=8) :: CSEA_FCO2   = '        ' ! Sea carbon flux
 !
 ! Sea-ice Input variables
 !
@@ -136,14 +143,25 @@ CHARACTER(LEN=8) :: CWAVE_TP     = '        ' ! Peak period
 ! Switch to add water into sea oasis mask
 !
 LOGICAL          :: LWATER = .FALSE.
+!
+! Switch to tile the fluxes calculation over sea and seaice 
+!
+LOGICAL          :: LSEAICE_2FLX = .FALSE.
+!
+!
+! Switch to activate sea carbon coupling
+!
+LOGICAL          :: LSEACARB = .FALSE.
+!
 !-------------------------------------------------------------------------------
 !
 !*       1.    NAMELISTS FOR LAND SURFACE FIELD
 !              ------------------------------------------------
 !
-NAMELIST/NAM_SFX_LAND_CPL/XTSTEP_CPL_LAND, XFLOOD_LIM,          &
-                         CRUNOFF,CDRAIN,CCALVING,CWTD,CFWTD,    &
-                         CFFLOOD,CPIFLOOD,CSRCFLOOD
+NAMELIST/NAM_SFX_LAND_CPL/XTSTEP_CPL_LAND, XFLOOD_LIM,        &
+                         CRUNOFF,CDRAIN,CCALVING,CWTD,CFWTD,  &
+                         CFFLOOD,CPIFLOOD,CSRCFLOOD,CDOCFLUX, &
+                         CTWS
 !
 !
 !*       2.    NAMELISTS FOR LAKE FIELD
@@ -156,12 +174,13 @@ NAMELIST/NAM_SFX_LAKE_CPL/XTSTEP_CPL_LAKE,                              &
 !*       3.    NAMELISTS FOR OCEANIC FIELD
 !              ---------------------------------------------------------------
 !
-NAMELIST/NAM_SFX_SEA_CPL/XTSTEP_CPL_SEA, LWATER,                               &
+NAMELIST/NAM_SFX_SEA_CPL/XTSTEP_CPL_SEA, LWATER, LSEAICE_2FLX,                 &
                           CSEA_FWSU,CSEA_FWSV,CSEA_HEAT,CSEA_SNET,CSEA_WIND,   &
                           CSEA_FWSM,CSEA_EVAP,CSEA_RAIN,CSEA_SNOW,             &
                           CSEA_WATF,CSEA_PRES,CSEAICE_HEAT,CSEAICE_SNET,       &
                           CSEAICE_EVAP,CSEA_SST,CSEA_UCU,CSEA_VCU,             &
-                          CSEAICE_SIT,CSEAICE_CVR,CSEAICE_ALB
+                          CSEAICE_SIT,CSEAICE_CVR,CSEAICE_ALB,                 &
+                          CSEA_CO2,CSEA_FCO2, LSEACARB !not sure about the name of this namelist
 !
 !*       4.    NAMELISTS FOR WAVE FIELD
 !              ---------------------------------------------------------------

@@ -48,13 +48,13 @@ ALLOCATE(PEK%XTG                     (KLU,KGROUND_LAYER      ))
 ALLOCATE(PEK%XWG                     (KLU,KGROUND_LAYER      )) 
 ALLOCATE(PEK%XWGI                    (KLU,KGROUND_LAYER      )) 
 ALLOCATE(PEK%XRESA                   (KLU                    )) 
+ALLOCATE(PEK%XQC                     (KLU                    )) 
 !
 ! - Vegetation: Ags Prognostic 
 !
 ALLOCATE(PEK%XAN                     (KLU                    )) 
 ALLOCATE(PEK%XANDAY                  (KLU                    )) 
 ALLOCATE(PEK%XANFM                   (KLU                    )) 
-ALLOCATE(PEK%XLE                     (KLU                    ))
 !
 ! - Vegetation (Ags 'NIT' 'NCB' option):
 !

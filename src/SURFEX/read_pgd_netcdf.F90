@@ -32,7 +32,7 @@ SUBROUTINE READ_PGD_NETCDF (UG, U, USS, &
 !!------------------------------------------------------------------
 !
 !
-use modd_netcdf_sfx, only : CDFINT
+use modd_netcdf_sfx, only : IDCDF_KIND
 USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
 USE MODD_SURF_ATM_n,      ONLY : SURF_ATM_t
 USE MODD_SSO_n,           ONLY : SSO_t
@@ -77,9 +77,9 @@ REAL, DIMENSION(:), ALLOCATABLE :: ZFIELD0
 !
 ! CHARACTER(LEN=28) :: YNCVAR
 !
-INTEGER(kind=CDFINT)::IERROR !error status
-INTEGER(kind=CDFINT)::ID_FILE ! id of netcdf file
-INTEGER(kind=CDFINT)::INFIELD,INLAT,INLON ! dimension lengths
+INTEGER(kind=IDCDF_KIND)::IERROR !error status
+INTEGER(kind=IDCDF_KIND)::ID_FILE ! id of netcdf file
+INTEGER(kind=IDCDF_KIND)::INFIELD,INLAT,INLON ! dimension lengths
 INTEGER::ILUOUT
 INTEGER::JPOINT !loop counter
 CHARACTER(LEN=20) :: HFIELD_LOC
@@ -202,17 +202,17 @@ USE NETCDF
 IMPLICIT NONE
 
 
-INTEGER(kind=CDFINT),INTENT(IN)::ID_FILE
+INTEGER(kind=IDCDF_KIND),INTENT(IN)::ID_FILE
  CHARACTER(LEN=20),   INTENT(IN)  :: HFIELD     ! name of variable
 REAL,DIMENSION(:),POINTER::PFIELD
 
-INTEGER(kind=CDFINT)::ID_VAR ! Netcdf IDs for file and variable
-INTEGER(kind=CDFINT)::INVARDIMS !number of dimensions of netcdf input variable
-INTEGER(kind=CDFINT),DIMENSION(:),ALLOCATABLE::IVARDIMSID
-INTEGER(kind=CDFINT)::ILENDIM1,ILENDIM2
-INTEGER(kind=CDFINT),INTENT(OUT)::ILENDIM
-INTEGER(kind=CDFINT)::IERROR !error status
-INTEGER(kind=CDFINT)::ITYPE
+INTEGER(kind=IDCDF_KIND)::ID_VAR ! Netcdf IDs for file and variable
+INTEGER(kind=IDCDF_KIND)::INVARDIMS !number of dimensions of netcdf input variable
+INTEGER(kind=IDCDF_KIND),DIMENSION(:),ALLOCATABLE::IVARDIMSID
+INTEGER(kind=IDCDF_KIND)::ILENDIM1,ILENDIM2
+INTEGER(kind=IDCDF_KIND),INTENT(OUT)::ILENDIM
+INTEGER(kind=IDCDF_KIND)::IERROR !error status
+INTEGER(kind=IDCDF_KIND)::ITYPE
 
 ! Look for variable ID for HFIELD
 IERROR=NF90_INQ_VARID(ID_FILE,TRIM(HFIELD),ID_VAR)

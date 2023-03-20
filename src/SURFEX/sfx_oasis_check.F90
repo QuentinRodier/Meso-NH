@@ -33,6 +33,7 @@ SUBROUTINE SFX_OASIS_CHECK (IO, U, KLUOUT)
 !!    -------------
 !!      Original    10/2013
 !!    10/2016 B. Decharme : bug surface/groundwater coupling
+!!    08/2016 R. Séférian : add riverine carbon cycle coupling
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -44,8 +45,8 @@ SUBROUTINE SFX_OASIS_CHECK (IO, U, KLUOUT)
 USE MODD_ISBA_OPTIONS_n, ONLY : ISBA_OPTIONS_t
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 !
-USE MODN_SFX_OASIS, ONLY : CCALVING, LWATER
-USE MODD_SFX_OASIS, ONLY : LCPL_LAKE, LCPL_CALVING, LCPL_GW
+USE MODN_SFX_OASIS, ONLY : CCALVING, LWATER, CDOCFLUX
+USE MODD_SFX_OASIS, ONLY : LCPL_LAKE, LCPL_CALVING, LCPL_GW, LCPL_RIVCARB
 !
 USE MODI_ABOR1_SFX
 !
@@ -121,6 +122,18 @@ IF(LWATER.AND.(U%CWATER=='NONE '.OR.U%CWATER=='FLAKE'))THEN
   WRITE(KLUOUT,*)'! Change CWATER or put LWATER=.FALSE. in NAM_SFX_SEA_CPL !!!'     
   CALL ABOR1_SFX('SFX_OASIS_READ_NAM: LWATER and CWATER not consistent')
 ENDIF
+!
+IF(LCPL_RIVCARB)THEN
+  IF(.NOT.IO%LCLEACH)THEN
+    WRITE(KLUOUT,*)'!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+    WRITE(KLUOUT,*)'Riverine carb flux is asked by SFX - OASIS coupling'
+    WRITE(KLUOUT,*)'CDOCFLUX = '//TRIM(CDOCFLUX)//' in NAM_SFX_LAND_CPL'
+    WRITE(KLUOUT,*)'but LCLEACH in not activated in NAM_ISBACCn        '
+    WRITE(KLUOUT,*)'Please check your SURFEX namelist                  '
+    WRITE(KLUOUT,*)'!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+    CALL ABOR1_SFX('SFX_OASIS_CHECK: Riverine DOC flux is asked by SFX - OASIS coupling')            
+  ENDIF  
+ENDIF  
 !
 IF (LHOOK) CALL DR_HOOK('SFX_OASIS_CHECK',1,ZHOOK_HANDLE)
 !

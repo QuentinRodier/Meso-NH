@@ -2,9 +2,9 @@
 !SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
-SUBROUTINE SFX_XIOS_SETUP(YSC, KCOMM, KLUOUT, KYEAR, KMONTH, KDAY, PTIME, PTSTEP, &
-     KDIM1, KDIM2, KEXT1, PCLAT, PCLON, KXINDEX, ODXMASK,&
-     KMASKNAT, KMASKSEA, KMASKWAT, KMASKTOWN)
+SUBROUTINE SFX_XIOS_SETUP(IM, UG, KCOMM, KLUOUT, KYEAR, KMONTH, KDAY, PTIME, PTSTEP, &
+                          KDIM1, KDIM2, KEXT1, PSW_BANDS, PCLAT, PCLON, KXINDEX,  &
+                          ODXMASK, KMASKNAT, KMASKSEA, KMASKWAT, KMASKTOWN        )
 !!
 !!
 !!     PURPOSE
@@ -16,7 +16,7 @@ SUBROUTINE SFX_XIOS_SETUP(YSC, KCOMM, KLUOUT, KYEAR, KMONTH, KDAY, PTIME, PTSTEP
 !!     IMPLICIT ARGUMENTS :
 !!     -------------------- 
 !!
-!!     LXIOS, YXIOS_CONTEXT, TXIOS_CONTEXT
+!!     LXIOS, YXIOS_CONTEXT
 !!
 !!
 !!     EXTERNAL
@@ -41,71 +41,83 @@ SUBROUTINE SFX_XIOS_SETUP(YSC, KCOMM, KLUOUT, KYEAR, KMONTH, KDAY, PTIME, PTSTEP
 !!
 !!     Original    08/2015
 !!
+!!     D. St-Martin 02/2018 : add LXIOS_INVERT_LEVELS
+!!     A. Alias     06/2018 - add specification of the month for the reference date
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_SURFEX_n, ONLY : SURFEX_t
-
-USE MODD_CSTS,  ONLY : XPI
-USE MODD_SURFEX_MPI, ONLY     : NRANK, NINDEX
+USE MODD_SURFEX_n,        ONLY : ISBA_MODEL_t
+USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
 !
-USE MODD_XIOS      , ONLY : LXIOS,TXIOS_CONTEXT,YXIOS_CONTEXT, &
-     LXIOS_DEF_CLOSED, YGROUND_LAYER_DIM_NAME, &
-     YWGROUND_LAYER_DIM_NAME, YWIGROUND_LAYER_DIM_NAME, NBASE_XIOS_FREQ, &
-     YSWBAND_DIM_NAME, YPATCH_DIM_NAME
+USE MODD_DATA_COVER_PAR,  ONLY : NVEGTYPE
+!
+USE MODD_XIOS
 !
 #ifdef WXIOS 
+!
 USE XIOS, ONLY : XIOS_CONTEXT_INITIALIZE, XIOS_GET_HANDLE,   &
      XIOS_SET_CURRENT_CONTEXT, XIOS_SET_TIMESTEP, XIOS_DATE, &
      XIOS_DURATION, XIOS_DEFINE_CALENDAR, XIOS_GETVAR,       &
-     XIOS_SOLVE_INHERITANCE
+     XIOS_SOLVE_INHERITANCE, XIOS_GETVAR
 !
-USE MODI_ABOR1_SFX
 USE MODI_SFX_XIOS_SET_DOMAIN
 USE MODI_SET_AXIS
 !
 #endif
 !
-USE YOMHOOK           , ONLY : LHOOK,   DR_HOOK
-USE PARKIND1          , ONLY : JPRB
+USE MODI_ABOR1_SFX
+!
+USE YOMHOOK,  ONLY : LHOOK,   DR_HOOK
+USE PARKIND1, ONLY : JPRB
 !
 IMPLICIT NONE
 !
 !
 !   Arguments
 !
-TYPE (SURFEX_t),    INTENT(IN) :: YSC
+TYPE(ISBA_MODEL_t),    INTENT(INOUT) :: IM
+TYPE(SURF_ATM_GRID_t), INTENT(INOUT) :: UG
 !
-INTEGER,            INTENT(INOUT) :: KCOMM  ! Communicator
-INTEGER,            INTENT(IN) :: KLUOUT    ! Listing logical unit number
-INTEGER,            INTENT(IN) :: KYEAR     ! current year (UTC)
-INTEGER,            INTENT(IN) :: KMONTH    ! current month (UTC)
-INTEGER,            INTENT(IN) :: KDAY      ! current day (UTC)
-REAL,               INTENT(IN) :: PTIME     ! current time since midnight (UTC,s)
-REAL,               INTENT(IN) :: PTSTEP    ! model time step 
-INTEGER,            INTENT(IN) :: KDIM1     ! Geometry param. (see  sfx_set_domain)
-INTEGER,            INTENT(IN) :: KDIM2     ! Geometry param. (see  sfx_set_domain)
-INTEGER,            INTENT(IN) :: KEXT1     ! Geometry param. (see  sfx_set_domain)
-REAL   ,   INTENT(IN) , DIMENSION(:,:) :: PCLAT      ! Lat corners "
-REAL   ,   INTENT(IN) , DIMENSION(:,:) :: PCLON      ! Lon corners "
-INTEGER,   INTENT(IN) , DIMENSION(:)   :: KXINDEX    ! index of proc cells in global grid
-LOGICAL,   INTENT(IN) , DIMENSION(:)   :: ODXMASK    ! Cells mask
-INTEGER,   INTENT(IN) , DIMENSION(:)   :: KMASKNAT   ! Masks for the whole MPI task
-INTEGER,   INTENT(IN) , DIMENSION(:)   :: KMASKSEA
-INTEGER,   INTENT(IN) , DIMENSION(:)   :: KMASKWAT
-INTEGER,   INTENT(IN) , DIMENSION(:)   :: KMASKTOWN
-
+INTEGER,               INTENT(IN) :: KCOMM  ! Communicator
+! 
+INTEGER,               INTENT(IN) :: KLUOUT    ! Listing logical unit number
+INTEGER,               INTENT(IN) :: KYEAR     ! current year (UTC)
+INTEGER,               INTENT(IN) :: KMONTH    ! current month (UTC)
+INTEGER,               INTENT(IN) :: KDAY      ! current day (UTC)
+REAL,                  INTENT(IN) :: PTIME     ! current time since midnight (UTC,s)
+REAL,                  INTENT(IN) :: PTSTEP    ! model time step 
+INTEGER,               INTENT(IN) :: KDIM1     ! Geometry param. (see  sfx_set_domain)
+INTEGER,               INTENT(IN) :: KDIM2     ! Geometry param. (see  sfx_set_domain)
+INTEGER,               INTENT(IN) :: KEXT1     ! Geometry param. (see  sfx_set_domain)
+!
+REAL,DIMENSION(:),     INTENT(IN) :: PSW_BANDS
+REAL,DIMENSION(:,:),   INTENT(IN) :: PCLAT      ! Lat corners "
+REAL,DIMENSION(:,:),   INTENT(IN) :: PCLON      ! Lon corners "
+INTEGER, DIMENSION(:), INTENT(IN) :: KXINDEX    ! index of proc cells in global grid
+LOGICAL, DIMENSION(:), INTENT(IN) :: ODXMASK    ! Cells mask
+INTEGER, DIMENSION(:), INTENT(IN) :: KMASKNAT   ! Masks for the whole MPI task
+INTEGER, DIMENSION(:), INTENT(IN) :: KMASKSEA
+INTEGER, DIMENSION(:), INTENT(IN) :: KMASKWAT
+INTEGER, DIMENSION(:), INTENT(IN) :: KMASKTOWN
 !
 !  Local variables
 !
+REAL, DIMENSION(  IM%O%NGROUND_LAYER) :: ZMID_DG
+REAL, DIMENSION(2,IM%O%NGROUND_LAYER) :: ZBOUND
+!
 #ifdef WXIOS
+INTEGER               :: IX, JX
 TYPE(XIOS_DURATION)   :: TDTIME ! Time-step 'a la XIOS'
 INTEGER               :: INHOURS,INMINUTES,INSECONDS
+INTEGER               :: IREFYEAR,IREFMON
 #endif
 !
+INTEGER            :: JL
 INTEGER            :: ITMP
+INTEGER            :: IRESP
+LOGICAL            :: LL_INVERT_LEVELS
 !
 REAL(KIND=JPRB)    :: ZHOOK_HANDLE
 !
@@ -135,16 +147,10 @@ LXIOS_DEF_CLOSED=.FALSE.
 ! -----------------------------------------------------------------------------
 !
 !$OMP SINGLE
+CALL XIOS_CONTEXT_INITIALIZE(YXIOS_CONTEXT,KCOMM)
+CALL XIOS_GET_HANDLE(YXIOS_CONTEXT,TXIOS_CONTEXT)
+CALL XIOS_SET_CURRENT_CONTEXT(YXIOS_CONTEXT)
 !
-!#ifndef CPLOASIS
-!  CALL XIOS_INITIALIZE('surfex', return_comm=KCOMM)
-!#endif
-
- CALL XIOS_CONTEXT_INITIALIZE(YXIOS_CONTEXT, KCOMM)
- CALL XIOS_GET_HANDLE(YXIOS_CONTEXT, TXIOS_CONTEXT)
- CALL XIOS_SET_CURRENT_CONTEXT(TXIOS_CONTEXT)
-! 
-
 ! -----------------------------------------------------------------------------
 !
 !      Set date for XIOS
@@ -155,12 +161,13 @@ INHOURS   = INT(PTIME/3600)
 INMINUTES = INT((PTIME - INHOURS*3600)/60)
 INSECONDS = INT(PTIME - INHOURS*3600 - INMINUTES*60)
 !
-!WRITE(KLUOUT,*) 'initializing xios calendar '
-
-! For XIOS-2.0 :
- CALL XIOS_DEFINE_CALENDAR("Gregorian", &
-     start_date  = xios_date(KYEAR,KMONTH,KDAY,INHOURS,INMINUTES,INSECONDS), &
-     time_origin = xios_date(KYEAR,KMONTH,KDAY,INHOURS,INMINUTES,INSECONDS))
+! Calendar init 
+!
+IF (.NOT.(XIOS_GETVAR('ref_year',IREFYEAR))) IREFYEAR=1850
+IF (.NOT.(XIOS_GETVAR('ref_mon',IREFMON)))   IREFMON=1
+CALL XIOS_DEFINE_CALENDAR("Gregorian", &
+     start_date=xios_date(KYEAR,KMONTH,KDAY,INHOURS,INMINUTES,INSECONDS), &
+     time_origin=xios_date(IREFYEAR,IREFMON,1,0,0,0))
 !
 ! -----------------------------------------------------------------------------
 !
@@ -169,48 +176,103 @@ INSECONDS = INT(PTIME - INHOURS*3600 - INMINUTES*60)
 ! -----------------------------------------------------------------------------
 !
 IF (XIOS_GETVAR("timesteps_between_samples",ITMP)) NBASE_XIOS_FREQ=ITMP
-!
 TDTIME%SECOND = INT(PTSTEP*NBASE_XIOS_FREQ)
- CALL XIOS_SET_TIMESTEP(TDTIME)
-!
+CALL XIOS_SET_TIMESTEP(TDTIME)
 !$OMP END SINGLE
 !
 !
+!
+! -----------------------------------------------------------------------------
+!
+!   Set option for inverting levels
+!
+! -----------------------------------------------------------------------------
+!
+IF (XIOS_GETVAR("invert_levels", LL_INVERT_LEVELS)) THEN
+  LXIOS_INVERT_LEVELS = LL_INVERT_LEVELS
+ENDIF
 ! ---------------------------------------------------------------------------------
 !
 !   Declare a 'full' domain and one domain per tile 
 !
 ! ---------------------------------------------------------------------------------
 !
- CALL SFX_XIOS_SET_DOMAIN(YSC%UG%G%CGRID, "FULL"  , KDIM1, KDIM2, KEXT1, KXINDEX, ODXMASK, &
-     YSC%UG%G%XLON, YSC%UG%G%XLAT, PCLON, PCLAT )
- CALL SFX_XIOS_SET_DOMAIN(YSC%UG%G%CGRID, "SEA"   , KDIM1, KDIM2, KEXT1, KXINDEX, ODXMASK, &
-     YSC%UG%G%XLON, YSC%UG%G%XLAT, PCLON, PCLAT, KMASK=KMASKSEA )
- CALL SFX_XIOS_SET_DOMAIN(YSC%UG%G%CGRID, "NATURE", KDIM1, KDIM2, KEXT1, KXINDEX, ODXMASK, &
-     YSC%UG%G%XLON, YSC%UG%G%XLAT, PCLON, PCLAT, KMASK=KMASKNAT)
- CALL SFX_XIOS_SET_DOMAIN(YSC%UG%G%CGRID, "WATER" , KDIM1, KDIM2, KEXT1, KXINDEX, ODXMASK, &
-     YSC%UG%G%XLON, YSC%UG%G%XLAT , PCLON, PCLAT, KMASK=KMASKWAT )
- CALL SFX_XIOS_SET_DOMAIN(YSC%UG%G%CGRID, "TOWN"  , KDIM1, KDIM2, KEXT1, KXINDEX, ODXMASK, &
-     YSC%UG%G%XLON, YSC%UG%G%XLAT , PCLON, PCLAT, KMASK=KMASKTOWN )
+ CALL SFX_XIOS_SET_DOMAIN(UG%G%CGRID, "FULL"  , KDIM1, KDIM2, KEXT1, KXINDEX, ODXMASK, &
+                          UG%G%XLON, UG%G%XLAT, PCLON, PCLAT )
+ CALL SFX_XIOS_SET_DOMAIN(UG%G%CGRID, "SEA"   , KDIM1, KDIM2, KEXT1, KXINDEX, ODXMASK, &
+                          UG%G%XLON, UG%G%XLAT, PCLON, PCLAT, KMASK=KMASKSEA )
+ CALL SFX_XIOS_SET_DOMAIN(UG%G%CGRID, "NATURE", KDIM1, KDIM2, KEXT1, KXINDEX, ODXMASK, &
+                          UG%G%XLON, UG%G%XLAT, PCLON, PCLAT, KMASK=KMASKNAT)
+ CALL SFX_XIOS_SET_DOMAIN(UG%G%CGRID, "WATER" , KDIM1, KDIM2, KEXT1, KXINDEX, ODXMASK, &
+                          UG%G%XLON, UG%G%XLAT , PCLON, PCLAT, KMASK=KMASKWAT )
+ CALL SFX_XIOS_SET_DOMAIN(UG%G%CGRID, "TOWN"  , KDIM1, KDIM2, KEXT1, KXINDEX, ODXMASK, &
+                          UG%G%XLON, UG%G%XLAT , PCLON, PCLAT, KMASK=KMASKTOWN )
 !
-! Declare axes, depending on activated schemes
+! ---------------------------------------------------------------------------------
 !
-!IF (YSC%U%NDIM_NATURE>0) THEN
-   CALL SET_AXIS(YPATCH_DIM_NAME , KSIZE=SIZE(YSC%IM%NPE%AL))
-   CALL SET_AXIS(YGROUND_LAYER_DIM_NAME , KSIZE=SIZE(YSC%IM%NPE%AL(1)%XTG,2))
-   CALL SET_AXIS(YWGROUND_LAYER_DIM_NAME, KSIZE=SIZE(YSC%IM%NPE%AL(1)%XWG,2))
-   CALL SET_AXIS(YWIGROUND_LAYER_DIM_NAME, KSIZE=SIZE(YSC%IM%NPE%AL(1)%XWG,2))
-   CALL SET_AXIS(YSWBAND_DIM_NAME, KSIZE=SIZE(YSC%IM%ID%D%XSWBD,2))
-   ! CALL SET_AXIS(YSNOW_PATCH_DIM_NAME, KSIZE=)
-!ENDIF
-!IF (YSC%U%NDIM_SEA>0) THEN
-   ! CALL SET_AXIS(YSEAICE_LAYER_DIM_NAME, KSIZE=)
-!ENDIF
+! Declare axes from atmosphere
 !
-!  Force XIOS inheritance inorder that fields declarations can 
-!  fully account for user settings
+! ---------------------------------------------------------------------------------
 !
-!   CALL XIOS_SOLVE_INHERITANCE()
+!YSWBAND_DIM_NAME="swband"
+CALL SET_AXIS(YSWBAND_DIM_NAME,PVALUE=PSW_BANDS,CDUNITS='m')
+!
+! ---------------------------------------------------------------------------------
+!
+! Declare axes from surfex
+!
+! ---------------------------------------------------------------------------------
+!
+!YPATCH_DIM_NAME="patch"
+CALL SET_AXIS(YPATCH_DIM_NAME,KSIZE=IM%O%NPATCH)
+!
+!YPATCHES_DIM_NAME="patches"
+CALL SET_AXIS(YPATCHES_DIM_NAME,KSIZE=IM%O%NPATCH)
+!
+!YSNOW_LAYER_DIM_NAME="snow_layer"
+CALL SET_AXIS(YSNOW_LAYER_DIM_NAME,KSIZE=IM%NPE%AL(1)%TSNOW%NLAYER)
+!
+IF(IM%O%CISBA/='DIF'.OR.ANY(IM%DTV%LDATA_DG))THEN
+!
+! YGROUND_LAYER_DIM_NAME="ground_layer"
+  CALL SET_AXIS(YGROUND_LAYER_DIM_NAME,KSIZE=IM%O%NGROUND_LAYER)
+!
+! YTG_LAYER_DIM_NAME="ground_layer_for_temperature"
+  CALL SET_AXIS(YTG_LAYER_DIM_NAME,KSIZE=SIZE(IM%NPE%AL(1)%XTG,2))
+!
+ELSE
+!
+  ZBOUND(1,1)=0.0  
+  ZBOUND(2,:)=IM%O%XSOILGRID(:)
+  DO JL=2,IM%O%NGROUND_LAYER
+     ZBOUND(1,JL)=ZBOUND(2,JL-1)
+  ENDDO
+!
+  ZMID_DG(1)=0.5*IM%O%XSOILGRID(1)
+  DO JL=2,IM%O%NGROUND_LAYER
+     ZMID_DG(JL)=0.5*(IM%O%XSOILGRID(JL-1)+IM%O%XSOILGRID(JL))
+  ENDDO
+!  
+  !YGROUND_LAYER_DIM_NAME="ground_layer"
+  CALL SET_AXIS(YGROUND_LAYER_DIM_NAME,PVALUE=ZMID_DG,PBOUNDS=ZBOUND,CDUNITS='m',CDPOSITIVE='down')
+!
+  !YTG_LAYER_DIM_NAME="ground_layer_for_temperature"
+  CALL SET_AXIS(YTG_LAYER_DIM_NAME,PVALUE=ZMID_DG,PBOUNDS=ZBOUND,CDUNITS='m',CDPOSITIVE='down')
+!
+ENDIF
+!
+!YVEGTYPE_DIM_NAME="vegtype"
+CALL SET_AXIS(YVEGTYPE_DIM_NAME,KSIZE=NVEGTYPE)
+!
+!YSOIL_CARBON_POOL_DIM_NAME="soil_carbon_pools"
+CALL SET_AXIS(YSOIL_CARBON_POOL_DIM_NAME,KSIZE=IM%O%NNSOILCARB)
+!
+!YLANDUSE_TILES_DIM_NAME="landusetype4"
+CALL SET_AXIS(YLANDUSE_TILES_DIM_NAME,KSIZE=NLUT)
+!
+CALL XIOS_SOLVE_INHERITANCE()
+! ---------------------------------------------------------------------------------
+!
 #endif
 !
 IF (LHOOK) CALL DR_HOOK('SFX_XIOS_SETUP',1,ZHOOK_HANDLE)

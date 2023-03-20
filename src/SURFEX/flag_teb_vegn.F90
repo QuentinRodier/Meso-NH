@@ -119,7 +119,6 @@ ENDIF
       PEK%XANFM (:) = ZANFM              
       PEK%XAN   (:) = ZDEF
       PEK%XANDAY(:) = ZDEF
-      PEK%XLE   (:) = ZDEF
     END WHERE
     !
     IF (IO%CPHOTO=='NIT' .OR. IO%CPHOTO=='NCB') THEN

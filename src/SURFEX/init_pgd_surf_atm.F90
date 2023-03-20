@@ -27,6 +27,7 @@ SUBROUTINE INIT_PGD_SURF_ATM (YSC, HPROGRAM,HINIT,HATMFILE,HATMFILETYPE, &
 !!    -------------
 !!      Original    01/2004
 !!      B. Decharme  04/2013 new coupling variables
+!!      R.Séférian  08/2016  new landuse change implementation
 !!------------------------------------------------------------------
 !
 !
@@ -60,8 +61,10 @@ REAL,              INTENT(IN)   :: PTIME       ! time
 !
 !*      0.2    declarations of local variables
 !
-TYPE(DATE) :: TDATE_END
- CHARACTER(LEN=6), DIMENSION(0)  :: YSV       ! name of all scalar variables
+TYPE(DATE)            :: TDATE_END
+TYPE(SURF_ATM_TURB_t) :: AT         ! atmospheric turbulence parameters
+!
+CHARACTER(LEN=6), DIMENSION(0)  :: YSV       ! name of all scalar variables
 REAL,             DIMENSION(0)  :: ZCO2      ! CO2 concentration (kg/m3)
 REAL,             DIMENSION(0)  :: ZRHOA     ! air density (kg/m3)
 REAL,             DIMENSION(0)  :: ZZENITH   ! solar zenithal angle
@@ -72,18 +75,19 @@ REAL,             DIMENSION(0,1):: ZSCA_ALB  ! diffuse albedo for each band
 REAL,             DIMENSION(0)  :: ZEMIS     ! emissivity
 REAL,             DIMENSION(0)  :: ZTSRAD    ! radiative temperature
 REAL,             DIMENSION(0)  :: ZTSURF    ! radiative temperature
-TYPE(SURF_ATM_TURB_t) :: AT         ! atmospheric turbulence parameters
+!
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------------
 !
 !* initialization of PGD fields of output domain
 !
 IF (LHOOK) CALL DR_HOOK('INIT_PGD_SURF_ATM',0,ZHOOK_HANDLE)
+!
 TDATE_END%YEAR = KYEAR
 TDATE_END%MONTH = KMONTH
 TDATE_END%DAY = KDAY
 !
- CALL INIT_SURF_ATM_n(YSC, HPROGRAM,HINIT,.FALSE.,               &
+ CALL INIT_SURF_ATM_n(YSC, HPROGRAM,HINIT,                       &
                       0,0,1,YSV,ZCO2,ZRHOA,      &
                       ZZENITH,ZAZIM,ZSW_BANDS,ZDIR_ALB,ZSCA_ALB, &
                       ZEMIS,ZTSRAD,ZTSURF,                       &

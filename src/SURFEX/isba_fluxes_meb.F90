@@ -430,11 +430,11 @@ DK%XEVAP(:)     = PEVAP_C_A(:) + PEVAP_N_A(:)
 ! 
 ! Total latent heat flux of surface/snow/vegetation: W m-2
 !
-PEK%XLE(:)       = DK%XEVAP(:)*PLTT(:)                  
+DK%XLE(:)       = DK%XEVAP(:)*PLTT(:)                  
 !
 ! Total sublimation from the surface/snow/vegetation: W m-2
 !
-DK%XLEI(:)      = PLES(:) + PLEGI(:) + DEK%XLEI_FLOOD(:)
+DK%XLEI(:)      = PLES(:) + PLEGI(:) + DEK%XLEI_FLOOD(:) + DEK%XLES_CV(:)
 !
 ! Total sublimation from the surface/snow/vegetation: kg m-2 s-1
 !

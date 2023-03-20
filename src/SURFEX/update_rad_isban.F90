@@ -33,6 +33,8 @@ SUBROUTINE UPDATE_RAD_ISBA_n (IO, S, KK, PK, PEK, KPATCH, PZENITH, PSW_BANDS, NP
 !!      P. Samuelsson 02/2012 MEB
 !!      A. Boone      03/2015 MEB-use TR_ML scheme for SW radiation
 !!      A. Druel      02/2019 transmit NPAR_VEG_IRR_USE for irrigation
+!!      B. Decharme   06/2022 Intinialization : Albedo not defined, can not be used with arpege
+!!                            !!!This debug must be improved to couple with arpege!!!
 !!------------------------------------------------------------------
 !
 !
@@ -215,6 +217,7 @@ IF(IO%LMEB_PATCH(KPATCH))THEN
     !   the cummulative variables in this routine:
     !
     DO JSWB=1,ISWB
+      !
       ZGLOBAL_SW(:) = ZDIR_SW(:,JSWB) + ZSCA_SW(:,JSWB)
       !
       WHERE(PEK%TSNOW%ALB(:)/=XUNDEF .AND. PEK%TSNOW%ALBVIS(:)/=XUNDEF .AND. PEK%TSNOW%ALBNIR(:)/=XUNDEF)
@@ -227,7 +230,7 @@ IF(IO%LMEB_PATCH(KPATCH))THEN
         ZALBNIR_TSOIL(:) = PEK%XALBNIR_SOIL(:)
       END WHERE
       !
-      CALL RADIATIVE_TRANSFERT(IO%LAGRI_TO_GRASS, KK%XVEGTYPE,                   &
+      CALL RADIATIVE_TRANSFERT(KK%XVEGTYPE,                                      &
               PEK%XALBVIS_VEG, ZALBVIS_TSOIL, PEK%XALBNIR_VEG, ZALBNIR_TSOIL,    &
               ZGLOBAL_SW, ZLAIN, ZZENITH, S%XABC,                                &
               PEK%XFAPARC, PEK%XFAPIRC, PEK%XMUS, PEK%XLAI_EFFC, GSHADE, ZIACAN, &              
@@ -247,6 +250,21 @@ IF(IO%LMEB_PATCH(KPATCH))THEN
       KK%XSCA_ALB_WITH_SNOW(:,JSWB)=ZALBT(:) 
       !
     END DO
+    !
+  ELSE
+    !
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    ! Wrong solution for initialisation. 
+    ! Must be improved by adding directly radiative properties at t+1 in the restart
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !
+    ZALBNIR_WITH_SNOW(:) = PEK%XALBNIR(:) * (1.-PEK%XPSN(:)) + PEK%TSNOW%ALB (:) * PEK%XPSN(:)   
+    ZALBVIS_WITH_SNOW(:) = PEK%XALBVIS(:) * (1.-PEK%XPSN(:)) + PEK%TSNOW%ALB (:) * PEK%XPSN(:)  
+    ZALBUV_WITH_SNOW (:) = PEK%XALBUV (:) * (1.-PEK%XPSN(:)) + PEK%TSNOW%ALB (:) * PEK%XPSN(:)  
+    !
+    CALL ALBEDO_FROM_NIR_VIS(PSW_BANDS,                                              &
+                             ZALBNIR_WITH_SNOW,  ZALBVIS_WITH_SNOW, ZALBUV_WITH_SNOW,&
+                             KK%XDIR_ALB_WITH_SNOW, KK%XSCA_ALB_WITH_SNOW            )
     !
   ENDIF
   !
@@ -288,9 +306,9 @@ ENDIF
 !
 !Update albedo with snow for the next time step
 !
- CALL UNPACK_SAME_RANK(PK%NR_P,KK%XDIR_ALB_WITH_SNOW, PDIR_ALB_WITH_SNOW,ZPUT0)
- CALL UNPACK_SAME_RANK(PK%NR_P,KK%XSCA_ALB_WITH_SNOW, PSCA_ALB_WITH_SNOW,ZPUT0)
- CALL UNPACK_SAME_RANK(PK%NR_P,ZEMIST,PEMIST,ZPUT0)
+CALL UNPACK_SAME_RANK(PK%NR_P,KK%XDIR_ALB_WITH_SNOW, PDIR_ALB_WITH_SNOW,ZPUT0)
+CALL UNPACK_SAME_RANK(PK%NR_P,KK%XSCA_ALB_WITH_SNOW, PSCA_ALB_WITH_SNOW,ZPUT0)
+CALL UNPACK_SAME_RANK(PK%NR_P,ZEMIST,PEMIST,ZPUT0)
 !
 !-------------------------------------------------------------------------------
 IF (LHOOK) CALL DR_HOOK('UPDATE_RAD_ISBA_N',1,ZHOOK_HANDLE)

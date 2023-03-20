@@ -4,7 +4,7 @@
 !SFX_LIC for details. version 1.
 !####################################################################
     SUBROUTINE SURFACE_AIR_MEB(PZ0, PZ0H, PZ0G, PH_VEG, PLAI,          &
-                               PTG, PTC, PTV, PVELC, PLW,              &
+                               PVEGTYPE, PTG, PTC, PTV, PVELC, PLW,    &
                                PDISPH,                                 &
                                PRAGNC, PGVNC,                          &
                                PUSTAR2, PCD, PCH, PRI                  )
@@ -56,6 +56,9 @@
 !!                  14/06/2017  Put in numerical limits for ground to canopy air
 !!                              resistances. Needed in the limit as the vegetation
 !!                              cover becomes vanishingly thin.
+!!     (B. Decharme)
+!!                  14/07/2021  Correction RI computation
+!!                              Attenuation coef. for mom adapted for tropical forest
 !!
 !-------------------------------------------------------------------------------
 !
@@ -64,6 +67,8 @@
 !
 USE MODD_CSTS,     ONLY : XG, XKARMAN
 USE MODD_SURF_ATM, ONLY : XRIMAX
+!
+USE MODD_DATA_COVER_PAR, ONLY : NVT_TRBE, NVT_TRBD
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -78,6 +83,8 @@ REAL, DIMENSION(:), INTENT(IN)   :: PZ0, PZ0H, PZ0G, PH_VEG, PLAI
 !                                     PZ0G = roughness length for soil(understory veg?)/snow
 !                                     PH_VEG = height of the vegetation
 !                                     PLAI = leaf area index
+!
+REAL, DIMENSION(:,:), INTENT(IN) :: PVEGTYPE ! fraction of each vegetation
 !
 REAL, DIMENSION(:), INTENT(IN)   :: PTG, PTC, PTV, PVELC
 !                                     PTG     = surface temperature
@@ -105,15 +112,16 @@ REAL, DIMENSION(:), INTENT(OUT)  :: PUSTAR2, PCD, PCH, PRI
 !*      0.2    declarations of local variables
 !
 !
-REAL, DIMENSION(SIZE(PTG)) :: ZDIFFH, ZK, ZPIH, ZDIFFT, ZRIF, ZZ0HG, ZUSTAR
+REAL, DIMENSION(SIZE(PTG)) :: ZDIFFH, ZK, ZPIH, ZDIFFT, ZRIF, ZZ0HG, ZUSTAR, ZALPHA, ZTROP
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !*      0.3    declarations of local parameters
 !
 REAL, PARAMETER             :: ZNY          = 0.15e-04 !kinematic viscosity for air
-REAL, PARAMETER             :: ZALPHA       = 4.       !attenuation coef. for mom.
-                                                       ! ~2 for Wheat, ~4 for coniferous forest
+REAL, PARAMETER             :: ZALPHA_DEF   = 4.       !attenuation coef. for mom.
+REAL, PARAMETER             :: ZALPHA_TRO   = 10.      !attenuation coef. for mom
+                                                       ! ~2 for Wheat, ~4 for coniferous forest, ~10 for tropical forest
                                                        ! NOTE Eventually should possibly be made a fn of veg type
 REAL, PARAMETER             :: ZALPHAPRIM   = 3.       !attenuation coef. for wind
 REAL, PARAMETER             :: ZA           = 0.01
@@ -122,15 +130,19 @@ REAL, PARAMETER             :: ZRAFA        = 9.       !resistance factor for st
 
 REAL, PARAMETER             :: ZRAGNC_MIN   = 1.       ! (s/m) Minimum ground to canopy air resistance
 !-------------------------------------------------------------------------------
+IF (LHOOK) CALL DR_HOOK('SURFACE_AIR_MEB',0,ZHOOK_HANDLE)
 !-------------------------------------------------------------------------------
 !
 !*       0.     Initialization:
 !               ---------------
 !
-IF (LHOOK) CALL DR_HOOK('SURFACE_AIR_MEB',0,ZHOOK_HANDLE)
-!
 PRAGNC(:)  = 0.
 PGVNC(:)   = 0.
+!
+!-------------------------------------------------------------------------------
+!
+!*       1.     Aerodynamic resistance between soil/snow and canopy air
+!               -------------------------------------------------------
 !
 ZDIFFH(:)  = MAX(PH_VEG(:)-PDISPH(:),0.1)
 !
@@ -144,8 +156,12 @@ PUSTAR2(:) = ZUSTAR(:)**2
 !
 ! Aerodynamic resistance, Eq. 25 Choudhury and Monteith, 1988:
 !
-PRAGNC(:)=PH_VEG(:)*EXP(ZALPHA)/(ZALPHA*ZK(:))*(EXP(-ZALPHA*PZ0G(:)/PH_VEG(:)) &
-          -EXP(-ZALPHA*(PDISPH(:)+PZ0(:))/PH_VEG(:)))
+ZTROP(:)= PVEGTYPE(:,NVT_TRBE)+PVEGTYPE(:,NVT_TRBD)
+!
+ZALPHA(:)=ZTROP(:)*ZALPHA_TRO+(1.0-ZTROP(:))*ZALPHA_DEF
+!
+PRAGNC(:)=PH_VEG(:)*EXP(ZALPHA(:))/(ZALPHA(:)*ZK(:))*(EXP(-ZALPHA(:)*PZ0G(:)/PH_VEG(:)) &
+          -EXP(-ZALPHA(:)*(PDISPH(:)+PZ0(:))/PH_VEG(:)))
 !
 ! For the case of vanishingly thin vegetation, limit is imposed
 ! This results because the above Eq assumes z0v > z0g
@@ -171,7 +187,7 @@ PRAGNC(:) = MAX(ZRAGNC_MIN,PRAGNC(:))
 ! Finally, note that we assume the ratio z0/z0h is the same for vegetation and 
 ! underlying surface (as done for composite ISBA).
 !
-PRI(:)   = -XG*PH_VEG(:)*(PTG(:)-PTC(:))/(PTG(:)*PVELC(:)*PVELC(:))
+PRI(:)   = XG*PH_VEG(:)*(PTC(:)-PTG(:))/(0.5*(PTC(:)+PTG(:))*PVELC(:)*PVELC(:))
 !
 ZRIF(:)  = 0.
 ZZ0HG(:) = PZ0G(:)
@@ -191,10 +207,15 @@ PRAGNC(:)  = PRAGNC(:)/ZPIH(:)
 !
 PCH(:)     = 1/(PRAGNC(:)*MAX(1., PVELC(:)))
 !
-! Aerodynamic resistance within the canopy layer, i.e. between canopy and canopy air
+!-------------------------------------------------------------------------------
+!
+!*       2.     Aerodynamic conductance between canopy and canopy air
+!               -----------------------------------------------------
+!
+! Aerodynamic conductance within the canopy layer, i.e. between canopy and canopy air
 ! Eq. 29 and 30, Choudhury and Monteith, 1988:
 !
-PGVNC(:)  = (2.*ZA)*PLAI(:)/ZALPHAPRIM*SQRT(PVELC(:)/PLW(:))*(1.-EXP(-0.5*ZALPHAPRIM)) 
+PGVNC(:)  = (2.*ZA)*PLAI(:)/ZALPHAPRIM*SQRT(PVELC(:)/PLW(:))*(1.-EXP(-0.5*ZALPHAPRIM))
 !
 ! Limit the aerodynamic conductance to a small value
 !
@@ -206,6 +227,8 @@ ZDIFFT(:) = MAX(1.E-06,PTV(:)-PTC(:))
 ZDIFFT(:) = SQRT(SQRT(ZDIFFT(:)/PLW(:)))
 PGVNC(:)  = PGVNC(:)+ZDIFFT(:)*PLAI(:)/890.
 !
+!-------------------------------------------------------------------------------
 IF (LHOOK) CALL DR_HOOK('SURFACE_AIR_MEB',1,ZHOOK_HANDLE)
+!-------------------------------------------------------------------------------
 !
 END SUBROUTINE SURFACE_AIR_MEB

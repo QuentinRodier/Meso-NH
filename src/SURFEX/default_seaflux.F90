@@ -4,6 +4,7 @@
 !SFX_LIC for details. version 1.
 !     #########
       SUBROUTINE DEFAULT_SEAFLUX(PTSTEP,POUT_TSTEP,HSEA_ALB,HSEA_FLUX,   &
+                                   HSEA_SFCO2,                           &
                                    OPWG, OPRECIP, OPWEBB, KZ0, KGRVWAVES,&
                                    OPROGSST, POCEAN_TSTEP,               &
                                    PICHCE, HINTERPOL_SST, HINTERPOL_SSS, &
@@ -41,6 +42,7 @@
 !!      Modified    03/2014 : M.N. Bouin  ! possibility of wave parameters
 !!                                        ! from external source
 !!      C. Lebeaupin 01/2020 : new seaflux default ECUME6
+!!      R. Séférian    11/16 : Implement carbon cycle coupling (Earth system model)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -62,6 +64,7 @@ REAL,              INTENT(OUT) :: PTSTEP        ! time step for run
 REAL,              INTENT(OUT) :: POUT_TSTEP    ! time step for writing
 CHARACTER(LEN=6),  INTENT(OUT) :: HSEA_FLUX     ! type of sea scheme
 CHARACTER(LEN=4),  INTENT(OUT) :: HSEA_ALB      ! type of sea albedo
+CHARACTER(LEN=4),  INTENT(OUT) :: HSEA_SFCO2    ! type of carbon cycle exchange
 LOGICAL,           INTENT(OUT) :: OPWG          ! gustiness impact
 LOGICAL,           INTENT(OUT) :: OPRECIP       ! precipitation correction
 LOGICAL,           INTENT(OUT) :: OPWEBB        ! Webb correction
@@ -87,6 +90,7 @@ POUT_TSTEP = XUNDEF
 !
 HSEA_FLUX = "ECUME6"
 HSEA_ALB  = "TA96"
+HSEA_SFCO2  = "NONE"
 !
 OPWG    = .FALSE.
 OPRECIP = .FALSE. 

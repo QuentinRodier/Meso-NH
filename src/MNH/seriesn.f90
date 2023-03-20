@@ -41,6 +41,8 @@
 !!  03/2018     (P.Wautelet)   replace TEMPORAL_DIST by DATETIME_DISTANCE
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
+!!  12/2021 (R. Schoetter) adds humidity and other mean diagnostics
+
 !-------------------------------------------------------------------------------
 !
 !*      0.   DECLARATIONS
@@ -127,8 +129,8 @@ IF (LSURF) THEN
    KI=(IIE-IIB+1)*(IJE-IJB+1)
    ALLOCATE(ZSERIES(KI,5))
    CALL GET_SURF_VAR_n(YSURF_CUR%FM,YSURF_CUR%IM,YSURF_CUR%SM,YSURF_CUR%TM, &
-                       YSURF_CUR%GDM,YSURF_CUR%WM,YSURF_CUR%DUO,YSURF_CUR%DU,&
-                       YSURF_CUR%UG,YSURF_CUR%U, YSURF_CUR%USS,&
+                       YSURF_CUR%GDM, YSURF_CUR%WM,YSURF_CUR%DUO,           &
+                       YSURF_CUR%DU,YSURF_CUR%UG,YSURF_CUR%U, YSURF_CUR%USS,&
                        'MESONH',KI,5,PSERIES=ZSERIES)
    ZTS(:,:)=0.
    ZTMNW(:,:)=0.

@@ -84,6 +84,7 @@ ALLOCATE(PEK%XLAI                    (ISIZE              ))
 ALLOCATE(PEK%XVEG                    (ISIZE              )) 
 ALLOCATE(PEK%XZ0                     (ISIZE              )) 
 ALLOCATE(PEK%XEMIS                   (ISIZE              )) 
+ALLOCATE(PEK%XH_VEG                  (ISIZE              ))
 !
 ALLOCATE(PEK%XRSMIN                  (ISIZE              )) 
 ALLOCATE(PEK%XGAMMA                  (ISIZE              )) 
@@ -180,7 +181,6 @@ ENDIF
 !
 ALLOCATE(PEK%XGNDLITTER (ISIZE))
 ALLOCATE(PEK%XZ0LITTER  (ISIZE))
-ALLOCATE(PEK%XH_VEG     (ISIZE))
 !
 IF (LHOOK) CALL DR_HOOK('ALLOCATE_PHYSIO',1,ZHOOK_HANDLE)
 !

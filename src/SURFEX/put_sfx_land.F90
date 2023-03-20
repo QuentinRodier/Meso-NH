@@ -5,7 +5,8 @@
 !     #########
       SUBROUTINE PUT_SFX_LAND (IO, S, K, NK, NP, U, &
                                KLUOUT,OCPL_WTD,OCPL_FLOOD, &
-                              PWTD,PFWTD,PFFLOOD,PPIFLOOD )  
+                               PWTD,PFWTD,PFFLOOD,PPIFLOOD,&
+                               PTWS                        )  
 !     #####################################################
 !
 !!****  *PUT_SFX_LAND* - routine to put some land surface variables to surfex
@@ -44,8 +45,10 @@ USE MODD_ISBA_OPTIONS_n, ONLY : ISBA_OPTIONS_t
 USE MODD_ISBA_n, ONLY : ISBA_S_t, ISBA_K_t, ISBA_NK_t, ISBA_NP_t, ISBA_P_t
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 !
-USE MODD_SURF_PAR,   ONLY : XUNDEF
 USE MODN_SFX_OASIS,  ONLY : XFLOOD_LIM
+USE MODD_SFX_OASIS,  ONLY : NTWS_ID
+!
+USE MODD_SURF_PAR,   ONLY : XUNDEF, NUNDEF
 !
 USE MODI_PACK_SAME_RANK
 !
@@ -71,7 +74,8 @@ LOGICAL,           INTENT(IN)  :: OCPL_FLOOD
 REAL, DIMENSION(:), INTENT(IN) :: PWTD     ! water table depth (negative below soil surface) (m)
 REAL, DIMENSION(:), INTENT(IN) :: PFWTD    ! fraction of water table rise (-)
 REAL, DIMENSION(:), INTENT(IN) :: PFFLOOD  ! fraction of flooded area (-)
-REAL, DIMENSION(:), INTENT(IN) :: PPIFLOOD ! Potential floodplain infiltration (kg/m2)
+REAL, DIMENSION(:), INTENT(IN) :: PPIFLOOD ! Potential floodplain infiltration (kg/m2/s)
+REAL, DIMENSION(:), INTENT(IN) :: PTWS     ! RRM terrestrial water storage (kg/m2)
 !
 !*       0.2   Declarations of local variables
 !              -------------------------------
@@ -98,6 +102,16 @@ ENDIF
 !
 !*       2.0   Put variable over nature
 !              ------------------------
+!
+IF(NTWS_ID/=NUNDEF)THEN
+!
+  S%XCPL_TWS(:) = XUNDEF
+!
+  YCOMMENT='RRM terrestrial water storage'
+  CALL PACK_SAME_RANK(U%NR_NATURE(:),PTWS(:),S%XCPL_TWS(:))
+  CALL CHECK_LAND(YCOMMENT,S%XCPL_TWS)
+!
+ENDIF
 !
 IF(OCPL_WTD)THEN
 !    
