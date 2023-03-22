@@ -2,7 +2,6 @@ all: E001_pgd1  E002_ecmwf2lfi E003_run E004_restart
 ifneq "$(MNH_PYTHON)" "NO"
 all: E005_python
  endif
-all: E006_ncl
 
 E001_pgd1 :
 	cd 001_pgd1	       && run_prep_pgd_xyz 
@@ -14,8 +13,6 @@ E004_restart:
 	cd 004_restart	       && run_mesonh_xyz
 E005_python:
 	cd 005_python	       && run_python
-E006_ncl:
-	cd 006_ncl 	       && run_ncl
 clean:
 	cd 001_pgd1	       && clean_prep_pgd_xyz
 	cd 002_ecmwf2lfi       && clean_ecmwf2lfi_xyz
@@ -24,7 +21,6 @@ clean:
         ifneq "$(MNH_PYTHON)" "NO"
 	cd 005_python	       && clean_python
         endif
-	cd 006_ncl	       && clean_ncl
 
 python:
 	cd 005_python          && run_python

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2009-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2009-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -36,7 +36,7 @@ USE MODD_TIME
 !
 USE MODD_MNH2LPDM
 !
-use modd_field,            only: tfielddata, TYPEREAL
+use modd_field,            only: tfieldmetadata, TYPEREAL
 USE MODE_IO_FILE,          only: IO_File_close, IO_File_open
 USE MODE_IO_FIELD_READ,    only: IO_Field_read
 USE MODE_IO_MANAGE_STRUCT, only: IO_File_add2list
@@ -61,7 +61,7 @@ INTEGER              :: ICURAA,ICURMM,ICURJJ         ! Date  courante.
 INTEGER              :: ICURHH,ICURMN,ICURSS         ! Heure courante.
 INTEGER              :: JI,JJ,JK
 TYPE(DATE_TIME)      :: TZDTCUR
-type(tfielddata)        :: tzfield
+type(tfieldmetadata)    :: tzfield
 TYPE(TFILEDATA),POINTER :: TZFILE
 !
 !
@@ -110,54 +110,59 @@ CALL IO_Field_read(TPFILE,'WT',     XWT)
 CALL IO_Field_read(TPFILE,'THT',    XTHT)
 CALL IO_Field_read(TPFILE,'TKET',   XTKET)
 
-tzfield%cmnhname  = 'LM'
-tzfield%clongname = ''
-tzfield%cunits    = 'm'
-tzfield%cdir      = 'XY'
-tzfield%ccomment  = 'Mixing length'
-tzfield%ngrid     = 1
-tzfield%ntype     = TYPEREAL
-tzfield%ndims     = 3
+tzfield = tfieldmetadata(      &
+  cmnhname  = 'LM',            &
+  clongname = '',              &
+  cunits    = 'm',             &
+  cdir      = 'XY',            &
+  ccomment  = 'Mixing length', &
+  ngrid     = 1,               &
+  ntype     = TYPEREAL,        &
+  ndims     = 3                )
 CALL IO_Field_read(TPFILE, tzfield, XLM)
 
-tzfield%cmnhname  = 'THW_FLX'
-tzfield%clongname = ''
-tzfield%cunits    = 'K s-1' !correct?
-tzfield%cdir      = 'XY'
-tzfield%ccomment  = 'Conservative potential temperature vertical flux'
-tzfield%ngrid     = 4
-tzfield%ntype     = TYPEREAL
-tzfield%ndims     = 3
+tzfield = tfieldmetadata(&
+  cmnhname  = 'THW_FLX', &
+  clongname = '',        &
+  cunits    = 'K s-1',   & !correct?
+  cdir      = 'XY',      &
+  ccomment  = 'Conservative potential temperature vertical flux', &
+  ngrid     = 4,         &
+  ntype     = TYPEREAL,  &
+  ndims     = 3          )
 CALL IO_Field_read(TPFILE, tzfield, XWPTHP)
 
-tzfield%cmnhname  = 'DISS'
-tzfield%clongname = ''
-tzfield%cunits    = '' !TODO: set units
-tzfield%cdir      = 'XY'
-tzfield%ccomment  = 'X_Y_Z_DISS'
-tzfield%ngrid     = 1
-tzfield%ntype     = TYPEREAL
-tzfield%ndims     = 3
+tzfield = tfieldmetadata(   &
+  cmnhname  = 'DISS',       &
+  clongname = '',           &
+  cunits    = '',           & !TODO: set units
+  cdir      = 'XY',         &
+  ccomment  = 'X_Y_Z_DISS', &
+  ngrid     = 1,            &
+  ntype     = TYPEREAL,     &
+  ndims     = 3             )
 CALL IO_Field_read(TPFILE, tzfield, XDISSIP)
 
-tzfield%cmnhname  = 'FMU'
-tzfield%clongname = ''
-tzfield%cunits    = 'kg m-1 s-2'
-tzfield%cdir      = 'XY'
-tzfield%ccomment  = 'X_Y_FMU'
-tzfield%ngrid     = 4
-tzfield%ntype     = TYPEREAL
-tzfield%ndims     = 2
+tzfield = tfieldmetadata(   &
+  cmnhname  = 'FMU',        &
+  clongname = '',           &
+  cunits    = 'kg m-1 s-2', &
+  cdir      = 'XY',         &
+  ccomment  = 'X_Y_FMU',    &
+  ngrid     = 4,            &
+  ntype     = TYPEREAL,     &
+  ndims     = 2             )
 CALL IO_Field_read(TPFILE, tzfield, XSFU)
 
-tzfield%cmnhname  = 'FMV'
-tzfield%clongname = ''
-tzfield%cunits    = 'kg m-1 s-2'
-tzfield%cdir      = 'XY'
-tzfield%ccomment  = 'X_Y_FMV'
-tzfield%ngrid     = 4
-tzfield%ntype     = TYPEREAL
-tzfield%ndims     = 2
+tzfield = tfieldmetadata(   &
+  cmnhname  = 'FMV',        &
+  clongname = '',           &
+  cunits    = 'kg m-1 s-2', &
+  cdir      = 'XY',         &
+  ccomment  = 'X_Y_FMV',    &
+  ngrid     = 4,            &
+  ntype     = TYPEREAL,     &
+  ndims     = 2             )
 CALL IO_Field_read(TPFILE, tzfield, XSFV)
 
 CALL IO_Field_read(TPFILE,'INPRT',  XINRT)

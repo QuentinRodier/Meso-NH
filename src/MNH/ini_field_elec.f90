@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2002-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -11,12 +11,12 @@ INTERFACE
 !
       SUBROUTINE INI_FIELD_ELEC (PDXX, PDYY, PDZZ, PDZX, PDZY, PZZ)
 !
-REAL, DIMENSION(:,:,:),  INTENT(IN) ::  PDXX     ! Metric coefficients
-REAL, DIMENSION(:,:,:),  INTENT(IN) ::  PDYY     ! Metric coefficients
-REAL, DIMENSION(:,:,:),  INTENT(IN) ::  PDZZ     ! Metric coefficients
-REAL, DIMENSION(:,:,:),  INTENT(IN) ::  PDZX     ! Metric coefficients
-REAL, DIMENSION(:,:,:),  INTENT(IN) ::  PDZY     ! Metric coefficients
-REAL, DIMENSION(:,:,:),  INTENT(IN) ::  PZZ      ! vertical grid
+REAL, DIMENSION(:,:,:),  INTENT(IN)    ::  PDXX     ! Metric coefficients
+REAL, DIMENSION(:,:,:),  INTENT(IN)    ::  PDYY     ! Metric coefficients
+REAL, DIMENSION(:,:,:),  INTENT(IN)    ::  PDZZ     ! Metric coefficients
+REAL, DIMENSION(:,:,:),  INTENT(INOUT) ::  PDZX     ! Metric coefficients
+REAL, DIMENSION(:,:,:),  INTENT(INOUT) ::  PDZY     ! Metric coefficients
+REAL, DIMENSION(:,:,:),  INTENT(IN)    ::  PZZ      ! vertical grid
 !
 END SUBROUTINE INI_FIELD_ELEC
 END INTERFACE
@@ -85,12 +85,12 @@ IMPLICIT NONE
 !
 !*	0.1	Declaration of dummy arguments
 !
-REAL, DIMENSION(:,:,:),  INTENT(IN) ::  PDXX  ! Metric coefficients
-REAL, DIMENSION(:,:,:),  INTENT(IN) ::  PDYY  ! Metric coefficients
-REAL, DIMENSION(:,:,:),  INTENT(IN) ::  PDZZ  ! Metric coefficients
-REAL, DIMENSION(:,:,:),  INTENT(IN) ::  PDZX  ! Metric coefficients
-REAL, DIMENSION(:,:,:),  INTENT(IN) ::  PDZY  ! Metric coefficients
-REAL, DIMENSION(:,:,:),  INTENT(IN) ::  PZZ   ! vertical grid
+REAL, DIMENSION(:,:,:),  INTENT(IN)    ::  PDXX     ! Metric coefficients
+REAL, DIMENSION(:,:,:),  INTENT(IN)    ::  PDYY     ! Metric coefficients
+REAL, DIMENSION(:,:,:),  INTENT(IN)    ::  PDZZ     ! Metric coefficients
+REAL, DIMENSION(:,:,:),  INTENT(INOUT) ::  PDZX     ! Metric coefficients
+REAL, DIMENSION(:,:,:),  INTENT(INOUT) ::  PDZY     ! Metric coefficients
+REAL, DIMENSION(:,:,:),  INTENT(IN)    ::  PZZ      ! vertical grid
 !
 !*	0.2	Declaration of local variables
 !

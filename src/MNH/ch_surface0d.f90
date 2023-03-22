@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1999-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1999-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -132,8 +132,8 @@ CALL CH_EMISSION_FLUX0D(PTSIMUL, ZEMIS, "CHCONTROL1.nam", 6, NVERB)
 ! convert m2 to cm2, days to seconds and Mole to molecules
 ! ZEMIS(1:KEQ) = (6.022136E23/1E4/86400.)*ZEMIS(1:KEQ)
 !
-! convert ppp*m/s to molecules/cm2/s
-! based on 1 ppp*m/s = (Na/Vmol)*m/s = (6.022136E23/22.414E-3) molecules/m2/s
+! convert ppv*m/s to molecules/cm2/s
+! based on 1 ppv*m/s = (Na/Vmol)*m/s = (6.022136E23/22.414E-3) molecules/m2/s
 ZEMIS(1:KEQ) = (6.022136E23/224.14)*ZEMIS(1:KEQ)
 !
 !*    2.   CALCULATE DEPOSITION FLUXES WITH WESLEY 
@@ -153,7 +153,7 @@ ZSVT(1,1,1,:) = PCONC(:) ! scalar variables at t
 !                      ZHU_PATCH,ZPSN_PATCH)
 !UPG
 !
-! results in  ZSFSV(1,1,:) ! flux of scalar variables (ppp*m/s)
+! results in  ZSFSV(1,1,:) ! flux of scalar variables (ppv*m/s)
 ! but we do not use them here, we rather take the deposition velocity 
 ! directly from the module (variable XVDEPT)
 !

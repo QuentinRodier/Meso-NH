@@ -2,13 +2,7 @@ all: E001_pgd1 E002_pgd2 E003_nest E004_arp2lfi E005_spa_mod1_mod2 E006_preal E0
 ifneq "$(MNH_PYTHON)" "NO"
 all: E010_python
 endif
-all: E011_ncl E012_spectre
-
-all_ncl_nc4: E001_pgd1 E002_pgd2 E003_nest E004_arp2lfi E005_spa_mod1_mod2 E006_preal E008_run2 E009_diag E011_ncl_nc4
-
-all_ncl_lfi2cdf: E001_pgd1 E002_pgd2 E003_nest E004_arp2lfi E005_spa_mod1_mod2 E006_preal E008_run2 E009_diag E010_python E011_ncl_lfi2cdf
-
-all_ncl_extractdia: E001_pgd1 E002_pgd2 E003_nest E004_arp2lfi E005_spa_mod1_mod2 E006_preal E008_run2 E009_diag E010_python E011_ncl_extractdia
+all: E011_spectre
 
 E001_pgd1 :
 	cd 001_pgd1	       && get_pgd_files 
@@ -29,16 +23,8 @@ E009_diag:
 	cd 009_diag	       && run_diag_xyz
 E010_python:
 	cd 010_python	       && run_python
-E011_ncl:
-	cd 011_ncl             && run_ncl
-E011_ncl_nc4:
-	cd 011_ncl_nc4         && run_ncl
-E011_ncl_lfi2cdf:
-	cd 011_ncl_lfi2cdf     && run_ncl
-E011_ncl_extractdia:
-	cd 011_ncl_extractdia  && run_ncl
-E012_spectre:
-	cd 012_spectre	       && run_spectre_xyz
+E011_spectre:
+	cd 011_spectre	       && run_spectre_xyz
 
 clean:
 	cd 001_pgd1	       && clean_prep_pgd_xyz
@@ -52,10 +38,5 @@ clean:
         ifneq "$(MNH_PYTHON)" "NO"
 	cd 010_python	       && clean_python
         endif
-	cd 011_ncl_lfi2cdf     && clean_ncl
-	cd 011_ncl_extractdia  && clean_ncl
-	cd 011_ncl_nc4         && clean_ncl
-	cd 011_ncl             && clean_ncl
-	cd 012_spectre	       && clean_spectre_xyz
 python:
 	cd 010_python          && run_python

@@ -111,7 +111,6 @@ REAL, DIMENSION(KI)             :: ZTS_GREENROOF       ! radiative temperature
 !
 REAL, DIMENSION(KI)             :: ZALB_HVEG         ! albedo of urban trees
 REAL, DIMENSION(KI)             :: ZTRANS_HVCR      ! transmissivity for all crown of high veg
-
 !
 REAL, DIMENSION(KI)             :: ZAZIM  !** strong simplification: to change
 REAL, DIMENSION(KI)             :: ZWGT   !** weight sum

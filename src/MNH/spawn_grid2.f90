@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -9,11 +9,13 @@ MODULE MODI_SPAWN_GRID2
 !
 INTERFACE
 !
-     SUBROUTINE SPAWN_GRID2 (KXOR,KYOR,KXEND,KYEND,KDXRATIO,KDYRATIO,         &
-                             PLONOR,PLATOR,PXHAT,PYHAT,PZHAT,PZTOP,           &
-                             OSLEVE,PLEN1,PLEN2,                              &
-                             PZS,PZSMT,PZS_LS,PZSMT_LS,                       &
-                             TPDTMOD,TPDTCUR                                  )
+     SUBROUTINE SPAWN_GRID2( KXOR, KYOR, KXEND, KYEND, KDXRATIO, KDYRATIO,                &
+                             PLONOR, PLATOR, PXHAT, PYHAT, PZHAT, PXHATM, PYHATM, PZHATM, &
+                             PXHAT_ll, PYHAT_ll, PXHATM_ll, PYHATM_ll,                    &
+                             PHAT_BOUND, PHATM_BOUND,                                     &
+                             PZTOP, OSLEVE, PLEN1, PLEN2,                                 &
+                             PZS, PZSMT, PZS_LS, PZSMT_LS,                                &
+                             TPDTMOD, TPDTCUR                                             )
 !
 USE MODD_TIME
 !
@@ -23,22 +25,29 @@ INTEGER,   INTENT(IN)  :: KYOR,KYEND ! of the model 2 domain, relative to model 
 INTEGER,   INTENT(IN)  :: KDXRATIO   !  x and y-direction Resolution ratio
 INTEGER,   INTENT(IN)  :: KDYRATIO   ! between model 2 and model 1
 !
-REAL,                 INTENT(INOUT) :: PLATOR            ! Latitude of the origine point
-REAL,                 INTENT(INOUT) :: PLONOR            ! Longitude of the origine point
-REAL, DIMENSION(:),   INTENT(INOUT) :: PXHAT,PYHAT,PZHAT ! positions x,y,z in the
+REAL,                 INTENT(OUT) :: PLATOR            ! Latitude of the origine point
+REAL,                 INTENT(OUT) :: PLONOR            ! Longitude of the origine point
+REAL, DIMENSION(:),   INTENT(OUT) :: PXHAT,PYHAT,PZHAT ! positions x,y,z in the
                                      ! conformal plane or on the cartesian plane
+REAL, DIMENSION(:),   INTENT(OUT) :: PXHATM, PYHATM, PZHATM ! positions x,y in the
+                                     ! conformal plane or on the cartesian plane at mass points
+REAL, DIMENSION(:),   POINTER, INTENT(INOUT) :: PXHAT_ll    ! Position x, y or z in the conformal or cartesian plane (all domain)
+REAL, DIMENSION(:),   POINTER, INTENT(INOUT) :: PYHAT_ll    ! Position x, y or z in the conformal or cartesian plane (all domain)
+REAL, DIMENSION(:),   POINTER, INTENT(INOUT) :: PXHATM_ll   ! id at mass points
+REAL, DIMENSION(:),   POINTER, INTENT(INOUT) :: PYHATM_ll   ! id at mass points
+REAL, DIMENSION(:),   POINTER, INTENT(INOUT) :: PHAT_BOUND  ! Boundaries of global domain in the conformal or cartesian plane
+REAL, DIMENSION(:),   POINTER, INTENT(INOUT) :: PHATM_BOUND ! idem at mass points
 REAL,                 INTENT(OUT)   :: PZTOP             ! model top (m)
 LOGICAL,              INTENT(OUT)   :: OSLEVE            ! flag for SLEVE coordinate
 REAL,                 INTENT(OUT)   :: PLEN1             ! Decay scale for smooth topography
 REAL,                 INTENT(OUT)   :: PLEN2             ! Decay scale for small-scale topography deviation
-REAL, DIMENSION(:,:), INTENT(INOUT) :: PZS               ! orography
-REAL, DIMENSION(:,:), INTENT(INOUT) :: PZSMT             ! smooth orography
+REAL, DIMENSION(:,:), INTENT(OUT)   :: PZS               ! orography
+REAL, DIMENSION(:,:), INTENT(OUT)   :: PZSMT             ! smooth orography
 REAL, DIMENSION(:,:), INTENT(OUT)   :: PZS_LS            ! interpolated orography
 REAL, DIMENSION(:,:), INTENT(OUT)   :: PZSMT_LS          ! interpolated smooth orography
 !
-!
-TYPE (DATE_TIME),     INTENT(INOUT) :: TPDTMOD  ! Date and Time of MODel beginning
-TYPE (DATE_TIME),     INTENT(INOUT) :: TPDTCUR  ! CURent date and time
+TYPE (DATE_TIME),     INTENT(OUT) :: TPDTMOD  ! Date and Time of MODel beginning
+TYPE (DATE_TIME),     INTENT(OUT) :: TPDTCUR  ! CURent date and time
 !
 END SUBROUTINE SPAWN_GRID2
 !
@@ -47,13 +56,15 @@ END INTERFACE
 END MODULE MODI_SPAWN_GRID2
 !
 !
-!     #########################################################################
-     SUBROUTINE SPAWN_GRID2 (KXOR,KYOR,KXEND,KYEND,KDXRATIO,KDYRATIO,         &
-                             PLONOR,PLATOR,PXHAT,PYHAT,PZHAT,PZTOP,           &
-                             OSLEVE,PLEN1,PLEN2,                              &
-                             PZS,PZSMT,PZS_LS,PZSMT_LS,                       &
-                             TPDTMOD,TPDTCUR                                  )
-!     #########################################################################
+!    ######################################################################################
+     SUBROUTINE SPAWN_GRID2( KXOR, KYOR, KXEND, KYEND, KDXRATIO, KDYRATIO,                &
+                             PLONOR, PLATOR, PXHAT, PYHAT, PZHAT, PXHATM, PYHATM, PZHATM, &
+                             PXHAT_ll, PYHAT_ll, PXHATM_ll, PYHATM_ll,                    &
+                             PHAT_BOUND, PHATM_BOUND,                                     &
+                             PZTOP, OSLEVE, PLEN1, PLEN2,                                 &
+                             PZS, PZSMT, PZS_LS, PZSMT_LS,                                &
+                             TPDTMOD, TPDTCUR                                             )
+!    ######################################################################################
 !
 !!****  *SPAWN_GRID2 * - subroutine to define spatial and temporal grid.
 !!
@@ -166,6 +177,7 @@ USE MODD_BIKHARDT_n
 USE MODD_VAR_ll
 use mode_bikhardt
 USE MODE_ll
+USE MODE_SET_GRID,   only: INTERP_HORGRID_TO_MASSPOINTS, STORE_GLOB_GRID
 USE MODE_TIME
 USE MODE_GRIDPROJ
 !
@@ -184,10 +196,18 @@ INTEGER,   INTENT(IN)  :: KYOR,KYEND ! of the model 2 domain, relative to model 
 INTEGER,   INTENT(IN)  :: KDXRATIO   !  x and y-direction Resolution ratio
 INTEGER,   INTENT(IN)  :: KDYRATIO   ! between model 2 and model 1
 !
-REAL,                 INTENT(INOUT) :: PLATOR            ! Latitude of the origine point
-REAL,                 INTENT(INOUT) :: PLONOR            ! Longitude of the origine point
-REAL, DIMENSION(:),   INTENT(INOUT) :: PXHAT,PYHAT,PZHAT ! positions x,y,z in the
+REAL,                 INTENT(OUT) :: PLATOR            ! Latitude of the origine point
+REAL,                 INTENT(OUT) :: PLONOR            ! Longitude of the origine point
+REAL, DIMENSION(:),   INTENT(OUT) :: PXHAT,PYHAT,PZHAT ! positions x,y,z in the
                                      ! conformal plane or on the cartesian plane
+REAL, DIMENSION(:),   INTENT(OUT) :: PXHATM, PYHATM, PZHATM ! positions x,y in the
+                                     ! conformal plane or on the cartesian plane at mass points
+REAL, DIMENSION(:),   POINTER, INTENT(INOUT) :: PXHAT_ll    ! Position x, y or z in the conformal or cartesian plane (all domain)
+REAL, DIMENSION(:),   POINTER, INTENT(INOUT) :: PYHAT_ll    ! Position x, y or z in the conformal or cartesian plane (all domain)
+REAL, DIMENSION(:),   POINTER, INTENT(INOUT) :: PXHATM_ll   ! id at mass points
+REAL, DIMENSION(:),   POINTER, INTENT(INOUT) :: PYHATM_ll   ! id at mass points
+REAL, DIMENSION(:),   POINTER, INTENT(INOUT) :: PHAT_BOUND  ! Boundaries of global domain in the conformal or cartesian plane
+REAL, DIMENSION(:),   POINTER, INTENT(INOUT) :: PHATM_BOUND ! idem at mass points
 REAL,                 INTENT(OUT)   :: PZTOP             ! model top (m)
 LOGICAL,              INTENT(OUT)   :: OSLEVE            ! flag for SLEVE coordinate
 REAL,                 INTENT(OUT)   :: PLEN1             ! Decay scale for smooth topography
@@ -197,9 +217,8 @@ REAL, DIMENSION(:,:), INTENT(OUT)   :: PZSMT             ! smooth orography
 REAL, DIMENSION(:,:), INTENT(OUT)   :: PZS_LS            ! interpolated orography
 REAL, DIMENSION(:,:), INTENT(OUT)   :: PZSMT_LS          ! interpolated smooth orography
 !
-!
-TYPE (DATE_TIME),     INTENT(INOUT) :: TPDTMOD  ! Date and Time of MODel beginning
-TYPE (DATE_TIME),     INTENT(INOUT) :: TPDTCUR  ! CURent date and time
+TYPE (DATE_TIME),     INTENT(OUT) :: TPDTMOD  ! Date and Time of MODel beginning
+TYPE (DATE_TIME),     INTENT(OUT) :: TPDTCUR  ! CURent date and time
 !
 !*       0.2    Declarations of local variables for print on FM file
 !
@@ -304,7 +323,8 @@ END IF
 !              --------------------------------------
 !
 PZTOP    = XZTOP1
-PZHAT(:) = XZHAT1(:) 
+PZHAT(:)  = XZHAT1(:)
+PZHATM(:) = XZHATM1(:)
 OSLEVE   = LSLEVE1
 PLEN1    = XLEN11
 PLEN2    = XLEN21
@@ -449,6 +469,14 @@ PLEN2    = XLEN21
   DEALLOCATE(ZYHAT_2D_F)
   DEALLOCATE(ZYHAT_EXTENDED_C)
   DEALLOCATE(ZYHAT_2D_C)
+
+  ! Interpolations of positions to mass points
+  CALL INTERP_HORGRID_TO_MASSPOINTS( PXHAT, PYHAT, PXHATM, PYHATM )
+
+  ! Collect global domain boundaries
+  CALL STORE_GLOB_GRID( PXHAT, PYHAT, PZHAT, PXHATM, PYHATM, PZHATM,                      &
+                        PXHAT_ll, PYHAT_ll, PXHATM_ll, PYHATM_ll, PHAT_BOUND, PHATM_BOUND )
+
 !!$=======
 !!$  IXSIZE1=SIZE(XXHAT1)
 !!$  ALLOCATE(ZXHAT_EXTENDED(IXSIZE1+1))

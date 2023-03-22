@@ -48,9 +48,9 @@ END MODULE MODI_SALTLFI_n
 !!
 !!    MODIFICATIONS
 !!    -------------
+!!    none
+!!
 !!    2014    P.Tulet  modif calcul ZM
-!!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
-
 !!    EXTERNAL
 !!    --------
 !!    None
@@ -101,7 +101,7 @@ INTEGER :: IMOMENTS
 !-Marine
 INTEGER :: JI, JJ, JN, JK  ! loop counter
 INTEGER :: IMODEIDX  ! index mode
-REAL, PARAMETER  :: ZN_SALT=1E4 ! multiplcative factor for X0MIN
+REAL, PARAMETER  :: ZN_SALT=0.1 ! particles of sea salt/cm3 {air}
 REAL, PARAMETER  :: ZCLM=800. ! Marine Salt layer (m)
 REAL    :: ZN_SALTN
 !
@@ -160,14 +160,12 @@ DO JN = 1, NMODE_SLT
   ZINISIGMA(JN)  = XINISIG_SLT(IMODEIDX)
   !
   ZMMIN(IM0(JN)) = XN0MIN_SLT(IMODEIDX)
-! ZRGMIN   = XCOEFRADMIN * ZINIRADIUS(JN)
   ZRGMIN   = ZINIRADIUS(JN)
   ZMMIN(IM3(JN)) = XN0MIN_SLT(IMODEIDX) * (ZRGMIN**3)*EXP(4.5 * LOG(ZINISIGMA(JN))**2) 
   ZMMIN(IM6(JN)) = XN0MIN_SLT(IMODEIDX) * (ZRGMIN**6)*EXP(18. * LOG(ZINISIGMA(JN))**2)
 ENDDO
 !
 !
-!XDENSITY_SALT est fixé dans modd_csts_salt.f90
 ZRHOI = XDENSITY_SALT 
 ZMI   = XMOLARWEIGHT_SALT 
 ZDEN2MOL = 1E-6 * XAVOGADRO / XMD
@@ -182,18 +180,19 @@ DO JN=1,NMODE_SLT
 !+Marine : (reprendre XN0MIN_SLT de modd_salt.f90).
 ! Pas plus simple de fixer une dimension à ZN_SALT qui dépend de JN pour ne pas
 ! avoir à rappeler le schéma d'émission?
-  IF(NMODE_SLT == 5)THEN
-    IF (JN == 1) ZN_SALTN = XN0MIN_SLT(JPSALTORDER(JN)) *  ZN_SALT 
-    IF (JN == 2) ZN_SALTN = XN0MIN_SLT(JPSALTORDER(JN)) *  ZN_SALT
-    IF (JN == 3) ZN_SALTN = XN0MIN_SLT(JPSALTORDER(JN)) *  ZN_SALT
-    IF (JN == 4) ZN_SALTN = XN0MIN_SLT(JPSALTORDER(JN)) *  ZN_SALT
-    IF (JN == 5) ZN_SALTN = XN0MIN_SLT(JPSALTORDER(JN)) *  ZN_SALT
-  ELSE 
-    IF (JN == 1) ZN_SALTN =  XN0MIN_SLT(JPSALTORDER(JN)) *  ZN_SALT 
-    IF (JN == 2) ZN_SALTN =  XN0MIN_SLT(JPSALTORDER(JN)) *  ZN_SALT
-    IF (JN == 3) ZN_SALTN =  XN0MIN_SLT(JPSALTORDER(JN)) *  ZN_SALT
-  END IF
+
+ IF (JN == 1) ZN_SALTN =  XN0MIN_SLT(JPSALTORDER(JN)) *  ZN_SALT *1E6
+ IF (JN == 2) ZN_SALTN =  XN0MIN_SLT(JPSALTORDER(JN)) *  ZN_SALT *1E6
+ IF (JN == 3) ZN_SALTN =  XN0MIN_SLT(JPSALTORDER(JN)) *  ZN_SALT *1E6
+ IF (JN == 4) ZN_SALTN = XN0MIN_SLT(JPSALTORDER(JN)) *  ZN_SALT *1E6
+ IF (JN == 5) ZN_SALTN = XN0MIN_SLT(JPSALTORDER(JN)) *  ZN_SALT *1E6
+ IF (JN == 6) ZN_SALTN = XN0MIN_SLT(JPSALTORDER(JN)) *  ZN_SALT *1E6
+ IF (JN == 7) ZN_SALTN = XN0MIN_SLT(JPSALTORDER(JN)) *  ZN_SALT *1E6
+ IF (JN == 8) ZN_SALTN = XN0MIN_SLT(JPSALTORDER(JN)) *  ZN_SALT *1E6
+
+
 !-Marine
+
   DO JK=1, SIZE(PSV,3) 
     DO JJ=1, SIZE(PSV,2) 
       DO JI=1, SIZE(PSV,1) 

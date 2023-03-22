@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2019-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2019-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -68,12 +68,11 @@ SUBROUTINE IBM_IDEALRP(KNUMB_OBS,PIBM_XYZ,PPHI)
   USE MODE_POS
   USE MODE_ll
   USE MODE_IO
-  USE MODE_GATHER_ll
   !
   ! declaration
   USE MODD_IBM_PARAM_n
   USE MODD_DIM_n, ONLY: NIMAX,NJMAX,NKMAX
-  USE MODD_GRID_n, ONLY: XXHAT,XYHAT,XZHAT,XZZ
+  USE MODD_GRID_n, ONLY: XXHAT,XYHAT,XZHAT, XXHAT_ll, XYHAT_ll, XZZ
   USE MODD_PARAMETERS, ONLY: JPVEXT,JPHEXT
   !
   ! interface
@@ -105,7 +104,6 @@ SUBROUTINE IBM_IDEALRP(KNUMB_OBS,PIBM_XYZ,PPHI)
   REAL, ALLOCATABLE                   :: ZDIST_SUR6,ZDIST_REF0                            
   REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZXHATM,ZYHATM,ZZHATM                      ! mesh location (mass nodes)
   REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZXHATC,ZYHATC,ZZHATC                      ! mesh location (cell nodes)
-  REAL, DIMENSION(:)    , ALLOCATABLE :: ZXHAT_ll,ZYHAT_ll
   CHARACTER(LEN=1)                    :: YPOS
   INTEGER                             :: NRESP
   !
@@ -140,14 +138,10 @@ SUBROUTINE IBM_IDEALRP(KNUMB_OBS,PIBM_XYZ,PPHI)
   !     ----------------
   ! 
   CALL GET_GLOBALDIMS_ll(IIU_ll,IJU_ll)
-  ALLOCATE(ZXHAT_ll(IIU_ll+ 2 * JPHEXT))
-  ALLOCATE(ZYHAT_ll(IJU_ll+ 2 * JPHEXT))
-  CALL GATHERALL_FIELD_ll('XX',XXHAT,ZXHAT_ll,NRESP)
-  CALL GATHERALL_FIELD_ll('YY',XYHAT,ZYHAT_ll,NRESP)
   ZDELTX = abs((PIBM_XYZ(KNUMB_OBS,1)-PIBM_XYZ(KNUMB_OBS,2))/ & 
-       ((ZXHAT_ll(IIU_ll+2)-ZXHAT_ll(2))/(IIU_ll*1.)))
+       ((XXHAT_ll(IIU_ll+2)-XXHAT_ll(2))/(IIU_ll*1.)))
   ZDELTY = abs((PIBM_XYZ(KNUMB_OBS,3)-PIBM_XYZ(KNUMB_OBS,4))/ & 
-       ((ZYHAT_ll(IJU_ll+2)-ZYHAT_ll(2))/(IJU_ll*1.)))  
+       ((XYHAT_ll(IJU_ll+2)-XYHAT_ll(2))/(IJU_ll*1.)))
   ZDELTZ = abs((PIBM_XYZ(KNUMB_OBS,5)-PIBM_XYZ(KNUMB_OBS,6))/ &
        ((XZHAT(IKU)-XZHAT(2))/(IKU*1.-2.)))
   !      
@@ -301,7 +295,6 @@ SUBROUTINE IBM_IDEALRP(KNUMB_OBS,PIBM_XYZ,PPHI)
   !     -----------------------
   !
   DEALLOCATE(ZXHATC,ZYHATC,ZZHATC)
-  DEALLOCATE(ZXHAT_ll,ZYHAT_ll)
   DEALLOCATE(ZTEST_XMIN,ZTEST_XMAX,ZTEST_YMIN,ZTEST_YMAX,ZTEST_ZMIN,ZTEST_ZMAX)
   DEALLOCATE(ZPOSI_XYZ0,ZPOSI_XYZ1,ZPOSI_XYZ2)
   DEALLOCATE(ZDIST_SUR0,ZDIST_SUR1,ZDIST_SUR2,ZDIST_SUR3,ZDIST_SUR4,ZDIST_SUR5,ZDIST_SUR6,ZDIST_REF0)

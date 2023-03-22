@@ -47,6 +47,7 @@ END IF
 ! - Physiographic field that can evolve prognostically
 !
 ALLOCATE(PEK%XLAI                    (KLU))
+ALLOCATE(PEK%XLAIp                    (KLU))
 ALLOCATE(PEK%XVEG                    (KLU)) 
 ALLOCATE(PEK%XEMIS                   (KLU)) 
 ALLOCATE(PEK%XZ0                     (KLU)) 

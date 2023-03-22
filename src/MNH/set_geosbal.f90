@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2010-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2010-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -49,7 +49,7 @@ END MODULE MODI_SET_GEOSBAL
 !     fields (at w-grid levels without ororgraphy i.e. at height XZHAT,
 !     with u along latitude circles and v along meridians.)
 !     The vertical profile of mass variable is given at mass-grid levels
-!     (without orography), i.e. at height ZZHATM.
+!     (without orography), i.e. at height XZHATM.
 !       The thermal wind balance is used to compute the potential virtual
 !     temperature from wind field and the vertical profile of thetav.
 !       The vapor mixing ratio is taken  uniform in horizontal plane, i.e.
@@ -289,9 +289,6 @@ REAL, DIMENSION(:,:,:), INTENT(OUT) :: PTHV  !  potential virtual temperature
 !
 !*       0.2   Declarations of local variables :
 !
-REAL, DIMENSION(SIZE(XZHAT))    :: ZZHATM  ! Height of mass model grid levels
-                                             ! (without orography)
-
 INTEGER             :: IITRREF  !  iteration number for the determination of
                                  !  the thetav field
 REAL,DIMENSION(:,:),ALLOCATABLE :: ZGAMMA,ZGAMMA_ll ! K(lambda-lambda0) -beta
@@ -311,7 +308,7 @@ REAL, DIMENSION(SIZE(XXHAT),SIZE(XYHAT),SIZE(XZHAT)) :: ZDXX,ZDYY ! metric
                                        ! coefficients dxx,dyy for the grid
                                        ! without orography
 REAL, DIMENSION(SIZE(XZHAT))                         :: ZDZHATM,ZDZHAT  ! deltaz
-                                       ! for ZZHATM and XZHAT levels
+                                       ! for XZHATM and XZHAT levels
 REAL    :: ZRADSDG,ZRVSRD         !Pi/180,Rv/Rd
 INTEGER :: IKB,IKE                 ! useful area in z direction
 INTEGER :: IIU,IJU,IKU             ! Upper bounds in x,y,z directions
@@ -351,14 +348,7 @@ CALL GET_OR_ll('B',IXOR_ll,IYOR_ll)
 !               IN X,Y DIRECTION AND COMPUTE CORIOLIS PARAMETER, AND METRIC
 !               COEFFICIENTS :
 !               -------------------------------------------------------------
-  ZZHATM(1:IKU-1) = 0.5 * (XZHAT(2:IKU)+XZHAT(1:IKU-1))  ! ZHATm(k)=
-                                                     ! 0.5(ZHAT(k+1) +ZHAT(k)
-  ZZHATM(IKU) = 2.* XZHAT(IKU) - ZZHATM(IKU-1)    ! extrapolation for IKU 
-                                                  ! based on deltazhat(iku+1) =
-                                                  ! deltazhat(iku) and  Zhatm(k)
-                                                  ! is the middle point between 
-                                                  ! Zhat(k) and Zhat(k+1)  
-!                                                  
+!
 !*       2.1    Compute a first guess of the dry density
 !
 IF (LTHINSHELL .OR. LCARTESIAN) THEN
@@ -402,7 +392,7 @@ END IF
 !
 ZTHV3D(:,:,:) = SPREAD(SPREAD(PTHVM(:),1,IIU),2,IJU)  ! initialize  with
                                               ! (KILOC,KJLOC) vertical profile
-  ZDZHATM(2:IKU) = ZZHATM(2:IKU)-ZZHATM(1:IKU-1)
+  ZDZHATM(2:IKU) = XZHATM(2:IKU)-XZHATM(1:IKU-1)
   ZDZHAT(1:IKU-1) = XZHAT(2:IKU) - XZHAT(1:IKU-1)
 !
   IF (OBOUSS) THEN
@@ -652,28 +642,28 @@ ZZM(:,:,:)   = MZF(XZZ)                       ! compute height at mass level
                                               ! of grid with orography
 !
 ZZM(:,:,IKU) = 2. * XZZ(:,:,IKU) - ZZM(:,:,IKU-1) ! extrapolate on IKU mass level
-!  ZZM(:,:,1) is always greater than or equal to ZZHATM(1)
-!  ZZM(:,:,IKU) is always smaller than or equal to ZZHATM(IKU)
+!  ZZM(:,:,1) is always greater than or equal to XZHATM(1)
+!  ZZM(:,:,IKU) is always smaller than or equal to XZHATM(IKU)
 !
 DO JI = 1,IIU
   DO JJ = 1,IJU
 !
     DO JK = 1,IKU            ! loop on vertical levels of grid with orography
 !
-      IF (ZZM(JI,JJ,JK) >= ZZHATM(IKU)) THEN     ! copy out when
-        PTHV(JI,JJ,JK)  =  ZTHV3D (JI,JJ,IKU)    ! ZZM(IKU)= ZZHATM(IKU)
+      IF (ZZM(JI,JJ,JK) >= XZHATM(IKU)) THEN     ! copy out when
+        PTHV(JI,JJ,JK)  =  ZTHV3D (JI,JJ,IKU)    ! ZZM(IKU)= XZHATM(IKU)
         XRT(JI,JJ,JK,1) = PMRM(IKU)              ! (in case zs=0.)
 !
-      ELSEIF (ZZM(JI,JJ,JK) < ZZHATM(1)) THEN    ! copy out when  
-        PTHV(JI,JJ,JK)  =  ZTHV3D (JI,JJ,1)      ! ZZM(1)< ZZHATM(1)  
+      ELSEIF (ZZM(JI,JJ,JK) < XZHATM(1)) THEN    ! copy out when
+        PTHV(JI,JJ,JK)  =  ZTHV3D (JI,JJ,1)      ! ZZM(1)< XZHATM(1)
         XRT(JI,JJ,JK,1) = PMRM(1)                ! (in case zs=0.)
 !
       ELSE                  ! search levels on the mass grid without orography
         DO JKS = 2,IKU      ! that surrounded JK
-          IF((ZZM(JI,JJ,JK) >= ZZHATM(JKS-1)).AND.(ZZM(JI,JJ,JK) < ZZHATM(JKS))) &
+          IF((ZZM(JI,JJ,JK) >= XZHATM(JKS-1)).AND.(ZZM(JI,JJ,JK) < XZHATM(JKS))) &
           THEN              ! interpolation with the values on the grid without
                             ! orography
-            ZDZ1SDH = (ZZM(JI,JJ,JK)-ZZHATM(JKS-1))/ (ZZHATM(JKS)-ZZHATM(JKS-1))
+            ZDZ1SDH = (ZZM(JI,JJ,JK)-XZHATM(JKS-1))/ (XZHATM(JKS)-XZHATM(JKS-1))
             ZDZ2SDH = 1. - ZDZ1SDH
             PTHV(JI,JJ,JK)  = (ZDZ1SDH * ZTHV3D(JI,JJ,JKS)   )       &
                             + (ZDZ2SDH * ZTHV3D(JI,JJ,JKS-1) )

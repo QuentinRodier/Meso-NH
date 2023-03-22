@@ -22,9 +22,9 @@ path=""
 LnameFiles = ['ICART.1.SEG01.001dg.nc', 'ICART.1.SEG01.002dg.nc']
 
 Dvar_input = {
-'f1':['MRC','COT','O3T','O3_PROD','O3_LOSS','CO_PROD','CO_LOSS','level','ZTOP', 'longitude','latitude','level_w','time',
+'f1':['MRC','CO','O3','O3_PROD','O3_LOSS','CO_PROD','CO_LOSS','level','ZTOP', 'longitude','latitude','level_w','time',
       'CO_BUDGET','O3_BUDGET','O3_CHREACLIST','CO_CHREACLIST'],
-'f2':['MRC','COT','O3T','O3_PROD','O3_LOSS','CO_PROD','CO_LOSS','level','ZTOP', 'longitude','latitude','level_w','time',
+'f2':['MRC','CO','O3','O3_PROD','O3_LOSS','CO_PROD','CO_LOSS','level','ZTOP', 'longitude','latitude','level_w','time',
       'CO_BUDGET','O3_BUDGET','O3_CHREACLIST','CO_CHREACLIST']
 }
 #  Read the variables in the files
@@ -36,7 +36,7 @@ Dvar = read_netcdf(LnameFiles, Dvar_input, path=path, removeHALO=True)
 ###############################################################
 Panel1 = PanelPlot(3,3, [25,17],'Horizontal section at 1150m, 19h', titlepad=25, minmaxpad=1.04, timepad=-0.07, colorbarpad=0.01, colorbaraspect=40, labelcolorbarpad = 13)
 
-Lplot = [ Dvar['f1']['MRC'][:,:,:], Dvar['f1']['COT'][:,:,:], Dvar['f1']['O3T'][:,:,:], Dvar['f1']['O3_PROD'][:,:,:],
+Lplot = [ Dvar['f1']['MRC'][:,:,:], Dvar['f1']['CO'][:,:,:], Dvar['f1']['O3'][:,:,:], Dvar['f1']['O3_PROD'][:,:,:],
          Dvar['f1']['O3_LOSS'][:,:,:], Dvar['f1']['CO_PROD'][:,:,:], Dvar['f1']['CO_LOSS'][:,:,:]]
 
 LaxeX = [Dvar['f1']['longitude']]*len(Lplot)
@@ -65,7 +65,7 @@ Panel1.save_graph(1,fig1)
 ###############################################################
 Panel2 = PanelPlot(3,3, [25,17],'Horizontal section at 1150m, 20h', titlepad=25, minmaxpad=1.04, timepad=-0.07, colorbarpad=0.01, colorbaraspect=40, labelcolorbarpad = 13)
 
-Lplot = [ Dvar['f2']['MRC'][:,:,:], Dvar['f2']['COT'][:,:,:], Dvar['f2']['O3T'][:,:,:], Dvar['f2']['O3_PROD'][:,:,:],
+Lplot = [ Dvar['f2']['MRC'][:,:,:], Dvar['f2']['CO'][:,:,:], Dvar['f2']['O3'][:,:,:], Dvar['f2']['O3_PROD'][:,:,:],
          Dvar['f2']['O3_LOSS'][:,:,:], Dvar['f2']['CO_PROD'][:,:,:], Dvar['f2']['CO_LOSS'][:,:,:]]
 
 fig2 = Panel2.psectionH(lon=LaxeX, lat=LaxeY, Lvar=Lplot, Llevel=Llvl,Lylab=Lylab, Ltitle=Ltitle, Lminval=Lminval, Lmaxval=Lmaxval, 

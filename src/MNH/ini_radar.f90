@@ -82,6 +82,7 @@ CHARACTER (LEN=4), INTENT(IN)       :: HPRISTINE_ICE    ! Indicator of ice cryst
 !-------------------------------------------------------------------------------
 !
 !
+CALL RAIN_ICE_DESCR_ASSOCIATE()
 !
 !*      1.1    Raindrop characteristics
 !
@@ -177,6 +178,7 @@ XLBR   = ( XAR*XCCR*MOMG(XALPHAR,XNUR,XBR) )**(-XLBEXR)
 XLBEXI = 1.0/(-XBI)
 XLBI   = ( XAI*MOMG(XALPHAI,XNUI,XBI) )**(-XLBEXI)
 !
+XNS   = 1.0/(XAS*MOMG(XALPHAS,XNUS,XBS))
 XLBEXS = 1.0/(XCXS-XBS)
 XLBS   = ( XAS*XCCS*MOMG(XALPHAS,XNUS,XBS) )**(-XLBEXS)
 !
@@ -188,7 +190,9 @@ XLBH   = ( XAH*XCCH*MOMG(XALPHAH,XNUH,XBH) )**(-XLBEXH)
 !
 !*       2.4    Minimal values allowed for the mixing ratios
 ! ICE3
-IF(.NOT.ALLOCATED(XRTMIN)) ALLOCATE( XRTMIN(6) )
+IF(.NOT.ASSOCIATED(XRTMIN)) THEN
+ CALL RAIN_ICE_DESCR_ALLOCATE(6)
+END IF
 !
 XRTMIN(1) = 1.0E-20
 XRTMIN(2) = 1.0E-20

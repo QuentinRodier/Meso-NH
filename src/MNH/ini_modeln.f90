@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -81,7 +81,7 @@ END MODULE MODI_INI_MODEL_n
 !!      FMCLOS      : to close a FM-file
 !!      SET_REF     : to initialize reference state for anelastic approximation
 !!      INI_DYNAMICS: to initialize parameters for the dynamics
-!!      INI_TKE_EPS : to initialize the TKE 
+!!      INI_TKE_EPS : to initialize the TKE
 !!      SET_DIRCOS  : to compute the director cosinus of the orography
 !!      INI_RADIATIONS : to initialize radiation computations
 !!      CH_INIT_CCS: to initialize the chemical core system
@@ -130,7 +130,7 @@ END MODULE MODI_INI_MODEL_n
 !!
 !!
 !!
-!!      Module MODN_CONF_n     : contains declaration of namelist NAM_CONFn and 
+!!      Module MODN_CONF_n     : contains declaration of namelist NAM_CONFn and
 !!                             uses module MODD_CONF_n (configuration variables)
 !!      Module MODN_LUNIT_n    : contains declaration of namelist NAM_LUNITn and
 !!                             uses module MODD_LUNIT_n (Logical units)
@@ -139,9 +139,9 @@ END MODULE MODI_INI_MODEL_n
 !!      Module MODN_PARAM_n    : contains declaration of namelist NAM_PARAMn and
 !!                             uses module MODD_PARAM_n (control of physical
 !!                             parameterization)
-!!      Module MODN_LBC_n      : contains declaration of namelist NAM_LBCn and 
+!!      Module MODN_LBC_n      : contains declaration of namelist NAM_LBCn and
 !!                             uses module MODD_LBC_n (lateral boundaries)
-!!      Module MODN_TURB_n     : contains declaration of namelist NAM_TURBn and 
+!!      Module MODN_TURB_n     : contains declaration of namelist NAM_TURBn and
 !!                             uses module MODD_TURB_n (turbulence scheme)
 !!      Module MODN_PARAM_RAD_n: contains declaration of namelist NAM_PARAM_RADn
 !!
@@ -185,8 +185,8 @@ END MODULE MODI_INI_MODEL_n
 !!                                      the ECMWF radiation code
 !!      Modification Sept. 13, 1995 (J.-P. Pinty) control the allocation of the
 !!                                      arrays of MODD_GR_FIELD_n
-!!      Modification Nove. 17, 1995 (J.Stein) control of the control !! 
-!!                   March 01, 1996 (J. Stein) add the cloud fraction    
+!!      Modification Nove. 17, 1995 (J.Stein) control of the control !!
+!!                   March 01, 1996 (J. Stein) add the cloud fraction
 !!                   April 03, 1996 (J. Stein) unify the ISBA and TSZ0 cases
 !!      Modification 13/12/95 (M. Georgelin) add the forcing variables in
 !!                                           the call read_field, and their
@@ -247,16 +247,16 @@ END MODULE MODI_INI_MODEL_n
 !!                   Oct.  2010  (J.Escobar) check if local domain not to small for NRIMX NRIMY
 !!                   Nov.  2010  (J.Escobar) PGI BUG , add SIZE(CSV) to init_ground routine
 !!                   Nov.  2009    (C. Barthe) add call to INI_ELEC_n
-!!                   Mar.  2010    (M. Chong) add small ions 
+!!                   Mar.  2010    (M. Chong) add small ions
 !!                   Apr.  2011    (M. Chong) correction of RESTART (ELEC)
 !!                   June  2011  (B.Aouizerats) Prognostic aerosols
-!!                   June  2011  (P.Aumond) Drag of the vegetation  
+!!                   June  2011  (P.Aumond) Drag of the vegetation
 !!                                         + Mean fields
 !!                   July  2013  (Bosseur & Filippi) Adds Forefire
-!!                   P. Tulet      Nov 2014 accumulated moles of aqueous species that fall at the surface   
+!!                   P. Tulet      Nov 2014 accumulated moles of aqueous species that fall at the surface
 !!                   JAn.  2015  (F. Brosse) bug in allocate XACPRAQ
 !!                   Dec 2014 (C.Lac) : For reproducibility START/RESTA
-!!                   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
+!!                   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !!                   V. Masson     Feb 2015 replaces, for aerosols, cover fractions by sea, town, bare soil fractions
 !!                   J.Escobar : 19/04/2016 : Pb IOZ/NETCDF , missing OPARALLELIO=.FALSE. for PGD files
 !!                   J.Escobar : 01/06/2016 : correct check limit of NRIM versus local subdomain size IDIM
@@ -266,15 +266,15 @@ END MODULE MODI_INI_MODEL_n
 !!                   M.Leriche 2016 Chemistry
 !!                   10/2016 M.Mazoyer New KHKO output fields
 !!                      10/2016 (C.Lac) Add max values
-!!       F. Brosse   Oct.  2016 add prod/loss terms computation for chemistry       
+!!       F. Brosse   Oct.  2016 add prod/loss terms computation for chemistry
 !!                   M.Leriche 2016 Chemistry
-!!                   M.Leriche 10/02/17 prevent negative values in LBX(Y)SVS 
+!!                   M.Leriche 10/02/17 prevent negative values in LBX(Y)SVS
 !!                   M.Leriche 01/07/2017 Add DIAG chimical surface fluxes
 !!                   09/2017 Q.Rodier add LTEND_UV_FRC
 !!                   02/2018 Q.Libois ECRAD
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!                   V. Vionnet : 18/07/2017 : add blowing snow scheme 
-!!                   01/18 J.Colin Add DRAG 
+!!                   V. Vionnet : 18/07/2017 : add blowing snow scheme
+!!                   01/18 J.Colin Add DRAG
 !  P. Wautelet 29/01/2019: bug: add missing zero-size allocations
 !  P. Wautelet 07/02/2019: force TYPE to a known value for IO_File_add2list
 !  P. Wautelet 13/02/2019: initialize XALBUV even if no radiation (needed in CH_INTERP_JVALUES)
@@ -292,9 +292,10 @@ END MODULE MODI_INI_MODEL_n
 !  S. Riette      04/2020: XHL* fields
 !  F. Auguste     02/2021: add IBM
 !  T.Nigel        02/2021: add turbulence recycling
-! J.L.Redelsperger 06/2011: OCEAN case
-  ! R. Schoetter    12/2021  multi-level coupling between MesoNH and SURFEX  
-!!                      12/2021 (R. Schoetter) adds humidity and other mean diagnostics
+!  J.L.Redelsperger 06/2011: OCEAN case
+!  R. Schoetter    12/2021  multi-level coupling between MesoNH and SURFEX  
+!  R. Schoetter    12/2021  adds humidity and other mean diagnostics
+! A. Costes        12/2021: Blaze fire model
 !---------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -397,6 +398,7 @@ use MODD_SALT_OPT_LKT,      only: NMAX_RADIUS_LKT_SALT=>NMAX_RADIUS_LKT, NMAX_SI
 USE MODD_SERIES,            only: LSERIES
 USE MODD_SHADOWS_n
 USE MODD_STAND_ATM,         only: XSTROATM, XSMLSATM, XSMLWATM, XSPOSATM, XSPOWATM
+USE MODD_SURF_PAR,          only: XUNDEF_SFX => XUNDEF
 USE MODD_TIME
 USE MODD_TIME_n
 USE MODD_TURB_CLOUD,        only: NMODEL_CLOUD, CTURBLEN_CLOUD,XCEI
@@ -404,6 +406,7 @@ USE MODD_TURB_n
 USE MODD_VAR_ll,            only: IP
 
 USE MODE_GATHER_ll
+USE MODE_INI_AIRCRAFT_BALLOON, only: INI_AIRCRAFT_BALLOON
 use mode_ini_budget,        only: Budget_preallocate, Ini_budget
 USE MODE_INI_ONE_WAY_n
 USE MODE_IO
@@ -414,8 +417,10 @@ USE MODE_ll
 USE MODE_MODELN_HANDLER
 USE MODE_MPPDB
 USE MODE_MSG
+USE MODE_SET_GRID
 USE MODE_SPLITTINGZ_ll,     only: GET_DIM_EXTZ_ll
 USE MODE_TYPE_ZDIFFU
+USE MODE_FIELD,             ONLY: INI_FIELD_LIST
 
 USE MODI_CH_AER_MOD_INIT
 USE MODI_CH_INIT_BUDGET_n
@@ -430,8 +435,6 @@ USE MODI_INI_AEROSET3
 USE MODI_INI_AEROSET4
 USE MODI_INI_AEROSET5
 USE MODI_INI_AEROSET6
-USE MODI_INI_AIRCRAFT_BALLOON
-USE MODI_INI_AIRCRAFT_BALLOON
 USE MODI_INI_BIKHARDT_n
 USE MODI_INI_CPL
 USE MODI_INI_DEEP_CONVECTION
@@ -464,7 +467,6 @@ USE MODI_MNHGET_SURF_PARAM_n
 USE MODI_MNHREAD_ZS_DUMMY_n
 USE MODI_READ_FIELD
 USE MODI_SET_DIRCOS
-USE MODI_SET_GRID
 USE MODI_SET_REF
 #ifdef CPLOASIS
 USE MODI_SFX_OASIS_READ_NAM
@@ -479,6 +481,7 @@ USE YOERDI   , ONLY :RCCO2
 #endif
 #endif
 !
+USE MODD_FIRE_n
 IMPLICIT NONE
 !
 !*       0.1   declarations of arguments
@@ -555,7 +558,7 @@ REAL, DIMENSION(:,:,:), POINTER :: DPTR_XCOEFLIN_LBXM,DPTR_XCOEFLIN_LBYM
 REAL, DIMENSION(:,:,:),   POINTER :: DPTR_XLBXUM,DPTR_XLBYUM,DPTR_XLBXVM,DPTR_XLBYVM
 REAL, DIMENSION(:,:,:),   POINTER :: DPTR_XLBXWM,DPTR_XLBYWM,DPTR_XLBXTHM,DPTR_XLBYTHM
 REAL, DIMENSION(:,:,:),   POINTER :: DPTR_XLBXTKEM,DPTR_XLBYTKEM
-REAL, DIMENSION(:,:,:,:),   POINTER :: DPTR_XLBXSVM,DPTR_XLBYSVM                
+REAL, DIMENSION(:,:,:,:),   POINTER :: DPTR_XLBXSVM,DPTR_XLBYSVM
 REAL, DIMENSION(:,:,:,:), POINTER :: DPTR_XLBXRM,DPTR_XLBYRM
 REAL, DIMENSION(:,:,:),   POINTER ::  DPTR_XZZ
 REAL, DIMENSION(:,:,:), POINTER ::   DPTR_XLSUM,DPTR_XLSVM,DPTR_XLSWM,DPTR_XLSTHM,DPTR_XLSRVM
@@ -563,7 +566,8 @@ REAL, DIMENSION(:,:,:), POINTER ::   DPTR_XLSUS,DPTR_XLSVS,DPTR_XLSWS,DPTR_XLSTH
 REAL, DIMENSION(:,:),   POINTER ::   DPTR_XLSZWSM,DPTR_XLSZWSS
 !
 INTEGER                         ::  IIB,IJB,IIE,IJE,IDIMX,IDIMY,IMI
-!
+! Fire model
+INTEGER             :: INBPARAMSENSIBLE, INBPARAMLATENT
 !-------------------------------------------------------------------------------
 !
 !*       0.    PROLOGUE
@@ -713,8 +717,8 @@ END IF
 !
 !*       2.4  Update NSV and floating indices for the current model
 !
-! 
-CALL UPDATE_NSV(KMI) 
+!
+CALL UPDATE_NSV(KMI)
 !
 !-------------------------------------------------------------------------------
 !
@@ -722,23 +726,23 @@ CALL UPDATE_NSV(KMI)
 !              -----------------
 ! * Module RECYCL
 !
-IF (LRECYCL) THEN 
+IF (LRECYCL) THEN
 !
   NR_COUNT = 0
 !
-  ALLOCATE(XUMEANW(IJU,IKU,INT(XNUMBELT)))      ; XUMEANW  = 0.0
-  ALLOCATE(XVMEANW(IJU,IKU,INT(XNUMBELT)))      ; XVMEANW  = 0.0
-  ALLOCATE(XWMEANW(IJU,IKU,INT(XNUMBELT)))      ; XWMEANW  = 0.0
-  ALLOCATE(XUMEANN(IIU,IKU,INT(XNUMBELT)))      ; XUMEANN  = 0.0
-  ALLOCATE(XVMEANN(IIU,IKU,INT(XNUMBELT)))      ; XVMEANN  = 0.0
-  ALLOCATE(XWMEANN(IIU,IKU,INT(XNUMBELT)))      ; XWMEANN  = 0.0
-  ALLOCATE(XUMEANE(IJU,IKU,INT(XNUMBELT)))      ; XUMEANE  = 0.0
-  ALLOCATE(XVMEANE(IJU,IKU,INT(XNUMBELT)))      ; XVMEANE  = 0.0
-  ALLOCATE(XWMEANE(IJU,IKU,INT(XNUMBELT)))      ; XWMEANE  = 0.0
-  ALLOCATE(XUMEANS(IIU,IKU,INT(XNUMBELT)))      ; XUMEANS  = 0.0
-  ALLOCATE(XVMEANS(IIU,IKU,INT(XNUMBELT)))      ; XVMEANS  = 0.0
-  ALLOCATE(XWMEANS(IIU,IKU,INT(XNUMBELT)))      ; XWMEANS  = 0.0
-  ALLOCATE(XTBV(IIU,IJU,IKU))                   ; XTBV  = 0.0
+  ALLOCATE(XUMEANW(IJU,IKU,NNUMBELT))      ; XUMEANW  = 0.0
+  ALLOCATE(XVMEANW(IJU,IKU,NNUMBELT))      ; XVMEANW  = 0.0
+  ALLOCATE(XWMEANW(IJU,IKU,NNUMBELT))      ; XWMEANW  = 0.0
+  ALLOCATE(XUMEANN(IIU,IKU,NNUMBELT))      ; XUMEANN  = 0.0
+  ALLOCATE(XVMEANN(IIU,IKU,NNUMBELT))      ; XVMEANN  = 0.0
+  ALLOCATE(XWMEANN(IIU,IKU,NNUMBELT))      ; XWMEANN  = 0.0
+  ALLOCATE(XUMEANE(IJU,IKU,NNUMBELT))      ; XUMEANE  = 0.0
+  ALLOCATE(XVMEANE(IJU,IKU,NNUMBELT))      ; XVMEANE  = 0.0
+  ALLOCATE(XWMEANE(IJU,IKU,NNUMBELT))      ; XWMEANE  = 0.0
+  ALLOCATE(XUMEANS(IIU,IKU,NNUMBELT))      ; XUMEANS  = 0.0
+  ALLOCATE(XVMEANS(IIU,IKU,NNUMBELT))      ; XVMEANS  = 0.0
+  ALLOCATE(XWMEANS(IIU,IKU,NNUMBELT))      ; XWMEANS  = 0.0
+  ALLOCATE(XTBV(IIU,IJU,IKU))              ; XTBV  = 0.0
 ELSE
   ALLOCATE(XUMEANW(0,0,0))
   ALLOCATE(XVMEANW(0,0,0))
@@ -787,13 +791,21 @@ IF (LMEAN_FIELD) THEN
   ALLOCATE(XWIFF_MAX (IIU,IJU,IKU))    ; XWIFF_MAX  = 0.0
   ALLOCATE(XWIDD_MAX (IIU,IJU,IKU))    ; XWIDD_MAX  = 0.0
 !
-  ALLOCATE(XU2_MEAN(IIU,IJU,IKU))      ; XU2_MEAN  = 0.0
-  ALLOCATE(XV2_MEAN(IIU,IJU,IKU))      ; XV2_MEAN  = 0.0
-  ALLOCATE(XW2_MEAN(IIU,IJU,IKU))      ; XW2_MEAN  = 0.0
-  ALLOCATE(XUW_MEAN(IIU,IJU,IKU))      ; XUW_MEAN  = 0.0
-  ALLOCATE(XTH2_MEAN(IIU,IJU,IKU))     ; XTH2_MEAN = 0.0
-  ALLOCATE(XTEMP2_MEAN(IIU,IJU,IKU))   ; XTEMP2_MEAN = 0.0
-  ALLOCATE(XPABS2_MEAN(IIU,IJU,IKU))   ; XPABS2_MEAN = 0.0
+  ALLOCATE(XU2_M2(IIU,IJU,IKU))      ; XU2_M2  = 0.0
+!
+  ALLOCATE(XU2_M2(IIU,IJU,IKU))      ; XU2_M2  = 0.0
+  ALLOCATE(XV2_M2(IIU,IJU,IKU))      ; XV2_M2  = 0.0
+  ALLOCATE(XW2_M2(IIU,IJU,IKU))      ; XW2_M2  = 0.0
+  ALLOCATE(XTH2_M2(IIU,IJU,IKU))     ; XTH2_M2 = 0.0
+  ALLOCATE(XTEMP2_M2(IIU,IJU,IKU))   ; XTEMP2_M2 = 0.0
+  ALLOCATE(XPABS2_M2(IIU,IJU,IKU))   ; XPABS2_M2 = 0.0
+!
+  IF (LCOV_FIELD) THEN
+    ALLOCATE(XUV_MEAN(IIU,IJU,IKU))    ; XUV_MEAN  = 0.0
+    ALLOCATE(XUW_MEAN(IIU,IJU,IKU))    ; XUW_MEAN  = 0.0
+    ALLOCATE(XVW_MEAN(IIU,IJU,IKU))    ; XVW_MEAN  = 0.0
+    ALLOCATE(XWTH_MEAN(IIU,IJU,IKU))   ; XWTH_MEAN  = 0.0
+  END IF
 !
   ALLOCATE(XUM_MAX(IIU,IJU,IKU))      ; XUM_MAX  = -1.E20
   ALLOCATE(XVM_MAX(IIU,IJU,IKU))      ; XVM_MAX  = -1.E20
@@ -808,6 +820,7 @@ IF (LMEAN_FIELD) THEN
   END IF
   ALLOCATE(XPABSM_MAX(IIU,IJU,IKU))   ; XPABSM_MAX = 0.0
 ELSE
+!
   ALLOCATE(XUM_MEAN(0,0,0))
   ALLOCATE(XVM_MEAN(0,0,0))
   ALLOCATE(XWM_MEAN(0,0,0))
@@ -817,13 +830,19 @@ ELSE
   ALLOCATE(XTKEM_MEAN(0,0,0))
   ALLOCATE(XPABSM_MEAN(0,0,0))
 !
-  ALLOCATE(XU2_MEAN(0,0,0))
-  ALLOCATE(XV2_MEAN(0,0,0))
-  ALLOCATE(XW2_MEAN(0,0,0))
-  ALLOCATE(XUW_MEAN(0,0,0))
-  ALLOCATE(XTH2_MEAN(0,0,0))
-  ALLOCATE(XTEMP2_MEAN(0,0,0))
-  ALLOCATE(XPABS2_MEAN(0,0,0))
+  ALLOCATE(XU2_M2(0,0,0))
+  ALLOCATE(XV2_M2(0,0,0))
+  ALLOCATE(XW2_M2(0,0,0))
+  ALLOCATE(XTH2_M2(0,0,0))
+  ALLOCATE(XTEMP2_M2(0,0,0))
+  ALLOCATE(XPABS2_M2(0,0,0))
+!
+  IF (LCOV_FIELD) THEN
+    ALLOCATE(XUV_MEAN(0,0,0))
+    ALLOCATE(XUW_MEAN(0,0,0))
+    ALLOCATE(XVW_MEAN(0,0,0))
+    ALLOCATE(XWTH_MEAN(0,0,0))
+  END IF
 !
   ALLOCATE(XUM_MAX(0,0,0))
   ALLOCATE(XVM_MAX(0,0,0))
@@ -973,9 +992,11 @@ END IF
 !
 IF (NRR>1) THEN
   ALLOCATE(XCLDFR(IIU,IJU,IKU));  XCLDFR (:, :, :) = 0.
+  ALLOCATE(XICEFR(IIU,IJU,IKU));  XICEFR (:, :, :) = 0.
   ALLOCATE(XRAINFR(IIU,IJU,IKU)); XRAINFR(:, :, :) = 0.
 ELSE
   ALLOCATE(XCLDFR(0,0,0))
+  ALLOCATE(XICEFR(0,0,0))
   ALLOCATE(XRAINFR(0,0,0))
 END IF
 !
@@ -1016,10 +1037,13 @@ ALLOCATE(XXHAT(IIU))
 ALLOCATE(XDXHAT(IIU))
 ALLOCATE(XYHAT(IJU))
 ALLOCATE(XDYHAT(IJU))
+ALLOCATE(XXHATM(IIU))
+ALLOCATE(XYHATM(IJU))
 ALLOCATE(XZS(IIU,IJU))
 ALLOCATE(XZSMT(IIU,IJU))
 ALLOCATE(XZZ(IIU,IJU,IKU))
 ALLOCATE(XZHAT(IKU))
+ALLOCATE(XZHATM(IKU))
 ALLOCATE(XDIRCOSZW(IIU,IJU))
 ALLOCATE(XDIRCOSXW(IIU,IJU))
 ALLOCATE(XDIRCOSYW(IIU,IJU))
@@ -1361,7 +1385,7 @@ IF ( LHORELAX_UVWTH ) THEN
 END IF      ! END OF THE IF STRUCTURE ON THE MODEL DIMENSION
 !
 !
-IF ( KMI > 1 ) THEN 
+IF ( KMI > 1 ) THEN
   ! it has been assumed that the THeta field used the largest rim area compared
   ! to the others prognostic variables, if it is not the case, you must change
   ! these lines
@@ -1488,8 +1512,8 @@ ELSE
 #endif
 END IF
 
-ALLOCATE(XSW_BANDS (NSWB_MNH)) 
-ALLOCATE(XLW_BANDS (NLWB_MNH)) 
+ALLOCATE(XSW_BANDS (NSWB_MNH))
+ALLOCATE(XLW_BANDS (NLWB_MNH))
 ALLOCATE(XZENITH   (IIU,IJU))
 ALLOCATE(XAZIM     (IIU,IJU))
 ALLOCATE(XALBUV    (IIU,IJU))
@@ -1506,7 +1530,7 @@ IF (CRAD /= 'NONE') THEN
   ALLOCATE(XDIR_ALB(IIU,IJU,NSWB_MNH))
   ALLOCATE(XSCA_ALB(IIU,IJU,NSWB_MNH))
   ALLOCATE(XEMIS  (IIU,IJU,NLWB_MNH))
-  ALLOCATE(XTSRAD (IIU,IJU))    ; XTSRAD = 0.0
+  ALLOCATE(XTSRAD (IIU,IJU))    ; XTSRAD = XUNDEF_SFX
   ALLOCATE(XSEA (IIU,IJU))
   ALLOCATE(XZS_XY (IIU,IJU))
   ALLOCATE(NCLEARCOL_TM1(IIU,IJU))
@@ -1815,7 +1839,7 @@ gles = lles_mean .or. lles_resolved  .or. lles_subgrid .or. lles_updraft &
 if ( ( cbutype /= "NONE" .and. nbumod == kmi ) .or. ( ( gles .or. lcheck ) .and. kmi == 1 ) ) THEN
   call Budget_preallocate()
 end if
-
+CALL TBUCONF_ASSOCIATE()
 IF ( CBUTYPE /= "NONE" .AND. NBUMOD == KMI ) THEN
   CALL Ini_budget(ILUOUT,XTSTEP,NSV,NRR,                                      &
              LNUMDIFU,LNUMDIFTH,LNUMDIFSV,                                    &
@@ -1867,13 +1891,15 @@ END IF
 !*       7.    INITIALIZE GRIDS AND METRIC COEFFICIENTS
 !              ----------------------------------------
 !
-CALL SET_GRID(KMI,TPINIFILE,IKU,NIMAX_ll,NJMAX_ll,                       &
-              XTSTEP,XSEGLEN,                                            &
-              XLONORI,XLATORI,XLON,XLAT,                                 &
-              XXHAT,XYHAT,XDXHAT,XDYHAT, XMAP,                           &
-              XZS,XZZ,XZHAT,XZTOP,LSLEVE,XLEN1,XLEN2,XZSMT,              &
-              ZJ,                                                        &
-              TDTMOD,TDTCUR,NSTOP,NBAK_NUMB,NOUT_NUMB,TBACKUPN,TOUTPUTN)
+CALL SET_GRID( KMI, TPINIFILE, IKU, NIMAX_ll, NJMAX_ll,                        &
+               XTSTEP, XSEGLEN,                                                &
+               XLONORI, XLATORI, XLON, XLAT,                                   &
+               XXHAT, XYHAT, XDXHAT, XDYHAT, XXHATM, XYHATM,                   &
+               XXHAT_ll, XYHAT_ll, XXHATM_ll, XYHATM_ll,                       &
+               XHAT_BOUND, XHATM_BOUND,                                        &
+               XMAP, XZS, XZZ, XZHAT, XZHATM, XZTOP, LSLEVE,                   &
+               XLEN1, XLEN2, XZSMT, ZJ,                                        &
+               TDTMOD, TDTCUR, NSTOP, NBAK_NUMB, NOUT_NUMB, TBACKUPN, TOUTPUTN )
 !
 CALL METRICS(XMAP,XDXHAT,XDYHAT,XZZ,XDXX,XDYY,XDZX,XDZY,XDZZ)
 !
@@ -1895,7 +1921,7 @@ NDT_2_WAY(KMI)=4
 !
 !-------------------------------------------------------------------------------
 !
-!*      8.    INITIALIZE DATA FOR JVALUES AND AEROSOLS 
+!*      8.    INITIALIZE DATA FOR JVALUES AND AEROSOLS
 !
 IF ( LUSECHEM .OR. LCHEMDIAG ) THEN
   IF ((KMI==1).AND.(CPROGRAM == "MESONH".OR.CPROGRAM == "DIAG  "))  &
@@ -1911,6 +1937,207 @@ IF (.NOT.(ASSOCIATED(XSOLORG))) ALLOCATE(XSOLORG(0,0,0,0))
 !
 IF (CCLOUD=='LIMA') CALL INIT_AEROSOL_PROPERTIES
 !
+!
+!
+!
+!-------------------------------------------------------------------------------
+!
+!*      9.    FIRE initializations
+!              --------------------
+!
+IF(LBLAZE) THEN
+  !
+  !     9.1 Array allocation
+  !         ----------------
+  !
+  ! Level Set function
+  ALLOCATE(XLSPHI(IIU,IJU,NREFINX*NREFINY));      XLSPHI(:,:,:) = 0.
+
+  ! BMap array
+  ! BMap default value
+  ! -1 = The fire is not here yet
+  ALLOCATE(XBMAP(IIU,IJU,NREFINX*NREFINY));       XBMAP(:,:,:) = -1.
+
+  ! A array
+  ALLOCATE(XFMRFA(IIU,IJU,NREFINX*NREFINY));      XFMRFA(:,:,:) = 0.
+
+  ! Wf0 array
+  ALLOCATE(XFMWF0(IIU,IJU,NREFINX*NREFINY));      XFMWF0(:,:,:) = 0.
+
+  ! R0 array
+  ALLOCATE(XFMR0(IIU,IJU,NREFINX*NREFINY));       XFMR0(:,:,:) = 0.
+
+  ! r00 array
+  ALLOCATE(XFMR00(IIU,IJU,NREFINX*NREFINY));      XFMR00(:,:,:) = 0.
+
+  ! Ignition
+  ! Default value as 1E6 : Ignition long after simulation end time
+  ! 1E6 should be enough as it is more than 11 days
+  ALLOCATE(XFMIGNITION(IIU,IJU,NREFINX*NREFINY)); XFMIGNITION(:,:,:) = 1.E6
+
+  ! Fuel type
+  ALLOCATE(XFMFUELTYPE(IIU,IJU,NREFINX*NREFINY)); XFMFUELTYPE(:,:,:) = 0.
+
+  ! Residence time function
+  ALLOCATE(XFIRETAU(IIU,IJU,NREFINX*NREFINY));    XFIRETAU(:,:,:) = 0.
+
+  ! Rate of spread with wind
+  ALLOCATE(XFIRERW(IIU,IJU,NREFINX*NREFINY));    XFIRERW(:,:,:) = 0.
+
+  ! Sensible heat flux parameters
+  ! get number of parameters
+  SELECT CASE(CHEAT_FLUX_MODEL)
+  CASE('CST')
+    ! 1 parameter for model : nominal injection value
+    INBPARAMSENSIBLE = 1
+
+  CASE('EXP')
+    ! 2 parameters for model : Max value and characteristic time
+    INBPARAMSENSIBLE = 2
+
+  CASE('EXS')
+    ! 3 parameters for model : Max value and characteristic time, smoldering injection value
+    INBPARAMSENSIBLE = 3
+  END SELECT
+
+  ALLOCATE(XFLUXPARAMH(IIU,IJU,NREFINX*NREFINY,INBPARAMSENSIBLE));
+  XFLUXPARAMH(:,:,:,:) = 0.
+
+  ! Latent heat flux parameters
+  ! get number of parameters
+  SELECT CASE(CLATENT_FLUX_MODEL)
+  CASE('CST')
+    ! 1 parameter for model : nominal injection value
+    INBPARAMLATENT = 1
+    
+  CASE('EXP')
+    ! 2 parameters for model : Max value and characteristic time
+    INBPARAMLATENT = 2
+  END SELECT
+
+  ALLOCATE(XFLUXPARAMW(IIU,IJU,NREFINX*NREFINY,INBPARAMLATENT));
+  XFLUXPARAMW(:,:,:,:) = 0.
+
+  ! Available Sensible energy
+  ALLOCATE(XFMASE(IIU,IJU,NREFINX*NREFINY)); XFMASE(:,:,:) = 0.
+
+  ! Available Latent energy
+  ALLOCATE(XFMAWC(IIU,IJU,NREFINX*NREFINY)); XFMAWC(:,:,:) = 0.
+
+  ! Walking Ignition map (Arrival time matrix for ignition)
+  ALLOCATE(XFMWALKIG(IIU,IJU,NREFINX*NREFINY)); XFMWALKIG(:,:,:) = -1.
+
+  ! Sensible heat flux (W/m2)
+  ALLOCATE(XFMFLUXHDH(IIU,IJU,NREFINX*NREFINY)); XFMFLUXHDH(:,:,:) = 0.
+
+  ! Latent heat flux (kg/s/m2)
+  ALLOCATE(XFMFLUXHDW(IIU,IJU,NREFINX*NREFINY)); XFMFLUXHDW(:,:,:) = 0.
+
+  ! filtered wind on front normal (m/s)
+  ALLOCATE(XFMHWS(IIU,IJU,NREFINX*NREFINY)); XFMHWS(:,:,:) = 0.
+
+  ! filtered wind U (m/s)
+  ALLOCATE(XFMWINDU(IIU,IJU,NREFINX*NREFINY)); XFMWINDU(:,:,:) = 0.
+
+  ! filtered wind V (m/s)
+  ALLOCATE(XFMWINDV(IIU,IJU,NREFINX*NREFINY)); XFMWINDV(:,:,:) = 0.
+
+  ! filtered wind W (m/s)
+  ALLOCATE(XFMWINDW(IIU,IJU,NREFINX*NREFINY)); XFMWINDW(:,:,:) = 0.
+
+  ! Gradient of Level Set on x
+  ALLOCATE(XGRADLSPHIX(IIU,IJU,NREFINX*NREFINY)); XGRADLSPHIX(:,:,:) = 0.
+
+  ! Gradient of Level Set on y
+  ALLOCATE(XGRADLSPHIY(IIU,IJU,NREFINX*NREFINY)); XGRADLSPHIY(:,:,:) = 0.
+
+  ! Wind for fire
+  ALLOCATE(XFIREWIND(IIU,IJU,NREFINX*NREFINY)); XFIREWIND(:,:,:) = 0.
+
+  ! Orographic gradient on fire mesh
+  ALLOCATE(XFMGRADOROX(IIU,IJU,NREFINX*NREFINY));      XFMGRADOROX(:,:,:) = 0.
+  ALLOCATE(XFMGRADOROY(IIU,IJU,NREFINX*NREFINY));      XFMGRADOROY(:,:,:) = 0.
+  !
+  !     9.2 Array 2d fire mesh allocation
+  !         -----------------------------
+  !
+  ! Level Set 2d
+  ALLOCATE(XLSPHI2D(IIU*NREFINX,IJU*NREFINY)); XLSPHI2D(:,:) = 0.
+  ! Gradient of Level Set on x 2d
+  ALLOCATE(XGRADLSPHIX2D(IIU*NREFINX,IJU*NREFINY)); XGRADLSPHIX2D(:,:) = 0.
+
+  ! Gradient of Level Set on y 2d
+  ALLOCATE(XGRADLSPHIY2D(IIU*NREFINX,IJU*NREFINY)); XGRADLSPHIY2D(:,:) = 0.
+
+  ! Level Set mask on x 2d
+  ALLOCATE(XGRADMASKX(IIU*NREFINX,IJU*NREFINY)); XGRADMASKX(:,:) = 0.
+
+  ! Level Set mask on y 2d
+  ALLOCATE(XGRADMASKY(IIU*NREFINX,IJU*NREFINY)); XGRADMASKY(:,:) = 0.
+
+  ! burnt surface ratio 2d
+  ALLOCATE(XSURFRATIO2D(IIU*NREFINX,IJU*NREFINY)); XSURFRATIO2D(:,:) = 0.
+
+  ! Level Set diffusuon x 2d
+  ALLOCATE(XLSDIFFUX2D(IIU*NREFINX,IJU*NREFINY)); XLSDIFFUX2D(:,:) = 0.
+
+  ! Level Set diffusion y 2d
+  ALLOCATE(XLSDIFFUY2D(IIU*NREFINX,IJU*NREFINY)); XLSDIFFUY2D(:,:) = 0.
+
+  ! ROS diffusion 2d
+  ALLOCATE(XFIRERW2D(IIU*NREFINX,IJU*NREFINY)); XFIRERW2D(:,:) = 0.
+  !
+  !     9.3 Compute fire mesh size
+  !         ----------------------
+  !
+  XFIREMESHSIZE(1) = (XXHAT(2) - XXHAT(1)) / REAL(NREFINX)
+  XFIREMESHSIZE(2) = (XYHAT(2) - XYHAT(1)) / REAL(NREFINY)
+  !
+ELSE
+  !
+  !     9.4 Default allocation
+  !          ------------------
+  !
+  ! 3d array
+  ALLOCATE(XLSPHI(0,0,0))
+  ALLOCATE(XBMAP(0,0,0))
+  ALLOCATE(XFMRFA(0,0,0))
+  ALLOCATE(XFMR0(0,0,0))
+  ALLOCATE(XFMWF0(0,0,0))
+  ALLOCATE(XFMR00(0,0,0))
+  ALLOCATE(XFMIGNITION(0,0,0))
+  ALLOCATE(XFMFUELTYPE(0,0,0))
+  ALLOCATE(XFIRETAU(0,0,0))
+  ALLOCATE(XFIRERW(0,0,0))
+  ALLOCATE(XFLUXPARAMH(0,0,0,0))
+  ALLOCATE(XFLUXPARAMW(0,0,0,0))
+  ALLOCATE(XFMASE(0,0,0))
+  ALLOCATE(XFMAWC(0,0,0))
+  ALLOCATE(XFMWALKIG(0,0,0))
+  ALLOCATE(XFMFLUXHDH(0,0,0))
+  ALLOCATE(XFMFLUXHDW(0,0,0))
+  ALLOCATE(XFMHWS(0,0,0))
+  ALLOCATE(XFMWINDU(0,0,0))
+  ALLOCATE(XFMWINDV(0,0,0))
+  ALLOCATE(XFMWINDW(0,0,0))
+  ALLOCATE(XGRADLSPHIX(0,0,0))
+  ALLOCATE(XGRADLSPHIY(0,0,0))
+  ALLOCATE(XFIREWIND(0,0,0))
+  ALLOCATE(XFMGRADOROX(0,0,0))
+  ALLOCATE(XFMGRADOROY(0,0,0))
+  ! 2d array
+  ALLOCATE(XLSPHI2D(0,0))
+  ALLOCATE(XGRADLSPHIX2D(0,0))
+  ALLOCATE(XGRADLSPHIY2D(0,0))
+  ALLOCATE(XGRADMASKX(0,0))
+  ALLOCATE(XGRADMASKY(0,0))
+  ALLOCATE(XSURFRATIO2D(0,0))
+  ALLOCATE(XLSDIFFUX2D(0,0))
+  ALLOCATE(XLSDIFFUY2D(0,0))
+  ALLOCATE(XFIRERW2D(0,0))
+END IF
+!
+!
 !-------------------------------------------------------------------------------
 !
 !*       9.    INITIALIZE THE PROGNOSTIC FIELDS
@@ -1920,7 +2147,7 @@ CALL MPPDB_CHECK3D(XUT,"INI_MODEL_N-before read_field::XUT",PRECISION)
 CALL READ_FIELD(KMI,TPINIFILE,IIU,IJU,IKU,                                    &
                 CGETTKET,CGETRVT,CGETRCT,CGETRRT,CGETRIT,CGETCIT,CGETZWS,     &
                 CGETRST,CGETRGT,CGETRHT,CGETSVT,CGETSRCT,CGETSIGS,CGETCLDFR,  &
-                CGETBL_DEPTH,CGETSBL_DEPTH,CGETPHC,CGETPHR,                   &
+                CGETICEFR, CGETBL_DEPTH,CGETSBL_DEPTH,CGETPHC,CGETPHR,        &
                 CUVW_ADV_SCHEME, CTEMP_SCHEME,                                &
                 NSIZELBX_ll, NSIZELBXU_ll, NSIZELBY_ll, NSIZELBYV_ll,         &
                 NSIZELBXTKE_ll,NSIZELBYTKE_ll,                                &
@@ -1928,8 +2155,8 @@ CALL READ_FIELD(KMI,TPINIFILE,IIU,IJU,IKU,                                    &
                 XUM,XVM,XWM,XDUM,XDVM,XDWM,                                   &
                 XUT,XVT,XWT,XTHT,XPABST,XTKET,XRTKEMS,                        &
                 XRT,XSVT,XZWS,XCIT,XDRYMASST,XDRYMASSS,                       &
-                XSIGS,XSRCT,XCLDFR,XBL_DEPTH,XSBL_DEPTH,XWTHVMF,XPHC,XPHR,    &
-                XLSUM,XLSVM,XLSWM,XLSTHM,XLSRVM,XLSZWSM,                      &
+                XSIGS,XSRCT,XCLDFR,XICEFR, XBL_DEPTH,XSBL_DEPTH,XWTHVMF,      &
+                XPHC,XPHR, XLSUM,XLSVM,XLSWM,XLSTHM,XLSRVM,XLSZWSM,           &
                 XLBXUM,XLBXVM,XLBXWM,XLBXTHM,XLBXTKEM,                        &
                 XLBXRM,XLBXSVM,                                               &
                 XLBYUM,XLBYVM,XLBYWM,XLBYTHM,XLBYTKEM,                        &
@@ -1943,7 +2170,8 @@ CALL READ_FIELD(KMI,TPINIFILE,IIU,IJU,IKU,                                    &
                 XVTH_FLUX_M,XWTH_FLUX_M,XVU_FLUX_M,                           &
                 XRUS_PRES,XRVS_PRES,XRWS_PRES,XRTHS_CLD,XRRS_CLD,XRSVS_CLD,   &
                 ZIBM_LS,XIBM_XMUT,XUMEANW,XVMEANW,XWMEANW,XUMEANN,XVMEANN,    &
-                XWMEANN,XUMEANE,XVMEANE,XWMEANE,XUMEANS,XVMEANS,XWMEANS       )
+                XWMEANN,XUMEANE,XVMEANE,XWMEANE,XUMEANS,XVMEANS,XWMEANS,      &
+                XLSPHI, XBMAP, XFMASE, XFMAWC, XFMWINDU, XFMWINDV, XFMWINDW, XFMHWS )
 
 !
 !-------------------------------------------------------------------------------
@@ -1953,10 +2181,10 @@ CALL READ_FIELD(KMI,TPINIFILE,IIU,IJU,IKU,                                    &
 !              ---------------------------
 !
 !
-CALL SET_REF(KMI,TPINIFILE,                         &
-             XZZ,XZHAT,ZJ,XDXX,XDYY,CLBCX,CLBCY,    &
-             XREFMASS,XMASS_O_PHI0,XLINMASS,        &
-             XRHODREF,XTHVREF,XRVREF,XEXNREF,XRHODJ )
+CALL SET_REF( KMI, TPINIFILE,                            &
+              XZZ, XZHATM, ZJ, XDXX, XDYY, CLBCX, CLBCY, &
+              XREFMASS, XMASS_O_PHI0, XLINMASS,          &
+              XRHODREF, XTHVREF, XRVREF, XEXNREF, XRHODJ )
 !
 !-------------------------------------------------------------------------------
 !
@@ -1988,7 +2216,7 @@ END IF
 !
 !-------------------------------------------------------------------------------
 !
-!*       12.    INITIALIZE THE MICROPHYSICS                   
+!*       12.    INITIALIZE THE MICROPHYSICS
 !               ----------------------------
 !
 IF (CELEC == 'NONE') THEN
@@ -1996,7 +2224,7 @@ IF (CELEC == 'NONE') THEN
 !
 !-------------------------------------------------------------------------------
 !
-!*       13.    INITIALIZE THE ATMOSPHERIC ELECTRICITY                   
+!*       13.    INITIALIZE THE ATMOSPHERIC ELECTRICITY
 !               --------------------------------------
 !
 ELSE
@@ -2007,7 +2235,7 @@ ELSE
   WRITE (UNIT=ILUOUT,&
   FMT='(/,"ELECTRIC VARIABLES ARE BETWEEN INDEX",I2," AND ",I2)')&
   NSV_ELECBEG, NSV_ELECEND
-! 
+!
     IF( CGETSVT(NSV_ELECBEG)=='INIT' ) THEN
       XSVT(:,:,:,NSV_ELECBEG) = XCION_POS_FW(:,:,:)                  ! Nb/kg
       XSVT(:,:,:,NSV_ELECEND) = XCION_NEG_FW(:,:,:)
@@ -2090,6 +2318,12 @@ IF ((KMI==1).AND.(.NOT. LSTEADYLS)) THEN
       ENDDO
       !
 #endif
+! Blaze smoke
+DO JSV=NSV_FIREBEG,NSV_FIREEND
+  XLBXSVS(:,:,:,JSV)=MAX(XLBXSVS(:,:,:,JSV),0.)
+  XLBYSVS(:,:,:,JSV)=MAX(XLBYSVS(:,:,:,JSV),0.)
+ENDDO
+!
       DO JSV=NSV_CSBEG,NSV_CSEND
         XLBXSVS(:,:,:,JSV)=MAX(XLBXSVS(:,:,:,JSV),0.)
         XLBYSVS(:,:,:,JSV)=MAX(XLBYSVS(:,:,:,JSV),0.)
@@ -2157,7 +2391,7 @@ IF ( KMI > 1) THEN
        DPTR_CLBCX,DPTR_CLBCY,DPTR_XZZ,DPTR_XZHAT,                                &
        LSLEVE,XLEN1,XLEN2,                                   &
        DPTR_XLSUM,DPTR_XLSVM,DPTR_XLSWM,DPTR_XLSTHM,DPTR_XLSRVM,DPTR_XLSZWSM,         &
-       DPTR_XLSUS,DPTR_XLSVS,DPTR_XLSWS,DPTR_XLSTHS,DPTR_XLSRVS,DPTR_XLSZWSS,                      &       
+       DPTR_XLSUS,DPTR_XLSVS,DPTR_XLSWS,DPTR_XLSTHS,DPTR_XLSRVS,DPTR_XLSZWSS,                      &
        DPTR_NKLIN_LBXU,DPTR_XCOEFLIN_LBXU,DPTR_NKLIN_LBYU,DPTR_XCOEFLIN_LBYU,    &
        DPTR_NKLIN_LBXV,DPTR_XCOEFLIN_LBXV,DPTR_NKLIN_LBYV,DPTR_XCOEFLIN_LBYV,    &
        DPTR_NKLIN_LBXW,DPTR_XCOEFLIN_LBXW,DPTR_NKLIN_LBYW,DPTR_XCOEFLIN_LBYW,    &
@@ -2202,7 +2436,7 @@ END IF
 !               -------------------------------
 !
 IF (LLG .AND. LINIT_LG .AND. CPROGRAM=='MESONH') &
-  CALL INI_LG(XXHAT,XYHAT,XZZ,XSVT,XLBXSVM,XLBYSVM)
+  CALL INI_LG( XXHATM, XYHATM, XZZ, XSVT, XLBXSVM, XLBYSVM )
 
 !
 !-------------------------------------------------------------------------------
@@ -2211,7 +2445,7 @@ IF (LLG .AND. LINIT_LG .AND. CPROGRAM=='MESONH') &
 !               ------------------------------------------
 !
 CALL INI_DYNAMICS(XLON,XLAT,XRHODJ,XTHVREF,XMAP,XZZ,XDXHAT,XDYHAT,            &
-             XZHAT,CLBCX,CLBCY,XTSTEP,                                        &
+             XZHAT,XZHATM,CLBCX,CLBCY,XTSTEP,                                 &
              LVE_RELAX,LVE_RELAX_GRD,LHORELAX_UVWTH,LHORELAX_RV,              &
              LHORELAX_RC,LHORELAX_RR,LHORELAX_RI,LHORELAX_RS,LHORELAX_RG,     &
              LHORELAX_RH,LHORELAX_TKE,LHORELAX_SV,                            &
@@ -2230,7 +2464,7 @@ CALL INI_DYNAMICS(XLON,XLAT,XRHODJ,XTHVREF,XMAP,XZZ,XDXHAT,XDYHAT,            &
              LMASK_RELAX,XKURELAX,XKVRELAX,XKWRELAX,                          &
              XDK2U,XDK4U,XDK2TH,XDK4TH,XDK2SV,XDK4SV,                         &
              LZDIFFU,XZDIFFU_HALO2,                                           &
-             XBFB,XBF_SXP2_YP1_Z                                              ) 
+             XBFB,XBF_SXP2_YP1_Z                                              )
 !
 !
 !*      16.1 Initialize the XDRAG array
@@ -2274,15 +2508,11 @@ IF (CRAD   /= 'NONE') THEN
   IF (GINIRAD) CALL SUNPOS_n(XZENITH,PAZIMSOL=XAZIM)
   CALL SURF_SOLAR_GEOM    (XZS, XZS_XY)
   !
-  ALLOCATE(XXHAT_ll                 (IIU_ll))
-  ALLOCATE(XYHAT_ll                 (IJU_ll))
   ALLOCATE(XZS_ll                   (IIU_ll,IJU_ll))
   ALLOCATE(XZS_XY_ll                (IIU_ll,IJU_ll))
   !
   CALL GATHERALL_FIELD_ll('XY',XZS,XZS_ll,IRESP)
   CALL GATHERALL_FIELD_ll('XY',XZS_XY,XZS_XY_ll,IRESP)
-  CALL GATHERALL_FIELD_ll('XX',XXHAT,XXHAT_ll,IRESP)
-  CALL GATHERALL_FIELD_ll('YY',XYHAT,XYHAT_ll,IRESP)
   XZS_MAX_ll=MAXVAL(XZS_ll)
 ELSE
   XAZIM       = XPI
@@ -2362,7 +2592,7 @@ IF (CSURF=='EXTE' .AND. (CPROGRAM=='MESONH' .OR. CPROGRAM=='DIAG  ')) THEN
     XSCA_ALB = ZSCA_ALB
     XEMIS    = ZEMIS
     XTSRAD   = ZTSRAD
-    CALL MNHGET_SURF_PARAM_n (PSEA=XSEA)                          
+    CALL MNHGET_SURF_PARAM_n (PSEA=XSEA)
   END IF
 ELSE
   !* fields not physically necessary, but must be initialized
@@ -2489,7 +2719,7 @@ ELSE
   ALLOCATE (XOZON(0,0,0))
   ALLOCATE (XAER(0,0,0,0))
   ALLOCATE (XDST_WL(0,0,0,0))
-  ALLOCATE (XAER_CLIM(0,0,0,0))  
+  ALLOCATE (XAER_CLIM(0,0,0,0))
 END IF
 !
 !
@@ -2570,37 +2800,31 @@ DEALLOCATE(XSPOWATM)
 !*      23.     BALLOON and AIRCRAFT initializations
 !              ------------------------------------
 !
-CALL INI_AIRCRAFT_BALLOON(TPINIFILE,XTSTEP, TDTSEG, XSEGLEN, NRR, NSV, &
-                          IKU,CTURB=="TKEL" ,                          &
-                          XLATORI, XLONORI                             )
+CALL INI_AIRCRAFT_BALLOON( TPINIFILE, XLATORI, XLONORI )
 !
 !-------------------------------------------------------------------------------
 !
 !*      24.     STATION initializations
 !              -----------------------
 !
-CALL INI_SURFSTATION_n(XTSTEP, XSEGLEN, NRR, NSV, &
-                       CTURB=="TKEL" , KMI,       &
-                       XLATORI, XLONORI           )
+CALL INI_SURFSTATION_n( )
 !
 !-------------------------------------------------------------------------------
 !
 !*      25.     PROFILER initializations
 !              ------------------------
 !
-CALL INI_POSPROFILER_n(XTSTEP, XSEGLEN, NRR, NSV,  &
-                       CTURB=="TKEL",              &
-                       XLATORI, XLONORI            )
+CALL INI_POSPROFILER_n( )
 !
 !-------------------------------------------------------------------------------
 !
-!*      26.     Prognostic aerosols          
+!*      26.     Prognostic aerosols
 !              ------------------------
 !
 IF ( ( CRAD=='ECMW' .OR. CRAD=='ECRA' ) .AND. CAOP=='EXPL' .AND. LORILAM ) THEN
-  ALLOCATE(POLYTAU(6,10,8,6,13))
-  ALLOCATE(POLYSSA(6,10,8,6,13))
-  ALLOCATE(POLYG  (6,10,8,6,13))
+  IF(.NOT.ALLOCATED(POLYTAU)) ALLOCATE(POLYTAU(6,10,8,6,13))
+  IF(.NOT.ALLOCATED(POLYSSA)) ALLOCATE(POLYSSA(6,10,8,6,13))
+  IF(.NOT.ALLOCATED(POLYG))   ALLOCATE(POLYG  (6,10,8,6,13))
   CALL INI_AEROSET1
   CALL INI_AEROSET2
   CALL INI_AEROSET3
@@ -2609,7 +2833,7 @@ IF ( ( CRAD=='ECMW' .OR. CRAD=='ECRA' ) .AND. CAOP=='EXPL' .AND. LORILAM ) THEN
   CALL INI_AEROSET6
 END IF
 #ifdef MNH_FOREFIRE
-! 
+!
 !-------------------------------------------------------------------------------
 !
 !*      27.    FOREFIRE initializations
@@ -2710,4 +2934,3 @@ ELSE
 END IF
 !
 END SUBROUTINE INI_MODEL_n
-

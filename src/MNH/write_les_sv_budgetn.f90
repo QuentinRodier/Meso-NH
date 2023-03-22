@@ -43,7 +43,7 @@ subroutine Write_les_sv_budget_n( tpdiafile )
 !!    -------------
 !!      Original         06/11/02
 !  P. Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!  P. Wautelet 14/10/2020: restructure Les_diachro calls to use tfield_metadata_base type
+!  P. Wautelet 14/10/2020: restructure Les_diachro calls to use tfieldmetadata_base type
 ! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -53,7 +53,7 @@ use modd_conf_n,      only: luserv
 use modd_cst,         only: xg
 use modd_field,       only: NMNHDIM_BUDGET_LES_LEVEL, NMNHDIM_BUDGET_LES_TIME, NMNHDIM_BUDGET_LES_SV, &
                             NMNHDIM_BUDGET_TERM, NMNHDIM_UNUSED,                                      &
-                            tfield_metadata_base, TYPEREAL
+                            tfieldmetadata_base, TYPEREAL
 use modd_io,          only: tfiledata
 use modd_les,         only: cles_norm_type, nles_k, xles_temp_mean_start, xles_temp_mean_end, xles_temp_sampling
 use modd_les_n,       only: nles_times,                                                                     &
@@ -99,9 +99,9 @@ character(len=:),   allocatable          :: ygroupcomment
 !
 REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: ZLES_BUDGET
 !
-logical                    :: gdoavg  ! Compute and store time average
-logical                    :: gdonorm ! Compute and store normalized field
-type(tfield_metadata_base) :: tzfield
+logical                   :: gdoavg  ! Compute and store time average
+logical                   :: gdonorm ! Compute and store normalized field
+type(tfieldmetadata_base) :: tzfield
 !-------------------------------------------------------------------------------
 !
 !*          Initializations

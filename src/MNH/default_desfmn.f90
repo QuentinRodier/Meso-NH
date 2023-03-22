@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -219,7 +219,11 @@ END MODULE MODI_DEFAULT_DESFM_n
 !  Q. Rodier      06/2021: modify default value to LGZ=F (grey-zone corr.), LSEDI and OSEDC=T (LIMA sedimentation)
 !  F. Couvreux    06/2021: add LRELAX_UVMEAN_FRC
 !  Q. Rodier      07/2021: modify XPOND=1
-! R. Schoetter    12/2021  multi-level coupling between MesoNH and SURFEX  
+!  R. Schoetter    12/2021  multi-level coupling between MesoNH and SURFEX  
+!  A. Costes      12/2021: Blaze fire model
+!  C. Barthe      03/2022: add CIBU and RDSF options in LIMA
+!  Delbeke/Vie    03/2022: KHKO option in LIMA
+!  P. Wautelet 27/04/2022: add namelist for profilers
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -272,26 +276,29 @@ USE MODD_EOL_MAIN
 USE MODD_EOL_ADNR
 USE MODD_EOL_ALM
 USE MODD_EOL_SHARED_IO
+USE MODD_ALLPROFILER_n
 USE MODD_ALLSTATION_n
 !
 !
-USE MODD_PARAM_LIMA, ONLY : LCOLD, LNUCL, LSEDI, LHHONI, LSNOW, LHAIL, LMEYERS,       &
-                            NMOD_IFN, XIFN_CONC, LIFN_HOM, CIFN_SPECIES,              &
-                            CINT_MIXING, NMOD_IMM, NIND_SPECIE,                       &
-                            CPRISTINE_ICE_LIMA, CHEVRIMED_ICE_LIMA,                   &
-                            XFACTNUC_DEP, XFACTNUC_CON,                               &
-                            OWARM=>LWARM, LACTI, ORAIN=>LRAIN, OSEDC=>LSEDC,          &
-                            OACTIT=>LACTIT, LBOUND, LSPRO, LADJ,                      &
-                            NMOD_CCN, XCCN_CONC,                                      &
-                            LCCN_HOM, CCCN_MODES,                                     &
-                            YALPHAR=>XALPHAR, YNUR=>XNUR,                             &
-                            YALPHAC=>XALPHAC, YNUC=>XNUC, CINI_CCN=>HINI_CCN,         &
-                            CTYPE_CCN=>HTYPE_CCN, YFSOLUB_CCN=>XFSOLUB_CCN,           &
-                            YACTEMP_CCN=>XACTEMP_CCN, YAERDIFF=>XAERDIFF,             &
-                            YAERHEIGHT=>XAERHEIGHT,                                   &
-                            LSCAV, LAERO_MASS, NPHILLIPS,                             &
-                            ODEPOC=>LDEPOC, OVDEPOC=>XVDEPOC, OACTTKE=>LACTTKE,       &
-                            LPTSPLIT, L_LFEEDBACKT=>LFEEDBACKT, L_NMAXITER=>NMAXITER, &
+USE MODD_PARAM_LIMA, ONLY : LNUCL, LSEDI, LHHONI, LMEYERS,                              &
+                            NMOM_I, NMOM_S, NMOM_G, NMOM_H,                             &
+                            NMOD_IFN, XIFN_CONC, LIFN_HOM, CIFN_SPECIES,                &
+                            CINT_MIXING, NMOD_IMM, NIND_SPECIE, LMURAKAMI,              &
+                            YSNOW_T=>LSNOW_T, CPRISTINE_ICE_LIMA, CHEVRIMED_ICE_LIMA,   &
+                            XFACTNUC_DEP, XFACTNUC_CON,                                 &
+                            LACTI, OSEDC=>LSEDC,                                        &
+                            OACTIT=>LACTIT, LBOUND, LSPRO, LADJ, LKHKO, NMOM_C, NMOM_R, &
+                            NMOD_CCN, XCCN_CONC, LKESSLERAC,                            &
+                            LCCN_HOM, CCCN_MODES,                                       &
+                            YALPHAR=>XALPHAR, YNUR=>XNUR,                               &
+                            YALPHAC=>XALPHAC, YNUC=>XNUC, CINI_CCN=>HINI_CCN,           &
+                            CTYPE_CCN=>HTYPE_CCN, YFSOLUB_CCN=>XFSOLUB_CCN,             &
+                            YACTEMP_CCN=>XACTEMP_CCN, YAERDIFF=>XAERDIFF,               &
+                            YAERHEIGHT=>XAERHEIGHT,                                     &
+                            LSCAV, LAERO_MASS, NPHILLIPS,                               &
+                            LCIBU, XNDEBRIS_CIBU, LRDSF,                                &
+                            ODEPOC=>LDEPOC, OVDEPOC=>XVDEPOC, OACTTKE=>LACTTKE,         &
+                            LPTSPLIT, L_LFEEDBACKT=>LFEEDBACKT, L_NMAXITER=>NMAXITER,   &
                             L_XMRSTEP=>XMRSTEP, L_XTSTEP_TS=>XTSTEP_TS
 !
 USE MODD_LATZ_EDFLX
@@ -306,6 +313,7 @@ USE MODD_IBM_LSF
 #ifdef MNH_FOREFIRE
 USE MODD_FOREFIRE
 #endif
+USE MODD_FIRE_n
 !
 IMPLICIT NONE
 !
@@ -446,6 +454,7 @@ LHORELAX_SVLIMA = .FALSE.
 LHORELAX_SVFF   = .FALSE.
 #endif
 LHORELAX_SVSNW  = .FALSE.
+LHORELAX_SVFIRE = .FALSE.
 !
 !
 !-------------------------------------------------------------------------------
@@ -546,7 +555,7 @@ VSIGQSAT  = 0.02
 CCONDENS='CB02'
 CLAMBDA3='CB'
 CSUBG_MF_PDF='TRIANGLE'
-LHGRAD =.FALSE.
+LLEONARD =.FALSE.
 XCOEFHGRADTHL = 1.0
 XCOEFHGRADRM = 1.0
 XALTHGRAD = 2000.0
@@ -607,7 +616,21 @@ LTIPLOSSG         = .TRUE.
 LTECOUTPTS        = .FALSE.
 !
 !------------------------------------------------------------------------------
-!*      10.e   SET DEFAULT VALUES FOR MODD_ALLSTATION_n :
+!*      10.e   SET DEFAULT VALUES FOR MODD_ALLPROFILER_n :
+!             ----------------------------------
+!
+NNUMB_PROF    = 0
+XSTEP_PROF    = 60.0
+XX_PROF(:)    = XUNDEF
+XY_PROF(:)    = XUNDEF
+XZ_PROF(:)    = XUNDEF
+XLAT_PROF(:)  = XUNDEF
+XLON_PROF(:)  = XUNDEF
+CNAME_PROF(:) = ''
+CFILE_PROF    = 'NO_INPUT_CSV'
+! LDIAG_SURFRAD = .TRUE.
+!------------------------------------------------------------------------------
+!*      10.f   SET DEFAULT VALUES FOR MODD_ALLSTATION_n :
 !             ----------------------------------
 !
 NNUMB_STAT    = 0
@@ -618,7 +641,6 @@ XZ_STAT(:)    = XUNDEF
 XLAT_STAT(:)  = XUNDEF
 XLON_STAT(:)  = XUNDEF
 CNAME_STAT(:) = ''
-CTYPE_STAT(:) = ''
 CFILE_STAT    = 'NO_INPUT_CSV'
 LDIAG_SURFRAD = .TRUE.
 !
@@ -886,7 +908,10 @@ IF (KMI == 1) THEN
   CFRAC_ICE_SHALLOW_MF = 'S'
   LSEDIM_AFTER = .FALSE.
   LDEPOSC = .FALSE.
-  XVDEPOSC= 0.02 ! 2 cm/s  
+  XVDEPOSC= 0.02 ! 2 cm/s
+  LSNOW_T=.FALSE.
+  LPACK_INTERP=.TRUE.
+  LPACK_MICRO=.TRUE. ! Meso-NH does not work with LPACK_MICRO=.FALSE.
 END IF
 !
 !-------------------------------------------------------------------------------
@@ -988,70 +1013,79 @@ ENDIF
 !                ----------------------------------------
 !
 IF (KMI == 1) THEN
-   LPTSPLIT     = .FALSE.
+   LPTSPLIT     = .TRUE.
    L_LFEEDBACKT = .TRUE.
-   L_NMAXITER   = 1
-   L_XMRSTEP    = 0.
-   L_XTSTEP_TS  = 0.
+   L_NMAXITER   = 5
+   L_XMRSTEP    = 0.005
+   L_XTSTEP_TS  = 20.
 !
-  YNUC    = 1.0
-  YALPHAC = 3.0
-  YNUR    = 2.0
-  YALPHAR = 1.0
+   YNUC    = 1.0
+   YALPHAC = 3.0
+   YNUR    = 2.0
+   YALPHAR = 1.0
 !
-  OWARM  = .TRUE.
-  LACTI  = .TRUE.
-  ORAIN  = .TRUE.
-  OSEDC  = .TRUE.
-  OACTIT = .FALSE.
-  LADJ   = .TRUE.
-  LSPRO  = .FALSE.
-  ODEPOC = .FALSE.
-  LBOUND = .FALSE.
-  OACTTKE = .TRUE.
+   LACTI  = .TRUE.
+   OSEDC  = .TRUE.
+   OACTIT = .FALSE.
+   LADJ   = .TRUE.
+   LSPRO  = .FALSE.
+   LKHKO  = .FALSE.
+   ODEPOC = .TRUE.
+   LBOUND = .FALSE.
+   OACTTKE = .TRUE.
+   LKESSLERAC = .FALSE.
 !
-  OVDEPOC = 0.02 ! 2 cm/s
+   NMOM_C = 2
+   NMOM_R = 2
 !
-  CINI_CCN   = 'AER'
-  CTYPE_CCN(:) = 'M'
+   OVDEPOC = 0.02 ! 2 cm/s
 !
-  YAERDIFF    = 0.0
-  YAERHEIGHT  = 2000.
+   CINI_CCN   = 'AER'
+   CTYPE_CCN(:) = 'M'
+!
+   YAERDIFF    = 0.0
+   YAERHEIGHT  = 2000.
 !  YR_MEAN_CCN = 0.0   ! In case of 'CCN' initialization
 !  YLOGSIG_CCN = 0.0
-  YFSOLUB_CCN = 1.0
-  YACTEMP_CCN = 280.
+   YFSOLUB_CCN = 1.0
+   YACTEMP_CCN = 280.
 !
-  NMOD_CCN = 1
+   NMOD_CCN = 1
 !
 !* AP Scavenging
 !
-  LSCAV      = .FALSE.
-  LAERO_MASS = .FALSE.
+   LSCAV      = .FALSE.
+   LAERO_MASS = .FALSE.
 !
-  LCCN_HOM = .TRUE.
-  CCCN_MODES = 'COPT'
-  XCCN_CONC(:)=300.
-
-  LHHONI = .FALSE.
-  LCOLD  = .TRUE.
-  LNUCL  = .TRUE.
-  LSEDI  = .TRUE.
-  LSNOW  = .TRUE.
-  LHAIL  = .FALSE.
-  CPRISTINE_ICE_LIMA = 'PLAT'
-  CHEVRIMED_ICE_LIMA = 'GRAU'
-  XFACTNUC_DEP = 1.0  
-  XFACTNUC_CON = 1.0
-  NMOD_IFN = 1
-  NIND_SPECIE = 1
-  LMEYERS = .FALSE.
-  LIFN_HOM = .TRUE.
-  CIFN_SPECIES = 'PHILLIPS'
-  CINT_MIXING = 'DM2'
-  XIFN_CONC(:) = 100.
-  NMOD_IMM = 0
-  NPHILLIPS=8
+   LCCN_HOM = .TRUE.
+   CCCN_MODES = 'COPT'
+   XCCN_CONC(:)=300.
+!
+   LHHONI = .FALSE.
+   LNUCL  = .TRUE.
+   LSEDI  = .TRUE.
+   YSNOW_T = .FALSE.
+   LMURAKAMI = .TRUE.
+   CPRISTINE_ICE_LIMA = 'PLAT'
+   CHEVRIMED_ICE_LIMA = 'GRAU'
+   XFACTNUC_DEP = 1.0  
+   XFACTNUC_CON = 1.0
+   NMOM_I = 2
+   NMOM_S = 1
+   NMOM_G = 1
+   NMOM_H = 0
+   NMOD_IFN = 1
+   NIND_SPECIE = 1
+   LMEYERS = .FALSE.
+   LIFN_HOM = .TRUE.
+   CIFN_SPECIES = 'PHILLIPS'
+   CINT_MIXING = 'DM2'
+   XIFN_CONC(:) = 100.
+   NMOD_IMM = 0
+   NPHILLIPS=8
+   LCIBU = .FALSE.
+   XNDEBRIS_CIBU = 50.0
+   LRDSF = .FALSE.
 ENDIF
 !
 !-------------------------------------------------------------------------------
@@ -1132,6 +1166,7 @@ ENDIF
 !
 IF (KMI == 1) THEN
   LMEAN_FIELD = .FALSE.
+  LCOV_FIELD  = .FALSE.
 ENDIF
 !
 !-------------------------------------------------------------------------------
@@ -1406,12 +1441,66 @@ ENDIF
   XARECYCLS  = 0.
   XDRECYCLE  = 0.
   XARECYCLE  = 0.
-  XTMOY      = 0.
-  XTMOYCOUNT = 0.
-  XNUMBELT   = 28.
+  NTMOY      = 0
+  NTMOYCOUNT = 0
+  NNUMBELT   = 28
   XRCOEFF    = 0.2
   XTBVTOP    = 500.
   XTBVBOT    = 300.
 !
+!-------------------------------------------------------------------------------
 !
+!*      33.   SET DEFAULT VALUES FOR MODD_FIRE_n
+!             ----------------------------------
+!
+! Blaze fire model namelist
+!
+LBLAZE = .FALSE.              ! Flag for Fire model use, default FALSE
+!
+CPROPAG_MODEL = 'SANTONI2011' ! Fire propagation model (default SANTONI2011)
+!
+CHEAT_FLUX_MODEL   = 'EXS'    ! Sensible heat flux injection model (default EXS)
+CLATENT_FLUX_MODEL = 'EXP'    ! latent heat flux injection model (default EXP)
+XFERR = 0.8                   ! Energy released in flamming stage (only for EXP)
+!
+CFIRE_CPL_MODE = '2WAYCPL'    ! Coupling mode (default 2way coupled)
+CBMAPFILE = CINIFILE          ! File name of BMAP for FIR2ATM mode
+LINTERPWIND = .TRUE.          ! Horizontal interpolation of wind
+LSGBAWEIGHT = .FALSE.         ! Flag for use of weighted average method for SubGrid Burning Area computation
+!
+NFIRE_WENO_ORDER = 3          ! Weno order (1,3,5)
+NFIRE_RK_ORDER = 3            ! Runge Kutta order (1,2,3,4)
+!
+NREFINX = 1                   ! Refinement ratio X
+NREFINY = 1                   ! Refinement ratio Y
+!
+XCFLMAXFIRE = 0.8             ! Max CFL on fire mesh
+XLSDIFFUSION = 0.1            ! Numerical diffusion of LevelSet
+XROSDIFFUSION = 0.05          ! Numerical diffusion of ROS
+!
+XFLUXZEXT = 3.                ! Flux distribution on vertical caracteristic length
+XFLUXZMAX = 4. * XFLUXZEXT    ! Flux distribution on vertical max injetion height
+!
+XFLXCOEFTMP = 1.              ! Flux multiplicator. For testing
+!
+LWINDFILTER = .FALSE.         ! Fire wind filtering flag
+CWINDFILTER = 'EWAM'          ! Wind filter method (EWAM or WLIM)
+XEWAMTAU    = 20.             ! Time averaging constant for EWAM method (s)
+XWLIMUTH    = 8.              ! Thresehold wind value for WLIM method (m/s)
+XWLIMUTMAX  = 9.              ! Maximum wind value for WLIM method (m/s) (needs to be >= XWLIMUTH )
+!
+NNBSMOKETRACER = 1            ! Nb of smoke tracers
+!
+NWINDSLOPECPLMODE = 0         ! Flag for use of wind/slope in ROS (0 = wind + slope, 1 = wind only, 2 = slope only (U0=0))
+!
+!
+!
+!! DO NOT CHANGE BELOW PARAMETERS
+XFIREMESHSIZE(:) = 0.         ! Fire mesh size (dxf,dyf)
+LRESTA_ASE = .FALSE.          ! Flag for using ASE in RESTA file
+LRESTA_AWC = .FALSE.          ! Flag for using AWC in RESTA file
+LRESTA_EWAM = .FALSE.         ! Flag for using EWAM in RESTA file
+LRESTA_WLIM = .FALSE.         ! Flag for using WLIM in RESTA file
+
+!-------------------------------------------------------------------------------
 END SUBROUTINE DEFAULT_DESFM_n

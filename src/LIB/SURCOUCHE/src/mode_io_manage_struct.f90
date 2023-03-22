@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2016-2022 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2016-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -20,7 +20,8 @@
 !  S. Donnier  28/02/2020: type STREAM needed for use of ECOCLIMAP SG
 !  P. Wautelet 08/01/2021: allow output files with empty variable list (useful if IO_Field_user_write is not empty)
 !  P. Wautelet 18/03/2022: minor bugfix in ISTEP_MAX computation + adapt diagnostics messages
-                           (change verbosity level and remove some unnecessary warnings)
+!                          (change verbosity level and remove some unnecessary warnings)
+!  P. Wautelet 13/01/2023: set NMODEL field for backup and output files
 !-----------------------------------------------------------------
 MODULE MODE_IO_MANAGE_STRUCT
 !
@@ -213,8 +214,8 @@ DO IMI = 1, NMODEL
   ALLOCATE(OUT_MODEL(IMI)%TBACKUPN(IBAK_NUMB))
   ALLOCATE(OUT_MODEL(IMI)%TOUTPUTN(IOUT_NUMB))
   !
-  CALL POPULATE_STRUCT(TFILE_FIRST,TFILE_LAST,IBAK_STEP,"MNHBACKUP",OUT_MODEL(IMI)%TBACKUPN)
-  CALL POPULATE_STRUCT(TFILE_FIRST,TFILE_LAST,IOUT_STEP,"MNHOUTPUT",OUT_MODEL(IMI)%TOUTPUTN)
+  CALL POPULATE_STRUCT(TFILE_FIRST,TFILE_LAST,IBAK_STEP,"MNHBACKUP",OUT_MODEL(IMI)%TBACKUPN,IMI)
+  CALL POPULATE_STRUCT(TFILE_FIRST,TFILE_LAST,IOUT_STEP,"MNHOUTPUT",OUT_MODEL(IMI)%TOUTPUTN,IMI)
   !
   !* Find dad output number
   !
@@ -521,7 +522,7 @@ SUBROUTINE SORT_ENTRIES(KNUMB,KSTEPS)
 END SUBROUTINE SORT_ENTRIES
 !
 !#########################################################################
-SUBROUTINE POPULATE_STRUCT(TPFILE_FIRST,TPFILE_LAST,KSTEPS,HFILETYPE,TPBAKOUTN)
+SUBROUTINE POPULATE_STRUCT(TPFILE_FIRST,TPFILE_LAST,KSTEPS,HFILETYPE,TPBAKOUTN,KMI)
 !#########################################################################
   !
   USE MODD_CONFZ, ONLY: NB_PROCIO_W
@@ -530,6 +531,7 @@ SUBROUTINE POPULATE_STRUCT(TPFILE_FIRST,TPFILE_LAST,KSTEPS,HFILETYPE,TPBAKOUTN)
   INTEGER,DIMENSION(:),              INTENT(IN)    :: KSTEPS
   CHARACTER(LEN=*),                  INTENT(IN)    :: HFILETYPE
   TYPE(TOUTBAK),DIMENSION(:),POINTER,INTENT(IN)    :: TPBAKOUTN
+  INTEGER,                           INTENT(IN)    :: KMI ! Model number
   !
   CHARACTER (LEN=3) :: YNUMBER          ! Character string for the file number
   INTEGER :: JI
@@ -600,6 +602,8 @@ SUBROUTINE POPULATE_STRUCT(TPFILE_FIRST,TPFILE_LAST,KSTEPS,HFILETYPE,TPBAKOUTN)
         ELSE
           CALL PRINT_MSG(NVERB_FATAL,'IO','POPULATE_STRUCT','unknown backup/output fileformat')
         ENDIF
+        !
+        TPBAKOUTN(IPOS)%TFILE%NMODEL = KMI
         !
         !Create file structures if Z-split files
         IF (NB_PROCIO_W>1) THEN

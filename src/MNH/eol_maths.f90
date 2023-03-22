@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2018-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2018-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -283,7 +283,7 @@ END FUNCTION INTERP_SPLCUB
 !#########################################################
 FUNCTION INTERP_LIN8NB(PPOS, KI, KJ, KK, PVAR, PZH)
 !
-USE MODD_GRID_n, ONLY: XXHAT,XYHAT
+USE MODD_GRID_n, ONLY: XDXHAT, XXHATM, XDYHAT, XYHATM
 !
 REAL                               :: INTERP_LIN8NB  ! Return
 REAL, DIMENSION(3),     INTENT(IN) :: PPOS           ! Position where we want to evaluate
@@ -309,7 +309,7 @@ REAL     :: ZUX                           ! Interpolated variable (VAR) in Z pla
 !
 ! FINDING 8 NEIGHBOORS 
 ! -- X axis
-IF (PPOS(1) <= 0.5*(XXHAT(KI)+XXHAT(KI+1))) THEN
+IF (PPOS(1) <= XXHATM(KI)) THEN
  IIP = KI - 1
  IIN = KI
 ELSE   
@@ -317,7 +317,7 @@ ELSE
  IIN = KI + 1
 END IF
 ! -- Y axis
-IF (PPOS(2) <= 0.5*((XYHAT(KJ)+XYHAT(KJ+1)))) THEN
+IF (PPOS(2) <= XYHATM(KJ)) THEN
  IJP = KJ - 1
  IJN = KJ
 ELSE   
@@ -336,7 +336,7 @@ END IF
 ! INTERPOLATION 
 ! -- Along X
 ! -- -- Alpha
-ZALPHAX = (PPOS(1) -  0.5*(XXHAT(IIP)+XXHAT(IIN))) / (XXHAT(IIN) - XXHAT(IIP))
+ZALPHAX = (PPOS(1) -  XXHATM(IIP)) / XDXHAT(IIP)
 !!PRINT*, "ZALPHAX = ", ZALPHAX
 ! -- -- -- Wind
 ! -- -- Interpolated variable in temporary plane X
@@ -353,7 +353,7 @@ ZHXPN = (1-ZALPHAX)*PZH(IIP,IJP,IKN) + ZALPHAX*PZH(IIN,IJP,IKN)
 !
 ! -- Along Y
 ! -- -- Alpha
-ZALPHAY = (PPOS(2) -  0.5*(XYHAT(IJP)+XYHAT(IJN))) / (XYHAT(IJN) - XYHAT(IJP))
+ZALPHAY = (PPOS(2) -  XYHATM(IJP)) / XDYHAT(IJP)
 !PRINT*, "ZALPHAY = ", ZALPHAY
 ! -- -- Interpolated variable in temporary plane Y
 ! -- -- -- Wind

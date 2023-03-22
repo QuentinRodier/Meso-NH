@@ -1,5 +1,5 @@
 #!/bin/bash
-#MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
+#MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
 #MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 #MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 #MNH_LIC for details. version 1.
@@ -8,15 +8,15 @@
 if [ "x$XYZ" = "x" ]
 then
 # 
-export VERSION_MASTER=${VERSION_MASTER:-MNH-V5-5}
-export VERSION_BUG=${VERSION_BUG:-1}
+export VERSION_MASTER=${VERSION_MASTER:-MNH-V5-6}
+export VERSION_BUG=${VERSION_BUG:-0}
 export VERSION_XYZ=${VERSION_XYZ:-${VERSION_MASTER}-${VERSION_BUG}${VER_OASIS:+-${VER_OASIS}}}
-export VERSION_DATE=${VERSION_DATE:-"19/03/2021"}
-export VERSION_LIBAEC=${VERSION_LIBAEC:-"0.3.4"}
-export VERSION_HDF=${VERSION_HDF:-"1.12.0"}
-export VERSION_CDFC=${VERSION_CDFC:-"4.7.4"}
+export VERSION_DATE=${VERSION_DATE:-"08/03/2023"}
+export VERSION_LIBAEC=${VERSION_LIBAEC:-"v1.0.6"}
+export VERSION_HDF=${VERSION_HDF:-"1.14.0"}
+export VERSION_CDFC=${VERSION_CDFC:-"4.9.0"}
 export VERSION_CDFCXX=${VERSION_CDFCXX:-"4.3.1"}
-export VERSION_CDFF=${VERSION_CDFF:-"4.5.3"}
+export VERSION_CDFF=${VERSION_CDFF:-"4.6.0"}
 export VERSION_GRIBAPI=${VERSION_GRIBAPI:-"1.26.0-Source"}
 export VERSION_ECCODES=${VERSION_ECCODES:-"2.18.0"}
 export ECCODES_DEFINITION_PATH=${ECCODES_DEFINITION_PATH:-${SRC_MESONH}/src/LIB/eccodes-${VERSION_ECCODES}/definitions/}
@@ -27,12 +27,19 @@ export MNH_IOCDF4=${MNH_IOCDF4:-1}
 
 export VERSION_OASIS=${VERSION_OASIS:-"mct_v3"}
 export VERSION_TOY=${VERSION_TOY:-"v1-0"}
-export VERSION_NCL=${VERSION_NCL:-"ncl-6.4.0"}
 
 export VERSION_ECRAD=${VERSION_ECRAD:-"1.4.0"}
 export VER_ECRAD=${VERSION_ECRAD//./}
 
 export MNH_LEN_HREC=${MNH_LEN_HREC:-16}
+#
+#  Install MNH_EXPAND if VER_MNHEXP=MNHEXPAUTO
+#
+export VER_MNHEXP=${VER_MNHEXP:-"MNHEXPAUTO"}
+export VERSION_MNHEXP=${VERSION_MNHEXP:-"MNH_EXPAND_1-2-2"}
+export VERSION_FILEPP=${VERSION_FILEPP:-"1.8.0"}
+
+export LEN_HREC=${LEN_HREC:-16}
 
 #
 export NEED_TOOLS=YES
@@ -45,6 +52,83 @@ cd ${LOCAL}/conf
 TARG=$(uname -s -n)
 #
 case "$TARG" in
+'Linux login'*)
+                export ARCH=${ARCH:-LXcray}
+                export VER_MPI=${VER_MPI:-MPICRAY}
+                export OPTLEVEL=${OPTLEVEL:-OPENACC}
+                export MVWORK=${MVWORK:-NO}
+                export VER_CDF=${VER_CDF:-CDFAUTO}
+if [ "${VER_MPI}" == "MPICRAY" ] 
+then	
+export MNHENV=${MNHENV:-"
+module purge
+module load craype-x86-trento
+module load craype-network-ofi
+module load PrgEnv-cray/8.3.3
+module load cce/15.0.0
+module load craype/2.7.19
+module load cray-mpich/8.1.21
+module load libfabric/1.15.2.0
+module load craype-accel-amd-gfx90a
+module load rocm/5.2.3
+
+export CCE_ALIAS_NONE=:on
+export CCE_NO_PTR_TO_PTR_ALIAS=:on
+
+module list
+"}
+else
+export MNHENV=${MNHENV:-"
+module purge
+module use /lus/home/NAT/gda2203/SHARED/escobar/my_modules >& /dev/null
+module load craype-x86-trento
+module load PrgEnv-cray/8.3.3
+module load craype/2.7.19
+module load craype-accel-amd-gfx90a 
+export version=5.2.3
+module load rocm/${version}
+module rm craype-network-ofi cray-mpich cray-libsci cray-dsmml
+module load ompij/4.1.2-cray-15.0.0-ucx_rocm
+
+export CCE_ALIAS_NONE=:on
+export CCE_NO_PTR_TO_PTR_ALIAS=:on
+
+module list
+"}	 
+fi
+
+              ;;
+
+'Linux login2'*)
+                export ARCH=${ARCH:-LXcray}
+                export VER_MPI=${VER_MPI:-MPICRAY}
+                #export VER_MPI=${VER_MPI:-MPIAUTO}
+                #export OPTLEVEL=${OPTLEVEL:-MANAGED02}
+               export OPTLEVEL=${OPTLEVEL:-OPENACC}
+               # export OPTLEVEL=${OPTLEVEL:-OPENACCDEFONLY}
+                export MVWORK=${MVWORK:-NO}
+                export VER_CDF=${VER_CDF:-CDFAUTO}
+                #export VER_USER=${VER_USER:-ZSOLVER}
+                export MNHENV=${MNHENV:-"
+module purge
+module load craype-x86-trento
+module load craype-network-ofi
+module load PrgEnv-cray/8.3.3
+
+module load libfabric/1.15.0.0
+module load xpmem/2.4.4-2.3_2.12__gff0e1d9.shasta
+module load cray-pmi/6.1.2
+module load craype-accel-amd-gfx90a
+module load rocm
+
+
+ulimit -s unlimited
+
+
+#export CRAY_ACC_DEBUG=2
+"}
+              ;;
+
 'Linux jean-zay'*|'Linux idrsrv'*)
                 export ARCH=${ARCH:-LXifort}
                 export VER_MPI=${VER_MPI:-MPIINTEL}
@@ -85,7 +169,6 @@ export I_MPI_CC=gcc
 'Linux service'*)
                 export     ARCH=${ARCH:-LXifort}
                 export  VER_MPI=${VER_MPI:-MPIICE}
-		export NEED_NCARG=${NEED_NCARG:-YES}
                 export MVWORK=${MVWORK:-NO}
 	        domain=$(grep .fr /etc/hosts | head -1 )
                 case "${domain}" in
@@ -93,7 +176,6 @@ export I_MPI_CC=gcc
                 export OPTLEVEL=${OPTLEVEL:-O2}
                 export MVWORK=${MVWORK:-NO}
 		export VER_CDF=${VER_CDF:-CDFICE}
-		export NEED_NCARG=${NEED_NCARG:-YES}
                 export MNHENV=${MNHENV:-"
 module rm netcdf ; module load netcdf/4.0
 module rm MPT    ; module load MPT/2.02
@@ -121,7 +203,6 @@ export MPI_DSM_CPULIST=0-7:allhosts
                 export MVWORK=${MVWORK:-NO}
 		export VER_CDF=${VER_CDF:-CDFAUTO}
                 export MNHENV=${MNHENV:-"
-module load ncl_ncarg/6.3.0
 "}
               ;;
 'Linux irene'*)
@@ -137,8 +218,8 @@ module load ncl_ncarg/6.3.0
                 export MNHENV=${MNHENV:-"
 module purge
 module load cmake/3.18.1
-module load intel/19.0.5.281 
-module load mpi/openmpi/4.0.2
+module load inteloneapi/21.4.0
+module load mpi/openmpi/4.1.4
 export SLURM_CPU_BIND=none
 "}
 ;;
@@ -153,8 +234,8 @@ export SLURM_CPU_BIND=none
                 export MNHENV=${MNHENV:-"
 module purge
 module load cmake/3.18.1
-module load intel/19.0.5.281 
-module load mpi/openmpi/4.0.2
+module load inteloneapi/21.4.0
+module load mpi/openmpi/4.1.4
 export SLURM_CPU_BIND=none
 # Set some openmpi variable for pb with nb of cores >> 1024
 export OMPI_MCA_coll_hcoll_enable=0
@@ -174,7 +255,6 @@ export ARMCI_SHR_BUF_METHOD=COPY
                 export OPTLEVEL=${OPTLEVEL:-O3}
                 export MVWORK=${MVWORK:-NO}
                 export VER_CDF=${VER_CDF:-CDFAUTO}
-                export NEED_NCARG=${NEED_NCARG:-YES}
                 export NEED_TOOLS=YES
                 export MNHENV=${MNHENV:-"
 module purge
@@ -182,22 +262,6 @@ module load intel/2019.5.281
 module load openmpi/intel/4.0.2.2
 module load cmake/3.15.4
 unset CC CXX
-"}
-              ;;
-'Linux beaufix'*|'Linux prolix'*)
-                export     ARCH=${ARCH:-LXifort}
-                export  VER_MPI=${VER_MPI:-MPIINTEL}
-                export OPTLEVEL=${OPTLEVEL:-O3}
-                export MVWORK=${MVWORK:-NO}
-		export VER_CDF=${VER_CDF:-CDFBFIX}
-                export NEED_NCARG=${NEED_NCARG:-NO}
-		export NEED_TOOLS=NO
-                export MNHENV=${MNHENV:-"
-module rm intel    ; module load intel/16.1.150 ;
-module rm intelmpi ; module load intelmpi/5.1.2.150 ;
-module rm netcdf ; module load netcdf/4.4.0 ;
-module rm grib_api ; module load grib_api/1.14.5 ;
-export GRIBAPI_PATH=/opt/softs/libraries/ICC16.1.150/grib_api-1.14.5
 "}
               ;;
 'Linux login0'*|'Linux compute'*)
@@ -299,6 +363,21 @@ export LIB_GRIBAPI='${GRIB_API_LIB}'
                       ;;
                  esac
               ;;
+'Linux aa'*|'Linux ab'*|'Linux ac'*|'Linux ad'*) # ECMWF Bolona Atos plateforme
+                export MNH_ARCH=`echo $ARCH | grep LX`
+                export     ARCH=${MNH_ARCH:-LXifort}
+                export  VER_MPI=${VER_MPI:-MPIAUTO}
+                export OPTLEVEL=${OPTLEVEL:-O2}
+                export MVWORK=${MVWORK:-NO}
+                export VER_CDF=${VER_CDF:-CDFAUTO}
+                export MNHENV=${MNHENV:-"
+module purge
+module load prgenv/intel 
+module switch intel/2021.4.0
+module load openmpi/4.1.1.1
+unset CC CXX 
+"}
+;;
 'Linux cc'*) # ECMWF Cray plateforme
                 export MNH_ARCH=`echo $ARCH | grep LX`
                 export     ARCH=${MNH_ARCH:-LXifort}
@@ -337,9 +416,20 @@ export CC=gcc
                 export   OPTLEVEL=${OPTLEVEL:-DEBUG}
                 export     MVWORK=${MVWORK:-NO}
                 export    VER_CDF=${VER_CDF:-CDFCTI}
-                export NEED_NCARG=${NEED_NCARG:-NO}
                 export NEED_TOOLS=NO
               ;;
+'Linux lxenm'*) #PC Linux ENM
+                export MNH_ARCH=`echo $ARCH | grep LX`
+                export     ARCH=${MNH_ARCH:-LXgfortran}
+                export  VER_MPI=${VER_MPI:-MPIVIDE}
+                export OPTLEVEL=${OPTLEVEL:-DEBUG}
+                export MVWORK=${MVWORK:-NO}
+                export VER_CDF=${VER_CDF:-CDFAUTO}
+		export NEED_TOOLS=NO
+		export MNHENV=${MNHENV:-"
+export PATH=/opt/gcc-9.4.0/bin:\$PATH
+"}
+		;;
 'Linux lx'*|'Linux sx'*|'Linux px'*) #CNRM
                 export MNH_ARCH=`echo $ARCH | grep LX`
                 export     ARCH=${MNH_ARCH:-LXgfortran}
@@ -347,7 +437,6 @@ export CC=gcc
                 export OPTLEVEL=${OPTLEVEL:-DEBUG}
                 export MVWORK=${MVWORK:-NO}
                 export VER_CDF=${VER_CDF:-CDFCTI}
-		export NEED_NCARG=${NEED_NCARG:-YES}
 		export NEED_TOOLS=NO
               ;;
 'Linux nuwa'*)
@@ -356,10 +445,9 @@ export CC=gcc
                 export OPTLEVEL=${OPTLEVEL:-O2}
                 export MVWORK=${MVWORK:-NO}
 		export VER_CDF=${VER_CDF:-CDFAUTO}
-		export NEED_NCARG=${NEED_NCARG:-YES}
                       export MNHENV=${MNHENV:-"
 . /home/tools/intel/psxe2018/bin/ifortvars.sh intel64
-export MPI_ROOT=/usr/local/openmpi/3.1.4/ifort18.0.2.199
+export MPI_ROOT=/usr/local/openmpi/4.0.4/ifort18.0.2.199
 export PATH=\$MPI_ROOT/bin:\$PATH
 export LD_LIBRARY_PATH=\$MPI_ROOT/lib64:\$LD_LIBRARY_PATH
 export MANPATH=\$MPI_ROOT/share/man:\$MANPATH
@@ -375,7 +463,7 @@ conda activate mnh-env_nuwa
 		export VER_CDF=${VER_CDF:-CDFAUTO}
                 export   MNHENV=${MNHENV:-"
 module purge
-module load intel/17.0.4 intelmpi/2017.3.196 ncl/6.2.0
+module load intel/17.0.4 intelmpi/2017.3.196
 export SLURM_CPU_BIND=none
 export I_MPI_PIN_PROCESSOR_LIST=all:map=spread
 "}
@@ -401,7 +489,6 @@ Linux*)
                 export MVWORK=${MVWORK:-NO}
 		#export VER_CDF=${VER_CDF:-CDFGFOR}
 		export VER_CDF=${VER_CDF:-CDFAUTO}
-		export NEED_NCARG=${NEED_NCARG:-YES}
               ;;
 Darwin*)
                 echo "WARNING:: Darwin for Mac not tested "
@@ -410,7 +497,6 @@ Darwin*)
                 export OPTLEVEL=${OPTLEVEL:-DEBUG}
                 export MVWORK=${MVWORK:-NO}
 		export VER_CDF=${VER_CDF:-CDFAUTO}
-		export NEED_NCARG=${NEED_NCARG:-NO}
               ;;
 *)
                 echo "WARNING ; system not yet tested "
@@ -498,7 +584,22 @@ if [ "x${NEED_TOOLS}" == "xYES" ] ; then
 	   ;;
   esac
 fi
-
+#
+#  Install MNH_EXPAND if VER_MNHEXP=MNHEXPAUTO
+#
+if [ "x${VER_MNHEXP}" == "xMNHEXPAUTO" ] ;then
+    (
+	cd $LOCAL/pub/FILEPP
+	if [ ! -d MNH_Expand_Array-${VERSION_MNHEXP} ] ; then
+	    tar xvf  ${VERSION_MNHEXP}.tar.gz
+	    tar xvf  filepp-${VERSION_FILEPP}.tar.gz
+	    cd filepp-${VERSION_FILEPP}
+	    FILEPP=$LOCAL/pub/FILEPP
+	    ./configure --prefix=${FILEPP}/FILEPP-${VERSION_FILEPP}
+	    make install
+	fi
+    )
+fi 
 #
 # Generate profile_mesonh
 #
@@ -530,10 +631,6 @@ if [ "x${MVWORK}" == "xYES" ] ; then
       done
    fi
 fi
-if [ "x${NEED_NCARG}" != "xNO" ] ; then
-( cd $LOCAL/pub ; [ ! -d ${VERSION_NCL} ] && ( tar xvfz ${VERSION_NCL}.tar.gz ) )
-fi
-
 #
 #  Install CDF if VER_CDF=CDFAUTO
 #
@@ -549,12 +646,6 @@ fi
 #
 if [ "x${VER_OASIS}" == "xOASISAUTO" ] ; then
 ( cd $LOCAL/src/LIB ; [ ! -d oasis3-${VERSION_OASIS} ] && tar xvfz oasis3-${VERSION_OASIS}.tar.gz ; [ ! -d toy_${VERSION_TOY} ] && tar xvfz toy_${VERSION_TOY}.tar.gz )
-fi
-#
-#  Install MEGAN if MNH_MEGAN=1
-#
-if [ "x${MNH_MEGAN}" == "x1" ] ; then
-( cd $LOCAL/src/LIB ; [ ! -d MEGAN ] && tar xvfz megan.tar.gz )
 fi
 #
 #  Install GRIBAPI or ecCodes

@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 param 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !    ##############################
      MODULE MODI_SURF_SOLAR_SHADOWS 
@@ -81,13 +76,14 @@ END MODULE MODI_SURF_SOLAR_SHADOWS
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODE_ll
 !
-USE MODD_PARAMETERS, ONLY : XUNDEF, JPHEXT
-USE MODD_CST,        ONLY : XPI, XRADIUS
 USE MODD_CONF,       ONLY : LCARTESIAN
-USE MODD_SHADOWS_n,  ONLY : XZS_ll, XZS_XY_ll, XXHAT_ll, &
-                            XYHAT_ll, XZS_MAX_ll, XZS_MAX_ll
+USE MODD_CST,        ONLY : XPI, XRADIUS
+USE MODD_GRID_n,     ONLY : XXHAT_ll, XYHAT_ll
+USE MODD_PARAMETERS, ONLY : XUNDEF, JPHEXT
+USE MODD_SHADOWS_n,  ONLY : XZS_ll, XZS_XY_ll, XZS_MAX_ll, XZS_MAX_ll
+!
+USE MODE_ll
 !
 IMPLICIT NONE
 !

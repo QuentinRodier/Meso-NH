@@ -83,7 +83,7 @@ END MODULE MODI_TURB_CLOUD_INDEX
 !
 !-------------------------------------------------------------------------------
 !
-use modd_field,          only: tfielddata, TYPEREAL
+use modd_field,          only: tfieldmetadata, TYPEREAL
 USE MODD_IO,             ONLY: TFILEDATA
 USE MODD_PARAMETERS,     ONLY: JPVEXT
 !
@@ -133,7 +133,7 @@ INTEGER             :: IIB,IJB,IKB  ! Begin of physical dimensions
 INTEGER             :: IIE,IJE,IKE  ! End   of physical dimensions
 INTEGER, DIMENSION(SIZE(PRM,1),SIZE(PRM,2),SIZE(PRM,3)) :: IMASK_CLOUD
                              ! 0 except cloudy points or adjacent points (1)
-TYPE(TFIELDDATA)    :: TZFIELD
+TYPE(TFIELDMETADATA) :: TZFIELD
 !
 !-------------------------------------------------------------------------------
 !
@@ -244,100 +244,108 @@ ENDDO
 !*       2.5    Writing
 !
 IF ( OTURB_DIAG .AND. tpfile%lopened ) THEN
-  TZFIELD%CMNHNAME   = 'RVCI'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'RVCI'
-  TZFIELD%CUNITS     = 'kg kg-1'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_Z_RVCI'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDMETADATA(   &
+    CMNHNAME   = 'RVCI',      &
+    CSTDNAME   = '',          &
+    CLONGNAME  = 'RVCI',      &
+    CUNITS     = 'kg kg-1',   &
+    CDIR       = 'XY',        &
+    CCOMMENT   = 'X_Y_Z_RVCI',&
+    NGRID      = 1,           &
+    NTYPE      = TYPEREAL,    &
+    NDIMS      = 3,           &
+    LTIMEDEP   = .TRUE.       )
   CALL IO_Field_write(TPFILE,TZFIELD,ZRVCI)
   !
-  TZFIELD%CMNHNAME   = 'GX_RVCI'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'GX_RVCI'
-  TZFIELD%CUNITS     = 'kg kg-1 m-1'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_Z_GX_RVCI'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDMETADATA(       &
+    CMNHNAME   = 'GX_RVCI',       &
+    CSTDNAME   = '',              &
+    CLONGNAME  = 'GX_RVCI',       &
+    CUNITS     = 'kg kg-1 m-1',   &
+    CDIR       = 'XY',            &
+    CCOMMENT   = 'X_Y_Z_GX_RVCI', &
+    NGRID      = 1,               &
+    NTYPE      = TYPEREAL,        &
+    NDIMS      = 3,               &
+    LTIMEDEP   = .TRUE.           )
   CALL IO_Field_write(TPFILE,TZFIELD,ZG_RVCI(:,:,:,1))
   !
-  TZFIELD%CMNHNAME   = 'GY_RVCI'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'GY_RVCI'
-  TZFIELD%CUNITS     = 'kg kg-1 m-1'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_Z_GY_RVCI'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDMETADATA(       &
+    CMNHNAME   = 'GY_RVCI',       &
+    CSTDNAME   = '',              &
+    CLONGNAME  = 'GY_RVCI',       &
+    CUNITS     = 'kg kg-1 m-1',   &
+    CDIR       = 'XY',            &
+    CCOMMENT   = 'X_Y_Z_GY_RVCI', &
+    NGRID      = 1,               &
+    NTYPE      = TYPEREAL,        &
+    NDIMS      = 3,               &
+    LTIMEDEP   = .TRUE.           )
   CALL IO_Field_write(TPFILE,TZFIELD,ZG_RVCI(:,:,:,2))
   !
-  TZFIELD%CMNHNAME   = 'GNORM_RVCI'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'GNORM_RVCI'
-  TZFIELD%CUNITS     = 'kg kg-1 m-1'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_Z_NORM G'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDMETADATA(      &
+    CMNHNAME   = 'GNORM_RVCI',   &
+    CSTDNAME   = '',             &
+    CLONGNAME  = 'GNORM_RVCI',   &
+    CUNITS     = 'kg kg-1 m-1',  &
+    CDIR       = 'XY',           &
+    CCOMMENT   = 'X_Y_Z_NORM G', &
+    NGRID      = 1,              &
+    NTYPE      = TYPEREAL,       &
+    NDIMS      = 3,              &
+    LTIMEDEP   = .TRUE.          )
   CALL IO_Field_write(TPFILE,TZFIELD,ZGNORM_RVCI)
   !
-  TZFIELD%CMNHNAME   = 'QX_RVCI'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'QX_RVCI'
-  TZFIELD%CUNITS     = 'kg kg-1 m-1'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_Z_QX_RVCI'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDMETADATA(       &
+    CMNHNAME   = 'QX_RVCI',       &
+    CSTDNAME   = '',              &
+    CLONGNAME  = 'QX_RVCI',       &
+    CUNITS     = 'kg kg-1 m-1',   &
+    CDIR       = 'XY',            &
+    CCOMMENT   = 'X_Y_Z_QX_RVCI', &
+    NGRID      = 1,               &
+    NTYPE      = TYPEREAL,        &
+    NDIMS      = 3,               &
+    LTIMEDEP   = .TRUE.           )
   CALL IO_Field_write(TPFILE,TZFIELD,ZQ_RVCI(:,:,:,1))
   !
-  TZFIELD%CMNHNAME   = 'QY_RVCI'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'QY_RVCI'
-  TZFIELD%CUNITS     = 'kg kg-1 m-1'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_Z_QY_RVCI'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDMETADATA(       &
+    CMNHNAME   = 'QY_RVCI',       &
+    CSTDNAME   = '',              &
+    CLONGNAME  = 'QY_RVCI',       &
+    CUNITS     = 'kg kg-1 m-1',   &
+    CDIR       = 'XY',            &
+    CCOMMENT   = 'X_Y_Z_QY_RVCI', &
+    NGRID      = 1,               &
+    NTYPE      = TYPEREAL,        &
+    NDIMS      = 3,               &
+    LTIMEDEP   = .TRUE.           )
   CALL IO_Field_write(TPFILE,TZFIELD,ZQ_RVCI(:,:,:,2))
   !
-  TZFIELD%CMNHNAME   = 'QNORM_RVCI'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'QNORM_RVCI'
-  TZFIELD%CUNITS     = 'kg kg-1 m-1'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_Z_QNORM_RVCI'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDMETADATA(          &
+    CMNHNAME   = 'QNORM_RVCI',       &
+    CSTDNAME   = '',                 &
+    CLONGNAME  = 'QNORM_RVCI',       &
+    CUNITS     = 'kg kg-1 m-1',      &
+    CDIR       = 'XY',               &
+    CCOMMENT   = 'X_Y_Z_QNORM_RVCI', &
+    NGRID      = 1,                  &
+    NTYPE      = TYPEREAL,           &
+    NDIMS      = 3,                  &
+    LTIMEDEP   = .TRUE.              )
   CALL IO_Field_write(TPFILE,TZFIELD,ZQNORM_RVCI)
   !
-  TZFIELD%CMNHNAME   = 'CEI'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'CEI'
-  TZFIELD%CUNITS     = 'kg kg-1 m-1 s-1'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_Z_CEI'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 3
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDMETADATA(         &
+    CMNHNAME   = 'CEI',             &
+    CSTDNAME   = '',                &
+    CLONGNAME  = 'CEI',             &
+    CUNITS     = 'kg kg-1 m-1 s-1', &
+    CDIR       = 'XY',              &
+    CCOMMENT   = 'X_Y_Z_CEI',       &
+    NGRID      = 1,                 &
+    NTYPE      = TYPEREAL,          &
+    NDIMS      = 3,                 &
+    LTIMEDEP   = .TRUE.             )
   CALL IO_Field_write(TPFILE,TZFIELD,PCEI)
 END IF
 !

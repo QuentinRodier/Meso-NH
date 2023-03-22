@@ -81,6 +81,7 @@ SUBROUTINE CALL_RTTOV13(KDLON, KFLEV, PEMIS, PTSRAD,     &
 !!      JP Chaboureau 02/11/2009 move GANGL deallocation outside the sensor loop
 !!      J.Escobar     15/09/2015 WENO5 & JPHEXT <> 1 
 !!      JP Chaboureau 09/04/2021 adapt to call RTTOV13
+!!      JP Chaboureau 10/11/2022 set opts_scatt % lusercfrac to false for MW
 !!----------------------------------------------------------------------------
 !!
 !!*       0.    DECLARATIONS
@@ -90,7 +91,7 @@ USE MODD_CST
 USE MODD_PARAMETERS
 USE MODD_GRID_n
 USE MODD_IO, ONLY: TFILEDATA
-USE MODD_FIELD, ONLY: TFIELDDATA, TYPEREAL
+USE MODD_FIELD, ONLY: TFIELDMETADATA, TYPEREAL
 USE MODD_LUNIT_n
 USE MODD_LBC_n
 USE MODD_DEEP_CONVECTION_n
@@ -114,7 +115,7 @@ USE MODE_POS
 USE rttov_const, ONLY :  errorstatus_success, &
        & sensor_id, sensor_id_ir, sensor_id_hi, sensor_id_mw, inst_name, &
        & platform_name, gas_unit_specconc, tmin, tmax, qmin, qmax, pmin, pmax, &
-       & rad2deg, zenmaxv9
+       & rad2deg, zenmaxv9, min_reflectivity
 USE rttov_types
 USE mod_rttov_brdf_atlas, ONLY : rttov_brdf_atlas_data
 USE parkind1, ONLY: jpim, jprb, jplm
@@ -136,6 +137,7 @@ IMPLICIT NONE
 #include "rttov_init_rad.interface"
 #include "rttov_alloc_prof.interface"
 #include "rttov_alloc_scatt_prof.interface"
+#include "rttov_alloc_reflectivity.interface"
 ! Use BRDF atlas
 #include "rttov_setup_brdf_atlas.interface"
 #include "rttov_get_brdf.interface"
@@ -176,9 +178,9 @@ TYPE(TFILEDATA),   INTENT(IN) :: TPFILE ! File characteristics
 !!!*       0.2   DECLARATIONS OF LOCAL VARIABLES
 !!!
 !!!
-LOGICAL(KIND=jplm)  :: thermal, solar
+LOGICAL(KIND=jplm)  :: thermal, solar, radar
 
-INTEGER(KIND=jpim), PARAMETER :: nhydro_frac = 1
+INTEGER(KIND=jpim), PARAMETER :: nhydro_frac = 1 ! a single profile of cloud cover (for MW)
 !
 INTEGER :: JI,JJ,JK,JK1,JK2,JKRAD,JKF,JSAT,JC ! loop indexes
 !
@@ -196,42 +198,57 @@ INTEGER :: IIJ          ! reformatted array index
 INTEGER :: IKSTAE       ! level number of the STAndard atmosphere array
 INTEGER :: IKUP         ! vertical level above which STAndard atmosphere data
 
+REAL, DIMENSION(:,:,:,:), ALLOCATABLE   ::  ZREF
 REAL, DIMENSION(:,:,:), ALLOCATABLE   ::  ZOUT
 REAL, DIMENSION(:,:), ALLOCATABLE :: ZANTMP, ZUTH
 REAL :: ZZH, zdeg_to_rad, zrad_to_deg, zbeta, zalpha
+REAL :: XFILLVALUE =  9.9692099683868690e+36 
 
 ! Other arrays for zenithal solar angle 
+LOGICAL                             :: LCOSZENOUT
 REAL, DIMENSION(:,:),   ALLOCATABLE :: ZCOSZEN, ZSINZEN, ZAZIMSOL
 
 ! -----------------------------------------------------------------------------
 REAL, DIMENSION(1) :: ZANGL, ZLON, ZLAT   !Satellite zenith angle, longitude, latitude (deg)
-! -----------------------------------------------------------------------------
-! Realistic maximum values for hydrometeor content in kg/kg
-REAL :: ZRCMAX = 5.0E-03, ZRRMAX = 5.0E-03, ZRIMAX = 2.0E-03, ZRSMAX = 5.0E-03
 ! -----------------------------------------------------------------------------
 INTEGER, DIMENSION(:), ALLOCATABLE :: IMSURF   !Surface type index
                                 
 INTEGER :: IKFBOT, IKFTOP, INDEX, ISUM, JLEV, JCH, IWATER, ICAN
 !  at the open of the file LFI routines 
 CHARACTER(LEN=8)  :: YINST  
-CHARACTER(LEN=4)  :: YBEG, YEND
+CHARACTER(LEN=5)  :: YBEG, YEND
 CHARACTER(LEN=2)  :: YCHAN, YTWO   
 CHARACTER(LEN=1)  :: YONE   
                                
-INTEGER, PARAMETER :: JPPLAT=16
+INTEGER, PARAMETER :: JPPLAT=24
 
 CHARACTER(LEN=3), DIMENSION(JPPLAT) :: YPLAT= (/ &
      'N  ','D  ','MET','GO ','GMS','FY2','TRM','ERS', &
-     'EOS','MTP','ENV','MSG','FY1','ADS','MTS','CRL' /)
+     'EOS','MTP','ENV','MSG','FY1','ADS','MTS','CRL', &
+     'JPS','GFT','STL','MTR','KAL','MOR','FY3','CMS' /)
 CHARACTER(LEN=2), DIMENSION(2) :: YLBL_MVIRI = (/ 'WV', 'IR'/)
 CHARACTER(LEN=3), DIMENSION(7) :: YLBL_SSMI = (/ &
      '19V','19H','22V','37V','37H','85V','85H'/)
 CHARACTER(LEN=3), DIMENSION(9) :: YLBL_TMI = (/ &
      '10V','10H','19V','19H','22V','37V','37H','85V','85H'/)
-CHARACTER(LEN=3), DIMENSION(12) :: YLBL_SEVIRI = (/ &
-     'V06', 'V08', 'N16', '039', '062','073','087','097','108','120','134', 'HRV'/)
+CHARACTER(LEN=4), DIMENSION(5) :: YLBL_MHS = (/ &
+     '8900','1570','1831','1833','1903'/)
+CHARACTER(LEN=5), DIMENSION(12) :: YLBL_SEVIRI = (/ &
+     'VIS06','VIS08','NIR16','IR039','WV062','WV073', &
+     'IR087','IR097','IR108','IR120','IR134','HRV  '/)
+CHARACTER(LEN=5), DIMENSION(19) :: YLBL_ABI = (/ &
+     'VIS04','VIS06','VIS08','VIS14','VIS16','VIS22', &
+     'IR039','IR062','IR069','IR073','IR085','IR096','IR103','IR112','IR123','IR133', &
+     'HRV04','HRV08','HRV16'/)
 CHARACTER(LEN=3), DIMENSION(4) :: YLBL_GOESI = (/ &
      '039', '067','107','120'/)
+CHARACTER(LEN=2), DIMENSION(6) :: YLBL_SAPHIR = (/ &
+     'S1','S2','S3','S4','S5','S6'/)
+CHARACTER(LEN=4), DIMENSION(13) :: YLBL_ICI = (/ &
+     '1837','1833','1832','243V','243H','3259','3253','3251','4487','4483','4481','664V','664H'/)
+CHARACTER(LEN=4), DIMENSION(2) :: YLBL_DPR = (/ '13', '35' /)
+CHARACTER(LEN=4), DIMENSION(13) :: YLBL_GMI = (/ &
+     '10V','10H','18V','18H','23V','36V','36H','89V','89H','166V','166H','1833','1837'/)
 
 ! -----------------------------------------------------------------------------
 LOGICAL (kind=jplm)       , ALLOCATABLE :: calcemis    (:) 
@@ -241,11 +258,12 @@ TYPE (rttov_chanprof)     , ALLOCATABLE :: chanprof    (:)  ! Channel and profil
 TYPE (rttov_profile)      , ALLOCATABLE :: profiles    (:)
 TYPE (rttov_profile_cloud), ALLOCATABLE :: cld_profiles(:)
 TYPE(rttov_emissivity)    , ALLOCATABLE :: emissivity  (:)  ! Input/output surface emissivity
+TYPE(rttov_reflectivity)  , ALLOCATABLE :: reflectivity
 LOGICAL(KIND=jplm)        , ALLOCATABLE :: calcrefl    (:)  ! Flag to indicate calculation of BRDF within RTTOV
 TYPE(rttov_reflectance)   , ALLOCATABLE :: reflectance (:)  ! Input/output surface BRDF
 TYPE(rttov_transmission)                :: transmission   ! Output transmittances
 INTEGER(KIND=jpim) :: asw
-INTEGER(jpim) :: run_gas_units = gas_unit_specconc ! mass mixing ratio   [kg/kg]
+INTEGER(jpim) :: run_gas_units = gas_unit_specconc ! mass mixing ratio [kg/kg] over wet air
 
 integer (kind=jpim)        :: errorstatus
 type (rttov_radiance)      :: radiance, radiance_k  
@@ -262,8 +280,9 @@ real    (kind=jprb) :: zenangle
 integer (kind=jpim), parameter :: fin = 10
 character (len=256) :: outstring
 ! -----------------------------------------------------------------------------
+CHARACTER(LEN=:), ALLOCATABLE :: YMNHNAME, YUNITS, YCOMMENT
 REAL, DIMENSION(SIZE(PTHT,1),SIZE(PTHT,2),SIZE(PTHT,3)) :: ZTEMP
-TYPE(TFIELDDATA) :: TZFIELD
+TYPE(TFIELDMETADATA) :: TZFIELD
 !-------------------------------------------------------------------------------
 !
 !*       0.     ARRAYS BOUNDS INITIALIZATION
@@ -288,10 +307,11 @@ END DO
 opts % interpolation % addinterp  = .TRUE.  ! Allow interpolation of input profile
 opts % interpolation % interp_mode = 1      ! Set interpolation method
 opts % config % do_checkinput = .TRUE.  
-opts % config % verbose       = .TRUE.  ! Enable printing of warnings
+opts % config % verbose       = .FALSE.  ! Enable printing of warnings
 opts_scatt % config % verbose = .FALSE. ! Disable printing of warnings
-opts_scatt % lusercfrac = .TRUE.
+opts_scatt % lusercfrac = .FALSE.
 
+LCOSZENOUT=.TRUE.
 ALLOCATE(ZCOSZEN(IIU,IJU))
 ALLOCATE(ZSINZEN(IIU,IJU))
 ALLOCATE(ZAZIMSOL(IIU,IJU))
@@ -306,9 +326,10 @@ DO JSAT=1,IJSAT ! loop over sensors
   instrument(2)=KRTTOVINFO(2,JSAT)
   instrument(3)=KRTTOVINFO(3,JSAT)
 
+  radar = .FALSE.
   IF( sensor_id( instrument(3) ) /= sensor_id_mw) THEN
     opts % rt_ir % addsolar         = .FALSE. ! Do not include solar radiation
-    IF (KRTTOVINFO(4,JSAT).EQ.1) THEN
+    IF (KRTTOVINFO(4,JSAT)==1) THEN
       opts % rt_ir % addsolar       = .TRUE.  ! Include solar radiation
     END IF
     opts % rt_ir % addaerosl        = .FALSE. ! Do not include aerosol effects
@@ -327,18 +348,20 @@ DO JSAT=1,IJSAT ! loop over sensors
     opts % rt_all % so2_data        = .FALSE. !
 
     opts % rt_ir % user_cld_opt_param   = .FALSE.
-!   opts % rt_mw % clw_data         = .FALSE. !
   ELSE
     opts % rt_all % addrefrac       = .FALSE. ! Do not include refraction in path calc
     opts % rt_ir % addsolar         = .FALSE. ! Do not include solar radiation
-    opts % rt_ir % addclouds        = .FALSE. ! Include cloud effects
+    opts % rt_ir % addaerosl        = .FALSE. ! Do not include aerosol effects
+    opts % rt_ir % addclouds        = .FALSE. ! Do not include cloud effects
+    opts % rt_mw % clw_data         = .FALSE. ! Do not include cloud liquid water
+    IF (KRTTOVINFO(3,JSAT).EQ.105.OR.KRTTOVINFO(3,JSAT).EQ.106) radar = .TRUE.
   END IF
 
 ! Read and initialise coefficients
 ! -----------------------------------------------------------------------------
   CALL rttov_read_coefs (errorstatus, coefs, opts, instrument=instrument)
   IF (errorstatus /= errorstatus_success) THEN
-    WRITE(*,*) 'error rttov_readcoeffs :',errorstatus
+    WRITE(*,*) 'platform=',instrument(1),' sat_id=',instrument(2),' inst=',instrument(3)
     CALL PRINT_MSG(NVERB_FATAL,'GEN','CALL_RTTOV13','error rttov_readcoeffs')
   END IF
   
@@ -372,32 +395,13 @@ DO JSAT=1,IJSAT ! loop over sensors
   nchannels = coefs%coef%fmv_chn   ! number of channels on instrument
   nchanprof = nprof * nchannels    ! total channels to simulate
 
-  ALLOCATE(ZOUT(IIU,IJU,nchanprof))
-  ZOUT(:,:,:)=XUNDEF
-
-  ! Allocate structures for RTTOV direct model
-! CALL rttov_alloc_direct( &
-!       errorstatus,                 &
-!       1_jpim,                      &  ! 1 => allocate
-!       nprof,                       &
-!       nchanprof,                   &
-!!      nlevels,                     &
-!       chanprof,                    &
-!       opts,                        &
-!       profiles,                    &
-!       coefs,                       &
-!       radiance = radiance,         &
-!       calcemis = calcemis,         &
-!       emissivity = emissivity,     &
-!       frequencies = frequencies,   &
-!       coef_scatt = coef_scatt,     &
-!       nhydro_frac = nhydro_frac,   &
-!       cld_profiles = cld_profiles, &
-!       init = .TRUE._jplm)
-! IF (errorstatus /= errorstatus_success) THEN
-!   WRITE(*,*) 'allocation error for rttov_direct structures :',errorstatus
-!   CALL PRINT_MSG(NVERB_FATAL,'GEN','CALL_RTTOV13','error rttov_alloc_direct')
-! ENDIF
+  IF (.NOT.radar) THEN
+    ALLOCATE(ZOUT(IIU,IJU,nchanprof))
+    ZOUT(:,:,:)=XFILLVALUE
+  ELSE
+    ALLOCATE(ZREF(IIU,IJU,IKU,nchanprof))
+    ZREF(:,:,:,:)=min_reflectivity
+  END IF
 
   ALLOCATE (chanprof     (nchanprof))
   ALLOCATE (frequencies  (nchanprof))
@@ -424,7 +428,6 @@ DO JSAT=1,IJSAT ! loop over sensors
     calcemis = .TRUE.
     emissivity % emis_in = 0.0_JPRB
   END IF
-
 
   ! --------------------------------------------------------------------------
   ! 4. Build the list of profile/channel indices in chanprof
@@ -462,6 +465,11 @@ DO JSAT=1,IJSAT ! loop over sensors
     cld_profiles(1)%nhydro = 5
     CALL rttov_alloc_scatt_prof(errorstatus, nprof, cld_profiles, nlevels, &
             cld_profiles(1)%nhydro, nhydro_frac, 1_jpim, init = .TRUE._jplm)
+    IF (radar) THEN
+       ALLOCATE(reflectivity)
+       CALL rttov_alloc_reflectivity(errorstatus, nchanprof, reflectivity, &
+                                        nlevels, 1_jpim, init = .TRUE._jplm)
+    END IF
   END IF
 
   CALL rttov_alloc_rad       (errorstatus, nchannels, radiance, nlevels-1_jpim,asw)
@@ -501,8 +509,6 @@ DO JSAT=1,IJSAT ! loop over sensors
 
   DO JI=IIB,IIE
     DO JJ=IJB,IJE      
-! DO JI=1,IIU
-!   DO JJ=1,IJU      
 
       ZANGL = XUNDEF
       ZLON  = XLON(JI,JJ)
@@ -524,6 +530,7 @@ DO JSAT=1,IJSAT ! loop over sensors
         ZANGL=0.
       ENDIF
 
+      WHERE (ZANGL == XUNDEF) ZANGL=0.
       profiles(1) % zenangle = MIN(ZANGL(1),zenmaxv9)
       profiles(1) % azangle = 0.
       profiles(1) % sunzenangle = XZENITH(JI,JJ) *rad2deg
@@ -533,12 +540,12 @@ DO JSAT=1,IJSAT ! loop over sensors
         JKRAD = nlevels-JK+2 !INVERSION OF VERTICAL LEVELS!
         profiles(1) % p(JKRAD) = PPABST(JI,JJ,JK)*0.01
         profiles(1) % t(JKRAD) = MIN(tmax,MAX(tmin,ZTEMP(JI,JJ,JK)))
-        profiles(1) % q(JKRAD) = MIN(qmax,MAX(qmin,PRT(JI,JJ,JK,1)))
+        profiles(1) % q(JKRAD) = MIN(qmax,MAX(qmin,PRT(JI,JJ,JK,1)/(1.+PRT(JI,JJ,JK,1))))
       END DO
       profiles(1) % elevation = 0.5*( PZZ(JI,JJ,1)+PZZ(JI,JJ,IKB) )*0.001
       profiles(1) % skin % t = MIN(tmax,MAX(tmin,PTSRAD(JI,JJ)))
       profiles(1) % s2m % t = MIN(tmax,MAX(tmin,ZTEMP(JI,JJ,IKB)))
-      profiles(1) % s2m % q = MIN(qmax,MAX(qmin,PRT(JI,JJ,1,IKB)))
+      profiles(1) % s2m % q = MIN(qmax,MAX(qmin,PRT(JI,JJ,IKB,1)/(1.+PRT(JI,JJ,IKB,1))))
       profiles(1) % s2m % u = PULVLKB(JI,JJ) ! 2m wind speed u (m/s)
       profiles(1) % s2m % v = PVLVLKB(JI,JJ) ! 2m wind speed v (m/s)
       profiles(1) % s2m % p = PPABST(JI,JJ,IKB)*0.01
@@ -571,14 +578,14 @@ DO JSAT=1,IJSAT ! loop over sensors
       ELSE
         DO JK=IKB,IKE
           JKRAD = nlevels-JK+2 !INVERSION OF VERTICAL LEVELS!
+          cld_profiles(1) %hydro_frac(JKRAD,1) = 1.
           cld_profiles(1) % ph (JKRAD) = 0.5*( PPABST(JI,JJ,JK) + PPABST(JI,JJ,JK+1) )*0.01
-          cld_profiles(1) %hydro_frac(JKRAD,1) = PCLDFR(JI,JJ,JK)
-          cld_profiles(1) %hydro(JKRAD,4) = MIN(ZRCMAX,PRT(JI,JJ,JK,2))
-          cld_profiles(1) %hydro(JKRAD,1) = MIN(ZRRMAX,PRT(JI,JJ,JK,3))
+          cld_profiles(1) %hydro(JKRAD,4) = PRT(JI,JJ,JK,2) ! liquid water
+          cld_profiles(1) %hydro(JKRAD,1) = PRT(JI,JJ,JK,3) ! rain
           IF (OUSERI) THEN
-            cld_profiles(1) %hydro(JKRAD,5) = MIN(ZRIMAX,PRT(JI,JJ,JK,4))
-            cld_profiles(1) %hydro(JKRAD,2) = MIN(ZRSMAX,PRT(JI,JJ,JK,5))
-            cld_profiles(1) %hydro(JKRAD,3) = MIN(ZRSMAX,PRT(JI,JJ,JK,6))
+            cld_profiles(1) %hydro(JKRAD,5) = PRT(JI,JJ,JK,4) ! ice water
+            cld_profiles(1) %hydro(JKRAD,2) = PRT(JI,JJ,JK,5) ! snow
+            cld_profiles(1) %hydro(JKRAD,3) = PRT(JI,JJ,JK,6) ! graupel
           END IF
         END DO
         cld_profiles (1) % ph (nlevels+1) =   profiles (1) % s2m % p
@@ -587,25 +594,23 @@ DO JSAT=1,IJSAT ! loop over sensors
       DO JCH=1,nchanprof
         IF (.NOT.calcemis(JCH)) emissivity(JCH)%emis_in = PEMIS(JI,JJ)
       END DO
-  IF (opts % rt_ir % addsolar) THEN
-    ! Use BRDF atlas
-    CALL rttov_get_brdf(              &
-              errorstatus,            &
-              opts,                   &
-              chanprof,               &
-              profiles,               &
-              coefs,                  &
-              brdf_atlas,             &
-              reflectance(:) % refl_in)
-    IF (errorstatus /= errorstatus_success) THEN
-      WRITE(*,*) 'error reading BRDF atlas'
-      CALL PRINT_MSG(NVERB_FATAL,'GEN','CALL_RTTOV13','error rttov_get_brdf')
-    END IF
-    ! Calculate BRDF within RTTOV where the atlas BRDF value is zero or less
-    calcrefl(:) = (reflectance(:) % refl_in <= 0._jprb)
-  END IF
-
-
+      IF (opts % rt_ir % addsolar) THEN
+        ! Use BRDF atlas
+        CALL rttov_get_brdf(              &
+                  errorstatus,            &
+                  opts,                   &
+                  chanprof,               &
+                  profiles,               &
+                  coefs,                  &
+                  brdf_atlas,             &
+                  reflectance(:) % refl_in)
+        IF (errorstatus /= errorstatus_success) THEN
+          WRITE(*,*) 'error reading BRDF atlas'
+          CALL PRINT_MSG(NVERB_FATAL,'GEN','CALL_RTTOV13','error rttov_get_brdf')
+        END IF
+        ! Calculate BRDF within RTTOV where the atlas BRDF value is zero or less
+        calcrefl(:) = (reflectance(:) % refl_in <= 0._jprb)
+      END IF
       IF (coefs%coef% id_sensor /= sensor_id_mw) THEN
         CALL rttov_direct(               &
              & errorstatus,              &! out   error flag
@@ -619,51 +624,85 @@ DO JSAT=1,IJSAT ! loop over sensors
              & emissivity  = emissivity, &! inout input/output emissivities per channel
              & calcrefl    = calcrefl,   &! in    flag for internal BRDF calcs
              & reflectance = reflectance) ! inout input/output BRDFs per channel
+      ELSEIF (radar) THEN
+        CALL rttov_scatt ( &
+             & errorstatus,  opts_scatt,   &
+             & nlevels,      chanprof,     &
+             & frequencies,  profiles,     &
+             & cld_profiles, coefs,        &
+             & coef_scatt,   calcemis,     &
+             & emissivity,   radiance,     &
+             & reflectivity = reflectivity)
       ELSE
         CALL rttov_scatt ( &
-             & errorstatus,         &! out
-             & opts_scatt,          &! in
-             & nlevels,             &! in
-             & chanprof,            &! in
-             & frequencies,         &! in
-             & profiles,            &! in  
-             & cld_profiles,        &! in
-             & coefs,               &! in
-             & coef_scatt,          &! in
-             & calcemis,            &! in
-             & emissivity,          &! in
-             & radiance)             ! out
+             & errorstatus,  opts_scatt,   &
+             & nlevels,      chanprof,     &
+             & frequencies,  profiles,     &
+             & cld_profiles, coefs,        &
+             & coef_scatt,   calcemis,     &
+             & emissivity,   radiance)
       END IF
       DO JCH=1,nchanprof
         ichan = chanprof(JCH)%chan
         thermal = coefs%coef%ss_val_chn(ichan) < 2
 !       solar   = coefs%coef%ss_val_chn(ichan) > 0
-        IF (thermal) THEN
-          ZOUT(JI,JJ,JCH)= radiance % bt(JCH)
+        IF (.NOT.radar) THEN
+          IF (thermal) THEN
+            ZOUT(JI,JJ,JCH)= radiance % bt(JCH)
+          ELSE
+            ZOUT(JI,JJ,JCH)= radiance % refl(JCH)
+          END IF
         ELSE
-          ZOUT(JI,JJ,JCH)= radiance % refl(JCH)
+          DO JK=IKB,IKE
+            JKRAD = nlevels-JK+2 !INVERSION OF VERTICAL LEVELS!
+            ZREF(JI,JJ,JK,JCH)= reflectivity % azef(JKRAD,JCH)
+          END DO
         END IF
       END DO
     END DO
   END DO
 ! -----------------------------------------------------------------------------
 ! LATERAL BOUNDARY FILLING
-  IF (LWEST_ll() .AND.CLBCX(1)/='CYCL') ZOUT(IIB-1,:,:) = ZOUT(IIB,:,:)
-  IF (LEAST_ll() .AND.CLBCX(1)/='CYCL') ZOUT(IIE+1,:,:) = ZOUT(IIE,:,:)
-  IF (LSOUTH_ll().AND.CLBCY(1)/='CYCL') ZOUT(:,IJB-1,:) = ZOUT(:,IJB,:)
-  IF (LNORTH_ll().AND.CLBCY(1)/='CYCL') ZOUT(:,IJE+1,:) = ZOUT(:,IJE,:)
+  IF (.NOT.radar) THEN
+    IF (LWEST_ll() .AND.CLBCX(1)/='CYCL') ZOUT(IIB-1,:,:) = ZOUT(IIB,:,:)
+    IF (LEAST_ll() .AND.CLBCX(1)/='CYCL') ZOUT(IIE+1,:,:) = ZOUT(IIE,:,:)
+    IF (LSOUTH_ll().AND.CLBCY(1)/='CYCL') ZOUT(:,IJB-1,:) = ZOUT(:,IJB,:)
+    IF (LNORTH_ll().AND.CLBCY(1)/='CYCL') ZOUT(:,IJE+1,:) = ZOUT(:,IJE,:)
+  ELSE
+    IF (LWEST_ll() .AND.CLBCX(1)/='CYCL') ZREF(IIB-1,:,:,:) = ZREF(IIB,:,:,:)
+    IF (LEAST_ll() .AND.CLBCX(1)/='CYCL') ZREF(IIE+1,:,:,:) = ZREF(IIE,:,:,:)
+    IF (LSOUTH_ll().AND.CLBCY(1)/='CYCL') ZREF(:,IJB-1,:,:) = ZREF(:,IJB,:,:)
+    IF (LNORTH_ll().AND.CLBCY(1)/='CYCL') ZREF(:,IJE+1,:,:) = ZREF(:,IJE,:,:)
+  END IF
 ! -----------------------------------------------------------------------------
   YBEG='    '
-  IF (KRTTOVINFO(1,JSAT) <= 2 .OR. KRTTOVINFO(1,JSAT) == 4) THEN ! NOAA
+  IF (KRTTOVINFO(1,JSAT) <= 2) THEN ! NOAA
     WRITE(YTWO,'(I2.2)') KRTTOVINFO(2,JSAT)
     YBEG=TRIM(YPLAT(KRTTOVINFO(1,JSAT)))//YTWO
   ELSEIF (KRTTOVINFO(1,JSAT) <= JPPLAT) THEN
     WRITE(YONE,'(I1.1)') KRTTOVINFO(2,JSAT)
     YBEG=TRIM(YPLAT(KRTTOVINFO(1,JSAT)))//YONE
   ELSE
-    YBEG='XXXX'
+    YBEG='XXXXX'
   END IF
-  WRITE(YTWO,'(I2.2)') KRTTOVINFO(3,JSAT)
+  IF (KRTTOVINFO(1,JSAT) == 4) THEN
+    YBEG='GOES'
+  ELSEIF  (KRTTOVINFO(1,JSAT) == 57) THEN
+    IF  (KRTTOVINFO(3,JSAT) == 108) YBEG='b325'
+    IF  (KRTTOVINFO(3,JSAT) == 110) YBEG='b448'
+    IF  (KRTTOVINFO(3,JSAT) == 111) YBEG='b183'
+    YTWO='ch'
+  ELSEIF  (KRTTOVINFO(1,JSAT) == 68) THEN
+    YBEG='aws'
+    YTWO='ch'
+  ELSEIF  (KRTTOVINFO(1,JSAT) == 28) THEN
+    IF  (KRTTOVINFO(2,JSAT) == 1) YBEG='aos1'
+    IF  (KRTTOVINFO(2,JSAT) == 2) YBEG='aos2'
+    IF  (KRTTOVINFO(2,JSAT) == 3) YBEG='aos3'
+    YTWO='ch'
+  ELSE
+    WRITE(YTWO,'(I2.2)') KRTTOVINFO(3,JSAT)
+  END IF
 
   DO JCH=1,nchanprof
     YEND='    '
@@ -678,6 +717,8 @@ DO JSAT=1,IJSAT ! loop over sensors
       YEND=YLBL_SSMI(JCH)
     ELSEIF (KRTTOVINFO(3,JSAT) == 9) THEN ! TMI
       YEND=YLBL_TMI(JCH)
+    ELSEIF (KRTTOVINFO(3,JSAT) == 15) THEN ! MHS
+      YEND=YLBL_MHS(JCH)
     ELSEIF (KRTTOVINFO(3,JSAT) == 20) THEN ! MVIRI
       YEND=YLBL_MVIRI(JCH)
     ELSEIF (KRTTOVINFO(3,JSAT) == 21) THEN ! SEVIRI
@@ -687,7 +728,28 @@ DO JSAT=1,IJSAT ! loop over sensors
         YEND=YLBL_SEVIRI(JCH+3)
       END IF
     ELSEIF (KRTTOVINFO(3,JSAT) == 22) THEN ! GOES-I
-      YEND=YLBL_GOESI(JCH)
+      IF (opts % rt_ir % addsolar) THEN
+        YEND=YLBL_GOESI(JCH)
+      ELSE
+        YEND=YLBL_GOESI(JCH+6)
+      END IF
+    ELSEIF (KRTTOVINFO(3,JSAT) == 34) THEN ! SAPHIR
+      YEND=YLBL_SAPHIR(JCH)
+    ELSEIF (KRTTOVINFO(3,JSAT) == 44) THEN ! ABI
+      IF (opts % rt_ir % addsolar) THEN
+        YEND=YLBL_ABI(JCH)
+      ELSE
+        YEND=YLBL_ABI(JCH+6)
+      END IF
+    ELSEIF (KRTTOVINFO(3,JSAT) == 70) THEN ! ICI
+      YBEG='ici'
+      YEND=YLBL_ICI(JCH)
+    ELSEIF (KRTTOVINFO(3,JSAT) == 71) THEN ! GMI
+      YBEG='gmi'
+      YEND=YLBL_GMI(JCH)
+    ELSEIF (KRTTOVINFO(3,JSAT) == 105) THEN ! DPR
+      YBEG='dpr'
+      YEND=YLBL_DPR(JCH)
     ELSE
       YEND=YTWO//YCHAN
     END IF
@@ -695,31 +757,85 @@ DO JSAT=1,IJSAT ! loop over sensors
     ichan = chanprof(JCH)%chan
     thermal = coefs%coef%ss_val_chn(ichan) < 2
 !   solar   = coefs%coef%ss_val_chn(ichan) > 0
-    IF (thermal) THEN
-      TZFIELD%CMNHNAME   = TRIM(YBEG)//'_'//TRIM(YEND)//'BT'
-      TZFIELD%CUNITS     = 'K'
-      TZFIELD%CCOMMENT   = TRIM(YBEG)//'_'//TRIM(YEND)//' brightness temperature'
+    IF (.NOT.radar) THEN
+      YMNHNAME   = TRIM(YBEG)//'_'//TRIM(YEND)
+      IF (thermal) THEN
+        IF (KRTTOVINFO(3,JSAT) /= 21 .AND. KRTTOVINFO(3,JSAT) /= 44) &
+        YMNHNAME   = TRIM(YBEG)//'_'//TRIM(YEND)//'BT'
+        YUNITS     = 'K'
+        YCOMMENT   = TRIM(YBEG)//'_'//TRIM(YEND)//' brightness temperature'
+      ELSE
+        YMNHNAME   = TRIM(YBEG)//'_'//TRIM(YEND)//'refl'
+        YUNITS     = '-'
+        YCOMMENT   = TRIM(YBEG)//'_'//TRIM(YEND)//' bidirectional reflectance factor'
+      END IF
+      TZFIELD = TFIELDMETADATA(                    &
+      CMNHNAME   = TRIM( YMNHNAME ),               &
+      CSTDNAME   = '',                             &
+      CLONGNAME  = 'MesoNH: ' // TRIM( YMNHNAME ), &
+      CUNITS     = TRIM( YUNITS ),                 &
+      CDIR       = 'XY',                           &
+      CCOMMENT   = TRIM( YCOMMENT ),               &
+      NGRID      = 1,                              &
+      NTYPE      = TYPEREAL,                       &
+      NDIMS      = 2,                              &
+      LTIMEDEP   = .TRUE.                          )
+      CALL IO_Field_write(TPFILE,TZFIELD,ZOUT(:,:,JCH))
+      IF (opts%rt_ir%addsolar .AND. LCOSZENOUT) THEN
+        YMNHNAME   = 'COSZEN'
+        YUNITS     = '-'
+        YCOMMENT   = 'Cosine of solar zenith angle'
+        TZFIELD = TFIELDMETADATA(                    &
+        CMNHNAME   = TRIM( YMNHNAME ),               &
+        CSTDNAME   = '',                             &
+        CLONGNAME  = 'MesoNH: ' // TRIM( YMNHNAME ), &
+        CUNITS     = TRIM( YUNITS ),                 &
+        CDIR       = 'XY',                           &
+        CCOMMENT   = TRIM( YCOMMENT ),               &
+        NGRID      = 1,                              &
+        NTYPE      = TYPEREAL,                       &
+        NDIMS      = 2,                              &
+        LTIMEDEP   = .TRUE.                          )
+        CALL IO_Field_write(TPFILE,TZFIELD,ZCOSZEN)
+        LCOSZENOUT=.FALSE.
+      END IF
     ELSE
-      TZFIELD%CMNHNAME   = TRIM(YBEG)//'_'//TRIM(YEND)//'refl'
-      TZFIELD%CUNITS     = '-'
-      TZFIELD%CCOMMENT   = TRIM(YBEG)//'_'//TRIM(YEND)//' bidirectional reflectance factor'
+      YMNHNAME   = TRIM(YBEG)//'_'//TRIM(YEND)//'refl'
+      YUNITS     = 'dBZ'
+      YCOMMENT   = TRIM(YBEG)//'_'//TRIM(YEND)//' radar reflectivity'
+      TZFIELD = TFIELDMETADATA(                    &
+      CMNHNAME   = TRIM( YMNHNAME ),               &
+      CSTDNAME   = '',                             &
+      CLONGNAME  = 'MesoNH: ' // TRIM( YMNHNAME ), &
+      CUNITS     = TRIM( YUNITS ),                 &
+      CDIR       = 'XY',                           &
+      CCOMMENT   = TRIM( YCOMMENT ),               &
+      NGRID      = 1,                              &
+      NTYPE      = TYPEREAL,                       &
+      NDIMS      = 3,                              &
+      LTIMEDEP   = .TRUE.                          )
+      WHERE(ZREF(:,:,:,JCH)==min_reflectivity) ZREF(:,:,:,JCH)=XFILLVALUE
+      CALL IO_Field_write(TPFILE,TZFIELD,ZREF(:,:,:,JCH))
     END IF
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 2
-    TZFIELD%LTIMEDEP   = .TRUE.
-!   ZOUT(:,:,JCH) = ZOUT(:,:,JCH) *ZCOSZEN(:,:)
-    CALL IO_Field_write(TPFILE,TZFIELD,ZOUT(:,:,JCH))
   END DO
   DEALLOCATE(chanprof,frequencies,emissivity,calcemis,profiles)
-  DEALLOCATE(ZOUT)
+
+  IF (.NOT.radar) THEN
+    DEALLOCATE(ZOUT)
+  ELSE
+    DEALLOCATE(ZREF)
+  END IF
   IF( coefs%coef% id_sensor == sensor_id_mw) THEN
     CALL rttov_alloc_scatt_prof(errorstatus, nprof, cld_profiles, nlevels, &
                                 cld_profiles(1)%nhydro, nhydro_frac, 0_jpim)
     CALL rttov_dealloc_scattcoeffs(coef_scatt)
+    IF (radar) CALL rttov_alloc_reflectivity(errorstatus, nchanprof,       &
+                                             reflectivity, nlevels, 0_jpim)
+    DEALLOCATE(cld_profiles)
+    DEALLOCATE(use_chan)
+  ELSE
+    DEALLOCATE(reflectance,calcrefl)
+    IF (opts % rt_ir % addsolar) CALL rttov_deallocate_brdf_atlas(brdf_atlas)
   END IF
   CALL rttov_dealloc_coefs(errorstatus, coefs)
 END DO

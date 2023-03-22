@@ -1,11 +1,7 @@
-!ORILAM_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!ORILAM_LIC Copyright 2005-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !ORILAM_LIC This is part of the ORILAM software governed by the CeCILL-C licence
 !ORILAM_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !ORILAM_LIC for details.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$ $Date$
 !-----------------------------------------------------------------
 !!   ########################
      MODULE MODE_DUST_PSD
@@ -14,7 +10,7 @@
 !!    PURPOSE
 !!    -------
 !! MODULE DUST PSD (Particle Size Distribution)
-!! Purpose: Contains subroutines to convert from transported variables (ppp)
+!! Purpose: Contains subroutines to convert from transported variables (ppv)
 !! to understandable aerosol variables, e.g. #/m3, kg/m3, sigma, R_{n}
 !!
 !!    AUTHOR
@@ -45,7 +41,7 @@ CONTAINS
 !
 !!   ############################################################
   SUBROUTINE PPP2DUST(             &
-       PSVT                         & !I [ppp] input scalar variables (moment of distribution)
+       PSVT                         & !I [ppv] input scalar variables (moment of distribution)
        , PRHODREF                   & !I [kg/m3] density of air       
        , PSIG3D                     & !O [-] standard deviation of aerosol distribution
        , PRG3D                      & !O [um] number median diameter of aerosol distribution
@@ -58,7 +54,7 @@ CONTAINS
 !!
 !!    PURPOSE
 !!    -------
-!!    Translate the three moments M0, M3 and M6 given in ppp into
+!!    Translate the three moments M0, M3 and M6 given in ppv into
 !!    Values which can be understood more easily (R, sigma, N, M)
 !! 
 !!    CALLING STRUCTURE NOTE: OPTIONAL VARIABLES
@@ -92,7 +88,7 @@ CONTAINS
 !
 !*      0.1    declarations of arguments
 !
-REAL,       DIMENSION(:,:,:,:),  INTENT(INOUT)  :: PSVT      !I [ppp] first moment
+REAL,       DIMENSION(:,:,:,:),  INTENT(INOUT)  :: PSVT      !I [ppv] first moment
 REAL,       DIMENSION(:,:,:),    INTENT(IN)     :: PRHODREF !I [kg/m3] density of air
 
 REAL,       DIMENSION(:,:,:,:),  OPTIONAL, INTENT(OUT)     :: PSIG3D   !O [-] standard deviation
@@ -135,7 +131,8 @@ ALLOCATE (ZRG(SIZE(PSVT,1), SIZE(PSVT,2), SIZE(PSVT,3)))
 ALLOCATE (ZSV(SIZE(PSVT,1), SIZE(PSVT,2), SIZE(PSVT,3), SIZE(PSVT,4)))
 ALLOCATE (ZINIRADIUS(NMODE_DST))
     
-ZSV(:,:,:,:) = MAX(PSVT(:,:,:,:), XMNH_TINY)
+!ZSV(:,:,:,:) = MAX(PSVT(:,:,:,:), XMNH_TINY)
+ZSV(:,:,:,:) = PSVT(:,:,:,:)
 
 DO JN=1,NMODE_DST
   IMODEIDX = JPDUSTORDER(JN)
@@ -154,7 +151,8 @@ DO JN=1,NMODE_DST
   ZMMIN(NM0(JN)) = XN0MIN(IMODEIDX)
   ZRGMIN         = ZINIRADIUS(JN)
   IF (LVARSIG) THEN
-    ZSIGMIN = XSIGMIN
+!    ZSIGMIN = XSIGMIN
+    ZSIGMIN = XINISIG(IMODEIDX)
   ELSE
     ZSIGMIN = XINISIG(IMODEIDX)
   ENDIF
@@ -188,7 +186,7 @@ DO JN=1,NMODE_DST
          * XM3TOUM3                            & !==>um3_{aer}/m3_{air}
          / (XPI * 4./3.)                         !==>um3_{aer}/m3_{air} (volume ==> 3rd moment)
      !Limit mass concentration to minimum value
-     ZM(:,:,:,NM3(JN)) = MAX(ZM(:,:,:,NM3(JN)), ZMMIN(NM3(JN)))
+!     ZM(:,:,:,NM3(JN)) = MAX(ZM(:,:,:,NM3(JN)), ZMMIN(NM3(JN)))
   ! 
     ZM(:,:,:,NM6(JN)) = ZSV(:,:,:,3+(JN-1)*3)  & !um6/molec_{air}*(cm3/m3)
          * 1.d-6                               & !==> um6/molec_{air}
@@ -196,7 +194,7 @@ DO JN=1,NMODE_DST
          / XMD                                 & !==> um6/kg_{air}
          * PRHODREF(:,:,:)                       !==> um6/m3_{air}
      !Limit m6 concentration to minimum value
-     ZM(:,:,:,NM6(JN)) =  MAX(ZM(:,:,:,NM6(JN)), ZMMIN(NM6(JN)))
+!     ZM(:,:,:,NM6(JN)) =  MAX(ZM(:,:,:,NM6(JN)), ZMMIN(NM6(JN)))
   !
   !Get sigma (only if sigma is allowed to vary)
     !Get intermediate values for sigma M3^2/(M0*M6) (ORILAM paper, eqn 8)
@@ -235,7 +233,7 @@ DO JN=1,NMODE_DST
          * XM3TOUM3                            & !==>um3_{aer}/m3_{air}
          / (XPI * 4./3.)                         !==>um3_{aer}/m3_{air} (volume ==> 3rd moment)
 
-     ZM(:,:,:,NM3(JN)) = MAX(ZM(:,:,:,NM3(JN)), ZMMIN(NM3(JN)))
+!     ZM(:,:,:,NM3(JN)) = MAX(ZM(:,:,:,NM3(JN)), ZMMIN(NM3(JN)))
 
      ZM(:,:,:,NM0(JN))=  ZM(:,:,:,NM3(JN))/&
        ((ZINIRADIUS(JN)**3)*EXP(4.5 * LOG(XINISIG(JPDUSTORDER(JN)))**2))
@@ -324,7 +322,7 @@ END SUBROUTINE PPP2DUST
 
 !!   ############################################################
   SUBROUTINE DUST2PPP(             &
-       PSVT                         & !IO [ppp] input scalar variables (moment of distribution)
+       PSVT                         & !IO [ppv] input scalar variables (moment of distribution)
        , PRHODREF                   & !I [kg/m3] density of air       
        , PSIG3D                     & !I [-] standard deviation of aerosol distribution
        , PRG3D                      & !I [um] number median diameter of aerosol distribution
@@ -334,7 +332,7 @@ END SUBROUTINE PPP2DUST
 !!
 !!    PURPOSE
 !!    -------
-!!    Translate the dust Mass, RG and SIGMA in the  three moments M0, M3 and M6 given in ppp 
+!!    Translate the dust Mass, RG and SIGMA in the  three moments M0, M3 and M6 given in ppv 
 !! 
 !!    CALLING STRUCTURE NOTE: OPTIONAL VARIABLES
 !!    -------
@@ -413,7 +411,7 @@ END SUBROUTINE PPP2DUST
 !
 
     ! PSVT need to be positive
-    PSVT(:,:,:,:) = MAX(PSVT(:,:,:,:), XMNH_TINY)
+!    PSVT(:,:,:,:) = MAX(PSVT(:,:,:,:), XMNH_TINY)
     
     DO JN=1,NMODE_DST
     IMODEIDX = JPDUSTORDER(JN)
@@ -433,7 +431,8 @@ END SUBROUTINE PPP2DUST
     ZMMIN(NM0(JN)) = XN0MIN(IMODEIDX)
     ZRGMIN     =  ZINIRADIUS(JN)
     IF (LVARSIG) THEN
-      ZSIGMIN = XSIGMIN
+      ZSIGMIN = XINISIG(IMODEIDX)
+      ! ZSIGMIN = XSIGMIN
     ELSE
       ZSIGMIN = XINISIG(IMODEIDX)
     ENDIF
@@ -465,7 +464,7 @@ END SUBROUTINE PPP2DUST
           * (1.d0/ZRHOI)                        & !==>m3_{aer}/m3_{air}
           * XM3TOUM3                            & !==>um3_{aer}/m3_{air}
           / (XPI * 4./3.)                         !==>um3_{aer}/m3_{air} (volume ==> 3rd moment)
-         ZM(:,:,:,NM3(JN)) = MAX(ZM(:,:,:,NM3(JN)), ZMMIN(NM3(JN)))
+       !  ZM(:,:,:,NM3(JN)) = MAX(ZM(:,:,:,NM3(JN)), ZMMIN(NM3(JN)))
       ELSE
           ZM(:,:,:,NM3(JN)) =                   &
           PSVT(:,:,:,2+(JN-1)*2)                & !molec_{aer}/molec_{aer}
@@ -485,23 +484,23 @@ END SUBROUTINE PPP2DUST
      ZM(:,:,:,NM6(JN)) = ZM(:,:,:,NM0(JN)) * (PRG3D(:,:,:,JN)**6) * &
                EXP(18 *(LOG(PSIG3D(:,:,:,JN)))**2)
 
-     IF (LVARSIG) THEN
-     WHERE ((ZM(:,:,:,NM0(JN)) .LT. ZMMIN(NM0(JN))).OR.&
-            (ZM(:,:,:,NM3(JN)) .LT. ZMMIN(NM3(JN))).OR.&
-            (ZM(:,:,:,NM6(JN)) .LT. ZMMIN(NM6(JN))))
-     ZM(:,:,:,NM0(JN)) = ZMMIN(NM0(JN))
-     ZM(:,:,:,NM3(JN)) = ZMMIN(NM3(JN))
-     ZM(:,:,:,NM6(JN)) = ZMMIN(NM6(JN))
-     END WHERE
-
-     ELSE IF (.NOT.(LRGFIX_DST)) THEN
-     
-     WHERE ((ZM(:,:,:,NM0(JN)) .LT. ZMMIN(NM0(JN))).OR.&
-            (ZM(:,:,:,NM3(JN)) .LT. ZMMIN(NM3(JN))))
-     ZM(:,:,:,NM0(JN)) = ZMMIN(NM0(JN))
-     ZM(:,:,:,NM3(JN)) = ZMMIN(NM3(JN))
-     END WHERE
-     ENDIF
+!     IF (LVARSIG) THEN
+!     WHERE ((ZM(:,:,:,NM0(JN)) .LT. ZMMIN(NM0(JN))).OR.&
+!            (ZM(:,:,:,NM3(JN)) .LT. ZMMIN(NM3(JN))).OR.&
+!            (ZM(:,:,:,NM6(JN)) .LT. ZMMIN(NM6(JN))))
+!     ZM(:,:,:,NM0(JN)) = ZMMIN(NM0(JN))
+!     ZM(:,:,:,NM3(JN)) = ZMMIN(NM3(JN))
+!     ZM(:,:,:,NM6(JN)) = ZMMIN(NM6(JN))
+!     END WHERE
+!
+!     ELSE IF (.NOT.(LRGFIX_DST)) THEN
+!     
+!     WHERE ((ZM(:,:,:,NM0(JN)) .LT. ZMMIN(NM0(JN))).OR.&
+!            (ZM(:,:,:,NM3(JN)) .LT. ZMMIN(NM3(JN))))
+!     ZM(:,:,:,NM0(JN)) = ZMMIN(NM0(JN))
+!     ZM(:,:,:,NM3(JN)) = ZMMIN(NM3(JN))
+!     END WHERE
+!     ENDIF
 
      
      ! return to concentration #/m3 =>  (#/molec_{air}
@@ -539,7 +538,7 @@ DEALLOCATE(NM0)
 END SUBROUTINE DUST2PPP
 !!   ############################################################
   SUBROUTINE PPP2DUST1D(             &
-       PSVT                         & !I [ppp] input scalar variables (moment of distribution)
+       PSVT                         & !I [ppv] input scalar variables (moment of distribution)
        , PRHODREF                   & !I [kg/m3] density of air       
        , PSIG1D                     & !O [-] standard deviation of aerosol distribution
        , PRG1D                      & !O [um] number median diameter of aerosol distribution
@@ -552,7 +551,7 @@ END SUBROUTINE DUST2PPP
 !!
 !!    PURPOSE
 !!    -------
-!!    Translate the three moments M0, M3 and M6 given in ppp into
+!!    Translate the three moments M0, M3 and M6 given in ppv into
 !!    Values which can be understood more easily (R, sigma, N, M)
 !! 
 !!    CALLING STRUCTURE NOTE: OPTIONAL VARIABLES
@@ -586,7 +585,7 @@ END SUBROUTINE DUST2PPP
 !
 !*      0.1    declarations of arguments
 !
-REAL,       DIMENSION(:,:),  INTENT(INOUT)  :: PSVT      !I [ppp] first moment
+REAL,       DIMENSION(:,:),  INTENT(INOUT)  :: PSVT      !I [ppv] first moment
 REAL,       DIMENSION(:),    INTENT(IN)     :: PRHODREF !I [kg/m3] density of air
 
 REAL,       DIMENSION(:,:),  OPTIONAL, INTENT(OUT)     :: PSIG1D   !O [-] standard deviation
@@ -629,7 +628,8 @@ ALLOCATE (ZRG(SIZE(PSVT,1)))
 ALLOCATE (ZSV(SIZE(PSVT,1),SIZE(PSVT,2)))
 ALLOCATE (ZINIRADIUS(NMODE_DST))
     
-ZSV(:,:) = MAX(PSVT(:,:), XMNH_TINY)
+!ZSV(:,:) = MAX(PSVT(:,:), XMNH_TINY)
+ZSV(:,:) = PSVT(:,:)
 
 DO JN=1,NMODE_DST
   IMODEIDX = JPDUSTORDER(JN)
@@ -648,7 +648,8 @@ DO JN=1,NMODE_DST
   ZMMIN(NM0(JN)) = XN0MIN(IMODEIDX)
   ZRGMIN         = ZINIRADIUS(JN)
   IF (LVARSIG) THEN
-    ZSIGMIN = XSIGMIN
+    !ZSIGMIN = XSIGMIN
+    ZSIGMIN = XINISIG(IMODEIDX)
   ELSE
     ZSIGMIN = XINISIG(IMODEIDX)
   ENDIF
@@ -682,7 +683,7 @@ DO JN=1,NMODE_DST
          * XM3TOUM3                            & !==>um3_{aer}/m3_{air}
          / (XPI * 4./3.)                         !==>um3_{aer}/m3_{air} (volume ==> 3rd moment)
      !Limit mass concentration to minimum value
-     ZM(:,NM3(JN)) = MAX(ZM(:,NM3(JN)), ZMMIN(NM3(JN)))
+!     ZM(:,NM3(JN)) = MAX(ZM(:,NM3(JN)), ZMMIN(NM3(JN)))
   ! 
     ZM(:,NM6(JN)) = ZSV(:,3+(JN-1)*3)  & !um6/molec_{air}*(cm3/m3)
          * 1.d-6                               & !==> um6/molec_{air}
@@ -690,7 +691,7 @@ DO JN=1,NMODE_DST
          / XMD                                 & !==> um6/kg_{air}
          * PRHODREF(:)                       !==> um6/m3_{air}
      !Limit m6 concentration to minimum value
-     ZM(:,NM6(JN)) =  MAX(ZM(:,NM6(JN)), ZMMIN(NM6(JN)))
+!     ZM(:,NM6(JN)) =  MAX(ZM(:,NM6(JN)), ZMMIN(NM6(JN)))
   !
   !Get sigma (only if sigma is allowed to vary)
     !Get intermediate values for sigma M3^2/(M0*M6) (ORILAM paper, eqn 8)
@@ -729,7 +730,7 @@ DO JN=1,NMODE_DST
          * XM3TOUM3                            & !==>um3_{aer}/m3_{air}
          / (XPI * 4./3.)                         !==>um3_{aer}/m3_{air} (volume ==> 3rd moment)
 
-     ZM(:,NM3(JN)) = MAX(ZM(:,NM3(JN)), ZMMIN(NM3(JN)))
+!     ZM(:,NM3(JN)) = MAX(ZM(:,NM3(JN)), ZMMIN(NM3(JN)))
 
      ZM(:,NM0(JN))=  ZM(:,NM3(JN))/&
        ((ZINIRADIUS(JN)**3)*EXP(4.5 * LOG(XINISIG(JPDUSTORDER(JN)))**2))
@@ -752,15 +753,15 @@ DO JN=1,NMODE_DST
          * PRHODREF(:)                       !==>#/m3
 
     ! Limit concentration to minimum values
-    WHERE ((ZM(:,NM0(JN)) < ZMMIN(NM0(JN)) ).OR. &
-           (ZM(:,NM3(JN)) < ZMMIN(NM3(JN)) )) 
-       ZM(:,NM0(JN)) = ZMMIN(NM0(JN))
-       ZM(:,NM3(JN)) = ZMMIN(NM3(JN))
-       PSVT(:,1+(JN-1)*2) = ZM(:,NM0(JN)) * XMD / &
-       (XAVOGADRO * PRHODREF(:) )
-       PSVT(:,2+(JN-1)*2) = ZM(:,NM3(JN)) * XMD * XPI * 4./3. * ZRHOI  / &
-                              (ZMI*PRHODREF(:)*XM3TOUM3)
-    ENDWHERE
+!    WHERE ((ZM(:,NM0(JN)) < ZMMIN(NM0(JN)) ).OR. &
+!           (ZM(:,NM3(JN)) < ZMMIN(NM3(JN)) )) 
+!       ZM(:,NM0(JN)) = ZMMIN(NM0(JN))
+!       ZM(:,NM3(JN)) = ZMMIN(NM3(JN))
+!       PSVT(:,1+(JN-1)*2) = ZM(:,NM0(JN)) * XMD / &
+!       (XAVOGADRO * PRHODREF(:) )
+!       PSVT(:,2+(JN-1)*2) = ZM(:,NM3(JN)) * XMD * XPI * 4./3. * ZRHOI  / &
+!                              (ZMI*PRHODREF(:)*XM3TOUM3)
+!    ENDWHERE
     END IF
 
     ! 

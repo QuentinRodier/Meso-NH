@@ -9,6 +9,7 @@
 &NAM_ADVn  CMET_ADV_SCHEME = "PPM_01", CSV_ADV_SCHEME = "PPM_01" /
 &NAM_PARAMn  CCLOUD = "ICE3" /
 &NAM_LBCn  CLBCX = 2*"OPEN", CLBCY = 2*"OPEN" /
+&NAM_PARAM_ICE LRED=F /
 &NAM_CH_MNHCn       LUSECHEM = T,
                     LUSECHAQ = T,
                     LUSECHIC = T,

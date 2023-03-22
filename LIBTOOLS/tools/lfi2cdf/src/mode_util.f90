@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -15,7 +15,7 @@
 !  P. Wautelet 10/11/2020: new data structures for netCDF dimensions
 !-----------------------------------------------------------------
 MODULE mode_util
-  use modd_field,      only: tfielddata, tfieldlist
+  use modd_field,      only: tfieldmetadata, tfieldlist
   USE MODD_IO,         ONLY: TFILEDATA, TFILE_ELT
   USE MODD_NETCDF,     ONLY: CDFINT, tdimnc
   USE MODD_PARAMETERS, ONLY: NLFIMAXCOMMENTLENGTH, NMNHNAMELGTMAX
@@ -56,7 +56,7 @@ MODULE mode_util
      INTEGER(kind=CDFINT)                  :: NTYPE_FILE  ! netCDF datatype (NF90_CHAR, NF90_INT...) (as present in input file)
      INTEGER,DIMENSION(MAXRAW)             :: src    ! List of variables used to compute the variable (needed only if calc=.true.)
      INTEGER                               :: tgt    ! Target: id of the variable that use it (calc variable)
-     TYPE(TFIELDDATA)                      :: TFIELD ! Metadata about the field
+     TYPE(TFIELDMETADATA)                  :: TFIELD ! Metadata about the field
      TYPE(tdimnc),DIMENSION(:),ALLOCATABLE :: TDIMS  ! Dimensions of the field
   END TYPE workfield
 
@@ -271,7 +271,7 @@ CONTAINS
 
        maxvar = nbvar_tbr+nbvar_calc
 DO ji=1,nbvar_tbr+nbvar_calc
-  print *,ji,'name=',trim(tpreclist(ji)%name),' calc=',tpreclist(ji)%calc,' tbw=',tpreclist(ji)%tbw,&
+  print *,ji,'name=',tpreclist(ji)%name,' calc=',tpreclist(ji)%calc,' tbw=',tpreclist(ji)%tbw,&
           ' tbr=',tpreclist(ji)%tbr,' found=',tpreclist(ji)%found
 END DO
 
@@ -388,7 +388,7 @@ END DO
       ELSE
         CALL FIND_FIELD_ID_FROM_MNHNAME(tpreclist(ji)%name,IID,IRESP,ONOWARNING=.TRUE.)
         IF (IRESP==0) THEN
-          tpreclist(ji)%TFIELD = TFIELDLIST(IID)
+          tpreclist(ji)%TFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
           ! Determine TDIMS
           IF (runmode==MODELFI2CDF) THEN
             ALLOCATE(tpreclist(ji)%TDIMS(tpreclist(ji)%TFIELD%NDIMS))
@@ -411,11 +411,11 @@ END DO
         ELSE !Field not found in list, try to determine characteristics
           tpreclist(ji)%TFIELD%CMNHNAME = TRIM(tpreclist(ji)%name)
           tpreclist(ji)%TFIELD%CSTDNAME = ''
-          tpreclist(ji)%TFIELD%CLONGNAME = TRIM(tpreclist(ji)%name)
-          tpreclist(ji)%TFIELD%CUNITS = ''
+          !Set in IO_Metadata_get_nc4 (and not used for LFI) tpreclist(ji)%TFIELD%CLONGNAME = TRIM(tpreclist(ji)%name)
+          !Set in IO_Metadata_get_nc4 (and not used for LFI) tpreclist(ji)%TFIELD%CUNITS = ''
           tpreclist(ji)%TFIELD%CDIR = 'XY' !Assumption...
           tpreclist(ji)%TFIELD%CLBTYPE = 'NONE'
-          tpreclist(ji)%TFIELD%CCOMMENT = ''
+          !Set in IO_Metadata_get_nc4 (and not used for LFI) tpreclist(ji)%TFIELD%CCOMMENT = ''
           !
           IF (runmode==MODELFI2CDF) THEN
             tpreclist(ji)%TFIELD%NGRID = 1 !Assumption
@@ -1026,7 +1026,7 @@ END DO
        if ( options( OPTFALLBACK )%set ) then
          inb_procio_r_save = NB_PROCIO_R
          NB_PROCIO_R = 1
-         CALL IO_FILE_ADD2LIST(INFILES(2)%TFILE,options( OPTFALLBACK )%cvalue,'UNKNOWN','READ',HFORMAT='NETCDF4')
+         CALL IO_FILE_ADD2LIST(INFILES(2)%TFILE,options( OPTFALLBACK )%cvalue,'MNH','READ',HFORMAT='NETCDF4')
          CALL IO_FILE_OPEN(INFILES(2)%TFILE)
          NB_PROCIO_R = inb_procio_r_save
        end if
@@ -1375,6 +1375,7 @@ END DO
     INTEGER(KIND=CDFINT)                     :: IVAR_ID
     INTEGER(KIND=CDFINT),DIMENSION(NF90_MAX_VAR_DIMS) :: IDIMS_ID
     LOGICAL                                  :: GSPLIT_AT_ENTRY
+    LOGICAL                                  :: GSPLIT_INFO_AVAILABLE
 
     CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Metadata_get_nc4','called')
 
@@ -1390,9 +1391,12 @@ END DO
     if ( istatus /= NF90_NOERR ) call IO_Err_handle_nc4( istatus, 'IO_Metadata_get_nc4', 'NF90_INQUIRE_VARIABLE', '' )
 
     !split_variable and other attributes were added in MesoNH > 5.4.2
+    GSPLIT_INFO_AVAILABLE = .FALSE.
     ISTATUS = NF90_INQUIRE_ATTRIBUTE(IFILE_ID, KVAR_ID, 'split_variable', LEN=ILENG)
     IF (ISTATUS == NF90_NOERR) THEN
-      IF (GSPLIT_AT_ENTRY) CALL PRINT_MSG(NVERB_ERROR,'IO','IO_Metadata_get_nc4','split variable delcaration inside a split file')
+      GSPLIT_INFO_AVAILABLE = .TRUE.
+
+      IF (GSPLIT_AT_ENTRY) CALL PRINT_MSG(NVERB_ERROR,'IO','IO_Metadata_get_nc4','split variable declaration inside a split file')
 
       ALLOCATE(CHARACTER(LEN=ILENG) :: YSPLIT)
       ISTATUS = NF90_GET_ATT(IFILE_ID, KVAR_ID, 'split_variable', YSPLIT)
@@ -1441,65 +1445,14 @@ END DO
       DEALLOCATE(YSPLIT)
     END IF
 
-    ISTATUS = NF90_GET_ATT(IFILE_ID,KVAR_ID,'grid',TPREC%NGRID_FILE)
-    !On MesoNH versions < 5.4.0, the grid number was stored in 'GRID' instead of 'grid'
-    IF (ISTATUS /= NF90_NOERR) ISTATUS = NF90_GET_ATT(IFILE_ID,KVAR_ID,'GRID',TPREC%NGRID_FILE)
-    IF (ISTATUS /= NF90_NOERR) TPREC%NGRID_FILE = 0
+    !Reset IFILE_ID to master file (if split files)
+    IFILE_ID = TPFILE%NNCID
 
-    ISTATUS = NF90_GET_ATT(IFILE_ID,KVAR_ID,'units',TPREC%CUNITS_FILE)
-    IF (ISTATUS /= NF90_NOERR) TPREC%CUNITS_FILE = ''
+    ISTATUS = NF90_GET_ATT(IFILE_ID,KVAR_ID,'long_name',TPREC%TFIELD%CLONGNAME)
+    IF (ISTATUS /= NF90_NOERR) TPREC%TFIELD%CLONGNAME = TRIM( TPREC%TFIELD%CMNHNAME )
 
-    !split_variable and other attributes were added in MesoNH > 5.4.2
-    ISTATUS = NF90_INQUIRE_ATTRIBUTE(IFILE_ID, KVAR_ID, 'split_variable', LEN=ILENG)
-    IF (ISTATUS == NF90_NOERR) THEN
-      IF (GSPLIT_AT_ENTRY) CALL PRINT_MSG(NVERB_ERROR,'IO','IO_Metadata_get_nc4','split variable declaration inside a split file')
-
-      ALLOCATE(CHARACTER(LEN=ILENG) :: YSPLIT)
-      ISTATUS = NF90_GET_ATT(IFILE_ID, KVAR_ID, 'split_variable', YSPLIT)
-      IF (istatus /= NF90_NOERR) call IO_Err_handle_nc4( istatus, 'IO_Metadata_get_nc4', 'NF90_GET_ATT', 'split_variable' )
-      IF ( YSPLIT == 'yes' ) then
-        TPREC%LSPLIT = .true.
-
-        ISTATUS = NF90_GET_ATT(IFILE_ID, KVAR_ID, 'ndims', TPREC%NDIMS_FILE)
-        IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4( istatus, 'IO_Metadata_get_nc4', 'NF90_GET_ATT', 'ndims' )
-        IF ( TPREC%NDIMS_FILE/=3 ) CALL PRINT_MSG(NVERB_ERROR,'IO','IO_Metadata_get_nc4', &
-                                                  'split variable with ndims/=3 not supported')
-
-        ISTATUS = NF90_INQUIRE_ATTRIBUTE(IFILE_ID, KVAR_ID, 'time_dependent', LEN=ILENG)
-        IF (istatus /= NF90_NOERR) &
-          CALL IO_Err_handle_nc4( istatus, 'IO_Metadata_get_nc4', 'NF90_INQUIRE_ATTRIBUTE', 'time_dependent' )
-        ALLOCATE(CHARACTER(LEN=ILENG) :: YTIMEDEP)
-        ISTATUS = NF90_GET_ATT(IFILE_ID, KVAR_ID, 'time_dependent', YTIMEDEP)
-        IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4( istatus, 'IO_Metadata_get_nc4', 'NF90_GET_ATT', 'time_dependent' )
-        IF ( YTIMEDEP == 'yes' ) then
-          TPREC%TFIELD%LTIMEDEP = .TRUE.
-        ELSE IF ( YTIMEDEP == 'no' ) THEN
-          TPREC%TFIELD%LTIMEDEP = .FALSE.
-        ELSE
-          CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Metadata_get_nc4','unknown value '//trim(YTIMEDEP)// &
-                                                                  ' for time_dependent attribute' )
-        END IF
-
-        ISTATUS = NF90_GET_ATT(IFILE_ID, KVAR_ID, 'split_nblocks', iblocks)
-        IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4( istatus, 'IO_Metadata_get_nc4', 'NF90_GET_ATT', 'split_nblocks' )
-
-!PW: todo:check tfiles_ioz exist
-        IFILE_ID = TPFILE%TFILES_IOZ(1)%TFILE%NNCID
-
-        istatus = NF90_INQ_VARID(IFILE_ID,trim(TPREC%NAME)//'0001',ivar_id)
-        IF (ISTATUS /= NF90_NOERR) &
-          CALL IO_Err_handle_nc4( istatus, 'IO_Metadata_get_nc4', 'NF90_INQ_VARID', trim(TPREC%NAME)//'0001' )
-        ISTATUS = NF90_INQUIRE_VARIABLE(IFILE_ID, IVAR_ID, DIMIDS = IDIMS_ID)
-        IF (ISTATUS /= NF90_NOERR) &
-          CALL IO_Err_handle_nc4( istatus, 'IO_Metadata_get_nc4', 'NF90_INQUIRE_VARIABLE', trim(TPREC%NAME)//'0001' )
-
-        DEALLOCATE(YTIMEDEP)
-      ELSE IF ( YSPLIT /= 'no' ) THEN
-        CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Metadata_get_nc4','unknown value '//trim(YSPLIT)//' for split_variable attribute' )
-      END IF
-
-      DEALLOCATE(YSPLIT)
-    END IF
+    ISTATUS = NF90_GET_ATT(IFILE_ID,KVAR_ID,'comment',TPREC%TFIELD%CCOMMENT)
+    IF (ISTATUS /= NF90_NOERR) TPREC%TFIELD%CCOMMENT = ''
 
     ISTATUS = NF90_GET_ATT(IFILE_ID,KVAR_ID,'grid',TPREC%NGRID_FILE)
     !On MesoNH versions < 5.4.0, the grid number was stored in 'GRID' instead of 'grid'
@@ -1552,8 +1505,15 @@ END DO
       END IF
 
       IF (TPREC%LSPLIT) THEN
+#if 0
         IF(     (.NOT.TPREC%TFIELD%LTIMEDEP .AND.  TPREC%NDIMS_FILE/=2)   &
             .OR. (     TPREC%TFIELD%LTIMEDEP .AND.  TPREC%NDIMS_FILE/=3) ) &
+#else
+        IF(      (      GSPLIT_INFO_AVAILABLE .AND.  TPREC%NDIMS_FILE/=3 )               &
+            .OR. ( .NOT.GSPLIT_INFO_AVAILABLE .AND.                                      &
+                            ( (.NOT.TPREC%TFIELD%LTIMEDEP .AND.  TPREC%NDIMS_FILE/=2)    &
+                      .OR. (     TPREC%TFIELD%LTIMEDEP .AND.  TPREC%NDIMS_FILE/=3) ) ) ) &
+#endif
           CALL PRINT_MSG(NVERB_FATAL,'IO','IO_Metadata_get_nc4',trim(TPREC%NAME)//': split variables can only be 3D')
         !Split variables are Z-split
         !Move time dimension to last (4th) position

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -24,7 +24,7 @@
 #ifdef MNH_IOCDF4
 module mode_io_tools_nc4
 
-use modd_field,     only: tfielddata
+use modd_field,     only: tfieldmetadata
 use modd_io,        only: tfiledata
 use modd_netcdf,    only: tdimnc, tdimsnc
 use modd_precision, only: CDFINT
@@ -85,7 +85,7 @@ USE MODD_FIELD, ONLY: NMNHDIM_ARAKAWA, TYPECHAR
 !
 !Used by LFI2CDF
 TYPE(TFILEDATA),                      INTENT(IN)  :: TPFILE
-TYPE(TFIELDDATA),                     INTENT(IN)  :: TPFIELD
+CLASS(TFIELDMETADATA),                INTENT(IN)  :: TPFIELD
 INTEGER,                              INTENT(IN)  :: KLEN
 TYPE(tdimnc),DIMENSION(:),            INTENT(OUT) :: TPDIMS
 INTEGER,                              INTENT(OUT) :: KRESP
@@ -276,11 +276,11 @@ use modd_les_n,         only: nles_times, nspectra_ni, nspectra_nj
 use modd_nsv,           only: nsv
 USE MODD_PARAMETERS_ll, ONLY: JPHEXT, JPVEXT
 use modd_param_n,       only: crad
-use modd_profiler_n,    only: numbprofiler, tprofiler
+use modd_profiler_n,    only: lprofiler, tprofilers_time
 use modd_radiations_n,  only: nlwb_mnh, nswb_mnh
 use modd_series,        only: lseries
 use modd_series_n,      only: nsnbstept
-use modd_station_n,     only: numbstat, tstation
+use modd_station_n,     only: lstation, tstations_time
 
 TYPE(TFILEDATA),INTENT(INOUT)        :: TPFILE
 CHARACTER(LEN=*),OPTIONAL,INTENT(IN) :: HPROGRAM_ORIG !To emulate a file coming from this program
@@ -420,14 +420,14 @@ if ( tpfile%ctype == 'MNHDIACHRONIC' ) then
   if ( nspectra_k > 0 ) call IO_Add_dim_nc4( tpfile, NMNHDIM_SPECTRA_LEVEL, 'nspectra_level', nspectra_k )
 
   !Dimension for the number of profiler times
-  if ( numbprofiler > 0 ) then
-    iprof = Nint ( ( xseglen - dyn_model(1)%xtstep ) / tprofiler%step ) + 1
+  if ( lprofiler ) then
+    iprof = Nint ( ( xseglen - dyn_model(1)%xtstep ) / tprofilers_time%xtstep ) + 1
     call IO_Add_dim_nc4( tpfile, NMNHDIM_PROFILER_TIME, 'time_profiler', iprof )
   end if
 
   !Dimension for the number of station times
-  if ( numbstat > 0 ) then
-    istation = Nint ( ( xseglen - dyn_model(1)%xtstep ) / tstation%step ) + 1
+  if ( lstation ) then
+    istation = Nint ( ( xseglen - dyn_model(1)%xtstep ) / tstations_time%xtstep ) + 1
     call IO_Add_dim_nc4( tpfile, NMNHDIM_STATION_TIME, 'time_station', istation )
   end if
 
@@ -515,7 +515,7 @@ use modd_field,  only: NMNHDIM_UNKNOWN, NMNHDIM_ONE, NMNHDIM_COMPLEX,           
                        NMNHDIM_NOTLISTED, NMNHDIM_UNUSED, NMNHDIM_ARAKAWA
 
 TYPE(TFILEDATA),                              INTENT(IN)  :: TPFILE
-TYPE(TFIELDDATA),                             INTENT(IN)  :: TPFIELD
+CLASS(TFIELDMETADATA),                        INTENT(IN)  :: TPFIELD
 INTEGER(KIND=CDFINT),DIMENSION(:),            INTENT(IN)  :: KSHAPE
 INTEGER(KIND=CDFINT),DIMENSION(:),ALLOCATABLE,INTENT(OUT) :: KVDIMS
 !
@@ -672,6 +672,7 @@ character(len=16)             :: ysuffix
 integer :: inewsize
 integer :: ji
 integer(kind=CDFINT)  :: istatus
+type(tdimsnc),              pointer     :: tz_tncdims
 type(tdimnc), dimension(:), allocatable :: tzncdims
 
 
@@ -725,9 +726,18 @@ if ( kidx == - 1 ) then
   call Move_alloc( from = tzncdims, to = tpfile%tncdims%tdims )
 #else
   !Do the Move_alloc by hand...
+#if 0
   if ( Allocated( tpfile%tncdims%tdims ) ) Deallocate( tpfile%tncdims%tdims )
   Allocate( tpfile%tncdims%tdims(Size( tzncdims )) )
   tpfile%tncdims%tdims(:) = tzncdims
+#else
+  !Use intermediate pointer to work around problem with gfortran/10.3.0 and Cray/cce/15.0 compilers (on Adastra)
+  !(does not like to modify pointed data if intent(in))
+  tz_tncdims => tpfile%tncdims
+  if ( Allocated( tz_tncdims%tdims ) ) Deallocate( tz_tncdims%tdims )
+  Allocate( tz_tncdims%tdims(Size( tzncdims )) )
+  tz_tncdims%tdims(:) = tzncdims
+#endif
   Deallocate( tzncdims )
 #endif
 
@@ -752,6 +762,7 @@ integer                                 :: idx
 integer                                 :: inewsize
 integer                                 :: ji
 integer(kind=CDFINT)                    :: istatus
+type(tdimsnc),              pointer     :: tz_tncdims
 type(tdimnc), dimension(:), allocatable :: tzncdims
 
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Strdimid_get_nc4','called')
@@ -791,9 +802,18 @@ if ( idx == -1 ) then
   call Move_alloc( from = tzncdims, to = tpfile%tncdims%tdims_str )
 #else
   !Do the Move_alloc by hand...
+#if 0
   if ( Allocated( tpfile%tncdims%tdims_str ) ) Deallocate( tpfile%tncdims%tdims_str )
   Allocate( tpfile%tncdims%tdims_str(Size( tzncdims )) )
   tpfile%tncdims%tdims_str(:) = tzncdims(:)
+#else
+  !Use intermediate pointer to work around problem with gfortran/10.3.0 and Cray/cce/15.0 compilers (on Adastra)
+  !(does not like to modify pointed data if intent(in))
+  tz_tncdims => tpfile%tncdims
+  if ( Allocated( tz_tncdims%tdims_str ) ) Deallocate( tz_tncdims%tdims_str )
+  Allocate( tz_tncdims%tdims_str(Size( tzncdims )) )
+  tz_tncdims%tdims_str(:) = tzncdims
+#endif
   Deallocate( tzncdims )
 #endif
   tpfile%tncdims%nmaxdims_str = inewsize

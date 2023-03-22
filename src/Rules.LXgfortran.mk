@@ -1,4 +1,4 @@
-#MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
+#MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
 #MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 #MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 #MNH_LIC for details. version 1.
@@ -50,6 +50,9 @@ OPT       = $(OPT_BASE) $(OPT_PERF0) $(OPT_CHECK)
 OPT0      = $(OPT_BASE) $(OPT_PERF0) $(OPT_CHECK)
 OPT_NOCB  = $(OPT_BASE) $(OPT_PERF0)
 CFLAGS    += -g -O0
+#-fbounds-check is bugged for GCC 11 and 12 (up to at least 12.2) in some special cases (GCC bug 109157)
+OBJS_NOBOUNDSCHECK = spll_mode_write_diachro.o
+$(OBJS_NOBOUNDSCHECK) : OPT = $(OPT_BASE) $(OPT_PERF0) -finit-real=nan
 endif
 #
 #  
@@ -75,6 +78,7 @@ FX90FLAGS     =  $(OPT)
 #
 CPP = cpp -P -traditional -Wcomment
 #
+CPPFLAGS_C         = -DLITTLE_endian
 CPPFLAGS_SURFEX    =
 CPPFLAGS_SURCOUCHE += -DDEV_NULL
 CPPFLAGS_RAD       =

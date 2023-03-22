@@ -5,7 +5,6 @@ all:
         ifneq "$(MNH_PYTHON)" "NO"
 	cd 004_python          && run_python
         endif
-	cd 005_ncl             && run_ncl
 
 clean:
 	cd 001_prep_ideal_case && clean_prep_ideal_case_xyz
@@ -14,7 +13,6 @@ clean:
         ifneq "$(MNH_PYTHON)" "NO"
 	cd 004_python          && clean_python
         endif
-	cd 005_ncl             && clean_ncl
 
 python:
 	cd 004_python          && run_python

@@ -87,6 +87,8 @@ END MODULE MODI_VER_PREP_GRIBEX_CASE
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!                  Sep, 02, 2020 (Q. Rodier) use of geopotential height instead of
 !!                                height above orography for isobaric surface interpolation
+!!                  Oct, 18 2022 (J.-P. Chaboureau) correction on vertical level
+!!                           for input fields on isobaric surface (GFS and ERA5)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -142,6 +144,7 @@ REAL,DIMENSION(:,:,:), ALLOCATABLE :: ZTKE_LS
 INTEGER                            :: JRR     ! loop counter
 INTEGER                            :: JSV     ! loop counter
 INTEGER                            :: JK      ! loop counter
+CHARACTER(LEN=4)                   :: YWLOC_LS ! localisation of vertical wind speed
 !-------------------------------------------------------------------------------
 !
 ILUOUT0 = TLUOUT0%NLU
@@ -195,6 +198,9 @@ END IF
 ALLOCATE(ZZMASS_LS(IIU,IJU,ILU+2*JPVEXT))
 ALLOCATE(ZSV_LS(IIU,IJU,ILU+2*JPVEXT,SIZE(XSV_LS,4)))
 IF (HFILE(1:3)=='ATM') THEN
+  IF (SIZE(XB_LS)==0) THEN   ! pressure level
+    XZMASS_LS(:,:,:)=XGH_LS(:,:,:)
+  END IF
   ALLOCATE(ZZFLUX_LS(IIU,IJU,ILU+2*JPVEXT))
   ALLOCATE(ZPMHP_LS(IIU,IJU,ILU+2*JPVEXT))
   ALLOCATE(ZTHV_LS(IIU,IJU,ILU+2*JPVEXT))
@@ -262,27 +268,20 @@ IF (HFILE(1:3)=='ATM') THEN
 END IF
 !
 IF (HFILE(1:3)=='ATM') THEN
-
-  IF (SIZE(XB_LS)/=0) THEN   ! hybrid level (w at flux points)
-  CALL VER_INTERP_TO_MIXED_GRID('ATM ',.TRUE.,XZS_LS,XZSMT_LS,    &
+  IF (SIZE(XB_LS)/=0) THEN  ! hybrid level (w at flux points)
+    YWLOC_LS='FLUX'
+  ELSE                      ! isobaric surfaces (w at mass points)
+    YWLOC_LS='MASS'
+  END IF
+  !Warning, for pressure level (GFS and ERA5 only for now), ZZFLUX_LS is not correct (but not used)
+  CALL VER_INTERP_TO_MIXED_GRID('ATM ',.TRUE.,XZS_LS,XZSMT_LS,   &
                                 ZZMASS_LS,ZSV_LS,                &
                                 ZZFLUX_LS,XPS_LS,ZPMHP_LS,       &
                                 ZTHV_LS,ZR_LS,                   &
                                 ZHU_LS,                          &
                                 ZTKE_LS,                         &
                                 ZU_LS,ZV_LS,                     &
-                                ZW_LS,'FLUX'                     )
-  ELSE                      ! isobaric surfaces (w at mass points)
-    !Warning, in that case (NCEP only for now) ZZFLUX_LS is not correct (but not used)
-    CALL VER_INTERP_TO_MIXED_GRID('ATM ',.TRUE.,XZS_LS,XZSMT_LS,    &
-                                  XGH_LS,ZSV_LS, &
-                                  ZZFLUX_LS,XPS_LS,ZPMHP_LS,       &
-                                  ZTHV_LS,ZR_LS,                   &
-                                  ZHU_LS,                          &
-                                  ZTKE_LS,                         &
-                                  ZU_LS,ZV_LS,                     &
-                                  ZW_LS,'MASS'                     )
-  END IF
+                                ZW_LS,YWLOC_LS                   )
 ELSE IF (HFILE=='CHEM') THEN
   CALL VER_INTERP_TO_MIXED_GRID(HFILE,.TRUE.,XZS_SV_LS,XZS_SV_LS,&
                                 ZZMASS_LS,ZSV_LS                 )

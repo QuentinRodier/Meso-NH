@@ -17,7 +17,7 @@ INTERFACE
                              OHORELAX_SVELEC,OHORELAX_SVLG,                    &
                              OHORELAX_SVCHEM,OHORELAX_SVCHIC, OHORELAX_SVAER,  &
                              OHORELAX_SVDST, OHORELAX_SVSLT, OHORELAX_SVPP,    &
-                             OHORELAX_SVCS,OHORELAX_SVSNW,                     &
+                             OHORELAX_SVCS,OHORELAX_SVSNW, OHORELAX_SVFIRE,    &
 #ifdef MNH_FOREFIRE
                              OHORELAX_SVFF,                                    &
 #endif
@@ -78,6 +78,8 @@ LOGICAL,             INTENT(IN):: OHORELAX_SVSLT  ! switch for the
                        ! horizontal relaxation for slt variables
 LOGICAL,             INTENT(IN):: OHORELAX_SVPP   ! switch for the 
                        ! horizontal relaxation for passive scalar
+LOGICAL,             INTENT(IN):: OHORELAX_SVFIRE   ! switch for the
+                                             ! horizontal relaxation for ForeFire variables
 #ifdef MNH_FOREFIRE
 LOGICAL,             INTENT(IN):: OHORELAX_SVFF   ! switch for the 
                        ! horizontal relaxation for ForeFire variables 
@@ -159,7 +161,7 @@ END MODULE MODI_RELAXATION
                              OHORELAX_SVELEC,OHORELAX_SVLG,                    &
                              OHORELAX_SVCHEM,OHORELAX_SVCHIC, OHORELAX_SVAER,  &
                              OHORELAX_SVDST, OHORELAX_SVSLT, OHORELAX_SVPP,    &
-                             OHORELAX_SVCS,OHORELAX_SVSNW,                     &
+                             OHORELAX_SVCS,OHORELAX_SVSNW, OHORELAX_SVFIRE,    &
 #ifdef MNH_FOREFIRE
                              OHORELAX_SVFF,                                    &
 #endif
@@ -259,6 +261,7 @@ END MODULE MODI_RELAXATION
 !  P. Wautelet    02/2020: use the new data structures and subroutines for budgets
 !  P. Wautelet 12/02/2021: bugfix: do not call budgets for all SV budgets if LRELAX2FW_ION=T
 !  P. Wautelet 16/02/2021: bugfix: GMASK3D_RELAX was not computed if OHORELAX_UVWTH=F and needed by other variables
+!  A. Costes      12/2021: add Blaze smoke relaxation
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -331,6 +334,8 @@ LOGICAL,             INTENT(IN):: OHORELAX_SVSLT  ! switch for the
                        ! horizontal relaxation for slt variables
 LOGICAL,             INTENT(IN):: OHORELAX_SVPP   ! switch for the 
                        ! horizontal relaxation for passive scalar
+LOGICAL,             INTENT(IN):: OHORELAX_SVFIRE   ! switch for the
+                                             ! horizontal relaxation for Blaze variables
 #ifdef MNH_FOREFIRE 
 LOGICAL,             INTENT(IN):: OHORELAX_SVFF   ! switch for the 
                        ! horizontal relaxation for ForeFire variables 
@@ -430,9 +435,9 @@ LOGICAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)) :: GMASK3D_RELAX ! 3D
                              ! mask for hor. relax.
 LOGICAL, DIMENSION(7) :: GHORELAXR ! local array of logical
 #ifdef MNH_FOREFIRE
-LOGICAL, DIMENSION(13) :: GHORELAXSV! local array of logical
+LOGICAL, DIMENSION(14) :: GHORELAXSV! local array of logical
 #else
-LOGICAL, DIMENSION(12) :: GHORELAXSV! local array of logical
+LOGICAL, DIMENSION(13) :: GHORELAXSV! local array of logical
 #endif
 !  
 !-------------------------------------------------------------------------------
@@ -493,8 +498,9 @@ GHORELAXSV(9) = OHORELAX_SVPP
 GHORELAXSV(10) = OHORELAX_SVCS
 GHORELAXSV(11) = OHORELAX_SVCHIC
 GHORELAXSV(12) = OHORELAX_SVSNW
+GHORELAXSV(13) = OHORELAX_SVFIRE
 #ifdef MNH_FOREFIRE
-GHORELAXSV(13) = OHORELAX_SVFF
+GHORELAXSV(14) = OHORELAX_SVFF
 #endif
 !-------------------------------------------------------------------------------
 !

@@ -1,4 +1,4 @@
-!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
@@ -57,7 +57,7 @@ IF (LHOOK) CALL DR_HOOK('CH_CONVERSION_FACTOR',0,ZHOOK_HANDLE)
 ! determine the conversion factor
 PCONVERSION(:) = 1.
 SELECT CASE (HCONVERSION)
-  CASE ('MIX') ! flux given ppp*m/s,  conversion to molec/m2/s
+  CASE ('MIX') ! flux given ppv*m/s,  conversion to molec/m2/s
     PCONVERSION(:) = XAVOGADRO * PRHOA(:) / XMD
   CASE ('CON') ! flux given in molecules/cm2/s, conversion to molec/m2/s 
     PCONVERSION(:) =  1E4

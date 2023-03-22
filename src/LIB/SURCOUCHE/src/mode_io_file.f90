@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -38,6 +38,8 @@
 !  P. Wautelet 12/03/2019: simplify opening of IO split files
 !  P. Wautelet 05/09/2019: disable IO_Coordvar_write_nc4 for Z-split files
 !  P. Wautelet 01/10/2020: bugfix: add missing initializations for IRESP
+!  P. Wautelet 19/08/2022: bugfix: IO_File_check_format_exist: broadcast cformat if changed
+!  P. Wautelet 13/01/2023: IO_File_close: add optional dummy argument TPDTMODELN to force written model time
 !-----------------------------------------------------------------
 module mode_io_file
 
@@ -491,10 +493,11 @@ END FUNCTION SUFFIX
 END SUBROUTINE IO_File_doopen
 
 
-recursive SUBROUTINE IO_File_close(TPFILE,KRESP,HPROGRAM_ORIG)
+recursive SUBROUTINE IO_File_close( TPFILE, KRESP, HPROGRAM_ORIG, TPDTMODELN )
 !
 use modd_conf,             only: cprogram
 use modd_io,               only: nnullunit
+use modd_type_date,        only: date_time
 
 use mode_io_file_lfi,      only: IO_File_close_lfi
 #ifdef MNH_IOCDF4
@@ -506,7 +509,7 @@ use mode_io_manage_struct, only: IO_File_find_byname
 TYPE(TFILEDATA),            INTENT(INOUT) :: TPFILE ! File structure
 INTEGER,          OPTIONAL, INTENT(OUT)   :: KRESP  ! Return code
 CHARACTER(LEN=*), OPTIONAL, INTENT(IN)    :: HPROGRAM_ORIG !To emulate a file coming from this program
-!
+TYPE(DATE_TIME),  OPTIONAL, INTENT(IN)    :: TPDTMODELN    !Time of model (to force model date written in file)
 character(len=256)      :: yioerrmsg
 INTEGER                 :: IRESP, JI
 TYPE(TFILEDATA),POINTER :: TZFILE_DES
@@ -564,7 +567,7 @@ SELECT CASE(TPFILE%CTYPE)
 #ifdef MNH_IOCDF4
     !Write coordinates variables in NetCDF file
     IF (TPFILE%CMODE == 'WRITE' .AND. (TPFILE%CFORMAT=='NETCDF4' .OR. TPFILE%CFORMAT=='LFICDF4')) THEN
-      CALL IO_Coordvar_write_nc4(TPFILE,HPROGRAM_ORIG=HPROGRAM_ORIG)
+      CALL IO_Coordvar_write_nc4( TPFILE, HPROGRAM_ORIG = HPROGRAM_ORIG, TPDTMODELN = TPDTMODELN )
     END IF
 #endif
 
@@ -666,9 +669,11 @@ end subroutine IO_Transfer_list_addto
 
 
 subroutine IO_File_check_format_exist( tpfile )
+use modd_mpif
 
 type(tfiledata), intent(inout) :: tpfile ! File structure
 
+integer :: ierr
 logical :: gexist_lfi, gexist_nc4
 
 
@@ -719,6 +724,9 @@ IF (TPFILE%LMASTER) THEN
     END SELECT
   end if MODE
 END IF
+
+if ( tpfile%cmode == 'READ' ) &
+  call MPI_BCAST( tpfile%cformat, Len( tpfile%cformat ), MPI_CHARACTER, tpfile%nmaster_rank - 1, tpfile%nmpicomm, ierr )
 
 end subroutine IO_File_check_format_exist
 

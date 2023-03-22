@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2004-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2004-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -302,8 +302,8 @@ DO JJ=IJB,IJE
       !
         ZKYY(JI,JJ,JK) =  &
             (ZA0(JI) * XG*ZNDW(JI,JJ)/(ZTHM_W(JI,JJ)*(ZCORIOZ(JI,JJ,JK)**2)) ) &
-            * (ZDW(JI,JJ)**2) * (EXP(-0.5*(XZHAT(JK)+XZHAT(JK+1))/ZDW(JI,JJ))) &
-            * ZADTDXW(JI,JJ)   
+            * ZDW(JI,JJ)**2 * EXP( - XZHATM(JK) / ZDW(JI,JJ) ) &
+            * ZADTDXW(JI,JJ)
       ENDDO       
       !
     ! CASE WHERE NO INSTABILITY IS DETECTED
@@ -323,8 +323,7 @@ ENDDO
 
 !
 DO JK=IKB,IKE
-   ZVTH_FLUX(:,:,JK) = - 0.5 * ZKYY(:,:,JK)*ZDTHM_DY(:,:,JK) * &
-                    (1-EXP(-0.5*(XZHAT(JK)+XZHAT(JK+1))/ZDELTAZ))
+   ZVTH_FLUX(:,:,JK) = - 0.5 * ZKYY(:,:,JK) * ZDTHM_DY(:,:,JK) * ( 1 - EXP( -XZHATM(JK) / ZDELTAZ ) )
 END DO
 !
 !       2.1 Smoothing in equatorial region

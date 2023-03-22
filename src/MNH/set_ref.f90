@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -10,7 +10,7 @@ MODULE MODI_SET_REF
 INTERFACE
 !
       SUBROUTINE SET_REF(KMI,TPINIFILE,                                    &
-                         PZZ,PZHAT,PJ,PDXX,PDYY,HLBCX,HLBCY,               &
+                         PZZ,PZHATM,PJ,PDXX,PDYY,HLBCX,HLBCY,              &
                          PREFMASS,PMASS_O_PHI0,PLINMASS,                   &
                          PRHODREF,PTHVREF,PRVREF,PEXNREF,PRHODJ            )
 !
@@ -20,7 +20,7 @@ INTEGER,                INTENT(IN)  :: KMI       ! Model index
 TYPE(TFILEDATA),        INTENT(IN)  :: TPINIFILE ! Initial file
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PZZ       ! Height  of the w levels
                                                  ! with orography                                          
-REAL, DIMENSION(:),     INTENT(IN)  :: PZHAT     ! Height of the w levels
+REAL, DIMENSION(:),     INTENT(IN)  :: PZHATM    ! Height of the w levels at mass points
            ! in the transformed space (GCS transf.) or without orography                                         
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PJ        ! Jacobian 
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PDXX      ! metric coefficient dxx
@@ -54,7 +54,7 @@ END MODULE MODI_SET_REF
 !
 !     #########################################################################
       SUBROUTINE SET_REF(KMI,TPINIFILE,                                &
-                         PZZ,PZHAT,PJ,PDXX,PDYY,HLBCX,HLBCY,           &
+                         PZZ,PZHATM,PJ,PDXX,PDYY,HLBCX,HLBCY,          &
                          PREFMASS,PMASS_O_PHI0,PLINMASS,               &
                          PRHODREF,PTHVREF,PRVREF,PEXNREF,PRHODJ        )
 !     #########################################################################
@@ -176,7 +176,7 @@ INTEGER,                INTENT(IN)  :: KMI       ! Model index
 TYPE(TFILEDATA),        INTENT(IN)  :: TPINIFILE ! Initial file
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PZZ       ! Height  of the w levels
                                                  ! with orography                                          
-REAL, DIMENSION(:),     INTENT(IN)  :: PZHAT     ! Height of the w levels
+REAL, DIMENSION(:),     INTENT(IN)  :: PZHATM    ! Height of the w levels at mass points
            ! in the transformed space (GCS transf.) or without orography                                         
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PJ        ! Jacobian 
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PDXX      ! metric coefficient dxx
@@ -210,8 +210,6 @@ REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3)) :: ZZM
                                                  ! with orography
 REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3)) :: ZRHOREF
                                                  ! Reference density
-REAL, DIMENSION(SIZE(PZZ,3))    :: ZZHATM        ! height of the mass levels
-               ! in the transformed space (GCS transf.) or without orography 
 REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3)) :: ZDENSOC,ZPFLUX,ZPMASS
 !
 INTEGER             :: IIU        ! Upper dimension in x direction
@@ -282,11 +280,9 @@ END IF
 ! 
 DO JK = 1,IKU-1
   ZZM(:,:,JK) = 0.5*(PZZ(:,:,JK) + PZZ(:,:,JK+1))
-  ZZHATM(JK)  = 0.5*(PZHAT(JK)+PZHAT(JK+1))
 END DO
-ZZHATM(IKU) = 2.* PZHAT(IKU) -ZZHATM(IKU-1)
 ZZM(:,:,IKU)    = 2.* PZZ(:,:,IKU)   -ZZM(:,:,IKU-1)
-! ZZM(:,:,IKU) is always smaller than or equal ZZHATM(IKU)
+! ZZM(:,:,IKU) is always smaller than or equal PZHATM(IKU)
 !
 !
 CALL MPPDB_CHECK3D(ZZM,"SET_REF::ZZM",PRECISION)
@@ -304,16 +300,16 @@ ELSE
 !
     DO JK = 1,IKU
 !
-      IF (ZZM(JI,JJ,JK) >= ZZHATM(IKU)) THEN     ! copy out when  
-        PTHVREF(JI,JJ,JK) =  XTHVREFZ(IKU)       ! ZZM(IKU)= ZZHATM(IKU)  
+      IF (ZZM(JI,JJ,JK) >= PZHATM(IKU)) THEN     ! copy out when
+        PTHVREF(JI,JJ,JK) =  XTHVREFZ(IKU)       ! ZZM(IKU)= PZHATM(IKU)
         PRHODREF(JI,JJ,JK) =  XRHODREFZ(IKU)     ! (in case zs=0.)
 ! 
       ELSE              ! search levels on the mass grid without orography
-        IF (ZZM(JI,JJ,JK) < ZZHATM(2)) THEN
+        IF (ZZM(JI,JJ,JK) < PZHATM(2)) THEN
            IKS=3
         ELSE
           SEARCH : DO JKS = 3,IKU
-            IF((ZZM(JI,JJ,JK) >= ZZHATM(JKS-1)).AND.(ZZM(JI,JJ,JK) < ZZHATM(JKS))) &
+            IF((ZZM(JI,JJ,JK) >= PZHATM(JKS-1)).AND.(ZZM(JI,JJ,JK) < PZHATM(JKS))) &
             THEN          ! interpolation with the values on the grid without
                           ! orography
               IKS=JKS
@@ -321,7 +317,7 @@ ELSE
             END IF
           END DO SEARCH
         END IF
-        ZDZ1SDZ = (ZZM(JI,JJ,JK)-ZZHATM(IKS-1)) / (ZZHATM(IKS)-ZZHATM(IKS-1))
+        ZDZ1SDZ = (ZZM(JI,JJ,JK)-PZHATM(IKS-1)) / (PZHATM(IKS)-PZHATM(IKS-1))
         ZDZ2SDZ = 1. - ZDZ1SDZ
         PTHVREF(JI,JJ,JK) = ( ZDZ1SDZ* XTHVREFZ(IKS) )  &
                           + (ZDZ2SDZ* XTHVREFZ(IKS-1) )      

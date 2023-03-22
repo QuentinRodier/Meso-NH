@@ -1,8 +1,18 @@
-!MNH_LIC Copyright 2000-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2000-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
+MODULE MODE_INI_BALLOON
+
+IMPLICIT NONE
+
+PRIVATE
+
+PUBLIC :: INI_BALLOON
+
+CONTAINS
+
 !     ######################
       SUBROUTINE INI_BALLOON
 !     ######################
@@ -18,7 +28,7 @@
 !!    ------
 !!    
 !!    For constant volume Balloon, horizontal advection using horizontal wind
-!!        vertical spped of the balloon calculated using the balloon equation
+!!        vertical speed of the balloon calculated using the balloon equation
 !!        (Koffi et AL 2000, JAS vol 57 P.2007-2021)
 !!
 !!   Must be defined (for each balloon):
@@ -93,414 +103,284 @@
 !!    -------------
 !!     Original 15/05/2000
 !!              Apr,19, 2001 (G.Jaubert) add CVBALL type and switch in models
-!!
+!  P. Wautelet 13/07/2022: give balloons characteristics in namelist instead of hardcoded
 !! --------------------------------------------------------------------------
-!       
-!*      0. DECLARATIONS
-!          ------------
-!
 USE MODD_AIRCRAFT_BALLOON
-USE MODD_CST
-!
-!
+USE MODD_CONF,             ONLY: NMODEL_NEST => NMODEL
+USE MODD_CST,              ONLY: XPI
+USE MODD_PARAMETERS,       ONLY: XNEGUNDEF, XUNDEF
+
+USE MODE_MSG
+
+USE MODN_BALLOONS
+
 IMPLICIT NONE
-!
-!
-!*      0.1  declarations of arguments
-!
-!
-!-------------------------------------------------------------------------------
-!
-!       0.2  declaration of local variables
-!
-!
-!----------------------------------------------------------------------------
-!
-!*      1.   Balloon number 1
-!            ----------------
-!
-!* model number
-!
-TBALLOON1%NMODEL             = 0
-TBALLOON1%MODEL             = 'MOB'
-!
-!* balloon type
-!
-TBALLOON1%TYPE               = 'CVBALL'
-!
-!* balloon name
-!
-TBALLOON1%TITLE              = 'CVB1MOBI'
-!
-!* launching date and time
-!
-TBALLOON1%LAUNCH%nyear  =  1999
-TBALLOON1%LAUNCH%nmonth =    09
-TBALLOON1%LAUNCH%nday   =    19
-TBALLOON1%LAUNCH%xtime  = 32460.
-!
-!* latitude and longitude of launching site (decimal degree)
-!
-TBALLOON1%LAT                = 45.800
-TBALLOON1%LON                =  8.629
-!
-!* altitude of the launching site for 'RADIOS'
-!* altitude or pressure of the flight level for 'ISODEN'
-!
-!TBALLOON1%ALT                =   3959.
-TBALLOON1%PRES               = 98450.
-!
-!* time step for data storage  (s)
-!
-TBALLOON1%STEP               = 20.
-!
-!* ascentional vertical speed of the ballon (in calm air) (for 'RADIOS')
-!
-TBALLOON1%WASCENT            = 0.
-!
-!* aerodynamic drag coefficient of the balloon (for 'CVBALL')
-!* induced drag coefficient (i.e. air shifted by the balloon) (for 'CVBALL')
-!* volume of the balloon (m3) (for 'CVBALL')
-!* mass of the balloon (kg) (for 'CVBALL')
-!
-TBALLOON1%AERODRAG           = 0.44
-TBALLOON1%INDDRAG           = 0.014
-TBALLOON1%VOLUME           = 3.040
-TBALLOON1%MASS           = 2.4516
-TBALLOON1%DIAMETER           = ((3.*TBALLOON1%VOLUME)/(4.*XPI))**(1./3.)
-!
-!----------------------------------------------------------------------------
-!
-!*      2.   Balloon number 2
-!            ----------------
-!
-!* model number
-!
-TBALLOON2%NMODEL             = 0
-TBALLOON2%MODEL             = 'MOB'
-!
-!* balloon type
-!
-TBALLOON2%TYPE               = 'CVBALL'
-!
-!* balloon name
-!
-TBALLOON2%TITLE              = 'CVB2MOBI'
-!
-!* launching date and time
-!
-TBALLOON2%LAUNCH%nyear  =  1999
-TBALLOON2%LAUNCH%nmonth =    09
-TBALLOON2%LAUNCH%nday   =    19
-TBALLOON2%LAUNCH%xtime  = 39660.
-!
-!* latitude and longitude of launching site (decimal degree)
-!
-TBALLOON2%LAT                = 45.800
-TBALLOON2%LON                =  8.630
-!
-!* altitude of the launching site for 'RADIOS'
-!* altitude or pressure of the flight level for 'ISODEN'
-!
-!TBALLOON2%ALT                =   3959.
-TBALLOON2%PRES               = 98490.
-!
-!* time step for data storage  (s)
-!
-TBALLOON2%STEP               = 20.
-!
-!* ascentional vertical speed of the ballon (in calm air) (for 'RADIOS')
-!
-TBALLOON2%WASCENT            = 0.
-!
-!* aerodynamic drag coefficient of the balloon (for 'CVBALL')
-!* induced drag coefficient (i.e. air shifted by the balloon) (for 'CVBALL')
-!* volume of the balloon (m3) (for 'CVBALL')
-!* mass of the balloon (kg) (for 'CVBALL')
-!
-TBALLOON2%AERODRAG           = 0.44
-TBALLOON2%INDDRAG           = 0.014
-TBALLOON2%VOLUME           = 3.040
-TBALLOON2%MASS           = 2.58087
-TBALLOON2%DIAMETER           = ((3.*TBALLOON2%VOLUME)/(4.*XPI))**(1./3.)
-!
-!-------------------------------------------------------------------------------
-!----------------------------------------------------------------------------
-!
-!*      3.   Balloon number 3
-!            ----------------
-!
-!* model number
-!
-TBALLOON3%NMODEL             = 0
-TBALLOON3%MODEL             = 'MOB'
-!
-!* balloon type
-!
-TBALLOON3%TYPE               = 'RADIOS'
-!
-!* balloon name
-!
-TBALLOON3%TITLE              = 'RSMASE19'
-!
-!* launching date and time
-!
-TBALLOON3%LAUNCH%nyear  =  1999
-TBALLOON3%LAUNCH%nmonth =    09
-TBALLOON3%LAUNCH%nday   =    19
-TBALLOON3%LAUNCH%xtime  = 68400.
-!
-!* latitude and longitude of launching site (decimal degree)
-!
-TBALLOON3%LAT                = 46.810
-TBALLOON3%LON                =  9.39 
-!
-!* altitude of the launching site for 'RADIOS'
-!* altitude or pressure of the flight level for 'ISODEN'
-!
-TBALLOON3%ALT                =   865. 
-!TBALLOON3%PRES               = 62360.
-!
-!* time step for data storage  (s)
-!
-TBALLOON3%STEP               = 20.
-!
-!* ascentional vertical speed of the ballon (in calm air) (for 'RADIOS')
-!
-TBALLOON3%WASCENT            = 4.85
-!
-!* aerodynamic drag coefficient of the balloon (for 'CVBALL')
-!* induced drag coefficient (i.e. air shifted by the balloon) (for 'CVBALL')
-!* volume of the balloon (m3) (for 'CVBALL')
-!* mass of the balloon (kg) (for 'CVBALL')
-!
-TBALLOON3%AERODRAG           = 0.44
-TBALLOON3%INDDRAG           = 0.014
-TBALLOON3%VOLUME           = 3.040
-TBALLOON3%MASS           = 2.4516
-TBALLOON3%DIAMETER           = ((3.*TBALLOON3%VOLUME)/(4.*XPI))**(1./3.)
-!
-!
-!----------------------------------------------------------------------------
-!
-!*      4.   Balloon number 4
-!            ----------------
-!
-!* model number
-!
-TBALLOON4%NMODEL             = 0
-TBALLOON4%MODEL             = 'FIX'
-!
-!* balloon type
-!
-TBALLOON4%TYPE               = 'CVBALL'
-!
-!* balloon name
-!
-TBALLOON4%TITLE              = 'CVB1ACVB'
-!
-!* launching date and time
-!
-TBALLOON4%LAUNCH%nyear  =  1999
-TBALLOON4%LAUNCH%nmonth =    09
-TBALLOON4%LAUNCH%nday   =    19
-TBALLOON4%LAUNCH%xtime  = 32460.
-!
-!* latitude and longitude of launching site (decimal degree)
-!
-TBALLOON4%LAT                = 45.922
-TBALLOON4%LON                =  8.646
-!
-!* altitude of the launching site for 'RADIOS'
-!* altitude or pressure of the flight level for 'ISODEN'
-!
-TBALLOON4%ALT                =   3959.
-!TBALLOON4%PRES               = 62360.
-!
-!* time step for data storage  (s)
-!
-TBALLOON4%STEP               = 20.
-!
-!* ascentional vertical speed of the ballon (in calm air) (for 'RADIOS')
-!
-!TBALLOON4%WASCENT            = 2.55
-!
-!* aerodynamic drag coefficient of the balloon (for 'CVBALL')
-!* induced drag coefficient (i.e. air shifted by the balloon) (for 'CVBALL')
-!* volume of the balloon (m3) (for 'CVBALL')
-!* mass of the balloon (kg) (for 'CVBALL')
-!
-TBALLOON4%AERODRAG           = 0.44
-TBALLOON4%INDDRAG           = 0.014
-TBALLOON4%VOLUME           = 3.040
-TBALLOON4%MASS           = 2.4516
-TBALLOON4%DIAMETER           = ((3.*TBALLOON4%VOLUME)/(4.*XPI))**(1./3.)
-!
-!----------------------------------------------------------------------------
-!
-!*      5.   Balloon number 5
-!            ----------------
-!
-!* model number
-!
-TBALLOON5%NMODEL             = 0
-TBALLOON5%MODEL             = 'FIX'
-!
-!* balloon type
-!
-TBALLOON5%TYPE               = 'CVBALL'
-!
-!* balloon name
-!
-TBALLOON5%TITLE              = 'CVB1DEPA'
-!
-!* launching date and time
-!
-TBALLOON5%LAUNCH%nyear  =  1999
-TBALLOON5%LAUNCH%nmonth =    09
-TBALLOON5%LAUNCH%nday   =    19
-TBALLOON5%LAUNCH%xtime  = 32435.
-!
-!* latitude and longitude of launching site (decimal degree)
-!
-TBALLOON5%LAT                = 45.800
-TBALLOON5%LON                =  8.630
-!
-!* altitude of the launching site for 'RADIOS'
-!* altitude or pressure of the flight level for 'ISODEN'
-!
-TBALLOON5%ALT                =    340.
-!TBALLOON5%PRES               = 62360.
-!
-!* time step for data storage  (s)
-!
-TBALLOON5%STEP               = 20.
-!
-!* ascentional vertical speed of the ballon (in calm air) (for 'RADIOS')
-!
-!TBALLOON5%WASCENT            = 2.55
-!
-!* aerodynamic drag coefficient of the balloon (for 'CVBALL')
-!* induced drag coefficient (i.e. air shifted by the balloon) (for 'CVBALL')
-!* volume of the balloon (m3) (for 'CVBALL')
-!* mass of the balloon (kg) (for 'CVBALL')
-!
-TBALLOON5%AERODRAG           = 0.44
-TBALLOON5%INDDRAG           = 0.014
-TBALLOON5%VOLUME           = 3.040
-TBALLOON5%MASS           = 2.4516
-TBALLOON5%DIAMETER           = ((3.*TBALLOON5%VOLUME)/(4.*XPI))**(1./3.)
-!
-!----------------------------------------------------------------------------
-!
-!*      6.   Balloon number 6
-!            ----------------
-!
-!* model number
-!
-TBALLOON6%NMODEL             = 0
-TBALLOON6%MODEL             = 'FIX'
-!
-!* balloon type
-!
-TBALLOON6%TYPE               = 'CVBALL'
-!
-!* balloon name
-!
-TBALLOON6%TITLE              = 'CVB1RCVB'
-!
-!* launching date and time
-!
-TBALLOON6%LAUNCH%nyear  =  1999
-TBALLOON6%LAUNCH%nmonth =    09
-TBALLOON6%LAUNCH%nday   =    19
-TBALLOON6%LAUNCH%xtime  = 32460.
-!
-!* latitude and longitude of launching site (decimal degree)
-!
-TBALLOON6%LAT                = 45.922
-TBALLOON6%LON                =  8.646
-!
-!* altitude of the launching site for 'RADIOS'
-!* altitude or pressure of the flight level for 'ISODEN'
-!
-!TBALLOON6%ALT                =   3959.
-!TBALLOON6%PRES               = 62360.
-!
-!* time step for data storage  (s)
-!
-TBALLOON6%STEP               = 20.
-!
-!* ascentional vertical speed of the ballon (in calm air) (for 'RADIOS')
-!
-!TBALLOON6%WASCENT            = 2.55
-!
-!* aerodynamic drag coefficient of the balloon (for 'CVBALL')
-!* induced drag coefficient (i.e. air shifted by the balloon) (for 'CVBALL')
-!* volume of the balloon (m3) (for 'CVBALL')
-!* mass of the balloon (kg) (for 'CVBALL')
-!
-TBALLOON6%AERODRAG           = 0.44
-TBALLOON6%INDDRAG           = 0.014
-TBALLOON6%VOLUME           = 3.040
-TBALLOON6%MASS           = 2.4516
-TBALLOON6%DIAMETER           = ((3.*TBALLOON6%VOLUME)/(4.*XPI))**(1./3.)
-!
-!----------------------------------------------------------------------------
-!
-!*      7.   Balloon number 7
-!            ----------------
-!
-!* model number
-!
-TBALLOON7%NMODEL             = 0
-TBALLOON7%MODEL             = 'FIX'
-!
-!* balloon type
-!
-TBALLOON7%TYPE               = 'CVBALL'
-!
-!* balloon name
-!
-TBALLOON7%TITLE              = 'CVB1PISO'
-!
-!* launching date and time
-!
-TBALLOON7%LAUNCH%nyear  =  1999
-TBALLOON7%LAUNCH%nmonth =    09
-TBALLOON7%LAUNCH%nday   =    19
-TBALLOON7%LAUNCH%xtime  = 32460.
-!
-!* latitude and longitude of launching site (decimal degree)
-!
-TBALLOON7%LAT                = 45.922
-TBALLOON7%LON                =  8.646
-!
-!* altitude of the launching site for 'RADIOS'
-!* altitude or pressure of the flight level for 'ISODEN'
-!
-!TBALLOON7%ALT                =   3959.
-TBALLOON7%PRES               = 62360.
-!
-!* time step for data storage  (s)
-!
-TBALLOON7%STEP               = 20.
-!
-!* ascentional vertical speed of the ballon (in calm air) (for 'RADIOS')
-!
-!TBALLOON7%WASCENT            = 2.55
-!
-!* aerodynamic drag coefficient of the balloon (for 'CVBALL')
-!* induced drag coefficient (i.e. air shifted by the balloon) (for 'CVBALL')
-!* volume of the balloon (m3) (for 'CVBALL')
-!* mass of the balloon (kg) (for 'CVBALL')
-!
-TBALLOON7%AERODRAG           = 0.44
-TBALLOON7%INDDRAG           = 0.014
-TBALLOON7%VOLUME           = 3.040
-TBALLOON7%MASS           = 2.4516
-TBALLOON7%DIAMETER           = ((3.*TBALLOON7%VOLUME)/(4.*XPI))**(1./3.)
-!
+
+INTEGER :: JI
+TYPE(TBALLOONDATA), POINTER :: TZBALLOON
+
+!Treat balloon data read in namelist
+DO JI = 1, NBALLOONS
+  ALLOCATE( TBALLOONS(JI)%TBALLOON )
+  TZBALLOON => TBALLOONS(JI)%TBALLOON
+
+  TZBALLOON%NID = JI
+
+  IF ( CTITLE(JI) == '' ) THEN
+    WRITE( CTITLE(JI), FMT = '( A, I3.3) ') TRIM( CTYPE(JI) ), JI
+
+    WRITE( CMNHMSG(1), FMT = '( A, I4 )' ) 'no title given to balloon number ', JI
+    CMNHMSG(2) = 'title set to ' // TRIM( CTITLE(JI) )
+    CALL PRINT_MSG( NVERB_INFO, 'GEN', 'INI_BALLOON', OLOCAL = .TRUE. )
+  END IF
+  TZBALLOON%CTITLE = CTITLE(JI)
+
+  IF ( CMODEL(JI) == 'FIX' ) THEN
+    IF ( NMODEL(JI) < 1 .OR. NMODEL(JI) > NMODEL_NEST ) THEN
+      CMNHMSG(1) = 'invalid NMODEL balloon ' // TRIM( CTITLE(JI) )
+      CMNHMSG(2) = 'NMODEL must be between 1 and the last nested model number'
+      CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'INI_BALLOON', OLOCAL = .TRUE. )
+      NMODEL(JI) = 1
+    END IF
+  ELSE IF ( CMODEL(JI) == 'MOB' ) THEN
+    IF ( NMODEL(JI) /= 0 .AND. NMODEL(JI) /= 1 ) THEN
+      CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'INI_BALLOON', &
+                      'NMODEL is set to 1 at start for a CMODEL="MOB" balloon (balloon ' // TRIM( CTITLE(JI) ) // ')', &
+                       OLOCAL = .TRUE.)
+    END IF
+    IF ( NMODEL_NEST == 1 ) CMODEL(JI) = 'FIX' ! If only one model, FIX and MOB are the same
+    ! NMODEL set temporarily to 1. Will be set to the launch model in INI_LAUNCH
+    NMODEL(JI) = 1
+  ELSE
+    CMNHMSG(1) = 'invalid CMODEL (' // TRIM( CMODEL(JI) ) // ') for balloon ' // TRIM( CTITLE(JI) )
+    CMNHMSG(2) = 'CMODEL must be FIX or MOB (default="FIX")'
+    CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'INI_BALLOON', OLOCAL = .TRUE. )
+    CMODEL(JI) = 'FIX'
+    NMODEL(JI) = 1
+  END IF
+  TZBALLOON%CMODEL = CMODEL(JI)
+  TZBALLOON%NMODEL = NMODEL(JI)
+
+  TZBALLOON%CTYPE = CTYPE(JI)
+
+  IF ( .NOT. TLAUNCH(JI)%CHECK( TRIM( CTITLE(JI) ) ) ) &
+        CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'INI_BALLOON', &
+                        'problem with TLAUNCH (not set or incorrect values) for balloon ' // TRIM( CTITLE(JI) ), OLOCAL = .TRUE. )
+  TZBALLOON%TLAUNCH  = TLAUNCH(JI)
+
+  IF ( XLATLAUNCH(JI) == XUNDEF ) &
+    CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'INI_BALLOON', 'XLATLAUNCH not provided for balloon ' // TRIM( CTITLE(JI) ), &
+                    OLOCAL = .TRUE. )
+  TZBALLOON%XLATLAUNCH = XLATLAUNCH(JI)
+
+  IF ( XLONLAUNCH(JI) == XUNDEF ) &
+    CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'INI_BALLOON', 'XLONLAUNCH not provided for balloon ' // TRIM( CTITLE(JI) ), &
+                    OLOCAL = .TRUE. )
+  TZBALLOON%XLONLAUNCH = XLONLAUNCH(JI)
+
+  IF ( XTSTEP(JI) == XNEGUNDEF ) THEN
+    CALL PRINT_MSG( NVERB_INFO, 'GEN', 'INI_BALLOON', &
+                    'data storage frequency not provided for balloon ' // TRIM( CTITLE(JI) ) // ' => set to 60s', OLOCAL = .TRUE. )
+    XTSTEP(JI) = 60.
+  ELSE IF ( XTSTEP(JI) <=0. ) THEN
+    CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'INI_BALLOON', 'invalid data storage frequency for balloon ' // TRIM( CTITLE(JI) ), &
+                    OLOCAL = .TRUE. )
+    XTSTEP(JI) = 60.
+  END IF
+  TZBALLOON%TFLYER_TIME%XTSTEP = XTSTEP(JI)
+
+  SELECT CASE ( CTYPE(JI) )
+    CASE ( 'CVBALL' )
+      IF ( XALTLAUNCH(JI) == XNEGUNDEF .AND. XPRES(JI) == XNEGUNDEF ) THEN
+        CMNHMSG(1) = 'altitude or pressure at launch not provided for CVBALL balloon ' // TRIM( CTITLE(JI) )
+        CMNHMSG(2) = 'altitude with same air density than balloon will be used for the launch position'
+        CALL PRINT_MSG( NVERB_INFO, 'GEN', 'INI_BALLOON' , OLOCAL = .TRUE.)
+      END IF
+      IF ( XALTLAUNCH(JI) /= XNEGUNDEF .AND. XPRES(JI) /= XNEGUNDEF ) &
+        CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'INI_BALLOON', &
+                        'altitude or pressure at launch (not both) must be provided for ISODEN balloon ' // TRIM( CTITLE(JI) ), &
+                        OLOCAL = .TRUE. )
+      TZBALLOON%XALTLAUNCH = XALTLAUNCH(JI)
+      TZBALLOON%XPRES      = XPRES(JI)
+
+      IF ( XWASCENT(JI) == XNEGUNDEF ) THEN
+        CALL PRINT_MSG( NVERB_INFO, 'GEN', 'INI_BALLOON', &
+                        'initial vertical speed not provided for CVBALL balloon ' // TRIM( CTITLE(JI) ) // ' => set to 0.' , &
+                        OLOCAL = .TRUE.)
+        XWASCENT(JI) = 0.
+      END IF
+      TZBALLOON%XWASCENT = XWASCENT(JI)
+
+
+      IF ( XAERODRAG(JI) == XNEGUNDEF ) THEN
+        CALL PRINT_MSG( NVERB_INFO, 'GEN', 'INI_BALLOON', &
+                        'aerodynamic drag coefficient not provided for CVBALL balloon ' // TRIM( CTITLE(JI) ) &
+                        // ' => set to 0.44', OLOCAL = .TRUE.)
+        XAERODRAG(JI) = 0.44
+      END IF
+      TZBALLOON%XAERODRAG = XAERODRAG(JI)
+
+      IF ( XINDDRAG(JI) == XNEGUNDEF ) THEN
+        CALL PRINT_MSG( NVERB_INFO, 'GEN', 'INI_BALLOON', &
+                        'induced drag coefficient not provided for CVBALL balloon ' // TRIM( CTITLE(JI) ) // ' => set to 0.014', &
+                        OLOCAL = .TRUE.)
+        XINDDRAG(JI) = 0.014
+      END IF
+      TZBALLOON%XINDDRAG = XINDDRAG(JI)
+
+      IF ( XMASS(JI) == XNEGUNDEF ) &
+        CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'INI_BALLOON', 'mass not provided for CVBALL balloon ' // TRIM( CTITLE(JI) ), &
+                        OLOCAL = .TRUE. )
+      TZBALLOON%XMASS = XMASS(JI)
+
+      IF ( XDIAMETER(JI) <= 0. .AND. XVOLUME(JI) <= 0. ) &
+        CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'INI_BALLOON', &
+                        'diameter or volume not provided for CVBALL balloon ' // TRIM( CTITLE(JI) ), OLOCAL = .TRUE. )
+
+      IF ( XDIAMETER(JI) <= 0. ) THEN
+        TZBALLOON%XVOLUME          = XVOLUME(JI)
+        TZBALLOON%XDIAMETER        = ( (3. * XVOLUME(JI) ) / ( 4. * XPI ) ) ** ( 1. / 3. )
+      ELSE IF ( XVOLUME(JI) <= 0 ) THEN
+        TZBALLOON%XDIAMETER        = XDIAMETER(JI)
+        TZBALLOON%XVOLUME          = XPI / 6 * XDIAMETER(JI)**3
+      ELSE
+        CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'INI_BALLOON', &
+                        'diameter or volume (not both) must be provided for CVBALL balloon ' // TRIM( CTITLE(JI) ), &
+                        OLOCAL = .TRUE. )
+      END IF
+
+
+    CASE ( 'ISODEN' )
+      IF ( XALTLAUNCH(JI) == XNEGUNDEF .AND. XPRES(JI) == XNEGUNDEF ) &
+        CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'INI_BALLOON', &
+                        'altitude or pressure at launch must be provided for ISODEN balloon ' // TRIM( CTITLE(JI) ), &
+                        OLOCAL = .TRUE. )
+      IF ( XALTLAUNCH(JI) /= XNEGUNDEF .AND. XPRES(JI) /= XNEGUNDEF ) &
+        CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'INI_BALLOON', &
+                        'altitude or pressure at launch (not both) must be provided for ISODEN balloon ' // TRIM( CTITLE(JI) ), &
+                        OLOCAL = .TRUE.)
+      TZBALLOON%XALTLAUNCH = XALTLAUNCH(JI)
+      TZBALLOON%XPRES      = XPRES(JI)
+
+      IF ( XWASCENT(JI) /= XNEGUNDEF ) THEN
+        CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'INI_BALLOON', &
+                        'initial vertical speed is not needed for ISODEN balloon ' // TRIM( CTITLE(JI) ) // ' => ignored', &
+                        OLOCAL = .TRUE. )
+        XWASCENT(JI) = XNEGUNDEF
+      END IF
+      TZBALLOON%XWASCENT = XWASCENT(JI)
+
+
+      IF ( XAERODRAG(JI) /= XNEGUNDEF ) THEN
+        CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'INI_BALLOON', &
+                        'aerodynamic drag coefficient is not needed for ISODEN balloon ' // TRIM( CTITLE(JI) ) // ' => ignored', &
+                        OLOCAL = .TRUE. )
+        XAERODRAG(JI) = XNEGUNDEF
+      END IF
+      TZBALLOON%XAERODRAG = XAERODRAG(JI)
+
+      IF ( XINDDRAG(JI) /= XNEGUNDEF ) THEN
+        CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'INI_BALLOON', &
+                        'induced drag coefficient is not needed for ISODEN balloon ' // TRIM( CTITLE(JI) ) // ' => ignored' , &
+                        OLOCAL = .TRUE.)
+        XINDDRAG(JI) = XNEGUNDEF
+      END IF
+      TZBALLOON%XINDDRAG = XINDDRAG(JI)
+
+      IF ( XMASS(JI) /= XNEGUNDEF ) THEN
+        CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'INI_BALLOON', &
+                        'mass is not needed for ISODEN balloon ' // TRIM( CTITLE(JI) ) // ' => ignored', OLOCAL = .TRUE. )
+        XMASS(JI) = XNEGUNDEF
+      END IF
+      TZBALLOON%XMASS = XMASS(JI)
+
+      IF ( XDIAMETER(JI) /= XNEGUNDEF ) THEN
+        CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'INI_BALLOON', &
+                        'diameter is not needed for ISODEN balloon ' // TRIM( CTITLE(JI) ) // ' => ignored', OLOCAL = .TRUE. )
+        XDIAMETER(JI) = XNEGUNDEF
+      END IF
+      TZBALLOON%XDIAMETER = XDIAMETER(JI)
+
+      IF ( XVOLUME(JI) /= XNEGUNDEF ) THEN
+        CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'INI_BALLOON', &
+                        'volume is not needed for ISODEN balloon ' // TRIM( CTITLE(JI) ) // ' => ignored', OLOCAL = .TRUE. )
+        XVOLUME(JI) = XNEGUNDEF
+      END IF
+      TZBALLOON%XVOLUME = XVOLUME(JI)
+
+
+    CASE ( 'RADIOS' )
+      IF ( XALTLAUNCH(JI) == XNEGUNDEF ) &
+        CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'INI_BALLOON', &
+                        'altitude of launch must be provided for radiosounding balloon ' // TRIM( CTITLE(JI) ), OLOCAL = .TRUE. )
+      TZBALLOON%XALTLAUNCH = XALTLAUNCH(JI)
+
+      IF ( XWASCENT(JI) == XNEGUNDEF ) THEN
+        CALL PRINT_MSG( NVERB_INFO, 'GEN', 'INI_BALLOON', &
+                        'initial vertical speed not provided for balloon ' // TRIM( CTITLE(JI) ) // ' => set to 5.', &
+                        OLOCAL = .TRUE. )
+        XWASCENT(JI) = 5.
+      END IF
+      TZBALLOON%XWASCENT = XWASCENT(JI)
+
+      IF ( XPRES(JI) /= XNEGUNDEF ) THEN
+        CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'INI_BALLOON',                        &
+                        'initial pressure is not needed for radiosounding balloon ' &
+                        // TRIM( CTITLE(JI) ) // ' => ignored', OLOCAL = .TRUE. )
+        XPRES(JI) = XNEGUNDEF
+      END IF
+      TZBALLOON%XAERODRAG = XAERODRAG(JI)
+
+      IF ( XAERODRAG(JI) /= XNEGUNDEF ) THEN
+        CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'INI_BALLOON',                                    &
+                        'aerodynamic drag coefficient is not needed for radiosounding balloon ' &
+                        // TRIM( CTITLE(JI) ) // ' => ignored', OLOCAL = .TRUE. )
+        XAERODRAG(JI) = XNEGUNDEF
+      END IF
+      TZBALLOON%XAERODRAG = XAERODRAG(JI)
+
+      IF ( XINDDRAG(JI) /= XNEGUNDEF ) THEN
+        CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'INI_BALLOON',                                &
+                        'induced drag coefficient is not needed for radiosounding balloon ' &
+                        // TRIM( CTITLE(JI) ) // ' => ignored', OLOCAL = .TRUE. )
+        XINDDRAG(JI) = XNEGUNDEF
+      END IF
+      TZBALLOON%XINDDRAG = XINDDRAG(JI)
+
+      IF ( XMASS(JI) /= XNEGUNDEF ) THEN
+        CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'INI_BALLOON', &
+                        'mass is not needed for radiosounding balloon ' // TRIM( CTITLE(JI) ) // ' => ignored', OLOCAL = .TRUE. )
+        XMASS(JI) = XNEGUNDEF
+      END IF
+      TZBALLOON%XMASS = XMASS(JI)
+
+      IF ( XDIAMETER(JI) /= XNEGUNDEF ) THEN
+        CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'INI_BALLOON', &
+                        'diameter is not needed for radiosounding balloon ' // TRIM( CTITLE(JI) ) // ' => ignored', &
+                        OLOCAL = .TRUE. )
+        XDIAMETER(JI) = XNEGUNDEF
+      END IF
+      TZBALLOON%XDIAMETER = XDIAMETER(JI)
+
+      IF ( XVOLUME(JI) /= XNEGUNDEF ) THEN
+        CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'INI_BALLOON', &
+                        'volume is not needed for radiosounding balloon ' // TRIM( CTITLE(JI) ) // ' => ignored', OLOCAL = .TRUE. )
+        XVOLUME(JI) = XNEGUNDEF
+      END IF
+      TZBALLOON%XVOLUME = XVOLUME(JI)
+
+
+    CASE DEFAULT
+      CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'INI_BALLOON', 'invalid balloon type (CTYPE=' &
+                      // TRIM( CTYPE(JI ) ) // ') for balloon ' // TRIM( CTITLE(JI) ), OLOCAL = .TRUE. )
+
+  END SELECT
+END DO
+
+IF ( NBALLOONS > 0 ) CALL BALLOONS_NML_DEALLOCATE()
+
 !----------------------------------------------------------------------------
 !
 END SUBROUTINE INI_BALLOON
+
+END MODULE MODE_INI_BALLOON

@@ -1,4 +1,4 @@
-!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
@@ -45,8 +45,8 @@ TYPE GR_BIOG_GREENROOF_t
   REAL, DIMENSION(:), POINTER :: XP_IACAN !pack radiation
   REAL, DIMENSION(:,:,:),POINTER ::XIACAN ! PAR at 3 gauss level for each patch
 !
-!* XFISO  = isoprene emission flux (ppp.m.s-1)
-!  XFMONO = monoterpenes emission flux (ppp m s-1)
+!* XFISO  = isoprene emission flux (ppv.m.s-1)
+!  XFMONO = monoterpenes emission flux (ppv m s-1)
   REAL, DIMENSION(:), POINTER :: XFISO, XFMONO
 !
 !

@@ -1,24 +1,19 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2001-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 init 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !     ##################
       MODULE MODI_INI_LG
 !     ##################
 INTERFACE
 !
-      SUBROUTINE INI_LG(PXHAT,PYHAT,PZZ,PSVT,PLBXSVM,PLBYSVM)
+      SUBROUTINE INI_LG( PXHATM, PYHATM, PZZ, PSVT, PLBXSVM, PLBYSVM )
 !
-REAL,DIMENSION(:),      INTENT(IN) :: PXHAT,PYHAT ! Positions x,y in the cartesian plane
-REAL,DIMENSION(:,:,:), INTENT(IN)  :: PZZ         ! True altitude of the w grid-point
-REAL,DIMENSION(:,:,:,:), INTENT(INOUT) :: PSVT        ! scalar var. at t
-REAL,DIMENSION(:,:,:,:), INTENT(INOUT) :: PLBXSVM,PLBYSVM  ! LB in x and y-dir.
+REAL, DIMENSION(:),       INTENT(IN)    :: PXHATM, PYHATM    ! Positions x,y in the cartesian plane at mass points
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PZZ               ! True altitude of the w grid-point
+REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PSVT              ! scalar var. at t
+REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PLBXSVM, PLBYSVM  ! LB in x and y-dir.
 !
 END SUBROUTINE INI_LG
 !
@@ -28,9 +23,9 @@ END MODULE MODI_INI_LG
 !
 !
 !
-!     ############################################################
-      SUBROUTINE INI_LG(PXHAT,PYHAT,PZZ,PSVT,PLBXSVM,PLBYSVM)
-!     ############################################################
+!     ################################################################
+      SUBROUTINE INI_LG( PXHATM, PYHATM, PZZ, PSVT, PLBXSVM, PLBYSVM )
+!     ################################################################
 !
 !!****  *INI_LG* - routine to initialize lagrangian variables
 !!
@@ -78,10 +73,10 @@ IMPLICIT NONE
 !
 !*       0.1   declarations of argument
 !
-REAL,DIMENSION(:),      INTENT(IN) :: PXHAT,PYHAT ! Positions x,y in the cartesian plane
-REAL,DIMENSION(:,:,:), INTENT(IN)  :: PZZ         ! True altitude of the w grid-point
-REAL,DIMENSION(:,:,:,:), INTENT(INOUT) :: PSVT        ! scalar var. at t
-REAL,DIMENSION(:,:,:,:), INTENT(INOUT) :: PLBXSVM,PLBYSVM  ! LB in x and y-dir.
+REAL, DIMENSION(:),       INTENT(IN)    :: PXHATM, PYHATM    ! Positions x,y in the cartesian plane at mass points
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PZZ               ! True altitude of the w grid-point
+REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PSVT              ! scalar var. at t
+REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PLBXSVM, PLBYSVM  ! LB in x and y-dir.
 !
 !
 !*       0.2   declarations of local variables
@@ -103,7 +98,7 @@ IKU=SIZE(PZZ,3)
 DO JK=1,IKU
   DO JJ=1,IJU
     DO JI=1,IIU-1
-      PSVT(JI,JJ,JK,NSV_LGBEG)=0.5*(PXHAT(JI)+PXHAT(JI+1))
+      PSVT(JI,JJ,JK,NSV_LGBEG)=PXHATM(JI)
     END DO
     PSVT(IIU,JJ,JK,NSV_LGBEG)=2.*PSVT(IIU-1,JJ,JK,NSV_LGBEG)-PSVT(IIU-2,JJ,JK,NSV_LGBEG)
   END DO
@@ -112,7 +107,7 @@ END DO
 DO JK=1,IKU
   DO JI=1,IIU
     DO JJ=1,IJU-1
-      PSVT(JI,JJ,JK,NSV_LGBEG+1)=0.5*(PYHAT(JJ)+PYHAT(JJ+1))
+      PSVT(JI,JJ,JK,NSV_LGBEG+1)=PYHATM(JJ)
     END DO
     PSVT(JI,IJU,JK,NSV_LGBEG+1)=2.*PSVT(JI,IJU-1,JK,NSV_LGBEG+1)-PSVT(JI,IJU-2,JK,NSV_LGBEG+1)
   END DO

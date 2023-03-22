@@ -12,42 +12,43 @@
       MODULE MODN_CH_ORILAM
 !!    #####################
 !!
-!!*** *MODN_CH_ORILAM*
-!!
 !!    PURPOSE
 !!    -------
-!       Namelist for ORILAM aerosol scheme parameters 
+!!    Namelist for ORILAM aerosol scheme parameters 
 !!
-!!**  AUTHOR
+!!    AUTHOR
 !!    ------
 !!    P. Tulet      *CNRM*
-!
+!!
 !!    MODIFICATIONS
 !!    -------------
-!!    Original 24/02/05
-!!
-!!    IMPLICIT ARGUMENTS
-!!    ------------------
-USE MODD_CH_AEROSOL, ONLY: LORILAM, XN0IMIN, XN0JMIN, LSEDIMAERO, LAERINIT,&
-                          LHETEROSO4, CNUCLEATION, XINISIGI, XINISIGJ,  & 
-                          XINIRADIUSI, XINIRADIUSJ, LVARSIGI,&
-                          LVARSIGJ, CMINERAL, CORGANIC,&
-                          XSIGIMIN, XSIGIMAX,XSIGJMIN, XSIGJMAX,  & 
-                          XCOEFRADIMAX, XCOEFRADIMIN, XCOEFRADJMAX, XCOEFRADJMIN,&
-                          CRGUNIT, LRGFIX, LDEPOS_AER
+!!    Original 24/02/2005
 !!
 !-----------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
 !        -----------------
+!
+USE MODD_CH_AEROSOL, ONLY: LORILAM, XN0IMIN, XN0JMIN, LSEDIMAERO, LAERINIT,        &
+                           LHETEROSO4, CNUCLEATION, LCONDENSATION, LMODE_MERGING,  &
+                           XRADIUS_NUCL, XSIGMA_NUCL,                              &
+                           LCOAGULATION, XINISIGI, XINISIGJ,                       &
+                           XINIRADIUSI, XINIRADIUSJ, LVARSIGI,                     &
+                           LVARSIGJ, CMINERAL, CORGANIC,                           &
+                           XSIGIMIN, XSIGIMAX,XSIGJMIN, XSIGJMAX,                  &
+                           XCOEFRADIMAX, XCOEFRADIMIN, XCOEFRADJMAX, XCOEFRADJMIN, &
+                           CRGUNIT, LRGFIX, LDEPOS_AER
+!
 IMPLICIT NONE
-SAVE
-NAMELIST /NAM_CH_ORILAM/  LORILAM, XN0IMIN, XN0JMIN, LSEDIMAERO, LAERINIT, &
-                          LHETEROSO4, CNUCLEATION, XINISIGI, XINISIGJ,  & 
-                          XINIRADIUSI, XINIRADIUSJ, LVARSIGI,&
-                          LVARSIGJ, CMINERAL, CORGANIC, &
-                          XSIGIMIN, XSIGIMAX,XSIGJMIN, XSIGJMAX,  & 
-                          XCOEFRADIMAX, XCOEFRADIMIN, XCOEFRADJMAX, XCOEFRADJMIN,&
+!
+NAMELIST /NAM_CH_ORILAM/  LORILAM, XN0IMIN, XN0JMIN, LSEDIMAERO, LAERINIT,        &
+                          LHETEROSO4, CNUCLEATION, LCONDENSATION, LMODE_MERGING,  &
+                          XRADIUS_NUCL, XSIGMA_NUCL,                              &
+                          LCOAGULATION, XINISIGI, XINISIGJ,                       &  
+                          XINIRADIUSI, XINIRADIUSJ, LVARSIGI,                     &
+                          LVARSIGJ, CMINERAL, CORGANIC,                           &
+                          XSIGIMIN, XSIGIMAX,XSIGJMIN, XSIGJMAX,                  &  
+                          XCOEFRADIMAX, XCOEFRADIMIN, XCOEFRADJMAX, XCOEFRADJMIN, &
                           CRGUNIT, LRGFIX, LDEPOS_AER
 
 !

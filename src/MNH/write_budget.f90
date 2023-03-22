@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -105,10 +105,10 @@ subroutine Write_budget( tpdiafile, tpdtcur, ptstep, ksv )
                                  tbudgets, tburhodj
   use modd_field,          only: NMNHDIM_ONE, NMNHDIM_NI, NMNHDIM_NJ,                              &
                                  NMNHDIM_BUDGET_TIME, NMNHDIM_BUDGET_MASK_NBUMASK, NMNHDIM_UNUSED, &
-                                 tfielddata, TYPEINT, TYPEREAL
+                                 tfieldmetadata, TYPEINT, TYPEREAL
   use modd_io,             only: tfiledata
   use modd_lunit_n,        only: tluout
-  use modd_parameters,     only: NMNHNAMELGTMAX
+  use modd_parameters,     only: NCOMMENTLGTMAX, NMNHNAMELGTMAX
   use modd_type_date,      only: date_time
 
   use mode_datetime,       only: datetime_distance
@@ -126,6 +126,8 @@ subroutine Write_budget( tpdiafile, tpdtcur, ptstep, ksv )
   real,            intent(in) :: ptstep       ! time step
   integer,         intent(in) :: ksv          ! number of scalar variables
 
+  character(len=NCOMMENTLGTMAX)                        :: ycomment
+  character(len=NMNHNAMELGTMAX)                        :: ymnhname
   character(len=NMNHNAMELGTMAX)                        :: yrecfm        ! name of the article to be written
   integer                                              :: jt, jmask
   integer                                              :: jsv           ! loop index over the ksv svx
@@ -133,8 +135,8 @@ subroutine Write_budget( tpdiafile, tpdtcur, ptstep, ksv )
   real,            dimension(:),           allocatable :: zworktemp
   real,            dimension(:,:,:,:,:,:), allocatable :: zrhodjn, zworkmask
   type(date_time), dimension(:),           allocatable :: tzdates
-  type(tfielddata) :: tzfield
-  type(tfiledata)  :: tzfile
+  type(tfieldmetadata) :: tzfield
+  type(tfiledata)      :: tzfile
   !
   !-------------------------------------------------------------------------------
   !
@@ -145,28 +147,30 @@ subroutine Write_budget( tpdiafile, tpdtcur, ptstep, ksv )
   !* Write TSTEP and BULEN
   !  ---------------------
   !
-  TZFIELD%CMNHNAME   = 'TSTEP'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'TSTEP'
-  TZFIELD%CUNITS     = 's'
-  TZFIELD%CDIR       = '--'
-  TZFIELD%CCOMMENT   = 'Time step'
-  TZFIELD%NGRID      = 0
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 0
-  TZFIELD%LTIMEDEP   = .FALSE.
+  TZFIELD = TFIELDMETADATA(   &
+    CMNHNAME   = 'TSTEP',     &
+    CSTDNAME   = '',          &
+    CLONGNAME  = 'TSTEP',     &
+    CUNITS     = 's',         &
+    CDIR       = '--',        &
+    CCOMMENT   = 'Time step', &
+    NGRID      = 0,           &
+    NTYPE      = TYPEREAL,    &
+    NDIMS      = 0,           &
+    LTIMEDEP   = .FALSE.      )
   CALL IO_Field_write(TPDIAFILE,TZFIELD,PTSTEP)
   !
-  TZFIELD%CMNHNAME   = 'BULEN'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'BULEN'
-  TZFIELD%CUNITS     = 's'
-  TZFIELD%CDIR       = '--'
-  TZFIELD%CCOMMENT   = 'Time step'
-  TZFIELD%NGRID      = 0
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 0
-  TZFIELD%LTIMEDEP   = .FALSE.
+  TZFIELD = TFIELDMETADATA(   &
+    CMNHNAME   = 'BULEN',     &
+    CSTDNAME   = '',          &
+    CLONGNAME  = 'BULEN',     &
+    CUNITS     = 's',         &
+    CDIR       = '--',        &
+    CCOMMENT   = 'Length of the budget temporal average', &
+    NGRID      = 0,           &
+    NTYPE      = TYPEREAL,    &
+    NDIMS      = 0,           &
+    LTIMEDEP   = .FALSE.      )
   CALL IO_Field_write(TPDIAFILE,TZFIELD,XBULEN)
   !
   ! Initialize NBUTSHIFT
@@ -245,22 +249,20 @@ subroutine Write_budget( tpdiafile, tpdtcur, ptstep, ksv )
         tzfile = tpdiafile
         tzfile%cformat = 'LFI'
 
-        Write( tzfield%cmnhname, fmt = "( 'MASK_', i4.4, '.MASK' )" ) nbutshift
-        tzfield%cstdname   = ''
-        tzfield%clongname  = Trim( tzfield%cmnhname )
-        tzfield%cunits     = ''
-        tzfield%cdir       = 'XY'
-        Write( tzfield%ccomment, fmt = "( 'X_Y_MASK', i4.4 )" ) nbutshift
-        tzfield%ngrid      = 1
-        tzfield%ntype      = TYPEREAL
-        tzfield%ndims      = 6
-        tzfield%ltimedep   = .FALSE.
-        tzfield%ndimlist(1) = NMNHDIM_NI
-        tzfield%ndimlist(2) = NMNHDIM_NJ
-        tzfield%ndimlist(3) = NMNHDIM_ONE
-        tzfield%ndimlist(4) = NMNHDIM_BUDGET_TIME
-        tzfield%ndimlist(5) = NMNHDIM_BUDGET_MASK_NBUMASK
-        tzfield%ndimlist(6) = NMNHDIM_ONE
+        Write( ymnhname, fmt = "( 'MASK_', i4.4, '.MASK' )" ) nbutshift
+        Write( ycomment, fmt = "( 'X_Y_MASK', i4.4 )" ) nbutshift
+        tzfield = tfieldmetadata(         &
+          cmnhname   = Trim( ymnhname ),  &
+          cstdname   = '',                &
+          clongname  = Trim( ymnhname ),  &
+          cunits     = '',                &
+          cdir       = 'XY',              &
+          ccomment   = Trim ( ycomment ), &
+          ngrid      = 1,                 &
+          ntype      = TYPEREAL,          &
+          ndims      = 6,                 &
+          ndimlist = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_ONE, NMNHDIM_BUDGET_TIME, NMNHDIM_BUDGET_MASK_NBUMASK, NMNHDIM_ONE ], &
+          ltimedep   = .FALSE.            )
         call IO_Field_write( tzfile, tzfield, zworkmask(:, :, :, :, :, :) )
 
         Write( yrecfm, fmt = "( 'MASK_', i4.4 )" ) nbutshift
@@ -274,21 +276,18 @@ subroutine Write_budget( tpdiafile, tpdtcur, ptstep, ksv )
         tzfile = tpdiafile
         tzfile%cformat = 'NETCDF4'
 
-        tzfield%cmnhname   = CMASK_VARNAME
-        tzfield%cstdname   = ''
-        tzfield%clongname  = Trim( tzfield%cmnhname )
-        tzfield%cunits     = '1'
-        tzfield%cdir       = 'XY'
-        tzfield%ccomment   = 'Masks for budget areas'
-        tzfield%ngrid      = 1
-        tzfield%ntype      = TYPEINT
-        tzfield%ndims      = 4
-        tzfield%ltimedep   = .false. !The time dependance is in the NMNHDIM_BUDGET_TIME dimension
-        tzfield%ndimlist(1)  = NMNHDIM_NI
-        tzfield%ndimlist(2)  = NMNHDIM_NJ
-        tzfield%ndimlist(3)  = NMNHDIM_BUDGET_MASK_NBUMASK
-        tzfield%ndimlist(4)  = NMNHDIM_BUDGET_TIME
-        tzfield%ndimlist(5:) = NMNHDIM_UNUSED
+        tzfield = tfieldmetadata(                &
+          cmnhname   = CMASK_VARNAME,            &
+          cstdname   = '',                       &
+          clongname  = CMASK_VARNAME,            &
+          cunits     = '1',                      &
+          cdir       = 'XY',                     &
+          ccomment   = 'Masks for budget areas', &
+          ngrid      = 1,                        &
+          ntype      = TYPEINT,                  &
+          ndims      = 4,                        &
+          ndimlist = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_BUDGET_MASK_NBUMASK, NMNHDIM_BUDGET_TIME ], &
+          ltimedep   = .false.                   ) !The time dependance is in the NMNHDIM_BUDGET_TIME dimension
 
         !Create the metadata of the field (has to be done only once)
         if ( nbutshift == 1 ) call IO_Field_create( tzfile, tzfield )
@@ -621,7 +620,6 @@ subroutine Store_one_budget( tpdiafile, tpdates, tpbudget, prhodjn, knocompress,
                                     TYPEREAL
   use modd_io,                only: tfiledata
   use modd_lunit_n,           only: tluout
-  use modd_nsv,               only: csvnames
   use modd_parameters,        only: NBUNAMELGTMAX
   use modd_type_date,         only: date_time
 

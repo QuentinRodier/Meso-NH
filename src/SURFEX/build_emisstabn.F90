@@ -1,4 +1,4 @@
-!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
@@ -110,13 +110,13 @@ ALLOCATE (PCONVERSION(SIZE(PRHODREF,1)))
 ! determine the conversion factor
   PCONVERSION(:) = 1.
 SELECT CASE (YUNIT)
-CASE ('MIX') ! flux given ppp*m/s,  conversion to molec/m2/s
-! where 1 molecule/cm2/s = (224.14/6.022136E23) ppp*m/s
+CASE ('MIX') ! flux given ppv*m/s,  conversion to molec/m2/s
+! where 1 molecule/cm2/s = (224.14/6.022136E23) ppv*m/s
   PCONVERSION(:) = XAVOGADRO * PRHODREF(:) / XMD
 CASE ('CON') ! flux given in molecules/cm2/s, conversion to molec/m2/s 
   PCONVERSION(:) =  1E4
 CASE ('MOL') ! flux given in microMol/m2/day, conversion to molec/m2/s  
-! where 1 microMol/m2/day = (22.414/86.400)*1E-12 ppp*m/s
+! where 1 microMol/m2/day = (22.414/86.400)*1E-12 ppv*m/s
   !XCONVERSION(:) = (22.414/86.400)*1E-12 * XAVOGADRO * PRHODREF(:) / XMD
   PCONVERSION(:) = 1E-6 * XAVOGADRO / 86400.
 

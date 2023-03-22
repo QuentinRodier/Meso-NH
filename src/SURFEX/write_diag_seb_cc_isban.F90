@@ -1,0 +1,1246 @@
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
+!     #########
+      SUBROUTINE WRITE_DIAG_SEB_CC_ISBA_n (DTCO, DUO, U, ID, IO, S, NP, NPE, HPROGRAM  )
+!     #################################
+!
+!!****  *WRITE_DIAG_SEB_CC_ISBA* - writes the ISBA-CC diagnostic fields
+!!
+!!    PURPOSE
+!!    -------
+!!
+!!
+!!**  METHOD
+!!    ------
+!!
+!!    REFERENCE
+!!    ---------
+!!
+!!
+!!    AUTHOR
+!!    ------
+!!      B. DECHARME   *CNRM*
+!!
+!!    MODIFICATIONS
+!!    -------------
+!!      Original    01/2022  adapt from write_diag_seb_isban.F90 for carbon diag
+!!      R. Séférian   11/16  Fire scheme, DOC, etc...
+!!      C. Delire   08/2016  Add turnover diags
+!!      B. Decharme 02/2019  Explicit soil carbon and gas schemes
+!!
+!-------------------------------------------------------------------------------
+!
+!*       0.    DECLARATIONS
+!              ------------
+!
+USE MODD_DATA_COVER_n,   ONLY : DATA_COVER_t
+USE MODD_DIAG_n,         ONLY : DIAG_OPTIONS_t
+USE MODD_SURF_ATM_n,     ONLY : SURF_ATM_t
+USE MODD_SURFEX_n,       ONLY : ISBA_DIAG_t
+USE MODD_ISBA_OPTIONS_n, ONLY : ISBA_OPTIONS_t
+USE MODD_ISBA_n,         ONLY : ISBA_NP_t, ISBA_P_t, ISBA_NPE_t, ISBA_PE_t, ISBA_S_t
+!
+USE MODD_XIOS,           ONLY : LALLOW_ADD_DIM, YGROUND_LAYER_DIM_NAME
+!
+USE MODD_SURF_PAR,       ONLY : XUNDEF, NUNDEF, LEN_HREC
+!
+USE MODD_DST_SURF
+!
+USE MODE_DIAG
+!
+USE MODI_INIT_IO_SURF_n
+USE MODI_WRITE_SURF
+USE MODI_END_IO_SURF_n
+USE MODI_WRITE_FIELD_1D_PATCH
+!
+USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+USE PARKIND1  ,ONLY : JPRB
+!
+IMPLICIT NONE
+!
+!*       0.1   Declarations of arguments
+!              -------------------------
+!
+TYPE(DATA_COVER_t),   INTENT(INOUT) :: DTCO
+TYPE(DIAG_OPTIONS_t), INTENT(INOUT) :: DUO
+TYPE(SURF_ATM_t),     INTENT(INOUT) :: U
+TYPE(ISBA_DIAG_t),    INTENT(INOUT) :: ID
+TYPE(ISBA_OPTIONS_t), INTENT(INOUT) :: IO
+TYPE(ISBA_S_t),       INTENT(INOUT) :: S
+TYPE(ISBA_NP_t),      INTENT(INOUT) :: NP
+TYPE(ISBA_NPE_t),     INTENT(INOUT) :: NPE
+!
+ CHARACTER(LEN=6),    INTENT(IN)    :: HPROGRAM ! program calling
+!
+!*       0.2   Declarations of local variables
+!              -------------------------------
+!
+TYPE(ISBA_P_t),  POINTER :: PK
+TYPE(ISBA_PE_t), POINTER :: PEK
+!
+INTEGER                 :: IRESP          ! IRESP  : return-code if a problem appears
+CHARACTER(LEN=LEN_HREC) :: YRECFM         ! Name of the article to be write
+CHARACTER(LEN=100)      :: YCOMMENT       ! Comment string
+CHARACTER(LEN=2)        :: YNUM
+!
+INTEGER         :: JP, JLAYER, JSTRESS
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+!
+!-------------------------------------------------------------------------------
+!
+IF (LHOOK) CALL DR_HOOK('WRITE_DIAG_SEB_CC_ISBA_N',0,ZHOOK_HANDLE)
+!
+!         Initialisation for IO
+!         ---------------------
+!
+IF ( ID%DM%LPROSNOW ) THEN
+  CALL INIT_IO_SURF_n(DTCO, U, HPROGRAM,'NATURE','ISBA  ','WRITE','ISBA_PROGNOSTIC.OUT.nc')
+ELSE
+  CALL INIT_IO_SURF_n(DTCO, U, HPROGRAM,'NATURE','ISBA  ','WRITE','ISBA_DIAGNOSTICS.OUT.nc')
+ENDIF
+!
+!-------------------------------------------------------------------------------
+
+!
+!*       1. ISBA averaged diag
+!           ------------------
+!
+IF (ID%DE%LSURF_EVAP_BUDGET) THEN
+  !
+  CALL WRITE_CC_BUD(ID%DE,"_ISBA ",.FALSE.)
+  !
+ENDIF
+!
+!-------------------------------------------------------------------------------
+!
+!*        2. ISBA diag per patch
+!            -------------------
+!
+IF (ID%O%LPATCH_BUDGET.AND.(IO%NPATCH >1)) THEN
+  !
+  IF (ID%DE%LSURF_EVAP_BUDGET) THEN
+    !
+    CALL WRITE_CC_BUD_PATCH(ID%NDE,'_ ',.FALSE.)
+    !
+  ENDIF
+  !
+ENDIF
+!
+!----------------------------------------------------------------------------
+!
+!*       3.     Diag of prognostic fields
+!               -------------------------
+!
+IF (DUO%LPROVAR_TO_DIAG) THEN
+  !
+  CALL PROVAR_TO_DIAG
+  !
+ENDIF
+!
+!----------------------------------------------------------------------------
+!
+!----------------------------------------------------------------------------
+CALL END_IO_SURF_n(HPROGRAM)
+!----------------------------------------------------------------------------
+!
+!*       7.    Cumulated Energy fluxes
+!              -----------------------
+!
+CALL INIT_IO_SURF_n(DTCO, U, HPROGRAM,'NATURE','ISBA  ','WRITE','ISBA_DIAG_CUMUL.OUT.nc')
+!
+IF (ID%O%LSURF_BUDGETC) THEN
+  !
+  CALL WRITE_CC_BUD(ID%DEC,"C_ISBA",(ID%O%LSURF_BUDGETC .AND. .NOT.DUO%LRESET_BUDGETC))
+  !  
+ENDIF
+!
+!----------------------------------------------------------------------------
+!
+!*       8.    Cumulated Energy fluxes per patch
+!              ---------------------------------
+!
+!User want (or not) patch output
+IF (ID%O%LPATCH_BUDGET.AND.(IO%NPATCH >1)) THEN
+    !
+    IF (ID%O%LSURF_BUDGETC) THEN
+      !
+      CALL WRITE_CC_BUD_PATCH(ID%NDEC,'C_',(ID%O%LSURF_BUDGETC .AND. .NOT.DUO%LRESET_BUDGETC))
+      !
+    ENDIF
+    !
+ENDIF
+!
+!         End of IO
+!
+!-------------------------------------------------------------------------------
+CALL END_IO_SURF_n(HPROGRAM)
+!-------------------------------------------------------------------------------
+!
+IF ( DUO%LRESETCUMUL .AND. ID%O%LSURF_BUDGETC ) THEN
+  !  
+  IF (ID%DE%LSURF_EVAP_BUDGET) THEN
+    !
+    DO JP = 1,IO%NPATCH
+       CALL INIT_CC_BUD(ID%NDEC%AL(JP),IO)
+    ENDDO
+    !
+  ENDIF
+  !
+END IF
+!
+IF (LHOOK) CALL DR_HOOK('WRITE_DIAG_SEB_CC_ISBA_N',1,ZHOOK_HANDLE)
+!
+!-------------------------------------------------------------------------------
+CONTAINS
+!-------------------------------------------------------------------------------
+!
+SUBROUTINE WRITE_CC_BUD(DEA,HTERM,OFLAG)
+!
+USE MODD_DIAG_EVAP_ISBA_n, ONLY : DIAG_EVAP_ISBA_t
+!
+TYPE(DIAG_EVAP_ISBA_t) :: DEA
+!
+CHARACTER(LEN=6), INTENT(IN) :: HTERM
+LOGICAL,          INTENT(IN) :: OFLAG
+!
+CHARACTER(LEN=10) :: YUNIT
+REAL(KIND=JPRB)   :: ZHOOK_HANDLE
+!
+IF (LHOOK) CALL DR_HOOK('WRITE_DIAG_SEB_CC_ISBA_N:WRITE_CC_BUD',0,ZHOOK_HANDLE)
+!
+IF (HTERM(1:1)=="C") THEN
+   YUNIT= ' (kg/m2/s)'
+ELSE
+   YUNIT= ' (kg/m2)  '
+ENDIF
+!
+! * Main Carbon flux diagnostics
+!
+IF (IO%CPHOTO/='NON') THEN      
+   !
+   YRECFM='GPP'//TRIM(HTERM)
+   YCOMMENT='gross primary production over tile nature'//YUNIT
+   CALL WRITE_SURF(DUO%CSELECT, HPROGRAM,YRECFM,DEA%XGPP(:),IRESP,HCOMMENT=YCOMMENT)
+   !
+   IF (HTERM(1:1)=="C") THEN
+      YRECFM='RC_AUTO'//TRIM(HTERM(2:))
+   ELSE
+      YRECFM='R_AUTO'//TRIM(HTERM)
+   ENDIF      
+   YCOMMENT='autotrophic respiration over tile nature'//YUNIT
+   CALL WRITE_SURF(DUO%CSELECT, HPROGRAM,YRECFM,DEA%XRESP_AUTO(:),IRESP,HCOMMENT=YCOMMENT)
+   !
+   IF (HTERM(1:1)=="C") THEN
+      YRECFM='RC_ECO'//TRIM(HTERM(2:))
+   ELSE
+      YRECFM='R_ECO'//TRIM(HTERM)
+   ENDIF      
+   YCOMMENT='ecosystem respiration over tile nature'//YUNIT
+   CALL WRITE_SURF(DUO%CSELECT, HPROGRAM,YRECFM,DEA%XRESP_ECO(:),IRESP,HCOMMENT=YCOMMENT)
+   !
+   IF (HTERM(1:1)=="C") THEN
+      YRECFM='RC_SOIL'//TRIM(HTERM(2:))
+   ELSE
+      YRECFM='R_SOIL'//TRIM(HTERM)
+   ENDIF
+   YCOMMENT='hetero respiration from soil over tile nature'//YUNIT
+   CALL WRITE_SURF(DUO%CSELECT, HPROGRAM,YRECFM,DEA%XRESPSCARB(:),IRESP,HCOMMENT=YCOMMENT)
+   !
+   IF (HTERM(1:1)=="C") THEN
+      YRECFM='RC_LIT'//TRIM(HTERM(2:))
+   ELSE
+      YRECFM='R_LIT'//TRIM(HTERM)
+   ENDIF
+   YCOMMENT='hetero respiration from surface litter over tile nature'//YUNIT
+   CALL WRITE_SURF(DUO%CSELECT, HPROGRAM,YRECFM,DEA%XRESPLIT(:),IRESP,HCOMMENT=YCOMMENT)
+   !
+ENDIF
+!
+! * Additional Carbon flux diagnostics
+!
+IF (IO%CRESPSL=='CNT'.OR.IO%CRESPSL=='DIF') THEN
+   !
+   YRECFM='TURNVT'//TRIM(HTERM)
+   YCOMMENT='turnover from tile nature'//YUNIT
+   CALL WRITE_SURF(DUO%CSELECT, HPROGRAM,YRECFM,DEA%XTURNVTOT(:),IRESP,HCOMMENT=YCOMMENT)
+   !
+ENDIF
+!
+! * Riverine doc Flux
+!
+IF (IO%LCLEACH) THEN
+   !
+   YRECFM='DOCL'//TRIM(HTERM)
+   YCOMMENT='riverine carbon export from surface litter'//YUNIT
+   CALL WRITE_SURF(DUO%CSELECT, HPROGRAM,YRECFM,DEA%XFDOCLIT(:),IRESP,HCOMMENT=YCOMMENT)
+   !
+   YRECFM='DOCS'//TRIM(HTERM)
+   YCOMMENT='riverine carbon export from soil carbon'//YUNIT
+   CALL WRITE_SURF(DUO%CSELECT, HPROGRAM,YRECFM,DEA%XFDOC(:),IRESP,HCOMMENT=YCOMMENT)
+   !
+ENDIF
+!
+! * Fire carbon Flux
+!
+IF(IO%LFIRE)THEN
+   !
+   YRECFM='TURNFI'//TRIM(HTERM)
+   YCOMMENT='conversion of biomass to litter due to fire'//YUNIT
+   CALL WRITE_SURF(DUO%CSELECT, HPROGRAM,YRECFM,DEA%XFIRETURNOVER(:),IRESP,HCOMMENT=YCOMMENT)
+   !
+   YRECFM='FIRECO2'//TRIM(HTERM)
+   YCOMMENT='CO2 Emission from natural Fire'//YUNIT
+   CALL WRITE_SURF(DUO%CSELECT, HPROGRAM,YRECFM,DEA%XFIRECO2(:),IRESP,HCOMMENT=YCOMMENT)   !
+   !
+   YRECFM='FIREBC'//TRIM(HTERM)
+   YCOMMENT='Black Carbon Emission from natural Fire'//YUNIT
+   CALL WRITE_SURF(DUO%CSELECT, HPROGRAM,YRECFM,DEA%XFIREBCS(:),IRESP,HCOMMENT=YCOMMENT)
+   !
+ENDIF
+!
+! * Land-use carbon flux (Harvest currently)
+!
+IF (IO%LLULCC) THEN
+   !
+   YRECFM='HARV'//TRIM(HTERM)
+   YCOMMENT='carbon flux due to harvesting'//YUNIT
+   CALL WRITE_SURF(DUO%CSELECT, HPROGRAM,YRECFM,DEA%XFHARVEST(:),IRESP,HCOMMENT=YCOMMENT)
+   !
+ENDIF
+! 
+! Soil gas scheme
+!
+IF (IO%LSOILGAS) THEN
+   !
+   YRECFM='O2DIF'
+   YCOMMENT='O2 flux from diffusion at soil/atmosphere interface'//YUNIT
+   CALL WRITE_SURF(DUO%CSELECT, HPROGRAM,YRECFM,DEA%XSURF_O2(:),IRESP,HCOMMENT=YCOMMENT)
+   !
+   YRECFM='CO2DIF'
+   YCOMMENT='CO2 flux from diffusion at soil/atmosphere interface'//YUNIT
+   CALL WRITE_SURF(DUO%CSELECT, HPROGRAM,YRECFM,DEA%XSURF_CO2(:),IRESP,HCOMMENT=YCOMMENT)
+   !
+   YRECFM='CH4DIF'
+   YCOMMENT='CH4 flux from diffusion at soil/atmosphere interface'//YUNIT
+   CALL WRITE_SURF(DUO%CSELECT, HPROGRAM,YRECFM,DEA%XSURF_CH4(:),IRESP,HCOMMENT=YCOMMENT)
+   !
+   YRECFM='O2ETR'
+   YCOMMENT='O2 flux from evapotranspiration'//YUNIT
+   CALL WRITE_SURF(DUO%CSELECT, HPROGRAM,YRECFM,DEA%XEVAP_O2(:),IRESP,HCOMMENT=YCOMMENT)
+   !
+   YRECFM='CO2ETR'
+   YCOMMENT='CO2 flux from evapotranspiration'//YUNIT
+   CALL WRITE_SURF(DUO%CSELECT, HPROGRAM,YRECFM,DEA%XEVAP_CO2(:),IRESP,HCOMMENT=YCOMMENT)
+   !
+   YRECFM='CH4ETR'
+   YCOMMENT='CH4 flux from evapotranspiration'//YUNIT
+   CALL WRITE_SURF(DUO%CSELECT, HPROGRAM,YRECFM,DEA%XEVAP_CH4(:),IRESP,HCOMMENT=YCOMMENT)
+   !
+   YRECFM='O2PMT'
+   YCOMMENT='O2 flux from plant'//YUNIT
+   CALL WRITE_SURF(DUO%CSELECT, HPROGRAM,YRECFM,DEA%XPMT_O2(:),IRESP,HCOMMENT=YCOMMENT)
+   !
+   YRECFM='CO2PMT'
+   YCOMMENT='CO2 flux from plant'//YUNIT
+   CALL WRITE_SURF(DUO%CSELECT, HPROGRAM,YRECFM,DEA%XPMT_CO2(:),IRESP,HCOMMENT=YCOMMENT)
+   !
+   YRECFM='CH4PMT'
+   YCOMMENT='CH4 flux from plant'//YUNIT
+   CALL WRITE_SURF(DUO%CSELECT, HPROGRAM,YRECFM,DEA%XPMT_CH4(:),IRESP,HCOMMENT=YCOMMENT)
+   !
+   YRECFM='CH4EBU'
+   YCOMMENT='CH4 flux from ebullition'//YUNIT
+   CALL WRITE_SURF(DUO%CSELECT, HPROGRAM,YRECFM,DEA%XEBU_CH4(:),IRESP,HCOMMENT=YCOMMENT)
+   !
+   YRECFM='O2CONS'
+   YCOMMENT='total soil O2 consumed during oxic decomposition and methanotrophy'//YUNIT
+   CALL WRITE_SURF(DUO%CSELECT, HPROGRAM,YRECFM,DEA%XFCONS_O2(:),IRESP,HCOMMENT=YCOMMENT)
+   !
+   YRECFM='CO2PRO'
+   YCOMMENT='total soil CO2 produced during oxic decomposition and methanotrophy'//YUNIT
+   CALL WRITE_SURF(DUO%CSELECT, HPROGRAM,YRECFM,DEA%XFPROD_CO2(:),IRESP,HCOMMENT=YCOMMENT)
+   !
+   YRECFM='CH4MT'
+   YCOMMENT='total soil CH4 consumed during methanotrophy'//YUNIT
+   CALL WRITE_SURF(DUO%CSELECT, HPROGRAM,YRECFM,DEA%XFMT_CH4(:),IRESP,HCOMMENT=YCOMMENT)
+   !
+   YRECFM='CH4MG'
+   YCOMMENT='total soil CH4 produced during methanogenesis'//YUNIT
+   CALL WRITE_SURF(DUO%CSELECT, HPROGRAM,YRECFM,DEA%XFMG_CH4(:),IRESP,HCOMMENT=YCOMMENT)
+   !
+   YRECFM='CH4FLX'
+   YCOMMENT='total CH4 flux'//YUNIT
+   CALL WRITE_SURF(DUO%CSELECT, HPROGRAM,YRECFM,DEA%XCH4FLUX(:),IRESP,HCOMMENT=YCOMMENT)
+   !
+   YRECFM='O2FLX'
+   YCOMMENT='total O2 flux'//YUNIT
+   CALL WRITE_SURF(DUO%CSELECT, HPROGRAM,YRECFM,DEA%XO2FLUX(:),IRESP,HCOMMENT=YCOMMENT)
+   !    
+ENDIF
+!
+IF (LHOOK) CALL DR_HOOK('WRITE_DIAG_SEB_CC_ISBA_N:WRITE_CC_BUD',1,ZHOOK_HANDLE)
+!
+END SUBROUTINE WRITE_CC_BUD
+!
+!-------------------------------------------------------------------------------
+!
+SUBROUTINE WRITE_CC_BUD_PATCH(NDEA,HTERM,OFLAG)
+!
+USE MODD_DIAG_EVAP_ISBA_n, ONLY : DIAG_EVAP_ISBA_NP_t
+!
+TYPE(DIAG_EVAP_ISBA_NP_t)    :: NDEA
+CHARACTER(LEN=2), INTENT(IN) :: HTERM
+LOGICAL,          INTENT(IN) :: OFLAG
+!
+CHARACTER(LEN=13) :: YUNIT
+REAL(KIND=JPRB)   :: ZHOOK_HANDLE
+!
+IF (LHOOK) CALL DR_HOOK('WRITE_DIAG_SEB_CC_ISBA_N:WRITE_CC_BUD_PATCH',0,ZHOOK_HANDLE)
+!
+IF (HTERM(1:1)=="C") THEN
+   YUNIT= ' (kg/m2/s)'
+ELSE
+   YUNIT= ' (kg/m2)  '
+ENDIF
+!
+! * Main Carbon flux diagnostics
+!
+IF(IO%CPHOTO/='NON')THEN
+   !
+   YRECFM='GPP'//TRIM(HTERM)
+   YCOMMENT='gross primary production per patch'//YUNIT
+   DO JP=1,IO%NPATCH
+      CALL WRITE_FIELD_1D_PATCH(DUO%CSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+           NP%AL(JP)%NR_P,NDEA%AL(JP)%XGPP(:),U%NSIZE_NATURE,S%XWORK_WR)
+   ENDDO
+   !
+   IF (HTERM(1:1)=="C") THEN
+     YRECFM='RC_AUTO'//TRIM(HTERM(2:))
+   ELSE
+     YRECFM='R_AUTO'//TRIM(HTERM)
+   ENDIF
+   YCOMMENT='autotrophic respiration per patch'//YUNIT
+   DO JP=1,IO%NPATCH
+      CALL WRITE_FIELD_1D_PATCH(DUO%CSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+           NP%AL(JP)%NR_P,NDEA%AL(JP)%XRESP_AUTO(:),U%NSIZE_NATURE,S%XWORK_WR)
+   ENDDO
+   !
+   IF (HTERM(1:1)=="C") THEN
+     YRECFM='RC_ECO'//TRIM(HTERM(2:))
+   ELSE
+     YRECFM='R_ECO'//TRIM(HTERM)
+   ENDIF  
+   YCOMMENT='ecosystem respiration per patch'//YUNIT
+   DO JP=1,IO%NPATCH
+      CALL WRITE_FIELD_1D_PATCH(DUO%CSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+           NP%AL(JP)%NR_P,NDEA%AL(JP)%XRESP_ECO(:),U%NSIZE_NATURE,S%XWORK_WR)
+   ENDDO
+   !
+   IF (HTERM(1:1)=="C") THEN
+      YRECFM='RC_SOIL'//TRIM(HTERM(2:))
+   ELSE
+      YRECFM='R_SOIL'//TRIM(HTERM)
+   ENDIF
+   YCOMMENT='hetero respiration from soil per patch'//YUNIT
+   DO JP=1,IO%NPATCH
+      CALL WRITE_FIELD_1D_PATCH(DUO%CSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+           NP%AL(JP)%NR_P,NDEA%AL(JP)%XRESPSCARB(:),U%NSIZE_NATURE,S%XWORK_WR)
+   ENDDO
+   !
+   IF (HTERM(1:1)=="C") THEN
+      YRECFM='RC_LIT'//TRIM(HTERM(2:))
+   ELSE
+      YRECFM='R_LIT'//TRIM(HTERM)
+   ENDIF
+   YCOMMENT='hetero respiration from surface litter per patch'//YUNIT
+   DO JP=1,IO%NPATCH
+      CALL WRITE_FIELD_1D_PATCH(DUO%CSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+           NP%AL(JP)%NR_P,NDEA%AL(JP)%XRESPLIT(:),U%NSIZE_NATURE,S%XWORK_WR)
+   ENDDO
+   !
+ENDIF
+!
+! * Additional Carbon flux diagnostics
+!
+IF (IO%CRESPSL=='CNT'.OR.IO%CRESPSL=='DIF') THEN
+   !
+   YRECFM='TURNVT'//TRIM(HTERM)
+   YCOMMENT='turnover from tile nature'//YUNIT
+   DO JP=1,IO%NPATCH
+      CALL WRITE_FIELD_1D_PATCH(DUO%CSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+           NP%AL(JP)%NR_P,NDEA%AL(JP)%XTURNVTOT(:),U%NSIZE_NATURE,S%XWORK_WR)
+   ENDDO
+   !
+ENDIF
+!
+! * Riverine doc Flux
+!
+IF (IO%LCLEACH) THEN
+   !
+   YRECFM='DOCL'//TRIM(HTERM)
+   YCOMMENT='riverine carbon export from surface litter'//YUNIT
+   DO JP=1,IO%NPATCH
+      CALL WRITE_FIELD_1D_PATCH(DUO%CSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+           NP%AL(JP)%NR_P,NDEA%AL(JP)%XFDOCLIT(:),U%NSIZE_NATURE,S%XWORK_WR)
+   ENDDO
+   !
+   YRECFM='DOCS'//TRIM(HTERM)
+   YCOMMENT='riverine carbon export from soil carbon'//YUNIT
+   DO JP=1,IO%NPATCH
+      CALL WRITE_FIELD_1D_PATCH(DUO%CSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+           NP%AL(JP)%NR_P,NDEA%AL(JP)%XFDOC(:),U%NSIZE_NATURE,S%XWORK_WR)
+   ENDDO
+   !
+ENDIF
+!
+! * Fire carbon Flux
+!
+IF(IO%LFIRE)THEN
+   !
+   YRECFM='TURNFI'//TRIM(HTERM)
+   YCOMMENT='conversion of biomass to litter due to fire'//YUNIT
+   DO JP=1,IO%NPATCH
+      CALL WRITE_FIELD_1D_PATCH(DUO%CSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+           NP%AL(JP)%NR_P,NDEA%AL(JP)%XFIRETURNOVER(:),U%NSIZE_NATURE,S%XWORK_WR)
+   ENDDO
+   !
+   YRECFM='FIRECO2'//TRIM(HTERM)
+   YCOMMENT='CO2 Emission from natural Fire'//YUNIT
+   DO JP=1,IO%NPATCH
+      CALL WRITE_FIELD_1D_PATCH(DUO%CSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+           NP%AL(JP)%NR_P,NDEA%AL(JP)%XFIRECO2(:),U%NSIZE_NATURE,S%XWORK_WR)
+   ENDDO
+   !
+   YRECFM='FIREBC'//TRIM(HTERM)
+   YCOMMENT='Black Carbon Emission from natural Fire'//YUNIT
+   DO JP=1,IO%NPATCH
+      CALL WRITE_FIELD_1D_PATCH(DUO%CSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+           NP%AL(JP)%NR_P,NDEA%AL(JP)%XFIREBCS(:),U%NSIZE_NATURE,S%XWORK_WR)
+   ENDDO
+   !
+ENDIF
+!
+! * Land-use carbon flux (Harvest currently)
+!
+IF (IO%LLULCC) THEN
+   !
+   YRECFM='HARV'//TRIM(HTERM)
+   YCOMMENT='carbon flux due to harvesting'//YUNIT
+   DO JP=1,IO%NPATCH
+      CALL WRITE_FIELD_1D_PATCH(DUO%CSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+           NP%AL(JP)%NR_P,NDEA%AL(JP)%XFHARVEST(:),U%NSIZE_NATURE,S%XWORK_WR)
+   ENDDO
+   !
+ENDIF
+! 
+! Soil gas scheme
+!
+IF (IO%LSOILGAS) THEN
+   !
+   YRECFM='O2DIF'
+   YCOMMENT='O2 flux from diffusion at soil/atmosphere interface'//YUNIT
+   DO JP=1,IO%NPATCH
+      CALL WRITE_FIELD_1D_PATCH(DUO%CSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+           NP%AL(JP)%NR_P,NDEA%AL(JP)%XSURF_O2(:),U%NSIZE_NATURE,S%XWORK_WR)
+   ENDDO
+   !
+   YRECFM='CO2DIF'
+   YCOMMENT='CO2 flux from diffusion at soil/atmosphere interface'//YUNIT
+   DO JP=1,IO%NPATCH
+      CALL WRITE_FIELD_1D_PATCH(DUO%CSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+           NP%AL(JP)%NR_P,NDEA%AL(JP)%XSURF_CO2(:),U%NSIZE_NATURE,S%XWORK_WR)
+   ENDDO
+   !
+   YRECFM='CH4DIF'
+   YCOMMENT='CH4 flux from diffusion at soil/atmosphere interface'//YUNIT
+   DO JP=1,IO%NPATCH
+      CALL WRITE_FIELD_1D_PATCH(DUO%CSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+           NP%AL(JP)%NR_P,NDEA%AL(JP)%XSURF_CH4(:),U%NSIZE_NATURE,S%XWORK_WR)
+   ENDDO
+   !
+   YRECFM='O2ETR'
+   YCOMMENT='O2 flux from evapotranspiration'//YUNIT
+   DO JP=1,IO%NPATCH
+      CALL WRITE_FIELD_1D_PATCH(DUO%CSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+           NP%AL(JP)%NR_P,NDEA%AL(JP)%XEVAP_O2(:),U%NSIZE_NATURE,S%XWORK_WR)
+   ENDDO
+   !
+   YRECFM='CO2ETR'
+   YCOMMENT='CO2 flux from evapotranspiration'//YUNIT
+   DO JP=1,IO%NPATCH
+      CALL WRITE_FIELD_1D_PATCH(DUO%CSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+           NP%AL(JP)%NR_P,NDEA%AL(JP)%XEVAP_CO2(:),U%NSIZE_NATURE,S%XWORK_WR)
+   ENDDO
+   !
+   YRECFM='CH4ETR'
+   YCOMMENT='CH4 flux from evapotranspiration'//YUNIT
+   DO JP=1,IO%NPATCH
+      CALL WRITE_FIELD_1D_PATCH(DUO%CSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+           NP%AL(JP)%NR_P,NDEA%AL(JP)%XEVAP_CH4(:),U%NSIZE_NATURE,S%XWORK_WR)
+   ENDDO
+   !
+   YRECFM='O2PMT'
+   YCOMMENT='O2 flux from plant'//YUNIT
+   DO JP=1,IO%NPATCH
+      CALL WRITE_FIELD_1D_PATCH(DUO%CSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+           NP%AL(JP)%NR_P,NDEA%AL(JP)%XPMT_O2(:),U%NSIZE_NATURE,S%XWORK_WR)
+   ENDDO
+   !
+   YRECFM='CO2PMT'
+   YCOMMENT='CO2 flux from plant'//YUNIT
+   DO JP=1,IO%NPATCH
+      CALL WRITE_FIELD_1D_PATCH(DUO%CSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+           NP%AL(JP)%NR_P,NDEA%AL(JP)%XPMT_CO2(:),U%NSIZE_NATURE,S%XWORK_WR)
+   ENDDO
+   !
+   YRECFM='CH4PMT'
+   YCOMMENT='CH4 flux from plant'//YUNIT
+   DO JP=1,IO%NPATCH
+      CALL WRITE_FIELD_1D_PATCH(DUO%CSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+           NP%AL(JP)%NR_P,NDEA%AL(JP)%XPMT_CH4(:),U%NSIZE_NATURE,S%XWORK_WR)
+   ENDDO
+   !
+   YRECFM='CH4EBU'
+   YCOMMENT='CH4 flux from ebullition'//YUNIT
+   DO JP=1,IO%NPATCH
+      CALL WRITE_FIELD_1D_PATCH(DUO%CSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+           NP%AL(JP)%NR_P,NDEA%AL(JP)%XEBU_CH4(:),U%NSIZE_NATURE,S%XWORK_WR)
+   ENDDO
+   !
+   YRECFM='O2CONS'
+   YCOMMENT='total soil O2 consumed during oxic decomposition and methanotrophy'//YUNIT
+   DO JP=1,IO%NPATCH
+      CALL WRITE_FIELD_1D_PATCH(DUO%CSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+           NP%AL(JP)%NR_P,NDEA%AL(JP)%XFCONS_O2(:),U%NSIZE_NATURE,S%XWORK_WR)
+   ENDDO
+   !
+   YRECFM='CO2PRO'
+   YCOMMENT='total soil CO2 produced during oxic decomposition and methanotrophy'//YUNIT
+   DO JP=1,IO%NPATCH
+      CALL WRITE_FIELD_1D_PATCH(DUO%CSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+           NP%AL(JP)%NR_P,NDEA%AL(JP)%XFPROD_CO2(:),U%NSIZE_NATURE,S%XWORK_WR)
+   ENDDO
+   !
+   YRECFM='CH4MT'
+   YCOMMENT='total soil CH4 consumed during methanotrophy'//YUNIT
+   DO JP=1,IO%NPATCH
+      CALL WRITE_FIELD_1D_PATCH(DUO%CSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+           NP%AL(JP)%NR_P,NDEA%AL(JP)%XFMT_CH4(:),U%NSIZE_NATURE,S%XWORK_WR)
+   ENDDO
+   !
+   YRECFM='CH4MG'
+   YCOMMENT='total soil CH4 produced during methanogenesis'//YUNIT
+   DO JP=1,IO%NPATCH
+      CALL WRITE_FIELD_1D_PATCH(DUO%CSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+           NP%AL(JP)%NR_P,NDEA%AL(JP)%XFMG_CH4(:),U%NSIZE_NATURE,S%XWORK_WR)
+   ENDDO
+   !
+   YRECFM='CH4FLX'
+   YCOMMENT='total CH4 flux'//YUNIT
+   DO JP=1,IO%NPATCH
+      CALL WRITE_FIELD_1D_PATCH(DUO%CSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+           NP%AL(JP)%NR_P,NDEA%AL(JP)%XCH4FLUX(:),U%NSIZE_NATURE,S%XWORK_WR)
+   ENDDO
+   !
+   YRECFM='O2FLX'
+   YCOMMENT='total O2 flux'//YUNIT
+   DO JP=1,IO%NPATCH
+      CALL WRITE_FIELD_1D_PATCH(DUO%CSELECT,HPROGRAM,YRECFM,YCOMMENT,JP,&
+           NP%AL(JP)%NR_P,NDEA%AL(JP)%XO2FLUX(:),U%NSIZE_NATURE,S%XWORK_WR)
+   ENDDO
+   !    
+ENDIF
+!
+IF (LHOOK) CALL DR_HOOK('WRITE_DIAG_SEB_CC_ISBA_N:WRITE_CC_BUD_PATCH',1,ZHOOK_HANDLE)
+!
+END SUBROUTINE WRITE_CC_BUD_PATCH
+!
+!-------------------------------------------------------------------------------
+!
+SUBROUTINE PROVAR_TO_DIAG
+!
+REAL, DIMENSION(U%NSIZE_NATURE,IO%NGROUND_LAYER)          :: ZDG_TOT
+!
+REAL, DIMENSION(U%NSIZE_NATURE,IO%NNBIOMASS)              :: ZBIOMASS
+REAL, DIMENSION(U%NSIZE_NATURE,IO%NNSOILCARB)             :: ZSOILCARB
+REAL, DIMENSION(U%NSIZE_NATURE)                           :: ZSOILCARB_TOT
+REAL, DIMENSION(U%NSIZE_NATURE,IO%NNLITTLEVS)             :: ZLIGNIN_STRUC, ZLIGNIN_WRK
+REAL, DIMENSION(U%NSIZE_NATURE,IO%NNLITTER,IO%NNLITTLEVS) :: ZLITTER
+!
+REAL, DIMENSION(U%NSIZE_NATURE,IO%NGROUND_LAYER,IO%NNSOILCARB) :: ZSOILDIF_SOC
+REAL, DIMENSION(U%NSIZE_NATURE,IO%NGROUND_LAYER              ) :: ZSOILDIF_LIGNIN
+!
+REAL, DIMENSION(U%NSIZE_NATURE)                  :: ZWORK
+REAL, DIMENSION(U%NSIZE_NATURE)                  :: ZSURF_LIT_TOT
+REAL, DIMENSION(U%NSIZE_NATURE)                  :: ZSOIL_LIT_TOT
+REAL, DIMENSION(U%NSIZE_NATURE,IO%NGROUND_LAYER) :: ZSOILDIF_LIT_TOT
+REAL, DIMENSION(U%NSIZE_NATURE,IO%NGROUND_LAYER) :: ZSOILDIF_SOC_TOT
+!
+REAL, DIMENSION(U%NSIZE_NATURE)                  :: ZFIREIND
+REAL, DIMENSION(U%NSIZE_NATURE)                  :: ZMOISTLIT_FIRE
+!
+REAL, DIMENSION(U%NSIZE_NATURE)                  :: ZFLUATM
+REAL, DIMENSION(U%NSIZE_NATURE)                  :: ZFLURES
+REAL, DIMENSION(U%NSIZE_NATURE)                  :: ZFLUANT
+REAL, DIMENSION(U%NSIZE_NATURE)                  :: ZFANTATM
+REAL, DIMENSION(U%NSIZE_NATURE)                  :: ZCANT
+REAL, DIMENSION(U%NSIZE_NATURE,IO%NNBIOMASS)     :: ZTURNOVER
+!
+REAL, DIMENSION(U%NSIZE_NATURE,IO%NGROUND_LAYER) :: ZSGASO2
+REAL, DIMENSION(U%NSIZE_NATURE,IO%NGROUND_LAYER) :: ZSGASCO2
+REAL, DIMENSION(U%NSIZE_NATURE,IO%NGROUND_LAYER) :: ZSGASCH4
+REAL, DIMENSION(U%NSIZE_NATURE)                  :: ZSGASO2_TOT
+REAL, DIMENSION(U%NSIZE_NATURE)                  :: ZSGASCO2_TOT
+REAL, DIMENSION(U%NSIZE_NATURE)                  :: ZSGASCH4_TOT
+!
+REAL, DIMENSION(U%NSIZE_NATURE,IO%NGROUND_LAYER) :: ZSOILO2
+REAL, DIMENSION(U%NSIZE_NATURE,IO%NGROUND_LAYER) :: ZSOILCO2
+REAL, DIMENSION(U%NSIZE_NATURE,IO%NGROUND_LAYER) :: ZSOILCH4
+REAL, DIMENSION(U%NSIZE_NATURE)                  :: ZSOILO2_TOT
+REAL, DIMENSION(U%NSIZE_NATURE)                  :: ZSOILCO2_TOT
+REAL, DIMENSION(U%NSIZE_NATURE)                  :: ZSOILCH4_TOT
+!
+CHARACTER(LEN=4 ) :: YLVL
+REAL              :: ZMISS
+INTEGER           :: JL, JP, JI, JC, INI, IWORK, IDEPTH, IMASK
+!
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+!
+IF (LHOOK) CALL DR_HOOK('WRITE_DIAG_SEB_CC_ISBA_N:PROVAR_TO_DIAG',0,ZHOOK_HANDLE)
+!
+INI=U%NSIZE_NATURE
+!
+! * Isba-Ags biomass reservoir
+!
+IF(IO%CPHOTO=='NIT'.OR.IO%CPHOTO=='NCB')THEN
+!
+  ZBIOMASS(:,:)=0.0
+  DO JP=1,IO%NPATCH
+    PK => NP%AL(JP)
+    PEK => NPE%AL(JP)    
+    DO JI=1,PK%NSIZE_P
+      IMASK = PK%NR_P(JI)      
+      DO JL=1,IO%NNBIOMASS
+        ZBIOMASS(IMASK,JL) = ZBIOMASS(IMASK,JL) + PK%XPATCH(JI) * PEK%XBIOMASS(JI,JL)
+      ENDDO
+    ENDDO
+  ENDDO
+!
+  DO JL = 1,IO%NNBIOMASS
+    WRITE(YLVL,'(I4)') JL
+    YRECFM='BIOM'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
+    YRECFM=YRECFM(:LEN_TRIM(YRECFM))//'_ISBA'
+    YCOMMENT='Biomasse (kgDM/m2) reservoir '//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
+    CALL WRITE_SURF(DUO%CSELECT,HPROGRAM,YRECFM,ZBIOMASS(:,JL),IRESP,HCOMMENT=YCOMMENT)  
+  ENDDO
+!
+ENDIF
+!
+! * Isba-CC carbon reservoir
+!
+IF(IO%CRESPSL=='CNT')THEN
+!
+  ZLITTER(:,:,:)=0.0
+  ZLIGNIN_WRK  (:,:)=0.0
+  ZLIGNIN_STRUC(:,:)=0.0
+  DO JP=1,IO%NPATCH
+    PK => NP%AL(JP)
+    PEK => NPE%AL(JP)    
+    DO JI=1,PK%NSIZE_P
+      IMASK = PK%NR_P(JI) 
+      DO JL=1,IO%NNLITTLEVS
+        ZLITTER(IMASK,1,JL) = ZLITTER(IMASK,1,JL) + PK%XPATCH(JI) * PEK%XLITTER(JI,1,JL)
+        ZLITTER(IMASK,2,JL) = ZLITTER(IMASK,2,JL) + PK%XPATCH(JI) * PEK%XLITTER(JI,2,JL)
+        ZLIGNIN_WRK  (IMASK,JL) = ZLIGNIN_WRK  (IMASK,JL) + PK%XPATCH(JI) * PEK%XLITTER(JI,2,JL)
+        ZLIGNIN_STRUC(IMASK,JL) = ZLIGNIN_STRUC(IMASK,JL) + PK%XPATCH(JI) * PEK%XLIGNIN_STRUC(JI,JL) * PEK%XLITTER(JI,2,JL)
+      ENDDO
+    ENDDO
+  ENDDO
+!    
+  WHERE(ZLIGNIN_WRK(:,:)>0.0)ZLIGNIN_STRUC(:,:) = ZLIGNIN_STRUC(:,:) / ZLIGNIN_WRK(:,:)
+!
+  ZSURF_LIT_TOT(:) = ZLITTER(:,1,1)+ZLITTER(:,2,1)
+  ZSOIL_LIT_TOT(:) = ZLITTER(:,1,2)+ZLITTER(:,2,2)
+!     
+  DO JL=1,IO%NNLITTLEVS
+!     
+     WRITE(YLVL,'(I4)') JL
+!     
+     YRECFM='LIT1_'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
+     YRECFM=YRECFM(:LEN_TRIM(YRECFM))//'_ISBA'
+     YCOMMENT='METABOLIC litter (gC/m2) reservoir '//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
+     CALL WRITE_SURF(DUO%CSELECT,HPROGRAM,YRECFM,ZLITTER(:,1,JL),IRESP,HCOMMENT=YCOMMENT)  
+!     
+     YRECFM='LIT2_'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
+     YRECFM=YRECFM(:LEN_TRIM(YRECFM))//'_ISBA'
+     YCOMMENT='STRUCTURAL litter (gC/m2) reservoir '//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
+     CALL WRITE_SURF(DUO%CSELECT, HPROGRAM,YRECFM,ZLITTER(:,2,JL),IRESP,HCOMMENT=YCOMMENT)
+!     
+     YRECFM='LIGSTR'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
+     YRECFM=YRECFM(:LEN_TRIM(YRECFM))//'_ISBA'
+     YCOMMENT='ratio Lignin/Carbon in structural litter (-) reservoir '//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
+     CALL WRITE_SURF(DUO%CSELECT,HPROGRAM,YRECFM,ZLIGNIN_STRUC(:,JL),IRESP,HCOMMENT=YCOMMENT)      
+!     
+  END DO
+!
+  ZSOILCARB_TOT(:)=0.0
+  ZSOILCARB  (:,:)=0.0
+  DO JP=1,IO%NPATCH
+    PK => NP%AL(JP)
+    PEK => NPE%AL(JP)    
+    DO JI=1,PK%NSIZE_P
+      IMASK = PK%NR_P(JI)   
+      DO JL=1,IO%NNSOILCARB
+        ZSOILCARB    (IMASK,JL) = ZSOILCARB    (IMASK,JL) + PK%XPATCH(JI) * PEK%XSOILCARB(JI,JL)
+        ZSOILCARB_TOT(IMASK   ) = ZSOILCARB_TOT(IMASK   ) + PK%XPATCH(JI) * PEK%XSOILCARB(JI,JL)
+      ENDDO
+    ENDDO
+  ENDDO
+!
+ELSEIF(IO%CRESPSL=='DIF')THEN
+!
+! * Isba-CC carbon reservoir DIF version
+!
+! Surface litter
+  ZSURF_LIT_TOT(:)=0.0
+  DO JC=1,IO%NNLITTER
+     DO JP=1,IO%NPATCH
+        PK => NP%AL(JP)
+        PEK => NPE%AL(JP)
+        DO JI=1,PK%NSIZE_P 
+           IMASK  = PK%NR_P(JI)   
+           ZSURF_LIT_TOT(IMASK) = ZSURF_LIT_TOT(IMASK) + PK%XPATCH(JI) * PEK%XSURFACE_LITTER(JI,JC)
+        ENDDO
+     ENDDO
+  ENDDO
+!
+! Soil litter
+  ZSOIL_LIT_TOT   (:  ) = 0.0
+  ZSOILDIF_LIT_TOT(:,:) = 0.0
+  DO JC=1,IO%NNLITTER
+     DO JP=1,IO%NPATCH
+        PK => NP%AL(JP)
+        PEK => NPE%AL(JP)
+        DO JL=1,IO%NGROUND_LAYER
+           DO JI=1,PK%NSIZE_P 
+              IMASK = PK%NR_P(JI)   
+              IF(JL<=PK%NWG_LAYER(JI))THEN
+                 ZSOIL_LIT_TOT   (IMASK   ) = ZSOIL_LIT_TOT   (IMASK   ) + PK%XPATCH(JI) * PEK%XSOILDIF_LITTER(JI,JL,JC)
+                 ZSOILDIF_LIT_TOT(IMASK,JL) = ZSOILDIF_LIT_TOT(IMASK,JL) + PK%XPATCH(JI) * PEK%XSOILDIF_LITTER(JI,JL,JC)
+              ENDIF
+           ENDDO
+        ENDDO
+     ENDDO
+  ENDDO    
+!
+  IF (LALLOW_ADD_DIM)  THEN 
+!
+     YRECFM='LITSL_ISBA' ; 
+     YCOMMENT='Soil Litter content by layers (gC/m2)' 
+     CALL WRITE_SURF(DUO%CSELECT,HPROGRAM,YRECFM,ZSOILDIF_LIT_TOT(:,:),IRESP,YCOMMENT,HNAM_DIM=YGROUND_LAYER_DIM_NAME)
+!
+  ELSE
+!
+     DO JL=1,IO%NGROUND_LAYER
+        WRITE(YLVL,'(A1,I2.2)')'L',JL
+        YRECFM='LITS'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
+        YRECFM=YRECFM(:LEN_TRIM(YRECFM))//'_ISBA'
+        YCOMMENT='Soil Litter content layer '//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))//' (gC/m2)'
+        CALL WRITE_SURF(DUO%CSELECT,HPROGRAM,YRECFM,ZSOILDIF_LIT_TOT(:,JL),IRESP,HCOMMENT=YCOMMENT)
+    ENDDO
+!
+  ENDIF
+!
+  ZWORK        (:  )=0.0
+  ZLIGNIN_STRUC(:,1)=0.0
+  DO JP=1,IO%NPATCH
+     PK => NP%AL(JP)
+     PEK => NPE%AL(JP)
+     DO JI=1,PK%NSIZE_P 
+        IMASK = PK%NR_P(JI)   
+        ZWORK        (IMASK  ) = ZWORK        (IMASK  ) + PK%XPATCH(JI) * PEK%XSURFACE_LITTER(JI,2)
+        ZLIGNIN_STRUC(IMASK,1) = ZLIGNIN_STRUC(IMASK,1) + PK%XPATCH(JI) * PEK%XSURFACE_LIGNIN_STRUC(JI) * PEK%XSURFACE_LITTER(JI,2)
+     ENDDO
+  ENDDO
+!
+  WHERE(ZWORK(:)>0.0)ZLIGNIN_STRUC(:,1) = ZLIGNIN_STRUC(:,1) / ZWORK(:)
+!
+  ZWORK          (:  )=0.0
+  ZLIGNIN_STRUC  (:,2)=0.0
+  ZDG_TOT        (:,:)=0.0
+  ZSOILDIF_LIGNIN(:,:)=0.0  
+  DO JP=1,IO%NPATCH
+     PK => NP%AL(JP)
+     PEK => NPE%AL(JP)
+     DO JL=1,IO%NGROUND_LAYER
+        DO JI=1,PK%NSIZE_P
+           IMASK = PK%NR_P(JI)   
+           IF(JL<=PK%NWG_LAYER(JI))THEN
+              ZWORK          (IMASK)    = ZWORK        (IMASK)    + PK%XPATCH(JI) * PEK%XSOILDIF_LITTER(JI,JL,2)
+              ZDG_TOT        (IMASK,JL) = ZDG_TOT      (IMASK,JL) + PK%XPATCH(JI) * PEK%XSOILDIF_LITTER(JI,JL,2)
+              ZLIGNIN_STRUC  (IMASK, 2) = ZLIGNIN_STRUC(IMASK, 2) + PK%XPATCH(JI) &
+                                        * PEK%XSOILDIF_LIGNIN_STRUC(JI,JL) * PEK%XSOILDIF_LITTER(JI,JL,2)
+              ZSOILDIF_LIGNIN(IMASK,JL) = ZSOILDIF_LIGNIN(IMASK,JL) + PK%XPATCH(JI) &
+                                        * PEK%XSOILDIF_LIGNIN_STRUC(JI,JL) * PEK%XSOILDIF_LITTER(JI,JL,2)
+           ENDIF
+        ENDDO
+     ENDDO
+  ENDDO
+!
+  WHERE(ZWORK(:)>0.0)ZLIGNIN_STRUC(:,2) = ZLIGNIN_STRUC(:,2) / ZWORK(:)
+!          
+  WHERE(ZDG_TOT(:,:)>0.0)ZSOILDIF_LIGNIN(:,:) = ZSOILDIF_LIGNIN(:,:) / ZDG_TOT(:,:)
+
+  YRECFM='LIGSTR1_ISBA'
+  YCOMMENT='ratio Lignin/Carbon in structural surface litter (-)'
+  CALL WRITE_SURF(DUO%CSELECT,HPROGRAM,YRECFM,ZLIGNIN_STRUC(:,1),IRESP,HCOMMENT=YCOMMENT)    
+!
+  YRECFM='LIGSTR2_ISBA'
+  YCOMMENT='ratio Lignin/Carbon in structural total soil litter (-)'
+  CALL WRITE_SURF(DUO%CSELECT,HPROGRAM,YRECFM,ZLIGNIN_STRUC(:,2),IRESP,HCOMMENT=YCOMMENT)    
+!
+  IF (LALLOW_ADD_DIM)  THEN 
+!
+     YRECFM='LIGSTR_ISBA' ; 
+     YCOMMENT='ratio Lignin/Carbon in structural soil litter by layers (-)' 
+     CALL WRITE_SURF(DUO%CSELECT,HPROGRAM,YRECFM,ZSOILDIF_LIGNIN(:,:),IRESP,YCOMMENT,HNAM_DIM=YGROUND_LAYER_DIM_NAME)
+!
+  ELSE
+!
+     DO JL=1,IO%NGROUND_LAYER
+        WRITE(YLVL,'(A1,I2.2)')'L',JL
+        YRECFM='LIG_'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
+        YRECFM=YRECFM(:LEN_TRIM(YRECFM))//'_ISBA'
+        YCOMMENT='ratio Lignin/Carbon in structural soil litter layer '//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))//' (-)'
+        CALL WRITE_SURF(DUO%CSELECT,HPROGRAM,YRECFM,ZSOILDIF_LIGNIN(:,JL),IRESP,HCOMMENT=YCOMMENT)
+      ENDDO
+!
+  ENDIF
+!
+  ZSOILCARB_TOT   (:    )=0.0
+  ZSOILCARB       (:,:  )=0.0
+  ZSOILDIF_SOC    (:,:,:)=0.0
+  ZSOILDIF_SOC_TOT(:,:  ) = 0.0
+  DO JP=1,IO%NPATCH
+     PK => NP%AL(JP)
+     PEK => NPE%AL(JP)
+     DO JC=1,IO%NNSOILCARB
+        DO JL=1,IO%NGROUND_LAYER
+           DO JI=1,PK%NSIZE_P 
+               IMASK = PK%NR_P(JI)   
+               IF(JL<=PK%NWG_LAYER(JI))THEN
+                 ZSOILCARB       (IMASK,   JC) = ZSOILCARB       (IMASK,   JC) + PK%XPATCH(JI) * PEK%XSOILDIF_CARB(JI,JL,JC)
+                 ZSOILDIF_SOC    (IMASK,JL,JC) = ZSOILDIF_SOC    (IMASK,JL,JC) + PK%XPATCH(JI) * PEK%XSOILDIF_CARB(JI,JL,JC)
+                 ZSOILCARB_TOT   (IMASK      ) = ZSOILCARB_TOT   (IMASK      ) + PK%XPATCH(JI) * PEK%XSOILDIF_CARB(JI,JL,JC)
+                 ZSOILDIF_SOC_TOT(IMASK,JL   ) = ZSOILDIF_SOC_TOT(IMASK,JL   ) + PK%XPATCH(JI) * PEK%XSOILDIF_CARB(JI,JL,JC)
+              ENDIF
+           ENDDO
+        ENDDO
+     ENDDO
+  ENDDO
+!
+  IF (LALLOW_ADD_DIM)  THEN 
+!
+  YRECFM='SOCL_ISBA' ; 
+  YCOMMENT='Soil Organic Carbon content by layer (gC/m2)' 
+  CALL WRITE_SURF(DUO%CSELECT,HPROGRAM,YRECFM,ZSOILDIF_SOC_TOT(:,:),IRESP,YCOMMENT,HNAM_DIM=YGROUND_LAYER_DIM_NAME)
+!
+  YRECFM='SOC1_L_ISBA' ; 
+  YCOMMENT='Soil Organic Carbon content reservoir 1 by layer (gC/m2)' 
+  CALL WRITE_SURF(DUO%CSELECT,HPROGRAM,YRECFM,ZSOILDIF_SOC(:,:,1),IRESP,YCOMMENT,HNAM_DIM=YGROUND_LAYER_DIM_NAME)
+!
+  YRECFM='SOC2_L_ISBA' ; 
+  YCOMMENT='Soil Organic Carbon content reservoir 2 by layer (gC/m2)' 
+  CALL WRITE_SURF(DUO%CSELECT,HPROGRAM,YRECFM,ZSOILDIF_SOC(:,:,2),IRESP,YCOMMENT,HNAM_DIM=YGROUND_LAYER_DIM_NAME)
+!
+  YRECFM='SOC3_L_ISBA' ; 
+  YCOMMENT='Soil Organic Carbon content reservoir 3 by layer (gC/m2)' 
+  CALL WRITE_SURF(DUO%CSELECT,HPROGRAM,YRECFM,ZSOILDIF_SOC(:,:,3),IRESP,YCOMMENT,HNAM_DIM=YGROUND_LAYER_DIM_NAME)
+!
+  ELSE
+!
+    DO JL=1,IO%NGROUND_LAYER
+        !
+        WRITE(YLVL,'(A1,I2.2)')'L',JL
+        !
+        YRECFM='SOC'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
+        YRECFM=YRECFM(:LEN_TRIM(YRECFM))//'_ISBA'
+        YCOMMENT='Soil Organic Carbon content layer '//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))//' (gC/m2)'
+        CALL WRITE_SURF(DUO%CSELECT,HPROGRAM,YRECFM,ZSOILDIF_LIT_TOT(:,JL),IRESP,HCOMMENT=YCOMMENT)
+        !
+        YRECFM='SOC1'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
+        YRECFM=YRECFM(:LEN_TRIM(YRECFM))//'_ISBA'
+        YCOMMENT='Soil Organic Carbon content reservoir 1 layer '//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))//' (gC/m2)'
+        CALL WRITE_SURF(DUO%CSELECT,HPROGRAM,YRECFM,ZSOILDIF_SOC(:,JL,1),IRESP,HCOMMENT=YCOMMENT)
+        !
+        YRECFM='SOC2'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
+        YRECFM=YRECFM(:LEN_TRIM(YRECFM))//'_ISBA'
+        YCOMMENT='Soil Organic Carbon content reservoir 2 layer '//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))//' (gC/m2)'
+        CALL WRITE_SURF(DUO%CSELECT,HPROGRAM,YRECFM,ZSOILDIF_SOC(:,JL,2),IRESP,HCOMMENT=YCOMMENT)
+        !
+        YRECFM='SOC3'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
+        YRECFM=YRECFM(:LEN_TRIM(YRECFM))//'_ISBA'
+        YCOMMENT='Soil Organic Carbon content reservoir 3 layer '//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))//' (gC/m2)'
+        CALL WRITE_SURF(DUO%CSELECT,HPROGRAM,YRECFM,ZSOILDIF_SOC(:,JL,3),IRESP,HCOMMENT=YCOMMENT)
+        !
+    ENDDO
+!
+  ENDIF
+!
+ENDIF
+!
+IF(IO%CRESPSL=='CNT'.OR.IO%CRESPSL=='DIF')THEN
+!
+  ZTURNOVER(:,:)=0.0
+  DO JP=1,IO%NPATCH
+     PK => NP%AL(JP)
+     PEK => NPE%AL(JP)
+     DO JL=1,IO%NNBIOMASS
+        DO JI=1,PK%NSIZE_P 
+           IMASK = PK%NR_P(JI)
+           ZTURNOVER(IMASK,JL) = ZTURNOVER(IMASK,JL) + PK%XPATCH(JI) * PK%XTURNOVER(JI,JL)
+        ENDDO
+     ENDDO
+  ENDDO
+!
+  DO JL=1,IO%NNBIOMASS
+     WRITE(YLVL,'(I4)') JL
+     YRECFM='TURN_'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
+     YRECFM=YRECFM(:LEN_TRIM(YRECFM))//'_ISBA'
+     YCOMMENT='Turnover between Biomass and litter for bimass reservoir '//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))//' (gC/m2)'
+     CALL WRITE_SURF(DUO%CSELECT,HPROGRAM,YRECFM,ZTURNOVER(:,JL),IRESP,HCOMMENT=YCOMMENT)    
+  END DO
+!
+  YRECFM='LITSURF_ISBA'
+  YCOMMENT='Total surface litter (gC/m2)'
+  CALL WRITE_SURF(DUO%CSELECT,HPROGRAM,YRECFM,ZSURF_LIT_TOT(:),IRESP,HCOMMENT=YCOMMENT)    
+!
+  YRECFM='LITSOIL_ISBA'
+  YCOMMENT='Total soil litter (gC/m2)'
+  CALL WRITE_SURF(DUO%CSELECT,HPROGRAM,YRECFM,ZSOIL_LIT_TOT(:),IRESP,HCOMMENT=YCOMMENT)
+!
+  DO JC = 1,IO%NNSOILCARB
+    WRITE(YLVL,'(I4)')JC
+    YRECFM='SOC'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
+    YRECFM=YRECFM(:LEN_TRIM(YRECFM))//'_ISBA'
+    YCOMMENT='Total Soil Organic Carbon content reservoir '//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))//' (gC/m2)'
+    CALL WRITE_SURF(DUO%CSELECT,HPROGRAM,YRECFM,ZSOILCARB(:,JC),IRESP,HCOMMENT=YCOMMENT)    
+  ENDDO
+!
+  YRECFM='SOC_T_ISBA'
+  YCOMMENT='Total Soil Organic Carbon (gC/m2)'
+  CALL WRITE_SURF(DUO%CSELECT,HPROGRAM,YRECFM,ZSOILCARB_TOT(:),IRESP,HCOMMENT=YCOMMENT)    
+!
+ENDIF
+!
+! * Soil gases
+!
+IF(IO%CRESPSL=='DIF'.AND.IO%LSOILGAS)THEN
+!
+  ZSOILO2 (:,:) = 0.0
+  ZSOILCO2(:,:) = 0.0
+  ZSOILCH4(:,:) = 0.0
+!
+  ZSGASO2 (:,:) = 0.0
+  ZSGASCO2(:,:) = 0.0
+  ZSGASCH4(:,:) = 0.0
+!
+  ZSOILO2_TOT (:) = 0.0
+  ZSOILCO2_TOT(:) = 0.0
+  ZSOILCH4_TOT(:) = 0.0
+!
+  ZSGASO2_TOT (:) = 0.0
+  ZSGASCO2_TOT(:) = 0.0
+  ZSGASCH4_TOT(:) = 0.0
+!
+  ZDG_TOT(:,:)= 0.0
+!
+  ZWORK(:) = 0.0
+!
+  DO JP=1,IO%NPATCH
+     PK => NP%AL(JP)
+     PEK => NPE%AL(JP)
+     DO JL=1,IO%NGROUND_LAYER
+        DO JI=1,PK%NSIZE_P 
+!                   
+           IMASK =PK%NR_P(JI)
+           IDEPTH=PK%NWG_LAYER(JI)
+           IF(JL<=IDEPTH)THEN
+!                   
+              ZSGASO2 (IMASK,JL) = ZSGASO2 (IMASK,JL) + PK%XPATCH(JI)*PK%XDZG(JI,JL)*PEK%XSGASO2 (JI,JL) 
+              ZSGASCO2(IMASK,JL) = ZSGASCO2(IMASK,JL) + PK%XPATCH(JI)*PK%XDZG(JI,JL)*PEK%XSGASCO2(JI,JL) 
+              ZSGASCH4(IMASK,JL) = ZSGASCH4(IMASK,JL) + PK%XPATCH(JI)*PK%XDZG(JI,JL)*PEK%XSGASCH4(JI,JL) 
+              ZDG_TOT (IMASK,JL) = ZDG_TOT (IMASK,JL)+  PK%XPATCH(JI)*PK%XDZG(JI,JL)
+!
+              ZSGASO2_TOT (IMASK) = ZSGASO2_TOT (IMASK) + PK%XPATCH(JI)*PK%XDZG(JI,JL)*PEK%XSGASO2 (JI,JL)
+              ZSGASCO2_TOT(IMASK) = ZSGASCO2_TOT(IMASK) + PK%XPATCH(JI)*PK%XDZG(JI,JL)*PEK%XSGASCO2(JI,JL)
+              ZSGASCH4_TOT(IMASK) = ZSGASCH4_TOT(IMASK) + PK%XPATCH(JI)*PK%XDZG(JI,JL)*PEK%XSGASCH4(JI,JL)
+              ZWORK       (IMASK) = ZWORK       (IMASK) + PK%XPATCH(JI)*PK%XDZG(JI,JL)
+!
+           ENDIF
+!                   
+        ENDDO
+     ENDDO
+  ENDDO
+!
+  WHERE(ZDG_TOT(:,:)>0.0)
+        ZSGASO2 (:,:)=ZSGASO2 (:,:)/ZDG_TOT(:,:)
+        ZSGASCO2(:,:)=ZSGASCO2(:,:)/ZDG_TOT(:,:)
+        ZSGASCH4(:,:)=ZSGASCH4(:,:)/ZDG_TOT(:,:)
+  ELSEWHERE
+        ZSGASO2 (:,:)=ZMISS
+        ZSGASCO2(:,:)=ZMISS    
+        ZSGASCH4(:,:)=ZMISS    
+  ENDWHERE
+!
+  WHERE(ZWORK(:)>0.0)
+        ZSGASO2_TOT (:) = ZSGASO2_TOT (:)/ZWORK(:)
+        ZSGASCO2_TOT(:) = ZSGASCO2_TOT(:)/ZWORK(:)
+        ZSGASCH4_TOT(:) = ZSGASCH4_TOT(:)/ZWORK(:)
+  ELSEWHERE
+        ZSGASO2_TOT (:) = ZMISS
+        ZSGASCO2_TOT(:) = ZMISS
+        ZSGASCH4_TOT(:) = ZMISS
+  ENDWHERE
+!
+  IF(LALLOW_ADD_DIM)THEN 
+!
+    YRECFM='O2G_ISBA' ; 
+    YCOMMENT='Soil gas air-filled pore O2 density content by layer (gO2/m3air)' 
+    CALL WRITE_SURF(DUO%CSELECT,HPROGRAM,YRECFM,ZSGASO2(:,:),IRESP,YCOMMENT,HNAM_DIM=YGROUND_LAYER_DIM_NAME)
+!
+    YRECFM='CO2G_ISBA' ; 
+    YCOMMENT='Soil gas air-filled pore CO2 density content by layer (gCO2/m3air)' 
+    CALL WRITE_SURF(DUO%CSELECT,HPROGRAM,YRECFM,ZSGASCO2(:,:),IRESP,YCOMMENT,HNAM_DIM=YGROUND_LAYER_DIM_NAME)
+!
+    YRECFM='CH4G_ISBA' ; 
+    YCOMMENT='Soil gas air-filled pore CH4 density content by layer (gCH4/m3air)' 
+    CALL WRITE_SURF(DUO%CSELECT,HPROGRAM,YRECFM,ZSGASCH4(:,:),IRESP,YCOMMENT,HNAM_DIM=YGROUND_LAYER_DIM_NAME)
+!
+  ELSE
+!          
+     DO JL=1,IO%NGROUND_LAYER
+!
+        WRITE(YLVL,'(I4)') JL
+!
+        YRECFM='O2G'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
+        YRECFM=YRECFM(:LEN_TRIM(YRECFM))//'_ISBA'
+        YCOMMENT='Soil gas air-filled pore O2 density content layer '//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))//' (gO2/m3air)' 
+        CALL WRITE_SURF(DUO%CSELECT,HPROGRAM,YRECFM,ZSGASO2(:,JL),IRESP,HCOMMENT=YCOMMENT)
+!
+        YRECFM='CO2G'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
+        YRECFM=YRECFM(:LEN_TRIM(YRECFM))//'_ISBA'
+        YCOMMENT='Soil gas air-filled pore CO2 density content layer '//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))//' (gCO2/m3air)' 
+        CALL WRITE_SURF(DUO%CSELECT,HPROGRAM,YRECFM,ZSGASCO2(:,JL),IRESP,HCOMMENT=YCOMMENT)
+!
+        YRECFM='CH4G'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
+        YRECFM=YRECFM(:LEN_TRIM(YRECFM))//'_ISBA'
+        YCOMMENT='Soil gas air-filled pore CH4 density content layer '//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))//' (gCH4/m3air)' 
+        CALL WRITE_SURF(DUO%CSELECT,HPROGRAM,YRECFM,ZSGASCH4(:,JL),IRESP,HCOMMENT=YCOMMENT)
+!
+     END DO
+  ENDIF
+!
+  YRECFM='O2G_T_ISBA'
+  YCOMMENT='Total soil gas air-filled pore O2 density content (gO2/m3air)'
+  CALL WRITE_SURF(DUO%CSELECT,HPROGRAM,YRECFM,ZSGASO2_TOT(:),IRESP,HCOMMENT=YCOMMENT)    
+!
+  YRECFM='CO2G_T_ISBA'
+  YCOMMENT='Total soil gas air-filled pore CO2 density content (gO2/m3air)'
+  CALL WRITE_SURF(DUO%CSELECT,HPROGRAM,YRECFM,ZSGASCO2_TOT(:),IRESP,HCOMMENT=YCOMMENT)    
+!
+  YRECFM='CH4G_T_ISBA'
+  YCOMMENT='Total soil gas air-filled pore CH4 density content (gO2/m3air)'
+  CALL WRITE_SURF(DUO%CSELECT,HPROGRAM,YRECFM,ZSGASCH4_TOT(:),IRESP,HCOMMENT=YCOMMENT)    
+!
+ENDIF
+!
+! * Fire disturbance
+!
+IF (IO%LFIRE) THEN
+  !
+  ZFIREIND      (:) = 0. 
+  ZMOISTLIT_FIRE(:) = 0.
+  !
+  DO JP=1,IO%NPATCH
+     PK => NP%AL(JP)
+     PEK => NPE%AL(JP)
+     DO JI=1,PK%NSIZE_P 
+        IMASK = PK%NR_P(JI)
+        ZFIREIND      (IMASK) = ZFIREIND      (IMASK) + PK%XPATCH(JI) * PEK%XFIREIND      (JI)
+        ZMOISTLIT_FIRE(IMASK) = ZMOISTLIT_FIRE(IMASK) + PK%XPATCH(JI) * PEK%XMOISTLIT_FIRE(JI)
+     ENDDO
+  ENDDO
+  !
+  YRECFM = 'FIREIND'
+  YRECFM=YRECFM(:LEN_TRIM(YRECFM))//'_ISBA'
+  YCOMMENT='GlobFirm index of long-term probability of fire (-)'
+  CALL WRITE_SURF(DUO%CSELECT,HPROGRAM,YRECFM,ZFIREIND(:),IRESP,HCOMMENT=YCOMMENT)    
+  !
+  YRECFM='FIREWL'
+  YRECFM=YRECFM(:LEN_TRIM(YRECFM))//'_ISBA'
+  YCOMMENT='Litter moisture content governing fire occurence (m3/m3)'
+  CALL WRITE_SURF(DUO%CSELECT,HPROGRAM,YRECFM,ZMOISTLIT_FIRE(:),IRESP,HCOMMENT=YCOMMENT)    
+  !
+END IF
+!
+! * Land-use Land Cover Change 
+!
+IF (IO%CPHOTO=='NCB' .AND. (IO%CRESPSL=='CNT'.OR.IO%CRESPSL=='DIF') .AND. IO%LLULCC) THEN
+  !
+  ZFLUATM(:)    = 0.
+  ZFLURES(:)    = 0.
+  ZFLUANT(:)    = 0.
+  ZFANTATM(:)   = 0.
+  ZCANT(:)      = 0. 
+  !
+  DO JP=1,IO%NPATCH
+     PK => NP%AL(JP)
+     PEK => NPE%AL(JP)
+     ! patch fraction is already included in the computation
+     DO JI=1,PK%NSIZE_P 
+        IMASK = PK%NR_P(JI)
+        ZCANT   (IMASK) = ZCANT   (IMASK) + (SUM(PEK%XCSTOCK_DECADAL(JI,:)) + SUM(PEK%XCSTOCK_CENTURY(JI,:)))
+        ZFLUATM (IMASK) = ZFLUATM (IMASK) + PEK%XFLUATM (JI)
+        ZFLURES (IMASK) = ZFLURES (IMASK) + PEK%XFLURES (JI)
+        ZFLUANT (IMASK) = ZFLUANT (IMASK) + PEK%XFLUANT (JI)
+        ZFANTATM(IMASK) = ZFANTATM(IMASK) + PEK%XFANTATM(JI)
+     ENDDO
+  ENDDO
+  !
+  YRECFM='FLUATM'
+  YRECFM=YRECFM(:LEN_TRIM(YRECFM))//'_ISBA'
+  YCOMMENT='land-use carbon flux to the atmosphere  (kgC m-2 s-1)'
+  CALL WRITE_SURF(DUO%CSELECT,HPROGRAM,YRECFM,ZFLUATM(:),IRESP,HCOMMENT=YCOMMENT)    
+  !
+  YRECFM='FLURES'
+  YRECFM=YRECFM(:LEN_TRIM(YRECFM))//'_ISBA'
+  YCOMMENT='residual land-use carbon flux to soil carbon pool  (kgC m-2 s-1)'
+  CALL WRITE_SURF(DUO%CSELECT,HPROGRAM,YRECFM,ZFLURES(:),IRESP,HCOMMENT=YCOMMENT)    
+  !
+  YRECFM='FLUANT'
+  YRECFM=YRECFM(:LEN_TRIM(YRECFM))//'_ISBA'
+  YCOMMENT='land-use carbon flux to the anthropogenic carbon pool (kgC m-2 s-1)'
+  CALL WRITE_SURF(DUO%CSELECT,HPROGRAM,YRECFM,ZFLUANT(:),IRESP,HCOMMENT=YCOMMENT)    
+  !
+  YRECFM='FANTATM'
+  YRECFM=YRECFM(:LEN_TRIM(YRECFM))//'_ISBA'
+  YCOMMENT='land-use carbon flux from the anthropogenic carbon pool to the atmosphere (kgC m-2 s-1)'
+  CALL WRITE_SURF(DUO%CSELECT,HPROGRAM,YRECFM,ZFANTATM(:),IRESP,HCOMMENT=YCOMMENT)    
+  !
+  YRECFM='CANTH'
+  YRECFM=YRECFM(:LEN_TRIM(YRECFM))//'_ISBA'
+  YCOMMENT='Anthropogenic carbon stock (kgC m-2)'
+  CALL WRITE_SURF(DUO%CSELECT,HPROGRAM,YRECFM,ZCANT(:),IRESP,HCOMMENT=YCOMMENT)    
+  !
+END IF
+!
+IF (LHOOK) CALL DR_HOOK('WRITE_DIAG_SEB_CC_ISBA_N:PROVAR_TO_DIAG',1,ZHOOK_HANDLE)
+!
+END SUBROUTINE PROVAR_TO_DIAG
+!
+!-------------------------------------------------------------------------------
+!
+END SUBROUTINE WRITE_DIAG_SEB_CC_ISBA_n

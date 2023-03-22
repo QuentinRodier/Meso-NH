@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -152,43 +152,31 @@ END MODULE MODI_SPAWN_FIELD2
 !!                   29/04/2016 (J.Escobar) bug in use of ZSVT_C in SET_LSFIELD_1WAY_ll        
 !!      Modification    01/2016  (JP Pinty) Add LIMA
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!      Modification 05/03/2018 (J.Escobar) bypass gridnesting special case KD(X/Y)RATIO == 1 not parallelized
-!!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
+!  J. Escobar  05/03/2018: bypass gridnesting special case KD(X/Y)RATIO == 1 not parallelized
+!  S. Bielli S.   02/2019: Sea salt: significant sea wave height influences salt emission; 5 salt modes
 !  P. Wautelet 14/03/2019: correct ZWS when variable not present in file
-!!      B. Vie          06/2020 Add prognostic supersaturation for LIMA
+!  B. Vie         06/2020: Add prognostic supersaturation for LIMA
 !  P. Wautelet 11/03/2021: bugfix: correct name for NSV_LIMA_IMM_NUCL
+!  P. Wautelet 04/02/2022: use TSVLIST to manage metadata of scalar variables
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
 !               ------------
 !
-USE MODD_2D_FRC
-USE MODD_ADVFRC_n
-USE MODD_BIKHARDT_n
-USE MODD_CH_AEROSOL,      ONLY: CAERONAMES
-USE MODD_CH_M9_n,         ONLY: CNAMES, CICNAMES
-USE MODD_CONF
-USE MODD_CST
+USE MODD_2D_FRC,          ONLY: L2D_ADV_FRC, L2D_REL_FRC
+USE MODD_ADVFRC_n,        ONLY: ADVFRC_MODEL
+USE MODD_BIKHARDT_N,      ONLY: XBFX1, XBFX2, XBFX3, XBFX4, XBFY1, XBFY2, XBFY3, XBFY4, &
+                                XBMX1, XBMX2, XBMX3, XBMX4, XBMY1, XBMY2, XBMY3, XBMY4
+USE MODD_CST,             ONLY: XCPD, XP00, XRD, XRV
 USE MODD_CONF_n,          ONLY: CONF_MODEL
-USE MODD_DUST,            ONLY: CDUSTNAMES
-USE MODD_ELEC_DESCR,      ONLY: CELECNAMES
-use modd_field,           only: tfielddata, TYPEREAL
+use modd_field,           only: tfieldmetadata, TYPEREAL
 USE MODD_FIELD_n,         ONLY: FIELD_MODEL, XZWS_DEFAULT
 USE MODD_IO,              ONLY: TFILEDATA
-USE MODD_LATZ_EDFLX
+USE MODD_LATZ_EDFLX,      ONLY: LTH_FLX, LUV_FLX
 USE MODD_LBC_n,           ONLY: LBC_MODEL
-USE MODD_LG,              ONLY: CLGNAMES
-USE MODD_LUNIT_n,         ONLY: LUNIT_MODEL,TLUOUT
-USE MODD_NSV
-USE MODD_REF_n,           ONLY: REF_MODEL
-USE MODD_PARAMETERS
-USE MODD_PARAM_LIMA,      ONLY: NMOD_CCN, NMOD_IFN, NMOD_IMM, NINDICE_CCN_IMM,&
-                                LSCAV, LAERO_MASS, LHHONI
-USE MODD_PARAM_LIMA_COLD, ONLY: CLIMA_COLD_NAMES
-USE MODD_PARAM_LIMA_WARM, ONLY: CLIMA_WARM_NAMES, CAERO_MASS
-USE MODD_RAIN_C2R2_DESCR, ONLY: C2R2NAMES
-USE MODD_RELFRC_n 
-USE MODD_SALT,            ONLY: CSALTNAMES
+USE MODD_LUNIT_n,         ONLY: TLUOUT
+USE MODD_NSV,             ONLY: NSV, NSV_CSBEG, NSV_CSEND, NSV_PPBEG, NSV_PPEND, NSV_USER, TSVLIST
+USE MODD_RELFRC_n,        ONLY: RELFRC_MODEL
 USE MODD_SPAWN
 !
 use mode_bikhardt
@@ -198,7 +186,6 @@ USE MODE_MSG
 USE MODE_MODELN_HANDLER
 USE MODE_MPPDB
 USE MODE_THERMO
-USE MODE_TOOLS,           ONLY: UPCASE
 !
 IMPLICIT NONE
 !
@@ -269,6 +256,7 @@ INTEGER  :: IMI, JI,KI
 INTEGER  :: IDIMX_C, IDIMY_C
 INTEGER  :: IINFO_ll
 !$
+LOGICAL :: GOLDFILEFORMAT
 ! Arrays for reading fields of input SON 1 file
 REAL, DIMENSION(:,:,:), ALLOCATABLE   :: ZWORK3D
 REAL, DIMENSION(:,:),   ALLOCATABLE   :: ZWORK2D
@@ -277,9 +265,9 @@ REAL, DIMENSION(:,:,:), ALLOCATABLE   :: ZPABST1,ZHUT1
 REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: ZRT1
 LOGICAL :: GUSERV
 !
+CHARACTER(LEN=3)  :: YNUM3
 CHARACTER(LEN=15) :: YVAL
-CHARACTER(LEN=2)  :: INDICE
-TYPE(TFIELDDATA)             :: TZFIELD
+TYPE(TFIELDMETADATA) :: TZFIELD
 !
 !-------------------------------------------------------------------------------
 !
@@ -289,6 +277,12 @@ TYPE(TFIELDDATA)             :: TZFIELD
 IMI = GET_CURRENT_MODEL_INDEX()
 CALL GOTO_MODEL(2)
 CALL GO_TOMODEL_ll(2, IINFO_ll)
+
+IF (PRESENT(TPSONFILE)) THEN
+  !If TPSONFILE file was written with a MesoNH version < 5.6, some variables had different names or were not available
+  GOLDFILEFORMAT = (      TPSONFILE%NMNHVERSION(1) < 5                                      &
+                   .OR. ( TPSONFILE%NMNHVERSION(1) == 5 .AND. TPSONFILE%NMNHVERSION(2) <6 ) )
+END IF
 !
 !*       1.0  recovers logical unit number of output listing
 !
@@ -839,384 +833,53 @@ IF (PRESENT(TPSONFILE)) THEN
   !
   ! Scalar variables
   !
-  IF (NSV /= 0) THEN
-    ! User scalar variables
-    IF (NSV_USER>0) THEN
-      TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'kg kg-1'
-      TZFIELD%CDIR       = 'XY'
-      TZFIELD%NGRID      = 1
-      TZFIELD%NTYPE      = TYPEREAL
-      TZFIELD%NDIMS      = 3
-      TZFIELD%LTIMEDEP   = .TRUE.
-      !
-      DO JSV = 1, NSV_USER      ! Users Scalar Variables
-        WRITE(TZFIELD%CMNHNAME,'(A3,I3.3)')'SVT',JSV
-        TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-        TZFIELD%CCOMMENT   = 'X_Y_Z_'//TRIM(TZFIELD%CMNHNAME)
-        CALL IO_Field_read(TPSONFILE,TZFIELD,ZWORK3D,IRESP)
-        IF(IRESP==0) PSVT(KIB2:KIE2,KJB2:KJE2,:,JSV)=ZWORK3D(KIB1:KIE1,KJB1:KJE1,:)
-      END DO
-    END IF
-    !
-    ! microphysical C2R2 scheme scalar variables
-    IF (NSV_C2R2END>=NSV_C2R2BEG) THEN
-      TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'm-3'
-      TZFIELD%CDIR       = 'XY'
-      TZFIELD%NGRID      = 1
-      TZFIELD%NTYPE      = TYPEREAL
-      TZFIELD%NDIMS      = 3
-      TZFIELD%LTIMEDEP   = .TRUE.
-      !
-      DO JSV = NSV_C2R2BEG,NSV_C2R2END
-        TZFIELD%CMNHNAME   = TRIM(C2R2NAMES(JSV-NSV_C2R2BEG+1))//'T'
-        TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-        WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
-        CALL IO_Field_read(TPSONFILE,TZFIELD,ZWORK3D,IRESP)
-        IF(IRESP==0) PSVT(KIB2:KIE2,KJB2:KJE2,:,JSV)=ZWORK3D(KIB1:KIE1,KJB1:KJE1,:)
-      END DO
-    END IF
-    !
-    ! LIMA variables
-    !
-    DO JSV = NSV_LIMA_BEG,NSV_LIMA_END
-      TZFIELD%CSTDNAME   = ''
-      WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
-      TZFIELD%CDIR       = 'XY'
-      TZFIELD%CUNITS     = 'kg-1'
-      TZFIELD%NGRID      = 1
-      TZFIELD%NTYPE      = TYPEREAL
-      TZFIELD%NDIMS      = 3
-      TZFIELD%LTIMEDEP   = .TRUE.
-      ! Nc
-      IF (JSV .EQ. NSV_LIMA_NC) THEN
-        TZFIELD%CMNHNAME   = TRIM(CLIMA_WARM_NAMES(1))//'T'
-      END IF
-      ! Nr
-      IF (JSV .EQ. NSV_LIMA_NR) THEN
-        TZFIELD%CMNHNAME   = TRIM(CLIMA_WARM_NAMES(2))//'T'
-      END IF
-      ! N CCN free
-      IF (JSV .GE. NSV_LIMA_CCN_FREE .AND. JSV .LT. NSV_LIMA_CCN_ACTI) THEN
-        WRITE(INDICE,'(I2.2)')(JSV - NSV_LIMA_CCN_FREE + 1)
-        TZFIELD%CMNHNAME   = TRIM(CLIMA_WARM_NAMES(3))//INDICE//'T'
-      END IF
-      ! N CCN acti
-      IF (JSV .GE. NSV_LIMA_CCN_ACTI .AND. JSV .LT. NSV_LIMA_CCN_ACTI + NMOD_CCN) THEN
-        WRITE(INDICE,'(I2.2)')(JSV - NSV_LIMA_CCN_ACTI + 1)
-        TZFIELD%CMNHNAME   = TRIM(CLIMA_WARM_NAMES(4))//INDICE//'T'
-      END IF
-      ! Scavenging
-      IF (JSV .EQ. NSV_LIMA_SCAVMASS) THEN
-        TZFIELD%CMNHNAME   = TRIM(CAERO_MASS(1))//'T'
-        TZFIELD%CUNITS     = 'kg kg-1'
-      END IF
-      ! Ni
-      IF (JSV .EQ. NSV_LIMA_NI) THEN
-        TZFIELD%CMNHNAME   = TRIM(CLIMA_COLD_NAMES(1))//'T'
-      END IF
-      ! N IFN free
-      IF (JSV .GE. NSV_LIMA_IFN_FREE .AND. JSV .LT. NSV_LIMA_IFN_NUCL) THEN
-        WRITE(INDICE,'(I2.2)')(JSV - NSV_LIMA_IFN_FREE + 1)
-        TZFIELD%CMNHNAME   = TRIM(CLIMA_COLD_NAMES(2))//INDICE//'T'
-      END IF
-      ! N IFN nucl
-      IF (JSV .GE. NSV_LIMA_IFN_NUCL .AND. JSV .LT. NSV_LIMA_IFN_NUCL + NMOD_IFN) THEN
-        WRITE(INDICE,'(I2.2)')(JSV - NSV_LIMA_IFN_NUCL + 1)
-        TZFIELD%CMNHNAME   = TRIM(CLIMA_COLD_NAMES(3))//INDICE//'T'
-      END IF
-      ! N IMM nucl
-      IF (JSV .GE. NSV_LIMA_IMM_NUCL .AND. JSV .LT. NSV_LIMA_IMM_NUCL + NMOD_IMM) THEN
-        WRITE(INDICE,'(I2.2)')(NINDICE_CCN_IMM(JSV - NSV_LIMA_IMM_NUCL + 1))
-        TZFIELD%CMNHNAME   = TRIM(CLIMA_COLD_NAMES(4))//INDICE//'T'
-      END IF
-      ! Hom. freez. of CCN
-      IF (JSV .EQ. NSV_LIMA_HOM_HAZE) THEN
-        TZFIELD%CMNHNAME   = TRIM(CLIMA_COLD_NAMES(5))//'T'
-      END IF
-      ! Supersaturation    
-      IF (JSV .EQ. NSV_LIMA_SPRO) THEN
-        TZFIELD%CMNHNAME   = TRIM(CLIMA_WARM_NAMES(5))//'T'
-      END IF
-      ! time t
-      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-      CALL IO_Field_read(TPSONFILE,TZFIELD,ZWORK3D,IRESP)
-      IF(IRESP==0) PSVT(KIB2:KIE2,KJB2:KJE2,:,JSV)=ZWORK3D(KIB1:KIE1,KJB1:KJE1,:)
-    END DO
-    !
-    ! ELEC Scalar Variables
-    !
-    IF (NSV_ELECEND>=NSV_ELECBEG) THEN
-      TZFIELD%CSTDNAME   = ''
-      TZFIELD%CDIR       = 'XY'
-      TZFIELD%NGRID      = 1
-      TZFIELD%NTYPE      = TYPEREAL
-      TZFIELD%NDIMS      = 3
-      TZFIELD%LTIMEDEP   = .TRUE.
-      !
-      DO JSV = NSV_ELECBEG,NSV_ELECEND
-        TZFIELD%CMNHNAME   = TRIM(CELECNAMES(JSV-NSV_ELECBEG+1))//'T'
-        TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-        IF (JSV .GT. NSV_ELECBEG .AND. JSV .LT. NSV_ELECEND) THEN
-          TZFIELD%CUNITS   = 'C m-3'
-          WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
-        ELSE
-          TZFIELD%CUNITS   = 'm-3'
-          WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3,A)')'X_Y_Z_','SVT',JSV,' (nb ions/m3)'
-        END IF
-        CALL IO_Field_read(TPSONFILE,TZFIELD,ZWORK3D,IRESP)
-        IF(IRESP==0) PSVT(KIB2:KIE2,KJB2:KJE2,:,JSV)=ZWORK3D(KIB1:KIE1,KJB1:KJE1,:)
-      END DO
-    END IF
-    !
-    ! Chemical Scalar Variables
-    !
-    IF (NSV_CHEMEND>=NSV_CHEMBEG) THEN
-      TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'ppp'
-      TZFIELD%CDIR       = 'XY'
-      TZFIELD%NGRID      = 1
-      TZFIELD%NTYPE      = TYPEREAL
-      TZFIELD%NDIMS      = 3
-      TZFIELD%LTIMEDEP   = .TRUE.
-      !
-      DO JSV = NSV_CHEMBEG,NSV_CHEMEND
-        TZFIELD%CMNHNAME   = TRIM(CNAMES(JSV-NSV_CHEMBEG+1))//'T'
-        TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-        WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
-        CALL IO_Field_read(TPSONFILE,TZFIELD,ZWORK3D,IRESP)
-        IF(IRESP==0) PSVT(KIB2:KIE2,KJB2:KJE2,:,JSV)=ZWORK3D(KIB1:KIE1,KJB1:KJE1,:)
-      END DO
-    END IF
-    !
-    ! Ice phase chemical Scalar Variables
-    !
-    IF (NSV_CHICEND>=NSV_CHICBEG) THEN
-      TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'ppp'
-      TZFIELD%CDIR       = 'XY'
-      TZFIELD%NGRID      = 1
-      TZFIELD%NTYPE      = TYPEREAL
-      TZFIELD%NDIMS      = 3
-      TZFIELD%LTIMEDEP   = .TRUE.
-      !
-      DO JSV = NSV_CHICBEG,NSV_CHICEND
-        CICNAMES(JSV-NSV_CHICBEG+1) = UPCASE(CICNAMES(JSV-NSV_CHICBEG+1))
-        TZFIELD%CMNHNAME   = TRIM(CICNAMES(JSV-NSV_CHICBEG+1))//'T'
-        TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-        WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
-        CALL IO_Field_read(TPSONFILE,TZFIELD,ZWORK3D,IRESP)
-        IF(IRESP==0) PSVT(KIB2:KIE2,KJB2:KJE2,:,JSV)=ZWORK3D(KIB1:KIE1,KJB1:KJE1,:)
-      END DO
-    END IF
-    !
-    ! Orilam Scalar Variables
-    !
-    IF (NSV_AEREND>=NSV_AERBEG) THEN
-      TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'ppp'
-      TZFIELD%CDIR       = 'XY'
-      TZFIELD%NGRID      = 1
-      TZFIELD%NTYPE      = TYPEREAL
-      TZFIELD%NDIMS      = 3
-      TZFIELD%LTIMEDEP   = .TRUE.
-      !
-      DO JSV = NSV_AERBEG,NSV_AEREND
-        TZFIELD%CMNHNAME   = TRIM(UPCASE(CAERONAMES(JSV-NSV_AERBEG+1)))//'T'
-        TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-        WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
-        CALL IO_Field_read(TPSONFILE,TZFIELD,ZWORK3D,IRESP)
-        IF(IRESP==0) PSVT(KIB2:KIE2,KJB2:KJE2,:,JSV)=ZWORK3D(KIB1:KIE1,KJB1:KJE1,:)
-      END DO
-    END IF
-    !
-    ! Dust Scalar Variables
-    !
-    IF (NSV_DSTEND>=NSV_DSTBEG) THEN
-      TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'ppp'
-      TZFIELD%CDIR       = 'XY'
-      TZFIELD%NGRID      = 1
-      TZFIELD%NTYPE      = TYPEREAL
-      TZFIELD%NDIMS      = 3
-      TZFIELD%LTIMEDEP   = .TRUE.
-      !
-      DO JSV = NSV_DSTBEG,NSV_DSTEND
-        TZFIELD%CMNHNAME   = TRIM(CDUSTNAMES(JSV-NSV_DSTBEG+1))//'T'
-        TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-        WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
-        CALL IO_Field_read(TPSONFILE,TZFIELD,ZWORK3D,IRESP)
-        IF(IRESP==0) PSVT(KIB2:KIE2,KJB2:KJE2,:,JSV)=ZWORK3D(KIB1:KIE1,KJB1:KJE1,:)
-      END DO
-    END IF
-    !
-    ! Sea Salt Scalar Variables
-    !
-    IF (NSV_SLTEND>=NSV_SLTBEG) THEN
-      TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'ppp'
-      TZFIELD%CDIR       = 'XY'
-      TZFIELD%NGRID      = 1
-      TZFIELD%NTYPE      = TYPEREAL
-      TZFIELD%NDIMS      = 3
-      TZFIELD%LTIMEDEP   = .TRUE.
-      !
-      DO JSV = NSV_SLTBEG,NSV_SLTEND
-        TZFIELD%CMNHNAME   = TRIM(CSALTNAMES(JSV-NSV_SLTBEG+1))//'T'
-        TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-        WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
-        CALL IO_Field_read(TPSONFILE,TZFIELD,ZWORK3D,IRESP)
-        IF(IRESP==0) PSVT(KIB2:KIE2,KJB2:KJE2,:,JSV)=ZWORK3D(KIB1:KIE1,KJB1:KJE1,:)
-      END DO
-    END IF
-    !
-    ! LG Scalar Variables
-    !
-    IF (NSV_LGEND>=NSV_LGBEG) THEN
-      TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'm'
-      TZFIELD%CDIR       = 'XY'
-      TZFIELD%NGRID      = 1
-      TZFIELD%NTYPE      = TYPEREAL
-      TZFIELD%NDIMS      = 3
-      TZFIELD%LTIMEDEP   = .TRUE.
-      !
-      DO JSV = NSV_LGBEG,NSV_LGEND
-        TZFIELD%CMNHNAME   = TRIM(CLGNAMES(JSV-NSV_LGBEG+1))//'T'
-        TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-        WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
-        CALL IO_Field_read(TPSONFILE,TZFIELD,ZWORK3D,IRESP)
-        IF(IRESP==0) PSVT(KIB2:KIE2,KJB2:KJE2,:,JSV)=ZWORK3D(KIB1:KIE1,KJB1:KJE1,:)
-      END DO
-    END IF
-    !
-    ! LNOx Scalar Variables
-    !
-!PW:TODO/bug1?: LINOX or LINOXT?
-!PW:TODO/bug2?: Same name of variable in a loop!
-    IF (NSV_LNOXEND>=NSV_LNOXBEG) THEN
-      TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'ppp' !PW: TODO: not sure (depends if LINOX or LINOXT)
-      TZFIELD%CDIR       = 'XY'
-      TZFIELD%NGRID      = 1
-      TZFIELD%NTYPE      = TYPEREAL
-      TZFIELD%NDIMS      = 3
-      TZFIELD%LTIMEDEP   = .TRUE.
-      !
-      DO JSV = NSV_LNOXBEG,NSV_LNOXEND
-        TZFIELD%CMNHNAME   = 'LINOX'
-        TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-        WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
-        CALL IO_Field_read(TPSONFILE,TZFIELD,ZWORK3D,IRESP)
-        IF(IRESP==0) PSVT(KIB2:KIE2,KJB2:KJE2,:,JSV)=ZWORK3D(KIB1:KIE1,KJB1:KJE1,:)
-      END DO
-    END IF
-    !
-    ! Passive scalar variables
-    !
-    IF (NSV_PPEND>=NSV_PPBEG) THEN
-      TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'kg kg-1'
-      TZFIELD%CDIR       = 'XY'
-      TZFIELD%NGRID      = 1
-      TZFIELD%NTYPE      = TYPEREAL
-      TZFIELD%NDIMS      = 3
-      TZFIELD%LTIMEDEP   = .TRUE.
-      !
-      DO JSV = NSV_PPBEG,NSV_PPEND
-        WRITE(TZFIELD%CMNHNAME,'(A3,I3.3)')'SVT',JSV
-        TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-        TZFIELD%CCOMMENT   = 'X_Y_Z_'//TRIM(TZFIELD%CMNHNAME)
-        CALL IO_Field_read(TPSONFILE,TZFIELD,ZWORK3D,IRESP)
-        IF(IRESP==0) PSVT(KIB2:KIE2,KJB2:KJE2,:,JSV)=ZWORK3D(KIB1:KIE1,KJB1:KJE1,:)
-      END DO
-    END IF
+  DO JSV = 1, NSV
+    TZFIELD = TSVLIST(JSV)
+    IF ( GOLDFILEFORMAT ) THEN
+      IF ( ( JSV >= 1         .AND. JSV <= NSV_USER  ) .OR. &
+           ( JSV >= NSV_PPBEG .AND. JSV <= NSV_PPEND ) .OR. &
 #ifdef MNH_FOREFIRE
-    !
-    ! ForeFire variables
-    !
-    IF (NSV_FFEND>=NSV_FFBEG) THEN
-      TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'kg kg-1'
-      TZFIELD%CDIR       = 'XY'
-      TZFIELD%NGRID      = 1
-      TZFIELD%NTYPE      = TYPEREAL
-      TZFIELD%NDIMS      = 3
-      TZFIELD%LTIMEDEP   = .TRUE.
-      !
-      DO JSV = NSV_FFBEG,NSV_FFEND
+           ( JSV >= NSV_FFBEG .AND. JSV <= NSV_FFEND ) .OR. &
+#endif
+           ( JSV >= NSV_CSBEG .AND. JSV <= NSV_CSEND )      ) THEN
+        !Some variables were written with an other name in MesoNH < 5.6
         WRITE(TZFIELD%CMNHNAME,'(A3,I3.3)')'SVT',JSV
         TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+        TZFIELD%CSTDNAME   = ''
         TZFIELD%CCOMMENT   = 'X_Y_Z_'//TRIM(TZFIELD%CMNHNAME)
-        CALL IO_Field_read(TPSONFILE,TZFIELD,ZWORK3D,IRESP)
-        IF(IRESP==0) PSVT(KIB2:KIE2,KJB2:KJE2,:,JSV)=ZWORK3D(KIB1:KIE1,KJB1:KJE1,:)
-      END DO
+      ELSE
+        !Scalar variables were written with a T suffix in older versions
+        TZFIELD%CMNHNAME  = TRIM( TZFIELD%CMNHNAME )  // 'T'
+        TZFIELD%CLONGNAME = TRIM( TZFIELD%CLONGNAME ) // 'T'
+      END IF
     END IF
-#endif
-    !
-    ! Passive scalar variables
-    !
-    IF (NSV_CSEND>=NSV_CSBEG) THEN
-      TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'kg kg-1'
-      TZFIELD%CDIR       = 'XY'
-      TZFIELD%NGRID      = 1
-      TZFIELD%NTYPE      = TYPEREAL
-      TZFIELD%NDIMS      = 3
-      TZFIELD%LTIMEDEP   = .TRUE.
-      !
-      DO JSV = NSV_CSBEG,NSV_CSEND
-        WRITE(TZFIELD%CMNHNAME,'(A3,I3.3)')'SVT',JSV
-        TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-        TZFIELD%CCOMMENT   = 'X_Y_Z_'//TRIM(TZFIELD%CMNHNAME)
-        CALL IO_Field_read(TPSONFILE,TZFIELD,ZWORK3D,IRESP)
-        IF(IRESP==0) PSVT(KIB2:KIE2,KJB2:KJE2,:,JSV)=ZWORK3D(KIB1:KIE1,KJB1:KJE1,:)
-      END DO
-    END IF
-    !
-    ! Passive scalar variables
-    !
-    IF (NSV_PP>=1) THEN
-      TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'm-3'
-      TZFIELD%CDIR       = 'XY'
-      TZFIELD%NGRID      = 1
-      TZFIELD%NTYPE      = TYPEREAL
-      TZFIELD%NDIMS      = 3
-      TZFIELD%LTIMEDEP   = .TRUE.
-      !
-      DO JSV = 1,NSV_PP
-        WRITE(TZFIELD%CMNHNAME,'(A3,I3.3)')'ATC',JSV+NSV_PPBEG-1
-        TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-        WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','ATC',JSV+NSV_PPBEG-1
-        CALL IO_Field_read(TPSONFILE,TZFIELD,ZWORK3D,IRESP)
-        IF(IRESP==0) PATC(KIB2:KIE2,KJB2:KJE2,:,JSV)=ZWORK3D(KIB1:KIE1,KJB1:KJE1,:)
-      END DO
-    END IF
-#ifdef MNH_FOREFIRE
-    !
-    ! ForeFire variables
-    !
-    IF (NSV_FF>=1) THEN
-      TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'm-3'
-      TZFIELD%CDIR       = 'XY'
-      TZFIELD%NGRID      = 1
-      TZFIELD%NTYPE      = TYPEREAL
-      TZFIELD%NDIMS      = 3
-      TZFIELD%LTIMEDEP   = .TRUE.
-      !
-      DO JSV = 1,NSV_FF
-        WRITE(TZFIELD%CMNHNAME,'(A3,I3.3)')'ATC',JSV+NSV_FFBEG-1
-        TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-        WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','ATC',JSV+NSV_FFBEG-1
-        CALL IO_Field_read(TPSONFILE,TZFIELD,ZWORK3D,IRESP)
-        IF(IRESP==0) PATC(KIB2:KIE2,KJB2:KJE2,:,JSV)=ZWORK3D(KIB1:KIE1,KJB1:KJE1,:)
-      END DO
-    END IF
-#endif
-  END IF
+
+    CALL IO_Field_read( TPSONFILE, TZFIELD, ZWORK3D, IRESP )
+
+    IF( IRESP == 0 ) PSVT(KIB2:KIE2, KJB2:KJE2, :, JSV) = ZWORK3D(KIB1:KIE1, KJB1:KJE1, :)
+  END DO
+  !
+  ! Passive scalar variables
+  !
+  DO JSV = NSV_PPBEG, NSV_PPEND
+    WRITE( YNUM3, '( I3.3 )' ) JSV
+
+    TZFIELD = TFIELDMETADATA(            &
+      CMNHNAME   = 'ATC' // YNUM3,       &
+      CSTDNAME   = '',                   &
+      CLONGNAME  = 'ATC' // YNUM3,       &
+      CCOMMENT   = 'X_Y_Z_ATC' // YNUM3, &
+      CUNITS     = 'm-3',                &
+      CDIR       = 'XY',                 &
+      NGRID      = 1,                    &
+      NTYPE      = TYPEREAL,             &
+      NDIMS      = 3,                    &
+      LTIMEDEP   = .TRUE.                )
+
+    CALL IO_Field_read( TPSONFILE, TZFIELD, ZWORK3D, IRESP )
+
+    IF( IRESP == 0 ) PATC(KIB2:KIE2, KJB2:KJE2, :, JSV-NSV_PPBEG+1) = ZWORK3D(KIB1:KIE1, KJB1:KJE1, :)
+  END DO
   !
   ! Secondary pronostic variables
   !

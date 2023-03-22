@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2021-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2021-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -109,8 +109,8 @@ Z_DELTY = XYHAT(2)-XYHAT(1)
 !     ---------------
 !
 !Moving averaged parameter verification
-IF (PTCOUNT==1 .AND. INT(XTMOY)/INT(XTMOYCOUNT) /= INT(XNUMBELT)) THEN
-    CMNHMSG(1) = 'XTMOY/XTMOYCOUNT must be equal to XNUMBELT'
+IF (PTCOUNT==1 .AND. ( NTMOY /= NNUMBELT * NTMOYCOUNT ) ) THEN
+    CMNHMSG(1) = 'NTMOY must be equal to NNUMBELT*NTMOYCOUNT'
     CMNHMSG(2) = 'Please change the above parameters accordingly in NAM_RECYCL_PARAMn'
     CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'RECYCLING' )
 END IF

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -47,7 +47,8 @@ REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PRT , PSVT
                                                   ! Variables at t
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHVREF   ! Virtual Temperature
                                           ! of the reference state
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PDXX,PDYY,PDZZ,PDZX,PDZY
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PDXX,PDYY,PDZZ
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PDZX,PDZY
                                                   !  metric coefficients
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRTHS, PRTKES
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRRS , PRSVS
@@ -152,7 +153,7 @@ use modd_budget,     only: lbudget_th, lbudget_tke, lbudget_rv, lbudget_rc,     
 USE MODD_CST
 USE MODD_CTURB,          ONLY: XTKEMIN
 USE MODD_CONF,           ONLY: LNEUTRAL,NHALO,L1D, L2D
-use modd_field,          only: tfielddata, TYPEREAL
+use modd_field,          only: tfieldmetadata, TYPEREAL
 USE MODD_IBM_PARAM_n,    ONLY: LIBM,XIBM_LS,XIBM_EPSI
 USE MODD_IO,             ONLY: TFILEDATA
 USE MODD_LUNIT_n,        ONLY: TLUOUT
@@ -212,7 +213,8 @@ REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PRT , PSVT
                                                   ! Variables at t
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHVREF   ! Virtual Temperature
                                           ! of the reference state
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PDXX,PDYY,PDZZ,PDZX,PDZY
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PDXX,PDYY,PDZZ
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PDZX,PDZY
                                                   !  metric coefficients
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRTHS, PRTKES
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRRS , PRSVS
@@ -275,11 +277,11 @@ TYPE(LIST_ll), POINTER      :: TZFIELDS0_ll ! list of fields to exchange
 TYPE(LIST_ll), POINTER      :: TZFIELDS1_ll ! list of fields to exchange
 !
 !
-INTEGER             :: IRESP        ! Return code of FM routines
-INTEGER             :: ILUOUT       ! logical unit
-INTEGER             :: ISPLIT_PPM   ! temporal time splitting 
-INTEGER             :: IIB, IIE, IJB, IJE,IKB,IKE
-TYPE(TFIELDDATA) :: TZFIELD
+INTEGER              :: IRESP        ! Return code of FM routines
+INTEGER              :: ILUOUT       ! logical unit
+INTEGER              :: ISPLIT_PPM   ! temporal time splitting
+INTEGER              :: IIB, IIE, IJB, IJE,IKB,IKE
+TYPE(TFIELDMETADATA) :: TZFIELD
 !-------------------------------------------------------------------------------
 !
 !*       0.     INITIALIZATION                        
@@ -366,54 +368,58 @@ END IF
 !* prints in the file the 3D Courant numbers (one should flag this)
 !
 IF ( tpfile%lopened .AND. OCFL_WRIT .AND. (.NOT. L1D) ) THEN
-    TZFIELD%CMNHNAME   = 'CFLU'
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = 'CFLU'
-    TZFIELD%CUNITS     = '1'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%CCOMMENT   = 'X_Y_Z_CFLU'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
+    TZFIELD = TFIELDMETADATA(    &
+      CMNHNAME   = 'CFLU',       &
+      CSTDNAME   = '',           &
+      CLONGNAME  = 'CFLU',       &
+      CUNITS     = '1',          &
+      CDIR       = 'XY',         &
+      CCOMMENT   = 'X_Y_Z_CFLU', &
+      NGRID      = 1,            &
+      NTYPE      = TYPEREAL,     &
+      NDIMS      = 3,            &
+      LTIMEDEP   = .TRUE.        )
     CALL IO_Field_write(TPFILE,TZFIELD,ZCFLU)
 !
   IF (.NOT. L2D) THEN
-    TZFIELD%CMNHNAME   = 'CFLV'
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = 'CFLV'
-    TZFIELD%CUNITS     = '1'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%CCOMMENT   = 'X_Y_Z_CFLV'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
+    TZFIELD = TFIELDMETADATA(    &
+      CMNHNAME   = 'CFLV',       &
+      CSTDNAME   = '',           &
+      CLONGNAME  = 'CFLV',       &
+      CUNITS     = '1',          &
+      CDIR       = 'XY',         &
+      CCOMMENT   = 'X_Y_Z_CFLV', &
+      NGRID      = 1,            &
+      NTYPE      = TYPEREAL,     &
+      NDIMS      = 3,            &
+      LTIMEDEP   = .TRUE.        )
     CALL IO_Field_write(TPFILE,TZFIELD,ZCFLV)
   END IF
 !
-    TZFIELD%CMNHNAME   = 'CFLW'
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = 'CFLW'
-    TZFIELD%CUNITS     = '1'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%CCOMMENT   = 'X_Y_Z_CFLW'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
+    TZFIELD = TFIELDMETADATA(    &
+      CMNHNAME   = 'CFLW',       &
+      CSTDNAME   = '',           &
+      CLONGNAME  = 'CFLW',       &
+      CUNITS     = '1',          &
+      CDIR       = 'XY',         &
+      CCOMMENT   = 'X_Y_Z_CFLW', &
+      NGRID      = 1,            &
+      NTYPE      = TYPEREAL,     &
+      NDIMS      = 3,            &
+      LTIMEDEP   = .TRUE.        )
     CALL IO_Field_write(TPFILE,TZFIELD,ZCFLW)
 !
-    TZFIELD%CMNHNAME   = 'CFL'
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = 'CFL'
-    TZFIELD%CUNITS     = '1'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%CCOMMENT   = 'X_Y_Z_CFL'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
+    TZFIELD = TFIELDMETADATA(   &
+      CMNHNAME   = 'CFL',       &
+      CSTDNAME   = '',          &
+      CLONGNAME  = 'CFL',       &
+      CUNITS     = '1',         &
+      CDIR       = 'XY',        &
+      CCOMMENT   = 'X_Y_Z_CFL', &
+      NGRID      = 1,           &
+      NTYPE      = TYPEREAL,    &
+      NDIMS      = 3,           &
+      LTIMEDEP   = .TRUE.       )
     CALL IO_Field_write(TPFILE,TZFIELD,ZCFL)
 END IF
 !

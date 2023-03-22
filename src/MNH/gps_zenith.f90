@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2004-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2004-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -66,8 +66,8 @@ END MODULE MODI_GPS_ZENITH
 !!    -------------
 !!      Original    18/11/04
 !!      Modified    4/12/2007
-!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 31/08/2022: use XXHATM and XYHATM (remove ZXHATM and ZYHATM local variables)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -120,7 +120,6 @@ INTEGER :: JI,JJ,JK               ! Loop variables of control
 INTEGER :: IIU,IJU,IKU      ! Loop variables of model 
 INTEGER :: ILUOUT0, IRESP   ! file unit and return code for output
 INTEGER :: JL               !
-REAL,  DIMENSION(:),ALLOCATABLE         :: ZXHATM,ZYHATM   ! mass-point positions 
 REAL,  DIMENSION(:,:,:),ALLOCATABLE     :: ZZHATM   ! mass level altitude  
 !-------- Physical parameters for the integration ----------------------------
 REAL, DIMENSION(:,:,:),ALLOCATABLE ::  ZE              !  Partial pressure of water vapor
@@ -166,8 +165,6 @@ IKU = SIZE (PTEMP,3)
 IKB = JPVEXT + 1
 IKE = IKU - JPVEXT
 !
-ALLOCATE(ZXHATM(IIU))
-ALLOCATE(ZYHATM(IJU))
 ALLOCATE(ZZHATM(IIU,IJU,IKU))
 ALLOCATE(ZE(IIU,IJU,IKU))
 ALLOCATE(ZTV(IIU,IJU,IKU))
@@ -203,10 +200,6 @@ ZRDSRV=XRD/XRV
 !              ------------------- 
 !
 ! 
-ZXHATM(1:IIU-1) = 0.5*(XXHAT(1:IIU-1)+XXHAT(2:IIU))
-ZXHATM(IIU)     = 2.*XXHAT(IIU)-ZXHATM(IIU-1)
-ZYHATM(1:IJU-1) = 0.5*(XYHAT(1:IJU-1)+XYHAT(2:IJU))
-ZYHATM(IJU)     = 2.*XYHAT(IJU)-ZYHATM(IJU-1)  
 ZZHATM(:,:,1:IKU-1)=0.5*(XZZ(:,:,1:IKU-1)+XZZ(:,:,2:IKU))
 ZZHATM(:,:,IKU)    = 2.*XZZ(:,:,IKU) -ZZHATM(:,:,IKU-1)
 ! 
@@ -304,7 +297,7 @@ IF (ISTATIONS >0 ) THEN
     CALL SM_XYHAT(XLATORI,XLONORI,   &
        XLAT_GPS(JL),XLON_GPS(JL),ZXHAT_GPS(JL),ZYHAT_GPS(JL))
 !
-    II(JL)=COUNT(ZXHATM(:)<=ZXHAT_GPS(JL))
+    II(JL)=COUNT(XXHATM(:)<=ZXHAT_GPS(JL))
     IX=COUNT(XXHAT(:)<=ZXHAT_GPS(JL))
     IF (IX<IIB .AND. LWEST_ll()) THEN
      ! station outside the MESO-NH domain 
@@ -314,7 +307,7 @@ IF (ISTATIONS >0 ) THEN
      ! station outside the MESO-NH domain 
       GSTATION(JL)=.FALSE.
     ENDIF
-    IJ(JL)=COUNT(ZYHATM(:)<=ZYHAT_GPS(JL))
+    IJ(JL)=COUNT(XYHATM(:)<=ZYHAT_GPS(JL))
     IY=COUNT(XYHAT(:)<=ZYHAT_GPS(JL))
     IF (IY<IJB .AND. LSOUTH_ll()) THEN
      ! stations outside MESO-NH domain 
@@ -337,7 +330,7 @@ IF (ISTATIONS >0 ) THEN
       II1=II(JL)
       IJ1=IJ(JL)
 !     interpolate Z at station position and check that the difference between model relief and station altitude is weaker than XDIFORO
-      CALL INTERPOL_STATION(XZZ(:,:,:),ZXHATM,ZYHATM,II1,IJ1,ZXHAT_GPS(JL),ZYHAT_GPS(JL),ZZ_STA(:,JL))
+      CALL INTERPOL_STATION(XZZ(:,:,:),XXHATM,XYHATM,II1,IJ1,ZXHAT_GPS(JL),ZYHAT_GPS(JL),ZZ_STA(:,JL))
       IF ( ABS( ZZ_STA(IKB,JL)-XZS_GPS(JL)) > XDIFFORO ) THEN
         WRITE(IFGRI,*) 'NO DATA, Difference between the model orography and the GPS station height too large for ',CNAM_GPS(JL)
         GSTATION(JL)=.FALSE.
@@ -347,10 +340,10 @@ IF (ISTATIONS >0 ) THEN
 !        6.3 Interpolate to the station positions 
 !
 ! interpolate model variables to obs point
-      CALL INTERPOL_STATION(PPABSM(:,:,:),ZXHATM,ZYHATM,II1,IJ1,ZXHAT_GPS(JL),ZYHAT_GPS(JL),ZP_STA(:))
-      CALL INTERPOL_STATION(ZE(:,:,:),ZXHATM,ZYHATM,II1,IJ1,ZXHAT_GPS(JL),ZYHAT_GPS(JL),ZE_STA(:))
-      CALL INTERPOL_STATION(PTEMP(:,:,:),ZXHATM,ZYHATM,II1,IJ1,ZXHAT_GPS(JL),ZYHAT_GPS(JL),ZT_STA(:))
-      CALL INTERPOL_STATION(ZTV(:,:,:),ZXHATM,ZYHATM,II1,IJ1,ZXHAT_GPS(JL),ZYHAT_GPS(JL),ZTV_STA(:))
+      CALL INTERPOL_STATION(PPABSM(:,:,:),XXHATM,XYHATM,II1,IJ1,ZXHAT_GPS(JL),ZYHAT_GPS(JL),ZP_STA(:))
+      CALL INTERPOL_STATION(ZE(:,:,:),XXHATM,XYHATM,II1,IJ1,ZXHAT_GPS(JL),ZYHAT_GPS(JL),ZE_STA(:))
+      CALL INTERPOL_STATION(PTEMP(:,:,:),XXHATM,XYHATM,II1,IJ1,ZXHAT_GPS(JL),ZYHAT_GPS(JL),ZT_STA(:))
+      CALL INTERPOL_STATION(ZTV(:,:,:),XXHATM,XYHATM,II1,IJ1,ZXHAT_GPS(JL),ZYHAT_GPS(JL),ZTV_STA(:))
 !  
 !            6.3.1 For stations above model orography
 !  
@@ -386,7 +379,7 @@ IF (ISTATIONS >0 ) THEN
              /(XRD* 0.5 *(ZTV_STAT+ZTV_STA(IKB))))
         
 ! assume constant rvn for Vapor pressure
-        CALL INTERPOL_STATION( PRM(:,:,IKB),ZXHATM,ZYHATM,II(JL),IJ(JL),ZXHAT_GPS(JL), &
+        CALL INTERPOL_STATION( PRM(:,:,IKB),XXHATM,XYHATM,II(JL),IJ(JL),ZXHAT_GPS(JL), &
              ZYHAT_GPS(JL),ZRV_STAT)
         ZEM_STAT =  ZPM_STAT *  ZRV_STAT  / ( ZRDSRV + ZRV_STAT )
 ! add contribution below the model orography        
@@ -408,11 +401,11 @@ IF (ISTATIONS >0 ) THEN
 !
 !            6.3.4 Add external  contribution for ZHD
 !
-      CALL INTERPOL_STATION( ZPTOP(:,:),ZXHATM,ZYHATM,II(JL),IJ(JL),ZXHAT_GPS(JL), &
+      CALL INTERPOL_STATION( ZPTOP(:,:),XXHATM,XYHATM,II(JL),IJ(JL),ZXHAT_GPS(JL), &
            ZYHAT_GPS(JL),ZPTOP_STAT)
-      CALL INTERPOL_STATION( ZGTOP(:,:),ZXHATM,ZYHATM,II(JL),IJ(JL),ZXHAT_GPS(JL), &
+      CALL INTERPOL_STATION( ZGTOP(:,:),XXHATM,XYHATM,II(JL),IJ(JL),ZXHAT_GPS(JL), &
            ZYHAT_GPS(JL),ZGTOP_STAT)
-      CALL INTERPOL_STATION( ZTEMPTOP(:,:),ZXHATM,ZYHATM,II(JL),IJ(JL),ZXHAT_GPS(JL), &
+      CALL INTERPOL_STATION( ZTEMPTOP(:,:),XXHATM,XYHATM,II(JL),IJ(JL),ZXHAT_GPS(JL), &
            ZYHAT_GPS(JL),ZTEMPTOP_STAT)
       ZGPS_ZHD(JL)=ZGPS_ZHD(JL)+ ( 1.E-6 * ZK1 * ZPTOP_STAT * XRD * ( 1. + 2. * XRD * ZTEMPTOP_STAT &
            / ( ( XRADIUS + ZZ_STA(IKE+1,JL) ) * ZGTOP_STAT )  +  2. * ( XRD * ZTEMPTOP_STAT &
@@ -435,8 +428,6 @@ IF (ISTATIONS >0 ) THEN
   CALL IO_File_close(TZFILE,IRESP)
   PRINT *,'File ',TRIM(HFGRI),' closed, IRESP= ',IRESP
 !
-  DEALLOCATE(ZXHATM)
-  DEALLOCATE(ZYHATM)
   DEALLOCATE(ZGPS_ZTD)
   DEALLOCATE(ZGPS_ZHD)
   DEALLOCATE(ZGPS_ZWD)

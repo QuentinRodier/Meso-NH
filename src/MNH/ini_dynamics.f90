@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ########################
@@ -8,7 +8,7 @@
 !     ########################
 INTERFACE
 SUBROUTINE INI_DYNAMICS(PLON,PLAT,PRHODJ,PTHVREF,PMAP,PZZ,                   &
-               PDXHAT,PDYHAT,PZHAT,HLBCX,HLBCY,PTSTEP,                       &
+               PDXHAT,PDYHAT,PZHAT,PZHATM,HLBCX,HLBCY,PTSTEP,                &
                OVE_RELAX,OVE_RELAX_GRD,OHORELAX_UVWTH,OHORELAX_RV,           &
                OHORELAX_RC,OHORELAX_RR,OHORELAX_RI,OHORELAX_RS,OHORELAX_RG,  &
                OHORELAX_RH,OHORELAX_TKE,OHORELAX_SV,                         &
@@ -41,7 +41,8 @@ REAL, DIMENSION(:,:),   INTENT(IN)        :: PMAP      ! Map factor
 REAL, DIMENSION(:,:,:), INTENT(IN)        :: PZZ       ! height 
 REAL, DIMENSION(:),     INTENT(IN)        :: PDXHAT     ! Stretching in x direction
 REAL, DIMENSION(:),     INTENT(IN)        :: PDYHAT     ! Stretching in y direction
-REAL, DIMENSION(:),     INTENT(IN)        :: PZHAT     ! Gal-Chen Height   
+REAL, DIMENSION(:),     INTENT(IN)        :: PZHAT     ! Gal-Chen Height
+REAL, DIMENSION(:),     INTENT(IN)        :: PZHATM    ! ... at mass points
 CHARACTER(LEN=4), DIMENSION(:), INTENT(IN) :: HLBCX    ! x-direction LBC type
 CHARACTER(LEN=4), DIMENSION(:), INTENT(IN) :: HLBCY    ! y-direction LBC type
 LOGICAL,                INTENT(IN)        :: OVE_RELAX ! logical
@@ -179,7 +180,7 @@ END INTERFACE
 END MODULE MODI_INI_DYNAMICS
 !     ######################################################################
 SUBROUTINE INI_DYNAMICS(PLON,PLAT,PRHODJ,PTHVREF,PMAP,PZZ,                   &
-               PDXHAT,PDYHAT,PZHAT,HLBCX,HLBCY,PTSTEP,                       &
+               PDXHAT,PDYHAT,PZHAT,PZHATM,HLBCX,HLBCY,PTSTEP,                &
                OVE_RELAX,OVE_RELAX_GRD,OHORELAX_UVWTH,OHORELAX_RV,           &
                OHORELAX_RC,OHORELAX_RR,OHORELAX_RI,OHORELAX_RS,OHORELAX_RG,  &
                OHORELAX_RH,OHORELAX_TKE,OHORELAX_SV,                         &
@@ -312,6 +313,7 @@ REAL, DIMENSION(:,:,:), INTENT(IN)        :: PZZ       ! height
 REAL, DIMENSION(:),     INTENT(IN)        :: PDXHAT     ! Stretching in x direction
 REAL, DIMENSION(:),     INTENT(IN)        :: PDYHAT     ! Stretching in y direction
 REAL, DIMENSION(:),     INTENT(IN)        :: PZHAT     ! Gal-Chen Height   
+REAL, DIMENSION(:),     INTENT(IN)        :: PZHATM    ! ... at mass points
 CHARACTER(LEN=4), DIMENSION(:), INTENT(IN) :: HLBCX    ! x-direction LBC type
 CHARACTER(LEN=4), DIMENSION(:), INTENT(IN) :: HLBCY    ! y-direction LBC type
 LOGICAL,                INTENT(IN)        :: OVE_RELAX ! logical
@@ -540,7 +542,7 @@ IF (GHORELAX .OR. OVE_RELAX.OR.OVE_RELAX_GRD) THEN
      OHORELAX_SVCHEM, OHORELAX_SVAER, OHORELAX_SVDST, OHORELAX_SVSLT, &
      OHORELAX_SVPP, OHORELAX_SVCS, OHORELAX_SVCHIC,OHORELAX_SVSNW,    &
      PALKTOP,PALKGRD, PALZBOT,PALZBAS,                                &
-     PZZ, PZHAT, PTSTEP,                                              &
+     PZZ, PZHAT, PZHATM, PTSTEP,                                      &
      PRIMKMAX,KRIMX,KRIMY,                                            &
      PALK, PALKW, KALBOT,                                             &
      PALKBAS, PALKWBAS, KALBAS,                                       &

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1998-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1998-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -136,7 +136,8 @@ END MODULE MODI_READ_ALL_DATA_GRIB_CASE
 !  Q. Rodier   21/04/2020: correction GFS u and v wind component written in the right vertical order
 !  Q. Rodier   02/09/2020: Read and interpol geopotential height for interpolation on isobaric surface Grid of NCEP
 !  P. Wautelet 09/03/2021: move some chemistry initializations to ini_nsv
-!JP Chaboureau 02/08/2021: add ERA5 reanlysis in pressure levels
+!JP Chaboureau 02/08/2021: add ERA5 reanalysis in pressure levels
+!JP Chaboureau 18/10/2022: correction on vertical level for GFS and ERA5 reanalyses in pressure levels
 !-------------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -370,12 +371,8 @@ ALLOCATE (ZXM(IIU,IJU))
 ALLOCATE (ZYM(IIU,IJU))
 ALLOCATE (ZLONM(IIU,IJU))
 ALLOCATE (ZLATM(IIU,IJU))
-ZXM(1:IIU-1,1) = (XXHAT(1:IIU-1) + XXHAT(2:IIU) ) / 2.
-ZXM(IIU,1)     = XXHAT(IIU) - XXHAT(IIU-1) + ZXM(IIU-1,1)
-ZXM(:,2:IJU)   = SPREAD(ZXM(:,1),2,IJU-1)
-ZYM(1,1:IJU-1) = (XYHAT(1:IJU-1) + XYHAT(2:IJU)) / 2.
-ZYM(1,IJU)     = XYHAT(IJU) - XYHAT(IJU-1) + ZYM(1,IJU-1)
-ZYM(2:IIU,:)   = SPREAD(ZYM(1,:),1,IIU-1)
+ZXM(:,:) = SPREAD(XXHATM(:),2,IJU)
+ZYM(:,:) = SPREAD(XYHATM(:),1,IIU)
 CALL SM_XYTOLATLON_A (XLAT0,XLON0,XRPK,XLATORI,XLONORI,ZXM,ZYM,ZLATM,ZLONM, &
                       IIU,IJU)
 ALLOCATE (ZLONOUT(INO))
@@ -925,6 +922,9 @@ ALLOCATE (ZEXNM_G(INI,INLEVEL))
 ZEXNM_G(:,1:INLEVEL-1) = (ZEXNF_G(:,1:INLEVEL-1)-ZEXNF_G(:,2:INLEVEL)) / &
                      (LOG(ZEXNF_G(:,1:INLEVEL-1))-LOG(ZEXNF_G(:,2:INLEVEL)))
 ZEXNM_G(:,INLEVEL) = (ZPF_G(:,INLEVEL)/2./XP00)**(XRD/XCPD)
+!
+IF (IMODEL==10.OR.IMODEL==11) ZEXNM_G(:,:)=ZEXNF_G(:,:) ! for GFS and ERA5 on pressure levels
+!
 DEALLOCATE (ZEXNF_G)
 DEALLOCATE (ZPF_G)
 !
@@ -1010,8 +1010,6 @@ ALLOCATE (ZRV_G(INI))
 ALLOCATE (ZOUT(INO))
 IF (IMODEL/=10) THEN ! others than NCEP
   DO JLOOP1=1, INLEVEL
-    !WRITE (ILUOUT0,*) 'JLOOP1=',JLOOP1,MINVAL(ZPM_G(:,JLOOP1)),MINVAL(ZT_G(:,JLOOP1)),MINVAL(ZQ_G(:,JLOOP1))
-    !WRITE (ILUOUT0,*) '                     ',MAXVAL(ZPM_G(:,JLOOP1)),MAXVAL(ZT_G(:,JLOOP1)),MAXVAL(ZQ_G(:,JLOOP1))
     !
     ! Compute Theta V and relative humidity on grib grid
     !
@@ -1039,17 +1037,13 @@ IF (IMODEL/=10) THEN ! others than NCEP
     CALL ARRAY_1D_TO_2D (INO,ZOUT,IIU,IJU,ZTHV_LS(:,:,JLOOP1))
     !
   END DO
-ELSE !NCEP
+ELSE !GFS and ERA5 on pressure levels
   DO JLOOP1=1, INLEVEL
-    !WRITE (ILUOUT0,*) 'JLOOP1=',JLOOP1,MINVAL(ZPM_G(:,JLOOP1)),MINVAL(ZT_G(:,JLOOP1)),MINVAL(ZQ_G(:,JLOOP1))
-    !WRITE (ILUOUT0,*) '                     ',MAXVAL(ZPM_G(:,JLOOP1)),MAXVAL(ZT_G(:,JLOOP1)),MAXVAL(ZQ_G(:,JLOOP1))
     ZH_G(:)  =ZQ_G(:,JLOOP1)
     ZRV_G(:) = (XRD/XRV)*SM_FOES(ZT_G(:,JLOOP1))*0.01*ZH_G(:) &
                         /(ZPM_G(:,JLOOP1) -SM_FOES(ZT_G(:,JLOOP1))*0.01*ZH_G(:))
-    !WRITE (ILUOUT0,*) '                     ',MINVAL(ZRV_G(:)),MAXVAL(ZRV_G(:))
     ZTHV_G(:)=ZT_G(:,JLOOP1) * ((XP00/ZPM_G(:,JLOOP1))**(XRD/XCPD)) * &
                                ((1. + XRV*ZRV_G(:)/XRD) / (1. + ZRV_G(:)))
-    !WRITE (ILUOUT0,*) '                     ',MINVAL(ZTHV_G(:)),MAXVAL(ZTHV_G(:))
     !
     ! Interpolation : H           
     CALL HORIBL(ZPARAM(3),ZPARAM(4),ZPARAM(5),ZPARAM(6),INT(ZPARAM(2)),IINLO,INI, &
@@ -1140,6 +1134,9 @@ ALLOCATE (ZEXNM_LS(IIU,IJU,INLEVEL))
 ZEXNM_LS(:,:,1:INLEVEL-1) = (ZEXNF_LS(:,:,1:INLEVEL-1)-ZEXNF_LS(:,:,2:INLEVEL)) / &
                      (LOG(ZEXNF_LS(:,:,1:INLEVEL-1))-LOG(ZEXNF_LS(:,:,2:INLEVEL)))
 ZEXNM_LS(:,:,INLEVEL) = (ZPF_LS(:,:,INLEVEL)/2./XP00)**(XRD/XCPD)
+!
+IF (IMODEL==10.OR.IMODEL==11) ZEXNM_LS(:,:,:)=ZEXNF_LS(:,:,:) ! for GFS and ERA5 on pressure levels
+!
 DEALLOCATE (ZEXNF_LS)
 DEALLOCATE (ZPF_LS)
 !
@@ -1362,7 +1359,7 @@ IF (IMODEL==5) THEN
   XSV_LS(:,:,:,:) = 0.
   ILEV1=-1
 !
-  WRITE (ILUOUT0,'(A,A4,A)') ' | Reading Mocage species (ppp) from ',HFILE,' file'
+  WRITE (ILUOUT0,'(A,A4,A)') ' | Reading Mocage species (ppv) from ',HFILE,' file'
 !
 !*       2.6.1  read mocage species
 !

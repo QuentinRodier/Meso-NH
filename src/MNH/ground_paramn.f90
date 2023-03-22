@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -9,13 +9,17 @@ MODULE MODI_GROUND_PARAM_n
 !
 INTERFACE 
 !
-      SUBROUTINE GROUND_PARAM_n( PSFTH, PSFTH_WALL, PSFTH_ROOF, PCD_ROOF, PSFRV, PSFRV_WALL, &
+      SUBROUTINE GROUND_PARAM_n(D, PSFTH, PSFTH_WALL, PSFTH_ROOF, PCD_ROOF, PSFRV, PSFRV_WALL, &
                                  PSFRV_ROOF, PSFSV, PSFCO2, PSFU, PSFV, PDIR_ALB, PSCA_ALB,  &
-                                 PEMIS, PTSRAD )
+                                 PEMIS, PTSRAD, KTCOUNT, TPFILE )
 !
 !* surface fluxes
 !  --------------
 !
+USE MODD_DIMPHYEX, ONLY: DIMPHYEX_t
+USE MODD_IO,       ONLY: TFILEDATA
+!
+TYPE(DIMPHYEX_t),     INTENT(IN)   :: D
 REAL, DIMENSION(:,:), INTENT(OUT) :: PSFTH ! Total surface flux of potential temperature (Km/s)
 REAL, DIMENSION(:,:), INTENT(OUT) :: PSFTH_WALL ! Wall surface flux of potential temperature (Km/s)
 REAL, DIMENSION(:,:), INTENT(OUT) :: PSFTH_ROOF ! Roof surface flux of potential temperature (Km/s)
@@ -24,7 +28,7 @@ REAL, DIMENSION(:,:), INTENT(OUT) :: PSFRV ! Total surface flux of water vapor  
 REAL, DIMENSION(:,:), INTENT(OUT) :: PSFRV_WALL ! Wall surface flux of water vapor           (m/s*kg/kg)
 REAL, DIMENSION(:,:), INTENT(OUT) :: PSFRV_ROOF ! Roof surface flux of water vapor           (m/s*kg/kg)
 REAL, DIMENSION(:,:,:),INTENT(OUT):: PSFSV ! surface flux of scalar                (m/s*kg/kg)
-                                           ! flux of chemical var.                 (ppp.m/s)
+                                           ! flux of chemical var.                 (ppv.m/s)
 REAL, DIMENSION(:,:), INTENT(OUT) :: PSFCO2! surface flux of CO2                   (m/s*kg/kg)
 REAL, DIMENSION(:,:), INTENT(OUT) :: PSFU  ! surface fluxes of horizontal   
 REAL, DIMENSION(:,:), INTENT(OUT) :: PSFV  ! momentum in x and y directions        (m2/s2)
@@ -37,6 +41,8 @@ REAL, DIMENSION(:,:,:), INTENT(OUT) :: PSCA_ALB  ! diffuse albedo for each spect
 REAL, DIMENSION(:,:,:), INTENT(OUT) :: PEMIS     ! surface emissivity                    (-)
 REAL, DIMENSION(:,:),   INTENT(OUT) :: PTSRAD    ! surface radiative temperature         (K)
 !
+INTEGER,                INTENT(IN)  :: KTCOUNT   ! temporal iteration count
+TYPE(TFILEDATA),        INTENT(IN)  :: TPFILE    ! Synchronous output file
 END SUBROUTINE GROUND_PARAM_n
 !
 END INTERFACE
@@ -44,9 +50,9 @@ END INTERFACE
 END MODULE MODI_GROUND_PARAM_n
 !
 !     ######################################################################
-      SUBROUTINE GROUND_PARAM_n( PSFTH, PSFTH_WALL, PSFTH_ROOF, PCD_ROOF, PSFRV,  &
+      SUBROUTINE GROUND_PARAM_n(D, PSFTH, PSFTH_WALL, PSFTH_ROOF, PCD_ROOF, PSFRV,  &
                                  PSFRV_WALL, PSFRV_ROOF, PSFSV, PSFCO2, PSFU,     &
-                                 PSFV, PDIR_ALB, PSCA_ALB, PEMIS, PTSRAD )
+                                 PSFV, PDIR_ALB, PSCA_ALB, PEMIS, PTSRAD, KTCOUNT, TPFILE )
 !     #######################################################################
 !
 !
@@ -119,7 +125,11 @@ END MODULE MODI_GROUND_PARAM_n
 !!     (Bielli S.) 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !  R. Schoetter    12/2021  multi-level coupling between MesoNH and SURFEX  
+!  A. Costes      12/2021: Blaze Fire model
 !  P. Wautelet 09/02/2022: bugfix: add missing XCURRENT_LEI computation
+!  P. Wautelet 30/09/2022: bugfix: missing communications for SWDIFF, SWDIR and LEI
+!  P. Wautelet 30/09/2022: bugfix: use XUNDEF from SURFEX for surface variables computed by SURFEX
+!  P. Wautelet 21/10/2022: bugfix: communicate halo values between processes for OUT variables
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -136,16 +146,23 @@ USE MODD_DYN_n,     ONLY : DYN_MODEL
 #endif
 !
 USE MODD_LUNIT_n, ONLY: TLUOUT
+USE MODD_BUDGET,  ONLY: LBUDGET_TH, LBUDGET_RV, NBUDGET_RV, NBUDGET_TH,TBUDGETS
+USE MODE_BUDGET,  ONLY: BUDGET_STORE_INIT, BUDGET_STORE_END
 USE MODD_CST,        ONLY : XP00, XCPD, XRD, XRV,XRHOLW, XDAY, XPI, XLVTT, XMD, XAVOGADRO
-USE MODD_PARAMETERS, ONLY : JPVEXT, XUNDEF
+USE MODD_DIMPHYEX,   ONLY : DIMPHYEX_t
+USE MODD_PARAMETERS, ONLY : JPVEXT
 USE MODD_DYN_n,      ONLY : XTSTEP
 USE MODD_CH_MNHC_n,  ONLY : LUSECHEM
-USE MODD_FIELD_n,    ONLY : XUT, XVT, XWT, XTHT, XRT, XPABST, XSVT, XTKET, XZWS
+USE MODD_FIELD_n,    ONLY : XUT, XVT, XWT, XTHT, XRT, XPABST, XSVT, XTKET, XZWS, XRTHS, XRRS
+USE MODD_FIRE_n,     ONLY : XLSPHI, XBMAP, XFMR0, XFMRFA, XFMWF0, XFMR00, XFMIGNITION, XFMFUELTYPE,    &
+                            XFIRETAU, XFLUXPARAMH, XFLUXPARAMW, XFIRERW, XFMASE, XFMAWC, XFMWALKIG,    &
+                            XFMFLUXHDH, XFMFLUXHDW, XFMHWS, XFMWINDU, XFMWINDV, XFMWINDW, XGRADLSPHIX, &
+                            XGRADLSPHIY, XFIREWIND, XFMGRADOROX, XFMGRADOROY
 USE MODD_METRICS_n,  ONLY : XDXX, XDYY, XDZZ
 USE MODD_DIM_n,      ONLY : NKMAX
 USE MODD_GRID_n,     ONLY : XLON, XZZ, XDIRCOSXW, XDIRCOSYW, XDIRCOSZW, &
                             XCOSSLOPE, XSINSLOPE, XZS
-USE MODD_REF_n,      ONLY : XRHODREF,XRHODJ
+USE MODD_REF_n,      ONLY : XEXNREF, XRHODREF, XRHODJ
 USE MODD_CONF_n,     ONLY : NRR
 USE MODD_PARAM_n,    ONLY : CDCONV,CCLOUD, CRAD
 USE MODD_PRECIP_n,   ONLY : XINPRC, XINPRR, XINPRS, XINPRG, XINPRH
@@ -172,9 +189,11 @@ USE MODD_CH_FLX_n, ONLY : XCHFLX
 USE MODD_DIAG_FLAG, ONLY : LCHEMDIAG
 USE MODD_DRAGBLDG_n, ONLY : LFLUXBLDG
 USE MODD_COUPLING_LEVELS_n
+USE MODD_SURF_PAR,   ONLY: XUNDEF_SFX => XUNDEF
+USE MODD_PRECISION,      ONLY: MNHTIME
 !
 USE MODI_NORMAL_INTERPOL
-USE MODI_ROTATE_WIND
+USE MODE_ROTATE_WIND, ONLY: ROTATE_WIND
 USE MODI_SHUMAN
 USE MODI_MNHGET_SURF_PARAM_n
 USE MODI_COUPLING_SURF_ATM_n
@@ -196,6 +215,14 @@ USE MODD_TIME
 !
 USE MODD_PARAM_LIMA, ONLY : MSEDC=>LSEDC
 !
+USE MODD_FIRE_n
+USE MODD_FIELD
+USE MODE_FIRE_MODEL
+USE MODD_CONF, ONLY : NVERB, NHALO
+USE MODE_MNH_TIMING, ONLY : SECOND_MNH2
+USE MODE_MSG
+USE MODD_IO,      ONLY: TFILEDATA
+!
 IMPLICIT NONE
 !
 !
@@ -205,6 +232,7 @@ IMPLICIT NONE
 !* surface fluxes
 !  --------------
 !
+TYPE(DIMPHYEX_t),     INTENT(IN)   :: D
 REAL, DIMENSION(:,:), INTENT(OUT) :: PSFTH      ! Total surface flux of potential temperature (Km/s)
 REAL, DIMENSION(:,:), INTENT(OUT) :: PSFTH_WALL ! Wall surface flux of potential temperature (Km/s)
 REAL, DIMENSION(:,:), INTENT(OUT) :: PSFTH_ROOF ! Roof surface flux of potential temperature (Km/s)
@@ -213,7 +241,7 @@ REAL, DIMENSION(:,:), INTENT(OUT) :: PSFRV      ! Total surface flux of water va
 REAL, DIMENSION(:,:), INTENT(OUT) :: PSFRV_WALL ! Wall surface flux of water vapor (m/s*kg/kg)
 REAL, DIMENSION(:,:), INTENT(OUT) :: PSFRV_ROOF ! Roof surface flux of water vapor (m/s*kg/kg)
 REAL, DIMENSION(:,:,:),INTENT(OUT):: PSFSV ! surface flux of scalar                (m/s*kg/kg)
-                                           ! flux of chemical var.                 (ppp.m/s)
+                                           ! flux of chemical var.                 (ppv.m/s)
 REAL, DIMENSION(:,:), INTENT(OUT) :: PSFCO2! surface flux of CO2                   (m/s*kg/kg)
 REAL, DIMENSION(:,:), INTENT(OUT) :: PSFU  ! surface fluxes of horizontal   
 REAL, DIMENSION(:,:), INTENT(OUT) :: PSFV  ! momentum in x and y directions        (m2/s2)
@@ -226,6 +254,8 @@ REAL, DIMENSION(:,:,:), INTENT(OUT) :: PSCA_ALB  ! diffuse albedo for each spect
 REAL, DIMENSION(:,:,:), INTENT(OUT) :: PEMIS     ! surface emissivity                    (-)
 REAL, DIMENSION(:,:),   INTENT(OUT) :: PTSRAD    ! surface radiative temperature         (K)
 !
+INTEGER,                INTENT(IN)  :: KTCOUNT   ! temporal iteration count
+TYPE(TFILEDATA),        INTENT(IN)  :: TPFILE    ! Synchronous output file
 !
 !-------------------------------------------------------------------------------
 !
@@ -401,6 +431,7 @@ TYPE(LIST_ll), POINTER            :: TZFIELDSURF_ll    ! list of fields to excha
 INTEGER                           :: IINFO_ll       ! return code of parallel routine
 !
 !
+CHARACTER(LEN=6) :: YJSV
 CHARACTER(LEN=6), DIMENSION(:), ALLOCATABLE :: YSV_SURF ! name of the scalar variables
                                                         ! sent to SURFEX
 !                                                        
@@ -414,6 +445,16 @@ REAL    :: ZAGLW_JKP1
 REAL    :: ZAGLSCAL_JK
 INTEGER :: ICOUNT, ILEV
 !
+! Fire model
+REAL(KIND=MNHTIME), DIMENSION(2)      :: ZFIRETIME1, ZFIRETIME2           ! CPU time for Blaze perf profiling
+REAL(KIND=MNHTIME), DIMENSION(2)      :: ZGRADTIME1, ZGRADTIME2           ! CPU time for Blaze perf profiling
+REAL(KIND=MNHTIME), DIMENSION(2)      :: ZPROPAGTIME1, ZPROPAGTIME2       ! CPU time for Blaze perf profiling
+REAL(KIND=MNHTIME), DIMENSION(2)      :: ZFLUXTIME1, ZFLUXTIME2           ! CPU time for Blaze perf profiling
+REAL(KIND=MNHTIME), DIMENSION(2)      :: ZROSWINDTIME1, ZROSWINDTIME2     ! CPU time for Blaze perf profiling
+REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: ZFIREFUELMAP                     ! Fuel map
+CHARACTER(LEN=7)                      :: YFUELMAPFILE                     ! Fuel Map file name
+TYPE(LIST_ll), POINTER                :: TZFIELDFIRE_ll                   ! list of fields to exchange
+!
 !-------------------------------------------------------------------------------
 !
 !
@@ -424,22 +465,22 @@ IKE=IKU-JPVEXT
 !
 CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 !
-PSFTH      = XUNDEF
-PSFTH_WALL = XUNDEF
-PSFTH_ROOF = XUNDEF
-PCD_ROOF   = XUNDEF
-PSFRV      = XUNDEF
-PSFRV_WALL = XUNDEF
-PSFRV_ROOF = XUNDEF
+PSFTH      = XUNDEF_SFX
+PSFTH_WALL = XUNDEF_SFX
+PSFTH_ROOF = XUNDEF_SFX
+PCD_ROOF   = XUNDEF_SFX
+PSFRV      = XUNDEF_SFX
+PSFRV_WALL = XUNDEF_SFX
+PSFRV_ROOF = XUNDEF_SFX
 !
-PSFSV    = XUNDEF
-PSFCO2   = XUNDEF
-PSFU     = XUNDEF
-PSFV     = XUNDEF
-PDIR_ALB = XUNDEF
-PSCA_ALB = XUNDEF
-PEMIS    = XUNDEF
-PTSRAD   = XUNDEF
+PSFSV    = XUNDEF_SFX
+PSFCO2   = XUNDEF_SFX
+PSFU     = XUNDEF_SFX
+PSFV     = XUNDEF_SFX
+PDIR_ALB = XUNDEF_SFX
+PSCA_ALB = XUNDEF_SFX
+PEMIS    = XUNDEF_SFX
+PTSRAD   = XUNDEF_SFX
 !
 ! Allocation of the local variables
 !
@@ -511,7 +552,7 @@ DO ILEV=1,NLEV_COUPLE
    !
    IF (ILEV.EQ.1) THEN
       !
-      CALL ROTATE_WIND(XUT,XVT,XWT,           &
+      CALL ROTATE_WIND(D,XUT,XVT,XWT,         &
            XDIRCOSXW, XDIRCOSYW, XDIRCOSZW,   &
            XCOSSLOPE,XSINSLOPE,               &
            XDXX,XDYY,XDZZ,                    &
@@ -689,7 +730,7 @@ IF(LBLOWSNOW) THEN
 ELSE
     KSV_SURF = NSV
     ALLOCATE(YSV_SURF(KSV_SURF))
-    YSV_SURF(:)     = CSV(:)
+    YSV_SURF(:)     = CSV(1:NSV)
 ENDIF
 !
 !
@@ -824,12 +865,170 @@ FF_TIME = FF_TIME + XTSTEP
 PSFU(:,:) = 0.
 PSFV(:,:) = 0.
 !
-WHERE (ZSFU(:,:)/=XUNDEF .AND. ZWIND(:,:,1)>0.)
+WHERE (ZSFU(:,:)/=XUNDEF_SFX .AND. ZWIND(:,:,1)>0.)
   PSFU(:,:) = - SQRT(ZSFU**2+ZSFV**2) * ZUA(:,:,1) / ZWIND(:,:,1) / XRHODREF(:,:,IKB)
   PSFV(:,:) = - SQRT(ZSFU**2+ZSFV**2) * ZVA(:,:,1) / ZWIND(:,:,1) / XRHODREF(:,:,IKB)
 END WHERE
 !
 PCD_ROOF(:,:) = ZCD_ROOF(:,:)
+!
+
+!*       2.1    Blaze Fire Model
+!               ----------------
+!
+IF (LBLAZE) THEN
+  ! get start time
+  CALL SECOND_MNH2( ZFIRETIME1 )
+
+  !*       2.1.1  Local variables allocation
+  !               --------------------------
+  !
+
+  ! Parallel fuel
+  NULLIFY(TZFIELDFIRE_ll)
+  IF (KTCOUNT <= 1) THEN
+    ! fuelmap
+    SELECT CASE (CPROPAG_MODEL)
+    CASE('SANTONI2011')
+      !
+      ALLOCATE( ZFIREFUELMAP(SIZE(XLSPHI,1), SIZE(XLSPHI,2), SIZE(XLSPHI,3), 22) );
+      ! Parallel fuel
+      CALL ADD4DFIELD_ll( TZFIELDFIRE_ll, ZFIREFUELMAP(:,:,:,1::22), 'MODEL_n::ZFIREFUELMAP' )
+      ! Default value
+      ZFIREFUELMAP(:,:,:,:) = 0.
+    END SELECT
+
+    !*       2.1.2  Read fuel map file
+    !               ------------------
+    !
+    ! Fuel map file name
+    YFUELMAPFILE = 'FuelMap'
+    !
+    CALL FIRE_READFUEL( TPFILE, ZFIREFUELMAP, XFMIGNITION, XFMWALKIG )
+
+    !*       2.1.3  Ignition LS function with ignition map
+    !               --------------------------------------
+    !
+    SELECT CASE (CFIRE_CPL_MODE)
+    CASE('2WAYCPL', 'ATM2FIR')
+      ! force ignition
+      WHERE (XFMIGNITION <= TDTCUR%XTIME ) XLSPHI = 1.
+      ! walking ignition
+      CALL FIRE_LS_RECONSTRUCTION_FROM_BMAP( XLSPHI, XFMWALKIG, 0.)
+      !
+      !*       2.1.4  Update BMAP
+      !               -----------
+      !
+      WHERE (XLSPHI >= .5 .AND. XBMAP < 0) XBMAP = TDTCUR%XTIME
+      !
+    CASE('FIR2ATM')
+      CALL FIRE_READBMAP(TPFILE,XBMAP)
+      
+    END SELECT
+    !
+    !*       2.1.5  Compute R0, A, Wf0, R00
+    !               -----------------------
+    !
+    SELECT CASE (CPROPAG_MODEL)
+    CASE('SANTONI2011')
+      CALL FIRE_NOWINDROS( ZFIREFUELMAP, XFMR0, XFMRFA, XFMWF0, XFMR00, XFMFUELTYPE, XFIRETAU, XFLUXPARAMH, &
+                           XFLUXPARAMW, XFMASE, XFMAWC )
+    END SELECT
+    !
+    !*       2.1.6  Compute orographic gradient
+    !               ---------------------------
+    CALL FIRE_GRAD_OROGRAPHY( XZS, XFMGRADOROX, XFMGRADOROY )
+    !
+    !*       2.1.7  Test halo size
+    !               --------------
+    IF (NHALO < 2 .AND. NFIRE_WENO_ORDER == 3) THEN
+      CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'GROUND_PARAM_n', 'BLAZE-FIRE: WENO3 fire gradient calculation needs NHALO >= 2' )
+    ELSE IF (NHALO < 3 .AND. NFIRE_WENO_ORDER == 5) THEN
+      CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'GROUND_PARAM_n', 'BLAZE-FIRE: WENO5 fire gradient calculation needs NHALO >= 3' )
+    END IF
+    !
+  END IF
+  !
+  !*       2.1.6  Compute grad of level set function phi
+  !               --------------------------------------
+  !
+  SELECT CASE (CFIRE_CPL_MODE)
+  CASE('2WAYCPL', 'ATM2FIR')
+    ! get time 1
+    CALL SECOND_MNH2( ZGRADTIME1 )
+    CALL FIRE_GRADPHI( XLSPHI, XGRADLSPHIX, XGRADLSPHIY )
+
+    ! get time 2
+    CALL SECOND_MNH2( ZGRADTIME2 )
+    XGRADPERF = XGRADPERF + ZGRADTIME2 - ZGRADTIME1
+    !
+    !*       2.1.7  Get horizontal wind speed projected on LS gradient direction
+    !               ------------------------------------------------------------
+    !
+    CALL FIRE_GETWIND( XUT, XVT, XWT, XGRADLSPHIX, XGRADLSPHIY, XFIREWIND, KTCOUNT, XTSTEP, XFMGRADOROX, XFMGRADOROY )
+    !
+    !*       2.1.8  Compute ROS XFIRERW with wind
+    !               -----------------------------
+    !
+    !
+    SELECT CASE (CPROPAG_MODEL)
+    CASE('SANTONI2011')
+      CALL FIRE_RATEOFSPREAD( XFMFUELTYPE, XFMR0, XFMRFA, XFMWF0, XFMR00, XFIREWIND, XGRADLSPHIX, XGRADLSPHIY, &
+                              XFMGRADOROX, XFMGRADOROY, XFIRERW )
+    END SELECT
+    CALL SECOND_MNH2( ZROSWINDTIME2 )
+    XROSWINDPERF = XROSWINDPERF + ZROSWINDTIME2 - ZGRADTIME2
+    !
+    !*       2.1.8  Integrate model on atm time step to propagate
+    !               ---------------------------------------------
+    !
+    SELECT CASE (CPROPAG_MODEL)
+    CASE('SANTONI2011')
+      CALL FIRE_PROPAGATE( XLSPHI, XBMAP, XFMIGNITION, XFMWALKIG, XGRADLSPHIX, XGRADLSPHIY, XTSTEP, XFIRERW )
+    END SELECT
+    CALL SECOND_MNH2( ZPROPAGTIME2 )
+    XPROPAGPERF = XPROPAGPERF + ZPROPAGTIME2 - ZROSWINDTIME2
+    !
+  CASE('FIR2ATM')
+    !
+    CALL SECOND_MNH2( ZPROPAGTIME1 )
+    CALL FIRE_LS_RECONSTRUCTION_FROM_BMAP( XLSPHI, XBMAP, XTSTEP )
+    CALL SECOND_MNH2( ZPROPAGTIME2 )
+    XPROPAGPERF = XPROPAGPERF + ZPROPAGTIME2 - ZPROPAGTIME1
+    XGRADPERF(:) = 0.
+    !
+  END SELECT
+  !
+  !*       2.1.8  Compute fluxes
+  !               --------------
+  !
+  IF (LBUDGET_RV) CALL BUDGET_STORE_INIT(TBUDGETS(NBUDGET_RV), 'BLAZE', XRRS(:,:,:,1))
+  IF (LBUDGET_TH) CALL BUDGET_STORE_INIT(TBUDGETS(NBUDGET_TH), 'BLAZE', XRTHS(:,:,:))
+  !
+  SELECT CASE (CFIRE_CPL_MODE)
+  CASE('2WAYCPL','FIR2ATM')
+    CALL SECOND_MNH2( ZFLUXTIME1 )
+    ! 2 way coupling
+    CALL FIRE_HEATFLUXES( XLSPHI, XBMAP, XFIRETAU, XTSTEP, XFLUXPARAMH, XFLUXPARAMW, XFMFLUXHDH, XFMFLUXHDW, XFMASE, XFMAWC )
+    !
+    ! vertical distribution of fire heat fluxes
+    CALL FIRE_VERTICALFLUXDISTRIB( XFMFLUXHDH, XFMFLUXHDW, XRTHS, XRRS, ZSFTS, XEXNREF, XRHODJ, XRT, XRHODREF )
+    !
+    CALL SECOND_MNH2( ZFLUXTIME2 )
+    XFLUXPERF = XFLUXPERF + ZFLUXTIME2 - ZFLUXTIME1
+  CASE DEFAULT
+    XFLUXPERF(:) = 0.
+  END SELECT
+  !
+  IF (LBUDGET_RV) CALL BUDGET_STORE_END(TBUDGETS(NBUDGET_RV), 'BLAZE', XRRS(:,:,:,1))
+  IF (LBUDGET_TH) CALL BUDGET_STORE_END(TBUDGETS(NBUDGET_TH), 'BLAZE', XRTHS(:,:,:))
+  !
+  ! get end time
+  CALL SECOND_MNH2( ZFIRETIME2 )
+  ! add to Blaze time
+  XFIREPERF = XFIREPERF + ZFIRETIME2 - ZFIRETIME1
+END IF
+!* conversion from H (W/m2) to w'Theta'
 !
 ! Unit conversions:
 !
@@ -883,18 +1082,18 @@ IF(NSV .GT. 0) THEN
    END DO
 END IF
 !
-!* conversion from chemistry flux (molec/m2/s) to (ppp.m.s-1)
+!* conversion from chemistry flux (molec/m2/s) to (ppv.m.s-1)
 !
 IF (LUSECHEM) THEN
    DO JSV=NSV_CHEMBEG,NSV_CHEMEND
       PSFSV(:,:,JSV) = ZSFTS(:,:,JSV) * XMD / ( XAVOGADRO * XRHODREF(:,:,IKB))
-      IF ((LCHEMDIAG).AND.(CPROGRAM == 'DIAG  ')) XCHFLX(:,:,JSV) = PSFSV(:,:,JSV)    
+      IF ((LCHEMDIAG).AND.(CPROGRAM == 'DIAG  ')) XCHFLX(:,:,JSV-NSV_CHEMBEG+1) = PSFSV(:,:,JSV)    
    END DO
 ELSE
   PSFSV(:,:,NSV_CHEMBEG:NSV_CHEMEND) = 0.
 END IF
 !
-!* conversion from dust flux (kg/m2/s) to (ppp.m.s-1)
+!* conversion from dust flux (kg/m2/s) to (ppv.m.s-1)
 !
 IF (LDUST) THEN
   DO JSV=NSV_DSTBEG,NSV_DSTEND
@@ -904,7 +1103,7 @@ ELSE
   PSFSV(:,:,NSV_DSTBEG:NSV_DSTEND) = 0.
 END IF
 !
-!* conversion from sea salt flux (kg/m2/s) to (ppp.m.s-1)
+!* conversion from sea salt flux (kg/m2/s) to (ppv.m.s-1)
 !
 IF (LSALT) THEN
   DO JSV=NSV_SLTBEG,NSV_SLTEND
@@ -914,7 +1113,7 @@ ELSE
   PSFSV(:,:,NSV_SLTBEG:NSV_SLTEND) = 0.
 END IF
 !
-!* conversion from aerosol flux (molec/m2/s) to (ppp.m.s-1)
+!* conversion from aerosol flux (molec/m2/s) to (ppv.m.s-1)
 !
 IF (LORILAM) THEN
   DO JSV=NSV_AERBEG,NSV_AEREND
@@ -943,6 +1142,32 @@ END IF
 !
 PSFCO2(:,:) = ZSFCO2(:,:) / XRHODREF(:,:,IKB)
 !
+!  Communicate halo values
+!
+NULLIFY(TZFIELDSURF_ll)
+!The commented communications are done in PHYS_PARAM_n
+! CALL ADD2DFIELD_ll( TZFIELDSURF_ll,PSFTH,  'GROUND_PARAM_n::PSFTH'  )
+! CALL ADD2DFIELD_ll( TZFIELDSURF_ll,PSFRV,  'GROUND_PARAM_n::PSFRV'  )
+! DO JSV = 1, NSV
+!   WRITE( YJSV, '( I6.6 )' ) JSV
+!   CALL ADD2DFIELD_ll( TZFIELDSURF_ll,PSFSV(:,:,JSV), 'GROUND_PARAM_n::PSFSV'//YJSV )
+! END DO
+! CALL ADD2DFIELD_ll( TZFIELDSURF_ll,PSFCO2, 'GROUND_PARAM_n::PSFCO2' )
+! CALL ADD2DFIELD_ll( TZFIELDSURF_ll,PSFU,   'GROUND_PARAM_n::PSFU'   )
+! CALL ADD2DFIELD_ll( TZFIELDSURF_ll,PSFV,   'GROUND_PARAM_n::PSFV'   )
+DO JLAYER = 1, SIZE( PDIR_ALB, 3 )
+  WRITE( YJSV, '( I6.6 )' ) JLAYER
+  CALL ADD2DFIELD_ll( TZFIELDSURF_ll,PDIR_ALB(:,:,JLAYER), 'GROUND_PARAM_n::PDIR_ALB'//YJSV )
+  CALL ADD2DFIELD_ll( TZFIELDSURF_ll,PSCA_ALB(:,:,JLAYER), 'GROUND_PARAM_n::PSCA_ALB'//YJSV )
+END DO
+DO JLAYER = 1, SIZE( PEMIS, 3 )
+  WRITE( YJSV, '( I6.6 )' ) JLAYER
+  CALL ADD2DFIELD_ll( TZFIELDSURF_ll,PEMIS(:,:,JLAYER), 'GROUND_PARAM_n::PEMIS'//YJSV )
+END DO
+CALL ADD2DFIELD_ll( TZFIELDSURF_ll,PTSRAD, 'GROUND_PARAM_n::PTSRAD'  )
+
+CALL UPDATE_HALO_ll(TZFIELDSURF_ll,IINFO_ll)
+CALL CLEANLIST_ll(TZFIELDSURF_ll)
 !
 !*  Diagnostics
 !   -----------
@@ -953,7 +1178,7 @@ IF (LDIAG_IN_RUN) THEN
   XCURRENT_SFCO2(:,:) = ZSFCO2(:,:)
   XCURRENT_DSTAOD(:,:)=0.0
   XCURRENT_SLTAOD(:,:)=0.0
-  IF (CRAD=='ECMW') THEN
+  IF (CRAD/='NONE') THEN
   XCURRENT_LWD  (:,:) = XFLALWD(:,:)
   XCURRENT_SWD  (:,:) = SUM(XDIRSRFSWD(:,:,:)+XSCAFLASWD(:,:,:),DIM=3)
   XCURRENT_LWU  (:,:) = XLWU(:,:,IKB) 
@@ -975,11 +1200,14 @@ IF (LDIAG_IN_RUN) THEN
   CALL ADD2DFIELD_ll( TZFIELDSURF_ll,XCURRENT_RN,     'GROUND_PARAM_n::XCURRENT_RN'     )
   CALL ADD2DFIELD_ll( TZFIELDSURF_ll,XCURRENT_H,      'GROUND_PARAM_n::XCURRENT_H'      )
   CALL ADD2DFIELD_ll( TZFIELDSURF_ll,XCURRENT_LE,     'GROUND_PARAM_n::XCURRENT_LE'     )
+  CALL ADD2DFIELD_ll( TZFIELDSURF_ll,XCURRENT_LEI,    'GROUND_PARAM_n::XCURRENT_LEI'    )
   CALL ADD2DFIELD_ll( TZFIELDSURF_ll,XCURRENT_GFLUX,  'GROUND_PARAM_n::XCURRENT_GFLUX'  )
   CALL ADD2DFIELD_ll( TZFIELDSURF_ll,XCURRENT_SWD,    'GROUND_PARAM_n::XCURRENT_SWD'    )
   CALL ADD2DFIELD_ll( TZFIELDSURF_ll,XCURRENT_SWU,    'GROUND_PARAM_n::XCURRENT_SWU'    )
   CALL ADD2DFIELD_ll( TZFIELDSURF_ll,XCURRENT_LWD,    'GROUND_PARAM_n::XCURRENT_LWD'    )
   CALL ADD2DFIELD_ll( TZFIELDSURF_ll,XCURRENT_LWU,    'GROUND_PARAM_n::XCURRENT_LWU'    )
+  CALL ADD2DFIELD_ll( TZFIELDSURF_ll,XCURRENT_SWDIR,  'GROUND_PARAM_n::XCURRENT_SWDIR'  )
+  CALL ADD2DFIELD_ll( TZFIELDSURF_ll,XCURRENT_SWDIFF, 'GROUND_PARAM_n::XCURRENT_SWDIFF' )
   CALL ADD2DFIELD_ll( TZFIELDSURF_ll,XCURRENT_T2M,    'GROUND_PARAM_n::XCURRENT_T2M'    )
   CALL ADD2DFIELD_ll( TZFIELDSURF_ll,XCURRENT_Q2M,    'GROUND_PARAM_n::XCURRENT_Q2M'    )
   CALL ADD2DFIELD_ll( TZFIELDSURF_ll,XCURRENT_HU2M,   'GROUND_PARAM_n::XCURRENT_HU2M'   )
@@ -995,6 +1223,12 @@ IF (LDIAG_IN_RUN) THEN
   !
 END IF
 !
+IF (LBLAZE) THEN
+  IF (KTCOUNT <= 1) THEN
+      DEALLOCATE(ZFIREFUELMAP)
+  END IF
+  CALL CLEANLIST_ll(TZFIELDFIRE_ll)
+END IF
 !==================================================================================
 !
 CONTAINS
@@ -1164,20 +1398,20 @@ ISHAPE_2 = (/KDIM1,KDIM2/)
 !
 ! Arguments in call to surface:
 !
-ZSFTH      = XUNDEF
-ZSFTH_SURF = XUNDEF
-ZSFTH_WALL = XUNDEF
-ZSFTH_ROOF = XUNDEF
-ZCD_ROOF   = XUNDEF
-ZSFTQ      = XUNDEF
-ZSFTQ_SURF = XUNDEF
-ZSFTQ_WALL = XUNDEF
-ZSFTQ_ROOF = XUNDEF
+ZSFTH      = XUNDEF_SFX
+ZSFTH_SURF = XUNDEF_SFX
+ZSFTH_WALL = XUNDEF_SFX
+ZSFTH_ROOF = XUNDEF_SFX
+ZCD_ROOF   = XUNDEF_SFX
+ZSFTQ      = XUNDEF_SFX
+ZSFTQ_SURF = XUNDEF_SFX
+ZSFTQ_WALL = XUNDEF_SFX
+ZSFTQ_ROOF = XUNDEF_SFX
 !
-IF (NSV>0) ZSFTS = XUNDEF
-ZSFCO2 = XUNDEF
-ZSFU = XUNDEF
-ZSFV = XUNDEF
+IF (NSV>0) ZSFTS = XUNDEF_SFX
+ZSFCO2 = XUNDEF_SFX
+ZSFU = XUNDEF_SFX
+ZSFV = XUNDEF_SFX
 !
 ZSFTH      (IIB:IIE,IJB:IJE) = RESHAPE(ZP_SFTH(:),      ISHAPE_2)
 ZSFTH_SURF (IIB:IIE,IJB:IJE) = RESHAPE(ZP_SFTH_SURF(:), ISHAPE_2)
@@ -1217,7 +1451,7 @@ IF (LDIAG_IN_RUN) THEN
   XCURRENT_HU2M    (IIB:IIE,IJB:IJE)  = RESHAPE(ZP_HU2M(:),   ISHAPE_2)
   XCURRENT_ZON10M  (IIB:IIE,IJB:IJE)  = RESHAPE(ZP_ZON10M(:), ISHAPE_2)
   XCURRENT_MER10M  (IIB:IIE,IJB:IJE)  = RESHAPE(ZP_MER10M(:), ISHAPE_2)
-  XCURRENT_ZWS  (IIB:IIE,IJB:IJE)  = RESHAPE(ZP_ZWS(:), ISHAPE_2)
+  XCURRENT_ZWS     (IIB:IIE,IJB:IJE)  = RESHAPE(ZP_ZWS(:),    ISHAPE_2)
 ENDIF
 !
 DO JLAYER=1,SIZE(PDIR_ALB,3)

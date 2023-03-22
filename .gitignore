@@ -36,8 +36,11 @@ MY_RUN/KTEST/009_ICARTT/001_pgd1/*.asc
 MY_RUN/KTEST/009_ICARTT/002_arp2lfi/ecmwf.OD.20040810.18-V2
 MY_RUN/KTEST/009_ICARTT/002_arp2lfi/mocage.GLOB22.20040810.18
 MY_RUN/KTEST/9??_*
-pub/ncl-?.?.?
-pub/ncl_ncarg*/
+pub/FILEPP/filepp*
+!pub/FILEPP/filepp*.tar.gz
+pub/FILEPP/FILEPP*
+pub/FILEPP/MNH_Expand_*
+!pub/FILEPP/MNH_EXPAND_*.tar.gz
 src/dir_obj-*
 src/LIB/eccodes*
 !src/LIB/eccodes*.tar.gz

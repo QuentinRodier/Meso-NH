@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1998-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1998-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
@@ -11,11 +11,11 @@ INTERFACE
 !
       SUBROUTINE PRESSURE_IN_PREP(PDXX,PDYY,PDZX,PDZY,PDZZ)
 !
-REAL,DIMENSION(:,:,:), INTENT(IN) :: PDXX     ! metric coefficient dxx
-REAL,DIMENSION(:,:,:), INTENT(IN) :: PDYY     ! metric coefficient dyy 
-REAL,DIMENSION(:,:,:), INTENT(IN) :: PDZX     ! metric coefficient dzx 
-REAL,DIMENSION(:,:,:), INTENT(IN) :: PDZY     ! metric coefficient dzy 
-REAL,DIMENSION(:,:,:), INTENT(IN) :: PDZZ     ! metric coefficient dzz  
+REAL,DIMENSION(:,:,:), INTENT(IN)    :: PDXX     ! metric coefficient dxx
+REAL,DIMENSION(:,:,:), INTENT(IN)    :: PDYY     ! metric coefficient dyy 
+REAL,DIMENSION(:,:,:), INTENT(INOUT) :: PDZX     ! metric coefficient dzx 
+REAL,DIMENSION(:,:,:), INTENT(INOUT) :: PDZY     ! metric coefficient dzy 
+REAL,DIMENSION(:,:,:), INTENT(IN)    :: PDZZ     ! metric coefficient dzz  
 !
 END SUBROUTINE PRESSURE_IN_PREP
 !
@@ -97,11 +97,11 @@ IMPLICIT NONE
 !*       0.1   Declaration of dummy arguments
 !              ------------------------------
 !
-REAL,DIMENSION(:,:,:), INTENT(IN) :: PDXX     ! metric coefficient dxx
-REAL,DIMENSION(:,:,:), INTENT(IN) :: PDYY     ! metric coefficient dyy 
-REAL,DIMENSION(:,:,:), INTENT(IN) :: PDZX     ! metric coefficient dzx 
-REAL,DIMENSION(:,:,:), INTENT(IN) :: PDZY     ! metric coefficient dzy 
-REAL,DIMENSION(:,:,:), INTENT(IN) :: PDZZ     ! metric coefficient dzz  
+REAL,DIMENSION(:,:,:), INTENT(IN)    :: PDXX     ! metric coefficient dxx
+REAL,DIMENSION(:,:,:), INTENT(IN)    :: PDYY     ! metric coefficient dyy 
+REAL,DIMENSION(:,:,:), INTENT(INOUT) :: PDZX     ! metric coefficient dzx 
+REAL,DIMENSION(:,:,:), INTENT(INOUT) :: PDZY     ! metric coefficient dzy 
+REAL,DIMENSION(:,:,:), INTENT(IN)    :: PDZZ     ! metric coefficient dzz  
 !
 !*       0.2   Declaration of local variables
 !              ------------------------------

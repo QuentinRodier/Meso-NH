@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2012-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2012-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -238,12 +238,8 @@ ALLOCATE (ZXM(IIU,IJU))
 ALLOCATE (ZYM(IIU,IJU))
 ALLOCATE (ZLONM(IIU,IJU))
 ALLOCATE (ZLATM(IIU,IJU))
-ZXM(1:IIU-1,1) = (XXHAT(1:IIU-1) + XXHAT(2:IIU) ) / 2.
-ZXM(IIU,1)     = XXHAT(IIU) - XXHAT(IIU-1) + ZXM(IIU-1,1)
-ZXM(:,2:IJU)   = SPREAD(ZXM(:,1),2,IJU-1)
-ZYM(1,1:IJU-1) = (XYHAT(1:IJU-1) + XYHAT(2:IJU)) / 2.
-ZYM(1,IJU)     = XYHAT(IJU) - XYHAT(IJU-1) + ZYM(1,IJU-1)
-ZYM(2:IIU,:)   = SPREAD(ZYM(1,:),1,IIU-1)
+ZXM(:,:) = SPREAD(XXHATM(:),2,IJU)
+ZYM(:,:) = SPREAD(XYHATM(:),1,IIU)
 CALL SM_XYTOLATLON_A (XLAT0,XLON0,XRPK,XLATORI,XLONORI,ZXM,ZYM,ZLATM,ZLONM, &
                       IIU,IJU)
 ALLOCATE (ZLONOUT(INO))
@@ -443,7 +439,7 @@ enddo
     ALLOCATE (XSV_LS(IIU,IJU,ilevlen,NSV))
    XSV_LS(:,:,:,:) = 0.
 !
-  WRITE (ILUOUT0,'(A,A4,A)') ' | Reading MOZART species (ppp) from ',HFILE,' file'
+  WRITE (ILUOUT0,'(A,A4,A)') ' | Reading MOZART species (ppv) from ',HFILE,' file'
 
 where (ZLONOUT(:) < 0.) ZLONOUT(:) = ZLONOUT(:) + 360.
 !

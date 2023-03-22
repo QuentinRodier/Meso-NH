@@ -1,4 +1,4 @@
-!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
@@ -188,7 +188,7 @@ SUBROUTINE DSLTMOMENT2SIZE(       &
 !!
 !!    PURPOSE
 !!    -------
-!!    Translate the three moments M0, M3 and M6 given in ppp into
+!!    Translate the three moments M0, M3 and M6 given in ppv into
 !!    Values which can be understood more easily (R, sigma, N, M)
 !!    At this point, M3 is in kg/m3, M0 in #/m3*(kg_{dst}/mole), M6 in um6/m3*1.d6*(kg_{dst}/mole)
 !!
@@ -225,7 +225,7 @@ IMPLICIT NONE
 !*      0.1    declarations of arguments
 !
 !INPUT
-REAL,       DIMENSION(:,:),  INTENT(IN)     :: PSVT      !I [ppp] moments in surface units
+REAL,       DIMENSION(:,:),  INTENT(IN)     :: PSVT      !I [ppv] moments in surface units
 REAL,       DIMENSION(:),    INTENT(IN)     :: PRHODREF  !I [kg/m3] density of air
 REAL,       DIMENSION(:),    INTENT(IN)     :: PEMISSIG  
 REAL,       DIMENSION(:),    INTENT(IN)     :: PEMISRADIUS

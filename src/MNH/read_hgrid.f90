@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1996-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1996-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -81,7 +81,7 @@ END MODULE MODI_READ_HGRID
 !*       0.    DECLARATIONS
 !
 USE MODD_CONF,          ONLY: CPROGRAM
-use modd_field,         only: tfielddata, tfieldlist
+use modd_field,         only: tfieldmetadata, tfieldlist
 USE MODD_GRID
 USE MODD_IO,            ONLY: TFILEDATA
 USE MODD_PARAMETERS
@@ -117,7 +117,7 @@ INTEGER                :: IID, IMI
 LOGICAL                :: G1D,G2D,GPACK
 INTEGER                :: IINFO_ll
 REAL                   :: ZLATOR, ZLONOR, ZXHATM, ZYHATM
-TYPE(TFIELDDATA)       :: TZFIELD
+TYPE(TFIELDMETADATA)   :: TZFIELD
 !-------------------------------------------------------------------------------
 !
 !*       1.     TEST ON MODEL INDEX
@@ -201,12 +201,12 @@ CALL IO_Pack_set(G1D,G2D,GPACK)
 !-------------------------------------------------------------------------------
 IF (TPFMFILE%NMNHVERSION(1)<4 .OR. (TPFMFILE%NMNHVERSION(1)==4 .AND. TPFMFILE%NMNHVERSION(2)<=5)) THEN
   CALL FIND_FIELD_ID_FROM_MNHNAME('LONORI',IID,IRESP)
-  TZFIELD = TFIELDLIST(IID)
+  TZFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
   TZFIELD%CMNHNAME = 'LONOR'
   CALL IO_Field_read(TPFMFILE,TZFIELD,XPGDLONOR)
   !
   CALL FIND_FIELD_ID_FROM_MNHNAME('LATORI',IID,IRESP)
-  TZFIELD = TFIELDLIST(IID)
+  TZFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
   TZFIELD%CMNHNAME = 'LATOR'
   CALL IO_Field_read(TPFMFILE,TZFIELD,XPGDLATOR)
   !

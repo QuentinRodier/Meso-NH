@@ -3,28 +3,28 @@
 !ORILAM_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !ORILAM_LIC for details.
 !-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/ch_orilam.f90,v $ $Revision: 1.1.2.1.2.1.18.1 $
-! MASDEV4_7 chimie 2007/03/02 13:59:37
-!-----------------------------------------------------------------
-!!   #########################
+!!   #####################
      MODULE MODI_CH_ORILAM
-!!   ######################### 
+!!   ##################### 
 !!
 INTERFACE
 !!
-SUBROUTINE CH_ORILAM(PAERO, PCHEM, PM, PSIG0, PRG0, PN0, PCTOTG, PCTOTA,&
-                           PCCTOT, PDTACT, PSEDA,&
-                           PMU, PLAMBDA, PRHOP0, POM, PSO4RAT,  &
-                           PRV, PDENAIR, PPRESSURE, PTEMP, PRC, PFRAC, PMI,&
-                           PTIME, GSCHEME, PSOLORG)
+SUBROUTINE CH_ORILAM(PAERO, PCHEM, PM, PLNSIG, PRG, PN, PCTOTG, PCTOTA, &
+                     PCCTOT, PDTACT, PSEDA,                             &
+                     PRHOP, PSO4RAT,                                    &
+                     PRV, PDENAIR, PPRESSURE, PTEMP, PRC, PFRAC, PMI,   &
+                     PTIME, GSCHEME, PSOLORG,                           &
+                     PJNUC,PJ2RAT,PMBEG,PMINT,PMEND,PDMINTRA,           &
+                     PDMINTER,PDMCOND,PDMNUCL,PDMMERG,                  &
+                     PCONC_MASS,PCOND_MASS_I,PCOND_MASS_J,PNUCL_MASS)
+!!
 IMPLICIT NONE
 REAL,                                   INTENT(IN)    :: PDTACT, PTIME
-REAL,                 DIMENSION(:,:),   INTENT(INOUT) :: PRHOP0, POM
-REAL,                 DIMENSION(:),     INTENT(INOUT) :: PLAMBDA, PMU, PSO4RAT
+REAL,                 DIMENSION(:,:),   INTENT(INOUT) :: PRHOP
+REAL,                 DIMENSION(:),     INTENT(INOUT) :: PSO4RAT
+REAL,                 DIMENSION(:),     INTENT(INOUT) :: PJNUC, PJ2RAT
 REAL,                 DIMENSION(:,:),   INTENT(INOUT) :: PM
-REAL,                 DIMENSION(:,:),   INTENT(INOUT) :: PSIG0, PRG0, PN0
+REAL,                 DIMENSION(:,:),   INTENT(INOUT) :: PLNSIG, PRG, PN
 REAL,                 DIMENSION(:,:),   INTENT(INOUT) :: PCTOTG
 REAL,                 DIMENSION(:,:),   INTENT(INOUT) :: PSEDA
 REAL,                 DIMENSION(:,:),   INTENT(INOUT) :: PCHEM
@@ -35,35 +35,30 @@ REAL,                 DIMENSION(:,:,:), INTENT(INOUT) :: PCTOTA, PCCTOT
 REAL,                 DIMENSION(:,:),   INTENT(INOUT) :: PSOLORG
 REAL,                 DIMENSION(:),     INTENT(IN)    :: PRV, PDENAIR, PPRESSURE, PTEMP, PRC
 CHARACTER(LEN=10),                      INTENT(IN)    :: GSCHEME
-
-
+REAL,                 DIMENSION(:,:),   INTENT(INOUT) :: PMBEG,PMINT,PMEND
+REAL,                 DIMENSION(:,:),   INTENT(INOUT) :: PDMINTRA,PDMINTER,PDMCOND,PDMNUCL,PDMMERG
+REAL,                 DIMENSION(:),     INTENT(INOUT) :: PCONC_MASS,PCOND_MASS_I,PCOND_MASS_J,PNUCL_MASS
+!!
 END SUBROUTINE CH_ORILAM
 !!
 END INTERFACE
 !!
 END MODULE MODI_CH_ORILAM
 !!
-!! #####################################################################################
-SUBROUTINE CH_ORILAM(PAERO, PCHEM, PM, PSIG0, PRG0, PN0, PCTOTG, PCTOTA,&
-                           PCCTOT, PDTACT, PSEDA,&
-                           PMU, PLAMBDA, PRHOP0, POM, PSO4RAT,  &
-                           PRV, PDENAIR, PPRESSURE, PTEMP, PRC, PFRAC, PMI,&
-                           PTIME, GSCHEME, PSOLORG)
-!! #####################################################################################
+!! #######################################################################
+SUBROUTINE CH_ORILAM(PAERO, PCHEM, PM, PLNSIG, PRG, PN, PCTOTG, PCTOTA,  &
+                     PCCTOT, PDTACT, PSEDA,                              &
+                     PRHOP, PSO4RAT,                                     &
+                     PRV, PDENAIR, PPRESSURE, PTEMP, PRC, PFRAC, PMI,    &
+                     PTIME, GSCHEME, PSOLORG,                            &
+                     PJNUC, PJ2RAT, PMBEG, PMINT, PMEND, PDMINTRA,       &
+                     PDMINTER, PDMCOND, PDMNUCL, PDMMERG,                &
+                     PCONC_MASS, PCOND_MASS_I, PCOND_MASS_J, PNUCL_MASS)
+!! #######################################################################
 !!
 !!    PURPOSE
 !!    -------
-!!
 !!    ORILAM aerosol Code
-!!    
-!!
-!!    Inputs:
-!!    PCHEM : Chemical (gaseous and aerosol) species (in molec./cm3)  
-!!    PSEDA : Moments 
-!!
-!!    Outputs:
-!!
-!!
 !!
 !!    REFERENCE
 !!    ---------
@@ -84,56 +79,77 @@ SUBROUTINE CH_ORILAM(PAERO, PCHEM, PM, PSIG0, PRG0, PN0, PCTOTG, PCTOTA,&
 !!
 !!    EXTERNAL
 !!    --------
-USE MODI_CH_AER_TRANS
-USE MODI_CH_AER_DRIVER
-
+!!    MODI_CH_AER_TRANS
+!!    MODI_CH_AER_DRIVER
 !!
-!!  IMPLICIT ARGUMENTS
-!!  ------------------
+!!    IMPLICIT ARGUMENTS
+!!    ------------------
+!!    MODD_CH_AEROSOL
 !!
-USE MODD_CH_AEROSOL
-!
 !-------------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
 !          ------------
 !
+USE MODI_CH_AER_TRANS
+USE MODI_CH_AER_DRIVER
+!
+USE MODD_CH_AEROSOL
+!
 IMPLICIT NONE
+!
+!
+!*      0.1    declarations of arguments
+!
 REAL,                                   INTENT(IN)    :: PDTACT, PTIME
 REAL,                 DIMENSION(:,:),   INTENT(INOUT) :: PM
-REAL,                 DIMENSION(:,:),   INTENT(INOUT) :: PRHOP0, POM
-REAL,                 DIMENSION(:),     INTENT(INOUT) :: PLAMBDA, PMU, PSO4RAT
+REAL,                 DIMENSION(:,:),   INTENT(INOUT) :: PRHOP 
+REAL,                 DIMENSION(:),     INTENT(INOUT) :: PSO4RAT
+REAL,                 DIMENSION(:),     INTENT(INOUT) :: PJNUC, PJ2RAT
 REAL,                 DIMENSION(:,:),   INTENT(INOUT) :: PSEDA
 REAL,                 DIMENSION(:,:),   INTENT(INOUT) :: PCHEM
 REAL,                 DIMENSION(:,:),   INTENT(INOUT) :: PAERO
 REAL,                 DIMENSION(:,:),   INTENT(INOUT) :: PFRAC
 REAL,                 DIMENSION(:,:),   INTENT(INOUT) :: PMI
-REAL,                 DIMENSION(:,:),   INTENT(INOUT) :: PSIG0, PRG0, PN0
+REAL,                 DIMENSION(:,:),   INTENT(INOUT) :: PLNSIG, PRG, PN
 REAL,                 DIMENSION(:,:),   INTENT(INOUT) :: PCTOTG
 REAL,                 DIMENSION(:,:,:), INTENT(INOUT) :: PCTOTA, PCCTOT
 REAL,                 DIMENSION(:,:),   INTENT(INOUT) :: PSOLORG
 REAL,                 DIMENSION(:),     INTENT(IN)    :: PRV, PDENAIR, PPRESSURE, PTEMP, PRC
 CHARACTER(LEN=10),                      INTENT(IN)    :: GSCHEME
-
+REAL,                 DIMENSION(:,:),   INTENT(INOUT) :: PMBEG,PMINT,PMEND
+REAL,                 DIMENSION(:,:),   INTENT(INOUT) :: PDMINTRA,PDMINTER,PDMCOND,PDMNUCL,PDMMERG
+REAL,                 DIMENSION(:),     INTENT(INOUT) :: PCONC_MASS,PCOND_MASS_I,PCOND_MASS_J,PNUCL_MASS
+!
+!*      0.2    declarations of local variables
+!
 REAL, DIMENSION(SIZE(PAERO,1),JPMODE)                 :: ZMASK
+REAL, DIMENSION(SIZE(PAERO,1))                        :: ZSULF
 !
 !-------------------------------------------------------------------------------
-!initialize ZMASK
+!
+!*      1. COMPUTATION
+!          -----------
+!
 ZMASK(:,:) = 1.
 !
-! transfer gas phase variables into aerosol variables
-CALL CH_AER_TRANS(0, PM, PSIG0, PRG0, PN0, PRHOP0,PAERO, PCHEM, PCTOTG, PCTOTA, PCCTOT,&
-                         PFRAC, PMI, ZMASK,GSCHEME)
-
-! integrate aerosol variables
-CALL CH_AER_DRIVER(PM,PSIG0, PRG0, PN0,  PCTOTG, PCTOTA, PCCTOT,         &
-                      PDTACT, PSEDA, PMU, PLAMBDA, PRHOP0, POM, PSO4RAT, &
+!*      1.1    transfer gas phase variables into aerosol variables
+!
+CALL CH_AER_TRANS(0, PM, PLNSIG, PRG, PN, PRHOP,PAERO, PCHEM, PCTOTG, PCTOTA, PCCTOT, &
+                  PFRAC, PMI, ZMASK, GSCHEME)
+!
+!*      1.2    integrate aerosol variables
+!
+CALL CH_AER_DRIVER(PM,PLNSIG, PRG, PN,  PCTOTG, PCTOTA, PCCTOT,          &
+                      PDTACT, PSEDA, PRHOP, PSO4RAT,                     &
                       PRV, PDENAIR, PPRESSURE, PTEMP, PRC, ZMASK, PTIME, &
-                      PSOLORG)
+                      PSOLORG,PJNUC,PJ2RAT,PMBEG,PMINT,PMEND,PDMINTRA,   &
+                      PDMINTER,PDMCOND,PDMNUCL,PDMMERG,                  &
+                      PCONC_MASS,PCOND_MASS_I,PCOND_MASS_J,PNUCL_MASS    )
 !
-! transfer aerosol variables back into gas phase variables
- CALL CH_AER_TRANS(1, PM, PSIG0, PRG0, PN0, PRHOP0, PAERO, PCHEM, PCTOTG, PCTOTA, PCCTOT,&
-                      PFRAC, PMI, ZMASK,GSCHEME)
+!*      1.3    transfer aerosol variables back into gas phase variables
 !
+CALL CH_AER_TRANS(1, PM, PLNSIG, PRG, PN, PRHOP, PAERO, PCHEM, PCTOTG, PCTOTA, PCCTOT, &
+                  PFRAC, PMI, ZMASK,GSCHEME)
 !
 END SUBROUTINE CH_ORILAM

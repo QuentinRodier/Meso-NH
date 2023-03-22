@@ -33,7 +33,7 @@
 !!
 !!     MODIFICATIONS
 !!     -------------
-!!
+!!     T. Hoarau  03/2019   add a switch for initialisation from MACC
 !!--------------------------------------------------------------------
 !!     DECLARATIONS
 !!     ------------
@@ -42,9 +42,10 @@ USE MODD_PARAMETERS, ONLY: JPMODELMAX
 IMPLICIT NONE
 !
 LOGICAL      :: LDUST     = .FALSE.   ! switch to active pronostic dusts
+LOGICAL      :: LDSTCAMS  = .FALSE.   ! switch to active pronostic dusts from MACC
 LOGICAL      :: LDSTINIT  = .FALSE.   ! switch to initialize pronostic dusts
 LOGICAL      :: LDSTPRES  = .FALSE.   ! switch to know if pronostic dusts exist
-LOGICAL,DIMENSION(JPMODELMAX)  :: LDEPOS_DST = .FALSE.    ! switch to DST wet depositon
+LOGICAL,DIMENSION(JPMODELMAX)  :: LDEPOS_DST = .FALSE.    ! switch to DST wet deposition
 INTEGER      :: NMODE_DST= 3  ! number of dust modes (max 3; default = 3)
 !
 CHARACTER(LEN=6),DIMENSION(:),ALLOCATABLE :: CDUSTNAMES

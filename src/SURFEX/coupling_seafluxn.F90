@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !SFX_LIC for details. version 1.
 !     ###############################################################################
-SUBROUTINE COUPLING_SEAFLUX_n (CHS, DTS, DGS, O, OR, G, S, AT, DST, SLT, &
+SUBROUTINE COUPLING_SEAFLUX_n (CHS, DTS, DGS, O, OR, G, S, AT, DST, SLT, DMS,  &
                                HPROGRAM, HCOUPLING, PTIMEC, PTSTEP, KYEAR, KMONTH, KDAY, PTIME, &
                                KI, KSV, KSW, PTSUN, PZENITH, PZENITH2, PAZIM, PZREF, PUREF,     &
                                PU, PV, PQA, PTA, PRHOA, PSV, PCO2, HSV, PRAIN, PSNOW, PLW,      &
@@ -66,11 +66,12 @@ USE MODD_SEAFLUX_n, ONLY : SEAFLUX_t
 !
 USE MODD_DST_n, ONLY : DST_t
 USE MODD_SLT_n, ONLY : SLT_t
+USE MODD_DMS_n, ONLY : DMS_t
 !
 USE MODD_REPROD_OPER, ONLY : CIMPLICIT_WIND
 !
-USE MODD_CSTS,       ONLY : XRD, XCPD, XP00, XTT, XTTS, XTTSI, XDAY
 USE MODD_CO2V_PAR,   ONLY : XMC, XMCO2, XPCCO2
+USE MODD_CSTS,       ONLY : XRD, XCPD, XP00, XTT, XTTS, XTTSI, XDAY, XAVOGADRO
 USE MODD_SURF_PAR,   ONLY : XUNDEF
 USE MODD_SFX_OASIS,  ONLY : LCPL_WAVE, LCPL_SEA, LCPL_SEAICE, LCPL_SEACARB
 USE MODD_WATER_PAR,  ONLY : XEMISWAT, XEMISWATICE, XALBSEAICE
@@ -130,6 +131,7 @@ TYPE(SEAFLUX_t), INTENT(INOUT) :: S
 TYPE(SURF_ATM_TURB_t), INTENT(IN) :: AT         ! atmospheric turbulence parameters
 TYPE(DST_t), INTENT(INOUT) :: DST
 TYPE(SLT_t), INTENT(INOUT) :: SLT
+TYPE(DMS_t), INTENT(INOUT) :: DMS
 !
 CHARACTER(LEN=6),    INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
 CHARACTER(LEN=1),    INTENT(IN)  :: HCOUPLING ! type of coupling
@@ -250,6 +252,8 @@ REAL, DIMENSION(KI) :: ZTP        ! peak period
 !
 REAL, DIMENSION(KI) :: ZSST       ! XSST corrected for anomalously low values (which actually are sea-ice temp)
 REAL, DIMENSION(KI) :: ZMASK      ! A mask for diagnosing where seaice exists (or, for coupling_iceflux, may appear)
+REAL, DIMENSION(KI) :: DMS_WATER ! DMS oceanic content (mol m-3) based on Lana et al. 2011 database
+REAL, DIMENSION(KI) :: ZFLUX_DMS ! DMS flux
 !
 REAL                             :: ZCONVERTFACM0_SLT, ZCONVERTFACM0_DST
 REAL                             :: ZCONVERTFACM3_SLT, ZCONVERTFACM3_DST
@@ -265,8 +269,10 @@ INTEGER :: IBEG, IEND
 INTEGER                          :: ISLT, IDST, JSV, IMOMENT   ! number of sea salt, dust variables
 !
 INTEGER :: ILUOUT
+INTEGER :: JP_DMS
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
+
 !-------------------------------------------------------------------------------------
 ! Preliminaries:
 !-------------------------------------------------------------------------------------
@@ -531,7 +537,8 @@ ENDIF
 !-------------------------------------------------------------------------------------
 !
 IF (CHS%SVS%NBEQ>0.AND.(KI.GT.0)) THEN
-  !
+!
+
   IF (CHS%CCH_DRY_DEP == "WES89") THEN
     !
     IBEG = CHS%SVS%NSV_CHSBEG
@@ -550,6 +557,7 @@ IF (CHS%SVS%NBEQ>0.AND.(KI.GT.0)) THEN
       CALL CH_AER_DEP(PSV(:,IBEG:IEND),PSFTS(:,IBEG:IEND),ZUSTAR,ZRESA_SEA,PTA,PRHOA)   
       !  
     END IF
+
     !
   ELSE
     !
@@ -561,6 +569,25 @@ IF (CHS%SVS%NBEQ>0.AND.(KI.GT.0)) THEN
     !
   ENDIF
   !
+! DMS flux
+DMS_WATER(:) = DMS%XDMS(:) ! nmol.dm-3
+DMS_WATER(:) = DMS_WATER(:) *1E-6*XAVOGADRO ! molec. m-3
+JP_DMS = 0
+DO  JSV=CHS%SVS%NSV_CHSBEG,CHS%SVS%NSV_CHSEND 
+   IF (TRIM(CHS%SVS%CSV(JSV)) == "DMS") JP_DMS=JSV
+ENDDO
+
+IF (JP_DMS .GT. 0) THEN
+  ZFLUX_DMS(:) = 0.
+  CALL COUPLING_DMS_n(SIZE(ZUSTAR,1),&     !! number of sea points
+                      ZWIND,&              !! wind velocity (m s-1)
+                      S%XSST,&             !! sea surface temperature (K)
+                      DMS_WATER,&          !! DMS oceanic content (mol m-3)
+                      ZFLUX_DMS)  !! DMS emission flux (mol m-2 s-1)
+  PSFTS(:,JP_DMS) = PSFTS(:,JP_DMS) + ZFLUX_DMS(:)
+ 
+ENDIF ! DMS
+
 ENDIF
 !
 IF (CHS%SVS%NDSTEQ>0.AND.(KI.GT.0)) THEN
@@ -591,6 +618,7 @@ IF (CHS%SVS%NSLTEQ>0.AND.(KI.GT.0)) THEN
   !
   IBEG = CHS%SVS%NSV_SLTBEG
   IEND = CHS%SVS%NSV_SLTEND
+
   !
   ISLT = IEND - IBEG + 1
   !
@@ -602,6 +630,7 @@ IF (CHS%SVS%NSLTEQ>0.AND.(KI.GT.0)) THEN
                       S%XSST,                   &
                       ZUSTAR,                   &
                       PSFTS(:,IBEG:IEND) )   
+
   !
   CALL DSLT_DEP(PSV(:,IBEG:IEND), PSFTS(:,IBEG:IEND), ZUSTAR, ZRESA_SEA, PTA, &
                 PRHOA, SLT%XEMISSIG_SLT, SLT%XEMISRADIUS_SLT, JPMODE_SLT,     &

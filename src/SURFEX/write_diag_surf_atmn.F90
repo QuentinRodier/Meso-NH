@@ -79,11 +79,10 @@ IF (LHOOK) CALL DR_HOOK('WRITE_DIAG_SURF_ATM_N',0,ZHOOK_HANDLE)
 !
 CPROGNAME = HPROGRAM
 !
-IF (NOT(PRESENT(KBACKUP_STEP))) THEN
-IBACKUP_STEP=1 !J. Wurtz tip when optionnal argument not declared means will not be realistics
+IF (PRESENT(KBACKUP_STEP)) THEN
+ IBACKUP_STEP = KBACKUP_STEP
 ELSE
-IBACKUP_STEP = KBACKUP_STEP
-
+ IBACKUP_STEP=1 !J. Wurtz tip when optionnal argument not declared means will not be realistics
 END IF
 
 IF (YSC%U%NDIM_SEA    >0) CALL WRITE_DIAG_SEA_n(YSC%DTCO, YSC%DUO, YSC%U, YSC%SM, & 

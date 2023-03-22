@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -74,7 +74,7 @@ END MODULE MODI_READ_DUMMY_GR_FIELD_n
 !*       0.    DECLARATIONS
 !
 USE MODD_DUMMY_GR_FIELD_n
-use modd_field,         only: tfielddata, TYPEINT, TYPEREAL
+use modd_field,         only: tfieldmetadata, TYPEINT, TYPEREAL
 USE MODD_GRID_n
 USE MODD_IO,            ONLY: TFILEDATA
 USE MODD_PARAMETERS,    ONLY: JPHEXT, NMNHNAMELGTMAX
@@ -106,7 +106,7 @@ INTEGER                           :: IIINF  ! lower I index
 INTEGER                           :: IISUP  ! upper I index
 INTEGER                           :: IJINF  ! lower J index
 INTEGER                           :: IJSUP  ! upper J index
-TYPE(TFIELDDATA)                  :: TZFIELD
+TYPE(TFIELDMETADATA)              :: TZFIELD
 !
 !-------------------------------------------------------------------------------
 !
@@ -147,16 +147,17 @@ END IF
 !
 !
 IF (TPINIFILE%NMNHVERSION(1)>=4) THEN
-  TZFIELD%CMNHNAME   = 'DUMMY_GR_NBR'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'DUMMY_GR_NBR'
-  TZFIELD%CUNITS     = ''
-  TZFIELD%CDIR       = '--'
-  TZFIELD%CCOMMENT   = 'number of dummy pgd fields chosen by user'
-  TZFIELD%NGRID      = 0
-  TZFIELD%NTYPE      = TYPEINT
-  TZFIELD%NDIMS      = 0
-  TZFIELD%LTIMEDEP   = .FALSE.
+  TZFIELD = TFIELDMETADATA(                                   &
+    CMNHNAME   = 'DUMMY_GR_NBR',                              &
+    CSTDNAME   = '',                                          &
+    CLONGNAME  = 'DUMMY_GR_NBR',                              &
+    CUNITS     = '',                                          &
+    CDIR       = '--',                                        &
+    CCOMMENT   = 'number of dummy pgd fields chosen by user', &
+    NGRID      = 0,                                           &
+    NTYPE      = TYPEINT,                                     &
+    NDIMS      = 0,                                           &
+    LTIMEDEP   = .FALSE.                                      )
   !
   CALL IO_Field_read(TPINIFILE,TZFIELD,NDUMMY_GR_NBR,IRESP)
   !
@@ -176,18 +177,19 @@ ALLOCATE(XDUMMY_GR_FIELDS(SIZE(XXHAT),SIZE(XYHAT),NDUMMY_GR_NBR))
 !
 DO JDUMMY=1,NDUMMY_GR_NBR
   WRITE(YRECFM,'(A8,I3.3)') 'DUMMY_GR',JDUMMY
-  TZFIELD%CMNHNAME   = TRIM(YRECFM)
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = TRIM(YRECFM)
-  TZFIELD%CUNITS     = ''
-  TZFIELD%CDIR       = 'XY'
-  ! Expected comment is not known but is in the following form:
-  ! 'X_Y_'//TRIM(YRECFM)//YSTRING20//YSTRING03
-  TZFIELD%CCOMMENT   = ''
-  TZFIELD%NGRID      = 4
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 2
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDMETADATA(    &
+    CMNHNAME   = TRIM(YRECFM), &
+    CSTDNAME   = '',           &
+    CLONGNAME  = TRIM(YRECFM), &
+    CUNITS     = '',           &
+    CDIR       = 'XY',         &
+    ! Expected comment is not known but is in the following form:
+    ! 'X_Y_'//TRIM(YRECFM)//YSTRING20//YSTRING03
+    CCOMMENT   = '',           &
+    NGRID      = 4,            &
+    NTYPE      = TYPEREAL,     &
+    NDIMS      = 2,            &
+    LTIMEDEP   = .TRUE.        )
   !
   CALL IO_Field_read(TPINIFILE,TZFIELD,ZWORK(:,:),IRESP)
   !

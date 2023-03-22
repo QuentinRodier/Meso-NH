@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2021-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2021-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -76,7 +76,6 @@ SUBROUTINE IBM_GENERLS(PIBM_FACES,PNORM_FACES,PV1,PV2,PV3,PX_MIN,PY_MIN,PX_MAX,P
   USE MODD_IBM_LSF
   USE MODD_DIM_n, ONLY: NIMAX,NJMAX,NKMAX
   USE MODD_PARAMETERS, ONLY: JPVEXT,JPHEXT,XUNDEF
-  USE MODD_GRID_n, ONLY: XXHAT,XYHAT,XZHAT,XZZ
   USE MODD_METRICS_n, ONLY: XDXX,XDYY,XDZZ
   USE MODD_VAR_ll, ONLY: IP
   USE MODD_CST, ONLY: XMNH_EPSILON 

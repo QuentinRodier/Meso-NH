@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -30,8 +30,9 @@ REAL,                     INTENT(IN)    :: PTSTEP
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PUT , PVT  , PWT
                                                   ! Variables at t
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODJ               
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PDXX,PDYY,PDZZ,PDZX,PDZY
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODJ
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PDXX,PDYY,PDZZ
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PDZX,PDZY
                                                   !  metric coefficients
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRUS , PRVS, PRWS
                                                   ! Sources terms 
@@ -132,7 +133,8 @@ REAL,                     INTENT(IN)    :: PTSTEP
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PUT , PVT  , PWT
                                                   ! Variables at t
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODJ               
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PDXX,PDYY,PDZZ,PDZX,PDZY
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PDXX,PDYY,PDZZ
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PDZX,PDZY
                                                   !  metric coefficients
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRUS , PRVS, PRWS
                                                   ! Sources terms 

@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     ###############################################################################
-SUBROUTINE COUPLING_SEAFLUX_SBL_n (CHS, DTS, DGS, O, OR, G, S, SB, AT, DST, SLT,                    &
+SUBROUTINE COUPLING_SEAFLUX_SBL_n (CHS, DTS, DGS, O, OR, G, S, SB, AT, DST, SLT, DMS,                   &
                                   HPROGRAM, HCOUPLING,  PTIMEC, PTSTEP, KYEAR, KMONTH, KDAY, PTIME, &
                                   KI, KSV, KSW, PTSUN, PZENITH, PZENITH2, PAZIM, PZREF, PUREF,      &
                                   PU, PV, PQA, PTA, PRHOA, PSV, PCO2, HSV,                          &
@@ -53,6 +53,7 @@ USE MODD_CANOPY_n, ONLY : CANOPY_t
 !
 USE MODD_DST_n, ONLY : DST_t
 USE MODD_SLT_n, ONLY : SLT_t
+USE MODD_DMS_n, ONLY : DMS_t
 !
 USE MODD_SURF_PAR,         ONLY : XUNDEF
 USE MODD_CSTS,             ONLY : XCPD
@@ -87,6 +88,7 @@ TYPE(CANOPY_t), INTENT(INOUT) :: SB
 TYPE(SURF_ATM_TURB_t), INTENT(IN) :: AT         ! atmospheric turbulence parameters
 TYPE(DST_t), INTENT(INOUT) :: DST
 TYPE(SLT_t), INTENT(INOUT) :: SLT
+TYPE(DMS_t), INTENT(INOUT) :: DMS
 !
  CHARACTER(LEN=6),    INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
  CHARACTER(LEN=1),    INTENT(IN)  :: HCOUPLING ! type of coupling
@@ -301,7 +303,7 @@ END IF
 !*      2.     Call of SEAFLUX
 !              ------------
 !
-  CALL COUPLING_SEAFLUX_n(CHS, DTS, DGS, O, OR, G, S, AT, DST, SLT, HPROGRAM, GCOUPLING, &
+  CALL COUPLING_SEAFLUX_n(CHS, DTS, DGS, O, OR, G, S, AT, DST, SLT, DMS, HPROGRAM, GCOUPLING, &
              PTIMEC, PTSTEP, KYEAR, KMONTH, KDAY, PTIME, KI, KSV, KSW,                &
              PTSUN, PZENITH, PZENITH2, PAZIM, ZZREF, ZUREF, ZU, ZV, ZQA, ZTA, PRHOA,  &
              PSV, PCO2, HSV, PRAIN, PSNOW, PLW, PDIR_SW, PSCA_SW, PSW_BANDS, PPS, ZPA,&

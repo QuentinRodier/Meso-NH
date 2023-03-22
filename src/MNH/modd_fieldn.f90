@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -55,7 +55,7 @@
 !  P. Wautelet 14/03/2019: add XZWS_DEFAULT parameter
 !  S. Riette      04/2020: highLow cloud
 !  T. Nagel       02/2021: add fields for turbulence recycling
-!!
+!
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -165,6 +165,7 @@ REAL, DIMENSION(:,:,:), POINTER :: XHLI_HRI=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XHLI_HCF=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XSIGS=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XCLDFR=>NULL()
+REAL, DIMENSION(:,:,:), POINTER :: XICEFR=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XRAINFR=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XCIT=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XTHM=>NULL()
@@ -173,6 +174,7 @@ REAL, DIMENSION(:,:,:), POINTER :: XRCM=>NULL()
 REAL, DIMENSION(:,:),   POINTER :: XFLUCTUNW=>NULL(),XFLUCTVNN=>NULL(),XFLUCTUTN=>NULL(),XFLUCTVTW=>NULL()
 REAL, DIMENSION(:,:),   POINTER :: XFLUCTUNE=>NULL(),XFLUCTVNS=>NULL(),XFLUCTUTS=>NULL(),XFLUCTVTE=>NULL()
 REAL, DIMENSION(:,:),   POINTER :: XFLUCTWTW=>NULL(),XFLUCTWTN=>NULL(),XFLUCTWTE=>NULL(),XFLUCTWTS=>NULL()
+
 CONTAINS
 
 SUBROUTINE FIELD_GOTO_MODEL(KFROM, KTO)

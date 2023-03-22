@@ -1,51 +1,33 @@
-!MNH_LIC Copyright 2000-2022 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2000-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 ! Modifications:
 !  P. Wautelet 01/10/2020: bugfix: DEFAULT_FLYER: add missing default values
+!  P. Wautelet    06/2022: reorganize flyers
+!  P. Wautelet 25/08/2022: write balloon positions in netCDF4 files inside HDF5 groups
 !-----------------------------------------------------------------
 
-!      #########################
-MODULE MODI_INI_AIRCRAFT_BALLOON
-!      #########################
-!
-INTERFACE
-!
-      SUBROUTINE INI_AIRCRAFT_BALLOON(TPINIFILE,                    &
-                                      PTSTEP, TPDTSEG, PSEGLEN,     &
-                                      KRR, KSV, KKU, OUSETKE,       &
-                                      PLATOR, PLONOR                )
-!
-USE MODD_IO, ONLY: TFILEDATA
-USE MODD_TYPE_DATE
-!
-TYPE(TFILEDATA),    INTENT(IN) :: TPINIFILE !Initial file
-REAL,               INTENT(IN) :: PTSTEP  ! time step
-TYPE(DATE_TIME),    INTENT(IN) :: TPDTSEG ! segment date and time
-REAL,               INTENT(IN) :: PSEGLEN ! segment length
-INTEGER,            INTENT(IN) :: KRR     ! number of moist variables
-INTEGER,            INTENT(IN) :: KSV     ! number of scalar variables
-INTEGER,            INTENT(IN) :: KKU     ! number of vertical levels 
-LOGICAL,            INTENT(IN) :: OUSETKE ! flag to use tke
-REAL,               INTENT(IN) :: PLATOR  ! latitude of origine point
-REAL,               INTENT(IN) :: PLONOR  ! longitude of origine point
-!
-!-------------------------------------------------------------------------------
-!
-END SUBROUTINE INI_AIRCRAFT_BALLOON
-!
-END INTERFACE
-!
-END MODULE MODI_INI_AIRCRAFT_BALLOON
-!
-!     ###############################################################
-      SUBROUTINE INI_AIRCRAFT_BALLOON(TPINIFILE,                    &
-                                      PTSTEP, TPDTSEG, PSEGLEN,     &
-                                      KRR, KSV, KKU, OUSETKE,       &
-                                      PLATOR, PLONOR                )
-!     ###############################################################
+!###############################
+MODULE MODE_INI_AIRCRAFT_BALLOON
+!###############################
+
+USE MODE_MSG
+
+IMPLICIT NONE
+
+PRIVATE
+
+PUBLIC :: ALLOCATE_FLYER, DEALLOCATE_FLYER
+
+PUBLIC :: INI_AIRCRAFT_BALLOON
+
+CONTAINS
+
+!     ############################################################
+      SUBROUTINE INI_AIRCRAFT_BALLOON( TPINIFILE, PLATOR, PLONOR )
+!     ############################################################
 !
 !
 !!****  *INI_AIRCRAFT_BALLOON* -
@@ -86,36 +68,24 @@ END MODULE MODI_INI_AIRCRAFT_BALLOON
 !          ------------
 !
 USE MODD_AIRCRAFT_BALLOON
-USE MODD_CONF
-USE MODD_DIAG_FLAG
-USE MODD_DYN_n
-use modd_field,      only: tfielddata, TYPEREAL
-USE MODD_GRID
-USE MODD_IO,         ONLY: TFILEDATA
-USE MODD_LUNIT_n,    ONLY: TLUOUT
-USE MODD_PARAM_n,    ONLY: CCLOUD
-USE MODD_PARAMETERS
+USE MODD_CONF,       ONLY: CPROGRAM
+USE MODD_DIAG_FLAG,  ONLY: LAIRCRAFT_BALLOON, NTIME_AIRCRAFT_BALLOON, &
+                           XALT_BALLOON, XLAT_BALLOON, XLON_BALLOON, XSTEP_AIRCRAFT_BALLOON
+USE MODD_DYN_n,      ONLY: DYN_MODEL
+USE MODD_IO,         ONLY: ISP, TFILEDATA
+USE MODD_PARAMETERS, ONLY: NUNDEF
 !
-USE MODE_GRIDPROJ
-USE MODE_ll
-USE MODE_MODELN_HANDLER
-USE MODE_MSG
+USE MODE_GRIDPROJ,       ONLY: SM_XYHAT
+USE MODE_INI_AIRCRAFT,   ONLY: INI_AIRCRAFT
+USE MODE_INI_BALLOON,    ONLY: INI_BALLOON
+USE MODE_MODELN_HANDLER, ONLY: GET_CURRENT_MODEL_INDEX
 !
-USE MODI_INI_BALLOON
-USE MODI_INI_AIRCRAFT
 !
 IMPLICIT NONE
 !
 !*      0.1  declarations of arguments
 !
 TYPE(TFILEDATA),    INTENT(IN) :: TPINIFILE !Initial file
-REAL,               INTENT(IN) :: PTSTEP  ! time step
-TYPE(DATE_TIME),    INTENT(IN) :: TPDTSEG ! segment date and time
-REAL,               INTENT(IN) :: PSEGLEN ! segment length
-INTEGER,            INTENT(IN) :: KRR     ! number of moist variables
-INTEGER,            INTENT(IN) :: KSV     ! number of scalar variables
-INTEGER,            INTENT(IN) :: KKU     ! number of vertical levels 
-LOGICAL,            INTENT(IN) :: OUSETKE ! flag to use tke
 REAL,               INTENT(IN) :: PLATOR  ! latitude of origine point
 REAL,               INTENT(IN) :: PLONOR  ! longitude of origine point
 !
@@ -124,16 +94,11 @@ REAL,               INTENT(IN) :: PLONOR  ! longitude of origine point
 !       0.2  declaration of local variables
 !
 INTEGER :: IMI    ! current model index
-INTEGER :: ISTORE ! number of storage instants
-INTEGER :: ILUOUT ! logical unit
-INTEGER :: IRESP  ! return code
-INTEGER :: JSEG   ! loop counter
-TYPE(TFIELDDATA) :: TZFIELD
+INTEGER :: JI
 !
 !----------------------------------------------------------------------------
 !
 IMI=GET_CURRENT_MODEL_INDEX()
-ILUOUT = TLUOUT%NLU
 !----------------------------------------------------------------------------
 !
 !*      1.   Default values
@@ -142,517 +107,581 @@ ILUOUT = TLUOUT%NLU
 IF ( CPROGRAM == 'DIAG  ') THEN
   IF ( .NOT. LAIRCRAFT_BALLOON ) RETURN
   IF (NTIME_AIRCRAFT_BALLOON == NUNDEF .OR. XSTEP_AIRCRAFT_BALLOON == XUNDEF) THEN
-    WRITE(ILUOUT,*) "NTIME_AIRCRAFT_BALLOON and/or  XSTEP_AIRCRAFT_BALLOON not initialized in DIAG "
-    WRITE(ILUOUT,*) "No calculations for Balloons and Aircraft"
+    CMNHMSG(1) = "NTIME_AIRCRAFT_BALLOON and/or XSTEP_AIRCRAFT_BALLOON not initialized in DIAG "
+    CMNHMSG(2) = "No calculations for Balloons and Aircraft"
+    CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'INI_AIRCRAFT_BALLOON' )
+
     LAIRCRAFT_BALLOON=.FALSE.
     RETURN
   ENDIF
 ENDIF
-!
-!
-IF ( IMI == 1 ) THEN
-  LFLYER=.FALSE.
-!
-  CALL DEFAULT_FLYER(TBALLOON1)
-  CALL DEFAULT_FLYER(TBALLOON2)
-  CALL DEFAULT_FLYER(TBALLOON3)
-  CALL DEFAULT_FLYER(TBALLOON4)
-  CALL DEFAULT_FLYER(TBALLOON5)
-  CALL DEFAULT_FLYER(TBALLOON6)
-  CALL DEFAULT_FLYER(TBALLOON7)
-  CALL DEFAULT_FLYER(TBALLOON8)
-  CALL DEFAULT_FLYER(TBALLOON9)
-!
-  CALL DEFAULT_FLYER(TAIRCRAFT1)
-  CALL DEFAULT_FLYER(TAIRCRAFT2)
-  CALL DEFAULT_FLYER(TAIRCRAFT3)
-  CALL DEFAULT_FLYER(TAIRCRAFT4)
-  CALL DEFAULT_FLYER(TAIRCRAFT5)
-  CALL DEFAULT_FLYER(TAIRCRAFT6)
-  CALL DEFAULT_FLYER(TAIRCRAFT7)
-  CALL DEFAULT_FLYER(TAIRCRAFT8)
-  CALL DEFAULT_FLYER(TAIRCRAFT9)
-  CALL DEFAULT_FLYER(TAIRCRAFT10)
-  CALL DEFAULT_FLYER(TAIRCRAFT11)
-  CALL DEFAULT_FLYER(TAIRCRAFT12)
-  CALL DEFAULT_FLYER(TAIRCRAFT13)
-  CALL DEFAULT_FLYER(TAIRCRAFT14)
-  CALL DEFAULT_FLYER(TAIRCRAFT15)
-  CALL DEFAULT_FLYER(TAIRCRAFT16)
-  CALL DEFAULT_FLYER(TAIRCRAFT17)
-  CALL DEFAULT_FLYER(TAIRCRAFT18)
-  CALL DEFAULT_FLYER(TAIRCRAFT19)
-  CALL DEFAULT_FLYER(TAIRCRAFT20)
-  CALL DEFAULT_FLYER(TAIRCRAFT21)
-  CALL DEFAULT_FLYER(TAIRCRAFT22)
-  CALL DEFAULT_FLYER(TAIRCRAFT23)
-  CALL DEFAULT_FLYER(TAIRCRAFT24)
-  CALL DEFAULT_FLYER(TAIRCRAFT25)
-  CALL DEFAULT_FLYER(TAIRCRAFT26)
-  CALL DEFAULT_FLYER(TAIRCRAFT27)
-  CALL DEFAULT_FLYER(TAIRCRAFT28)
-  CALL DEFAULT_FLYER(TAIRCRAFT29)
-  CALL DEFAULT_FLYER(TAIRCRAFT30)
-END IF
+
+IF ( NAIRCRAFTS > 0 .OR. NBALLOONS > 0 ) LFLYER = .TRUE.
 !
 !----------------------------------------------------------------------------
 !
 !*      2.   Balloon initialization
 !            ----------------------
-IF (IMI == 1) CALL INI_BALLOON
-!
-CALL INI_LAUNCH(1,TBALLOON1)
-CALL INI_LAUNCH(2,TBALLOON2)
-CALL INI_LAUNCH(3,TBALLOON3)
-CALL INI_LAUNCH(4,TBALLOON4)
-CALL INI_LAUNCH(5,TBALLOON5)
-CALL INI_LAUNCH(6,TBALLOON6)
-CALL INI_LAUNCH(7,TBALLOON7)
-CALL INI_LAUNCH(8,TBALLOON8)
-CALL INI_LAUNCH(9,TBALLOON9)
+IF ( IMI == 1 ) THEN
+  ALLOCATE( NRANKCUR_BALLOON (NBALLOONS) ); NRANKCUR_BALLOON = NFLYER_DEFAULT_RANK
+  ALLOCATE( NRANKNXT_BALLOON (NBALLOONS) ); NRANKNXT_BALLOON = NFLYER_DEFAULT_RANK
+
+  ALLOCATE( TBALLOONS(NBALLOONS) )
+END IF
+
+! Flyers are at first only initialized on 1 process. Data will be transfered later on the right processes
+IF ( ISP == NFLYER_DEFAULT_RANK ) THEN
+  IF ( IMI == 1 ) CALL INI_BALLOON
+
+  DO JI = 1, NBALLOONS
+    CALL INI_LAUNCH( JI, TBALLOONS(JI)%TBALLOON )
+  END DO
+END IF
 !
 !----------------------------------------------------------------------------
 !
 !*      3.   Aircraft initialization
 !            -----------------------
 !
-IF (IMI == 1) CALL INI_AIRCRAFT
-!
-CALL INI_FLIGHT(1,TAIRCRAFT1)
-CALL INI_FLIGHT(2,TAIRCRAFT2)
-CALL INI_FLIGHT(3,TAIRCRAFT3)
-CALL INI_FLIGHT(4,TAIRCRAFT4)
-CALL INI_FLIGHT(5,TAIRCRAFT5)
-CALL INI_FLIGHT(6,TAIRCRAFT6)
-CALL INI_FLIGHT(7,TAIRCRAFT7)
-CALL INI_FLIGHT(8,TAIRCRAFT8)
-CALL INI_FLIGHT(9,TAIRCRAFT9)
-CALL INI_FLIGHT(10,TAIRCRAFT10)
-CALL INI_FLIGHT(11,TAIRCRAFT11)
-CALL INI_FLIGHT(12,TAIRCRAFT12)
-CALL INI_FLIGHT(13,TAIRCRAFT13)
-CALL INI_FLIGHT(14,TAIRCRAFT14)
-CALL INI_FLIGHT(15,TAIRCRAFT15)
-CALL INI_FLIGHT(16,TAIRCRAFT16)
-CALL INI_FLIGHT(17,TAIRCRAFT17)
-CALL INI_FLIGHT(18,TAIRCRAFT18)
-CALL INI_FLIGHT(19,TAIRCRAFT19)
-CALL INI_FLIGHT(20,TAIRCRAFT20)
-CALL INI_FLIGHT(21,TAIRCRAFT21)
-CALL INI_FLIGHT(22,TAIRCRAFT22)
-CALL INI_FLIGHT(23,TAIRCRAFT23)
-CALL INI_FLIGHT(24,TAIRCRAFT24)
-CALL INI_FLIGHT(25,TAIRCRAFT25)
-CALL INI_FLIGHT(26,TAIRCRAFT26)
-CALL INI_FLIGHT(27,TAIRCRAFT27)
-CALL INI_FLIGHT(28,TAIRCRAFT28)
-CALL INI_FLIGHT(29,TAIRCRAFT29)
-CALL INI_FLIGHT(30,TAIRCRAFT30)
+IF ( IMI == 1 ) THEN
+  ALLOCATE( NRANKCUR_AIRCRAFT(NAIRCRAFTS) ); NRANKCUR_AIRCRAFT = NFLYER_DEFAULT_RANK
+  ALLOCATE( NRANKNXT_AIRCRAFT(NAIRCRAFTS) ); NRANKNXT_AIRCRAFT = NFLYER_DEFAULT_RANK
+
+  ALLOCATE( TAIRCRAFTS(NAIRCRAFTS) )
+END IF
+
+! Flyers are at first only initialized on 1 process. Data will be transfered later on the right processes
+IF ( ISP == NFLYER_DEFAULT_RANK ) THEN
+  IF ( IMI == 1 ) CALL INI_AIRCRAFT
+
+  DO JI = 1, NAIRCRAFTS
+    CALL INI_FLIGHT( JI, TAIRCRAFTS(JI)%TAIRCRAFT )
+  END DO
+END IF
 !
 !----------------------------------------------------------------------------
 !
 !*      4.   Allocations of storage arrays
 !            -----------------------------
 !
-IF (.NOT. LFLYER) RETURN
-!
-CALL ALLOCATE_FLYER(TBALLOON1)
-CALL ALLOCATE_FLYER(TBALLOON2)
-CALL ALLOCATE_FLYER(TBALLOON3)
-CALL ALLOCATE_FLYER(TBALLOON4)
-CALL ALLOCATE_FLYER(TBALLOON5)
-CALL ALLOCATE_FLYER(TBALLOON6)
-CALL ALLOCATE_FLYER(TBALLOON7)
-CALL ALLOCATE_FLYER(TBALLOON8)
-CALL ALLOCATE_FLYER(TBALLOON9)
-!
-CALL ALLOCATE_FLYER(TAIRCRAFT1)
-CALL ALLOCATE_FLYER(TAIRCRAFT2)
-CALL ALLOCATE_FLYER(TAIRCRAFT3)
-CALL ALLOCATE_FLYER(TAIRCRAFT4)
-CALL ALLOCATE_FLYER(TAIRCRAFT5)
-CALL ALLOCATE_FLYER(TAIRCRAFT6)
-CALL ALLOCATE_FLYER(TAIRCRAFT7)
-CALL ALLOCATE_FLYER(TAIRCRAFT8)
-CALL ALLOCATE_FLYER(TAIRCRAFT9)
-CALL ALLOCATE_FLYER(TAIRCRAFT10)
-CALL ALLOCATE_FLYER(TAIRCRAFT11)
-CALL ALLOCATE_FLYER(TAIRCRAFT12)
-CALL ALLOCATE_FLYER(TAIRCRAFT13)
-CALL ALLOCATE_FLYER(TAIRCRAFT14)
-CALL ALLOCATE_FLYER(TAIRCRAFT15)
-CALL ALLOCATE_FLYER(TAIRCRAFT16)
-CALL ALLOCATE_FLYER(TAIRCRAFT17)
-CALL ALLOCATE_FLYER(TAIRCRAFT18)
-CALL ALLOCATE_FLYER(TAIRCRAFT19)
-CALL ALLOCATE_FLYER(TAIRCRAFT20)
-CALL ALLOCATE_FLYER(TAIRCRAFT21)
-CALL ALLOCATE_FLYER(TAIRCRAFT22)
-CALL ALLOCATE_FLYER(TAIRCRAFT23)
-CALL ALLOCATE_FLYER(TAIRCRAFT24)
-CALL ALLOCATE_FLYER(TAIRCRAFT25)
-CALL ALLOCATE_FLYER(TAIRCRAFT26)
-CALL ALLOCATE_FLYER(TAIRCRAFT27)
-CALL ALLOCATE_FLYER(TAIRCRAFT28)
-CALL ALLOCATE_FLYER(TAIRCRAFT29)
-CALL ALLOCATE_FLYER(TAIRCRAFT30)
+IF ( IMI == 1 .AND. ISP == NFLYER_DEFAULT_RANK ) THEN
+  DO JI = 1, NBALLOONS
+    CALL ALLOCATE_FLYER( TBALLOONS(JI)%TBALLOON )
+  END DO
+
+  DO JI = 1, NAIRCRAFTS
+    CALL ALLOCATE_FLYER( TAIRCRAFTS(JI)%TAIRCRAFT )
+  END DO
+END IF
 !
 !----------------------------------------------------------------------------
 !----------------------------------------------------------------------------
 !
 CONTAINS
 !
-!----------------------------------------------------------------------------
-!----------------------------------------------------------------------------
-SUBROUTINE DEFAULT_FLYER(TPFLYER)
-!
-TYPE(FLYER), INTENT(OUT) :: TPFLYER
-!
-!
-TPFLYER%NMODEL = 0
-TPFLYER%MODEL = 'FIX'
-TPFLYER%TYPE   = '      '
-TPFLYER%TITLE  = '        '
-TPFLYER%LAUNCH = TPDTSEG
-TPFLYER%CRASH  = .FALSE.
-TPFLYER%FLY    = .FALSE.
-!
-TPFLYER%T_CUR  = XUNDEF
-TPFLYER%N_CUR  = 0
-TPFLYER%STEP   = 60.     ! s
-!
-TPFLYER%LAT     = XUNDEF
-TPFLYER%LON     = XUNDEF
-TPFLYER%XLAUNCH = XUNDEF! X coordinate of launch
-TPFLYER%YLAUNCH = XUNDEF! Y coordinate of launch
-TPFLYER%ALT     = XUNDEF
-TPFLYER%WASCENT = 5.     ! m/s
-TPFLYER%RHO     = XUNDEF
-TPFLYER%PRES    = XUNDEF
-TPFLYER%DIAMETER= XUNDEF
-TPFLYER%AERODRAG= XUNDEF
-TPFLYER%INDDRAG = XUNDEF
-TPFLYER%VOLUME  = XUNDEF
-TPFLYER%MASS    = XUNDEF
-!
-TPFLYER%SEG     = 0
-TPFLYER%SEGCURN = 1
-TPFLYER%SEGCURT = 0.
-!
-TPFLYER%ALTDEF   = .FALSE.
-!
-TPFLYER%X_CUR   = XUNDEF
-TPFLYER%Y_CUR   = XUNDEF
-TPFLYER%Z_CUR   = XUNDEF
-TPFLYER%P_CUR   = XUNDEF
-!
-END SUBROUTINE DEFAULT_FLYER
-!----------------------------------------------------------------------------
-!----------------------------------------------------------------------------
-SUBROUTINE ALLOCATE_FLYER(TPFLYER)
-!
-!
-TYPE(FLYER), INTENT(INOUT) :: TPFLYER
-!
-IF (TPFLYER%NMODEL > NMODEL) TPFLYER%NMODEL=0
-IF (IMI /= TPFLYER%NMODEL .AND. .NOT. (IMI==1 .AND. TPFLYER%NMODEL==0) ) RETURN
-!
-IF ( CPROGRAM == 'DIAG  ' ) THEN
-  ISTORE = INT ( NTIME_AIRCRAFT_BALLOON / TPFLYER%STEP ) + 1
-ELSE
-  ISTORE = NINT ( ( PSEGLEN - DYN_MODEL(1)%XTSTEP ) / TPFLYER%STEP ) + 1
-ENDIF
-!
-IF (TPFLYER%NMODEL == 0) ISTORE=0
-IF (TPFLYER%NMODEL > 0) THEN
-  WRITE(ILUOUT,*) 'Aircraft or Balloon:',TPFLYER%TITLE,' nmodel=',TPFLYER%NMODEL
-ENDIF
-!
-!
-allocate( tpflyer%tpdates(istore) )
-ALLOCATE(TPFLYER%X   (ISTORE))
-ALLOCATE(TPFLYER%Y   (ISTORE))
-ALLOCATE(TPFLYER%Z   (ISTORE))
-ALLOCATE(TPFLYER%XLON(ISTORE))
-ALLOCATE(TPFLYER%YLAT(ISTORE))
-ALLOCATE(TPFLYER%ZON (ISTORE))
-ALLOCATE(TPFLYER%MER (ISTORE))
-ALLOCATE(TPFLYER%W   (ISTORE))
-ALLOCATE(TPFLYER%P   (ISTORE))
-ALLOCATE(TPFLYER%TH  (ISTORE))
-ALLOCATE(TPFLYER%R   (ISTORE,KRR))
-ALLOCATE(TPFLYER%SV  (ISTORE,KSV))
-ALLOCATE(TPFLYER%RTZ (ISTORE,KKU))
-ALLOCATE(TPFLYER%RZ (ISTORE,KKU,KRR))
-ALLOCATE(TPFLYER%FFZ (ISTORE,KKU))
-ALLOCATE(TPFLYER%IWCZ (ISTORE,KKU))
-ALLOCATE(TPFLYER%LWCZ (ISTORE,KKU))
-ALLOCATE(TPFLYER%CIZ (ISTORE,KKU))
-IF (CCLOUD=='LIMA') THEN
-  ALLOCATE(TPFLYER%CCZ  (ISTORE,KKU))
-  ALLOCATE(TPFLYER%CRZ  (ISTORE,KKU))
-ENDIF
-ALLOCATE(TPFLYER%CRARE(ISTORE,KKU))
-ALLOCATE(TPFLYER%CRARE_ATT(ISTORE,KKU))
-ALLOCATE(TPFLYER%WZ(ISTORE,KKU))
-ALLOCATE(TPFLYER%ZZ(ISTORE,KKU))
-IF (OUSETKE) THEN
-  ALLOCATE(TPFLYER%TKE (ISTORE))
-ELSE
-  ALLOCATE(TPFLYER%TKE (0))
-END IF
-ALLOCATE(TPFLYER%TKE_DISS(ISTORE))
-ALLOCATE(TPFLYER%TSRAD (ISTORE))
-ALLOCATE(TPFLYER%ZS  (ISTORE))
-!
-ALLOCATE(TPFLYER%THW_FLUX  (ISTORE))
-ALLOCATE(TPFLYER%RCW_FLUX  (ISTORE))
-ALLOCATE(TPFLYER%SVW_FLUX  (ISTORE,KSV))
-!
-TPFLYER%X        = XUNDEF
-TPFLYER%Y        = XUNDEF
-TPFLYER%Z        = XUNDEF
-TPFLYER%XLON     = XUNDEF
-TPFLYER%YLAT     = XUNDEF
-TPFLYER%ZON      = XUNDEF
-TPFLYER%MER      = XUNDEF
-TPFLYER%W        = XUNDEF
-TPFLYER%P        = XUNDEF
-TPFLYER%TH       = XUNDEF
-TPFLYER%R        = XUNDEF
-TPFLYER%SV       = XUNDEF
-TPFLYER%RTZ      = XUNDEF
-TPFLYER%RZ       = XUNDEF
-TPFLYER%FFZ      = XUNDEF
-TPFLYER%CIZ      = XUNDEF
-IF (CCLOUD=='LIMA') THEN
-  TPFLYER%CRZ      = XUNDEF
-  TPFLYER%CCZ      = XUNDEF
-ENDIF
-TPFLYER%IWCZ     = XUNDEF
-TPFLYER%LWCZ     = XUNDEF
-XLAM_CRAD        = 3.154E-3 ! (in m) <=> 95.04 GHz = Rasta cloud radar frequency
-TPFLYER%CRARE    = XUNDEF
-TPFLYER%CRARE_ATT= XUNDEF
-TPFLYER%WZ= XUNDEF
-TPFLYER%ZZ= XUNDEF
-TPFLYER%TKE      = XUNDEF
-TPFLYER%TSRAD    = XUNDEF
-TPFLYER%ZS       = XUNDEF
-TPFLYER%TKE_DISS = XUNDEF
-!
-TPFLYER%THW_FLUX        = XUNDEF
-TPFLYER%RCW_FLUX        = XUNDEF
-TPFLYER%SVW_FLUX        = XUNDEF
-END SUBROUTINE ALLOCATE_FLYER
-!----------------------------------------------------------------------------
-!----------------------------------------------------------------------------
 SUBROUTINE INI_LAUNCH(KNBR,TPFLYER)
-!
+
+#ifdef MNH_IOCDF4
+USE NETCDF,             ONLY: NF90_INQ_NCID, NF90_NOERR
+#endif
+
+use modd_field,         only: tfieldmetadata, TYPEREAL
+USE MODD_IO,            ONLY: GSMONOPROC, ISP, TFILEDATA
+#ifdef MNH_IOCDF4
+USE MODD_PRECISION,     ONLY: CDFINT
+#endif
+USE MODD_TIME_n,        ONLY: TDTCUR
+
 use MODE_IO_FIELD_READ, only: IO_Field_read
-!
-INTEGER,     INTENT(IN)    :: KNBR
-TYPE(FLYER), INTENT(INOUT) :: TPFLYER
-!
-!
-!
-!*      0.2  declaration of local variables
-!
+
+INTEGER,             INTENT(IN)    :: KNBR
+CLASS(TBALLOONDATA), INTENT(INOUT) :: TPFLYER
+
+#ifdef MNH_IOCDF4
+INTEGER(KIND=CDFINT) :: IGROUPID
+INTEGER(KIND=CDFINT) :: ISTATUS
+#endif
+INTEGER :: IMODEL
+INTEGER :: IRESP  ! return code
+LOGICAL :: OMONOPROC_SAVE ! Copy of true value of GSMONOPROC
+LOGICAL :: GREAD ! True if balloon position was read in synchronous file
 REAL :: ZLAT ! latitude of the balloon
 REAL :: ZLON ! longitude of the balloon
-!
-IF (TPFLYER%MODEL == 'MOB' .AND. TPFLYER%NMODEL /= 0) TPFLYER%NMODEL=1
-IF (TPFLYER%NMODEL > NMODEL) TPFLYER%NMODEL=0
+#ifdef MNH_IOCDF4
+TYPE(TFILEDATA) :: TZFILE
+#endif
+TYPE(TFIELDMETADATA) :: TZFIELD
+
 IF ( IMI /= TPFLYER%NMODEL ) RETURN
-!
-LFLYER=.TRUE.
-!
-IF (TPFLYER%TITLE=='          ') THEN
-  WRITE(TPFLYER%TITLE,FMT='(A6,I2.2)') TPFLYER%TYPE,KNBR
-END IF
-!
+
+GREAD = .FALSE.
+
+! Save GSMONOPROC value
+OMONOPROC_SAVE = GSMONOPROC
+! Force GSMONOPROC to true to allow IO_Field_read on only 1 process! (not very clean hack)
+GSMONOPROC = .TRUE.
+
+CALL SM_XYHAT( PLATOR, PLONOR, TPFLYER%XLATLAUNCH, TPFLYER%XLONLAUNCH, TPFLYER%XXLAUNCH, TPFLYER%XYLAUNCH )
+
 IF ( CPROGRAM == 'MESONH' .OR. CPROGRAM == 'SPAWN ' .OR. CPROGRAM == 'REAL  ' ) THEN
-  ! read the current location in the FM_FILE
-  !
-  TZFIELD%CMNHNAME   = TRIM(TPFLYER%TITLE)//'LAT'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-  TZFIELD%CUNITS     = 'degree'
-  TZFIELD%CDIR       = '--'
-  TZFIELD%CCOMMENT   = ''
-  TZFIELD%NGRID      = 0
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 0
-  TZFIELD%LTIMEDEP   = .TRUE.
-  CALL IO_Field_read(TPINIFILE,TZFIELD,ZLAT,IRESP)
-  !
-  IF ( IRESP /= 0 ) THEN
-    WRITE(ILUOUT,*) "INI_LAUCH: Initial location take for ",TPFLYER%TITLE
-  ELSE
-    TZFIELD%CMNHNAME   = TRIM(TPFLYER%TITLE)//'LON'
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'degree'
-    TZFIELD%CDIR       = '--'
-    TZFIELD%CCOMMENT   = ''
-    TZFIELD%NGRID      = 0
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 0
-    TZFIELD%LTIMEDEP   = .TRUE.
-    CALL IO_Field_read(TPINIFILE,TZFIELD,ZLON)
-    !
-    TZFIELD%CMNHNAME   = TRIM(TPFLYER%TITLE)//'ALT'
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'm'
-    TZFIELD%CDIR       = '--'
-    TZFIELD%CCOMMENT   = ''
-    TZFIELD%NGRID      = 0
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 0
-    TZFIELD%LTIMEDEP   = .TRUE.
-    CALL IO_Field_read(TPINIFILE,TZFIELD,TPFLYER%Z_CUR)
-    !
-    TPFLYER%P_CUR   = XUNDEF
-    !
-    TZFIELD%CMNHNAME   = TRIM(TPFLYER%TITLE)//'WASCENT'
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'm s-1'
-    TZFIELD%CDIR       = '--'
-    TZFIELD%CCOMMENT   = ''
-    TZFIELD%NGRID      = 0
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 0
-    TZFIELD%LTIMEDEP   = .TRUE.
-    CALL IO_Field_read(TPINIFILE,TZFIELD,TPFLYER%WASCENT)
-    !
-    TZFIELD%CMNHNAME   = TRIM(TPFLYER%TITLE)//'RHO'
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = 'kg m-3'
-    TZFIELD%CDIR       = '--'
-    TZFIELD%CCOMMENT   = ''
-    TZFIELD%NGRID      = 0
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 0
-    TZFIELD%LTIMEDEP   = .TRUE.
-    CALL IO_Field_read(TPINIFILE,TZFIELD,TPFLYER%RHO)
-    !
-    CALL SM_XYHAT(PLATOR,PLONOR,&
-              ZLAT,ZLON,        &
-              TPFLYER%X_CUR, TPFLYER%Y_CUR )
-    TPFLYER%FLY = .TRUE.
-    WRITE(ILUOUT,*) &
-    "INI_LAUCH: Current location read in FM file for ",TPFLYER%TITLE
-    IF (TPFLYER%TYPE== 'CVBALL') THEN
-      WRITE(ILUOUT,*) &
-       " Lat=",ZLAT," Lon=",ZLON," Alt=",TPFLYER%Z_CUR," Wasc=",TPFLYER%WASCENT
-    ELSE IF (TPFLYER%TYPE== 'ISODEN') THEN
-      WRITE(ILUOUT,*) &
-       " Lat=",ZLAT," Lon=",ZLON," Rho=",TPFLYER%RHO
+  ! Read the current location in the synchronous file
+
+  IF ( TPINIFILE%CFORMAT == 'LFI'                                                             &
+       .OR. ( TPINIFILE%CFORMAT == 'NETCDF4' .AND.                                            &
+              (        TPINIFILE%NMNHVERSION(1) < 5                                           &
+                .OR. ( TPINIFILE%NMNHVERSION(1) == 5 .AND. TPINIFILE%NMNHVERSION(2) < 6 ) ) ) ) THEN
+    ! Read in LFI file or in old format if netCDF (MesoNH < 5.6)
+    TZFIELD = TFIELDMETADATA(                   &
+      CMNHNAME   = TRIM(TPFLYER%CTITLE)//'LAT', &
+      CSTDNAME   = '',                          &
+      CLONGNAME  = TRIM(TPFLYER%CTITLE)//'LAT', &
+      CUNITS     = 'degree',                    &
+      CDIR       = '--',                        &
+      CCOMMENT   = '',                          &
+      NGRID      = 0,                           &
+      NTYPE      = TYPEREAL,                    &
+      NDIMS      = 0,                           &
+      LTIMEDEP   = .TRUE.                       )
+    CALL IO_Field_read(TPINIFILE,TZFIELD,ZLAT,IRESP)
+
+    IF ( IRESP == 0 ) THEN
+      GREAD = .TRUE.
+
+      TZFIELD = TFIELDMETADATA(                   &
+        CMNHNAME   = TRIM(TPFLYER%CTITLE)//'LON', &
+        CSTDNAME   = '',                          &
+        CLONGNAME  = TRIM(TPFLYER%CTITLE)//'LON', &
+        CUNITS     = 'degree',                    &
+        CDIR       = '--',                        &
+        CCOMMENT   = '',                          &
+        NGRID      = 0,                           &
+        NTYPE      = TYPEREAL,                    &
+        NDIMS      = 0,                           &
+        LTIMEDEP   = .TRUE.                       )
+      CALL IO_Field_read(TPINIFILE,TZFIELD,ZLON)
+
+      TZFIELD = TFIELDMETADATA(                   &
+        CMNHNAME   = TRIM(TPFLYER%CTITLE)//'ALT', &
+        CSTDNAME   = '',                          &
+        CLONGNAME  = TRIM(TPFLYER%CTITLE)//'ALT', &
+        CUNITS     = 'm',                         &
+        CDIR       = '--',                        &
+        CCOMMENT   = '',                          &
+        NGRID      = 0,                           &
+        NTYPE      = TYPEREAL,                    &
+        NDIMS      = 0,                           &
+        LTIMEDEP   = .TRUE.                       )
+      CALL IO_Field_read(TPINIFILE,TZFIELD,TPFLYER%XZ_CUR)
+
+      TZFIELD = TFIELDMETADATA(                       &
+        CMNHNAME   = TRIM(TPFLYER%CTITLE)//'WASCENT', &
+        CSTDNAME   = '',                              &
+        CLONGNAME  = TRIM(TPFLYER%CTITLE)//'WASCENT', &
+        CUNITS     = 'm s-1',                         &
+        CDIR       = '--',                            &
+        CCOMMENT   = '',                              &
+        NGRID      = 0,                               &
+        NTYPE      = TYPEREAL,                        &
+        NDIMS      = 0,                               &
+        LTIMEDEP   = .TRUE.                           )
+      CALL IO_Field_read(TPINIFILE,TZFIELD,TPFLYER%XWASCENT)
+
+      TZFIELD = TFIELDMETADATA(                   &
+        CMNHNAME   = TRIM(TPFLYER%CTITLE)//'RHO', &
+        CSTDNAME   = '',                          &
+        CLONGNAME  = TRIM(TPFLYER%CTITLE)//'RHO', &
+        CUNITS     = 'kg m-3',                    &
+        CDIR       = '--',                        &
+        CCOMMENT   = '',                          &
+        NGRID      = 0,                           &
+        NTYPE      = TYPEREAL,                    &
+        NDIMS      = 0,                           &
+        LTIMEDEP   = .TRUE.                       )
+      CALL IO_Field_read(TPINIFILE,TZFIELD,TPFLYER%XRHO)
     END IF
-    !
-    TPFLYER%STEP  = MAX ( PTSTEP, TPFLYER%STEP )
+#ifdef MNH_IOCDF4
+  ELSE
+    ! Read in netCDF file (new structure since MesoNH 5.6)
+    IF ( ISP /= TPINIFILE%NMASTER_RANK )  CALL PRINT_MSG( NVERB_ERROR, 'IO', 'INI_LAUNCH', 'process is not the file master process')
+
+    ISTATUS = NF90_INQ_NCID( TPINIFILE%NNCID, TRIM( TPFLYER%CTITLE ), IGROUPID )
+
+    IF ( ISTATUS == NF90_NOERR ) THEN
+      GREAD = .TRUE.
+
+      TZFILE = TPINIFILE
+      TZFILE%NNCID = IGROUPID
+
+      TZFIELD = TFIELDMETADATA(  &
+        CMNHNAME   = 'LAT',      &
+        CSTDNAME   = '',         &
+        CLONGNAME  = 'LAT',      &
+        CUNITS     = 'degree',   &
+        CDIR       = '--',       &
+        CCOMMENT   = 'latitude', &
+        NGRID      = 0,          &
+        NTYPE      = TYPEREAL,   &
+        NDIMS      = 0,          &
+        LTIMEDEP   = .TRUE.      )
+      CALL IO_Field_read(TZFILE,TZFIELD,ZLAT)
+
+      TZFIELD = TFIELDMETADATA(   &
+        CMNHNAME   = 'LON',       &
+        CSTDNAME   = '',          &
+        CLONGNAME  = 'LON',       &
+        CUNITS     = 'degree',    &
+        CDIR       = '--',        &
+        CCOMMENT   = 'longitude', &
+        NGRID      = 0,           &
+        NTYPE      = TYPEREAL,    &
+        NDIMS      = 0,           &
+        LTIMEDEP   = .TRUE.       )
+      CALL IO_Field_read(TZFILE,TZFIELD,ZLON)
+
+      TZFIELD = TFIELDMETADATA(  &
+        CMNHNAME   = 'ALT',      &
+        CSTDNAME   = '',         &
+        CLONGNAME  = 'ALT',      &
+        CUNITS     = 'm',        &
+        CDIR       = '--',       &
+        CCOMMENT   = 'altitude', &
+        NGRID      = 0,          &
+        NTYPE      = TYPEREAL,   &
+        NDIMS      = 0,          &
+        LTIMEDEP   = .TRUE.      )
+      CALL IO_Field_read(TZFILE,TZFIELD,TPFLYER%XZ_CUR)
+
+      TZFIELD = TFIELDMETADATA(               &
+        CMNHNAME   = 'WASCENT',               &
+        CSTDNAME   = '',                      &
+        CLONGNAME  = 'WASCENT',               &
+        CUNITS     = 'm s-1',                 &
+        CDIR       = '--',                    &
+        CCOMMENT   = 'ascent vertical speed', &
+        NGRID      = 0,                       &
+        NTYPE      = TYPEREAL,                &
+        NDIMS      = 0,                       &
+        LTIMEDEP   = .TRUE.                   )
+      CALL IO_Field_read(TZFILE,TZFIELD,TPFLYER%XWASCENT)
+
+      TZFIELD = TFIELDMETADATA(     &
+        CMNHNAME   = 'RHO',         &
+        CSTDNAME   = '',            &
+        CLONGNAME  = 'RHO',         &
+        CUNITS     = 'kg m-3',      &
+        CDIR       = '--',          &
+        CCOMMENT   = 'air density', &
+        NGRID      = 0,             &
+        NTYPE      = TYPEREAL,      &
+        NDIMS      = 0,             &
+        LTIMEDEP   = .TRUE.         )
+      CALL IO_Field_read(TZFILE,TZFIELD,TPFLYER%XRHO)
+    END IF
+#endif
+  END IF
+
+  IF ( GREAD ) THEN
+    CALL SM_XYHAT( PLATOR, PLONOR, ZLAT, ZLON, TPFLYER%XX_CUR, TPFLYER%XY_CUR )
+
+    TPFLYER%LFLY = .TRUE.
+    TPFLYER%TPOS_CUR = TDTCUR
+
+    CMNHMSG(1) = 'current location read from synchronous file for ' // TRIM( TPFLYER%CTITLE )
+    IF (TPFLYER%CTYPE== 'CVBALL') THEN
+      WRITE( CMNHMSG(2), * ) " Lat=", ZLAT, " Lon=", ZLON
+      WRITE( CMNHMSG(3), * ) " Alt=", TPFLYER%XZ_CUR, " Wasc=", TPFLYER%XWASCENT
+    ELSE IF (TPFLYER%CTYPE== 'ISODEN') THEN
+      WRITE( CMNHMSG(2), * ) " Lat=", ZLAT, " Lon=", ZLON, " Rho=", TPFLYER%XRHO
+    END IF
+    CALL PRINT_MSG( NVERB_INFO, 'GEN', 'INI_LAUNCH' )
+  ELSE
+    ! The position is not found, data is not in the synchronous file
+    ! Use the position given in namelist
+    CALL PRINT_MSG( NVERB_INFO, 'GEN', 'INI_LAUNCH', 'initial location taken from namelist for ' // TRIM( TPFLYER%CTITLE ) )
+  END IF
+
+  ! Correct timestep if necessary
+  ! This has to be done at first pass (when IMI=1) to have the correct value as soon as possible
+  ! If 'MOB', set balloon store timestep to be at least the timestep of the coarser model (IMI=1) (with higher timestep)
+  ! as the balloon can fly on any model
+  ! If 'FIX', set balloon store timestep to be at least the timestep of its model
+  ! It should also need to be a multiple of the model timestep
+  IF ( IMI == 1 ) THEN
+    IF ( TPFLYER%CMODEL == 'MOB' ) THEN
+      IMODEL = 1
+    ELSE
+      IMODEL = TPFLYER%NMODEL
+    END IF
+
+    CALL FLYER_TIMESTEP_CORRECT( DYN_MODEL(IMODEL)%XTSTEP, TPFLYER )
   END IF
   !
-ELSE IF (CPROGRAM == 'DIAG  ' ) THEN
+ELSE IF ( CPROGRAM == 'DIAG  ' ) THEN
   IF ( LAIRCRAFT_BALLOON ) THEN
     ! read the current location in MODD_DIAG_FLAG
     !
     ZLAT=XLAT_BALLOON(KNBR)
     ZLON=XLON_BALLOON(KNBR)
-    TPFLYER%Z_CUR=XALT_BALLOON(KNBR)
-    IF (TPFLYER%Z_CUR /= XUNDEF .AND. ZLAT /= XUNDEF .AND. ZLON /= XUNDEF ) THEN
-      CALL SM_XYHAT(PLATOR,PLONOR,       &
-              ZLAT,ZLON,        &
-              TPFLYER%X_CUR, TPFLYER%Y_CUR )
-      TPFLYER%FLY = .TRUE.
-      WRITE(ILUOUT,*) &
-      "INI_LAUCH: Current location read in MODD_DIAG_FLAG for ",TPFLYER%TITLE
-      WRITE(ILUOUT,*) &
-            " Lat=",ZLAT," Lon=",ZLON," Alt=",TPFLYER%Z_CUR
+    TPFLYER%XZ_CUR=XALT_BALLOON(KNBR)
+    IF (TPFLYER%XZ_CUR /= XUNDEF .AND. ZLAT /= XUNDEF .AND. ZLON /= XUNDEF ) THEN
+      CALL SM_XYHAT( PLATOR, PLONOR, ZLAT, ZLON, TPFLYER%XX_CUR, TPFLYER%XY_CUR )
+      TPFLYER%LFLY = .TRUE.
+      CMNHMSG(1) = 'current location read from MODD_DIAG_FLAG for ' // TRIM( TPFLYER%CTITLE )
+      WRITE( CMNHMSG(2), * ) " Lat=", ZLAT, " Lon=", ZLON," Alt=",TPFLYER%XZ_CUR
+      CALL PRINT_MSG( NVERB_INFO, 'GEN', 'INI_LAUNCH' )
     END IF
     !
-    TPFLYER%STEP  = MAX (XSTEP_AIRCRAFT_BALLOON , TPFLYER%STEP )
+    CALL FLYER_TIMESTEP_CORRECT( XSTEP_AIRCRAFT_BALLOON, TPFLYER )
   END IF
 END IF
-!
-IF (TPFLYER%LAT==XUNDEF .OR.TPFLYER%LON==XUNDEF) THEN
-  WRITE(ILUOUT,*) 'Error in balloon initial position (balloon number ',KNBR,' )'
-  WRITE(ILUOUT,*) 'either LATitude or LONgitude is not given'
-  WRITE(ILUOUT,*) 'TPBALLOON%LAT=',TPFLYER%LAT
-  WRITE(ILUOUT,*) 'TPBALLOON%LON=',TPFLYER%LON
-  WRITE(ILUOUT,*) 'Check your INI_BALLOON routine'
-!callabortstop
-  CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_AIRCRAFT_BALLOON','')
-END IF
-!
-CALL SM_XYHAT(PLATOR,PLONOR,       &
-              TPFLYER%LAT, TPFLYER%LON,        &
-              TPFLYER%XLAUNCH, TPFLYER%YLAUNCH )
-!
+
+! Restore correct value of GSMONOPROC
+GSMONOPROC = OMONOPROC_SAVE
+
 END SUBROUTINE INI_LAUNCH
 !----------------------------------------------------------------------------
 !----------------------------------------------------------------------------
 SUBROUTINE INI_FLIGHT(KNBR,TPFLYER)
-!
-INTEGER,     INTENT(IN)    :: KNBR
-TYPE(FLYER), INTENT(INOUT) :: TPFLYER
-!
-IF (TPFLYER%MODEL == 'MOB' .AND. TPFLYER%NMODEL /= 0) TPFLYER%NMODEL=1
-IF (TPFLYER%NMODEL > NMODEL) TPFLYER%NMODEL=0
+
+INTEGER,              INTENT(IN)    :: KNBR
+CLASS(TAIRCRAFTDATA), INTENT(INOUT) :: TPFLYER
+
+INTEGER :: IMODEL
+INTEGER :: JSEG   ! loop counter
+
 IF ( IMI /= TPFLYER%NMODEL ) RETURN
-!
-LFLYER=.TRUE.
-!
-TPFLYER%STEP  = MAX ( PTSTEP, TPFLYER%STEP )
-!
-IF (TPFLYER%SEG==0) THEN
-  WRITE(ILUOUT,*) 'Error in aircraft flight path (aircraft number ',KNBR,' )'
-  WRITE(ILUOUT,*) 'There is ZERO flight segment defined.'
-  WRITE(ILUOUT,*) 'TPAIRCRAFT%SEG=',TPFLYER%SEG
-  WRITE(ILUOUT,*) 'Check your INI_AIRCRAFT routine'
-!callabortstop
-  CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_FLIGHT','')
+
+! Correct timestep if necessary
+! This has to be done at first pass (when IMI=1) to have the correct value as soon as possible
+! If 'MOB', set balloon store timestep to be at least the timestep of the coarser model (IMI=1) (with higher timestep)
+! as the balloon can fly on any model
+! If 'FIX', set balloon store timestep to be at least the timestep of its model
+! It should also need to be a multiple of the model timestep
+IF ( IMI == 1 ) THEN
+  IF ( TPFLYER%CMODEL == 'MOB' ) THEN
+    IMODEL = 1
+  ELSE
+    IMODEL = TPFLYER%NMODEL
+  END IF
+
+  CALL FLYER_TIMESTEP_CORRECT( DYN_MODEL(IMODEL)%XTSTEP, TPFLYER )
 END IF
-!
-IF ( ANY(TPFLYER%SEGLAT(:)==XUNDEF) .OR. ANY(TPFLYER%SEGLON(:)==XUNDEF) ) THEN
-  WRITE(ILUOUT,*) 'Error in aircraft flight path (aircraft number ',KNBR,' )'
-  WRITE(ILUOUT,*) 'either LATitude or LONgitude segment'
-  WRITE(ILUOUT,*) 'definiton is not complete.'
-  WRITE(ILUOUT,*) 'TPAIRCRAFT%SEGLAT=',TPFLYER%SEGLAT
-  WRITE(ILUOUT,*) 'TPAIRCRAFT%SEGLON=',TPFLYER%SEGLON
-  WRITE(ILUOUT,*) 'Check your INI_AIRCRAFT routine'
-!callabortstop
-  CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_AIRCRAFT_BALLOON','')
-END IF
-!
-ALLOCATE(TPFLYER%SEGX(TPFLYER%SEG+1))
-ALLOCATE(TPFLYER%SEGY(TPFLYER%SEG+1))
-!
-DO JSEG=1,TPFLYER%SEG+1
-  CALL SM_XYHAT(PLATOR,PLONOR,                              &
-                TPFLYER%SEGLAT(JSEG), TPFLYER%SEGLON(JSEG), &
-                TPFLYER%SEGX(JSEG),   TPFLYER%SEGY(JSEG)    )
+
+ALLOCATE(TPFLYER%XPOSX(TPFLYER%NPOS))
+ALLOCATE(TPFLYER%XPOSY(TPFLYER%NPOS))
+
+DO JSEG = 1, TPFLYER%NPOS
+  CALL SM_XYHAT( PLATOR, PLONOR, TPFLYER%XPOSLAT(JSEG), TPFLYER%XPOSLON(JSEG), TPFLYER%XPOSX(JSEG), TPFLYER%XPOSY(JSEG) )
 END DO
-!
-IF ( ANY(TPFLYER%SEGTIME(:)==XUNDEF) ) THEN
-  WRITE(ILUOUT,*) 'Error in aircraft flight path (aircraft number ',KNBR,' )'
-  WRITE(ILUOUT,*) 'definiton of segment duration is not complete.'
-  WRITE(ILUOUT,*) 'TPAIRCRAFT%SEGTIME=',TPFLYER%SEGTIME
-  WRITE(ILUOUT,*) 'Check your INI_AIRCRAFT routine'
-!callabortstop
-  CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_AIRCRAFT_BALLOON','')
-END IF
-!
-!
-IF (TPFLYER%TITLE=='          ') THEN
-  WRITE(TPFLYER%TITLE,FMT='(A6,I2.2)') TPFLYER%TYPE,KNBR
-END IF
-!
+
 END SUBROUTINE INI_FLIGHT
 !----------------------------------------------------------------------------
 !----------------------------------------------------------------------------
+SUBROUTINE FLYER_TIMESTEP_CORRECT( PTSTEP_MODEL, TPFLYER )
+! Timestep is set to a multiple of the PTSTEP_MODEL value
+REAL,              INTENT(IN)    :: PTSTEP_MODEL
+CLASS(TFLYERDATA), INTENT(INOUT) :: TPFLYER
+
+REAL :: ZTSTEP_OLD
+
+ZTSTEP_OLD = TPFLYER%TFLYER_TIME%XTSTEP
+
+TPFLYER%TFLYER_TIME%XTSTEP = MAX ( PTSTEP_MODEL, TPFLYER%TFLYER_TIME%XTSTEP )
+TPFLYER%TFLYER_TIME%XTSTEP = NINT( TPFLYER%TFLYER_TIME%XTSTEP / PTSTEP_MODEL ) * PTSTEP_MODEL
+
+IF ( ABS( TPFLYER%TFLYER_TIME%XTSTEP - ZTSTEP_OLD ) > 1E-6 ) THEN
+  WRITE( CMNHMSG(1), '( "Timestep for flyer ", A, " is set to ", EN12.3, " (instead of ", EN12.3, ")" )' ) &
+         TPFLYER%CTITLE, TPFLYER%TFLYER_TIME%XTSTEP, ZTSTEP_OLD
+  CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'INI_LAUNCH' )
+END IF
+
+END SUBROUTINE FLYER_TIMESTEP_CORRECT
+!----------------------------------------------------------------------------
+
+!----------------------------------------------------------------------------
 !
 END SUBROUTINE INI_AIRCRAFT_BALLOON
+
+!----------------------------------------------------------------------------
+!----------------------------------------------------------------------------
+SUBROUTINE ALLOCATE_FLYER( TPFLYER, KSTORE )
+
+USE MODD_AIRCRAFT_BALLOON, ONLY: TFLYERDATA
+USE MODD_CONF,             ONLY: CPROGRAM
+USE MODD_CONF_n,           ONLY: NRR
+USE MODD_DIAG_FLAG,        ONLY: NTIME_AIRCRAFT_BALLOON
+USE MODD_DIM_n,            ONLY: NKMAX
+USE MODD_DYN,              ONLY: XSEGLEN
+USE MODD_DYN_n,            ONLY: DYN_MODEL
+USE MODD_NSV,              ONLY: NSV
+USE MODD_PARAMETERS,       ONLY: JPVEXT, NNEGUNDEF, XUNDEF
+USE MODD_PARAM_n,          ONLY: CCLOUD, CTURB
+USE MODD_SURF_PAR,         ONLY: XUNDEF_SFX => XUNDEF
+
+IMPLICIT NONE
+
+CLASS(TFLYERDATA), INTENT(INOUT) :: TPFLYER
+INTEGER, OPTIONAL, INTENT(IN)    :: KSTORE
+
+INTEGER :: IKU    ! number of vertical levels
+INTEGER :: ISTORE ! number of storage instants
+
+CALL PRINT_MSG( NVERB_DEBUG, 'GEN', 'ALLOCATE_FLYER', 'flyer: ' // TRIM(TPFLYER%CTITLE), OLOCAL = .TRUE. )
+
+IKU = NKMAX + 2 * JPVEXT
+
+IF ( PRESENT( KSTORE ) ) THEN
+  ISTORE = KSTORE
+ELSE
+  IF ( CPROGRAM == 'DIAG  ' ) THEN
+    ISTORE = INT ( NTIME_AIRCRAFT_BALLOON / TPFLYER%TFLYER_TIME%XTSTEP ) + 1
+  ELSE
+    ISTORE = NINT ( ( XSEGLEN - DYN_MODEL(1)%XTSTEP ) / TPFLYER%TFLYER_TIME%XTSTEP ) + 1
+  ENDIF
+END IF
+!
+ALLOCATE( TPFLYER%TFLYER_TIME%TPDATES(ISTORE) )
+ALLOCATE( TPFLYER%NMODELHIST(ISTORE) )
+ALLOCATE( TPFLYER%XX   (ISTORE) )
+ALLOCATE( TPFLYER%XY   (ISTORE) )
+ALLOCATE( TPFLYER%XZ   (ISTORE) )
+ALLOCATE( TPFLYER%XLON (ISTORE) )
+ALLOCATE( TPFLYER%XLAT (ISTORE) )
+ALLOCATE( TPFLYER%XZON (ISTORE) )
+ALLOCATE( TPFLYER%XMER (ISTORE) )
+ALLOCATE( TPFLYER%XW   (ISTORE) )
+ALLOCATE( TPFLYER%XP   (ISTORE) )
+ALLOCATE( TPFLYER%XTH  (ISTORE) )
+ALLOCATE( TPFLYER%XR   (ISTORE, NRR) )
+ALLOCATE( TPFLYER%XSV  (ISTORE, NSV) )
+ALLOCATE( TPFLYER%XRTZ (ISTORE, IKU) )
+ALLOCATE( TPFLYER%XRZ  (ISTORE, IKU, NRR) )
+ALLOCATE( TPFLYER%XFFZ (ISTORE, IKU) )
+ALLOCATE( TPFLYER%XIWCZ(ISTORE, IKU) )
+ALLOCATE( TPFLYER%XLWCZ(ISTORE, IKU) )
+ALLOCATE( TPFLYER%XCIZ (ISTORE, IKU) )
+IF ( CCLOUD == 'LIMA' ) THEN
+  ALLOCATE( TPFLYER%XCCZ(ISTORE, IKU) )
+  ALLOCATE( TPFLYER%XCRZ(ISTORE, IKU) )
+ELSE
+  ALLOCATE( TPFLYER%XCCZ(0, 0) )
+  ALLOCATE( TPFLYER%XCRZ(0, 0) )
+ENDIF
+ALLOCATE( TPFLYER%XCRARE    (ISTORE, IKU) )
+ALLOCATE( TPFLYER%XCRARE_ATT(ISTORE, IKU) )
+ALLOCATE( TPFLYER%XWZ       (ISTORE, IKU) )
+ALLOCATE( TPFLYER%XZZ       (ISTORE, IKU) )
+IF ( CTURB == 'TKEL' ) THEN
+  ALLOCATE( TPFLYER%XTKE(ISTORE) )
+ELSE
+  ALLOCATE( TPFLYER%XTKE(0) )
+END IF
+ALLOCATE( TPFLYER%XTKE_DISS(ISTORE) )
+ALLOCATE( TPFLYER%XTSRAD   (ISTORE) )
+ALLOCATE( TPFLYER%XZS      (ISTORE) )
+
+ALLOCATE( TPFLYER%XTHW_FLUX(ISTORE) )
+ALLOCATE( TPFLYER%XRCW_FLUX(ISTORE) )
+ALLOCATE( TPFLYER%XSVW_FLUX(ISTORE, NSV) )
+
+TPFLYER%NMODELHIST = NNEGUNDEF
+TPFLYER%XX    = XUNDEF
+TPFLYER%XY    = XUNDEF
+TPFLYER%XZ    = XUNDEF
+TPFLYER%XLON  = XUNDEF
+TPFLYER%XLAT  = XUNDEF
+TPFLYER%XZON  = XUNDEF
+TPFLYER%XMER  = XUNDEF
+TPFLYER%XW    = XUNDEF
+TPFLYER%XP    = XUNDEF
+TPFLYER%XTH   = XUNDEF
+TPFLYER%XR    = XUNDEF
+TPFLYER%XSV   = XUNDEF
+TPFLYER%XRTZ  = XUNDEF
+TPFLYER%XRZ   = XUNDEF
+TPFLYER%XFFZ  = XUNDEF
+TPFLYER%XIWCZ = XUNDEF
+TPFLYER%XLWCZ = XUNDEF
+TPFLYER%XCIZ  = XUNDEF
+TPFLYER%XCCZ  = XUNDEF
+TPFLYER%XCRZ  = XUNDEF
+TPFLYER%XCRARE     = XUNDEF
+TPFLYER%XCRARE_ATT = XUNDEF
+TPFLYER%XWZ        = XUNDEF
+TPFLYER%XZZ        = XUNDEF
+TPFLYER%XTKE       = XUNDEF
+TPFLYER%XTKE_DISS  = XUNDEF
+TPFLYER%XTSRAD     = XUNDEF_SFX
+TPFLYER%XZS        = XUNDEF
+
+TPFLYER%XTHW_FLUX = XUNDEF
+TPFLYER%XRCW_FLUX = XUNDEF
+TPFLYER%XSVW_FLUX = XUNDEF
+
+END SUBROUTINE ALLOCATE_FLYER
+!----------------------------------------------------------------------------
+!----------------------------------------------------------------------------
+SUBROUTINE DEALLOCATE_FLYER( TPFLYER )
+
+USE MODD_AIRCRAFT_BALLOON, ONLY: TAIRCRAFTDATA, TFLYERDATA
+
+IMPLICIT NONE
+
+CLASS(TFLYERDATA), INTENT(INOUT) :: TPFLYER
+
+CALL PRINT_MSG( NVERB_DEBUG, 'GEN', 'DEALLOCATE_FLYER', 'flyer: ' // TRIM(TPFLYER%CTITLE), OLOCAL = .TRUE. )
+
+DEALLOCATE( TPFLYER%TFLYER_TIME%TPDATES )
+DEALLOCATE( TPFLYER%NMODELHIST )
+DEALLOCATE( TPFLYER%XX         )
+DEALLOCATE( TPFLYER%XY         )
+DEALLOCATE( TPFLYER%XZ         )
+DEALLOCATE( TPFLYER%XLON       )
+DEALLOCATE( TPFLYER%XLAT       )
+DEALLOCATE( TPFLYER%XZON       )
+DEALLOCATE( TPFLYER%XMER       )
+DEALLOCATE( TPFLYER%XW         )
+DEALLOCATE( TPFLYER%XP         )
+DEALLOCATE( TPFLYER%XTH        )
+DEALLOCATE( TPFLYER%XR         )
+DEALLOCATE( TPFLYER%XSV        )
+DEALLOCATE( TPFLYER%XRTZ       )
+DEALLOCATE( TPFLYER%XRZ        )
+DEALLOCATE( TPFLYER%XFFZ       )
+DEALLOCATE( TPFLYER%XIWCZ      )
+DEALLOCATE( TPFLYER%XLWCZ      )
+DEALLOCATE( TPFLYER%XCIZ       )
+DEALLOCATE( TPFLYER%XCCZ       )
+DEALLOCATE( TPFLYER%XCRZ       )
+DEALLOCATE( TPFLYER%XCRARE     )
+DEALLOCATE( TPFLYER%XCRARE_ATT )
+DEALLOCATE( TPFLYER%XWZ        )
+DEALLOCATE( TPFLYER%XZZ        )
+DEALLOCATE( TPFLYER%XTKE       )
+DEALLOCATE( TPFLYER%XTKE_DISS  )
+DEALLOCATE( TPFLYER%XTSRAD     )
+DEALLOCATE( TPFLYER%XZS        )
+
+DEALLOCATE( TPFLYER%XTHW_FLUX )
+DEALLOCATE( TPFLYER%XRCW_FLUX )
+DEALLOCATE( TPFLYER%XSVW_FLUX )
+
+SELECT TYPE( TPFLYER )
+  CLASS IS ( TAIRCRAFTDATA )
+    DEALLOCATE( TPFLYER%XPOSLAT  )
+    DEALLOCATE( TPFLYER%XPOSLON  )
+    DEALLOCATE( TPFLYER%XPOSX    )
+    DEALLOCATE( TPFLYER%XPOSY    )
+    IF ( TPFLYER%LALTDEF ) THEN
+      DEALLOCATE( TPFLYER%XPOSP  )
+    ELSE
+      DEALLOCATE( TPFLYER%XPOSZ  )
+    END IF
+    DEALLOCATE( TPFLYER%XPOSTIME )
+END SELECT
+
+END SUBROUTINE DEALLOCATE_FLYER
+!----------------------------------------------------------------------------
+!----------------------------------------------------------------------------
+
+END MODULE MODE_INI_AIRCRAFT_BALLOON

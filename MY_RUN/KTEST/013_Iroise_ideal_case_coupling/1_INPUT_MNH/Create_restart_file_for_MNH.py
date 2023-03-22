@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 #
 ##############################################
@@ -20,29 +20,29 @@ file_RSTRT = netCDF4.Dataset(curdir_path+'IROISE_5KM_201109_02_00.nc')
 
 LON_MNH=file_RSTRT.variables['LON'][1:-1,1:-1]
 LAT_MNH=file_RSTRT.variables['LAT'][1:-1,1:-1]
-U10_MNH=file_RSTRT.variables['UT'][2,1:-1,1:-1]
-V10_MNH=file_RSTRT.variables['VT'][2,1:-1,1:-1]
-PRES_MNH=file_RSTRT.variables['PABST'][2,1:-1,1:-1]
+U10_MNH=file_RSTRT.variables['UT'][0,2,1:-1,1:-1]
+V10_MNH=file_RSTRT.variables['VT'][0,2,1:-1,1:-1]
+PRES_MNH=file_RSTRT.variables['PABST'][0,2,1:-1,1:-1]
 
 try:
-  EVAP_MNH=file_RSTRT.variables['EVAP3D'][1:-1,1:-1]
+  EVAP_MNH=file_RSTRT.variables['EVAP3D'][0,1:-1,1:-1]
 except KeyError:
-  print 'EVAP3D not found... imposed at 0!'
+  print('EVAP3D not found... imposed at 0!')
   EVAP_MNH=np.zeros((np.shape(LON_MNH)[0],np.shape(LON_MNH)[1]))
 
 try:
-  RAIN_MNH=file_RSTRT.variables['INPRR3D'][1:-1,1:-1]
+  RAIN_MNH=file_RSTRT.variables['INPRR3D'][0,1:-1,1:-1]
 except KeyError:
-  print 'INPRR3D not found... imposed at 0!'
+  print('INPRR3D not found... imposed at 0!')
   RAIN_MNH=np.zeros((np.shape(LON_MNH)[0],np.shape(LON_MNH)[1]))
 
 try:
-  FMU_MNH=file_RSTRT.variables['FMU'][1:-1,1:-1]
-  FMV_MNH=file_RSTRT.variables['FMV'][1:-1,1:-1]
-  H_MNH=file_RSTRT.variables['H'][1:-1,1:-1]
-  RN_MNH=file_RSTRT.variables['RN'][1:-1,1:-1]
+  FMU_MNH=file_RSTRT.variables['FMU'][0,1:-1,1:-1]
+  FMV_MNH=file_RSTRT.variables['FMV'][0,1:-1,1:-1]
+  H_MNH=file_RSTRT.variables['H'][0,1:-1,1:-1]
+  RN_MNH=file_RSTRT.variables['RN'][0,1:-1,1:-1]
 except KeyError:
-  print 'Turbulent fluxes FMU, FMV, H and LE not found... imposed at 0!'
+  print('Turbulent fluxes FMU, FMV, H and LE not found... imposed at 0!')
   FMU_MNH=np.zeros((np.shape(LON_MNH)[0],np.shape(LON_MNH)[1]))
   FMV_MNH=np.zeros((np.shape(LON_MNH)[0],np.shape(LON_MNH)[1]))
   H_MNH=np.zeros((np.shape(LON_MNH)[0],np.shape(LON_MNH)[1]))
@@ -50,8 +50,8 @@ except KeyError:
 
 ########################################################################
 
-print '------------------------------------------'
-print ' Creating netcdf file : rstrt_MNH.nc'
+print('------------------------------------------')
+print(' Creating netcdf file : rstrt_MNH.nc')
 
 fout=netCDF4.Dataset(curdir_path+'rstrt_MNH.nc','w',format='NETCDF3_64BIT')
 fout.Description='Restart file for OASIS coupling'
@@ -93,6 +93,6 @@ fout.variables['MNH__V10'][:,:] = V10_MNH[:,:]
 # ---------------------------------------
 fout.close()
 
-print ' Closing netcdf file : rstrt_MNH.nc'
-print '-----------------------------------------'
+print(' Closing netcdf file : rstrt_MNH.nc')
+print('-----------------------------------------')
 #####################################################

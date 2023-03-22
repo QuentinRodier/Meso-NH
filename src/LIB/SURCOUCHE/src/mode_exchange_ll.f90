@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1998-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1998-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -1907,6 +1907,7 @@ INTEGER                                               :: NB_REQ
 !!    ------
 !     N. Gicquel               * CERFACS - CNRM *
 !     J. Escobar 18/08/2018 : Bug on MPI_RECV <-> uninitialized IMAXSIZESEND/IMAXSIZERECV variables 
+!     A. Costes     12/2021 : Adjust buffer size for Blaze
 !
 !-------------------------------------------------------------------------------
 !
@@ -1926,6 +1927,9 @@ INTEGER                                               :: NB_REQ
 !JUANZ
  USE MODD_CONFZ, ONLY : LMNH_MPI_BSEND
 !JUANZ
+! Blaze
+  USE MODD_FIRE_n, ONLY : LBLAZE, NREFINX, NREFINY
+
   IMPLICIT NONE
 !
 !*       0.1   declarations of arguments
@@ -2009,7 +2013,12 @@ INTEGER                                               :: NB_REQ,NFIRST_REQ_RECV
   IBUFFSIZE = IMAXSIZESEND 
   IF (IMAXSIZERECV > IBUFFSIZE) IBUFFSIZE = IMAXSIZERECV
 !
-  IBUFFSIZE = IBUFFSIZE * (NKMAX_TMP_ll + 2 * JPVEXT)
+  !Blaze
+  IF (LBLAZE) THEN
+    IBUFFSIZE = IBUFFSIZE * MAX(NKMAX_TMP_ll + 2 * JPVEXT,NREFINX*NREFINY)
+  ELSE
+    IBUFFSIZE = IBUFFSIZE * (NKMAX_TMP_ll + 2 * JPVEXT)
+  END IF
 !
 ! JUAN
 !if defined (MNH_MPI_ISEND)
@@ -2299,6 +2308,7 @@ INTEGER                                               :: NB_REQ,NFIRST_REQ_RECV
 !!    Author
 !!    ------
 !     N. Gicquel               * CERFACS - CNRM *
+!  A. Costes      12/2021: adjust buffer size for Blaze fire model
 !
 !-------------------------------------------------------------------------------
 !
@@ -2314,6 +2324,8 @@ INTEGER                                               :: NB_REQ,NFIRST_REQ_RECV
 !JUANZ
  USE MODD_CONFZ, ONLY : LMNH_MPI_BSEND
 !JUANZ
+!Blaze
+  USE MODD_FIRE_n, ONLY: LBLAZE, NREFINX, NREFINY
 !
 !-------------------------------------------------------------------------------
 !
@@ -2393,7 +2405,12 @@ INTEGER                                               :: NB_REQ,NFIRST_REQ_RECV
   IBUFFSIZE = IMAXSIZESEND 
   IF (IMAXSIZERECV > IBUFFSIZE) IBUFFSIZE = IMAXSIZERECV
 !
-  IBUFFSIZE = IBUFFSIZE * (NKMAX_TMP_ll + 2 * JPVEXT)
+  !Blaze
+  IF (LBLAZE) THEN
+    IBUFFSIZE = IBUFFSIZE * MAX(NKMAX_TMP_ll + 2 * JPVEXT,NREFINX*NREFINY)
+  ELSE
+    IBUFFSIZE = IBUFFSIZE * (NKMAX_TMP_ll + 2 * JPVEXT)
+  END IF
 ! JUAN
 !if defined (MNH_MPI_ISEND)
   IF ( .NOT. LMNH_MPI_BSEND) THEN

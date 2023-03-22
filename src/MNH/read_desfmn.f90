@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -13,7 +13,7 @@ INTERFACE
                    OUSERC,OUSERR,OUSERI,OUSECI,OUSERS,OUSERG,OUSERH,             &
                    OUSECHEM,OUSECHAQ,OUSECHIC,OCH_PH,OCH_CONV_LINOX,OSALT,       &
                    ODEPOS_SLT,ODUST,ODEPOS_DST, OCHTRANS,                        &
-                   OORILAM,ODEPOS_AER,OLG,OPASPOL,                               &
+                   OORILAM,ODEPOS_AER,OLG,OPASPOL,OFIRE,                         &
 #ifdef MNH_FOREFIRE
                    OFOREFIRE,                                                    &
 #endif
@@ -46,6 +46,7 @@ LOGICAL,            INTENT(OUT) :: OLG      ! lagrangian flag
 LOGICAL,            INTENT(OUT) :: OSALT    ! Sea Salt flag
 LOGICAL,            INTENT(OUT) :: ODUST    ! Dust flag
 LOGICAL,            INTENT(OUT) :: OPASPOL  ! Passive pollutant flag
+LOGICAL,            INTENT(OUT) :: OFIRE    ! Blaze flag
 #ifdef MNH_FOREFIRE
 LOGICAL,            INTENT(OUT) :: OFOREFIRE! ForeFire flag
 #endif
@@ -81,7 +82,7 @@ END MODULE MODI_READ_DESFM_n
                    OUSERC,OUSERR,OUSERI,OUSECI,OUSERS,OUSERG,OUSERH,             &
                    OUSECHEM,OUSECHAQ,OUSECHIC,OCH_PH,OCH_CONV_LINOX,OSALT,       &
                    ODEPOS_SLT,ODUST,ODEPOS_DST, OCHTRANS,                        &
-                   OORILAM,ODEPOS_AER,OLG,OPASPOL,                               &
+                   OORILAM,ODEPOS_AER,OLG,OPASPOL,OFIRE,                         &
 #ifdef MNH_FOREFIRE
                    OFOREFIRE,                                                    &
 #endif
@@ -195,6 +196,8 @@ END MODULE MODI_READ_DESFM_n
 !!      Modification   02/2021   (F.Auguste)  add IBM
 !!                               (T.Nagel)    add turbulence recycling
 !!                               (E.Jezequel) add stations read from CSV file
+!  A. Costes      12/2021: add Blaze fire model
+!  P. Wautelet 27/04/2022: add namelist for profilers
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -263,15 +266,19 @@ USE MODN_LATZ_EDFLX
 USE MODN_2D_FRC
 USE MODN_BLOWSNOW_n
 USE MODN_BLOWSNOW
+USE MODN_PROFILER_n
 USE MODN_STATION_n
 !
 USE MODN_PARAM_LIMA
+! USE MODN_FLYERS
 !
 USE MODE_MSG
 USE MODE_POS
 USE MODN_RECYCL_PARAM_n
 USE MODN_IBM_PARAM_n
 USE MODD_IBM_LSF, ONLY: LIBM_LSF
+!
+USE MODN_FIRE_n
 !
 IMPLICIT NONE
 !
@@ -313,6 +320,7 @@ CHARACTER (LEN=4),  INTENT(OUT) :: HELEC  ! Kind of electrical scheme
 CHARACTER (LEN=*),  INTENT(OUT) :: HEQNSYS! type of equations' system
 LOGICAL,            INTENT(OUT) :: OSALT    ! Sea Salt flag
 LOGICAL,            INTENT(OUT) :: OPASPOL  ! Passive pollutant flag
+LOGICAL,            INTENT(OUT) :: OFIRE    ! Blaze flag
 #ifdef MNH_FOREFIRE
 LOGICAL,            INTENT(OUT) :: OFOREFIRE ! ForeFire flag
 #endif
@@ -429,7 +437,7 @@ IF (GFOUND) THEN
   READ(UNIT=ILUDES,NML=NAM_CH_MNHCn)
   CALL UPDATE_NAM_CH_MNHCn
 END IF
-CALL POSNAM(ILUDES,'NAM_CH_SOLVERn',GFOUND)
+CALL POSNAM(ILUDES,'NAM_CH_SOLVERN',GFOUND)
 CALL INIT_NAM_CH_SOLVERn
 IF (GFOUND) THEN 
   READ(UNIT=ILUDES,NML=NAM_CH_SOLVERn)
@@ -459,7 +467,7 @@ IF (GFOUND) THEN
   READ(UNIT=ILUDES,NML=NAM_SERIESn)
   CALL UPDATE_NAM_SERIESn
 END IF
-CALL POSNAM(ILUDES,'NAM_BLOWSNOWn',GFOUND,ILUOUT)
+CALL POSNAM(ILUDES,'NAM_BLOWSNOWN',GFOUND,ILUOUT)
 CALL INIT_NAM_BLOWSNOWn
 IF (GFOUND) THEN
   READ(UNIT=ILUDES,NML=NAM_BLOWSNOWn)
@@ -471,11 +479,23 @@ IF (GFOUND) THEN
   READ(UNIT=ILUDES,NML=NAM_BLANKn)
   CALL UPDATE_NAM_BLANKn
 END IF
+CALL POSNAM(ILUDES,'NAM_PROFILERN',GFOUND,ILUOUT)
+CALL INIT_NAM_PROFILERn
+IF (GFOUND) THEN
+  READ(UNIT=ILUDES,NML=NAM_PROFILERN)
+  CALL UPDATE_NAM_PROFILERn
+END IF
 CALL POSNAM(ILUDES,'NAM_STATIONN',GFOUND,ILUOUT)
 CALL INIT_NAM_STATIONn
 IF (GFOUND) THEN
   READ(UNIT=ILUDES,NML=NAM_STATIONn)
   CALL UPDATE_NAM_STATIONn
+END IF
+CALL POSNAM(ILUDES,'NAM_FIREN',GFOUND,ILUOUT)
+CALL INIT_NAM_FIREn
+IF (GFOUND) THEN
+  READ(UNIT=ILUDES,NML=NAM_FIREn)
+  CALL UPDATE_NAM_FIREn
 END IF
 !
 !
@@ -538,7 +558,7 @@ IF (KMI == 1) THEN
     READ(UNIT=ILUDES,NML=NAM_OUTPUT)
   END IF
 ! Note: it is not useful to read the budget namelists in the .des files
-! The value here (if present in file) don't need to be compared with the ones in the EXSEGn files
+! The values here (if present in file) don't need to be compared with the ones in the EXSEGn files
 !   CALL POSNAM(ILUDES,'NAM_BUDGET',GFOUND)
 !   IF (GFOUND) READ(UNIT=ILUDES,NML=NAM_BUDGET)
 !   CALL POSNAM(ILUDES,'NAM_BU_RU',GFOUND)
@@ -614,7 +634,15 @@ IF (KMI == 1) THEN
   IF (GFOUND) READ(UNIT=ILUDES,NML=NAM_LATZ_EDFLX)
   CALL POSNAM(ILUDES,'NAM_VISC',GFOUND,ILUOUT)
   IF (GFOUND) READ(UNIT=ILUDES,NML=NAM_VISC)
-END IF                                                       
+! Note: it is not useful to read the FLYERS/AIRCRAFTS/BALLOONS namelists in the .des files
+! The values here (if present in file) don't need to be compared with the ones in the EXSEGn files
+!   CALL POSNAM(ILUDES,'NAM_FLYERS',GFOUND,ILUOUT)
+!   IF (GFOUND) READ(UNIT=ILUDES,NML=NAM_FLYERS)
+!   CALL POSNAM(ILUSEG,'NAM_AIRCRAFTS',GFOUND,ILUOUT)
+!   IF (GFOUND) READ(UNIT=ILUSEG,NML=NAM_AIRCRAFTS)
+!   CALL POSNAM(ILUSEG,'NAM_BALLOONS',GFOUND,ILUOUT)
+!   IF (GFOUND) READ(UNIT=ILUSEG,NML=NAM_BALLOONS)
+END IF
 !
 !-------------------------------------------------------------------------------
 !
@@ -644,6 +672,7 @@ OSALT    = LSALT
 OORILAM  = LORILAM
 OLG      = LLG
 OPASPOL  = LPASPOL
+OFIRE    = LBLAZE
 #ifdef MNH_FOREFIRE
 OFOREFIRE  = LFOREFIRE
 #endif
@@ -733,8 +762,14 @@ IF (NVERB >= 10) THEN
   WRITE(UNIT=ILUOUT,FMT="('********** BLANKn ******************')")
   WRITE(UNIT=ILUOUT,NML=NAM_BLANKn)
 !
+  WRITE(UNIT=ILUOUT,FMT="('********** PROFILERn *****************')")
+  WRITE(UNIT=ILUOUT,NML=NAM_PROFILERn)
+!
   WRITE(UNIT=ILUOUT,FMT="('********** STATIONn ******************')")
   WRITE(UNIT=ILUOUT,NML=NAM_STATIONn)
+!
+  WRITE(UNIT=ILUOUT,FMT="('********** BLAZE *******************')")
+  WRITE(UNIT=ILUOUT,NML=NAM_FIREn)
 !
   IF (KMI==1) THEN
     WRITE(UNIT=ILUOUT,FMT="(/,'PART OF INITIAL FILE COMMON TO ALL THE MODELS')")
@@ -817,10 +852,11 @@ IF (NVERB >= 10) THEN
     WRITE(UNIT=ILUOUT,NML=NAM_VISC)
 !
 #ifdef MNH_FOREFIRE
-	WRITE(UNIT=ILUOUT,FMT="('************ FOREFIRE  ***************')")
-	WRITE(UNIT=ILUOUT,NML=NAM_FOREFIRE)
+    WRITE(UNIT=ILUOUT,FMT="('************ FOREFIRE  ***************')")
+    WRITE(UNIT=ILUOUT,NML=NAM_FOREFIRE)
 !
-#endif		
+#endif
+!
     WRITE(UNIT=ILUOUT,FMT="('************ CONDITIONAL SAMPLING *************')")
     WRITE(UNIT=ILUOUT,NML=NAM_CONDSAMP)
  !

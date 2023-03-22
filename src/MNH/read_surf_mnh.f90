@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2003-2022 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2003-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -18,8 +18,10 @@ CONTAINS
 
 SUBROUTINE PREPARE_METADATA_READ_SURF(HREC,HDIR,KGRID,KTYPE,KDIMS,HSUBR,TPFIELD)
 !
-use modd_field, only: tfielddata, tfieldlist, TYPECHAR, TYPEDATE, TYPELOG
-use mode_field, only: Find_field_id_from_mnhname
+use modd_field,      only: tfieldmetadata, tfieldlist
+use modd_parameters, only: NMNHNAMELGTMAX
+
+use mode_field,      only: Find_field_id_from_mnhname
 !
 CHARACTER(LEN=MNH_LEN_HREC),INTENT(IN)  :: HREC     ! name of the article to write
 CHARACTER(LEN=2),       INTENT(IN)  :: HDIR     ! Expected type of the data field (XX,XY,--...)
@@ -27,14 +29,17 @@ INTEGER,                INTENT(IN)  :: KGRID    ! Localization on the model grid
 INTEGER,                INTENT(IN)  :: KTYPE    ! Datatype
 INTEGER,                INTENT(IN)  :: KDIMS    ! Number of dimensions
 CHARACTER(LEN=*),       INTENT(IN)  :: HSUBR    ! name of the subroutine calling
-TYPE(TFIELDDATA),       INTENT(OUT) :: TPFIELD  ! metadata of field
+TYPE(TFIELDMETADATA),       INTENT(OUT) :: TPFIELD  ! metadata of field
 !
 CHARACTER(LEN=32) :: YTXT
 INTEGER           :: IID, IRESP
 !
+IF ( LEN_TRIM( HREC ) > NMNHNAMELGTMAX ) &
+  CALL PRINT_MSG( NVERB_WARNING, 'IO', TRIM(HSUBR), 'HREC is too long (' // TRIM(HREC) // ')' )
+
 CALL FIND_FIELD_ID_FROM_MNHNAME(TRIM(HREC),IID,IRESP,ONOWARNING=.TRUE.)
 IF (IRESP==0) THEN
-  TPFIELD = TFIELDLIST(IID)
+  TPFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
   !Modify and check CLONGNAME
   IF (TRIM(TPFIELD%CLONGNAME)/=TRIM(HREC) &
       .AND. TRIM(HREC)/='VERSION' .AND. TRIM(HREC)/='BUG') THEN
@@ -71,25 +76,24 @@ IF (IRESP==0) THEN
   END IF
 ELSE
   CALL PRINT_MSG(NVERB_DEBUG,'IO',TRIM(HSUBR),TRIM(HREC)//' not found in FIELDLIST. Generating default metadata')
-  TPFIELD%CMNHNAME   = TRIM(HREC)
-  TPFIELD%CSTDNAME   = ''
-  TPFIELD%CLONGNAME  = TRIM(HREC)
-  TPFIELD%CUNITS     = ''
-  TPFIELD%CDIR       = HDIR
-  TPFIELD%CCOMMENT   = '' !Expected comment is not known
-  TPFIELD%NGRID      = KGRID
-  TPFIELD%NTYPE      = KTYPE
-  TPFIELD%NDIMS      = KDIMS
+  TPFIELD = TFIELDMETADATA(  &
+    CMNHNAME   = TRIM(HREC), &
+    CSTDNAME   = '',         &
+    CLONGNAME  = TRIM(HREC), &
+    CUNITS     = '',         &
+    CDIR       = HDIR,       &
+    CCOMMENT   = '',         & !Expected comment is not known
+    NGRID      = KGRID,      &
+    NTYPE      = KTYPE,      &
+    NDIMS      = KDIMS,      &
+    LTIMEDEP   = .FALSE.     )
 #if 0
   IF (TPFIELD%NDIMS==0 .OR. TPFIELD%NTYPE==TYPECHAR .OR. TPFIELD%NTYPE==TYPEDATE .OR. TPFIELD%NTYPE==TYPELOG) THEN
     TPFIELD%LTIMEDEP   = .FALSE.
   ELSE
     TPFIELD%LTIMEDEP   = .TRUE.
   END IF
-#else
-  TPFIELD%LTIMEDEP   = .FALSE.
 #endif
-
 END IF
 !
 END SUBROUTINE PREPARE_METADATA_READ_SURF
@@ -141,7 +145,7 @@ END MODULE MODE_READ_SURF_MNH_TOOLS
 !             ------------
 !
 USE MODD_CONF,          ONLY: CPROGRAM
-use modd_field,         only: tfielddata, tfieldlist, TYPEREAL
+use modd_field,         only: tfieldmetadata, tfieldlist, TYPEREAL
 USE MODD_GRID,          ONLY: XRPK,XBETA,XLAT0,XLON0
 USE MODD_IO_SURF_MNH,   ONLY: TOUT, TPINFILE
 USE MODD_PARAMETERS,    ONLY: JPHEXT, XUNDEF
@@ -165,15 +169,15 @@ CHARACTER(LEN=*),       INTENT(OUT) :: HCOMMENT ! comment
 !
 !*      0.2   Declarations of local variables
 !
-INTEGER           :: IGRID          ! IGRID : grid indicator
-INTEGER           :: ILENCH         ! ILENCH : length of comment string
-INTEGER           :: ILUOUT
-INTEGER           :: IID,IRESP
-INTEGER           :: IIMAX,IJMAX
+INTEGER              :: IGRID          ! IGRID : grid indicator
+INTEGER              :: ILENCH         ! ILENCH : length of comment string
+INTEGER              :: ILUOUT
+INTEGER              :: IID,IRESP
+INTEGER              :: IIMAX,IJMAX
 REAL,DIMENSION(:), ALLOCATABLE :: ZXHAT,ZYHAT
-REAL              :: ZLATOR,ZLONOR,ZXHATM,ZYHATM,ZLATORI,ZLONORI
-REAL              :: ZRPK, ZBETA, ZLAT0, ZLON0
-TYPE(TFIELDDATA)  :: TZFIELD
+REAL                 :: ZLATOR,ZLONOR,ZXHATM,ZYHATM,ZLATORI,ZLONORI
+REAL                 :: ZRPK, ZBETA, ZLAT0, ZLON0
+TYPE(TFIELDMETADATA) :: TZFIELD
 !-------------------------------------------------------------------------------
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','READ_SURFX0_MNH',TRIM(TPINFILE%CNAME)//': reading '//TRIM(HREC))
@@ -203,12 +207,12 @@ IF (HREC=='LONORI' .OR. HREC=='LATORI') THEN
       CALL IO_Field_read(TPINFILE,'YHAT',ZYHAT)
       !
       CALL FIND_FIELD_ID_FROM_MNHNAME('LONORI',IID,IRESP)
-      TZFIELD = TFIELDLIST(IID)
+      TZFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
       TZFIELD%CMNHNAME = 'LONOR'
       CALL IO_Field_read(TPINFILE,TZFIELD,ZLONOR)
       !
       CALL FIND_FIELD_ID_FROM_MNHNAME('LATORI',IID,IRESP)
-      TZFIELD = TFIELDLIST(IID)
+      TZFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
       TZFIELD%CMNHNAME = 'LATOR'
       CALL IO_Field_read(TPINFILE,TZFIELD,ZLATOR)
       !
@@ -291,7 +295,7 @@ END SUBROUTINE READ_SURFX0_MNH
 !             ------------
 !
 USE MODD_CST,           ONLY: XPI
-use modd_field,         only: tfielddata, tfieldlist, TYPEREAL
+use modd_field,         only: tfieldmetadata, tfieldlist, TYPEREAL
 USE MODD_IO_SURF_MNH,   ONLY: TOUT, TPINFILE, NMASK, &
                               NIU, NJU, NIB, NJB, NIE, NJE, &
                               NIU_ALL, NJU_ALL, NIB_ALL,    &
@@ -337,11 +341,11 @@ REAL                              :: ZW     ! work value
 CHARACTER(LEN=MNH_LEN_HREC) :: YREC
 CHARACTER(LEN=2)  :: YSTORAGE_TYPE
 !
-INTEGER           :: IID, IRESP
-INTEGER           :: IIU, IJU, IIB, IJB, IIE, IJE ! dimensions of horizontal fields
+INTEGER              :: IID, IRESP
+INTEGER              :: IIU, IJU, IIB, IJB, IIE, IJE ! dimensions of horizontal fields
 INTEGER, DIMENSION(:), ALLOCATABLE :: IMASK       ! mask for packing
-REAL              :: ZUNDEF         ! undefined value in SURFEX
-TYPE(TFIELDDATA)  :: TZFIELD
+REAL                 :: ZUNDEF         ! undefined value in SURFEX
+TYPE(TFIELDMETADATA) :: TZFIELD
 !-------------------------------------------------------------------------------
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','READ_SURFX1_MNH',TRIM(TPINFILE%CNAME)//': reading '//TRIM(HREC))
@@ -392,7 +396,7 @@ ELSE IF (HREC=='XX') THEN
   ALLOCATE(ZWORK  (IIU,IJU))
   ZWORK(:,:) = 0.
   CALL FIND_FIELD_ID_FROM_MNHNAME('XHAT',IID,IRESP)
-  TZFIELD = TFIELDLIST(IID)
+  TZFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
   IF (HDIR/='A'.AND.HDIR/='E') THEN
     TZFIELD%CDIR       = 'XX'
   ELSE
@@ -412,7 +416,7 @@ ELSE IF (HREC=='DX') THEN
   ALLOCATE(ZWORK  (IIU,IJU))
   ZWORK(:,:) = 0.
   CALL FIND_FIELD_ID_FROM_MNHNAME('XHAT',IID,IRESP)
-  TZFIELD = TFIELDLIST(IID)
+  TZFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
   IF (HDIR/='A'.AND.HDIR/='E') THEN
     TZFIELD%CDIR       = 'XX'
   ELSE
@@ -432,7 +436,7 @@ ELSE IF (HREC=='YY') THEN
   ALLOCATE(ZWORK  (IIU,IJU))
   ZWORK(:,:) = 0.
   CALL FIND_FIELD_ID_FROM_MNHNAME('YHAT',IID,IRESP)
-  TZFIELD = TFIELDLIST(IID)
+  TZFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
   IF (HDIR/='A'.AND.HDIR/='E') THEN
     TZFIELD%CDIR       = 'YY'
   ELSE
@@ -452,7 +456,7 @@ ELSE IF (HREC=='DY') THEN
   ALLOCATE(ZWORK  (IIU,IJU))
   ZWORK(:,:) = 0.
   CALL FIND_FIELD_ID_FROM_MNHNAME('YHAT',IID,IRESP)
-  TZFIELD = TFIELDLIST(IID)
+  TZFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
   IF (HDIR/='A'.AND.HDIR/='E') THEN
     TZFIELD%CDIR       = 'YY'
   ELSE
@@ -581,7 +585,7 @@ END SUBROUTINE READ_SURFX1_MNH
 !*      0.    DECLARATIONS
 !             ------------
 !
-use modd_field,         only: tfielddata, TYPEREAL
+use modd_field,         only: tfieldmetadata, TYPEREAL
 USE MODD_IO_SURF_MNH,   ONLY: TOUT, TPINFILE, NMASK, NIU, NJU, NIB, NJB, NIE, NJE, &
                               NIU_ALL, NJU_ALL, NIB_ALL, NJB_ALL, NIE_ALL, NJE_ALL, NMASK_ALL
 USE MODD_PARAMETERS,    ONLY: XUNDEF
@@ -611,14 +615,14 @@ CHARACTER(LEN=1),        INTENT(IN)  :: HDIR     ! type of field :
 !
 !*      0.2   Declarations of local variables
 !
-INTEGER           :: IGRID          ! IGRID : grid indicator
-INTEGER           :: ILENCH         ! ILENCH : length of comment string
-INTEGER           :: ILUOUT
-INTEGER           :: JP             ! loop index
+INTEGER              :: IGRID          ! IGRID : grid indicator
+INTEGER              :: ILENCH         ! ILENCH : length of comment string
+INTEGER              :: ILUOUT
+INTEGER              :: JP             ! loop index
 
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZWORK  ! work array read in the file
-REAL              :: ZUNDEF         ! undefined value in SURFEX
-TYPE(TFIELDDATA)  :: TZFIELD
+REAL                 :: ZUNDEF         ! undefined value in SURFEX
+TYPE(TFIELDMETADATA) :: TZFIELD
 !-------------------------------------------------------------------------------
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','READ_SURFX2_MNH',TRIM(TPINFILE%CNAME)//': reading '//TRIM(HREC))
@@ -717,7 +721,7 @@ END SUBROUTINE READ_SURFX2_MNH
 !
 USE MODD_CST,            ONLY: XPI
 USE MODD_DATA_COVER_PAR, ONLY: JPCOVER
-use modd_field,          only: tfielddata, TYPELOG, TYPEREAL
+use modd_field,          only: tfieldmetadata, TYPELOG, TYPEREAL
 USE MODD_IO_SURF_MNH,    ONLY: TOUT, TPINFILE, NMASK, &
                                NIU, NJU, NIB, NJB, NIE, NJE, &
                                NIU_ALL, NJU_ALL, NIB_ALL,    &
@@ -766,7 +770,7 @@ REAL,DIMENSION(:,:,:), ALLOCATABLE :: ZWORK3D
 INTEGER  :: IRESP
 INTEGER  :: IVERSION, IBUGFIX
 LOGICAL  :: GCOVER_PACKED ! .T. if COVER are all packed into one field
-TYPE(TFIELDDATA) :: TZFIELD
+TYPE(TFIELDMETADATA) :: TZFIELD
 !-------------------------------------------------------------------------------
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','READ_SURFX2COV_MNH',TRIM(TPINFILE%CNAME)//': reading '//TRIM(HREC))
@@ -810,33 +814,36 @@ CALL IO_Field_read(TPINFILE,'BUG',    IBUGFIX)
 IF (IVERSION<7 .OR. (IVERSION==7 .AND. IBUGFIX==0)) THEN
   GCOVER_PACKED = .FALSE.
 ELSE
-  TZFIELD%CMNHNAME   = 'COVER_PACKED'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'COVER_PACKED'
-  TZFIELD%CUNITS     = ''
-  TZFIELD%CDIR       = '--'
-  TZFIELD%CCOMMENT   = ''
-  TZFIELD%NGRID      = 0
-  TZFIELD%NTYPE      = TYPELOG
-  TZFIELD%NDIMS      = 0
-  TZFIELD%LTIMEDEP   = .FALSE.
+  TZFIELD = TFIELDMETADATA(      &
+    CMNHNAME   = 'COVER_PACKED', &
+    CSTDNAME   = '',             &
+    CLONGNAME  = 'COVER_PACKED', &
+    CUNITS     = '',             &
+    CDIR       = '--',           &
+    CCOMMENT   = '',             &
+    NGRID      = 0,              &
+    NTYPE      = TYPELOG,        &
+    NDIMS      = 0,              &
+    LTIMEDEP   = .FALSE.         )
   CALL IO_Field_read(TPINFILE,TZFIELD,GCOVER_PACKED)
 END IF
 !
 IF (.NOT. GCOVER_PACKED) THEN
   ICOVER=0
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CUNITS     = ''
-  TZFIELD%NGRID      = 4
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 2
-  TZFIELD%LTIMEDEP   = .FALSE.
+  TZFIELD = TFIELDMETADATA(&
+    CMNHNAME   = 'generic no COVER_PACKED', & !Temporary name to ease identification
+    CSTDNAME   = '',       &
+    CUNITS     = '',       &
+    CDIR       = YDIR,     &
+    NGRID      = 4,        &
+    NTYPE      = TYPEREAL, &
+    NDIMS      = 2,        &
+    LTIMEDEP   = .FALSE.   )
   DO JL2=1,SIZE(OFLAG)
     WRITE(YREC,'(A5,I3.3)') 'COVER',JL2
     TZFIELD%CMNHNAME   = TRIM(YREC)
     TZFIELD%CLONGNAME  = TRIM(YREC)
     TZFIELD%CCOMMENT   = 'X_Y_'//TRIM(YREC)
-    TZFIELD%CDIR       = YDIR
     IF (OFLAG(JL2)) THEN
       ICOVER=ICOVER+1
       CALL IO_Field_read(TPINFILE,TZFIELD,ZWORK3D(:,:,ICOVER),IRESP)
@@ -911,7 +918,7 @@ END SUBROUTINE READ_SURFX2COV_MNH
 !             ------------
 !
 USE MODD_CST,           ONLY: XPI
-use modd_field,         only: tfielddata, TYPELOG, TYPEREAL
+use modd_field,         only: tfieldmetadata, TYPELOG, TYPEREAL
 USE MODD_IO_SURF_MNH,   ONLY: TOUT, TPINFILE, NMASK,        &
                               NIU, NJU, NIB, NJB, NIE, NJE, &
                               NIU_ALL, NJU_ALL, NIB_ALL,    &
@@ -959,7 +966,7 @@ REAL,DIMENSION(:,:), ALLOCATABLE :: ZWORK2D
 INTEGER  :: IVERSION, IBUGFIX
 LOGICAL  :: GCOVER_PACKED ! .T. if COVER are all packed into one field
 CHARACTER(LEN=1) :: YDIR1
-TYPE(TFIELDDATA) :: TZFIELD
+TYPE(TFIELDMETADATA) :: TZFIELD
 !-------------------------------------------------------------------------------
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','READ_SURFX2COV_1COV_MNH',TRIM(TPINFILE%CNAME)//': reading '//TRIM(HREC))
@@ -1004,31 +1011,33 @@ CALL IO_Field_read(TPINFILE,'BUG',    IBUGFIX)
 IF (IVERSION<7 .OR. (IVERSION==7 .AND. IBUGFIX==0)) THEN
   GCOVER_PACKED = .FALSE.
 ELSE
-  TZFIELD%CMNHNAME   = 'COVER_PACKED'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'COVER_PACKED'
-  TZFIELD%CUNITS     = ''
-  TZFIELD%CDIR       = '--'
-  TZFIELD%CCOMMENT   = ''
-  TZFIELD%NGRID      = 0
-  TZFIELD%NTYPE      = TYPELOG
-  TZFIELD%NDIMS      = 0
-  TZFIELD%LTIMEDEP   = .FALSE.
+  TZFIELD = TFIELDMETADATA(      &
+    CMNHNAME   = 'COVER_PACKED', &
+    CSTDNAME   = '',             &
+    CLONGNAME  = 'COVER_PACKED', &
+    CUNITS     = '',             &
+    CDIR       = '--',           &
+    CCOMMENT   = '',             &
+    NGRID      = 0,              &
+    NTYPE      = TYPELOG,        &
+    NDIMS      = 0,              &
+    LTIMEDEP   = .FALSE.         )
   CALL IO_Field_read(TPINFILE,TZFIELD,GCOVER_PACKED,KRESP)
 END IF
 !
 IF (.NOT. GCOVER_PACKED) THEN
   WRITE(YREC,'(A5,I3.3)') 'COVER',KCOVER
-  TZFIELD%CMNHNAME   = TRIM(YREC)
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = TRIM(YREC)
-  TZFIELD%CUNITS     = ''
-  TZFIELD%CDIR       = YDIR
-  TZFIELD%CCOMMENT   = 'X_Y_'//TRIM(YREC)
-  TZFIELD%NGRID      = 4
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 2
-  TZFIELD%LTIMEDEP   = .FALSE.
+  TZFIELD = TFIELDMETADATA(          &
+    CMNHNAME   = TRIM(YREC),         &
+    CSTDNAME   = '',                 &
+    CLONGNAME  = TRIM(YREC),         &
+    CUNITS     = '',                 &
+    CDIR       = YDIR,               &
+    CCOMMENT   = 'X_Y_'//TRIM(YREC), &
+    NGRID      = 4,                  &
+    NTYPE      = TYPEREAL,           &
+    NDIMS      = 2,                  &
+    LTIMEDEP   = .FALSE.             )
   CALL IO_Field_read(TPINFILE,TZFIELD,ZWORK2D,KRESP)
 ELSE
   call Print_msg( NVERB_FATAL, 'IO', 'READ_SURFX2COV_1COV_MNH', 'GCOVER_PACKED=TRUE and we try to read the covers one by one' )
@@ -1094,7 +1103,7 @@ END SUBROUTINE READ_SURFX2COV_1COV_MNH
 !             ------------
 !
 USE MODD_CONF,          ONLY: CPROGRAM
-use modd_field,         only: tfielddata, TYPEINT
+use modd_field,         only: tfieldmetadata, TYPEINT
 USE MODD_IO_SURF_MNH,   ONLY: TOUT, TPINFILE, NMASK, &
                               NIU, NJU, NIB, NJB, NIE, NJE
 
@@ -1114,9 +1123,9 @@ CHARACTER(LEN=*),       INTENT(OUT) :: HCOMMENT ! comment
 !
 !*      0.2   Declarations of local variables
 !
-INTEGER          :: IIMAX, IJMAX
-INTEGER          :: ILUOUT
-TYPE(TFIELDDATA) :: TZFIELD
+INTEGER              :: IIMAX, IJMAX
+INTEGER              :: ILUOUT
+TYPE(TFIELDMETADATA) :: TZFIELD
 !
 !-------------------------------------------------------------------------------
 !
@@ -1189,7 +1198,7 @@ END SUBROUTINE READ_SURFN0_MNH
 !*      0.    DECLARATIONS
 !             ------------
 !
-use modd_field,         only: tfielddata, TYPEINT
+use modd_field,         only: tfieldmetadata, TYPEINT
 USE MODD_IO_SURF_MNH,   ONLY: TOUT, TPINFILE, NMASK, &
                               NIU, NJU, NIB, NJB, NIE, NJE
 !
@@ -1220,7 +1229,7 @@ INTEGER           :: ILENCH         ! ILENCH : length of comment string
 INTEGER           :: ILUOUT
 !
 INTEGER, DIMENSION(:,:), ALLOCATABLE :: IWORK  ! work array read in the file
-TYPE(TFIELDDATA) :: TZFIELD
+TYPE(TFIELDMETADATA)                 :: TZFIELD
 !---------------------------------------------------------------------
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','READ_SURFN1_MNH',TRIM(TPINFILE%CNAME)//': reading '//TRIM(HREC))
@@ -1298,7 +1307,7 @@ END SUBROUTINE READ_SURFN1_MNH
 !             ------------
 !
 USE MODD_CONF,          ONLY: LCARTESIAN, CPROGRAM
-use modd_field,         only: tfielddata, TYPECHAR
+use modd_field,         only: tfieldmetadata, TYPECHAR
 USE MODD_IO_SURF_MNH,   ONLY: TOUT, TPINFILE
 USE MODD_LUNIT,         ONLY: TPGDFILE
 
@@ -1319,17 +1328,17 @@ CHARACTER(LEN=*),       INTENT(OUT) :: HCOMMENT  ! comment
 !
 !*      0.2   Declarations of local variables
 !
-INTEGER           :: IRESP          ! return code
-INTEGER           :: IGRID          ! IGRID : grid indicator
-INTEGER           :: ILENCH         ! ILENCH : length of comment string
-INTEGER           :: ILUOUT
+INTEGER              :: IRESP          ! return code
+INTEGER              :: IGRID          ! IGRID : grid indicator
+INTEGER              :: ILENCH         ! ILENCH : length of comment string
+INTEGER              :: ILUOUT
 !
-INTEGER           :: ILUDES       ! .des file logical unit
+INTEGER              :: ILUDES       ! .des file logical unit
 !
-LOGICAL           :: GFOUND
-CHARACTER(LEN=4)  :: CTURB,CRAD,CGROUND,CCLOUD,CDCONV,CELEC
-CHARACTER(LEN=6)  :: CSEA_FLUX
-TYPE(TFIELDDATA)  :: TZFIELD
+LOGICAL              :: GFOUND
+CHARACTER(LEN=4)     :: CTURB,CRAD,CGROUND,CCLOUD,CDCONV,CELEC
+CHARACTER(LEN=6)     :: CSEA_FLUX
+TYPE(TFIELDMETADATA) :: TZFIELD
 !
 NAMELIST/NAM_PARAMn/CTURB,CRAD,CGROUND,CCLOUD,CDCONV,CSEA_FLUX, CELEC
 !----------------------------------------------------------------------------
@@ -1453,7 +1462,7 @@ END SUBROUTINE READ_SURFC0_MNH
 !*      0.    DECLARATIONS
 !             ------------
 !
-use modd_field,         only: tfielddata, TYPEINT, TYPELOG
+use modd_field,         only: tfieldmetadata, TYPEINT, TYPELOG
 USE MODD_IO_SURF_MNH,   ONLY: TOUT, TPINFILE, NMASK, &
                               NIU, NJU, NIB, NJB, NIE, NJE
 !
@@ -1479,12 +1488,12 @@ CHARACTER(LEN=1),       INTENT(IN)  :: HDIR     ! type of field :
 !
 !*      0.2   Declarations of local variables
 !
-INTEGER           :: IGRID          ! IGRID : grid indicator
-INTEGER           :: ILENCH         ! ILENCH : length of comment string
-INTEGER           :: ILUOUT
+INTEGER              :: IGRID          ! IGRID : grid indicator
+INTEGER              :: ILENCH         ! ILENCH : length of comment string
+INTEGER              :: ILUOUT
 LOGICAL, DIMENSION(:,:), ALLOCATABLE :: GWORK  ! work array read in the file
 INTEGER, DIMENSION(:,:), ALLOCATABLE :: IWORK  ! work array read in the file
-TYPE(TFIELDDATA)  :: TZFIELD
+TYPE(TFIELDMETADATA) :: TZFIELD
 !-------------------------------------------------------------------------------
 CALL PRINT_MSG(NVERB_DEBUG,'IO','READ_SURFL1_MNH',TRIM(TPINFILE%CNAME)//': reading '//TRIM(HREC))
 !
@@ -1569,7 +1578,7 @@ END SUBROUTINE READ_SURFL1_MNH
 !*      0.    DECLARATIONS
 !             ------------
 !
-use modd_field,         only: tfielddata, TYPELOG
+use modd_field,         only: tfieldmetadata, TYPELOG
 USE MODD_IO_SURF_MNH,   ONLY: TOUT, TPINFILE
 
 USE MODE_IO_FIELD_READ, only: IO_Field_read
@@ -1587,8 +1596,10 @@ CHARACTER(LEN=*),       INTENT(OUT) :: HCOMMENT ! comment
 !
 !*      0.2   Declarations of local variables
 !
+CHARACTER(LEN=4), PARAMETER :: YSUFFIX = '_SFX'
+
 INTEGER           :: ILUOUT
-TYPE(TFIELDDATA)  :: TZFIELD
+TYPE(TFIELDMETADATA)  :: TZFIELD
 !-------------------------------------------------------------------------------
 CALL PRINT_MSG(NVERB_DEBUG,'IO','READ_SURFL0_MNH',TRIM(TPINFILE%CNAME)//': reading '//TRIM(HREC))
 !
@@ -1610,8 +1621,23 @@ IF (HREC=='ECOCLIMAP') THEN
   END IF
 END IF
 !
-CALL PREPARE_METADATA_READ_SURF(HREC,'--',0,TYPELOG,0,'READ_SURFL0_MNH',TZFIELD)
-CALL IO_Field_read(TPINFILE,TZFIELD,OFIELD,KRESP)
+IF ( TPINFILE%NMNHVERSION(1) < 5 .OR. ( TPINFILE%NMNHVERSION(1) == 5 .AND. TPINFILE%NMNHVERSION(2) < 6 ) ) THEN
+  CALL PREPARE_METADATA_READ_SURF(HREC,'--',0,TYPELOG,0,'READ_SURFL0_MNH',TZFIELD)
+  CALL IO_Field_read(TPINFILE,TZFIELD,OFIELD,KRESP)
+ELSE
+  ! Add a suffix to logical variables coming from SURFEX
+  ! This is done because some variables can have the same name than MesoNH variables
+  ! This suffix has been added in MesoNH 5.6.0
+  CALL PREPARE_METADATA_READ_SURF(TRIM(HREC)//YSUFFIX,'--',0,TYPELOG,0,'READ_SURFL0_MNH',TZFIELD)
+  CALL IO_Field_read(TPINFILE,TZFIELD,OFIELD,KRESP)
+
+  IF ( KRESP /= 0 ) THEN
+    ! Retries without the suffix
+    ! Potentially useful if tpinfile was not written with MesoNH
+    CALL PREPARE_METADATA_READ_SURF(HREC,'--',0,TYPELOG,0,'READ_SURFL0_MNH',TZFIELD)
+    CALL IO_Field_read(TPINFILE,TZFIELD,OFIELD,KRESP)
+  END IF
+END IF
 HCOMMENT = TZFIELD%CCOMMENT
 !
 IF (KRESP /=0) THEN
@@ -1665,7 +1691,7 @@ END SUBROUTINE READ_SURFL0_MNH
 !*      0.    DECLARATIONS
 !             ------------
 !
-use modd_field,         only: tfielddata, TYPECHAR
+use modd_field,         only: tfieldmetadata, TYPECHAR
 USE MODD_IO_SURF_MNH,   ONLY: TOUT, TPINFILE
 USE MODD_TYPE_DATE
 
@@ -1693,9 +1719,9 @@ INTEGER           :: ILUOUT
 CHARACTER(LEN=MNH_LEN_HREC)        :: YRECFM     ! Name of the article to be written
 CHARACTER(LEN=40)              :: YFILETYPE40! MESONH file type
 CHARACTER(LEN=2)               :: YFILETYPE2 ! MESONH file type
-INTEGER, DIMENSION(3)  :: ITDATE
-TYPE(TFIELDDATA)       :: TZFIELD
-TYPE(DATE_TIME)        :: TZDATETIME
+INTEGER, DIMENSION(3)          :: ITDATE
+TYPE(TFIELDMETADATA)           :: TZFIELD
+TYPE(DATE_TIME)                :: TZDATETIME
 !-------------------------------------------------------------------------------
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','READ_SURFT0_MNH',TRIM(TPINFILE%CNAME)//': reading '//TRIM(HREC))
@@ -1706,16 +1732,17 @@ HCOMMENT = ''
 IF (TPINFILE%NMNHVERSION(1)<4 .OR. (TPINFILE%NMNHVERSION(1)==4 .AND. TPINFILE%NMNHVERSION(2)<6)) THEN
   CALL IO_Field_read(TPINFILE,'STORAGE_TYPE',YFILETYPE2)
 ELSE
-  TZFIELD%CMNHNAME   = 'STORAGETYPE'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'STORAGETYPE'
-  TZFIELD%CUNITS     = ''
-  TZFIELD%CDIR       = '--'
-  TZFIELD%CCOMMENT   = ''
-  TZFIELD%NGRID      = 0
-  TZFIELD%NTYPE      = TYPECHAR
-  TZFIELD%NDIMS      = 0
-  TZFIELD%LTIMEDEP   = .FALSE.
+  TZFIELD = TFIELDMETADATA(     &
+    CMNHNAME   = 'STORAGETYPE', &
+    CSTDNAME   = '',            &
+    CLONGNAME  = 'STORAGETYPE', &
+    CUNITS     = '',            &
+    CDIR       = '--',          &
+    CCOMMENT   = '',            &
+    NGRID      = 0,             &
+    NTYPE      = TYPECHAR,      &
+    NDIMS      = 0,             &
+    LTIMEDEP   = .FALSE.        )
   CALL IO_Field_read(TPINFILE,TZFIELD,YFILETYPE40)
   YFILETYPE2 = YFILETYPE40(1:2)
 END IF
@@ -1788,7 +1815,7 @@ END SUBROUTINE READ_SURFT0_MNH
 !*      0.    DECLARATIONS
 !             ------------
 !
-use modd_field,         only: tfielddata, TYPECHAR, TYPEINT, TYPEREAL
+use modd_field,         only: tfieldmetadata, TYPECHAR, TYPEINT, TYPEREAL
 USE MODD_IO_SURF_MNH,   ONLY: TOUT, TPINFILE
 
 USE MODE_IO_FIELD_READ, only: IO_Field_read
@@ -1817,8 +1844,8 @@ INTEGER           :: ILUOUT
 CHARACTER(LEN=MNH_LEN_HREC)        :: YRECFM     ! Name of the article to be written
 CHARACTER(LEN=40)              :: YFILETYPE40! MESONH file type
 CHARACTER(LEN=2)               :: YFILETYPE2 ! MESONH file type
-INTEGER, DIMENSION(3,KL1)  :: ITDATE
-TYPE(TFIELDDATA)       :: TZFIELD
+INTEGER, DIMENSION(3,KL1)      :: ITDATE
+TYPE(TFIELDMETADATA)           :: TZFIELD
 !-------------------------------------------------------------------------------
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','READ_SURFT1_MNH',TRIM(TPINFILE%CNAME)//': reading '//TRIM(HREC))
@@ -1829,16 +1856,17 @@ HCOMMENT = ''
 IF (TPINFILE%NMNHVERSION(1)<4 .OR. (TPINFILE%NMNHVERSION(1)==4 .AND. TPINFILE%NMNHVERSION(2)<6)) THEN
   CALL IO_Field_read(TPINFILE,'STORAGE_TYPE',YFILETYPE2)
 ELSE
-  TZFIELD%CMNHNAME   = 'STORAGETYPE'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'STORAGETYPE'
-  TZFIELD%CUNITS     = ''
-  TZFIELD%CDIR       = '--'
-  TZFIELD%CCOMMENT   = ''
-  TZFIELD%NGRID      = 0
-  TZFIELD%NTYPE      = TYPECHAR
-  TZFIELD%NDIMS      = 0
-  TZFIELD%LTIMEDEP   = .FALSE.
+  TZFIELD = TFIELDMETADATA(     &
+    CMNHNAME   = 'STORAGETYPE', &
+    CSTDNAME   = '',            &
+    CLONGNAME  = 'STORAGETYPE', &
+    CUNITS     = '',            &
+    CDIR       = '--',          &
+    CCOMMENT   = '',            &
+    NGRID      = 0,             &
+    NTYPE      = TYPECHAR,      &
+    NDIMS      = 0,             &
+    LTIMEDEP   = .FALSE.        )
   CALL IO_Field_read(TPINFILE,TZFIELD,YFILETYPE40)
   YFILETYPE2 = YFILETYPE40(1:2)
 END IF
@@ -1852,16 +1880,17 @@ END IF
 !  RETURN
 !END IF
 !
-TZFIELD%CMNHNAME   = TRIM(HREC)//'%TDATE'
-TZFIELD%CSTDNAME   = ''
-TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-TZFIELD%CUNITS     = ''
-TZFIELD%CDIR       = '--'
-TZFIELD%CCOMMENT   = ''
-TZFIELD%NGRID      = 0
-TZFIELD%NTYPE      = TYPEINT
-TZFIELD%NDIMS      = 2
-TZFIELD%LTIMEDEP   = .FALSE.
+TZFIELD = TFIELDMETADATA(            &
+  CMNHNAME   = TRIM(HREC)//'%TDATE', &
+  CSTDNAME   = '',                   &
+  CLONGNAME  = TRIM(HREC)//'%TDATE', &
+  CUNITS     = '',                   &
+  CDIR       = '--',                 &
+  CCOMMENT   = '',                   &
+  NGRID      = 0,                    &
+  NTYPE      = TYPEINT,              &
+  NDIMS      = 2,                    &
+  LTIMEDEP   = .FALSE.               )
 !
 CALL IO_Field_read(TPINFILE,TZFIELD,ITDATE(:,:),KRESP)
 !
@@ -1877,16 +1906,17 @@ IF (KRESP /=0) THEN
   WRITE(ILUOUT,*) ' '
 ENDIF
 !
-TZFIELD%CMNHNAME   = TRIM(HREC)//'%xtime'
-TZFIELD%CSTDNAME   = ''
-TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-TZFIELD%CUNITS     = ''
-TZFIELD%CDIR       = '--'
-TZFIELD%CCOMMENT   = ''
-TZFIELD%NGRID      = 0
-TZFIELD%NTYPE      = TYPEREAL
-TZFIELD%NDIMS      = 1
-TZFIELD%LTIMEDEP   = .FALSE.
+TZFIELD = TFIELDMETADATA(            &
+  CMNHNAME   = TRIM(HREC)//'%xtime', &
+  CSTDNAME   = '',                   &
+  CLONGNAME  = TRIM(HREC)//'%xtime', &
+  CUNITS     = '',                   &
+  CDIR       = '--',                 &
+  CCOMMENT   = '',                   &
+  NGRID      = 0,                    &
+  NTYPE      = TYPEREAL,             &
+  NDIMS      = 1,                    &
+  LTIMEDEP   = .FALSE.               )
 !
 CALL IO_Field_read(TPINFILE,TZFIELD,PTIME(:),KRESP)
 !

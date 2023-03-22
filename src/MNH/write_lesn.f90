@@ -7,7 +7,7 @@
 module mode_write_les_n
 !######################
 
-use modd_field, only: tfield_metadata_base
+use modd_field, only: tfieldmetadata_base
 
 implicit none
 
@@ -22,9 +22,9 @@ character(len=:), allocatable :: cgroupcomment
 logical :: ldoavg    ! Compute and store time average
 logical :: ldonorm   ! Compute and store normalized field
 
-type(tfield_metadata_base) :: tfield
-type(tfield_metadata_base) :: tfieldx
-type(tfield_metadata_base) :: tfieldy
+type(tfieldmetadata_base) :: tfield
+type(tfieldmetadata_base) :: tfieldx
+type(tfieldmetadata_base) :: tfieldy
 
 interface Les_diachro_write
   module procedure Les_diachro_write_1D, Les_diachro_write_2D, Les_diachro_write_3D, Les_diachro_write_4D
@@ -71,7 +71,7 @@ subroutine  Write_les_n( tpdiafile )
 !  P. Wautelet 12/10/2020: remove HLES_AVG dummy argument and group all 4 calls
 !  P. Wautelet 13/10/2020: bugfix: correct some names for LES_DIACHRO_2PT diagnostics (Ri)
 !  P. Wautelet 26/10/2020: bugfix: correct some comments and conditions + add missing RES_RTPZ
-!  P. Wautelet 26/10/2020: restructure subroutines to use tfield_metadata_base type
+!  P. Wautelet 26/10/2020: restructure subroutines to use tfieldmetadata_base type
 ! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -87,6 +87,7 @@ use modd_grid_n,     only: xdxhat, xdyhat
 use modd_nsv,        only: nsv
 use modd_les
 use modd_les_n
+use modd_param_n,    only: ccloud
 use modd_param_c2r2, only: ldepoc
 use modd_param_ice,  only: ldeposc
 use modd_parameters, only: XUNDEF
@@ -126,6 +127,7 @@ INTEGER                                 :: IMI ! Current model inde
 !
 IF (.NOT. LLES) RETURN
 !
+!
 !*      1.   Initializations
 !            ---------------
 !
@@ -136,13 +138,13 @@ IMI = GET_CURRENT_MODEL_INDEX()
 !            -----------------------
 !
 IF (CLES_NORM_TYPE/='NONE' ) THEN
-  ALLOCATE(XLES_NORM_M  (NLES_TIMES))
-  ALLOCATE(XLES_NORM_S  (NLES_TIMES))
-  ALLOCATE(XLES_NORM_K  (NLES_TIMES))
-  ALLOCATE(XLES_NORM_RHO(NLES_TIMES))
-  ALLOCATE(XLES_NORM_RV (NLES_TIMES))
-  ALLOCATE(XLES_NORM_SV (NLES_TIMES,NSV))
-  ALLOCATE(XLES_NORM_P  (NLES_TIMES))
+  CALL LES_ALLOCATE('XLES_NORM_M',  (/NLES_TIMES/))
+  CALL LES_ALLOCATE('XLES_NORM_S',  (/NLES_TIMES/))
+  CALL LES_ALLOCATE('XLES_NORM_K',  (/NLES_TIMES/))
+  CALL LES_ALLOCATE('XLES_NORM_RHO',(/NLES_TIMES/))
+  CALL LES_ALLOCATE('XLES_NORM_RV', (/NLES_TIMES/))
+  CALL LES_ALLOCATE('XLES_NORM_SV', (/NLES_TIMES,NSV/))
+  CALL LES_ALLOCATE('XLES_NORM_P',  (/NLES_TIMES/))
   !
   IF (CLES_NORM_TYPE=='CONV') THEN
     WHERE (XLES_WSTAR(:)>0.)
@@ -220,7 +222,8 @@ END IF
 !
 NLES_CURRENT_TIMES=NLES_TIMES
 !
-ALLOCATE(XLES_CURRENT_Z(NLES_K))
+CALL LES_ALLOCATE('XLES_CURRENT_Z',(/NLES_K/))
+
 XLES_CURRENT_Z(:) = XLES_Z(:)
 !
 XLES_CURRENT_ZS = XLES_ZS
@@ -355,6 +358,8 @@ if ( luserr ) &
 call Les_diachro_write( tpdiafile, XLES_MEAN_RF,     'MEAN_RF',     'Mean RF Profile',              '1',       ymasks )
 if ( luseri ) &
 call Les_diachro_write( tpdiafile, XLES_MEAN_Ri,     'MEAN_RI',     'Mean Ri Profile',              'kg kg-1', ymasks )
+if ( luseri ) &
+call Les_diachro_write( tpdiafile, XLES_MEAN_If,     'MEAN_IF',     'Mean If Profile',              '1',       ymasks )
 if ( lusers ) &
 call Les_diachro_write( tpdiafile, XLES_MEAN_Rs,     'MEAN_RS',     'Mean Rs Profile',              'kg kg-1', ymasks )
 if ( luserg ) &
@@ -1172,16 +1177,16 @@ call Les_spec_n( tpdiafile )
 !*      7.   deallocations
 !            -------------
 !
-DEALLOCATE( XLES_CURRENT_Z )
+CALL LES_DEALLOCATE('XLES_CURRENT_Z')
 
 IF (CLES_NORM_TYPE/='NONE' ) THEN
-  DEALLOCATE(XLES_NORM_M  )
-  DEALLOCATE(XLES_NORM_S  )
-  DEALLOCATE(XLES_NORM_K  )
-  DEALLOCATE(XLES_NORM_RHO)
-  DEALLOCATE(XLES_NORM_RV )
-  DEALLOCATE(XLES_NORM_SV )
-  DEALLOCATE(XLES_NORM_P  )
+  CALL LES_DEALLOCATE('XLES_NORM_M')
+  CALL LES_DEALLOCATE('XLES_NORM_S')
+  CALL LES_DEALLOCATE('XLES_NORM_K')
+  CALL LES_DEALLOCATE('XLES_NORM_RHO')
+  CALL LES_DEALLOCATE('XLES_NORM_RV')
+  CALL LES_DEALLOCATE('XLES_NORM_SV')
+  CALL LES_DEALLOCATE('XLES_NORM_P')
 END IF
 
 end subroutine Write_les_n

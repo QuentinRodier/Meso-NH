@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -274,7 +274,7 @@ ILU=SIZE(PZMASS_LS,3)
 !*       1.1   Grid definition
 !              ---------------
 !
-IF (MINVAL(PZMASS_LS (:,:,ILU))<0.5*(XZHAT(IKE)+XZHAT(IKE+1))) THEN
+IF (MINVAL(PZMASS_LS (:,:,ILU))<XZHATM(IKE)) THEN
   WRITE(ILUOUT0,*)
   WRITE(ILUOUT0,*) '+-----------------------------------------------------+'
   WRITE(ILUOUT0,*) '| MESONH highest mass level above highest input level |'

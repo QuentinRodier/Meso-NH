@@ -172,6 +172,7 @@ LDFLAGS    =   -Wl,--allow-multiple-definition -Wl,-warn-once $(PAR) -Wl,-rpath=
 #
 CPP = cpp -P -traditional -Wcomment
 #
+CPPFLAGS_C         = -DLITTLE_endian
 CPPFLAGS_SURFEX    =
 CPPFLAGS_SURCOUCHE += -DDEV_NULL
 CPPFLAGS_RAD       =
@@ -240,7 +241,8 @@ include Makefile.MESONH.mk
 # Juan & Maud 20/03/2008 --> Ifort 10.1.008 Bug O2 optimization
 ifneq "$(OPTLEVEL)" "DEBUG"
 OPT_PERF1  =  -O1 
-OBJS_O1= spll_mode_snow3l.o spll_schu.o spll_ps2str.o spll_p_abs.o spll_ini_one_way_n.o spll_urban_solar_abs.o spll_aeroopt_get.o spll_ch_get_rates.o
+OBJS_O1= spll_mode_snow3l.o spll_schu.o spll_ps2str.o spll_p_abs.o spll_ini_one_way_n.o spll_urban_solar_abs.o spll_aeroopt_get.o spll_ch_get_rates.o \
+         spll_ini_aeroset1.o spll_ini_aeroset2.o spll_ini_aeroset3.o spll_ini_aeroset4.o spll_ini_aeroset5.o spll_ini_aeroset6.o
 $(OBJS_O1) : OPT = $(OPT_BASE) $(OPT_PERF1)
 endif
 

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2009-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2009-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -20,12 +20,12 @@ CHARACTER (LEN=4), INTENT(IN) :: HCLOUD   ! microphysics scheme
 TYPE(TFILEDATA),   INTENT(IN) :: TPINIFILE! Initial file
 REAL,              INTENT(IN) :: PTSTEP   ! Time STEP
 !
-REAL, DIMENSION(:,:,:), INTENT(IN) :: PZZ     ! height z
-REAL, DIMENSION(:,:,:), INTENT(IN) :: PDXX    ! metric coefficient dxx
-REAL, DIMENSION(:,:,:), INTENT(IN) :: PDYY    ! metric coefficient dyy
-REAL, DIMENSION(:,:,:), INTENT(IN) :: PDZZ    ! metric coefficient dzz
-REAL, DIMENSION(:,:,:), INTENT(IN) :: PDZX    ! metric coefficient dzx
-REAL, DIMENSION(:,:,:), INTENT(IN) :: PDZY    ! metric coefficient dzy
+REAL, DIMENSION(:,:,:), INTENT(IN)    :: PZZ     ! height z
+REAL, DIMENSION(:,:,:), INTENT(IN)    :: PDXX    ! metric coefficient dxx
+REAL, DIMENSION(:,:,:), INTENT(IN)    :: PDYY    ! metric coefficient dyy
+REAL, DIMENSION(:,:,:), INTENT(IN)    :: PDZZ    ! metric coefficient dzz
+REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PDZX    ! metric coefficient dzx
+REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PDZY    ! metric coefficient dzy
 !
 END SUBROUTINE INI_ELEC_n
 END INTERFACE
@@ -130,12 +130,12 @@ CHARACTER (LEN=4), INTENT(IN) :: HCLOUD   ! microphysics scheme
 TYPE(TFILEDATA),   INTENT(IN) :: TPINIFILE! Initial file
 REAL,              INTENT(IN) :: PTSTEP   ! Time STEP
 !
-REAL, DIMENSION(:,:,:), INTENT(IN) :: PZZ     ! height z
-REAL, DIMENSION(:,:,:), INTENT(IN) :: PDXX    ! metric coefficient dxx
-REAL, DIMENSION(:,:,:), INTENT(IN) :: PDYY    ! metric coefficient dyy
-REAL, DIMENSION(:,:,:), INTENT(IN) :: PDZZ    ! metric coefficient dzz
-REAL, DIMENSION(:,:,:), INTENT(IN) :: PDZX    ! metric coefficient dzx
-REAL, DIMENSION(:,:,:), INTENT(IN) :: PDZY    ! metric coefficient dzy
+REAL, DIMENSION(:,:,:), INTENT(IN)    :: PZZ     ! height z
+REAL, DIMENSION(:,:,:), INTENT(IN)    :: PDXX    ! metric coefficient dxx
+REAL, DIMENSION(:,:,:), INTENT(IN)    :: PDYY    ! metric coefficient dyy
+REAL, DIMENSION(:,:,:), INTENT(IN)    :: PDZZ    ! metric coefficient dzz
+REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PDZX    ! metric coefficient dzx
+REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PDZY    ! metric coefficient dzy
 !
 !*       0.2   declarations of local variables
 !

@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !     ######################
       MODULE MODI_CH_CONVECT_SCAVENGING
 !     ######################
@@ -340,7 +341,7 @@ ENDDO
 !
 GCHFIRSTCALL = .FALSE.
 !
-!               Convert KH from mol/l/atm in ppp/ppp
+!               Convert KH from mol/l/atm in ppv/ppv
 !               ------------------------------------
 DO JKAQ = NSV_CHEMBEG, NSV_CHEMEND
  ZKHC(:,:,JKAQ) = ZKH(:,:,JKAQ)*0.08205*ZT(:,:)*ZLWCC(:,:)
@@ -368,7 +369,7 @@ DO JKAQ = NSV_CHEMBEG, NSV_CHEMEND
 ENDDO
 !
 !
-!          Convert KHI from cm3(air)/cm3(ice) in ppp/ppp
+!          Convert KHI from cm3(air)/cm3(ice) in ppv/ppv
 !          ---------------------------------------------    
 DO JKAQ = NSV_CHEMBEG, NSV_CHEMEND
  IF (CNAMES(JKAQ-NSV_CHEMBEG+1)=='HNO3') THEN 
@@ -625,15 +626,17 @@ IF (LORILAM) THEN ! ORILAM chemical aerosol scavenging
   ZSIGAER(:,:,:,2) = XINISIGJ
   ZRGAER(:,:,:,1) = ZINIRADIUSI
   ZRGAER(:,:,:,2) = ZINIRADIUSJ      
+  ZNAER(:,:,:,1) = XN0IMIN
+  ZNAER(:,:,:,2) = XN0IMIN
 
   ! Compute RG and SIGMA with old concentration PCH1
   CALL PPP2AERO(ZSV(:,:,IKB:IKE,NSV_AERBEG:NSV_AEREND),&
               ZRHODREF(:,:,IKB:IKE), PSIG3D=ZSIGAER(:,:,IKB:IKE,:),&
               PRG3D=ZRGAER(:,:,IKB:IKE,:),PN3D=ZNAER(:,:,IKB:IKE,:))
 
-  CALL AERO2PPP(ZSVC(:,:,:,NSV_AERBEG:NSV_AEREND), &
-              ZRHODREF(:,:,:), ZSIGAER(:,:,:,:),&
-              ZRGAER(:,:,:,:))
+  CALL AERO2PPP(ZSVC(:,:,IKB:IKE,NSV_AERBEG:NSV_AEREND), &
+              ZRHODREF(:,:,IKB:IKE), ZSIGAER(:,:,IKB:IKE,:),&
+              ZRGAER(:,:,IKB:IKE,:))
 
   PCH1C(:,:,NSV_AERBEG:NSV_AEREND) = ZSVC(:,1,:,NSV_AERBEG:NSV_AEREND)
 

@@ -507,6 +507,7 @@ REAL, POINTER, DIMENSION(:)   :: XSNOWFREE_ALB_SOIL! snow free albedo for soil
 REAL, POINTER, DIMENSION(:) :: XVEG          ! vegetation cover fraction               (-)
 !
 REAL, POINTER, DIMENSION(:) :: XLAI          ! Leaf Area Index                         (m2/m2)
+REAL, POINTER, DIMENSION(:) :: XLAIp          ! Leaf Area Index previous                         (m2/m2)
 !
 REAL, POINTER, DIMENSION(:) :: XEMIS         ! surface emissivity                      (-)
 REAL, POINTER, DIMENSION(:) :: XZ0           ! surface roughness length                (m)
@@ -807,7 +808,8 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 IF (LHOOK) CALL DR_HOOK("MODD_ISBA_N:ISBA_PE_INIT",0,ZHOOK_HANDLE)
 !
-NULLIFY(YISBA_PE%XLAI)  
+NULLIFY(YISBA_PE%XLAI)
+NULLIFY(YISBA_PE%XLAIp)
 NULLIFY(YISBA_PE%XVEG)
 NULLIFY(YISBA_PE%XEMIS)
 NULLIFY(YISBA_PE%XZ0)

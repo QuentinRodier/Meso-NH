@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -16,12 +16,12 @@ IMPLICIT NONE
 CHARACTER (LEN=4), DIMENSION(2), INTENT(IN) :: HLBCX    ! x-direction LBC type 
 CHARACTER (LEN=4), DIMENSION(2), INTENT(IN) :: HLBCY    ! y-direction LBC type
 ! 
-                                                 ! Metric coefficients:       
-REAL, DIMENSION(:,:,:), INTENT(IN)  :: PDXX      ! d*xx 
-REAL, DIMENSION(:,:,:), INTENT(IN)  :: PDYY      ! d*yy 
-REAL, DIMENSION(:,:,:), INTENT(IN)  :: PDZX      ! d*zx 
-REAL, DIMENSION(:,:,:), INTENT(IN)  :: PDZY      ! d*zy 
-REAL, DIMENSION(:,:,:), INTENT(IN)  :: PDZZ      ! d*zz
+                                                   ! Metric coefficients:       
+REAL, DIMENSION(:,:,:), INTENT(IN)    :: PDXX      ! d*xx 
+REAL, DIMENSION(:,:,:), INTENT(IN)    :: PDYY      ! d*yy 
+REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PDZX      ! d*zx 
+REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PDZY      ! d*zy 
+REAL, DIMENSION(:,:,:), INTENT(IN)    :: PDZZ      ! d*zz
 !
                                                  ! Field components
 REAL, DIMENSION(:,:,:), INTENT(INOUT)  :: PU        ! along x             
@@ -113,12 +113,12 @@ IMPLICIT NONE
 CHARACTER (LEN=4), DIMENSION(2), INTENT(IN) :: HLBCX    ! x-direction LBC type 
 CHARACTER (LEN=4), DIMENSION(2), INTENT(IN) :: HLBCY    ! y-direction LBC type
 ! 
-                                                 ! Metric coefficients:       
-REAL, DIMENSION(:,:,:), INTENT(IN)  :: PDXX      ! d*xx 
-REAL, DIMENSION(:,:,:), INTENT(IN)  :: PDYY      ! d*yy 
-REAL, DIMENSION(:,:,:), INTENT(IN)  :: PDZX      ! d*zx 
-REAL, DIMENSION(:,:,:), INTENT(IN)  :: PDZY      ! d*zy 
-REAL, DIMENSION(:,:,:), INTENT(IN)  :: PDZZ      ! d*zz
+                                                   ! Metric coefficients:       
+REAL, DIMENSION(:,:,:), INTENT(IN)    :: PDXX      ! d*xx 
+REAL, DIMENSION(:,:,:), INTENT(IN)    :: PDYY      ! d*yy 
+REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PDZX      ! d*zx 
+REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PDZY      ! d*zy 
+REAL, DIMENSION(:,:,:), INTENT(IN)    :: PDZZ      ! d*zz
 !
                                                  ! Field components
 REAL, DIMENSION(:,:,:), INTENT(INOUT)  :: PU        ! along x             

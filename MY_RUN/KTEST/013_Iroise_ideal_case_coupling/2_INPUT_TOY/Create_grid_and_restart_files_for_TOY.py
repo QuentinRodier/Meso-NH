@@ -26,8 +26,8 @@ curdir_path=os.path.abspath(os.curdir)+'/'
 #$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 #
 #-- Limit of the grid (from etopo)
-lat_domain=[ 46.681,  50.092]
-lon_domain=[-6.6348, -1.3652]
+lat_domain=[47.0, 49.5]
+lon_domain=[-6.2, -4.0]
 print ('londomaine[0]',lon_domain[0])
 print ('londomaine[1]',lon_domain[1])
 

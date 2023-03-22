@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -329,6 +329,7 @@
 !
 USE MODD_PARAMETERS       ! Declarative modules
 USE MODD_ARGSLIST_ll, ONLY : LIST_ll
+USE MODD_BUDGET,           ONLY: TBUCONF_ASSOCIATE
 USE MODD_DIM_n
 USE MODD_CONF
 USE MODD_CST
@@ -337,10 +338,12 @@ USE MODD_GRID_n
 USE MODD_IBM_LSF,     ONLY: CIBM_TYPE, LIBM_LSF, NIBM_SMOOTH, XIBM_SMOOTH
 USE MODD_IBM_PARAM_n, ONLY: XIBM_LS
 USE MODD_METRICS_n
+USE MODD_LES, ONLY : LES_ASSOCIATE
 USE MODD_PGDDIM
 USE MODD_PGDGRID
 USE MODD_TIME
 USE MODD_TIME_n
+USE MODD_PARAM_ICE, ONLY: PARAM_ICE_ASSOCIATE
 USE MODD_REF
 USE MODD_REF_n
 USE MODD_LUNIT
@@ -379,6 +382,7 @@ USE MODE_ll
 USE MODE_MODELN_HANDLER
 use mode_field,            only: Alloc_field_scalars, Ini_field_list, Ini_field_scalars
 USE MODE_MSG
+USE MODE_SET_GRID,         only: INTERP_HORGRID_TO_MASSPOINTS, STORE_GLOB_HORGRID
 !
 USE MODI_DEFAULT_DESFM_n    ! Interface modules
 USE MODI_DEFAULT_EXPRE
@@ -409,6 +413,9 @@ USE MODI_PGD_SURF_ATM
 USE MODI_ICE_ADJUST_BIS
 USE MODI_WRITE_PGD_SURF_ATM_n
 USE MODI_PREP_SURF_MNH
+USE MODI_INIT_SALT
+USE MODI_AER2LIMA
+USE MODD_PARAM_LIMA
 !
 !JUAN
 USE MODE_SPLITTINGZ_ll
@@ -416,7 +423,6 @@ USE MODD_SUB_MODEL_n
 USE MODE_MNH_TIMING
 USE MODN_CONFZ
 !JUAN
-USE MODI_TH_R_FROM_THL_RT_3D
 !
 USE MODI_VERSION
 USE MODI_INIT_PGD_SURF_ATM
@@ -431,6 +437,7 @@ USE MODI_SET_RELFRC
 !
 USE MODI_INI_CST
 USE MODI_INI_NEB
+USE MODD_NEB, ONLY: NEB
 USE MODI_WRITE_HGRID
 USE MODD_MPIF
 USE MODD_VAR_ll
@@ -551,11 +558,11 @@ INTEGER :: IISIZEX4,IJSIZEX4,IISIZEX2,IJSIZEX2       ! West-east LB arrays
 INTEGER :: IISIZEYF,IJSIZEYF,IISIZEYFV,IJSIZEYFV     ! dimensions of the
 INTEGER :: IISIZEY4,IJSIZEY4,IISIZEY2,IJSIZEY2       ! North-south LB arrays
 INTEGER :: IBEG,IEND,IXOR,IXDIM,IYOR,IYDIM,ILBX,ILBY
-REAL, DIMENSION(:),   ALLOCATABLE :: ZXHAT_ll, ZYHAT_ll
 !
 REAL, DIMENSION(:,:,:), ALLOCATABLE ::ZTHL,ZT,ZRT,ZFRAC_ICE,&
                                       ZEXN,ZLVOCPEXN,ZLSOCPEXN,ZCPH, &
                                       ZRSATW, ZRSATI
+REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: ZBUF
                                  ! variables for adjustement
 REAL                :: ZDIST
 !
@@ -649,7 +656,9 @@ CALL INI_NEB
 !*       2.1  For variables in DESFM file
 !
 CALL ALLOC_FIELD_SCALARS()
-!
+CALL PARAM_ICE_ASSOCIATE()
+CALL TBUCONF_ASSOCIATE()
+CALL LES_ASSOCIATE()
 CALL DEFAULT_DESFM_n(1)
 !
 CSURF = "NONE"
@@ -712,9 +721,11 @@ IF (GFOUND) READ(UNIT=NLUPRE,NML=NAM_AERO_PRE)
 CALL POSNAM(NLUPRE,'NAM_IBM_LSF' ,GFOUND,NLUOUT)
 IF (GFOUND) READ(UNIT=NLUPRE,NML=NAM_IBM_LSF )
 !
-CALL INI_FIELD_LIST(1)
+CALL INI_FIELD_LIST()
 !
 CALL INI_FIELD_SCALARS()
+! Sea salt
+CALL INIT_SALT
 !
 IF( LEN_TRIM(CPGD_FILE) /= 0 ) THEN 
   ! open the PGD_FILE
@@ -1239,7 +1250,8 @@ ELSE
 ! the MESONH horizontal grid is built from the PRE_IDEA1.nam informations
 !------------------------------------------------------------------------
 !
-  ALLOCATE(XXHAT(NIU),XYHAT(NJU))
+  ALLOCATE( XXHAT(NIU),  XYHAT(NJU)  )
+  ALLOCATE( XXHATM(NIU), XYHATM(NJU) )
 !
 ! define the grid localization at the earth surface by the central point
 ! coordinates
@@ -1252,14 +1264,10 @@ ELSE
 ! conformal coordinates (0,0). This is to allow the centering of the model in
 ! a non-cyclic  configuration regarding to XLATCEN or XLONCEN.
 !
-      ALLOCATE(ZXHAT_ll(NIMAX_ll+2*JPHEXT),ZYHAT_ll(NJMAX_ll+2*JPHEXT))
-      ZXHAT_ll=0.
-      ZYHAT_ll=0.
       CALL SM_LATLON(XLATCEN,XLONCEN,                     &
                        -XDELTAX*(NIMAX_ll/2-0.5+JPHEXT),  &
                        -XDELTAY*(NJMAX_ll/2-0.5+JPHEXT),  &
                        XLATORI,XLONORI)
-        DEALLOCATE(ZXHAT_ll,ZYHAT_ll)
 !
       WRITE(NLUOUT,FMT=*) 'PREP_IDEAL_CASE : XLATORI=' , XLATORI, &
                           ' XLONORI= ', XLONORI
@@ -1283,6 +1291,13 @@ ELSE
     XXHAT(:) = (/ (REAL(JLOOP-NIB)*XDELTAX, JLOOP=1,NIU) /)
     XYHAT(:) = (/ (REAL(JLOOP-NJB)*XDELTAY, JLOOP=1,NJU) /)
   END IF
+
+  ! Interpolations of positions to mass points
+  CALL INTERP_HORGRID_TO_MASSPOINTS( XXHAT, XYHAT, XXHATM, XYHATM )
+
+  ! Collect global domain boundaries
+  CALL STORE_GLOB_HORGRID( XXHAT, XYHAT, XXHATM, XYHATM, XXHAT_ll, XYHAT_ll, XXHATM_ll, XYHATM_ll, XHAT_BOUND, XHATM_BOUND )
+
 END IF
 !
 !*       5.1.2  Orography and Gal-Chen Sommerville transformation :
@@ -1425,8 +1440,9 @@ IF (LCARTESIAN) THEN
   CALL SM_GRIDCART(XXHAT,XYHAT,XZHAT,XZS,LSLEVE,XLEN1,XLEN2,XZSMT,XDXHAT,XDYHAT,XZZ,XJ)
   XMAP=1.
 ELSE
-  CALL SM_GRIDPROJ(XXHAT,XYHAT,XZHAT,XZS,LSLEVE,XLEN1,XLEN2,XZSMT,XLATORI,XLONORI, &
-                   XMAP,XLAT,XLON,XDXHAT,XDYHAT,XZZ,XJ)
+  CALL SM_GRIDPROJ( XXHAT, XYHAT, XZHAT, XXHATM, XYHATM, XZS,      &
+                    LSLEVE, XLEN1, XLEN2, XZSMT, XLATORI, XLONORI, &
+                    XMAP, XLAT, XLON, XDXHAT, XDYHAT, XZZ, XJ      )
 END IF
 !*       5.4.1  metrics coefficients and update halos:
 !
@@ -1449,12 +1465,9 @@ IF (CTYPELOC =='LATLON' ) THEN
   END IF 
 END IF  
 !
-ALLOCATE(ZXHAT_ll(NIMAX_ll+ 2 * JPHEXT),ZYHAT_ll(NJMAX_ll+2 * JPHEXT))
-CALL GATHERALL_FIELD_ll('XX',XXHAT,ZXHAT_ll,NRESP) !//
-CALL GATHERALL_FIELD_ll('YY',XYHAT,ZYHAT_ll,NRESP) !//
 IF (CTYPELOC /= 'IJGRID') THEN                                               
-  NILOC = MINLOC(ABS(XXHATLOC-ZXHAT_ll(:)))
-  NJLOC = MINLOC(ABS(XYHATLOC-ZYHAT_ll(:)))
+  NILOC = MINLOC(ABS(XXHATLOC-XXHAT_ll(:)))
+  NJLOC = MINLOC(ABS(XYHATLOC-XYHAT_ll(:)))
 END IF
 !
 IF ( L1D .AND. ( NILOC(1) /= 1 .OR. NJLOC(1) /= 1 ) ) THEN
@@ -1480,7 +1493,7 @@ IF (CIDEAL == 'RSOU') THEN
   WRITE(NLUOUT,FMT=*) 'CIDEAL="RSOU", attempt to read DATE'
   CALL POSKEY(NLUPRE,NLUOUT,'RSOU')
   READ(NLUPRE,FMT=*)  NYEAR,NMONTH,NDAY,XTIME
-  TDTCUR = DATE_TIME(DATE(NYEAR,NMONTH,NDAY),XTIME)
+  TDTCUR = DATE_TIME(NYEAR,NMONTH,NDAY,XTIME)
   TDTEXP = TDTCUR
   TDTSEG = TDTCUR
   TDTMOD = TDTCUR
@@ -1499,7 +1512,7 @@ ELSE IF (CIDEAL == 'CSTN') THEN
   WRITE(NLUOUT,FMT=*) 'CIDEAL="CSTN", attempt to read DATE'
   CALL POSKEY(NLUPRE,NLUOUT,'CSTN')
   READ(NLUPRE,FMT=*)  NYEAR,NMONTH,NDAY,XTIME
-  TDTCUR = DATE_TIME(DATE(NYEAR,NMONTH,NDAY),XTIME)
+  TDTCUR = DATE_TIME(NYEAR,NMONTH,NDAY,XTIME)
   TDTEXP = TDTCUR
   TDTSEG = TDTCUR
   TDTMOD = TDTCUR
@@ -1550,10 +1563,10 @@ CALL UPDATE_METRICS(CLBCX,CLBCY,XDXX,XDYY,XDZX,XDZY,XDZZ)
 !
 !*       5.4.2  3D reference state :
 !
-CALL SET_REF(0,TFILE_DUMMY,                        &
-             XZZ,XZHAT,XJ,XDXX,XDYY,CLBCX,CLBCY,   &
-             XREFMASS,XMASS_O_PHI0,XLINMASS,       &
-             XRHODREF,XTHVREF,XRVREF,XEXNREF,XRHODJ)
+CALL SET_REF( 0, TFILE_DUMMY,                            &
+              XZZ, XZHATM, XJ, XDXX, XDYY, CLBCX, CLBCY, &
+              XREFMASS, XMASS_O_PHI0, XLINMASS,          &
+              XRHODREF, XTHVREF, XRVREF, XEXNREF, XRHODJ )
 !
 !
 !*       5.5.1  Absolute pressure :
@@ -1667,6 +1680,7 @@ IF (CIDEAL == 'RSOU') THEN
   ALLOCATE(ZFRAC_ICE(NIU,NJU,NKU))
   ALLOCATE(ZRSATW(NIU,NJU,NKU))
   ALLOCATE(ZRSATI(NIU,NJU,NKU))             
+  ALLOCATE(ZBUF(NIU,NJU,NKU,16))
   ZRT=XRT(:,:,:,1)+XRT(:,:,:,2)+XRT(:,:,:,4)
 IF (LOCEAN) THEN
   ZEXN(:,:,:)= 1.
@@ -1682,8 +1696,9 @@ ELSE
   ZLVOCPEXN = (XLVTT + (XCPV-XCL) * (ZT-XTT))/(ZCPH*ZEXN)
   ZLSOCPEXN = (XLSTT + (XCPV-XCI) * (ZT-XTT))/(ZCPH*ZEXN)
   ZTHL=XTHT-ZLVOCPEXN*XRT(:,:,:,2)-ZLSOCPEXN*XRT(:,:,:,4)
-  CALL TH_R_FROM_THL_RT_3D('T',ZFRAC_ICE,XPABST,ZTHL,ZRT,XTHT,XRT(:,:,:,1), &
-                            XRT(:,:,:,2),XRT(:,:,:,4),ZRSATW, ZRSATI)
+  CALL TH_R_FROM_THL_RT(CST, NEB, SIZE(ZFRAC_ICE), 'T',ZFRAC_ICE,XPABST,ZTHL,ZRT,XTHT,XRT(:,:,:,1), &
+                        XRT(:,:,:,2),XRT(:,:,:,4),ZRSATW, ZRSATI,OOCEAN=.FALSE.,&
+                        PBUF=ZBUF)
 END IF
   DEALLOCATE(ZEXN)         
   DEALLOCATE(ZT)       
@@ -1692,6 +1707,7 @@ END IF
   DEALLOCATE(ZLSOCPEXN)
   DEALLOCATE(ZTHL) 
   DEALLOCATE(ZRT)
+  DEALLOCATE(ZBUF)
 ! Coherence test
   IF ((.NOT. LUSERI) ) THEN
     IF (MAXVAL(XRT(:,:,:,4))/= 0) THEN
@@ -1730,6 +1746,9 @@ CALL IO_File_close(TZEXPREFILE)  ! Close the EXPRE file
 !
 IF ( LCH_INIT_FIELD ) CALL CH_INIT_FIELD_n(1, NLUOUT, NVERB)
 !
+! Initialization LIMA variables by ORILAM 
+IF (CCLOUD == 'LIMA' .AND. ((LORILAM).OR.(LDUST).OR.(LSALT))) &
+    CALL AER2LIMA(XSVT, XRHODREF, XRT(:,:,:,1), XPABST, XTHT, XZZ)
 !-------------------------------------------------------------------------------
 !
 !*  	 7.    INITIALIZE LEVELSET FOR IBM
@@ -1930,4 +1949,8 @@ WRITE(NLUOUT,FMT=*) '****************************************************'
 !
 CALL FINALIZE_MNH()
 !
+!
+CONTAINS
+INCLUDE "th_r_from_thl_rt.func.h"
+INCLUDE "compute_frac_ice.func.h"
 END PROGRAM PREP_IDEAL_CASE

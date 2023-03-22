@@ -5,7 +5,7 @@
 #MSUB -o Examples.eo%j   #
 #MSUB -e Examples.eo%j   #
 #MSUB -T 3600        # time limit
-#MSUB -I             # do not propaget variable from interactif
+##MSUB -I             # do not propaget variable from interactif, /!\ problem with module load if activate
 #MSUB -m work,scratch,store # use this files system
 #MSUB -x #  exclusive usage of nodes
 #MSUB -X # enable X forwarding -> force 'ccc_msub -i ' to get it work
@@ -21,7 +21,7 @@ set +x
 # Nom de la machine
 hostname 
 
-. ../conf/profile_mesonh-LXifort-R8I4-MNH-V5-5-1-MPIAUTO-O2
+. ../conf/profile_mesonh-LXifort-R8I4-MNH-V5-6-0-MPIAUTO-O2
 
 set -x
 

@@ -1,4 +1,4 @@
-#MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
+#MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
 #MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 #MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 #MNH_LIC for details. version 1.
@@ -16,14 +16,7 @@ dependance_flist = $(notdir $(shell find $(1) -follow -type f \
 obj_flist        = $(notdir $(shell find $(1) -follow -type f \
                -name 'spll_*.f*' | sed -e 's/\(.*\)\(\.\).*/\1.o/g' )) 
 #
-##########################################################
-#                                                        #
-# COMPILER & ARCHITECTURE CONFIGURATION                  #
-#                                                        #
-##########################################################
-#
-include Rules.$(ARCH)$(F).mk
-#
+
 ##########################################################
 ##########################################################
 ##########################################################
@@ -69,6 +62,30 @@ include Rules.$(ARCH)$(F).mk
 
 ##########################################################
 #                                                        #
+# DEP_USER : Automatique -->                             #
+#    Dependance file of MY source                        #
+#                                                        #
+##########################################################
+#
+ifdef VER_USER
+OBJDIR_USER=$(OBJDIR_ROOT)/$(VER_USER)
+#
+#  init VPATH depending on compilation phase
+#
+ifdef DO_DEP_USER
+DEP_USER= $(call dependance_flist,$(DIR_USER))
+VPATH += $(shell find $(DIR_USER) -follow -type d )
+VPATH += $(OBJDIR_USER)
+endif
+#
+ifdef DO_COMP_USER
+VPATH += $(VER_USER) $(OBJDIR_USER) $(OBJDIR_USER)/MOD $(OBJDIR_MASTER) $(OBJDIR_MASTER)/MOD
+INC += -I$(B)$(VER_USER) -I$(B)$(OBJDIR_USER)/MOD -I$(B)$(OBJDIR_MASTER)/MOD
+endif
+#
+endif
+##########################################################
+#                                                        #
 # DEP_MASTER : Automatique -->                           #
 #    Dependance file of MASTER source                    #
 #                                                        #
@@ -91,28 +108,12 @@ endif
 #
 ##########################################################
 #                                                        #
-# DEP_USER : Automatique -->                             #
-#    Dependance file of MY source                        #
+# COMPILER & ARCHITECTURE CONFIGURATION                  #
 #                                                        #
 ##########################################################
 #
-ifdef VER_USER
-OBJDIR_USER=$(OBJDIR_ROOT)/$(VER_USER)
+include Rules.$(ARCH)$(F).mk
 #
-#  init VPATH depending on compilation phase
-#
-ifdef DO_DEP_USER
-DEP_USER= $(call dependance_flist,$(DIR_USER))
-VPATH += $(shell find $(DIR_USER) -follow -type d )
-VPATH += $(OBJDIR_USER)
-endif
-#
-ifdef DO_COMP_USER
-VPATH += $(OBJDIR_USER) $(OBJDIR_USER)/MOD $(OBJDIR_MASTER) $(OBJDIR_MASTER)/MOD
-INC += -I$(B)$(OBJDIR_USER)/MOD -I$(B)$(OBJDIR_MASTER)/MOD
-endif
-#
-endif
 ##########################################################
 #                                                        #
 # VPATH ADJUSTEMENT :                                    #
@@ -318,13 +319,16 @@ gribapi_clean :
 #                                                        #
 ##########################################################
 eccodes_lib : $(ECCODES_MOD)
+ifeq "$(VER_CDF)" "CDFAUTO"
+$(ECCODES_MOD) : $(CDF_MOD)
+endif
 $(ECCODES_MOD) :
 	- [ ! -d $(DIR_ECCODES_BUILD) ] && mkdir -p $(DIR_ECCODES_BUILD)
 	cd ${DIR_ECCODES_BUILD} && \
 	AEC_PATH=$(CDF_PATH) cmake ${DIR_ECCODES_SRC} -DCMAKE_INSTALL_PREFIX=${DIR_ECCODES_INSTALL} -DBUILD_SHARED_LIBS=OFF \
 	-DENABLE_NETCDF=OFF -DENABLE_JPG=OFF -DENABLE_PYTHON=OFF -DENABLE_EXAMPLES=OFF \
 	-DCMAKE_Fortran_COMPILER=$(FC) -DCMAKE_C_COMPILER=$(CC) \
-	-DCMAKE_Fortran_FLAGS=$(ECCODES_FFLAGS) -DCMAKE_C_FLAGS=$(ECCODES_CFLAGS) && \
+	-DCMAKE_Fortran_FLAGS=$(ECCODES_FFLAGS) -DCMAKE_C_FLAGS=$(ECCODES_CFLAGS) ${EC_CONF} && \
 	$(MAKE) && $(MAKE) install && $(MAKE) clean
 
 eccodes_lib_clean :
@@ -342,23 +346,23 @@ NETCDF_OPT ?= ${OPT_BASE_I4:-$OPT_BASE}
 #
 cdf : $(CDF_MOD)
 $(CDF_MOD) :
-	cd ${DIR_LIBAEC} && ./configure --disable-shared --prefix=${CDF_PATH} --libdir=${CDF_PATH}/lib64 CC="$(CC)" CFLAGS="$(HDF_OPT)" && \
+	cd ${DIR_LIBAEC} && ./configure --disable-shared --prefix=${CDF_PATH} --libdir=${CDF_PATH}/lib64 CC="$(CC)" CFLAGS="$(HDF_OPT)" ${CDF_CONF} && \
 	$(MAKE) && $(MAKE) install && $(MAKE) clean
 	cd ${DIR_HDF} && ./configure --enable-fortran --disable-shared --prefix=${CDF_PATH} --libdir=${CDF_PATH}/lib64 --with-szlib=${CDF_PATH}/include,${CDF_PATH}/lib64 \
-	CC="$(CC)" CFLAGS="$(HDF_OPT)" FC="$(FC)" FCFLAGS="$(NETCDF_OPT)" LDFLAGS="-L${CDF_PATH}/lib64" LIBS="-lsz -laec -lz" && \
+	CC="$(CC)" CFLAGS="$(HDF_OPT)" ${HDF_CONF} FC="$(FC)" FCFLAGS="$(NETCDF_OPT)" LDFLAGS="-L${CDF_PATH}/lib64" LIBS="-lsz -laec -lz" && \
 	$(MAKE) && $(MAKE) install && $(MAKE) clean
 	cd ${DIR_CDFC} && ./configure --disable-shared --prefix=${CDF_PATH} --libdir=${CDF_PATH}/lib64 --disable-dap \
-	CC="$(CC)" CFLAGS="$(NETCDF_OPT)" CPPFLAGS="${INC_NETCDF}" ${CDF_CONF} LDFLAGS="-L${CDF_PATH}/lib64" LIBS="-lhdf5_hl -lhdf5 -lsz -laec -lz" && \
+	CC="$(CC)" CFLAGS="$(NETCDF_OPT)" CPPFLAGS="${INC_NETCDF}" ${CDF_CONF} LDFLAGS="-L${CDF_PATH}/lib64" LIBS="-lhdf5_hl -lhdf5 -lsz -laec -lz -ldl " && \
 	$(MAKE) && $(MAKE) install && $(MAKE) clean
 ifdef MNH_FOREFIRE
 	cd ${DIR_CDFCXX} && ./configure --disable-shared --prefix=${CDF_PATH} --libdir=${CDF_PATH}/lib64 \
 	CXX="$(CXX)" CXXFLAGS="$(NETCDF_OPT)" FC="$(FC)" FCFLAGS="$(NETCDF_OPT) $(NETCDF_SUPPFLAGS)" FFLAGS="$(NETCDF_OPT)"  \
-	CPPFLAGS="${INC_NETCDF}" ${CDF_CONF} LDFLAGS="-L${CDF_PATH}/lib64" LIBS="-lnetcdf -lhdf5_hl -lhdf5 -lsz -laec -lz" && \
+	CPPFLAGS="${INC_NETCDF}" ${CDF_CONF} LDFLAGS="-L${CDF_PATH}/lib64" LIBS="-lnetcdf -lhdf5_hl -lhdf5 -lsz -laec -lz -ldl " && \
 	$(MAKE) && $(MAKE) install && $(MAKE) clean
 endif
 	cd ${DIR_CDFF} && ./configure --disable-shared --prefix=${CDF_PATH} --libdir=${CDF_PATH}/lib64 \
 	CC="$(CC)" CFLAGS="$(NETCDF_OPT)" FC="$(FC)" FCFLAGS="$(NETCDF_OPT) $(NETCDF_SUPPFLAGS)" FFLAGS="$(NETCDF_OPT)"  \
-	CPPFLAGS="${INC_NETCDF}" ${CDF_CONF} LDFLAGS="-L${CDF_PATH}/lib64" LIBS="-lnetcdf -lhdf5_hl -lhdf5 -lsz -laec -lz" && \
+	CPPFLAGS="${INC_NETCDF}" ${CDF_CONF} LDFLAGS="-L${CDF_PATH}/lib64" LIBS="-lnetcdf -lhdf5_hl -lhdf5 -lsz -laec -lz -ldl " && \
 	$(MAKE) && $(MAKE) install && $(MAKE) clean
 
 cleanmaster : cleancdf
@@ -454,20 +458,8 @@ chimie : $(EXAMPLES_CHIMIE)
 $(EXAMPLES) $(EXAMPLES_CHIMIE) 012_dust :
 	cd $(PWD_KTEST)/$@ ; run_$@
 
-EXAMPLES_NCL=004_Reunion 007_16janvier
-
-ncl1_examples :  $(patsubst %,%_ncl1,$(EXAMPLES_NCL))
-
-ncl2_examples :  $(patsubst %,%_ncl2,$(EXAMPLES_NCL))
-
 examplesclean :  $(patsubst %,%_clean,$(EXAMPLES))
 
-
-%_ncl1 : 
-	cd $(PWD_KTEST)/$(*F) ; run_$(*F) all_ncl_extractdia
-
-%_ncl2 : 
-	cd $(PWD_KTEST)/$(*F) ; run_$(*F) all_ncl_lfi2cdf
 
 %_clean : 
 	cd $(PWD_KTEST)/$(*F) ; $(MAKE) clean
@@ -524,48 +516,48 @@ ARFLAGS=r
 #
 #  GENERATION OF DEPENDANCE FILES : *.D
 # 
-
+SPLL ?= spll
 %.D:%.F90
 	$(CPP) $(INC) $(CPPFLAGS) $< >  $(OBJDIR)/$(*F).f90 
-	spll $(NSOURCE) $(OBJDIR)/$(*F).f90 
+	$(SPLL) $(NSOURCE) $(OBJDIR)/$(*F).f90 
 	rm -f $(OBJDIR)/$(*F).f90 
 
 %.D:%.f90
 	$(CPP) $(INC) $(CPPFLAGS) $< >  $(OBJDIR)/$(*F).f90 
-	spll $(NSOURCE) $(OBJDIR)/$(*F).f90 
+	$(SPLL) $(NSOURCE) $(OBJDIR)/$(*F).f90 
 	rm -f $(OBJDIR)/$(*F).f90 
 
 %.D:%.fx90
 	$(CPP)  $(INC) $(CPPFLAGS) $< > $(OBJDIR)/$(*F).fx90
-	spll $(NSOURCE) $(OBJDIR)/$(*F).fx90 
+	$(SPLL) $(NSOURCE) $(OBJDIR)/$(*F).fx90 
 	rm -f $(OBJDIR)/$(*F).fx90
  
 %.D:%.f
 	$(CPP)  $(INC) $(CPPFLAGS) $< > $(OBJDIR)/$(*F).f
-	spll $(NSOURCE) $(OBJDIR)/$(*F).f 
+	$(SPLL) $(NSOURCE) $(OBJDIR)/$(*F).f 
 	rm -f $(OBJDIR)/$(*F).f
  
 #
 # GENERATION OF OBJET FILES : *.o
 #
 
-%.o:%.f90
-	echo "inc=$(INC)"
-	$(F90) -I$(OBJDIR) $(INC) -c $(F90FLAGS) $< 
-	-mv  $(*F).o $(OBJDIR)/. || echo OK $(*F).o
+#%.o:%.f90
+#	echo "inc=$(INC)"
+#	$(F90) -I$(OBJDIR) $(INC) -c $(F90FLAGS) $< 
+#	-mv  $(*F).o $(OBJDIR)/. || echo OK $(*F).o
 
 %.o:%.f
 	echo "inc=$(INC)"
 	$(F77) -I$(OBJDIR) $(INC) -c $(F77FLAGS)  $<  
 	-mv  $(*F).o $(OBJDIR)/. || echo OK $(*F).o
 
-%.o:%.fx90
-	cp $< $(OBJDIR)/$(*F).f 
-	$(FX90) -I$(OBJDIR) $(INC) -c $(FX90FLAGS) $(OBJDIR)/$(*F).f   
-	-mv  $(*F).o $(OBJDIR)/. || echo OK $(*F).o
+#%.o:%.fx90
+#	cp $< $(OBJDIR)/$(*F).f 
+#	$(FX90) -I$(OBJDIR) $(INC) -c $(FX90FLAGS) $(OBJDIR)/$(*F).f   
+#	-mv  $(*F).o $(OBJDIR)/. || echo OK $(*F).o
 
 %.o : %.c
-	$(CC) $(INC) $(CFLAGS) $(CPPFLAGS) -c $< -o $(OBJDIR)/$(*F).o
+	$(CC) $(INC) $(CFLAGS) $(CPPFLAGS_C) -c $< -o $(OBJDIR)/$(*F).o
 	-mv  $(*F).o $(OBJDIR)/. || echo OK $(*F).o
 
 ifeq "$(DO_COMP_MASTER)" "YES"

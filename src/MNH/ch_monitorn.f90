@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -7,17 +7,17 @@
       MODULE MODI_CH_MONITOR_n
 !!    ########################
 !!
-!
+!!
 INTERFACE
 !!
 SUBROUTINE CH_MONITOR_n(PWETDEPAER, KTCOUNT,PTSTEP, KLUOUT, KVERB)
 IMPLICIT NONE
-REAL, DIMENSION(:,:,:,:), INTENT(IN) :: PWETDEPAER ! tendency of aerosol wet depostion
-INTEGER, INTENT(IN) :: KTCOUNT    ! iteration count
-REAL,  INTENT(IN)   :: PTSTEP    ! Double timestep except 
-                                  ! for the first time step (single one)
-INTEGER, INTENT(IN) :: KLUOUT     ! unit for output listing count
-INTEGER, INTENT(IN) :: KVERB      ! verbosity level
+REAL,    DIMENSION(:,:,:,:), INTENT(IN) :: PWETDEPAER ! tendency of aerosol wet depostion
+INTEGER,                     INTENT(IN) :: KTCOUNT    ! iteration count
+REAL,                        INTENT(IN)   :: PTSTEP   ! Double timestep except 
+                                                      ! for the first time step (single one)
+INTEGER,                     INTENT(IN) :: KLUOUT     ! unit for output listing count
+INTEGER,                     INTENT(IN) :: KVERB      ! verbosity level
 END SUBROUTINE CH_MONITOR_n
 !!
 END INTERFACE
@@ -27,8 +27,6 @@ END MODULE MODI_CH_MONITOR_n
 !!    ####################################################### 
       SUBROUTINE CH_MONITOR_n(PWETDEPAER, KTCOUNT,PTSTEP, KLUOUT, KVERB)
 !!    #######################################################
-!!
-!!*** *CH_MONITOR_n*  monitor of the chemical module
 !!
 !!    PURPOSE
 !!    -------
@@ -111,9 +109,7 @@ END MODULE MODI_CH_MONITOR_n
 !!    11/12/15 (M. Leriche & P. Tulet) add ch_init_ice initialise index for ice chem.
 !!    18/01/16 (M Leriche) for sedimentation fusion C2R2 and khko
 !!    15/02/16 (M Leriche) call ch_init_rosenbrock only one time
-!!    20/01/17 (G.Delautier) bug if CPROGRAM/=DIAG
 !!    01/10/17 (C.Lac) add correction of negativity
-!!    Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 12/02/2019: bugfix: ZINPRR was not initialized all the time
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !  P. Wautelet    02/2020: use the new data structures and subroutines for budgets
@@ -122,10 +118,12 @@ END MODULE MODI_CH_MONITOR_n
 !!    --------
 USE MODI_CH_METEO_TRANS_KESS
 USE MODI_CH_METEO_TRANS_C2R2
+USE MODI_CH_METEO_TRANS_LIMA
 USE MODI_CH_SET_RATES
 USE MODI_CH_SET_PHOTO_RATES
 USE MODI_CH_SOLVER_n
 USE MODI_CH_UPDATE_JVALUES
+use modd_budget,     only: lbudget_sv, NBUDGET_SV1, tbudgets
 USE MODI_CH_INIT_ICE
 USE MODI_CH_AQUEOUS_TMICICE
 USE MODI_CH_AQUEOUS_TMICKESS
@@ -161,7 +159,7 @@ USE MODD_NSV, ONLY : NSV_CHEMBEG,NSV_CHEMEND,NSV_CHEM,& ! index for chemical SV
                      NSV_CHACBEG,NSV_CHACEND,NSV_CHAC,& ! index for aqueous SV
                      NSV_CHGSBEG,NSV_CHGSEND,         & ! index for gas phase SV
                      NSV_CHICBEG,NSV_CHICEND,         & ! index for ice phase SV
-                     NSV_C2R2BEG,                     & ! index for number concentration
+                     NSV_C2R2BEG,NSV_LIMA_NC,NSV_LIMA_NR, & ! index for number concentration
                      NSV_AERBEG, NSV_AEREND, NSV_AER, & ! index for aerosols SV
                      XSVMIN
 !
@@ -218,7 +216,7 @@ USE MODD_TIME,      ONLY: TDTEXP
 !
 USE MODD_TIME_n,    ONLY: TDTCUR      ! Current Time and Date
 !
-USE MODD_CONF,      ONLY: CPROGRAM, L1D
+USE MODD_CONF,      ONLY: CPROGRAM, L1D, NVERB
 USE MODD_PARAM_n,   ONLY: CCLOUD
 !
 USE MODD_PARAMETERS,ONLY: JPHEXT,    &! number of horizontal External points
@@ -294,17 +292,17 @@ IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
 !
-REAL, DIMENSION(:,:,:,:), INTENT(IN) :: PWETDEPAER ! tendency of aerosol wet depostion
-INTEGER, INTENT(IN) :: KTCOUNT    ! iteration count
-REAL,  INTENT(IN)   :: PTSTEP    ! Double timestep except 
-                                  ! for the first time step (single one)
-INTEGER, INTENT(IN) :: KLUOUT     ! unit for output listing count
-INTEGER, INTENT(IN) :: KVERB      ! verbosity level
+REAL,    DIMENSION(:,:,:,:), INTENT(IN) :: PWETDEPAER ! tendency of aerosol wet depostion
+INTEGER,                     INTENT(IN) :: KTCOUNT    ! iteration count
+REAL,                        INTENT(IN)   :: PTSTEP   ! Double timestep except 
+                                                      ! for the first time step (single one)
+INTEGER,                     INTENT(IN) :: KLUOUT     ! unit for output listing count
+INTEGER,                     INTENT(IN) :: KVERB      ! verbosity level
 !
 !*      0.2    declarations of local variables
 !
 INTEGER :: JI,JJ,JK,JL,JM,JN   ! loop counters
-REAL    :: ZDTSOLVER        ! timestep for the solver
+REAL    :: ZDTSOLVER           ! timestep for the solver
 !
 REAL, DIMENSION(:,:), ALLOCATABLE :: ZCHEM, ZOLDCHEM,  ZNEWCHEM 
 REAL, DIMENSION(:,:), ALLOCATABLE :: ZAERO, ZOLDAERO,  ZNEWAERO
@@ -380,18 +378,22 @@ INTEGER                :: IMI            ! model index
 !-------------------------------------------------------------------------------
 !   variables for the aerosol module
 !
-REAL                   :: ZTIME                ! current time 
-REAL, ALLOCATABLE, DIMENSION(:,:)   :: ZM, ZSIG0, ZN0, ZRG0, &   ! work array
-                                       ZCTOTG, ZSEDA, ZFRAC, ZMI ! for aerosols
+REAL                   :: ZTIME                ! current time  
+REAL, ALLOCATABLE, DIMENSION(:,:)   :: ZM, ZLNSIG, ZN, ZRG,      & ! work array
+                                       ZCTOTG, ZSEDA, ZFRAC, ZMI, & ! for aerosols
+                                       ZMBEG,ZMINT,ZMEND,&
+                                       ZDMINTRA,ZDMINTER,ZDMCOND,ZDMNUCL,ZDMMERG
 REAL, ALLOCATABLE, DIMENSION(:,:,:) :: ZCTOTA, ZCCTOT
                                          ! first dimension is vectorization,
                                          ! second dim. are the modes*moments
+REAL,  ALLOCATABLE, DIMENSION(:) :: ZCONC_MASS,ZCOND_MASS_I,ZCOND_MASS_J,ZNUCL_MASS
 REAL, DIMENSION(:),   ALLOCATABLE :: ZRV, ZDENAIR, ZPRESSURE, ZTEMP, ZRC
-REAL, DIMENSION(:,:), ALLOCATABLE :: ZRHOP0, ZOM, ZSOLORG
-REAL, DIMENSION(:),   ALLOCATABLE :: ZLAMBDA, ZMU, ZSO4RAT
+REAL, DIMENSION(:,:), ALLOCATABLE :: ZRHOP, ZSOLORG
+REAL, DIMENSION(:),   ALLOCATABLE :: ZSO4RAT
+REAL, DIMENSION(:),   ALLOCATABLE :: ZJNUC, ZJ2RAT
 
-REAL,DIMENSION(:,:,:,:), ALLOCATABLE :: ZSVT
-REAL,DIMENSION(:,:,:,:), ALLOCATABLE :: ZCWETAERO
+REAL,DIMENSION(SIZE(XSVT,1),SIZE(XSVT,2),SIZE(XSVT,3),SIZE(XSVT,4)) :: ZSVT
+REAL,DIMENSION(SIZE(XSVT,1),SIZE(XSVT,2),SIZE(XSVT,3),NSV_AER) :: ZCWETAERO
 !
 !-------------------------------------------------------------------------------
 !   variables for AQueous/NAQueous cases
@@ -405,13 +407,16 @@ REAL, DIMENSION(SIZE(XRT,1), SIZE(XRT,2))     :: ZINPRR! Rain instant precip
 !
 ! get model index
 IMI = GET_CURRENT_MODEL_INDEX()
-
+!
 if ( lbudget_sv ) then
   do jsv = nsv_chembeg, nsv_chemend
     call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + jsv), 'CHEM', xrsvs(:, :, :, jsv) )
   enddo
+  do jsv = nsv_aerbeg, nsv_aerend
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + jsv), 'AER', xrsvs(:, :, :, jsv) )
+  enddo
 endif
-!
+
 !*       1.    PREPARE MONITOR
 !              ---------------
 !
@@ -608,22 +613,22 @@ ZDTSOLVER = PTSTEP / NCH_SUBSTEPS
 !
 !
 IF (LORILAM) THEN
-  ALLOCATE( ZSVT(SIZE(XSVT,1),SIZE(XSVT,2),SIZE(XSVT,3),SIZE(XSVT,4)) )
-  IF (CPROGRAM /='DIAG  ') THEN
-    DO JSV = 1, SIZE(XSVT,4)
-      ZSVT(:,:,:,JSV) =  XRSVS(:,:,:,JSV) *PTSTEP / XRHODJ(:,:,:)
-    END DO
+
+  IF (CPROGRAM/='DIAG  ') THEN
+   DO JSV = 1, SIZE(XSVT,4)
+    ZSVT(:,:,:,JSV) =  XRSVS(:,:,:,JSV) *PTSTEP / XRHODJ(:,:,:) 
+   END DO
   ELSE
-    DO JSV = 1, SIZE(XSVT,4)
-      ZSVT(:,:,:,JSV) =  XSVT(:,:,:,JSV)
-    END DO
+   DO JSV = 1, SIZE(XSVT,4)
+    ZSVT(:,:,:,JSV) =  XSVT(:,:,:,JSV)
+   END DO
   END IF
   ZSVT(:,:,:,NSV_CHEMBEG:NSV_CHEMEND) = MAX(ZSVT(:,:,:,NSV_CHEMBEG:NSV_CHEMEND), XMNH_TINY)
   ZSVT(:,:,:,NSV_AERBEG:NSV_AEREND)   = MAX(ZSVT(:,:,:,NSV_AERBEG:NSV_AEREND), XMNH_TINY)
 !
 END IF
 !
-!*       1.4 compute conversion factor ppp/m3 --> molec/cm3
+!*       1.4 compute conversion factor ppv/m3 --> molec/cm3
 !
 ZDEN2MOL = 1E-6 * XAVOGADRO / XMD
 !
@@ -641,7 +646,9 @@ SELECT CASE (CCH_TDISCRETIZATION)
     IF (KVERB >= 10) WRITE(KLUOUT,*) "CH_MONITOR_n: using LAGGED option"
   CASE DEFAULT
     ! the following line should never be reached:
-    call Print_msg( NVERB_FATAL, 'GEN', 'CH_MONITOR_n', 'invalid CCH_TDISCRETIZATION option ('//trim(CCH_TDISCRETIZATION)//')' )
+    ! callabortstop
+    CALL ABORT
+    STOP "CH_MONITOR_n: CCH_TDISCRETIZATION option not valid"
 END SELECT
 !
 !
@@ -680,16 +687,21 @@ IF (LORILAM) THEN
   ALLOCATE(ZOLDAERO(ISVECNPT,NSV_AER))
   ALLOCATE(ZM(ISVECNPT,JPIN))
   ALLOCATE(ZSEDA(ISVECNPT,JPIN))
-  ALLOCATE(ZRHOP0(ISVECNPT,JPMODE))
-  ALLOCATE(ZSIG0(ISVECNPT,JPMODE))
-  ALLOCATE(ZRG0(ISVECNPT,JPMODE))
-  ALLOCATE(ZN0(ISVECNPT,JPMODE))
+  ALLOCATE(ZMBEG(ISVECNPT,JPIN))
+  ALLOCATE(ZMINT(ISVECNPT,JPIN))
+  ALLOCATE(ZMEND(ISVECNPT,JPIN))
+  ALLOCATE(ZDMINTRA(ISVECNPT,JPIN))
+  ALLOCATE(ZDMINTER(ISVECNPT,JPIN))
+  ALLOCATE(ZDMCOND(ISVECNPT,JPIN))
+  ALLOCATE(ZDMNUCL(ISVECNPT,JPIN))
+  ALLOCATE(ZDMMERG(ISVECNPT,JPIN))
+  ALLOCATE(ZRHOP(ISVECNPT,JPMODE))
+  ALLOCATE(ZLNSIG(ISVECNPT,JPMODE))
+  ALLOCATE(ZRG(ISVECNPT,JPMODE))
+  ALLOCATE(ZN(ISVECNPT,JPMODE))
   ALLOCATE(ZCTOTA(ISVECNPT,NSP+NCARB+NSOA,JPMODE))
   ALLOCATE(ZCCTOT(ISVECNPT,NSP+NCARB+NSOA,JPMODE))
   ALLOCATE(ZCTOTG(ISVECNPT,NSP+NCARB+NSOA))
-  ALLOCATE(ZMU(ISVECNPT))
-  ALLOCATE(ZLAMBDA(ISVECNPT))
-  ALLOCATE(ZOM(ISVECNPT,JPMODE))
   ALLOCATE(ZSO4RAT(ISVECNPT))
   ALLOCATE(ZRV(ISVECNPT))
   ALLOCATE(ZRC(ISVECNPT))
@@ -701,6 +713,12 @@ IF (LORILAM) THEN
   ALLOCATE(ZSOLORG(ISVECNPT,NSOA))
   ALLOCATE(XSURF(ISVECNPT,JPMODE))
   ALLOCATE(XDP(ISVECNPT,JPMODE))
+  ALLOCATE(ZJNUC(ISVECNPT))
+  ALLOCATE(ZJ2RAT(ISVECNPT))
+  ALLOCATE(ZCONC_MASS(ISVECNPT))
+  ALLOCATE(ZCOND_MASS_I(ISVECNPT))
+  ALLOCATE(ZCOND_MASS_J(ISVECNPT))
+  ALLOCATE(ZNUCL_MASS(ISVECNPT))
 END IF
 !
 !-------------------------------------------------------------------------------
@@ -716,6 +734,11 @@ IF (KTCOUNT==1 .OR. &
   IF (.NOT.ASSOCIATED(XJVALUES)) &
              ALLOCATE(XJVALUES(SIZE(XSVT,1),SIZE(XSVT,2),SIZE(XSVT,3),JPJVMAX))
   XJVALUES(:,:,:,:) = 0.
+
+  IF (NVERB .GE. 20) THEN
+    WRITE(*,*) 'min max XALBUV =', MINVAL(XALBUV), MAXVAL(XALBUV)
+  ENDIF 
+
   CALL CH_UPDATE_JVALUES(KLUOUT,  XZENITH, XRT,                  &
        XALBUV, XZS, XZZ, XLAT0, XLON0,                           &
        SIZE(XZZ,1), SIZE(XZZ,2), SIZE(XZZ,3), NRR,               &
@@ -735,10 +758,20 @@ ISTCOUNT = ISTCOUNT + 1
 !*       3.1 sedimentation term and wet deposition for aerosols tendency (XSEDA)
 !
 IF (LORILAM) THEN
-  ZTIME  = TDTCUR%xtime ! need for ch_orilam
-  XSEDA(:,:,:,:) = 0.
-  ZSEDA(:,:) = 0.
-! dry sedimentation
+  ZTIME          = TDTCUR%xtime ! need for ch_orilam
+  XSEDA(:,:,:,:) = 0.0
+  ZSEDA(:,:)     = 0.0
+  ZMBEG(:,:)     = 0.0
+  ZMINT(:,:)     = 0.0
+  ZMEND(:,:)     = 0.0
+  ZDMINTRA(:,:)  = 0.0
+  ZDMINTER(:,:)  = 0.0
+  ZDMCOND(:,:)   = 0.0
+  ZDMNUCL(:,:)   = 0.0
+  ZDMMERG(:,:)   = 0.0
+  !
+  ! dry sedimentation
+  !
   IF ((LSEDIMAERO).AND.(CPROGRAM/='DIAG  ')) THEN
     CALL CH_AER_SEDIM_n(PTSTEP,                                                &
             ZSVT(IIB:IIE,IJB:IJE,IKB:IKE,NSV_AERBEG:NSV_AEREND),               &
@@ -748,7 +781,6 @@ IF (LORILAM) THEN
   ENDIF
 ! implicit  wet deposition
   IF ((LCH_CONV_SCAV).AND.(CPROGRAM/='DIAG  ')) THEN
-    ALLOCATE( ZCWETAERO(SIZE(XSVT,1),SIZE(XSVT,2),SIZE(XSVT,3),NSV_AER) )
     DO JN=1,NSV_AER
     ZCWETAERO(:,:,:,JN) =  (XRSVS(:,:,:,JN+NSV_AERBEG-1)+PWETDEPAER(:,:,:,JN))*PTSTEP / XRHODJ(:,:,:) 
     END DO
@@ -757,7 +789,6 @@ IF (LORILAM) THEN
     CALL CH_AER_WETDEP_n(PTSTEP, ZSVT(IIB:IIE,IJB:IJE,IKB:IKE,NSV_AERBEG:NSV_AEREND),             &
                          ZCWETAERO(IIB:IIE,IJB:IJE,IKB:IKE,:), XRHODREF(IIB:IIE,IJB:IJE,IKB:IKE), &
                          XSEDA(IIB:IIE,IJB:IJE,IKB:IKE,:))
-    DEALLOCATE( ZCWETAERO )
   ENDIF
 ! explicit wet deposition
   IF ((LDEPOS_AER(IMI)).AND.(CPROGRAM/='DIAG  ')) THEN
@@ -779,8 +810,6 @@ IF (LORILAM) THEN
   DO JSV = 1, SIZE(XSVT,4)
     XRSVS(:,:,:,JSV) = ZSVT(:,:,:,JSV) * XRHODJ(:,:,:) / PTSTEP
   END DO
-
-  DEALLOCATE( ZSVT )
 ENDIF
 !
 !*       3.2 check where aqueous concentration>0 + micropĥysics term
@@ -861,6 +890,7 @@ IF (LUSECHAQ.AND.(NRRL>=2) ) THEN
                                   XSVT(:,:,:,NSV_CHACBEG+NEQAQ/2:NSV_CHACEND), &
                                   XRSVS(:,:,:,NSV_CHACBEG+NEQAQ/2:NSV_CHACEND),&
                                   ZINPRR(:,:)                                  )
+
     END SELECT
   ELSE
     ZINPRR(:,:) = 0.
@@ -891,6 +921,12 @@ DO JL=1,ISVECNMASK
   IF (LORILAM) THEN
     ZRV(:) = 0.
     ZRC(:) = 0.
+    ZJNUC(:) = 0.
+    ZJ2RAT(:) = 0.
+    ZCONC_MASS = 0. 
+    ZCOND_MASS_I = 0. 
+    ZCOND_MASS_J = 0.
+    ZNUCL_MASS = 0.
 !ocl novrec
 !cdir nodep
   DO JM=0,ISVECNPT-1
@@ -910,11 +946,11 @@ DO JL=1,ISVECNMASK
     IF (SIZE(XRT,4) .GE. 2) ZRC(JM+1) = XRT(JI, JJ, JK, 2)
     !Molar mass (kg/kg)
     ZMI(JM+1,:)     = XMI(JI, JJ, JK, :)
-    !Moments (ppp)
+    !Moments (ppv)
     ZM(JM+1,:)      = XM3D(JI,JJ,JK,:)
-    ZSIG0(JM+1,:)   = LOG(XSIG3D(JI,JJ,JK,:))
-    ZRG0(JM+1,:)    =  XRG3D(JI,JJ,JK,:)  
-    ZN0(JM+1,:)     =  XN3D(JI,JJ,JK,:)  
+    ZLNSIG(JM+1,:)   = LOG(XSIG3D(JI,JJ,JK,:))
+    ZRG(JM+1,:)    =  XRG3D(JI,JJ,JK,:)  
+    ZN(JM+1,:)     =  XN3D(JI,JJ,JK,:)  
     IF (NSOA > 0) ZSOLORG(JM+1,:) = XSOLORG(JI,JJ,JK,:)
   ENDDO
   DO JN = 1, NSV_AER
@@ -937,8 +973,8 @@ DO JL=1,ISVECNMASK
 !
 !* initialize  aerosol surface and aerosol diameter
 !
-    CALL CH_AER_SURF(ZM, ZRG0, ZSIG0, XSURF) ! Compute aerosol surface (m2/cc)
-    XDP(:,:) = 2.E-6 * ZRG0(:,:) ! Mean diameter in meter 
+    CALL CH_AER_SURF(ZM, ZRG, ZLNSIG, XSURF) ! Compute aerosol surface (m2/cc)
+    XDP(:,:) = 2.E-6 * ZRG(:,:) ! Mean diameter in meter 
   END IF
 !
 !
@@ -992,6 +1028,8 @@ DO JL=1,ISVECNMASK
     END DO
   END IF
 !
+  ZCHEM(:,:) = MAX(ZCHEM, XMNH_TINY)
+!
 !*       4.2   transfer meteo data into chemical core system
 !
   SELECT CASE ( CCLOUD )
@@ -1022,6 +1060,20 @@ DO JL=1,ISVECNMASK
                              XSVT(:,:,:,NSV_C2R2BEG+2), XTHT, XPABST, ISVECNPT,      &
                              ISVECMASK, TZM, TDTCUR%nday, TDTCUR%nmonth,             &
                              TDTCUR%nyear, XLAT,XLON, XLAT0, XLON0, LUSERV,          &
+                             LUSERC, LUSERR, KLUOUT, CCLOUD                          )
+    ENDIF
+  CASE ('LIMA') !add cloud and rain C. for mean radius
+    IF (GSPLIT) THEN ! LWC and LWR computed from tendencies
+      CALL CH_METEO_TRANS_LIMA(JL, XRHODJ, XRHODREF, XRRS, XRSVS(:,:,:,NSV_LIMA_NC), &
+                             XRSVS(:,:,:,NSV_LIMA_NR), XTHT, XPABST, ISVECNPT,       &
+                             ISVECMASK, TZM, TDTCUR%nday, TDTCUR%nmonth,             &
+                             TDTCUR%nyear, XLAT,XLON, XLAT0, XLON0, LUSERV,          &
+                             LUSERC, LUSERR, KLUOUT, CCLOUD,  PTSTEP                   )
+    ELSE
+      CALL CH_METEO_TRANS_LIMA(JL, XRHODJ, XRHODREF, XRT, XSVT(:,:,:,NSV_LIMA_NC), &
+                             XSVT(:,:,:,NSV_LIMA_NR), XTHT, XPABST, ISVECNPT,      &
+                             ISVECMASK, TZM, TDTCUR%nday, TDTCUR%nmonth,           &
+                             TDTCUR%nyear, XLAT,XLON, XLAT0, XLON0, LUSERV,        &
                              LUSERC, LUSERR, KLUOUT, CCLOUD                          )
     ENDIF
   END SELECT
@@ -1061,8 +1113,8 @@ DO JL=1,ISVECNMASK
 !
   IF (LORILAM) THEN
     IF (KTCOUNT == 1) THEN
-          CALL CH_INI_ORILAM(ZM, ZSIG0, ZRG0, ZN0, ZCTOTG, ZCTOTA, ZCCTOT,   &
-                             ZSEDA, ZOM, ZRHOP0, ZAERO, ZCHEM, ZRV, ZDENAIR, &
+          CALL CH_INI_ORILAM(ZM, ZLNSIG, ZRG, ZN, ZCTOTG, ZCTOTA, ZCCTOT,   &
+                             ZSEDA, ZRHOP, ZAERO, ZCHEM, ZRV, ZDENAIR, &
                              ZPRESSURE, ZTEMP, ZRC, ZFRAC, ZMI,CCH_SCHEME)
     END IF
 ! transfer non-volatile species from aerosol to gas-phase variables
@@ -1089,13 +1141,16 @@ DO JL=1,ISVECNMASK
 !*       4.6   solve aerosol system
 !
   IF (LORILAM) THEN
-    ZSO4RAT(:)    = (ZNEWCHEM(:,JP_CH_H2SO4)-ZOLDCHEM(:,JP_CH_H2SO4)) / PTSTEP
+    !ZSO4RAT(:)    = (ZNEWCHEM(:,JP_CH_H2SO4)-ZOLDCHEM(:,JP_CH_H2SO4)) / PTSTEP
+    ZSO4RAT(:)    = (ZNEWCHEM(:,JP_CH_H2SO4)) / PTSTEP
     ZOLDAERO(:,:) = ZAERO(:,:)
-    CALL CH_ORILAM(ZAERO,ZNEWCHEM, ZM, ZSIG0, ZRG0, ZN0,  ZCTOTG,  &
+    CALL CH_ORILAM(ZAERO,ZNEWCHEM, ZM, ZLNSIG, ZRG, ZN,  ZCTOTG,  &
                    ZCTOTA, ZCCTOT, PTSTEP, ZSEDA,                  &
-                   ZMU, ZLAMBDA, ZRHOP0, ZOM, ZSO4RAT,             &
+                   ZRHOP, ZSO4RAT,             &
                    ZRV, ZDENAIR,ZPRESSURE, ZTEMP, ZRC, ZFRAC, ZMI, &
-                   ZTIME,CCH_SCHEME,ZSOLORG )
+                   ZTIME,CCH_SCHEME,ZSOLORG, ZJNUC, ZJ2RAT, ZMBEG,ZMINT,ZMEND,&
+                   ZDMINTRA,ZDMINTER,ZDMCOND,ZDMNUCL,ZDMMERG,&
+                   ZCONC_MASS,ZCOND_MASS_I,ZCOND_MASS_J,ZNUCL_MASS)
     ZNEWAERO(:,:) = ZAERO(:,:)
 !
 !*       4.7   return results to MesoNH scalar variables - aerosols
@@ -1108,14 +1163,29 @@ DO JL=1,ISVECNMASK
       JJ=JM/IDTI-IDTJ*(JM/(IDTI*IDTJ))+ISVECMASK(3,JL)
       JK=JM/(IDTI*IDTJ)-IDTK*(JM/(IDTI*IDTJ*IDTK))+ISVECMASK(5,JL)
 !
-      XSIG3D(JI,JJ,JK,:)     = EXP(ZSIG0(JM+1,:))
-      XRG3D(JI,JJ,JK,:)      = ZRG0(JM+1,:)
-      XN3D(JI,JJ,JK,:)       = ZN0(JM+1,:)
-      XRHOP3D(JI,JJ,JK,:)    = ZRHOP0(JM+1,:)
+      XSIG3D(JI,JJ,JK,:)     = EXP(ZLNSIG(JM+1,:))
+      XRG3D(JI,JJ,JK,:)      = ZRG(JM+1,:)
+      XN3D(JI,JJ,JK,:)       = ZN(JM+1,:)
+      XRHOP3D(JI,JJ,JK,:)    = ZRHOP(JM+1,:)
       XCTOTA3D(JI,JJ,JK,:,:) = ZCTOTA(JM+1,:,:)
       XM3D(JI,JJ,JK,:)       = ZM(JM+1,:)
       XFRAC(JI,JJ,JK,:)      = ZFRAC(JM+1,:)
       XMI(JI,JJ,JK,:)        = ZMI(JM+1,:)
+      !
+      XJNUC(JI,JJ,JK)        = ZJNUC(JM+1)
+      XJ2RAT(JI,JJ,JK)       = ZJ2RAT(JM+1)
+      XCONC_MASS(JI,JJ,JK)   = ZCONC_MASS(JM+1)
+      XCOND_MASS_I(JI,JJ,JK) = ZCOND_MASS_I(JM+1)
+      XCOND_MASS_J(JI,JJ,JK) = ZCOND_MASS_J(JM+1)
+      XNUCL_MASS(JI,JJ,JK)   = ZNUCL_MASS(JM+1)
+      XMBEG(JI,JJ,JK,:)      = ZMBEG(JM+1,:)
+      XMINT(JI,JJ,JK,:)      = ZMINT(JM+1,:)
+      XMEND(JI,JJ,JK,:)      = ZMEND(JM+1,:)
+      XDMINTRA(JI,JJ,JK,:)   = ZDMINTRA(JM+1,:)
+      XDMINTER(JI,JJ,JK,:)   = ZDMINTER(JM+1,:)
+      XDMCOND(JI,JJ,JK,:)    = ZDMCOND(JM+1,:)
+      XDMNUCL(JI,JJ,JK,:)    = ZDMNUCL(JM+1,:)
+      XDMMERG(JI,JJ,JK,:)    = ZDMMERG(JM+1,:)
     END DO
     DO JN = 1, NSV_AER
 !Vectorization:
@@ -1295,8 +1365,12 @@ if ( lbudget_sv ) then
   do jsv = nsv_chembeg, nsv_chemend
     call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + jsv), 'CHEM', xrsvs(:, :, :, jsv) )
   enddo
+  do jsv = nsv_aerbeg, nsv_aerend
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + jsv), 'AER', xrsvs(:, :, :, jsv) )
+  enddo
 endif
 
+!
 !----------------------------------------------------------------------
 !
 IF ((CPROGRAM =='DIAG  ').OR.(L1D)) THEN
@@ -1328,16 +1402,13 @@ IF (LORILAM) THEN
   DEALLOCATE(ZOLDAERO)
   DEALLOCATE(ZM)
   DEALLOCATE(ZSEDA)
-  DEALLOCATE(ZN0)
-  DEALLOCATE(ZRG0)
-  DEALLOCATE(ZSIG0)
-  DEALLOCATE(ZRHOP0)
+  DEALLOCATE(ZN)
+  DEALLOCATE(ZRG)
+  DEALLOCATE(ZLNSIG)
+  DEALLOCATE(ZRHOP)
   DEALLOCATE(ZCTOTA)
   DEALLOCATE(ZCCTOT)
   DEALLOCATE(ZCTOTG)
-  DEALLOCATE(ZMU)
-  DEALLOCATE(ZLAMBDA)
-  DEALLOCATE(ZOM)
   DEALLOCATE(ZSO4RAT)
   DEALLOCATE(ZRV)
   DEALLOCATE(ZRC)
@@ -1349,6 +1420,14 @@ IF (LORILAM) THEN
   DEALLOCATE(ZSOLORG)
   DEALLOCATE(XDP)
   DEALLOCATE(XSURF)
+  DEALLOCATE(ZMBEG)
+  DEALLOCATE(ZMINT)
+  DEALLOCATE(ZMEND)
+  DEALLOCATE(ZDMINTRA)
+  DEALLOCATE(ZDMINTER)
+  DEALLOCATE(ZDMCOND)
+  DEALLOCATE(ZDMNUCL)
+  DEALLOCATE(ZDMMERG)
 END IF
 !-------------------------------------------------------------------------------
 !

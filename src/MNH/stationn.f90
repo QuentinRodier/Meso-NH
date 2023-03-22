@@ -9,14 +9,10 @@ MODULE MODI_STATION_n
 !
 INTERFACE
 !
-      SUBROUTINE STATION_n(PTSTEP,                               &
-                           PXHAT, PYHAT, PZ,                     &
-                           PU, PV, PW, PTH, PR, PSV, PTKE,       &
-                           PTS,PP ) 
+      SUBROUTINE STATION_n( PZ,                             &
+                            PU, PV, PW, PTH, PR, PSV, PTKE, &
+                            PTS, PP )
 !
-REAL,                     INTENT(IN)     :: PTSTEP ! time step
-REAL, DIMENSION(:),       INTENT(IN)     :: PXHAT  ! x coordinate
-REAL, DIMENSION(:),       INTENT(IN)     :: PYHAT  ! y coordinate
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PZ     ! z array
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PU     ! horizontal wind X component
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PV     ! horizontal wind Y component
@@ -36,12 +32,11 @@ END INTERFACE
 !
 END MODULE MODI_STATION_n
 !
-!     ########################################################
-      SUBROUTINE STATION_n(PTSTEP,                           &
-                       PXHAT, PYHAT, PZ,                     &
-                       PU, PV, PW, PTH, PR, PSV, PTKE,       &
-                       PTS, PP )
-!     ########################################################
+!     #######################################################
+      SUBROUTINE STATION_n( PZ,                             &
+                            PU, PV, PW, PTH, PR, PSV, PTKE, &
+                            PTS, PP )
+!     #######################################################
 !
 !
 !!****  *STATION_n* - (advects and) stores 
@@ -72,37 +67,31 @@ END MODULE MODI_STATION_n
 !!    MODIFICATIONS
 !!    -------------
 !!     Original 15/02/2002
-!!     A. Lemonsu 19/11/2002
-!!     P.Aumond 01/07/2011 : Add model levels
-!!     C.Lac       04/2013 : Correction on the vertical levels
-!!     C.Lac       04/2013 : Add I/J positioning                   
+!  A. Lemonsu   19/11/2002
+!  P. Aumond    01/07/2011: add model levels
+!  C. Lac          04/2013: correction on the vertical levels
+!  C. Lac          04/2013: add I/JK positioning
 !  P. Wautelet  28/03/2018: replace TEMPORAL_DIST by DATETIME_DISTANCE
 !  P. Wautelet  05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet  13/09/2019: budget: simplify and modernize date/time management
 !  R. Schoetter    11/2019: use LCARTESIAN instead of LSTATLAT for multiproc in cartesian
-!  P. Wautelet  09/05/2022: bugfix: use correct indices for U and V interpolation
+!  P. Wautelet     04/2022: restructure stations for better performance, reduce memory usage and correct some problems/bugs
 !
 ! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
 !          ------------
 !
-USE MODD_CONF
-USE MODD_CST
+USE MODD_CONF,          ONLY: LCARTESIAN
+USE MODD_CST,           ONLY: XPI
 USE MODD_DIAG_IN_RUN
-USE MODD_GRID
-USE MODD_PARAMETERS
+USE MODD_GRID,          ONLY: XBETA, XLON0, XRPK
+USE MODD_PARAMETERS,    ONLY: JPVEXT
 USE MODD_PARAM_n,       ONLY: CRAD
 USE MODD_STATION_n
 USE MODD_ALLSTATION_n,  ONLY: LDIAG_SURFRAD
-USE MODD_SUB_STATION_n
-USE MODD_TIME,          ONLY: tdtexp
-USE MODD_TIME_n,        ONLY: tdtcur
 !
-USE MODE_ll
-!
-USE MODI_WATER_SUM
-!
+USE MODE_STATPROF_TOOLS, ONLY: STATPROF_INSTANT, STATPROF_INTERP_2D, STATPROF_INTERP_2D_U, STATPROF_INTERP_2D_V
 !
 !
 IMPLICIT NONE
@@ -111,9 +100,6 @@ IMPLICIT NONE
 !*      0.1  declarations of arguments
 !
 !
-REAL,                     INTENT(IN)     :: PTSTEP ! time step
-REAL, DIMENSION(:),       INTENT(IN)     :: PXHAT  ! x coordinate
-REAL, DIMENSION(:),       INTENT(IN)     :: PYHAT  ! y coordinate
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PZ     ! z array
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PU     ! horizontal wind X component
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PV     ! horizontal wind Y component
@@ -130,21 +116,6 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PP     ! pressure
 !       0.2  declaration of local variables
 !
 !
-INTEGER :: IIB        ! current processor domain sizes
-INTEGER :: IJB        ! 
-INTEGER :: IIE        !    
-INTEGER :: IJE        !   
-INTEGER :: IIU        ! 
-INTEGER :: IJU        ! 
-!
-REAL, DIMENSION(SIZE(PXHAT))        :: ZXHATM ! mass point coordinates
-REAL, DIMENSION(SIZE(PYHAT))        :: ZYHATM ! mass point coordinates
-!
-REAL, DIMENSION(SIZE(PSV,1),SIZE(PSV,2),SIZE(PSV,3),SIZE(PSV,4))  :: ZWORK   ! 
-!
-LOGICAL       :: GSTORE                       ! storage occurs at this time step
-!
-!
 INTEGER :: IN       ! time index
 INTEGER :: JSV      ! loop counter
 !
@@ -152,397 +123,75 @@ REAL    :: ZU_STAT     ! horizontal wind speed at station location (along x)
 REAL    :: ZV_STAT     ! horizontal wind speed at station location (along y)
 REAL    :: ZGAM        ! rotation between meso-nh base and spherical lat-lon base.
 !
-INTEGER :: IINFO_ll   ! return code
-INTEGER :: IRESP      ! return code
-INTEGER :: I          ! loop for stations
-INTEGER :: J          ! loop for levels
-
-!
-!----------------------------------------------------------------------------
-!
-!*      2.   PRELIMINARIES
-!            -------------
-!
-!*      2.1  Indices
-!            -------
-!
-CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
-!
-!
-!*      2.2  Interpolations of model variables to mass points
-!            ------------------------------------------------
-!
-IIU=SIZE(PXHAT)
-IJU=SIZE(PYHAT)
-!
-ZXHATM(1:IIU-1)=0.5*PXHAT(1:IIU-1)+0.5*PXHAT(2:IIU  )
-ZXHATM(  IIU  )=1.5*PXHAT(  IIU  )-0.5*PXHAT(  IIU-1)
-!
-ZYHATM(1:IJU-1)=0.5*PYHAT(1:IJU-1)+0.5*PYHAT(2:IJU  )
-ZYHATM(  IJU  )=1.5*PYHAT(  IJU  )-0.5*PYHAT(  IJU-1)
+INTEGER :: JS          ! loop for stations
+INTEGER :: JK          ! loop for levels
 !
 !----------------------------------------------------------------------------
 !
 !*      3.4  instant of storage
 !            ------------------
 !
-IF ( TSTATION%T_CUR == XUNDEF ) TSTATION%T_CUR = TSTATION%STEP - PTSTEP
+CALL  STATPROF_INSTANT( TSTATIONS_TIME, IN )
+IF ( IN < 1 ) RETURN !No profiler storage at this time step
 !
-TSTATION%T_CUR = TSTATION%T_CUR + PTSTEP
-!
-IF ( TSTATION%T_CUR >= TSTATION%STEP - 1.E-10 ) THEN
-     GSTORE = .TRUE.
-     TSTATION%T_CUR = TSTATION%T_CUR - TSTATION%STEP
-     TSTATION%N_CUR = TSTATION%N_CUR + 1
-     IN = TSTATION%N_CUR
-ELSE
-     GSTORE = .FALSE.
-END IF
-!
-IF (GSTORE) THEN
-#if 0
-  tstation%tpdates(in)%date%year  = tdtexp%date%year
-  tstation%tpdates(in)%date%month = tdtexp%date%month
-  tstation%tpdates(in)%date%day   = tdtexp%date%day
-  tstation%tpdates(in)%xtime      = tdtexp%xtime + ( in - 1 ) * tstation%step
-#else
-  tstation%tpdates(in) = tdtcur
-#endif
-END IF
-!
-!
-!----------------------------------------------------------------------------
-!
-!*      4.   STATION POSITION
-!            --------------
-!
-!*      4.0  initialization of processor test
-!            --------------------------------
-IF (GSTATFIRSTCALL) THEN
- GSTATFIRSTCALL=.FALSE.
-!
- IF (.NOT.(ASSOCIATED(ZTHIS_PROCS))) ALLOCATE(ZTHIS_PROCS(NUMBSTAT))
-!
- IF (.NOT.(ASSOCIATED(II)))     ALLOCATE(II(NUMBSTAT))
- IF (.NOT.(ASSOCIATED(IJ)))     ALLOCATE(IJ(NUMBSTAT))
- IF (.NOT.(ASSOCIATED(IV)))     ALLOCATE(IV(NUMBSTAT))
- IF (.NOT.(ASSOCIATED(IU)))     ALLOCATE(IU(NUMBSTAT))
- IF (.NOT.(ASSOCIATED(ZXCOEF))) ALLOCATE(ZXCOEF(NUMBSTAT))
- IF (.NOT.(ASSOCIATED(ZUCOEF))) ALLOCATE(ZUCOEF(NUMBSTAT))
- IF (.NOT.(ASSOCIATED(ZYCOEF))) ALLOCATE(ZYCOEF(NUMBSTAT))
- IF (.NOT.(ASSOCIATED(ZVCOEF))) ALLOCATE(ZVCOEF(NUMBSTAT))
-
- ZXCOEF(:)  =XUNDEF
- ZUCOEF(:)  =XUNDEF
- ZYCOEF(:)  =XUNDEF
- ZVCOEF(:)  =XUNDEF
-
-!
- DO I=1,NUMBSTAT
-!
-  ZTHIS_PROCS(I)=0.
-!
-!*      4.1  X position
-!            ----------
-!
-  IU(I)=COUNT( PXHAT (:)<=TSTATION%X(I) )
-  II(I)=COUNT( ZXHATM(:)<=TSTATION%X(I) )
-!
-  IF (II(I)<=IIB-1   .AND. LWEST_ll() .AND. .NOT. L1D) TSTATION%ERROR(I)=.TRUE.
-  IF (II(I)>=IIE     .AND. LEAST_ll() .AND. .NOT. L1D) TSTATION%ERROR(I)=.TRUE.
-!
-!
-!*      4.2  Y position
-!            ----------
-!
-  IV(I)=COUNT( PYHAT (:)<=TSTATION%Y(I) )
-  IJ(I)=COUNT( ZYHATM(:)<=TSTATION%Y(I) )
-!
-  IF (IJ(I)<=IJB-1   .AND. LSOUTH_ll() .AND. .NOT. L1D) TSTATION%ERROR(I)=.TRUE.
-  IF (IJ(I)>=IJE     .AND. LNORTH_ll() .AND. .NOT. L1D) TSTATION%ERROR(I)=.TRUE.
-!
-!
-!*      4.3  Position of station according to processors
-!            -------------------------------------------
-!
-  IF (IU(I)>=IIB .AND. IU(I)<=IIE .AND. IV(I)>=IJB .AND. IV(I)<=IJE) ZTHIS_PROCS(I)=1.
-  IF (L1D) ZTHIS_PROCS(I)=1.
-!
-!
-!*      4.4  Computations only on correct processor
-!            --------------------------------------
-    ZXCOEF(I) = 0.
-    ZYCOEF(I) = 0.
-    ZUCOEF(I) = 0.         
-    ZVCOEF(I) = 0.
-    IF (ZTHIS_PROCS(I) >0. .AND. .NOT. L1D) THEN
-!----------------------------------------------------------------------------
-!
-!*      6.1  Interpolation coefficient for X
-!            -------------------------------
-!
-       ZXCOEF(I) = (TSTATION%X(I) - ZXHATM(II(I))) / (ZXHATM(II(I)+1) - ZXHATM(II(I)))
-!
-!
-!
-!*      6.2  Interpolation coefficient for y
-!            -------------------------------
-!
-       ZYCOEF(I) = (TSTATION%Y(I) - ZYHATM(IJ(I))) / (ZYHATM(IJ(I)+1) - ZYHATM(IJ(I)))
-!
-!-------------------------------------------------------------------
-!
-!*      7.   INITIALIZATIONS FOR INTERPOLATIONS OF U AND V
-!            ---------------------------------------------
-!
-!*      7.1  Interpolation coefficient for X (for U)
-!            -------------------------------
-!
-       ZUCOEF(I) = (TSTATION%X(I) - PXHAT(IU(I))) / (PXHAT(IU(I)+1) - PXHAT(IU(I)))
-!
-!
-!*      7.2  Interpolation coefficient for y (for V)
-!            -------------------------------
-!
-       ZVCOEF(I) = (TSTATION%Y(I) - PYHAT(IV(I))) / (PYHAT(IV(I)+1) - PYHAT(IV(I)))
-!
-!
-
-    END IF
- ENDDO
-END IF
 !----------------------------------------------------------------------------
 !
 !*      8.   DATA RECORDING
 !            --------------
 !
-IF (GSTORE) THEN
-  DO I=1,NUMBSTAT
-     !
-     IF ((ZTHIS_PROCS(I)==1.).AND.(.NOT. TSTATION%ERROR(I))) THEN
-       IF (TSTATION%K(I)/= XUNDEF) THEN
-         J = TSTATION%K(I)
-       ELSE  ! suppose TSTATION%Z(I) /= XUNDEF
-        J=1
-        DO WHILE ((STATION_INTERP_2D(PZ(:,:,J))-STATION_INTERP_2D(PZ(:,:,2))) &
-        < TSTATION%Z(I))
-         J = J + 1
-        END DO
-        IF (((STATION_INTERP_2D(PZ(:,:,J))-STATION_INTERP_2D(PZ(:,:,2)))-TSTATION%Z(I))>&
-       (TSTATION%Z(I)-(STATION_INTERP_2D(PZ(:,:,J-1))-STATION_INTERP_2D(PZ(:,:,2))))) THEN
-         J=J-1
-        ENDIF
-       END IF
-      !
-      IF (LCARTESIAN) THEN
-        TSTATION%ZON (IN,I)   =   STATION_INTERP_2D_U(PU(:,:,J))
-        TSTATION%MER (IN,I)   =   STATION_INTERP_2D_V(PV(:,:,J))
-      ELSE
-        ZU_STAT               = STATION_INTERP_2D_U(PU(:,:,J))
-        ZV_STAT               = STATION_INTERP_2D_V(PV(:,:,J))
-        ZGAM                  = (XRPK * (TSTATION%LON(I) - XLON0) - XBETA)*(XPI/180.)
-        TSTATION%ZON (IN,I)   =   ZU_STAT     * COS(ZGAM) + ZV_STAT     * SIN(ZGAM)
-        TSTATION%MER (IN,I)   = - ZU_STAT     * SIN(ZGAM) + ZV_STAT     * COS(ZGAM)
-      ENDIF
-        TSTATION%W   (IN,I)   = STATION_INTERP_2D(PW(:,:,J))
-        TSTATION%TH  (IN,I)   = STATION_INTERP_2D(PTH(:,:,J))
-        TSTATION%P   (IN,I)   = STATION_INTERP_2D(PP(:,:,J))
-      !
-        DO JSV=1,SIZE(PR,4)
-         TSTATION%R   (IN,I,JSV) = STATION_INTERP_2D(PR(:,:,J,JSV))
-        END DO
-      !
-        DO JSV=1,SIZE(PSV,4)
-         TSTATION%SV  (IN,I,JSV) = STATION_INTERP_2D(PSV(:,:,J,JSV))
-        END DO
-      !
-        IF (SIZE(PTKE)>0) TSTATION%TKE  (IN,I) = STATION_INTERP_2D(PTKE(:,:,J))
-        IF (SIZE(PTS) >0) TSTATION%TSRAD(IN,I) = STATION_INTERP_2D(PTS)
-        TSTATION%ZS(I)      = STATION_INTERP_2D(PZ(:,:,1+JPVEXT))
-      !
-        IF (LDIAG_SURFRAD) THEN
-          TSTATION%ZON10M(IN,I) = STATION_INTERP_2D(XCURRENT_ZON10M)
-          TSTATION%MER10M(IN,I) = STATION_INTERP_2D(XCURRENT_MER10M)
-          TSTATION%T2M   (IN,I) = STATION_INTERP_2D(XCURRENT_T2M   )
-          TSTATION%Q2M   (IN,I) = STATION_INTERP_2D(XCURRENT_Q2M   )
-          TSTATION%HU2M  (IN,I) = STATION_INTERP_2D(XCURRENT_HU2M  )
-          TSTATION%RN    (IN,I) = STATION_INTERP_2D(XCURRENT_RN    ) 
-          TSTATION%H     (IN,I) = STATION_INTERP_2D(XCURRENT_H     ) 
-          TSTATION%LE    (IN,I) = STATION_INTERP_2D(XCURRENT_LE    ) 
-          TSTATION%LEI   (IN,I) = STATION_INTERP_2D(XCURRENT_LEI   ) 
-          TSTATION%GFLUX (IN,I) = STATION_INTERP_2D(XCURRENT_GFLUX ) 
-         IF (CRAD /= 'NONE') THEN
-          TSTATION%SWD   (IN,I) = STATION_INTERP_2D(XCURRENT_SWD   ) 
-          TSTATION%SWU   (IN,I) = STATION_INTERP_2D(XCURRENT_SWU   ) 
-          TSTATION%LWD   (IN,I) = STATION_INTERP_2D(XCURRENT_LWD   ) 
-          TSTATION%LWU   (IN,I) = STATION_INTERP_2D(XCURRENT_LWU   ) 
-          TSTATION%SWDIR (IN,I) = STATION_INTERP_2D(XCURRENT_SWDIR ) 
-          TSTATION%SWDIFF(IN,I) = STATION_INTERP_2D(XCURRENT_SWDIFF)
-          TSTATION%DSTAOD(IN,I) = STATION_INTERP_2D(XCURRENT_DSTAOD)
-         ENDIF
-          TSTATION%SFCO2 (IN,I) = STATION_INTERP_2D(XCURRENT_SFCO2 ) 
-        ENDIF
-       
-      !
-    END IF
-!
-!----------------------------------------------------------------------------
-!
-!*     11.   EXCHANGE OF INFORMATION BETWEEN PROCESSORS
-!            ------------------------------------------
-!
-!*     11.2  data stored
-!            -----------
-!
-  CALL DISTRIBUTE_STATION(TSTATION%X   (I))
-  CALL DISTRIBUTE_STATION(TSTATION%Y   (I))
-  CALL DISTRIBUTE_STATION(TSTATION%Z   (I))
-  CALL DISTRIBUTE_STATION(TSTATION%LON (I))
-  CALL DISTRIBUTE_STATION(TSTATION%LAT (I))    
-  CALL DISTRIBUTE_STATION(TSTATION%ZON (IN,I))
-  CALL DISTRIBUTE_STATION(TSTATION%MER (IN,I))
-  CALL DISTRIBUTE_STATION(TSTATION%W   (IN,I))
-  CALL DISTRIBUTE_STATION(TSTATION%P   (IN,I))
-  CALL DISTRIBUTE_STATION(TSTATION%TH  (IN,I))
+STATION: DO JS = 1,NUMBSTAT_LOC
+  JK = TSTATIONS(JS)%NK
+
+  IF (LCARTESIAN) THEN
+    TSTATIONS(JS)%XZON(IN) =   STATPROF_INTERP_2D_U( TSTATIONS(JS), PU(:,:,JK) )
+    TSTATIONS(JS)%XMER(IN) =   STATPROF_INTERP_2D_V( TSTATIONS(JS), PV(:,:,JK) )
+  ELSE
+    ZU_STAT                = STATPROF_INTERP_2D_U( TSTATIONS(JS), PU(:,:,JK) )
+    ZV_STAT                = STATPROF_INTERP_2D_V( TSTATIONS(JS), PV(:,:,JK) )
+    ZGAM                   = (XRPK * (TSTATIONS(JS)%XLON - XLON0) - XBETA)*(XPI/180.)
+    TSTATIONS(JS)%XZON(IN) =   ZU_STAT * COS(ZGAM) + ZV_STAT * SIN(ZGAM)
+    TSTATIONS(JS)%XMER(IN) = - ZU_STAT * SIN(ZGAM) + ZV_STAT * COS(ZGAM)
+  END IF
+  TSTATIONS(JS)%XW (IN) = STATPROF_INTERP_2D( TSTATIONS(JS), PW(:,:,JK) )
+  TSTATIONS(JS)%XTH(IN) = STATPROF_INTERP_2D( TSTATIONS(JS), PTH(:,:,JK) )
+  TSTATIONS(JS)%XP (IN) = STATPROF_INTERP_2D( TSTATIONS(JS), PP(:,:,JK) )
+
   DO JSV=1,SIZE(PR,4)
-    CALL DISTRIBUTE_STATION(TSTATION%R   (IN,I,JSV))
+    TSTATIONS(JS)%XR(IN,JSV) = STATPROF_INTERP_2D( TSTATIONS(JS), PR(:,:,JK,JSV) )
   END DO
+
   DO JSV=1,SIZE(PSV,4)
-    CALL DISTRIBUTE_STATION(TSTATION%SV  (IN,I,JSV))
+    TSTATIONS(JS)%XSV(IN,JSV) = STATPROF_INTERP_2D( TSTATIONS(JS), PSV(:,:,JK,JSV) )
   END DO
-  IF (SIZE(PTKE)>0) CALL DISTRIBUTE_STATION(TSTATION%TKE  (IN,I))
-  IF (SIZE(PTS) >0) CALL DISTRIBUTE_STATION(TSTATION%TSRAD(IN,I))
-  CALL DISTRIBUTE_STATION(TSTATION%ZS  (I))
-  IF (LDIAG_SURFRAD) THEN
-    CALL DISTRIBUTE_STATION(TSTATION%T2M    (IN,I))
-    CALL DISTRIBUTE_STATION(TSTATION%Q2M    (IN,I))
-    CALL DISTRIBUTE_STATION(TSTATION%HU2M   (IN,I))
-    CALL DISTRIBUTE_STATION(TSTATION%ZON10M (IN,I))
-    CALL DISTRIBUTE_STATION(TSTATION%MER10M (IN,I))
-    CALL DISTRIBUTE_STATION(TSTATION%RN     (IN,I))
-    CALL DISTRIBUTE_STATION(TSTATION%H      (IN,I))
-    CALL DISTRIBUTE_STATION(TSTATION%LE     (IN,I))
-    CALL DISTRIBUTE_STATION(TSTATION%LEI    (IN,I))    
-    CALL DISTRIBUTE_STATION(TSTATION%GFLUX  (IN,I))
-   IF (CRAD /= 'NONE') THEN
-    CALL DISTRIBUTE_STATION(TSTATION%SWD    (IN,I))
-    CALL DISTRIBUTE_STATION(TSTATION%SWU    (IN,I))
-    CALL DISTRIBUTE_STATION(TSTATION%LWD    (IN,I))
-    CALL DISTRIBUTE_STATION(TSTATION%LWU    (IN,I))
-    CALL DISTRIBUTE_STATION(TSTATION%SWDIR  (IN,I))
-    CALL DISTRIBUTE_STATION(TSTATION%SWDIFF (IN,I))    
-    CALL DISTRIBUTE_STATION(TSTATION%DSTAOD (IN,I))
-   END IF
-    CALL DISTRIBUTE_STATION(TSTATION%SFCO2  (IN,I))
-  ENDIF
-  !
- ENDDO
-  !
-END IF
+
+  IF (SIZE(PTKE)>0) TSTATIONS(JS)%XTKE(IN) = STATPROF_INTERP_2D( TSTATIONS(JS), PTKE(:,:,JK) )
+  IF ( CRAD /= 'NONE' ) TSTATIONS(JS)%XTSRAD(IN) = STATPROF_INTERP_2D( TSTATIONS(JS), PTS )
+  TSTATIONS(JS)%XZS  = STATPROF_INTERP_2D( TSTATIONS(JS), PZ(:,:,1+JPVEXT))
+
+  IF ( LDIAG_SURFRAD ) THEN
+    TSTATIONS(JS)%XZON10M(IN) = STATPROF_INTERP_2D( TSTATIONS(JS), XCURRENT_ZON10M )
+    TSTATIONS(JS)%XMER10M(IN) = STATPROF_INTERP_2D( TSTATIONS(JS), XCURRENT_MER10M )
+    TSTATIONS(JS)%XT2M   (IN) = STATPROF_INTERP_2D( TSTATIONS(JS), XCURRENT_T2M    )
+    TSTATIONS(JS)%XQ2M   (IN) = STATPROF_INTERP_2D( TSTATIONS(JS), XCURRENT_Q2M    )
+    TSTATIONS(JS)%XHU2M  (IN) = STATPROF_INTERP_2D( TSTATIONS(JS), XCURRENT_HU2M   )
+    TSTATIONS(JS)%XRN    (IN) = STATPROF_INTERP_2D( TSTATIONS(JS), XCURRENT_RN     )
+    TSTATIONS(JS)%XH     (IN) = STATPROF_INTERP_2D( TSTATIONS(JS), XCURRENT_H      )
+    TSTATIONS(JS)%XLE    (IN) = STATPROF_INTERP_2D( TSTATIONS(JS), XCURRENT_LE     )
+    TSTATIONS(JS)%XLEI   (IN) = STATPROF_INTERP_2D( TSTATIONS(JS), XCURRENT_LEI    )
+    TSTATIONS(JS)%XGFLUX (IN) = STATPROF_INTERP_2D( TSTATIONS(JS), XCURRENT_GFLUX  )
+    IF ( CRAD /= 'NONE' ) THEN
+      TSTATIONS(JS)%XSWD   (IN) = STATPROF_INTERP_2D( TSTATIONS(JS), XCURRENT_SWD    )
+      TSTATIONS(JS)%XSWU   (IN) = STATPROF_INTERP_2D( TSTATIONS(JS), XCURRENT_SWU    )
+      TSTATIONS(JS)%XLWD   (IN) = STATPROF_INTERP_2D( TSTATIONS(JS), XCURRENT_LWD    )
+      TSTATIONS(JS)%XLWU   (IN) = STATPROF_INTERP_2D( TSTATIONS(JS), XCURRENT_LWU    )
+      TSTATIONS(JS)%XSWDIR (IN) = STATPROF_INTERP_2D( TSTATIONS(JS), XCURRENT_SWDIR  )
+      TSTATIONS(JS)%XSWDIFF(IN) = STATPROF_INTERP_2D( TSTATIONS(JS), XCURRENT_SWDIFF )
+      TSTATIONS(JS)%XDSTAOD(IN) = STATPROF_INTERP_2D( TSTATIONS(JS), XCURRENT_DSTAOD )
+    END IF
+    TSTATIONS(JS)%XSFCO2(IN) = STATPROF_INTERP_2D( TSTATIONS(JS), XCURRENT_SFCO2 )
+  END IF
+END DO STATION
 !
-!----------------------------------------------------------------------------
-!----------------------------------------------------------------------------
-!
-CONTAINS
-!
-!----------------------------------------------------------------------------
-!----------------------------------------------------------------------------
-!
-FUNCTION STATION_INTERP_2D(PA) RESULT(PB)
-!
-REAL, DIMENSION(:,:), INTENT(IN) :: PA
-REAL                             :: PB
-!
-INTEGER :: JI, JJ
-!
-IF (SIZE(PA,1)==2) THEN
-     JI=1
-     JJ=1 
-ELSEIF (L1D) THEN
-     JI=2
-     JJ=2
-ELSE
-     JI=II(I)
-     JJ=IJ(I)
-END IF
-!
-!
-IF ((JI .GE. 1).AND. (JI .LE. SIZE(PA,1)) .AND. &
-    (JJ .GE. 1).AND. (JJ .LE. SIZE(PA,2))) &
-PB = (1.-ZYCOEF(I)) * (1.-ZXCOEF(I)) *  PA(JI,JJ)    + &
-     (1.-ZYCOEF(I)) *    (ZXCOEF(I)) *  PA(JI+1,JJ)  + &
-     (   ZYCOEF(I)) * (1.-ZXCOEF(I)) *  PA(JI,JJ+1)  + &
-     (   ZYCOEF(I)) *    (ZXCOEF(I)) *  PA(JI+1,JJ+1)
-!
-END FUNCTION STATION_INTERP_2D
-!----------------------------------------------------------------------------
-!----------------------------------------------------------------------------
-! MODIFS
-FUNCTION STATION_INTERP_2D_U(PA) RESULT(PB)
-!
-REAL, DIMENSION(:,:), INTENT(IN) :: PA
-REAL                             :: PB
-!
-INTEGER :: JI, JJ
-!
-IF (SIZE(PA,1)==2) THEN
-     JI=1
-     JJ=1
-ELSEIF (L1D) THEN
-     JI=2
-     JJ=2
-ELSE
-     JI=IU(I)
-     JJ=IJ(I)
-END IF
-!
-IF ((JI .GE. 1).AND. (JI .LE. SIZE(PA,1)) .AND. &
-    (JJ .GE. 1).AND. (JJ .LE. SIZE(PA,2))) &
-PB = (1.- ZYCOEF(I)) * (1.-ZUCOEF(I)) * PA(JI  ,JJ  ) &
-   + (1.- ZYCOEF(I)) * (   ZUCOEF(I)) * PA(JI+1,JJ  ) &
-   + (    ZYCOEF(I)) * (1.-ZUCOEF(I)) * PA(JI  ,JJ+1) &
-   + (    ZYCOEF(I)) * (   ZUCOEF(I)) * PA(JI+1,JJ+1)
-!
-END FUNCTION STATION_INTERP_2D_U
-!----------------------------------------------------------------------------
-!----------------------------------------------------------------------------
-! MODIFS
-FUNCTION STATION_INTERP_2D_V(PA) RESULT(PB)
-!
-REAL, DIMENSION(:,:), INTENT(IN) :: PA
-REAL                             :: PB
-!
-INTEGER :: JI, JJ
-!
-IF (SIZE(PA,1)==2) THEN
-  JI=1
-  JJ=1
-ELSEIF (L1D) THEN
-     JI=2
-     JJ=2  
-ELSE
-  JI=II(I)
-  JJ=IV(I)
-END IF
-!
-IF ((JI .GT. 0).AND. (JI .LT. SIZE(PA,1)) .AND. &
-    (JJ .GT. 0).AND. (JJ .LT. SIZE(PA,2))) &
-PB = (1.- ZVCOEF(I)) * (1.-ZXCOEF(I)) * PA(JI  ,JJ  ) &
-   + (1.- ZVCOEF(I)) * (   ZXCOEF(I)) * PA(JI+1,JJ  ) &
-   + (    ZVCOEF(I)) * (1.-ZXCOEF(I)) * PA(JI  ,JJ+1) &
-   + (    ZVCOEF(I)) * (   ZXCOEF(I)) * PA(JI+1,JJ+1)
-!
-END FUNCTION STATION_INTERP_2D_V
-!----------------------------------------------------------------------------
-!----------------------------------------------------------------------------
-SUBROUTINE DISTRIBUTE_STATION(PAS)
-!
-REAL, INTENT(INOUT) :: PAS
-!
-PAS = PAS * ZTHIS_PROCS(I)
-CALL REDUCESUM_ll(PAS,IINFO_ll)
-!
-END SUBROUTINE DISTRIBUTE_STATION
 !----------------------------------------------------------------------------
 !
 END SUBROUTINE STATION_n

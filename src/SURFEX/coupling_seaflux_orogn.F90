@@ -42,10 +42,11 @@ SUBROUTINE COUPLING_SEAFLUX_OROG_n (SM, DST, SLT, HPROGRAM, HCOUPLING, PTIMEC, P
 !!-------------------------------------------------------------
 !
 !
-USE MODD_SURFEX_n, ONLY : SEAFLUX_MODEL_t
+USE MODD_SURFEX_n, ONLY : SEAFLUX_MODEL_t, SURFEX_t
 !
 USE MODD_DST_n, ONLY : DST_t
 USE MODD_SLT_n, ONLY : SLT_t
+USE MODD_DMS_n, ONLY : DMS_t
 !
 !
 USE MODD_SURF_PAR,         ONLY : XUNDEF
@@ -198,7 +199,7 @@ ELSE
 ENDIF
 !
  CALL COUPLING_SEAFLUX_SBL_n(SM%CHS, SM%DTS, SM%SD, SM%O, SM%OR, SM%G, SM%S, SM%SB, &
-                             SM%AT, DST, SLT, HPROGRAM, HCOUPLING, PTIMEC, PTSTEP,  &
+                             SM%AT, DST, SLT, SM%DMS, HPROGRAM, HCOUPLING, PTIMEC, PTSTEP, &
                              KYEAR, KMONTH, KDAY, PTIME, KI, KSV, KSW,              &
                              PTSUN, PZENITH, PZENITH2, PAZIM, PZREF, PUREF, PU, PV, &
                              ZQA, ZTA, ZRHOA, PSV, PCO2, HSV, ZRAIN, ZSNOW, ZLW,    &

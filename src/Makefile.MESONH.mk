@@ -67,15 +67,28 @@ OBJS_NOCB +=  spll_dxf.o spll_dxm.o spll_dyf.o spll_dym.o \
         spll_gx_m_m.o spll_gx_m_u.o spll_gy_m_m.o \
         spll_gy_m_v.o spll_gz_m_m.o spll_gz_m_w.o \
         spll_dzf_mf.o spll_dzm_mf.o spll_mzf_mf.o spll_mzm_mf.o \
-        spll_modi_gradient_m_d.o
+        spll_mode_shuman_phy.o mode_shuman_phy.mod
 
 $(OBJS_NOCB) : OPT = $(OPT_NOCB)
 
-OBJS0 += spll_switch_sbg_lesn.o spll_mode_mppdb.o
+OBJS0 += spll_switch_sbg_lesn.o spll_mode_mppdb.o mode_mppdb.mod
 
 $(OBJS0)     : OPT = $(OPT0) 
 
 endif
+
+##########################################################
+#           Source PHYEX                                 #
+##########################################################
+DIR_PHYEX += PHYEX/aux PHYEX/turb PHYEX/micro PHYEX/conv
+INC_PHYEX += -I$(B)PHYEX/micro -I$(B)PHYEX/turb -I$(B)PHYEX/aux
+#CPPFLAGS_PHYEX += 
+VPATH     += PHYEX/aux PHYEX/turb PHYEX/micro PHYEX/conv
+#
+DIR_MASTER += $(DIR_PHYEX)
+CPPFLAGS   += $(CPPFLAGS_PHYEX)
+INC        += $(INC_PHYEX)
+
 ##########################################################
 #           Source SURFEX                                #
 ##########################################################
@@ -113,14 +126,6 @@ DIR_MASTER   += $(DIR_SURCOUCHE)
 CPPFLAGS     += $(CPPFLAGS_SURCOUCHE)
 #VER_SURCOUCHE=
 #ARCH_XYZ    := $(ARCH_XYZ)-$(VER_SURCOUCHE)
-endif
-##########################################################
-#           Source MINPACK                             #
-##########################################################
-DIR_MINPACK += LIB/minpack
-#
-ifdef DIR_MINPACK
-DIR_MASTER   += $(DIR_MINPACK)
 endif
 ##########################################################
 #           Source RAD                                   #
@@ -220,7 +225,7 @@ VPATH         += $(RTTOV_PATH)/mod
 CPPFLAGS    += $(CPPFLAGS_RTTOV)
 CPPFLAGS_MNH += -DMNH_RTTOV_11=MNH_RTTOV_11
 endif
-ifeq "$(VER_RTTOV)" "13.0"
+ifeq "$(VER_RTTOV)" "13.2"
 DIR_RTTOV=${SRC_MESONH}/src/LIB/RTTOV-${VER_RTTOV}
 RTTOV_PATH=${DIR_RTTOV}
 #
@@ -719,6 +724,9 @@ IGNORE_DEP_MASTER += ch_svode.D ch_model0d.D  \
 close_file_ol.D close_namelist_ol.D end_io_surf_oln.D \
 init_io_surf_oln.D modd_io_surf_ol.D modd_ol_fileid.D \
 open_file_ol.D open_namelist_ol.D read_surf_ol.D write_surf_ol.D offline.D
+
+# For PHYEX
+IGNORE_DEP_MASTER += ice4_fast_ri.D ice4_rsrimcg_old.D \
 
 #
 #

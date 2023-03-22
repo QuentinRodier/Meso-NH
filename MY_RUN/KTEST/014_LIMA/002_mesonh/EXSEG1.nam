@@ -78,13 +78,11 @@
                 LBU_ICP = .FALSE.,
                 LBU_JCP = .FALSE. /
 
-&NAM_PARAM_LIMA LWARM = T,
-		LACTI = T,
+&NAM_PARAM_LIMA LACTI = T,
                 HINI_CCN='AER',
                 HTYPE_CCN(1)='C',
                 NMOD_CCN = 1,          ! Nombre de modes de CCN
                 LACTIT=T,
-                LRAIN=T,
                 LSEDC=F,
                 LBOUND=T, 
                 LSCAV=F,               ! Scavenging
@@ -92,11 +90,9 @@
                 LCCN_HOM=F,             ! Concentration en CCN homogène selon z
                 CCCN_MODES='JUNGFRAU',  ! Choix des modes de CCN
                 XCCN_CONC(1)=250.,          ! Concentration du mode 1 de CCN (/cm3)
-                LCOLD = T,
 		LNUCL = T,
                 LSEDI=T,
                 LHHONI=T,
-                LSNOW=T,
                 NMOD_IFN=1,            ! Nombre de modes d'IFN
                 CPRISTINE_ICE_LIMA = 'PLAT', 
                 CHEVRIMED_ICE_LIMA = 'GRAU',

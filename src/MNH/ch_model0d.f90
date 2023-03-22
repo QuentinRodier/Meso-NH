@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -309,10 +309,10 @@ IF (NVERB >= 5) THEN
   END IF
 END IF
 ! 
-ZCONC(1,:) = ZCONC(1,:) * ZDEN2MOL * ZRHODREF(1,1,1) ! convert ppp to molec.cm-3
+ZCONC(1,:) = ZCONC(1,:) * ZDEN2MOL * ZRHODREF(1,1,1) ! convert ppv to molec.cm-3
 ZNEWCONC(1,:) = ZCONC(1,:)
 IF (LORILAM) THEN
-ZAERO(1,:) = ZAERO(1,:) * ZDEN2MOL * ZRHODREF(1,1,1) ! convert ppp to molec.cm-3
+ZAERO(1,:) = ZAERO(1,:) * ZDEN2MOL * ZRHODREF(1,1,1) ! convert ppv to molec.cm-3
 ZNEWAERO(1,:) = ZAERO(1,:)  
 END IF
 !*       1.5  initialize data for jvalues
@@ -468,7 +468,7 @@ IF (LORILAM) THEN
    XDP(:,:) = 2.E-6 * ZRG0(:,:)
 END IF
 
-  ! ZCONC(1,:) = ZCONC(1,:) * ZDEN2MOL * ZRHODREF(1,1,1) !convert ppp to  molec.cm-3
+  ! ZCONC(1,:) = ZCONC(1,:) * ZDEN2MOL * ZRHODREF(1,1,1) !convert ppv to  molec.cm-3
 
    CALL CH_SET_RATES(XTSIMUL,ZCONC,TZM,1,6,NVERB,1,NEQ)
    TZK%MODELLEVEL = 1
@@ -501,10 +501,10 @@ CALL CH_UPDATE_JVALUES(6, ZZENITH, ZRT,              &
   write_to_disk : IF (XTSIMUL >= XTNEXTOUT) THEN
 
     ZCONC(1,:) = ZCONC(1,:)*1.E9 / (ZDEN2MOL * ZRHODREF(1,1,1)) ! convert molec.cm-3 to ppb
-    IF (LORILAM) ZAERO(1,:) = ZAERO(1,:) / (ZDEN2MOL * ZRHODREF(1,1,1)) ! convert molec.cm-3 to ppp
+    IF (LORILAM) ZAERO(1,:) = ZAERO(1,:) / (ZDEN2MOL * ZRHODREF(1,1,1)) ! convert molec.cm-3 to ppv
     CALL CH_OUTPUT(ZCONC,ZAERO, ZMI, TZM, 1, 1)
     ZCONC(1,:) = ZCONC(1,:)*1.E-9 * (ZDEN2MOL * ZRHODREF(1,1,1)) ! convert  ppb to molec.cm-3
-    IF (LORILAM) ZAERO(1,:) = ZAERO(1,:) * (ZDEN2MOL * ZRHODREF(1,1,1)) ! convert  ppp to molec.cm-3
+    IF (LORILAM) ZAERO(1,:) = ZAERO(1,:) * (ZDEN2MOL * ZRHODREF(1,1,1)) ! convert  ppv to molec.cm-3
 
     XTNEXTOUT = XTSIMUL + XDTOUT
   ENDIF write_to_disk
@@ -559,8 +559,8 @@ ENDDO time_loop
 !*       4.1  write final result to disk (restart file)
 !
 ! convert molec.cm-3 to ppb
-ZCONC(1,:) = ZCONC(1,:) / (ZDEN2MOL * ZRHODREF(1,1,1)) ! convert molec.cm-3 to ppp
-IF (LORILAM) ZAERO(1,:) = ZAERO(1,:) / (ZDEN2MOL * ZRHODREF(1,1,1)) ! convert molec.cm-3 to ppp
+ZCONC(1,:) = ZCONC(1,:) / (ZDEN2MOL * ZRHODREF(1,1,1)) ! convert molec.cm-3 to ppv
+IF (LORILAM) ZAERO(1,:) = ZAERO(1,:) / (ZDEN2MOL * ZRHODREF(1,1,1)) ! convert molec.cm-3 to ppv
 CALL CH_WRITE_CHEM(ZCONC(1,:), ZAERO(1,:), ZRHODREF(:,1,1), COUTFILE)
 !
 !*       4.2  finish

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1999-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1999-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -91,7 +91,7 @@
 !  P. Wautelet 07/02/2019: force TYPE to a known value for IO_File_add2list
 !  P. Wautelet 11/02/2019: added missing use of MODI_CH_MONITOR_n
 !  P. Wautelet 28/03/2019: use MNHTIME for time measurement variables
-!  P. Wautelet 26/07/2019: bug correction: deallocate of zsea and ztown done too early
+!  P. Wautelet 26/07/2019: bug correction: deallocate of zsea done too early
 !  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
 !  P. Wautelet 06/07/2021: use FINALIZE_MNH
 !-------------------------------------------------------------------------------
@@ -141,6 +141,7 @@ USE MODD_TIME_n
 USE MODD_TURB_n
 USE MODD_VAR_ll
 !
+USE MODE_AIRCRAFT_BALLOON
 USE MODE_DATETIME
 USE MODE_FINALIZE_MNH,     only: FINALIZE_MNH
 USE MODE_IO_FILE,          only: IO_File_close, IO_File_open
@@ -156,9 +157,9 @@ USE MODE_MODELN_HANDLER
 USE MODE_MSG
 USE MODE_POS
 USE MODE_TIME
+USE MODE_WRITE_AIRCRAFT_BALLOON
 use mode_write_lfifmn_fordiachro_n, only: WRITE_LFIFMN_FORDIACHRO_n
 !
-USE MODI_AIRCRAFT_BALLOON
 USE MODI_CH_MONITOR_n
 USE MODI_COMPUTE_R00
 USE MODI_DIAG_SURF_ATM_N
@@ -166,7 +167,6 @@ USE MODI_INIT_MNH
 USE MODI_MNHGET_SURF_PARAM_n
 USE MODI_PHYS_PARAM_n
 USE MODI_VERSION
-USE MODI_WRITE_AIRCRAFT_BALLOON
 USE MODI_WRITE_DIAG_SURF_ATM_N
 USE MODI_WRITE_LFIFM1_FOR_DIAG
 USE MODI_WRITE_LFIFM1_FOR_DIAG_SUPP
@@ -205,7 +205,7 @@ LOGICAL:: GCLOUD_ONLY          ! conditionnal radiation computations for
                                 !      the only cloudy columns
 !
 INTEGER :: IIU, IJU, IKU
-REAL, DIMENSION(:,:),ALLOCATABLE          :: ZSEA,ZTOWN
+REAL, DIMENSION(:,:),ALLOCATABLE          :: ZSEA
 REAL, DIMENSION(:,:,:,:),ALLOCATABLE          :: ZWETDEPAER
 !
 TYPE(TFILEDATA),POINTER :: TZDIACFILE => NULL()
@@ -547,21 +547,17 @@ IF ( LAIRCRAFT_BALLOON ) THEN
   TDTCUR = TXDTBAL !TDTCUR is used in AIRCRAFT_BALLOON
 !
   ALLOCATE (ZSEA(SIZE(XRHODJ,1),SIZE(XRHODJ,2)))
-  ALLOCATE (ZTOWN(SIZE(XRHODJ,1),SIZE(XRHODJ,2)))
   ZSEA(:,:) = 0.
-  ZTOWN(:,:)= 0.
-  CALL MNHGET_SURF_PARAM_n (PSEA=ZSEA(:,:),PTOWN=ZTOWN(:,:))
-  DO ISTEPBAL=1,NTIME_AIRCRAFT_BALLOON,INT(XSTEP_AIRCRAFT_BALLOON)
-    CALL AIRCRAFT_BALLOON(XSTEP_AIRCRAFT_BALLOON,                &
-                      XXHAT, XYHAT, XZZ, XMAP, XLONORI, XLATORI, &
-                      XUT, XVT, XWT, XPABST, XTHT, XRT, XSVT,    &
-                      XTKET, XTSRAD, XRHODREF,XCIT,ZSEA)
+  CALL MNHGET_SURF_PARAM_n (PSEA=ZSEA(:,:))
+  DO ISTEPBAL = 1, NTIME_AIRCRAFT_BALLOON, INT(XSTEP_AIRCRAFT_BALLOON)
+    CALL AIRCRAFT_BALLOON( XSTEP_AIRCRAFT_BALLOON, XZZ, XMAP, XLONORI, XLATORI, XUT, XVT, XWT, &
+                           XPABST, XTHT, XRT, XSVT, XTKET, XTSRAD, XRHODREF, XCIT, ZSEA        )
 
     TXDTBAL%xtime = TXDTBAL%xtime + XSTEP_AIRCRAFT_BALLOON
     CALL DATETIME_CORRECTDATE(TXDTBAL)
     TDTCUR = TXDTBAL !TDTCUR is used in AIRCRAFT_BALLOON
-  ENDDO
-  DEALLOCATE (ZSEA,ZTOWN)
+  END DO
+  DEALLOCATE (ZSEA)
 !
   TDTCUR = TPDTCUR_SAVE
 !

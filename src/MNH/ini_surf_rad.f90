@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2003-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2003-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -63,7 +63,7 @@ END MODULE MODI_INI_SURF_RAD
 !*       0.    DECLARATIONS
 !              ------------
 !
-use modd_field,         only: tfielddata, tfieldlist
+use modd_field,         only: tfieldmetadata, tfieldlist
 USE MODD_IO,            ONLY: TFILEDATA
 !
 use mode_field,         only: Find_field_id_from_mnhname
@@ -82,8 +82,8 @@ REAL, DIMENSION(:,:),   INTENT(OUT) :: PTSRAD    ! radiative surface temperature
 !
 !*       0.2   declarations of local variables
 !
-INTEGER           :: IID, IRESP
-TYPE(TFIELDDATA)  :: TZFIELD
+INTEGER              :: IID, IRESP
+TYPE(TFIELDMETADATA) :: TZFIELD
 !-------------------------------------------------------------------------------
 !
 CALL IO_Field_read(TPINIFILE,'DIR_ALB',PDIR_ALB)
@@ -91,7 +91,7 @@ CALL IO_Field_read(TPINIFILE,'SCA_ALB',PSCA_ALB)
 !
 CALL PRINT_MSG(NVERB_INFO,'IO','INI_SURF_RAD','EMIS: reading only first band (copy on others)')
 CALL FIND_FIELD_ID_FROM_MNHNAME('EMIS',IID,IRESP)
-TZFIELD = TFIELDLIST(IID)
+TZFIELD = TFIELDMETADATA( TFIELDLIST(IID) )
 TZFIELD%NDIMS = 2
 CALL IO_Field_read(TPINIFILE,TZFIELD,PEMIS(:,:,1))
 PEMIS(:,:,:) = SPREAD(SOURCE=PEMIS(:,:,1),DIM=3,NCOPIES=SIZE(PEMIS,3))

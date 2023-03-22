@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 solver 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !     ######spl
       MODULE MODI_RICHARDSON
@@ -23,12 +18,12 @@ IMPLICIT NONE
 CHARACTER (LEN=4), DIMENSION(2), INTENT(IN) :: HLBCX    ! x-direction LBC type 
 CHARACTER (LEN=4), DIMENSION(2), INTENT(IN) :: HLBCY    ! y-direction LBC type 
 !
-                                                 ! Metric coefficients:
-REAL, DIMENSION(:,:,:), INTENT(IN)  :: PDXX      ! d*xx 
-REAL, DIMENSION(:,:,:), INTENT(IN)  :: PDYY      ! d*yy 
-REAL, DIMENSION(:,:,:), INTENT(IN)  :: PDZX      ! d*zx 
-REAL, DIMENSION(:,:,:), INTENT(IN)  :: PDZY      ! d*zy 
-REAL, DIMENSION(:,:,:), INTENT(IN)  :: PDZZ      ! d*zz
+                                                   ! Metric coefficients:
+REAL, DIMENSION(:,:,:), INTENT(IN)    :: PDXX      ! d*xx 
+REAL, DIMENSION(:,:,:), INTENT(IN)    :: PDYY      ! d*yy 
+REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PDZX      ! d*zx 
+REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PDZY      ! d*zy 
+REAL, DIMENSION(:,:,:), INTENT(IN)    :: PDZZ      ! d*zz
 !
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRHODJ    ! density of reference * J
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PTHETAV   ! virtual potential temp. at 
@@ -148,12 +143,12 @@ IMPLICIT NONE
 CHARACTER (LEN=4), DIMENSION(2), INTENT(IN) :: HLBCX    ! x-direction LBC type 
 CHARACTER (LEN=4), DIMENSION(2), INTENT(IN) :: HLBCY    ! y-direction LBC type 
 !
-                                                 ! Metric coefficients:
-REAL, DIMENSION(:,:,:), INTENT(IN)  :: PDXX      ! d*xx 
-REAL, DIMENSION(:,:,:), INTENT(IN)  :: PDYY      ! d*yy 
-REAL, DIMENSION(:,:,:), INTENT(IN)  :: PDZX      ! d*zx 
-REAL, DIMENSION(:,:,:), INTENT(IN)  :: PDZY      ! d*zy 
-REAL, DIMENSION(:,:,:), INTENT(IN)  :: PDZZ      ! d*zz
+                                                   ! Metric coefficients:
+REAL, DIMENSION(:,:,:), INTENT(IN)    :: PDXX      ! d*xx 
+REAL, DIMENSION(:,:,:), INTENT(IN)    :: PDYY      ! d*yy 
+REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PDZX      ! d*zx 
+REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PDZY      ! d*zy 
+REAL, DIMENSION(:,:,:), INTENT(IN)    :: PDZZ      ! d*zz
 !
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRHODJ    ! density of reference * J
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PTHETAV   ! virtual potential temp. at 

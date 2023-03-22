@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -39,7 +39,8 @@ REAL, INTENT(IN)    :: PRELAX                    ! relaxation coefficient for
 REAL, DIMENSION(:,:,:), INTENT(IN) :: PRHODJ     ! density of reference state
                                                  ! * J
 !
-REAL, DIMENSION(:,:,:), INTENT(IN) :: PDXX,PDYY,PDZZ,PDZX,PDZY ! metric coefficients
+REAL, DIMENSION(:,:,:), INTENT(IN)    :: PDXX,PDYY,PDZZ
+REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PDZX,PDZY ! metric coefficients
 !
 REAL, INTENT(IN) :: PDXHATM                     ! mean grid increment in the x
                                                 ! direction
@@ -281,7 +282,8 @@ REAL, INTENT(IN)    :: PRELAX                    ! relaxation coefficient for
 REAL, DIMENSION(:,:,:), INTENT(IN) :: PRHODJ     ! density of reference state
                                                  ! * J
 !
-REAL, DIMENSION(:,:,:), INTENT(IN) :: PDXX,PDYY,PDZZ,PDZX,PDZY ! metric coefficients
+REAL, DIMENSION(:,:,:), INTENT(IN)    :: PDXX,PDYY,PDZZ
+REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PDZX,PDZY ! metric coefficients
 !
 REAL, INTENT(IN) :: PDXHATM                     ! mean grid increment in the x
                                                 ! direction

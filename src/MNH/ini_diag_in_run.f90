@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2003-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 profiler 2006/10/24 10:07:46
 !-----------------------------------------------------------------
 !      #########################
 MODULE MODI_INI_DIAG_IN_RUN
@@ -61,18 +56,19 @@ END MODULE MODI_INI_DIAG_IN_RUN
 !!
 !!    MODIFICATIONS
 !!    -------------
-!!     Original 11/2003
-!!                   02/2018 Q.Libois ECRAD
-!!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
-!!
-!! --------------------------------------------------------------------------
-!       
+!     Original 11/2003
+!  Q. Libois      02/2018: ECRAD
+!  S. Bielli      02/2019: sea salt: significant sea wave height influences salt emission; 5 salt modes
+!  P. Wautelet 30/09/2022: bugfix: use XUNDEF from SURFEX for surface variables computed by SURFEX
+! --------------------------------------------------------------------------
+!
 !*      0. DECLARATIONS
 !          ------------
 !
 USE MODD_CONF, ONLY : CPROGRAM
-USE MODD_PARAMETERS, ONLY : XUNDEF
 USE MODD_DIAG_IN_RUN
+USE MODD_PARAMETERS, ONLY : XUNDEF
+USE MODD_SURF_PAR,   ONLY: XUNDEF_SFX => XUNDEF
 !
 IMPLICIT NONE
 !
@@ -118,27 +114,27 @@ IF (LDIAG_IN_RUN) THEN
   ALLOCATE(XCURRENT_ZWS(KIU,KJU)) ! Significant height of waves
   !
   !
-  XCURRENT_RN    = XUNDEF
-  XCURRENT_H     = XUNDEF
-  XCURRENT_LE    = XUNDEF
-  XCURRENT_LEI   = XUNDEF  
-  XCURRENT_GFLUX = XUNDEF
+  XCURRENT_RN    = XUNDEF_SFX
+  XCURRENT_H     = XUNDEF_SFX
+  XCURRENT_LE    = XUNDEF_SFX
+  XCURRENT_LEI   = XUNDEF_SFX
+  XCURRENT_GFLUX = XUNDEF_SFX
   XCURRENT_LWD   = XUNDEF
   XCURRENT_LWU   = XUNDEF
   XCURRENT_SWD   = XUNDEF
   XCURRENT_SWU   = XUNDEF
   XCURRENT_SWDIR = XUNDEF
   XCURRENT_SWDIFF= XUNDEF  
-  XCURRENT_T2M   = XUNDEF
-  XCURRENT_Q2M   = XUNDEF
-  XCURRENT_HU2M  = XUNDEF
-  XCURRENT_ZON10M= XUNDEF
-  XCURRENT_MER10M= XUNDEF
+  XCURRENT_T2M   = XUNDEF_SFX
+  XCURRENT_Q2M   = XUNDEF_SFX
+  XCURRENT_HU2M  = XUNDEF_SFX
+  XCURRENT_ZON10M= XUNDEF_SFX
+  XCURRENT_MER10M= XUNDEF_SFX
   XCURRENT_DSTAOD= XUNDEF
-  XCURRENT_SFCO2 = XUNDEF
+  XCURRENT_SFCO2 = XUNDEF_SFX
   XCURRENT_TKE_DISS = XUNDEF
   XCURRENT_SLTAOD= XUNDEF
-  XCURRENT_ZWS = XUNDEF
+  XCURRENT_ZWS = XUNDEF_SFX
 ELSE
   ALLOCATE(XCURRENT_RN    (0,0))! net radiation
   ALLOCATE(XCURRENT_H     (0,0))! sensible heat flux

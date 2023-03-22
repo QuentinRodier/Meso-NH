@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -17,7 +17,7 @@ INTERFACE
             OHORELAX_SVCHEM, OHORELAX_SVAER, OHORELAX_SVDST, OHORELAX_SVSLT, &
             OHORELAX_SVPP,OHORELAX_SVCS, OHORELAX_SVCHIC,OHORELAX_SVSNW,     &
             PALKTOP,PALKGRD, PALZBOT,PALZBAS,                                &
-            PZZ, PZHAT, PTSTEP,                                              &
+            PZZ, PZHAT, PZHATM, PTSTEP,                                      &
             PRIMKMAX,KRIMX, KRIMY,                                           &
             PALK, PALKW, KALBOT,PALKBAS,PALKWBAS,KALBAS,                     &  
             OMASK_RELAX,PKURELAX, PKVRELAX, PKWRELAX    )
@@ -79,8 +79,9 @@ REAL,                   INTENT(IN)        :: PALZBOT   ! Height of the abs.
 REAL,                   INTENT(IN)        :: PALZBAS   ! Height of the abs.
                                                        ! layer base            
 REAL, DIMENSION(:,:,:), INTENT(IN)        :: PZZ       ! Height 
-REAL, DIMENSION(:),     INTENT(IN)        :: PZHAT     ! Gal-Chen Height 
-REAL,                   INTENT(IN)        :: PTSTEP    ! Time step         
+REAL, DIMENSION(:),     INTENT(IN)        :: PZHAT     ! Gal-Chen Height
+REAL, DIMENSION(:),     INTENT(IN)        :: PZHATM    ! ... at mass points
+REAL,                   INTENT(IN)        :: PTSTEP    ! Time step
 REAL,                     INTENT(IN)    :: PRIMKMAX !Max. value of the horiz.
                                           ! relaxation coefficients
 INTEGER,                INTENT(IN)        :: KRIMX,KRIMY ! Number of points in 
@@ -122,7 +123,7 @@ END MODULE MODI_RELAXDEF
             OHORELAX_SVCHEM, OHORELAX_SVAER, OHORELAX_SVDST, OHORELAX_SVSLT, &
             OHORELAX_SVPP,OHORELAX_SVCS, OHORELAX_SVCHIC,OHORELAX_SVSNW,     &
             PALKTOP,PALKGRD, PALZBOT,PALZBAS,                                &
-            PZZ, PZHAT, PTSTEP,                                              &
+            PZZ, PZHAT, PZHATM, PTSTEP,                                      &
             PRIMKMAX,KRIMX, KRIMY,                                           &
             PALK, PALKW, KALBOT,PALKBAS,PALKWBAS,KALBAS,                     &
             OMASK_RELAX,PKURELAX, PKVRELAX, PKWRELAX    )
@@ -306,7 +307,8 @@ REAL,                   INTENT(IN)        :: PALZBAS   ! Height of the abs.
                                                        ! layer base                                                        
 REAL, DIMENSION(:,:,:), INTENT(IN)        :: PZZ       ! Height 
 REAL, DIMENSION(:),     INTENT(IN)        :: PZHAT     ! Gal-Chen Height 
-REAL,                   INTENT(IN)        :: PTSTEP    ! Time step         
+REAL, DIMENSION(:),     INTENT(IN)        :: PZHATM    ! ... at mass points
+REAL,                   INTENT(IN)        :: PTSTEP    ! Time step
 REAL,                     INTENT(IN)    :: PRIMKMAX !Max. value of the horiz.
                                           ! relaxation coefficients
 INTEGER,                INTENT(IN)        :: KRIMX,KRIMY ! Number of points in 
@@ -341,8 +343,6 @@ REAL                       :: ZZSHAT
 REAL                       :: ZZTOP       ! Height of the model top         
 REAL                       :: ZALZHAT     ! Gal-Chen height of the abs. layer 
                                           ! base
-REAL                       :: ZZHATK      ! Gal-Chen height of u(k), v(k), and 
-                                          ! theta(k)
 !
 INTEGER                    :: IKRIMAX     ! Maximum width of the rim zone
                                           !  (number of points)
@@ -445,8 +445,7 @@ IF(OVE_RELAX) THEN
   END DO
 !
   DO JK = KALBOT, IKE
-    ZZHATK = 0.5 * (PZHAT(JK) +PZHAT(JK+1))
-    PALK(JK) = PALKTOP * SIN ( ZWORK * (ZZHATK - PZHAT(KALBOT))) **2
+    PALK(JK) = PALKTOP * SIN ( ZWORK * (PZHATM(JK) - PZHAT(KALBOT))) **2
     PALK(JK) = PALK(JK) / (1. + 2. * PTSTEP * PALK(JK))
   END DO
 !
@@ -469,8 +468,7 @@ IF (OVE_RELAX_GRD) THEN
   END DO
 !
   DO JK = 1,KALBAS
-    ZZHATK = 0.5 * (PZHAT(JK) +PZHAT(JK+1))
-    PALKBAS(JK) = PALKGRD * SIN ( ZWORK * (-ZZHATK + PZHAT(KALBAS))) **2
+    PALKBAS(JK) = PALKGRD * SIN ( ZWORK * (-PZHATM(JK) + PZHAT(KALBAS))) **2
     PALKBAS(JK) = PALKBAS(JK) / (1. + 2. * PTSTEP * PALKBAS(JK))
   END DO
 END IF

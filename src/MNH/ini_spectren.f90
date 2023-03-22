@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2015-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2015-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -105,6 +105,7 @@ USE MODE_IO_FIELD_READ, only: IO_Field_read
 USE MODE_ll
 USE MODE_MODELN_HANDLER
 USE MODE_MSG
+USE MODE_SET_GRID
 USE MODE_SPLITTINGZ_ll, ONLY: GET_DIM_EXTZ_ll
 USE MODE_TYPE_ZDIFFU
 !
@@ -114,7 +115,6 @@ USE MODI_INI_DYNAMICS
 USE MODI_INI_SPAWN_LS_n
 USE MODI_GET_SIZEX_LB
 USE MODI_GET_SIZEY_LB
-USE MODI_SET_GRID
 USE MODI_METRICS
 USE MODI_SET_REF
 USE MODI_UPDATE_METRICS
@@ -262,10 +262,13 @@ ALLOCATE(XXHAT(IIU))
 ALLOCATE(XDXHAT(IIU))
 ALLOCATE(XYHAT(IJU))
 ALLOCATE(XDYHAT(IJU))
+ALLOCATE(XXHATM(IIU))
+ALLOCATE(XYHATM(IJU))
 ALLOCATE(XZS(IIU,IJU))
 ALLOCATE(XZSMT(IIU,IJU))
 ALLOCATE(XZZ(IIU,IJU,IKU))
 ALLOCATE(XZHAT(IKU))
+ALLOCATE(XZHATM(IKU))
 !
 ALLOCATE(XDXX(IIU,IJU,IKU))
 ALLOCATE(XDYY(IIU,IJU,IKU))
@@ -682,13 +685,15 @@ CALL INI_BIKHARDT_n (NDXRATIO_ALL(KMI),NDYRATIO_ALL(KMI),KMI)
 !*       6.    INITIALIZE GRIDS AND METRIC COEFFICIENTS
 !              ----------------------------------------
 !
-CALL SET_GRID(KMI,TPINIFILE,IKU,NIMAX_ll,NJMAX_ll,                       &
-              XTSTEP,XSEGLEN,                                            &
-              XLONORI,XLATORI,XLON,XLAT,                                 &
-              XXHAT,XYHAT,XDXHAT,XDYHAT, XMAP,                           &
-              XZS,XZZ,XZHAT,XZTOP,LSLEVE,XLEN1,XLEN2,XZSMT,              &
-              ZJ,                                                        &
-              TDTMOD,TDTCUR,NSTOP,NBAK_NUMB,NOUT_NUMB,TBACKUPN,TOUTPUTN)
+CALL SET_GRID( KMI, TPINIFILE, IKU, NIMAX_ll, NJMAX_ll,                        &
+               XTSTEP, XSEGLEN,                                                &
+               XLONORI, XLATORI, XLON, XLAT,                                   &
+               XXHAT, XYHAT, XDXHAT, XDYHAT, XXHATM, XYHATM,                   &
+               XXHAT_ll, XYHAT_ll, XXHATM_ll, XYHATM_ll,                       &
+               XHAT_BOUND, XHATM_BOUND,                                        &
+               XMAP, XZS, XZZ, XZHAT, XZHATM, XZTOP, LSLEVE,                   &
+               XLEN1, XLEN2, XZSMT, ZJ,                                        &
+               TDTMOD, TDTCUR, NSTOP, NBAK_NUMB, NOUT_NUMB, TBACKUPN, TOUTPUTN )
 !
 CALL METRICS(XMAP,XDXHAT,XDYHAT,XZZ,XDXX,XDYY,XDZX,XDZY,XDZZ)
 !
@@ -743,10 +748,10 @@ END IF
 !              ---------------------------
 !
 !
-CALL SET_REF(KMI,TPINIFILE,                        &
-             XZZ,XZHAT,ZJ,XDXX,XDYY,CLBCX,CLBCY,   &
-             XREFMASS,XMASS_O_PHI0,XLINMASS,       &
-             XRHODREF,XTHVREF,XRVREF,XEXNREF,XRHODJ)
+CALL SET_REF( KMI, TPINIFILE,                            &
+              XZZ, XZHATM, ZJ, XDXX, XDYY, CLBCX, CLBCY, &
+              XREFMASS, XMASS_O_PHI0, XLINMASS,          &
+              XRHODREF, XTHVREF, XRVREF, XEXNREF, XRHODJ )
 !-------------------------------------------------------------------------------
 !
 !*       11.    INITIALIZE THE SOURCE OF TOTAL DRY MASS Md
@@ -894,7 +899,7 @@ ALLOCATE(XALKBAS(0))
 ALLOCATE(XALKWBAS(0))
 !
 CALL INI_DYNAMICS(XLON,XLAT,XRHODJ,XTHVREF,XMAP,XZZ,XDXHAT,XDYHAT,            &
-             XZHAT,CLBCX,CLBCY,XTSTEP,                                        &
+             XZHAT,XZHATM,CLBCX,CLBCY,XTSTEP,                                 &
              LVE_RELAX,LVE_RELAX_GRD,LHORELAX_UVWTH,LHORELAX_RV,              &
              LHORELAX_RC,LHORELAX_RR,LHORELAX_RI,LHORELAX_RS,LHORELAX_RG,     &
              LHORELAX_RH,LHORELAX_TKE,LHORELAX_SV,                            &

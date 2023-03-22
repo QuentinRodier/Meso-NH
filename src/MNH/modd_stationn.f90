@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 modd 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !     ############################
       MODULE MODD_STATION_n
@@ -34,34 +29,42 @@
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    15/01/02
+!  P. Wautelet     04/2022: restructure stations for better performance, reduce memory usage and correct some problems/bugs
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
 !             ------------
 !
 !
-USE MODD_TYPE_STATION
-USE MODD_PARAMETERS, ONLY: JPMODELMAX
+USE MODD_PARAMETERS,    ONLY: JPMODELMAX
+USE MODD_TYPE_STATPROF, ONLY: TSTATIONDATA, TSTATPROFTIME
+
 IMPLICIT NONE
+
+PRIVATE
+
+PUBLIC :: LSTATION, NUMBSTAT_LOC, TSTATIONS_TIME, TSTATIONS
+
+PUBLIC :: STATION_GOTO_MODEL
 
 TYPE STATION_t
 !
 !-------------------------------------------------------------------------------------------
 !
   LOGICAL                          :: LSTATION    ! flag to use stations
-  INTEGER                          :: NUMBSTAT    ! number of stations
-  LOGICAL                          :: LSTATLAT    ! positioning in lat/lon
+  INTEGER                          :: NUMBSTAT_LOC = 0 ! number of stations on this process
 !
-  TYPE(STATION) :: TSTATION ! characteristics and records of a station
+  TYPE(TSTATPROFTIME) :: TSTATIONS_TIME
+  TYPE(TSTATIONDATA), DIMENSION(:), POINTER :: TSTATIONS ! characteristics and records of the stations
 !
 END TYPE STATION_t
 
 TYPE(STATION_t), DIMENSION(JPMODELMAX), TARGET, SAVE :: STATION_MODEL
 
 LOGICAL, POINTER :: LSTATION=>NULL()
-INTEGER, POINTER :: NUMBSTAT=>NULL()
-LOGICAL, POINTER :: LSTATLAT=>NULL()
-TYPE(STATION), POINTER :: TSTATION=>NULL()
+INTEGER, POINTER :: NUMBSTAT_LOC=>NULL()
+TYPE(TSTATPROFTIME),              POINTER :: TSTATIONS_TIME => NULL()
+TYPE(TSTATIONDATA), DIMENSION(:), POINTER :: TSTATIONS      => NULL()
 
 CONTAINS
 
@@ -69,12 +72,13 @@ SUBROUTINE STATION_GOTO_MODEL(KFROM, KTO)
 INTEGER, INTENT(IN) :: KFROM, KTO
 !
 ! Save current state for allocated arrays
+STATION_MODEL(KFROM)%TSTATIONS => TSTATIONS
 !
 ! Current model is set to model KTO
-LSTATION=>STATION_MODEL(KTO)%LSTATION
-NUMBSTAT=>STATION_MODEL(KTO)%NUMBSTAT
-LSTATLAT=>STATION_MODEL(KTO)%LSTATLAT
-TSTATION=>STATION_MODEL(KTO)%TSTATION
+LSTATION       => STATION_MODEL(KTO)%LSTATION
+NUMBSTAT_LOC   => STATION_MODEL(KTO)%NUMBSTAT_LOC
+TSTATIONS_TIME => STATION_MODEL(KTO)%TSTATIONS_TIME
+TSTATIONS      => STATION_MODEL(KTO)%TSTATIONS
 
 END SUBROUTINE STATION_GOTO_MODEL
 

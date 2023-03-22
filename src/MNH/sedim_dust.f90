@@ -1,4 +1,4 @@
-!ORILAM_LIC Copyright 2006-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!ORILAM_LIC Copyright 2006-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !ORILAM_LIC This is part of the ORILAM software governed by the CeCILL-C licence
 !ORILAM_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !ORILAM_LIC for details.
@@ -15,7 +15,7 @@ SUBROUTINE SEDIM_DUST(  &
      ,PRHODREF          & !I [kg/m3] air density
      ,PPABST            & !I [Pa] pressure
      ,PZZ               & !I [m] height of layers
-     ,PSVT              & !IO [scalar variable, ppp] sea salt concentration
+     ,PSVT              & !IO [scalar variable, ppv] sea salt concentration
      )
 
 IMPLICIT NONE
@@ -241,7 +241,7 @@ ELSE
   LSEDFIX = .TRUE.
 END IF
 !
-!*       5.   Return to concentration in ppp (#/molec_{air})
+!*       5.   Return to concentration in ppv (#/molec_{air})
 !
 DO JN=1,NMODE_DST
 IF (LVARSIG) THEN

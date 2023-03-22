@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1996-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1996-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -63,7 +63,7 @@ END MODULE MODI_WRITE_DUMMY_GR_FIELD_n
 !
 USE MODD_DUMMY_GR_FIELD_n, ONLY: NDUMMY_GR_NBR, CDUMMY_GR_NAME,    &
                                  CDUMMY_GR_AREA, XDUMMY_GR_FIELDS
-use modd_field,            only: tfielddata, TYPEINT, TYPEREAL
+use modd_field,            only: tfieldmetadata, TYPEINT, TYPEREAL
 USE MODD_IO,               ONLY: TFILEDATA
 USE MODD_PARAMETERS,       ONLY: NMNHNAMELGTMAX
 !
@@ -87,7 +87,7 @@ CHARACTER(LEN=3)              :: YSTRING03
 !
 REAL, DIMENSION(:,:), ALLOCATABLE :: ZWORK2D
 !
-TYPE(TFIELDDATA)  :: TZFIELD
+TYPE(TFIELDMETADATA) :: TZFIELD
 !
 !-------------------------------------------------------------------------------
 !
@@ -104,16 +104,17 @@ ALLOCATE(ZWORK2D(SIZE(XDUMMY_GR_FIELDS,1),SIZE(XDUMMY_GR_FIELDS,2)))
 !*       3.     Dummy fields :
 !               ------------
 !
-TZFIELD%CMNHNAME   = 'DUMMY_GR_NBR'
-TZFIELD%CSTDNAME   = ''
-TZFIELD%CLONGNAME  = 'DUMMY_GR_NBR'
-TZFIELD%CUNITS     = ''
-TZFIELD%CDIR       = '--'
-TZFIELD%CCOMMENT   = 'number of dummy pgd fields chosen by user'
-TZFIELD%NGRID      = 0
-TZFIELD%NTYPE      = TYPEINT
-TZFIELD%NDIMS      = 0
-TZFIELD%LTIMEDEP   = .FALSE.
+TZFIELD = TFIELDMETADATA(                                   &
+  CMNHNAME   = 'DUMMY_GR_NBR',                              &
+  CSTDNAME   = '',                                          &
+  CLONGNAME  = 'DUMMY_GR_NBR',                              &
+  CUNITS     = '',                                          &
+  CDIR       = '--',                                        &
+  CCOMMENT   = 'number of dummy pgd fields chosen by user', &
+  NGRID      = 0,                                           &
+  NTYPE      = TYPEINT,                                     &
+  NDIMS      = 0,                                           &
+  LTIMEDEP   = .FALSE.                                      )
 CALL IO_Field_write(TPFILE,TZFIELD,NDUMMY_GR_NBR)
 !
 DO JDUMMY=1,NDUMMY_GR_NBR
@@ -121,16 +122,17 @@ DO JDUMMY=1,NDUMMY_GR_NBR
   YSTRING20=CDUMMY_GR_NAME(JDUMMY)
   YSTRING03=CDUMMY_GR_AREA(JDUMMY)
   !
-  TZFIELD%CMNHNAME   = TRIM(YRECFM)
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = TRIM(YRECFM)
-  TZFIELD%CUNITS     = ''
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_'//YRECFM//YSTRING20//YSTRING03
-  TZFIELD%NGRID      = 4
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 2
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDMETADATA(                            &
+    CMNHNAME   = TRIM(YRECFM),                         &
+    CSTDNAME   = '',                                   &
+    CLONGNAME  = TRIM(YRECFM),                         &
+    CUNITS     = '',                                   &
+    CDIR       = 'XY',                                 &
+    CCOMMENT   = 'X_Y_'//YRECFM//YSTRING20//YSTRING03, &
+    NGRID      = 4,                                    &
+    NTYPE      = TYPEREAL,                             &
+    NDIMS      = 2,                                    &
+    LTIMEDEP   = .TRUE.                                )
   !
   ZWORK2D(:,:) = XDUMMY_GR_FIELDS(:,:,JDUMMY)
   !

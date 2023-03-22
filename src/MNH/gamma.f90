@@ -3,23 +3,6 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
 !########################
-        MODULE MODI_GAMMA
-!########################
-!
-INTERFACE GAMMA
-!
-FUNCTION GAMMA_X0D(PX)  RESULT(PGAMMA)
-REAL, INTENT(IN)                                  :: PX
-REAL                                              :: PGAMMA
-END FUNCTION GAMMA_X0D
-!
-FUNCTION GAMMA_X1D(PX)  RESULT(PGAMMA)
-REAL, DIMENSION(:), INTENT(IN)                    :: PX
-REAL, DIMENSION(SIZE(PX))                         :: PGAMMA
-END FUNCTION GAMMA_X1D
-!
-END INTERFACE
-END MODULE MODI_GAMMA
 !
 !--------------------------------------------------------------------------
 !
@@ -29,6 +12,8 @@ END MODULE MODI_GAMMA
 !
 !     ######################################
       FUNCTION GAMMA_X0D(PX)  RESULT(PGAMMA)
+      USE PARKIND1, ONLY : JPRB
+      USE YOMHOOK , ONLY : LHOOK, DR_HOOK
 !     ######################################
 !
 !
@@ -81,6 +66,8 @@ INTEGER                              :: JJ ! Loop index
 REAL                                 :: ZSER,ZSTP,ZTMP,ZX,ZY,ZCOEF(6)
 REAL                                 :: ZPI
 !
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+IF (LHOOK) CALL DR_HOOK('GAMMA_X0D',0,ZHOOK_HANDLE)
 !-------------------------------------------------------------------------------
 !
 !*       1. SOME CONSTANTS
@@ -121,6 +108,7 @@ IF (PX .LT. 0.) THEN
 ELSE
   PGAMMA = EXP(ZTMP + ALOG(ZSTP*ZSER/ZX))
 END IF
+IF (LHOOK) CALL DR_HOOK('GAMMA_X0D',1,ZHOOK_HANDLE)
 RETURN
 !
 END FUNCTION GAMMA_X0D
@@ -133,6 +121,8 @@ END FUNCTION GAMMA_X0D
 !
 !     ######################################
       FUNCTION GAMMA_X1D(PX)  RESULT(PGAMMA)
+      USE PARKIND1, ONLY : JPRB
+      USE YOMHOOK , ONLY : LHOOK, DR_HOOK
 !     ######################################
 !
 !
@@ -183,10 +173,12 @@ REAL, DIMENSION(SIZE(PX))            :: PGAMMA
 !*       0.2 declarations of local variables
 !
 INTEGER                              :: JJ ! Loop index
-REAL, DIMENSION(SIZE(PX))            :: ZSER,ZSTP,ZTMP,ZX,ZY
-REAL                                 :: ZCOEF(6)
+INTEGER                              :: JI ! Loop index
+REAL                                 :: ZSER, ZSTP, ZTMP, ZX, ZY, ZCOEF(6)
 REAL                                 :: ZPI
 !
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+IF (LHOOK) CALL DR_HOOK('GAMMA_X1D',0,ZHOOK_HANDLE)
 !-------------------------------------------------------------------------------
 !
 !*       1. SOME CONSTANTS
@@ -201,24 +193,35 @@ ZCOEF(6) = -0.5395239384953E-5
 ZSTP     =  2.5066282746310005
 !
 ZPI = 3.141592654
-ZX(:) = PX(:)
-WHERE ( PX(:)<0.0 )
-  ZX(:) = 1.- PX(:)
-END WHERE
-ZY(:) = ZX(:)
-ZTMP(:) =  ZX(:) + 5.5
-ZTMP(:) = (ZX(:) + 0.5)*ALOG(ZTMP(:)) - ZTMP(:)
-ZSER(:) = 1.000000000190015
 !
-DO JJ = 1 , 6
-  ZY(:) = ZY(:) + 1.0
-  ZSER(:) = ZSER(:) + ZCOEF(JJ)/ZY(:)
+!-------------------------------------------------------------------------------
+!
+!*       2. COMPUTE GAMMA
+!           -------------
+!  
+DO JI = 1, SIZE(PX)
+  IF (PX(JI) .LT. 0.) THEN
+    ZX = 1. - PX(JI)
+  ELSE 
+    ZX = PX(JI)
+  END IF
+  ZY = ZX
+  ZTMP =  ZX + 5.5
+  ZTMP = (ZX + 0.5) * ALOG(ZTMP) - ZTMP
+  ZSER = 1.000000000190015
+!
+  DO JJ = 1, 6
+    ZY = ZY + 1.0
+    ZSER = ZSER + ZCOEF(JJ) / ZY
+  END DO
+!
+  IF (PX(JI) .LT. 0.) THEN
+    PGAMMA = ZPI / SIN(ZPI*PX(JI)) / EXP(ZTMP + ALOG(ZSTP*ZSER/ZX))
+  ELSE
+    PGAMMA = EXP(ZTMP + ALOG(ZSTP*ZSER/ZX))
+  END IF
 END DO
-!
-PGAMMA(:) = EXP( ZTMP(:) + ALOG( ZSTP*ZSER(:)/ZX(:) ) )
-WHERE ( PX(:)<0.0 )
-  PGAMMA(:) = ZPI/SIN(ZPI*PX(:))/PGAMMA(:)
-END WHERE
+IF (LHOOK) CALL DR_HOOK('GAMMA_X1D',1,ZHOOK_HANDLE)
 RETURN
 !
 END FUNCTION GAMMA_X1D

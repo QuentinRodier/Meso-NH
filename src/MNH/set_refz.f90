@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -193,8 +193,7 @@ XTHVREFZ(:)=-999.
 !ocl scalar
 !!!!!!!!!!!!!!!!  FUJI  compiler directive !!!!!!!!!!
 DO JK=IKB,IKU-1
-    XTHVREFZ(JK)= ZSECT(0.5*(XZHAT(JK)+XZHAT(JK+1)),             &
-                        ZZMASS(:,:,IKB:IKE+1),PTHV(:,:,IKB:IKE+1))
+    XTHVREFZ(JK) = ZSECT( XZHATM(JK), ZZMASS(:,:,IKB:IKE+1), PTHV(:,:,IKB:IKE+1) )
 END DO
     XTHVREFZ(IKU)=XTHVREFZ(IKU-1)                                 &
                  +(XTHVREFZ(IKU-1)-XTHVREFZ(IKU-2))               &
@@ -217,8 +216,7 @@ XTHVREFZ(1)=XTHVREFZ(2)
 ZRREFZ(:)=-999.
 !ocl scalar
 DO JK=IKB,IKU-1
-    ZRREFZ(JK)= ZSECT(0.5*(XZHAT(JK)+XZHAT(JK+1)),              &
-                      ZZMASS(:,:,IKB:IKE+1),PRV(:,:,IKB:IKE+1))
+    ZRREFZ(JK) = ZSECT( XZHATM(JK), ZZMASS(:,:,IKB:IKE+1), PRV(:,:,IKB:IKE+1) )
 END DO
     ZRREFZ(IKU)=ZRREFZ(IKU-1)                                   &
                +(ZRREFZ(IKU-1)-ZRREFZ(IKU-2))                   &
@@ -233,7 +231,7 @@ IF (ZRREFZ(IMINLEVEL)==0) THEN
 ELSE
   ZCOEFB=-(LOG(ZRREFZ(IMINLEVEL+1))-LOG(ZRREFZ(IMINLEVEL))) &
        /(0.5*(XZHAT(IMINLEVEL+2)-XZHAT(IMINLEVEL)))
-  ZCOEFA=ZRREFZ(IMINLEVEL)*EXP(ZCOEFB*0.5*(XZHAT(IMINLEVEL+1)+XZHAT(IMINLEVEL)))
+  ZCOEFA=ZRREFZ(IMINLEVEL)*EXP(ZCOEFB*XZHATM(IMINLEVEL))
   WHERE (ZRREFZ==-999.)
     ZRREFZ(:)=ZCOEFA*EXP(-ZCOEFB*0.5*(XZHAT(:)+EOSHIFT(XZHAT(:),1)))
   END WHERE

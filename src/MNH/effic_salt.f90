@@ -1,11 +1,7 @@
-!ORILAM_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!ORILAM_LIC Copyright 2017-2022 CNRS, Meteo-France and Universite Paul Sabatier
 !ORILAM_LIC This is part of the ORILAM software governed by the CeCILL-C licence
 !ORILAM_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !ORILAM_LIC for details.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$ $Date$
 !-----------------------------------------------------------------
 !!   ##############################
      MODULE MODI_EFFIC_SALT
@@ -18,8 +14,8 @@ SUBROUTINE EFFIC_SALT(  &
      ,PRHODREF          & !I [kg/m3] air density
      ,PPABST            & !I [Pa] pressure
      ,PURR              & !I
-     ,PSVT              & !I [scalar variable, ppp] sea salt concentration
-     ,PEFFIC            & !O [scalar variable, ppp] sea salt concentration
+     ,PSVT              & !I [scalar variable, ppv] sea salt concentration
+     ,PEFFIC            & !O [scalar variable, ppv] sea salt concentration
      )
 
 IMPLICIT NONE

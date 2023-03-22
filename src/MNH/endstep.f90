@@ -192,6 +192,7 @@ END MODULE MODI_ENDSTEP
 !!                 J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !!                 02/2019  (S. Bielli)  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !  P. Wautelet    02/2020: use the new data structures and subroutines for budgets
+!  P. Wautelet    02/2022:  add sea salt
 !------------------------------------------------------------------------------
 !
 !*      0.   DECLARATIONS
@@ -208,12 +209,14 @@ USE MODD_CH_AEROSOL, ONLY: LORILAM
 USE MODD_CONF
 USE MODD_CTURB
 USE MODD_DUST,       ONLY: LDUST
+USE MODD_SALT,       ONLY: LSALT
 USE MODD_DYN
 USE MODD_GRID_n
 USE MODD_LBC_n,      ONLY: CLBCX, CLBCY
 USE MODD_NSV,        ONLY: XSVMIN, NSV_CHEMBEG, NSV_CHEMEND, &
                            NSV_AERBEG, NSV_AEREND,&
                            NSV_DSTBEG, NSV_DSTEND,&
+                           NSV_SLTBEG, NSV_SLTEND,&
                            NSV_SNWBEG, NSV_SNWEND
 USE MODD_PARAM_C2R2, ONLY: LACTIT
 USE MODD_PARAM_LIMA, ONLY: LACTIT_LIMA=>LACTIT
@@ -516,7 +519,24 @@ END IF
 !
 !------------------------------------------------------------------------------
 !
-!*      10.   STORAGE IN BUDGET ARRAYS
+!*      9.   MINIMUM VALUE FOR SEA SALTS
+!
+IF (LSALT) THEN
+  IF ((SIZE(PLBXSVM,4) > NSV_SLTEND-1).AND.(SIZE(PLBXSVM,1) /= 0))  THEN
+    DO JSV=NSV_SLTBEG, NSV_SLTEND
+      PLBXSVM(:,:,:,JSV) = MAX(PLBXSVM(:,:,:,JSV), XSVMIN(JSV))
+    END DO
+  END IF
+  IF ((SIZE(PLBYSVM,4) > NSV_SLTEND-1).AND.(SIZE(PLBYSVM,1) /= 0)) THEN
+    DO JSV=NSV_SLTBEG, NSV_SLTEND
+      PLBYSVM(:,:,:,JSV) = MAX(PLBYSVM(:,:,:,JSV), XSVMIN(JSV))
+    END DO
+  END IF
+END IF
+!
+!------------------------------------------------------------------------------
+!
+!*      11.   STORAGE IN BUDGET ARRAYS
 !
 IF (LBU_ENABLE) THEN
   !Division by nbustep to compute average on the selected time period
@@ -637,7 +657,7 @@ END IF
 !
 !------------------------------------------------------------------------------
 !
-!*      11.  COMPUTATION OF PHASE VELOCITY
+!*      12.  COMPUTATION OF PHASE VELOCITY
 !            -----------------------------
 !
 !   It is temporarily set to a constant value

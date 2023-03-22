@@ -74,7 +74,7 @@ use modd_budget,        only: NLVL_CATEGORY, NLVL_SUBCATEGORY, NLVL_GROUP, NLVL_
 use modd_field,         only: NMNHDIM_NI, NMNHDIM_NI_U,                                                               &
                               NMNHDIM_SERIES_LEVEL, NMNHDIM_SERIES_LEVEL_W, NMNHDIM_SERIES_TIME, NMNHDIM_SERIES_PROC, &
                               NMNHDIM_UNUSED,                                                                         &
-                              tfield_metadata_base, TYPEREAL
+                              tfieldmetadata_base, TYPEREAL
 USE MODD_IO,            ONLY: NGEN_VERB, TFILEDATA
 USE MODD_LUNIT_n,       ONLY: TLUOUT
 USE MODD_PARAMETERS
@@ -117,9 +117,9 @@ INTEGER  :: INFO_ll   ! Return code of FM-routines
 INTEGER :: ISER,INAV
 REAL :: ZSIZEHB
 CHARACTER(LEN=100) :: YMSG
-type(tbudiachrometadata)                              :: tzbudiachro
-type(tfield_metadata_base), dimension(:), allocatable :: tzfields
-type(tfiledata)                                       :: tzfile
+type(tbudiachrometadata)                             :: tzbudiachro
+type(tfieldmetadata_base), dimension(:), allocatable :: tzfields
+type(tfiledata)                                      :: tzfile
 !----------------------------------------------------------------------------
 !
 !*    1.     INITIALIZATION
