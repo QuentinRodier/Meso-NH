@@ -223,9 +223,12 @@ CHARACTER(LEN=*),    INTENT(IN)    :: HFILE !Name of the CSV file with the aircr
 
 CHARACTER(LEN=NMAXLINELGT) :: YSTRING
 INTEGER                    :: ILU      ! logical unit of the file
+INTEGER                    :: ILINESREAD ! Number of lines read and treated (the 1st one is skipped)
 INTEGER                    :: JI
 REAL                       :: ZLAT, ZLON, ZALT
 REAL                       :: ZTIME
+
+ILINESREAD = 0
 
 ! Open file
 OPEN( NEWUNIT = ILU, FILE = HFILE, FORM = 'formatted' )
@@ -235,6 +238,7 @@ READ( ILU, END = 101, FMT = '(A)' ) YSTRING ! Reading of header (skip it)
 DO JI = 1, TPAIRCRAFT%NPOS
   ! Read aircraft position
   READ( ILU, END = 101, FMT = '(A)' ) YSTRING
+  ILINESREAD = ILINESREAD + 1
 
   READ( YSTRING, * ) ZTIME, ZLAT, ZLON, ZALT
 
@@ -252,7 +256,7 @@ END DO
 
 CLOSE( ILU )
 
-IF ( JI < TPAIRCRAFT%NPOS ) &
+IF ( ILINESREAD < TPAIRCRAFT%NPOS ) &
   CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'AIRCRAFT_CSV_READ', 'Data not found in file ' // TRIM( HFILE ), OLOCAL = .TRUE. )
 
 TPAIRCRAFT%TLAND = TPAIRCRAFT%TLAUNCH + TPAIRCRAFT%XPOSTIME(TPAIRCRAFT%NPOS)
