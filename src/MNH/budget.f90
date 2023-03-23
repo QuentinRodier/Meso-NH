@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -141,7 +141,7 @@ subroutine Budget_store_end( tpbudget, hsource, pvars )
 
   call Print_msg( NVERB_DEBUG, 'BUD', 'Budget_store_end', hbudget )
 
-  if ( lcheck ) call Mppdb_check3d( pvars, 'BUD_INI::' // hbudget, precision )
+  if ( lcheck ) call Mppdb_check3d( pvars, 'BUD_END::' // hbudget, precision )
 
   if ( lles_call ) then
     if ( hsource /= tpbudget%clessource ) &
@@ -240,7 +240,10 @@ end subroutine Budget_store_end
 
 
 subroutine Budget_store_add( tpbudget, hsource, pvars )
-  use modd_les, only: lles_call
+  use modd_conf, only: lcheck
+  use modd_les,  only: lles_call
+
+  use mode_mppdb
 
   use modi_les_budget, only: Les_budget
 
@@ -248,10 +251,15 @@ subroutine Budget_store_add( tpbudget, hsource, pvars )
   character(len=*),       intent(in) :: hsource     ! Name of the source term
   real, dimension(:,:,:), intent(in) :: pvars       ! Current value to be stored
 
+  character(len=:), allocatable :: hbudget
   integer :: iid    ! Reference number of the current source term
   integer :: igroup ! Number of the group where to store the source term
 
-  call Print_msg( NVERB_DEBUG, 'BUD', 'Budget_store_add', trim( tpbudget%cname )//':'//trim( hsource ) )
+  hbudget = trim( tpbudget%cname )//':'//trim( hsource )
+
+  call Print_msg( NVERB_DEBUG, 'BUD', 'Budget_store_add', hbudget )
+
+  if ( lcheck ) call Mppdb_check3d( pvars, 'BUD_ADD::' // hbudget, precision )
 
   if ( tpbudget%ntmpstoresource /= 0 ) &
     call Print_msg( NVERB_ERROR, 'BUD', 'Budget_store_add', 'inside a Budget_store_init/Budget_store_end zone' )
