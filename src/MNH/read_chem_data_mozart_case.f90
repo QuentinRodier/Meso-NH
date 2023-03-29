@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2012-2017 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2012-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
@@ -85,6 +85,7 @@ END MODULE MODI_READ_CHEM_DATA_MOZART_CASE
 !!      P. Wautelet 30/10/17 use F90 module for netCDF
 !!      J.Pianezzej 13/02/2019 : correction for use of MEGAN
 !  P. Wautelet 18/09/2019: correct support of 64bit integers (MNH_INT=8)
+!  P. Wautelet 29/03/2022: add error if CDUMMY1 not set correctly
 !-------------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -112,17 +113,13 @@ USE MODD_PREP_REAL
 USE MODD_TIME
 USE MODD_TIME_n
 !
-!UPG*PT    
-!USE MODE_FM
-!USE MODE_IO_ll
-USE MODE_TOOLS, ONLY: UPCASE
-use MODE_TOOLS_ll
 USE MODE_IO_FILE,    only: IO_File_close
-!UPG*PT    
-
 USE MODE_MPPDB
+USE MODE_MSG
 USE MODE_THERMO
 USE MODE_TIME
+USE MODE_TOOLS, ONLY: UPCASE
+use MODE_TOOLS_ll
 !
 USE MODI_CH_AER_INIT_SOA
 USE MODI_CH_INIT_SCHEME_n
@@ -398,6 +395,9 @@ ELSEIF (CDUMMY1=="18") THEN
        itimeindex=3
 ELSEIF ((CDUMMY1=="24").OR.(CDUMMY1=="00")) THEN
        itimeindex=4
+ELSE
+  call Print_msg( NVERB_ERROR, 'GEN', 'READ_CHEM_DATA_MOZART_CASE', 'CDUMMY1 is not set correctly (or not set at all)' )
+  itimeindex=1
 ENDIF
  start3d(4) = itimeindex
 !
