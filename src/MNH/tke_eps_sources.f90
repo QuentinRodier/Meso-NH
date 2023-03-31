@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -415,12 +415,12 @@ IF ( OTURB_DIAG .AND. tpfile%lopened ) THEN
 !
 ! stores the dynamic production 
 !
-  TZFIELD%CMNHNAME   = 'DP'
+  TZFIELD%CMNHNAME   = 'TKE_DP'
   TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'DP'
+  TZFIELD%CLONGNAME  = 'Subgrid TKE dynamical production'
   TZFIELD%CUNITS     = 'm2 s-3'
   TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_Z_DP'
+  TZFIELD%CCOMMENT   = 'Subgrid dynamical production of TKE'
   TZFIELD%NGRID      = 1
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
@@ -429,12 +429,12 @@ IF ( OTURB_DIAG .AND. tpfile%lopened ) THEN
 !
 ! stores the thermal production 
 !
-  TZFIELD%CMNHNAME   = 'TP'
+  TZFIELD%CMNHNAME   = 'TKE_TP'
   TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'TP'
+  TZFIELD%CLONGNAME  = 'Subgrid TKE thermal production'
   TZFIELD%CUNITS     = 'm2 s-3'
   TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_Z_TP'
+  TZFIELD%CCOMMENT   = 'Subgrid thermal production of TKE'
   TZFIELD%NGRID      = 1
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
@@ -443,12 +443,12 @@ IF ( OTURB_DIAG .AND. tpfile%lopened ) THEN
 !
 ! stores the whole turbulent transport
 !
-  TZFIELD%CMNHNAME   = 'TR'
+  TZFIELD%CMNHNAME   = 'TKE_TR'
   TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'TR'
+  TZFIELD%CLONGNAME  = 'Subgrid TKE turbulent transport'
   TZFIELD%CUNITS     = 'm2 s-3'
   TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_Z_TR'
+  TZFIELD%CCOMMENT   = 'Subgrid total turbulent transport of TKE'
   TZFIELD%NGRID      = 1
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
@@ -457,12 +457,12 @@ IF ( OTURB_DIAG .AND. tpfile%lopened ) THEN
 !
 ! stores the dissipation of TKE 
 !
-  TZFIELD%CMNHNAME   = 'DISS'
+  TZFIELD%CMNHNAME   = 'TKE_DISS'
   TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'DISS'
+  TZFIELD%CLONGNAME  = 'Subgrid TKE dissipation'
   TZFIELD%CUNITS     = 'm2 s-3'
   TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_Z_DISS'
+  TZFIELD%CCOMMENT   = 'Subgrid dissipation of TKE'
   TZFIELD%NGRID      = 1
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
