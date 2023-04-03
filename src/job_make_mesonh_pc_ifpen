@@ -9,7 +9,7 @@ set -x
 pwd
 
 # Chargement du profil (qui contient le source vers l'env ifpen-mesonh)
-. ../conf/profile_mesonh-LXgfortran-R8I4-MNH-V5-5-1-MPIAUTO-O2
+. ../conf/profile_mesonh-LXgfortran-R8I4-MNH-V5-6-0-MPIAUTO-O2
 
 time gmake -j 10
 time gmake -j 1 installmaster
