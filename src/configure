@@ -487,7 +487,7 @@ export I_MPI_PIN_PROCESSOR_LIST=all:map=spread
                 export VER_CDF=${VER_CDF:-CDFAUTO}
                 export   MNHENV=${MNHENV:-"
 module purge
-source /soft/irsrvsoft1/expl/eb/r17/el_7-x86_64/envs/mesonh.sh
+source /soft/irsrvsoft1/expl/eb/r17/$(echo el_`lsb_release -r | awk -F ":" ' {print $2}' | awk -F "." '{print $1}' | tr -d '\t'`-`uname -i`)/envs/mesonh.sh
 "}
               ;;
 
