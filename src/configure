@@ -479,7 +479,18 @@ module load intel/20.0.015 intelmpi/20.0.015
 export SLURM_CPU_BIND=none
 export I_MPI_PIN_PROCESSOR_LIST=all:map=spread
 "}
-              ;; 
+              ;;
+'Linux irlin'*|'Linux islin'*|'Linux ener440'*) # PC IFPEN
+                export     ARCH=${ARCH:-LXgfortran}
+                export  VER_MPI=${VER_MPI:-MPIAUTO}
+                export OPTLEVEL=${OPTLEVEL:-O2}
+                export VER_CDF=${VER_CDF:-CDFAUTO}
+                export   MNHENV=${MNHENV:-"
+module purge
+source /soft/irsrvsoft1/expl/eb/r17/$(echo el_`lsb_release -r | awk -F ":" ' {print $2}' | awk -F "." '{print $1}' | tr -d '\t'`-`uname -i`)/envs/mesonh.sh
+"}
+              ;;
+
 
 Linux*)
                 export     ARCH=${ARCH:-LXgfortran}
