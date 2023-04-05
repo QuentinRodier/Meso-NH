@@ -23,8 +23,8 @@ END MODULE MODI_INI_EOL_ADR
       SUBROUTINE INI_EOL_ADR(PDXX,PDYY)
 !     ############################################################
 !
-!!****  *INI_EOL_ADR* - routine to initialize the Actuator Line Model 
-!!                      to simulate wind turbines      
+!!****  *INI_EOL_ADR* - routine to initialize the Actuator Disc 
+!!                      with Rotation to simulate wind turbines      
 !!
 !!    PURPOSE
 !!    -------
@@ -52,24 +52,26 @@ END MODULE MODI_INI_EOL_ADR
 !!    REAL, DIMENSION(:), ALLOCATABLE :: XTHRU_SUM     ! Sum of thrust (N)
 !!    REAL, DIMENSION(:), ALLOCATABLE :: XTORQ_SUM     ! Sum of torque (Nm)
 !!    REAL, DIMENSION(:), ALLOCATABLE :: XPOW_SUM      ! Sum of power (W)
+!!    REAL, DIMENSION(:,:,:),   ALLOCATABLE :: XELT_RAD       ! Elements radius [m]
+!!    REAL, DIMENSION(:,:,:),   ALLOCATABLE :: XAOA_GLB       ! Angle of attack of an element [rad]
+!!    REAL, DIMENSION(:,:,:),   ALLOCATABLE :: XFLIFT_GLB     ! Lift force, parallel to Urel [N]
+!!    REAL, DIMENSION(:,:,:),   ALLOCATABLE :: XFDRAG_GLB     ! Drag force, perpendicular to Urel [N]
+!!    REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: XFAERO_RG_GLB  ! Aerodyn. force (lift+drag) in RG [N]
 !!
-!!    INTEGER            :: NNB_RADELT        ! Number of radial elements
-!!    INTEGER            :: NNB_AZIELT        ! Number of azimutal elements
-!!    
+!    
 !!    *MODD_EOL_ADR (OUTPUT):
 !!    TYPE(FARM)                               :: TFARM
 !!    TYPE(TURBINE)                            :: TTURBINE
 !!    TYPE(BLADE)                              :: TBLADE
 !!    TYPE(AIRFOIL), DIMENSION(:), ALLOCATABLE :: TAIRFOIL
-!!    REAL, DIMENSION(:,:,:),      ALLOCATABLE :: XELT_RAD      ! Blade elements radius [m]
-!!    REAL, DIMENSION(:,:,:),      ALLOCATABLE :: XAOA_GLB      ! Angle of attack of an element [rad]
-!!    REAL, DIMENSION(:,:,:),      ALLOCATABLE :: XFLIFT_GLB    ! Lift force, parallel to Urel [N]
-!!    REAL, DIMENSION(:,:,:),      ALLOCATABLE :: XFDRAG_GLB    ! Drag force, perpendicular to Urel [N]
-!!    REAL, DIMENSION(:,:,:,:),    ALLOCATABLE :: XFAERO_REA_GLB ! Aerodyn. force (lift+drag) in RE [N]
-!!    REAL, DIMENSION(:,:,:,:),    ALLOCATABLE :: XFAERO_RG_GLB ! Aerodyn. force (lift+drag) in RG [N]
-!!    REAL, DIMENSION(:,:,:),      ALLOCATABLE :: XAOA_SUM      ! Sum of angle of attack [rad]
-!!    REAL, DIMENSION(:,:,:,:),    ALLOCATABLE :: XFAERO_REA_SUM ! Sum of aerodyn. force (lift+drag) in RE [N]
-!
+!!    REAL, DIMENSION(:,:,:),      ALLOCATABLE :: XELT_AZI       ! Elements azimut [rad]
+!!    REAL, DIMENSION(:,:,:,:),    ALLOCATABLE :: XFAERO_RA_GLB  ! Aerodyn. force (lift+drag) in RA [N]
+!!    REAL, DIMENSION(:,:,:),      ALLOCATABLE :: XFAERO_RA_BLA  ! Blade Eq Aero. force in RA [N]
+!!    REAL, DIMENSION(:,:),        ALLOCATABLE :: XAOA_BLA       ! Blade Eq. AoA 
+!!    REAL, DIMENSION(:,:,:),      ALLOCATABLE :: XFAERO_RA_SUM  ! Sum of aero. force  in RA [N]
+!!    INTEGER                                  :: NNB_RADELT     ! Number of radial elements
+!!    INTEGER                                  :: NNB_AZIELT     ! Number of azimutal elements
+!!
 !!    *MODD_EOL_KINEMATICS
 !!    Positions
 !!    Orientations
@@ -78,15 +80,14 @@ END MODULE MODI_INI_EOL_ADR
 !!    REFERENCE
 !!    ---------
 !!       
-!!
-!!    AUTHOR
+!!**  AUTHOR
 !!    ------
-!!	PA. Joulin      * Meteo France & IFPEN *
+!!    H. Toumi                    *IFPEN*
 !!
 !!    MODIFICATIONS
 !!    -------------
-!!      Original        31/05/18
-!!      Modification    10/11/20 (PA. Joulin) Updated for a main version
+!!    Original 09/22
+!!    Modification 05/04/23 (PA. Joulin) Updated for a main version
 !!
 !-------------------------------------------------------------------------------
 !
@@ -96,10 +97,8 @@ END MODULE MODI_INI_EOL_ADR
 !*       0.1    Modules
 !
 USE MODD_EOL_ADR
-USE MODD_EOL_SHARED_IO, ONLY: CFARM_CSVDATA
-USE MODD_EOL_SHARED_IO, ONLY: CTURBINE_CSVDATA
-USE MODD_EOL_SHARED_IO, ONLY: CBLADE_CSVDATA
-USE MODD_EOL_SHARED_IO, ONLY: CAIRFOIL_CSVDATA
+USE MODD_EOL_SHARED_IO, ONLY: CFARM_CSVDATA, CTURBINE_CSVDATA
+USE MODD_EOL_SHARED_IO, ONLY: CBLADE_CSVDATA, CAIRFOIL_CSVDATA
 USE MODD_EOL_SHARED_IO, ONLY: XTHRUT, XTORQT, XPOWT
 USE MODD_EOL_SHARED_IO, ONLY: XTHRU_SUM, XTORQ_SUM, XPOW_SUM
 USE MODD_EOL_SHARED_IO, ONLY: XELT_RAD
@@ -214,31 +213,26 @@ INB_RELT  = TBLADE%NNB_RADELT
 INB_TELT  = 2
 INB_NELT  = 2
 !
-XDELTA_AZI     =  2d0*XPI/INB_AELT                                  ! Rotor disc azimutal devision
-XDELTA_RAD     =  (TTURBINE%XR_MAX - TTURBINE%XR_MIN)/INB_RELT      ! Rotor disc radialal devision
+ZDELTA_AZI     =  2d0*XPI/INB_AELT                                  ! Rotor disc azimutal devision
+ZDELTA_RAD     =  (TTURBINE%XR_MAX - TTURBINE%XR_MIN)/INB_RELT      ! Rotor disc radialal devision
 
 
 !*       3.1    MODD_EOL_ADR variables
 ! at t
 ALLOCATE(XELT_RAD      (INB_WT,INB_AELT,INB_RELT  ))
 ALLOCATE(XELT_AZI      (INB_WT,INB_AELT,INB_RELT  ))
-ALLOCATE(XAOA_ELT      (INB_WT,INB_AELT,INB_RELT  ))
 ALLOCATE(XAOA_GLB      (INB_WT,INB_AELT,INB_RELT  ))
 ALLOCATE(XAOA_BLA      (INB_WT,INB_RELT  ))
-ALLOCATE(XFDRAG_ELT    (INB_WT,INB_AELT,INB_RELT  ))
 ALLOCATE(XFDRAG_GLB    (INB_WT,INB_AELT,INB_RELT  ))
-ALLOCATE(XFLIFT_ELT    (INB_WT,INB_AELT,INB_RELT  ))
 ALLOCATE(XFLIFT_GLB    (INB_WT,INB_AELT,INB_RELT  ))
-ALLOCATE(XFAERO_RA_ELT (INB_WT,INB_AELT,INB_RELT,3))
 ALLOCATE(XFAERO_RA_GLB (INB_WT,INB_AELT,INB_RELT,3))
 ALLOCATE(XFAERO_RA_BLA (INB_WT,INB_RELT,3))
-ALLOCATE(XFAERO_RG_ELT (INB_WT,INB_AELT,INB_RELT,3))
 ALLOCATE(XFAERO_RG_GLB (INB_WT,INB_AELT,INB_RELT,3))
 ALLOCATE(XTHRUT        (INB_WT                 ))
 ALLOCATE(XTORQT        (INB_WT                 ))
 ALLOCATE(XPOWT         (INB_WT                 ))
 ! for mean values
-ALLOCATE(XAOA_SUM_ADR      (INB_WT,INB_RELT  ))
+ALLOCATE(XAOA_SUM      (INB_WT,INB_RELT  ))
 ALLOCATE(XFAERO_RA_SUM (INB_WT,INB_RELT,3))
 ALLOCATE(XTHRU_SUM     (INB_WT))
 ALLOCATE(XTORQ_SUM     (INB_WT))
@@ -432,15 +426,15 @@ DO JROT=1, INB_WT
 
 ! - Positioning of sections (cuts)
   
-   XPOS_SEC_RC(JROT,JAZI,JRAD,1)    = TTURBINE%XR_MIN + (JRAD-1) * XDELTA_RAD
-   XPOS_SEC_RC(JROT,JAZI,JRAD,2)    = (JAZI-1) * XDELTA_AZI
+   XPOS_SEC_RC(JROT,JAZI,JRAD,1)    = TTURBINE%XR_MIN + (JRAD-1) * ZDELTA_RAD
+   XPOS_SEC_RC(JROT,JAZI,JRAD,2)    = (JAZI-1) * ZDELTA_AZI
    XPOS_SEC_RC(JROT,JAZI,JRAD,3)    = 0d0
   END DO
   
   DO JRAD=1, INB_RELT
 ! - Positioning of centers (points of application) 
-   XPOS_ELT_RC(JROT,JAZI,JRAD,1)    = XPOS_SEC_RC(JROT,JAZI,JRAD,1) + XDELTA_RAD/2d0
-   XPOS_ELT_RC(JROT,JAZI,JRAD,2)    = XPOS_SEC_RC(JROT,JAZI,JRAD,2) + XDELTA_AZI/2d0
+   XPOS_ELT_RC(JROT,JAZI,JRAD,1)    = XPOS_SEC_RC(JROT,JAZI,JRAD,1) + ZDELTA_RAD/2d0
+   XPOS_ELT_RC(JROT,JAZI,JRAD,2)    = XPOS_SEC_RC(JROT,JAZI,JRAD,2) + ZDELTA_AZI/2d0
    XPOS_ELT_RC(JROT,JAZI,JRAD,3)    = 0d0
    XELT_RAD(JROT,JAZI,JRAD)         = XPOS_ELT_RC(JROT,JAZI,JRAD,1)
    XELT_AZI(JROT,JAZI,JRAD)         = XPOS_ELT_RC(JROT,JAZI,JRAD,2)
@@ -455,7 +449,7 @@ DO JROT=1, INB_WT
                                      * (XPOS_SEC_RC(JROT,JAZI,JRAD+1,1)      &
                                      - XPOS_SEC_RC(JROT,JAZI,JRAD,1))
    XSURF_APP_ELT(JROT,JRAD)         = INB_B * XSURF_ELT(JROT,JRAD)           &                   
-                                     * XDELTA_AZI/(2d0*XPI)
+                                     * ZDELTA_AZI/(2d0*XPI)
 
 ! - Velocities
    XRVEL_RA_RC(JROT,JAZI,JRAD,:)    = 0d0
@@ -465,7 +459,7 @@ DO JROT=1, INB_WT
 !   - Orientation in the transition reference frame      
    XANGINI_ELT_RC(JROT,JAZI,JRAD,1) = 0d0 
    XANGINI_ELT_RC(JROT,JAZI,JRAD,2) = 0d0
-   XANGINI_ELT_RC(JROT,JAZI,JRAD,3) = 0d0 + (JAZI-1) * XDELTA_AZI + XDELTA_AZI/2d0  
+   XANGINI_ELT_RC(JROT,JAZI,JRAD,3) = 0d0 + (JAZI-1) * ZDELTA_AZI + ZDELTA_AZI/2d0  
 !   - Orientation in the annular elements reference frame      
    XANGINI_ELT_RA(JROT,JAZI,JRAD,1) = 0d0 + TFARM%XBLA_PITCH(JROT) + XTWIST_ELT(JROT,JRAD)
    XANGINI_ELT_RA(JROT,JAZI,JRAD,2) = 0d0

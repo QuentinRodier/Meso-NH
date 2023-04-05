@@ -8,24 +8,24 @@
       MODULE MODD_EOL_ADR
 !!    #####################
 !!
-!!*** *MODD_EOL_ALM*
+!!*** *MODD_EOL_ADR*
 !!
 !!    PURPOSE
 !!    -------
 !!       It is possible to include wind turbines parameterization in Meso-NH,
 !!       and several models are available. One of the models is the Actuator 
-!!       Line Method (ALM). MODD_EOL_ALM contains all the declarations for
-!!       the ALM model. 
+!!       Disc with Rotation (ADR). MODD_EOL_ADR contains all the declarations 
+!!       for the ADR model. 
 !!
 !!
 !!**  AUTHOR
 !!    ------
-!!    PA.Joulin                   *CNRM & IFPEN*
-!
+!!    H. Toumi                    *IFPEN*
+!!
 !!    MODIFICATIONS
 !!    -------------
-!!    Original 04/01/17
-!!    Modification 14/10/20 (PA. Joulin) Updated for a main version
+!!    Original 09/22
+!!    Modification 05/04/23 (PA. Joulin) Updated for a main version
 !!
 !-----------------------------------------------------------------------------
 !
@@ -46,7 +46,7 @@ TYPE FARM
 END TYPE FARM
 !
 TYPE TURBINE 
-        CHARACTER(LEN=10)                            :: CNAME        ! Nom de la turbine [-]
+        CHARACTER(LEN=10)                            :: CNAME        ! Wind turbine name [-]
         INTEGER                                      :: NNB_BLADES   ! Number of blades [-]
         REAL                                         :: XH_HEIGHT    ! Hub height [m]
         REAL                                         :: XH_DEPORT    ! Hub deport [m]
@@ -81,24 +81,20 @@ TYPE(TURBINE)                                        :: TTURBINE
 TYPE(BLADE)                                          :: TBLADE
 TYPE(AIRFOIL), DIMENSION(:), ALLOCATABLE             :: TAIRFOIL 
 !
+! 
 ! --- Global variables (Code & CPU) --- 
-REAL                                  :: XDELTA_AZI     ! Delta azimut [rad]
-REAL                                  :: XDELTA_RAD     ! Delta radius [rad]
 REAL, DIMENSION(:,:,:),   ALLOCATABLE :: XELT_AZI       ! Elements azimut [rad]
-REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: XFAERO_RA_GLB  ! Aerodyn. force (lift+drag) in RA [N]
-REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: XFAERO_RA_ELT  ! Aerodyn. force (lift+drag) in RA [N]
-REAL, DIMENSION(:,:,:), ALLOCATABLE  :: XFAERO_RA_BLA  ! Aerodyn. force (lift+drag) in RA [N]
-REAL, DIMENSION(:,:,:), ALLOCATABLE   :: XAOA_ELT 
-REAL, DIMENSION(:,:), ALLOCATABLE   :: XAOA_BLA 
-REAL, DIMENSION(:,:,:), ALLOCATABLE   :: XFDRAG_ELT 
-REAL, DIMENSION(:,:,:), ALLOCATABLE   :: XFLIFT_ELT 
-REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: XFAERO_RG_ELT  ! Aerodyn. force (lift+drag) in RA [N]
-
+REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: XFAERO_RA_GLB  ! Aerodyn. force (lift+drag) in RA [N], global
+!
+! Blade equivalent values
+REAL, DIMENSION(:,:,:),   ALLOCATABLE :: XFAERO_RA_BLA  ! Blade Eq Aerodyn. force (lift+drag) in RA [N]
+REAL, DIMENSION(:,:),     ALLOCATABLE :: XAOA_BLA       ! Blade Eq. AoA 
+!
 ! Mean values
-REAL, DIMENSION(:,:,:), ALLOCATABLE :: XFAERO_RA_SUM  ! Sum of aerodyn. force (lift+drag) in RA [N]
-REAL, DIMENSION(:,:), ALLOCATABLE :: XAOA_SUM_ADR  ! Sum of aerodyn. force (lift+drag) in RA [N]
+REAL, DIMENSION(:,:,:),   ALLOCATABLE :: XFAERO_RA_SUM  ! Sum of aerodyn. force (lift+drag) in RA [N]
 !
 ! Implicit from MODD_EOL_SHARED_IO :
+! --- Thruts torque and power ---
 !REAL, DIMENSION(:),       ALLOCATABLE :: XTHRUT         ! Thrust [N]
 !REAL, DIMENSION(:),       ALLOCATABLE :: XTORQT         ! Torque [Nm]
 !REAL, DIMENSION(:),       ALLOCATABLE :: XPOWT          ! Power [W]
@@ -106,6 +102,15 @@ REAL, DIMENSION(:,:), ALLOCATABLE :: XAOA_SUM_ADR  ! Sum of aerodyn. force (lift
 !REAL, DIMENSION(:),       ALLOCATABLE :: XTORQ_SUM      ! Sum of torque (Nm)
 !REAL, DIMENSION(:),       ALLOCATABLE :: XPOW_SUM       ! Sum of power (W)
 !
+! --- Global variables (Code & CPU) --- 
+!REAL, DIMENSION(:,:,:),   ALLOCATABLE :: XELT_RAD       ! Elements radius [m]
+!REAL, DIMENSION(:,:,:),   ALLOCATABLE :: XAOA_GLB       ! Angle of attack of an element [rad]
+!REAL, DIMENSION(:,:,:),   ALLOCATABLE :: XFLIFT_GLB     ! Lift force, parallel to Urel [N]
+!REAL, DIMENSION(:,:,:),   ALLOCATABLE :: XFDRAG_GLB     ! Drag force, perpendicular to Urel [N]
+!REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: XFAERO_RG_GLB  ! Aerodyn. force (lift+drag) in RG [N]
+!
+! Mean values
+!REAL, DIMENSION(:,:,:),   ALLOCATABLE :: XAOA_SUM        ! Sum of angle of attack [rad]
 !
 ! --- Namelist NAM_EOL_ADR ---
 ! Implicit from MODD_EOL_SHARED_IO :
@@ -118,5 +123,4 @@ REAL, DIMENSION(:,:), ALLOCATABLE :: XAOA_SUM_ADR  ! Sum of aerodyn. force (lift
 INTEGER            :: NNB_RADELT        ! Number of radial elements
 INTEGER            :: NNB_AZIELT        ! Number of azimutal elements
 !
-
 END MODULE MODD_EOL_ADR

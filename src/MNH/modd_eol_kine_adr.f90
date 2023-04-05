@@ -8,21 +8,21 @@
       MODULE MODD_EOL_KINE_ADR
 !!    #####################
 !!
-!!*** *MODD_EOL_KINE_ALM*
+!!*** *MODD_EOL_KINE_ADR*
 !!
 !!    PURPOSE
 !!    -------
-!       Declaration to take into account wind turbine motion
-!              
+!!      Declaration to take into account wind turbine motion
+!!              
 !!
 !!**  AUTHOR
 !!    ------
-!!    PA.Joulin                   *CNRM & IFPEN*
-!
+!!    H. Toumi                    *IFPEN*
+!!
 !!    MODIFICATIONS
 !!    -------------
-!!    Original 04/18
-!  P. Wautelet 19/07/2021: replace double precision by real to allow MNH_REAL=4 compilation
+!!    Original 09/22
+!!    Modification 05/04/23 (PA. Joulin) Updated for a main version
 !!
 !-----------------------------------------------------------------------------
 !

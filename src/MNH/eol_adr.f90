@@ -43,37 +43,37 @@ END MODULE MODI_EOL_ADR
                            PFX_RG, PFY_RG, PFZ_RG  )
 !     ###################################################################
 !
-!!****  *MODI_EOL_ALM* -
+!!****  *MODI_EOL_ADR* -
 !!
-!!    PURPOSE
+!!**  PURPOSE
 !!    -------
 !!       It is possible to include wind turbines parameterization in Meso-NH,
 !!       and several methods are available. One of the models is the Actuator 
-!!       Line Method (ALM). It allows to compute aerodynamic forces according 
-!!       the wind speed and the caracteristics of the wind turbine. 
+!!       Disc with Rotation (ADR). It allows to compute aerodynamic forces 
+!!       according the wind speed and the caracteristics of the wind turbine. 
 !! 
 !!**  METHOD
 !!    ------
-!!      The ALM consists in modeling each blade by one line divided into blade
-!!      element points (Sørensen and Shen, 2002). These points are applying 
-!!      aerodynamic forces into the flow. 
-!!      Each point carries a two-dimensional (2D) airfoil, and its characteris-
-!!      tics, as lift and drag coefficients. Knowing these coefficients, and 
-!!      the angle of attack, the lift and drag forces can be evaluated.
+!!      The ADR consists in modeling the rotor by a disc, drawn by the blades 
+!!      (Mikkelsen 2003). The disc is discretized in a cyldrical frame. Each 
+!!      element apply an aerodynamic force into the flow. Each element carries 
+!!      a two-dimensional (2D) airfoil, and its characteristics, as lift and 
+!!      drag coefficients. Knowing these coefficients, and the angle of attack, 
+!!      the lift and drag forces can be evaluated.
 !!
-!!    REFERENCE
+!!**  REFERENCE
 !!    ---------
 !!     PA. Joulin PhD Thesis. 2020.
-!!      
+!!     H. Toumi Master Thesis. 2022.
 !!
-!!    AUTHOR
+!!**  AUTHOR
 !!    ------
-!!     PA. Joulin 		*CNRM & IFPEN*
+!!    H. Toumi                    *IFPEN*
 !!
 !!    MODIFICATIONS
 !!    -------------
-!!    Original     24/01/17
-!!    Modification 14/10/20 (PA. Joulin) Updated for a main version
+!!    Original 09/22
+!!    Modification 05/04/23 (PA. Joulin) Updated for a main version
 !!
 !!---------------------------------------------------------------
 !
@@ -133,7 +133,14 @@ INTEGER   :: IKU                ! Vertical size of the domain
 INTEGER   :: JI, JJ, JK         ! Loop index
 INTEGER   :: JROT, JAZI, JRAD   ! Rotor, azimutal, and radial element indicies
 !
+! Aggregated variables 
+REAL, DIMENSION(TFARM%NNB_TURBINES,TTURBINE%NNB_AZIELT,TBLADE%NNB_RADELT)   :: ZAOA_ELT      ! Angle of attack of an element, hub frame [rad]
+REAL, DIMENSION(TFARM%NNB_TURBINES,TTURBINE%NNB_AZIELT,TBLADE%NNB_RADELT)   :: ZFLIFT_ELT    ! Aerodynamic lift force, parallel to Urel [N]
+REAL, DIMENSION(TFARM%NNB_TURBINES,TTURBINE%NNB_AZIELT,TBLADE%NNB_RADELT)   :: ZFDRAG_ELT    ! Aerodynamic drag force, perpendicular to Urel [N]
+REAL, DIMENSION(TFARM%NNB_TURBINES,TTURBINE%NNB_AZIELT,TBLADE%NNB_RADELT,3) :: ZFAERO_RA_ELT ! Aerodynamic force (lift+drag) in RA [N]
+REAL, DIMENSION(TFARM%NNB_TURBINES,TTURBINE%NNB_AZIELT,TBLADE%NNB_RADELT,3) :: ZFAERO_RG_ELT ! Aerodynamic force (lift+drag) in RG [N]
 
+!
 ! -- Wind -- 
 REAL                :: ZRHO_I                  ! Interpolated density [kg/m3]
 REAL                :: ZUT_I                   ! Interpolated wind speed U (RG) [m/s] 
@@ -175,12 +182,18 @@ INTEGER             :: IINFO                   ! code info return
 !
 !*       0.3     Implicit arguments
 !
-! A. From MODD_EOL_ALM
+! A. From MODD_EOL_ADR
 !TYPE(FARM)                                :: TFARM
 !TYPE(TURBINE)                             :: TTURBINE
 !TYPE(BLADE)                               :: TBLADE
 !TYPE(AIRFOIL), DIMENSION(:), ALLOCATABLE  :: TAIRFOIL 
 !
+!REAL, DIMENSION(:,:,:),   ALLOCATABLE :: XELT_AZI       ! Elements azimut [rad]
+!REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: XFAERO_RA_GLB  ! Aerodyn. force (lift+drag) in RA [N], global
+!REAL, DIMENSION(:,:,:),   ALLOCATABLE :: XFAERO_RA_BLA  ! Blade Eq Aerodyn. force (lift+drag) in RA [N]
+!REAL, DIMENSION(:,:),     ALLOCATABLE :: XAOA_BLA       ! Blade Eq. AoA 
+
+! B. From MODD_EOL_SHARED_IO:
 !REAL, DIMENSION(:,:,:),   ALLOCATABLE     :: XELT_RAD      ! Blade elements radius [m]
 !REAL, DIMENSION(:,:,:),   ALLOCATABLE     :: XAOA_GLB      ! Angle of attack of an element [rad]
 !REAL, DIMENSION(:,:,:),   ALLOCATABLE     :: XFLIFT_GLB    ! Lift force, parallel to Urel [N]
@@ -188,18 +201,12 @@ INTEGER             :: IINFO                   ! code info return
 !REAL, DIMENSION(:,:,:,:), ALLOCATABLE     :: XFAERO_RE_GLB ! Aerodyn. force (lift+drag) in RE [N]
 !REAL, DIMENSION(:,:,:,:), ALLOCATABLE     :: XFAERO_RG_GLB ! Aerodyn. force (lift+drag) in RG [N]
 !
-!INTEGER                                   :: NNB_BLAELT        ! Number of blade elements
-!LOGICAL                                   :: LTIMESPLIT        ! Flag to apply Time splitting method
-!LOGICAL                                   :: LTIPLOSSG         ! Flag to apply Glauert's tip loss correction
-!LOGICAL                                   :: LTECOUTPTS        ! Flag to get Tecplot file output of element points
-!
-! B. From MODD_EOL_SHARED_IO:
 ! for namelist NAM_EOL_ALM
-!CHARACTER(LEN=100)                        :: CFARM_CSVDATA     ! Farm file to read 
-!CHARACTER(LEN=100)                        :: CTURBINE_CSVDATA  ! Turbine file to read  
-!CHARACTER(LEN=100)                        :: CBLADE_CSVDATA    ! Blade file to read  
-!CHARACTER(LEN=100)                        :: CAIRFOIL_CSVDATA  ! Airfoil file to read  
-!CHARACTER(LEN=3)                          :: CINTERP           ! Interpolation method for wind speed
+!CHARACTER(LEN=3)   :: CINTERP           ! Interpolation method for wind speed
+!LOGICAL            :: LTIPLOSSG         ! Flag to apply Glauert's tip loss correction
+!LOGICAL            :: LTECOUTPTS        ! Flag to get Tecplot file output of element points
+!LOGICAL            :: LCSVOUTFRM        ! Flag to get CSV files output of frames
+!
 ! for output
 !REAL, DIMENSION(:),       ALLOCATABLE     :: XTHRUT        ! Thrust [N]
 !REAL, DIMENSION(:),       ALLOCATABLE     :: XTORQT        ! Torque [Nm]
@@ -237,11 +244,11 @@ END IF
 !
 !*       1.4     Set to zeros at each MNH time steps
 !
-XAOA_ELT(:,:,:)             = 0.
-XFLIFT_ELT(:,:,:)           = 0.
-XFDRAG_ELT(:,:,:)           = 0.
-XFAERO_RA_ELT(:,:,:,:)      = 0.
-XFAERO_RG_ELT(:,:,:,:)      = 0.
+ZAOA_ELT(:,:,:)             = 0.
+ZFLIFT_ELT(:,:,:)           = 0.
+ZFDRAG_ELT(:,:,:)           = 0.
+ZFAERO_RA_ELT(:,:,:,:)      = 0.
+ZFAERO_RG_ELT(:,:,:,:)      = 0.
 ! Global variables (seen by all CPU) 
 XAOA_GLB(:,:,:)             = 0.
 XFLIFT_GLB(:,:,:)           = 0.
@@ -393,11 +400,11 @@ XTORQT(:)                   = 0.
 !          PRINT*, 'FX= ', PFX_RG(JI,JJ,JK), 'FY= ', PFY_RG(JI,JJ,JK), 'FZ= ', PFZ_RG(JI,JJ,JK) 
 !
 
-          XAOA_ELT(JROT,JAZI,JRAD)    =   ZAOA
-          XFLIFT_ELT(JROT,JAZI,JRAD)   =   ZFLIFT
-          XFDRAG_ELT(JROT,JAZI,JRAD)   =   ZFDRAG
-          XFAERO_RA_ELT(JROT,JAZI,JRAD,:)   =  ZFAERO_RA(:) 
-          XFAERO_RG_ELT(JROT,JAZI,JRAD,:)   =  ZFAERO_RG(:) 
+          ZAOA_ELT(JROT,JAZI,JRAD)    =   ZAOA
+          ZFLIFT_ELT(JROT,JAZI,JRAD)   =   ZFLIFT
+          ZFDRAG_ELT(JROT,JAZI,JRAD)   =   ZFDRAG
+          ZFAERO_RA_ELT(JROT,JAZI,JRAD,:)   =  ZFAERO_RA(:) 
+          ZFAERO_RG_ELT(JROT,JAZI,JRAD,:)   =  ZFAERO_RG(:) 
 
 
           !PRINT*, '---------------------------------------------------- '
@@ -448,15 +455,15 @@ PFZ_RG(:,:,IKE+1) = PFZ_RG(:,:,IKE)
 !
 !*       5.     SHARING THE DATAS OVER THE CPUS
 !               -------------------------------
-CALL MPI_ALLREDUCE(XAOA_ELT,      XAOA_GLB,      SIZE(XAOA_GLB),     &
+CALL MPI_ALLREDUCE(ZAOA_ELT,      XAOA_GLB,      SIZE(XAOA_GLB),     &
         MNHREAL_MPI,MPI_SUM,NMNH_COMM_WORLD,IINFO)
-CALL MPI_ALLREDUCE(XFLIFT_ELT,    XFLIFT_GLB,    SIZE(XFLIFT_GLB),   &
+CALL MPI_ALLREDUCE(ZFLIFT_ELT,    XFLIFT_GLB,    SIZE(XFLIFT_GLB),   &
         MNHREAL_MPI,MPI_SUM,NMNH_COMM_WORLD,IINFO)
-CALL MPI_ALLREDUCE(XFDRAG_ELT,    XFDRAG_GLB,    SIZE(XFDRAG_GLB),   &
+CALL MPI_ALLREDUCE(ZFDRAG_ELT,    XFDRAG_GLB,    SIZE(XFDRAG_GLB),   &
         MNHREAL_MPI,MPI_SUM,NMNH_COMM_WORLD,IINFO)
-CALL MPI_ALLREDUCE(XFAERO_RA_ELT, XFAERO_RA_GLB, SIZE(XFAERO_RA_GLB),&
+CALL MPI_ALLREDUCE(ZFAERO_RA_ELT, XFAERO_RA_GLB, SIZE(XFAERO_RA_GLB),&
         MNHREAL_MPI,MPI_SUM,NMNH_COMM_WORLD,IINFO)
-CALL MPI_ALLREDUCE(XFAERO_RG_ELT, XFAERO_RG_GLB, SIZE(XFAERO_RG_GLB),&
+CALL MPI_ALLREDUCE(ZFAERO_RG_ELT, XFAERO_RG_GLB, SIZE(XFAERO_RG_GLB),&
         MNHREAL_MPI,MPI_SUM,NMNH_COMM_WORLD,IINFO)
 !
 !

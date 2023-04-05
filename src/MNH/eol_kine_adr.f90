@@ -41,15 +41,14 @@ SUBROUTINE EOL_KINE_ADR(KTCOUNT,PTSTEP)
 !!    ---------
 !!      
 !!
-!!    AUTHOR
+!!**  AUTHOR
 !!    ------
-!!     PA. Joulin 		*CNRM & IFPEN*
+!!    H. Toumi                    *IFPEN*
 !!
 !!    MODIFICATIONS
 !!    -------------
-!!     Original        04/2017
-!!     Modification    10/11/20 (PA. Joulin) Updated for a main version
-!  P. Wautelet 19/07/2021: replace double precision by real to allow MNH_REAL=4 compilation
+!!    Original 09/22
+!!    Modification 05/04/23 (PA. Joulin) Updated for a main version
 !!
 !!---------------------------------------------------------------
 !
@@ -83,12 +82,12 @@ REAL, DIMENSION(3)   :: ZDIST_NAC_HUB_RG   ! Distance between hub and base of na
 REAL, DIMENSION(3)   :: ZDIST_HUB_CYL_RG   ! Distance between cylindrical base and base of hub
 REAL, DIMENSION(3)   :: ZDIST_CYL_ELT_RG   ! Distance between cylindrical base and elements
 !
-REAL                             :: ZTIME                              ! TIME 
-INTEGER                          :: JROT, JTELT, JNELT, JAZI ,JRAD     ! Loop control
-INTEGER                          :: INB_WT,INB_B,INB_AELT, INB_RELT         ! Total numbers
-INTEGER                          :: INB_TELT, INB_NELT                 ! Total numbers
-INTEGER                          :: ITECOUT                            ! Unit number for Tecplot file
-INTEGER                          :: ICSVOUT                            ! Unit number for TOW.csv file
+REAL                 :: ZTIME                              ! TIME 
+INTEGER              :: JROT, JTELT, JNELT, JAZI ,JRAD     ! Loop control
+INTEGER              :: INB_WT,INB_B,INB_AELT, INB_RELT         ! Total numbers
+INTEGER              :: INB_TELT, INB_NELT                 ! Total numbers
+INTEGER              :: ITECOUT                            ! Unit number for Tecplot file
+INTEGER              :: ICSVOUT                            ! Unit number for TOW.csv file
 !
 !
 !---------------------------------------------------------------
