@@ -59,6 +59,7 @@ END MODULE MODI_EOL_MAIN
 !!    MODIFICATIONS
 !!    -------------
 !!     21/10/20      Original
+!!        09/22      H. Toumi : adding ADR model
 !!
 !!---------------------------------------------------------------
 !
@@ -69,6 +70,7 @@ END MODULE MODI_EOL_MAIN
 ! To work with wind turbines
 USE MODD_EOL_MAIN
 USE MODI_EOL_ADNR
+USE MODI_EOL_ADR
 USE MODI_EOL_ALM
 USE MODI_EOL_SMEAR
 ! To play with MPI
@@ -205,6 +207,12 @@ SELECT CASE(CMETH_EOL)
                 ZUT_M, ZVT_M, ZWT_M,    &
                 XFX_RG, XFY_RG, XFZ_RG  )
 !
+ CASE('ADR') ! Actuator Disc Rotating
+   CALL EOL_ADR(KTCOUNT, PTSTEP,        &
+                PDXX, PDYY, PDZZ,       &
+                ZRHO_M,                 & 
+                ZUT_M, ZVT_M, ZWT_M,    &
+                XFX_RG, XFY_RG, XFZ_RG  )
 END SELECT
 !
 !*       3.2    Sharing 3D field

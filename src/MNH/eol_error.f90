@@ -40,6 +40,15 @@ SUBROUTINE EOL_BLADEDATA_ERROR(PDELTARAD)
    REAL, INTENT(IN) :: PDELTARAD               ! Span lenght of an element
 END SUBROUTINE EOL_BLADEDATA_ERROR
 !
+!
+! ***
+! ADR
+! ***
+!
+SUBROUTINE EOL_ADRELT_ERROR(PDXX,PDYY,PDZZ,XRAD,NNB_RADELT,NNB_AZIELT)
+   REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PDXX,PDYY,PDZZ    ! mesh size
+END SUBROUTINE EOL_ADRELT_ERROR  
+!
 END INTERFACE
 !
 END MODULE MODI_EOL_ERROR
@@ -164,3 +173,23 @@ CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'EOL_BLADEDATA_ERROR' )
 END SUBROUTINE EOL_BLADEDATA_ERROR
 !#########################################################
 !
+SUBROUTINE EOL_ADRELT_ERROR(PDXX,PDYY,PDZZ)
+!
+USE MODD_EOL_ADR, ONLY: BLADE, NNB_RADELT, NNB_AZIELT
+USE MODE_MSG
+USE MODD_CST,     ONLY: XPI
+!
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PDXX,PDYY,PDZZ    ! mesh size
+!
+!IF (NNB_RADELT < (XRAD/PDXX)) THEN
+! CMNHMSG(1) = 'EOL error: error in radial elements number '
+! CMNHMSG(2) = 'The number of radial elements is too small '
+
+! IF (NNB_AZIELT < (2d0*XPI*XRAD/PDXX)) THEN
+!  CMNHMSG(1) = 'EOL error: error in azimutal elements number '
+!  CMNHMSG(2) = 'The number of azimutal elements is too small '
+
+! END IF 
+!END IF 
+!CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'EOL_ADRELT_ERROR' )
+END SUBROUTINE EOL_ADRELT_ERROR 
