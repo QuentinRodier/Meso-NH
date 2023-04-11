@@ -62,11 +62,11 @@ REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: XFAERO_RG_GLB  ! Aerodyn. force (lift+d
 REAL, DIMENSION(:),       ALLOCATABLE :: XTHRUT         ! Thrust [N]
 REAL, DIMENSION(:),       ALLOCATABLE :: XTORQT         ! Torque [Nm]
 REAL, DIMENSION(:),       ALLOCATABLE :: XPOWT          ! Power [W]
+!
+! Mean values
 REAL, DIMENSION(:),       ALLOCATABLE :: XTHRU_SUM      ! Sum of thrust (N)
 REAL, DIMENSION(:),       ALLOCATABLE :: XTORQ_SUM      ! Sum of torque (Nm)
 REAL, DIMENSION(:),       ALLOCATABLE :: XPOW_SUM       ! Sum of power (W)
-!
-! Mean values
-REAL, DIMENSION(:,:,:),   ALLOCATABLE :: XAOA_SUM        ! Sum of angle of attack [rad]
+REAL, DIMENSION(:,:,:),   ALLOCATABLE :: XAOA_SUM       ! Sum of angle of attack [rad]
 !
 END MODULE MODD_EOL_SHARED_IO

@@ -141,7 +141,7 @@ END MODULE MODI_EOL_PRINTER
 !!    MODIFICATIONS
 !!    -------------
 !!    Original     26/10/2020  
-!!    H. Toumi     09/22 adding ADR functions
+!!    H. Toumi     09/22 add ADR functions
 !!
 !!---------------------------------------------------------------
 !

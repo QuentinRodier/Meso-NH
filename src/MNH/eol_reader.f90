@@ -127,7 +127,7 @@ END MODULE MODI_EOL_READER
 !!    -------------
 !!    Original     05/2018  
 !!    Modification 21/10/20 (PA. Joulin) Updated for a main version
-!!    H. Toumi     09/22 adding ADR functions
+!!    H. Toumi     09/22 add ADR functions
 !!
 !!---------------------------------------------------------------
 !

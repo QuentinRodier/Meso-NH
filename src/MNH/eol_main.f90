@@ -59,7 +59,7 @@ END MODULE MODI_EOL_MAIN
 !!    MODIFICATIONS
 !!    -------------
 !!     21/10/20      Original
-!!        09/22      H. Toumi : adding ADR model
+!!        09/22      H. Toumi : add ADR model
 !!
 !!---------------------------------------------------------------
 !

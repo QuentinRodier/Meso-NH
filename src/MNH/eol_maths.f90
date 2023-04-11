@@ -19,7 +19,7 @@
 !!    -------------
 !!     Original     24/01/17
 !!     P. Wautelet  19/07/2021: replace double precision by real to allow MNH_REAL=4 compilation
-!!     H. Toumi     04/23 : adding ADR functions   
+!!     H. Toumi     04/23 : add ADR functions   
 !!
 !-----------------------------------------------------------------
 !     #######################
