@@ -295,6 +295,7 @@ END MODULE MODI_READ_EXSEG_n
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !  C. Lac         11/2019: correction in the drag formula and application to building in addition to tree
 !  Q. Rodier      03/2020: add abort if use of any LHORELAX and cyclic conditions
+!  PA. Joulin     10/2020: add namelists for wind tubrines (EOL)
 !  F.Auguste      02/2021: add IBM
 !  T.Nagel        02/2021: add turbulence recycling
 !  E.Jezequel     02/2021: add stations read from CSV file
@@ -308,6 +309,8 @@ END MODULE MODI_READ_EXSEG_n
 !  P. Wautelet 24/06/2022: remove check on CSTORAGE_TYPE for restart of ForeFire variables
 !  P. Wautelet 13/07/2022: add namelist for flyers and balloons
 !  P. Wautelet 19/08/2022: add namelist for aircrafts
+!  H. Toumi       09/2022: add EOL/ADR
+!  PA. Joulin     04/2023: update for main
 !------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -369,6 +372,7 @@ USE MODN_DYN_n      ! to avoid the duplication of this routine for each model.
 USE MODN_ELEC
 USE MODN_EOL
 USE MODN_EOL_ADNR
+USE MODN_EOL_ADR
 USE MODN_EOL_ALM
 USE MODN_FIRE_n
 USE MODN_FLYERS
@@ -565,6 +569,8 @@ CALL POSNAM(ILUSEG,'NAM_EOL',GFOUND,ILUOUT)
 IF (GFOUND) READ(UNIT=ILUSEG,NML=NAM_EOL)
 CALL POSNAM(ILUSEG,'NAM_EOL_ADNR',GFOUND,ILUOUT)
 IF (GFOUND) READ(UNIT=ILUSEG,NML=NAM_EOL_ADNR)
+CALL POSNAM(ILUSEG,'NAM_EOL_ADR',GFOUND,ILUOUT)
+IF (GFOUND) READ(UNIT=ILUSEG,NML=NAM_EOL_ADR)
 CALL POSNAM(ILUSEG,'NAM_EOL_ALM',GFOUND,ILUOUT)
 IF (GFOUND) READ(UNIT=ILUSEG,NML=NAM_EOL_ALM)
 CALL POSNAM(ILUSEG,'NAM_PROFILERN',GFOUND,ILUOUT)

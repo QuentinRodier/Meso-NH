@@ -45,10 +45,11 @@ END MODULE MODI_MEAN_FIELD
 !!
 !!    MODIFICATIONS
 !!    -------------
-!!      Original    07/2009
-!!      (C.Lac)     09/2016 Max values
-!!      (PA.Joulin) 12/2020 Wind turbine variables
+!!      Original      07/2009
+!!      (C.Lac)       09/2016 Max values
+!!      (PA.Joulin)   12/2020 Wind turbine variables
 !!      (E. Jezequel) 11/2022 Welford algorithm and covariances
+!!      (H. Toumi)    009/2022: add ADR
 !!---------------------------------------------------------------
 !
 !
@@ -63,10 +64,10 @@ USE MODD_CST
 USE MODD_PASPOL
 !
 USE MODD_EOL_MAIN, ONLY: LMAIN_EOL, CMETH_EOL, NMODEL_EOL
-USE MODD_EOL_SHARED_IO, ONLY: XTHRUT, XTORQT, XPOWT
-USE MODD_EOL_SHARED_IO, ONLY: XTHRU_SUM, XTORQ_SUM, XPOW_SUM
-USE MODD_EOL_ALM
-USE MODD_EOL_ADNR
+USE MODD_EOL_SHARED_IO, ONLY: XTHRUT, XTORQT, XPOWT, XAOA_GLB
+USE MODD_EOL_SHARED_IO, ONLY: XTHRU_SUM, XTORQ_SUM, XPOW_SUM, XAOA_SUM
+USE MODD_EOL_ADR, ONLY: XFAERO_RA_SUM
+USE MODD_EOL_ALM, ONLY: XFAERO_RE_SUM
 USE MODE_MODELN_HANDLER
 USE MODI_UPDATE_WELFORD
 !
@@ -117,6 +118,12 @@ IKE=IKU-JPVEXT
     SELECT CASE(CMETH_EOL)
      CASE('ADNR') ! Actuator Disc Non-Rotating
       XTHRU_SUM       = XTHRUT        + XTHRU_SUM
+     CASE('ADR') ! Actuator Line Method
+      XAOA_SUM        = XAOA_GLB      + XAOA_SUM
+      XFAERO_RA_SUM   = XFAERO_RA_GLB + XFAERO_RA_SUM
+      XTHRU_SUM       = XTHRUT        + XTHRU_SUM
+      XTORQ_SUM       = XTORQT        + XTORQ_SUM
+      XPOW_SUM        = XPOWT         + XPOW_SUM
      CASE('ALM') ! Actuator Line Method
       XAOA_SUM        = XAOA_GLB      + XAOA_SUM
       XFAERO_RE_SUM   = XFAERO_RE_GLB + XFAERO_RE_SUM
