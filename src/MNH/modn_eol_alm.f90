@@ -25,6 +25,7 @@
 !!    -------------
 !!    Original 24/01/17
 !!    Modification 14/10/20 (PA. Joulin) Updated for a main version
+!!    Modification    04/23 (PA. Joulin) Add csv outputs of frames
 !!
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
@@ -41,6 +42,6 @@ NAMELIST /NAM_EOL_ALM/                                                  &
      CFARM_CSVDATA, CTURBINE_CSVDATA, CBLADE_CSVDATA, CAIRFOIL_CSVDATA, &
      NNB_BLAELT,                                                        &
      CINTERP, LTIMESPLIT, LTIPLOSSG,                                    &
-     LTECOUTPTS
+     LTECOUTPTS,LCSVOUTFRM
 !
 END MODULE MODN_EOL_ALM

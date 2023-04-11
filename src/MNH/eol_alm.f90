@@ -74,7 +74,8 @@ END MODULE MODI_EOL_ALM
 !!    -------------
 !!    Original     24/01/17
 !!    Modification 14/10/20 (PA. Joulin) Updated for a main version
-!  P. Wautelet 23/07/2021: replace non-standard FLOAT function by REAL function
+!!  P. Wautelet 23/07/2021: replace non-standard FLOAT function by REAL function
+!!  H. Toumi       09/2022: uses specific functions for ALM
 !!---------------------------------------------------------------
 !
 !
@@ -85,11 +86,13 @@ END MODULE MODI_EOL_ALM
 USE MODD_EOL_ALM
 USE MODD_EOL_KINE_ALM
 !
-USE MODD_EOL_SHARED_IO, ONLY: CINTERP
+USE MODD_EOL_SHARED_IO, ONLY: CINTERP, LTECOUTPTS,LTIPLOSSG
 USE MODD_EOL_SHARED_IO, ONLY: XTHRUT, XTORQT, XPOWT
+USE MODD_EOL_SHARED_IO, ONLY: XELT_RAD
+USE MODD_EOL_SHARED_IO, ONLY: XAOA_GLB, XFLIFT_GLB, XFDRAG_GLB, XFAERO_RG_GLB
 !
 USE MODI_EOL_MATHS
-USE MODI_EOL_READER,    ONLY: GET_AIRFOIL_ID
+USE MODI_EOL_READER,    ONLY: GET_AIRFOIL_ID_ALM
 USE MODI_EOL_PRINTER,   ONLY: PRINT_TSPLIT
 USE MODI_EOL_ERROR,     ONLY: EOL_WTCFL_ERROR
 ! Math
@@ -367,7 +370,7 @@ DO KTSUBCOUNT=1,INBSUBCOUNT
 !*       4.6     Getting aerodynamic coefficients from tabulated data
 !
           ZRAD   = XELT_RAD(JROT,JBLA,JBELT)            ! Radius of the element
-          IAID   = GET_AIRFOIL_ID(TTURBINE,TBLADE,TAIRFOIL,ZRAD)   ! ID of the airfoil   
+          IAID   = GET_AIRFOIL_ID_ALM(TTURBINE,TBLADE,TAIRFOIL,ZRAD)   ! ID of the airfoil   
           ZCLIFT = INTERP_SPLCUB(ZAOA*180/XPI,      &
                                  TAIRFOIL(IAID)%XAA,&
                                  TAIRFOIL(IAID)%XCL)

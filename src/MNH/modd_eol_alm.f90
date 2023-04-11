@@ -26,6 +26,7 @@
 !!    -------------
 !!    Original 04/01/17
 !!    Modification 14/10/20 (PA. Joulin) Updated for a main version
+!!    Modification    04/23 (PA. Joulin) variables moved in modd_eol_shared_io
 !!
 !-----------------------------------------------------------------------------
 !
@@ -81,21 +82,23 @@ TYPE(BLADE)                                          :: TBLADE
 TYPE(AIRFOIL), DIMENSION(:), ALLOCATABLE             :: TAIRFOIL 
 !
 ! --- Global variables (Code & CPU) --- 
-REAL, DIMENSION(:,:,:),   ALLOCATABLE :: XELT_RAD      ! Blade elements radius [m]
-REAL, DIMENSION(:,:,:),   ALLOCATABLE :: XAOA_GLB      ! Angle of attack of an element [rad]
-REAL, DIMENSION(:,:,:),   ALLOCATABLE :: XFLIFT_GLB    ! Lift force, parallel to Urel [N]
-REAL, DIMENSION(:,:,:),   ALLOCATABLE :: XFDRAG_GLB    ! Drag force, perpendicular to Urel [N]
 REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: XFAERO_RE_GLB ! Aerodyn. force (lift+drag) in RE [N]
-REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: XFAERO_RG_GLB ! Aerodyn. force (lift+drag) in RG [N]
 !
 ! Mean values
-REAL, DIMENSION(:,:,:),   ALLOCATABLE :: XAOA_SUM       ! Sum of angle of attack [rad]
 REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: XFAERO_RE_SUM  ! Sum of aerodyn. force (lift+drag) in RE [N]
 !
 ! Implicit from MODD_EOL_SHARED_IO :
+!REAL, DIMENSION(:,:,:),   ALLOCATABLE :: XELT_RAD      ! Blade elements radius [m]
+!REAL, DIMENSION(:,:,:),   ALLOCATABLE :: XAOA_GLB      ! Angle of attack of an element [rad]
+!REAL, DIMENSION(:,:,:),   ALLOCATABLE :: XFLIFT_GLB    ! Lift force, parallel to Urel [N]
+!REAL, DIMENSION(:,:,:),   ALLOCATABLE :: XFDRAG_GLB    ! Drag force, perpendicular to Urel [N]
+!REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: XFAERO_RG_GLB ! Aerodyn. force (lift+drag) in RG [N]
+!
 !REAL, DIMENSION(:),       ALLOCATABLE :: XTHRUT         ! Thrust [N]
 !REAL, DIMENSION(:),       ALLOCATABLE :: XTORQT         ! Torque [Nm]
 !REAL, DIMENSION(:),       ALLOCATABLE :: XPOWT          ! Power [W]
+!
+!REAL, DIMENSION(:,:,:),   ALLOCATABLE :: XAOA_SUM       ! Sum of angle of attack [rad]
 !REAL, DIMENSION(:),       ALLOCATABLE :: XTHRU_SUM      ! Sum of thrust (N)
 !REAL, DIMENSION(:),       ALLOCATABLE :: XTORQ_SUM      ! Sum of torque (Nm)
 !REAL, DIMENSION(:),       ALLOCATABLE :: XPOW_SUM       ! Sum of power (W)
@@ -108,11 +111,12 @@ REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: XFAERO_RE_SUM  ! Sum of aerodyn. force 
 !CHARACTER(LEN=100) :: CBLADE_CSVDATA    ! Blade file to read  
 !CHARACTER(LEN=100) :: CAIRFOIL_CSVDATA  ! Airfoil file to read  
 !CHARACTER(LEN=3)   :: CINTERP           ! Interpolation method for wind speed
+!LOGICAL            :: LTIPLOSSG         ! Flag to apply Glauert's tip loss correction
+!LOGICAL            :: LTECOUTPTS        ! Flag to get Tecplot file output of element points
+!LOGICAL            :: LCSVOUTFRM        ! Flag to get CSV files output of frames
 !
 INTEGER            :: NNB_BLAELT        ! Number of blade elements
 !
 LOGICAL            :: LTIMESPLIT        ! Flag to apply Time splitting method
-LOGICAL            :: LTIPLOSSG         ! Flag to apply Glauert's tip loss correction
-LOGICAL            :: LTECOUTPTS        ! Flag to get Tecplot file output of element points
 !
 END MODULE MODD_EOL_ALM
