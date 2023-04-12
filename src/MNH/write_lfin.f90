@@ -2073,7 +2073,7 @@ SELECT CASE(CMETH_EOL)
       NGRID      = 1,                           &
       NTYPE      = TYPEREAL,                    &
       NDIMS      = 1,                           &
-      LTIMEDEP   = .TRUE.   
+      LTIMEDEP   = .TRUE.                       ) 
 !
     TZFIELD%CMNHNAME   = 'THRUT'
     TZFIELD%CLONGNAME  = 'THRUSTT_EOL'
@@ -2157,20 +2157,31 @@ SELECT CASE(CMETH_EOL)
     CALL IO_Field_write(TPFILE,TZFIELD,XFAERO_RG_GLB)
 !
 ! * Blade Equivalent Variables (rotor id, radial id, xyz)
-    TZFIELD = TFIELDMETADATA(                           &
-      CMNHNAME   = '3D ADR variables : (rot,rad,xyz)',  & 
-      CSTDNAME   = '',                                  &
-      CDIR       = '--',                                &
-      NGRID      = 1,                                   &
-      NTYPE      = TYPEREAL,                            &
-      NDIMS      = 3,                                   &
-      LTIMEDEP   = .TRUE.                               )
-!
-    TZFIELD%CMNHNAME   = 'FAERO_BLA_RA'
-    TZFIELD%CLONGNAME  = 'AERODYNAMIC FORCE ON ONE BLADE IN RA'
-    TZFIELD%CUNITS     = 'N'
-    TZFIELD%CCOMMENT   = 'RID_RAD_XYZ forces (N) in RA'
-    CALL IO_Field_write(TPFILE,TZFIELD,XFAERO_RA_BLA)
+    TZFIELD = TFIELDMETADATA(                                  &
+      CMNHNAME   = 'AOA_BLEQ',                                 &
+      CSTDNAME   = '',                                         &
+      CLONGNAME  = 'BLADE_EQUIVALENT_ANGLE_OF_ATTACK',         &
+      CUNITS     = 'rad',                                      &
+      CDIR       = '--',                                       &
+      CCOMMENT   = 'RID_RAD blade eq. angle of attack (rad)',  &
+      NGRID      = 1,                                          &
+      NTYPE      = TYPEREAL,                                   &
+      NDIMS      = 2,                                          &
+      LTIMEDEP   = .TRUE.                                      )
+    CALL IO_Field_write(TPFILE,TZFIELD,XAOA_BLEQ_GLB)
+
+    TZFIELD = TFIELDMETADATA(                                  &
+      CMNHNAME   = 'FAERO_BLEQ_RA',                            &
+      CSTDNAME   = '',                                         &
+      CLONGNAME  = 'BLADE_EQUIVALENT_AERODYNAMIC_FORCE_RA',    &
+      CUNITS     = 'N',                                        &
+      CDIR       = '--',                                       &
+      CCOMMENT   = 'RID_RAD_XYZ blade eq. forces (N) in RA',   &
+      NGRID      = 1,                                          &
+      NTYPE      = TYPEREAL,                                   &
+      NDIMS      = 3,                                          &
+      LTIMEDEP   = .TRUE.                                      )
+    CALL IO_Field_write(TPFILE,TZFIELD,XFAERO_BLEQ_RA_GLB)
 !
     IF (MEAN_COUNT /= 0) THEN
 !
@@ -2182,7 +2193,7 @@ SELECT CASE(CMETH_EOL)
         NGRID      = 1,                                &
         NTYPE      = TYPEREAL,                         &
         NDIMS      = 1,                                &
-        LTIMEDEP   = .TRUE.   
+        LTIMEDEP   = .TRUE.                            ) 
 !
       TZFIELD%CMNHNAME   = 'THRUMME'
       TZFIELD%CLONGNAME  = 'MEAN_THRUST_EOL'
@@ -2216,7 +2227,7 @@ SELECT CASE(CMETH_EOL)
       CALL IO_Field_write(TPFILE,TZFIELD,XAOA_SUM/MEAN_COUNT)
 !
       TZFIELD = TFIELDMETADATA(                               &
-        CMNHNAME   = 'FAEROMME_RE',                           &
+        CMNHNAME   = 'FAEROMME_RA',                           &
         CSTDNAME   = '',                                      &
         CLONGNAME  = 'MEAN_AERODYNAMIC_FORCE_RA',             &
         CUNITS     = 'N',                                     &
@@ -2227,6 +2238,33 @@ SELECT CASE(CMETH_EOL)
         NDIMS      = 4,                                       &
         LTIMEDEP   = .TRUE.                                   )
       CALL IO_Field_write(TPFILE,TZFIELD,XFAERO_RA_SUM/MEAN_COUNT)
+!
+! * Blade Equivalent Variables (rotor id, radial id, xyz)
+      TZFIELD = TFIELDMETADATA(                                      &
+        CMNHNAME   = 'AOAMME_BLEQ',                                  &
+        CSTDNAME   = '',                                             &
+        CLONGNAME  = 'MEAN_BLADE_EQUIVALENT_ANGLE_OF_ATTACK',        &
+        CUNITS     = 'rad',                                          &
+        CDIR       = '--',                                           &
+        CCOMMENT   = 'RID_RAD mean blade eq. angle of attack (rad)', &
+        NGRID      = 1,                                              &
+        NTYPE      = TYPEREAL,                                       &
+        NDIMS      = 2,                                              &
+        LTIMEDEP   = .TRUE.                                          )
+      CALL IO_Field_write(TPFILE,TZFIELD,XAOA_BLEQ_SUM/MEAN_COUNT)
+
+      TZFIELD = TFIELDMETADATA(                                       &
+        CMNHNAME   = 'FAEROMME_BLEQ_RA',                              &
+        CSTDNAME   = '',                                              &
+        CLONGNAME  = 'MEAN_BLADE_EQUIVALENT_AERODYNAMIC_FORCE_RA',    &
+        CUNITS     = 'N',                                             &
+        CDIR       = '--',                                            &
+        CCOMMENT   = 'RID_RAD_XYZ mean blade eq. forces (N) in RA',   &
+        NGRID      = 1,                                               &
+        NTYPE      = TYPEREAL,                                        &
+        NDIMS      = 3,                                               &
+        LTIMEDEP   = .TRUE.                                           )
+      CALL IO_Field_write(TPFILE,TZFIELD,XFAERO_BLEQ_RA_SUM/MEAN_COUNT)
 !
     END IF
 !

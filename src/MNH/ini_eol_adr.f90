@@ -66,8 +66,8 @@ END MODULE MODI_INI_EOL_ADR
 !!    TYPE(AIRFOIL), DIMENSION(:), ALLOCATABLE :: TAIRFOIL
 !!    REAL, DIMENSION(:,:,:),      ALLOCATABLE :: XELT_AZI       ! Elements azimut [rad]
 !!    REAL, DIMENSION(:,:,:,:),    ALLOCATABLE :: XFAERO_RA_GLB  ! Aerodyn. force (lift+drag) in RA [N]
-!!    REAL, DIMENSION(:,:,:),      ALLOCATABLE :: XFAERO_RA_BLA  ! Blade Eq Aero. force in RA [N]
-!!    REAL, DIMENSION(:,:),        ALLOCATABLE :: XAOA_BLA       ! Blade Eq. AoA 
+!!    REAL, DIMENSION(:,:,:),      ALLOCATABLE :: XFAERO_BLEQ_RA ! Blade Eq Aero. force in RA [N]
+!!    REAL, DIMENSION(:,:),        ALLOCATABLE :: XAOA_BLEQ      ! Blade Eq. AoA 
 !!    REAL, DIMENSION(:,:,:),      ALLOCATABLE :: XFAERO_RA_SUM  ! Sum of aero. force  in RA [N]
 !!    INTEGER                                  :: NNB_RADELT     ! Number of radial elements
 !!    INTEGER                                  :: NNB_AZIELT     ! Number of azimutal elements
@@ -149,6 +149,7 @@ INTEGER  :: INB_WT, INB_B           ! Total numbers of wind turbines, blade
 INTEGER  :: INB_RELT, INB_AELT      ! Total numbers of radial elt and azimut elt
 INTEGER  :: INB_TELT, INB_NELT      ! Total numbers of tower elt and nacelle elt
 REAL     :: ZRAD                    ! Radius along the blade 
+REAL     :: ZDELTA_AZI, ZDELTA_RAD  ! Azimuthal and radial step 
 ! Tower base folowing the terrain
 REAL,DIMENSION(:,:),ALLOCATABLE :: ZPOSINI_TOWO_RG ! Initial tower origin position
 INTEGER  :: IINFO                   ! code info return
@@ -219,24 +220,27 @@ ZDELTA_RAD     =  (TTURBINE%XR_MAX - TTURBINE%XR_MIN)/INB_RELT      ! Rotor disc
 
 !*       3.1    MODD_EOL_ADR variables
 ! at t
-ALLOCATE(XELT_RAD      (INB_WT,INB_AELT,INB_RELT  ))
-ALLOCATE(XELT_AZI      (INB_WT,INB_AELT,INB_RELT  ))
-ALLOCATE(XAOA_GLB      (INB_WT,INB_AELT,INB_RELT  ))
-ALLOCATE(XAOA_BLA      (INB_WT,INB_RELT  ))
-ALLOCATE(XFDRAG_GLB    (INB_WT,INB_AELT,INB_RELT  ))
-ALLOCATE(XFLIFT_GLB    (INB_WT,INB_AELT,INB_RELT  ))
-ALLOCATE(XFAERO_RA_GLB (INB_WT,INB_AELT,INB_RELT,3))
-ALLOCATE(XFAERO_RA_BLA (INB_WT,INB_RELT,3))
-ALLOCATE(XFAERO_RG_GLB (INB_WT,INB_AELT,INB_RELT,3))
-ALLOCATE(XTHRUT        (INB_WT                 ))
-ALLOCATE(XTORQT        (INB_WT                 ))
-ALLOCATE(XPOWT         (INB_WT                 ))
+ALLOCATE(XELT_RAD           (INB_WT,INB_AELT,INB_RELT  ))
+ALLOCATE(XELT_AZI           (INB_WT,INB_AELT,INB_RELT  ))
+ALLOCATE(XAOA_GLB           (INB_WT,INB_AELT,INB_RELT  ))
+ALLOCATE(XAOA_BLEQ_GLB      (INB_WT,         INB_RELT  ))
+ALLOCATE(XFDRAG_GLB         (INB_WT,INB_AELT,INB_RELT  ))
+ALLOCATE(XFLIFT_GLB         (INB_WT,INB_AELT,INB_RELT  ))
+ALLOCATE(XFAERO_RA_GLB      (INB_WT,INB_AELT,INB_RELT,3))
+ALLOCATE(XFAERO_BLEQ_RA_GLB (INB_WT,         INB_RELT,3))
+ALLOCATE(XFAERO_RG_GLB      (INB_WT,INB_AELT,INB_RELT,3))
+ALLOCATE(XTHRUT             (INB_WT                    ))
+ALLOCATE(XTORQT             (INB_WT                    ))
+ALLOCATE(XPOWT              (INB_WT                    ))
 ! for mean values
-ALLOCATE(XAOA_SUM      (INB_WT,INB_RELT  ))
-ALLOCATE(XFAERO_RA_SUM (INB_WT,INB_RELT,3))
-ALLOCATE(XTHRU_SUM     (INB_WT))
-ALLOCATE(XTORQ_SUM     (INB_WT))
-ALLOCATE(XPOW_SUM      (INB_WT))
+ALLOCATE(XAOA_SUM           (INB_WT,INB_AELT,INB_RELT  ))
+ALLOCATE(XFAERO_RA_SUM      (INB_WT,INB_AELT,INB_RELT,3))
+ALLOCATE(XTHRU_SUM          (INB_WT                    ))
+ALLOCATE(XTORQ_SUM          (INB_WT                    ))
+ALLOCATE(XPOW_SUM           (INB_WT                    ))
+ALLOCATE(XAOA_BLEQ_SUM      (INB_WT,         INB_RELT  ))
+ALLOCATE(XFAERO_BLEQ_RA_SUM (INB_WT,         INB_RELT,3))
+
 !
 !*       3.2    MODD_EOL_KINE_ADR variables
 !

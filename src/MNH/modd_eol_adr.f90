@@ -87,11 +87,14 @@ REAL, DIMENSION(:,:,:),   ALLOCATABLE :: XELT_AZI       ! Elements azimut [rad]
 REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: XFAERO_RA_GLB  ! Aerodyn. force (lift+drag) in RA [N], global
 !
 ! Blade equivalent values
-REAL, DIMENSION(:,:,:),   ALLOCATABLE :: XFAERO_RA_BLA  ! Blade Eq Aerodyn. force (lift+drag) in RA [N]
-REAL, DIMENSION(:,:),     ALLOCATABLE :: XAOA_BLA       ! Blade Eq. AoA 
+REAL, DIMENSION(:,:),     ALLOCATABLE :: XAOA_BLEQ_GLB       ! Blade Eq. AoA 
+REAL, DIMENSION(:,:,:),   ALLOCATABLE :: XFAERO_BLEQ_RA_GLB  ! Blade Eq Aerodyn. force (lift+drag) in RA [N]
 !
 ! Mean values
-REAL, DIMENSION(:,:,:),   ALLOCATABLE :: XFAERO_RA_SUM  ! Sum of aerodyn. force (lift+drag) in RA [N]
+REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: XFAERO_RA_SUM      ! Sum of aerodyn. force (lift+drag) in RA [N]
+REAL, DIMENSION(:,:),     ALLOCATABLE :: XAOA_BLEQ_SUM      ! Sum of Blade Eq. AoA 
+REAL, DIMENSION(:,:,:),   ALLOCATABLE :: XFAERO_BLEQ_RA_SUM ! Sum of Blade Eq Aero. force (lift+drag) in RA [N]
+
 !
 ! Implicit from MODD_EOL_SHARED_IO :
 ! --- Thruts torque and power ---

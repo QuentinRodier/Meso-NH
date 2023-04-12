@@ -134,11 +134,11 @@ INTEGER   :: JI, JJ, JK         ! Loop index
 INTEGER   :: JROT, JAZI, JRAD   ! Rotor, azimutal, and radial element indicies
 !
 ! Aggregated variables 
-REAL, DIMENSION(TFARM%NNB_TURBINES,TTURBINE%NNB_AZIELT,TBLADE%NNB_RADELT)   :: ZAOA_ELT      ! Angle of attack of an element, hub frame [rad]
-REAL, DIMENSION(TFARM%NNB_TURBINES,TTURBINE%NNB_AZIELT,TBLADE%NNB_RADELT)   :: ZFLIFT_ELT    ! Aerodynamic lift force, parallel to Urel [N]
-REAL, DIMENSION(TFARM%NNB_TURBINES,TTURBINE%NNB_AZIELT,TBLADE%NNB_RADELT)   :: ZFDRAG_ELT    ! Aerodynamic drag force, perpendicular to Urel [N]
-REAL, DIMENSION(TFARM%NNB_TURBINES,TTURBINE%NNB_AZIELT,TBLADE%NNB_RADELT,3) :: ZFAERO_RA_ELT ! Aerodynamic force (lift+drag) in RA [N]
-REAL, DIMENSION(TFARM%NNB_TURBINES,TTURBINE%NNB_AZIELT,TBLADE%NNB_RADELT,3) :: ZFAERO_RG_ELT ! Aerodynamic force (lift+drag) in RG [N]
+REAL, DIMENSION(TFARM%NNB_TURBINES,TBLADE%NNB_AZIELT,TBLADE%NNB_RADELT)   :: ZAOA_ELT      ! Angle of attack of an element, hub frame [rad]
+REAL, DIMENSION(TFARM%NNB_TURBINES,TBLADE%NNB_AZIELT,TBLADE%NNB_RADELT)   :: ZFLIFT_ELT    ! Aerodynamic lift force, parallel to Urel [N]
+REAL, DIMENSION(TFARM%NNB_TURBINES,TBLADE%NNB_AZIELT,TBLADE%NNB_RADELT)   :: ZFDRAG_ELT    ! Aerodynamic drag force, perpendicular to Urel [N]
+REAL, DIMENSION(TFARM%NNB_TURBINES,TBLADE%NNB_AZIELT,TBLADE%NNB_RADELT,3) :: ZFAERO_RA_ELT ! Aerodynamic force (lift+drag) in RA [N]
+REAL, DIMENSION(TFARM%NNB_TURBINES,TBLADE%NNB_AZIELT,TBLADE%NNB_RADELT,3) :: ZFAERO_RG_ELT ! Aerodynamic force (lift+drag) in RG [N]
 
 !
 ! -- Wind -- 
@@ -190,8 +190,8 @@ INTEGER             :: IINFO                   ! code info return
 !
 !REAL, DIMENSION(:,:,:),   ALLOCATABLE :: XELT_AZI       ! Elements azimut [rad]
 !REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: XFAERO_RA_GLB  ! Aerodyn. force (lift+drag) in RA [N], global
-!REAL, DIMENSION(:,:,:),   ALLOCATABLE :: XFAERO_RA_BLA  ! Blade Eq Aerodyn. force (lift+drag) in RA [N]
-!REAL, DIMENSION(:,:),     ALLOCATABLE :: XAOA_BLA       ! Blade Eq. AoA 
+!REAL, DIMENSION(:,:,:),   ALLOCATABLE :: XFAERO_BLA_BLEQ ! Blade Eq Aerodyn. force (lift+drag) in RA [N]
+!REAL, DIMENSION(:,:),     ALLOCATABLE :: XAOA_BLEQ       ! Blade Eq. AoA 
 
 ! B. From MODD_EOL_SHARED_IO:
 !REAL, DIMENSION(:,:,:),   ALLOCATABLE     :: XELT_RAD      ! Blade elements radius [m]
@@ -256,8 +256,8 @@ XFDRAG_GLB(:,:,:)           = 0.
 XFAERO_RA_GLB(:,:,:,:)      = 0.
 XFAERO_RG_GLB(:,:,:,:)      = 0.
 !
-XFAERO_RA_BLA(:,:,:)        = 0.
-XAOA_BLA(:,:)               = 0.
+XFAERO_BLEQ_RA_GLB(:,:,:)   = 0.
+XAOA_BLEQ_GLB(:,:)          = 0.
 !
 XTHRUT(:)                   = 0.
 XTORQT(:)                   = 0.
@@ -485,12 +485,10 @@ IF(IP == 1) THEN
 !
 !*       6.1     Preliminaries
 ! Mean AOA on one blade 
-    XAOA_BLA(JROT,JRAD)    = XAOA_BLA(JROT,JRAD) + XAOA_GLB(JROT,JAZI,JRAD)/INB_AELT
-
+    XAOA_BLEQ_GLB(JROT,JRAD)    = XAOA_BLEQ_GLB(JROT,JRAD) + XAOA_GLB(JROT,JAZI,JRAD)
 ! Aerodynamic load (wind->blade) in RA
-    XFAERO_RA_BLA(JROT,JRAD,:)         = XFAERO_RA_BLA(JROT,JRAD,:) + XFAERO_RA_GLB(JROT,JAZI,JRAD,:)/INB_B
-
-
+    XFAERO_BLEQ_RA_GLB(JROT,JRAD,:) = XFAERO_BLEQ_RA_GLB(JROT,JRAD,:) &
+                                    + XFAERO_RA_GLB(JROT,JAZI,JRAD,:)/INB_B
 !   PRINT*, '---------------------------------------------------- '
 !   PRINT*, 'JROT= ', JROT, 'JAZI= ', JAZI, 'JRAD= ', JRAD
 !   PRINT*, 'FAERO_RA(1)= ', XFAERO_RA_BLA(JROT,JRAD,1),'FAERO_RA(2)= ', XFAERO_RA_BLA(JROT,JRAD,2)
