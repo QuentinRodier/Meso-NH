@@ -4,12 +4,22 @@
 #MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 #MNH_LIC for details. version 1.
 
-set -x
-# On va lancer la compilation dans le répertoire de lancement du job
 pwd
 
+set -x
+
+export ARCH=LXgfortran
+export VERSION_XYZ=MNH-V5-6-0
+export VER_MPI=MPIAUTO
+export OPTLEVEL=DEBUG
+
+# Test de l'existence du profile
+if ! [ -e ../conf/profile_mesonh-${ARCH}-R8I4-${VERSION_XYZ}-${VER_MPI}-${OPTLEVEL}]; then
+  ./configure
+fi
+
 # Chargement du profil (qui contient le source vers l'env ifpen-mesonh)
-. ../conf/profile_mesonh-LXgfortran-R8I4-MNH-V5-6-0-MPIAUTO-O2
+. ../conf/profile_mesonh-${ARCH}-R8I4-${VERSION_XYZ}-${VER_MPI}-${OPTLEVEL}
 
 time gmake -j 10
 time gmake -j 1 installmaster
