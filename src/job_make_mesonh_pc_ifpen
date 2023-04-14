@@ -13,6 +13,3 @@ pwd
 
 time gmake -j 10
 time gmake -j 1 installmaster
-
-~                       
-
