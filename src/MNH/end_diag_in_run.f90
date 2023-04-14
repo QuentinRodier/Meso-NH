@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2003-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 profiler 2006/10/24 10:07:27
 !-----------------------------------------------------------------
 !      #########################
 MODULE MODI_END_DIAG_IN_RUN
@@ -94,7 +89,7 @@ DEALLOCATE(XCURRENT_DSTAOD)! dust aerosol optical depth
 DEALLOCATE(XCURRENT_SFCO2   ) ! CO2 Surface flux
 DEALLOCATE(XCURRENT_TKE_DISS) ! Tke dissipation rate
 DEALLOCATE(XCURRENT_SLTAOD)   ! Salt aerosol optical depth
-DEALLOCATE(XCURRENT_ZWS   )   ! Significant height of waves
+! DEALLOCATE(XCURRENT_ZWS   )   ! Significant height of waves
 
 !
 !-------------------------------------------------------------------------------
