@@ -1,4 +1,4 @@
-!SFX_LIC Copyright 2001-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC Copyright 2001-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !SFX_LIC for details. version 1.
@@ -53,7 +53,12 @@ END INTERFACE
 !!    --------------
 !!       I. Mallet  15/10/01     adaptation to MesoNH (F90 norm)
 !!       P. Wautelet 22/01/2019  use standard FLUSH statement instead of non standard intrinsics
+!!       P. Wautelet 12/04/2023: POSNAM: modernisation + improvements (taken from MesoNH mode_pos.f90)
 !------------------------------------------------------------------------------
+!
+#ifdef SFX_MNH
+USE MODE_MSG
+#endif
 !
 IMPLICIT NONE
 !
@@ -69,6 +74,7 @@ INTEGER, OPTIONAL,INTENT(IN) :: KLUOUT
 !
 !*       0.2   Declarations of local variables
 !
+ CHARACTER(LEN=100) :: YERRORMSG
  CHARACTER(LEN=120) :: YLINE
  CHARACTER(LEN=1)   :: YLTEST
 INTEGER            :: ILEN,ILEY,INDL,IND1,IRET
@@ -92,22 +98,26 @@ ILEN=LEN(HDNAML)
 DO JFILE=1,2
   search_nam : DO
     YLINE=' '
-    READ(UNIT=KULNAM,FMT='(A)',IOSTAT=IRET,END=100) YLINE
+    READ ( UNIT=KULNAM, FMT='(A)', IOSTAT=IRET, IOMSG=YERRORMSG, END=100 ) YLINE
 
 !   If file does not exist, most compilers would just create it and jump 
 !   to the END label ; but a few of them would report an error:         
     IF (IRET /=0 ) THEN                 
+#ifndef SFX_MNH
       INQUIRE(KULNAM,OPENED=LLOPENED)
       IF (LLOPENED) THEN
         IF (PRESENT(KLUOUT)) THEN
           WRITE(KLUOUT,FMT=*) 'MODE_POS_SURF : error reading from unit ',&
                 KULNAM,' file ',HDNAML,' line ',YLINE
           FLUSH(unit=KLUOUT)
-        ENDIF        
+        ENDIF
         CALL ABOR1_SFX('MODE_POS_SURF: read error in namelist file') 
       ELSE
         EXIT search_nam
       END IF
+#else
+      call Print_msg( NVERB_ERROR, 'IO', 'POSNAM (SFX)', Trim( HDNAML) // ': read error:' // Trim( YERRORMSG ) )
+#endif
     ELSE   
 !     FIRST SEARCH for "&" IN THE LINE, THEN CORRECT LINE AND TEST :
       INDL=INDEX(YLINE,'&')
@@ -120,12 +130,30 @@ DO JFILE=1,2
         END DO
         IND1=INDEX(YLINE,'&'//HDNAML)
         IF(IND1.NE.0) THEN
+          IF( IND1 > 1 ) THEN
+            IF ( LEN_TRIM( YLINE(:IND1-1) ) /= 0 ) THEN
+              ! Check that it is really the beginning of a namelist and that is not a comment
+              ! Nothing but spaces is allowed here
+#ifdef SFX_MNH
+              call Print_msg( NVERB_DEBUG, 'IO', 'POSNAM (SFX)', 'invalid header or commented namelist: ' // Trim ( YLINE) )
+#endif
+              CYCLE
+            END IF
+          END IF
           YLTEST=YLINE(IND1+ILEN+1:IND1+ILEN+1)
           IF(YLTEST == ' ') THEN
 !           NAMELIST FOUND : RETURN
             BACKSPACE(KULNAM)
             OFOUND=.TRUE.
+#ifndef SFX_MNH
             IF (PRESENT(KLUOUT)) WRITE(KLUOUT,FMT=*) '-- namelist ',HDNAML,' read'
+#else
+            IF ( PRESENT( KLUOUT ) ) THEN
+              call Print_msg( NVERB_INFO,  'IO', 'POSNAM (SFX)', 'namelist ' // Trim( HDNAML ) // ' found' )
+            ELSE
+              call Print_msg( NVERB_DEBUG, 'IO', 'POSNAM (SFX)', 'namelist ' // Trim( HDNAML ) // ' found' )
+            END IF
+#endif
             IF (LHOOK) CALL DR_HOOK('MODE_POS_SURF:POSNAM',1,ZHOOK_HANDLE)
             RETURN
           ENDIF
@@ -139,9 +167,19 @@ ENDDO
 
 BACKSPACE(KULNAM)
 ! end of file: namelist name not found
+#ifndef SFX_MNH
 IF (PRESENT(KLUOUT)) &
 WRITE(KLUOUT,FMT=*)  &
 '-- namelist ',HDNAML,' not found: default values used if required'
+#else
+IF ( PRESENT( KLUOUT ) ) THEN
+  call Print_msg( NVERB_INFO,  'IO', 'POSNAM (SFX)', 'namelist ' // Trim( HDNAML ) &
+                 // ' not found: default values used if required' )
+ELSE
+  call Print_msg( NVERB_DEBUG, 'IO', 'POSNAM (SFX)', 'namelist ' // Trim( HDNAML ) &
+                 // ' not found: default values used if required' )
+END IF
+#endif
 IF (LHOOK) CALL DR_HOOK('MODE_POS_SURF:POSNAM',1,ZHOOK_HANDLE)
 !------------------------------------------------------------------
 END SUBROUTINE POSNAM

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2003-2022 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2003-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -111,7 +111,7 @@ IF (LDIAG_IN_RUN) THEN
   ALLOCATE(XCURRENT_SFCO2 (KIU,KJU))! CO2 Surface flux
   ALLOCATE(XCURRENT_TKE_DISS(KIU,KJU,KKU)) ! Tke dissipation rate
   ALLOCATE(XCURRENT_SLTAOD(KIU,KJU))! Salt aerosol optical depth
-  ALLOCATE(XCURRENT_ZWS(KIU,KJU)) ! Significant height of waves
+  ! ALLOCATE(XCURRENT_ZWS(KIU,KJU)) ! Significant height of waves
   !
   !
   XCURRENT_RN    = XUNDEF_SFX
@@ -134,7 +134,7 @@ IF (LDIAG_IN_RUN) THEN
   XCURRENT_SFCO2 = XUNDEF_SFX
   XCURRENT_TKE_DISS = XUNDEF
   XCURRENT_SLTAOD= XUNDEF
-  XCURRENT_ZWS = XUNDEF_SFX
+  ! XCURRENT_ZWS = XUNDEF_SFX
 ELSE
   ALLOCATE(XCURRENT_RN    (0,0))! net radiation
   ALLOCATE(XCURRENT_H     (0,0))! sensible heat flux
@@ -156,7 +156,7 @@ ELSE
   ALLOCATE(XCURRENT_SFCO2 (0,0))! CO2 Surface flux
   ALLOCATE(XCURRENT_TKE_DISS(0,0,0)) ! Tke dissipation rate
   ALLOCATE(XCURRENT_SLTAOD(0,0))! Salt aerosol optical depth
-  ALLOCATE(XCURRENT_ZWS(0,0))! Significant height of waves
+  ! ALLOCATE(XCURRENT_ZWS(0,0))! Significant height of waves
 END IF
 !
 !-------------------------------------------------------------------------------

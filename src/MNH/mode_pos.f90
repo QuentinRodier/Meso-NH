@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1993-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1993-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -12,9 +12,9 @@ implicit none
 !!
 CONTAINS
 !!
-!!    ##############################################
-      SUBROUTINE POSNAM(KULNAM,HDNAML,OFOUND,KLUOUT)
-!!    ##############################################
+!!    ###########################################
+      SUBROUTINE POSNAM( TPFILE, HDNAML, OFOUND )
+!!    ###########################################
 !!
 !!*** *POSNAM*
 !!
@@ -45,72 +45,102 @@ CONTAINS
 !!       Original : 22/06/93
 !!       I. Mallet  15/10/01     adaptation to MesoNH (F90 norm)
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
+!  P. Wautelet 05/04/2023: POSNAM: modernisation + improvements
 !------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
+USE MODD_IO,    ONLY: TFILEDATA
+
+USE MODE_MSG
+USE MODE_TOOLS, ONLY: Upcase
 !
 !*       0.1   Declarations of arguments
 !
-INTEGER,          INTENT(IN) :: KULNAM
+TYPE(TFILEDATA),  INTENT(IN) :: TPFILE
 CHARACTER(LEN=*), INTENT(IN) :: HDNAML
 LOGICAL,          INTENT(OUT):: OFOUND
-INTEGER, OPTIONAL,INTENT(IN) :: KLUOUT
 !
 !*       0.2   Declarations of local variables
 !
-CHARACTER(LEN=120) :: YLINE
-CHARACTER(LEN=1)   :: YLTEST
-INTEGER            :: ILEN,ILEY,IND1,IRET
-INTEGER            :: J,JA
-!
-CHARACTER(LEN=1),DIMENSION(26) :: YLO=(/'a','b','c','d','e','f','g','h', &
-     'i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z'/)
-CHARACTER(LEN=1),DIMENSION(26) :: YUP=(/'A','B','C','D','E','F','G','H', &
-     'I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'/)
-!
-!*       1.    POSITION FILE
-!              -------------
-!
-REWIND(KULNAM)
-ILEN=LEN(HDNAML)
-IRET = 0
-!
+CHARACTER(LEN=100)            :: YERRORMSG
+CHARACTER(LEN=120)            :: YLINE
+CHARACTER(LEN=1)              :: YLTEST
+CHARACTER(LEN=:), ALLOCATABLE :: YDNAML
+INTEGER                       :: ILU
+INTEGER                       :: ILEN, IND1, IRET
+INTEGER                       :: IVERBLVL
+
+
+OFOUND = .FALSE.
+
+IF ( .NOT.TPFILE%LOPENED ) THEN
+  call Print_msg( NVERB_ERROR, 'IO', 'POSNAM', Trim( TPFILE%CNAME ) // ' not opened' )
+  RETURN
+END IF
+
+ILU = TPFILE%NLU
+
+IF ( TPFILE%CTYPE == 'DES' ) THEN
+  IVERBLVL = NVERB_DEBUG
+ELSE IF ( TPFILE%CTYPE == 'NML' ) THEN
+  IVERBLVL = NVERB_INFO
+ELSE
+  ! Check if there is an associated .des file
+  ! and use it if available
+  IF ( ASSOCIATED( TPFILE%TDESFILE ) ) THEN
+    IVERBLVL = NVERB_DEBUG
+    IF ( .NOT.TPFILE%TDESFILE%LOPENED ) THEN
+      call Print_msg( NVERB_ERROR, 'IO', 'POSNAM', Trim( TPFILE%TDESFILE%CNAME ) // ' not opened' )
+      RETURN
+    END IF
+    ILU = TPFILE%TDESFILE%NLU
+  ELSE
+    IVERBLVL = NVERB_INFO
+    call Print_msg( NVERB_WARNING, 'IO', 'POSNAM', Trim( TPFILE%CNAME ) &
+                    // ': unexpected filetype: ' // Trim( TPFILE%CTYPE ) )
+  END IF
+END IF
+
+REWIND( ILU )
+
+ILEN = LEN( HDNAML )
+ALLOCATE( CHARACTER(LEN=ILEN) :: YDNAML )
+YDNAML = Upcase( HDNAML ) ! Force namelist name into upper case (read namelist name will also be upcased)
+
 search_nam : DO
-      YLINE=' '
-      READ(UNIT=KULNAM,FMT='(A)',IOSTAT=IRET,END=100) YLINE
-      IF (IRET /=0 ) THEN
-        IF (PRESENT(KLUOUT)) &
-         WRITE(KLUOUT,FMT=*) '-> error reading from unit',KULNAM,' line ',YLINE
-      ELSE   
-        ILEY=LEN(YLINE)
-        DO J=1,ILEY
-          DO JA=1,26
-            IF (YLINE(J:J)==YLO(JA)) YLINE(J:J)=YUP(JA) 
-          END DO
-        END DO
-        IND1=INDEX(YLINE,'&'//HDNAML)
-        IF(IND1.NE.0) THEN
-          YLTEST=YLINE(IND1+ILEN+1:IND1+ILEN+1)
-          !IF((LLT(YLTEST,'0').OR.LGT(YLTEST,'9')).AND. &
-          !   (LLT(YLTEST,'A').OR.LGT(YLTEST,'Z'))) EXIT search_nam
-          IF(YLTEST == ' ') EXIT search_nam
-        ENDIF
-      ENDIF
-ENDDO search_nam
-!
-BACKSPACE(KULNAM)
-OFOUND=.TRUE.
-IF (PRESENT(KLUOUT)) WRITE(KLUOUT,FMT=*) '-- namelist ',HDNAML,' read'
-!
+  READ ( UNIT=ILU, FMT='(A)', IOSTAT=IRET, IOMSG=YERRORMSG, END=100 ) YLINE
+  IF (IRET /= 0 ) THEN
+    call Print_msg( NVERB_ERROR, 'IO', 'POSNAM', 'read error:' // Trim( YERRORMSG ) )
+  ELSE
+    YLINE = Upcase( YLINE )
+    IND1 = INDEX( YLINE, '&'//YDNAML )
+    IF( IND1 /= 0 ) THEN
+      IF( IND1 > 1 ) THEN
+        IF ( LEN_TRIM( YLINE(:IND1-1) ) /= 0 ) THEN
+          ! Check that it is really the beginning of a namelist and that is not a comment
+          ! Nothing but spaces is allowed here
+          call Print_msg( NVERB_DEBUG, 'IO', 'POSNAM', 'invalid header or commented namelist: ' // Trim ( YLINE) )
+          CYCLE
+        END IF
+      END IF
+      YLTEST = YLINE(IND1+ILEN+1:IND1+ILEN+1)
+      IF( YLTEST == ' ' ) EXIT search_nam
+    END IF
+  END IF
+END DO search_nam
+
+BACKSPACE( ILU )
+OFOUND = .TRUE.
+call Print_msg( IVERBLVL, 'IO', 'POSNAM', Trim( TPFILE%CNAME ) // ': namelist ' // Trim( HDNAML ) // ' found' )
+
 RETURN
-!
+
 ! end of file: namelist name not found
 100  CONTINUE
-OFOUND=.FALSE.
-IF (PRESENT(KLUOUT)) &
-WRITE(KLUOUT,FMT=*)  &
-'-- namelist ',HDNAML,' not found: default values used if required'
+call Print_msg( IVERBLVL, 'IO', 'POSNAM', Trim( TPFILE%CNAME ) // ': namelist ' // Trim( HDNAML ) &
+                 // ' not found: default values used if required' )
+
 !------------------------------------------------------------------
 END SUBROUTINE POSNAM
 !!
