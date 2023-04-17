@@ -480,7 +480,7 @@ export SLURM_CPU_BIND=none
 export I_MPI_PIN_PROCESSOR_LIST=all:map=spread
 "}
               ;;
-'Linux irlin'*|'Linux islin'*|'Linux ener440'*) # PC IFPEN
+'Linux irlin'*|'Linux islin'*|'Linux ener'*) # PC IFPEN
                 export     ARCH=${ARCH:-LXgfortran}
                 export  VER_MPI=${VER_MPI:-MPIAUTO}
                 export OPTLEVEL=${OPTLEVEL:-O2}
