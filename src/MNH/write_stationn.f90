@@ -132,7 +132,7 @@ IF ( ISNPROC > 1 ) THEN
   IF ( CRAD /= 'NONE' ) IPACKSIZE = IPACKSIZE + ISTORE !XTSRAD term
   IF ( LDIAG_SURFRAD ) THEN
     IF ( CSURF == 'EXTE' ) IPACKSIZE = IPACKSIZE + ISTORE * 10
-    IF ( CRAD /= 'NONE' )  IPACKSIZE = IPACKSIZE + ISTORE * 7
+    IF ( CRAD /= 'NONE' )  IPACKSIZE = IPACKSIZE + ISTORE * 8
     IPACKSIZE = IPACKSIZE + ISTORE !XSFCO2 term
   END IF
 
@@ -196,6 +196,7 @@ STATION: DO JS = 1, INUMSTAT
           ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XSWDIR;  IPOS = IPOS + ISTORE
           ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XSWDIFF; IPOS = IPOS + ISTORE
           ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XDSTAOD; IPOS = IPOS + ISTORE
+          ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XSLTAOD; IPOS = IPOS + ISTORE
         END IF
         ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XSFCO2;    IPOS = IPOS + ISTORE
       END IF
@@ -259,8 +260,9 @@ STATION: DO JS = 1, INUMSTAT
           TZSTATION%XSWDIR  = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
           TZSTATION%XSWDIFF = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
           TZSTATION%XDSTAOD = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+          TZSTATION%XSLTAOD = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
         END IF
-        TZSTATION%XSFCO2 =    ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+        TZSTATION%XSFCO2    = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
       END IF
 
       IF ( IPOS-1 /= IPACKSIZE ) &
@@ -329,7 +331,7 @@ IPROC = 5 + SIZE(TPSTATION%XR,2) + SIZE(TPSTATION%XSV,2)
 IF ( CTURB == 'TKEL' ) IPROC = IPROC + 1
 IF (LDIAG_SURFRAD) THEN
   IF(CSURF=="EXTE") IPROC = IPROC + 10
-  IF(CRAD/="NONE")  IPROC = IPROC + 7
+  IF(CRAD/="NONE")  IPROC = IPROC + 8
   IPROC = IPROC + 1 ! XSFCO2 term
 END IF
 IF (LORILAM) IPROC = IPROC + JPMODE*(3+NSOA+NCARB+NSP)
@@ -384,6 +386,7 @@ if ( ldiag_surfrad ) then
     call Add_point( 'SWDIR',  'Downward direct short-wave radiation',  'W m-2', tpstation%xswdir(:)  )
     call Add_point( 'SWDIFF', 'Downward diffuse short-wave radiation', 'W m-2', tpstation%xswdiff(:) )
     call Add_point( 'DSTAOD', 'Dust aerosol optical depth',            'm',     tpstation%xdstaod(:) )
+    call Add_point( 'SLTAOD', 'Salt aerosol optical depth',            'm',     tpstation%xsltaod(:) )
   end if
 end if
 

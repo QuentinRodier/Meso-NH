@@ -84,15 +84,20 @@ TYPE :: TSTATPROFDATA
   REAL, DIMENSION(:),   ALLOCATABLE :: XHU2M   ! 2 m relative humidity (%)
   REAL, DIMENSION(:),   ALLOCATABLE :: XZON10M ! 10 m zonal wind (m/s)
   REAL, DIMENSION(:),   ALLOCATABLE :: XMER10M ! 10 m merid. wind (m/s)
-  REAL, DIMENSION(:),   ALLOCATABLE :: XRN     ! net radiation (W m2)
-  REAL, DIMENSION(:),   ALLOCATABLE :: XH      ! sensible heat flux (W m2)
-  REAL, DIMENSION(:),   ALLOCATABLE :: XLE     ! Total latent heat flux (W m2)
-  REAL, DIMENSION(:),   ALLOCATABLE :: XLEI    ! Solid latent heat flux (W m2)
-  REAL, DIMENSION(:),   ALLOCATABLE :: XGFLUX  ! storage heat flux (W m2)
-  REAL, DIMENSION(:),   ALLOCATABLE :: XSWD    ! IR downward radiation (W m2)
-  REAL, DIMENSION(:),   ALLOCATABLE :: XSWU    ! IR upward radiation (W m2)
-  REAL, DIMENSION(:),   ALLOCATABLE :: XLWD    ! solar downward radiation (W m2)
-  REAL, DIMENSION(:),   ALLOCATABLE :: XLWU    ! solar upward radiation (W m2)
+  REAL, DIMENSION(:),   ALLOCATABLE :: XRN     ! net radiation (W/m2)
+  REAL, DIMENSION(:),   ALLOCATABLE :: XH      ! sensible heat flux (W/m2)
+  REAL, DIMENSION(:),   ALLOCATABLE :: XLE     ! Total latent heat flux (W/m2)
+  REAL, DIMENSION(:),   ALLOCATABLE :: XLEI    ! Solid latent heat flux (W/m2)
+  REAL, DIMENSION(:),   ALLOCATABLE :: XGFLUX  ! storage heat flux (W/m2)
+  REAL, DIMENSION(:),   ALLOCATABLE :: XSWD    ! IR downward radiation (W/m2)
+  REAL, DIMENSION(:),   ALLOCATABLE :: XSWU    ! IR upward radiation (W/m2)
+  REAL, DIMENSION(:),   ALLOCATABLE :: XLWD    ! solar downward radiation (W/m2)
+  REAL, DIMENSION(:),   ALLOCATABLE :: XLWU    ! solar upward radiation (W/m2)
+  REAL, DIMENSION(:),   ALLOCATABLE :: XSWDIR  ! IR downward direct radiation (W/m2)
+  REAL, DIMENSION(:),   ALLOCATABLE :: XSWDIFF ! IR downward diffuse radiation (W/m2)
+  REAL, DIMENSION(:),   ALLOCATABLE :: XDSTAOD ! Dust Aerosol Optical Depth (m)
+  REAL, DIMENSION(:),   ALLOCATABLE :: XSLTAOD ! Salt Aerosol Optical Depth (m)
+  REAL, DIMENSION(:),   ALLOCATABLE :: XSFCO2  ! CO2 surface flux (mg/m2/s)
 END TYPE
 
 TYPE, EXTENDS( TSTATPROFDATA ) ::  TSTATIONDATA
@@ -112,11 +117,6 @@ TYPE, EXTENDS( TSTATPROFDATA ) ::  TSTATIONDATA
   REAL, DIMENSION(:,:), ALLOCATABLE :: XR      ! r*(n)
   REAL, DIMENSION(:,:), ALLOCATABLE :: XSV     ! Sv*(n)
   REAL, DIMENSION(:),   ALLOCATABLE :: XTSRAD  ! Ts(n)
-
-  REAL, DIMENSION(:),   ALLOCATABLE :: XSWDIR
-  REAL, DIMENSION(:),   ALLOCATABLE :: XSWDIFF
-  REAL, DIMENSION(:),   ALLOCATABLE :: XDSTAOD ! Dust Aerosol Optical Depth
-  REAL, DIMENSION(:),   ALLOCATABLE :: XSFCO2  ! CO2 surface flux
 END TYPE TSTATIONDATA
 
 TYPE, EXTENDS( TSTATPROFDATA ) ::  TPROFILERDATA
