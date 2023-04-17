@@ -14,7 +14,7 @@ export VER_MPI=MPIAUTO
 export OPTLEVEL=DEBUG
 
 # Test de l'existence du profile
-if ! [ -e ../conf/profile_mesonh-${ARCH}-R8I4-${VERSION_XYZ}-${VER_MPI}-${OPTLEVEL}]; then
+if ! [ -e ../conf/profile_mesonh-${ARCH}-R8I4-${VERSION_XYZ}-${VER_MPI}-${OPTLEVEL} ]; then
   ./configure
 fi
 
