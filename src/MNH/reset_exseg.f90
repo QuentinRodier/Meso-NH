@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2000-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2000-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -115,7 +115,7 @@ ILUNAM = TZNMLFILE%NLU
 ! Meso-NH to store these diagnostics must be allocated by the ini_model1 subroutine
 !
 IF (NCONV_KF>=0) THEN
-  CALL POSNAM(ILUNAM,'NAM_PARAM_KAFRN',GFOUND)
+  CALL POSNAM( TZNMLFILE, 'NAM_PARAM_KAFRN', GFOUND )
   IF (GFOUND) THEN
     CALL INIT_NAM_PARAM_KAFRn
     READ(UNIT=ILUNAM,NML=NAM_PARAM_KAFRN)
@@ -149,7 +149,7 @@ IF (CRAD=='NONE') THEN
 END IF
 !
 IF(NRAD_3D>=1) THEN
-  CALL POSNAM(ILUNAM,'NAM_PARAM_RADN',GFOUND)
+  CALL POSNAM( TZNMLFILE, 'NAM_PARAM_RADN', GFOUND )
   IF (GFOUND) THEN
     CALL INIT_NAM_PARAM_RADn
     READ(UNIT=ILUNAM,NML=NAM_PARAM_RADN)
@@ -157,7 +157,7 @@ IF(NRAD_3D>=1) THEN
     IF ( IP == 1 ) PRINT*, '  namelist NAM_PARAM_RADN read'
   END IF
 #ifdef MNH_ECRAD
-  CALL POSNAM(ILUNAM,'NAM_PARAM_ECRADN',GFOUND)
+  CALL POSNAM( TZNMLFILE, 'NAM_PARAM_ECRADN', GFOUND )
   IF (GFOUND) THEN
     CALL INIT_NAM_PARAM_EcRADn
     READ(UNIT=ILUNAM,NML=NAM_PARAM_ECRADN)
@@ -193,7 +193,7 @@ IF ( IP == 1 ) PRINT*,' '
 !
 !*      5. For retrotrajectories in // , reset NHALO >> 1 if needed from NAM_CONF_DIAG
 !          ---------------------------------------------------
-CALL POSNAM(ILUNAM,'NAM_CONF_DIAG',GFOUND)
+CALL POSNAM( TZNMLFILE, 'NAM_CONF_DIAG', GFOUND )
 IF (GFOUND) THEN
   READ(UNIT=ILUNAM,NML=NAM_CONF_DIAG)
 END IF
