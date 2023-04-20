@@ -78,8 +78,8 @@ DEALLOCATE(XCURRENT_LWD   )! incoming longwave at the surface
 DEALLOCATE(XCURRENT_LWU   )! outcoming longwave at the surface
 DEALLOCATE(XCURRENT_SWD   )! incoming Shortwave at the surface
 DEALLOCATE(XCURRENT_SWU   )! outcoming Shortwave at the surface
-IF(ALLOCATED(XCURRENT_SWDIR)) DEALLOCATE(XCURRENT_SWDIR )! incoming Shortwave direct at the surface
-IF(ALLOCATED(XCURRENT_SWDIFF))DEALLOCATE(XCURRENT_SWDIFF)! incoming Shortwave diffuse at the surface
+DEALLOCATE(XCURRENT_SWDIR )! incoming Shortwave direct at the surface
+DEALLOCATE(XCURRENT_SWDIFF)! incoming Shortwave diffuse at the surface
 DEALLOCATE(XCURRENT_T2M   )! temperature at 2m
 DEALLOCATE(XCURRENT_Q2M   )! humidity at 2m
 DEALLOCATE(XCURRENT_HU2M  )! humidity at 2m

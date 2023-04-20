@@ -44,7 +44,7 @@ SUBROUTINE WRITE_STATION_n( TPDIAFILE )
 !*      0. DECLARATIONS
 !          ------------
 !
-USE MODD_ALLSTATION_n,    ONLY: LDIAG_SURFRAD
+USE MODD_ALLSTATION_n,    ONLY: LDIAG_SURFRAD_STAT
 USE MODD_CONF_n,          ONLY: NRR
 USE MODD_IO,              ONLY: ISNPROC, ISP, TFILEDATA
 USE MODD_MPIF
@@ -130,7 +130,7 @@ IF ( ISNPROC > 1 ) THEN
   IPACKSIZE = IPACKSIZE + ISTORE * ( 5 + NRR + NSV )
   IF ( CTURB == 'TKEL') IPACKSIZE = IPACKSIZE + ISTORE !Tke term
   IF ( CRAD /= 'NONE' ) IPACKSIZE = IPACKSIZE + ISTORE !XTSRAD term
-  IF ( LDIAG_SURFRAD ) THEN
+  IF ( LDIAG_SURFRAD_STAT ) THEN
     IF ( CSURF == 'EXTE' ) IPACKSIZE = IPACKSIZE + ISTORE * 10
     IF ( CRAD /= 'NONE' )  IPACKSIZE = IPACKSIZE + ISTORE * 8
     IPACKSIZE = IPACKSIZE + ISTORE !XSFCO2 term
@@ -175,7 +175,7 @@ STATION: DO JS = 1, INUMSTAT
       IF ( CRAD /= 'NONE' ) THEN
         ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XTSRAD(:); IPOS = IPOS + ISTORE
       END IF
-      IF ( LDIAG_SURFRAD ) THEN
+      IF ( LDIAG_SURFRAD_STAT ) THEN
         IF ( CSURF == 'EXTE') THEN
           ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XT2M;    IPOS = IPOS + ISTORE
           ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XQ2M;    IPOS = IPOS + ISTORE
@@ -239,7 +239,7 @@ STATION: DO JS = 1, INUMSTAT
       IF ( CRAD /= 'NONE' ) THEN
         TZSTATION%XTSRAD(:) = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
       END IF
-      IF ( LDIAG_SURFRAD ) THEN
+      IF ( LDIAG_SURFRAD_STAT ) THEN
         IF ( CSURF == 'EXTE' ) THEN
           TZSTATION%XT2M    = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
           TZSTATION%XQ2M    = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
@@ -280,7 +280,7 @@ END SUBROUTINE WRITE_STATION_n
 SUBROUTINE STATION_DIACHRO_n( TPDIAFILE, TPSTATION )
 ! ##################################################
 
-USE MODD_ALLSTATION_n,  ONLY: LDIAG_SURFRAD
+USE MODD_ALLSTATION_n,  ONLY: LDIAG_SURFRAD_STAT
 use modd_budget,        only: NLVL_CATEGORY, NLVL_SUBCATEGORY, NLVL_GROUP, NLVL_SHAPE, NLVL_TIMEAVG, NLVL_NORM, NLVL_MASK, &
                               tbudiachrometadata
 USE MODD_CONF,          ONLY: LCARTESIAN
@@ -329,7 +329,7 @@ type(tfieldmetadata_base), dimension(:), allocatable :: tzfields
 IPROC = 5 + SIZE(TPSTATION%XR,2) + SIZE(TPSTATION%XSV,2)
 
 IF ( CTURB == 'TKEL' ) IPROC = IPROC + 1
-IF (LDIAG_SURFRAD) THEN
+IF (LDIAG_SURFRAD_STAT) THEN
   IF(CSURF=="EXTE") IPROC = IPROC + 10
   IF(CRAD/="NONE")  IPROC = IPROC + 8
   IPROC = IPROC + 1 ! XSFCO2 term
@@ -365,7 +365,7 @@ end if
 call Add_point( 'W',  'Air vertical speed',    'm s-1', tpstation%xw(:)  )
 call Add_point( 'Th', 'Potential temperature', 'K',     tpstation%xth(:) )
 
-if ( ldiag_surfrad ) then
+if ( ldiag_surfrad_stat ) then
   if ( csurf == "EXTE" ) then
     call Add_point( 'T2m',    '2-m temperature',        'K',       tpstation%xt2m(:)    )
     call Add_point( 'Q2m',    '2-m humidity',           'kg kg-1', tpstation%xq2m(:)    )
@@ -623,7 +623,7 @@ end if
 
 if ( crad /= 'NONE' ) call Add_point( 'Tsrad', 'Radiative Surface Temperature', 'K', tpstation%xtsrad(:) )
 
-if ( ldiag_surfrad ) call Add_point( 'SFCO2', 'CO2 Surface Flux', 'mg m-2 s-1', tpstation%xsfco2(:) )
+if ( ldiag_surfrad_stat ) call Add_point( 'SFCO2', 'CO2 Surface Flux', 'mg m-2 s-1', tpstation%xsfco2(:) )
 !
 !----------------------------------------------------------------------------
 !

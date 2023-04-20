@@ -909,6 +909,7 @@ IF (CSURF=='EXTE') THEN
     CALL IO_Field_write(TPFILE,TZFIELD,XCURRENT_SFCO2)
   END IF
   !
+  IF ( CRAD /= 'NONE' ) THEN
   IF(ANY(XCURRENT_SWD/=XUNDEF))THEN
     TZFIELD = TFIELDMETADATA(                           &
       CMNHNAME   = 'SWD',                               &
@@ -968,6 +969,7 @@ IF (CSURF=='EXTE') THEN
       LTIMEDEP   = .TRUE.                               )
     CALL IO_Field_write(TPFILE,TZFIELD,XCURRENT_LWU)
   END IF
+  END IF ! CRAD/='NONE'
 END IF
 
 ! MODIF FP NOV 2012
