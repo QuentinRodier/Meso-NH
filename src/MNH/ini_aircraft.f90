@@ -199,6 +199,15 @@ DO JI = 1, NAIRCRAFTS
   ! Read CSV data (trajectory)
   CALL AIRCRAFT_CSV_READ( TZAIRCRAFT, CFILE(JI) )
 
+  IF ( TZAIRCRAFT%LALTDEF ) THEN
+    ! Print a warning if pressures seem too high (> 2000 hPa)
+    IF ( ANY( TZAIRCRAFT%XPOSP > 2.E5 ) ) THEN
+      CMNHMSG(1) = TRIM( TZAIRCRAFT%CTITLE ) // ': pressure values seem too high'
+      CMNHMSG(2) = 'check that they are given in hPa and not Pa'
+      CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'INI_AIRCRAFT', OLOCAL = .TRUE. )
+    END IF
+  END IF
+
 END DO
 
 IF ( NAIRCRAFTS > 0 ) CALL AIRCRAFTS_NML_DEALLOCATE()
