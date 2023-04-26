@@ -67,7 +67,7 @@ END MODULE MODI_INI_EOL_ADR
 !!    REAL, DIMENSION(:,:,:),      ALLOCATABLE :: XELT_AZI       ! Elements azimut [rad]
 !!    REAL, DIMENSION(:,:,:,:),    ALLOCATABLE :: XFAERO_RA_GLB  ! Aerodyn. force (lift+drag) in RA [N]
 !!    REAL, DIMENSION(:,:,:),      ALLOCATABLE :: XFAERO_BLEQ_RA ! Blade Eq Aero. force in RA [N]
-!!    REAL, DIMENSION(:,:),        ALLOCATABLE :: XAOA_BLEQ      ! Blade Eq. AoA 
+!!    REAL, DIMENSION(:,:),        ALLOCATABLE :: XAOA_BLEQ_GLB  ! Blade Eq. AoA 
 !!    REAL, DIMENSION(:,:,:),      ALLOCATABLE :: XFAERO_RA_SUM  ! Sum of aero. force  in RA [N]
 !!    INTEGER                                  :: NNB_RADELT     ! Number of radial elements
 !!    INTEGER                                  :: NNB_AZIELT     ! Number of azimutal elements

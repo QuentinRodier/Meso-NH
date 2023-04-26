@@ -188,10 +188,10 @@ INTEGER             :: IINFO                   ! code info return
 !TYPE(BLADE)                               :: TBLADE
 !TYPE(AIRFOIL), DIMENSION(:), ALLOCATABLE  :: TAIRFOIL 
 !
-!REAL, DIMENSION(:,:,:),   ALLOCATABLE :: XELT_AZI       ! Elements azimut [rad]
-!REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: XFAERO_RA_GLB  ! Aerodyn. force (lift+drag) in RA [N], global
-!REAL, DIMENSION(:,:,:),   ALLOCATABLE :: XFAERO_BLA_BLEQ ! Blade Eq Aerodyn. force (lift+drag) in RA [N]
-!REAL, DIMENSION(:,:),     ALLOCATABLE :: XAOA_BLEQ       ! Blade Eq. AoA 
+!REAL, DIMENSION(:,:,:),   ALLOCATABLE :: XELT_AZI           ! Elements azimut [rad]
+!REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: XFAERO_RA_GLB      ! Aero. force (lift+drag) RA [N]
+!REAL, DIMENSION(:,:,:),   ALLOCATABLE :: XFAERO_BLEQ_RA_GLB ! Blade Eq Aero. force (lift+drag) in RA [N]
+!REAL, DIMENSION(:,:),     ALLOCATABLE :: XAOA_BLEQ_GLB      ! Blade Eq. AoA 
 
 ! B. From MODD_EOL_SHARED_IO:
 !REAL, DIMENSION(:,:,:),   ALLOCATABLE     :: XELT_RAD      ! Blade elements radius [m]
@@ -201,7 +201,7 @@ INTEGER             :: IINFO                   ! code info return
 !REAL, DIMENSION(:,:,:,:), ALLOCATABLE     :: XFAERO_RE_GLB ! Aerodyn. force (lift+drag) in RE [N]
 !REAL, DIMENSION(:,:,:,:), ALLOCATABLE     :: XFAERO_RG_GLB ! Aerodyn. force (lift+drag) in RG [N]
 !
-! for namelist NAM_EOL_ALM
+! for namelist NAM_EOL_ADR
 !CHARACTER(LEN=3)   :: CINTERP           ! Interpolation method for wind speed
 !LOGICAL            :: LTIPLOSSG         ! Flag to apply Glauert's tip loss correction
 !LOGICAL            :: LTECOUTPTS        ! Flag to get Tecplot file output of element points
@@ -318,30 +318,22 @@ XTORQT(:)                   = 0.
           ZWIND_VEL_RG(2) = ZVT_I
           ZWIND_VEL_RG(3) = ZWT_I
 !
-!          PRINT*, 'JROT= ', JROT, 'JAZI= ', JAZI, 'JRAD= ', JRAD
-!          PRINT*, 'WIND_VEL_RG(1)= ', ZWIND_VEL_RG(1),'WIND_VEL_RG(2)= ', ZWIND_VEL_RG(2), 'WIND_VEL_RG(3)= ', ZWIND_VEL_RG(3)
 !*       4.3     Calculating the wind in RA frame
 !
           ZWIND_VEL_RA(:) = MATMUL(XMAT_RA_RG(JROT,JAZI,JRAD,:,:), ZWIND_VEL_RG(:))
-!          PRINT*, 'WIND_VEL_RA(1)= ', ZWIND_VEL_RA(1),'WIND_VEL_RA(2)= ', ZWIND_VEL_RA(2), 'WIND_VEL_RA(3)= ', ZWIND_VEL_RA(3)
 !
 !*       4.4     Calculating the relative wind speed in RE frame + norm
 !
           ZWINDREL_VEL_RA(:) = ZWIND_VEL_RA(:) - XTVEL_ELT_RA(JROT,JAZI,JRAD,:)
           ZWINDREL_VEL       = NORM(ZWINDREL_VEL_RA)
 !
-!          PRINT*, 'WINDREL_VEL_RA(1)= ', ZWINDREL_VEL_RA(1),'WINDREL_VEL_RA(2)= ', ZWINDREL_VEL_RA(2)
-!          PRINT*, 'WINDREL_VEL_RA(3)= ', ZWINDREL_VEL_RA(3)
-!          PRINT*, 'WINDREL_VEL ', ZWINDREL_VEL
 !*       4.5     Calculating the angle of attack
 !
           ZAOA   = ATAN2(-ZWINDREL_VEL_RA(3), ZWINDREL_VEL_RA(2))      
 !
-!          PRINT*, 'AOA= ', ZAOA
 !*       4.6     Getting aerodynamic coefficients from tabulated data
 !
           ZRAD   = XELT_RAD(JROT,JAZI,JRAD)                       ! Radius of the element
-!          PRINT*, 'RAD= ', ZRAD  
           IAID   = GET_AIRFOIL_ID_ADR(TTURBINE,TBLADE,TAIRFOIL,ZRAD)   ! ID of the airfoil   
           ZCLIFT = INTERP_SPLCUB(ZAOA*180/XPI,      &
                                  TAIRFOIL(IAID)%XAA,&
@@ -349,10 +341,6 @@ XTORQT(:)                   = 0.
           ZCDRAG = INTERP_SPLCUB(ZAOA*180/XPI,      &
                                  TAIRFOIL(IAID)%XAA,&
                                  TAIRFOIL(IAID)%XCD)
-
-!          PRINT*, 'CLIFT= ', ZCLIFT  
-!          PRINT*, 'CDRAG= ', ZCDRAG  
-
 !
 !*       4.7     Tip loss correction (Glauert)
 !
@@ -364,11 +352,6 @@ XTORQT(:)                   = 0.
             ZFTIPL   = (2.0/XPI)*ACOS(MIN(                       &
                         1.0, EXP(-(TTURBINE%NNB_BLADES/2.0)      &
                        *(TTURBINE%XR_MAX-ZRAD)/(ZRAD*SIN(ZPHI)))))
-           ! PRINT*, 'JROT= ', JROT, 'JAZI= ', JAZI, 'JROT= ', JRAD
-           ! PRINT*, 'RAD= ', ZRAD, 'PHI= ', ZPHI, 'FTIPL=', ZFTIPL
-           ! PRINT*, 'EXP= ', EXP(-(TTURBINE%NNB_BLADES/2.0)*(TTURBINE%XR_MAX-ZRAD)/(ZRAD*SIN(ZPHI))) 
-           ! PRINT*, 'ACOS= ', ACOS(MIN(1.0, EXP(-(TTURBINE%NNB_BLADES/2.0)*(TTURBINE%XR_MAX-ZRAD)/(ZRAD*SIN(ZPHI)))))
-
            ELSE
             ZFTIPL = 1.0
            END IF
@@ -380,7 +363,6 @@ XTORQT(:)                   = 0.
 !                  that act on blades (wind->blade)
           ZFLIFT = 0.5*ZRHO_I*XSURF_APP_ELT(JROT,JRAD)*ZCLIFT*ZWINDREL_VEL**2
           ZFDRAG = 0.5*ZRHO_I*XSURF_APP_ELT(JROT,JRAD)*ZCDRAG*ZWINDREL_VEL**2
-!          PRINT*, 'LIFT= ', ZFLIFT, 'DRAG= ', ZFDRAG
 !
 !*       4.9     Evaluating the aerodynamiques forces in RE frame
 !                  that act on blades (wind->blade)
@@ -388,7 +370,6 @@ XTORQT(:)                   = 0.
           ZFAERO_RA(2) =   COS(ZAOA)*ZFDRAG - SIN(ZAOA)*ZFLIFT
           ZFAERO_RA(3) = - SIN(ZAOA)*ZFDRAG - COS(ZAOA)*ZFLIFT
 !
-!          PRINT*, 'FAERO_RA(1)= ', ZFAERO_RA(1), 'FAERO_RA(2)= ', ZFAERO_RA(2)
 !*       4.10     Evaluating the aerodynamiques forces in RG frame
 !                  that act on blades (wind->blade)
           ZFAERO_RG(:) = MATMUL(XMAT_RG_RA(JROT,JAZI,JRAD,:,:), ZFAERO_RA(:))
@@ -397,36 +378,14 @@ XTORQT(:)                   = 0.
           PFX_RG(JI,JJ,JK) = PFX_RG(JI,JJ,JK) + ZFAERO_RG(1) 
           PFY_RG(JI,JJ,JK) = PFY_RG(JI,JJ,JK) + ZFAERO_RG(2) 
           PFZ_RG(JI,JJ,JK) = PFZ_RG(JI,JJ,JK) + ZFAERO_RG(3) 
-!          PRINT*, 'FX= ', PFX_RG(JI,JJ,JK), 'FY= ', PFY_RG(JI,JJ,JK), 'FZ= ', PFZ_RG(JI,JJ,JK) 
 !
-
+!*       4.12     Storing variables (because they were local only)
           ZAOA_ELT(JROT,JAZI,JRAD)    =   ZAOA
           ZFLIFT_ELT(JROT,JAZI,JRAD)   =   ZFLIFT
           ZFDRAG_ELT(JROT,JAZI,JRAD)   =   ZFDRAG
           ZFAERO_RA_ELT(JROT,JAZI,JRAD,:)   =  ZFAERO_RA(:) 
           ZFAERO_RG_ELT(JROT,JAZI,JRAD,:)   =  ZFAERO_RG(:) 
 
-
-          !PRINT*, '---------------------------------------------------- '
-          !IF (IP==1) THEN 
-
-          !PRINT*, 'TCOUNT= ', KTCOUNT, 'STEP= ', PTSTEP
-          !PRINT*, 'JROT= ', JROT, 'JAZI= ', JAZI, 'JRAD= ', JRAD
-          !PRINT*, 'WIND_VEL_RG(1)= ', ZWIND_VEL_RG(1),'WIND_VEL_RG(2)= ', ZWIND_VEL_RG(2), 'WIND_VEL_RG(3)= ', ZWIND_VEL_RG(3)
-          !PRINT*, 'WIND_VEL_RA(1)= ', ZWIND_VEL_RA(1),'WIND_VEL_RA(2)= ', ZWIND_VEL_RA(2), 'WIND_VEL_RA(3)= ', ZWIND_VEL_RA(3)
-          !PRINT*, 'WINDREL_VEL_RA(1)= ', ZWINDREL_VEL_RA(1)
-          !PRINT*, 'WINDREL_VEL_RA(2)= ', ZWINDREL_VEL_RA(2)
-          !PRINT*, 'WINDREL_VEL_RA(3)= ', ZWINDREL_VEL_RA(3)
-          !PRINT*, 'WINDREL_VEL ', ZWINDREL_VEL
-          !PRINT*, 'AOA= ', ZAOA
-          !PRINT*, 'RAD= ', ZRAD  
-          !PRINT*, 'CLIFT= ', ZCLIFT, 'CDRAG= ', ZCDRAG  
-          !PRINT*, 'LIFT= ', ZFLIFT, 'DRAG= ', ZFDRAG
-          !PRINT*, 'FAERO_RA(1)= ', ZFAERO_RA(1), 'FAERO_RA(2)= ', ZFAERO_RA(2)
-          !PRINT*, 'FX= ', PFX_RG(JI,JJ,JK), 'FY= ', PFY_RG(JI,JJ,JK), 'FZ= ', PFZ_RG(JI,JJ,JK) 
-         ! END IF
-
-          !PRINT*, 'FAERO(1)= ', ZFAERO(JRAD,1) , 'FAERO(1)= ', ZFAERO(JRAD,2), 'FAERO(1)= ', ZFAERO(JRAD,3)  
          ! End of position tests 
          END IF
         END IF
@@ -467,11 +426,6 @@ CALL MPI_ALLREDUCE(ZFAERO_RG_ELT, XFAERO_RG_GLB, SIZE(XFAERO_RG_GLB),&
         MNHREAL_MPI,MPI_SUM,NMNH_COMM_WORLD,IINFO)
 !
 !
-!PRINT*, 'AOA_GLB= ', XAOA_GLB 
-!PRINT*, 'FLIFT_GLB= ', XFLIFT_GLB 
-!PRINT*, 'FDRAG_GLB= ', XFDRAG_GLB 
-!PRINT*, 'FAERO_RA_GLB= ', XFAERO_RA_GLB 
-!PRINT*, 'FAERO_RG_GLB= ', XFAERO_RG_GLB 
 !-------------------------------------------------------------------------------
 !
 !*       6.     COMPUTING THRUST, TORQUE AND POWER
@@ -489,11 +443,6 @@ IF(IP == 1) THEN
 ! Aerodynamic load (wind->blade) in RA
     XFAERO_BLEQ_RA_GLB(JROT,JRAD,:) = XFAERO_BLEQ_RA_GLB(JROT,JRAD,:) &
                                     + XFAERO_RA_GLB(JROT,JAZI,JRAD,:)/INB_B
-!   PRINT*, '---------------------------------------------------- '
-!   PRINT*, 'JROT= ', JROT, 'JAZI= ', JAZI, 'JRAD= ', JRAD
-!   PRINT*, 'FAERO_RA(1)= ', XFAERO_RA_BLA(JROT,JRAD,1),'FAERO_RA(2)= ', XFAERO_RA_BLA(JROT,JRAD,2)
-!   PRINT*, 'FAERO_RA(3)= ', XFAERO_RA_BLA(JROT,JRAD,3)
-!   PRINT*, 'AOA= ', XAOA_BLA(JROT,JRAD)
    END DO
   END DO
 
