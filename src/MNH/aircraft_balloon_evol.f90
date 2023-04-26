@@ -344,7 +344,7 @@ SELECT TYPE ( TPFLYER )
           TPFLYER%LFLY = .FALSE.
           WRITE( CMNHMSG(1), "( 'Balloon ', A, ' crashed the ', I2, '/', I2, '/', I4, ' at ', F18.12, &
                                 's (too low or too high)' )" )                                        &
-                 TRIM( TPFLYER%CTITLE ), TDTCUR%NDAY, TDTCUR%NMONTH, TDTCUR%NYEAR, TDTCUR%XTIME
+                 TRIM( TPFLYER%CNAME ), TDTCUR%NDAY, TDTCUR%NMONTH, TDTCUR%NYEAR, TDTCUR%XTIME
           CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'AIRCRAFT_BALLOON_EVOL', OLOCAL = .TRUE. )
         ELSE CRASH_VERT
           !No vertical crash
@@ -413,7 +413,7 @@ SELECT CASE ( TPBALLOON%CTYPE )
       ZZCOEF11 = (ZFLYER_EXN - ZEXN(2,2,IK11)) / ( ZEXN(2,2,IK11+1) - ZEXN(2,2,IK11))
       TPBALLOON%XRHO = FLYER_INTERP(ZRHO)
     ELSE
-      CMNHMSG(1) = 'Error in balloon initial position (balloon ' // TRIM(TPBALLOON%CTITLE) // ' )'
+      CMNHMSG(1) = 'Error in balloon initial position (balloon ' // TRIM(TPBALLOON%CNAME) // ' )'
       CMNHMSG(2) = 'neither initial ALTITUDE or PRESsure is given'
       CMNHMSG(3) = 'Check your INI_BALLOON routine'
       CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'AIRCRAFT_BALLOON_EVOL', OLOCAL = .TRUE. )
@@ -541,7 +541,7 @@ CALL FLYER_GET_RANK_MODEL_ISCRASHED( TPBALLOON )
 IF ( TPBALLOON%LCRASH ) THEN
   WRITE( CMNHMSG(1), "( 'Balloon ', A, ' crashed the ', I2, '/', I2, '/', I4, ' at ', F18.12, &
                       's (out of the horizontal boundaries)' )" ) &
-    TRIM( TPBALLOON%CTITLE ), TDTCUR%NDAY, TDTCUR%NMONTH, TDTCUR%NYEAR, TDTCUR%XTIME
+    TRIM( TPBALLOON%CNAME ), TDTCUR%NDAY, TDTCUR%NMONTH, TDTCUR%NYEAR, TDTCUR%XTIME
   CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'AIRCRAFT_BALLOON_EVOL', OLOCAL = .TRUE. )
 END IF
 
@@ -581,8 +581,8 @@ IF ( TPBALLOON%NMODEL /= IMODEL_OLD .AND. .NOT. TPBALLOON%LCRASH ) THEN
         TPBALLOON%TFLYER_TIME%TPDATES(ISTORE) = TPBALLOON%TFLYER_TIME%TPDATES(ISTORE-1) + TPBALLOON%TFLYER_TIME%XTSTEP
 
         WRITE( CMNHMSG(1), "( 'Balloon ', A, ': store skipped at ', I2, '/', I2, '/', I4, ' at ', F18.12, 's' )" ) &
-               TRIM( TPBALLOON%CTITLE ),                                                                             &
-               TPBALLOON%TFLYER_TIME%TPDATES(ISTORE)%NDAY,  TPBALLOON%TFLYER_TIME%TPDATES(ISTORE)%NMONTH,              &
+               TRIM( TPBALLOON%CNAME ),                                                                            &
+               TPBALLOON%TFLYER_TIME%TPDATES(ISTORE)%NDAY,  TPBALLOON%TFLYER_TIME%TPDATES(ISTORE)%NMONTH,          &
                TPBALLOON%TFLYER_TIME%TPDATES(ISTORE)%NYEAR, TPBALLOON%TFLYER_TIME%TPDATES(ISTORE)%XTIME
         CMNHMSG(2) = 'due to change of model (child to its parent)'
         CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'AIRCRAFT_BALLOON_EVOL', OLOCAL = .TRUE. )
@@ -600,13 +600,13 @@ IF ( TPBALLOON%NMODEL /= IMODEL_OLD .AND. .NOT. TPBALLOON%LCRASH ) THEN
     IF ( TPBALLOON%LCRASH ) THEN
       WRITE( CMNHMSG(1), "( 'Balloon ', A, ' crashed the ', I2, '/', I2, '/', I4, ' at ', F18.12, &
                          's (out of the horizontal boundaries)' )" ) &
-        TRIM( TPBALLOON%CTITLE ), TDTCUR%NDAY, TDTCUR%NMONTH, TDTCUR%NYEAR, TDTCUR%XTIME
+        TRIM( TPBALLOON%CNAME ), TDTCUR%NDAY, TDTCUR%NMONTH, TDTCUR%NYEAR, TDTCUR%XTIME
       CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'AIRCRAFT_BALLOON_EVOL', OLOCAL = .TRUE. )
     END IF
   ELSE
     ! Special case not-managed (different dads, change of several models in 1 step (going to grand parent/grand children)...)
     ! This situation should be very infrequent => reasonable risk, error on the trajectory should be relatively small in most cases
-    CMNHMSG(1) = 'unmanaged change of model for ballon ' // TPBALLOON%CTITLE
+    CMNHMSG(1) = 'unmanaged change of model for ballon ' // TPBALLOON%CNAME
     CMNHMSG(2) = 'its trajectory might be wrong'
     CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'AIRCRAFT_BALLOON_EVOL', OLOCAL = .TRUE. )
   END IF
@@ -830,7 +830,7 @@ IF ( ANY( [ IK00, IK01, IK10, IK11 ] < IKB ) ) THEN
   IK10 = MAX ( IK10, IKB )
   IK11 = MAX ( IK11, IKB )
 
-  CMNHMSG(1) = 'flyer ' // TRIM( TPFLYER%CTITLE ) // ' is near the ground'
+  CMNHMSG(1) = 'flyer ' // TRIM( TPFLYER%CNAME ) // ' is near the ground'
   WRITE( CMNHMSG(2), "( 'at ', I2, '/', I2, '/', I4, ' ', F18.12, 's' )" ) &
          TDTCUR%NDAY, TDTCUR%NMONTH, TDTCUR%NYEAR, TDTCUR%XTIME
   CALL PRINT_MSG( NVERB_INFO, 'GEN', 'FLYER_COMPUTE_INTERP_COEFF_VER', OLOCAL = .TRUE. )

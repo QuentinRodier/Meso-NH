@@ -555,12 +555,12 @@ call Aircraft_balloon_longtype_get( tpflyer, tzbudiachro%clevels(NLVL_SUBCATEGOR
 tzbudiachro%ccomments(NLVL_SUBCATEGORY) = 'Level for the flyers of type: ' // Trim( tzbudiachro%clevels(NLVL_SUBCATEGORY) )
 
 tzbudiachro%lleveluse(NLVL_GROUP)       = .true.
-tzbudiachro%clevels  (NLVL_GROUP)       = Trim( tpflyer%ctitle )
-tzbudiachro%ccomments(NLVL_GROUP)       = 'Values for flyer ' // Trim( tpflyer%ctitle )
+tzbudiachro%clevels  (NLVL_GROUP)       = Trim( tpflyer%cname )
+tzbudiachro%ccomments(NLVL_GROUP)       = 'Values for flyer ' // Trim( tpflyer%cname )
 
 tzbudiachro%lleveluse(NLVL_SHAPE)       = .true.
 tzbudiachro%clevels  (NLVL_SHAPE)       = 'Point'
-tzbudiachro%ccomments(NLVL_SHAPE)       = 'Values at position of flyer ' // Trim( tpflyer%ctitle )
+tzbudiachro%ccomments(NLVL_SHAPE)       = 'Values at position of flyer ' // Trim( tpflyer%cname )
 
 tzbudiachro%lleveluse(NLVL_TIMEAVG)     = .false.
 tzbudiachro%clevels  (NLVL_TIMEAVG)     = 'Not_time_averaged'
@@ -665,12 +665,12 @@ call Aircraft_balloon_longtype_get( tpflyer, tzbudiachro%clevels(NLVL_SUBCATEGOR
 tzbudiachro%ccomments(NLVL_SUBCATEGORY) = 'Level for the flyers of type: ' // Trim( tzbudiachro%clevels(NLVL_SUBCATEGORY) )
 
 tzbudiachro%lleveluse(NLVL_GROUP)       = .true.
-tzbudiachro%clevels  (NLVL_GROUP)       = Trim( tpflyer%ctitle )
-tzbudiachro%ccomments(NLVL_GROUP)       = 'Values for flyer ' // Trim( tpflyer%ctitle )
+tzbudiachro%clevels  (NLVL_GROUP)       = Trim( tpflyer%cname )
+tzbudiachro%ccomments(NLVL_GROUP)       = 'Values for flyer ' // Trim( tpflyer%cname )
 
 tzbudiachro%lleveluse(NLVL_SHAPE)       = .true.
 tzbudiachro%clevels  (NLVL_SHAPE)       = 'Vertical_profile'
-tzbudiachro%ccomments(NLVL_SHAPE)       = 'Vertical profiles at position of flyer ' // Trim( tpflyer%ctitle )
+tzbudiachro%ccomments(NLVL_SHAPE)       = 'Vertical profiles at position of flyer ' // Trim( tpflyer%cname )
 
 tzbudiachro%lleveluse(NLVL_TIMEAVG)     = .false.
 tzbudiachro%clevels  (NLVL_TIMEAVG)     = 'Not_time_averaged'

@@ -257,11 +257,11 @@ IF ( ISP == NFLYER_DEFAULT_RANK ) THEN
         CALL FLYER_GET_RANK_MODEL_ISCRASHED( TZBALLOON, PX = TZBALLOON%XXLAUNCH, PY = TZBALLOON%XYLAUNCH )
       END IF
       IF ( TZBALLOON%LCRASH ) THEN
-        CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'AIRCRAFT_BALLOON', 'balloon ' // TRIM( TZBALLOON%CTITLE ) &
+        CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'AIRCRAFT_BALLOON', 'balloon ' // TRIM( TZBALLOON%CNAME ) &
                         // ': launch coordinates are outside of horizontal physical domain' )
       END IF
     ELSE
-      CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'AIRCRAFT_BALLOON', 'balloon ' // TRIM( TZBALLOON%CTITLE ) &
+      CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'AIRCRAFT_BALLOON', 'balloon ' // TRIM( TZBALLOON%CNAME ) &
                       // ': position has already been initialized' )
     END IF
 
@@ -333,19 +333,19 @@ select type ( tpflyer )
     else if ( Trim( TPFLYER%CTYPE ) == 'CVBALL' ) then
       ytype = 'Constant_volume_balloons'
     else
-      call Print_msg( NVERB_ERROR, 'GEN', 'AIRCRAFT_BALLOON_LONGTYPE_GET', 'unknown category for flyer ' // Trim( tpflyer%ctitle ) )
+      call Print_msg( NVERB_ERROR, 'GEN', 'AIRCRAFT_BALLOON_LONGTYPE_GET', 'unknown category for flyer ' // Trim( tpflyer%cname ) )
       ytype = 'Unknown'
     end if
 
   class default
-    call Print_msg( NVERB_ERROR, 'GEN', 'AIRCRAFT_BALLOON_LONGTYPE_GET', 'unknown class for flyer ' // Trim( tpflyer%ctitle ) )
+    call Print_msg( NVERB_ERROR, 'GEN', 'AIRCRAFT_BALLOON_LONGTYPE_GET', 'unknown class for flyer ' // Trim( tpflyer%cname ) )
     ytype = 'Unknown'
 
 end select
 
 if ( Len_trim( ytype ) > Len( HLONGTYPE ) ) &
   call Print_msg( NVERB_WARNING, 'GEN', 'AIRCRAFT_BALLOON_LONGTYPE_GET', &
-                  'HLONGTYPE truncated for flyer ' // Trim( tpflyer%ctitle ) )
+                  'HLONGTYPE truncated for flyer ' // Trim( tpflyer%cname ) )
 HLONGTYPE = Trim( ytype )
 
 END SUBROUTINE AIRCRAFT_BALLOON_LONGTYPE_GET
@@ -385,7 +385,7 @@ REAL,    DIMENSION(:), ALLOCATABLE :: ZPACK        ! Buffer to store raw data of
 
 WRITE( YFROM, '( I10 )' ) ISP
 WRITE( YTO,   '( I10 )' ) KTO
-CALL PRINT_MSG( NVERB_DEBUG, 'GEN', 'FLYER_SEND', 'send flyer '//TRIM(TPFLYER%CTITLE)//': '//TRIM(YFROM)//'->'//TRIM(YTO), &
+CALL PRINT_MSG( NVERB_DEBUG, 'GEN', 'FLYER_SEND', 'send flyer '//TRIM(TPFLYER%CNAME)//': '//TRIM(YFROM)//'->'//TRIM(YTO), &
                 OLOCAL = .TRUE. )
 
 IKU = NKMAX + 2 * JPVEXT
@@ -396,7 +396,7 @@ ISTORE_CUR = TPFLYER%TFLYER_TIME%N_CUR
 
 ! Determine size of data to send
 ! Characters, integers and logicals will be converted to reals. CMODEL and CTYPE will be coded by 1 real
-IPACKSIZE = 15 + LEN(TPFLYER%CTITLE) + ISTORE_CUR * ( 18 + NRR + NSV * 2 + IKU * ( 9 + NRR ) )
+IPACKSIZE = 15 + LEN(TPFLYER%CNAME) + ISTORE_CUR * ( 18 + NRR + NSV * 2 + IKU * ( 9 + NRR ) )
 IF (  CCLOUD == 'LIMA' ) IPACKSIZE = IPACKSIZE + ISTORE_CUR * IKU * 2
 
 SELECT TYPE ( TPFLYER )
@@ -444,8 +444,8 @@ END SELECT
 IPOS = IPOS + 1
 
 ! Convert title characters to integers
-DO JI = 1, LEN(TPFLYER%CTITLE)
-  ZPACK(IPOS) = ICHAR( TPFLYER%CTITLE(JI:JI) )
+DO JI = 1, LEN(TPFLYER%CNAME)
+  ZPACK(IPOS) = ICHAR( TPFLYER%CNAME(JI:JI) )
   IPOS = IPOS + 1
 END DO
 
@@ -619,7 +619,7 @@ CHARACTER(LEN=10) :: YFROM, YTO
 WRITE( YFROM, '( I10 )' ) ISP
 WRITE( YTO,   '( I10 )' ) KTO
 CALL PRINT_MSG( NVERB_DEBUG, 'GEN', 'FLYER_SEND_AND_DEALLOCATE', &
-                'send flyer '//TRIM(TPFLYER%CTITLE)//': '//TRIM(YFROM)//'->'//TRIM(YTO), OLOCAL = .TRUE. )
+                'send flyer '//TRIM(TPFLYER%CNAME)//': '//TRIM(YFROM)//'->'//TRIM(YTO), OLOCAL = .TRUE. )
 
 CALL FLYER_SEND( TPFLYER, KTO )
 
@@ -713,14 +713,14 @@ END SELECT
 IPOS = IPOS + 1
 
 ! Convert integers to characters for title
-DO JI = 1, LEN(TPFLYER%CTITLE)
-  TPFLYER%CTITLE(JI:JI) = ACHAR( NINT( ZPACK(IPOS) ) )
+DO JI = 1, LEN(TPFLYER%CNAME)
+  TPFLYER%CNAME(JI:JI) = ACHAR( NINT( ZPACK(IPOS) ) )
   IPOS = IPOS + 1
 END DO
 
 ! Print full message only now (flyer title was not yet known)
 CALL PRINT_MSG( NVERB_DEBUG, 'GEN', 'FLYER_RECV_AND_ALLOCATE', &
-                'receive flyer '//TRIM(TPFLYER%CTITLE)//': '//TRIM(YFROM)//'->'//TRIM(YTO), OLOCAL = .TRUE. )
+                'receive flyer '//TRIM(TPFLYER%CNAME)//': '//TRIM(YFROM)//'->'//TRIM(YTO), OLOCAL = .TRUE. )
 
 TPFLYER%TLAUNCH = TPREFERENCE_DATE + ZPACK(IPOS); IPOS = IPOS + 1
 

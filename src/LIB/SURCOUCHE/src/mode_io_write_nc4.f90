@@ -2315,16 +2315,16 @@ subroutine Write_flyer_time_coord( tpflyer )
                       Trim( tpfile%cname ) // ': group ' // Trim( ytype_clean ) // ' not found' )
     end if
 
-    istatus = NF90_INQ_NCID( isubcatid, Trim( tpflyer%ctitle ), incid )
+    istatus = NF90_INQ_NCID( isubcatid, Trim( tpflyer%cname ), incid )
     if ( istatus /= NF90_NOERR ) then
       call Print_msg( NVERB_ERROR, 'IO', 'Write_flyer_time_coord', &
-                      Trim( tpfile%cname ) // ': group '// Trim( tpflyer%ctitle ) // ' not found' )
+                      Trim( tpfile%cname ) // ': group '// Trim( tpflyer%cname ) // ' not found' )
     end if
 
     istatus = NF90_INQ_DIMID( incid, 'time_flyer', idimid )
     if ( istatus /= NF90_NOERR ) then
       call Print_msg( NVERB_ERROR, 'IO', 'Write_flyer_time_coord', &
-                      Trim( tpfile%cname ) // ': group ' // Trim( tpflyer%ctitle ) // ' time_flyer dimension not found' )
+                      Trim( tpfile%cname ) // ': group ' // Trim( tpflyer%cname ) // ' time_flyer dimension not found' )
     end if
 
     tzdim%cname = 'time_flyer'

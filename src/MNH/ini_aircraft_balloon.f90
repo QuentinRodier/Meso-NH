@@ -232,9 +232,9 @@ IF ( CPROGRAM == 'MESONH' .OR. CPROGRAM == 'SPAWN ' .OR. CPROGRAM == 'REAL  ' ) 
                 .OR. ( TPINIFILE%NMNHVERSION(1) == 5 .AND. TPINIFILE%NMNHVERSION(2) < 6 ) ) ) ) THEN
     ! Read in LFI file or in old format if netCDF (MesoNH < 5.6)
     TZFIELD = TFIELDMETADATA(                   &
-      CMNHNAME   = TRIM(TPFLYER%CTITLE)//'LAT', &
+      CMNHNAME   = TRIM(TPFLYER%CNAME)//'LAT',  &
       CSTDNAME   = '',                          &
-      CLONGNAME  = TRIM(TPFLYER%CTITLE)//'LAT', &
+      CLONGNAME  = TRIM(TPFLYER%CNAME)//'LAT',  &
       CUNITS     = 'degree',                    &
       CDIR       = '--',                        &
       CCOMMENT   = '',                          &
@@ -248,9 +248,9 @@ IF ( CPROGRAM == 'MESONH' .OR. CPROGRAM == 'SPAWN ' .OR. CPROGRAM == 'REAL  ' ) 
       GREAD = .TRUE.
 
       TZFIELD = TFIELDMETADATA(                   &
-        CMNHNAME   = TRIM(TPFLYER%CTITLE)//'LON', &
+        CMNHNAME   = TRIM(TPFLYER%CNAME)//'LON',  &
         CSTDNAME   = '',                          &
-        CLONGNAME  = TRIM(TPFLYER%CTITLE)//'LON', &
+        CLONGNAME  = TRIM(TPFLYER%CNAME)//'LON',  &
         CUNITS     = 'degree',                    &
         CDIR       = '--',                        &
         CCOMMENT   = '',                          &
@@ -261,9 +261,9 @@ IF ( CPROGRAM == 'MESONH' .OR. CPROGRAM == 'SPAWN ' .OR. CPROGRAM == 'REAL  ' ) 
       CALL IO_Field_read(TPINIFILE,TZFIELD,ZLON)
 
       TZFIELD = TFIELDMETADATA(                   &
-        CMNHNAME   = TRIM(TPFLYER%CTITLE)//'ALT', &
+        CMNHNAME   = TRIM(TPFLYER%CNAME)//'ALT',  &
         CSTDNAME   = '',                          &
-        CLONGNAME  = TRIM(TPFLYER%CTITLE)//'ALT', &
+        CLONGNAME  = TRIM(TPFLYER%CNAME)//'ALT',  &
         CUNITS     = 'm',                         &
         CDIR       = '--',                        &
         CCOMMENT   = '',                          &
@@ -274,9 +274,9 @@ IF ( CPROGRAM == 'MESONH' .OR. CPROGRAM == 'SPAWN ' .OR. CPROGRAM == 'REAL  ' ) 
       CALL IO_Field_read(TPINIFILE,TZFIELD,TPFLYER%XZ_CUR)
 
       TZFIELD = TFIELDMETADATA(                       &
-        CMNHNAME   = TRIM(TPFLYER%CTITLE)//'WASCENT', &
+        CMNHNAME   = TRIM(TPFLYER%CNAME)//'WASCENT',  &
         CSTDNAME   = '',                              &
-        CLONGNAME  = TRIM(TPFLYER%CTITLE)//'WASCENT', &
+        CLONGNAME  = TRIM(TPFLYER%CNAME)//'WASCENT',  &
         CUNITS     = 'm s-1',                         &
         CDIR       = '--',                            &
         CCOMMENT   = '',                              &
@@ -287,9 +287,9 @@ IF ( CPROGRAM == 'MESONH' .OR. CPROGRAM == 'SPAWN ' .OR. CPROGRAM == 'REAL  ' ) 
       CALL IO_Field_read(TPINIFILE,TZFIELD,TPFLYER%XWASCENT)
 
       TZFIELD = TFIELDMETADATA(                   &
-        CMNHNAME   = TRIM(TPFLYER%CTITLE)//'RHO', &
+        CMNHNAME   = TRIM(TPFLYER%CNAME)//'RHO',  &
         CSTDNAME   = '',                          &
-        CLONGNAME  = TRIM(TPFLYER%CTITLE)//'RHO', &
+        CLONGNAME  = TRIM(TPFLYER%CNAME)//'RHO',  &
         CUNITS     = 'kg m-3',                    &
         CDIR       = '--',                        &
         CCOMMENT   = '',                          &
@@ -304,7 +304,7 @@ IF ( CPROGRAM == 'MESONH' .OR. CPROGRAM == 'SPAWN ' .OR. CPROGRAM == 'REAL  ' ) 
     ! Read in netCDF file (new structure since MesoNH 5.6)
     IF ( ISP /= TPINIFILE%NMASTER_RANK )  CALL PRINT_MSG( NVERB_ERROR, 'IO', 'INI_LAUNCH', 'process is not the file master process')
 
-    ISTATUS = NF90_INQ_NCID( TPINIFILE%NNCID, TRIM( TPFLYER%CTITLE ), IGROUPID )
+    ISTATUS = NF90_INQ_NCID( TPINIFILE%NNCID, TRIM( TPFLYER%CNAME ), IGROUPID )
 
     IF ( ISTATUS == NF90_NOERR ) THEN
       GREAD = .TRUE.
@@ -386,7 +386,7 @@ IF ( CPROGRAM == 'MESONH' .OR. CPROGRAM == 'SPAWN ' .OR. CPROGRAM == 'REAL  ' ) 
     TPFLYER%LFLY = .TRUE.
     TPFLYER%TPOS_CUR = TDTCUR
 
-    CMNHMSG(1) = 'current location read from synchronous file for ' // TRIM( TPFLYER%CTITLE )
+    CMNHMSG(1) = 'current location read from synchronous file for ' // TRIM( TPFLYER%CNAME )
     IF (TPFLYER%CTYPE== 'CVBALL') THEN
       WRITE( CMNHMSG(2), * ) " Lat=", ZLAT, " Lon=", ZLON
       WRITE( CMNHMSG(3), * ) " Alt=", TPFLYER%XZ_CUR, " Wasc=", TPFLYER%XWASCENT
@@ -397,7 +397,7 @@ IF ( CPROGRAM == 'MESONH' .OR. CPROGRAM == 'SPAWN ' .OR. CPROGRAM == 'REAL  ' ) 
   ELSE
     ! The position is not found, data is not in the synchronous file
     ! Use the position given in namelist
-    CALL PRINT_MSG( NVERB_INFO, 'GEN', 'INI_LAUNCH', 'initial location taken from namelist for ' // TRIM( TPFLYER%CTITLE ) )
+    CALL PRINT_MSG( NVERB_INFO, 'GEN', 'INI_LAUNCH', 'initial location taken from namelist for ' // TRIM( TPFLYER%CNAME ) )
   END IF
 
   ! Correct timestep if necessary
@@ -426,7 +426,7 @@ ELSE IF ( CPROGRAM == 'DIAG  ' ) THEN
     IF (TPFLYER%XZ_CUR /= XUNDEF .AND. ZLAT /= XUNDEF .AND. ZLON /= XUNDEF ) THEN
       CALL SM_XYHAT( PLATOR, PLONOR, ZLAT, ZLON, TPFLYER%XX_CUR, TPFLYER%XY_CUR )
       TPFLYER%LFLY = .TRUE.
-      CMNHMSG(1) = 'current location read from MODD_DIAG_FLAG for ' // TRIM( TPFLYER%CTITLE )
+      CMNHMSG(1) = 'current location read from MODD_DIAG_FLAG for ' // TRIM( TPFLYER%CNAME )
       WRITE( CMNHMSG(2), * ) " Lat=", ZLAT, " Lon=", ZLON," Alt=",TPFLYER%XZ_CUR
       CALL PRINT_MSG( NVERB_INFO, 'GEN', 'INI_LAUNCH' )
     END IF
@@ -491,7 +491,7 @@ TPFLYER%TFLYER_TIME%XTSTEP = NINT( TPFLYER%TFLYER_TIME%XTSTEP / PTSTEP_MODEL ) *
 
 IF ( ABS( TPFLYER%TFLYER_TIME%XTSTEP - ZTSTEP_OLD ) > 1E-6 ) THEN
   WRITE( CMNHMSG(1), '( "Timestep for flyer ", A, " is set to ", EN12.3, " (instead of ", EN12.3, ")" )' ) &
-         TPFLYER%CTITLE, TPFLYER%TFLYER_TIME%XTSTEP, ZTSTEP_OLD
+         TPFLYER%CNAME, TPFLYER%TFLYER_TIME%XTSTEP, ZTSTEP_OLD
   CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'INI_LAUNCH' )
 END IF
 
@@ -526,7 +526,7 @@ INTEGER, OPTIONAL, INTENT(IN)    :: KSTORE
 INTEGER :: IKU    ! number of vertical levels
 INTEGER :: ISTORE ! number of storage instants
 
-CALL PRINT_MSG( NVERB_DEBUG, 'GEN', 'ALLOCATE_FLYER', 'flyer: ' // TRIM(TPFLYER%CTITLE), OLOCAL = .TRUE. )
+CALL PRINT_MSG( NVERB_DEBUG, 'GEN', 'ALLOCATE_FLYER', 'flyer: ' // TRIM(TPFLYER%CNAME), OLOCAL = .TRUE. )
 
 IKU = NKMAX + 2 * JPVEXT
 
@@ -629,7 +629,7 @@ IMPLICIT NONE
 
 CLASS(TFLYERDATA), INTENT(INOUT) :: TPFLYER
 
-CALL PRINT_MSG( NVERB_DEBUG, 'GEN', 'DEALLOCATE_FLYER', 'flyer: ' // TRIM(TPFLYER%CTITLE), OLOCAL = .TRUE. )
+CALL PRINT_MSG( NVERB_DEBUG, 'GEN', 'DEALLOCATE_FLYER', 'flyer: ' // TRIM(TPFLYER%CNAME), OLOCAL = .TRUE. )
 
 DEALLOCATE( TPFLYER%TFLYER_TIME%TPDATES )
 DEALLOCATE( TPFLYER%NMODELHIST )

@@ -75,7 +75,7 @@ TYPE :: TFLYERDATA
                                   ! 'ISODEN' : iso-density balloon
                                   ! 'AIRCRA' : aircraft
                                   ! 'CVBALL' : Constant Volume balloon
-  CHARACTER(LEN=10) :: CTITLE = ''  ! title or name for the balloon/aircraft
+  CHARACTER(LEN=10) :: CNAME = '' ! title or name for the balloon/aircraft
   TYPE(DATE_TIME)   :: TLAUNCH = TPREFERENCE_DATE ! launch/takeoff date and time
   LOGICAL           :: LCRASH = .FALSE. ! occurence of crash
   INTEGER           :: NCRASH = NCRASH_NO
