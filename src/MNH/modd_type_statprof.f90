@@ -36,8 +36,8 @@
 !*       0.   DECLARATIONS
 !             ------------
 !
-use modd_type_date,  only: date_time
-use modd_parameters, only: NNEGUNDEF, NSTATPROFNAMELGTMAX, XUNDEF
+use modd_type_date,   only: date_time
+use modd_parameters,  only: NNEGUNDEF, NSENSORNAMELGTMAX, XUNDEF
 
 implicit none
 
@@ -56,7 +56,7 @@ TYPE :: TSTATPROFDATA
   ! Type to store data common to stations and profilers
   ! It is used as a basis for the TSTATIONDATA and TPROFILERDATA
   ! and for common procedures for these 2 types
-  CHARACTER(LEN=NSTATPROFNAMELGTMAX) :: CNAME = ''  ! Station/profiler name
+  CHARACTER(LEN=NSENSORNAMELGTMAX) :: CNAME = ''  ! Station/profiler name
 
   INTEGER :: NID = 0 ! Global identification number of the station/profiler (from 1 to total number)
 
@@ -121,7 +121,7 @@ END TYPE TSTATIONDATA
 
 TYPE, EXTENDS( TSTATPROFDATA ) ::  TPROFILERDATA
   ! Type to store all the data of 1 profiler
-  CHARACTER(LEN=NSTATPROFNAMELGTMAX) :: CTYPE = ''  ! Profiler type
+  CHARACTER(LEN=NSENSORNAMELGTMAX) :: CTYPE = ''  ! Profiler type
 
   ! (n: recording instants)
   REAL, DIMENSION(:,:),   ALLOCATABLE :: XZON       ! zonal wind(n)

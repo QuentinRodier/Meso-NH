@@ -41,7 +41,7 @@
 !             ------------
 !
 !
-use modd_parameters,    only: NNEGUNDEF, XNEGUNDEF, XUNDEF
+use modd_parameters,    only: NSENSORNAMELGTMAX, NNEGUNDEF, XNEGUNDEF, XUNDEF
 USE MODD_TYPE_STATPROF, ONLY: TSTATPROFTIME
 use modd_type_date,     only: date_time
 
@@ -75,7 +75,7 @@ TYPE :: TFLYERDATA
                                   ! 'ISODEN' : iso-density balloon
                                   ! 'AIRCRA' : aircraft
                                   ! 'CVBALL' : Constant Volume balloon
-  CHARACTER(LEN=10) :: CNAME = '' ! title or name for the balloon/aircraft
+  CHARACTER(LEN=NSENSORNAMELGTMAX) :: CNAME = '' ! title or name for the balloon/aircraft
   TYPE(DATE_TIME)   :: TLAUNCH = TPREFERENCE_DATE ! launch/takeoff date and time
   LOGICAL           :: LCRASH = .FALSE. ! occurence of crash
   INTEGER           :: NCRASH = NCRASH_NO
