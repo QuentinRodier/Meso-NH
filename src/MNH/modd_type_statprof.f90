@@ -38,6 +38,7 @@
 !
 use modd_type_date,   only: date_time
 use modd_parameters,  only: NNEGUNDEF, NSENSORNAMELGTMAX, XUNDEF
+use modd_sensor,      only: tsensor
 
 implicit none
 
@@ -52,12 +53,10 @@ TYPE :: TSTATPROFTIME
   type(date_time), dimension(:), ALLOCATABLE :: tpdates             ! dates(n) (n: recording instants)
 END TYPE TSTATPROFTIME
 
-TYPE :: TSTATPROFDATA
+TYPE, EXTENDS(TSENSOR), ABSTRACT :: TSTATPROFDATA
   ! Type to store data common to stations and profilers
   ! It is used as a basis for the TSTATIONDATA and TPROFILERDATA
   ! and for common procedures for these 2 types
-  CHARACTER(LEN=NSENSORNAMELGTMAX) :: CNAME = ''  ! Station/profiler name
-
   INTEGER :: NID = 0 ! Global identification number of the station/profiler (from 1 to total number)
 
   REAL :: XX   = XUNDEF  ! X(n)
