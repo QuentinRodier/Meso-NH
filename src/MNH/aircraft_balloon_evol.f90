@@ -680,12 +680,17 @@ IKE = SIZE(PZ,3) - JPVEXT
 ! ------------------------------------------------
 
 ! X position
-II_U = COUNT( XXHAT (:) <= TPFLYER%XX_CUR )
-II_M = COUNT( XXHATM(:) <= TPFLYER%XX_CUR )
+TPFLYER%NI_U = COUNT( XXHAT (:) <= TPFLYER%XX_CUR )
+TPFLYER%NI_M = COUNT( XXHATM(:) <= TPFLYER%XX_CUR )
+II_U = TPFLYER%NI_U
+II_M = TPFLYER%NI_M
 
 ! Y position
-IJ_V=COUNT( XYHAT (:)<=TPFLYER%XY_CUR )
-IJ_M=COUNT( XYHATM(:)<=TPFLYER%XY_CUR )
+TPFLYER%NJ_V = COUNT( XYHAT (:)<=TPFLYER%XY_CUR )
+TPFLYER%NJ_M = COUNT( XYHATM(:)<=TPFLYER%XY_CUR )
+IJ_V = TPFLYER%NJ_V
+IJ_M = TPFLYER%NJ_M
+
 ZZM(:,:,1:IKU-1)=0.5 *PZ(II_M  :II_M+1,IJ_M  :IJ_M+1,1:IKU-1)+0.5 *PZ(II_M  :II_M+1,IJ_M  :IJ_M+1,2:IKU  )
 ZZM(:,:,  IKU  )=1.5 *PZ(II_M  :II_M+1,IJ_M  :IJ_M+1,  IKU-1)-0.5 *PZ(II_M  :II_M+1,IJ_M  :IJ_M+1,  IKU-2)
 
@@ -767,18 +772,22 @@ IMPLICIT NONE
 ! Interpolation coefficient for X
 ZXCOEF = (TPFLYER%XX_CUR - XXHATM(II_M)) / (XXHATM(II_M+1) - XXHATM(II_M))
 ZXCOEF = MAX (0.,MIN(ZXCOEF,1.))
+TPFLYER%XXMCOEF = ZXCOEF
 
 ! Interpolation coefficient for y
 ZYCOEF = (TPFLYER%XY_CUR - XYHATM(IJ_M)) / (XYHATM(IJ_M+1) - XYHATM(IJ_M))
 ZYCOEF = MAX (0.,MIN(ZYCOEF,1.))
+TPFLYER%XYMCOEF = ZYCOEF
 
 ! Interpolation coefficient for X (for U)
 ZUCOEF = (TPFLYER%XX_CUR - XXHAT(II_U)) / (XXHAT(II_U+1) - XXHAT(II_U))
 ZUCOEF = MAX(0.,MIN(ZUCOEF,1.))
+TPFLYER%XXUCOEF = ZUCOEF
 
 ! Interpolation coefficient for y (for V)
 ZVCOEF = (TPFLYER%XY_CUR - XYHAT(IJ_V)) / (XYHAT(IJ_V+1) - XYHAT(IJ_V))
 ZVCOEF = MAX(0.,MIN(ZVCOEF,1.))
+TPFLYER%XYVCOEF = ZVCOEF
 
 END SUBROUTINE FLYER_COMPUTE_INTERP_COEFF_HOR_STAGE1
 !----------------------------------------------------------------------------

@@ -59,18 +59,6 @@ TYPE, EXTENDS(TSENSOR), ABSTRACT :: TSTATPROFDATA
   ! and for common procedures for these 2 types
   INTEGER :: NID = 0 ! Global identification number of the station/profiler (from 1 to total number)
 
-  ! Position in the mesh
-  INTEGER :: NI_M = NNEGUNDEF ! X position for mass-point axis (between this one and the next one)
-  INTEGER :: NJ_M = NNEGUNDEF ! Y position for mass-point axis (between this one and the next one)
-  INTEGER :: NI_U = NNEGUNDEF ! X position for u-point axis (between this one and the next one)
-  INTEGER :: NJ_V = NNEGUNDEF ! Y position for v-point axis (between this one and the next one)
-
-  ! Coefficient to interpolate values (stations are usually not exactly on mesh points)
-  REAL :: XXMCOEF = XUNDEF ! Interpolation coefficient for X (mass-point)
-  REAL :: XYMCOEF = XUNDEF ! Interpolation coefficient for Y (mass-point)
-  REAL :: XXUCOEF = XUNDEF ! Interpolation coefficient for X (U-point)
-  REAL :: XYVCOEF = XUNDEF ! Interpolation coefficient for Y (V-point)
-
   ! Dimension corresponds to recording instants
   REAL, DIMENSION(:),   ALLOCATABLE :: XT2M    ! 2 m air temperature (C)
   REAL, DIMENSION(:),   ALLOCATABLE :: XQ2M    ! 2 m humidity (kg/kg)

@@ -8,7 +8,7 @@
 ! Modifications:
 !-----------------------------------------------------------------
 MODULE MODD_SENSOR
-  USE MODD_PARAMETERS, ONLY: NSENSORNAMELGTMAX, XNEGUNDEF
+  USE MODD_PARAMETERS, ONLY: NSENSORNAMELGTMAX, NNEGUNDEF, XNEGUNDEF, XUNDEF
 
   IMPLICIT NONE
 
@@ -27,6 +27,18 @@ MODULE MODD_SENSOR
       REAL :: XZ_CUR   = XNEGUNDEF  ! z position
       REAL :: XLAT_CUR = XNEGUNDEF  ! latitude
       REAL :: XLON_CUR = XNEGUNDEF  ! longitude
+
+      ! Position in the mesh
+      INTEGER :: NI_M = NNEGUNDEF ! X position for mass-point axis (between this one and the next one)
+      INTEGER :: NJ_M = NNEGUNDEF ! Y position for mass-point axis (between this one and the next one)
+      INTEGER :: NI_U = NNEGUNDEF ! X position for u-point axis (between this one and the next one)
+      INTEGER :: NJ_V = NNEGUNDEF ! Y position for v-point axis (between this one and the next one)
+
+      ! Coefficient to interpolate values (sensors are usually not exactly on mesh points)
+      REAL :: XXMCOEF = XUNDEF ! Interpolation coefficient for X (mass-point)
+      REAL :: XYMCOEF = XUNDEF ! Interpolation coefficient for Y (mass-point)
+      REAL :: XXUCOEF = XUNDEF ! Interpolation coefficient for X (U-point)
+      REAL :: XYVCOEF = XUNDEF ! Interpolation coefficient for Y (V-point)
   END TYPE TSENSOR
 
 END MODULE MODD_SENSOR
