@@ -1978,7 +1978,7 @@ END IF
 !
 IF (LMAIN_EOL .AND. IMI == NMODEL_EOL) THEN
   TZFIELD = TFIELDMETADATA(                            &
-    CMNHNAME   = 'generic for wind turbine variables', & !Temporary name to ease identification
+    CMNHNAME   = 'generic for wind turbine var',       & !Temporary name to ease identification
     CSTDNAME   = '',                                   &
     CUNITS     = 'N',                                  &
     CDIR       = 'XY',                                 &
@@ -2067,7 +2067,7 @@ SELECT CASE(CMETH_EOL)
 !
 ! * 1D Variables (rotor id)
     TZFIELD = TFIELDMETADATA(                   &
-      CMNHNAME   = '1D ADR variables: (rot)',   & !Temporary name to ease identification
+      CMNHNAME   = '1D ADR var: (rot)',         & !Temporary name to ease identification
       CSTDNAME   = '',                          &
       CDIR       = '--',                        &
       NGRID      = 1,                           &
@@ -2096,7 +2096,7 @@ SELECT CASE(CMETH_EOL)
 !
 ! * 3D Variables (rotor id, azimuthal id, radial id)
     TZFIELD = TFIELDMETADATA(                           &
-      CMNHNAME   = '3D ADR variables : (rot,azi,rad)',  & 
+      CMNHNAME   = '3D ADR var: (rot,azi,rad)',         & 
       CSTDNAME   = '',                                  &
       CDIR       = '--',                                &
       NGRID      = 1,                                   &
@@ -2136,7 +2136,7 @@ SELECT CASE(CMETH_EOL)
 !
 ! * 4D Variables (rotor id, azimuthal id, radial id, xyz)
     TZFIELD = TFIELDMETADATA(                               &
-      CMNHNAME   = '4D ADR variables : (rot,azi,rad,xyz)',  & 
+      CMNHNAME   = '4D ADR var: (rot,azi,rad,xyz)',         & 
       CSTDNAME   = '',                                      &
       CDIR       = '--',                                    &
       NGRID      = 1,                                       &
@@ -2160,7 +2160,7 @@ SELECT CASE(CMETH_EOL)
     TZFIELD = TFIELDMETADATA(                                  &
       CMNHNAME   = 'AOA_BLEQ',                                 &
       CSTDNAME   = '',                                         &
-      CLONGNAME  = 'BLADE_EQUIVALENT_ANGLE_OF_ATTACK',         &
+      CLONGNAME  = 'BLADE_EQ_ANGLE_OF_ATTACK',                 &
       CUNITS     = 'rad',                                      &
       CDIR       = '--',                                       &
       CCOMMENT   = 'RID_RAD blade eq. angle of attack (rad)',  &
@@ -2173,7 +2173,7 @@ SELECT CASE(CMETH_EOL)
     TZFIELD = TFIELDMETADATA(                                  &
       CMNHNAME   = 'FAERO_BLEQ_RA',                            &
       CSTDNAME   = '',                                         &
-      CLONGNAME  = 'BLADE_EQUIVALENT_AERODYNAMIC_FORCE_RA',    &
+      CLONGNAME  = 'BLADE_EQ_AERO_FORCE_RA',                   &
       CUNITS     = 'N',                                        &
       CDIR       = '--',                                       &
       CCOMMENT   = 'RID_RAD_XYZ blade eq. forces (N) in RA',   &
@@ -2187,7 +2187,7 @@ SELECT CASE(CMETH_EOL)
 !
 ! * 1D Variables (rotor id)
       TZFIELD = TFIELDMETADATA(                        &
-        CMNHNAME   = '1D ADR mean variables: (rot)',   & !Temporary name to ease identification
+        CMNHNAME   = '1D ADR mean var: (rot)',         & !Temporary name to ease identification
         CSTDNAME   = '',                               &
         CDIR       = '--',                             &
         NGRID      = 1,                                &
@@ -2243,7 +2243,7 @@ SELECT CASE(CMETH_EOL)
       TZFIELD = TFIELDMETADATA(                                      &
         CMNHNAME   = 'AOAMME_BLEQ',                                  &
         CSTDNAME   = '',                                             &
-        CLONGNAME  = 'MEAN_BLADE_EQUIVALENT_ANGLE_OF_ATTACK',        &
+        CLONGNAME  = 'MEAN_BLADE_EQ_AOA',                            &
         CUNITS     = 'rad',                                          &
         CDIR       = '--',                                           &
         CCOMMENT   = 'RID_RAD mean blade eq. angle of attack (rad)', &
@@ -2256,7 +2256,7 @@ SELECT CASE(CMETH_EOL)
       TZFIELD = TFIELDMETADATA(                                       &
         CMNHNAME   = 'FAEROMME_BLEQ_RA',                              &
         CSTDNAME   = '',                                              &
-        CLONGNAME  = 'MEAN_BLADE_EQUIVALENT_AERODYNAMIC_FORCE_RA',    &
+        CLONGNAME  = 'MEAN_BLADE_EQ_AERO_F_RA',                       &
         CUNITS     = 'N',                                             &
         CDIR       = '--',                                            &
         CCOMMENT   = 'RID_RAD_XYZ mean blade eq. forces (N) in RA',   &
@@ -2274,7 +2274,7 @@ SELECT CASE(CMETH_EOL)
 !
 ! * 1D Variables (rotor id)
     TZFIELD = TFIELDMETADATA(                   &
-      CMNHNAME   = '1D ALM variables: (rot)',   & !Temporary name to ease identification
+      CMNHNAME   = '1D ALM var: (rot)',         & !Temporary name to ease identification
       CSTDNAME   = '',                          &
       CDIR       = '--',                        &
       NGRID      = 1,                           &
@@ -2302,7 +2302,7 @@ SELECT CASE(CMETH_EOL)
 !
 ! * 3D Variables (rotor id, blade id, radial id)
     TZFIELD = TFIELDMETADATA(                             &
-      CMNHNAME   = '3D ALM variables : (rot,blade,rad)',  & 
+      CMNHNAME   = '3D ALM var: (rot,blade,rad)',         & 
       CSTDNAME   = '',                                    &
       CDIR       = '--',                                  &
       NGRID      = 1,                                     &
@@ -2336,7 +2336,7 @@ SELECT CASE(CMETH_EOL)
 !
 ! * 4D Variables (rotor id, azimuthal id, radial id, xyz)
     TZFIELD = TFIELDMETADATA(                                 &
-      CMNHNAME   = '4D ALM variables : (rot,blade,rad,xyz)',  & 
+      CMNHNAME   = '4D ALM var: (rot,blade,rad,xyz)',         & 
       CSTDNAME   = '',                                        &
       CDIR       = '--',                                      &
       NGRID      = 1,                                         &
@@ -2360,7 +2360,7 @@ SELECT CASE(CMETH_EOL)
 !
 ! * 1D Variables (rotor id)
       TZFIELD = TFIELDMETADATA(                        &
-        CMNHNAME   = '1D ALM mean variables: (rot)',   & !Temporary name to ease identification
+        CMNHNAME   = '1D ALM mean var: (rot)',         & !Temporary name to ease identification
         CSTDNAME   = '',                               &
         CDIR       = '--',                             &
         NGRID      = 1,                                &
