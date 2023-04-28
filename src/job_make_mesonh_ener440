@@ -1,0 +1,22 @@
+#!/bin/bash
+#MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+#MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
+#MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+#MNH_LIC for details. version 1.
+
+#SBATCH -N 1
+#SBATCH -n 10
+#SBATCH -o MasterI.eo%j   #
+#SBATCH -e MasterI.eo%j   #
+#SBATCH -p standard
+#SBATCH -q debug
+#SBATCH -J "MesoNH-compile"
+#SBATCH --wckey MPX13001    # Numero du projet
+#SBATCH -t 02:00:00
+
+set -x
+# On va lancer la compilation dans le répertoire de lancement du job
+pwd
+#
+# Lancement du script :
+./job_make_mesonh_dev_pc_ifpen
