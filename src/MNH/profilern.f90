@@ -293,7 +293,7 @@ PROFILER: DO JP = 1, NUMBPROFILER_LOC
   ZPRES(:)               = STATPROF_INTERP_3D( TPROFILERS(JP), PP )
   ZU_PROFILER(:)         = STATPROF_INTERP_3D_U( TPROFILERS(JP), PU )
   ZV_PROFILER(:)         = STATPROF_INTERP_3D_V( TPROFILERS(JP), PV )
-  ZGAM                   = (XRPK * (TPROFILERS(JP)%XLON - XLON0) - XBETA)*(XPI/180.)
+  ZGAM                   = (XRPK * (TPROFILERS(JP)%XLON_CUR - XLON0) - XBETA)*(XPI/180.)
   ZFF(:)                 = SQRT(ZU_PROFILER(:)**2 + ZV_PROFILER(:)**2)
   DO JK=1,IKU
     IF (ZU_PROFILER(JK) >=0. .AND. ZV_PROFILER(JK) > 0.) &
@@ -308,7 +308,7 @@ PROFILER: DO JP = 1, NUMBPROFILER_LOC
       ZDD(JK) = XUNDEF
   END DO
   ! GPS IWV and ZTD
-  XZS_GPS=TPROFILERS(JP)%XZ
+  XZS_GPS=TPROFILERS(JP)%XZ_CUR
   IF ( ABS( ZZ(IKB)-XZS_GPS ) < 150 ) THEN ! distance between real and model orography ok
     ZRV(:)                 = STATPROF_INTERP_3D( TPROFILERS(JP), PR(:,:,:,1) )
     ZT(:)                  = STATPROF_INTERP_3D( TPROFILERS(JP), ZTEMP )

@@ -59,12 +59,6 @@ TYPE, EXTENDS(TSENSOR), ABSTRACT :: TSTATPROFDATA
   ! and for common procedures for these 2 types
   INTEGER :: NID = 0 ! Global identification number of the station/profiler (from 1 to total number)
 
-  REAL :: XX   = XUNDEF  ! X(n)
-  REAL :: XY   = XUNDEF  ! Y(n)
-  REAL :: XZ   = XUNDEF  ! Z(n)
-  REAL :: XLON = XUNDEF  ! longitude(n)
-  REAL :: XLAT = XUNDEF  ! latitude (n)
-
   ! Position in the mesh
   INTEGER :: NI_M = NNEGUNDEF ! X position for mass-point axis (between this one and the next one)
   INTEGER :: NJ_M = NNEGUNDEF ! Y position for mass-point axis (between this one and the next one)

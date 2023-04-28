@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -110,15 +110,15 @@ IF (CFILE_PROF=="NO_INPUT_CSV") THEN
   IF ( NNUMB_PROF > 0 ) THEN
     DO JI = 1, NNUMB_PROF
       IF ( LCARTESIAN ) THEN
-        TZPROFILER%XX = XX_PROF(JI)
-        TZPROFILER%XY = XY_PROF(JI)
+        TZPROFILER%XX_CUR = XX_PROF(JI)
+        TZPROFILER%XY_CUR = XY_PROF(JI)
       ELSE
-        TZPROFILER%XLAT = XLAT_PROF(JI)
-        TZPROFILER%XLON = XLON_PROF(JI)
+        TZPROFILER%XLAT_CUR = XLAT_PROF(JI)
+        TZPROFILER%XLON_CUR = XLON_PROF(JI)
         CALL STATPROF_INI_INTERP( TZPROFILER )
       END IF
-      TZPROFILER%XZ    = XZ_PROF(JI)
-      TZPROFILER%CNAME = CNAME_PROF(JI)
+      TZPROFILER%XZ_CUR = XZ_PROF(JI)
+      TZPROFILER%CNAME  = CNAME_PROF(JI)
 
       CALL STATPROF_POSITION( TZPROFILER, GINSIDE, GPRESENT )
 

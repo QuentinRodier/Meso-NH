@@ -86,11 +86,6 @@ TYPE, EXTENDS(TSENSOR), ABSTRACT :: TFLYERDATA
   LOGICAL             :: LSTORE = .FALSE. ! Do we have to store data now
   TYPE(TSTATPROFTIME) :: TFLYER_TIME ! Time management for flyer
   !
-  !* current position of the balloon/aircraft
-  !
-  REAL :: XX_CUR = XNEGUNDEF ! current x
-  REAL :: XY_CUR = XNEGUNDEF ! current y
-  REAL :: XZ_CUR = XNEGUNDEF ! current z (if 'RADIOS' or 'AIRCRA' and 'ALTDEF' = T)
   INTEGER :: NRANK_CUR = NFLYER_DEFAULT_RANK ! Rank of the process where the flyer is
   !
   !* data records

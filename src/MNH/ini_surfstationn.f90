@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -111,15 +111,15 @@ IF (CFILE_STAT=="NO_INPUT_CSV") THEN
   IF ( NNUMB_STAT > 0 ) THEN
     DO JI = 1, NNUMB_STAT
       IF ( LCARTESIAN ) THEN
-        TZSTATION%XX = XX_STAT(JI)
-        TZSTATION%XY = XY_STAT(JI)
+        TZSTATION%XX_CUR = XX_STAT(JI)
+        TZSTATION%XY_CUR = XY_STAT(JI)
       ELSE
-        TZSTATION%XLAT = XLAT_STAT(JI)
-        TZSTATION%XLON = XLON_STAT(JI)
+        TZSTATION%XLAT_CUR = XLAT_STAT(JI)
+        TZSTATION%XLON_CUR = XLON_STAT(JI)
         CALL STATPROF_INI_INTERP( TZSTATION )
       END IF
-      TZSTATION%XZ    = XZ_STAT(JI)
-      TZSTATION%CNAME = CNAME_STAT(JI)
+      TZSTATION%XZ_CUR = XZ_STAT(JI)
+      TZSTATION%CNAME  = CNAME_STAT(JI)
 
       CALL STATPROF_POSITION( TZSTATION, GINSIDE, GPRESENT )
 

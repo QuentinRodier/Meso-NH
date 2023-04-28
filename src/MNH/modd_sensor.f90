@@ -8,7 +8,7 @@
 ! Modifications:
 !-----------------------------------------------------------------
 MODULE MODD_SENSOR
-  USE MODD_PARAMETERS, ONLY: NSENSORNAMELGTMAX
+  USE MODD_PARAMETERS, ONLY: NSENSORNAMELGTMAX, XNEGUNDEF
 
   IMPLICIT NONE
 
@@ -17,9 +17,16 @@ MODULE MODD_SENSOR
   PUBLIC :: TSENSOR
 
   TYPE, ABSTRACT :: TSENSOR
-    CHARACTER(LEN=NSENSORNAMELGTMAX) :: CNAME = '' ! Title or name of the sensor
+      CHARACTER(LEN=NSENSORNAMELGTMAX) :: CNAME = '' ! Title or name of the sensor
 
-    LOGICAL :: LFIX ! true if sensor is fix (can not move)
+      LOGICAL :: LFIX ! true if sensor is fix (can not move)
+
+      ! Current position of sensor
+      REAL :: XX_CUR   = XNEGUNDEF  ! x position
+      REAL :: XY_CUR   = XNEGUNDEF  ! y position
+      REAL :: XZ_CUR   = XNEGUNDEF  ! z position
+      REAL :: XLAT_CUR = XNEGUNDEF  ! latitude
+      REAL :: XLON_CUR = XNEGUNDEF  ! longitude
   END TYPE TSENSOR
 
 END MODULE MODD_SENSOR
