@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2020-2022 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2020-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -35,7 +35,7 @@ USE MODD_ALLSTATION_n, ONLY:&
         XZ_STAT_n       =>XZ_STAT       ,&
         CNAME_STAT_n    =>CNAME_STAT    ,&
         CFILE_STAT_n    =>CFILE_STAT    ,&
-        LDIAG_SURFRAD_n =>LDIAG_SURFRAD
+        LDIAG_SURFRAD_n =>LDIAG_SURFRAD_STAT
 USE MODD_PARAMETERS, ONLY: NFILENAMELGTMAX, NSTATPROFNAMELGTMAX
 !
 !-----------------------------------------------------------------------------

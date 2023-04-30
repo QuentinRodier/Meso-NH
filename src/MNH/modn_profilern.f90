@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2020-2022 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2020-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -35,8 +35,8 @@ USE MODD_ALLPROFILER_n, ONLY:&
         XLON_PROF_n     =>XLON_PROF     ,&
         XZ_PROF_n       =>XZ_PROF       ,&
         CNAME_PROF_n    =>CNAME_PROF    ,&
-        CFILE_PROF_n    =>CFILE_PROF    !,&
-!         LDIAG_SURFRAD_n =>LDIAG_SURFRAD
+        CFILE_PROF_n    =>CFILE_PROF    ,&
+        LDIAG_SURFRAD_n =>LDIAG_SURFRAD_PROF
 USE MODD_PARAMETERS, ONLY: NFILENAMELGTMAX, NSTATPROFNAMELGTMAX
 !
 !-----------------------------------------------------------------------------
@@ -51,14 +51,14 @@ REAL                             ,SAVE:: XSTEP_PROF
 REAL, DIMENSION(100)             ,SAVE:: XX_PROF, XY_PROF, XZ_PROF, XLAT_PROF, XLON_PROF
 CHARACTER (LEN=NSTATPROFNAMELGTMAX), DIMENSION(100),SAVE:: CNAME_PROF
 CHARACTER (LEN=NFILENAMELGTMAX),                   SAVE:: CFILE_PROF              !filename
-! LOGICAL                          ,SAVE:: LDIAG_SURFRAD
+LOGICAL                          ,SAVE:: LDIAG_SURFRAD
 
 NAMELIST /NAM_PROFILERn/  &
      NNUMB_PROF, XSTEP_PROF, &
      XX_PROF,XY_PROF,XZ_PROF,&
      XLON_PROF,XLAT_PROF,&
      CNAME_PROF,&
-     CFILE_PROF !,LDIAG_SURFRAD
+     CFILE_PROF, LDIAG_SURFRAD
      
 !
 CONTAINS
@@ -73,7 +73,7 @@ SUBROUTINE INIT_NAM_PROFILERn
   XZ_PROF      = XZ_PROF_n
   CNAME_PROF   = CNAME_PROF_n
   CFILE_PROF   = CFILE_PROF_n
-!   LDIAG_SURFRAD= LDIAG_SURFRAD_n
+  LDIAG_SURFRAD= LDIAG_SURFRAD_n
 END SUBROUTINE INIT_NAM_PROFILERn
 
 SUBROUTINE UPDATE_NAM_PROFILERn
@@ -86,6 +86,6 @@ SUBROUTINE UPDATE_NAM_PROFILERn
   XZ_PROF_n      = XZ_PROF
   CNAME_PROF_n   = CNAME_PROF
   CFILE_PROF_n   = CFILE_PROF
-!   LDIAG_SURFRAD_n= LDIAG_SURFRAD
+  LDIAG_SURFRAD_n= LDIAG_SURFRAD
 END SUBROUTINE UPDATE_NAM_PROFILERn
 END MODULE MODN_PROFILER_n

@@ -203,7 +203,6 @@ USE MODD_AIRCRAFT_BALLOON
 use modd_budget,           only: NLVL_CATEGORY, NLVL_SUBCATEGORY, NLVL_GROUP, NLVL_SHAPE, NLVL_TIMEAVG, NLVL_NORM, NLVL_MASK, &
                                  tbudiachrometadata
 USE MODD_CST,              ONLY: XRV
-USE MODD_DIAG_IN_RUN,      ONLY: LDIAG_IN_RUN
 use modd_field,            only: NMNHDIM_LEVEL, NMNHDIM_FLYER_PROC, NMNHDIM_FLYER_TIME, NMNHDIM_UNUSED, &
                                  tfieldmetadata_base, TYPEREAL
 USE MODD_IO,               ONLY: TFILEDATA
@@ -268,7 +267,7 @@ IPROCZ = SIZE(TPFLYER%XRTZ,2)+ SIZE(TPFLYER%XRZ,2)+ SIZE(TPFLYER%XRZ,3)+  SIZE(T
 
 IF (NSV_LIMA_BEG<=NSV_LIMA_END) IPROCZ= IPROCZ+ SIZE(TPFLYER%XCCZ,2) + SIZE(TPFLYER%XCRZ,2)
 IF (SIZE(TPFLYER%XTKE  )>0) IPROC = IPROC + 1
-IF (LDIAG_IN_RUN) IPROC = IPROC + 1
+IPROC = IPROC + 1 ! TKE_DISS
 IF (LORILAM) IPROC = IPROC + JPMODE*3
 IF (LDUST) IPROC = IPROC + NMODE_DST*3
 IF (SIZE(TPFLYER%XTSRAD)>0) IPROC = IPROC + 1
@@ -352,9 +351,7 @@ DO JSV=1,SIZE(TPFLYER%XSVW_FLUX,2)
   WRITE ( YTITLE, FMT = '( A, I3.3 )' ) 'SV_FLUX', JSV
   call Add_point( Trim( ytitle ), 'scalar flux', 'SVUNIT m s-1', tpflyer%xsvw_flux(:,jsv) )
 END DO
-IF (LDIAG_IN_RUN) THEN
-  call Add_point( 'Tke_Diss', 'TKE dissipation rate', 'm2 s-2', tpflyer%xtke_diss(:) )
-ENDIF
+call Add_point( 'Tke_Diss', 'TKE dissipation rate', 'm2 s-2', tpflyer%xtke_diss(:) )
 !
 IF (SIZE(TPFLYER%XSV,2)>=1) THEN
   ! Scalar variables

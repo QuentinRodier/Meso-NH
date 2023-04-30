@@ -51,10 +51,10 @@ SUBROUTINE WRITE_PROFILER_n( TPDIAFILE )
 !*      0. DECLARATIONS
 !          ------------
 !
+USE MODD_ALLPROFILER_n,   ONLY: LDIAG_SURFRAD_PROF
 USE MODD_CONF_n,          ONLY: NRR
 USE MODD_DIM_n,           ONLY: NKMAX
 USE MODD_IO,              ONLY: ISNPROC, ISP, TFILEDATA
-USE MODD_DIAG_IN_RUN,     ONLY: LDIAG_IN_RUN
 USE MODD_MPIF
 USE MODD_NSV,             ONLY: NSV
 USE MODD_PARAMETERS,      ONLY: JPVEXT
@@ -146,11 +146,12 @@ IF ( ISNPROC > 1 ) THEN
   IF ( CTURB == 'TKEL') IPACKSIZE = IPACKSIZE + ISTORE * IKU !Tke term
   IF ( CCLOUD == 'ICE3' .OR. CCLOUD == 'ICE4' ) IPACKSIZE = IPACKSIZE + ISTORE * IKU  !CIZ term
   IPACKSIZE = IPACKSIZE + 4 * ISTORE
-  IF ( LDIAG_IN_RUN ) THEN
+  IF ( LDIAG_SURFRAD_PROF ) THEN
     IPACKSIZE = IPACKSIZE + ISTORE * 10
-    IF ( CRAD /= 'NONE' )  IPACKSIZE = IPACKSIZE + ISTORE * 4
-    IPACKSIZE = IPACKSIZE + ISTORE * IKU !XTKE_DISS term
+    IF ( CRAD /= 'NONE' )  IPACKSIZE = IPACKSIZE + ISTORE * 8
+    IPACKSIZE = IPACKSIZE + ISTORE !XSFCO2 term
   END IF
+  IPACKSIZE = IPACKSIZE + ISTORE * IKU !XTKE_DISS term
 
   ALLOCATE( ZPACK(IPACKSIZE) )
 END IF
@@ -215,7 +216,7 @@ PROFILER: DO JS = 1, INUMPROF
       ZPACK(IPOS:IPOS+ISTORE-1) = TPROFILERS(IDX)%XZWD(:); IPOS = IPOS + ISTORE
       ZPACK(IPOS:IPOS+ISTORE-1) = TPROFILERS(IDX)%XZHD(:); IPOS = IPOS + ISTORE
 
-      IF ( LDIAG_IN_RUN ) THEN
+      IF ( LDIAG_SURFRAD_PROF ) THEN
         ZPACK(IPOS:IPOS+ISTORE-1) = TPROFILERS(IDX)%XT2M;    IPOS = IPOS + ISTORE
         ZPACK(IPOS:IPOS+ISTORE-1) = TPROFILERS(IDX)%XQ2M;    IPOS = IPOS + ISTORE
         ZPACK(IPOS:IPOS+ISTORE-1) = TPROFILERS(IDX)%XHU2M;   IPOS = IPOS + ISTORE
@@ -231,9 +232,15 @@ PROFILER: DO JS = 1, INUMPROF
           ZPACK(IPOS:IPOS+ISTORE-1) = TPROFILERS(IDX)%XSWU;    IPOS = IPOS + ISTORE
           ZPACK(IPOS:IPOS+ISTORE-1) = TPROFILERS(IDX)%XLWD;    IPOS = IPOS + ISTORE
           ZPACK(IPOS:IPOS+ISTORE-1) = TPROFILERS(IDX)%XLWU;    IPOS = IPOS + ISTORE
+          ZPACK(IPOS:IPOS+ISTORE-1) = TPROFILERS(IDX)%XSWDIR;  IPOS = IPOS + ISTORE
+          ZPACK(IPOS:IPOS+ISTORE-1) = TPROFILERS(IDX)%XSWDIFF; IPOS = IPOS + ISTORE
+          ZPACK(IPOS:IPOS+ISTORE-1) = TPROFILERS(IDX)%XDSTAOD; IPOS = IPOS + ISTORE
+          ZPACK(IPOS:IPOS+ISTORE-1) = TPROFILERS(IDX)%XSLTAOD; IPOS = IPOS + ISTORE
         END IF
-        ZPACK(IPOS:IPOS+ISTORE*IKU-1) = RESHAPE( TPROFILERS(IDX)%XTKE_DISS(:,:), [ISTORE*IKU] ) ; IPOS = IPOS + ISTORE * IKU
+        ZPACK(IPOS:IPOS+ISTORE-1) = TPROFILERS(IDX)%XSFCO2;    IPOS = IPOS + ISTORE
       END IF
+
+      ZPACK(IPOS:IPOS+ISTORE*IKU-1) = RESHAPE( TPROFILERS(IDX)%XTKE_DISS(:,:), [ISTORE*IKU] ) ; IPOS = IPOS + ISTORE * IKU
 
       IF ( IPOS-1 /= IPACKSIZE ) &
         call Print_msg( NVERB_WARNING, 'IO', 'WRITE_PROFILER_n', 'IPOS-1 /= IPACKSIZE (sender side)', OLOCAL = .TRUE. )
@@ -297,7 +304,7 @@ PROFILER: DO JS = 1, INUMPROF
       TZPROFILER%XZWD(:) = ZPACK(IPOS:IPOS+ISTORE-1) ; IPOS = IPOS + ISTORE
       TZPROFILER%XZHD(:) = ZPACK(IPOS:IPOS+ISTORE-1) ; IPOS = IPOS + ISTORE
 
-      IF ( LDIAG_IN_RUN ) THEN
+      IF ( LDIAG_SURFRAD_PROF ) THEN
         TZPROFILER%XT2M    = ZPACK(IPOS:IPOS+ISTORE-1) ; IPOS = IPOS + ISTORE
         TZPROFILER%XQ2M    = ZPACK(IPOS:IPOS+ISTORE-1) ; IPOS = IPOS + ISTORE
         TZPROFILER%XHU2M   = ZPACK(IPOS:IPOS+ISTORE-1) ; IPOS = IPOS + ISTORE
@@ -309,13 +316,19 @@ PROFILER: DO JS = 1, INUMPROF
         TZPROFILER%XGFLUX  = ZPACK(IPOS:IPOS+ISTORE-1) ; IPOS = IPOS + ISTORE
         TZPROFILER%XLEI    = ZPACK(IPOS:IPOS+ISTORE-1) ; IPOS = IPOS + ISTORE
         IF ( CRAD /= 'NONE' ) THEN
-          TZPROFILER%XSWD = ZPACK(IPOS:IPOS+ISTORE-1) ; IPOS = IPOS + ISTORE
-          TZPROFILER%XSWU = ZPACK(IPOS:IPOS+ISTORE-1) ; IPOS = IPOS + ISTORE
-          TZPROFILER%XLWD = ZPACK(IPOS:IPOS+ISTORE-1) ; IPOS = IPOS + ISTORE
-          TZPROFILER%XLWU = ZPACK(IPOS:IPOS+ISTORE-1) ; IPOS = IPOS + ISTORE
+          TZPROFILER%XSWD    = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+          TZPROFILER%XSWU    = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+          TZPROFILER%XLWD    = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+          TZPROFILER%XLWU    = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+          TZPROFILER%XSWDIR  = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+          TZPROFILER%XSWDIFF = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+          TZPROFILER%XDSTAOD = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+          TZPROFILER%XSLTAOD = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
         END IF
-        TZPROFILER%XTKE_DISS(:,:) = RESHAPE( ZPACK(IPOS:IPOS+ISTORE*IKU-1), [ ISTORE, IKU ] ) ; IPOS = IPOS + ISTORE * IKU
+        TZPROFILER%XSFCO2    = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
       END IF
+
+      TZPROFILER%XTKE_DISS(:,:) = RESHAPE( ZPACK(IPOS:IPOS+ISTORE*IKU-1), [ ISTORE, IKU ] ) ; IPOS = IPOS + ISTORE * IKU
 
       IF ( IPOS-1 /= IPACKSIZE ) &
         call Print_msg( NVERB_WARNING, 'IO', 'WRITE_PROFILER_n', 'IPOS-1 /= IPACKSIZE (receiver side)', OLOCAL = .TRUE. )
@@ -334,13 +347,13 @@ END SUBROUTINE WRITE_PROFILER_n
 SUBROUTINE PROFILER_DIACHRO_n( TPDIAFILE, TPPROFILER )
 ! ####################################################
 
+USE MODD_ALLPROFILER_n,   ONLY: LDIAG_SURFRAD_PROF
 use modd_budget,          only: NLVL_CATEGORY, NLVL_SUBCATEGORY, NLVL_GROUP, NLVL_SHAPE, NLVL_TIMEAVG, NLVL_NORM, NLVL_MASK, &
                                 tbudiachrometadata
 USE MODD_CH_AEROSOL,      ONLY: LORILAM, JPMODE
 USE MODD_CONF,            ONLY: LCARTESIAN
 USE MODD_CONF_n,          ONLY: NRR
 USE MODD_CST,             ONLY: XRV
-USE MODD_DIAG_IN_RUN,     only: LDIAG_IN_RUN
 USE MODD_DUST,            ONLY: LDUST, NMODE_DST
 USE MODD_DIM_n,           ONLY: NKMAX
 use modd_field,           only: NMNHDIM_LEVEL, NMNHDIM_LEVEL_W, NMNHDIM_PROFILER_TIME, NMNHDIM_PROFILER_PROC, NMNHDIM_UNUSED, &
@@ -385,7 +398,11 @@ IKU = NKMAX + 2 * JPVEXT !Number of vertical levels
 !
 !IPROC is too large (not a big problem) due to the separation between vertical profiles and point values
 IPROC = 25 + NRR + NSV
-IF (LDIAG_IN_RUN) IPROC = IPROC + 15
+IF (LDIAG_SURFRAD_PROF) THEN
+  IPROC = IPROC + 10
+  IF(CRAD/="NONE")  IPROC = IPROC + 8
+  IPROC = IPROC + 1 ! XSFCO2 term
+END IF
 IF (LORILAM) IPROC = IPROC + JPMODE*3
 IF (LDUST) IPROC = IPROC + NMODE_DST*3
 IF (LDUST .OR. LORILAM .OR. LSALT) IPROC=IPROC+NAER
@@ -422,8 +439,7 @@ call Add_profile( 'W',        'Air vertical speed',            'm s-1',  tpprofi
 !Store position of W in the field list. Useful because it is not computed on the same Arakawa-grid points
 jproc_w = jproc
 
-if ( ldiag_in_run ) &
-  call Add_profile( 'TKE_DISS', 'TKE dissipation rate', 'm2 s-2', tpprofiler%xtke_diss )
+call Add_profile( 'TKE_DISS', 'TKE dissipation rate', 'm2 s-2', tpprofiler%xtke_diss )
 
 if ( ccloud == 'ICE3' .or. ccloud == 'ICE4' ) &
   call Add_profile( 'CIT',      'Ice concentration',    'kg-3',   tpprofiler%xciz )
@@ -658,7 +674,7 @@ ALLOCATE ( XWORK6(1, 1, 1, ISTORE, 1, IPROC) )
 
 jproc = 0
 
-if ( ldiag_in_run ) then
+if ( ldiag_surfrad_prof ) then
   call Add_point( 'T2m',    '2-m temperature',               'K',       tpprofiler%xt2m    )
   call Add_point( 'Q2m',    '2-m humidity',                  'kg kg-1', tpprofiler%xq2m    )
   call Add_point( 'HU2m',   '2-m relative humidity',         'percent', tpprofiler%xhu2m   )
@@ -673,6 +689,10 @@ if ( ldiag_in_run ) then
     call Add_point( 'SWU',  'Upward short-wave radiation',   'W m-2',   tpprofiler%xswu    )
     call Add_point( 'LWD',  'Downward long-wave radiation',  'W m-2',   tpprofiler%xlwd    )
     call Add_point( 'LWU',  'Upward long-wave radiation',    'W m-2',   tpprofiler%xlwu    )
+    call Add_point( 'SWDIR',  'Downward direct short-wave radiation',  'W m-2', tpprofiler%xswdir(:)  )
+    call Add_point( 'SWDIFF', 'Downward diffuse short-wave radiation', 'W m-2', tpprofiler%xswdiff(:) )
+    call Add_point( 'DSTAOD', 'Dust aerosol optical depth',            'm',     tpprofiler%xdstaod(:) )
+    call Add_point( 'SLTAOD', 'Salt aerosol optical depth',            'm',     tpprofiler%xsltaod(:) )
   end if
   call Add_point( 'LEI',    'Solid Latent heat flux',        'W m-2',   tpprofiler%xlei    )
 end if
@@ -681,6 +701,8 @@ call Add_point( 'IWV', 'Integrated Water Vapour',   'kg m-2', tpprofiler%xiwv )
 call Add_point( 'ZTD', 'Zenith Tropospheric Delay', 'm',      tpprofiler%xztd )
 call Add_point( 'ZWD', 'Zenith Wet Delay',          'm',      tpprofiler%xzwd )
 call Add_point( 'ZHD', 'Zenith Hydrostatic Delay',  'm',      tpprofiler%xzhd )
+
+if ( ldiag_surfrad_prof ) call Add_point( 'SFCO2', 'CO2 Surface Flux', 'mg m-2 s-1', tpprofiler%xsfco2(:) )
 
 Allocate( tzfields( jproc ) )
 
