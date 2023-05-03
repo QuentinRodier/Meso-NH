@@ -3,8 +3,24 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-! Modifications:
-!  P. Wautelet 19/07/2021: replace double precision by real to allow MNH_REAL=4 compilation
+!!
+!!****  *MODI_EOL_MATHS* -
+!!
+!!    PURPOSE
+!!    -------
+!!     Contains all mathematical functions for EOL computations.
+!!    
+!!    AUTHOR
+!!    ------
+!!     PA. Joulin               *CNRM & IFPEN*
+!!
+!!
+!!    MODIFICATIONS
+!!    -------------
+!!     Original     24/01/17
+!!     P. Wautelet  19/07/2021: replace double precision by real to allow MNH_REAL=4 compilation
+!!     H. Toumi     04/23 : add ADR functions   
+!!
 !-----------------------------------------------------------------
 !     #######################
        MODULE MODI_EOL_MATHS
@@ -36,6 +52,16 @@ SUBROUTINE GET_ORI_MAT_Z(PTHETA, PORI_MAT_Z)
         REAL, INTENT(IN)                   :: PTHETA      ! Angle
         REAL, DIMENSION(3,3), INTENT(OUT)  :: PORI_MAT_Z  ! Matrix
 END SUBROUTINE GET_ORI_MAT_Z
+!
+FUNCTION GET_VEC_CYL(VEC_CART)
+        REAL, DIMENSION(3), INTENT(IN)     :: VEC_CART    ! cartesian vector
+        REAL, DIMENSION(3)                 :: GET_VEC_CYL ! cylindrical vector
+END FUNCTION GET_VEC_CYL
+!
+FUNCTION GET_VEC_CART(VEC_CYL)
+        REAL, DIMENSION(3), INTENT(IN)     :: VEC_CYL      ! cartesian vector
+        REAL, DIMENSION(3)                 :: GET_VEC_CART ! cylindrical vector
+END FUNCTION GET_VEC_CART
 !
 FUNCTION INTERP_SPLCUB(PAV, PX, PY)
         REAL                           :: INTERP_SPLCUB ! interface
@@ -154,6 +180,34 @@ SUBROUTINE GET_ORI_MAT_Z(PTHETA, PORI_MAT_Z)
         PORI_MAT_Z (3,3) = 1d0
 !
 END SUBROUTINE GET_ORI_MAT_Z
+!#########################################################
+!
+!#########################################################
+FUNCTION GET_VEC_CYL(VEC_CART)
+! Obtain cylindrical coordinates from a cartesian vector
+!
+        REAL, DIMENSION(3), INTENT(IN)     :: VEC_CART    ! cartesian vector
+        REAL, DIMENSION(3)                 :: GET_VEC_CYL     ! cylindrical vector
+!
+        GET_VEC_CYL(1) = SQRT(VEC_CART(1)**2+VEC_CART(2)**2)
+        GET_VEC_CYL(2) = ATAN2(VEC_CART(2),VEC_CART(1))
+        GET_VEC_CYL(3) = VEC_CART(3)
+!
+END FUNCTION GET_VEC_CYL
+!#########################################################
+!
+!#########################################################
+FUNCTION GET_VEC_CART(VEC_CYL)
+! Obtain cylindrical coordinates from a cartesian vector
+!
+        REAL, DIMENSION(3), INTENT(IN)     :: VEC_CYL    ! cartesian vector
+        REAL, DIMENSION(3)                 :: GET_VEC_CART     ! cylindrical vector
+!
+        GET_VEC_CART(1) = VEC_CYL(1)*COS(VEC_CYL(2))
+        GET_VEC_CART(2) = VEC_CYL(1)*SIN(VEC_CYL(2))
+        GET_VEC_CART(3) = VEC_CYL(3)
+!
+END FUNCTION GET_VEC_CART
 !#########################################################
 !
 !#########################################################
