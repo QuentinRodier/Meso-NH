@@ -41,18 +41,96 @@ MODULE MODD_SENSOR
       REAL :: XYVCOEF = XUNDEF ! Interpolation coefficient for Y (V-point)
 
     CONTAINS
-      PROCEDURE                               :: INTERP_FROM_MASSPOINT_VERT
+      PROCEDURE                               :: INTERP_HOR_FROM_MASSPOINT_0D
+      PROCEDURE                               :: INTERP_HOR_FROM_UPOINT_0D
+      PROCEDURE                               :: INTERP_HOR_FROM_VPOINT_0D
+      PROCEDURE                               :: INTERP_HOR_FROM_MASSPOINT_1D
+      PROCEDURE                               :: INTERP_HOR_FROM_UPOINT_1D
+      PROCEDURE                               :: INTERP_HOR_FROM_VPOINT_1D
+
+      GENERIC :: INTERP_HOR_FROM_MASSPOINT => INTERP_HOR_FROM_MASSPOINT_0D, INTERP_HOR_FROM_MASSPOINT_1D
+      GENERIC :: INTERP_HOR_FROM_UPOINT    => INTERP_HOR_FROM_UPOINT_0D,    INTERP_HOR_FROM_UPOINT_1D
+      GENERIC :: INTERP_HOR_FROM_VPOINT    => INTERP_HOR_FROM_VPOINT_0D,    INTERP_HOR_FROM_VPOINT_1D
+
   END TYPE TSENSOR
 
+
+
   CONTAINS
-    FUNCTION INTERP_FROM_MASSPOINT_VERT( TPSENSOR, PA ) RESULT( PB )
+    ! ################################################################
+    FUNCTION INTERP_HOR_FROM_MASSPOINT_0D( TPSENSOR, PA ) RESULT( PB )
+    ! ################################################################
+      USE MODD_CONF,       ONLY: L1D
+      USE MODD_PARAMETERS, ONLY: XUNDEF
+
+      USE MODE_MSG
+
+      IMPLICIT NONE
+
+      CLASS(TSENSOR),       INTENT(IN) :: TPSENSOR
+      REAL, DIMENSION(:,:), INTENT(IN) :: PA
+      REAL                             :: PB
+
+      REAL, DIMENSION(1) :: ZB
+
+      ZB = INTERP_HOR_FROM_MASSPOINT_1D( TPSENSOR, RESHAPE( PA, [ SIZE(PA,1), SIZE(PA,2), 1 ] ) )
+      PB = ZB(1)
+
+    END FUNCTION INTERP_HOR_FROM_MASSPOINT_0D
+
+
+    ! #############################################################
+    FUNCTION INTERP_HOR_FROM_UPOINT_0D( TPSENSOR, PA ) RESULT( PB )
+    ! #############################################################
       USE MODD_CONF,       ONLY: L1D
 
       USE MODE_MSG
 
-      CLASS(TSENSOR),         INTENT(INOUT) :: TPSENSOR
-      REAL, DIMENSION(:,:,:), INTENT(IN)    :: PA
-      REAL, DIMENSION( SIZE(PA,3) )         :: PB
+      IMPLICIT NONE
+
+      CLASS(TSENSOR),       INTENT(IN) :: TPSENSOR
+      REAL, DIMENSION(:,:), INTENT(IN) :: PA
+      REAL                             :: PB
+
+      REAL, DIMENSION(1) :: ZB
+
+      ZB = INTERP_HOR_FROM_UPOINT_1D( TPSENSOR, RESHAPE( PA, [ SIZE(PA,1), SIZE(PA,2), 1 ] ) )
+      PB = ZB(1)
+
+    END FUNCTION INTERP_HOR_FROM_UPOINT_0D
+
+
+    ! #############################################################
+    FUNCTION INTERP_HOR_FROM_VPOINT_0D( TPSENSOR, PA ) RESULT( PB )
+    ! #############################################################
+      USE MODD_CONF,       ONLY: L1D
+
+      USE MODE_MSG
+
+      IMPLICIT NONE
+
+      CLASS(TSENSOR),       INTENT(IN) :: TPSENSOR
+      REAL, DIMENSION(:,:), INTENT(IN) :: PA
+      REAL                             :: PB
+
+      REAL, DIMENSION(1) :: ZB
+
+      ZB = INTERP_HOR_FROM_VPOINT_1D( TPSENSOR, RESHAPE( PA, [ SIZE(PA,1), SIZE(PA,2), 1 ] ) )
+      PB = ZB(1)
+
+    END FUNCTION INTERP_HOR_FROM_VPOINT_0D
+
+
+    ! ################################################################
+    FUNCTION INTERP_HOR_FROM_MASSPOINT_1D( TPSENSOR, PA ) RESULT( PB )
+    ! ################################################################
+      USE MODD_CONF,       ONLY: L1D
+
+      USE MODE_MSG
+
+      CLASS(TSENSOR),         INTENT(IN) :: TPSENSOR
+      REAL, DIMENSION(:,:,:), INTENT(IN) :: PA
+      REAL, DIMENSION( SIZE( PA, 3 ) )   :: PB
 
       INTEGER :: JI, JJ, JK
 
@@ -81,10 +159,89 @@ MODULE MODD_SENSOR
           END IF
         END DO
       ELSE
-        CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'Interp_from_masspoint_vert', 'value can not be interpolated', OLOCAL = .TRUE. )
+        CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'Interp_hor_from_masspoint', 'value can not be interpolated', OLOCAL = .TRUE. )
         PB(:) = XUNDEF
       END IF
 
-    END FUNCTION INTERP_FROM_MASSPOINT_VERT
+    END FUNCTION INTERP_HOR_FROM_MASSPOINT_1D
+
+
+    ! #############################################################
+    FUNCTION INTERP_HOR_FROM_UPOINT_1D( TPSENSOR, PA ) RESULT( PB )
+    ! #############################################################
+      USE MODD_CONF,       ONLY: L1D
+
+      USE MODE_MSG
+
+      IMPLICIT NONE
+
+      CLASS(TSENSOR),         INTENT(IN) :: TPSENSOR
+      REAL, DIMENSION(:,:,:), INTENT(IN) :: PA
+      REAL, DIMENSION( SIZE( PA, 3 ) )   :: PB
+
+      INTEGER :: JI, JJ
+
+      IF ( SIZE( PA, 1 ) == 2 ) THEN
+        JI = 1
+        JJ = 1
+      ELSE IF ( L1D ) THEN
+        JI = 2
+        JJ = 2
+      ELSE
+        JI = TPSENSOR%NI_U
+        JJ = TPSENSOR%NJ_M
+      END IF
+
+      IF (       JI >= 1 .AND. JI < SIZE( PA, 1 ) &
+           .AND. JJ >= 1 .AND. JJ < SIZE( PA, 2 ) ) THEN
+        PB(:) = (1.-TPSENSOR%XXUCOEF) *  (1.-TPSENSOR%XYMCOEF) * PA(JI,   JJ,   :) + &
+                (   TPSENSOR%XXUCOEF) *  (1.-TPSENSOR%XYMCOEF) * PA(JI+1, JJ,   :) + &
+                (1.-TPSENSOR%XXUCOEF) *  (   TPSENSOR%XYMCOEF) * PA(JI,   JJ+1, :) + &
+                (   TPSENSOR%XXUCOEF) *  (   TPSENSOR%XYMCOEF) * PA(JI+1, JJ+1, :)
+      ELSE
+        CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'Interp_hor_from_upoint', 'value can not be interpolated', OLOCAL = .TRUE. )
+        PB(:) = XUNDEF
+      END IF
+
+    END FUNCTION INTERP_HOR_FROM_UPOINT_1D
+
+
+    ! #############################################################
+    FUNCTION INTERP_HOR_FROM_VPOINT_1D( TPSENSOR, PA ) RESULT( PB )
+    ! #############################################################
+      USE MODD_CONF,       ONLY: L1D
+
+      USE MODE_MSG
+
+      IMPLICIT NONE
+
+      CLASS(TSENSOR),         INTENT(IN) :: TPSENSOR
+      REAL, DIMENSION(:,:,:), INTENT(IN) :: PA
+      REAL, DIMENSION( SIZE( PA, 3 ) )   :: PB
+
+      INTEGER :: JI, JJ
+
+      IF ( SIZE( PA, 1 ) == 2 ) THEN
+        JI = 1
+        JJ = 1
+      ELSE IF ( L1D ) THEN
+        JI = 2
+        JJ = 2
+      ELSE
+        JI = TPSENSOR%NI_M
+        JJ = TPSENSOR%NJ_V
+      END IF
+      IF (       JI >= 1 .AND. JI < SIZE( PA, 1 ) &
+           .AND. JJ >= 1 .AND. JJ < SIZE( PA, 2 ) ) THEN
+        PB(:) = (1.-TPSENSOR%XXMCOEF) *  (1.-TPSENSOR%XYVCOEF) * PA(JI,   JJ,   :) + &
+                (   TPSENSOR%XXMCOEF) *  (1.-TPSENSOR%XYVCOEF) * PA(JI+1, JJ,   :) + &
+                (1.-TPSENSOR%XXMCOEF) *  (   TPSENSOR%XYVCOEF) * PA(JI,   JJ+1, :) + &
+                (   TPSENSOR%XXMCOEF) *  (   TPSENSOR%XYVCOEF) * PA(JI+1, JJ+1, :)
+      ELSE
+        CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'Interp_hor_from_vpoint', 'value can not be interpolated', OLOCAL = .TRUE. )
+        PB(:) = XUNDEF
+      END IF
+
+    END FUNCTION INTERP_HOR_FROM_VPOINT_1D
 
 END MODULE MODD_SENSOR

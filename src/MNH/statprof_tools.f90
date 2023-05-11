@@ -25,8 +25,6 @@ PUBLIC :: PROFILER_ALLOCATE, STATION_ALLOCATE
 PUBLIC :: STATPROF_INI_INTERP
 PUBLIC :: STATPROF_POSITION
 PUBLIC :: PROFILER_ADD, STATION_ADD
-PUBLIC :: STATPROF_INTERP_2D, STATPROF_INTERP_2D_U, STATPROF_INTERP_2D_V
-PUBLIC :: STATPROF_INTERP_3D, STATPROF_INTERP_3D_U, STATPROF_INTERP_3D_V
 PUBLIC :: STATPROF_INSTANT
 
 CONTAINS
@@ -389,16 +387,17 @@ SUBROUTINE STATPROF_POSITION( TPSTATPROF, OINSIDE, OPRESENT )
       TYPE IS( TSTATIONDATA )
         ! The closest K-level to the station altitude is chosen
         JK = JPVEXT + 1
-        DO WHILE ( ( STATPROF_INTERP_2D( TPSTATPROF, XZZ(:,:,JK) ) - STATPROF_INTERP_2D( TPSTATPROF, XZZ(:,:,JPVEXT+1) ) ) &
-                   < TPSTATPROF%XZ_CUR)
+        DO WHILE ( (   TPSTATPROF%INTERP_HOR_FROM_MASSPOINT( XZZ(:,:,JK) )         &
+                     - TPSTATPROF%INTERP_HOR_FROM_MASSPOINT( XZZ(:,:,JPVEXT+1) ) ) &
+                   < TPSTATPROF%XZ_CUR )
           JK = JK + 1
         END DO
-        ZLOW  = STATPROF_INTERP_2D( TPSTATPROF, XZZ(:,:,JK-1) ) - STATPROF_INTERP_2D( TPSTATPROF, XZZ(:,:,JPVEXT+1) )
-        ZHIGH = STATPROF_INTERP_2D( TPSTATPROF, XZZ(:,:,JK  ) ) - STATPROF_INTERP_2D( TPSTATPROF, XZZ(:,:,JPVEXT+1) )
+        ZLOW  = TPSTATPROF%INTERP_HOR_FROM_MASSPOINT( XZZ(:,:,JK-1) ) - TPSTATPROF%INTERP_HOR_FROM_MASSPOINT( XZZ(:,:,JPVEXT+1) )
+        ZHIGH = TPSTATPROF%INTERP_HOR_FROM_MASSPOINT( XZZ(:,:,JK  ) ) - TPSTATPROF%INTERP_HOR_FROM_MASSPOINT( XZZ(:,:,JPVEXT+1) )
         !If the station/profiler is nearer from the lower level, select it
         IF ( ( ZHIGH - TPSTATPROF%XZ_CUR ) > ( TPSTATPROF%XZ_CUR - ZLOW ) ) JK = JK - 1
         TPSTATPROF%NK = JK
-        TPSTATPROF%XZMEAS = STATPROF_INTERP_2D( TPSTATPROF, XZZ(:,:,JK) )
+        TPSTATPROF%XZMEAS = TPSTATPROF%INTERP_HOR_FROM_MASSPOINT( XZZ(:,:,JK) )
 
       CLASS DEFAULT
         CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'STATPROF_POSITION', 'unknown type for TPSTATPROF', OLOCAL = .TRUE. )
@@ -497,253 +496,6 @@ SUBROUTINE STATION_ADD( TPSTATION )
   TSTATIONS => TZSTATIONS
 
 END SUBROUTINE STATION_ADD
-
-! ########################################################
-FUNCTION STATPROF_INTERP_2D( TPSTATPROF, PA ) RESULT( PB )
-! ########################################################
-  USE MODD_CONF,       ONLY: L1D
-  USE MODD_PARAMETERS, ONLY: XUNDEF
-
-  USE MODE_MSG
-
-  IMPLICIT NONE
-
-  CLASS(TSTATPROFDATA), INTENT(IN) :: TPSTATPROF
-  REAL, DIMENSION(:,:), INTENT(IN) :: PA
-  REAL                             :: PB
-
-  INTEGER :: JI, JJ
-
-  IF ( SIZE( PA, 1 ) == 2 ) THEN
-    JI = 1
-    JJ = 1
-  ELSE IF ( L1D ) THEN
-    JI = 2
-    JJ = 2
-  ELSE
-    JI = TPSTATPROF%NI_M
-    JJ = TPSTATPROF%NJ_M
-  END IF
-
-  IF (       JI >= 1 .AND. JI < SIZE( PA, 1 ) &
-       .AND. JJ >= 1 .AND. JJ < SIZE( PA, 2 ) ) THEN
-    PB = (1.-TPSTATPROF%XXMCOEF) *  (1.-TPSTATPROF%XYMCOEF) * PA(JI,   JJ  ) + &
-         (   TPSTATPROF%XXMCOEF) *  (1.-TPSTATPROF%XYMCOEF) * PA(JI+1, JJ  ) + &
-         (1.-TPSTATPROF%XXMCOEF) *  (   TPSTATPROF%XYMCOEF) * PA(JI,   JJ+1) + &
-         (   TPSTATPROF%XXMCOEF) *  (   TPSTATPROF%XYMCOEF) * PA(JI+1, JJ+1)
-  ELSE
-    CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'STATPROF_INTERP_2D', 'value can not be interpolated', OLOCAL = .TRUE. )
-    PB = XUNDEF
-  END IF
-
-END FUNCTION STATPROF_INTERP_2D
-
-! ##########################################################
-FUNCTION STATPROF_INTERP_2D_U( TPSTATPROF, PA ) RESULT( PB )
-! ##########################################################
-  USE MODD_CONF,       ONLY: L1D
-  USE MODD_PARAMETERS, ONLY: XUNDEF
-
-  USE MODE_MSG
-
-  IMPLICIT NONE
-
-  CLASS(TSTATPROFDATA), INTENT(IN) :: TPSTATPROF
-  REAL, DIMENSION(:,:), INTENT(IN) :: PA
-  REAL                             :: PB
-
-  INTEGER :: JI, JJ
-
-  IF ( SIZE( PA, 1 ) == 2 ) THEN
-    JI = 1
-    JJ = 1
-  ELSE IF ( L1D ) THEN
-    JI = 2
-    JJ = 2
-  ELSE
-    JI = TPSTATPROF%NI_U
-    JJ = TPSTATPROF%NJ_M
-  END IF
-
-  IF (       JI >= 1 .AND. JI < SIZE( PA, 1 ) &
-       .AND. JJ >= 1 .AND. JJ < SIZE( PA, 2 ) ) THEN
-    PB = (1.-TPSTATPROF%XXUCOEF) *  (1.-TPSTATPROF%XYMCOEF) * PA(JI,   JJ  ) + &
-         (   TPSTATPROF%XXUCOEF) *  (1.-TPSTATPROF%XYMCOEF) * PA(JI+1, JJ  ) + &
-         (1.-TPSTATPROF%XXUCOEF) *  (   TPSTATPROF%XYMCOEF) * PA(JI,   JJ+1) + &
-         (   TPSTATPROF%XXUCOEF) *  (   TPSTATPROF%XYMCOEF) * PA(JI+1, JJ+1)
-  ELSE
-    CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'STATPROF_INTERP_2D_U', 'value can not be interpolated', OLOCAL = .TRUE. )
-    PB = XUNDEF
-  END IF
-
-END FUNCTION STATPROF_INTERP_2D_U
-
-! ##########################################################
-FUNCTION STATPROF_INTERP_2D_V( TPSTATPROF, PA ) RESULT( PB )
-! ##########################################################
-  USE MODD_CONF,       ONLY: L1D
-  USE MODD_PARAMETERS, ONLY: XUNDEF
-
-  USE MODE_MSG
-
-  IMPLICIT NONE
-
-  CLASS(TSTATPROFDATA), INTENT(IN) :: TPSTATPROF
-  REAL, DIMENSION(:,:), INTENT(IN) :: PA
-  REAL                             :: PB
-
-  INTEGER :: JI, JJ
-
-  IF ( SIZE( PA, 1 ) == 2 ) THEN
-    JI = 1
-    JJ = 1
-  ELSE IF ( L1D ) THEN
-    JI = 2
-    JJ = 2
-  ELSE
-    JI = TPSTATPROF%NI_M
-    JJ = TPSTATPROF%NJ_V
-  END IF
-
-  IF (       JI >= 1 .AND. JI < SIZE( PA, 1 ) &
-       .AND. JJ >= 1 .AND. JJ < SIZE( PA, 2 ) ) THEN
-    PB = (1.-TPSTATPROF%XXMCOEF) *  (1.-TPSTATPROF%XYVCOEF) * PA(JI,   JJ  ) + &
-         (   TPSTATPROF%XXMCOEF) *  (1.-TPSTATPROF%XYVCOEF) * PA(JI+1, JJ  ) + &
-         (1.-TPSTATPROF%XXMCOEF) *  (   TPSTATPROF%XYVCOEF) * PA(JI,   JJ+1) + &
-         (   TPSTATPROF%XXMCOEF) *  (   TPSTATPROF%XYVCOEF) * PA(JI+1, JJ+1)
-  ELSE
-    CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'STATPROF_INTERP_2D_V', 'value can not be interpolated', OLOCAL = .TRUE. )
-    PB = XUNDEF
-  END IF
-
-END FUNCTION STATPROF_INTERP_2D_V
-
-! ########################################################
-FUNCTION STATPROF_INTERP_3D( TPSTATPROF, PA ) RESULT( PB )
-! ########################################################
-  USE MODD_CONF,       ONLY: L1D
-  USE MODD_PARAMETERS, ONLY: XUNDEF
-
-  USE MODE_MSG
-
-  IMPLICIT NONE
-
-  CLASS(TSTATPROFDATA),   INTENT(IN) :: TPSTATPROF
-  REAL, DIMENSION(:,:,:), INTENT(IN) :: PA
-  REAL, DIMENSION(SIZE(PA,3))        :: PB
-
-  INTEGER :: JI, JJ, JK
-
-  IF ( SIZE( PA, 1 ) == 2 ) THEN
-    JI = 1
-    JJ = 1
-  ELSE IF ( L1D ) THEN
-    JI = 2
-    JJ = 2
-  ELSE
-    JI = TPSTATPROF%NI_M
-    JJ = TPSTATPROF%NJ_M
-  END IF
-
-  IF (       JI >= 1 .AND. JI < SIZE( PA, 1 ) &
-       .AND. JJ >= 1 .AND. JJ < SIZE( PA, 2 ) ) THEN
-    DO JK = 1, SIZE( PA, 3 )
-      IF ( PA(JI, JJ,   JK) /= XUNDEF .AND. PA(JI+1, JJ,   JK) /= XUNDEF .AND. &
-           PA(JI, JJ+1, JK) /= XUNDEF .AND. PA(JI+1, JJ+1, JK) /= XUNDEF       ) THEN
-        PB(JK) = (1.-TPSTATPROF%XXMCOEF) *  (1.-TPSTATPROF%XYMCOEF) * PA(JI,   JJ,   JK) + &
-                 (   TPSTATPROF%XXMCOEF) *  (1.-TPSTATPROF%XYMCOEF) * PA(JI+1, JJ,   JK) + &
-                 (1.-TPSTATPROF%XXMCOEF) *  (   TPSTATPROF%XYMCOEF) * PA(JI,   JJ+1, JK) + &
-                 (   TPSTATPROF%XXMCOEF) *  (   TPSTATPROF%XYMCOEF) * PA(JI+1, JJ+1, JK)
-      ELSE
-        PB(JK) = XUNDEF
-      END IF
-    END DO
-  ELSE
-    CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'STATPROF_INTERP_3D', 'value can not be interpolated', OLOCAL = .TRUE. )
-    PB(:) = XUNDEF
-  END IF
-
-END FUNCTION STATPROF_INTERP_3D
-
-! ##########################################################
-FUNCTION STATPROF_INTERP_3D_U( TPSTATPROF, PA ) RESULT( PB )
-! ##########################################################
-  USE MODD_CONF,       ONLY: L1D
-  USE MODD_PARAMETERS, ONLY: XUNDEF
-
-  USE MODE_MSG
-
-  IMPLICIT NONE
-
-  CLASS(TSTATPROFDATA),   INTENT(IN) :: TPSTATPROF
-  REAL, DIMENSION(:,:,:), INTENT(IN) :: PA
-  REAL, DIMENSION(SIZE(PA,3))        :: PB
-
-  INTEGER :: JI, JJ
-
-  IF ( SIZE( PA, 1 ) == 2 ) THEN
-    JI = 1
-    JJ = 1
-  ELSE IF ( L1D ) THEN
-    JI = 2
-    JJ = 2
-  ELSE
-    JI = TPSTATPROF%NI_U
-    JJ = TPSTATPROF%NJ_M
-  END IF
-
-  IF (       JI >= 1 .AND. JI < SIZE( PA, 1 ) &
-       .AND. JJ >= 1 .AND. JJ < SIZE( PA, 2 ) ) THEN
-    PB(:) = (1.-TPSTATPROF%XXUCOEF) *  (1.-TPSTATPROF%XYMCOEF) * PA(JI,   JJ,   :) + &
-            (   TPSTATPROF%XXUCOEF) *  (1.-TPSTATPROF%XYMCOEF) * PA(JI+1, JJ,   :) + &
-            (1.-TPSTATPROF%XXUCOEF) *  (   TPSTATPROF%XYMCOEF) * PA(JI,   JJ+1, :) + &
-            (   TPSTATPROF%XXUCOEF) *  (   TPSTATPROF%XYMCOEF) * PA(JI+1, JJ+1, :)
-  ELSE
-    CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'STATPROF_INTERP_3D_U', 'value can not be interpolated', OLOCAL = .TRUE. )
-    PB = XUNDEF
-  END IF
-
-END FUNCTION STATPROF_INTERP_3D_U
-
-! ##########################################################
-FUNCTION STATPROF_INTERP_3D_V( TPSTATPROF, PA ) RESULT( PB )
-! ##########################################################
-  USE MODD_CONF,       ONLY: L1D
-  USE MODD_PARAMETERS, ONLY: XUNDEF
-
-  USE MODE_MSG
-
-  IMPLICIT NONE
-
-  CLASS(TSTATPROFDATA),   INTENT(IN) :: TPSTATPROF
-  REAL, DIMENSION(:,:,:), INTENT(IN) :: PA
-  REAL, DIMENSION(SIZE(PA,3))        :: PB
-
-  INTEGER :: JI, JJ
-
-  IF ( SIZE( PA, 1 ) == 2 ) THEN
-    JI = 1
-    JJ = 1
-  ELSE IF ( L1D ) THEN
-    JI = 2
-    JJ = 2
-  ELSE
-    JI = TPSTATPROF%NI_M
-    JJ = TPSTATPROF%NJ_V
-  END IF
-
-  IF (       JI >= 1 .AND. JI < SIZE( PA, 1 ) &
-       .AND. JJ >= 1 .AND. JJ < SIZE( PA, 2 ) ) THEN
-    PB(:) = (1.-TPSTATPROF%XXMCOEF) *  (1.-TPSTATPROF%XYVCOEF) * PA(JI,   JJ,   :) + &
-            (   TPSTATPROF%XXMCOEF) *  (1.-TPSTATPROF%XYVCOEF) * PA(JI+1, JJ,   :) + &
-            (1.-TPSTATPROF%XXMCOEF) *  (   TPSTATPROF%XYVCOEF) * PA(JI,   JJ+1, :) + &
-            (   TPSTATPROF%XXMCOEF) *  (   TPSTATPROF%XYVCOEF) * PA(JI+1, JJ+1, :)
-  ELSE
-    CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'STATPROF_INTERP_3D_V', 'value can not be interpolated', OLOCAL = .TRUE. )
-    PB = XUNDEF
-  END IF
-
-END FUNCTION STATPROF_INTERP_3D_V
 
 ! #################################################
 SUBROUTINE STATPROF_INSTANT( TPSTATPROF_TIME, KIN )
