@@ -67,17 +67,18 @@ MODULE MODD_SENSOR
       REAL :: XVCOEF11 = XUNDEF ! Interpolation coefficient in Z direction for ni_m+1, nj_v+1
 
     CONTAINS
-      PROCEDURE(TSENSOR_ALLOCATION), DEFERRED :: ALLOCATE
-      PROCEDURE                               :: COMPUTE_VERTICAL_INTERP_COEFF
-      PROCEDURE                               :: INTERP_FROM_MASSPOINT
-      PROCEDURE                               :: INTERP_FROM_UPOINT
-      PROCEDURE                               :: INTERP_FROM_VPOINT
-      PROCEDURE                               :: INTERP_HOR_FROM_MASSPOINT_0D
-      PROCEDURE                               :: INTERP_HOR_FROM_UPOINT_0D
-      PROCEDURE                               :: INTERP_HOR_FROM_VPOINT_0D
-      PROCEDURE                               :: INTERP_HOR_FROM_MASSPOINT_1D
-      PROCEDURE                               :: INTERP_HOR_FROM_UPOINT_1D
-      PROCEDURE                               :: INTERP_HOR_FROM_VPOINT_1D
+      PROCEDURE(TSENSOR_ALLOCATION),   DEFERRED :: ALLOCATE
+      PROCEDURE(TSENSOR_DEALLOCATION), DEFERRED :: DEALLOCATE
+      PROCEDURE                                 :: COMPUTE_VERTICAL_INTERP_COEFF
+      PROCEDURE                                 :: INTERP_FROM_MASSPOINT
+      PROCEDURE                                 :: INTERP_FROM_UPOINT
+      PROCEDURE                                 :: INTERP_FROM_VPOINT
+      PROCEDURE                                 :: INTERP_HOR_FROM_MASSPOINT_0D
+      PROCEDURE                                 :: INTERP_HOR_FROM_UPOINT_0D
+      PROCEDURE                                 :: INTERP_HOR_FROM_VPOINT_0D
+      PROCEDURE                                 :: INTERP_HOR_FROM_MASSPOINT_1D
+      PROCEDURE                                 :: INTERP_HOR_FROM_UPOINT_1D
+      PROCEDURE                                 :: INTERP_HOR_FROM_VPOINT_1D
 
       GENERIC :: INTERP_HOR_FROM_MASSPOINT => INTERP_HOR_FROM_MASSPOINT_0D, INTERP_HOR_FROM_MASSPOINT_1D
       GENERIC :: INTERP_HOR_FROM_UPOINT    => INTERP_HOR_FROM_UPOINT_0D,    INTERP_HOR_FROM_UPOINT_1D
@@ -90,6 +91,11 @@ MODULE MODD_SENSOR
       IMPORT TSENSOR
       CLASS(TSENSOR),    INTENT(INOUT) :: TPSENSOR
       INTEGER, OPTIONAL, INTENT(IN)    :: KSTORE
+    END SUBROUTINE
+
+    SUBROUTINE TSENSOR_DEALLOCATION( TPSENSOR )
+      IMPORT TSENSOR
+      CLASS(TSENSOR),    INTENT(INOUT) :: TPSENSOR
     END SUBROUTINE
   END INTERFACE
 
