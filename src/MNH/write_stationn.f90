@@ -55,7 +55,6 @@ USE MODD_STATION_n,       only: NUMBSTAT_LOC, TSTATIONS, tstations_time
 USE MODD_TYPE_STATPROF,   ONLY: TSTATIONDATA
 !
 USE MODE_MSG
-USE MODE_STATPROF_TOOLS,  ONLY: STATION_ALLOCATE
 !
 IMPLICIT NONE
 !
@@ -121,7 +120,7 @@ DO JP = 1, ISNPROC
   END DO
 END DO
 
-CALL STATION_ALLOCATE( TZSTATION, SIZE( tstations_time%tpdates ) )
+CALL TZSTATION%ALLOCATE( SIZE( tstations_time%tpdates ) )
 
 !Determine the size of the ZPACK buffer used to transfer station data in 1 MPI communication
 IF ( ISNPROC > 1 ) THEN

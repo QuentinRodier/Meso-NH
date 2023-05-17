@@ -65,7 +65,9 @@ MODULE MODD_SENSOR
       REAL :: XVCOEF01 = XUNDEF ! Interpolation coefficient in Z direction for ni_m  , nj_v+1
       REAL :: XVCOEF10 = XUNDEF ! Interpolation coefficient in Z direction for ni_m+1, nj_v
       REAL :: XVCOEF11 = XUNDEF ! Interpolation coefficient in Z direction for ni_m+1, nj_v+1
+
     CONTAINS
+      PROCEDURE(TSENSOR_ALLOCATION), DEFERRED :: ALLOCATE
       PROCEDURE                               :: COMPUTE_VERTICAL_INTERP_COEFF
       PROCEDURE                               :: INTERP_FROM_MASSPOINT
       PROCEDURE                               :: INTERP_FROM_UPOINT
@@ -83,6 +85,13 @@ MODULE MODD_SENSOR
 
   END TYPE TSENSOR
 
+  ABSTRACT INTERFACE
+    SUBROUTINE TSENSOR_ALLOCATION( TPSENSOR, KSTORE )
+      IMPORT TSENSOR
+      CLASS(TSENSOR),    INTENT(INOUT) :: TPSENSOR
+      INTEGER, OPTIONAL, INTENT(IN)    :: KSTORE
+    END SUBROUTINE
+  END INTERFACE
 
 
   CONTAINS

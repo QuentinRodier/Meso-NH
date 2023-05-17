@@ -65,7 +65,6 @@ USE MODD_RADIATIONS_n,    ONLY: NAER
 USE MODD_TYPE_STATPROF,   ONLY: TPROFILERDATA
 !
 USE MODE_MSG
-USE MODE_STATPROF_TOOLS,  ONLY: PROFILER_ALLOCATE
 !
 IMPLICIT NONE
 !
@@ -134,7 +133,7 @@ DO JP = 1, ISNPROC
   END DO
 END DO
 
-CALL PROFILER_ALLOCATE( TZPROFILER, SIZE( tprofilers_time%tpdates ) )
+CALL TZPROFILER%ALLOCATE( SIZE( tprofilers_time%tpdates ) )
 
 !Determine the size of the ZPACK buffer used to transfer profiler data in 1 MPI communication
 IF ( ISNPROC > 1 ) THEN
