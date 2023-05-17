@@ -138,7 +138,7 @@ END IF
 LPROFILER = ( INUMBPROF > 0 )
 
 DO JI = 1, NUMBPROFILER_LOC
-  CALL TPROFILERS(JI)%ALLOCATE( ISTORE )
+  CALL TPROFILERS(JI)%DATA_ARRAYS_ALLOCATE( ISTORE )
 END DO
 !----------------------------------------------------------------------------
 !

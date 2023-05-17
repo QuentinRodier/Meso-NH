@@ -139,7 +139,7 @@ END IF
 LSTATION = ( INUMBSTAT > 0 )
 
 DO JI = 1, NUMBSTAT_LOC
-  CALL TSTATIONS(JI)%ALLOCATE( ISTORE )
+  CALL TSTATIONS(JI)%DATA_ARRAYS_ALLOCATE( ISTORE )
 END DO
 
 !----------------------------------------------------------------------------

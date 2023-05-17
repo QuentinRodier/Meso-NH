@@ -622,7 +622,7 @@ CALL PRINT_MSG( NVERB_DEBUG, 'GEN', 'FLYER_SEND_AND_DEALLOCATE', &
 CALL FLYER_SEND( TPFLYER, KTO )
 
 ! Free flyer data (dynamically allocated), scalar data has to be freed outside this subroutine
-CALL TPFLYER%DEALLOCATE()
+CALL TPFLYER%DATA_ARRAYS_DEALLOCATE()
 
 END SUBROUTINE FLYER_SEND_AND_DEALLOCATE
 !----------------------------------------------------------------------------
@@ -680,7 +680,7 @@ ALLOCATE( ZPACK(IPACKSIZE) )
 CALL MPI_RECV( ZPACK, IPACKSIZE, MNHREAL_MPI, KFROM-1, NTAG_PACK, NMNH_COMM_WORLD, MPI_STATUS_IGNORE, IERR )
 
 ! Allocation of flyer must be done only once number of stores is known
-CALL TPFLYER%ALLOCATE( ISTORE_TOT )
+CALL TPFLYER%DATA_ARRAYS_ALLOCATE( ISTORE_TOT )
 
 ! Unpack data
 IPOS = 1

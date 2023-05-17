@@ -120,7 +120,7 @@ DO JP = 1, ISNPROC
   END DO
 END DO
 
-CALL TZSTATION%ALLOCATE( SIZE( tstations_time%tpdates ) )
+CALL TZSTATION%DATA_ARRAYS_ALLOCATE( SIZE( tstations_time%tpdates ) )
 
 !Determine the size of the ZPACK buffer used to transfer station data in 1 MPI communication
 IF ( ISNPROC > 1 ) THEN

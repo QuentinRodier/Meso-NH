@@ -133,7 +133,7 @@ DO JP = 1, ISNPROC
   END DO
 END DO
 
-CALL TZPROFILER%ALLOCATE( SIZE( tprofilers_time%tpdates ) )
+CALL TZPROFILER%DATA_ARRAYS_ALLOCATE( SIZE( tprofilers_time%tpdates ) )
 
 !Determine the size of the ZPACK buffer used to transfer profiler data in 1 MPI communication
 IF ( ISNPROC > 1 ) THEN
