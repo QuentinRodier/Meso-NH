@@ -613,7 +613,7 @@ XLAT_PROF(:)  = XUNDEF
 XLON_PROF(:)  = XUNDEF
 CNAME_PROF(:) = ''
 CFILE_PROF    = 'NO_INPUT_CSV'
-LDIAG_SURFRAD_PROF = .TRUE.
+! LDIAG_SURFRAD = .TRUE.
 !------------------------------------------------------------------------------
 !*      10.f   SET DEFAULT VALUES FOR MODD_ALLSTATION_n :
 !             ----------------------------------
@@ -627,7 +627,7 @@ XLAT_STAT(:)  = XUNDEF
 XLON_STAT(:)  = XUNDEF
 CNAME_STAT(:) = ''
 CFILE_STAT    = 'NO_INPUT_CSV'
-LDIAG_SURFRAD_STAT = .TRUE.
+LDIAG_SURFRAD = .TRUE.
 !
 !-------------------------------------------------------------------------------
 !
@@ -1088,7 +1088,7 @@ LCH_PH              = .FALSE.
 LCH_RET_ICE         = .FALSE.
 XCH_PHINIT          = 5.2
 XRTMIN_AQ           = 5.e-8
-CCHEM_INPUT_FILE    = 'EXSEG1.nam'
+CCHEM_INPUT_FILE    = 'MNHC.input'
 CCH_TDISCRETIZATION = 'SPLIT'
 NCH_SUBSTEPS        = 1
 LCH_TUV_ONLINE      = .FALSE.
@@ -1168,8 +1168,8 @@ LHETEROSO4 = .FALSE.  ! switch to active sulfates heteronegeous
                       ! production
 LSEDIMAERO = .FALSE.  ! switch to active aerosol sedimentation
 LAERINIT   = .FALSE.  ! switch to initialize aerosol in arome
-CMINERAL      = "NONE"   ! mineral equilibrium scheme
-CORGANIC      = "NONE"   ! mineral equilibrium scheme
+CMINERAL      = "EQSAM"   ! mineral equilibrium scheme
+CORGANIC      = "MPMPO"   ! mineral equilibrium scheme
 CNUCLEATION   = "NONE" ! sulfates nucleation scheme
 LDEPOS_AER(:) = .FALSE.
 
