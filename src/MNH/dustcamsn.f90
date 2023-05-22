@@ -125,13 +125,12 @@ DO JN = 1, NMODE_DST
   ZMMIN(IM3(JN)) = XN0MIN(IMODEIDX) * (ZRGMIN**3)*EXP(4.5 * LOG(ZINISIGMA(JN))**2) 
   ZMMIN(IM6(JN)) = XN0MIN(IMODEIDX) * (ZRGMIN**6)*EXP(18. * LOG(ZINISIGMA(JN))**2)
 
-  IF (JPDUSTORDER(JN) == 1) ZMASS(:,:,:,JN) = PMASSCAMS(:,:,:,1) ! fin mode 
-  IF (JPDUSTORDER(JN) == 2) ZMASS(:,:,:,JN) = PMASSCAMS(:,:,:,2) ! median mode 
-  IF (JPDUSTORDER(JN) == 3) ZMASS(:,:,:,JN) = PMASSCAMS(:,:,:,3) ! large mode
+  IF (JPDUSTORDER(JN) == 1) ZMASS(:,:,:,JN) = MAX(PMASSCAMS(:,:,:,1), 1E-16) ! fin mode 
+  IF (JPDUSTORDER(JN) == 2) ZMASS(:,:,:,JN) = MAX(PMASSCAMS(:,:,:,2), 1E-15) ! median mode 
+  IF (JPDUSTORDER(JN) == 3) ZMASS(:,:,:,JN) = MAX(PMASSCAMS(:,:,:,3), 1E-15) ! large mode
 
 ENDDO
 
-ZMASS(:,:,:,:) = MAX(ZMASS(:,:,:,:), 1E-40)
 !
 !
 ZRHOI = XDENSITY_DUST !1.8e3 !++changed alfgr
@@ -158,14 +157,14 @@ DO JN = 1, NMODE_DST
                       (ZINIRADIUS(JN)**3) * &
                       EXP(4.5*LOG(ZINISIGMA(JN))**2) 
 
-  ZM(:,:,:,IM3(JN)) = MAX(ZMMIN(IM3(JN)), ZM(:,:,:,IM3(JN)))
+!  ZM(:,:,:,IM3(JN)) = MAX(ZMMIN(IM3(JN)), ZM(:,:,:,IM3(JN)))
 !
 !*       1.3    calculate moment 6 from m0,  RG and SIG 
 !
   ZM(:,:,:,IM6(JN))= ZM(:,:,:,IM0(JN)) * ((ZINIRADIUS(JN)**6) * &
                      EXP(18.*(LOG(ZINISIGMA(JN)))**2))
 !
-  ZM(:,:,:,IM6(JN)) = MAX(ZMMIN(IM6(JN)), ZM(:,:,:,IM6(JN)))
+!  ZM(:,:,:,IM6(JN)) = MAX(ZMMIN(IM6(JN)), ZM(:,:,:,IM6(JN)))
 !
 !*       1.4    output concentration
 !
