@@ -392,7 +392,6 @@ REAL, DIMENSION(:,:), ALLOCATABLE :: ZRHOP, ZSOLORG
 REAL, DIMENSION(:),   ALLOCATABLE :: ZSO4RAT
 REAL, DIMENSION(:),   ALLOCATABLE :: ZJNUC, ZJ2RAT
 
-REAL,DIMENSION(SIZE(XSVT,1),SIZE(XSVT,2),SIZE(XSVT,3),SIZE(XSVT,4)) :: ZSVT
 REAL,DIMENSION(SIZE(XSVT,1),SIZE(XSVT,2),SIZE(XSVT,3),NSV_AER) :: ZCWETAERO
 !
 !-------------------------------------------------------------------------------
@@ -609,25 +608,6 @@ ENDIF  ! first time step
 !
 ZDTSOLVER = PTSTEP / NCH_SUBSTEPS
 !
-!*       1.3   give minimum value and conserve mass for aerosols
-!
-!
-IF (LORILAM) THEN
-
-  IF (CPROGRAM/='DIAG  ') THEN
-   DO JSV = 1, SIZE(XSVT,4)
-    ZSVT(:,:,:,JSV) =  XRSVS(:,:,:,JSV) *PTSTEP / XRHODJ(:,:,:) 
-   END DO
-  ELSE
-   DO JSV = 1, SIZE(XSVT,4)
-    ZSVT(:,:,:,JSV) =  XSVT(:,:,:,JSV)
-   END DO
-  END IF
-  ZSVT(:,:,:,NSV_CHEMBEG:NSV_CHEMEND) = MAX(ZSVT(:,:,:,NSV_CHEMBEG:NSV_CHEMEND), XMNH_TINY)
-  ZSVT(:,:,:,NSV_AERBEG:NSV_AEREND)   = MAX(ZSVT(:,:,:,NSV_AERBEG:NSV_AEREND), XMNH_TINY)
-!
-END IF
-!
 !*       1.4 compute conversion factor ppv/m3 --> molec/cm3
 !
 ZDEN2MOL = 1E-6 * XAVOGADRO / XMD
@@ -774,10 +754,10 @@ IF (LORILAM) THEN
   !
   IF ((LSEDIMAERO).AND.(CPROGRAM/='DIAG  ')) THEN
     CALL CH_AER_SEDIM_n(PTSTEP,                                                &
-            ZSVT(IIB:IIE,IJB:IJE,IKB:IKE,NSV_AERBEG:NSV_AEREND),               &
+            XSVT(IIB:IIE,IJB:IJE,IKB:IKE,NSV_AERBEG:NSV_AEREND),               &
             XTHT(IIB:IIE,IJB:IJE,IKB:IKE),  XRHODREF(IIB:IIE,IJB:IJE,IKB:IKE), &
-          XPABST(IIB:IIE,IJB:IJE,IKB:IKE), XVDEPAERO(IIB:IIE,IJB:IJE,:),       &
-             XZZ(IIB:IIE,IJB:IJE,IKB:IKE),     XSEDA(IIB:IIE,IJB:IJE,IKB:IKE,:))
+            XPABST(IIB:IIE,IJB:IJE,IKB:IKE), XVDEPAERO(IIB:IIE,IJB:IJE,:),     &
+            XZZ(IIB:IIE,IJB:IJE,IKB:IKE),     XSEDA(IIB:IIE,IJB:IJE,IKB:IKE,:))
   ENDIF
 ! implicit  wet deposition
   IF ((LCH_CONV_SCAV).AND.(CPROGRAM/='DIAG  ')) THEN
@@ -786,7 +766,7 @@ IF (LORILAM) THEN
     END DO
     ZCWETAERO(:,:,:,:)= MAX(ZCWETAERO(:,:,:,:), XMNH_TINY)
 
-    CALL CH_AER_WETDEP_n(PTSTEP, ZSVT(IIB:IIE,IJB:IJE,IKB:IKE,NSV_AERBEG:NSV_AEREND),             &
+    CALL CH_AER_WETDEP_n(PTSTEP, XSVT(IIB:IIE,IJB:IJE,IKB:IKE,NSV_AERBEG:NSV_AEREND),             &
                          ZCWETAERO(IIB:IIE,IJB:IJE,IKB:IKE,:), XRHODREF(IIB:IIE,IJB:IJE,IKB:IKE), &
                          XSEDA(IIB:IIE,IJB:IJE,IKB:IKE,:))
   ENDIF
@@ -798,7 +778,7 @@ IF (LORILAM) THEN
                         XRT(IIB:IIE,IJB:IJE,IKB:IKE,:),     &
                         XRRS(IIB:IIE,IJB:IJE,IKB:IKE,:),    &
                         XRHODJ(IIB:IIE,IJB:IJE,IKB:IKE),    &
-                        ZSVT(IIB:IIE,IJB:IJE,IKB:IKE,:),    &
+                        XSVT(IIB:IIE,IJB:IJE,IKB:IKE,:),    &
                         XMI(IIB:IIE,IJB:IJE,IKB:IKE,:),     &
                         XTHT(IIB:IIE,IJB:IJE,IKB:IKE),      &
                         XPABST(IIB:IIE,IJB:IJE,IKB:IKE),    &
@@ -808,7 +788,7 @@ IF (LORILAM) THEN
   ENDIF
 ! Update aerosol tendency before aerosol solver
   DO JSV = 1, SIZE(XSVT,4)
-    XRSVS(:,:,:,JSV) = ZSVT(:,:,:,JSV) * XRHODJ(:,:,:) / PTSTEP
+    XRSVS(:,:,:,JSV) = XSVT(:,:,:,JSV) * XRHODJ(:,:,:) / PTSTEP
   END DO
 ENDIF
 !
