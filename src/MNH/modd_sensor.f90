@@ -9,12 +9,20 @@
 !-----------------------------------------------------------------
 MODULE MODD_SENSOR
   USE MODD_PARAMETERS, ONLY: NSENSORNAMELGTMAX, NNEGUNDEF, XNEGUNDEF, XUNDEF
+  USE MODD_TYPE_DATE,  ONLY: DATE_TIME
 
   IMPLICIT NONE
 
   PRIVATE
 
   PUBLIC :: TSENSOR
+  PUBLIC :: TSENSORTIME
+
+  TYPE :: TSENSORTIME
+    INTEGER                                    :: N_CUR   = 0       ! current step of storage
+    REAL                                       :: XTSTEP  = 60.     ! storage time step (default reset later)
+    TYPE(DATE_TIME), DIMENSION(:), ALLOCATABLE :: TPDATES           ! dates(n) (n: recording instants)
+  END TYPE TSENSORTIME
 
   TYPE, ABSTRACT :: TSENSOR
       CHARACTER(LEN=NSENSORNAMELGTMAX) :: CNAME = '' ! Title or name of the sensor

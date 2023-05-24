@@ -42,8 +42,7 @@
 !
 !
 use modd_parameters,    only: NNEGUNDEF, XNEGUNDEF, XUNDEF
-use modd_sensor,        only: tsensor
-USE MODD_TYPE_STATPROF, ONLY: TSTATPROFTIME
+use modd_sensor,        only: tsensor, tsensortime
 use modd_type_date,     only: date_time
 
 USE MODE_DATETIME,      ONLY: TPREFERENCE_DATE
@@ -83,8 +82,8 @@ TYPE, EXTENDS(TSENSOR), ABSTRACT :: TFLYERDATA
   !
   !* storage monitoring
   !
-  LOGICAL             :: LSTORE = .FALSE. ! Do we have to store data now
-  TYPE(TSTATPROFTIME) :: TFLYER_TIME ! Time management for flyer
+  LOGICAL           :: LSTORE = .FALSE. ! Do we have to store data now
+  TYPE(TSENSORTIME) :: TFLYER_TIME      ! Time management for flyer
   !
   INTEGER :: NRANK_CUR = NFLYER_DEFAULT_RANK ! Rank of the process where the flyer is
   !
