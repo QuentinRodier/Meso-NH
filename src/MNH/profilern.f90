@@ -124,11 +124,11 @@ USE MODD_RAIN_ICE_DESCR,   ONLY: XALPHAR_I => XALPHAR, XNUR_I => XNUR, XLBEXR_I 
                                  XNS_I => XNS, XRTMIN_I => XRTMIN, XCONC_LAND, XCONC_SEA,                                  &
                                  XLBDAS_MAX_I => XLBDAS_MAX, XLBDAS_MIN_I => XLBDAS_MIN,                                   &
                                  XTRANS_MP_GAMMAS_I => XTRANS_MP_GAMMAS
+USE MODD_SENSOR,           ONLY: TSENSORTIME
 !
 USE MODE_FGAU,             ONLY: GAULAG
 USE MODE_FSCATTER,         ONLY: BHMIE, QEPSI, QEPSW, MG, MOMG
 USE MODE_MSG
-USE MODE_STATPROF_TOOLS,   ONLY: STATPROF_INSTANT
 !
 USE MODI_GPS_ZENITH_GRID
 USE MODI_WATER_SUM
@@ -254,8 +254,7 @@ IKE = IKU-JPVEXT
 !*      3.4  instant of storage
 !            ------------------
 !
-CALL  STATPROF_INSTANT( TPROFILERS_TIME, IN )
-IF ( IN < 1 ) RETURN !No profiler storage at this time step
+IF ( .NOT. TPROFILERS_TIME%STORESTEP_CHECK_AND_SET( IN ) ) RETURN !No profiler storage at this time step
 !
 !----------------------------------------------------------------------------
 !

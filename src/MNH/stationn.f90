@@ -89,9 +89,9 @@ USE MODD_DIAG_IN_RUN
 USE MODD_GRID,          ONLY: XBETA, XLON0, XRPK
 USE MODD_PARAMETERS,    ONLY: JPVEXT
 USE MODD_PARAM_n,       ONLY: CRAD
+USE MODD_SENSOR,        ONLY: TSENSORTIME
 USE MODD_STATION_n
 !
-USE MODE_STATPROF_TOOLS, ONLY: STATPROF_INSTANT
 !
 !
 IMPLICIT NONE
@@ -131,8 +131,7 @@ INTEGER :: JK          ! loop for levels
 !*      3.4  instant of storage
 !            ------------------
 !
-CALL  STATPROF_INSTANT( TSTATIONS_TIME, IN )
-IF ( IN < 1 ) RETURN !No profiler storage at this time step
+IF ( .NOT. TSTATIONS_TIME%STORESTEP_CHECK_AND_SET( IN ) ) RETURN !No profiler storage at this time step
 !
 !----------------------------------------------------------------------------
 !

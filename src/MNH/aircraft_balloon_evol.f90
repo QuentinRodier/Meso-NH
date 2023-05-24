@@ -237,10 +237,9 @@ SELECT TYPE ( TPFLYER )
     END IF TAKEOFF
 
     !Do we have to store aircraft data?
-    IF ( IMI == TPFLYER%NMODEL ) CALL FLYER_CHECK_STORESTEP( TPFLYER )
+    IF ( IMI == TPFLYER%NMODEL ) TPFLYER%LSTORE = TPFLYER%TFLYER_TIME%STORESTEP_CHECK_AND_SET( ISTORE )
 
     ! For aircrafts, data has only to be computed at store moments
-    ISTORE = TPFLYER%TFLYER_TIME%N_CUR
     IF ( IMI == TPFLYER%NMODEL .AND. TPFLYER%LFLY .AND. TPFLYER%LSTORE ) THEN
       ! Check if it is the right moment to store data
       IF ( ABS( TDTCUR - TPFLYER%TFLYER_TIME%TPDATES(ISTORE) ) < 1e-10 ) THEN
@@ -316,7 +315,7 @@ SELECT TYPE ( TPFLYER )
     IF ( TPFLYER%NMODEL == IMI .AND. &
           ( .NOT. TPFLYER%LFLY .OR. TPFLYER%LCRASH .OR. ABS( TPFLYER%TPOS_CUR - TDTCUR ) < 1.e-8 ) ) THEN
       !Do we have to store balloon data?
-      CALL FLYER_CHECK_STORESTEP( TPFLYER )
+      TPFLYER%LSTORE = TPFLYER%TFLYER_TIME%STORESTEP_CHECK_AND_SET( ISTORE )
     END IF
 
     ! In flight
@@ -1408,31 +1407,6 @@ ELSE
 END IF
 
 END SUBROUTINE FLYER_GET_RANK_MODEL_ISCRASHED
-!----------------------------------------------------------------------------
-!----------------------------------------------------------------------------
-SUBROUTINE FLYER_CHECK_STORESTEP( TPFLYER )
-
-USE MODD_AIRCRAFT_BALLOON, ONLY: TFLYERDATA
-
-USE MODE_STATPROF_TOOLS,   ONLY: STATPROF_INSTANT
-
-IMPLICIT NONE
-
-CLASS(TFLYERDATA), INTENT(INOUT) :: TPFLYER ! balloon/aircraft
-
-INTEGER :: ISTORE
-
-!Remark: TPFLYER%TFLYER_TIME%N_CUR and %TPDATES are updated in STATPROF_INSTANT
-CALL  STATPROF_INSTANT( TPFLYER%TFLYER_TIME, ISTORE )
-
-IF ( ISTORE < 1 ) THEN
-  !No profiler storage at this time step
-  TPFLYER%LSTORE = .FALSE.
-ELSE
-  TPFLYER%LSTORE = .TRUE.
-END IF
-
-END SUBROUTINE FLYER_CHECK_STORESTEP
 !----------------------------------------------------------------------------
 
 END MODULE MODE_AIRCRAFT_BALLOON_EVOL

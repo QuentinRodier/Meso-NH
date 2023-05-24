@@ -10,13 +10,13 @@
 ! Modifications:
 !  P. Wautelet 30/09/2022: bugfix: use XUNDEF from SURFEX for surface variables computed by SURFEX
 !  P. Wautelet 25/11/2022: rewrite STATPROF_INSTANT algorithm (does not depends on model timestep anymore => independent of model)
+!  P. Wautelet 24/05/2023: move TSTATPROF_TIME and STATPROF_INSTANT to modd_sensor (+ rename them)
 !-----------------------------------------------------------------
 !      ###################
 MODULE MODE_STATPROF_TOOLS
 !      ###################
 
 USE MODD_TYPE_STATPROF, ONLY: TPROFILERDATA, TSTATIONDATA, TSTATPROFDATA
-USE MODD_SENSOR,        ONLY: TSENSORTIME
 
 IMPLICIT NONE
 
@@ -25,7 +25,6 @@ PRIVATE
 PUBLIC :: STATPROF_INI_INTERP
 PUBLIC :: STATPROF_POSITION
 PUBLIC :: PROFILER_ADD, STATION_ADD
-PUBLIC :: STATPROF_INSTANT
 
 CONTAINS
 
@@ -258,42 +257,5 @@ SUBROUTINE STATION_ADD( TPSTATION )
   TSTATIONS => TZSTATIONS
 
 END SUBROUTINE STATION_ADD
-
-! #################################################
-SUBROUTINE STATPROF_INSTANT( TPSTATPROF_TIME, KIN )
-! #################################################
-  USE MODD_TIME_n,     ONLY: TDTCUR
-
-  USE MODE_DATETIME
-  USE MODE_MSG
-
-  IMPLICIT NONE
-
-  TYPE(TSENSORTIME), INTENT(INOUT) :: TPSTATPROF_TIME
-  INTEGER,           INTENT(OUT)   :: KIN ! Current step of storage
-
-  IF ( TPSTATPROF_TIME%N_CUR == 0 ) THEN
-    ! First store
-    TPSTATPROF_TIME%N_CUR = 1
-    TPSTATPROF_TIME%TPDATES(1) = TDTCUR
-    KIN = 1
-  ELSE
-    IF ( TDTCUR - TPSTATPROF_TIME%TPDATES(TPSTATPROF_TIME%N_CUR) >= TPSTATPROF_TIME%XTSTEP - 1.E-6 ) THEN
-      TPSTATPROF_TIME%N_CUR = TPSTATPROF_TIME%N_CUR + 1
-      KIN = TPSTATPROF_TIME%N_CUR
-
-      IF ( KIN < 1 .OR. KIN > SIZE( TPSTATPROF_TIME%TPDATES ) ) THEN
-        CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'STATPROF_INSTANT', 'problem with step of storage' )
-        KIN = -2
-      ELSE
-        TPSTATPROF_TIME%TPDATES(KIN) = TDTCUR
-      END IF
-    ELSE
-      ! Return an invalid step number
-      KIN = -1
-    END IF
-  END IF
-
-END SUBROUTINE STATPROF_INSTANT
 
 END MODULE MODE_STATPROF_TOOLS

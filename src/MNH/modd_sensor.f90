@@ -19,9 +19,12 @@ MODULE MODD_SENSOR
   PUBLIC :: TSENSORTIME
 
   TYPE :: TSENSORTIME
-    INTEGER                                    :: N_CUR   = 0       ! current step of storage
-    REAL                                       :: XTSTEP  = 60.     ! storage time step (default reset later)
-    TYPE(DATE_TIME), DIMENSION(:), ALLOCATABLE :: TPDATES           ! dates(n) (n: recording instants)
+      INTEGER                                    :: N_CUR   = 0       ! current step of storage
+      REAL                                       :: XTSTEP  = 60.     ! storage time step (default reset later)
+      TYPE(DATE_TIME), DIMENSION(:), ALLOCATABLE :: TPDATES           ! dates(n) (n: recording instants)
+
+    CONTAINS
+      PROCEDURE :: STORESTEP_CHECK_AND_SET
   END TYPE TSENSORTIME
 
   TYPE, ABSTRACT :: TSENSOR
@@ -109,6 +112,58 @@ MODULE MODD_SENSOR
 
 
   CONTAINS
+    ! ###########################################################################
+    FUNCTION STORESTEP_CHECK_AND_SET( TPSENSOR_TIME, KSTORE_ID ) RESULT( OSTORE )
+    ! ###########################################################################
+
+      USE MODD_TIME_N, ONLY: TDTCUR
+
+      USE MODE_DATETIME
+      USE MODE_MSG
+
+      CLASS(TSENSORTIME), INTENT(INOUT) :: TPSENSOR_TIME
+      INTEGER,            INTENT(OUT)   :: KSTORE_ID ! current step of storage
+      LOGICAL                           :: OSTORE
+
+      OSTORE = .FALSE.
+
+      IF ( .NOT.ALLOCATED( TPSENSOR_TIME%TPDATES ) ) &
+        CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'Storestep_check_and_set', 'tpdates not allocated for tpsensor_time' )
+
+      IF ( TPSENSOR_TIME%N_CUR == 0 ) THEN
+        IF ( SIZE( TPSENSOR_TIME%TPDATES ) < 1 ) &
+          CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'Storestep_check_and_set', 'tpdates too small' )
+
+        ! First store
+        TPSENSOR_TIME%N_CUR = 1
+        TPSENSOR_TIME%TPDATES(1) = TDTCUR
+        KSTORE_ID = 1
+        OSTORE = .TRUE.
+      ELSE IF ( TPSENSOR_TIME%N_CUR > 0 ) THEN
+        IF ( TDTCUR - TPSENSOR_TIME%TPDATES(TPSENSOR_TIME%N_CUR) >= TPSENSOR_TIME%XTSTEP - 1.E-6 ) THEN
+          TPSENSOR_TIME%N_CUR = TPSENSOR_TIME%N_CUR + 1
+          KSTORE_ID = TPSENSOR_TIME%N_CUR
+
+          IF ( KSTORE_ID < 1 .OR. KSTORE_ID > SIZE( TPSENSOR_TIME%TPDATES ) ) THEN
+            CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'Storestep_check_and_set', 'problem with step of storage' )
+            KSTORE_ID = -2
+          ELSE
+            TPSENSOR_TIME%TPDATES(KSTORE_ID) = TDTCUR
+            OSTORE = .TRUE.
+          END IF
+        ELSE
+          ! Return an invalid step number
+          ! This is not an instant to do a store
+          KSTORE_ID = -1
+        END IF
+      ELSE
+        CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'Storestep_check_and_set', 'n_cur cannot be negative' )
+        KSTORE_ID = -3
+      END IF
+
+    END FUNCTION STORESTEP_CHECK_AND_SET
+
+
     ! ##############################################################################################
     SUBROUTINE COMPUTE_VERTICAL_INTERP_COEFF( TPSENSOR, HPOS, PALT, PZ, OLOW, OHIGH, ODONOLOWCRASH )
     ! ##############################################################################################
