@@ -792,6 +792,8 @@ USE MODD_TIME_n, ONLY: TDTCUR
 
 IMPLICIT NONE
 
+LOGICAL :: GLOW, GHIGH
+
 ! Find indices surrounding the vertical box where the flyer is
 SELECT TYPE ( TPFLYER )
   CLASS IS ( TAIRCRAFTDATA)
