@@ -1,11 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2004-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$ $Date$
 !-----------------------------------------------------------------
 !     ######spl
       MODULE MODE_FSCATTER
@@ -37,7 +33,8 @@
 !!    MODIFICATIONS
 !!    -------------
 !!      Original  26/03/2004  
-!!      27/05/2014 (O. Caumont) Added Maxwell Garnett equation
+!  O. Caumont  27/05/2014: added Maxwell Garnett equation
+!  P. Wautelet 26/05/2023: add elemental attributes
 !--------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -81,10 +78,10 @@ CONTAINS
 !*       2.   FUNCTION QEPSW
 !             -------------------
 !-------------------------------------------------------------------------------
-!     ###########################################
-      FUNCTION QEPSW(PTEMP,PFREQ) RESULT(PQEPSW)
-!     ###########################################
-   ! water complex dielectric function (Liebe et al., 1991)
+! #########################################################
+  ELEMENTAL FUNCTION QEPSW( PTEMP, PFREQ ) RESULT( PQEPSW )
+! #########################################################
+    ! water complex dielectric function (Liebe et al., 1991)
     ! electromagnetic fields in exp(-i*omega*t), i.e. Im(epsw)>=0
     ! in  : ptemp=temperature in K
     !       pfreq=frequency in Hz
@@ -110,9 +107,9 @@ CONTAINS
 !*       3.   FUNCTION QEPSI
 !             -------------------
 !-------------------------------------------------------------------------------
-!   ##########################################
-    FUNCTION QEPSI(PTEMP,PFREQ) RESULT(PQEPSI)
-!   ##########################################
+! #########################################################
+  ELEMENTAL FUNCTION QEPSI( PTEMP, PFREQ ) RESULT( PQEPSI )
+! #########################################################
     ! ice complex dielectric function (Hufford, 1991)
     ! electromagnetic fields in exp(-i*omega*t), i.e. Im(epsi)>=0
     ! in  : ptemp=temperature in K
@@ -138,9 +135,9 @@ CONTAINS
 !*       4.   SUBROUTINE BHMIE
 !             -----------------
 !-------------------------------------------------------------------------------
-!   ##########################################
-    SUBROUTINE BHMIE(X,REFREL,QEXT,QSCA,QBACK)
-!   ##########################################
+! ##########################################################
+  ELEMENTAL SUBROUTINE BHMIE( X, REFREL, QEXT, QSCA, QBACK )
+! ##########################################################
     IMPLICIT NONE
     ! Arguments:
     REAL,INTENT(IN) :: X
@@ -206,9 +203,9 @@ CONTAINS
 !*       5.   SUBROUTINE BHCOAT
 !             -----------------
 !-------------------------------------------------------------------------------
-!   ######################################################
-    SUBROUTINE BHCOAT(X,Y,RFREL1,RFREL2,QEXT,QSCA,QBACK)
-!   ######################################################
+! ######################################################################
+  ELEMENTAL SUBROUTINE BHCOAT( X, Y, RFREL1, RFREL2, QEXT, QSCA, QBACK )
+! ######################################################################
     IMPLICIT NONE
 ! PARAMETERS
     REAL,PARAMETER :: DEL=1.e-8
@@ -331,9 +328,9 @@ CONTAINS
 !             -------------------
 !-------------------------------------------------------------------------------
 !-------------------------------------------------------------------------------
-!   ##########################################
-    FUNCTION MG(QEPSINC,QEPSMAT,PF) RESULT(PQEPS)
-!   ##########################################
+! #############################################################
+  ELEMENTAL FUNCTION MG( QEPSINC, QEPSMAT, PF ) RESULT( PQEPS )
+! #############################################################
     ! Maxwell Garnett (1904) equation for dielectric function of effective medium (sphere inclusions in a matrix)
     
     IMPLICIT NONE
