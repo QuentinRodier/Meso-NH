@@ -31,12 +31,12 @@ MODULE MODE_SENSOR
     REAL, DIMENSION(:,:,:),   INTENT(IN) :: PRHODREF ! dry air density of the reference state
 
     ! initialization LWC and IWC
-    TPSENSOR%XLWCZ(KSTORE_ID,:) = 0.
-    TPSENSOR%XIWCZ(KSTORE_ID,:) = 0.
+    TPSENSOR%XLWCZ(:,KSTORE_ID) = 0.
+    TPSENSOR%XIWCZ(:,KSTORE_ID) = 0.
 
     IF ( CCLOUD == "LIMA" .OR. CCLOUD=="ICE3" ) THEN
-      TPSENSOR%XLWCZ(KSTORE_ID,:) = TPSENSOR%INTERP_HOR_FROM_MASSPOINT( (PR(:,:,:,2)+PR(:,:,:,3)            ) * PRHODREF(:,:,:) )
-      TPSENSOR%XIWCZ(KSTORE_ID,:) = TPSENSOR%INTERP_HOR_FROM_MASSPOINT( (PR(:,:,:,4)+PR(:,:,:,5)+PR(:,:,:,6)) * PRHODREF(:,:,:) )
+      TPSENSOR%XLWCZ(:,KSTORE_ID) = TPSENSOR%INTERP_HOR_FROM_MASSPOINT( (PR(:,:,:,2)+PR(:,:,:,3)            ) * PRHODREF(:,:,:) )
+      TPSENSOR%XIWCZ(:,KSTORE_ID) = TPSENSOR%INTERP_HOR_FROM_MASSPOINT( (PR(:,:,:,4)+PR(:,:,:,5)+PR(:,:,:,6)) * PRHODREF(:,:,:) )
     END IF
   END SUBROUTINE SENSOR_WC_COMPUTE
 
@@ -113,8 +113,8 @@ MODULE MODE_SENSOR
     IKU = SIZE( PRHODREF, 3 )
 
     ! initialization CRARE and CRARE_ATT
-    TPSENSOR%XCRARE    (KSTORE_ID,:) = 0.
-    TPSENSOR%XCRARE_ATT(KSTORE_ID,:) = 0.
+    TPSENSOR%XCRARE    (:,KSTORE_ID) = 0.
+    TPSENSOR%XCRARE_ATT(:,KSTORE_ID) = 0.
 
     IF ( CCLOUD == "LIMA" .OR. CCLOUD=="ICE3" ) THEN
       ZTEMPZ(:)    = TPSENSOR%INTERP_HOR_FROM_MASSPOINT( PTH_EXN(:,:,:)  )
@@ -374,7 +374,7 @@ MODULE MODE_SENSOR
             END DO
             ZREFLOC = ZREFLOC * ( XLAM_CRAD / XPI ) ** 4 * ZN / ( 4. * GAMMA( ZNU ) * .93 )
             ZAETMP  = ZAETMP  *               XPI        * ZN / ( 4. * GAMMA( ZNU ) )
-            TPSENSOR%XCRARE(KSTORE_ID, JK) = TPSENSOR%XCRARE(KSTORE_ID, JK) + ZREFLOC
+            TPSENSOR%XCRARE(JK, KSTORE_ID) = TPSENSOR%XCRARE(JK, KSTORE_ID) + ZREFLOC
             ZAELOC(JK) = ZAELOC(JK) + ZAETMP
           END IF
         END DO
@@ -398,7 +398,7 @@ MODULE MODE_SENSOR
           ! attenuation from zaeloc(jk) and zaeloc(jk+1)
           ZAETOT = ZAETOT * EXP( - ( ZAELOC(JK+1) + ZAELOC(JK) ) * ( PZMZ(JK+1) - PZMZ(JK) ) )
         END IF
-        TPSENSOR%XCRARE_ATT(KSTORE_ID,JK) = TPSENSOR%XCRARE(KSTORE_ID,JK) * ZAETOT
+        TPSENSOR%XCRARE_ATT(JK,KSTORE_ID) = TPSENSOR%XCRARE(JK,KSTORE_ID) * ZAETOT
       END DO
 
       ! zenith
@@ -418,19 +418,19 @@ MODULE MODE_SENSOR
           ! attenuation from zaeloc(jk) and zaeloc(jk-1)
           ZAETOT = ZAETOT * EXP ( - ( ZAELOC(JK-1) + ZAELOC(JK) ) * ( PZMZ(JK) - PZMZ(JK-1) ) )
         END IF
-        TPSENSOR%XCRARE_ATT(KSTORE_ID,JK) = TPSENSOR%XCRARE(KSTORE_ID,JK) * ZAETOT
+        TPSENSOR%XCRARE_ATT(JK,KSTORE_ID) = TPSENSOR%XCRARE(JK,KSTORE_ID) * ZAETOT
       END DO
 
       ! m^3 → mm^6/m^3 → dbz
-      WHERE( TPSENSOR%XCRARE(KSTORE_ID, :) > 0 )
-        TPSENSOR%XCRARE(KSTORE_ID, :) = 10. * LOG10( 1.E18 * TPSENSOR%XCRARE(KSTORE_ID, :) )
+      WHERE( TPSENSOR%XCRARE(:, KSTORE_ID) > 0 )
+        TPSENSOR%XCRARE(:, KSTORE_ID) = 10. * LOG10( 1.E18 * TPSENSOR%XCRARE(:, KSTORE_ID) )
       ELSEWHERE
-        TPSENSOR%XCRARE(KSTORE_ID, :) = XUNDEF
+        TPSENSOR%XCRARE(:, KSTORE_ID) = XUNDEF
       END WHERE
-      WHERE( TPSENSOR%XCRARE_ATT(KSTORE_ID, :) > 0 )
-        TPSENSOR%XCRARE_ATT(KSTORE_ID, :) = 10. * LOG10( 1.E18 * TPSENSOR%XCRARE_ATT(KSTORE_ID, :) )
+      WHERE( TPSENSOR%XCRARE_ATT(:, KSTORE_ID) > 0 )
+        TPSENSOR%XCRARE_ATT(:, KSTORE_ID) = 10. * LOG10( 1.E18 * TPSENSOR%XCRARE_ATT(:, KSTORE_ID) )
       ELSEWHERE
-        TPSENSOR%XCRARE_ATT(KSTORE_ID, : ) = XUNDEF
+        TPSENSOR%XCRARE_ATT(:, KSTORE_ID ) = XUNDEF
       END WHERE
     END IF ! end LIMA / ICE3
 
@@ -491,8 +491,6 @@ MODULE MODE_SENSOR
     CHARACTER(LEN=*), DIMENSION(:),           INTENT(INOUT) :: HUNITS
     REAL,             DIMENSION(:,:,:,:,:,:), INTENT(INOUT) :: PDATA
 
-    INTEGER :: JK
-
     KPROC_CUR = KPROC_CUR + 1
 
     IF ( KPROC_CUR > KMAXPROC ) CALL PRINT_MSG( NVERB_FATAL, 'IO', 'Sensor_diachro_profile_add', 'more processes than expected' )
@@ -512,9 +510,7 @@ MODULE MODE_SENSOR
       CALL PRINT_MSG( NVERB_WARNING, 'IO', 'Sensor_diachro_profile_add',                             &
                       'units was truncated to ' // HUNITS(KPROC_CUR) // ' from ' // TRIM( HUNITSIN ) )
 
-    DO JK = 1, SIZE( PFIELDIN, 2 )
-      PDATA(1, 1, JK, :, 1, KPROC_CUR) = PFIELDIN(:, JK)
-    END DO
+    PDATA(1, 1, :, :, 1, KPROC_CUR) = PFIELDIN(:, :)
 
   END SUBROUTINE SENSOR_DIACHRO_PROFILE_ADD
 END MODULE MODE_SENSOR
