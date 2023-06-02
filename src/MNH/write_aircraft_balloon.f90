@@ -716,49 +716,32 @@ DEALLOCATE (CUNIT   )
 
 contains
 
-
 subroutine Add_profile( htitle, hcomment, hunits, pfield )
+! This subroutine is a simple interface to the generic Add_profile.
+! This is done this way to reduce the number of arguments passed to Add_profile.
+use mode_sensor, only: Sensor_diachro_profile_add
 
 character(len=*),     intent(in) :: htitle
 character(len=*),     intent(in) :: hcomment
 character(len=*),     intent(in) :: hunits
 real, dimension(:,:), intent(in) :: pfield
 
-integer :: jk
-
-jproc = jproc + 1
-
-if ( jproc > iprocz ) call Print_msg( NVERB_FATAL, 'IO', 'Add_profile', 'more processes than expected' )
-
-ctitle(jproc)   = Trim( htitle )
-ccomment(jproc) = Trim( hcomment )
-cunit(jproc)    = Trim( hunits )
-
-do jk = 1, iku
-  xwork6(1, 1, jk, :, 1, jproc) = pfield(:, jk)
-end do
+call Sensor_diachro_profile_add( htitle, hcomment, hunits, pfield, jproc, iprocz, ctitle, ccomment, cunit, xwork6 )
 
 end subroutine Add_profile
 
 
 subroutine Add_point( htitle, hcomment, hunits, pfield )
+! This subroutine is a simple interface to the generic Add_point.
+! This is done this way to reduce the number of arguments passed to Add_point.
+use mode_sensor, only: Sensor_diachro_point_add
 
 character(len=*),   intent(in) :: htitle
 character(len=*),   intent(in) :: hcomment
 character(len=*),   intent(in) :: hunits
 real, dimension(:), intent(in) :: pfield
 
-integer :: jk
-
-jproc = jproc + 1
-
-if ( jproc > iproc ) call Print_msg( NVERB_FATAL, 'IO', 'Add_point', 'more processes than expected' )
-
-ctitle(jproc)   = Trim( htitle)
-ccomment(jproc) = Trim( hcomment )
-cunit(jproc)    = Trim( hunits )
-
-xwork6(1, 1, 1, :, 1, jproc) = pfield(:)
+call Sensor_diachro_point_add( htitle, hcomment, hunits, pfield, jproc, iproc, ctitle, ccomment, cunit, xwork6 )
 
 end subroutine Add_point
 

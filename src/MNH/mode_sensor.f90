@@ -16,6 +16,8 @@ MODULE MODE_SENSOR
 
   PUBLIC :: SENSOR_WC_COMPUTE
   PUBLIC :: SENSOR_RARE_COMPUTE
+  PUBLIC :: SENSOR_DIACHRO_POINT_ADD
+  PUBLIC :: SENSOR_DIACHRO_PROFILE_ADD
 
   CONTAINS
 
@@ -433,4 +435,86 @@ MODULE MODE_SENSOR
     END IF ! end LIMA / ICE3
 
   END SUBROUTINE SENSOR_RARE_COMPUTE
+
+
+  SUBROUTINE SENSOR_DIACHRO_POINT_ADD( HTITLEIN, HCOMMENTIN, HUNITSIN, PFIELDIN, KPROC_CUR, KMAXPROC, &
+                                       HTITLES,  HCOMMENTS,  HUNITS,   PDATA )
+    USE MODE_MSG
+
+    CHARACTER(LEN=*),                         INTENT(IN)    :: HTITLEIN
+    CHARACTER(LEN=*),                         INTENT(IN)    :: HCOMMENTIN
+    CHARACTER(LEN=*),                         INTENT(IN)    :: HUNITSIN
+    REAL, DIMENSION(:),                       INTENT(IN)    :: PFIELDIN
+    INTEGER,                                  INTENT(INOUT) :: KPROC_CUR
+    INTEGER,                                  INTENT(IN)    :: KMAXPROC
+    CHARACTER(LEN=*), DIMENSION(:),           INTENT(INOUT) :: HTITLES
+    CHARACTER(LEN=*), DIMENSION(:),           INTENT(INOUT) :: HCOMMENTS
+    CHARACTER(LEN=*), DIMENSION(:),           INTENT(INOUT) :: HUNITS
+    REAL,             DIMENSION(:,:,:,:,:,:), INTENT(INOUT) :: PDATA
+
+    KPROC_CUR = KPROC_CUR + 1
+
+    IF ( KPROC_CUR > KMAXPROC ) CALL PRINT_MSG( NVERB_FATAL, 'IO', 'Sensor_diachro_point_add', 'more processes than expected' )
+
+    HTITLES(KPROC_CUR)   = TRIM( HTITLEIN)
+    IF ( LEN_TRIM( HTITLEIN ) > LEN( HTITLES(KPROC_CUR) ) )                                           &
+      CALL PRINT_MSG( NVERB_WARNING, 'IO', 'Sensor_diachro_point_add',                                &
+                      'title was truncated to ' // HTITLES(KPROC_CUR) // ' from ' // TRIM( HTITLEIN ) )
+
+    HCOMMENTS(KPROC_CUR) = TRIM( HCOMMENTIN )
+    IF ( LEN_TRIM( HCOMMENTIN ) > LEN( HCOMMENTS(KPROC_CUR) ) )                                             &
+      CALL PRINT_MSG( NVERB_WARNING, 'IO', 'Sensor_diachro_point_add',                                      &
+                      'comment was truncated to ' // HCOMMENTS(KPROC_CUR) // ' from ' // TRIM( HCOMMENTIN ) )
+
+    HUNITS(KPROC_CUR)    = TRIM( HUNITSIN )
+    IF ( LEN_TRIM( HUNITSIN ) > LEN( HUNITS(KPROC_CUR) ) )                                           &
+      CALL PRINT_MSG( NVERB_WARNING, 'IO', 'Sensor_diachro_point_add',                               &
+                      'units was truncated to ' // HUNITS(KPROC_CUR) // ' from ' // TRIM( HUNITSIN ) )
+
+    PDATA(1, 1, 1, :, 1, KPROC_CUR) = PFIELDIN(:)
+
+  END SUBROUTINE SENSOR_DIACHRO_POINT_ADD
+
+
+  SUBROUTINE SENSOR_DIACHRO_PROFILE_ADD( HTITLEIN, HCOMMENTIN, HUNITSIN, PFIELDIN, KPROC_CUR, KMAXPROC, &
+                                         HTITLES,  HCOMMENTS,  HUNITS,   PDATA )
+    USE MODE_MSG
+
+    CHARACTER(LEN=*),                         INTENT(IN)    :: HTITLEIN
+    CHARACTER(LEN=*),                         INTENT(IN)    :: HCOMMENTIN
+    CHARACTER(LEN=*),                         INTENT(IN)    :: HUNITSIN
+    REAL, DIMENSION(:,:),                     INTENT(IN)    :: PFIELDIN
+    INTEGER,                                  INTENT(INOUT) :: KPROC_CUR
+    INTEGER,                                  INTENT(IN)    :: KMAXPROC
+    CHARACTER(LEN=*), DIMENSION(:),           INTENT(INOUT) :: HTITLES
+    CHARACTER(LEN=*), DIMENSION(:),           INTENT(INOUT) :: HCOMMENTS
+    CHARACTER(LEN=*), DIMENSION(:),           INTENT(INOUT) :: HUNITS
+    REAL,             DIMENSION(:,:,:,:,:,:), INTENT(INOUT) :: PDATA
+
+    INTEGER :: JK
+
+    KPROC_CUR = KPROC_CUR + 1
+
+    IF ( KPROC_CUR > KMAXPROC ) CALL PRINT_MSG( NVERB_FATAL, 'IO', 'Sensor_diachro_profile_add', 'more processes than expected' )
+
+    HTITLES(KPROC_CUR)   = TRIM( HTITLEIN)
+    IF ( LEN_TRIM( HTITLEIN ) > LEN( HTITLES(KPROC_CUR) ) )                                           &
+      CALL PRINT_MSG( NVERB_WARNING, 'IO', 'Sensor_diachro_profile_add',                              &
+                      'title was truncated to ' // HTITLES(KPROC_CUR) // ' from ' // TRIM( HTITLEIN ) )
+
+    HCOMMENTS(KPROC_CUR) = TRIM( HCOMMENTIN )
+    IF ( LEN_TRIM( HCOMMENTIN ) > LEN( HCOMMENTS(KPROC_CUR) ) )                                             &
+      CALL PRINT_MSG( NVERB_WARNING, 'IO', 'Sensor_diachro_profile_add',                                    &
+                      'comment was truncated to ' // HCOMMENTS(KPROC_CUR) // ' from ' // TRIM( HCOMMENTIN ) )
+
+    HUNITS(KPROC_CUR)    = TRIM( HUNITSIN )
+    IF ( LEN_TRIM( HUNITSIN ) > LEN( HUNITS(KPROC_CUR) ) )                                           &
+      CALL PRINT_MSG( NVERB_WARNING, 'IO', 'Sensor_diachro_profile_add',                             &
+                      'units was truncated to ' // HUNITS(KPROC_CUR) // ' from ' // TRIM( HUNITSIN ) )
+
+    DO JK = 1, SIZE( PFIELDIN, 2 )
+      PDATA(1, 1, JK, :, 1, KPROC_CUR) = PFIELDIN(:, JK)
+    END DO
+
+  END SUBROUTINE SENSOR_DIACHRO_PROFILE_ADD
 END MODULE MODE_SENSOR
