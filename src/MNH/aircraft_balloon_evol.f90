@@ -163,44 +163,12 @@ REAL, DIMENSION(2,2,SIZE(PTH,3))    :: ZRCW_FLUX  !
 REAL, DIMENSION(2,2,SIZE(PSV,3),SIZE(PSV,4)) :: ZSVW_FLUX
 !
 LOGICAL :: GLAUNCH  ! launch/takeoff is effective at this time-step (if true)
-LOGICAL :: GSTORE   ! storage occurs at this time step
 LOGICAL :: GOWNER_CUR ! The process is the current owner of the flyer
 !
 INTEGER :: II_M     ! mass balloon position (x index)
 INTEGER :: IJ_M     ! mass balloon position (y index)
 INTEGER :: II_U     ! U flux point balloon position (x index)
 INTEGER :: IJ_V     ! V flux point balloon position (y index)
-!
-INTEGER :: IK00     ! balloon position for II_M  , IJ_M
-INTEGER :: IK01     ! balloon position for II_M  , IJ_M+1
-INTEGER :: IK10     ! balloon position for II_M+1, IJ_M
-INTEGER :: IK11     ! balloon position for II_M+1, IJ_M+1
-INTEGER :: IU00     ! balloon position for II_U  , IJ_M
-INTEGER :: IU01     ! balloon position for II_U  , IJ_M+1
-INTEGER :: IU10     ! balloon position for II_U+1, IJ_M
-INTEGER :: IU11     ! balloon position for II_U+1, IJ_M+1
-INTEGER :: IV00     ! balloon position for II_M  , IJ_V
-INTEGER :: IV01     ! balloon position for II_M  , IJ_V+1
-INTEGER :: IV10     ! balloon position for II_M+1, IJ_V
-INTEGER :: IV11     ! balloon position for II_M+1, IJ_V+1
-!
-REAL :: ZXCOEF      ! X direction interpolation coefficient
-REAL :: ZUCOEF      ! X direction interpolation coefficient (for U)
-REAL :: ZYCOEF      ! Y direction interpolation coefficient
-REAL :: ZVCOEF      ! Y direction interpolation coefficient (for V)
-!
-REAL :: ZZCOEF00    ! Z direction interpolation coefficient for II_M  , IJ_M
-REAL :: ZZCOEF01    ! Z direction interpolation coefficient for II_M  , IJ_M+1
-REAL :: ZZCOEF10    ! Z direction interpolation coefficient for II_M+1, IJ_M
-REAL :: ZZCOEF11    ! Z direction interpolation coefficient for II_M+1, IJ_M+1
-REAL :: ZUCOEF00    ! Z direction interpolation coefficient for II_U  , IJ_M
-REAL :: ZUCOEF01    ! Z direction interpolation coefficient for II_U  , IJ_M+1
-REAL :: ZUCOEF10    ! Z direction interpolation coefficient for II_U+1, IJ_M
-REAL :: ZUCOEF11    ! Z direction interpolation coefficient for II_U+1, IJ_M+1
-REAL :: ZVCOEF00    ! Z direction interpolation coefficient for II_M  , IJ_V
-REAL :: ZVCOEF01    ! Z direction interpolation coefficient for II_M  , IJ_V+1
-REAL :: ZVCOEF10    ! Z direction interpolation coefficient for II_M+1, IJ_V
-REAL :: ZVCOEF11    ! Z direction interpolation coefficient for II_M+1, IJ_V+1
 !
 INTEGER :: ISTORE          ! time index for storage
 !
@@ -764,24 +732,20 @@ USE MODD_GRID_n, ONLY: XXHAT, XXHATM, XYHAT, XYHATM
 IMPLICIT NONE
 
 ! Interpolation coefficient for X
-ZXCOEF = (TPFLYER%XX_CUR - XXHATM(II_M)) / (XXHATM(II_M+1) - XXHATM(II_M))
-ZXCOEF = MAX (0.,MIN(ZXCOEF,1.))
-TPFLYER%XXMCOEF = ZXCOEF
+TPFLYER%XXMCOEF = ( TPFLYER%XX_CUR - XXHATM(II_M) ) / ( XXHATM(II_M+1) - XXHATM(II_M) )
+TPFLYER%XXMCOEF = MAX( 0., MIN( TPFLYER%XXMCOEF, 1. ) )
 
 ! Interpolation coefficient for y
-ZYCOEF = (TPFLYER%XY_CUR - XYHATM(IJ_M)) / (XYHATM(IJ_M+1) - XYHATM(IJ_M))
-ZYCOEF = MAX (0.,MIN(ZYCOEF,1.))
-TPFLYER%XYMCOEF = ZYCOEF
+TPFLYER%XYMCOEF = ( TPFLYER%XY_CUR - XYHATM(IJ_M) ) / ( XYHATM(IJ_M+1) - XYHATM(IJ_M) )
+TPFLYER%XYMCOEF = MAX( 0., MIN( TPFLYER%XYMCOEF, 1. ) )
 
 ! Interpolation coefficient for X (for U)
-ZUCOEF = (TPFLYER%XX_CUR - XXHAT(II_U)) / (XXHAT(II_U+1) - XXHAT(II_U))
-ZUCOEF = MAX(0.,MIN(ZUCOEF,1.))
-TPFLYER%XXUCOEF = ZUCOEF
+TPFLYER%XXUCOEF = ( TPFLYER%XX_CUR - XXHAT(II_U) ) / ( XXHAT(II_U+1) - XXHAT(II_U) )
+TPFLYER%XXUCOEF = MAX( 0., MIN( TPFLYER%XXUCOEF, 1. ) )
 
 ! Interpolation coefficient for y (for V)
-ZVCOEF = (TPFLYER%XY_CUR - XYHAT(IJ_V)) / (XYHAT(IJ_V+1) - XYHAT(IJ_V))
-ZVCOEF = MAX(0.,MIN(ZVCOEF,1.))
-TPFLYER%XYVCOEF = ZVCOEF
+TPFLYER%XYVCOEF = ( TPFLYER%XY_CUR - XYHAT(IJ_V) ) / ( XYHAT(IJ_V+1) - XYHAT(IJ_V) )
+TPFLYER%XYVCOEF = MAX( 0., MIN( TPFLYER%XYVCOEF, 1. ) )
 
 END SUBROUTINE FLYER_COMPUTE_INTERP_COEFF_HOR_STAGE1
 !----------------------------------------------------------------------------
