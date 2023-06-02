@@ -77,6 +77,13 @@ MODULE MODD_SENSOR
       REAL :: XVCOEF10 = XUNDEF ! Interpolation coefficient in Z direction for ni_m+1, nj_v
       REAL :: XVCOEF11 = XUNDEF ! Interpolation coefficient in Z direction for ni_m+1, nj_v+1
 
+      ! Data records (at recording instants)
+      REAL, DIMENSION(:,:),   ALLOCATABLE :: XIWCZ      ! ice water content
+      REAL, DIMENSION(:,:),   ALLOCATABLE :: XLWCZ      ! liquid water content
+      REAL, DIMENSION(:,:),   ALLOCATABLE :: XCRARE     ! cloud radar reflectivity
+      REAL, DIMENSION(:,:),   ALLOCATABLE :: XCRARE_ATT ! attenuated (= more realistic) cloud radar reflectivity
+
+
     CONTAINS
       PROCEDURE(TSENSOR_ALLOCATION),   DEFERRED :: DATA_ARRAYS_ALLOCATE
       PROCEDURE(TSENSOR_DEALLOCATION), DEFERRED :: DATA_ARRAYS_DEALLOCATE

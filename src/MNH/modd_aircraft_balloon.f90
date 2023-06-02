@@ -107,13 +107,9 @@ TYPE, EXTENDS(TSENSOR), ABSTRACT :: TFLYERDATA
   REAL, DIMENSION(:,:),   ALLOCATABLE :: XRTZ       ! tot hydrometeor mixing ratio
   REAL, DIMENSION(:,:,:), ALLOCATABLE :: XRZ        ! water vapour mixing ratio
   REAL, DIMENSION(:,:),   ALLOCATABLE :: XFFZ       ! horizontal wind
-  REAL, DIMENSION(:,:),   ALLOCATABLE :: XIWCZ      ! ice water content
-  REAL, DIMENSION(:,:),   ALLOCATABLE :: XLWCZ      ! liquid water content
   REAL, DIMENSION(:,:),   ALLOCATABLE :: XCIZ       ! Ice concentration
   REAL, DIMENSION(:,:),   ALLOCATABLE :: XCCZ       ! Cloud concentration (LIMA)
   REAL, DIMENSION(:,:),   ALLOCATABLE :: XCRZ       ! Rain concentration (LIMA)
-  REAL, DIMENSION(:,:),   ALLOCATABLE :: XCRARE     ! cloud radar reflectivity
-  REAL, DIMENSION(:,:),   ALLOCATABLE :: XCRARE_ATT ! attenuated (= more realistic) cloud radar reflectivity
   REAL, DIMENSION(:,:),   ALLOCATABLE :: XWZ        ! vertical profile of vertical velocity
   REAL, DIMENSION(:,:),   ALLOCATABLE :: XZZ        ! vertical profile of mass point altitude (above sea)
   REAL, DIMENSION(:),     ALLOCATABLE :: XZS        ! zs(n)
