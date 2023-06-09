@@ -161,18 +161,18 @@ STATION: DO JS = 1, INUMSTAT
       ZPACK(IPOS) = TSTATIONS(IDX)%XZS;      IPOS = IPOS + 1
       ZPACK(IPOS) = TSTATIONS(IDX)%NK;       IPOS = IPOS + 1
       ZPACK(IPOS) = TSTATIONS(IDX)%XZMEAS;   IPOS = IPOS + 1
-      ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XZON(:); IPOS = IPOS + ISTORE
-      ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XMER(:); IPOS = IPOS + ISTORE
-      ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XW(:);   IPOS = IPOS + ISTORE
-      ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XP(:);   IPOS = IPOS + ISTORE
+      ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XZON(1,:); IPOS = IPOS + ISTORE
+      ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XMER(1,:); IPOS = IPOS + ISTORE
+      ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XW(1,:);   IPOS = IPOS + ISTORE
+      ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XP(1,:);   IPOS = IPOS + ISTORE
       IF ( CTURB == 'TKEL') THEN
-        ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XTKE(:); IPOS = IPOS + ISTORE
+        ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XTKE(1,:); IPOS = IPOS + ISTORE
       END IF
-      ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XTH(:);  IPOS = IPOS + ISTORE
-      ZPACK(IPOS:IPOS+ISTORE*NRR-1) = RESHAPE( TSTATIONS(IDX)%XR(:,:),  [ISTORE*NRR] ); IPOS = IPOS + ISTORE * NRR
-      ZPACK(IPOS:IPOS+ISTORE*NSV-1) = RESHAPE( TSTATIONS(IDX)%XSV(:,:), [ISTORE*NSV] ); IPOS = IPOS + ISTORE * NSV
+      ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XTH(1,:);  IPOS = IPOS + ISTORE
+      ZPACK(IPOS:IPOS+ISTORE*NRR-1) = RESHAPE( TSTATIONS(IDX)%XR(1,:,:),  [ISTORE*NRR] ); IPOS = IPOS + ISTORE * NRR
+      ZPACK(IPOS:IPOS+ISTORE*NSV-1) = RESHAPE( TSTATIONS(IDX)%XSV(1,:,:), [ISTORE*NSV] ); IPOS = IPOS + ISTORE * NSV
       IF ( CRAD /= 'NONE' ) THEN
-        ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XTSRAD(:); IPOS = IPOS + ISTORE
+        ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XTSRAD(1,:); IPOS = IPOS + ISTORE
       END IF
       IF ( LDIAG_SURFRAD_STAT ) THEN
         IF ( CSURF == 'EXTE') THEN
@@ -225,18 +225,18 @@ STATION: DO JS = 1, INUMSTAT
       TZSTATION%XZS      = ZPACK(IPOS);         IPOS = IPOS + 1
       TZSTATION%NK       = NINT( ZPACK(IPOS) ); IPOS = IPOS + 1
       TZSTATION%XZMEAS   = ZPACK(IPOS);         IPOS = IPOS + 1
-      TZSTATION%XZON(:)  = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
-      TZSTATION%XMER(:)  = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
-      TZSTATION%XW(:)    = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
-      TZSTATION%XP(:)    = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+      TZSTATION%XZON(1,:) = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+      TZSTATION%XMER(1,:) = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+      TZSTATION%XW(1,:)   = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+      TZSTATION%XP(1,:)   = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
       IF ( CTURB == 'TKEL') THEN
-        TZSTATION%XTKE(:) = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+        TZSTATION%XTKE(1,:) = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
       END IF
-      TZSTATION%XTH(:) = ZPACK(IPOS:IPOS+ISTORE-1);  IPOS = IPOS + ISTORE
-      TZSTATION%XR(:,:)  = RESHAPE( ZPACK(IPOS:IPOS+ISTORE*NRR-1), [ ISTORE, NRR ] ); IPOS = IPOS + ISTORE * NRR
-      TZSTATION%XSV(:,:) = RESHAPE( ZPACK(IPOS:IPOS+ISTORE*NSV-1), [ ISTORE, NSV ] ); IPOS = IPOS + ISTORE * NSV
+      TZSTATION%XTH(1,:) = ZPACK(IPOS:IPOS+ISTORE-1);  IPOS = IPOS + ISTORE
+      TZSTATION%XR(1,:,:)  = RESHAPE( ZPACK(IPOS:IPOS+ISTORE*NRR-1), [ ISTORE, NRR ] ); IPOS = IPOS + ISTORE * NRR
+      TZSTATION%XSV(1,:,:) = RESHAPE( ZPACK(IPOS:IPOS+ISTORE*NSV-1), [ ISTORE, NSV ] ); IPOS = IPOS + ISTORE * NSV
       IF ( CRAD /= 'NONE' ) THEN
-        TZSTATION%XTSRAD(:) = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+        TZSTATION%XTSRAD(1,:) = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
       END IF
       IF ( LDIAG_SURFRAD_STAT ) THEN
         IF ( CSURF == 'EXTE' ) THEN
@@ -324,7 +324,7 @@ type(tfieldmetadata_base), dimension(:), allocatable :: tzfields
 !
 !----------------------------------------------------------------------------
 !
-IPROC = 5 + SIZE(TPSTATION%XR,2) + SIZE(TPSTATION%XSV,2)
+IPROC = 5 + SIZE(TPSTATION%XR,3) + SIZE(TPSTATION%XSV,3)
 
 IF ( CTURB == 'TKEL' ) IPROC = IPROC + 1
 IF (LDIAG_SURFRAD_STAT) THEN
@@ -348,18 +348,18 @@ JPROC = 0
 !
 !----------------------------------------------------------------------------
 !
-call Add_point( 'P',  'Pressure',  'Pa', tpstation%xp(:) )
+call Add_point( 'P',  'Pressure',  'Pa', tpstation%xp(1,:) )
 
 if ( lcartesian ) then
-  call Add_point( 'U', 'Axial velocity',       'm s-1', tpstation%xzon(:) )
-  call Add_point( 'V', 'Transversal velocity', 'm s-1', tpstation%xmer(:) )
+  call Add_point( 'U', 'Axial velocity',       'm s-1', tpstation%xzon(1,:) )
+  call Add_point( 'V', 'Transversal velocity', 'm s-1', tpstation%xmer(1,:) )
 else
-  call Add_point( 'ZON_WIND', 'Zonal wind',      'm s-1', tpstation%xzon(:) )
-  call Add_point( 'MER_WIND', 'Meridional wind', 'm s-1', tpstation%xmer(:) )
+  call Add_point( 'ZON_WIND', 'Zonal wind',      'm s-1', tpstation%xzon(1,:) )
+  call Add_point( 'MER_WIND', 'Meridional wind', 'm s-1', tpstation%xmer(1,:) )
 end if
 
-call Add_point( 'W',  'Air vertical speed',    'm s-1', tpstation%xw(:)  )
-call Add_point( 'Th', 'Potential temperature', 'K',     tpstation%xth(:) )
+call Add_point( 'W',  'Air vertical speed',    'm s-1', tpstation%xw(1,:)  )
+call Add_point( 'Th', 'Potential temperature', 'K',     tpstation%xth(1,:) )
 
 if ( ldiag_surfrad_stat ) then
   if ( csurf == "EXTE" ) then
@@ -386,58 +386,58 @@ if ( ldiag_surfrad_stat ) then
   end if
 end if
 
-do jrr = 1, SIZE( tpstation%xr, 2 )
+do jrr = 1, SIZE( tpstation%xr, 3 )
   select case( jrr )
     case (1)
-      call Add_point( 'Rv', 'Water vapor mixing ratio',        'kg kg-1', tpstation%xr(:,jrr) )
+      call Add_point( 'Rv', 'Water vapor mixing ratio',        'kg kg-1', tpstation%xr(1,:,jrr) )
     case (2)
-      call Add_point( 'Rc', 'Liquid cloud water mixing ratio', 'kg kg-1', tpstation%xr(:,jrr) )
+      call Add_point( 'Rc', 'Liquid cloud water mixing ratio', 'kg kg-1', tpstation%xr(1,:,jrr) )
     case (3)
-      call Add_point( 'Rr', 'Rain water mixing ratio',         'kg kg-1', tpstation%xr(:,jrr) )
+      call Add_point( 'Rr', 'Rain water mixing ratio',         'kg kg-1', tpstation%xr(1,:,jrr) )
     case (4)
-      call Add_point( 'Ri', 'Ice cloud water mixing ratio',    'kg kg-1', tpstation%xr(:,jrr) )
+      call Add_point( 'Ri', 'Ice cloud water mixing ratio',    'kg kg-1', tpstation%xr(1,:,jrr) )
     case (5)
-      call Add_point( 'Rs', 'Snow mixing ratio',               'kg kg-1', tpstation%xr(:,jrr) )
+      call Add_point( 'Rs', 'Snow mixing ratio',               'kg kg-1', tpstation%xr(1,:,jrr) )
     case (6)
-      call Add_point( 'Rg', 'Graupel mixing ratio',            'kg kg-1', tpstation%xr(:,jrr) )
+      call Add_point( 'Rg', 'Graupel mixing ratio',            'kg kg-1', tpstation%xr(1,:,jrr) )
     case (7)
-      call Add_point( 'Rh', 'Hail mixing ratio',               'kg kg-1', tpstation%xr(:,jrr) )
+      call Add_point( 'Rh', 'Hail mixing ratio',               'kg kg-1', tpstation%xr(1,:,jrr) )
   end select
 end do
 
-if ( cturb == 'TKEL' ) call Add_point( 'Tke', 'Turbulent kinetic energy', 'm2 s-2', tpstation%xtke(:) )
+if ( cturb == 'TKEL' ) call Add_point( 'Tke', 'Turbulent kinetic energy', 'm2 s-2', tpstation%xtke(1,:) )
 
 if ( nsv > 0 ) then
   ! Scalar variables
   DO JSV = 1, NSV
     IF ( TRIM( TSVLIST(JSV)%CUNITS ) == 'ppv' ) THEN
       !*1e9 for conversion ppv->ppb
-      call Add_point( TRIM( TSVLIST(JSV)%CMNHNAME ), '', 'ppb', TPSTATION%XSV(:,JSV) * 1.e9 )
+      call Add_point( TRIM( TSVLIST(JSV)%CMNHNAME ), '', 'ppb', TPSTATION%XSV(1,:,JSV) * 1.e9 )
     ELSE
-      call Add_point( TRIM( TSVLIST(JSV)%CMNHNAME ), '', TSVLIST(JSV)%CUNITS, TPSTATION%XSV(:,JSV) )
+      call Add_point( TRIM( TSVLIST(JSV)%CMNHNAME ), '', TSVLIST(JSV)%CUNITS, TPSTATION%XSV(1,:,JSV) )
     END IF
   END DO
 
-  IF ((LORILAM).AND. .NOT.(ANY(TPSTATION%XP(:) == 0.))) THEN
+  IF ((LORILAM).AND. .NOT.(ANY(TPSTATION%XP(1,:) == 0.))) THEN
     ALLOCATE (ZSV(1,1,ISTORE,NSV_AER))
     ALLOCATE (ZRHO(1,1,ISTORE))
     ALLOCATE (ZN0(1,1,ISTORE,JPMODE))
     ALLOCATE (ZRG(1,1,ISTORE,JPMODE))
     ALLOCATE (ZSIG(1,1,ISTORE,JPMODE))
     ALLOCATE (ZPTOTA(1,1,ISTORE,NSP+NCARB+NSOA,JPMODE))
-    ZSV(1,1,:,1:NSV_AER) = TPSTATION%XSV(:,NSV_AERBEG:NSV_AEREND)
-    IF (SIZE(TPSTATION%XR,2) >0) THEN
+    ZSV(1,1,:,1:NSV_AER) = TPSTATION%XSV(1,:,NSV_AERBEG:NSV_AEREND)
+    IF (SIZE(TPSTATION%XR,3) >0) THEN
       ZRHO(1,1,:) = 0.
-      DO JRR=1,SIZE(TPSTATION%XR,2)
-        ZRHO(1,1,:) = ZRHO(1,1,:) + TPSTATION%XR(:,JRR)
+      DO JRR=1,SIZE(TPSTATION%XR,3)
+        ZRHO(1,1,:) = ZRHO(1,1,:) + TPSTATION%XR(1,:,JRR)
       ENDDO
-      ZRHO(1,1,:) = TPSTATION%XTH(:) * ( 1. + XRV/XRD*TPSTATION%XR(:,1) )  &
-                                      / ( 1. + ZRHO(1,1,:)                )
+      ZRHO(1,1,:) = TPSTATION%XTH(1,:) * ( 1. + XRV/XRD*TPSTATION%XR(1,:,1) )  &
+                                       / ( 1. + ZRHO(1,1,:)                 )
     ELSE
-      ZRHO(1,1,:) = TPSTATION%XTH(:)
+      ZRHO(1,1,:) = TPSTATION%XTH(1,:)
     ENDIF
-    ZRHO(1,1,:) =  TPSTATION%XP(:) / &
-                  (XRD *ZRHO(1,1,:) *((TPSTATION%XP(:)/XP00)**(XRD/XCPD)) )
+    ZRHO(1,1,:) =  TPSTATION%XP(1,:) / &
+                  (XRD *ZRHO(1,1,:) *((TPSTATION%XP(1,:)/XP00)**(XRD/XCPD)) )
 
     CALL PPP2AERO(ZSV,ZRHO, PSIG3D=ZSIG, PRG3D=ZRG, PN3D=ZN0,PCTOTA=ZPTOTA)
 
@@ -532,25 +532,25 @@ if ( nsv > 0 ) then
     DEALLOCATE (ZN0,ZRG,ZSIG)
   END IF
 
-  IF ((LDUST).AND. .NOT.(ANY(TPSTATION%XP(:) == 0.))) THEN
+  IF ((LDUST).AND. .NOT.(ANY(TPSTATION%XP(1,:) == 0.))) THEN
     ALLOCATE (ZSV(1,1,ISTORE,NSV_DST))
     ALLOCATE (ZRHO(1,1,ISTORE))
     ALLOCATE (ZN0(1,1,ISTORE,NMODE_DST))
     ALLOCATE (ZRG(1,1,ISTORE,NMODE_DST))
     ALLOCATE (ZSIG(1,1,ISTORE,NMODE_DST))
-    ZSV(1,1,:,1:NSV_DST) = TPSTATION%XSV(:,NSV_DSTBEG:NSV_DSTEND)
-    IF (SIZE(TPSTATION%XR,2) >0) THEN
+    ZSV(1,1,:,1:NSV_DST) = TPSTATION%XSV(1,:,NSV_DSTBEG:NSV_DSTEND)
+    IF (SIZE(TPSTATION%XR,3) >0) THEN
       ZRHO(1,1,:) = 0.
-      DO JRR=1,SIZE(TPSTATION%XR,2)
-        ZRHO(1,1,:) = ZRHO(1,1,:) + TPSTATION%XR(:,JRR)
+      DO JRR=1,SIZE(TPSTATION%XR,3)
+        ZRHO(1,1,:) = ZRHO(1,1,:) + TPSTATION%XR(1,:,JRR)
       ENDDO
-      ZRHO(1,1,:) = TPSTATION%XTH(:) * ( 1. + XRV/XRD*TPSTATION%XR(:,1) )  &
-                                      / ( 1. + ZRHO(1,1,:)                )
+      ZRHO(1,1,:) = TPSTATION%XTH(1,:) * ( 1. + XRV/XRD*TPSTATION%XR(1,:,1) )  &
+                                       / ( 1. + ZRHO(1,1,:)                 )
     ELSE
-      ZRHO(1,1,:) = TPSTATION%XTH(:)
+      ZRHO(1,1,:) = TPSTATION%XTH(1,:)
     ENDIF
-    ZRHO(1,1,:) =  TPSTATION%XP(:) / &
-                  (XRD *ZRHO(1,1,:) *((TPSTATION%XP(:)/XP00)**(XRD/XCPD)) )
+    ZRHO(1,1,:) =  TPSTATION%XP(1,:) / &
+                  (XRD *ZRHO(1,1,:) *((TPSTATION%XP(1,:)/XP00)**(XRD/XCPD)) )
     CALL PPP2DUST(ZSV,ZRHO, PSIG3D=ZSIG, PRG3D=ZRG, PN3D=ZN0)
     DO JSV=1,NMODE_DST
       ! mean radius
@@ -576,25 +576,25 @@ if ( nsv > 0 ) then
     DEALLOCATE (ZN0,ZRG,ZSIG)
   END IF
 
-  IF ((LSALT).AND. .NOT.(ANY(TPSTATION%XP(:) == 0.))) THEN
+  IF ((LSALT).AND. .NOT.(ANY(TPSTATION%XP(1,:) == 0.))) THEN
     ALLOCATE (ZSV(1,1,ISTORE,NSV_SLT))
     ALLOCATE (ZRHO(1,1,ISTORE))
     ALLOCATE (ZN0(1,1,ISTORE,NMODE_SLT))
     ALLOCATE (ZRG(1,1,ISTORE,NMODE_SLT))
     ALLOCATE (ZSIG(1,1,ISTORE,NMODE_SLT))
-    ZSV(1,1,:,1:NSV_SLT) = TPSTATION%XSV(:,NSV_SLTBEG:NSV_SLTEND)
-    IF (SIZE(TPSTATION%XR,2) >0) THEN
+    ZSV(1,1,:,1:NSV_SLT) = TPSTATION%XSV(1,:,NSV_SLTBEG:NSV_SLTEND)
+    IF (SIZE(TPSTATION%XR,3) >0) THEN
       ZRHO(1,1,:) = 0.
-      DO JRR=1,SIZE(TPSTATION%XR,2)
-        ZRHO(1,1,:) = ZRHO(1,1,:) + TPSTATION%XR(:,JRR)
+      DO JRR=1,SIZE(TPSTATION%XR,3)
+        ZRHO(1,1,:) = ZRHO(1,1,:) + TPSTATION%XR(1,:,JRR)
       ENDDO
-      ZRHO(1,1,:) = TPSTATION%XTH(:) * ( 1. + XRV/XRD*TPSTATION%XR(:,1) )  &
+      ZRHO(1,1,:) = TPSTATION%XTH(1,:) * ( 1. + XRV/XRD*TPSTATION%XR(1,:,1) )  &
                                       / ( 1. + ZRHO(1,1,:)                )
     ELSE
-      ZRHO(1,1,:) = TPSTATION%XTH(:)
+      ZRHO(1,1,:) = TPSTATION%XTH(1,:)
     ENDIF
-    ZRHO(1,1,:) =  TPSTATION%XP(:) / &
-                  (XRD *ZRHO(1,1,:) *((TPSTATION%XP(:)/XP00)**(XRD/XCPD)) )
+    ZRHO(1,1,:) =  TPSTATION%XP(1,:) / &
+                  (XRD *ZRHO(1,1,:) *((TPSTATION%XP(1,:)/XP00)**(XRD/XCPD)) )
     CALL PPP2SALT(ZSV,ZRHO, PSIG3D=ZSIG, PRG3D=ZRG, PN3D=ZN0)
     DO JSV=1,NMODE_SLT
       ! mean radius
@@ -617,7 +617,7 @@ if ( nsv > 0 ) then
   END IF
 end if
 
-if ( crad /= 'NONE' ) call Add_point( 'Tsrad', 'Radiative Surface Temperature', 'K', tpstation%xtsrad(:) )
+if ( crad /= 'NONE' ) call Add_point( 'Tsrad', 'Radiative Surface Temperature', 'K', tpstation%xtsrad(1,:) )
 
 if ( ldiag_surfrad_stat ) call Add_point( 'SFCO2', 'CO2 Surface Flux', 'mg m-2 s-1', tpstation%xsfco2(:) )
 !

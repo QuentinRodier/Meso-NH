@@ -247,7 +247,7 @@ type(tfieldmetadata_base), dimension(:), allocatable :: tzfields
 !
 IMI = GET_CURRENT_MODEL_INDEX()
 
-IRR = SIZE( tpflyer%xr, 2 )
+IRR = SIZE( tpflyer%xr, 3 )
 
 IF (TPFLYER%NMODEL==0) RETURN
 IF (ALL(TPFLYER%XX==XUNDEF)) RETURN
@@ -256,7 +256,7 @@ IF ( IMI /= TPFLYER%NMODEL ) RETURN
 !
 IKU = SIZE(TPFLYER%XRTZ,1) !number of vertical levels
 !
-IPROC = 9 + IRR + SIZE(TPFLYER%XSV,2) + 2 + SIZE(TPFLYER%XSVW_FLUX,2)
+IPROC = 9 + IRR + SIZE(TPFLYER%XSV,3) + 2 + SIZE(TPFLYER%XSVW_FLUX,2)
 IF ( IRR > 1 ) IPROC = IPROC + 1
 IF ( SIZE( TPFLYER%XTKE ) > 0 ) IPROC = IPROC + 1
 IPROC = IPROC + 1 ! TKE_DISS
@@ -280,7 +280,7 @@ call Add_point( 'ZS', 'orography', 'm', tpflyer%xzs(:) )
 SELECT TYPE ( TPFLYER )
   CLASS IS ( TAIRCRAFTDATA )
     IF (TPFLYER%LALTDEF) THEN
-      call Add_point( 'P', 'pressure', 'Pascal', tpflyer%xp(:) )
+      call Add_point( 'P', 'pressure', 'Pascal', tpflyer%xp(1,:) )
     ELSE
       call Add_point( 'Z', 'altitude', 'm', tpflyer%xz(:) )
     ENDIF
@@ -293,18 +293,18 @@ END SELECT
 call Add_point( 'MODEL',    'model on which data was computed', '1', REAL( tpflyer%nmodelhist(:) ) )
 call Add_point( 'LON',      'longitude',             'degree', tpflyer%xlon(:) )
 call Add_point( 'LAT',      'latitude',              'degree', tpflyer%xlat(:) )
-call Add_point( 'ZON_WIND', 'zonal wind',            'm s-1',  tpflyer%xzon(:) )
-call Add_point( 'MER_WIND', 'meridian wind',         'm s-1',  tpflyer%xmer(:) )
-call Add_point( 'W',        'air vertical speed',    'm s-1',  tpflyer%xw(:)   )
-call Add_point( 'Th',       'potential temperature', 'K',      tpflyer%xth(:)  )
+call Add_point( 'ZON_WIND', 'zonal wind',            'm s-1',  tpflyer%xzon(1,:) )
+call Add_point( 'MER_WIND', 'meridian wind',         'm s-1',  tpflyer%xmer(1,:) )
+call Add_point( 'W',        'air vertical speed',    'm s-1',  tpflyer%xw(1,:)   )
+call Add_point( 'Th',       'potential temperature', 'K',      tpflyer%xth(1,:)  )
 !
-if ( irr >= 1 ) call Add_point( 'Rv', 'water vapor mixing ratio',        'kg kg-1', tpflyer%xr(:,1) )
-if ( irr >= 2 ) call Add_point( 'Rc', 'liquid cloud water mixing ratio', 'kg kg-1', tpflyer%xr(:,2) )
-if ( irr >= 3 ) call Add_point( 'Rr', 'Rain water mixing ratio',         'kg kg-1', tpflyer%xr(:,3) )
-if ( irr >= 4 ) call Add_point( 'Ri', 'Ice cloud water mixing ratio',    'kg kg-1', tpflyer%xr(:,4) )
-if ( irr >= 5 ) call Add_point( 'Rs', 'Snow mixing ratio',               'kg kg-1', tpflyer%xr(:,5) )
-if ( irr >= 6 ) call Add_point( 'Rg', 'Graupel mixing ratio',            'kg kg-1', tpflyer%xr(:,6) )
-if ( irr >= 7 ) call Add_point( 'Rh', 'Hail mixing ratio',               'kg kg-1', tpflyer%xr(:,7) )
+if ( irr >= 1 ) call Add_point( 'Rv', 'water vapor mixing ratio',        'kg kg-1', tpflyer%xr(1,:,1) )
+if ( irr >= 2 ) call Add_point( 'Rc', 'liquid cloud water mixing ratio', 'kg kg-1', tpflyer%xr(1,:,2) )
+if ( irr >= 3 ) call Add_point( 'Rr', 'Rain water mixing ratio',         'kg kg-1', tpflyer%xr(1,:,3) )
+if ( irr >= 4 ) call Add_point( 'Ri', 'Ice cloud water mixing ratio',    'kg kg-1', tpflyer%xr(1,:,4) )
+if ( irr >= 5 ) call Add_point( 'Rs', 'Snow mixing ratio',               'kg kg-1', tpflyer%xr(1,:,5) )
+if ( irr >= 6 ) call Add_point( 'Rg', 'Graupel mixing ratio',            'kg kg-1', tpflyer%xr(1,:,6) )
+if ( irr >= 7 ) call Add_point( 'Rh', 'Hail mixing ratio',               'kg kg-1', tpflyer%xr(1,:,7) )
 !
 !add cloud liquid water content in g/m3 to compare to measurements from FSSP
 !IF (.NOT.(ANY(TPFLYER%XP(:) == 0.))) THEN
@@ -313,19 +313,19 @@ IF ( IRR > 1 ) THEN !cloud water is present
   ALLOCATE( ZLWC(ISTORE) )
   ZRHO(1,1,:) = 0.
   DO JRR = 1, IRR
-    ZRHO(1,1,:) = ZRHO(1,1,:) + TPFLYER%XR(:,JRR)
+    ZRHO(1,1,:) = ZRHO(1,1,:) + TPFLYER%XR(1,:,JRR)
   ENDDO
-  ZRHO(1,1,:) = TPFLYER%XTH(:) * ( 1. + XRV/XRD*TPFLYER%XR(:,1) )  &
-                                / ( 1. + ZRHO(1,1,:)              )
+  ZRHO(1,1,:) = TPFLYER%XTH(1,:) * ( 1. + XRV/XRD*TPFLYER%XR(1,:,1) )  &
+                                 / ( 1. + ZRHO(1,1,:)               )
   DO JPT=1,ISTORE
     IF ( TPFLYER%NMODELHIST(JPT) > 0 ) THEN !Compute LWC only if flyer is flying
-      IF (TPFLYER%XP(JPT) == 0.) THEN
+      IF (TPFLYER%XP(1,JPT) == 0.) THEN
         ZRHO(1,1,JPT) = 0.
       ELSE
-        ZRHO(1,1,JPT) = TPFLYER%XP(JPT) / &
-                        (XRD *ZRHO(1,1,JPT) *((TPFLYER%XP(JPT)/XP00)**(XRD/XCPD))  )
+        ZRHO(1,1,JPT) = TPFLYER%XP(1,JPT) / &
+                        (XRD *ZRHO(1,1,JPT) *((TPFLYER%XP(1,JPT)/XP00)**(XRD/XCPD))  )
       ENDIF
-      ZLWC(JPT) = TPFLYER%XR(JPT,2) * ZRHO(1,1,JPT) * 1.E3
+      ZLWC(JPT) = TPFLYER%XR(1,JPT,2) * ZRHO(1,1,JPT) * 1.E3
     ELSE
       ZLWC(JPT) = XUNDEF
     END IF
@@ -334,7 +334,7 @@ IF ( IRR > 1 ) THEN !cloud water is present
   DEALLOCATE( ZLWC, ZRHO )
 END IF
 !
-IF (SIZE(TPFLYER%XTKE)>0) call Add_point( 'Tke', 'Turbulent kinetic energy', 'm2 s-2', tpflyer%xtke(:) )
+IF (SIZE(TPFLYER%XTKE)>0) call Add_point( 'Tke', 'Turbulent kinetic energy', 'm2 s-2', tpflyer%xtke(1,:) )
 !
 call Add_point( 'H_FLUX',  'sensible flux', 'W m-2', tpflyer%xthw_flux(:) )
 call Add_point( 'LE_FLUX', 'latent flux',   'W m-2', tpflyer%xrcw_flux(:) )
@@ -345,17 +345,17 @@ DO JSV=1,SIZE(TPFLYER%XSVW_FLUX,2)
 END DO
 call Add_point( 'Tke_Diss', 'TKE dissipation rate', 'm2 s-2', tpflyer%xtke_diss(:) )
 !
-IF (SIZE(TPFLYER%XSV,2)>=1) THEN
+IF (SIZE(TPFLYER%XSV,3)>=1) THEN
   ! Scalar variables
   DO JSV = 1, NSV
     IF ( TRIM( TSVLIST(JSV)%CUNITS ) == 'ppv' ) THEN
-      call Add_point( Trim( tsvlist(jsv)%cmnhname ), '', 'ppb', tpflyer%xsv(:,jsv) * 1.e9 ) !*1e9 for conversion ppv->ppb
+      call Add_point( Trim( tsvlist(jsv)%cmnhname ), '', 'ppb', tpflyer%xsv(1,:,jsv) * 1.e9 ) !*1e9 for conversion ppv->ppb
     ELSE
-      call Add_point( Trim( tsvlist(jsv)%cmnhname ), '', Trim( tsvlist(jsv)%cunits ), tpflyer%xsv(:,jsv) )
+      call Add_point( Trim( tsvlist(jsv)%cmnhname ), '', Trim( tsvlist(jsv)%cunits ), tpflyer%xsv(1,:,jsv) )
     END IF
   END DO
 
-  IF ((LORILAM).AND. .NOT.(ANY(TPFLYER%XP(:) == 0.))) THEN
+  IF ((LORILAM).AND. .NOT.(ANY(TPFLYER%XP(1,:) == 0.))) THEN
 
     ALLOCATE (ZSV(1,1,ISTORE,NSV_AER))
     ALLOCATE (ZRHO(1,1,ISTORE))
@@ -363,19 +363,19 @@ IF (SIZE(TPFLYER%XSV,2)>=1) THEN
     ALLOCATE (ZRG(1,1,ISTORE,JPMODE))
     ALLOCATE (ZSIG(1,1,ISTORE,JPMODE))
     ALLOCATE (ZPTOTA(1,1,ISTORE,NSP+NCARB+NSOA,JPMODE))
-    ZSV(1,1,:,1:NSV_AER) = TPFLYER%XSV(:,NSV_AERBEG:NSV_AEREND)
+    ZSV(1,1,:,1:NSV_AER) = TPFLYER%XSV(1,:,NSV_AERBEG:NSV_AEREND)
     IF (IRR >0) THEN
       ZRHO(1,1,:) = 0.
       DO JRR=1,IRR
-        ZRHO(1,1,:) = ZRHO(1,1,:) + TPFLYER%XR(:,JRR)
+        ZRHO(1,1,:) = ZRHO(1,1,:) + TPFLYER%XR(1,:,JRR)
       ENDDO
-      ZRHO(1,1,:) = TPFLYER%XTH(:) * ( 1. + XRV/XRD*TPFLYER%XR(:,1) )  &
-                                  / ( 1. + ZRHO(1,1,:)                )
+      ZRHO(1,1,:) = TPFLYER%XTH(1,:) * ( 1. + XRV/XRD*TPFLYER%XR(1,:,1) )  &
+                                     / ( 1. + ZRHO(1,1,:)               )
     ELSE
-      ZRHO(1,1,:) = TPFLYER%XTH(:)
+      ZRHO(1,1,:) = TPFLYER%XTH(1,:)
     ENDIF
-    ZRHO(1,1,:) =  TPFLYER%XP(:) / &
-                  (XRD *ZRHO(1,1,:) *((TPFLYER%XP(:)/XP00)**(XRD/XCPD))  )
+    ZRHO(1,1,:) =  TPFLYER%XP(1,:) / &
+                  (XRD *ZRHO(1,1,:) *((TPFLYER%XP(1,:)/XP00)**(XRD/XCPD))  )
     ZSIG = 0.
     ZRG = 0.
     ZN0 = 0.
@@ -474,25 +474,25 @@ IF (SIZE(TPFLYER%XSV,2)>=1) THEN
     DEALLOCATE (ZN0,ZRG,ZSIG,ZPTOTA)
   END IF
 
-  IF ((LDUST).AND. .NOT.(ANY(TPFLYER%XP(:) == 0.))) THEN
+  IF ((LDUST).AND. .NOT.(ANY(TPFLYER%XP(1,:) == 0.))) THEN
     ALLOCATE (ZSV(1,1,ISTORE,NSV_DST))
     ALLOCATE (ZRHO(1,1,ISTORE))
     ALLOCATE (ZN0(1,1,ISTORE,NMODE_DST))
     ALLOCATE (ZRG(1,1,ISTORE,NMODE_DST))
     ALLOCATE (ZSIG(1,1,ISTORE,NMODE_DST))
-    ZSV(1,1,:,1:NSV_DST) = TPFLYER%XSV(:,NSV_DSTBEG:NSV_DSTEND)
+    ZSV(1,1,:,1:NSV_DST) = TPFLYER%XSV(1,:,NSV_DSTBEG:NSV_DSTEND)
     IF (IRR >0) THEN
       ZRHO(1,1,:) = 0.
       DO JRR=1,IRR
-        ZRHO(1,1,:) = ZRHO(1,1,:) + TPFLYER%XR(:,JRR)
+        ZRHO(1,1,:) = ZRHO(1,1,:) + TPFLYER%XR(1,:,JRR)
       ENDDO
-      ZRHO(1,1,:) = TPFLYER%XTH(:) * ( 1. + XRV/XRD*TPFLYER%XR(:,1) )  &
-                                          / ( 1. + ZRHO(1,1,:)                )
+      ZRHO(1,1,:) = TPFLYER%XTH(1,:) * ( 1. + XRV/XRD*TPFLYER%XR(1,:,1) )  &
+                                     / ( 1. + ZRHO(1,1,:)                )
     ELSE
-      ZRHO(1,1,:) = TPFLYER%XTH(:)
+      ZRHO(1,1,:) = TPFLYER%XTH(1,:)
     ENDIF
-    ZRHO(1,1,:) =  TPFLYER%XP(:) / &
-                  (XRD *ZRHO(1,1,:) *((TPFLYER%XP(:)/XP00)**(XRD/XCPD)) )
+    ZRHO(1,1,:) =  TPFLYER%XP(1,:) / &
+                  (XRD *ZRHO(1,1,:) *((TPFLYER%XP(1,:)/XP00)**(XRD/XCPD)) )
     CALL PPP2DUST(ZSV,ZRHO, PSIG3D=ZSIG, PRG3D=ZRG, PN3D=ZN0)
     DO JSV=1,NMODE_DST
       ! mean radius
@@ -518,7 +518,7 @@ IF (SIZE(TPFLYER%XTSRAD)>0) THEN
   CTITLE   (JPROC) = 'Tsrad'
   CUNIT    (JPROC) = 'K'
   CCOMMENT (JPROC) = 'Radiative Surface Temperature'
-  XWORK6 (1,1,1,:,1,JPROC) = TPFLYER%XTSRAD(:)
+  XWORK6 (1,1,1,:,1,JPROC) = TPFLYER%XTSRAD(1,:)
 END IF
 !
 allocate( tzfields( jproc ) )

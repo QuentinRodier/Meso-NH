@@ -78,6 +78,16 @@ MODULE MODD_SENSOR
       REAL :: XVCOEF11 = XUNDEF ! Interpolation coefficient in Z direction for ni_m+1, nj_v+1
 
       ! Data records (at recording instants)
+      REAL, DIMENSION(:,:),   ALLOCATABLE :: XZON    ! zonal wind(n)
+      REAL, DIMENSION(:,:),   ALLOCATABLE :: XMER    ! meridian wind(n)
+      REAL, DIMENSION(:,:),   ALLOCATABLE :: XW      ! w(n)  (air vertical speed)
+      REAL, DIMENSION(:,:),   ALLOCATABLE :: XP      ! p(n)
+      REAL, DIMENSION(:,:),   ALLOCATABLE :: XTKE    ! tke(n)
+      REAL, DIMENSION(:,:),   ALLOCATABLE :: XTH     ! th(n)
+      REAL, DIMENSION(:,:,:), ALLOCATABLE :: XR      ! r*(n)
+      REAL, DIMENSION(:,:,:), ALLOCATABLE :: XSV     ! Sv*(n)
+      REAL, DIMENSION(:,:),   ALLOCATABLE :: XTSRAD  ! Ts(n)
+
       REAL, DIMENSION(:,:),   ALLOCATABLE :: XIWCZ      ! ice water content
       REAL, DIMENSION(:,:),   ALLOCATABLE :: XLWCZ      ! liquid water content
       REAL, DIMENSION(:,:),   ALLOCATABLE :: XCRARE     ! cloud radar reflectivity
