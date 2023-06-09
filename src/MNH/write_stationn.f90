@@ -304,7 +304,6 @@ TYPE(TSTATIONDATA), INTENT(IN) :: TPSTATION
 !
 !*      0.2  declaration of local variables for diachro
 !
-REAL, DIMENSION(:,:,:,:,:,:), ALLOCATABLE :: XWORK6 ! contains temporal series
 REAL, DIMENSION(:,:,:,:),     ALLOCATABLE :: ZSV, ZN0, ZSIG, ZRG
 REAL, DIMENSION(:,:,:,:,:),   ALLOCATABLE :: ZPTOTA
 REAL, DIMENSION(:,:,:),       ALLOCATABLE :: ZRHO
@@ -337,9 +336,7 @@ IF (LORILAM) IPROC = IPROC + JPMODE*(3+NSOA+NCARB+NSP)
 IF (LDUST) IPROC = IPROC + NMODE_DST*3
 IF (LSALT) IPROC = IPROC + NMODE_SLT*3
 IF ( CRAD /= 'NONE' )  IPROC = IPROC + 1
-!
-IPROC = MAX( IPROC, 6 ) !6 correspond to the number of fixed values written later
-!
+
 ISTORE = SIZE( TSTATIONS_TIME%TPDATES )
 
 ALLOCATE( XWORK6(1, 1, 1, ISTORE, 1, IPROC) )
@@ -693,9 +690,20 @@ tzbudiachro%nkh        = 1
 call Write_diachro( tpdiafile, tzbudiachro, tzfields, tstations_time%tpdates, xwork6(:,:,:,:,:,:jproc) )
 
 deallocate( tzfields )
+Deallocate( xwork6   )
+Deallocate( ccomment )
+Deallocate( ctitle   )
+Deallocate( cunit    )
 
 !----------------------------------------------------------------------------
 !Treat position and fix values (not changing during simulation)
+
+IPROC = 6
+
+ALLOCATE( XWORK6(1, 1, 1, 1, 1, IPROC) )
+ALLOCATE( CCOMMENT(IPROC) )
+ALLOCATE( CTITLE  (IPROC) )
+ALLOCATE( CUNIT   (IPROC) )
 
 jproc = 0
 
@@ -704,50 +712,50 @@ if ( lcartesian ) then
   CTITLE   (JPROC) = 'X'
   CUNIT    (JPROC) = 'm'
   CCOMMENT (JPROC) = 'X Pos'
-  XWORK6 (1,1,1,:,1,JPROC) = TPSTATION%XX_CUR
+  XWORK6 (1,1,1,1,1,JPROC) = TPSTATION%XX_CUR
 
   JPROC = JPROC + 1
   CTITLE   (JPROC) = 'Y'
   CUNIT    (JPROC) = 'm'
   CCOMMENT (JPROC) = 'Y Pos'
-  XWORK6 (1,1,1,:,1,JPROC) = TPSTATION%XY_CUR
+  XWORK6 (1,1,1,1,1,JPROC) = TPSTATION%XY_CUR
 else
   JPROC = JPROC + 1
   CTITLE   (JPROC) = 'LON'
   CUNIT    (JPROC) = 'degree'
   CCOMMENT (JPROC) = 'Longitude'
-  XWORK6 (1,1,1,:,1,JPROC) = TPSTATION%XLON_CUR
+  XWORK6 (1,1,1,1,1,JPROC) = TPSTATION%XLON_CUR
 
   JPROC = JPROC + 1
   CTITLE   (JPROC) = 'LAT'
   CUNIT    (JPROC) = 'degree'
   CCOMMENT (JPROC) = 'Latitude'
-  XWORK6 (1,1,1,:,1,JPROC) = TPSTATION%XLAT_CUR
+  XWORK6 (1,1,1,1,1,JPROC) = TPSTATION%XLAT_CUR
 end if
 
 JPROC = JPROC + 1
 CTITLE   (JPROC) = 'Z'
 CUNIT    (JPROC) = 'm'
 CCOMMENT (JPROC) = 'Altitude'
-XWORK6 (1,1,1,:,1,JPROC) = TPSTATION%XZ_CUR
+XWORK6 (1,1,1,1,1,JPROC) = TPSTATION%XZ_CUR
 
 JPROC = JPROC + 1
 CTITLE   (JPROC) = 'ZS'
 CUNIT    (JPROC) = 'm'
 CCOMMENT (JPROC) = 'Orography'
-XWORK6 (1,1,1,:,1,JPROC) = TPSTATION%XZS
+XWORK6 (1,1,1,1,1,JPROC) = TPSTATION%XZS
 
 JPROC = JPROC + 1
 CTITLE   (JPROC) = 'Zmeas'
 CUNIT    (JPROC) = 'm'
 CCOMMENT (JPROC) = 'interpolated altitude used for measurements'
-XWORK6 (1,1,1,:,1,JPROC) = TPSTATION%XZMEAS
+XWORK6 (1,1,1,1,1,JPROC) = TPSTATION%XZMEAS
 
 JPROC = JPROC + 1
 CTITLE   (JPROC) = 'K'
 CUNIT    (JPROC) = '1'
 CCOMMENT (JPROC) = 'vertical model level used for computations'
-XWORK6 (1,1,1,:,1,JPROC) = REAL( TPSTATION%NK )
+XWORK6 (1,1,1,1,1,JPROC) = REAL( TPSTATION%NK )
 
 Allocate( tzfields( jproc ) )
 

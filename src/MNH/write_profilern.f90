@@ -394,16 +394,13 @@ type(tfieldmetadata_base), dimension(:), allocatable :: tzfields
 !----------------------------------------------------------------------------
 
 IKU = NKMAX + 2 * JPVEXT !Number of vertical levels
-!
-!IPROC is too large (not a big problem) due to the separation between vertical profiles and point values
-IPROC = 25 + NRR + NSV
-IF (LDIAG_SURFRAD_PROF) THEN
-  IPROC = IPROC + 10
-  IF(CRAD/="NONE")  IPROC = IPROC + 8
-  IPROC = IPROC + 1 ! XSFCO2 term
-END IF
-IF (LORILAM) IPROC = IPROC + JPMODE*3
-IF (LDUST) IPROC = IPROC + NMODE_DST*3
+
+IPROC = 13 + NRR + NSV
+if ( ccloud == 'C2R2' .or. ccloud == 'KHKO' )  IPROC = IPROC + 1
+if ( ccloud /= 'NONE' .and. ccloud /= 'REVE' ) IPROC = IPROC + 1
+if ( ccloud == 'ICE3' .or. ccloud == 'ICE4' )  IPROC = IPROC + 1
+IF (LORILAM) IPROC = IPROC + JPMODE * 3
+IF (LDUST) IPROC = IPROC + NMODE_DST * 3
 IF (LDUST .OR. LORILAM .OR. LSALT) IPROC=IPROC+NAER
 IF ( CTURB == 'TKEL' ) IPROC = IPROC + 1
 
@@ -665,11 +662,22 @@ call Write_diachro( tpdiafile, tzbudiachro, tzfields, tprofilers_time%tpdates, x
 
 Deallocate( tzfields )
 Deallocate( xwork6 )
+Deallocate( ccomment, ctitle, cunit )
 
 !----------------------------------------------------------------------------
 !Treat point values
 
+IPROC = 4
+IF (LDIAG_SURFRAD_PROF) THEN
+  IPROC = IPROC + 10
+  IF(CRAD/="NONE")  IPROC = IPROC + 8
+  IPROC = IPROC + 1 ! XSFCO2 term
+END IF
+
 ALLOCATE ( XWORK6(1, 1, 1, ISTORE, 1, IPROC) )
+ALLOCATE ( CCOMMENT(IPROC) )
+ALLOCATE ( CTITLE  (IPROC) )
+ALLOCATE ( CUNIT   (IPROC) )
 
 jproc = 0
 
@@ -769,10 +777,18 @@ tzbudiachro%nkh        = 1
 call Write_diachro( tpdiafile, tzbudiachro, tzfields, tprofilers_time%tpdates, xwork6(:,:,:,:,:,:jproc) )
 
 Deallocate( tzfields )
-
+Deallocate( xwork6 )
+Deallocate( ccomment, ctitle, cunit )
 
 !----------------------------------------------------------------------------
 !Treat position
+
+IPROC = 3
+
+ALLOCATE ( XWORK6(1, 1, 1, 1, 1, IPROC) )
+ALLOCATE ( CCOMMENT(IPROC) )
+ALLOCATE ( CTITLE  (IPROC) )
+ALLOCATE ( CUNIT   (IPROC) )
 
 jproc = 0
 
@@ -781,32 +797,32 @@ if ( lcartesian ) then
   CTITLE   (JPROC) = 'X'
   CUNIT    (JPROC) = 'm'
   CCOMMENT (JPROC) = 'X Pos'
-  XWORK6 (1,1,1,:,1,JPROC) = TPPROFILER%XX_CUR
+  XWORK6 (1,1,1,1,1,JPROC) = TPPROFILER%XX_CUR
 
   JPROC = JPROC + 1
   CTITLE   (JPROC) = 'Y'
   CUNIT    (JPROC) = 'm'
   CCOMMENT (JPROC) = 'Y Pos'
-  XWORK6 (1,1,1,:,1,JPROC) = TPPROFILER%XY_CUR
+  XWORK6 (1,1,1,1,1,JPROC) = TPPROFILER%XY_CUR
 else
   JPROC = JPROC + 1
   CTITLE   (JPROC) = 'LON'
   CUNIT    (JPROC) = 'degree'
   CCOMMENT (JPROC) = 'Longitude'
-  XWORK6 (1,1,1,:,1,JPROC) = TPPROFILER%XLON_CUR
+  XWORK6 (1,1,1,1,1,JPROC) = TPPROFILER%XLON_CUR
 
   JPROC = JPROC + 1
   CTITLE   (JPROC) = 'LAT'
   CUNIT    (JPROC) = 'degree'
   CCOMMENT (JPROC) = 'Latitude'
-  XWORK6 (1,1,1,:,1,JPROC) = TPPROFILER%XLAT_CUR
+  XWORK6 (1,1,1,1,1,JPROC) = TPPROFILER%XLAT_CUR
 end if
 
 JPROC = JPROC + 1
 CTITLE   (JPROC) = 'Z'
 CUNIT    (JPROC) = 'm'
 CCOMMENT (JPROC) = 'altitude'
-XWORK6 (1,1,1,:,1,JPROC) = TPPROFILER%XZ_CUR
+XWORK6 (1,1,1,1,1,JPROC) = TPPROFILER%XZ_CUR
 
 Allocate( tzfields( jproc ) )
 
