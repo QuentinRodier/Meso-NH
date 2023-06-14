@@ -69,7 +69,6 @@ TYPE, EXTENDS(TSENSOR), ABSTRACT :: TFLYERDATA
                                      ! 'MOB' : change od model depends of the
                                      !         balloon/aircraft location
   INTEGER          :: NMODEL = 0 ! model number for each balloon/aircraft (may change if CMODEL='MOB')
-  INTEGER          :: NID    = 0 ! Identification number
   CHARACTER(LEN=6) :: CTYPE = ''  ! flyer type:
                                   ! 'RADIOS' : radiosounding balloon
                                   ! 'ISODEN' : iso-density balloon

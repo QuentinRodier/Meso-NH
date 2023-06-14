@@ -29,6 +29,8 @@ MODULE MODD_SENSOR
 
   TYPE, ABSTRACT :: TSENSOR
       CHARACTER(LEN=NSENSORNAMELGTMAX) :: CNAME = '' ! Title or name of the sensor
+      INTEGER :: NID = 0 ! Identification number of the sensor (from 1 to total number,
+                         ! separate numbering for separate sensor types)
 
       LOGICAL :: LFIX ! true if sensor is fix (can not move)
 

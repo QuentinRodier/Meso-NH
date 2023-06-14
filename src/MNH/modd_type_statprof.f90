@@ -50,7 +50,6 @@ TYPE, EXTENDS(TSENSOR), ABSTRACT :: TSTATPROFDATA
   ! Type to store data common to stations and profilers
   ! It is used as a basis for the TSTATIONDATA and TPROFILERDATA
   ! and for common procedures for these 2 types
-  INTEGER :: NID = 0 ! Global identification number of the station/profiler (from 1 to total number)
 
   ! Dimension corresponds to recording instants
   REAL, DIMENSION(:),   ALLOCATABLE :: XT2M    ! 2 m air temperature (C)
