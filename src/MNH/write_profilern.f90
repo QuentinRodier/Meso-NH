@@ -143,6 +143,7 @@ IF ( ISNPROC > 1 ) THEN
   IF ( CCLOUD == 'C2R2' .OR. CCLOUD == 'KHKO' )  IPACKSIZE = IPACKSIZE + ISTORE * IKU !VISIGUL
   IF ( CCLOUD /= 'NONE' .AND. CCLOUD /= 'REVE' ) IPACKSIZE = IPACKSIZE + ISTORE * IKU !VISIKUN
   IF ( CTURB == 'TKEL') IPACKSIZE = IPACKSIZE + ISTORE * IKU !Tke term
+  IF ( CRAD /= 'NONE' ) IPACKSIZE = IPACKSIZE + ISTORE !XTSRAD term
   IF ( CCLOUD == 'ICE3' .OR. CCLOUD == 'ICE4' ) IPACKSIZE = IPACKSIZE + ISTORE * IKU  !CIZ term
   IPACKSIZE = IPACKSIZE + 4 * ISTORE
   IF ( LDIAG_SURFRAD_PROF ) THEN
@@ -185,6 +186,9 @@ PROFILER: DO JS = 1, INUMPROF
       ZPACK(IPOS:IPOS+ISTORE*IKU-1) = RESHAPE( TPROFILERS(IDX)%XZZ(:,:),  [ISTORE*IKU] ) ; IPOS = IPOS + ISTORE * IKU
       IF ( CTURB == 'TKEL') THEN
         ZPACK(IPOS:IPOS+ISTORE*IKU-1) = RESHAPE( TPROFILERS(IDX)%XTKE(:,:), [ISTORE*IKU] ) ; IPOS = IPOS + ISTORE * IKU
+      END IF
+      IF ( CRAD /= 'NONE' ) THEN
+        ZPACK(IPOS:IPOS+ISTORE-1) = TPROFILERS(IDX)%XTSRAD(:); IPOS = IPOS + ISTORE
       END IF
       ZPACK(IPOS:IPOS+ISTORE*IKU-1) = RESHAPE( TPROFILERS(IDX)%XTH(:,:),        [ISTORE*IKU] ) ; IPOS = IPOS + ISTORE * IKU
       ZPACK(IPOS:IPOS+ISTORE*IKU-1) = RESHAPE( TPROFILERS(IDX)%XTHV(:,:),       [ISTORE*IKU] ) ; IPOS = IPOS + ISTORE * IKU
@@ -273,6 +277,9 @@ PROFILER: DO JS = 1, INUMPROF
       TZPROFILER%XZZ(:,:)  = RESHAPE( ZPACK(IPOS:IPOS+ISTORE*IKU-1), [ IKU, ISTORE ] ) ; IPOS = IPOS + ISTORE * IKU
       IF ( CTURB == 'TKEL') THEN
          TZPROFILER%XTKE(:,:) = RESHAPE( ZPACK(IPOS:IPOS+ISTORE*IKU-1), [ IKU, ISTORE ] ) ; IPOS = IPOS + ISTORE * IKU
+      END IF
+      IF ( CRAD /= 'NONE' ) THEN
+        TZPROFILER%XTSRAD(:) = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
       END IF
       TZPROFILER%XTH(:,:)        = RESHAPE( ZPACK(IPOS:IPOS+ISTORE*IKU-1), [ IKU, ISTORE ] ) ; IPOS = IPOS + ISTORE * IKU
       TZPROFILER%XTHV(:,:)       = RESHAPE( ZPACK(IPOS:IPOS+ISTORE*IKU-1), [ IKU, ISTORE ] ) ; IPOS = IPOS + ISTORE * IKU
@@ -673,6 +680,7 @@ IF (LDIAG_SURFRAD_PROF) THEN
   IF(CRAD/="NONE")  IPROC = IPROC + 8
   IPROC = IPROC + 1 ! XSFCO2 term
 END IF
+IF( CRAD /= 'NONE' )  IPROC = IPROC + 1 !Tsrad term
 
 ALLOCATE ( XWORK6(1, 1, 1, ISTORE, 1, IPROC) )
 ALLOCATE ( CCOMMENT(IPROC) )
@@ -710,6 +718,8 @@ call Add_point( 'ZWD', 'Zenith Wet Delay',          'm',      tpprofiler%xzwd )
 call Add_point( 'ZHD', 'Zenith Hydrostatic Delay',  'm',      tpprofiler%xzhd )
 
 if ( ldiag_surfrad_prof ) call Add_point( 'SFCO2', 'CO2 Surface Flux', 'mg m-2 s-1', tpprofiler%xsfco2(:) )
+
+if ( crad /= 'NONE' ) call Add_point( 'Tsrad', 'Radiative Surface Temperature', 'K', tpprofiler%xtsrad(:) )
 
 Allocate( tzfields( jproc ) )
 
