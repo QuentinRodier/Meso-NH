@@ -88,7 +88,7 @@ MODULE MODD_SENSOR
       REAL, DIMENSION(:,:),   ALLOCATABLE :: XTH     ! th(n)
       REAL, DIMENSION(:,:,:), ALLOCATABLE :: XR      ! r*(n)
       REAL, DIMENSION(:,:,:), ALLOCATABLE :: XSV     ! Sv*(n)
-      REAL, DIMENSION(:,:),   ALLOCATABLE :: XTSRAD  ! Ts(n)
+      REAL, DIMENSION(:),     ALLOCATABLE :: XTSRAD  ! surface temperature Ts(n)
 
       REAL, DIMENSION(:,:),   ALLOCATABLE :: XIWCZ      ! ice water content
       REAL, DIMENSION(:,:),   ALLOCATABLE :: XLWCZ      ! liquid water content

@@ -172,7 +172,7 @@ STATION: DO JS = 1, INUMSTAT
       ZPACK(IPOS:IPOS+ISTORE*NRR-1) = RESHAPE( TSTATIONS(IDX)%XR(1,:,:),  [ISTORE*NRR] ); IPOS = IPOS + ISTORE * NRR
       ZPACK(IPOS:IPOS+ISTORE*NSV-1) = RESHAPE( TSTATIONS(IDX)%XSV(1,:,:), [ISTORE*NSV] ); IPOS = IPOS + ISTORE * NSV
       IF ( CRAD /= 'NONE' ) THEN
-        ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XTSRAD(1,:); IPOS = IPOS + ISTORE
+        ZPACK(IPOS:IPOS+ISTORE-1) = TSTATIONS(IDX)%XTSRAD(:); IPOS = IPOS + ISTORE
       END IF
       IF ( LDIAG_SURFRAD_STAT ) THEN
         IF ( CSURF == 'EXTE') THEN
@@ -236,7 +236,7 @@ STATION: DO JS = 1, INUMSTAT
       TZSTATION%XR(1,:,:)  = RESHAPE( ZPACK(IPOS:IPOS+ISTORE*NRR-1), [ ISTORE, NRR ] ); IPOS = IPOS + ISTORE * NRR
       TZSTATION%XSV(1,:,:) = RESHAPE( ZPACK(IPOS:IPOS+ISTORE*NSV-1), [ ISTORE, NSV ] ); IPOS = IPOS + ISTORE * NSV
       IF ( CRAD /= 'NONE' ) THEN
-        TZSTATION%XTSRAD(1,:) = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
+        TZSTATION%XTSRAD(:) = ZPACK(IPOS:IPOS+ISTORE-1); IPOS = IPOS + ISTORE
       END IF
       IF ( LDIAG_SURFRAD_STAT ) THEN
         IF ( CSURF == 'EXTE' ) THEN
@@ -617,7 +617,7 @@ if ( nsv > 0 ) then
   END IF
 end if
 
-if ( crad /= 'NONE' ) call Add_point( 'Tsrad', 'Radiative Surface Temperature', 'K', tpstation%xtsrad(1,:) )
+if ( crad /= 'NONE' ) call Add_point( 'Tsrad', 'Radiative Surface Temperature', 'K', tpstation%xtsrad(:) )
 
 if ( ldiag_surfrad_stat ) call Add_point( 'SFCO2', 'CO2 Surface Flux', 'mg m-2 s-1', tpstation%xsfco2(:) )
 !

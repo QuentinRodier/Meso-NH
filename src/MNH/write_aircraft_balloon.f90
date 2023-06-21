@@ -518,7 +518,7 @@ IF (SIZE(TPFLYER%XTSRAD)>0) THEN
   CTITLE   (JPROC) = 'Tsrad'
   CUNIT    (JPROC) = 'K'
   CCOMMENT (JPROC) = 'Radiative Surface Temperature'
-  XWORK6 (1,1,1,:,1,JPROC) = TPFLYER%XTSRAD(1,:)
+  XWORK6 (1,1,1,:,1,JPROC) = TPFLYER%XTSRAD(:)
 END IF
 !
 allocate( tzfields( jproc ) )
