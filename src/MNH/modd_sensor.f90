@@ -10,6 +10,7 @@
 MODULE MODD_SENSOR
   USE MODD_PARAMETERS, ONLY: NSENSORNAMELGTMAX, NNEGUNDEF, XNEGUNDEF, XUNDEF
   USE MODD_TYPE_DATE,  ONLY: DATE_TIME
+  USE MODD_SURF_PAR,   ONLY: XUNDEF_SFX => XUNDEF
 
   IMPLICIT NONE
 
@@ -99,6 +100,10 @@ MODULE MODD_SENSOR
     CONTAINS
       PROCEDURE(TSENSOR_ALLOCATION),   DEFERRED :: DATA_ARRAYS_ALLOCATE
       PROCEDURE(TSENSOR_DEALLOCATION), DEFERRED :: DATA_ARRAYS_DEALLOCATE
+      ! Remark: data_arrays_(de)allocate_sensor do not point to data_arrays_(de)allocate to allow other dummy arguments
+      PROCEDURE                                 :: DATA_ARRAYS_ALLOCATE_SENSOR
+      PROCEDURE                                 :: DATA_ARRAYS_DEALLOCATE_SENSOR
+
       PROCEDURE                                 :: COMPUTE_VERTICAL_INTERP_COEFF
       PROCEDURE                                 :: INTERP_FROM_MASSPOINT
       PROCEDURE                                 :: INTERP_FROM_UPOINT
@@ -131,6 +136,103 @@ MODULE MODD_SENSOR
 
 
   CONTAINS
+    ! ############################################################################
+    SUBROUTINE DATA_ARRAYS_ALLOCATE_SENSOR( TPSENSOR, OVERTPROF, KLEVELS, KSTORE )
+    ! ############################################################################
+
+      USE MODD_CONF_N,           ONLY: NRR
+      USE MODD_DIM_N,            ONLY: NKMAX
+      USE MODD_NSV,              ONLY: NSV
+      USE MODD_PARAMETERS,       ONLY: JPVEXT
+      USE MODD_PARAM_N,          ONLY: CRAD, CTURB
+
+      USE MODE_MSG
+
+      CLASS(TSENSOR), INTENT(INOUT) :: TPSENSOR
+      LOGICAL,        INTENT(IN)    :: OVERTPROF ! vertical profile or not
+      INTEGER,        INTENT(IN)    :: KLEVELS   ! number of vertical levels
+      INTEGER,        INTENT(IN)    :: KSTORE    ! number of storage instants
+
+      INTEGER :: IKU ! number of vertical levels for profile
+
+      CALL PRINT_MSG( NVERB_DEBUG, 'GEN', 'Data_arrays_allocate_sensor', 'sensor: ' // TRIM(TPSENSOR%CNAME), OLOCAL = .TRUE. )
+
+      IKU = NKMAX + 2 * JPVEXT
+
+      ALLOCATE( TPSENSOR%XZON (KLEVELS, KSTORE) )
+      ALLOCATE( TPSENSOR%XMER (KLEVELS, KSTORE) )
+      ALLOCATE( TPSENSOR%XW   (KLEVELS, KSTORE) )
+      ALLOCATE( TPSENSOR%XP   (KLEVELS, KSTORE) )
+      IF ( CTURB == 'TKEL' ) THEN
+        ALLOCATE( TPSENSOR%XTKE(KLEVELS, KSTORE) )
+      ELSE
+        ALLOCATE( TPSENSOR%XTKE(0, 0) )
+      END IF
+      ALLOCATE( TPSENSOR%XTH  (KLEVELS, KSTORE) )
+      ALLOCATE( TPSENSOR%XR   (KLEVELS, KSTORE, NRR) )
+      ALLOCATE( TPSENSOR%XSV  (KLEVELS, KSTORE, NSV) )
+      IF ( CRAD /= 'NONE' ) THEN
+        ALLOCATE( TPSENSOR%XTSRAD(KSTORE) )
+      ELSE
+        ALLOCATE( TPSENSOR%XTSRAD(0) )
+      END IF
+
+      IF ( OVERTPROF ) THEN
+        ALLOCATE( TPSENSOR%XIWCZ     (IKU, KSTORE) )
+        ALLOCATE( TPSENSOR%XLWCZ     (IKU, KSTORE) )
+        ALLOCATE( TPSENSOR%XCRARE    (IKU, KSTORE) )
+        ALLOCATE( TPSENSOR%XCRARE_ATT(IKU, KSTORE) )
+      ELSE
+        ALLOCATE( TPSENSOR%XIWCZ     (0, 0) )
+        ALLOCATE( TPSENSOR%XLWCZ     (0, 0) )
+        ALLOCATE( TPSENSOR%XCRARE    (0, 0) )
+        ALLOCATE( TPSENSOR%XCRARE_ATT(0, 0) )
+      END IF
+
+      TPSENSOR%XZON      (:,:)   = XUNDEF
+      TPSENSOR%XMER      (:,:)   = XUNDEF
+      TPSENSOR%XW        (:,:)   = XUNDEF
+      TPSENSOR%XP        (:,:)   = XUNDEF
+      TPSENSOR%XTKE      (:,:)   = XUNDEF
+      TPSENSOR%XTH       (:,:)   = XUNDEF
+      TPSENSOR%XR        (:,:,:) = XUNDEF
+      TPSENSOR%XSV       (:,:,:) = XUNDEF
+      TPSENSOR%XTSRAD    (:)     = XUNDEF_SFX
+      TPSENSOR%XIWCZ     (:,:)   = XUNDEF
+      TPSENSOR%XLWCZ     (:,:)   = XUNDEF
+      TPSENSOR%XCRARE    (:,:)   = XUNDEF
+      TPSENSOR%XCRARE_ATT(:,:)   = XUNDEF
+
+    END SUBROUTINE DATA_ARRAYS_ALLOCATE_SENSOR
+
+
+    ! ##################################################
+    SUBROUTINE DATA_ARRAYS_DEALLOCATE_SENSOR( TPSENSOR )
+    ! ##################################################
+
+      USE MODE_MSG
+
+      CLASS(TSENSOR), INTENT(INOUT) :: TPSENSOR
+
+      CALL PRINT_MSG( NVERB_DEBUG, 'GEN', 'Data_arrays_deallocate_sensor', 'sensor: ' // TRIM(TPSENSOR%CNAME), OLOCAL = .TRUE. )
+
+      DEALLOCATE( TPSENSOR%XZON       )
+      DEALLOCATE( TPSENSOR%XMER       )
+      DEALLOCATE( TPSENSOR%XW         )
+      DEALLOCATE( TPSENSOR%XP         )
+      DEALLOCATE( TPSENSOR%XTKE       )
+      DEALLOCATE( TPSENSOR%XTH        )
+      DEALLOCATE( TPSENSOR%XR         )
+      DEALLOCATE( TPSENSOR%XSV        )
+      DEALLOCATE( TPSENSOR%XTSRAD     )
+      DEALLOCATE( TPSENSOR%XIWCZ      )
+      DEALLOCATE( TPSENSOR%XLWCZ      )
+      DEALLOCATE( TPSENSOR%XCRARE     )
+      DEALLOCATE( TPSENSOR%XCRARE_ATT )
+
+    END SUBROUTINE DATA_ARRAYS_DEALLOCATE_SENSOR
+
+
     ! ###########################################################################
     FUNCTION STORESTEP_CHECK_AND_SET( TPSENSOR_TIME, KSTORE_ID ) RESULT( OSTORE )
     ! ###########################################################################
