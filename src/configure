@@ -248,6 +248,30 @@ export ARMCI_SHR_BUF_METHOD=COPY
 ;;
 		esac
               ;;
+'Linux topaze'*) # Topaze TGCC
+                export MNH_ARCH=`echo $ARCH | grep LX`
+                export     ARCH=${MNH_ARCH:-LXifort}
+                export  VER_MPI=${VER_MPI:-MPIAUTO}
+                export OPTLEVEL=${OPTLEVEL:-O2}
+                export MVWORK=${MVWORK:-NO}
+		export VER_CDF=${VER_CDF:-CDFAUTO}
+                export MNHENV=${MNHENV:-"
+module purge
+module load cmake/3.20.3
+module load inteloneapi/21.4.0 
+module load mpi/openmpi/4.1.4
+
+export SLURM_CPU_BIND=none
+# Set some openmpi variable for pb with nb of cores >> 1024
+export OMPI_MCA_coll_hcoll_enable=0
+export HCOLL_ENABLE_MCAST_ALL=0
+export OMPI_MCA_coll_tuned_barrier_algorithm=2 
+# For GA version set GA/ARMCI variables
+export ARMCI_VERBOSE=1
+export ARMCI_STRIDED_METHOD=IOV ARMCI_IOV_METHOD=BATCHED
+export ARMCI_SHR_BUF_METHOD=COPY
+"}
+;;
 'Linux belenos'*|'Linux taranis'*)
                 export     ARCH=${ARCH:-LXifort}
                 export  VER_MPI=${VER_MPI:-MPIAUTO}
@@ -481,13 +505,17 @@ export I_MPI_PIN_PROCESSOR_LIST=all:map=spread
 "}
               ;;
 'Linux irlin'*|'Linux islin'*|'Linux ener'*) # PC IFPEN
-                export     ARCH=${ARCH:-LXgfortran}
+                export     ARCH=${ARCH:-LXifort}
                 export  VER_MPI=${VER_MPI:-MPIAUTO}
                 export OPTLEVEL=${OPTLEVEL:-O2}
                 export VER_CDF=${VER_CDF:-CDFAUTO}
                 export   MNHENV=${MNHENV:-"
 module purge
-source /soft/irsrvsoft1/expl/eb/r17/$(echo el_`lsb_release -r | awk -F ":" ' {print $2}' | awk -F "." '{print $1}' | tr -d '\t'`-`uname -i`)/envs/mesonh.sh
+module load GCC/9.3.0
+module load OpenMPI/4.0.3
+module load inter-compilers/2021.2.0
+module load GCCcore/10.3.0
+module load CMake/3.20.1
 "}
               ;;
 
