@@ -19,6 +19,8 @@ MODULE MODD_SENSOR
   PUBLIC :: TSENSOR
   PUBLIC :: TSENSORTIME
 
+  INTEGER, PARAMETER :: NTAG_NCUR = 145
+  INTEGER, PARAMETER :: NTAG_PACK = 245
   TYPE :: TSENSORTIME
       INTEGER                                    :: N_CUR   = 0       ! current step of storage
       REAL                                       :: XTSTEP  = 60.     ! storage time step (default reset later)
@@ -32,6 +34,10 @@ MODULE MODD_SENSOR
       CHARACTER(LEN=NSENSORNAMELGTMAX) :: CNAME = '' ! Title or name of the sensor
       INTEGER :: NID = 0 ! Identification number of the sensor (from 1 to total number,
                          ! separate numbering for separate sensor types)
+      INTEGER :: NSTORE_MAX = 0 ! Maximum number of store instants
+
+      INTEGER :: NBUFFER_FIXSIZE = 42 + NSENSORNAMELGTMAX ! Memory size required for exchange buffer (fixed part)
+      INTEGER :: NBUFFER_VARSIZE = 0 ! Memory size required for exchange buffer (part per store instant)
 
       LOGICAL :: LFIX ! true if sensor is fix (can not move)
 
@@ -101,8 +107,8 @@ MODULE MODD_SENSOR
       PROCEDURE(TSENSOR_ALLOCATION),   DEFERRED :: DATA_ARRAYS_ALLOCATE
       PROCEDURE(TSENSOR_DEALLOCATION), DEFERRED :: DATA_ARRAYS_DEALLOCATE
       ! Remark: data_arrays_(de)allocate_sensor do not point to data_arrays_(de)allocate to allow other dummy arguments
-      PROCEDURE                                 :: DATA_ARRAYS_ALLOCATE_SENSOR
-      PROCEDURE                                 :: DATA_ARRAYS_DEALLOCATE_SENSOR
+      PROCEDURE, NON_OVERRIDABLE                :: DATA_ARRAYS_ALLOCATE_SENSOR
+      PROCEDURE, NON_OVERRIDABLE                :: DATA_ARRAYS_DEALLOCATE_SENSOR
 
       PROCEDURE                                 :: COMPUTE_VERTICAL_INTERP_COEFF
       PROCEDURE                                 :: INTERP_FROM_MASSPOINT
@@ -114,6 +120,17 @@ MODULE MODD_SENSOR
       PROCEDURE                                 :: INTERP_HOR_FROM_MASSPOINT_1D
       PROCEDURE                                 :: INTERP_HOR_FROM_UPOINT_1D
       PROCEDURE                                 :: INTERP_HOR_FROM_VPOINT_1D
+
+      PROCEDURE, NON_OVERRIDABLE               :: BUFFER_SIZE_COMPUTE
+      ! 2 procedures pointing to the same one: necessary to allow overload for extended types (limitation of Fortran standard)
+      PROCEDURE, NON_OVERRIDABLE               :: BUFFER_PACK_SENSOR
+      PROCEDURE                                :: BUFFER_PACK => BUFFER_PACK_SENSOR
+      PROCEDURE, NON_OVERRIDABLE               :: BUFFER_UNPACK_SENSOR
+      PROCEDURE                                :: BUFFER_UNPACK => BUFFER_UNPACK_SENSOR
+      PROCEDURE, NON_OVERRIDABLE               :: BUFFER_SIZE_SEND
+      PROCEDURE, NON_OVERRIDABLE               :: BUFFER_SIZE_RECV
+      PROCEDURE, NON_OVERRIDABLE               :: BUFFER_SEND
+      PROCEDURE, NON_OVERRIDABLE               :: BUFFER_RECV
 
       GENERIC :: INTERP_HOR_FROM_MASSPOINT => INTERP_HOR_FROM_MASSPOINT_0D, INTERP_HOR_FROM_MASSPOINT_1D
       GENERIC :: INTERP_HOR_FROM_UPOINT    => INTERP_HOR_FROM_UPOINT_0D,    INTERP_HOR_FROM_UPOINT_1D
@@ -154,34 +171,38 @@ MODULE MODD_SENSOR
       INTEGER,        INTENT(IN)    :: KSTORE    ! number of storage instants
 
       INTEGER :: IKU ! number of vertical levels for profile
+      INTEGER :: IVARSIZE ! total allocated size per store
 
       CALL PRINT_MSG( NVERB_DEBUG, 'GEN', 'Data_arrays_allocate_sensor', 'sensor: ' // TRIM(TPSENSOR%CNAME), OLOCAL = .TRUE. )
 
       IKU = NKMAX + 2 * JPVEXT
+      IVARSIZE = 0
 
-      ALLOCATE( TPSENSOR%XZON (KLEVELS, KSTORE) )
-      ALLOCATE( TPSENSOR%XMER (KLEVELS, KSTORE) )
-      ALLOCATE( TPSENSOR%XW   (KLEVELS, KSTORE) )
-      ALLOCATE( TPSENSOR%XP   (KLEVELS, KSTORE) )
+      TPSENSOR%NSTORE_MAX = KSTORE
+
+      ALLOCATE( TPSENSOR%XZON (KLEVELS, KSTORE) ) ; IVARSIZE = IVARSIZE + KLEVELS
+      ALLOCATE( TPSENSOR%XMER (KLEVELS, KSTORE) ) ; IVARSIZE = IVARSIZE + KLEVELS
+      ALLOCATE( TPSENSOR%XW   (KLEVELS, KSTORE) ) ; IVARSIZE = IVARSIZE + KLEVELS
+      ALLOCATE( TPSENSOR%XP   (KLEVELS, KSTORE) ) ; IVARSIZE = IVARSIZE + KLEVELS
       IF ( CTURB == 'TKEL' ) THEN
-        ALLOCATE( TPSENSOR%XTKE(KLEVELS, KSTORE) )
+        ALLOCATE( TPSENSOR%XTKE(KLEVELS, KSTORE) ) ; IVARSIZE = IVARSIZE + KLEVELS
       ELSE
         ALLOCATE( TPSENSOR%XTKE(0, 0) )
       END IF
-      ALLOCATE( TPSENSOR%XTH  (KLEVELS, KSTORE) )
-      ALLOCATE( TPSENSOR%XR   (KLEVELS, KSTORE, NRR) )
-      ALLOCATE( TPSENSOR%XSV  (KLEVELS, KSTORE, NSV) )
+      ALLOCATE( TPSENSOR%XTH  (KLEVELS, KSTORE) )      ; IVARSIZE = IVARSIZE + KLEVELS
+      ALLOCATE( TPSENSOR%XR   (KLEVELS, KSTORE, NRR) ) ; IVARSIZE = IVARSIZE + KLEVELS * NRR
+      ALLOCATE( TPSENSOR%XSV  (KLEVELS, KSTORE, NSV) ) ; IVARSIZE = IVARSIZE + KLEVELS * NSV
       IF ( CRAD /= 'NONE' ) THEN
-        ALLOCATE( TPSENSOR%XTSRAD(KSTORE) )
+        ALLOCATE( TPSENSOR%XTSRAD(KSTORE) ) ; IVARSIZE = IVARSIZE + 1
       ELSE
         ALLOCATE( TPSENSOR%XTSRAD(0) )
       END IF
 
       IF ( OVERTPROF ) THEN
-        ALLOCATE( TPSENSOR%XIWCZ     (IKU, KSTORE) )
-        ALLOCATE( TPSENSOR%XLWCZ     (IKU, KSTORE) )
-        ALLOCATE( TPSENSOR%XCRARE    (IKU, KSTORE) )
-        ALLOCATE( TPSENSOR%XCRARE_ATT(IKU, KSTORE) )
+        ALLOCATE( TPSENSOR%XIWCZ     (IKU, KSTORE) ) ; IVARSIZE = IVARSIZE + IKU
+        ALLOCATE( TPSENSOR%XLWCZ     (IKU, KSTORE) ) ; IVARSIZE = IVARSIZE + IKU
+        ALLOCATE( TPSENSOR%XCRARE    (IKU, KSTORE) ) ; IVARSIZE = IVARSIZE + IKU
+        ALLOCATE( TPSENSOR%XCRARE_ATT(IKU, KSTORE) ) ; IVARSIZE = IVARSIZE + IKU
       ELSE
         ALLOCATE( TPSENSOR%XIWCZ     (0, 0) )
         ALLOCATE( TPSENSOR%XLWCZ     (0, 0) )
@@ -189,6 +210,7 @@ MODULE MODD_SENSOR
         ALLOCATE( TPSENSOR%XCRARE_ATT(0, 0) )
       END IF
 
+      TPSENSOR%NBUFFER_VARSIZE = TPSENSOR%NBUFFER_VARSIZE + IVARSIZE
       TPSENSOR%XZON      (:,:)   = XUNDEF
       TPSENSOR%XMER      (:,:)   = XUNDEF
       TPSENSOR%XW        (:,:)   = XUNDEF
@@ -784,5 +806,362 @@ MODULE MODD_SENSOR
       END IF
 
     END FUNCTION INTERP_HOR_FROM_VPOINT_1D
+
+    ! ######################################################################
+    FUNCTION BUFFER_SIZE_COMPUTE( TPSENSOR, KSTORE_CURRENT ) RESULT( KSIZE )
+    ! ######################################################################
+
+      USE MODE_MSG
+
+      CLASS(TSENSOR),           INTENT(IN) :: TPSENSOR
+      INTEGER,        OPTIONAL, INTENT(IN) :: KSTORE_CURRENT ! Current number of stored instants
+      INTEGER                              :: KSIZE
+
+      INTEGER :: ISTORES
+
+      IF ( PRESENT( KSTORE_CURRENT ) ) THEN
+        ISTORES = KSTORE_CURRENT
+        IF ( ISTORES > TPSENSOR%NSTORE_MAX ) THEN
+          CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'Buffer_size_compute', 'sensor: ' // TRIM(TPSENSOR%CNAME) &
+                           // ': kstore_current>nstore_max', OLOCAL = .TRUE. )
+          ISTORES = TPSENSOR%NSTORE_MAX
+        END IF
+      ELSE
+        ISTORES = TPSENSOR%NSTORE_MAX
+      END IF
+
+      KSIZE = TPSENSOR%NBUFFER_FIXSIZE + ISTORES * TPSENSOR%NBUFFER_VARSIZE
+
+    END FUNCTION BUFFER_SIZE_COMPUTE
+
+
+    ! ######################################################################
+    SUBROUTINE BUFFER_PACK_SENSOR( TPSENSOR, PBUFFER, KPOS, KSTORE_CURRENT )
+    ! ######################################################################
+
+      USE MODD_CONF_N,     ONLY: NRR
+      USE MODD_DIM_N,      ONLY: NKMAX
+      USE MODD_NSV,        ONLY: NSV
+      USE MODD_PARAMETERS, ONLY: JPVEXT
+      USE MODD_PARAM_N,    ONLY: CRAD, CTURB
+
+      USE MODE_MSG
+
+      CLASS(TSENSOR),               INTENT(IN)    :: TPSENSOR
+      REAL, DIMENSION(:),           INTENT(INOUT) :: PBUFFER        ! Buffer to pack
+      INTEGER,                      INTENT(INOUT) :: KPOS           ! Position in the buffer
+      INTEGER,            OPTIONAL, INTENT(IN)    :: KSTORE_CURRENT ! Current number of stored instants
+
+      INTEGER :: IKU     ! number of vertical levels for profile
+      INTEGER :: ILEVELS
+      INTEGER :: ISTORES
+      INTEGER :: ILVST   ! =ilevels*istores
+      INTEGER :: JI
+
+      IKU = NKMAX + 2 * JPVEXT
+      ILEVELS = SIZE( TPSENSOR%XZON, 1 )
+
+      IF ( PRESENT( KSTORE_CURRENT ) ) THEN
+        ISTORES = KSTORE_CURRENT
+        IF ( ISTORES > TPSENSOR%NSTORE_MAX ) THEN
+          CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'Buffer_pack_sensor', 'sensor: ' // TRIM(TPSENSOR%CNAME) &
+                          // ': kstore_current>nstore_max', OLOCAL = .TRUE. )
+          ISTORES = TPSENSOR%NSTORE_MAX
+        END IF
+      ELSE
+        ISTORES = TPSENSOR%NSTORE_MAX
+      END IF
+
+      IF ( KPOS /= 1 )                                                                                 &
+        CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'Buffer_pack_sensor', 'sensor: ' // TRIM(TPSENSOR%CNAME) &
+                        // ': initial position of buffer not at its beginning', OLOCAL = .TRUE. )
+
+      ILVST = ILEVELS * ISTORES
+
+      ! Convert title characters to integers
+      DO JI = 1, LEN( TPSENSOR%CNAME )
+        PBUFFER(KPOS) = ICHAR( TPSENSOR%CNAME(JI:JI) )
+        KPOS = KPOS + 1
+      END DO
+
+      PBUFFER(KPOS) = TPSENSOR%NID        ; KPOS = KPOS + 1
+      PBUFFER(KPOS) = TPSENSOR%NSTORE_MAX ; KPOS = KPOS + 1
+
+      PBUFFER(KPOS) = TPSENSOR%NBUFFER_FIXSIZE ; KPOS = KPOS + 1
+      PBUFFER(KPOS) = TPSENSOR%NBUFFER_VARSIZE ; KPOS = KPOS + 1
+
+      IF ( TPSENSOR%LFIX ) THEN
+        PBUFFER(KPOS) = 1.D0
+      ELSE
+        PBUFFER(KPOS) = 0.D0
+      END IF
+      KPOS = KPOS + 1
+
+      PBUFFER(KPOS) = TPSENSOR%XX_CUR   ; KPOS = KPOS + 1
+      PBUFFER(KPOS) = TPSENSOR%XY_CUR   ; KPOS = KPOS + 1
+      PBUFFER(KPOS) = TPSENSOR%XZ_CUR   ; KPOS = KPOS + 1
+      PBUFFER(KPOS) = TPSENSOR%XLAT_CUR ; KPOS = KPOS + 1
+      PBUFFER(KPOS) = TPSENSOR%XLON_CUR ; KPOS = KPOS + 1
+
+      PBUFFER(KPOS) = TPSENSOR%NI_M ; KPOS = KPOS + 1
+      PBUFFER(KPOS) = TPSENSOR%NJ_M ; KPOS = KPOS + 1
+      PBUFFER(KPOS) = TPSENSOR%NI_U ; KPOS = KPOS + 1
+      PBUFFER(KPOS) = TPSENSOR%NJ_V ; KPOS = KPOS + 1
+
+      PBUFFER(KPOS) = TPSENSOR%NK00 ; KPOS = KPOS + 1
+      PBUFFER(KPOS) = TPSENSOR%NK01 ; KPOS = KPOS + 1
+      PBUFFER(KPOS) = TPSENSOR%NK10 ; KPOS = KPOS + 1
+      PBUFFER(KPOS) = TPSENSOR%NK11 ; KPOS = KPOS + 1
+      PBUFFER(KPOS) = TPSENSOR%NU00 ; KPOS = KPOS + 1
+      PBUFFER(KPOS) = TPSENSOR%NU01 ; KPOS = KPOS + 1
+      PBUFFER(KPOS) = TPSENSOR%NU10 ; KPOS = KPOS + 1
+      PBUFFER(KPOS) = TPSENSOR%NU11 ; KPOS = KPOS + 1
+      PBUFFER(KPOS) = TPSENSOR%NV00 ; KPOS = KPOS + 1
+      PBUFFER(KPOS) = TPSENSOR%NV01 ; KPOS = KPOS + 1
+      PBUFFER(KPOS) = TPSENSOR%NV10 ; KPOS = KPOS + 1
+      PBUFFER(KPOS) = TPSENSOR%NV11 ; KPOS = KPOS + 1
+
+      PBUFFER(KPOS) = TPSENSOR%XXMCOEF ; KPOS = KPOS + 1
+      PBUFFER(KPOS) = TPSENSOR%XYMCOEF ; KPOS = KPOS + 1
+      PBUFFER(KPOS) = TPSENSOR%XXUCOEF ; KPOS = KPOS + 1
+      PBUFFER(KPOS) = TPSENSOR%XYVCOEF ; KPOS = KPOS + 1
+
+      PBUFFER(KPOS) = TPSENSOR%XZCOEF00 ; KPOS = KPOS + 1
+      PBUFFER(KPOS) = TPSENSOR%XZCOEF01 ; KPOS = KPOS + 1
+      PBUFFER(KPOS) = TPSENSOR%XZCOEF10 ; KPOS = KPOS + 1
+      PBUFFER(KPOS) = TPSENSOR%XZCOEF11 ; KPOS = KPOS + 1
+      PBUFFER(KPOS) = TPSENSOR%XUCOEF00 ; KPOS = KPOS + 1
+      PBUFFER(KPOS) = TPSENSOR%XUCOEF01 ; KPOS = KPOS + 1
+      PBUFFER(KPOS) = TPSENSOR%XUCOEF10 ; KPOS = KPOS + 1
+      PBUFFER(KPOS) = TPSENSOR%XUCOEF11 ; KPOS = KPOS + 1
+      PBUFFER(KPOS) = TPSENSOR%XVCOEF00 ; KPOS = KPOS + 1
+      PBUFFER(KPOS) = TPSENSOR%XVCOEF01 ; KPOS = KPOS + 1
+      PBUFFER(KPOS) = TPSENSOR%XVCOEF10 ; KPOS = KPOS + 1
+      PBUFFER(KPOS) = TPSENSOR%XVCOEF11 ; KPOS = KPOS + 1
+
+      PBUFFER(KPOS:KPOS+ILVST-1) = RESHAPE( TPSENSOR%XZON(:,1:ISTORES), [ILVST] ) ; KPOS = KPOS + ILVST
+      PBUFFER(KPOS:KPOS+ILVST-1) = RESHAPE( TPSENSOR%XMER(:,1:ISTORES), [ILVST] ) ; KPOS = KPOS + ILVST
+      PBUFFER(KPOS:KPOS+ILVST-1) = RESHAPE( TPSENSOR%XW  (:,1:ISTORES), [ILVST] ) ; KPOS = KPOS + ILVST
+      PBUFFER(KPOS:KPOS+ILVST-1) = RESHAPE( TPSENSOR%XP  (:,1:ISTORES), [ILVST] ) ; KPOS = KPOS + ILVST
+      IF ( CTURB == 'TKEL') THEN
+        PBUFFER(KPOS:KPOS+ILVST-1) = RESHAPE( TPSENSOR%XTKE(:,1:ISTORES), [ILVST] ) ; KPOS = KPOS + ILVST
+      END IF
+      PBUFFER(KPOS:KPOS+ILVST-1)     = RESHAPE( TPSENSOR%XTH(:,1:ISTORES),   [ILVST] )      ; KPOS = KPOS + ILVST
+      PBUFFER(KPOS:KPOS+ILVST*NRR-1) = RESHAPE( TPSENSOR%XR (:,1:ISTORES,:), [ILVST*NRR]  ) ; KPOS = KPOS + ILVST * NRR
+      PBUFFER(KPOS:KPOS+ILVST*NSV-1) = RESHAPE( TPSENSOR%XSV(:,1:ISTORES,:), [ILVST*NSV]  ) ; KPOS = KPOS + ILVST * NSV
+      IF ( CRAD /= 'NONE' ) THEN
+        PBUFFER(KPOS:KPOS+ISTORES-1) = TPSENSOR%XTSRAD(1:ISTORES) ; KPOS = KPOS + ISTORES
+      END IF
+
+      IF ( SIZE( TPSENSOR%XIWCZ ) > 0 ) THEN
+        PBUFFER(KPOS:KPOS+IKU*ISTORES-1) = RESHAPE( TPSENSOR%XIWCZ     (:,1:ISTORES), [IKU*ISTORES] ) ; KPOS = KPOS + IKU * ISTORES
+        PBUFFER(KPOS:KPOS+IKU*ISTORES-1) = RESHAPE( TPSENSOR%XLWCZ     (:,1:ISTORES), [IKU*ISTORES] ) ; KPOS = KPOS + IKU * ISTORES
+        PBUFFER(KPOS:KPOS+IKU*ISTORES-1) = RESHAPE( TPSENSOR%XCRARE    (:,1:ISTORES), [IKU*ISTORES] ) ; KPOS = KPOS + IKU * ISTORES
+        PBUFFER(KPOS:KPOS+IKU*ISTORES-1) = RESHAPE( TPSENSOR%XCRARE_ATT(:,1:ISTORES), [IKU*ISTORES] ) ; KPOS = KPOS + IKU * ISTORES
+      END IF
+
+    END SUBROUTINE BUFFER_PACK_SENSOR
+
+
+    ! ################################################################
+    SUBROUTINE BUFFER_UNPACK_SENSOR( TPSENSOR, PBUFFER, KPOS, KSTORE )
+    ! ################################################################
+
+      USE MODD_CONF_N,     ONLY: NRR
+      USE MODD_DIM_N,      ONLY: NKMAX
+      USE MODD_NSV,        ONLY: NSV
+      USE MODD_PARAMETERS, ONLY: JPVEXT
+      USE MODD_PARAM_N,    ONLY: CRAD, CTURB
+
+      USE MODE_MSG
+
+      CLASS(TSENSOR),     INTENT(INOUT) :: TPSENSOR
+      REAL, DIMENSION(:), INTENT(IN)    :: PBUFFER  ! Buffer to unpack
+      INTEGER,            INTENT(INOUT) :: KPOS     ! Position in the buffer
+      INTEGER,            INTENT(IN)    :: KSTORE   ! Current number of stored instants
+
+      INTEGER :: IKU     ! number of vertical levels for profile
+      INTEGER :: ILEVELS
+      INTEGER :: ILVST   ! =ilevels*kstore_cur
+      INTEGER :: JI
+
+      IKU = NKMAX + 2 * JPVEXT
+      ILEVELS = SIZE( TPSENSOR%XZON, 1 )
+      ILVST = ILEVELS * KSTORE
+
+      ! Convert integers to characters for title
+      DO JI = 1, LEN( TPSENSOR%CNAME )
+        TPSENSOR%CNAME(JI:JI) = ACHAR( NINT( PBUFFER(KPOS) ) )
+        KPOS = KPOS + 1
+      END DO
+
+      TPSENSOR%NID        = NINT( PBUFFER(KPOS) ) ; KPOS = KPOS + 1
+      TPSENSOR%NSTORE_MAX = NINT( PBUFFER(KPOS) ) ; KPOS = KPOS + 1
+
+      TPSENSOR%NBUFFER_FIXSIZE = NINT( PBUFFER(KPOS) ) ; KPOS = KPOS + 1
+      TPSENSOR%NBUFFER_VARSIZE = NINT( PBUFFER(KPOS) ) ; KPOS = KPOS + 1
+
+      IF ( NINT( PBUFFER(KPOS) ) == 0 ) THEN
+        TPSENSOR%LFIX = .FALSE.
+      ELSE
+        TPSENSOR%LFIX = .TRUE.
+      END IF
+      KPOS = KPOS + 1
+
+      TPSENSOR%XX_CUR   = PBUFFER(KPOS) ; KPOS = KPOS + 1
+      TPSENSOR%XY_CUR   = PBUFFER(KPOS) ; KPOS = KPOS + 1
+      TPSENSOR%XZ_CUR   = PBUFFER(KPOS) ; KPOS = KPOS + 1
+      TPSENSOR%XLAT_CUR = PBUFFER(KPOS) ; KPOS = KPOS + 1
+      TPSENSOR%XLON_CUR = PBUFFER(KPOS) ; KPOS = KPOS + 1
+
+      TPSENSOR%NI_M = NINT( PBUFFER(KPOS) ) ; KPOS = KPOS + 1
+      TPSENSOR%NJ_M = NINT( PBUFFER(KPOS) ) ; KPOS = KPOS + 1
+      TPSENSOR%NI_U = NINT( PBUFFER(KPOS) ) ; KPOS = KPOS + 1
+      TPSENSOR%NJ_V = NINT( PBUFFER(KPOS) ) ; KPOS = KPOS + 1
+
+      TPSENSOR%NK00 = NINT( PBUFFER(KPOS) ) ; KPOS = KPOS + 1
+      TPSENSOR%NK01 = NINT( PBUFFER(KPOS) ) ; KPOS = KPOS + 1
+      TPSENSOR%NK10 = NINT( PBUFFER(KPOS) ) ; KPOS = KPOS + 1
+      TPSENSOR%NK11 = NINT( PBUFFER(KPOS) ) ; KPOS = KPOS + 1
+      TPSENSOR%NU00 = NINT( PBUFFER(KPOS) ) ; KPOS = KPOS + 1
+      TPSENSOR%NU01 = NINT( PBUFFER(KPOS) ) ; KPOS = KPOS + 1
+      TPSENSOR%NU10 = NINT( PBUFFER(KPOS) ) ; KPOS = KPOS + 1
+      TPSENSOR%NU11 = NINT( PBUFFER(KPOS) ) ; KPOS = KPOS + 1
+      TPSENSOR%NV00 = NINT( PBUFFER(KPOS) ) ; KPOS = KPOS + 1
+      TPSENSOR%NV01 = NINT( PBUFFER(KPOS) ) ; KPOS = KPOS + 1
+      TPSENSOR%NV10 = NINT( PBUFFER(KPOS) ) ; KPOS = KPOS + 1
+      TPSENSOR%NV11 = NINT( PBUFFER(KPOS) ) ; KPOS = KPOS + 1
+
+      TPSENSOR%XXMCOEF = PBUFFER(KPOS) ; KPOS = KPOS + 1
+      TPSENSOR%XYMCOEF = PBUFFER(KPOS) ; KPOS = KPOS + 1
+      TPSENSOR%XXUCOEF = PBUFFER(KPOS) ; KPOS = KPOS + 1
+      TPSENSOR%XYVCOEF = PBUFFER(KPOS) ; KPOS = KPOS + 1
+
+      TPSENSOR%XZCOEF00 = PBUFFER(KPOS) ; KPOS = KPOS + 1
+      TPSENSOR%XZCOEF01 = PBUFFER(KPOS) ; KPOS = KPOS + 1
+      TPSENSOR%XZCOEF10 = PBUFFER(KPOS) ; KPOS = KPOS + 1
+      TPSENSOR%XZCOEF11 = PBUFFER(KPOS) ; KPOS = KPOS + 1
+      TPSENSOR%XUCOEF00 = PBUFFER(KPOS) ; KPOS = KPOS + 1
+      TPSENSOR%XUCOEF01 = PBUFFER(KPOS) ; KPOS = KPOS + 1
+      TPSENSOR%XUCOEF10 = PBUFFER(KPOS) ; KPOS = KPOS + 1
+      TPSENSOR%XUCOEF11 = PBUFFER(KPOS) ; KPOS = KPOS + 1
+      TPSENSOR%XVCOEF00 = PBUFFER(KPOS) ; KPOS = KPOS + 1
+      TPSENSOR%XVCOEF01 = PBUFFER(KPOS) ; KPOS = KPOS + 1
+      TPSENSOR%XVCOEF10 = PBUFFER(KPOS) ; KPOS = KPOS + 1
+      TPSENSOR%XVCOEF11 = PBUFFER(KPOS) ; KPOS = KPOS + 1
+
+      TPSENSOR%XZON(:,1:KSTORE) = RESHAPE( PBUFFER(KPOS:KPOS+ILVST-1), [ ILEVELS, KSTORE ] ) ; KPOS = KPOS + ILVST
+      TPSENSOR%XMER(:,1:KSTORE) = RESHAPE( PBUFFER(KPOS:KPOS+ILVST-1), [ ILEVELS, KSTORE ] ) ; KPOS = KPOS + ILVST
+      TPSENSOR%XW  (:,1:KSTORE) = RESHAPE( PBUFFER(KPOS:KPOS+ILVST-1), [ ILEVELS, KSTORE ] ) ; KPOS = KPOS + ILVST
+      TPSENSOR%XP  (:,1:KSTORE) = RESHAPE( PBUFFER(KPOS:KPOS+ILVST-1), [ ILEVELS, KSTORE ] ) ; KPOS = KPOS + ILVST
+      IF ( CTURB == 'TKEL') THEN
+        TPSENSOR%XTKE(:,1:KSTORE) = RESHAPE( PBUFFER(KPOS:KPOS+ILVST-1), [ ILEVELS, KSTORE ] ) ; KPOS = KPOS + ILVST
+      END IF
+      TPSENSOR%XTH(:,1:KSTORE)   = RESHAPE( PBUFFER(KPOS:KPOS+ILVST-1),     [ ILEVELS, KSTORE ] )      ; KPOS = KPOS + ILVST
+      TPSENSOR%XR (:,1:KSTORE,:) = RESHAPE( PBUFFER(KPOS:KPOS+ILVST*NRR-1), [ ILEVELS, KSTORE, NRR ] ) ; KPOS = KPOS + ILVST * NRR
+      TPSENSOR%XSV(:,1:KSTORE,:) = RESHAPE( PBUFFER(KPOS:KPOS+ILVST*NSV-1), [ ILEVELS, KSTORE, NSV ] ) ; KPOS = KPOS + ILVST * NSV
+      IF ( CRAD /= 'NONE' ) THEN
+        TPSENSOR%XTSRAD(1:KSTORE) = PBUFFER(KPOS:KPOS+KSTORE-1) ; KPOS = KPOS + KSTORE
+      END IF
+
+      IF ( SIZE( TPSENSOR%XIWCZ ) > 0 ) THEN
+        TPSENSOR%XIWCZ     (:,1:KSTORE) = RESHAPE( PBUFFER(KPOS:KPOS+IKU*KSTORE-1), [ IKU, KSTORE ] ) ; KPOS = KPOS + IKU * KSTORE
+        TPSENSOR%XLWCZ     (:,1:KSTORE) = RESHAPE( PBUFFER(KPOS:KPOS+IKU*KSTORE-1), [ IKU, KSTORE ] ) ; KPOS = KPOS + IKU * KSTORE
+        TPSENSOR%XCRARE    (:,1:KSTORE) = RESHAPE( PBUFFER(KPOS:KPOS+IKU*KSTORE-1), [ IKU, KSTORE ] ) ; KPOS = KPOS + IKU * KSTORE
+        TPSENSOR%XCRARE_ATT(:,1:KSTORE) = RESHAPE( PBUFFER(KPOS:KPOS+IKU*KSTORE-1), [ IKU, KSTORE ] ) ; KPOS = KPOS + IKU * KSTORE
+      END IF
+
+    END SUBROUTINE BUFFER_UNPACK_SENSOR
+
+
+    ! #################################################################
+    SUBROUTINE BUFFER_SIZE_SEND( TPSENSOR, KSTORE_CUR, KPACKSIZE, KTO )
+    ! #################################################################
+
+      USE MODD_MPIF,      ONLY: MPI_SEND
+      USE MODD_PRECISION, ONLY: MNHINT_MPI
+      USE MODD_VAR_LL,    ONLY: NMNH_COMM_WORLD
+
+      CLASS(TSENSOR), INTENT(IN) :: TPSENSOR
+      INTEGER,        INTENT(IN) :: KSTORE_CUR
+      INTEGER,        INTENT(IN) :: KPACKSIZE
+      INTEGER,        INTENT(IN) :: KTO         ! Process to which to send sensor data
+
+      INTEGER               :: IERR
+      INTEGER, DIMENSION(3) :: ISTORES
+
+      ISTORES(1) = KSTORE_CUR          ! Number of currently used store-positions
+      ISTORES(2) = TPSENSOR%NSTORE_MAX ! Total number of store positions
+      ISTORES(3) = KPACKSIZE           ! Total size of the buffer
+
+      CALL MPI_SEND( ISTORES, 3, MNHINT_MPI, KTO-1, NTAG_NCUR, NMNH_COMM_WORLD, IERR )
+
+    END SUBROUTINE BUFFER_SIZE_SEND
+
+
+    ! ###############################################################################
+    SUBROUTINE BUFFER_SIZE_RECV( TPSENSOR, KSTORE_CUR, KSTORE_TOT, KPACKSIZE, KFROM )
+    ! ###############################################################################
+
+      USE MODD_MPIF,      ONLY: MPI_RECV, MPI_STATUS_IGNORE
+      USE MODD_PRECISION, ONLY: MNHINT_MPI
+      USE MODD_VAR_LL,    ONLY: NMNH_COMM_WORLD
+
+      CLASS(TSENSOR), INTENT(IN)  :: TPSENSOR
+      INTEGER,        INTENT(OUT) :: KSTORE_CUR
+      INTEGER,        INTENT(OUT) :: KSTORE_TOT
+      INTEGER,        INTENT(OUT) :: KPACKSIZE
+      INTEGER,        INTENT(IN)  :: KFROM     ! Process from which to receive sensor data
+
+      INTEGER               :: IERR
+      INTEGER, DIMENSION(3) :: ISTORES
+
+      CALL MPI_RECV( ISTORES, 3, MNHINT_MPI, KFROM-1, NTAG_NCUR, NMNH_COMM_WORLD, MPI_STATUS_IGNORE, IERR )
+
+      KSTORE_CUR = ISTORES(1)
+      KSTORE_TOT = ISTORES(2)
+      KPACKSIZE  = ISTORES(3)
+
+    END SUBROUTINE BUFFER_SIZE_RECV
+
+
+    ! ##############################################
+    SUBROUTINE BUFFER_SEND( TPSENSOR, PBUFFER, KTO )
+    ! ##############################################
+
+      USE MODD_MPIF,      ONLY: MPI_SEND
+      USE MODD_PRECISION, ONLY: MNHREAL_MPI
+      USE MODD_VAR_LL,    ONLY: NMNH_COMM_WORLD
+
+      CLASS(TSENSOR),     INTENT(IN) :: TPSENSOR
+      REAL, DIMENSION(:), INTENT(IN) :: PBUFFER
+      INTEGER,            INTENT(IN) :: KTO      ! Process to which to send buffer
+
+      INTEGER :: IERR
+
+      ! Send packed data
+      CALL MPI_SEND( PBUFFER, SIZE( PBUFFER ), MNHREAL_MPI, KTO-1, NTAG_PACK, NMNH_COMM_WORLD, IERR )
+
+    END SUBROUTINE BUFFER_SEND
+
+
+      ! ################################################
+      SUBROUTINE BUFFER_RECV( TPSENSOR, PBUFFER, KFROM )
+      ! ################################################
+
+        USE MODD_MPIF,      ONLY: MPI_RECV, MPI_STATUS_IGNORE
+        USE MODD_PRECISION, ONLY: MNHREAL_MPI
+        USE MODD_VAR_LL,    ONLY: NMNH_COMM_WORLD
+
+        CLASS(TSENSOR),     INTENT(IN)  :: TPSENSOR
+        REAL, DIMENSION(:), INTENT(OUT) :: PBUFFER
+        INTEGER,            INTENT(IN)  :: KFROM    ! Process from which to receive buffer
+
+        INTEGER :: IERR
+
+        ! Receive packed data
+        CALL MPI_RECV( PBUFFER, SIZE( PBUFFER ), MNHREAL_MPI, KFROM-1, NTAG_PACK, NMNH_COMM_WORLD, MPI_STATUS_IGNORE, IERR )
+
+      END SUBROUTINE BUFFER_RECV
 
 END MODULE MODD_SENSOR
