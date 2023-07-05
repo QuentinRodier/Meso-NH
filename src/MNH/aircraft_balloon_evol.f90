@@ -209,6 +209,7 @@ SELECT TYPE ( TPFLYER )
     !Do we have to store aircraft data?
     IF ( IMI == TPFLYER%NMODEL ) TPFLYER%LSTORE = TPFLYER%TFLYER_TIME%STORESTEP_CHECK_AND_SET( ISTORE )
 
+    IF ( TPFLYER%LSTORE ) TPFLYER%NSTORE_CUR = ISTORE
     ! For aircrafts, data has only to be computed at store moments
     IF ( IMI == TPFLYER%NMODEL .AND. TPFLYER%LFLY .AND. TPFLYER%LSTORE ) THEN
       ! Check if it is the right moment to store data
@@ -286,6 +287,7 @@ SELECT TYPE ( TPFLYER )
           ( .NOT. TPFLYER%LFLY .OR. TPFLYER%LCRASH .OR. ABS( TPFLYER%TPOS_CUR - TDTCUR ) < 1.e-8 ) ) THEN
       !Do we have to store balloon data?
       TPFLYER%LSTORE = TPFLYER%TFLYER_TIME%STORESTEP_CHECK_AND_SET( ISTORE )
+      IF ( TPFLYER%LSTORE ) TPFLYER%NSTORE_CUR = ISTORE
     END IF
 
     ! In flight
@@ -844,7 +846,6 @@ REAL                           :: ZV_BAL   ! horizontal wind speed at balloon lo
 REAL, DIMENSION(SIZE(PZ,3))    :: ZZ       ! altitude of model levels at station location
 REAL, DIMENSION(SIZE(PR,1),SIZE(PR,2),SIZE(PR,3))    :: ZR
 
-TPFLYER%NSTORE_CUR = ISTORE
 
 TPFLYER%NMODELHIST(ISTORE) = TPFLYER%NMODEL
 
