@@ -37,7 +37,7 @@ MODULE MODD_SENSOR
       INTEGER :: NSTORE_CUR = 0  ! Current store instant
       INTEGER :: NSTORE_MAX = -1 ! Maximum number of store instants (negative if arrays not allocated)
 
-      INTEGER :: NBUFFER_FIXSIZE = 42 + NSENSORNAMELGTMAX ! Memory size required for exchange buffer (fixed part)
+      INTEGER :: NBUFFER_FIXSIZE = 43 + NSENSORNAMELGTMAX ! Memory size required for exchange buffer (fixed part)
       INTEGER :: NBUFFER_VARSIZE = 0 ! Memory size required for exchange buffer (part per store instant)
 
       LOGICAL :: LFIX ! true if sensor is fix (can not move)
@@ -178,6 +178,12 @@ MODULE MODD_SENSOR
 
       IKU = NKMAX + 2 * JPVEXT
       IVARSIZE = 0
+
+      IF ( TPSENSOR%NSTORE_MAX >= 0 ) THEN
+        CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'Data_arrays_allocate_sensor', 'sensor: ' // TRIM(TPSENSOR%CNAME) &
+                                            // ' already allocated', OLOCAL = .TRUE. )
+        RETURN
+      END IF
 
       TPSENSOR%NSTORE_MAX = KSTORE
 
@@ -889,6 +895,7 @@ MODULE MODD_SENSOR
       END DO
 
       PBUFFER(KPOS) = TPSENSOR%NID        ; KPOS = KPOS + 1
+      PBUFFER(KPOS) = TPSENSOR%NSTORE_CUR ; KPOS = KPOS + 1
       PBUFFER(KPOS) = TPSENSOR%NSTORE_MAX ; KPOS = KPOS + 1
 
       PBUFFER(KPOS) = TPSENSOR%NBUFFER_FIXSIZE ; KPOS = KPOS + 1
@@ -1000,6 +1007,7 @@ MODULE MODD_SENSOR
       END DO
 
       TPSENSOR%NID        = NINT( PBUFFER(KPOS) ) ; KPOS = KPOS + 1
+      TPSENSOR%NSTORE_CUR = NINT( PBUFFER(KPOS) ) ; KPOS = KPOS + 1
       TPSENSOR%NSTORE_MAX = NINT( PBUFFER(KPOS) ) ; KPOS = KPOS + 1
 
       TPSENSOR%NBUFFER_FIXSIZE = NINT( PBUFFER(KPOS) ) ; KPOS = KPOS + 1
