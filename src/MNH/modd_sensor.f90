@@ -34,8 +34,8 @@ MODULE MODD_SENSOR
       CHARACTER(LEN=NSENSORNAMELGTMAX) :: CNAME = '' ! Title or name of the sensor
       INTEGER :: NID = 0 ! Identification number of the sensor (from 1 to total number,
                          ! separate numbering for separate sensor types)
-      INTEGER :: NSTORE_CUR = 0 ! Current store instant
-      INTEGER :: NSTORE_MAX = 0 ! Maximum number of store instants
+      INTEGER :: NSTORE_CUR = 0  ! Current store instant
+      INTEGER :: NSTORE_MAX = -1 ! Maximum number of store instants (negative if arrays not allocated)
 
       INTEGER :: NBUFFER_FIXSIZE = 42 + NSENSORNAMELGTMAX ! Memory size required for exchange buffer (fixed part)
       INTEGER :: NBUFFER_VARSIZE = 0 ! Memory size required for exchange buffer (part per store instant)
@@ -238,6 +238,9 @@ MODULE MODD_SENSOR
       CLASS(TSENSOR), INTENT(INOUT) :: TPSENSOR
 
       CALL PRINT_MSG( NVERB_DEBUG, 'GEN', 'Data_arrays_deallocate_sensor', 'sensor: ' // TRIM(TPSENSOR%CNAME), OLOCAL = .TRUE. )
+
+      ! nstore_max set to negative value to inform that arrays are not allocated
+      TPSENSOR%NSTORE_MAX = -1
 
       DEALLOCATE( TPSENSOR%XZON       )
       DEALLOCATE( TPSENSOR%XMER       )
