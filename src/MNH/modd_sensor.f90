@@ -34,6 +34,7 @@ MODULE MODD_SENSOR
       CHARACTER(LEN=NSENSORNAMELGTMAX) :: CNAME = '' ! Title or name of the sensor
       INTEGER :: NID = 0 ! Identification number of the sensor (from 1 to total number,
                          ! separate numbering for separate sensor types)
+      INTEGER :: NSTORE_CUR = 0 ! Current store instant
       INTEGER :: NSTORE_MAX = 0 ! Maximum number of store instants
 
       INTEGER :: NBUFFER_FIXSIZE = 42 + NSENSORNAMELGTMAX ! Memory size required for exchange buffer (fixed part)

@@ -844,6 +844,8 @@ REAL                           :: ZV_BAL   ! horizontal wind speed at balloon lo
 REAL, DIMENSION(SIZE(PZ,3))    :: ZZ       ! altitude of model levels at station location
 REAL, DIMENSION(SIZE(PR,1),SIZE(PR,2),SIZE(PR,3))    :: ZR
 
+TPFLYER%NSTORE_CUR = ISTORE
+
 TPFLYER%NMODELHIST(ISTORE) = TPFLYER%NMODEL
 
 TPFLYER%XX(ISTORE) = TPFLYER%XX_CUR
