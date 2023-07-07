@@ -207,9 +207,12 @@ SELECT TYPE ( TPFLYER )
     END IF TAKEOFF
 
     !Do we have to store aircraft data?
-    IF ( IMI == TPFLYER%NMODEL ) TPFLYER%LSTORE = TPFLYER%TFLYER_TIME%STORESTEP_CHECK_AND_SET( ISTORE )
+    IF ( IMI == TPFLYER%NMODEL ) THEN
+      TPFLYER%LSTORE = TPFLYER%TFLYER_TIME%STORESTEP_CHECK_AND_SET( ISTORE )
+      IF ( TPFLYER%LSTORE ) TPFLYER%NSTORE_CUR = ISTORE
+    END IF
 
-    IF ( TPFLYER%LSTORE ) TPFLYER%NSTORE_CUR = ISTORE
+
     ! For aircrafts, data has only to be computed at store moments
     IF ( IMI == TPFLYER%NMODEL .AND. TPFLYER%LFLY .AND. TPFLYER%LSTORE ) THEN
       ! Check if it is the right moment to store data

@@ -132,6 +132,9 @@ MODULE MODD_SENSOR
       PROCEDURE, NON_OVERRIDABLE               :: BUFFER_SIZE_RECV
       PROCEDURE, NON_OVERRIDABLE               :: BUFFER_SEND
       PROCEDURE, NON_OVERRIDABLE               :: BUFFER_RECV
+      PROCEDURE, NON_OVERRIDABLE               :: SEND            => SENSOR_COMM_SEND
+      PROCEDURE, NON_OVERRIDABLE               :: SEND_DEALLOCATE => SENSOR_COMM_SEND_DEALLOCATE
+      PROCEDURE, NON_OVERRIDABLE               :: RECV_ALLOCATE   => SENSOR_COMM_RECV_ALLOCATE
 
       GENERIC :: INTERP_HOR_FROM_MASSPOINT => INTERP_HOR_FROM_MASSPOINT_0D, INTERP_HOR_FROM_MASSPOINT_1D
       GENERIC :: INTERP_HOR_FROM_UPOINT    => INTERP_HOR_FROM_UPOINT_0D,    INTERP_HOR_FROM_UPOINT_1D
@@ -1157,23 +1160,168 @@ MODULE MODD_SENSOR
     END SUBROUTINE BUFFER_SEND
 
 
-      ! ################################################
-      SUBROUTINE BUFFER_RECV( TPSENSOR, PBUFFER, KFROM )
-      ! ################################################
+    ! ################################################
+    SUBROUTINE BUFFER_RECV( TPSENSOR, PBUFFER, KFROM )
+    ! ################################################
 
-        USE MODD_MPIF,      ONLY: MPI_RECV, MPI_STATUS_IGNORE
-        USE MODD_PRECISION, ONLY: MNHREAL_MPI
-        USE MODD_VAR_LL,    ONLY: NMNH_COMM_WORLD
+      USE MODD_MPIF,      ONLY: MPI_RECV, MPI_STATUS_IGNORE
+      USE MODD_PRECISION, ONLY: MNHREAL_MPI
+      USE MODD_VAR_LL,    ONLY: NMNH_COMM_WORLD
 
-        CLASS(TSENSOR),     INTENT(IN)  :: TPSENSOR
-        REAL, DIMENSION(:), INTENT(OUT) :: PBUFFER
-        INTEGER,            INTENT(IN)  :: KFROM    ! Process from which to receive buffer
+      CLASS(TSENSOR),     INTENT(IN)  :: TPSENSOR
+      REAL, DIMENSION(:), INTENT(OUT) :: PBUFFER
+      INTEGER,            INTENT(IN)  :: KFROM    ! Process from which to receive buffer
 
-        INTEGER :: IERR
+      INTEGER :: IERR
 
-        ! Receive packed data
-        CALL MPI_RECV( PBUFFER, SIZE( PBUFFER ), MNHREAL_MPI, KFROM-1, NTAG_PACK, NMNH_COMM_WORLD, MPI_STATUS_IGNORE, IERR )
+      ! Receive packed data
+      CALL MPI_RECV( PBUFFER, SIZE( PBUFFER ), MNHREAL_MPI, KFROM-1, NTAG_PACK, NMNH_COMM_WORLD, MPI_STATUS_IGNORE, IERR )
 
-      END SUBROUTINE BUFFER_RECV
+    END SUBROUTINE BUFFER_RECV
+
+    ! ##################################################################
+    SUBROUTINE SENSOR_COMM_SEND( TPSENSOR, KTO, OSEND_SIZE_TO_RECEIVER )
+    ! ##################################################################
+
+      USE MODD_IO, ONLY: ISP
+
+      USE MODE_MSG
+
+      CLASS(TSENSOR),           INTENT(INOUT) :: TPSENSOR
+      INTEGER,                  INTENT(IN)    :: KTO                    ! Process to which to send data
+      LOGICAL,        OPTIONAL, INTENT(IN)    :: OSEND_SIZE_TO_RECEIVER ! If the buffer size has to be send to the receiver
+
+      CHARACTER(LEN=10) :: YFROM, YTO
+      INTEGER           :: IPACKSIZE
+      INTEGER           :: IPOS
+      LOGICAL           :: GSEND_SIZE_TO_RECEIVER
+      REAL,    DIMENSION(:), ALLOCATABLE :: ZPACK ! buffer to store raw data of the sensor
+
+      WRITE( YFROM, '( i10 )' ) ISP
+      WRITE( YTO,   '( i10 )' ) KTO
+      CALL PRINT_MSG( NVERB_DEBUG, 'GEN', 'Sensor_comm_send', &
+                      'send sensor ' // TRIM(TPSENSOR%CNAME) // ': ' // TRIM(YFROM) // '->' // TRIM(YTO), OLOCAL = .TRUE. )
+
+      IF ( PRESENT( OSEND_SIZE_TO_RECEIVER ) ) THEN
+        GSEND_SIZE_TO_RECEIVER = OSEND_SIZE_TO_RECEIVER
+      ELSE
+        GSEND_SIZE_TO_RECEIVER = .FALSE.
+      END IF
+
+      IPACKSIZE = TPSENSOR%BUFFER_SIZE_COMPUTE( TPSENSOR%NSTORE_CUR )
+
+      IF ( GSEND_SIZE_TO_RECEIVER ) CALL TPSENSOR%BUFFER_SIZE_SEND( TPSENSOR%NSTORE_CUR, IPACKSIZE, KTO )
+
+      ALLOCATE( ZPACK(IPACKSIZE) )
+
+      IPOS = 1
+      CALL TPSENSOR%BUFFER_PACK( ZPACK, IPOS, TPSENSOR%NSTORE_CUR )
+
+      IF ( IPOS-1 /= IPACKSIZE ) &
+        CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'Sensor_comm_send', 'IPOS-1 /= IPACKSIZE', OLOCAL = .TRUE. )
+
+      CALL TPSENSOR%BUFFER_SEND( ZPACK, KTO )
+
+      DEALLOCATE( ZPACK )
+
+    END SUBROUTINE SENSOR_COMM_SEND
+
+    ! #############################################################################
+    SUBROUTINE SENSOR_COMM_SEND_DEALLOCATE( TPSENSOR, KTO, OSEND_SIZE_TO_RECEIVER )
+    ! #############################################################################
+
+      CLASS(TSENSOR),           INTENT(INOUT) :: TPSENSOR
+      INTEGER,                  INTENT(IN)    :: KTO                    ! Process to which to send data
+      LOGICAL,        OPTIONAL, INTENT(IN)    :: OSEND_SIZE_TO_RECEIVER ! If the buffer size has to be send to the receiver
+
+      CALL SENSOR_COMM_SEND( TPSENSOR, KTO, OSEND_SIZE_TO_RECEIVER )
+
+      ! Deallocate sensor data once not needed anymore
+      IF ( TPSENSOR%NSTORE_MAX >= 0 ) CALL TPSENSOR%DATA_ARRAYS_DEALLOCATE( )
+
+    END SUBROUTINE SENSOR_COMM_SEND_DEALLOCATE
+
+    ! ####################################################################################################
+    SUBROUTINE SENSOR_COMM_RECV_ALLOCATE( TPSENSOR, KFROM, KSTORE_CUR, KSTORE_MAX, ORECV_SIZE_FROM_OWNER )
+    ! ####################################################################################################
+
+      USE MODD_IO, ONLY: ISP
+
+      USE MODE_MSG
+
+      CLASS(TSENSOR),           INTENT(INOUT) :: TPSENSOR
+      INTEGER,                  INTENT(IN)    :: KFROM    ! Process from which to receive data
+      INTEGER,        OPTIONAL, INTENT(IN)    :: KSTORE_CUR ! Number of storage steps to receive
+      INTEGER,        OPTIONAL, INTENT(IN)    :: KSTORE_MAX ! Maximum number of storage steps to store in sensor
+                                                            ! (if not provided, kstore_* size must be given by the sender)
+      LOGICAL,        OPTIONAL, INTENT(IN)    :: ORECV_SIZE_FROM_OWNER ! If the buffer size has to be send to the receiver
+
+      CHARACTER(LEN=10) :: YFROM, YTO
+      INTEGER           :: IPACKSIZE
+      INTEGER           :: IPOS
+      INTEGER           :: ISTORE_CUR
+      INTEGER           :: ISTORE_MAX
+      LOGICAL           :: GRECV_SIZE_FROM_OWNER
+      REAL,    DIMENSION(:), ALLOCATABLE :: ZPACK ! buffer to store raw data of the sensor
+
+      WRITE( YFROM, '( i10 )' ) KFROM
+      WRITE( YTO,   '( i10 )' ) ISP
+      CALL PRINT_MSG( NVERB_DEBUG, 'GEN', 'Sensor_comm_recv_allocate', &
+                      'receive sensor (name not yet known): ' // TRIM(YFROM) // '->' // TRIM(YTO), OLOCAL = .TRUE. )
+
+      IF ( PRESENT( ORECV_SIZE_FROM_OWNER ) ) THEN
+        GRECV_SIZE_FROM_OWNER = ORECV_SIZE_FROM_OWNER
+      ELSE
+        GRECV_SIZE_FROM_OWNER = .FALSE.
+       END IF
+
+      IF ( PRESENT( KSTORE_CUR ) ) THEN
+        IF ( GRECV_SIZE_FROM_OWNER )                                                                       &
+          CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'Sensor_comm_recv_allocate',                                 &
+                          'kstore_cur may not be provided if size is received from owner', OLOCAL = .TRUE. )
+        ISTORE_CUR = KSTORE_CUR
+      ELSE
+        IF ( .NOT. GRECV_SIZE_FROM_OWNER )                                                                  &
+          CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'Sensor_comm_recv_allocate',                                  &
+                          'kstore_cur must be provided if size is not received from owner', OLOCAL = .TRUE. )
+        ! istore_cur will be received from owner
+        ISTORE_CUR = 0
+      END IF
+
+      IF ( PRESENT( KSTORE_MAX ) ) THEN
+        IF ( GRECV_SIZE_FROM_OWNER )                                                                       &
+          CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'Sensor_comm_recv_allocate',                                 &
+                          'kstore_max may not be provided if size is received from owner', OLOCAL = .TRUE. )
+        ISTORE_MAX = KSTORE_MAX
+      ELSE
+        IF ( .NOT. GRECV_SIZE_FROM_OWNER )                                                                  &
+          CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'Sensor_comm_recv_allocate',                                  &
+                          'kstore_max must be provided if size is not received from owner', OLOCAL = .TRUE. )
+
+        ! istore_max will be received from owner
+        ISTORE_MAX = 0
+      END IF
+
+      IF ( GRECV_SIZE_FROM_OWNER ) THEN
+        CALL TPSENSOR%BUFFER_SIZE_RECV( ISTORE_CUR, ISTORE_MAX, IPACKSIZE, KFROM )
+      ELSE
+        IPACKSIZE = TPSENSOR%BUFFER_SIZE_COMPUTE( ISTORE_CUR )
+      END IF
+
+      ! Allocate receive buffer
+      ALLOCATE( ZPACK(IPACKSIZE) )
+
+      ! Allocation of sensor must be done only once the total number of stores is known (and only if not yet allocated)
+      IF (TPSENSOR%NSTORE_MAX < 0 ) CALL TPSENSOR%DATA_ARRAYS_ALLOCATE( ISTORE_MAX )
+
+      CALL TPSENSOR%BUFFER_RECV( ZPACK, KFROM )
+
+      IPOS = 1
+      CALL TPSENSOR%BUFFER_UNPACK( ZPACK, IPOS, ISTORE_CUR )
+
+      IF ( IPOS-1 /= IPACKSIZE ) &
+        CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'Sensor_comm_recv_allocate', 'IPOS-1 /= IPACKSIZE', OLOCAL = .TRUE. )
+
+    END SUBROUTINE SENSOR_COMM_RECV_ALLOCATE
 
 END MODULE MODD_SENSOR

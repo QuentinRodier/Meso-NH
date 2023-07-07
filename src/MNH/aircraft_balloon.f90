@@ -25,8 +25,6 @@ PUBLIC :: AIRCRAFT_BALLOON
 
 PUBLIC :: AIRCRAFT_BALLOON_LONGTYPE_GET
 
-PUBLIC :: FLYER_RECV_AND_ALLOCATE, FLYER_SEND
-
 INTEGER, PARAMETER :: NTAG_NCUR = 145
 INTEGER, PARAMETER :: NTAG_PACK = 245
 
@@ -212,13 +210,13 @@ DEALLOCATE( IRANKNXT_AIRCRAFT_TMP )
 DO JI = 1, NAIRCRAFTS
   IF ( NRANKNXT_AIRCRAFT(JI) /= NRANKCUR_AIRCRAFT(JI) ) THEN
     IF ( ISP == NRANKCUR_AIRCRAFT(JI) ) THEN
-      CALL FLYER_SEND_AND_DEALLOCATE( TAIRCRAFTS(JI)%TAIRCRAFT, NRANKNXT_AIRCRAFT(JI) )
+      CALL TAIRCRAFTS(JI)%TAIRCRAFT%SEND_DEALLOCATE( KTO = NRANKNXT_AIRCRAFT(JI), OSEND_SIZE_TO_RECEIVER = .TRUE. )
       DEALLOCATE( TAIRCRAFTS(JI)%TAIRCRAFT )
     ELSE IF ( ISP == NRANKNXT_AIRCRAFT(JI) ) THEN
       IF ( ASSOCIATED( TAIRCRAFTS(JI)%TAIRCRAFT ) ) &
         call Print_msg( NVERB_FATAL, 'GEN', 'AIRCRAFT_BALLOON', 'aircraft already associated' )
       ALLOCATE( TAIRCRAFTS(JI)%TAIRCRAFT )
-      CALL FLYER_RECV_AND_ALLOCATE( TAIRCRAFTS(JI)%TAIRCRAFT, NRANKCUR_AIRCRAFT(JI) )
+      CALL TAIRCRAFTS(JI)%TAIRCRAFT%RECV_ALLOCATE( KFROM = NRANKCUR_AIRCRAFT(JI), ORECV_SIZE_FROM_OWNER = .TRUE. )
     END IF
   END IF
 END DO
@@ -297,11 +295,11 @@ DEALLOCATE( IRANKNXT_BALLOON_TMP )
 DO JI = 1, NBALLOONS
   IF ( NRANKNXT_BALLOON(JI) /= NRANKCUR_BALLOON(JI) ) THEN
     IF ( ISP == NRANKCUR_BALLOON(JI) ) THEN
-      CALL FLYER_SEND_AND_DEALLOCATE( TBALLOONS(JI)%TBALLOON, NRANKNXT_BALLOON(JI) )
+      CALL TBALLOONS(JI)%TBALLOON%SEND_DEALLOCATE( KTO = NRANKNXT_BALLOON(JI), OSEND_SIZE_TO_RECEIVER = .TRUE. )
       DEALLOCATE( TBALLOONS(JI)%TBALLOON )
     ELSE IF ( ISP == NRANKNXT_BALLOON(JI) ) THEN
       ALLOCATE( TBALLOONS(JI)%TBALLOON )
-      CALL FLYER_RECV_AND_ALLOCATE( TBALLOONS(JI)%TBALLOON, NRANKCUR_BALLOON(JI) )
+      CALL TBALLOONS(JI)%TBALLOON%RECV_ALLOCATE( KFROM = NRANKCUR_BALLOON(JI), ORECV_SIZE_FROM_OWNER = .TRUE. )
     END IF
   END IF
 END DO
@@ -349,117 +347,6 @@ if ( Len_trim( ytype ) > Len( HLONGTYPE ) ) &
 HLONGTYPE = Trim( ytype )
 
 END SUBROUTINE AIRCRAFT_BALLOON_LONGTYPE_GET
-!----------------------------------------------------------------------------
-!----------------------------------------------------------------------------
-
-SUBROUTINE FLYER_SEND( TPFLYER, KTO )
-
-USE MODD_AIRCRAFT_BALLOON, ONLY: TFLYERDATA
-USE MODD_IO,               ONLY: ISP
-USE MODD_PARAMETERS,       ONLY: JPVEXT
-
-IMPLICIT NONE
-
-CLASS(TFLYERDATA), INTENT(INOUT) :: TPFLYER
-INTEGER,           INTENT(IN)    :: KTO     ! Process to which to send flyer data
-
-CHARACTER(LEN=10) :: YFROM, YTO
-INTEGER :: IPACKSIZE ! Size of the ZPACK buffer
-INTEGER :: IPOS      ! Position in the ZPACK buffer
-INTEGER :: ISTORE_CUR
-REAL,    DIMENSION(:), ALLOCATABLE :: ZPACK        ! Buffer to store raw data of a profiler (used for MPI communication)
-
-WRITE( YFROM, '( I10 )' ) ISP
-WRITE( YTO,   '( I10 )' ) KTO
-CALL PRINT_MSG( NVERB_DEBUG, 'GEN', 'FLYER_SEND', 'send flyer '//TRIM(TPFLYER%CNAME)//': '//TRIM(YFROM)//'->'//TRIM(YTO), &
-                OLOCAL = .TRUE. )
-
-ISTORE_CUR = TPFLYER%TFLYER_TIME%N_CUR
-
-
-IPACKSIZE = TPFLYER%BUFFER_SIZE_COMPUTE( ISTORE_CUR )
-
-CALL TPFLYER%BUFFER_SIZE_SEND( ISTORE_CUR, IPACKSIZE, KTO )
-
-ALLOCATE( ZPACK(IPACKSIZE) )
-
-IPOS = 1
-CALL TPFLYER%BUFFER_PACK( ZPACK, IPOS, ISTORE_CUR )
-
-IF ( IPOS-1 /= IPACKSIZE ) &
-  call Print_msg( NVERB_ERROR, 'IO', 'FLYER_SEND', 'IPOS-1 /= IPACKSIZE (sender side)', OLOCAL = .TRUE. )
-
-CALL TPFLYER%BUFFER_SEND( ZPACK, KTO )
-
-DEALLOCATE( ZPACK )
-
-END SUBROUTINE FLYER_SEND
-!----------------------------------------------------------------------------
-!----------------------------------------------------------------------------
-SUBROUTINE FLYER_SEND_AND_DEALLOCATE( TPFLYER, KTO )
-
-USE MODD_AIRCRAFT_BALLOON,     ONLY: TFLYERDATA
-USE MODD_IO,               ONLY: ISP
-
-IMPLICIT NONE
-
-CLASS(TFLYERDATA), INTENT(INOUT) :: TPFLYER
-INTEGER,           INTENT(IN)    :: KTO     ! Process to which to send flyer data
-
-CHARACTER(LEN=10) :: YFROM, YTO
-
-WRITE( YFROM, '( I10 )' ) ISP
-WRITE( YTO,   '( I10 )' ) KTO
-CALL PRINT_MSG( NVERB_DEBUG, 'GEN', 'FLYER_SEND_AND_DEALLOCATE', &
-                'send flyer '//TRIM(TPFLYER%CNAME)//': '//TRIM(YFROM)//'->'//TRIM(YTO), OLOCAL = .TRUE. )
-
-CALL FLYER_SEND( TPFLYER, KTO )
-
-! Free flyer data (dynamically allocated), scalar data has to be freed outside this subroutine
-CALL TPFLYER%DATA_ARRAYS_DEALLOCATE()
-
-END SUBROUTINE FLYER_SEND_AND_DEALLOCATE
-!----------------------------------------------------------------------------
-!----------------------------------------------------------------------------
-SUBROUTINE FLYER_RECV_AND_ALLOCATE( TPFLYER, KFROM )
-
-USE MODD_AIRCRAFT_BALLOON, ONLY: TFLYERDATA
-! USE MODD_IO,               ONLY: ISP
-
-IMPLICIT NONE
-
-CLASS(TFLYERDATA), INTENT(INOUT) :: TPFLYER
-INTEGER,           INTENT(IN)    :: KFROM   ! Process from which to receive flyer data
-
-! CHARACTER(LEN=10) :: YFROM, YTO
-INTEGER :: ISTORE_CUR
-INTEGER :: ISTORE_TOT
-INTEGER :: IPACKSIZE ! Size of the ZPACK buffer
-INTEGER :: IPOS      ! Position in the ZPACK buffer
-REAL,    DIMENSION(:), ALLOCATABLE :: ZPACK        ! Buffer to store raw data of a profiler (used for MPI communication)
-
-! WRITE( YFROM, '( I10 )' ) KFROM
-! WRITE( YTO,   '( I10 )' ) ISP
-! CALL PRINT_MSG( NVERB_DEBUG, 'GEN', 'FLYER_RECV_AND_ALLOCATE', &
-!                 'receive flyer (name not yet known): '//TRIM(YFROM)//'->'//TRIM(YTO), OLOCAL = .TRUE. )
-
-CALL TPFLYER%BUFFER_SIZE_RECV( ISTORE_CUR, ISTORE_TOT, IPACKSIZE, KFROM )
-
-! Allocate receive buffer
-ALLOCATE( ZPACK(IPACKSIZE) )
-
-! Allocation of flyer must be done only once number of stores is known
-CALL TPFLYER%DATA_ARRAYS_ALLOCATE( ISTORE_TOT )
-
-CALL TPFLYER%BUFFER_RECV( ZPACK, KFROM )
-
-IPOS = 1
-CALL TPFLYER%BUFFER_UNPACK( ZPACK, IPOS, ISTORE_CUR )
-
-IF ( IPOS-1 /= IPACKSIZE ) &
-  call Print_msg( NVERB_ERROR, 'IO', 'FLYER_RECV_AND_ALLOCATE', 'IPOS-1 /= IPACKSIZE (receiver side)', OLOCAL = .TRUE. )
-
-END SUBROUTINE FLYER_RECV_AND_ALLOCATE
 !----------------------------------------------------------------------------
 !----------------------------------------------------------------------------
 

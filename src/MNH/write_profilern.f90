@@ -74,15 +74,12 @@ INTEGER :: IERR
 INTEGER :: JP, JS
 INTEGER :: IDX
 INTEGER :: INUMPROF  ! Total number of profilers (for the current model)
-INTEGER :: IPACKSIZE ! Size of the ZPACK buffer
-INTEGER :: IPOS      ! Position in the ZPACK buffer
 INTEGER :: ISTORE
 INTEGER, DIMENSION(:), ALLOCATABLE :: INPROFPRC    ! Array to store the number of profilers per process (for the current model)
 INTEGER, DIMENSION(:), ALLOCATABLE :: IPROFIDS     ! Intermediate array for MPI communication
 INTEGER, DIMENSION(:), ALLOCATABLE :: IPROFPRCRANK ! Array to store the ranks of the processes where the profilers are
 INTEGER, DIMENSION(:), ALLOCATABLE :: IDS          ! Array to store the profiler number to send
 INTEGER, DIMENSION(:), ALLOCATABLE :: IDISP        ! Array to store the displacements for MPI communications
-REAL,    DIMENSION(:), ALLOCATABLE :: ZPACK        ! Buffer to store raw data of a profiler (used for MPI communication)
 TYPE(TPROFILERDATA) :: TZPROFILER
 !
 !----------------------------------------------------------------------------
@@ -127,13 +124,6 @@ ISTORE = SIZE( TPROFILERS_TIME%TPDATES )
 
 CALL TZPROFILER%DATA_ARRAYS_ALLOCATE( ISTORE )
 
-!Determine the size of the ZPACK buffer used to transfer profiler data in 1 MPI communication
-IF ( ISNPROC > 1 ) THEN
-  IPACKSIZE = TZPROFILER%BUFFER_SIZE_COMPUTE( ISTORE )
-
-  ALLOCATE( ZPACK(IPACKSIZE) )
-END IF
-
 IDX = 1
 
 PROFILER: DO JS = 1, INUMPROF
@@ -147,24 +137,12 @@ PROFILER: DO JS = 1, INUMPROF
     !The profiler data is not on the writer process
     IF ( ISP == IPROFPRCRANK(JS) ) THEN
       ! This process has the data and needs to send it to the writer process
-      IPOS = 1
-      CALL TPROFILERS(IDX)%BUFFER_PACK( ZPACK, IPOS, ISTORE )
-
-      IF ( IPOS-1 /= IPACKSIZE ) &
-        call Print_msg( NVERB_ERROR, 'IO', 'WRITE_PROFILER_n', 'IPOS-1 /= IPACKSIZE (sender side)', OLOCAL = .TRUE. )
-
-      CALL TPROFILERS(IDX)%BUFFER_SEND( ZPACK, TPDIAFILE%NMASTER_RANK )
+      CALL TPROFILERS(IDX)%SEND_DEALLOCATE( KTO = TPDIAFILE%NMASTER_RANK, OSEND_SIZE_TO_RECEIVER = .FALSE. )
 
       IDX = IDX + 1
     ELSE IF ( ISP == TPDIAFILE%NMASTER_RANK ) THEN
       ! This process is the writer and will receive the profiler data from its owner
-      CALL TZPROFILER%BUFFER_RECV( ZPACK, IPROFPRCRANK(JS) )
-
-      IPOS = 1
-      CALL TZPROFILER%BUFFER_UNPACK( ZPACK, IPOS, ISTORE )
-
-      IF ( IPOS-1 /= IPACKSIZE ) &
-        call Print_msg( NVERB_ERROR, 'IO', 'WRITE_PROFILER_n', 'IPOS-1 /= IPACKSIZE (receiver side)', OLOCAL = .TRUE. )
+      CALL TZPROFILER%RECV_ALLOCATE( KFROM = IPROFPRCRANK(JS), KSTORE_CUR = ISTORE, KSTORE_MAX = ISTORE )
     END IF
   END IF
 
@@ -172,6 +150,8 @@ PROFILER: DO JS = 1, INUMPROF
 
 END DO PROFILER
 
+! Deallocate arrays (if still allocated)
+IF ( TZPROFILER%NSTORE_MAX >= 0 ) CALL TZPROFILER%DATA_ARRAYS_DEALLOCATE( )
 
 END SUBROUTINE WRITE_PROFILER_n
 

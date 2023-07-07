@@ -67,15 +67,12 @@ INTEGER :: IERR
 INTEGER :: JP, JS
 INTEGER :: IDX
 INTEGER :: INUMSTAT  ! Total number of stations (for the current model)
-INTEGER :: IPACKSIZE ! Size of the ZPACK buffer
-INTEGER :: IPOS      ! Position in the ZPACK buffer
 INTEGER :: ISTORE
 INTEGER, DIMENSION(:), ALLOCATABLE :: INSTATPRC    ! Array to store the number of stations per process (for the current model)
 INTEGER, DIMENSION(:), ALLOCATABLE :: ISTATIDS     ! Intermediate array for MPI communication
 INTEGER, DIMENSION(:), ALLOCATABLE :: ISTATPRCRANK ! Array to store the ranks of the processes where the stations are
 INTEGER, DIMENSION(:), ALLOCATABLE :: IDS          ! Array to store the station number to send
 INTEGER, DIMENSION(:), ALLOCATABLE :: IDISP        ! Array to store the displacements for MPI communications
-REAL,    DIMENSION(:), ALLOCATABLE :: ZPACK        ! Buffer to store raw data of a station (used for MPI communication)
 TYPE(TSTATIONDATA) :: TZSTATION
 !
 !----------------------------------------------------------------------------
@@ -119,13 +116,6 @@ ISTORE = SIZE( TSTATIONS_TIME%TPDATES )
 
 CALL TZSTATION%DATA_ARRAYS_ALLOCATE( ISTORE )
 
-!Determine the size of the ZPACK buffer used to transfer station data in 1 MPI communication
-IF ( ISNPROC > 1 ) THEN
-  IPACKSIZE = TZSTATION%BUFFER_SIZE_COMPUTE( ISTORE )
-
-  ALLOCATE( ZPACK(IPACKSIZE) )
-END IF
-
 IDX = 1
 
 STATION: DO JS = 1, INUMSTAT
@@ -139,30 +129,22 @@ STATION: DO JS = 1, INUMSTAT
     !The station data is not on the writer process
     IF ( ISP == ISTATPRCRANK(JS) ) THEN
       ! This process has the data and needs to send it to the writer process
-      IPOS = 1
-      CALL TSTATIONS(IDX)%BUFFER_PACK( ZPACK, IPOS, ISTORE )
-
-      IF ( IPOS-1 /= IPACKSIZE ) &
-        call Print_msg( NVERB_ERROR, 'IO', 'WRITE_STATION_n', 'IPOS-1 /= IPACKSIZE (sender side)', OLOCAL = .TRUE. )
-
-      CALL TSTATIONS(IDX)%BUFFER_SEND( ZPACK, TPDIAFILE%NMASTER_RANK )
+      CALL TSTATIONS(IDX)%SEND_DEALLOCATE( KTO = TPDIAFILE%NMASTER_RANK, OSEND_SIZE_TO_RECEIVER = .FALSE. )
 
       IDX = IDX + 1
     ELSE IF ( ISP == TPDIAFILE%NMASTER_RANK ) THEN
       ! This process is the writer and will receive the station data from its owner
-      CALL TZSTATION%BUFFER_RECV( ZPACK, ISTATPRCRANK(JS) )
-
-      IPOS = 1
-      CALL TZSTATION%BUFFER_UNPACK( ZPACK, IPOS, ISTORE )
-
-      IF ( IPOS-1 /= IPACKSIZE ) &
-        call Print_msg( NVERB_WARNING, 'IO', 'WRITE_STATION_n', 'IPOS-1 /= IPACKSIZE (receiver side)', OLOCAL = .TRUE. )
+      ! Remark: allocation is already done and will be skipped in RECV_ALLOCATE
+      CALL TZSTATION%RECV_ALLOCATE( KFROM = ISTATPRCRANK(JS), KSTORE_CUR = ISTORE, KSTORE_MAX = ISTORE )
     END IF
   END IF
 
   CALL STATION_DIACHRO_n( TPDIAFILE, TZSTATION )
 
 END DO STATION
+
+! Deallocate arrays (if still allocated)
+IF ( TZSTATION%NSTORE_MAX >= 0 ) CALL TZSTATION%DATA_ARRAYS_DEALLOCATE( )
 
 END SUBROUTINE WRITE_STATION_n
 
