@@ -24,7 +24,7 @@ implicit none
 
 private
 
-public :: WRITE_STATION_n
+public :: STATION_DIACHRO_n
 
 CHARACTER(LEN=NCOMMENTLGTMAX), DIMENSION(:), ALLOCATABLE :: CCOMMENT ! comment string
 CHARACTER(LEN=NMNHNAMELGTMAX), DIMENSION(:), ALLOCATABLE :: CTITLE   ! title
@@ -33,120 +33,6 @@ CHARACTER(LEN=NUNITLGTMAX),    DIMENSION(:), ALLOCATABLE :: CUNIT    ! physical 
 REAL, DIMENSION(:,:,:,:,:,:), ALLOCATABLE :: XWORK6   ! contains temporal serie
 
 contains
-!
-! #####################################
-SUBROUTINE WRITE_STATION_n( TPDIAFILE )
-! #####################################
-!
-!
-!****  *WRITE_STATION* - write the stations records in the diachronic file
-!
-!*      0. DECLARATIONS
-!          ------------
-!
-USE MODD_IO,              ONLY: ISNPROC, ISP, TFILEDATA
-USE MODD_MPIF
-USE MODD_PRECISION,       ONLY: MNHINT_MPI
-USE MODD_STATION_n,       ONLY: NUMBSTAT_LOC, TSTATIONS, TSTATIONS_TIME
-USE MODD_TYPE_STATPROF,   ONLY: TSTATIONDATA
-!
-USE MODE_MSG
-!
-IMPLICIT NONE
-!
-!
-!*      0.1  declarations of arguments
-!
-TYPE(TFILEDATA),  INTENT(IN) :: TPDIAFILE ! diachronic file to write
-!
-!-------------------------------------------------------------------------------
-!
-!       0.2  declaration of local variables
-!
-INTEGER :: IERR
-INTEGER :: JP, JS
-INTEGER :: IDX
-INTEGER :: INUMSTAT  ! Total number of stations (for the current model)
-INTEGER :: ISTORE
-INTEGER, DIMENSION(:), ALLOCATABLE :: INSTATPRC    ! Array to store the number of stations per process (for the current model)
-INTEGER, DIMENSION(:), ALLOCATABLE :: ISTATIDS     ! Intermediate array for MPI communication
-INTEGER, DIMENSION(:), ALLOCATABLE :: ISTATPRCRANK ! Array to store the ranks of the processes where the stations are
-INTEGER, DIMENSION(:), ALLOCATABLE :: IDS          ! Array to store the station number to send
-INTEGER, DIMENSION(:), ALLOCATABLE :: IDISP        ! Array to store the displacements for MPI communications
-TYPE(TSTATIONDATA) :: TZSTATION
-!
-!----------------------------------------------------------------------------
-
-ALLOCATE( INSTATPRC(ISNPROC) )
-ALLOCATE( IDS(NUMBSTAT_LOC) )
-
-!Gather number of station present on each process
-CALL MPI_ALLGATHER( NUMBSTAT_LOC, 1, MNHINT_MPI, INSTATPRC, 1, MNHINT_MPI, TPDIAFILE%NMPICOMM, IERR )
-
-!Store the identification number of local stations (these numbers are globals)
-DO JS = 1, NUMBSTAT_LOC
-  IDS(JS) = TSTATIONS(JS)%NID
-END DO
-
-ALLOCATE( IDISP(ISNPROC) )
-IDISP(1) = 0
-DO JP = 2, ISNPROC
-  IDISP(JP) = IDISP(JP-1) + INSTATPRC(JP-1)
-END DO
-
-INUMSTAT = SUM( INSTATPRC(:) )
-ALLOCATE( ISTATIDS(INUMSTAT) )
-ALLOCATE( ISTATPRCRANK(INUMSTAT) )
-
-!Gather the list of all the stations of all processes
-CALL MPI_ALLGATHERV( IDS(:), NUMBSTAT_LOC, MNHINT_MPI, ISTATIDS(:), INSTATPRC(:), &
-                     IDISP(:), MNHINT_MPI, TPDIAFILE%NMPICOMM, IERR )
-
-!Store the rank of each process corresponding to a given station
-IDX = 1
-ISTATPRCRANK(:) = -1
-DO JP = 1, ISNPROC
-  DO JS = 1, INSTATPRC(JP)
-    ISTATPRCRANK(ISTATIDS(IDX)) = JP
-    IDX = IDX + 1
-  END DO
-END DO
-
-ISTORE = SIZE( TSTATIONS_TIME%TPDATES )
-
-CALL TZSTATION%DATA_ARRAYS_ALLOCATE( ISTORE )
-
-IDX = 1
-
-STATION: DO JS = 1, INUMSTAT
-  IF ( ISTATPRCRANK(JS) == TPDIAFILE%NMASTER_RANK ) THEN
-    !No communication necessary, the station data is already on the writer process
-    IF ( ISP == TPDIAFILE%NMASTER_RANK ) THEN
-      TZSTATION = TSTATIONS(IDX)
-      IDX = IDX + 1
-    END IF
-  ELSE
-    !The station data is not on the writer process
-    IF ( ISP == ISTATPRCRANK(JS) ) THEN
-      ! This process has the data and needs to send it to the writer process
-      CALL TSTATIONS(IDX)%SEND_DEALLOCATE( KTO = TPDIAFILE%NMASTER_RANK, OSEND_SIZE_TO_RECEIVER = .FALSE. )
-
-      IDX = IDX + 1
-    ELSE IF ( ISP == TPDIAFILE%NMASTER_RANK ) THEN
-      ! This process is the writer and will receive the station data from its owner
-      ! Remark: allocation is already done and will be skipped in RECV_ALLOCATE
-      CALL TZSTATION%RECV_ALLOCATE( KFROM = ISTATPRCRANK(JS), KSTORE_CUR = ISTORE, KSTORE_MAX = ISTORE )
-    END IF
-  END IF
-
-  CALL STATION_DIACHRO_n( TPDIAFILE, TZSTATION )
-
-END DO STATION
-
-! Deallocate arrays (if still allocated)
-IF ( TZSTATION%NSTORE_MAX >= 0 ) CALL TZSTATION%DATA_ARRAYS_DEALLOCATE( )
-
-END SUBROUTINE WRITE_STATION_n
 
 ! ##################################################
 SUBROUTINE STATION_DIACHRO_n( TPDIAFILE, TPSTATION )

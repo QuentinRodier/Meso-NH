@@ -31,7 +31,7 @@ implicit none
 
 private
 
-public :: WRITE_PROFILER_n
+public :: PROFILER_DIACHRO_n
 
 CHARACTER(LEN=NCOMMENTLGTMAX), DIMENSION(:), ALLOCATABLE :: CCOMMENT ! comment string
 CHARACTER(LEN=NMNHNAMELGTMAX), DIMENSION(:), ALLOCATABLE :: CTITLE   ! title
@@ -40,121 +40,6 @@ CHARACTER(LEN=NUNITLGTMAX),    DIMENSION(:), ALLOCATABLE :: CUNIT    ! physical 
 REAL, DIMENSION(:,:,:,:,:,:), ALLOCATABLE :: XWORK6   ! contains temporal serie
 
 contains
-!
-!#######################################
-SUBROUTINE WRITE_PROFILER_n( TPDIAFILE )
-!#######################################
-!
-!
-!****  *WRITE_PROFILER* - write the profilers records in the diachronic file
-!
-!*      0. DECLARATIONS
-!          ------------
-!
-USE MODD_IO,              ONLY: ISNPROC, ISP, TFILEDATA
-USE MODD_MPIF
-USE MODD_PRECISION,       ONLY: MNHINT_MPI
-USE MODD_PROFILER_n,      only: NUMBPROFILER_LOC, TPROFILERS, TPROFILERS_TIME
-USE MODD_TYPE_STATPROF,   ONLY: TPROFILERDATA
-!
-USE MODE_MSG
-!
-IMPLICIT NONE
-!
-!
-!*      0.1  declarations of arguments
-!
-TYPE(TFILEDATA),  INTENT(IN) :: TPDIAFILE ! diachronic file to write
-!
-!-------------------------------------------------------------------------------
-!
-!       0.2  declaration of local variables
-!
-INTEGER :: IERR
-INTEGER :: JP, JS
-INTEGER :: IDX
-INTEGER :: INUMPROF  ! Total number of profilers (for the current model)
-INTEGER :: ISTORE
-INTEGER, DIMENSION(:), ALLOCATABLE :: INPROFPRC    ! Array to store the number of profilers per process (for the current model)
-INTEGER, DIMENSION(:), ALLOCATABLE :: IPROFIDS     ! Intermediate array for MPI communication
-INTEGER, DIMENSION(:), ALLOCATABLE :: IPROFPRCRANK ! Array to store the ranks of the processes where the profilers are
-INTEGER, DIMENSION(:), ALLOCATABLE :: IDS          ! Array to store the profiler number to send
-INTEGER, DIMENSION(:), ALLOCATABLE :: IDISP        ! Array to store the displacements for MPI communications
-TYPE(TPROFILERDATA) :: TZPROFILER
-!
-!----------------------------------------------------------------------------
-!
-
-ALLOCATE( INPROFPRC(ISNPROC) )
-ALLOCATE( IDS(NUMBPROFILER_LOC) )
-
-!Gather number of profiler present on each process
-CALL MPI_ALLGATHER( NUMBPROFILER_LOC, 1, MNHINT_MPI, INPROFPRC, 1, MNHINT_MPI, TPDIAFILE%NMPICOMM, IERR )
-
-!Store the identification number of local profilers (these numbers are globals)
-DO JS = 1, NUMBPROFILER_LOC
-  IDS(JS) = TPROFILERS(JS)%NID
-END DO
-
-ALLOCATE( IDISP(ISNPROC) )
-IDISP(1) = 0
-DO JP = 2, ISNPROC
-  IDISP(JP) = IDISP(JP-1) + INPROFPRC(JP-1)
-END DO
-
-INUMPROF = SUM( INPROFPRC(:) )
-ALLOCATE( IPROFIDS(INUMPROF) )
-ALLOCATE( IPROFPRCRANK(INUMPROF) )
-
-!Gather the list of all the profilers of all processes
-CALL MPI_ALLGATHERV( IDS(:), NUMBPROFILER_LOC, MNHINT_MPI, IPROFIDS(:), INPROFPRC(:), &
-                     IDISP(:), MNHINT_MPI, TPDIAFILE%NMPICOMM, IERR )
-
-!Store the rank of each process corresponding to a given profiler
-IDX = 1
-IPROFPRCRANK(:) = -1
-DO JP = 1, ISNPROC
-  DO JS = 1, INPROFPRC(JP)
-    IPROFPRCRANK(IPROFIDS(IDX)) = JP
-    IDX = IDX + 1
-  END DO
-END DO
-
-ISTORE = SIZE( TPROFILERS_TIME%TPDATES )
-
-CALL TZPROFILER%DATA_ARRAYS_ALLOCATE( ISTORE )
-
-IDX = 1
-
-PROFILER: DO JS = 1, INUMPROF
-  IF ( IPROFPRCRANK(JS) == TPDIAFILE%NMASTER_RANK ) THEN
-    !No communication necessary, the profiler data is already on the writer process
-    IF ( ISP == TPDIAFILE%NMASTER_RANK ) THEN
-      TZPROFILER = TPROFILERS(IDX)
-      IDX = IDX + 1
-    END IF
-  ELSE
-    !The profiler data is not on the writer process
-    IF ( ISP == IPROFPRCRANK(JS) ) THEN
-      ! This process has the data and needs to send it to the writer process
-      CALL TPROFILERS(IDX)%SEND_DEALLOCATE( KTO = TPDIAFILE%NMASTER_RANK, OSEND_SIZE_TO_RECEIVER = .FALSE. )
-
-      IDX = IDX + 1
-    ELSE IF ( ISP == TPDIAFILE%NMASTER_RANK ) THEN
-      ! This process is the writer and will receive the profiler data from its owner
-      CALL TZPROFILER%RECV_ALLOCATE( KFROM = IPROFPRCRANK(JS), KSTORE_CUR = ISTORE, KSTORE_MAX = ISTORE )
-    END IF
-  END IF
-
-  CALL PROFILER_DIACHRO_n( TPDIAFILE, TZPROFILER )
-
-END DO PROFILER
-
-! Deallocate arrays (if still allocated)
-IF ( TZPROFILER%NSTORE_MAX >= 0 ) CALL TZPROFILER%DATA_ARRAYS_DEALLOCATE( )
-
-END SUBROUTINE WRITE_PROFILER_n
-
 
 ! ####################################################
 SUBROUTINE PROFILER_DIACHRO_n( TPDIAFILE, TPPROFILER )
