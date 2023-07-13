@@ -106,6 +106,9 @@ allocate( tstations_time%tpdates(istore) )
 NUMBSTAT_LOC = 0
 
 IF (CFILE_STAT=="NO_INPUT_CSV") THEN
+  IF ( NNUMB_STAT > NNOCSVSTATIONMAX ) &
+    call Print_msg( NVERB_FATAL, 'IO', 'INI_SURFSTATION_n', 'number of stations is limited to NNOCSVSTATIONMAX' )
+
   ! Treat namelist
   INUMBSTAT = 0
   IF ( NNUMB_STAT > 0 ) THEN

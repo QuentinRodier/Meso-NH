@@ -47,14 +47,17 @@ PUBLIC :: CNAME_STAT, CFILE_STAT, LDIAG_SURFRAD_STAT
 
 PUBLIC :: ALLSTATION_GOTO_MODEL
 
+
+INTEGER, PUBLIC, PARAMETER :: NNOCSVSTATIONMAX = 100
+
 TYPE ALLSTATION_t
 !
 !-------------------------------------------------------------------------------------------
 !
 !
   INTEGER                          :: NNUMB_STAT  !Number of stations as defined in namelist
-  REAL, DIMENSION(100)             :: XX_STAT, XY_STAT, XZ_STAT, XLAT_STAT, XLON_STAT
-  CHARACTER(LEN=NSENSORNAMELGTMAX), DIMENSION(100) :: CNAME_STAT
+  REAL,                             DIMENSION(NNOCSVSTATIONMAX) :: XX_STAT, XY_STAT, XZ_STAT, XLAT_STAT, XLON_STAT
+  CHARACTER(LEN=NSENSORNAMELGTMAX), DIMENSION(NNOCSVSTATIONMAX) :: CNAME_STAT
   CHARACTER(LEN=NFILENAMELGTMAX)   :: CFILE_STAT
   REAL                             :: XSTEP_STAT
   LOGICAL                          :: LDIAG_SURFRAD_STAT

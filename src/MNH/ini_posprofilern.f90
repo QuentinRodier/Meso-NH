@@ -105,6 +105,9 @@ allocate( tprofilers_time%tpdates(istore) )
 NUMBPROFILER_LOC = 0
 
 IF (CFILE_PROF=="NO_INPUT_CSV") THEN
+  IF ( NNUMB_PROF > NNOCSVPROFILERMAX ) &
+    call Print_msg( NVERB_FATAL, 'IO', 'INI_POSPROFILER_n', 'number of profilers is limited to NNOCSVPROFILERMAX' )
+
   ! Treat namelist
   INUMBPROF = 0
   IF ( NNUMB_PROF > 0 ) THEN
