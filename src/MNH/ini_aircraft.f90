@@ -45,7 +45,7 @@ CONTAINS
 !!
 !!  3) the type of aircraft
 !!
-!!     'AIRCRA' for aircraft
+!!     'AIRCRAFT' for aircraft
 !!
 !!  4) the takeoff date and time
 !!

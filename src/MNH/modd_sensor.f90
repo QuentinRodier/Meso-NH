@@ -32,12 +32,16 @@ MODULE MODD_SENSOR
 
   TYPE, ABSTRACT :: TSENSOR
       CHARACTER(LEN=NSENSORNAMELGTMAX) :: CNAME = '' ! Title or name of the sensor
+      CHARACTER(LEN=NSENSORNAMELGTMAX) :: CTYPE = '' ! Sensor type:
+        ! 'AIRCRAFT' : aircraft
+        ! 'RADIOS' : radiosounding balloon, 'ISODEN' : iso-density balloon, 'CVBALL' : Constant Volume balloon
+        ! 'STATION', 'PROFILER',...
       INTEGER :: NID = 0 ! Identification number of the sensor (from 1 to total number,
                          ! separate numbering for separate sensor types)
       INTEGER :: NSTORE_CUR = 0  ! Current store instant
       INTEGER :: NSTORE_MAX = -1 ! Maximum number of store instants (negative if arrays not allocated)
 
-      INTEGER :: NBUFFER_FIXSIZE = 43 + NSENSORNAMELGTMAX ! Memory size required for exchange buffer (fixed part)
+      INTEGER :: NBUFFER_FIXSIZE = 43 + 2 * NSENSORNAMELGTMAX ! Memory size required for exchange buffer (fixed part)
       INTEGER :: NBUFFER_VARSIZE = 0 ! Memory size required for exchange buffer (part per store instant)
 
       LOGICAL :: LFIX ! true if sensor is fix (can not move)
@@ -897,6 +901,11 @@ MODULE MODD_SENSOR
         KPOS = KPOS + 1
       END DO
 
+      DO JI = 1, LEN( TPSENSOR%CTYPE )
+        PBUFFER(KPOS) = ICHAR( TPSENSOR%CTYPE(JI:JI) )
+        KPOS = KPOS + 1
+      END DO
+
       PBUFFER(KPOS) = TPSENSOR%NID        ; KPOS = KPOS + 1
       PBUFFER(KPOS) = TPSENSOR%NSTORE_CUR ; KPOS = KPOS + 1
       PBUFFER(KPOS) = TPSENSOR%NSTORE_MAX ; KPOS = KPOS + 1
@@ -1006,6 +1015,11 @@ MODULE MODD_SENSOR
       ! Convert integers to characters for title
       DO JI = 1, LEN( TPSENSOR%CNAME )
         TPSENSOR%CNAME(JI:JI) = ACHAR( NINT( PBUFFER(KPOS) ) )
+        KPOS = KPOS + 1
+      END DO
+
+      DO JI = 1, LEN( TPSENSOR%CTYPE )
+        TPSENSOR%CTYPE(JI:JI) = ACHAR( NINT( PBUFFER(KPOS) ) )
         KPOS = KPOS + 1
       END DO
 
