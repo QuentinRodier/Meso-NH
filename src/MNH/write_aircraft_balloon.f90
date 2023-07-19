@@ -199,7 +199,7 @@ USE MODD_AIRCRAFT_BALLOON
 use modd_budget,           only: NLVL_CATEGORY, NLVL_SUBCATEGORY, NLVL_GROUP, NLVL_SHAPE, NLVL_TIMEAVG, NLVL_NORM, NLVL_MASK, &
                                  tbudiachrometadata
 USE MODD_CST,              ONLY: XRV
-use modd_field,            only: NMNHDIM_LEVEL, NMNHDIM_FLYER_PROC, NMNHDIM_FLYER_TIME, NMNHDIM_UNUSED, &
+use modd_field,            only: NMNHDIM_LEVEL, NMNHDIM_LEVEL_W, NMNHDIM_FLYER_PROC, NMNHDIM_FLYER_TIME, NMNHDIM_UNUSED, &
                                  tfieldmetadata_base, TYPEREAL
 USE MODD_IO,               ONLY: TFILEDATA
 USE MODD_NSV,              ONLY: tsvlist, nsv, nsv_aer, nsv_aerbeg, nsv_aerend, nsv_dst, nsv_dstbeg, nsv_dstend, &
@@ -230,6 +230,7 @@ CHARACTER(LEN=NUNITLGTMAX)    :: YUNIT
 INTEGER :: IMI      ! current model index
 INTEGER :: IPROC    ! number of variables records
 INTEGER :: JPROC    ! loop counter
+integer :: jproc_w
 INTEGER :: ISTORE
 INTEGER :: IPROCZ   ! number of variables records
 INTEGER :: IRR      ! number of hydrometeors
@@ -631,6 +632,8 @@ call Add_profile( 'RARE',    '1D cloud radar reflectivity',            'dBZ', tp
 call Add_profile( 'RAREatt', '1D cloud radar attenuated reflectivity', 'dBZ', tpflyer%xcrare_att(:,:) )
 
 call Add_profile( 'W', '1D vertical velocity', 'm s-1', tpflyer%xwz(:,:) )
+!Store position of W in the field list. Useful because it is not computed on the same Arakawa-grid points
+jproc_w = jproc
 call Add_profile( 'Z', '1D altitude above sea', 'm', tpflyer%xzz(:,:) )
 
 allocate( tzfields( jproc ) )
@@ -646,6 +649,7 @@ tzfields(:)%ndims     = 3
 tzfields(:)%ndimlist(1) = NMNHDIM_UNUSED
 tzfields(:)%ndimlist(2) = NMNHDIM_UNUSED
 tzfields(:)%ndimlist(3) = NMNHDIM_LEVEL
+tzfields(jproc_w)%ndimlist(3) = NMNHDIM_LEVEL_W
 tzfields(:)%ndimlist(4) = NMNHDIM_FLYER_TIME
 tzfields(:)%ndimlist(5) = NMNHDIM_UNUSED
 tzfields(:)%ndimlist(6) = NMNHDIM_FLYER_PROC
