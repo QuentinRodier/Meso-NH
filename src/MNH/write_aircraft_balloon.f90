@@ -512,13 +512,7 @@ IF (SIZE(TPFLYER%XSV,3)>=1) THEN
   END IF
 ENDIF
 !
-IF (SIZE(TPFLYER%XTSRAD)>0) THEN
-  JPROC = JPROC+1
-  CTITLE   (JPROC) = 'Tsrad'
-  CUNIT    (JPROC) = 'K'
-  CCOMMENT (JPROC) = 'Radiative Surface Temperature'
-  XWORK6 (1,1,1,:,1,JPROC) = TPFLYER%XTSRAD(:)
-END IF
+IF ( SIZE( TPFLYER%XTSRAD ) > 0 ) call Add_point( 'Tsrad', 'Radiative Surface Temperature', 'K', TPFLYER%XTSRAD(:) )
 !
 allocate( tzfields( jproc ) )
 

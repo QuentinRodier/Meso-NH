@@ -313,23 +313,19 @@ if ( nsv > 0 ) then
     CALL PPP2DUST(ZSV,ZRHO, PSIG3D=ZSIG, PRG3D=ZRG, PN3D=ZN0)
     DO JSV=1,NMODE_DST
       ! mean radius
-      JPROC = JPROC+1
-      WRITE(CTITLE(JPROC),'(A6,I1)')'DSTRGA',JSV
-      CUNIT    (JPROC) = 'um'
-      WRITE(CCOMMENT(JPROC),'(A18,I1)')'RG (nb) DUST MODE ',JSV
-      XWORK6 (1,1,1,:,1,JPROC) = ZRG(1,1,:,JSV)
+      WRITE( YTITLE,   '( A6,  I1 )' ) 'DSTRGA', JSV
+      WRITE( YCOMMENT, '( A18, I1 )' ) 'RG (nb) DUST MODE ', JSV
+      call Add_point( ytitle, ycomment, 'um', ZRG(1,1,:,JSV) )
+
       ! standard deviation
-      JPROC = JPROC+1
-      WRITE(CTITLE(JPROC),'(A7,I1)')'DSTSIGA',JSV
-      CUNIT    (JPROC) = '  '
-      WRITE(CCOMMENT(JPROC),'(A16,I1)')'SIGMA DUST MODE ',JSV
-      XWORK6 (1,1,1,:,1,JPROC) = ZSIG(1,1,:,JSV)
+      WRITE( YTITLE,   '( A7,  I1 )' ) 'DSTSIGA', JSV
+      WRITE( YCOMMENT, '( A16, I1 )' ) 'SIGMA DUST MODE ', JSV
+      call Add_point( ytitle, ycomment, '', ZSIG(1,1,:,JSV) )
+
       ! particles number
-      JPROC = JPROC+1
-      WRITE(CTITLE(JPROC),'(A6,I1)')'DSTN0A',JSV
-      CUNIT    (JPROC) = 'm-3'
-      WRITE(CCOMMENT(JPROC),'(A13,I1)')'N0 DUST MODE ',JSV
-      XWORK6 (1,1,1,:,1,JPROC) = ZN0(1,1,:,JSV)
+      WRITE( YTITLE,   '( A6,  I1 )' ) 'DSTN0A', JSV
+      WRITE( YCOMMENT, '( A13, I1 )' ) 'N0 DUST MODE ', JSV
+      call Add_point( ytitle, ycomment, 'm-3', ZN0(1,1,:,JSV) )
     ENDDO
     DEALLOCATE (ZSV,ZRHO)
     DEALLOCATE (ZN0,ZRG,ZSIG)

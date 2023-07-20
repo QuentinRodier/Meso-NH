@@ -74,8 +74,9 @@ TYPE(TPROFILERDATA), INTENT(IN) :: TPPROFILER
 !
 !*      0.2  declaration of local variables for diachro
 !
-character(len=NMNHNAMELGTMAX)                        :: yname
-character(len=NUNITLGTMAX)                           :: yunits
+character(len=NCOMMENTLGTMAX)                        :: ycomment
+character(len=NMNHNAMELGTMAX)                        :: ytitle
+character(len=NUNITLGTMAX)                           :: yunit
 INTEGER                                              :: IKU
 INTEGER                                              :: IPROC    ! number of variables records
 INTEGER                                              :: JPROC
@@ -162,13 +163,13 @@ if ( nsv > 0  ) then
   Allocate( zwork, mold = tpprofiler%xsv(:,:,1) )
   do jsv = 1, nsv
     if ( Trim( tsvlist(jsv)%cunits ) == 'ppv' ) then
-      yunits = 'ppb'
+      yunit = 'ppb'
       zwork = tpprofiler%xsv(:,:,jsv) * 1.e9 !*1e9 for conversion ppv->ppb
     else
-      yunits = Trim( tsvlist(jsv)%cunits )
+      yunit = Trim( tsvlist(jsv)%cunits )
       zwork = tpprofiler%xsv(:,:,jsv)
     end if
-    call Add_profile( tsvlist(jsv)%cmnhname, '', yunits, zwork )
+    call Add_profile( tsvlist(jsv)%cmnhname, '', yunit, zwork )
   end do
   Deallocate( zwork )
 
@@ -202,29 +203,19 @@ if ( nsv > 0  ) then
     CALL PPP2AERO(ZSV,ZRHO, PSIG3D=ZSIG, PRG3D=ZRG, PN3D=ZN0)
     DO JSV=1,JPMODE
       ! mean radius
-      JPROC = JPROC+1
-      WRITE(CTITLE(JPROC),'(A6,I1)')'AERRGA',JSV
-      CUNIT(JPROC) = 'um'
-      WRITE(CCOMMENT(JPROC),'(A18,I1)')'RG (nb) AERO MODE ',JSV
-      do ji = 1, iku
-        XWORK6(1,1,ji,:,1,JPROC) = ZRG(1,ji,:,JSV)
-      end do
+      WRITE( YTITLE,   '( A6,  I1 )' ) 'AERRGA', JSV
+      WRITE( YCOMMENT, '( A18, I1 )' ) 'RG (nb) AERO MODE ', JSV
+      call Add_profile( ytitle, ycomment, 'um', ZRG(1,:,:,JSV) )
+
       ! standard deviation
-      JPROC = JPROC+1
-      WRITE(CTITLE(JPROC),'(A7,I1)')'AERSIGA',JSV
-      CUNIT(JPROC) = '  '
-      WRITE(CCOMMENT(JPROC),'(A16,I1)')'SIGMA AERO MODE ',JSV
-      do ji = 1, iku
-        XWORK6(1,1,ji,:,1,JPROC) = ZSIG(1,ji,:,JSV)
-      end do
+      WRITE( YTITLE,   '( A7,  I1 )' ) 'AERSIGA', JSV
+      WRITE( YCOMMENT, '( A16, I1 )' ) 'SIGMA AERO MODE ', JSV
+      call Add_profile( ytitle, ycomment, '', ZSIG(1,:,:,JSV) )
+
       ! particles number
-      JPROC = JPROC+1
-      WRITE(CTITLE(JPROC),'(A6,I1)')'AERN0A',JSV
-      CUNIT(JPROC) = 'm-3'
-      WRITE(CCOMMENT(JPROC),'(A13,I1)')'N0 AERO MODE ',JSV
-      do ji = 1, iku
-        XWORK6(1,1,ji,:,1,JPROC) = ZN0(1,ji,:,JSV)
-      end do
+      WRITE( YTITLE,   '( A6,  I1 )' ) 'AERN0A', JSV
+      WRITE( YCOMMENT, '( A13, I1 )' ) 'N0 AERO MODE ', JSV
+      call Add_profile( ytitle, ycomment, 'm-3', ZN0(1,:,:,JSV) )
     ENDDO
     DEALLOCATE (ZSV,ZRHO)
     DEALLOCATE (ZN0,ZRG,ZSIG)
@@ -259,37 +250,27 @@ if ( nsv > 0  ) then
     CALL PPP2DUST(ZSV,ZRHO, PSIG3D=ZSIG, PRG3D=ZRG, PN3D=ZN0)
     DO JSV=1,NMODE_DST
       ! mean radius
-      JPROC = JPROC+1
-      WRITE(CTITLE(JPROC),'(A6,I1)')'DSTRGA',JSV
-      CUNIT(JPROC) = 'um'
-      WRITE(CCOMMENT(JPROC),'(A18,I1)')'RG (nb) DUST MODE ',JSV
-      do ji = 1, iku
-        XWORK6 (1,1,ji,:,1,JPROC) = ZRG(1,ji,:,JSV)
-      end do
+      WRITE( YTITLE,   '( A6,  I1 )' ) 'DSTRGA', JSV
+      WRITE( YCOMMENT, '( A18, I1 )' ) 'RG (nb) DUST MODE ', JSV
+      call Add_profile( ytitle, ycomment, 'um', ZRG(1,:,:,JSV) )
+
       ! standard deviation
-      JPROC = JPROC+1
-      WRITE(CTITLE(JPROC),'(A7,I1)')'DSTSIGA',JSV
-      CUNIT(JPROC) = '  '
-      WRITE(CCOMMENT(JPROC),'(A16,I1)')'SIGMA DUST MODE ',JSV
-      do ji = 1, iku
-        XWORK6 (1,1,ji,:,1,JPROC) = ZSIG(1,ji,:,JSV)
-      end do
+      WRITE(YTITLE,   '( A7,  I1 )' ) 'DSTSIGA', JSV
+      WRITE(YCOMMENT, '( A16, I1 )' ) 'SIGMA DUST MODE ', JSV
+      call Add_profile( ytitle, ycomment, '', ZSIG(1,:,:,JSV) )
+
       ! particles number
-      JPROC = JPROC+1
-      WRITE(CTITLE(JPROC),'(A6,I1)')'DSTN0A',JSV
-      CUNIT(JPROC) = 'm-3'
-      WRITE(CCOMMENT(JPROC),'(A13,I1)')'N0 DUST MODE ',JSV
-      do ji = 1, iku
-        XWORK6 (1,1,ji,:,1,JPROC) = ZN0(1,ji,:,JSV)
-      end do
+      WRITE( YTITLE,   '( A6,  I1 )' ) 'DSTN0A', JSV
+      WRITE( YCOMMENT, '( A13, I1 )' ) 'N0 DUST MODE ', JSV
+      call Add_profile( ytitle, ycomment, 'm-3', ZN0(1,:,:,JSV) )
     ENDDO
     DEALLOCATE (ZSV,ZRHO)
     DEALLOCATE (ZN0,ZRG,ZSIG)
   END IF
   if ( ldust .or. lorilam .or. lsalt ) then
     do jsv = 1, naer
-      Write( yname, '( a, i1 )' ) 'AEREXT', jsv
-      call Add_profile( yname, 'Aerosol Extinction', '1', tpprofiler%xaer(:,:,jsv) )
+      Write( ytitle, '( a, i1 )' ) 'AEREXT', jsv
+      call Add_profile( ytitle, 'Aerosol Extinction', '1', tpprofiler%xaer(:,:,jsv) )
     end do
   end if
 end if
