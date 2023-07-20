@@ -357,18 +357,18 @@ if ( nsv > 0 ) then
     CALL PPP2SALT(ZSV,ZRHO, PSIG3D=ZSIG, PRG3D=ZRG, PN3D=ZN0)
     DO JSV=1,NMODE_SLT
       ! mean radius
-      WRITE(CTITLE(JPROC),'(A6,I1)')'SLTRGA',JSV
-      WRITE(CCOMMENT(JPROC),'(A18,I1)')'RG (nb) SALT MODE ',JSV
+      WRITE( YTITLE,   '( A6,  I1 )' ) 'SLTRGA', JSV
+      WRITE( YCOMMENT, '( A18, I1 )' ) 'RG (nb) SALT MODE ', JSV
       call Add_point( ytitle, ycomment, 'um', ZRG(1,1,:,JSV) )
 
       ! standard deviation
-      WRITE(CTITLE(JPROC),'(A7,I1)')'SLTSIGA',JSV
-      WRITE(CCOMMENT(JPROC),'(A16,I1)')'SIGMA DUST MODE ',JSV
+      WRITE( YTITLE,   '( A7,  I1 )' ) 'SLTSIGA', JSV
+      WRITE( YCOMMENT, '( A16, I1 )' ) 'SIGMA DUST MODE ', JSV
       call Add_point( ytitle, ycomment, '',ZSIG(1,1,:,JSV) )
 
       ! particles number
-      WRITE(CTITLE(JPROC),'(A6,I1)')'SLTN0A',JSV
-      WRITE(CCOMMENT(JPROC),'(A13,I1)')'N0 DUST MODE ',JSV
+      WRITE( YTITLE,   '( A6,  I1 )' ) 'SLTN0A', JSV
+      WRITE( YCOMMENT, '( A13, I1 )' ) 'N0 DUST MODE ', JSV
       call Add_point( ytitle, ycomment, 'm-3', ZN0(1,1,:,JSV) )
     ENDDO
     DEALLOCATE (ZSV,ZRHO)
