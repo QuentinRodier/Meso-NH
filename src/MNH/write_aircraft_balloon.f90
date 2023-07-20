@@ -388,86 +388,86 @@ IF (SIZE(TPFLYER%XSV,3)>=1) THEN
       ! mean radius
       WRITE(YTITLE,'(A,I1)')'AERRGA',JSV
       WRITE(YCOMMENT,'(A,I1)')'RG (nb) AERO MODE ',JSV
-      call Add_point( Trim( ytitle ), 'um', Trim( ycomment ), ZRG(1,1,:,JSV) )
+      call Add_point( Trim( ytitle ), Trim( ycomment ), 'um', ZRG(1,1,:,JSV) )
       ! standard deviation
       WRITE(YTITLE,'(A,I1)')'AERSIGA',JSV
       WRITE(YCOMMENT,'(A,I1)')'SIGMA AERO MODE ',JSV
-      call Add_point( Trim( ytitle ), '1', Trim( ycomment ), ZSIG(1,1,:,JSV) )
+      call Add_point( Trim( ytitle ), Trim( ycomment ), '1', ZSIG(1,1,:,JSV) )
       ! particles number
       WRITE(YTITLE,'(A,I1)')'AERN0A',JSV
       WRITE(YCOMMENT,'(A,I1)')'N0 AERO MODE ',JSV
-      call Add_point( Trim( ytitle ), 'm-3', Trim( ycomment ), ZN0(1,1,:,JSV) )
+      call Add_point( Trim( ytitle ), Trim( ycomment ), 'm-3', ZN0(1,1,:,JSV) )
       ! mass concentration in microg/m3
       ! sulfate
       WRITE(YTITLE,'(A,I1)')'MSO4',JSV
       WRITE(YCOMMENT,'(A,I1)')'MASS SO4 AEROSOL MODE ',JSV
-      call Add_point( Trim( ytitle ), 'ug m-3', Trim( ycomment ), ZPTOTA(1,1,:,JP_AER_SO4,JSV) )
+      call Add_point( Trim( ytitle ), Trim( ycomment ), 'ug m-3', ZPTOTA(1,1,:,JP_AER_SO4,JSV) )
       ! nitrate
       WRITE(YTITLE,'(A,I1)')'MNO3',JSV
       WRITE(YCOMMENT,'(A,I1)')'MASS NO3 AEROSOL MODE ',JSV
-      call Add_point( Trim( ytitle ), 'ug m-3', Trim( ycomment ), ZPTOTA(1,1,:,JP_AER_NO3,JSV) )
+      call Add_point( Trim( ytitle ), Trim( ycomment ), 'ug m-3', ZPTOTA(1,1,:,JP_AER_NO3,JSV) )
       ! amoniac
       WRITE(YTITLE,'(A,I1)')'MNH3',JSV
       WRITE(YCOMMENT,'(A,I1)')'MASS NH3 AEROSOL MODE ',JSV
-      call Add_point( Trim( ytitle ), 'ug m-3', Trim( ycomment ), ZPTOTA(1,1,:,JP_AER_NH3,JSV) )
+      call Add_point( Trim( ytitle ), Trim( ycomment ), 'ug m-3', ZPTOTA(1,1,:,JP_AER_NH3,JSV) )
       ! water
       WRITE(YTITLE,'(A,I1)')'MH2O',JSV
       WRITE(YCOMMENT,'(A,I1)')'MASS H2O AEROSOL MODE ',JSV
-      call Add_point( Trim( ytitle ), 'ug m-3', Trim( ycomment ), ZPTOTA(1,1,:,JP_AER_H2O,JSV) )
+      call Add_point( Trim( ytitle ), Trim( ycomment ), 'ug m-3', ZPTOTA(1,1,:,JP_AER_H2O,JSV) )
       IF (NSOA .EQ. 10) THEN
         ! SOA1
         WRITE(YTITLE,'(A,I1)')'MSOA1',JSV
         WRITE(YCOMMENT,'(A,I1)')'MASS SOA1 AEROSOL MODE ',JSV
-        call Add_point( Trim( ytitle ), 'ug m-3', Trim( ycomment ), ZPTOTA(1,1,:,JP_AER_SOA1,JSV) )
+        call Add_point( Trim( ytitle ), Trim( ycomment ), 'ug m-3', ZPTOTA(1,1,:,JP_AER_SOA1,JSV) )
         ! SOA2
         WRITE(YTITLE,'(A,I1)')'MSOA2',JSV
         WRITE(YCOMMENT,'(A,I1)')'MASS SOA2 AEROSOL MODE ',JSV
-        call Add_point( Trim( ytitle ), 'ug m-3', Trim( ycomment ), ZPTOTA(1,1,:,JP_AER_SOA2,JSV) )
+        call Add_point( Trim( ytitle ), Trim( ycomment ), 'ug m-3', ZPTOTA(1,1,:,JP_AER_SOA2,JSV) )
         ! SOA3
         WRITE(YTITLE,'(A,I1)')'MSOA3',JSV
         WRITE(YCOMMENT,'(A,I1)')'MASS SOA3 AEROSOL MODE ',JSV
-        call Add_point( Trim( ytitle ), 'ug m-3', Trim( ycomment ), ZPTOTA(1,1,:,JP_AER_SOA3,JSV) )
+        call Add_point( Trim( ytitle ), Trim( ycomment ), 'ug m-3', ZPTOTA(1,1,:,JP_AER_SOA3,JSV) )
         ! SOA4
         WRITE(YTITLE,'(A,I1)')'MSOA4',JSV
         WRITE(YCOMMENT,'(A,I1)')'MASS SOA4 AEROSOL MODE ',JSV
-        call Add_point( Trim( ytitle ), 'ug m-3', Trim( ycomment ), ZPTOTA(1,1,:,JP_AER_SOA4,JSV) )
+        call Add_point( Trim( ytitle ), Trim( ycomment ), 'ug m-3', ZPTOTA(1,1,:,JP_AER_SOA4,JSV) )
         ! SOA5
         WRITE(YTITLE,'(A,I1)')'MSOA5',JSV
         WRITE(YCOMMENT,'(A,I1)')'MASS SOA5 AEROSOL MODE ',JSV
-        call Add_point( Trim( ytitle ), 'ug m-3', Trim( ycomment ), ZPTOTA(1,1,:,JP_AER_SOA5,JSV) )
+        call Add_point( Trim( ytitle ), Trim( ycomment ), 'ug m-3', ZPTOTA(1,1,:,JP_AER_SOA5,JSV) )
         ! SOA6
         WRITE(YTITLE,'(A,I1)')'MSOA6',JSV
         WRITE(YCOMMENT,'(A,I1)')'MASS SOA6 AEROSOL MODE ',JSV
-        call Add_point( Trim( ytitle ), 'ug m-3', Trim( ycomment ), ZPTOTA(1,1,:,JP_AER_SOA6,JSV) )
+        call Add_point( Trim( ytitle ), Trim( ycomment ), 'ug m-3', ZPTOTA(1,1,:,JP_AER_SOA6,JSV) )
         ! SOA7
         WRITE(YTITLE,'(A,I1)')'MSOA7',JSV
         WRITE(YCOMMENT,'(A,I1)')'MASS SOA7 AEROSOL MODE ',JSV
-        call Add_point( Trim( ytitle ), 'ug m-3', Trim( ycomment ), ZPTOTA(1,1,:,JP_AER_SOA7,JSV) )
+        call Add_point( Trim( ytitle ), Trim( ycomment ), 'ug m-3', ZPTOTA(1,1,:,JP_AER_SOA7,JSV) )
         ! SOA8
         WRITE(YTITLE,'(A,I1)')'MSOA8',JSV
         WRITE(YCOMMENT,'(A,I1)')'MASS SOA8 AEROSOL MODE ',JSV
-        call Add_point( Trim( ytitle ), 'ug m-3', Trim( ycomment ), ZPTOTA(1,1,:,JP_AER_SOA8,JSV) )
+        call Add_point( Trim( ytitle ), Trim( ycomment ), 'ug m-3', ZPTOTA(1,1,:,JP_AER_SOA8,JSV) )
         ! SOA9
         WRITE(YTITLE,'(A,I1)')'MSOA9',JSV
         WRITE(YCOMMENT,'(A,I1)')'MASS SOA9 AEROSOL MODE ',JSV
-        call Add_point( Trim( ytitle ), 'ug m-3', Trim( ycomment ), ZPTOTA(1,1,:,JP_AER_SOA9,JSV) )
+        call Add_point( Trim( ytitle ), Trim( ycomment ), 'ug m-3', ZPTOTA(1,1,:,JP_AER_SOA9,JSV) )
         ! SOA10
         WRITE(YTITLE,'(A,I1)')'MSOA10',JSV
         WRITE(YCOMMENT,'(A,I1)')'MASS SOA10 AEROSOL MODE ',JSV
-        call Add_point( Trim( ytitle ), 'ug m-3', Trim( ycomment ), ZPTOTA(1,1,:,JP_AER_SOA10,JSV) )
+        call Add_point( Trim( ytitle ), Trim( ycomment ), 'ug m-3', ZPTOTA(1,1,:,JP_AER_SOA10,JSV) )
       ENDIF
       ! OC
       WRITE(YTITLE,'(A,I1)')'MOC',JSV
       WRITE(YCOMMENT,'(A,I1)')'MASS OC AEROSOL MODE ',JSV
-      call Add_point( Trim( ytitle ), 'ug m-3', Trim( ycomment ), ZPTOTA(1,1,:,JP_AER_OC,JSV) )
+      call Add_point( Trim( ytitle ), Trim( ycomment ), 'ug m-3', ZPTOTA(1,1,:,JP_AER_OC,JSV) )
       ! BC
       WRITE(YTITLE,'(A,I1)')'MBC',JSV
       WRITE(YCOMMENT,'(A,I1)')'MASS BC AEROSOL MODE ',JSV
-      call Add_point( Trim( ytitle ), 'ug m-3', Trim( ycomment ), ZPTOTA(1,1,:,JP_AER_BC,JSV) )
+      call Add_point( Trim( ytitle ), Trim( ycomment ), 'ug m-3', ZPTOTA(1,1,:,JP_AER_BC,JSV) )
       ! dust
       WRITE(YTITLE,'(A,I1)')'MDUST',JSV
       WRITE(YCOMMENT,'(A,I1)')'MASS DUST AEROSOL MODE ',JSV
-      call Add_point( Trim( ytitle ), 'ug m-3', Trim( ycomment ), ZPTOTA(1,1,:,JP_AER_DST,JSV) )
+      call Add_point( Trim( ytitle ), Trim( ycomment ), 'ug m-3', ZPTOTA(1,1,:,JP_AER_DST,JSV) )
     ENDDO
     DEALLOCATE (ZSV,ZRHO)
     DEALLOCATE (ZN0,ZRG,ZSIG,ZPTOTA)
@@ -497,15 +497,15 @@ IF (SIZE(TPFLYER%XSV,3)>=1) THEN
       ! mean radius
       WRITE(YTITLE,'(A,I1)')'DSTRGA',JSV
       WRITE(YCOMMENT,'(A,I1)')'RG (nb) DUST MODE ',JSV
-      call Add_point( Trim( ytitle ), 'um', Trim( ycomment ), ZRG(1,1,:,JSV) )
+      call Add_point( Trim( ytitle ), Trim( ycomment ), 'um', ZRG(1,1,:,JSV) )
       ! standard deviation
       WRITE(YTITLE,'(A,I1)')'DSTSIGA',JSV
       WRITE(YCOMMENT,'(A,I1)')'SIGMA DUST MODE ',JSV
-      call Add_point( Trim( ytitle ), '1', Trim( ycomment ), ZSIG(1,1,:,JSV) )
+      call Add_point( Trim( ytitle ), Trim( ycomment ), '1', ZSIG(1,1,:,JSV) )
       ! particles number
       WRITE(YTITLE,'(A,I1)')'DSTN0A',JSV
       WRITE(YCOMMENT,'(A,I1)')'N0 DUST MODE ',JSV
-      call Add_point( Trim( ytitle ), 'm-3', Trim( ycomment ), ZN0(1,1,:,JSV) )
+      call Add_point( Trim( ytitle ), Trim( ycomment ), 'm-3', ZN0(1,1,:,JSV) )
     ENDDO
     DEALLOCATE (ZSV,ZRHO)
     DEALLOCATE (ZN0,ZRG,ZSIG)
