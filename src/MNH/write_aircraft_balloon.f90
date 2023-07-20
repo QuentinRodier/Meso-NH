@@ -625,7 +625,7 @@ IF ( CCLOUD == 'LIMA' ) THEN
   call Add_profile( 'CRAINT',  'Rain concentration',         'kg-1', tpflyer%xcrz(:,:) )
   call Add_profile( 'CICET',   'Ice concentration',          'kg-1', tpflyer%xciz(:,:) )
 ELSE IF ( CCLOUD == 'ICE3' .OR. CCLOUD == 'ICE4' ) THEN
-  call Add_profile( 'CIT', 'Ice concentration', 'm-3', tpflyer%xciz(:,:) )
+  call Add_profile( 'CIT',     'Ice concentration',           'm-3', tpflyer%xciz(:,:) )
 END IF
 
 call Add_profile( 'RARE',    '1D cloud radar reflectivity',            'dBZ', tpflyer%xcrare(:,:) )

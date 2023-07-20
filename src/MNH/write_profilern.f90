@@ -98,6 +98,7 @@ IPROC = 13 + NRR + NSV
 if ( ccloud == 'C2R2' .or. ccloud == 'KHKO' )  IPROC = IPROC + 1
 if ( ccloud /= 'NONE' .and. ccloud /= 'REVE' ) IPROC = IPROC + 1
 if ( ccloud == 'ICE3' .or. ccloud == 'ICE4' )  IPROC = IPROC + 1
+if ( ccloud == 'LIMA' )  IPROC = IPROC + 3
 IF (LORILAM) IPROC = IPROC + JPMODE * 3
 IF (LDUST) IPROC = IPROC + NMODE_DST * 3
 IF (LDUST .OR. LORILAM .OR. LSALT) IPROC=IPROC+NAER
@@ -136,8 +137,13 @@ jproc_w = jproc
 
 call Add_profile( 'TKE_DISS', 'TKE dissipation rate', 'm2 s-2', tpprofiler%xtke_diss )
 
-if ( ccloud == 'ICE3' .or. ccloud == 'ICE4' ) &
-  call Add_profile( 'CIT',      'Ice concentration',    'kg-3',   tpprofiler%xciz )
+if ( ccloud == 'LIMA' ) then
+  call Add_profile( 'CCLOUDT', 'liquid cloud concentration', 'kg-1', tpprofiler%xccz(:,:) )
+  call Add_profile( 'CRAINT',  'Rain concentration',         'kg-1', tpprofiler%xcrz(:,:) )
+  call Add_profile( 'CICET',   'Ice concentration',          'kg-1', tpprofiler%xciz(:,:) )
+else if ( ccloud == 'ICE3' .or. ccloud == 'ICE4' ) then
+  call Add_profile( 'CIT',     'Ice concentration',           'm-3', tpprofiler%xciz(:,:) )
+end if
 
 if ( nrr >= 1 ) call Add_profile( 'Rv', 'Water vapor mixing ratio',        'kg kg-1', tpprofiler%xr(:,:,1) )
 if ( nrr >= 2 ) call Add_profile( 'Rc', 'Liquid cloud water mixing ratio', 'kg kg-1', tpprofiler%xr(:,:,2) )
