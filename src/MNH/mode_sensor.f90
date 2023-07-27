@@ -455,65 +455,28 @@ CONTAINS
 
 
   SUBROUTINE ADD_FIXPOINT( HTITLEIN, HCOMMENTIN, HUNITSIN, PFIELDIN )
-    USE MODE_MSG
 
     CHARACTER(LEN=*), INTENT(IN) :: HTITLEIN
     CHARACTER(LEN=*), INTENT(IN) :: HCOMMENTIN
     CHARACTER(LEN=*), INTENT(IN) :: HUNITSIN
     REAL,             INTENT(IN) :: PFIELDIN
 
-    NPROCCUR = NPROCCUR + 1
+    REAL, DIMENSION(1,1) :: PFIELD
 
-    IF ( NPROCCUR > NPROCMAX ) CALL PRINT_MSG( NVERB_FATAL, 'IO', 'Add_fixpoint', 'more processes than expected' )
-
-    CTITLE(NPROCCUR)   = TRIM( HTITLEIN)
-    IF ( LEN_TRIM( HTITLEIN ) > LEN( CTITLE(NPROCCUR) ) )                                           &
-      CALL PRINT_MSG( NVERB_WARNING, 'IO', 'Add_fixpoint',                                &
-                      'title was truncated to ' // CTITLE(NPROCCUR) // ' from ' // TRIM( HTITLEIN ) )
-
-    CCOMMENT(NPROCCUR) = TRIM( HCOMMENTIN )
-    IF ( LEN_TRIM( HCOMMENTIN ) > LEN( CCOMMENT(NPROCCUR) ) )                                             &
-      CALL PRINT_MSG( NVERB_WARNING, 'IO', 'Add_fixpoint',                                      &
-                      'comment was truncated to ' // CCOMMENT(NPROCCUR) // ' from ' // TRIM( HCOMMENTIN ) )
-
-    CUNIT(NPROCCUR)    = TRIM( HUNITSIN )
-    IF ( LEN_TRIM( HUNITSIN ) > LEN( CUNIT(NPROCCUR) ) )                                           &
-      CALL PRINT_MSG( NVERB_WARNING, 'IO', 'Add_fixpoint',                               &
-                      'units was truncated to ' // CUNIT(NPROCCUR) // ' from ' // TRIM( HUNITSIN ) )
-
-    XWORK6(1, 1, 1, 1, 1, NPROCCUR) = PFIELDIN
+    PFIELD(1,1) = PFIELDIN
+    CALL ADD_PROFILE( HTITLEIN, HCOMMENTIN, HUNITSIN, PFIELD )
 
   END SUBROUTINE ADD_FIXPOINT
 
 
   SUBROUTINE ADD_POINT( HTITLEIN, HCOMMENTIN, HUNITSIN, PFIELDIN )
-    USE MODE_MSG
 
     CHARACTER(LEN=*),   INTENT(IN) :: HTITLEIN
     CHARACTER(LEN=*),   INTENT(IN) :: HCOMMENTIN
     CHARACTER(LEN=*),   INTENT(IN) :: HUNITSIN
     REAL, DIMENSION(:), INTENT(IN) :: PFIELDIN
 
-    NPROCCUR = NPROCCUR + 1
-
-    IF ( NPROCCUR > NPROCMAX ) CALL PRINT_MSG( NVERB_FATAL, 'IO', 'Add_point', 'more processes than expected' )
-
-    CTITLE(NPROCCUR)   = TRIM( HTITLEIN)
-    IF ( LEN_TRIM( HTITLEIN ) > LEN( CTITLE(NPROCCUR) ) )                                           &
-      CALL PRINT_MSG( NVERB_WARNING, 'IO', 'Add_point',                                &
-                      'title was truncated to ' // CTITLE(NPROCCUR) // ' from ' // TRIM( HTITLEIN ) )
-
-    CCOMMENT(NPROCCUR) = TRIM( HCOMMENTIN )
-    IF ( LEN_TRIM( HCOMMENTIN ) > LEN( CCOMMENT(NPROCCUR) ) )                                             &
-      CALL PRINT_MSG( NVERB_WARNING, 'IO', 'Add_point',                                      &
-                      'comment was truncated to ' // CCOMMENT(NPROCCUR) // ' from ' // TRIM( HCOMMENTIN ) )
-
-    CUNIT(NPROCCUR)    = TRIM( HUNITSIN )
-    IF ( LEN_TRIM( HUNITSIN ) > LEN( CUNIT(NPROCCUR) ) )                                           &
-      CALL PRINT_MSG( NVERB_WARNING, 'IO', 'Add_point',                               &
-                      'units was truncated to ' // CUNIT(NPROCCUR) // ' from ' // TRIM( HUNITSIN ) )
-
-    XWORK6(1, 1, 1, :, 1, NPROCCUR) = PFIELDIN(:)
+    CALL ADD_PROFILE( HTITLEIN, HCOMMENTIN, HUNITSIN, RESHAPE( PFIELDIN, [ 1, SIZE(PFIELDIN) ] ) )
 
   END SUBROUTINE ADD_POINT
 
@@ -532,17 +495,17 @@ CONTAINS
 
     CTITLE(NPROCCUR)   = TRIM( HTITLEIN)
     IF ( LEN_TRIM( HTITLEIN ) > LEN( CTITLE(NPROCCUR) ) )                                           &
-      CALL PRINT_MSG( NVERB_WARNING, 'IO', 'Add_profile',                                &
+      CALL PRINT_MSG( NVERB_WARNING, 'IO', 'Add_profile',                                           &
                       'title was truncated to ' // CTITLE(NPROCCUR) // ' from ' // TRIM( HTITLEIN ) )
 
     CCOMMENT(NPROCCUR) = TRIM( HCOMMENTIN )
     IF ( LEN_TRIM( HCOMMENTIN ) > LEN( CCOMMENT(NPROCCUR) ) )                                             &
-      CALL PRINT_MSG( NVERB_WARNING, 'IO', 'Add_profile',                                      &
+      CALL PRINT_MSG( NVERB_WARNING, 'IO', 'Add_profile',                                                 &
                       'comment was truncated to ' // CCOMMENT(NPROCCUR) // ' from ' // TRIM( HCOMMENTIN ) )
 
     CUNIT(NPROCCUR)    = TRIM( HUNITSIN )
     IF ( LEN_TRIM( HUNITSIN ) > LEN( CUNIT(NPROCCUR) ) )                                           &
-      CALL PRINT_MSG( NVERB_WARNING, 'IO', 'Add_profile',                               &
+      CALL PRINT_MSG( NVERB_WARNING, 'IO', 'Add_profile',                                          &
                       'units was truncated to ' // CUNIT(NPROCCUR) // ' from ' // TRIM( HUNITSIN ) )
 
     XWORK6(1, 1, :, :, 1, NPROCCUR) = PFIELDIN(:, :)
