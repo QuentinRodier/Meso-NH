@@ -18,12 +18,6 @@ private
 PUBLIC :: AIRCRAFT_BALLOON_FREE_NONLOCAL
 public :: WRITE_AIRCRAFT_BALLOON
 
-CHARACTER(LEN=NCOMMENTLGTMAX), DIMENSION(:), ALLOCATABLE :: CCOMMENT ! comment string(
-CHARACTER(LEN=NMNHNAMELGTMAX), DIMENSION(:), ALLOCATABLE :: CTITLE   ! title
-CHARACTER(LEN=NUNITLGTMAX),    DIMENSION(:), ALLOCATABLE :: CUNIT    ! physical unit
-
-REAL, DIMENSION(:,:,:,:,:,:), ALLOCATABLE :: XWORK6   ! contains temporal serie
-
 contains
 
 ! ##########################################
@@ -211,6 +205,9 @@ USE MODE_AERO_PSD
 use mode_aircraft_balloon, only: Aircraft_balloon_longtype_get
 USE MODE_DUST_PSD
 USE MODE_MODELN_HANDLER,   ONLY: GET_CURRENT_MODEL_INDEX
+use mode_sensor,           only: Add_fixpoint, Add_point, Add_profile, Sensor_current_processes_number_get, &
+                                 ccomment, ctitle, cunit, xwork6, &
+                                 Sensor_write_workarrays_allocate, Sensor_write_workarrays_deallocate
 use mode_write_diachro,    only: Write_diachro
 
 
@@ -267,12 +264,7 @@ ISTORE = SIZE( TPFLYER%TFLYER_TIME%TPDATES )
 !
 !----------------------------------------------------------------------------
 !Treat point values
-ALLOCATE (XWORK6(1,1,1,ISTORE,1,IPROC))
-ALLOCATE (CCOMMENT(IPROC))
-ALLOCATE (CTITLE  (IPROC))
-ALLOCATE (CUNIT   (IPROC))
-
-jproc = 0
+call Sensor_write_workarrays_allocate( 1, istore, iproc )
 
 call Add_point( 'ZS', 'orography', 'm', tpflyer%xzs(:) )
 !
@@ -514,6 +506,7 @@ ENDIF
 !
 IF ( SIZE( TPFLYER%XTSRAD ) > 0 ) call Add_point( 'Tsrad', 'Radiative Surface Temperature', 'K', TPFLYER%XTSRAD(:) )
 !
+jproc = Sensor_current_processes_number_get()
 allocate( tzfields( jproc ) )
 
 tzfields(:)%cmnhname  = ctitle(1 : jproc)
@@ -580,10 +573,7 @@ call Write_diachro( tpdiafile, tzbudiachro, tzfields, tpflyer%tflyer_time%tpdate
                     tpflyer = tpflyer                                                                        )
 
 Deallocate( tzfields )
-Deallocate( xwork6 )
-Deallocate( ccomment )
-Deallocate( ctitle )
-Deallocate( cunit )
+call Sensor_write_workarrays_deallocate( )
 
 !----------------------------------------------------------------------------
 !Treat vertical profiles
@@ -592,12 +582,7 @@ IPROCZ = 8 + IRR
 IF ( CCLOUD == 'LIMA' )     IPROCZ = IPROCZ + 3
 IF ( CCLOUD(1:3) == 'ICE' ) IPROCZ = IPROCZ + 1
 
-ALLOCATE (XWORK6(1,1,IKU,ISTORE,1,IPROCZ))
-ALLOCATE (CCOMMENT(IPROCZ))
-ALLOCATE (CTITLE (IPROCZ))
-ALLOCATE (CUNIT  (IPROCZ))
-
-JPROC = 0
+call Sensor_write_workarrays_allocate( iku, istore, iprocz )
 
 call Add_profile( 'Rt', '1D Total hydrometeor mixing ratio', 'kg kg-1', tpflyer%xrtz(:,:) )
 
@@ -627,8 +612,10 @@ call Add_profile( 'RAREatt', '1D cloud radar attenuated reflectivity', 'dBZ', tp
 
 call Add_profile( 'W', '1D vertical velocity', 'm s-1', tpflyer%xwz(:,:) )
 !Store position of W in the field list. Useful because it is not computed on the same Arakawa-grid points
-jproc_w = jproc
+jproc_w = Sensor_current_processes_number_get()
 call Add_profile( 'Z', '1D altitude above sea', 'm', tpflyer%xzz(:,:) )
+
+jproc = Sensor_current_processes_number_get()
 
 allocate( tzfields( jproc ) )
 
@@ -702,42 +689,7 @@ call Write_diachro( tpdiafile, tzbudiachro, tzfields, tpflyer%tflyer_time%tpdate
                     tpflyer = tpflyer                                                                        )
 
 deallocate( tzfields )
-
-DEALLOCATE (XWORK6)
-DEALLOCATE (CCOMMENT)
-DEALLOCATE (CTITLE  )
-DEALLOCATE (CUNIT   )
-
-contains
-
-subroutine Add_profile( htitle, hcomment, hunits, pfield )
-! This subroutine is a simple interface to the generic Add_profile.
-! This is done this way to reduce the number of arguments passed to Add_profile.
-use mode_sensor, only: Sensor_diachro_profile_add
-
-character(len=*),     intent(in) :: htitle
-character(len=*),     intent(in) :: hcomment
-character(len=*),     intent(in) :: hunits
-real, dimension(:,:), intent(in) :: pfield
-
-call Sensor_diachro_profile_add( htitle, hcomment, hunits, pfield, jproc, iprocz, ctitle, ccomment, cunit, xwork6 )
-
-end subroutine Add_profile
-
-
-subroutine Add_point( htitle, hcomment, hunits, pfield )
-! This subroutine is a simple interface to the generic Add_point.
-! This is done this way to reduce the number of arguments passed to Add_point.
-use mode_sensor, only: Sensor_diachro_point_add
-
-character(len=*),   intent(in) :: htitle
-character(len=*),   intent(in) :: hcomment
-character(len=*),   intent(in) :: hunits
-real, dimension(:), intent(in) :: pfield
-
-call Sensor_diachro_point_add( htitle, hcomment, hunits, pfield, jproc, iproc, ctitle, ccomment, cunit, xwork6 )
-
-end subroutine Add_point
+call Sensor_write_workarrays_deallocate( )
 
 !----------------------------------------------------------------------------
 END SUBROUTINE FLYER_DIACHRO

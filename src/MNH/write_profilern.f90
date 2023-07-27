@@ -33,12 +33,6 @@ private
 
 public :: PROFILER_DIACHRO_n
 
-CHARACTER(LEN=NCOMMENTLGTMAX), DIMENSION(:), ALLOCATABLE :: CCOMMENT ! comment string
-CHARACTER(LEN=NMNHNAMELGTMAX), DIMENSION(:), ALLOCATABLE :: CTITLE   ! title
-CHARACTER(LEN=NUNITLGTMAX),    DIMENSION(:), ALLOCATABLE :: CUNIT    ! physical unit
-
-REAL, DIMENSION(:,:,:,:,:,:), ALLOCATABLE :: XWORK6   ! contains temporal serie
-
 contains
 
 ! ####################################################
@@ -67,6 +61,9 @@ USE MODD_TYPE_STATPROF
 !
 USE MODE_AERO_PSD
 USE MODE_DUST_PSD
+use mode_sensor,           only: Add_fixpoint, Add_point, Add_profile, Sensor_current_processes_number_get, &
+                                 ccomment, ctitle, cunit, xwork6, &
+                                 Sensor_write_workarrays_allocate, Sensor_write_workarrays_deallocate
 use mode_write_diachro,   only: Write_diachro
 !
 TYPE(TFILEDATA),     INTENT(IN) :: TPDIAFILE ! diachronic file to write
@@ -107,14 +104,10 @@ IF ( CTURB == 'TKEL' ) IPROC = IPROC + 1
 
 ISTORE = SIZE( TPROFILERS_TIME%TPDATES )
 
-ALLOCATE ( XWORK6(1, 1, IKU, ISTORE, 1, IPROC) )
-ALLOCATE ( CCOMMENT(IPROC) )
-ALLOCATE ( CTITLE  (IPROC) )
-ALLOCATE ( CUNIT   (IPROC) )
+call Sensor_write_workarrays_allocate( iku, istore, iproc )
 !
 !----------------------------------------------------------------------------
 !Treat vertical profiles
-jproc = 0
 
 call Add_profile( 'Th',       'Potential temperature',         'K',      tpprofiler%xth        )
 call Add_profile( 'Thv',      'Virtual Potential temperature', 'K',      tpprofiler%xthv       )
@@ -127,14 +120,14 @@ call Add_profile( 'RAREatt',  'Radar attenuated reflectivity', 'dBZ',    tpprofi
 call Add_profile( 'P',        'Pressure',                      'Pa',     tpprofiler%xp         )
 call Add_profile( 'ALT',      'Altitude',                      'm',      tpprofiler%xzz        )
 !Store position of ALT in the field list. Useful because it is not computed on the same Arakawa-grid points
-jproc_alt = jproc
+jproc_alt = Sensor_current_processes_number_get()
 call Add_profile( 'ZON_WIND', 'Zonal wind',                    'm s-1',  tpprofiler%xzon       )
 call Add_profile( 'MER_WIND', 'Meridional wind',               'm s-1',  tpprofiler%xmer       )
 call Add_profile( 'FF',       'Wind intensity',                'm s-1',  tpprofiler%xff        )
 call Add_profile( 'DD',       'Wind direction',                'degree', tpprofiler%xdd        )
 call Add_profile( 'W',        'Air vertical speed',            'm s-1',  tpprofiler%xw         )
 !Store position of W in the field list. Useful because it is not computed on the same Arakawa-grid points
-jproc_w = jproc
+jproc_w = Sensor_current_processes_number_get()
 
 call Add_profile( 'TKE_DISS', 'TKE dissipation rate', 'm2 s-2', tpprofiler%xtke_diss )
 
@@ -275,6 +268,8 @@ if ( nsv > 0  ) then
   end if
 end if
 
+jproc = Sensor_current_processes_number_get()
+
 allocate( tzfields( jproc ) )
 
 tzfields(:)%cmnhname  = ctitle(1 : jproc)
@@ -347,8 +342,7 @@ tzbudiachro%nkh        = iku
 call Write_diachro( tpdiafile, tzbudiachro, tzfields, tprofilers_time%tpdates, xwork6(:,:,:,:,:,:jproc) )
 
 Deallocate( tzfields )
-Deallocate( xwork6 )
-Deallocate( ccomment, ctitle, cunit )
+call Sensor_write_workarrays_deallocate( )
 
 !----------------------------------------------------------------------------
 !Treat point values
@@ -361,12 +355,7 @@ IF (LDIAG_SURFRAD_PROF) THEN
 END IF
 IF( CRAD /= 'NONE' )  IPROC = IPROC + 1 !Tsrad term
 
-ALLOCATE ( XWORK6(1, 1, 1, ISTORE, 1, IPROC) )
-ALLOCATE ( CCOMMENT(IPROC) )
-ALLOCATE ( CTITLE  (IPROC) )
-ALLOCATE ( CUNIT   (IPROC) )
-
-jproc = 0
+call Sensor_write_workarrays_allocate( 1, istore, iproc )
 
 if ( ldiag_surfrad_prof ) then
   call Add_point( 'T2m',    '2-m temperature',               'K',       tpprofiler%xt2m    )
@@ -399,6 +388,8 @@ call Add_point( 'ZHD', 'Zenith Hydrostatic Delay',  'm',      tpprofiler%xzhd )
 if ( ldiag_surfrad_prof ) call Add_point( 'SFCO2', 'CO2 Surface Flux', 'mg m-2 s-1', tpprofiler%xsfco2(:) )
 
 if ( crad /= 'NONE' ) call Add_point( 'Tsrad', 'Radiative Surface Temperature', 'K', tpprofiler%xtsrad(:) )
+
+jproc = Sensor_current_processes_number_get()
 
 Allocate( tzfields( jproc ) )
 
@@ -466,52 +457,26 @@ tzbudiachro%nkh        = 1
 call Write_diachro( tpdiafile, tzbudiachro, tzfields, tprofilers_time%tpdates, xwork6(:,:,:,:,:,:jproc) )
 
 Deallocate( tzfields )
-Deallocate( xwork6 )
-Deallocate( ccomment, ctitle, cunit )
+call Sensor_write_workarrays_deallocate( )
 
 !----------------------------------------------------------------------------
 !Treat position
 
 IPROC = 3
 
-ALLOCATE ( XWORK6(1, 1, 1, 1, 1, IPROC) )
-ALLOCATE ( CCOMMENT(IPROC) )
-ALLOCATE ( CTITLE  (IPROC) )
-ALLOCATE ( CUNIT   (IPROC) )
-
-jproc = 0
+call Sensor_write_workarrays_allocate( 1, 1, iproc )
 
 if ( lcartesian ) then
-  JPROC = JPROC + 1
-  CTITLE   (JPROC) = 'X'
-  CUNIT    (JPROC) = 'm'
-  CCOMMENT (JPROC) = 'X Pos'
-  XWORK6 (1,1,1,1,1,JPROC) = TPPROFILER%XX_CUR
-
-  JPROC = JPROC + 1
-  CTITLE   (JPROC) = 'Y'
-  CUNIT    (JPROC) = 'm'
-  CCOMMENT (JPROC) = 'Y Pos'
-  XWORK6 (1,1,1,1,1,JPROC) = TPPROFILER%XY_CUR
+  call Add_fixpoint( 'X', 'X position', 'm', TPPROFILER%XX_CUR )
+  call Add_fixpoint( 'Y', 'Y position', 'm', TPPROFILER%XY_CUR )
 else
-  JPROC = JPROC + 1
-  CTITLE   (JPROC) = 'LON'
-  CUNIT    (JPROC) = 'degree'
-  CCOMMENT (JPROC) = 'Longitude'
-  XWORK6 (1,1,1,1,1,JPROC) = TPPROFILER%XLON_CUR
-
-  JPROC = JPROC + 1
-  CTITLE   (JPROC) = 'LAT'
-  CUNIT    (JPROC) = 'degree'
-  CCOMMENT (JPROC) = 'Latitude'
-  XWORK6 (1,1,1,1,1,JPROC) = TPPROFILER%XLAT_CUR
+  call Add_fixpoint( 'LON', 'longitude', 'degree', TPPROFILER%XLON_CUR )
+  call Add_fixpoint( 'LAT', 'latitude',  'degree', TPPROFILER%XLAT_CUR )
 end if
 
-JPROC = JPROC + 1
-CTITLE   (JPROC) = 'Z'
-CUNIT    (JPROC) = 'm'
-CCOMMENT (JPROC) = 'altitude'
-XWORK6 (1,1,1,1,1,JPROC) = TPPROFILER%XZ_CUR
+call Add_fixpoint( 'Z', 'altitude', 'm', TPPROFILER%XZ_CUR )
+
+jproc = Sensor_current_processes_number_get()
 
 Allocate( tzfields( jproc ) )
 
@@ -532,43 +497,8 @@ tzfields(:)%ndimlist(6) = NMNHDIM_PROFILER_PROC
 
 call Write_diachro( tpdiafile, tzbudiachro, tzfields, tprofilers_time%tpdates, xwork6(:,:,:,:,:,:jproc) )
 
-
-!Necessary because global variables (private inside module)
-Deallocate( xwork6  )
-Deallocate (ccomment)
-Deallocate (ctitle  )
-Deallocate (cunit   )
-
-contains
-
-subroutine Add_profile( htitle, hcomment, hunits, pfield )
-! This subroutine is a simple interface to the generic Add_profile.
-! This is done this way to reduce the number of arguments passed to Add_profile.
-use mode_sensor, only: Sensor_diachro_profile_add
-
-character(len=*),     intent(in) :: htitle
-character(len=*),     intent(in) :: hcomment
-character(len=*),     intent(in) :: hunits
-real, dimension(:,:), intent(in) :: pfield
-
-call Sensor_diachro_profile_add( htitle, hcomment, hunits, pfield, jproc, iproc, ctitle, ccomment, cunit, xwork6 )
-
-end subroutine Add_profile
-
-
-subroutine Add_point( htitle, hcomment, hunits, pfield )
-! This subroutine is a simple interface to the generic Add_point.
-! This is done this way to reduce the number of arguments passed to Add_point.
-use mode_sensor, only: Sensor_diachro_point_add
-
-character(len=*),   intent(in) :: htitle
-character(len=*),   intent(in) :: hcomment
-character(len=*),   intent(in) :: hunits
-real, dimension(:), intent(in) :: pfield
-
-call Sensor_diachro_point_add( htitle, hcomment, hunits, pfield, jproc, iproc, ctitle, ccomment, cunit, xwork6 )
-
-end subroutine Add_point
+Deallocate( tzfields )
+call Sensor_write_workarrays_deallocate( )
 
 END SUBROUTINE PROFILER_DIACHRO_n
 

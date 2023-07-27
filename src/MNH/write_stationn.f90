@@ -26,12 +26,6 @@ private
 
 public :: STATION_DIACHRO_n
 
-CHARACTER(LEN=NCOMMENTLGTMAX), DIMENSION(:), ALLOCATABLE :: CCOMMENT ! comment string
-CHARACTER(LEN=NMNHNAMELGTMAX), DIMENSION(:), ALLOCATABLE :: CTITLE   ! title
-CHARACTER(LEN=NUNITLGTMAX),    DIMENSION(:), ALLOCATABLE :: CUNIT    ! physical unit
-
-REAL, DIMENSION(:,:,:,:,:,:), ALLOCATABLE :: XWORK6   ! contains temporal serie
-
 contains
 
 ! ##################################################
@@ -56,6 +50,9 @@ use modd_type_statprof, only: tstationdata
 USE MODE_AERO_PSD
 USE MODE_DUST_PSD
 USE MODE_SALT_PSD
+use mode_sensor,         only: Add_fixpoint, Add_point, Sensor_current_processes_number_get, &
+                               ccomment, ctitle, cunit, xwork6, &
+                               Sensor_write_workarrays_allocate, Sensor_write_workarrays_deallocate
 use MODE_WRITE_DIACHRO,  ONLY: Write_diachro
 
 TYPE(TFILEDATA),    INTENT(IN) :: TPDIAFILE ! diachronic file to write
@@ -98,12 +95,7 @@ IF ( CRAD /= 'NONE' )  IPROC = IPROC + 1
 
 ISTORE = SIZE( TSTATIONS_TIME%TPDATES )
 
-ALLOCATE( XWORK6(1, 1, 1, ISTORE, 1, IPROC) )
-ALLOCATE( CCOMMENT(IPROC) )
-ALLOCATE( CTITLE  (IPROC) )
-ALLOCATE( CUNIT   (IPROC) )
-!
-JPROC = 0
+call Sensor_write_workarrays_allocate( 1, istore, iproc )
 !
 !----------------------------------------------------------------------------
 !
@@ -379,6 +371,8 @@ if ( ldiag_surfrad_stat ) call Add_point( 'SFCO2', 'CO2 Surface Flux', 'mg m-2 s
 !----------------------------------------------------------------------------
 !
 !
+jproc = Sensor_current_processes_number_get()
+
 allocate( tzfields( jproc ) )
 
 tzfields(:)%cmnhname  = ctitle(1 : jproc)
@@ -445,72 +439,29 @@ tzbudiachro%nkh        = 1
 call Write_diachro( tpdiafile, tzbudiachro, tzfields, tstations_time%tpdates, xwork6(:,:,:,:,:,:jproc) )
 
 deallocate( tzfields )
-Deallocate( xwork6   )
-Deallocate( ccomment )
-Deallocate( ctitle   )
-Deallocate( cunit    )
+call Sensor_write_workarrays_deallocate( )
 
 !----------------------------------------------------------------------------
 !Treat position and fix values (not changing during simulation)
 
 IPROC = 6
 
-ALLOCATE( XWORK6(1, 1, 1, 1, 1, IPROC) )
-ALLOCATE( CCOMMENT(IPROC) )
-ALLOCATE( CTITLE  (IPROC) )
-ALLOCATE( CUNIT   (IPROC) )
-
-jproc = 0
+call Sensor_write_workarrays_allocate( 1, 1, iproc )
 
 if ( lcartesian ) then
-  JPROC = JPROC + 1
-  CTITLE   (JPROC) = 'X'
-  CUNIT    (JPROC) = 'm'
-  CCOMMENT (JPROC) = 'X Pos'
-  XWORK6 (1,1,1,1,1,JPROC) = TPSTATION%XX_CUR
-
-  JPROC = JPROC + 1
-  CTITLE   (JPROC) = 'Y'
-  CUNIT    (JPROC) = 'm'
-  CCOMMENT (JPROC) = 'Y Pos'
-  XWORK6 (1,1,1,1,1,JPROC) = TPSTATION%XY_CUR
+  call Add_fixpoint( 'X', 'X position', 'm', TPSTATION%XX_CUR )
+  call Add_fixpoint( 'Y', 'Y position', 'm', TPSTATION%XY_CUR )
 else
-  JPROC = JPROC + 1
-  CTITLE   (JPROC) = 'LON'
-  CUNIT    (JPROC) = 'degree'
-  CCOMMENT (JPROC) = 'Longitude'
-  XWORK6 (1,1,1,1,1,JPROC) = TPSTATION%XLON_CUR
-
-  JPROC = JPROC + 1
-  CTITLE   (JPROC) = 'LAT'
-  CUNIT    (JPROC) = 'degree'
-  CCOMMENT (JPROC) = 'Latitude'
-  XWORK6 (1,1,1,1,1,JPROC) = TPSTATION%XLAT_CUR
+  call Add_fixpoint( 'LON', 'longitude', 'degree', TPSTATION%XLON_CUR )
+  call Add_fixpoint( 'LAT', 'latitude',  'degree', TPSTATION%XLAT_CUR )
 end if
 
-JPROC = JPROC + 1
-CTITLE   (JPROC) = 'Z'
-CUNIT    (JPROC) = 'm'
-CCOMMENT (JPROC) = 'Altitude'
-XWORK6 (1,1,1,1,1,JPROC) = TPSTATION%XZ_CUR
+call Add_fixpoint( 'Z',     'altitude',  'm', TPSTATION%XZ_CUR )
+call Add_fixpoint( 'ZS',    'orography', 'm', TPSTATION%XZS )
+call Add_fixpoint( 'Zmeas', 'interpolated altitude used for measurements', 'm', TPSTATION%XZMEAS )
+call Add_fixpoint( 'K',     'vertical model level used for computations',  '1', REAL( TPSTATION%NK ) )
 
-JPROC = JPROC + 1
-CTITLE   (JPROC) = 'ZS'
-CUNIT    (JPROC) = 'm'
-CCOMMENT (JPROC) = 'Orography'
-XWORK6 (1,1,1,1,1,JPROC) = TPSTATION%XZS
-
-JPROC = JPROC + 1
-CTITLE   (JPROC) = 'Zmeas'
-CUNIT    (JPROC) = 'm'
-CCOMMENT (JPROC) = 'interpolated altitude used for measurements'
-XWORK6 (1,1,1,1,1,JPROC) = TPSTATION%XZMEAS
-
-JPROC = JPROC + 1
-CTITLE   (JPROC) = 'K'
-CUNIT    (JPROC) = '1'
-CCOMMENT (JPROC) = 'vertical model level used for computations'
-XWORK6 (1,1,1,1,1,JPROC) = REAL( TPSTATION%NK )
+jproc = Sensor_current_processes_number_get()
 
 Allocate( tzfields( jproc ) )
 
@@ -531,32 +482,8 @@ tzfields(:)%ndimlist(6) = NMNHDIM_STATION_PROC
 
 call Write_diachro( tpdiafile, tzbudiachro, tzfields, tstations_time%tpdates, xwork6(:,:,:,:,:,:jproc) )
 
-
-!Necessary because global variables (private inside module)
-Deallocate( xwork6  )
-Deallocate (ccomment)
-Deallocate (ctitle  )
-Deallocate (cunit   )
-
-!----------------------------------------------------------------------------
-
-contains
-
-! ######################################################
-subroutine Add_point( htitle, hcomment, hunits, pfield )
-! ######################################################
-! This subroutine is a simple interface to the generic Add_point.
-! This is done this way to reduce the number of arguments passed to Add_point.
-use mode_sensor, only: Sensor_diachro_point_add
-
-character(len=*),   intent(in) :: htitle
-character(len=*),   intent(in) :: hcomment
-character(len=*),   intent(in) :: hunits
-real, dimension(:), intent(in) :: pfield
-
-call Sensor_diachro_point_add( htitle, hcomment, hunits, pfield, jproc, iproc, ctitle, ccomment, cunit, xwork6 )
-
-end subroutine Add_point
+deallocate( tzfields )
+call Sensor_write_workarrays_deallocate( )
 
 END SUBROUTINE STATION_DIACHRO_n
 
