@@ -18,8 +18,6 @@
 MODULE MODE_WRITE_STATION_n
 !      ###########################
 
-use modd_parameters, only: NCOMMENTLGTMAX, NMNHNAMELGTMAX, NUNITLGTMAX
-
 implicit none
 
 private
@@ -35,22 +33,20 @@ SUBROUTINE STATION_DIACHRO_n( TPDIAFILE, TPSTATION )
 USE MODD_ALLSTATION_n,  ONLY: LDIAG_SURFRAD_STAT
 use modd_budget,        only: NLVL_CATEGORY, NLVL_SUBCATEGORY, NLVL_GROUP, NLVL_SHAPE, NLVL_TIMEAVG, NLVL_NORM, NLVL_MASK, &
                               tbudiachrometadata
+USE MODD_CH_AEROSOL,    ONLY: JPMODE, LORILAM, NCARB, NSOA, NSP
 USE MODD_CONF,          ONLY: LCARTESIAN
-USE MODD_CST,           ONLY: XRV
+USE MODD_DUST,          ONLY: LDUST, NMODE_DST
 use modd_field,         only: NMNHDIM_STATION_TIME, NMNHDIM_STATION_PROC, NMNHDIM_UNUSED, &
                               tfieldmetadata_base, TYPEREAL
 USE MODD_IO,            ONLY: TFILEDATA
-USE MODD_NSV,           ONLY: nsv, nsv_aer, nsv_aerbeg, nsv_aerend, &
-                              nsv_dst, nsv_dstbeg, nsv_dstend, nsv_slt, nsv_sltbeg, nsv_sltend, &
-                              tsvlist
+USE MODD_NSV,           ONLY: nsv, tsvlist
 USE MODD_PARAM_n,       ONLY: CRAD, CSURF, CTURB
+USE MODD_SALT,          ONLY: LSALT, NMODE_SLT
 use modd_station_n,     only: tstations_time
 use modd_type_statprof, only: tstationdata
 
-USE MODE_AERO_PSD
-USE MODE_DUST_PSD
-USE MODE_SALT_PSD
-use mode_sensor,         only: Add_fixpoint, Add_point, Sensor_current_processes_number_get, &
+use mode_sensor,         only: Add_dust_data, Add_fixpoint, Add_orilam_data, Add_point, Add_salt_data, &
+                               Sensor_current_processes_number_get, &
                                ccomment, ctitle, cunit, xwork6, &
                                Sensor_write_workarrays_allocate, Sensor_write_workarrays_deallocate
 use MODE_WRITE_DIACHRO,  ONLY: Write_diachro
@@ -59,13 +55,6 @@ TYPE(TFILEDATA),    INTENT(IN) :: TPDIAFILE ! diachronic file to write
 TYPE(TSTATIONDATA), INTENT(IN) :: TPSTATION
 !
 !*      0.2  declaration of local variables for diachro
-!
-REAL, DIMENSION(:,:,:,:),     ALLOCATABLE :: ZSV, ZN0, ZSIG, ZRG
-REAL, DIMENSION(:,:,:,:,:),   ALLOCATABLE :: ZPTOTA
-REAL, DIMENSION(:,:,:),       ALLOCATABLE :: ZRHO
-!
-CHARACTER(LEN=NCOMMENTLGTMAX)     :: YCOMMENT ! comment string
-CHARACTER(LEN=NMNHNAMELGTMAX)     :: YTITLE   ! title
 !
 !!! do not forget to increment the IPROC value if you add diagnostic !!!
 INTEGER :: IPROC    ! number of variables records
@@ -88,9 +77,9 @@ IF (LDIAG_SURFRAD_STAT) THEN
   IF(CRAD/="NONE")  IPROC = IPROC + 8
   IPROC = IPROC + 1 ! XSFCO2 term
 END IF
-IF (LORILAM) IPROC = IPROC + JPMODE*(3+NSOA+NCARB+NSP)
-IF (LDUST) IPROC = IPROC + NMODE_DST*3
-IF (LSALT) IPROC = IPROC + NMODE_SLT*3
+IF ( LORILAM ) IPROC = IPROC + JPMODE * ( 3 + NSOA + NCARB + NSP )
+IF ( LDUST )   IPROC = IPROC + NMODE_DST * 3
+IF ( LSALT )   IPROC = IPROC + NMODE_SLT * 3
 IF ( CRAD /= 'NONE' )  IPROC = IPROC + 1
 
 ISTORE = SIZE( TSTATIONS_TIME%TPDATES )
@@ -169,199 +158,9 @@ if ( nsv > 0 ) then
     END IF
   END DO
 
-  IF ((LORILAM).AND. .NOT.(ANY(TPSTATION%XP(1,:) == 0.))) THEN
-    ALLOCATE (ZSV(1,1,ISTORE,NSV_AER))
-    ALLOCATE (ZRHO(1,1,ISTORE))
-    ALLOCATE (ZN0(1,1,ISTORE,JPMODE))
-    ALLOCATE (ZRG(1,1,ISTORE,JPMODE))
-    ALLOCATE (ZSIG(1,1,ISTORE,JPMODE))
-    ALLOCATE (ZPTOTA(1,1,ISTORE,NSP+NCARB+NSOA,JPMODE))
-    ZSV(1,1,:,1:NSV_AER) = TPSTATION%XSV(1,:,NSV_AERBEG:NSV_AEREND)
-    IF (SIZE(TPSTATION%XR,3) >0) THEN
-      ZRHO(1,1,:) = 0.
-      DO JRR=1,SIZE(TPSTATION%XR,3)
-        ZRHO(1,1,:) = ZRHO(1,1,:) + TPSTATION%XR(1,:,JRR)
-      ENDDO
-      ZRHO(1,1,:) = TPSTATION%XTH(1,:) * ( 1. + XRV/XRD*TPSTATION%XR(1,:,1) )  &
-                                       / ( 1. + ZRHO(1,1,:)                 )
-    ELSE
-      ZRHO(1,1,:) = TPSTATION%XTH(1,:)
-    ENDIF
-    ZRHO(1,1,:) =  TPSTATION%XP(1,:) / &
-                  (XRD *ZRHO(1,1,:) *((TPSTATION%XP(1,:)/XP00)**(XRD/XCPD)) )
-
-    CALL PPP2AERO(ZSV,ZRHO, PSIG3D=ZSIG, PRG3D=ZRG, PN3D=ZN0,PCTOTA=ZPTOTA)
-
-    DO JSV=1,JPMODE
-      ! mean radius
-      WRITE(YTITLE,'(A6,I1)')'AERRGA',JSV
-      WRITE(YCOMMENT,'(A18,I1)')'RG (nb) AERO MODE ',JSV
-      call Add_point( ytitle, ycomment, 'um', ZRG(1,1,:,JSV) )
-
-      ! standard deviation
-      WRITE(YTITLE,'(A7,I1)')'AERSIGA',JSV
-      WRITE(YCOMMENT,'(A16,I1)')'SIGMA AERO MODE ',JSV
-      call Add_point( ytitle, ycomment, '',ZSIG(1,1,:,JSV) )
-
-      ! particles number
-      WRITE(YTITLE,'(A6,I1)')'AERN0A',JSV
-      WRITE(YCOMMENT,'(A13,I1)')'N0 AERO MODE ',JSV
-      call Add_point( ytitle, ycomment, 'm-3', ZN0(1,1,:,JSV) )
-
-      WRITE(YTITLE,'(A5,I1)')'MOC  ',JSV
-      WRITE(CCOMMENT,'(A23,I1)')'MASS OC   AEROSOL MODE ',JSV
-      call Add_point( ytitle, ycomment, 'ug m-3', ZPTOTA(1,1,:,JP_AER_OC,JSV) )
-
-      WRITE(YTITLE,'(A5,I1)')'MBC  ',JSV
-      WRITE(CCOMMENT,'(A23,I1)')'MASS BC   AEROSOL MODE ',JSV
-      call Add_point( ytitle, ycomment, 'ug m-3', ZPTOTA(1,1,:,JP_AER_BC,JSV) )
-
-      WRITE(YTITLE,'(A5,I1)')'MDST  ',JSV
-      WRITE(CCOMMENT,'(A23,I1)')'MASS DST   AEROSOL MODE ',JSV
-      call Add_point( ytitle, ycomment, 'ug m-3', ZPTOTA(1,1,:,JP_AER_DST,JSV) )
-
-      WRITE(YTITLE,'(A5,I1)')'MSO4 ',JSV
-      WRITE(CCOMMENT,'(A23,I1)')'MASS SO4  AEROSOL MODE ',JSV
-      call Add_point( ytitle, ycomment, 'ug m-3', ZPTOTA(1,1,:,JP_AER_SO4,JSV) )
-
-      WRITE(YTITLE,'(A5,I1)')'MNO3 ',JSV
-      WRITE(CCOMMENT,'(A23,I1)')'MASS NO3  AEROSOL MODE ',JSV
-      call Add_point( ytitle, ycomment, 'ug m-3', ZPTOTA(1,1,:,JP_AER_NO3,JSV) )
-
-      WRITE(YTITLE,'(A5,I1)')'MH2O ',JSV
-      WRITE(CCOMMENT,'(A23,I1)')'MASS H2O  AEROSOL MODE ',JSV
-      call Add_point( ytitle, ycomment, 'ug m-3', ZPTOTA(1,1,:,JP_AER_H2O,JSV) )
-
-      WRITE(YTITLE,'(A5,I1)')'MNH3 ',JSV
-      WRITE(CCOMMENT,'(A23,I1)')'MASS NH3  AEROSOL MODE ',JSV
-      call Add_point( ytitle, ycomment, 'ug m-3', ZPTOTA(1,1,:,JP_AER_NH3,JSV) )
-
-      IF ( NSOA == 10 ) THEN
-        WRITE(YTITLE,'(A5,I1)')'MSOA1',JSV
-        WRITE(CCOMMENT,'(A23,I1)')'MASS SOA1 AEROSOL MODE ',JSV
-        call Add_point( ytitle, ycomment, 'ug m-3', ZPTOTA(1,1,:,JP_AER_SOA1,JSV) )
-
-        WRITE(YTITLE,'(A5,I1)')'MSOA2',JSV
-        WRITE(CCOMMENT,'(A23,I1)')'MASS SOA2 AEROSOL MODE ',JSV
-        call Add_point( ytitle, ycomment, 'ug m-3', ZPTOTA(1,1,:,JP_AER_SOA2,JSV) )
-
-        WRITE(YTITLE,'(A5,I1)')'MSOA3',JSV
-        WRITE(CCOMMENT,'(A23,I1)')'MASS SOA3 AEROSOL MODE ',JSV
-        call Add_point( ytitle, ycomment, 'ug m-3', ZPTOTA(1,1,:,JP_AER_SOA3,JSV) )
-
-        WRITE(YTITLE,'(A5,I1)')'MSOA4',JSV
-        WRITE(CCOMMENT,'(A23,I1)')'MASS SOA4 AEROSOL MODE ',JSV
-        call Add_point( ytitle, ycomment, 'ug m-3', ZPTOTA(1,1,:,JP_AER_SOA4,JSV) )
-
-        WRITE(YTITLE,'(A5,I1)')'MSOA5',JSV
-        WRITE(CCOMMENT,'(A23,I1)')'MASS SOA5 AEROSOL MODE ',JSV
-        call Add_point( ytitle, ycomment, 'ug m-3', ZPTOTA(1,1,:,JP_AER_SOA5,JSV) )
-
-        WRITE(YTITLE,'(A5,I1)')'MSOA6',JSV
-        WRITE(CCOMMENT,'(A23,I1)')'MASS SOA6 AEROSOL MODE ',JSV
-        call Add_point( ytitle, ycomment, 'ug m-3', ZPTOTA(1,1,:,JP_AER_SOA6,JSV) )
-
-        WRITE(YTITLE,'(A5,I1)')'MSOA7',JSV
-        WRITE(CCOMMENT,'(A23,I1)')'MASS SOA7 AEROSOL MODE ',JSV
-        call Add_point( ytitle, ycomment, 'ug m-3', ZPTOTA(1,1,:,JP_AER_SOA7,JSV) )
-
-        WRITE(YTITLE,'(A5,I1)')'MSOA8',JSV
-        WRITE(CCOMMENT,'(A23,I1)')'MASS SOA8 AEROSOL MODE ',JSV
-        call Add_point( ytitle, ycomment, 'ug m-3', ZPTOTA(1,1,:,JP_AER_SOA8,JSV) )
-
-        WRITE(YTITLE,'(A5,I1)')'MSOA9',JSV
-        WRITE(CCOMMENT,'(A23,I1)')'MASS SOA9 AEROSOL MODE ',JSV
-        call Add_point( ytitle, ycomment, 'ug m-3', ZPTOTA(1,1,:,JP_AER_SOA9,JSV) )
-
-        WRITE(YTITLE,'(A6,I1)')'MSOA10',JSV
-        WRITE(CCOMMENT,'(A24,I1)')'MASS SOA10 AEROSOL MODE ',JSV
-        call Add_point( ytitle, ycomment, 'ug m-3', ZPTOTA(1,1,:,JP_AER_SOA10,JSV) )
-      END IF
-    END DO
-
-    DEALLOCATE (ZSV,ZRHO)
-    DEALLOCATE (ZN0,ZRG,ZSIG)
-  END IF
-
-  IF ((LDUST).AND. .NOT.(ANY(TPSTATION%XP(1,:) == 0.))) THEN
-    ALLOCATE (ZSV(1,1,ISTORE,NSV_DST))
-    ALLOCATE (ZRHO(1,1,ISTORE))
-    ALLOCATE (ZN0(1,1,ISTORE,NMODE_DST))
-    ALLOCATE (ZRG(1,1,ISTORE,NMODE_DST))
-    ALLOCATE (ZSIG(1,1,ISTORE,NMODE_DST))
-    ZSV(1,1,:,1:NSV_DST) = TPSTATION%XSV(1,:,NSV_DSTBEG:NSV_DSTEND)
-    IF (SIZE(TPSTATION%XR,3) >0) THEN
-      ZRHO(1,1,:) = 0.
-      DO JRR=1,SIZE(TPSTATION%XR,3)
-        ZRHO(1,1,:) = ZRHO(1,1,:) + TPSTATION%XR(1,:,JRR)
-      ENDDO
-      ZRHO(1,1,:) = TPSTATION%XTH(1,:) * ( 1. + XRV/XRD*TPSTATION%XR(1,:,1) )  &
-                                       / ( 1. + ZRHO(1,1,:)                 )
-    ELSE
-      ZRHO(1,1,:) = TPSTATION%XTH(1,:)
-    ENDIF
-    ZRHO(1,1,:) =  TPSTATION%XP(1,:) / &
-                  (XRD *ZRHO(1,1,:) *((TPSTATION%XP(1,:)/XP00)**(XRD/XCPD)) )
-    CALL PPP2DUST(ZSV,ZRHO, PSIG3D=ZSIG, PRG3D=ZRG, PN3D=ZN0)
-    DO JSV=1,NMODE_DST
-      ! mean radius
-      WRITE( YTITLE,   '( A6,  I1 )' ) 'DSTRGA', JSV
-      WRITE( YCOMMENT, '( A18, I1 )' ) 'RG (nb) DUST MODE ', JSV
-      call Add_point( ytitle, ycomment, 'um', ZRG(1,1,:,JSV) )
-
-      ! standard deviation
-      WRITE( YTITLE,   '( A7,  I1 )' ) 'DSTSIGA', JSV
-      WRITE( YCOMMENT, '( A16, I1 )' ) 'SIGMA DUST MODE ', JSV
-      call Add_point( ytitle, ycomment, '', ZSIG(1,1,:,JSV) )
-
-      ! particles number
-      WRITE( YTITLE,   '( A6,  I1 )' ) 'DSTN0A', JSV
-      WRITE( YCOMMENT, '( A13, I1 )' ) 'N0 DUST MODE ', JSV
-      call Add_point( ytitle, ycomment, 'm-3', ZN0(1,1,:,JSV) )
-    ENDDO
-    DEALLOCATE (ZSV,ZRHO)
-    DEALLOCATE (ZN0,ZRG,ZSIG)
-  END IF
-
-  IF ((LSALT).AND. .NOT.(ANY(TPSTATION%XP(1,:) == 0.))) THEN
-    ALLOCATE (ZSV(1,1,ISTORE,NSV_SLT))
-    ALLOCATE (ZRHO(1,1,ISTORE))
-    ALLOCATE (ZN0(1,1,ISTORE,NMODE_SLT))
-    ALLOCATE (ZRG(1,1,ISTORE,NMODE_SLT))
-    ALLOCATE (ZSIG(1,1,ISTORE,NMODE_SLT))
-    ZSV(1,1,:,1:NSV_SLT) = TPSTATION%XSV(1,:,NSV_SLTBEG:NSV_SLTEND)
-    IF (SIZE(TPSTATION%XR,3) >0) THEN
-      ZRHO(1,1,:) = 0.
-      DO JRR=1,SIZE(TPSTATION%XR,3)
-        ZRHO(1,1,:) = ZRHO(1,1,:) + TPSTATION%XR(1,:,JRR)
-      ENDDO
-      ZRHO(1,1,:) = TPSTATION%XTH(1,:) * ( 1. + XRV/XRD*TPSTATION%XR(1,:,1) )  &
-                                      / ( 1. + ZRHO(1,1,:)                )
-    ELSE
-      ZRHO(1,1,:) = TPSTATION%XTH(1,:)
-    ENDIF
-    ZRHO(1,1,:) =  TPSTATION%XP(1,:) / &
-                  (XRD *ZRHO(1,1,:) *((TPSTATION%XP(1,:)/XP00)**(XRD/XCPD)) )
-    CALL PPP2SALT(ZSV,ZRHO, PSIG3D=ZSIG, PRG3D=ZRG, PN3D=ZN0)
-    DO JSV=1,NMODE_SLT
-      ! mean radius
-      WRITE( YTITLE,   '( A6,  I1 )' ) 'SLTRGA', JSV
-      WRITE( YCOMMENT, '( A18, I1 )' ) 'RG (nb) SALT MODE ', JSV
-      call Add_point( ytitle, ycomment, 'um', ZRG(1,1,:,JSV) )
-
-      ! standard deviation
-      WRITE( YTITLE,   '( A7,  I1 )' ) 'SLTSIGA', JSV
-      WRITE( YCOMMENT, '( A16, I1 )' ) 'SIGMA DUST MODE ', JSV
-      call Add_point( ytitle, ycomment, '',ZSIG(1,1,:,JSV) )
-
-      ! particles number
-      WRITE( YTITLE,   '( A6,  I1 )' ) 'SLTN0A', JSV
-      WRITE( YCOMMENT, '( A13, I1 )' ) 'N0 DUST MODE ', JSV
-      call Add_point( ytitle, ycomment, 'm-3', ZN0(1,1,:,JSV) )
-    ENDDO
-    DEALLOCATE (ZSV,ZRHO)
-    DEALLOCATE (ZN0,ZRG,ZSIG)
-  END IF
+  if ( lorilam ) call Add_orilam_data( tpstation, 1, istore )
+  if ( ldust   ) call Add_dust_data  ( tpstation, 1, istore )
+  if ( lsalt   ) call Add_salt_data  ( tpstation, 1, istore )
 end if
 
 if ( crad /= 'NONE' ) call Add_point( 'Tsrad', 'Radiative Surface Temperature', 'K', tpstation%xtsrad(:) )

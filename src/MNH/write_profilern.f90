@@ -25,7 +25,7 @@
 MODULE MODE_WRITE_PROFILER_n
 !      ###########################
 
-use modd_parameters, only: NCOMMENTLGTMAX, NMNHNAMELGTMAX, NUNITLGTMAX
+use modd_parameters, only: NMNHNAMELGTMAX, NUNITLGTMAX
 
 implicit none
 
@@ -42,7 +42,7 @@ SUBROUTINE PROFILER_DIACHRO_n( TPDIAFILE, TPPROFILER )
 USE MODD_ALLPROFILER_n,   ONLY: LDIAG_SURFRAD_PROF
 use modd_budget,          only: NLVL_CATEGORY, NLVL_SUBCATEGORY, NLVL_GROUP, NLVL_SHAPE, NLVL_TIMEAVG, NLVL_NORM, NLVL_MASK, &
                                 tbudiachrometadata
-USE MODD_CH_AEROSOL,      ONLY: LORILAM, JPMODE
+USE MODD_CH_AEROSOL,      ONLY: JPMODE, LORILAM, NCARB, NSOA, NSP
 USE MODD_CONF,            ONLY: LCARTESIAN
 USE MODD_CONF_n,          ONLY: NRR
 USE MODD_CST,             ONLY: XRV
@@ -51,19 +51,18 @@ USE MODD_DIM_n,           ONLY: NKMAX
 use modd_field,           only: NMNHDIM_LEVEL, NMNHDIM_LEVEL_W, NMNHDIM_PROFILER_TIME, NMNHDIM_PROFILER_PROC, NMNHDIM_UNUSED, &
                                 tfieldmetadata_base, TYPEREAL
 USE MODD_IO,              ONLY: TFILEDATA
-USE MODD_NSV,             ONLY: tsvlist, nsv, nsv_aer, nsv_aerbeg, nsv_aerend, nsv_dst, nsv_dstbeg, nsv_dstend
+USE MODD_NSV,             ONLY: tsvlist, nsv
 USE MODD_PARAMETERS,      ONLY: JPVEXT, XUNDEF
 USE MODD_PARAM_n,         ONLY: CCLOUD, CRAD, CTURB
 USE MODD_PROFILER_n
 USE MODD_RADIATIONS_n,    ONLY: NAER
-USE MODD_SALT,            ONLY: LSALT
+USE MODD_SALT,            ONLY: LSALT, NMODE_SLT
 USE MODD_TYPE_STATPROF
 !
-USE MODE_AERO_PSD
-USE MODE_DUST_PSD
-use mode_sensor,           only: Add_fixpoint, Add_point, Add_profile, Sensor_current_processes_number_get, &
-                                 ccomment, ctitle, cunit, xwork6, &
-                                 Sensor_write_workarrays_allocate, Sensor_write_workarrays_deallocate
+use mode_sensor,          only: Add_dust_data, Add_fixpoint, Add_orilam_data, Add_point, Add_profile, Add_salt_data, &
+                                Sensor_current_processes_number_get, &
+                                ccomment, ctitle, cunit, xwork6, &
+                                Sensor_write_workarrays_allocate, Sensor_write_workarrays_deallocate
 use mode_write_diachro,   only: Write_diachro
 !
 TYPE(TFILEDATA),     INTENT(IN) :: TPDIAFILE ! diachronic file to write
@@ -71,7 +70,6 @@ TYPE(TPROFILERDATA), INTENT(IN) :: TPPROFILER
 !
 !*      0.2  declaration of local variables for diachro
 !
-character(len=NCOMMENTLGTMAX)                        :: ycomment
 character(len=NMNHNAMELGTMAX)                        :: ytitle
 character(len=NUNITLGTMAX)                           :: yunit
 INTEGER                                              :: IKU
@@ -80,11 +78,9 @@ INTEGER                                              :: JPROC
 integer                                              :: jproc_alt, jproc_w
 INTEGER                                              :: JRR      ! loop counter
 INTEGER                                              :: JSV      ! loop counter
-integer                                              :: ji
 INTEGER                                              :: ISTORE
 REAL, DIMENSION(:,:,:),                  ALLOCATABLE :: ZRHO
 REAL, DIMENSION(:,:),                    ALLOCATABLE :: ZWORK
-REAL, DIMENSION(:,:,:,:),                ALLOCATABLE :: ZSV, ZN0, ZSIG, ZRG
 type(tbudiachrometadata)                             :: tzbudiachro
 type(tfieldmetadata_base), dimension(:), allocatable :: tzfields
 !
@@ -97,8 +93,9 @@ if ( ccloud == 'C2R2' .or. ccloud == 'KHKO' )  IPROC = IPROC + 1
 if ( ccloud /= 'NONE' .and. ccloud /= 'REVE' ) IPROC = IPROC + 1
 if ( ccloud == 'ICE3' .or. ccloud == 'ICE4' )  IPROC = IPROC + 1
 if ( ccloud == 'LIMA' )  IPROC = IPROC + 3
-IF (LORILAM) IPROC = IPROC + JPMODE * 3
-IF (LDUST) IPROC = IPROC + NMODE_DST * 3
+IF ( LORILAM ) IPROC = IPROC + JPMODE * ( 3 + NSOA + NCARB + NSP )
+IF ( LDUST )   IPROC = IPROC + NMODE_DST * 3
+IF ( LSALT )   IPROC = IPROC + NMODE_SLT * 3
 IF (LDUST .OR. LORILAM .OR. LSALT) IPROC=IPROC+NAER
 IF ( CTURB == 'TKEL' ) IPROC = IPROC + 1
 
@@ -166,100 +163,10 @@ if ( nsv > 0  ) then
   end do
   Deallocate( zwork )
 
-  IF ( LORILAM .AND. .NOT.(ANY(TPPROFILER%XP(:,:) == 0.)) ) THEN
-    ALLOCATE (ZSV (1,iku,ISTORE,NSV_AER))
-    ALLOCATE (ZRHO(1,iku,ISTORE))
-    ALLOCATE (ZN0 (1,iku,ISTORE,JPMODE))
-    ALLOCATE (ZRG (1,iku,ISTORE,JPMODE))
-    ALLOCATE (ZSIG(1,iku,ISTORE,JPMODE))
-    do ji = 1, iku
-      ZSV(1,ji,:,1:NSV_AER) = TPPROFILER%XSV(ji,:,NSV_AERBEG:NSV_AEREND)
-    end do
-    IF ( NRR  > 0) THEN
-      ZRHO(1,:,:) = 0.
-      do ji = 1, iku
-        DO JRR = 1, NRR
-          ZRHO(1,ji,:) = ZRHO(1,ji,:) + TPPROFILER%XR(ji,:,JRR)
-        ENDDO
-        ZRHO(1,ji,:) = TPPROFILER%XTH(ji,:) * ( 1. + XRV/XRD*TPPROFILER%XR(ji,:,1) )  &
-                                             / ( 1. + ZRHO(1,ji,:)                )
-      end do
-    ELSE
-      do ji = 1, iku
-        ZRHO(1,ji,:) = TPPROFILER%XTH(ji,:)
-      end do
-    ENDIF
-    do ji = 1, iku
-      ZRHO(1,ji,:) =  TPPROFILER%XP(ji,:) / &
-                      (XRD *ZRHO(1,ji,:) *((TPPROFILER%XP(ji,:)/XP00)**(XRD/XCPD)) )
-    end do
-    CALL PPP2AERO(ZSV,ZRHO, PSIG3D=ZSIG, PRG3D=ZRG, PN3D=ZN0)
-    DO JSV=1,JPMODE
-      ! mean radius
-      WRITE( YTITLE,   '( A6,  I1 )' ) 'AERRGA', JSV
-      WRITE( YCOMMENT, '( A18, I1 )' ) 'RG (nb) AERO MODE ', JSV
-      call Add_profile( ytitle, ycomment, 'um', ZRG(1,:,:,JSV) )
+  if ( lorilam ) call Add_orilam_data( tpprofiler, iku, istore )
+  if ( ldust   ) call Add_dust_data  ( tpprofiler, iku, istore )
+  if ( lsalt   ) call Add_salt_data  ( tpprofiler, iku, istore )
 
-      ! standard deviation
-      WRITE( YTITLE,   '( A7,  I1 )' ) 'AERSIGA', JSV
-      WRITE( YCOMMENT, '( A16, I1 )' ) 'SIGMA AERO MODE ', JSV
-      call Add_profile( ytitle, ycomment, '', ZSIG(1,:,:,JSV) )
-
-      ! particles number
-      WRITE( YTITLE,   '( A6,  I1 )' ) 'AERN0A', JSV
-      WRITE( YCOMMENT, '( A13, I1 )' ) 'N0 AERO MODE ', JSV
-      call Add_profile( ytitle, ycomment, 'm-3', ZN0(1,:,:,JSV) )
-    ENDDO
-    DEALLOCATE (ZSV,ZRHO)
-    DEALLOCATE (ZN0,ZRG,ZSIG)
-  END IF
-  IF ((LDUST).AND. .NOT.(ANY(TPPROFILER%XP(:,:) == 0.))) THEN
-    ALLOCATE (ZSV (1,iku,ISTORE,NSV_DST))
-    ALLOCATE (ZRHO(1,iku,ISTORE))
-    ALLOCATE (ZN0 (1,iku,ISTORE,NMODE_DST))
-    ALLOCATE (ZRG (1,iku,ISTORE,NMODE_DST))
-    ALLOCATE (ZSIG(1,iku,ISTORE,NMODE_DST))
-    do ji = 1, iku
-      ZSV(1,ji,:,1:NSV_DST) = TPPROFILER%XSV(ji,:,NSV_DSTBEG:NSV_DSTEND)
-    end do
-    IF ( NRR > 0 ) THEN
-      ZRHO(1,:,:) = 0.
-      do ji = 1, iku
-        DO JRR = 1, NRR
-          ZRHO(1,ji,:) = ZRHO(1,ji,:) + TPPROFILER%XR(ji,:,JRR)
-        ENDDO
-        ZRHO(1,ji,:) = TPPROFILER%XTH(ji,:) * ( 1. + XRV/XRD*TPPROFILER%XR(ji,:,1) )  &
-                                             / ( 1. + ZRHO(1,ji,:)                )
-      end do
-    ELSE
-      do ji = 1, iku
-        ZRHO(1,ji,:) = TPPROFILER%XTH(ji,:)
-      end do
-    ENDIF
-    do ji = 1, iku
-      ZRHO(1,ji,:) =  TPPROFILER%XP(ji,:) / &
-                     (XRD *ZRHO(1,ji,:) *((TPPROFILER%XP(ji,:)/XP00)**(XRD/XCPD)) )
-    end do
-    CALL PPP2DUST(ZSV,ZRHO, PSIG3D=ZSIG, PRG3D=ZRG, PN3D=ZN0)
-    DO JSV=1,NMODE_DST
-      ! mean radius
-      WRITE( YTITLE,   '( A6,  I1 )' ) 'DSTRGA', JSV
-      WRITE( YCOMMENT, '( A18, I1 )' ) 'RG (nb) DUST MODE ', JSV
-      call Add_profile( ytitle, ycomment, 'um', ZRG(1,:,:,JSV) )
-
-      ! standard deviation
-      WRITE(YTITLE,   '( A7,  I1 )' ) 'DSTSIGA', JSV
-      WRITE(YCOMMENT, '( A16, I1 )' ) 'SIGMA DUST MODE ', JSV
-      call Add_profile( ytitle, ycomment, '', ZSIG(1,:,:,JSV) )
-
-      ! particles number
-      WRITE( YTITLE,   '( A6,  I1 )' ) 'DSTN0A', JSV
-      WRITE( YCOMMENT, '( A13, I1 )' ) 'N0 DUST MODE ', JSV
-      call Add_profile( ytitle, ycomment, 'm-3', ZN0(1,:,:,JSV) )
-    ENDDO
-    DEALLOCATE (ZSV,ZRHO)
-    DEALLOCATE (ZN0,ZRG,ZSIG)
-  END IF
   if ( ldust .or. lorilam .or. lsalt ) then
     do jsv = 1, naer
       Write( ytitle, '( a, i1 )' ) 'AEREXT', jsv
