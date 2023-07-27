@@ -63,6 +63,7 @@ use mode_sensor,          only: Add_dust_data, Add_fixpoint, Add_orilam_data, Ad
                                 Sensor_current_processes_number_get, &
                                 ccomment, ctitle, cunit, xwork6, &
                                 Sensor_write_workarrays_allocate, Sensor_write_workarrays_deallocate
+use mode_statprof_tools,  only: Add_diag_surfrad_data
 use mode_write_diachro,   only: Write_diachro
 !
 TYPE(TFILEDATA),     INTENT(IN) :: TPDIAFILE ! diachronic file to write
@@ -119,7 +120,7 @@ call Add_profile( 'ALT',      'Altitude',                      'm',      tpprofi
 !Store position of ALT in the field list. Useful because it is not computed on the same Arakawa-grid points
 jproc_alt = Sensor_current_processes_number_get()
 call Add_profile( 'ZON_WIND', 'Zonal wind',                    'm s-1',  tpprofiler%xzon       )
-call Add_profile( 'MER_WIND', 'Meridional wind',               'm s-1',  tpprofiler%xmer       )
+call Add_profile( 'MER_WIND', 'Meridian wind',                 'm s-1',  tpprofiler%xmer       )
 call Add_profile( 'FF',       'Wind intensity',                'm s-1',  tpprofiler%xff        )
 call Add_profile( 'DD',       'Wind direction',                'degree', tpprofiler%xdd        )
 call Add_profile( 'W',        'Air vertical speed',            'm s-1',  tpprofiler%xw         )
@@ -264,35 +265,12 @@ IF( CRAD /= 'NONE' )  IPROC = IPROC + 1 !Tsrad term
 
 call Sensor_write_workarrays_allocate( 1, istore, iproc )
 
-if ( ldiag_surfrad_prof ) then
-  call Add_point( 'T2m',    '2-m temperature',               'K',       tpprofiler%xt2m    )
-  call Add_point( 'Q2m',    '2-m humidity',                  'kg kg-1', tpprofiler%xq2m    )
-  call Add_point( 'HU2m',   '2-m relative humidity',         'percent', tpprofiler%xhu2m   )
-  call Add_point( 'zon10m', '10-m zonal wind',               'm s-1',   tpprofiler%xzon10m )
-  call Add_point( 'mer10m', '10-m meridian wind',            'm s-1',   tpprofiler%xmer10m )
-  call Add_point( 'RN',     'Net radiation',                 'W m-2',   tpprofiler%xrn     )
-  call Add_point( 'H',      'Sensible heat flux',            'W m-2',   tpprofiler%xh      )
-  call Add_point( 'LE',     'Total Latent heat flux',        'W m-2',   tpprofiler%xle     )
-  call Add_point( 'G',      'Storage heat flux',             'W m-2',   tpprofiler%xgflux  )
-  if ( crad /= 'NONE' ) then
-    call Add_point( 'SWD',  'Downward short-wave radiation', 'W m-2',   tpprofiler%xswd    )
-    call Add_point( 'SWU',  'Upward short-wave radiation',   'W m-2',   tpprofiler%xswu    )
-    call Add_point( 'LWD',  'Downward long-wave radiation',  'W m-2',   tpprofiler%xlwd    )
-    call Add_point( 'LWU',  'Upward long-wave radiation',    'W m-2',   tpprofiler%xlwu    )
-    call Add_point( 'SWDIR',  'Downward direct short-wave radiation',  'W m-2', tpprofiler%xswdir(:)  )
-    call Add_point( 'SWDIFF', 'Downward diffuse short-wave radiation', 'W m-2', tpprofiler%xswdiff(:) )
-    call Add_point( 'DSTAOD', 'Dust aerosol optical depth',            'm',     tpprofiler%xdstaod(:) )
-    call Add_point( 'SLTAOD', 'Salt aerosol optical depth',            'm',     tpprofiler%xsltaod(:) )
-  end if
-  call Add_point( 'LEI',    'Solid Latent heat flux',        'W m-2',   tpprofiler%xlei    )
-end if
+if ( ldiag_surfrad_prof ) call Add_diag_surfrad_data( tpprofiler )
 
 call Add_point( 'IWV', 'Integrated Water Vapour',   'kg m-2', tpprofiler%xiwv )
 call Add_point( 'ZTD', 'Zenith Tropospheric Delay', 'm',      tpprofiler%xztd )
 call Add_point( 'ZWD', 'Zenith Wet Delay',          'm',      tpprofiler%xzwd )
 call Add_point( 'ZHD', 'Zenith Hydrostatic Delay',  'm',      tpprofiler%xzhd )
-
-if ( ldiag_surfrad_prof ) call Add_point( 'SFCO2', 'CO2 Surface Flux', 'mg m-2 s-1', tpprofiler%xsfco2(:) )
 
 if ( crad /= 'NONE' ) call Add_point( 'Tsrad', 'Radiative Surface Temperature', 'K', tpprofiler%xtsrad(:) )
 

@@ -49,6 +49,7 @@ use mode_sensor,         only: Add_dust_data, Add_fixpoint, Add_orilam_data, Add
                                Sensor_current_processes_number_get, &
                                ccomment, ctitle, cunit, xwork6, &
                                Sensor_write_workarrays_allocate, Sensor_write_workarrays_deallocate
+use mode_statprof_tools, only: Add_diag_surfrad_data
 use MODE_WRITE_DIACHRO,  ONLY: Write_diachro
 
 TYPE(TFILEDATA),    INTENT(IN) :: TPDIAFILE ! diachronic file to write
@@ -101,30 +102,7 @@ end if
 call Add_point( 'W',  'Air vertical speed',    'm s-1', tpstation%xw(1,:)  )
 call Add_point( 'Th', 'Potential temperature', 'K',     tpstation%xth(1,:) )
 
-if ( ldiag_surfrad_stat ) then
-  if ( csurf == "EXTE" ) then
-    call Add_point( 'T2m',    '2-m temperature',        'K',       tpstation%xt2m(:)    )
-    call Add_point( 'Q2m',    '2-m humidity',           'kg kg-1', tpstation%xq2m(:)    )
-    call Add_point( 'HU2m',   '2-m relative humidity',  'percent', tpstation%xhu2m(:)   )
-    call Add_point( 'zon10m', '10-m zonal wind',        'm s-1',   tpstation%xzon10m(:) )
-    call Add_point( 'mer10m', '10-m meridian wind',     'm s-1',   tpstation%xmer10m(:) )
-    call Add_point( 'RN',     'Net radiation',          'W m-2',   tpstation%xrn(:)     )
-    call Add_point( 'H',      'Sensible heat flux',     'W m-2',   tpstation%xh(:)      )
-    call Add_point( 'LE',     'Total Latent heat flux', 'W m-2',   tpstation%xle(:)     )
-    call Add_point( 'G',      'Storage heat flux',      'W m-2',   tpstation%xgflux(:)  )
-    call Add_point( 'LEI',    'Solid Latent heat flux', 'W m-2',   tpstation%xlei(:)    )
-  end if
-  if ( crad /= 'NONE' ) then
-    call Add_point( 'SWD',    'Downward short-wave radiation',         'W m-2', tpstation%xswd(:)    )
-    call Add_point( 'SWU',    'Upward short-wave radiation',           'W m-2', tpstation%xswu(:)    )
-    call Add_point( 'LWD',    'Downward long-wave radiation',          'W m-2', tpstation%xlwd(:)    )
-    call Add_point( 'LWU',    'Upward long-wave radiation',            'W m-2', tpstation%xlwu(:)    )
-    call Add_point( 'SWDIR',  'Downward direct short-wave radiation',  'W m-2', tpstation%xswdir(:)  )
-    call Add_point( 'SWDIFF', 'Downward diffuse short-wave radiation', 'W m-2', tpstation%xswdiff(:) )
-    call Add_point( 'DSTAOD', 'Dust aerosol optical depth',            'm',     tpstation%xdstaod(:) )
-    call Add_point( 'SLTAOD', 'Salt aerosol optical depth',            'm',     tpstation%xsltaod(:) )
-  end if
-end if
+if ( ldiag_surfrad_stat ) call Add_diag_surfrad_data( tpstation )
 
 do jrr = 1, SIZE( tpstation%xr, 3 )
   select case( jrr )
@@ -164,8 +142,6 @@ if ( nsv > 0 ) then
 end if
 
 if ( crad /= 'NONE' ) call Add_point( 'Tsrad', 'Radiative Surface Temperature', 'K', tpstation%xtsrad(:) )
-
-if ( ldiag_surfrad_stat ) call Add_point( 'SFCO2', 'CO2 Surface Flux', 'mg m-2 s-1', tpstation%xsfco2(:) )
 !
 !----------------------------------------------------------------------------
 !

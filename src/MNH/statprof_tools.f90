@@ -26,6 +26,7 @@ PUBLIC :: STATPROF_INI_INTERP
 PUBLIC :: STATPROF_POSITION
 PUBLIC :: PROFILER_ADD, STATION_ADD
 PUBLIC :: STATPROF_DIAG_SURFRAD
+PUBLIC :: ADD_DIAG_SURFRAD_DATA
 
 CONTAINS
 
@@ -257,5 +258,42 @@ SUBROUTINE STATPROF_DIAG_SURFRAD( TPSTATPROF, KSTORE )
   TPSTATPROF%XSFCO2(KSTORE) = TPSTATPROF%INTERP_HOR_FROM_MASSPOINT( XCURRENT_SFCO2 )
 
 END SUBROUTINE STATPROF_DIAG_SURFRAD
+
+! ############################################
+SUBROUTINE Add_diag_surfrad_data( TPSTATPROF )
+! ############################################
+  use modd_param_n, only: crad, csurf
+
+  use mode_sensor,         only: Add_point
+
+  class(tstatprofdata), intent(in) :: tpstatprof
+
+  if ( csurf == "EXTE" ) then
+    call Add_point( 'T2m',    '2-m temperature',        'K',       tpstatprof%xt2m(:)    )
+    call Add_point( 'Q2m',    '2-m humidity',           'kg kg-1', tpstatprof%xq2m(:)    )
+    call Add_point( 'HU2m',   '2-m relative humidity',  'percent', tpstatprof%xhu2m(:)   )
+    call Add_point( 'zon10m', '10-m zonal wind',        'm s-1',   tpstatprof%xzon10m(:) )
+    call Add_point( 'mer10m', '10-m meridian wind',     'm s-1',   tpstatprof%xmer10m(:) )
+    call Add_point( 'RN',     'Net radiation',          'W m-2',   tpstatprof%xrn(:)     )
+    call Add_point( 'H',      'Sensible heat flux',     'W m-2',   tpstatprof%xh(:)      )
+    call Add_point( 'LE',     'Total Latent heat flux', 'W m-2',   tpstatprof%xle(:)     )
+    call Add_point( 'G',      'Storage heat flux',      'W m-2',   tpstatprof%xgflux(:)  )
+    call Add_point( 'LEI',    'Solid Latent heat flux', 'W m-2',   tpstatprof%xlei(:)    )
+  end if
+
+  if ( crad /= 'NONE' ) then
+    call Add_point( 'SWD',    'Downward short-wave radiation',         'W m-2', tpstatprof%xswd(:)    )
+    call Add_point( 'SWU',    'Upward short-wave radiation',           'W m-2', tpstatprof%xswu(:)    )
+    call Add_point( 'LWD',    'Downward long-wave radiation',          'W m-2', tpstatprof%xlwd(:)    )
+    call Add_point( 'LWU',    'Upward long-wave radiation',            'W m-2', tpstatprof%xlwu(:)    )
+    call Add_point( 'SWDIR',  'Downward direct short-wave radiation',  'W m-2', tpstatprof%xswdir(:)  )
+    call Add_point( 'SWDIFF', 'Downward diffuse short-wave radiation', 'W m-2', tpstatprof%xswdiff(:) )
+    call Add_point( 'DSTAOD', 'Dust aerosol optical depth',            'm',     tpstatprof%xdstaod(:) )
+    call Add_point( 'SLTAOD', 'Salt aerosol optical depth',            'm',     tpstatprof%xsltaod(:) )
+  end if
+
+  call Add_point( 'SFCO2', 'CO2 Surface Flux', 'mg m-2 s-1', tpstatprof%xsfco2(:) )
+
+END SUBROUTINE Add_diag_surfrad_data
 
 END MODULE MODE_STATPROF_TOOLS
