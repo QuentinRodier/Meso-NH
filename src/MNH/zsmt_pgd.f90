@@ -155,8 +155,6 @@ ALLOCATE(ZYHAT(IJU))
 CALL IO_Field_read(TPFILE,'XHAT',ZXHAT)
 CALL IO_Field_read(TPFILE,'YHAT',ZYHAT)
 
-!PW: bug/TODO: read a field in a file opened in WRITE mode
-!There is a test in IO_Field_read_BYFIELD_X2 to allow this if TPFILE%CMODE='LFICDF4'
 CALL IO_Field_read(TPFILE,'ZS',ZZS)
 !
 DO JI=1,JPHEXT

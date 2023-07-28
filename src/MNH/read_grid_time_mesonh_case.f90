@@ -150,8 +150,6 @@ TYPE(TFILEDATA),POINTER :: TZFMFILE => NULL()
 ILUOUT0 = TLUOUT0%NLU
 ZEPS=1.E-10
 !
-!PW: TODO: temporary: look for file from its name
-!     TPFMFILE should be passed in arguments
 CALL IO_File_find_byname(HFMFILE,TZFMFILE,IRESP)
 !
 !*       1.1   Original FMfile name

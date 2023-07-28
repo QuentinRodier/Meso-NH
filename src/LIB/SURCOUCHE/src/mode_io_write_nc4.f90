@@ -1939,7 +1939,6 @@ subroutine Gather_hor_coord1d( haxis, pcoords_loc, pcoords_glob )
   endif
 
   !If the file has Z-split subfiles, broadcast the coordinates to all processes
-  !PW: TODO: broadcast only to subfile writers
   if ( tpfile%nsubfiles_ioz > 0 ) &
     call MPI_BCAST( pcoords_glob, size( pcoords_glob ), MNHREAL_MPI, tpfile%nmaster_rank - 1,  tpfile%nmpicomm, ierr )
 
@@ -1989,7 +1988,6 @@ subroutine Gather_hor_coord2d( px, py, plat_glob, plon_glob )
   endif
 
   !If the file has Z-split subfiles, broadcast the coordinates to all processes
-  !PW: TODO: broadcast only to subfile writers
   if ( tpfile%nsubfiles_ioz > 0 ) then
     call MPI_BCAST( plat_glob, size( plat_glob ), MNHREAL_MPI, tpfile%nmaster_rank - 1,  tpfile%nmpicomm, ierr )
     call MPI_BCAST( plon_glob, size( plon_glob ), MNHREAL_MPI, tpfile%nmaster_rank - 1,  tpfile%nmpicomm, ierr )

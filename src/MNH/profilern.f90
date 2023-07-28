@@ -212,7 +212,6 @@ IF ( .NOT. TPROFILERS_TIME%STORESTEP_CHECK_AND_SET( IN ) ) RETURN !No profiler s
 !*      8.   DATA RECORDING
 !            --------------
 !
-!PW: TODO: ne faire le calcul que si necessaire (presence de profileurs locaux,...)
 ZTEMP(:,:,:)=PTH(:,:,:)*(PP(:,:,:)/ XP00) **(XRD/XCPD)
 ! Theta_v
 ZTHV(:,:,:) = PTH(:,:,:) / (1.+WATER_SUM(PR(:,:,:,:)))*(1.+PR(:,:,:,1)/ZRDSRV)

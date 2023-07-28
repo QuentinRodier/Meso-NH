@@ -789,8 +789,6 @@ call Add_field2list( TFIELDDATA( &
   CSTDNAME   = 'projection_x_coordinate', &
   CLONGNAME  = 'XHAT_ll',        &
   CUNITS     = 'm',              &
-!PW:BUG?: CDIR=XX => correct? variable is NOT distributed (same value on all processes) (see alse YHAT_ll...)
-!PW:BUG?: NGRID=2 => correct? variable is NOT distributed (same value on all processes)
 !PW:TODO?: create a new field to say if the variable is distributed? and how (X,Y,XY...)?
   CDIR       = 'XX',             &
   CCOMMENT   = 'Position x in the conformal or cartesian plane (all domain)', &
@@ -3162,7 +3160,6 @@ call Add_field2list( TFIELDDATA( &
   CMNHNAME   = 'RTHS_EDDY_FLUX', &
   CSTDNAME   = '',               &
   CLONGNAME  = 'RTHS_EDDY_FLUX', &
-!TODO PW: units?
   CUNITS     = '',               &
   CDIR       = 'XY',             &
   CCOMMENT   = '',               &
@@ -3187,7 +3184,6 @@ call Add_field2list( TFIELDDATA( &
   CMNHNAME   = 'RVS_EDDY_FLUX',  &
   CSTDNAME   = '',               &
   CLONGNAME  = 'RVS_EDDY_FLUX',  &
-!TODO PW: units?
   CUNITS     = '',               &
   CDIR       = 'XY',             &
   CCOMMENT   = '',               &
@@ -3211,7 +3207,6 @@ call Add_field2list( TFIELDDATA( &
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 IF (TRIM(CPROGRAM)=='REAL' .OR. TRIM(CPROGRAM) == 'LFICDF') THEN
-!PW: not yet known: IF (LFILTERING) THEN
 !
 call Add_field2list( TFIELDDATA( &
   CMNHNAME   = 'UT15',           &
@@ -3467,9 +3462,6 @@ INTEGER,SAVE :: IFIRSTGUESS=1 !Store first field to test
 CHARACTER(LEN=64) :: YMSG
 LOGICAL :: GNOWARNING
 !
-!PW: TODO: possible optimizations:
-! * Classement alphanumerique + index vers 1er champ commencant par caractere
-! * Classement dans l'ordre des ecritures + stockage dernier hit + reboucler depuis le debut => DONE
 !
 IF (.NOT.LFIELDLIST_ISINIT) THEN
   CALL PRINT_MSG(NVERB_FATAL,'GEN','FIND_FIELD_ID_FROM_MNHNAME','TFIELDLIST not yet initialized')
