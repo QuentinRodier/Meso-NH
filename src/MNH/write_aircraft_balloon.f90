@@ -293,7 +293,6 @@ if ( irr >= 6 ) call Add_point( 'Rg', 'Graupel mixing ratio',            'kg kg-
 if ( irr >= 7 ) call Add_point( 'Rh', 'Hail mixing ratio',               'kg kg-1', tpflyer%xr(1,:,7) )
 !
 !add cloud liquid water content in g/m3 to compare to measurements from FSSP
-!IF (.NOT.(ANY(TPFLYER%XP(:) == 0.))) THEN
 IF ( IRR > 1 ) THEN !cloud water is present
   ALLOCATE( ZRHO(1, 1, ISTORE) )
   ALLOCATE( ZLWC(ISTORE) )
