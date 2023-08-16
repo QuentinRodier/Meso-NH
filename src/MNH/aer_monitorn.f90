@@ -347,8 +347,6 @@ SELECT CASE (CCLOUD)
                               XRHODREF(IIB:IIE,IJB:IJE,IKB:IKE),   &
                               XRT(IIB:IIE,IJB:IJE,IKB:IKE,2),      &
                               XRT(IIB:IIE,IJB:IJE,IKB:IKE,3),      &
-                              ZRCS(IIB:IIE,IJB:IJE,IKB:IKE),       &
-                              ZRRS(IIB:IIE,IJB:IJE,IKB:IKE),       &
                               ZSVDST(IIB:IIE,IJB:IJE,IKB:IKE,:),   &
                               XTHT(IIB:IIE,IJB:IJE,IKB:IKE),       &
                               XPABST(IIB:IIE,IJB:IJE,IKB:IKE),     &
@@ -366,8 +364,6 @@ SELECT CASE (CCLOUD)
                               XRHODREF(IIB:IIE,IJB:IJE,IKB:IKE),   &
                               XRT(IIB:IIE,IJB:IJE,IKB:IKE,2),      &
                               XRT(IIB:IIE,IJB:IJE,IKB:IKE,3),      &
-                              ZRCS(IIB:IIE,IJB:IJE,IKB:IKE),       &
-                              ZRRS(IIB:IIE,IJB:IJE,IKB:IKE),       &
                               ZSVDST(IIB:IIE,IJB:IJE,IKB:IKE,:),   &
                               XTHT(IIB:IIE,IJB:IJE,IKB:IKE),       &
                               XPABST(IIB:IIE,IJB:IJE,IKB:IKE),     &
@@ -385,8 +381,6 @@ CASE ('LIMA')
                               XRHODREF(IIB:IIE,IJB:IJE,IKB:IKE),   &
                               XRT(IIB:IIE,IJB:IJE,IKB:IKE,2),      &
                               XRT(IIB:IIE,IJB:IJE,IKB:IKE,3),      &
-                              ZRCS(IIB:IIE,IJB:IJE,IKB:IKE),       &
-                              ZRRS(IIB:IIE,IJB:IJE,IKB:IKE),       &
                               ZSVDST(IIB:IIE,IJB:IJE,IKB:IKE,:),   &
                               XTHT(IIB:IIE,IJB:IJE,IKB:IKE),       &
                               XPABST(IIB:IIE,IJB:IJE,IKB:IKE),     &
@@ -537,8 +531,6 @@ SELECT CASE (CCLOUD)
                               XRHODREF(IIB:IIE,IJB:IJE,IKB:IKE),  &
                               XRT(IIB:IIE,IJB:IJE,IKB:IKE,2),     &
                               XRT(IIB:IIE,IJB:IJE,IKB:IKE,3),     &
-                              ZRCS(IIB:IIE,IJB:IJE,IKB:IKE),      &
-                              ZRRS(IIB:IIE,IJB:IJE,IKB:IKE),      &
                               ZSVSLT(IIB:IIE,IJB:IJE,IKB:IKE,:),  &
                               XTHT(IIB:IIE,IJB:IJE,IKB:IKE),      &
                               XPABST(IIB:IIE,IJB:IJE,IKB:IKE),    &
@@ -556,8 +548,6 @@ SELECT CASE (CCLOUD)
                               XRHODREF(IIB:IIE,IJB:IJE,IKB:IKE),   &
                               XRT(IIB:IIE,IJB:IJE,IKB:IKE,2),      &
                               XRT(IIB:IIE,IJB:IJE,IKB:IKE,3),      &
-                              ZRCS(IIB:IIE,IJB:IJE,IKB:IKE),       &
-                              ZRRS(IIB:IIE,IJB:IJE,IKB:IKE),       &
                               ZSVSLT(IIB:IIE,IJB:IJE,IKB:IKE,:),   &
                               XTHT(IIB:IIE,IJB:IJE,IKB:IKE),       &
                               XPABST(IIB:IIE,IJB:IJE,IKB:IKE),     &
@@ -574,8 +564,6 @@ SELECT CASE (CCLOUD)
                               XRHODREF(IIB:IIE,IJB:IJE,IKB:IKE),   &
                               XRT(IIB:IIE,IJB:IJE,IKB:IKE,2),      &
                               XRT(IIB:IIE,IJB:IJE,IKB:IKE,3),      &
-                              ZRCS(IIB:IIE,IJB:IJE,IKB:IKE),       &
-                              ZRRS(IIB:IIE,IJB:IJE,IKB:IKE),       &
                               ZSVSLT(IIB:IIE,IJB:IJE,IKB:IKE,:),   &
                               XTHT(IIB:IIE,IJB:IJE,IKB:IKE),       &
                               XPABST(IIB:IIE,IJB:IJE,IKB:IKE),     &
