@@ -175,7 +175,7 @@ INTEGER(kind=CDFINT)               :: ind_netcdf    ! Indice for netcdf var.
 INTEGER                                       :: ICHANNEL
 CHARACTER(LEN=8)                              :: YMOZ="MOZ1.nam"
 integer                                       :: IMOZ
-CHARACTER(LEN=68)                             :: YFORMAT
+CHARACTER(LEN=100)                            :: YFORMAT
 CHARACTER(LEN=40), DIMENSION(:), ALLOCATABLE  :: YSPCMNH
 integer, dimension(:), ALLOCATABLE            :: ISPCMOZ
 CHARACTER(LEN=9)                              :: YA

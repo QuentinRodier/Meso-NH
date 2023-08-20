@@ -12,7 +12,7 @@ INTERFACE
     SUBROUTINE INI_RADIATIONS_ECMWF(                                  &
          PZHAT, PPABST, PTHT, PTSRAD, PLAT, PLON, TPDTCUR, TPDTEXP,   &
          HLW, KDLON, KFLEV, KFLUX, KRAD, KSWB, HAER, KAER, KSTATM,    &
-         PSTATM, PSEA, PTOWN, PBARE, POZON, PAER, PDST_WL, OSUBG_COND )
+         PSTATM, POZON, PAER, PDST_WL, OSUBG_COND                     )
 !
 USE MODD_TYPE_DATE
 !
@@ -23,9 +23,6 @@ REAL, DIMENSION(:),     INTENT(IN) :: PZHAT ! height level without orography
 REAL, DIMENSION(:,:,:), INTENT(IN) :: PPABST! pressure
 REAL, DIMENSION(:,:,:), INTENT(IN) :: PTHT  !Temperature
 REAL, DIMENSION(:,:),   INTENT(IN) :: PTSRAD ! surface radiative temperature
-REAL, DIMENSION (:,:),  INTENT(IN) :: PSEA   ! sea fraction
-REAL, DIMENSION (:,:),  INTENT(IN) :: PTOWN  ! town fraction
-REAL, DIMENSION (:,:),  INTENT(IN) :: PBARE  ! bare soil fraction
 REAL, DIMENSION(:,:),   INTENT(IN) :: PLAT, PLON ! arrays of latitude-longitude
 !
 TYPE (DATE_TIME),       INTENT(IN) :: TPDTCUR    ! Current date and time
@@ -61,7 +58,7 @@ END MODULE MODI_INI_RADIATIONS_ECMWF
     SUBROUTINE INI_RADIATIONS_ECMWF(                                  &
          PZHAT, PPABST, PTHT, PTSRAD, PLAT, PLON, TPDTCUR, TPDTEXP,   &
          HLW, KDLON, KFLEV, KFLUX, KRAD, KSWB, HAER, KAER, KSTATM,    &
-         PSTATM, PSEA, PTOWN, PBARE, POZON, PAER, PDST_WL, OSUBG_COND )
+         PSTATM, POZON, PAER, PDST_WL, OSUBG_COND                     )
 !   ###################################################################
 !
 !!****  *INI_RADIATIONS * - initialisation for ECMWF radiation scheme in the MesoNH framework
@@ -181,10 +178,6 @@ END MODULE MODI_INI_RADIATIONS_ECMWF
 !ECMWF radiation scheme specific modules 
 !
 USE OYOMCST,               ONLY: RTT
-USE PARKIND1,              ONLY: JPRB
-USE YOEAERD,               ONLY: RCAEOPS, RCAEOPL, RCAEOPU, RCAEOPD, RCTRBGA, &
-                                 RCVOBGA, RCSTBGA, RCTRPT,  RCAEADM, RCAEROS, &
-                                 RCAEADK
 USE YOETHF,                ONLY: RTICE
 !
 !MESO-NH modules
@@ -205,7 +198,7 @@ USE MODE_ll
 USE MODE_REPRO_SUM
 USE MODE_SALTOPT
 !
-USE MODI_INI_HOR_AERCLIM
+USE MODI_AEROZON
 USE MODI_INI_RADCONF
 USE MODI_INI_STAND_ATM
 USE MODI_RADAER
@@ -224,9 +217,6 @@ REAL, DIMENSION(:),     INTENT(IN) :: PZHAT ! height level without orography
 REAL, DIMENSION(:,:,:), INTENT(IN) :: PPABST! pressure
 REAL, DIMENSION(:,:,:), INTENT(IN) :: PTHT  !Temperature
 REAL, DIMENSION(:,:),   INTENT(IN) :: PTSRAD ! surface radiative temperature
-REAL, DIMENSION (:,:),  INTENT(IN) :: PSEA   ! sea fraction
-REAL, DIMENSION (:,:),  INTENT(IN) :: PTOWN  ! town fraction
-REAL, DIMENSION (:,:),  INTENT(IN) :: PBARE  ! bare soil fraction
 REAL, DIMENSION(:,:),   INTENT(IN) :: PLAT, PLON ! arrays of latitude-longitude
 !
 TYPE (DATE_TIME),       INTENT(IN) :: TPDTCUR    ! Current date and time
@@ -258,11 +248,8 @@ LOGICAL :: GWINTER ! .T. when WINTERtime
 LOGICAL :: GSEASON ! .T. when SUMMERtime in the northern hemisphere or
                    !     when WINTERtime in the southern hemisphere
 !
-INTEGER :: JI, JJ, JK, JK1, JKRAD,IIJ,JL  ! loop index
-!
 INTEGER :: IIB           ! I index value of the first inner mass point
 INTEGER :: IJB           ! J index value of the first inner mass point
-INTEGER :: IKB           ! K index value of the first inner mass point
 INTEGER :: IIE           ! I index value of the last inner mass point
 INTEGER :: IJE           ! J index value of the last inner mass point
 INTEGER :: IKE           ! K index value of the last inner mass point
@@ -275,7 +262,6 @@ REAL :: ZLATMEAN      ! MEAN LATitude in the domain
 REAL :: ZLAT_TROPICAL ! TROPIQUE LATitude
 REAL :: ZLAT_POLAR    ! POLAR circle LATitude
 !
-REAL, DIMENSION(:,:),ALLOCATABLE :: ZLON          ! longitude
 REAL, DIMENSION(SIZE(PSTATM,1)) :: ZZSTAT ! half level altitudes of standard atm.
 !
 INTEGER :: IINFO_ll                   ! return code of parallel routine
@@ -283,20 +269,8 @@ INTEGER :: IIMAX_ll,IJMAX_ll          ! Number of points of
                                       ! Global physical domain
                                       ! in the x and y directions
 !
-REAL, DIMENSION(SIZE(PTHT,1),SIZE(PTHT,2),SIZE(PTHT,3)) :: ZEXNT ! Exner function
-!
 ! Variables for aerosols and ozone climatologies set up
-REAL, DIMENSION (:),     ALLOCATABLE  :: ZAESEA, ZAELAN, ZAEURB, ZAEDES
-REAL(KIND=JPRB), DIMENSION (:), ALLOCATABLE  :: ZAESEA_RAD, ZAELAN_RAD, ZAEURB_RAD, ZAEDES_RAD
-LOGICAL, DIMENSION (:,:),ALLOCATABLE  :: GAFRICA, GASIA, GAUSTRALIA
-REAL, DIMENSION (:,:),   ALLOCATABLE  :: ZDESERT ! desert fraction
-REAL, DIMENSION (:,:),   ALLOCATABLE  :: ZPAVE, ZWORK_GRID
-REAL(KIND=JPRB), DIMENSION (:,:,:), ALLOCATABLE  :: ZAER
-REAL(KIND=JPRB), DIMENSION (:,:),   ALLOCATABLE  :: ZPRES_HL,ZT_HL,ZOZON
-REAL(KIND=JPRB), DIMENSION (:,:),   ALLOCATABLE  :: ZCVDAES, ZCVDAEL, ZCVDAEU, ZCVDAED,ZETAH
-REAL(KIND=JPRB), DIMENSION (:),     ALLOCATABLE  :: ZGEMU 
-REAL, DIMENSION(:),      ALLOCATABLE  :: ZAECOV_SEA, ZAECOV_URB, ZAECOV_LAN, ZAECOV_DES
-INTEGER :: ZYMD, ZHOURS   ! date for climatology initialisation
+REAL :: ZSINDEL,ZCOSDEL,ZTSIDER,ZCORSOL   ! astronomical parameters not used here
 !
 !-------------------------------------------------------------------------------
 !-------------------------------------------------------------------------------
@@ -310,7 +284,6 @@ CALL GET_DIM_EXT_ll ('B',IIU,IJU)
 IKU = SIZE(PTHT,3)
 !
 CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
-IKB = 1 + JPVEXT
 IKE = IKU - JPVEXT
 !
 ! size of global physical domain
@@ -430,272 +403,25 @@ CALL INI_RADCONF (HLW,KSWB,OSUBG_COND)
 !*       8.     INITIALIZE RADIATIVELY ACTIVE COMPOUNDS (3D FIELDS) 
 !	        ------------------------------------------------------ 
 !
-!*       8.1   set up for grid dependant quantitites (from initial state) 
-! 
-ALLOCATE (ZPRES_HL(KDLON,KFLEV+1))
-ALLOCATE (ZPAVE(KDLON,KFLEV))
-ALLOCATE (ZETAH(KDLON,KFLEV+1))
-ALLOCATE (ZT_HL(KDLON,KFLEV+1))
-ALLOCATE (ZGEMU(KDLON))
-ZT_HL(:,:) = 273.
-!
-ZEXNT(:,:,:)= ( PPABST(:,:,:)/XP00 ) ** (XRD/XCPD)
-!
-DO JK=IKB,IKE+1
-  JKRAD = JK-JPVEXT
-  DO JJ=IJB,IJE
-    DO JI=IIB,IIE
-      IIJ = 1 + (JI-IIB) + (IIE-IIB+1)*(JJ-IJB)
-      ZPRES_HL(IIJ,JKRAD) = XP00 * (0.5*(ZEXNT(JI,JJ,JK)+ZEXNT(JI,JJ,JK-1)))**(XCPD/XRD)
-      ZT_HL(IIJ,JKRAD) = 0.5*(PTHT(JI,JJ,JK)*ZEXNT(JI,JJ,JK)+PTHT(JI,JJ,JK-1)*ZEXNT(JI,JJ,JK-1))
-    END DO
-  END DO
-END DO
-!
-!  Surface temperature at the first level
-!
-DO JJ=IJB,IJE
-  DO JI=IIB,IIE
-    IIJ = 1 + (JI-IIB) + (IIE-IIB+1)*(JJ-IJB)
-    ZT_HL(IIJ,1) = PTSRAD(JI,JJ)
-  END DO
-END DO
-WHERE (ZT_HL(:,:) == 0.)
-  ZT_HL(:,:) = 273.
-ENDWHERE
-!
-!  Standard atmosphere extension
-!* begining at ikup+1 level allows to use a model domain higher than 50km
-!
-IKUP   = IKE-JPVEXT+1
-!
-DO JK=IKUP+1,KFLEV+1
-  JK1 = (KSTATM-1)+(JK-IKUP)
-  ZPRES_HL(:,JK) = PSTATM(JK1,2)*100.0
-  ZT_HL(:,JK) = PSTATM(JK1,3)
-END DO
-!
-! vertical grid inversion for compatibility with ECMWF routines
-!
-ALLOCATE (ZWORK_GRID(SIZE(ZPRES_HL,1),KFLEV+1))
-!
-!half level pressure
-!
-ZWORK_GRID(:,:)=ZPRES_HL(:,:)
-DO JKRAD=1, KFLEV+1
-  JK1=(KFLEV+1)+1-JKRAD
-  ZPRES_HL(:,JKRAD) = ZWORK_GRID(:,JK1)
-END DO
-!
-!half level temperature
-!
-ZWORK_GRID(:,:)=ZT_HL(:,:)
-DO  JKRAD=1, KFLEV+1
-  JK1=(KFLEV+1)+1-JKRAD
-  ZT_HL(:,JKRAD)=ZWORK_GRID(:,JK1)
-END DO
-DEALLOCATE(ZWORK_GRID)
-!
-DO JKRAD=1,KFLEV
-  ZPAVE(:,JKRAD)=0.5*(ZPRES_HL(:,JKRAD)+ZPRES_HL(:,JKRAD+1))
-END DO
-!
-!coo geographique 
-!
-IF(.NOT.LCARTESIAN) THEN
-  DO JJ=IJB,IJE
-    DO JI=IIB,IIE
-      IIJ = 1 + (JI-IIB) + (IIE-IIB+1)*(JJ-IJB)
-      ZGEMU(IIJ) = SIN ( PLAT(JI,JJ) * XPI/180)  
-    END DO
-  END DO
-ELSE
-  ZGEMU(:) = SIN ( XLAT0 * XPI/180) 
-END IF
-!
-!*     8.2     OZONE climatology 
-!
-ALLOCATE (ZOZON(KDLON,KFLEV))
-!
-IF (LFIX_DAT ) THEN     ! Ajout PP 
- ZYMD = TPDTEXP%nyear * 1E4 + TPDTEXP%nmonth * 1E2 + TPDTEXP%nday
- ZHOURS = INT(TPDTEXP%xtime / 60.)
-ELSE
- ZYMD = TPDTCUR%nyear * 1E4 + TPDTCUR%nmonth * 1E2 + TPDTCUR%nday
- ZHOURS = INT(TPDTCUR%xtime / 60.)
-END IF
-!
-! Fortuin langematz climatology loading
-!
-CALL SUECOZC ( ZYMD , ZHOURS )
-!
-! Interpolation on the simulation domain
-!
-CALL RADOZC ( 1 , KDLON, KDLON , 1, KFLEV, 1 ,&
-     KDLON ,0,ZPRES_HL, ZGEMU,       &
-     ZOZON                         )
-!
-!*    8.3         AEROSOLS climatogy 
-!
-ALLOCATE (ZAER(KDLON, KFLEV,KAER))
-!
-IF(HAER /= 'NONE') THEN
-!
-!     8.3.1 horizontal ditributions   
-!
-  ALLOCATE (ZAESEA(KDLON))
-  ALLOCATE (ZAELAN(KDLON))
-  ALLOCATE (ZAEURB(KDLON))
-  ALLOCATE (ZAEDES(KDLON))
-
-  ALLOCATE (ZAESEA_RAD(KDLON))
-  ALLOCATE (ZAELAN_RAD(KDLON))
-  ALLOCATE (ZAEURB_RAD(KDLON))
-  ALLOCATE (ZAEDES_RAD(KDLON))
-!
-! AEROSOLS ECMWF climatologies
-!
-  IF ( HAER =='TANR' .OR. HAER == 'TEGE' ) THEN
-    CALL INI_HOR_AERCLIM (HAER,IIB,IIE,IJB,IJE,KDLON,ZYMD,ZHOURS, &
-                          PLAT,PLON,ZAESEA,ZAELAN,ZAEURB,ZAEDES )
-  END IF
-!
-! AEROSOLS from SURFACE FRACTIONS
-!
-  IF( HAER =='SURF') THEN
-!
-    !* deserts are only considered over Africa, southern Asia, Australia
-    !* longitude between -180 and 180 for geographical tests
-    !  Only bare soil fractions larger than 0.5 are supposed to contribute to
-    !  desert aerosols
-    !
-    ALLOCATE(ZDESERT   (IIU,IJU))
-    ZDESERT(:,:) = 0.
-
-    IF (.NOT.LCARTESIAN) THEN
-      !* deserts are only considered over Africa, southern Asia, Australia
-      ALLOCATE(ZLON      (IIU,IJU))
-      ALLOCATE(GAFRICA   (IIU,IJU))
-      ALLOCATE(GASIA     (IIU,IJU))
-      ALLOCATE(GAUSTRALIA(IIU,IJU))    
-      !* longitude between -180 and 180 for geographical tests
-      ZLON = PLON(:,:) - NINT(PLON/360.)*360.
-      GAFRICA   (:,:) = PLAT(:,:) > -36.086389  .AND. PLAT(:,:) < 36.010556 &
-                  .AND. ZLON(:,:) > -73.18      .AND. ZLON(:,:) < 34.158611
-      GASIA     (:,:) = PLAT(:,:) > 4.358056    .AND. PLAT(:,:) < 55.335278 &
-                  .AND. ZLON(:,:) > -123.157778 .AND. ZLON(:,:) <-34.285556
-      GAUSTRALIA(:,:) = PLAT(:,:) > -39.561389  .AND. PLAT(:,:) < -10.251667 &
-                  .AND. ZLON(:,:) > -155.041944 .AND. ZLON(:,:) < -111.405556
-      !
-      !  Only bare soil fractions larger than 0.5 are supposed to contribute to
-      !  desert aerosols
-      !
-      WHERE (GAFRICA(:,:) .OR. GASIA(:,:) .OR. GAUSTRALIA(:,:)) &
-      ZDESERT(:,:) = MAX( 2.*(PBARE(:,:)-0.5) , 0.)
-      !
-      !
-    ELSE
-      !
-      ZDESERT(:,:) = MAX( 2.*(PBARE(:,:)-0.5) , 0.)
-      !
-    ENDIF
-    !
-    !* fills sea, town, desert and land surface covers for aerosols distributions
-    DO JJ=IJB,IJE
-      DO JI=IIB,IIE
-        IIJ = 1 + (JI-IIB) + (IIE-IIB+1)*(JJ-IJB)
-        ZAESEA(IIJ) = PSEA(JI,JJ)
-        ZAEURB(IIJ) = PTOWN(JI,JJ)
-        ZAEDES(IIJ) = ZDESERT(JI,JJ)
-        ZAELAN(IIJ) = MAX( 1.- ZAESEA(IIJ) - ZAEURB(IIJ) - ZAEDES(IIJ) , 0.)
-      END DO
-    END DO
-    IF (ALLOCATED(ZLON)) DEALLOCATE(ZLON)
-    IF (ALLOCATED(GAFRICA))     DEALLOCATE(GAFRICA)
-    IF (ALLOCATED(GASIA))     DEALLOCATE(GASIA)
-    IF (ALLOCATED(GAUSTRALIA))     DEALLOCATE(GAUSTRALIA)
-    IF (ALLOCATED(ZDESERT))     DEALLOCATE(ZDESERT)
-
-  END IF
-!
-!     8.3.2 vertical ditributions (standard profiles derived from Tanre)
-!
-  ALLOCATE (ZCVDAES(KDLON,KFLEV+1))
-  ALLOCATE (ZCVDAEL(KDLON,KFLEV+1))
-  ALLOCATE (ZCVDAEU(KDLON,KFLEV+1))
-  ALLOCATE (ZCVDAED(KDLON,KFLEV+1))
-  DO JL=1,KDLON
-    ZETAH(JL,:)=ZPRES_HL(JL,:)/101300. ! reference pressure for normalisation
-  END DO
-  WHERE (ZETAH (:,:) > 1.)
-    ZETAH(:,:)=1.
-  END WHERE
-!
-! set up of vertical ditribution parameters
-  CALL SUAERV ( KDLON, KFLEV   , ZETAH, &
-        ZCVDAES ,ZCVDAEL ,ZCVDAEU ,ZCVDAED, &
-        RCTRBGA,RCVOBGA,RCSTBGA,RCAEOPS,RCAEOPL,RCAEOPU,&
-        RCAEOPD,RCTRPT ,RCAEADK,RCAEADM,RCAEROS )
-!  
-! modification of initial ECMWF maximum optical thickness 
-! for aerosols classes in case of HAER=SURF
-! note : these variables belongs to yoeaerd module   
-!
-  IF ( HAER =='SURF') THEN
-     RCAEOPS = 0.001 ! Sea instead 0.02 to agree with TEGEN
-     RCAEOPL = 0.05  ! Land (continental)
-     RCAEOPU = 0.3   ! Urban zone
-     RCAEOPD = 0.5   ! Desert
-  END IF
-!
-! final aerosol profiles on mnh grid
-!
-  ZAESEA_RAD = ZAESEA ; ZAELAN_RAD = ZAELAN ; ZAEURB_RAD = ZAEURB ; ZAEDES_RAD = ZAEDES
-  CALL RADAER (1, KDLON, KDLON, 1, KFLEV, ZPRES_HL,ZT_HL, &
-       ZCVDAES ,ZCVDAEL ,ZCVDAEU ,ZCVDAED, &
-       ZAESEA_RAD, ZAELAN_RAD, ZAEURB_RAD, ZAEDES_RAD, &
-       ZAER )
-!
-!!- VOLCANIC AEROSOL SET TO epsilon IN ABSENCE OF ERUPTION 
-  ZAER(:,:,5) = 1.E-12
-!
-  DEALLOCATE (ZCVDAES)
-  DEALLOCATE (ZCVDAEL)
-  DEALLOCATE (ZCVDAEU)
-  DEALLOCATE (ZCVDAED)
-  DEALLOCATE (ZAESEA)
-  DEALLOCATE (ZAELAN)
-  DEALLOCATE (ZAEURB)
-  DEALLOCATE (ZAEDES)
-
-  DEALLOCATE (ZAESEA_RAD)
-  DEALLOCATE (ZAELAN_RAD)
-  DEALLOCATE (ZAEURB_RAD)
-  DEALLOCATE (ZAEDES_RAD)
-ELSE
-  ZAER(:,:,:)= 1E-12
-END IF
-!
-!* 8.4              Adaptation on mnh domain
+!* 8.1          Aerosols and Ozone climatologies
 !
 ALLOCATE (POZON(IIU,IJU,KFLEV))
 ALLOCATE (PAER(IIU,IJU,KFLEV,KAER))
+!
+CALL AEROZON(PPABST,PTHT,PTSRAD,PLAT,PLON,TPDTCUR,TPDTEXP,         &
+         KDLON,KFLEV,HAER,KAER,KSTATM,                             &
+         ZSINDEL,ZCOSDEL,ZTSIDER,ZCORSOL,                          &
+         PSTATM,POZON, PAER)
+!
+!
+!-------------------------------------------------------------------------------
+!
+!* 8.4              Dusts
+!
 ALLOCATE (PDST_WL(IIU,IJU,KFLEV,KSWB))
 !
-POZON (:,:,:)=0.
-PAER (:,:,:,:)=0.
 PDST_WL (:,:,:,:)=0.
 !
-DO JJ=IJB,IJE
-  DO JI=IIB,IIE
-    IIJ = 1 + (JI-IIB) + (IIE-IIB+1)*(JJ-IJB)
-    DO JKRAD=1,KFLEV      
-      JK1 = KFLEV +1 -JKRAD
-      POZON (JI,JJ,JKRAD) = ZOZON (IIJ,JK1)
-      PAER  (JI,JJ,JKRAD,:) = ZAER (IIJ,JK1,:)
-    END DO
-  END DO
-END DO
 !
 !        Read in look up tables of dust optical properties
 !No arguments, all look up tables are defined in module
@@ -727,13 +453,6 @@ IF ( LSALT .AND. CAOP=='EXPL' ) THEN
 END IF
 !
 CALL INI_CONS_PROP_OP
-DEALLOCATE (ZPRES_HL) 
-DEALLOCATE (ZPAVE)
-DEALLOCATE (ZT_HL)
-DEALLOCATE (ZETAH)
-DEALLOCATE (ZGEMU)
-DEALLOCATE (ZOZON)
-DEALLOCATE (ZAER)
 !
 !-------------------------------------------------------------------------------
 !

@@ -95,16 +95,16 @@ CHARACTER(LEN=10),        INTENT(IN) :: HSCHEME
 !
 !*      0.2    declarations local variables
 !
-INTEGER :: JJ, JN  ! loop counter
+INTEGER :: JJ, JN, II  ! loop counter
 !   variables for the aerosol module
 !
 REAL, DIMENSION(SIZE(PM,1)) :: ZSIGMA
 REAL, DIMENSION(SIZE(PM,1)) :: ZSUM
 REAL, SAVE, DIMENSION(JPIN) :: ZPMIN
 LOGICAL, SAVE               :: GPHYSLIM = .TRUE. ! flag
-REAL :: ZRGMIN
+REAL, SAVE    :: ZRGMIN
 REAL, PARAMETER :: ZCSTAVOG=6.0221367E+11
-REAL    :: ZINIRADIUSI, ZINIRADIUSJ
+REAL, SAVE    :: ZINIRADIUSI, ZINIRADIUSJ
 
 
 !
@@ -128,13 +128,13 @@ END IF
 
 ZPMIN(1) = XN0IMIN
 ZRGMIN = ZINIRADIUSI
-ZPMIN(2) = ZPMIN(1) * (ZRGMIN**3)*EXP(4.5 * LOG(XSIGIMIN)**2) 
-ZPMIN(3) = ZPMIN(1) * (ZRGMIN**6)*EXP(18. * LOG(XSIGIMIN)**2)
+ZPMIN(2) = ZPMIN(1) * (ZRGMIN**3)*EXP(4.5 * LOG(XINISIGI)**2) 
+ZPMIN(3) = ZPMIN(1) * (ZRGMIN**6)*EXP(18. * LOG(XINISIGI)**2)
 
 ZPMIN(4) = XN0JMIN
 ZRGMIN = ZINIRADIUSJ
-ZPMIN(5) = ZPMIN(4) * (ZRGMIN**3)*EXP(4.5 * LOG(XSIGJMIN)**2) 
-ZPMIN(6) = ZPMIN(4) * (ZRGMIN**6)*EXP(18. * LOG(XSIGJMIN)**2)
+ZPMIN(5) = ZPMIN(4) * (ZRGMIN**3)*EXP(4.5 * LOG(XINISIGJ)**2) 
+ZPMIN(6) = ZPMIN(4) * (ZRGMIN**6)*EXP(18. * LOG(XINISIGJ)**2)
 
 END IF
 
@@ -768,6 +768,8 @@ END IF
 !
 !*       1.n    transfer moment 0 from gas to aerosol variable
 !
+!print*,'aer_trans N0i =',MINVAL(PAERO(:,JP_CH_M0i)), MAXVAL(PAERO(:,JP_CH_M0i))
+!print*,'aer_trans N0j =',MINVAL(PAERO(:,JP_CH_M0j)), MAXVAL(PAERO(:,JP_CH_M0j))
   PM(:,1) = MAX(PAERO(:,JP_CH_M0i) * 1E+6, XMNH_TINY) ! convert from 1/cc to 1/m3
   PM(:,4) = MAX(PAERO(:,JP_CH_M0j) * 1E+6, XMNH_TINY) ! convert from 1/cc to 1/m3
 
@@ -892,7 +894,7 @@ PMASK(:,JN) = 1.
 END WHERE
 
 ENDDO
-
+  
 ELSE
 !
 !*       2.     TRANSFER FROM AEROSOL TO GAS  MODULE

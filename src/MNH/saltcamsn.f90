@@ -135,6 +135,8 @@ DELTA_CAMS_3 = RAY_CAMS_4 - RAY_CAMS_3
 ! puis calcul de la masse correspondante avec facteur correctif pour eviter
 ! la surestimation des concentrations en aerosols
 
+ZMASS(:,:,:,1) = PMASSCAMS(:,:,:,1) * 1E-3
+
 DELTA_1 = RAY_2 - RAY_CAMS_1
 RATIO_1 = DELTA_1 / DELTA_CAMS_1
 ZMASS(:,:,:,2) = PMASSCAMS(:,:,:,1) * RATIO_1 ! * 1E-2 ! Attribution Mode 2 ORILAM
@@ -159,18 +161,16 @@ DELTA_6 = 10 - RAY_CAMS_3
 RATIO_6 = DELTA_3 / DELTA_CAMS_1
 ZMASS(:,:,:,5) = (PMASSCAMS(:,:,:,3) * RATIO_6) + ZMASS(:,:,:,5) ! Attribution Mode 5 ter ORILAM
 
-ZMASS(:,:,:,5) = ZMASS(:,:,:,5) * 1E-1
-
-! Hyp : the ultrafine mode is neglected for orilam-lima coupling
-ZMASS(:,:,:,1) = PMASSCAMS(:,:,:,1) * 1E-5 ! ultrafin mode
-!
 !========================================================
 ! Adjust the mass / SSA emissions after a few hours
-ZMASS(:,:,:,1) = ZMASS(:,:,:,1) * 1.
-ZMASS(:,:,:,2) = ZMASS(:,:,:,2) * 1.
-ZMASS(:,:,:,3) = ZMASS(:,:,:,3) * 1.
-ZMASS(:,:,:,4) = ZMASS(:,:,:,4) * 1.
-ZMASS(:,:,:,5) = ZMASS(:,:,:,5) * 1.
+ZMASS(:,:,:,1) = MAX(ZMASS(:,:,:,1) * 0.16, 1E-18)
+ZMASS(:,:,:,2) = MAX(ZMASS(:,:,:,2) * 0.1, 1E-17)
+ZMASS(:,:,:,3) = MAX(ZMASS(:,:,:,3) * 0.5, 1E-16)
+ZMASS(:,:,:,4) = MAX(ZMASS(:,:,:,4) * 0.1, 1E-16)
+ZMASS(:,:,:,5) = MAX(ZMASS(:,:,:,5), 1E-17) 
+IF (NMODE_SLT >= 6) ZMASS(:,:,:,6) = MAX(ZMASS(:,:,:,5) * 0.01, 1E-16)
+IF (NMODE_SLT >= 7) ZMASS(:,:,:,7) = MAX(ZMASS(:,:,:,5) * 0.001, 1E-16)
+IF (NMODE_SLT >= 8) ZMASS(:,:,:,8) = MAX(ZMASS(:,:,:,5) * 0.0001, 1E-16)
 !========================================================
 
 DO JN = 1, NMODE_SLT
@@ -197,15 +197,11 @@ DO JN = 1, NMODE_SLT
   ZMMIN(IM6(JN)) = XN0MIN_SLT(IMODEIDX) * (ZRGMIN**6)*EXP(18. * LOG(ZINISIGMA(JN))**2)
 
 END DO
-
-ZMASS(:,:,:,:) = MAX(ZMASS(:,:,:,:), 1E-40)
-!
 !
 ZRHOI = XDENSITY_SALT
 ZMI   = XMOLARWEIGHT_SALT
 ZDEN2MOL = 1E-6 * XAVOGADRO / XMD
 ZFAC = (4. / 3.) * XPI * ZRHOI * 1.e-9
-
 !
 DO JN = 1, NMODE_SLT
 
@@ -225,13 +221,13 @@ DO JN = 1, NMODE_SLT
                       (ZINIRADIUS(JN)**3) * & 
                       EXP(4.5*LOG(ZINISIGMA(JN))**2) 
 
-  ZM(:,:,:,IM3(JN)) = MAX(ZMMIN(IM3(JN)), ZM(:,:,:,IM3(JN)))
+!  ZM(:,:,:,IM3(JN)) = MAX(ZMMIN(IM3(JN)), ZM(:,:,:,IM3(JN)))
 !
 !*       1.3    calculate moment 6 from m0,  RG and SIG 
 !
   ZM(:,:,:,IM6(JN))= ZM(:,:,:,IM0(JN)) * ((ZINIRADIUS(JN)**6)*&
                         EXP(18. * (LOG(ZINISIGMA(JN)))**2))
-  ZM(:,:,:,IM6(JN)) = MAX(ZMMIN(IM6(JN)), ZM(:,:,:,IM6(JN)))
+!  ZM(:,:,:,IM6(JN)) = MAX(ZMMIN(IM6(JN)), ZM(:,:,:,IM6(JN)))
 !
 !*       1.4    output concentration (in ppv)
 !

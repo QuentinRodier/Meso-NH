@@ -167,6 +167,7 @@ USE MODE_ll
 USE MODI_SHUMAN
 USE MODI_INI_RADCONF
 USE MODI_INI_HOR_AERCLIM
+USE MODI_AER_CLIM_SURF
 USE MODI_SUECOZC
 USE MODI_RADOZC
 USE MODI_SUAERV
@@ -232,7 +233,7 @@ REAL, DIMENSION(SIZE(PTHT,1),SIZE(PTHT,2),SIZE(PTHT,3)) :: ZEXNT ! Exner functio
 !
 ! Variables for aerosols and ozone climatologies set up
 
-REAL, DIMENSION (:,:),   ALLOCATABLE  :: ZPAVE, ZWORK_GRID
+REAL, DIMENSION (:,:),   ALLOCATABLE  :: ZWORK_GRID
 REAL, DIMENSION (:),   ALLOCATABLE  :: ZAESEA, ZAELAN, ZAEURB, ZAEDES
 !
 REAL(KIND=JPRB), DIMENSION (:,:),   ALLOCATABLE  :: ZT_HL
@@ -326,7 +327,6 @@ PCORSOL = 1.00011+0.034221*COS(ZAD)   +0.001280*SIN(ZAD)    &
 !*       8.1   set up for grid dependant quantitites (from initial state) 
 ! 
 ALLOCATE (ZPRES_HL(KDLON,KFLEV+1))
-ALLOCATE (ZPAVE(KDLON,KFLEV))
 ALLOCATE (ZETAH(KDLON,KFLEV+1))
 ALLOCATE (ZT_HL(KDLON,KFLEV+1))
 ALLOCATE (ZGEMU(KDLON))
@@ -380,10 +380,6 @@ DO  JKRAD=1, KFLEV+1
   ZT_HL(:,JKRAD)=ZWORK_GRID(:,JK1)
 END DO
 DEALLOCATE(ZWORK_GRID)
-!
-DO JKRAD=1,KFLEV
-  ZPAVE(:,JKRAD)=0.5*(ZPRES_HL(:,JKRAD)+ZPRES_HL(:,JKRAD+1))
-END DO
 !
 !coo geographique 
 !
@@ -440,11 +436,16 @@ IF(HAER /= 'NONE') THEN
 !
 ! AEROSOLS ECMWF climatologies
 !
-  IF ( HAER == 'TEGE' ) THEN
+  IF ( HAER == 'TEGE' .OR. HAER=='TANR' ) THEN
     CALL INI_HOR_AERCLIM (HAER,IIB,IIE,IJB,IJE,KDLON,ZYMD,ZHOURS, &
                           PLAT,PLON,ZAESEA,ZAELAN,ZAEURB,ZAEDES )
   END IF
+  !
+  IF( HAER =='SURF') THEN
 !
+    CALL AER_CLIM_SURF(PLAT, PLON, ZAESEA, ZAELAN, ZAEURB, ZAEDES )
+  END IF
+  !
 !
 !     8.3.2 vertical ditributions (standard profiles derived from Tanre)
 !
@@ -468,6 +469,18 @@ IF(HAER /= 'NONE') THEN
 ! modification of initial ECMWF maximum optical thickness 
 ! for aerosols classes in case of HAER=SURF
 ! note : these variables belongs to yoeaerd module   
+!
+! modification of initial ECMWF maximum optical thickness
+! for aerosols classes in case of HAER=SURF
+! note : these variables belongs to yoeaerd module
+!
+  IF ( HAER =='SURF') THEN
+     RCAEOPS = 0.001 ! Sea instead 0.02 to agree with TEGEN
+     RCAEOPL = 0.05  ! Land (continental)
+     RCAEOPU = 0.3   ! Urban zone
+     RCAEOPD = 0.5   ! Desert
+  END IF
+
 !
 ! final aerosol profiles on mnh grid
 !
@@ -516,9 +529,7 @@ DO JJ=IJB,IJE
 END DO
 !
 !
-!
 DEALLOCATE (ZPRES_HL) 
-DEALLOCATE (ZPAVE)
 DEALLOCATE (ZT_HL)
 DEALLOCATE (ZETAH)
 DEALLOCATE (ZGEMU)
