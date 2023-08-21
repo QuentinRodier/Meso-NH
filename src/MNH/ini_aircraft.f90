@@ -199,6 +199,15 @@ DO JI = 1, NAIRCRAFTS
   ! Read CSV data (trajectory)
   CALL AIRCRAFT_CSV_READ( TZAIRCRAFT, CFILE(JI) )
 
+  IF ( TZAIRCRAFT%LALTDEF ) THEN
+    ! Print a warning if pressures seem too high (> 2000 hPa)
+    IF ( ANY( TZAIRCRAFT%XPOSP > 2.E5 ) ) THEN
+      CMNHMSG(1) = TRIM( TZAIRCRAFT%CTITLE ) // ': pressure values seem too high'
+      CMNHMSG(2) = 'check that they are given in hPa and not Pa'
+      CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'INI_AIRCRAFT', OLOCAL = .TRUE. )
+    END IF
+  END IF
+
 END DO
 
 IF ( NAIRCRAFTS > 0 ) CALL AIRCRAFTS_NML_DEALLOCATE()
@@ -223,9 +232,12 @@ CHARACTER(LEN=*),    INTENT(IN)    :: HFILE !Name of the CSV file with the aircr
 
 CHARACTER(LEN=NMAXLINELGT) :: YSTRING
 INTEGER                    :: ILU      ! logical unit of the file
+INTEGER                    :: ILINESREAD ! Number of lines read and treated (the 1st one is skipped)
 INTEGER                    :: JI
 REAL                       :: ZLAT, ZLON, ZALT
 REAL                       :: ZTIME
+
+ILINESREAD = 0
 
 ! Open file
 OPEN( NEWUNIT = ILU, FILE = HFILE, FORM = 'formatted' )
@@ -235,6 +247,7 @@ READ( ILU, END = 101, FMT = '(A)' ) YSTRING ! Reading of header (skip it)
 DO JI = 1, TPAIRCRAFT%NPOS
   ! Read aircraft position
   READ( ILU, END = 101, FMT = '(A)' ) YSTRING
+  ILINESREAD = ILINESREAD + 1
 
   READ( YSTRING, * ) ZTIME, ZLAT, ZLON, ZALT
 
@@ -252,7 +265,7 @@ END DO
 
 CLOSE( ILU )
 
-IF ( JI < TPAIRCRAFT%NPOS ) &
+IF ( ILINESREAD < TPAIRCRAFT%NPOS ) &
   CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'AIRCRAFT_CSV_READ', 'Data not found in file ' // TRIM( HFILE ), OLOCAL = .TRUE. )
 
 TPAIRCRAFT%TLAND = TPAIRCRAFT%TLAUNCH + TPAIRCRAFT%XPOSTIME(TPAIRCRAFT%NPOS)

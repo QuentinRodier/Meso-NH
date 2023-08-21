@@ -192,7 +192,7 @@ IF ((CEMISPARAM_SLT .eq. "Ova14").OR.(CEMISPARAM_SLT .eq. "OvB21a").OR.(CEMISPAR
 
   ! Tableau d'interpolation pour calculer ZNUWATER en fonction de la SST
   ! Cas ou 0 < SST < 10 C
-  WHERE ((PSST(:) >= 273.15).AND.(PSST(:) < 283.15))
+  WHERE (PSST(:) < 283.15)
     ZVISCO(:) = ZNUWATER(1) + (PSST(:) - ZWT(1)) * (ZNUWATER(2)-ZNUWATER(1)) / &
                 (ZWT(2) - ZWT(1))
   ENDWHERE
@@ -210,7 +210,7 @@ IF ((CEMISPARAM_SLT .eq. "Ova14").OR.(CEMISPARAM_SLT .eq. "OvB21a").OR.(CEMISPAR
   ENDWHERE
 
   ! Cas ou 30 < SST < 40 C
-  WHERE ((PSST(:) >= 303.15).AND.(PSST(:) < 313.15))
+  WHERE (PSST(:) >= 303.15)
     ZVISCO(:) = ZNUWATER(4) + (PSST(:) - ZWT(4)) * (ZNUWATER(5)-ZNUWATER(4)) / &
                 (ZWT(5) - ZWT(4))
   ENDWHERE

@@ -116,12 +116,12 @@ END IF
 !Get minimum values possible
 ZPMIN(1) = XN0IMIN
 ZRGMIN = ZINIRADIUSI
-ZPMIN(2) = ZPMIN(1) * (ZRGMIN**3)*EXP(4.5 * LOG(XSIGIMIN)**2) 
-ZPMIN(3) = ZPMIN(1) * (ZRGMIN**6)*EXP(18. * LOG(XSIGIMIN)**2)
+ZPMIN(2) = ZPMIN(1) * (ZRGMIN**3)*EXP(4.5 * LOG(XINISIGI)**2) 
+ZPMIN(3) = ZPMIN(1) * (ZRGMIN**6)*EXP(18. * LOG(XINISIGI)**2)
 ZPMIN(4) = XN0JMIN
 ZRGMIN = ZINIRADIUSJ
-ZPMIN(5) = ZPMIN(4) * (ZRGMIN**3)*EXP(4.5 * LOG(XSIGJMIN)**2) 
-ZPMIN(6) = ZPMIN(4) * (ZRGMIN**6)*EXP(18. * LOG(XSIGJMIN)**2)
+ZPMIN(5) = ZPMIN(4) * (ZRGMIN**3)*EXP(4.5 * LOG(XINISIGJ)**2) 
+ZPMIN(6) = ZPMIN(4) * (ZRGMIN**6)*EXP(18. * LOG(XINISIGJ)**2)
 !
 !
 CALL  PPP2AERO(ZSVT, PRHODREF, &
@@ -167,15 +167,15 @@ SELECT CASE (CCLOUD)
   CASE ('KESS','REVE','ICE3','ICE4')
 ! One moment cloud scheme
   CALL AER_WET_DEP_KMT_WARM  (NSPLITR, PTSTEP, PZZ, PRHODREF,    &
-                              PRT(:,:,:,2), PRT(:,:,:,3), ZRCS,  &
-                              ZRRS, ZSVAER, PTHT, PPABST,  ZRG,  &
+                              PRT(:,:,:,2), PRT(:,:,:,3),        &
+                              ZSVAER, PTHT, PPABST,  ZRG,        &
                               PEVAP3D, JPMODE,ZRHOP, ZMASSMIN,   &
                               PSEA=ZSEA, PTOWN=ZTOWN)
   CASE ('KHKO','C2R2','C3R5')
 ! Two moment cloud scheme
   CALL AER_WET_DEP_KMT_WARM  (NSPLITR, PTSTEP, PZZ, PRHODREF,    &
-                              PRT(:,:,:,2), PRT(:,:,:,3), ZRCS,  &
-                              ZRRS, ZSVAER, PTHT, PPABST,  ZRG,  &
+                              PRT(:,:,:,2), PRT(:,:,:,3),        &
+                              ZSVAER, PTHT, PPABST,  ZRG,        &
                               PEVAP3D, JPMODE,ZRHOP, ZMASSMIN,   &
                               PSEA=ZSEA, PTOWN=ZTOWN,            &
                               PCCT=PSVT(:,:,:,NSV_C2R2BEG+1),    &
@@ -183,8 +183,8 @@ SELECT CASE (CCLOUD)
   CASE ('LIMA')
 ! Two moment cloud scheme
   CALL AER_WET_DEP_KMT_WARM  (NSPLITR, PTSTEP, PZZ, PRHODREF,    &
-                              PRT(:,:,:,2), PRT(:,:,:,3), ZRCS,  &
-                              ZRRS, ZSVAER, PTHT, PPABST,  ZRG,  &
+                              PRT(:,:,:,2), PRT(:,:,:,3),        &
+                              ZSVAER, PTHT, PPABST,  ZRG,        &
                               PEVAP3D, JPMODE,ZRHOP, ZMASSMIN,   &
                               PSEA=ZSEA, PTOWN=ZTOWN,            &
                               PCCT=PSVT(:,:,:,NSV_LIMA_NC),      &

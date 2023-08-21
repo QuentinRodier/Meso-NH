@@ -12,7 +12,7 @@ INTERFACE
     SUBROUTINE INI_RADIATIONS_ECRAD(                                   &
          PZHAT, PPABST, PTHT, PTSRAD, PLAT, PLON, TPDTCUR, TPDTEXP,    &
          HLW, KDLON, KFLEV, KFLUX, KRAD, KSWB_OLD, HAER, KAER, KSTATM, &
-         PSTATM, PSEA, PTOWN, PBARE, POZON, PAER, PDST_WL, OSUBG_COND  )
+         PSTATM, POZON, PAER, PDST_WL, OSUBG_COND                      )
 !
 USE MODD_TYPE_DATE
 
@@ -23,9 +23,6 @@ REAL, DIMENSION(:),     INTENT(IN) :: PZHAT ! height level without orography
 REAL, DIMENSION(:,:,:), INTENT(IN) :: PPABST! pressure
 REAL, DIMENSION(:,:,:), INTENT(IN) :: PTHT  !Temperature
 REAL, DIMENSION(:,:),   INTENT(IN) :: PTSRAD ! surface radiative temperature
-REAL, DIMENSION (:,:),  INTENT(IN) :: PSEA   ! sea fraction
-REAL, DIMENSION (:,:),  INTENT(IN) :: PTOWN  ! town fraction
-REAL, DIMENSION (:,:),  INTENT(IN) :: PBARE  ! bare soil fraction
 REAL, DIMENSION(:,:),   INTENT(IN) :: PLAT, PLON ! arrays of latitude-longitude
 !
 TYPE (DATE_TIME),       INTENT(IN) :: TPDTCUR    ! Current date and time
@@ -61,7 +58,7 @@ END MODULE MODI_INI_RADIATIONS_ECRAD
     SUBROUTINE INI_RADIATIONS_ECRAD(                                   &
          PZHAT, PPABST, PTHT, PTSRAD, PLAT, PLON, TPDTCUR, TPDTEXP,    &
          HLW, KDLON, KFLEV, KFLUX, KRAD, KSWB_OLD, HAER, KAER, KSTATM, &
-         PSTATM, PSEA, PTOWN, PBARE, POZON, PAER, PDST_WL, OSUBG_COND  )
+         PSTATM, POZON, PAER, PDST_WL, OSUBG_COND                      )
 !   ####################################################################
 !
 ! INI_RADIATIONS_ECRAD - Initialization of ECRAD code
@@ -121,9 +118,6 @@ REAL, DIMENSION(:),     INTENT(IN) :: PZHAT ! height level without orography
 REAL, DIMENSION(:,:,:), INTENT(IN) :: PPABST! pressure
 REAL, DIMENSION(:,:,:), INTENT(IN) :: PTHT  !Temperature
 REAL, DIMENSION(:,:),   INTENT(IN) :: PTSRAD ! surface radiative temperature
-REAL, DIMENSION (:,:),  INTENT(IN) :: PSEA   ! sea fraction
-REAL, DIMENSION (:,:),  INTENT(IN) :: PTOWN  ! town fraction
-REAL, DIMENSION (:,:),  INTENT(IN) :: PBARE  ! bare soil fraction
 REAL, DIMENSION(:,:),   INTENT(IN) :: PLAT, PLON ! arrays of latitude-longitude
 !
 TYPE (DATE_TIME),       INTENT(IN) :: TPDTCUR    ! Current date and time
@@ -156,7 +150,7 @@ NULOUT = TLUOUT%NLU
 CALL INI_RADIATIONS_ECMWF(                                                               &
                            PZHAT, PPABST, PTHT, PTSRAD, PLAT, PLON, TPDTCUR, TPDTEXP,    &
                            HLW, KDLON, KFLEV, KFLUX, KRAD, KSWB_OLD, HAER, KAER, KSTATM, &
-                           PSTATM, PSEA, PTOWN, PBARE, POZON, PAER, PDST_WL, OSUBG_COND  )
+                           PSTATM, POZON, PAER, PDST_WL, OSUBG_COND                      )
 
 ! ECRAD specific variables
 

@@ -63,12 +63,11 @@ IF (LHOOK) CALL DR_HOOK('INIT_SLT',0,ZHOOK_HANDLE)
 !Get initial size distributions. This is cut and pasted
 !from dead routine dstpsd.F90
 !Check for different source parameterizations
-! Default : CEMISPARAM_SLT.eq."Ova14"
-
-  NSLTMDE = 5
+! Default : CEMISPARAM_SLT.eq."OvB21b"
+  NSLTMDE = 8
   CRGUNITS   = 'NUMB'
-  XEMISRADIUS_INI_SLT = (/0.009, 0.021, 0.045, 0.115, 0.415, 0.0, 0.0, 0.0/)
-  XEMISSIG_INI_SLT = (/1.37, 1.5, 1.42, 1.53, 1.85,0.,0.,0./)
+  XEMISRADIUS_INI_SLT = (/0.009, 0.021, 0.045, 0.115, 0.415, 2.5, 7.0, 25.0/)
+  XEMISSIG_INI_SLT = (/1.37, 1.5, 1.42, 1.53,1.70,1.80, 1.85, 2.1/)
 
 IF ((CEMISPARAM_SLT.eq."OvB21a").OR.(CEMISPARAM_SLT.eq."OvB21b")) THEN
   NSLTMDE = 8
@@ -76,6 +75,11 @@ IF ((CEMISPARAM_SLT.eq."OvB21a").OR.(CEMISPARAM_SLT.eq."OvB21b")) THEN
   XEMISRADIUS_INI_SLT = (/0.009, 0.021, 0.045, 0.115, 0.415, 2.5, 7.0, 25.0/)
   XEMISSIG_INI_SLT = (/1.37, 1.5, 1.42, 1.53,1.70,1.80, 1.85, 2.1/)
 
+ELSE IF (CEMISPARAM_SLT.eq."Ova14") THEN
+  NSLTMDE = 5
+  CRGUNITS   = 'NUMB'
+  XEMISRADIUS_INI_SLT = (/0.009, 0.021, 0.045, 0.115, 0.415, 0.0, 0.0, 0.0/)
+  XEMISSIG_INI_SLT = (/1.37, 1.5, 1.42, 1.53, 1.85,0.,0.,0./)
 
 ELSE IF (CEMISPARAM_SLT.eq."Vig01") THEN
    NSLTMDE = 5
