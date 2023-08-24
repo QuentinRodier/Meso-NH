@@ -696,7 +696,7 @@ ENDDO
 !
 IF (KTILE==1) THEN
   !
-  CALL COUPLING_SEA_n(YSC%SM, YSC%DLO, YSC%DL, YSC%DLC, YSC%U, YSC%NDST%AL(1), YSC%SLT,      &
+  CALL COUPLING_SEA_n(YSC%SM, YSC%DLO, YSC%DL, YSC%DLC, YSC%U, YSC%DST, YSC%SLT,      &
                       HPROGRAM, HCOUPLING, PTIMEC, PTSTEP, KYEAR, KMONTH, KDAY, PTIME,       &
                       YSC%U%NSIZE_SEA, KSV, KSW,  ZP_TSUN, ZP_ZENITH, ZP_ZENITH2,ZP_AZIM,    &
                       ZP_ZREF(:,1), ZP_UREF(:,1), ZP_ZS, ZP_U(:,1), ZP_V(:,1), ZP_QA(:,1),   &
@@ -718,7 +718,7 @@ IF (KTILE==1) THEN
 ELSEIF (KTILE==2) THEN
   !
    CALL COUPLING_INLAND_WATER_n(YSC%FM, YSC%WM, YSC%DLO, YSC%DL, YSC%DLC, YSC%U,              &
-                               YSC%NDST%AL(1), YSC%SLT, HPROGRAM, HCOUPLING, PTIMEC, PTSTEP, &
+                               YSC%DST, YSC%SLT, HPROGRAM, HCOUPLING, PTIMEC, PTSTEP, &
                                KYEAR, KMONTH, KDAY, PTIME, YSC%U%NSIZE_WATER, KSV, KSW,      &
                                ZP_TSUN, ZP_ZENITH, ZP_ZENITH2, ZP_AZIM, ZP_ZREF(:,1),        &
                                ZP_UREF(:,1), ZP_ZS, ZP_U(:,1), ZP_V(:,1), ZP_QA(:,1),        &
@@ -761,7 +761,7 @@ ELSEIF (KTILE==3) THEN
   !
 ELSEIF (KTILE==4) THEN
   !
-  CALL COUPLING_TOWN_n(YSC%DTCO, YSC%U, YSC%DLO, YSC%DL, YSC%DLC, YSC%NDST%AL(1), YSC%SLT, YSC%TM,  &
+  CALL COUPLING_TOWN_n(YSC%DTCO, YSC%U, YSC%DLO, YSC%DL, YSC%DLC, YSC%DST, YSC%SLT, YSC%TM,  &
                        YSC%GDM, YSC%GRM, YSC%HM, HPROGRAM, HCOUPLING, PTIMEC, PTSTEP, KYEAR, KMONTH,&
                        KDAY, PTIME, YSC%U%NSIZE_TOWN, KSV, KSW, KLEV, ZP_TSUN, ZP_ZENITH, ZP_AZIM,  &
                        ZP_ZREF, ZP_UREF, ZP_ZS, ZP_U, ZP_V, ZP_QA, ZP_TA, ZP_RHOA, ZP_SV, ZP_CO2,   &
