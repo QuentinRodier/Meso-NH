@@ -1151,7 +1151,9 @@ PRINT *,'PW: Data_arrays_allocate_sensor: ',TPSENSOR%CNAME,' :' ,KLEVELS,IKU,KST
     SUBROUTINE BUFFER_SIZE_SEND( TPSENSOR, KSTORE_CUR, KPACKSIZE, KTO )
     ! #################################################################
 
-      USE MODD_MPIF,      ONLY: MPI_SEND
+      !Workaround problem with Intel MPI module (do not use only for MPI subroutines)
+      ! use modd_mpif,      only: MPI_SEND
+      USE MODD_MPIF
       USE MODD_PRECISION, ONLY: MNHINT_MPI
       USE MODD_VAR_LL,    ONLY: NMNH_COMM_WORLD
 
@@ -1176,7 +1178,9 @@ PRINT *,'PW: Data_arrays_allocate_sensor: ',TPSENSOR%CNAME,' :' ,KLEVELS,IKU,KST
     SUBROUTINE BUFFER_SIZE_RECV( TPSENSOR, KSTORE_CUR, KSTORE_TOT, KPACKSIZE, KFROM )
     ! ###############################################################################
 
-      USE MODD_MPIF,      ONLY: MPI_RECV, MPI_STATUS_IGNORE
+      !Workaround problem with Intel MPI module (do not use only for MPI subroutines)
+      ! USE MODD_MPIF,      ONLY: MPI_RECV, MPI_STATUS_IGNORE
+      USE MODD_MPIF
       USE MODD_PRECISION, ONLY: MNHINT_MPI
       USE MODD_VAR_LL,    ONLY: NMNH_COMM_WORLD
 
@@ -1202,7 +1206,9 @@ PRINT *,'PW: Data_arrays_allocate_sensor: ',TPSENSOR%CNAME,' :' ,KLEVELS,IKU,KST
     SUBROUTINE BUFFER_SEND( TPSENSOR, PBUFFER, KTO )
     ! ##############################################
 
-      USE MODD_MPIF,      ONLY: MPI_SEND
+      !Workaround problem with Intel MPI module (do not use only for MPI subroutines)
+      ! USE MODD_MPIF,      ONLY: MPI_SEND
+      USE MODD_MPIF
       USE MODD_PRECISION, ONLY: MNHREAL_MPI
       USE MODD_VAR_LL,    ONLY: NMNH_COMM_WORLD
 
@@ -1222,7 +1228,9 @@ PRINT *,'PW: Data_arrays_allocate_sensor: ',TPSENSOR%CNAME,' :' ,KLEVELS,IKU,KST
     SUBROUTINE BUFFER_RECV( TPSENSOR, PBUFFER, KFROM )
     ! ################################################
 
-      USE MODD_MPIF,      ONLY: MPI_RECV, MPI_STATUS_IGNORE
+      !Workaround problem with Intel MPI module (do not use only for MPI subroutines)
+      ! USE MODD_MPIF,      ONLY: MPI_RECV, MPI_STATUS_IGNORE
+      USE MODD_MPIF
       USE MODD_PRECISION, ONLY: MNHREAL_MPI
       USE MODD_VAR_LL,    ONLY: NMNH_COMM_WORLD
 
