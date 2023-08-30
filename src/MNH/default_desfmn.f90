@@ -613,7 +613,7 @@ XLAT_PROF(:)  = XUNDEF
 XLON_PROF(:)  = XUNDEF
 CNAME_PROF(:) = ''
 CFILE_PROF    = 'NO_INPUT_CSV'
-! LDIAG_SURFRAD = .TRUE.
+LDIAG_SURFRAD_PROF = .TRUE.
 !------------------------------------------------------------------------------
 !*      10.f   SET DEFAULT VALUES FOR MODD_ALLSTATION_n :
 !             ----------------------------------
@@ -627,7 +627,7 @@ XLAT_STAT(:)  = XUNDEF
 XLON_STAT(:)  = XUNDEF
 CNAME_STAT(:) = ''
 CFILE_STAT    = 'NO_INPUT_CSV'
-LDIAG_SURFRAD = .TRUE.
+LDIAG_SURFRAD_STAT = .TRUE.
 !
 !-------------------------------------------------------------------------------
 !
