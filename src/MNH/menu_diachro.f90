@@ -103,11 +103,15 @@ LPACK=.FALSE.
 !
 IF(HGROUP == 'END')THEN
 
-  IF(IGROUP == 0)THEN
-!   print *,' No record for the diachronic file' mettre les prints dans le fichier LISTING
-    LPACK=GPACK
-    RETURN
-  ENDIF
+! The following block is commented because in some special cases (ie if flyers are present), the IGROUP value may be different
+! between the master process and the other ones (and may be 0)
+! In all cases, the master process has the correct values and is the only one to do the real writing (CDRIR='--')
+! Therefore, MENU_BUDGET.DIM is now always written in the LFI file. MENU_BUDGET is not written if empty (IO_Field_write does
+! not write a zero-size object)
+!   IF(IGROUP == 0)THEN
+!     LPACK=GPACK
+!     RETURN
+!   ENDIF
 
   !Write only in LFI files
   tzfile = tpdiafile
@@ -156,6 +160,7 @@ ELSE IF(HGROUP == 'READ')THEN
   tzfile = tpdiafile
   tzfile%cformat = 'LFI'
 
+  ILENG = 0
   TZFIELD = TFIELDMETADATA(         &
     CMNHNAME   = 'MENU_BUDGET.DIM', &
     CSTDNAME   = '',                &
@@ -168,7 +173,9 @@ ELSE IF(HGROUP == 'READ')THEN
     NDIMS      = 0,                 &
     LTIMEDEP   = .FALSE.            )
   CALL IO_Field_read(tzfile,TZFIELD,ILENG,IRESPDIA)
-  IF(IRESPDIA == -47)THEN
+  ! Note: keep check on IRESPDIA to ensure backward compatibility with older LFI files
+  !       MENU_BUDGET.DIM was not written if IGROUP=0 before MNH 5.6.1
+  IF( IRESPDIA == -47 .OR. ILENG == 0 ) THEN
 !   print *,' No record MENU_BUDGET '
     LPACK=GPACK
     RETURN
