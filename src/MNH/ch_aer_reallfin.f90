@@ -134,7 +134,7 @@ ZRHOI(:) = 1.8e3
 ZRHOI(JP_AER_H2O) = 1.0e3   ! water
 ZRHOI(JP_AER_DST) = XDENSITY_DUST
 !
-PSV(:,:,:,:)  = MAX(PSV(:,:,:,:), 0.)
+PSV(:,:,:,:)  = MAX(PSV(:,:,:,:), 1E-20)
 PCO(:,:,:)    = MAX(PCO(:,:,:), 10.E-9*PRHODREF(:,:,:))
 !
 ! Special treatment for BC and OC (link to CO gaseous concentration)
@@ -310,6 +310,7 @@ DO JN=1,JPMODE
 !
   ZRG(:,:,:,JN)=(ZM(:,:,:,NM3(JN))/ZN(:,:,:,JN))**(1./3.)*EXP(-1.5*ZSIGMA(:,:,:))
 !
+
 ENDDO
 !
 !conversion into ppv
