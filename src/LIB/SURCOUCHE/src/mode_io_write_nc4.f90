@@ -1612,6 +1612,8 @@ call Write_hor_coord1d( tzdim_ni_v, 'x-dimension of the grid at v location', &
 call Write_hor_coord1d( tzdim_nj_v, 'y-dimension of the grid at v location', &
                         trim(ystdnameprefix)//'_y_coordinate_at_v_location', 'Y', -0.5, jphext, 0,      zyhat_glob  )
 
+!Warning: the following block has to be reenabled if IO_Coordvar_write_nc4 is again called for Z-split files
+#if 0
 !Deallocate only if it is a non Z-split file or the last Z-split subfile
 gdealloc = .false.
 if ( Associated( tpfile%tmainfile ) ) then
@@ -1619,6 +1621,9 @@ if ( Associated( tpfile%tmainfile ) ) then
 else if ( tpfile%nsubfiles_ioz == 0 .and. .not. Associated( tpfile%tmainfile ) ) then
   gdealloc = .true.
 end if
+#else
+gdealloc = .true.
+#endif
 
 if ( .not. lcartesian ) then
   !Compute latitude/longitude for the Arakawa points
