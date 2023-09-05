@@ -1,8 +1,8 @@
 #
 # Version of PACKAGE MESONH "Open distribution"
-#              PACK-MNH-V5-6-0
-#              DATE : 08/03/2023
-#              VERSION : MESONH MASDEV5_6 + BUG-0
+#              PACK-MNH-V5-6-1
+#              DATE : 05/09/2023
+#              VERSION : MESONH MASDEV5_6 + BUG-1
 #
 #  MAP
 #
@@ -84,14 +84,14 @@
 #
 # or directly
 #
-# http://mesonh.aero.obs-mip.fr/mesonh/dir_open/dir_MESONH/MNH-V5-6-0.tar.gz
+# http://mesonh.aero.obs-mip.fr/mesonh/dir_open/dir_MESONH/MNH-V5-6-1.tar.gz
 #
-# Then untar the file "MNH-V5-6-0.tar.gz" where you want to.
+# Then untar the file "MNH-V5-6-1.tar.gz" where you want to.
 # For example, in your home directory:
 #
 
 cd ~
-tar xvfz MNH-V5-6-0.tar.gz
+tar xvfz MNH-V5-6-1.tar.gz
 
 #
 #  Process now to the chapter to configure the MesoNH package.
@@ -171,10 +171,10 @@ git config --global http.sslverify false
 # Finally you can clone the Meso-NH Git repository with the following command:
 #
 
-git lfs clone anongit@anongit_mesonh:/gitrepos/MNH-git_open_source-lfs.git -b MNH-56-branch MNH-V5-6-0
+git lfs clone anongit@anongit_mesonh:/gitrepos/MNH-git_open_source-lfs.git -b MNH-56-branch MNH-V5-6-1
 
 #
-# that will create the MNH-V5-6-0 directory containing a clone (copy) of the
+# that will create the MNH-V5-6-1 directory containing a clone (copy) of the
 # Meso-NH package on the remote developpement branch MNH-56-branch
 #
 #
@@ -184,16 +184,16 @@ git lfs clone anongit@anongit_mesonh:/gitrepos/MNH-git_open_source-lfs.git -b MN
 # Once the repository is cloned, it's better for you to checkout your own branch
 # (by default, you are on HEAD of the MNH-56-branch development branch  ).
 #
-# To create your local branch corresponding to the V5-6-0 version, type:
+# To create your local branch corresponding to the V5-6-1 version, type:
 #
 
-cd MNH-V5-6-0
-git checkout -b MYB-MNH-V5-6-0 PACK-MNH-V5-6-0
+cd MNH-V5-6-1
+git checkout -b MYB-MNH-V5-6-1 PACK-MNH-V5-6-1
 
 #
-# MYB-MNH-V5-6-0 is the name of the local branch you created
+# MYB-MNH-V5-6-1 is the name of the local branch you created
 # and
-# PACK-MNH-V5-6-0 is the remote/origin tag on which it is based.
+# PACK-MNH-V5-6-1 is the remote/origin tag on which it is based.
 #
 # The advantage of this way of downloading the package is that in the future
 # you could check/update quickly differences with the new version of the
@@ -257,7 +257,7 @@ git clone anongit@anongit_mesonh:/gitrepos/MNH-DOC.git
 #    use the "./configure" script like this 
 #
 
-cd ~/MNH-V5-6-0/src
+cd ~/MNH-V5-6-1/src
 ./configure
 . ../conf/profile_mesonh
 
@@ -308,7 +308,7 @@ export OPTLEVEL=O2         # Compile in O2, 4 times faster then DEBUG, but less 
 
 #    and then source/load the new generate file
 
-. ../conf/profile_mesonh.LXifort.MNH-V5-6-0.MPIAUTO.O2
+. ../conf/profile_mesonh.LXifort.MNH-V5-6-1.MPIAUTO.O2
 
 #
 #  REM: 
@@ -333,7 +333,7 @@ export OPTLEVEL=O2         # Compile in O2, 4 times faster then DEBUG, but less 
 # go to the directory  "src"
 #
 
-cd  ~/MNH-V5-6-0/src
+cd  ~/MNH-V5-6-1/src
 
 #
 # if you have not already configured your MESONH environment
@@ -562,7 +562,7 @@ make examples
 # 
 
 cd $WORKDIR
-cd MNH-V5-6-0/src
+cd MNH-V5-6-1/src
 
 ./configure
  
@@ -576,8 +576,8 @@ cd MNH-V5-6-0/src
 
 #   - On JEAN-ZAY ( HPE ) the compilation is in interactive :
 
-cd MNH-V5-6-0/src
-. ../conf/profile_mesonh-LXifort-R8I4-MNH-V5-6-0-MPIINTEL-O2
+cd MNH-V5-6-1/src
+. ../conf/profile_mesonh-LXifort-R8I4-MNH-V5-6-1-MPIINTEL-O2
 make -j16 |& tee error$XYZ
 make installmaster
 
@@ -612,12 +612,12 @@ sbatch job_make_examples_BullX_occigen
 #   - ssh irene-fr  : for Intel SkyLake/KNL processors
 #      On Intel processors the MPI use is OPENMPI/2.0.4
 #      the configure will generate a
-#      profile_mesonh-LXifort-R8I4-MNH-V5-6-0-MPIAUTO-O2
+#      profile_mesonh-LXifort-R8I4-MNH-V5-6-1-MPIAUTO-O2
 #
 #   - ssh irene-amd : for AMD , processors
 #      On AMD processors the MPI use is OPENMPI/4.02
 #      the configure will generate a
-#      profile_mesonh-LXifort-R8I4-MNH-V5-6-0-AMD-MPIAUTO-O2
+#      profile_mesonh-LXifort-R8I4-MNH-V5-6-1-AMD-MPIAUTO-O2
 # 
 #   - install the PACKAGE in your $CCCHOME ( default 20Go  of quota )
 #   - Compile in interactive mode ( see IDRIS )
@@ -657,14 +657,14 @@ sbatch  job_make_examples_Atos_HPCF
 #   - At Meteo-France DSI on belenos
 #
 #  to install the whole package on your "$HOME" directory
-#  untar the file "MNH-V5-6-0.tar.gz" from its location :
+#  untar the file "MNH-V5-6-1.tar.gz" from its location :
 
 cd ~
-tar xvf $MESONH/MNH-V5-6-0.tar.gz
+tar xvf $MESONH/MNH-V5-6-1.tar.gz
 
 #  run the "./configure" command :
 
-cd MNH-V5-6-0/src
+cd MNH-V5-6-1/src
 ./configure
 
 #
@@ -763,7 +763,7 @@ scandollar
 
 ## OUTPUT ::
 
->#  read default config file :: --->  CONF_DOLLAR=/home/escj/DEV64/PACK-MNH-V5-6-0/conf/post/confdollar_aeropc_default
+>#  read default config file :: --->  CONF_DOLLAR=/home/escj/DEV64/PACK-MNH-V5-6-1/conf/post/confdollar_aeropc_default
 >#
 >#  read    user config file :: --->  CONFIG=confdollar
 >#
@@ -785,7 +785,7 @@ scandollar 0*
 
 ## OUTPUT ::
 >#
->#  read default config file :: --->  CONF_DOLLAR=/home/escj/DEV64/PACK-MNH-V5-6-0/conf/post/confdollar_aeropc_default
+>#  read default config file :: --->  CONF_DOLLAR=/home/escj/DEV64/PACK-MNH-V5-6-1/conf/post/confdollar_aeropc_default
 >#
 >#  read    user config file :: --->  CONFIG=confdollar
 >#
@@ -859,22 +859,22 @@ cp -R  007_16janvier_scandollar /.../your_directory
 #
 # use this "profile_mesonh" :
 
-.  /home/rech/mnh/rmnh007/DEV/MNH-V5-6-0/conf/profile_mesonh-SX8-MNH-V5-6-0-MPIAUTO-O4
+.  /home/rech/mnh/rmnh007/DEV/MNH-V5-6-1/conf/profile_mesonh-SX8-MNH-V5-6-1-MPIAUTO-O4
 
 # And the examples are here ( link to my $WORKDIR in actually )  
 
-/home/rech/mnh/rmnh007/DEV/MNH-V5-6-0/MY_RUN/KTEST/007_16janvier_scandollar
+/home/rech/mnh/rmnh007/DEV/MNH-V5-6-1/MY_RUN/KTEST/007_16janvier_scandollar
 
 #
 #  On vargas
 #  ---------
 #  use this "profile_mesonh" :
 
-. /workgpfs/rech/mnh/rmnh007/DEV/MNH-V5-6-0/conf/profile_mesonh-AIX64-MNH-V5-6-0-MPIAUTO-O2
+. /workgpfs/rech/mnh/rmnh007/DEV/MNH-V5-6-1/conf/profile_mesonh-AIX64-MNH-V5-6-1-MPIAUTO-O2
 
 # and examples here :
 
-/workgpfs/rech/mnh/rmnh007/DEV/MNH-V5-6-0/MY_RUN/KTEST/007_16janvier_scandollar
+/workgpfs/rech/mnh/rmnh007/DEV/MNH-V5-6-1/MY_RUN/KTEST/007_16janvier_scandollar
 
 # 
 #  - At CINES on JADE :
@@ -882,11 +882,11 @@ cp -R  007_16janvier_scandollar /.../your_directory
 #
 # use 
 
-. /work/escobar/DEV/MNH-V5-6-0/conf/profile_mesonh-LXifort-MNH-V5-6-0-MPIICE-O2
+. /work/escobar/DEV/MNH-V5-6-1/conf/profile_mesonh-LXifort-MNH-V5-6-1-MPIICE-O2
 
 # and the exemples
 
-/work/escobar/DEV/MNH-V5-6-0/MY_RUN/KTEST/007_16janvier_scandollar
+/work/escobar/DEV/MNH-V5-6-1/MY_RUN/KTEST/007_16janvier_scandollar
 
 #
 #  - At ECMWF on cxa :
@@ -894,11 +894,11 @@ cp -R  007_16janvier_scandollar /.../your_directory
 #
 # use
 
-. /c1a/ms_perm/au5/MNH-V5-6-0/conf/profile_mesonh-AIX64-MNH-V5-6-0-MPIAUTO-O2
+. /c1a/ms_perm/au5/MNH-V5-6-1/conf/profile_mesonh-AIX64-MNH-V5-6-1-MPIAUTO-O2
 
 # and the examples
 
-/c1a/ms_perm/au5/MNH-V5-6-0/MY_RUN/KTEST/007_16janvier_scandollar
+/c1a/ms_perm/au5/MNH-V5-6-1/MY_RUN/KTEST/007_16janvier_scandollar
 
 
 #

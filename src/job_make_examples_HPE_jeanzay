@@ -19,7 +19,7 @@ set -x
 # Nom de la machine
 hostname 
 
-. ../conf/profile_mesonh-LXifort-R8I4-MNH-V5-6-0-MPIINTEL-O2
+. ../conf/profile_mesonh-LXifort-R8I4-MNH-V5-6-1-MPIINTEL-O2
 export MONORUN="Exec srun -l -n 1 --export=ALL numabind_core_slurm"
 export MPIRUN="Exec srun -l -n 4 --export=ALL numabind_core_slurm"
 export POSTRUN="echo "
