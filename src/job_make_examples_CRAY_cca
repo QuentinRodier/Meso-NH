@@ -24,6 +24,8 @@ set -x
 # Nom de la machine
 hostname 
 
+unset MAKEFLAGS
+
 cd ${PBS_O_WORKDIR}
 
 ARCH=LXifort
