@@ -24,6 +24,7 @@ use modd_parameters, only: NMNHNAMELGTMAX
 use mode_field,      only: Find_field_id_from_mnhname
 !
 CHARACTER(LEN=MNH_LEN_HREC),INTENT(IN)  :: HREC     ! name of the article to write
+!CHARACTER(LEN=*),INTENT(IN)  :: HREC     ! name of the article to write
 CHARACTER(LEN=2),       INTENT(IN)  :: HDIR     ! Expected type of the data field (XX,XY,--...)
 INTEGER,                INTENT(IN)  :: KGRID    ! Localization on the model grid
 INTEGER,                INTENT(IN)  :: KTYPE    ! Datatype
@@ -1597,10 +1598,11 @@ CHARACTER(LEN=*),       INTENT(OUT) :: HCOMMENT ! comment
 !*      0.2   Declarations of local variables
 !
 CHARACTER(LEN=4), PARAMETER :: YSUFFIX = '_SFX'
-
+CHARACTER(LEN=MNH_LEN_HREC)           :: YREC
 INTEGER           :: ILUOUT
 TYPE(TFIELDMETADATA)  :: TZFIELD
 !-------------------------------------------------------------------------------
+YREC=TRIM(HREC)//YSUFFIX
 CALL PRINT_MSG(NVERB_DEBUG,'IO','READ_SURFL0_MNH',TRIM(TPINFILE%CNAME)//': reading '//TRIM(HREC))
 !
 ILUOUT = TOUT%NLU
@@ -1628,7 +1630,7 @@ ELSE
   ! Add a suffix to logical variables coming from SURFEX
   ! This is done because some variables can have the same name than MesoNH variables
   ! This suffix has been added in MesoNH 5.6.0
-  CALL PREPARE_METADATA_READ_SURF(TRIM(HREC)//YSUFFIX,'--',0,TYPELOG,0,'READ_SURFL0_MNH',TZFIELD)
+  CALL PREPARE_METADATA_READ_SURF(YREC,'--',0,TYPELOG,0,'READ_SURFL0_MNH',TZFIELD)
   CALL IO_Field_read(TPINFILE,TZFIELD,OFIELD,KRESP)
 
   IF ( KRESP /= 0 ) THEN
