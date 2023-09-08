@@ -66,7 +66,7 @@ SUBROUTINE INIT_ISBA_n (DTCO, OREAD_BUDGETC, UG, U, USS, GCP, IM, DTZ,&
 !!      B. Decharme    01/18 : simplify carbon spinup procedure (delete LAGRI_TO_GRASS XCO2_START XCO2_END)
 !!      B. Decharme    04/20 : New soil carbon scheme (Morel et al. 2019 JAMES) under CRESPSL = DIF option
 !!      B. Decharme    04/20 : Soil gas scheme (Morel et al. 2019 JAMES) under LSOILGAS = T
-!!      J. Wurtz       02/23 : Allowing DIF & ECOSG
+!!
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -442,12 +442,12 @@ IF( ((IM%O%CRESPSL/='CNT'.AND.IM%O%CRESPSL/='DIF') .AND. IM%O%LCLEACH) .OR. &
   CALL ABOR1_SFX('INIT_ISBAN: INCONSISTENCY BETWEEN CRESPSL AND LCLEACH')
 ENDIF
 !
-!IF(U%LECOSG .AND.(IM%O%CRESPSL/='CNT'.OR.IM%O%CRESPSL/='DIF'.OR.IM%O%LLULCC.OR.IM%O%LFIRE))THEN
-!  WRITE(ILUOUT,*)'!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
-!  WRITE(ILUOUT,*)'INIT_ISBAN: ECOSG CAN NOT BE USED WITH LAND-USE-CHANGE OR ISBA-CC FOR NOW'
-!  WRITE(ILUOUT,*)'!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
-!  CALL ABOR1_SFX('INIT_ISBAN: ECOSG CAN NOT BE USED WITH LAND-USE-CHANGE OR ISBA-CC FOR NOW')
-!ENDIF
+IF(U%LECOSG .AND.(IM%O%CRESPSL/='CNT'.OR.IM%O%CRESPSL/='DIF'.OR.IM%O%LLULCC.OR.IM%O%LFIRE))THEN
+  WRITE(ILUOUT,*)'!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+  WRITE(ILUOUT,*)'INIT_ISBAN: ECOSG CAN NOT BE USED WITH LAND-USE-CHANGE OR ISBA-CC FOR NOW'
+  WRITE(ILUOUT,*)'!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+  CALL ABOR1_SFX('INIT_ISBAN: ECOSG CAN NOT BE USED WITH LAND-USE-CHANGE OR ISBA-CC FOR NOW')
+ENDIF
 !
 CALL END_IO_SURF_n(HPROGRAM)
 CALL SET_SURFEX_FILEIN(HPROGRAM,'PREP') ! restore input file name
