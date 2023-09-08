@@ -785,30 +785,6 @@ CALL COUPLING_SURF_ATM_MULTI_LEVEL_n(YSURF_CUR,'MESONH', 'E',ZTIMEC, XTSTEP,    
                ZP_Z0, ZP_Z0H, ZP_QSURF, ZP_PEW_A_COEF, ZP_PEW_B_COEF, ZP_PET_A_COEF,           &
                ZP_PEQ_A_COEF, ZP_PET_B_COEF, ZP_PEQ_B_COEF, ZP_ZWS, 'OK' )
 
-
-
-!Jean Wurtz
-!In some cases LE and H are not realistic at the beginning
-!Hard fix, source problem may have to be corrected
-!Energy is hence not conservated at the beginning...
-
-ZP_SFTH(:)=MAX(MIN(ZP_SFTH(:),1500.),-1500.)
-ZP_SFTH_WALL(:)=MAX(MIN(ZP_SFTH_WALL(:),1500.),-1500.)
-ZP_SFTH_ROOF(:)=MAX(MIN(ZP_SFTH_ROOF(:),1500.),-1500.)
-ZP_SFTH_SURF(:)=MAX(MIN(ZP_SFTH_SURF(:),1500.),-1500.)
-
-
-! Enthalpie de vaporisation : 2.26476E6
-! on divise 1500 par cette enthalpie
-
-ZP_SFTQ(:)=MAX(MIN(ZP_SFTQ(:),0.000662322),-0.000662322)
-ZP_SFTQ_WALL(:)=MAX(MIN(ZP_SFTQ_WALL(:),0.000662322),-0.000662322)
-ZP_SFTQ_ROOF(:)=MAX(MIN(ZP_SFTQ_ROOF(:),0.000662322),-0.000662322)
-ZP_SFTQ_SURF(:)=MAX(MIN(ZP_SFTQ_SURF(:),0.000662322),-0.000662322)
-
-
-
-
 !
 #ifdef CPLOASIS
 IF (LOASIS) THEN
