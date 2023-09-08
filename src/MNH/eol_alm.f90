@@ -379,8 +379,8 @@ DO KTSUBCOUNT=1,INBSUBCOUNT
 !
           IF (LTIPLOSSG) THEN
            ZPHI   = + ZAOA                                      &
-                    + TFARM%XBLA_PITCH(JROT)                    &
-                    + XTWIST_ELT(JROT,JBLA,JBELT)
+                    - TFARM%XBLA_PITCH(JROT)                    &
+                    - XTWIST_ELT(JROT,JBLA,JBELT)
            IF (ZPHI > 0.0) THEN
             ZFTIPL   = (2.0/XPI)*ACOS(MIN(                       &
                         1.0, EXP(-(TTURBINE%NNB_BLADES/2.0)      &
