@@ -70,7 +70,7 @@ type(tfieldmetadata_base), dimension(:), allocatable :: tzfields
 !
 !----------------------------------------------------------------------------
 !
-IPROC = 5 + SIZE(TPSTATION%XR,3) + SIZE(TPSTATION%XSV,3)
+IPROC = 6 + SIZE(TPSTATION%XR,3) + SIZE(TPSTATION%XSV,3)
 
 IF ( CTURB == 'TKEL' ) IPROC = IPROC + 1
 IF (LDIAG_SURFRAD_STAT) THEN
@@ -122,6 +122,8 @@ do jrr = 1, SIZE( tpstation%xr, 3 )
       call Add_point( 'Rh', 'Hail mixing ratio',               'kg kg-1', tpstation%xr(1,:,jrr) )
   end select
 end do
+
+call Add_point( 'Rhod', 'Density of dry air', 'kg m-3', tpstation%xrhod_sensor )
 
 if ( cturb == 'TKEL' ) call Add_point( 'Tke', 'Turbulent kinetic energy', 'm2 s-2', tpstation%xtke(1,:) )
 

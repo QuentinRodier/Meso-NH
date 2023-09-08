@@ -145,7 +145,7 @@ if ( nrr >= 5 ) call Add_profile( 'Rs', 'Snow mixing ratio',               'kg k
 if ( nrr >= 6 ) call Add_profile( 'Rg', 'Graupel mixing ratio',            'kg kg-1', tpprofiler%xr(:,:,6) )
 if ( nrr >= 7 ) call Add_profile( 'Rh', 'Hail mixing ratio',               'kg kg-1', tpprofiler%xr(:,:,7) )
 
-call Add_profile( 'Rhod', 'Density of dry air in moist', 'kg m-3', tpprofiler%xrhod )
+call Add_profile( 'Rhod', 'Density of dry air', 'kg m-3', tpprofiler%xrhod )
 if ( cturb == 'TKEL') &
   call Add_profile( 'Tke', 'Turbulent kinetic energy', 'm2 s-2', tpprofiler%xtke )
 
@@ -264,6 +264,10 @@ END IF
 IF( CRAD /= 'NONE' )  IPROC = IPROC + 1 !Tsrad term
 
 call Sensor_write_workarrays_allocate( 1, istore, iproc )
+
+! xrhod_sensor NOT computed => not written
+! if needed, please add its computation in STATION_n
+! call Add_point( 'Rhod', 'Density of dry air', 'kg m-3', tpstation%xrhod_sensor )
 
 if ( ldiag_surfrad_prof ) call Add_diag_surfrad_data( tpprofiler )
 

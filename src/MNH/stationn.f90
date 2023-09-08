@@ -9,11 +9,12 @@ MODULE MODI_STATION_n
 !
 INTERFACE
 !
-      SUBROUTINE STATION_n( PZ,                             &
+      SUBROUTINE STATION_n( PZ, PRHODREF,                   &
                             PU, PV, PW, PTH, PR, PSV, PTKE, &
                             PTS, PP )
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PZ     ! z array
+REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PRHODREF ! dry air density of the reference state
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PU     ! horizontal wind X component
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PV     ! horizontal wind Y component
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PW     ! vertical wind
@@ -33,7 +34,7 @@ END INTERFACE
 END MODULE MODI_STATION_n
 !
 !     #######################################################
-      SUBROUTINE STATION_n( PZ,                             &
+      SUBROUTINE STATION_n( PZ, PRHODREF,                   &
                             PU, PV, PW, PTH, PR, PSV, PTKE, &
                             PTS, PP )
 !     #######################################################
@@ -101,6 +102,7 @@ IMPLICIT NONE
 !
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PZ     ! z array
+REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PRHODREF ! dry air density of the reference state
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PU     ! horizontal wind X component
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PV     ! horizontal wind Y component
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PW     ! vertical wind
@@ -164,6 +166,8 @@ STATION: DO JS = 1, NUMBSTAT_LOC
   DO JSV=1,SIZE(PSV,4)
     TSTATIONS(JS)%XSV(1,IN,JSV) = TSTATIONS(JS)%INTERP_HOR_FROM_MASSPOINT( PSV(:,:,JK,JSV) )
   END DO
+
+  TSTATIONS(JS)%XRHOD_SENSOR(IN) = TSTATIONS(JS)%INTERP_HOR_FROM_MASSPOINT( PRHODREF(:,:,JK) )
 
   IF (SIZE(PTKE)>0) TSTATIONS(JS)%XTKE(1,IN) = TSTATIONS(JS)%INTERP_HOR_FROM_MASSPOINT( PTKE(:,:,JK) )
   IF ( CRAD /= 'NONE' ) TSTATIONS(JS)%XTSRAD(IN) = TSTATIONS(JS)%INTERP_HOR_FROM_MASSPOINT( PTS )

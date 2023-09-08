@@ -2190,7 +2190,7 @@ END IF
 !               --------------------------------
 !
 IF ( LSTATION ) &
-  CALL STATION_n( XZZ, XUT, XVT, XWT, XTHT, XRT, XSVT, XTKET, XTSRAD, XPABST )
+  CALL STATION_n( XZZ, XRHODREF, XUT, XVT, XWT, XTHT, XRT, XSVT, XTKET, XTSRAD, XPABST )
 !
 !---------------------------------------------------------
 !
