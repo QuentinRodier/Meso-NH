@@ -441,16 +441,17 @@ IF (LCLD_COV .AND. LUSERC) THEN
   ZWORK21(:,:)=0.0
   ZWORK21(IIB:IIE,IJB:IJE)=MAXVAL(XCLDFR(IIB:IIE,IJB:IJE,JPVEXT+1:IKE),DIM=3)
  
-  TZFIELD%CMNHNAME   = 'CLDFRMAX'
-  TZFIELD%CSTDNAME   = 'max_cloud_fraction'
-  TZFIELD%CLONGNAME  = 'CLDFRMAX'
-  TZFIELD%CUNITS     = '1'
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = 'X_Y_MAx of CLoud fraction'
-  TZFIELD%NGRID      = 1
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 2
-  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD = TFIELDMETADATA(                   &
+    CMNHNAME   = 'CLDFRMAX',                  &
+    !Invalid CF convention standard name: CSTDNAME   = 'max_cloud_fraction', &
+    CLONGNAME  = 'CLDFRMAX',                  &
+    CUNITS     = '1',                         &
+    CDIR       = 'XY',                        &
+    CCOMMENT   = 'X_Y_MAx of CLoud fraction', &
+    NGRID      = 1,                           &
+    NTYPE      = TYPEREAL,                    &
+    NDIMS      = 2,                           &
+    LTIMEDEP   = .TRUE.                       )
   CALL IO_Field_write(TPFILE,TZFIELD,ZWORK21)
   !
 !  Visibility                                    

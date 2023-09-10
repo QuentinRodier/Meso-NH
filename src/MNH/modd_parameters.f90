@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -86,8 +86,8 @@ INTEGER, PARAMETER :: NMNHNAMELGTMAX  = 32  ! Maximum length of a MNH variable n
 INTEGER, PARAMETER :: NSTDNAMELGTMAX  = 64  ! Maximum length of the standard name of a variable (CF convention)
 INTEGER, PARAMETER :: NLONGNAMELGTMAX = 32  ! Maximum length of the long name of a variable (CF convention)
 INTEGER, PARAMETER :: NUNITLGTMAX     = 40  ! Maximum length of the canonical units of a variable (CF convention)
-!
-INTEGER, PARAMETER :: NSTATPROFNAMELGTMAX = 8 ! Maximum length for the name of a station or profiler
+
+INTEGER, PARAMETER :: NSENSORNAMELGTMAX = 10 ! Maximum length for the name of a sensor (aircraft, balloon, station, profiler...)
 
 INTEGER, PARAMETER :: NDIRNAMELGTMAX = 512 ! Maximum length of a directory name
 INTEGER, PARAMETER :: NFILENAMELGTMAX = 32 ! Maximum length of a file name (must be at least NFILENAMELGTMAXLFI)

@@ -111,7 +111,7 @@ YDNAML = Upcase( HDNAML ) ! Force namelist name into upper case (read namelist n
 search_nam : DO
   READ ( UNIT=ILU, FMT='(A)', IOSTAT=IRET, IOMSG=YERRORMSG, END=100 ) YLINE
   IF (IRET /= 0 ) THEN
-    call Print_msg( NVERB_ERROR, 'IO', 'POSNAM', 'read error:' // Trim( YERRORMSG ) )
+    call Print_msg( NVERB_ERROR, 'IO', 'POSNAM', Trim( HDNAML) // ': read error:' // Trim( YERRORMSG ) )
   ELSE
     YLINE = Upcase( YLINE )
     IND1 = INDEX( YLINE, '&'//YDNAML )

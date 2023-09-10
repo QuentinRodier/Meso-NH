@@ -45,7 +45,7 @@ CONTAINS
 !!
 !!  3) the type of aircraft
 !!
-!!     'AIRCRA' for aircraft
+!!     'AIRCRAFT' for aircraft
 !!
 !!  4) the takeoff date and time
 !!
@@ -129,7 +129,7 @@ DO JI = 1, NAIRCRAFTS
     CMNHMSG(2) = 'title set to ' // TRIM( CTITLE(JI) )
     CALL PRINT_MSG( NVERB_INFO, 'GEN', 'INI_AIRCRAFT', OLOCAL = .TRUE. )
   END IF
-  TZAIRCRAFT%CTITLE = CTITLE(JI)
+  TZAIRCRAFT%CNAME = CTITLE(JI)
 
   IF ( CMODEL(JI) == 'FIX' ) THEN
     IF ( NMODEL(JI) < 1 .OR. NMODEL(JI) > NMODEL_NEST ) THEN
@@ -202,7 +202,7 @@ DO JI = 1, NAIRCRAFTS
   IF ( TZAIRCRAFT%LALTDEF ) THEN
     ! Print a warning if pressures seem too high (> 2000 hPa)
     IF ( ANY( TZAIRCRAFT%XPOSP > 2.E5 ) ) THEN
-      CMNHMSG(1) = TRIM( TZAIRCRAFT%CTITLE ) // ': pressure values seem too high'
+      CMNHMSG(1) = TRIM( TZAIRCRAFT%CNAME ) // ': pressure values seem too high'
       CMNHMSG(2) = 'check that they are given in hPa and not Pa'
       CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'INI_AIRCRAFT', OLOCAL = .TRUE. )
     END IF

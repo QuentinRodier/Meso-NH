@@ -1087,7 +1087,6 @@ IF (LLIMA_DIAG) THEN
   END IF
   !
   DO JSV = NSV_LIMA_BEG,NSV_LIMA_END
-!PW: bases sur CLIMA_*_CONC et pas CLIMA_*_NAMES !!!
     !
     TZFIELD%CUNITS     = 'cm-3'
     WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
@@ -1194,7 +1193,6 @@ IF (LLIMA_DIAG) THEN
   END IF
 !
 END IF
-!PW: TODO: a documenter
 IF (LELECDIAG .AND. CELEC .NE. "NONE") THEN
   DO JSV = NSV_ELECBEG,NSV_ELECEND
     TZFIELD = TSVLIST(JSV)
@@ -1279,7 +1277,6 @@ IF (LPASPOL) THEN
 END IF
 ! Conditional sampling variables
 IF (LCONDSAMP) THEN
-!PW: TODO: a documenter!!!
   DO JSV = NSV_CSBEG, NSV_CSEND
     TZFIELD = TSVLIST(JSV)
     CALL IO_Field_write(TPFILE,TZFIELD,XSVT(:,:,:,JSV))
@@ -1319,7 +1316,6 @@ IF (LCHAQDIAG) THEN    !aqueous concentration in M
 
 
 
-!PW: TODO: LCHICDIAG n'existe pas => les variables correspondantes ne sont pas ecrites...
 
 !  ZWORK31(:,:,:)=0.
 !  DO JSV = NSV_CHICBEG,NSV_CHICEND   ! ice phase
@@ -1886,7 +1882,6 @@ END IF
 !  Blowing snow variables
 !
 IF(LBLOWSNOW) THEN
-!PW:TODO?:variables scalaires XSVT pas ecrites ici. Voulu?
   TZFIELD = TFIELDMETADATA(                                             &
     CMNHNAME   = 'SNWSUBL3D',                                           &
     CSTDNAME   = '',                                                    &
