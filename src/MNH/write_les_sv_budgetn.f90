@@ -520,7 +520,6 @@ END IF
 !      -----------
 !
 ILES=ILES+1
-!PW: not in documentation. Always set to 0
 YFIELDNAMES(ILES)    = 'SBG_DISS'
 YFIELDCOMMENTS(ILES) = 'subgrid dissipation'
 !

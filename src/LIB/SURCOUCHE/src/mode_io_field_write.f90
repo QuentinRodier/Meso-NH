@@ -3050,7 +3050,6 @@ end subroutine IO_Ndimlist_reduce
     !
     CALL IO_Format_write_select(TPFILE,GLFI,GNC4)
     !
-!PW: transferer ce traitement LFI dans les subroutines LFI (en creer 1 pour les HFIELD)
     IF(GLFI) THEN
       ILE=LEN(HFIELD)
       IP=SIZE(HFIELD)
@@ -4087,7 +4086,6 @@ DO JI = 1,SIZE(TPOUTPUT%NFIELDLIST)
           ELSE
             call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
                             ': CLBTYPE/=NONE not (yet) allowed for 3D real fields' )
-            !PW: TODO?: add missing field in TFIELDLIST?
             !CALL IO_Field_write_lb(TPOUTPUT%TFILE,TFIELDLIST(IDX),***,TFIELDLIST(IDX)%TFIELD_X3D(IMI)%DATA)
           END IF
         !
@@ -4107,7 +4105,6 @@ DO JI = 1,SIZE(TPOUTPUT%NFIELDLIST)
           ELSE
             call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
                             ': CLBTYPE/=NONE not (yet) allowed for 3D integer fields' )
-            !PW: TODO?: add missing field in TFIELDLIST?
             !CALL IO_Field_write_lb(TPOUTPUT%TFILE,TFIELDLIST(IDX),***,TFIELDLIST(IDX)%TFIELD_N3D(IMI)%DATA)
           END IF
         !
@@ -4139,7 +4136,6 @@ DO JI = 1,SIZE(TPOUTPUT%NFIELDLIST)
           ELSE
             call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
                             ': CLBTYPE/=NONE not (yet) allowed for 4D real fields' )
-            !PW: TODO?: add missing field in TFIELDLIST?
             !CALL IO_Field_write_lb(TPOUTPUT%TFILE,TFIELDLIST(IDX),***,TFIELDLIST(IDX)%TFIELD_X4D(IMI)%DATA)
           END IF
         !
@@ -4171,7 +4167,6 @@ DO JI = 1,SIZE(TPOUTPUT%NFIELDLIST)
           ELSE
             call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
                             ': CLBTYPE/=NONE not (yet) allowed for 5D real fields' )
-            !PW: TODO?: add missing field in TFIELDLIST?
             !CALL IO_Field_write_lb(TPOUTPUT%TFILE,TFIELDLIST(IDX),***,TFIELDLIST(IDX)%TFIELD_X5D(IMI)%DATA)
           END IF
         !
@@ -4203,7 +4198,6 @@ DO JI = 1,SIZE(TPOUTPUT%NFIELDLIST)
           ELSE
             call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
                             ': CLBTYPE/=NONE not (yet) allowed for 6D real fields' )
-            !PW: TODO?: add missing field in TFIELDLIST?
             !CALL IO_Field_write_lb(TPOUTPUT%TFILE,TFIELDLIST(IDX),***,TFIELDLIST(IDX)%TFIELD_X6D(IMI)%DATA)
           END IF
         !

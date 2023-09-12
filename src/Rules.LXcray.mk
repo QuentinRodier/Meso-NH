@@ -185,7 +185,7 @@ ifeq ($(shell test $(CFV) -ge 1402 ; echo $$?),0)
 CPPFLAGS_MNH       += -DMNH_COMPILER_CCE_1403
 endif
 CPPFLAGS_MNH       += -DMNH_EXPAND -DMNH_EXPAND_LOOP -DMNH_EXPAND_OPENACC
-CPPFLAGS_MNH       += -imacros MNH_OPENACC_NV_CR.CPP
+#CPPFLAGS_MNH       += -imacros MNH_OPENACC_NV_CR.CPP
 ifdef VER_GA
 CPPFLAGS_SURCOUCHE += -DMNH_GA
 INC                += -I${GA_ROOT}/include

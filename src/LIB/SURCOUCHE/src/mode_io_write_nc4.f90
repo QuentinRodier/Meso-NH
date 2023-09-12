@@ -1612,6 +1612,8 @@ call Write_hor_coord1d( tzdim_ni_v, 'x-dimension of the grid at v location', &
 call Write_hor_coord1d( tzdim_nj_v, 'y-dimension of the grid at v location', &
                         trim(ystdnameprefix)//'_y_coordinate_at_v_location', 'Y', -0.5, jphext, 0,      zyhat_glob  )
 
+!Warning: the following block has to be reenabled if IO_Coordvar_write_nc4 is again called for Z-split files
+#if 0
 !Deallocate only if it is a non Z-split file or the last Z-split subfile
 gdealloc = .false.
 if ( Associated( tpfile%tmainfile ) ) then
@@ -1619,6 +1621,9 @@ if ( Associated( tpfile%tmainfile ) ) then
 else if ( tpfile%nsubfiles_ioz == 0 .and. .not. Associated( tpfile%tmainfile ) ) then
   gdealloc = .true.
 end if
+#else
+gdealloc = .true.
+#endif
 
 if ( .not. lcartesian ) then
   !Compute latitude/longitude for the Arakawa points
@@ -1939,7 +1944,6 @@ subroutine Gather_hor_coord1d( haxis, pcoords_loc, pcoords_glob )
   endif
 
   !If the file has Z-split subfiles, broadcast the coordinates to all processes
-  !PW: TODO: broadcast only to subfile writers
   if ( tpfile%nsubfiles_ioz > 0 ) &
     call MPI_BCAST( pcoords_glob, size( pcoords_glob ), MNHREAL_MPI, tpfile%nmaster_rank - 1,  tpfile%nmpicomm, ierr )
 
@@ -1989,7 +1993,6 @@ subroutine Gather_hor_coord2d( px, py, plat_glob, plon_glob )
   endif
 
   !If the file has Z-split subfiles, broadcast the coordinates to all processes
-  !PW: TODO: broadcast only to subfile writers
   if ( tpfile%nsubfiles_ioz > 0 ) then
     call MPI_BCAST( plat_glob, size( plat_glob ), MNHREAL_MPI, tpfile%nmaster_rank - 1,  tpfile%nmpicomm, ierr )
     call MPI_BCAST( plon_glob, size( plon_glob ), MNHREAL_MPI, tpfile%nmaster_rank - 1,  tpfile%nmpicomm, ierr )
@@ -2315,16 +2318,16 @@ subroutine Write_flyer_time_coord( tpflyer )
                       Trim( tpfile%cname ) // ': group ' // Trim( ytype_clean ) // ' not found' )
     end if
 
-    istatus = NF90_INQ_NCID( isubcatid, Trim( tpflyer%ctitle ), incid )
+    istatus = NF90_INQ_NCID( isubcatid, Trim( tpflyer%cname ), incid )
     if ( istatus /= NF90_NOERR ) then
       call Print_msg( NVERB_ERROR, 'IO', 'Write_flyer_time_coord', &
-                      Trim( tpfile%cname ) // ': group '// Trim( tpflyer%ctitle ) // ' not found' )
+                      Trim( tpfile%cname ) // ': group '// Trim( tpflyer%cname ) // ' not found' )
     end if
 
     istatus = NF90_INQ_DIMID( incid, 'time_flyer', idimid )
     if ( istatus /= NF90_NOERR ) then
       call Print_msg( NVERB_ERROR, 'IO', 'Write_flyer_time_coord', &
-                      Trim( tpfile%cname ) // ': group ' // Trim( tpflyer%ctitle ) // ' time_flyer dimension not found' )
+                      Trim( tpfile%cname ) // ': group ' // Trim( tpflyer%cname ) // ' time_flyer dimension not found' )
     end if
 
     tzdim%cname = 'time_flyer'

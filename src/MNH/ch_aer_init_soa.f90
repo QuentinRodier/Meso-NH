@@ -1,12 +1,7 @@
-!ORILAM_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!ORILAM_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !ORILAM_LIC This is part of the ORILAM software governed by the CeCILL-C licence
 !ORILAM_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !ORILAM_LIC for details.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 chimie 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !!   ########################
      MODULE MODI_CH_AER_INIT_SOA
@@ -50,9 +45,8 @@ END MODULE MODI_CH_AER_INIT_SOA
 !!    None
 !!
 USE MODD_CH_AEROSOL
-USE MODD_CH_M9_n,   ONLY : CNAMES, NEQ
+USE MODD_CH_M9_n,   ONLY : CNAMES
 USE MODD_CH_MNHC_n, ONLY : CCH_SCHEME
-USE MODD_NSV,       ONLY : NSV_CHEM
 !!
 IMPLICIT NONE
 !!

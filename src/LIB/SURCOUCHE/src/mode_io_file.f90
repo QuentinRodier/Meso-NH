@@ -593,6 +593,7 @@ SELECT CASE(TPFILE%CTYPE)
 #ifdef MNH_IOCDF4
 !Remark: IO_Coordvar_write_nc4 disabled (for the moment) for Z-split files
 !        because it introduce a serialization due to MPI communications inside the call
+!        WARNING: if uncommented, please modify IO_Coordvar_write_nc4 to enable block concerning gdealloc
 !       !Write coordinates variables in netCDF file
 !       IF (TZFILE_IOZ%CMODE == 'WRITE' .AND. (TZFILE_IOZ%CFORMAT=='NETCDF4' .OR. TZFILE_IOZ%CFORMAT=='LFICDF4')) THEN
 !         CALL IO_Coordvar_write_nc4(TZFILE_IOZ,HPROGRAM_ORIG=HPROGRAM_ORIG)
