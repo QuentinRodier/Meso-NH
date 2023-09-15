@@ -7,6 +7,7 @@
 !  P. Wautelet 01/10/2020: bugfix: DEFAULT_FLYER: add missing default values
 !  P. Wautelet    06/2022: reorganize flyers
 !  P. Wautelet 25/08/2022: write balloon positions in netCDF4 files inside HDF5 groups
+!  P. Wautelet 15/09/2023: remove offline balloons
 !-----------------------------------------------------------------
 
 !###############################
@@ -67,8 +68,6 @@ CONTAINS
 !
 USE MODD_AIRCRAFT_BALLOON
 USE MODD_CONF,       ONLY: CPROGRAM
-USE MODD_DIAG_FLAG,  ONLY: LAIRCRAFT_BALLOON, NTIME_AIRCRAFT_BALLOON, &
-                           XALT_BALLOON, XLAT_BALLOON, XLON_BALLOON, XSTEP_AIRCRAFT_BALLOON
 USE MODD_DYN_n,      ONLY: DYN_MODEL
 USE MODD_IO,         ONLY: ISP, TFILEDATA
 USE MODD_PARAMETERS, ONLY: NUNDEF
@@ -95,31 +94,17 @@ INTEGER :: IMI    ! current model index
 INTEGER :: JI
 !
 !----------------------------------------------------------------------------
-!
-IMI=GET_CURRENT_MODEL_INDEX()
-!----------------------------------------------------------------------------
-!
-!*      1.   Default values
-!            --------------
-!
-IF ( CPROGRAM == 'DIAG  ') THEN
-  IF ( .NOT. LAIRCRAFT_BALLOON ) RETURN
-  IF (NTIME_AIRCRAFT_BALLOON == NUNDEF .OR. XSTEP_AIRCRAFT_BALLOON == XUNDEF) THEN
-    CMNHMSG(1) = "NTIME_AIRCRAFT_BALLOON and/or XSTEP_AIRCRAFT_BALLOON not initialized in DIAG "
-    CMNHMSG(2) = "No calculations for Balloons and Aircraft"
-    CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'INI_AIRCRAFT_BALLOON' )
 
-    LAIRCRAFT_BALLOON=.FALSE.
-    RETURN
-  ENDIF
-ENDIF
+IF ( CPROGRAM == 'DIAG  ') RETURN
 
 IF ( NAIRCRAFTS > 0 .OR. NBALLOONS > 0 ) LFLYER = .TRUE.
-!
+
 !----------------------------------------------------------------------------
 !
 !*      2.   Balloon initialization
 !            ----------------------
+IMI=GET_CURRENT_MODEL_INDEX()
+
 IF ( IMI == 1 ) THEN
   ALLOCATE( NRANKCUR_BALLOON (NBALLOONS) ); NRANKCUR_BALLOON = NFLYER_DEFAULT_RANK
   ALLOCATE( NRANKNXT_BALLOON (NBALLOONS) ); NRANKNXT_BALLOON = NFLYER_DEFAULT_RANK
@@ -412,24 +397,6 @@ IF ( CPROGRAM == 'MESONH' .OR. CPROGRAM == 'SPAWN ' .OR. CPROGRAM == 'REAL  ' ) 
     END IF
 
     CALL FLYER_TIMESTEP_CORRECT( DYN_MODEL(IMODEL)%XTSTEP, TPFLYER )
-  END IF
-  !
-ELSE IF ( CPROGRAM == 'DIAG  ' ) THEN
-  IF ( LAIRCRAFT_BALLOON ) THEN
-    ! read the current location in MODD_DIAG_FLAG
-    !
-    ZLAT=XLAT_BALLOON(KNBR)
-    ZLON=XLON_BALLOON(KNBR)
-    TPFLYER%XZ_CUR=XALT_BALLOON(KNBR)
-    IF (TPFLYER%XZ_CUR /= XUNDEF .AND. ZLAT /= XUNDEF .AND. ZLON /= XUNDEF ) THEN
-      CALL SM_XYHAT( PLATOR, PLONOR, ZLAT, ZLON, TPFLYER%XX_CUR, TPFLYER%XY_CUR )
-      TPFLYER%LFLY = .TRUE.
-      CMNHMSG(1) = 'current location read from MODD_DIAG_FLAG for ' // TRIM( TPFLYER%CNAME )
-      WRITE( CMNHMSG(2), * ) " Lat=", ZLAT, " Lon=", ZLON," Alt=",TPFLYER%XZ_CUR
-      CALL PRINT_MSG( NVERB_INFO, 'GEN', 'INI_LAUNCH' )
-    END IF
-    !
-    CALL FLYER_TIMESTEP_CORRECT( XSTEP_AIRCRAFT_BALLOON, TPFLYER )
   END IF
 END IF
 
