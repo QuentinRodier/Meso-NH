@@ -205,7 +205,7 @@ USE MODD_SALT,             ONLY: LSALT, NMODE_SLT
 
 use mode_aircraft_balloon, only: Aircraft_balloon_longtype_get
 USE MODE_MODELN_HANDLER,   ONLY: GET_CURRENT_MODEL_INDEX
-use mode_sensor,           only: Add_dust_data, Add_fixpoint, Add_orilam_data, Add_point, Add_profile, Add_salt_data, &
+use mode_sensor,           only: Add_dust_data, Add_orilam_data, Add_point, Add_profile, Add_salt_data, &
                                  Sensor_current_processes_number_get, &
                                  ccomment, ctitle, cunit, xwork6, &
                                  Sensor_write_workarrays_allocate, Sensor_write_workarrays_deallocate
@@ -246,7 +246,7 @@ IF ( IMI /= TPFLYER%NMODEL ) RETURN
 !
 IKU = SIZE(TPFLYER%XRTZ,1) !number of vertical levels
 !
-IPROC = 9 + IRR + SIZE(TPFLYER%XSV,3) + 2 + SIZE(TPFLYER%XSVW_FLUX,2)
+IPROC = 10 + IRR + SIZE(TPFLYER%XSV,3) + 2 + SIZE(TPFLYER%XSVW_FLUX,2)
 IF ( IRR > 1 ) IPROC = IPROC + 1
 IF ( SIZE( TPFLYER%XTKE ) > 0 ) IPROC = IPROC + 1
 IPROC = IPROC + 1 ! TKE_DISS
@@ -318,7 +318,9 @@ IF ( IRR > 1 ) THEN !cloud water is present
   call Add_point( 'LWC', 'cloud liquid water content', 'g m-3', ZLWC(:) )
   DEALLOCATE( ZLWC, ZRHO )
 END IF
-!
+
+call Add_point( 'Rhod', 'Density of dry air', 'kg m-3', tpflyer%xrhod_sensor )
+
 IF (SIZE(TPFLYER%XTKE)>0) call Add_point( 'Tke', 'Turbulent kinetic energy', 'm2 s-2', tpflyer%xtke(1,:) )
 !
 call Add_point( 'H_FLUX',  'sensible flux', 'W m-2', tpflyer%xthw_flux(:) )
@@ -420,7 +422,7 @@ call Sensor_write_workarrays_deallocate( )
 !----------------------------------------------------------------------------
 !Treat vertical profiles
 
-IPROCZ = 8 + IRR
+IPROCZ = 9 + IRR
 IF ( CCLOUD == 'LIMA' )     IPROCZ = IPROCZ + 3
 IF ( CCLOUD(1:3) == 'ICE' ) IPROCZ = IPROCZ + 1
 
@@ -441,6 +443,7 @@ call Add_profile( 'FF', 'Horizontal wind', 'm s-1', tpflyer%xffz(:,:) )
 call Add_profile( 'IWC', 'Ice water content',    'kg m-3', tpflyer%xiwcz(:,:) )
 call Add_profile( 'LWC', 'Liquid water content', 'kg m-3', tpflyer%xlwcz(:,:) )
 
+call Add_profile( 'Rhod', 'Density of dry air',  'kg m-3', tpflyer%xrhod(:,:) )
 IF ( CCLOUD == 'LIMA' ) THEN
   call Add_profile( 'CCLOUDT', 'liquid cloud concentration', 'kg-1', tpflyer%xccz(:,:) )
   call Add_profile( 'CRAINT',  'Rain concentration',         'kg-1', tpflyer%xcrz(:,:) )

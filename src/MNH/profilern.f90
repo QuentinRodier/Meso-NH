@@ -212,6 +212,8 @@ IF ( .NOT. TPROFILERS_TIME%STORESTEP_CHECK_AND_SET( IN ) ) RETURN !No profiler s
 !*      8.   DATA RECORDING
 !            --------------
 !
+IF ( NUMBPROFILER_LOC == 0 ) RETURN ! No profiler on this process
+
 ZTEMP(:,:,:)=PTH(:,:,:)*(PP(:,:,:)/ XP00) **(XRD/XCPD)
 ! Theta_v
 ZTHV(:,:,:) = PTH(:,:,:) / (1.+WATER_SUM(PR(:,:,:,:)))*(1.+PR(:,:,:,1)/ZRDSRV)
@@ -366,6 +368,12 @@ PROFILER: DO JP = 1, NUMBPROFILER_LOC
     TPROFILERS(JP)%XAER(:,IN,JSV) = TPROFILERS(JP)%INTERP_HOR_FROM_MASSPOINT( ZWORK2(:,:,:,JSV) )
   END DO
   IF (SIZE(PTKE)>0) TPROFILERS(JP)%XTKE  (:,IN) = TPROFILERS(JP)%INTERP_HOR_FROM_MASSPOINT( PTKE )
+
+  ! XRHOD_SENSOR is not computed for profilers because not very useful
+  ! If needed, the interpolation must also be done vertically
+  ! (and therefore the vertical interpolation coefficients have to be computed)
+  ! TPROFILERS(JP)%XRHOD_SENSOR(IN) = ...
+
   IF ( CRAD /= 'NONE' ) TPROFILERS(JP)%XTSRAD(IN) = TPROFILERS(JP)%INTERP_HOR_FROM_MASSPOINT( PTS )
   !
   IF ( LDIAG_SURFRAD_PROF ) CALL STATPROF_DIAG_SURFRAD(TPROFILERS(JP), IN )

@@ -54,22 +54,24 @@ case "$TARG" in
 'Linux login'*)
                 export ARCH=${ARCH:-LXcray}
                 export VER_MPI=${VER_MPI:-MPICRAY}
-                export OPTLEVEL=${OPTLEVEL:-OPENACC}
+#                export OPTLEVEL=${OPTLEVEL:-OPENACC}
+                export OPTLEVEL=${OPTLEVEL:-O2}
                 export MVWORK=${MVWORK:-NO}
                 export VER_CDF=${VER_CDF:-CDFAUTO}
 if [ "${VER_MPI}" == "MPICRAY" ] 
 then	
 export MNHENV=${MNHENV:-"
 module purge
-module load craype-x86-trento
+#module load craype-x86-trento
+module load craype-x86-genoa
 module load craype-network-ofi
 module load PrgEnv-cray/8.3.3
-module load cce/15.0.0
+module load cce/15.0.1
 module load craype/2.7.19
-module load cray-mpich/8.1.21
+module load cray-mpich/8.1.24
 module load libfabric/1.15.2.0
-module load craype-accel-amd-gfx90a
-module load rocm/5.2.3
+#module load craype-accel-amd-gfx90a
+module load rocm/5.3.0
 
 export CCE_ALIAS_NONE=:on
 export CCE_NO_PTR_TO_PTR_ALIAS=:on
