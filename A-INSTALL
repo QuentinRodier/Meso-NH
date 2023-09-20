@@ -609,26 +609,58 @@ sbatch job_make_examples_BullX_occigen
 #   At TGCC , you have two architectures accessible throw 2 differents frontals
 #   but with a commun disk space , connect to : 
 #
-#   - ssh irene-fr  : for Intel SkyLake/KNL processors
-#      On Intel processors the MPI use is OPENMPI/2.0.4
+#   - ssh irene-fr  : for Intel SkyLake processors
+#      On Intel processors the MPI use is OPENMPI/4.1.4
 #      the configure will generate a
 #      profile_mesonh-LXifort-R8I4-MNH-V5-6-1-MPIAUTO-O2
 #
 #   - ssh irene-amd : for AMD , processors
-#      On AMD processors the MPI use is OPENMPI/4.02
+#      On AMD processors the MPI use is OPENMPI/4.1.4
 #      the configure will generate a
 #      profile_mesonh-LXifort-R8I4-MNH-V5-6-1-AMD-MPIAUTO-O2
 # 
-#   - install the PACKAGE in your $CCCHOME ( default 20Go  of quota )
-#   - Compile in interactive mode ( see IDRIS )
 #
+#   At TGCC they use 'one login' for multi-project allocation .
+#   This induce 'strange' problem with the installation of eccodes
+#   resulting in file with the wrong default group and 'disk quota excedeed' error
+#
+#   You could get your different project info by 'ccc_myproject'
+#
+#   I recommand you first, supposing that the "Genci Allocation" you want to use
+#   as for projet group "genXXXX"
+#
+#   1) to add  in your "~/.bash_profile"
+#
+module switch dfldatadir dfldatadir/genXXXX
+newgrp genXXXX
+
+#   2) "logout & login" again
+#      and check that you have now the good default group
+#
+id -ng
+--> genXXXX
+echo $CCCHOME
+--> /ccc/.../home/genXXXX/{your_login}
+
+#  If all is OK , you could install the code in interactive as usally 
+#
+#   - install the PACKAGE in your ${CCCHOME} ( default 20Go  of quota )
+#  for example on Intel frontal
+cd ${CCCHOME}
+cd MNH-V5-6-1/src
+./configure
+. ../conf/profile_mesonh-LXifort-R8I4-MNH-V5-6-1-MPIAUTO-O2
+make -j16 |& tee error$XYZ
+make installmaster
+
+# REM: The eccode lib will be installed in your ${CCCWORKDIR}
+#      also for the quota problem ...
+#    
 
 #   - to run the test case examples  run
 #
 # On intel Skylake
 ccc_msub job_make_examples_BullX_irene
-# On intel Knl 
-ccc_msub -q knl job_make_examples_BullX_irene
 
 # On intel AMD 
 ccc_msub job_make_examples_BullX_irene_AMD
