@@ -380,8 +380,8 @@ export LIB_GRIBAPI='${GRIB_API_LIB}'
                 export MNHENV=${MNHENV:-"
 module purge
 module load prgenv/intel 
-module switch intel/2021.4.0
-module load openmpi/4.1.1.1
+module switch intel/2023.2.0
+module load openmpi/4.1.4.1
 unset CC CXX 
 "}
 ;;
