@@ -139,7 +139,7 @@ SUBROUTINE INI_LB(TPINIFILE,OLSOURCE,KSV,                          &
 !
 !*       0.    DECLARATIONS
 !
-USE MODD_CTURB,           ONLY: XTKEMIN
+USE MODD_TURB_n,          ONLY: XTKEMIN
 USE MODD_CONF,            ONLY: LCPL_AROME
 use modd_field,           only: NMNHDIM_UNKNOWN, tfieldmetadata, TYPELOG, TYPEREAL
 USE MODD_IO,              ONLY: TFILEDATA

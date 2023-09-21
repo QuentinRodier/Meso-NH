@@ -229,6 +229,7 @@ END MODULE MODI_DEFAULT_DESFM_n
 !*       0.    DECLARATIONS
 !              ------------
 USE MODD_PARAMETERS
+USE MODD_LUNIT_n,          ONLY: TLUOUT
 USE MODD_CONF             !        For INIT only DEFAULT_DESFM1
 USE MODD_CONFZ
 USE MODD_DYN
@@ -243,7 +244,8 @@ USE MODD_ADV_n            ! missing values. This is why we affect default values
 USE MODD_PARAM_n          !      For SPAWNING DEFAULT_DESFM2 is also used
 USE MODD_LBC_n
 USE MODD_OUT_n
-USE MODD_TURB_n
+USE MODD_TURB_n, ONLY: TURBN_INIT
+USE MODD_NEB_n, ONLY: NEBN_INIT
 USE MODD_BUDGET
 USE MODD_LES
 USE MODD_PARAM_RAD_n
@@ -255,11 +257,11 @@ USE MODD_RADIATIONS_n , ONLY : NSWB_MNH, NLWB_MNH
 #endif
 USE MODD_BLANK_n
 USE MODD_FRC
-USE MODD_PARAM_ICE
+USE MODD_PARAM_ICE_n, ONLY: PARAM_ICEN_INIT
+USE MODD_PARAM_LIMA, ONLY: PARAM_LIMA_INIT
 USE MODD_PARAM_C2R2
-USE MODD_TURB_CLOUD
 USE MODD_PARAM_KAFR_n
-USE MODD_PARAM_MFSHALL_n
+USE MODD_PARAM_MFSHALL_n, ONLY: PARAM_MFSHALLN_INIT
 USE MODD_CH_MNHC_n
 USE MODD_SERIES_n
 USE MODD_NUDGING_n
@@ -279,28 +281,6 @@ USE MODD_EOL_SHARED_IO
 USE MODD_ALLPROFILER_n
 USE MODD_ALLSTATION_n
 !
-!
-USE MODD_PARAM_LIMA, ONLY : LNUCL, LSEDI, LHHONI, LMEYERS,                              &
-                            NMOM_I, NMOM_S, NMOM_G, NMOM_H,                             &
-                            NMOD_IFN, XIFN_CONC, LIFN_HOM, CIFN_SPECIES,                &
-                            CINT_MIXING, NMOD_IMM, NIND_SPECIE, LMURAKAMI,              &
-                            YSNOW_T=>LSNOW_T, CPRISTINE_ICE_LIMA, CHEVRIMED_ICE_LIMA,   &
-                            XFACTNUC_DEP, XFACTNUC_CON,                                 &
-                            LACTI, OSEDC=>LSEDC,                                        &
-                            OACTIT=>LACTIT, LBOUND, LSPRO, LADJ, LKHKO, NMOM_C, NMOM_R, &
-                            NMOD_CCN, XCCN_CONC, LKESSLERAC,                            &
-                            LCCN_HOM, CCCN_MODES,                                       &
-                            YALPHAR=>XALPHAR, YNUR=>XNUR,                               &
-                            YALPHAC=>XALPHAC, YNUC=>XNUC, CINI_CCN=>HINI_CCN,           &
-                            CTYPE_CCN=>HTYPE_CCN, YFSOLUB_CCN=>XFSOLUB_CCN,             &
-                            YACTEMP_CCN=>XACTEMP_CCN, YAERDIFF=>XAERDIFF,               &
-                            YAERHEIGHT=>XAERHEIGHT,                                     &
-                            LSCAV, LAERO_MASS, NPHILLIPS,                               &
-                            LCIBU, XNDEBRIS_CIBU, LRDSF,                                &
-                            ODEPOC=>LDEPOC, OVDEPOC=>XVDEPOC, OACTTKE=>LACTTKE,         &
-                            LPTSPLIT, L_LFEEDBACKT=>LFEEDBACKT, L_NMAXITER=>NMAXITER,   &
-                            L_XMRSTEP=>XMRSTEP, L_XTSTEP_TS=>XTSTEP_TS
-!
 USE MODD_LATZ_EDFLX
 USE MODD_2D_FRC
 USE MODD_BLOWSNOW
@@ -314,6 +294,7 @@ USE MODD_IBM_LSF
 USE MODD_FOREFIRE
 #endif
 USE MODD_FIRE_n
+USE MODD_IO, ONLY: TFILEDATA
 !
 IMPLICIT NONE
 !
@@ -324,6 +305,7 @@ INTEGER,         INTENT(IN)  :: KMI       ! Model index
 !*       0.2   declaration of local variables
 !
 INTEGER             :: JM      ! loop index
+TYPE(TFILEDATA)    TFILENAM    ! Empty file to satisfy interface of PHYEX_init routines which may calls POSNAM (but do not)
 !
 !-------------------------------------------------------------------------------
 !
@@ -536,31 +518,15 @@ XTNUDGING = 21600.
 !*      10.   SET DEFAULT VALUES FOR MODD_TURB_n :
 !             ----------------------------------
 !
-XIMPL     = 1.
-XKEMIN    = 0.01
-XCEDIS    = 0.84
-XCADAP    = 0.5
-CTURBLEN  = 'BL89'
-CTURBDIM  = '1DIM'
-LTURB_FLX =.FALSE.
-LTURB_DIAG=.FALSE.
-LSUBG_COND=.FALSE.
-CSUBG_AUCV='NONE' 
-CSUBG_AUCV_RI='NONE'
-LSIGMAS   =.TRUE.
-LSIG_CONV =.FALSE.
-LRMC01    =.FALSE.
-CTOM      ='NONE'
-VSIGQSAT  = 0.02
-CCONDENS='CB02'
-CLAMBDA3='CB'
-CSUBG_MF_PDF='TRIANGLE'
-LLEONARD =.FALSE.
-XCOEFHGRADTHL = 1.0
-XCOEFHGRADRM = 1.0
-XALTHGRAD = 2000.0
-XCLDTHOLD = -1.0
-
+CALL TURBN_INIT(CPROGRAM, TFILENAM, .FALSE., TLUOUT%NLU, &
+               &LDDEFAULTVAL=.TRUE., LDREADNAM=.FALSE., LDCHECK=.FALSE., KPRINT=0)
+!-------------------------------------------------------------------------------
+!
+!*      10a.   SET DEFAULT VALUES FOR MODD_NEB_n :
+!             ----------------------------------
+!
+CALL NEBN_INIT(CPROGRAM, TFILENAM, .FALSE., TLUOUT%NLU, &
+              &LDDEFAULTVAL=.TRUE., LDREADNAM=.FALSE., LDCHECK=.FALSE., KPRINT=0)
 !-------------------------------------------------------------------------------
 !
 !*      10b.   SET DEFAULT VALUES FOR MODD_DRAGTREE :
@@ -879,40 +845,8 @@ END IF
 !*      16.   SET DEFAULT VALUES FOR MODD_PARAM_ICE :
 !             ---------------------------------------
 !
-IF (KMI == 1) THEN
-  LRED    = .TRUE.
-  LWARM = .TRUE.
-  CPRISTINE_ICE = 'PLAT'
-  LSEDIC  = .TRUE.
-  LCONVHG = .FALSE.
-  CSEDIM  = 'SPLI'
-  LFEEDBACKT = .TRUE.
-  LEVLIMIT = .TRUE.
-  LNULLWETG = .TRUE.
-  LWETGPOST = .TRUE.
-  LNULLWETH = .TRUE.
-  LWETHPOST = .TRUE.
-  CSNOWRIMING = 'M90 '
-  CSUBG_RC_RR_ACCR = 'NONE'
-  CSUBG_RR_EVAP = 'NONE'
-  CSUBG_PR_PDF = 'SIGM'
-  XFRACM90 = 0.1
-  LCRFLIMIT = .TRUE.
-  NMAXITER = 5
-  XMRSTEP = 0.00005
-  XTSTEP_TS = 0.
-  LADJ_BEFORE = .TRUE.
-  LADJ_AFTER = .TRUE.
-  CFRAC_ICE_ADJUST = 'S'
-  XSPLIT_MAXCFL = 0.8
-  CFRAC_ICE_SHALLOW_MF = 'S'
-  LSEDIM_AFTER = .FALSE.
-  LDEPOSC = .FALSE.
-  XVDEPOSC= 0.02 ! 2 cm/s
-  LSNOW_T=.FALSE.
-  LPACK_INTERP=.TRUE.
-  LPACK_MICRO=.TRUE. ! Meso-NH does not work with LPACK_MICRO=.FALSE.
-END IF
+CALL PARAM_ICEN_INIT(CPROGRAM, TFILENAM, .FALSE., TLUOUT%NLU, &
+                    &LDDEFAULTVAL=.TRUE., LDREADNAM=.FALSE., LDCHECK=.FALSE., KPRINT=0)
 !
 !-------------------------------------------------------------------------------
 !
@@ -937,38 +871,8 @@ NENSM         = 0
 !*      18.   SET DEFAULT VALUES FOR MODD_PARAM_MFSHALL_n :
 !             --------------------------------------------
 !
-XIMPL_MF    = 1.
-CMF_UPDRAFT = 'EDKF'
-CMF_CLOUD   = 'DIRE'
-LMIXUV      = .TRUE. 
-LMF_FLX     = .FALSE.
-!
-XALP_PERT   = 0.3  
-XABUO       = 1.     
-XBENTR      = 1.   
-XBDETR      = 0.   
-XCMF        = 0.065 
-XENTR_MF    = 0.035
-XCRAD_MF    = 50.  
-XENTR_DRY   = 0.55 
-XDETR_DRY   = 10.  
-XDETR_LUP   = 1.  
-XKCF_MF     = 2.75
-XKRC_MF     = 1.   
-XTAUSIGMF   = 600.  
-XPRES_UV    = 0.5  
-XFRAC_UP_MAX= 0.33
-XALPHA_MF = 2.     
-XSIGMA_MF = 20.  
-!
-XA1    =  2./3.  
-XB     =  0.002       
-XC     =  0.012     
-XBETA1 =  0.9 
-XR     =  2.
-XLAMBDA_MF=  0.
-LGZ    =  .FALSE.
-XGZ    =  1.83 ! between 1.83 and 1.33
+CALL PARAM_MFSHALLN_INIT(CPROGRAM, TFILENAM, .FALSE., TLUOUT%NLU, &
+                        &LDDEFAULTVAL=.TRUE., LDREADNAM=.FALSE., LDCHECK=.FALSE., KPRINT=0)
 !
 !-------------------------------------------------------------------------------
 !
@@ -1013,79 +917,8 @@ ENDIF
 !                ----------------------------------------
 !
 IF (KMI == 1) THEN
-   LPTSPLIT     = .TRUE.
-   L_LFEEDBACKT = .TRUE.
-   L_NMAXITER   = 5
-   L_XMRSTEP    = 0.005
-   L_XTSTEP_TS  = 20.
-!
-   YNUC    = 1.0
-   YALPHAC = 3.0
-   YNUR    = 2.0
-   YALPHAR = 1.0
-!
-   LACTI  = .TRUE.
-   OSEDC  = .TRUE.
-   OACTIT = .FALSE.
-   LADJ   = .TRUE.
-   LSPRO  = .FALSE.
-   LKHKO  = .FALSE.
-   ODEPOC = .TRUE.
-   LBOUND = .FALSE.
-   OACTTKE = .TRUE.
-   LKESSLERAC = .FALSE.
-!
-   NMOM_C = 2
-   NMOM_R = 2
-!
-   OVDEPOC = 0.02 ! 2 cm/s
-!
-   CINI_CCN   = 'AER'
-   CTYPE_CCN(:) = 'M'
-!
-   YAERDIFF    = 0.0
-   YAERHEIGHT  = 2000.
-!  YR_MEAN_CCN = 0.0   ! In case of 'CCN' initialization
-!  YLOGSIG_CCN = 0.0
-   YFSOLUB_CCN = 1.0
-   YACTEMP_CCN = 280.
-!
-   NMOD_CCN = 1
-!
-!* AP Scavenging
-!
-   LSCAV      = .FALSE.
-   LAERO_MASS = .FALSE.
-!
-   LCCN_HOM = .TRUE.
-   CCCN_MODES = 'COPT'
-   XCCN_CONC(:)=300.
-!
-   LHHONI = .FALSE.
-   LNUCL  = .TRUE.
-   LSEDI  = .TRUE.
-   YSNOW_T = .FALSE.
-   LMURAKAMI = .TRUE.
-   CPRISTINE_ICE_LIMA = 'PLAT'
-   CHEVRIMED_ICE_LIMA = 'GRAU'
-   XFACTNUC_DEP = 1.0  
-   XFACTNUC_CON = 1.0
-   NMOM_I = 2
-   NMOM_S = 1
-   NMOM_G = 1
-   NMOM_H = 0
-   NMOD_IFN = 1
-   NIND_SPECIE = 1
-   LMEYERS = .FALSE.
-   LIFN_HOM = .TRUE.
-   CIFN_SPECIES = 'PHILLIPS'
-   CINT_MIXING = 'DM2'
-   XIFN_CONC(:) = 100.
-   NMOD_IMM = 0
-   NPHILLIPS=8
-   LCIBU = .FALSE.
-   XNDEBRIS_CIBU = 50.0
-   LRDSF = .FALSE.
+  CALL PARAM_LIMA_INIT(CPROGRAM, TFILENAM, .FALSE., TLUOUT%NLU, &
+                      &LDDEFAULTVAL=.TRUE., LDREADNAM=.FALSE., LDCHECK=.FALSE., KPRINT=0)
 ENDIF
 !
 !-------------------------------------------------------------------------------
@@ -1147,18 +980,6 @@ NJSLICEH(:) = 1 !+ 2*JPHEXT
 NFREQSERIES  = INT(XSEGLEN /(100.*XTSTEP) )
 NFREQSERIES  = MAX(NFREQSERIES,1)
 !
-!-------------------------------------------------------------------------------
-!
-!*      22.   SET DEFAULT VALUES FOR MODD_TURB_CLOUD
-!             --------------------------------------
-!
-IF (KMI == 1) THEN
-  NMODEL_CLOUD = NUNDEF
-  CTURBLEN_CLOUD = 'DELT'
-  XCOEF_AMPL_SAT = 5.
-  XCEI_MIN = 0.001E-06
-  XCEI_MAX = 0.01E-06
-ENDIF
 !-------------------------------------------------------------------------------
 !
 !*      22.   SET DEFAULT VALUES FOR MODD_MEAN_FIELD

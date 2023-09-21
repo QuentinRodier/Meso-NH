@@ -70,7 +70,7 @@ END MODULE MODI_INI_RADAR
 !              ------------
 !
 USE MODD_CST
-USE MODD_RAIN_ICE_DESCR
+USE MODD_RAIN_ICE_DESCR_n
 !
 IMPLICIT NONE
 !
@@ -82,7 +82,6 @@ CHARACTER (LEN=4), INTENT(IN)       :: HPRISTINE_ICE    ! Indicator of ice cryst
 !-------------------------------------------------------------------------------
 !
 !
-CALL RAIN_ICE_DESCR_ASSOCIATE()
 !
 !*      1.1    Raindrop characteristics
 !
@@ -215,9 +214,9 @@ CONTAINS
 
   IMPLICIT NONE
 
-  REAL     :: PALPHA ! first shape parameter of the dimensionnal distribution
-  REAL     :: PNU    ! second shape parameter of the dimensionnal distribution
-  REAL     :: PP     ! order of the moment
+  REAL, INTENT(IN)     :: PALPHA ! first shape parameter of the dimensionnal distribution
+  REAL, INTENT(IN)     :: PNU    ! second shape parameter of the dimensionnal distribution
+  REAL, INTENT(IN)     :: PP     ! order of the moment
   REAL     :: PMOMG  ! result: moment of order ZP
 
 !------------------------------------------------------------------------------

@@ -83,6 +83,7 @@ USE MODD_LUNIT
 USE MODD_LUNIT_n
 USE MODD_MNH_SURFEX_n
 USE MODD_PARAMETERS
+USE MODD_NSV, ONLY: NSV_ASSOCIATE
 !
 use mode_field,            only: Alloc_field_scalars, Fieldlist_goto_model
 USE MODE_IO_FILE,          ONLY: IO_File_open
@@ -91,8 +92,7 @@ USE MODE_ll
 USE MODE_MODELN_HANDLER
 USE MODE_SPLITTINGZ_ll
 !
-USE MODI_INI_CST
-USE MODI_INI_CTURB
+USE MODE_INI_CST, ONLY: INI_CST
 USE MODI_INI_MODEL_n
 USE MODI_INI_SEG_n
 USE MODI_INI_SIZE_n
@@ -141,6 +141,8 @@ WRITE(UNIT=ILUOUT0,FMT="(50('*'),/,'*',48X,'*',/,                  &
                   & 7('*'),12X,' CNRM - LA ',12X,8('*'),/,         &
                   & '*',48X,'*',/,  50('*'))")
 !
+CALL NSV_ASSOCIATE()
+!
 !
 !*      1.2   initialize physical constants
 !
@@ -149,12 +151,8 @@ CALL INI_CST
 !
 !*       1.3    initialize constants for the turbulence scheme                      
 !
-CALL INI_CTURB                      
+!Now done in ini_modeln
 !
-!
-!*       1.4    initialize constants for nebulosity computation                            
-!
-CALL INI_NEB
 !
 !-------------------------------------------------------------------------------
 !

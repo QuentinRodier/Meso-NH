@@ -84,10 +84,10 @@ SUBROUTINE AER_EFFIC(PRG,PVGG,      & !aerosol radius/fall speed (m/s)
 !*      0. DECLARATIONS
 !          ------------
 !
-USE MODD_RAIN_ICE_PARAM,  ONLY : YFSEDR => XFSEDR, YEXSEDR => XEXSEDR
+USE MODD_RAIN_ICE_PARAM_n,  ONLY : YFSEDR => XFSEDR, YEXSEDR => XEXSEDR
 !++cb++
 !++th++
-USE MODD_RAIN_ICE_DESCR,  ONLY : YCCR => XCCR, YLBR => XLBR, YLBEXR => XLBEXR, &
+USE MODD_RAIN_ICE_DESCR_n,  ONLY : YCCR => XCCR, YLBR => XLBR, YLBEXR => XLBEXR, &
                                  YCEXVT => XCEXVT
 USE MODD_PARAM_LIMA_WARM, ONLY : WCCR => XCCR, WLBR => XLBR, WLBEXR => XLBEXR, &
                                  XFSEDRR, XFSEDRC 

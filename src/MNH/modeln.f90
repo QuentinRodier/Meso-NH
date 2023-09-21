@@ -350,7 +350,7 @@ USE MODD_OUT_n
 USE MODD_PARAM_C1R3,     ONLY: NSEDI => LSEDI, NHHONI => LHHONI
 USE MODD_PARAM_C2R2,     ONLY: NSEDC => LSEDC, NRAIN => LRAIN, NACTIT => LACTIT,LACTTKE,LDEPOC
 USE MODD_PARAMETERS
-USE MODD_PARAM_ICE,      ONLY: LWARM,LSEDIC,LCONVHG,LDEPOSC
+USE MODD_PARAM_ICE_n,    ONLY: LWARM,LSEDIC,LCONVHG,LDEPOSC, CSUBG_AUCV_RC
 USE MODD_PARAM_LIMA,     ONLY: MSEDC => LSEDC, NMOM_C, NMOM_R, &
                                MACTIT => LACTIT, LSCAV, NMOM_I,                 &
                                MSEDI => LSEDI, MHHONI => LHHONI, NMOM_H,        &
@@ -362,7 +362,7 @@ USE MODD_PRECIP_n
 use modd_precision,      only: MNHTIME
 USE MODD_PROFILER_n
 USE MODD_RADIATIONS_n,   ONLY: XTSRAD,XSCAFLASWD,XDIRFLASWD,XDIRSRFSWD, XAER, XDTHRAD
-USE MODD_RAIN_ICE_DESCR, ONLY: XRTMIN
+USE MODD_RAIN_ICE_DESCR_n, ONLY: XRTMIN
 USE MODD_RECYCL_PARAM_n, ONLY: LRECYCL
 USE MODD_REF,            ONLY: LCOUPLES
 USE MODD_REF_n
@@ -374,8 +374,8 @@ USE MODD_SUB_MODEL_n
 USE MODD_TIME
 USE MODD_TIME_n 
 USE MODD_TIMEZ
-USE MODD_TURB_CLOUD,     ONLY: NMODEL_CLOUD,CTURBLEN_CLOUD,XCEI
 USE MODD_TURB_n
+USE MODD_NEB_n,          ONLY: VSIGQSAT, LSIGMAS, LSUBG_COND
 USE MODD_TYPE_DATE,      ONLY: DATE_TIME
 USE MODD_VISCOSITY
 !
@@ -1764,7 +1764,7 @@ XT_ADVUVW = XT_ADVUVW + ZTIME2 - ZTIME1 - XTIME_LES_BU_PROCESS - XTIME_BU_PROCES
 !
 !-------------------------------------------------------------------------------
 !
-IF (NMODEL_CLOUD==IMI .AND. CTURBLEN_CLOUD/='NONE') THEN
+IF (LCLOUDMODIFLM) THEN
   CALL TURB_CLOUD_INDEX( XTSTEP, TPBAKFILE,                               &
                          LTURB_DIAG, NRRI,                                &
                          XRRS, XRT, XRHODJ, XDXX, XDYY, XDZZ, XDZX, XDZY, &
@@ -1782,7 +1782,7 @@ CALL MPPDB_CHECK3DM("before RAD_BOUND :XRU/V/WS",PRECISION,XRUS,XRVS,XRWS)
 ZRUS=XRUS
 ZRVS=XRVS
 ZRWS=XRWS
-
+!
 if ( .not. l1d ) then
   if ( lbudget_u ) call Budget_store_init( tbudgets(NBUDGET_U), 'PRES', xrus(:, :, :) )
   if ( lbudget_v ) call Budget_store_init( tbudgets(NBUDGET_V), 'PRES', xrvs(:, :, :) )
@@ -1953,7 +1953,7 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
     CALL RESOLVED_CLOUD ( CCLOUD, CACTCCN, CSCONV, CMF_CLOUD, NRR, NSPLITR,    &
                           NSPLITG, IMI, KTCOUNT,                               &
                           CLBCX,CLBCY,TPBAKFILE, CRAD, CTURBDIM,               &
-                          LSUBG_COND,LSIGMAS,CSUBG_AUCV,XTSTEP,                &
+                          LSUBG_COND,LSIGMAS,CSUBG_AUCV_RC,XTSTEP,             &
                           XZZ, XRHODJ, XRHODREF, XEXNREF,                      &
                           ZPABST, XTHT,XRT,XSIGS,VSIGQSAT,XMFCONV,XTHM,XRCM,   &
                           XPABST, XWT_ACT_NUC,XDTHRAD, XRTHS, XRRS,            &
@@ -1973,7 +1973,7 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
     CALL RESOLVED_CLOUD ( CCLOUD, CACTCCN, CSCONV, CMF_CLOUD, NRR, NSPLITR,    &
                           NSPLITG, IMI, KTCOUNT,                               &
                           CLBCX,CLBCY,TPBAKFILE, CRAD, CTURBDIM,               &
-                          LSUBG_COND,LSIGMAS,CSUBG_AUCV,                       &
+                          LSUBG_COND,LSIGMAS,CSUBG_AUCV_RC,                    &
                           XTSTEP,XZZ, XRHODJ, XRHODREF, XEXNREF,               &
                           ZPABST, XTHT,XRT,XSIGS,VSIGQSAT,XMFCONV,XTHM,XRCM,   &
                           XPABST, XWT_ACT_NUC,XDTHRAD, XRTHS, XRRS,            &
@@ -2010,7 +2010,7 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
 !
     IF (LSCAV .AND. (CCLOUD == 'LIMA')) THEN
        CALL LIMA_PRECIP_SCAVENGING( YLDIMPHYEX,CST,TBUCONF,TBUDGETS,SIZE(TBUDGETS), &
-                                    CCLOUD, ILUOUT, KTCOUNT,XTSTEP,XRT(:,:,:,3),    &
+                                    CCLOUD, CCONF, ILUOUT, KTCOUNT,XTSTEP,XRT(:,:,:,3),    &
                                     XRHODREF, XRHODJ, XZZ, XPABST, XTHT,            &
                                     XSVT(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END),          &
                                     XRSVS(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END), XINPAP  )
@@ -2052,7 +2052,7 @@ IF (CELEC /= 'NONE' .AND. (CCLOUD(1:3) == 'ICE')) THEN
     CALL RESOLVED_ELEC_n (CCLOUD, CSCONV, CMF_CLOUD,                     &
                           NRR, NSPLITR, IMI, KTCOUNT, OEXIT,             &
                           CLBCX, CLBCY, CRAD, CTURBDIM,                  &
-                          LSUBG_COND, LSIGMAS,VSIGQSAT,CSUBG_AUCV,       &
+                          LSUBG_COND, LSIGMAS,VSIGQSAT,CSUBG_AUCV_RC,    &
                           XTSTEP, XZZ, XRHODJ, XRHODREF, XEXNREF,        &
                           ZPABST, XTHT, XRTHS, XWT,  XRT, XRRS,          &
                           XSVT, XRSVS, XCIT,                             &
@@ -2067,7 +2067,7 @@ IF (CELEC /= 'NONE' .AND. (CCLOUD(1:3) == 'ICE')) THEN
     CALL RESOLVED_ELEC_n (CCLOUD, CSCONV, CMF_CLOUD,                     &
                           NRR, NSPLITR, IMI, KTCOUNT, OEXIT,             &
                           CLBCX, CLBCY, CRAD, CTURBDIM,                  &
-                          LSUBG_COND, LSIGMAS,VSIGQSAT, CSUBG_AUCV,      &
+                          LSUBG_COND, LSIGMAS,VSIGQSAT, CSUBG_AUCV_RC,   &
                           XTSTEP, XZZ, XRHODJ, XRHODREF, XEXNREF,        &
                           ZPABST, XTHT, XRTHS, XWT,                      &
                           XRT, XRRS, XSVT, XRSVS, XCIT,                  &

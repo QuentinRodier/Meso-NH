@@ -89,7 +89,7 @@ use modd_les
 use modd_les_n
 use modd_param_n,    only: ccloud
 use modd_param_c2r2, only: ldepoc
-use modd_param_ice,  only: ldeposc
+USE MODD_PARAM_ICE_n,  only: ldeposc
 use modd_parameters, only: XUNDEF
 
 use mode_les_spec_n,            only: Les_spec_n
@@ -1150,12 +1150,14 @@ if ( nspectra_k > 0 ) then
     call Les_diachro_2pt_write( tpdiafile, XCORRi_WRi,   XCORRj_WRi,   'WRI',  'W*ri    2 points correlations', 'm kg s-1 kg-1' )
   end if
 
+!PW: TODO: ameliorer le ygroup (tenir compte de ce qu'est la variable scalaire et pas juste son jsv!)
   do jsv = 1, nsv
     Write( ygroup, fmt = "( a2, i3.3 )" ) "SS", jsv
     call Les_diachro_2pt_write( tpdiafile, XCORRi_SvSv(:,:,:,JSV), XCORRj_SvSv(:,:,:,JSV), ygroup, &
                                 'Sv*Sv   2 points correlations','kg2 kg-2' )
   end do
 
+!PW: TODO: ameliorer le ygroup (tenir compte de ce qu'est la variable scalaire et pas juste son jsv!)
   do jsv = 1, nsv
     Write( ygroup, fmt = "( a2, i3.3 )" ) "WS", jsv
     call Les_diachro_2pt_write( tpdiafile, XCORRi_WSv(:,:,:,JSV), XCORRj_WSv(:,:,:,JSV), ygroup, &

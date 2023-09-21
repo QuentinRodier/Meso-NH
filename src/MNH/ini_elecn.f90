@@ -58,7 +58,7 @@ END MODULE MODI_INI_ELEC_n
 !!      
 !!    AUTHOR
 !!    ------
-!!  	C. Barthe     * Laboratoire de l'Atmosphère et des Cyclones *
+!!      C. Barthe     * Laboratoire de l'AtmosphÃ¨re et des Cyclones *
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -99,7 +99,7 @@ USE MODD_LBC_n, ONLY : CLBCX, CLBCY
 USE MODD_LUNIT_n, ONLY: TLUOUT
 USE MODD_PARAM_C2R2, ONLY : LDEPOC
 USE MODD_PARAMETERS, ONLY : JPVEXT, JPHEXT
-USE MODD_PARAM_ICE, ONLY : LDEPOSC
+USE MODD_PARAM_ICE_n, ONLY : LDEPOSC
 USE MODD_PRECIP_n, ONLY : XINPRR, XACPRR, XINPRS, XACPRS, XINPRG, XACPRG, &
                           XINPRH, XACPRH, XINPRC, XACPRC, XINPRR3D, XEVAP3D,&
                           XINDEP,XACDEP

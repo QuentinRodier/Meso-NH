@@ -246,7 +246,7 @@ END MODULE MODI_PHYS_PARAM_n
 !*       0.     DECLARATIONS
 !               ------------
 !
-USE MODD_ADV_n,            ONLY : XRTKEMS
+USE MODD_ADV_n,       ONLY : XRTKEMS
 USE MODD_AIRCRAFT_BALLOON, ONLY: LFLYER
 USE MODD_ARGSLIST_ll, ONLY : LIST_ll
 USE MODD_BLOWSNOW,    ONLY : LBLOWSNOW,XRSNOW
@@ -301,10 +301,10 @@ USE MODD_OCEANH
 USE MODD_OUT_n
 USE MODD_PARAM_C2R2,       ONLY : LSEDC
 USE MODD_PARAMETERS
-USE MODD_PARAM_ICE,        ONLY : LSEDIC
+USE MODD_PARAM_ICE_n,        ONLY : LSEDIC
 USE MODD_PARAM_KAFR_n
 USE MODD_PARAM_LIMA,       ONLY : MSEDC => LSEDC, XRTMIN_LIMA=>XRTMIN
-USE MODD_PARAM_MFSHALL_n
+USE MODD_PARAM_MFSHALL_n,  ONLY: CMF_CLOUD
 USE MODD_PARAM_n
 USE MODD_PARAM_RAD_n
 USE MODD_PASPOL
@@ -313,7 +313,7 @@ USE MODD_DIMPHYEX,   ONLY: DIMPHYEX_t
 USE MODD_PRECIP_n
 use modd_precision,        only: MNHTIME
 USE MODD_RADIATIONS_n
-USE MODD_RAIN_ICE_DESCR,   ONLY: XRTMIN
+USE MODD_RAIN_ICE_DESCR_n,   ONLY: XRTMIN
 USE MODD_REF,              ONLY: LCOUPLES
 USE MODD_REF_n
 USE MODD_SALT
@@ -322,10 +322,9 @@ USE MODD_SUB_PHYS_PARAM_n
 USE MODD_TIME_n
 USE MODD_TIME_n
 USE MODD_TIME, ONLY : TDTEXP  ! Ajout PP
-USE MODD_TURB_CLOUD, ONLY : CTURBLEN_CLOUD,NMODEL_CLOUD, &
-                            XCEI,XCEI_MIN,XCEI_MAX,XCOEF_AMPL_SAT
 USE MODD_TURB_FLUX_AIRCRAFT_BALLOON, ONLY : XTHW_FLUX, XRCW_FLUX, XSVW_FLUX
 USE MODD_TURB_n
+USE MODD_NEB_n, ONLY: NEBN
 
 USE MODE_AERO_PSD
 use mode_budget,            only: Budget_store_end, Budget_store_init
@@ -1621,9 +1620,6 @@ IF (LOCEAN .AND. LDEEPOC) THEN
   END DO
 END IF !END DEEP OCEAN CONV CASE
 !
-LSTATNW = .FALSE.
-LHARAT = .FALSE.
-!
 IF(LLEONARD) THEN
   IGRADIENTS=6
   ALLOCATE(ZHGRAD(IIU,IJU,IKU,IGRADIENTS))
@@ -1634,10 +1630,9 @@ IF(LLEONARD) THEN
   ZHGRAD(:,:,:,5) = GX_M_M(XRT(:,:,:,1), XDXX,XDZZ,XDZX,1,IKU,1)
   ZHGRAD(:,:,:,6) = GY_M_M(XRT(:,:,:,1), XDXX,XDZZ,XDZX,1,IKU,1)
 END IF
-   CALL TURB( CST,CSTURB, TBUCONF, TURBN,YLDIMPHYEX,TLES, &
-              IMI, NRR, NRRL, NRRI, CLBCX, CLBCY, IGRADIENTS, NHALO,                 &
-              1, NMODEL_CLOUD,                                                       &
-              NSV, NSV_LGBEG, NSV_LGEND,CPROGRAM,                                    &
+   CALL TURB( CST,CSTURB, TBUCONF, TURBN, NEBN, YLDIMPHYEX,TLES, &
+              NRR, NRRL, NRRI, CLBCX, CLBCY, IGRADIENTS, NHALO, NTURBSPLIT,          &
+              LCLOUDMODIFLM, NSV, NSV_LGBEG, NSV_LGEND,                              &
               NSV_LIMA_NR, NSV_LIMA_NS, NSV_LIMA_NG, NSV_LIMA_NH,                    &
               L2D, LNOMIXLG,LFLAT,                                                   &
               LCOUPLES, LBLOWSNOW, LIBM,LFLYER,                                      &
@@ -1705,8 +1700,8 @@ IF (CSCONV == 'EDKF') THEN
      CALL MPPDB_CHECK3D(ZEXN,"physparam.7::ZEXN",PRECISION)
  !    
      CALL SHALLOW_MF_PACK(NRR,NRRL,NRRI,                                  &
-                   LMF_FLX,TPFILE,ZTIME_LES_MF,                           &
-                   XIMPL_MF, XTSTEP,                                      &
+                   TPFILE,ZTIME_LES_MF,                                   &
+                   XTSTEP,                                                &
                    XDZZ, XZZ,XDXHAT(1),XDYHAT(1),                         &
                    XRHODJ, XRHODREF, XPABST, ZEXN, ZSFTH, ZSFRV,          &
                    XTHT,XRT,XUT,XVT,XTKET,XSVT,                           &
