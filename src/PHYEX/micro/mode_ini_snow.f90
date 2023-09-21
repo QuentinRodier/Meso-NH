@@ -1,7 +1,9 @@
 !     ######spl
+MODULE MODE_INI_SNOW
+IMPLICIT NONE
+CONTAINS
       SUBROUTINE INI_SNOW ( KLUOUT )
-      USE PARKIND1, ONLY : JPRB
-      USE YOMHOOK , ONLY : LHOOK, DR_HOOK
+      USE YOMHOOK , ONLY : LHOOK, DR_HOOK, JPHOOK
 !     ###########################################################
 !
 !!****  *INI_SNOW * - re-initialize the constants based on snow-size distubutio
@@ -47,9 +49,9 @@
 !
 USE MODD_CST
 USE MODD_PARAMETERS
-USE MODD_PARAM_ICE
-USE MODD_RAIN_ICE_DESCR
-USE MODD_RAIN_ICE_PARAM
+USE MODD_PARAM_ICE_n
+USE MODD_RAIN_ICE_DESCR_n
+USE MODD_RAIN_ICE_PARAM_n
 !
 USE MODI_GAMMA
 USE MODI_GAMMA_INC
@@ -76,7 +78,7 @@ REAL :: ZRHO00                ! Surface reference air density
 REAL :: ZCONC_MAX ! Maximal concentration for snow
 
 
-REAL(KIND=JPRB) :: ZHOOK_HANDLE
+REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 IF (LHOOK) CALL DR_HOOK('INI_RAIN_ICE',0,ZHOOK_HANDLE)
 
 
@@ -145,9 +147,9 @@ CONTAINS
 !
   IMPLICIT NONE
 !
-  REAL     :: PALPHA ! first shape parameter of the dimensionnal distribution
-  REAL     :: PNU    ! second shape parameter of the dimensionnal distribution
-  REAL     :: PP     ! order of the moment
+  REAL, INTENT(IN)     :: PALPHA ! first shape parameter of the dimensionnal distribution
+  REAL, INTENT(IN)     :: PNU    ! second shape parameter of the dimensionnal distribution
+  REAL, INTENT(IN)     :: PP     ! order of the moment
   REAL     :: PMOMG  ! result: moment of order ZP
 !
 !------------------------------------------------------------------------------
@@ -161,3 +163,4 @@ CONTAINS
 !
 !
 END SUBROUTINE INI_SNOW
+END MODULE MODE_INI_SNOW

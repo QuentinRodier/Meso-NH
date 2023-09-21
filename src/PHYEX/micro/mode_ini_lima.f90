@@ -4,26 +4,11 @@
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !      ####################
-       MODULE MODI_INI_LIMA
+       MODULE MODE_INI_LIMA
 !      ####################
 !
-INTERFACE
-      SUBROUTINE INI_LIMA (PTSTEP, PDZMIN, KSPLITR, KSPLITG)
-!
-INTEGER,                 INTENT(OUT):: KSPLITR   ! Number of small time step
-                                                 ! integration for  rain
-                                                 ! sedimendation
-INTEGER,                 INTENT(OUT):: KSPLITG   ! Number of small time step
-                                                 ! integration for graupel
-                                                 ! sedimendation
-REAL,                    INTENT(IN) :: PTSTEP    ! Effective Time step 
-REAL,                    INTENT(IN) :: PDZMIN    ! minimun vertical mesh size
-!
-END SUBROUTINE INI_LIMA
-!
-END INTERFACE
-!
-END MODULE MODI_INI_LIMA
+IMPLICIT NONE
+CONTAINS
 !     ######################################################
       SUBROUTINE INI_LIMA (PTSTEP, PDZMIN, KSPLITR, KSPLITG)
 !     ######################################################
@@ -52,9 +37,10 @@ END MODULE MODI_INI_LIMA
 !              ------------
 !
 USE MODD_CST
-USE MODD_REF
 USE MODD_PARAM_LIMA
 USE MODD_PARAMETERS
+USE MODE_INI_LIMA_WARM, ONLY: INI_LIMA_WARM
+USE MODE_INI_LIMA_COLD_MIXED, ONLY: INI_LIMA_COLD_MIXED
 !USE MODD_LUNIT, ONLY : TLUOUT0
 !
 IMPLICIT NONE
@@ -77,8 +63,6 @@ REAL     :: ZT      ! Work variable
 REAL, DIMENSION(7)  :: ZVTRMAX
 !
 INTEGER  :: JI
-INTEGER  :: ILUOUT0 ! Logical unit number for output-listing
-INTEGER  :: IRESP   ! Return code of FM-routines
 !  
 !-------------------------------------------------------------------------------
 !
@@ -130,12 +114,12 @@ END DO SPLITG
 !
 !
 !
-IF (ALLOCATED(XRTMIN)) RETURN    ! In case of nesting microphysics, constants of
-                                 ! MODD_RAIN_C2R2_PARAM are computed only once.
+IF (ASSOCIATED(XRTMIN)) RETURN    ! In case of nesting microphysics, constants of
+                                  ! MODD_RAIN_C2R2_PARAM are computed only once.
 !
 !
 ! Set bounds for mixing ratios and concentrations
-ALLOCATE( XRTMIN(7) )
+CALL PARAM_LIMA_ALLOCATE('XRTMIN', 7)
 XRTMIN(1) = 1.0E-10   ! rv
 XRTMIN(2) = 1.0E-10   ! rc
 XRTMIN(3) = 1.0E-10   ! rr
@@ -143,7 +127,7 @@ XRTMIN(4) = 1.0E-10   ! ri
 XRTMIN(5) = 1.0E-10   ! rs
 XRTMIN(6) = 1.0E-10   ! rg
 XRTMIN(7) = 1.0E-10   ! rh
-ALLOCATE( XCTMIN(7) )
+CALL PARAM_LIMA_ALLOCATE('XCTMIN', 7)
 XCTMIN(1) = 1.0       ! Not used
 XCTMIN(2) = 1.0E-3    ! Nc
 XCTMIN(3) = 1.0E-3    ! Nr
@@ -171,3 +155,5 @@ CALL INI_LIMA_COLD_MIXED(PTSTEP, PDZMIN)
 !------------------------------------------------------------------------------
 !
 END SUBROUTINE INI_LIMA
+!
+END MODULE MODE_INI_LIMA

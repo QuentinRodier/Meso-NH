@@ -2,38 +2,20 @@
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$ $Date$
-!-----------------------------------------------------------------
-!-----------------------------------------------------------------
-!       #####################
-        MODULE MODI_INI_CTURB
-!       #####################
-!
-INTERFACE
-!
-SUBROUTINE INI_CTURB
-END SUBROUTINE INI_CTURB
-!
-END INTERFACE
-!
-END MODULE MODI_INI_CTURB
-!
-!
-!
+MODULE MODE_INI_TURB
+IMPLICIT NONE
+CONTAINS
 !       ####################
-        SUBROUTINE INI_CTURB
+        SUBROUTINE INI_TURB(HPROGRAM)
 !       ####################
 !
-!!****     *INI_CTURB*  - routine to initialize the turbulence scheme 
+!!****     *INI_TURB*  - routine to initialize the turbulence scheme 
 !!                        constants.
 !!
 !!      PURPOSE
 !!      -------
 !         The purpose of this routine is to initialize the turbulence 
-!       scheme constants that are stored in module MODD_CTURB
+!       scheme constants that are stored in module MODD_CTURB and MODD_TURBN
 !
 !!      METHOD
 !!      ------
@@ -63,24 +45,27 @@ END MODULE MODI_INI_CTURB
 !!        P.Jabouille       20/10/99   XCET=0.4
 !!        V.Masson          13/11/02   XALPSBL and XASBL
 !!                             05/06   Remove KEPS
-!!        Q.Rodier             01/19   XCED replaced by XCEDIS in read_exsegn.f90 and ini_modeln.f90
-!!                                     Remove XASBL (not used)
+!!        Q.Rodier             01/19   Remove XASBL (not used)
 !! --------------------------------------------------------------------------
 !
 !*        0. DECLARATIONS
 !            ------------
 !
 USE MODD_CST
-USE MODD_CTURB
+USE MODD_TURB_n, ONLY : XCTP, XCED, XCSHF, XCHF, XCTV, XCHV, XCHT1, XCHT2, XCPR1, CTURBLEN, &
+                      & XBL89EXP,  XUSRBL89
+USE MODD_NEB_n, ONLY: LSTATNW
+USE MODD_CTURB ! For true constants (not tunable)
+USE MODD_PARAMETERS, ONLY : XUNDEF
 !
-USE PARKIND1, ONLY : JPRB
-USE YOMHOOK , ONLY : LHOOK, DR_HOOK
+USE YOMHOOK , ONLY : LHOOK, DR_HOOK, JPHOOK
 !
 IMPLICIT NONE
 !
-REAL(KIND=JPRB) :: ZHOOK_HANDLE
+CHARACTER(LEN=6),  INTENT(IN) :: HPROGRAM
+REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 !
-IF (LHOOK) CALL DR_HOOK('INI_CTURB',0,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('INI_TURB',0,ZHOOK_HANDLE)
 !
 CALL CTURB_ASSOCIATE()
 !
@@ -91,13 +76,22 @@ CALL CTURB_ASSOCIATE()
 !
 !         1.1 Constant for dissipation of Tke
 !
-!XCED is now replaced by XCEDIS
-!XCED  = 0.70
-!XCED  = 0.84
-!       Redelsperger-Sommeria (1981) = 0.70
-!       Schmidt-Schumann      (1989) = 0.845
-!       Cheng-Canuto-Howard   (2002) = 0.845
-!       Rodier, Masson, Couvreux, Paci (2017) = 0.34
+!
+IF(XCED == XUNDEF) THEN
+  !       Redelsperger-Sommeria (1981) = 0.70
+  !       Schmidt-Schumann      (1989) = 0.845
+  !       Cheng-Canuto-Howard   (2002) = 0.845
+  !       Rodier, Masson, Couvreux, Paci (2017) = 0.34
+  IF(CTURBLEN=='RM17' .OR. CTURBLEN=='ADAP') THEN
+    XCED=0.34
+  ELSE
+    IF(HPROGRAM=='AROME') THEN
+      XCED=0.85
+    ELSE
+      XCED=0.84
+    END IF
+  ENDIF
+ENDIF
 !
 !
 !         1.2 Constant for wind pressure-correlations
@@ -143,7 +137,14 @@ XCTD  = 1.2
 !
 !         1.7 Constant for temperature and vapor pressure-correlations
 !
-XCTP  = 4.65
+IF(XCTP == XUNDEF) THEN
+  IF (LSTATNW) THEN
+    !wc in STATNW consistent use of Redelsperger-Sommeria for (co)variances
+    XCTP  = 4.0
+  ELSE
+    XCTP  = 4.65
+  ENDIF
+ENDIF
 !       Redelsperger-Sommeria (1981) = 4.
 !       Schmidt-Schumann      (1989) = 3.25
 !       Cheng-Canuto-Howard   (2002) = 4.65
@@ -225,10 +226,6 @@ XCPR5= XCPR2
 !         3. MINIMUM VALUES 
 !            --------------
 !
-XTKEMIN=0.01 ! This value is replaced by XKEMIN in &NAM_TURBn
-!
-!XLINI=10.   ! BL mixing length
-XLINI=0.1   ! BL mixing length
 XLINF=1.E-10! to prevent division by zero
 !
 !
@@ -259,5 +256,12 @@ XSBL_O_BL     = 0.05 ! SBL height / BL height ratio
 XFTOP_O_FSURF = 0.05 ! Fraction of surface (heat or momentum) flux used to define top of BL
 !
 !
-IF (LHOOK) CALL DR_HOOK('INI_CTURB',1,ZHOOK_HANDLE)
-END SUBROUTINE INI_CTURB
+!         7. Constants for BL89 computation
+!
+XBL89EXP=LOG(16.)/(4.*LOG(XKARMAN)+LOG(XCED)-3.*LOG(XCMFS))
+XUSRBL89=1./XBL89EXP
+!
+!
+IF (LHOOK) CALL DR_HOOK('INI_TURB',1,ZHOOK_HANDLE)
+END SUBROUTINE INI_TURB
+END MODULE MODE_INI_TURB

@@ -4,20 +4,12 @@
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !      #########################
-       MODULE MODI_INI_LIMA_WARM
+       MODULE MODE_INI_LIMA_WARM
 !      #########################
 !
-INTERFACE
-      SUBROUTINE INI_LIMA_WARM (PTSTEP, PDZMIN)
+IMPLICIT NONE
 !
-REAL,                    INTENT(IN) :: PTSTEP    ! Effective Time step 
-REAL,                    INTENT(IN) :: PDZMIN    ! minimun vertical mesh size
-!
-END SUBROUTINE INI_LIMA_WARM
-!
-END INTERFACE
-!
-END MODULE MODI_INI_LIMA_WARM
+CONTAINS
 !     #########################################
       SUBROUTINE INI_LIMA_WARM (PTSTEP, PDZMIN)
 !     #########################################
@@ -46,7 +38,6 @@ END MODULE MODI_INI_LIMA_WARM
 !              ------------
 !
 USE MODD_CST
-USE MODD_REF
 USE MODD_PARAM_LIMA
 USE MODD_PARAM_LIMA_WARM
 USE MODD_PARAMETERS
@@ -76,9 +67,7 @@ REAL, DIMENSION(6)  :: ZGAMC, ZGAMR ! parameters involving various moments of
 REAL :: ZTT                   ! Temperature in Celsius
 REAL :: ZLV                   ! Latent heat of vaporization
 REAL :: ZSS                   ! Supersaturation
-REAL :: ZPSI1, ZG             ! Psi1 and G functions
-REAL :: ZAHENR                ! r_star (FH92)
-REAL :: ZVTRMAX               ! Raindrop maximal fall velocity
+REAL :: ZG                    ! G function
 REAL :: ZRHO00                ! Surface reference air density
 REAL :: ZSURF_TEN             ! Water drop surface tension
 REAL :: ZSMIN, ZSMAX          ! Minimal and maximal supersaturation used to
@@ -92,6 +81,7 @@ REAL :: ZSMIN, ZSMAX          ! Minimal and maximal supersaturation used to
 !  
 !-------------------------------------------------------------------------------
 !
+CALL PARAM_LIMA_WARM_ASSOCIATE()
 !
 !*       1.     CHARACTERISTICS OF THE SPECIES
 !   	        ------------------------------
@@ -249,8 +239,8 @@ XCSTDCRIT = (XPI/6.)*XRHOLW*( (8.0*ZSURF_TEN )/( 3.0*XRV*XRHOLW ) )**3
 !               using a logarithmic scale for S
 !
 NHYP = 500 ! Number of points for the tabulation
-ALLOCATE (XHYPF12( NHYP, NMOD_CCN ))
-ALLOCATE (XHYPF32( NHYP, NMOD_CCN ))
+CALL PARAM_LIMA_WARM_ALLOCATE('XHYPF12', NHYP, NMOD_CCN)
+CALL PARAM_LIMA_WARM_ALLOCATE('XHYPF32', NHYP, NMOD_CCN)
 !
 ZSMIN = 1.0E-5  ! Minimum supersaturation set at 0.001 % 
 ZSMAX = 5.0E-2  ! Maximum supersaturation set at 5 %
@@ -285,11 +275,11 @@ XAHENINTP2 = 0.5*REAL(NAHEN-1) - XTT
 !            Lv
 !            G
 !
-ALLOCATE (XAHENG(NAHEN))
-ALLOCATE (XAHENG2(NAHEN))
-ALLOCATE (XAHENG3(NAHEN))
-ALLOCATE (XPSI1(NAHEN))
-ALLOCATE (XPSI3(NAHEN))
+CALL PARAM_LIMA_WARM_ALLOCATE('XAHENG', NAHEN)
+CALL PARAM_LIMA_WARM_ALLOCATE('XAHENG2', NAHEN)
+CALL PARAM_LIMA_WARM_ALLOCATE('XAHENG3', NAHEN)
+CALL PARAM_LIMA_WARM_ALLOCATE('XPSI1', NAHEN)
+CALL PARAM_LIMA_WARM_ALLOCATE('XPSI3', NAHEN)
 XCSTHEN = 1.0 / ( XRHOLW*2.0*XPI )
 DO J1 = 1,NAHEN
    ZTT = XTT + REAL(J1-(NAHEN-1)/2)                                          ! T
@@ -475,3 +465,5 @@ XCRER = 1.0/ (ZGAMR(6) * XAR**(2.0/3.0))
 !------------------------------------------------------------------------------
 !
 END SUBROUTINE INI_LIMA_WARM
+!
+END MODULE MODE_INI_LIMA_WARM

@@ -8,7 +8,6 @@ IMPLICIT NONE
 CONTAINS
 SUBROUTINE ICE4_PACK(D, CST, PARAMI, ICEP, ICED, BUCONF,                   &
                      KPROMA, KSIZE, KSIZE2,                                &
-                     HSUBG_AUCV_RC, HSUBG_AUCV_RI,                         &
                      PTSTEP, KRR, ODMICRO, PEXN,                           &
                      PRHODJ, PRHODREF, PEXNREF, PPABST, PCIT, PCLDFR,      &
                      PHLC_HRC, PHLC_HCF, PHLI_HRI, PHLI_HCF,               &
@@ -19,20 +18,37 @@ SUBROUTINE ICE4_PACK(D, CST, PARAMI, ICEP, ICED, BUCONF,                   &
                      PWR,                                                  &
                      TBUDGETS, KBUDGETS,                                   &
                      PRHS                                                  )
+!     ######################################################################
+!
+!!****  * -  compute the explicit microphysical sources
+!!
+!!    PURPOSE
+!!    -------
+!!      The purpose of this routine is to pack arrays to compute
+!!      the microphysics tendencies
+!!
+!!
+!!    METHOD
+!!    ------
+!!      Pack arrays by chuncks
+!!
+!!
+!!    MODIFICATIONS
+!!    -------------
+!!     R. El Khatib 28-Apr-2023 Fix (and re-enable) the cache-blocking mechanism on top of phyex
 !  -----------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE PARKIND1, ONLY : JPRB
-USE YOMHOOK , ONLY : LHOOK, DR_HOOK
+USE YOMHOOK , ONLY : LHOOK, DR_HOOK, JPHOOK
 
 USE MODD_DIMPHYEX,       ONLY: DIMPHYEX_t
 USE MODD_BUDGET,         ONLY: TBUDGETDATA, TBUDGETCONF_t
 USE MODD_CST,            ONLY: CST_t
-USE MODD_PARAM_ICE,      ONLY: PARAM_ICE_t
-USE MODD_RAIN_ICE_DESCR, ONLY: RAIN_ICE_DESCR_t
-USE MODD_RAIN_ICE_PARAM, ONLY: RAIN_ICE_PARAM_t
+USE MODD_PARAM_ICE_n,      ONLY: PARAM_ICE_t
+USE MODD_RAIN_ICE_DESCR_n, ONLY: RAIN_ICE_DESCR_t
+USE MODD_RAIN_ICE_PARAM_n, ONLY: RAIN_ICE_PARAM_t
 USE MODD_FIELDS_ADDRESS, ONLY : & ! common fields adress
       & ITH,     & ! Potential temperature
       & IRV,     & ! Water vapor
@@ -82,8 +98,6 @@ TYPE(TBUDGETCONF_t),      INTENT(IN)    :: BUCONF
 INTEGER,                  INTENT(IN)    :: KPROMA ! cache-blocking factor for microphysic loop
 INTEGER,                  INTENT(IN)    :: KSIZE
 INTEGER,                  INTENT(IN)    :: KSIZE2
-CHARACTER(LEN=4),         INTENT(IN)    :: HSUBG_AUCV_RC ! Kind of Subgrid autoconversion method
-CHARACTER(LEN=80),        INTENT(IN)    :: HSUBG_AUCV_RI ! Kind of Subgrid autoconversion method
 REAL,                     INTENT(IN)    :: PTSTEP  ! Double Time step (single if cold start)
 INTEGER,                  INTENT(IN)    :: KRR     ! Number of moist variable
 LOGICAL, DIMENSION(D%NIJT,D%NKT), INTENT(IN)   :: ODMICRO ! mask to limit computation
@@ -109,13 +123,13 @@ REAL, DIMENSION(D%NIJT,D%NKT),   INTENT(INOUT) :: PRIS    ! Pristine ice m.r. so
 REAL, DIMENSION(D%NIJT,D%NKT),   INTENT(INOUT) :: PRSS    ! Snow/aggregate m.r. source
 REAL, DIMENSION(D%NIJT,D%NKT),   INTENT(INOUT) :: PRGS    ! Graupel m.r. source
 !
-REAL, DIMENSION(D%NIJT,D%NKT),   INTENT(OUT)   :: PEVAP3D! Rain evap profile
-REAL, DIMENSION(D%NIJT,D%NKT),   INTENT(OUT)   :: PRAINFR !Precipitation fraction
+REAL, DIMENSION(D%NIJT,D%NKT),   INTENT(INOUT) :: PEVAP3D! Rain evap profile
+REAL, DIMENSION(D%NIJT,D%NKT),   INTENT(INOUT) :: PRAINFR !Precipitation fraction
 REAL, DIMENSION(D%NIJT,D%NKT),   INTENT(IN)    :: PSIGS   ! Sigma_s at t
 REAL, DIMENSION(D%NIJT,D%NKT),   INTENT(IN)    :: PRVHENI ! heterogeneous nucleation
 REAL, DIMENSION(D%NIJT,D%NKT),   INTENT(IN)    :: PLVFACT
 REAL, DIMENSION(D%NIJT,D%NKT),   INTENT(IN)    :: PLSFACT
-REAL, DIMENSION(D%NIJT,D%NKT,0:7), INTENT(OUT) :: PWR
+REAL, DIMENSION(D%NIJT,D%NKT,0:7), INTENT(INOUT) :: PWR
 TYPE(TBUDGETDATA), DIMENSION(KBUDGETS), INTENT(INOUT) :: TBUDGETS
 INTEGER, INTENT(IN) :: KBUDGETS
 REAL, DIMENSION(D%NIJT,D%NKT), OPTIONAL,  INTENT(INOUT) :: PRHS    ! Hail m.r. source
@@ -123,10 +137,10 @@ REAL, DIMENSION(D%NIJT,D%NKT), OPTIONAL,  INTENT(INOUT) :: PRHS    ! Hail m.r. s
 !
 !*       0.2   Declarations of local variables :
 !
-REAL(KIND=JPRB) :: ZHOOK_HANDLE
+REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 !
 INTEGER :: JIJ, JK
-INTEGER :: IKTB, IKTE, IIJB, IIJE
+INTEGER :: IKT, IKTB, IKTE, IIJT, IIJB, IIJE
 INTEGER :: ISTIJ, ISTK
 !
 LOGICAL :: GEXT_TEND
@@ -170,19 +184,21 @@ IF (LHOOK) CALL DR_HOOK('ICE4_PACK', 0, ZHOOK_HANDLE)
 !*       1.     GENERALITIES
 !               ------------
 !
+IKT=D%NKT
 IKTB=D%NKTB
 IKTE=D%NKTE
+IIJT=D%NIJT
 IIJB=D%NIJB
 IIJE=D%NIJE
 GEXT_TEND=.TRUE.
-LLSIGMA_RC=(HSUBG_AUCV_RC=='PDF ' .AND. PARAMI%CSUBG_PR_PDF=='SIGM')
-LL_AUCV_ADJU=(HSUBG_AUCV_RC=='ADJU' .OR. HSUBG_AUCV_RI=='ADJU')
+LLSIGMA_RC=(PARAMI%CSUBG_AUCV_RC=='PDF ' .AND. PARAMI%CSUBG_PR_PDF=='SIGM')
+LL_AUCV_ADJU=(PARAMI%CSUBG_AUCV_RC=='ADJU' .OR. PARAMI%CSUBG_AUCV_RI=='ADJU')
 !
 IF(PARAMI%LPACK_MICRO) THEN
-  IF(KPROMA /= KSIZE) THEN
+  IF(KPROMA /= KSIZE .AND. (PARAMI%CSUBG_RR_EVAP=='PRFR' .OR. PARAMI%CSUBG_RC_RR_ACCR=='PRFR')) THEN
     CALL PRINT_MSG(NVERB_FATAL, 'GEN', 'RAIN_ICE', 'For now, KPROMA must be equal to KSIZE, see comments in code for explanation')
     ! Microphyscs was optimized by introducing chunks of KPROMA size
-    ! Thus, in ice4_tendencies, the 1D array represent only a fraction of the points where microphisical species are present
+    ! Thus, in ice4_tendencies, the 1D array represent only a fraction of the points where microphysical species are present
     ! We cannot rebuild the entire 3D arrays in the subroutine, so we cannot call ice4_rainfr_vert in it
     ! A solution would be to suppress optimisation in this case by setting KPROMA=KSIZE in rain_ice
     ! Another solution would be to compute column by column?
@@ -272,8 +288,10 @@ IF(PARAMI%LPACK_MICRO) THEN
               ! Save indices for later usages:
               I1(IC) = JIJ
               I2(IC) = JK
-              I1TOT(JMICRO+IC-1)=JIJ
-              I2TOT(JMICRO+IC-1)=JK
+              IF(BUCONF%LBU_ENABLE) THEN
+                I1TOT(JMICRO+IC-1)=JIJ
+                I2TOT(JMICRO+IC-1)=JK
+              ENDIF
               IF (IC==IMICRO) THEN
                 ! the end of the chunk has been reached, then reset the starting index :
                 ISTIJ=JIJ+1
@@ -281,6 +299,7 @@ IF(PARAMI%LPACK_MICRO) THEN
                   ISTK=JK
                 ELSE
                   ! end of line, restart from 1 and increment upper loop
+                  ISTIJ=D%NIJB
                   ISTK=JK+1
                   IF (ISTK > IKTE) THEN
                     ! end of line, restart from 1
@@ -305,7 +324,6 @@ IF(PARAMI%LPACK_MICRO) THEN
                         &LLSIGMA_RC, LL_AUCV_ADJU, GEXT_TEND, &
                         &KPROMA, IMICRO, LLMICRO, PTSTEP, &
                         &KRR, &
-                        &HSUBG_AUCV_RC, HSUBG_AUCV_RI, &
                         &ZEXN, ZRHODREF, I1, I2, &
                         &ZPRES, ZCF, ZSIGMA_RC, &
                         &ZCIT, &
@@ -345,13 +363,20 @@ IF(PARAMI%LPACK_MICRO) THEN
   ENDIF ! KSIZE > 0
 
 ELSE ! PARAMI%LPACK_MICRO
+  !We assume, here, that points outside the physical domain of the model (extral levels,
+  !horizontal points in the halo) contain valid values, sufficiently valid to be used in tests
+  !such as "PTHT(JL)>ZTHRESHOLD .AND. LLMICRO(JL)". In these tests, LLMICRO(JL) will be evaluated
+  !to .FALSE. on these kind of points but valid values for PTHT are needed to prevent crash.
+  !
   IF (KSIZE /= D%NIJT*D%NKT) THEN
       CALL PRINT_MSG(NVERB_FATAL, 'GEN', 'ICE4_PACK', 'ICE4_PACK : KSIZE /= NIJT*NKT')
   ENDIF
 
+  !Some arrays must be copied. In order not to waste memory, we re-use temporary arrays
+  !declared for the pack case.
   IC=0
-  DO JK = IKTB, IKTE
-    DO JIJ = IIJB, IIJE
+  DO JK = 1, IKT
+    DO JIJ = 1, IIJT
       IC=IC+1
       I1TOT(IC)=JIJ
       I2TOT(IC)=JK
@@ -367,12 +392,39 @@ ELSE ! PARAMI%LPACK_MICRO
         IF (KRR==7) THEN
           ZEXTPK(IC, IRH)=PRHS(JIJ, JK)
         ENDIF
-        IF(LLSIGMA_RC) THEN
-          ZSIGMA_RC(IC)=PSIGS(JIJ, JK)
-        ENDIF
+      ENDIF
+      IF(LLSIGMA_RC) THEN
+        !Copy needed because sigma is modified in ice4_stepping
+        ZSIGMA_RC(IC)=PSIGS(JIJ, JK)
       ENDIF
     ENDDO
   ENDDO
+  !
+  !When PARAMI%LPACK_MICRO=T, values on the extra levels are not given to ice4_stepping,
+  !so there was not filled in rain_ice.
+  !When PARAMI%LPACK_MICRO=F, we need to complement the work done in rain_ice to provide
+  !valid values on these levels.
+  !The same applies for the first points and last points on the horizontal dimension.
+  IF (IKTB /= 1) THEN
+    DO JK=1, IKTB-1
+      PWR(:, JK, :)=PWR(:, IKTB, :)
+    ENDDO
+  ENDIF
+  IF (IKTE /= IKT) THEN
+    DO JK=IKTE+1, IKT
+      PWR(:, JK, :)=PWR(:, IKTE, :)
+    ENDDO
+  ENDIF
+  IF (IIJB /= 1) THEN
+    DO JIJ=1, IIJB-1
+      PWR(JIJ, :, :)=PWR(IIJB, :, :)
+    ENDDO
+  ENDIF
+  IF (IIJE /= IIJT) THEN
+    DO JIJ=IIJE+1, IIJT
+      PWR(JIJ, :, :)=PWR(IIJE, :, :) 
+    ENDDO
+  ENDIF
   !
   !*       5bis.  TENDENCIES COMPUTATION
   !               ----------------------
@@ -381,7 +433,6 @@ ELSE ! PARAMI%LPACK_MICRO
                     &LLSIGMA_RC, LL_AUCV_ADJU, GEXT_TEND, &
                     &KSIZE, KSIZE, ODMICRO, PTSTEP, &
                     &KRR, &
-                    &HSUBG_AUCV_RC, HSUBG_AUCV_RI, &
                     &PEXN, PRHODREF, I1TOT, I2TOT, &
                     &PPABST, PCLDFR, ZSIGMA_RC, &
                     &PCIT, &
