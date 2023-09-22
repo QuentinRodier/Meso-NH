@@ -326,6 +326,7 @@ SELECT TYPE ( TPFLYER )
     END IF
 
     ! In flight
+    ! The condition "ABS( TPFLYER%TPOS_CUR - TDTCUR ) < XTIMETHRESH" is necessary if the balloon changes of model
     INFLIGHTONMODEL: IF ( TPFLYER%LFLY .AND. .NOT. TPFLYER%LCRASH .AND. TPFLYER%NMODEL == IMI &
                           .AND. ABS( TPFLYER%TPOS_CUR - TDTCUR ) < XTIMETHRESH ) THEN
       ISOWNERBAL: IF ( TPFLYER%NRANK_CUR == ISP ) THEN
