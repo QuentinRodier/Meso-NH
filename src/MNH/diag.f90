@@ -253,6 +253,7 @@ CPROGRAM='DIAG  '
 !
 CALL IO_Init()
 CALL SECOND_MNH2(ZTIME1)
+CALL NSV_ASSOCIATE()
 ZTIME0=ZTIME1
 !
 ! initialization of logical for the diagnostics
