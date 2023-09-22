@@ -380,7 +380,6 @@ MODULE MODD_SENSOR
       INTEGER :: IK00, IK01, IK10, IK11
       INTEGER :: IKB, IKE, IKU
       INTEGER :: JI, JJ
-      LOGICAL :: GCHANGE ! set to true if at least an index has been forced to change
       LOGICAL :: GDONE   ! set to true if coefficient computation has been done
       LOGICAL :: GDONOLOWCRASH
       REAL    :: ZZCOEF00, ZZCOEF01, ZZCOEF10, ZZCOEF11
@@ -388,7 +387,6 @@ MODULE MODD_SENSOR
       OLOW  = .FALSE.
       OHIGH = .FALSE.
 
-      GCHANGE = .FALSE.
       GDONE   = .FALSE.
 
       IKB = 1 + JPVEXT
@@ -419,9 +417,9 @@ MODULE MODD_SENSOR
       IF ( ANY( [ IK00, IK01, IK10, IK11 ] < IKB ) ) THEN
           ! Sensor is low (too near the ground or below it)
         OLOW = .TRUE.
+
         IF ( GDONOLOWCRASH ) THEN
           ! Do not allow crash on the ground: set position on the ground if too low
-          GCHANGE = .TRUE.
           !Minimum altitude is on the ground at ikb (no crash if too low)
           IK00 = MAX ( IK00, IKB )
           IK01 = MAX ( IK01, IKB )
@@ -454,25 +452,20 @@ MODULE MODD_SENSOR
         OHIGH = .TRUE.
 
         ! Limit ik?? indices to prevent out of bound accesses
-        IF ( IK00 > IKU-1) THEN
-          IK00 = IKU-1
-          GCHANGE = .TRUE.
-        END IF
-        IF ( IK01 > IKU-1) THEN
-          IK01 = IKU-1
-          GCHANGE = .TRUE.
-        END IF
-        IF ( IK10 > IKU-1) THEN
-          IK10 = IKU-1
-          GCHANGE = .TRUE.
-        END IF
-        IF ( IK11 > IKU-1) THEN
-          IK11 = IKU-1
-          GCHANGE = .TRUE.
-        END IF
+        IK00 = MIN( IK00, IKE )
+        IK01 = MIN( IK01, IKE )
+        IK10 = MIN( IK10, IKE )
+        IK11 = MIN( IK11, IKE )
 
         CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'Compute_vertical_interp_coeff', &
                         'sensor ' // TRIM( TPSENSOR%CNAME ) // ' is too high', OLOCAL = .TRUE. )
+
+        ZZCOEF00 = XUNDEF
+        ZZCOEF01 = XUNDEF
+        ZZCOEF10 = XUNDEF
+        ZZCOEF11 = XUNDEF
+
+        GDONE = .TRUE.
       END IF
 
       IF ( .NOT. GDONE ) THEN
