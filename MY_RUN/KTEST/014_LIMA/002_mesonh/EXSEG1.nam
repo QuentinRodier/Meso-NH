@@ -37,9 +37,8 @@
                 CTURBLEN = "DELT",
                 CTURBDIM = "3DIM",
                 LTURB_DIAG = F,
-                LTURB_FLX = F,
-                CSUBG_AUCV = 'NONE',
-                LSUBG_COND = F /
+                LTURB_FLX = F
+                /
 
 &NAM_CH_MNHCn   LUSECHEM = F /
 
@@ -83,8 +82,7 @@
                 HTYPE_CCN(1)='C',
                 NMOD_CCN = 1,          ! Nombre de modes de CCN
                 LACTIT=T,
-                LSEDC=F,
-                LBOUND=T, 
+                LSEDC=F, 
                 LSCAV=F,               ! Scavenging
                 LAERO_MASS=F,
                 LCCN_HOM=F,             ! Concentration en CCN homogène selon z
@@ -124,3 +122,5 @@
 &NAM_BU_RRG     LBU_RRG = T /
 
 &NAM_BU_RSV     LBU_RSV = T /
+&NAM_NEBn LSUBG_COND = F  /
+&NAM_PARAM_ICEn CSUBG_AUCV_RC = 'NONE'/

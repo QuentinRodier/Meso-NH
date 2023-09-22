@@ -100,8 +100,7 @@
            LRMC01 = .FALSE.,
            LTURB_FLX=.TRUE.,
            LTURB_DIAG=.TRUE.,
-           LSUBG_COND =.FALSE.,
-           XKEMIN=0.0000001 /
+           XTKEMIN=0.0000001 /
 
 &NAM_CH_MNHCn LUSECHEM = F /
 
@@ -133,3 +132,4 @@
               CINTERPOL_SST='NONE',
               XICHCE=0.0 /
 
+&NAM_NEBn LSUBG_COND =.FALSE. /
