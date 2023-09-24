@@ -238,13 +238,13 @@ cleanlibmaster :
 	rm -f  $(LIB_MASTER) 
 
 cleanmaster : 
-	test -d $(OBJDIR_MASTER) && rm -fr  $(OBJDIR_MASTER)
+	- [ -d $(OBJDIR_MASTER) ] && rm -fr  $(OBJDIR_MASTER)
 
 cleanobjmaster :  
-	test -d $(OBJDIR_MASTER) && find $(OBJDIR_MASTER) -follow -name "*.o" -o -name "*.mod" | xargs rm 
+	- [ -d $(OBJDIR_MASTER) ] && find $(OBJDIR_MASTER) -follow -name "*.o" -o -name "*.mod" | xargs rm 
 
 cleanprogmaster :
-	test -d $(OBJDIR_MASTER) && cd $(OBJDIR_MASTER) && rm -f $(PROG_LIST)
+	- [ -d $(OBJDIR_MASTER) ] && cd $(OBJDIR_MASTER) && rm -f $(PROG_LIST)
 
 ##########################################################
 #                                                        #
@@ -331,9 +331,10 @@ $(ECCODES_MOD) :
 	-DCMAKE_Fortran_FLAGS=$(ECCODES_FFLAGS) -DCMAKE_C_FLAGS=$(ECCODES_CFLAGS) ${EC_CONF} && \
 	$(MAKE) && $(MAKE) install && $(MAKE) clean
 
+cleanmaster : eccodes_lib_clean
 eccodes_lib_clean :
-	- [  -d ${DIR_ECCODES_BUILD} ] && rm -fr ${DIR_ECCODES_BUILD}
-	- [  -d ${DIR_ECCODES_INSTALL} ] && rm -fr ${DIR_ECCODES_INSTALL}
+	- [  -d $(DIR_ECCODES_BUILD) ] && rm -fr $(DIR_ECCODES_BUILD)
+	- [  -d $(DIR_ECCODES_INSTALL) ] && rm -fr $(DIR_ECCODES_INSTALL)
 ##########################################################
 #                                                        #
 # EXTRA LIB : NETCDF                                     #

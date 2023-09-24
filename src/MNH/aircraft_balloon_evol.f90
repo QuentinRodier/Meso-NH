@@ -202,6 +202,11 @@ SELECT TYPE ( TPFLYER )
         IF ( TDTCUR >= TPFLYER%TLAUNCH .AND. TDTCUR <= TPFLYER%TLAND ) THEN
           TPFLYER%LFLY     = .TRUE.
           TPFLYER%LTOOKOFF = .TRUE.
+          WRITE( CMNHMSG(1), "( 'aircraft ', A, ' takeoff on ', I2, '/', I2, '/', I4, ' at ', F18.12, 's' )" ) &
+                 TRIM( TPFLYER%CNAME ), TDTCUR%NDAY, TDTCUR%NMONTH, TDTCUR%NYEAR, TDTCUR%XTIME
+          CALL PRINT_MSG( NVERB_INFO, 'GEN', 'AIRCRAFT_BALLOON_EVOL', OLOCAL = .TRUE. )
+        ELSE
+          TPFLYER%LFLY = .FALSE.
         END IF
       END IF
     END IF TAKEOFF
@@ -253,14 +258,34 @@ SELECT TYPE ( TPFLYER )
         IF ( TZNEXT >= TPFLYER%TLAUNCH .AND. TZNEXT <= TPFLYER%TLAND ) THEN
           TPFLYER%LFLY = .TRUE.
           ! Force LTOOKOFF to prevent to do it again (at a next timestep)
-          TPFLYER%LTOOKOFF = .TRUE.
+          IF ( .NOT. TPFLYER%LTOOKOFF ) THEN
+            TPFLYER%LTOOKOFF = .TRUE.
+            WRITE( CMNHMSG(1), "( 'aircraft ', A, ' will take off at next store on ', &
+                   I2, '/', I2, '/', I4, ' at ', F18.12, 's' )" )                     &
+                   TRIM( TPFLYER%CNAME ), TZNEXT%NDAY, TZNEXT%NMONTH, TZNEXT%NYEAR, TZNEXT%XTIME
+            CALL PRINT_MSG( NVERB_INFO, 'GEN', 'AIRCRAFT_BALLOON_EVOL', OLOCAL = .TRUE. )
+          END IF
 
           ! Compute next position
           CALL AIRCRAFT_COMPUTE_POSITION( TZNEXT, TPFLYER )
 
           ! Get rank of the process where the aircraft is and the model number
           CALL FLYER_GET_RANK_MODEL_ISCRASHED( TPFLYER )
+
+          IF ( TPFLYER%LCRASH .AND. TPFLYER%NCRASH == NCRASH_OUT_HORIZ ) THEN
+            WRITE( CMNHMSG(1), "( 'aircraft ', A, ' crashed on ', I2, '/', I2, '/', I4, ' at ', F18.12, &
+                   's (out of the horizontal boundaries)' )" )                                          &
+                   TRIM( TPFLYER%CNAME ), TZNEXT%NDAY, TZNEXT%NMONTH, TZNEXT%NYEAR, TZNEXT%XTIME
+            CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'AIRCRAFT_BALLOON_EVOL', OLOCAL = .TRUE. )
+          END IF
         ELSE
+          IF ( TPFLYER%LFLY ) THEN
+            ! Aircraft was in flight and will have landed at next store
+            WRITE( CMNHMSG(1), "( 'aircraft ', A, ' will have landed at next store on ', &
+                   I2, '/', I2, '/', I4, ' at ', F18.12, 's' )" )                        &
+                   TRIM( TPFLYER%CNAME ), TZNEXT%NDAY, TZNEXT%NMONTH, TZNEXT%NYEAR, TZNEXT%XTIME
+            CALL PRINT_MSG( NVERB_INFO, 'GEN', 'AIRCRAFT_BALLOON_EVOL', OLOCAL = .TRUE. )
+          END IF
           TPFLYER%LFLY = .FALSE.
         END IF
       END IF
@@ -281,6 +306,9 @@ SELECT TYPE ( TPFLYER )
         TPFLYER%XX_CUR = TPFLYER%XXLAUNCH
         TPFLYER%XY_CUR = TPFLYER%XYLAUNCH
         TPFLYER%TPOS_CUR = TDTCUR
+        WRITE( CMNHMSG(1), "( 'balloon ', A, ' launched on ', I2, '/', I2, '/', I4, ' at ', F18.12, 's' )" ) &
+               TRIM( TPFLYER%CNAME ), TDTCUR%NDAY, TDTCUR%NMONTH, TDTCUR%NYEAR, TDTCUR%XTIME
+        CALL PRINT_MSG( NVERB_INFO, 'GEN', 'AIRCRAFT_BALLOON_EVOL', OLOCAL = .TRUE. )
       END IF LAUNCHTIME
     END IF LAUNCH
 
@@ -316,10 +344,6 @@ SELECT TYPE ( TPFLYER )
 
         CRASH_VERT: IF ( TPFLYER%LCRASH ) THEN
           TPFLYER%LFLY = .FALSE.
-          WRITE( CMNHMSG(1), "( 'Balloon ', A, ' crashed the ', I2, '/', I2, '/', I4, ' at ', F18.12, &
-                                's (too low or too high)' )" )                                        &
-                 TRIM( TPFLYER%CNAME ), TDTCUR%NDAY, TDTCUR%NMONTH, TDTCUR%NYEAR, TDTCUR%XTIME
-          CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'AIRCRAFT_BALLOON_EVOL', OLOCAL = .TRUE. )
         ELSE CRASH_VERT
           !No vertical crash
 
@@ -361,6 +385,9 @@ IMPLICIT NONE
 CLASS(TBALLOONDATA), INTENT(INOUT) :: TPBALLOON
 
 LOGICAL :: GLOW, GHIGH
+
+GLOW  = .FALSE.
+GHIGH = .FALSE.
 
 SELECT CASE ( TPBALLOON%CTYPE )
   !
@@ -468,6 +495,8 @@ USE MODD_NESTING,          ONLY: NDAD, NDTRATIO
 USE MODD_TIME,             only: TDTSEG
 USE MODD_TIME_n,           ONLY: TDTCUR
 
+USE MODE_DATETIME
+
 IMPLICIT NONE
 
 CLASS(TBALLOONDATA), INTENT(INOUT) :: TPBALLOON
@@ -480,6 +509,7 @@ REAL    :: ZDIVTMP
 REAL    :: ZMAP     ! map factor at balloon location
 REAL    :: ZU_BAL   ! horizontal wind speed at balloon location (along x)
 REAL    :: ZV_BAL   ! horizontal wind speed at balloon location (along y)
+TYPE(DATE_TIME) :: TZNEXT ! Time for next position
 
 ZTSTEP = PTSTEP
 
@@ -505,10 +535,12 @@ IMODEL_OLD = TPBALLOON%NMODEL
 ! Get rank of the process where the balloon is and the model number
 CALL FLYER_GET_RANK_MODEL_ISCRASHED( TPBALLOON )
 
-IF ( TPBALLOON%LCRASH ) THEN
-  WRITE( CMNHMSG(1), "( 'Balloon ', A, ' crashed the ', I2, '/', I2, '/', I4, ' at ', F18.12, &
-                      's (out of the horizontal boundaries)' )" ) &
-    TRIM( TPBALLOON%CNAME ), TDTCUR%NDAY, TDTCUR%NMONTH, TDTCUR%NYEAR, TDTCUR%XTIME
+TZNEXT = TDTCUR + ZTSTEP
+
+IF ( TPBALLOON%LCRASH .AND. TPBALLOON%NCRASH == NCRASH_OUT_HORIZ ) THEN
+  WRITE( CMNHMSG(1), "( 'balloon ', A, ' crashed on ', I2, '/', I2, '/', I4, ' at ', F18.12, &
+         's (out of the horizontal boundaries)' )" )                                          &
+         TRIM( TPBALLOON%CNAME ), TZNEXT%NDAY, TZNEXT%NMONTH, TZNEXT%NYEAR, TZNEXT%XTIME
   CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'AIRCRAFT_BALLOON_EVOL', OLOCAL = .TRUE. )
 END IF
 
@@ -516,6 +548,11 @@ IF ( TPBALLOON%NMODEL /= IMODEL_OLD .AND. .NOT. TPBALLOON%LCRASH ) THEN
   ! Balloon has changed of model
   IF ( NDAD(TPBALLOON%NMODEL ) == IMODEL_OLD ) THEN
     ! Nothing special to do when going to child model
+    WRITE( CMNHMSG(1), "( 'balloon ', A, ': change of model: ', I2, '->', I2, ' going to child' )" ) &
+           TRIM( TPFLYER%CNAME ), IMODEL_OLD, TPBALLOON%NMODEL
+    WRITE( CMNHMSG(2), "( 'on ', I2, '/', I2, '/', I4, ' at ', F18.12, 's' )" ) &
+           TZNEXT%NDAY, TZNEXT%NMONTH, TZNEXT%NYEAR, TZNEXT%XTIME
+    CALL PRINT_MSG( NVERB_INFO, 'GEN', 'AIRCRAFT_BALLOON_EVOL', OLOCAL = .TRUE. )
   ELSE IF ( TPBALLOON%NMODEL == NDAD(IMODEL_OLD) ) THEN
     ! Balloon go to parent model
     ! Recompute position to be compatible with parent timestep
@@ -547,14 +584,22 @@ IF ( TPBALLOON%NMODEL /= IMODEL_OLD .AND. .NOT. TPBALLOON%LCRASH ) THEN
         !Remark: by construction here, ISTORE is always > 1 => no risk with ISTORE-1 value
         TPBALLOON%TFLYER_TIME%TPDATES(ISTORE) = TPBALLOON%TFLYER_TIME%TPDATES(ISTORE-1) + TPBALLOON%TFLYER_TIME%XTSTEP
 
-        WRITE( CMNHMSG(1), "( 'Balloon ', A, ': store skipped at ', I2, '/', I2, '/', I4, ' at ', F18.12, 's' )" ) &
+        WRITE( CMNHMSG(1), "( 'balloon ', A, ': store skipped on ', I2, '/', I2, '/', I4, ' at ', F18.12, 's' )" ) &
                TRIM( TPBALLOON%CNAME ),                                                                            &
                TPBALLOON%TFLYER_TIME%TPDATES(ISTORE)%NDAY,  TPBALLOON%TFLYER_TIME%TPDATES(ISTORE)%NMONTH,          &
                TPBALLOON%TFLYER_TIME%TPDATES(ISTORE)%NYEAR, TPBALLOON%TFLYER_TIME%TPDATES(ISTORE)%XTIME
         CMNHMSG(2) = 'due to change of model (child to its parent)'
-        CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'AIRCRAFT_BALLOON_EVOL', OLOCAL = .TRUE. )
+        CALL PRINT_MSG( NVERB_INFO, 'GEN', 'AIRCRAFT_BALLOON_EVOL', OLOCAL = .TRUE. )
       END IF
     END IF
+
+    TZNEXT = TDTCUR + ZTSTEP
+
+    WRITE( CMNHMSG(1), "( 'balloon ', A, ': change of model: ', I2, '->', I2, ' going to parent' )" ) &
+           TRIM( TPFLYER%CNAME ), IMODEL_OLD, TPBALLOON%NMODEL
+    WRITE( CMNHMSG(2), "( 'on ', I2, '/', I2, '/', I4, ' at ', F18.12, 's' )" ) &
+           TZNEXT%NDAY, TZNEXT%NMONTH, TZNEXT%NYEAR, TZNEXT%XTIME
+    CALL PRINT_MSG( NVERB_INFO, 'GEN', 'AIRCRAFT_BALLOON_EVOL', OLOCAL = .TRUE. )
 
     ! Compute new horizontal position
     TPBALLOON%XX_CUR = TPBALLOON%XX_CUR + ZU_BAL * ZTSTEP * ZMAP
@@ -564,10 +609,11 @@ IF ( TPBALLOON%NMODEL /= IMODEL_OLD .AND. .NOT. TPBALLOON%LCRASH ) THEN
     ! Model number is now imposed
     IMODEL = TPBALLOON%NMODEL
     CALL FLYER_GET_RANK_MODEL_ISCRASHED( TPBALLOON, KMODEL = IMODEL )
-    IF ( TPBALLOON%LCRASH ) THEN
-      WRITE( CMNHMSG(1), "( 'Balloon ', A, ' crashed the ', I2, '/', I2, '/', I4, ' at ', F18.12, &
-                         's (out of the horizontal boundaries)' )" ) &
-        TRIM( TPBALLOON%CNAME ), TDTCUR%NDAY, TDTCUR%NMONTH, TDTCUR%NYEAR, TDTCUR%XTIME
+
+    IF ( TPBALLOON%LCRASH .AND. TPBALLOON%NCRASH == NCRASH_OUT_HORIZ ) THEN
+      WRITE( CMNHMSG(1), "( 'balloon ', A, ' crashed on ', I2, '/', I2, '/', I4, ' at ', F18.12, &
+             's (out of the horizontal boundaries)' )" )                                          &
+             TRIM( TPBALLOON%CNAME ), TZNEXT%NDAY, TZNEXT%NMONTH, TZNEXT%NYEAR, TZNEXT%XTIME
       CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'AIRCRAFT_BALLOON_EVOL', OLOCAL = .TRUE. )
     END IF
   ELSE
@@ -767,7 +813,7 @@ LOGICAL :: GLOW, GHIGH
 
 ! Find indices surrounding the vertical box where the flyer is
 SELECT TYPE ( TPFLYER )
-  CLASS IS ( TAIRCRAFTDATA)
+  CLASS IS ( TAIRCRAFTDATA )
     IF ( TPFLYER%LALTDEF ) THEN
       ZFLYER_EXN = (TPFLYER%XP_CUR/XP00)**(XRD/XCPD)
       CALL TPFLYER%COMPUTE_VERTICAL_INTERP_COEFF( 'MASS', ZFLYER_EXN,     ZEXN, GLOW, GHIGH, ODONOLOWCRASH = .TRUE. )
@@ -775,7 +821,7 @@ SELECT TYPE ( TPFLYER )
       CALL TPFLYER%COMPUTE_VERTICAL_INTERP_COEFF( 'MASS', TPFLYER%XZ_CUR, ZZM,  GLOW, GHIGH, ODONOLOWCRASH = .TRUE. )
     END IF
 
-  CLASS IS ( TBALLOONDATA)
+  CLASS IS ( TBALLOONDATA )
     IF ( TPFLYER%CTYPE == 'ISODEN' ) THEN
       CALL TPFLYER%COMPUTE_VERTICAL_INTERP_COEFF( 'MASS', TPFLYER%XRHO,   ZRHO, GLOW, GHIGH, ODONOLOWCRASH = .TRUE. )
     ELSE IF ( TPFLYER%CTYPE == 'RADIOS' .OR. TPFLYER%CTYPE == 'CVBALL' ) THEN
@@ -788,6 +834,16 @@ END SELECT
 IF ( GHIGH ) THEN
   TPFLYER%LCRASH = .TRUE.
   TPFLYER%NCRASH = NCRASH_OUT_HIGH
+
+  SELECT TYPE ( TPFLYER )
+    CLASS IS ( TAIRCRAFTDATA )
+      WRITE( CMNHMSG(1), "( 'aircraft ', A, ' crashed on ', I2, '/', I2, '/', I4, ' at ', F18.12, 's (too  high)' )" ) &
+             TRIM( TPFLYER%CNAME ), TDTCUR%NDAY, TDTCUR%NMONTH, TDTCUR%NYEAR, TDTCUR%XTIME
+    CLASS IS ( TBALLOONDATA )
+      WRITE( CMNHMSG(1), "( 'balloon ', A, ' crashed on ', I2, '/', I2, '/', I4, ' at ', F18.12, 's (too  high)' )" ) &
+             TRIM( TPFLYER%CNAME ), TDTCUR%NDAY, TDTCUR%NMONTH, TDTCUR%NYEAR, TDTCUR%XTIME
+  END SELECT
+  CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'AIRCRAFT_BALLOON_EVOL', OLOCAL = .TRUE. )
 END IF
 
 SELECT TYPE ( TPFLYER )

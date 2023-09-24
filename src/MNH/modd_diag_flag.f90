@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1998-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/modd_diag_flag.f90,v $ $Revision: 1.2.4.1.2.2.10.2.2.2.2.2 $
-! masdev4_8 modd 2008/06/30 15:13:13
 !-----------------------------------------------------------------
 !     #####################
       MODULE MODD_DIAG_FLAG
@@ -43,7 +38,8 @@
 !!       T. Dauhut     10/2017 add parallel 3D clustering
 !!       J.-P. Chaboureau 01/2018 add altitude interpolation
 !!       J.-P. Chaboureau 01/2018 add coarse graining
-!!
+!  P. Wautelet 15/09/2023: remove offline balloons
+!
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -109,13 +105,6 @@ LOGICAL     :: LCHAQDIAG   ! flag for aqueous phase chemistry
 REAL, DIMENSION(10)  :: XCHEMLAT,XCHEMLON ! positions of vertical profiles written by routine write_ts1d
 CHARACTER (LEN=1024) :: CSPEC_BU_DIAG
 CHARACTER (LEN=1024) :: CSPEC_DIAG
-LOGICAL     :: LAIRCRAFT_BALLOON    ! aircraft and balloon trajectories
-INTEGER     :: NTIME_AIRCRAFT_BALLOON ! time in seconds of trajectories computing
-REAL        :: XSTEP_AIRCRAFT_BALLOON ! minimum time step for trajectories calculations (s)
-REAL, DIMENSION(9) :: XLAT_BALLOON  ! initial latitudes of the balloons
-                                    !(at file time minus NTIME_AIRCRAFT_BALLOON/2)
-REAL, DIMENSION(9) :: XLON_BALLOON  ! initial longitudes of the balloons
-REAL, DIMENSION(9) :: XALT_BALLOON  ! initial altitude of the balloons (m)
 LOGICAL     :: LC2R2
 LOGICAL     :: LC3R5
 LOGICAL     :: LELECDIAG            ! flag for atmospheric electricity

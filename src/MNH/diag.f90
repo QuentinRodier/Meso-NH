@@ -63,7 +63,6 @@
 !!  03/2010     (G.Tanguy)     Clean up of unuseful variables
 !!  05/2010                    Add lidar
 !!!  03/2012     (S. Bielli)   Add NAM_NCOUT for netcdf output (removed 11/07/2016)
-!!  03/2013     (O.Caumont)    Modif call aircraft_balloon
 !!  03/2013     (C. Augros)    Add variables for radar simulator in NAMELIST:
 !!                             NBAZIM,LSNRT,XSNRMIN
 !!  D.Ricard 2015 : add LMOIST_ES
@@ -83,24 +82,22 @@
 !!  01/2018     (J.-P. Chaboureau) Add altitude interpolation
 !!  01/2018     (J.-P. Chaboureau) Add coarse graining
 !!  01/2018      (G.Delautier) SURFEX 8.1
-!!  03/2018     (P.Wautelet)   replace SUBTRACT_TO_DATE and ADD_FORECAST_TO_DATE
-!!                             by DATETIME_CORRECTDATE
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!  V.Vionnet 07/2017 add LWIND_CONTRAV
 !!  11/2017      (D. Ricard, P. Marquet) add diagnostics for THETAS 
 !  P. Wautelet 07/02/2019: force TYPE to a known value for IO_File_add2list
 !  P. Wautelet 11/02/2019: added missing use of MODI_CH_MONITOR_n
 !  P. Wautelet 28/03/2019: use MNHTIME for time measurement variables
-!  P. Wautelet 26/07/2019: bug correction: deallocate of zsea done too early
 !  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
 !  P. Wautelet 06/07/2021: use FINALIZE_MNH
+!  P. Wautelet 15/09/2023! remove offline balloons
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
 !               ------------
 !
 USE MODD_ADV_n
-USE MODD_AIRCRAFT_BALLOON
+USE MODD_AIRCRAFT_BALLOON, ONLY: LFLYER
 USE MODD_BUDGET
 USE MODD_CONF
 USE MODD_CONF_n
@@ -113,7 +110,7 @@ USE MODD_FIELD_n
 USE MODD_GR_FIELD_n
 USE MODD_GRID,             ONLY: XLONORI, XLATORI
 USE MODD_GRID_n
-USE MODD_IO,               ONLY: CIO_DIR, NIO_VERB, NVERB_DEBUG, TFILEDATA, TFILE_SURFEX
+USE MODD_IO,               ONLY: NIO_VERB, NVERB_DEBUG, TFILEDATA, TFILE_SURFEX
 USE MODD_LBC_n
 USE MODD_LES
 USE MODD_LES_BUDGET
@@ -141,11 +138,9 @@ USE MODD_TIME_n
 USE MODD_TURB_n
 USE MODD_VAR_ll
 !
-USE MODE_AIRCRAFT_BALLOON
 USE MODE_DATETIME
 USE MODE_FINALIZE_MNH,     only: FINALIZE_MNH
 USE MODE_IO_FILE,          only: IO_File_close, IO_File_open
-USE MODE_IO_FIELD_WRITE,   only: IO_Header_write
 USE MODE_IO,               only: IO_Config_set, IO_Init
 USE MODE_IO_MANAGE_STRUCT, only: IO_File_add2list
 USE MODE_ll
@@ -157,14 +152,11 @@ USE MODE_MODELN_HANDLER
 USE MODE_MSG
 USE MODE_POS
 USE MODE_TIME
-USE MODE_WRITE_AIRCRAFT_BALLOON
-use mode_write_lfifmn_fordiachro_n, only: WRITE_LFIFMN_FORDIACHRO_n
 !
 USE MODI_CH_MONITOR_n
 USE MODI_COMPUTE_R00
 USE MODI_DIAG_SURF_ATM_N
 USE MODI_INIT_MNH
-USE MODI_MNHGET_SURF_PARAM_n
 USE MODI_PHYS_PARAM_n
 USE MODI_VERSION
 USE MODI_WRITE_DIAG_SURF_ATM_N
@@ -181,8 +173,6 @@ IMPLICIT NONE
 !
 !*       0.1   declarations of local variables
 !
-TYPE(DATE_TIME)   :: TXDTBAL   ! current time and date for BALLOON and AIRCRAFT trajectories
-TYPE(DATE_TIME)   :: TPDTCUR_SAVE
 CHARACTER (LEN=28), DIMENSION(1) :: YINIFILE ! names of the INPUT FM-file
 CHARACTER (LEN=28), DIMENSION(1) :: YINIFILEPGD ! names of the INPUT FM-file
 CHARACTER (LEN=5)  :: YSUFFIX   ! character string for the OUTPUT FM-file number
@@ -193,9 +183,8 @@ CHARACTER (LEN=4)  :: YTURB     ! initial flag to call to turbulence schemes
 INTEGER  :: ILUOUT0             ! Logical unit number for the output listing
 REAL(kind=MNHTIME), DIMENSION(2) :: ZTIME0, ZTIME1, ZTIME2, ZRAD, ZDCONV, ZSHADOWS, ZGROUND, &
                                     ZTRACER, ZDRAG, ZTURB, ZMAFL, ZCHEM, ZTIME_BU, ZEOL ! CPU times
-REAL(kind=MNHTIME), DIMENSION(2) :: ZSTART, ZINIT, ZWRIT, ZBALL, ZPHYS, ZSURF, ZWRITS, ZTRAJ ! storing variables
+REAL(kind=MNHTIME), DIMENSION(2) :: ZSTART, ZINIT, ZWRIT, ZPHYS, ZSURF, ZWRITS, ZTRAJ ! storing variables
 INTEGER(KIND=LFIINT) :: INPRAR ! number of articles predicted  in the LFIFM file
-INTEGER :: ISTEPBAL   ! loop indice for balloons and aircraft
 INTEGER :: ILUNAM      ! Logical unit numbers for the namelist file
                        ! and for output_listing file
 INTEGER        :: JF =0   !  loop index
@@ -205,10 +194,8 @@ LOGICAL:: GCLOUD_ONLY          ! conditionnal radiation computations for
                                 !      the only cloudy columns
 !
 INTEGER :: IIU, IJU, IKU
-REAL, DIMENSION(:,:),ALLOCATABLE          :: ZSEA
 REAL, DIMENSION(:,:,:,:),ALLOCATABLE          :: ZWETDEPAER
 !
-TYPE(TFILEDATA),POINTER :: TZDIACFILE => NULL()
 TYPE(TFILEDATA),POINTER :: TZNMLFILE  => NULL() !Namelist file
 !
 NAMELIST/NAM_DIAG/ CISO, LVAR_RS, LVAR_LS,   &
@@ -222,9 +209,7 @@ NAMELIST/NAM_DIAG/ CISO, LVAR_RS, LVAR_LS,   &
                    LCLD_COV, LVAR_PR, LTOTAL_PR, LMEAN_PR, XMEAN_PR, &
                    NCAPE, LBV_FR, LRADAR, CBLTOP, LTRAJ, &
                    LDIAG,XDIAG,LCHEMDIAG,LCHAQDIAG,XCHEMLAT,XCHEMLON,&
-                   CSPEC_BU_DIAG,CSPEC_DIAG,LAIRCRAFT_BALLOON,NTIME_AIRCRAFT_BALLOON,&
-                   XSTEP_AIRCRAFT_BALLOON,&
-                   XLAT_BALLOON,XLON_BALLOON,XALT_BALLOON,&
+                   CSPEC_BU_DIAG,CSPEC_DIAG, &
                    LC2R2, LC3R5, LELECDIAG, CAERDIAG, &
                    NGPS,XLAT_GPS,XLON_GPS,XZS_GPS,CNAM_GPS,XDIFFORO, &
                    NVERSION_RAD, NCURV_INTERPOL, LCART_RAD, CARF,LREFR,LDNDZ,&
@@ -312,13 +297,6 @@ CSPEC_BU_DIAG=''
 CSPEC_DIAG=''
 LTRAJ=.FALSE.
 LLIMA_DIAG=.FALSE.
-!
-LAIRCRAFT_BALLOON=.FALSE.
-NTIME_AIRCRAFT_BALLOON=NUNDEF
-XSTEP_AIRCRAFT_BALLOON=XUNDEF
-XLAT_BALLOON(:)=XUNDEF
-XLON_BALLOON(:)=XUNDEF
-XALT_BALLOON(:)=XUNDEF
 !
 NGPS=-1
 CNAM_GPS(:)=''
@@ -512,60 +490,6 @@ WRITE(ILUOUT0,*) ' '
 !
 CALL SECOND_MNH2(ZTIME2)
 ZWRIT =ZTIME2-ZTIME1
-ZTIME1=ZTIME2
-!-------------------------------------------------------------------------------
-!
-!*       4.1    BALLOON and AIRCRAFT
-!
-IF ( LAIRCRAFT_BALLOON ) THEN
-!
-  CALL IO_File_add2list(TZDIACFILE,TRIM(CINIFILE)//'BAL','MNHDIACHRONIC','WRITE', &
-                        HDIRNAME=CIO_DIR,KLFINPRAR=INPRAR,KLFITYPE=1,KLFIVERB=NVERB)
-!
-  CALL IO_File_open(TZDIACFILE)
-!
-  WRITE(ILUOUT0,*) ' '
-  WRITE(ILUOUT0,*) 'DIAG AFTER OPEN DIACHRONIC FILE'
-  WRITE(ILUOUT0,*) ' '
-!
-  TPDTCUR_SAVE = TDTCUR
-!
-  TXDTBAL%nyear  = TDTCUR%nyear
-  TXDTBAL%nmonth = TDTCUR%nmonth
-  TXDTBAL%nday   = TDTCUR%nday
-  TXDTBAL%xtime  = TDTCUR%xtime - NTIME_AIRCRAFT_BALLOON/2.
-  CALL DATETIME_CORRECTDATE(TXDTBAL)
-  TDTCUR = TXDTBAL !TDTCUR is used in AIRCRAFT_BALLOON
-!
-  ALLOCATE (ZSEA(SIZE(XRHODJ,1),SIZE(XRHODJ,2)))
-  ZSEA(:,:) = 0.
-  CALL MNHGET_SURF_PARAM_n (PSEA=ZSEA(:,:))
-  DO ISTEPBAL = 1, NTIME_AIRCRAFT_BALLOON, INT(XSTEP_AIRCRAFT_BALLOON)
-    CALL AIRCRAFT_BALLOON( XSTEP_AIRCRAFT_BALLOON, XZZ, XMAP, XLONORI, XLATORI, XUT, XVT, XWT, &
-                           XPABST, XTHT, XRT, XSVT, XTKET, XTSRAD, XRHODREF, XCIT, ZSEA        )
-
-    TXDTBAL%xtime = TXDTBAL%xtime + XSTEP_AIRCRAFT_BALLOON
-    CALL DATETIME_CORRECTDATE(TXDTBAL)
-    TDTCUR = TXDTBAL !TDTCUR is used in AIRCRAFT_BALLOON
-  END DO
-  DEALLOCATE (ZSEA)
-!
-  TDTCUR = TPDTCUR_SAVE
-!
-  CALL IO_Header_write(TZDIACFILE)
-  CALL WRITE_LFIFMN_FORDIACHRO_n(TZDIACFILE)
-  CALL WRITE_AIRCRAFT_BALLOON(TZDIACFILE)
-#ifdef MNH_IOLFI
-  CALL MENU_DIACHRO(TZDIACFILE,'END')
-#endif
-  CALL IO_File_close(TZDIACFILE)
-  WRITE(ILUOUT0,*) ' '
-  WRITE(ILUOUT0,*) 'DIAG AFTER CLOSE DIACHRONIC FILE'
-  WRITE(ILUOUT0,*) ' '
-END IF
-!
-CALL SECOND_MNH2(ZTIME2)
-ZBALL =ZTIME2-ZTIME1
 ZTIME1=ZTIME2
 !-------------------------------------------------------------------------------
 !
@@ -771,7 +695,6 @@ ZTIME2=ZTIME2-ZTIME0
 !WRITE(ILUOUT0,YFMT) '|        START        |     ',ZSTART,'      |     ',100.*ZSTART/ZTIME2,'     |'
 !WRITE(ILUOUT0,YFMT) '|        INIT         |     ',ZINIT,'      |     ',100.*ZINIT/ZTIME2,'     |'
 !WRITE(ILUOUT0,YFMT) '|        WRIT         |     ',ZWRIT,'      |     ',100.*ZWRIT/ZTIME2,'     |'
-!WRITE(ILUOUT0,YFMT) '|        BALL         |     ',ZBALL,'      |     ',100.*ZBALL/ZTIME2,'     |'
 !WRITE(ILUOUT0,YFMT) '|        PHYS         |     ',ZPHYS,'      |     ',100.*ZPHYS/ZTIME2,'     |'
 !IF (ZRAD>0.) &
 !  WRITE(ILUOUT0,YFMT2) '|          ',CRAD,'       |     ',ZRAD

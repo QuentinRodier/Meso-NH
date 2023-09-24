@@ -218,10 +218,13 @@ export MPI_DSM_CPULIST=0-7:allhosts
 		export VER_CDF=${VER_CDF:-CDFAUTO}
                 export MNHENV=${MNHENV:-"
 module purge
-module load cmake/3.18.1
-module load inteloneapi/21.4.0
+module load cmake/3.26.4
+module load inteloneapi/23.1.0
 module load mpi/openmpi/4.1.4
 export SLURM_CPU_BIND=none
+
+export DIR_ECCODES_INSTALL=\${CCCWORKDIR}/ECCODES-2.18.0\${XYZM}
+
 "}
 ;;
 *AMD*) # Irene AMD core
@@ -234,10 +237,13 @@ export SLURM_CPU_BIND=none
 		export VERSION_XYZ="${VERSION_XYZ}-AMD"
                 export MNHENV=${MNHENV:-"
 module purge
-module load cmake/3.18.1
-module load inteloneapi/21.4.0
+module load cmake/3.26.4
+module load inteloneapi/23.1.0
 module load mpi/openmpi/4.1.4
 export SLURM_CPU_BIND=none
+
+export DIR_ECCODES_INSTALL=\${CCCWORKDIR}/ECCODES-2.18.0\${XYZM}
+
 # Set some openmpi variable for pb with nb of cores >> 1024
 export OMPI_MCA_coll_hcoll_enable=0
 export HCOLL_ENABLE_MCAST_ALL=0
@@ -374,8 +380,8 @@ export LIB_GRIBAPI='${GRIB_API_LIB}'
                 export MNHENV=${MNHENV:-"
 module purge
 module load prgenv/intel 
-module switch intel/2021.4.0
-module load openmpi/4.1.1.1
+module switch intel/2023.2.0
+module load openmpi/4.1.4.1
 unset CC CXX 
 "}
 ;;
