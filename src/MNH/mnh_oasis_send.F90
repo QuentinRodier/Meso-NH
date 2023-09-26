@@ -245,14 +245,14 @@ ENDIF
 !*       3.     Send fields to OASIS proc by proc:
 !               ----------------------------------
 !
-CALL SFX_OASIS_SEND(ILUOUT,KI,IDATE,GSEND_LAND,GSEND_LAKE,GSEND_SEA,GSEND_WAVE, &
-                    ZLAND_RUNOFF,ZLAND_DRAIN,ZLAND_CALVING,                     &
-                    ZLAND_SRCFLOOD,ZLAND_DOCFLUX,                               &
-                    ZLAKE_EVAP,ZLAKE_RAIN,ZLAKE_SNOW,ZLAKE_WATF,                &
-                    ZSEA_FWSU,ZSEA_FWSV,ZSEA_HEAT,ZSEA_SNET,ZSEA_WIND,          &
-                    ZSEA_FWSM,ZSEA_EVAP,ZSEA_RAIN,ZSEA_SNOW,                    &
-                    ZSEA_WATF,                                                  &
-                    ZSEA_PRES,ZSEAICE_HEAT,ZSEAICE_SNET,ZSEAICE_EVAP,           &
+CALL SFX_OASIS_SEND(ILUOUT,KI,KI,IDATE,GSEND_LAND,GSEND_LAKE,GSEND_SEA,GSEND_WAVE, &
+                    ZLAND_RUNOFF,ZLAND_DRAIN,ZLAND_CALVING,                        &
+                    ZLAND_SRCFLOOD,ZLAND_DOCFLUX,                                  &
+                    ZLAKE_EVAP,ZLAKE_RAIN,ZLAKE_SNOW,ZLAKE_WATF,                   &
+                    ZSEA_FWSU,ZSEA_FWSV,ZSEA_HEAT,ZSEA_SNET,ZSEA_WIND,             &
+                    ZSEA_FWSM,ZSEA_EVAP,ZSEA_RAIN,ZSEA_SNOW,                       &
+                    ZSEA_WATF,                                                     &
+                    ZSEA_PRES,ZSEAICE_HEAT,ZSEAICE_SNET,ZSEAICE_EVAP,              &
                     ZWAVE_U10, ZWAVE_V10      )
 !
 !-------------------------------------------------------------------------------

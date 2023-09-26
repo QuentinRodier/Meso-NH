@@ -148,7 +148,7 @@ DEALLOCATE(ISEG_OFFSET)
 !*       2.     Put definitions for exchange of coupling fields :
 !               -------------------------------------------------
 !
-CALL SFX_OASIS_DEFINE(YSURF_CUR%IM%O, YSURF_CUR%U, &
+CALL SFX_OASIS_DEFINE(YSURF_CUR%IM%O, YSURF_CUR%U, YSURF_CUR%UG, &
                       HPROGRAM,INPTS, IPARAL        )
 !
 DEALLOCATE(IPARAL)
