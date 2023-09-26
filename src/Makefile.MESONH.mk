@@ -495,7 +495,7 @@ endif
 ##########################################################
 #
 ifeq "$(VER_OASIS)" "OASISAUTO"
-OASIS_PATH ?= ${SRC_MESONH}/src/LIB/work_oasis3-mct
+OASIS_PATH ?= ${SRC_MESONH}/src/LIB/oasis3-mct_${VERSION_OASIS}/compile_generic_mesonh
 OASIS_KEY ?= ${OASIS_PATH}/build/lib/psmile.MPI1/mod_oasis.mod
 # INC_OASIS     : includes all *o and *mod for each library
 INC_OASIS      ?= -I${OASIS_PATH}/build/lib/psmile.MPI1 -I$(OASIS_PATH)/build/lib/mct -I$(OASIS_PATH)/build/lib/scrip
@@ -504,10 +504,13 @@ INC            += $(INC_OASIS)
 LIBS           += $(LIB_OASIS)
 VPATH          += ${OASIS_PATH}/build/lib/psmile.MPI1
 CPPFLAGS       += -DCPLOASIS
-
 endif
 
-ifeq "$(VER_OASIS)" "OASISBASHRC"
+# OASIS installed manually, need to defined OASISDIR environment variable
+ifeq "$(VER_OASIS)" "OASISPERSO"
+ifndef OASISDIR
+$(error You chose VER_OASIS=OASISPERSO, please set OASISDIR environment variable)
+endif
 OASIS_PATH ?= ${OASISDIR}
 OASIS_KEY ?= ${OASIS_PATH}/build/lib/psmile.MPI1/mod_oasis.mod
 # INC_OASIS     : includes all *o and *mod for each library
@@ -551,9 +554,13 @@ DIR_LIBAEC?=${SRC_MESONH}/src/LIB/libaec-${VERSION_LIBAEC}
 
 endif
 #
-# NetCDF : CDF LaReunion Local
+# NetCDF installed manually, need to defined NETCDF_CONFIG environment variable
 #
-ifeq "$(VER_CDF)" "CDFBASHRC"
+ifeq "$(VER_CDF)" "CDFPERSO"
+#
+ifndef NETCDF_CONFIG
+$(error You chose VER_CDF=CDFPERSO, please set NETCDF_CONFIG environment variable)
+endif
 #
 INC_NETCDF     ?= $(shell $(NETCDF_CONFIG) --fflags)
 LIB_NETCDF     ?= $(shell $(NETCDF_CONFIG) --flibs)

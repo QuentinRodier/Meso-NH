@@ -386,7 +386,7 @@ ifeq "$(VER_OASIS)" "OASISAUTO"
 #
 oasis : $(OASIS_KEY)
 $(OASIS_KEY): 
-	cd ${SRC_MESONH}/src/LIB/oasis3-mct_v3/util/make_dir && make realclean -f TopMakefileOasis3 && make -f TopMakefileOasis3 && cd ${SRC_MESONH}/src/LIB/toy_v1-0 && make clean && make
+	cd ${SRC_MESONH}/src/LIB/oasis3-mct_${VERSION_OASIS}/util/make_dir && make realclean -f TopMakefileOasis3 && make -f TopMakefileOasis3 && cd ${SRC_MESONH}/src/LIB/toy_${VERSION_TOY} && make clean && make
 
 cleanmaster : cleanoasis
 cleanoasis :

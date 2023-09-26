@@ -25,11 +25,11 @@ export LFI_INT=${LFI_INT:-8}
 export MNH_REAL=${MNH_REAL:-"8"}
 export MNH_IOCDF4=${MNH_IOCDF4:-1}
 
-export VERSION_OASIS=${VERSION_OASIS:-"mct_v3"}
-export VERSION_TOY=${VERSION_TOY:-"v1-0"}
-
 export VERSION_ECRAD=${VERSION_ECRAD:-"1.4.0"}
 export VER_ECRAD=${VERSION_ECRAD//./}
+
+export VERSION_OASIS=${VERSION_OASIS:-"5.0"}
+export VERSION_TOY=${VERSION_TOY:-"1.0"}
 
 export MNH_LEN_HREC=${MNH_LEN_HREC:-16}
 #
@@ -672,7 +672,7 @@ fi
 #  Install OASIS if VER_OASIS=OASISAUTO
 #
 if [ "x${VER_OASIS}" == "xOASISAUTO" ] ; then
-( cd $LOCAL/src/LIB ; [ ! -d oasis3-${VERSION_OASIS} ] && tar xvfz oasis3-${VERSION_OASIS}.tar.gz ; [ ! -d toy_${VERSION_TOY} ] && tar xvfz toy_${VERSION_TOY}.tar.gz )
+( cd $LOCAL/src/LIB ; [ ! -d oasis3-mct_${VERSION_OASIS} ] && tar xvfz oasis3-mct_${VERSION_OASIS}.tar.gz ; [ ! -d toy_${VERSION_TOY} ] && tar xvfz toy_${VERSION_TOY}.tar.gz )
 fi
 #
 #  Install GRIBAPI or ecCodes
