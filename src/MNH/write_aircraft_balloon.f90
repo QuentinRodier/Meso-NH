@@ -254,7 +254,7 @@ IF ( ALL( TPFLYER%XX == XUNDEF ) ) RETURN
 !
 IKU = SIZE(TPFLYER%XRTZ,1) !number of vertical levels
 !
-IPROC = 10 + IRR + SIZE(TPFLYER%XSV,3) + 2 + SIZE(TPFLYER%XSVW_FLUX,2)
+IPROC = 11 + IRR + SIZE(TPFLYER%XSV,3) + 2 + SIZE(TPFLYER%XSVW_FLUX,2)
 IF ( IRR > 1 ) IPROC = IPROC + 1
 IF ( SIZE( TPFLYER%XTKE ) > 0 ) IPROC = IPROC + 1
 IPROC = IPROC + 1 ! TKE_DISS
@@ -291,6 +291,7 @@ call Add_point( 'ZON_WIND', 'zonal wind',            'm s-1',  tpflyer%xzon(1,:)
 call Add_point( 'MER_WIND', 'meridian wind',         'm s-1',  tpflyer%xmer(1,:) )
 call Add_point( 'W',        'air vertical speed',    'm s-1',  tpflyer%xw(1,:)   )
 call Add_point( 'Th',       'potential temperature', 'K',      tpflyer%xth(1,:)  )
+call Add_point( 'T',        'temperature',           'K',      tpflyer%xt(1,:)   )
 !
 if ( irr >= 1 ) call Add_point( 'Rv', 'water vapor mixing ratio',        'kg kg-1', tpflyer%xr(1,:,1) )
 if ( irr >= 2 ) call Add_point( 'Rc', 'liquid cloud water mixing ratio', 'kg kg-1', tpflyer%xr(1,:,2) )
@@ -430,8 +431,7 @@ call Sensor_write_workarrays_deallocate( )
 !----------------------------------------------------------------------------
 !Treat vertical profiles
 
-IPROCZ = 9 + IRR
-IF ( CCLOUD == 'LIMA' )     IPROCZ = IPROCZ + 3
+IPROCZ = 10 + IRR + NSV
 IF ( CCLOUD(1:3) == 'ICE' ) IPROCZ = IPROCZ + 1
 
 call Sensor_write_workarrays_allocate( iku, istore, iprocz )
@@ -448,14 +448,25 @@ if ( irr >= 7 ) call Add_profile( 'Rh', '1D Hail mixing ratio',               'k
 
 call Add_profile( 'FF', 'Horizontal wind', 'm s-1', tpflyer%xffz(:,:) )
 
+call Add_profile( 'T',  'Temperature',     'K',     tpflyer%xtz(:,:) )
+
 call Add_profile( 'IWC', 'Ice water content',    'kg m-3', tpflyer%xiwcz(:,:) )
 call Add_profile( 'LWC', 'Liquid water content', 'kg m-3', tpflyer%xlwcz(:,:) )
 
 call Add_profile( 'Rhod', 'Density of dry air',  'kg m-3', tpflyer%xrhod(:,:) )
+
+IF (SIZE(TPFLYER%XSVZ,3)>=1) THEN
+  ! Scalar variables
+  DO JSV = 1, NSV
+    IF ( TRIM( TSVLIST(JSV)%CUNITS ) == 'ppv' ) THEN
+      call Add_profile( Trim( tsvlist(jsv)%cmnhname ), '', 'ppb', tpflyer%xsvz(:,:,jsv) * 1.e9 ) !*1e9 for conversion ppv->ppb
+    ELSE
+      call Add_profile( Trim( tsvlist(jsv)%cmnhname ), '', Trim( tsvlist(jsv)%cunits ), tpflyer%xsvz(:,:,jsv) )
+    END IF
+  END DO
+ENDIF
+
 IF ( CCLOUD == 'LIMA' ) THEN
-  call Add_profile( 'CCLOUDT', 'liquid cloud concentration', 'kg-1', tpflyer%xccz(:,:) )
-  call Add_profile( 'CRAINT',  'Rain concentration',         'kg-1', tpflyer%xcrz(:,:) )
-  call Add_profile( 'CICET',   'Ice concentration',          'kg-1', tpflyer%xciz(:,:) )
 ELSE IF ( CCLOUD == 'ICE3' .OR. CCLOUD == 'ICE4' ) THEN
   call Add_profile( 'CIT',     'Ice concentration',           'm-3', tpflyer%xciz(:,:) )
 END IF

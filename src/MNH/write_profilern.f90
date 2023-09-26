@@ -89,11 +89,10 @@ type(tfieldmetadata_base), dimension(:), allocatable :: tzfields
 
 IKU = NKMAX + 2 * JPVEXT !Number of vertical levels
 
-IPROC = 13 + NRR + NSV
+IPROC = 14 + NRR + NSV
 if ( ccloud == 'C2R2' .or. ccloud == 'KHKO' )  IPROC = IPROC + 1
 if ( ccloud /= 'NONE' .and. ccloud /= 'REVE' ) IPROC = IPROC + 1
 if ( ccloud == 'ICE3' .or. ccloud == 'ICE4' )  IPROC = IPROC + 1
-if ( ccloud == 'LIMA' )  IPROC = IPROC + 3
 IF ( LORILAM ) IPROC = IPROC + JPMODE * ( 3 + NSOA + NCARB + NSP )
 IF ( LDUST )   IPROC = IPROC + NMODE_DST * 3
 IF ( LSALT )   IPROC = IPROC + NMODE_SLT * 3
@@ -108,6 +107,7 @@ call Sensor_write_workarrays_allocate( iku, istore, iproc )
 !Treat vertical profiles
 
 call Add_profile( 'Th',       'Potential temperature',         'K',      tpprofiler%xth        )
+call Add_profile( 'T',        'Temperature',                   'K',      tpprofiler%xtz        )
 call Add_profile( 'Thv',      'Virtual Potential temperature', 'K',      tpprofiler%xthv       )
 if ( ccloud == 'C2R2' .or. ccloud == 'KHKO' ) &
   call Add_profile( 'VISIGUL', 'Visibility Gultepe',           'km',     tpprofiler%xvisigul   )
@@ -130,9 +130,6 @@ jproc_w = Sensor_current_processes_number_get()
 call Add_profile( 'TKE_DISS', 'TKE dissipation rate', 'm2 s-2', tpprofiler%xtke_diss )
 
 if ( ccloud == 'LIMA' ) then
-  call Add_profile( 'CCLOUDT', 'liquid cloud concentration', 'kg-1', tpprofiler%xccz(:,:) )
-  call Add_profile( 'CRAINT',  'Rain concentration',         'kg-1', tpprofiler%xcrz(:,:) )
-  call Add_profile( 'CICET',   'Ice concentration',          'kg-1', tpprofiler%xciz(:,:) )
 else if ( ccloud == 'ICE3' .or. ccloud == 'ICE4' ) then
   call Add_profile( 'CIT',     'Ice concentration',           'm-3', tpprofiler%xciz(:,:) )
 end if
@@ -255,7 +252,7 @@ call Sensor_write_workarrays_deallocate( )
 !----------------------------------------------------------------------------
 !Treat point values
 
-IPROC = 4
+IPROC = 5
 IF (LDIAG_SURFRAD_PROF) THEN
   IPROC = IPROC + 10
   IF(CRAD/="NONE")  IPROC = IPROC + 8
@@ -275,6 +272,7 @@ call Add_point( 'IWV', 'Integrated Water Vapour',   'kg m-2', tpprofiler%xiwv )
 call Add_point( 'ZTD', 'Zenith Tropospheric Delay', 'm',      tpprofiler%xztd )
 call Add_point( 'ZWD', 'Zenith Wet Delay',          'm',      tpprofiler%xzwd )
 call Add_point( 'ZHD', 'Zenith Hydrostatic Delay',  'm',      tpprofiler%xzhd )
+call Add_point( 'T',   'Temperature',               'K',      tpprofiler%xt(1,:) )
 
 if ( crad /= 'NONE' ) call Add_point( 'Tsrad', 'Radiative Surface Temperature', 'K', tpprofiler%xtsrad(:) )
 
