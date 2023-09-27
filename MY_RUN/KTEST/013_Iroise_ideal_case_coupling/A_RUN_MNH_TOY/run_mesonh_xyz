@@ -4,7 +4,7 @@ echo '--------------------------------------'
 echo '--  run Meso-NH coupling              '
 echo '--------------------------------------'
 
-export PATH_EXETOY=${SRC_MESONH}/src/LIB/toy_v1-0/
+export PATH_EXETOY=${SRC_MESONH}/src/LIB/toy_1.0/
 
 #~~~~~ OCEAN OR WAVE
 export TYPE_TOY='WAVE'

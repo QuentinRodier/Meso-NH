@@ -53,5 +53,7 @@ src/LIB/libaec*
 src/LIB/netcdf*
 !src/LIB/netcdf*.tar.gz
 src/LIB/MEGAN*
-src/LIB/oasis3-mct_v3*
-src/LIB/toy_v1-0*
+src/LIB/oasis3-mct*
+!src/LIB/oasis3-mct*.tar.gz
+src/LIB/toy*
+!src/LIB/toy*.tar.gz

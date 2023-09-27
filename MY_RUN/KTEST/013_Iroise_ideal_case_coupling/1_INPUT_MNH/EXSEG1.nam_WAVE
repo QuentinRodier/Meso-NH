@@ -4,7 +4,7 @@
 
 &NAM_SFX_WAVE_CPL XTSTEP_CPL_WAVE = 60.0,
                   CWAVE_U10       = 'MNH__U10',
-                  CWAVE_V10       = '        ',    
+                  CWAVE_V10       = '        ',
                   CWAVE_CHA       = 'MNH__CHA',
                   CWAVE_UCU       = '        ',
                   CWAVE_VCU       = '        ',
@@ -34,7 +34,7 @@
 &NAM_CONFZ MPI_BUFFER_SIZE=200 /
 
 &NAM_CONF CCONF = "START",
-          NVERB=5,
+          NVERB =0,
           NMODEL = 1,
           CEXP = "IROIS",
           CSEG = "00-01",

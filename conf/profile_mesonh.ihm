@@ -117,6 +117,8 @@ export VER_ECRAD=${VER_ECRAD}
 #  OASIS
 #
 export VER_OASIS=${VER_OASIS}
+export VERSION_OASIS=${VERSION_OASIS}
+export VERSION_TOY=${VERSION_TOY}
 #
 # NCL_NCARG
 #
@@ -177,3 +179,15 @@ export VARTTY=\`tty\`
 # Optional Environnement variable/Module  Env
 #
 ${MNHENV}
+#
+if [ \${VER_CDF} = 'CDFPERSO' ] ; then
+if [ -z \$NETCDF_CONFIG ] ; then
+echo 'WARNING : You chose VER_CDF=CDFPERSO, please set NETCDF_CONFIG environment variable'
+fi
+fi
+#
+if [ \${VER_OASIS} = 'OASISPERSO' ] ; then
+if [ -z \$OASISDIR ] ; then
+echo 'WARNING : You chose VER_OASIS=OASISPERSO, please set OASISDIR environment variable'
+fi
+fi 
