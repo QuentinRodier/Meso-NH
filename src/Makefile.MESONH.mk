@@ -342,7 +342,7 @@ INC_MPI                = -I$(B)$(DIR_MPI)
 DIR_MASTER            += $(DIR_MPI)
 OBJS_LISTE_MASTER     += mpivide.o
 INC                   += $(INC_MPI)
-mpivide.o  : CPPFLAGS += -DMNH_INT=$(MNH_INT) -DMNH_REAL=$(MNH_REAL) \
+mpivide.o  : CPPFLAGS_C += -DMNH_INT=$(MNH_INT) -DMNH_REAL=$(MNH_REAL) \
                         -I$(DIR_MPI)/include
 VPATH                 += $(DIR_MPI)
 endif

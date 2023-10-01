@@ -67,10 +67,11 @@ CONTAINS
 !          ------------
 !
 USE MODD_AIRCRAFT_BALLOON
-USE MODD_CONF,       ONLY: CPROGRAM
+USE MODD_CONF,       ONLY: CPROGRAM, NMODEL
 USE MODD_DYN_n,      ONLY: DYN_MODEL
 USE MODD_IO,         ONLY: ISP, TFILEDATA
 USE MODD_PARAMETERS, ONLY: NUNDEF
+USE MODD_PARAM_n,    ONLY: PARAM_MODEL
 !
 USE MODE_GRIDPROJ,       ONLY: SM_XYHAT
 USE MODE_INI_AIRCRAFT,   ONLY: INI_AIRCRAFT
@@ -92,6 +93,7 @@ REAL,               INTENT(IN) :: PLONOR  ! longitude of origine point
 !
 INTEGER :: IMI    ! current model index
 INTEGER :: JI
+LOGICAL :: GCHECK
 !
 !----------------------------------------------------------------------------
 
@@ -99,12 +101,12 @@ IF ( CPROGRAM == 'DIAG  ') RETURN
 
 IF ( NAIRCRAFTS > 0 .OR. NBALLOONS > 0 ) LFLYER = .TRUE.
 
+IMI = GET_CURRENT_MODEL_INDEX()
+
 !----------------------------------------------------------------------------
 !
 !*      2.   Balloon initialization
 !            ----------------------
-IMI=GET_CURRENT_MODEL_INDEX()
-
 IF ( IMI == 1 ) THEN
   ALLOCATE( NRANKCUR_BALLOON (NBALLOONS) ); NRANKCUR_BALLOON = NFLYER_DEFAULT_RANK
   ALLOCATE( NRANKNXT_BALLOON (NBALLOONS) ); NRANKNXT_BALLOON = NFLYER_DEFAULT_RANK
@@ -147,13 +149,50 @@ END IF
 !*      4.   Allocations of storage arrays
 !            -----------------------------
 !
-IF ( IMI == 1 .AND. ISP == NFLYER_DEFAULT_RANK ) THEN
+! Check that CCLOUD, CRAD and CTURB are the same for all models if some flyers have CMODEL='MOB'
+! This is necessary because we need to allocate and compute the same data on every model if the flyer is allowed to change model
+! This check is only done once (on MODEL IMI=1)
+! This check has to be done AFTER the calls to INI_AIRCRAFT and INI_BALLOON
+IF ( IMI == 1 .AND. NMODEL > 1 .AND. ISP == NFLYER_DEFAULT_RANK ) THEN
+  GCHECK = .FALSE.
+
   DO JI = 1, NBALLOONS
-    CALL TBALLOONS(JI)%TBALLOON%DATA_ARRAYS_ALLOCATE()
+    IF ( TBALLOONS(JI)%TBALLOON%CMODEL == 'MOB' ) THEN
+      GCHECK = .TRUE.
+      EXIT
+    END IF
   END DO
 
   DO JI = 1, NAIRCRAFTS
-    CALL TAIRCRAFTS(JI)%TAIRCRAFT%DATA_ARRAYS_ALLOCATE()
+    IF ( TAIRCRAFTS(JI)%TAIRCRAFT%CMODEL == 'MOB' ) THEN
+      GCHECK = .TRUE.
+      EXIT
+    END IF
+  END DO
+
+  IF ( GCHECK ) THEN
+    DO JI = 2, NMODEL
+      IF ( PARAM_MODEL(JI)%CCLOUD /= PARAM_MODEL(1)%CCLOUD )        &
+        CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'INI_AIRCRAFT_BALLOON', &
+                       'CCLOUD must be the same on all nested domains if aircraft/balloon has CMODEL="MOB"' )
+      IF ( PARAM_MODEL(JI)%CRAD   /= PARAM_MODEL(1)%CRAD )          &
+        CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'INI_AIRCRAFT_BALLOON', &
+                       'CRAD must be the same on all nested domains if aircraft/balloon has CMODEL="MOB"' )
+      IF ( PARAM_MODEL(JI)%CTURB  /= PARAM_MODEL(1)%CTURB )         &
+        CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'INI_AIRCRAFT_BALLOON', &
+                       'CTURB must be the same on all nested domains if aircraft/balloon has CMODEL="MOB"' )
+    END DO
+  END IF
+END IF
+
+! Allocate data arrays of flyers
+IF ( ISP == NFLYER_DEFAULT_RANK ) THEN
+  DO JI = 1, NBALLOONS
+    IF ( TBALLOONS(JI)%TBALLOON%NMODEL == IMI ) CALL TBALLOONS(JI)%TBALLOON%DATA_ARRAYS_ALLOCATE()
+  END DO
+
+  DO JI = 1, NAIRCRAFTS
+    IF ( TAIRCRAFTS(JI)%TAIRCRAFT%NMODEL == IMI ) CALL TAIRCRAFTS(JI)%TAIRCRAFT%DATA_ARRAYS_ALLOCATE()
   END DO
 END IF
 !
@@ -208,6 +247,7 @@ CALL SM_XYHAT( PLATOR, PLONOR, TPFLYER%XLATLAUNCH, TPFLYER%XLONLAUNCH, TPFLYER%X
 
 IF ( CPROGRAM == 'MESONH' .OR. CPROGRAM == 'SPAWN ' .OR. CPROGRAM == 'REAL  ' ) THEN
   ! Read the current location in the synchronous file
+  ! Remark: if the balloon is not yet in flight or is crashed, position is not available in file
 
   IF ( TPINIFILE%CFORMAT == 'LFI'                                                             &
        .OR. ( TPINIFILE%CFORMAT == 'NETCDF4' .AND.                                            &

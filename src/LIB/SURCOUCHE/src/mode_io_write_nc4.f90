@@ -2301,7 +2301,9 @@ subroutine Write_flyer_time_coord( tpflyer )
   type(tdimnc),        pointer :: tzdim
 
   !Do it only if correct model level and has really flown
-  if ( tpflyer%nmodel == imi .and. Count( tpflyer%xx /= XUNDEF) > 1 ) then
+  if ( tpflyer%nmodel == imi ) then
+  ! Do the second if only if the first one is OK (if not, xx may be not allocated)
+  if ( Count( tpflyer%xx /= XUNDEF) > 1 ) then
     Allocate( tzdim )
 
     istatus = NF90_INQ_NCID( tpfile%nncid, 'Flyers', icatid )
@@ -2341,6 +2343,7 @@ subroutine Write_flyer_time_coord( tpflyer )
 
     !Restore file identifier to root group
     incid = tpfile%nncid
+  end if
   end if
 
 end subroutine Write_flyer_time_coord

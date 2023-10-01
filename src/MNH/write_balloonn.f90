@@ -73,12 +73,13 @@ TYPE(TFILEDATA),   INTENT(IN) :: TPFILE ! File characteristics
 !
 INTEGER :: IMI
 INTEGER :: JI
-LOGICAL :: OMONOPROC_SAVE ! Copy of true value of GSMONOPROC
+LOGICAL :: GEMPTYCOMM     ! if TRUE, the communication is empty (no data is exchanged)
+LOGICAL :: GMONOPROC_SAVE ! Copy of true value of GSMONOPROC
 
 IMI = GET_CURRENT_MODEL_INDEX()
 
 ! Save GSMONOPROC value
-OMONOPROC_SAVE = GSMONOPROC
+GMONOPROC_SAVE = GSMONOPROC
 ! Force GSMONOPROC to true to allow IO_Field_write on only 1 process! (not very clean hack)
 GSMONOPROC = .TRUE.
 
@@ -87,30 +88,33 @@ DO JI = 1, NBALLOONS
 
   ! Send data from owner to writer if necessary
   IF ( ISP == NRANKCUR_BALLOON(JI) .AND. NRANKCUR_BALLOON(JI) /= TPFILE%NMASTER_RANK ) THEN
-    CALL TBALLOONS(JI)%TBALLOON%SEND( KTO = TPFILE%NMASTER_RANK, OSEND_SIZE_TO_RECEIVER = .TRUE. )
+    GEMPTYCOMM = ( TBALLOONS(JI)%TBALLOON%NMODEL /= IMI )
+    CALL TBALLOONS(JI)%TBALLOON%SEND( KTO = TPFILE%NMASTER_RANK, OSEND_SIZE_TO_RECEIVER = .TRUE., OEMPTYSEND = GEMPTYCOMM )
   END IF
 
   IF ( ISP == TPFILE%NMASTER_RANK ) THEN
     ! Receive data from owner if not available on the writer process
     IF ( NRANKCUR_BALLOON(JI) /= TPFILE%NMASTER_RANK ) THEN
       ALLOCATE( TBALLOONS(JI)%TBALLOON )
-      CALL TBALLOONS(JI)%TBALLOON%RECV_ALLOCATE( KFROM = NRANKCUR_BALLOON(JI), ORECV_SIZE_FROM_OWNER = .TRUE. )
+      CALL TBALLOONS(JI)%TBALLOON%RECV_ALLOCATE( KFROM = NRANKCUR_BALLOON(JI), ORECV_SIZE_FROM_OWNER = .TRUE., &
+                                                 OEMPTYRECV = GEMPTYCOMM )
     END IF
 
     ! Write data (only if flyer is on the current model)
     ! It will also be written in the ancestry model files
-    IF ( TBALLOONS(JI)%TBALLOON%NMODEL == IMI ) CALL WRITE_BALLOON_POSITION( TPFILE, TBALLOONS(JI)%TBALLOON )
+    ! if GEMPTYCOMM=FALSE => flyer is on the current model (equivalent to TBALLOONS(JI)%TBALLOON%NMODEL==IMI)
+    IF ( .NOT. GEMPTYCOMM ) CALL WRITE_BALLOON_POSITION( TPFILE, TBALLOONS(JI)%TBALLOON )
 
     ! Free ballon data if it was not stored on this process
     IF ( NRANKCUR_BALLOON(JI) /= TPFILE%NMASTER_RANK ) THEN
-      CALL TBALLOONS(JI)%TBALLOON%DATA_ARRAYS_DEALLOCATE()
+      IF ( TBALLOONS(JI)%TBALLOON%NSTORE_MAX >= 0 ) CALL TBALLOONS(JI)%TBALLOON%DATA_ARRAYS_DEALLOCATE()
       DEALLOCATE( TBALLOONS(JI)%TBALLOON )
     END IF
   END IF
 END DO
 
 ! Restore correct value of GSMONOPROC
-GSMONOPROC = OMONOPROC_SAVE
+GSMONOPROC = GMONOPROC_SAVE
 
 END SUBROUTINE WRITE_BALLOON_n
 !-------------------------------------------------------------------------------
@@ -151,7 +155,7 @@ REAL                 :: ZLON          ! longitude of the balloon
 type(tfiledata)      :: tzfile
 TYPE(TFIELDMETADATA) :: TZFIELD
 
-! Do not write balloon position if not yet in fly or crashed
+! Do not write balloon position if not yet in flight or crashed
 IF ( .NOT.TPFLYER%LFLY .OR. TPFLYER%LCRASH ) RETURN
 
 ! Check if current model time is the same as the time corresponding to the balloon position

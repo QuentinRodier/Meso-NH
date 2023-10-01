@@ -31,6 +31,8 @@
 MODULE MODE_AIRCRAFT_BALLOON_EVOL
 !      ##########################
 
+USE MODD_PRECISION, ONLY: MNHREAL
+
 USE MODE_MSG
 
 IMPLICIT NONE
@@ -42,6 +44,8 @@ PUBLIC :: AIRCRAFT_BALLOON_EVOL
 PUBLIC :: AIRCRAFT_COMPUTE_POSITION
 
 PUBLIC :: FLYER_GET_RANK_MODEL_ISCRASHED
+
+REAL, PARAMETER :: XTIMETHRESH = 1.E-8_MNHREAL
 
 CONTAINS
 !     ########################################################
@@ -299,7 +303,7 @@ SELECT TYPE ( TPFLYER )
     ! Launch?
     LAUNCH: IF ( .NOT. TPFLYER%LFLY .AND. .NOT. TPFLYER%LCRASH .AND. TPFLYER%NMODEL == IMI ) THEN
       ! Check if it is launchtime
-      LAUNCHTIME: IF ( ( TDTCUR - TPFLYER%TLAUNCH ) >= -1.e-10 ) THEN
+      LAUNCHTIME: IF ( ( TDTCUR - TPFLYER%TLAUNCH ) >= -XTIMETHRESH ) THEN
         TPFLYER%LFLY = .TRUE.
         GLAUNCH = .TRUE.
 
@@ -315,15 +319,16 @@ SELECT TYPE ( TPFLYER )
     ! Check if it is time to store data. This has also to be checked if the balloon
     ! is not yet launched or is crashed (data is also written in these cases, but with default values)
     IF ( TPFLYER%NMODEL == IMI .AND. &
-          ( .NOT. TPFLYER%LFLY .OR. TPFLYER%LCRASH .OR. ABS( TPFLYER%TPOS_CUR - TDTCUR ) < 1.e-8 ) ) THEN
+          ( .NOT. TPFLYER%LFLY .OR. TPFLYER%LCRASH .OR. ABS( TPFLYER%TPOS_CUR - TDTCUR ) < XTIMETHRESH ) ) THEN
       !Do we have to store balloon data?
       TPFLYER%LSTORE = TPFLYER%TFLYER_TIME%STORESTEP_CHECK_AND_SET( ISTORE )
       IF ( TPFLYER%LSTORE ) TPFLYER%NSTORE_CUR = ISTORE
     END IF
 
     ! In flight
+    ! The condition "ABS( TPFLYER%TPOS_CUR - TDTCUR ) < XTIMETHRESH" is necessary if the balloon changes of model
     INFLIGHTONMODEL: IF ( TPFLYER%LFLY .AND. .NOT. TPFLYER%LCRASH .AND. TPFLYER%NMODEL == IMI &
-                          .AND. ABS( TPFLYER%TPOS_CUR - TDTCUR ) < 1.e-8 ) THEN
+                          .AND. ABS( TPFLYER%TPOS_CUR - TDTCUR ) < XTIMETHRESH ) THEN
       ISOWNERBAL: IF ( TPFLYER%NRANK_CUR == ISP ) THEN
         CALL FLYER_INTERP_TO_MASSPOINTS()
 
