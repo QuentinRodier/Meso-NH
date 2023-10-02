@@ -1,0 +1,35 @@
+#!/bin/bash
+
+export PREP_PGD_FILES=${PREP_PGD_FILES:-"$HOME/PREP_PGD_FILES_WWW"}
+
+if [ ! -d ${PREP_PGD_FILES} ]
+then
+
+   echo 'Your directory PREP_PGD_FILES=$PREP_PGD_FILES doesnt exist.'
+   echo 'Please define the location of your PREP_PGD_FILES through'
+   echo 'the environment variable PREP_PGD_FILES.'
+   exit
+
+else
+ 
+   echo '---------------------------------------'
+   echo '   Create input for Meso-NH : PREP_PGD '
+   echo '---------------------------------------'
+   ln -sf $PREP_PGD_FILES/CLAY_HWSD_MOY.??? .
+   ln -sf $PREP_PGD_FILES/SAND_HWSD_MOY.??? .
+   ln -sf $PREP_PGD_FILES/ECOCLIMAP_v2.0.??? .
+   ln -sf $PREP_PGD_FILES/gtopo30.??? .
+   ln -sf $PREP_PGD_FILES/etopo2.nc .
+   time ${MONORUN} PREP_PGD${XYZ}
+
+   echo '----------------------------------------------'
+   echo '   Create input for Meso-NH : PREP_IDEAL_CASE '
+   echo '----------------------------------------------'
+   time ${MONORUN} PREP_IDEAL_CASE${XYZ}
+
+   echo '--------------------------------------------'
+   echo '   Create restart file from PREP_IDEAL_CASE '
+   echo '--------------------------------------------'
+   python3 create_restart_file_from_PREP_IDEAL_CASE.py
+
+fi

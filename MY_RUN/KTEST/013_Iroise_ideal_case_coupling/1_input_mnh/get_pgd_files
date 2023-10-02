@@ -1,0 +1,41 @@
+#!/bin/bash
+#
+#     Modif
+#     J. Pianezze 20/09/2023 add test on directory and file's presence
+#     J. Escobar  11/04/2014 get PGD files from 'dir_open' directory ( without psswd )
+#     J. Escobar  25/04/2013 get LICENCE files
+#
+export PREP_PGD_FILES=${PREP_PGD_FILES:-"$HOME/PREP_PGD_FILES_WWW"}
+export PGD_URL="http://mesonh.aero.obs-mip.fr/mesonh/dir_open/dir_PGDFILES"
+export WGET="wget"
+
+if [ ! -d ${PREP_PGD_FILES} ]
+then
+   echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+   echo "!!!!            WARNING                  !!!!"
+   echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+   echo
+   echo you need 3GO to download this files in
+   echo
+   echo PREP_PGD_FILES=$PREP_PGD_FILES
+   echo
+   echo if OK press ENTER else CTRL-C
+   read
+   mkdir -p $PREP_PGD_FILES
+fi
+
+cd $PREP_PGD_FILES
+
+for file in LICENSE_ECOCLIMAP.txt LICENSE_soil_data.txt \
+            gtopo30.hdr           gtopo30.dir           \
+            SAND_HWSD_MOY.hdr     SAND_HWSD_MOY.dir     \
+	    CLAY_HWSD_MOY.hdr     CLAY_HWSD_MOY.dir     \
+            ECOCLIMAP_v2.0.hdr    ECOCLIMAP_v2.0.dir    \
+	    etopo2.nc
+do
+   if [ ! -f $file ]
+   then
+      echo 'Download' ${file}
+      ${WGET} -c -nd $PGD_URL/$file.gz ; gunzip $file.gz
+   fi
+done

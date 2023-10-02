@@ -495,7 +495,7 @@ endif
 ##########################################################
 #
 ifeq "$(VER_OASIS)" "OASISAUTO"
-OASIS_PATH ?= ${SRC_MESONH}/src/LIB/oasis3-mct_${VERSION_OASIS}/compile_generic_mesonh
+OASIS_PATH ?= ${OBJDIR_MASTER}/OASIS3-MCT_5.0
 OASIS_KEY ?= ${OASIS_PATH}/build/lib/psmile.MPI1/mod_oasis.mod
 # INC_OASIS     : includes all *o and *mod for each library
 INC_OASIS      ?= -I${OASIS_PATH}/build/lib/psmile.MPI1 -I$(OASIS_PATH)/build/lib/mct -I$(OASIS_PATH)/build/lib/scrip

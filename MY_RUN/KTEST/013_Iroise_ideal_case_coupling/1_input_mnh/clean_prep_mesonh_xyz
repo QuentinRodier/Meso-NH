@@ -1,13 +1,13 @@
 #!/bin/bash
 
-# cleaning PGD files
+# cleaning PREP_PGD files
 rm -f IROISE* fort*
 rm -f file*
 rm -f *.dir *.hdr
 rm -f OUTPUT_LISTING* OUTPUT_TRANSFER pipe* *.tex
 rm -f etop*
 
-# cleaning PIC files
+# cleaning PREP_IDEAL_CASE files
 rm -f arome* 
 rm -f file*
 rm -f ecmwf* OUTPUT_LISTING* OUTPUT_TRANSFER pipe* *.tex
