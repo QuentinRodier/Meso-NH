@@ -20,7 +20,21 @@ import numpy as np
 curdir_path = os.getcwd()+'/'
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+# #########################################################
+# ###           To be defined by user                   ###
+# #########################################################
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# - -     Add debug informations                        - -
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 cfg_debug   = False
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# - -     Name of PREP_IDEAL_CASE file                  - -
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+name_PREP_IDEAL_CASE_file = 'IROISE_5KM_201109_02_00.nc'
+
+# #########################################################
 
 if cfg_debug : print('++++++++++++++++++++++++++++++++++++++++++++++')
 if cfg_debug : print('+++                                           ')
@@ -28,7 +42,7 @@ if cfg_debug : print('+++   0. Read variables from PREP_IDEAL_CASE  ')
 if cfg_debug : print('+++                                           ')
 if cfg_debug : print('++++++++++++++++++++++++++++++++++++++++++++++')
 
-file_RSTRT = netCDF4.Dataset(curdir_path+'IROISE_5KM_201109_02_00.nc')
+file_RSTRT = netCDF4.Dataset(curdir_path+name_PREP_IDEAL_CASE_file)
 
 LON_MNH    = file_RSTRT.variables['LON']  [    1:-1,1:-1] ; nlon_MNH=len(LON_MNH[0,:])
 LAT_MNH    = file_RSTRT.variables['LAT']  [    1:-1,1:-1] ; nlat_MNH=len(LAT_MNH[:,0])
@@ -70,7 +84,7 @@ if cfg_debug : print('++++++++++++++++++++++++++++++++++++++++++++++')
 # ---------------------------------------
 #   Open the file
 # ---------------------------------------
-fout=netCDF4.Dataset(curdir_path+'rstrt_MNH.nc','w',format='NETCDF3_64BIT')
+fout=netCDF4.Dataset(curdir_path+'rstrt_MNH.nc','w')
 fout.Description='Restart file for MNH coupling'
 
 # ----------------------------------

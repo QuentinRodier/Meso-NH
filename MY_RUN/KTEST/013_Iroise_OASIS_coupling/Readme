@@ -1,0 +1,50 @@
+=====================================================
+===== Readme for 013_Iroise_OASIS_coupling
+=====================================================
+
+The automatic compilation of Meso-NH was developed with
+gfortran/openMPI.
+
+Adaptation of the Makefile for OASIS is required
+if you want to use another compiler.
+
+-----------------------------------------------------
+1. Configure Meso-NH
+-----------------------------------------------------
+
+export VER_MPI=MPIAUTO
+export VER_CDF=CDFAUTO
+export VER_OASIS=OASISAUTO
+./configure
+. ../conf/profile_mesonh
+
+-----------------------------------------------------
+2. Compile Meso-NH
+-----------------------------------------------------
+
+make
+make installmaster  
+
+-----------------------------------------------------
+3. Launch the coupling run
+-----------------------------------------------------
+
+Before launching the coupling run, you have to define
+the environnment variable PREP_PGD_FILES.
+It corresponds to the directory where the files
+needed by the PGD program (ECOCLIMAP, gtopo30, SAND*, CLAY*)
+are stored. You can download these files at this location:
+http://mesonh.aero.obs-mip.fr/mesonh52/Download
+
+The toy model need the etopo2.nc file, you can download it there:
+http://mesonh.aero.obs-mip.fr/mesonh49/Download
+You have to put this file at the same location as the pgd files.
+
+Define the PREP_PGD_FILES environnment variable:
+export PREP_PGD_FILES=/full/path/of/your/files/directory
+
+Then go to the coupling ktest:
+cd MY_RUN/KTEST/013_Iroise_OASIS_coupling/
+
+and launch the coupling KTEST:
+./run_013_Iroise_OASIS_coupling

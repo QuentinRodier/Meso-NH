@@ -1,0 +1,72 @@
+&NAM_OASIS LOASIS      = .TRUE.,
+           LOASIS_GRID = .TRUE.,
+           CMODEL_NAME = 'mesonh' /
+
+&NAM_SFX_WAVE_CPL XTSTEP_CPL_WAVE = 60.0,
+                  CWAVE_U10       = 'MNH__U10',
+                  CWAVE_V10       = '        ',
+                  CWAVE_CHA       = 'MNH__CHA',
+                  CWAVE_UCU       = '        ',
+                  CWAVE_VCU       = '        ',
+                  CWAVE_HS        = '        ',
+                  CWAVE_TP        = '        ' /
+
+&NAM_SFX_SEA_CPL XTSTEP_CPL_SEA  =  -1.0,
+                 CSEA_FWSU       = '        ',
+                 CSEA_FWSV       = '        ',
+                 CSEA_HEAT       = '        ',
+                 CSEA_SNET       = '        ',
+                 CSEA_WIND       = '        ',
+                 CSEA_FWSM       = '        ',
+                 CSEA_EVAP       = '        ',
+                 CSEA_RAIN       = '        ',
+                 CSEA_SNOW       = '        ',
+                 CSEA_WATF       = '        ',
+                 CSEA_PRES       = '        ',
+                 CSEA_SST        = '        ',
+                 CSEA_UCU        = '        ',
+                 CSEA_VCU        = '        ' /
+
+&NAM_CONF CCONF  = 'START',
+          NVERB  = 0,
+          NMODEL = 1,
+          CEXP   = 'IROIS',
+          CSEG   = '00-01',
+          CSPLIT = 'BSPLITTING' /
+
+&NAM_DYN XSEGLEN   =    360.,
+         LCORIO    =  .TRUE.,
+         LNUMDIFU  =  .TRUE.,
+         LNUMDIFTH = .FALSE.,
+         XALKTOP   =   0.001,
+         XALZBOT   =    1200. /
+
+&NAM_BACKUP  XBAK_TIME(1,1)=360. /
+
+&NAM_LUNITn CINIFILE    = 'IROISE_5KM_201109_02_00',
+            CINIFILEPGD = 'IROISE_5KM' /
+
+&NAM_DYNn  XTSTEP    = 10.,  
+           CPRESOPT  = 'ZRESI', 
+           LVE_RELAX = .TRUE. /
+
+&NAM_ADVn CUVW_ADV_SCHEME = 'CEN4TH',
+          CTEMP_SCHEME    = 'LEFR'  ,
+          CMET_ADV_SCHEME = 'PPM_01',
+          CSV_ADV_SCHEME  = 'PPM_01' /
+
+&NAM_PARAMn CCLOUD = 'ICE3',
+            CTURB  = 'TKEL',
+            CRAD   = 'ECMW',
+            CDCONV = 'NONE',
+            CSCONV = 'EDKF' /
+
+&NAM_PARAM_RADn XDTRAD        = 600.,
+                XDTRAD_CLONLY = 600. /
+
+&NAM_LBCn CLBCX       = 2*'OPEN',
+          CLBCY       = 2*'OPEN' /
+
+&NAM_DIAG_SURFn N2M=2 /
+
+&NAM_SEAFLUXn CSEA_FLUX='COARE3' /

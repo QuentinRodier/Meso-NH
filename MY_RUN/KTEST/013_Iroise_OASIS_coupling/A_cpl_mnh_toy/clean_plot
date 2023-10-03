@@ -1,4 +1,3 @@
 #!/bin/bash
 
-rm -Rf MSU_MSV/
 rm -Rf U10_CHA/ 

@@ -1,0 +1,7 @@
+*.nam
+*.txt
+U10_CHA/
+debug.*
+*timers*
+namcouple
+nout.000000

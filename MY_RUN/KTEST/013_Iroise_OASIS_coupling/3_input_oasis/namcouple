@@ -47,7 +47,7 @@ MNH__U10 VARRCV01 1 60 1 rst_A.nc EXPOUT
 20 20 66 75 ssea toyt LAG=+10
 R  0  R  0
 SCRIPR
-DISTWGT LR SCALAR LATLON 1 4
+BILINEAR LR SCALAR LATLON 1
 #
 #                     ------------------------------------------
 #                        TOY (toyexe) ==> MESONH (mesonh)

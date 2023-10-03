@@ -1,0 +1,22 @@
+#!/bin/bash
+
+export PREP_PGD_FILES=${PREP_PGD_FILES:-"$HOME/PREP_PGD_FILES_WWW"}
+
+if [ ! -d ${PREP_PGD_FILES} ]
+then
+
+   echo 'Your directory PREP_PGD_FILES=$PREP_PGD_FILES doesnt exist.'
+   echo 'Please define the location of your PREP_PGD_FILES through'
+   echo 'the environment variable PREP_PGD_FILES.'
+   exit
+
+else
+
+   echo '--------------------------------------'
+   echo '   Create input for TOY               '
+   echo '--------------------------------------'
+
+   ln -sf $PREP_PGD_FILES/etopo2.nc topo.nc
+   python3 create_grid_and_restart_files_for_TOY.py
+
+fi

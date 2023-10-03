@@ -1,7 +1,3 @@
-&NAM_CONFIO LCDF4=.TRUE.,
-            LLFIOUT=.FALSE.,
-            LLFIREAD=.FALSE. /
-
 &NAM_VER_GRID NKMAX=48,
               YZGRID_TYPE='FUNCTN',
               ZDZGRD=10.,
