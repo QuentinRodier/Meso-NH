@@ -58,6 +58,7 @@ END MODULE MODI_MEAN_FIELD
 !              ------------
 !
 USE MODE_ll
+USE MODD_CONF_n, ONLY: LUSERV
 USE MODD_MEAN_FIELD_n
 USE MODD_PARAM_n
 USE MODD_MEAN_FIELD
@@ -125,56 +126,55 @@ IKE=IKU-JPVEXT
 !
 !*       1. MEAN
 !
-   ZTEMPT = PTHT*(((PPABST)/XP00)**(XRD/XCPD))
+ZTEMPT = PTHT*(((PPABST)/XP00)**(XRD/XCPD))
 !
 !
-! Calculation of saturation specific humidity over water/ice
-!
-ZQSAT_W = QSAT (ZTEMPT, PPABST)
-ZQSAT_I = QSATI(ZTEMPT, PPABST)
-!
-! Conversion mixing ratio -> specfic humidity
-!
-ZRT(:,:,:) = -9999.0
-WHERE (PRT(:,:,:).LT.1.0E-6)
-   ZRT(:,:,:) = 1.0E-6
-ELSEWHERE
-   ZRT(:,:,:) = PRT(:,:,:)
-ENDWHERE
-!
-ZQACT(:,:,:) = 1.0 / ( 1.0 + 1.0/ZRT(:,:,:) )
-!
-! Calculation of relative humidity with respect to water/ice
-!
-ZRH_W(:,:,:) = 100.0*ZQACT(:,:,:)/ZQSAT_W(:,:,:)
-ZRH_I(:,:,:) = 100.0*ZQACT(:,:,:)/ZQSAT_I(:,:,:)
-!
-! Fractional partitioning between liquid and solid cloud water
-! as assumed in condensations
-!
-ZFRAC(:,:,:) = ( XTT - ZTEMPT(:,:,:) ) / 20.
-ZFRAC(:,:,:) = MAX( 0., MIN(1., ZFRAC(:,:,:) ) )
-!
-! Calculation of weighted average between water and ice value
-!
-ZRH_P(:,:,:) = ZFRAC(:,:,:) * ZRH_I(:,:,:) + (1.0-ZFRAC(:,:,:)) * ZRH_W(:,:,:)
-!
-! Calculation of the column maximum of relative humidity
-!
-ZRH_W_MAXCOL(:,:) = MAXVAL(ZRH_W(:,:,:),DIM=3)
-ZRH_I_MAXCOL(:,:) = MAXVAL(ZRH_I(:,:,:),DIM=3)
-ZRH_P_MAXCOL(:,:) = MAXVAL(ZRH_P(:,:,:),DIM=3)
-!
-   IF (LPASPOL)  XSVT_MEAN  = PSVT + XSVT_MEAN
-   IF (CTURB/='NONE') XTKEM_MEAN = PTKET + XTKEM_MEAN
-   XQ_MEAN     = XQ_MEAN + ZQACT
-   XRH_W_MEAN    = XRH_W_MEAN + ZRH_W
-   XRH_I_MEAN    = XRH_I_MEAN + ZRH_I
-   XRH_P_MEAN    = XRH_P_MEAN + ZRH_P
-   XRH_W_MAXCOL_MEAN = XRH_W_MAXCOL_MEAN + ZRH_W_MAXCOL
-   XRH_I_MAXCOL_MEAN = XRH_I_MAXCOL_MEAN + ZRH_I_MAXCOL
-   XRH_P_MAXCOL_MEAN = XRH_P_MAXCOL_MEAN + ZRH_P_MAXCOL
-   
+IF(LUSERV) THEN
+  ! Calculation of saturation specific humidity over water/ice
+  !
+  ZQSAT_W = QSAT (ZTEMPT, PPABST)
+  ZQSAT_I = QSATI(ZTEMPT, PPABST)
+  !
+  ! Conversion mixing ratio -> specfic humidity
+  !
+  ZRT(:,:,:) = -9999.0
+  WHERE (PRT(:,:,:).LT.1.0E-6)
+     ZRT(:,:,:) = 1.0E-6
+  ELSEWHERE
+     ZRT(:,:,:) = PRT(:,:,:)
+  ENDWHERE
+  !
+  ZQACT(:,:,:) = 1.0 / ( 1.0 + 1.0/ZRT(:,:,:) )
+  !
+  ! Calculation of relative humidity with respect to water/ice
+  !
+  ZRH_W(:,:,:) = 100.0*ZQACT(:,:,:)/ZQSAT_W(:,:,:)
+  ZRH_I(:,:,:) = 100.0*ZQACT(:,:,:)/ZQSAT_I(:,:,:)
+  !
+  ! Fractional partitioning between liquid and solid cloud water
+  ! as assumed in condensations
+  !
+  ZFRAC(:,:,:) = ( XTT - ZTEMPT(:,:,:) ) / 20.
+  ZFRAC(:,:,:) = MAX( 0., MIN(1., ZFRAC(:,:,:) ) )
+  !
+  ! Calculation of weighted average between water and ice value
+  !
+  ZRH_P(:,:,:) = ZFRAC(:,:,:) * ZRH_I(:,:,:) + (1.0-ZFRAC(:,:,:)) * ZRH_W(:,:,:)
+  !
+  ! Calculation of the column maximum of relative humidity
+  !
+  ZRH_W_MAXCOL(:,:) = MAXVAL(ZRH_W(:,:,:),DIM=3)
+  ZRH_I_MAXCOL(:,:) = MAXVAL(ZRH_I(:,:,:),DIM=3)
+  ZRH_P_MAXCOL(:,:) = MAXVAL(ZRH_P(:,:,:),DIM=3)
+  XQ_MEAN     = XQ_MEAN + ZQACT
+  XRH_W_MEAN    = XRH_W_MEAN + ZRH_W
+  XRH_I_MEAN    = XRH_I_MEAN + ZRH_I
+  XRH_P_MEAN    = XRH_P_MEAN + ZRH_P
+  XRH_W_MAXCOL_MEAN = XRH_W_MAXCOL_MEAN + ZRH_W_MAXCOL
+  XRH_I_MAXCOL_MEAN = XRH_I_MAXCOL_MEAN + ZRH_I_MAXCOL
+  XRH_P_MAXCOL_MEAN = XRH_P_MAXCOL_MEAN + ZRH_P_MAXCOL
+END IF   
+
    IF (LPASPOL)  XSVT_MEAN  = PSVT + XSVT_MEAN
    IF (CTURB/='NONE') XTKEM_MEAN = PTKET + XTKEM_MEAN
 !
