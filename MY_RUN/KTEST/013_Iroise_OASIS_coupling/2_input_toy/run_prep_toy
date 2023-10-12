@@ -17,6 +17,6 @@ else
    echo '--------------------------------------'
 
    ln -sf $PREP_PGD_FILES/etopo2.nc topo.nc
-   python3 create_grid_and_restart_files_for_TOY.py
+   python3 create_grid_and_restart_files_for_TOY_from_etopo2.py
 
 fi

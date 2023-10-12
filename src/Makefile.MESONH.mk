@@ -509,7 +509,7 @@ endif
 # OASIS installed manually, need to defined OASISDIR environment variable
 ifeq "$(VER_OASIS)" "OASISPERSO"
 ifndef OASISDIR
-$(error You chose VER_OASIS=OASISPERSO, please set OASISDIR environment variable)
+$(error You have chosen VER_OASIS=OASISPERSO, please set OASISDIR environment variable)
 endif
 OASIS_PATH ?= ${OASISDIR}
 OASIS_KEY ?= ${OASIS_PATH}/build/lib/psmile.MPI1/mod_oasis.mod
@@ -559,7 +559,7 @@ endif
 ifeq "$(VER_CDF)" "CDFPERSO"
 #
 ifndef NETCDF_CONFIG
-$(error You chose VER_CDF=CDFPERSO, please set NETCDF_CONFIG environment variable)
+$(error You have chosen VER_CDF=CDFPERSO, please set NETCDF_CONFIG environment variable)
 endif
 #
 INC_NETCDF     ?= $(shell $(NETCDF_CONFIG) --fflags)

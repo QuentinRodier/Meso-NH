@@ -386,11 +386,14 @@ ifeq "$(VER_OASIS)" "OASISAUTO"
 #
 oasis : $(OASIS_KEY)
 $(OASIS_KEY): 
-	cd ${SRC_MESONH}/src/LIB/oasis3-mct_${VERSION_OASIS}/util/make_dir && make realclean -f TopMakefileOasis3 && make -f TopMakefileOasis3 && cd ${SRC_MESONH}/src/LIB/toy_${VERSION_TOY} && make clean && make
+	cd ${SRC_MESONH}/src/LIB/oasis3-mct_${VERSION_OASIS}/util/make_dir && make realclean -f TopMakefileOasis3 && make -f TopMakefileOasis3 && cd ${SRC_MESONH}/src/LIB/toy_${VERSION_TOY} && make clean -f Makefile_OASISMNH && make -f Makefile_OASISMNH
 
 cleanmaster : cleanoasis
 cleanoasis :
 	- [ -d ${OASIS_PATH} ] && rm -fr  ${OASIS_PATH}
+
+toy:
+	cd ${SRC_MESONH}/src/LIB/toy_${VERSION_TOY} && make clean -f Makefile_OASISMNH && make -f Makefile_OASISMNH
 endif
 ##########################################################
 #                                                        #

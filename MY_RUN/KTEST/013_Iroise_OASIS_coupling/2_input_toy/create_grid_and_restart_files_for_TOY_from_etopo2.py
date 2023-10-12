@@ -144,22 +144,22 @@ grid_file.createDimension ('ncorner',   4)
 # ----------------------------------
 #   Create the variables of the files
 # ----------------------------------
-varout=grid_file.createVariable('lon',  'd',(          'nlat','nlon'))
-varout=grid_file.createVariable('lat',  'd',(          'nlat','nlon'))
-varout=grid_file.createVariable('clo',  'd',('ncorner','nlat','nlon'))
-varout=grid_file.createVariable('cla',  'd',('ncorner','nlat','nlon'))
-varout=grid_file.createVariable('srf',  'd',(          'nlat','nlon'))
-varout=grid_file.createVariable('imask','d',(          'nlat','nlon'))
+varout=grid_file.createVariable('lon', 'd',(          'nlat','nlon'))
+varout=grid_file.createVariable('lat', 'd',(          'nlat','nlon'))
+varout=grid_file.createVariable('clo', 'd',('ncorner','nlat','nlon'))
+varout=grid_file.createVariable('cla', 'd',('ncorner','nlat','nlon'))
+varout=grid_file.createVariable('srf', 'd',(          'nlat','nlon'))
+varout=grid_file.createVariable('mask','d',(          'nlat','nlon'))
 
 # ---------------------------------------
 #   Write out the data arrays into the file
 # ---------------------------------------
-grid_file.variables['lon']  [  :,:] = lon    [  :,:]
-grid_file.variables['lat']  [  :,:] = lat    [  :,:]
-grid_file.variables['clo']  [:,:,:] = clo    [:,:,:]
-grid_file.variables['cla']  [:,:,:] = cla    [:,:,:]
-grid_file.variables['srf']  [  :,:] = surface[  :,:]
-grid_file.variables['imask'][  :,:] = mask   [  :,:]
+grid_file.variables['lon'] [  :,:] = lon    [  :,:]
+grid_file.variables['lat'] [  :,:] = lat    [  :,:]
+grid_file.variables['clo'] [:,:,:] = clo    [:,:,:]
+grid_file.variables['cla'] [:,:,:] = cla    [:,:,:]
+grid_file.variables['srf'] [  :,:] = surface[  :,:]
+grid_file.variables['mask'][  :,:] = mask   [  :,:]
 
 # ---------------------------------------
 #   Close the file
