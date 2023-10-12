@@ -4,7 +4,7 @@ echo '--------------------------------------'
 echo '    Run Meso-NH coupling              '
 echo '--------------------------------------'
 
-export PATH_EXETOY=${SRC_MESONH}/src/LIB/toy_1.0/
+export PATH_EXETOY=${SRC_MESONH}/src/LIB/toy_2.0/
 
 #~~~~~ MESONH
 ln -sf ../1_input_mnh/IROISE_5KM* .
