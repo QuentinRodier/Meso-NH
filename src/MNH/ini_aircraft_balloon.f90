@@ -7,6 +7,7 @@
 !  P. Wautelet 01/10/2020: bugfix: DEFAULT_FLYER: add missing default values
 !  P. Wautelet    06/2022: reorganize flyers
 !  P. Wautelet 25/08/2022: write balloon positions in netCDF4 files inside HDF5 groups
+!  P. Wautelet 15/09/2023: remove offline balloons
 !-----------------------------------------------------------------
 
 !###############################
@@ -66,12 +67,11 @@ CONTAINS
 !          ------------
 !
 USE MODD_AIRCRAFT_BALLOON
-USE MODD_CONF,       ONLY: CPROGRAM
-USE MODD_DIAG_FLAG,  ONLY: LAIRCRAFT_BALLOON, NTIME_AIRCRAFT_BALLOON, &
-                           XALT_BALLOON, XLAT_BALLOON, XLON_BALLOON, XSTEP_AIRCRAFT_BALLOON
+USE MODD_CONF,       ONLY: CPROGRAM, NMODEL
 USE MODD_DYN_n,      ONLY: DYN_MODEL
 USE MODD_IO,         ONLY: ISP, TFILEDATA
 USE MODD_PARAMETERS, ONLY: NUNDEF
+USE MODD_PARAM_n,    ONLY: PARAM_MODEL
 !
 USE MODE_GRIDPROJ,       ONLY: SM_XYHAT
 USE MODE_INI_AIRCRAFT,   ONLY: INI_AIRCRAFT
@@ -93,29 +93,16 @@ REAL,               INTENT(IN) :: PLONOR  ! longitude of origine point
 !
 INTEGER :: IMI    ! current model index
 INTEGER :: JI
+LOGICAL :: GCHECK
 !
 !----------------------------------------------------------------------------
-!
-IMI=GET_CURRENT_MODEL_INDEX()
-!----------------------------------------------------------------------------
-!
-!*      1.   Default values
-!            --------------
-!
-IF ( CPROGRAM == 'DIAG  ') THEN
-  IF ( .NOT. LAIRCRAFT_BALLOON ) RETURN
-  IF (NTIME_AIRCRAFT_BALLOON == NUNDEF .OR. XSTEP_AIRCRAFT_BALLOON == XUNDEF) THEN
-    CMNHMSG(1) = "NTIME_AIRCRAFT_BALLOON and/or XSTEP_AIRCRAFT_BALLOON not initialized in DIAG "
-    CMNHMSG(2) = "No calculations for Balloons and Aircraft"
-    CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'INI_AIRCRAFT_BALLOON' )
 
-    LAIRCRAFT_BALLOON=.FALSE.
-    RETURN
-  ENDIF
-ENDIF
+IF ( CPROGRAM == 'DIAG  ') RETURN
 
 IF ( NAIRCRAFTS > 0 .OR. NBALLOONS > 0 ) LFLYER = .TRUE.
-!
+
+IMI = GET_CURRENT_MODEL_INDEX()
+
 !----------------------------------------------------------------------------
 !
 !*      2.   Balloon initialization
@@ -162,13 +149,50 @@ END IF
 !*      4.   Allocations of storage arrays
 !            -----------------------------
 !
-IF ( IMI == 1 .AND. ISP == NFLYER_DEFAULT_RANK ) THEN
+! Check that CCLOUD, CRAD and CTURB are the same for all models if some flyers have CMODEL='MOB'
+! This is necessary because we need to allocate and compute the same data on every model if the flyer is allowed to change model
+! This check is only done once (on MODEL IMI=1)
+! This check has to be done AFTER the calls to INI_AIRCRAFT and INI_BALLOON
+IF ( IMI == 1 .AND. NMODEL > 1 .AND. ISP == NFLYER_DEFAULT_RANK ) THEN
+  GCHECK = .FALSE.
+
   DO JI = 1, NBALLOONS
-    CALL TBALLOONS(JI)%TBALLOON%DATA_ARRAYS_ALLOCATE()
+    IF ( TBALLOONS(JI)%TBALLOON%CMODEL == 'MOB' ) THEN
+      GCHECK = .TRUE.
+      EXIT
+    END IF
   END DO
 
   DO JI = 1, NAIRCRAFTS
-    CALL TAIRCRAFTS(JI)%TAIRCRAFT%DATA_ARRAYS_ALLOCATE()
+    IF ( TAIRCRAFTS(JI)%TAIRCRAFT%CMODEL == 'MOB' ) THEN
+      GCHECK = .TRUE.
+      EXIT
+    END IF
+  END DO
+
+  IF ( GCHECK ) THEN
+    DO JI = 2, NMODEL
+      IF ( PARAM_MODEL(JI)%CCLOUD /= PARAM_MODEL(1)%CCLOUD )        &
+        CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'INI_AIRCRAFT_BALLOON', &
+                       'CCLOUD must be the same on all nested domains if aircraft/balloon has CMODEL="MOB"' )
+      IF ( PARAM_MODEL(JI)%CRAD   /= PARAM_MODEL(1)%CRAD )          &
+        CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'INI_AIRCRAFT_BALLOON', &
+                       'CRAD must be the same on all nested domains if aircraft/balloon has CMODEL="MOB"' )
+      IF ( PARAM_MODEL(JI)%CTURB  /= PARAM_MODEL(1)%CTURB )         &
+        CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'INI_AIRCRAFT_BALLOON', &
+                       'CTURB must be the same on all nested domains if aircraft/balloon has CMODEL="MOB"' )
+    END DO
+  END IF
+END IF
+
+! Allocate data arrays of flyers
+IF ( ISP == NFLYER_DEFAULT_RANK ) THEN
+  DO JI = 1, NBALLOONS
+    IF ( TBALLOONS(JI)%TBALLOON%NMODEL == IMI ) CALL TBALLOONS(JI)%TBALLOON%DATA_ARRAYS_ALLOCATE()
+  END DO
+
+  DO JI = 1, NAIRCRAFTS
+    IF ( TAIRCRAFTS(JI)%TAIRCRAFT%NMODEL == IMI ) CALL TAIRCRAFTS(JI)%TAIRCRAFT%DATA_ARRAYS_ALLOCATE()
   END DO
 END IF
 !
@@ -223,6 +247,7 @@ CALL SM_XYHAT( PLATOR, PLONOR, TPFLYER%XLATLAUNCH, TPFLYER%XLONLAUNCH, TPFLYER%X
 
 IF ( CPROGRAM == 'MESONH' .OR. CPROGRAM == 'SPAWN ' .OR. CPROGRAM == 'REAL  ' ) THEN
   ! Read the current location in the synchronous file
+  ! Remark: if the balloon is not yet in flight or is crashed, position is not available in file
 
   IF ( TPINIFILE%CFORMAT == 'LFI'                                                             &
        .OR. ( TPINIFILE%CFORMAT == 'NETCDF4' .AND.                                            &
@@ -412,24 +437,6 @@ IF ( CPROGRAM == 'MESONH' .OR. CPROGRAM == 'SPAWN ' .OR. CPROGRAM == 'REAL  ' ) 
     END IF
 
     CALL FLYER_TIMESTEP_CORRECT( DYN_MODEL(IMODEL)%XTSTEP, TPFLYER )
-  END IF
-  !
-ELSE IF ( CPROGRAM == 'DIAG  ' ) THEN
-  IF ( LAIRCRAFT_BALLOON ) THEN
-    ! read the current location in MODD_DIAG_FLAG
-    !
-    ZLAT=XLAT_BALLOON(KNBR)
-    ZLON=XLON_BALLOON(KNBR)
-    TPFLYER%XZ_CUR=XALT_BALLOON(KNBR)
-    IF (TPFLYER%XZ_CUR /= XUNDEF .AND. ZLAT /= XUNDEF .AND. ZLON /= XUNDEF ) THEN
-      CALL SM_XYHAT( PLATOR, PLONOR, ZLAT, ZLON, TPFLYER%XX_CUR, TPFLYER%XY_CUR )
-      TPFLYER%LFLY = .TRUE.
-      CMNHMSG(1) = 'current location read from MODD_DIAG_FLAG for ' // TRIM( TPFLYER%CNAME )
-      WRITE( CMNHMSG(2), * ) " Lat=", ZLAT, " Lon=", ZLON," Alt=",TPFLYER%XZ_CUR
-      CALL PRINT_MSG( NVERB_INFO, 'GEN', 'INI_LAUNCH' )
-    END IF
-    !
-    CALL FLYER_TIMESTEP_CORRECT( XSTEP_AIRCRAFT_BALLOON, TPFLYER )
   END IF
 END IF
 

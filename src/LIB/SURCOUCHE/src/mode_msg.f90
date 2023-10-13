@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2017-2022 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2017-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -65,7 +65,7 @@ subroutine Print_msg_multi_cmnhmsg( kverb, hdomain, hsubr, olocal )
     ilines = ilines - 1
   end do
 
-  call Print_msg_multi( kverb, hdomain, hsubr, cmnhmsg(1 : ilines) )
+  call Print_msg_multi( kverb, hdomain, hsubr, cmnhmsg(1 : ilines), olocal )
 
   !Empty the message buffer
   !This is necessary especially if the next call contain a shorter message

@@ -342,7 +342,7 @@ INC_MPI                = -I$(B)$(DIR_MPI)
 DIR_MASTER            += $(DIR_MPI)
 OBJS_LISTE_MASTER     += mpivide.o
 INC                   += $(INC_MPI)
-mpivide.o  : CPPFLAGS += -DMNH_INT=$(MNH_INT) -DMNH_REAL=$(MNH_REAL) \
+mpivide.o  : CPPFLAGS_C += -DMNH_INT=$(MNH_INT) -DMNH_REAL=$(MNH_REAL) \
                         -I$(DIR_MPI)/include
 VPATH                 += $(DIR_MPI)
 endif
@@ -479,11 +479,11 @@ ifneq "$(MNH_GRIBAPI)" "yes"
 DIR_ECCODES_SRC?=${SRC_MESONH}/src/LIB/eccodes-${VERSION_ECCODES}-Source
 DIR_ECCODES_BUILD?=${OBJDIR_MASTER}/build_eccodes-${VERSION_ECCODES}
 DIR_ECCODES_INSTALL?=${OBJDIR_MASTER}/ECCODES-${VERSION_ECCODES}
-ECCODES_MOD?=${DIR_ECCODES_INSTALL}/include/grib_api.mod
+ECCODES_MOD?=$(DIR_ECCODES_INSTALL)/include/grib_api.mod
 #
 ifdef DIR_ECCODES_SRC
-INC_ECCODES   ?= -I${DIR_ECCODES_INSTALL}/include
-LIB_ECCODES   ?= -L${DIR_ECCODES_INSTALL}/lib -L${DIR_ECCODES_INSTALL}/lib64 -leccodes_f90 -leccodes
+INC_ECCODES   ?= -I$(DIR_ECCODES_INSTALL)/include
+LIB_ECCODES   ?= -L$(DIR_ECCODES_INSTALL)/lib -L$(DIR_ECCODES_INSTALL)/lib64 -leccodes_f90 -leccodes
 INC           += $(INC_ECCODES)
 LIBS          += $(LIB_ECCODES)
 VPATH         += $(DIR_ECCODES_INSTALL)/include

@@ -21,6 +21,8 @@ MODULE MODD_SENSOR
 
   INTEGER, PARAMETER :: NTAG_NCUR = 145
   INTEGER, PARAMETER :: NTAG_PACK = 245
+
+  INTEGER, PARAMETER :: NEMPTYDATA = -1 ! Size to communicate if exchange of no sensor data
   TYPE :: TSENSORTIME
       INTEGER                                    :: N_CUR   = 0       ! current step of storage
       REAL                                       :: XTSTEP  = 60.     ! storage time step (default reset later)
@@ -71,6 +73,7 @@ MODULE MODD_SENSOR
       INTEGER :: NV01 = NNEGUNDEF ! Z position for ni_m  , nj_v+1
       INTEGER :: NV10 = NNEGUNDEF ! Z position for ni_m+1, nj_v
       INTEGER :: NV11 = NNEGUNDEF ! Z position for ni_m+1, nj_v+1
+
       ! Coefficient to interpolate values (sensors are usually not exactly on mesh points)
       REAL :: XXMCOEF = XUNDEF ! Interpolation coefficient for X (mass-point)
       REAL :: XYMCOEF = XUNDEF ! Interpolation coefficient for Y (mass-point)
@@ -380,7 +383,6 @@ MODULE MODD_SENSOR
       INTEGER :: IK00, IK01, IK10, IK11
       INTEGER :: IKB, IKE, IKU
       INTEGER :: JI, JJ
-      LOGICAL :: GCHANGE ! set to true if at least an index has been forced to change
       LOGICAL :: GDONE   ! set to true if coefficient computation has been done
       LOGICAL :: GDONOLOWCRASH
       REAL    :: ZZCOEF00, ZZCOEF01, ZZCOEF10, ZZCOEF11
@@ -388,7 +390,6 @@ MODULE MODD_SENSOR
       OLOW  = .FALSE.
       OHIGH = .FALSE.
 
-      GCHANGE = .FALSE.
       GDONE   = .FALSE.
 
       IKB = 1 + JPVEXT
@@ -419,9 +420,9 @@ MODULE MODD_SENSOR
       IF ( ANY( [ IK00, IK01, IK10, IK11 ] < IKB ) ) THEN
           ! Sensor is low (too near the ground or below it)
         OLOW = .TRUE.
+
         IF ( GDONOLOWCRASH ) THEN
           ! Do not allow crash on the ground: set position on the ground if too low
-          GCHANGE = .TRUE.
           !Minimum altitude is on the ground at ikb (no crash if too low)
           IK00 = MAX ( IK00, IKB )
           IK01 = MAX ( IK01, IKB )
@@ -454,25 +455,20 @@ MODULE MODD_SENSOR
         OHIGH = .TRUE.
 
         ! Limit ik?? indices to prevent out of bound accesses
-        IF ( IK00 > IKU-1) THEN
-          IK00 = IKU-1
-          GCHANGE = .TRUE.
-        END IF
-        IF ( IK01 > IKU-1) THEN
-          IK01 = IKU-1
-          GCHANGE = .TRUE.
-        END IF
-        IF ( IK10 > IKU-1) THEN
-          IK10 = IKU-1
-          GCHANGE = .TRUE.
-        END IF
-        IF ( IK11 > IKU-1) THEN
-          IK11 = IKU-1
-          GCHANGE = .TRUE.
-        END IF
+        IK00 = MIN( IK00, IKE )
+        IK01 = MIN( IK01, IKE )
+        IK10 = MIN( IK10, IKE )
+        IK11 = MIN( IK11, IKE )
 
         CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'Compute_vertical_interp_coeff', &
                         'sensor ' // TRIM( TPSENSOR%CNAME ) // ' is too high', OLOCAL = .TRUE. )
+
+        ZZCOEF00 = XUNDEF
+        ZZCOEF01 = XUNDEF
+        ZZCOEF10 = XUNDEF
+        ZZCOEF11 = XUNDEF
+
+        GDONE = .TRUE.
       END IF
 
       IF ( .NOT. GDONE ) THEN
@@ -1258,9 +1254,9 @@ MODULE MODD_SENSOR
 
     END SUBROUTINE BUFFER_RECV
 
-    ! ##################################################################
-    SUBROUTINE SENSOR_COMM_SEND( TPSENSOR, KTO, OSEND_SIZE_TO_RECEIVER )
-    ! ##################################################################
+    ! ##############################################################################
+    SUBROUTINE SENSOR_COMM_SEND( TPSENSOR, KTO, OSEND_SIZE_TO_RECEIVER, OEMPTYSEND )
+    ! ##############################################################################
 
       USE MODD_IO, ONLY: ISP
 
@@ -1269,10 +1265,12 @@ MODULE MODD_SENSOR
       CLASS(TSENSOR),           INTENT(INOUT) :: TPSENSOR
       INTEGER,                  INTENT(IN)    :: KTO                    ! Process to which to send data
       LOGICAL,        OPTIONAL, INTENT(IN)    :: OSEND_SIZE_TO_RECEIVER ! If the buffer size has to be send to the receiver
+      LOGICAL,        OPTIONAL, INTENT(IN)    :: OEMPTYSEND             ! True if the sensor data has not to be sent
 
       CHARACTER(LEN=10) :: YFROM, YTO
       INTEGER           :: IPACKSIZE
       INTEGER           :: IPOS
+      LOGICAL           :: GEMPTYSEND
       LOGICAL           :: GSEND_SIZE_TO_RECEIVER
       REAL,    DIMENSION(:), ALLOCATABLE :: ZPACK ! buffer to store raw data of the sensor
 
@@ -1281,27 +1279,45 @@ MODULE MODD_SENSOR
       CALL PRINT_MSG( NVERB_DEBUG, 'GEN', 'Sensor_comm_send', &
                       'send sensor ' // TRIM(TPSENSOR%CNAME) // ': ' // TRIM(YFROM) // '->' // TRIM(YTO), OLOCAL = .TRUE. )
 
+      IF ( PRESENT( OEMPTYSEND ) ) THEN
+        GEMPTYSEND = OEMPTYSEND
+      ELSE
+        GEMPTYSEND = .FALSE.
+      END IF
+
       IF ( PRESENT( OSEND_SIZE_TO_RECEIVER ) ) THEN
         GSEND_SIZE_TO_RECEIVER = OSEND_SIZE_TO_RECEIVER
       ELSE
         GSEND_SIZE_TO_RECEIVER = .FALSE.
       END IF
 
-      IPACKSIZE = TPSENSOR%BUFFER_SIZE_COMPUTE( TPSENSOR%NSTORE_CUR )
+      IF ( GEMPTYSEND .AND. .NOT.GSEND_SIZE_TO_RECEIVER )                                                  &
+        CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'Sensor_comm_send',                                            &
+                        'incompatible options: gemptysend=T and gsend_size_to_receiver=F', OLOCAL = .TRUE. )
+
+      IF ( GEMPTYSEND ) THEN
+        ! If 'empty send', ipacksize is set to NEMPTYDATA
+        ! This will allow the receiver to know that no sensor data will be sent
+        IPACKSIZE = NEMPTYDATA
+      ELSE
+        IPACKSIZE = TPSENSOR%BUFFER_SIZE_COMPUTE( TPSENSOR%NSTORE_CUR )
+      END IF
 
       IF ( GSEND_SIZE_TO_RECEIVER ) CALL TPSENSOR%BUFFER_SIZE_SEND( TPSENSOR%NSTORE_CUR, IPACKSIZE, KTO )
 
-      ALLOCATE( ZPACK(IPACKSIZE) )
+      IF ( .NOT. GEMPTYSEND ) THEN
+        ALLOCATE( ZPACK(IPACKSIZE) )
 
-      IPOS = 1
-      CALL TPSENSOR%BUFFER_PACK( ZPACK, IPOS, TPSENSOR%NSTORE_CUR )
+        IPOS = 1
+        CALL TPSENSOR%BUFFER_PACK( ZPACK, IPOS, TPSENSOR%NSTORE_CUR )
 
-      IF ( IPOS-1 /= IPACKSIZE ) &
-        CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'Sensor_comm_send', 'IPOS-1 /= IPACKSIZE', OLOCAL = .TRUE. )
+        IF ( IPOS-1 /= IPACKSIZE ) &
+          CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'Sensor_comm_send', 'IPOS-1 /= IPACKSIZE', OLOCAL = .TRUE. )
 
-      CALL TPSENSOR%BUFFER_SEND( ZPACK, KTO )
+        CALL TPSENSOR%BUFFER_SEND( ZPACK, KTO )
 
-      DEALLOCATE( ZPACK )
+        DEALLOCATE( ZPACK )
+      END IF
 
     END SUBROUTINE SENSOR_COMM_SEND
 
@@ -1320,26 +1336,28 @@ MODULE MODD_SENSOR
 
     END SUBROUTINE SENSOR_COMM_SEND_DEALLOCATE
 
-    ! ####################################################################################################
-    SUBROUTINE SENSOR_COMM_RECV_ALLOCATE( TPSENSOR, KFROM, KSTORE_CUR, KSTORE_MAX, ORECV_SIZE_FROM_OWNER )
-    ! ####################################################################################################
+    ! ################################################################################################################
+    SUBROUTINE SENSOR_COMM_RECV_ALLOCATE( TPSENSOR, KFROM, KSTORE_CUR, KSTORE_MAX, ORECV_SIZE_FROM_OWNER, OEMPTYRECV )
+    ! ################################################################################################################
 
       USE MODD_IO, ONLY: ISP
 
       USE MODE_MSG
 
       CLASS(TSENSOR),           INTENT(INOUT) :: TPSENSOR
-      INTEGER,                  INTENT(IN)    :: KFROM    ! Process from which to receive data
+      INTEGER,                  INTENT(IN)    :: KFROM      ! Process from which to receive data
       INTEGER,        OPTIONAL, INTENT(IN)    :: KSTORE_CUR ! Number of storage steps to receive
       INTEGER,        OPTIONAL, INTENT(IN)    :: KSTORE_MAX ! Maximum number of storage steps to store in sensor
                                                             ! (if not provided, kstore_* size must be given by the sender)
       LOGICAL,        OPTIONAL, INTENT(IN)    :: ORECV_SIZE_FROM_OWNER ! If the buffer size has to be send to the receiver
+      LOGICAL,        OPTIONAL, INTENT(OUT)   :: OEMPTYRECV ! True if the sensor data has not been received
 
       CHARACTER(LEN=10) :: YFROM, YTO
       INTEGER           :: IPACKSIZE
       INTEGER           :: IPOS
       INTEGER           :: ISTORE_CUR
       INTEGER           :: ISTORE_MAX
+      LOGICAL           :: GEMPTYRECV
       LOGICAL           :: GRECV_SIZE_FROM_OWNER
       REAL,    DIMENSION(:), ALLOCATABLE :: ZPACK ! buffer to store raw data of the sensor
 
@@ -1347,6 +1365,8 @@ MODULE MODD_SENSOR
       WRITE( YTO,   '( i10 )' ) ISP
       CALL PRINT_MSG( NVERB_DEBUG, 'GEN', 'Sensor_comm_recv_allocate', &
                       'receive sensor (name not yet known): ' // TRIM(YFROM) // '->' // TRIM(YTO), OLOCAL = .TRUE. )
+
+      GEMPTYRECV = .FALSE.
 
       IF ( PRESENT( ORECV_SIZE_FROM_OWNER ) ) THEN
         GRECV_SIZE_FROM_OWNER = ORECV_SIZE_FROM_OWNER
@@ -1387,19 +1407,29 @@ MODULE MODD_SENSOR
         IPACKSIZE = TPSENSOR%BUFFER_SIZE_COMPUTE( ISTORE_CUR )
       END IF
 
-      ! Allocate receive buffer
-      ALLOCATE( ZPACK(IPACKSIZE) )
+      IF ( IPACKSIZE == NEMPTYDATA ) THEN
+        GEMPTYRECV = .TRUE.
+        !call Print_msg( NVERB_DEBUG, 'GEN', 'Sensor_comm_recv_allocate', 'empty receive', olocal = .true. )
+        IF ( .NOT. PRESENT( OEMPTYRECV) )                                                                                       &
+          CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'Sensor_comm_recv_allocate',                                                      &
+                          'optional dummy argument oemptyrecv must be provided in case of empty communication', OLOCAL = .TRUE. )
+      ELSE
+        ! Allocate receive buffer
+        ALLOCATE( ZPACK(IPACKSIZE) )
 
-      ! Allocation of sensor must be done only once the total number of stores is known (and only if not yet allocated)
-      IF (TPSENSOR%NSTORE_MAX < 0 ) CALL TPSENSOR%DATA_ARRAYS_ALLOCATE( ISTORE_MAX )
+        ! Allocation of sensor must be done only once the total number of stores is known (and only if not yet allocated)
+        IF (TPSENSOR%NSTORE_MAX < 0 ) CALL TPSENSOR%DATA_ARRAYS_ALLOCATE( ISTORE_MAX )
 
-      CALL TPSENSOR%BUFFER_RECV( ZPACK, KFROM )
+        CALL TPSENSOR%BUFFER_RECV( ZPACK, KFROM )
 
-      IPOS = 1
-      CALL TPSENSOR%BUFFER_UNPACK( ZPACK, IPOS, ISTORE_CUR )
+        IPOS = 1
+        CALL TPSENSOR%BUFFER_UNPACK( ZPACK, IPOS, ISTORE_CUR )
 
-      IF ( IPOS-1 /= IPACKSIZE ) &
-        CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'Sensor_comm_recv_allocate', 'IPOS-1 /= IPACKSIZE', OLOCAL = .TRUE. )
+        IF ( IPOS-1 /= IPACKSIZE ) &
+          CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'Sensor_comm_recv_allocate', 'IPOS-1 /= IPACKSIZE', OLOCAL = .TRUE. )
+      END IF
+
+      IF ( PRESENT( OEMPTYRECV) ) OEMPTYRECV = GEMPTYRECV
 
     END SUBROUTINE SENSOR_COMM_RECV_ALLOCATE
 

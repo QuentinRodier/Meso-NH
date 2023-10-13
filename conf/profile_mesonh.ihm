@@ -148,6 +148,7 @@ fi
 ##########################################################
 #
 export XYZ="-\${ARCH}-R\${MNH_REAL}I\${MNH_INT}-\${VERSION_XYZ}\${MNH_ECRAD:+-ECRAD${VER_ECRAD}}\${MNH_FOREFIRE:+-FF}\${VER_USER:+-\${VER_USER}}-\${VER_MPI}-\${OPTLEVEL}"
+export XYZM="-\${ARCH}-R\${MNH_REAL}I\${MNH_INT}-\${VERSION_XYZ}\${MNH_ECRAD:+-ECRAD${VER_ECRAD}}\${MNH_FOREFIRE:+-FF}-\${VER_MPI}-\${OPTLEVEL}"
 #[ "x\${VER_USER}" != "x" ] && export XYZ="\${XYZ}-\${VER_USER}"
 # PATH to find tools like "makegen, etc ..."
 export BIN_TOOLS=${BIN_TOOLS}
