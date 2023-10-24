@@ -467,7 +467,6 @@ ZLES_BUDGET(:,:,ILES) =  XG * XLES_SUBGRID_RtThv(:,:,1)   &
 !* 3.6 dissipation
 !      -----------
 !
-!PW: not in the documentation, but set to 0 anyway
 ILES=ILES+1
 YFIELDNAMES(ILES)    = 'SBG_DISS'
 YFIELDCOMMENTS(ILES) = 'subgrid dissipation'

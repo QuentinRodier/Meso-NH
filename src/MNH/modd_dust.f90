@@ -100,7 +100,7 @@ REAL, DIMENSION(3)          :: XINIRADIUS= 0.5*(/0.078, 0.641, 5.00 /)
 !Initial, standard deviation from Alfaro et al 1998
 REAL, DIMENSION(3)          :: XINISIG =  (/1.75, 1.76, 1.70/)
 !Minimum allowed number concentration for any mode (#/m3)
-REAL, DIMENSION(3)          :: XN0MIN  = (/1.e3 , 1.e1 , 1.e-2 /)
+REAL, DIMENSION(3)          :: XN0MIN  = (/1.e1 , 1.e-1 , 1.e-4 /)
 CHARACTER(LEN=9),DIMENSION(:),ALLOCATABLE :: CDEDSTNAMES
 CHARACTER(LEN=9),DIMENSION(6), PARAMETER  :: YPDEDST_INI = &
      (/'DEDSTM31C','DEDSTM32C','DEDSTM33C' &

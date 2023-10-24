@@ -17,84 +17,6 @@ CONTAINS
       SUBROUTINE INI_BALLOON
 !     ######################
 !
-!
-!!****  *INI_BALLOON* - user initializes the balloon characteristics
-!!
-!!    PURPOSE
-!!    -------
-!
-!
-!!**  METHOD
-!!    ------
-!!    
-!!    For constant volume Balloon, horizontal advection using horizontal wind
-!!        vertical speed of the balloon calculated using the balloon equation
-!!        (Koffi et AL 2000, JAS vol 57 P.2007-2021)
-!!
-!!   Must be defined (for each balloon):
-!!   ---------------
-!!
-!!  No default exist for these variables.
-!!  ************************************
-!!
-!!  1) the model in which the balloon will evolve
-!!     if NOT initialized, the balloon is NOT used.
-!!  1.1) the possibility to switch from a model to its dad or kid
-!!       'FIX' : NMODEL used during the run
-!!       'MOB' : best resolution model used. NMODEL=1 is used at the beginning
-!!
-!!  2) the type of balloon
-!!
-!!     'RADIOS' for radiosounding balloon
-!!     'ISODEN' for iso-density balloon
-!!     'CVBALL' for constant volume Balloon
-!!
-!!  3) the launching date and time
-!!
-!!  4) the latitude of the launching site
-!!
-!!  5) the longitude of the launching site
-!!
-!!  6) the altitude of the launching site (for 'RADIOS')
-!!
-!!                      OR
-!!
-!!     the altitude OR pressure of balloon at start of the leveled flight
-!!     (for 'ISODEN'). In this case, the density of this level will be computed,
-!!     and the balloon will evolve at this density level.
-!!
-!!
-!!
-!!   Can be defined  (for each balloon):
-!!   --------------
-!!
-!!  7) the ascentional vertical speed of the ballon (in calm air) (for 'RADIOS')
-!!     default is 5m/s
-!!
-!!  8) the time step for data storage.
-!!    default is 60s
-!!
-!!  9) the name or title describing the balloon (8 characters)
-!!     default is the balloon type (6 characters) + the balloon numbers (2 characters)
-!!
-!!  10) for 'CVBALL' the aerodynamic drag coefficient of the balloon
-!!
-!!  11) for 'CVBALL' the induced drag coefficient (i.e. air shifted by the balloon)
-!!
-!!  12) for 'CVBALL' the volume of the balloon
-!!
-!!  13) for 'CVBALL' the mass of the balloon
-!!
-!!
-!!    EXTERNAL
-!!    --------
-!!
-!!    IMPLICIT ARGUMENTS
-!!    ------------------
-!!
-!!    REFERENCE
-!!    ---------
-!!
 !!    AUTHOR
 !!    ------
 !!      Valery Masson             * Meteo-France *
@@ -126,6 +48,8 @@ DO JI = 1, NBALLOONS
 
   TZBALLOON%NID = JI
 
+  TZBALLOON%LFIX = .FALSE.
+
   IF ( CTITLE(JI) == '' ) THEN
     WRITE( CTITLE(JI), FMT = '( A, I3.3) ') TRIM( CTYPE(JI) ), JI
 
@@ -133,7 +57,7 @@ DO JI = 1, NBALLOONS
     CMNHMSG(2) = 'title set to ' // TRIM( CTITLE(JI) )
     CALL PRINT_MSG( NVERB_INFO, 'GEN', 'INI_BALLOON', OLOCAL = .TRUE. )
   END IF
-  TZBALLOON%CTITLE = CTITLE(JI)
+  TZBALLOON%CNAME = CTITLE(JI)
 
   IF ( CMODEL(JI) == 'FIX' ) THEN
     IF ( NMODEL(JI) < 1 .OR. NMODEL(JI) > NMODEL_NEST ) THEN

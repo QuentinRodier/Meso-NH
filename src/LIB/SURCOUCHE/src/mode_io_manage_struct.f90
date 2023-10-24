@@ -396,7 +396,6 @@ SUBROUTINE IO_SYNC_MODELS_FLOAT(KNUMB,PTIMES)
       !Value is rounded to nearest timestep
       PTIMES(IMI,JOUT) = NINT(PTIMES(IMI,JOUT)/DYN_MODEL(IMI)%XTSTEP) * DYN_MODEL(IMI)%XTSTEP
       !Output/backup time is propagated to nested models (with higher numbers)
-      !PW: TODO: BUG?: what happens if 2 dissociated models? Use NSON(:) array?
       DO JKLOOP = IMI+1,NMODEL
         IDX = 1
         CALL FIND_NEXT_AVAIL_SLOT_FLOAT(PTIMES(JKLOOP,:),IDX)
@@ -419,7 +418,6 @@ SUBROUTINE IO_SYNC_MODELS_INT(KNUMB,KSTEPS)
     IF (KSTEPS(IMI,JOUT) > 0) THEN
       KNUMB = KNUMB + 1
       !Output/backup time is propagated to nested models (with higher numbers)
-      !PW: TODO: BUG?: what happens if 2 dissociated models? Use NSON(:) array?
       DO JKLOOP = IMI+1,NMODEL
         IDX = 1
         CALL FIND_NEXT_AVAIL_SLOT_INT(KSTEPS(JKLOOP,:),IDX)
@@ -587,7 +585,6 @@ SUBROUTINE POPULATE_STRUCT(TPFILE_FIRST,TPFILE_LAST,KSTEPS,HFILETYPE,TPBAKOUTN,K
           CALL PRINT_MSG(NVERB_FATAL,'IO','POPULATE_STRUCT','unknown filetype ('//TRIM(HFILETYPE)//')')
         ENDIF
         TPBAKOUTN(IPOS)%TFILE%NLFITYPE=1 !1: to be transferred
-!PW: TODO: set NLFIVERB only when useful (only if LFI file...)
         TPBAKOUTN(IPOS)%TFILE%NLFIVERB=NVERB
         IF (LIOCDF4) THEN
           IF (.NOT.LLFIOUT) THEN
@@ -635,7 +632,6 @@ SUBROUTINE POPULATE_STRUCT(TPFILE_FIRST,TPFILE_LAST,KSTEPS,HFILETYPE,TPBAKOUTN,K
               TPBAKOUTN(IPOS)%TFILE%TFILES_IOZ(JI)%TFILE%NNCCOMPRESS_LEVEL = NOUT_COMPRESS_LEVEL(IMI)
             END IF
             TPBAKOUTN(IPOS)%TFILE%TFILES_IOZ(JI)%TFILE%NLFITYPE=1 !1: to be transferred
-!PW: TODO: set NLFIVERB only when useful (only if LFI file...)
             TPBAKOUTN(IPOS)%TFILE%TFILES_IOZ(JI)%TFILE%NLFIVERB=NVERB
             IF (LIOCDF4) THEN
               IF (.NOT.LLFIOUT) THEN

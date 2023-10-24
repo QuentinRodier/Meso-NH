@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1999-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1999-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
@@ -110,8 +110,6 @@ INTEGER,SAVE      :: NZ_PROC_ll = 0  ! Number of proc to use in the Z splitting
 ! DIMX = NIMAX + 2*JPHEXT ...
 !
   INTEGER :: DIMX,DIMY,DIMZ
-!
-  INTEGER, PARAMETER :: NTMAX = 100
 !
 ! maximum size of 2D and 3D buffers
 !

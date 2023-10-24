@@ -1183,7 +1183,6 @@ if ( iresp == 0 .and. any( zfield /= XUNDEF ) ) then
         tzfields(jp)%ndims     = tzfields(jp)%ndims - 1
 
         tzbudiachro%clevels(NLVL_MASK) = hmasks(jp)
-!PW:TODO? necessite le transfert d'info depuis les routines appelantes ou via des structures dans les modd
         tzbudiachro%ccomments(NLVL_MASK) = ''
 
         call Write_diachro( tzfile, tzbudiachro, [ tzfields(jp) ], tzdates, zwork6(:,:,:,:,:,jp:jp) )

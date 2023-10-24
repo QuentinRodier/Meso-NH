@@ -570,7 +570,6 @@ END DO
         tpreclist(ji)%TFIELD%NTYPE    = tpreclist(idx_var)%TFIELD%NTYPE
         tpreclist(ji)%TFIELD%NDIMS    = tpreclist(idx_var)%TFIELD%NDIMS
 #if 0
-!PW: TODO?
         tpreclist(ji)%TFIELD%NFILLVALUE
         tpreclist(ji)%TFIELD%XFILLVALUE
         tpreclist(ji)%TFIELD%NVALIDMIN
@@ -1427,7 +1426,6 @@ END DO
         ISTATUS = NF90_GET_ATT(IFILE_ID, KVAR_ID, 'split_nblocks', iblocks)
         IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4( istatus, 'IO_Metadata_get_nc4', 'NF90_GET_ATT', 'split_nblocks' )
 
-!PW: todo:check tfiles_ioz exist
         IFILE_ID = TPFILE%TFILES_IOZ(1)%TFILE%NNCID
 
         istatus = NF90_INQ_VARID(IFILE_ID,trim(TPREC%NAME)//'0001',ivar_id)

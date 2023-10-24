@@ -1,55 +1,48 @@
 #!/bin/bash
-#MSUB -J Examples
-#MSUB -N 2            # nodes number
-#MSUB -n 4            # CPUs number (on all nodes)         
-#MSUB -o Examples.eo%j   #
-#MSUB -e Examples.eo%j   #
-#MSUB -T 3600        # time limit
-##MSUB -I             # do not propaget variable from interactif, /!\ problem with module load if activate
-#MSUB -m work,scratch,store # use this files system
-#MSUB -x #  exclusive usage of nodes
-#MSUB -X # enable X forwarding -> force 'ccc_msub -i ' to get it work
-#MSUB -q skylake
-##MSUB -q knl
+#SBATCH -J Examples
+#SBATCH -N 1            # nodes number
+#SBATCH -n 4            # CPUs number (on all nodes) 
+#SBATCH -C GENOA
+##SBATCH --exclusive           
+#SBATCH -o Examples.eo%j   #
+#SBATCH -e Examples.eo%j   #
+#SBATCH -t 01:00:00    # time limit
+#SBATCH --export=NONE
+#SBATCH -A mnh # put here you account/projet name
 
-# Echo des commandes
+# Echo of commands
 ulimit -c 0
 ulimit -s unlimited
-# Arrete du job des la premiere erreur
+# Stop job at first error
 #set -e
-set +x
-# Nom de la machine
+set -x
+# Machine name
 hostname 
 
 unset MAKEFLAGS
 
-. ../conf/profile_mesonh-LXifort-R8I4-MNH-V5-6-1-MPIAUTO-O2
-
-set -x
-
-module list
-
-export MONORUN="Mpirun -tag-output --report-bindings -np 1 "
-export MPIRUN="Mpirun -tag-output --report-bindings -np 4 "
+. ../conf/profile_mesonh-LXcray-R8I4-MNH-V5-6-1-MPICRAY-O2
+export MONORUN="Exec srun -l -n 1 --export=ALL"
+export MPIRUN="Exec srun -l -n 4 --export=ALL"
 export POSTRUN="echo "
 
 cd $SRC_MESONH/MY_RUN/KTEST/003_KW78 
 make -k
 #
 echo "#################################################################################"
-echo "##CAS SUIVANT####################################################################"
+echo "##NEXT CASE######################################################################"
 echo "#################################################################################"
 cd $SRC_MESONH/MY_RUN/KTEST/001_2Drelief 
 make -k
 #
 echo "#################################################################################"
-echo "##CAS SUIVANT####################################################################"
+echo "##NEXT CASE######################################################################"
 echo "#################################################################################"
 cd $SRC_MESONH/MY_RUN/KTEST/002_3Drelief 
 make -k
 #
 echo "#################################################################################"
-echo "##CAS SUIVANT####################################################################"
+echo "##NEXT CASE######################################################################"
 echo "#################################################################################"
 
 cd $SRC_MESONH/MY_RUN/KTEST/004_Reunion
@@ -59,7 +52,7 @@ make -k << EOF
 EOF
 #
 echo "#################################################################################"
-echo "##CAS SUIVANT####################################################################"
+echo "##NEXT CASE######################################################################"
 echo "#################################################################################"
 cd $SRC_MESONH/MY_RUN/KTEST/007_16janvier
 make -k << EOF 
@@ -68,9 +61,8 @@ make -k << EOF
 EOF
 #
 echo "#################################################################################"
-echo "##CAS SUIVANT####################################################################"
+echo "##NEXT CASE######################################################################"
 echo "#################################################################################"
 cd $SRC_MESONH/MY_RUN/KTEST/014_LIMA 
 make -k
-
 

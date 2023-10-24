@@ -101,6 +101,7 @@ REAL                                 :: ZDEN2MOL
 REAL,DIMENSION(JPMODE*3)             :: ZPMIN               ! [aerosol units] minimum values for N, sigma, M
 INTEGER                              :: JI,JJ,JK,JSV, JN              ! [idx] loop counters
 REAL    :: ZINIRADIUSI, ZINIRADIUSJ
+INTEGER :: II,IJ,IK
 !
 !-------------------------------------------------------------------------------
 !
@@ -253,6 +254,7 @@ END IF
 !
 !*       5    set moment 6  ==> um6_{aer}/m3_{air}
 !
+
 IF (LVARSIGI) THEN ! set M6 variable standard deviation
   IF ((CPROGRAM=="REAL  ").OR.(CPROGRAM=="IDEAL ")) THEN
   ZM(:,:,:,3)= ZM(:,:,:,1) * (ZINIRADIUSJ**6)*EXP(18. * LOG(XINISIGJ)**2)
@@ -328,6 +330,7 @@ DO JN=1,JPMODE
 
 ENDDO
 !
+
 IF(PRESENT(PCTOTA)) PCTOTA(:,:,:,:,:) = ZCTOTA(:,:,:,:,:)
 IF(PRESENT(PM3D)) PM3D(:,:,:,:) = ZM(:,:,:,:)
 !
@@ -463,7 +466,9 @@ ENDDO
   ZCTOTA(:,:,:,JP_AER_SOA10,1) = PSVT(:,:,:,JP_CH_SOA10i)
   ZCTOTA(:,:,:,JP_AER_SOA10,2) = PSVT(:,:,:,JP_CH_SOA10j)
   END IF
-  ZCTOTA(:,:,:,:,:) = MAX(ZCTOTA(:,:,:,:,:),XMNH_TINY)
+  ZCTOTA(:,:,:,:,1) = MAX(ZCTOTA(:,:,:,:,1),1E-6)
+  ZCTOTA(:,:,:,:,2) = MAX(ZCTOTA(:,:,:,:,2),1E-4)
+
 
 !
 !*       3    calculate moment 3 from total aerosol mass
@@ -547,8 +552,6 @@ IF (LVARSIGJ) PSVT(:,:,:,JP_CH_M6j) = ZM(:,:,:,6)
 DO JJ=1,SIZE(PSVT,4)
   PSVT(:,:,:,JJ) =  PSVT(:,:,:,JJ) / (ZDEN2MOL * PRHODREF(:,:,:))
 ENDDO
-
-
 END SUBROUTINE CON2MIX
 
 !   ############################################################
