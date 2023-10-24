@@ -249,9 +249,10 @@ MNH_COMPRESS=yes
 MNH_GRIBAPI=no
 #
 NETCDF_SUPPFLAGS='-emf'
-ECCODES_FFLAGS='-emf -hsystem_alloc'
-ECCODES_CFLAGS=' -gdwarf-4 '
-EC_CONF='-DIEEE_LE=1'
+ECCODES_FFLAGS= -hcpu=x86-64 -emf 
+# -hsystem_alloc
+ECCODES_CFLAGS= -hcpu=x86-64 -gdwarf-4 
+EC_CONF= -DCMAKE_BUILD_TYPE="RELEASE" -DIEEE_LE=1 
 CDF_CONF= CPP=cpp 
 HDF_CONF= CPP=cpp 
 #
