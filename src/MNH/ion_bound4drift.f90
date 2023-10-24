@@ -8,11 +8,12 @@ MODULE MODI_ION_BOUND4DRIFT
 !
 INTERFACE
 !
-      SUBROUTINE ION_BOUND4DRIFT (HLBCX,HLBCY,PEFIELDU,PEFIELDV,PSVT)
+      SUBROUTINE ION_BOUND4DRIFT (KRR, HLBCX,HLBCY,PEFIELDU,PEFIELDV,PSVT)
 
-CHARACTER(LEN=4), DIMENSION(2), INTENT(IN)  :: HLBCX,HLBCY  
+INTEGER,                        INTENT(IN)    :: KRR     ! Number of moist variables
+CHARACTER(LEN=4), DIMENSION(2), INTENT(IN)    :: HLBCX,HLBCY  
 REAL, DIMENSION(:,:,:,:),       INTENT(INOUT) :: PSVT
-REAL, DIMENSION(:,:,:),         INTENT(IN)  :: PEFIELDU,PEFIELDV
+REAL, DIMENSION(:,:,:),         INTENT(IN)    :: PEFIELDU,PEFIELDV
 !
 END SUBROUTINE ION_BOUND4DRIFT
 !
@@ -22,7 +23,7 @@ END MODULE MODI_ION_BOUND4DRIFT
 !
 !
 !     ####################################################################
-      SUBROUTINE ION_BOUND4DRIFT (HLBCX,HLBCY,PEFIELDU,PEFIELDV,PSVT)
+      SUBROUTINE ION_BOUND4DRIFT (KRR, HLBCX,HLBCY,PEFIELDU,PEFIELDV,PSVT)
 !     ####################################################################
 !
 !!****  *ION_BOUND4DRIFT* - routine to force the Lateral Boundary Conditions for
@@ -73,9 +74,10 @@ IMPLICIT NONE
 !*       0.1   declarations of arguments
 !
 !
-CHARACTER(LEN=4), DIMENSION(2), INTENT(IN)  :: HLBCX,HLBCY  
+INTEGER,                        INTENT(IN)    :: KRR     ! Number of moist variables
+CHARACTER(LEN=4), DIMENSION(2), INTENT(IN)    :: HLBCX,HLBCY  
 REAL, DIMENSION(:,:,:,:),       INTENT(INOUT) :: PSVT
-REAL, DIMENSION(:,:,:),         INTENT(IN)  :: PEFIELDU,PEFIELDV
+REAL, DIMENSION(:,:,:),         INTENT(IN)    :: PEFIELDU,PEFIELDV
 !
 !
 !*       0.2   declarations of local variables
@@ -100,13 +102,13 @@ CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IF (LWEST_ll( ) .AND. HLBCX(1)=='OPEN') THEN
 !
   WHERE ( PEFIELDU(IIB,:,:) <= 0. )         !  OUT(IN)FLOW for POS(NEG) IONS
-    PSVT(IIB-1,:,:,NSV_ELECBEG) = MAX( 2.*PSVT(IIB,:,:,NSV_ELECBEG) -          &
-                             PSVT(IIB+1,:,:,NSV_ELECBEG), XSVMIN(NSV_ELECBEG) )
-    PSVT(IIB-1,:,:,NSV_ELECEND) = XCION_NEG_FW(IIB,:,:)  ! Nb/kg
+    PSVT(IIB-1,:,:,1) = MAX( 2.*PSVT(IIB,:,:,1) -          &
+                             PSVT(IIB+1,:,:,1), XSVMIN(NSV_ELECBEG) )
+    PSVT(IIB-1,:,:,KRR+1) = XCION_NEG_FW(IIB,:,:)  ! Nb/kg
   ELSEWHERE                            !  IN(OUT)FLOW for NEG(POS) IONS
-    PSVT(IIB-1,:,:,NSV_ELECBEG) = XCION_POS_FW(IIB,:,:)  ! Nb/kg
-    PSVT(IIB-1,:,:,NSV_ELECEND) = MAX( 2.*PSVT(IIB,:,:,NSV_ELECEND) -          &
-                             PSVT(IIB+1,:,:,NSV_ELECEND), XSVMIN(NSV_ELECEND) )
+    PSVT(IIB-1,:,:,1) = XCION_POS_FW(IIB,:,:)  ! Nb/kg
+    PSVT(IIB-1,:,:,KRR+1) = MAX( 2.*PSVT(IIB,:,:,KRR+1) -          &
+                             PSVT(IIB+1,:,:,KRR+1), XSVMIN(NSV_ELECEND) )
   ENDWHERE
 END IF
 !
@@ -119,13 +121,13 @@ END IF
 IF (LEAST_ll( ) .AND. HLBCX(2)=='OPEN') THEN
 ! 
   WHERE ( PEFIELDU(IIE+1,:,:) >= 0. )         !  OUT(IN)FLOW for POS(NEG) IONS
-    PSVT(IIE+1,:,:,NSV_ELECBEG) = MAX( 2.*PSVT(IIE,:,:,NSV_ELECBEG) -          &
-                             PSVT(IIE-1,:,:,NSV_ELECBEG), XSVMIN(NSV_ELECBEG) )
-    PSVT(IIE+1,:,:,NSV_ELECEND) = XCION_NEG_FW(IIE,:,:)  ! Nb/kg
+    PSVT(IIE+1,:,:,1) = MAX( 2.*PSVT(IIE,:,:,1) -          &
+                             PSVT(IIE-1,:,:,1), XSVMIN(NSV_ELECBEG) )
+    PSVT(IIE+1,:,:,KRR+1) = XCION_NEG_FW(IIE,:,:)  ! Nb/kg
   ELSEWHERE                              !  IN(OUT)FLOW for NEG(POS) IONS
-    PSVT(IIE+1,:,:,NSV_ELECBEG) = XCION_POS_FW(IIE,:,:)  ! Nb/kg
-    PSVT(IIE+1,:,:,NSV_ELECEND) = MAX( 2.*PSVT(IIE,:,:,NSV_ELECEND) -          &
-                             PSVT(IIE-1,:,:,NSV_ELECEND), XSVMIN(NSV_ELECEND) )
+    PSVT(IIE+1,:,:,1) = XCION_POS_FW(IIE,:,:)  ! Nb/kg
+    PSVT(IIE+1,:,:,KRR+1) = MAX( 2.*PSVT(IIE,:,:,KRR+1) -          &
+                             PSVT(IIE-1,:,:,KRR+1), XSVMIN(NSV_ELECEND) )
   ENDWHERE
 END IF
 !
@@ -138,13 +140,13 @@ END IF
 IF (LSOUTH_ll( ) .AND. HLBCY(1)=='OPEN') THEN
 !
   WHERE ( PEFIELDV(:,IJB,:) <= 0. )         !  OUT(IN)FLOW for POS(NEG) IONS
-    PSVT(:,IJB-1,:,NSV_ELECBEG) = MAX( 2.*PSVT(:,IJB,:,NSV_ELECBEG) -          &
-                             PSVT(:,IJB+1,:,NSV_ELECBEG), XSVMIN(NSV_ELECBEG) )
-    PSVT(:,IJB-1,:,NSV_ELECEND) = XCION_NEG_FW(:,IJB,:)  ! Nb/kg
+    PSVT(:,IJB-1,:,1) = MAX( 2.*PSVT(:,IJB,:,1) -          &
+                             PSVT(:,IJB+1,:,1), XSVMIN(NSV_ELECBEG) )
+    PSVT(:,IJB-1,:,KRR+1) = XCION_NEG_FW(:,IJB,:)  ! Nb/kg
   ELSEWHERE                            !  IN(OUT)FLOW for NEG(POS) IONS
-    PSVT(:,IJB-1,:,NSV_ELECBEG) = XCION_POS_FW(:,IJB,:)  ! Nb/kg
-    PSVT(:,IJB-1,:,NSV_ELECEND) = MAX( 2.*PSVT(:,IJB,:,NSV_ELECEND) -          &
-                             PSVT(:,IJB+1,:,NSV_ELECEND), XSVMIN(NSV_ELECEND) )
+    PSVT(:,IJB-1,:,1) = XCION_POS_FW(:,IJB,:)  ! Nb/kg
+    PSVT(:,IJB-1,:,KRR+1) = MAX( 2.*PSVT(:,IJB,:,KRR+1) -          &
+                             PSVT(:,IJB+1,:,KRR+1), XSVMIN(NSV_ELECEND) )
   ENDWHERE
 END IF
 !
@@ -157,13 +159,13 @@ END IF
 IF (LNORTH_ll( ) .AND. HLBCY(2)=='OPEN') THEN
 ! 
   WHERE ( PEFIELDV(:,IJE+1,:) >= 0. )         !  OUT(IN)FLOW for POS(NEG) IONS
-    PSVT(:,IJE+1,:,NSV_ELECBEG) = MAX( 2.*PSVT(:,IJE,:,NSV_ELECBEG) -          &
-                             PSVT(:,IJE-1,:,NSV_ELECBEG), XSVMIN(NSV_ELECBEG) )
-    PSVT(:,IJE+1,:,NSV_ELECEND) = XCION_NEG_FW(:,IJE,:)  ! Nb/kg
+    PSVT(:,IJE+1,:,1) = MAX( 2.*PSVT(:,IJE,:,1) -          &
+                             PSVT(:,IJE-1,:,1), XSVMIN(NSV_ELECBEG) )
+    PSVT(:,IJE+1,:,KRR+1) = XCION_NEG_FW(:,IJE,:)  ! Nb/kg
   ELSEWHERE                              !  IN(OUT)FLOW for NEG(POS) IONS
-    PSVT(:,IJE+1,:,NSV_ELECBEG) = XCION_POS_FW(:,IJE,:)  ! Nb/kg
-    PSVT(:,IJE+1,:,NSV_ELECEND) = MAX( 2.*PSVT(:,IJE,:,NSV_ELECEND) -          &
-                             PSVT(:,IJE-1,:,NSV_ELECEND), XSVMIN(NSV_ELECEND) )
+    PSVT(:,IJE+1,:,1) = XCION_POS_FW(:,IJE,:)  ! Nb/kg
+    PSVT(:,IJE+1,:,KRR+1) = MAX( 2.*PSVT(:,IJE,:,KRR+1) -          &
+                             PSVT(:,IJE-1,:,KRR+1), XSVMIN(NSV_ELECEND) )
   ENDWHERE
 END IF
 !

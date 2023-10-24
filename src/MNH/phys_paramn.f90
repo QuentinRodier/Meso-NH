@@ -240,6 +240,7 @@ END MODULE MODI_PHYS_PARAM_n
 !  P. Wautelet 30/11/2022: compute XTHW_FLUX, XRCW_FLUX and XSVW_FLUX only when needed
 !  A. Costes      12/2021: add Blaze fire model
 !  Q. Rodier      2022:    integration with PHYEX
+!  C. Barthe      03/2023: add CELEC in call to turbulence
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -1582,7 +1583,7 @@ END IF
               LCOUPLES, LBLOWSNOW, LIBM,LFLYER,                                      &
               GCOMPUTE_SRC, XRSNOW,                                                  &
               LOCEAN, LDEEPOC, LDIAG_IN_RUN,                                         &
-              CTURBLEN_CLOUD, CCLOUD,                                                &
+              CTURBLEN_CLOUD, CCLOUD, CELEC,                                         &
               XTSTEP, TPFILE,                                                        &
               XDXX, XDYY, XDZZ, XDZX, XDZY, XZZ,                                     &
               XDIRCOSXW, XDIRCOSYW, XDIRCOSZW, XCOSSLOPE, XSINSLOPE,                 &

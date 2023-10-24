@@ -9,7 +9,7 @@ CONTAINS
 SUBROUTINE ICE4_PACK(D, CST, PARAMI, ICEP, ICED, BUCONF,                   &
                      KPROMA, KSIZE, KSIZE2,                                &
                      HSUBG_AUCV_RC, HSUBG_AUCV_RI,                         &
-                     PTSTEP, KRR, ODMICRO, PEXN,                           &
+                     PTSTEP, KRR, OSAVE_MICRO, ODMICRO, OELEC, PEXN,       &
                      PRHODJ, PRHODREF, PEXNREF, PPABST, PCIT, PCLDFR,      &
                      PHLC_HRC, PHLC_HCF, PHLI_HRI, PHLI_HCF,               &
                      PTHS, PRVS, PRCS, PRRS, PRIS, PRSS, PRGS,             &
@@ -18,7 +18,7 @@ SUBROUTINE ICE4_PACK(D, CST, PARAMI, ICEP, ICED, BUCONF,                   &
                      PRVHENI, PLVFACT, PLSFACT,                            &
                      PWR,                                                  &
                      TBUDGETS, KBUDGETS,                                   &
-                     PRHS                                                  )
+                     PMICRO_TEND, PLATHAM_IAGGS, PRHS                      )
 !  -----------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -86,6 +86,8 @@ CHARACTER(LEN=4),         INTENT(IN)    :: HSUBG_AUCV_RC ! Kind of Subgrid autoc
 CHARACTER(LEN=80),        INTENT(IN)    :: HSUBG_AUCV_RI ! Kind of Subgrid autoconversion method
 REAL,                     INTENT(IN)    :: PTSTEP  ! Double Time step (single if cold start)
 INTEGER,                  INTENT(IN)    :: KRR     ! Number of moist variable
+LOGICAL,                  INTENT(IN)    :: OSAVE_MICRO  ! If true, microphysical tendencies are saved
+LOGICAL,                  INTENT(IN)    :: OELEC        ! if true, cloud electricity is activated
 LOGICAL, DIMENSION(D%NIJT,D%NKT), INTENT(IN)   :: ODMICRO ! mask to limit computation
 !
 REAL, DIMENSION(D%NIJT,D%NKT),   INTENT(IN)    :: PEXN    ! Exner function
@@ -118,6 +120,11 @@ REAL, DIMENSION(D%NIJT,D%NKT),   INTENT(IN)    :: PLSFACT
 REAL, DIMENSION(D%NIJT,D%NKT,0:7), INTENT(OUT) :: PWR
 TYPE(TBUDGETDATA), DIMENSION(KBUDGETS), INTENT(INOUT) :: TBUDGETS
 INTEGER, INTENT(IN) :: KBUDGETS
+REAL, DIMENSION(MERGE(D%NIJT,0,OSAVE_MICRO),MERGE(D%NKT,0,OSAVE_MICRO),MERGE(IBUNUM-IBUNUM_EXTRA,0,OSAVE_MICRO)), &
+                                          INTENT(INOUT) :: PMICRO_TEND  ! Microphysical tendencies
+REAL, DIMENSION(MERGE(D%NIJT,0,OELEC),MERGE(D%NKT,0,OELEC)), &
+                                          INTENT(IN)    :: PLATHAM_IAGGS  ! E Function to simulate
+                                                                          ! enhancement of IAGGS
 REAL, DIMENSION(D%NIJT,D%NKT), OPTIONAL,  INTENT(INOUT) :: PRHS    ! Hail m.r. source
 !
 !
@@ -158,6 +165,9 @@ REAL, DIMENSION(KPROMA, IBUNUM-IBUNUM_EXTRA) :: ZBU_SUM
 REAL, DIMENSION(KPROMA,0:7) :: ZVART !Packed variables
 REAL, DIMENSION(KSIZE2,0:7) :: ZEXTPK   !To take into acount external tendencies inside the splitting
 !
+!For retroaction of E on IAGGS
+REAL, DIMENSION(MERGE(KPROMA,0,OELEC)) :: ZLATHAM_IAGGS
+!
 INTEGER, DIMENSION(KPROMA) :: I1,I2 ! Used to replace the COUNT and PACK intrinsics on variables
 INTEGER, DIMENSION(KSIZE) :: I1TOT, I2TOT ! Used to replace the COUNT and PACK intrinsics
 !
@@ -189,7 +199,7 @@ IF(PARAMI%LPACK_MICRO) THEN
     ! Another one would be to cut tendencies in 3 parts: before rainfr_vert, rainfr_vert, after rainfr_vert
   ENDIF
   !
-  IF(BUCONF%LBU_ENABLE) THEN
+  IF(BUCONF%LBU_ENABLE .OR. OSAVE_MICRO) THEN
     DO JV=1, IBUNUM-IBUNUM_EXTRA
       ZBU_PACK(:, JV)=0.
     ENDDO
@@ -269,6 +279,7 @@ IF(PARAMI%LPACK_MICRO) THEN
                 ZHLI_HCF(IC) = PHLI_HCF(JIJ, JK)
                 ZHLI_HRI(IC) = PHLI_HRI(JIJ, JK)
               ENDIF
+              IF (OELEC) ZLATHAM_IAGGS(IC) = PLATHAM_IAGGS(JIJ, JK)
               ! Save indices for later usages:
               I1(IC) = JIJ
               I2(IC) = JK
@@ -304,7 +315,7 @@ IF(PARAMI%LPACK_MICRO) THEN
       CALL ICE4_STEPPING(D, CST, PARAMI, ICEP, ICED, BUCONF, &
                         &LLSIGMA_RC, LL_AUCV_ADJU, GEXT_TEND, &
                         &KPROMA, IMICRO, LLMICRO, PTSTEP, &
-                        &KRR, &
+                        &KRR, OSAVE_MICRO, OELEC, &
                         &HSUBG_AUCV_RC, HSUBG_AUCV_RI, &
                         &ZEXN, ZRHODREF, I1, I2, &
                         &ZPRES, ZCF, ZSIGMA_RC, &
@@ -312,7 +323,8 @@ IF(PARAMI%LPACK_MICRO) THEN
                         &ZVART, &
                         &ZHLC_HCF, ZHLC_HRC, &
                         &ZHLI_HCF, ZHLI_HRI, PRAINFR, &
-                        &ZEXTPK, ZBU_SUM, ZRREVAV)
+                        &ZEXTPK, ZBU_SUM, ZRREVAV, &
+                        &ZLATHAM_IAGGS)
       !
       !*       6.     UNPACKING
       !               ---------
@@ -332,7 +344,7 @@ IF(PARAMI%LPACK_MICRO) THEN
           PWR(I1(JL),I2(JL),IRH)=ZVART(JL, IRH)
         ENDIF
       ENDDO
-      IF(BUCONF%LBU_ENABLE) THEN
+      IF(BUCONF%LBU_ENABLE .OR. OSAVE_MICRO) THEN
         DO JV=1, IBUNUM-IBUNUM_EXTRA
           DO JL=1, IMICRO
             ZBU_PACK(JMICRO+JL-1, JV) = ZBU_SUM(JL, JV)
@@ -380,7 +392,7 @@ ELSE ! PARAMI%LPACK_MICRO
   CALL ICE4_STEPPING(D, CST, PARAMI, ICEP, ICED, BUCONF, &
                     &LLSIGMA_RC, LL_AUCV_ADJU, GEXT_TEND, &
                     &KSIZE, KSIZE, ODMICRO, PTSTEP, &
-                    &KRR, &
+                    &KRR, OSAVE_MICRO, OELEC, &
                     &HSUBG_AUCV_RC, HSUBG_AUCV_RI, &
                     &PEXN, PRHODREF, I1TOT, I2TOT, &
                     &PPABST, PCLDFR, ZSIGMA_RC, &
@@ -388,9 +400,23 @@ ELSE ! PARAMI%LPACK_MICRO
                     &PWR, &
                     &PHLC_HCF, PHLC_HRC, &
                     &PHLI_HCF, PHLI_HRI, PRAINFR, &
-                    &ZEXTPK, ZBU_PACK, PEVAP3D)
+                    &ZEXTPK, ZBU_PACK, PEVAP3D, &
+                    &ZLATHAM_IAGGS)
 
 ENDIF ! PARAMI%LPACK_MICRO
+!
+!
+!*       6.     SAVE MICROPHYSICAL TENDENCIES USED BY OTHER PHYSICAL PARAMETERIZATIONS
+!               ----------------------------------------------------------------------
+!
+IF (OSAVE_MICRO) THEN
+  DO JV = 1, IBUNUM-IBUNUM_EXTRA
+    DO JL = 1, KSIZE 
+      PMICRO_TEND(I1TOT(JL),I2TOT(JL),JV) = ZBU_PACK(JL,JV)
+    ENDDO
+  ENDDO        
+END IF
+!
 !
 !*       7.     BUDGETS
 !               -------
