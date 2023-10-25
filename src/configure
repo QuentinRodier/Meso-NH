@@ -519,9 +519,9 @@ export I_MPI_PIN_PROCESSOR_LIST=all:map=spread
                 export VER_CDF=${VER_CDF:-CDFAUTO}
                 export   MNHENV=${MNHENV:-"
 module purge
-module load iompi/2020a
-module load GCCcore/10.3.0
-module load CMake/3.20.1
+source /soft/irsrvsoft1/expl/eb/r17/$(echo el_`lsb_release -r | awk -F ":" ' {print $2}' | awk -F "." '{print $1}' | tr -d '\t'`-`uname -i`)/envs/mesonh.sh
+module load intel-compilers/2021.4.0
+export OMPI_FC=ifort
 "}
               ;;
 
