@@ -145,7 +145,7 @@ CPPFLAGS_RAD = -DMNH_ECRAD -DVER_ECRAD=$(VER_ECRAD)
 INC_RAD      += -I$(B)LIB/RAD/ecrad-$(VERSION_ECRAD)/include
 ifeq "$(VER_ECRAD)" "140"
 INC_RAD      += -I$(B)LIB/RAD/ecrad-$(VERSION_ECRAD)/drhook/include
-IGNORE_DEP_MASTER   += yomhook.D
+#IGNORE_DEP_MASTER   += yomhook.D
 endif
 ifneq "$(VER_ECRAD)" "140"
 IGNORE_DEP_MASTER   += read_albedo_data.D read_emiss_data.D
