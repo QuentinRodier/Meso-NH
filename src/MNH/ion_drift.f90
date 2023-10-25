@@ -9,8 +9,9 @@
 
 INTERFACE
 !
-      SUBROUTINE ION_DRIFT(PDRIFTP, PDRIFTM, PSVT, HLBCX, HLBCY)
+      SUBROUTINE ION_DRIFT(KRR, PDRIFTP, PDRIFTM, PSVT, HLBCX, HLBCY)
 !
+INTEGER,                        INTENT(IN)    :: KRR     ! Number of moist variables
 CHARACTER(LEN=4), DIMENSION(2), INTENT(IN)    :: HLBCX,HLBCY
 REAL, DIMENSION(:,:,:),         INTENT(OUT)   :: PDRIFTP, PDRIFTM
 REAL, DIMENSION(:,:,:,:),       INTENT(INOUT) :: PSVT
@@ -19,9 +20,9 @@ END SUBROUTINE ION_DRIFT
 END INTERFACE
 END MODULE MODI_ION_DRIFT
 !
-!     ##########################################################
-      SUBROUTINE ION_DRIFT(PDRIFTP, PDRIFTM, PSVT, HLBCX, HLBCY)
-!     ##########################################################
+!     ###############################################################
+      SUBROUTINE ION_DRIFT(KRR, PDRIFTP, PDRIFTM, PSVT, HLBCX, HLBCY)
+!     ###############################################################
 !
 !!    PURPOSE
 !!    -------
@@ -37,6 +38,7 @@ END MODULE MODI_ION_DRIFT
 !!          M. Chong      01/2010
 !!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
+!  C. Barthe   30/11/2022: change the indexes from nsv_elecbeg/nsv_elecend to 1-krr+1
 !
 !-------------------------------------------------------------------------------
 !
@@ -64,6 +66,7 @@ IMPLICIT NONE
 !
 !*       0.1   declarations of arguments
 !
+INTEGER,                        INTENT(IN)    :: KRR     ! Number of moist variableS
 CHARACTER(LEN=4), DIMENSION(2), INTENT(IN)    :: HLBCX,HLBCY
 REAL, DIMENSION(:,:,:),         INTENT(OUT)   :: PDRIFTP, PDRIFTM
 REAL, DIMENSION(:,:,:,:),       INTENT(INOUT) :: PSVT
@@ -123,22 +126,22 @@ CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
 CALL CLEANLIST_ll(TZFIELDS_ll)
 !
 !  specify lateral boundary ion mixing ratio
-CALL ION_BOUND4DRIFT (HLBCX,HLBCY,XEFIELDU,XEFIELDV,PSVT)
+CALL ION_BOUND4DRIFT (KRR,HLBCX,HLBCY,XEFIELDU,XEFIELDV,PSVT)
 !
-CALL ADD3DFIELD_ll( TZFIELDS_ll, PSVT(:,:,:,NSV_ELECBEG), 'ION_DRIFT::PSVT(:,:,:,NSV_ELECBEG)' )
-CALL ADD3DFIELD_ll( TZFIELDS_ll, PSVT(:,:,:,NSV_ELECEND), 'ION_DRIFT::PSVT(:,:,:,NSV_ELECEND)' )
+CALL ADD3DFIELD_ll( TZFIELDS_ll, PSVT(:,:,:,1), 'ION_DRIFT::PSVT(:,:,:,1)' )
+CALL ADD3DFIELD_ll( TZFIELDS_ll, PSVT(:,:,:,KRR+1), 'ION_DRIFT::PSVT(:,:,:,KRR+1)' )
 CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
 CALL CLEANLIST_ll(TZFIELDS_ll)
 !
 ! specify upper boundary ion mixing ratio
 WHERE (XEFIELDW(:,:,IKE+1) .GE. 0.)   ! Out(In)flow for positive (negative) ions 
-  PSVT (:,:,IKE+1,NSV_ELECBEG) = MAX(2. * PSVT (:,:,IKE,NSV_ELECBEG) -  &
-                                  PSVT (:,:,IKE-1,NSV_ELECBEG),XSVMIN(NSV_ELECBEG))
-  PSVT (:,:,IKE+1,NSV_ELECEND) = XCION_NEG_FW(:,:,IKE+1)
+  PSVT (:,:,IKE+1,1) = MAX(2. * PSVT (:,:,IKE,1) -  &
+                                PSVT (:,:,IKE-1,1),XSVMIN(NSV_ELECBEG))
+  PSVT (:,:,IKE+1,KRR+1) = XCION_NEG_FW(:,:,IKE+1)
 ELSE WHERE      ! In(Out)flow for positive (negative) ions
-  PSVT (:,:,IKE+1,NSV_ELECBEG) = XCION_POS_FW(:,:,IKE+1)
-  PSVT (:,:,IKE+1,NSV_ELECEND) = MAX(2.* PSVT (:,:,IKE,NSV_ELECEND) -  &
-                                  PSVT (:,:,IKE-1,NSV_ELECEND),XSVMIN(NSV_ELECEND))
+  PSVT (:,:,IKE+1,1) = XCION_POS_FW(:,:,IKE+1)
+  PSVT (:,:,IKE+1,KRR+1) = MAX(2.* PSVT (:,:,IKE,KRR+1) -  &
+                                   PSVT (:,:,IKE-1,KRR+1),XSVMIN(NSV_ELECEND))
 END WHERE  
 !
 XEFIELDW(:,:,IKB-1) = XEFIELDW(:,:,IKB)
@@ -152,17 +155,17 @@ XEFIELDW(:,:,IKE+1) = XEFIELDW(:,:,IKE)
 !*      3.1  positive ion source (drifting along E)
 !
 ! x-component of div term
-ZDRIFTX(:,:,:) = PSVT(:,:,:,NSV_ELECBEG) * XMOBIL_POS(:,:,:)
+ZDRIFTX(:,:,:) = PSVT(:,:,:,1) * XMOBIL_POS(:,:,:)
 ZDRIFTX(:,:,:) = ZDRIFTX(:,:,:) * XEFIELDU(:,:,:)
 ZDRIFTX(:,:,:) = -MXM(ZDRIFTX(:,:,:)) ! Put components at flux sides
 !
 ! y-component of div term
-ZDRIFTY(:,:,:) = PSVT(:,:,:,NSV_ELECBEG) * XMOBIL_POS(:,:,:)
+ZDRIFTY(:,:,:) = PSVT(:,:,:,1) * XMOBIL_POS(:,:,:)
 ZDRIFTY(:,:,:) = ZDRIFTY(:,:,:) * XEFIELDV(:,:,:)
 ZDRIFTY(:,:,:) = -MYM(ZDRIFTY(:,:,:)) ! Put components at flux sides
 !
 ! z-component of div term
-ZDRIFTZ(:,:,:) = PSVT(:,:,:,NSV_ELECBEG) * XMOBIL_POS(:,:,:)
+ZDRIFTZ(:,:,:) = PSVT(:,:,:,1) * XMOBIL_POS(:,:,:)
 ZDRIFTZ(:,:,:) = ZDRIFTZ(:,:,:) * XEFIELDW(:,:,:)
 ZDRIFTZ(:,:,:) = -MZM(ZDRIFTZ(:,:,:)) ! Put components at flux sides
 !
@@ -178,17 +181,17 @@ CALL GDIV(HLBCX,HLBCY,XDXX,XDYY,XDZX,XDZY,XDZZ,ZDRIFTX,ZDRIFTY,ZDRIFTZ,PDRIFTP)
 !*      3.2    negative ion source (drifting counter E)
 !
 ! x-component of div term
-ZDRIFTX(:,:,:) = PSVT(:,:,:,NSV_ELECEND) * XMOBIL_NEG(:,:,:)
+ZDRIFTX(:,:,:) = PSVT(:,:,:,KRR+1) * XMOBIL_NEG(:,:,:)
 ZDRIFTX(:,:,:) = ZDRIFTX(:,:,:) * XEFIELDU(:,:,:)
 ZDRIFTX(:,:,:) = +MXM(ZDRIFTX(:,:,:)) ! Put components at flux sides
 !
 ! y-component of div term
-ZDRIFTY(:,:,:) = PSVT(:,:,:,NSV_ELECEND) * XMOBIL_NEG(:,:,:)
+ZDRIFTY(:,:,:) = PSVT(:,:,:,KRR+1) * XMOBIL_NEG(:,:,:)
 ZDRIFTY(:,:,:) = ZDRIFTY(:,:,:) * XEFIELDV(:,:,:)
 ZDRIFTY(:,:,:) = +MYM(ZDRIFTY(:,:,:)) ! Put components at flux sides
 !
 ! z-component of div term
-ZDRIFTZ(:,:,:) = PSVT(:,:,:,NSV_ELECEND) * XMOBIL_NEG(:,:,:)
+ZDRIFTZ(:,:,:) = PSVT(:,:,:,KRR+1) * XMOBIL_NEG(:,:,:)
 ZDRIFTZ(:,:,:) = ZDRIFTZ(:,:,:) * XEFIELDW(:,:,:)
 ZDRIFTZ(:,:,:) = +MZM(ZDRIFTZ(:,:,:)) ! Put components at flux sides
 

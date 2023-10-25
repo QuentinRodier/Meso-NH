@@ -8,106 +8,68 @@
 !     ###########################
 !
 INTERFACE
-      SUBROUTINE RESOLVED_ELEC_n (HCLOUD, HSCONV, HMF_CLOUD,                              &
-                                  KRR, KSPLITR, KMI, KTCOUNT, OEXIT,                      &
-                                  HLBCX, HLBCY, HRAD, HTURBDIM,                           &
-                                  OSUBG_COND, OSIGMAS,PSIGQSAT, HSUBG_AUCV,               &
-                                  PTSTEP, PZZ, PRHODJ, PRHODREF, PEXNREF,                 &
-                                  PPABST, PTHT, PTHS, PWT,                                & 
-                                  PRT, PRS, PSVT, PSVS, PCIT,                             & 
-                                  PSIGS, PSRCS, PCLDFR, PMFCONV, PCF_MF, PRC_MF,          &
-                                  PRI_MF, OSEDIC, OWARM,                                  &
-                                  PINPRC, PINPRR, PINPRR3D, PEVAP3D,                      &
-                                  PINPRS, PINPRG, PINPRH,                                 &
-                                  PSEA, PTOWN                                             )   
+      SUBROUTINE RESOLVED_ELEC_n (HCLOUD, KRR, KMI, KTCOUNT, OEXIT,       &
+                                  PTSTEP, PZZ, PRHODJ, PRHODREF, PEXNREF, &
+                                  PPABST, PTHT, PWT,                      & 
+                                  PRT, PRS, PSVT, PSVS, PCIT,             & 
+                                  PINPRR,                                 &
+                                  PSEA, PTOWN,                            &
+                                  PCCS, PCRS, PCSS, PCGS, PCHS,           &
+                                  PSVS_LNOX                               )   
 !
-CHARACTER(LEN=4),         INTENT(IN)   :: HCLOUD   ! kind of cloud
-CHARACTER(LEN=4),         INTENT(IN)   :: HSCONV   ! Shallow convection scheme
-CHARACTER(LEN=4),         INTENT(IN)   :: HMF_CLOUD! Type of statistical cloud
-INTEGER,                  INTENT(IN)   :: KRR      ! Number of moist variables
-INTEGER,                  INTENT(IN)   :: KSPLITR  ! Number of small time step
-                                                   ! integrations for  rain sedimendation
-INTEGER,                  INTENT(IN)   :: KMI      ! Model index
-INTEGER,                  INTENT(IN)   :: KTCOUNT  ! Temporal loop counter
-LOGICAL,                  INTENT(IN)   :: OEXIT    ! switch for the end of the temporal loop
-CHARACTER(LEN=4), DIMENSION(2), INTENT(IN) :: HLBCX,HLBCY   ! X and Y-direc. LBC type
-CHARACTER(len=4),         INTENT(IN)   :: HRAD     ! Radiation scheme name
-CHARACTER(len=4),         INTENT(IN)   :: HTURBDIM ! Dimensionality of the
-                                                   ! turbulence scheme
-LOGICAL,                  INTENT(IN)   :: OSUBG_COND ! Switch for Subgrid Cond.
-LOGICAL,                  INTENT(IN)   :: OSIGMAS  ! Switch for Sigma_s:
-                                                   ! use values computed in CONDENSATION
-                                                   ! or that from turbulence scheme
-REAL,                     INTENT(IN)   :: PSIGQSAT  ! coeff applied to qsat variance contribution
-CHARACTER(LEN=4),         INTENT(IN)   :: HSUBG_AUCV
-                                                   ! Kind of Subgrid autoconversion method
-REAL,                     INTENT(IN)   :: PTSTEP ! Double Time step
-                                                 ! (single if cold start)
+CHARACTER(LEN=4),         INTENT(IN)    :: HCLOUD   ! kind of cloud
+INTEGER,                  INTENT(IN)    :: KRR      ! Number of moist variables
+INTEGER,                  INTENT(IN)    :: KMI      ! Model index
+INTEGER,                  INTENT(IN)    :: KTCOUNT  ! Temporal loop counter
+LOGICAL,                  INTENT(IN)    :: OEXIT    ! switch for the end of the temporal loop
+REAL,                     INTENT(IN)    :: PTSTEP   ! Double Time step (single if cold start)
 !
-REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PZZ     ! Height (z)
-REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PRHODJ  !Dry density * Jacobian
-REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PRHODREF! Reference dry air density
-REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PEXNREF ! Reference Exner function
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PZZ     ! Height (z)
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODJ  !Dry density * Jacobian
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODREF! Reference dry air density
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PEXNREF ! Reference Exner function
 !
-REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PPABST  ! abs. pressure at time t
-REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PTHT    ! Theta at time t
-REAL, DIMENSION(:,:,:,:), INTENT(INOUT):: PRT     ! Moist variables at time t
-REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PSIGS   ! Sigma_s at time t
-REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PMFCONV ! convective mass flux
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PPABST  ! abs. pressure at time t
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHT    ! Theta at time t
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PWT     ! vertical velocity at time t
+REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PRT     ! Moist variables at time t
 !
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PTHS  ! Theta source
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRS   ! Moist  variable sources
-REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PSVT  ! Scalar variable at time t
+REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PSVT  ! Scalar variable at time t
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PSVS  ! Scalar variable sources
 !
-REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSRCS ! Second-order flux
-                                                 ! s'rc'/2Sigma_s2 at time t+1
-                                                 ! multiplied by Lambda_3
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PCLDFR! Cloud fraction
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PCIT  ! Pristine ice number
-                                                 ! concentration at time t
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PCIT  ! Pristine ice nb conc.
+                                                 ! - at time t (for ICE schemes)
+                                                 ! - source (for LIMA)
 !
-LOGICAL,                  INTENT(IN) :: OSEDIC! Switch to activate the
-                                              ! cloud droplet sedimentation
-LOGICAL,                  INTENT(IN) :: OWARM ! Control of the rain formation
-                                              !  by slow warm microphysical
-                                              !         processes
+REAL, DIMENSION(:,:),      INTENT(IN)   :: PINPRR   ! Rain instant precip
 !
-REAL, DIMENSION(:,:,:), INTENT(IN) :: PCF_MF! Convective Mass Flux Cloud fraction 
-REAL, DIMENSION(:,:,:), INTENT(IN) :: PRC_MF! Convective Mass Flux liquid mixing ratio
-REAL, DIMENSION(:,:,:), INTENT(IN) :: PRI_MF! Convective Mass Flux solid mixing ratio
+REAL, DIMENSION(:,:),   OPTIONAL, INTENT(IN)    :: PSEA   ! Land Sea mask
+REAL, DIMENSION(:,:),   OPTIONAL, INTENT(IN)    :: PTOWN  ! Town fraction
 !
-REAL, DIMENSION(:,:),   INTENT(INOUT) :: PINPRC   ! Cloud instant precip
-REAL, DIMENSION(:,:),   INTENT(INOUT) :: PINPRR   ! Rain instant precip
-REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PINPRR3D ! sed flux of precip
-REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PEVAP3D  ! evap profile
-REAL, DIMENSION(:,:),   INTENT(INOUT) :: PINPRS   ! Snow instant precip
-REAL, DIMENSION(:,:),   INTENT(INOUT) :: PINPRG   ! Graupel instant precip
-REAL, DIMENSION(:,:),   INTENT(INOUT) :: PINPRH   ! Hail instant precip
+REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(IN)    :: PCCS   ! Cld droplets nb conc source
+REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(IN)    :: PCRS   ! Rain nb conc source
+REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(IN)    :: PCSS   ! Snow nb conc source
+REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(IN)    :: PCGS   ! Graupel nb conc source
+REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(IN)    :: PCHS   ! Hail nb conc source
 !
-REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN) :: PSEA   ! Land Sea mask
-REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN) :: PTOWN  ! Town fraction
+REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(INOUT) :: PSVS_LNOX ! Scalar variable source for LNOX
 !
-REAL, DIMENSION(:,:,:), INTENT(IN) :: PWT  ! vertical velocity at time t-dt
 !
 END SUBROUTINE RESOLVED_ELEC_n
 END INTERFACE
 END MODULE MODI_RESOLVED_ELEC_n
 !
-!     #####################################################################################
-      SUBROUTINE RESOLVED_ELEC_n (HCLOUD, HSCONV, HMF_CLOUD,                              &
-                                  KRR, KSPLITR, KMI, KTCOUNT, OEXIT,                      &
-                                  HLBCX, HLBCY, HRAD, HTURBDIM,                           &
-                                  OSUBG_COND, OSIGMAS,PSIGQSAT, HSUBG_AUCV,               &
-                                  PTSTEP, PZZ, PRHODJ, PRHODREF, PEXNREF,                 &
-                                  PPABST, PTHT, PTHS, PWT,                                & 
-                                  PRT, PRS, PSVT, PSVS, PCIT,                             & 
-                                  PSIGS, PSRCS, PCLDFR, PMFCONV, PCF_MF, PRC_MF,          &
-                                  PRI_MF, OSEDIC, OWARM,                                  &
-                                  PINPRC, PINPRR, PINPRR3D, PEVAP3D,                      &
-                                  PINPRS, PINPRG, PINPRH,                                 &
-                                  PSEA, PTOWN                                             )   
-!     #####################################################################################
+!     #####################################################################
+      SUBROUTINE RESOLVED_ELEC_n (HCLOUD, KRR, KMI, KTCOUNT, OEXIT,       &
+                                  PTSTEP, PZZ, PRHODJ, PRHODREF, PEXNREF, &
+                                  PPABST, PTHT, PWT,                      & 
+                                  PRT, PRS, PSVT, PSVS, PCIT,             & 
+                                  PINPRR,                                 &
+                                  PSEA, PTOWN,                            &
+                                  PCCS, PCRS, PCSS, PCGS, PCHS,           &
+                                  PSVS_LNOX                               )   
+!     #####################################################################
 !
 !!    PURPOSE
 !!    -------
@@ -173,127 +135,78 @@ END MODULE MODI_RESOLVED_ELEC_n
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !  P. Wautelet 12/02/2021: bugfix: change STATUS for opening files containing flash information (NEW->UNKNOWN)
 !  P. Wautelet 17/02/2021: budgets: add DRIFT and CORAY terms for electricity
+!!      C. Barthe   07/02/2022: remove cloud electrification from resolved_elec
+!!      C. Barthe   08/09/2022: enable using CELLS with LIMA
+!!
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-use mode_budget,           only: Budget_store_add, Budget_store_init, Budget_store_end
 USE MODE_ELEC_ll
 USE MODE_IO_FILE,          ONLY: IO_File_close, IO_File_open
 USE MODE_IO_MANAGE_STRUCT, ONLY: IO_File_add2list, IO_File_find_byname
 USE MODE_ll
 !
-use modd_budget,           only: lbudget_th, lbudget_rv, lbudget_rc, lbudget_rr, lbudget_ri, lbudget_rs, lbudget_rg, lbudget_rh, &
-                                 lbudget_sv,                                                                                     &
-                                 NBUDGET_TH, NBUDGET_RV, NBUDGET_RC, NBUDGET_RR, NBUDGET_RI, NBUDGET_RS, NBUDGET_RG, NBUDGET_RH, &
-                                 NBUDGET_SV1,                                                                                    &
-                                 tbudgets
-USE MODD_METRICS_n, ONLY : XDXX, XDYY, XDZX, XDZY, XDZZ
-USE MODD_FIELD_n, ONLY : XRSVS
-USE MODD_CONF, ONLY : L1D, L2D, CEXP
+USE MODD_CONF,        ONLY : CEXP, CSEG
 USE MODD_CST
-USE MODD_IO,            ONLY: TFILEDATA, TFILE_DUMMY
-USE MODD_PARAMETERS, ONLY : JPVEXT
+USE MODD_IO,          ONLY : TFILEDATA, TFILE_DUMMY
+USE MODD_PARAMETERS,  ONLY : JPVEXT
+USE MODD_PARAM_LIMA,  ONLY : NMOM_C, NMOM_R, NMOM_I, NMOM_S, NMOM_G, NMOM_H
 USE MODD_ELEC_DESCR
 USE MODD_ELEC_n
-USE MODD_NSV
-USE MODD_CH_MNHC_n,    ONLY: LUSECHEM,LCH_CONV_LINOX
-USE MODD_DYN_n, ONLY: NSTOP, XTSTEP
 USE MODD_ARGSLIST_ll, ONLY : LIST_ll
-
 USE MODD_TIME_n
 USE MODD_LMA_SIMULATOR
 !
-USE MODD_VAR_ll, ONLY : NMNH_COMM_WORLD
-USE MODI_RAIN_ICE_ELEC
-USE MODI_ICE_ADJUST_ELEC
-USE MODI_TO_ELEC_FIELD_n
+USE MODD_VAR_ll,      ONLY : NMNH_COMM_WORLD
 USE MODI_FLASH_GEOM_ELEC_n
-USE MODI_SHUMAN
 USE MODI_ION_ATTACH_ELEC
-USE MODD_ARGSLIST_ll, ONLY : LIST_ll
-!
-USE MODI_ION_DRIFT
 USE MODI_SERIES_CLOUD_ELEC
 !
 IMPLICIT NONE
 !
+!
 !*       0.1   Declarations of dummy arguments :
 !
-CHARACTER(LEN=4),         INTENT(IN)   :: HCLOUD   ! kind of cloud
-                                                   ! paramerization
-CHARACTER(LEN=4),         INTENT(IN)   :: HSCONV   ! Shallow convection scheme
-CHARACTER(LEN=4),         INTENT(IN)   :: HMF_CLOUD! Type of statistical cloud
-INTEGER,                  INTENT(IN)   :: KRR      ! Number of moist variables
-INTEGER,                  INTENT(IN)   :: KSPLITR  ! Number of small time step
-                                       ! integrations for  rain sedimendation
-                                       ! integrations for  ice  sedimendation
-INTEGER,                  INTENT(IN)   :: KMI      ! Model index
-INTEGER,                  INTENT(IN)   :: KTCOUNT  ! Temporal loop counter
-LOGICAL,                  INTENT(IN)   :: OEXIT    ! switch for the end of the temporal loop
-CHARACTER(LEN=4), DIMENSION(2), INTENT(IN) :: HLBCX,HLBCY   ! X and Y-direc. LBC type
-CHARACTER(len=4),         INTENT(IN)   :: HRAD     ! Radiation scheme name
-CHARACTER(len=4),         INTENT(IN)   :: HTURBDIM ! Dimensionality of the
-                                                   ! turbulence scheme
-LOGICAL,                  INTENT(IN)   :: OSUBG_COND ! Switch for Subgrid Cond.
-LOGICAL,                  INTENT(IN)   :: OSIGMAS  ! Switch for Sigma_s:
-                                        ! use values computed in CONDENSATION
-                                        ! or that from turbulence scheme
-REAL,                     INTENT(IN)   :: PSIGQSAT  ! coeff applied to qsat variance contribution
-CHARACTER(LEN=4),         INTENT(IN)   :: HSUBG_AUCV
-                                        ! Kind of Subgrid autoconversion method
-REAL,                     INTENT(IN)   :: PTSTEP   ! Double Time step
-                                                   ! (single if cold start)
+CHARACTER(LEN=4),         INTENT(IN)    :: HCLOUD   ! kind of cloud paramerization
+INTEGER,                  INTENT(IN)    :: KRR      ! Number of moist variables
+INTEGER,                  INTENT(IN)    :: KMI      ! Model index
+INTEGER,                  INTENT(IN)    :: KTCOUNT  ! Temporal loop counter
+LOGICAL,                  INTENT(IN)    :: OEXIT    ! switch for the end of the temporal loop
+REAL,                     INTENT(IN)    :: PTSTEP   ! Double Time step (single if cold start)
 !
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PZZ      ! Height (z)
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODJ   ! Dry density * Jacobian
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODREF ! Reference dry air density
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PEXNREF  ! Reference Exner function
 !
-REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PZZ     ! Height (z)
-REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PRHODJ  !Dry density * Jacobian
-REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PRHODREF! Reference dry air density
-REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PEXNREF ! Reference Exner function
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PPABST  ! abs. pressure at time t
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHT    ! Theta at time t
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PWT     ! vertical velocity at time t
+REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PRT     ! Moist variables at time t
 !
-!
-REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PPABST  ! abs. pressure at time t
-REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PTHT    ! Theta at time t
-REAL, DIMENSION(:,:,:,:), INTENT(INOUT):: PRT     ! Moist variables at time t
-REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PSIGS   ! Sigma_s at time t
-REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PMFCONV ! convective mass flux
-!
-!
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PTHS  ! Theta source
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRS   ! Moist  variable sources
-REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PSVT  ! Scalar variable at time t
+REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PSVT  ! Scalar variable at time t
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PSVS  ! Scalar variable sources
 !
-REAL, DIMENSION(:,:,:),   INTENT(OUT) :: PSRCS ! Second-order flux
-                                               ! s'rc'/2Sigma_s2 at time t+1
-                                               ! multiplied by Lambda_3
-REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PCLDFR! Cloud fraction
-REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PCIT  ! Pristine ice number
-                                               ! concentration at time t
-LOGICAL,                  INTENT(IN) :: OSEDIC! Switch to activate the
-                                              ! cloud droplet sedimentation
-                                              ! for ICE3            
-LOGICAL,                  INTENT(IN) :: OWARM ! Control of the rain formation
-                                              !  by slow warm microphysical
-                                              !         processes
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PCIT  ! Pristine ice nb conc.
+                                                 ! - at time t (for ICE schemes)
+                                                 ! - source (for LIMA)
 !
-REAL, DIMENSION(:,:,:), INTENT(IN) :: PCF_MF! Convective Mass Flux Cloud fraction 
-REAL, DIMENSION(:,:,:), INTENT(IN) :: PRC_MF! Convective Mass Flux liquid mixing ratio
-REAL, DIMENSION(:,:,:), INTENT(IN) :: PRI_MF! Convective Mass Flux solid mixing ratio
+REAL, DIMENSION(:,:),     INTENT(IN)    :: PINPRR ! Rain instant precip
 !
-REAL, DIMENSION(:,:), INTENT(INOUT)   :: PINPRC ! Cloud instant precip
-REAL, DIMENSION(:,:), INTENT(INOUT)   :: PINPRR ! Rain instant precip
-REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PINPRR3D ! sed flux of precip
-REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PEVAP3D  ! evap profile
-REAL, DIMENSION(:,:), INTENT(INOUT)   :: PINPRS ! Snow instant precip
-REAL, DIMENSION(:,:), INTENT(INOUT)   :: PINPRG ! Graupel instant precip
-REAL, DIMENSION(:,:), INTENT(INOUT)   :: PINPRH ! Hail instant precip
+REAL, DIMENSION(:,:),   OPTIONAL, INTENT(IN)    :: PSEA   ! Land Sea mask
+REAL, DIMENSION(:,:),   OPTIONAL, INTENT(IN)    :: PTOWN  ! Town fraction
 !
-REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN) :: PSEA   ! Land Sea mask
-REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN) :: PTOWN  ! Town fraction
+REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(IN)    :: PCCS   ! Cld droplets nb conc source
+REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(IN)    :: PCRS   ! Rain nb conc source
+REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(IN)    :: PCSS   ! Snow nb conc source
+REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(IN)    :: PCGS   ! Graupel nb conc source
+REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(IN)    :: PCHS   ! Hail nb conc source
 !
-REAL, DIMENSION(:,:,:), INTENT(IN) :: PWT  ! vertical velocity at time t-dt
+REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(INOUT) :: PSVS_LNOX ! Scalar variable source for LNOX
+!
 !
 !*       0.2   Declarations of local variables :
 !
@@ -309,46 +222,18 @@ INTEGER :: IPROC         ! my proc number
 INTEGER :: IERR          ! error status
 INTEGER :: ILU           ! unit number for IO
 !
-REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3)):: ZT,   &
-                                                       ZEXN, &
-                                                       ZLV,  &
-                                                       ZLS,  &
-                                                       ZCPH
-REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3)) :: ZCOR
-                                    ! for the correction of negative rv
-REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3)) :: ZZZ
-                                    ! model layer height
 REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3)) :: ZQTOT
                                     ! total charge source term
-REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3)) :: ZION_NUMBER  !nearly Nb
-                         !  of elementary charge in hydrometeor charge
-REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3)) :: ZADD         ! ratio (0
-                         !  or 1) of ZION_NUMBER to add to positive
-                         !              or negative ion number
-REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3)):: ZIONTOT
-!
-REAL :: ZMASSTOT         ! total mass  for one water category
-                         ! including the negative values
-REAL :: ZMASSPOS         ! total mass  for one water category
-                         ! after removing the negative values
-REAL :: ZRATIO           ! ZMASSTOT / ZMASSCOR
 !
 INTEGER, DIMENSION(3) :: IMINLOC, IMAXLOC
 !
-LOGICAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3)):: GMASSCOR ! mask for
-                                                               ! mass correction
 LOGICAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3)):: GATTACH  ! mask for
                                      !ion recombination and attachment
 !
 TYPE(LIST_ll), POINTER :: TZFIELDS_ll   ! list of fields to exchange
 
-INTEGER, DIMENSION(3) :: IM_LOC
-REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3)) :: ZDRIFT
-INTEGER :: IPROCMIN, IK
-INTEGER :: IXOR, IYOR  ! origin of the extended subdomain
 CHARACTER (LEN=32) :: YASCFILE
 !
-REAL               :: ZTEMP_DIST
 CHARACTER (LEN=18) :: YNAME
 LOGICAL            :: GLMA_FILE
 LOGICAL,                 SAVE :: GFIRST_CALL = .TRUE.
@@ -376,507 +261,70 @@ CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IKB = 1 + JPVEXT
 IKE = SIZE(PZZ,3) - JPVEXT
 !
-if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'NEGA', pths(:, :, :)    )
-if ( lbudget_rv ) call Budget_store_init( tbudgets(NBUDGET_RV), 'NEGA', prs (:, :, :, 1) )
-if ( lbudget_rc ) call Budget_store_init( tbudgets(NBUDGET_RC), 'NEGA', prs (:, :, :, 2) )
-if ( lbudget_rr ) call Budget_store_init( tbudgets(NBUDGET_RR), 'NEGA', prs (:, :, :, 3) )
-if ( lbudget_ri ) call Budget_store_init( tbudgets(NBUDGET_RI), 'NEGA', prs (:, :, :, 4) )
-if ( lbudget_rs ) call Budget_store_init( tbudgets(NBUDGET_RS), 'NEGA', prs (:, :, :, 5) )
-if ( lbudget_rg ) call Budget_store_init( tbudgets(NBUDGET_RG), 'NEGA', prs (:, :, :, 6) )
-if ( lbudget_rh ) call Budget_store_init( tbudgets(NBUDGET_RH), 'NEGA', prs (:, :, :, 7) )
-if ( lbudget_sv ) then
-  do jsv = nsv_elecbeg, nsv_elecend
-    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + jsv), 'NEGA', psvs(:, :, :, jsv) )
-  end do
-end if
-!
-!------------------------------------------------------------------------------
-!
-!*       2.     MICROPHYSICS AND CLOUD ELECTRIFICATION
-!               --------------------------------------
-!
-!*       2.1    Transformation into physical tendencies
-!
-! X-Component per m3.s into X-Component per kg.s
-PTHS(:,:,:) = PTHS(:,:,:) / PRHODJ(:,:,:)
-DO JRR = 1, KRR
-  PRS(:,:,:,JRR) = PRS(:,:,:,JRR) / PRHODJ(:,:,:)
-END DO
-!
-DO JSV = NSV_ELECBEG, NSV_ELECEND
-  PSVS(:,:,:,JSV) = PSVS(:,:,:,JSV) / PRHODJ(:,:,:)
-ENDDO
-!
-!  complete the lateral boundaries to avoid possible problems
-!
-PTHS(IIB-1,:,:) = PTHS(IIB,:,:)
-PTHS(IIE+1,:,:) = PTHS(IIE,:,:)
-PTHS(:,IJB-1,:) = PTHS(:,IJB,:)
-PTHS(:,IJE+1,:) = PTHS(:,IJE,:)
-!
-PRS(IIB-1,:,:,1) = PRS(IIB,:,:,1)
-PRS(IIE+1,:,:,1) = PRS(IIE,:,:,1)
-PRS(:,IJB-1,:,1) = PRS(:,IJB,:,1)
-PRS(:,IJE+1,:,1) = PRS(:,IJE,:,1)
-!
-PRS(IIB-1,:,:,2:) = 0.0
-PRS(IIE+1,:,:,2:) = 0.0
-PRS(:,IJB-1,:,2:) = 0.0
-PRS(:,IJE+1,:,2:) = 0.0
-!
-! positive ion source
-PSVS(IIB-1,:,:,NSV_ELECBEG) = PSVS(IIB,:,:,NSV_ELECBEG)
-PSVS(IIE+1,:,:,NSV_ELECBEG) = PSVS(IIE,:,:,NSV_ELECBEG) 
-PSVS(:,IJB-1,:,NSV_ELECBEG) = PSVS(:,IJB,:,NSV_ELECBEG)
-PSVS(:,IJE+1,:,NSV_ELECBEG) = PSVS(:,IJE,:,NSV_ELECBEG)
-! source of hydrometeor charge
-PSVS(IIB-1,:,:,NSV_ELECBEG+1:NSV_ELECEND-1) = 0.0    
-PSVS(IIE+1,:,:,NSV_ELECBEG+1:NSV_ELECEND-1) = 0.0   
-PSVS(:,IJB-1,:,NSV_ELECBEG+1:NSV_ELECEND-1) = 0.0
-PSVS(:,IJE+1,:,NSV_ELECBEG+1:NSV_ELECEND-1) = 0.0
-! negative ion source
-PSVS(IIB-1,:,:,NSV_ELECEND) = PSVS(IIB,:,:,NSV_ELECEND) 
-PSVS(IIE+1,:,:,NSV_ELECEND) = PSVS(IIE,:,:,NSV_ELECEND)
-PSVS(:,IJB-1,:,NSV_ELECEND) = PSVS(:,IJB,:,NSV_ELECEND)
-PSVS(:,IJE+1,:,NSV_ELECEND) = PSVS(:,IJE,:,NSV_ELECEND)
-!
-!  complete the physical boundaries to avoid some computations
-!
-IF(LWEST_ll()  .AND. HLBCX(1) /= 'CYCL')  PRT(IIB-1,:,:,2:) = 0.0
-IF(LEAST_ll()  .AND. HLBCX(2) /= 'CYCL')  PRT(IIE+1,:,:,2:) = 0.0
-IF(LSOUTH_ll() .AND. HLBCY(1) /= 'CYCL')  PRT(:,IJB-1,:,2:) = 0.0
-IF(LNORTH_ll() .AND. HLBCY(2) /= 'CYCL')  PRT(:,IJE+1,:,2:) = 0.0
-!
-IF(LWEST_ll()  .AND. HLBCX(1) /= 'CYCL')  &
-                        PSVT(IIB-1,:,:,NSV_ELECBEG+1:NSV_ELECEND-1) = 0.0
-IF(LEAST_ll()  .AND. HLBCX(2) /= 'CYCL')  &
-                        PSVT(IIE+1,:,:,NSV_ELECBEG+1:NSV_ELECEND-1) = 0.0
-IF(LSOUTH_ll() .AND. HLBCY(1) /= 'CYCL')  &
-                        PSVT(:,IJB-1,:,NSV_ELECBEG+1:NSV_ELECEND-1) = 0.0
-IF(LNORTH_ll() .AND. HLBCY(2) /= 'CYCL')  &
-                        PSVT(:,IJE+1,:,NSV_ELECBEG+1:NSV_ELECEND-1) = 0.0
-!
-!  complete the vertical boundaries
-!
-PTHS(:,:,IKB-1) = PTHS(:,:,IKB)
-PTHS(:,:,IKE+1) = PTHS(:,:,IKE)
-!
-PRS(:,:,IKB-1,1) = PRS(:,:,IKB,1)
-PRS(:,:,IKE+1,1) = PRS(:,:,IKE,1)
-PRS(:,:,IKB-1,2:) = 0.0
-PRS(:,:,IKE+1,2:) = 0.0
-!
-PRT(:,:,IKB-1,1) = PRT(:,:,IKB,1)
-PRT(:,:,IKE+1,1) = PRT(:,:,IKE,1)
-PRT(:,:,IKB-1,2:) = 0.0
-PRT(:,:,IKE+1,2:) = 0.0
-!
-PSVS(:,:,IKB-1,NSV_ELECBEG) = PSVS(:,:,IKB,NSV_ELECBEG)    ! Positive ion
-PSVT(:,:,IKB-1,NSV_ELECBEG) = PSVT(:,:,IKB,NSV_ELECBEG)
-PSVS(:,:,IKB-1,NSV_ELECBEG+1:NSV_ELECEND-1) = 0.0          ! Hydrometeor charge
-PSVS(:,:,IKE+1,NSV_ELECBEG+1:NSV_ELECEND-1) = 0.0
-PSVT(:,:,IKB-1,NSV_ELECBEG+1:NSV_ELECEND-1) = 0.0
-PSVT(:,:,IKE+1,NSV_ELECBEG+1:NSV_ELECEND-1) = 0.0
-PSVS(:,:,IKB-1,NSV_ELECEND) = PSVS(:,:,IKB,NSV_ELECEND)    ! Negative ion
-PSVT(:,:,IKB-1,NSV_ELECEND) = PSVT(:,:,IKB,NSV_ELECEND)
-!
-! personal comment:  tranfering these variables to the
-!                    microphysical routines would save
-!                    computing time
-!
-ZEXN(:,:,:) = (PPABST(:,:,:) / XP00)**(XRD / XCPD)
-ZT(:,:,:)   = PTHT(:,:,:) * ZEXN(:,:,:)
-ZLV(:,:,:)  = XLVTT + (XCPV - XCL) * (ZT(:,:,:) - XTT)
-ZLS(:,:,:)  = XLSTT + (XCPV - XCI) * (ZT(:,:,:) - XTT)
-ZCPH(:,:,:) = XCPD + XCPV * PTSTEP * PRS(:,:,:,1)
-!
-!
-!------------------------------------------------------------------------------
-!
-!*       3.     REMOVE NEGATIVE VALUES
-!               ----------------------
-!
-!*       3.1    Non local correction for precipitating species (Rood 87)
-!
-DO JRR = 3, KRR
-  SELECT CASE (JRR)
-    CASE(3,5,6,7) ! rain, snow, graupel and hail
-!
-      IF (MIN_ll(PRS(:,:,:,JRR), IINFO_ll) < 0.0) THEN
-        GMASSCOR = PRS(:,:,:,JRR) < 0.
-!
-! compute the total water mass computation
-        ZMASSTOT = MAX( 0. , SUM3D_ll( PRS(:,:,:,JRR), IINFO_ll ) )
-!
-! remove the negative values
-        PRS(:,:,:,JRR) = MAX( 0., PRS(:,:,:,JRR) )
-!
-! compute the new total mass
-        ZMASSPOS = MAX(XMNH_TINY,SUM3D_ll( PRS(:,:,:,JRR), IINFO_ll ) )
-!
-! correct again in such a way to conserve the total mass
-        ZRATIO = ZMASSTOT / ZMASSPOS
-        PRS(:,:,:,JRR) = PRS(:,:,:,JRR) * ZRATIO
-!
-! No electric charge without hydrometeors
-        WHERE( GMASSCOR )
-          PSVS(:,:,:,NSV_ELECBEG-1+JRR) = 0.
-        ENDWHERE
-      END IF
-  END SELECT
-END DO
-!
-!
-!*       3.2    Adjustement for liquid and solid cloud
-!
-WHERE (PRS(:,:,:,4) < 0.)                          ! ice particles
-  PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,4)
-  PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,4) * ZLS(:,:,:) /  &
-                ZCPH(:,:,:) / ZEXN(:,:,:)
-  PRS(:,:,:,4) = 0.
-!
-  ZION_NUMBER(:,:,:) = ABS(PSVS(:,:,:,NSV_ELECBEG+3)) / XECHARGE
-  ZADD(:,:,:) = 0.5 + SIGN(0.5, PSVS(:,:,:,NSV_ELECBEG+3))
-  PSVS(:,:,:,NSV_ELECBEG) = PSVS(:,:,:,NSV_ELECBEG) +  &
-                            ZADD(:,:,:) * ZION_NUMBER(:,:,:)
-  PSVS(:,:,:,NSV_ELECEND) = PSVS(:,:,:,NSV_ELECEND) +  &
-                            (1. - ZADD(:,:,:)) * ZION_NUMBER(:,:,:)
-  PSVS(:,:,:,NSV_ELECBEG+3) = 0.0
-END WHERE
-!
-! cloud
-WHERE (PRS(:,:,:,2) < 0.)
-  PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,2)
-  PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,2) * ZLV(:,:,:) /  &
-       ZCPH(:,:,:) / ZEXN(:,:,:)
-  PRS(:,:,:,2) = 0.
-!
-  ZION_NUMBER(:,:,:) = ABS(PSVS(:,:,:,NSV_ELECBEG+1)) / XECHARGE
-  ZADD(:,:,:) = 0.5 + SIGN(0.5, PSVS(:,:,:,NSV_ELECBEG+1))
-  PSVS(:,:,:,NSV_ELECBEG) = PSVS(:,:,:,NSV_ELECBEG) +  &
-                            ZADD(:,:,:) * ZION_NUMBER(:,:,:)
-  PSVS(:,:,:,NSV_ELECEND) = PSVS(:,:,:,NSV_ELECEND) +  &
-                            (1. - ZADD(:,:,:)) * ZION_NUMBER(:,:,:)
-  PSVS(:,:,:,NSV_ELECBEG+1) = 0.0
-END WHERE
-!
-! if rc or ri are positive, we can correct negative rv
-! cloud
-WHERE ((PRS(:,:,:,1) < 0.) .AND. (PRS(:,:,:,2) > 0.) )
-  PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,2)
-  PTHS(:,:,:)  = PTHS(:,:,:) - PRS(:,:,:,2) * ZLV(:,:,:) /  &
-                 ZCPH(:,:,:) / ZEXN(:,:,:)
-  PRS(:,:,:,2) = 0.
-!
-  ZION_NUMBER(:,:,:) = ABS(PSVS(:,:,:,NSV_ELECBEG+1)) / XECHARGE
-  ZADD(:,:,:) = 0.5 + SIGN(0.5, PSVS(:,:,:,NSV_ELECBEG+1))
-  PSVS(:,:,:,NSV_ELECBEG) = PSVS(:,:,:,NSV_ELECBEG) +  &
-                            ZADD(:,:,:) * ZION_NUMBER(:,:,:)
-  PSVS(:,:,:,NSV_ELECEND) = PSVS(:,:,:,NSV_ELECEND) +  &
-                            (1.-ZADD(:,:,:)) * ZION_NUMBER(:,:,:)
-  PSVS(:,:,:,NSV_ELECBEG+1) = 0.0
-END WHERE
-!
-! ice
-IF(KRR > 3) THEN
-  WHERE ((PRS(:,:,:,1) < 0.).AND.(PRS(:,:,:,4) > 0.))
-    ZCOR(:,:,:)  = MIN(-PRS(:,:,:,1),PRS(:,:,:,4))
-    PRS(:,:,:,1) = PRS(:,:,:,1) + ZCOR(:,:,:)
-    PTHS(:,:,:)  = PTHS(:,:,:) - ZCOR(:,:,:) * ZLS(:,:,:) /  &
-                   ZCPH(:,:,:) / ZEXN(:,:,:)
-    PRS(:,:,:,4) = PRS(:,:,:,4) -ZCOR(:,:,:)
-!
-  ZION_NUMBER(:,:,:) = ABS(PSVS(:,:,:,NSV_ELECBEG+3)) / XECHARGE
-  ZADD(:,:,:) = 0.5 + SIGN(0.5, PSVS(:,:,:,NSV_ELECBEG+3))
-  PSVS(:,:,:,NSV_ELECBEG) = PSVS(:,:,:,NSV_ELECBEG) +  &
-                            ZADD(:,:,:) * ZION_NUMBER(:,:,:)
-  PSVS(:,:,:,NSV_ELECEND) = PSVS(:,:,:,NSV_ELECEND) +  &
-                            (1. - ZADD(:,:,:)) * ZION_NUMBER(:,:,:)
-  PSVS(:,:,:,NSV_ELECBEG+3) = 0.0
-  END WHERE
-END IF
-!
-!
-!*       3.3     cascade the electric charges in absence of hydrometeor
-!
-DO JRR = KRR, 5, -1
-  WHERE(PRS(:,:,:,JRR) < XRTMIN_ELEC(JRR))
-    PSVS(:,:,:,NSV_ELECBEG-2+JRR) = PSVS(:,:,:,NSV_ELECBEG-2+JRR) + &
-                                    PSVS(:,:,:,NSV_ELECBEG-1+JRR)
-    PSVS(:,:,:,NSV_ELECBEG-1+JRR) = 0.0
-  END WHERE
-END DO
-JRR = 3
-WHERE(PRS(:,:,:,JRR) < XRTMIN_ELEC(JRR))
-  PSVS(:,:,:,NSV_ELECBEG-2+JRR) = PSVS(:,:,:,NSV_ELECBEG-2+JRR) + &
-                                  PSVS(:,:,:,NSV_ELECBEG-1+JRR)
-  PSVS(:,:,:,NSV_ELECBEG-1+JRR) = 0.0
-END WHERE
-DO JRR = 4, 2, -2
-  WHERE(PRS(:,:,:,JRR) < XRTMIN_ELEC(JRR))
-!
-    ZION_NUMBER(:,:,:) = ABS(PSVS(:,:,:,NSV_ELECBEG-1+JRR)) / XECHARGE
-    ZADD(:,:,:) = 0.5 + SIGN(0.5, PSVS(:,:,:,NSV_ELECBEG-1+JRR))
-    PSVS(:,:,:,NSV_ELECBEG) = PSVS(:,:,:,NSV_ELECBEG) +  &
-                              ZADD(:,:,:) * ZION_NUMBER(:,:,:)
-    PSVS(:,:,:,NSV_ELECEND) = PSVS(:,:,:,NSV_ELECEND) +  &
-                              (1. - ZADD(:,:,:)) * ZION_NUMBER(:,:,:)
-    PSVS(:,:,:,NSV_ELECBEG-1+JRR) = 0.0
-  END WHERE
-END DO
-!
-!
-!*       3.4     store the budget terms
-!
-if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'NEGA', pths(:, :, :)    * prhodj(:, :, :) )
-if ( lbudget_rv ) call Budget_store_end( tbudgets(NBUDGET_RV), 'NEGA', prs (:, :, :, 1) * prhodj(:, :, :) )
-if ( lbudget_rc ) call Budget_store_end( tbudgets(NBUDGET_RC), 'NEGA', prs (:, :, :, 2) * prhodj(:, :, :) )
-if ( lbudget_rr ) call Budget_store_end( tbudgets(NBUDGET_RR), 'NEGA', prs (:, :, :, 3) * prhodj(:, :, :) )
-if ( lbudget_ri ) call Budget_store_end( tbudgets(NBUDGET_RI), 'NEGA', prs (:, :, :, 4) * prhodj(:, :, :) )
-if ( lbudget_rs ) call Budget_store_end( tbudgets(NBUDGET_RS), 'NEGA', prs (:, :, :, 5) * prhodj(:, :, :) )
-if ( lbudget_rg ) call Budget_store_end( tbudgets(NBUDGET_RG), 'NEGA', prs (:, :, :, 6) * prhodj(:, :, :) )
-if ( lbudget_rh ) call Budget_store_end( tbudgets(NBUDGET_RH), 'NEGA', prs (:, :, :, 7) * prhodj(:, :, :) )
-if ( lbudget_sv ) then
-  do jsv = nsv_elecbeg, nsv_elecend
-    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + jsv), 'NEGA', psvs(:, :, :, jsv) * prhodj(:, :, :) )
-  end do
-end if
-!
-!------------------------------------------------------------------------------
-!
-!*       4.     ION SOURCE FROM DRIFT MOTION AND COSMIC RAYS
-!               ---------------------------------------------
-!
-!* 	 4.1	Compute the electric field at mass points
-!
-PSVT(:,:,:,NSV_ELECBEG) = XECHARGE*PSVT(:,:,:,NSV_ELECBEG)    ! 1/kg --> C/kg
-PSVT(:,:,:,NSV_ELECEND) =-XECHARGE*PSVT(:,:,:,NSV_ELECEND)
-!
-CALL TO_ELEC_FIELD_n (PRT, PSVT(:,:,:,NSV_ELECBEG:NSV_ELECEND), PRHODJ, &
-                      KTCOUNT, KRR,                                     &
-                      XEFIELDU, XEFIELDV, XEFIELDW                      )
-!
-PSVT(:,:,:,NSV_ELECBEG) = PSVT(:,:,:,NSV_ELECBEG)/XECHARGE    ! back to 1/kg 
-PSVT(:,:,:,NSV_ELECEND) =-PSVT(:,:,:,NSV_ELECEND)/XECHARGE
-!
-!
-!*       4.2    Compute source term from -/+(Div (N.mu E)) at mass points, 
-!               N positive or negative ion number per kg of air (= PSVT)
-!               This is a contribution of drift motion to Source PSVS for ions
-!               in 1/(kg.s)
-!
 CALL MYPROC_ELEC_ll (IPROC)
 !
-!     Hereafter, ZCPH and ZCOR are used temporarily to store the drift sources 
-!          of the positive and negative ions, respectively
-!
-CALL ION_DRIFT(ZCPH, ZCOR, PSVT, HLBCX, HLBCY)
-
-PSVS(:,:,:,NSV_ELECBEG) = PSVS(:,:,:,NSV_ELECBEG) + ZCPH(:,:,:)
-PSVS(:,:,:,NSV_ELECEND) = PSVS(:,:,:,NSV_ELECEND) + ZCOR(:,:,:)
-
-if ( lbudget_sv ) then
-  call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg), 'DRIFT', zcph(:, :, :) * prhodj(:, :, :) )
-  call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecend), 'DRIFT', zcor(:, :, :) * prhodj(:, :, :) )
-end if
-!
-!*       4.3    Add Cosmic Ray source
-!
-PSVS(:,:,:,NSV_ELECBEG) = PSVS(:,:,:,NSV_ELECBEG) +           &
-                              XIONSOURCEFW(:,:,:) / PRHODREF(:,:,:)
-PSVS(:,:,:,NSV_ELECEND) = PSVS(:,:,:,NSV_ELECEND) +           &
-                              XIONSOURCEFW(:,:,:) / PRHODREF(:,:,:)
-
-if ( lbudget_sv ) then
-  call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg), 'CORAY', xionsourcefw(:,:,:)/prhodref(:,:,:) * prhodj(:, :, :) )
-  call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecend), 'CORAY', xionsourcefw(:,:,:)/prhodref(:,:,:) * prhodj(:, :, :) )
-end if
-!
-!-------------------------------------------------------------------------------
-!
-SELECT CASE (HCLOUD)
-!
-  CASE ('ICE3')
-!
-!*       5.     MIXED-PHASE MICROPHYSICAL SCHEME (WITH 3 ICE SPECIES)
-!               -----------------------------------------------------
-!
-!*       5.1    Compute the explicit microphysical sources and
-!*              the explicit charging rates
-!
-    CALL RAIN_ICE_ELEC (OSEDIC, HSUBG_AUCV, OWARM,                            &
-                        KSPLITR, PTSTEP, KMI, KRR,                            &
-                        PZZ, PRHODJ, PRHODREF, PEXNREF, PPABST, PCIT, PCLDFR, &
-                        PTHT, PRT(:,:,:,1), PRT(:,:,:,2), PRT(:,:,:,3),       &
-                        PRT(:,:,:,4), PRT(:,:,:,5), PRT(:,:,:,6),             &
-                        PTHS, PRS(:,:,:,1), PRS(:,:,:,2), PRS(:,:,:,3),       &
-                        PRS(:,:,:,4), PRS(:,:,:,5), PRS(:,:,:,6),             &
-                        PINPRC, PINPRR, PINPRR3D, PEVAP3D,                    &
-                        PINPRS, PINPRG, PSIGS,                                &
-                        PSVT(:,:,:,NSV_ELECBEG),   PSVT(:,:,:,NSV_ELECBEG+1), &
-                        PSVT(:,:,:,NSV_ELECBEG+2), PSVT(:,:,:,NSV_ELECBEG+3), &
-                        PSVT(:,:,:,NSV_ELECBEG+4), PSVT(:,:,:,NSV_ELECBEG+5), &
-                        PSVT(:,:,:,NSV_ELECEND),                              &
-                        PSVS(:,:,:,NSV_ELECBEG),   PSVS(:,:,:,NSV_ELECBEG+1), &
-                        PSVS(:,:,:,NSV_ELECBEG+2), PSVS(:,:,:,NSV_ELECBEG+3), &
-                        PSVS(:,:,:,NSV_ELECBEG+4), PSVS(:,:,:,NSV_ELECBEG+5), &
-                        PSVS(:,:,:,NSV_ELECEND),                              &
-                        PSEA, PTOWN                                           )
-
-!
-!*       5.2    Perform the saturation adjustment over cloud ice and cloud water
-!
-    ZZZ = MZF( PZZ )
-    CALL ICE_ADJUST_ELEC (KRR, KMI, HRAD, HTURBDIM,                           &
-                          HSCONV, HMF_CLOUD,                                  &
-                          OSUBG_COND, OSIGMAS, PTSTEP,PSIGQSAT,               &
-                          PRHODJ, PEXNREF, PSIGS, PPABST, ZZZ,                &
-                          PMFCONV, PCF_MF, PRC_MF, PRI_MF,                    &
-                          PRVT=PRT(:,:,:,1), PRCT=PRT(:,:,:,2),               &
-                          PRVS=PRS(:,:,:,1), PRCS=PRS(:,:,:,2),               &
-                          PTHS=PTHS, PSRCS=PSRCS, PCLDFR=PCLDFR,              &
-                          PRRT=PRT(:,:,:,3), PRRS=PRS(:,:,:,3),               &
-                          PRIT=PRT(:,:,:,4), PRIS=PRS(:,:,:,4),               &
-                          PRST=PRT(:,:,:,5), PRSS=PRS(:,:,:,5),               &
-                          PRGT=PRT(:,:,:,6), PRGS=PRS(:,:,:,6),               &
-                          PQPIT=PSVT(:,:,:,NSV_ELECBEG),  & !..PI.. Positive
-                          PQPIS=PSVS(:,:,:,NSV_ELECBEG),  & !  Ion Mixing Ratio
-                          PQCT=PSVT(:,:,:,NSV_ELECBEG+1), &
-                          PQCS=PSVS(:,:,:,NSV_ELECBEG+1), &
-                          PQRT=PSVT(:,:,:,NSV_ELECBEG+2), &
-                          PQRS=PSVS(:,:,:,NSV_ELECBEG+2), &
-                          PQIT=PSVT(:,:,:,NSV_ELECBEG+3), &
-                          PQIS=PSVS(:,:,:,NSV_ELECBEG+3), &
-                          PQST=PSVT(:,:,:,NSV_ELECBEG+4), &
-                          PQSS=PSVS(:,:,:,NSV_ELECBEG+4), &
-                          PQGT=PSVT(:,:,:,NSV_ELECBEG+5), &
-                          PQGS=PSVS(:,:,:,NSV_ELECBEG+5), &
-                          PQNIT=PSVT(:,:,:,NSV_ELECEND),  & !..NI.. Negative
-                          PQNIS=PSVS(:,:,:,NSV_ELECEND))    !  Ion Mixing Ratio
+!------------------------------------------------------------------------------
 !
 !
-!-------------------------------------------------------------------------------
-!
-!*       6.     MIXED-PHASE MICROPHYSICAL SCHEME (WITH 4 ICE SPECIES)
-!               -----------------------------------------------------
-!
-!*       6.1    Compute the explicit microphysical sources and
-!*              the explicit charging rates
-!
-  CASE ('ICE4')
-!
-    CALL RAIN_ICE_ELEC (OSEDIC, HSUBG_AUCV, OWARM,                            &
-                        KSPLITR, PTSTEP, KMI, KRR,                            &
-                        PZZ, PRHODJ, PRHODREF, PEXNREF, PPABST, PCIT, PCLDFR, &
-                        PTHT, PRT(:,:,:,1), PRT(:,:,:,2), PRT(:,:,:,3),       &
-                        PRT(:,:,:,4), PRT(:,:,:,5), PRT(:,:,:,6),             &
-                        PTHS, PRS(:,:,:,1), PRS(:,:,:,2), PRS(:,:,:,3),       &
-                        PRS(:,:,:,4), PRS(:,:,:,5), PRS(:,:,:,6),             &
-                        PINPRC, PINPRR, PINPRR3D, PEVAP3D,                    &
-                        PINPRS, PINPRG, PSIGS,                   &
-                        PSVT(:,:,:,NSV_ELECBEG),   PSVT(:,:,:,NSV_ELECBEG+1), &
-                        PSVT(:,:,:,NSV_ELECBEG+2), PSVT(:,:,:,NSV_ELECBEG+3), &
-                        PSVT(:,:,:,NSV_ELECBEG+4), PSVT(:,:,:,NSV_ELECBEG+5), &
-                        PSVT(:,:,:,NSV_ELECEND),          &
-                        PSVS(:,:,:,NSV_ELECBEG),   PSVS(:,:,:,NSV_ELECBEG+1), &
-                        PSVS(:,:,:,NSV_ELECBEG+2), PSVS(:,:,:,NSV_ELECBEG+3), &
-                        PSVS(:,:,:,NSV_ELECBEG+4), PSVS(:,:,:,NSV_ELECBEG+5), &
-                        PSVS(:,:,:,NSV_ELECEND),          &
-                        PSEA, PTOWN,                   &
-                        PRT(:,:,:,7), PRS(:,:,:,7), PINPRH,                   &
-                        PSVT(:,:,:,NSV_ELECBEG+6), PSVS(:,:,:,NSV_ELECBEG+6)  )
-! Index NSV_ELECBEG: Positive ion , NSV_ELECEND: Negative ion
-!
-!
-!*       6.2    Perform the saturation adjustment over cloud ice and cloud water
-!
-    ZZZ = MZF( PZZ )
-    CALL ICE_ADJUST_ELEC (KRR, KMI, HRAD,                                     &
-                          HTURBDIM, HSCONV, HMF_CLOUD,                        &
-                          OSUBG_COND, OSIGMAS, PTSTEP,PSIGQSAT,               &
-                          PRHODJ, PEXNREF, PSIGS, PPABST, ZZZ,                &
-                          PMFCONV, PCF_MF, PRC_MF, PRI_MF,                    & 
-                          PRVT=PRT(:,:,:,1), PRCT=PRT(:,:,:,2),               &
-                          PRVS=PRS(:,:,:,1), PRCS=PRS(:,:,:,2),               &
-                          PTHS=PTHS, PSRCS=PSRCS, PCLDFR=PCLDFR,              &
-                          PRRT=PRT(:,:,:,3), PRRS=PRS(:,:,:,3),               &
-                          PRIT=PRT(:,:,:,4), PRIS=PRS(:,:,:,4),               &
-                          PRST=PRT(:,:,:,5), PRSS=PRS(:,:,:,5),               &
-                          PRGT=PRT(:,:,:,6), PRGS=PRS(:,:,:,6),               &
-                          PQPIT=PSVT(:,:,:,NSV_ELECBEG), &  !..PI.. Positive
-                          PQPIS=PSVS(:,:,:,NSV_ELECBEG),  & !  Ion Mixing Ratio
-                          PQCT=PSVT(:,:,:,NSV_ELECBEG+1), &
-                          PQCS=PSVS(:,:,:,NSV_ELECBEG+1), &
-                          PQRT=PSVT(:,:,:,NSV_ELECBEG+2), &
-                          PQRS=PSVS(:,:,:,NSV_ELECBEG+2), &
-                          PQIT=PSVT(:,:,:,NSV_ELECBEG+3), &
-                          PQIS=PSVS(:,:,:,NSV_ELECBEG+3), &
-                          PQST=PSVT(:,:,:,NSV_ELECBEG+4), &
-                          PQSS=PSVS(:,:,:,NSV_ELECBEG+4), &
-                          PQGT=PSVT(:,:,:,NSV_ELECBEG+5), &
-                          PQGS=PSVS(:,:,:,NSV_ELECBEG+5), &
-                          PQNIT=PSVT(:,:,:,NSV_ELECEND),  & !..NI.. Negative
-                          PQNIS=PSVS(:,:,:,NSV_ELECEND),  & !  Ion Mixing Ratio
-                          PRHT=PRT(:,:,:,7), PRHS=PRS(:,:,:,7),               &
-                          PQHT=PSVT(:,:,:,NSV_ELECBEG+6), &
-                          PQHS=PSVS(:,:,:,NSV_ELECBEG+6) )
-!
-END SELECT
-!
-IF(KTCOUNT .EQ. 1 .AND. IPROC .EQ. 0) PRINT *,'KSPLITR=', KSPLITR
-!
-!-------------------------------------------------------------------------------
-!
-!*      7.      SWITCH BACK TO THE PROGNOSTIC VARIABLES
-!               ---------------------------------------
-!
-! Convert source into component per m3 of air and sec., i.e. volumetric source
-!
-PTHS(:,:,:) = PTHS(:,:,:) * PRHODJ(:,:,:)
-!
-DO JRR = 1,KRR
-  PRS(:,:,:,JRR)  = PRS(:,:,:,JRR) * PRHODJ(:,:,:)
-END DO
-!
-DO JSV = NSV_ELECBEG, NSV_ELECEND
-  PSVS(:,:,:,JSV) = PSVS(:,:,:,JSV) * PRHODJ(:,:,:)
-ENDDO
-!
-! Note that the LiNOx Conc. (in mol/mol) is PSVS (:,::,NSV_LNOXBEG)
-! but there is no need to *PRHODJ(:,:,:) as it is done implicitly
-! during unit conversion in flash_geom.
-!
-PSVS(:,:,:,NSV_ELECBEG) = MAX(0., PSVS(:,:,:,NSV_ELECBEG))
-PSVS(:,:,:,NSV_ELECEND) = MAX(0., PSVS(:,:,:,NSV_ELECEND))
-!
-!-------------------------------------------------------------------------------
-!
-!*      8.      ION RECOMBINATION AND ATTACHMENT
+!*      2.      ION RECOMBINATION AND ATTACHMENT
 !               --------------------------------
 !
 GATTACH(:,:,:) = .FALSE.
 GATTACH(IIB:IIE, IJB:IJE, IKB:IKE) = .TRUE.
 !
-IF (PRESENT(PSEA)) THEN
-  CALL ION_ATTACH_ELEC(KTCOUNT, KRR, PTSTEP, PRHODREF,                   &
-                       PRHODJ, PSVS(:,:,:,NSV_ELECBEG:NSV_ELECEND),      & 
-                       PRS, PTHT, PCIT, PPABST, XEFIELDU,                &
-                       XEFIELDV, XEFIELDW, GATTACH, PTOWN, PSEA          )
-ELSE
-  CALL ION_ATTACH_ELEC(KTCOUNT, KRR, PTSTEP, PRHODREF,                   &
-                       PRHODJ, PSVS(:,:,:,NSV_ELECBEG:NSV_ELECEND),      &
-                       PRS, PTHT, PCIT, PPABST, XEFIELDU,                &
-                       XEFIELDV, XEFIELDW, GATTACH                       )
-ENDIF
+IF (HCLOUD(1:3) == 'ICE') THEN
+  IF (PRESENT(PSEA)) THEN
+    CALL ION_ATTACH_ELEC(KTCOUNT, KRR, HCLOUD, PTSTEP, PRHODREF,      &
+                         PRHODJ, PSVS(:,:,:,1:KRR+1),                 &
+                         PRS, PTHT, PCIT, PPABST, XEFIELDU,           &
+                         XEFIELDV, XEFIELDW, GATTACH,                 &
+                         PTOWN=PTOWN, PSEA=PSEA)
+  ELSE
+    CALL ION_ATTACH_ELEC(KTCOUNT, KRR, HCLOUD, PTSTEP, PRHODREF,      &
+                         PRHODJ, PSVS(:,:,:,1:KRR+1),                 &
+                         PRS, PTHT, PCIT, PPABST, XEFIELDU,           &
+                         XEFIELDV, XEFIELDW, GATTACH)
+  ENDIF
+ELSE IF (HCLOUD == 'LIMA') THEN
+  IF (KRR == 7) THEN
+    IF (NMOM_S == 1 .AND. NMOM_G == 1 .AND. NMOM_H == 1) THEN
+      CALL ION_ATTACH_ELEC(KTCOUNT, KRR, HCLOUD, PTSTEP, PRHODREF,      &
+                           PRHODJ, PSVS(:,:,:,1:KRR+1),                 &
+                           PRS, PTHT, PCIT, PPABST, XEFIELDU,           &
+                           XEFIELDV, XEFIELDW, GATTACH,                 &
+                           PCCS=PCCS, PCRS=PCRS)
+    ELSE IF (NMOM_S == 2 .AND. NMOM_G == 2 .AND. NMOM_H == 2) THEN
+      CALL ION_ATTACH_ELEC(KTCOUNT, KRR, HCLOUD, PTSTEP, PRHODREF,      &
+                           PRHODJ, PSVS(:,:,:,1:KRR+1),                 &
+                           PRS, PTHT, PCIT, PPABST, XEFIELDU,           &
+                           XEFIELDV, XEFIELDW, GATTACH,                 &
+                           PCCS=PCCS, PCRS=PCRS, PCSS=PCSS, PCGS=PCGS, PCHS=PCHS)
+    END IF
+  ELSE IF (KRR == 6) THEN
+    IF (NMOM_S == 1 .AND. NMOM_G == 1) THEN
+      CALL ION_ATTACH_ELEC(KTCOUNT, KRR, HCLOUD, PTSTEP, PRHODREF,      &
+                           PRHODJ, PSVS(:,:,:,1:KRR+1),                 &
+                           PRS, PTHT, PCIT, PPABST, XEFIELDU,           &
+                           XEFIELDV, XEFIELDW, GATTACH,                 &
+                           PCCS=PCCS, PCRS=PCRS)
+    ELSE IF (NMOM_S == 2 .AND. NMOM_G == 2) THEN
+      CALL ION_ATTACH_ELEC(KTCOUNT, KRR, HCLOUD, PTSTEP, PRHODREF,      &
+                           PRHODJ, PSVS(:,:,:,1:KRR+1),                 &
+                           PRS, PTHT, PCIT, PPABST, XEFIELDU,           &
+                           XEFIELDV, XEFIELDW, GATTACH,                 &
+                           PCCS=PCCS, PCRS=PCRS, PCSS=PCSS, PCGS=PCGS, PCHS=PCHS)
+    END IF
+  END IF
+END IF
 !
 !-------------------------------------------------------------------------------
 !
-!*      9.      OPEN THE OUTPUT ASCII FILES
+!*      3.      OPEN THE OUTPUT ASCII FILES
 !               ---------------------------
 !
-IF (KTCOUNT==1 .AND. IPROC==0) THEN
+IF (KTCOUNT == 1 .AND. IPROC == 0) THEN
   IF (LFLASH_GEOM) THEN
-    YASCFILE = CEXP//"_fgeom_diag.asc"
+    YASCFILE = CEXP//"_"//CSEG//"_fgeom_diag.asc"
     TZFILE_FGEOM_DIAG => NULL()
     CALL IO_File_add2list(TZFILE_FGEOM_DIAG,YASCFILE,'TXT','WRITE')
     CALL IO_File_open(TZFILE_FGEOM_DIAG,HPOSITION='APPEND',HSTATUS='UNKNOWN')
@@ -1021,23 +469,116 @@ END IF
 ! the lightning scheme is now called at each time step
 ! but only if there's electric charge in the domain
 !
-ZQTOT(:,:,:) = XECHARGE * (PSVT(:,:,:,NSV_ELECBEG) - PSVT(:,:,:,NSV_ELECEND))
-DO JSV = NSV_ELECBEG+1, NSV_ELECEND-1
+ZQTOT(:,:,:) = XECHARGE * (PSVT(:,:,:,1) - PSVT(:,:,:,KRR+1))
+DO JSV = 2, KRR
   ZQTOT(:,:,:) = ZQTOT(:,:,:) + PSVT(:,:,:,JSV)
 END DO
 !
+!++cb-- reprendre les appels avec bcp de conditions : utiliser des tableaux (0,0,0)
 IF ((.NOT. LOCG) .AND. LELEC_FIELD .AND.  MAX_ll(ABS(ZQTOT),IINFO_ll)>0.) THEN
   IF (LFLASH_GEOM) THEN
-    CALL FLASH_GEOM_ELEC_n (KTCOUNT, KMI, KRR, PTSTEP, OEXIT,                                 &
-                            PRHODJ, PRHODREF, PRT, PCIT, PSVS(:,:,:,NSV_ELECBEG:NSV_ELECEND), &
-                            PRS, PTHT, PPABST, XEFIELDU, XEFIELDV, XEFIELDW,                  &
-                            PZZ, PSVS(:,:,:,NSV_LNOXBEG),                                     &
-                            TZFILE_FGEOM_DIAG, TZFILE_FGEOM_COORD, TZFILE_LMA,                &
-                            PTOWN, PSEA)
+    IF (HCLOUD(1:3) == 'ICE') THEN 
+      IF (PRESENT(PTOWN) .AND. PRESENT(PSEA)) THEN
+        IF (PRESENT(PSVS_LNOX)) THEN
+          CALL FLASH_GEOM_ELEC_n (KTCOUNT, KMI, KRR, HCLOUD, PTSTEP, OEXIT,          &
+                                  PRHODJ, PRHODREF, PRT, PCIT,                       &
+                                  PSVS(:,:,:,1:KRR+1),                               &
+                                  PRS, PTHT, PPABST, XEFIELDU, XEFIELDV, XEFIELDW,   &
+                                  PZZ,                                               &
+                                  TZFILE_FGEOM_DIAG, TZFILE_FGEOM_COORD, TZFILE_LMA, &
+                                  PTOWN=PTOWN, PSEA=PSEA, PSVS_LNOX=PSVS_LNOX)
+        ELSE
+          CALL FLASH_GEOM_ELEC_n (KTCOUNT, KMI, KRR, HCLOUD, PTSTEP, OEXIT,          &
+                                  PRHODJ, PRHODREF, PRT, PCIT,                       &
+                                  PSVS(:,:,:,1:KRR+1),                               &
+                                  PRS, PTHT, PPABST, XEFIELDU, XEFIELDV, XEFIELDW,   &
+                                  PZZ,                                               &
+                                  TZFILE_FGEOM_DIAG, TZFILE_FGEOM_COORD, TZFILE_LMA, &
+                                  PTOWN=PTOWN, PSEA=PSEA)
+        END IF
+      ELSE
+        IF (PRESENT(PSVS_LNOX)) THEN
+          CALL FLASH_GEOM_ELEC_n (KTCOUNT, KMI, KRR, HCLOUD, PTSTEP, OEXIT,          &
+                                  PRHODJ, PRHODREF, PRT, PCIT,                       &
+                                  PSVS(:,:,:,1:KRR+1),                               &
+                                  PRS, PTHT, PPABST, XEFIELDU, XEFIELDV, XEFIELDW,   &
+                                  PZZ,                                               &
+                                  TZFILE_FGEOM_DIAG, TZFILE_FGEOM_COORD, TZFILE_LMA, &
+                                  PSVS_LNOX=PSVS_LNOX)
+        ELSE
+          CALL FLASH_GEOM_ELEC_n (KTCOUNT, KMI, KRR, HCLOUD, PTSTEP, OEXIT,          &
+                                  PRHODJ, PRHODREF, PRT, PCIT,                       &
+                                  PSVS(:,:,:,1:KRR+1),                               &
+                                  PRS, PTHT, PPABST, XEFIELDU, XEFIELDV, XEFIELDW,   &
+                                  PZZ,                                               &
+                                  TZFILE_FGEOM_DIAG, TZFILE_FGEOM_COORD, TZFILE_LMA)
+        END IF
+      END IF
+    ELSE
+      IF (HCLOUD == 'LIMA' .AND. ((KRR == 6 .AND. NMOM_S == 1 .AND. NMOM_G == 1) .OR. &
+                                  (KRR == 7 .AND. NMOM_S == 1 .AND. NMOM_G == 1 .AND. NMOM_H == 1))) THEN  
+        IF (PRESENT(PSVS_LNOX)) THEN
+          CALL FLASH_GEOM_ELEC_n (KTCOUNT, KMI, KRR, HCLOUD, PTSTEP, OEXIT,          &
+                                  PRHODJ, PRHODREF, PRT, PCIT,                       &
+                                  PSVS(:,:,:,1:KRR+1),                               &
+                                  PRS, PTHT, PPABST, XEFIELDU, XEFIELDV, XEFIELDW,   &
+                                  PZZ,                                               &
+                                  TZFILE_FGEOM_DIAG, TZFILE_FGEOM_COORD, TZFILE_LMA, &
+                                  PCCS=PCCS, PCRS=PCRS,                              &
+                                  PSVS_LNOX=PSVS_LNOX)
+        ELSE
+          CALL FLASH_GEOM_ELEC_n (KTCOUNT, KMI, KRR, HCLOUD, PTSTEP, OEXIT,          &
+                                  PRHODJ, PRHODREF, PRT, PCIT,                       &
+                                  PSVS(:,:,:,1:KRR+1),                               &
+                                  PRS, PTHT, PPABST, XEFIELDU, XEFIELDV, XEFIELDW,   &
+                                  PZZ,                                               &
+                                  TZFILE_FGEOM_DIAG, TZFILE_FGEOM_COORD, TZFILE_LMA, &
+                                  PCCS=PCCS, PCRS=PCRS)
+        END IF
+      ELSE IF (HCLOUD == 'LIMA' .AND. KRR == 6 .AND. NMOM_S == 2 .AND. NMOM_G == 2) THEN  
+        IF (PRESENT(PSVS_LNOX)) THEN
+          CALL FLASH_GEOM_ELEC_n (KTCOUNT, KMI, KRR, HCLOUD, PTSTEP, OEXIT,          &
+                                  PRHODJ, PRHODREF, PRT, PCIT,                       &
+                                  PSVS(:,:,:,1:KRR+1),                               &
+                                  PRS, PTHT, PPABST, XEFIELDU, XEFIELDV, XEFIELDW,   &
+                                  PZZ,                                               &
+                                  TZFILE_FGEOM_DIAG, TZFILE_FGEOM_COORD, TZFILE_LMA, &
+                                  PCCS=PCCS, PCRS=PCRS, PCSS=PCSS, PCGS=PCGS,        &
+                                  PSVS_LNOX=PSVS_LNOX)
+        ELSE
+          CALL FLASH_GEOM_ELEC_n (KTCOUNT, KMI, KRR, HCLOUD, PTSTEP, OEXIT,          &
+                                  PRHODJ, PRHODREF, PRT, PCIT,                       &
+                                  PSVS(:,:,:,1:KRR+1),                               &
+                                  PRS, PTHT, PPABST, XEFIELDU, XEFIELDV, XEFIELDW,   &
+                                  PZZ,                                               &
+                                  TZFILE_FGEOM_DIAG, TZFILE_FGEOM_COORD, TZFILE_LMA, &
+                                  PCCS=PCCS, PCRS=PCRS, PCSS=PCSS, PCGS=PCGS)
+        END IF
+      ELSE IF (HCLOUD == 'LIMA' .AND. KRR == 7 .AND. NMOM_S == 2 .AND. NMOM_G == 2 .AND. NMOM_H == 2) THEN  
+        IF (PRESENT(PSVS_LNOX)) THEN
+          CALL FLASH_GEOM_ELEC_n (KTCOUNT, KMI, KRR, HCLOUD, PTSTEP, OEXIT,              &
+                                  PRHODJ, PRHODREF, PRT, PCIT,                           &
+                                  PSVS(:,:,:,1:KRR+1),                                   &
+                                  PRS, PTHT, PPABST, XEFIELDU, XEFIELDV, XEFIELDW,       &
+                                  PZZ,                                                   &
+                                  TZFILE_FGEOM_DIAG, TZFILE_FGEOM_COORD, TZFILE_LMA,     &
+                                  PCCS=PCCS, PCRS=PCRS, PCSS=PCSS, PCGS=PCGS, PCHS=PCHS, &
+                                  PSVS_LNOX=PSVS_LNOX)
+        ELSE
+          CALL FLASH_GEOM_ELEC_n (KTCOUNT, KMI, KRR, HCLOUD, PTSTEP, OEXIT,          &
+                                  PRHODJ, PRHODREF, PRT, PCIT,                       &
+                                  PSVS(:,:,:,1:KRR+1),                               &
+                                  PRS, PTHT, PPABST, XEFIELDU, XEFIELDV, XEFIELDW,   &
+                                  PZZ,                                               &
+                                  TZFILE_FGEOM_DIAG, TZFILE_FGEOM_COORD, TZFILE_LMA, &
+                                  PCCS=PCCS, PCRS=PCRS, PCSS=PCSS, PCGS=PCGS, PCHS=PCHS)
+        END IF
+      END IF
+    END IF
   END IF
 !
-  PSVS(:,:,:,NSV_ELECBEG) = MAX(0., PSVS(:,:,:,NSV_ELECBEG))
-  PSVS(:,:,:,NSV_ELECEND) = MAX(0., PSVS(:,:,:,NSV_ELECEND))
+  PSVS(:,:,:,1)     = MAX(0., PSVS(:,:,:,1))
+  PSVS(:,:,:,KRR+1) = MAX(0., PSVS(:,:,:,KRR+1))
 !
 END IF
 !

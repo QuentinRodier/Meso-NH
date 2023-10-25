@@ -309,6 +309,7 @@ END MODULE MODI_READ_EXSEG_n
 !  P. Wautelet 24/06/2022: remove check on CSTORAGE_TYPE for restart of ForeFire variables
 !  P. Wautelet 13/07/2022: add namelist for flyers and balloons
 !  P. Wautelet 19/08/2022: add namelist for aircrafts
+!  C. Barthe   11/07/2023: ELEC: only some combinations of microphysical options are allowed
 !------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -393,7 +394,7 @@ USE MODN_PARAM_C1R3, ONLY : NAM_PARAM_C1R3, CPRISTINE_ICE_C1R3,    &
 USE MODN_PARAM_C2R2, ONLY : EPARAM_CCN=>HPARAM_CCN, EINI_CCN=>HINI_CCN, &
                             WNUC=>XNUC, WALPHAC=>XALPHAC, NAM_PARAM_C2R2
 USE MODN_PARAM_ECRAD_n
-USE MODD_PARAM_ICE_n, ONLY : PARAM_ICEN_INIT, PARAM_ICEN, CSUBG_AUCV_RC, CSUBG_AUCV_RI
+USE MODD_PARAM_ICE_n, ONLY : PARAM_ICEN_INIT, PARAM_ICEN, CSUBG_AUCV_RC, CSUBG_AUCV_RI, LRED, LSNOW_T
 USE MODN_PARAM_KAFR_n
 USE MODD_PARAM_LIMA, ONLY : FINI_CCN=>HINI_CCN,PARAM_LIMA_INIT,NMOD_CCN,LSCAV, &
                             CPRISTINE_ICE_LIMA, CHEVRIMED_ICE_LIMA, NMOD_IFN, NMOD_IMM, &
@@ -1786,6 +1787,59 @@ IF (CELEC /= 'NONE') THEN
          &SCHEME IN INITIAL FMFILE",/,&
          & "THE ELECTRICAL VARIABLES HAVE BEEN INITIALIZED TO ZERO ")') 
     CGETSVT(NSV_ELECBEG:NSV_ELECEND)='INIT'
+  END IF
+  !
+  IF (CCLOUD(1:3) == 'ICE') THEN
+    IF (.NOT. LRED .AND. CELEC == 'ELE3') THEN
+      WRITE(UNIT=ILUOUT,FMT='("THIS IS THE OLD VERSION OF THE ELECTRICAL SCHEME",/,&
+                            & "BE AWARE ANOTHER VERSION IS AVAILABLE !")')
+    ELSE IF (LRED .AND. CELEC == 'ELE4') THEN
+      WRITE(UNIT=ILUOUT,FMT='("THIS IS THE NEW VERSION OF THE ELECTRICAL SCHEME",/,&
+                            & "BUT WITH THE 1 MOMENT VERSION OF THE MICROPHYSICS SCHEME")')
+    ELSE
+      WRITE(UNIT=ILUOUT,FMT='("THIS VERSION OF THE ELECTRICAL SCHEME IS NOT COMPATIBLE",/,&
+                            & "WITH THE ICE3 MICROPHYSICS SCHEME")')
+      CALL PRINT_MSG(NVERB_FATAL,'GEN','READ_EXSEG_n','') ! error
+    END IF
+    IF (LSNOW_T) THEN
+      WRITE(UNIT=ILUOUT,FMT='("THE ELECTRICAL SCHEME CANNOT BE USED WITH LSNOW_T")')
+      CALL PRINT_MSG(NVERB_FATAL,'GEN','READ_EXSEG_n','') ! error
+    END IF
+  ELSE IF (CCLOUD == 'LIMA' .AND. LPTSPLIT) THEN
+    IF (CELEC == 'ELE4' .AND. NMOM_C == 2 .AND. NMOM_R == 2 .AND. NMOM_I == 2 .AND. &
+                              NMOM_S == 1 .AND. NMOM_G == 1 .AND. NMOM_H == 0) THEN
+      WRITE(UNIT=ILUOUT,FMT='("THE ELECTRICAL SCHEME IS USED WITH",/,&
+                            & "THE PARTIAL 2-MOMENT MICROPHYSICS SCHEME LIMA")')
+    ELSE IF (CELEC == 'ELE4' .AND. NMOM_C == 2 .AND. NMOM_R == 2 .AND. NMOM_I == 2 .AND. &
+                                   NMOM_S == 2 .AND. NMOM_G == 2 .AND. NMOM_H == 0) THEN
+      WRITE(UNIT=ILUOUT,FMT='("THE ELECTRICAL SCHEME IS USED WITH",/,&
+                            & "THE FULL 2-MOMENT MICROPHYSICS SCHEME LIMA",/,&
+                            & "BE CAREFUL: NOT FULLY VALIDATED !!!")')
+    ELSE IF (CELEC == 'ELE4' .AND. NMOM_C == 2 .AND. NMOM_R == 2 .AND. NMOM_I == 2 .AND. &
+                                   NMOM_S == 1 .AND. NMOM_G == 1 .AND. NMOM_H == 1) THEN
+      WRITE(UNIT=ILUOUT,FMT='("THE ELECTRICAL SCHEME IS USED WITH",/,&
+                            & "THE PARTIAL 2-MOMENT MICROPHYSICS SCHEME LIMA",/,&
+                            & "WITH HAIL ACTIVATED",/,&
+                            & "BE CAREFUL: NOT TESTED NOR VALIDATED !!!")')
+    ELSE IF (CELEC == 'ELE4' .AND. NMOM_C == 2 .AND. NMOM_R == 2 .AND. NMOM_I == 2 .AND. &
+                                   NMOM_S == 2 .AND. NMOM_G == 2 .AND. NMOM_H == 2) THEN
+      WRITE(UNIT=ILUOUT,FMT='("THE ELECTRICAL SCHEME IS USED WITH",/,&
+                            & "THE FULL 2-MOMENT MICROPHYSICS SCHEME LIMA",/,&
+                            & "WITH HAIL ACTIVATED",/,&
+                            & "BE CAREFUL: NOT TESTED NOR VALIDATED !!!")')                    
+    ELSE
+      WRITE(UNIT=ILUOUT,FMT='("THE USE OF THE ELECTRICAL SCHEME IS NOT COMPATIBLE",/,&
+                            & "WITH THE OPTIONS OF THE LIMA MICROPHYSICS SCHEME")')
+      CALL PRINT_MSG(NVERB_FATAL,'GEN','READ_EXSEG_n','') ! error
+    END IF
+    IF (LSNOW_T) THEN
+      WRITE(UNIT=ILUOUT,FMT='("THE ELECTRICAL SCHEME CANNOT BE USED WITH LSNOW_T")')
+      CALL PRINT_MSG(NVERB_FATAL,'GEN','READ_EXSEG_n','') ! error
+    END IF
+  ELSE
+    WRITE(UNIT=ILUOUT,FMT='("THE ELECTRICAL SCHEME IS NOT COMPATIBLE",/,&
+                          & "WITH THE CHOSEN MICROPHYSICS SCHEME")')
+    CALL PRINT_MSG(NVERB_FATAL,'GEN','READ_EXSEG_n','') ! error
   END IF
 END IF
 !

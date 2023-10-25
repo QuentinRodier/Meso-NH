@@ -193,6 +193,7 @@ END MODULE MODI_ENDSTEP
 !!                 02/2019  (S. Bielli)  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !  P. Wautelet    02/2020: use the new data structures and subroutines for budgets
 !  P. Wautelet    02/2022:  add sea salt
+!  C. Barthe      03/2023: add correction for electric charges
 !------------------------------------------------------------------------------
 !
 !*      0.   DECLARATIONS
@@ -217,7 +218,8 @@ USE MODD_NSV,        ONLY: XSVMIN, NSV_CHEMBEG, NSV_CHEMEND, &
                            NSV_AERBEG, NSV_AEREND,&
                            NSV_DSTBEG, NSV_DSTEND,&
                            NSV_SLTBEG, NSV_SLTEND,&
-                           NSV_SNWBEG, NSV_SNWEND
+                           NSV_SNWBEG, NSV_SNWEND,&
+                           NSV_ELECBEG, NSV_ELECEND
 USE MODD_PARAM_C2R2, ONLY: LACTIT
 USE MODD_PARAM_LIMA, ONLY: LACTIT_LIMA=>LACTIT
 
@@ -466,6 +468,18 @@ IF (SIZE(PLBYRM,4) > 1) THEN
   WHERE(PLBYRM(:,:,:,2:)<1.E-20)
     PLBYRM(:,:,:,2:)=0.
   END WHERE
+END IF
+!
+!------------------------------------------------------------------------------
+!
+!*      6b.  ELECTRIC CHARGES ONLY EXIST WHERE HYDROMETEORS ARE PRESENT
+!
+IF (SIZE(PRT,4) > 1 .AND. NSV_ELECEND > NSV_ELECBEG) THEN
+  DO JSV = 2, KRR
+    WHERE (PRT(:,:,:,JSV) == 0.)
+      PSVT(:,:,:,NSV_ELECBEG+JSV-1) = 0.
+    END WHERE
+  END DO
 END IF
 !
 !------------------------------------------------------------------------------
