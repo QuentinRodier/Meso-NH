@@ -11,7 +11,7 @@
 #SBATCH -p standard
 #SBATCH -q debug
 #SBATCH -J "MesoNH-compile"
-#SBATCH --wckey MRS02001    # Numero du projet
+#SBATCH --wckey MPX13003    # Numero du projet
 #SBATCH -t 02:00:00
 
 # On va lancer la compilation dans le répertoire de lancement du job
