@@ -242,7 +242,8 @@ include Makefile.MESONH.mk
 ifneq "$(OPTLEVEL)" "DEBUG"
 OPT_PERF1  =  -O1 
 OBJS_O1= spll_mode_snow3l.o spll_schu.o spll_ps2str.o spll_p_abs.o spll_ini_one_way_n.o spll_urban_solar_abs.o spll_aeroopt_get.o spll_ch_get_rates.o \
-         spll_ini_aeroset1.o spll_ini_aeroset2.o spll_ini_aeroset3.o spll_ini_aeroset4.o spll_ini_aeroset5.o spll_ini_aeroset6.o
+         spll_ini_aeroset1.o spll_ini_aeroset2.o spll_ini_aeroset3.o spll_ini_aeroset4.o spll_ini_aeroset5.o spll_ini_aeroset6.o \
+         mode_snow3l.mod mode_ini_one_way_n.mod
 $(OBJS_O1) : OPT = $(OPT_BASE) $(OPT_PERF1)
 endif
 

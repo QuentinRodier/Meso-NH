@@ -167,7 +167,7 @@ endif
 
 ifeq ($(shell test $(GFV) -le 482 ; echo $$?),0)
 ifneq "$(OPTLEVEL)" "DEBUG"
-OBJS_O0= spll_lima_phillips_integ.o
+OBJS_O0= spll_lima_phillips_integ.o mode_lima_phillips_integ.mod
 $(OBJS_O0) : OPT = $(OPT_BASE) $(OPT_PERF0)
 endif
 endif

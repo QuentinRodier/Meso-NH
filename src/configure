@@ -270,6 +270,8 @@ module load intel/2019.5.281
 module load openmpi/intel/4.0.2.2
 module load cmake/3.15.4
 unset CC CXX
+export SPLL=spll_new
+
 "}
               ;;
 'Linux login0'*|'Linux compute'*)
@@ -436,9 +438,23 @@ export CC=gcc
 		export NEED_TOOLS=NO
 		export MNHENV=${MNHENV:-"
 export PATH=/opt/gcc-9.4.0/bin:\$PATH
+export SPLL=spll_new
 "}
 		;;
-'Linux lx'*|'Linux sx'*|'Linux px'*) #CNRM
+'Linux sx'*) #CNRM team server UBUNTU22
+                export MNH_ARCH=`echo $ARCH | grep LX`
+                export     ARCH=${MNH_ARCH:-LXgfortran}
+                export  VER_MPI=${VER_MPI:-MPIAUTO}
+                export OPTLEVEL=${OPTLEVEL:-DEBUG}
+                export MVWORK=${MVWORK:-NO}
+                export VER_CDF=${VER_CDF:-CDFAUTO}
+                export NEED_TOOLS=NO
+                export MNHENV=${MNHENV:-"
+export PATH=/opt/gcc-9.4.0/bin:\$PATH
+export SPLL=spll_new
+"}
+                 ;;
+'Linux lx'*|'Linux px'*) #CNRM
                 export MNH_ARCH=`echo $ARCH | grep LX`
                 export     ARCH=${MNH_ARCH:-LXgfortran}
                 export  VER_MPI=${VER_MPI:-MPIAUTO}
@@ -446,6 +462,9 @@ export PATH=/opt/gcc-9.4.0/bin:\$PATH
                 export MVWORK=${MVWORK:-NO}
                 export VER_CDF=${VER_CDF:-CDFCTI}
 		export NEED_TOOLS=NO
+                export MNHENV=${MNHENV:-"
+export SPLL=spll_new
+"}
               ;;
 'Linux nuwa'*)
                 export     ARCH=${ARCH:-LXifort}
