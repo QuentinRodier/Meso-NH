@@ -18,74 +18,6 @@ CONTAINS
 !     #######################
       SUBROUTINE INI_AIRCRAFT
 !     #######################
-!
-!
-!!****  *INI_AIRCRAFT* - user initializes the aircraft flight path
-!!
-!!    PURPOSE
-!!    -------
-!
-!
-!!**  METHOD
-!!    ------
-!!    
-!!   Must be defined (for each aircraft):
-!!   ---------------
-!!
-!!  No default exist for these variables.
-!!  ************************************
-!!
-!!  1) the model in which the aircraft will evolve
-!!     if NOT initialized, the aircraft is NOT used.
-!!
-!!  2) the possibility to switch from a model to its dad or kid
-!!       'FIX' : NMODEL used during the run
-!!       'MOB' : best resolution model used. NMODEL=1 is used at the beginning
-!!
-!!
-!!  3) the type of aircraft
-!!
-!!     'AIRCRA' for aircraft
-!!
-!!  4) the takeoff date and time
-!!
-!!  5) the number of flight path segments (SEG)
-!!
-!!  6) the (SEG  ) duration of flight in the segments, in the flight order (sec.)
-!!
-!!  6bis) TAIRCRAFT%LALTDEF : flag to define the mode of initialisation of
-!!        aircraft altitude TRUE for pressure (corresponding to %XSEGP)
-!!        or FALSE for Z (corresponding to %XSEGZ)
-!!
-!!  7) the (SEG+1) latitudes of the segments ends, in the flight order
-!!     first point is take-off
-!!     last  point is landing
-!!
-!!  8) the (SEG+1) longitudes of the segments ends, in the flight order
-!!
-!!  9) the (SEG+1) pressure (%XSEGP) or Z (%XSEGZ) of the segments ends, in the flight order
-!!
-!!
-!!
-!!   Can be defined  (for each aircraft):
-!!   --------------
-!!
-!!
-!!  9) the time step for data storage.
-!!    default is 60s
-!!
-!! 10) the name or title describing the aircraft (8 characters)
-!!     default is the aircraft type (6 characters) + the aircraft numbers (2 characters)
-!!
-!!
-!!    EXTERNAL
-!!    --------
-!!
-!!    IMPLICIT ARGUMENTS
-!!    ------------------
-!!
-!!    REFERENCE
-!!    ---------
 !!
 !!    AUTHOR
 !!    ------
@@ -122,6 +54,8 @@ DO JI = 1, NAIRCRAFTS
 
     TZAIRCRAFT%NID = JI
 
+    TZAIRCRAFT%LFIX = .FALSE.
+
   IF ( CTITLE(JI) == '' ) THEN
     WRITE( CTITLE(JI), FMT = '( A, I3.3) ') TRIM( CTYPE(JI) ), JI
 
@@ -129,7 +63,7 @@ DO JI = 1, NAIRCRAFTS
     CMNHMSG(2) = 'title set to ' // TRIM( CTITLE(JI) )
     CALL PRINT_MSG( NVERB_INFO, 'GEN', 'INI_AIRCRAFT', OLOCAL = .TRUE. )
   END IF
-  TZAIRCRAFT%CTITLE = CTITLE(JI)
+  TZAIRCRAFT%CNAME = CTITLE(JI)
 
   IF ( CMODEL(JI) == 'FIX' ) THEN
     IF ( NMODEL(JI) < 1 .OR. NMODEL(JI) > NMODEL_NEST ) THEN
@@ -199,6 +133,15 @@ DO JI = 1, NAIRCRAFTS
   ! Read CSV data (trajectory)
   CALL AIRCRAFT_CSV_READ( TZAIRCRAFT, CFILE(JI) )
 
+  IF ( TZAIRCRAFT%LALTDEF ) THEN
+    ! Print a warning if pressures seem too high (> 2000 hPa)
+    IF ( ANY( TZAIRCRAFT%XPOSP > 2.E5 ) ) THEN
+      CMNHMSG(1) = TRIM( TZAIRCRAFT%CNAME ) // ': pressure values seem too high'
+      CMNHMSG(2) = 'check that they are given in hPa and not Pa'
+      CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'INI_AIRCRAFT', OLOCAL = .TRUE. )
+    END IF
+  END IF
+
 END DO
 
 IF ( NAIRCRAFTS > 0 ) CALL AIRCRAFTS_NML_DEALLOCATE()
@@ -223,9 +166,12 @@ CHARACTER(LEN=*),    INTENT(IN)    :: HFILE !Name of the CSV file with the aircr
 
 CHARACTER(LEN=NMAXLINELGT) :: YSTRING
 INTEGER                    :: ILU      ! logical unit of the file
+INTEGER                    :: ILINESREAD ! Number of lines read and treated (the 1st one is skipped)
 INTEGER                    :: JI
 REAL                       :: ZLAT, ZLON, ZALT
 REAL                       :: ZTIME
+
+ILINESREAD = 0
 
 ! Open file
 OPEN( NEWUNIT = ILU, FILE = HFILE, FORM = 'formatted' )
@@ -235,6 +181,7 @@ READ( ILU, END = 101, FMT = '(A)' ) YSTRING ! Reading of header (skip it)
 DO JI = 1, TPAIRCRAFT%NPOS
   ! Read aircraft position
   READ( ILU, END = 101, FMT = '(A)' ) YSTRING
+  ILINESREAD = ILINESREAD + 1
 
   READ( YSTRING, * ) ZTIME, ZLAT, ZLON, ZALT
 
@@ -252,7 +199,7 @@ END DO
 
 CLOSE( ILU )
 
-IF ( JI < TPAIRCRAFT%NPOS ) &
+IF ( ILINESREAD < TPAIRCRAFT%NPOS ) &
   CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'AIRCRAFT_CSV_READ', 'Data not found in file ' // TRIM( HFILE ), OLOCAL = .TRUE. )
 
 TPAIRCRAFT%TLAND = TPAIRCRAFT%TLAUNCH + TPAIRCRAFT%XPOSTIME(TPAIRCRAFT%NPOS)

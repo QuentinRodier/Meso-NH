@@ -83,7 +83,7 @@ REAL,DIMENSION(8)    :: XINIRADIUS_SLT=  (/0.009, 0.021, 0.045, 0.115,0.415,2.5,
 REAL,DIMENSION(8)      :: XINISIG_SLT =  (/ 1.37, 1.5, 1.42, 1.53, 1.85,1.7,1.8, 2.9 /)
 
 !Minimum allowed number concentration for any mode (#/m3)
-REAL,DIMENSION(8)  :: XN0MIN_SLT  = (/1.e1 , 1.e1, 1.e1, 1., 1.e-4,1.e-20, 1.e-20,1.e-20 /)
+REAL,DIMENSION(8)  :: XN0MIN_SLT  = (/1.e1 , 1.e1, 1.e1, 1., 1.e-4,1.e-5, 1.e-6,1.e-7 /)
 !Test Thomas
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: XSLTMSS   ! [kg/m3] total mass concentration of sea salt
 !

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2020-2022 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2020-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -26,6 +26,7 @@
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
 USE MODD_ALLSTATION_n, ONLY:&
+        NNOCSVSTATIONMAX                ,&
         NNUMB_STAT_n    =>NNUMB_STAT    ,&
         XSTEP_STAT_n    =>XSTEP_STAT    ,&
         XX_STAT_n       =>XX_STAT       ,&
@@ -35,8 +36,8 @@ USE MODD_ALLSTATION_n, ONLY:&
         XZ_STAT_n       =>XZ_STAT       ,&
         CNAME_STAT_n    =>CNAME_STAT    ,&
         CFILE_STAT_n    =>CFILE_STAT    ,&
-        LDIAG_SURFRAD_n =>LDIAG_SURFRAD
-USE MODD_PARAMETERS, ONLY: NFILENAMELGTMAX, NSTATPROFNAMELGTMAX
+        LDIAG_SURFRAD_n =>LDIAG_SURFRAD_STAT
+USE MODD_PARAMETERS, ONLY: NFILENAMELGTMAX, NSENSORNAMELGTMAX
 !
 !-----------------------------------------------------------------------------
 !
@@ -47,9 +48,9 @@ IMPLICIT NONE
 
 INTEGER                          ,SAVE:: NNUMB_STAT
 REAL                             ,SAVE:: XSTEP_STAT
-REAL, DIMENSION(100)             ,SAVE:: XX_STAT, XY_STAT, XZ_STAT, XLAT_STAT, XLON_STAT
-CHARACTER (LEN=NSTATPROFNAMELGTMAX), DIMENSION(100),SAVE:: CNAME_STAT
-CHARACTER (LEN=NFILENAMELGTMAX),                   SAVE:: CFILE_STAT              !filename
+REAL,                              DIMENSION(NNOCSVSTATIONMAX),SAVE:: XX_STAT, XY_STAT, XZ_STAT, XLAT_STAT, XLON_STAT
+CHARACTER (LEN=NSENSORNAMELGTMAX), DIMENSION(NNOCSVSTATIONMAX),SAVE:: CNAME_STAT
+CHARACTER (LEN=NFILENAMELGTMAX)  ,SAVE:: CFILE_STAT              !filename
 LOGICAL                          ,SAVE:: LDIAG_SURFRAD
 
 NAMELIST /NAM_STATIONn/  &

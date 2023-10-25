@@ -19,6 +19,7 @@
 !  P. Wautelet 04/12/2020: add IO_Field_create and IO_Ndimlist_reduce subroutines
 !  P. Wautelet 07/12/2020: add support for partial write of fields (optional argument: koffset, not all subroutines, no LFI spport)
 !  P. Wautelet 14/01/2021: add IO_Field_write_byname_N4 and IO_Field_write_byfield_N4 subroutines
+!  P. Wautelet 07/04/2023: correct IO_Field_user_write examples
 !-----------------------------------------------------------------
 
 #define MNH_SCALARS_IN_SPLITFILES 0
@@ -4085,7 +4086,6 @@ DO JI = 1,SIZE(TPOUTPUT%NFIELDLIST)
           ELSE
             call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
                             ': CLBTYPE/=NONE not (yet) allowed for 3D real fields' )
-            !PW: TODO?: add missing field in TFIELDLIST?
             !CALL IO_Field_write_lb(TPOUTPUT%TFILE,TFIELDLIST(IDX),***,TFIELDLIST(IDX)%TFIELD_X3D(IMI)%DATA)
           END IF
         !
@@ -4105,7 +4105,6 @@ DO JI = 1,SIZE(TPOUTPUT%NFIELDLIST)
           ELSE
             call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
                             ': CLBTYPE/=NONE not (yet) allowed for 3D integer fields' )
-            !PW: TODO?: add missing field in TFIELDLIST?
             !CALL IO_Field_write_lb(TPOUTPUT%TFILE,TFIELDLIST(IDX),***,TFIELDLIST(IDX)%TFIELD_N3D(IMI)%DATA)
           END IF
         !
@@ -4137,7 +4136,6 @@ DO JI = 1,SIZE(TPOUTPUT%NFIELDLIST)
           ELSE
             call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
                             ': CLBTYPE/=NONE not (yet) allowed for 4D real fields' )
-            !PW: TODO?: add missing field in TFIELDLIST?
             !CALL IO_Field_write_lb(TPOUTPUT%TFILE,TFIELDLIST(IDX),***,TFIELDLIST(IDX)%TFIELD_X4D(IMI)%DATA)
           END IF
         !
@@ -4169,7 +4167,6 @@ DO JI = 1,SIZE(TPOUTPUT%NFIELDLIST)
           ELSE
             call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
                             ': CLBTYPE/=NONE not (yet) allowed for 5D real fields' )
-            !PW: TODO?: add missing field in TFIELDLIST?
             !CALL IO_Field_write_lb(TPOUTPUT%TFILE,TFIELDLIST(IDX),***,TFIELDLIST(IDX)%TFIELD_X5D(IMI)%DATA)
           END IF
         !
@@ -4201,7 +4198,6 @@ DO JI = 1,SIZE(TPOUTPUT%NFIELDLIST)
           ELSE
             call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
                             ': CLBTYPE/=NONE not (yet) allowed for 6D real fields' )
-            !PW: TODO?: add missing field in TFIELDLIST?
             !CALL IO_Field_write_lb(TPOUTPUT%TFILE,TFIELDLIST(IDX),***,TFIELDLIST(IDX)%TFIELD_X6D(IMI)%DATA)
           END IF
         !
@@ -4223,9 +4219,10 @@ END DO
 END SUBROUTINE IO_Fieldlist_write
 
 
-SUBROUTINE IO_Field_user_write(TPOUTPUT)
+SUBROUTINE IO_Field_user_write( TPOUTPUT )
 !
 #if 0
+! IMPORTANT: uncomment the previous line (set to '#if 1') if you want to use the next lines
 USE MODD_DYN_n,      ONLY: XTSTEP
 USE MODD_FIELD_n,    ONLY: XUT, XVT, XRT, XTHT, XSVT
 USE MODD_PARAMETERS, ONLY: JPVEXT
@@ -4239,86 +4236,93 @@ TYPE(TOUTBAK),    INTENT(IN)  :: TPOUTPUT !Output structure
 TYPE(TFIELDMETADATA) :: TZFIELD
 !
 #if 0
+! IMPORTANT: uncomment the previous line (set to '#if 1') if you want to use the next lines
+!
 INTEGER          :: IKB
-!
+
 IKB=JPVEXT+1
-!
-TZFIELD%CMNHNAME   = 'UTLOW'
-TZFIELD%CSTDNAME   = 'x_wind'
-TZFIELD%CLONGNAME  = ''
-TZFIELD%CUNITS     = 'm s-1'
-TZFIELD%CDIR       = 'XY'
-TZFIELD%CCOMMENT   = 'X_Y_Z_U component of wind at lowest physical level'
-TZFIELD%NGRID      = 2
-TZFIELD%NTYPE      = TYPEREAL
-TZFIELD%NDIMS      = 2
-TZFIELD%LTIMEDEP   = .TRUE.
-CALL IO_Field_write(TPOUTPUT%TFILE,TZFIELD,XUT(:,:,IKB))
-!
-TZFIELD%CMNHNAME   = 'VTLOW'
-TZFIELD%CSTDNAME   = 'y_wind'
-TZFIELD%CLONGNAME  = ''
-TZFIELD%CUNITS     = 'm s-1'
-TZFIELD%CDIR       = 'XY'
-TZFIELD%CCOMMENT   = 'X_Y_Z_V component of wind at lowest physical level'
-TZFIELD%NGRID      = 3
-TZFIELD%NTYPE      = TYPEREAL
-TZFIELD%NDIMS      = 2
-TZFIELD%LTIMEDEP   = .TRUE.
-CALL IO_Field_write(TPOUTPUT%TFILE,TZFIELD,XVT(:,:,IKB))
-!
-TZFIELD%CMNHNAME   = 'THTLOW'
-TZFIELD%CSTDNAME   = 'air_potential_temperature'
-TZFIELD%CLONGNAME  = ''
-TZFIELD%CUNITS     = 'K'
-TZFIELD%CDIR       = 'XY'
-TZFIELD%CCOMMENT   = 'X_Y_Z_potential temperature at lowest physical level'
-TZFIELD%NGRID      = 1
-TZFIELD%NTYPE      = TYPEREAL
-TZFIELD%NDIMS      = 2
-TZFIELD%LTIMEDEP   = .TRUE.
-CALL IO_Field_write(TPOUTPUT%TFILE,TZFIELD,XTHT(:,:,IKB))
-!
-TZFIELD%CMNHNAME   = 'RVTLOW'
-!TZFIELD%CSTDNAME   = 'humidity_mixing_ratio' !ratio of the mass of water vapor to the mass of dry air
-TZFIELD%CSTDNAME   = 'specific_humidity'     !mass fraction of water vapor in (moist) air
-TZFIELD%CLONGNAME  = ''
-TZFIELD%CUNITS     = 'kg kg-1'
-TZFIELD%CDIR       = 'XY'
-TZFIELD%CCOMMENT   = 'X_Y_Z_Vapor mixing Ratio at lowest physical level'
-TZFIELD%NGRID      = 1
-TZFIELD%NTYPE      = TYPEREAL
-TZFIELD%NDIMS      = 2
-TZFIELD%LTIMEDEP   = .TRUE.
-CALL IO_Field_write(TPOUTPUT%TFILE,TZFIELD,XRT(:,:,IKB,1))
-!
-TZFIELD%CMNHNAME   = 'ACPRRSTEP'
-TZFIELD%CSTDNAME   = 'rainfall_amount'
-TZFIELD%CLONGNAME  = ''
-TZFIELD%CUNITS     = 'kg m-2'
-TZFIELD%CDIR       = ''
-TZFIELD%CCOMMENT   = 'X_Y_ACcumulated Precipitation Rain Rate during timestep'
-TZFIELD%NGRID      = 1
-TZFIELD%NTYPE      = TYPEREAL
-TZFIELD%NDIMS      = 2
-TZFIELD%LTIMEDEP   = .TRUE.
+
+TZFIELD = TFIELDMETADATA( &
+  CMNHNAME   = 'UTLOW',   &
+  CLONGNAME  = '',        &
+  CSTDNAME   = 'x_wind',  &
+  CUNITS     = 'm s-1',   &
+  CDIR       = 'XY',      &
+  CCOMMENT   = 'X-component of wind at lowest physical level', &
+  NGRID      = 2,         &
+  NTYPE      = TYPEREAL,  &
+  NDIMS      = 2,         &
+  LTIMEDEP   = .TRUE.     )
+CALL IO_Field_write( TPOUTPUT%TFILE, TZFIELD, XUT(:,:,IKB) )
+
+TZFIELD = TFIELDMETADATA( &
+  CMNHNAME   = 'VTLOW',   &
+  CLONGNAME  = '',        &
+  CSTDNAME   = 'y_wind',  &
+  CUNITS     = 'm s-1',   &
+  CDIR       = 'XY',      &
+  CCOMMENT   = 'Y-component of wind at lowest physical level', &
+  NGRID      = 3,         &
+  NTYPE      = TYPEREAL,  &
+  NDIMS      = 2,         &
+  LTIMEDEP   = .TRUE.     )
+CALL IO_Field_write( TPOUTPUT%TFILE, TZFIELD, XVT(:,:,IKB) )
+
+TZFIELD = TFIELDMETADATA( &
+  CMNHNAME   = 'THTLOW',  &
+  CLONGNAME  = '',        &
+  CSTDNAME   = 'air_potential_temperature',  &
+  CUNITS     = 'K',       &
+  CDIR       = 'XY',      &
+  CCOMMENT   = 'potential temperature at lowest physical level', &
+  NGRID      = 1,         &
+  NTYPE      = TYPEREAL,  &
+  NDIMS      = 2,         &
+  LTIMEDEP   = .TRUE.     )
+CALL IO_Field_write( TPOUTPUT%TFILE, TZFIELD, XTHT(:,:,IKB) )
+
+TZFIELD = TFIELDMETADATA(           &
+  CMNHNAME   = 'RVTLOW',            &
+  CLONGNAME  = '',                  &
+  ! CSTDNAME   = 'humidity_mixing_ratio',  &  !ratio of the mass of water vapor to the mass of dry air
+  CSTDNAME   = 'specific_humidity', &         !mass fraction of water vapor in (moist) air
+  CUNITS     = 'kg kg-1',           &
+  CDIR       = 'XY',                &
+  CCOMMENT   = 'Vapor mixing Ratio at lowest physical level', &
+  NGRID      = 1,                   &
+  NTYPE      = TYPEREAL,            &
+  NDIMS      = 2,                   &
+  LTIMEDEP   = .TRUE.               )
+CALL IO_Field_write( TPOUTPUT%TFILE, TZFIELD, XRT(:,:,IKB,1) )
+
+TZFIELD = TFIELDMETADATA(         &
+  CMNHNAME   = 'ACPRRSTEP',       &
+  CLONGNAME  = '',                &
+  CSTDNAME   = 'rainfall_amount', &
+  CUNITS     = 'kg m-2',          &
+  CDIR       = 'XY',              &
+  CCOMMENT   = 'ACcumulated Precipitation Rain Rate during timestep', &
+  NGRID      = 1,                 &
+  NTYPE      = TYPEREAL,          &
+  NDIMS      = 2,                 &
+  LTIMEDEP   = .TRUE.             )
 !XACPRR is multiplied by 1000. to convert from m to kg m-2 (water density is assumed to be 1000 kg m-3)
-CALL IO_Field_write(TPOUTPUT%TFILE,TZFIELD,XINPRR*XTSTEP*1.0E3)
-!
-TZFIELD%CMNHNAME   = 'SVT001'
-TZFIELD%CSTDNAME   = 'concentration in scalar variable'
-TZFIELD%CLONGNAME  = ''
-TZFIELD%CUNITS     = 'kg kg-1'
-TZFIELD%CDIR       = 'XY'
-TZFIELD%CCOMMENT   = 'X_Y_Z_concentration in scalar variable'
-TZFIELD%NGRID      = 1
-TZFIELD%NTYPE      = TYPEREAL
-TZFIELD%NDIMS      = 3
-TZFIELD%LTIMEDEP   = .TRUE.
-CALL IO_WRITE_FIELD(TPOUTPUT%TFILE,TZFIELD,XSVT(:,:,:,1))
-!
+CALL IO_Field_write( TPOUTPUT%TFILE, TZFIELD, XINPRR*XTSTEP*1.0E3 )
+
+TZFIELD = TFIELDMETADATA( &
+  CMNHNAME   = 'SVT001',  &
+  CLONGNAME  = 'SVT001',  &
+  CSTDNAME   = '',        &
+  CUNITS     = 'kg kg-1', &
+  CDIR       = 'XY',      &
+  CCOMMENT   = 'concentration in scalar variable', &
+  NGRID      = 1,         &
+  NTYPE      = TYPEREAL,  &
+  NDIMS      = 3,         &
+  LTIMEDEP   = .TRUE.     )
+CALL IO_Field_write( TPOUTPUT%TFILE, TZFIELD, XSVT(:,:,:,1) )
 #endif
-!
+
 END SUBROUTINE IO_Field_user_write
 
 END MODULE MODE_IO_FIELD_WRITE

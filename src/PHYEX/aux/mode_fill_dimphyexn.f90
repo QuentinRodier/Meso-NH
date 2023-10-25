@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2022-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -6,7 +6,7 @@
 MODULE MODE_FILL_DIMPHYEX
 IMPLICIT NONE
 CONTAINS
-SUBROUTINE FILL_DIMPHYEX(YDDIMPHYEX, KIT, KJT, KKT, LTURB)
+SUBROUTINE FILL_DIMPHYEX( YDDIMPHYEX, KIT, KJT, KKT, LTURB, KLES_TIMES, KLES_K )
 !     #########################
 !
 !!
@@ -29,6 +29,7 @@ SUBROUTINE FILL_DIMPHYEX(YDDIMPHYEX, KIT, KJT, KKT, LTURB)
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    January 2022
+!  P. Wautelet 04/10/2023: bugfix: set NKLES correctly
 !
 !-----------------------------------------------------------------
 !*       0.   DECLARATIONS
@@ -50,6 +51,9 @@ TYPE(DIMPHYEX_t), INTENT(OUT) :: YDDIMPHYEX ! Structure to fill in
 INTEGER, INTENT(IN) :: KIT, KJT, KKT ! Array dimensions
 LOGICAL, INTENT(IN), OPTIONAL :: LTURB ! Flag to replace array dimensions I/JB and I/JE to the full array size
                                        ! needed if computation in HALO points (e.g. in turbulence)
+INTEGER, INTENT(IN), OPTIONAL :: KLES_TIMES  ! number of LES computations in time
+INTEGER, INTENT(IN), OPTIONAL :: KLES_K      ! number of vertical levels for LES diagnostics
+
 LOGICAL :: YTURB
 !
 !*       0.2  declaration of local variables
@@ -74,7 +78,6 @@ YDDIMPHYEX%NKA=1
 YDDIMPHYEX%NKU=KKT
 YDDIMPHYEX%NKB=1+JPVEXT
 YDDIMPHYEX%NKE=KKT-JPVEXT
-YDDIMPHYEX%NKLES=KKT-2*JPVEXT
 YDDIMPHYEX%NKTB=1+JPVEXT
 YDDIMPHYEX%NKTE=KKT-JPVEXT
 !
@@ -97,7 +100,15 @@ ELSE
 END IF
 IF (LHOOK) CALL DR_HOOK('FILL_DIMPHYEX', 1, ZHOOK_HANDLE)
 !
-YDDIMPHYEX%NLESMASK = 1
+YDDIMPHYEX%NLESMASK=1
+YDDIMPHYEX%NLES_TIMES=0
+IF (PRESENT(KLES_TIMES)) THEN
+  YDDIMPHYEX%NLES_TIMES = KLES_TIMES
+END IF
+YDDIMPHYEX%NKLES=0
+IF (PRESENT(KLES_K)) THEN
+  YDDIMPHYEX%NKLES = KLES_K
+END IF
 IF (LLES_MY_MASK) YDDIMPHYEX%NLESMASK = YDDIMPHYEX%NLESMASK + NLES_MASKS_USER
 IF (LLES_NEB_MASK) YDDIMPHYEX%NLESMASK = YDDIMPHYEX%NLESMASK + 2
 IF (LLES_CORE_MASK) YDDIMPHYEX%NLESMASK = YDDIMPHYEX%NLESMASK + 2

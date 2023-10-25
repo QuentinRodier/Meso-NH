@@ -132,8 +132,9 @@
   REAL, DIMENSION(size(ZMASS,1),size(ZMASS,2),size(ZMASS,3))      :: VEXTR
   COMPLEX, DIMENSION(size(ZMASS,1),size(ZMASS,2),size(ZMASS,3),6)::Req !  Equivalent refractive index
   REAL, PARAMETER           :: EPSILON=1.d-8                     ![um] a small number used to avoid zero
-  
-  INTEGER ::JJJ, JI, JSV
+  REAL,DIMENSION(NSP+NCARB+NSOA)       :: ZFAC
+  REAL,DIMENSION(NSP+NCARB+NSOA)       :: ZRHOI  
+  INTEGER ::JJJ, JI, JSV, JJ
  
 !-------------------------------------------------------------------------
 !-------------------------------------------------------------------------
@@ -212,25 +213,33 @@ NMODE_AER=JPMODE  ! in case of ORILAM
 !       VDDST(:,:,:)=0.
 !    ENDIF
 
+! Cf Ackermann (all to black carbon except water)
+!Set molecular weightn g/mol 
+ZRHOI(:) = 1.8e3
+ZRHOI(JP_AER_H2O) = 1.0e3   ! water
+ZRHOI(JP_AER_DST) = XDENSITY_DUST  ! dusts
+DO JJ=1,NSP+NCARB+NSOA
+  ZFAC(JJ)=(4./3.)*XPI*ZRHOI(JJ)*1.e-9
+ENDDO
 
-     VOC(:,:,:)=(ZMASS(:,:,:,JP_AER_OC,JMDE))/XFAC(JP_AER_OC)
-     VH2O(:,:,:)=(ZMASS(:,:,:,JP_AER_H2O,JMDE))/XFAC(JP_AER_H2O)
-     VAM(:,:,:)=(ZMASS(:,:,:,JP_AER_NH3,JMDE))/XFAC(JP_AER_NH3)
-     VSU(:,:,:)=(ZMASS(:,:,:,JP_AER_SO4,JMDE))/XFAC(JP_AER_SO4)
-     VNI(:,:,:)=(ZMASS(:,:,:,JP_AER_NO3,JMDE))/XFAC(JP_AER_NO3)
-     VBC(:,:,:)=(ZMASS(:,:,:,JP_AER_BC,JMDE))/XFAC(JP_AER_BC)
-     VDDST(:,:,:)=(ZMASS(:,:,:,JP_AER_DST,JMDE))/XFAC(JP_AER_DST)
+     VOC(:,:,:)=(ZMASS(:,:,:,JP_AER_OC,JMDE))/ZFAC(JP_AER_OC)
+     VH2O(:,:,:)=(ZMASS(:,:,:,JP_AER_H2O,JMDE))/ZFAC(JP_AER_H2O)
+     VAM(:,:,:)=(ZMASS(:,:,:,JP_AER_NH3,JMDE))/ZFAC(JP_AER_NH3)
+     VSU(:,:,:)=(ZMASS(:,:,:,JP_AER_SO4,JMDE))/ZFAC(JP_AER_SO4)
+     VNI(:,:,:)=(ZMASS(:,:,:,JP_AER_NO3,JMDE))/ZFAC(JP_AER_NO3)
+     VBC(:,:,:)=(ZMASS(:,:,:,JP_AER_BC,JMDE))/ZFAC(JP_AER_BC)
+     VDDST(:,:,:)=(ZMASS(:,:,:,JP_AER_DST,JMDE))/ZFAC(JP_AER_DST)
     IF (NSOA .EQ. 10) THEN 
-     VSOA1(:,:,:)=(ZMASS(:,:,:,JP_AER_SOA1,JMDE))/XFAC(JP_AER_SOA1)
-     VSOA2(:,:,:)=(ZMASS(:,:,:,JP_AER_SOA2,JMDE))/XFAC(JP_AER_SOA2)
-     VSOA3(:,:,:)=(ZMASS(:,:,:,JP_AER_SOA3,JMDE))/XFAC(JP_AER_SOA3)
-     VSOA4(:,:,:)=(ZMASS(:,:,:,JP_AER_SOA4,JMDE))/XFAC(JP_AER_SOA4)
-     VSOA5(:,:,:)=(ZMASS(:,:,:,JP_AER_SOA5,JMDE))/XFAC(JP_AER_SOA5)
-     VSOA6(:,:,:)=(ZMASS(:,:,:,JP_AER_SOA6,JMDE))/XFAC(JP_AER_SOA6)
-     VSOA7(:,:,:)=(ZMASS(:,:,:,JP_AER_SOA7,JMDE))/XFAC(JP_AER_SOA7)
-     VSOA8(:,:,:)=(ZMASS(:,:,:,JP_AER_SOA8,JMDE))/XFAC(JP_AER_SOA8)
-     VSOA9(:,:,:)=(ZMASS(:,:,:,JP_AER_SOA9,JMDE))/XFAC(JP_AER_SOA9)
-     VSOA10(:,:,:)=(ZMASS(:,:,:,JP_AER_SOA10,JMDE))/XFAC(JP_AER_SOA10)
+     VSOA1(:,:,:)=(ZMASS(:,:,:,JP_AER_SOA1,JMDE))/ZFAC(JP_AER_SOA1)
+     VSOA2(:,:,:)=(ZMASS(:,:,:,JP_AER_SOA2,JMDE))/ZFAC(JP_AER_SOA2)
+     VSOA3(:,:,:)=(ZMASS(:,:,:,JP_AER_SOA3,JMDE))/ZFAC(JP_AER_SOA3)
+     VSOA4(:,:,:)=(ZMASS(:,:,:,JP_AER_SOA4,JMDE))/ZFAC(JP_AER_SOA4)
+     VSOA5(:,:,:)=(ZMASS(:,:,:,JP_AER_SOA5,JMDE))/ZFAC(JP_AER_SOA5)
+     VSOA6(:,:,:)=(ZMASS(:,:,:,JP_AER_SOA6,JMDE))/ZFAC(JP_AER_SOA6)
+     VSOA7(:,:,:)=(ZMASS(:,:,:,JP_AER_SOA7,JMDE))/ZFAC(JP_AER_SOA7)
+     VSOA8(:,:,:)=(ZMASS(:,:,:,JP_AER_SOA8,JMDE))/ZFAC(JP_AER_SOA8)
+     VSOA9(:,:,:)=(ZMASS(:,:,:,JP_AER_SOA9,JMDE))/ZFAC(JP_AER_SOA9)
+     VSOA10(:,:,:)=(ZMASS(:,:,:,JP_AER_SOA10,JMDE))/ZFAC(JP_AER_SOA10)
      VSOA(:,:,:)=VSOA1(:,:,:)+VSOA2(:,:,:)+VSOA3(:,:,:)+VSOA4(:,:,:)+&
                  VSOA5(:,:,:)+VSOA6(:,:,:)+VSOA7(:,:,:)+VSOA8(:,:,:)+&
                  VSOA9(:,:,:)+VSOA10(:,:,:)

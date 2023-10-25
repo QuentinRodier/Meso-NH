@@ -1,11 +1,12 @@
 /*
-MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
+MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
 MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 MNH_LIC for details. version 1.
 */
 /* Modifications :
   P. Wautelet 19/11/2021: add function findtypesize + improve/add support for 32 and 64 bits variables + add mpi_reduce
+  J. Escobar  22/09/2022: add MPI_Sendrecv
 */
 
 #include <stdio.h>
@@ -158,6 +159,20 @@ int              *__ierr;
     *__ierr = 0;
 }
 
+#pragma weak mpi_sendrecv__ = mpi_sendrecv
+#pragma weak mpi_sendrecv_  = mpi_sendrecv
+void mpi_sendrecv(void *sendbuf, int *sendcounts, int *sendtype, int *dest  , int *sendtag ,
+                  void *recvbuf, int *recvcounts, int *recvtype, int *source, int *recvtag ,
+		  int *comm, int *__ierr)
+{
+    int size;
+
+    disppass("sendrecv");
+    size = findtypesize(*sendtype);
+    memcpy(recvbuf, sendbuf, (*recvcounts)*size);
+
+    *__ierr = 0;
+}
 
 #pragma weak mpi_alltoallv__ = mpi_alltoallv
 #pragma weak mpi_alltoallv_  = mpi_alltoallv

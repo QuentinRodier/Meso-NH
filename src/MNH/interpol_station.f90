@@ -1,11 +1,10 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2008-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$ $Date$
+! Modifications:
+!  P. Wautelet 19/07/2023: INTERPOL_STATION_2D: small optimisation
 !-----------------------------------------------------------------
 !###########################
 MODULE MODI_INTERPOL_STATION
@@ -114,12 +113,11 @@ INTEGER,               INTENT(IN) :: KJ ! the closest south-west grid point
 REAL,                  INTENT(IN) :: PXHAT_GPS ! x positions of the GPS station
 REAL,                  INTENT(IN) :: PYHAT_GPS ! y positions of the GPS station
 REAL,    INTENT(OUT) :: PSTAT_GPS !  value of the GPS parameter at the station
-REAL, DIMENSION(SIZE(PGPS,1), SIZE(PGPS,2),1) :: ZFIELD1
+
 REAL, DIMENSION(1) :: ZFIELD2
 !
 !-------------------------------------------------------------------------------!
-ZFIELD1(:,:,1)=PGPS(:,:)
-CALL INTERPOL_STATION_3D(ZFIELD1,PXHAT,PYHAT,KI,KJ,PXHAT_GPS,PYHAT_GPS,ZFIELD2)
-PSTAT_GPS=ZFIELD2(1)
+CALL INTERPOL_STATION_3D( RESHAPE( PGPS,[ SIZE(PGPS,1), SIZE(PGPS,2), 1 ] ), PXHAT, PYHAT, KI, KJ, PXHAT_GPS, PYHAT_GPS, ZFIELD2 )
+PSTAT_GPS = ZFIELD2(1)
 !
 END SUBROUTINE INTERPOL_STATION_2D

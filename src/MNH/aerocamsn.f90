@@ -52,6 +52,7 @@ END MODULE MODI_AEROCAMS_n
 !!
 
 USE MODE_AERO_PSD
+USE MODD_CH_AEROSOL
 !!
 IMPLICIT NONE
 !!
@@ -72,7 +73,14 @@ INTEGER  :: JN
 
 DO JN =1,SIZE(PSV, 4)
  PSV(:,:,:,JN) = PSV(:,:,:,JN) * 1E9 / PRHODREF(:,:,:)
+ !print*, CAERONAMES(JN),' =',MINVAL(PSV(:,:,:,JN)), MAXVAL(PSV(:,:,:,JN))
 ENDDO
+PSV(:,:,:,JP_CH_BCi) = MAX(PSV(:,:,:,JP_CH_BCi), 1E-4)
+PSV(:,:,:,JP_CH_BCj) = MAX(PSV(:,:,:,JP_CH_BCj), 1E-3)
+PSV(:,:,:,JP_CH_OCi) = MAX(PSV(:,:,:,JP_CH_OCi), 1E-4)
+PSV(:,:,:,JP_CH_OCj) = MAX(PSV(:,:,:,JP_CH_OCj), 1E-3)
+PSV(:,:,:,JP_CH_DSTi) = MAX(PSV(:,:,:,JP_CH_DSTi), 1E-4)
+PSV(:,:,:,JP_CH_DSTj) = MAX(PSV(:,:,:,JP_CH_DSTj), 1E-3)
 
 ! Compute moment from aerosol mass and conversion  SV aerosols variables into ppv
 
