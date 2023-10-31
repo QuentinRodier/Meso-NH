@@ -310,7 +310,6 @@ END MODULE MODI_READ_EXSEG_n
 !  P. Wautelet 13/07/2022: add namelist for flyers and balloons
 !  P. Wautelet 19/08/2022: add namelist for aircrafts
 !  H. Toumi       09/2022: add EOL/ADR
-!  PA. Joulin     04/2023: update for main
 !------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
