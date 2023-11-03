@@ -85,9 +85,9 @@ END MODULE MODI_MNHGET_SURF_PARAM_n
 !!       S. Donier  06/2015 : bug surface aerosols
 !!  06/2016     (G.Delautier) phasage surfex 8
 !!  01/2018      (G.Delautier) SURFEX 8.1
-! C. Lac         11/2019: correction in the drag formula and application to building in addition to tree
-! P. Wautelet 11/03/2020: bugfix: add present checks before working on optional arrays
-  ! R. Schoetter    12/2021  multi-level coupling between MesoNH and SURFEX  
+!  C. Lac          11/2019: correction in the drag formula and application to building in addition to tree
+!  P. Wautelet  11/03/2020: bugfix: add present checks before working on optional arrays
+!  R. Schoetter    12/2021: multi-level coupling between MesoNH and SURFEX
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS

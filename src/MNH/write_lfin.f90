@@ -178,7 +178,7 @@ END MODULE MODI_WRITE_LFIFM_n
 !  P. Wautelet 10/03/2021: use scalar variable names for dust and salt
 !  P. Wautelet 11/03/2021: bugfix: correct name for NSV_LIMA_IMM_NUCL
 !  J.L. Redelsperger 03/2021: add OCEAN and auto-coupled O-A LES cases
-!  R. Schoetter  12/2021:  adds humidity and other mean diagnostics
+!  R. Schoetter   12/2021: adds humidity and other mean diagnostics
 !  A. Costes      12/2021: add Blaze fire model
 !  P. Wautelet 04/02/2022: use TSVLIST to manage metadata of scalar variables
 !  E. Jezequel    11/2022: add covariances from MEAN fields
@@ -874,14 +874,14 @@ IF (MEAN_COUNT /= 0) THEN
   TZFIELD%CUNITS     = 'm s-1'
   TZFIELD%CCOMMENT   = 'X_Y_Z_horizontal maximum wind speed'
   CALL IO_Field_write(TPFILE,TZFIELD,XWIFF_MAX)
-  XWIFF_MAX(:,:,:)=-XUNDEF
+  XWIFF_MAX(:,:,:)=XNEGUNDEF
   !
   TZFIELD%CMNHNAME   = 'WIDDMAX'
   TZFIELD%CLONGNAME  = 'WIDDMAX'
   TZFIELD%CUNITS     = 'm s-1'
   TZFIELD%CCOMMENT   = 'X_Y_Z_horizontal maximum wind direction'
   CALL IO_Field_write(TPFILE,TZFIELD,XWIDD_MAX)
-  XWIDD_MAX(:,:,:)=-XUNDEF
+  XWIDD_MAX(:,:,:)=XNEGUNDEF
 !  
   TZFIELD%NGRID      = 1
   TZFIELD = TFIELDMETADATA(                          &

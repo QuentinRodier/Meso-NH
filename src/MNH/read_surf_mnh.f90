@@ -24,7 +24,6 @@ use modd_parameters, only: NMNHNAMELGTMAX
 use mode_field,      only: Find_field_id_from_mnhname
 !
 CHARACTER(LEN=MNH_LEN_HREC),INTENT(IN)  :: HREC     ! name of the article to write
-!CHARACTER(LEN=*),INTENT(IN)  :: HREC     ! name of the article to write
 CHARACTER(LEN=2),       INTENT(IN)  :: HDIR     ! Expected type of the data field (XX,XY,--...)
 INTEGER,                INTENT(IN)  :: KGRID    ! Localization on the model grid
 INTEGER,                INTENT(IN)  :: KTYPE    ! Datatype

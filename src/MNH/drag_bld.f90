@@ -67,8 +67,8 @@ SUBROUTINE DRAG_BLD(PTSTEP, PUT, PVT, PTKET, PPABST, PTHT, PRT,              &
   !!    MODIFICATIONS
   !!    -------------
   !!      Original    09/2019
-  !  P. Wautelet 04/03/2021: budgets: add DRAGB source term
-  ! R. Schoetter    12/2021  multi-level coupling between MesoNH and SURFEX  
+  !  P. Wautelet  04/03/2021: budgets: add DRAGB source term
+  !  R. Schoetter    12/2021: multi-level coupling between MesoNH and SURFEX
   !!---------------------------------------------------------------
   !
   !*       0.    DECLARATIONS
@@ -85,9 +85,9 @@ SUBROUTINE DRAG_BLD(PTSTEP, PUT, PVT, PTKET, PPABST, PTHT, PRT,              &
   USE MODD_GROUND_PAR
   USE MODD_NSV
   USE MODD_PGDFIELDS
-  
+
   use mode_budget,     only: Budget_store_init, Budget_store_end
-  !
+
   USE MODI_MNHGET_SURF_PARAM_n
   USE MODI_SHUMAN
   !
@@ -154,7 +154,7 @@ SUBROUTINE DRAG_BLD(PTSTEP, PUT, PVT, PTKET, PPABST, PTHT, PRT,              &
   REAL :: ZSUM_LAD_CAN, ZSUM_BLD_DENSITY, ZLEV_K0, ZLEV_K1
   REAL :: ZSUM_SFTH_WALL, ZSUM_SFTH_ROOF, ZSUM_SFRV_WALL, ZSUM_SFRV_ROOF 
   !
-  !*       0.3     Initialisation de kelkes variables
+  !*       0.3     Initialization
   !
   if ( lbudget_u   ) call Budget_store_init( tbudgets(NBUDGET_U  ), 'DRAGB', prus  (:, :, :) )
   if ( lbudget_v   ) call Budget_store_init( tbudgets(NBUDGET_V  ), 'DRAGB', prvs  (:, :, :) )

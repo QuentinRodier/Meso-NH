@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2010-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2010-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -116,36 +116,36 @@ END MODULE MODI_FLASH_GEOM_ELEC_n
 !*      0.      DECLARATIONS
 !               ------------
 !
-USE MODD_ARGSLIST_ll,    ONLY: LIST_ll
-USE MODD_CONF,           ONLY: CEXP, LCARTESIAN
-USE MODD_CST,            ONLY: XAVOGADRO, XMD
-USE MODD_DYN_n,          ONLY: XDXHATM, XDYHATM, NSTOP
+USE MODD_ARGSLIST_ll,      ONLY: LIST_ll
+USE MODD_CONF,             ONLY: CEXP, LCARTESIAN
+USE MODD_CST,              ONLY: XAVOGADRO, XMD
+USE MODD_DYN_n,            ONLY: XDXHATM, XDYHATM, NSTOP
 USE MODD_ELEC_DESCR
 USE MODD_ELEC_FLASH
-USE MODD_ELEC_PARAM,     ONLY: XFQLIGHTR, XEXQLIGHTR, &
-                               XFQLIGHTI, XEXQLIGHTI, &
-                               XFQLIGHTS, XEXQLIGHTS, &
-                               XFQLIGHTG, XEXQLIGHTG, &
-                               XFQLIGHTH, XEXQLIGHTH, &
-                               XFQLIGHTC
-USE MODD_GRID,           ONLY: XLATORI,XLONORI
-USE MODD_GRID_n,         ONLY: XXHATM, XYHATM, XZHAT
-USE MODD_IO,             ONLY: TFILEDATA
+USE MODD_ELEC_PARAM,       ONLY: XFQLIGHTR, XEXQLIGHTR, &
+                                 XFQLIGHTI, XEXQLIGHTI, &
+                                 XFQLIGHTS, XEXQLIGHTS, &
+                                 XFQLIGHTG, XEXQLIGHTG, &
+                                 XFQLIGHTH, XEXQLIGHTH, &
+                                 XFQLIGHTC
+USE MODD_GRID,             ONLY: XLATORI,XLONORI
+USE MODD_GRID_n,           ONLY: XXHATM, XYHATM, XZHAT
+USE MODD_IO,               ONLY: TFILEDATA
 USE MODD_LMA_SIMULATOR
-USE MODD_METRICS_n,      ONLY: XDXX, XDYY, XDZZ ! in linox_production
-USE MODD_NSV,            ONLY: NSV_ELECBEG, NSV_ELECEND, NSV_ELEC
-USE MODD_PARAM_LIMA,     ONLY: XRTMIN_L=>XRTMIN
+USE MODD_METRICS_n,        ONLY: XDXX, XDYY, XDZZ ! in linox_production
+USE MODD_NSV,              ONLY: NSV_ELECBEG, NSV_ELECEND, NSV_ELEC
+USE MODD_PARAM_LIMA,       ONLY: XRTMIN_L=>XRTMIN
 USE MODD_PARAM_LIMA_COLD,  ONLY: XLBS_L=>XLBS, XLBEXS_L=>XLBEXS
 USE MODD_PARAM_LIMA_MIXED, ONLY: XLBG_L=>XLBG, XLBEXG_L=>XLBEXG, XLBH_L=>XLBH, XLBEXH_L=>XLBEXH
 USE MODD_PARAM_LIMA_WARM,  ONLY: XLBC, XLBEXC, XLBR_L=>XLBR, XLBEXR_L=>XLBEXR
 USE MODD_PARAMETERS,       ONLY: JPHEXT, JPVEXT
 use MODD_PRECISION,        ONLY: MNHINT_MPI, MNHLOG_MPI, MNHREAL_MPI
 USE MODD_RAIN_ICE_DESCR_n, ONLY: XLBR_I=>XLBR, XLBEXR_I=>XLBEXR, XLBS_I=>XLBS, XLBEXS_I=>XLBEXS, &
-                               XLBG_I=>XLBG, XLBEXG_I=>XLBEXG, XLBH_I=>XLBH, XLBEXH_I=>XLBEXH, &
-                               XRTMIN_I=>XRTMIN
+                                 XLBG_I=>XLBG, XLBEXG_I=>XLBEXG, XLBH_I=>XLBH, XLBEXH_I=>XLBEXH, &
+                                 XRTMIN_I=>XRTMIN
 USE MODD_SUB_ELEC_n
 USE MODD_TIME_n
-USE MODD_VAR_ll,         ONLY: NPROC,NMNH_COMM_WORLD
+USE MODD_VAR_ll,           ONLY: NPROC,NMNH_COMM_WORLD
 !
 USE MODE_ELEC_ll
 USE MODE_GRIDPROJ

@@ -208,7 +208,7 @@ end subroutine Budget_preallocate
 !  P. Wautelet 02/03/2021: budgets: add terms for blowing snow
 !  P. Wautelet 04/03/2021: budgets: add terms for drag due to buildings
 !  P. Wautelet 17/03/2021: choose source terms for budgets with character strings instead of multiple integer variables
-! R. Schoetter    12/2021  multi-level coupling between MesoNH and SURFEX  
+!  R. Schoetter   12/2021: multi-level coupling between MesoNH and SURFEX
 !  C. Barthe   14/03/2022: budgets: add terms for CIBU and RDSF in LIMA
 !  M. Taufour  01/07/2022: budgets: add concentration for snow, graupel, hail
 !  C. Barthe   14/03/2023: budgets: add terms for electricity with LIMA
@@ -231,6 +231,7 @@ use modd_dyn_n,         only: xtstep, locean
 use modd_elec_descr,    only: linductive, lrelax2fw_ion
 use modd_field,         only: TYPEREAL
 use modd_fire_n,        only: lblaze
+use modd_neb_n,         only: lsubg_cond
 use modd_nsv,           only: nsv_aerbeg, nsv_aerend, nsv_aerdepbeg, nsv_aerdepend, nsv_c2r2beg, nsv_c2r2end,      &
                               nsv_chembeg, nsv_chemend, nsv_chicbeg, nsv_chicend, nsv_csbeg, nsv_csend,            &
                               nsv_dstbeg, nsv_dstend, nsv_dstdepbeg, nsv_dstdepend, nsv_elecbeg, nsv_elecend,      &
@@ -257,7 +258,6 @@ use modd_param_lima,   only: laero_mass_lima => laero_mass, lacti_lima => lacti,
                              nmom_c, nmom_r, nmom_i, nmom_s, nmom_g, nmom_h, nmod_ccn, nmod_ifn, nmod_imm
 use modd_ref,          only: lcouples
 use modd_salt,         only: lsalt
-use modd_neb_n,        only: lsubg_cond
 use modd_viscosity,    only: lvisc, lvisc_r, lvisc_sv, lvisc_th, lvisc_uvw
 
 USE MODE_ll

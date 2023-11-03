@@ -208,7 +208,6 @@ use modd_budget,     only: lbudget_u,  lbudget_v,  lbudget_w,  lbudget_th, lbudg
                            nbustep, tbudgets
 USE MODD_CH_AEROSOL, ONLY: LORILAM
 USE MODD_CONF
-USE MODD_TURB_n,     ONLY: XTKEMIN
 USE MODD_DUST,       ONLY: LDUST
 USE MODD_SALT,       ONLY: LSALT
 USE MODD_DYN
@@ -222,6 +221,7 @@ USE MODD_NSV,        ONLY: XSVMIN, NSV_CHEMBEG, NSV_CHEMEND, &
                            NSV_ELECBEG, NSV_ELECEND
 USE MODD_PARAM_C2R2, ONLY: LACTIT
 USE MODD_PARAM_LIMA, ONLY: LACTIT_LIMA=>LACTIT
+USE MODD_TURB_n,     ONLY: XTKEMIN
 
 use mode_budget,     only: Budget_store_end, Budget_store_init
 
