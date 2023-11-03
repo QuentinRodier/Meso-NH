@@ -646,9 +646,7 @@ SELECT CASE (CCH_TDISCRETIZATION)
     IF (KVERB >= 10) WRITE(KLUOUT,*) "CH_MONITOR_n: using LAGGED option"
   CASE DEFAULT
     ! the following line should never be reached:
-    ! callabortstop
-    CALL ABORT
-    STOP "CH_MONITOR_n: CCH_TDISCRETIZATION option not valid"
+    call Print_msg( NVERB_FATAL, 'GEN', 'CH_MONITOR_n', 'invalid CCH_TDISCRETIZATION option ('//trim(CCH_TDISCRETIZATION)//')' )
 END SELECT
 !
 !

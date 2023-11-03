@@ -1066,15 +1066,18 @@ WRITE (ILUOUT0,'(A,A4,A)') ' -- netcdf decoder for ',HFILE,' file ended successf
 
 CONTAINS
 !
-!     #############################
-      SUBROUTINE HANDLE_ERR(STATUS)
-!     #############################
-     INTEGER(KIND=CDFINT) STATUS
-     IF (STATUS .NE. NF90_NOERR) THEN
-        PRINT *, NF90_STRERROR(STATUS)
-     STOP 'Stopped'
-     ENDIF
-     END SUBROUTINE HANDLE_ERR
+! #############################
+  subroutine handle_err(istatus)
+! #############################
+    use mode_msg
+
+    integer(kind=CDFINT) istatus
+
+    if ( istatus /= NF90_NOERR ) then
+      call Print_msg( NVERB_FATAL, 'IO', 'HANDLE_ERR', NF90_STRERROR(istatus) )
+    end if
+
+  end subroutine handle_err
 !
 !
 !     #############################################

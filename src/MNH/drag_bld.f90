@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2019-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2019-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -8,10 +8,10 @@ MODULE MODI_DRAG_BLD
   !     #######################
   !
   INTERFACE
-     !
-     SUBROUTINE DRAG_BLD(PTSTEP, PUT, PVT, PTKET, PPABST, PTHT,    &
-          PRT, PSVT, PRHODJ, PZZ, PRUS, PRVS, PRTKES, PRTHS, PRRS, &
-          PSFTH_WALL, PSFTH_ROOF, PCD_ROOF, PSFRV_WALL, PSFRV_ROOF )
+    !
+    SUBROUTINE DRAG_BLD( PTSTEP, PUT, PVT, PTKET, PPABST, PTHT, PRT,              &
+                         PSVT, PRHODJ, PZZ, PRUS, PRVS, PRTKES, PRTHS, PRRS,      &
+                         PSFTH_WALL, PSFTH_ROOF, PCD_ROOF, PSFRV_WALL, PSFRV_ROOF )
        !
        REAL,                     INTENT(IN)    :: PTSTEP ! Time step
        REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PUT, PVT   ! variables
@@ -32,8 +32,8 @@ MODULE MODI_DRAG_BLD
        !
        REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRUS, PRVS       ! Sources of Momentum
        REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRTKES           ! Sources of Tke
-       REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRRS              
-       REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PRTHS          
+       REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRRS
+       REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRTHS
        !
      END SUBROUTINE DRAG_BLD
 
@@ -41,11 +41,11 @@ MODULE MODI_DRAG_BLD
 
 END MODULE MODI_DRAG_BLD
 !
-!     ###################################################################
-SUBROUTINE DRAG_BLD(PTSTEP, PUT, PVT, PTKET, PPABST, PTHT, PRT,              & 
-                    PSVT, PRHODJ, PZZ, PRUS, PRVS, PRTKES, PRTHS, PRRS, &
-                    PSFTH_WALL, PSFTH_ROOF, PCD_ROOF, PSFRV_WALL, PSFRV_ROOF )
-  !     ###################################################################
+!     #########################################################################
+SUBROUTINE DRAG_BLD( PTSTEP, PUT, PVT, PTKET, PPABST, PTHT, PRT,              &
+                     PSVT, PRHODJ, PZZ, PRUS, PRVS, PRTKES, PRTHS, PRRS,      &
+                     PSFTH_WALL, PSFTH_ROOF, PCD_ROOF, PSFRV_WALL, PSFRV_ROOF )
+  !     #######################################################################
   !
   !!****  *DRAG_BLD_n * -
   !!
@@ -87,6 +87,7 @@ SUBROUTINE DRAG_BLD(PTSTEP, PUT, PVT, PTKET, PPABST, PTHT, PRT,              &
   USE MODD_PGDFIELDS
 
   use mode_budget,     only: Budget_store_init, Budget_store_end
+  USE MODE_MSG
 
   USE MODI_MNHGET_SURF_PARAM_n
   USE MODI_SHUMAN
@@ -114,8 +115,8 @@ SUBROUTINE DRAG_BLD(PTSTEP, PUT, PVT, PTKET, PPABST, PTHT, PRT,              &
   !
   REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRUS, PRVS       ! Sources of Momentum
   REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRTKES           ! Sources of Tke
-  REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRRS              
-  REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRTHS          
+  REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRRS
+  REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRTHS
   !
   !*       0.2   Declarations of local variables :
   !
@@ -231,7 +232,7 @@ SUBROUTINE DRAG_BLD(PTSTEP, PUT, PVT, PTKET, PPABST, PTHT, PRT,              &
         ZH_URBTRUN(JI,JJ) = MIN(ZH_URBTRUN(JI,JJ),0.3*ZH_URBTREE(JI,JJ))
         !
         IF (ZH_URBTRUN(JI,JJ).GT.ZH_URBTREE(JI,JJ)) THEN
-           STOP ("Trunk higher than tree")
+           CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'DRAG_BLD', 'Trunk higher than tree' )
         ENDIF
         !
      ENDDO
@@ -299,11 +300,11 @@ SUBROUTINE DRAG_BLD(PTSTEP, PUT, PVT, PTKET, PPABST, PTHT, PRT,              &
            ENDDO
            !
            IF ( ICHECK .NE. 1 ) THEN
-              STOP ("Roof level not attributed")
+            CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'DRAG_BLD', 'Roof level not attributed' )
            ENDIF
            !
            IF ( ABS(ZSUM_BLD_DENSITY-ZF_BLD(JI,JJ)) .GT. 1.0E-6 ) THEN
-              STOP ("Wrong normalisation of frontal area density")
+            CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'DRAG_BLD', 'Wrong normalisation of frontal area density' )
            ENDIF
            !
         ENDIF
@@ -373,7 +374,7 @@ SUBROUTINE DRAG_BLD(PTSTEP, PUT, PVT, PTKET, PPABST, PTHT, PRT,              &
            ! Check for correct normalisation of PLAD_CAN
            !
            IF ( ABS(ZSUM_LAD_CAN-ZLAI_URBVEG(JI,JJ)).GT.1.0E-6 ) THEN
-              STOP ("Wrong normalisation of vegetation density")
+            CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'DRAG_BLD', 'Wrong normalisation of vegetation density' )
            ENDIF
            !
         ENDIF
@@ -468,19 +469,15 @@ SUBROUTINE DRAG_BLD(PTSTEP, PUT, PVT, PTKET, PPABST, PTHT, PRT,              &
            ! Check for correct normalisation of fluxes
            !
            IF ( ABS(ZSUM_SFTH_WALL-PSFTH_WALL(JI,JJ)).GT.1.0E-6 ) THEN
-              STOP ("Wrong normalisation of wall heat flux")
+            CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'DRAG_BLD', 'Wrong normalisation of wall heat flux' )
            ENDIF
            !
            IF ( ABS(ZSUM_SFRV_WALL-PSFRV_WALL(JI,JJ)).GT.1.0E-6 ) THEN
-              STOP ("Wrong normalisation of wall evaporative flux")
-           ENDIF
-           !
-           IF ( ABS(ZSUM_SFTH_ROOF-PSFTH_ROOF(JI,JJ)).GT.1.0E-6 ) THEN
-              STOP ("Wrong normalisation of roof heat flux")
+            CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'DRAG_BLD', 'Wrong normalisation of roof heat flux' )
            ENDIF
            !
            IF ( ABS(ZSUM_SFRV_ROOF-PSFRV_ROOF(JI,JJ)).GT.1.0E-6 ) THEN
-              STOP ("Wrong normalisation of roof evaporative flux")
+            CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'DRAG_BLD', 'Wrong normalisation of roof evaporative flux' )
            ENDIF
            !
         ENDIF

@@ -845,7 +845,7 @@ IF (MEAN_COUNT /= 0) THEN
   CALL IO_Field_write(TPFILE,TZFIELD,XWM_MAX)
 !
   !
-  ! Calculation of mean horizontal wind speed and 
+  ! Calculation of mean horizontal wind speed and
   ! wind direction based on average components
   !
   XWIFF_MEAN = SQRT((MXF(XUM_MEAN)/MEAN_COUNT)**2 + (MYF(XVM_MEAN)/MEAN_COUNT)**2)
@@ -855,7 +855,8 @@ IF (MEAN_COUNT /= 0) THEN
      XWIDD_MEAN(:,:,:) = XWIDD_MEAN(:,:,:) - 360.0
   ENDWHERE
   !
-  IF ((MINVAL(XWIDD_MEAN).LT.0.0).OR.(MAXVAL(XWIDD_MEAN).GT.360.0)) STOP ("Wrong wind direction") 
+  IF ( MINVAL(XWIDD_MEAN) < 0. .OR. MAXVAL(XWIDD_MEAN) > 360. ) &
+    call Print_msg( NVERB_FATAL, 'GEN', 'WRITE_LFIFM_n', 'Wrong wind direction' )
   !
   TZFIELD%CMNHNAME   = 'WIFFME'
   TZFIELD%CLONGNAME  = 'WIFFME'
@@ -867,7 +868,7 @@ IF (MEAN_COUNT /= 0) THEN
   TZFIELD%CLONGNAME  = 'WIDDME'
   TZFIELD%CUNITS     = 'm s-1'
   TZFIELD%CCOMMENT   = 'X_Y_Z_horizontal mean wind direction (degrees from north)'
-  CALL IO_Field_write(TPFILE,TZFIELD,XWIDD_MEAN)  
+  CALL IO_Field_write(TPFILE,TZFIELD,XWIDD_MEAN)
   !
   TZFIELD%CMNHNAME   = 'WIFFMAX'
   TZFIELD%CLONGNAME  = 'WIFFMAX'
@@ -882,7 +883,7 @@ IF (MEAN_COUNT /= 0) THEN
   TZFIELD%CCOMMENT   = 'X_Y_Z_horizontal maximum wind direction'
   CALL IO_Field_write(TPFILE,TZFIELD,XWIDD_MAX)
   XWIDD_MAX(:,:,:)=XNEGUNDEF
-!  
+!
   TZFIELD%NGRID      = 1
   TZFIELD = TFIELDMETADATA(                          &
     CMNHNAME   = 'generic for mean_count variables', & !Temporary name to ease identification

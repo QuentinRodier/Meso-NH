@@ -693,8 +693,8 @@ DO ILEV=1,NLEV_COUPLE
    !
    ZWEIGHT_VERT(:,:) = MIN(1.0,MAX(ZZREF_VERT(:,:)-5.0,0.0)/15.0)
    !
-   IF (MAXVAL(ZWEIGHT_VERT).GT.1.0) STOP ("Wrong weight")
-   IF (MINVAL(ZWEIGHT_VERT).LT.0.0) STOP ("Wrong weight")
+   IF ( MAXVAL(ZWEIGHT_VERT) > 1. .OR. MINVAL(ZWEIGHT_VERT) < 0. ) &
+    CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'GROUND_PARAM_n', 'Wrong weight' )
    !
    ZZREF(:,:,ILEV) = ZWEIGHT_VERT(:,:) * ZZREF_VERT(:,:) + (1.0 - ZWEIGHT_VERT(:,:)) * ZZREF_DIST(:,:)
    !
@@ -1030,10 +1030,10 @@ IF (LFLUXBLDG) THEN
    !
    ! Test conservation of fluxes
    !
-   IF (MAXVAL(ABS(ZSFTH(:,:)/XCPD/XRHODREF(:,:,IKB) - PSFTH(:,:) - PSFTH_WALL(:,:)& 
-           - PSFTH_ROOF(:,:))).GT.1.0E-6) STOP ("Wrong H flux partition")
-   IF (MAXVAL(ABS(ZSFTQ(:,:)/XRHODREF(:,:,IKB)      - PSFRV(:,:) - PSFRV_WALL(:,:)&
-           - PSFRV_ROOF(:,:))).GT.1.0E-6) STOP ("Wrong Q flux partition")
+   IF ( MAXVAL(ABS(ZSFTH(:,:)/XCPD/XRHODREF(:,:,IKB) - PSFTH(:,:) - PSFTH_WALL(:,:) - PSFTH_ROOF(:,:))).GT.1.0E-6 ) &
+     CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'GROUND_PARAM_n', 'Wrong H flux partition' )
+   IF ( MAXVAL(ABS(ZSFTQ(:,:)/XRHODREF(:,:,IKB)      - PSFRV(:,:) - PSFRV_WALL(:,:) - PSFRV_ROOF(:,:))).GT.1.0E-6 ) &
+     CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'GROUND_PARAM_n', 'Wrong Q flux partition' )
    !
 ELSE
    !

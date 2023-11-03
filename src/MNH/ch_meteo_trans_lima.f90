@@ -1,11 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$ $Date$
 !-----------------------------------------------------------------
 !!    ############################### 
       MODULE MODI_CH_METEO_TRANS_LIMA
@@ -126,6 +122,8 @@ USE MODD_PARAM_LIMA,      ONLY: XNUC, XALPHAC, & ! Cloud droplets distrib. param
 USE MODD_PARAM_LIMA_WARM, ONLY: XLBC, XLBEXC,  & !shape param. of the cloud droplets
                                 XLBR, XLBEXR     !shape param. of the raindrops
 !!
+USE MODE_MSG
+
 USE MODI_GAMMA
 !
 !-------------------------------------------------------------------------------
@@ -182,13 +180,13 @@ firstcall : IF (GSFIRSTCALL) THEN
 !              corresponds to what the CCS expects
 !
   IF (NMETEOVARS /= 13) THEN
-    WRITE(KLUOUT,*) "CH_METEO_TRANS ERROR: number of meteovars to transfer"
-    WRITE(KLUOUT,*) "does not correspond to the number expected by the CCS:"
-    WRITE(KLUOUT,*) "     meteovars to transfer: ", 13
-    WRITE(KLUOUT,*) "     NMETEOVARS expected:   ", NMETEOVARS
-    WRITE(KLUOUT,*) "Check the definition of NMETEOVARS in your .chf file."
-    WRITE(KLUOUT,*) "The program will be stopped now!"
-    STOP 1
+    CMNHMSG(1) = "CH_METEO_TRANS ERROR: number of meteovars to transfer"
+    CMNHMSG(2) = "does not correspond to the number expected by the CCS:"
+    CMNHMSG(3) = "     meteovars to transfer: 13"
+    WRITE(CMNHMSG(4) ,*) "     NMETEOVARS expected:   ", NMETEOVARS
+    CMNHMSG(5) = "Check the definition of NMETEOVARS in your .chf file."
+    CMNHMSG(6) = "The program will be stopped now!"
+    CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'CH_METEO_TRANS_LIMA' )
   END IF
 !
 !*       1.2   initialize names of meteo vars
