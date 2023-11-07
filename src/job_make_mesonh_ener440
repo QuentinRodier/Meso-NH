@@ -8,8 +8,7 @@
 #SBATCH -n 10
 #SBATCH -o MasterI.eo%j   #
 #SBATCH -e MasterI.eo%j   #
-#SBATCH -p standard
-#SBATCH -q debug
+#SBATCH -p debug
 #SBATCH -J "MesoNH-compile"
 #SBATCH --wckey MPX13003    # Numero du projet
 #SBATCH -t 02:00:00
