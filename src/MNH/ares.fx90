@@ -1,10 +1,11 @@
-!MNH_LIC Copyright 1987-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1987-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 ! Modifications:
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!  P. Wautelet 08/11/2023: replace STOP calls by PRINT_MSG calls
 !-----------------------------------------------------------------
 c/////////////////////////////////////////////////////////////////////////////
             
@@ -812,6 +813,7 @@ C   S.Roselle   7/30/97   Modified for use in Models-3
 C   F.Binkowski 8/7/97    Modified coefficients BETA0, BETA1, CGAMA
 C
 C-----------------------------------------------------------------------
+      USE MODE_MSG
 
       IMPLICIT NONE
 
@@ -957,7 +959,8 @@ c        CALL M3WARN ( PNAME, 0, 0, XMSG )
 c        XMSG = 'Ionic strength below zero...negative concentrations'
 c        CALL M3EXIT ( PNAME, 0, 0, XMSG, XSTAT1 )
 CALL ABORT
-       STOP 'Ionic strength below zero...negative concentrations'
+        CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'ACTCOF', 'Ionic strength &
+     &below zero...negative concentrations' )
       END IF
 
 C...compute some essential expressions
@@ -1045,8 +1048,9 @@ C...now calculate the multicomponent activity coefficients
             GAMA( ICAT, IAN ) = 1.0E+30
 c            XMSG = 'Multicomponent activity coefficient is extremely large'
 c            CALL M3WARN ( PNAME, 0, 0, XMSG )
-CALL ABORT
-           STOP 'Multicomponent activity coefficient is extremely large'
+CALL
+            CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'ACTCOF',
+     &       'Multicomponent activity coefficient is extremely large' )
           ELSE
             GAMA( ICAT, IAN ) = 10.0**TRM
           END IF
