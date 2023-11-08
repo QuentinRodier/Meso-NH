@@ -86,6 +86,10 @@ SUBROUTINE gltools_glterr  &
         ( hroutine,hmess,hflag )
 !
   USE modd_glt_param
+#ifdef SFX_MNH
+!
+  USE MODE_MSG
+#endif
 !
   IMPLICIT NONE
 !
@@ -113,7 +117,11 @@ SUBROUTINE gltools_glterr  &
           ' for routine GLTERR. We stop.'
         IF ( noutlu/=6 ) CLOSE(noutlu)
       ENDIF
+#ifndef SFX_MNH
       STOP
+#else
+      CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'gltools_glterr', 'Incorrect flag' )
+#endif
   ENDIF
 !
   IF ( hflag=='STOP' .OR. hflag=='stop' ) THEN
@@ -132,7 +140,13 @@ SUBROUTINE gltools_glterr  &
         WRITE(noutlu,*) '                >>>> WE STOP ! <<<<'           
         IF ( noutlu/=6 ) CLOSE(noutlu)
       ENDIF
+#ifndef SFX_MNH
       STOP
+#else
+      CALL PRINT_MSG( NVERB_FATAL,   'GEN', hroutine, hmess )
+  ELSE
+      CALL PRINT_MSG( NVERB_WARNING, 'GEN', hroutine, hmess )
+#endif
   ENDIF
 !
 END SUBROUTINE gltools_glterr

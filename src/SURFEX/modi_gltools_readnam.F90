@@ -77,6 +77,10 @@ USE modi_gltools_nextval
 USE modi_gltools_nwords
 USE modi_gltools_strsplit
 !
+#ifdef SFX_MNH
+USE MODE_MSG
+!
+#endif
 IMPLICIT NONE
 !
 LOGICAL, INTENT(IN),OPTIONAL           :: &
@@ -128,9 +132,13 @@ OPEN( UNIT=iparlu, FILE=TRIM(ADJUSTL(ypinpfile)), STATUS='OLD', &
 230 CONTINUE
 IF (ierr /= 0 ) THEN  ! File not found , or any other issue
   IF ( gmandatory ) THEN
+#ifndef SFX_MNH
     WRITE(*,*) "*** GELATO/readnam : issue opening gltpar "
     WRITE(*,*) 'We stop.'
     STOP
+#else
+    CALL PRINT_MSG( NVERB_FATAL, 'IO', 'gltools_readnam', 'issue opening gltpar' )
+#endif
   ELSE
     gread=.FALSE.
   ENDIF
@@ -384,7 +392,12 @@ CASE('double') ; nnflxin = 1
 CASE('multi')  ; nnflxin = nt
   IF (lp1) WRITE(*,*) 'We are using multiple physics (one flux per ice cat + water)'
 CASE DEFAULT
+#ifndef SFX_MNH
   IF (lp1) WRITE(*,*) 'We stop. Invalid parameter cnflxin = ' // TRIM(cnflxin) ; STOP
+#else
+  CMNHMSG(1) = 'Invalid parameter cnflxin = ' // TRIM(cnflxin)
+  CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'gltools_readnam' )
+#endif
 !
 END SELECT
 !
@@ -468,6 +481,7 @@ SELECT CASE ( TRIM(cdiafmt) )
         CASE('3') ; ndiap3=1
         CASE('x') ; ndiapx=1
         CASE DEFAULT
+#ifndef SFX_MNH
           IF (lwg) THEN
             WRITE(*,*) ' '
             WRITE(*,*) '              glt_gelato FATAL ERROR' 
@@ -477,6 +491,11 @@ SELECT CASE ( TRIM(cdiafmt) )
             WRITE(*,*) ' We stop.'
           ENDIF
           STOP
+#else
+          CMNHMSG(1) = 'Diagnostic code = ' // ytag // ' in cdialev ignored'
+          CMNHMSG(2) = ' (illegal with glt_output format = ' // TRIM(cdiafmt) // ')'
+          CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'gltools_readnam' )
+#endif
       END SELECT
     END DO
   CASE('XIOS')
@@ -487,14 +506,20 @@ SELECT CASE ( TRIM(cdiafmt) )
       WRITE(*,*) ' '
     ENDIF
   CASE DEFAULT
+#ifndef SFX_MNH
     IF (lwg) THEN
       WRITE(*,*) ' '
       WRITE(*,*) '              glt_gelato FATAL ERROR' 
       WRITE(*,*) '            **********************' 
       WRITE(*,*) ' cdiafmt was set to '//cdiafmt//' in gltpar.' 
-      WRITE(*,*) ' Only GELATO and VMAR5 are legal. We stop.'
+      WRITE(*,*) ' Only GELATO, VMAR5 and XIOS are legal. We stop.'
     ENDIF
     STOP
+#else
+    CMNHMSG(1) = 'cdiafmt was set to ' // cdiafmt // ' in gltpar'
+    CMNHMSG(2) = 'Only GELATO, VMAR5 and XIOS are legal'
+    CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'gltools_readnam' )
+#endif
 END SELECT  
 !
 !
@@ -525,18 +550,30 @@ ntd=0        ! Will disable sit_d array allocation and use of constraint data
 IF ( TRIM(cfsidmp)=='DAMP' .OR. TRIM(cfsidmp)=='PRESCRIBE' ) THEN
   ntd=1      ! Will enable sit_d array allocation and trigger constraint
 ELSE IF ( TRIM(cfsidmp)/='NONE' ) THEN
+#ifndef SFX_MNH
   WRITE(*,*) "cfsidmp must be 'DAMP' or 'PRESCRIBE'" 
   WRITE(*,*) " - You specified cfsidmp=" // TRIM(cfsidmp)
   STOP
+#else
+  CMNHMSG(1) = "cfsidmp must be 'DAMP' or 'PRESCRIBE'"
+  CMNHMSG(2) = " - You specified cfsidmp=" // TRIM(cfsidmp)
+  CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'gltools_readnam' )
+#endif
 ENDIF
 !
 IF ( TRIM(chsidmp)=='DAMP_ADD' .OR. TRIM(chsidmp)=='DAMP_FAC' .OR.  &
      TRIM(chsidmp)=='PRESCRIBE' ) THEN
   ntd=1
 ELSE IF ( TRIM(chsidmp)/='NONE' ) THEN
+#ifndef SFX_MNH
   WRITE(*,*) "chsidmp must be 'DAMP_ADD', 'DAMP_FAC'' or 'PRESCRIBE'" 
   WRITE(*,*) " - You specified chsidmp=" // TRIM(chsidmp)
   STOP
+#else
+  CMNHMSG(1) = "chsidmp must be 'DAMP_ADD', 'DAMP_FAC'' or 'PRESCRIBE'"
+  CMNHMSG(2) = " - You specified chsidmp=" // TRIM(chsidmp)
+  CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'gltools_readnam' )
+#endif
 ENDIF
 RETURN
 !
@@ -551,6 +588,7 @@ IF (lp1) WRITE(*,*) '        ---------------------------------------------------
 !
 100 CONTINUE
 !
+#ifndef SFX_MNH
 IF (lwg) THEN
   WRITE(*,*) "*** GELATO/readnam : &
 & dimension of 'thick' not consistent with nt, &
@@ -558,9 +596,15 @@ IF (lwg) THEN
   WRITE(*,*) 'We stop.'
 ENDIF
 STOP
+#else
+CMNHMSG(1) = "dimension of 'thick' not consistent with nt"
+CMNHMSG(2) = "or you declared 'thick' before 'nt' in gltpar"
+CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'gltools_readnam' )
+#endif
 !
 200 CONTINUE
 ! 
+#ifndef SFX_MNH
 IF (lwg) THEN
   WRITE(*,*) "*** GELATO/readnam : &
 & dimension of 'cinsfld' not consistent with nt, &
@@ -568,6 +612,11 @@ IF (lwg) THEN
   WRITE(*,*) 'We stop.'
 ENDIF
 STOP
+#else
+CMNHMSG(1) = "dimension of 'cinsfld' not consistent with nt"
+CMNHMSG(2) = "or you declared 'cinsfld' before 'ndiamax' in gltpar"
+CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'gltools_readnam' )
+#endif
 !
 110 FORMAT("* GELATO/readnam : parameter '",A,"' ignored.")
 !

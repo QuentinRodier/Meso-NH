@@ -117,6 +117,9 @@ MODULE lib_mpp
    !! mpp_min, mpp_max, mpp_sum are dummies (see below)
 #endif
 #endif
+#ifdef SFX_MNH
+   USE MODE_MSG
+#endif
 
    IMPLICIT NONE
 #if ! defined in_surfex
@@ -3034,9 +3037,15 @@ CONTAINS
    END SUBROUTINE mpp_maxloc3d
 
    SUBROUTINE mppstop
+#ifndef SFX_MNH
       WRITE(*,*) 'mppstop: You should not have seen this print if running in mpp mode! error?...'
       WRITE(*,*) 'mppstop: ..otherwise this is a stop condition raised by ctl_stop in single processor mode'
       STOP
+#else
+      CMNHMSG(1) = 'You should not have seen this print if running in mpp mode! error?...'
+      CMNHMSG(2) = '..otherwise this is a stop condition raised by ctl_stop in single processor mode'
+      CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'mppstop' )
+#endif
    END SUBROUTINE mppstop
 
    SUBROUTINE mpp_ini_ice( kcom, knum )
@@ -3196,7 +3205,11 @@ CONTAINS
             WRITE(kout,*) '           we stop. verify the file '
             WRITE(kout,*)
          ENDIF
+#ifndef SFX_MNH
          STOP 'ctl_opn bad opening'
+#else
+         CALL PRINT_MSG( NVERB_FATAL, 'IO', 'ctl_opn', 'bad opening' )
+#endif
       ENDIF
 
    END SUBROUTINE ctl_opn

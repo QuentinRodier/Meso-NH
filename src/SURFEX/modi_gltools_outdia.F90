@@ -91,7 +91,12 @@ SUBROUTINE gltools_outdia  &
   USE modi_gltools_wriios
   USE mode_gltools_wrivais
   USE modi_gltools_avevai
-  IMPLICIT NONE
+#ifdef SFX_MNH
+!
+  USE MODE_MSG
+!
+#endif
+    IMPLICIT NONE
 !
 !* Arguments
 !
@@ -140,6 +145,7 @@ SUBROUTINE gltools_outdia  &
             ixc = SIZE( pcumdia,2 )
             iyc = SIZE( pcumdia,3 )
             IF ( ix/=ixc .OR. iy/=iyc ) THEN
+#ifndef SFX_MNH
                IF (lwg) THEN
                   WRITE(noutlu,*) '==> Writing field '//TRIM(tpnam%sna)//':'
                   WRITE(noutlu,*) '==> Input field size=',ix,iy
@@ -148,6 +154,12 @@ SUBROUTINE gltools_outdia  &
                   WRITE(noutlu,*) '==> We stop.'
                ENDIF
                STOP
+#else
+               WRITE( CMNHMSG(1), '( "Writing field ", A, ":" )' ) TRIM(tpnam%sna)
+               WRITE( CMNHMSG(2), '( "Input field size=", I0, I0 )' ) ix, iy
+               WRITE( CMNHMSG(3), '( "not conformable with ndiamax space size=", I0, I0 )' ) ixc, iyc
+               CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'gltools_outdia' )
+#endif
            ENDIF
         ENDIF
       ENDIF
@@ -157,6 +169,7 @@ SUBROUTINE gltools_outdia  &
          ixw = SIZE( pwgt,1 )
          iyw = SIZE( pwgt,2 )
          IF ( ix/=ixw .OR. iy/=iyw ) THEN
+#ifndef SFX_MNH
             IF (lwg) THEN
                WRITE(noutlu,*) '==> Writing field '//TRIM(tpnam%sna)//':'
                WRITE(noutlu,*) '==> Input field size=',ix,iy
@@ -165,6 +178,12 @@ SUBROUTINE gltools_outdia  &
                WRITE(noutlu,*) '==> We stop.'
             ENDIF
             STOP
+#else
+            WRITE( CMNHMSG(1), '( "Writing field ", A, ":" )' ) TRIM(tpnam%sna)
+            WRITE( CMNHMSG(2), '( "Input field size=", I0, I0 )' ) ix, iy
+            WRITE( CMNHMSG(3), '( "not conformable with weights size=", I0, I0 )' ) ixw, iyw
+            CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'gltools_outdia' )
+#endif
          ENDIF
       ENDIF
 !

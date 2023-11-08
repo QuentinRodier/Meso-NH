@@ -93,6 +93,9 @@ SUBROUTINE gltools_avevai  &
   USE MODI_GATHER_AND_WRITE_MPI
 #endif
 #endif
+#ifdef SFX_MNH
+  USE MODE_MSG
+#endif
   IMPLICIT NONE
 !
 !* Arguments
@@ -152,7 +155,11 @@ SUBROUTINE gltools_avevai  &
         &  fields with dimensions',nxglo,nyglo,' or 1,1.'
         WRITE(noutlu,*) 'We stop.'
       ENDIF
+#ifndef SFX_MNH
       STOP
+#else
+      CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'gltools_avevai', 'invalid field dimensions' )
+#endif
   ENDIF
   pcumdia(ifld,:,:) = pcumdia(ifld,:,:) + pfield(:,:)
 !

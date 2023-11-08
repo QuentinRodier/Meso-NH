@@ -27,6 +27,10 @@ module easy_netcdf
   use parkind1,      only : jprb, jpib
   use radiation_io,  only : nulout, nulerr, my_abort => radiation_abort
 
+#ifdef SFX_MNH
+  USE MODE_MSG
+#endif
+
   implicit none
 
   !---------------------------------------------------------------------
@@ -230,9 +234,14 @@ contains
     this%is_define_mode = .true.
 
     if (istatus /= NF90_NOERR) then
+#ifndef SFX_MNH
       write(nulerr,'(a,a,a)') '*** Error opening NetCDF file ', file_name, &
            &                  ': ', trim(nf90_strerror(istatus))
       stop
+#else
+      CALL PRINT_MSG( NVERB_FATAL, 'IO', 'create_netcdf_file', 'Error opening NetCDF file ' &
+                      // Trim(file_name) // ': ' // Trim(nf90_strerror(istatus)) )
+#endif
     end if
     this%file_name = file_name
 
@@ -251,9 +260,14 @@ contains
 
     istatus = nf90_close(this%ncid)
     if (istatus /= NF90_NOERR) then
+#ifndef SFX_MNH
       write(nulerr,'(a,a,a,a)') '*** Error closing NetCDF file ', &
            & trim(this%file_name), ': ', trim(nf90_strerror(istatus))
       stop
+#else
+      CALL PRINT_MSG( NVERB_FATAL, 'IO', 'close_netcdf_file', 'Error closing NetCDF file ' &
+                      // Trim(this%file_name) // ': ' // Trim(nf90_strerror(istatus)) )
+#endif
     end if
 
   end subroutine close_netcdf_file

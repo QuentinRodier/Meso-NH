@@ -79,6 +79,9 @@ SUBROUTINE gltools_wrivai_2d  &
   USE MODI_GATHER_AND_WRITE_MPI
 #endif
 #endif
+#ifdef SFX_MNH
+  USE MODE_MSG
+#endif
   IMPLICIT NONE
 !
 !* Arguments
@@ -219,7 +222,11 @@ SUBROUTINE gltools_wrivai_2d  &
               &  fields with dimensions',nxglo,nyglo,' or 1,1.'
                 WRITE(noutlu,*) 'We stop.'
               ENDIF
+#ifndef SFX_MNH
               STOP
+#else
+              CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'gltools_wrivai_2d', 'invalid field dimensions' )
+#endif
           ENDIF
       ENDIF
 !
@@ -261,6 +268,9 @@ SUBROUTINE gltools_wrivai_3d  &
   USE mode_gltools_bound
 #else
   USE MODI_GATHER_AND_WRITE_MPI
+#endif
+#ifdef SFX_MNH
+  USE MODE_MSG
 #endif
   IMPLICIT NONE
 !
@@ -404,7 +414,11 @@ SUBROUTINE gltools_wrivai_3d  &
               &  fields with dimensions',nxglo,nyglo,' or 1,1.'
                 WRITE(noutlu,*) 'We stop.'
               ENDIF
+#ifndef SFX_MNH
               STOP
+#else
+              CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'gltools_wrivai_3d', 'invalid field dimensions' )
+#endif
           ENDIF
       ENDIF
 !

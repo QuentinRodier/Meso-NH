@@ -67,6 +67,9 @@ USE XIOS, ONLY : XIOS_INITIALIZE
 #ifdef CPLOASIS
 USE MOD_OASIS
 #endif
+#ifdef SFX_MNH
+USE MODE_MSG
+#endif
 !
 IMPLICIT NONE
 !
@@ -123,6 +126,7 @@ IF(LEN_TRIM(HNAMELIST)/=0)THEN
   OPEN(UNIT=11,FILE=HNAMELIST,ACTION='READ',FORM="FORMATTED",POSITION="REWIND",STATUS='OLD',IOSTAT=IERR)   
 !
   IF (IERR /= 0) THEN
+#ifndef SFX_MNH
     WRITE(*,'(A)' )'!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
     WRITE(*,'(A)' )' WARNING WARNING WARNING WARNING WARNING     '
     WRITE(*,'(A)' )' ---------------------------------------     '
@@ -132,6 +136,10 @@ IF(LEN_TRIM(HNAMELIST)/=0)THEN
 #ifndef SFX_ARO 
     CALL ABORT
     STOP
+#endif
+#else
+      CMNHMSG(1) = 'SFX namelist file not found: ' // TRIM(HNAMELIST)
+      CALL PRINT_MSG( NVERB_FATAL, 'IO', 'SFX_OASIS_INIT' )
 #endif
   ELSE
     READ (UNIT=11,NML=NAM_OASIS,IOSTAT=IERR)
@@ -174,8 +182,6 @@ ELSE  ! (i.e. .NOT. LXIOS)
       WRITE(*,'(A)'   )'SFX : Error initializing OASIS'
       WRITE(*,'(A,I4)')'SFX : Return code from oasis_init_comp : ',IERR
       CALL OASIS_ABORT(ICOMP_ID,CMODEL_NAME,'SFX_OASIS_INIT: Error initializing OASIS')
-      CALL ABORT
-      STOP
     ENDIF
     CALL OASIS_GET_LOCALCOMM(KLOCAL_COMM,IERR) 
     IF (IERR/=OASIS_OK) THEN
@@ -184,8 +190,6 @@ ELSE  ! (i.e. .NOT. LXIOS)
         WRITE(*,'(A,I4)')'SFX : Return code from oasis_get_local_comm : ',IERR
       ENDIF
       CALL OASIS_ABORT(ICOMP_ID,CMODEL_NAME,'SFX_OASIS_INIT: Error getting local communicator')
-      CALL ABORT
-      STOP
     ENDIF
 !
   ELSE
@@ -228,6 +232,7 @@ IF (LOASIS) THEN
 !
  OPEN (UNIT=11,FILE ='namcouple',STATUS='OLD',FORM ='FORMATTED',POSITION="REWIND",IOSTAT=IERR)
  IF (IERR /= 0) THEN
+#ifndef SFX_MNH
     IF(IRANK==0)THEN
        WRITE(*,'(A)'   )'!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
        WRITE(*,'(A)'   )'SFX : OASIS namcouple not found'
@@ -235,6 +240,9 @@ IF (LOASIS) THEN
     ENDIF
     CALL ABORT
     STOP
+#else
+    CALL PRINT_MSG( NVERB_FATAL, 'IO', 'SFX_OASIS_INIT', 'OASIS namcouple not found' )
+#endif
  ENDIF
 !
  YTIMERUN=' $RUNTIME'
@@ -243,6 +251,7 @@ IF (LOASIS) THEN
  DO WHILE (ITIMERUN==-1)
     READ (UNIT = 11,FMT = '(A9)',IOSTAT=IERR) YWORD
     IF(IERR/=0)THEN
+#ifndef SFX_MNH
        IF(IRANK==0)THEN
           WRITE(*,'(A)'   )'!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
           WRITE(*,'(A)'   )'SFX : Problem $RUNTIME empty in namcouple'
@@ -250,10 +259,14 @@ IF (LOASIS) THEN
        ENDIF
        CALL ABORT
        STOP           
+#else
+       CALL PRINT_MSG( NVERB_FATAL, 'IO', 'SFX_OASIS_INIT', 'Problem $RUNTIME empty in namcouple' )
+#endif
     ENDIF
     IF (YWORD==YTIMERUN)THEN
        READ (UNIT = 11,FMT = '(A1000)',IOSTAT=IERR) YLINE
        IF(IERR/=0)THEN
+#ifndef SFX_MNH
           IF(IRANK==0)THEN
              WRITE(*,'(A)'   )'!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
              WRITE(*,'(A)'   )'SFX : Problem looking for $RUNTIME in namcouple'
@@ -261,11 +274,15 @@ IF (LOASIS) THEN
           ENDIF
           CALL ABORT
           STOP           
+#else
+          CALL PRINT_MSG( NVERB_FATAL, 'IO', 'SFX_OASIS_INIT', 'Problem looking for $RUNTIME empty in namcouple' )
+#endif
        ENDIF
        CALL FOUND_TIMERUN (YLINE, YFOUND, 1000, GFOUND)
        IF (GFOUND) THEN
           READ (YFOUND,FMT = '(I100)',IOSTAT=IERR) ITIMERUN
           IF(IERR/=0)THEN
+#ifndef SFX_MNH
              IF(IRANK==0)THEN
                 WRITE(*,'(A)'   )'!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
                 WRITE(*,'(A)'   )'SFX : Problem reading $RUNTIME in namcouple'
@@ -274,6 +291,11 @@ IF (LOASIS) THEN
              ENDIF
              CALL ABORT
              STOP
+#else
+             CMNHMSG(1) = 'Problem reading $RUNTIME in namcouple'
+             CMNHMSG(2) = '$RUNTIME = ' // TRIM(YFOUND)
+             CALL PRINT_MSG( NVERB_FATAL, 'IO', 'SFX_OASIS_INIT' )
+#endif
           ENDIF
        ENDIF
     ENDIF
@@ -316,6 +338,7 @@ INTEGER             :: IERR
 DO WHILE (HIN(1:1)==YNADA)
    READ (UNIT = 11, FMT = '(A9)',IOSTAT=IERR) YLINE 
    IF(IERR/=0)THEN
+#ifndef SFX_MNH
        IF(IRANK==0)THEN
          WRITE(*,'(A)'   )'!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
          WRITE(*,'(A)'   )'SFX : Problem looking for $RUNTINE line in namcouple'
@@ -323,6 +346,9 @@ DO WHILE (HIN(1:1)==YNADA)
        ENDIF
        CALL ABORT
        STOP           
+#else
+       CALL PRINT_MSG( NVERB_FATAL, 'IO', 'SFX_OASIS_INIT', 'Problem looking for $RUNTINE line in namcouple' )
+#endif
    ENDIF
    HIN(1:KLEN) = YLINE(1:KLEN)
 ENDDO 

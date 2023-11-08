@@ -44,13 +44,25 @@ contains
   ! Abort the program with optional error message. Normally you would
   ! log details of the error to nulerr before calling this subroutine.
   subroutine radiation_abort(text)
+#ifdef SFX_MNH
+    USE MODE_MSG
+#endif
+
     character(len=*), intent(in), optional :: text
+#ifndef SFX_MNH
     if (present(text)) then
       write(nulerr, '(a)') text
     else
       write(nulerr, '(a)') 'Error in radiation calculation'
     end if
     call abort
+#else
+    if (present(text)) then
+      call Print_msg( NVERB_FATAL, 'GEN', 'radiation_abort', trim(text) )
+    else
+      call Print_msg( NVERB_FATAL, 'GEN', 'radiation_abort', 'Error in radiation calculation' )
+    end if
+#endif
   end subroutine radiation_abort
 
 end module radiation_io

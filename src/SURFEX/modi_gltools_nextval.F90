@@ -76,6 +76,10 @@ USE modi_gltools_nextline
 !
 USE modd_glt_param
 !
+#ifdef SFX_MNH
+USE MODE_MSG
+!
+#endif
 IMPLICIT NONE
 !
   INTEGER, INTENT(in) ::  &
@@ -127,7 +131,11 @@ IF ( iend==1 ) THEN
       END DO
       WRITE(*,*) '*** Check gltpar file. We stop.'
     ENDIF
+#ifndef SFX_MNH
     STOP
+#else
+    CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'gltools_nextval', 'No valid entry was found in gltpar. Check gltpar file' )
+#endif
 ENDIF
 DO ji=1,infld
   IF ( TRIM(ADJUSTL(hlistfld(ji)))==TRIM(ADJUSTL(hpar)) ) THEN

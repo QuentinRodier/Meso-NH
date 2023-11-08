@@ -42,6 +42,10 @@ USE MODD_SURFEX_MPI, ONLY : NRANK, NPROC
 USE MODD_SURFEX_OMP, ONLY : NBLOCK, NBLOCKTOT
 USE MODD_SURF_CONF,  ONLY : CPROGNAME, CSOFTWARE
 !
+#ifdef SFX_MNH
+USE MODE_MSG
+!
+#endif
 USE MODI_GET_LUOUT
 USE MODI_CLOSE_FILE
 !      
@@ -103,6 +107,8 @@ WRITE(ILUOUT,*) '---------------------------------------------------------------
 !
 #ifdef SFX_ARO
 call abor1('abort by abor1_sfx')
+#elif SFX_MNH
+CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'ABOR1_SFX', TRIM(YTEXT) )
 #else
  write(0,*) "aborted with text:",trim(ytext),"|"
  CALL ABORT

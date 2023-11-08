@@ -60,6 +60,10 @@ END MODULE MODI_GAMMA_INC_LOW
 !*       0. DECLARATIONS
 !           ------------
 !
+#ifdef SFX_MNH
+USE MODE_MSG
+!
+#endif
 USE MODI_GAMMA_SURF
 !
 IMPLICIT NONE
@@ -103,12 +107,16 @@ ZS(5) = 2.9092306039
 !
 !*       1 Compute coefficients
 !
+#ifndef SFX_MNH
 IF( (PX.LT.0.0).OR.(PA.LE.0.0) ) THEN
   PRINT *,' BAD ARGUMENTS IN GAMMA_INC_LOW'
 !callabortstop
 CALL ABORT
   STOP
 END IF
+#else
+IF( PX<0.0 .OR. PA<=0.0 ) call Print_msg(NVERB_FATAL,'GEN','GAMMA_INC_LOW','invalid arguments: PX<0.0 .OR. PA<=0.0')
+#endif
 !
 !
 ZC(1) = 1.+ZP(1)*PA+ZP(2)*PA**2+ZP(3)*PA**3+ZP(4)*PA**4+ZP(5)*(EXP(-ZP(6)*PA)-1)
