@@ -293,9 +293,9 @@ END MODULE MODI_INI_MODEL_n
 !  F. Auguste     02/2021: add IBM
 !  T.Nigel        02/2021: add turbulence recycling
 !  J.L.Redelsperger 06/2011: OCEAN case
-!  R. Schoetter    12/2021  multi-level coupling between MesoNH and SURFEX  
-!  R. Schoetter    12/2021  adds humidity and other mean diagnostics
-!  A. Costes       12/2021: Blaze fire model
+!  R. Schoetter   12/2021: multi-level coupling between MesoNH and SURFEX
+!  R. Schoetter   12/2021: adds humidity and other mean diagnostics
+!  A. Costes      12/2021: Blaze fire model
 !  C. Barthe      03/2023: if cloud electricity is activated, both ini_micron and ini_elecn are called
 !---------------------------------------------------------------------------------
 !
@@ -792,8 +792,6 @@ IF (LMEAN_FIELD) THEN
   ALLOCATE(XWIDD_MAX (IIU,IJU,IKU))    ; XWIDD_MAX  = 0.0
 !
   ALLOCATE(XU2_M2(IIU,IJU,IKU))      ; XU2_M2  = 0.0
-!
-  ALLOCATE(XU2_M2(IIU,IJU,IKU))      ; XU2_M2  = 0.0
   ALLOCATE(XV2_M2(IIU,IJU,IKU))      ; XV2_M2  = 0.0
   ALLOCATE(XW2_M2(IIU,IJU,IKU))      ; XW2_M2  = 0.0
   ALLOCATE(XTH2_M2(IIU,IJU,IKU))     ; XTH2_M2 = 0.0
@@ -805,6 +803,11 @@ IF (LMEAN_FIELD) THEN
     ALLOCATE(XUW_MEAN(IIU,IJU,IKU))    ; XUW_MEAN  = 0.0
     ALLOCATE(XVW_MEAN(IIU,IJU,IKU))    ; XVW_MEAN  = 0.0
     ALLOCATE(XWTH_MEAN(IIU,IJU,IKU))   ; XWTH_MEAN  = 0.0
+  ELSE
+    ALLOCATE(XUV_MEAN (0,0,0))
+    ALLOCATE(XUW_MEAN (0,0,0))
+    ALLOCATE(XVW_MEAN (0,0,0))
+    ALLOCATE(XWTH_MEAN(0,0,0))
   END IF
 !
   ALLOCATE(XUM_MAX(IIU,IJU,IKU))      ; XUM_MAX  = -1.E20
@@ -829,6 +832,17 @@ ELSE
   ALLOCATE(XSVT_MEAN(0,0,0))
   ALLOCATE(XTKEM_MEAN(0,0,0))
   ALLOCATE(XPABSM_MEAN(0,0,0))
+  ALLOCATE(XQ_MEAN   (0,0,0))
+  ALLOCATE(XRH_W_MEAN(0,0,0))
+  ALLOCATE(XRH_I_MEAN(0,0,0))
+  ALLOCATE(XRH_P_MEAN(0,0,0))
+  ALLOCATE(XRH_W_MAXCOL_MEAN(0,0))
+  ALLOCATE(XRH_I_MAXCOL_MEAN(0,0))
+  ALLOCATE(XRH_P_MAXCOL_MEAN(0,0))
+  ALLOCATE(XWIFF_MEAN(0,0,0))
+  ALLOCATE(XWIDD_MEAN(0,0,0))
+  ALLOCATE(XWIFF_MAX (0,0,0))
+  ALLOCATE(XWIDD_MAX (0,0,0))
 !
   ALLOCATE(XU2_M2(0,0,0))
   ALLOCATE(XV2_M2(0,0,0))
@@ -837,12 +851,10 @@ ELSE
   ALLOCATE(XTEMP2_M2(0,0,0))
   ALLOCATE(XPABS2_M2(0,0,0))
 !
-  IF (LCOV_FIELD) THEN
-    ALLOCATE(XUV_MEAN(0,0,0))
-    ALLOCATE(XUW_MEAN(0,0,0))
-    ALLOCATE(XVW_MEAN(0,0,0))
-    ALLOCATE(XWTH_MEAN(0,0,0))
-  END IF
+  ALLOCATE(XUV_MEAN(0,0,0))
+  ALLOCATE(XUW_MEAN(0,0,0))
+  ALLOCATE(XVW_MEAN(0,0,0))
+  ALLOCATE(XWTH_MEAN(0,0,0))
 !
   ALLOCATE(XUM_MAX(0,0,0))
   ALLOCATE(XVM_MAX(0,0,0))
