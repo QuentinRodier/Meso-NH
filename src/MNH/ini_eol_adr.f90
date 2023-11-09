@@ -9,9 +9,9 @@
 !
 INTERFACE
 !
-SUBROUTINE INI_EOL_ADR(PDXX,PDYY)
+SUBROUTINE INI_EOL_ADR(PDXX,PDYY,PDZZ)
 !
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PDXX,PDYY    ! mesh size
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PDXX,PDYY,PDZZ    ! mesh size
 !
 END SUBROUTINE INI_EOL_ADR                  
 !
@@ -20,7 +20,7 @@ END INTERFACE
 END MODULE MODI_INI_EOL_ADR
 !
 !     ############################################################
-      SUBROUTINE INI_EOL_ADR(PDXX,PDYY)
+      SUBROUTINE INI_EOL_ADR(PDXX,PDYY,PDZZ)
 !     ############################################################
 !
 !!****  *INI_EOL_ADR* - routine to initialize the Actuator Disc 
@@ -97,6 +97,7 @@ END MODULE MODI_INI_EOL_ADR
 !*       0.1    Modules
 !
 USE MODD_EOL_ADR
+USE MODI_EOL_ERROR,     ONLY: EOL_DR_ERROR, EOL_DA_ERROR
 USE MODD_EOL_SHARED_IO, ONLY: CFARM_CSVDATA, CTURBINE_CSVDATA
 USE MODD_EOL_SHARED_IO, ONLY: CBLADE_CSVDATA, CAIRFOIL_CSVDATA
 USE MODD_EOL_SHARED_IO, ONLY: XTHRUT, XTORQT, XPOWT
@@ -126,12 +127,13 @@ USE MODD_PARAMETERS,    ONLY: JPVEXT
 USE MODD_VAR_ll,        ONLY: NMNH_COMM_WORLD
 USE MODD_PRECISION,     ONLY: MNHREAL_MPI
 USE MODD_MPIF,          ONLY: MPI_SUM
+USE MODE_SUM_ll,        ONLY: MIN_ll
 !
 !*       0.2    Variables
 !
 IMPLICIT NONE
 ! Interface
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PDXX,PDYY    ! mesh size
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PDXX,PDYY,PDZZ    ! mesh size
 !
 ! Some loop controlers 
 ! .. for wind turbines
@@ -145,11 +147,14 @@ INTEGER  :: IIB,IJB,IKB             ! Begin of a CPU domain
 INTEGER  :: IIE,IJE                 ! End of a CPU domain
 INTEGER  :: JI,JJ                   ! Domain index
 ! Some variables to be coder-friendly
-INTEGER  :: INB_WT, INB_B           ! Total numbers of wind turbines, blade
-INTEGER  :: INB_RELT, INB_AELT      ! Total numbers of radial elt and azimut elt
-INTEGER  :: INB_TELT, INB_NELT      ! Total numbers of tower elt and nacelle elt
-REAL     :: ZRAD                    ! Radius along the blade 
-REAL     :: ZDELTA_AZI, ZDELTA_RAD  ! Azimuthal and radial step 
+INTEGER  :: INB_WT, INB_B              ! Total numbers of wind turbines, blade
+INTEGER  :: INB_RELT, INB_AELT         ! Total numbers of radial elt and azimut elt
+INTEGER  :: INB_TELT, INB_NELT         ! Total numbers of tower elt and nacelle elt
+REAL     :: ZRAD                       ! Radius along the blade 
+REAL     :: ZDELTA_AZI, ZDELTA_RAD     ! Azimuthal and radial step 
+REAL     :: ZMIN_SIZE                      ! Minimum size of a mesh side
+REAL     :: ZDELTA_RAD_MAX, ZDELTA_AZI_MAX ! Max size of ADR element
+INTEGER  :: INB_RELT_MIN, INB_AELT_MIN     ! Minimum number of ADR mesh elements
 ! Tower base folowing the terrain
 REAL,DIMENSION(:,:),ALLOCATABLE :: ZPOSINI_TOWO_RG ! Initial tower origin position
 INTEGER  :: IINFO                   ! code info return
@@ -206,18 +211,38 @@ CALL PRINT_DATA_AIRFOIL_ADR(TLUOUT%NLU,TAIRFOIL)
 !              -------------------- 
 !
 !*       3.0    Preliminaries
+!
+!*       3.0.a) Shortening the names of the most frequently used var
 INB_WT    = TFARM%NNB_TURBINES
 INB_B     = TTURBINE%NNB_BLADES
 INB_AELT  = TBLADE%NNB_AZIELT
 INB_RELT  = TBLADE%NNB_RADELT
-! Hard coded variables, but they will be usefull in next updates
-INB_TELT  = 2
-INB_NELT  = 2
+INB_TELT  = 2 ! Hard coded variable, usefull for next updates
+INB_NELT  = 2 ! Hard coded variable, usefull for next updates
 !
+!*       3.0.b) Mesh variable
 ZDELTA_AZI     =  2d0*XPI/INB_AELT                                  ! Rotor disc azimutal devision
 ZDELTA_RAD     =  (TTURBINE%XR_MAX - TTURBINE%XR_MIN)/INB_RELT      ! Rotor disc radialal devision
-
-
+!
+!*       3.0.c) Checking mesh
+! Finding the minimum size of a cell, in the whole domain.
+! (Later, the research could be done only in wind turbine area)
+ZMIN_SIZE = MIN(MIN_ll(PDXX(:,:,:),IINFO),&
+                MIN_ll(PDYY(:,:,:),IINFO),&
+                MIN_ll(PDZZ(:,:,:),IINFO))
+!        3.0.c)i) Check the number of radial elements:
+ZDELTA_RAD_MAX = ZMIN_SIZE
+IF (ZDELTA_RAD > ZDELTA_RAD_MAX) THEN
+ INB_RELT_MIN = INT(CEILING((TTURBINE%XR_MAX - TTURBINE%XR_MIN)/ZDELTA_RAD_MAX)) ! User proper value
+ CALL EOL_DR_ERROR(INB_RELT_MIN)
+END IF 
+!        3.0.c)ii) Check the number of azimutal elements:
+ZDELTA_AZI_MAX = ATAN2(ZMIN_SIZE,TTURBINE%XR_MAX)
+IF (ZDELTA_AZI > ZDELTA_AZI_MAX) THEN
+ INB_AELT_MIN = INT(CEILING(2d0*XPI/ZDELTA_AZI_MAX)) ! User proper value
+ CALL EOL_DA_ERROR(INB_AELT_MIN)
+END IF 
+!
 !*       3.1    MODD_EOL_ADR variables
 ! at t
 ALLOCATE(XELT_RAD           (INB_WT,INB_AELT,INB_RELT  ))
