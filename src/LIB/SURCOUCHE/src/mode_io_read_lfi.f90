@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -592,13 +592,13 @@ INTEGER(KIND=LFIINT)                            :: IRESP, ITOTAL
 INTEGER                                         :: ILENG
 INTEGER(KIND=MNHINT64),DIMENSION(:),ALLOCATABLE :: IWORK
 LOGICAL                                         :: GGOOD
-TYPE(tfieldmetadata_base)                       :: TZFIELD
+CLASS(tfieldmetadata_base), ALLOCATABLE         :: TZFIELD
 INTEGER, DIMENSION(3)                           :: ITDATE    ! date array
 REAL,DIMENSION(1)                               :: ZTIME
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_read_lfi_T0',TRIM(TPFILE%CNAME)//': reading '//TRIM(TPFIELD%CMNHNAME))
 !
-TZFIELD = TPFIELD
+ALLOCATE( TZFIELD, SOURCE = TPFIELD ) ! TZFIELD = TPFIELD (sourced allocation, TZFIELD is allocated to a clone of TPFIELD)
 !
 ! Read date
 !
