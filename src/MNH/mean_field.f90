@@ -49,7 +49,7 @@ END MODULE MODI_MEAN_FIELD
 !!      (C.Lac)       09/2016 Max values
 !!      (PA.Joulin)   12/2020 Wind turbine variables
 !!      (E. Jezequel) 11/2022 Welford algorithm and covariances
-!!      (H. Toumi)    009/2022: add ADR
+!!      (H. Toumi)    09/2022: add ADR
 !!---------------------------------------------------------------
 !
 !
@@ -121,7 +121,7 @@ IKE=IKU-JPVEXT
     SELECT CASE(CMETH_EOL)
      CASE('ADNR') ! Actuator Disc Non-Rotating
       XTHRU_SUM       = XTHRUT        + XTHRU_SUM
-     CASE('ADR') ! Actuator Line Method
+     CASE('ADR') ! Actuator Disc with Rotation
       XAOA_SUM        = XAOA_GLB      + XAOA_SUM
       XFAERO_RA_SUM   = XFAERO_RA_GLB + XFAERO_RA_SUM
       XTHRU_SUM       = XTHRUT        + XTHRU_SUM
