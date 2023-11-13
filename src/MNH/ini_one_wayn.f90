@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1999-2022 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1999-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -103,10 +103,12 @@ USE MODD_NSV,            only: NSV_A, NSV_C1R3BEG_A, NSV_C1R3_A, NSV_C2R2BEG_A, 
                                NSV_CHEM_A, NSV_CHICBEG_A, NSV_CHIC_A, NSV_DSTBEG_A, NSV_DSTDEPBEG_A, NSV_DSTDEP_A, NSV_DST_A, &
                                NSV_ELECBEG_A, NSV_ELEC_A, NSV_LGBEG_A, NSV_LG_A, NSV_LIMA_A, NSV_LIMA_BEG_A,                  &
                                NSV_LNOXBEG_A, NSV_LNOX_A, NSV_PPBEG_A, NSV_PP_A,                                              &
-                               NSV_SLTBEG_A, NSV_SLTDEPBEG_A, NSV_SLTDEP_A, NSV_SLT_A, NSV_USER_A
+
 #ifdef MNH_FOREFIRE
-USE MODD_NSV,            only: NSV_FF_A, NSV_FFBEG_A
-#endif
+                               NSV_FFBEG_A, NSV_FF_A, &
+#endif                                              
+                               NSV_SLTBEG_A, NSV_SLTDEPBEG_A, NSV_SLTDEP_A, NSV_SLT_A, NSV_USER_A
+
 USE MODD_PARAM_n,        only: CCLOUD
 USE MODD_REF,            ONLY: LCOUPLES
 USE MODD_REF_n,          only: XRHODJ, XRHODREF
