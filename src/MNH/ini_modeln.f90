@@ -290,10 +290,12 @@ END MODULE MODI_INI_MODEL_n
 !  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
 !  C. Lac         11/2019: correction in the drag formula and application to building in addition to tree
 !  S. Riette      04/2020: XHL* fields
+!  PA. Joulin     10/2020: add wind tubrines (EOL)
 !  F. Auguste     02/2021: add IBM
 !  T.Nigel        02/2021: add turbulence recycling
 ! J.L.Redelsperger 06/2011: OCEAN case
 ! A. Costes       12/2021: Blaze fire model
+!  H. Toumi       09/2022: add EOL/ADR
 !---------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -439,6 +441,7 @@ USE MODI_INI_DRAG
 USE MODI_INI_DYNAMICS
 USE MODI_INI_ELEC_n
 USE MODI_INI_EOL_ADNR
+USE MODI_INI_EOL_ADR
 USE MODI_INI_EOL_ALM
 USE MODI_INI_LES_N
 USE MODI_INI_LG
@@ -2873,8 +2876,10 @@ IF (LMAIN_EOL .AND. KMI == NMODEL_EOL) THEN
  SELECT CASE(CMETH_EOL)
   CASE('ADNR')
    CALL INI_EOL_ADNR
+  CASE('ADR')
+   CALL INI_EOL_ADR(XDXX,XDYY,XDZZ)
   CASE('ALM')
-   CALL INI_EOL_ALM(XDXX,XDYY)
+   CALL INI_EOL_ALM(XDXX,XDYY,XDZZ)
  END SELECT
 END IF
 !

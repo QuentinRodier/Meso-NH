@@ -51,6 +51,7 @@ END MODULE MODI_INI_MEAN_FIELD
 !!                      02/2021 (T.Nagel) add passive scalar (XSVT) and UW wind component
 !!                      05/2021 (PA.Joulin) add wind turbine variables
 !!                      11/2022 (E. Jezequel) add covariances
+!!                      09/2022 (H.Toumi) add EOL/ADR variables
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -61,8 +62,9 @@ USE MODD_MEAN_FIELD_n
 USE MODD_MEAN_FIELD
 USE MODD_PARAM_n        
 USE MODD_EOL_MAIN, ONLY: LMAIN_EOL, CMETH_EOL, NMODEL_EOL
-USE MODD_EOL_SHARED_IO, ONLY: XTHRU_SUM, XTORQ_SUM, XPOW_SUM
-USE MODD_EOL_ALM
+USE MODD_EOL_SHARED_IO, ONLY: XTHRU_SUM, XTORQ_SUM, XPOW_SUM, XAOA_SUM
+USE MODD_EOL_ADR, ONLY: XFAERO_RA_SUM, XAOA_BLEQ_SUM, XFAERO_BLEQ_RA_SUM
+USE MODD_EOL_ALM, ONLY: XFAERO_RE_SUM
 USE MODE_MODELN_HANDLER
 !
 IMPLICIT NONE
@@ -98,6 +100,14 @@ IF (LMAIN_EOL .AND. IMI==NMODEL_EOL) THEN
  SELECT CASE(CMETH_EOL)
   CASE('ADNR') ! Actuator Disc Non-Rotating
    XTHRU_SUM      = 0.0
+  CASE('ADR') ! Actuator Disc Method
+   XAOA_SUM           = 0.0
+   XFAERO_RA_SUM      = 0.0
+   XTHRU_SUM          = 0.0
+   XTORQ_SUM          = 0.0
+   XPOW_SUM           = 0.0
+   XAOA_BLEQ_SUM       = 0.0
+   XFAERO_BLEQ_RA_SUM  = 0.0
   CASE('ALM') ! Actuator Line Method
    XAOA_SUM       = 0.0
    XFAERO_RE_SUM  = 0.0

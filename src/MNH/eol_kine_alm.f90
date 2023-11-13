@@ -52,6 +52,7 @@ SUBROUTINE EOL_KINE_ALM(KTCOUNT,KTSUBCOUNT,PTSUBSTEP,PTSTEP)
 !!     Original        04/2017
 !!     Modification    10/11/20 (PA. Joulin) Updated for a main version
 !  P. Wautelet 19/07/2021: replace double precision by real to allow MNH_REAL=4 compilation
+!  PA. Joulin     04/2023: add csv output for 3d frames
 !!
 !!---------------------------------------------------------------
 !
@@ -61,7 +62,9 @@ SUBROUTINE EOL_KINE_ALM(KTCOUNT,KTSUBCOUNT,PTSUBSTEP,PTSTEP)
 !*       0.1    Modules
 USE MODD_EOL_KINE_ALM
 USE MODD_EOL_ALM
+USE MODI_EOL_PRINTER
 USE MODI_EOL_MATHS
+USE MODD_EOL_SHARED_IO, ONLY: LTECOUTPTS,LCSVOUTFRM
 USE MODD_TIME_n, ONLY : TDTCUR
 USE MODD_CST,    ONLY : XPI
 !
@@ -94,6 +97,7 @@ INTEGER                          :: JROT, JBLA, JTELT, JNELT, JBELT    ! Loop co
 INTEGER                          :: INB_WT, INB_B, INB_BELT            ! Total numbers
 INTEGER                          :: INB_TELT, INB_NELT                 ! Total numbers
 INTEGER                          :: ITECOUT                            ! Unit number for Tecplot file
+INTEGER                          :: ICSVOUT                            ! Unit number for TOW.csv file
 !
 !
 !---------------------------------------------------------------
@@ -113,7 +117,10 @@ ZTIME = TDTCUR%xtime+(KTSUBCOUNT)*PTSUBSTEP
 !
 !*       1.3 Tecplotfile : opening + headers
 IF (LTECOUTPTS) THEN
- CALL OPEN_TECOUT(ITECOUT, KTCOUNT, KTSUBCOUNT)
+ CALL OPEN_TECOUT_ALM(ITECOUT, KTCOUNT, KTSUBCOUNT)
+END IF
+IF (LCSVOUTFRM) THEN
+ CALL OPEN_3DCSV_ALM(ICSVOUT, KTCOUNT, KTSUBCOUNT)
 END IF
 !
 !
@@ -159,6 +166,11 @@ DO JROT=1, INB_WT
   END DO
  END IF
 !
+!* T.5 Print in 3D csv file
+ IF (LCSVOUTFRM) THEN
+  CALL PRINT_3DFRM(ICSVOUT,'TOW',XMAT_RG_RT(JROT,:,:), XPOS_TOWO_RG(JROT,:))
+ END IF
+!
 !
 ! ---- NACELLE ----
 !
@@ -199,6 +211,11 @@ DO JROT=1, INB_WT
   END DO
  END IF
 !
+!* N.5 Print in 3D csv file
+ IF (LCSVOUTFRM) THEN
+  CALL PRINT_3DFRM(ICSVOUT,'NAC',XMAT_RG_RN(JROT,:,:), XPOS_NACO_RG(JROT,:))
+ END IF
+!
 !
 ! ---- HUB ----
 !
@@ -226,6 +243,11 @@ DO JROT=1, INB_WT
 !* H.4 Print in tecplot file
  IF (LTECOUTPTS) THEN
   CALL PRINT_TECOUT(ITECOUT, XPOS_HUB_RG(JROT,:))
+ END IF
+!
+!* H.5 Print in 3D csv file
+ IF (LCSVOUTFRM) THEN
+  CALL PRINT_3DFRM(ICSVOUT,'HUB',XMAT_RG_RH(JROT,:,:), XPOS_HUB_RG(JROT,:))
  END IF
 !
 !
@@ -258,6 +280,10 @@ DO JROT=1, INB_WT
    CALL PRINT_TECOUT(ITECOUT, XPOS_BLA_RG(JROT,JBLA,:))
   END IF
 !
+!* B.5 Print in 3D csv file
+  IF (LCSVOUTFRM) THEN
+   CALL PRINT_3DFRM(ICSVOUT,'BLA',XMAT_RG_RB(JROT,JBLA,:,:), XPOS_BLA_RG(JROT,JBLA,:))
+  END IF
 !
 ! ---- ELEMENTS ----
 !* E.0 Positioning sections (cuts) in RG
@@ -300,6 +326,11 @@ DO JROT=1, INB_WT
     CALL PRINT_TECOUT(ITECOUT, XPOS_ELT_RG(JROT,JBLA,JBELT,:))
    END IF
 !
+!* E.5 Print in 3D csv file
+   IF (LCSVOUTFRM) THEN
+    CALL PRINT_3DFRM(ICSVOUT,'ELT',XMAT_RG_RE(JROT,JBLA,JBELT,:,:), XPOS_ELT_RG(JROT,JBLA,JBELT,:))
+   END IF
+!
 ! ---- Leading Edge and Trailing Edge ----
 ! It is just to have a tecplot more beautiful
 ! For the moment, they are useless for computations
@@ -332,6 +363,9 @@ END DO ! Rotor loop
 ! Closing tec file
 IF (LTECOUTPTS) THEN
  CLOSE(ITECOUT)
+END IF
+IF (LCSVOUTFRM) THEN
+ CLOSE(ICSVOUT)
 END IF
 !
 END SUBROUTINE EOL_KINE_ALM

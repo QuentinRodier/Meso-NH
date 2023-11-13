@@ -23,22 +23,39 @@ SUBROUTINE EOL_CSVEMPTY_ERROR(HFILE,KNBLINE)
 END SUBROUTINE EOL_CSVEMPTY_ERROR
 !
 !
-! ***
-! ALM
-! ***
+! *********
+! ALM & ADR
+! *********
 !
 SUBROUTINE EOL_AIRFOILNOTFOUND_ERROR(HFILE,HVAR)
   CHARACTER(LEN=*),  INTENT(IN)    :: HFILE    ! file read   
   CHARACTER(LEN=*),  INTENT(IN)    :: HVAR     ! missing data
 END SUBROUTINE EOL_AIRFOILNOTFOUND_ERROR
 !
+SUBROUTINE EOL_BLADEDATA_ERROR(PDELTARAD)
+   REAL, INTENT(IN) :: PDELTARAD               ! Span lenght of an element
+END SUBROUTINE EOL_BLADEDATA_ERROR
+!
+SUBROUTINE EOL_DR_ERROR(KNB_RELT_MIN)
+   INTEGER, INTENT(IN) :: KNB_RELT_MIN    ! minimum number of rad elt for ADR & ALM
+END SUBROUTINE EOL_DR_ERROR  
+!
+! ***
+! ALM
+! ***
+!
 SUBROUTINE EOL_WTCFL_ERROR(PMAXTSTEP)
    REAL, INTENT(IN) :: PMAXTSTEP               ! maximum acceptable time-step 
 END SUBROUTINE EOL_WTCFL_ERROR
 !
-SUBROUTINE EOL_BLADEDATA_ERROR(PDELTARAD)
-   REAL, INTENT(IN) :: PDELTARAD               ! Span lenght of an element
-END SUBROUTINE EOL_BLADEDATA_ERROR
+! ***
+! ADR
+! ***
+!
+SUBROUTINE EOL_DA_ERROR(KNB_AELT_MIN)
+   INTEGER, INTENT(IN) :: KNB_AELT_MIN    ! minimum number of rad elt for ADR
+END SUBROUTINE EOL_DA_ERROR  
+!
 !
 END INTERFACE
 !
@@ -148,7 +165,7 @@ USE MODE_IO_FILE, ONLY: IO_File_close
 USE MODE_MSG
 USE MODD_EOL_SHARED_IO, ONLY: CBLADE_CSVDATA
 !
-REAL,    INTENT(IN) :: PDELTARAD    ! hals section width 
+REAL,    INTENT(IN) :: PDELTARAD    ! aero section width 
 ! 
 CHARACTER(LEN=4) :: YDELTARAD
 !
@@ -163,4 +180,48 @@ CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'EOL_BLADEDATA_ERROR' )
 !
 END SUBROUTINE EOL_BLADEDATA_ERROR
 !#########################################################
+!
+!#########################################################
+SUBROUTINE EOL_DR_ERROR(KNB_RELT_MIN)
+!
+USE MODD_LUNIT_n, ONLY: TLUOUT
+USE MODE_IO_FILE, ONLY: IO_File_close
+USE MODE_MSG
+!
+INTEGER,    INTENT(IN) :: KNB_RELT_MIN    ! minimum number of radial element
+! 
+CHARACTER(LEN=4) :: YNB_RELT_MIN
+!
+WRITE( YNB_RELT_MIN, '( I3 )' ) KNB_RELT_MIN
+!
+CMNHMSG(1) = 'EOL Initialization error: error while meshing blades.'
+CMNHMSG(2) = 'Considering the grid, the number of discretized radial'
+CMNHMSG(3) = 'element should be at least : ' // TRIM(YNB_RELT_MIN) 
+CMNHMSG(4) = 'Please, modify NNB_RADELT (NAM_ADR) or NNB_BLAELT (NAM_ALM)'
+CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'EOL_MESH_ERROR' )
+!
+END SUBROUTINE EOL_DR_ERROR
+!
+!#########################################################
+!
+!#########################################################
+SUBROUTINE EOL_DA_ERROR(KNB_AELT_MIN)
+!
+USE MODD_LUNIT_n, ONLY: TLUOUT
+USE MODE_IO_FILE, ONLY: IO_File_close
+USE MODE_MSG
+!
+INTEGER,    INTENT(IN) :: KNB_AELT_MIN    ! minimum number of radial element
+! 
+CHARACTER(LEN=4) :: YNB_AELT_MIN
+!
+WRITE( YNB_AELT_MIN, '( I3 )' ) KNB_AELT_MIN
+!
+CMNHMSG(1) = 'EOL Initialization error: error while meshing blades.'
+CMNHMSG(2) = 'Considering the grid, the number of discretized azimutal'
+CMNHMSG(3) = 'element should be at least : ' // TRIM(YNB_AELT_MIN) 
+CMNHMSG(4) = 'Please, modify NNB_AZIELT in NAM_ADR'
+CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'EOL_MESH_ERROR' )
+!
+END SUBROUTINE EOL_DA_ERROR
 !

@@ -1,0 +1,25 @@
+#!/bin/bash
+#MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+#MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
+#MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+#MNH_LIC for details. version 1.
+
+pwd
+
+set -x
+
+export ARCH=LXgfortran
+export VERSION_XYZ=MNH-V5-6-1
+export VER_MPI=MPIAUTO
+export OPTLEVEL=DEBUG
+
+# Test de l'existence du profile
+if ! [ -e ../conf/profile_mesonh-${ARCH}-R8I4-${VERSION_XYZ}-${VER_MPI}-${OPTLEVEL} ]; then
+  ./configure
+fi
+
+# Chargement du profil (qui contient le source vers l'env ifpen-mesonh)
+. ../conf/profile_mesonh-${ARCH}-R8I4-${VERSION_XYZ}-${VER_MPI}-${OPTLEVEL}
+
+time gmake -j 10
+time gmake -j 1 installmaster

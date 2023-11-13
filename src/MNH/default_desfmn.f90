@@ -209,6 +209,7 @@ END MODULE MODI_DEFAULT_DESFM_n
 !!                   11/2019 C.Lac correction in the drag formula and application to building in addition to tree
 !  P. Wautelet 17/04/2020: move budgets switch values into modd_budget
 !  P. Wautelet 30/06/2020: add NNETURSV, NNEADVSV and NNECONSV variables
+!  PA. Joulin     10/2020: add default variables for wind tubrines (EOL)
 !  F. Auguste, T. Nagel 02/2021: add IBM defaults parameters
 !  T. Nagel       02/2021: add turbulence recycling defaults parameters
 !  P-A Joulin  21/05/2021: add Wind turbines
@@ -223,6 +224,7 @@ END MODULE MODI_DEFAULT_DESFM_n
 !  C. Barthe      03/2022: add CIBU and RDSF options in LIMA
 !  Delbeke/Vie    03/2022: KHKO option in LIMA
 !  P. Wautelet 27/04/2022: add namelist for profilers
+!  PA. Joulin     04/2023: add EOL/ADR
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -270,9 +272,9 @@ USE MODD_CONDSAMP
 USE MODD_MEAN_FIELD
 USE MODD_DRAGTREE_n
 USE MODD_DRAGBLDG_n
-USE MODD_EOL_MAIN
-USE MODD_EOL_ADNR
-USE MODD_EOL_ALM
+USE MODD_EOL_MAIN, ONLY: LMAIN_EOL,CMETH_EOL,CSMEAR,NMODEL_EOL
+USE MODD_EOL_ADR,  ONLY: NNB_RADELT, NNB_AZIELT
+USE MODD_EOL_ALM,  ONLY: NNB_BLAELT, LTIMESPLIT
 USE MODD_EOL_SHARED_IO
 USE MODD_ALLPROFILER_n
 USE MODD_ALLSTATION_n
@@ -592,14 +594,20 @@ CBLADE_CSVDATA    = 'data_blade.csv'
 CAIRFOIL_CSVDATA  = 'data_airfoil.csv'
 !
 CINTERP           = 'CLS'
+LTIPLOSSG         = .TRUE.
+LTECOUTPTS        = .FALSE.
+LCSVOUTFRM        = .FALSE.
 !
-!       10d.iii) MODD_EOL_ALM
+!       10d.iii) MODD_EOL_ADR
+!
+NNB_RADELT        =  18
+NNB_AZIELT        =  56
+!
+!       10d.iv) MODD_EOL_ALM
 !
 NNB_BLAELT        =  42
 LTIMESPLIT        = .FALSE.
-LTIPLOSSG         = .TRUE.
-LTECOUTPTS        = .FALSE.
-!
+
 !------------------------------------------------------------------------------
 !*      10.e   SET DEFAULT VALUES FOR MODD_ALLPROFILER_n :
 !             ----------------------------------
