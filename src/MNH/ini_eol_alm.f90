@@ -9,9 +9,9 @@
 !
 INTERFACE
 !
-SUBROUTINE INI_EOL_ALM(PDXX,PDYY)
+SUBROUTINE INI_EOL_ALM(PDXX,PDYY,PDZZ)
 !
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PDXX,PDYY    ! mesh size
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PDXX,PDYY,PDZZ    ! mesh size
 !
 END SUBROUTINE INI_EOL_ALM                  
 !
@@ -20,7 +20,7 @@ END INTERFACE
 END MODULE MODI_INI_EOL_ALM
 !
 !     ############################################################
-      SUBROUTINE INI_EOL_ALM(PDXX,PDYY)
+      SUBROUTINE INI_EOL_ALM(PDXX,PDYY,PDZZ)
 !     ############################################################
 !
 !!****  *INI_EOL_ALM* - routine to initialize the Actuator Line Model 
@@ -86,6 +86,7 @@ END MODULE MODI_INI_EOL_ALM
 !!    -------------
 !!      Original        31/05/18
 !!      Modification    10/11/20 (PA. Joulin) Updated for a main version
+!!      Modification       04/23 (H. Toumi) Modified shared_io var
 !!
 !-------------------------------------------------------------------------------
 !
@@ -95,12 +96,16 @@ END MODULE MODI_INI_EOL_ALM
 !*       0.1    Modules
 !
 USE MODD_EOL_ALM
+USE MODI_EOL_ERROR,     ONLY: EOL_DR_ERROR
 USE MODD_EOL_SHARED_IO, ONLY: CFARM_CSVDATA
 USE MODD_EOL_SHARED_IO, ONLY: CTURBINE_CSVDATA
 USE MODD_EOL_SHARED_IO, ONLY: CBLADE_CSVDATA
 USE MODD_EOL_SHARED_IO, ONLY: CAIRFOIL_CSVDATA
 USE MODD_EOL_SHARED_IO, ONLY: XTHRUT, XTORQT, XPOWT
 USE MODD_EOL_SHARED_IO, ONLY: XTHRU_SUM, XTORQ_SUM, XPOW_SUM
+USE MODD_EOL_SHARED_IO, ONLY: XELT_RAD
+USE MODD_EOL_SHARED_IO, ONLY: XAOA_GLB, XFLIFT_GLB, XFDRAG_GLB, XFAERO_RG_GLB
+USE MODD_EOL_SHARED_IO, ONLY: XAOA_SUM 
 USE MODI_EOL_READER,    ONLY: READ_CSVDATA_FARM_ALM
 USE MODI_EOL_READER,    ONLY: READ_CSVDATA_TURBINE_ALM
 USE MODI_EOL_READER,    ONLY: READ_CSVDATA_BLADE_ALM
@@ -123,12 +128,13 @@ USE MODD_PARAMETERS,    ONLY: JPVEXT
 USE MODD_VAR_ll,        ONLY: NMNH_COMM_WORLD
 USE MODD_PRECISION,     ONLY: MNHREAL_MPI
 USE MODD_MPIF,          ONLY: MPI_SUM
+USE MODE_SUM_ll,        ONLY: MIN_ll
 !
 !*       0.2    Variables
 !
 IMPLICIT NONE
 ! Interface
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PDXX,PDYY    ! mesh size
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PDXX,PDYY,PDZZ    ! mesh size
 !
 ! Some loop controlers 
 ! .. for wind turbines
@@ -145,6 +151,11 @@ INTEGER  :: JI,JJ                   ! Domain index
 INTEGER  :: INB_WT, INB_B, INB_BELT ! Total numbers of wind turbines, blades, and blade elt
 INTEGER  :: INB_TELT, INB_NELT      ! Total numbers of tower elt, and nacelle elt
 REAL     :: ZRAD                    ! Radius along the blade 
+REAL     :: ZDELTA_RAD              ! Radial size of blade element 
+REAL     :: ZMIN_SIZE               ! Minimum size of a mesh side
+REAL     :: ZDELTA_RAD_MAX          ! Max size of ALM rad element
+INTEGER  :: INB_BELT_MIN            ! Minimum number of ALM mesh elements
+!
 ! Tower base folowing the terrain
 REAL,DIMENSION(:,:),ALLOCATABLE :: ZPOSINI_TOWO_RG ! Initial tower origin position
 INTEGER  :: IINFO                   ! code info return
@@ -201,12 +212,29 @@ CALL PRINT_DATA_AIRFOIL_ALM(TLUOUT%NLU,TAIRFOIL)
 !              -------------------- 
 !
 !*       3.0    Preliminaries
+!
+!*       3.0.a) Shortening the names of the most frequently used var
 INB_WT   = TFARM%NNB_TURBINES
 INB_B    = TTURBINE%NNB_BLADES
-INB_BELT  = TBLADE%NNB_BLAELT
-! Hard coded variables, but they will be usefull in next updates
-INB_TELT = 2
-INB_NELT = 2
+INB_BELT = TBLADE%NNB_BLAELT
+INB_TELT = 2 ! Hard coded variable, usefull for next updates
+INB_NELT = 2 ! Hard coded variable, usefull for next updates
+!
+!*       3.0.b) Mesh variable
+ZDELTA_RAD     = (TTURBINE%XR_MAX-TTURBINE%XR_MIN)/INB_BELT      ! Radial element size
+!
+!*       3.0.c) Checking mesh
+! Finding the minimum size of a cell, in the whole domain.
+! Later, the research could be done only in wind turbine area.
+ZMIN_SIZE = MIN(MIN_ll(PDXX(:,:,:),IINFO),&
+                MIN_ll(PDYY(:,:,:),IINFO),&
+                MIN_ll(PDZZ(:,:,:),IINFO))
+!        3.0.c)i) Check the number of radial elements:
+ZDELTA_RAD_MAX = ZMIN_SIZE  
+IF (ZDELTA_RAD > ZDELTA_RAD_MAX) THEN
+ INB_BELT_MIN = INT(CEILING((TTURBINE%XR_MAX-TTURBINE%XR_MIN)/ZDELTA_RAD_MAX)) ! User proper value
+ CALL EOL_DR_ERROR(INB_BELT_MIN)
+END IF
 !
 !*       3.1    MODD_EOL_ALM variables
 ! at t

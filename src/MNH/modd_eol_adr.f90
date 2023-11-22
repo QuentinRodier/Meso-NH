@@ -5,28 +5,27 @@
 !-----------------------------------------------------------------
 !!
 !!    #####################
-      MODULE MODD_EOL_ALM
+      MODULE MODD_EOL_ADR
 !!    #####################
 !!
-!!*** *MODD_EOL_ALM*
+!!*** *MODD_EOL_ADR*
 !!
 !!    PURPOSE
 !!    -------
 !!       It is possible to include wind turbines parameterization in Meso-NH,
 !!       and several models are available. One of the models is the Actuator 
-!!       Line Method (ALM). MODD_EOL_ALM contains all the declarations for
-!!       the ALM model. 
+!!       Disc with Rotation (ADR). MODD_EOL_ADR contains all the declarations 
+!!       for the ADR model. 
 !!
 !!
 !!**  AUTHOR
 !!    ------
-!!    PA.Joulin                   *CNRM & IFPEN*
-!
+!!    H. Toumi                    *IFPEN*
+!!
 !!    MODIFICATIONS
 !!    -------------
-!!    Original 04/01/17
-!!    Modification 14/10/20 (PA. Joulin) Updated for a main version
-!!    Modification    04/23 (PA. Joulin) variables moved in modd_eol_shared_io
+!!    Original 09/22
+!!    Modification 05/04/23 (PA. Joulin) Updated for a main version
 !!
 !-----------------------------------------------------------------------------
 !
@@ -47,7 +46,7 @@ TYPE FARM
 END TYPE FARM
 !
 TYPE TURBINE 
-        CHARACTER(LEN=10)                            :: CNAME        ! Nom de la turbine [-]
+        CHARACTER(LEN=10)                            :: CNAME        ! Wind turbine name [-]
         INTEGER                                      :: NNB_BLADES   ! Number of blades [-]
         REAL                                         :: XH_HEIGHT    ! Hub height [m]
         REAL                                         :: XH_DEPORT    ! Hub deport [m]
@@ -57,7 +56,8 @@ TYPE TURBINE
 END TYPE TURBINE
 !
 TYPE BLADE 
-        INTEGER                                      :: NNB_BLAELT   ! Number of blade element
+        INTEGER                                      :: NNB_RADELT   ! Number of radial elements
+        INTEGER                                      :: NNB_AZIELT   ! Number of azimutal elements
         INTEGER                                      :: NNB_BLADAT   ! Number of blade data
         REAL,              DIMENSION(:), ALLOCATABLE :: XRAD         ! Data node radius [m]
         REAL,              DIMENSION(:), ALLOCATABLE :: XCHORD       ! Element chord [m]
@@ -81,42 +81,49 @@ TYPE(TURBINE)                                        :: TTURBINE
 TYPE(BLADE)                                          :: TBLADE
 TYPE(AIRFOIL), DIMENSION(:), ALLOCATABLE             :: TAIRFOIL 
 !
+! 
 ! --- Global variables (Code & CPU) --- 
-REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: XFAERO_RE_GLB ! Aerodyn. force (lift+drag) in RE [N]
+REAL, DIMENSION(:,:,:),   ALLOCATABLE :: XELT_AZI       ! Elements azimut [rad]
+REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: XFAERO_RA_GLB  ! Aerodyn. force (lift+drag) in RA [N], global
+!
+! Blade equivalent values
+REAL, DIMENSION(:,:),     ALLOCATABLE :: XAOA_BLEQ_GLB       ! Blade Eq. AoA 
+REAL, DIMENSION(:,:,:),   ALLOCATABLE :: XFAERO_BLEQ_RA_GLB  ! Blade Eq Aerodyn. force (lift+drag) in RA [N]
 !
 ! Mean values
-REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: XFAERO_RE_SUM  ! Sum of aerodyn. force (lift+drag) in RE [N]
+REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: XFAERO_RA_SUM      ! Sum of aerodyn. force (lift+drag) in RA [N]
+REAL, DIMENSION(:,:),     ALLOCATABLE :: XAOA_BLEQ_SUM      ! Sum of Blade Eq. AoA 
+REAL, DIMENSION(:,:,:),   ALLOCATABLE :: XFAERO_BLEQ_RA_SUM ! Sum of Blade Eq Aero. force (lift+drag) in RA [N]
+
 !
 ! Implicit from MODD_EOL_SHARED_IO :
-!REAL, DIMENSION(:,:,:),   ALLOCATABLE :: XELT_RAD      ! Blade elements radius [m]
-!REAL, DIMENSION(:,:,:),   ALLOCATABLE :: XAOA_GLB      ! Angle of attack of an element [rad]
-!REAL, DIMENSION(:,:,:),   ALLOCATABLE :: XFLIFT_GLB    ! Lift force, parallel to Urel [N]
-!REAL, DIMENSION(:,:,:),   ALLOCATABLE :: XFDRAG_GLB    ! Drag force, perpendicular to Urel [N]
-!REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: XFAERO_RG_GLB ! Aerodyn. force (lift+drag) in RG [N]
-!
+! --- Thruts torque and power ---
 !REAL, DIMENSION(:),       ALLOCATABLE :: XTHRUT         ! Thrust [N]
 !REAL, DIMENSION(:),       ALLOCATABLE :: XTORQT         ! Torque [Nm]
 !REAL, DIMENSION(:),       ALLOCATABLE :: XPOWT          ! Power [W]
-!
-!REAL, DIMENSION(:,:,:),   ALLOCATABLE :: XAOA_SUM       ! Sum of angle of attack [rad]
 !REAL, DIMENSION(:),       ALLOCATABLE :: XTHRU_SUM      ! Sum of thrust (N)
 !REAL, DIMENSION(:),       ALLOCATABLE :: XTORQ_SUM      ! Sum of torque (Nm)
 !REAL, DIMENSION(:),       ALLOCATABLE :: XPOW_SUM       ! Sum of power (W)
 !
+! --- Global variables (Code & CPU) --- 
+!REAL, DIMENSION(:,:,:),   ALLOCATABLE :: XELT_RAD       ! Elements radius [m]
+!REAL, DIMENSION(:,:,:),   ALLOCATABLE :: XAOA_GLB       ! Angle of attack of an element [rad]
+!REAL, DIMENSION(:,:,:),   ALLOCATABLE :: XFLIFT_GLB     ! Lift force, parallel to Urel [N]
+!REAL, DIMENSION(:,:,:),   ALLOCATABLE :: XFDRAG_GLB     ! Drag force, perpendicular to Urel [N]
+!REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: XFAERO_RG_GLB  ! Aerodyn. force (lift+drag) in RG [N]
 !
-! --- Namelist NAM_EOL_ALM ---
+! Mean values
+!REAL, DIMENSION(:,:,:),   ALLOCATABLE :: XAOA_SUM        ! Sum of angle of attack [rad]
+!
+! --- Namelist NAM_EOL_ADR ---
 ! Implicit from MODD_EOL_SHARED_IO :
 !CHARACTER(LEN=100) :: CFARM_CSVDATA     ! Farm file to read 
 !CHARACTER(LEN=100) :: CTURBINE_CSVDATA  ! Turbine file to read  
 !CHARACTER(LEN=100) :: CBLADE_CSVDATA    ! Blade file to read  
 !CHARACTER(LEN=100) :: CAIRFOIL_CSVDATA  ! Airfoil file to read  
 !CHARACTER(LEN=3)   :: CINTERP           ! Interpolation method for wind speed
-!LOGICAL            :: LTIPLOSSG         ! Flag to apply Glauert's tip loss correction
-!LOGICAL            :: LTECOUTPTS        ! Flag to get Tecplot file output of element points
-!LOGICAL            :: LCSVOUTFRM        ! Flag to get CSV files output of frames
 !
-INTEGER            :: NNB_BLAELT        ! Number of blade elements
+INTEGER            :: NNB_RADELT        ! Number of radial elements
+INTEGER            :: NNB_AZIELT        ! Number of azimutal elements
 !
-LOGICAL            :: LTIMESPLIT        ! Flag to apply Time splitting method
-!
-END MODULE MODD_EOL_ALM
+END MODULE MODD_EOL_ADR

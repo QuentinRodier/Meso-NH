@@ -26,6 +26,40 @@ SUBROUTINE PRINT_DATA_TURBINE_ADNR(KFILE,TPTURBINE)
 END SUBROUTINE PRINT_DATA_TURBINE_ADNR
 !
 ! ***
+! ADR
+! ***
+!
+SUBROUTINE PRINT_DATA_FARM_ADR(KFILE,TPFARM)
+        USE MODD_EOL_ADR, ONLY: FARM
+        INTEGER,                     INTENT(IN) :: KFILE         ! output file
+        TYPE(FARM),                  INTENT(IN) :: TPFARM        ! stored farm data
+END SUBROUTINE PRINT_DATA_FARM_ADR
+!
+SUBROUTINE PRINT_DATA_TURBINE_ADR(KFILE,TPTURBINE)
+        USE MODD_EOL_ADR, ONLY : TURBINE
+        INTEGER,                     INTENT(IN) :: KFILE         ! output file
+        TYPE(TURBINE),               INTENT(IN) :: TPTURBINE     ! stored turbine data
+END SUBROUTINE PRINT_DATA_TURBINE_ADR
+!
+SUBROUTINE PRINT_DATA_BLADE_ADR(KFILE,TPBLADE)
+        USE MODD_EOL_ADR, ONLY : BLADE
+        INTEGER,                     INTENT(IN) :: KFILE         ! output file
+        TYPE(BLADE),                 INTENT(IN) :: TPBLADE       ! stored blade data
+END SUBROUTINE PRINT_DATA_BLADE_ADR
+!
+SUBROUTINE PRINT_DATA_AIRFOIL_ADR(KFILE,TPAIRFOIL)
+        USE MODD_EOL_ADR, ONLY : AIRFOIL
+        INTEGER,                     INTENT(IN) :: KFILE         ! output file
+        TYPE(AIRFOIL), DIMENSION(:), INTENT(IN) :: TPAIRFOIL     ! stored airfoil data
+END SUBROUTINE PRINT_DATA_AIRFOIL_ADR
+!
+SUBROUTINE OPEN_TECOUT_ADR(KFILE, KTCOUNT)
+        INTEGER,                     INTENT(IN)   :: KFILE       ! File index
+        INTEGER,                     INTENT(IN)   :: KTCOUNT     ! Time step index
+END SUBROUTINE OPEN_TECOUT_ADR
+!
+!
+! ***
 ! ALM
 ! ***
 !
@@ -53,11 +87,11 @@ SUBROUTINE PRINT_DATA_AIRFOIL_ALM(KFILE,TPAIRFOIL)
         TYPE(AIRFOIL), DIMENSION(:), INTENT(IN) :: TPAIRFOIL     ! stored airfoil data
 END SUBROUTINE PRINT_DATA_AIRFOIL_ALM
 !
-SUBROUTINE OPEN_TECOUT(KFILE, KTCOUNT, KTSUBCOUNT)
+SUBROUTINE OPEN_TECOUT_ALM(KFILE, KTCOUNT, KTSUBCOUNT)
         INTEGER,                     INTENT(IN)   :: KFILE       ! File index
         INTEGER,                     INTENT(IN)   :: KTCOUNT     ! Time step index
         INTEGER,                     INTENT(IN)   :: KTSUBCOUNT  ! Subtime step index
-END SUBROUTINE OPEN_TECOUT
+END SUBROUTINE OPEN_TECOUT_ALM
 !
 SUBROUTINE PRINT_TECOUT(KFILE,PVAR)
         INTEGER,                     INTENT(IN)   :: KFILE       ! File index
@@ -69,6 +103,25 @@ SUBROUTINE PRINT_TSPLIT(KNBSUBCOUNT,PTSUBSTEP)
         REAL,                        INTENT(IN)   :: PTSUBSTEP   ! sub timestep
 END SUBROUTINE PRINT_TSPLIT
 !
+! 3D FRAMES
+!
+SUBROUTINE OPEN_3DCSV_ADR(KFILE, KTCOUNT)
+        INTEGER,                     INTENT(IN)   :: KFILE       ! File index
+        INTEGER,                     INTENT(IN)   :: KTCOUNT     ! Time step index
+END SUBROUTINE OPEN_3DCSV_ADR
+!
+SUBROUTINE OPEN_3DCSV_ALM(KFILE, KTCOUNT, KTSUBCOUNT)
+        INTEGER,                     INTENT(IN)   :: KFILE       ! File index
+        INTEGER,                     INTENT(IN)   :: KTCOUNT     ! Time step index
+        INTEGER,                     INTENT(IN)   :: KTSUBCOUNT  ! Subtime step index
+END SUBROUTINE OPEN_3DCSV_ALM
+!
+SUBROUTINE PRINT_3DFRM(KFILE,HPART,PMAT,PPOS)
+        INTEGER,                     INTENT(IN)   :: KFILE       ! File index
+        CHARACTER(LEN=3),            INTENT(IN)   :: HPART       ! Part of the wind turbine
+        REAL, DIMENSION(3,3),        INTENT(IN)   :: PMAT        ! Frame to plot
+        REAL, DIMENSION(3),          INTENT(IN)   :: PPOS        ! Frame origin
+END SUBROUTINE PRINT_3DFRM
 !
 END INTERFACE
 !
@@ -88,6 +141,7 @@ END MODULE MODI_EOL_PRINTER
 !!    MODIFICATIONS
 !!    -------------
 !!    Original     26/10/2020  
+!!    H. Toumi     09/22 add ADR functions
 !!
 !!---------------------------------------------------------------
 !
@@ -150,6 +204,135 @@ END IF
 !
 END SUBROUTINE PRINT_DATA_TURBINE_ADNR
 !#########################################################
+!
+! ADR
+!
+!#########################################################
+SUBROUTINE PRINT_DATA_FARM_ADR(KFILE,TPFARM)
+!        
+USE MODD_EOL_ADR,  ONLY : FARM
+USE MODD_EOL_SHARED_IO, ONLY : CFARM_CSVDATA
+USE MODD_VAR_ll,   ONLY : IP                    ! only master cpu
+!
+IMPLICIT NONE
+!
+INTEGER,    INTENT(IN) :: KFILE    ! File index
+TYPE(FARM), INTENT(IN) :: TPFARM   ! dummy stored farm data
+!
+INTEGER  :: JROT    ! Loop index
+!
+IF (IP==1) THEN
+ WRITE(KFILE,*) ''
+ WRITE(KFILE,*) '======================== WIND TURBINE DATA ========================'
+ WRITE(KFILE,*) ''
+ WRITE(KFILE,*) '---- Farm ----'
+ WRITE(KFILE,*) 'Data from file                  : ', TRIM(CFARM_CSVDATA)
+ WRITE(KFILE,*) 'Number of turbines              : ', TPFARM%NNB_TURBINES
+ WRITE(KFILE,*) 'Tower base positions (X,Y) [m]  : '
+ DO JROT=1, TPFARM%NNB_TURBINES
+  WRITE(KFILE, '(1X,A,I3,A,F10.1,A,F10.1,A)') 'n.', JROT,&
+         ': (', TPFARM%XPOS_X(JROT),',',TPFARM%XPOS_Y(JROT),')'
+ END DO
+ WRITE(KFILE,*) 'Working state (rad/s,rad,rad)   : '
+ DO JROT=1, TPFARM%NNB_TURBINES
+  WRITE(KFILE, '(1X,A,I3,A,F10.5,A,F10.5,A,F10.5)') 'n.', JROT,&
+         ': Omega = ',   TPFARM%XOMEGA(JROT),  &
+         ' ; Yaw = ',     TPFARM%XNAC_YAW(JROT),&
+         ' ; Pitch = ',   TPFARM%XBLA_PITCH(JROT)
+ END DO
+ WRITE(KFILE,*) ''
+END IF
+!
+END SUBROUTINE PRINT_DATA_FARM_ADR
+!#########################################################
+!
+!#########################################################
+SUBROUTINE PRINT_DATA_TURBINE_ADR(KFILE,TPTURBINE)
+!        
+USE MODD_EOL_ADR,  ONLY : TURBINE
+USE MODD_EOL_SHARED_IO, ONLY : CTURBINE_CSVDATA
+USE MODD_VAR_ll,   ONLY : IP                    ! only master cpu
+!
+IMPLICIT NONE
+!
+INTEGER,       INTENT(IN)  :: KFILE      ! File index
+TYPE(TURBINE), INTENT(IN)  :: TPTURBINE  ! dummy stored turbine data
+!
+IF (IP==1) THEN
+ WRITE(KFILE,*) '---- Turbine ----'
+ WRITE(KFILE,*             ) 'Data from file                  : ', TRIM(CTURBINE_CSVDATA)
+ WRITE(KFILE,'(1X,A,A10)'  ) 'Wind turbine                    : ', TPTURBINE%CNAME
+ WRITE(KFILE,'(1X,A,I10)'  ) 'Number of blades                : ', TPTURBINE%NNB_BLADES
+ WRITE(KFILE,'(1X,A,F10.1)') 'Hub height [m]                  : ', TPTURBINE%XH_HEIGHT
+ WRITE(KFILE,'(1X,A,F10.3)') 'Blade min radius [m]            : ', TPTURBINE%XR_MIN
+ WRITE(KFILE,'(1X,A,F10.3)') 'Blade max radius [m]            : ', TPTURBINE%XR_MAX
+ WRITE(KFILE,'(1X,A,F10.3)') 'Nacelle tilt [rad]              : ', TPTURBINE%XNAC_TILT
+ WRITE(KFILE,'(1X,A,F10.3)') 'Hub deport [m]                  : ', TPTURBINE%XH_DEPORT
+ WRITE(KFILE,*) ''
+END IF
+!
+END SUBROUTINE PRINT_DATA_TURBINE_ADR
+!#########################################################
+!
+!#########################################################
+SUBROUTINE PRINT_DATA_BLADE_ADR(KFILE,TPBLADE)
+!        
+USE MODD_EOL_ADR,  ONLY : BLADE
+USE MODD_EOL_SHARED_IO, ONLY : CBLADE_CSVDATA
+USE MODD_VAR_ll,   ONLY : IP                    ! only master cpu
+!
+IMPLICIT NONE
+!
+INTEGER,     INTENT(IN)  :: KFILE    ! File index
+TYPE(BLADE), INTENT(IN)  :: TPBLADE  ! dummy stored blade data
+!
+IF (IP==1) THEN
+ WRITE(KFILE,*) '---- Blade ----'
+ WRITE(KFILE,*             ) 'Data from file                    : ', TRIM(CBLADE_CSVDATA)
+ WRITE(KFILE,'(1X,A,I10)'  ) 'Nb of data (from data file)       : ', TPBLADE%NNB_BLADAT
+ WRITE(KFILE,'(1X,A,F10.1)') 'First node radius [m]             : ', TPBLADE%XRAD(1)
+ WRITE(KFILE,'(1X,A,F10.1)') 'Last node radius [m]              : ', TPBLADE%XRAD(TPBLADE%NNB_BLADAT)
+ WRITE(KFILE,'(1X,A,F10.1)') 'Chord max. [m]                    : ', MAXVAL(TPBLADE%XCHORD(:))
+ WRITE(KFILE,'(1X,A,I10)'  ) 'Nb of radial element (from nam)   : ', TPBLADE%NNB_RADELT
+ WRITE(KFILE,'(1X,A,I10)'  ) 'Nb of azimutal element (from nam) : ', TPBLADE%NNB_AZIELT
+ WRITE(KFILE,*) ''
+END IF
+!
+END SUBROUTINE PRINT_DATA_BLADE_ADR
+!#########################################################
+!
+!#########################################################
+SUBROUTINE PRINT_DATA_AIRFOIL_ADR(KFILE,TPAIRFOIL)
+!        
+USE MODD_EOL_ADR,  ONLY : AIRFOIL
+USE MODD_EOL_SHARED_IO, ONLY : CAIRFOIL_CSVDATA
+USE MODD_VAR_ll,   ONLY : IP                    ! only master cpu
+!
+IMPLICIT NONE
+!
+INTEGER,                     INTENT(IN)  :: KFILE        ! File index
+TYPE(AIRFOIL), DIMENSION(:), INTENT(IN)  :: TPAIRFOIL    ! dummy stored airfoil data
+!
+INTEGER :: JA                  
+!
+IF (IP==1) THEN
+ WRITE(KFILE,*) '---- Airfoils ----'
+ WRITE(KFILE,*             ) 'Data from file                  : ', TRIM(CAIRFOIL_CSVDATA)
+ WRITE(KFILE,'(1X,A,I10)'  ) 'Nb of airfoils (from data file) : ', SIZE(TPAIRFOIL)
+ WRITE(KFILE,'(1X,A)'      ) 'Different airfoils              : '
+ DO JA=1,SIZE(TPAIRFOIL)
+  WRITE(KFILE,'(1X,A,I3,A,A)') 'Airfoil n.', JA,&
+       ': ', TPAIRFOIL(JA)%CNAME
+ END DO
+ WRITE(KFILE,*) ''
+ WRITE(KFILE,*) '==================================================================='
+ WRITE(KFILE,*) ''
+END IF
+!
+END SUBROUTINE PRINT_DATA_AIRFOIL_ADR
+!#########################################################
+!
+! ALM
 !
 !#########################################################
 SUBROUTINE PRINT_DATA_FARM_ALM(KFILE,TPFARM)
@@ -274,10 +457,47 @@ END IF
 !
 END SUBROUTINE PRINT_DATA_AIRFOIL_ALM
 !#########################################################
+!!
+!#########################################################
+SUBROUTINE OPEN_TECOUT_ADR(KFILE, KTCOUNT)
+!
+USE MODD_EOL_ADR, ONLY:TFARM,TTURBINE,TBLADE
+!
+IMPLICIT NONE
+!
+INTEGER, INTENT(OUT)  :: KFILE      ! File index
+INTEGER, INTENT(IN)   :: KTCOUNT    ! Time step index
+!
+INTEGER  :: INB_WT, INB_RADELT, INB_AZIELT        ! Total numbers of wind turbines, radial elt, and azimutal elt
+INTEGER  :: INB_TELT, INB_NELT                    ! Total numbers of tower elt, and nacelle elt
+INTEGER  :: ITOTELT                               ! Total number of points
+!
+CHARACTER(LEN=1024) :: HFILE      ! File name
+!
+INB_WT        = TFARM%NNB_TURBINES
+INB_RADELT    = TBLADE%NNB_RADELT
+INB_AZIELT    = TBLADE%NNB_AZIELT
+! Hard coded variables, but they will be useful in next updates
+INB_TELT = 2
+INB_NELT = 2
+!
+ITOTELT = INB_WT*(INB_TELT+INB_NELT+INB_AZIELT*INB_RADELT)
+!
+! File name and opening
+WRITE(HFILE, "(A18,I4.4,A3)") "Tecplot2.0_Output_", KTCOUNT,".tp"
+OPEN( NEWUNIT=KFILE, file=HFILE, form="FORMATTED")
+!
+! Tecplot Header
+WRITE(KFILE,*) 'TITLE="Wind Turbines Points"'
+WRITE(KFILE,*) 'VARIABLES="X" "Y" "Z"'
+WRITE(KFILE,*) 'ZONE I=',ITOTELT,' J=3 K=1 DATAPACKING=POINT'
+!
+END SUBROUTINE OPEN_TECOUT_ADR
+!#########################################################
 !
 !
 !#########################################################
-SUBROUTINE OPEN_TECOUT(KFILE, KTCOUNT, KTSUBCOUNT)
+SUBROUTINE OPEN_TECOUT_ALM(KFILE, KTCOUNT, KTSUBCOUNT)
 !
 USE MODD_EOL_ALM, ONLY:TFARM,TTURBINE,TBLADE
 !
@@ -311,7 +531,7 @@ WRITE(KFILE,*) 'TITLE="Wind Turbines Points"'
 WRITE(KFILE,*) 'VARIABLES="X" "Y" "Z"'
 WRITE(KFILE,*) 'ZONE I=',ITOTELT,' J=3 K=1 DATAPACKING=POINT'
 !
-END SUBROUTINE OPEN_TECOUT
+END SUBROUTINE OPEN_TECOUT_ALM
 !#########################################################
 !
 !#########################################################
@@ -354,4 +574,76 @@ WRITE(KFILE,'(A,A,A,A,A,F10.8,A)')                                 &
  'Please, turn on the time-splitting method (LTIMESPLIT=.TRUE.), ',&
  'or decrease XTSTEP to a value lower than ', PMAXTSTEP, ' sec.'
 END SUBROUTINE PRINT_ERROR_WTCFL
+!#########################################################
+!
+!#########################################################
+SUBROUTINE OPEN_3DCSV_ALM(KFILE, KTCOUNT, KTSUBCOUNT)
+!
+IMPLICIT NONE
+!
+INTEGER, INTENT(OUT)           :: KFILE      ! File index
+INTEGER, INTENT(IN)            :: KTCOUNT    ! Time step index
+INTEGER, INTENT(IN)            :: KTSUBCOUNT ! Subtime step index
+!
+!
+CHARACTER(LEN=1024) :: HFILE      ! File name
+!
+! File name and opening
+WRITE(HFILE, "(A6,I4.4,I2.2,A4)") "CSV3D_", KTCOUNT, KTSUBCOUNT,".csv"
+OPEN( NEWUNIT=KFILE, file=HFILE, form="FORMATTED")
+!
+! CSV Header
+WRITE(KFILE,'(A50)') 'Frame;&
+                      R11;R12;R13;&
+                      R21;R22;R23;&
+                      R31;R32;R33;&
+                      P1;P2;P3'
+!
+END SUBROUTINE OPEN_3DCSV_ALM
+!#########################################################
+!
+!#########################################################
+SUBROUTINE OPEN_3DCSV_ADR(KFILE, KTCOUNT)
+!
+IMPLICIT NONE
+!
+INTEGER, INTENT(OUT)           :: KFILE      ! File index
+INTEGER, INTENT(IN)            :: KTCOUNT    ! Time step index
+!
+!
+CHARACTER(LEN=1024) :: HFILE      ! File name
+!
+! File name and opening
+WRITE(HFILE, "(A6,I4.4,A4)") "CSV3D_", KTCOUNT,".csv"
+OPEN( NEWUNIT=KFILE, file=HFILE, form="FORMATTED")
+!
+! CSV Header
+WRITE(KFILE,'(A50)') 'Frame;&
+                      R11;R12;R13;&
+                      R21;R22;R23;&
+                      R31;R32;R33;&
+                      P1;P2;P3'
+!
+END SUBROUTINE OPEN_3DCSV_ADR
+!#########################################################
+!
+!#########################################################
+SUBROUTINE PRINT_3DFRM(KFILE,HPART,PMAT,PPOS)
+IMPLICIT NONE
+INTEGER,              INTENT(IN) :: KFILE     ! File index
+CHARACTER(LEN=3),     INTENT(IN) :: HPART     ! Part of the wind turbine
+REAL, DIMENSION(3,3), INTENT(IN) :: PMAT      ! Frame to plot
+REAL, DIMENSION(3),   INTENT(IN) :: PPOS      ! Point to plot
+!
+! It writes frames informations
+WRITE(KFILE, '(A3,A1,E14.7,A1,E14.7,A1,E14.7,A1,E14.7,A1,E14.7,A1,E14.7,A1,E14.7,A1,E14.7,A1,E14.7,A1,E14.7,A1,E14.7,A1,E14.7)')&
+!'(A3,A1,F,A1,F,A1,F,A1,F,A1,F,A1,F,A1,F,A1,F,A1,F,A1,F,A1,F,A1,F)')& 
+               HPART, ';',                                &
+               PMAT(1,1),';',PMAT(1,2),';',PMAT(1,3),';', &
+               PMAT(2,1),';',PMAT(2,2),';',PMAT(2,3),';', &
+               PMAT(3,1),';',PMAT(3,2),';',PMAT(3,3),';', &
+               PPOS(1),';',PPOS(2),';',PPOS(3)
+!
+END SUBROUTINE PRINT_3DFRM
+!#########################################################
 !

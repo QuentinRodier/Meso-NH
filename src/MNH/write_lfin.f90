@@ -182,6 +182,8 @@ END MODULE MODI_WRITE_LFIFM_n
 !  A. Costes      12/2021: add Blaze fire model
 !  P. Wautelet 04/02/2022: use TSVLIST to manage metadata of scalar variables
 !  E. Jezequel    11/2022: add covariances from MEAN fields
+!  H. Toumi       09/2022: add ADR
+!  PA. Joulin     04/2023: update EOL metadata management
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -214,6 +216,7 @@ USE MODD_ELEC_DESCR,      ONLY: LLNOX_EXPLICIT
 USE MODD_ELEC_FLASH
 USE MODD_ELEC_n
 USE MODD_EOL_ADNR
+USE MODD_EOL_ADR
 USE MODD_EOL_ALM
 USE MODD_EOL_MAIN
 USE MODD_EOL_SHARED_IO
@@ -2067,7 +2070,7 @@ END IF
 !
 IF (LMAIN_EOL .AND. IMI == NMODEL_EOL) THEN
   TZFIELD = TFIELDMETADATA(                            &
-    CMNHNAME   = 'generic for wind turbine variables', & !Temporary name to ease identification
+    CMNHNAME   = 'generic for wind turbine var',       & !Temporary name to ease identification
     CSTDNAME   = '',                                   &
     CUNITS     = 'N',                                  &
     CDIR       = 'XY',                                 &
@@ -2149,12 +2152,221 @@ SELECT CASE(CMETH_EOL)
       CALL IO_Field_write(TPFILE,TZFIELD,XTHRU_SUM/MEAN_COUNT)
 !
     END IF
-!             iii) Actuator Line Model
+!
+!             iii) Actuator Disc with Rotation Model
+!
+  CASE('ADR') ! Actuator Disc with Rotation
+!
+! * 1D Variables (rotor id)
+    TZFIELD = TFIELDMETADATA(                   &
+      CMNHNAME   = '1D ADR var: (rot)',         & !Temporary name to ease identification
+      CSTDNAME   = '',                          &
+      CDIR       = '--',                        &
+      NGRID      = 1,                           &
+      NTYPE      = TYPEREAL,                    &
+      NDIMS      = 1,                           &
+      LTIMEDEP   = .TRUE.                       ) 
+!
+    TZFIELD%CMNHNAME   = 'THRUT'
+    TZFIELD%CLONGNAME  = 'THRUSTT_EOL'
+    TZFIELD%CUNITS     = 'N'
+    TZFIELD%CCOMMENT   = 'RID instantaneous thrust (N) of wind turbines'
+    CALL IO_Field_write(TPFILE,TZFIELD,XTHRUT)
+!
+    TZFIELD%CMNHNAME   = 'TORQT'
+    TZFIELD%CLONGNAME  = 'TORQUET_EOL'
+    TZFIELD%CUNITS     = 'Nm'
+    TZFIELD%CCOMMENT   = 'RID instantaneous torque (Nm) of wind turbines'
+    CALL IO_Field_write(TPFILE,TZFIELD,XTORQT)
+!
+    TZFIELD%CMNHNAME   = 'POWT'
+    TZFIELD%CLONGNAME  = 'POWERT_EOL'
+    TZFIELD%CUNITS     = 'W'
+    TZFIELD%CCOMMENT   = 'RID instantaneous power (W) of wind turbines'
+    CALL IO_Field_write(TPFILE,TZFIELD,XPOWT)
+!
+!
+! * 3D Variables (rotor id, azimuthal id, radial id)
+    TZFIELD = TFIELDMETADATA(                           &
+      CMNHNAME   = '3D ADR var: (rot,azi,rad)',         & 
+      CSTDNAME   = '',                                  &
+      CDIR       = '--',                                &
+      NGRID      = 1,                                   &
+      NTYPE      = TYPEREAL,                            &
+      NDIMS      = 3,                                   &
+      LTIMEDEP   = .TRUE.                               )
+!
+    TZFIELD%CMNHNAME   = 'ELT_RAD'
+    TZFIELD%CLONGNAME  = 'ELT_RAD'
+    TZFIELD%CUNITS     = 'm'
+    TZFIELD%CCOMMENT   = 'RID_AZI_RAD radius (m) of wind turbine blade elements'
+    CALL IO_Field_write(TPFILE,TZFIELD,XELT_RAD)
+!
+    TZFIELD%CMNHNAME   = 'ELT_AZI'
+    TZFIELD%CLONGNAME  = 'ELT_AZI'
+    TZFIELD%CUNITS     = 'rad'
+    TZFIELD%CCOMMENT   = 'RID_AZI_RAD Azimutal angle (rad) of wind turbine blade elements'
+    CALL IO_Field_write(TPFILE,TZFIELD,XELT_AZI)
+!
+    TZFIELD%CMNHNAME   = 'AOA'
+    TZFIELD%CLONGNAME  = 'ANGLE OF ATTACK'
+    TZFIELD%CUNITS     = 'rad'
+    TZFIELD%CCOMMENT   = 'RID_AZI_RAD instantaneous angle of attack (rad)'
+    CALL IO_Field_write(TPFILE,TZFIELD,XAOA_GLB)
+!
+    TZFIELD%CMNHNAME   = 'FLIFT'
+    TZFIELD%CLONGNAME  = 'LIFT FORCE'
+    TZFIELD%CUNITS     = 'N'
+    TZFIELD%CCOMMENT   = 'RID_AZI_RAD instantaneous lift (N) in relative frame'
+    CALL IO_Field_write(TPFILE,TZFIELD,XFLIFT_GLB)
+!
+    TZFIELD%CMNHNAME   = 'FDRAG'
+    TZFIELD%CLONGNAME  = 'DRAG FORCE'
+    TZFIELD%CUNITS     = 'N'
+    TZFIELD%CCOMMENT   = 'RID_AZI_RAD instantaneous drag (N) in relative frame'
+    CALL IO_Field_write(TPFILE,TZFIELD,XFDRAG_GLB)
+!
+! * 4D Variables (rotor id, azimuthal id, radial id, xyz)
+    TZFIELD = TFIELDMETADATA(                               &
+      CMNHNAME   = '4D ADR var: (rot,azi,rad,xyz)',         & 
+      CSTDNAME   = '',                                      &
+      CDIR       = '--',                                    &
+      NGRID      = 1,                                       &
+      NTYPE      = TYPEREAL,                                &
+      NDIMS      = 4,                                       &
+      LTIMEDEP   = .TRUE.                                   )
+!
+    TZFIELD%CMNHNAME   = 'FAERO_RA'
+    TZFIELD%CLONGNAME  = 'AERODYNAMIC FORCE RA'
+    TZFIELD%CUNITS     = 'N'
+    TZFIELD%CCOMMENT   = 'RID_AZI_RAD_XYZ instantaneous forces (N) in RA'
+    CALL IO_Field_write(TPFILE,TZFIELD,XFAERO_RA_GLB)
+!
+    TZFIELD%CMNHNAME   = 'FAERO_RG'
+    TZFIELD%CLONGNAME  = 'AERODYNAMIC FORCE RG'
+    TZFIELD%CUNITS     = 'N'
+    TZFIELD%CCOMMENT   = 'RID_AZI_RAD_XYZ instantaneous forces (N) in RG'
+    CALL IO_Field_write(TPFILE,TZFIELD,XFAERO_RG_GLB)
+!
+! * Blade Equivalent Variables (rotor id, radial id, xyz)
+    TZFIELD = TFIELDMETADATA(                                  &
+      CMNHNAME   = 'AOA_BLEQ',                                 &
+      CSTDNAME   = '',                                         &
+      CLONGNAME  = 'BLADE_EQ_ANGLE_OF_ATTACK',                 &
+      CUNITS     = 'rad',                                      &
+      CDIR       = '--',                                       &
+      CCOMMENT   = 'RID_RAD blade eq. angle of attack (rad)',  &
+      NGRID      = 1,                                          &
+      NTYPE      = TYPEREAL,                                   &
+      NDIMS      = 2,                                          &
+      LTIMEDEP   = .TRUE.                                      )
+    CALL IO_Field_write(TPFILE,TZFIELD,XAOA_BLEQ_GLB)
+
+    TZFIELD = TFIELDMETADATA(                                  &
+      CMNHNAME   = 'FAERO_BLEQ_RA',                            &
+      CSTDNAME   = '',                                         &
+      CLONGNAME  = 'BLADE_EQ_AERO_FORCE_RA',                   &
+      CUNITS     = 'N',                                        &
+      CDIR       = '--',                                       &
+      CCOMMENT   = 'RID_RAD_XYZ blade eq. forces (N) in RA',   &
+      NGRID      = 1,                                          &
+      NTYPE      = TYPEREAL,                                   &
+      NDIMS      = 3,                                          &
+      LTIMEDEP   = .TRUE.                                      )
+    CALL IO_Field_write(TPFILE,TZFIELD,XFAERO_BLEQ_RA_GLB)
+!
+    IF (MEAN_COUNT /= 0) THEN
+!
+! * 1D Variables (rotor id)
+      TZFIELD = TFIELDMETADATA(                        &
+        CMNHNAME   = '1D ADR mean var: (rot)',         & !Temporary name to ease identification
+        CSTDNAME   = '',                               &
+        CDIR       = '--',                             &
+        NGRID      = 1,                                &
+        NTYPE      = TYPEREAL,                         &
+        NDIMS      = 1,                                &
+        LTIMEDEP   = .TRUE.                            ) 
+!
+      TZFIELD%CMNHNAME   = 'THRUMME'
+      TZFIELD%CLONGNAME  = 'MEAN_THRUST_EOL'
+      TZFIELD%CUNITS     = 'N'
+      TZFIELD%CCOMMENT   = 'RID mean thrust of the wind turbines (N)'
+      CALL IO_Field_write(TPFILE,TZFIELD,XTHRU_SUM/MEAN_COUNT)
+!
+      TZFIELD%CMNHNAME   = 'TORQMME'
+      TZFIELD%CLONGNAME  = 'MEAN_TORQUE_EOL'
+      TZFIELD%CUNITS     = 'Nm'
+      TZFIELD%CCOMMENT   = 'RID mean torque of the wind turbines (Nm)'
+      CALL IO_Field_write(TPFILE,TZFIELD,XTORQ_SUM/MEAN_COUNT)
+!
+      TZFIELD%CMNHNAME   = 'POWMME'
+      TZFIELD%CLONGNAME  = 'MEAN_POWER_EOL'
+      TZFIELD%CUNITS     = 'W'
+      TZFIELD%CCOMMENT   = 'RID mean power of the wind turbines (W)'
+      CALL IO_Field_write(TPFILE,TZFIELD,XPOW_SUM/MEAN_COUNT)
+!
+      TZFIELD = TFIELDMETADATA(                                &
+        CMNHNAME   = 'AOAMME',                                 &
+        CSTDNAME   = '',                                       &
+        CLONGNAME  = 'MEAN_ANGLE_OF_ATTACK',                   &
+        CUNITS     = 'rad',                                    &
+        CDIR       = '--',                                     &
+        CCOMMENT   = 'RID_AZI_RAD mean angle of attack (rad)', &
+        NGRID      = 1,                                        &
+        NTYPE      = TYPEREAL,                                 &
+        NDIMS      = 3,                                        &
+        LTIMEDEP   = .TRUE.                                    )
+      CALL IO_Field_write(TPFILE,TZFIELD,XAOA_SUM/MEAN_COUNT)
+!
+      TZFIELD = TFIELDMETADATA(                               &
+        CMNHNAME   = 'FAEROMME_RA',                           &
+        CSTDNAME   = '',                                      &
+        CLONGNAME  = 'MEAN_AERODYNAMIC_FORCE_RA',             &
+        CUNITS     = 'N',                                     &
+        CDIR       = '--',                                    &
+        CCOMMENT   = 'RID_AZI_RAD_XYZ mean forces (N) in RA', &
+        NGRID      = 1,                                       &
+        NTYPE      = TYPEREAL,                                &
+        NDIMS      = 4,                                       &
+        LTIMEDEP   = .TRUE.                                   )
+      CALL IO_Field_write(TPFILE,TZFIELD,XFAERO_RA_SUM/MEAN_COUNT)
+!
+! * Blade Equivalent Variables (rotor id, radial id, xyz)
+      TZFIELD = TFIELDMETADATA(                                      &
+        CMNHNAME   = 'AOAMME_BLEQ',                                  &
+        CSTDNAME   = '',                                             &
+        CLONGNAME  = 'MEAN_BLADE_EQ_AOA',                            &
+        CUNITS     = 'rad',                                          &
+        CDIR       = '--',                                           &
+        CCOMMENT   = 'RID_RAD mean blade eq. angle of attack (rad)', &
+        NGRID      = 1,                                              &
+        NTYPE      = TYPEREAL,                                       &
+        NDIMS      = 2,                                              &
+        LTIMEDEP   = .TRUE.                                          )
+      CALL IO_Field_write(TPFILE,TZFIELD,XAOA_BLEQ_SUM/MEAN_COUNT)
+
+      TZFIELD = TFIELDMETADATA(                                       &
+        CMNHNAME   = 'FAEROMME_BLEQ_RA',                              &
+        CSTDNAME   = '',                                              &
+        CLONGNAME  = 'MEAN_BLADE_EQ_AERO_F_RA',                       &
+        CUNITS     = 'N',                                             &
+        CDIR       = '--',                                            &
+        CCOMMENT   = 'RID_RAD_XYZ mean blade eq. forces (N) in RA',   &
+        NGRID      = 1,                                               &
+        NTYPE      = TYPEREAL,                                        &
+        NDIMS      = 3,                                               &
+        LTIMEDEP   = .TRUE.                                           )
+      CALL IO_Field_write(TPFILE,TZFIELD,XFAERO_BLEQ_RA_SUM/MEAN_COUNT)
+!
+    END IF
+!
+!             iv) Actuator Line Model
 !
   CASE('ALM') ! Actuator Line Method
 !
+! * 1D Variables (rotor id)
     TZFIELD = TFIELDMETADATA(                   &
-      CMNHNAME   = 'generic for ALM variables', & !Temporary name to ease identification
+      CMNHNAME   = '1D ALM var: (rot)',         & !Temporary name to ease identification
       CSTDNAME   = '',                          &
       CDIR       = '--',                        &
       NGRID      = 1,                           &
@@ -2180,14 +2392,15 @@ SELECT CASE(CMETH_EOL)
     TZFIELD%CCOMMENT   = 'RID instantaneous power (W) of wind turbines'
     CALL IO_Field_write(TPFILE,TZFIELD,XPOWT)
 !
-    TZFIELD = TFIELDMETADATA(                   &
-      CMNHNAME   = 'generic for ALM variables', & !Temporary name to ease identification
-      CSTDNAME   = '',                          &
-      CDIR       = '--',                        &
-      NGRID      = 1,                           &
-      NTYPE      = TYPEREAL,                    &
-      NDIMS      = 3,                           &
-      LTIMEDEP   = .TRUE.                       )
+! * 3D Variables (rotor id, blade id, radial id)
+    TZFIELD = TFIELDMETADATA(                             &
+      CMNHNAME   = '3D ALM var: (rot,blade,rad)',         & 
+      CSTDNAME   = '',                                    &
+      CDIR       = '--',                                  &
+      NGRID      = 1,                                     &
+      NTYPE      = TYPEREAL,                              &
+      NDIMS      = 3,                                     &
+      LTIMEDEP   = .TRUE.                                 )
 !
     TZFIELD%CMNHNAME   = 'ELT_RAD'
     TZFIELD%CLONGNAME  = 'ELT_RAD'
@@ -2213,14 +2426,15 @@ SELECT CASE(CMETH_EOL)
     TZFIELD%CCOMMENT   = 'RID_BID_EID instantaneous drag (N) in relative frame'
     CALL IO_Field_write(TPFILE,TZFIELD,XFDRAG_GLB)
 !
-    TZFIELD = TFIELDMETADATA(                   &
-      CMNHNAME   = 'generic for ALM variables', & !Temporary name to ease identification
-      CSTDNAME   = '',                          &
-      CDIR       = '--',                        &
-      NGRID      = 1,                           &
-      NTYPE      = TYPEREAL,                    &
-      NDIMS      = 4,                           &
-      LTIMEDEP   = .TRUE.                       )
+! * 4D Variables (rotor id, azimuthal id, radial id, xyz)
+    TZFIELD = TFIELDMETADATA(                                 &
+      CMNHNAME   = '4D ALM var: (rot,blade,rad,xyz)',         & 
+      CSTDNAME   = '',                                        &
+      CDIR       = '--',                                      &
+      NGRID      = 1,                                         &
+      NTYPE      = TYPEREAL,                                  &
+      NDIMS      = 4,                                         &
+      LTIMEDEP   = .TRUE.                                     )
 !
     TZFIELD%CMNHNAME   = 'FAERO_RE'
     TZFIELD%CLONGNAME  = 'AERODYNAMIC FORCE RE'
@@ -2236,8 +2450,9 @@ SELECT CASE(CMETH_EOL)
 !
     IF (MEAN_COUNT /= 0) THEN
 !
+! * 1D Variables (rotor id)
       TZFIELD = TFIELDMETADATA(                        &
-        CMNHNAME   = 'generic for ALM mean variables', & !Temporary name to ease identification
+        CMNHNAME   = '1D ALM mean var: (rot)',         & !Temporary name to ease identification
         CSTDNAME   = '',                               &
         CDIR       = '--',                             &
         NGRID      = 1,                                &
