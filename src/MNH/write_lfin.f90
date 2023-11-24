@@ -946,49 +946,49 @@ IF (MEAN_COUNT /= 0) THEN
 !
   TZFIELD%CMNHNAME   = 'QSPECME'
   TZFIELD%CLONGNAME  = 'QSPECME'
-  TZFIELD%CUNITS     = 'kg/kg'
+  TZFIELD%CUNITS     = 'kg kg-1'
   TZFIELD%CCOMMENT   = 'X_Y_Z_mean specific humidity'
   ZWORK3D = XQ_MEAN/MEAN_COUNT
   CALL IO_Field_write(TPFILE,TZFIELD,ZWORK3D)
 !
   TZFIELD%CMNHNAME   = 'RHME'
   TZFIELD%CLONGNAME  = 'RHME'
-  TZFIELD%CUNITS     = '%'
+  TZFIELD%CUNITS     = 'percent'
   TZFIELD%CCOMMENT   = 'X_Y_Z_mean relative humidity, water'
   ZWORK3D = XRH_W_MEAN/MEAN_COUNT
   CALL IO_Field_write(TPFILE,TZFIELD,ZWORK3D)
 !
   TZFIELD%CMNHNAME   = 'RHME_ICE'
   TZFIELD%CLONGNAME  = 'RHME_ICE'
-  TZFIELD%CUNITS     = '%'
+  TZFIELD%CUNITS     = 'percent'
   TZFIELD%CCOMMENT   = 'X_Y_Z_mean relative humidity, ice'
   ZWORK3D = XRH_I_MEAN/MEAN_COUNT
   CALL IO_Field_write(TPFILE,TZFIELD,ZWORK3D)
 !
   TZFIELD%CMNHNAME   = 'RHME_WEIG'
   TZFIELD%CLONGNAME  = 'RHME_WEIG'
-  TZFIELD%CUNITS     = '%'
+  TZFIELD%CUNITS     = 'percent'
   TZFIELD%CCOMMENT   = 'X_Y_Z_mean relative humidity, weighted'
   ZWORK3D = XRH_P_MEAN/MEAN_COUNT
   CALL IO_Field_write(TPFILE,TZFIELD,ZWORK3D)
 !
   TZFIELD%CMNHNAME   = 'RHMAXME'
   TZFIELD%CLONGNAME  = 'RHMAXME'
-  TZFIELD%CUNITS     = '%'
+  TZFIELD%CUNITS     = 'percent'
   TZFIELD%CCOMMENT   = 'X_Y_Z_mean column maximum relative humidity, water'
   ZWORK2D = XRH_W_MAXCOL_MEAN/MEAN_COUNT
   CALL IO_Field_write(TPFILE,TZFIELD,ZWORK3D)
 !
   TZFIELD%CMNHNAME   = 'RHMAXME_ICE'
   TZFIELD%CLONGNAME  = 'RHMAXME_ICE'
-  TZFIELD%CUNITS     = '%'
+  TZFIELD%CUNITS     = 'percent'
   TZFIELD%CCOMMENT   = 'X_Y_Z_mean column maximum relative humidity, ice'
   ZWORK2D = XRH_I_MAXCOL_MEAN/MEAN_COUNT
   CALL IO_Field_write(TPFILE,TZFIELD,ZWORK3D)
 !
   TZFIELD%CMNHNAME   = 'RHMAXME_WEIG'
   TZFIELD%CLONGNAME  = 'RHMAXME_WEIG'
-  TZFIELD%CUNITS     = '%'
+  TZFIELD%CUNITS     = 'percent'
   TZFIELD%CCOMMENT   = 'X_Y_Z_mean column maximum relative humidity, weighted'
   ZWORK2D = XRH_P_MAXCOL_MEAN/MEAN_COUNT
   CALL IO_Field_write(TPFILE,TZFIELD,ZWORK3D)
