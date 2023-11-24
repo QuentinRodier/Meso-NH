@@ -2454,7 +2454,7 @@ IF (LMOIST_ES .AND. (NRR>0)) THEN
        (3.5*ALOG(XTHT(:,:,:)*( XPABST(:,:,:)/XP00 )**(XRD/XCPD)  )   &
        - ALOG( XPABST(:,:,:)*0.01*ZWORK31(:,:,:) / ( 0.622+ZWORK31(:,:,:) ) ) &
        -4.805   )    ) + 55.
-  ZTHETAES(:,:,:)= XTHT(:,:,:) * EXP( (3376. / ZTHETAE(:,:,:) - 2.54)  &
+  ZTHETAES(:,:,:)= XTHT(:,:,:) * EXP( (3376. / ZTHETAES(:,:,:) - 2.54)  &
                *ZWORK31(:,:,:) *(1. +0.81 *ZWORK31(:,:,:)) )
   TZFIELD = TFIELDMETADATA(                                          &
     CMNHNAME   = 'THETAES',                                          &
