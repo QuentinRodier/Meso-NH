@@ -90,29 +90,27 @@
 !
 USE MODD_CONF,             only: CPROGRAM, NMODEL
 USE MODD_CONF_n
+USE MODD_DYN,              ONLY: XSEGLEN
+USE MODD_DYN_n,            ONLY: XTSTEP
 USE MODD_IO,               ONLY: TFILEDATA
+USE MODD_MNH_SURFEX_n
 USE MODD_NESTING
+USE MODD_TIME,             ONLY: TDTSEG
+USE MODD_TIME_n,           ONLY: TDTCUR
 USE MODD_TYPE_DATE,        ONLY: DATE_TIME
 !
+USE MODI_INIT_MNH
 USE MODI_MODEL_n
 USE MODI_KID_MODEL
+USE MODI_VERSION
 !
+USE MODE_DATETIME
 USE MODE_FINALIZE_MNH,     only: FINALIZE_MNH
 USE MODE_IO,               only: IO_Init
 USE MODE_IO_FILE,          only: IO_FILE_CLOSE
 USE MODE_ll
 USE MODE_MODELN_HANDLER
 !
-USE MODI_VERSION
-USE MODI_INIT_MNH
-USE MODD_MNH_SURFEX_n
-!
-USE MODD_TIME,              ONLY: TDTSEG
-USE MODD_TIME_n,            ONLY: TDTCUR
-USE MODE_DATETIME
-USE MODD_LUNIT_n,           ONLY: TLUOUT
-USE MODD_DYN,               ONLY: XSEGLEN
-USE MODD_DYN_n,             ONLY: XTSTEP
 !
 #ifdef CPLOASIS
   USE MODI_SFX_OASIS_INIT
@@ -132,7 +130,6 @@ END TYPE TFILEPTR
 !
 INTEGER       :: JMODEL                       ! loop index 
 INTEGER       :: ITEMP_MODEL1                 ! loop increment 
-REAL          :: ZTIMEC                       ! Cumulative time since the start of simulation (s)
 LOGICAL       :: GEXIT                        ! flag for the end of the temporal loop
 INTEGER       :: IINFO_ll                     ! return code of // routines
 TYPE(TFILEDATA), POINTER :: TZBAKFILE         ! Backup file
@@ -234,8 +231,8 @@ ITEMP_MODEL1=1
 DO
   ITEMP_MODEL1=ITEMP_MODEL1+1
   !
-  CALL DATETIME_DISTANCE(TDTSEG,TDTCUR,ZTIMEC)
-  WRITE(TLUOUT%NLU,*) 'Current simulation time: ', ZTIMEC, ' s / ', XSEGLEN-XTSTEP, ' s'
+  WRITE(CMNHMSG(1),*) 'Current simulation time: ', TDTCUR-TDTSEG, ' s / ', XSEGLEN-XTSTEP, ' s'
+  CALL PRINT_MSG( NVERB_INFO, 'GEN', 'MESONH' )
   CALL GO_TOMODEL_ll(1,IINFO_ll)
   CALL GOTO_MODEL(1)
   CALL MODEL_n( ITEMP_MODEL1, TZBAKFILE, TZDTMODELN, GEXIT )
