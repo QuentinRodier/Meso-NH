@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2022 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -6,6 +6,7 @@
 ! Modifications:
 !  P. Wautelet 31/08/2022: add PXHATM and PYHATM variables
 !  P. Wautelet 07/09/2022: add INTERP_HORGRID_1DIR_TO_MASSPOINTS, INTERP_HORGRID_TO_MASSPOINTS, INTERP_VERGRID_TO_MASSPOINTS
+!  P. Wautelet 24/11/2023: fix problem in INTERP_HORGRID_1DIR_TO_MASSPOINTS if domain is cyclic
 !-----------------------------------------------------------------
 !     ####################
       MODULE MODE_SET_GRID
@@ -450,10 +451,12 @@ SUBROUTINE INTERP_HORGRID_1DIR_TO_MASSPOINTS( HDIR, PHAT, PHATM )
   ! Interpolate 1 direction of horizontal grid to mass points
 
   USE MODD_ARGSLIST_ll, ONLY: LIST1D_ll
+  USE MODD_PARAMETERS,  ONLY: JPHEXT
 
   USE MODE_ARGSLIST_ll, ONLY: ADD1DFIELD_ll, CLEANLIST1D_ll
   USE MODE_EXCHANGE_ll, ONLY: UPDATE_1DHALO_ll
   USE MODE_MSG
+  USE MODE_TOOLS_ll,    ONLY: LNORTH_ll, LSOUTH_ll, LEAST_ll, LWEST_ll
 
   IMPLICIT NONE
 
@@ -463,6 +466,7 @@ SUBROUTINE INTERP_HORGRID_1DIR_TO_MASSPOINTS( HDIR, PHAT, PHATM )
 
   CHARACTER(LEN=:), ALLOCATABLE :: YNAME
   INTEGER                       :: IINFO_ll ! return code
+  REAL, DIMENSION(JPHEXT)       :: ZBEG, ZEND
   TYPE(LIST1D_ll),  POINTER     :: TZLIST   ! pointer for the list of 1D fields to be communicated
 
 
@@ -481,9 +485,27 @@ SUBROUTINE INTERP_HORGRID_1DIR_TO_MASSPOINTS( HDIR, PHAT, PHATM )
     CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'INTERP_HORGRID_1DIR_TO_MASSPOINTS', 'invalid direction (valid: X or Y)' )
   END IF
 
+  ! Save state outside of the physical domain (necessary to overcome overwrite in UPDATE_1DHALO_ll if cyclic domain)
+  ! This is a relatively clean hack. An other way would be to force CLBCX/Y to 'OPEN' but it seems to have
+  ! unexpected results later.
+  IF ( ( HDIR == 'X' .AND. LWEST_ll() ) .OR. ( HDIR == 'Y' .AND. LSOUTH_ll() ) ) THEN
+    ZBEG(:) = PHATM( LBOUND(PHATM,1)          : LBOUND(PHATM,1)+JPHEXT-1 )
+  END IF
+  IF ( ( HDIR == 'X' .AND. LEAST_ll() ) .OR. ( HDIR == 'Y' .AND. LNORTH_ll() ) ) THEN
+    ZEND(:) = PHATM( UBOUND(PHATM,1)-JPHEXT+1 : UBOUND(PHATM,1)          )
+  END IF
+
   CALL ADD1DFIELD_ll( HDIR, TZLIST, PHATM, YNAME )
   CALL UPDATE_1DHALO_ll( TZLIST, IINFO_ll )
   CALL CLEANLIST1D_ll( TZLIST )
+
+  ! Restore state outside of the physical domain (necessary to overcome overwrite in UPDATE_1DHALO_ll if cyclic domain)
+  IF ( ( HDIR == 'X' .AND. LWEST_ll() ) .OR. ( HDIR == 'Y' .AND. LSOUTH_ll() ) ) THEN
+    PHATM( LBOUND(PHATM,1)          : LBOUND(PHATM,1)+JPHEXT-1 ) = ZBEG(:)
+  END IF
+  IF ( ( HDIR == 'X' .AND. LEAST_ll() ) .OR. ( HDIR == 'Y' .AND. LNORTH_ll() ) ) THEN
+    PHATM( UBOUND(PHATM,1)-JPHEXT+1 : UBOUND(PHATM,1)          ) = ZEND(:)
+  END IF
 
 END SUBROUTINE INTERP_HORGRID_1DIR_TO_MASSPOINTS
 !-----------------------------------------------------------------
