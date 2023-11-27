@@ -143,9 +143,11 @@ USE MODD_ARGSLIST_ll,       ONLY: LIST_ll
 USE MODD_BLOWSNOW,          ONLY: LBLOWSNOW, NBLOWSNOW_2D, YPBLOWSNOW_2D
 USE MODD_BLOWSNOW_n,        ONLY: XRSNWCANOS
 USE MODD_BUDGET,            ONLY: LBUDGET_TH, LBUDGET_RV, NBUDGET_RV, NBUDGET_TH, TBUDGETS
-USE MODD_CH_AEROSOL,        ONLY: LORILAM
+USE MODD_CH_AEROSOL,        ONLY: LORILAM, NSP, NCARB, NSOA
+USE MODD_CH_AERO_n,         ONLY: XMI
 USE MODD_CH_FLX_n,          ONLY: XCHFLX
 USE MODD_CH_MNHC_n,         ONLY: LUSECHEM
+USE MODD_CH_M9_SCHEME
 USE MODD_CONF,              ONLY: CPROGRAM, LCARTESIAN, NHALO, NVERB
 USE MODD_CONF_n,            ONLY: NRR
 USE MODD_COUPLING_LEVELS_n
@@ -160,7 +162,8 @@ USE MODD_DIM_n,             ONLY: NKMAX
 USE MODD_DIMPHYEX,          ONLY: DIMPHYEX_t
 USE MODD_DUST,              ONLY: LDUST 
 USE MODD_DYN_n,             ONLY: XTSTEP
-USE MODD_FIELD_n,           ONLY: XUT, XVT, XWT, XTHT, XRT, XPABST, XSVT, XTKET, XZWS, XRTHS, XRRS
+USE MODD_FIELD_n,           ONLY: XUT, XVT, XWT, XTHT, XRT, XPABST, XSVT, XTKET, XZWS, XRTHS, XRRS, &
+                                  XFLX_SLT, XFLXT_SLT, XFLX_AER, XFLXT_AER, XFLX_DMS, XFLXT_DMS
 USE MODD_FIRE_n,            ONLY: XLSPHI, XBMAP, XFMR0, XFMRFA, XFMWF0, XFMR00, XFMIGNITION, XFMFUELTYPE,    &
                                   XFIRETAU, XFLUXPARAMH, XFLUXPARAMW, XFIRERW, XFMASE, XFMAWC, XFMWALKIG,    &
                                   XFMFLUXHDH, XFMFLUXHDW, XFMHWS, XFMWINDU, XFMWINDV, XFMWINDW, XGRADLSPHIX, &
@@ -187,7 +190,7 @@ USE MODD_RADIATIONS_n,      ONLY: XFLALWD, XCCO2, XTSIDER, &
                                   XSW_BANDS, XDIRSRFSWD, XSCAFLASWD, &
                                   XZENITH, XAZIM, XAER, XSWU, XLWU
 USE MODD_REF_n,             ONLY: XEXNREF, XRHODREF, XRHODJ
-USE MODD_SALT,              ONLY: LSALT
+USE MODD_SALT,              ONLY: LSALT, NMODE_SLT, XINIRADIUS_SLT, XINISIG_SLT, CRGUNITS, JPSALTORDER
 USE MODD_STATION_n,         ONLY: LSTATION
 USE MODD_SURF_PAR,          ONLY: XUNDEF_SFX => XUNDEF
 USE MODD_TIME,              ONLY: TDTSEG
@@ -455,6 +458,11 @@ REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: ZFIREFUELMAP                     ! Fuel
 CHARACTER(LEN=7)                      :: YFUELMAPFILE                     ! Fuel Map file name
 TYPE(LIST_ll), POINTER                :: TZFIELDFIRE_ll                   ! list of fields to exchange
 !
+INTEGER :: II
+INTEGER :: JSV_DMS, JSV_SLT   ! index for sea salt flux
+INTEGER :: IMOMENTS  ! number of moments for sea salt
+REAL,DIMENSION(:),       ALLOCATABLE  :: ZINIRADIUS          ! initial mean radius
+INTEGER                               :: IMODEIDX            ! [idx] loop counters
 !-------------------------------------------------------------------------------
 !
 !
@@ -1065,6 +1073,13 @@ IF (LUSECHEM) THEN
       PSFSV(:,:,JSV) = ZSFTS(:,:,JSV) * XMD / ( XAVOGADRO * XRHODREF(:,:,IKB))
       IF ((LCHEMDIAG).AND.(CPROGRAM == 'DIAG  ')) XCHFLX(:,:,JSV-NSV_CHEMBEG+1) = PSFSV(:,:,JSV)    
    END DO
+    IF (CPROGRAM == 'MESONH') THEN
+    ! net flux of so2 in kg/m2/s
+    XFLX_DMS(:,:) = ZSFTS(:,:,NSV_CHEMBEG-1+JP_DMS) *62.13E-3 / XAVOGADRO
+    ! total net flux of so2 in kg/m2
+    XFLXT_DMS(:,:) = XFLXT_DMS(:,:)+ ZSFTS(:,:,NSV_CHEMBEG-1+JP_DMS)*XTSTEP
+    END IF
+
 ELSE
   PSFSV(:,:,NSV_CHEMBEG:NSV_CHEMEND) = 0.
 END IF
@@ -1088,6 +1103,39 @@ IF (LSALT) THEN
 ELSE
   PSFSV(:,:,NSV_SLTBEG:NSV_SLTEND) = 0.
 END IF
+
+IF ((LSALT).AND.(CPROGRAM == 'MESONH')) THEN
+  IMOMENTS = INT(NSV_SLTEND - NSV_SLTBEG + 1) / NMODE_SLT
+  ALLOCATE (ZINIRADIUS(NMODE_SLT))
+
+  DO JSV = 1, NMODE_SLT
+    JSV_SLT = NSV_SLTBEG + 1 + (JSV-1)*IMOMENTS
+
+    IF (IMOMENTS == 1) THEN ! conversion number to mass
+    IMODEIDX = JPSALTORDER(JSV)
+      IF (CRGUNITS=="MASS") THEN
+       ZINIRADIUS(JSV) = XINIRADIUS_SLT(IMODEIDX) * EXP(-3.*(LOG(XINISIG_SLT(IMODEIDX)))**2)
+      ELSE
+       ZINIRADIUS(JSV) = XINIRADIUS_SLT(IMODEIDX)
+      END IF
+
+    
+! Instantaneous net flux
+    XFLX_SLT(:,:,JSV) = ZSFTS(:,:,JSV_SLT-1) * 4./3. * XPI * XMD / 1.d18 * ZINIRADIUS(JSV)**3 / &
+                        (EXP(-4.5*(LOG(XINISIG_SLT(IMODEIDX)))**2))
+
+    ELSE ! moment 2 or 3,  direct mass flux from surfex
+! Instantaneous net flux
+    XFLX_SLT(:,:,JSV) = ZSFTS(:,:,JSV_SLT) 
+    END IF
+
+! Total net flux
+    XFLXT_SLT(:,:,JSV) = XFLXT_SLT(:,:,JSV) + &
+                         ZSFTS(:,:,JSV_SLT) * XTSTEP
+  END DO
+  DEALLOCATE(ZINIRADIUS)
+END IF
+
 !
 !* conversion from aerosol flux (molec/m2/s) to (ppv.m.s-1)
 !
@@ -1095,6 +1143,19 @@ IF (LORILAM) THEN
   DO JSV=NSV_AERBEG,NSV_AEREND
     PSFSV(:,:,JSV) = ZSFTS(:,:,JSV) * XMD / ( XAVOGADRO * XRHODREF(:,:,IKB))
   END DO
+  IF (CPROGRAM == 'MESONH') THEN
+  DO JSV=NSV_AERBEG,NSV_AERBEG+(NSP+NCARB+NSOA)*2-1
+  JI=INT((JSV-NSV_AERBEG+1)/2. +0.5)
+! Instantaneous net flux (kg/m2/s)
+    XFLX_AER(:,:,JSV-NSV_AERBEG+1) = ZSFTS(:,:,JSV) * XMI(:,:,IKB,JI) &
+                                     *1E-3  / XAVOGADRO
+
+! Total net flux
+    XFLXT_AER(:,:,JSV-NSV_AERBEG+1) = XFLXT_AER(:,:,JSV-NSV_AERBEG+1) + &
+                         XFLX_AER(:,:,JSV-NSV_AERBEG+1) * XTSTEP
+  END DO
+  END IF
+
 ELSE
   PSFSV(:,:,NSV_AERBEG:NSV_AEREND) = 0.
 END IF

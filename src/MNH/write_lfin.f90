@@ -223,6 +223,7 @@ USE MODD_EOL_SHARED_IO
 USE MODD_FIELD_n
 use modd_field,       only: NMNHDIM_UNUSED, tfieldmetadata, tfieldlist, NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NOTLISTED, &
                             TYPECHAR, TYPEDATE, TYPEINT, TYPELOG, TYPEREAL
+use mode_field,           only: Find_field_id_from_mnhname
 USE MODD_FIRE_n
 #ifdef MNH_FOREFIRE
 USE MODD_FOREFIRE
@@ -301,6 +302,7 @@ INTEGER           :: IRESP          ! IRESP  : return-code if a problem appears
 INTEGER           :: JSV            ! loop index for scalar variables
 !
 CHARACTER(LEN=3)  :: YFRC           ! to mark the time of the forcing
+CHARACTER(LEN=1)  :: YFRC1          ! to mark the time of the forcing
 INTEGER           :: JT             ! loop index
 !
 REAL,DIMENSION(:,:), ALLOCATABLE  :: ZWORK2D     ! Working array
@@ -1127,6 +1129,98 @@ IF (NSV >= 1 ) THEN
   END IF
   END IF
   END IF
+
+IF ((LORILAM).AND.(CPROGRAM == 'MESONH')) THEN
+DO JSV = 1 , NSV_AER
+    TZFIELD = TFIELDMETADATA(                                      &
+      CMNHNAME   = 'FLX_'//TRIM(UPCASE(CAERONAMES(JSV))),          &
+      CSTDNAME   = '',                                             &
+      CLONGNAME  = 'FLX_'//TRIM(UPCASE(CAERONAMES(JSV))),          &
+      CUNITS     = 'kg m-2 s-1',                                   &
+      CDIR       = 'XY',                                           &
+      CCOMMENT   = 'Aerosols mass flux', &
+      NGRID      = 1,                                              &
+      NTYPE      = TYPEREAL,                                       &
+      NDIMS      = 2,                                              &
+      LTIMEDEP   = .TRUE.                                          )
+    CALL IO_Field_write(TPFILE,TZFIELD,XFLX_AER(:,:,JSV))
+
+    TZFIELD = TFIELDMETADATA(                                      &
+      CMNHNAME   = 'FLXT_'//TRIM(UPCASE(CAERONAMES(JSV))),         &
+      CSTDNAME   = '',                                             &
+      CLONGNAME  = 'FLXT_'//TRIM(UPCASE(CAERONAMES(JSV))),         &
+      CUNITS     = 'kg m-2',                                       &
+      CDIR       = 'XY',                                           &
+      CCOMMENT   = 'Integrated aerosols flux since start/restart',  &
+      NGRID      = 1,                                              &
+      NTYPE      = TYPEREAL,                                       &
+      NDIMS      = 2,                                              &
+      LTIMEDEP   = .TRUE.                                          )
+    CALL IO_Field_write(TPFILE,TZFIELD,XFLXT_AER(:,:,JSV))
+END DO
+END IF
+
+IF ((LSALT).AND.(CPROGRAM == 'MESONH')) THEN
+DO JSV = 1 , NMODE_SLT
+    WRITE (YFRC1,'(I1.1)') JSV
+
+    TZFIELD = TFIELDMETADATA(                                      &
+      CMNHNAME   = 'FLX_SLT'//YFRC1,                               &
+      CSTDNAME   = '',                                             &
+      CLONGNAME  = 'FLX_SLT'//YFRC1,                               &
+      CUNITS     = 'part m-2 s-1',                                   &
+      CDIR       = 'XY',                                           &
+      CCOMMENT   = 'Sea salt mass flux',                           &
+      NGRID      = 1,                                              &
+      NTYPE      = TYPEREAL,                                       &
+      NDIMS      = 2,                                              &
+      LTIMEDEP   = .TRUE.                                          )
+    CALL IO_Field_write(TPFILE,TZFIELD,XFLX_SLT(:,:,JSV))
+
+    TZFIELD = TFIELDMETADATA(                                      &
+      CMNHNAME   = 'FLXT_SLT'//YFRC1,                              &
+      CSTDNAME   = '',                                             &
+      CLONGNAME  = 'FLXT_SLT'//YFRC1,                              &
+      CUNITS     = 'part m-2',                                       &
+      CDIR       = 'XY',                                           &
+      CCOMMENT   = 'Integrated sea salt flux since start/restart', &
+      NGRID      = 1,                                              &
+      NTYPE      = TYPEREAL,                                       &
+      NDIMS      = 2,                                              &
+      LTIMEDEP   = .TRUE.                                          )
+    CALL IO_Field_write(TPFILE,TZFIELD,XFLXT_SLT(:,:,JSV))
+END DO
+END IF
+
+IF ((LUSECHEM).AND.(CPROGRAM == 'MESONH')) THEN
+    TZFIELD = TFIELDMETADATA(                                      &
+      CMNHNAME   = 'FLX_DMS',                                      &
+      CSTDNAME   = '',                                             &
+      CLONGNAME  = 'FLX_DMS',                                      &
+      CUNITS     = 'kg m-2 s-1',                                   &
+      CDIR       = 'XY',                                           &
+      CCOMMENT   = 'Sea salt mass flux', &
+      NGRID      = 1,                                              &
+      NTYPE      = TYPEREAL,                                       &
+      NDIMS      = 2,                                              &
+      LTIMEDEP   = .TRUE.                                          )
+    CALL IO_Field_write(TPFILE,TZFIELD,XFLX_DMS(:,:))
+
+    TZFIELD = TFIELDMETADATA(                                      &
+      CMNHNAME   = 'FLXT_DMS',                                     &
+      CSTDNAME   = '',                                             &
+      CLONGNAME  = 'FLXT_DMS',                                     &
+      CUNITS     = 'kg m-2',                                       &
+      CDIR       = 'XY',                                           &
+      CCOMMENT   = 'Integrated sea salt flux since start/restart', &
+      NGRID      = 1,                                              &
+      NTYPE      = TYPEREAL,                                       &
+      NDIMS      = 2,                                              &
+      LTIMEDEP   = .TRUE.                                          )
+    CALL IO_Field_write(TPFILE,TZFIELD,XFLXT_DMS(:,:))
+END IF
+
+
 
   ! electrical scalar variables
   IF (CELEC /= 'NONE') THEN

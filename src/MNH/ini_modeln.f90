@@ -394,7 +394,7 @@ USE MODD_RECYCL_PARAM_n
 USE MODD_REF
 USE MODD_REF_n
 USE MODD_RELFRC_n
-use MODD_SALT,              only: LSALT
+use MODD_SALT,              only: LSALT, NMODE_SLT
 use MODD_SALT_OPT_LKT,      only: NMAX_RADIUS_LKT_SALT=>NMAX_RADIUS_LKT, NMAX_SIGMA_LKT_SALT=>NMAX_SIGMA_LKT,               &
                                   NMAX_WVL_SW_SALT=>NMAX_WVL_SW,                                                            &
                                   XEXT_COEFF_WVL_LKT_SALT=>XEXT_COEFF_WVL_LKT, XEXT_COEFF_550_LKT_SALT=>XEXT_COEFF_550_LKT, &
@@ -2555,6 +2555,22 @@ RCCO2 = 360.0E-06 * 44.0E-03 / XMD
 !
 !*      17.2   Externalized surface fields
 !              ---------------------------
+IF (CPROGRAM=='MESONH') THEN
+  ! ajout flux aerosols marins
+  ALLOCATE(XFLXT_SLT(IIU,IJU,NMODE_SLT))
+  ALLOCATE(XFLX_SLT(IIU,IJU,NMODE_SLT))
+  ALLOCATE(XFLX_AER(IIU,IJU,NSV_AER))
+  ALLOCATE(XFLXT_AER(IIU,IJU,NSV_AER))
+  ALLOCATE(XFLX_DMS(IIU,IJU))
+  ALLOCATE(XFLXT_DMS(IIU,IJU))
+  XFLX_SLT(:,:,:) = 0.
+  XFLXT_SLT(:,:,:) = 0.
+  XFLX_AER(:,:,:) = 0.
+  XFLXT_AER(:,:,:) = 0.
+  XFLX_DMS(:,:) = 0.
+  XFLXT_DMS(:,:) = 0.
+END IF
+
 !
 ALLOCATE(ZCO2(IIU,IJU))
 ZCO2(:,:) = XCCO2
