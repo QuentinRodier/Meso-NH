@@ -431,7 +431,7 @@ call Sensor_write_workarrays_deallocate( )
 !----------------------------------------------------------------------------
 !Treat vertical profiles
 
-IPROCZ = 10 + IRR + NSV
+IPROCZ = 11 + IRR + NSV
 IF ( CCLOUD(1:3) == 'ICE' ) IPROCZ = IPROCZ + 1
 
 call Sensor_write_workarrays_allocate( iku, istore, iprocz )
@@ -449,6 +449,7 @@ if ( irr >= 7 ) call Add_profile( 'Rh', '1D Hail mixing ratio',               'k
 call Add_profile( 'FF', 'Horizontal wind', 'm s-1', tpflyer%xffz(:,:) )
 
 call Add_profile( 'T',  'Temperature',     'K',     tpflyer%xtz(:,:) )
+call Add_profile( 'P',  'Pressure',     'Pa',     tpflyer%xpz(:,:) )
 
 call Add_profile( 'IWC', 'Ice water content',    'kg m-3', tpflyer%xiwcz(:,:) )
 call Add_profile( 'LWC', 'Liquid water content', 'kg m-3', tpflyer%xlwcz(:,:) )
