@@ -2,7 +2,7 @@
 # Version of PACKAGE MESONH "Open distribution"
 #              PACK-MNH-V5-6-2
 #              DATE : 28/11/2023
-#              VERSION : MESONH MASDEV5_6 + BUG-1
+#              VERSION : MESONH MASDEV5_6 + BUG-2
 #
 #  MAP
 #
@@ -199,19 +199,19 @@ git checkout -b MYB-MNH-V5-6-2 PACK-MNH-V5-6-2
 # you could check/update quickly differences with the new version of the
 # package without having to download entirely the full package.
 #
-#  Suppose that a new version, for example "PACK-MNH-V5-6-2", is announced.
+#  Suppose that a new version, for example "PACK-MNH-V5-6-3", is announced.
 #
 #  To see the differences with your working copy, do:
 #
 
 git fetch
-git diff HEAD PACK-MNH-V5-6-2
+git diff HEAD PACK-MNH-V5-6-3
 
 #
 #  To go to the new version, you can, for example, create a new local branch:
 #
 
-git checkout -b MYB-MNH-V5-6-2 PACK-MNH-V5-6-2
+git checkout -b MYB-MNH-V5-6-3 PACK-MNH-V5-6-3
 
 #
 # At any time, you can also check for "uptodate" changes in the Git branch
