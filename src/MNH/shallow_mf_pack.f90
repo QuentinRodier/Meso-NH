@@ -108,6 +108,7 @@ END MODULE MODI_SHALLOW_MF_PACK
 !  S. Riette      11/2016: support for CFRAC_ICE_SHALLOW_MF
 !  P. Wautelet 28/03/2019: use MNHTIME for time measurement variables
 !  P. Wautelet    02/2020: use the new data structures and subroutines for budgets
+!  C. Barthe   23/11/2023: allow negative values for the tendencies of electric charges
 ! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -126,7 +127,7 @@ USE MODD_BUDGET,          ONLY: TBUDGETS,TBUCONF,lbudget_th,nbudget_th
 USE MODD_CONF
 USE MODD_IO,              ONLY: TFILEDATA
 use modd_field,           ONLY: tfieldmetadata, TYPEREAL
-USE MODD_NSV,             ONLY: XSVMIN, NSV_LGBEG, NSV_LGEND
+USE MODD_NSV,             ONLY: XSVMIN, NSV_LGBEG, NSV_LGEND, NSV_ELECBEG, NSV_ELECEND
 USE MODD_PARAMETERS
 USE MODD_PARAM_MFSHALL_n
 USE modd_precision,       ONLY: MNHTIME
@@ -286,8 +287,13 @@ PRVS(:,:,:)   = PRVS(:,:,:)  +MYM(  &
 !
 DO JSV=1,ISV 
   IF (LNOMIXLG .AND. JSV >= NSV_LGBEG .AND. JSV<= NSV_LGEND) CYCLE
-  PRSVS(:,:,:,JSV)   = MAX((PRSVS(:,:,:,JSV)  +    &
-                  PRHODJ(:,:,:)*ZDSVDT_MF(:,:,:,JSV)),XSVMIN(JSV))
+  IF (JSV > NSV_ELECBEG .AND. JSV < NSV_ELECEND) THEN
+    ! electric charges carried by hydrometeors can be negative !!!
+    PRSVS(:,:,:,JSV)   = PRSVS(:,:,:,JSV) + PRHODJ(:,:,:) * ZDSVDT_MF(:,:,:,JSV)
+  ELSE
+    PRSVS(:,:,:,JSV)   = MAX((PRSVS(:,:,:,JSV)  +    &
+                    PRHODJ(:,:,:)*ZDSVDT_MF(:,:,:,JSV)),XSVMIN(JSV))
+  END IF
 END DO     
 !
 !!! 4. Prints the fluxes in output file
