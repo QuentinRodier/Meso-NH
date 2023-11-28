@@ -173,6 +173,7 @@ END MODULE MODI_ELEC_TENDENCIES
 !! C. Barthe   12/04/2022   include electrification from LIMA
 !! C. Barthe   22/03/2023   5-6: take into account news from LIMA (Ns, Ng, Nh, CIBU and RDSF) and PHYEX
 !! C. Barthe   13/07/2023   5-6: Ns, Ng and Nh can be pronostic variables (LIMA2)
+!! C. Barthe   22/11/2023   initialize Nx to 0 when 1-moment
 !!
 !------------------------------------------------------------------
 !
@@ -585,6 +586,11 @@ IF (KMICRO >= 0) THEN
     IF (IMOM_S == 2) ZCST(JL) = PCST(II1(JL),II2(JL),II3(JL))
     IF (IMOM_G == 2) ZCGT(JL) = PCGT(II1(JL),II2(JL),II3(JL))
     IF (IMOM_H == 2) ZCHT(JL) = PCHT(II1(JL),II2(JL),II3(JL))
+    IF (IMOM_C == 1) ZCCT(JL) = 0.
+    IF (IMOM_R == 1) ZCRT(JL) = 0.
+    IF (IMOM_S == 1) ZCST(JL) = 0.
+    IF (IMOM_G == 1) ZCGT(JL) = 0.
+    IF (IMOM_H == 1) ZCHT(JL) = 0.
     !
     ZRVT(JL)  = PRVT(II1(JL),II2(JL),II3(JL))
     ZRCT(JL)  = PRCT(II1(JL),II2(JL),II3(JL))
