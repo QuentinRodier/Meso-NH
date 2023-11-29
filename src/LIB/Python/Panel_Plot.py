@@ -122,6 +122,16 @@ class PanelPlot():
                 newcolor_map[:i, :] = whites
         newcmp = ListedColormap(newcolor_map)
         return newcmp
+    
+    def addColorcm(self, colormap_in):
+        """
+          Assign the last color of the colormap to the values out of range 
+        """
+        colormap = cm.get_cmap(colormap_in, 256)
+
+        colormap.set_under(color=colormap(1./256))
+        colormap.set_over(color=colormap(1.-1./256))
+        return(colormap)
 
     def set_Title(self, ax, i, title, Lid_overlap, xlab, ylab):
         """
@@ -230,7 +240,8 @@ class PanelPlot():
 
     def psectionV(self, Lxx=[], Lzz=[], Lvar=[], Lxlab=[], Lylab=[], Ltitle=[], Lminval=[], Lmaxval=[],
                   Lstep=[], Lstepticks=[], Lcolormap=[], Lcbarlabel=[], LcolorLine=[], Lcbformatlabel=[], Llinewidth=[],
-                  Lfacconv=[], ax=[], Lid_overlap=[], colorbar=True, orog=[], Lxlim=[], Lylim=[], Ltime=[], Lpltype=[], LaddWhite_cm=[], LwhiteTop=[]):
+                  Lfacconv=[], ax=[], Lid_overlap=[], colorbar=True, orog=[], Lxlim=[], Lylim=[], Ltime=[], Lpltype=[], LaddWhite_cm=[], LwhiteTop=[], 
+                  Lextendcolorbar=[], PrintMinMaxText=True):
         """
           Vertical cross section plot
           Parameters :
@@ -260,6 +271,8 @@ class PanelPlot():
               - LwhiteTop    : List of boolean to add the white color at the first top (high value). If false, the white is added at the bottom if Laddwhite_cm=T
               - Lcbformatlabel: List of boolean to reduce the format to exponential 1.1E+02 format colorbar label
               - orog         : Orography variable
+              - Lextendcolorbar : List of boolean to extend the colorbar in both directions
+              - PrintMinMaxText: Boolean, True to add a min/max values of the plotted variables on top of the graph
         """
         self.ax = ax
         firstCall = (len(self.ax) == 0)
@@ -291,6 +304,8 @@ class PanelPlot():
             Lcbformatlabel = [False] * len(Lvar)
         if not Llinewidth:
             Llinewidth = [1.0] * len(Lvar)
+        if not Lextendcolorbar: 
+            Lextendcolorbar = [False] * len(Lvar)
 
         #  Add an extra percentage of the top max value for forcing the colorbar show the true user maximum value (correct a bug)
         Lmaxval = list(map(lambda x, y: x + 1E-6 * y, Lmaxval, Lstep))  # The extra value is 1E-6 times the step ticks of the colorbar
@@ -312,7 +327,8 @@ class PanelPlot():
             norm = mpl.colors.Normalize(vmax=Lmaxval[i], vmin=Lminval[i])
 
             #  Print min/max (stout and on plot)
-            self.set_minmaxText(self.ax, iax, var, Ltitle[i], Lid_overlap, Lfacconv[i])
+            if PrintMinMaxText:
+                self.set_minmaxText(self.ax, iax, var, Ltitle[i], Lid_overlap, Lfacconv[i])
 
             #  Print time validity
             if Ltime:
@@ -328,6 +344,8 @@ class PanelPlot():
             #  Add White to colormap
             if LaddWhite_cm[i] and Lcolormap:
                 Lcolormap[i] = self.addWhitecm(Lcolormap[i], len(levels_contour), LwhiteTop[i])
+            elif not LaddWhite_cm[i] and Lcolormap:
+                Lcolormap[i] = self.addColorcm(Lcolormap[i])
 
             #  Plot
             if Lpltype[i] == 'c':  # Contour
@@ -338,9 +356,13 @@ class PanelPlot():
                     cf = self.ax[iax].contour(Lxx[i], Lzz[i], var * Lfacconv[i], levels=levels_contour,
                                               norm=norm, vmin=Lminval[i], vmax=Lmaxval[i], cmap=Lcolormap[i], linewidths=Llinewidth[i])
             else:  # Contourf
-                cf = self.ax[iax].contourf(Lxx[i], Lzz[i], var * Lfacconv[i], levels=levels_contour,
+                if Lextendcolorbar[i]: 
+                    cf = self.ax[iax].contourf(Lxx[i], Lzz[i], var * Lfacconv[i], levels=levels_contour,
+                                           norm=norm, vmin=Lminval[i], vmax=Lmaxval[i], cmap=Lcolormap[i], extend='both')
+                else:
+                    cf = self.ax[iax].contourf(Lxx[i], Lzz[i], var * Lfacconv[i], levels=levels_contour,
                                            norm=norm, vmin=Lminval[i], vmax=Lmaxval[i], cmap=Lcolormap[i])
-
+                        
             #  Title
             self.set_Title(self.ax, iax, Ltitle[i], Lid_overlap, Lxlab[i], Lylab[i])
 
@@ -379,7 +401,7 @@ class PanelPlot():
                 # fontsize=self.cbTicksLabelSize) #TODO bug, levels not recognized
 
             # Filling area under topography
-            if not orog == []:
+            if len(orog) > 0:
                 if Lxx[i].ndim == 1:
                     self.ax[iax].fill_between(Lxx[i], orog, color='black', linewidth=0.2)
                 else:
@@ -429,6 +451,7 @@ class PanelPlot():
               - LaxisColor : List of colors for multiple x-axis overlap
               - LlocLegend : List of localisation of the legend : 'best',  'upper left', 'upper right', 'lower left', 'lower right',
                              'upper center', 'lower center', 'center left', 'center right', 'center'
+              - PrintMinMaxText: Boolean, True to add a min/max values of the plotted variables on top of the graph
         """
         self.ax = ax
         firstCall = (len(self.ax) == 0)
@@ -520,7 +543,8 @@ class PanelPlot():
 
     def psectionH(self, lon=[], lat=[], Lvar=[], Lcarte=[], Llevel=[], Lxlab=[], Lylab=[], Ltitle=[], Lminval=[], Lmaxval=[],
                   Lstep=[], Lstepticks=[], Lcolormap=[], LcolorLine=[], Lcbarlabel=[], Lproj=[], Lfacconv=[], coastLines=True, ax=[],
-                  Lid_overlap=[], colorbar=True, Ltime=[], LaddWhite_cm=[], LwhiteTop=[], Lpltype=[], Lcbformatlabel=[], Llinewidth=[]):
+                  Lid_overlap=[], colorbar=True, Ltime=[], LaddWhite_cm=[], LwhiteTop=[], Lpltype=[], Lcbformatlabel=[], Llinewidth=[], 
+                  Lextendcolorbar=[], PrintMinMaxText=True):
         """
           Horizontal cross section plot
           Parameters :
@@ -551,6 +575,9 @@ class PanelPlot():
               - LaddWhite_cm : List of boolean to add white color to a colormap at the first (low value) tick colorbar
               - LwhiteTop    : List of boolean to add the white color at the first top (high value). If false, the white is added at the bottom if Laddwhite_cm=T
               - Lcbformatlabel: List of boolean to reduce the format to exponential 1.1E+02 format colorbar label
+              - Lextendcolorbar : List of boolean to extend the colorbar in both directions
+              - PrintMinMaxText: Boolean, True to add a min/max values of the plotted variables on top of the graph
+
         """
         self.ax = ax
         firstCall = (len(self.ax) == 0)
@@ -582,6 +609,8 @@ class PanelPlot():
             Lcbformatlabel = [False] * len(Lvar)
         if not Llinewidth:
             Llinewidth = [1.0] * len(Lvar)
+        if not Lextendcolorbar: 
+            Lextendcolorbar = [False] * len(Lvar)
 
         #  Add an extra percentage of the top max value for forcing the colorbar show the true user maximum value (correct a bug)
         if Lstep:
@@ -626,7 +655,8 @@ class PanelPlot():
                 vartoPlot = var[Llevel[i], :, :]
 
             #  Print min/max (stout and on plot)
-            self.set_minmaxText(self.ax, iax, vartoPlot, Ltitle[i], Lid_overlap, Lfacconv[i])
+            if PrintMinMaxText:
+                self.set_minmaxText(self.ax, iax, vartoPlot, Ltitle[i], Lid_overlap, Lfacconv[i])
 
             #  Print time validity
             if Ltime:
@@ -642,6 +672,8 @@ class PanelPlot():
             #  Add White to colormap
             if LaddWhite_cm[i] and Lcolormap:
                 Lcolormap[i] = self.addWhitecm(Lcolormap[i], len(levels_contour), LwhiteTop[i])
+            elif not LaddWhite_cm[i] and Lcolormap:
+                Lcolormap[i] = self.addColorcm(Lcolormap[i])
 
             #  Plot
             if Lproj:
@@ -653,14 +685,22 @@ class PanelPlot():
                         cf = self.ax[iax].contour(lon[i], lat[i], vartoPlot * Lfacconv[i], levels=levels_contour, transform=Lproj[i],
                                                   norm=norm, vmin=Lminval[i], vmax=Lmaxval[i], cmap=Lcolormap[i],linewidths=Llinewidth[i])
                 else:
-                    cf = self.ax[iax].contourf(lon[i], lat[i], vartoPlot * Lfacconv[i], levels=levels_contour, transform=Lproj[i],
+                    if Lextendcolorbar[i]: 
+                        cf = self.ax[iax].contourf(lon[i], lat[i], vartoPlot * Lfacconv[i], levels=levels_contour, transform=Lproj[i],
+                                               norm=norm, vmin=Lminval[i], vmax=Lmaxval[i], cmap=Lcolormap[i], extend='both')
+                    else: 
+                        cf = self.ax[iax].contourf(lon[i], lat[i], vartoPlot * Lfacconv[i], levels=levels_contour, transform=Lproj[i],
                                                norm=norm, vmin=Lminval[i], vmax=Lmaxval[i], cmap=Lcolormap[i])
             else:  # Cartesian coordinates
                 if Lpltype[i] == 'c':  # Contour
                     cf = self.ax[iax].contour(lon[i], lat[i], vartoPlot * Lfacconv[i], levels=levels_contour,
                                               norm=norm, vmin=Lminval[i], vmax=Lmaxval[i], colors=LcolorLine[i],linewidths=Llinewidth[i])
                 else:
-                    cf = self.ax[iax].contourf(lon[i], lat[i], vartoPlot * Lfacconv[i], levels=levels_contour,
+                    if Lextendcolorbar[i]: 
+                        cf = self.ax[iax].contourf(lon[i], lat[i], vartoPlot * Lfacconv[i], levels=levels_contour,
+                                               norm=norm, vmin=Lminval[i], vmax=Lmaxval[i], cmap=Lcolormap[i], extend='both')
+                    else: 
+                        cf = self.ax[iax].contourf(lon[i], lat[i], vartoPlot * Lfacconv[i], levels=levels_contour,
                                                norm=norm, vmin=Lminval[i], vmax=Lmaxval[i], cmap=Lcolormap[i])
             #  Title
             self.set_Title(self.ax, iax, Ltitle[i], Lid_overlap, Lxlab[i], Lylab[i])
@@ -707,9 +747,9 @@ class PanelPlot():
         return self.fig
 
     def pvector(self, Lxx=[], Lyy=[], Lvar1=[], Lvar2=[], Lcarte=[], Llevel=[], Lxlab=[], Lylab=[],
-                Ltitle=[], Lwidth=[], Larrowstep=[], Lcolor=[], Llegendval=[], Llegendlabel=[],
+                Ltitle=[], Lwidth=[], Larrowstep=[], LarrowstepX=[], LarrowstepY=[], Lcolor=[], Llegendval=[], Llegendlabel=[],
                 Lproj=[], Lfacconv=[], ax=[], coastLines=True, Lid_overlap=[], Ltime=[], Lscale=[],
-                Lylim=[], Lxlim=[]):
+                Lylim=[], Lxlim=[], PrintMinMaxText=True):
         """
           Vectors
           Parameters :
@@ -727,7 +767,9 @@ class PanelPlot():
               - Ltime  : List of time (validity)
               - Lwidth : List of thickness of the arrows
               - Lscale : List of scale for the length of the arrows (high value <=> small length)
-              - Larrowstep : List of sub-sample (frequency) if too much arrows
+              - Larrowstep : List of sub-sample (frequency) along all if too much arrows (MNHPy 0.2 name)
+              - LarrowstepX : List of sub-sample (frequency) along X-axis
+              - LarrowstepY : List of sub-sample (frequency) along Y-axis
               - Lcolor : List of colors for the arrows (default: black)
               - Llegendval : List of value for the legend of the default arrow
               - Llegendlabel : List of labels for the legend of the default arrow
@@ -736,6 +778,7 @@ class PanelPlot():
               - coastLines : Boolean to plot coast lines and grid lines
               - ax         : List of fig.axes for ploting multiple different types of plots in a subplot panel
               - Lid_overlap : List of number index of plot to overlap current variables
+              - PrintMinMaxText: Boolean, True to add a min/max values of the plotted variables on top of the graph
         """
         self.ax = ax
         firstCall = (len(self.ax) == 0)
@@ -750,6 +793,9 @@ class PanelPlot():
             Lylab = [''] * len(Lvar1)
         if not Lxlab:
             Lxlab = [''] * len(Lvar1)
+        if Larrowstep:
+            LarrowstepY = Larrowstep
+            LarrowstepX = Larrowstep
         #  On all variables to plot
         for i, var1 in enumerate(Lvar1):
             if firstCall:  # 1st call
@@ -783,7 +829,8 @@ class PanelPlot():
                 vartoPlot2 = Lvar2[i][Llevel[i], :, :]
 
             #  Print min/max val to help choose colorbar steps
-            self.set_minmaxText(self.ax, iax, np.sqrt(vartoPlot1**2 + vartoPlot2**2), Ltitle[i], Lid_overlap, Lfacconv[i])
+            if PrintMinMaxText:
+                self.set_minmaxText(self.ax, iax, np.sqrt(vartoPlot1**2 + vartoPlot2**2), Ltitle[i], Lid_overlap, Lfacconv[i])
 
             #  Print time validity
             if Ltime:
@@ -793,12 +840,12 @@ class PanelPlot():
             axeX = Lxx[i]
             axeY = Lyy[i]
             if Lxx[i].ndim == 2:
-                cf = self.ax[iax].quiver(axeX[::Larrowstep[i], ::Larrowstep[i]], axeY[::Larrowstep[i], ::Larrowstep[i]],
-                                         vartoPlot1[::Larrowstep[i], ::Larrowstep[i]], vartoPlot2[::Larrowstep[i], ::Larrowstep[i]],
+                cf = self.ax[iax].quiver(axeX[::LarrowstepX[i], ::LarrowstepY[i]], axeY[::LarrowstepX[i], ::LarrowstepY[i]],
+                                         vartoPlot1[::LarrowstepX[i], ::LarrowstepY[i]], vartoPlot2[::LarrowstepX[i], ::LarrowstepY[i]],
                                          width=Lwidth[i], angles='uv', color=Lcolor[i], scale=Lscale[i])
             else:
-                cf = self.ax[iax].quiver(axeX[::Larrowstep[i]], axeY[::Larrowstep[i]],
-                                         vartoPlot1[::Larrowstep[i], ::Larrowstep[i]], vartoPlot2[::Larrowstep[i], ::Larrowstep[i]],
+                cf = self.ax[iax].quiver(axeX[::LarrowstepX[i]], axeY[::LarrowstepY[i]],
+                                         vartoPlot1[::LarrowstepX[i], ::LarrowstepY[i]], vartoPlot2[::LarrowstepX[i], ::LarrowstepY[i]],
                                          width=Lwidth[i], angles='uv', color=Lcolor[i], scale=Lscale[i])
             #  Title
             self.set_Title(self.ax, iax, Ltitle[i], Lid_overlap, Lxlab[i], Lylab[i])
@@ -830,7 +877,7 @@ class PanelPlot():
 
     def pstreamline(self, Lxx=[], Lyy=[], Lvar1=[], Lvar2=[], Lcarte=[], Llevel=[], Lxlab=[], Lylab=[], Llinewidth=[], Ldensity=[],
                     Ltitle=[], Lcolor=[], Lproj=[], Lfacconv=[], ax=[], coastLines=True, Lid_overlap=[], Ltime=[],
-                    Lylim=[], Lxlim=[]):
+                    Lylim=[], Lxlim=[], PrintMinMaxText=True):
         """
           Wind stream lines
           Parameters :
@@ -854,6 +901,7 @@ class PanelPlot():
               - coastLines : Boolean to plot coast lines and grid lines
               - ax         : List of fig.axes for ploting multiple different types of plots in a subplot panel
               - Lid_overlap : List of number index of plot to overlap current variables
+              - PrintMinMaxText: Boolean, True to add a min/max values of the plotted variables on top of the graph
         """
         self.ax = ax
         firstCall = (len(self.ax) == 0)
@@ -904,7 +952,8 @@ class PanelPlot():
                 vartoPlot2 = Lvar2[i][Llevel[i], :, :]
 
             #  Print min/max val to help choose steps
-            self.set_minmaxText(self.ax, iax, np.sqrt(vartoPlot1**2 + vartoPlot2**2), Ltitle[i], Lid_overlap, Lfacconv[i])
+            if PrintMinMaxText:
+                self.set_minmaxText(self.ax, iax, np.sqrt(vartoPlot1**2 + vartoPlot2**2), Ltitle[i], Lid_overlap, Lfacconv[i])
 
             #  Print time validity
             if Ltime:
@@ -996,7 +1045,6 @@ class PanelPlot():
             else:  # existing ax with no overlapping (graph appended to existing panel)
                 self.ax.append(self.fig.add_subplot(self.nb_l, self.nb_c, self.nb_graph + 1))
                 self.nb_graph += 1
-                print(len(self.ax))
                 iax = len(self.ax) - 1  # The ax index of the new coming plot is the length of the existant ax -1 for indices matter
 
             #  Print time validity
