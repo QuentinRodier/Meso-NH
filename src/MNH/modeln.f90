@@ -499,6 +499,7 @@ INTEGER                   :: IPOINTS
 CHARACTER(len=16)         :: YTCOUNT,YPOINTS
 CHARACTER(LEN=:), ALLOCATABLE :: YDADNAME
 !
+INTEGER :: IBAKSTEP ! Number of timesteps since previous backup
 INTEGER :: ISYNCHRO          ! model synchronic index relative to its father
                              ! = 1  for the first time step in phase with DAD
                              ! = 0  for the last  time step (out of phase)
@@ -1036,7 +1037,12 @@ IF ( nfile_backup_current < NBAK_NUMB ) THEN
       CALL WRITE_SURF_ATM_n(YSURF_CUR,'MESONH','ALL')
       IF ( KTCOUNT > 1) THEN
         CALL DIAG_SURF_ATM_n(YSURF_CUR,'MESONH')
-        CALL WRITE_DIAG_SURF_ATM_n(YSURF_CUR,'MESONH','ALL', KTCOUNT/nfile_backup_current)
+        IF ( NFILE_BACKUP_CURRENT == 1 ) THEN
+          IBAKSTEP = KTCOUNT - 1
+        ELSE
+          IBAKSTEP = KTCOUNT - TBACKUPN(NFILE_BACKUP_CURRENT - 1)%NSTEP
+        END IF
+        CALL WRITE_DIAG_SURF_ATM_n( YSURF_CUR, 'MESONH', 'ALL', IBAKSTEP )
       END IF
       NULLIFY(TFILE_SURFEX)
     END IF
