@@ -251,7 +251,7 @@ call Sensor_write_workarrays_deallocate( )
 !----------------------------------------------------------------------------
 !Treat point values
 
-IPROC = 5
+IPROC = 4
 IF (LDIAG_SURFRAD_PROF) THEN
   IPROC = IPROC + 10
   IF(CRAD/="NONE")  IPROC = IPROC + 8
@@ -271,7 +271,6 @@ call Add_point( 'IWV', 'Integrated Water Vapour',   'kg m-2', tpprofiler%xiwv )
 call Add_point( 'ZTD', 'Zenith Tropospheric Delay', 'm',      tpprofiler%xztd )
 call Add_point( 'ZWD', 'Zenith Wet Delay',          'm',      tpprofiler%xzwd )
 call Add_point( 'ZHD', 'Zenith Hydrostatic Delay',  'm',      tpprofiler%xzhd )
-call Add_point( 'T',   'Temperature',               'K',      tpprofiler%xt(1,:) )
 
 if ( crad /= 'NONE' ) call Add_point( 'Tsrad', 'Radiative Surface Temperature', 'K', tpprofiler%xtsrad(:) )
 
