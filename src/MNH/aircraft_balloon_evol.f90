@@ -159,7 +159,6 @@ REAL, DIMENSION(2,2,SIZE(PZ,3))     :: ZZU    ! U points z coordinates
 REAL, DIMENSION(2,2,SIZE(PZ,3))     :: ZZV    ! V points z coordinates
 REAL, DIMENSION(2,2,SIZE(PZ,3))     :: ZWM    ! mass point wind
 !
-REAL, DIMENSION(SIZE(PTH,1),SIZE(PTH,2),SIZE(PTH,3)) :: ZEXN3D   ! Exner function
 REAL, DIMENSION(2,2,SIZE(PTH,3))    :: ZEXN   ! Exner function
 REAL, DIMENSION(2,2,SIZE(PTH,3))    :: ZTH_EXN ! potential temperature multiplied by Exner function
 REAL, DIMENSION(2,2,SIZE(PTH,3))    :: ZRHO   ! air density
@@ -231,7 +230,6 @@ SELECT TYPE ( TPFLYER )
         ISOWNERAIR: IF ( TPFLYER%NRANK_CUR == ISP ) THEN
           CALL FLYER_INTERP_TO_MASSPOINTS()
 
-          ZEXN3D(:,:,:) = (PP(:,:,:)/XP00)**(XRD/XCPD)
           ZEXN(:,:,:) = FLYER_COMPUTE_EXNER( )
           ZRHO(:,:,:) = FLYER_COMPUTE_RHO( )
 
@@ -335,7 +333,6 @@ SELECT TYPE ( TPFLYER )
       ISOWNERBAL: IF ( TPFLYER%NRANK_CUR == ISP ) THEN
         CALL FLYER_INTERP_TO_MASSPOINTS()
 
-        ZEXN3D(:,:,:) = (PP(:,:,:)/XP00)**(XRD/XCPD)
         ZEXN(:,:,:) = FLYER_COMPUTE_EXNER( )
         ZRHO(:,:,:) = FLYER_COMPUTE_RHO( )
 
@@ -910,7 +907,7 @@ INTEGER                        :: JLOOP    ! loop counter
 REAL                           :: ZGAM     ! rotation between meso-nh base and spherical lat-lon base.
 REAL                           :: ZU_BAL   ! horizontal wind speed at balloon location (along x)
 REAL                           :: ZV_BAL   ! horizontal wind speed at balloon location (along y)
-REAL, DIMENSION(SIZE(PZ,3))    :: ZZ       ! altitude of model levels at station location
+REAL, DIMENSION(SIZE(PZ,3))    :: ZZ       ! altitude of model levels at flyer location
 REAL, DIMENSION(SIZE(PR,1),SIZE(PR,2),SIZE(PR,3))    :: ZR
 
 TPFLYER%NMODELHIST(ISTORE) = TPFLYER%NMODEL
@@ -960,7 +957,7 @@ IF ( CCLOUD=="ICE3" .OR. CCLOUD=="ICE4" ) THEN
 END IF
 
 TPFLYER%XPZ   (:,ISTORE) = TPFLYER%INTERP_HOR_FROM_MASSPOINT( PP(:,:,:) )
-TPFLYER%XTZ   (:,ISTORE) = TPFLYER%INTERP_HOR_FROM_MASSPOINT( PTH * ZEXN3D )
+TPFLYER%XTZ   (:,ISTORE) = TPFLYER%INTERP_HOR_FROM_MASSPOINT( PTH(:,:,:) ) * ( TPFLYER%XPZ(:,ISTORE) / XP00 ) ** ( XRD / XCPD )
 
 DO JLOOP=1,SIZE(PSV,4)
   TPFLYER%XSVZ(:,ISTORE,JLOOP) = TPFLYER%INTERP_HOR_FROM_MASSPOINT( PSV(:,:,:,JLOOP) )
