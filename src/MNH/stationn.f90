@@ -77,7 +77,7 @@ END MODULE MODI_STATION_n
 !  P. Wautelet  13/09/2019: budget: simplify and modernize date/time management
 !  R. Schoetter    11/2019: use LCARTESIAN instead of LSTATLAT for multiproc in cartesian
 !  P. Wautelet     04/2022: restructure stations for better performance, reduce memory usage and correct some problems/bugs
-!
+!  P. Wautelet  01/12/2023: compute temperature (XT field)
 ! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -85,7 +85,7 @@ END MODULE MODI_STATION_n
 !
 USE MODD_ALLSTATION_n,  ONLY: LDIAG_SURFRAD_STAT
 USE MODD_CONF,          ONLY: LCARTESIAN
-USE MODD_CST,           ONLY: XPI
+USE MODD_CST,           ONLY: XCPD, XP00, XPI, XRD
 USE MODD_GRID,          ONLY: XBETA, XLON0, XRPK
 USE MODD_PARAMETERS,    ONLY: JPVEXT
 USE MODD_PARAM_n,       ONLY: CRAD
@@ -158,6 +158,7 @@ STATION: DO JS = 1, NUMBSTAT_LOC
   TSTATIONS(JS)%XW (1,IN) = TSTATIONS(JS)%INTERP_HOR_FROM_MASSPOINT( PW(:,:,JK) )
   TSTATIONS(JS)%XTH(1,IN) = TSTATIONS(JS)%INTERP_HOR_FROM_MASSPOINT( PTH(:,:,JK) )
   TSTATIONS(JS)%XP (1,IN) = TSTATIONS(JS)%INTERP_HOR_FROM_MASSPOINT( PP(:,:,JK) )
+  TSTATIONS(JS)%XT (1,IN) = TSTATIONS(JS)%XTH(1,IN) * ( TSTATIONS(JS)%XP (1,IN) / XP00 ) **( XRD / XCPD )
 
   DO JSV=1,SIZE(PR,4)
     TSTATIONS(JS)%XR(1,IN,JSV) = TSTATIONS(JS)%INTERP_HOR_FROM_MASSPOINT( PR(:,:,JK,JSV) )

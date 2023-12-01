@@ -13,6 +13,7 @@
 !  P. Wautelet 03/03/2021: budgets: add tbudiachrometadata type (useful to pass more information to Write_diachro)
 !  P. Wautelet 04/02/2022: use TSVLIST to manage metadata of scalar variables
 !  P. Wautelet    04/2022: restructure stations for better performance, reduce memory usage and correct some problems/bugs
+!  P. Wautelet 01/12/2023: write temperature field
 ! --------------------------------------------------------------------------
 !      ###########################
 MODULE MODE_WRITE_STATION_n
@@ -70,7 +71,7 @@ type(tfieldmetadata_base), dimension(:), allocatable :: tzfields
 !
 !----------------------------------------------------------------------------
 !
-IPROC = 6 + SIZE(TPSTATION%XR,3) + SIZE(TPSTATION%XSV,3)
+IPROC = 7 + SIZE(TPSTATION%XR,3) + SIZE(TPSTATION%XSV,3)
 
 IF ( CTURB == 'TKEL' ) IPROC = IPROC + 1
 IF (LDIAG_SURFRAD_STAT) THEN
@@ -99,8 +100,9 @@ else
   call Add_point( 'MER_WIND', 'Meridional wind', 'm s-1', tpstation%xmer(1,:) )
 end if
 
-call Add_point( 'W',  'Air vertical speed',    'm s-1', tpstation%xw(1,:)  )
+call Add_point( 'W',  'Air vertical speed',    'm s-1', tpstation%xw (1,:) )
 call Add_point( 'Th', 'Potential temperature', 'K',     tpstation%xth(1,:) )
+call Add_point( 'T',  'Temperature',           'K',     tpstation%xt (1,:) )
 
 if ( ldiag_surfrad_stat ) call Add_diag_surfrad_data( tpstation )
 

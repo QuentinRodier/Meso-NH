@@ -26,6 +26,7 @@
 !                                    -do not use PMAP if cartesian domain
 !  P. Wautelet    06/2022: reorganize flyers
 !  P. Wautelet 01/06/2023: deduplicate code => moved to modd/mode_sensors.f90
+!  B. Vie      21/09/2023: add T and scalar variables
 !-----------------------------------------------------------------
 !      ##########################
 MODULE MODE_AIRCRAFT_BALLOON_EVOL
@@ -107,7 +108,7 @@ CONTAINS
 !          ------------
 !
 USE MODD_AIRCRAFT_BALLOON
-USE MODD_CST,              ONLY: XCPD, XLVTT
+USE MODD_CST,              ONLY: XCPD, XLVTT, XP00, XRD
 USE MODD_IO,               ONLY: ISP
 USE MODD_TIME_n,           ONLY: TDTCUR
 USE MODD_TURB_FLUX_AIRCRAFT_BALLOON, ONLY: XRCW_FLUX, XSVW_FLUX, XTHW_FLUX
@@ -894,7 +895,6 @@ SUBROUTINE FLYER_RECORD_DATA( )
 USE MODD_CST,              ONLY: XP00, XPI, XRD
 USE MODD_DIAG_IN_RUN,      ONLY: XCURRENT_TKE_DISS
 USE MODD_GRID,             ONLY: XBETA, XLON0, XRPK
-USE MODD_NSV,              ONLY: NSV_LIMA_NC, NSV_LIMA_NR, NSV_LIMA_NI
 USE MODD_PARAMETERS,       ONLY: JPVEXT
 USE MODD_PARAM_n,          ONLY: CCLOUD, CRAD
 
@@ -907,7 +907,7 @@ INTEGER                        :: JLOOP    ! loop counter
 REAL                           :: ZGAM     ! rotation between meso-nh base and spherical lat-lon base.
 REAL                           :: ZU_BAL   ! horizontal wind speed at balloon location (along x)
 REAL                           :: ZV_BAL   ! horizontal wind speed at balloon location (along y)
-REAL, DIMENSION(SIZE(PZ,3))    :: ZZ       ! altitude of model levels at station location
+REAL, DIMENSION(SIZE(PZ,3))    :: ZZ       ! altitude of model levels at flyer location
 REAL, DIMENSION(SIZE(PR,1),SIZE(PR,2),SIZE(PR,3))    :: ZR
 
 TPFLYER%NMODELHIST(ISTORE) = TPFLYER%NMODEL
@@ -928,11 +928,12 @@ ZGAM   = (XRPK * (TPFLYER%XLON_CUR - XLON0) - XBETA)*(XPI/180.)
 TPFLYER%XZON (1,ISTORE) = ZU_BAL * COS(ZGAM) + ZV_BAL * SIN(ZGAM)
 TPFLYER%XMER (1,ISTORE) = - ZU_BAL * SIN(ZGAM) + ZV_BAL * COS(ZGAM)
 !
-TPFLYER%XW   (1,ISTORE) = TPFLYER%INTERP_FROM_MASSPOINT( ZWM )
-TPFLYER%XTH  (1,ISTORE) = TPFLYER%INTERP_FROM_MASSPOINT( PTH )
-!
 ZFLYER_EXN = TPFLYER%INTERP_FROM_MASSPOINT( ZEXN )
+TPFLYER%XW   (1,ISTORE) = TPFLYER%INTERP_FROM_MASSPOINT( ZWM )
 TPFLYER%XP   (1,ISTORE) = XP00 * ZFLYER_EXN**(XCPD/XRD)
+TPFLYER%XTH  (1,ISTORE) = TPFLYER%INTERP_FROM_MASSPOINT( PTH )
+TPFLYER%XT   (1,ISTORE) = TPFLYER%INTERP_FROM_MASSPOINT( PTH ) * ZFLYER_EXN
+!
 
 ZR(:,:,:) = 0.
 DO JLOOP=1,SIZE(PR,4)
@@ -951,13 +952,16 @@ TPFLYER%XFFZ  (:,ISTORE) = TPFLYER%INTERP_HOR_FROM_MASSPOINT( SQRT(PU**2+PV**2) 
 
 TPFLYER%XRHOD (:,ISTORE) = TPFLYER%INTERP_HOR_FROM_MASSPOINT( PRHODREF )
 
-IF (CCLOUD=="LIMA") THEN
-  TPFLYER%XCIZ  (:,ISTORE) = TPFLYER%INTERP_HOR_FROM_MASSPOINT( PSV(:,:,:,NSV_LIMA_NI) )
-  TPFLYER%XCCZ  (:,ISTORE) = TPFLYER%INTERP_HOR_FROM_MASSPOINT( PSV(:,:,:,NSV_LIMA_NC) )
-  TPFLYER%XCRZ  (:,ISTORE) = TPFLYER%INTERP_HOR_FROM_MASSPOINT( PSV(:,:,:,NSV_LIMA_NR) )
-ELSE IF ( CCLOUD=="ICE3" .OR. CCLOUD=="ICE4" ) THEN
-  TPFLYER%XCIZ  (:,ISTORE) = TPFLYER%INTERP_HOR_FROM_MASSPOINT( PCIT(:,:,:) )
+IF ( CCLOUD=="ICE3" .OR. CCLOUD=="ICE4" ) THEN
+  TPFLYER%XCIZ(:,ISTORE) = TPFLYER%INTERP_HOR_FROM_MASSPOINT( PCIT(:,:,:) )
 END IF
+
+TPFLYER%XPZ   (:,ISTORE) = TPFLYER%INTERP_HOR_FROM_MASSPOINT( PP(:,:,:) )
+TPFLYER%XTZ   (:,ISTORE) = TPFLYER%INTERP_HOR_FROM_MASSPOINT( PTH(:,:,:) ) * ( TPFLYER%XPZ(:,ISTORE) / XP00 ) ** ( XRD / XCPD )
+
+DO JLOOP=1,SIZE(PSV,4)
+  TPFLYER%XSVZ(:,ISTORE,JLOOP) = TPFLYER%INTERP_HOR_FROM_MASSPOINT( PSV(:,:,:,JLOOP) )
+END DO
 
 ZTH_EXN(:,:,:) = PTH(TPFLYER%NI_M:TPFLYER%NI_M+1, TPFLYER%NJ_M:TPFLYER%NJ_M+1, :) * ZEXN(:,:,:)
 ZZ(:) = TPFLYER%INTERP_HOR_FROM_MASSPOINT( ZZM(:,:,:) )
