@@ -449,14 +449,14 @@ if ( irr >= 7 ) call Add_profile( 'Rh', '1D Hail mixing ratio',               'k
 call Add_profile( 'FF', 'Horizontal wind', 'm s-1', tpflyer%xffz(:,:) )
 
 call Add_profile( 'T',  'Temperature',     'K',     tpflyer%xtz(:,:) )
-call Add_profile( 'P',  'Pressure',     'Pa',     tpflyer%xpz(:,:) )
+call Add_profile( 'P',  'Pressure',        'Pa',    tpflyer%xpz(:,:) )
 
 call Add_profile( 'IWC', 'Ice water content',    'kg m-3', tpflyer%xiwcz(:,:) )
 call Add_profile( 'LWC', 'Liquid water content', 'kg m-3', tpflyer%xlwcz(:,:) )
 
 call Add_profile( 'Rhod', 'Density of dry air',  'kg m-3', tpflyer%xrhod(:,:) )
 
-IF (SIZE(TPFLYER%XSVZ,3)>=1) THEN
+IF ( nsv > 0 ) THEN
   ! Scalar variables
   DO JSV = 1, NSV
     IF ( TRIM( TSVLIST(JSV)%CUNITS ) == 'ppv' ) THEN
@@ -467,8 +467,7 @@ IF (SIZE(TPFLYER%XSVZ,3)>=1) THEN
   END DO
 ENDIF
 
-IF ( CCLOUD == 'LIMA' ) THEN
-ELSE IF ( CCLOUD == 'ICE3' .OR. CCLOUD == 'ICE4' ) THEN
+IF ( CCLOUD == 'ICE3' .OR. CCLOUD == 'ICE4' ) THEN
   call Add_profile( 'CIT',     'Ice concentration',           'm-3', tpflyer%xciz(:,:) )
 END IF
 

@@ -107,7 +107,7 @@ call Sensor_write_workarrays_allocate( iku, istore, iproc )
 !Treat vertical profiles
 
 call Add_profile( 'Th',       'Potential temperature',         'K',      tpprofiler%xth        )
-call Add_profile( 'T',        'Temperature',                   'K',      tpprofiler%xtz        )
+call Add_profile( 'T',        'Temperature',                   'K',      tpprofiler%xt         )
 call Add_profile( 'Thv',      'Virtual Potential temperature', 'K',      tpprofiler%xthv       )
 if ( ccloud == 'C2R2' .or. ccloud == 'KHKO' ) &
   call Add_profile( 'VISIGUL', 'Visibility Gultepe',           'km',     tpprofiler%xvisigul   )
@@ -129,8 +129,7 @@ jproc_w = Sensor_current_processes_number_get()
 
 call Add_profile( 'TKE_DISS', 'TKE dissipation rate', 'm2 s-2', tpprofiler%xtke_diss )
 
-if ( ccloud == 'LIMA' ) then
-else if ( ccloud == 'ICE3' .or. ccloud == 'ICE4' ) then
+if ( ccloud == 'ICE3' .or. ccloud == 'ICE4' ) then
   call Add_profile( 'CIT',     'Ice concentration',           'm-3', tpprofiler%xciz(:,:) )
 end if
 
