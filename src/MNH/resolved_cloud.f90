@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -501,16 +501,13 @@ LOGICAL                               :: GWEST,GEAST,GNORTH,GSOUTH
 LOGICAL                               :: LMFCONV ! =SIZE(PMFCONV)!=0
 ! BVIE work array waiting for PINPRI
 REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2)):: ZINPRI
-REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3)):: ZICEFR
-REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3)):: ZPRCFR
-REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3)):: ZTM
 REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2)) :: ZSIGQSAT2D
 TYPE(DIMPHYEX_t) :: YLDIMPHYEX
 REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3)):: ZDUM
 !
 ! variables for cloud electricity
-REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3)) :: ZCND, ZDEP
-REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3)) :: ZRCS_BEF, ZRIS_BEF
+REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZCND, ZDEP
+REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZRCS_BEF, ZRIS_BEF
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZQCT, ZQRT, ZQIT, ZQST, ZQGT, ZQHT, ZQPIT, ZQNIT
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZQCS, ZQRS, ZQIS, ZQSS, ZQGS, ZQHS, ZQPIS, ZQNIS
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZLATHAM_IAGGS ! E Function to simulate
@@ -848,6 +845,13 @@ SELECT CASE ( HCLOUD )
 !
     allocate( zexn( size( pzz, 1 ), size( pzz, 2 ), size( pzz, 3 ) ) )
     ZEXN(:,:,:)= (PPABST(:,:,:)/CST%XP00)**(CST%XRD/CST%XCPD)
+
+    IF (HELEC == 'ELE4') THEN
+      ALLOCATE( ZCND    (SIZE(PZZ,1), SIZE(PZZ,2), SIZE(PZZ,3)) )
+      ALLOCATE( ZDEP    (SIZE(PZZ,1), SIZE(PZZ,2), SIZE(PZZ,3)) )
+      ALLOCATE( ZRCS_BEF(SIZE(PZZ,1), SIZE(PZZ,2), SIZE(PZZ,3)) )
+      ALLOCATE( ZRIS_BEF(SIZE(PZZ,1), SIZE(PZZ,2), SIZE(PZZ,3)) )
+    END IF
 !
 !*       9.1    Compute the explicit microphysical sources
 !
