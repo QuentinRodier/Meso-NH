@@ -76,7 +76,7 @@ character(len=NUNITLGTMAX)                           :: yunit
 INTEGER                                              :: IKU
 INTEGER                                              :: IPROC    ! number of variables records
 INTEGER                                              :: JPROC
-integer                                              :: jproc_alt, jproc_w
+integer                                              :: jproc_w
 INTEGER                                              :: JRR      ! loop counter
 INTEGER                                              :: JSV      ! loop counter
 INTEGER                                              :: ISTORE
@@ -89,7 +89,7 @@ type(tfieldmetadata_base), dimension(:), allocatable :: tzfields
 
 IKU = NKMAX + 2 * JPVEXT !Number of vertical levels
 
-IPROC = 14 + NRR + NSV
+IPROC = 13 + NRR + NSV
 if ( ccloud == 'C2R2' .or. ccloud == 'KHKO' )  IPROC = IPROC + 1
 if ( ccloud /= 'NONE' .and. ccloud /= 'REVE' ) IPROC = IPROC + 1
 if ( ccloud == 'ICE3' .or. ccloud == 'ICE4' )  IPROC = IPROC + 1
@@ -116,9 +116,6 @@ if ( ccloud /= 'NONE' .and. ccloud /= 'REVE' ) &
 call Add_profile( 'RARE',     'Radar reflectivity',            'dBZ',    tpprofiler%xcrare     )
 call Add_profile( 'RAREatt',  'Radar attenuated reflectivity', 'dBZ',    tpprofiler%xcrare_att )
 call Add_profile( 'P',        'Pressure',                      'Pa',     tpprofiler%xp         )
-call Add_profile( 'ALT',      'Altitude',                      'm',      tpprofiler%xzz        )
-!Store position of ALT in the field list. Useful because it is not computed on the same Arakawa-grid points
-jproc_alt = Sensor_current_processes_number_get()
 call Add_profile( 'ZON_WIND', 'Zonal wind',                    'm s-1',  tpprofiler%xzon       )
 call Add_profile( 'MER_WIND', 'Meridian wind',                 'm s-1',  tpprofiler%xmer       )
 call Add_profile( 'FF',       'Wind intensity',                'm s-1',  tpprofiler%xff        )
@@ -187,7 +184,6 @@ tzfields(:)%ndims     = 3
 tzfields(:)%ndimlist(1) = NMNHDIM_UNUSED
 tzfields(:)%ndimlist(2) = NMNHDIM_UNUSED
 tzfields(:)%ndimlist(3) = NMNHDIM_LEVEL
-tzfields(jproc_alt)%ndimlist(3) = NMNHDIM_LEVEL_W
 tzfields(jproc_w)%ndimlist(3)   = NMNHDIM_LEVEL_W
 tzfields(:)%ndimlist(4) = NMNHDIM_PROFILER_TIME
 tzfields(:)%ndimlist(5) = NMNHDIM_UNUSED
@@ -242,6 +238,40 @@ tzbudiachro%njh        = 1
 !These values are written in the LFI files. They are kept for backward compatibility (and not set to default values)
 tzbudiachro%nkl        = 1
 tzbudiachro%nkh        = iku
+
+call Write_diachro( tpdiafile, tzbudiachro, tzfields, tprofilers_time%tpdates, xwork6(:,:,:,:,:,:jproc) )
+
+Deallocate( tzfields )
+call Sensor_write_workarrays_deallocate( )
+
+!----------------------------------------------------------------------------
+!Treat altitude field (profile not changing)
+
+IPROC = 1
+
+call Sensor_write_workarrays_allocate( iku, 1, iproc )
+
+call Add_profile( 'ALT', 'Altitude', 'm', tpprofiler%xzz(:,1:1) ) !Provide only 1st record (:,1:1)
+!Store position of ALT in the field list. Useful because it is not computed on the same Arakawa-grid points
+
+jproc = Sensor_current_processes_number_get()
+
+Allocate( tzfields( jproc ) )
+
+tzfields(:)%cmnhname  = ctitle(1 : jproc)
+tzfields(:)%cstdname  = ''
+tzfields(:)%clongname = ctitle(1 : jproc)
+tzfields(:)%cunits    = cunit(1 : jproc)
+tzfields(:)%ccomment  = ccomment(1 : jproc)
+tzfields(:)%ngrid     = 0
+tzfields(:)%ntype     = TYPEREAL
+tzfields(:)%ndims     = 2
+tzfields(:)%ndimlist(1) = NMNHDIM_UNUSED
+tzfields(:)%ndimlist(2) = NMNHDIM_UNUSED
+tzfields(:)%ndimlist(3) = NMNHDIM_LEVEL_W
+tzfields(:)%ndimlist(4) = NMNHDIM_UNUSED
+tzfields(:)%ndimlist(5) = NMNHDIM_UNUSED
+tzfields(:)%ndimlist(6) = NMNHDIM_PROFILER_PROC
 
 call Write_diachro( tpdiafile, tzbudiachro, tzfields, tprofilers_time%tpdates, xwork6(:,:,:,:,:,:jproc) )
 

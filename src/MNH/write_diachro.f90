@@ -1257,6 +1257,13 @@ select case ( idims )
       do ji = 1, Size( pvar, 6 )
         call Diachro_one_field_write_nc4( tzfile, tpbudiachro, tpfields(ji), pvar(:,:,:,:,:,ji:ji), [ 4 ], gsplit, gdistributed )
       end do
+    else if (  tpfields(1)%ndimlist(3) == NMNHDIM_LEVEL_W       &
+         .and. tpfields(1)%ndimlist(6) == NMNHDIM_PROFILER_PROC ) then
+      !Correspond to WRITE_PROFILER_n
+      ! Loop on the processes
+      do ji = 1, Size( pvar, 6 )
+        call Diachro_one_field_write_nc4( tzfile, tpbudiachro, tpfields(ji), pvar(:,:,:,:,:,ji:ji), [ 3 ], gsplit, gdistributed )
+      end do
     else
       call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                       'case not yet implemented (2D variable '//trim(tpfields(1)%cmnhname)//')' )
