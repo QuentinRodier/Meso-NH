@@ -1361,11 +1361,11 @@ CHARACTER(LEN=100),     INTENT(IN)  :: HCOMMENT ! Comment string
 !*      0.2   Declarations of local variables
 !
 CHARACTER(LEN=4), PARAMETER :: YSUFFIX = '_SFX'
+
+CHARACTER(LEN=5)            :: YMSG
 CHARACTER(LEN=MNH_LEN_HREC) :: YREC
-CHARACTER(LEN=5)     :: YMSG
-TYPE(TFIELDMETADATA) :: TZFIELD
+TYPE(TFIELDMETADATA)        :: TZFIELD
 !
-YREC=TRIM(HREC)//YSUFFIX
 CALL PRINT_MSG(NVERB_DEBUG,'IO','WRITE_SURFL0_MNH',TRIM(TFILE_SURFEX%CNAME)//': writing '//TRIM(HREC))
 !
 IF( (CMASK /= 'FULL  ').AND. (HREC=='COVER') ) THEN
@@ -1376,6 +1376,10 @@ ELSE
   ! Add a suffix to logical variables coming from SURFEX
   ! This is done because some variables can have the same name than MesoNH variables
   ! This suffix has been added in MesoNH 5.6.0
+  YREC = TRIM(HREC) // TRIM(YSUFFIX)
+  IF ( LEN_TRIM(HREC) + LEN_TRIM(YSUFFIX) > MNH_LEN_HREC )                                              &
+    CALL PRINT_MSG( NVERB_WARNING, 'IO', 'WRITE_SURFL0_MNH', TRIM(TFILE_SURFEX%CNAME) //                &
+                    ': YREC was truncated from ' // TRIM(HREC) // TRIM(YSUFFIX) // ' to ' // TRIM(YREC) )
   CALL PREPARE_METADATA_WRITE_SURF(YREC,'--',HCOMMENT,0,TYPELOG,0,'WRITE_SURFL0_MNH',TZFIELD)
   CALL IO_Field_write(TFILE_SURFEX,TZFIELD,OFIELD,KRESP)
 END IF

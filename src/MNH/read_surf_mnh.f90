@@ -1597,11 +1597,11 @@ CHARACTER(LEN=*),       INTENT(OUT) :: HCOMMENT ! comment
 !*      0.2   Declarations of local variables
 !
 CHARACTER(LEN=4), PARAMETER :: YSUFFIX = '_SFX'
-CHARACTER(LEN=MNH_LEN_HREC)           :: YREC
-INTEGER           :: ILUOUT
-TYPE(TFIELDMETADATA)  :: TZFIELD
+
+CHARACTER(LEN=MNH_LEN_HREC) :: YREC
+INTEGER                     :: ILUOUT
+TYPE(TFIELDMETADATA)        :: TZFIELD
 !-------------------------------------------------------------------------------
-YREC=TRIM(HREC)//YSUFFIX
 CALL PRINT_MSG(NVERB_DEBUG,'IO','READ_SURFL0_MNH',TRIM(TPINFILE%CNAME)//': reading '//TRIM(HREC))
 !
 ILUOUT = TOUT%NLU
@@ -1629,6 +1629,10 @@ ELSE
   ! Add a suffix to logical variables coming from SURFEX
   ! This is done because some variables can have the same name than MesoNH variables
   ! This suffix has been added in MesoNH 5.6.0
+  YREC = TRIM(HREC) // TRIM(YSUFFIX)
+  IF ( LEN_TRIM(HREC) + LEN_TRIM(YSUFFIX) > MNH_LEN_HREC )                                              &
+    CALL PRINT_MSG( NVERB_WARNING, 'IO', 'READ_SURFL0_MNH', TRIM(TPINFILE%CNAME) //                     &
+                    ': YREC was truncated from ' // TRIM(HREC) // TRIM(YSUFFIX) // ' to ' // TRIM(YREC) )
   CALL PREPARE_METADATA_READ_SURF(YREC,'--',0,TYPELOG,0,'READ_SURFL0_MNH',TZFIELD)
   CALL IO_Field_read(TPINFILE,TZFIELD,OFIELD,KRESP)
 
