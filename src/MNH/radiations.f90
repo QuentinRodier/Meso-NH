@@ -10,10 +10,11 @@
 CONTAINS
 !
 !   ############################################################################
-    SUBROUTINE RADIATIONS (TPFILE,OCLEAR_SKY,OCLOUD_ONLY,                      &
+    SUBROUTINE RADIATIONS (TPFILE,KIB,KIE,KJB,KJE,OCLEAR_SKY,OCLOUD_ONLY,      &
                KCLEARCOL_TM1,HEFRADL,HEFRADI,HOPWSW,HOPISW,HOPWLW,HOPILW,      &
                PFUDG, KDLON, KFLEV, KRAD_DIAG, KFLUX, KRAD, KAER, KSWB_OLD,    &
                KSWB_MNH,KLWB_MNH, KSTATM,KRAD_COLNBR,PCOSZEN,PSEA, PCORSOL,    &
+               PLAT, PLON,                                                     &
                PDIR_ALB, PSCA_ALB,PEMIS, PCLDFR, PCCO2, PTSRAD, PSTATM,        &
                PTHT, PRT, PPABST, POZON, PAER, PDST_WL, PAER_CLIM, PSVT,       &
                PDTHRAD, PSRFLWD, PSRFSWD_DIR,PSRFSWD_DIF, PRHODREF, PZZ,       &
@@ -178,6 +179,10 @@ IMPLICIT NONE
 !*       0.1   DECLARATIONS OF DUMMY ARGUMENTS :
 !
 TYPE(TFILEDATA),  INTENT(IN)         :: TPFILE    ! Output file
+INTEGER, INTENT(IN)                  :: KIB       ! first X physical point in array
+INTEGER, INTENT(IN)                  :: KIE       ! last  X physical point in array
+INTEGER, INTENT(IN)                  :: KJB       ! first Y physical point in array
+INTEGER, INTENT(IN)                  :: KJE       ! last  Y physical point in array
 LOGICAL, INTENT(IN)                  :: OCLOUD_ONLY! flag for the cloud column
                                                    !    computations only
 LOGICAL, INTENT(IN)                  :: OCLEAR_SKY ! 
@@ -214,6 +219,8 @@ CHARACTER (LEN=*), INTENT (IN)       :: HOPILW !ice water  LW optical properties
 REAL,               INTENT(IN)       :: PFUDG  ! subgrid cloud inhomogenity factor
 REAL, DIMENSION(:,:),     INTENT(IN) :: PCOSZEN ! COS(zenithal solar angle)
 REAL,                     INTENT(IN) :: PCORSOL ! SOLar constant CORrection
+REAL, DIMENSION(:,:),     INTENT(IN) :: PLAT    ! Latitude
+REAL, DIMENSION(:,:),     INTENT(IN) :: PLON    ! Longitude
 REAL, DIMENSION(:,:),     INTENT(IN) :: PSEA    ! Land-sea mask
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN) :: PDIR_ALB! Surface direct ALBedo
@@ -229,10 +236,10 @@ REAL, DIMENSION(:,:,:,:), INTENT(IN) :: PRT     ! moist variables at t (humidity
 REAL, DIMENSION(:,:,:),   INTENT(IN) :: PPABST  ! pressure at t
 REAL, DIMENSION(:,:,:,:), INTENT(IN) :: PSVT    ! scalar variable ( C2R2 and C1R3  particle)
 !
-REAL, DIMENSION(:,:,:),   POINTER    :: POZON   ! OZONE field from clim.
-REAL, DIMENSION(:,:,:,:), POINTER    :: PAER    ! AERosols optical thickness from clim. 
-REAL, DIMENSION(:,:,:,:), POINTER    :: PDST_WL    ! AERosols Extinction by wavelength . 
-REAL, DIMENSION(:,:,:,:), POINTER    :: PAER_CLIM    ! AERosols optical thickness from clim.
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: POZON   ! OZONE field from clim.
+REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PAER    ! AERosols optical thickness from clim. 
+REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PDST_WL    ! AERosols Extinction by wavelength . 
+REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PAER_CLIM    ! AERosols optical thickness from clim.
                                                 ! note : the vertical dimension of 
                                                 ! these fields include the "radiation levels"
                                                 ! above domain top
@@ -558,8 +565,11 @@ REAL                               :: ZCLEAR_COL_ll , ZDLON_ll
 !*       1.    COMPUTE DIMENSIONS OF ARRAYS AND OTHER INDICES
 !              ----------------------------------------------
 !
-CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)  ! this definition must be coherent with
-                                      ! the one used in ini_radiations routine
+IIB = KIB
+IIE = KIE
+IJB = KJB
+IJE = KJE
+
 IKU = SIZE(PTHT,3)
 IKB = 1 + JPVEXT
 IKE = IKU - JPVEXT
@@ -569,38 +579,17 @@ IKUP   = IKE-JPVEXT+1
 ! 
 ISWB   = SIZE(PSRFSWD_DIR,3)
 !
-!-------------------------------------------------------------------------------
-!*       1.1   CHECK PRESSURE DECREASING
-!              -------------------------
-ZDZPABST(:,:,1:IKU-1) = PPABST(:,:,1:IKU-1) - PPABST(:,:,2:IKU)
-ZDZPABST(:,:,IKU) = ZDZPABST(:,:,IKU-1)
-!
-ZMINVAL=MIN_ll(ZDZPABST,IINFO_ll)
-!
-IF ( ZMINVAL <= 0.0 ) THEN
-   ILUOUT = TLUOUT%NLU
-   IMINLOC=GMINLOC_ll( ZDZPABST )
-   WRITE(ILUOUT,*) ' radiation.f90 STOP :: SOMETHING WRONG WITH PRESSURE , ZDZPABST <= 0.0 '  
-   WRITE(ILUOUT,*) ' radiation :: ZDZPABST ', ZMINVAL,' located at ',   IMINLOC
-   FLUSH(unit=ILUOUT)
-   call Print_msg( NVERB_FATAL, 'GEN', 'RADIATIONS', 'something wrong with pressure: ZDZPABST <= 0.0' )
-
-ENDIF
 !------------------------------------------------------------------------------
 ALLOCATE(ZLAT(KDLON))
 ALLOCATE(ZLON(KDLON))
-IF(LCARTESIAN) THEN
-  ZLAT(:) = XLAT0*(XPI/180.)
-  ZLON(:) = XLON0*(XPI/180.)
-ELSE
-  DO JJ=IJB,IJE
-    DO JI=IIB,IIE
-        IIJ = 1 + (JI-IIB) + (IIE-IIB+1)*(JJ-IJB)
-        ZLAT(IIJ) =  XLAT(JI,JJ)*(XPI/180.)
-        ZLON(IIJ) =  XLON(JI,JJ)*(XPI/180.)
-    END DO
+DO JJ=IJB,IJE
+  DO JI=IIB,IIE
+      IIJ = 1 + (JI-IIB) + (IIE-IIB+1)*(JJ-IJB)
+      ZLAT(IIJ) =  PLAT(JI,JJ)
+      ZLON(IIJ) =  PLON(JI,JJ)
   END DO
-END IF
+END DO
+!
 !-------------------------------------------------------------------------------
 !
 !*       2.    INITIALIZES THE MEAN-LAYER VARIABLES
@@ -1215,10 +1204,6 @@ IF(OCLOUD_ONLY .OR. OCLEAR_SKY) THEN
   CALL REDUCESUM_ll(ZCLEAR_COL_ll,IINFO_ll)
   !ZDLON_ll = KDLON
   !CALL REDUCESUM_ll(ZDLON_ll,IINFO_ll)
-
-  !IF (IP == 1 )  
-  !print*,",RADIATIOn COULD_ONLY=OCLOUD_ONLY,OCLEAR_SKY,ZCLEAR_COL_ll,ICLEAR_COL,ICLOUD_COL,KDON,ZDLON_ll,GNOCL=", &
-  !     OCLOUD_ONLY,OCLEAR_SKY,ZCLEAR_COL_ll,ICLEAR_COL,ICLOUD_COL,KDLON,ZDLON_ll,GNOCL
 !
 !!$  IF( ICLEAR_COL /=0 ) THEN ! at least one clear-sky column exists -> average profiles on clear columns
   IF( ZCLEAR_COL_ll /= 0.0  ) THEN ! at least one clear-sky column exists -> average profiles on clear columns

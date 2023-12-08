@@ -389,6 +389,7 @@ USE MODD_PASPOL
 USE MODD_PASPOL_n
 USE MODD_PAST_FIELD_n
 use modd_precision,         only: LFIINT
+USE MODD_PARAM_RAD_n
 USE MODD_RADIATIONS_n
 USE MODD_RECYCL_PARAM_n
 USE MODD_REF
@@ -2519,7 +2520,9 @@ IF (CRAD   /= 'NONE') THEN
                       TDTRAD_FULL,TDTRAD_CLONLY,          &
                       TZINITHALO2D_ll,                    &
                       XRADEFF,XSWU,XSWD,XLWU,             &
-                      XLWD,XDTHRADSW,XDTHRADLW           )
+                      XLWD,XDTHRADSW,XDTHRADLW,           &
+                      NRAD_AGG,NI_RAD_AGG,NJ_RAD_AGG,     &
+                      NIOR_RAD_AGG,NJOR_RAD_AGG           )
   !
   IF (GINIRAD) CALL SUNPOS_n(XZENITH,PAZIMSOL=XAZIM)
   CALL SURF_SOLAR_GEOM    (XZS, XZS_XY)

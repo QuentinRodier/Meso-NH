@@ -2251,6 +2251,25 @@ IF ( CRAD /= 'NONE' .AND. CPROGRAM=='MESONH' ) THEN
     WRITE(UNIT=ILUOUT,FMT=*) 'YOU MUST USE LAERO_FT=T WITH CAER=TEGE IF CCONF=RESTA IN ALL SEGMENTS'
     WRITE(UNIT=ILUOUT,FMT=*) 'TO UPDATE THE OZONE AND AEROSOLS CLIMATOLOGY USED BY THE RADIATION CODE;'
   END IF
+!
+! impossible to have aggregation of radiative columns and LCEAR_SKy or CLOUD_ONLY options
+! because of parallelization issues when aggregating all clear sky columns between processors
+!
+! Please note that XDTRAD_CLONLY and XDTRAD are both initialized per default to 60. sec.
+! This is because the default time step is 60. sec, which is almost never the case.
+! This should be corrected (put a XUNDEF value for default for XDTRAD_CLONLY would be nice)
+!
+  IF (NRAD_AGG>1 .AND. (LCLEAR_SKY .OR. (XDTRAD<XDTRAD_CLONLY) ) ) THEN
+    WRITE(UNIT=ILUOUT,FMT=9003) KMI
+    WRITE(UNIT=ILUOUT,FMT=*) 'AGGREGATION OF RADIATIVE COLUMNS CANNOT BE DONE IF LCLEAR_SKY OPTION,'
+    WRITE(UNIT=ILUOUT,FMT=*) 'OR CLOUD_ONLY OPTION ARE ACTIVATED'
+    WRITE(UNIT=ILUOUT,FMT=*) 'AGGREGATION OF RADIATIVE COLUMNS : NRAD_AGG         =', NRAD_AGG
+    WRITE(UNIT=ILUOUT,FMT=*) 'LCLEAR_SKY OPTION                : LCLEAR_SKY       =', LCLEAR_SKY
+    WRITE(UNIT=ILUOUT,FMT=*) 'CLOUD_ONLY OPTION, XDTRAD /= XDTRAD_CLONLY : '
+    WRITE(UNIT=ILUOUT,FMT=*) 'CLOUD_ONLY OPTION                : XDTRAD           =', XDTRAD
+    WRITE(UNIT=ILUOUT,FMT=*) 'CLOUD_ONLY OPTION                : XDTRAD_CLONLY    =', XDTRAD_CLONLY
+    CALL PRINT_MSG(NVERB_FATAL,'GEN','READ_EXSEG_n','NRAD_AGG OPTION NOT IMPLEMENTED FOR LCLEAR_SKY AND CLOUD_ONLY OPTIONS')
+  END IF
 END IF
 !
 !        3.6  check the initialization of the deep convection scheme

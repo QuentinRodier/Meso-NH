@@ -127,6 +127,12 @@ TYPE RADIATIONS_t
   REAL, DIMENSION(:,:,:),       POINTER :: XDTHRADLW => NULL() ! DTHRAD LW
   REAL, DIMENSION(:,:,:),       POINTER :: XRADEFF   => NULL() ! effective radius
 !
+! For aggregation of columns into packed radiative columns
+  INTEGER :: NI_RAD_AGG    ! reformatted X array size
+  INTEGER :: NJ_RAD_AGG    ! reformatted Y array size
+  INTEGER :: NIOR_RAD_AGG  ! index of first point of packed array according to current domain
+  INTEGER :: NJOR_RAD_AGG  ! index of first point of packed array according to current domain
+!
 END TYPE RADIATIONS_t
 
 TYPE(RADIATIONS_t), DIMENSION(JPMODELMAX), TARGET, SAVE :: RADIATIONS_MODEL
@@ -185,6 +191,11 @@ REAL, DIMENSION(:,:,:), POINTER :: XLWD=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XDTHRADSW=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XDTHRADLW=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XRADEFF=>NULL()
+
+INTEGER, POINTER :: NI_RAD_AGG=>NULL()    ! reformatted X array size
+INTEGER, POINTER :: NJ_RAD_AGG=>NULL()    ! reformatted Y array size
+INTEGER, POINTER :: NIOR_RAD_AGG=>NULL()  ! index of first point of packed array according to current domain
+INTEGER, POINTER :: NJOR_RAD_AGG=>NULL()  ! index of first point of packed array according to current domain
 
 CONTAINS
 
@@ -281,6 +292,11 @@ XLWD=>RADIATIONS_MODEL(KTO)%XLWD
 XDTHRADSW=>RADIATIONS_MODEL(KTO)%XDTHRADSW
 XDTHRADLW=>RADIATIONS_MODEL(KTO)%XDTHRADLW
 XRADEFF=>RADIATIONS_MODEL(KTO)%XRADEFF
+
+NI_RAD_AGG=>RADIATIONS_MODEL(KTO)%NI_RAD_AGG
+NJ_RAD_AGG=>RADIATIONS_MODEL(KTO)%NJ_RAD_AGG
+NIOR_RAD_AGG=>RADIATIONS_MODEL(KTO)%NIOR_RAD_AGG
+NJOR_RAD_AGG=>RADIATIONS_MODEL(KTO)%NJOR_RAD_AGG
 
 END SUBROUTINE RADIATIONS_GOTO_MODEL
 

@@ -15,7 +15,8 @@ INTERFACE
          PDTHRAD,PDIRFLASWD,PSCAFLASWD,                                &
          PFLALWD,PDIRSRFSWD,KCLEARCOL_TM1,                             &
          PZENITH, PAZIM, TPDTRAD_FULL,TPDTRAD_CLONLY,TPINITHALO2D_ll,  &
-         PRADEFF,PSWU,PSWD,PLWU,PLWD,PDTHRADSW,PDTHRADLW               )
+         PRADEFF,PSWU,PSWD,PLWU,PLWD,PDTHRADSW,PDTHRADLW,              &
+         KRAD_AGG,KI_RAD_AGG,KJ_RAD_AGG,KIOR_RAD_AGG,KJOR_RAD_AGG      )
 !
 USE MODD_ARGSLIST_ll, ONLY : LIST_ll
 USE MODD_IO,       ONLY : TFILEDATA
@@ -59,6 +60,13 @@ REAL, DIMENSION(:,:,:),     INTENT(OUT) :: PDTHRADSW !  dthrad sw
 REAL, DIMENSION(:,:,:),     INTENT(OUT) :: PDTHRADLW !  dthrad lw
 REAL, DIMENSION(:,:,:),     INTENT(OUT) :: PRADEFF ! effective radius
 !
+!
+INTEGER, INTENT(IN)  :: KRAD_AGG      ! number of aggregated points
+INTEGER, INTENT(OUT) :: KI_RAD_AGG    ! reformatted X array size
+INTEGER, INTENT(OUT) :: KJ_RAD_AGG    ! reformatted Y array size
+INTEGER, INTENT(OUT) :: KIOR_RAD_AGG  ! index of first point of packed array according to current domain
+INTEGER, INTENT(OUT) :: KJOR_RAD_AGG  ! index of first point of packed array according to current domain
+
 END SUBROUTINE INI_RADIATIONS
 !
 END INTERFACE
@@ -73,7 +81,8 @@ END MODULE MODI_INI_RADIATIONS
          PDTHRAD,PDIRFLASWD,PSCAFLASWD,                                &
          PFLALWD,PDIRSRFSWD,KCLEARCOL_TM1,                             &
          PZENITH, PAZIM, TPDTRAD_FULL,TPDTRAD_CLONLY,TPINITHALO2D_ll,  &
-         PRADEFF,PSWU,PSWD,PLWU,PLWD,PDTHRADSW,PDTHRADLW               )
+         PRADEFF,PSWU,PSWD,PLWU,PLWD,PDTHRADSW,PDTHRADLW,              &
+         KRAD_AGG,KI_RAD_AGG,KJ_RAD_AGG,KIOR_RAD_AGG,KJOR_RAD_AGG      )
 !   ####################################################################
 !
 !!****  *INI_RADIATION_TIME * - initialisation for radiation scheme in the MesoNH framework
@@ -130,6 +139,7 @@ USE MODE_IO_FIELD_READ, only: IO_Field_read
 USE MODE_ll
 !
 USE MODI_SHUMAN
+USE MODI_INI_RADIATIONS_AGG
 !
 IMPLICIT NONE
 !
@@ -171,6 +181,12 @@ REAL, DIMENSION(:,:,:),     INTENT(OUT) :: PLWD ! downward LW Flux
 REAL, DIMENSION(:,:,:),     INTENT(OUT) :: PDTHRADSW !  dthrad sw
 REAL, DIMENSION(:,:,:),     INTENT(OUT) :: PDTHRADLW !  dthrad lw
 REAL, DIMENSION(:,:,:),     INTENT(OUT) :: PRADEFF ! effective radius
+!
+INTEGER, INTENT(IN)  :: KRAD_AGG      ! number of aggregated points
+INTEGER, INTENT(OUT) :: KI_RAD_AGG    ! reformatted X array size
+INTEGER, INTENT(OUT) :: KJ_RAD_AGG    ! reformatted Y array size
+INTEGER, INTENT(OUT) :: KIOR_RAD_AGG  ! index of first point of packed array according to current domain
+INTEGER, INTENT(OUT) :: KJOR_RAD_AGG  ! index of first point of packed array according to current domain
 !
 !*       0.2   declarations of local variables
 !
@@ -321,6 +337,14 @@ ELSE
   CALL IO_Field_read(TPINIFILE,'ZENITH',      PZENITH)
   CALL IO_Field_read(TPINIFILE,'AZIM',        PAZIM)
 END IF
+!
+!-------------------------------------------------------------------------------
+!
+!*       10.         INITIALIZE COLUMN AGGREGATION FOR RADIATION CALL
+!	            -------------------------------------------------
+
+CALL INI_RADIATIONS_AGG (KRAD_AGG,KI_RAD_AGG,KJ_RAD_AGG,KIOR_RAD_AGG,KJOR_RAD_AGG)
+!
 !-------------------------------------------------------------------------------
 !
 END SUBROUTINE INI_RADIATIONS

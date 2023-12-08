@@ -84,6 +84,7 @@ TYPE PARAM_RAD_t
                                 ! aerosol and ozone distribution
   LOGICAL           :: LFIX_DAT ! logical switch to fix the date to a constant 
                                 ! perpetual day ( diurnal cycle is conserved)
+  INTEGER:: NRAD_AGG      ! number of aggregated points in each direction in radiative aggregated columns
 !-------------------------------------------------------------------------------
 !
 
@@ -115,6 +116,7 @@ CHARACTER (LEN=4), POINTER :: COPWSW=>NULL()
 CHARACTER (LEN=4), POINTER :: COPISW=>NULL()
 LOGICAL, POINTER :: LAERO_FT=>NULL()
 LOGICAL, POINTER :: LFIX_DAT=>NULL()
+INTEGER, POINTER :: NRAD_AGG=>NULL()
 
 CONTAINS
 
@@ -142,6 +144,7 @@ COPWSW=>PARAM_RAD_MODEL(KTO)%COPWSW
 COPISW=>PARAM_RAD_MODEL(KTO)%COPISW
 LAERO_FT=>PARAM_RAD_MODEL(KTO)%LAERO_FT
 LFIX_DAT=>PARAM_RAD_MODEL(KTO)%LFIX_DAT
+NRAD_AGG=>PARAM_RAD_MODEL(KTO)%NRAD_AGG
 
 END SUBROUTINE PARAM_RAD_GOTO_MODEL
 
