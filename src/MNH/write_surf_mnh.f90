@@ -285,6 +285,7 @@ END SUBROUTINE WRITE_SURFX0_MNH
 !!      original                                                     01/08/03
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!  P. Wautelet 01/02/2019: bug: forgotten if for iib=iie and XX (same as for YY)
+!  P. Wautelet 08/12/2023: compute global grid 1D coordinates when needed (for PGD files)
 !----------------------------------------------------------------------------
 !
 !*      0.    DECLARATIONS
@@ -292,7 +293,9 @@ END SUBROUTINE WRITE_SURFX0_MNH
 !
 USE MODD_CONF_n,        ONLY: CSTORAGE_TYPE
 use modd_field,         only: tfieldmetadata, tfieldlist, TYPEREAL
-USE MODD_GRID_n,        ONLY: XXHAT, XXHATM, XYHAT, XYHATM
+USE MODD_GRID_n,        ONLY: XXHAT, XXHATM, XXHAT_ll, XXHATM_ll, &
+                              XYHAT, XYHATM, XYHAT_ll, XYHATM_ll, &
+                              XHAT_BOUND, XHATM_BOUND
 USE MODD_IO,            ONLY: TFILE_SURFEX
 USE MODD_IO_SURF_MNH,   ONLY :NMASK, CMASK,                          &
                               NIU, NJU, NIB, NJB, NIE, NJE,          &
@@ -303,7 +306,7 @@ USE MODD_PARAMETERS,    ONLY: XUNDEF, JPHEXT
 use mode_field,          only: Find_field_id_from_mnhname
 use MODE_IO_FIELD_WRITE, only: IO_Field_write
 USE MODE_MSG
-USE MODE_SET_GRID,       only: INTERP_HORGRID_1DIR_TO_MASSPOINTS
+USE MODE_SET_GRID,       only: INTERP_HORGRID_1DIR_TO_MASSPOINTS, STORE_GRID_1DIR
 USE MODE_TOOLS_ll
 USE MODE_WRITE_SURF_MNH_TOOLS
 
@@ -459,6 +462,10 @@ IF (      (CSTORAGE_TYPE=='PG' .OR. CSTORAGE_TYPE=='SU')  &
 
       ! Interpolations of positions to mass points
       CALL INTERP_HORGRID_1DIR_TO_MASSPOINTS( 'X', XXHAT, XXHATM )
+
+      ! Collect global domain boundaries
+      ! No need to allocate XXHAT_ll, XXHATM_ll, XHAT_BOUND, XHATM_BOUND, this is done in STORE_GRID_1DIR
+      CALL STORE_GRID_1DIR( 'X', XXHAT, XXHATM, XXHAT_ll, XXHATM_ll, XHAT_BOUND, XHATM_BOUND )
     END IF
   END IF
   DEALLOCATE(ZW1D)
@@ -494,6 +501,10 @@ ELSE IF ( (CSTORAGE_TYPE=='PG' .OR. CSTORAGE_TYPE=='SU')  &
 
       ! Interpolations of positions to mass points
       CALL INTERP_HORGRID_1DIR_TO_MASSPOINTS( 'Y', XYHAT, XYHATM )
+
+      ! Collect global domain boundaries
+      ! No need to allocate XYHAT_ll, XYHATM_ll, XHAT_BOUND, XHATM_BOUND, this is done in STORE_GRID_1DIR
+      CALL STORE_GRID_1DIR( 'Y', XYHAT, XYHATM, XYHAT_ll, XYHATM_ll, XHAT_BOUND, XHATM_BOUND )
     END IF
   END IF
   DEALLOCATE(ZW1D)
