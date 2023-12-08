@@ -284,7 +284,7 @@ export ARMCI_SHR_BUF_METHOD=COPY
 'Linux belenos'*|'Linux taranis'*)
                 export     ARCH=${ARCH:-LXifort}
                 export  VER_MPI=${VER_MPI:-MPIAUTO}
-                export OPTLEVEL=${OPTLEVEL:-O3}
+                export OPTLEVEL=${OPTLEVEL:-O2}
                 export MVWORK=${MVWORK:-NO}
                 export VER_CDF=${VER_CDF:-CDFAUTO}
                 export NEED_TOOLS=YES
