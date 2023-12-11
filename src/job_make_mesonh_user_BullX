@@ -19,7 +19,7 @@ export VER_USER=                ########## Your own USER Directory
 set -x
 
 # On va lancer la compilation dans le répertoire de lancement du job
-. ../conf/profile_mesonh-LXifort-R8I4-MNH-V5-6-1-${VER_USER}-MPIINTEL-O3
+. ../conf/profile_mesonh-LXifort-R8I4-MNH-V5-6-2-${VER_USER}-MPIINTEL-O3
 
 time gmake user
 time gmake -j 1 installuser
