@@ -70,6 +70,8 @@ USE MODD_DYN        , ONLY : XTSTEP_MODEL1
 USE MODD_CONDSAMP
 USE MODE_ll
 USE MODD_CST
+USE MODE_MPPDB
+USE MODE_REPRO_SUM, ONLY : SUM_DD_R2_ll
 !
 !*      0. DECLARATIONS
 !          ------------
@@ -98,7 +100,9 @@ REAL, DIMENSION(SIZE(XRT,1),SIZE(XRT,2),SIZE(XRT,3)) :: ZRT
 REAL, DIMENSION(SIZE(XSVT,1),SIZE(XSVT,2),SIZE(XSVT,3),SIZE(XSVT,4)) :: ZSVT
 REAL, DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3)) :: ZSUM,ZTHV
 REAL, DIMENSION(:,:,:), ALLOCATABLE  :: ZLVOCPEXNM,ZLSOCPEXNM ! Lv/Cp/EXNREF and Ls/Cp/EXNREF at t-1
-
+!
+CHARACTER(LEN=3) :: YJSV
+INTEGER          :: IIMAX_ll,IJMAX_ll
 !
 !--------------------------------------------------------------------------------------
 !
@@ -111,9 +115,16 @@ IKU = SIZE(XRT,3)
 IKB = 1 + JPVEXT
 IKE = IKU - JPVEXT
 CALL GET_INDICE_ll(IIB,IJB,IIE,IJE)
+CALL GET_GLOBALDIMS_ll ( IIMAX_ll,IJMAX_ll)
 !
 ZSVT(:,:,:,:) = XSVT(:,:,:,:)
 !
+IF (MPPDB_INITIALIZED) THEN
+DO JSV=NSV_CSBEG, NSV_CSEND
+   WRITE( YJSV, '( I3.3 )' ) JSV
+   CALL MPPDB_CHECK3D(ZSVT(:,:,:,JSV),"BEG CONDSAMP ZSVT"//YJSV,PRECISION)
+END DO
+END IF
 !
 !
 !*	1.  INITIALIZATION OF CONDITIONAL SAMPLING TRACERS
@@ -159,10 +170,10 @@ IF ( NSV_CS >= 2 ) THEN
     ZTHV(:,:,JK)=XTHT(:,:,JK) * ( 1. + XRV/XRD*XRT(:,:,JK,1) )  &
                            / ( 1. + ZSUM(:,:,JK) )
   END DO
-  ZTHVMEAN = SUM(ZTHV(:,:,2))/SIZE(ZTHV(:,:,2)) 
+  ZTHVMEAN = SUM_DD_R2_ll(ZTHV(IIB:IIE,IJB:IJE,2))/REAL(IIMAX_ll*IJMAX_ll)
   DO JK=3,IKE
      IF (ITOP == 0) THEN
-      ZDT     =  SUM(ZTHV(:,:,JK))/SIZE(ZTHV(:,:,JK))   
+        ZDT = SUM_DD_R2_ll(ZTHV(IIB:IIE,IJB:IJE,JK))/REAL(IIMAX_ll*IJMAX_ll)
       ZTHVMEAN =   (1.0/XZHAT(JK+1))* & 
                   (XZHAT(JK)*ZTHVMEAN + (XZHAT(JK+1)-XZHAT(JK))*ZDT)
       IF (ZDT > ZTHVMEAN + ZOFFSET ) THEN
@@ -181,7 +192,7 @@ IF ( NSV_CS >= 2 ) THEN
   !
   DO JK=1,IKE
     ! ZDT need to become positive at least once
-    ZDT = SUM((XTHT(:,:,JK+1)-XTHT(:,:,JK)))/SIZE(XTHT(:,:,JK))
+    ZDT = SUM_DD_R2_ll(XTHT(IIB:IIE,IJB:IJE,JK+1)-XTHT(IIB:IIE,IJB:IJE,JK))/REAL(IIMAX_ll*IJMAX_ll)     
     ZDT = ZDT/(XZHAT(JK+1)-XZHAT(JK))
     IF ( ZDT > ZMAXZDT ) THEN
       ITOP=JK
@@ -260,6 +271,12 @@ DO JSV=NSV_CSBEG, NSV_CSEND
    XRSVS(:,:,:,JSV) = XRSVS(:,:,:,JSV) + &
         XRHODJ(:,:,:)*(ZSVT(:,:,:,JSV)-XSVT(:,:,:,JSV))/PTSTEP
 END DO
+IF (MPPDB_INITIALIZED) THEN
+DO JSV=NSV_CSBEG, NSV_CSEND
+   WRITE( YJSV, '( I3.3 )' ) JSV
+   CALL MPPDB_CHECK3D(ZSVT(:,:,:,JSV),"END CONDSAMP ZSVT"//YJSV,PRECISION)
+END DO
+END IF
 !-------------------------------------------------------------------------------
 !
 !-------------------------------------------------------------------------------
