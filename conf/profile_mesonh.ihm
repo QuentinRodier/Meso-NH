@@ -186,8 +186,10 @@ echo 'WARNING : You chose VER_CDF=CDFPERSO, please set NETCDF_CONFIG environment
 fi
 fi
 #
+if [ -n "${VER_OASIS}" ] ; then
 if [ \${VER_OASIS} = 'OASISPERSO' ] ; then
 if [ -z \$OASISDIR ] ; then
 echo 'WARNING : You chose VER_OASIS=OASISPERSO, please set OASISDIR environment variable'
 fi
-fi 
+fi
+fi
