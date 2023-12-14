@@ -352,7 +352,7 @@ $(CDF_MOD) :
 	cd ${DIR_HDF} && ./configure --enable-fortran --disable-shared --prefix=${CDF_PATH} --libdir=${CDF_PATH}/lib64 --with-szlib=${CDF_PATH}/include,${CDF_PATH}/lib64 \
 	CC="$(CC)" CFLAGS="$(HDF_OPT)" ${HDF_CONF} FC="$(FC)" FCFLAGS="$(NETCDF_OPT)" LDFLAGS="-L${CDF_PATH}/lib64" LIBS="-lsz -laec -lz" && \
 	$(MAKE) && $(MAKE) install && $(MAKE) clean
-	cd ${DIR_CDFC} && ./configure --disable-shared --prefix=${CDF_PATH} --libdir=${CDF_PATH}/lib64 --disable-dap \
+	cd ${DIR_CDFC} && ./configure --disable-shared --prefix=${CDF_PATH} --libdir=${CDF_PATH}/lib64 --disable-dap --disable-byterange \
 	CC="$(CC)" CFLAGS="$(NETCDF_OPT)" CPPFLAGS="${INC_NETCDF}" ${CDF_CONF} LDFLAGS="-L${CDF_PATH}/lib64" LIBS="-lhdf5_hl -lhdf5 -lsz -laec -lz -ldl " && \
 	$(MAKE) && $(MAKE) install && $(MAKE) clean
 ifdef MNH_FOREFIRE

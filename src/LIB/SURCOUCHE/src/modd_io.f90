@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -12,11 +12,16 @@
 !  P. Wautelet 17/01/2020: add 'BUD' category for Print_msg + corresponding namelist variables
 !  P. Wautelet 22/09/2020: add ldimreduced in tfiledata
 !  P. Wautelet 10/11/2020: new data structures for netCDF dimensions
+!  P. Wautelet 14/12/2023: add lossy compression for output files
 !-----------------------------------------------------------------
 
 #define MNH_REDUCE_DIMENSIONS_IN_FILES 1
 
 MODULE MODD_IO
+!
+#ifdef MNH_IOCDF4
+USE NETCDF, ONLY: NF90_QUANTIZE_GRANULARBR
+#endif
 !
 use modd_netcdf,     only: tdimsnc
 USE MODD_PARAMETERS, ONLY: NDIRNAMELGTMAX, NFILENAMELGTMAX
@@ -123,6 +128,9 @@ TYPE TFILEDATA
                                                                 ! instead of double precision
   LOGICAL                :: LNCCOMPRESS = .FALSE. ! Do compression on fields
   INTEGER(KIND=CDFINT)   :: NNCCOMPRESS_LEVEL = 0 ! Compression level
+  LOGICAL                :: LNCCOMPRESS_LOSSY      = .FALSE.                  ! Do lossy compression on float fields
+  INTEGER(KIND=CDFINT)   :: NNCCOMPRESS_LOSSY_ALGO = NF90_QUANTIZE_GRANULARBR ! Lossy compression algorithm
+  INTEGER(KIND=CDFINT)   :: NNCCOMPRESS_LOSSY_NSD  = 3                  ! Number of Significant Digits (or Bits)
   type(tdimsnc), pointer :: tncdims => Null()     ! Dimensions of netCDF file
 #endif
   !
