@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1996-2017 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1996-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ##################
@@ -24,16 +24,17 @@
 !!    REFERENCE
 !!    ---------
 !!      Book2 of Meso-NH documentation (module MODD_BAKOUT)
-!!          
+!!
 !!    AUTHOR
 !!    ------
 !!	J.P. Lafore      *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
-!!      Original    26/07/96                      
-!!      Ph. Wautelet 2016       new structures for outputs/backups
-!!      Ph. Wautelet 02/10/2017 split NAM_OUTPUT in NAM_BACKUP and NAM_OUTPUT
+!!      Original    26/07/96
+!  P. Wautelet       2016: new structures for outputs/backups
+!  P. Wautelet 02/10/2017: split NAM_OUTPUT in NAM_BACKUP and NAM_OUTPUT
+!  P. Wautelet 14/12/2023: add lossy compression for output files
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -50,6 +51,7 @@ NAMELIST/NAM_OUTPUT/LOUT_BEG,LOUT_END,&
                    COUT_VAR, &
                    LOUT_REDUCE_FLOAT_PRECISION, &
                    LOUT_COMPRESS, NOUT_COMPRESS_LEVEL,&
+                   LOUT_COMPRESS_LOSSY, COUT_COMPRESS_LOSSY_ALGO, NOUT_COMPRESS_LOSSY_NSD, &
                    COUT_DIR
 !
 END MODULE MODN_OUTPUT

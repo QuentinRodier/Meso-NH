@@ -22,6 +22,7 @@
 !  P. Wautelet 18/03/2022: minor bugfix in ISTEP_MAX computation + adapt diagnostics messages
 !                          (change verbosity level and remove some unnecessary warnings)
 !  P. Wautelet 13/01/2023: set NMODEL field for backup and output files
+!  P. Wautelet 14/12/2023: add lossy compression for output files
 !-----------------------------------------------------------------
 MODULE MODE_IO_MANAGE_STRUCT
 !
@@ -523,7 +524,13 @@ END SUBROUTINE SORT_ENTRIES
 SUBROUTINE POPULATE_STRUCT(TPFILE_FIRST,TPFILE_LAST,KSTEPS,HFILETYPE,TPBAKOUTN,KMI)
 !#########################################################################
   !
-  USE MODD_CONFZ, ONLY: NB_PROCIO_W
+#ifdef MNH_IOCDF4
+  USE NETCDF, ONLY: NF90_QUANTIZE_BITGROOM, NF90_QUANTIZE_BITROUND, NF90_QUANTIZE_GRANULARBR
+#endif
+  !
+  USE MODD_CONFZ,      ONLY: NB_PROCIO_W
+  !
+  USE MODE_TOOLS,      ONLY: UPCASE
   !
   TYPE(TFILEDATA),           POINTER,INTENT(INOUT) :: TPFILE_FIRST,TPFILE_LAST
   INTEGER,DIMENSION(:),              INTENT(IN)    :: KSTEPS
@@ -559,16 +566,109 @@ SUBROUTINE POPULATE_STRUCT(TPFILE_FIRST,TPFILE_LAST,KSTEPS,HFILETYPE,TPBAKOUTN,K
         IF (TRIM(HFILETYPE)=='MNHOUTPUT') THEN
           ! Add a "OUT" suffix for output files
           TPBAKOUTN(IPOS)%TFILE%CNAME=ADJUSTL(ADJUSTR(IO_SURF_MNH_MODEL(IMI)%COUTFILE)//'.OUT.'//YNUMBER)
+
+#ifdef MNH_IOCDF4
           !Reduce the float precision if asked
           TPBAKOUTN(IPOS)%TFILE%LNCREDUCE_FLOAT_PRECISION = LOUT_REDUCE_FLOAT_PRECISION(IMI)
+
           !Set compression if asked
           TPBAKOUTN(IPOS)%TFILE%LNCCOMPRESS = LOUT_COMPRESS(IMI)
           IF ( NOUT_COMPRESS_LEVEL(IMI)<0 .OR. NOUT_COMPRESS_LEVEL(IMI)>9 ) THEN
-            CALL PRINT_MSG(NVERB_WARNING,'IO','POPULATE_STRUCT',&
-                           'NOUT_COMPRESS_LEVEL must be in the [0..9] range. Value forced to 4')
+            CALL PRINT_MSG( NVERB_ERROR, 'IO', 'POPULATE_STRUCT', &
+                            'NOUT_COMPRESS_LEVEL must be in the [0..9] range' )
             NOUT_COMPRESS_LEVEL(IMI) = 4
           END IF
           TPBAKOUTN(IPOS)%TFILE%NNCCOMPRESS_LEVEL = NOUT_COMPRESS_LEVEL(IMI)
+
+          !Set lossy compression
+          TPBAKOUTN(IPOS)%TFILE%LNCCOMPRESS_LOSSY = LOUT_COMPRESS_LOSSY(IMI)
+          IF ( LOUT_COMPRESS_LOSSY(IMI) ) THEN
+            !Force compression if lossy compression is enabled
+            TPBAKOUTN(IPOS)%TFILE%LNCCOMPRESS = .TRUE.
+
+            !Set lossy compression algorithm
+            SELECT CASE ( UPCASE( COUT_COMPRESS_LOSSY_ALGO(IMI) ) )
+              CASE ( 'BITGROOM' )
+                TPBAKOUTN(IPOS)%TFILE%NNCCOMPRESS_LOSSY_ALGO = NF90_QUANTIZE_BITGROOM
+              CASE ( 'GRANULARBR' )
+                TPBAKOUTN(IPOS)%TFILE%NNCCOMPRESS_LOSSY_ALGO = NF90_QUANTIZE_GRANULARBR
+              CASE ( 'BITROUND' )
+                TPBAKOUTN(IPOS)%TFILE%NNCCOMPRESS_LOSSY_ALGO = NF90_QUANTIZE_BITROUND
+              CASE DEFAULT
+                CMNHMSG(1) = 'invalid COUT_COMPRESS_LOSSY_ALGO'
+                CMNHMSG(2) = 'Accepted algorithms: BITGROOM, GRANULARBR (default choice), BITROUND'
+                CALL PRINT_MSG( NVERB_ERROR, 'IO', 'POPULATE_STRUCT' )
+                TPBAKOUTN(IPOS)%TFILE%NNCCOMPRESS_LOSSY_ALGO = NF90_QUANTIZE_GRANULARBR
+            END SELECT
+
+            !Set number of significant digits/bits for lossy compression algorithm
+#if (MNH_REAL == 4)
+            SELECT CASE ( TPBAKOUTN(IPOS)%TFILE%NNCCOMPRESS_LOSSY_ALGO )
+              CASE ( NF90_QUANTIZE_BITROUND )
+                ! For 32 bit reals, number of significant bits must be in the 1 to 23 range
+                IF ( NOUT_COMPRESS_LOSSY_NSD(IMI) < 1 .OR. NOUT_COMPRESS_LOSSY_NSD(IMI) > 23 ) THEN
+                  CALL PRINT_MSG( NVERB_ERROR, 'IO', 'POPULATE_STRUCT', &
+                                  'NOUT_COMPRESS_LOSSY_NSD must be in the [1..23] range' )
+                  NOUT_COMPRESS_LOSSY_NSD(IMI) = 7
+                END IF
+              CASE ( NF90_QUANTIZE_BITGROOM, NF90_QUANTIZE_GRANULARBR )
+                ! For 32 bit reals, number of significant digits must be in the 1 to 7 range
+                IF ( NOUT_COMPRESS_LOSSY_NSD(IMI) < 1 .OR. NOUT_COMPRESS_LOSSY_NSD(IMI) > 7 ) THEN
+                  CALL PRINT_MSG( NVERB_ERROR, 'IO', 'POPULATE_STRUCT', &
+                                  'NOUT_COMPRESS_LOSSY_NSD must be in the [1..7] range' )
+                  NOUT_COMPRESS_LOSSY_NSD(IMI) = 3
+                END IF
+              CASE DEFAULT
+                CALL PRINT_MSG( NVERB_FATAL, 'IO', 'POPULATE_STRUCT', 'invalid NNCCOMPRESS_LOSSY_ALGO (internal fatal error)' )
+            END SELECT
+#elif (MNH_REAL == 8)
+            IF ( TPBAKOUTN(IPOS)%TFILE%LNCREDUCE_FLOAT_PRECISION ) THEN
+              SELECT CASE ( TPBAKOUTN(IPOS)%TFILE%NNCCOMPRESS_LOSSY_ALGO )
+                CASE ( NF90_QUANTIZE_BITROUND )
+                  ! For 32 bit reals, number of significant bits must be in the 1 to 23 range
+                  IF ( NOUT_COMPRESS_LOSSY_NSD(IMI) < 1 .OR. NOUT_COMPRESS_LOSSY_NSD(IMI) > 23 ) THEN
+                    CALL PRINT_MSG( NVERB_ERROR, 'IO', 'POPULATE_STRUCT', &
+                                    'NOUT_COMPRESS_LOSSY_NSD must be in the [1..23] range' )
+                    NOUT_COMPRESS_LOSSY_NSD(IMI) = 7
+                  END IF
+                CASE ( NF90_QUANTIZE_BITGROOM, NF90_QUANTIZE_GRANULARBR )
+                  ! For 32 bit reals, number of significant digits must be in the 1 to 7 range
+                  IF ( NOUT_COMPRESS_LOSSY_NSD(IMI) < 1 .OR. NOUT_COMPRESS_LOSSY_NSD(IMI) > 7 ) THEN
+                    CALL PRINT_MSG( NVERB_ERROR, 'IO', 'POPULATE_STRUCT', &
+                                    'NOUT_COMPRESS_LOSSY_NSD must be in the [1..7] range' )
+                    NOUT_COMPRESS_LOSSY_NSD(IMI) = 3
+                  END IF
+                CASE DEFAULT
+                  CALL PRINT_MSG( NVERB_FATAL, 'IO', 'POPULATE_STRUCT', 'invalid NNCCOMPRESS_LOSSY_ALGO (internal fatal error)' )
+              END SELECT
+            ELSE
+              SELECT CASE ( TPBAKOUTN(IPOS)%TFILE%NNCCOMPRESS_LOSSY_ALGO )
+                CASE ( NF90_QUANTIZE_BITROUND )
+                  ! For 64 bit reals, number of significant bits must be in the 1 to 52 range
+                  IF ( NOUT_COMPRESS_LOSSY_NSD(IMI) < 1 .OR. NOUT_COMPRESS_LOSSY_NSD(IMI) > 52 ) THEN
+                    CALL PRINT_MSG( NVERB_ERROR, 'IO', 'POPULATE_STRUCT', &
+                                    'NOUT_COMPRESS_LOSSY_NSD must be in the [1..52] range' )
+                    NOUT_COMPRESS_LOSSY_NSD(IMI) = 7
+                  END IF
+                CASE ( NF90_QUANTIZE_BITGROOM, NF90_QUANTIZE_GRANULARBR )
+                  ! For 64 bit reals, number of significant digits must be in the 1 to 15 range
+                  IF ( NOUT_COMPRESS_LOSSY_NSD(IMI) < 1 .OR. NOUT_COMPRESS_LOSSY_NSD(IMI) > 15 ) THEN
+                    CALL PRINT_MSG( NVERB_ERROR, 'IO', 'POPULATE_STRUCT', &
+                                    'NOUT_COMPRESS_LOSSY_NSD must be in the [1..15] range')
+                    NOUT_COMPRESS_LOSSY_NSD(IMI) = 3
+                  END IF
+                CASE DEFAULT
+                  CALL PRINT_MSG( NVERB_FATAL, 'IO', 'POPULATE_STRUCT', 'invalid NNCCOMPRESS_LOSSY_ALGO (internal fatal error)' )
+              END SELECT
+            END IF
+#else
+#error "Invalid MNH_REAL"
+#endif
+            TPBAKOUTN(IPOS)%TFILE%NNCCOMPRESS_LOSSY_NSD = NOUT_COMPRESS_LOSSY_NSD(IMI)
+          END IF
+#endif
+
+          !Set output directory
           IF (LEN_TRIM(COUT_DIR)>0) THEN
             TPBAKOUTN(IPOS)%TFILE%CDIRNAME=TRIM(COUT_DIR)
           ELSE IF (LEN_TRIM(CIO_DIR)>0) THEN
