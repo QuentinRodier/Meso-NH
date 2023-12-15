@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2014-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2014-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -39,7 +39,7 @@
 !
 USE MODD_IO, ONLY : LVERB_OUTLST, LVERB_STDOUT, LVERB_ALLPRC, &
                     NBUD_VERB, NBUD_ABORT_LEVEL, NIO_VERB, NIO_ABORT_LEVEL, NGEN_VERB, NGEN_ABORT_LEVEL, &
-                    CIO_DIR, LIO_ALLOW_NO_BACKUP, LIO_NO_WRITE
+                    CIO_DIR, LIO_ALLOW_NO_BACKUP, LIO_NO_WRITE, NFILE_NUM_MAX
 !
 IMPLICIT NONE
 !
@@ -53,7 +53,8 @@ NAMELIST/NAM_CONFIO/LCDF4, LLFIOUT, LLFIREAD,                 &
                     NBUD_VERB, NBUD_ABORT_LEVEL,              &
                     NIO_VERB,  NIO_ABORT_LEVEL,               &
                     NGEN_VERB, NGEN_ABORT_LEVEL, CIO_DIR,     &
-                    LIO_ALLOW_NO_BACKUP, LIO_NO_WRITE
+                    LIO_ALLOW_NO_BACKUP, LIO_NO_WRITE,        &
+                    NFILE_NUM_MAX
 !
 END MODULE MODN_CONFIO
 

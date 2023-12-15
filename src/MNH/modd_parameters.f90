@@ -36,7 +36,6 @@
 !!      Modification 17/11/00 (P.Jabouille) add the dummy array size
 !!      Modification 22/01/01 (D.Gazen) change JPSVMAX from 100 to 200
 !!                                         and JPBUMAX from 120 to 250
-!!      Modification 17/05/04 (P.Jabouille) add JPOUTMAX
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !!      B.VIE 2016 LIMA
 !  P. Wautelet: 05/2016-04/2018: new data structures and calls for I/O
@@ -77,7 +76,6 @@ INTEGER, PARAMETER :: NNEGUNDEF = -999  ! default value for undefined or unused
 !                                       ! field (negative value guaranteed)
 INTEGER, PARAMETER :: JPDUMMY  = 20   ! Size of dummy array
 !
-INTEGER, PARAMETER :: JPOUTMAX = 999    ! Maximum allowed number of OUTput files
 INTEGER, PARAMETER :: JPOUTVARMAX = 192 ! Maximum allowed number of variables in an output file
 !
 INTEGER, PARAMETER :: NBUNAMELGTMAX   = 32  ! Maximum length of a budget name
