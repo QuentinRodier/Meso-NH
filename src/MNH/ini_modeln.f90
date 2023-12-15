@@ -362,7 +362,7 @@ USE MODD_GET_n
 USE MODD_GRID_n
 USE MODD_GRID,              only: XLONORI,XLATORI
 USE MODD_IBM_PARAM_n,       only: LIBM, XIBM_IEPS, XIBM_LS, XIBM_XMUT
-USE MODD_IO,                only: CIO_DIR, TFILEDATA, TFILE_DUMMY
+USE MODD_IO,                only: CIO_DIR, NFILE_NUM_MAX, TFILEDATA, TFILE_DUMMY
 USE MODD_IO_SURF_MNH,       only: IO_SURF_MNH_MODEL
 USE MODD_LATZ_EDFLX
 USE MODD_LBC_n,             only: CLBCX, CLBCY
@@ -504,6 +504,7 @@ REAL, PARAMETER :: NALBUV_DEFAULT = 0.01 ! Arbitrary low value for XALBUV
 INTEGER             :: JSV     ! Loop index
 INTEGER             :: IRESP   ! Return code of FM routines
 INTEGER             :: ILUOUT  ! Logical unit number of output-listing
+CHARACTER(LEN=6)    :: YNUM
 CHARACTER(LEN=28)   :: YNAME
 INTEGER             :: IIU     ! Upper dimension in x direction (local)
 INTEGER             :: IJU     ! Upper dimension in y direction (local)
@@ -1877,9 +1878,21 @@ CALL INI_BIKHARDT_n (NDXRATIO_ALL(KMI),NDYRATIO_ALL(KMI),KMI)
 !               ----------------------------
 !
 IF (KMI == 1) THEN
+  IF ( NFILE_NUM_MAX < 1000 ) THEN
+    YNUM= '000'
+  ELSE IF ( NFILE_NUM_MAX < 10000 ) THEN
+    YNUM= '0000'
+  ELSE IF ( NFILE_NUM_MAX < 100000 ) THEN
+    YNUM= '00000'
+  ELSE IF ( NFILE_NUM_MAX < 1000000 ) THEN
+    YNUM= '000000'
+  ELSE
+    CALL PRINT_MSG( NVERB_FATAL, 'IO', 'INI_MODEL_n', 'NFILE_NUM_MAX is too large' )
+  END IF
+
   DO IMI = 1 , NMODEL
     WRITE(IO_SURF_MNH_MODEL(IMI)%COUTFILE,'(A,".",I1,".",A)') CEXP,IMI,TRIM(ADJUSTL(CSEG))
-    WRITE(YNAME, '(A,".",I1,".",A)') CEXP,IMI,TRIM(ADJUSTL(CSEG))//'.000'
+    WRITE( YNAME, '(A,".",I1,".",A)' ) CEXP, IMI, TRIM(ADJUSTL(CSEG)) // '.' // TRIM(YNUM)
     CALL IO_File_add2list(LUNIT_MODEL(IMI)%TDIAFILE,YNAME,'MNHDIACHRONIC','WRITE', &
                           HDIRNAME=CIO_DIR,                                        &
                           KLFINPRAR=INT(50,KIND=LFIINT),KLFITYPE=1,KLFIVERB=NVERB, &
