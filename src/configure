@@ -18,7 +18,7 @@ export VERSION_CDFC=${VERSION_CDFC:-"4.9.2"}
 export VERSION_CDFCXX=${VERSION_CDFCXX:-"4.3.1"}
 export VERSION_CDFF=${VERSION_CDFF:-"4.6.1"}
 export VERSION_GRIBAPI=${VERSION_GRIBAPI:-"1.26.0-Source"}
-export VERSION_ECCODES=${VERSION_ECCODES:-"2.18.0"}
+export VERSION_ECCODES=${VERSION_ECCODES:-"2.25.0"}
 export ECCODES_DEFINITION_PATH=${ECCODES_DEFINITION_PATH:-${SRC_MESONH}/src/LIB/eccodes-${VERSION_ECCODES}/definitions/}
 export MNH_INT=${MNH_INT:-"4"}
 export LFI_INT=${LFI_INT:-8}
@@ -224,7 +224,7 @@ module load inteloneapi/23.1.0
 module load mpi/openmpi/4.1.4
 export SLURM_CPU_BIND=none
 
-export DIR_ECCODES_INSTALL=\${CCCWORKDIR}/ECCODES-2.18.0\${XYZM}
+export DIR_ECCODES_INSTALL=\${CCCWORKDIR}/ECCODES-2.25.0\${XYZM}
 
 "}
 ;;
@@ -243,7 +243,7 @@ module load inteloneapi/23.1.0
 module load mpi/openmpi/4.1.4
 export SLURM_CPU_BIND=none
 
-export DIR_ECCODES_INSTALL=\${CCCWORKDIR}/ECCODES-2.18.0\${XYZM}
+export DIR_ECCODES_INSTALL=\${CCCWORKDIR}/ECCODES-2.25.0\${XYZM}
 
 # Set some openmpi variable for pb with nb of cores >> 1024
 export OMPI_MCA_coll_hcoll_enable=0
