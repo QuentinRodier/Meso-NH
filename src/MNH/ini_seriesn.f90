@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2002-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -93,12 +93,14 @@ CHARACTER (LEN=5), DIMENSION(3) :: YSUF
 INTEGER  :: ILUOUT ! Logical unit number for output-listing
 INTEGER  :: IRESP   ! Return code of FM-routines
 INTEGER :: IMI ! Current model index
+INTEGER :: IDIGITS, ISIZE ! Length of character string
 !-------------------------------------------------------------------------------
 !
 !*       1.    INITIALIZATIONS
 !              ---------------
 !
 IMI = GET_CURRENT_MODEL_INDEX()
+IDIGITS = INT( LOG10(REAL(IMI)+0.1) + 1 ) !Get the number of digits of IMI
 !
 CALL GET_INDICE_ll (IIB,IJB,IIE,IJE) 
 IKE = NKMAX + JPVEXT
@@ -317,7 +319,9 @@ YMASK(3) = 'SEA'
 !              -----------------
 !
 DO JI=1,NSTEMP_SERIE1
-  WRITE(CSCOMMENT1(JI),'("TEMPORAL SERIE (t)   : ",A,".",I0,".",A)') CEXP,IMI,CSEG
+  ISIZE = LEN("TEMPORAL SERIES (t)  : ") + LEN_TRIM(CEXP) + 1 + IDIGITS + 1 + LEN_TRIM(CSEG)
+  IF ( ISIZE > LEN(CSCOMMENT1(JI)) ) CALL PRINT_MSG( NVERB_WARNING, 'IO', 'INI_SERIES_n', 'CSCOMMENT1 truncated' )
+  WRITE(CSCOMMENT1(JI),'("TEMPORAL SERIES (t)  : ",A,".",I0,".",A)') TRIM(CEXP), IMI, TRIM(CSEG)
   IF (JI==1) WRITE(ILUOUT,FMT=*) CSCOMMENT1(JI)
 END DO
 !
@@ -383,7 +387,9 @@ end if
 !              ---------------------
 !
 DO JI=1,NSTEMP_SERIE2
-  WRITE(CSCOMMENT2(JI),'("TEMPORAL SERIE (z,t) : ",A,".",I0,".",A)') CEXP,IMI,CSEG
+  ISIZE = LEN("TEMPORAL SERIES (z,t): ") + LEN_TRIM(CEXP) + 1 + IDIGITS + 1 + LEN_TRIM(CSEG)
+  IF ( ISIZE > LEN(CSCOMMENT2(JI)) ) CALL PRINT_MSG( NVERB_WARNING, 'IO', 'INI_SERIES_n', 'CSCOMMENT2 truncated' )
+  WRITE(CSCOMMENT2(JI),'("TEMPORAL SERIES (z,t): ",A,".",I0,".",A)') TRIM(CEXP), IMI, TRIM(CSEG)
   IF (JI==1) WRITE(ILUOUT,FMT=*) CSCOMMENT2(JI)
 END DO
 !
@@ -428,7 +434,9 @@ end if
 !*    2.3 Temporal series (x,t)
 !
 DO JI=1,NSTEMP_SERIE3
-  WRITE(CSCOMMENT3(JI),'("TEMPORAL SERIE (x,t) : ",A,".",I0,".",A)') CEXP,IMI,CSEG 
+  ISIZE = LEN("TEMPORAL SERIES (x,t): ") + LEN_TRIM(CEXP) + 1 + IDIGITS + 1 + LEN_TRIM(CSEG)
+  IF ( ISIZE > LEN(CSCOMMENT3(JI)) ) CALL PRINT_MSG( NVERB_WARNING, 'IO', 'INI_SERIES_n', 'CSCOMMENT3 truncated' )
+  WRITE(CSCOMMENT3(JI),'("TEMPORAL SERIES (x,t): ",A,".",I0,".",A)') TRIM(CEXP), IMI, TRIM(CSEG)
   IF (JI==1) WRITE(ILUOUT,FMT=*) CSCOMMENT3(JI)
 END DO
 
