@@ -32,7 +32,7 @@
 !
 
 module radiation_config
-
+  USE MODD_PARAM_LIMA,          ONLY : CPRISTINE_ICE_LIMA
   use parkind1,                      only : jprb
 
   use radiation_cloud_optics_data,   only : cloud_optics_type
@@ -69,7 +69,6 @@ module radiation_config
        & IEntrapmentExplicit, & ! Estimate horiz migration dist, account for fractal clouds
        & IEntrapmentExplicitNonFractal, & ! As above but ignore fractal nature of clouds
        & IEntrapmentMaximum ! Complete horizontal homogenization within regions (old SPARTACUS assumption)
-
   end enum
   
   ! Names available in the radiation namelist for variable
@@ -110,14 +109,15 @@ module radiation_config
   enum, bind(c) 
      enumerator IIceModelMonochromatic, IIceModelFu, &
           &  IIceModelBaran, IIceModelBaran2016, IIceModelBaran2017,   &
-          &  IIceModelYi
+          &  IIceModelYi, IIceModelShapes
   end enum
-  character(len=*), parameter :: IceModelName(0:5) = (/ 'Monochromatic', &
+  character(len=*), parameter :: IceModelName(0:6) = (/ 'Monochromatic', &
        &                                                'Fu-IFS       ', &
        &                                                'Baran        ', &
        &                                                'Baran2016    ', &
        &                                                'Baran2017    ', &
-       &                                                'Yi           ' /)
+       &                                                'Yi           ', &
+       &                                                'Shapes       ' /)
 
   ! Cloud PDF distribution shapes
   enum, bind(c)
@@ -238,7 +238,7 @@ module radiation_config
     ! Codes describing the gas and cloud scattering models to use, the
     ! latter of which is currently not used
     integer :: i_gas_model = IGasModelIFSRRTMG
-    !     integer :: i_cloud_model
+    !     integer :: i_cloud_model    
 
     ! Optics if i_gas_model==IGasModelMonochromatic.
     ! The wavelength to use for the Planck function in metres. If this
@@ -274,10 +274,10 @@ module radiation_config
 
     ! User-defined monotonically increasing wavelength bounds (m)
     ! between input surface albedo/emissivity intervals. Implicitly
-    ! the first interval starts at zero and the last ends at infinity.
+    ! the first interval starts at zero and the last ends at
+    ! infinity. 
     real(jprb) :: sw_albedo_wavelength_bound(NMaxAlbedoIntervals-1) = -1.0_jprb
     real(jprb) :: lw_emiss_wavelength_bound( NMaxAlbedoIntervals-1)  = -1.0_jprb
-
     ! The index to the surface albedo/emissivity intervals for each of
     ! the wavelength bounds specified in sw_albedo_wavelength_bound
     ! and lw_emiss_wavelength_bound
@@ -419,8 +419,8 @@ module radiation_config
     ! then that will be used instead. If the user assigns one and it
     ! doesn't start with a '/' character then it will be prepended by
     ! the contents of directory_name.
-    character(len=511) :: ice_optics_override_file_name = ''
-    character(len=511) :: liq_optics_override_file_name = ''
+    character(len=511) :: ice_optics_override_file_name     = ''
+    character(len=511) :: liq_optics_override_file_name     = ''
     character(len=511) :: aerosol_optics_override_file_name = ''
 
     ! Optionally override the look-up table file for the cloud-water
@@ -428,8 +428,7 @@ module radiation_config
     character(len=511) :: cloud_pdf_override_file_name = ''
 
     ! Has "consolidate" been called?  
-    logical :: is_consolidated = .false.
-
+    logical :: is_consolidated = .false.    
     ! COMPUTED PARAMETERS
     ! Users of this library should not edit these parameters directly;
     ! they are set by the "consolidate" routine
@@ -440,6 +439,7 @@ module radiation_config
     real(jprb), allocatable, dimension(:) :: wavenumber2_sw
     real(jprb), allocatable, dimension(:) :: wavenumber1_lw
     real(jprb), allocatable, dimension(:) :: wavenumber2_lw
+
 
     ! If the nearest surface albedo/emissivity interval is to be used
     ! for each SW/LW band then the following arrays will be allocated
@@ -502,7 +502,7 @@ module radiation_config
     character(len=511) :: ice_optics_file_name, &
          &                liq_optics_file_name, &
          &                aerosol_optics_file_name
-    
+
     ! McICA PDF look-up table file name
     character(len=511) :: cloud_pdf_file_name
 
@@ -601,7 +601,7 @@ contains
     integer :: i_aerosol_type_map(NMaxAerosolTypes) ! More than 256 is an error
 
     logical :: do_nearest_spectral_sw_albedo = .true.
-    logical :: do_nearest_spectral_lw_emiss  = .true.
+    logical :: do_nearest_spectral_lw_emiss = .true.
     real(jprb) :: sw_albedo_wavelength_bound(NMaxAlbedoIntervals-1)
     real(jprb) :: lw_emiss_wavelength_bound( NMaxAlbedoIntervals-1)
     integer :: i_sw_albedo_index(NMaxAlbedoIntervals)
@@ -1006,6 +1006,9 @@ contains
     else if (this%i_ice_model == IIceModelYi) then
       this%ice_optics_file_name &
            &   = trim(this%directory_name) // "/yi_ice_scattering_rrtm.nc"
+    else if (this%i_ice_model == IIceModelShapes) then
+      this%ice_optics_file_name &
+           &   = trim(this%directory_name) // "/" // CPRISTINE_ICE_LIMA // "_ice_scattering_rrtm.nc"
     end if
 
     ! Set cloud-water PDF look-up table file name
@@ -1326,7 +1329,7 @@ contains
 
     if (this%n_bands_sw <= 0) then
       write(nulerr,'(a)') '*** Error: get_sw_weights called before number of shortwave bands set'
-      call radiation_abort()      
+      call radiation_abort()
     end if
 
     ! Convert wavelength range (m) to wavenumber (cm-1)
@@ -1976,5 +1979,5 @@ contains
     
   end function out_of_bounds_3d
 
-
+    
 end module radiation_config

@@ -18,6 +18,7 @@
 module radiation_cloud_optics
 
   implicit none
+
   public
 
 contains
@@ -37,7 +38,7 @@ contains
     use radiation_io,     only : nulerr, radiation_abort
     use radiation_config, only : config_type, IIceModelFu, IIceModelBaran, &
          &                       IIceModelBaran2016, IIceModelBaran2017, &
-         &                       IIceModelYi, &
+         &                       IIceModelYi,IIceModelShapes, &
          &                       ILiquidModelSOCRATES, ILiquidModelSlingo
     use radiation_cloud_optics_data, only  : cloud_optics_type
     use radiation_ice_optics_fu, only    : NIceOpticsCoeffsFuSW, &
@@ -48,6 +49,8 @@ contains
          &                                 NIceOpticsGeneralCoeffsBaran2017
     use radiation_ice_optics_yi, only    : NIceOpticsCoeffsYiSW, &
          &                                 NIceOpticsCoeffsYiLW
+    use radiation_ice_optics_shapes, only    : NIceOpticsCoeffsShapesSW, &
+         &                                 NIceOpticsCoeffsShapesLW
     use radiation_liquid_optics_socrates, only : NLiqOpticsCoeffsSOCRATES
     use radiation_liquid_optics_slingo, only : NLiqOpticsCoeffsSlingoSW, &
          &                                     NLiqOpticsCoeffsLindnerLiLW
@@ -188,6 +191,23 @@ contains
              &  ') does not match number expected (', NIceOpticsCoeffsYiSW,')'
         call radiation_abort()
       end if
+    else if (config%i_ice_model == IIceModelShapes) then
+      if (size(config%cloud_optics%ice_coeff_lw, 2) &
+           &  /= NIceOpticsCoeffsShapesLW) then
+        write(nulerr,'(a,i0,a,i0,a,i0,a)') &
+             &  '*** Error: number of LW ice-particle optical coefficients (', &
+             &  size(config%cloud_optics%ice_coeff_lw, 2), &
+             &  ') does not match number expected (', NIceOpticsCoeffsShapesLW,')'
+        call radiation_abort()
+      end if
+      if (size(config%cloud_optics%ice_coeff_sw, 2) &
+           &  /= NIceOpticsCoeffsShapesSW) then
+        write(nulerr,'(a,i0,a,i0,a,i0,a)') &
+             &  '*** Error: number of SW ice-particle optical coefficients (', &
+             &  size(config%cloud_optics%ice_coeff_sw, 2), &
+             &  ') does not match number expected (', NIceOpticsCoeffsShapesSW,')'
+        call radiation_abort()
+      end if
     end if
 
     if (lhook) call dr_hook('radiation_cloud_optics:setup_cloud_optics',1,hook_handle)
@@ -208,7 +228,7 @@ contains
     use radiation_io,     only : nulout, nulerr, radiation_abort
     use radiation_config, only : config_type, IIceModelFu, IIceModelBaran, &
          &                       IIceModelBaran2016, IIceModelBaran2017, &
-         &                       IIceModelYi, &
+         &                       IIceModelYi,IIceModelShapes, &
          &                       ILiquidModelSOCRATES, ILiquidModelSlingo
     use radiation_thermodynamics, only    : thermodynamics_type
     use radiation_cloud, only             : cloud_type
@@ -221,6 +241,8 @@ contains
     use radiation_ice_optics_baran2017, only  : calc_ice_optics_baran2017
     use radiation_ice_optics_yi, only     : calc_ice_optics_yi_sw, &
          &                                  calc_ice_optics_yi_lw
+    use radiation_ice_optics_shapes, only     : calc_ice_optics_shapes_sw, &
+         &                                  calc_ice_optics_shapes_lw
     use radiation_liquid_optics_socrates, only:calc_liq_optics_socrates
     use radiation_liquid_optics_slingo, only:calc_liq_optics_slingo, &
          &                                   calc_liq_optics_lindner_li
@@ -344,10 +366,12 @@ contains
               call radiation_abort()
             end if
 
+            ! Delta-Eddington scaling in the shortwave only
             if (.not. config%do_sw_delta_scaling_with_gases) then
-              ! Delta-Eddington scaling in the shortwave only
               call delta_eddington_scat_od(od_sw_liq, scat_od_sw_liq, g_sw_liq)
             end if
+            !call delta_eddington_scat_od(od_lw_liq, scat_od_lw_liq, g_lw_liq)
+
           else
             ! Liquid not present: set properties to zero
             od_lw_liq = 0.0_jprb
@@ -429,6 +453,17 @@ contains
               call calc_ice_optics_yi_sw(config%n_bands_sw, &
                    &  config%cloud_optics%ice_coeff_sw, &
                    &  iwp_in_cloud, cloud%re_ice(jcol,jlev), &
+                   &  od_sw_ice, scat_od_sw_ice, g_sw_ice)        
+            else if (config%i_ice_model == IIceModelShapes) then
+              ! Compute longwave properties
+              call calc_ice_optics_shapes_lw(config%n_bands_lw, &
+                   &  config%cloud_optics%ice_coeff_lw, &
+                   &  iwp_in_cloud, cloud%re_ice(jcol,jlev), &
+                   &  od_lw_ice, scat_od_lw_ice, g_lw_ice)
+              ! Compute shortwave properties
+              call calc_ice_optics_shapes_sw(config%n_bands_sw, &
+                   &  config%cloud_optics%ice_coeff_sw, &
+                   &  iwp_in_cloud, cloud%re_ice(jcol,jlev), &
                    &  od_sw_ice, scat_od_sw_ice, g_sw_ice)
             else
               write(nulerr,*) '*** Error: Unknown ice model with code', &
@@ -436,14 +471,14 @@ contains
               call radiation_abort()
             end if
 
+            ! Delta-Eddington scaling in both longwave and shortwave
+            ! (assume that particles are larger than wavelength even
+            ! in longwave)
             if (.not. config%do_sw_delta_scaling_with_gases) then
-              ! Delta-Eddington scaling in both longwave and shortwave
-              ! (assume that particles are larger than wavelength even
-              ! in longwave)
               call delta_eddington_scat_od(od_sw_ice, scat_od_sw_ice, g_sw_ice)
             end if
-
             call delta_eddington_scat_od(od_lw_ice, scat_od_lw_ice, g_lw_ice)
+
           else
             ! Ice not present: set properties to zero
             od_lw_ice = 0.0_jprb
