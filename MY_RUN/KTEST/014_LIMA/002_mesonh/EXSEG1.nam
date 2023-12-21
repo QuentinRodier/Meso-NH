@@ -117,7 +117,7 @@
 &NAM_BU_RRR     LBU_RRR = T,
 		CBULIST_RRR(1) = "ALL"/
 
-&NAM_BU_RRI     LBU_RRI = F /
+&NAM_BU_RRI     LBU_RRI = T /
 
 &NAM_BU_RRS     LBU_RRS = T,
 		CBULIST_RRS(1) = "ALL"/
