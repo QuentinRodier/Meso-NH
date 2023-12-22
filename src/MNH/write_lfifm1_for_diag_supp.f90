@@ -71,7 +71,7 @@ END MODULE MODI_WRITE_LFIFM1_FOR_DIAG_SUPP
 !!              choose the platform, the satellite, the sensor for all channels 
 !!              (see the table in rttov science and validation report) and the
 !!              type of calculations in the namelist: 0 = tb, 1 = tb + jacobian,
-!!              2 = tb + adjoint, 3 = tb + jacobian + adjoint)
+!!              2 = tb + adjoint, 3 = tb + jacobian + adjoint) --- !!! removed !!!
 !!      V. Masson   01/2004  removes surface (externalization)
 !!      October 2009 (G. Tanguy) add ILENCH=LEN(YCOMMENT) after
 !!                                              change of YCOMMENT
@@ -82,7 +82,7 @@ END MODULE MODI_WRITE_LFIFM1_FOR_DIAG_SUPP
 !!      P.Tulet : Diag for salt and orilam
 !!      J.-P. Chaboureau 07/03/2016 fix the dimensions of local arrays
 !!      P.Wautelet : 11/07/2016 : removed MNH_NCWRIT define
-!!      J.-P. Chaboureau 31/10/2016 add the call to RTTOV11
+!!      J.-P. Chaboureau 31/10/2016 add the call to RTTOV11 --- !!! removed !!!
 !!      F. Brosse 10/2016 add chemical production destruction terms outputs
 !!      M.Leriche 01/07/2017 Add DIAG chimical surface fluxes
 !!      J.-P. Chaboureau 01/2018 add altitude interpolation
@@ -117,7 +117,7 @@ USE MODD_CONF,              ONLY: LCARTESIAN
 USE MODD_CONF_n,            ONLY: LUSERC, LUSERI, LUSERV, NRR
 USE MODD_DEEP_CONVECTION_n, ONLY: NCLBASCONV, NCLTOPCONV, XCAPE, XDMFCONV, XDRCCONV, XDRICONV, XDRVCONV, &
                                   XDTHCONV, XDSVCONV, XMFCONV, XPRLFLXCONV, XPRSFLXCONV, XUMFCONV
-USE MODD_DIAG_FLAG,         ONLY: CRAD_SAT, LCHEMDIAG, LCLD_COV, LCOARSE, LISOAL, LISOPR, LISOTH, LRAD_SUBG_COND, &
+USE MODD_DIAG_FLAG,         ONLY: LCHEMDIAG, LCLD_COV, LCOARSE, LISOAL, LISOPR, LISOTH, LRAD_SUBG_COND, &
                                   NCONV_KF, NDXCOARSE, NRAD_3D, NRTTOVINFO, XISOAL, XISOPR, XISOTH
 USE MODD_FIELD_n,           ONLY: XCLDFR, XICEFR, XPABST, XSIGS, XTHT, XTKET, XRT, XUT, XVT, XWT
 USE MODD_GRID_n,            ONLY: XZHAT, XZZ
@@ -143,12 +143,6 @@ USE MODE_NEIGHBORAVG,       ONLY: BLOCKAVG, MOVINGAVG
 USE MODE_THERMO,            ONLY: SM_FOES
 USE MODE_TOOLS_LL,          ONLY: GET_INDICE_ll
 
-#ifdef MNH_RTTOV_8
-USE MODI_CALL_RTTOV8
-#endif
-#ifdef MNH_RTTOV_11
-USE MODI_CALL_RTTOV11
-#endif
 #ifdef MNH_RTTOV_13
 USE MODI_CALL_RTTOV13
 #endif
@@ -710,97 +704,12 @@ IF (LCHEMDIAG) THEN
 END IF
 !-------------------------------------------------------------------------------
 !
-!* Brightness temperatures from the radiatif transfer code (Morcrette, 1991)
-!
-IF (LEN_TRIM(CRAD_SAT) /= 0 .AND. NRR /=0) THEN
-  ALLOCATE (ZIRBT(IIU,IJU),ZWVBT(IIU,IJU))
-  ITOTGEO=0
-  IF (INDEX(CRAD_SAT,'GOES-E')   /= 0) THEN
-    ITOTGEO= ITOTGEO+1
-    INDGEO(ITOTGEO) = 1
-    YNAM_SAT(ITOTGEO) = 'GOES-E'
-  END IF
-  IF (INDEX(CRAD_SAT,'GOES-W')   /= 0) THEN
-    ITOTGEO= ITOTGEO+1
-    INDGEO(ITOTGEO) = 2
-    YNAM_SAT(ITOTGEO) = 'GOES-W'
-  END IF
-  IF (INDEX(CRAD_SAT,'GMS')      /= 0) THEN
-    ITOTGEO= ITOTGEO+1
-    INDGEO(ITOTGEO) = 3
-    YNAM_SAT(ITOTGEO) = 'GMS'
-  END IF
-  IF (INDEX(CRAD_SAT,'INDSAT')   /= 0) THEN
-    ITOTGEO= ITOTGEO+1
-    INDGEO(ITOTGEO) = 4
-    YNAM_SAT(ITOTGEO) = 'INDSAT'
-  END IF
-  IF (INDEX(CRAD_SAT,'METEOSAT') /= 0) THEN
-    ITOTGEO= ITOTGEO+1
-    INDGEO(ITOTGEO) = 5
-    YNAM_SAT(ITOTGEO) = 'METEOSAT'
-  END IF
-  PRINT*,'YOU ASK FOR BRIGHTNESS TEMPERATURES FOR ',ITOTGEO,' SATELLITE(S)'
-  IF (NRR==1) THEN
-    PRINT*,' THERE IS ONLY VAPOR WATER IN YOUR ATMOSPHERE'
-    PRINT*,' IRBT WILL NOT TAKE INTO ACCOUNT CLOUDS.'
-  END IF
-  !
-  DO JI=1,ITOTGEO
-    ZIRBT(:,:) = XUNDEF
-    ZWVBT(:,:) = XUNDEF
-    CALL RADTR_SATEL( TDTCUR%nyear, TDTCUR%nmonth, TDTCUR%nday, TDTCUR%xtime, &
-                      NDLON, NFLEV, NSTATM, NRAD_COLNBR, XEMIS(:,:,1),        &
-                      XCCO2, XTSRAD, XSTATM, XTHT, XRT, XPABST, XZZ,          &
-                      XSIGS, XMFCONV, MAX(XCLDFR,XICEFR), LUSERI, LSIGMAS,    &
-                      LSUBG_COND, LRAD_SUBG_COND, ZIRBT, ZWVBT,               &
-                      INDGEO(JI), VSIGQSAT                                    )
-    !
-    TZFIELD = TFIELDMETADATA(                                               &
-      CMNHNAME   = TRIM(YNAM_SAT(JI))//'_IRBT',                             &
-      CSTDNAME   = '',                                                      &
-      CLONGNAME  = TRIM(YNAM_SAT(JI))//'_IRBT',                             &
-      CUNITS     = 'K',                                                     &
-      CDIR       = 'XY',                                                    &
-      CCOMMENT   = TRIM(YNAM_SAT(JI))//' Infra-Red Brightness Temperature', &
-      NGRID      = 1,                                                       &
-      NTYPE      = TYPEREAL,                                                &
-      NDIMS      = 2,                                                       &
-      LTIMEDEP   = .TRUE.                                                   )
-    CALL IO_Field_write(TPFILE,TZFIELD,ZIRBT)
-    !
-    TZFIELD = TFIELDMETADATA(                                                 &
-      CMNHNAME   = TRIM(YNAM_SAT(JI))//'_WVBT',                               &
-      CSTDNAME   = '',                                                        &
-      CLONGNAME  = TRIM(YNAM_SAT(JI))//'_WVBT',                               &
-      CUNITS     = 'K',                                                       &
-      CDIR       = 'XY',                                                      &
-      CCOMMENT   = TRIM(YNAM_SAT(JI))//' Water-Vapor Brightness Temperature', &
-      NGRID      = 1,                                                         &
-      NTYPE      = TYPEREAL,                                                  &
-      NDIMS      = 2,                                                         &
-      LTIMEDEP   = .TRUE.                                                     )
-    CALL IO_Field_write(TPFILE,TZFIELD,ZWVBT)
-  END DO
-  DEALLOCATE(ZIRBT,ZWVBT)
-END IF
-!
-!-------------------------------------------------------------------------------
-!
 !* Brightness temperatures from the Radiatif Transfer for Tiros Operational
 ! Vertical Sounder (RTTOV) code
 !
 IF (NRTTOVINFO(1,1) /= NUNDEF) THEN
 ! PRINT*,'YOU ASK FOR BRIGHTNESS TEMPERATURE COMPUTED BY THE RTTOV CODE'
-#if defined(MNH_RTTOV_8)
-  CALL CALL_RTTOV8(NDLON, NFLEV, NSTATM, XEMIS(:,:,1), XTSRAD, XSTATM, XTHT, XRT, &
-                  XPABST, XZZ, XMFCONV, MAX(XCLDFR,XICEFR), XUT(:,:,IKB), XVT(:,:,IKB),   &
-                  LUSERI, NRTTOVINFO, TPFILE                                  )
-#elif defined(MNH_RTTOV_11)
-  CALL CALL_RTTOV11(NDLON, NFLEV, XEMIS(:,:,1), XTSRAD, XTHT, XRT,            &
-                  XPABST, XZZ, XMFCONV, MAX(XCLDFR,XICEFR), XUT(:,:,IKB), XVT(:,:,IKB),   &
-                  LUSERI, NRTTOVINFO, TPFILE                                  )
-#elif defined(MNH_RTTOV_13)
+#if defined(MNH_RTTOV_13)
   CALL CALL_RTTOV13(NDLON, NFLEV, XEMIS(:,:,1), XTSRAD, XTHT, XRT,            &
                   XPABST, XZZ, XMFCONV, MAX(XCLDFR,XICEFR), XUT(:,:,IKB), XVT(:,:,IKB),   &
                   LUSERI, NRTTOVINFO, TPFILE                                  )

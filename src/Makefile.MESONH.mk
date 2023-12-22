@@ -200,30 +200,7 @@ endif
 ##########################################################
 ifdef MNH_RTTOV
 ifndef VER_RTTOV
-VER_RTTOV      = 8.7
-endif
-ifeq "$(VER_RTTOV)" "8.7"
-DIR_RTTOV      +=  LIB/RTTOV/src
-CPPFLAGS_RTTOV = -DMNH_RTTOV
-INC_RTTOV      = -I$(B)LIB/RTTOV/src
-#
-DIR_MASTER  += $(DIR_RTTOV)
-CPPFLAGS    += $(CPPFLAGS_RTTOV)
-INC         += $(INC_RTTOV)
-CPPFLAGS    += $(CPPFLAGS_RTTOV)
-CPPFLAGS_MNH += -DMNH_RTTOV_8=MNH_RTTOV_8
-endif
-ifeq "$(VER_RTTOV)" "11.3"
-DIR_RTTOV=${SRC_MESONH}/src/LIB/RTTOV-${VER_RTTOV}
-RTTOV_PATH=${DIR_RTTOV}
-#
-INC_RTTOV     ?= -I${RTTOV_PATH}/include -I${RTTOV_PATH}/mod
-LIB_RTTOV     ?= -L${RTTOV_PATH}/lib -lrttov11_coef_io -lrttov11_mw_scatt -lrttov11_main
-INC            += $(INC_RTTOV)
-LIBS           += $(LIB_RTTOV)
-VPATH         += $(RTTOV_PATH)/mod
-CPPFLAGS    += $(CPPFLAGS_RTTOV)
-CPPFLAGS_MNH += -DMNH_RTTOV_11=MNH_RTTOV_11
+VER_RTTOV      = 13.2
 endif
 ifeq "$(VER_RTTOV)" "13.2"
 DIR_RTTOV=${SRC_MESONH}/src/LIB/RTTOV-${VER_RTTOV}

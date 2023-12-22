@@ -247,6 +247,7 @@ CHARACTER(LEN=2), DIMENSION(6) :: YLBL_SAPHIR = (/ &
 CHARACTER(LEN=4), DIMENSION(13) :: YLBL_ICI = (/ &
      '1837','1833','1832','243V','243H','3259','3253','3251','4487','4483','4481','664V','664H'/)
 CHARACTER(LEN=4), DIMENSION(2) :: YLBL_DPR = (/ '13', '35' /)
+CHARACTER(LEN=4), DIMENSION(1) :: YLBL_CPR = (/ '94' /)
 CHARACTER(LEN=4), DIMENSION(13) :: YLBL_GMI = (/ &
      '10V','10H','18V','18H','23V','36V','36H','89V','89H','166V','166H','1833','1837'/)
 
@@ -354,7 +355,7 @@ DO JSAT=1,IJSAT ! loop over sensors
     opts % rt_ir % addaerosl        = .FALSE. ! Do not include aerosol effects
     opts % rt_ir % addclouds        = .FALSE. ! Do not include cloud effects
     opts % rt_mw % clw_data         = .FALSE. ! Do not include cloud liquid water
-    IF (KRTTOVINFO(3,JSAT).EQ.105.OR.KRTTOVINFO(3,JSAT).EQ.106) radar = .TRUE.
+    IF (KRTTOVINFO(3,JSAT).EQ.105.OR.KRTTOVINFO(3,JSAT).EQ.107) radar = .TRUE.
   END IF
 
 ! Read and initialise coefficients
@@ -750,6 +751,9 @@ DO JSAT=1,IJSAT ! loop over sensors
     ELSEIF (KRTTOVINFO(3,JSAT) == 105) THEN ! DPR
       YBEG='dpr'
       YEND=YLBL_DPR(JCH)
+    ELSEIF (KRTTOVINFO(3,JSAT) == 107) THEN ! CPR
+      YBEG='cpr'
+      YEND=YLBL_CPR(JCH)
     ELSE
       YEND=YTWO//YCHAN
     END IF
