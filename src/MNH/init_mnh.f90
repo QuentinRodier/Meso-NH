@@ -106,7 +106,7 @@ IMPLICIT NONE
 !*       0.1   Local variables
 !
 INTEGER :: JMI                                        !  Loop index
-CHARACTER(LEN=28),DIMENSION(JPMODELMAX)  :: YINIFILEPGD
+CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(JPMODELMAX) :: YINIFILEPGD
 INTEGER  :: ILUOUT0,IRESP                             ! Logical unit number for
                                                       ! output-listing common
                                                       ! to all models and return

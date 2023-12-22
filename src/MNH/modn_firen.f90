@@ -64,6 +64,7 @@ USE MODD_FIRE_n, ONLY:                        &
   XWLIMUTMAX_n         => XWLIMUTMAX,         &
   NWINDSLOPECPLMODE_n  => NWINDSLOPECPLMODE,  &
   NNBSMOKETRACER_n     => NNBSMOKETRACER
+USE MODD_PARAMETERS, ONLY: NFILENAMELGTMAX
 
 IMPLICIT NONE
 
@@ -72,7 +73,7 @@ CHARACTER(LEN=11) :: CPROPAG_MODEL        ! Fire propagation model (default SANT
 CHARACTER(LEN=3)  :: CHEAT_FLUX_MODEL     ! Sensible heat flux injection model (default CST)
 CHARACTER(LEN=3)  :: CLATENT_FLUX_MODEL   ! latent heat flux injection model (default CST)
 CHARACTER(LEN=7)  :: CFIRE_CPL_MODE       ! Coupling mode (default 2WAYCPL)
-CHARACTER(LEN=28) :: CBMAPFILE            ! BMap file for FIR2ATM mode (default INIFILE)
+CHARACTER(LEN=NFILENAMELGTMAX) :: CBMAPFILE ! BMap file for FIR2ATM mode (default INIFILE)
 LOGICAL           :: LINTERPWIND          ! Flag for wind interpolation
 LOGICAL           :: LSGBAWEIGHT          ! Flag for use of weighted average method for SubGrid Burning Area computation
 INTEGER           :: NFIRE_WENO_ORDER     ! Weno order (1,3,5)

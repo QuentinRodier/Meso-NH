@@ -117,7 +117,7 @@ USE MODD_PARAM_n,         ONLY: CRAD         ! Kind of radiation parameterizatio
 USE MODD_RADIATIONS_n,    ONLY: XDTHRAD ! radiative heating/cooling rate
 USE MODD_CH_JVALUES_n,    ONLY: XJVALUES   ! Jvalues and 
 USE MODD_CH_INIT_JVALUES, ONLY:JPJVMAX ! their number
-USE MODD_PARAMETERS,      ONLY: XUNDEF
+USE MODD_PARAMETERS,      ONLY: NFILENAMELGTMAX, XUNDEF
 USE MODD_DIAG_FLAG,       ONLY: LCHEMDIAG, XCHEMLAT, XCHEMLON
 
 IMPLICIT NONE
@@ -130,8 +130,8 @@ IMPLICIT NONE
 REAL  :: ZTIME
 LOGICAL, SAVE     :: GSFIRSTCALL = .TRUE.
 INTEGER, SAVE     :: ISIO1D                 ! IO-channel 
-CHARACTER(LEN=80), SAVE :: YSIO1DDEF        ! name of def-file
-CHARACTER(LEN=80), SAVE :: YSIO1DDAT        ! name of dat-file
+CHARACTER(LEN=NFILENAMELGTMAX), SAVE :: YSIO1DDEF ! name of def-file
+CHARACTER(LEN=NFILENAMELGTMAX), SAVE :: YSIO1DDAT ! name of dat-file
 CHARACTER(LEN=40) :: YFORM = "(E15.8)"      ! data output format
 INTEGER, SAVE     :: ISCOUNT = 0            ! timestep counter
 INTEGER           :: JK, JL, JN             ! loop counter
@@ -212,7 +212,7 @@ DO JN=1,NBPROF
     END IF
 
     CCH_TS1D_FILENAME = ADJUSTR(YCLATLON) // ":" // YCYEAR // YCMONTH // YCDAY // "-" // YCTIME
-    CCH_TS1D_COMMENT = "Fichier issu de " // CINIFILE
+    CCH_TS1D_COMMENT = "Fichier issu de " // TRIM(CINIFILE)
     YSIO1DDEF = "def." // ADJUSTL(CCH_TS1D_FILENAME)
     YSIO1DDAT = "dat." // ADJUSTL(CCH_TS1D_FILENAME)
 

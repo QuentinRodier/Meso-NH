@@ -11,9 +11,11 @@ INTERFACE
 !
       SUBROUTINE COMPARE_DAD (HDADINIFILE,HDADSPAFILE,KRESP)
 !
-CHARACTER (LEN=*),      INTENT(IN)  :: HDADINIFILE   ! Name of true DAD FM file
-CHARACTER (LEN=*),      INTENT(IN)  :: HDADSPAFILE   ! Name of Replaced DAD FM file
-INTEGER,               INTENT(OUT)  :: KRESP !  logical switch 
+USE MODD_PARAMETERS, ONLY: NFILENAMELGTMAX
+
+CHARACTER (LEN=NFILENAMELGTMAX), INTENT(IN)  :: HDADINIFILE   ! Name of true DAD FM file
+CHARACTER (LEN=NFILENAMELGTMAX), INTENT(IN)  :: HDADSPAFILE   ! Name of Replaced DAD FM file
+INTEGER,                         INTENT(OUT) :: KRESP !  logical switch
 !
 END SUBROUTINE COMPARE_DAD 
 !
@@ -69,7 +71,7 @@ USE MODD_CONF
 use modd_field,            only: tfieldmetadata, tfieldlist
 USE MODD_IO,               ONLY: TFILEDATA
 USE MODD_LUNIT_n,          ONLY: TLUOUT
-USE MODD_PARAMETERS,       ONLY: JPHEXT, JPVEXT, NMNHNAMELGTMAX
+USE MODD_PARAMETERS,       ONLY: JPHEXT, JPVEXT, NFILENAMELGTMAX, NMNHNAMELGTMAX
 !
 use mode_field,            only: Find_field_id_from_mnhname
 USE MODE_IO_FILE,          only: IO_File_close, IO_File_open
@@ -82,9 +84,9 @@ IMPLICIT NONE
 !
 !*       0.1  Declarations of dummy arguments :
 !
-CHARACTER (LEN=*), INTENT(IN)  :: HDADINIFILE   ! Name of true DAD FM file
-CHARACTER (LEN=*), INTENT(IN)  :: HDADSPAFILE   ! Name of Replaced DAD FM file
-INTEGER,           INTENT(OUT) :: KRESP
+CHARACTER (LEN=NFILENAMELGTMAX), INTENT(IN)  :: HDADINIFILE   ! Name of true DAD FM file
+CHARACTER (LEN=NFILENAMELGTMAX), INTENT(IN)  :: HDADSPAFILE   ! Name of Replaced DAD FM file
+INTEGER,                         INTENT(OUT) :: KRESP !  logical switch
 !
 !
 !*       0.2  Declarations of local variables :

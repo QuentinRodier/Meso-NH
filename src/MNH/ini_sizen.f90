@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -11,11 +11,12 @@ INTERFACE
 !
 SUBROUTINE INI_SIZE_n( KMI, TPINIFILE, HINIFILEPGD )
 !
-USE MODD_IO, ONLY : TFILEDATA
+USE MODD_IO,         ONLY : TFILEDATA
+USE MODD_PARAMETERS, ONLY: NFILENAMELGTMAX
 !
-INTEGER,            INTENT(IN)    :: KMI          !Model Index
-TYPE(TFILEDATA),    INTENT(IN)    :: TPINIFILE    !Initial file
-CHARACTER (LEN=*),  INTENT(IN)    :: HINIFILEPGD
+INTEGER,                        INTENT(IN)    :: KMI          !Model Index
+TYPE(TFILEDATA),                INTENT(IN)    :: TPINIFILE    !Initial file
+CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)    :: HINIFILEPGD
 !
        END SUBROUTINE INI_SIZE_n
 !
@@ -108,10 +109,10 @@ USE MODD_DIM_n,         ONLY: NIMAX_ll, NJMAX_ll, NKMAX
 USE MODD_DYN,           ONLY: LCORIO
 USE MODD_IO,            ONLY: GSMONOPROC, TFILEDATA
 USE MODD_LBC_n,         ONLY: CLBCX, CLBCY
-USE MODD_LUNIT_n,       ONLY: CINIFILE, CINIFILEPGD, TLUOUT
+USE MODD_LUNIT_n,       ONLY: CINIFILEPGD, TLUOUT
 USE MODD_NESTING,       ONLY: CMY_NAME, CDAD_NAME, NDAD, NDXRATIO_ALL, NDYRATIO_ALL, &
                               NXOR_ALL, NYOR_ALL, NXEND_ALL,NYEND_ALL
-USE MODD_PARAMETERS,    ONLY: JPMODELMAX, JPHEXT,JPVEXT
+USE MODD_PARAMETERS,    ONLY: JPMODELMAX, JPHEXT, JPVEXT, NFILENAMELGTMAX
 USE MODD_REF,           ONLY: LCOUPLES
 !
 USE MODE_IO,            ONLY: IO_Pack_set
@@ -125,9 +126,9 @@ IMPLICIT NONE
 !
 !*       0.1   declarations of arguments
 !
-INTEGER,            INTENT(IN)    :: KMI          !Model Index
-TYPE(TFILEDATA),    INTENT(IN)    :: TPINIFILE    !Initial file
-CHARACTER (LEN=*),  INTENT(IN)    :: HINIFILEPGD
+INTEGER,                        INTENT(IN)    :: KMI          !Model Index
+TYPE(TFILEDATA),                INTENT(IN)    :: TPINIFILE    !Initial file
+CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)    :: HINIFILEPGD
 !
 !*       0.2   declarations of local variables
 !
@@ -168,7 +169,7 @@ IF ( KMI > 1 ) THEN
   IF ( LCOUPLES ) THEN
     IF ( KMI == 2 ) THEN
       CMY_NAME(NDAD(KMI)) = CDAD_NAME(KMI)
-      WRITE(UNIT=ILUOUT,FMT=*) 'NDAD',NDAD(KMI),'changed in '//TRIM(CMY_NAME(NDAD(KMI)))//TRIM(CDAD_NAME(KMI)),KMI
+      WRITE(UNIT=ILUOUT,FMT=*) 'NDAD', NDAD(KMI), ' changed in ' // TRIM(CMY_NAME(NDAD(KMI))) // TRIM(CDAD_NAME(KMI)), KMI
     END IF
   END IF
   IF ( TRIM(CDAD_NAME(KMI)) /= TRIM(CMY_NAME(NDAD(KMI))) ) THEN

@@ -13,19 +13,21 @@ INTERFACE
                                HCHEM_INPUT_FILE,HSPAFILE,HSPANBR,  &
                                HSONFILE,HINIFILE,HINIFILEPGD,OSPAWN_SURF       )
 !
+USE MODD_PARAMETERS, ONLY: NFILENAMELGTMAX
+!
 INTEGER,               INTENT(IN)  :: KRR         ! Number of moist variables
 INTEGER,               INTENT(IN)  :: KSV_USER    ! Number of Users Scalar Variables
 CHARACTER (LEN=4),     INTENT(IN)  :: HTURB       ! Kind of turbulence parameterization
 CHARACTER (LEN=4),     INTENT(IN)  :: HSURF       ! Kind of surface parameterization
 CHARACTER (LEN=4),     INTENT(IN)  :: HCLOUD      ! Kind of cloud parameterization
                                                   ! model 2 physical domain
-CHARACTER (LEN=*),     INTENT(IN) :: HSPAFILE     ! possible name of the output FM-file
-CHARACTER (LEN=*),     INTENT(IN) :: HSPANBR      ! NumBeR associated to the SPAwned file
-CHARACTER (LEN=*),     INTENT(IN) :: HSONFILE     ! name of the input FM-file SON
-CHARACTER (LEN=80),    INTENT(IN) :: HCHEM_INPUT_FILE
-CHARACTER (LEN=*),     INTENT(IN) :: HINIFILE     ! Input file
-CHARACTER (LEN=*),     INTENT(IN) :: HINIFILEPGD  ! Input pgd file
-LOGICAL,               INTENT(IN) :: OSPAWN_SURF  ! flag to spawn surface fields
+CHARACTER (LEN=NFILENAMELGTMAX), INTENT(IN) :: HSPAFILE     ! possible name of the output FM-file
+CHARACTER (LEN=*),               INTENT(IN) :: HSPANBR      ! NumBeR associated to the SPAwned file
+CHARACTER (LEN=NFILENAMELGTMAX), INTENT(IN) :: HSONFILE     ! name of the input FM-file SON
+CHARACTER (LEN=NFILENAMELGTMAX), INTENT(IN) :: HCHEM_INPUT_FILE
+CHARACTER (LEN=NFILENAMELGTMAX), INTENT(IN) :: HINIFILE     ! Input file
+CHARACTER (LEN=NFILENAMELGTMAX), INTENT(IN) :: HINIFILEPGD  ! Input pgd file
+LOGICAL,                         INTENT(IN) :: OSPAWN_SURF  ! flag to spawn surface fields
 !
 END SUBROUTINE SPAWN_MODEL2
 !
@@ -313,13 +315,13 @@ INTEGER,               INTENT(IN)  :: KSV_USER    ! Number of Users Scalar Varia
 CHARACTER (LEN=4),     INTENT(IN)  :: HTURB       ! Kind of turbulence parameterization
 CHARACTER (LEN=4),     INTENT(IN)  :: HSURF       ! Kind of surface parameterization
 CHARACTER (LEN=4),     INTENT(IN)  :: HCLOUD      ! Kind of cloud parameterization
-CHARACTER (LEN=*),     INTENT(IN) :: HSPAFILE     ! possible name of the output FM-file
-CHARACTER (LEN=*),     INTENT(IN) :: HSPANBR      ! NumBeR associated to the SPAwned file
-CHARACTER (LEN=*),     INTENT(IN) :: HSONFILE     ! name of the input FM-file SON
-CHARACTER (LEN=80),    INTENT(IN) :: HCHEM_INPUT_FILE
-CHARACTER (LEN=*),     INTENT(IN) :: HINIFILE     ! Input file
-CHARACTER (LEN=*),     INTENT(IN) :: HINIFILEPGD  ! Input pgd file
-LOGICAL,               INTENT(IN) :: OSPAWN_SURF  ! flag to spawn surface fields
+CHARACTER (LEN=NFILENAMELGTMAX), INTENT(IN) :: HSPAFILE     ! possible name of the output FM-file
+CHARACTER (LEN=*),               INTENT(IN) :: HSPANBR      ! NumBeR associated to the SPAwned file
+CHARACTER (LEN=NFILENAMELGTMAX), INTENT(IN) :: HSONFILE     ! name of the input FM-file SON
+CHARACTER (LEN=NFILENAMELGTMAX), INTENT(IN) :: HCHEM_INPUT_FILE
+CHARACTER (LEN=NFILENAMELGTMAX), INTENT(IN) :: HINIFILE     ! Input file
+CHARACTER (LEN=NFILENAMELGTMAX), INTENT(IN) :: HINIFILEPGD  ! Input pgd file
+LOGICAL,                         INTENT(IN) :: OSPAWN_SURF  ! flag to spawn surface fields
 !
 !*       0.1.3  Declarations of local variables :
 !
@@ -380,7 +382,7 @@ INTEGER             :: IJE1           ! indice J End       in y direction
 ! Logical for no common domain between the 2 sons or no input son
 LOGICAL             :: GNOSON = .TRUE.
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZWORK3D ! working array
-CHARACTER(LEN=28)   :: YDAD_SON
+CHARACTER(LEN=NFILENAMELGTMAX) :: YDAD_SON
 !$
 INTEGER             :: IINFO_ll
 TYPE(LIST_ll), POINTER :: TZFIELDS_ll=>NULL()   ! list of fields to exchange
@@ -640,7 +642,7 @@ END IF
 !*       3.5   model 2 configuration in MODD_NESTING to be written
 !*                on the FM-file to allow nesting or coupling 
 !
-CCPLFILE(:) = '    ' 
+CCPLFILE(:) = ''
 LSTEADYLS=.TRUE.
 !
 NDXRATIO_ALL(:) = 0

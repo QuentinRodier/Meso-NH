@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1999-2022 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1999-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -121,20 +121,11 @@ INTEGER :: ILUOUT   ! Logical unit number for the output listing
 !
 CHARACTER (LEN=5)  :: YPRESOPT        ! Pressure solver option of model 1
 INTEGER            :: IITR            ! Iterations of pressure solver of model 1
-CHARACTER (LEN=28) :: YMY_NAME, YDAD_NAME
+CHARACTER (LEN=NFILENAMELGTMAX) :: YMY_NAME, YDAD_NAME
 CHARACTER (LEN=2)  :: YSTORAGE_TYPE
 INTEGER            :: IID, IMI
 !
-!$20140602
-INTEGER            :: IIU, IJU
 INTEGER            :: IINFO_ll    ! return code of // routines
-INTEGER            :: NIMAX, NJMAX
-CHARACTER(LEN=28), DIMENSION(JPMODELMAX) :: CPGD     ! name of input  pgd files
-LOGICAL, DIMENSION(JPMODELMAX) :: L1D_ALL  ! Flag for      1D conf. for each PGD
-LOGICAL, DIMENSION(JPMODELMAX) :: L2D_ALL  ! Flag for      2D conf. for each PGD
-LOGICAL, DIMENSION(JPMODELMAX) :: LPACK_ALL! Flag for packing conf. for each PGD
-INTEGER            :: IDIMX, IDIMY, IIB, IJB, IIE, IJE
-!$
 REAL :: ZLATOR, ZLONOR, ZXHATM, ZYHATM
 INTEGER :: IIMAX_ll,IJMAX_ll
 TYPE(TFIELDMETADATA)    :: TZFIELD

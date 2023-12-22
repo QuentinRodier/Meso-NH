@@ -33,7 +33,7 @@
 !*       0.   DECLARATIONS
 !             ------------
 !
-USE MODD_PARAMETERS, ONLY: JPMODELMAX
+USE MODD_PARAMETERS, ONLY: JPMODELMAX, NFILENAMELGTMAX
 USE MODD_PRECISION,  ONLY: MNHTIME
 
 IMPLICIT NONE
@@ -89,7 +89,7 @@ TYPE TFIRE_t
 
   CHARACTER(LEN=7)  :: CFIRE_CPL_MODE       ! Coupling mode (default 2WAYCPL)
 
-  CHARACTER(LEN=28) :: CBMAPFILE            ! BMap file for FIR2ATM mode (default INIFILE)
+  CHARACTER(LEN=NFILENAMELGTMAX) :: CBMAPFILE ! BMap file for FIR2ATM mode (default INIFILE)
   LOGICAL           :: LINTERPWIND          ! Flag for wind interpolation
   LOGICAL           :: LSGBAWEIGHT          ! Flag for use of weighted average method for SubGrid Burning Area computation
 
@@ -179,7 +179,7 @@ CHARACTER(LEN=11),                POINTER :: CPROPAG_MODEL      => NULL()
 CHARACTER(LEN=3),                 POINTER :: CHEAT_FLUX_MODEL   => NULL()
 CHARACTER(LEN=3),                 POINTER :: CLATENT_FLUX_MODEL => NULL()
 CHARACTER(LEN=7),                 POINTER :: CFIRE_CPL_MODE     => NULL()
-CHARACTER(LEN=28),                POINTER :: CBMAPFILE          => NULL()
+CHARACTER(LEN=NFILENAMELGTMAX),   POINTER :: CBMAPFILE          => NULL()
 LOGICAL,                          POINTER :: LINTERPWIND        => NULL()
 LOGICAL,                          POINTER :: LSGBAWEIGHT        => NULL()
 INTEGER,                          POINTER :: NFIRE_WENO_ORDER   => NULL()

@@ -11,12 +11,13 @@ INTERFACE
 !
 SUBROUTINE INI_SEG_n(KMI,TPINIFILE,HINIFILEPGD,PTSTEP_ALL)
 !
-USE MODD_IO, ONLY : TFILEDATA
+USE MODD_IO,         ONLY: TFILEDATA
+USE MODD_PARAMETERS, ONLY: NFILENAMELGTMAX
 !
-INTEGER,                    INTENT(IN)    :: KMI          !Model index
-TYPE(TFILEDATA),   POINTER, INTENT(OUT)   :: TPINIFILE    !Initial file
-CHARACTER (LEN=28),         INTENT(OUT)   :: HINIFILEPGD
-REAL,DIMENSION(:),          INTENT(INOUT) :: PTSTEP_ALL   ! Time STEP of ALL models
+INTEGER,                        INTENT(IN)    :: KMI          !Model index
+TYPE(TFILEDATA), POINTER,       INTENT(OUT)   :: TPINIFILE    !Initial file
+CHARACTER(LEN=NFILENAMELGTMAX), INTENT(OUT)   :: HINIFILEPGD
+REAL,DIMENSION(:),              INTENT(INOUT) :: PTSTEP_ALL   ! Time STEP of ALL models
 !
 END SUBROUTINE INI_SEG_n
 !
@@ -202,15 +203,15 @@ IMPLICIT NONE
 !
 !*       0.1   declarations of arguments
 !
-INTEGER,                    INTENT(IN)    :: KMI          !Model index
-TYPE(TFILEDATA),   POINTER, INTENT(OUT)   :: TPINIFILE    !Initial file
-CHARACTER (LEN=28),         INTENT(OUT)   :: HINIFILEPGD
-REAL,DIMENSION(:),          INTENT(INOUT) :: PTSTEP_ALL   ! Time STEP of ALL models
+INTEGER,                        INTENT(IN)    :: KMI          !Model index
+TYPE(TFILEDATA), POINTER,       INTENT(OUT)   :: TPINIFILE    !Initial file
+CHARACTER(LEN=NFILENAMELGTMAX), INTENT(OUT)   :: HINIFILEPGD
+REAL,DIMENSION(:),              INTENT(INOUT) :: PTSTEP_ALL   ! Time STEP of ALL models
 !
 !*       0.1   declarations of local variables
 !
 LOGICAL            :: GFOUND              ! Return code when searching namelist
-CHARACTER (LEN=28) :: YINIFILE                    ! name of initial file
+CHARACTER (LEN=NFILENAMELGTMAX) :: YINIFILE       ! name of initial file
 CHARACTER (LEN=2)  :: YMI                         ! string for model index
 INTEGER            :: ILUOUT                      ! Logical unit number
                                                   ! associated with TLUOUT
@@ -461,7 +462,7 @@ CALL READ_EXSEG_n(KMI,TZFILE_DES,YCONF,GFLAT,GUSERV,GUSERC,                 &
 IF (CPROGRAM=='SPAWN ' .OR. CPROGRAM=='DIAG  ' .OR. CPROGRAM=='SPEC  '      &
      .OR. CPROGRAM=='REAL  ') THEN
   CINIFILE_n    = YINIFILE
-  CCPLFILE(:) = '                            '
+  CCPLFILE(:) = ''
   NMODEL=1
   LSTEADYLS=.TRUE.
 END IF

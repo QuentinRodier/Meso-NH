@@ -536,7 +536,7 @@ REAL,DIMENSION(:,:,:),ALLOCATABLE   :: XCORIOZ ! Coriolis parameter (this
 !              file is used :
 !
 INTEGER             :: JSV                      ! loop index on scalar var.
-CHARACTER(LEN=28)   :: CPGD_FILE=' '            ! Physio-Graphic Data file name
+CHARACTER(LEN=NFILENAMELGTMAX) :: CPGD_FILE=''  ! Physio-Graphic Data file name
 LOGICAL  :: LREAD_ZS = .TRUE.,                & ! switch to use orography 
                                                 ! coming from the PGD file
             LREAD_GROUND_PARAM = .TRUE.         ! switch to use soil parameters
@@ -545,7 +545,9 @@ LOGICAL  :: LREAD_ZS = .TRUE.,                & ! switch to use orography
 
 INTEGER           :: NSLEVE   =12         ! number of iteration for smooth orography
 REAL              :: XSMOOTH_ZS = XUNDEF  ! optional uniform smooth orography for SLEVE coordinate
-CHARACTER(LEN=28) :: YPGD_NAME, YPGD_DAD_NAME   ! general information
+CHARACTER(LEN=NFILENAMELGTMAX) :: YATMFILE
+CHARACTER(LEN=6)               :: YATMFILETYPE
+CHARACTER(LEN=NFILENAMELGTMAX) :: YPGD_NAME, YPGD_DAD_NAME   ! general information
 CHARACTER(LEN=2)  :: YPGD_TYPE
 !
 INTEGER           :: IINFO_ll                   ! return code of // routines
@@ -736,17 +738,17 @@ IF( LEN_TRIM(CPGD_FILE) /= 0 ) THEN
 
   IF ( CPGD_FILE /= CINIFILEPGD) THEN
      WRITE(NLUOUT,FMT=*) ' WARNING : in PRE_IDEA1.nam, in NAM_LUNITn you&
-          & have CINIFILEPGD= ',CINIFILEPGD
+          & have CINIFILEPGD= ',TRIM(CINIFILEPGD)
      WRITE(NLUOUT,FMT=*) ' whereas in NAM_REAL_PGD you have CPGD_FILE = '&
-          ,CPGD_FILE
+          ,TRIM(CPGD_FILE)
      WRITE(NLUOUT,FMT=*) ' '
-     WRITE(NLUOUT,FMT=*) ' CINIFILEPGD HAS BEEN SET TO  ',CPGD_FILE        
+     WRITE(NLUOUT,FMT=*) ' CINIFILEPGD HAS BEEN SET TO  ',TRIM(CPGD_FILE)
      CINIFILEPGD=CPGD_FILE
   END IF
   IF ( IJPHEXT .NE. JPHEXT ) THEN
      WRITE(NLUOUT,FMT=*) ' PREP_IDEAL_CASE : JPHEXT in PRE_IDEA1.nam/NAM_CONF_PRE ( or default value )&
         & JPHEXT=',JPHEXT
-     WRITE(NLUOUT,FMT=*) ' different from PGD files=', CINIFILEPGD,' value JPHEXT=',IJPHEXT
+     WRITE(NLUOUT,FMT=*) ' different from PGD files=', TRIM(CINIFILEPGD),' value JPHEXT=',IJPHEXT
      WRITE(NLUOUT,FMT=*) '-> JOB ABORTED'
      CALL PRINT_MSG(NVERB_FATAL,'GEN','PREP_IDEAL_CASE','')
      !WRITE(NLUOUT,FMT=*) ' JPHEXT HAS BEEN SET TO ', IJPHEXT
@@ -1824,8 +1826,10 @@ IF (CSURF =='EXTE') THEN
     TPGDFILE => TINIFILEPGD
   ELSE
   ! ... or read from file.
+    YATMFILE = ''
+    YATMFILETYPE = ''
     CALL INIT_PGD_SURF_ATM( YSURF_CUR, 'MESONH', 'PGD',               &
-                            '                            ', '      ', &
+                            YATMFILE, YATMFILETYPE,                   &
                             TDTCUR%nyear, TDTCUR%nmonth,              &
                             TDTCUR%nday, TDTCUR%xtime                 )
 !
@@ -1861,7 +1865,9 @@ IF (CSURF =='EXTE') THEN
   !* writing of all surface fields
   TOUTDATAFILE => TINIFILE
   TFILE_SURFEX => TINIFILE
-  CALL PREP_SURF_MNH('                            ','      ')
+  YATMFILE = ''
+  YATMFILETYPE = ''
+  CALL PREP_SURF_MNH( YATMFILE, YATMFILETYPE )
   NULLIFY(TFILE_SURFEX)
 ELSE
   CSURF = "NONE"

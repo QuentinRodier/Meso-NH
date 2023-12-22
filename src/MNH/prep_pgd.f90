@@ -88,7 +88,7 @@ USE MODD_CONF,   ONLY : CPROGRAM, L1D, L2D, LPACK, LCARTESIAN
 USE MODD_CONF_n,ONLY : CSTORAGE_TYPE
 USE MODD_LUNIT,  ONLY : TLUOUT0
 USE MODD_LUNIT_n,ONLY : LUNIT_MODEL
-USE MODD_PARAMETERS, ONLY : XUNDEF
+USE MODD_PARAMETERS,       ONLY: NFILENAMELGTMAX, XUNDEF
 USE MODD_IO,               only: TFILEDATA, TFILE_OUTPUTLISTING, TFILE_SURFEX
 use modd_precision,   only: LFIINT
 USE MODD_IO_SURF_MNH, ONLY : NHALO
@@ -137,9 +137,9 @@ INTEGER :: IRESP    ! return code for I/O
 INTEGER :: ILUOUT0
 INTEGER :: ILUNAM
 LOGICAL :: GFOUND
-CHARACTER(LEN=28) :: YDAD     =' '        ! name of dad of input FM file
-CHARACTER(LEN=28) :: CPGDFILE ='PGDFILE'  ! name of the output file
-CHARACTER(LEN=100) :: YMSG
+CHARACTER(LEN=NFILENAMELGTMAX) :: CPGDFILE = 'PGDFILE'  ! name of the output file
+CHARACTER(LEN=NFILENAMELGTMAX) :: YFILE
+CHARACTER(LEN=6)               :: YFILETYPE
 INTEGER           :: NZSFILTER=1          ! number of iteration for filter for fine   orography
 INTEGER           :: NLOCZSFILTER=3       ! number of iteration for filter of local fine orography
 LOGICAL           :: LHSLOP=.FALSE.       ! filtering of local slopes higher than XHSLOP   
@@ -185,9 +185,8 @@ CALL IO_File_add2list(TZNMLFILE,'PRE_PGD1.nam','NML','READ')
 CALL IO_File_open(TZNMLFILE,KRESP=IRESP)
 ILUNAM = TZNMLFILE%NLU
 IF (IRESP.NE.0 ) THEN
-  WRITE(YMSG,*) 'file PRE_PGD1.nam not found, IRESP=', IRESP
- !callabortstop
-  CALL PRINT_MSG(NVERB_FATAL,'GEN','PREP_PGD',YMSG)
+  WRITE( CMNHMSG(1), * ) 'file PRE_PGD1.nam not found, IRESP=', IRESP
+  CALL PRINT_MSG( NVERB_FATAL, 'IO', 'PREP_PGD' )
 ENDIF
 !JUAN
 
@@ -235,8 +234,10 @@ CALL INI_CST
 !*            Initializes the grid
 !             --------------------
 ! 
-CALL PGD_GRID_SURF_ATM(YSURF_CUR%UG, YSURF_CUR%U,YSURF_CUR%GCP,'MESONH',&
-                       '                            ','      ',.FALSE.,HDIR='-')
+YFILE = ''
+YFILETYPE = ''
+CALL PGD_GRID_SURF_ATM( YSURF_CUR%UG, YSURF_CUR%U, YSURF_CUR%GCP, 'MESONH', &
+                        YFILE, YFILETYPE, .FALSE., HDIR='-' )
 !
 CALL EXTEND_GRID_ON_HALO('MESONH',YSURF_CUR%UG, YSURF_CUR%U,&
         YSURF_CUR%UG%G%NGRID_PAR, YSURF_CUR%UG%G%XGRID_PAR)
@@ -245,7 +246,7 @@ CALL EXTEND_GRID_ON_HALO('MESONH',YSURF_CUR%UG, YSURF_CUR%U,&
 !*            Initializes all physiographic fields
 !             ------------------------------------
 !
-CALL PGD_SURF_ATM(YSURF_CUR,'MESONH','                            ','      ',.FALSE.)
+CALL PGD_SURF_ATM( YSURF_CUR, 'MESONH', YFILE, YFILETYPE, .FALSE. )
 !
 !
 !*    3.      Writes the physiographic fields

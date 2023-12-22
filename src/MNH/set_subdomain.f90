@@ -117,7 +117,7 @@ INTEGER,           INTENT(OUT):: KDYRATIO  ! DYRATIO compared to Dad file, if an
 !*       0.2   Declaration of local variables
 !              ------------------------------
 !
-CHARACTER(LEN=28) :: YDADFILE ! name of atmospheric file father (if any)
+CHARACTER(LEN=NFILENAMELGTMAX) :: YDADFILE ! name of atmospheric file father (if any)
 INTEGER :: ILUNAM     ! logical unit for namelist file HNAMELIST
 INTEGER :: ILUOUT0    ! logical unit for listing file
 INTEGER :: IRESP      ! return-code if problems araised
@@ -220,7 +220,7 @@ WRITE(ILUOUT0,*) 'given or computed NYOR  = ',NYOR
 !              ---------------------------------------------
 !
 CALL IO_Field_read(TPATMFILE,'DAD_NAME',YDADFILE,IRESP)
-IF ( IRESP /= 0  ) YDADFILE='                          '
+IF ( IRESP /= 0  ) YDADFILE=''
 !
 IF (LEN_TRIM(YDADFILE)/=0) THEN
   CALL IO_Field_read(TPATMFILE,'DXRATIO',KDXRATIO,IRESP)

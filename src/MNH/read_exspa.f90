@@ -13,11 +13,13 @@ INTERFACE
                             KXOR,KYOR,KXSIZE,KYSIZE,KDXRATIO,KDYRATIO,&
                             OBAL_ONLY,HDOMAIN,HSPAFILE,HSPANBR,       &
                             HDADINIFILE,HDADSPAFILE,HSONFILE)
+
+USE MODD_PARAMETERS, ONLY: NFILENAMELGTMAX
 !
 !*       0.1    Dummy arguments
 !
-CHARACTER (LEN=28), INTENT(OUT) :: HINIFILE ! Name of the model 1 FM file
-CHARACTER (LEN=28), INTENT(OUT) :: HINIFILEPGD
+CHARACTER (LEN=NFILENAMELGTMAX), INTENT(OUT) :: HINIFILE ! Name of the model 1 FM file
+CHARACTER (LEN=NFILENAMELGTMAX), INTENT(OUT) :: HINIFILEPGD
 INTEGER,            INTENT(OUT) :: KXOR     !  horizontal position (i,j) of the ORigin
 INTEGER,            INTENT(OUT) :: KYOR     ! of the model 2 domain, relative to model 1
 INTEGER,            INTENT(OUT) :: KDXRATIO !  x and y-direction resolution RATIO
@@ -25,19 +27,15 @@ INTEGER,            INTENT(OUT) :: KDYRATIO !      between model 2 and model 1
 INTEGER,            INTENT(OUT) :: KXSIZE   ! number of model 1 grid points in x and y-directions
 INTEGER,            INTENT(OUT) :: KYSIZE   ! in the model 2 physical domain
 !
-CHARACTER (LEN=28), INTENT(OUT) :: HDOMAIN  ! input fm-file for grid definition
-CHARACTER (LEN=28), INTENT(OUT) :: HSPAFILE ! possible name of the output FM-file
-CHARACTER (LEN= 2), INTENT(OUT) :: HSPANBR  ! NumBeR associated to the SPAwned file
-CHARACTER (LEN=28), INTENT(OUT) :: HSONFILE ! Name of the SON 1 file
-CHARACTER (LEN=28), INTENT(OUT) :: HDADINIFILE ! name of the initial dad file
-                                               ! of the model 1 only for
-                                               ! spawning 1 with GBAL_ONLY
-CHARACTER (LEN=28), INTENT(OUT) :: HDADSPAFILE  ! name of the dad file of the
-                                                ! model 2 only for spawning 1
-                                                  ! with GBAL_ONLY
-LOGICAL,            INTENT(OUT) :: OBAL_ONLY      ! compute anelastique balance
-                                                  ! without change in the file
-                                                  ! definition
+CHARACTER (LEN=NFILENAMELGTMAX), INTENT(OUT) :: HDOMAIN  ! input fm-file for grid definition
+CHARACTER (LEN=NFILENAMELGTMAX), INTENT(OUT) :: HSPAFILE ! possible name of the output FM-file
+CHARACTER (LEN= 2),              INTENT(OUT) :: HSPANBR  ! NumBeR associated to the SPAwned file
+CHARACTER (LEN=NFILENAMELGTMAX), INTENT(OUT) :: HSONFILE ! Name of the SON 1 file
+CHARACTER (LEN=NFILENAMELGTMAX), INTENT(OUT) :: HDADINIFILE  ! name of the initial dad file of the model 1 only for
+                                                             ! spawning 1 with GBAL_ONLY
+CHARACTER (LEN=NFILENAMELGTMAX), INTENT(OUT) :: HDADSPAFILE  ! name of the dad file of the model 2 only for spawning 1
+                                                             ! with GBAL_ONLY
+LOGICAL,                         INTENT(OUT) :: OBAL_ONLY    ! compute anelastic balance without change in the file definition
 !
 END SUBROUTINE READ_EXSPA
 !
@@ -118,8 +116,8 @@ IMPLICIT NONE
 !
 !*       0.1    Dummy arguments
 !
-CHARACTER (LEN=28), INTENT(OUT) :: HINIFILE ! Name of the model 1 FM file
-CHARACTER (LEN=28), INTENT(OUT) :: HINIFILEPGD
+CHARACTER (LEN=NFILENAMELGTMAX), INTENT(OUT) :: HINIFILE ! Name of the model 1 FM file
+CHARACTER (LEN=NFILENAMELGTMAX), INTENT(OUT) :: HINIFILEPGD
 INTEGER,            INTENT(OUT) :: KXOR     !  horizontal position (i,j) of the ORigin
 INTEGER,            INTENT(OUT) :: KYOR     ! of the model 2 domain, relative to model 1
 INTEGER,            INTENT(OUT) :: KDXRATIO !  x and y-direction resolution RATIO
@@ -127,19 +125,15 @@ INTEGER,            INTENT(OUT) :: KDYRATIO !      between model 2 and model 1
 INTEGER,            INTENT(OUT) :: KXSIZE   ! number of model 1 grid points in x and y-directions
 INTEGER,            INTENT(OUT) :: KYSIZE   ! in the model 2 physical domain
 !
-CHARACTER (LEN=28), INTENT(OUT) :: HDOMAIN  ! input fm-file for grid definition
-CHARACTER (LEN=28), INTENT(OUT) :: HSPAFILE ! possible name of the output FM-file
-CHARACTER (LEN= 2), INTENT(OUT) :: HSPANBR  ! NumBeR associated to the SPAwned file
-CHARACTER (LEN=28), INTENT(OUT) :: HSONFILE ! Name of the SON 1 file
-CHARACTER (LEN=28), INTENT(OUT) :: HDADINIFILE ! name of the initial dad file
-                                               ! of the model 1 only for
-                                               ! spawning 1 with GBAL_ONLY
-CHARACTER (LEN=28), INTENT(OUT) :: HDADSPAFILE  ! name of the dad file of the
-                                                ! model 2 only for spawning 1
-                                                  ! with GBAL_ONLY
-LOGICAL,            INTENT(OUT) :: OBAL_ONLY      ! compute anelastique balance
-                                                  ! without change in the file
-                                                  ! definition
+CHARACTER (LEN=NFILENAMELGTMAX), INTENT(OUT) :: HDOMAIN  ! input fm-file for grid definition
+CHARACTER (LEN=NFILENAMELGTMAX), INTENT(OUT) :: HSPAFILE ! possible name of the output FM-file
+CHARACTER (LEN= 2),              INTENT(OUT) :: HSPANBR  ! NumBeR associated to the SPAwned file
+CHARACTER (LEN=NFILENAMELGTMAX), INTENT(OUT) :: HSONFILE ! Name of the SON 1 file
+CHARACTER (LEN=NFILENAMELGTMAX), INTENT(OUT) :: HDADINIFILE  ! name of the initial dad file of the model 1 only for
+                                                             ! spawning 1 with GBAL_ONLY
+CHARACTER (LEN=NFILENAMELGTMAX), INTENT(OUT) :: HDADSPAFILE  ! name of the dad file of the model 2 only for spawning 1
+                                                             ! with GBAL_ONLY
+LOGICAL,                         INTENT(OUT) :: OBAL_ONLY    ! compute anelastic balance without change in the file definition
 !
 !
 !*       0.2    Local variables
@@ -158,15 +152,15 @@ INTEGER :: IDYRATIO            !      between model 2 and model 1
 INTEGER :: IXSIZE,IYSIZE       ! number of model 1 grid points in x and y-directions
                                ! in the model 2 physical domain
 LOGICAL :: GBAL_ONLY           !  compute only anelastique balance
-CHARACTER(LEN=28) :: YDOMAIN     ! input fm-file for grid definition
-CHARACTER(LEN=28) :: YSPAFILE    ! possible name of the output FM-file
-CHARACTER(LEN= 2) :: YSPANBR     ! NumBeR associated to the SPAwned file
-CHARACTER(LEN=28) :: YDADINIFILE ! Name of dad model for model 1
-CHARACTER(LEN=28) :: YDADSPAFILE ! Name of dad model for model 2
-CHARACTER(LEN=28) :: CINIFILE    ! re-declaration because of namelist
-CHARACTER(LEN=28) :: CINIFILEPGD ! re-declaration because of namelist
+CHARACTER(LEN=NFILENAMELGTMAX) :: YDOMAIN     ! input fm-file for grid definition
+CHARACTER(LEN=NFILENAMELGTMAX) :: YSPAFILE    ! possible name of the output FM-file
+CHARACTER(LEN= 2)              :: YSPANBR     ! NumBeR associated to the SPAwned file
+CHARACTER(LEN=NFILENAMELGTMAX) :: YDADINIFILE ! Name of dad model for model 1
+CHARACTER(LEN=NFILENAMELGTMAX) :: YDADSPAFILE ! Name of dad model for model 2
+CHARACTER(LEN=NFILENAMELGTMAX) :: CINIFILE    ! re-declaration because of namelist
+CHARACTER(LEN=NFILENAMELGTMAX) :: CINIFILEPGD ! re-declaration because of namelist
 
-CHARACTER (LEN=28) :: YSONFILE = ' '  ! Name of SON input file
+CHARACTER (LEN=NFILENAMELGTMAX) :: YSONFILE = ''  ! Name of SON input file
 TYPE(TFILEDATA),POINTER :: TZNMLFILE  ! Namelist file
 !
 !*       0.3    Namelist declarations

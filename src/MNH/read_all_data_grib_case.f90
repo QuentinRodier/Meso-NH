@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1998-2022 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1998-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -10,15 +10,16 @@ INTERFACE
 SUBROUTINE READ_ALL_DATA_GRIB_CASE(HFILE,TPPRE_REAL1,HGRIB,TPPGDFILE,    &
                     PTIME_HORI,KVERB,ODUMMY_REAL                         ) 
 !
-USE MODD_IO, ONLY: TFILEDATA
+USE MODD_IO,         ONLY: TFILEDATA
+USE MODD_PARAMETERS, ONLY: NFILENAMELGTMAX
 !
-CHARACTER(LEN=4),  INTENT(IN)    :: HFILE       ! which file ('ATM0','ATM1' or 'CHEM')
-TYPE(TFILEDATA),POINTER,INTENT(INOUT) :: TPPRE_REAL1 ! PRE_REAL1 file
-CHARACTER(LEN=28), INTENT(IN)    :: HGRIB       ! name of the GRIB file
-TYPE(TFILEDATA),   INTENT(IN)    :: TPPGDFILE   ! physiographic data file
-INTEGER,           INTENT(IN)    :: KVERB       ! verbosity level
-LOGICAL,           INTENT(IN)    :: ODUMMY_REAL ! flag to interpolate dummy fields
-REAL,              INTENT(INOUT) :: PTIME_HORI  ! time spent in hor. interpolations
+CHARACTER(LEN=4),               INTENT(IN)    :: HFILE       ! which file ('ATM0','ATM1' or 'CHEM')
+TYPE(TFILEDATA), POINTER,       INTENT(INOUT) :: TPPRE_REAL1 ! PRE_REAL1 file
+CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)    :: HGRIB       ! name of the GRIB file
+TYPE(TFILEDATA),                INTENT(IN)    :: TPPGDFILE   ! physiographic data file
+INTEGER,                        INTENT(IN)    :: KVERB       ! verbosity level
+LOGICAL,                        INTENT(IN)    :: ODUMMY_REAL ! flag to interpolate dummy fields
+REAL,                           INTENT(INOUT) :: PTIME_HORI  ! time spent in hor. interpolations
 !
 END SUBROUTINE READ_ALL_DATA_GRIB_CASE
 !
@@ -191,13 +192,13 @@ IMPLICIT NONE
 !* 0.1. Declaration of arguments
 !       ------------------------
 !
-CHARACTER(LEN=4),  INTENT(IN)    :: HFILE       ! which file ('ATM0','ATM1' or 'CHEM')
-TYPE(TFILEDATA),POINTER,INTENT(INOUT) :: TPPRE_REAL1! PRE_REAL1 file
-CHARACTER(LEN=28), INTENT(IN)    :: HGRIB       ! name of the GRIB file
-TYPE(TFILEDATA),   INTENT(IN)    :: TPPGDFILE   ! physiographic data file
-INTEGER,           INTENT(IN)    :: KVERB       ! verbosity level
-LOGICAL,           INTENT(IN)    :: ODUMMY_REAL ! flag to interpolate dummy fields
-REAL,              INTENT(INOUT) :: PTIME_HORI  ! time spent in hor. interpolations
+CHARACTER(LEN=4),               INTENT(IN)    :: HFILE       ! which file ('ATM0','ATM1' or 'CHEM')
+TYPE(TFILEDATA), POINTER,       INTENT(INOUT) :: TPPRE_REAL1 ! PRE_REAL1 file
+CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)    :: HGRIB       ! name of the GRIB file
+TYPE(TFILEDATA),                INTENT(IN)    :: TPPGDFILE   ! physiographic data file
+INTEGER,                        INTENT(IN)    :: KVERB       ! verbosity level
+LOGICAL,                        INTENT(IN)    :: ODUMMY_REAL ! flag to interpolate dummy fields
+REAL,                           INTENT(INOUT) :: PTIME_HORI  ! time spent in hor. interpolations
 !
 !* 0.2 Declaration of local variables
 !      ------------------------------
@@ -216,8 +217,8 @@ INTEGER                            :: JLOOP1,JLOOP2 !  |
 INTEGER                            :: JLOOP3,JLOOP4 !  |
 INTEGER                            :: JLOOP         !  |
 ! Variables used by the PGD reader
-CHARACTER(LEN=28)                  :: YPGD_NAME     ! not used - dummy argument
-CHARACTER(LEN=28)                  :: YPGD_DAD_NAME ! not used - dummy argument
+CHARACTER(LEN=NFILENAMELGTMAX)     :: YPGD_NAME     ! not used - dummy argument
+CHARACTER(LEN=NFILENAMELGTMAX)     :: YPGD_DAD_NAME ! not used - dummy argument
 CHARACTER(LEN=2)                   :: YPGD_TYPE     ! not used - dummy argument
 ! PGD Grib definition variables
 INTEGER                            :: INO           ! Number of points of the grid

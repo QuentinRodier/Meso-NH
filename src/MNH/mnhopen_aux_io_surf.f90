@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2003-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2003-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -9,9 +9,11 @@
 INTERFACE
       SUBROUTINE MNHOPEN_AUX_IO_SURF(HFILE,HFILETYPE,HMASK)
 !
-CHARACTER(LEN=28), INTENT(IN)  :: HFILE     ! file name
-CHARACTER(LEN=6),  INTENT(IN)  :: HFILETYPE ! main program
-CHARACTER(LEN=6),  INTENT(IN)  :: HMASK
+USE MODD_PARAMETERS, ONLY: NFILENAMELGTMAX
+!
+CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN) :: HFILE     ! file name
+CHARACTER(LEN=6),               INTENT(IN) :: HFILETYPE ! main program
+CHARACTER(LEN=6),               INTENT(IN) :: HMASK
 !
 END SUBROUTINE MNHOPEN_AUX_IO_SURF
 !
@@ -69,7 +71,7 @@ USE MODD_IO_SURF_MNH,      ONLY: TOUT, TPINFILE, COUTFILE, NMASK_ALL, CMASK, NIU
                                  NMASK, NIU, NJU, NIB, NJB, NIE, NJE
 USE MODD_LUNIT,            ONLY: TPGDFILE, TLUOUT0, TOUTDATAFILE
 USE MODD_LUNIT_n,          ONLY: TLUOUT
-USE MODD_PARAMETERS,       ONLY: JPHEXT
+USE MODD_PARAMETERS,       ONLY: JPHEXT, NFILENAMELGTMAX
 !
 USE MODE_IO_FIELD_READ,    only: IO_Field_read
 USE MODE_IO_FILE,          ONLY: IO_File_open
@@ -85,9 +87,9 @@ IMPLICIT NONE
 !*       0.1   Declarations of arguments
 !              -------------------------
 !
-CHARACTER(LEN=28), INTENT(IN)  :: HFILE     ! file name
-CHARACTER(LEN=6),  INTENT(IN)  :: HFILETYPE ! main program
-CHARACTER(LEN=6),  INTENT(IN)  :: HMASK
+CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN) :: HFILE     ! file name
+CHARACTER(LEN=6),               INTENT(IN) :: HFILETYPE ! main program
+CHARACTER(LEN=6),               INTENT(IN) :: HMASK
 !
 !*       0.2   Declarations of local variables
 !              -------------------------------
@@ -98,7 +100,7 @@ INTEGER           :: IIMAX          ! number of points in X direction
 INTEGER           :: IJMAX          ! number of points in Y direction
 !
 !
-CHARACTER(LEN=28) :: YFILE,YPGDFILE ! file names
+CHARACTER(LEN=NFILENAMELGTMAX) :: YFILE, YPGDFILE ! file names
 INTEGER           :: ILU            ! 1D physical dimension of XCOVER
 INTEGER           :: ILUOUT
 REAL, DIMENSION(:),   ALLOCATABLE :: ZFULL  ! total cover

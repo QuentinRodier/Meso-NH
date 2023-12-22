@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 modn 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !     ###################
       MODULE MODN_LUNIT_n
@@ -43,17 +38,18 @@
 !*       0.   DECLARATIONS
 !             ------------
 !
-USE MODD_PARAMETERS, ONLY : JPCPLFILEMAX
-USE MODD_LUNIT_n, ONLY: &
-         CINIFILE_n => CINIFILE, &
-         CINIFILEPGD_n => CINIFILEPGD, &
-         CCPLFILE_n => CCPLFILE
+USE MODD_PARAMETERS, ONLY: JPCPLFILEMAX, NFILENAMELGTMAX
+USE MODD_LUNIT_n,    ONLY: CINIFILE_n    => CINIFILE,    &
+                           CINIFILEPGD_n => CINIFILEPGD, &
+                           CCPLFILE_n    => CCPLFILE
 !
 IMPLICIT NONE
 !
-CHARACTER(LEN=28),SAVE  :: CINIFILE
-CHARACTER(LEN=28),SAVE  :: CINIFILEPGD
-CHARACTER(LEN=28),SAVE,DIMENSION(JPCPLFILEMAX)  :: CCPLFILE
+SAVE
+!
+CHARACTER(LEN=NFILENAMELGTMAX)                          :: CINIFILE
+CHARACTER(LEN=NFILENAMELGTMAX)                          :: CINIFILEPGD
+CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(JPCPLFILEMAX) :: CCPLFILE
 !
 NAMELIST/NAM_LUNITn/CINIFILE,CINIFILEPGD,CCPLFILE
 !

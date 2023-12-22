@@ -10,14 +10,15 @@ INTERFACE
 SUBROUTINE READ_CAMS_DATA_NETCDF_CASE(TPPRE_REAL1,HFILE,TPPGDFILE, &
                                       PTIME_HORI,KVERB,ODUMMY_REAL ) 
 !
-USE MODD_IO, ONLY: TFILEDATA
+USE MODD_IO,         ONLY: TFILEDATA
+USE MODD_PARAMETERS, ONLY: NFILENAMELGTMAX
 !
-TYPE(TFILEDATA),POINTER,INTENT(IN) :: TPPRE_REAL1 ! PRE_REAL1 file
-CHARACTER(LEN=28),  INTENT(IN)    :: HFILE      ! name of the NETCDF file
-TYPE(TFILEDATA),    INTENT(IN)    :: TPPGDFILE  ! physiographic data file
-REAL,               INTENT(INOUT) :: PTIME_HORI ! time spent in hor. interpolations
-INTEGER,            INTENT(IN)    :: KVERB      ! verbosity level
-LOGICAL,            INTENT(IN)    :: ODUMMY_REAL! flag to interpolate dummy fields
+TYPE(TFILEDATA), POINTER,       INTENT(IN)    :: TPPRE_REAL1 ! PRE_REAL1 file
+CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)    :: HFILE       ! name of the NETCDF file
+TYPE(TFILEDATA),                INTENT(IN)    :: TPPGDFILE   ! physiographic data file
+REAL,                           INTENT(INOUT) :: PTIME_HORI  ! time spent in hor. interpolations
+INTEGER,                        INTENT(IN)    :: KVERB       ! verbosity level
+LOGICAL,                        INTENT(IN)    :: ODUMMY_REAL ! flag to interpolate dummy fields
 END SUBROUTINE READ_CAMS_DATA_NETCDF_CASE
 !
 END INTERFACE
@@ -137,12 +138,12 @@ IMPLICIT NONE
 !* 0.1. Declaration of arguments
 !       ------------------------
 !
-TYPE(TFILEDATA),POINTER,INTENT(IN) :: TPPRE_REAL1 ! PRE_REAL1 file
-CHARACTER(LEN=28),  INTENT(IN)    :: HFILE      ! name of the NETCDF file
-TYPE(TFILEDATA),    INTENT(IN)    :: TPPGDFILE  ! physiographic data file
-REAL,               INTENT(INOUT) :: PTIME_HORI ! time spent in hor. interpolations
-INTEGER,            INTENT(IN)    :: KVERB      ! verbosity level
-LOGICAL,            INTENT(IN)    :: ODUMMY_REAL! flag to interpolate dummy fields
+TYPE(TFILEDATA), POINTER,       INTENT(IN)    :: TPPRE_REAL1 ! PRE_REAL1 file
+CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)    :: HFILE       ! name of the NETCDF file
+TYPE(TFILEDATA),                INTENT(IN)    :: TPPGDFILE   ! physiographic data file
+REAL,                           INTENT(INOUT) :: PTIME_HORI  ! time spent in hor. interpolations
+INTEGER,                        INTENT(IN)    :: KVERB       ! verbosity level
+LOGICAL,                        INTENT(IN)    :: ODUMMY_REAL ! flag to interpolate dummy fields
 !
 !* 0.2 Declaration of local variables
 !      ------------------------------
@@ -151,8 +152,8 @@ INTEGER                            :: ILUOUT0       ! Unit used for output msg.
 INTEGER                            :: JJ            ! Dummy counters
 INTEGER                            :: JLOOP1
 ! Variables used by the PGD reader
-CHARACTER(LEN=28)                  :: YPGD_NAME     ! not used - dummy argument
-CHARACTER(LEN=28)                  :: YPGD_DAD_NAME ! not used - dummy argument
+CHARACTER(LEN=NFILENAMELGTMAX)     :: YPGD_NAME     ! not used - dummy argument
+CHARACTER(LEN=NFILENAMELGTMAX)     :: YPGD_DAD_NAME ! not used - dummy argument
 CHARACTER(LEN=2)                   :: YPGD_TYPE     ! not used - dummy argument
 ! PGD Grib definition variables
 INTEGER                            :: INO           ! Number of points of the grid
@@ -558,7 +559,7 @@ DEALLOCATE (zmmr_sulfaer)
 !
 DEALLOCATE (ZWORK)
 !
-WRITE (ILUOUT0,'(A,A4,A)') ' -- netcdf decoder for ',HFILE,' file ended successfully'
+WRITE (ILUOUT0,'(A,A4,A)') ' -- netcdf decoder for ',TRIM(HFILE),' file ended successfully'
 WRITE (ILUOUT0,'(A,A4,A)') 'CAMS mixing ratios are interpolated horizontally'
 !
 !

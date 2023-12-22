@@ -91,9 +91,9 @@ IMPLICIT NONE
 !*    0.2    Declaration of variables
 !            ------------------------
 !
-CHARACTER(LEN=28) :: YINIFILE  ! name of input FM file
-CHARACTER(LEN=28) :: YNAME     ! true name of input FM file
-CHARACTER(LEN=28) :: YDAD      ! name of dad of input FM file
+CHARACTER(LEN=NFILENAMELGTMAX) :: YINIFILE  ! name of input FM file
+CHARACTER(LEN=NFILENAMELGTMAX) :: YNAME     ! true name of input FM file
+CHARACTER(LEN=NFILENAMELGTMAX) :: YDAD      ! name of dad of input FM file
 CHARACTER(LEN=2)  :: YSTORAGE_TYPE
 INTEGER :: INAM                ! Logical unit for namelist file
 INTEGER :: ILUOUT0             ! Logical unit for output file.

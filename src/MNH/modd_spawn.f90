@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1999-2022 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1999-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     #################
@@ -39,6 +39,7 @@
 !*       0.   DECLARATIONS
 !             ------------
 !
+USE MODD_PARAMETERS, ONLY: NFILENAMELGTMAX
 USE MODD_TYPE_DATE
 !
 IMPLICIT NONE
@@ -50,17 +51,15 @@ INTEGER,SAVE   :: NXSIZE,NYSIZE     ! number of model 1 grid points in x and y-d
 INTEGER,SAVE   :: NXOR, NYOR        ! horizontal position (i,j) of the
 INTEGER,SAVE   :: NXEND,NYEND       ! ORigin and END of model 2 relative to model 1 
 !
-CHARACTER (LEN=28) :: CDOMAIN       ! input fm-file for grid definition
+CHARACTER (LEN=NFILENAMELGTMAX) :: CDOMAIN ! input fm-file for grid definition
 !
 LOGICAL            :: LBAL_ONLY     ! logical switch for spawning 1 with
                                     ! balance calculation only and
                                     ! no modification of the model definition
                                     ! v.s its DAD except the DAD name
 !
-CHARACTER (LEN=28) :: CDADINIFILE ! DAD fm-file for initial file
-                                    ! if LBAL_ONLY=T
-CHARACTER (LEN=28) :: CDADSPAFILE ! DAD fm-file for spawning file
-                                    ! if LBAL_ONLY=T
+CHARACTER (LEN=NFILENAMELGTMAX) :: CDADINIFILE ! DAD fm-file for initial file  if LBAL_ONLY=T
+CHARACTER (LEN=NFILENAMELGTMAX) :: CDADSPAFILE ! DAD fm-file for spawning file if LBAL_ONLY=T
 !
 ! Pointers to the data of the mesh #1
 REAL,DIMENSION(:),    SAVE,POINTER :: XXHAT1  => NULL()

@@ -109,17 +109,15 @@ INTEGER :: IRESP      ! return-code if problems eraised
 INTEGER :: ILUOUT0    ! logical unit for listing file
 LOGICAL :: GFOUND     ! Return code when searching namelist
 !
-CHARACTER(LEN=28) :: HPRE_NEST_PGD ! name of namelist file
-INTEGER           :: IPRE_NEST_PGD ! logical unit of namelist file
+CHARACTER(LEN=NFILENAMELGTMAX) :: YPRE_NEST_PGD ! name of namelist file
+INTEGER                        :: IPRE_NEST_PGD ! logical unit of namelist file
 !
-CHARACTER(LEN=28),DIMENSION(JPMODELMAX) :: YPGD ! name of the pgd file for each model
-CHARACTER(LEN=28) :: YLUOUT    ! name of output listing file for each model
-CHARACTER(LEN=2)  :: YNEST     ! to define the output pgd file names
-CHARACTER(LEN=28) :: YPGD1, YPGD2, YPGD3, YPGD4, &
-                     YPGD5, YPGD6, YPGD7, YPGD8
-!                    ! name of all pgd files
-!                    ! in the namelist
-CHARACTER(LEN=100) :: YMSG
+CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(JPMODELMAX) :: YPGD ! name of the pgd file for each model
+CHARACTER(LEN=NFILENAMELGTMAX) :: YLUOUT    ! name of output listing file for each model
+CHARACTER(LEN=2)               :: YNEST     ! to define the output pgd file names
+CHARACTER(LEN=NFILENAMELGTMAX) :: YPGD1, YPGD2, YPGD3, YPGD4, &
+                                  YPGD5, YPGD6, YPGD7, YPGD8
+                                  ! name of all pgd files in the namelist
 INTEGER           :: IDAD    ! father of one model
 INTEGER           :: JPGD    ! loop counter
 LOGICAL           :: GADD    !
@@ -149,7 +147,7 @@ TZPRE_NEST_PGD => NULL()
 !*       1.    SET DEFAULT NAMES
 !              -----------------
 !
-HPRE_NEST_PGD='PRE_NEST_PGD1.nam'
+YPRE_NEST_PGD='PRE_NEST_PGD1.nam'
 !
 !-------------------------------------------------------------------------------
 !
@@ -168,7 +166,7 @@ ILUOUT0=TLUOUT0%NLU
 !*       3.    OPENNING OF PRE_NEST_PGD1.nam
 !              -----------------------------
 !
-CALL IO_File_add2list(TZPRE_NEST_PGD,TRIM(HPRE_NEST_PGD),'NML','READ')
+CALL IO_File_add2list(TZPRE_NEST_PGD,TRIM(YPRE_NEST_PGD),'NML','READ')
 CALL IO_File_open(TZPRE_NEST_PGD)
 IPRE_NEST_PGD = TZPRE_NEST_PGD%NLU
 !reading of NAM_CONFZ
@@ -189,14 +187,14 @@ END IF
 !*       4.    READING OF THE OTHER FILE NAMES
 !              -------------------------------
 !
-YPGD1='                            '
-YPGD2='                            '
-YPGD3='                            '
-YPGD4='                            '
-YPGD5='                            '
-YPGD6='                            '
-YPGD7='                            '
-YPGD8='                            '
+YPGD1=''
+YPGD2=''
+YPGD3=''
+YPGD4=''
+YPGD5=''
+YPGD6=''
+YPGD7=''
+YPGD8=''
 NDAD(:)=0
 GADD=.TRUE.
 !
@@ -257,8 +255,8 @@ DO JPGD=1,JPMODELMAX
   !
   IF ( (IDAD<1 .OR. IDAD>JPMODELMAX) .AND. (JPGD>1) ) THEN
 !callabortstop
-      WRITE(YMSG,*) 'No father indicated for model ',JPGD,' in namelist NAM_PGD',JPGD
-      CALL PRINT_MSG(NVERB_FATAL,'GEN','OPEN_NESTPGD_FILES',YMSG)
+      WRITE( CMNHMSG(1), * ) 'No father indicated for model ', JPGD, ' in namelist NAM_PGD', JPGD
+      CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'OPEN_NESTPGD_FILES' )
   END IF
   !
   IF (GADD) THEN

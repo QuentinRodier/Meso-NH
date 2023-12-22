@@ -508,22 +508,22 @@ IMPLICIT NONE
 !*       0.1   Declaration of local variables
 !              ------------------------------
 !
-CHARACTER(LEN=28)              :: YATMFILE    ! name of the Atmospheric file
+CHARACTER(LEN=NFILENAMELGTMAX) :: YATMFILE    ! name of the Atmospheric file
 CHARACTER(LEN=6)               :: YATMFILETYPE! type of the Atmospheric file
-CHARACTER(LEN=28)              :: YCHEMFILE    ! name of the Chemical file
+CHARACTER(LEN=NFILENAMELGTMAX) :: YCHEMFILE    ! name of the Chemical file
 CHARACTER(LEN=6)               :: YCHEMFILETYPE! type of the Chemical file
 !UP*PT
-!CHARACTER(LEN=28)              :: YCAMSFILE    ! name of the input CAMS file
+!CHARACTER(LEN=NFILENAMELGTMAX) :: YCAMSFILE    ! name of the input CAMS file
 !CHARACTER(LEN=6)               :: YCAMSFILETYPE! type of the input CAMS file
-CHARACTER(LEN=28)              :: YLIMAFILE    ! name of the input MACC file
+CHARACTER(LEN=NFILENAMELGTMAX) :: YLIMAFILE    ! name of the input MACC file
 CHARACTER(LEN=6)               :: YLIMAFILETYPE! type of the input MACC file
 !UP*PT
-CHARACTER(LEN=28)              :: YSURFFILE    ! name of the Surface file
+CHARACTER(LEN=NFILENAMELGTMAX) :: YSURFFILE    ! name of the Surface file
 CHARACTER(LEN=6)               :: YSURFFILETYPE! type of the Surface file
-CHARACTER(LEN=28)              :: YPGDFILE    ! name of the physiographic data
+CHARACTER(LEN=NFILENAMELGTMAX) :: YPGDFILE    ! name of the physiographic data
 !                                             ! file
 !
-CHARACTER(LEN=28)              :: YDAD_NAME   ! true name of the atmospheric file
+CHARACTER(LEN=NFILENAMELGTMAX) :: YDAD_NAME   ! true name of the atmospheric file
 !
 !* other variables
 !
@@ -1404,7 +1404,7 @@ IF (LEN_TRIM(YDAD_NAME)>0) THEN
   WRITE(ILUOUT0,*) ' '
   WRITE(ILUOUT0,*) ' ------------------------------------------------------------'
   WRITE(ILUOUT0,*) '|  Nesting allowed                                           |'
-  WRITE(ILUOUT0,*) '|  DAD_NAME="',YDAD_NAME,'"                   |'
+  WRITE(ILUOUT0,*) '|  DAD_NAME="',TRIM(YDAD_NAME),'"                   |'
   WRITE(ILUOUT0,*) ' ------------------------------------------------------------'
   WRITE(ILUOUT0,*) ' '
 ELSE

@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2001-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$ $Date$
-!-----------------------------------------------------------------
 !-----------------------------------------------------------------
 !     #####################
       MODULE MODD_HURR_CONF
@@ -50,6 +45,7 @@
 !
 !*       0.   DECLARATIONS
 !             ------------
+USE MODD_PARAMETERS, ONLY: NFILENAMELGTMAX
 !
 IMPLICIT NONE
 !
@@ -85,6 +81,6 @@ REAL   ,SAVE       ::   XMAX        ! altitude where the tangentiel wind vanishe
 REAL   ,SAVE       ::   XANGCONV0   ! Convergence angle near the surface
 REAL   ,SAVE       ::   XANGCONV1000! Convergence angle at 1000m altitude
 REAL   ,SAVE       ::   XANGCONV2000! Convergence angle at 2000m altitude
-CHARACTER(LEN=28),SAVE :: CDADATMFILE  ! Name of the dad of HATMFILE 
-CHARACTER(LEN=28),SAVE :: CDADBOGFILE  ! Name of the dad of CINIFILE
+CHARACTER(LEN=NFILENAMELGTMAX),SAVE :: CDADATMFILE  ! Name of the dad of HATMFILE
+CHARACTER(LEN=NFILENAMELGTMAX),SAVE :: CDADBOGFILE  ! Name of the dad of CINIFILE
  END MODULE MODD_HURR_CONF

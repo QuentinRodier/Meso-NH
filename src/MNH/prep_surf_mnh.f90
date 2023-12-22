@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2004-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2004-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
@@ -9,9 +9,11 @@
 INTERFACE
       SUBROUTINE PREP_SURF_MNH(HATMFILE,HATMFILETYPE,OINIFILEOPEN)
 !
-CHARACTER(LEN=28),INTENT(IN) :: HATMFILE    ! name of the Atmospheric file
-CHARACTER(LEN=6), INTENT(IN) :: HATMFILETYPE! type of the Atmospheric file
-LOGICAL, OPTIONAL,INTENT(IN) :: OINIFILEOPEN! Open the INI file here (or not)
+USE MODD_PARAMETERS, ONLY: NFILENAMELGTMAX
+!
+CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN) :: HATMFILE     ! name of the Atmospheric file
+CHARACTER(LEN=6),               INTENT(IN) :: HATMFILETYPE ! type of the Atmospheric file
+LOGICAL,          OPTIONAL,     INTENT(IN) :: OINIFILEOPEN ! Open the INI file here (or not)
 !
 END SUBROUTINE PREP_SURF_MNH
 !
@@ -51,6 +53,7 @@ USE MODD_IO_SURF_MNH, ONLY : COUTFILE
 USE MODD_LUNIT,       ONLY : TLUOUT0, TOUTDATAFILE
 USE MODD_LUNIT_n,     ONLY : CINIFILE, TINIFILE
 USE MODD_MNH_SURFEX_n
+USE MODD_PARAMETERS,  ONLY : NFILENAMELGTMAX
 USE MODD_TIME_n,      ONLY : TDTCUR
 !
 USE MODE_IO_FILE,     ONLY: IO_File_open
@@ -66,17 +69,15 @@ IMPLICIT NONE
 !*       0.1   Declarations of arguments
 !              -------------------------
 !
-CHARACTER(LEN=28),INTENT(IN) :: HATMFILE    ! name of the Atmospheric file
-CHARACTER(LEN=6), INTENT(IN) :: HATMFILETYPE! type of the Atmospheric file
-LOGICAL, OPTIONAL,INTENT(IN) :: OINIFILEOPEN! Open the INI file here (or not)
+CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN) :: HATMFILE     ! name of the Atmospheric file
+CHARACTER(LEN=6),               INTENT(IN) :: HATMFILETYPE ! type of the Atmospheric file
+LOGICAL,          OPTIONAL,     INTENT(IN) :: OINIFILEOPEN ! Open the INI file here (or not)
 !
 !*       0.2   Declarations of local variables
 !              -------------------------------
 !
 TYPE (PREP_CTL) :: YLCTL
 !
-CHARACTER(LEN=28)  :: YPGDFILE  ='                            '  ! name of the pgd file
-CHARACTER(LEN=6)   :: YPGDFILETYPE ='      '                     ! type of the pgd file
 INTEGER            :: ILUOUT0  ! logical unit for listing file
 CHARACTER(LEN=6)   :: YATMFILETYPE    ! type of the Atmospheric file
 !------------------------------------------------------------------

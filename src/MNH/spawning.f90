@@ -142,8 +142,8 @@ IMPLICIT NONE
 !*       0.3    Local variables
 !
 !
-CHARACTER (LEN=28) :: YSONFILE = ' '  ! possible name of SON input FM-file
-CHARACTER (LEN=28) :: YSPAFILE = ' '  ! possible name of the output FM-file
+CHARACTER (LEN=NFILENAMELGTMAX) :: YSONFILE = ''  ! possible name of SON input FM-file
+CHARACTER (LEN=NFILENAMELGTMAX) :: YSPAFILE = ''  ! possible name of the output FM-file
 CHARACTER (LEN= 2) :: YSPANBR = '00'  ! NumBeR associated to the SPAwned file
 INTEGER            :: IINFO_ll        ! return code of // routines
 INTEGER :: IRESP                      ! Return codes in FM routines

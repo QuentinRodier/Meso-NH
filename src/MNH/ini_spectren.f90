@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2015-2022 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2015-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -73,7 +73,7 @@ USE MODD_GRID_n
 USE MODD_IO,            ONLY: TFILEDATA
 USE MODD_LBC_n,         only: CLBCX, CLBCY
 USE MODD_LSFIELD_n
-USE MODD_LUNIT_n,       ONLY: COUTFILE, TLUOUT
+USE MODD_LUNIT_n,       ONLY: TLUOUT
 USE MODD_MEAN_FIELD
 USE MODD_MEAN_FIELD_n
 USE MODD_METRICS_n
@@ -882,13 +882,6 @@ IF ( KMI > 1) THEN
        DPTR_XLBXTKEM,DPTR_XLBYTKEM,                                                             &
        DPTR_XLBXRM,DPTR_XLBYRM,DPTR_XLBXSVM,DPTR_XLBYSVM                                        )
 END IF
-!
-!
-!*       16.    BUILT THE GENERIC OUTPUT NAME
-!               ----------------------------
-!
-WRITE(COUTFILE,'(A,".",I1,".",A)') CEXP,KMI,TRIM(ADJUSTL(CSEG))
-
 !-------------------------------------------------------------------------------
 !
 !*       17.    INITIALIZE THE PARAMETERS FOR THE DYNAMICS

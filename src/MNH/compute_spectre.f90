@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -123,7 +123,7 @@ REAL, DIMENSION(:),     ALLOCATABLE :: ZANB       ! wavenumbers vector
 REAL, DIMENSION(:,:),   ALLOCATABLE :: ZLGO       ! wavelengths and adimensionned wavenumbers vector
 REAL, DIMENSION(:,:),   ALLOCATABLE :: ZAP        ! normalized wavenumbers vector
 INTEGER                             :: JLOGIMIN   ! size of wavenumber format
-CHARACTER(LEN=80)                   :: YOUTFILE   ! outfile's name
+CHARACTER(LEN=NFILENAMELGTMAX)      :: YOUTFILE   ! outfile's name
 REAL                                :: ZDEL       ! needed for the initialization of 
 REAL                                :: ZANGLE     ! the arrays used by the FFT
 REAL, DIMENSION(:), ALLOCATABLE     :: ZTRIGSX    ! arrays of sin or cos values for the FFT along x

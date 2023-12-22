@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2003-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2003-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -9,8 +9,10 @@
 INTERFACE
       SUBROUTINE MNHCLOSE_AUX_IO_SURF(HFILE,HFILETYPE)
 !
-CHARACTER(LEN=28), INTENT(IN), OPTIONAL :: HFILE    ! file to close
-CHARACTER(LEN=6),  INTENT(IN), OPTIONAL :: HFILETYPE! type of file to close
+USE MODD_PARAMETERS, ONLY: NFILENAMELGTMAX
+
+CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN), OPTIONAL :: HFILE    ! file to close
+CHARACTER(LEN=6),               INTENT(IN), OPTIONAL :: HFILETYPE! type of file to close
 
 !
 END SUBROUTINE MNHCLOSE_AUX_IO_SURF
@@ -57,6 +59,7 @@ END MODULE MODI_MNHCLOSE_AUX_IO_SURF
 !              ------------
 !
 USE MODD_IO_SURF_MNH, ONLY: TPINFILE, CACTION, NMASK_ALL, NMASK
+USE MODD_PARAMETERS,  ONLY: NFILENAMELGTMAX
 !
 USE MODE_IO_FILE,     only: IO_File_close
 USE MODE_ll
@@ -66,14 +69,12 @@ IMPLICIT NONE
 !*       0.1   Declarations of arguments
 !              -------------------------
 !
-CHARACTER(LEN=28), INTENT(IN), OPTIONAL :: HFILE    ! file to close
-CHARACTER(LEN=6),  INTENT(IN), OPTIONAL :: HFILETYPE! type of file to close
+CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN), OPTIONAL :: HFILE    ! file to close
+CHARACTER(LEN=6),               INTENT(IN), OPTIONAL :: HFILETYPE! type of file to close
 
 !
 !*       0.2   Declarations of local variables
 !              -------------------------------
-!
-INTEGER           :: IRESP          ! return-code if a problem appears
 !
 !-------------------------------------------------------------------------------
 !

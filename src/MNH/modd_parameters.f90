@@ -76,8 +76,9 @@ INTEGER, PARAMETER :: NNEGUNDEF = -999  ! default value for undefined or unused
 !                                       ! field (negative value guaranteed)
 INTEGER, PARAMETER :: JPDUMMY  = 20   ! Size of dummy array
 !
+
 INTEGER, PARAMETER :: JPOUTVARMAX = 192 ! Maximum allowed number of variables in an output file
-!
+
 INTEGER, PARAMETER :: NBUNAMELGTMAX   = 32  ! Maximum length of a budget name
 INTEGER, PARAMETER :: NCOMMENTLGTMAX  = 100 ! Maximum length of a comment
 INTEGER, PARAMETER :: NMNHNAMELGTMAX  = 32  ! Maximum length of a MNH variable name
@@ -87,8 +88,31 @@ INTEGER, PARAMETER :: NUNITLGTMAX     = 40  ! Maximum length of the canonical un
 
 INTEGER, PARAMETER :: NSENSORNAMELGTMAX = 10 ! Maximum length for the name of a sensor (aircraft, balloon, station, profiler...)
 
+! Filename: maximum length
+! Structure:
+! CEXP.m.CSEG(.OUT).nnn(nnn)(diagsuffix)(.Zzzz).extension
+!
+! CEXP: experiment name
+! m:    model number
+! CESG: segment name
+! .OUT: if filetype is MNHOUTPUT
+! nnn(nnn): index of the output/backup (3 to 6 digits)
+! diagsuffix: suffix added for files created with DIAG from backup files (never for output files)
+! Zzzz: level number for Z-split files (3 digits)
+! extension: suffix of the filename (nc, des...)
+INTEGER, PARAMETER :: NEXPNAMELGTMAX    = 32 ! should be at least 5
+INTEGER, PARAMETER :: NMODELNUMLGTMAX   = 1  ! should be at least 1
+INTEGER, PARAMETER :: NSEGNAMELGTMAX    = 32 ! should be at least 5
+INTEGER, PARAMETER :: NFILENUMLGTMAX    = 6  ! should be at least 3
+INTEGER, PARAMETER :: NDIAGSUFFIXLGTMAX = 5  ! should be at least 5
+INTEGER, PARAMETER :: NZSPLITNUMLGTMAX  = 3  ! should be at least 3
+INTEGER, PARAMETER :: NEXTNAMELGTMAX    = 3  ! should be at least 3
+! NFILENAMELGTMAX: maximum length name for a file. Remark: used for any file (even if not with the previous structure)
+! Length should be at least 50 to respect constraints on all filenames
+INTEGER, PARAMETER :: NFILENAMELGTMAX   = NEXPNAMELGTMAX + 1 + NMODELNUMLGTMAX + 1 + NSEGNAMELGTMAX        &
+                                          + 1 + NFILENUMLGTMAX + 2 + NZSPLITNUMLGTMAX + 1 + NEXTNAMELGTMAX &
+                                          + MAX (4,NDIAGSUFFIXLGTMAX ) ! 4 is for .OUT
 INTEGER, PARAMETER :: NDIRNAMELGTMAX = 512 ! Maximum length of a directory name
-INTEGER, PARAMETER :: NFILENAMELGTMAX = 32 ! Maximum length of a file name (must be at least NFILENAMELGTMAXLFI)
 INTEGER, PARAMETER :: NFILENAMELGTMAXLFI = 28 ! Maximum length of a file name in LFI file (this is necessary
                                               ! to keep backward compatibility), MUST BE 28
 !

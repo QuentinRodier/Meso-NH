@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2004-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2004-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -9,9 +9,11 @@
 INTERFACE
       SUBROUTINE MNHOPEN_NAMELIST(HPROGRAM,KLUNAM,HFILE)
 !
-CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM ! main program
-INTEGER,           INTENT(OUT) :: KLUNAM   ! logical unit of namelist
-CHARACTER(LEN=28), INTENT(IN)  :: HFILE ! ASCII file to open
+USE MODD_PARAMETERS, ONLY: NFILENAMELGTMAX
+
+CHARACTER(LEN=6),               INTENT(IN)  :: HPROGRAM ! main program
+INTEGER,                        INTENT(OUT) :: KLUNAM   ! logical unit of namelist
+CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)  :: HFILE ! ASCII file to open
 !
 END SUBROUTINE MNHOPEN_NAMELIST
 !
@@ -56,6 +58,7 @@ END MODULE MODI_MNHOPEN_NAMELIST
 !
 USE MODD_CONF,             ONLY: CPROGRAM
 USE MODD_IO_NAM,           ONLY: TNAM
+USE MODD_PARAMETERS,       ONLY: NFILENAMELGTMAX
 !
 USE MODE_IO_FILE,          ONLY: IO_File_open
 USE MODE_IO_MANAGE_STRUCT, ONLY: IO_File_add2list
@@ -67,9 +70,9 @@ IMPLICIT NONE
 !*       0.1   Declarations of arguments
 !              -------------------------
 !
-CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM ! main program
-INTEGER,           INTENT(OUT) :: KLUNAM   ! logical unit of namelist
-CHARACTER(LEN=28), INTENT(IN)  :: HFILE ! ASCII file to open
+CHARACTER(LEN=6),               INTENT(IN)  :: HPROGRAM ! main program
+INTEGER,                        INTENT(OUT) :: KLUNAM   ! logical unit of namelist
+CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)  :: HFILE ! ASCII file to open
 !
 !*       0.2   Declarations of local variables
 !              -------------------------------
@@ -78,7 +81,7 @@ INTEGER           :: IRESP          ! IRESP  : return-code if a problem appears
                                     ! at the open of the file in LFI  routines 
 INTEGER           :: IMI            ! model index
 !
-CHARACTER(LEN=28) :: YNAM ! name of namelist
+CHARACTER(LEN=NFILENAMELGTMAX) :: YNAM ! name of namelist
 !-------------------------------------------------------------------------------
 !
 !* reading of namelist

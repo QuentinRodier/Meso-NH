@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1996-2022 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1996-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -10,12 +10,13 @@
 INTERFACE
       SUBROUTINE READ_HGRID_n(TPFMFILE,HMY_NAME,HDAD_NAME,HSTORAGE_TYPE)
 !
-USE MODD_IO, ONLY: TFILEDATA
+USE MODD_IO,         ONLY: TFILEDATA
+USE MODD_PARAMETERS, ONLY: NFILENAMELGTMAX
 !
-TYPE(TFILEDATA),   INTENT(IN)  :: TPFMFILE     ! file n
-CHARACTER(LEN=28), INTENT(OUT) :: HMY_NAME     ! True Name of FM-file
-CHARACTER(LEN=28), INTENT(OUT) :: HDAD_NAME    ! Name of father
-CHARACTER(LEN=2) , INTENT(OUT) :: HSTORAGE_TYPE
+TYPE(TFILEDATA),                INTENT(IN)  :: TPFMFILE     ! file n
+CHARACTER(LEN=NFILENAMELGTMAX), INTENT(OUT) :: HMY_NAME     ! True Name of FM-file
+CHARACTER(LEN=NFILENAMELGTMAX), INTENT(OUT) :: HDAD_NAME    ! Name of father
+CHARACTER(LEN=2),               INTENT(OUT) :: HSTORAGE_TYPE
 !
 END SUBROUTINE READ_HGRID_n
 !
@@ -85,7 +86,7 @@ USE MODD_GRID
 USE MODD_GRID_n
 USE MODD_IO,            ONLY: TFILEDATA
 USE MODD_LUNIT_n
-USE MODD_PARAMETERS,    ONLY: JPHEXT, JPVEXT, JPMODELMAX
+USE MODD_PARAMETERS,    ONLY: JPHEXT, JPVEXT, JPMODELMAX, NFILENAMELGTMAX
 !
 use mode_field,         only: Find_field_id_from_mnhname
 USE MODE_GRIDPROJ
@@ -100,10 +101,10 @@ IMPLICIT NONE
 !
 !*       0.1   declarations of arguments
 !
-TYPE(TFILEDATA),   INTENT(IN)  :: TPFMFILE     ! file n
-CHARACTER(LEN=28), INTENT(OUT) :: HMY_NAME     ! True Name of FM-file
-CHARACTER(LEN=28), INTENT(OUT) :: HDAD_NAME    ! Name of father
-CHARACTER(LEN=2) , INTENT(OUT) :: HSTORAGE_TYPE
+TYPE(TFILEDATA),                INTENT(IN)  :: TPFMFILE     ! file n
+CHARACTER(LEN=NFILENAMELGTMAX), INTENT(OUT) :: HMY_NAME     ! True Name of FM-file
+CHARACTER(LEN=NFILENAMELGTMAX), INTENT(OUT) :: HDAD_NAME    ! Name of father
+CHARACTER(LEN=2),               INTENT(OUT) :: HSTORAGE_TYPE
 !
 !*       0.2   declarations of local variables
 !

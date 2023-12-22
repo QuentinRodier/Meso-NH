@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1996-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1996-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -9,10 +9,12 @@ MODULE MODI_READ_GRID_TIME_MESONH_CASE
 INTERFACE
       SUBROUTINE READ_GRID_TIME_MESONH_CASE(HFMFILE,KXOR_LS,KYOR_LS,HDAD_NAME)
 !
-CHARACTER(LEN=*),  INTENT(IN) :: HFMFILE  ! name of the input Mesonh file
-INTEGER          , INTENT(OUT):: KXOR_LS  ! I and J shifts between PGD file
-INTEGER          , INTENT(OUT):: KYOR_LS  !   and LS atmospheric file
-CHARACTER(LEN=*),  INTENT(OUT):: HDAD_NAME! dad name of the FM file
+USE MODD_PARAMETERS, ONLY: NFILENAMELGTMAX
+!
+CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)  :: HFMFILE   ! name of the input Mesonh file
+INTEGER,                        INTENT(OUT) :: KXOR_LS   ! I and J shifts between PGD file
+INTEGER,                        INTENT(OUT) :: KYOR_LS   !   and LS atmospheric file
+CHARACTER(LEN=NFILENAMELGTMAX), INTENT(OUT) :: HDAD_NAME ! dad name of the FM file
 !!
 END SUBROUTINE READ_GRID_TIME_MESONH_CASE
 END INTERFACE
@@ -108,10 +110,10 @@ IMPLICIT NONE
 !
 !*       0.1   Declaration of arguments
 !              ------------------------
-CHARACTER(LEN=*),  INTENT(IN) :: HFMFILE  ! name of the input Mesonh file
-INTEGER          , INTENT(OUT):: KXOR_LS  ! I and J shifts between PGD file
-INTEGER          , INTENT(OUT):: KYOR_LS  !   and LS atmospheric file
-CHARACTER(LEN=*),  INTENT(OUT):: HDAD_NAME! dad name of the FM file
+CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)  :: HFMFILE   ! name of the input Mesonh file
+INTEGER,                        INTENT(OUT) :: KXOR_LS   ! I and J shifts between PGD file
+INTEGER,                        INTENT(OUT) :: KYOR_LS   !   and LS atmospheric file
+CHARACTER(LEN=NFILENAMELGTMAX), INTENT(OUT) :: HDAD_NAME ! dad name of the FM file
 !
 !*       0.2   Declaration of local variables
 !              ------------------------------
@@ -129,7 +131,7 @@ REAL         :: ZLON0_LS   ! reference longitude
 REAL         :: ZRPK_LS    ! parameter for projection 
 REAL         :: ZBETA_LS   ! angle of rotation of the domain
 !
-CHARACTER(LEN=28) :: YMY_NAME, YDAD_NAME
+CHARACTER(LEN=NFILENAMELGTMAX) :: YMY_NAME, YDAD_NAME
 CHARACTER(LEN=2)  :: YTYPE
 !
 !        0.2.2 local variables linking PGD and atm.MESONH files

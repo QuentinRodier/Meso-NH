@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2013-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2013-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -11,12 +11,14 @@ INTERFACE
                                    PRVFRC)
       
 !
-CHARACTER(LEN=28), INTENT(IN) :: HFILENAME     ! Name of the field file.
-INTEGER , INTENT(IN)      :: KLEV
-REAL , DIMENSION(:)   , INTENT(OUT)      :: PLAT
-REAL , DIMENSION(:)   , INTENT(OUT)      :: PLEV
-REAL , DIMENSION(:,:) , INTENT(OUT)      :: PTHFRC
-REAL , DIMENSION(:,:) , INTENT(OUT)      :: PRVFRC
+USE MODD_PARAMETERS, ONLY: NFILENAMELGTMAX
+!
+CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)  :: HFILENAME     ! Name of the field file.
+INTEGER,                        INTENT(IN)  :: KLEV
+REAL,    DIMENSION(:),          INTENT(OUT) :: PLAT
+REAL,    DIMENSION(:),          INTENT(OUT) :: PLEV
+REAL,    DIMENSION(:,:),        INTENT(OUT) :: PTHFRC
+REAL,    DIMENSION(:,:),        INTENT(OUT) :: PRVFRC
 !
 !
 END SUBROUTINE READ_ASC_LATPRESS
@@ -51,6 +53,7 @@ END MODULE MODI_READ_ASC_LATPRESS
 !*    0.     DECLARATION
 !            -----------
 !
+USE MODD_PARAMETERS, ONLY: NFILENAMELGTMAX
 !
 use mode_tools_ll,        only: GET_INDICE_ll
 !
@@ -59,12 +62,12 @@ IMPLICIT NONE
 !*    0.1    Declaration of arguments
 !            ------------------------
 !
-CHARACTER(LEN=28), INTENT(IN) :: HFILENAME     ! Name of the field file.
-INTEGER , INTENT(IN)      :: KLEV
-REAL , DIMENSION(:)   , INTENT(OUT)      :: PLAT
-REAL , DIMENSION(:)   , INTENT(OUT)      :: PLEV
-REAL , DIMENSION(:,:) , INTENT(OUT)      :: PTHFRC
-REAL , DIMENSION(:,:) , INTENT(OUT)      :: PRVFRC
+CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)  :: HFILENAME     ! Name of the field file.
+INTEGER,                        INTENT(IN)  :: KLEV
+REAL,    DIMENSION(:),          INTENT(OUT) :: PLAT
+REAL,    DIMENSION(:),          INTENT(OUT) :: PLEV
+REAL,    DIMENSION(:,:),        INTENT(OUT) :: PTHFRC
+REAL,    DIMENSION(:,:),        INTENT(OUT) :: PRVFRC
 !
 !*    0.2    Declaration of local variables
 !            ------------------------------

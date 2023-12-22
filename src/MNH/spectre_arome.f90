@@ -46,7 +46,7 @@ REAL,INTENT(IN) :: PDELTAX,PDELTAY
 CHARACTER(LEN=5) :: YFIELDSP
 REAL,DIMENSION(:,:,:),ALLOCATABLE:: ZWORK         ! work array
 REAL,DIMENSION(:,:,:),ALLOCATABLE:: ZWORK1         ! work array
-CHARACTER (LEN=32)                :: YFILE         ! file to open
+CHARACTER (LEN=NFILENAMELGTMAX)  :: YFILE         ! file to open
 REAL :: ZLATB, ZLONB
 INTEGER :: ILU
 INTEGER :: JJJ,III,JERR

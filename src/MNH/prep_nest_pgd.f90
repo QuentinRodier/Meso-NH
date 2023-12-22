@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -148,7 +148,9 @@ INTEGER, DIMENSION(JPMODELMAX) :: NYSIZE   ! in x and y-directions
 INTEGER                        :: ILUOUT0
 INTEGER                        :: IINFO_ll ! return code of // routines
 INTEGER                        :: JPGD     ! loop control
-CHARACTER(LEN=28)              :: YMY_NAME,YDAD_NAME
+CHARACTER(LEN=NFILENAMELGTMAX) :: YATMFILE
+CHARACTER(LEN=6)               :: YATMFILETYPE
+CHARACTER(LEN=NFILENAMELGTMAX) :: YMY_NAME, YDAD_NAME
 CHARACTER(LEN=2)               :: YSTORAGE_TYPE
 LOGICAL, DIMENSION(JPMODELMAX) :: L1D_ALL  ! Flag for      1D conf. for each PGD
 LOGICAL, DIMENSION(JPMODELMAX) :: L2D_ALL  ! Flag for      2D conf. for each PGD
@@ -309,9 +311,9 @@ DO JPGD=1,NMODEL
     TPGDFILE => TZFILEPGD(JPGD)%TZFILE
     CALL GOTO_MODEL(JPGD)
     CALL GOTO_SURFEX(JPGD)
-    CALL INIT_PGD_SURF_ATM(YSURF_CUR,'MESONH','PGD',                         &
-         '                            ','      ',&
-         NUNDEF,NUNDEF,NUNDEF,XUNDEF             )
+    YATMFILE = ''
+    YATMFILETYPE = ''
+    CALL INIT_PGD_SURF_ATM( YSURF_CUR, 'MESONH', 'PGD', YATMFILE, YATMFILETYPE, NUNDEF, NUNDEF, NUNDEF, XUNDEF )
   END IF
 END DO
 !

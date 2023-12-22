@@ -43,7 +43,8 @@
 !*       0.   DECLARATIONS
 !        -----------------
 !
-USE MODD_IO, ONLY: TFILEDATA
+USE MODD_IO,         ONLY: TFILEDATA
+USE MODD_PARAMETERS, ONLY: NFILENAMELGTMAX
 !
 IMPLICIT NONE
 SAVE
@@ -63,15 +64,15 @@ REAL :: XTNEXTMETEO   ! time of next meteo update
 !
 !*       0.2  file names, formats and I/O channels
 !
-CHARACTER(len=128) :: CINITFILE  = "CHCONTROL1.nam" ! name of initial value file
-CHARACTER(len=128) :: CMETEOFILE = "CHCONTROL1.nam" ! meteo update file
+CHARACTER(len=NFILENAMELGTMAX) :: CINITFILE  = "CHCONTROL1.nam" ! name of initial value file
+CHARACTER(len=NFILENAMELGTMAX) :: CMETEOFILE = "CHCONTROL1.nam" ! meteo update file
 TYPE(TFILEDATA),POINTER :: TMETEOFILE => NULL() ! meteo update file
 !
-CHARACTER(len=128) :: COUTFILE    = "BOX.OUT"      ! name of final output file
-CHARACTER(len=128) :: CRESULTFILE = "BOX.RESULT"   ! regular output file
-CHARACTER(len=128) :: CDIAGFILE   = "BOX.DIAG"     ! diagnostics output file
+CHARACTER(len=NFILENAMELGTMAX) :: COUTFILE    = "BOX.OUT"      ! name of final output file
+CHARACTER(len=NFILENAMELGTMAX) :: CRESULTFILE = "BOX.RESULT"   ! regular output file
+CHARACTER(len=NFILENAMELGTMAX) :: CDIAGFILE   = "BOX.DIAG"     ! diagnostics output file
 !
-CHARACTER(len=80)  :: CRUNID        = "no runid specified" ! runid for output file
+CHARACTER(len=NFILENAMELGTMAX)  :: CRUNID        = "no runid specified" ! runid for output file
 CHARACTER(len=40)  :: CRESULTFORMAT = "(5E16.8)" ! Format for results
 CHARACTER(len=40)  :: CDIAGFORMAT   = "(5E16.8)" ! Format for diagnostics
 !
@@ -85,7 +86,7 @@ INTEGER :: NVERB     = 5  ! verbosity level: 0 (lowest) <= NVERB <= 10 (highest)
 !*       0.4  parameters for TUV
 !
 LOGICAL      :: LCH_TUV_ONLINE = .TRUE.        ! switch online/lookup table
-CHARACTER(len=80) :: CCH_TUV_LOOKUP = "PHOTO.TUV39" ! name of lookup table file
+CHARACTER(len=NFILENAMELGTMAX) :: CCH_TUV_LOOKUP = "PHOTO.TUV39" ! name of lookup table file
 CHARACTER(len=4)  :: CCH_TUV_CLOUDS = "NONE"        ! method for calculating the
                                                     ! impact of clouds on radiation
                                                     ! "FOUQ" (model clouds, only 1-D)
@@ -101,5 +102,5 @@ REAL :: XCH_TUV_TUPDATE = 600. ! update frequency for TUV (in seconds)
 !
 LOGICAL :: LCH_SURFACE0D = .FALSE. ! switch to activate surface fluxes
 !
-CHARACTER(LEN=80) :: CCHEM_INPUT_FILE
+CHARACTER(LEN=NFILENAMELGTMAX) :: CCHEM_INPUT_FILE
 END MODULE MODD_CH_MODEL0D

@@ -30,6 +30,7 @@ USE MODD_IO,               only: TFILEDATA
 USE MODD_LUNIT_n
 USE MODD_TIME_n
 USE MODD_DIM_ll
+USE MODD_PARAMETERS,       ONLY: NFILENAMELGTMAX
 USE MODD_SPECTRE
 !
 USE MODI_SPECTRE_MESONH
@@ -52,8 +53,8 @@ IMPLICIT NONE
 !
 !*       0.1   declarations of local variables
 !
-CHARACTER (LEN=28), DIMENSION(1) :: YINIFILE      ! names of the INPUT FM-file
-CHARACTER (LEN=50)               :: YOUTFILE      ! names of the OUTPUT FM-file
+CHARACTER (LEN=NFILENAMELGTMAX), DIMENSION(1) :: YINIFILE ! names of the INPUT FM-file
+CHARACTER (LEN=NFILENAMELGTMAX)               :: YOUTFILE ! names of the OUTPUT FM-file
 INTEGER                          :: IRESP         ! return code in FM routines
 INTEGER                          :: ILUOUT0       ! Logical unit number for the output listing
 INTEGER                          :: ILUNAM        ! Logical unit numbers for the namelist file
@@ -87,7 +88,7 @@ CPROGRAM='SPEC  '
 CALL IO_Init()
 !
 ! initialization 
-YINIFILE(:)   = '                         '
+YINIFILE(:)   = ''
 CTYPEFILE     = 'MESONH'
 LSPECTRE_U    = .FALSE.
 LSPECTRE_V    = .FALSE.
@@ -101,7 +102,7 @@ LSPECTRE_LSTH = .FALSE.
 LSPECTRE_LSRV = .FALSE.
 LSMOOTH       = .FALSE.
 LZOOM         = .FALSE.
-YOUTFILE      = '                         '
+YOUTFILE      = ''
 LSTAT         = .FALSE.
 NI=750
 NJ=720

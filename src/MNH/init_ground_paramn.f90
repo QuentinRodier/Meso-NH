@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2003-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2003-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -90,7 +90,7 @@ USE MODD_TYPE_DATE,  ONLY : DATE_TIME
 !
 USE MODD_TYPE_DATE_SURF, ONLY : DATE_SURF=>DATE
 !
-USE MODD_PARAMETERS, ONLY : XUNDEF, JPVEXT
+USE MODD_PARAMETERS, ONLY : NFILENAMELGTMAX, XUNDEF, JPVEXT
 !
 USE MODI_INIT_SURF_ATM_N
 !
@@ -147,6 +147,8 @@ INTEGER :: IID,IRESP
 TYPE (DATE_TIME), POINTER :: TZTCUR=>NULL()
 TYPE (DATE_TIME)          :: TZDATE
 !
+CHARACTER(LEN=NFILENAMELGTMAX) :: YATMFILE
+CHARACTER(LEN=6)               :: YATMFILETYPE
 CHARACTER(LEN=6), DIMENSION(:), ALLOCATABLE :: YSV_SURF ! name of the scalar variables
                                                         ! sent to SURFEX
 TYPE(SURF_ATM_TURB_t) :: AT         ! atmospheric turbulence parameters
@@ -221,6 +223,8 @@ ELSE
     ALLOCATE(YSV_SURF(ISV))
     YSV_SURF(:)     = HSV(:)
 ENDIF
+YATMFILE = ''
+YATMFILETYPE = ''
 CALL INIT_SURF_ATM_n(YSURF_CUR,'MESONH',HINIT,                          &
                      ILU,ISV,SIZE(PSW_BANDS),                           &
                      YSV_SURF,ZCO2,ZRHODREF,                            &
@@ -228,7 +232,7 @@ CALL INIT_SURF_ATM_n(YSURF_CUR,'MESONH',HINIT,                          &
                      ZEMIS,ZTSRAD,ZTSURF,                               &
                      TZTCUR%nyear, TZTCUR%nmonth,                       &
                      TZTCUR%nday, TZTCUR%xtime,                         &
-                     TDATE_END,AT,'                            ','      ', &
+                     TDATE_END,AT,YATMFILE,YATMFILETYPE,                &
                      'OK'                                               )
 !
 PDIR_ALB = XUNDEF

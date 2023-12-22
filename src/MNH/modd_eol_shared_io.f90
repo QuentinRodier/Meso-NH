@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2020-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2020-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -30,6 +30,8 @@
 !!
 !-----------------------------------------------------------------------------
 !
+USE MODD_PARAMETERS, ONLY: NFILENAMELGTMAX
+!
 IMPLICIT NONE
 !
 !*       1.   INPUTS VAR
@@ -37,10 +39,10 @@ IMPLICIT NONE
 !
 ! --- Namelistis NAM_EOL_ADNR/NAM_EOL_ALM ---
 ! * .csv files
-CHARACTER(LEN=100) :: CFARM_CSVDATA     ! Farm file to read 
-CHARACTER(LEN=100) :: CTURBINE_CSVDATA  ! Turbine file to read  
-CHARACTER(LEN=100) :: CBLADE_CSVDATA    ! Blade file to read  
-CHARACTER(LEN=100) :: CAIRFOIL_CSVDATA  ! Airfoil file to read  
+CHARACTER(LEN=NFILENAMELGTMAX) :: CFARM_CSVDATA     ! Farm file to read
+CHARACTER(LEN=NFILENAMELGTMAX) :: CTURBINE_CSVDATA  ! Turbine file to read
+CHARACTER(LEN=NFILENAMELGTMAX) :: CBLADE_CSVDATA    ! Blade file to read
+CHARACTER(LEN=NFILENAMELGTMAX) :: CAIRFOIL_CSVDATA  ! Airfoil file to read
 ! * flags
 CHARACTER(LEN=3)   :: CINTERP           ! Interpolation method for wind speed
 LOGICAL            :: LTIPLOSSG         ! Flag to apply Glauert's tip loss correction

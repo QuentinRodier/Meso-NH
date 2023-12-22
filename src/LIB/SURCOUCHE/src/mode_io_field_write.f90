@@ -30,7 +30,7 @@ MODULE MODE_IO_FIELD_WRITE
                                TYPECHAR, TYPEDATE, TYPEINT, TYPELOG, TYPEREAL
   USE MODD_IO,         ONLY: TFILEDATA, TOUTBAK
   USE MODD_MPIF
-  use modd_parameters, only: NMNHNAMELGTMAX
+  use modd_parameters, only: NFILENAMELGTMAX, NMNHNAMELGTMAX
   use modd_precision,  only: MNHINT_MPI, MNHREAL_MPI, MNHTIME
 
   use mode_field,        only: Find_field_id_from_mnhname
@@ -537,7 +537,7 @@ end subroutine IO_Ndimlist_reduce
     !
     !*      0.2   Declarations of local variables
     !
-    CHARACTER(LEN=28)                        :: YFILEM   ! FM-file name
+    CHARACTER(LEN=NFILENAMELGTMAX)           :: YFILEM   ! FM-file name
     CHARACTER(LEN=NMNHNAMELGTMAX)            :: YRECFM   ! name of the article to write
     CHARACTER(LEN=2)                         :: YDIR     ! field form
     INTEGER                                  :: IERR
@@ -621,6 +621,7 @@ end subroutine IO_Ndimlist_reduce
     !
   END SUBROUTINE IO_Field_write_byname_X1
 
+
   SUBROUTINE IO_Field_write_byfield_X1( TPFILE, TPFIELD, PFIELD, KRESP, koffset )
     USE MODD_IO,               ONLY: GSMONOPROC, ISP
     !
@@ -640,7 +641,7 @@ end subroutine IO_Ndimlist_reduce
     !
     !*      0.2   Declarations of local variables
     !
-    CHARACTER(LEN=28)                        :: YFILEM   ! FM-file name
+    CHARACTER(LEN=NFILENAMELGTMAX)           :: YFILEM   ! FM-file name
     CHARACTER(LEN=NMNHNAMELGTMAX)            :: YRECFM   ! name of the article to write
     CHARACTER(LEN=2)                         :: YDIR     ! field form
     INTEGER                                  :: IERR
@@ -770,7 +771,7 @@ end subroutine IO_Ndimlist_reduce
     !
     !*      0.2   Declarations of local variables
     !
-    CHARACTER(LEN=28)                        :: YFILEM   ! FM-file name
+    CHARACTER(LEN=NFILENAMELGTMAX)           :: YFILEM   ! FM-file name
     CHARACTER(LEN=NMNHNAMELGTMAX)            :: YRECFM   ! name of the article to write
     CHARACTER(LEN=2)                         :: YDIR     ! field form
     INTEGER                                  :: IERR
@@ -1027,7 +1028,7 @@ end subroutine IO_Ndimlist_reduce
     !
     !*      0.2   Declarations of local variables
     !
-    CHARACTER(LEN=28)                        :: YFILEM   ! FM-file name
+    CHARACTER(LEN=NFILENAMELGTMAX)           :: YFILEM   ! FM-file name
     CHARACTER(LEN=NMNHNAMELGTMAX)            :: YRECFM   ! name of the article to write
     CHARACTER(LEN=2)                         :: YDIR     ! field form
     INTEGER                                  :: IERR
@@ -1492,7 +1493,7 @@ end subroutine IO_Ndimlist_reduce
     !
     !*      0.2   Declarations of local variables
     !
-    CHARACTER(LEN=28)                        :: YFILEM   ! FM-file name
+    CHARACTER(LEN=NFILENAMELGTMAX)           :: YFILEM   ! FM-file name
     CHARACTER(LEN=NMNHNAMELGTMAX)            :: YRECFM   ! name of the article to write
     CHARACTER(LEN=2)                         :: YDIR     ! field form
     INTEGER                                  :: IERR
@@ -1704,7 +1705,7 @@ end subroutine IO_Ndimlist_reduce
     !
     !*      0.2   Declarations of local variables
     !
-    CHARACTER(LEN=28)                        :: YFILEM   ! FM-file name
+    CHARACTER(LEN=NFILENAMELGTMAX)           :: YFILEM   ! FM-file name
     CHARACTER(LEN=NMNHNAMELGTMAX)            :: YRECFM   ! name of the article to write
     CHARACTER(LEN=2)                         :: YDIR     ! field form
     INTEGER                                  :: IERR
@@ -1875,7 +1876,7 @@ end subroutine IO_Ndimlist_reduce
     !
     !*      0.2   Declarations of local variables
     !
-    CHARACTER(LEN=28)                        :: YFILEM   ! FM-file name
+    CHARACTER(LEN=NFILENAMELGTMAX)           :: YFILEM   ! FM-file name
     CHARACTER(LEN=NMNHNAMELGTMAX)            :: YRECFM   ! name of the article to write
     CHARACTER(LEN=2)                         :: YDIR     ! field form
     INTEGER                                  :: IERR
@@ -2078,7 +2079,7 @@ end subroutine IO_Ndimlist_reduce
     !
     !*      0.2   Declarations of local variables
     !
-    CHARACTER(LEN=28)                        :: YFILEM   ! FM-file name
+    CHARACTER(LEN=NFILENAMELGTMAX)           :: YFILEM   ! FM-file name
     CHARACTER(LEN=NMNHNAMELGTMAX)            :: YRECFM   ! name of the article to write
     CHARACTER(LEN=2)                         :: YDIR     ! field form
     INTEGER                                  :: IERR
@@ -2190,7 +2191,7 @@ end subroutine IO_Ndimlist_reduce
     !
     !*      0.2   Declarations of local variables
     !
-    CHARACTER(LEN=28)                        :: YFILEM   ! FM-file name
+    CHARACTER(LEN=NFILENAMELGTMAX)           :: YFILEM   ! FM-file name
     CHARACTER(LEN=NMNHNAMELGTMAX)            :: YRECFM   ! name of the article to write
     CHARACTER(LEN=2)                         :: YDIR     ! field form
     INTEGER                                  :: IERR
@@ -2369,7 +2370,7 @@ end subroutine IO_Ndimlist_reduce
     !
     !*      0.2   Declarations of local variables
     !
-    CHARACTER(LEN=28)                        :: YFILEM   ! FM-file name
+    CHARACTER(LEN=NFILENAMELGTMAX)           :: YFILEM   ! FM-file name
     CHARACTER(LEN=NMNHNAMELGTMAX)            :: YRECFM   ! name of the article to write
     CHARACTER(LEN=2)                         :: YDIR     ! field form
     INTEGER                                  :: IERR
@@ -2546,7 +2547,7 @@ end subroutine IO_Ndimlist_reduce
     !
     !*      0.2   Declarations of local variables
     !
-    CHARACTER(LEN=28)                        :: YFILEM   ! FM-file name
+    CHARACTER(LEN=NFILENAMELGTMAX)           :: YFILEM   ! FM-file name
     CHARACTER(LEN=NMNHNAMELGTMAX)            :: YRECFM   ! name of the article to write
     CHARACTER(LEN=2)                         :: YDIR     ! field form
     INTEGER                                  :: IERR
@@ -2844,7 +2845,7 @@ end subroutine IO_Ndimlist_reduce
     !
     !*      0.2   Declarations of local variables
     !
-    CHARACTER(LEN=28)                        :: YFILEM   ! FM-file name
+    CHARACTER(LEN=NFILENAMELGTMAX)           :: YFILEM   ! FM-file name
     CHARACTER(LEN=NMNHNAMELGTMAX)            :: YRECFM   ! name of the article to write
     CHARACTER(LEN=2)                         :: YDIR     ! field form
     INTEGER                                  :: IERR
@@ -3293,7 +3294,7 @@ end subroutine IO_Ndimlist_reduce
     !
     !*      0.2   Declarations of local variables
     !
-    CHARACTER(LEN=28)                        :: YFILEM   ! FM-file name
+    CHARACTER(LEN=NFILENAMELGTMAX)           :: YFILEM   ! FM-file name
     CHARACTER(LEN=NMNHNAMELGTMAX)            :: YRECFM   ! name of the article to write
     CHARACTER(LEN=4)                         :: YLBTYPE  ! 'LBX','LBXU','LBY' or 'LBYV'
     INTEGER                                  :: IRIM     ! size of the LB area

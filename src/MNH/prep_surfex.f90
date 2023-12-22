@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2004-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2004-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -40,7 +40,7 @@ USE MODD_IO,          ONLY : TFILEDATA, TFILE_SURFEX
 USE MODD_LUNIT,       ONLY : TPGDFILE, TLUOUT0
 USE MODD_LUNIT_n,     ONLY : CINIFILE, TINIFILE
 USE MODD_MNH_SURFEX_n
-USE MODD_PARAMETERS,  ONLY : JPMODELMAX,JPHEXT,JPVEXT, NUNDEF, XUNDEF
+USE MODD_PARAMETERS,  ONLY : JPMODELMAX,JPHEXT,JPVEXT, NFILENAMELGTMAX, NUNDEF, XUNDEF
 USE MODD_TIME_n,      ONLY : TDTCUR
 !
 use mode_field,            only: Ini_field_list, Ini_field_scalars
@@ -66,16 +66,15 @@ IMPLICIT NONE
 !*       0.1   Declaration of local variables
 !              ------------------------------
 !
-CHARACTER(LEN=28)     :: YATMFILE        ! name of the Atmospheric file
-CHARACTER(LEN=6)      :: YATMFILETYPE    ! type of the Atmospheric file
-CHARACTER(LEN=28)     :: YCHEMFILE       ! name of the Chemical file (not used)
-CHARACTER(LEN=6)      :: YCHEMFILETYPE   ! type of the Chemical file (not used)
-CHARACTER(LEN=28)     :: YCAMSFILE       ! name of the input CAMS file
-CHARACTER(LEN=6)      :: YCAMSFILETYPE   ! type of the input CAMS file
-CHARACTER(LEN=28)     :: YSURFFILE       ! name of the Surface file (not used)
-CHARACTER(LEN=6)      :: YSURFFILETYPE   ! type of the Surface file (not used)
-CHARACTER(LEN=28)     :: YPGDFILE        ! name of the physiographic data
-!                                        ! file
+CHARACTER(LEN=NFILENAMELGTMAX) :: YATMFILE        ! name of the Atmospheric file
+CHARACTER(LEN=6)               :: YATMFILETYPE    ! type of the Atmospheric file
+CHARACTER(LEN=NFILENAMELGTMAX) :: YCHEMFILE       ! name of the Chemical file (not used)
+CHARACTER(LEN=6)               :: YCHEMFILETYPE   ! type of the Chemical file (not used)
+CHARACTER(LEN=NFILENAMELGTMAX) :: YCAMSFILE       ! name of the input CAMS file
+CHARACTER(LEN=6)               :: YCAMSFILETYPE   ! type of the input CAMS file
+CHARACTER(LEN=NFILENAMELGTMAX) :: YSURFFILE       ! name of the Surface file (not used)
+CHARACTER(LEN=6)               :: YSURFFILETYPE   ! type of the Surface file (not used)
+CHARACTER(LEN=NFILENAMELGTMAX) :: YPGDFILE        ! name of the physiographic data file
 !
 !* file management variables and counters
 !

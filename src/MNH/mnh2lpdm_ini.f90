@@ -66,8 +66,8 @@ TYPE(TFILEDATA),POINTER,INTENT(IN)    :: TPDATEFILE
 !
 !*	0.3 Variables locales.
 !
-CHARACTER(LEN=28)     :: YNAME,YDAD     ! Noms du FM et de son papa.
-CHARACTER(LEN=2)      :: YSTORAGE       ! Type de variable.
+CHARACTER(LEN=NFILENAMELGTMAX) :: YNAME, YDAD ! Noms du FM et de son papa.
+CHARACTER(LEN=2)               :: YSTORAGE    ! Type de variable.
 !
 REAL                  :: ZECHEANCE1,ZECHEANCE2     ! dist temp date modele - date courante
 INTEGER               :: IHHMDL,IMNMDL,ISSMDL ! h - mn - s du model

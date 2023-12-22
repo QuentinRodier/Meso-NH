@@ -316,7 +316,7 @@ TYPE(TFILEDATA)    TFILENAM    ! Empty file to satisfy interface of PHYEX_init r
 !
 ! CINIFILE='INIFILE'
 CINIFILEPGD='' !Necessary to keep this line to prevent problems with spawning
-CCPLFILE(:)='    '
+CCPLFILE(:)=''
 !
 !-------------------------------------------------------------------------------
 !

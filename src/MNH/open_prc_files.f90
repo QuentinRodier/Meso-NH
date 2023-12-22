@@ -14,20 +14,22 @@ INTERFACE
                                                 HPGDFILE,TPPGDFILE,      &
                                                 HCAMSFILE,HCAMSFILETYPE)
 !
-USE MODD_IO, ONLY: TFILEDATA
+USE MODD_IO,         ONLY: TFILEDATA
+USE MODD_PARAMETERS, ONLY: NFILENAMELGTMAX
 !
-TYPE(TFILEDATA),POINTER, INTENT(OUT) :: TPPRE_REAL1FILE ! PRE_REAL1 file
-CHARACTER(LEN=28), INTENT(OUT) :: HATMFILE     ! name of the input atmospheric file
-CHARACTER(LEN=6),  INTENT(OUT) :: HATMFILETYPE ! type of the input atmospheric file
-TYPE(TFILEDATA),POINTER, INTENT(OUT) :: TPATMFILE ! physiographic data file
-CHARACTER(LEN=28), INTENT(OUT) :: HCHEMFILE    ! name of the input chemical file
-CHARACTER(LEN=6),  INTENT(OUT) :: HCHEMFILETYPE! type of the input chemical file
-CHARACTER(LEN=28), INTENT(OUT) :: HSURFFILE    ! name of the input surface file
-CHARACTER(LEN=6),  INTENT(OUT) :: HSURFFILETYPE! type of the input surface file
-CHARACTER(LEN=28), INTENT(OUT) :: HPGDFILE     ! name of the physiographic data file
-TYPE(TFILEDATA),POINTER, INTENT(OUT) :: TPPGDFILE ! physiographic data file
-CHARACTER(LEN=28), INTENT(OUT) :: HCAMSFILE    ! name of the input CAMS file
-CHARACTER(LEN=6),  INTENT(OUT) :: HCAMSFILETYPE! type of the input CAMS file
+TYPE(TFILEDATA), POINTER,       INTENT(OUT) :: TPPRE_REAL1FILE ! PRE_REAL1 file
+CHARACTER(LEN=NFILENAMELGTMAX), INTENT(OUT) :: HATMFILE     ! name of the input atmospheric file
+CHARACTER(LEN=6),               INTENT(OUT) :: HATMFILETYPE ! type of the input atmospheric file
+TYPE(TFILEDATA), POINTER,       INTENT(OUT) :: TPATMFILE ! physiographic data file
+CHARACTER(LEN=NFILENAMELGTMAX), INTENT(OUT) :: HCHEMFILE    ! name of the input chemical file
+CHARACTER(LEN=6),               INTENT(OUT) :: HCHEMFILETYPE! type of the input chemical file
+CHARACTER(LEN=NFILENAMELGTMAX), INTENT(OUT) :: HSURFFILE    ! name of the input surface file
+CHARACTER(LEN=6),               INTENT(OUT) :: HSURFFILETYPE! type of the input surface file
+CHARACTER(LEN=NFILENAMELGTMAX), INTENT(OUT) :: HPGDFILE     ! name of the physiographic data file
+TYPE(TFILEDATA), POINTER,       INTENT(OUT) :: TPPGDFILE ! physiographic data file
+CHARACTER(LEN=NFILENAMELGTMAX), INTENT(OUT) :: HCAMSFILE    ! name of the input CAMS file
+CHARACTER(LEN=6),               INTENT(OUT) :: HCAMSFILETYPE! type of the input CAMS file
+!
 END SUBROUTINE OPEN_PRC_FILES
 END INTERFACE
 END MODULE MODI_OPEN_PRC_FILES
@@ -112,6 +114,7 @@ USE MODD_CONF_n
 USE MODD_IO,               ONLY: TFILE_OUTPUTLISTING, TFILEDATA
 USE MODD_LUNIT
 USE MODD_LUNIT_n, CINIFILE_n=>CINIFILE , CINIFILEPGD_n=>CINIFILEPGD
+USE MODD_PARAMETERS,       ONLY: NFILENAMELGTMAX
 !
 !
 USE MODE_IO,               only: IO_Config_set
@@ -130,18 +133,18 @@ IMPLICIT NONE
 !*       0.1   Declaration of arguments
 !              ------------------------
 !
-TYPE(TFILEDATA),POINTER, INTENT(OUT) :: TPPRE_REAL1FILE ! PRE_REAL1 file
-CHARACTER(LEN=28), INTENT(OUT) :: HATMFILE     ! name of the input atmospheric file
-CHARACTER(LEN=6),  INTENT(OUT) :: HATMFILETYPE ! type of the input atmospheric file
-TYPE(TFILEDATA),POINTER, INTENT(OUT) :: TPATMFILE ! physiographic data file
-CHARACTER(LEN=28), INTENT(OUT) :: HCHEMFILE    ! name of the input chemical file
-CHARACTER(LEN=6),  INTENT(OUT) :: HCHEMFILETYPE! type of the input chemical file
-CHARACTER(LEN=28), INTENT(OUT) :: HSURFFILE    ! name of the input surface file
-CHARACTER(LEN=6),  INTENT(OUT) :: HSURFFILETYPE! type of the input surface file
-CHARACTER(LEN=28), INTENT(OUT) :: HPGDFILE     ! name of the physiographic data file
-TYPE(TFILEDATA),POINTER, INTENT(OUT) :: TPPGDFILE ! physiographic data file
-CHARACTER(LEN=28), INTENT(OUT) :: HCAMSFILE    ! name of the input CAMS file
-CHARACTER(LEN=6),  INTENT(OUT) :: HCAMSFILETYPE! type of the input CAMS file
+TYPE(TFILEDATA), POINTER,       INTENT(OUT) :: TPPRE_REAL1FILE ! PRE_REAL1 file
+CHARACTER(LEN=NFILENAMELGTMAX), INTENT(OUT) :: HATMFILE     ! name of the input atmospheric file
+CHARACTER(LEN=6),               INTENT(OUT) :: HATMFILETYPE ! type of the input atmospheric file
+TYPE(TFILEDATA), POINTER,       INTENT(OUT) :: TPATMFILE ! physiographic data file
+CHARACTER(LEN=NFILENAMELGTMAX), INTENT(OUT) :: HCHEMFILE    ! name of the input chemical file
+CHARACTER(LEN=6),               INTENT(OUT) :: HCHEMFILETYPE! type of the input chemical file
+CHARACTER(LEN=NFILENAMELGTMAX), INTENT(OUT) :: HSURFFILE    ! name of the input surface file
+CHARACTER(LEN=6),               INTENT(OUT) :: HSURFFILETYPE! type of the input surface file
+CHARACTER(LEN=NFILENAMELGTMAX), INTENT(OUT) :: HPGDFILE     ! name of the physiographic data file
+TYPE(TFILEDATA), POINTER,       INTENT(OUT) :: TPPGDFILE ! physiographic data file
+CHARACTER(LEN=NFILENAMELGTMAX), INTENT(OUT) :: HCAMSFILE    ! name of the input CAMS file
+CHARACTER(LEN=6),               INTENT(OUT) :: HCAMSFILETYPE! type of the input CAMS file
 !
 !*       0.2   Declaration of local variables
 !              ------------------------------
@@ -151,9 +154,8 @@ INTEGER :: IPRE_REAL1 ! logical unit for file PRE_REAL1
 INTEGER :: ILUOUT0    ! logical unit for listing file
 LOGICAL :: GFOUND     ! Return code when searching namelist
 INTEGER :: ILEN
-CHARACTER(LEN=28) :: YFILE
 !
-CHARACTER(LEN=28) :: CINIFILE ! re-declaration of this model variable for namelist
+CHARACTER(LEN=NFILENAMELGTMAX) :: CINIFILE ! re-declaration of this model variable for namelist
 !
 !*       0.3   Declaration of namelists
 !              ------------------------
@@ -166,13 +168,13 @@ NAMELIST/NAM_FILE_NAMES/ HATMFILE,HATMFILETYPE,HCHEMFILE,HCHEMFILETYPE, &
 !*       1.    SET DEFAULT NAMES
 !              -----------------
 !
-HATMFILE='                            '
+HATMFILE=''
 HATMFILETYPE='MESONH'
-HCHEMFILE='                            '
+HCHEMFILE=''
 HCHEMFILETYPE='MESONH'
-HSURFFILE='                            '
+HSURFFILE=''
 HSURFFILETYPE='MESONH'
-HCAMSFILE='                            '
+HCAMSFILE=''
 HCAMSFILETYPE='NETCDF'
 !
 !-------------------------------------------------------------------------------
@@ -220,7 +222,7 @@ CALL POSNAM( TPPRE_REAL1FILE, 'NAM_FILE_NAMES', GFOUND )
 IF (GFOUND) READ(UNIT=IPRE_REAL1,NML=NAM_FILE_NAMES)
 CINIFILE_n = CINIFILE
 !
-WRITE(ILUOUT0,*) 'HATMFILE= ', HATMFILE
+WRITE(ILUOUT0,*) 'HATMFILE= ', TRIM(HATMFILE)
 !
 IF (HCHEMFILE==HATMFILE) HCHEMFILE=''
 IF (LEN_TRIM(HCHEMFILE)>0 .AND. HATMFILETYPE/='GRIBEX') THEN
@@ -228,15 +230,15 @@ IF (LEN_TRIM(HCHEMFILE)>0 .AND. HATMFILETYPE/='GRIBEX') THEN
   CALL PRINT_MSG(NVERB_FATAL,'GEN','OPEN_PRC_FILES',&
                  'Additional CHEMical file is only possible when ATMospheric file is of GRIBEX type')
 END IF
-WRITE(ILUOUT0,*) 'HCHEMFILE=', HCHEMFILE
+WRITE(ILUOUT0,*) 'HCHEMFILE=', TRIM(HCHEMFILE)
 !
-WRITE(ILUOUT0,*) 'HCAMSFILE=', HCAMSFILE
+WRITE(ILUOUT0,*) 'HCAMSFILE=', TRIM(HCAMSFILE)
 !
 IF ( LEN_TRIM( HSURFFILE ) == 0 ) THEN
   HSURFFILE     = HATMFILE
   HSURFFILETYPE = HATMFILETYPE
 END IF
-WRITE(ILUOUT0,*) 'HSURFFILE=', HSURFFILE
+WRITE(ILUOUT0,*) 'HSURFFILE=', TRIM(HSURFFILE)
 !
 CINIFILEPGD_n = HPGDFILE
 IF (LEN_TRIM(HPGDFILE)==0) THEN
@@ -262,7 +264,7 @@ ELSE
   END IF
 END IF
 !
-WRITE(ILUOUT0,*) 'HPGDFILE= ', HPGDFILE
+WRITE(ILUOUT0,*) 'HPGDFILE= ', TRIM(HPGDFILE)
 !-------------------------------------------------------------------------------
 !
 !*       6.    INPUT ATMOSPHERIC FILE

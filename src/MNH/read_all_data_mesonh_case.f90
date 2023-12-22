@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -10,12 +10,13 @@ INTERFACE
       SUBROUTINE READ_ALL_DATA_MESONH_CASE(TZPRE_REAL1,HFMFILE,TPPGDFILE, &
                               HDAD_NAME                                   )
 !
-USE MODD_IO, ONLY: TFILEDATA
+USE MODD_IO,         ONLY: TFILEDATA
+USE MODD_PARAMETERS, ONLY: NFILENAMELGTMAX
 !
-TYPE(TFILEDATA),POINTER, INTENT(INOUT) :: TZPRE_REAL1 !PRE_REAL1 file
-CHARACTER(LEN=28), INTENT(IN)    :: HFMFILE    ! name of the Mesonh input file
-TYPE(TFILEDATA),   INTENT(IN)    :: TPPGDFILE  ! physiographic data file
-CHARACTER(LEN=*),  INTENT(INOUT) :: HDAD_NAME  ! true name of the Mesonh input file
+TYPE(TFILEDATA),  POINTER,      INTENT(INOUT) :: TZPRE_REAL1 !PRE_REAL1 file
+CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)    :: HFMFILE ! name of the Mesonh input file
+TYPE(TFILEDATA),                INTENT(IN)    :: TPPGDFILE  ! physiographic data file
+CHARACTER(LEN=NFILENAMELGTMAX), INTENT(INOUT) :: HDAD_NAME  ! true name of the Mesonh input file
 !
 END SUBROUTINE READ_ALL_DATA_MESONH_CASE
 !
@@ -158,10 +159,10 @@ IMPLICIT NONE
 !*       0.1   Declaration of arguments
 !              ------------------------
 !
-TYPE(TFILEDATA),POINTER, INTENT(INOUT) :: TZPRE_REAL1 !PRE_REAL1 file
-CHARACTER(LEN=28), INTENT(IN)    :: HFMFILE    ! name of the Mesonh input file
-TYPE(TFILEDATA),   INTENT(IN)    :: TPPGDFILE  ! physiographic data file
-CHARACTER(LEN=*),  INTENT(INOUT) :: HDAD_NAME  ! true name of the Mesonh input file
+TYPE(TFILEDATA),  POINTER,      INTENT(INOUT) :: TZPRE_REAL1 !PRE_REAL1 file
+CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)    :: HFMFILE ! name of the Mesonh input file
+TYPE(TFILEDATA),                INTENT(IN)    :: TPPGDFILE  ! physiographic data file
+CHARACTER(LEN=NFILENAMELGTMAX), INTENT(INOUT) :: HDAD_NAME  ! true name of the Mesonh input file
 !
 !
 !*       0.2   Declaration of local variables
@@ -181,8 +182,8 @@ INTEGER :: IYOR_LS    ! J shift between PGD file and LS atmospheric file
 INTEGER :: IRESP      ! return-code if problems occured
 INTEGER :: ILUOUT0    ! logical unit for file TLUOUT0
 !
-CHARACTER(LEN=28) :: YPGD_NAME, YPGD_DAD_NAME
-CHARACTER(LEN=28) :: YOUTFILE
+CHARACTER(LEN=NFILENAMELGTMAX) :: YPGD_NAME, YPGD_DAD_NAME
+CHARACTER(LEN=NFILENAMELGTMAX) :: YOUTFILE
 CHARACTER(LEN=2)  :: YPGD_TYPE
 !
 !* temporary namelist configuration variables

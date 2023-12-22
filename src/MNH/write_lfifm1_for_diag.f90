@@ -9,11 +9,11 @@ MODULE MODI_WRITE_LFIFM1_FOR_DIAG
 INTERFACE
       SUBROUTINE WRITE_LFIFM1_FOR_DIAG(TPFILE,HDADFILE)
 !
-USE MODD_IO, ONLY: TFILEDATA
+USE MODD_IO,         ONLY: TFILEDATA
+USE MODD_PARAMETERS, ONLY: NFILENAMELGTMAX
 !
-TYPE(TFILEDATA),   INTENT(IN) :: TPFILE       ! outpput data file
-CHARACTER(LEN=28), INTENT(IN) :: HDADFILE     ! corresponding FM-file name of 
-                                              ! its DAD model
+TYPE(TFILEDATA),                INTENT(IN) :: TPFILE   ! outpput data file
+CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN) :: HDADFILE ! corresponding FM-file name of its DAD model
 !
 END SUBROUTINE WRITE_LFIFM1_FOR_DIAG
 END INTERFACE
@@ -187,7 +187,7 @@ USE MODD_METRICS_n,         ONLY: XDXX, XDYY, XDZX, XDZY, XDZZ
 USE MODD_MPIF
 USE MODD_NESTING,           ONLY: NDXRATIO_ALL, NDYRATIO_ALL, NXOR_ALL, NYOR_ALL
 USE MODD_NSV
-USE MODD_PARAMETERS,        ONLY: JPHEXT, JPVEXT, XUNDEF
+USE MODD_PARAMETERS,        ONLY: JPHEXT, JPVEXT, NFILENAMELGTMAX, XUNDEF
 USE MODD_PARAM_LIMA_COLD,   ONLY: CLIMA_COLD_CONC
 USE MODD_PARAM_LIMA,        ONLY: NMOD_CCN, NMOD_IFN, NMOD_IMM, NINDICE_CCN_IMM, &
                                   LSCAV, LLIMA_DIAG, NMOM_S, NMOM_G, NMOM_H
@@ -243,16 +243,15 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments
 !
-TYPE(TFILEDATA),   INTENT(IN) :: TPFILE       ! outpput data file
-CHARACTER(LEN=28), INTENT(IN) :: HDADFILE     ! corresponding FM-file name of 
-                                              ! its DAD model
+TYPE(TFILEDATA),                INTENT(IN) :: TPFILE   ! outpput data file
+CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN) :: HDADFILE ! corresponding FM-file name of its DAD model
 !
 !*       0.2   Declarations of local variables
 !
 INTEGER           :: IRESP          ! return-code for the file routines 
 !
-CHARACTER(LEN=3)  :: YFRC           ! to mark the time of the forcing
-CHARACTER(LEN=31) :: YFGRI          ! file name for GPS stations
+CHARACTER(LEN=3)               :: YFRC           ! to mark the time of the forcing
+CHARACTER(LEN=NFILENAMELGTMAX) :: YFGRI ! file name for GPS stations
 !
 INTEGER           :: IIU,IJU,IKU,IIB,IJB,IKB,IIE,IJE,IKE ! Arrays bounds
 ! 

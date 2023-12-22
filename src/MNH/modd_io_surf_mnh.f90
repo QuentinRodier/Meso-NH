@@ -32,8 +32,8 @@
 !
 !*       0.   DECLARATIONS
 !
-USE MODD_IO, ONLY: TFILEDATA
-USE MODD_PARAMETERS, ONLY: JPMODELMAX
+USE MODD_IO,         ONLY: TFILEDATA
+USE MODD_PARAMETERS, ONLY: JPMODELMAX, NFILENAMELGTMAX
 
 IMPLICIT NONE
 
@@ -41,7 +41,7 @@ INTEGER                              :: NHALO = 0
 
 TYPE IO_SURF_MNH_t
   TYPE(TFILEDATA),POINTER        :: TPINFILE => NULL() ! Input FM-file
-  CHARACTER(LEN=28)              :: COUTFILE    ! Name of the output FM-file
+  CHARACTER(LEN=NFILENAMELGTMAX) :: COUTFILE    ! Name of the output FM-file
   TYPE(TFILEDATA),POINTER        :: TOUT => NULL() ! Output_listing file
   CHARACTER(LEN=6)               :: CMASK
   INTEGER, DIMENSION(:), POINTER :: NMASK=>NULL()     ! 1D mask to read only interesting surface
@@ -65,7 +65,7 @@ TYPE(IO_SURF_MNH_t), DIMENSION(JPMODELMAX), TARGET, SAVE :: IO_SURF_MNH_MODEL
 !!!!!!!!!!!!!!!!!!!! LOCAL VARIABLE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 TYPE(TFILEDATA)       ,POINTER :: TPINFILE => NULL()  ! Input FM-file
-CHARACTER(LEN=28)     ,POINTER :: COUTFILE =>NULL()   ! Name of the output FM-file
+CHARACTER(LEN=NFILENAMELGTMAX), POINTER :: COUTFILE =>NULL()   ! Name of the output FM-file
 TYPE(TFILEDATA)       ,POINTER :: TOUT => NULL()      ! Output_listing file
 CHARACTER(LEN=6)      ,POINTER :: CMASK =>NULL()
 INTEGER, DIMENSION(:), POINTER :: NMASK=>NULL()     ! 1D mask to read only interesting surface

@@ -84,8 +84,9 @@
 !               ------------
 !
 #ifdef CPLOASIS
-  USE MODD_VAR_ll, ONLY : NMNH_COMM_WORLD, IP
-  USE MODD_SFX_OASIS, ONLY : LOASIS, LOASIS_GRID
+USE MODD_PARAMETERS, ONLY: NFILENAMELGTMAX
+USE MODD_SFX_OASIS, ONLY : LOASIS, LOASIS_GRID
+USE MODD_VAR_ll, ONLY : NMNH_COMM_WORLD, IP
 #endif
 !
 USE MODD_CONF,             only: CPROGRAM, NMODEL
@@ -113,9 +114,9 @@ USE MODE_MODELN_HANDLER
 !
 !
 #ifdef CPLOASIS
-  USE MODI_SFX_OASIS_INIT
-  USE MODI_MNH_OASIS_GRID
-  USE MODI_MNH_OASIS_DEFINE
+USE MODI_MNH_OASIS_DEFINE
+USE MODI_MNH_OASIS_GRID
+USE MODI_SFX_OASIS_INIT
 #endif
 !
 USE MODE_MPPDB
@@ -137,8 +138,8 @@ TYPE(DATE_TIME)          :: TZDTMODELN        ! Date/time of current model compu
 TYPE(TFILEPTR), DIMENSION(:), ALLOCATABLE :: TZBAKFILES ! Array of pointers to backup files
 !
 #ifdef CPLOASIS
-  CHARACTER(LEN=28)  :: CNAMELIST
-  LOGICAL            :: L_MASTER
+CHARACTER(LEN=NFILENAMELGTMAX) :: CNAMELIST
+LOGICAL                        :: L_MASTER
 #endif
 !
 !-------------------------------------------------------------------------------

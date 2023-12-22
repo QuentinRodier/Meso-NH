@@ -52,7 +52,7 @@ TYPE(TFILEDATA),POINTER,INTENT(IN)    :: TPMETEOFILE
 !
 !*	0.3 Variables locales.
 !
-CHARACTER(LEN=100)   :: YFTURB                       ! Stockage champs de turbulence.
+CHARACTER(LEN=NFILENAMELGTMAX) :: YFTURB             ! Stockage champs de turbulence.
 INTEGER              :: IFTURB
 INTEGER              :: IFMTO,IREP
 INTEGER              :: ICURAA,ICURMM,ICURJJ         ! Date  courante.

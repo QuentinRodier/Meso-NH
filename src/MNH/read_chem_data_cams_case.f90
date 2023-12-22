@@ -10,15 +10,16 @@ INTERFACE
 SUBROUTINE READ_CHEM_DATA_CAMS_CASE(TPPRE_REAL1,HFILE,TPPGDFILE,PTIME_HORI, &
                                     KVERB,ODUMMY_REAL,OUSECHEM              )
 !
-USE MODD_IO, ONLY: TFILEDATA
+USE MODD_IO,         ONLY: TFILEDATA
+USE MODD_PARAMETERS, ONLY: NFILENAMELGTMAX
 !
-TYPE(TFILEDATA),POINTER,INTENT(IN) :: TPPRE_REAL1 ! PRE_REAL1 file
-CHARACTER(LEN=28),  INTENT(IN)    :: HFILE      ! name of the NETCDF file
-TYPE(TFILEDATA),    INTENT(IN)    :: TPPGDFILE  ! physiographic data file
-REAL,               INTENT(INOUT) :: PTIME_HORI ! time spent in hor. interpolations
-INTEGER,            INTENT(IN)    :: KVERB      ! verbosity level
-LOGICAL,            INTENT(IN)    :: ODUMMY_REAL! flag to interpolate dummy fields
-LOGICAL,            INTENT(IN)    :: OUSECHEM   ! flag to initialize chemistry
+TYPE(TFILEDATA), POINTER,       INTENT(IN)    :: TPPRE_REAL1 ! PRE_REAL1 file
+CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)    :: HFILE      ! name of the NETCDF file
+TYPE(TFILEDATA),                INTENT(IN)    :: TPPGDFILE  ! physiographic data file
+REAL,                           INTENT(INOUT) :: PTIME_HORI ! time spent in hor. interpolations
+INTEGER,                        INTENT(IN)    :: KVERB      ! verbosity level
+LOGICAL,                        INTENT(IN)    :: ODUMMY_REAL! flag to interpolate dummy fields
+LOGICAL,                        INTENT(IN)    :: OUSECHEM   ! flag to initialize chemistry
 END SUBROUTINE READ_CHEM_DATA_CAMS_CASE
 !
 END INTERFACE
@@ -148,13 +149,13 @@ IMPLICIT NONE
 !*       0.1. Declaration of arguments
 !             ------------------------
 !
-TYPE(TFILEDATA),POINTER,INTENT(IN) :: TPPRE_REAL1 ! PRE_REAL1 file
-CHARACTER(LEN=28),  INTENT(IN)    :: HFILE      ! name of the NETCDF file
-TYPE(TFILEDATA),    INTENT(IN)    :: TPPGDFILE  ! physiographic data file
-REAL,               INTENT(INOUT) :: PTIME_HORI ! time spent in hor. interpolations
-INTEGER,            INTENT(IN)    :: KVERB      ! verbosity level
-LOGICAL,            INTENT(IN)    :: ODUMMY_REAL! flag to interpolate dummy fields
-LOGICAL,            INTENT(IN)    :: OUSECHEM   ! flag to initialize chemistry
+TYPE(TFILEDATA), POINTER,       INTENT(IN)    :: TPPRE_REAL1 ! PRE_REAL1 file
+CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)    :: HFILE      ! name of the NETCDF file
+TYPE(TFILEDATA),                INTENT(IN)    :: TPPGDFILE  ! physiographic data file
+REAL,                           INTENT(INOUT) :: PTIME_HORI ! time spent in hor. interpolations
+INTEGER,                        INTENT(IN)    :: KVERB      ! verbosity level
+LOGICAL,                        INTENT(IN)    :: ODUMMY_REAL! flag to interpolate dummy fields
+LOGICAL,                        INTENT(IN)    :: OUSECHEM   ! flag to initialize chemistry
 !
 !* 0.2 Declaration of local variables
 !      ------------------------------
@@ -166,8 +167,8 @@ INTEGER                            :: JLOOP1        !
 INTEGER                            :: JN            ! conter of dust/SS modes
 INTEGER                            :: JNCHEM, JNAER ! conters of chemical species in BASIC
 ! Variables used by the PGD reader
-CHARACTER(LEN=28)                  :: YPGD_NAME     ! not used - dummy argument
-CHARACTER(LEN=28)                  :: YPGD_DAD_NAME ! not used - dummy argument
+CHARACTER(LEN=NFILENAMELGTMAX)     :: YPGD_NAME     ! not used - dummy argument
+CHARACTER(LEN=NFILENAMELGTMAX)     :: YPGD_DAD_NAME ! not used - dummy argument
 CHARACTER(LEN=2)                   :: YPGD_TYPE     ! not used - dummy argument
 ! PGD Grib definition variables
 INTEGER                            :: INO           ! Number of points of the grid
@@ -587,7 +588,7 @@ XSV_LS(:,:,:,:) = 0.
 !*       2.5 read chem. variables and convert them into MNH variables
 !
 IF (OUSECHEM) THEN
-  WRITE (ILUOUT0,'(A,A4,A)') ' | Reading CAMS species (ppp) from ',HFILE,'file'
+  WRITE (ILUOUT0,'(A,A4,A)') ' | Reading CAMS species (ppp) from ',TRIM(HFILE),'file'
 !
 ! read CAMS species from the file CAM1.nam
 !
@@ -1061,7 +1062,7 @@ IF (ALLOCATED(mmr_seasalt1)) DEALLOCATE(mmr_seasalt1)
 IF (ALLOCATED(mmr_seasalt2)) DEALLOCATE(mmr_seasalt2)
 IF (ALLOCATED(mmr_seasalt3)) DEALLOCATE(mmr_seasalt3)
 !
-WRITE (ILUOUT0,'(A,A4,A)') ' -- netcdf decoder for ',HFILE,' file ended successfully'
+WRITE (ILUOUT0,'(A,A4,A)') ' -- netcdf decoder for ',TRIM(HFILE),' file ended successfully'
 !
 
 CONTAINS

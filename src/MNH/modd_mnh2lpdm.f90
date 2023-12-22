@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2002-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -17,14 +17,19 @@
 !*	FICHIERS ET NAMELISTS.
 !	----------------------
 !
+USE MODD_PARAMETERS, ONLY: NFILENAMELGTMAX
+!
+IMPLICIT NONE
+!
 INTEGER,PARAMETER :: JPMNHMAX = 30   ! Nombre max de  fichiers FM.
+!
 INTEGER,SAVE      :: NBMNH           ! Nombre reel de fichiers FM.
 INTEGER,SAVE      :: IGRILLE         ! numero de la grille Meso-nh
 !
-CHARACTER(LEN=50), SAVE, DIMENSION(JPMNHMAX) :: CFMTO  ! Nom des fichiers METEO.
-CHARACTER(LEN=50), SAVE                      :: CFGRI  ! Nom du fichier GRILLE.
-CHARACTER(LEN=50), SAVE                      :: CFDAT  ! Nom du fichier DATE.
-CHARACTER(LEN=28), SAVE, DIMENSION(JPMNHMAX) :: CFMNH  ! Noms des FM.
+CHARACTER(LEN=NFILENAMELGTMAX), SAVE, DIMENSION(JPMNHMAX) :: CFMTO  ! Nom des fichiers METEO.
+CHARACTER(LEN=NFILENAMELGTMAX), SAVE                      :: CFGRI  ! Nom du fichier GRILLE.
+CHARACTER(LEN=NFILENAMELGTMAX), SAVE                      :: CFDAT  ! Nom du fichier DATE.
+CHARACTER(LEN=NFILENAMELGTMAX), SAVE, DIMENSION(JPMNHMAX) :: CFMNH  ! Noms des FM.
 !
 CHARACTER(len=10), SAVE :: CTURBPARAM="ISOTROPE"   ! ISOTROPE ou HANNA
 !

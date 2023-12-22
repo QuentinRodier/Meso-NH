@@ -23,7 +23,8 @@ INTERFACE
                    HTURB,HTOM,ORMC01,HRAD,HDCONV,HSCONV,HCLOUD,HELEC,              &
                    HEQNSYS,PTSTEP_ALL,HINIFILEPGD                                  )
 !
-USE MODD_IO,   ONLY: TFILEDATA
+USE MODD_IO,         ONLY: TFILEDATA
+USE MODD_PARAMETERS, ONLY: NFILENAMELGTMAX
 !
 INTEGER,            INTENT(IN) :: KMI    ! Model index
 TYPE(TFILEDATA),    INTENT(IN) :: TPEXSEGFILE ! EXSEG file
@@ -72,7 +73,7 @@ CHARACTER (LEN=4),  INTENT(IN) :: HCLOUD ! Kind of microphysical scheme
 CHARACTER (LEN=4),  INTENT(IN) :: HELEC  ! Kind of electrical scheme
 CHARACTER (LEN=*),  INTENT(IN) :: HEQNSYS! type of equations' system
 REAL,DIMENSION(:),  INTENT(INOUT):: PTSTEP_ALL ! Time STEP of ALL models
-CHARACTER (LEN=*),  INTENT(IN) :: HINIFILEPGD ! name of PGD file
+CHARACTER (LEN=NFILENAMELGTMAX), INTENT(IN) :: HINIFILEPGD ! name of PGD file
 !
 END SUBROUTINE READ_EXSEG_n
 !
@@ -472,7 +473,7 @@ CHARACTER (LEN=4),  INTENT(IN) :: HCLOUD ! Kind of microphysical scheme
 CHARACTER (LEN=4),  INTENT(IN) :: HELEC  ! Kind of electrical scheme
 CHARACTER (LEN=*),  INTENT(IN) :: HEQNSYS! type of equations' system
 REAL,DIMENSION(:),  INTENT(INOUT):: PTSTEP_ALL ! Time STEP of ALL models
-CHARACTER (LEN=*),  INTENT(IN) :: HINIFILEPGD ! name of PGD file
+CHARACTER (LEN=NFILENAMELGTMAX), INTENT(IN) :: HINIFILEPGD ! name of PGD file
 !
 !*       0.2   declarations of local variables
 !
@@ -493,7 +494,7 @@ ILUSEG = TPEXSEGFILE%NLU
 ILUOUT = TLUOUT%NLU
 !
 CALL INIT_NAM_LUNITN
-CCPLFILE(:)="                            "
+CCPLFILE(:)=''
 CALL INIT_NAM_CONFN
 CALL INIT_NAM_DYNN
 CALL INIT_NAM_ADVN
@@ -2464,7 +2465,7 @@ IF (KMI == 1) THEN
         DO JI=JCI,JPCPLFILEMAX-1
           CCPLFILE(JI)=CCPLFILE(JI+1)
         END DO
-        CCPLFILE(JPCPLFILEMAX)='    '
+        CCPLFILE(JPCPLFILEMAX)=''
       END IF
     END IF
   END DO
@@ -3059,8 +3060,8 @@ END IF
 IF ( LEN_TRIM(HINIFILEPGD)>0 ) THEN
   IF ( CINIFILEPGD/=HINIFILEPGD ) THEN 
     WRITE(UNIT=ILUOUT,FMT=9001) KMI
-    WRITE(ILUOUT,FMT=*) ' ERROR : in EXSEG1.nam, in NAM_LUNITn you have CINIFILEPGD= ',CINIFILEPGD
-    WRITE(ILUOUT,FMT=*) ' whereas in .des you have CINIFILEPGD= ',HINIFILEPGD
+    WRITE(ILUOUT,FMT=*) ' ERROR : in EXSEG1.nam, in NAM_LUNITn you have CINIFILEPGD= ',TRIM(CINIFILEPGD)
+    WRITE(ILUOUT,FMT=*) ' whereas in .des you have CINIFILEPGD= ',TRIM(HINIFILEPGD)
     WRITE(ILUOUT,FMT=*) ' Please check your Namelist '
     WRITE(ILUOUT,FMT=*) ' For example, you may have specified the un-nested PGD file instead of the nested PGD file '
     WRITE(ILUOUT,FMT=*) 

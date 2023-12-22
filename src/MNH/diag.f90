@@ -173,9 +173,9 @@ IMPLICIT NONE
 !
 !*       0.1   declarations of local variables
 !
-CHARACTER (LEN=28), DIMENSION(1) :: YINIFILE ! names of the INPUT FM-file
-CHARACTER (LEN=28), DIMENSION(1) :: YINIFILEPGD ! names of the INPUT FM-file
-CHARACTER (LEN=5)  :: YSUFFIX   ! character string for the OUTPUT FM-file number
+CHARACTER (LEN=NFILENAMELGTMAX), DIMENSION(1) :: YINIFILE ! names of the INPUT FM-file
+CHARACTER (LEN=NFILENAMELGTMAX), DIMENSION(1) :: YINIFILEPGD ! names of the INPUT FM-file
+CHARACTER (LEN=NDIAGSUFFIXLGTMAX)  :: YSUFFIX   ! character string for the OUTPUT FM-file number
 CHARACTER (LEN=4)  :: YRAD      ! initial flag to call to radiation schemes
 CHARACTER (LEN=4)  :: YDCONV    ! initial flag to call to deep convection schemes
 CHARACTER (LEN=4)  :: YTURB     ! initial flag to call to turbulence schemes
@@ -350,11 +350,11 @@ XSNRMIN=0
 LDIAG(:)=.FALSE.
 XDIAG(:)=XUNDEF
 !
-YINIFILE(:) = '                         '
-YINIFILEPGD(:) = '                         '
+YINIFILE(:) = ''
+YINIFILEPGD(:) = ''
 YSUFFIX='_DIAG'
 !
-CFILES(:) = '                         '
+CFILES(:) = ''
 NSTART_SUPP(:) = NUNDEF
 !
 LLIDAR=.FALSE.
@@ -435,7 +435,7 @@ ENDIF
 !
 INPRAR = 24 +2*(4+NRR+NSV)
 !
-CALL IO_File_add2list(TOUTDATAFILE,TRIM(CINIFILE)//YSUFFIX,'MNHDIAG','WRITE',KLFINPRAR=INPRAR,KLFITYPE=1,KLFIVERB=NVERB)
+CALL IO_File_add2list(TOUTDATAFILE,TRIM(CINIFILE)//TRIM(YSUFFIX),'MNHDIAG','WRITE',KLFINPRAR=INPRAR,KLFITYPE=1,KLFIVERB=NVERB)
 !
 CALL SECOND_MNH2(ZTIME2)
 ZSTART=ZTIME2-ZTIME1
