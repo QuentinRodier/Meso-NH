@@ -70,7 +70,7 @@ USE MODD_DST_SURF,       ONLY: LVARSIG_DST, NDSTMDE, NDST_MDEBEG, LRGFIX_DST
 USE MODD_SLT_SURF,       ONLY: LVARSIG_SLT, NSLTMDE, NSLT_MDEBEG, LRGFIX_SLT
 !
 USE MODD_READ_NAMELIST,  ONLY : LNAM_READ
-USE MODD_SURF_PAR,       ONLY : XUNDEF, NUNDEF
+USE MODD_SURF_PAR,       ONLY : NFILENAMELGTMAX, XUNDEF, NUNDEF
 !
 USE MODD_SURF_ATM_TURB_n, ONLY : SURF_ATM_TURB_t
 !
@@ -137,7 +137,7 @@ INTEGER,                          INTENT(IN)  :: KDAY      ! current day (UTC)
 REAL,                             INTENT(IN)  :: PTIME     ! current time since
                                                           !  midnight (UTC, s)
 !
- CHARACTER(LEN=28),                INTENT(IN)  :: HATMFILE    ! atmospheric file name
+ CHARACTER(LEN=NFILENAMELGTMAX),   INTENT(IN)  :: HATMFILE    ! atmospheric file name
  CHARACTER(LEN=6),                 INTENT(IN)  :: HATMFILETYPE! atmospheric file type
  CHARACTER(LEN=2),                 INTENT(IN)  :: HTEST       ! must be equal to 'OK'
 !

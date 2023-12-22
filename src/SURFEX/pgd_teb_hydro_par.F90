@@ -46,7 +46,7 @@ USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 USE MODD_SSO_n, ONLY : SSO_t
 USE MODD_DATA_TEB_HYDRO_n, ONLY : DATA_TEB_HYDRO_t
-USE MODD_SURF_PAR, ONLY : XUNDEF
+USE MODD_SURF_PAR, ONLY : NFILENAMELGTMAX, XUNDEF
 !
 USE MODI_GET_LUOUT
 USE MODI_OPEN_NAMELIST
@@ -102,15 +102,15 @@ REAL                                   :: XUNIF_URBDRAIN            ! Limitation
 !
 ! name of files containing data
 !
-CHARACTER(LEN=28)                      :: CFNAM_DENS_WASTE    ! waste water sewer length
-CHARACTER(LEN=28)                      :: CFNAM_DENS_STORM    ! storm water sewer length
-CHARACTER(LEN=28)                      :: CFNAM_DSEWER        ! waste water sewer depth
-CHARACTER(LEN=28)                      :: CFNAM_WS_ROOF_MAX         ! Max. capacity of surface roof water storage 
-CHARACTER(LEN=28)                      :: CFNAM_WS_ROAD_MAX         ! Max. capacity of surface road water storage
-CHARACTER(LEN=28)                      :: CFNAM_IP_SEWER            ! Parameter for parasite infiltrations into sewer
-CHARACTER(LEN=28)                      :: CFNAM_CONNEX              ! Impervious surfaces connexion rate to the sewer
-CHARACTER(LEN=28)                      :: CFNAM_INFIL_ROAD          ! Water infiltration through the roads
-CHARACTER(LEN=28)                      :: CFNAM_URBDRAIN            ! Limitation of urban deep drainage (0-1)
+CHARACTER(LEN=NFILENAMELGTMAX)        :: CFNAM_DENS_WASTE    ! waste water sewer length
+CHARACTER(LEN=NFILENAMELGTMAX)        :: CFNAM_DENS_STORM    ! storm water sewer length
+CHARACTER(LEN=NFILENAMELGTMAX)        :: CFNAM_DSEWER        ! waste water sewer depth
+CHARACTER(LEN=NFILENAMELGTMAX)        :: CFNAM_WS_ROOF_MAX         ! Max. capacity of surface roof water storage
+CHARACTER(LEN=NFILENAMELGTMAX)        :: CFNAM_WS_ROAD_MAX         ! Max. capacity of surface road water storage
+CHARACTER(LEN=NFILENAMELGTMAX)        :: CFNAM_IP_SEWER            ! Parameter for parasite infiltrations into sewer
+CHARACTER(LEN=NFILENAMELGTMAX)        :: CFNAM_CONNEX              ! Impervious surfaces connexion rate to the sewer
+CHARACTER(LEN=NFILENAMELGTMAX)        :: CFNAM_INFIL_ROAD          ! Water infiltration through the roads
+CHARACTER(LEN=NFILENAMELGTMAX)        :: CFNAM_URBDRAIN            ! Limitation of urban deep drainage (0-1)
 !
 ! type of files containing data
 !
@@ -152,15 +152,15 @@ XUNIF_IP_SEWER     = 0.
 XUNIF_CONNEX       = 1.
 XUNIF_INFIL_ROAD   = 0.
 XUNIF_URBDRAIN     = 0.
-CFNAM_DENS_WASTE   = '                            ' 
-CFNAM_DENS_STORM   = '                            ' 
-CFNAM_DSEWER       = '                            '
-CFNAM_WS_ROOF_MAX  = '                            '
-CFNAM_WS_ROAD_MAX  = '                            ' 
-CFNAM_IP_SEWER     = '                            ' 
-CFNAM_CONNEX       = '                            ' 
-CFNAM_INFIL_ROAD   = '                            ' 
-CFNAM_URBDRAIN     = '                            ' 
+CFNAM_DENS_WASTE   = ''
+CFNAM_DENS_STORM   = ''
+CFNAM_DSEWER       = ''
+CFNAM_WS_ROOF_MAX  = ''
+CFNAM_WS_ROAD_MAX  = ''
+CFNAM_IP_SEWER     = ''
+CFNAM_CONNEX       = ''
+CFNAM_INFIL_ROAD   = ''
+CFNAM_URBDRAIN     = ''
 CFTYP_DENS_WASTE   = '      '
 CFTYP_DENS_STORM   = '      '
 CFTYP_DSEWER       = '      '

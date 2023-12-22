@@ -54,6 +54,7 @@ USE MODD_DIAG_n, ONLY : DIAG_OPTIONS_t, DIAG_t
 !
 !
 USE MODD_CSTS,       ONLY : XTT
+USE MODD_SURF_PAR,   ONLY: NFILENAMELGTMAX
 !
 USE MODD_SURF_ATM_TURB_n, ONLY : SURF_ATM_TURB_t
 !
@@ -105,7 +106,7 @@ REAL,                             INTENT(IN)  :: PTIME     ! current time since
                                                           !  midnight (UTC, s)
 TYPE(SURF_ATM_TURB_t), INTENT(IN) :: AT         ! atmospheric turbulence parameters
 !
- CHARACTER(LEN=28),                INTENT(IN)  :: HATMFILE    ! atmospheric file name
+ CHARACTER(LEN=NFILENAMELGTMAX),   INTENT(IN)  :: HATMFILE    ! atmospheric file name
  CHARACTER(LEN=6),                 INTENT(IN)  :: HATMFILETYPE! atmospheric file type
  CHARACTER(LEN=2),                 INTENT(IN)  :: HTEST       ! must be equal to 'OK'
 REAL(KIND=JPRB) :: ZHOOK_HANDLE

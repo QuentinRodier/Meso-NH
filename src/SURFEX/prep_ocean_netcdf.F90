@@ -30,6 +30,7 @@ SUBROUTINE PREP_OCEAN_NETCDF(HPROGRAM,HSURF,HFILE,HFILETYPE,&
 !
 USE MODD_PREP,       ONLY : CINTERP_TYPE, CINGRID_TYPE
 USE MODD_GRID_LATLONREGUL, ONLY : NILENGTH, NINDEPTH, XILONARRAY
+USE MODD_SURF_PAR, ONLY: NFILENAMELGTMAX
 !
 USE MODE_READ_NETCDF_MERCATOR
 !
@@ -43,10 +44,10 @@ IMPLICIT NONE
 !
  CHARACTER(LEN=6),   INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
  CHARACTER(LEN=7),   INTENT(IN)  :: HSURF     ! type of field
- CHARACTER(LEN=28),  INTENT(IN)  :: HFILE     ! file name
- CHARACTER(LEN=6),   INTENT(IN)  :: HFILETYPE ! file type
+ CHARACTER(LEN=NFILENAMELGTMAX),  INTENT(IN)  :: HFILE     ! file name
+ CHARACTER(LEN=6),                INTENT(IN)  :: HFILETYPE ! file type
 INTEGER,            INTENT(IN)  :: KLUOUT    ! output listing logical unit
- CHARACTER(LEN=28),  INTENT(IN), OPTIONAL   :: HNCVARNAME!var to read 
+ CHARACTER(LEN=28),  INTENT(IN), OPTIONAL   :: HNCVARNAME!var to read
 REAL, POINTER, DIMENSION(:,:,:)   :: PFIELD    ! field to interpolate horizontally
 !
 !*      0.2    declarations of local variables

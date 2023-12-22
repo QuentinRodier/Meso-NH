@@ -33,6 +33,8 @@
 !             ------------
 !
 !
+USE MODD_SURF_PAR, ONLY: NFILENAMELGTMAX
+!
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
@@ -57,7 +59,7 @@ TYPE CH_SURF_t
   CHARACTER(LEN=6), DIMENSION(:), POINTER :: CDSTNAMES ! NAME OF DUST SPECIES
   CHARACTER(LEN=6), DIMENSION(:), POINTER :: CSLTNAMES ! NAME OF SEA SALT SPECIES
                                                        ! SPECIES (FOR DIAG ONLY)
-  CHARACTER(LEN=28)             :: CCHEM_SURF_FILE     ! name of general 
+  CHARACTER(LEN=NFILENAMELGTMAX) :: CCHEM_SURF_FILE    ! name of general
                                                        ! (chemical) purpose
                                                        ! ASCII input file
   REAL, DIMENSION(:), POINTER   :: XCONVERSION         ! emission unit 

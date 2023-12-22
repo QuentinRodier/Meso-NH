@@ -38,6 +38,8 @@
 !*       0.    DECLARATIONS
 !              ------------
 !
+USE MODD_SURF_PAR, ONLY: NFILENAMELGTMAX
+!
 USE YOMHOOK ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
@@ -77,10 +79,10 @@ IMPLICIT NONE
 !
 !
 !
- CHARACTER(LEN=28), INTENT(IN)  :: HFILE     ! file name
- CHARACTER(LEN=6),  INTENT(IN)  :: HFILETYPE ! main program
- CHARACTER(LEN=6),  INTENT(IN)  :: HMASK
- CHARACTER(LEN=1), OPTIONAL, INTENT(IN) :: HDIR
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)  :: HFILE     ! file name
+ CHARACTER(LEN=6),               INTENT(IN)  :: HFILETYPE ! main program
+ CHARACTER(LEN=6),               INTENT(IN)  :: HMASK
+ CHARACTER(LEN=1), OPTIONAL,     INTENT(IN) :: HDIR
 !
 !*       0.2   Declarations of local variables
 !              -------------------------------

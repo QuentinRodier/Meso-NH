@@ -54,7 +54,7 @@ USE MODI_MAKE_CHOICE_ARRAY
 USE MODD_PREP,               ONLY : CINGRID_TYPE, CINTERP_TYPE
 USE MODD_PREP_TEB_GREENROOF, ONLY : XGRID_SOIL, XWR_DEF
 USE MODD_DATA_COVER_PAR,     ONLY : NVEGTYPE
-USE MODD_SURF_PAR,           ONLY : XUNDEF, LEN_HREC
+USE MODD_SURF_PAR,           ONLY : NFILENAMELGTMAX, XUNDEF, LEN_HREC
 USE MODD_AGRI,               ONLY : NVEG_IRR
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -75,10 +75,10 @@ TYPE(GRID_CONF_PROJ_t), INTENT(INOUT) :: GCP
 INTEGER,DIMENSION(:),INTENT(IN)  :: NPAR_VEG_IRR_USE ! vegtype with irrigation
  CHARACTER(LEN=6),   INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
  CHARACTER(LEN=7),   INTENT(IN)  :: HSURF     ! type of field
- CHARACTER(LEN=28),  INTENT(IN)  :: HFILE     ! name of file
- CHARACTER(LEN=6),   INTENT(IN)  :: HFILETYPE ! type of input file
- CHARACTER(LEN=28),  INTENT(IN)  :: HFILEPGD     ! name of file
- CHARACTER(LEN=6),   INTENT(IN)  :: HFILEPGDTYPE ! type of input file
+ CHARACTER(LEN=NFILENAMELGTMAX),  INTENT(IN)  :: HFILE     ! name of file
+ CHARACTER(LEN=6),                INTENT(IN)  :: HFILETYPE ! type of input file
+ CHARACTER(LEN=NFILENAMELGTMAX),  INTENT(IN)  :: HFILEPGD     ! name of file
+ CHARACTER(LEN=6),                INTENT(IN)  :: HFILEPGDTYPE ! type of input file
 INTEGER,            INTENT(IN)  :: KLUOUT    ! logical unit of output listing
 INTEGER,            INTENT(IN)  :: KPATCH
 REAL,DIMENSION(:,:,:), POINTER  :: PFIELD    ! field to interpolate horizontally (on final soil grid)

@@ -55,7 +55,7 @@ USE MODD_CSTS,           ONLY : XTT, XG, XRD, XP00
 USE MODD_SNOW_PAR,       ONLY : XZ0SN
 USE MODD_ISBA_PAR,       ONLY : XWGMIN
 USE MODD_CO2V_PAR,       ONLY : XCC_NIT, XCA_NIT, XANFMINIT
-USE MODD_SURF_PAR,       ONLY : XUNDEF
+USE MODD_SURF_PAR,       ONLY : NFILENAMELGTMAX, XUNDEF
 !
 USE MODE_PREP_CTL, ONLY : PREP_CTL
 !
@@ -87,12 +87,12 @@ TYPE(GRID_t),          INTENT(INOUT) :: TG
 TYPE(TEB_OPTIONS_t),   INTENT(INOUT) :: TOP
 TYPE (PREP_CTL),       INTENT(INOUT) :: YDCTL
 !
-INTEGER,DIMENSION(:),INTENT(IN)  :: NPAR_VEG_IRR_USE ! vegtype with irrigation
-CHARACTER(LEN=6),    INTENT(IN)  :: HPROGRAM    ! program calling surf. schemes
-CHARACTER(LEN=28),   INTENT(IN)  :: HATMFILE    ! name of the Atmospheric file
-CHARACTER(LEN=6),    INTENT(IN)  :: HATMFILETYPE! type of the Atmospheric file
-CHARACTER(LEN=28),   INTENT(IN)  :: HPGDFILE    ! name of the Atmospheric file
-CHARACTER(LEN=6),    INTENT(IN)  :: HPGDFILETYPE! type of the Atmospheric file
+INTEGER ,DIMENSION(:),          INTENT(IN)  :: NPAR_VEG_IRR_USE ! vegtype with irrigation
+CHARACTER(LEN=6),               INTENT(IN)  :: HPROGRAM    ! program calling surf. schemes
+CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)  :: HATMFILE    ! name of the Atmospheric file
+CHARACTER(LEN=6),               INTENT(IN)  :: HATMFILETYPE! type of the Atmospheric file
+CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)  :: HPGDFILE    ! name of the Atmospheric file
+CHARACTER(LEN=6),               INTENT(IN)  :: HPGDFILETYPE! type of the Atmospheric file
 !
 INTEGER,            INTENT(IN)  :: KPATCH
 !

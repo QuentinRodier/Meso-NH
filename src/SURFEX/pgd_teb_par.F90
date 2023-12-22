@@ -62,7 +62,7 @@ USE MODD_BLD_DESCRIPTION_n, ONLY : BLD_DESC_t
 USE MODD_DATA_TEB_n, ONLY : DATA_TEB_t
 USE MODD_TEB_OPTION_n, ONLY : TEB_OPTIONS_t
 !
-USE MODD_SURF_PAR,   ONLY : XUNDEF, NUNDEF
+USE MODD_SURF_PAR,   ONLY : NFILENAMELGTMAX, XUNDEF, NUNDEF
 !
 USE MODI_GET_LUOUT
 USE MODI_OPEN_NAMELIST
@@ -127,72 +127,72 @@ INTEGER            :: NPAR_WALL_LAYER ! number of wall layers
 ! Geometric Parameters:
 !
 INTEGER                                 :: NUNIF_BLDTYPE
- CHARACTER(LEN=28)                       :: CFNAM_BLDTYPE
+ CHARACTER(LEN=NFILENAMELGTMAX)          :: CFNAM_BLDTYPE
  CHARACTER(LEN=6)                        :: CFTYP_BLDTYPE
 INTEGER                                 :: NUNIF_IND_BLD_AGE
- CHARACTER(LEN=28)                       :: CFNAM_IND_BLD_AGE
+ CHARACTER(LEN=NFILENAMELGTMAX)          :: CFNAM_IND_BLD_AGE
  CHARACTER(LEN=6)                        :: CFTYP_IND_BLD_AGE
 INTEGER                                 :: NUNIF_COL_BLD_AGE
- CHARACTER(LEN=28)                       :: CFNAM_COL_BLD_AGE
+ CHARACTER(LEN=NFILENAMELGTMAX)          :: CFNAM_COL_BLD_AGE
  CHARACTER(LEN=6)                        :: CFTYP_COL_BLD_AGE
- CHARACTER(LEN=28)                       :: CCSVFILEARCHI
- CHARACTER(LEN=28)                       :: CCSVFILECOMPO
+ CHARACTER(LEN=NFILENAMELGTMAX)          :: CCSVFILEARCHI
+ CHARACTER(LEN=NFILENAMELGTMAX)          :: CCSVFILECOMPO
 INTEGER                                 :: NUNIF_USETYPE
- CHARACTER(LEN=28)                       :: CFNAM_USETYPE
+ CHARACTER(LEN=NFILENAMELGTMAX)          :: CFNAM_USETYPE
  CHARACTER(LEN=6)                        :: CFTYP_USETYPE
 INTEGER                                 :: NUNIF_P1TERRITORY
- CHARACTER(LEN=28)                       :: CFNAM_P1TERRITORY
+ CHARACTER(LEN=NFILENAMELGTMAX)          :: CFNAM_P1TERRITORY
  CHARACTER(LEN=6)                        :: CFTYP_P1TERRITORY
 INTEGER                                 :: NUNIF_PXTERRITORY
- CHARACTER(LEN=28)                       :: CFNAM_PXTERRITORY
+ CHARACTER(LEN=NFILENAMELGTMAX)          :: CFNAM_PXTERRITORY
  CHARACTER(LEN=6)                        :: CFTYP_PXTERRITORY
 REAL                                    :: XUNIF_FRACIHS
- CHARACTER(LEN=28)                       :: CFNAM_FRACIHS
+ CHARACTER(LEN=NFILENAMELGTMAX)          :: CFNAM_FRACIHS
  CHARACTER(LEN=6)                        :: CFTYP_FRACIHS
 REAL                                    :: XUNIF_FRACCHS
- CHARACTER(LEN=28)                       :: CFNAM_FRACCHS
+ CHARACTER(LEN=NFILENAMELGTMAX)          :: CFNAM_FRACCHS
  CHARACTER(LEN=6)                        :: CFTYP_FRACCHS
 REAL                                    :: XUNIF_FRACCOM
- CHARACTER(LEN=28)                       :: CFNAM_FRACCOM
+ CHARACTER(LEN=NFILENAMELGTMAX)          :: CFNAM_FRACCOM
  CHARACTER(LEN=6)                        :: CFTYP_FRACCOM
 REAL                                    :: XUNIF_FRACTER
- CHARACTER(LEN=28)                       :: CFNAM_FRACTER
+ CHARACTER(LEN=NFILENAMELGTMAX)          :: CFNAM_FRACTER
  CHARACTER(LEN=6)                        :: CFTYP_FRACTER
 REAL                                    :: XUNIF_FRACIND
- CHARACTER(LEN=28)                       :: CFNAM_FRACIND
+ CHARACTER(LEN=NFILENAMELGTMAX)          :: CFNAM_FRACIND
  CHARACTER(LEN=6)                        :: CFTYP_FRACIND
 REAL                                    :: XUNIF_FRACNHE
- CHARACTER(LEN=28)                       :: CFNAM_FRACNHE
+ CHARACTER(LEN=NFILENAMELGTMAX)          :: CFNAM_FRACNHE
  CHARACTER(LEN=6)                        :: CFTYP_FRACNHE
 REAL                                    :: XUNIF_FRACPAV
- CHARACTER(LEN=28)                       :: CFNAM_FRACPAV
+ CHARACTER(LEN=NFILENAMELGTMAX)          :: CFNAM_FRACPAV
  CHARACTER(LEN=6)                        :: CFTYP_FRACPAV
 REAL                                    :: XUNIF_FRACMRI
- CHARACTER(LEN=28)                       :: CFNAM_FRACMRI
+ CHARACTER(LEN=NFILENAMELGTMAX)          :: CFNAM_FRACMRI
  CHARACTER(LEN=6)                        :: CFTYP_FRACMRI
 REAL                                    :: XUNIF_FRACHRI
- CHARACTER(LEN=28)                       :: CFNAM_FRACHRI
+ CHARACTER(LEN=NFILENAMELGTMAX)          :: CFNAM_FRACHRI
  CHARACTER(LEN=6)                        :: CFTYP_FRACHRI
 REAL                                    :: XUNIF_FRACATB
- CHARACTER(LEN=28)                       :: CFNAM_FRACATB
+ CHARACTER(LEN=NFILENAMELGTMAX)          :: CFNAM_FRACATB
  CHARACTER(LEN=6)                        :: CFTYP_FRACATB
 REAL                                    :: XUNIF_FOEQI_MAIS
- CHARACTER(LEN=28)                       :: CFNAM_FOEQI_MAIS
+ CHARACTER(LEN=NFILENAMELGTMAX)          :: CFNAM_FOEQI_MAIS
  CHARACTER(LEN=6)                        :: CFTYP_FOEQI_MAIS
 REAL                                    :: XUNIF_FOEQI_APPT
- CHARACTER(LEN=28)                       :: CFNAM_FOEQI_APPT
+ CHARACTER(LEN=NFILENAMELGTMAX)          :: CFNAM_FOEQI_APPT
  CHARACTER(LEN=6)                        :: CFTYP_FOEQI_APPT
 REAL                                    :: XUNIF_FAEQI_MAIS
- CHARACTER(LEN=28)                       :: CFNAM_FAEQI_MAIS
+ CHARACTER(LEN=NFILENAMELGTMAX)          :: CFNAM_FAEQI_MAIS
  CHARACTER(LEN=6)                        :: CFTYP_FAEQI_MAIS
 REAL                                    :: XUNIF_FAEQI_APPT
- CHARACTER(LEN=28)                       :: CFNAM_FAEQI_APPT
+ CHARACTER(LEN=NFILENAMELGTMAX)          :: CFNAM_FAEQI_APPT
  CHARACTER(LEN=6)                        :: CFTYP_FAEQI_APPT
 REAL                                    :: XUNIF_CRE_MAIS
- CHARACTER(LEN=28)                       :: CFNAM_CRE_MAIS
+ CHARACTER(LEN=NFILENAMELGTMAX)          :: CFNAM_CRE_MAIS
  CHARACTER(LEN=6)                        :: CFTYP_CRE_MAIS
 REAL                                    :: XUNIF_CRE_APPT
- CHARACTER(LEN=28)                       :: CFNAM_CRE_APPT
+ CHARACTER(LEN=NFILENAMELGTMAX)          :: CFNAM_CRE_APPT
  CHARACTER(LEN=6)                        :: CFTYP_CRE_APPT
 !
  CHARACTER(LEN=3)                        :: CBLD_ATYPE         ! type of averaging for buildings
@@ -208,16 +208,16 @@ REAL                                    :: XUNIF_FRAC_HVEG    ! fraction of high
 REAL                                    :: XUNIF_FRAC_LVEG    ! fraction of low  vegetation      (-)
 REAL                                    :: XUNIF_FRAC_NVEG    ! fraction of no   vegetation      (-)
 REAL                                    :: XUNIF_ROAD_DIR     ! road direction (deg from North, clockwise)
- CHARACTER(LEN=28)                       :: CFNAM_BLD          ! file name for BLD 
- CHARACTER(LEN=28)                       :: CFNAM_ROAD         ! file name for ROAD
- CHARACTER(LEN=28)                       :: CFNAM_BLD_HEIGHT   ! file name for BLD_HEIGHT
- CHARACTER(LEN=28)                       :: CFNAM_WALL_O_HOR   ! file name for WALL_O_HOR
- CHARACTER(LEN=28)                       :: CFNAM_Z0_TOWN      ! file name for Z0_TOWN
- CHARACTER(LEN=28)                       :: CFNAM_GREENROOF    ! file name for GREENROOF
- CHARACTER(LEN=28)                       :: CFNAM_FRAC_HVEG    ! file name for FRAC_HVEG
- CHARACTER(LEN=28)                       :: CFNAM_FRAC_LVEG    ! file name for FRAC_LVEG
- CHARACTER(LEN=28)                       :: CFNAM_FRAC_NVEG    ! file name for FRAC_NVEG
- CHARACTER(LEN=28)                       :: CFNAM_ROAD_DIR     ! file name for ROAD_DIR  
+ CHARACTER(LEN=NFILENAMELGTMAX)          :: CFNAM_BLD          ! file name for BLD
+ CHARACTER(LEN=NFILENAMELGTMAX)          :: CFNAM_ROAD         ! file name for ROAD
+ CHARACTER(LEN=NFILENAMELGTMAX)          :: CFNAM_BLD_HEIGHT   ! file name for BLD_HEIGHT
+ CHARACTER(LEN=NFILENAMELGTMAX)          :: CFNAM_WALL_O_HOR   ! file name for WALL_O_HOR
+ CHARACTER(LEN=NFILENAMELGTMAX)          :: CFNAM_Z0_TOWN      ! file name for Z0_TOWN
+ CHARACTER(LEN=NFILENAMELGTMAX)          :: CFNAM_GREENROOF    ! file name for GREENROOF
+ CHARACTER(LEN=NFILENAMELGTMAX)          :: CFNAM_FRAC_HVEG    ! file name for FRAC_HVEG
+ CHARACTER(LEN=NFILENAMELGTMAX)          :: CFNAM_FRAC_LVEG    ! file name for FRAC_LVEG
+ CHARACTER(LEN=NFILENAMELGTMAX)          :: CFNAM_FRAC_NVEG    ! file name for FRAC_NVEG
+ CHARACTER(LEN=NFILENAMELGTMAX)          :: CFNAM_ROAD_DIR     ! file name for ROAD_DIR
  CHARACTER(LEN=6)                        :: CFTYP_BLD          ! file type for BLD 
  CHARACTER(LEN=6)                        :: CFTYP_ROAD         ! file type for ROAD
  CHARACTER(LEN=6)                        :: CFTYP_BLD_HEIGHT   ! file type for BLD_HEIGHT
@@ -233,21 +233,21 @@ REAL                                    :: XUNIF_ROAD_DIR     ! road direction (
 !
 REAL                                    :: XUNIF_ALB_ROOF     ! roof albedo                      (-)
 REAL                                    :: XUNIF_EMIS_ROOF    ! roof emissivity                  (-)
- CHARACTER(LEN=28)                       :: CFNAM_ALB_ROOF     ! file name for ALB_ROOF
- CHARACTER(LEN=28)                       :: CFNAM_EMIS_ROOF    ! file name for EMIS_ROOF
+ CHARACTER(LEN=NFILENAMELGTMAX)          :: CFNAM_ALB_ROOF     ! file name for ALB_ROOF
+ CHARACTER(LEN=NFILENAMELGTMAX)          :: CFNAM_EMIS_ROOF    ! file name for EMIS_ROOF
  CHARACTER(LEN=6)                        :: CFTYP_ALB_ROOF     ! file name for ALB_ROOF   
  CHARACTER(LEN=6)                        :: CFTYP_EMIS_ROOF    ! file name for EMIS_ROOF  
 REAL, DIMENSION(NROOF_MAX)              :: XUNIF_HC_ROOF      ! roof layers heat capacity        (J/K/m3)
 REAL, DIMENSION(NROOF_MAX)              :: XUNIF_TC_ROOF      ! roof layers thermal conductivity (W/K/m)
 REAL, DIMENSION(NROOF_MAX)              :: XUNIF_D_ROOF       ! depth of roof layers             (m)
- CHARACTER(LEN=28), DIMENSION(NROOF_MAX) :: CFNAM_HC_ROOF      ! file name for HC_ROOF   
- CHARACTER(LEN=28), DIMENSION(NROOF_MAX) :: CFNAM_TC_ROOF      ! file name for TC_ROOF
- CHARACTER(LEN=28), DIMENSION(NROOF_MAX) :: CFNAM_D_ROOF       ! file name for D_ROOF
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NROOF_MAX) :: CFNAM_HC_ROOF      ! file name for HC_ROOF
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NROOF_MAX) :: CFNAM_TC_ROOF      ! file name for TC_ROOF
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NROOF_MAX) :: CFNAM_D_ROOF       ! file name for D_ROOF
  CHARACTER(LEN=6),  DIMENSION(NROOF_MAX) :: CFTYP_HC_ROOF      ! file type for HC_ROOF   
  CHARACTER(LEN=6),  DIMENSION(NROOF_MAX) :: CFTYP_TC_ROOF      ! file type for TC_ROOF
  CHARACTER(LEN=6),  DIMENSION(NROOF_MAX) :: CFTYP_D_ROOF       ! file type for D_ROOF
 REAL                                    :: XUNIF_ROUGH_ROOF  ! roof roughness coef
- CHARACTER(LEN=28)                       :: CFNAM_ROUGH_ROOF  ! file name for ROUGH_ROOF
+ CHARACTER(LEN=NFILENAMELGTMAX)          :: CFNAM_ROUGH_ROOF  ! file name for ROUGH_ROOF
  CHARACTER(LEN=6)                        :: CFTYP_ROUGH_ROOF  ! file type for ROUGH_ROOF
 !
 !
@@ -255,8 +255,8 @@ REAL                                    :: XUNIF_ROUGH_ROOF  ! roof roughness co
 !
 REAL                                    :: XUNIF_ALB_ROAD     ! road albedo                      (-)
 REAL                                    :: XUNIF_EMIS_ROAD    ! road emissivity                  (-)
- CHARACTER(LEN=28)                       :: CFNAM_ALB_ROAD     ! file name for ALB_ROAD
- CHARACTER(LEN=28)                       :: CFNAM_EMIS_ROAD    ! file name for EMIS_ROAD
+ CHARACTER(LEN=NFILENAMELGTMAX)          :: CFNAM_ALB_ROAD     ! file name for ALB_ROAD
+ CHARACTER(LEN=NFILENAMELGTMAX)          :: CFNAM_EMIS_ROAD    ! file name for EMIS_ROAD
  CHARACTER(LEN=6)                        :: CFTYP_ALB_ROAD     ! file type for ALB_ROAD
  CHARACTER(LEN=6)                        :: CFTYP_EMIS_ROAD    ! file type for EMIS_ROAD
 REAL                                    :: XUNIF_HC_COATING_ROAD  ! road coating heat capacity        (J/K/m3)
@@ -264,11 +264,11 @@ REAL                                    :: XUNIF_TC_COATING_ROAD  ! road coating
 REAL                                    :: XUNIF_D_COATING_ROAD   ! depth of road coating             (m)
 REAL                                    :: XUNIF_HC_BASEMENT_ROAD ! road coating heat capacity        (J/K/m3)
 REAL                                    :: XUNIF_TC_BASEMENT_ROAD ! road coating thermal conductivity (W/K/m)
- CHARACTER(LEN=28)                       :: CFNAM_HC_COATING_ROAD      ! file name for HC_ROAD   
- CHARACTER(LEN=28)                       :: CFNAM_TC_COATING_ROAD      ! file name for TC_ROAD
- CHARACTER(LEN=28)                       :: CFNAM_D_COATING_ROAD       ! file name for D_ROAD
- CHARACTER(LEN=28)                       :: CFNAM_HC_BASEMENT_ROAD     ! file name for HC_ROAD   
- CHARACTER(LEN=28)                       :: CFNAM_TC_BASEMENT_ROAD     ! file name for TC_ROAD
+ CHARACTER(LEN=NFILENAMELGTMAX)          :: CFNAM_HC_COATING_ROAD      ! file name for HC_ROAD
+ CHARACTER(LEN=NFILENAMELGTMAX)          :: CFNAM_TC_COATING_ROAD      ! file name for TC_ROAD
+ CHARACTER(LEN=NFILENAMELGTMAX)          :: CFNAM_D_COATING_ROAD       ! file name for D_ROAD
+ CHARACTER(LEN=NFILENAMELGTMAX)          :: CFNAM_HC_BASEMENT_ROAD     ! file name for HC_ROAD
+ CHARACTER(LEN=NFILENAMELGTMAX)          :: CFNAM_TC_BASEMENT_ROAD     ! file name for TC_ROAD
  CHARACTER(LEN=6)                        :: CFTYP_HC_COATING_ROAD      ! file type for HC_ROAD   
  CHARACTER(LEN=6)                        :: CFTYP_TC_COATING_ROAD      ! file type for TC_ROAD
  CHARACTER(LEN=6)                        :: CFTYP_D_COATING_ROAD       ! file type for D_ROAD
@@ -279,21 +279,21 @@ REAL                                    :: XUNIF_TC_BASEMENT_ROAD ! road coating
 !
 REAL                                    :: XUNIF_ALB_WALL     ! wall albedo                      (-)
 REAL                                    :: XUNIF_EMIS_WALL    ! wall emissivity                  (-)
- CHARACTER(LEN=28)                       :: CFNAM_ALB_WALL     ! file name for ALB_WALL
- CHARACTER(LEN=28)                       :: CFNAM_EMIS_WALL    ! file name for EMIS_WALL
+ CHARACTER(LEN=NFILENAMELGTMAX)          :: CFNAM_ALB_WALL     ! file name for ALB_WALL
+ CHARACTER(LEN=NFILENAMELGTMAX)          :: CFNAM_EMIS_WALL    ! file name for EMIS_WALL
  CHARACTER(LEN=6)                        :: CFTYP_ALB_WALL     ! file type for ALB_WALL
  CHARACTER(LEN=6)                        :: CFTYP_EMIS_WALL    ! file type for EMIS_WALL
 REAL, DIMENSION(NWALL_MAX)              :: XUNIF_HC_WALL      ! wall layers heat capacity        (J/K/m3)
 REAL, DIMENSION(NWALL_MAX)              :: XUNIF_TC_WALL      ! wall layers thermal conductivity (W/K/m)
 REAL, DIMENSION(NWALL_MAX)              :: XUNIF_D_WALL       ! depth of wall layers             (m)
- CHARACTER(LEN=28), DIMENSION(NWALL_MAX) :: CFNAM_HC_WALL      ! file name for HC_WALL   
- CHARACTER(LEN=28), DIMENSION(NWALL_MAX) :: CFNAM_TC_WALL      ! file name for TC_WALL
- CHARACTER(LEN=28), DIMENSION(NWALL_MAX) :: CFNAM_D_WALL       ! file name for D_WALL
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NWALL_MAX) :: CFNAM_HC_WALL      ! file name for HC_WALL
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NWALL_MAX) :: CFNAM_TC_WALL      ! file name for TC_WALL
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NWALL_MAX) :: CFNAM_D_WALL       ! file name for D_WALL
  CHARACTER(LEN=6),  DIMENSION(NWALL_MAX) :: CFTYP_HC_WALL      ! file type for HC_WALL   
  CHARACTER(LEN=6),  DIMENSION(NWALL_MAX) :: CFTYP_TC_WALL      ! file type for TC_WALL
  CHARACTER(LEN=6),  DIMENSION(NWALL_MAX) :: CFTYP_D_WALL       ! file type for D_WALL
 REAL                                    :: XUNIF_ROUGH_WALL  ! wall roughness coef
- CHARACTER(LEN=28)                       :: CFNAM_ROUGH_WALL  ! file name for ROUGH_WALL
+ CHARACTER(LEN=NFILENAMELGTMAX)          :: CFNAM_ROUGH_WALL  ! file name for ROUGH_WALL
  CHARACTER(LEN=6)                        :: CFTYP_ROUGH_WALL  ! file type for ROUGH_WALL
 !
 ! anthropogenic fluxes
@@ -306,10 +306,10 @@ REAL                                    :: XUNIF_H_INDUSTRY   ! anthropogenic se
 !                                                             ! heat fluxes due to factories     (W/m2)
 REAL                                    :: XUNIF_LE_INDUSTRY  ! anthropogenic latent
 !                                                             ! heat fluxes due to factories     (W/m2)
- CHARACTER(LEN=28)                       :: CFNAM_H_TRAFFIC    ! file name for H_TRAFFIC
- CHARACTER(LEN=28)                       :: CFNAM_LE_TRAFFIC   ! file name for LE_TRAFFIC
- CHARACTER(LEN=28)                       :: CFNAM_H_INDUSTRY   ! file name for H_INDUSTRY
- CHARACTER(LEN=28)                       :: CFNAM_LE_INDUSTRY  ! file name for LE_INDUSTRY
+ CHARACTER(LEN=NFILENAMELGTMAX)          :: CFNAM_H_TRAFFIC    ! file name for H_TRAFFIC
+ CHARACTER(LEN=NFILENAMELGTMAX)          :: CFNAM_LE_TRAFFIC   ! file name for LE_TRAFFIC
+ CHARACTER(LEN=NFILENAMELGTMAX)          :: CFNAM_H_INDUSTRY   ! file name for H_INDUSTRY
+ CHARACTER(LEN=NFILENAMELGTMAX)          :: CFNAM_LE_INDUSTRY  ! file name for LE_INDUSTRY
  CHARACTER(LEN=6)                        :: CFTYP_H_TRAFFIC    ! file type for H_TRAFFIC
  CHARACTER(LEN=6)                        :: CFTYP_LE_TRAFFIC   ! file type for LE_TRAFFIC
  CHARACTER(LEN=6)                        :: CFTYP_H_INDUSTRY   ! file type for H_INDUSTRY
@@ -321,10 +321,10 @@ REAL                                    :: XUNIF_EMIS_PANEL    ! emissivity of s
 REAL                                    :: XUNIF_ALB_PANEL     ! albedo     of solar panel       (-)
 REAL                                    :: XUNIF_EFF_PANEL     ! efficiency of solar panel       (-)
 REAL                                    :: XUNIF_FRAC_PANEL    ! fraction   of solar panel       (-)
- CHARACTER(LEN=28)                       :: CFNAM_EMIS_PANEL   ! file name for EMIS_PANEL
- CHARACTER(LEN=28)                       :: CFNAM_ALB_PANEL    ! file name for ALB_PANEL
- CHARACTER(LEN=28)                       :: CFNAM_EFF_PANEL    ! file name for EFF_PANEL
- CHARACTER(LEN=28)                       :: CFNAM_FRAC_PANEL   ! file name for FRAC_PANEL
+ CHARACTER(LEN=NFILENAMELGTMAX)          :: CFNAM_EMIS_PANEL   ! file name for EMIS_PANEL
+ CHARACTER(LEN=NFILENAMELGTMAX)          :: CFNAM_ALB_PANEL    ! file name for ALB_PANEL
+ CHARACTER(LEN=NFILENAMELGTMAX)          :: CFNAM_EFF_PANEL    ! file name for EFF_PANEL
+ CHARACTER(LEN=NFILENAMELGTMAX)          :: CFNAM_FRAC_PANEL   ! file name for FRAC_PANEL
  CHARACTER(LEN=6)                        :: CFTYP_EMIS_PANEL   ! file type for EMIS_PANEL
  CHARACTER(LEN=6)                        :: CFTYP_ALB_PANEL    ! file type for ALB_PANEL
  CHARACTER(LEN=6)                        :: CFTYP_EFF_PANEL    ! file type for EFF_PANEL
@@ -334,15 +334,15 @@ REAL                                    :: XUNIF_FRAC_PANEL    ! fraction   of s
 ! New variables for CO2 flux calculus
 !
 REAL                                    :: XUNIF_NB_POP                 ! uniform value for population per square kilometer
-CHARACTER(LEN=28)                       :: CFNAM_NB_POP                 ! file name for population per square kilometer
+CHARACTER(LEN=NFILENAMELGTMAX)          :: CFNAM_NB_POP                 ! file name for population per square kilometer
 CHARACTER(LEN=6)                        :: CFTYP_NB_POP                 ! file type for population per square kilometer
 !
 REAL                                    :: XUNIF_SFCO2_RD               ! uniform value for CO2 flux link to traffic (roads) : (kg/m2 of town/s)
-CHARACTER(LEN=28)                       :: CFNAM_SFCO2_RD               ! file name for CO2 flux link to traffic (roads) : (kg/m2 of town/s)
+CHARACTER(LEN=NFILENAMELGTMAX)          :: CFNAM_SFCO2_RD               ! file name for CO2 flux link to traffic (roads) : (kg/m2 of town/s)
 CHARACTER(LEN=6)                        :: CFTYP_SFCO2_RD               ! file type for CO2 flux link to traffic (roads) : (kg/m2 of town/s)
 !
 REAL, DIMENSION(TOP%NTIME_CHANGE+1)              :: XUNIF_DELTA_LEGAL_TIME       ! uniform value for difference between UTC and legal time (in hour)
-CHARACTER(LEN=28), DIMENSION(TOP%NTIME_CHANGE+1) :: CFNAM_DELTA_LEGAL_TIME       ! file name for difference between UTC and legal time (in hour)
+CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(TOP%NTIME_CHANGE+1) :: CFNAM_DELTA_LEGAL_TIME       ! file name for difference between UTC and legal time (in hour)
 CHARACTER(LEN=6), DIMENSION(TOP%NTIME_CHANGE+1)  :: CFTYP_DELTA_LEGAL_TIME       ! file type for difference between UTC and legal time (in hour)
 !
 INTEGER, PARAMETER                      :: NINFO_TIME=4                 ! number of information needed to define the time (year, month, day, second)
@@ -527,73 +527,72 @@ XPAR_POP_MONTHLY        = XUNDEF
 XPAR_POP_DAILY          = XUNDEF
 XPAR_POP_HOURLY         = XUNDEF
 !
-CFNAM_BLDTYPE         = '                            '
-CFNAM_IND_BLD_AGE     = '                            '
-CFNAM_COL_BLD_AGE     = '                            '
-CFNAM_USETYPE         = '                            '
-CFNAM_P1TERRITORY     = '                            '
-CFNAM_PXTERRITORY     = '                            '
-CFNAM_FRACIHS         = '                            '
-CFNAM_FRACCHS         = '                            '
-CFNAM_FRACCOM         = '                            '
-CFNAM_FRACTER         = '                            '
-CFNAM_FRACIND         = '                            '
-CFNAM_FRACNHE         = '                            '
-CFNAM_FRACPAV         = '                            '
-CFNAM_FRACMRI         = '                            '
-CFNAM_FRACHRI         = '                            '
-CFNAM_FRACATB         = '                            '
-CFNAM_FOEQI_MAIS      = '                            '
-CFNAM_FOEQI_APPT      = '                            '
-CFNAM_FAEQI_MAIS      = '                            '
-CFNAM_FAEQI_APPT      = '                            '
-CFNAM_CRE_MAIS        = '                            '
-CFNAM_CRE_APPT        = '                            '
-CCSVFILEARCHI         = '                            '
-CCSVFILECOMPO         = '                            '
-CFNAM_BLD             = '                            '
-CFNAM_ROAD            = '                            '
-CFNAM_BLD_HEIGHT      = '                            '
-CFNAM_WALL_O_HOR      = '                            '
-CFNAM_Z0_TOWN         = '                            '
-CFNAM_ALB_ROOF (:)    = '                            '
-CFNAM_EMIS_ROOF(:)    = '                            '
-CFNAM_HC_ROOF  (:)    = '                            '
-CFNAM_TC_ROOF  (:)    = '                            '
-CFNAM_D_ROOF   (:)    = '                            '
-CFNAM_ROUGH_ROOF(:)   = '                            '
-CFNAM_ROUGH_WALL(:)   = '                            '
-CFNAM_ALB_ROAD (:)    = '                            '
-CFNAM_EMIS_ROAD(:)    = '                            '
-CFNAM_HC_COATING_ROAD  (:)    = '                            '
-CFNAM_TC_COATING_ROAD  (:)    = '                            '
-CFNAM_D_COATING_ROAD   (:)    = '                            '
-CFNAM_HC_BASEMENT_ROAD (:)    = '                            '
-CFNAM_TC_BASEMENT_ROAD (:)    = '                            '
-CFNAM_ALB_WALL (:)    = '                            '
-CFNAM_EMIS_WALL(:)    = '                            '
-CFNAM_HC_WALL  (:)    = '                            '
-CFNAM_TC_WALL  (:)    = '                            '
-CFNAM_D_WALL   (:)    = '                            '
+CFNAM_BLDTYPE         = ''
+CFNAM_IND_BLD_AGE     = ''
+CFNAM_COL_BLD_AGE     = ''
+CFNAM_USETYPE         = ''
+CFNAM_P1TERRITORY     = ''
+CFNAM_PXTERRITORY     = ''
+CFNAM_FRACIHS         = ''
+CFNAM_FRACCHS         = ''
+CFNAM_FRACCOM         = ''
+CFNAM_FRACTER         = ''
+CFNAM_FRACIND         = ''
+CFNAM_FRACNHE         = ''
+CFNAM_FRACPAV         = ''
+CFNAM_FRACMRI         = ''
+CFNAM_FRACHRI         = ''
+CFNAM_FRACATB         = ''
+CFNAM_FOEQI_MAIS      = ''
+CFNAM_FOEQI_APPT      = ''
+CFNAM_FAEQI_MAIS      = ''
+CFNAM_FAEQI_APPT      = ''
+CFNAM_CRE_MAIS        = ''
+CFNAM_CRE_APPT        = ''
+CCSVFILEARCHI         = ''
+CCSVFILECOMPO         = ''
+CFNAM_BLD             = ''
+CFNAM_ROAD            = ''
+CFNAM_BLD_HEIGHT      = ''
+CFNAM_WALL_O_HOR      = ''
+CFNAM_Z0_TOWN         = ''
+CFNAM_ALB_ROOF (:)    = ''
+CFNAM_EMIS_ROOF(:)    = ''
+CFNAM_HC_ROOF  (:)    = ''
+CFNAM_TC_ROOF  (:)    = ''
+CFNAM_D_ROOF   (:)    = ''
+CFNAM_ROUGH_ROOF(:)   = ''
+CFNAM_ROUGH_WALL(:)   = ''
+CFNAM_ALB_ROAD (:)    = ''
+CFNAM_EMIS_ROAD(:)    = ''
+CFNAM_HC_COATING_ROAD  (:)    = ''
+CFNAM_TC_COATING_ROAD  (:)    = ''
+CFNAM_D_COATING_ROAD   (:)    = ''
+CFNAM_HC_BASEMENT_ROAD (:)    = ''
+CFNAM_TC_BASEMENT_ROAD (:)    = ''
+CFNAM_ALB_WALL (:)    = ''
+CFNAM_EMIS_WALL(:)    = ''
+CFNAM_HC_WALL  (:)    = ''
+CFNAM_TC_WALL  (:)    = ''
+CFNAM_D_WALL   (:)    = ''
 
-CFNAM_H_TRAFFIC       = '                            '
-CFNAM_LE_TRAFFIC      = '                            '
-CFNAM_H_INDUSTRY      = '                            '
-CFNAM_LE_INDUSTRY     = '                            '
+CFNAM_H_TRAFFIC       = ''
+CFNAM_LE_TRAFFIC      = ''
+CFNAM_H_INDUSTRY      = ''
+CFNAM_LE_INDUSTRY     = ''
+CFNAM_GREENROOF       = ''
+CFNAM_FRAC_HVEG       = ''
+CFNAM_FRAC_LVEG       = ''
+CFNAM_FRAC_NVEG       = ''
+CFNAM_ROAD_DIR        = ''
 
-CFNAM_GREENROOF       = '                            '
-CFNAM_FRAC_HVEG       = '                            '
-CFNAM_FRAC_LVEG       = '                            '
-CFNAM_FRAC_NVEG       = '                            '
-CFNAM_ROAD_DIR        = '                            '
-
-CFNAM_EMIS_PANEL      = '                            '
-CFNAM_ALB_PANEL       = '                            '
-CFNAM_EFF_PANEL       = '                            '
-CFNAM_FRAC_PANEL      = '                            '
-CFNAM_NB_POP          = '                            '
-CFNAM_SFCO2_RD        = '                            '
-CFNAM_DELTA_LEGAL_TIME= '                            '
+CFNAM_EMIS_PANEL      = ''
+CFNAM_ALB_PANEL       = ''
+CFNAM_EFF_PANEL       = ''
+CFNAM_FRAC_PANEL      = ''
+CFNAM_NB_POP          = ''
+CFNAM_SFCO2_RD        = ''
+CFNAM_DELTA_LEGAL_TIME= ''
 !
 CFTYP_BLDTYPE         = '      '
 CFTYP_IND_BLD_AGE     = '      '

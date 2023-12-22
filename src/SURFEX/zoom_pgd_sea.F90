@@ -48,6 +48,8 @@ USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 USE MODD_GRID_CONF_PROJ_n, ONLY : GRID_CONF_PROJ_t
 !
+USE MODD_SURF_PAR, ONLY: NFILENAMELGTMAX
+!
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
@@ -66,11 +68,11 @@ TYPE(SURF_ATM_GRID_t), INTENT(INOUT) :: UG
 TYPE(SURF_ATM_t), INTENT(INOUT) :: U
 TYPE(GRID_CONF_PROJ_t),INTENT(INOUT) :: GCP
 !
- CHARACTER(LEN=6),     INTENT(IN)  :: HPROGRAM    ! program calling
- CHARACTER(LEN=28),    INTENT(IN)  :: HINIFILE    ! input atmospheric file name
- CHARACTER(LEN=6),     INTENT(IN)  :: HINIFILETYPE! input atmospheric file type
- CHARACTER(LEN=28),    INTENT(IN)  :: HFILE       ! output file name
- CHARACTER(LEN=6),     INTENT(IN)  :: HFILETYPE   ! output file type
+ CHARACTER(LEN=6),               INTENT(IN)  :: HPROGRAM    ! program calling
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)  :: HINIFILE    ! input atmospheric file name
+ CHARACTER(LEN=6),               INTENT(IN)  :: HINIFILETYPE! input atmospheric file type
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)  :: HFILE       ! output file name
+ CHARACTER(LEN=6),               INTENT(IN)  :: HFILETYPE   ! output file type
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !

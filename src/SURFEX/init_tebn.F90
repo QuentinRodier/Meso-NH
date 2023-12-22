@@ -80,7 +80,7 @@ USE MODD_SNOW_PAR, ONLY : XEMISSN
 !
 USE MODD_READ_NAMELIST, ONLY : LNAM_READ
 !
-USE MODD_SURF_PAR,        ONLY: XUNDEF, NUNDEF
+USE MODD_SURF_PAR,        ONLY: NFILENAMELGTMAX, XUNDEF, NUNDEF
 USE MODD_TYPE_DATE_SURF
 USE MODD_ISBA_PAR,        ONLY: XEMISVEG
 USE MODD_TEB_PAR,         ONLY: XD_FLOOR_DEF, XHC_FLOOR_DEF, XTC_FLOOR_DEF, XTS_FLOOR
@@ -205,7 +205,7 @@ REAL,                               INTENT(IN)  :: PTIME       ! current time si
                                                                !  midnight (UTC, s)
 TYPE(SURF_ATM_TURB_t), INTENT(IN) :: AT         ! atmospheric turbulence parameters
 !
- CHARACTER(LEN=28),                  INTENT(IN)  :: HATMFILE    ! atmospheric file name
+ CHARACTER(LEN=NFILENAMELGTMAX),     INTENT(IN)  :: HATMFILE    ! atmospheric file name
  CHARACTER(LEN=6),                   INTENT(IN)  :: HATMFILETYPE! atmospheric file type
  CHARACTER(LEN=2),                   INTENT(IN)  :: HTEST       ! must be equal to 'OK'
 !

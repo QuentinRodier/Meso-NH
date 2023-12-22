@@ -56,7 +56,7 @@ USE MODI_PREP_OCEAN_MERCATORVERGRID
 USE MODD_PREP_SEAFLUX, ONLY : CFILE_SEAFLX, CTYPE_SEAFLX, CFILEPGD_SEAFLX, CTYPEPGD, &
                               CFILEWAVE_SEAFLX, CTYPEWAVE, XSST_UNIF, XSSS_UNIF, XSIC_UNIF
 !
-USE MODD_SURF_PAR,   ONLY : XUNDEF
+USE MODD_SURF_PAR,   ONLY : NFILENAMELGTMAX, XUNDEF
 !
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -71,18 +71,18 @@ IMPLICIT NONE
 !
 LOGICAL, INTENT(IN) :: OMERCATOR
 !
-CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM ! program calling ISBA
-CHARACTER(LEN=7),  INTENT(IN)  :: HVAR     ! variable treated
-CHARACTER(LEN=28), INTENT(OUT) :: HFILE    ! file name
-CHARACTER(LEN=6),  INTENT(OUT) :: HFILETYPE! file type
-CHARACTER(LEN=28), INTENT(OUT) :: HFILEPGD    ! file name
-CHARACTER(LEN=6),  INTENT(OUT) :: HFILEPGDTYPE! file type
-CHARACTER(LEN=28), INTENT(IN)  :: HATMFILE    ! atmospheric file name
-CHARACTER(LEN=6),  INTENT(IN)  :: HATMFILETYPE! atmospheric file type
-CHARACTER(LEN=28), INTENT(IN)  :: HPGDFILE    ! atmospheric file name
-CHARACTER(LEN=6),  INTENT(IN)  :: HPGDFILETYPE! atmospheric file type
-INTEGER,           INTENT(IN)  :: KLUOUT   ! logical unit of output listing
-LOGICAL,           INTENT(OUT) :: OUNIF    ! flag for prescribed uniform field
+CHARACTER(LEN=6),               INTENT(IN)  :: HPROGRAM ! program calling ISBA
+CHARACTER(LEN=7),               INTENT(IN)  :: HVAR     ! variable treated
+CHARACTER(LEN=NFILENAMELGTMAX), INTENT(OUT) :: HFILE    ! file name
+CHARACTER(LEN=6),               INTENT(OUT) :: HFILETYPE! file type
+CHARACTER(LEN=NFILENAMELGTMAX), INTENT(OUT) :: HFILEPGD    ! file name
+CHARACTER(LEN=6),               INTENT(OUT) :: HFILEPGDTYPE! file type
+CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)  :: HATMFILE    ! atmospheric file name
+CHARACTER(LEN=6),               INTENT(IN)  :: HATMFILETYPE! atmospheric file type
+CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)  :: HPGDFILE    ! atmospheric file name
+CHARACTER(LEN=6),               INTENT(IN)  :: HPGDFILETYPE! atmospheric file type
+INTEGER,                        INTENT(IN)  :: KLUOUT   ! logical unit of output listing
+LOGICAL,                        INTENT(OUT) :: OUNIF    ! flag for prescribed uniform field
 
 !
 !*       0.2   Declarations of local variables
@@ -92,7 +92,7 @@ INTEGER           :: IRESP          ! IRESP  : return-code if a problem appears
                                     ! at the open of the file in LFI  routines 
 INTEGER           :: ILUNAM         ! Logical unit of namelist file
 !
- CHARACTER(LEN=28) :: YNAMELIST      ! namelist file
+ CHARACTER(LEN=NFILENAMELGTMAX) :: YNAMELIST      ! namelist file
 !
 LOGICAL           :: GFOUND         ! Return code when searching namelist
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
@@ -100,10 +100,10 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !
 IF (LHOOK) CALL DR_HOOK('READ_PREP_SEAFLUX_CONF',0,ZHOOK_HANDLE)
-HFILE = '                         '
+HFILE = ''
 HFILETYPE = '      '
 !
-HFILEPGD = '                            '
+HFILEPGD = ''
 HFILEPGDTYPE = '      '
 !
 OUNIF     = .FALSE.

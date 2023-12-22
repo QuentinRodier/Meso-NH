@@ -58,7 +58,7 @@ USE MODD_PGDWORK,        ONLY : XALL, XEXT_ALL, NSIZE_ALL, &
                                 XMEAN_WORK, XSTD_WORK,    &
                                 XSKEW_WORK, NSIZE, XSUMVAL 
 !
-USE MODD_SURF_PAR,       ONLY : XUNDEF
+USE MODD_SURF_PAR,       ONLY : NFILENAMELGTMAX, XUNDEF
 !
 !
 USE MODD_SGH_PAR,        ONLY : XREGP, XREGA
@@ -108,7 +108,7 @@ LOGICAL, INTENT(INOUT) :: OCTI
 !
 CHARACTER(LEN=6),     INTENT(IN)  :: HPROGRAM     ! program calling
 INTEGER,              INTENT(IN)  :: KLU          ! number of nature points
-CHARACTER(LEN=28),    INTENT(IN)  :: HCTI         ! topographic index file name
+CHARACTER(LEN=NFILENAMELGTMAX),    INTENT(IN)  :: HCTI         ! topographic index file name
 CHARACTER(LEN=6),     INTENT(IN)  :: HCTIFILETYPE ! topographic index file type
 LOGICAL,              INTENT(IN)  :: OIMP_CTI     ! .true. if topographic index statistics is imposed
 !
@@ -477,7 +477,7 @@ REAL    :: ZGLBLONMIN                 ! minimum longitude of data box in the fil
 REAL    :: ZGLBLATMAX                 ! maximum latitude of data box in the file
 REAL    :: ZGLBLONMAX                 ! maximum longitude of data box in the file
 !
-CHARACTER(LEN=28)  :: YFILEHDR        ! Name of the field file header
+CHARACTER(LEN=NFILENAMELGTMAX) :: YFILEHDR ! Name of the field file header
 !
 INTEGER                    :: INBLAT
 INTEGER                    :: INBLON

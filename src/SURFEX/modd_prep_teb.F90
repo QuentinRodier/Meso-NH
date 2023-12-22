@@ -31,23 +31,25 @@
 !*       0.   DECLARATIONS
 !             ------------
 !
+USE MODD_SURF_PAR, ONLY: NFILENAMELGTMAX
+!
 IMPLICIT NONE
 !
 SAVE
 !--------------------------------------------------------------------------
 !
- CHARACTER(LEN=28) :: CFILE_TEB      ! input file name
- CHARACTER(LEN=6)  :: CTYPE          ! input file type
- CHARACTER(LEN=28) :: CFILEPGD_TEB   ! input file name
- CHARACTER(LEN=6)  :: CTYPEPGD       ! input file type
- CHARACTER(LEN=28) :: CFILE_SNOW_TEB ! input file name for Snow
- CHARACTER(LEN=6)  :: CTYPE_SNOW     ! input file type for Snow
- CHARACTER(LEN=28) :: CFILEPGD_SNOW_TEB ! input file name for Snow
- CHARACTER(LEN=6)  :: CTYPEPGD_SNOW     ! input file type for Snow
- CHARACTER(LEN=28) :: CFILE_WS       ! input file name for Ws
- CHARACTER(LEN=6)  :: CTYPE_WS       ! input file type for Ws
- CHARACTER(LEN=28) :: CFILE_TS       ! input file name for Ts
- CHARACTER(LEN=6)  :: CTYPE_TS       ! input file type for Ts
+ CHARACTER(LEN=NFILENAMELGTMAX) :: CFILE_TEB      ! input file name
+ CHARACTER(LEN=6)               :: CTYPE          ! input file type
+ CHARACTER(LEN=NFILENAMELGTMAX) :: CFILEPGD_TEB   ! input file name
+ CHARACTER(LEN=6)               :: CTYPEPGD       ! input file type
+ CHARACTER(LEN=NFILENAMELGTMAX) :: CFILE_SNOW_TEB ! input file name for Snow
+ CHARACTER(LEN=6)               :: CTYPE_SNOW     ! input file type for Snow
+ CHARACTER(LEN=NFILENAMELGTMAX) :: CFILEPGD_SNOW_TEB ! input file name for Snow
+ CHARACTER(LEN=6)               :: CTYPEPGD_SNOW     ! input file type for Snow
+ CHARACTER(LEN=NFILENAMELGTMAX) :: CFILE_WS       ! input file name for Ws
+ CHARACTER(LEN=6)               :: CTYPE_WS       ! input file type for Ws
+ CHARACTER(LEN=NFILENAMELGTMAX) :: CFILE_TS       ! input file name for Ts
+ CHARACTER(LEN=6)               :: CTYPE_TS       ! input file type for Ts
 !
 REAL              :: XWS_ROOF       ! roof uniform water content (kg/m2)
 REAL              :: XWS_ROAD       ! road uniform water content (kg/m2)

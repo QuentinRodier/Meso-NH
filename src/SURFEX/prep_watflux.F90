@@ -50,6 +50,7 @@ USE MODD_READ_NAMELIST,  ONLY : LNAM_READ
 USE MODN_PREP_WATFLUX
 USE MODD_PREP,           ONLY : XZS_LS
 USE MODD_SURF_ATM,       ONLY : LVERTSHIFT
+USE MODD_SURF_PAR, ONLY: NFILENAMELGTMAX
 !
 USE MODE_PREP_CTL, ONLY : PREP_CTL
 !
@@ -74,11 +75,11 @@ TYPE(WATFLUX_t), INTENT(INOUT) :: W
 TYPE(CANOPY_t), INTENT(INOUT) :: SB
 TYPE (PREP_CTL),    INTENT(INOUT) :: YDCTL
 !
- CHARACTER(LEN=6),   INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
- CHARACTER(LEN=28),  INTENT(IN)  :: HATMFILE    ! name of the Atmospheric file
- CHARACTER(LEN=6),   INTENT(IN)  :: HATMFILETYPE! type of the Atmospheric file
- CHARACTER(LEN=28),  INTENT(IN)  :: HPGDFILE    ! name of the Atmospheric file
- CHARACTER(LEN=6),   INTENT(IN)  :: HPGDFILETYPE! type of the Atmospheric file
+ CHARACTER(LEN=6),               INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)  :: HATMFILE    ! name of the Atmospheric file
+ CHARACTER(LEN=6),               INTENT(IN)  :: HATMFILETYPE! type of the Atmospheric file
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)  :: HPGDFILE    ! name of the Atmospheric file
+ CHARACTER(LEN=6),               INTENT(IN)  :: HPGDFILETYPE! type of the Atmospheric file
 !
 !*      0.2    declarations of local variables
 !

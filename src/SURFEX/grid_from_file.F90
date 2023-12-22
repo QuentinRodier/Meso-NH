@@ -43,6 +43,7 @@
 !
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 USE MODD_GRID_CONF_PROJ_n, ONLY : GRID_CONF_PROJ_t
+USE MODD_SURF_PAR, ONLY: NFILENAMELGTMAX
 !
 USE MODD_SURFEX_MPI, ONLY : NRANK, NSIZE_TASK
 !
@@ -74,7 +75,7 @@ TYPE(GRID_CONF_PROJ_t),INTENT(INOUT) :: GCP
 REAL, DIMENSION(:), POINTER :: PGRID_FULL_PAR
 !
  CHARACTER(LEN=6),  INTENT(IN)   :: HPROGRAM   ! program calling the surface
- CHARACTER(LEN=28), INTENT(IN)   :: HFILE      ! file name
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)   :: HFILE      ! file name
  CHARACTER(LEN=6),  INTENT(IN)   :: HFILETYPE  ! file type
 LOGICAL,           INTENT(IN)   :: OGRID      ! .true. if grid is imposed by atm. model
  CHARACTER(LEN=10), INTENT(OUT)  :: HGRID      ! type of horizontal grid

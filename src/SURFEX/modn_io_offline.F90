@@ -42,6 +42,8 @@
 !*       0.    DECLARATIONS
 !              ------------
 !
+USE MODD_SURF_PAR, ONLY: NFILENAMELGTMAX
+!
 IMPLICIT NONE
 !
 !*    Types of files
@@ -61,10 +63,10 @@ IMPLICIT NONE
 !*    Names of files
 !     --------------
 !
- CHARACTER(LEN=28):: CPGDFILE  ='PGD'          ! name of the PGD file
- CHARACTER(LEN=28):: CPREPFILE ='PREP'         ! name of the INITIAL file
- CHARACTER(LEN=28):: CSURFFILE ='SURFOUT'      ! name of the final output CSURFEX file
- CHARACTER(LEN=28):: CNAMELIST ='OPTIONS.nam'  ! name of namelist file
+ CHARACTER(LEN=NFILENAMELGTMAX):: CPGDFILE  ='PGD'          ! name of the PGD file
+ CHARACTER(LEN=NFILENAMELGTMAX):: CPREPFILE ='PREP'         ! name of the INITIAL file
+ CHARACTER(LEN=NFILENAMELGTMAX):: CSURFFILE ='SURFOUT'      ! name of the final output CSURFEX file
+ CHARACTER(LEN=NFILENAMELGTMAX):: CNAMELIST ='OPTIONS.nam'  ! name of namelist file
 !
 !
 !*    General flags defining output options

@@ -19,6 +19,7 @@ USE MODD_BEM_OPTION_n, ONLY : BEM_OPTIONS_t
 !
 USE MODD_SURFEX_MPI, ONLY : NRANK, NPIO
 USE MODD_TYPE_DATE_SURF
+USE MODD_SURF_PAR, ONLY: NFILENAMELGTMAX
 !
 USE MODI_PREP_GRID_EXTERN
 USE MODI_READ_SURF
@@ -51,10 +52,10 @@ TYPE(BEM_OPTIONS_t), INTENT(INOUT) :: BOP
 !
  CHARACTER(LEN=6),   INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
  CHARACTER(LEN=7),   INTENT(IN)  :: HSURF     ! type of field
- CHARACTER(LEN=28),  INTENT(IN)  :: HFILE     ! name of file
- CHARACTER(LEN=6),   INTENT(IN)  :: HFILETYPE ! type of input file
- CHARACTER(LEN=28),  INTENT(IN)  :: HFILEPGD     ! name of file
- CHARACTER(LEN=6),   INTENT(IN)  :: HFILEPGDTYPE ! type of input file
+ CHARACTER(LEN=NFILENAMELGTMAX),  INTENT(IN)  :: HFILE     ! name of file
+ CHARACTER(LEN=6),                INTENT(IN)  :: HFILETYPE ! type of input file
+ CHARACTER(LEN=NFILENAMELGTMAX),  INTENT(IN)  :: HFILEPGD     ! name of file
+ CHARACTER(LEN=6),                INTENT(IN)  :: HFILEPGDTYPE ! type of input file
 INTEGER,            INTENT(IN)  :: KLUOUT    ! logical unit of output listing
 INTEGER,            INTENT(IN)  :: KPATCH
 REAL,DIMENSION(:,:), POINTER    :: PFIELD    ! field to interpolate horizontally

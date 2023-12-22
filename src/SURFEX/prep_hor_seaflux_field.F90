@@ -46,6 +46,7 @@ USE MODD_SEAFLUX_n, ONLY : SEAFLUX_t
 USE MODD_TYPE_DATE_SURF, ONLY : DATE_TIME
 USE MODD_SURFEX_MPI, ONLY : NRANK, NPIO, NCOMM, NPROC
 USE MODD_PREP,           ONLY : CINGRID_TYPE, CINTERP_TYPE, XZS_LS, CMASK
+USE MODD_SURF_PAR, ONLY: NFILENAMELGTMAX
 !
 USE MODD_GRID_GRIB, ONLY : CINMODEL
 !
@@ -89,19 +90,19 @@ INTEGER, INTENT(IN) :: KLAT
 TYPE(SEAFLUX_t), INTENT(INOUT) :: S
 TYPE (PREP_CTL),    INTENT(INOUT) :: YDCTL
 !
- CHARACTER(LEN=6),   INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
- CHARACTER(LEN=7),   INTENT(IN)  :: HSURF     ! type of field
- CHARACTER(LEN=28),  INTENT(IN)  :: HATMFILE    ! name of the Atmospheric file
- CHARACTER(LEN=6),   INTENT(IN)  :: HATMFILETYPE! type of the Atmospheric file
- CHARACTER(LEN=28),  INTENT(IN)  :: HPGDFILE    ! name of the Atmospheric file
- CHARACTER(LEN=6),   INTENT(IN)  :: HPGDFILETYPE! type of the Atmospheric file
+ CHARACTER(LEN=6),               INTENT(IN) :: HPROGRAM     ! program calling surf. schemes
+ CHARACTER(LEN=7),               INTENT(IN) :: HSURF        ! type of field
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN) :: HATMFILE     ! name of the Atmospheric file
+ CHARACTER(LEN=6),               INTENT(IN) :: HATMFILETYPE ! type of the Atmospheric file
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN) :: HPGDFILE     ! name of the Atmospheric file
+ CHARACTER(LEN=6),               INTENT(IN) :: HPGDFILETYPE ! type of the Atmospheric file
 !
 !*      0.2    declarations of local variables
 !
- CHARACTER(LEN=6)              :: YFILETYPE ! type of input file
- CHARACTER(LEN=28)             :: YFILE     ! name of file
- CHARACTER(LEN=6)              :: YFILEPGDTYPE ! type of input file
- CHARACTER(LEN=28)             :: YFILEPGD     ! name of file
+ CHARACTER(LEN=6)               :: YFILETYPE ! type of input file
+ CHARACTER(LEN=NFILENAMELGTMAX) :: YFILE     ! name of file
+ CHARACTER(LEN=6)               :: YFILEPGDTYPE ! type of input file
+ CHARACTER(LEN=NFILENAMELGTMAX) :: YFILEPGD     ! name of file
 REAL, POINTER, DIMENSION(:,:) :: ZFIELDIN  ! field to interpolate horizontally
 REAL, POINTER, DIMENSION(:,:) :: ZFIELDOUT ! field interpolated   horizontally
 TYPE (DATE_TIME) :: TZTIME_GRIB    ! current date and time
@@ -109,7 +110,7 @@ INTEGER  :: ILUOUT    ! output listing logical unit
 INTEGER :: INFOMPI, INL
 !
 LOGICAL                       :: GUNIF     ! flag for prescribed uniform field
- CHARACTER (LEN=28)            :: CLFILE
+ CHARACTER (LEN=NFILENAMELGTMAX) :: CLFILE
 INTEGER                       :: IRESP
  CHARACTER (LEN=100)           :: CLCOMMENT
  CHARACTER (LEN=6)             :: CLSCHEME

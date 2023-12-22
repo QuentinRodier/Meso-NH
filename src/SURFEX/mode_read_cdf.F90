@@ -233,9 +233,11 @@ END SUBROUTINE GET2DCDF
 !
 USE NETCDF
 !
+USE MODD_SURF_PAR, ONLY: NFILENAMELGTMAX
+!
 IMPLICIT NONE
 !
- CHARACTER(LEN=28), INTENT(IN) :: HFILENAME   ! Name of the field file.
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN) :: HFILENAME   ! Name of the field file.
  CHARACTER(LEN=28), INTENT(IN) :: HNCVARNAME  ! Name of variable to read in netcdf file
 REAL, DIMENSION(:), INTENT(OUT) :: PLON,PLAT ! Longitudes/latitudes innetcdf file 
 REAL, DIMENSION(:), INTENT(OUT) :: PVAL      ! value to get
@@ -432,9 +434,11 @@ END SUBROUTINE READ_LATLONVAL_CDF
 !
 USE NETCDF
 !
+USE MODD_SURF_PAR, ONLY: NFILENAMELGTMAX
+!
 IMPLICIT NONE
 !
- CHARACTER(LEN=28), INTENT(IN) :: HFILENAME   ! Name of the field file.
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN) :: HFILENAME   ! Name of the field file.
  CHARACTER(LEN=28), INTENT(IN) :: HNCVARNAME  ! Name of variable to read in netcdf file
 INTEGER(kind=IDCDF_KIND), INTENT(OUT):: KDIM        ! value of dimension to get
 !

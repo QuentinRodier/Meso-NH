@@ -56,7 +56,7 @@ USE MODD_SURF_PAR, ONLY : LEN_HREC
 USE MODD_SSO_n, ONLY : SSO_t
 USE MODD_MEGAN_SURF_FIELDS_n, ONLY : MEGAN_SURF_FIELDS_t
 !
-USE MODD_SURF_PAR, ONLY : XUNDEF
+USE MODD_SURF_PAR, ONLY : NFILENAMELGTMAX, XUNDEF
 USE MODD_DATA_COVER_PAR, ONLY : JPCOVER
 USE MODD_ISBA_PAR,    ONLY : XOPTIMGRID
 USE MODD_PREP,           ONLY : CINGRID_TYPE, CINTERP_TYPE
@@ -99,12 +99,12 @@ TYPE(SURF_ATM_t), INTENT(INOUT) :: U
 TYPE(SSO_t), INTENT(INOUT) :: USS
 TYPE(GRID_CONF_PROJ_t),INTENT(INOUT) :: GCP
 !
- CHARACTER(LEN=6),     INTENT(IN)  :: HPROGRAM    ! program calling
- CHARACTER(LEN=28),    INTENT(IN)  :: HINIFILE    ! input atmospheric file name
- CHARACTER(LEN=6),     INTENT(IN)  :: HINIFILETYPE! input atmospheric file type
- CHARACTER(LEN=28),    INTENT(IN)  :: HFILE       ! output file name
- CHARACTER(LEN=6),     INTENT(IN)  :: HFILETYPE   ! output file type
-LOGICAL,              INTENT(IN)  :: OECOCLIMAP  ! flag to use ecoclimap
+ CHARACTER(LEN=6),               INTENT(IN)  :: HPROGRAM    ! program calling
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)  :: HINIFILE    ! input atmospheric file name
+ CHARACTER(LEN=6),               INTENT(IN)  :: HINIFILETYPE! input atmospheric file type
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)  :: HFILE       ! output file name
+ CHARACTER(LEN=6),               INTENT(IN)  :: HFILETYPE   ! output file type
+LOGICAL,                         INTENT(IN)  :: OECOCLIMAP  ! flag to use ecoclimap
 !
 !
 !*    0.2    Declaration of local variables

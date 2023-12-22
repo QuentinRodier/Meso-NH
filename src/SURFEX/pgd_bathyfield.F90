@@ -47,7 +47,7 @@ USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 USE MODD_SSO_n, ONLY : SSO_t
 !
-USE MODD_SURF_PAR,       ONLY : XUNDEF
+USE MODD_SURF_PAR,       ONLY : NFILENAMELGTMAX, XUNDEF
 USE MODD_PGD_GRID,       ONLY : NL
 USE MODD_PGDWORK,        ONLY : XALL, NSIZE_ALL, NSIZE, XSUMVAL
 !
@@ -79,8 +79,8 @@ TYPE(SSO_t), INTENT(INOUT) :: USS
 !                                          ! 'SEA' : on sea
 !                                          ! 'WAT' : on inland waters
 !                                          ! 'LAN' : on nature + on town
- CHARACTER(LEN=28), INTENT(IN) :: HFILE     ! data file name
- CHARACTER(LEN=6),  INTENT(IN) :: HFILETYPE ! data file type
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN) :: HFILE     ! data file name
+ CHARACTER(LEN=6),               INTENT(IN) :: HFILETYPE ! data file type
  CHARACTER(LEN=28), INTENT(IN) :: HNCVARNAME! variable name to read
 REAL,              INTENT(IN) :: PUNIF     ! prescribed uniform value for field
 REAL, DIMENSION(:),INTENT(OUT):: PFIELD    ! physiographic field

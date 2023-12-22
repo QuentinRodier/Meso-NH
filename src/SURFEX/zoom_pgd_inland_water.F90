@@ -55,6 +55,8 @@ USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 USE MODD_SSO_n, ONLY : SSO_t
 USE MODD_WATFLUX_n, ONLY : WATFLUX_t
 !
+USE MODD_SURF_PAR, ONLY: NFILENAMELGTMAX
+!
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
@@ -75,12 +77,12 @@ TYPE(SSO_t), INTENT(INOUT) :: USS
 TYPE(GRID_t), INTENT(INOUT) :: WG
 TYPE(WATFLUX_t), INTENT(INOUT) :: W
 !
-CHARACTER(LEN=6),     INTENT(IN)  :: HPROGRAM    ! program calling
-CHARACTER(LEN=28),    INTENT(IN)  :: HINIFILE    ! input atmospheric file name
-CHARACTER(LEN=6),     INTENT(IN)  :: HINIFILETYPE! input atmospheric file type
-CHARACTER(LEN=28),    INTENT(IN)  :: HFILE       ! output file name
-CHARACTER(LEN=6),     INTENT(IN)  :: HFILETYPE   ! output file type
-LOGICAL,              INTENT(IN)  :: OECOCLIMAP
+CHARACTER(LEN=6),               INTENT(IN)  :: HPROGRAM    ! program calling
+CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)  :: HINIFILE    ! input atmospheric file name
+CHARACTER(LEN=6),               INTENT(IN)  :: HINIFILETYPE! input atmospheric file type
+CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)  :: HFILE       ! output file name
+CHARACTER(LEN=6),               INTENT(IN)  :: HFILETYPE   ! output file type
+LOGICAL,                        INTENT(IN)  :: OECOCLIMAP
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !

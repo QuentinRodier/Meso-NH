@@ -49,7 +49,7 @@ USE MODD_SSO_n, ONLY : SSO_t
 !
 USE MODD_PGD_GRID,           ONLY : NL
 USE MODD_PGDWORK,            ONLY : CATYPE
-USE MODD_SURF_PAR,           ONLY : XUNDEF
+USE MODD_SURF_PAR,           ONLY : NFILENAMELGTMAX, XUNDEF
 !
 USE MODI_GET_LUOUT
 USE MODI_PGD_FIELD
@@ -88,8 +88,8 @@ INTEGER                             :: IDUMMY_NBR
  CHARACTER(LEN=3),  DIMENSION(1000)  :: YDUMMY_AREA
  CHARACTER(LEN=3),  DIMENSION(1000)  :: CDUMMY_ATYPE    ! avg type for dummy pgd fields
 !                                                      ! 'ARI' , 'INV'
- CHARACTER(LEN=28), DIMENSION(1000)  :: CDUMMY_FILE     ! data files
- CHARACTER(LEN=6),  DIMENSION(1000)  :: CDUMMY_FILETYPE ! type of these files
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(1000)  :: CDUMMY_FILE     ! data files
+ CHARACTER(LEN=6),               DIMENSION(1000)  :: CDUMMY_FILETYPE ! type of these files
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !-------------------------------------------------------------------------------

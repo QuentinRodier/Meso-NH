@@ -36,7 +36,7 @@
 !
 !
 USE MODD_CH_EMIS_FIELD_n, ONLY : CH_EMIS_FIELD_t
-USE MODD_SURF_PAR, ONLY : LEN_HREC
+USE MODD_SURF_PAR, ONLY : LEN_HREC, NFILENAMELGTMAX
 !
 USE MODI_GET_LUOUT
 USE MODI_BUILD_EMISSTAB_n
@@ -69,7 +69,7 @@ CHARACTER(LEN=3),  INTENT(IN)  :: HINIT    ! Flag to know if one initializes:
 !                                          ! 'PRE' : only variables to build 
 !                                          !         an initial file
 REAL, DIMENSION(:),INTENT(IN)  :: PRHOA    ! air density
-CHARACTER(LEN=28), INTENT(IN)  :: HCHEM_SURF_FILE ! ascii file for chemistry aggregation
+CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)  :: HCHEM_SURF_FILE ! ascii file for chemistry aggregation
 LOGICAL, INTENT(IN)  :: LCH_SURF_EMIS
 INTEGER, INTENT(IN)  :: KEQ
 !

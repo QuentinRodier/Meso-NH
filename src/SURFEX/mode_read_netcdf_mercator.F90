@@ -383,12 +383,14 @@ END SUBROUTINE GET3DCDF
        SUBROUTINE READ_DIM_CDF(HFILENAME,HNCVARNAME,KDIM)
 !     ####################
 !
+USE MODD_SURF_PAR, ONLY: NFILENAMELGTMAX
+!
 USE NETCDF
 !
 IMPLICIT NONE
 !
- CHARACTER(LEN=28), INTENT(IN) :: HFILENAME   ! Name of the field file.
- CHARACTER(LEN=28), INTENT(IN) :: HNCVARNAME  ! Name of variable to read in netcdf file
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN) :: HFILENAME   ! Name of the field file.
+ CHARACTER(LEN=28),              INTENT(IN) :: HNCVARNAME  ! Name of variable to read in netcdf file
 INTEGER(kind=IDCDF_KIND), INTENT(OUT):: KDIM        ! value of dimension to get
 !
 integer(kind=IDCDF_KIND) :: status
@@ -525,8 +527,8 @@ IMPLICIT NONE
 INCLUDE "mpif.h"
 #endif
 !
- CHARACTER(LEN=28), INTENT(IN) :: HFILENAME   ! Name of the field file.
- CHARACTER(LEN=28), INTENT(IN) :: HNCVARNAME  ! Name of variable to read in netcdf file
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN) :: HFILENAME   ! Name of the field file.
+ CHARACTER(LEN=28),              INTENT(IN) :: HNCVARNAME  ! Name of variable to read in netcdf file
 !
 integer(kind=IDCDF_KIND) :: status
 integer(kind=IDCDF_KIND) :: kcdf_id
@@ -764,12 +766,14 @@ END SUBROUTINE PREP_NETCDF_GRID
        SUBROUTINE READ_Z1D_CDF(HFILENAME,HNCVARNAME,PVAL)
 !     ####################
 !
+USE MODD_SURF_PAR, ONLY: NFILENAMELGTMAX
+!
 USE NETCDF
 !
 IMPLICIT NONE
 !
- CHARACTER(LEN=28), INTENT(IN) :: HFILENAME   ! Name of the field file.
- CHARACTER(LEN=28), INTENT(IN) :: HNCVARNAME  ! Name of variable to read in netcdf file
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN) :: HFILENAME   ! Name of the field file.
+ CHARACTER(LEN=28),              INTENT(IN) :: HNCVARNAME  ! Name of variable to read in netcdf file
 REAL, DIMENSION(:), INTENT(OUT) :: PVAL      ! value to get
 !
 integer(kind=IDCDF_KIND) :: status
@@ -882,12 +886,14 @@ END SUBROUTINE READ_Z1D_CDF
        SUBROUTINE READ_LATLONVAL_CDF(HFILENAME,HNCVARNAME,PLON,PLAT,PVAL)
 !     ####################
 !
+USE MODD_SURF_PAR, ONLY: NFILENAMELGTMAX
+!
 USE NETCDF
 !
 IMPLICIT NONE
 !
- CHARACTER(LEN=28), INTENT(IN) :: HFILENAME   ! Name of the field file.
- CHARACTER(LEN=28), INTENT(IN) :: HNCVARNAME  ! Name of variable to read in netcdf file
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN) :: HFILENAME   ! Name of the field file.
+ CHARACTER(LEN=28),              INTENT(IN) :: HNCVARNAME  ! Name of variable to read in netcdf file
 REAL, DIMENSION(:), INTENT(OUT) :: PLON,PLAT ! Longitudes/latitudes in netcdf file 
 REAL, DIMENSION(:), INTENT(OUT) :: PVAL      ! value to get
 !
@@ -1082,12 +1088,14 @@ END SUBROUTINE READ_LATLONVAL_CDF
        SUBROUTINE READ_LATLONDEPVAL_CDF(HFILENAME,HNCVARNAME,PLON,PLAT,PDEP,PVAL)
 !     ####################
 !
+USE MODD_SURF_PAR, ONLY: NFILENAMELGTMAX
+!
 USE NETCDF
 !
 IMPLICIT NONE
 !
- CHARACTER(LEN=28), INTENT(IN) :: HFILENAME   ! Name of the field file.
- CHARACTER(LEN=28), INTENT(IN) :: HNCVARNAME  ! Name of variable to read in netcdf file
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN) :: HFILENAME   ! Name of the field file.
+ CHARACTER(LEN=28),              INTENT(IN) :: HNCVARNAME  ! Name of variable to read in netcdf file
 REAL, DIMENSION(:), INTENT(OUT) :: PLON,PLAT ! Longitudes/latitudes in netcdf file 
 REAL, DIMENSION(:), INTENT(OUT) :: PDEP      ! depth in netcdf file
 REAL, DIMENSION(:,:), INTENT(OUT) :: PVAL      ! value to get
@@ -1348,7 +1356,7 @@ END SUBROUTINE READ_LATLONDEPVAL_CDF
 !     ####################
 !
 USE MODD_GRID_LATLONREGUL, ONLY : NINDEPTH,NILENGTH
-USE MODD_SURF_PAR,         ONLY : XUNDEF
+USE MODD_SURF_PAR,         ONLY : NFILENAMELGTMAX, XUNDEF
 USE MODD_CSTS,             ONLY : XTT
 USE MODD_PREP,       ONLY : CINTERP_TYPE
 !
@@ -1356,8 +1364,8 @@ USE NETCDF
 !
 IMPLICIT NONE
 !
- CHARACTER(LEN=28), INTENT(IN) :: HFILENAME   ! Name of the field file.
- CHARACTER(LEN=28), INTENT(IN) :: HNCVARNAME  ! Name of variable to read in netcdf file
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN) :: HFILENAME   ! Name of the field file.
+ CHARACTER(LEN=28),              INTENT(IN) :: HNCVARNAME  ! Name of variable to read in netcdf file
 REAL, POINTER,DIMENSION(:) :: PFIELD      ! value to get
 !
 REAL,DIMENSION(:), ALLOCATABLE :: ZLATI
@@ -1428,13 +1436,14 @@ END SUBROUTINE READ_NETCDF_SST
 !
 USE MODD_GRID_LATLONREGUL, ONLY : NINLAT,NINLON,NINDEPTH,NILENGTH
 USE MODD_PREP,       ONLY : CINTERP_TYPE
+USE MODD_SURF_PAR, ONLY: NFILENAMELGTMAX
 !
 USE NETCDF
 !
 IMPLICIT NONE
 !
- CHARACTER(LEN=28), INTENT(IN) :: HFILENAME   ! Name of the field file.
- CHARACTER(LEN=28), INTENT(IN) :: HNCVARNAME  ! Name of variable to read in netcdf file
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN) :: HFILENAME   ! Name of the field file.
+ CHARACTER(LEN=28),              INTENT(IN) :: HNCVARNAME  ! Name of variable to read in netcdf file
 REAL, POINTER, DIMENSION(:)   :: PFIELD      ! value to get
 !
 REAL,DIMENSION(:), ALLOCATABLE :: ZLATI
@@ -1484,11 +1493,12 @@ END SUBROUTINE READ_NETCDF_ZS_SEA
 !
 USE MODD_GRID_LATLONREGUL, ONLY : NINLAT,NINLON,NINDEPTH,NILENGTH
 USE MODD_PREP,       ONLY : CINTERP_TYPE
+USE MODD_SURF_PAR, ONLY: NFILENAMELGTMAX
 !
 IMPLICIT NONE
 !
- CHARACTER(LEN=28), INTENT(IN) :: HFILENAME   ! Name of the field file.
- CHARACTER(LEN=28), INTENT(IN) :: HNCVARNAME  ! Name of variable to read in netcdf file
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN) :: HFILENAME   ! Name of the field file.
+ CHARACTER(LEN=28),              INTENT(IN) :: HNCVARNAME  ! Name of variable to read in netcdf file
 REAL, POINTER, DIMENSION(:)   :: PFIELD      ! value to get
 !
 REAL,DIMENSION(:), ALLOCATABLE :: ZLATI

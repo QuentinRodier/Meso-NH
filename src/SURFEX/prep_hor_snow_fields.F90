@@ -53,7 +53,7 @@ USE MODD_SURF_ATM_n,       ONLY : SURF_ATM_t
 USE MODD_GRID_CONF_PROJ_n, ONLY : GRID_CONF_PROJ_t
 USE MODD_TYPE_SNOW
 USE MODD_TYPE_DATE_SURF,   ONLY : DATE_TIME
-USE MODD_SURF_PAR,         ONLY : XUNDEF
+USE MODD_SURF_PAR,         ONLY : NFILENAMELGTMAX, XUNDEF
 USE MODD_SNOW_PAR,         ONLY : XAGLAMIN, XAGLAMAX
 !
 USE MODE_PREP_CTL,         ONLY : PREP_CTL, PREP_CTL_INT_PART2, PREP_CTL_INT_PART4
@@ -86,10 +86,10 @@ TYPE (PREP_CTL),       INTENT(INOUT) :: YDCTL
 !
  CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
  CHARACTER(LEN=7),  INTENT(IN)  :: HSURF     ! type of field
- CHARACTER(LEN=28), INTENT(IN)  :: HFILE     ! file name
- CHARACTER(LEN=6),  INTENT(IN)  :: HFILETYPE ! file type
- CHARACTER(LEN=28), INTENT(IN)  :: HFILEPGD     ! file name
- CHARACTER(LEN=6),  INTENT(IN)  :: HFILEPGDTYPE ! file type
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)  :: HFILE     ! file name
+ CHARACTER(LEN=6),               INTENT(IN)  :: HFILETYPE ! file type
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)  :: HFILEPGD     ! file name
+ CHARACTER(LEN=6),               INTENT(IN)  :: HFILEPGDTYPE ! file type
 INTEGER,            INTENT(IN)  :: KLUOUT    ! logical unit of output listing
 LOGICAL,            INTENT(IN)  :: OUNIF     ! flag for prescribed uniform field
 INTEGER,            INTENT(IN)  :: KPATCH    ! patch number for output scheme

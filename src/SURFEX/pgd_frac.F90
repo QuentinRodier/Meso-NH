@@ -48,7 +48,7 @@ USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 USE MODD_SSO_n, ONLY : SSO_t
 !
-USE MODD_SURF_PAR,       ONLY : XUNDEF
+USE MODD_SURF_PAR,       ONLY : NFILENAMELGTMAX, XUNDEF
 USE MODD_PGD_GRID,       ONLY : NL, CGRID
 USE MODD_DATA_COVER_PAR, ONLY : JPCOVER, NCOVER, NTYPE
 !
@@ -104,10 +104,10 @@ REAL     :: XUNIF_TOWN  ! value of town   fraction
 !
 ! name of files containing data
 !
- CHARACTER(LEN=28)     :: CFNAM_SEA    ! name of sea    file
- CHARACTER(LEN=28)     :: CFNAM_WATER  ! name of water  file
- CHARACTER(LEN=28)     :: CFNAM_NATURE ! name of nature file
- CHARACTER(LEN=28)     :: CFNAM_TOWN   ! name of town   file
+ CHARACTER(LEN=NFILENAMELGTMAX) :: CFNAM_SEA    ! name of sea    file
+ CHARACTER(LEN=NFILENAMELGTMAX) :: CFNAM_WATER  ! name of water  file
+ CHARACTER(LEN=NFILENAMELGTMAX) :: CFNAM_NATURE ! name of nature file
+ CHARACTER(LEN=NFILENAMELGTMAX) :: CFNAM_TOWN   ! name of town   file
 !
 ! type of files containing data
 !
@@ -140,10 +140,10 @@ XUNIF_NATURE   = XUNDEF
 XUNIF_TOWN     = XUNDEF
 LECOCLIMAP     = .TRUE.
 LECOSG         = .FALSE.
-CFNAM_SEA   (:)= '                            '
-CFNAM_WATER (:)= '                            '
-CFNAM_NATURE(:)= '                            '
-CFNAM_TOWN  (:)= '                            '
+CFNAM_SEA   (:)= ''
+CFNAM_WATER (:)= ''
+CFNAM_NATURE(:)= ''
+CFNAM_TOWN  (:)= ''
 CFTYP_SEA   (:)= '      '
 CFTYP_WATER (:)= '      '
 CFTYP_NATURE(:)= '      '

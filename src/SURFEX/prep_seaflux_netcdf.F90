@@ -37,6 +37,7 @@ USE MODE_READ_NETCDF_MERCATOR
 USE MODD_SURFEX_MPI, ONLY : NRANK, NPIO, NCOMM, NPROC
 USE MODD_PREP,       ONLY : CINGRID_TYPE, CINTERP_TYPE
 USE MODD_GRID_LATLONREGUL,  ONLY : NILENGTH,NINDEPTH
+USE MODD_SURF_PAR, ONLY: NFILENAMELGTMAX
 !
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -52,7 +53,7 @@ INCLUDE "mpif.h"
 !
  CHARACTER(LEN=6),   INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
  CHARACTER(LEN=7),   INTENT(IN)  :: HSURF     ! type of field
- CHARACTER(LEN=28),  INTENT(IN)  :: HFILE     ! name of file
+ CHARACTER(LEN=NFILENAMELGTMAX),  INTENT(IN)  :: HFILE     ! name of file
 INTEGER,            INTENT(IN)  :: KLUOUT    ! logical unit of output listing
 REAL,DIMENSION(:,:), POINTER    :: PFIELD    ! field to interpolate horizontally
 !

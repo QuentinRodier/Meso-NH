@@ -68,6 +68,7 @@ USE MODD_PREP_SNOW,        ONLY : XGRID_SNOW, NIMPUR
 USE MODD_SURF_PAR,         ONLY : XUNDEF
 USE MODD_DATA_COVER_PAR,   ONLY : NVEGTYPE
 USE MODD_PREP,             ONLY : LINTERP,CINTERP_TYPE,CINGRID_TYPE, CMASK
+USE MODD_SURF_PAR,         ONLY : NFILENAMELGTMAX
 !
 USE MODD_AGRI,             ONLY : NVEG_IRR
 !
@@ -110,10 +111,10 @@ TYPE(GRID_CONF_PROJ_t), INTENT(INOUT) :: GCP
 TYPE (PREP_CTL),        INTENT(INOUT) :: YDCTL
 !
  CHARACTER(LEN=6),   INTENT(IN)  :: HPROGRAM     ! program calling surf. schemes
- CHARACTER(LEN=28),  INTENT(IN)  :: HFILE        ! file name
- CHARACTER(LEN=6),   INTENT(IN)  :: HFILETYPE    ! file type
- CHARACTER(LEN=28),  INTENT(IN)  :: HFILEPGD     ! file name
- CHARACTER(LEN=6),   INTENT(IN)  :: HFILEPGDTYPE ! file type
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)  :: HFILE        ! file name
+ CHARACTER(LEN=6),               INTENT(IN)  :: HFILETYPE    ! file type
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)  :: HFILEPGD     ! file name
+ CHARACTER(LEN=6),               INTENT(IN)  :: HFILEPGDTYPE ! file type
 INTEGER,            INTENT(IN)   :: KLUOUT       ! logical unit of output listing
 LOGICAL,            INTENT(IN)   :: OUNIF        ! flag for prescribed uniform field
  CHARACTER(LEN=10)               :: HSNSURF      ! type of field

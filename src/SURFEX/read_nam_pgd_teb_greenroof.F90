@@ -42,7 +42,7 @@
 !*    0.     DECLARATION
 !            -----------
 !
-USE MODD_SURF_PAR,             ONLY : XUNDEF
+USE MODD_SURF_PAR,             ONLY : NFILENAMELGTMAX, XUNDEF
 !
 USE MODI_GET_LUOUT
 USE MODI_OPEN_NAMELIST
@@ -68,10 +68,10 @@ REAL,DIMENSION(:),               INTENT(OUT)   :: PUNIF_OM_GR
 REAL,DIMENSION(:),               INTENT(OUT)   :: PUNIF_CLAY_GR
 REAL,DIMENSION(:),               INTENT(OUT)   :: PUNIF_SAND_GR
 REAL,DIMENSION(:),               INTENT(OUT)   :: PUNIF_LAI_GR
- CHARACTER(LEN=28),DIMENSION(:),  INTENT(OUT)   :: HFNAM_OM_GR
- CHARACTER(LEN=28),DIMENSION(:),  INTENT(OUT)   :: HFNAM_CLAY_GR
- CHARACTER(LEN=28),DIMENSION(:),  INTENT(OUT)   :: HFNAM_SAND_GR
- CHARACTER(LEN=28),DIMENSION(:),  INTENT(OUT)   :: HFNAM_LAI_GR
+ CHARACTER(LEN=NFILENAMELGTMAX),DIMENSION(:),  INTENT(OUT)   :: HFNAM_OM_GR
+ CHARACTER(LEN=NFILENAMELGTMAX),DIMENSION(:),  INTENT(OUT)   :: HFNAM_CLAY_GR
+ CHARACTER(LEN=NFILENAMELGTMAX),DIMENSION(:),  INTENT(OUT)   :: HFNAM_SAND_GR
+ CHARACTER(LEN=NFILENAMELGTMAX),DIMENSION(:),  INTENT(OUT)   :: HFNAM_LAI_GR
  CHARACTER(LEN=6),DIMENSION(:),   INTENT(OUT)   :: HFTYP_OM_GR
  CHARACTER(LEN=6),DIMENSION(:),   INTENT(OUT)   :: HFTYP_CLAY_GR
  CHARACTER(LEN=6),DIMENSION(:),   INTENT(OUT)   :: HFTYP_SAND_GR
@@ -106,10 +106,10 @@ REAL,DIMENSION(NTIME_GR_MAX)               :: XUNIF_LAI_GR     ! LAI of green ro
 !
 ! name of files containing data
 !
- CHARACTER(LEN=28),DIMENSION(NLAYER_GR_MAX) :: CFNAM_OM_GR      ! fraction of organic matter (OM) in green roof layer
- CHARACTER(LEN=28),DIMENSION(NLAYER_GR_MAX) :: CFNAM_CLAY_GR    ! fraction of clay for the non-OM part of the green roof layer
- CHARACTER(LEN=28),DIMENSION(NLAYER_GR_MAX) :: CFNAM_SAND_GR    ! fraction of sand for the non-OM part of the green roof layer
- CHARACTER(LEN=28),DIMENSION(NTIME_GR_MAX)  :: CFNAM_LAI_GR     ! LAI  of green roof
+ CHARACTER(LEN=NFILENAMELGTMAX),DIMENSION(NLAYER_GR_MAX) :: CFNAM_OM_GR   ! fraction of organic matter (OM) in green roof layer
+ CHARACTER(LEN=NFILENAMELGTMAX),DIMENSION(NLAYER_GR_MAX) :: CFNAM_CLAY_GR ! fraction of clay for the non-OM part of the green roof layer
+ CHARACTER(LEN=NFILENAMELGTMAX),DIMENSION(NLAYER_GR_MAX) :: CFNAM_SAND_GR ! fraction of sand for the non-OM part of the green roof layer
+ CHARACTER(LEN=NFILENAMELGTMAX),DIMENSION(NTIME_GR_MAX)  :: CFNAM_LAI_GR  ! LAI  of green roof
 !
 ! type of files containing data
 !
@@ -142,10 +142,10 @@ XUNIF_CLAY_GR    = XUNDEF
 XUNIF_SAND_GR    = XUNDEF
 XUNIF_LAI_GR     = XUNDEF
 !
-CFNAM_OM_GR      = '                            '
-CFNAM_CLAY_GR    = '                            '
-CFNAM_SAND_GR    = '                            '
-CFNAM_LAI_GR     = '                            '
+CFNAM_OM_GR      = ''
+CFNAM_CLAY_GR    = ''
+CFNAM_SAND_GR    = ''
+CFNAM_LAI_GR     = ''
 !
 CFTYP_OM_GR      = '      '
 CFTYP_CLAY_GR    = '      '

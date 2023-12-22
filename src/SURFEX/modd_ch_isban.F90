@@ -35,6 +35,8 @@ USE MODD_SV_n, ONLY : SV_t, SV_INIT
 USE MODD_SLT_n, ONLY : SLT_t, SLT_INIT
 USE MODD_DST_n, ONLY : DST_t, DST_INIT
 !
+USE MODD_SURF_PAR, ONLY: NFILENAMELGTMAX
+!
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
@@ -42,7 +44,7 @@ IMPLICIT NONE
 
 TYPE CH_ISBA_t
 !
-  CHARACTER(LEN=28)  :: CCHEM_SURF_FILE  ! name of general (chemical) purpose ASCII input file
+  CHARACTER(LEN=NFILENAMELGTMAX)  :: CCHEM_SURF_FILE  ! name of general (chemical) purpose ASCII input file
   CHARACTER(LEN=6)                :: CCH_DRY_DEP            !  deposition scheme
   CHARACTER(LEN=6)                :: CPARAMBVOC             !  BVOC flux scheme 
   REAL, DIMENSION(:,:), POINTER :: XDEP                   ! final dry deposition  

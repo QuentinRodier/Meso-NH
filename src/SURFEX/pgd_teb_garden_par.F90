@@ -48,7 +48,7 @@ USE MODD_SSO_n, ONLY : SSO_t
 USE MODD_TEB_OPTION_n, ONLY : TEB_OPTIONS_t
 USE MODD_ISBA_OPTIONS_n, ONLY : ISBA_OPTIONS_t
 USE MODD_DATA_ISBA_n, ONLY : DATA_ISBA_t
-USE MODD_SURF_PAR, ONLY : XUNDEF
+USE MODD_SURF_PAR, ONLY : NFILENAMELGTMAX, XUNDEF
 USE MODD_PGDWORK, ONLY : CATYPE
 !
 USE MODI_TEST_NAM_VAR_SURF
@@ -118,12 +118,12 @@ REAL                                   :: XUNIF_RE25           ! Ecosystem Respi
 !
 ! name of files containing data
 !
- CHARACTER(LEN=28),DIMENSION(NTIME_MAX) :: CFNAM_LAI_HVEG   ! LAI       of high vegetation
- CHARACTER(LEN=28),DIMENSION(NTIME_MAX) :: CFNAM_LAI_LVEG   ! LAI       of low  vegetation
- CHARACTER(LEN=28)                      :: CFNAM_H_HVEG     ! height of trees
- CHARACTER(LEN=28)                      :: CFNAM_HTRUNK_HVEG   ! height of TRUNK of trees
- CHARACTER(LEN=28)                      :: CFNAM_WCROWN_HVEG   ! width of crown of trees
- CHARACTER(LEN=28)                      :: CFNAM_RE25          ! Ecosystem Respiration parameter (kg.m-2.s-1)
+ CHARACTER(LEN=NFILENAMELGTMAX),DIMENSION(NTIME_MAX) :: CFNAM_LAI_HVEG   ! LAI       of high vegetation
+ CHARACTER(LEN=NFILENAMELGTMAX),DIMENSION(NTIME_MAX) :: CFNAM_LAI_LVEG   ! LAI       of low  vegetation
+ CHARACTER(LEN=NFILENAMELGTMAX)                      :: CFNAM_H_HVEG     ! height of trees
+ CHARACTER(LEN=NFILENAMELGTMAX)                      :: CFNAM_HTRUNK_HVEG   ! height of TRUNK of trees
+ CHARACTER(LEN=NFILENAMELGTMAX)                      :: CFNAM_WCROWN_HVEG   ! width of crown of trees
+ CHARACTER(LEN=NFILENAMELGTMAX)                      :: CFNAM_RE25          ! Ecosystem Respiration parameter (kg.m-2.s-1)
  
 !
 ! type of files containing data
@@ -181,12 +181,12 @@ XUNIF_HTRUNK_HVEG  = XUNDEF
 XUNIF_WCROWN_HVEG  = XUNDEF
 XUNIF_RE25         = XUNDEF
 !
-CFNAM_LAI_HVEG     = '                            '
-CFNAM_LAI_LVEG     = '                            '
-CFNAM_H_HVEG       = '                            '
-CFNAM_HTRUNK_HVEG  = '                            '
-CFNAM_WCROWN_HVEG  = '                            '
-CFNAM_RE25         = '                            '
+CFNAM_LAI_HVEG     = ''
+CFNAM_LAI_LVEG     = ''
+CFNAM_H_HVEG       = ''
+CFNAM_HTRUNK_HVEG  = ''
+CFNAM_WCROWN_HVEG  = ''
+CFNAM_RE25         = ''
 !
 CFTYP_LAI_HVEG     = '      '
 CFTYP_LAI_LVEG     = '      '

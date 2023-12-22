@@ -60,6 +60,8 @@ USE MODI_ABOR1_SFX
 !
 USE MODD_XIOS , ONLY : LXIOS ! Should we call XIOS_INITIALIZE instead of OASIS_GET_LOCAL_COMM
 !
+USE MODD_SURF_PAR, ONLY: NFILENAMELGTMAX
+!
 #ifdef WXIOS
 USE XIOS, ONLY : XIOS_INITIALIZE
 #endif
@@ -80,7 +82,7 @@ INCLUDE 'mpif.h'
 !*       0.1   Declarations of arguments
 !              -------------------------
 !
- CHARACTER(LEN=28), INTENT(IN )           :: HNAMELIST
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN ) :: HNAMELIST
 INTEGER,           INTENT(OUT)           :: KLOCAL_COMM ! value of local communicator
  CHARACTER(LEN=3),  INTENT(IN ), OPTIONAL :: HINIT       ! choice of fields to initialize
 !

@@ -56,7 +56,7 @@ USE MODD_SSO_n, ONLY : SSO_t
 !
 USE MODD_PGDWORK,        ONLY : XALL, NSIZE_ALL, CATYPE, NSIZE, XSUMVAL,   &
                                 NVALNBR, NVALCOUNT, XVALLIST, JPVALMAX
-USE MODD_SURF_PAR,       ONLY : XUNDEF
+USE MODD_SURF_PAR,       ONLY : NFILENAMELGTMAX, XUNDEF
 USE MODD_PGD_GRID,       ONLY : NL
 !
 USE MODD_DATA_COVER_PAR, ONLY : NTYPE, LVEG_PRES, NVEGTYPE_OLD
@@ -96,7 +96,7 @@ TYPE(SSO_t), INTENT(INOUT) :: USS
 !                                           ! 'TWN' : on town
 !                                           ! 'SEA' : on sea
 !                                           ! 'WAT' : on inland waters
- CHARACTER(LEN=28), INTENT(IN) :: HFILE     ! data file name
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN) :: HFILE     ! data file name
  CHARACTER(LEN=6),  INTENT(INOUT) :: HFILETYPE ! data file type
 REAL,              INTENT(IN) :: PUNIF     ! prescribed uniform value for field
 REAL, DIMENSION(:,:),INTENT(OUT):: PFIELD    ! physiographic field

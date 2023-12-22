@@ -57,7 +57,7 @@ USE MODD_PREP_TEB_GREENROOF, ONLY : XGRID_SOIL, NGRID_LEVEL,                    
                                     XAGESNOW_GR, XASNOW_GR, LSNOW_IDEAL_GR
 USE MODD_ISBA_PAR,           ONLY : XWGMIN
 USE MODD_DATA_COVER_PAR,     ONLY : NVEGTYPE
-USE MODD_SURF_PAR,           ONLY : XUNDEF
+USE MODD_SURF_PAR,           ONLY : NFILENAMELGTMAX, XUNDEF
 USE MODD_AGRI,               ONLY : NVEG_IRR
 USE MODD_PREP_SNOW,          ONLY : NIMPUR
 !
@@ -111,23 +111,23 @@ TYPE (PREP_CTL),       INTENT(INOUT) :: YDCTL
 INTEGER,DIMENSION(:),INTENT(IN)  :: NPAR_VEG_IRR_USE ! vegtype with irrigation
  CHARACTER(LEN=6),   INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
  CHARACTER(LEN=7),   INTENT(IN)  :: HSURF     ! type of field
- CHARACTER(LEN=28),  INTENT(IN)  :: HATMFILE    ! name of the Atmospheric file
- CHARACTER(LEN=6),   INTENT(IN)  :: HATMFILETYPE! type of the Atmospheric file
- CHARACTER(LEN=28),  INTENT(IN)  :: HPGDFILE    ! name of the Atmospheric file
- CHARACTER(LEN=6),   INTENT(IN)  :: HPGDFILETYPE! type of the Atmospheric file
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)  :: HATMFILE    ! name of the Atmospheric file
+ CHARACTER(LEN=6),               INTENT(IN)  :: HATMFILETYPE! type of the Atmospheric file
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)  :: HPGDFILE    ! name of the Atmospheric file
+ CHARACTER(LEN=6),               INTENT(IN)  :: HPGDFILETYPE! type of the Atmospheric file
 !
 INTEGER,            INTENT(IN)  :: KPATCH
 !
 !*      0.2    declarations of local variables
 !
- CHARACTER(LEN=6)              :: YFILETYPE      ! type of input file
- CHARACTER(LEN=28)             :: YFILE          ! name of file
- CHARACTER(LEN=6)              :: YFILEPGDTYPE ! type of input file
- CHARACTER(LEN=28)             :: YFILEPGD     ! name of file
- CHARACTER(LEN=6)              :: YFILETYPE_SNOW ! type of input file
- CHARACTER(LEN=28)             :: YFILE_SNOW     ! name of file
- CHARACTER(LEN=6)              :: YFILEPGDTYPE_SNOW ! type of input file
- CHARACTER(LEN=28)             :: YFILEPGD_SNOW     ! name of file  
+ CHARACTER(LEN=6)               :: YFILETYPE      ! type of input file
+ CHARACTER(LEN=NFILENAMELGTMAX) :: YFILE          ! name of file
+ CHARACTER(LEN=6)               :: YFILEPGDTYPE ! type of input file
+ CHARACTER(LEN=NFILENAMELGTMAX) :: YFILEPGD     ! name of file
+ CHARACTER(LEN=6)               :: YFILETYPE_SNOW ! type of input file
+ CHARACTER(LEN=NFILENAMELGTMAX) :: YFILE_SNOW     ! name of file
+ CHARACTER(LEN=6)               :: YFILEPGDTYPE_SNOW ! type of input file
+ CHARACTER(LEN=NFILENAMELGTMAX) :: YFILEPGD_SNOW     ! name of file
 REAL, POINTER,     DIMENSION(:,:,:) :: ZFIELDIN=>NULL()       ! field to interpolate horizontally
 !
 TYPE(NSURF_SNOW) :: TNPSNOW

@@ -14,6 +14,7 @@ INTERFACE PGD_FIELD
 USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
 USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
+USE MODD_SURF_PAR, ONLY: NFILENAMELGTMAX
 USE MODD_SSO_n, ONLY : SSO_t
 !
 IMPLICIT NONE
@@ -35,7 +36,7 @@ TYPE(SSO_t), INTENT(INOUT) :: USS
 !                                          ! 'TWN' : on town
 !                                          ! 'SEA' : on sea
 !                                          ! 'WAT' : on inland waters
- CHARACTER(LEN=28), INTENT(IN) :: HFILE     ! data file name
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN) :: HFILE     ! data file name
  CHARACTER(LEN=6),  INTENT(INOUT) :: HFILETYPE ! data file type
 REAL,              INTENT(IN) :: PUNIF     ! prescribed uniform value for field
 REAL, DIMENSION(:),INTENT(OUT):: PFIELD    ! physiographic field
@@ -54,6 +55,7 @@ END SUBROUTINE PGD_FIELD_1D
 USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
 USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
+USE MODD_SURF_PAR, ONLY: NFILENAMELGTMAX
 USE MODD_SSO_n, ONLY : SSO_t
 !
 IMPLICIT NONE
@@ -75,7 +77,7 @@ TYPE(SSO_t), INTENT(INOUT) :: USS
 !                                          ! 'TWN' : on town
 !                                          ! 'SEA' : on sea
 !                                          ! 'WAT' : on inland waters
- CHARACTER(LEN=28), INTENT(IN) :: HFILE     ! data file name
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN) :: HFILE     ! data file name
  CHARACTER(LEN=6),  INTENT(INOUT) :: HFILETYPE ! data file type
 REAL,              INTENT(IN) :: PUNIF     ! prescribed uniform value for field
 REAL, DIMENSION(:,:),INTENT(OUT):: PFIELD    ! physiographic field
@@ -99,6 +101,7 @@ END MODULE MODI_PGD_FIELD
 USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
 USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
+USE MODD_SURF_PAR, ONLY: NFILENAMELGTMAX
 USE MODD_SSO_n, ONLY : SSO_t
 !
 USE MODI_PGD_FIELDIN
@@ -122,7 +125,7 @@ TYPE(SSO_t), INTENT(INOUT) :: USS
 !                                          ! 'TWN' : on town
 !                                          ! 'SEA' : on sea
 !                                          ! 'WAT' : on inland waters
- CHARACTER(LEN=28), INTENT(IN) :: HFILE     ! data file name
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN) :: HFILE     ! data file name
  CHARACTER(LEN=6),  INTENT(INOUT) :: HFILETYPE ! data file type
 REAL,              INTENT(IN) :: PUNIF     ! prescribed uniform value for field
 REAL, DIMENSION(:),INTENT(OUT):: PFIELD    ! physiographic field
@@ -160,6 +163,7 @@ END SUBROUTINE PGD_FIELD_1D
 USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
 USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
+USE MODD_SURF_PAR, ONLY: NFILENAMELGTMAX
 USE MODD_SSO_n, ONLY : SSO_t
 !
 USE MODI_PGD_FIELDIN
@@ -183,7 +187,7 @@ TYPE(SSO_t), INTENT(INOUT) :: USS
 !                                          ! 'TWN' : on town
 !                                          ! 'SEA' : on sea
 !                                          ! 'WAT' : on inland waters
- CHARACTER(LEN=28), INTENT(IN) :: HFILE     ! data file name
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN) :: HFILE     ! data file name
  CHARACTER(LEN=6),  INTENT(INOUT) :: HFILETYPE ! data file type
 REAL,              INTENT(IN) :: PUNIF     ! prescribed uniform value for field
 REAL, DIMENSION(:,:),INTENT(OUT):: PFIELD    ! physiographic field

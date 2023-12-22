@@ -57,6 +57,8 @@ USE MODD_GRID_CONF_PROJ_n, ONLY : GRID_CONF_PROJ_t
 USE MODD_SFX_GRID_n, ONLY : GRID_t
 USE MODD_TEB_OPTION_n, ONLY : TEB_OPTIONS_t
 !
+USE MODD_SURF_PAR, ONLY: NFILENAMELGTMAX
+!
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
@@ -81,11 +83,11 @@ TYPE(GRID_t), INTENT(INOUT) :: TG
 TYPE(TEB_OPTIONS_t), INTENT(INOUT) :: TOP
 TYPE(DATA_TEB_HYDRO_t), INTENT(INOUT) :: DTH
 !
- CHARACTER(LEN=6),     INTENT(IN)  :: HPROGRAM    ! program calling
- CHARACTER(LEN=28),    INTENT(IN)  :: HINIFILE    ! input atmospheric file name
- CHARACTER(LEN=6),     INTENT(IN)  :: HINIFILETYPE! input atmospheric file type
- CHARACTER(LEN=28),    INTENT(IN)  :: HFILE       ! output file name
- CHARACTER(LEN=6),     INTENT(IN)  :: HFILETYPE   ! output file type
+ CHARACTER(LEN=6),               INTENT(IN)  :: HPROGRAM    ! program calling
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)  :: HINIFILE    ! input atmospheric file name
+ CHARACTER(LEN=6),               INTENT(IN)  :: HINIFILETYPE! input atmospheric file type
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)  :: HFILE       ! output file name
+ CHARACTER(LEN=6),               INTENT(IN)  :: HFILETYPE   ! output file type
 LOGICAL,              INTENT(IN)  :: OECOCLIMAP  ! flag to use ecoclimap
 LOGICAL,              INTENT(IN)  :: OGARDEN     ! flag to use garden
 REAL(KIND=JPRB) :: ZHOOK_HANDLE

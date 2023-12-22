@@ -31,15 +31,17 @@ MODULE MODD_PREP_FLAKE
 !*       0.   DECLARATIONS
 !             ------------
 !
+USE MODD_SURF_PAR, ONLY: NFILENAMELGTMAX
+!
 IMPLICIT NONE
 !
 SAVE
 !--------------------------------------------------------------------------
 !
- CHARACTER(LEN=28) :: CFILE_FLAKE   ! input file name
- CHARACTER(LEN=6)  :: CTYPE         ! input file type
- CHARACTER(LEN=28) :: CFILEPGD_FLAKE   ! input file name
- CHARACTER(LEN=6)  :: CTYPEPGD         ! input file type
+ CHARACTER(LEN=NFILENAMELGTMAX) :: CFILE_FLAKE   ! input file name
+ CHARACTER(LEN=6)               :: CTYPE         ! input file type
+ CHARACTER(LEN=NFILENAMELGTMAX) :: CFILEPGD_FLAKE   ! input file name
+ CHARACTER(LEN=6)               :: CTYPEPGD         ! input file type
 !
 REAL              :: XTS_UNIF   !  uniform prescribed 
                                 !  surface temperature for inland water

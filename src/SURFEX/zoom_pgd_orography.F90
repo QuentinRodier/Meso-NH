@@ -48,7 +48,7 @@ USE MODD_SSO_n, ONLY : SSO_t
 USE MODD_GRID_CONF_PROJ_n, ONLY : GRID_CONF_PROJ_t
 !
 USE MODD_PREP,             ONLY : CINGRID_TYPE, CINTERP_TYPE, LINTERP
-USE MODD_SURF_PAR,         ONLY : XUNDEF,LEN_HREC
+USE MODD_SURF_PAR,         ONLY : NFILENAMELGTMAX, XUNDEF, LEN_HREC
 !
 USE MODI_OPEN_AUX_IO_SURF
 USE MODI_READ_SURF
@@ -84,8 +84,8 @@ TYPE(GRID_CONF_PROJ_t),INTENT(INOUT) :: GCP
  CHARACTER(LEN=6),     INTENT(IN)  :: HPROGRAM    ! program calling
 REAL, DIMENSION(:),   INTENT(IN)  :: PSEA        ! sea fraction
 REAL, DIMENSION(:),   INTENT(IN)  :: PWATER      ! inland water fraction
- CHARACTER(LEN=28),    INTENT(IN)  :: HINIFILE    ! input atmospheric file name
- CHARACTER(LEN=6),     INTENT(IN)  :: HINIFILETYPE! input atmospheric file type
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)  :: HINIFILE    ! input atmospheric file name
+ CHARACTER(LEN=6),               INTENT(IN)  :: HINIFILETYPE! input atmospheric file type
 !
 !
 !*    0.2    Declaration of local variables

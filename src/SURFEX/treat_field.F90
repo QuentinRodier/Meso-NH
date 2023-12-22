@@ -58,7 +58,7 @@ USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
 USE MODD_SURF_ATM_n,      ONLY : SURF_ATM_t
 USE MODD_SSO_n,           ONLY : SSO_t
 !
-USE MODD_SURF_PAR,        ONLY : XUNDEF
+USE MODD_SURF_PAR,        ONLY : NFILENAMELGTMAX, XUNDEF
 USE MODD_PGDWORK,         ONLY : NSIZE, NSIZE_ALL, XALL, NSSO_ALL, XSSO_ALL, &
                                  XSUMVAL, XEXT_ALL, CATYPE, &
                                  XSSQO, LSSQO, NSSO, XMIN_WORK, XMAX_WORK, & 
@@ -112,7 +112,7 @@ TYPE(SSO_t),           INTENT(INOUT) :: USS
  CHARACTER(LEN=6),  INTENT(IN) :: HSCHEME       ! Scheme treated
  CHARACTER(LEN=6),  INTENT(IN) :: HFILETYPE     ! Type of the data file
  CHARACTER(LEN=6),  INTENT(IN) :: HSUBROUTINE   ! Name of the subroutine to call
- CHARACTER(LEN=28), INTENT(IN) :: HFILENAME     ! Name of the field file.
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN) :: HFILENAME     ! Name of the field file.
  CHARACTER(LEN=20), INTENT(IN) :: HFIELD        ! Name of the field.
 REAL, DIMENSION(:,:), INTENT(INOUT), OPTIONAL :: PPGDARRAY ! field on MESONH grid
 !

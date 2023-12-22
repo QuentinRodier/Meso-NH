@@ -56,6 +56,7 @@ USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 USE MODD_GRID_CONF_PROJ_n, ONLY : GRID_CONF_PROJ_t
 !
 USE MODD_PREP,             ONLY : CINGRID_TYPE, CINTERP_TYPE, LINTERP
+USE MODD_SURF_PAR,         ONLY : NFILENAMELGTMAX
 !
 USE MODD_TYPE_DATE_SURF, ONLY : DATE
 !
@@ -92,9 +93,9 @@ TYPE(SURF_ATM_GRID_t), INTENT(INOUT) :: UG
 TYPE(SURF_ATM_t), INTENT(INOUT) :: U
 TYPE(GRID_CONF_PROJ_t),INTENT(INOUT) :: GCP
 !
- CHARACTER(LEN=6),       INTENT(IN)  :: HPROGRAM     ! program calling
- CHARACTER(LEN=28),      INTENT(IN)  :: HINIFILE     ! input atmospheric file name
- CHARACTER(LEN=6),       INTENT(IN)  :: HINIFILETYPE ! input atmospheric file type
+ CHARACTER(LEN=6),               INTENT(IN)  :: HPROGRAM     ! program calling
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN) :: HINIFILE     ! input atmospheric file name
+ CHARACTER(LEN=6),               INTENT(IN)  :: HINIFILETYPE ! input atmospheric file type
 !
 !*    0.2    Declaration of local variables
 !            ------------------------------

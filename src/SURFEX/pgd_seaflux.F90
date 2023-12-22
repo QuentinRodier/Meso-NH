@@ -54,6 +54,7 @@ USE MODD_SSO_n, ONLY : SSO_t
 !
 USE MODD_PGD_GRID,       ONLY : NL
 USE MODD_DATA_COVER_PAR,  ONLY : JPCOVER
+USE MODD_SURF_PAR, ONLY: NFILENAMELGTMAX
 !
 USE MODI_READ_NAM_PGD_SEABATHY
 USE MODI_PGD_BATHYFIELD
@@ -100,9 +101,9 @@ INTEGER :: ILUOUT
 !*    0.3    Declaration of namelists
 !            ------------------------
 !
- CHARACTER(LEN=28)        :: YSEABATHY         ! file name for bathymetrie
- CHARACTER(LEN=6)         :: YSEABATHYFILETYPE ! bathymetry data file type
- CHARACTER(LEN=28)        :: YNCVARNAME        ! variable to read in netcdf
+ CHARACTER(LEN=NFILENAMELGTMAX) :: YSEABATHY         ! file name for bathymetrie
+ CHARACTER(LEN=6)               :: YSEABATHYFILETYPE ! bathymetry data file type
+ CHARACTER(LEN=28)              :: YNCVARNAME        ! variable to read in netcdf
                                               ! file
 REAL                     :: XUNIF_SEABATHY    ! uniform value of bathymetry
 REAL(KIND=JPRB) :: ZHOOK_HANDLE

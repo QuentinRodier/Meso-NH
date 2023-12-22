@@ -36,7 +36,7 @@ USE MODI_INTERP_GRID
 USE MODD_GRID_GRIB,  ONLY : CGRIB_FILE, NNI, CINMODEL
 USE MODD_PREP_TEB,   ONLY : XGRID_ROAD, XGRID_WALL, XGRID_ROOF, &
                             XTI_BLD, XTDEEP_TEB, XTI_BLD_DEF
-USE MODD_SURF_PAR,   ONLY : XUNDEF
+USE MODD_SURF_PAR,   ONLY : NFILENAMELGTMAX, XUNDEF
 !
 !
 !USE YOMHOOK ,ONLY : LHOOK, DR_HOOK
@@ -48,7 +48,7 @@ IMPLICIT NONE
 !
  CHARACTER(LEN=6),   INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
  CHARACTER(LEN=7),   INTENT(IN)  :: HSURF     ! type of field
- CHARACTER(LEN=28),  INTENT(IN)  :: HFILE     ! name of file
+ CHARACTER(LEN=NFILENAMELGTMAX),  INTENT(IN)  :: HFILE     ! name of file
 INTEGER,            INTENT(IN)  :: KLUOUT    ! logical unit of output listing
 REAL,DIMENSION(:,:), POINTER    :: PFIELD    ! field to interpolate horizontally
 !

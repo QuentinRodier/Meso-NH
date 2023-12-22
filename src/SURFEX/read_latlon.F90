@@ -45,6 +45,7 @@ USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 USE MODD_SSO_n, ONLY : SSO_t
 !
 USE MODD_PGD_GRID,   ONLY : XMESHLENGTH
+USE MODD_SURF_PAR,   ONLY : NFILENAMELGTMAX
 !
 USE MODI_GET_LUOUT
 USE MODI_OPEN_NAMELIST
@@ -73,7 +74,7 @@ TYPE(SSO_t), INTENT(INOUT) :: USS
  CHARACTER(LEN=6),  INTENT(IN) :: HPROGRAM      ! Type of program
  CHARACTER(LEN=6),  INTENT(IN) :: HSCHEME       ! Scheme treated
  CHARACTER(LEN=6),  INTENT(IN) :: HSUBROUTINE   ! Name of the subroutine to call
- CHARACTER(LEN=28), INTENT(IN) :: HFILENAME     ! Name of the field file.
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN) :: HFILENAME     ! Name of the field file.
 !
 !*    0.2    Declaration of local variables read in the data file head
 !            ---------------------------------------------------------

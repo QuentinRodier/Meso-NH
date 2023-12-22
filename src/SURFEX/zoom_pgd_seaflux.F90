@@ -52,6 +52,7 @@ USE MODD_GRID_CONF_PROJ_n, ONLY : GRID_CONF_PROJ_t
 !
 USE MODD_DATA_COVER_PAR,  ONLY : JPCOVER
 USE MODD_PREP,             ONLY : CINGRID_TYPE, CINTERP_TYPE, LINTERP
+USE MODD_SURF_PAR, ONLY: NFILENAMELGTMAX
 !
 !
 USE MODI_GET_LUOUT
@@ -87,11 +88,11 @@ TYPE(SURF_ATM_GRID_t), INTENT(INOUT) :: UG
 TYPE(SURF_ATM_t), INTENT(INOUT) :: U
 TYPE(GRID_CONF_PROJ_t),INTENT(INOUT) :: GCP
 !
- CHARACTER(LEN=6),     INTENT(IN)  :: HPROGRAM    ! Type of program
- CHARACTER(LEN=28),    INTENT(IN)  :: HINIFILE    ! input atmospheric file name
- CHARACTER(LEN=6),     INTENT(IN)  :: HINIFILETYPE! input atmospheric file type
- CHARACTER(LEN=28),    INTENT(IN)  :: HFILE       ! output file name
- CHARACTER(LEN=6),     INTENT(IN)  :: HFILETYPE   ! output file type
+ CHARACTER(LEN=6),               INTENT(IN)  :: HPROGRAM    ! Type of program
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)  :: HINIFILE    ! input atmospheric file name
+ CHARACTER(LEN=6),               INTENT(IN)  :: HINIFILETYPE! input atmospheric file type
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)  :: HFILE       ! output file name
+ CHARACTER(LEN=6),               INTENT(IN)  :: HFILETYPE   ! output file type
 !
 !
 !*    0.2    Declaration of local variables

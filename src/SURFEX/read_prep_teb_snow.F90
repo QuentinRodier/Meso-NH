@@ -41,7 +41,7 @@
 USE MODN_PREP_TEB_SNOW
 USE MODD_READ_NAMELIST, ONLY : LNAM_READ
 !
-USE MODD_SURF_PAR,       ONLY : XUNDEF
+USE MODD_SURF_PAR,       ONLY : NFILENAMELGTMAX, XUNDEF
 !
 USE MODE_POS_SURF
 USE MODI_TEST_NAM_VAR_SURF
@@ -73,10 +73,10 @@ IMPLICIT NONE
  CHARACTER(LEN=3),  INTENT(OUT) :: HSNOW_ROAD ! snow scheme for roads
 INTEGER,           INTENT(OUT) :: KSNOW_ROOF ! snow scheme layers for roofs
 INTEGER,           INTENT(OUT) :: KSNOW_ROAD ! snow scheme layers for roads
- CHARACTER(LEN=28), OPTIONAL, INTENT(OUT) :: HFILE        ! file name
- CHARACTER(LEN=6),  OPTIONAL, INTENT(OUT) :: HFILETYPE    ! file type
- CHARACTER(LEN=28), OPTIONAL, INTENT(OUT) :: HFILEPGD       ! file name
- CHARACTER(LEN=6),  OPTIONAL, INTENT(OUT) :: HFILEPGDTYPE    ! file type
+ CHARACTER(LEN=NFILENAMELGTMAX), OPTIONAL, INTENT(OUT) :: HFILE        ! file name
+ CHARACTER(LEN=6),               OPTIONAL, INTENT(OUT) :: HFILETYPE    ! file type
+ CHARACTER(LEN=NFILENAMELGTMAX), OPTIONAL, INTENT(OUT) :: HFILEPGD       ! file name
+ CHARACTER(LEN=6),               OPTIONAL, INTENT(OUT) :: HFILEPGDTYPE    ! file type
  
 !
 !*       0.2   Declarations of local variables
@@ -106,9 +106,9 @@ IF (LNAM_READ) THEN
   CSNOW_ROOF = '1-L'
   CSNOW_ROAD = '1-L'
   !
-  CFILE_SNOW_TEB = '                         '
+  CFILE_SNOW_TEB = ''
   CTYPE_SNOW     = '      ' 
-  CFILEPGD_SNOW_TEB = '                         '
+  CFILEPGD_SNOW_TEB = ''
   CTYPEPGD_SNOW     = '      '    
   !
   XWSNOW_ROOF(:) = 0.

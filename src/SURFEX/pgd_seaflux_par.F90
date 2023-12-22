@@ -48,7 +48,7 @@ USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 USE MODD_SSO_n, ONLY : SSO_t
 !
-USE MODD_SURF_PAR,       ONLY : XUNDEF, NUNDEF
+USE MODD_SURF_PAR,       ONLY : NFILENAMELGTMAX, XUNDEF, NUNDEF
 !
 USE MODD_PGDWORK,       ONLY : CATYPE
 !
@@ -108,8 +108,8 @@ LOGICAL                        :: LSST_DATA
 !
 ! name of files containing data
 !
- CHARACTER(LEN=28), DIMENSION(NTIME_MAX)   :: CFNAM_SST        ! sea surface temperature
- CHARACTER(LEN=6),  DIMENSION(NTIME_MAX)   :: CFTYP_SST        ! sea surface temperature
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NTIME_MAX) :: CFNAM_SST        ! sea surface temperature
+ CHARACTER(LEN=6),               DIMENSION(NTIME_MAX) :: CFTYP_SST        ! sea surface temperature
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 NAMELIST/NAM_DATA_SEAFLUX/NTIME_SST, LSST_DATA, XUNIF_SST, CFNAM_SST, CFTYP_SST, &
@@ -123,7 +123,7 @@ IF (LHOOK) CALL DR_HOOK('PGD_SEAFLUX_PAR',0,ZHOOK_HANDLE)
 NTIME_SST         = 12
 XUNIF_SST (:)     = XUNDEF ! sea surface temperature
 !
-CFNAM_SST (:)     = '                            '
+CFNAM_SST (:)     = ''
 !
 CFTYP_SST (:)     = '      '
 !

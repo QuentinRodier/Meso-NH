@@ -37,6 +37,8 @@ USE MODD_SURFEX_n, ONLY : SURFEX_t
 USE MODD_TYPE_DATE_SURF, ONLY : DATE
 USE MODD_SURF_ATM_TURB_n, ONLY : SURF_ATM_TURB_t
 !
+USE MODD_SURF_PAR, ONLY: NFILENAMELGTMAX
+!
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
@@ -51,7 +53,7 @@ TYPE(SURFEX_t), INTENT(INOUT) :: YSC
 !
  CHARACTER(LEN=6),   INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
  CHARACTER(LEN=3),   INTENT(IN)  :: HINIT     ! fields to initialize 'ALL', 'PRE', 'PGD'
- CHARACTER(LEN=28), INTENT(IN)   :: HATMFILE    ! name of the Atmospheric file
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)   :: HATMFILE    ! name of the Atmospheric file
  CHARACTER(LEN=6),  INTENT(IN)   :: HATMFILETYPE! type of the Atmospheric file
 INTEGER,           INTENT(IN)   :: KYEAR       ! year
 INTEGER,           INTENT(IN)   :: KMONTH      ! month

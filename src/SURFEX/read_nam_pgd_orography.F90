@@ -44,7 +44,7 @@
 !*    0.     DECLARATION
 !            -----------
 !
-USE MODD_SURF_PAR,       ONLY : XUNDEF
+USE MODD_SURF_PAR,       ONLY : NFILENAMELGTMAX, XUNDEF
 !
 USE MODI_GET_LUOUT
 USE MODI_OPEN_NAMELIST
@@ -62,7 +62,7 @@ IMPLICIT NONE
 !            ------------------------
 !                                   
  CHARACTER(LEN=6),    INTENT(IN)    :: HPROGRAM    ! Type of program
- CHARACTER(LEN=28),   INTENT(OUT)   :: HZS         ! file name for orography
+ CHARACTER(LEN=NFILENAMELGTMAX),   INTENT(OUT)   :: HZS         ! file name for orography
  CHARACTER(LEN=6),    INTENT(OUT)   :: HFILETYPE   ! data file type
 REAL,                INTENT(OUT)   :: PUNIF_ZS    ! uniform orography
  CHARACTER(LEN=3),    INTENT(OUT)   :: HOROGTYPE   ! orogpraphy type 
@@ -79,7 +79,7 @@ REAL,                INTENT(OUT)   :: PHALORADIUS ! radius of the halo in which 
 !                                                   'MANNERS' = Manners et al. 2012
 LOGICAL,             INTENT(OUT)   :: OFSSOSVF    ! compute SVF on fractional slopes if possible
 !
-CHARACTER(LEN=28),   INTENT(OUT),OPTIONAL   :: HSLOPE         ! file name for slope
+CHARACTER(LEN=NFILENAMELGTMAX),   INTENT(OUT),OPTIONAL   :: HSLOPE         ! file name for slope
 CHARACTER(LEN=6),    INTENT(OUT),OPTIONAL   :: HSLOPEFILETYPE   ! data file type
 LOGICAL,             INTENT(OUT),OPTIONAL   :: OEXPLICIT_SLOPE ! Slope is computed from explicit ZS field and not subgrid orography
 !                                  
@@ -94,10 +94,10 @@ LOGICAL                           :: GFOUND    ! flag when namelist is present
 !*    0.3    Declaration of namelists
 !            ------------------------
 !
- CHARACTER(LEN=28)        :: YZS         ! file name for orography
- CHARACTER(LEN=6)         :: YZSFILETYPE   ! data file type
-CHARACTER(LEN=28)        :: YSLOPE         ! file name for slope
-CHARACTER(LEN=6)         :: YSLOPEFILETYPE   ! data file type
+ CHARACTER(LEN=NFILENAMELGTMAX) :: YZS         ! file name for orography
+ CHARACTER(LEN=6)               :: YZSFILETYPE   ! data file type
+CHARACTER(LEN=NFILENAMELGTMAX)  :: YSLOPE         ! file name for slope
+CHARACTER(LEN=6)                :: YSLOPEFILETYPE   ! data file type
 REAL                     :: XUNIF_ZS    ! uniform orography
  CHARACTER(LEN=3)         :: COROGTYPE   ! orogpraphy type 
 !                                       ! 'AVG' : average orography
@@ -131,9 +131,9 @@ NAMELIST/NAM_ZS/YZS, YZSFILETYPE, XUNIF_ZS, COROGTYPE, XENV, LIMP_ZS , &
 !
 IF (LHOOK) CALL DR_HOOK('READ_NAM_PGD_OROGRAPHY',0,ZHOOK_HANDLE)
 XUNIF_ZS       = XUNDEF
-YZS            = '                          '
+YZS            = ''
 YZSFILETYPE    = '      '
-YSLOPE            = '                          '
+YSLOPE            = ''
 YSLOPEFILETYPE      = '      '
 !
 COROGTYPE      = 'ENV'

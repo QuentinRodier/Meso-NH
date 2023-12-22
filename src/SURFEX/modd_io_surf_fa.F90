@@ -29,14 +29,16 @@
 !
 !*       0.   DECLARATIONS
 !
+USE MODD_SURF_PAR, ONLY: NFILENAMELGTMAX
+!
 IMPLICIT NONE
 !
 CHARACTER(LEN=6), SAVE  :: CDNOMC ='header'     ! Name of the header
-CHARACTER(LEN=28),SAVE  :: CFILE_FA       ='SURFIN.fa'  ! Name of the input
-CHARACTER(LEN=28),SAVE  :: CFILEIN_FA       ='SURFIN.fa'  ! Name of the input
-CHARACTER(LEN=28),SAVE  :: CFILEIN_FA_SAVE  ='SURFIN.fa'  ! Name of the input
-CHARACTER(LEN=28),SAVE  :: CFILEOUT_FA      ='SURFOUT.fa' ! Name of the input
-CHARACTER(LEN=28),SAVE  :: CFILEPGD_FA      ='PGD.fa'     ! Name of the pgd file
+CHARACTER(LEN=NFILENAMELGTMAX),SAVE  :: CFILE_FA        = 'SURFIN.fa'  ! Name of the input
+CHARACTER(LEN=NFILENAMELGTMAX),SAVE  :: CFILEIN_FA      = 'SURFIN.fa'  ! Name of the input
+CHARACTER(LEN=NFILENAMELGTMAX),SAVE  :: CFILEIN_FA_SAVE = 'SURFIN.fa'  ! Name of the input
+CHARACTER(LEN=NFILENAMELGTMAX),SAVE  :: CFILEOUT_FA     = 'SURFOUT.fa' ! Name of the input
+CHARACTER(LEN=NFILENAMELGTMAX),SAVE  :: CFILEPGD_FA     = 'PGD.fa'     ! Name of the pgd file
 CHARACTER(LEN=4), SAVE  :: CPREFIX1D        ='SFX.'       ! Prefix name in fa file
 CHARACTER(LEN=1), SAVE  :: CPREFIX2D        ='X'          ! Prefix name in fa file
 !

@@ -52,7 +52,7 @@ USE MODD_SSO_n, ONLY : SSO_t
 !
 USE MODD_DATA_LAKE,      ONLY : CLAKELDB, CSTATUSLDB
 USE MODD_DATA_COVER_PAR, ONLY : JPCOVER
-USE MODD_SURF_PAR,       ONLY : XUNDEF
+USE MODD_SURF_PAR,       ONLY : NFILENAMELGTMAX, XUNDEF
 !
 USE MODD_PGDWORK,        ONLY : CATYPE
 !
@@ -109,12 +109,12 @@ INTEGER,DIMENSION(:),ALLOCATABLE  :: IWATER_STATUS
 !*    0.3    Declaration of namelists
 !            ------------------------
 !
- CHARACTER(LEN=28)        :: YWATER_DEPTH  ! file name for water depth
- CHARACTER(LEN=28)        :: YWATER_DEPTH_STATUS  ! file name for water depth status
- CHARACTER(LEN=28)        :: YWATER_FETCH
- CHARACTER(LEN=28)        :: YT_BS
- CHARACTER(LEN=28)        :: YDEPTH_BS
- CHARACTER(LEN=28)        :: YEXTCOEF_WATER
+ CHARACTER(LEN=NFILENAMELGTMAX) :: YWATER_DEPTH  ! file name for water depth
+ CHARACTER(LEN=NFILENAMELGTMAX) :: YWATER_DEPTH_STATUS  ! file name for water depth status
+ CHARACTER(LEN=NFILENAMELGTMAX) :: YWATER_FETCH
+ CHARACTER(LEN=NFILENAMELGTMAX) :: YT_BS
+ CHARACTER(LEN=NFILENAMELGTMAX) :: YDEPTH_BS
+ CHARACTER(LEN=NFILENAMELGTMAX) :: YEXTCOEF_WATER
 
  CHARACTER(LEN=6)         :: YWATER_DEPTHFILETYPE ! water depth file type
  CHARACTER(LEN=6)         :: YWATER_FETCHFILETYPE
@@ -152,12 +152,12 @@ XUNIF_T_BS         = 286.
 XUNIF_DEPTH_BS     = 1.
 XUNIF_EXTCOEF_WATER= 3.
 !
-YWATER_DEPTH        = '                          '
-YWATER_DEPTH_STATUS = '                          '
-YWATER_FETCH        = '                          '
-YT_BS               = '                          '
-YDEPTH_BS           = '                          '
-YEXTCOEF_WATER      = '                          '
+YWATER_DEPTH        = ''
+YWATER_DEPTH_STATUS = ''
+YWATER_FETCH        = ''
+YT_BS               = ''
+YDEPTH_BS           = ''
+YEXTCOEF_WATER      = ''
 !
 YWATER_DEPTHFILETYPE   = '      '
 YWATER_FETCHFILETYPE   = '      '

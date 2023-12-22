@@ -79,6 +79,7 @@ USE MODD_PGDWORK, ONLY : NSIZE_ALL, XALL, NVALNBR, NVALCOUNT, XVALLIST, &
 USE MODI_REFRESH_PGDWORK
 !
 USE MODD_CSTS ,ONLY : XSURF_EPSILON
+USE MODD_SURF_PAR, ONLY: NFILENAMELGTMAX
 !
 IMPLICIT NONE
 !
@@ -92,15 +93,15 @@ TYPE(SSO_t),           INTENT(INOUT) :: USS
  CHARACTER(LEN=6),  INTENT(IN) :: HPROGRAM      ! Type of program
  CHARACTER(LEN=6),  INTENT(IN) :: HSCHEME       ! Scheme treated
  CHARACTER(LEN=6),  INTENT(IN) :: HSUBROUTINE   ! Name of the subroutine to call
- CHARACTER(LEN=28), INTENT(IN) :: HFILENAME     ! Name of the field file.
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN) :: HFILENAME     ! Name of the field file.
  CHARACTER(LEN=20), INTENT(IN) :: HFIELD        ! Name of the field.
 LOGICAL, OPTIONAL, INTENT(IN) :: OMULTITYPE
 !
 !*    0.2    Declaration of local variables
 !            ------------------------------
 !
- CHARACTER(LEN=28) :: YFILENAME        ! Name of the field file without header
- CHARACTER(LEN=28) :: YFILEHDR         ! Name of the field file header
+ CHARACTER(LEN=NFILENAMELGTMAX) :: YFILENAME        ! Name of the field file without header
+ CHARACTER(LEN=NFILENAMELGTMAX) :: YFILEHDR         ! Name of the field file header
 !
  CHARACTER(LEN=7)  :: YTYPE            ! type of numerical field stored in the
 !                                     ! direct access file ('INTEGER','REAL   ')

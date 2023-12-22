@@ -42,7 +42,7 @@
 !*    0.     DECLARATION
 !            -----------
 !
-USE MODD_SURF_PAR,       ONLY : XUNDEF, NUNDEF
+USE MODD_SURF_PAR,       ONLY : NFILENAMELGTMAX, XUNDEF, NUNDEF
 !
 USE MODD_DATA_COVER,     ONLY : TDATA_SEED, TDATA_REAP, XDATA_WATSUP, XDATA_IRRIGTYPE,&
                                   LDATA_IRRIG, XDATA_VEGTYPE, LCLIM_LAI  
@@ -97,7 +97,7 @@ INTEGER, DIMENSION(:), ALLOCATABLE   :: IVALUE   ! value of a record of data poi
 !*    0.3    Declaration of namelists
 !            ------------------------
 !
- CHARACTER(LEN=28)        :: YIRRIG   ! file name for irrigation
+ CHARACTER(LEN=NFILENAMELGTMAX) :: YIRRIG   ! file name for irrigation
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !                                        
 NAMELIST/NAM_ECOCLIMAP2/  YIRRIG, LCLIM_LAI
@@ -113,7 +113,7 @@ NAMELIST/NAM_ECOCLIMAP2/  YIRRIG, LCLIM_LAI
 !* Initializations 
 !
 IF (LHOOK) CALL DR_HOOK('PGD_ECOCLIMAP2_DATA',0,ZHOOK_HANDLE)
-YIRRIG         = '                          '
+YIRRIG         = ''
 LCLIM_LAI      = .TRUE.
 KYEAR          = NUNDEF
 !
@@ -167,7 +167,7 @@ DO JCOVER=301,JPCOVER
       (IVALUE(2).EQ.0 .OR. IVALUE(3).EQ.0 .OR. IVALUE(4).EQ.0 .OR. &
       IVALUE(5).EQ.0 .OR. IVALUE(6).EQ.0 .OR. IVALUE(7).EQ.0)) THEN    
       WRITE(ILUOUT,*)'**************************************************'
-      WRITE(ILUOUT,*)'* error, missing data in ',YIRRIG,' for          *'
+      WRITE(ILUOUT,*)'* error, missing data in ',TRIM(YIRRIG),' for          *'
       WRITE(ILUOUT,*)'* the class ',JCOVER,'.                          *'
      WRITE(ILUOUT,*)'**************************************************'
      IERR=1
@@ -176,7 +176,7 @@ DO JCOVER=301,JPCOVER
       (IVALUE(2).NE.0 .OR. IVALUE(3).NE.0 .OR. IVALUE(4).NE.0 .OR. &
       IVALUE(5).NE.0 .OR. IVALUE(6).NE.0 .OR. IVALUE(7).NE.0)) THEN    
       WRITE(ILUOUT,*)'**************************************************'
-      WRITE(ILUOUT,*)'* error, too many data in ',YIRRIG,' for         *'
+      WRITE(ILUOUT,*)'* error, too many data in ',TRIM(YIRRIG),' for         *'
       WRITE(ILUOUT,*)'* the class ',JCOVER,'.                          *'
       WRITE(ILUOUT,*)'**************************************************'
      IERR=1

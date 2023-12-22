@@ -46,6 +46,7 @@ USE MODI_CLOSE_NAMELIST
 !
 USE MODE_POS_SURF
 !
+USE MODD_SURF_PAR, ONLY: NFILENAMELGTMAX
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -72,8 +73,8 @@ INTEGER,                            INTENT(OUT)  :: KMEGAN_NBR
 !                          ! 'BLD' : where buildings are present
  CHARACTER(LEN=3),  DIMENSION(1000), INTENT(OUT)  :: HMEGAN_ATYPE    ! avg type for megan pgd fields
 !                                                                   ! 'ARI' , 'INV'
- CHARACTER(LEN=28), DIMENSION(1000), INTENT(OUT)  :: HMEGAN_FILE     ! data files
- CHARACTER(LEN=6),  DIMENSION(1000), INTENT(OUT)  :: HMEGAN_FILETYPE ! type of these files
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(1000), INTENT(OUT)  :: HMEGAN_FILE     ! data files
+ CHARACTER(LEN=6),               DIMENSION(1000), INTENT(OUT)  :: HMEGAN_FILETYPE ! type of these files
 !
 !
 !*    0.2    Declaration of local variables
@@ -102,8 +103,8 @@ INTEGER                             :: NMEGAN_NBR
 !                          ! 'BLD' : where buildings are present
  CHARACTER(LEN=3),  DIMENSION(1000)  :: CMEGAN_ATYPE    ! avg type for megan pgd fields
 !                                                      ! 'ARI' , 'INV'
- CHARACTER(LEN=28), DIMENSION(1000)  :: CMEGAN_FILE     ! data files
- CHARACTER(LEN=6),  DIMENSION(1000)  :: CMEGAN_FILETYPE ! type of these files
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(1000)  :: CMEGAN_FILE     ! data files
+ CHARACTER(LEN=6),               DIMENSION(1000)  :: CMEGAN_FILETYPE ! type of these files
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 NAMELIST/NAM_MEGAN_PGD/ NMEGAN_NBR, CMEGAN_NAME, CMEGAN_AREA,       &
@@ -117,7 +118,7 @@ IF (LHOOK) CALL DR_HOOK('READ_NAM_PGD_MEGAN',0,ZHOOK_HANDLE)
 NMEGAN_NBR = 0
 !
 CMEGAN_NAME     = "                    "
-CMEGAN_FILE     = "                            "
+CMEGAN_FILE     = ""
 CMEGAN_FILETYPE = "      "
 CMEGAN_AREA     = "ALL"
 CMEGAN_ATYPE    = "ARI"

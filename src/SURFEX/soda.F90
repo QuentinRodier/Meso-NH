@@ -136,6 +136,8 @@ USE MODI_TEST_NAM_VAR_SURF
 USE MODI_INIT_OUTPUT_NC_n
 USE MODI_CLOSE_FILEOUT_OL
 !
+USE MODD_SURF_PAR, ONLY: NFILENAMELGTMAX
+!
 USE MODE_EKF, ONLY : GET_FILE_NAME, SET_FILEIN
 !
 USE YOMHOOK,             ONLY : LHOOK,DR_HOOK
@@ -158,12 +160,12 @@ TYPE(DATE) :: TDATE_END
  CHARACTER(LEN=200) :: YMFILE     ! Name of the observation, perturbed or reference file!
  CHARACTER(LEN=3)  :: YINIT
  CHARACTER(LEN=2), PARAMETER  :: YTEST        = 'OK'          ! must be equal to 'OK'
- CHARACTER(LEN=28)            :: YATMFILE  ='   '  ! name of the Atmospheric file
- CHARACTER(LEN=6)             :: YATMFILETYPE ='      '                     ! type of the Atmospheric file
- CHARACTER(LEN=28)            :: YLUOUT    ='LISTING_SODA                '  ! name of listing
- CHARACTER(LEN=6)             :: YPROGRAM2 = 'FA    '
- CHARACTER(LEN=28)            :: YFILEIN
- CHARACTER(LEN=3)             :: YVAR
+ CHARACTER(LEN=NFILENAMELGTMAX) :: YATMFILE     = ''  ! name of the Atmospheric file
+ CHARACTER(LEN=6)               :: YATMFILETYPE = '      '                     ! type of the Atmospheric file
+ CHARACTER(LEN=NFILENAMELGTMAX) :: YLUOUT       = 'LISTING_SODA'  ! name of listing
+ CHARACTER(LEN=6)               :: YPROGRAM2    = 'FA    '
+ CHARACTER(LEN=NFILENAMELGTMAX) :: YFILEIN
+ CHARACTER(LEN=3)               :: YVAR
 !
  CHARACTER(LEN=100) :: YNAME
  CHARACTER(LEN=10)  :: YRANK

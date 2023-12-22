@@ -46,6 +46,7 @@ USE MODI_CLOSE_NAMELIST
 !
 USE MODE_POS_SURF
 !
+USE MODD_SURF_PAR, ONLY: NFILENAMELGTMAX
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -72,7 +73,7 @@ INTEGER,                            INTENT(OUT)  :: KDMS_NBR
 !                          ! 'BLD' : where buildings are present
  CHARACTER(LEN=3),  DIMENSION(1000), INTENT(OUT)  :: HDMS_ATYPE    ! avg type for megan pgd fields
 !                                                                   ! 'ARI' , 'INV'
- CHARACTER(LEN=28), DIMENSION(1000), INTENT(OUT)  :: HDMS_FILE     ! data files
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(1000), INTENT(OUT)  :: HDMS_FILE     ! data files
  CHARACTER(LEN=6),  DIMENSION(1000), INTENT(OUT)  :: HDMS_FILETYPE ! type of these files
 !
 !
@@ -102,8 +103,8 @@ INTEGER                             :: NDMS_NBR
 !                          ! 'BLD' : where buildings are present
  CHARACTER(LEN=3),  DIMENSION(1000)  :: CDMS_ATYPE    ! avg type for megan pgd fields
 !                                                      ! 'ARI' , 'INV'
- CHARACTER(LEN=28), DIMENSION(1000)  :: CDMS_FILE     ! data files
- CHARACTER(LEN=6),  DIMENSION(1000)  :: CDMS_FILETYPE ! type of these files
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(1000)  :: CDMS_FILE     ! data files
+ CHARACTER(LEN=6),               DIMENSION(1000)  :: CDMS_FILETYPE ! type of these files
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 NAMELIST/NAM_DMS_PGD/ NDMS_NBR, CDMS_NAME, CDMS_AREA,       &
@@ -117,7 +118,7 @@ IF (LHOOK) CALL DR_HOOK('READ_NAM_PGD_DMS',0,ZHOOK_HANDLE)
 NDMS_NBR = 0
 !
 CDMS_NAME     = "                    "
-CDMS_FILE     = "                            "
+CDMS_FILE     = ""
 CDMS_FILETYPE = "      "
 CDMS_AREA     = "ALL"
 CDMS_ATYPE    = "ARI"

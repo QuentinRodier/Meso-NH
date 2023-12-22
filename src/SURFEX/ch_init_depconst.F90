@@ -45,6 +45,7 @@ USE MODI_CLOSE_NAMELIST
 !
 USE MODI_CH_OPEN_INPUTB
 USE MODD_CH_SURF
+USE MODD_SURF_PAR, ONLY: NFILENAMELGTMAX
 !!
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
@@ -61,7 +62,7 @@ IMPLICIT NONE
 !*      0.1    declarations of arguments
 !
 CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM ! Program name
-CHARACTER(LEN=28), INTENT(IN)  :: HCHEM_SURF_FILE ! ascii file for chemistry aggregation
+CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)  :: HCHEM_SURF_FILE ! ascii file for chemistry aggregation
 INTEGER,                  INTENT(IN)  :: KLUOUT   ! output listing channel
  CHARACTER(LEN=*), DIMENSION(:),  INTENT(IN)  :: HSV      ! name of chemical species
 !

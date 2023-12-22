@@ -26,18 +26,18 @@
 !!    MODIFICATIONS
 !!    -------------
 !!    
-USE MODD_SURF_PAR, ONLY : NUNDEF
+USE MODD_SURF_PAR, ONLY : NFILENAMELGTMAX, NUNDEF
 !
 !*       0.   DECLARATIONS
 !
 IMPLICIT NONE
- CHARACTER(LEN=28),SAVE :: CLUOUT_LFI                  ! Name of the listing
- CHARACTER(LEN=28),SAVE :: CFILE_LFI                   ! Name of the current file
- CHARACTER(LEN=28),SAVE :: CFILEIN_LFI                 ! Name of the input
- CHARACTER(LEN=28),SAVE :: CFILEIN_LFI_SAVE            ! Name of the input
- CHARACTER(LEN=28),SAVE :: CFILEOUT_LFI                ! Name of the output
- CHARACTER(LEN=28),SAVE :: CFILEDIAG_LFI               ! Name of the output
- CHARACTER(LEN=28),SAVE :: CFILEPGD_LFI                ! Name of the pgd file
+ CHARACTER(LEN=NFILENAMELGTMAX),SAVE :: CLUOUT_LFI                  ! Name of the listing
+ CHARACTER(LEN=NFILENAMELGTMAX),SAVE :: CFILE_LFI                   ! Name of the current file
+ CHARACTER(LEN=NFILENAMELGTMAX),SAVE :: CFILEIN_LFI                 ! Name of the input
+ CHARACTER(LEN=NFILENAMELGTMAX),SAVE :: CFILEIN_LFI_SAVE            ! Name of the input
+ CHARACTER(LEN=NFILENAMELGTMAX),SAVE :: CFILEOUT_LFI                ! Name of the output
+ CHARACTER(LEN=NFILENAMELGTMAX),SAVE :: CFILEDIAG_LFI               ! Name of the output
+ CHARACTER(LEN=NFILENAMELGTMAX),SAVE :: CFILEPGD_LFI                ! Name of the pgd file
 INTEGER                :: NUNIT_LFI      ! logical unit of surface file (LFI part)
 INTEGER                :: NLUOUT         ! logical unit of output file
 !

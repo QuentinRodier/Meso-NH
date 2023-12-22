@@ -41,6 +41,7 @@
 !
 !
 !
+USE MODD_SURF_PAR, ONLY: NFILENAMELGTMAX
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
@@ -78,7 +79,7 @@ IMPLICIT NONE
 !*       0.1   Declarations of arguments
 !              -------------------------
 !
- CHARACTER(LEN=28), INTENT(IN)  :: HFILE     ! file name
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)  :: HFILE     ! file name
  CHARACTER(LEN=6),  INTENT(IN)  :: HFILETYPE ! main program
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !

@@ -47,7 +47,7 @@ USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 USE MODD_SSO_n, ONLY : SSO_t
 USE MODD_TEB_IRRIG_n, ONLY : TEB_IRRIG_t
 !
-USE MODD_SURF_PAR,          ONLY : XUNDEF
+USE MODD_SURF_PAR,          ONLY : NFILENAMELGTMAX, XUNDEF
 !
 USE MODD_PGDWORK,           ONLY : CATYPE
 !
@@ -114,21 +114,21 @@ REAL               :: XUNIF_RD_24H_IRRIG    ! total irrigation over 24h       fo
 !
 ! name of files containing data
 !
- CHARACTER(LEN=28)                      :: CFNAM_GD_START_MONTH
- CHARACTER(LEN=28)                      :: CFNAM_GD_END_MONTH 
- CHARACTER(LEN=28)                      :: CFNAM_GD_START_HOUR
- CHARACTER(LEN=28)                      :: CFNAM_GD_END_HOUR
- CHARACTER(LEN=28)                      :: CFNAM_GD_24H_IRRIG
- CHARACTER(LEN=28)                      :: CFNAM_GR_START_MONTH
- CHARACTER(LEN=28)                      :: CFNAM_GR_END_MONTH 
- CHARACTER(LEN=28)                      :: CFNAM_GR_START_HOUR
- CHARACTER(LEN=28)                      :: CFNAM_GR_END_HOUR
- CHARACTER(LEN=28)                      :: CFNAM_GR_24H_IRRIG
- CHARACTER(LEN=28)                      :: CFNAM_RD_START_MONTH
- CHARACTER(LEN=28)                      :: CFNAM_RD_END_MONTH 
- CHARACTER(LEN=28)                      :: CFNAM_RD_START_HOUR
- CHARACTER(LEN=28)                      :: CFNAM_RD_END_HOUR
- CHARACTER(LEN=28)                      :: CFNAM_RD_24H_IRRIG
+ CHARACTER(LEN=NFILENAMELGTMAX)         :: CFNAM_GD_START_MONTH
+ CHARACTER(LEN=NFILENAMELGTMAX)         :: CFNAM_GD_END_MONTH
+ CHARACTER(LEN=NFILENAMELGTMAX)         :: CFNAM_GD_START_HOUR
+ CHARACTER(LEN=NFILENAMELGTMAX)         :: CFNAM_GD_END_HOUR
+ CHARACTER(LEN=NFILENAMELGTMAX)         :: CFNAM_GD_24H_IRRIG
+ CHARACTER(LEN=NFILENAMELGTMAX)         :: CFNAM_GR_START_MONTH
+ CHARACTER(LEN=NFILENAMELGTMAX)         :: CFNAM_GR_END_MONTH
+ CHARACTER(LEN=NFILENAMELGTMAX)         :: CFNAM_GR_START_HOUR
+ CHARACTER(LEN=NFILENAMELGTMAX)         :: CFNAM_GR_END_HOUR
+ CHARACTER(LEN=NFILENAMELGTMAX)         :: CFNAM_GR_24H_IRRIG
+ CHARACTER(LEN=NFILENAMELGTMAX)         :: CFNAM_RD_START_MONTH
+ CHARACTER(LEN=NFILENAMELGTMAX)         :: CFNAM_RD_END_MONTH
+ CHARACTER(LEN=NFILENAMELGTMAX)         :: CFNAM_RD_START_HOUR
+ CHARACTER(LEN=NFILENAMELGTMAX)         :: CFNAM_RD_END_HOUR
+ CHARACTER(LEN=NFILENAMELGTMAX)         :: CFNAM_RD_24H_IRRIG
 !
 ! type of files containing data
 !
@@ -220,21 +220,21 @@ XUNIF_RD_START_HOUR = XUNDEF
 XUNIF_RD_END_HOUR   = XUNDEF
 XUNIF_RD_24H_IRRIG  = XUNDEF
 !
-CFNAM_GD_START_MONTH  = '                            '
-CFNAM_GD_END_MONTH    = '                            '
-CFNAM_GD_START_HOUR   = '                            '
-CFNAM_GD_END_HOUR     = '                            '
-CFNAM_GD_24H_IRRIG    = '                            '
-CFNAM_GR_START_MONTH  = '                            '
-CFNAM_GR_END_MONTH    = '                            '
-CFNAM_GR_START_HOUR   = '                            '
-CFNAM_GR_END_HOUR     = '                            '
-CFNAM_GR_24H_IRRIG    = '                            '
-CFNAM_RD_START_MONTH  = '                            '
-CFNAM_RD_END_MONTH    = '                            '
-CFNAM_RD_START_HOUR   = '                            '
-CFNAM_RD_END_HOUR     = '                            '
-CFNAM_RD_24H_IRRIG    = '                            '
+CFNAM_GD_START_MONTH  = ''
+CFNAM_GD_END_MONTH    = ''
+CFNAM_GD_START_HOUR   = ''
+CFNAM_GD_END_HOUR     = ''
+CFNAM_GD_24H_IRRIG    = ''
+CFNAM_GR_START_MONTH  = ''
+CFNAM_GR_END_MONTH    = ''
+CFNAM_GR_START_HOUR   = ''
+CFNAM_GR_END_HOUR     = ''
+CFNAM_GR_24H_IRRIG    = ''
+CFNAM_RD_START_MONTH  = ''
+CFNAM_RD_END_MONTH    = ''
+CFNAM_RD_START_HOUR   = ''
+CFNAM_RD_END_HOUR     = ''
+CFNAM_RD_24H_IRRIG    = ''
 !
 CFTYP_GD_START_MONTH  = '      '
 CFTYP_GD_END_MONTH    = '      '

@@ -37,6 +37,8 @@
 !*       0.    DECLARATIONS
 !              ------------
 !
+USE MODD_SURF_PAR, ONLY: NFILENAMELGTMAX
+!
 #if defined(SFX_ASC) || defined(SFX_ARO) || defined(SFX_MNH) || defined(SFX_NC)
 USE MODI_OPEN_FILE_ASC
 #endif
@@ -76,7 +78,7 @@ INTEGER,           INTENT(IN), OPTIONAL :: KRECL    ! record length
 !*       0.2   Declarations of local variables
 !              -------------------------------
 !
- CHARACTER(LEN=28) :: YFILE
+ CHARACTER(LEN=NFILENAMELGTMAX) :: YFILE
  CHARACTER(LEN=11) :: YFORM
  CHARACTER(LEN=9)  :: YACTION
  CHARACTER(LEN=6)  :: YACCESS

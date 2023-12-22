@@ -41,7 +41,7 @@
 !*    0.     DECLARATION
 !            -----------
 !
-USE MODD_SURF_PAR, ONLY : XUNDEF, NUNDEF
+USE MODD_SURF_PAR, ONLY : NFILENAMELGTMAX, XUNDEF, NUNDEF
 !
 USE MODI_GET_LUOUT
 USE MODI_OPEN_NAMELIST
@@ -57,12 +57,11 @@ IMPLICIT NONE
 !*    0.1    Declaration of arguments
 !            ------------------------
 !
- CHARACTER(LEN=6),    INTENT(IN)    :: HPROGRAM          ! Type of program
- CHARACTER(LEN=28),   INTENT(OUT)   :: HSEABATHY         ! file name for bathymetry
- CHARACTER(LEN=6),    INTENT(OUT)   :: HSEABATHYFILETYPE ! bathymetry data file type
- CHARACTER(LEN=28),   INTENT(OUT)   :: HNCVARNAME        ! variable to read in netcdf
-                                                        ! file
-REAL,                INTENT(OUT)   :: PUNIF_SEABATHY    ! uniform value of bathymetry
+ CHARACTER(LEN=6),               INTENT(IN)    :: HPROGRAM          ! Type of program
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(OUT)   :: HSEABATHY         ! file name for bathymetry
+ CHARACTER(LEN=6),               INTENT(OUT)   :: HSEABATHYFILETYPE ! bathymetry data file type
+ CHARACTER(LEN=28),              INTENT(OUT)   :: HNCVARNAME        ! variable to read in netcdf file
+REAL,                            INTENT(OUT)   :: PUNIF_SEABATHY    ! uniform value of bathymetry
 !
 !
 !*    0.2    Declaration of local variables
@@ -75,9 +74,9 @@ LOGICAL                           :: GFOUND    ! flag when namelist is present
 !*    0.3    Declaration of namelists
 !            ------------------------
 !
- CHARACTER(LEN=28)        :: YSEABATHY         ! file name for bathymetry
- CHARACTER(LEN=6)         :: YSEABATHYFILETYPE ! bathymetry data file type
- CHARACTER(LEN=28)        :: YNCVARNAME        ! variable to read in netcdf
+ CHARACTER(LEN=NFILENAMELGTMAX) :: YSEABATHY         ! file name for bathymetry
+ CHARACTER(LEN=6)               :: YSEABATHYFILETYPE ! bathymetry data file type
+ CHARACTER(LEN=28)              :: YNCVARNAME        ! variable to read in netcdf
                                               ! file
 REAL                     :: XUNIF_SEABATHY    ! uniform value of bathymetry
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
@@ -91,7 +90,7 @@ NAMELIST/NAM_SEABATHY/ YSEABATHY, YSEABATHYFILETYPE, YNCVARNAME, XUNIF_SEABATHY
 !
 IF (LHOOK) CALL DR_HOOK('READ_NAM_PGD_SEABATHY',0,ZHOOK_HANDLE)
 XUNIF_SEABATHY     = -300.
-YSEABATHY          = '                          '
+YSEABATHY          = ''
 YSEABATHYFILETYPE  = '      '
 YNCVARNAME='rose                      '
 !

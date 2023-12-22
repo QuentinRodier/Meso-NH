@@ -64,6 +64,8 @@ USE MODI_SET_SURFEX_FILE_NAME_ARO
 !
 USE MODI_ABOR1_SFX
 !
+USE MODD_SURF_PAR, ONLY: NFILENAMELGTMAX
+!
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
@@ -80,7 +82,7 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !*       0.2   Declarations of local variables
 !              -------------------------------
 !
- CHARACTER(LEN=28)              :: YFILE
+ CHARACTER(LEN=NFILENAMELGTMAX) :: YFILE
 !
 !-------------------------------------------------------------------------------
 !

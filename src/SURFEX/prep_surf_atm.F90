@@ -1,7 +1,8 @@
-!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC Copyright 2004-2023 CNRS, Meteo-France and Universite Paul Sabatier
 !SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
-!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !SFX_LIC for details. version 1.
+!-----------------------------------------------------------------
 !     #################################################################################
 SUBROUTINE PREP_SURF_ATM (YSC, HPROGRAM,HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE,YDCTL)
 !     #################################################################################
@@ -33,6 +34,8 @@ SUBROUTINE PREP_SURF_ATM (YSC, HPROGRAM,HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILET
 !
 USE MODD_SURFEX_n, ONLY : SURFEX_t
 !
+USE MODD_SURF_PAR, ONLY: NFILENAMELGTMAX
+!
 USE MODE_PREP_CTL, ONLY : PREP_CTL
 !
 USE MODI_PREP_NATURE
@@ -54,16 +57,16 @@ IMPLICIT NONE
 TYPE(SURFEX_t),    INTENT(INOUT) :: YSC
 TYPE (PREP_CTL),   INTENT(INOUT) :: YDCTL
 !
- CHARACTER(LEN=6),  INTENT(IN) :: HPROGRAM    ! program calling surf. schemes
- CHARACTER(LEN=28), INTENT(IN) :: HATMFILE    ! name of the Atmospheric file
- CHARACTER(LEN=6),  INTENT(IN) :: HATMFILETYPE! type of the Atmospheric file
- CHARACTER(LEN=28), INTENT(IN) :: HPGDFILE    ! name of the Atmospheric file
- CHARACTER(LEN=6),  INTENT(IN) :: HPGDFILETYPE! type of the Atmospheric file
+ CHARACTER(LEN=6),               INTENT(IN) :: HPROGRAM    ! program calling surf. schemes
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN) :: HATMFILE    ! name of the Atmospheric file
+ CHARACTER(LEN=6),               INTENT(IN) :: HATMFILETYPE! type of the Atmospheric file
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN) :: HPGDFILE    ! name of the Atmospheric file
+ CHARACTER(LEN=6),               INTENT(IN) :: HPGDFILETYPE! type of the Atmospheric file
 !
 !*      0.2    declarations of local variables
- CHARACTER(LEN=28)               :: YATMFILE    ! name of the Atmospheric file
+ CHARACTER(LEN=NFILENAMELGTMAX)  :: YATMFILE    ! name of the Atmospheric file
  CHARACTER(LEN=6)                :: YATMFILETYPE! type of the Atmospheric file
- CHARACTER(LEN=28)               :: YPGDFILE    ! name of the Atmospheric file
+ CHARACTER(LEN=NFILENAMELGTMAX)  :: YPGDFILE    ! name of the Atmospheric file
  CHARACTER(LEN=6)                :: YPGDFILETYPE! type of the Atmospheric file
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 
@@ -76,13 +79,13 @@ IF (LHOOK) CALL DR_HOOK('PREP_SURF_ATM',0,ZHOOK_HANDLE)
 IF ( LEN_TRIM(HATMFILE)>0 ) THEN
   YATMFILE=HATMFILE
 ELSE
-  YATMFILE='                            '
+  YATMFILE=''
 ENDIF
 !
 IF ( LEN_TRIM(HPGDFILE)>0 ) THEN
   YPGDFILE=HPGDFILE
 ELSE
-  YPGDFILE='                            '
+  YPGDFILE=''
 ENDIF
 !
 IF (  LEN_TRIM(HATMFILETYPE)>0 ) THEN

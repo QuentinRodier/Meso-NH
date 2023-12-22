@@ -53,7 +53,7 @@ USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 USE MODD_SSO_n, ONLY : SSO_t
 !
 USE MODD_SURFEX_MPI, ONLY : NRANK, NPIO, NPROC, NCOMM
-USE MODD_SURF_PAR,       ONLY : XUNDEF
+USE MODD_SURF_PAR,       ONLY : NFILENAMELGTMAX, XUNDEF
 USE MODD_PGD_GRID,       ONLY : CGRID, NL, XGRID_PAR
 USE MODD_PGDWORK,        ONLY : XALL, NSIZE_ALL, NSIZE, XSUMVAL, XPREC
 USE MODD_DATA_COVER_PAR, ONLY : JPCOVER, NROCK, NSEA, NWATER, NPERMSNOW, LVEG_PRES
@@ -122,7 +122,7 @@ LOGICAL,             INTENT(OUT)   :: ORM_RIVER    ! delete river coverage (defa
 !            ------------------------------
 !
  CHARACTER(LEN=10)       :: YFIELD
- CHARACTER(LEN=28)       :: YCOVER      ! file name for cover types
+ CHARACTER(LEN=NFILENAMELGTMAX) :: YCOVER      ! file name for cover types
  CHARACTER(LEN=6)        :: YFILETYPE   ! data file type
 !
 REAL                     :: XRM_COVER   ! limit of coverage under which the

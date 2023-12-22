@@ -57,7 +57,7 @@ USE MODD_DATA_BEM_n, ONLY : DATA_BEM_t
 USE MODD_BEM_OPTION_n, ONLY : BEM_OPTIONS_t
 USE MODE_COHERENCE_FRAC
 !
-USE MODD_SURF_PAR,   ONLY : XUNDEF, NUNDEF
+USE MODD_SURF_PAR,   ONLY : NFILENAMELGTMAX, XUNDEF, NUNDEF
 USE MODD_CSTS,   ONLY : XSURF_EPSILON
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -110,105 +110,104 @@ INTEGER, PARAMETER             :: NFLOOR_MAX  = 9 ! Maximum number of floor laye
 INTEGER, PARAMETER             :: NMASS_MAX   = 9 ! Maximum number of internal mass layers
 INTEGER, PARAMETER             :: NBEMCOMP_MAX= 9 ! Maximum number of tiles for use/behaviour
 !
-INTEGER, PARAMETER             :: NFNAM  = 28      ! max file name length
 INTEGER, PARAMETER             :: NFTYP  = 6       ! max file type length
 !
 INTEGER                        :: NPAR_FLOOR_LAYER ! number of floor layers
 INTEGER                        :: NPAR_MASS_LAYER  ! number of internal mass layers
 !
 REAL , DIMENSION(NBEMCOMP_MAX) :: XUNIF_NATVENT ! Control variable for ventilation (0=NONE; 1=MANU; 2=AUTO)
-CHARACTER(LEN=NFNAM)           :: CFNAM_NATVENT ! File name for NATVENT
+CHARACTER(LEN=NFILENAMELGTMAX) :: CFNAM_NATVENT ! File name for NATVENT
 CHARACTER(LEN=NFTYP)           :: CFTYP_NATVENT ! File type for NATVENT
 !
 REAL                           :: XUNIF_RESIDENTIAL    ! Residential fraction (for solar panels) [1]
-CHARACTER(LEN=NFNAM)           :: CFNAM_RESIDENTIAL    ! File name for RESIDENTIAL
+CHARACTER(LEN=NFILENAMELGTMAX) :: CFNAM_RESIDENTIAL    ! File name for RESIDENTIAL
 CHARACTER(LEN=NFTYP)           :: CFTYP_RESIDENTIAL    ! File type for RESIDENTIAL
 !
-REAL , DIMENSION(NBEMCOMP_MAX)          :: XUNIF_FRACOMP    ! Fractions of tiles for uses/behaviour [1]
-CHARACTER(LEN=NFNAM)                    :: CFNAM_FRACOMP    ! File name for FRACOMP
-CHARACTER(LEN=NFTYP)                    :: CFTYP_FRACOMP    ! File type for FRACOMP
+REAL , DIMENSION(NBEMCOMP_MAX) :: XUNIF_FRACOMP    ! Fractions of tiles for uses/behaviour [1]
+CHARACTER(LEN=NFILENAMELGTMAX) :: CFNAM_FRACOMP    ! File name for FRACOMP
+CHARACTER(LEN=NFTYP)           :: CFTYP_FRACOMP    ! File type for FRACOMP
 !
-REAL                                    :: XUNIF_ISMECH     ! Control variable for presence of mechanical ventilation [0=NO, 1=YES]
-CHARACTER(LEN=NFNAM)                    :: CFNAM_ISMECH     ! File name for ISMECH
-CHARACTER(LEN=NFTYP)                    :: CFTYP_ISMECH     ! File type for ISMECH
+REAL                           :: XUNIF_ISMECH     ! Control variable for presence of mechanical ventilation [0=NO, 1=YES]
+CHARACTER(LEN=NFILENAMELGTMAX) :: CFNAM_ISMECH     ! File name for ISMECH
+CHARACTER(LEN=NFTYP)           :: CFTYP_ISMECH     ! File type for ISMECH
 !
-REAL                                    :: XUNIF_MECHRATE   ! Air exchange rate due to mechanical ventilation [vol h-1]
-CHARACTER(LEN=NFNAM)                    :: CFNAM_MECHRATE   ! File name for MECHRATE
-CHARACTER(LEN=NFTYP)                    :: CFTYP_MECHRATE   ! File type for MECHRATE
+REAL                           :: XUNIF_MECHRATE   ! Air exchange rate due to mechanical ventilation [vol h-1]
+CHARACTER(LEN=NFILENAMELGTMAX) :: CFNAM_MECHRATE   ! File name for MECHRATE
+CHARACTER(LEN=NFTYP)           :: CFTYP_MECHRATE   ! File type for MECHRATE
 !
-REAL                                    :: XUNIF_SHADEARCHI ! Control variable for presence of shading elements [0=None; 1=Adaptive; 2=Permanent]
-CHARACTER(LEN=NFNAM)                    :: CFNAM_SHADEARCHI ! File name for SHADEARCHI
-CHARACTER(LEN=NFTYP)                    :: CFTYP_SHADEARCHI ! File type for SHADEARCHI
+REAL                           :: XUNIF_SHADEARCHI ! Control variable for presence of shading elements [0=None; 1=Adaptive; 2=Permanent]
+CHARACTER(LEN=NFILENAMELGTMAX) :: CFNAM_SHADEARCHI ! File name for SHADEARCHI
+CHARACTER(LEN=NFTYP)           :: CFTYP_SHADEARCHI ! File type for SHADEARCHI
 !
 ! Floor parameters
 !
-REAL, DIMENSION(NFLOOR_MAX)                 :: XUNIF_HC_FLOOR     ! Floor layers heat capacity [J.K-1.m-3]
-REAL, DIMENSION(NFLOOR_MAX)                 :: XUNIF_TC_FLOOR     ! Floor layers thermal conductivity [W.K-1.m-1]
-REAL, DIMENSION(NFLOOR_MAX)                 :: XUNIF_D_FLOOR      ! Depth of floor layers [m]
-REAL                                        :: XUNIF_FLOOR_HEIGHT ! Building floor height [m]
-CHARACTER(LEN=NFNAM), DIMENSION(NFLOOR_MAX) :: CFNAM_HC_FLOOR     ! File name for HC_FLOOR   
-CHARACTER(LEN=NFNAM), DIMENSION(NFLOOR_MAX) :: CFNAM_TC_FLOOR     ! File name for TC_FLOOR
-CHARACTER(LEN=NFNAM), DIMENSION(NFLOOR_MAX) :: CFNAM_D_FLOOR      ! File name for D_FLOOR
-CHARACTER(LEN=NFNAM)                        :: CFNAM_FLOOR_HEIGHT ! File name for FLOOR_HEIGHT
-CHARACTER(LEN=NFTYP), DIMENSION(NFLOOR_MAX) :: CFTYP_HC_FLOOR     ! File type for HC_FLOOR   
-CHARACTER(LEN=NFTYP), DIMENSION(NFLOOR_MAX) :: CFTYP_TC_FLOOR     ! File type for TC_FLOOR
-CHARACTER(LEN=NFTYP), DIMENSION(NFLOOR_MAX) :: CFTYP_D_FLOOR      ! File type for D_FLOOR
-CHARACTER(LEN=NFTYP)                        :: CFTYP_FLOOR_HEIGHT ! File type for FLOOR_HEIGHT
+REAL, DIMENSION(NFLOOR_MAX)                           :: XUNIF_HC_FLOOR     ! Floor layers heat capacity [J.K-1.m-3]
+REAL, DIMENSION(NFLOOR_MAX)                           :: XUNIF_TC_FLOOR     ! Floor layers thermal conductivity [W.K-1.m-1]
+REAL, DIMENSION(NFLOOR_MAX)                           :: XUNIF_D_FLOOR      ! Depth of floor layers [m]
+REAL                                                  :: XUNIF_FLOOR_HEIGHT ! Building floor height [m]
+CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NFLOOR_MAX) :: CFNAM_HC_FLOOR     ! File name for HC_FLOOR
+CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NFLOOR_MAX) :: CFNAM_TC_FLOOR     ! File name for TC_FLOOR
+CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NFLOOR_MAX) :: CFNAM_D_FLOOR      ! File name for D_FLOOR
+CHARACTER(LEN=NFILENAMELGTMAX)                        :: CFNAM_FLOOR_HEIGHT ! File name for FLOOR_HEIGHT
+CHARACTER(LEN=NFTYP),           DIMENSION(NFLOOR_MAX) :: CFTYP_HC_FLOOR     ! File type for HC_FLOOR
+CHARACTER(LEN=NFTYP),           DIMENSION(NFLOOR_MAX) :: CFTYP_TC_FLOOR     ! File type for TC_FLOOR
+CHARACTER(LEN=NFTYP),           DIMENSION(NFLOOR_MAX) :: CFTYP_D_FLOOR      ! File type for D_FLOOR
+CHARACTER(LEN=NFTYP)                                  :: CFTYP_FLOOR_HEIGHT ! File type for FLOOR_HEIGHT
 !
 ! Mass parameters
 !
-REAL, DIMENSION(NMASS_MAX)                 :: XUNIF_HC_MASS  ! Mass layers heat capacity [J.K-1.m-3]
-REAL, DIMENSION(NMASS_MAX)                 :: XUNIF_TC_MASS  ! Mass layers thermal conductivity [W.K-1.m-1]
-REAL, DIMENSION(NMASS_MAX)                 :: XUNIF_D_MASS   ! Depth of mass layers [m]
-CHARACTER(LEN=NFNAM), DIMENSION(NMASS_MAX) :: CFNAM_HC_MASS  ! File name for HC_MASS   
-CHARACTER(LEN=NFNAM), DIMENSION(NMASS_MAX) :: CFNAM_TC_MASS  ! File name for TC_MASS
-CHARACTER(LEN=NFNAM), DIMENSION(NMASS_MAX) :: CFNAM_D_MASS   ! File name for D_MASS
-CHARACTER(LEN=NFTYP), DIMENSION(NMASS_MAX) :: CFTYP_HC_MASS  ! File type for HC_MASS   
-CHARACTER(LEN=NFTYP), DIMENSION(NMASS_MAX) :: CFTYP_TC_MASS  ! File type for TC_MASS
-CHARACTER(LEN=NFTYP), DIMENSION(NMASS_MAX) :: CFTYP_D_MASS   ! File type for D_MASS
+REAL, DIMENSION(NMASS_MAX)                           :: XUNIF_HC_MASS  ! Mass layers heat capacity [J.K-1.m-3]
+REAL, DIMENSION(NMASS_MAX)                           :: XUNIF_TC_MASS  ! Mass layers thermal conductivity [W.K-1.m-1]
+REAL, DIMENSION(NMASS_MAX)                           :: XUNIF_D_MASS   ! Depth of mass layers [m]
+CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NMASS_MAX) :: CFNAM_HC_MASS  ! File name for HC_MASS
+CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NMASS_MAX) :: CFNAM_TC_MASS  ! File name for TC_MASS
+CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NMASS_MAX) :: CFNAM_D_MASS   ! File name for D_MASS
+CHARACTER(LEN=NFTYP),           DIMENSION(NMASS_MAX) :: CFTYP_HC_MASS  ! File type for HC_MASS
+CHARACTER(LEN=NFTYP),           DIMENSION(NMASS_MAX) :: CFTYP_TC_MASS  ! File type for TC_MASS
+CHARACTER(LEN=NFTYP),           DIMENSION(NMASS_MAX) :: CFTYP_D_MASS   ! File type for D_MASS
 !
 ! AC systems parameters
 !
-REAL                 :: XUNIF_F_WASTE_CAN  ! Fraction of waste heat into the canyon [1]
-REAL                 :: XUNIF_HR_TARGET    ! Relative humidity setpoint [1]
-REAL                 :: XUNIF_CAP_SYS_HEAT ! Capacity of the heating system [W.m-2(bld)] 
-REAL                 :: XUNIF_CAP_SYS_RAT  ! Rated capacity of the cooling system [1]
-REAL                 :: XUNIF_T_ADP        ! Apparatus dewpoint temperature [K]
-REAL                 :: XUNIF_M_SYS_RAT    ! Rated HVAC mass flow rate [kg s-1 m-2(bld)]
-REAL                 :: XUNIF_COP_RAT      ! Rated COP of the cooling system [1]
-REAL                 :: XUNIF_COP_DCS      ! Rated COP of the district cooling system [1]
-REAL                 :: XUNIF_F_WATER_COND ! fraction of evaporation of condensers [1]
-REAL                 :: XUNIF_DCS_AREA     ! presence of district cooling system [1]
-CHARACTER(LEN=NFNAM) :: CFNAM_F_WASTE_CAN  ! File name for F_WASTE_CAN
-CHARACTER(LEN=NFNAM) :: CFNAM_HR_TARGET    ! File name for HR_TARGET
-CHARACTER(LEN=NFNAM) :: CFNAM_CAP_SYS_HEAT ! File name for CAP_SYS_HEAT
-CHARACTER(LEN=NFNAM) :: CFNAM_CAP_SYS_RAT  ! File name for CAP_SYS_RAT
-CHARACTER(LEN=NFNAM) :: CFNAM_T_ADP        ! File name for T_ADP
-CHARACTER(LEN=NFNAM) :: CFNAM_M_SYS_RAT    ! File name for M_SYS_RAT
-CHARACTER(LEN=NFNAM) :: CFNAM_COP_RAT      ! File name for COP_RAT
-CHARACTER(LEN=NFNAM) :: CFNAM_COP_DCS      ! File name for COP_DCS
-CHARACTER(LEN=NFNAM) :: CFNAM_F_WATER_COND ! File name for F_WATER_COND
-CHARACTER(LEN=NFNAM) :: CFNAM_DCS_AREA     ! File name for DCS_AREA
-CHARACTER(LEN=NFTYP) :: CFTYP_F_WASTE_CAN  ! File type for F_WASTE_CAN
-CHARACTER(LEN=NFTYP) :: CFTYP_HR_TARGET    ! File type for HR_TARGET
-CHARACTER(LEN=NFTYP) :: CFTYP_CAP_SYS_HEAT ! File type for CAP_SYS_HEAT
-CHARACTER(LEN=NFTYP) :: CFTYP_CAP_SYS_RAT  ! File type for CAP_SYS_RAT
-CHARACTER(LEN=NFTYP) :: CFTYP_T_ADP        ! File type for T_ADP
-CHARACTER(LEN=NFTYP) :: CFTYP_M_SYS_RAT    ! File type for M_SYS_RAT
-CHARACTER(LEN=NFTYP) :: CFTYP_COP_RAT      ! File type for COP_RAT
-CHARACTER(LEN=NFTYP) :: CFTYP_COP_DCS      ! File type for COP_DCS
-CHARACTER(LEN=NFTYP) :: CFTYP_F_WATER_COND ! File type for F_WATER_COND
-CHARACTER(LEN=NFTYP) :: CFTYP_DCS_AREA     ! File type for DCS_AREA
+REAL                           :: XUNIF_F_WASTE_CAN  ! Fraction of waste heat into the canyon [1]
+REAL                           :: XUNIF_HR_TARGET    ! Relative humidity setpoint [1]
+REAL                           :: XUNIF_CAP_SYS_HEAT ! Capacity of the heating system [W.m-2(bld)]
+REAL                           :: XUNIF_CAP_SYS_RAT  ! Rated capacity of the cooling system [1]
+REAL                           :: XUNIF_T_ADP        ! Apparatus dewpoint temperature [K]
+REAL                           :: XUNIF_M_SYS_RAT    ! Rated HVAC mass flow rate [kg s-1 m-2(bld)]
+REAL                           :: XUNIF_COP_RAT      ! Rated COP of the cooling system [1]
+REAL                           :: XUNIF_COP_DCS      ! Rated COP of the district cooling system [1]
+REAL                           :: XUNIF_F_WATER_COND ! fraction of evaporation of condensers [1]
+REAL                           :: XUNIF_DCS_AREA     ! presence of district cooling system [1]
+CHARACTER(LEN=NFILENAMELGTMAX) :: CFNAM_F_WASTE_CAN  ! File name for F_WASTE_CAN
+CHARACTER(LEN=NFILENAMELGTMAX) :: CFNAM_HR_TARGET    ! File name for HR_TARGET
+CHARACTER(LEN=NFILENAMELGTMAX) :: CFNAM_CAP_SYS_HEAT ! File name for CAP_SYS_HEAT
+CHARACTER(LEN=NFILENAMELGTMAX) :: CFNAM_CAP_SYS_RAT  ! File name for CAP_SYS_RAT
+CHARACTER(LEN=NFILENAMELGTMAX) :: CFNAM_T_ADP        ! File name for T_ADP
+CHARACTER(LEN=NFILENAMELGTMAX) :: CFNAM_M_SYS_RAT    ! File name for M_SYS_RAT
+CHARACTER(LEN=NFILENAMELGTMAX) :: CFNAM_COP_RAT      ! File name for COP_RAT
+CHARACTER(LEN=NFILENAMELGTMAX) :: CFNAM_COP_DCS      ! File name for COP_DCS
+CHARACTER(LEN=NFILENAMELGTMAX) :: CFNAM_F_WATER_COND ! File name for F_WATER_COND
+CHARACTER(LEN=NFILENAMELGTMAX) :: CFNAM_DCS_AREA     ! File name for DCS_AREA
+CHARACTER(LEN=NFTYP)           :: CFTYP_F_WASTE_CAN  ! File type for F_WASTE_CAN
+CHARACTER(LEN=NFTYP)           :: CFTYP_HR_TARGET    ! File type for HR_TARGET
+CHARACTER(LEN=NFTYP)           :: CFTYP_CAP_SYS_HEAT ! File type for CAP_SYS_HEAT
+CHARACTER(LEN=NFTYP)           :: CFTYP_CAP_SYS_RAT  ! File type for CAP_SYS_RAT
+CHARACTER(LEN=NFTYP)           :: CFTYP_T_ADP        ! File type for T_ADP
+CHARACTER(LEN=NFTYP)           :: CFTYP_M_SYS_RAT    ! File type for M_SYS_RAT
+CHARACTER(LEN=NFTYP)           :: CFTYP_COP_RAT      ! File type for COP_RAT
+CHARACTER(LEN=NFTYP)           :: CFTYP_COP_DCS      ! File type for COP_DCS
+CHARACTER(LEN=NFTYP)           :: CFTYP_F_WATER_COND ! File type for F_WATER_COND
+CHARACTER(LEN=NFTYP)           :: CFTYP_DCS_AREA     ! File type for DCS_AREA
 !
-REAL                 :: XUNIF_TDESV       ! Design temperature for ventilation [K]
-REAL                 :: XUNIF_WIN_SW_MAX  ! Threshold for shortwave radiation received by walls for shading [W.m-2(wall)]
-REAL                 :: XUNIF_FOPEN       ! Maximum fraction of windows opened [1]
-CHARACTER(LEN=NFNAM) :: CFNAM_TDESV       ! File name for TDESV
-CHARACTER(LEN=NFNAM) :: CFNAM_WIN_SW_MAX  ! File name for WIN_SW_MAX
-CHARACTER(LEN=NFNAM) :: CFNAM_FOPEN       ! File name for FOPEN
-CHARACTER(LEN=NFTYP) :: CFTYP_TDESV       ! File type for TDESV
-CHARACTER(LEN=NFTYP) :: CFTYP_WIN_SW_MAX  ! File type for WIN_SW_MAX
-CHARACTER(LEN=NFTYP) :: CFTYP_FOPEN       ! File type for FOPEN
+REAL                           :: XUNIF_TDESV       ! Design temperature for ventilation [K]
+REAL                           :: XUNIF_WIN_SW_MAX  ! Threshold for shortwave radiation received by walls for shading [W.m-2(wall)]
+REAL                           :: XUNIF_FOPEN       ! Maximum fraction of windows opened [1]
+CHARACTER(LEN=NFILENAMELGTMAX) :: CFNAM_TDESV       ! File name for TDESV
+CHARACTER(LEN=NFILENAMELGTMAX) :: CFNAM_WIN_SW_MAX  ! File name for WIN_SW_MAX
+CHARACTER(LEN=NFILENAMELGTMAX) :: CFNAM_FOPEN       ! File name for FOPEN
+CHARACTER(LEN=NFTYP)           :: CFTYP_TDESV       ! File type for TDESV
+CHARACTER(LEN=NFTYP)           :: CFTYP_WIN_SW_MAX  ! File type for WIN_SW_MAX
+CHARACTER(LEN=NFTYP)           :: CFTYP_FOPEN       ! File type for FOPEN
 !
 REAL, DIMENSION(NBEMCOMP_MAX) :: XUNIF_FVSUM ! Fraction of households opening windows during warm conditions [1]
 REAL, DIMENSION(NBEMCOMP_MAX) :: XUNIF_FVVAC ! Fraction of households opening windows when the building is vacant [1]
@@ -216,18 +215,18 @@ REAL, DIMENSION(NBEMCOMP_MAX) :: XUNIF_FVNIG ! Fraction of households opening wi
 REAL, DIMENSION(NBEMCOMP_MAX) :: XUNIF_FSSUM ! Fraction of households closing shading elements during warm conditions [1]
 REAL, DIMENSION(NBEMCOMP_MAX) :: XUNIF_FSVAC ! Fraction of households closing shading elements when the building is vacant [1]
 REAL, DIMENSION(NBEMCOMP_MAX) :: XUNIF_FSNIG ! Fraction of households closing shading elements during the night [1]
-CHARACTER(LEN=NFNAM)          :: CFNAM_FVSUM ! File name for FVSUM
-CHARACTER(LEN=NFNAM)          :: CFNAM_FVVAC ! File name for FVVAC
-CHARACTER(LEN=NFNAM)          :: CFNAM_FVNIG ! File name for FVNIG
-CHARACTER(LEN=NFNAM)          :: CFNAM_FSSUM ! File name for FSSUM
-CHARACTER(LEN=NFNAM)          :: CFNAM_FSVAC ! File name for FSVAC
-CHARACTER(LEN=NFNAM)          :: CFNAM_FSNIG ! File name for FSNIG
-CHARACTER(LEN=NFTYP)          :: CFTYP_FVSUM ! File type for FVSUM
-CHARACTER(LEN=NFTYP)          :: CFTYP_FVVAC ! File type for FVVAC
-CHARACTER(LEN=NFTYP)          :: CFTYP_FVNIG ! File type for FVNIG
-CHARACTER(LEN=NFTYP)          :: CFTYP_FSSUM ! File type for FSSUM
-CHARACTER(LEN=NFTYP)          :: CFTYP_FSVAC ! File type for FSVAC
-CHARACTER(LEN=NFTYP)          :: CFTYP_FSNIG ! File type for FSNIG
+CHARACTER(LEN=NFILENAMELGTMAX) :: CFNAM_FVSUM ! File name for FVSUM
+CHARACTER(LEN=NFILENAMELGTMAX) :: CFNAM_FVVAC ! File name for FVVAC
+CHARACTER(LEN=NFILENAMELGTMAX) :: CFNAM_FVNIG ! File name for FVNIG
+CHARACTER(LEN=NFILENAMELGTMAX) :: CFNAM_FSSUM ! File name for FSSUM
+CHARACTER(LEN=NFILENAMELGTMAX) :: CFNAM_FSVAC ! File name for FSVAC
+CHARACTER(LEN=NFILENAMELGTMAX) :: CFNAM_FSNIG ! File name for FSNIG
+CHARACTER(LEN=NFTYP)           :: CFTYP_FVSUM ! File type for FVSUM
+CHARACTER(LEN=NFTYP)           :: CFTYP_FVVAC ! File type for FVVAC
+CHARACTER(LEN=NFTYP)           :: CFTYP_FVNIG ! File type for FVNIG
+CHARACTER(LEN=NFTYP)           :: CFTYP_FSSUM ! File type for FSSUM
+CHARACTER(LEN=NFTYP)           :: CFTYP_FSVAC ! File type for FSVAC
+CHARACTER(LEN=NFTYP)           :: CFTYP_FSNIG ! File type for FSNIG
 !
 REAL, DIMENSION(:,:), ALLOCATABLE :: XUNIF_DAYWBEG_SCHED ! Day of week for beginning of schedule (1=Monday)
 REAL, DIMENSION(:,:), ALLOCATABLE :: XUNIF_HOURBEG_SCHED ! Hour of day for beginning of schedule 
@@ -235,12 +234,12 @@ REAL, DIMENSION(:,:), ALLOCATABLE :: XUNIF_PROBOCC       ! Probability of buildi
 REAL, DIMENSION(:,:), ALLOCATABLE :: XUNIF_BEG_HOLIDAY   ! Julian day of year for beginning of holiday
 REAL, DIMENSION(:,:), ALLOCATABLE :: XUNIF_END_HOLIDAY   ! Julian day of year for end of holiday
 REAL, DIMENSION(NBEMCOMP_MAX)     :: XUNIF_MOD_HOLIDAY   ! Modulation factor for internal heat release during holidays [1]
-CHARACTER(LEN=NFNAM)              :: CFNAM_DAYWBEG_SCHED ! File name for DAYWBEG_SCHED
-CHARACTER(LEN=NFNAM)              :: CFNAM_HOURBEG_SCHED ! File name for HOURBEG_SCHED 
-CHARACTER(LEN=NFNAM)              :: CFNAM_PROBOCC       ! File name for PROBOCC 
-CHARACTER(LEN=NFNAM)              :: CFNAM_BEG_HOLIDAY   ! File name for BEG_HOLIDAY
-CHARACTER(LEN=NFNAM)              :: CFNAM_END_HOLIDAY   ! File name for END_HOLIDAY
-CHARACTER(LEN=NFNAM)              :: CFNAM_MOD_HOLIDAY   ! File name for MOD_HOLIDAY
+CHARACTER(LEN=NFILENAMELGTMAX)    :: CFNAM_DAYWBEG_SCHED ! File name for DAYWBEG_SCHED
+CHARACTER(LEN=NFILENAMELGTMAX)    :: CFNAM_HOURBEG_SCHED ! File name for HOURBEG_SCHED
+CHARACTER(LEN=NFILENAMELGTMAX)    :: CFNAM_PROBOCC       ! File name for PROBOCC
+CHARACTER(LEN=NFILENAMELGTMAX)    :: CFNAM_BEG_HOLIDAY   ! File name for BEG_HOLIDAY
+CHARACTER(LEN=NFILENAMELGTMAX)    :: CFNAM_END_HOLIDAY   ! File name for END_HOLIDAY
+CHARACTER(LEN=NFILENAMELGTMAX)    :: CFNAM_MOD_HOLIDAY   ! File name for MOD_HOLIDAY
 CHARACTER(LEN=NFTYP)              :: CFTYP_DAYWBEG_SCHED ! File type for DAYWBEG_SCHED
 CHARACTER(LEN=NFTYP)              :: CFTYP_HOURBEG_SCHED ! File type for HOURBEG_SCHED
 CHARACTER(LEN=NFTYP)              :: CFTYP_PROBOCC       ! File type for PROBOCC
@@ -248,122 +247,122 @@ CHARACTER(LEN=NFTYP)              :: CFTYP_BEG_HOLIDAY   ! File type for BEG_HOL
 CHARACTER(LEN=NFTYP)              :: CFTYP_END_HOLIDAY   ! File type for END_HOLIDAY
 CHARACTER(LEN=NFTYP)              :: CFTYP_MOD_HOLIDAY   ! File type for MOD_HOLIDAY
 !
-REAL, DIMENSION(NBEMCOMP_MAX) :: XUNIF_TCOOL_OCCD ! Design temperature for air conditioning, occupied, day [K]
-CHARACTER(LEN=NFNAM)          :: CFNAM_TCOOL_OCCD ! File name for TCOOL_OCCD
-CHARACTER(LEN=NFTYP)          :: CFTYP_TCOOL_OCCD ! File type for TCOOL_OCCD
+REAL, DIMENSION(NBEMCOMP_MAX)  :: XUNIF_TCOOL_OCCD ! Design temperature for air conditioning, occupied, day [K]
+CHARACTER(LEN=NFILENAMELGTMAX) :: CFNAM_TCOOL_OCCD ! File name for TCOOL_OCCD
+CHARACTER(LEN=NFTYP)           :: CFTYP_TCOOL_OCCD ! File type for TCOOL_OCCD
 !
-REAL, DIMENSION(NBEMCOMP_MAX) :: XUNIF_TCOOL_OCCN ! Design temperature for air conditioning, occupied, night [K]
-CHARACTER(LEN=NFNAM)          :: CFNAM_TCOOL_OCCN ! File name for TCOOL_OCCN
-CHARACTER(LEN=NFTYP)          :: CFTYP_TCOOL_OCCN ! File type for TCOOL_OCCN
+REAL, DIMENSION(NBEMCOMP_MAX)  :: XUNIF_TCOOL_OCCN ! Design temperature for air conditioning, occupied, night [K]
+CHARACTER(LEN=NFILENAMELGTMAX) :: CFNAM_TCOOL_OCCN ! File name for TCOOL_OCCN
+CHARACTER(LEN=NFTYP)           :: CFTYP_TCOOL_OCCN ! File type for TCOOL_OCCN
 !
-REAL, DIMENSION(NBEMCOMP_MAX) :: XUNIF_TCOOL_VCDD ! Design temperature for air conditioning, vacant, day [K]
-CHARACTER(LEN=NFNAM)          :: CFNAM_TCOOL_VCDD ! File name for TCOOL_VCDD
-CHARACTER(LEN=NFTYP)          :: CFTYP_TCOOL_VCDD ! File type for TCOOL_VCDD
+REAL, DIMENSION(NBEMCOMP_MAX)  :: XUNIF_TCOOL_VCDD ! Design temperature for air conditioning, vacant, day [K]
+CHARACTER(LEN=NFILENAMELGTMAX) :: CFNAM_TCOOL_VCDD ! File name for TCOOL_VCDD
+CHARACTER(LEN=NFTYP)           :: CFTYP_TCOOL_VCDD ! File type for TCOOL_VCDD
 !
-REAL, DIMENSION(NBEMCOMP_MAX) :: XUNIF_TCOOL_VCDN ! Design temperature for air conditioning, vacant, night [K]
-CHARACTER(LEN=NFNAM)          :: CFNAM_TCOOL_VCDN ! File name for TCOOL_VCDN
-CHARACTER(LEN=NFTYP)          :: CFTYP_TCOOL_VCDN ! File type for TCOOL_VCDN
+REAL, DIMENSION(NBEMCOMP_MAX)  :: XUNIF_TCOOL_VCDN ! Design temperature for air conditioning, vacant, night [K]
+CHARACTER(LEN=NFILENAMELGTMAX) :: CFNAM_TCOOL_VCDN ! File name for TCOOL_VCDN
+CHARACTER(LEN=NFTYP)           :: CFTYP_TCOOL_VCDN ! File type for TCOOL_VCDN
 !
-REAL, DIMENSION(NBEMCOMP_MAX) :: XUNIF_TCOOL_VCLD ! Design temperature for air conditioning, vacant, long duration [K]   
-CHARACTER(LEN=NFNAM)          :: CFNAM_TCOOL_VCLD ! File name for TCOOL_VCLD
-CHARACTER(LEN=NFTYP)          :: CFTYP_TCOOL_VCLD ! File type for TCOOL_VCLD
+REAL, DIMENSION(NBEMCOMP_MAX)  :: XUNIF_TCOOL_VCLD ! Design temperature for air conditioning, vacant, long duration [K]
+CHARACTER(LEN=NFILENAMELGTMAX) :: CFNAM_TCOOL_VCLD ! File name for TCOOL_VCLD
+CHARACTER(LEN=NFTYP)           :: CFTYP_TCOOL_VCLD ! File type for TCOOL_VCLD
 !
-REAL, DIMENSION(NBEMCOMP_MAX) :: XUNIF_THEAT_OCCD ! Design temperature for heating, occupied, day [K]
-CHARACTER(LEN=NFNAM)          :: CFNAM_THEAT_OCCD ! File name for THEAT_OCCD
-CHARACTER(LEN=NFTYP)          :: CFTYP_THEAT_OCCD ! File type for THEAT_OCCD
+REAL, DIMENSION(NBEMCOMP_MAX)  :: XUNIF_THEAT_OCCD ! Design temperature for heating, occupied, day [K]
+CHARACTER(LEN=NFILENAMELGTMAX) :: CFNAM_THEAT_OCCD ! File name for THEAT_OCCD
+CHARACTER(LEN=NFTYP)           :: CFTYP_THEAT_OCCD ! File type for THEAT_OCCD
 !
-REAL, DIMENSION(NBEMCOMP_MAX) :: XUNIF_THEAT_OCCN ! Design temperature for heating, occupied, night [K]
-CHARACTER(LEN=NFNAM)          :: CFNAM_THEAT_OCCN ! File name for THEAT_OCCN
-CHARACTER(LEN=NFTYP)          :: CFTYP_THEAT_OCCN ! File type for THEAT_OCCN 
+REAL, DIMENSION(NBEMCOMP_MAX)  :: XUNIF_THEAT_OCCN ! Design temperature for heating, occupied, night [K]
+CHARACTER(LEN=NFILENAMELGTMAX) :: CFNAM_THEAT_OCCN ! File name for THEAT_OCCN
+CHARACTER(LEN=NFTYP)           :: CFTYP_THEAT_OCCN ! File type for THEAT_OCCN
 !
-REAL, DIMENSION(NBEMCOMP_MAX) :: XUNIF_THEAT_VCDD ! Design temperature for heating, vacant, day [K]
-CHARACTER(LEN=NFNAM)          :: CFNAM_THEAT_VCDD ! File name for THEAT_VCDD  
-CHARACTER(LEN=NFTYP)          :: CFTYP_THEAT_VCDD ! File type for THEAT_VCDD
+REAL, DIMENSION(NBEMCOMP_MAX)  :: XUNIF_THEAT_VCDD ! Design temperature for heating, vacant, day [K]
+CHARACTER(LEN=NFILENAMELGTMAX) :: CFNAM_THEAT_VCDD ! File name for THEAT_VCDD
+CHARACTER(LEN=NFTYP)           :: CFTYP_THEAT_VCDD ! File type for THEAT_VCDD
 !
-REAL, DIMENSION(NBEMCOMP_MAX) :: XUNIF_THEAT_VCDN ! Design temperature for heating, vacant, night [K]  
-CHARACTER(LEN=NFNAM)          :: CFNAM_THEAT_VCDN ! File name for THEAT_VCDN
-CHARACTER(LEN=NFTYP)          :: CFTYP_THEAT_VCDN ! File type for THEAT_VCDN
+REAL, DIMENSION(NBEMCOMP_MAX)  :: XUNIF_THEAT_VCDN ! Design temperature for heating, vacant, night [K]
+CHARACTER(LEN=NFILENAMELGTMAX) :: CFNAM_THEAT_VCDN ! File name for THEAT_VCDN
+CHARACTER(LEN=NFTYP)           :: CFTYP_THEAT_VCDN ! File type for THEAT_VCDN
 !
-REAL, DIMENSION(NBEMCOMP_MAX) :: XUNIF_THEAT_VCLD ! Design temperature for heating, vacant, long duration [K]
-CHARACTER(LEN=NFNAM)          :: CFNAM_THEAT_VCLD ! File name for THEAT_VCLD  
-CHARACTER(LEN=NFTYP)          :: CFTYP_THEAT_VCLD ! File type for THEAT_VCLD
+REAL, DIMENSION(NBEMCOMP_MAX)  :: XUNIF_THEAT_VCLD ! Design temperature for heating, vacant, long duration [K]
+CHARACTER(LEN=NFILENAMELGTMAX) :: CFNAM_THEAT_VCLD ! File name for THEAT_VCLD
+CHARACTER(LEN=NFTYP)           :: CFTYP_THEAT_VCLD ! File type for THEAT_VCLD
 !
 ! Internal heat gains
-REAL, DIMENSION(NBEMCOMP_MAX) :: XUNIF_QIN         ! Internal heat gains [W m-2(floor)]
-REAL                          :: XUNIF_QIN_FRAD    ! Radiant fraction of int heat gains [1]
-REAL                          :: XUNIF_QIN_FLAT    ! Latent franction of internal heat gains [1]
-REAL, DIMENSION(NBEMCOMP_MAX) :: XUNIF_MODQIN_VCD  ! Modulation during short-term vacancy [1]
-REAL, DIMENSION(NBEMCOMP_MAX) :: XUNIF_MODQIN_VLD  ! Modulation during long-term vacancy [1]
-REAL, DIMENSION(NBEMCOMP_MAX) :: XUNIF_MODQIN_NIG  ! Modulation during night [1] 
-CHARACTER(LEN=NFNAM)          :: CFNAM_QIN         ! File name for QIN
-CHARACTER(LEN=NFNAM)          :: CFNAM_QIN_FRAD    ! File name for QIN_FRAD
-CHARACTER(LEN=NFNAM)          :: CFNAM_QIN_FLAT    ! File name for QIN_FLAT
-CHARACTER(LEN=NFNAM)          :: CFNAM_MODQIN_VCD  ! File name for MODQIN_VCD 
-CHARACTER(LEN=NFNAM)          :: CFNAM_MODQIN_VLD  ! File name for MODQIN_VLD 
-CHARACTER(LEN=NFNAM)          :: CFNAM_MODQIN_NIG  ! File name for MODQIN_NIG
-CHARACTER(LEN=NFTYP)          :: CFTYP_QIN         ! File type for QIN
-CHARACTER(LEN=NFTYP)          :: CFTYP_QIN_FRAD    ! File type for QIN_FRAD  
-CHARACTER(LEN=NFTYP)          :: CFTYP_QIN_FLAT    ! File type for QIN_FLAT 
-CHARACTER(LEN=NFTYP)          :: CFTYP_MODQIN_VCD  ! File type for MODQIN_VCD  
-CHARACTER(LEN=NFTYP)          :: CFTYP_MODQIN_VLD  ! File type for MODQIN_VLD 
-CHARACTER(LEN=NFTYP)          :: CFTYP_MODQIN_NIG  ! File type for MODQIN_NIG  
+REAL, DIMENSION(NBEMCOMP_MAX)  :: XUNIF_QIN         ! Internal heat gains [W m-2(floor)]
+REAL                           :: XUNIF_QIN_FRAD    ! Radiant fraction of int heat gains [1]
+REAL                           :: XUNIF_QIN_FLAT    ! Latent franction of internal heat gains [1]
+REAL, DIMENSION(NBEMCOMP_MAX)  :: XUNIF_MODQIN_VCD  ! Modulation during short-term vacancy [1]
+REAL, DIMENSION(NBEMCOMP_MAX)  :: XUNIF_MODQIN_VLD  ! Modulation during long-term vacancy [1]
+REAL, DIMENSION(NBEMCOMP_MAX)  :: XUNIF_MODQIN_NIG  ! Modulation during night [1]
+CHARACTER(LEN=NFILENAMELGTMAX) :: CFNAM_QIN         ! File name for QIN
+CHARACTER(LEN=NFILENAMELGTMAX) :: CFNAM_QIN_FRAD    ! File name for QIN_FRAD
+CHARACTER(LEN=NFILENAMELGTMAX) :: CFNAM_QIN_FLAT    ! File name for QIN_FLAT
+CHARACTER(LEN=NFILENAMELGTMAX) :: CFNAM_MODQIN_VCD  ! File name for MODQIN_VCD
+CHARACTER(LEN=NFILENAMELGTMAX) :: CFNAM_MODQIN_VLD  ! File name for MODQIN_VLD
+CHARACTER(LEN=NFILENAMELGTMAX) :: CFNAM_MODQIN_NIG  ! File name for MODQIN_NIG
+CHARACTER(LEN=NFTYP)           :: CFTYP_QIN         ! File type for QIN
+CHARACTER(LEN=NFTYP)           :: CFTYP_QIN_FRAD    ! File type for QIN_FRAD
+CHARACTER(LEN=NFTYP)           :: CFTYP_QIN_FLAT    ! File type for QIN_FLAT
+CHARACTER(LEN=NFTYP)           :: CFTYP_MODQIN_VCD  ! File type for MODQIN_VCD
+CHARACTER(LEN=NFTYP)           :: CFTYP_MODQIN_VLD  ! File type for MODQIN_VLD
+CHARACTER(LEN=NFTYP)           :: CFTYP_MODQIN_NIG  ! File type for MODQIN_NIG
 !
 ! window parameters
-REAL                 :: XUNIF_GR      ! Glazing ratio [1]
-REAL                 :: XUNIF_SHGC    ! Solar transmittance of windows [1] 
-REAL                 :: XUNIF_SHGC_SH ! solar transmittance of windows + shading [1]
-REAL                 :: XUNIF_U_WIN   ! U-Value of window [W.m-2.K-1]
-CHARACTER(LEN=NFNAM) :: CFNAM_GR      ! File name for GR
-CHARACTER(LEN=NFNAM) :: CFNAM_SHGC    ! File name for SHGC
-CHARACTER(LEN=NFNAM) :: CFNAM_SHGC_SH ! File name for SHGC_SH
-CHARACTER(LEN=NFNAM) :: CFNAM_U_WIN   ! File name for U_WIN
-CHARACTER(LEN=NFTYP) :: CFTYP_GR      ! File type for GR
-CHARACTER(LEN=NFTYP) :: CFTYP_SHGC    ! File type for SHGC
-CHARACTER(LEN=NFTYP) :: CFTYP_SHGC_SH ! File type for SHGC
-CHARACTER(LEN=NFTYP) :: CFTYP_U_WIN   ! File type for U_WIN
+REAL                           :: XUNIF_GR      ! Glazing ratio [1]
+REAL                           :: XUNIF_SHGC    ! Solar transmittance of windows [1]
+REAL                           :: XUNIF_SHGC_SH ! solar transmittance of windows + shading [1]
+REAL                           :: XUNIF_U_WIN   ! U-Value of window [W.m-2.K-1]
+CHARACTER(LEN=NFILENAMELGTMAX) :: CFNAM_GR      ! File name for GR
+CHARACTER(LEN=NFILENAMELGTMAX) :: CFNAM_SHGC    ! File name for SHGC
+CHARACTER(LEN=NFILENAMELGTMAX) :: CFNAM_SHGC_SH ! File name for SHGC_SH
+CHARACTER(LEN=NFILENAMELGTMAX) :: CFNAM_U_WIN   ! File name for U_WIN
+CHARACTER(LEN=NFTYP)           :: CFTYP_GR      ! File type for GR
+CHARACTER(LEN=NFTYP)           :: CFTYP_SHGC    ! File type for SHGC
+CHARACTER(LEN=NFTYP)           :: CFTYP_SHGC_SH ! File type for SHGC
+CHARACTER(LEN=NFTYP)           :: CFTYP_U_WIN   ! File type for U_WIN
 !
 ! air renewal
-REAL                 :: XUNIF_N50 ! Airtightness of the building [vol.h-1 at 5O Pa]
-CHARACTER(LEN=NFNAM) :: CFNAM_N50 ! File name for N50
-CHARACTER(LEN=NFTYP) :: CFTYP_N50 ! File type for N50
+REAL                           :: XUNIF_N50 ! Airtightness of the building [vol.h-1 at 5O Pa]
+CHARACTER(LEN=NFILENAMELGTMAX) :: CFNAM_N50 ! File name for N50
+CHARACTER(LEN=NFTYP)           :: CFTYP_N50 ! File type for N50
 !
 ! parameters for autosize calculation of the AC systems
-REAL                  :: XUNIF_T_SIZE_MAX ! Temperature for capacity of the cooling system [K]
-REAL                  :: XUNIF_T_SIZE_MIN ! Temperature for capacity of the heating system [K]
- CHARACTER(LEN=NFNAM) :: CFNAM_T_SIZE_MAX ! File name for T_SIZE_MAX
- CHARACTER(LEN=NFNAM) :: CFNAM_T_SIZE_MIN ! File name for T_SIZE_MIN
- CHARACTER(LEN=NFTYP) :: CFTYP_T_SIZE_MAX ! File type for T_SIZE_MAX
- CHARACTER(LEN=NFTYP) :: CFTYP_T_SIZE_MIN ! File type for T_SIZE_MIN
+REAL                            :: XUNIF_T_SIZE_MAX ! Temperature for capacity of the cooling system [K]
+REAL                            :: XUNIF_T_SIZE_MIN ! Temperature for capacity of the heating system [K]
+ CHARACTER(LEN=NFILENAMELGTMAX) :: CFNAM_T_SIZE_MAX ! File name for T_SIZE_MAX
+ CHARACTER(LEN=NFILENAMELGTMAX) :: CFNAM_T_SIZE_MIN ! File name for T_SIZE_MIN
+ CHARACTER(LEN=NFTYP)           :: CFTYP_T_SIZE_MAX ! File type for T_SIZE_MAX
+ CHARACTER(LEN=NFTYP)           :: CFTYP_T_SIZE_MIN ! File type for T_SIZE_MIN
 !
 ! heating fractions and emission factors(for CO2 flux from buildings calculation)
-REAL                 :: XUNIF_FRAC_HEAT_ELEC ! uniform value for Fraction of electric heating [1]
-CHARACTER(LEN=NFNAM) :: CFNAM_FRAC_HEAT_ELEC ! file name for Fraction of electric heating
-CHARACTER(LEN=NFTYP) :: CFTYP_FRAC_HEAT_ELEC ! file type for Fraction of electric heating
+REAL                           :: XUNIF_FRAC_HEAT_ELEC ! uniform value for Fraction of electric heating [1]
+CHARACTER(LEN=NFILENAMELGTMAX) :: CFNAM_FRAC_HEAT_ELEC ! file name for Fraction of electric heating
+CHARACTER(LEN=NFTYP)           :: CFTYP_FRAC_HEAT_ELEC ! file type for Fraction of electric heating
 !
-REAL                 :: XUNIF_FRAC_HEAT_GAS  ! uniform value for Fraction of gas heating [1]
-CHARACTER(LEN=NFNAM) :: CFNAM_FRAC_HEAT_GAS  ! file name for Fraction of gas heating
-CHARACTER(LEN=NFTYP) :: CFTYP_FRAC_HEAT_GAS  ! file type for Fraction of gas heating
+REAL                           :: XUNIF_FRAC_HEAT_GAS  ! uniform value for Fraction of gas heating [1]
+CHARACTER(LEN=NFILENAMELGTMAX) :: CFNAM_FRAC_HEAT_GAS  ! file name for Fraction of gas heating
+CHARACTER(LEN=NFTYP)           :: CFTYP_FRAC_HEAT_GAS  ! file type for Fraction of gas heating
 !
-REAL                 :: XUNIF_FRAC_HEAT_OTHER ! uniform value for Fraction of other heating [1]
-CHARACTER(LEN=NFNAM) :: CFNAM_FRAC_HEAT_OTHER ! file name for Fraction of other heating
-CHARACTER(LEN=NFTYP) :: CFTYP_FRAC_HEAT_OTHER ! file type for Fraction of other heating
+REAL                           :: XUNIF_FRAC_HEAT_OTHER ! uniform value for Fraction of other heating [1]
+CHARACTER(LEN=NFILENAMELGTMAX) :: CFNAM_FRAC_HEAT_OTHER ! file name for Fraction of other heating
+CHARACTER(LEN=NFTYP)           :: CFTYP_FRAC_HEAT_OTHER ! file type for Fraction of other heating
 !
-REAL                 :: XUNIF_FRAC_HEAT_FUEL ! uniform value for Fraction of fuel heating [1]
-CHARACTER(LEN=NFNAM) :: CFNAM_FRAC_HEAT_FUEL ! file name for Fraction of fuel heating
-CHARACTER(LEN=NFTYP) :: CFTYP_FRAC_HEAT_FUEL ! file type for Fraction of fuel heating
+REAL                           :: XUNIF_FRAC_HEAT_FUEL ! uniform value for Fraction of fuel heating [1]
+CHARACTER(LEN=NFILENAMELGTMAX) :: CFNAM_FRAC_HEAT_FUEL ! file name for Fraction of fuel heating
+CHARACTER(LEN=NFTYP)           :: CFTYP_FRAC_HEAT_FUEL ! file type for Fraction of fuel heating
 !
 REAL :: XPAR_CF_CO2_ELEC  ! Emission factor CO2/electricity [KgCO2.J-1]
 REAL :: XPAR_CF_CO2_GAS   ! Emission factor CO2/gas [KgCO2.J-1]
 REAL :: XPAR_CF_CO2_FUEL  ! Emission factor CO2/fuel [KgCO2.J-1]
 REAL :: XPAR_CF_CO2_OTHER ! Emission factor CO2/other source [KgCO2.J-1]
 !
-REAL, DIMENSION(NBEMCOMP_MAX) :: XUNIF_HOTWAT ! Energy needed for hot water [W m-2(floor)]
-CHARACTER(LEN=NFNAM)          :: CFNAM_HOTWAT ! Energy needed for hot water [W m-2(floor)]
-CHARACTER(LEN=NFTYP)          :: CFTYP_HOTWAT ! Energy needed for hot water [W m-2(floor)]
+REAL, DIMENSION(NBEMCOMP_MAX)  :: XUNIF_HOTWAT ! Energy needed for hot water [W m-2(floor)]
+CHARACTER(LEN=NFILENAMELGTMAX) :: CFNAM_HOTWAT ! Energy needed for hot water [W m-2(floor)]
+CHARACTER(LEN=NFTYP)           :: CFTYP_HOTWAT ! Energy needed for hot water [W m-2(floor)]
 !
-REAL                 :: XUNIF_F_HW_GAS ! Fraction of warm water heated by gas [1]
-CHARACTER(LEN=NFNAM) :: CFNAM_F_HW_GAS ! File name for F_HW_GAS
-CHARACTER(LEN=NFTYP) :: CFTYP_F_HW_GAS ! File type for F_HW_GAS
+REAL                           :: XUNIF_F_HW_GAS ! Fraction of warm water heated by gas [1]
+CHARACTER(LEN=NFILENAMELGTMAX) :: CFNAM_F_HW_GAS ! File name for F_HW_GAS
+CHARACTER(LEN=NFTYP)           :: CFTYP_F_HW_GAS ! File type for F_HW_GAS
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !

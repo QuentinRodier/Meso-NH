@@ -34,7 +34,8 @@ MODULE MODD_SURF_PAR
 !             ------------
 !
 #ifdef SFX_MNH
-USE MODD_PRECISION, ONLY: MNHREAL
+USE MODD_PARAMETERS, ONLY: NFILENAMELGTMAX_MNH => NFILENAMELGTMAX
+USE MODD_PRECISION,  ONLY: MNHREAL
 #endif
 !
 IMPLICIT NONE
@@ -66,6 +67,12 @@ INTEGER, PARAMETER :: LEN_HREC = MNH_LEN_HREC ! Length of record variable writte
                                     ! variable names to 12 as much as possible.
 #else
 INTEGER, PARAMETER :: LEN_HREC = 12
+#endif
+!
+#ifdef SFX_MNH
+INTEGER, PARAMETER :: NFILENAMELGTMAX = NFILENAMELGTMAX_MNH
+#else
+INTEGER, PARAMETER :: NFILENAMELGTMAX = 28
 #endif
 !-----------------------------------------------------------------------------------------------------
 !

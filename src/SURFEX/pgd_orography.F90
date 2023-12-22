@@ -54,7 +54,7 @@ USE MODD_PGD_GRID,       ONLY : NL, CGRID, XGRID_PAR
 USE MODD_PGDWORK,        ONLY : XALL, NSIZE_ALL, XSSQO, LSSQO, NSSO, &
                                 XEXT_ALL, XSUMVAL, NSIZE, LORORAD,   &
                                 XRFSSO, XHALORADIUS, NFSSOMAX
-USE MODD_SURF_PAR,       ONLY : XUNDEF, NUNDEF
+USE MODD_SURF_PAR,       ONLY : NFILENAMELGTMAX, XUNDEF, NUNDEF
 USE MODD_CSTS,           ONLY : XPI
 !
 USE MODI_GET_LUOUT
@@ -105,7 +105,7 @@ TYPE(SURF_ATM_t), INTENT(INOUT) :: U
 TYPE(SSO_t), INTENT(INOUT) :: USS
 !
  CHARACTER(LEN=6),     INTENT(IN)  :: HPROGRAM ! program calling
- CHARACTER(LEN=28),    INTENT(IN)  :: HFILE    ! atmospheric file name
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)  :: HFILE    ! atmospheric file name
  CHARACTER(LEN=6),     INTENT(IN)  :: HFILETYPE! atmospheric file type
 LOGICAL,              INTENT(IN)  :: OZS      ! .true. if orography is imposed by atm. model
 !
@@ -136,10 +136,10 @@ INTEGER                  :: IZS         ! size of orographic array in atmospheri
 !*    0.3    Declaration of namelists
 !            ------------------------
 !
- CHARACTER(LEN=28)        :: YZS         ! file name for orography
- CHARACTER(LEN=6)         :: YFILETYPE   ! data file type
-CHARACTER(LEN=28)        :: YSLOPE         ! file name for slope and aspect
-CHARACTER(LEN=6)         :: YSLOPEFILETYPE   ! data file type
+ CHARACTER(LEN=NFILENAMELGTMAX) :: YZS         ! file name for orography
+ CHARACTER(LEN=6)               :: YFILETYPE   ! data file type
+CHARACTER(LEN=NFILENAMELGTMAX)  :: YSLOPE         ! file name for slope and aspect
+CHARACTER(LEN=6)                :: YSLOPEFILETYPE   ! data file type
 REAL                     :: ZUNIF_ZS    ! uniform orography
  CHARACTER(LEN=3)         :: YOROGTYPE   ! orogpraphy type 
 !                                       ! 'AVG' : average orography
@@ -365,7 +365,7 @@ ELSEIF(GIMP_ZS)THEN !GIMP_ZS (impose topo from input file at the same resolution
      
 !      CALL ABOR1_SFX('Use another format than netcdf for topo input file with GIMP_ZS')
     CALL READ_PGD_NETCDF(UG, U, USS, &
-                          HPROGRAM,'SURF  ','      ',YZS,'ZS                  ',U%XZS)
+                          HPROGRAM,'SURF  ','      ',TRIM(YZS),'ZS                  ',U%XZS)
      
      USS%XSIL_ZS(:)    = U%XZS(:)
      USS%XAVG_ZS(:)    = U%XZS(:)

@@ -33,29 +33,31 @@
 !*       0.   DECLARATIONS
 !             ------------
 !
+USE MODD_SURF_PAR, ONLY: NFILENAMELGTMAX
+!
 IMPLICIT NONE
 !
 SAVE
 !--------------------------------------------------------------------------
 !
- CHARACTER(LEN=28) :: CFILE_ISBA     ! input file name
- CHARACTER(LEN=6)  :: CTYPE          ! input file type
- CHARACTER(LEN=28) :: CFILEPGD_ISBA  ! input file name
- CHARACTER(LEN=6)  :: CTYPEPGD       ! input file type
- CHARACTER(LEN=28) :: CFILE_SNOW     ! input file name for Snow
- CHARACTER(LEN=6)  :: CTYPE_SNOW     ! input file type for Snow
- CHARACTER(LEN=28) :: CFILEPGD_SNOW  ! input file name for Snow
- CHARACTER(LEN=6)  :: CTYPEPGD_SNOW  ! input file type for Snow
- CHARACTER(LEN=28) :: CFILE_HUG      ! input file name for Wg, Wgi
- CHARACTER(LEN=6)  :: CTYPE_HUG      ! input file type for Wg, Wgi
- CHARACTER(LEN=28) :: CFILE_TG       ! input file name for Tg
- CHARACTER(LEN=6)  :: CTYPE_TG       ! input file type for Tg
- CHARACTER(LEN=28) :: CFILE_HUG_SURF ! input file name for HUG_SURF
- CHARACTER(LEN=28) :: CFILE_HUG_ROOT ! input file name for HUG_ROOT
- CHARACTER(LEN=28) :: CFILE_HUG_DEEP ! input file name for HUG_DEEP
- CHARACTER(LEN=28) :: CFILE_TG_SURF  ! input file name for TG_SURF
- CHARACTER(LEN=28) :: CFILE_TG_ROOT  ! input file name for TG_ROOT
- CHARACTER(LEN=28) :: CFILE_TG_DEEP  ! input file name for TG_DEEP
+ CHARACTER(LEN=NFILENAMELGTMAX) :: CFILE_ISBA     ! input file name
+ CHARACTER(LEN=6)               :: CTYPE          ! input file type
+ CHARACTER(LEN=NFILENAMELGTMAX) :: CFILEPGD_ISBA  ! input file name
+ CHARACTER(LEN=6)               :: CTYPEPGD       ! input file type
+ CHARACTER(LEN=NFILENAMELGTMAX) :: CFILE_SNOW     ! input file name for Snow
+ CHARACTER(LEN=6)               :: CTYPE_SNOW     ! input file type for Snow
+ CHARACTER(LEN=NFILENAMELGTMAX) :: CFILEPGD_SNOW  ! input file name for Snow
+ CHARACTER(LEN=6)               :: CTYPEPGD_SNOW  ! input file type for Snow
+ CHARACTER(LEN=NFILENAMELGTMAX) :: CFILE_HUG      ! input file name for Wg, Wgi
+ CHARACTER(LEN=6)               :: CTYPE_HUG      ! input file type for Wg, Wgi
+ CHARACTER(LEN=NFILENAMELGTMAX) :: CFILE_TG       ! input file name for Tg
+ CHARACTER(LEN=6)               :: CTYPE_TG       ! input file type for Tg
+ CHARACTER(LEN=NFILENAMELGTMAX) :: CFILE_HUG_SURF ! input file name for HUG_SURF
+ CHARACTER(LEN=NFILENAMELGTMAX) :: CFILE_HUG_ROOT ! input file name for HUG_ROOT
+ CHARACTER(LEN=NFILENAMELGTMAX) :: CFILE_HUG_DEEP ! input file name for HUG_DEEP
+ CHARACTER(LEN=NFILENAMELGTMAX) :: CFILE_TG_SURF  ! input file name for TG_SURF
+ CHARACTER(LEN=NFILENAMELGTMAX) :: CFILE_TG_ROOT  ! input file name for TG_ROOT
+ CHARACTER(LEN=NFILENAMELGTMAX) :: CFILE_TG_DEEP  ! input file name for TG_DEEP
 !
 REAL              :: XHUG_SURF      ! surface relative soil humidity
 REAL              :: XHUG_ROOT      ! root layer relative soil humidity

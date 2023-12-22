@@ -75,7 +75,7 @@ USE MODD_DATA_COVER,      ONLY : LDATA_IRRIG
 USE MODD_DATA_COVER_PAR,  ONLY : JPCOVER, NCAR_FILES
 USE MODD_AGRI,            ONLY : LIRRIGMODE, XTHRESHOLD_DEFAULT, XTHRESHOLD, NVEG_IRR, NPATCH_TREE
 !
-USE MODD_SURF_PAR,        ONLY : XUNDEF, LEN_HREC
+USE MODD_SURF_PAR,        ONLY : NFILENAMELGTMAX, XUNDEF, LEN_HREC
 USE MODD_ISBA_PAR,        ONLY : XOPTIMGRID
 !
 USE MODI_READ_NAM_PGD_ISBA
@@ -153,14 +153,14 @@ CHARACTER(LEN=3)         :: YPHOTO           ! photosynthesis option
 LOGICAL                  :: GTR_ML           ! new radiative transfert
 CHARACTER(LEN=4)         :: YALBEDO
 REAL                     :: ZRM_PATCH        ! threshold to remove little fractions of patches
-CHARACTER(LEN=28)        :: YSAND            ! file name for sand fraction
-CHARACTER(LEN=28)        :: YCLAY            ! file name for clay fraction
-CHARACTER(LEN=28)        :: YSOC_TOP         ! file name for organic carbon top soil
-CHARACTER(LEN=28)        :: YSOC_SUB         ! file name for organic carbon sub soil
-CHARACTER(LEN=28)        :: YCTI             ! file name for topographic index
-CHARACTER(LEN=28)        :: YRUNOFFB         ! file name for runoffb parameter
-CHARACTER(LEN=28)        :: YWDRAIN          ! file name for wdrain parameter
-CHARACTER(LEN=28)        :: YPERM            ! file name for permafrost distribution
+CHARACTER(LEN=NFILENAMELGTMAX) :: YSAND      ! file name for sand fraction
+CHARACTER(LEN=NFILENAMELGTMAX) :: YCLAY      ! file name for clay fraction
+CHARACTER(LEN=NFILENAMELGTMAX) :: YSOC_TOP   ! file name for organic carbon top soil
+CHARACTER(LEN=NFILENAMELGTMAX) :: YSOC_SUB   ! file name for organic carbon sub soil
+CHARACTER(LEN=NFILENAMELGTMAX) :: YCTI       ! file name for topographic index
+CHARACTER(LEN=NFILENAMELGTMAX) :: YRUNOFFB   ! file name for runoffb parameter
+CHARACTER(LEN=NFILENAMELGTMAX) :: YWDRAIN    ! file name for wdrain parameter
+CHARACTER(LEN=NFILENAMELGTMAX) :: YPERM      ! file name for permafrost distribution
 CHARACTER(LEN=6)         :: YSANDFILETYPE    ! sand data file type
 CHARACTER(LEN=6)         :: YCLAYFILETYPE    ! clay data file type
 CHARACTER(LEN=6)         :: YSOCFILETYPE     ! organic carbon data file type
@@ -182,8 +182,8 @@ LOGICAL                  :: LIMP_CTI         ! Imposed maps of topographic index
 LOGICAL                  :: LIMP_PERM        ! Imposed maps of permafrost distribution
 LOGICAL                  :: GLULCC
 REAL, DIMENSION(150)     :: ZSOILGRID        ! Soil grid reference for DIF
-CHARACTER(LEN=28)        :: YPH           ! file name for pH
-CHARACTER(LEN=28)        :: YFERT         ! file name for fertilisation rate
+CHARACTER(LEN=NFILENAMELGTMAX) :: YPH     ! file name for pH
+CHARACTER(LEN=NFILENAMELGTMAX) :: YFERT   ! file name for fertilisation rate
 CHARACTER(LEN=6)         :: YPHFILETYPE   ! pH data file type
 CHARACTER(LEN=6)         :: YFERTFILETYPE ! fertilisation data file type
 REAL                     :: XUNIF_PH      ! uniform value of pH

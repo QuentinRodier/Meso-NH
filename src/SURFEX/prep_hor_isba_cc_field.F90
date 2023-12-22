@@ -50,7 +50,7 @@ USE MODD_PREP_ISBA, ONLY : LRESET_CSOIL
 USE MODD_SURFEX_MPI, ONLY : NRANK, NPIO, NCOMM, NPROC
 !
 USE MODD_DATA_COVER_PAR, ONLY : NVEGTYPE
-USE MODD_SURF_PAR,       ONLY : XUNDEF,NUNDEF
+USE MODD_SURF_PAR,       ONLY : NFILENAMELGTMAX, XUNDEF, NUNDEF
 USE MODD_AGRI,           ONLY : NVEG_IRR
 !
 USE MODE_PREP_CTL, ONLY : PREP_CTL, PREP_CTL_INT_PART2, PREP_CTL_INT_PART4
@@ -90,10 +90,10 @@ TYPE (PREP_CTL),    INTENT(INOUT) :: YDCTL
 INTEGER, INTENT(IN)             :: KNI         ! number of grid cell
 CHARACTER(LEN=6),   INTENT(IN)  :: HPROGRAM    ! program calling surf. schemes
 CHARACTER(LEN=8),   INTENT(IN)  :: HSURF       ! type of field
-CHARACTER(LEN=28),  INTENT(IN)  :: HATMFILE    ! name of the Atmospheric file
-CHARACTER(LEN=6),   INTENT(IN)  :: HATMFILETYPE! type of the Atmospheric file
-CHARACTER(LEN=28),  INTENT(IN)  :: HPGDFILE    ! name of the Atmospheric file
-CHARACTER(LEN=6),   INTENT(IN)  :: HPGDFILETYPE! type of the Atmospheric file
+CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)  :: HATMFILE    ! name of the Atmospheric file
+CHARACTER(LEN=6),               INTENT(IN)  :: HATMFILETYPE! type of the Atmospheric file
+CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)  :: HPGDFILE    ! name of the Atmospheric file
+CHARACTER(LEN=6),               INTENT(IN)  :: HPGDFILETYPE! type of the Atmospheric file
 !
 !*      0.2    declarations of local variables
 !
@@ -111,9 +111,9 @@ TYPE(ISBA_PE_t), POINTER :: PEK
 !
 INTEGER,DIMENSION(:),INTENT(IN) :: NPAR_VEG_IRR_USE ! vegtype with irrigation
 CHARACTER(LEN=6)               :: YFILETYPE    ! type of input file
-CHARACTER(LEN=28)              :: YFILE        ! name of file
+CHARACTER(LEN=NFILENAMELGTMAX) :: YFILE        ! name of file
 CHARACTER(LEN=6)               :: YFILEPGDTYPE ! type of input file
-CHARACTER(LEN=28)              :: YFILEPGD     ! name of file
+CHARACTER(LEN=NFILENAMELGTMAX) :: YFILEPGD     ! name of file
 REAL, POINTER, DIMENSION(:,:,:) :: ZFIELDIN     ! field to interpolate horizontally
 REAL, POINTER, DIMENSION(:,:,:) :: ZFIELDOUTP   ! field interpolated   horizontally
 REAL, POINTER, DIMENSION(:,:,:) :: ZFIELDOUTV ! field interpolated   horizontally

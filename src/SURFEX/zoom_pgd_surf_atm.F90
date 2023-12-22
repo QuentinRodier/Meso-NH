@@ -61,6 +61,8 @@ USE MODI_ZOOM_PGD_TOWN
 USE MODI_READ_COVER_GARDEN
 USE MODI_GOTO_MODEL_MNH
 !
+USE MODD_SURF_PAR, ONLY: NFILENAMELGTMAX
+!
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
@@ -72,11 +74,11 @@ IMPLICIT NONE
 !
 TYPE(SURFEX_t), INTENT(INOUT) :: YSC
 !
- CHARACTER(LEN=6),     INTENT(IN)  :: HPROGRAM    ! program calling
- CHARACTER(LEN=28),    INTENT(IN)  :: HINIFILE    ! input atmospheric file name
- CHARACTER(LEN=6),     INTENT(IN)  :: HINIFILETYPE! input atmospheric file type
- CHARACTER(LEN=28),    INTENT(IN)  :: HFILE       ! output atmospheric file name
- CHARACTER(LEN=6),     INTENT(IN)  :: HFILETYPE   ! output atmospheric file type
+ CHARACTER(LEN=6),               INTENT(IN)  :: HPROGRAM    ! program calling
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)  :: HINIFILE    ! input atmospheric file name
+ CHARACTER(LEN=6),               INTENT(IN)  :: HINIFILETYPE! input atmospheric file type
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)  :: HFILE       ! output atmospheric file name
+ CHARACTER(LEN=6),               INTENT(IN)  :: HFILETYPE   ! output atmospheric file type
 !
 !
 !*    0.2    Declaration of local variables

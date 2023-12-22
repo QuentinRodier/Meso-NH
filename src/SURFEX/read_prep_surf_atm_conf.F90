@@ -40,6 +40,8 @@
 !*       0.    DECLARATIONS
 !              ------------
 !
+USE MODD_SURF_PAR, ONLY: NFILENAMELGTMAX
+!
 USE MODE_POS_SURF
 !
 USE MODN_PREP_SURF_ATM
@@ -52,16 +54,16 @@ IMPLICIT NONE
 !*       0.1   Declarations of arguments
 !              -------------------------
 !
- CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM    ! program calling ISBA
- CHARACTER(LEN=28), INTENT(OUT) :: HFILE       ! file name
- CHARACTER(LEN=6),  INTENT(OUT) :: HFILETYPE   ! file type
- CHARACTER(LEN=28), INTENT(OUT) :: HFILEPGD    ! file name
- CHARACTER(LEN=6),  INTENT(OUT) :: HFILEPGDTYPE! file type
- CHARACTER(LEN=28), INTENT(IN)  :: HATMFILE    ! atmospheric file name
- CHARACTER(LEN=6),  INTENT(IN)  :: HATMFILETYPE! atmospheric file type
- CHARACTER(LEN=28), INTENT(IN)  :: HPGDFILE    ! atmospheric file name
- CHARACTER(LEN=6),  INTENT(IN)  :: HPGDFILETYPE! atmospheric file type
-INTEGER,           INTENT(IN)  :: KLUOUT      ! logical unit of output listing
+ CHARACTER(LEN=6),               INTENT(IN)  :: HPROGRAM    ! program calling ISBA
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(OUT) :: HFILE       ! file name
+ CHARACTER(LEN=6),               INTENT(OUT) :: HFILETYPE   ! file type
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(OUT) :: HFILEPGD    ! file name
+ CHARACTER(LEN=6),               INTENT(OUT) :: HFILEPGDTYPE! file type
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)  :: HATMFILE    ! atmospheric file name
+ CHARACTER(LEN=6),               INTENT(IN)  :: HATMFILETYPE! atmospheric file type
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)  :: HPGDFILE    ! atmospheric file name
+ CHARACTER(LEN=6),               INTENT(IN)  :: HPGDFILETYPE! atmospheric file type
+INTEGER,                         INTENT(IN)  :: KLUOUT      ! logical unit of output listing
 
 
 
@@ -74,7 +76,7 @@ INTEGER           :: IRESP          ! IRESP  : return-code if a problem appears
                                     ! at the open of the file in LFI  routines 
 INTEGER           :: ILUNAM         ! Logical unit of namelist file
 !
- CHARACTER(LEN=28) :: YNAMELIST      ! namelist file
+ CHARACTER(LEN=NFILENAMELGTMAX) :: YNAMELIST      ! namelist file
 !
 LOGICAL           :: GFOUND         ! Return code when searching namelist
 REAL(KIND=JPRB) :: ZHOOK_HANDLE

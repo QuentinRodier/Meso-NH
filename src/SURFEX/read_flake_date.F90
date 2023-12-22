@@ -44,7 +44,7 @@
 !
 !
 USE MODD_TYPE_DATE_SURF
-USE MODD_SURF_PAR,       ONLY : XUNDEF, NUNDEF
+USE MODD_SURF_PAR,       ONLY : NFILENAMELGTMAX, XUNDEF, NUNDEF
 !
 USE MODI_READ_PRE_FLAKE_DAT_CONF
 USE MODI_READ_PRE_SURFA_DAT_CONF
@@ -65,7 +65,7 @@ IMPLICIT NONE
 !
  CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM    ! program calling
  CHARACTER(LEN=3),  INTENT(IN)  :: HINIT     ! fields to initialize 'ALL', 'PRE', 'PGD'
- CHARACTER(LEN=28), INTENT(IN)  :: HATMFILE    ! atmospheric file name
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)  :: HATMFILE ! atmospheric file name
  CHARACTER(LEN=6),  INTENT(IN)  :: HATMFILETYPE! atmospheric file type
 INTEGER,           INTENT(IN)  :: KYEAR     ! current year (UTC)
 INTEGER,           INTENT(IN)  :: KMONTH    ! current month (UTC)
@@ -81,11 +81,11 @@ INTEGER,           INTENT(IN)  :: KLUOUT      ! logical unit of output listing
 !*       0.2   Declarations of local variables
 !              -------------------------------
 !
- CHARACTER(LEN=28)              :: YFILE       ! file name
+ CHARACTER(LEN=NFILENAMELGTMAX) :: YFILE       ! file name
  CHARACTER(LEN=6)               :: YFILETYPE   ! file type
- CHARACTER(LEN=28)              :: YFILEPGD       ! file name
+ CHARACTER(LEN=NFILENAMELGTMAX) :: YFILEPGD       ! file name
  CHARACTER(LEN=6)               :: YFILEPGDTYPE   ! file type
- CHARACTER(LEN=28)              :: YFILEPGDIN       ! file name
+ CHARACTER(LEN=NFILENAMELGTMAX) :: YFILEPGDIN       ! file name
  CHARACTER(LEN=6)               :: YFILEPGDINTYPE   ! file type
 !
 LOGICAL                        :: GUNIF       ! flag for prescribed uniform field
@@ -94,10 +94,10 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('READ_FLAKE_DATE',0,ZHOOK_HANDLE)
-YFILE     = '                         '
+YFILE     = ''
 YFILETYPE = '      '
 !
-YFILEPGDIN     = '                         '
+YFILEPGDIN     = ''
 YFILEPGDINTYPE = '      '
 !
 !-------------------------------------------------------------------------------

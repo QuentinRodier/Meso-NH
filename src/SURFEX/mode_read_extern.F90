@@ -41,7 +41,7 @@ USE MODD_GRID_CONF_PROJ_n, ONLY : GRID_CONF_PROJ_t
 !
 USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
 USE MODD_ISBA_OPTIONS_n, ONLY : ISBA_OPTIONS_t
-USE MODD_SURF_PAR, ONLY : LEN_HREC
+USE MODD_SURF_PAR, ONLY : LEN_HREC, NFILENAMELGTMAX
 !
 USE MODD_SURFEX_MPI, ONLY : NRANK,NPIO
 !
@@ -71,10 +71,10 @@ TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
 TYPE(ISBA_OPTIONS_t), INTENT(INOUT) :: IO
 !
 INTEGER,DIMENSION(:), INTENT(IN)    :: NPAR_VEG_IRR_USE ! vegtype with irrigation
- CHARACTER(LEN=28),   INTENT(IN)    :: HFILE     ! type of input file
- CHARACTER(LEN=6),    INTENT(IN)    :: HFILETYPE ! type of input file
- CHARACTER(LEN=28),   INTENT(IN)    :: HFILEPGD  ! type of input file
- CHARACTER(LEN=6),    INTENT(IN)    :: HFILEPGDTYPE  ! type of input file
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN) :: HFILE     ! type of input file
+ CHARACTER(LEN=6),               INTENT(IN) :: HFILETYPE ! type of input file
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN) :: HFILEPGD  ! type of input file
+ CHARACTER(LEN=6),               INTENT(IN) :: HFILEPGDTYPE  ! type of input file
 INTEGER,              INTENT(IN)    :: KLUOUT    ! logical unit of output listing
 CHARACTER(LEN=3),     INTENT(IN)    :: HISBA     ! type of ISBA soil scheme
 CHARACTER(LEN=3),     INTENT(IN)    :: HNAT      ! type of surface (nature, gardens)
@@ -443,7 +443,7 @@ USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 USE MODD_GRID_CONF_PROJ_n, ONLY : GRID_CONF_PROJ_t
 USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
 USE MODD_ISBA_OPTIONS_n, ONLY : ISBA_OPTIONS_t
-USE MODD_SURF_PAR, ONLY : LEN_HREC
+USE MODD_SURF_PAR, ONLY : LEN_HREC, NFILENAMELGTMAX
 !
 USE MODD_ISBA_PAR,    ONLY : XOPTIMGRID
 USE MODD_COUPLING_TOPD, ONLY : LPERT_PARAM
@@ -466,10 +466,10 @@ TYPE(GRID_CONF_PROJ_t),INTENT(INOUT) :: GCP
 TYPE(ISBA_OPTIONS_t), INTENT(INOUT) :: IO
 !
 INTEGER,DIMENSION(:), INTENT(IN)  :: NPAR_VEG_IRR_USE ! vegtype with irrigation
-CHARACTER(LEN=28),    INTENT(IN)  :: HFILE     ! name of file
-CHARACTER(LEN=6),     INTENT(IN)  :: HFILETYPE ! type of input file
-CHARACTER(LEN=28),    INTENT(IN)  :: HFILEPGD     ! name of file
-CHARACTER(LEN=6),     INTENT(IN)  :: HFILEPGDTYPE ! type of input file
+CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)  :: HFILE     ! name of file
+CHARACTER(LEN=6),               INTENT(IN)  :: HFILETYPE ! type of input file
+CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)  :: HFILEPGD     ! name of file
+CHARACTER(LEN=6),               INTENT(IN)  :: HFILEPGDTYPE ! type of input file
 INTEGER,              INTENT(IN)  :: KLUOUT    ! logical unit of output listing
 INTEGER,              INTENT(IN)  :: KNI       ! number of points
 CHARACTER(LEN=7),     INTENT(IN)  :: HFIELD    ! field name

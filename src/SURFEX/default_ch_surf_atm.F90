@@ -39,6 +39,8 @@
 !
 !
 !
+USE MODD_SURF_PAR, ONLY: NFILENAMELGTMAX
+!
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
@@ -48,8 +50,8 @@ IMPLICIT NONE
 !              -------------------------
 !
 !
- CHARACTER(LEN=28),        INTENT(OUT) :: HCHEM_SURF_FILE
-LOGICAL,                  INTENT(OUT) :: OSURF_EMIS
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(OUT) :: HCHEM_SURF_FILE
+LOGICAL,                         INTENT(OUT) :: OSURF_EMIS
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !*       0.2   Declarations of local variables
@@ -57,7 +59,7 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !-------------------------------------------------------------------------------
 IF (LHOOK) CALL DR_HOOK('DEFAULT_CH_SURF_ATM',0,ZHOOK_HANDLE)
-HCHEM_SURF_FILE = '                            '
+HCHEM_SURF_FILE = ''
 OSURF_EMIS = .FALSE.
 IF (LHOOK) CALL DR_HOOK('DEFAULT_CH_SURF_ATM',1,ZHOOK_HANDLE)
 !-------------------------------------------------------------------------------

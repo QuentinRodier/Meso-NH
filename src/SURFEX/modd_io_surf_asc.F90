@@ -30,12 +30,15 @@
 !
 !*       0.   DECLARATIONS
 !
+USE MODD_SURF_PAR, ONLY: NFILENAMELGTMAX
+!
 IMPLICIT NONE
- CHARACTER(LEN=28),SAVE :: CFILE = 'SURFIN.txt'
- CHARACTER(LEN=28),SAVE :: CFILEIN ='SURFIN.txt' ! Name of the input
- CHARACTER(LEN=28),SAVE :: CFILEIN_SAVE ='SURFIN.txt' ! Name of the input
- CHARACTER(LEN=28),SAVE :: CFILEOUT='SURFOUT.txt'! Name of the output
- CHARACTER(LEN=28),SAVE :: CFILEPGD     ='PGD.txt'    ! Name of the pgd file
+!
+ CHARACTER(LEN=NFILENAMELGTMAX),SAVE :: CFILE        = 'SURFIN.txt'
+ CHARACTER(LEN=NFILENAMELGTMAX),SAVE :: CFILEIN      = 'SURFIN.txt' ! Name of the input
+ CHARACTER(LEN=NFILENAMELGTMAX),SAVE :: CFILEIN_SAVE = 'SURFIN.txt' ! Name of the input
+ CHARACTER(LEN=NFILENAMELGTMAX),SAVE :: CFILEOUT     = 'SURFOUT.txt'! Name of the output
+ CHARACTER(LEN=NFILENAMELGTMAX),SAVE :: CFILEPGD     = 'PGD.txt'    ! Name of the pgd file
 INTEGER                :: NUNIT       ! logical unit of surface file
 INTEGER                :: NLUOUT      ! logical unit of output file
 INTEGER, DIMENSION(:), POINTER :: NMASK=>NULL() ! 1D mask to read only interesting

@@ -10,6 +10,7 @@ SUBROUTINE PREP_SEAFLUX_EXTERN (GCP,HPROGRAM,HSURF,HFILE,HFILETYPE,HFILEPGD,HFIL
 USE MODD_GRID_CONF_PROJ_n, ONLY : GRID_CONF_PROJ_t
 !
 USE MODD_SURFEX_MPI, ONLY : NRANK,NPIO
+USE MODD_SURF_PAR,   ONLY: NFILENAMELGTMAX
 !
 USE MODD_TYPE_DATE_SURF
 !
@@ -32,10 +33,10 @@ TYPE(GRID_CONF_PROJ_t),INTENT(INOUT) :: GCP
 !
  CHARACTER(LEN=6),   INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
  CHARACTER(LEN=7),   INTENT(IN)  :: HSURF     ! type of field
- CHARACTER(LEN=28),  INTENT(IN)  :: HFILE     ! name of file
- CHARACTER(LEN=6),   INTENT(IN)  :: HFILETYPE ! type of input file
- CHARACTER(LEN=28),  INTENT(IN)  :: HFILEPGD     ! name of file
- CHARACTER(LEN=6),   INTENT(IN)  :: HFILEPGDTYPE ! type of input file
+ CHARACTER(LEN=NFILENAMELGTMAX),  INTENT(IN)  :: HFILE     ! name of file
+ CHARACTER(LEN=6),                INTENT(IN)  :: HFILETYPE ! type of input file
+ CHARACTER(LEN=NFILENAMELGTMAX),  INTENT(IN)  :: HFILEPGD     ! name of file
+ CHARACTER(LEN=6),                INTENT(IN)  :: HFILEPGDTYPE ! type of input file
 INTEGER,            INTENT(IN)  :: KLUOUT    ! logical unit of output listing
 REAL,DIMENSION(:,:), POINTER    :: PFIELD    ! field to interpolate horizontally
 !

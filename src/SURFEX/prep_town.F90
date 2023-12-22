@@ -43,6 +43,8 @@ USE MODD_SURFEX_n,         ONLY : TEB_GARDEN_MODEL_t
 USE MODD_SURFEX_n,         ONLY : TEB_GREENROOF_MODEL_t
 USE MODD_SURFEX_n, ONLY : TEB_HYDRO_MODEL_t
 !
+USE MODD_SURF_PAR,         ONLY: NFILENAMELGTMAX
+!
 USE MODE_PREP_CTL,         ONLY : PREP_CTL
 !
 USE MODI_PREP_TEB
@@ -66,12 +68,12 @@ TYPE(TEB_GREENROOF_MODEL_t), INTENT(INOUT) :: GRM
 TYPE(TEB_HYDRO_MODEL_t),     INTENT(INOUT) :: HM
 TYPE (PREP_CTL),             INTENT(INOUT) :: YDCTL
 !
-INTEGER,DIMENSION(:),INTENT(IN)  :: NPAR_VEG_IRR_USE ! vegtype with irrigation
- CHARACTER(LEN=6),   INTENT(IN)  :: HPROGRAM    ! program calling surf. schemes
- CHARACTER(LEN=28),  INTENT(IN)  :: HATMFILE    ! name of the Atmospheric file
- CHARACTER(LEN=6),   INTENT(IN)  :: HATMFILETYPE! type of the Atmospheric file
- CHARACTER(LEN=28),  INTENT(IN)  :: HPGDFILE    ! name of the Atmospheric file
- CHARACTER(LEN=6),   INTENT(IN)  :: HPGDFILETYPE! type of the Atmospheric file
+INTEGER ,DIMENSION(:),           INTENT(IN)  :: NPAR_VEG_IRR_USE ! vegtype with irrigation
+ CHARACTER(LEN=6),               INTENT(IN)  :: HPROGRAM    ! program calling surf. schemes
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)  :: HATMFILE    ! name of the Atmospheric file
+ CHARACTER(LEN=6),               INTENT(IN)  :: HATMFILETYPE! type of the Atmospheric file
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)  :: HPGDFILE    ! name of the Atmospheric file
+ CHARACTER(LEN=6),               INTENT(IN)  :: HPGDFILETYPE! type of the Atmospheric file
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !

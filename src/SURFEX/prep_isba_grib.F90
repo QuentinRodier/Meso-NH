@@ -36,7 +36,7 @@ USE MODI_INTERP_GRID_NAT
 !
 USE MODD_PREP_ISBA,      ONLY : XGRID_SOIL, XWR_DEF, XWRV_DEF,     &
                                 XWRVN_DEF, XQC_DEF
-USE MODD_SURF_PAR,       ONLY : XUNDEF
+USE MODD_SURF_PAR,       ONLY : NFILENAMELGTMAX, XUNDEF
 USE MODD_GRID_GRIB,      ONLY : CGRIB_FILE, NNI, CINMODEL
 !
 !
@@ -51,7 +51,7 @@ IMPLICIT NONE
 !
 CHARACTER(LEN=6),   INTENT(IN)    :: HPROGRAM  ! program calling surf. schemes
 CHARACTER(LEN=7),   INTENT(IN)    :: HSURF     ! type of field
-CHARACTER(LEN=28),  INTENT(IN)    :: HFILE     ! name of file
+CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN) :: HFILE     ! name of file
 INTEGER,            INTENT(IN)    :: KLUOUT    ! logical unit of output listing
 REAL,DIMENSION(:,:,:), POINTER    :: PFIELD    ! field to interpolate horizontally
 LOGICAL, OPTIONAL,  INTENT(INOUT) :: OKEY

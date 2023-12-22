@@ -53,7 +53,7 @@ USE MODD_PREP_TEB_GREENROOF, ONLY : CFILE_GR, CTYPE, CFILEPGD_GR, CTYPEPGD, &
                                     CFILE_TG_SURF_GR, CFILE_TG_ROOT_GR, CFILE_TG_DEEP_GR,     &
                                     XTG_SURF_GR, XTG_ROOT_GR, XTG_DEEP_GR 
 !
-USE MODD_SURF_PAR,   ONLY : XUNDEF
+USE MODD_SURF_PAR,   ONLY : NFILENAMELGTMAX, XUNDEF
 !
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -66,18 +66,18 @@ IMPLICIT NONE
 !*       0.1   Declarations of arguments
 !              -------------------------
 !
- CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM    ! program calling
- CHARACTER(LEN=7),  INTENT(IN)  :: HVAR        ! variable treated
- CHARACTER(LEN=28), INTENT(OUT) :: HFILE       ! file name
- CHARACTER(LEN=6),  INTENT(OUT) :: HFILETYPE   ! file type
- CHARACTER(LEN=28), INTENT(OUT) :: HFILEPGD    ! file name
- CHARACTER(LEN=6),  INTENT(OUT) :: HFILEPGDTYPE! file type
- CHARACTER(LEN=28), INTENT(IN)  :: HATMFILE    ! atmospheric file name
- CHARACTER(LEN=6),  INTENT(IN)  :: HATMFILETYPE! atmospheric file type
- CHARACTER(LEN=28), INTENT(IN)  :: HPGDFILE    ! atmospheric file name
- CHARACTER(LEN=6),  INTENT(IN)  :: HPGDFILETYPE! atmospheric file type
-INTEGER,           INTENT(IN)  :: KLUOUT      ! logical unit of output listing
-LOGICAL,           INTENT(OUT) :: OUNIF       ! flag for prescribed uniform field
+ CHARACTER(LEN=6),               INTENT(IN)  :: HPROGRAM    ! program calling
+ CHARACTER(LEN=7),               INTENT(IN)  :: HVAR        ! variable treated
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(OUT) :: HFILE       ! file name
+ CHARACTER(LEN=6),               INTENT(OUT) :: HFILETYPE   ! file type
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(OUT) :: HFILEPGD    ! file name
+ CHARACTER(LEN=6),               INTENT(OUT) :: HFILEPGDTYPE! file type
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)  :: HATMFILE    ! atmospheric file name
+ CHARACTER(LEN=6),               INTENT(IN)  :: HATMFILETYPE! atmospheric file type
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)  :: HPGDFILE    ! atmospheric file name
+ CHARACTER(LEN=6),               INTENT(IN)  :: HPGDFILETYPE! atmospheric file type
+INTEGER,                         INTENT(IN)  :: KLUOUT      ! logical unit of output listing
+LOGICAL,                         INTENT(OUT) :: OUNIF       ! flag for prescribed uniform field
 
 !
 !*       0.2   Declarations of local variables
@@ -87,7 +87,7 @@ INTEGER           :: IRESP          ! IRESP  : return-code if a problem appears
                                     ! at the open of the file in LFI  routines 
 INTEGER           :: ILUNAM         ! Logical unit of namelist file
 !
- CHARACTER(LEN=28) :: YNAMELIST      ! namelist file
+ CHARACTER(LEN=NFILENAMELGTMAX) :: YNAMELIST      ! namelist file
 !
 LOGICAL           :: GFOUND         ! Return code when searching namelist
 REAL(KIND=JPRB)   :: ZHOOK_HANDLE

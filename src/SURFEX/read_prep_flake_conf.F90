@@ -58,7 +58,7 @@ USE MODD_PREP_FLAKE, ONLY : CFILE_FLAKE, CFILEPGD_FLAKE, CTYPE, CTYPEPGD, &
                               XUNIF_H_B1,       &
                               LCLIM_LAKE   
 !
-USE MODD_SURF_PAR,   ONLY : XUNDEF
+USE MODD_SURF_PAR,   ONLY : NFILENAMELGTMAX, XUNDEF
 !
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -71,18 +71,18 @@ IMPLICIT NONE
 !*       0.1   Declarations of arguments
 !              -------------------------
 !
- CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM ! program calling ISBA
- CHARACTER(LEN=7),  INTENT(IN)  :: HVAR     ! variable treated
- CHARACTER(LEN=28), INTENT(OUT) :: HFILE    ! file name
- CHARACTER(LEN=6),  INTENT(OUT) :: HFILETYPE! file type
- CHARACTER(LEN=28), INTENT(OUT) :: HFILEPGD    ! file name
- CHARACTER(LEN=6),  INTENT(OUT) :: HFILEPGDTYPE! file type
- CHARACTER(LEN=28), INTENT(IN)  :: HATMFILE    ! atmospheric file name
- CHARACTER(LEN=6),  INTENT(IN)  :: HATMFILETYPE! atmospheric file type
- CHARACTER(LEN=28), INTENT(IN)  :: HPGDFILE    ! atmospheric file name
- CHARACTER(LEN=6),  INTENT(IN)  :: HPGDFILETYPE! atmospheric file type
-INTEGER,           INTENT(IN)  :: KLUOUT   ! logical unit of output listing
-LOGICAL,           INTENT(OUT) :: OUNIF    ! flag for prescribed uniform field
+ CHARACTER(LEN=6),               INTENT(IN)  :: HPROGRAM ! program calling ISBA
+ CHARACTER(LEN=7),               INTENT(IN)  :: HVAR     ! variable treated
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(OUT) :: HFILE    ! file name
+ CHARACTER(LEN=6),               INTENT(OUT) :: HFILETYPE! file type
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(OUT) :: HFILEPGD    ! file name
+ CHARACTER(LEN=6),               INTENT(OUT) :: HFILEPGDTYPE! file type
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)  :: HATMFILE    ! atmospheric file name
+ CHARACTER(LEN=6),               INTENT(IN)  :: HATMFILETYPE! atmospheric file type
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)  :: HPGDFILE    ! atmospheric file name
+ CHARACTER(LEN=6),               INTENT(IN)  :: HPGDFILETYPE! atmospheric file type
+INTEGER,                         INTENT(IN)  :: KLUOUT   ! logical unit of output listing
+LOGICAL,                         INTENT(OUT) :: OUNIF    ! flag for prescribed uniform field
 
 !
 !*       0.2   Declarations of local variables
@@ -92,7 +92,7 @@ INTEGER           :: IRESP          ! IRESP  : return-code if a problem appears
                                     ! at the open of the file in LFI  routines 
 INTEGER           :: ILUNAM         ! Logical unit of namelist file
 !
- CHARACTER(LEN=28) :: YNAMELIST      ! namelist file
+ CHARACTER(LEN=NFILENAMELGTMAX) :: YNAMELIST ! namelist file
 !
 LOGICAL           :: GFOUND         ! Return code when searching namelist
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
@@ -100,10 +100,10 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !
 IF (LHOOK) CALL DR_HOOK('READ_PREP_FLAKE_CONF',0,ZHOOK_HANDLE)
-HFILE = '                         '
+HFILE = ''
 HFILETYPE = '      '
 !
-HFILEPGD = '                         '
+HFILEPGD = ''
 HFILEPGDTYPE = '      '
 !
 OUNIF     = .FALSE.
@@ -142,65 +142,65 @@ SELECT CASE (HVAR)
  CASE('T_SNOW ')
    OUNIF = (XUNIF_T_SNOW/=XUNDEF)
    IF (HFILETYPE=='GRIB  '.OR.HFILETYPE=='ASCLLV') THEN          ! all fields but TS 
-      HFILE = '                         ' ! are not readed
+      HFILE = '' ! are not read
       HFILETYPE = '      '                ! from grib files
    END IF    
  CASE('T_ICE  ')
    OUNIF = (XUNIF_T_ICE/=XUNDEF)
    IF (HFILETYPE=='GRIB  '.OR.HFILETYPE=='ASCLLV') THEN
-      HFILE = '                         '
+      HFILE = ''
       HFILETYPE = '      '
    END IF    
  CASE('T_MNW  ')
    OUNIF = .FALSE.
    IF (HFILETYPE=='GRIB  '.OR.HFILETYPE=='ASCLLV') THEN
-      HFILE = '                         '
+      HFILE = ''
       HFILETYPE = '      '
    END IF    
  CASE('T_WML  ')
    OUNIF = (XUNIF_T_WML/=XUNDEF)
-   HFILE = '                         '
+   HFILE = ''
    HFILETYPE = '      '
  CASE('T_BOT  ')
    OUNIF = (XUNIF_T_BOT/=XUNDEF)
    IF (HFILETYPE=='GRIB  '.OR.HFILETYPE=='ASCLLV') THEN
-      HFILE = '                         '
+      HFILE = ''
       HFILETYPE = '      '
    END IF    
  CASE('T_B1   ')
    OUNIF = (XUNIF_T_B1/=XUNDEF)
    IF (HFILETYPE=='GRIB  '.OR.HFILETYPE=='ASCLLV') THEN
-      HFILE = '                         '
+      HFILE = ''
       HFILETYPE = '      '
    END IF    
  CASE('CT     ')
    OUNIF = (XUNIF_CT/=XUNDEF)
    IF (HFILETYPE=='GRIB  '.OR.HFILETYPE=='ASCLLV') THEN
-      HFILE = '                         '
+      HFILE = ''
       HFILETYPE = '      '
    END IF    
  CASE('H_SNOW ')
    OUNIF = (XUNIF_H_SNOW/=XUNDEF)
    IF (HFILETYPE=='GRIB  '.OR.HFILETYPE=='ASCLLV') THEN
-      HFILE = '                         '
+      HFILE = ''
       HFILETYPE = '      '
    END IF    
  CASE('H_ICE  ')
    OUNIF = (XUNIF_H_ICE/=XUNDEF)
    IF (HFILETYPE=='GRIB  '.OR.HFILETYPE=='ASCLLV') THEN
-      HFILE = '                         '
+      HFILE = ''
       HFILETYPE = '      '
    END IF    
  CASE('H_ML   ')
    IF (HFILETYPE=='GRIB  '.OR.HFILETYPE=='ASCLLV') THEN
-      HFILE = '                         '
+      HFILE = ''
       HFILETYPE = '      '
    END IF    
    OUNIF = (XUNIF_H_ML/=XUNDEF)
  CASE('H_B1   ')
    OUNIF = (XUNIF_H_B1/=XUNDEF)
    IF (HFILETYPE=='GRIB  '.OR.HFILETYPE=='ASCLLV') THEN
-      HFILE = '                         '
+      HFILE = ''
       HFILETYPE = '      '
    END IF    
 END SELECT

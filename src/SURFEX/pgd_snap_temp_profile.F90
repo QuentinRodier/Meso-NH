@@ -35,7 +35,7 @@ USE MODI_GET_LUOUT
 USE MODI_TEST_NAM_VAR_SURF
 !
 !
-USE MODD_SURF_PAR,       ONLY : XUNDEF
+USE MODD_SURF_PAR,       ONLY : NFILENAMELGTMAX, XUNDEF
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 IMPLICIT NONE
@@ -44,7 +44,7 @@ IMPLICIT NONE
 !            ------------------------
 !
  CHARACTER(LEN=6),     INTENT(IN) :: HPROGRAM      ! Type of program
- CHARACTER(LEN=28),    INTENT(IN) :: HFILENAME     ! Name of the field file.
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN) :: HFILENAME     ! Name of the field file.
 REAL, DIMENSION(:,:), INTENT(OUT):: PSNAP_COEF    ! Snap coefficient
 INTEGER,              INTENT(IN) :: KTPS          ! Number of time step
 INTEGER,              INTENT(IN) :: KSNAP         ! Number of snaps

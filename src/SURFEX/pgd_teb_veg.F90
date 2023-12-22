@@ -59,7 +59,7 @@ USE MODD_ISBA_n, ONLY : ISBA_S_t, ISBA_K_t
 USE MODD_DATA_ISBA_n, ONLY : DATA_ISBA_t
 USE MODD_TEB_IRRIG_n, ONLY : TEB_IRRIG_t
 USE MODD_SURFEX_n, ONLY : DATA_TEB_t
-USE MODD_SURF_PAR, ONLY : XUNDEF, NUNDEF
+USE MODD_SURF_PAR, ONLY : NFILENAMELGTMAX, XUNDEF, NUNDEF
 USE MODD_ISBA_PAR, ONLY : NOPTIMLAYER, XOPTIMGRID
 !
 USE MODI_GET_LUOUT
@@ -119,11 +119,11 @@ CHARACTER(LEN=3)         :: YPHOTO           ! photosynthesis option
 LOGICAL                  :: GTR_ML           ! new radiative transfert
 CHARACTER(LEN=4)         :: YALBEDO
 REAL                     :: ZRM_PATCH        ! threshold to remove little fractions of patches
-CHARACTER(LEN=28)        :: YSAND            ! file name for sand fraction
-CHARACTER(LEN=28)        :: YCLAY            ! file name for clay fraction
-CHARACTER(LEN=28)        :: YCTI             ! file name for topographic index
-CHARACTER(LEN=28)        :: YRUNOFFB         ! file name for runoffb parameter
-CHARACTER(LEN=28)        :: YWDRAIN          ! file name for wdrain parameter
+CHARACTER(LEN=NFILENAMELGTMAX) :: YSAND      ! file name for sand fraction
+CHARACTER(LEN=NFILENAMELGTMAX) :: YCLAY      ! file name for clay fraction
+CHARACTER(LEN=NFILENAMELGTMAX) :: YCTI       ! file name for topographic index
+CHARACTER(LEN=NFILENAMELGTMAX) :: YRUNOFFB   ! file name for runoffb parameter
+CHARACTER(LEN=NFILENAMELGTMAX) :: YWDRAIN    ! file name for wdrain parameter
 CHARACTER(LEN=6)         :: YSANDFILETYPE    ! sand data file type
 CHARACTER(LEN=6)         :: YCLAYFILETYPE    ! clay data file type
 CHARACTER(LEN=6)         :: YCTIFILETYPE     ! topographic index data file type
@@ -140,9 +140,9 @@ REAL, DIMENSION(150)     :: ZSOILGRID        ! Soil layer thickness for DIF
 !
 ! Not used in TEB garden
 !
-CHARACTER(LEN=28)        :: YSOC_TOP      ! file name for organic carbon
-CHARACTER(LEN=28)        :: YSOC_SUB      ! file name for organic carbon
-CHARACTER(LEN=28)        :: YPERM         ! file name for permafrost distribution
+CHARACTER(LEN=NFILENAMELGTMAX) :: YSOC_TOP! file name for organic carbon
+CHARACTER(LEN=NFILENAMELGTMAX) :: YSOC_SUB! file name for organic carbon
+CHARACTER(LEN=NFILENAMELGTMAX) :: YPERM   ! file name for permafrost distribution
 CHARACTER(LEN=6)         :: YSOCFILETYPE  ! organic carbon data file type
 CHARACTER(LEN=6)         :: YPERMFILETYPE ! permafrost distribution data file type
 REAL                     :: XUNIF_SOC_TOP ! uniform value of organic carbon top soil (kg/m2)
@@ -151,8 +151,8 @@ REAL                     :: XUNIF_PERM    ! uniform permafrost distribution
 LOGICAL                  :: LIMP_SOC      ! Imposed maps of organic carbon
 LOGICAL                  :: LIMP_PERM     ! Imposed maps of permafrost distribution
 LOGICAL                  :: GMEB          ! Multi-energy balance (MEB)
-CHARACTER(LEN=28)        :: YPH           ! file name for pH
-CHARACTER(LEN=28)        :: YFERT         ! file name for fertilisation rate
+CHARACTER(LEN=NFILENAMELGTMAX) :: YPH     ! file name for pH
+CHARACTER(LEN=NFILENAMELGTMAX) :: YFERT   ! file name for fertilisation rate
 CHARACTER(LEN=6)         :: YPHFILETYPE   ! pH data file type
 CHARACTER(LEN=6)         :: YFERTFILETYPE ! fertilisation data file type
 REAL                     :: XUNIF_PH      ! uniform value of pH

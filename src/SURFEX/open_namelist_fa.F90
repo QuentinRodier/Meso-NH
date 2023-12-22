@@ -40,6 +40,8 @@
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
+USE MODD_SURF_PAR, ONLY: NFILENAMELGTMAX
+!
 IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments
@@ -47,12 +49,12 @@ IMPLICIT NONE
 !
  CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM ! main program
 INTEGER,           INTENT(OUT) :: KLUNAM   ! logical unit of namelist
- CHARACTER(LEN=28), INTENT(IN)  :: HFILE ! FAII file to open
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)  :: HFILE ! FAII file to open
 !
 !*       0.2   Declarations of local variables
 !              -------------------------------
 !
- CHARACTER(LEN=28) :: YNAM
+ CHARACTER(LEN=NFILENAMELGTMAX) :: YNAM
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !-------------------------------------------------------------------------------

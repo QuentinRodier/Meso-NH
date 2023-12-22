@@ -35,6 +35,7 @@
 USE MODD_CH_SNAP_n, ONLY : CH_EMIS_SNAP_t
 !
 USE MODD_CSTS,       ONLY : XAVOGADRO, XMD
+USE MODD_SURF_PAR, ONLY: NFILENAMELGTMAX
 USE MODI_GET_LUOUT
 USE MODI_READ_SURF
 USE MODI_ABOR1_SFX
@@ -66,7 +67,7 @@ INTEGER,           INTENT(IN)  :: KLU      ! number of points
 !                                          ! 'PRE' : only variables to build 
 !                                          !         an initial file
 REAL, DIMENSION(:),INTENT(IN)  :: PRHOA    ! air density
-CHARACTER(LEN=28), INTENT(IN)  :: HCHEM_SURF_FILE ! ascii file for chemistry aggregation
+CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)  :: HCHEM_SURF_FILE ! ascii file for chemistry aggregation
 LOGICAL, INTENT(IN)            :: LCH_SURF_EMIS
 INTEGER, INTENT(IN)  :: KEQ
 

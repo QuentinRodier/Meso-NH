@@ -106,7 +106,7 @@ USE MODD_DATA_COVER,     ONLY : XDATA_LAI, XDATA_H_TREE,                        
 !
 USE MODD_WRITE_SURF_ATM, ONLY : LSPLIT_PATCH
 USE MODD_SURF_ATM,       ONLY : LCPL_GCM, XCO2UNCPL
-USE MODD_SURF_PAR,       ONLY : XUNDEF, NUNDEF
+USE MODD_SURF_PAR,       ONLY : NFILENAMELGTMAX, XUNDEF, NUNDEF
 USE MODD_AGRI,           ONLY : LAGRIP, LIRRIGMODE, NPATCH_TREE
 !
 USE MODE_TARTES,         ONLY : INIT_TARTES
@@ -198,7 +198,7 @@ INTEGER,                          INTENT(IN)  :: KMONTH    ! current month (UTC)
 INTEGER,                          INTENT(IN)  :: KDAY      ! current day (UTC)
 REAL,                             INTENT(IN)  :: PTIME     ! current time since midnight (UTC, s)
 !
- CHARACTER(LEN=28),               INTENT(IN)  :: HATMFILE    ! atmospheric file name
+ CHARACTER(LEN=NFILENAMELGTMAX),  INTENT(IN)  :: HATMFILE    ! atmospheric file name
  CHARACTER(LEN=6),                INTENT(IN)  :: HATMFILETYPE! atmospheric file type
  CHARACTER(LEN=2),                INTENT(IN)  :: HTEST       ! must be equal to 'OK'
 !

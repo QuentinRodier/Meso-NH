@@ -31,13 +31,14 @@
 !*       0.   DECLARATIONS
 !             ------------
 !
+USE MODD_SURF_PAR, ONLY: NFILENAMELGTMAX
 !
 IMPLICIT NONE
 !
- CHARACTER(LEN=28) :: CFILE        ! file name
- CHARACTER(LEN=6)  :: CFILETYPE    ! file type
- CHARACTER(LEN=28) :: CFILEPGD        ! file name
- CHARACTER(LEN=6)  :: CFILEPGDTYPE    ! file type
+ CHARACTER(LEN=NFILENAMELGTMAX) :: CFILE        ! file name
+ CHARACTER(LEN=6)               :: CFILETYPE    ! file type
+ CHARACTER(LEN=NFILENAMELGTMAX) :: CFILEPGD        ! file name
+ CHARACTER(LEN=6)               :: CFILEPGDTYPE    ! file type
 INTEGER           :: NHALO_PREP   ! HALO for nearest point extrapolation
 INTEGER           :: NYEAR        ! YEAR for surface
 INTEGER           :: NMONTH       ! MONTH for surface

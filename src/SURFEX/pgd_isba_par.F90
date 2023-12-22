@@ -65,7 +65,7 @@ USE MODD_DATA_COVER_PAR, ONLY : NVEGTYPE, NVT_IRR,                              
                                 NVT_BOBD, NVT_BOND, NVT_BOGR, NVT_SHRB, NVT_C3W,   &  !#rustine
                                 NVT_C3S, NVT_FLTR, NVT_FLGR, NTYPE                    !#rustine
 
-USE MODD_SURF_PAR,       ONLY : XUNDEF, NUNDEF
+USE MODD_SURF_PAR,       ONLY : NFILENAMELGTMAX, XUNDEF, NUNDEF
 !
 USE MODD_AGRI,           ONLY : LAGRIP, LIRRIGMODE, LMULTI_SEASON, JPSTAGE, XTHRESHOLD, XTHRESHOLD_DEFAULT, &
                                NVEG_IRR, NVEG_IRR_DEFAULT, NVEG_IRR_USE_DEFAULT, NPATCH_TREE, NIRR_TYPE, &
@@ -254,75 +254,75 @@ REAL, DIMENSION(NGROUND_MAX)   :: XUNIF_WSAT
 !
 ! name of files containing data
 !
- CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX)           :: CFNAM_VEGTYPE    ! fractions of each vegtypes
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NVEGTYPE_MAX)           :: CFNAM_VEGTYPE    ! fractions of each vegtypes
 !
- CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX,NTIME_MAX)   :: CFNAM_VEG        ! vegetation fraction
- CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX,NTIME_MAX)   :: CFNAM_LAI        ! LAI
- CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX,NTIME_MAX)   :: CFNAM_Z0         ! roughness length
- CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX,NTIME_MAX)   :: CFNAM_EMIS       ! emissivity
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NVEGTYPE_MAX,NTIME_MAX)   :: CFNAM_VEG        ! vegetation fraction
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NVEGTYPE_MAX,NTIME_MAX)   :: CFNAM_LAI        ! LAI
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NVEGTYPE_MAX,NTIME_MAX)   :: CFNAM_Z0         ! roughness length
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NVEGTYPE_MAX,NTIME_MAX)   :: CFNAM_EMIS       ! emissivity
 !
- CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX,NGROUND_MAX) :: CFNAM_DG         ! soil depth
- CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX,NGROUND_MAX) :: CFNAM_ROOTFRAC   ! root fraction profiles
- CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_GROUND_DEPTH! ground depth
- CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_ROOT_DEPTH ! root depth
- CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_ROOT_EXTINCTION! root extinction parameter
- CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_ROOT_LIN   ! root linear parameter
- CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_DICE       ! soil ice depth for runoff (m)
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NVEGTYPE_MAX,NGROUND_MAX) :: CFNAM_DG         ! soil depth
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NVEGTYPE_MAX,NGROUND_MAX) :: CFNAM_ROOTFRAC   ! root fraction profiles
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_GROUND_DEPTH! ground depth
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_ROOT_DEPTH ! root depth
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_ROOT_EXTINCTION! root extinction parameter
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_ROOT_LIN   ! root linear parameter
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_DICE       ! soil ice depth for runoff (m)
 !
- CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_RSMIN      ! minimal stomatal resistance
- CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_GAMMA      ! gamma parameter
- CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_WRMAX_CF   ! coefficient for interception
- CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_RGL        ! Rgl
- CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_CV         ! Cv
- CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_Z0_O_Z0H   ! ratio of roughness lengths
- CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX,NTIME_MAX)   :: CFNAM_ALBNIR_VEG ! albedo of vegetation (near-infra-red)
- CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX,NTIME_MAX)   :: CFNAM_ALBVIS_VEG ! albedo of vegetation (visible)
- CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX,NTIME_MAX)   :: CFNAM_ALBUV_VEG  ! albedo of vegetation (UV)
- CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX,NTIME_MAX)   :: CFNAM_ALBNIR_SOIL! albedo of soil (near-infra-red)
- CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX,NTIME_MAX)   :: CFNAM_ALBVIS_SOIL! albedo of soil (visible)
- CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX,NTIME_MAX)   :: CFNAM_ALBUV_SOIL ! albedo of soil (UV)
- CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_GMES       ! Gmes
- CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_BSLAI      ! Biomass over LAI
- CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_LAIMIN     ! minimum LAI
- CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_SEFOLD     ! e-folding time for senesence
- CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_GC         ! cuticular conductance
- CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_DMAX       ! Dmax
- CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_F2I        ! F2I
- CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_H_TREE     ! height of trees
- CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_RE25       ! soil respiration parameter
- CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_CE_NITRO   ! CE for nitrogen
- CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_CF_NITRO   ! CF for nitrogen
- CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_CNA_NITRO  ! CNA for nitrogen
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_RSMIN      ! minimal stomatal resistance
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_GAMMA      ! gamma parameter
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_WRMAX_CF   ! coefficient for interception
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_RGL        ! Rgl
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_CV         ! Cv
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_Z0_O_Z0H   ! ratio of roughness lengths
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NVEGTYPE_MAX,NTIME_MAX)   :: CFNAM_ALBNIR_VEG ! albedo of vegetation (near-infra-red)
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NVEGTYPE_MAX,NTIME_MAX)   :: CFNAM_ALBVIS_VEG ! albedo of vegetation (visible)
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NVEGTYPE_MAX,NTIME_MAX)   :: CFNAM_ALBUV_VEG  ! albedo of vegetation (UV)
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NVEGTYPE_MAX,NTIME_MAX)   :: CFNAM_ALBNIR_SOIL! albedo of soil (near-infra-red)
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NVEGTYPE_MAX,NTIME_MAX)   :: CFNAM_ALBVIS_SOIL! albedo of soil (visible)
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NVEGTYPE_MAX,NTIME_MAX)   :: CFNAM_ALBUV_SOIL ! albedo of soil (UV)
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_GMES       ! Gmes
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_BSLAI      ! Biomass over LAI
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_LAIMIN     ! minimum LAI
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_SEFOLD     ! e-folding time for senesence
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_GC         ! cuticular conductance
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_DMAX       ! Dmax
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_F2I        ! F2I
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_H_TREE     ! height of trees
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_RE25       ! soil respiration parameter
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_CE_NITRO   ! CE for nitrogen
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_CF_NITRO   ! CF for nitrogen
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_CNA_NITRO  ! CNA for nitrogen
 !
- CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_IRRIGTYPE  ! irrigation type
- CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_IRRIGFRAC  ! fraction of irrigation
- CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX,NTIME_MAX)   :: CFNAM_WATSUP     ! irrigation amount (mm)
- CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_IRRIGFREQ  ! minimum time between two irrigation (s)
- CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_IRRIGTIME  ! irrigation amount application time (s)
- CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX,NTIME_MAX)   :: CFNAM_F2THRESHOLD! F2 threshold for irrigation triggering
- CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_SEED_M     ! 
- CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_SEED_D     ! 
- CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_REAP_M     ! 
- CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_REAP_D     !  
- CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_SEED_S2_M  ! 
- CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_SEED_S2_D  ! 
- CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_REAP_S2_M  ! 
- CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_REAP_S2_D  !
- CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_SEED_S3_M  !
- CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_SEED_S3_D  !
- CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_REAP_S3_M  !
- CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_REAP_S3_D  !
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_IRRIGTYPE  ! irrigation type
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_IRRIGFRAC  ! fraction of irrigation
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NVEGTYPE_MAX,NTIME_MAX)   :: CFNAM_WATSUP     ! irrigation amount (mm)
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_IRRIGFREQ  ! minimum time between two irrigation (s)
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_IRRIGTIME  ! irrigation amount application time (s)
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NVEGTYPE_MAX,NTIME_MAX)   :: CFNAM_F2THRESHOLD! F2 threshold for irrigation triggering
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_SEED_M     !
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_SEED_D     !
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_REAP_M     !
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_REAP_D     !
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_SEED_S2_M  !
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_SEED_S2_D  !
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_REAP_S2_M  !
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_REAP_S2_D  !
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_SEED_S3_M  !
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_SEED_S3_D  !
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_REAP_S3_M  !
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_REAP_S3_D  !
 !
-CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX,NTIME_MAX)   :: CFNAM_Z0LITTER
-CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX,NTIME_MAX)   :: CFNAM_GNDLITTER
-CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX,NTIME_MAX)   :: CFNAM_H_VEG
+CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NVEGTYPE_MAX,NTIME_MAX)   :: CFNAM_Z0LITTER
+CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NVEGTYPE_MAX,NTIME_MAX)   :: CFNAM_GNDLITTER
+CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NVEGTYPE_MAX,NTIME_MAX)   :: CFNAM_H_VEG
 !
-CHARACTER(LEN=28), DIMENSION(NGROUND_MAX)   :: CFNAM_CONDSAT
-CHARACTER(LEN=28), DIMENSION(NGROUND_MAX)   :: CFNAM_MPOTSAT
-CHARACTER(LEN=28), DIMENSION(NGROUND_MAX)   :: CFNAM_BCOEF
-CHARACTER(LEN=28), DIMENSION(NGROUND_MAX)   :: CFNAM_WWILT
-CHARACTER(LEN=28), DIMENSION(NGROUND_MAX)   :: CFNAM_WFC
-CHARACTER(LEN=28), DIMENSION(NGROUND_MAX)   :: CFNAM_WSAT
+CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NGROUND_MAX)   :: CFNAM_CONDSAT
+CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NGROUND_MAX)   :: CFNAM_MPOTSAT
+CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NGROUND_MAX)   :: CFNAM_BCOEF
+CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NGROUND_MAX)   :: CFNAM_WWILT
+CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NGROUND_MAX)   :: CFNAM_WFC
+CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(NGROUND_MAX)   :: CFNAM_WSAT
 !
 ! types of file containing data
 !
@@ -572,76 +572,76 @@ XUNIF_WWILT           = XUNDEF
 XUNIF_WFC             = XUNDEF
 XUNIF_WSAT            = XUNDEF
 !
-CFNAM_VEGTYPE (:)     = '                            '
+CFNAM_VEGTYPE (:)     = ''
 !
-CFNAM_VEG  (:,:)      = '                            '
-CFNAM_LAI  (:,:)      = '                            '
-CFNAM_Z0   (:,:)      = '                            '
-CFNAM_EMIS (:,:)      = '                            '
+CFNAM_VEG  (:,:)      = ''
+CFNAM_LAI  (:,:)      = ''
+CFNAM_Z0   (:,:)      = ''
+CFNAM_EMIS (:,:)      = ''
 !
-CFNAM_DG       (:,:)  = '                            '
-CFNAM_ROOTFRAC (:,:)  = '                            '
-CFNAM_DICE     (:)    = '                            '
+CFNAM_DG       (:,:)  = ''
+CFNAM_ROOTFRAC (:,:)  = ''
+CFNAM_DICE     (:)    = ''
 !
-CFNAM_GROUND_DEPTH    (:) = '                            '
-CFNAM_ROOT_DEPTH      (:) = '                            '
-CFNAM_ROOT_EXTINCTION (:) = '                            '
-CFNAM_ROOT_LIN        (:) = '                            '
+CFNAM_GROUND_DEPTH    (:) = ''
+CFNAM_ROOT_DEPTH      (:) = ''
+CFNAM_ROOT_EXTINCTION (:) = ''
+CFNAM_ROOT_LIN        (:) = ''
 !
-CFNAM_RSMIN       (:) = '                            '
-CFNAM_GAMMA       (:) = '                            '
-CFNAM_WRMAX_CF    (:) = '                            '
-CFNAM_RGL         (:) = '                            '
-CFNAM_CV          (:) = '                            '
-CFNAM_Z0_O_Z0H    (:) = '                            '
-CFNAM_ALBNIR_VEG  (:,:) = '                            '
-CFNAM_ALBVIS_VEG  (:,:) = '                            '
-CFNAM_ALBUV_VEG   (:,:) = '                            '
-CFNAM_ALBNIR_SOIL (:,:) = '                            '
-CFNAM_ALBVIS_SOIL (:,:) = '                            '
-CFNAM_ALBUV_SOIL  (:,:) = '                            '
-CFNAM_GMES        (:) = '                            '
-CFNAM_BSLAI       (:) = '                            '
-CFNAM_LAIMIN      (:) = '                            '
-CFNAM_SEFOLD      (:) = '                            '
-CFNAM_GC          (:) = '                            '
-CFNAM_DMAX        (:) = '                            '
-CFNAM_F2I         (:) = '                            '
-CFNAM_H_TREE      (:) = '                            '
-CFNAM_RE25        (:) = '                            '
-CFNAM_CE_NITRO    (:) = '                            '
-CFNAM_CF_NITRO    (:) = '                            '
-CFNAM_CNA_NITRO   (:) = '                            '
+CFNAM_RSMIN       (:) = ''
+CFNAM_GAMMA       (:) = ''
+CFNAM_WRMAX_CF    (:) = ''
+CFNAM_RGL         (:) = ''
+CFNAM_CV          (:) = ''
+CFNAM_Z0_O_Z0H    (:) = ''
+CFNAM_ALBNIR_VEG  (:,:) = ''
+CFNAM_ALBVIS_VEG  (:,:) = ''
+CFNAM_ALBUV_VEG   (:,:) = ''
+CFNAM_ALBNIR_SOIL (:,:) = ''
+CFNAM_ALBVIS_SOIL (:,:) = ''
+CFNAM_ALBUV_SOIL  (:,:) = ''
+CFNAM_GMES        (:) = ''
+CFNAM_BSLAI       (:) = ''
+CFNAM_LAIMIN      (:) = ''
+CFNAM_SEFOLD      (:) = ''
+CFNAM_GC          (:) = ''
+CFNAM_DMAX        (:) = ''
+CFNAM_F2I         (:) = ''
+CFNAM_H_TREE      (:) = ''
+CFNAM_RE25        (:) = ''
+CFNAM_CE_NITRO    (:) = ''
+CFNAM_CF_NITRO    (:) = ''
+CFNAM_CNA_NITRO   (:) = ''
 !
-CFNAM_IRRIGTYPE    (:) = '                            '
-CFNAM_IRRIGFRAC    (:) = '                            '
-CFNAM_WATSUP     (:,:) = '                            '
-CFNAM_IRRIGFREQ    (:) = '                            '
-CFNAM_IRRIGTIME    (:) = '                            '
-CFNAM_F2THRESHOLD(:,:) = '                            '
-CFNAM_SEED_M       (:) = '                            '
-CFNAM_SEED_D       (:) = '                            '
-CFNAM_REAP_M       (:) = '                            '
-CFNAM_REAP_D       (:) = '                            '
-CFNAM_SEED_S2_M    (:) = '                            '
-CFNAM_SEED_S2_D    (:) = '                            '
-CFNAM_REAP_S2_M    (:) = '                            '
-CFNAM_REAP_S2_D    (:) = '                            '
-CFNAM_SEED_S3_M    (:) = '                            '
-CFNAM_SEED_S3_D    (:) = '                            '
-CFNAM_REAP_S3_M    (:) = '                            '
-CFNAM_REAP_S3_D    (:) = '                            '
+CFNAM_IRRIGTYPE    (:) = ''
+CFNAM_IRRIGFRAC    (:) = ''
+CFNAM_WATSUP     (:,:) = ''
+CFNAM_IRRIGFREQ    (:) = ''
+CFNAM_IRRIGTIME    (:) = ''
+CFNAM_F2THRESHOLD(:,:) = ''
+CFNAM_SEED_M       (:) = ''
+CFNAM_SEED_D       (:) = ''
+CFNAM_REAP_M       (:) = ''
+CFNAM_REAP_D       (:) = ''
+CFNAM_SEED_S2_M    (:) = ''
+CFNAM_SEED_S2_D    (:) = ''
+CFNAM_REAP_S2_M    (:) = ''
+CFNAM_REAP_S2_D    (:) = ''
+CFNAM_SEED_S3_M    (:) = ''
+CFNAM_SEED_S3_D    (:) = ''
+CFNAM_REAP_S3_M    (:) = ''
+CFNAM_REAP_S3_D    (:) = ''
 !
-CFNAM_Z0LITTER    (:,:) = '                            '
-CFNAM_GNDLITTER   (:,:) = '                            '
-CFNAM_H_VEG       (:,:) = '                            '
+CFNAM_Z0LITTER    (:,:) = ''
+CFNAM_GNDLITTER   (:,:) = ''
+CFNAM_H_VEG       (:,:) = ''
 !
-CFNAM_CONDSAT     (:) = '                            '
-CFNAM_MPOTSAT     (:) = '                            '
-CFNAM_BCOEF       (:) = '                            '
-CFNAM_WWILT       (:) = '                            '
-CFNAM_WFC         (:) = '                            '
-CFNAM_WSAT        (:) = '                            '
+CFNAM_CONDSAT     (:) = ''
+CFNAM_MPOTSAT     (:) = ''
+CFNAM_BCOEF       (:) = ''
+CFNAM_WWILT       (:) = ''
+CFNAM_WFC         (:) = ''
+CFNAM_WSAT        (:) = ''
 !
 CFTYP_VEGTYPE (:)     = '      '
 !

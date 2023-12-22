@@ -53,7 +53,7 @@ USE MODD_PREP_ISBA,  ONLY : CFILE_ISBA, CTYPE, CFILEPGD_ISBA, CTYPEPGD,        &
                             XTG_SURF, XTG_ROOT, XTG_DEEP,                      &  
                             XWSNOW, XTSNOW, XRSNOW, XASNOW
 !
-USE MODD_SURF_PAR,   ONLY : XUNDEF
+USE MODD_SURF_PAR,   ONLY : NFILENAMELGTMAX, XUNDEF
 !
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -66,18 +66,18 @@ IMPLICIT NONE
 !*       0.1   Declarations of arguments
 !              -------------------------
 !
- CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM    ! program calling ISBA
- CHARACTER(LEN=7),  INTENT(IN)  :: HVAR        ! variable treated
- CHARACTER(LEN=28), INTENT(OUT) :: HFILE       ! file name
- CHARACTER(LEN=6),  INTENT(OUT) :: HFILETYPE   ! file type
- CHARACTER(LEN=28), INTENT(OUT) :: HFILEPGD    ! file name
- CHARACTER(LEN=6),  INTENT(OUT) :: HFILEPGDTYPE! file type
- CHARACTER(LEN=28), INTENT(IN)  :: HATMFILE    ! atmospheric file name
- CHARACTER(LEN=6),  INTENT(IN)  :: HATMFILETYPE! atmospheric file type
- CHARACTER(LEN=28), INTENT(IN)  :: HPGDFILE    ! atmospheric file name
- CHARACTER(LEN=6),  INTENT(IN)  :: HPGDFILETYPE! atmospheric file type
-INTEGER,           INTENT(IN)  :: KLUOUT      ! logical unit of output listing
-LOGICAL,           INTENT(OUT) :: OUNIF       ! flag for prescribed uniform field
+ CHARACTER(LEN=6),               INTENT(IN)  :: HPROGRAM    ! program calling ISBA
+ CHARACTER(LEN=7),               INTENT(IN)  :: HVAR        ! variable treated
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(OUT) :: HFILE       ! file name
+ CHARACTER(LEN=6),               INTENT(OUT) :: HFILETYPE   ! file type
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(OUT) :: HFILEPGD    ! file name
+ CHARACTER(LEN=6),               INTENT(OUT) :: HFILEPGDTYPE! file type
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)  :: HATMFILE    ! atmospheric file name
+ CHARACTER(LEN=6),               INTENT(IN)  :: HATMFILETYPE! atmospheric file type
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)  :: HPGDFILE    ! atmospheric file name
+ CHARACTER(LEN=6),               INTENT(IN)  :: HPGDFILETYPE! atmospheric file type
+INTEGER,                         INTENT(IN)  :: KLUOUT      ! logical unit of output listing
+LOGICAL,                         INTENT(OUT) :: OUNIF       ! flag for prescribed uniform field
 
 !
 !*       0.2   Declarations of local variables
@@ -88,10 +88,10 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !
 IF (LHOOK) CALL DR_HOOK('READ_PREP_ISBA_CONF',0,ZHOOK_HANDLE)
-HFILE    = '                         '
+HFILE    = ''
 HFILETYPE    = '      '
 !
-HFILEPGD = '                         '
+HFILEPGD = ''
 HFILEPGDTYPE = '      '
 !
 OUNIF    = .FALSE.

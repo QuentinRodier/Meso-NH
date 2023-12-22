@@ -46,6 +46,7 @@ USE MODI_CLOSE_NAMELIST
 !
 USE MODE_POS_SURF
 !
+USE MODD_SURF_PAR, ONLY: NFILENAMELGTMAX
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -72,8 +73,8 @@ INTEGER,                            INTENT(OUT)  :: KDUMMY_NBR
 !                          ! 'BLD' : where buildings are present
  CHARACTER(LEN=3),  DIMENSION(1000), INTENT(OUT)  :: HDUMMY_ATYPE    ! avg type for dummy pgd fields
 !                                                                   ! 'ARI' , 'INV'
- CHARACTER(LEN=28), DIMENSION(1000), INTENT(OUT)  :: HDUMMY_FILE     ! data files
- CHARACTER(LEN=6),  DIMENSION(1000), INTENT(OUT)  :: HDUMMY_FILETYPE ! type of these files
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(1000), INTENT(OUT)  :: HDUMMY_FILE     ! data files
+ CHARACTER(LEN=6),               DIMENSION(1000), INTENT(OUT)  :: HDUMMY_FILETYPE ! type of these files
 !
 !
 !*    0.2    Declaration of local variables
@@ -102,7 +103,7 @@ INTEGER                             :: NDUMMY_NBR
 !                          ! 'BLD' : where buildings are present
  CHARACTER(LEN=3),  DIMENSION(1000)  :: CDUMMY_ATYPE    ! avg type for dummy pgd fields
 !                                                      ! 'ARI' , 'INV'
- CHARACTER(LEN=28), DIMENSION(1000)  :: CDUMMY_FILE     ! data files
+ CHARACTER(LEN=NFILENAMELGTMAX), DIMENSION(1000)  :: CDUMMY_FILE     ! data files
  CHARACTER(LEN=6),  DIMENSION(1000)  :: CDUMMY_FILETYPE ! type of these files
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
@@ -117,7 +118,7 @@ IF (LHOOK) CALL DR_HOOK('READ_NAM_PGD_DUMMY',0,ZHOOK_HANDLE)
 NDUMMY_NBR = 0
 !
 CDUMMY_NAME     = "                    "
-CDUMMY_FILE     = "                            "
+CDUMMY_FILE     = ""
 CDUMMY_FILETYPE = "      "
 CDUMMY_AREA     = "ALL"
 CDUMMY_ATYPE    = "ARI"

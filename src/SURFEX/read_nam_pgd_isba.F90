@@ -56,7 +56,7 @@
 !*    0.     DECLARATION
 !            -----------
 !
-USE MODD_SURF_PAR, ONLY : XUNDEF, NUNDEF
+USE MODD_SURF_PAR, ONLY : NFILENAMELGTMAX, XUNDEF, NUNDEF
 !
 USE MODI_GET_LUOUT
 USE MODI_OPEN_NAMELIST
@@ -82,12 +82,12 @@ INTEGER,             INTENT(OUT)   :: KGROUND_LAYER ! number of soil layers
 LOGICAL,             INTENT(OUT)   :: OTR_ML        ! new radiative transfert
  CHARACTER(LEN=4),   INTENT(OUT)    :: HALBEDO
 REAL,                INTENT(OUT)   :: PRM_PATCH     ! threshold to remove little fractions of patches
- CHARACTER(LEN=28),   INTENT(OUT)   :: HSAND         ! file name for sand fraction
- CHARACTER(LEN=28),   INTENT(OUT)   :: HCLAY         ! file name for clay fraction
- CHARACTER(LEN=28),   INTENT(OUT)   :: HCTI          ! file name for topographic index
- CHARACTER(LEN=28),   INTENT(OUT)   :: HPERM         ! file name for permafrost distribution
- CHARACTER(LEN=28),   INTENT(OUT)   :: HRUNOFFB      ! file name for runoffb parameter
- CHARACTER(LEN=28),   INTENT(OUT)   :: HWDRAIN       ! file name for wdrain parameter
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(OUT) :: HSAND    ! file name for sand fraction
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(OUT) :: HCLAY    ! file name for clay fraction
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(OUT) :: HCTI     ! file name for topographic index
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(OUT) :: HPERM    ! file name for permafrost distribution
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(OUT) :: HRUNOFFB ! file name for runoffb parameter
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(OUT) :: HWDRAIN  ! file name for wdrain parameter
  CHARACTER(LEN=6),    INTENT(OUT)   :: HSANDFILETYPE ! sand data file type
  CHARACTER(LEN=6),    INTENT(OUT)   :: HCLAYFILETYPE ! clay data file type
  CHARACTER(LEN=6),    INTENT(OUT)   :: HCTIFILETYPE  ! topographic index data file type
@@ -104,15 +104,15 @@ LOGICAL,             INTENT(OUT)   :: OIMP_CLAY     ! Imposed values for Clay
 LOGICAL,             INTENT(OUT)   :: OIMP_CTI      ! Imposed values for topographic index statistics
 LOGICAL,             INTENT(OUT)   :: OMEB          ! MEB
 LOGICAL,             INTENT(OUT)   :: OIMP_PERM     ! Imposed maps of permafrost distribution
- CHARACTER(LEN=28),   INTENT(OUT)   :: HSOC_TOP      ! file name for organic carbon
- CHARACTER(LEN=28),   INTENT(OUT)   :: HSOC_SUB      ! file name for organic carbon
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(OUT) :: HSOC_TOP ! file name for organic carbon
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(OUT) :: HSOC_SUB ! file name for organic carbon
  CHARACTER(LEN=6),    INTENT(OUT)   :: HSOCFILETYPE  ! organic carbon data file type
 REAL,                INTENT(OUT)   :: PUNIF_SOC_TOP ! uniform value of organic carbon top soil (kg/m2)
 REAL,                INTENT(OUT)   :: PUNIF_SOC_SUB ! uniform value of organic carbon sub soil (kg/m2)
 LOGICAL,             INTENT(OUT)   :: OIMP_SOC      ! Imposed maps of organic carbon
 REAL, DIMENSION(:),  INTENT(OUT)   :: PSOILGRID     ! Soil layer thickness for DIF
- CHARACTER(LEN=28),   INTENT(OUT)   :: HPH           ! file name for pH
- CHARACTER(LEN=28),   INTENT(OUT)   :: HFERT         ! file name for fertilisation rate
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(OUT) :: HPH   ! file name for pH
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(OUT) :: HFERT ! file name for fertilisation rate
  CHARACTER(LEN=6),    INTENT(OUT)   :: HPHFILETYPE   ! pH data file type
  CHARACTER(LEN=6),    INTENT(OUT)   :: HFERTFILETYPE ! fertilisation data file type
 REAL,                INTENT(OUT)   :: PUNIF_PH      ! uniform value of pH
@@ -138,14 +138,14 @@ INTEGER                  :: NGROUND_LAYER    ! number of soil layers
 LOGICAL                  :: LTR_ML           ! new radiative transfert
  CHARACTER(LEN=4)         :: CALBEDO
 REAL                     :: XRM_PATCH        ! threshold to remove little fractions of patches
- CHARACTER(LEN=28)        :: YSAND            ! file name for sand fraction
- CHARACTER(LEN=28)        :: YCLAY            ! file name for clay fraction
- CHARACTER(LEN=28)        :: YCTI             ! file name for topographic index
- CHARACTER(LEN=28)        :: YPERM            ! file name for permafrost distribution
- CHARACTER(LEN=28)        :: YRUNOFFB         ! file name for runoffb parameter
- CHARACTER(LEN=28)        :: YWDRAIN          ! file name for wdrain parameter
- CHARACTER(LEN=28)        :: YPH              ! file name for pH
- CHARACTER(LEN=28)        :: YFERT            ! file name for fertilisation rate
+ CHARACTER(LEN=NFILENAMELGTMAX) :: YSAND      ! file name for sand fraction
+ CHARACTER(LEN=NFILENAMELGTMAX) :: YCLAY      ! file name for clay fraction
+ CHARACTER(LEN=NFILENAMELGTMAX) :: YCTI       ! file name for topographic index
+ CHARACTER(LEN=NFILENAMELGTMAX) :: YPERM      ! file name for permafrost distribution
+ CHARACTER(LEN=NFILENAMELGTMAX) :: YRUNOFFB   ! file name for runoffb parameter
+ CHARACTER(LEN=NFILENAMELGTMAX) :: YWDRAIN    ! file name for wdrain parameter
+ CHARACTER(LEN=NFILENAMELGTMAX) :: YPH        ! file name for pH
+ CHARACTER(LEN=NFILENAMELGTMAX) :: YFERT      ! file name for fertilisation rate
  CHARACTER(LEN=6)         :: YSANDFILETYPE    ! sand data file type
  CHARACTER(LEN=6)         :: YCLAYFILETYPE    ! clay data file type
  CHARACTER(LEN=6)         :: YCTIFILETYPE     ! topographic index data file type
@@ -169,8 +169,8 @@ REAL                     :: XUNIF_FERT    ! uniform value of fertilisation rate
 !
 REAL, DIMENSION(150)     :: XSOILGRID     ! Soil layer thickness for DIF
 !
- CHARACTER(LEN=28)        :: YSOC_TOP      ! file name for organic carbon expressed in kg/m2
- CHARACTER(LEN=28)        :: YSOC_SUB      ! file name for organic carbon expressed in kg/m2
+ CHARACTER(LEN=NFILENAMELGTMAX)        :: YSOC_TOP      ! file name for organic carbon expressed in kg/m2
+ CHARACTER(LEN=NFILENAMELGTMAX)        :: YSOC_SUB      ! file name for organic carbon expressed in kg/m2
  CHARACTER(LEN=6)         :: YSOCFILETYPE  ! organic carbon data file type
 REAL                     :: XUNIF_SOC_TOP ! uniform value of organic carbon (kg/m2)
 REAL                     :: XUNIF_SOC_SUB ! uniform value of organic carbon (kg/m2)
@@ -218,16 +218,16 @@ XUNIF_PERM       = XUNDEF
 XUNIF_PH         = XUNDEF
 XUNIF_FERT       = XUNDEF
 !
-YCLAY            = '                          '
-YSAND            = '                          '
-YSOC_TOP         = '                          '
-YSOC_SUB         = '                          '
-YCTI             = '                          '
-YPERM            = '                          '
-YRUNOFFB         = '                          '
-YWDRAIN          = '                          '
-YPH              = '                          '
-YFERT            = '                          '
+YCLAY            = ''
+YSAND            = ''
+YSOC_TOP         = ''
+YSOC_SUB         = ''
+YCTI             = ''
+YPERM            = ''
+YRUNOFFB         = ''
+YWDRAIN          = ''
+YPH              = ''
+YFERT            = ''
 !
 YCLAYFILETYPE    = '      '
 YSANDFILETYPE    = '      '

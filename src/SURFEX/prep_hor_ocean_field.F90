@@ -41,7 +41,7 @@ USE MODD_OCEAN_n, ONLY : OCEAN_t
 USE MODD_OCEAN_REL_n, ONLY : OCEAN_REL_t
 !
 USE MODD_CSTS,           ONLY : XTT
-USE MODD_SURF_PAR,       ONLY : XUNDEF
+USE MODD_SURF_PAR,       ONLY : NFILENAMELGTMAX, XUNDEF
 USE MODD_OCEAN_GRID,   ONLY : NOCKMIN,NOCKMAX,XZHOC
 USE MODD_PREP,           ONLY : CINGRID_TYPE, CINTERP_TYPE, LINTERP
 !
@@ -69,13 +69,13 @@ TYPE(OCEAN_REL_t), INTENT(INOUT) :: OR
 INTEGER, INTENT(IN) :: KLAT
 REAL, DIMENSION(:), INTENT(IN) :: PSEABATHY
 !
- CHARACTER(LEN=6),   INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
- CHARACTER(LEN=28),  INTENT(IN)  :: HFILE     ! file name
- CHARACTER(LEN=6),   INTENT(IN)  :: HFILETYPE ! file type
-INTEGER,            INTENT(IN)  :: KLUOUT    ! logical unit of output listing
-LOGICAL,            INTENT(IN)  :: OUNIF     ! flag for prescribed uniform field
- CHARACTER(LEN=7)                :: HSURF   ! type of field
- CHARACTER(LEN=28),  INTENT(IN), OPTIONAL :: HNCVARNAME!var to read 
+ CHARACTER(LEN=6),               INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
+ CHARACTER(LEN=NFILENAMELGTMAX), INTENT(IN)  :: HFILE     ! file name
+ CHARACTER(LEN=6),               INTENT(IN)  :: HFILETYPE ! file type
+INTEGER,                         INTENT(IN)  :: KLUOUT    ! logical unit of output listing
+LOGICAL,                         INTENT(IN)  :: OUNIF     ! flag for prescribed uniform field
+ CHARACTER(LEN=7),               INTENT(IN)  :: HSURF   ! type of field
+ CHARACTER(LEN=28),              INTENT(IN), OPTIONAL :: HNCVARNAME!var to read
 !
 !
 !*      0.2    declarations of local variables

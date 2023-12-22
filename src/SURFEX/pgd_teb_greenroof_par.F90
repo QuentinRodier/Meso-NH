@@ -49,7 +49,7 @@ USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 USE MODD_SSO_n, ONLY : SSO_t
 USE MODD_ISBA_OPTIONS_n, ONLY : ISBA_OPTIONS_t
 USE MODD_ISBA_n, ONLY : ISBA_S_t, ISBA_K_t
-USE MODD_SURF_PAR, ONLY : XUNDEF
+USE MODD_SURF_PAR, ONLY : NFILENAMELGTMAX, XUNDEF
 USE MODD_PGDWORK, ONLY : CATYPE
 !
 USE MODI_READ_NAM_PGD_TEB_GREENROOF
@@ -114,10 +114,10 @@ REAL,DIMENSION(NTIME_GR_MAX)               :: ZUNIF_LAI_GR     ! LAI of green ro
 !
 ! name of files containing data
 !
- CHARACTER(LEN=28),DIMENSION(NLAYER_GR_MAX) :: YFNAM_OM_GR      ! fraction of organic matter (OM) in green roof layer
- CHARACTER(LEN=28),DIMENSION(NLAYER_GR_MAX) :: YFNAM_CLAY_GR    ! fraction of clay for the non-OM part of the green roof layer
- CHARACTER(LEN=28),DIMENSION(NLAYER_GR_MAX) :: YFNAM_SAND_GR    ! fraction of sand for the non-OM part of the green roof layer
- CHARACTER(LEN=28),DIMENSION(NTIME_GR_MAX)  :: YFNAM_LAI_GR     ! LAI  of green roof
+ CHARACTER(LEN=NFILENAMELGTMAX),DIMENSION(NLAYER_GR_MAX) :: YFNAM_OM_GR      ! fraction of organic matter (OM) in green roof layer
+ CHARACTER(LEN=NFILENAMELGTMAX),DIMENSION(NLAYER_GR_MAX) :: YFNAM_CLAY_GR    ! fraction of clay for the non-OM part of the green roof layer
+ CHARACTER(LEN=NFILENAMELGTMAX),DIMENSION(NLAYER_GR_MAX) :: YFNAM_SAND_GR    ! fraction of sand for the non-OM part of the green roof layer
+ CHARACTER(LEN=NFILENAMELGTMAX),DIMENSION(NTIME_GR_MAX)  :: YFNAM_LAI_GR     ! LAI  of green roof
 !
 ! type of files containing data
 !
@@ -147,10 +147,10 @@ ZUNIF_CLAY_GR    = XUNDEF
 ZUNIF_SAND_GR    = XUNDEF
 ZUNIF_LAI_GR     = XUNDEF
 !
-YFNAM_OM_GR      = '                            '
-YFNAM_CLAY_GR    = '                            '
-YFNAM_SAND_GR    = '                            '
-YFNAM_LAI_GR     = '                            '
+YFNAM_OM_GR      = ''
+YFNAM_CLAY_GR    = ''
+YFNAM_SAND_GR    = ''
+YFNAM_LAI_GR     = ''
 !
 YFTYP_OM_GR      = '      '
 YFTYP_CLAY_GR    = '      '

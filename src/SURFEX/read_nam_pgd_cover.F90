@@ -41,6 +41,7 @@
 !            -----------
 !
 USE MODD_DATA_COVER_PAR, ONLY : NCOVER
+USE MODD_SURF_PAR,       ONLY : NFILENAMELGTMAX
 !
 USE MODI_GET_LUOUT
 USE MODI_OPEN_NAMELIST
@@ -58,7 +59,7 @@ IMPLICIT NONE
 !            ------------------------
 !                                   
 CHARACTER(LEN=6),    INTENT(IN)    :: HPROGRAM    ! Type of program
-CHARACTER(LEN=28),   INTENT(OUT)   :: HCOVER      ! file name for cover types
+CHARACTER(LEN=NFILENAMELGTMAX), INTENT(OUT) :: HCOVER      ! file name for cover types
 CHARACTER(LEN=6),    INTENT(OUT)   :: HFILETYPE   ! data file type
 REAL, DIMENSION(:),  INTENT(OUT)   :: PUNIF_COVER ! value of each cover (cover will be uniform on the horizontal)
 REAL,                INTENT(OUT)   :: PRM_COVER   ! limit of coverage under which the cover is removed. Default is 1.E-6
@@ -84,7 +85,7 @@ LOGICAL                           :: GFOUND    ! flag when namelist is present
 REAL, DIMENSION(NCOVER) :: XUNIF_COVER ! value of each cover (cover will be
 !                                                   uniform on the horizontal)
 !
-CHARACTER(LEN=28)        :: YCOVER      ! file name for cover types
+CHARACTER(LEN=NFILENAMELGTMAX) :: YCOVER     ! file name for cover types
 CHARACTER(LEN=6)         :: YCOVERFILETYPE   ! data file type
 REAL                     :: XRM_COVER   ! limit of coverage under which the
                                         ! cover is removed. Default is 1.E-6
@@ -118,7 +119,7 @@ NAMELIST/NAM_COVER/ YCOVER, YCOVERFILETYPE, XUNIF_COVER, XRM_COVER, XRM_COAST,  
 !
 IF (LHOOK) CALL DR_HOOK('READ_NAM_PGD_COVER',0,ZHOOK_HANDLE)
 XUNIF_COVER(:) = 0.
-YCOVER         = '                          '
+YCOVER         = ''
 YCOVERFILETYPE = '      '
 XRM_COVER      = 1.E-6
 XRM_COAST      = 1.0
