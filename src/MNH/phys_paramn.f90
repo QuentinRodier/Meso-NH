@@ -36,7 +36,7 @@ END MODULE MODI_PHYS_PARAM_n
 !
 !     ########################################################################################
       SUBROUTINE PHYS_PARAM_n( KTCOUNT, TPFILE,                                              &
-                               PRAD, PSHADOWS, PKAFR, PGROUND, PMAFL, PEOL, PDRAG, PTURB,    &
+                               PRAD, PSHADOWS, PKAFR, PGROUND, PMAFL, PDRAG, PEOL, PTURB,    &
                                PTRACER, PTIME_BU, PWETDEPAER, OMASKkids, OCLOUD_ONLY         )
 !     ########################################################################################
 !
