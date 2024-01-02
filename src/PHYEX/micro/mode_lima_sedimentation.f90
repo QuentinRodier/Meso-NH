@@ -7,9 +7,9 @@ MODULE MODE_LIMA_SEDIMENTATION
   IMPLICIT NONE
 CONTAINS
 !     ######################################################################
-  SUBROUTINE LIMA_SEDIMENTATION (D, CST, &
+  SUBROUTINE LIMA_SEDIMENTATION (D, CST, ICED, HCLOUD, &
                                  HPHASE, KMOMENTS, KID, KSPLITG, PTSTEP, OELEC, &
-                                 PDZZ, PRHODREF, &
+                                 PDZZ, PRHODREF, PTHVREFZIKB, &
                                  PPABST, PT, PRT_SUM, PCPT, PRS, PCS, PINPR, PFPR, &
                                  PEFIELDW, PQS)
 !     ######################################################################
@@ -51,6 +51,7 @@ CONTAINS
 !
 USE MODD_DIMPHYEX,         ONLY: DIMPHYEX_t
 USE MODD_CST,              ONLY: CST_t
+USE MODD_RAIN_ICE_DESCR_n, ONLY: RAIN_ICE_DESCR_t
 USE MODD_ELEC_DESCR,       ONLY: LSEDIM_BEARD
 USE MODD_ELEC_PARAM,       ONLY: XFQSED, XDQ
 USE MODD_PARAM_LIMA,       ONLY: XCEXVT, XRTMIN, XCTMIN, NSPLITSED,           &
@@ -64,8 +65,8 @@ USE MODD_PARAM_LIMA_MIXED, ONLY: XCCG, XCXG, XCCH, XCXH
 
 use mode_tools,            only: Countjv
 
-USE MODI_GAMMA,            ONLY: GAMMA_X0D
-USE MODI_ELEC_COMPUTE_EX
+USE MODI_GAMMA,             ONLY: GAMMA_X0D
+USE MODE_ELEC_COMPUTE_EX,   ONLY: ELEC_COMPUTE_EX
 USE MODE_ELEC_BEARD_EFFECT, ONLY: ELEC_BEARD_EFFECT
 !
 IMPLICIT NONE
@@ -74,6 +75,7 @@ IMPLICIT NONE
 !
 TYPE(DIMPHYEX_t),         INTENT(IN)    :: D
 TYPE(CST_t),              INTENT(IN)    :: CST
+TYPE(RAIN_ICE_DESCR_t),   INTENT(IN)    :: ICED
 CHARACTER(1),             INTENT(IN)    :: HPHASE    ! Liquid or solid hydrometeors
 INTEGER,                  INTENT(IN)    :: KMOMENTS  ! Number of moments 
 INTEGER,                  INTENT(IN)    :: KID       ! Hydrometeor ID
@@ -91,6 +93,8 @@ REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PCS       ! C. source
 REAL, DIMENSION(:,:),     INTENT(INOUT) :: PINPR     ! Instant precip rate
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PFPR      ! Precip. fluxes in altitude
 REAL, DIMENSION(:,:,:),   INTENT(IN),    OPTIONAL :: PEFIELDW  ! Vertical component of the electric field
+CHARACTER (LEN=4),      INTENT(IN)   ::  HCLOUD       ! Kind of microphysical scheme
+REAL, INTENT(IN)                :: PTHVREFZIKB ! Reference thv at IKB for electricity
 REAL, DIMENSION(:,:,:),   INTENT(INOUT), OPTIONAL :: PQS ! Elec. charge density source
 !
 !*       0.2   Declarations of local variables :
@@ -243,7 +247,7 @@ DO JN = 1 ,  NSPLITSED(KID)
       IF (OELEC .AND. LSEDIM_BEARD) THEN
         ALLOCATE(ZLBDA3(SIZE(PRHODREF,1),SIZE(PRHODREF,2),SIZE(PRHODREF,3)))
         ZLBDA3(:,:,:) = UNPACK( ZLBDA(:),MASK=GSEDIM(:,:,:),FIELD=0.0 )
-        CALL ELEC_BEARD_EFFECT(D, KID, GSEDIM, PT, PRHODREF, &
+        CALL ELEC_BEARD_EFFECT(D, CST, ICED, HCLOUD, KID, GSEDIM, PT, PRHODREF, PTHVREFZIKB, &
                                PRS, PQS, PEFIELDW, ZLBDA3, ZBEARDCOEFF)
         DEALLOCATE(ZLBDA3)
       END IF
@@ -263,10 +267,10 @@ DO JN = 1 ,  NSPLITSED(KID)
       IF (OELEC) THEN
         ! compute e of the q-D relationship
         IF (IMOMENTS == 2) THEN  ! 2-moment species
-          CALL ELEC_COMPUTE_EX (KID, IMOMENTS, ISEDIM, PTSTEP, ZRHODREF, XRTMIN(KID), &
+          CALL ELEC_COMPUTE_EX (KID, IMOMENTS, ISEDIM, HCLOUD, PTSTEP, ZRHODREF, XRTMIN(KID), &
                                 ZRS, ZQS, ZES, PLBDX=ZLBDA, PCX=ZCS)
         ELSE                     ! 1-moment species
-          CALL ELEC_COMPUTE_EX (KID, IMOMENTS, ISEDIM, PTSTEP, ZRHODREF, XRTMIN(KID), &
+          CALL ELEC_COMPUTE_EX (KID, IMOMENTS, ISEDIM, HCLOUD, PTSTEP, ZRHODREF, XRTMIN(KID), &
                                 ZRS, ZQS, ZES, PLBDX=ZLBDA)
         END IF
         !

@@ -114,9 +114,9 @@ IF (OOCEAN) THEN                                    ! ocean case
   !$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
 ELSE   
  IF ( KRR == 0) THEN                                ! dry case
- !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
+  !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
   PETHETA(:,:) = 1.
- !$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
+  !$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
  ELSE IF ( KRR == 1 ) THEN                           ! only vapor
   ZDELTA = (CST%XRV/CST%XRD) - 1.
   !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
@@ -127,7 +127,7 @@ ELSE
   !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
   ZRW(:,:) = PRM(:,:,1)
   !$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
-!
+  !
   IF ( KRRI>0 ) THEN  ! rc and ri case
     !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
     ZRW(:,:) = ZRW(:,:) + PRM(:,:,3)
@@ -142,11 +142,11 @@ ELSE
               (1.+ZDELTA) * (PRM(:,:,1) - PRM(:,:,2) - PRM(:,:,4)) &
               -ZRW(:,:)                                                &
                      )  /  (1. + ZRW(:,:))
-  !
-  !   Etheta = ZA + ZC * Atheta  
-  !   ZC is computed from line 2 to line 5
-  !   - Atheta * 2. * SRC is computed at line 6 
-  !
+    !
+    !   Etheta = ZA + ZC * Atheta  
+    !   ZC is computed from line 2 to line 5
+    !   - Atheta * 2. * SRC is computed at line 6 
+    !
     PETHETA(:,:) = ZA(:,:)                                                 &
         +( PLOCPEXNM(:,:) * ZA(:,:)                                        &
                -(1.+ZDELTA) * (PTHLM(:,:) + PLOCPEXNM(:,:)*(               &
@@ -165,11 +165,11 @@ ELSE
               (1.+ZDELTA) * (PRM(:,:,1) - PRM(:,:,2)) &
               -ZRW(:,:)                                 &
                      )  /  (1. + ZRW(:,:))
-  !
-  !   Etheta = ZA + ZC * Atheta  
-  !   ZC is computed from line 2 to line 5
-  !   - Atheta * 2. * SRC is computed at line 6 
-  !
+    !
+    !   Etheta = ZA + ZC * Atheta  
+    !   ZC is computed from line 2 to line 5
+    !   - Atheta * 2. * SRC is computed at line 6 
+    !
     PETHETA(:,:) = ZA(:,:)                                                 &
         +( PLOCPEXNM(:,:) * ZA(:,:) -(1.+ZDELTA) * (PTHLM(:,:) &
         + PLOCPEXNM(:,:)*PRM(:,:,2))   &

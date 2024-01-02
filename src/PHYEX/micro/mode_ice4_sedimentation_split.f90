@@ -7,7 +7,8 @@ MODULE MODE_ICE4_SEDIMENTATION_SPLIT
 IMPLICIT NONE
 CONTAINS
 SUBROUTINE ICE4_SEDIMENTATION_SPLIT(D, CST, ICEP, ICED, PARAMI, ELECP, ELECD, &
-                                   &OELEC, OSEDIM_BEARD, PTSTEP, KRR, PDZZ, &
+                                   &OELEC, OSEDIM_BEARD, PTHVREFZIKB, HCLOUD,  &
+                                   &PTSTEP, KRR, PDZZ, &
                                    &PRHODREF, PPABST, PTHT, PT, PRHODJ, &
                                    &PRCS, PRCT, PRRS, PRRT, PRIS, PRIT, PRSS, PRST, PRGS, PRGT,&
                                    &PINPRC, PINPRR, PINPRI, PINPRS, PINPRG, &
@@ -62,6 +63,7 @@ TYPE(RAIN_ICE_DESCR_t),        INTENT(IN)              :: ICED
 TYPE(PARAM_ICE_t),             INTENT(IN)              :: PARAMI
 TYPE(ELEC_PARAM_t),            INTENT(IN)              :: ELECP   ! electrical parameters
 TYPE(ELEC_DESCR_t),            INTENT(IN)              :: ELECD   ! electrical descriptive csts
+CHARACTER (LEN=4),             INTENT(IN)              :: HCLOUD  ! Kind of microphysical scheme
 LOGICAL,                       INTENT(IN)              :: OELEC   ! if true, cloud electricity is activated
 LOGICAL,                       INTENT(IN)              :: OSEDIM_BEARD ! if true, effect of electrical forces on sedim.
 REAL,                          INTENT(IN)              :: PTSTEP  ! Double Time step (single if cold start)
@@ -107,7 +109,7 @@ REAL, DIMENSION(MERGE(D%NIJT,0,OELEC),MERGE(D%NKT,0,OELEC)), INTENT(INOUT) :: PQ
 REAL, DIMENSION(MERGE(D%NIJT,0,OELEC),MERGE(D%NKT,0,OELEC)), INTENT(INOUT) :: PQGS   ! Graupel electric charge source
 REAL, DIMENSION(MERGE(D%NIJT,0,OELEC),MERGE(D%NKT,0,OELEC)), OPTIONAL, INTENT(INOUT) :: PQHS   ! Hail electric charge source
 REAL, DIMENSION(MERGE(D%NIJT,0,OSEDIM_BEARD),MERGE(D%NKT,0,OSEDIM_BEARD)), INTENT(IN) :: PEFIELDW ! Vertical E field 
-!
+REAL, INTENT(IN)                :: PTHVREFZIKB ! Reference thv at IKB for electricity
 !*       0.2  declaration of local variables
 !
 !
@@ -389,13 +391,14 @@ CHARACTER(LEN=10) :: YSPE ! String for error message
 INTEGER                         :: JIJ, JK
 LOGICAL                         :: GPRESENT_PFPR
 REAL                            :: ZINVTSTEP
-REAL                            :: ZZWLBDC, ZRAY, ZZT, ZZWLBDA, ZZCC
+REAL                            :: ZZWLBDC, ZZRAY, ZZT, ZZWLBDA, ZZCC
 REAL                            :: ZLBDA
 REAL                            :: ZFSED, ZEXSED
 REAL                            :: ZMRCHANGE
 REAL, DIMENSION(D%NIJT)       :: ZMAX_TSTEP ! Maximum CFL in column
 REAL, DIMENSION(SIZE(ICED%XRTMIN))   :: ZRSMIN
 REAL, DIMENSION(D%NIJT)       :: ZREMAINT   ! Remaining time until the timestep end
+LOGICAL :: ZANYREMAINT
 REAL, DIMENSION(D%NIJT, 0:D%NKT+1) :: ZWSED   ! Sedimentation fluxes
 INTEGER :: IKTB, IKTE, IKB, IKL, IIJE, IIJB
 REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
@@ -445,11 +448,12 @@ END IF
 !
 PINPRX(:) = 0.
 ZINVTSTEP=1./PTSTEP
-ZRSMIN(:) = ICED%XRTMIN(:) * ZINVTSTEP
+ZRSMIN = ICED%XRTMIN * ZINVTSTEP
 ZREMAINT(:) = 0.
 ZREMAINT(:) = PTSTEP
 !
-DO WHILE (ANY(ZREMAINT>0.))
+ZANYREMAINT = .TRUE.
+DO WHILE (ZANYREMAINT)
   !
   ! Effect of electrical forces on sedimentation
   IF (OELEC .AND. OSEDIM_BEARD) THEN
@@ -483,10 +487,10 @@ DO WHILE (ANY(ZREMAINT>0.))
           ZZWLBDC = PLBC(JIJ,JK) * PCONC3D(JIJ,JK) / &
                    &(PRHODREF(JIJ,JK) * PRXT(JIJ,JK))
           ZZWLBDC = ZZWLBDC**ICED%XLBEXC
-          ZRAY = PRAY(JIJ,JK) / ZZWLBDC
+          ZZRAY = PRAY(JIJ,JK) / ZZWLBDC
           ZZT = PTHT(JIJ,JK) * (PPABST(JIJ,JK)/CST%XP00)**(CST%XRD/CST%XCPD)
           ZZWLBDA = 6.6E-8*(101325./PPABST(JIJ,JK))*(ZZT/293.15)
-          ZZCC = ICED%XCC*(1.+1.26*ZZWLBDA/ZRAY)
+          ZZCC = ICED%XCC*(1.+1.26*ZZWLBDA/ZZRAY)
           ZWSED(JIJ, JK) = PRHODREF(JIJ,JK)**(-ICED%XCEXVT +1 ) *   &
                              &ZZWLBDC**(-ICED%XDC)*ZZCC*PFSEDC(JIJ,JK) * PRXT(JIJ,JK)
 !++cb++ nouveau : traitement de la sedimentation des charges portees par les gouttelettes
@@ -505,7 +509,8 @@ DO WHILE (ANY(ZREMAINT>0.))
       ENDDO
     ENDDO
     IF (OELEC .AND. OSEDIM_BEARD) THEN
-      CALL ELEC_BEARD_EFFECT(D, KSPE, GMASK, PT, PRHODREF, PRXT, PQXT, PEFIELDW, ZLBDA3, ZBEARDCOEFF)
+      CALL ELEC_BEARD_EFFECT(D, CST, ICED, HCLOUD, KSPE, GMASK, PT, PRHODREF, PTHVREFZIKB, &
+                             PRXT, PQXT, PEFIELDW, ZLBDA3, ZBEARDCOEFF)
       DO JK = IKTB,IKTE
         DO JIJ = IIJB,IIJE
           ZWSED(JIJ,JK)  = ZWSED(JIJ,JK)  * ZBEARDCOEFF(JIJ,JK)
@@ -548,7 +553,8 @@ DO WHILE (ANY(ZREMAINT>0.))
       ENDDO
     ENDDO
     IF (OELEC .AND. OSEDIM_BEARD) THEN
-      CALL ELEC_BEARD_EFFECT(D, KSPE, GMASK, PT, PRHODREF, PRXT, PQXT, PEFIELDW, ZLBDA3, ZBEARDCOEFF)
+      CALL ELEC_BEARD_EFFECT(D, CST, ICED, HCLOUD, KSPE, GMASK, PT, PRHODREF, PTHVREFZIKB, &
+                             PRXT, PQXT, PEFIELDW, ZLBDA3, ZBEARDCOEFF)
       DO JK = IKTB,IKTE
         DO JIJ = IIJB,IIJE
           ZWSED(JIJ,JK)  = ZWSED(JIJ,JK)  * ZBEARDCOEFF(JIJ,JK)
@@ -556,8 +562,6 @@ DO WHILE (ANY(ZREMAINT>0.))
         END DO
       END DO
     END IF
-#ifdef REPRO48 
-#else
   ELSEIF(KSPE==5) THEN
     ! ******* for snow
     ZWSED(:,:) = 0.
@@ -565,6 +569,19 @@ DO WHILE (ANY(ZREMAINT>0.))
       ZWSEDQ(:,:) = 0.
       ZLBDA3(:,:) = 0.
     END IF
+#ifdef REPRO48
+    !The following lines must be kept equal to the computation in the general case ("for other species" case below)
+    ZFSED=ICEP%XFSEDS
+    ZEXSED=ICEP%XEXSEDS
+    DO JK = IKTB,IKTE
+      DO JIJ = IIJB,IIJE
+        IF(PRXT(JIJ,JK)>ICED%XRTMIN(KSPE) .AND. ZREMAINT(JIJ)>0.) THEN
+          ZWSED(JIJ, JK) = ZFSED  * PRXT(JIJ, JK)**ZEXSED            &
+                         &        * PRHODREF(JIJ, JK)**(ZEXSED-ICED%XCEXVT)
+        ENDIF
+      ENDDO
+    ENDDO
+#else
     DO JK = IKTB,IKTE
       DO JIJ = IIJB,IIJE
         IF(PRXT(JIJ,JK)> ICED%XRTMIN(KSPE) .AND. ZREMAINT(JIJ)>0.) THEN
@@ -594,7 +611,8 @@ DO WHILE (ANY(ZREMAINT>0.))
       ENDDO
     ENDDO
     IF (OELEC .AND. OSEDIM_BEARD) THEN
-      CALL ELEC_BEARD_EFFECT(D, KSPE, GMASK, PT, PRHODREF, PRXT, PQXT, PEFIELDW, ZLBDA3, ZBEARDCOEFF)
+      CALL ELEC_BEARD_EFFECT(D, CST, ICED, HCLOUD, KSPE, GMASK, PT, PRHODREF, PTHVREFZIKB,&
+                             PRXT, PQXT, PEFIELDW, ZLBDA3, ZBEARDCOEFF)
       DO JK = IKTB,IKTE
         DO JIJ = IIJB,IIJE
           ZWSED(JIJ,JK)  = ZWSED(JIJ,JK)  * ZBEARDCOEFF(JIJ,JK)
@@ -609,12 +627,6 @@ DO WHILE (ANY(ZREMAINT>0.))
       CASE(3)
         ZFSED=ICEP%XFSEDR
         ZEXSED=ICEP%XEXSEDR
-#ifdef REPRO48
-      CASE(5)
-        ZFSED=ICEP%XFSEDS
-        ZEXSED=ICEP%XEXSEDS
-#else
-#endif
       CASE(6)
         ZFSED=ICEP%XFSEDG
         ZEXSED=ICEP%XEXSEDG
@@ -692,7 +704,8 @@ DO WHILE (ANY(ZREMAINT>0.))
       ENDDO
     ENDDO
     IF (OELEC .AND. OSEDIM_BEARD) THEN
-      CALL ELEC_BEARD_EFFECT(D, KSPE, GMASK, PT, PRHODREF, PRXT, PQXT, PEFIELDW, ZLBDA3, ZBEARDCOEFF)
+      CALL ELEC_BEARD_EFFECT(D, CST, ICED, HCLOUD, KSPE, GMASK, PT, PRHODREF, PTHVREFZIKB, &
+                             PRXT, PQXT, PEFIELDW, ZLBDA3, ZBEARDCOEFF)
       DO JK = IKTB,IKTE
         DO JIJ = IIJB,IIJE
           ZWSED(JIJ,JK)  = ZWSED(JIJ,JK)  * ZBEARDCOEFF(JIJ,JK)
@@ -731,7 +744,13 @@ DO WHILE (ANY(ZREMAINT>0.))
       ENDIF
     ENDDO
   ENDDO
-!
+  !
+  ZANYREMAINT = .FALSE.
+  DO JIJ=IIJB,IIJE
+    IF(ZREMAINT(JIJ)>0.) THEN
+      ZANYREMAINT = .TRUE.
+    END IF
+  END DO
 END DO
 !
 IF (LHOOK) CALL DR_HOOK('ICE4_SEDIMENTATION_SPLIT:INTERNAL_SEDIM_SPLIT', 1, ZHOOK_HANDLE)

@@ -36,6 +36,7 @@ SUBROUTINE ICE4_PACK(D, CST, PARAMI, ICEP, ICED, BUCONF,                   &
 !!    MODIFICATIONS
 !!    -------------
 !!     R. El Khatib 28-Apr-2023 Fix (and re-enable) the cache-blocking mechanism on top of phyex
+!!     S. Riette Sept 23: all 3D arrays are suppressed from ice4_stepping
 !  -----------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -168,6 +169,7 @@ REAL, DIMENSION(KPROMA) :: &
                         & ZHLC_HRC, & ! HLCLOUDS : LWC that is High LWC in grid
                         & ZHLI_HCF, &
                         & ZHLI_HRI, &
+                        & ZRAINFR,  &
                         & ZRREVAV
 REAL, DIMENSION(KSIZE2) :: ZSIGMA_RC ! Standard deviation of rc at time t
 LOGICAL, DIMENSION(KPROMA) :: LLMICRO
@@ -205,16 +207,6 @@ LLSIGMA_RC=(PARAMI%CSUBG_AUCV_RC=='PDF ' .AND. PARAMI%CSUBG_PR_PDF=='SIGM')
 LL_AUCV_ADJU=(PARAMI%CSUBG_AUCV_RC=='ADJU' .OR. PARAMI%CSUBG_AUCV_RI=='ADJU')
 !
 IF(PARAMI%LPACK_MICRO) THEN
-  IF(KPROMA /= KSIZE .AND. (PARAMI%CSUBG_RR_EVAP=='PRFR' .OR. PARAMI%CSUBG_RC_RR_ACCR=='PRFR')) THEN
-    CALL PRINT_MSG(NVERB_FATAL, 'GEN', 'RAIN_ICE', 'For now, KPROMA must be equal to KSIZE, see comments in code for explanation')
-    ! Microphyscs was optimized by introducing chunks of KPROMA size
-    ! Thus, in ice4_tendencies, the 1D array represent only a fraction of the points where microphysical species are present
-    ! We cannot rebuild the entire 3D arrays in the subroutine, so we cannot call ice4_rainfr_vert in it
-    ! A solution would be to suppress optimisation in this case by setting KPROMA=KSIZE in rain_ice
-    ! Another solution would be to compute column by column?
-    ! Another one would be to cut tendencies in 3 parts: before rainfr_vert, rainfr_vert, after rainfr_vert
-  ENDIF
-  !
   IF(BUCONF%LBU_ENABLE .OR. OSAVE_MICRO) THEN
     DO JV=1, IBUNUM-IBUNUM_EXTRA
       ZBU_PACK(:, JV)=0.
@@ -295,6 +287,7 @@ IF(PARAMI%LPACK_MICRO) THEN
                 ZHLI_HCF(IC) = PHLI_HCF(JIJ, JK)
                 ZHLI_HRI(IC) = PHLI_HRI(JIJ, JK)
               ENDIF
+              ZRAINFR(IC)=PRAINFR(JIJ, JK)
               IF (OELEC) ZLATHAM_IAGGS(IC) = PLATHAM_IAGGS(JIJ, JK)
               ! Save indices for later usages:
               I1(IC) = JIJ
@@ -340,7 +333,7 @@ IF(PARAMI%LPACK_MICRO) THEN
                         &ZCIT, &
                         &ZVART, &
                         &ZHLC_HCF, ZHLC_HRC, &
-                        &ZHLI_HCF, ZHLI_HRI, PRAINFR, &
+                        &ZHLI_HCF, ZHLI_HRI, ZRAINFR, &
                         &ZEXTPK, ZBU_SUM, ZRREVAV, &
                         &ZLATHAM_IAGGS)
       !
@@ -361,6 +354,7 @@ IF(PARAMI%LPACK_MICRO) THEN
         IF (KRR==7) THEN
           PWR(I1(JL),I2(JL),IRH)=ZVART(JL, IRH)
         ENDIF
+        PRAINFR(I1(JL),I2(JL))=ZRAINFR(JL)
       ENDDO
       IF(BUCONF%LBU_ENABLE .OR. OSAVE_MICRO) THEN
         DO JV=1, IBUNUM-IBUNUM_EXTRA

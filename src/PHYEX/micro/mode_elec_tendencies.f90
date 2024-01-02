@@ -3,133 +3,16 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-!     ###########################
-      MODULE MODI_ELEC_TENDENCIES
-!     ###########################
+MODULE MODE_ELEC_TENDENCIES
 !
-INTERFACE
-      SUBROUTINE ELEC_TENDENCIES (D, KRR, KMICRO, PTSTEP, ODMICRO,                            &
-                                  PRHODREF, PRHODJ, PZT, PCIT,                                &
-                                  PRVT, PRCT, PRRT, PRIT, PRST, PRGT,                         &
-                                  PQPIT, PQCT, PQRT, PQIT, PQST, PQGT, PQNIT,                 &
-                                  PQPIS, PQCS, PQRS, PQIS, PQSS, PQGS, PQNIS,                 &
-                                  PRVHENI, PRRHONG, PRIMLTC,                                  &
-                                  PRCHONI, PRVDEPS, PRIAGGS, PRIAUTS, PRVDEPG,                &
-                                  PRCAUTR, PRCACCR, PRREVAV,                                  &
-                                  PRCRIMSS, PRCRIMSG, PRSRIMCG, PRRACCSS, PRRACCSG, PRSACCRG, &
-                                  PRSMLTG, PRICFRRG, PRRCFRIG,                                &
-                                  PRCWETG, PRIWETG, PRRWETG, PRSWETG,                         &
-                                  PRCDRYG, PRIDRYG, PRRDRYG, PRSDRYG,                         &
-                                  PRGMLTR, PRCBERI,                                           & 
-                                  PRCMLTSR, PRICFRR,                                          & !- opt. param. for ICE3 
-                                  PCCT, PCRT, PCST, PCGT,                                     & !-- optional
-                                  PRVHENC, PRCHINC, PRVHONH,                                  & !| parameters 
-                                  PRRCVRC, PRICNVI, PRVDEPI, PRSHMSI, PRGHMGI,                & !|    for
-                                  PRICIBU, PRIRDSF,                                           & !|    LIMA
-                                  PRCCORR2, PRRCORR2, PRICORR2,                               & !--
-                                  PRWETGH, PRCWETH, PRIWETH, PRSWETH, PRGWETH, PRRWETH,       & !--  optional
-                                  PRCDRYH, PRIDRYH, PRSDRYH, PRRDRYH, PRGDRYH,                & !|  parameters
-                                  PRHMLTR, PRDRYHG,                                           & !|     for
-                                  PRHT, PRHS, PCHT, PQHT, PQHS)                                 !--    hail                          
-!
-USE MODD_DIMPHYEX, ONLY: DIMPHYEX_t
-!
-TYPE(DIMPHYEX_t),                     INTENT(IN)    :: D
-!
-INTEGER,                              INTENT(IN)    :: KMICRO
-REAL,                                 INTENT(IN)    :: PTSTEP  ! Double Time step
-                                                               ! (single if cold start)
-INTEGER,                              INTENT(IN)    :: KRR     ! Number of moist variable
-!
-LOGICAL, DIMENSION(D%NIT,D%NJT,D%NKT), INTENT(IN)   :: ODMICRO ! mask to limit computation
-!
-REAL, DIMENSION(D%NIT,D%NJT,D%NKT),   INTENT(IN)    :: PRHODREF! Reference density
-REAL, DIMENSION(D%NIT,D%NJT,D%NKT),   INTENT(IN)    :: PRHODJ  ! Dry density * Jacobian
-REAL, DIMENSION(D%NIT,D%NJT,D%NKT),   INTENT(IN)    :: PZT     ! Temperature (K)
-REAL, DIMENSION(D%NIT,D%NJT,D%NKT),   INTENT(IN)    :: PCIT    ! Pristine ice n.c. at t
-!
-REAL, DIMENSION(D%NIT,D%NJT,D%NKT),   INTENT(IN)    :: PRVT    ! Water vapor m.r. at t
-REAL, DIMENSION(D%NIT,D%NJT,D%NKT),   INTENT(IN)    :: PRCT    ! Cloud water m.r. at t
-REAL, DIMENSION(D%NIT,D%NJT,D%NKT),   INTENT(IN)    :: PRRT    ! Rain water m.r. at t
-REAL, DIMENSION(D%NIT,D%NJT,D%NKT),   INTENT(IN)    :: PRIT    ! Pristine ice m.r. at t
-REAL, DIMENSION(D%NIT,D%NJT,D%NKT),   INTENT(IN)    :: PRST    ! Snow/aggregate m.r. at t
-REAL, DIMENSION(D%NIT,D%NJT,D%NKT),   INTENT(IN)    :: PRGT    ! Graupel/hail m.r. at t
-!
-REAL, DIMENSION(D%NIT,D%NJT,D%NKT),   INTENT(IN)    :: PQPIT   ! Positive ion (Nb/kg) at t
-REAL, DIMENSION(D%NIT,D%NJT,D%NKT),   INTENT(IN)    :: PQNIT   ! Negative ion (Nb/kg) at t
-REAL, DIMENSION(D%NIT,D%NJT,D%NKT),   INTENT(IN)    :: PQCT    ! Cloud water charge at t
-REAL, DIMENSION(D%NIT,D%NJT,D%NKT),   INTENT(IN)    :: PQRT    ! Raindrops charge at t
-REAL, DIMENSION(D%NIT,D%NJT,D%NKT),   INTENT(IN)    :: PQIT    ! Pristine ice charge at t
-REAL, DIMENSION(D%NIT,D%NJT,D%NKT),   INTENT(IN)    :: PQST    ! Snow/aggregates charge at t
-REAL, DIMENSION(D%NIT,D%NJT,D%NKT),   INTENT(IN)    :: PQGT    ! Graupel charge at t
-!
-REAL, DIMENSION(D%NIT,D%NJT,D%NKT),   INTENT(INOUT) :: PQPIS   ! Positive ion (Nb/kg) source
-REAL, DIMENSION(D%NIT,D%NJT,D%NKT),   INTENT(INOUT) :: PQNIS   ! Negative ion (Nb/kg) source
-REAL, DIMENSION(D%NIT,D%NJT,D%NKT),   INTENT(INOUT) :: PQCS    ! Cloud water charge source
-REAL, DIMENSION(D%NIT,D%NJT,D%NKT),   INTENT(INOUT) :: PQRS    ! Raindrops charge source
-REAL, DIMENSION(D%NIT,D%NJT,D%NKT),   INTENT(INOUT) :: PQIS    ! Pristine ice charge source
-REAL, DIMENSION(D%NIT,D%NJT,D%NKT),   INTENT(INOUT) :: PQSS    ! Snow/aggregates charge source
-REAL, DIMENSION(D%NIT,D%NJT,D%NKT),   INTENT(INOUT) :: PQGS    ! Graupel charge source
-!
-! microphysics rates common to ICE3 and LIMA
-REAL, DIMENSION(D%NIT,D%NJT,D%NKT),   INTENT(IN)    :: PRVHENI, &  ! heterogeneous nucleation mixing ratio change (HIND for LIMA)
-                                                       PRCHONI, &  ! Homogeneous nucleation
-                                                       PRRHONG, &  ! Spontaneous freezing mixing ratio change
-                                                       PRVDEPS, &  ! Deposition on r_s,
-                                                       PRIAGGS, &  ! Aggregation on r_s
-                                                       PRIAUTS, &  ! Autoconversion of r_i for r_s production (CNVS for LIMA)
-                                                       PRVDEPG, &  ! Deposition on r_g
-                                                       PRCAUTR, &  ! Autoconversion of r_c for r_r production
-                                                       PRCACCR, &  ! Accretion of r_c for r_r production
-                                                       PRREVAV, &  ! Evaporation of r_r
-                                                       PRIMLTC, &  ! Cloud ice melting mixing ratio change
-                                                       PRCBERI, &  ! Bergeron-Findeisen effect
-                                                       PRSMLTG, &  ! Conversion-Melting of the aggregates
-                                                       PRRACCSS, PRRACCSG, PRSACCRG, & ! Rain accretion onto the aggregates
-                                                       PRCRIMSS, PRCRIMSG, PRSRIMCG, & ! Cloud droplet riming of the aggregates
-                                                       PRICFRRG, PRRCFRIG,           & ! Rain contact freezing
-                                                       PRCWETG, PRIWETG, PRRWETG, PRSWETG, &  ! Graupel wet growth
-                                                       PRCDRYG, PRIDRYG, PRRDRYG, PRSDRYG, &  ! Graupel dry growth
-                                                       PRGMLTR     ! Melting of the graupel
-! microphysics rates specific to ICE3 (knmoments==1)
-REAL, DIMENSION(D%NIT,D%NJT,D%NKT), OPTIONAL, INTENT(IN)    :: PRCMLTSR,&  ! Cld droplet collection onto aggregates by pos. temp.
-                                                               PRICFRR     ! Rain contact freezing (part of ice crystals converted to rain)
-! microphysics rates specific to LIMA (knmoments==2)
-REAL, DIMENSION(D%NIT,D%NJT,D%NKT), OPTIONAL, INTENT(IN)    :: PRVHENC, &  ! Cld droplet formation
-                                                               PRCHINC, &  ! Heterogeneous nucleation of coated IFN
-                                                               PRVHONH, &  ! Nucleation of haze
-                                                               PRRCVRC, &  ! Conversion of small drops into droplets
-                                                               PRICNVI, &  ! Conversion snow --> ice
-                                                               PRVDEPI, &  ! Deposition on r_i
-                                                               PRSHMSI, PRGHMGI, & ! Hallett Mossop for snow and graupel
-                                                               PRICIBU, &  ! Collisional ice breakup
-                                                               PRIRDSF, &  ! Raindrop shattering by freezing
-                                                               PRCCORR2, PRRCORR2, PRICORR2 ! Correction inside LIMA splitting
-! microphysics rates related to hail (krr == 7, lhail = .t.)
-REAL, DIMENSION(D%NIT,D%NJT,D%NKT), OPTIONAL, INTENT(IN)    :: PRWETGH, &  ! Conversion of graupel into hail
-                                                               PRCWETH, PRIWETH, PRSWETH, PRGWETH, PRRWETH, & ! Dry growth of hail
-                                                               PRCDRYH, PRIDRYH, PRSDRYH, PRRDRYH, PRGDRYH, & ! Wet growth of hail
-                                                               PRHMLTR, &                                     ! Melting of hail  
-                                                               PRDRYHG     ! Conversion of hail into graupel
-!
-REAL, DIMENSION(D%NIT,D%NJT,D%NKT), OPTIONAL, INTENT(IN)    :: PCCT   ! Cloud droplets conc. at t
-REAL, DIMENSION(D%NIT,D%NJT,D%NKT), OPTIONAL, INTENT(IN)    :: PCRT   ! Raindrops conc. at t
-REAL, DIMENSION(D%NIT,D%NJT,D%NKT), OPTIONAL, INTENT(IN)    :: PCST   ! Snow conc. at t
-REAL, DIMENSION(D%NIT,D%NJT,D%NKT), OPTIONAL, INTENT(IN)    :: PCGT   ! Graupel conc. at t
-REAL, DIMENSION(D%NIT,D%NJT,D%NKT), OPTIONAL, INTENT(IN)    :: PCHT   ! Hail conc. at t
-!
-REAL, DIMENSION(D%NIT,D%NJT,D%NKT), OPTIONAL, INTENT(IN)    :: PRHT   ! Hail m.r. at t
-REAL, DIMENSION(D%NIT,D%NJT,D%NKT), OPTIONAL, INTENT(INOUT) :: PRHS   ! Hail m.r. source
-REAL, DIMENSION(D%NIT,D%NJT,D%NKT), OPTIONAL, INTENT(IN)    :: PQHT   ! Hail charge at t
-REAL, DIMENSION(D%NIT,D%NJT,D%NKT), OPTIONAL, INTENT(INOUT) :: PQHS   ! Hail charge source
-!
-END SUBROUTINE ELEC_TENDENCIES
-END INTERFACE
-END MODULE MODI_ELEC_TENDENCIES
-!
+IMPLICIT NONE
+CONTAINS
 !
 !     #########################################################################################
-      SUBROUTINE ELEC_TENDENCIES (D, KRR, KMICRO, PTSTEP, ODMICRO,                            &
+      SUBROUTINE ELEC_TENDENCIES (D, CST, ICED, ICEP, ELECD, ELECP,                           &
+                                  KRR, KMICRO, PTSTEP, ODMICRO,                               &
+                                  BUCONF, TBUDGETS, KBUDGETS,                                 &
+                                  HCLOUD, PTHVREFZIKB,                                        &
                                   PRHODREF, PRHODJ, PZT, PCIT,                                &
                                   PRVT, PRCT, PRRT, PRIT, PRST, PRGT,                         &
                                   PQPIT, PQCT, PQRT, PQIT, PQST, PQGT, PQNIT,                 &
@@ -157,7 +40,7 @@ END MODULE MODI_ELEC_TENDENCIES
 !!****  * - compute the explicit cloud electrification sources
 !!
 !!    This routine is adapted from rain_ice_elec.f90.
-!!    To avoid duplicated routines, the cloud electrification routine is now called 
+!!    To avoid duplicated routines, the cloud electrification routine is now CALLed 
 !!    at the end of the microphysics scheme but needs the microphysical tendencies as arguments.
 !!    The sedimentation source for electric charges is treated separately.
 !!
@@ -180,24 +63,18 @@ END MODULE MODI_ELEC_TENDENCIES
 !*      0.    DECLARATIONS
 !             ------------
 !
-use modd_budget,          only: lbu_enable,                                                 &
-                                lbudget_th, lbudget_rv, lbudget_rc, lbudget_rr, lbudget_ri, &
-                                lbudget_rs, lbudget_rg, lbudget_rh, lbudget_sv,             &
-                                NBUDGET_TH, NBUDGET_RV, NBUDGET_RC, NBUDGET_RR, NBUDGET_RI, &
-                                NBUDGET_RS, NBUDGET_RG, NBUDGET_RH, NBUDGET_SV1,            &
-                                tbudgets
+USE MODD_BUDGET,     ONLY:  NBUDGET_TH, NBUDGET_RV, NBUDGET_RC, NBUDGET_RR, NBUDGET_RI, &
+                            NBUDGET_RS, NBUDGET_RG, NBUDGET_RH, NBUDGET_SV1,            &
+                            TBUDGETDATA, TBUDGETCONF_t
 !
-USE MODD_CONF
-USE MODD_CST
-USE MODD_DIMPHYEX, ONLY: DIMPHYEX_t
-USE MODD_ELEC_DESCR
+USE MODD_CST,              ONLY: CST_t
+USE MODD_DIMPHYEX,         ONLY: DIMPHYEX_t
+USE MODD_RAIN_ICE_DESCR_n, ONLY: RAIN_ICE_DESCR_t
+USE MODD_RAIN_ICE_PARAM_n, ONLY: RAIN_ICE_PARAM_t
+USE MODD_NSV, ONLY: NSV_ELECBEG, NSV_ELECEND
+USE MODD_ELEC_DESCR      
+USE MODD_ELEC_PARAM      
 USE MODD_ELEC_n
-USE MODD_ELEC_PARAM
-USE MODD_LES
-USE MODE_ll
-USE MODD_NSV,              ONLY: NSV_ELECBEG, NSV_ELECEND ! Scalar variables for budgets
-USE MODD_PARAMETERS
-USE MODD_PARAM_ICE_n
 USE MODD_PARAM_LIMA,       ONLY: XALPHAI_L=>XALPHAI, XNUI_L=>XNUI,   &
                                  XCEXVT_L=>XCEXVT, XRTMIN_L=>XRTMIN, &
                                  LCIBU, LRDSF,                       &
@@ -218,35 +95,15 @@ USE MODD_PARAM_LIMA_MIXED, ONLY: XDG_L=>XDG, XCXG_L=>XCXG,                      
                                  XDRYINTP1S_L=>XDRYINTP1S, XDRYINTP2S_L=>XDRYINTP2S, &
                                  XDRYINTP1G_L=>XDRYINTP1G, XDRYINTP2G_L=>XDRYINTP2G, &
                                  XRIMINTP1_L=>XRIMINTP1,   XRIMINTP2_L=>XRIMINTP2
-
-USE MODD_PARAM_n,         ONLY: CCLOUD
-USE MODD_RAIN_ICE_DESCR_n,ONLY: XCEXVT_I=>XCEXVT, XRTMIN_I=>XRTMIN,                       &
-                                XALPHAI_I=>XALPHAI, XNUI_I=>XNUI, XAI_I=>XAI, XBI_I=>XBI, &
-                                XDS_I=>XDS, XDG_I=>XDG,                                   &
-                                XCXS_I=>XCXS, XCXG_I=>XCXG
-USE MODD_RAIN_ICE_PARAM_n,ONLY: XCOLIS_I=>XCOLIS, XCOLEXIS_I=>XCOLEXIS,             &
-                                XCOLIG_I=>XCOLIG, XCOLEXIG_I=>XCOLEXIG,             &
-                                XCOLSG_I=>XCOLSG, XCOLEXSG_I=>XCOLEXSG,             &
-                                NGAMINC_I=>NGAMINC,                                 &                                
-                                NACCLBDAR_I=>NACCLBDAR, NACCLBDAS_I=>NACCLBDAS,     &
-                                XACCINTP1S_I=>XACCINTP1S, XACCINTP2S_I=>XACCINTP2S, &
-                                XACCINTP1R_I=>XACCINTP1R, XACCINTP2R_I=>XACCINTP2R, &
-                                NDRYLBDAR_I=>NDRYLBDAR, NDRYLBDAS_I=>NDRYLBDAS,     &
-                                NDRYLBDAG_I=>NDRYLBDAG,                             &
-                                XDRYINTP1R_I=>XDRYINTP1R, XDRYINTP2R_I=>XDRYINTP2R, &
-                                XDRYINTP1S_I=>XDRYINTP1S, XDRYINTP2S_I=>XDRYINTP2S, &
-                                XDRYINTP1G_I=>XDRYINTP1G, XDRYINTP2G_I=>XDRYINTP2G, &
-                                XRIMINTP1_I=>XRIMINTP1,   XRIMINTP2_I=>XRIMINTP2
-USE MODD_REF,             ONLY: XTHVREFZ
 !
-#ifdef MNH_PGI
-USE MODE_PACK_PGI
-#endif
+!#ifdef MNH_PGI
+!USE MODE_PACK_PGI
+!#endif
 use mode_tools,           only: Countjv
-use mode_budget,          only: Budget_store_add, Budget_store_init, Budget_store_end
+USE MODE_BUDGET_PHY,      ONLY: BUDGET_STORE_ADD_PHY, BUDGET_STORE_INIT_PHY, BUDGET_STORE_END_PHY
 !
-USE MODI_COMPUTE_LAMBDA
-USE MODI_ELEC_COMPUTE_EX
+USE MODE_COMPUTE_LAMBDA, ONLY: COMPUTE_LAMBDA
+USE MODE_ELEC_COMPUTE_EX,ONLY: ELEC_COMPUTE_EX
 USE MODI_MOMG
 !
 IMPLICIT NONE
@@ -254,7 +111,15 @@ IMPLICIT NONE
 !
 !*      0.1   Declaration of dummy arguments
 !
-TYPE(DIMPHYEX_t),                     INTENT(IN)    :: D
+TYPE(DIMPHYEX_t),                      INTENT(IN)     :: D
+TYPE(CST_t),                           INTENT(IN)     :: CST
+TYPE(TBUDGETCONF_t),                   INTENT(IN)     :: BUCONF        ! budget structure
+TYPE(RAIN_ICE_DESCR_t),                INTENT(IN)     :: ICED
+TYPE(RAIN_ICE_PARAM_t),                INTENT(IN)     :: ICEP
+TYPE(ELEC_PARAM_t),                    INTENT(IN)     :: ELECP   ! electrical parameters
+TYPE(ELEC_DESCR_t),                    INTENT(IN)     :: ELECD   ! electrical descriptive csts
+TYPE(TBUDGETDATA), DIMENSION(KBUDGETS),INTENT(INOUT)  :: TBUDGETS
+INTEGER,                               INTENT(IN)     :: KBUDGETS
 !
 INTEGER,                              INTENT(IN)    :: KMICRO
 REAL,                                 INTENT(IN)    :: PTSTEP  ! Double Time step
@@ -262,6 +127,7 @@ REAL,                                 INTENT(IN)    :: PTSTEP  ! Double Time ste
 INTEGER,                              INTENT(IN)    :: KRR     ! Number of moist variable
 !
 LOGICAL, DIMENSION(D%NIT,D%NJT,D%NKT), INTENT(IN)   :: ODMICRO ! mask to limit computation
+CHARACTER (LEN=4),      INTENT(IN)   ::  HCLOUD       ! Kind of microphysical scheme
 !
 REAL, DIMENSION(D%NIT,D%NJT,D%NKT),   INTENT(IN)    :: PRHODREF! Reference density
 REAL, DIMENSION(D%NIT,D%NJT,D%NKT),   INTENT(IN)    :: PRHODJ  ! Dry density * Jacobian
@@ -342,6 +208,7 @@ REAL, DIMENSION(D%NIT,D%NJT,D%NKT), OPTIONAL, INTENT(IN)    :: PRHT   ! Hail m.r
 REAL, DIMENSION(D%NIT,D%NJT,D%NKT), OPTIONAL, INTENT(INOUT) :: PRHS   ! Hail m.r. source
 REAL, DIMENSION(D%NIT,D%NJT,D%NKT), OPTIONAL, INTENT(IN)    :: PQHT   ! Hail charge at t
 REAL, DIMENSION(D%NIT,D%NJT,D%NKT), OPTIONAL, INTENT(INOUT) :: PQHS   ! Hail charge source
+REAL, INTENT(IN)                :: PTHVREFZIKB ! Reference thv at IKB for electricity
 !
 !
 !*      0.2   Declaration of local variables    
@@ -486,6 +353,23 @@ REAL, DIMENSION(:), ALLOCATABLE :: ZRCMLTSR, ZRICFRR, ZRVHENC, ZRCHINC, ZRVHONH,
                                    ZRGDRYH, ZRHMLTR, ZRDRYHG 
 !
 !------------------------------------------------------------------
+ASSOCIATE(XCEXVT_I=>ICED%XCEXVT, XRTMIN_I=>ICED%XRTMIN,                       &
+                                XALPHAI_I=>ICED%XALPHAI, XNUI_I=>ICED%XNUI, XAI_I=>ICED%XAI, XBI_I=>ICED%XBI, &
+                                XDS_I=>ICED%XDS, XDG_I=>ICED%XDG,                             &
+                                XCXS_I=>ICED%XCXS, XCXG_I=>ICED%XCXG,                         &
+                                XCOLIS_I=>ICEP%XCOLIS, XCOLEXIS_I=>ICEP%XCOLEXIS,             &
+                                XCOLIG_I=>ICEP%XCOLIG, XCOLEXIG_I=>ICEP%XCOLEXIG,             &
+                                XCOLSG_I=>ICEP%XCOLSG, XCOLEXSG_I=>ICEP%XCOLEXSG,             &
+                                NGAMINC_I=>ICEP%NGAMINC,                                 &                                
+                                NACCLBDAR_I=>ICEP%NACCLBDAR, NACCLBDAS_I=>ICEP%NACCLBDAS,     &
+                                XACCINTP1S_I=>ICEP%XACCINTP1S, XACCINTP2S_I=>ICEP%XACCINTP2S, &
+                                XACCINTP1R_I=>ICEP%XACCINTP1R, XACCINTP2R_I=>ICEP%XACCINTP2R, &
+                                NDRYLBDAR_I=>ICEP%NDRYLBDAR, NDRYLBDAS_I=>ICEP%NDRYLBDAS,     &
+                                NDRYLBDAG_I=>ICEP%NDRYLBDAG,                             &
+                                XDRYINTP1R_I=>ICEP%XDRYINTP1R, XDRYINTP2R_I=>ICEP%XDRYINTP2R, &
+                                XDRYINTP1S_I=>ICEP%XDRYINTP1S, XDRYINTP2S_I=>ICEP%XDRYINTP2S, &
+                                XDRYINTP1G_I=>ICEP%XDRYINTP1G, XDRYINTP2G_I=>ICEP%XDRYINTP2G, &
+                                XRIMINTP1_I=>ICEP%XRIMINTP1,   XRIMINTP2_I=>ICEP%XRIMINTP2    )
 !
 !*      1.    INITIALIZATIONS
 !             ---------------
@@ -502,7 +386,7 @@ IKE = D%NKE
 !
 !*      1.2   select parameters between ICEx and LIMA
 !
-IF (CCLOUD(1:3) == 'ICE') THEN
+IF (HCLOUD(1:3) == 'ICE') THEN
   ZCEXVT = XCEXVT_I
   IMOM_C = 1
   IMOM_R = 1
@@ -514,7 +398,7 @@ IF (CCLOUD(1:3) == 'ICE') THEN
   ELSE
     IMOM_H = 0
   END IF
-ELSE IF (CCLOUD == 'LIMA') THEN
+ELSE IF (HCLOUD == 'LIMA') THEN
   ZCEXVT = XCEXVT_L
   IMOM_C = NMOM_C
   IMOM_R = NMOM_R
@@ -524,7 +408,7 @@ ELSE IF (CCLOUD == 'LIMA') THEN
   IMOM_H = NMOM_H
 END IF
 !
-ZRHO00 = XP00 / (XRD * XTHVREFZ(IKB))
+ZRHO00 = CST%XP00 / (CST%XRD * PTHVREFZIKB)
 ZCOR00 = ZRHO00**ZCEXVT
 !
 IF (LINDUCTIVE) ALLOCATE (ZEFIELDW(KMICRO))
@@ -539,11 +423,11 @@ IF (KMICRO >= 0) THEN
   IMICRO = COUNTJV(ODMICRO(:,:,:), II1(:), II2(:), II3(:))
   !
   ! some microphysical tendencies are optional: the corresponding 1D arrays must be allocated
-  IF (CCLOUD(1:3) == 'ICE') THEN  ! ICE3 scheme
+  IF (HCLOUD(1:3) == 'ICE') THEN  ! ICE3 scheme
     ALLOCATE(ZRCMLTSR(IMICRO))
     ALLOCATE(ZRICFRR(IMICRO))
   END IF
-  IF (CCLOUD == 'LIMA') THEN  ! LIMA scheme
+  IF (HCLOUD == 'LIMA') THEN  ! LIMA scheme
     ALLOCATE(ZRVHENC(IMICRO))
     ALLOCATE(ZRCHINC(IMICRO))
     ALLOCATE(ZRVHONH(IMICRO))
@@ -651,11 +535,11 @@ IF (KMICRO >= 0) THEN
     ZRSDRYG(JL) = PRSDRYG(II1(JL), II2(JL), II3(JL))
     ZRGMLTR(JL) = PRGMLTR(II1(JL), II2(JL), II3(JL))
     ZRCBERI(JL) = PRCBERI(II1(JL), II2(JL), II3(JL))
-    IF (CCLOUD(1:3) == 'ICE') THEN
+    IF (HCLOUD(1:3) == 'ICE') THEN
       ZRCMLTSR(JL) = PRCMLTSR(II1(JL), II2(JL), II3(JL))
       ZRICFRR(JL)  = PRICFRR(II1(JL), II2(JL), II3(JL))
     END IF
-    IF (CCLOUD == 'LIMA') THEN
+    IF (HCLOUD == 'LIMA') THEN
       ZCST(JL)    = PCST(II1(JL), II2(JL), II3(JL))
       ZCGT(JL)    = PCGT(II1(JL), II2(JL), II3(JL))
       ZRVHENC(JL) = PRVHENC(II1(JL), II2(JL), II3(JL))
@@ -751,7 +635,7 @@ IF (KMICRO >= 0) THEN
 !*      1.5   select parameters between ICEx and LIMA
 !
   ALLOCATE(ZRTMIN(KRR))
-  IF (CCLOUD(1:3) == 'ICE') THEN
+  IF (HCLOUD(1:3) == 'ICE') THEN
 ! in ini_rain_ice, xrtmin is initialized with dimension 6 (hail not activated) or 7 (hail activated)
     ZRTMIN(1:KRR) = XRTMIN_I(1:KRR)
     !
@@ -793,7 +677,7 @@ IF (KMICRO >= 0) THEN
     ZRIMINTP1 = XRIMINTP1_I
     ZRIMINTP2 = XRIMINTP2_I
     !
-  ELSE IF (CCLOUD == 'LIMA') THEN
+  ELSE IF (HCLOUD == 'LIMA') THEN
 ! in ini_lima, xrtmin is initialized with dimension 7
     ZRTMIN(1:KRR) = XRTMIN_L(1:KRR)
     !
@@ -840,32 +724,32 @@ IF (KMICRO >= 0) THEN
 !*      1.6   update the slope parameter of the distribution
 !*            and compute N_x if necessary
 !
-  IF (CCLOUD(1:3) == 'ICE') ZCCT(:) = 0.
-  CALL COMPUTE_LAMBDA(2, IMOM_C, KMICRO, ZRHODREF, ZRTMIN(2), ZRCT, ZCCT, ZLBDAC)
-  CALL COMPUTE_LAMBDA(3, IMOM_R, KMICRO, ZRHODREF, ZRTMIN(3), ZRRT, ZCRT, ZLBDAR)
-  CALL COMPUTE_LAMBDA(4, IMOM_I, KMICRO, ZRHODREF, ZRTMIN(4), ZRIT, ZCIT, ZLBDAI)
-  CALL COMPUTE_LAMBDA(5, IMOM_S, KMICRO, ZRHODREF, ZRTMIN(5), ZRST, ZCST, ZLBDAS)
-  CALL COMPUTE_LAMBDA(6, IMOM_G, KMICRO, ZRHODREF, ZRTMIN(6), ZRGT, ZCGT, ZLBDAG)
-  IF (KRR == 7) CALL COMPUTE_LAMBDA(7, IMOM_H, KMICRO, ZRHODREF, ZRTMIN(7), ZRHT, ZCHT, ZLBDAH)
+  IF (HCLOUD(1:3) == 'ICE') ZCCT(:) = 0.
+  CALL COMPUTE_LAMBDA(2, IMOM_C, KMICRO, HCLOUD, ZRHODREF, ZRTMIN(2), ZRCT, ZCCT, ZLBDAC)
+  CALL COMPUTE_LAMBDA(3, IMOM_R, KMICRO, HCLOUD, ZRHODREF, ZRTMIN(3), ZRRT, ZCRT, ZLBDAR)
+  CALL COMPUTE_LAMBDA(4, IMOM_I, KMICRO, HCLOUD, ZRHODREF, ZRTMIN(4), ZRIT, ZCIT, ZLBDAI)
+  CALL COMPUTE_LAMBDA(5, IMOM_S, KMICRO, HCLOUD, ZRHODREF, ZRTMIN(5), ZRST, ZCST, ZLBDAS)
+  CALL COMPUTE_LAMBDA(6, IMOM_G, KMICRO, HCLOUD, ZRHODREF, ZRTMIN(6), ZRGT, ZCGT, ZLBDAG)
+  IF (KRR == 7) CALL COMPUTE_LAMBDA(7, IMOM_H, KMICRO, HCLOUD, ZRHODREF, ZRTMIN(7), ZRHT, ZCHT, ZLBDAH)
 !
 !
 !*      1.7   update the parameter e in the charge-diameter relationship
 !
 ! Compute e_x at time t
-  IF (CCLOUD == 'LIMA') THEN
-    CALL ELEC_COMPUTE_EX(2, IMOM_C, KMICRO, 1., ZRHODREF, ZRTMIN(2), ZRCT, ZQCT, ZECT, PLBDX=ZLBDAC, PCX=ZCCT)
-    CALL ELEC_COMPUTE_EX(3, IMOM_R, KMICRO, 1., ZRHODREF, ZRTMIN(3), ZRRT, ZQRT, ZERT, PLBDX=ZLBDAR, PCX=ZCRT)
-    CALL ELEC_COMPUTE_EX(4, IMOM_I, KMICRO, 1., ZRHODREF, ZRTMIN(4), ZRIT, ZQIT, ZEIT, PLBDX=ZLBDAI, PCX=ZCIT)
-    CALL ELEC_COMPUTE_EX(5, IMOM_S, KMICRO, 1., ZRHODREF, ZRTMIN(5), ZRST, ZQST, ZEST, PLBDX=ZLBDAS, PCX=ZCST)
-    CALL ELEC_COMPUTE_EX(6, IMOM_G, KMICRO, 1., ZRHODREF, ZRTMIN(6), ZRGT, ZQGT, ZEGT, PLBDX=ZLBDAG, PCX=ZCGT)
-    IF (KRR == 7) CALL ELEC_COMPUTE_EX(7, IMOM_H, KMICRO, 1., ZRHODREF, ZRTMIN(7), ZRHT, ZQHT, ZEHT, PLBDX=ZLBDAH, PCX=ZCHT)
-  ELSE IF (CCLOUD(1:3) == 'ICE') THEN
-    CALL ELEC_COMPUTE_EX(2, 1, KMICRO, 1., ZRHODREF, ZRTMIN(2), ZRCT, ZQCT, ZECT)
-    CALL ELEC_COMPUTE_EX(3, 1, KMICRO, 1., ZRHODREF, ZRTMIN(3), ZRRT, ZQRT, ZERT, PLBDX=ZLBDAR)
-    CALL ELEC_COMPUTE_EX(4, 1, KMICRO, 1., ZRHODREF, ZRTMIN(4), ZRIT, ZQIT, ZEIT, PCX=ZCIT)
-    CALL ELEC_COMPUTE_EX(5, 1, KMICRO, 1., ZRHODREF, ZRTMIN(5), ZRST, ZQST, ZEST, PLBDX=ZLBDAS)
-    CALL ELEC_COMPUTE_EX(6, 1, KMICRO, 1., ZRHODREF, ZRTMIN(6), ZRGT, ZQGT, ZEGT, PLBDX=ZLBDAG)
-    IF (KRR == 7) CALL ELEC_COMPUTE_EX(7, 1, KMICRO, 1., ZRHODREF, ZRTMIN(7), ZRHT, ZQHT, ZEHT, PLBDX=ZLBDAH)
+  IF (HCLOUD == 'LIMA') THEN
+    CALL ELEC_COMPUTE_EX(2, IMOM_C, KMICRO, HCLOUD, 1., ZRHODREF, ZRTMIN(2), ZRCT, ZQCT, ZECT, PLBDX=ZLBDAC, PCX=ZCCT)
+    CALL ELEC_COMPUTE_EX(3, IMOM_R, KMICRO, HCLOUD, 1., ZRHODREF, ZRTMIN(3), ZRRT, ZQRT, ZERT, PLBDX=ZLBDAR, PCX=ZCRT)
+    CALL ELEC_COMPUTE_EX(4, IMOM_I, KMICRO, HCLOUD, 1., ZRHODREF, ZRTMIN(4), ZRIT, ZQIT, ZEIT, PLBDX=ZLBDAI, PCX=ZCIT)
+    CALL ELEC_COMPUTE_EX(5, IMOM_S, KMICRO, HCLOUD, 1., ZRHODREF, ZRTMIN(5), ZRST, ZQST, ZEST, PLBDX=ZLBDAS, PCX=ZCST)
+    CALL ELEC_COMPUTE_EX(6, IMOM_G, KMICRO, HCLOUD, 1., ZRHODREF, ZRTMIN(6), ZRGT, ZQGT, ZEGT, PLBDX=ZLBDAG, PCX=ZCGT)
+    IF (KRR == 7) CALL ELEC_COMPUTE_EX(7, IMOM_H, KMICRO, HCLOUD, 1., ZRHODREF, ZRTMIN(7), ZRHT, ZQHT, ZEHT, PLBDX=ZLBDAH, PCX=ZCHT)
+  ELSE IF (HCLOUD(1:3) == 'ICE') THEN
+    CALL ELEC_COMPUTE_EX(2, 1, KMICRO, HCLOUD, 1., ZRHODREF, ZRTMIN(2), ZRCT, ZQCT, ZECT)
+    CALL ELEC_COMPUTE_EX(3, 1, KMICRO, HCLOUD, 1., ZRHODREF, ZRTMIN(3), ZRRT, ZQRT, ZERT, PLBDX=ZLBDAR)
+    CALL ELEC_COMPUTE_EX(4, 1, KMICRO, HCLOUD, 1., ZRHODREF, ZRTMIN(4), ZRIT, ZQIT, ZEIT, PCX=ZCIT)
+    CALL ELEC_COMPUTE_EX(5, 1, KMICRO, HCLOUD, 1., ZRHODREF, ZRTMIN(5), ZRST, ZQST, ZEST, PLBDX=ZLBDAS)
+    CALL ELEC_COMPUTE_EX(6, 1, KMICRO, HCLOUD, 1., ZRHODREF, ZRTMIN(6), ZRGT, ZQGT, ZEGT, PLBDX=ZLBDAG)
+    IF (KRR == 7) CALL ELEC_COMPUTE_EX(7, 1, KMICRO, HCLOUD, 1., ZRHODREF, ZRTMIN(7), ZRHT, ZQHT, ZEHT, PLBDX=ZLBDAH)
   END IF
 !
 !
@@ -922,10 +806,10 @@ IF (KMICRO >= 0) THEN
 !
 !*      2.2   spontaneous freezing (rhong)
 !
-  if ( lbudget_sv ) then
-    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 2 ), 'SFR', &
+  if ( BUCONF%LBUDGET_SV ) then
+    CALL BUDGET_STORE_INIT_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 2 ), 'SFR', &
                             Unpack( zqrs(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
-    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 5 ), 'SFR', &
+    CALL BUDGET_STORE_INIT_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 5 ), 'SFR', &
                             Unpack( zqgs(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
   end if
 !  
@@ -938,20 +822,20 @@ IF (KMICRO >= 0) THEN
     ZQRS(:) = 0.
   END WHERE
 !
-  if ( lbudget_sv ) then
-    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 2 ), 'SFR', &
+  if ( BUCONF%LBUDGET_SV ) then
+    CALL BUDGET_STORE_END_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 2 ), 'SFR', &
                            Unpack( zqrs(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
-    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 5 ), 'SFR', &
+    CALL BUDGET_STORE_END_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 5 ), 'SFR', &
                            Unpack( zqgs(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
   end if
 !
 !
 !*      2.3   cloud ice melting (rimltc)
 !
-  if ( lbudget_sv ) then
-    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 1 ), 'IMLT', &
+  if ( BUCONF%LBUDGET_SV ) then
+    CALL BUDGET_STORE_INIT_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 1 ), 'IMLT', &
                             Unpack( zqcs(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
-    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 3 ), 'IMLT', &
+    CALL BUDGET_STORE_INIT_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 3 ), 'IMLT', &
                             Unpack( zqis(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
   end if
 !
@@ -960,10 +844,10 @@ IF (KMICRO >= 0) THEN
     ZQIS(:) = 0.
   END WHERE
 !
-  if ( lbudget_sv ) then
-    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 1 ), 'IMLT', &
+  if ( BUCONF%LBUDGET_SV ) then
+    CALL BUDGET_STORE_END_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 1 ), 'IMLT', &
                            Unpack( zqcs(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
-    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 3 ), 'IMLT', &
+    CALL BUDGET_STORE_END_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 3 ), 'IMLT', &
                            Unpack( zqis(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
   end if
 !
@@ -979,7 +863,7 @@ IF (KMICRO >= 0) THEN
   ZWQ(:) = 0.
   WHERE (ZRCHONI(:) > 0. .AND.           &
          ZRCT(:) > XRTMIN_ELEC(2) .AND.  &
-         ABS(ZQCT(:)) > XQTMIN(2) .AND. ABS(ZECT(:)) > XECMIN)
+         ABS(ZQCT(:)) > XQTMIN(2) .AND. ABS(ZECT(:)) > ELECP%XECMIN)
     ZWQ(:) = XQHON * ZECT(:) * ZRCHONI(:)
     ZWQ(:) = SIGN( MIN( ABS(ZQCT(:)/PTSTEP),ABS(ZWQ(:)) ),ZQCS(:) )
     !
@@ -987,20 +871,20 @@ IF (KMICRO >= 0) THEN
     ZQCS(:) = ZQCS(:) - ZWQ(:)
   END WHERE
 !
-  if ( lbudget_sv ) then
-    call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 1 ), 'HON', &
+  if ( BUCONF%LBUDGET_SV ) then
+    CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 1 ), 'HON', &
                            Unpack( -zwq(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
-    call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 3 ), 'HON', &
+    CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 3 ), 'HON', &
                            Unpack(  zwq(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
   end if
 !
 !
 !*      2.6   deposition on snow/aggregates (rvdeps)
 !
-  if ( lbudget_sv ) then
-    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg ), 'DEPS', &
+  if ( BUCONF%LBUDGET_SV ) then
+    CALL BUDGET_STORE_INIT_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG ), 'DEPS', &
                             Unpack( zqpis(:) * zrhodj(:), mask = odmicro(:, :, :), field =  0. ) )
-    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecend ), 'DEPS', &
+    CALL BUDGET_STORE_INIT_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECEND ), 'DEPS', &
                             Unpack( zqnis(:) * zrhodj(:), mask = odmicro(:, :, :), field =  0. ) )
   end if
 !
@@ -1013,16 +897,16 @@ IF (KMICRO >= 0) THEN
     ZWQ(:) = SIGN( MIN( ABS(ZQST(:)/PTSTEP),ABS(ZWQ(:)) ),ZQSS(:) )
     !
     ZQSS(:)  = ZQSS(:)  - ZWQ(:)
-    ZQPIS(:) = ZQPIS(:) + MAX( 0.0,ZWQ(:)/XECHARGE )
-    ZQNIS(:) = ZQNIS(:) - MIN( 0.0,ZWQ(:)/XECHARGE )
+    ZQPIS(:) = ZQPIS(:) + MAX( 0.0,ZWQ(:)/ELECD%XECHARGE )
+    ZQNIS(:) = ZQNIS(:) - MIN( 0.0,ZWQ(:)/ELECD%XECHARGE )
   END WHERE
 !
-  if ( lbudget_sv ) then
-    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg ), 'DEPS', &
+  if ( BUCONF%LBUDGET_SV ) then
+    CALL BUDGET_STORE_END_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG ), 'DEPS', &
                            Unpack( zqpis(:) * zrhodj(:), mask = odmicro(:, :, :), field =  0. ) )
-    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecend ), 'DEPS', &
+    CALL BUDGET_STORE_END_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECEND ), 'DEPS', &
                            Unpack( zqnis(:) * zrhodj(:), mask = odmicro(:, :, :), field =  0. ) )
-    call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 4 ), 'DEPS', &
+    CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 4 ), 'DEPS', &
                            Unpack( -zwq(:) * zrhodj(:),  mask = odmicro(:, :, :), field =  0. ) )
   end if
 !
@@ -1033,10 +917,10 @@ IF (KMICRO >= 0) THEN
                                 XRTMIN_ELEC(4), XQTMIN(4), XCOEF_RQ_I, &
                                 ZWQ, ZQIS, ZQSS)
 !
-  if ( lbudget_sv ) then
-    call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 3 ), 'AGGS', &
+  if ( BUCONF%LBUDGET_SV ) then
+    CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 3 ), 'AGGS', &
                            Unpack( -zwq(:), mask = odmicro(:, :, :), field =  0. ) )
-    call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 4 ), 'AGGS', &
+    CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 4 ), 'AGGS', &
                            Unpack(  zwq(:), mask = odmicro(:, :, :), field =  0. ) )
   end if
 !
@@ -1045,10 +929,10 @@ IF (KMICRO >= 0) THEN
 !
   CALL ELEC_IAGGS_B()
 !
-  if ( lbudget_sv ) then
-    call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 3 ), 'NIIS', &
+  if ( BUCONF%LBUDGET_SV ) then
+    CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 3 ), 'NIIS', &
                            Unpack( -zwq_ni(:), mask = odmicro(:, :, :), field =  0. ) )
-    call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 4 ), 'NIIS', &
+    CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 4 ), 'NIIS', &
                            Unpack(  zwq_ni(:), mask = odmicro(:, :, :), field =  0. ) )
   end if
 !
@@ -1064,34 +948,34 @@ IF (KMICRO >= 0) THEN
                                 XRTMIN_ELEC(4), XQTMIN(4), XCOEF_RQ_I, &
                                 ZWQ, ZQIS, ZQSS)
 !
-  if ( lbudget_sv ) then
-    call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 3 ), 'AUTS', &
+  if ( BUCONF%LBUDGET_SV ) then
+    CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 3 ), 'AUTS', &
                            Unpack( -zwq(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
-    call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 4 ), 'AUTS', &
+    CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 4 ), 'AUTS', &
                            Unpack(  zwq(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
   end if
 !
 !
 !*      2.10  snow --> ice conversion (rscnvi)
 !
-  IF (CCLOUD == 'LIMA') THEN
+  IF (HCLOUD == 'LIMA') THEN
     CALL COMPUTE_CHARGE_TRANSFER (ZRICNVI, ZRST, ZQST, PTSTEP, &
                                   XRTMIN_ELEC(5), XQTMIN(5), XCOEF_RQ_S, &
                                   ZWQ, ZQSS, ZQIS)          
 !
-    if ( lbudget_sv ) then
-      call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 3 ), 'CNVI', &
+    if ( BUCONF%LBUDGET_SV ) then
+      CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 3 ), 'CNVI', &
                              Unpack(  zwq(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
-      call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 4 ), 'CNVI', &
+      CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 4 ), 'CNVI', &
                              Unpack( -zwq(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
     end if
 !
 !*      2.11  water vapor deposition on ice crystals (rvdepi)
 !
-    if ( lbudget_sv ) then
-      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg ), 'SUBI', &
+    if ( BUCONF%LBUDGET_SV ) then
+      CALL BUDGET_STORE_INIT_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG ), 'SUBI', &
                               Unpack( zqpis(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
-      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecend ), 'SUBI', &
+      CALL BUDGET_STORE_INIT_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECEND ), 'SUBI', &
                               Unpack( zqnis(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
     end if
     !
@@ -1104,16 +988,16 @@ IF (KMICRO >= 0) THEN
       ZWQ(:) = SIGN( MIN( ABS(ZQIT(:)/PTSTEP),ABS(ZWQ(:)) ),ZQIS(:) )
       !
       ZQIS(:)  = ZQIS(:)  - ZWQ(:)
-      ZQPIS(:) = ZQPIS(:) + MAX( 0.0,ZWQ(:)/XECHARGE )
-      ZQNIS(:) = ZQNIS(:) - MIN( 0.0,ZWQ(:)/XECHARGE )
+      ZQPIS(:) = ZQPIS(:) + MAX( 0.0,ZWQ(:)/ELECD%XECHARGE )
+      ZQNIS(:) = ZQNIS(:) - MIN( 0.0,ZWQ(:)/ELECD%XECHARGE )
     END WHERE
 !
-    if ( lbudget_sv ) then
-      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg ), 'SUBI', &
+    if ( BUCONF%LBUDGET_SV ) then
+      CALL BUDGET_STORE_END_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG ), 'SUBI', &
                              Unpack( zqpis(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
-      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecend ), 'SUBI', &
+      CALL BUDGET_STORE_END_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECEND ), 'SUBI', &
                              Unpack( zqnis(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )           
-      call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 3 ), 'SUBI', &
+      CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 3 ), 'SUBI', &
                              Unpack( -zwq(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
     end if    
   END IF
@@ -1121,10 +1005,10 @@ IF (KMICRO >= 0) THEN
 !
 !*      2.12  water vapor deposition on graupel (rvdepg)
 !
-  if ( lbudget_sv ) then
-    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg ), 'DEPG', &
+  if ( BUCONF%LBUDGET_SV ) then
+    CALL BUDGET_STORE_INIT_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG ), 'DEPG', &
                             Unpack( zqpis(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
-    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecend ), 'DEPG', &
+    CALL BUDGET_STORE_INIT_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECEND ), 'DEPG', &
                             Unpack( zqnis(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
   end if
 !
@@ -1137,16 +1021,16 @@ IF (KMICRO >= 0) THEN
     ZWQ(:) = SIGN( MIN( ABS(ZQGT(:)/PTSTEP),ABS(ZWQ(:)) ),ZQGS(:) )
     !
     ZQGS(:)  = ZQGS(:)  - ZWQ(:) 
-    ZQPIS(:) = ZQPIS(:) + MAX( 0.0,ZWQ(:)/XECHARGE )
-    ZQNIS(:) = ZQNIS(:) - MIN( 0.0,ZWQ(:)/XECHARGE )
+    ZQPIS(:) = ZQPIS(:) + MAX( 0.0,ZWQ(:)/ELECD%XECHARGE )
+    ZQNIS(:) = ZQNIS(:) - MIN( 0.0,ZWQ(:)/ELECD%XECHARGE )
   END WHERE
 !
-  if ( lbudget_sv ) then
-    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg ), 'DEPG', &
+  if ( BUCONF%LBUDGET_SV ) then
+    CALL BUDGET_STORE_END_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG ), 'DEPG', &
                            Unpack( zqpis(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
-    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecend ), 'DEPG', &
+    CALL BUDGET_STORE_END_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECEND ), 'DEPG', &
                            Unpack( zqnis(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
-    call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 5 ), 'DEPG', &
+    CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 5 ), 'DEPG', &
                            Unpack( -zwq(:) * zrhodj(:),  mask = odmicro(:, :, :), field = 0. ) )
   end if
 !
@@ -1162,10 +1046,10 @@ IF (KMICRO >= 0) THEN
                                 XRTMIN_ELEC(2), XQTMIN(2), XCOEF_RQ_C, &
                                 ZWQ, ZQCS, ZQRS)
 !
-  if ( lbudget_sv ) then
-    call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 1 ), 'AUTO', &
+  if ( BUCONF%LBUDGET_SV ) then
+    CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 1 ), 'AUTO', &
                            Unpack( -zwq(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
-    call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 2 ), 'AUTO', &
+    CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 2 ), 'AUTO', &
                            Unpack(  zwq(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
   end if
 !
@@ -1176,20 +1060,20 @@ IF (KMICRO >= 0) THEN
                                 XRTMIN_ELEC(2), XQTMIN(2), XCOEF_RQ_C, &
                                 ZWQ, ZQCS, ZQRS)
 !
-  if ( lbudget_sv ) then
-    call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 1 ), 'ACCR', &
+  if ( BUCONF%LBUDGET_SV ) then
+    CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 1 ), 'ACCR', &
                            Unpack( -zwq(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
-    call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 2 ), 'ACCR', &
+    CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 2 ), 'ACCR', &
                            Unpack(  zwq(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
   end if
 !
 !
 !*      3.3   evaporation of raindrops (rrevav)
 !
-  if ( lbudget_sv ) then
-    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg ), 'REVA', &
+  if ( BUCONF%LBUDGET_SV ) then
+    CALL BUDGET_STORE_INIT_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG ), 'REVA', &
                             Unpack( zqpis(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
-    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecend ), 'REVA', &
+    CALL BUDGET_STORE_INIT_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECEND ), 'REVA', &
                             Unpack( zqnis(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
   end if
 !
@@ -1200,27 +1084,27 @@ IF (KMICRO >= 0) THEN
     ZWQ(:) = SIGN( MIN( ABS(ZQRT(:)/PTSTEP),ABS(ZWQ(:)) ),ZQRS(:) )
     !
     ZQRS(:)  = ZQRS(:)  - ZWQ(:)
-    ZQPIS(:) = ZQPIS(:) + MAX( 0.0,ZWQ(:)/XECHARGE )
-    ZQNIS(:) = ZQNIS(:) - MIN( 0.0,ZWQ(:)/XECHARGE )
+    ZQPIS(:) = ZQPIS(:) + MAX( 0.0,ZWQ(:)/ELECD%XECHARGE )
+    ZQNIS(:) = ZQNIS(:) - MIN( 0.0,ZWQ(:)/ELECD%XECHARGE )
   END WHERE
 !
-  if ( lbudget_sv ) then
-    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg ), 'REVA', &
+  if ( BUCONF%LBUDGET_SV ) then
+    CALL BUDGET_STORE_END_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG ), 'REVA', &
                            Unpack( zqpis(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
-    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecend ), 'REVA', &
+    CALL BUDGET_STORE_END_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECEND ), 'REVA', &
                            Unpack( zqnis(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
-    call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 2 ), 'REVA', &
+    CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 2 ), 'REVA', &
                            Unpack( -zwq(:) * zrhodj(:),  mask = odmicro(:, :, :), field = 0. ) )
   end if
 !
 !
 !*      3.4   conversion of drops to droplets (rrcvrc)
 !
-  IF (CCLOUD == 'LIMA') THEN
-    if ( lbudget_sv ) then
-      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 1 ), 'R2C1', &
+  IF (HCLOUD == 'LIMA') THEN
+    if ( BUCONF%LBUDGET_SV ) then
+      CALL BUDGET_STORE_INIT_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 1 ), 'R2C1', &
                               Unpack( zqcs(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
-      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 2 ), 'R2C1', &
+      CALL BUDGET_STORE_INIT_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 2 ), 'R2C1', &
                               Unpack( zqrs(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
     end if
 !
@@ -1228,10 +1112,10 @@ IF (KMICRO >= 0) THEN
                                   XRTMIN_ELEC(3), XQTMIN(3), XCOEF_RQ_R, &
                                   ZWQ, ZQRS, ZQCS)
 !
-    if ( lbudget_sv ) then
-      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 1 ), 'R2C1', &
+    if ( BUCONF%LBUDGET_SV ) then
+      CALL BUDGET_STORE_END_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 1 ), 'R2C1', &
                              Unpack( zqcs(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
-      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 2 ), 'R2C1', &
+      CALL BUDGET_STORE_END_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 2 ), 'R2C1', &
                              Unpack( zqrs(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
     end if
   END IF
@@ -1243,12 +1127,12 @@ IF (KMICRO >= 0) THEN
 !
 !*      4.1   cloud droplet riming of the aggregates
 !
-  if ( lbudget_sv ) then
-    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 1 ), 'RIM', &
+  if ( BUCONF%LBUDGET_SV ) then
+    CALL BUDGET_STORE_INIT_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 1 ), 'RIM', &
                            Unpack( zqcs(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
-    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 4 ), 'RIM', &
+    CALL BUDGET_STORE_INIT_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 4 ), 'RIM', &
                            Unpack( zqss(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
-    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 5 ), 'RIM', &
+    CALL BUDGET_STORE_INIT_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 5 ), 'RIM', &
                            Unpack( zqgs(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
   end if
 !
@@ -1278,7 +1162,7 @@ IF (KMICRO >= 0) THEN
   GMASK(:) = .FALSE.
   IGMASK = 0
   DO JJ = 1, SIZE(GMASK)
-    IF (ZRSRIMCG(JJ) > 0. .AND. ZZT(JJ) < XTT .AND. &
+    IF (ZRSRIMCG(JJ) > 0. .AND. ZZT(JJ) < CST%XTT .AND. &
         ZRCT(JJ) > XRTMIN_ELEC(2) .AND. ZRST(JJ) > XRTMIN_ELEC(5) .AND. &
         ZLBDAS(JJ) > 0.) THEN  !++cb-- 12/07/23 condition ajoutee pour eviter log(0)
       IGMASK = IGMASK + 1
@@ -1331,27 +1215,27 @@ IF (KMICRO >= 0) THEN
     ZQSS(:) = ZQSS(:) - ZWQ(:)
   END WHERE
 !
-  if ( lbudget_sv ) then
-    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 1 ), 'RIM', &
+  if ( BUCONF%LBUDGET_SV ) then
+    CALL BUDGET_STORE_END_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 1 ), 'RIM', &
                            Unpack( zqcs(:) * zrhodj(:),  mask = odmicro(:, :, :), field = 0. ) )
-    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 4 ), 'RIM', &
+    CALL BUDGET_STORE_END_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 4 ), 'RIM', &
                            Unpack( zqss(:) * zrhodj(:),  mask = odmicro(:, :, :), field = 0. ) )
-    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 5 ), 'RIM', &
+    CALL BUDGET_STORE_END_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 5 ), 'RIM', &
                            Unpack( zqgs(:) * zrhodj(:),  mask = odmicro(:, :, :), field = 0. ) )
   end if
 !
 !
 !*      4.2   Hallett-Mossop ice multiplication process due to snow riming (rhmsi)
 !
-  IF (CCLOUD == 'LIMA') THEN
+  IF (HCLOUD == 'LIMA') THEN
     CALL COMPUTE_CHARGE_TRANSFER (ZRSHMSI, ZRST, ZQST, PTSTEP,          &
                                   XRTMIN_ELEC(4), XQTMIN(4), XCOEF_RQ_S, &
                                   ZWQ, ZQSS, ZQIS)       
 !
-    if ( lbudget_sv ) then
-      call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 4 ), 'HMS', &
+    if ( BUCONF%LBUDGET_SV ) then
+      CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 4 ), 'HMS', &
                              Unpack( -zwq(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
-      call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 3 ), 'HMS', &
+      CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 3 ), 'HMS', &
                              Unpack(  zwq(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
     end if
   END IF
@@ -1428,7 +1312,7 @@ IF (KMICRO >= 0) THEN
            ZRRT(:) > XRTMIN_ELEC(3) .AND. ZRST(:) > XRTMIN_ELEC(5) .AND. &
            ZCRT(:) > 0.             .AND. ZCST(:) > 0.             .AND. &
            ZLBDAR(:) > 0.           .AND. ZLBDAS(:) > 0.           .AND. &
-           ABS(ZERT(:)) > XERMIN)  ! and zzt(:) < xtt ?
+           ABS(ZERT(:)) > ELECP%XERMIN)  ! and zzt(:) < xtt ?
       ZWQ4(:) = XFQRACCS * ZERT(:) * ZRHOCOR(:) / (ZCOR00 * ZRHODREF(:)) * &
                 ZCRT(:) * ZCST(:)                                        * &
                (XLBQRACCS1 * ZLBDAR(:)**(-2.0 - XFR)                     + &
@@ -1473,12 +1357,12 @@ IF (KMICRO >= 0) THEN
       ZQGS(:) = ZQGS(:) + ZWQ5(:,4)
     END WHERE
     !
-    if ( lbudget_sv ) then
-      call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 2 ), 'ACC', &
+    if ( BUCONF%LBUDGET_SV ) then
+      CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 2 ), 'ACC', &
                              Unpack( (-zwq5(:,1) - zwq5(:,3)) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
-      call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 4 ), 'ACC', &
+      CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 4 ), 'ACC', &
                              Unpack( ( zwq5(:,1) - zwq5(:,4)) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
-      call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 5 ), 'ACC', &
+      CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 5 ), 'ACC', &
                              Unpack( ( zwq5(:,3) + zwq5(:,4)) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
     end if    
     !
@@ -1491,25 +1375,25 @@ IF (KMICRO >= 0) THEN
                                 XRTMIN_ELEC(5), XQTMIN(5), XCOEF_RQ_S, &
                                 ZWQ, ZQSS, ZQGS)
 !
-  if ( lbudget_sv ) then
-    call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 4 ), 'CMEL', &
+  if ( BUCONF%LBUDGET_SV ) then
+    CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 4 ), 'CMEL', &
                            Unpack( -zwq(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
-    call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 5 ), 'CMEL', &
+    CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 5 ), 'CMEL', &
                            Unpack(  zwq(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
   end if
 !
 !
 !*      4.5   cloud droplet collection onto aggregates by positive temperature (rcmltsr)
 !
-  IF (CCLOUD(1:3) == 'ICE') THEN
+  IF (HCLOUD(1:3) == 'ICE') THEN
     CALL COMPUTE_CHARGE_TRANSFER (ZRCMLTSR, ZRCT, ZQCT, PTSTEP,           &
                                   XRTMIN_ELEC(2), XQTMIN(2), XCOEF_RQ_C, &
                                   ZWQ, ZQCS, ZQRS)
 !
-    if ( lbudget_sv ) then
-      call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 1 ), 'CMEL', &
+    if ( BUCONF%LBUDGET_SV ) then
+      CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 1 ), 'CMEL', &
                              Unpack( -zwq(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
-      call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 2 ), 'CMEL', &
+      CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 2 ), 'CMEL', &
                              Unpack(  zwq(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
     end if
   END IF
@@ -1522,12 +1406,12 @@ IF (KMICRO >= 0) THEN
 !
 !*      5.1   rain contact freezing (ricfrrg, rrcfrig, ricfrr)
 !
-  if ( lbudget_sv ) then
-    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 2 ), 'CFRZ', &
+  if ( BUCONF%LBUDGET_SV ) then
+    CALL BUDGET_STORE_INIT_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 2 ), 'CFRZ', &
                            Unpack( zqrs(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
-    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 3 ), 'CFRZ', &
+    CALL BUDGET_STORE_INIT_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 3 ), 'CFRZ', &
                            Unpack( zqis(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
-    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 5 ), 'CFRZ', &
+    CALL BUDGET_STORE_INIT_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 5 ), 'CFRZ', &
                            Unpack( zqgs(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
   end if
   !
@@ -1535,7 +1419,7 @@ IF (KMICRO >= 0) THEN
   WHERE (ZRRCFRIG(:) > 0. .AND.                                        &
          ZRIT(:) > XRTMIN_ELEC(4) .AND. ZRRT(:) > XRTMIN_ELEC(3) .AND. &
          ZCRT(:) > 0.             .AND.                                &
-         ABS(ZERT(:)) > XERMIN    .AND. ABS(ZQRT(:)) > XQTMIN(3))
+         ABS(ZERT(:)) > ELECP%XERMIN    .AND. ABS(ZQRT(:)) > XQTMIN(3))
     ZWQ(:) = XQRCFRIG * ZLBDAR(:)**XEXQRCFRIG * ZCIT(:) * ZCRT(:) * &
              ZERT(:) * ZRHOCOR(:) / (ZCOR00 * ZRHODREF(:))  ! QRCFRIG
     ZWQ(:) = SIGN( MIN( ABS(ZQRT(:)/PTSTEP),ABS(ZWQ(:)) ),ZQRS(:) )
@@ -1557,12 +1441,12 @@ IF (KMICRO >= 0) THEN
 !
 !++CB-- 16/06/2022 il manque le traitement de qricfrr
 !
-  if ( lbudget_sv ) then
-    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 2 ), 'CFRZ', &
+  if ( BUCONF%LBUDGET_SV ) then
+    CALL BUDGET_STORE_END_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 2 ), 'CFRZ', &
                            Unpack( zqrs(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
-    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 3 ), 'CFRZ', &
+    CALL BUDGET_STORE_END_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 3 ), 'CFRZ', &
                            Unpack( zqis(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
-    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 5 ), 'CFRZ', &
+    CALL BUDGET_STORE_END_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 5 ), 'CFRZ', &
                            Unpack( zqgs(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
   end if
 !
@@ -1602,10 +1486,10 @@ IF (KMICRO >= 0) THEN
   ! charge separation during collision between ice and graupel
   CALL ELEC_IDRYG_B()  ! QIDRYG_boun
   !
-  if ( lbudget_sv ) then
-    call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 3 ), 'NIIG', &
+  if ( BUCONF%LBUDGET_SV ) then
+    CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 3 ), 'NIIG', &
                             Unpack( -zwq_ni(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
-    call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 5 ), 'NIIG', &
+    CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 5 ), 'NIIG', &
                             Unpack(  zwq_ni(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
   end if
   !
@@ -1714,7 +1598,7 @@ IF (KMICRO >= 0) THEN
            ZLBDAS(:) > 0.           .AND. ZLBDAG(:) > 0. .AND. &
            ABS(ZQST(:)) > XQTMIN(5) .AND. ABS(ZEST(:)) > XESMIN)
       ZWQ5(:,3) = ZWQ5(:,3) * XFQSDRYG *                                   &
-                  ZCOLSG * EXP(ZCOLEXSG * (ZZT(:) - XTT)) *                &
+                  ZCOLSG * EXP(ZCOLEXSG * (ZZT(:) - CST%XTT)) *                &
                   ZEST(:) * ZRHOCOR(:) / (ZCOR00 * ZRHODREF(:)) *          & 
                   ZCGT(:) * ZCST(:) *                                      &
                  (XLBQSDRYG1 * ZLBDAS(:)**(-2.0-XFS) +                     &
@@ -1734,10 +1618,10 @@ IF (KMICRO >= 0) THEN
     ! compute QSDRYG_boun
     CALL ELEC_SDRYG_B()
     !
-    if ( lbudget_sv ) then
-      call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 4 ), 'NISG', &
+    if ( BUCONF%LBUDGET_SV ) then
+      CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 4 ), 'NISG', &
                               Unpack( -zwq_ni(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
-      call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 5 ), 'NISG', &
+      CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 5 ), 'NISG', &
                               Unpack(  zwq_ni(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
     end if
     !
@@ -1807,7 +1691,7 @@ IF (KMICRO >= 0) THEN
            ZRRT(:) > XRTMIN_ELEC(3) .AND. ZRGT(:) > XRTMIN_ELEC(6) .AND. & 
            ZCRT(:) > 0.             .AND. ZCGT(:) > 0.             .AND. & 
            ZLBDAR(:) > 0.           .AND. ZLBDAG(:) > 0.           .AND. &
-           ABS(ZERT(:)) > XERMIN .AND. ABS(ZQRT(:)) > XQTMIN(3))
+           ABS(ZERT(:)) > ELECP%XERMIN .AND. ABS(ZQRT(:)) > XQTMIN(3))
       ZWQ5(:,4) = ZWQ5(:,4) * XFQRDRYG *                                       &
                   ZRHODREF(:)**(-ZCEXVT) *                                     &
                   ZERT(:) * ZCGT(:) * ZCRT(:) *                                &
@@ -1823,16 +1707,16 @@ IF (KMICRO >= 0) THEN
     ENDWHERE
 !    ZRDRYG(:) = ZWQ5(:,1) + ZWQ5(:,2) + ZWQ5(:,3) + ZWQ5(:,4)
 !
-    if ( lbudget_sv ) then
-      call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 1 ), 'DRYG', &
+    if ( BUCONF%LBUDGET_SV ) then
+      CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 1 ), 'DRYG', &
                               Unpack( -zwq5(:,1) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
-      call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 2 ), 'DRYG', &
+      CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 2 ), 'DRYG', &
                               Unpack( -zwq5(:,4) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
-      call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 3 ), 'DRYG', &
+      CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 3 ), 'DRYG', &
                               Unpack( -zwq5(:,2) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
-      call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 4 ), 'DRYG', &
+      CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 4 ), 'DRYG', &
                               Unpack( -zwq5(:,3) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
-      call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 5 ), 'DRYG', &
+      CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 5 ), 'DRYG', &
                               Unpack( (zwq5(:,1) + zwq5(:,2) + zwq5(:,3) + zwq5(:,4)) * zrhodj(:), &
                               mask = odmicro(:, :, :), field = 0. ) )
     end if
@@ -1842,15 +1726,15 @@ IF (KMICRO >= 0) THEN
 !
 !*      5.3   Hallett-Mossop ice multiplication process due to graupel riming (rhmgi)
 !
-  IF (CCLOUD == 'LIMA') THEN
+  IF (HCLOUD == 'LIMA') THEN
     CALL COMPUTE_CHARGE_TRANSFER (ZRGHMGI, ZRGT, ZQGT, PTSTEP,          &
                                   XRTMIN_ELEC(6), XQTMIN(6), XCOEF_RQ_G, &
                                   ZWQ, ZQGS, ZQIS)          
 !
-    if ( lbudget_sv ) then
-      call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 5 ), 'HMG', &
+    if ( BUCONF%LBUDGET_SV ) then
+      CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 5 ), 'HMG', &
                              Unpack( -zwq(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
-      call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 3 ), 'HMG', &
+      CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 3 ), 'HMG', &
                              Unpack(  zwq(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
     end if
   END IF
@@ -1900,8 +1784,8 @@ IF (KMICRO >= 0) THEN
 !
 !*      5.4.4 conversion of graupel into hail (rwetgh)
 !
-  if ( lbudget_sv ) then
-    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 5 ), 'WETG', &
+  if ( BUCONF%LBUDGET_SV ) then
+    CALL BUDGET_STORE_INIT_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 5 ), 'WETG', &
                             Unpack( zqgs(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
   end if
 !
@@ -1932,19 +1816,19 @@ IF (KMICRO >= 0) THEN
     END WHERE
   END IF
 !
-  if ( lbudget_sv ) then
-    call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 1 ), 'WETG', &
+  if ( BUCONF%LBUDGET_SV ) then
+    CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 1 ), 'WETG', &
                            Unpack( -zwq5(:,5) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
-    call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 2 ), 'WETG', &
+    CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 2 ), 'WETG', &
                            Unpack( -zwq5(:,8) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
-    call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 3 ), 'WETG', &
+    CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 3 ), 'WETG', &
                            Unpack( -zwq5(:,6) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
-    call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 4 ), 'WETG', &
+    CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 4 ), 'WETG', &
                            Unpack( -zwq5(:,7) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
-    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 5 ), 'WETG', &
+    CALL BUDGET_STORE_END_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 5 ), 'WETG', &
                            Unpack(  zqgs(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
     if ( krr == 7 ) &
-      call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 6 ), 'WETG', &
+      CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 6 ), 'WETG', &
                            Unpack( zwq5(:,9) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
   end if
 !
@@ -1965,7 +1849,7 @@ IF (KMICRO >= 0) THEN
       ZWQ(:) = 0.
       !
       WHERE (GMASK(:) .AND.                                      &
-             ZEFIELDW(:) /= 0. .AND. ABS(ZEGT(:)) > XEGMIN .AND. &
+             ZEFIELDW(:) /= 0. .AND. ABS(ZEGT(:)) > ELECP%XEGMIN .AND. &
              ZLBDAG(:) > 0. .AND. ZCGT(:) > 0. .AND.             &
              ZRGT(:) > XRTMIN_ELEC(6) .AND. ZRCT(:) > XRTMIN_ELEC(2))
         ZWQ(:) = XIND1 * ZCGT(:) * ZRHOCOR(:) *                             &
@@ -1978,10 +1862,10 @@ IF (KMICRO >= 0) THEN
         ZQCS(:) = ZQCS(:) - ZWQ(:)
       END WHERE
     !
-      if ( lbudget_sv ) then
-        call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 1 ), 'INCG', &
+      if ( BUCONF%LBUDGET_SV ) then
+        CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 1 ), 'INCG', &
                                Unpack( -zwq(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
-        call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 5 ), 'INCG', &
+        CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 5 ), 'INCG', &
                                Unpack(  zwq(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
       end if    
       !
@@ -2004,10 +1888,10 @@ IF (KMICRO >= 0) THEN
                                 XRTMIN_ELEC(6), XQTMIN(6), XCOEF_RQ_G, &
                                 ZWQ, ZQGS, ZQRS)
 !
-  if ( lbudget_sv ) then
-    call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 2 ), 'GMLT', &
+  if ( BUCONF%LBUDGET_SV ) then
+    CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 2 ), 'GMLT', &
                            Unpack(  zwq(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
-    call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 5 ), 'GMLT', &
+    CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 5 ), 'GMLT', &
                            Unpack( -zwq(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
   end if
 !
@@ -2022,14 +1906,14 @@ IF (KMICRO >= 0) THEN
 !
 !*      6.1   collisional ice breakup (cibu)
 !
-  IF (CCLOUD == 'LIMA' .AND. LCIBU) &
+  IF (HCLOUD == 'LIMA' .AND. LCIBU) &
     CALL COMPUTE_CHARGE_TRANSFER (ZRICIBU, ZRST, ZQST, PTSTEP,           &
                                   XRTMIN_ELEC(5), XQTMIN(5), XCOEF_RQ_S, &
                                   ZWQ, ZQSS, ZQIS)
 !
 !*      6.2   raindrop shattering freezing (rdsf)
 !
-  IF (CCLOUD == 'LIMA' .AND. LRDSF) &
+  IF (HCLOUD == 'LIMA' .AND. LRDSF) &
     CALL COMPUTE_CHARGE_TRANSFER (ZRIRDSF, ZRRT, ZQRT, PTSTEP,           &
                                   XRTMIN_ELEC(3), XQTMIN(3), XCOEF_RQ_R, &
                                   ZWQ, ZQRS, ZQIS)
@@ -2086,18 +1970,18 @@ IF (KMICRO >= 0) THEN
       ZQHS(:) = ZQHS(:) + ZWQ5(:,4)
     END WHERE
 !
-    if ( lbudget_sv ) then
-      call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 1 ), 'WETH', &
+    if ( BUCONF%LBUDGET_SV ) then
+      CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 1 ), 'WETH', &
                              Unpack( -zwq5(:, 1) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
-      call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 2 ), 'WETH', &
+      CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 2 ), 'WETH', &
                              Unpack( -zwq5(:, 4) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
-      call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 3 ), 'WETH', &
+      CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 3 ), 'WETH', &
                              Unpack( -zwq5(:, 2) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
-      call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 4 ), 'WETH', &
+      CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 4 ), 'WETH', &
                              Unpack( -zwq5(:, 3) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
-      call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 5 ), 'WETH', &
+      CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 5 ), 'WETH', &
                              Unpack( -zwq5(:, 5) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
-      call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 6 ), 'WETH',                      &
+      CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 6 ), 'WETH',                      &
                              Unpack( ( zwq5(:, 1) + zwq5(:, 2) + zwq5(:, 3) + zwq5(:, 4) + zwq5(:, 5) ) &
                                        * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
     end if
@@ -2154,18 +2038,18 @@ IF (KMICRO >= 0) THEN
                                   XRTMIN_ELEC(7), XQTMIN(7), XCOEF_RQ_H, &
                                   ZWQ, ZQHS, ZQGS)
 !
-    if ( lbudget_sv ) then
-      call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 1 ), 'DRYH', &
+    if ( BUCONF%LBUDGET_SV ) then
+      CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 1 ), 'DRYH', &
                              Unpack( -zwq5(:, 1) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
-      call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 2 ), 'DRYH', &
+      CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 2 ), 'DRYH', &
                              Unpack( -zwq5(:, 4) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
-      call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 3 ), 'DRYH', &
+      CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 3 ), 'DRYH', &
                              Unpack( -zwq5(:, 2) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
-      call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 4 ), 'DRYH', &
+      CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 4 ), 'DRYH', &
                              Unpack( -zwq5(:, 3) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
-      call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 5 ), 'DRYH', &
+      CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 5 ), 'DRYH', &
                              Unpack( (-zwq5(:, 5) - zwq(:)) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
-      call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 6 ), 'DRYH',                      &
+      CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 6 ), 'DRYH',                      &
                              Unpack( ( zwq5(:, 1) + zwq5(:, 2) + zwq5(:, 3) + zwq5(:, 4) + zwq5(:, 5) + zwq(:) ) &
                                        * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
     end if
@@ -2177,10 +2061,10 @@ IF (KMICRO >= 0) THEN
                                   XRTMIN_ELEC(7), XQTMIN(7), XCOEF_RQ_H, &
                                   ZWQ, ZQHS, ZQRS)
 !
-    if ( lbudget_sv ) then
-      call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 2 ), 'HMLT', &
+    if ( BUCONF%LBUDGET_SV ) then
+      CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 2 ), 'HMLT', &
                              Unpack(  zwq(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
-      call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 6 ), 'HMLT', &
+      CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 6 ), 'HMLT', &
                              Unpack( -zwq(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
     end if
 !
@@ -2198,10 +2082,10 @@ IF (KMICRO >= 0) THEN
                                 XRTMIN_ELEC(2), XQTMIN(2), XCOEF_RQ_C, &
                                 ZWQ, ZQCS, ZQIS)
 !
-  if ( lbudget_sv ) then
-    call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 1 ), 'BERFI', &
+  if ( BUCONF%LBUDGET_SV ) then
+    CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 1 ), 'BERFI', &
                            Unpack( -zwq(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
-    call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 3 ), 'BERFI', &
+    CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 3 ), 'BERFI', &
                            Unpack(  zwq(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
   end if
 !
@@ -2211,12 +2095,12 @@ IF (KMICRO >= 0) THEN
 !*      9.    COMPUTE THE CHARGE TRANSFER ASSOCIATED WITH THE CORRECTION TERM
 !             ---------------------------------------------------------------
 !
-  IF (CCLOUD == 'LIMA') THEN
+  IF (HCLOUD == 'LIMA') THEN
 !
-    if ( lbudget_sv ) then
-      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg ), 'CORR2', &
+    if ( BUCONF%LBUDGET_SV ) then
+      CALL BUDGET_STORE_INIT_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG ), 'CORR2', &
                               Unpack( zqpis(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
-      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecend ), 'CORR2', &
+      CALL BUDGET_STORE_INIT_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECEND ), 'CORR2', &
                               Unpack( zqnis(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
     end if
 !
@@ -2226,8 +2110,8 @@ IF (KMICRO >= 0) THEN
       ZWQ(:) = SIGN( MIN( ABS(ZQCT(:)/PTSTEP),ABS(ZWQ1(:)) ),ZQCS(:) )
       !
       ZQCS(:)  = ZQCS(:)  - ZWQ1(:)
-      ZQPIS(:) = ZQPIS(:) + MAX( 0.0,ZWQ1(:)/XECHARGE )
-      ZQNIS(:) = ZQNIS(:) - MIN( 0.0,ZWQ1(:)/XECHARGE )      
+      ZQPIS(:) = ZQPIS(:) + MAX( 0.0,ZWQ1(:)/ELECD%XECHARGE )
+      ZQNIS(:) = ZQNIS(:) - MIN( 0.0,ZWQ1(:)/ELECD%XECHARGE )      
     END WHERE
     !
     !
@@ -2237,8 +2121,8 @@ IF (KMICRO >= 0) THEN
       ZWQ2(:) = SIGN( MIN( ABS(ZQRT(:)/PTSTEP),ABS(ZWQ2(:)) ),ZQRS(:) )
       !
       ZQRS(:)  = ZQRS(:)  - ZWQ2(:)
-      ZQPIS(:) = ZQPIS(:) + MAX( 0.0,ZWQ2(:)/XECHARGE )
-      ZQNIS(:) = ZQNIS(:) - MIN( 0.0,ZWQ2(:)/XECHARGE )      
+      ZQPIS(:) = ZQPIS(:) + MAX( 0.0,ZWQ2(:)/ELECD%XECHARGE )
+      ZQNIS(:) = ZQNIS(:) - MIN( 0.0,ZWQ2(:)/ELECD%XECHARGE )      
     END WHERE
     !
     ZWQ3(:) = 0.
@@ -2247,20 +2131,20 @@ IF (KMICRO >= 0) THEN
       ZWQ3(:) = SIGN( MIN( ABS(ZQIT(:)/PTSTEP),ABS(ZWQ3(:)) ),ZQIS(:) )
       !
       ZQIS(:)  = ZQIS(:)  - ZWQ3(:)
-      ZQPIS(:) = ZQPIS(:) + MAX( 0.0,ZWQ3(:)/XECHARGE )
-      ZQNIS(:) = ZQNIS(:) - MIN( 0.0,ZWQ3(:)/XECHARGE )      
+      ZQPIS(:) = ZQPIS(:) + MAX( 0.0,ZWQ3(:)/ELECD%XECHARGE )
+      ZQNIS(:) = ZQNIS(:) - MIN( 0.0,ZWQ3(:)/ELECD%XECHARGE )      
     END WHERE
 !
-    if ( lbudget_sv ) then
-      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg ), 'CORR2', &
+    if ( BUCONF%LBUDGET_SV ) then
+      CALL BUDGET_STORE_END_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG ), 'CORR2', &
                              Unpack( zqpis(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
-      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecend ), 'CORR2', &
+      CALL BUDGET_STORE_END_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECEND ), 'CORR2', &
                              Unpack( zqnis(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
-      call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 1 ), 'CORR2', &
+      CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 1 ), 'CORR2', &
                              Unpack( zwq1(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
-      call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 2 ), 'CORR2', &
+      CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 2 ), 'CORR2', &
                              Unpack( zwq2(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )                     
-      call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 3 ), 'CORR2', &
+      CALL BUDGET_STORE_ADD_PHY(D, TBUDGETS(NBUDGET_SV1 - 1 + NSV_ELECBEG + 3 ), 'CORR2', &
                              Unpack( zwq3(:) * zrhodj(:), mask = odmicro(:, :, :), field = 0. ) )
     end if    
   END IF
@@ -2362,6 +2246,7 @@ IF (ALLOCATED(ZRHMLTR))  DEALLOCATE(ZRHMLTR)
 IF (ALLOCATED(ZRDRYHG))  DEALLOCATE(ZRDRYHG)
 !
 !------------------------------------------------------------------
+END ASSOCIATE
 !
 CONTAINS
 !
@@ -2394,7 +2279,7 @@ GELEC(:,:) = .FALSE.
 ZDELTALWC(:) = 0.
 ZFT(:) = 0.
 !
-GELEC(:,3) = ZZT(:) > (XTT - 40.) .AND. ZZT(:) < XTT
+GELEC(:,3) = ZZT(:) > (CST%XTT - 40.) .AND. ZZT(:) < CST%XTT
 GELEC(:,1) = GELEC(:,3) .AND.                                              &
              ZRIT(:) > XRTMIN_ELEC(4) .AND. ZRST(:) > XRTMIN_ELEC(5) .AND. &
              ZCIT(:) > 0.0 .AND. ZLBDAS(:) > 0. .AND. ZLBDAS(:) < XLBDAS_MAXE
@@ -2409,9 +2294,9 @@ GELEC(:,4) = GELEC(:,1) .OR. GELEC(:,2) .OR. GELEC(:,3)
 !
 WHERE (GELEC(:,4))
   ! f(DeltaT)
-  ZFT(:) = - 1.7E-5 * ((-21 / (XQTC - XTT)) * (ZZT(:) - XTT))**3   &
-           - 0.003  * ((-21 / (XQTC - XTT)) * (ZZT(:) - XTT))**2   &
-           - 0.05   * ((-21 / (XQTC - XTT)) * (ZZT(:) - XTT))      &
+  ZFT(:) = - 1.7E-5 * ((-21 / (XQTC - CST%XTT)) * (ZZT(:) - CST%XTT))**3   &
+           - 0.003  * ((-21 / (XQTC - CST%XTT)) * (ZZT(:) - CST%XTT))**2   &
+           - 0.05   * ((-21 / (XQTC - CST%XTT)) * (ZZT(:) - CST%XTT))      &
            + 0.13
   !
   ! LWC - LWC_crit
@@ -2470,7 +2355,7 @@ WHERE (ZLBDAG(:) > 0. .AND. ZRCT(:) > 0.)
   ZEW(:) = 0.8 * ZRCT(:) * ZRHODREF(:) * 1.E3   ! (g m^-3)
 END WHERE
 !
-GELEC(:,3) = ZZT(:) > (XTT - 40.) .AND. ZZT(:) <= XTT .AND. &
+GELEC(:,3) = ZZT(:) > (CST%XTT - 40.) .AND. ZZT(:) <= CST%XTT .AND. &
              ZEW(:) >= 0.01 .AND. ZEW(:) <= 10.
 GELEC(:,1) = GELEC(:,3) .AND.                                              &
              ZRIT(:) > XRTMIN_ELEC(4) .AND. ZRST(:) > XRTMIN_ELEC(5) .AND. &
@@ -2548,40 +2433,40 @@ ZRAR_CRIT(:) = 0.
 !
 IF (CNI_CHARGING == 'SAP98') THEN
 !
-  WHERE (ZZT(:) <= XTT .AND. ZZT(:) >= (XTT - 23.7)) ! Original from SAP98
-    ZRAR_CRIT(:) = 1.0 + 7.93E-2 * (ZZT(:) - XTT) +    &
-                         4.48E-2 * (ZZT(:) - XTT)**2 + &
-                         7.48E-3 * (ZZT(:) - XTT)**3 + &
-                         5.47E-4 * (ZZT(:) - XTT)**4 + &
-                         1.67E-5 * (ZZT(:) - XTT)**5 + &
-                         1.76E-7 * (ZZT(:) - XTT)**6
+  WHERE (ZZT(:) <= CST%XTT .AND. ZZT(:) >= (CST%XTT - 23.7)) ! Original from SAP98
+    ZRAR_CRIT(:) = 1.0 + 7.93E-2 * (ZZT(:) - CST%XTT) +    &
+                         4.48E-2 * (ZZT(:) - CST%XTT)**2 + &
+                         7.48E-3 * (ZZT(:) - CST%XTT)**3 + &
+                         5.47E-4 * (ZZT(:) - CST%XTT)**4 + &
+                         1.67E-5 * (ZZT(:) - CST%XTT)**5 + &
+                         1.76E-7 * (ZZT(:) - CST%XTT)**6
   END WHERE
   !
-  WHERE (ZZT(:) < (XTT - 23.7) .AND. ZZT(:) > (XTT - 40.)) ! Added by Mansell
-    ZRAR_CRIT(:) = 3.4 * (1.0 - (ABS(ZZT(:) - XTT + 23.7) / & ! et al. (2005)
+  WHERE (ZZT(:) < (CST%XTT - 23.7) .AND. ZZT(:) > (CST%XTT - 40.)) ! Added by Mansell
+    ZRAR_CRIT(:) = 3.4 * (1.0 - (ABS(ZZT(:) - CST%XTT + 23.7) / & ! et al. (2005)
                    (-23.7 + 40.))**3.)
   END WHERE
   !
-  GELEC(:,3) = ZZT(:) >= (XTT - 40.) .AND. ZZT(:) <= XTT
+  GELEC(:,3) = ZZT(:) >= (CST%XTT - 40.) .AND. ZZT(:) <= CST%XTT
 !
 ELSE IF (CNI_CHARGING == 'BSMP1' .OR. CNI_CHARGING == 'BSMP2') THEN
 !
-  WHERE (ZZT(:) > (XTT - 10.7))
+  WHERE (ZZT(:) > (CST%XTT - 10.7))
     ZRAR_CRIT(:) = 0.66
   END WHERE
-  WHERE (ZZT(:) <= (XTT - 10.7) .AND. ZZT(:) >= (XTT - 23.7))
-    ZRAR_CRIT(:) = -1.47 - 0.2 * (ZZT(:) - XTT)
+  WHERE (ZZT(:) <= (CST%XTT - 10.7) .AND. ZZT(:) >= (CST%XTT - 23.7))
+    ZRAR_CRIT(:) = -1.47 - 0.2 * (ZZT(:) - CST%XTT)
   END WHERE
-  WHERE (ZZT(:) < (XTT - 23.7) .AND. ZZT(:) > (XTT - 40.))
+  WHERE (ZZT(:) < (CST%XTT - 23.7) .AND. ZZT(:) > (CST%XTT - 40.))
     ZRAR_CRIT(:) = 3.3
   END WHERE
   !
-  GELEC(:,3) = ZZT(:) > (XTT - 40.) .AND. ZZT(:) <= XTT .AND. &
+  GELEC(:,3) = ZZT(:) > (CST%XTT - 40.) .AND. ZZT(:) <= CST%XTT .AND. &
                ZEW(:) >= 0.01 .AND. ZEW(:) <= 10.
 !
 ELSE IF (CNI_CHARGING == 'TERAR') THEN
 !
-  GELEC(:,3) = ZZT(:) >= (XTT - 40.) .AND. ZZT(:) <= XTT
+  GELEC(:,3) = ZZT(:) >= (CST%XTT - 40.) .AND. ZZT(:) <= CST%XTT
 END IF
 !
 GELEC(:,1) = GELEC(:,3) .AND.                                              &
@@ -2764,7 +2649,7 @@ ZDQ(:) = 0.
 !
 ZEW(:) = ZRCT(:) * ZRHODREF(:) * 1.E3      ! (g m^-3)
 !
-GELEC(:,3) = ZZT(:) > (XTT - 40.) .AND. ZZT(:) <= XTT .AND. &
+GELEC(:,3) = ZZT(:) > (CST%XTT - 40.) .AND. ZZT(:) <= CST%XTT .AND. &
              ZEW(:) >= 0.01 .AND. ZEW(:) <= 10.
 GELEC(:,1) = GELEC(:,3) .AND.                                              &
              ZRIT(:) > XRTMIN_ELEC(4) .AND. ZRST(:) > XRTMIN_ELEC(5) .AND. &
@@ -2831,7 +2716,7 @@ WHERE (ZLBDAG(:) > 0. .AND. ZRCT(:) > 0.)
   ZEW(:) = 0.8 * ZRHODREF(:) * ZRCT(:) * 1.E3 
 END WHERE
 !
-GELEC(:,3) = ZZT(:) >= (XTT - 40.) .AND. ZZT(:) <= XTT .AND.  &
+GELEC(:,3) = ZZT(:) >= (CST%XTT - 40.) .AND. ZZT(:) <= CST%XTT .AND.  &
              ZEW(:) >= 0.01 .AND. ZEW(:) <= 10.
 GELEC(:,1) = GELEC(:,3) .AND.                                              &
              ZRIT(:) > XRTMIN_ELEC(4) .AND. ZRST(:) > XRTMIN_ELEC(5) .AND. &
@@ -2969,7 +2854,7 @@ IF (IGAUX > 0) THEN
 !
 ! Temperature index (0C --> -40C)
   ZVECT1(1:IGAUX) = MAX( 1.00001, MIN( REAL(KIND_TEMP)-0.00001, &
-                                    (ZVECT1(1:IGAUX) - XTT - 1.)/(-1.) ) )
+                                    (ZVECT1(1:IGAUX) - CST%XTT - 1.)/(-1.) ) )
   IVECT1(1:IGAUX) = INT( ZVECT1(1:IGAUX) )
   ZVECT1(1:IGAUX) = ZVECT1(1:IGAUX) - REAL(IVECT1(1:IGAUX))
 !
@@ -3035,7 +2920,7 @@ IMPLICIT NONE
 !*      1.     COMPUTE THE COLLISION EFFICIENCY
 !              --------------------------------
 !
-ZQCOLIS(:) = ZCOLIS * EXP(ZCOLEXIS * (ZZT(:) - XTT))
+ZQCOLIS(:) = ZCOLIS * EXP(ZCOLEXIS * (ZZT(:) - CST%XTT))
 !
 ZWQ_NI(:) = 0.
 ZLIMIT(:) = 0.
@@ -3146,8 +3031,8 @@ ELSE
   ENDWHERE
 !
 ! For temperatures lower than -30C --> linear interpolation
-  WHERE (ZWQ_NI(:) /= 0. .AND. ZZT(:) < (XTT-30.) .AND. ZZT(:) >= (XTT-40.))
-    ZWQ_NI(:) = ZWQ_NI(:) * (ZZT(:) - XTT + 40.) / 10.
+  WHERE (ZWQ_NI(:) /= 0. .AND. ZZT(:) < (CST%XTT-30.) .AND. ZZT(:) >= (CST%XTT-40.))
+    ZWQ_NI(:) = ZWQ_NI(:) * (ZZT(:) - CST%XTT + 40.) / 10.
   ENDWHERE
 !
 END IF
@@ -3177,7 +3062,7 @@ IMPLICIT NONE
 !*      1.     COMPUTE THE COLLISION EFFICIENCY
 !              --------------------------------
 !
-ZQCOLIG(:) = ZCOLIG * EXP(ZCOLEXIG * (ZZT(:) - XTT))
+ZQCOLIG(:) = ZCOLIG * EXP(ZCOLEXIG * (ZZT(:) - CST%XTT))
 !
 ZWQ_NI(:) = 0.
 ZLIMIT(:) = 0.
@@ -3288,8 +3173,8 @@ ELSE
   ENDWHERE
 !
 ! For temperatures lower than -30C --> linear interpolation
-  WHERE (ZWQ_NI(:) /= 0. .AND. ZZT(:) < (XTT-30.) .AND. ZZT(:) >= (XTT-40.))
-    ZWQ_NI(:) = ZWQ_NI(:) * (ZZT(:) - XTT + 40.) / 10.
+  WHERE (ZWQ_NI(:) /= 0. .AND. ZZT(:) < (CST%XTT-30.) .AND. ZZT(:) >= (CST%XTT-40.))
+    ZWQ_NI(:) = ZWQ_NI(:) * (ZZT(:) - CST%XTT + 40.) / 10.
   ENDWHERE
 !
 END IF
@@ -3321,7 +3206,7 @@ IMPLICIT NONE
 !*      1.      COMPUTE THE COLLECTION EFFICIENCY
 !               ---------------------------------
 !
-ZQCOLSG(:) = ZCOLSG * EXP (ZCOLEXSG * (ZZT(:) - XTT))
+ZQCOLSG(:) = ZCOLSG * EXP (ZCOLEXSG * (ZZT(:) - CST%XTT))
 !
 ZWQ_NI(:) = 0.
 ZLIMIT(:) = 0.
@@ -3454,8 +3339,8 @@ ELSE
   ENDWHERE
 !
 ! For temperatures lower than -30C --> linear interpolation
-  WHERE (ZWQ_NI(:) /= 0. .AND. ZZT(:) < (XTT-30.) .AND. ZZT(:) >= (XTT-40.))
-    ZWQ_NI(:) = ZWQ_NI(:) * (ZZT(:) - XTT + 40.) / 10.
+  WHERE (ZWQ_NI(:) /= 0. .AND. ZZT(:) < (CST%XTT-30.) .AND. ZZT(:) >= (CST%XTT-40.))
+    ZWQ_NI(:) = ZWQ_NI(:) * (ZZT(:) - CST%XTT + 40.) / 10.
   ENDWHERE
 !
 END IF
@@ -3574,3 +3459,4 @@ END FUNCTION BI_LIN_INTP_V
 !------------------------------------------------------------------
 !
 END SUBROUTINE ELEC_TENDENCIES
+END MODULE MODE_ELEC_TENDENCIES

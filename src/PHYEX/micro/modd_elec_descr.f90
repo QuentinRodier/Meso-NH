@@ -93,7 +93,6 @@ REAL, DIMENSION(:), SAVE, ALLOCATABLE :: XQTMIN ! Min values allowed for the
 REAL, DIMENSION(:) ,      ALLOCATABLE :: XRTMIN_ELEC    ! Limit value of R where charge is available
 !
 REAL       :: XEPSILON        ! Dielectric permittivity of air (F/m)
-REAL       :: XECHARGE        ! Elementary charge (C)
 !
 !
 ! parameters relative to electrification
@@ -163,6 +162,7 @@ LOGICAL :: LIAGGS_LATHAM=.FALSE.   ! .T.: to enable ELEC=>MICROPHYS via
 TYPE ELEC_DESCR_t
   REAL :: XFC, XFR, XFI, XFS, XFG, XFH ! f_x in q_x = e_x D^f_x
   REAL :: XCXR            ! Exponent in the concentration-slope
+  REAL       :: XECHARGE        ! Elementary charge (C)
 END TYPE ELEC_DESCR_t
 !
 TYPE(ELEC_DESCR_t), SAVE, TARGET :: ELEC_DESCR
@@ -173,7 +173,8 @@ REAL, POINTER :: XFC => NULL(), &
                  XFS => NULL(), &
                  XFG => NULL(), &
                  XFH => NULL(), &
-                 XCXR => NULL()
+                 XCXR => NULL(), &
+                 XECHARGE => NULL()
 !
 CONTAINS
 !
@@ -187,6 +188,7 @@ SUBROUTINE ELEC_DESCR_ASSOCIATE()
   XFG => ELEC_DESCR%XFG
   XFH => ELEC_DESCR%XFH
   XCXR => ELEC_DESCR%XCXR
+  XECHARGE=> ELEC_DESCR%XECHARGE
 END SUBROUTINE ELEC_DESCR_ASSOCIATE
 !
 END MODULE MODD_ELEC_DESCR
