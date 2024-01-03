@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2022 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2023-2024 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -9,12 +9,13 @@
 !
 INTERFACE
 
-    SUBROUTINE INI_RADIATIONS_AGG (KRAD_AGG,KI_RAD_AGG,KJ_RAD_AGG,KIOR_RAD_AGG,KJOR_RAD_AGG)
+    SUBROUTINE INI_RADIATIONS_AGG (KRAD_AGG,KI_RAD_AGG,KJ_RAD_AGG,KIOR_RAD_AGG,KJOR_RAD_AGG,KRAD_AGG_FLAG)
 INTEGER, INTENT(IN)  :: KRAD_AGG      ! number of aggregated points
 INTEGER, INTENT(OUT) :: KI_RAD_AGG    ! reformatted X array size
 INTEGER, INTENT(OUT) :: KJ_RAD_AGG    ! reformatted Y array size
 INTEGER, INTENT(OUT) :: KIOR_RAD_AGG  ! index of first point of packed array according to current domain
 INTEGER, INTENT(OUT) :: KJOR_RAD_AGG  ! index of first point of packed array according to current domain
+INTEGER, DIMENSION(:,:), INTENT(OUT) :: KRAD_AGG_FLAG  ! flag to know if aggregated column is computed in this processor or another one
 END SUBROUTINE INI_RADIATIONS_AGG
 
 END INTERFACE
@@ -22,7 +23,7 @@ END INTERFACE
 END MODULE MODI_INI_RADIATIONS_AGG
 !
 !   ############################################################################
-    SUBROUTINE INI_RADIATIONS_AGG (KRAD_AGG,KI_RAD_AGG,KJ_RAD_AGG,KIOR_RAD_AGG,KJOR_RAD_AGG)
+    SUBROUTINE INI_RADIATIONS_AGG (KRAD_AGG,KI_RAD_AGG,KJ_RAD_AGG,KIOR_RAD_AGG,KJOR_RAD_AGG,KRAD_AGG_FLAG)
 !   ############################################################################
 !
 !!****  *INI_RADIATIONS_AGG * - routine to call the SW and LW radiation calculations
@@ -95,6 +96,7 @@ INTEGER, INTENT(OUT) :: KI_RAD_AGG    ! reformatted X array size
 INTEGER, INTENT(OUT) :: KJ_RAD_AGG    ! reformatted Y array size
 INTEGER, INTENT(OUT) :: KIOR_RAD_AGG  ! index of first point of packed array according to current domain
 INTEGER, INTENT(OUT) :: KJOR_RAD_AGG  ! index of first point of packed array according to current domain
+INTEGER, DIMENSION(:,:), INTENT(OUT) :: KRAD_AGG_FLAG  ! flag to know if aggregated column is computed in this processor or another one
 !
 !
 !*       0.2   DECLARATIONS OF LOCAL VARIABLES
@@ -119,6 +121,9 @@ INTEGER :: IJOR_ll      ! index of first point in the processor relative to the 
 !
 INTEGER :: ILUOUT       ! Logical unit 
 INTEGER :: IMI
+
+LOGICAL :: LREMOVE_SOUTH, LREMOVE_NORTH, LREMOVE_EAST, LREMOVE_WEST ! flags to not keep packed column in current processor
+INTEGER :: ISOUTH, INORTH, IEAST, IWEST ! inner limits of packed colums on each side of the processor (in local coordinate)
 !-------------------------------------------------------------------------
 !-------------------------------------------------------------------------
 !-------------------------------------------------------------------------
@@ -191,10 +196,125 @@ KJOR_RAD_AGG = IJOR_RAD_AGG_ll - IJOR_ll + 1
 KIOR_RAD_AGG = KIOR_RAD_AGG + ((IIB-KIOR_RAD_AGG)/KRAD_AGG) * KRAD_AGG
 KJOR_RAD_AGG = KJOR_RAD_AGG + ((IJB-KJOR_RAD_AGG)/KRAD_AGG) * KRAD_AGG
 !
+!-------------------------------------------------------------------------------
 !
 ! Number of PACKED radiative subdomains inside current processor domain
 KI_RAD_AGG = (IIE - KIOR_RAD_AGG) / KRAD_AGG + 1
 KJ_RAD_AGG = (IJE - KJOR_RAD_AGG) / KRAD_AGG + 1
+!
+!-------------------------------------------------------------------------------
+!
+! REMOVES Aggregated columns that are duplicated in several processors
+!
+! Checks if the middle of the packed column is in the current processor
+! 
+LREMOVE_SOUTH = .FALSE.
+LREMOVE_NORTH = .FALSE.
+LREMOVE_EAST  = .FALSE.
+LREMOVE_WEST  = .FALSE.
+!
+KRAD_AGG_FLAG(:,:) = 0.
+!
+! inner limits of packed colums on each side of the processor (in local coordinate)
+IWEST  = KIOR_RAD_AGG +                KRAD_AGG-1
+IEAST  = KIOR_RAD_AGG + (KI_RAD_AGG-1)*KRAD_AGG
+ISOUTH = KJOR_RAD_AGG +                KRAD_AGG-1
+INORTH = KJOR_RAD_AGG + (KJ_RAD_AGG-1)*KRAD_AGG
+!
+! Eastern side of processor (if NOT of whole domain) (checks on last X index of aggregated columns)
+IF (IEAST+KRAD_AGG/2 > IIE .AND. .NOT. (LEAST_ll() .AND. CLBCX(2)=='OPEN') ) THEN
+   KRAD_AGG_FLAG(IEAST:IIE,:) = 3  ! points located there will take values computed by processor towards east
+   LREMOVE_EAST = .TRUE.
+END IF
+! Western side of processor (if NOT of whole domain) (checks on first X index of aggregated columns)
+IF (KIOR_RAD_AGG+KRAD_AGG/2 < IIB  .AND. .NOT. (LWEST_ll() .AND. CLBCX(1)=='OPEN') ) THEN
+   KRAD_AGG_FLAG(IIB:IWEST,:) = 1  ! points located there will take values computed by processor towards west
+   LREMOVE_WEST = .TRUE.
+END IF
+! Northern side of processor (if NOT of whole domain) (checks on last Y index of aggregated columns)
+IF (INORTH+KRAD_AGG/2 > IJE .AND. .NOT. (LNORTH_ll() .AND. CLBCY(2)=='OPEN') ) THEN
+   KRAD_AGG_FLAG(:,INORTH:IJE) = 4  ! points located there will take values computed by processor towards north
+   LREMOVE_NORTH= .TRUE.
+END IF
+! Southern side of processor (if NOT of whole domain) (checks on first X index of aggregated columns)
+IF (KJOR_RAD_AGG+KRAD_AGG/2 < IJB  .AND. .NOT. (LSOUTH_ll() .AND. CLBCY(1)=='OPEN') ) THEN
+   KRAD_AGG_FLAG(:,IJB:ISOUTH) = 2  ! points located there will take values computed by processor towards south
+   LREMOVE_SOUTH= .TRUE.
+END IF
+!
+! North-Eastern corner of processor (if NOT of whole domain)
+IF (       IEAST+KRAD_AGG/2 > IIE .AND.  INORTH+KRAD_AGG/2 > IJE  ) THEN
+   IF (.NOT. (LEAST_ll()  .AND. CLBCX(2)=='OPEN') .AND. .NOT. (LNORTH_ll() .AND. CLBCY(2)=='OPEN') ) THEN
+     KRAD_AGG_FLAG(IEAST:IIE,INORTH:IJE) = 7  
+     ! points located there will take values computed by processor towards NE
+     LREMOVE_EAST  = .TRUE.
+     LREMOVE_NORTH = .TRUE.
+   ELSE IF ( (LEAST_ll()  .AND. CLBCX(2)=='OPEN') .AND. .NOT. (LNORTH_ll() .AND. CLBCY(2)=='OPEN') ) THEN
+     KRAD_AGG_FLAG(:,INORTH:IJE) = 4  ! points located there will take values computed by processor towards north
+     LREMOVE_NORTH = .TRUE.
+   ELSE IF ( (LNORTH_ll()  .AND. CLBCY(2)=='OPEN') .AND. .NOT. (LEAST_ll()  .AND. CLBCX(2)=='OPEN') ) THEN
+     KRAD_AGG_FLAG(IEAST:IIE,:) = 3  ! points located there will take values computed by processor towards east
+     LREMOVE_EAST = .TRUE.
+   END IF
+END IF
+!
+! North-Western corner of processor (if NOT of whole domain)
+IF (       KIOR_RAD_AGG+KRAD_AGG/2 < IIB .AND.  INORTH+KRAD_AGG/2 > IJE  ) THEN
+   IF (.NOT. (LWEST_ll()  .AND. CLBCX(1)=='OPEN') .AND. .NOT. (LNORTH_ll() .AND. CLBCY(2)=='OPEN')) THEN
+     KRAD_AGG_FLAG(IIB:IWEST,INORTH:IJE) = 8  ! points located there will take values computed by processor towards NW
+     LREMOVE_WEST  = .TRUE.
+     LREMOVE_NORTH = .TRUE.
+   ELSE IF ( (LWEST_ll()  .AND. CLBCX(1)=='OPEN') .AND. .NOT. (LNORTH_ll() .AND. CLBCY(2)=='OPEN')) THEN
+     KRAD_AGG_FLAG(IIB:IWEST,INORTH:IJE) = 4  ! points located there will take values computed by processor towards north
+     LREMOVE_NORTH = .TRUE.
+   ELSE IF ( (LNORTH_ll()  .AND. CLBCY(2)=='OPEN') .AND. .NOT. (LWEST_ll()  .AND. CLBCX(1)=='OPEN')) THEN
+     KRAD_AGG_FLAG(IIB:IWEST,INORTH:IJE) = 1  ! points located there will take values computed by processor towards west
+     LREMOVE_WEST = .TRUE.
+   END IF
+END IF
+!
+! South-Western corner of processor (if NOT of whole domain)
+IF (       KIOR_RAD_AGG+KRAD_AGG/2 < IIB .AND.  KJOR_RAD_AGG+KRAD_AGG/2 < IJB ) THEN
+   IF (.NOT. (LWEST_ll()  .AND. CLBCX(1)=='OPEN') .AND. .NOT. (LSOUTH_ll() .AND. CLBCY(1)=='OPEN') ) THEN
+     KRAD_AGG_FLAG(IIB:IWEST,IIB:ISOUTH) = 5  ! points located there will take values computed by processor towards SW
+     LREMOVE_WEST  = .TRUE.
+     LREMOVE_SOUTH = .TRUE.
+   ELSE IF ( (LWEST_ll()  .AND. CLBCX(1)=='OPEN')  .AND. .NOT. (LSOUTH_ll() .AND. CLBCY(1)=='OPEN') ) THEN
+     KRAD_AGG_FLAG(IIB:IWEST,IIB:ISOUTH) = 2  ! points located there will take values computed by processor towards south
+     LREMOVE_SOUTH = .TRUE.
+   ELSE IF ( (LSOUTH_ll()  .AND. CLBCY(2)=='OPEN') .AND. .NOT. (LWEST_ll()  .AND. CLBCX(1)=='OPEN') ) THEN
+     KRAD_AGG_FLAG(IIB:IWEST,IIB:ISOUTH) = 1  ! points located there will take values computed by processor towards west
+     LREMOVE_WEST = .TRUE.
+   END IF
+END IF
+!
+! South-Eastern corner of processor (if NOT of whole domain)
+IF (       IEAST+KRAD_AGG/2 > IIE .AND.  KJOR_RAD_AGG+KRAD_AGG/2 < IJB ) THEN
+   IF (.NOT. (LEAST_ll()  .AND. CLBCX(1)=='OPEN') .AND. .NOT. (LSOUTH_ll() .AND. CLBCY(1)=='OPEN') ) THEN
+     KRAD_AGG_FLAG(IEAST:IIE,IIB:ISOUTH) = 6  ! points located there will take values computed by processor towards SW
+     LREMOVE_EAST  = .TRUE.
+     LREMOVE_SOUTH = .TRUE.
+   ELSE IF ( (LEAST_ll()  .AND. CLBCX(1)=='OPEN')  .AND. .NOT. (LSOUTH_ll() .AND. CLBCY(1)=='OPEN') ) THEN
+     KRAD_AGG_FLAG(IEAST:IIE,IIB:ISOUTH) = 2  ! points located there will take values computed by processor towards south
+     LREMOVE_SOUTH = .TRUE.
+   ELSE IF ( (LSOUTH_ll()  .AND. CLBCY(2)=='OPEN') .AND. .NOT. (LEAST_ll()  .AND. CLBCX(1)=='OPEN') ) THEN
+     KRAD_AGG_FLAG(IEAST:IIE,IIB:ISOUTH) = 3  ! points located there will take values computed by processor towards west
+     LREMOVE_EAST = .TRUE.
+   END IF
+END IF
+!
+! removes from current processor the column that was partially (and majoritaly) in the other processor
+!
+IF (LREMOVE_EAST) KI_RAD_AGG = KI_RAD_AGG -1 
+IF (LREMOVE_WEST) THEN
+   KIOR_RAD_AGG = KIOR_RAD_AGG + KRAD_AGG
+   KI_RAD_AGG = KI_RAD_AGG -1
+END IF
+IF (LREMOVE_NORTH) KJ_RAD_AGG = KJ_RAD_AGG -1
+IF (LREMOVE_SOUTH) THEN
+   KJOR_RAD_AGG = KJOR_RAD_AGG + KRAD_AGG
+   KJ_RAD_AGG = KJ_RAD_AGG -1
+END IF
 !
 !-------------------------------------------------------------------------------
 !

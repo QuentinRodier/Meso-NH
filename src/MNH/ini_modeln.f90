@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2024 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -299,6 +299,7 @@ END MODULE MODI_INI_MODEL_n
 !  A. Costes      12/2021: Blaze fire model
 !  H. Toumi       09/2022: add EOL/ADR
 !  C. Barthe      03/2023: if cloud electricity is activated, both ini_micron and ini_elecn are called
+!  V. Masson      01/2024: aggregation of columns for radiation
 !---------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -1556,6 +1557,7 @@ IF (CRAD /= 'NONE') THEN
   ALLOCATE(XDTHRADSW(IIU,IJU,IKU))
   ALLOCATE(XDTHRADLW(IIU,IJU,IKU))
   ALLOCATE(XRADEFF(IIU,IJU,IKU))
+  ALLOCATE(NRAD_AGG_FLAG(IIU,IJU))
 ELSE
   ALLOCATE(XSLOPANG(0,0))
   ALLOCATE(XSLOPAZI(0,0))
@@ -1575,6 +1577,7 @@ ELSE
   ALLOCATE(XDTHRADSW(0,0,0))
   ALLOCATE(XDTHRADLW(0,0,0))
   ALLOCATE(XRADEFF(0,0,0))
+  ALLOCATE(NRAD_AGG_FLAG(0,0))
 END IF
 
 IF (CRAD == 'ECMW' .OR. CRAD == 'ECRA') THEN
@@ -2535,7 +2538,8 @@ IF (CRAD   /= 'NONE') THEN
                       XRADEFF,XSWU,XSWD,XLWU,             &
                       XLWD,XDTHRADSW,XDTHRADLW,           &
                       NRAD_AGG,NI_RAD_AGG,NJ_RAD_AGG,     &
-                      NIOR_RAD_AGG,NJOR_RAD_AGG           )
+                      NIOR_RAD_AGG,NJOR_RAD_AGG,          &
+                      NRAD_AGG_FLAG                       )
   !
   IF (GINIRAD) CALL SUNPOS_n(XZENITH,PAZIMSOL=XAZIM)
   CALL SURF_SOLAR_GEOM    (XZS, XZS_XY)

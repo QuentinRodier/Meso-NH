@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2023 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2024 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -242,6 +242,7 @@ END MODULE MODI_PHYS_PARAM_n
 !  A. Costes      12/2021: add Blaze fire model
 !  Q. Rodier      2022   : integration with PHYEX
 !  C. Barthe      03/2023: add CELEC in call to turbulence
+!  V. Masson      01/2024: aggregation of columns for radiation
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -326,6 +327,7 @@ USE MODD_TIME_n
 USE MODD_TIME, ONLY : TDTEXP  ! Ajout PP
 USE MODD_TURB_FLUX_AIRCRAFT_BALLOON, ONLY : XTHW_FLUX, XRCW_FLUX, XSVW_FLUX
 USE MODD_TURB_n
+USE MODD_VAR_ll,      ONLY: IP
 
 USE MODE_AERO_PSD
 use mode_budget,            only: Budget_store_end, Budget_store_init
@@ -777,7 +779,7 @@ CALL SUNPOS_n   ( XZENITH, ZCOSZEN, ZSINZEN, ZAZIMSOL )
       XLWD(:,:,:)=0.0
       XDTHRADSW(:,:,:)=0.0
       XDTHRADLW(:,:,:)=0.0
-      CALL RADIATIONS_AGG(NRAD_AGG,NI_RAD_AGG,NJ_RAD_AGG,NIOR_RAD_AGG,NJOR_RAD_AGG, TPFILE,      &
+      CALL RADIATIONS_AGG(NRAD_AGG,NI_RAD_AGG,NJ_RAD_AGG,NIOR_RAD_AGG,NJOR_RAD_AGG, NRAD_AGG_FLAG, TPFILE,      &
                        LCLEAR_SKY, OCLOUD_ONLY, NCLEARCOL_TM1, CEFRADL, CEFRADI, COPWSW, COPISW, &
                        COPWLW, COPILW, XFUDG,                                                    &
                        NDLON, NFLEV, NRAD_DIAG, NFLUX, NRAD, NAER, NSWB_OLD, NSWB_MNH, NLWB_MNH, &

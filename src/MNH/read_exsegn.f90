@@ -312,6 +312,7 @@ END MODULE MODI_READ_EXSEG_n
 !  P. Wautelet 19/08/2022: add namelist for aircrafts
 !  H. Toumi       09/2022: add EOL/ADR
 !  C. Barthe   11/07/2023: ELEC: only some combinations of microphysical options are allowed
+!  V. Masson   03/01/2024: aggregation of columns for radiation
 !------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS

@@ -9,7 +9,7 @@
 !
 INTERFACE
 
-    SUBROUTINE RADIATIONS_AGG (KRAD_AGG,KI_RAD_AGG,KJ_RAD_AGG,KIOR_RAD_AGG,KJOR_RAD_AGG, &
+    SUBROUTINE RADIATIONS_AGG (KRAD_AGG,KI_RAD_AGG,KJ_RAD_AGG,KIOR_RAD_AGG,KJOR_RAD_AGG,KRAD_AGG_FLAG, &
                TPFILE,OCLEAR_SKY,OCLOUD_ONLY,                                  &
                KCLEARCOL_TM1,HEFRADL,HEFRADI,HOPWSW,HOPISW,HOPWLW,HOPILW,      &
                PFUDG, KDLON, KFLEV, KRAD_DIAG, KFLUX, KRAD, KAER, KSWB_OLD,    &
@@ -26,6 +26,8 @@ INTEGER, INTENT(IN) :: KI_RAD_AGG    ! reformatted X array size
 INTEGER, INTENT(IN) :: KJ_RAD_AGG    ! reformatted Y array size
 INTEGER, INTENT(IN) :: KIOR_RAD_AGG  ! index of first point of packed array according to current domain
 INTEGER, INTENT(IN) :: KJOR_RAD_AGG  ! index of first point of packed array according to current domain
+INTEGER, DIMENSION(:,:), INTENT(IN) :: KRAD_AGG_FLAG  ! flag to know if aggregated column is computed in this processor or another one
+
 
 TYPE(TFILEDATA),  INTENT(IN)         :: TPFILE    ! Output file
 LOGICAL, INTENT(IN)                  :: OCLOUD_ONLY! flag for the cloud column
@@ -113,7 +115,7 @@ END INTERFACE
 END MODULE MODI_RADIATIONS_AGG
 !
 !   ############################################################################
-    SUBROUTINE RADIATIONS_AGG (KRAD_AGG,KI_RAD_AGG,KJ_RAD_AGG,KIOR_RAD_AGG,KJOR_RAD_AGG, &
+    SUBROUTINE RADIATIONS_AGG (KRAD_AGG,KI_RAD_AGG,KJ_RAD_AGG,KIOR_RAD_AGG,KJOR_RAD_AGG,KRAD_AGG_FLAG,  &
                TPFILE,OCLEAR_SKY,OCLOUD_ONLY,                                  &
                KCLEARCOL_TM1,HEFRADL,HEFRADI,HOPWSW,HOPISW,HOPWLW,HOPILW,      &
                PFUDG, KDLON, KFLEV, KRAD_DIAG, KFLUX, KRAD, KAER, KSWB_OLD,    &
@@ -192,6 +194,7 @@ INTEGER, INTENT(IN) :: KI_RAD_AGG    ! reformatted X array size
 INTEGER, INTENT(IN) :: KJ_RAD_AGG    ! reformatted Y array size
 INTEGER, INTENT(IN) :: KIOR_RAD_AGG  ! index of first point of packed array according to current domain
 INTEGER, INTENT(IN) :: KJOR_RAD_AGG  ! index of first point of packed array according to current domain
+INTEGER, DIMENSION(:,:), INTENT(IN) :: KRAD_AGG_FLAG  ! flag to know if aggregated column is computed in this processor or another one
 
 TYPE(TFILEDATA),  INTENT(IN)         :: TPFILE    ! Output file
 LOGICAL, INTENT(IN)                  :: OCLOUD_ONLY! flag for the cloud column
@@ -630,35 +633,87 @@ REAL, DIMENSION(:,:), INTENT(IN)  :: PFULL
 REAL, DIMENSION(:,:), INTENT(OUT) :: PPACK
 LOGICAL                           :: OEXCH
 
-!  DO JJP=1,MIN(KJ_RAD_AGG,IJMAX)
-!    DO JIP=1,MIN(KI_RAD_AGG,IIMAX)
   DO JJP=1,KJ_RAD_AGG
     DO JIP=1,KI_RAD_AGG
       IXORP = KIOR_RAD_AGG + (JIP-1) * KRAD_AGG
       IYORP = KJOR_RAD_AGG + (JJP-1) * KRAD_AGG
-      PPACK(JIP,JJP) = PFULL(MIN(IXORP + KRAD_AGG/2,IImax),MIN(IYORP + KRAD_AGG/2,Ijmax) ) 
+      PPACK(JIP,JJP) = PFULL(MIN(IXORP + KRAD_AGG/2,IIMAX),MIN(IYORP + KRAD_AGG/2,IJMAX) )
     END DO
   END DO
 END SUBROUTINE PACK_RAD_AGG_MID
-!
 !-------------------------------------------------------------------------------
 !
 SUBROUTINE UNPACK_RAD_AGG_2D(PFULL,PPACK)
 REAL, DIMENSION(:,:), INTENT(OUT)  :: PFULL
 REAL, DIMENSION(:,:), INTENT(IN)   :: PPACK
 
+TYPE(LIST_ll), POINTER :: TZFIELDS_ll   ! list of fields to exchange
+REAL, DIMENSION(SIZE(PFULL,1),SIZE(PFULL,2)) :: ZFULL
+
+  ZFULL = 0.
+  ! unpacks columns whose center is located in the current processor
   DO JJP=1,KJ_RAD_AGG
     DO JIP=1,KI_RAD_AGG
       IXORP = KIOR_RAD_AGG + (JIP-1) * KRAD_AGG
       IYORP = KJOR_RAD_AGG + (JJP-1) * KRAD_AGG
       DO JJ=IYORP,MIN(IYORP+KRAD_AGG-1,IJMAX)
         DO JI=IXORP,MIN(IXORP+KRAD_AGG-1,IIMAX)
-          PFULL(JI,JJ) = PPACK(JIP,JJP)
+          ZFULL(JI,JJ) = PPACK(JIP,JJP)
         END DO
       END DO
     END DO
   END DO
 
+  ! stores the output field
+  PFULL = 0.
+  PFULL(IIB:IIE,IJB:IJE) = ZFULL(IIB:IIE,IJB:IJE)
+
+  ! updates boundaries outside processor (that's because some aggregated columns were computed another processors)
+  NULLIFY(TZFIELDS_ll)
+  CALL ADD2DFIELD_ll( TZFIELDS_ll, ZFULL, 'RADIATION_AGG: UNPACK_RAD_AGG_2D' )
+  CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
+  CALL CLEANLIST_ll(TZFIELDS_ll)
+
+  ! Get the values of the packed column for points in the HALO if those were indeed computed by the other processors
+!  DO JJ=1,IJB-1
+!    DO JI=1,IIB-1
+!      IF (ZFULL(JI,JJ) /= 0.) PFULL(JI,JJ) = ZFULL(JI,JJ)
+!    END DO
+!  END DO
+!  DO JJ=IJE+1,IJU
+!    DO JI=1,IIB-1
+!      IF (ZFULL(JI,JJ) /= 0.) PFULL(JI,JJ) = ZFULL(JI,JJ)
+!    END DO
+!  END DO
+!  DO JJ=1,IJB-1
+!    DO JI=IIE+1,IIU
+!      IF (ZFULL(JI,JJ) /= 0.) PFULL(JI,JJ) = ZFULL(JI,JJ)
+!    END DO
+!  END DO
+!  DO JJ=IJE+1,IJU
+!    DO JI=IIE+1,IIU
+!      IF (ZFULL(JI,JJ) /= 0.) PFULL(JI,JJ) = ZFULL(JI,JJ)
+!    END DO
+!  END DO
+
+
+  ! Get the values of the packed column for points whose column center is outside the processor
+  ! In that case, the column is on one of the sides outside the processor, but within the NHALO bands
+  !
+  DO JJ=IJB,IJE
+    DO JI=IIB,IIE
+      IF (KRAD_AGG_FLAG(JI,JJ)==0) CYCLE  ! points whose aggregated columns were computed within this processor
+      IF (KRAD_AGG_FLAG(JI,JJ)==1) PFULL(JI,JJ) = ZFULL(IIB-1,JJ) ! computed column was towards West side of processor
+      IF (KRAD_AGG_FLAG(JI,JJ)==2) PFULL(JI,JJ) = ZFULL(JI,IJB-1) ! computed column was towards South side of processor
+      IF (KRAD_AGG_FLAG(JI,JJ)==3) PFULL(JI,JJ) = ZFULL(IIE+1,JJ) ! computed column was towards East side of processor
+      IF (KRAD_AGG_FLAG(JI,JJ)==4) PFULL(JI,JJ) = ZFULL(JI,IJE+1) ! computed column was towards North side of processor
+      IF (KRAD_AGG_FLAG(JI,JJ)==5) PFULL(JI,JJ) = ZFULL(IIB-1,IJB-1) ! computed column was towards South-West corner
+      IF (KRAD_AGG_FLAG(JI,JJ)==6) PFULL(JI,JJ) = ZFULL(IIE+1,IJB-1) ! computed column was towards South-East corner
+      IF (KRAD_AGG_FLAG(JI,JJ)==7) PFULL(JI,JJ) = ZFULL(IIE+1,IJE+1) ! computed column was towards North-East corner
+      IF (KRAD_AGG_FLAG(JI,JJ)==8) PFULL(JI,JJ) = ZFULL(IIB-1,IJE+1) ! computed column was towards North-West corner
+    END DO
+  END DO
+  !
 END SUBROUTINE UNPACK_RAD_AGG_2D
 !-------------------------------------------------------------------------------
 !

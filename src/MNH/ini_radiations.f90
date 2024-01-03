@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2003-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2003-2024 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -16,7 +16,8 @@ INTERFACE
          PFLALWD,PDIRSRFSWD,KCLEARCOL_TM1,                             &
          PZENITH, PAZIM, TPDTRAD_FULL,TPDTRAD_CLONLY,TPINITHALO2D_ll,  &
          PRADEFF,PSWU,PSWD,PLWU,PLWD,PDTHRADSW,PDTHRADLW,              &
-         KRAD_AGG,KI_RAD_AGG,KJ_RAD_AGG,KIOR_RAD_AGG,KJOR_RAD_AGG      )
+         KRAD_AGG,KI_RAD_AGG,KJ_RAD_AGG,KIOR_RAD_AGG,KJOR_RAD_AGG,     &
+         KRAD_AGG_FLAG                                                 )
 !
 USE MODD_ARGSLIST_ll, ONLY : LIST_ll
 USE MODD_IO,       ONLY : TFILEDATA
@@ -66,6 +67,7 @@ INTEGER, INTENT(OUT) :: KI_RAD_AGG    ! reformatted X array size
 INTEGER, INTENT(OUT) :: KJ_RAD_AGG    ! reformatted Y array size
 INTEGER, INTENT(OUT) :: KIOR_RAD_AGG  ! index of first point of packed array according to current domain
 INTEGER, INTENT(OUT) :: KJOR_RAD_AGG  ! index of first point of packed array according to current domain
+INTEGER, DIMENSION(:,:), INTENT(OUT) :: KRAD_AGG_FLAG  ! flag to know if aggregated column is computed in this processor or another one
 
 END SUBROUTINE INI_RADIATIONS
 !
@@ -82,7 +84,8 @@ END MODULE MODI_INI_RADIATIONS
          PFLALWD,PDIRSRFSWD,KCLEARCOL_TM1,                             &
          PZENITH, PAZIM, TPDTRAD_FULL,TPDTRAD_CLONLY,TPINITHALO2D_ll,  &
          PRADEFF,PSWU,PSWD,PLWU,PLWD,PDTHRADSW,PDTHRADLW,              &
-         KRAD_AGG,KI_RAD_AGG,KJ_RAD_AGG,KIOR_RAD_AGG,KJOR_RAD_AGG      )
+         KRAD_AGG,KI_RAD_AGG,KJ_RAD_AGG,KIOR_RAD_AGG,KJOR_RAD_AGG,     &
+         KRAD_AGG_FLAG                                                 )
 !   ####################################################################
 !
 !!****  *INI_RADIATION_TIME * - initialisation for radiation scheme in the MesoNH framework
@@ -119,6 +122,7 @@ END MODULE MODI_INI_RADIATIONS
 !  P. Wautelet 14/02/2019: remove CLUOUT/CLUOUT0 and associated variables
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
+!       V. Masson 03/01/2024: aggregation of columns for radiation
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -187,6 +191,7 @@ INTEGER, INTENT(OUT) :: KI_RAD_AGG    ! reformatted X array size
 INTEGER, INTENT(OUT) :: KJ_RAD_AGG    ! reformatted Y array size
 INTEGER, INTENT(OUT) :: KIOR_RAD_AGG  ! index of first point of packed array according to current domain
 INTEGER, INTENT(OUT) :: KJOR_RAD_AGG  ! index of first point of packed array according to current domain
+INTEGER, DIMENSION(:,:), INTENT(OUT) :: KRAD_AGG_FLAG  ! flag to know if aggregated column is computed in this processor or another one
 !
 !*       0.2   declarations of local variables
 !
@@ -343,7 +348,7 @@ END IF
 !*       10.         INITIALIZE COLUMN AGGREGATION FOR RADIATION CALL
 !	            -------------------------------------------------
 
-CALL INI_RADIATIONS_AGG (KRAD_AGG,KI_RAD_AGG,KJ_RAD_AGG,KIOR_RAD_AGG,KJOR_RAD_AGG)
+CALL INI_RADIATIONS_AGG (KRAD_AGG,KI_RAD_AGG,KJ_RAD_AGG,KIOR_RAD_AGG,KJOR_RAD_AGG,KRAD_AGG_FLAG)
 !
 !-------------------------------------------------------------------------------
 !

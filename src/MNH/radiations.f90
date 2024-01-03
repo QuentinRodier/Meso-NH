@@ -123,6 +123,7 @@ CONTAINS
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !  P. Wautelet 06/09/2022: small fix: GSURF_CLOUD was not set outside of physical domain
+!       V. Masson 03/01/2024: aggregation of columns for radiation
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
