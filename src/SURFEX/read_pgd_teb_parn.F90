@@ -1525,6 +1525,8 @@ END SUBROUTINE READ_FIELD
 !_______________________________
 SUBROUTINE READ_FIELD_2D(HRECFM,PFIELD,YDIR)
 !
+USE MODI_HOR_INTERPOL  
+!  
 IMPLICIT NONE
 !
 CHARACTER(LEN=*),           INTENT(IN)  :: HRECFM ! name of record in the file
