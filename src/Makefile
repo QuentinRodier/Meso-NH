@@ -520,7 +520,7 @@ ARFLAGS=r
 #
 #  GENERATION OF DEPENDANCE FILES : *.D
 # 
-SPLL ?= spll
+SPLL ?= spll_new
 %.D:%.F90
 	$(CPP) $(INC) $(CPPFLAGS) $< >  $(OBJDIR)/$(*F).f90 
 	$(SPLL) $(NSOURCE) $(OBJDIR)/$(*F).f90 
