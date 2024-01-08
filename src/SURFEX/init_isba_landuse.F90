@@ -2,6 +2,79 @@
 !SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
+MODULE MODI_INIT_ISBA_LANDUSE
+
+INTERFACE  
+  
+!#############################################################
+SUBROUTINE INIT_ISBA_LANDUSE (IG, IO, S, K, NK, NP, NPE, DTI, HPROGRAM, KI)  
+!#############################################################
+!
+!!****  *INIT_ISBA_LANDUSE* - routine to initialize land use for ISBA field
+!!
+!!    PURPOSE
+!!    -------
+!!
+!!**  METHOD
+!!    ------
+!!
+!!    EXTERNAL
+!!    --------
+!!
+!!
+!!    IMPLICIT ARGUMENTS
+!!    ------------------
+!!
+!!    REFERENCE
+!!    ---------
+!!
+!!
+!!    AUTHOR
+!!    ------
+!!      B. Decharme   *Meteo France*
+!!
+!!    MODIFICATIONS
+!!    -------------
+!!      Original    07/2011
+!!      Completelly reframed 08/2016 R. Séférian
+!!      R. Séférian 10/2016 correct error in landuse computation fields
+!!      R. Séférian 11/2016 : add cmip6 diagnostics
+!!      J. Colin    12/2017 : add computations in case the water or snow is
+!!                            nudged seperately on each patch
+!!
+!-------------------------------------------------------------------------------
+!
+!*       0.    DECLARATIONS
+!              ------------
+!
+USE MODD_SFX_GRID_n,     ONLY : GRID_t
+USE MODD_ISBA_OPTIONS_n, ONLY : ISBA_OPTIONS_t
+USE MODD_ISBA_n,         ONLY : ISBA_S_t, ISBA_K_t, ISBA_NK_t, &
+                                ISBA_NP_t, ISBA_NPE_t
+USE MODD_DATA_ISBA_n,    ONLY : DATA_ISBA_t
+!
+IMPLICIT NONE
+!
+!*       0.1   Declarations of arguments
+!              -------------------------
+!
+TYPE(GRID_t),          INTENT(INOUT) :: IG
+TYPE(ISBA_OPTIONS_t),  INTENT(INOUT) :: IO
+TYPE(ISBA_S_t),        INTENT(INOUT) :: S
+TYPE(ISBA_K_t),        INTENT(INOUT) :: K
+TYPE(ISBA_NK_t),       INTENT(INOUT) :: NK
+TYPE(ISBA_NP_t),       INTENT(INOUT) :: NP
+TYPE(ISBA_NPE_t),      INTENT(INOUT) :: NPE
+TYPE(DATA_ISBA_t),     INTENT(INOUT) :: DTI
+!
+CHARACTER(LEN=6),                 INTENT(IN)    :: HPROGRAM          ! program calling surf. schemes
+INTEGER,                          INTENT(IN)    :: KI
+!
+END SUBROUTINE INIT_ISBA_LANDUSE
+
+END INTERFACE
+
+END MODULE MODI_INIT_ISBA_LANDUSE
 !#############################################################
 SUBROUTINE INIT_ISBA_LANDUSE (IG, IO, S, K, NK, NP, NPE, DTI, HPROGRAM, KI)  
 !#############################################################
