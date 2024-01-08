@@ -4,6 +4,7 @@ END MODULE MODD_BUDGET_COUPL_ROUT
 !     ######################
 !     ######################      
 MODULE MODD_COUPLING_TOPD
+LOGICAL                           :: LPERT_PARAM
 END MODULE MODD_COUPLING_TOPD 
 !     ######################
 !     ######################
