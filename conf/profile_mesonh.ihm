@@ -176,15 +176,16 @@ export VARTTY=\`tty\`
 #
 [ ! -f \${SRC_MESONH}/conf/conf_\${ARCH} ] || . \${SRC_MESONH}/conf/conf_\${ARCH}
 #
-# Optional Environnement variable/Module  Env
-#
-${MNHENV}
+# Check 'CDFPERSO'
 #
 if [ \${VER_CDF} = 'CDFPERSO' ] ; then
 if [ -z \$NETCDF_CONFIG ] ; then
 echo 'WARNING : You chose VER_CDF=CDFPERSO, please set NETCDF_CONFIG environment variable'
 fi
 fi
+#
+#
+# Check 'OASISPERSO'
 #
 if [ -n "${VER_OASIS}" ] ; then
 if [ \${VER_OASIS} = 'OASISPERSO' ] ; then
@@ -193,3 +194,7 @@ echo 'WARNING : You chose VER_OASIS=OASISPERSO, please set OASISDIR environment 
 fi
 fi
 fi
+#
+# Optional Environnement variable/Module  Env
+#
+${MNHENV}
