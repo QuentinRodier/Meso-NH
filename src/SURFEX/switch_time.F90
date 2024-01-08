@@ -43,6 +43,7 @@ USE MODD_CSTS,        ONLY: XDAY
 !
 USE MODI_ADD_FORECAST_TO_DATE_SURF
 USE MODI_SUBSTRACT_TO_DATE_SURF
+USE MODI_ABOR1_SFX
 !------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
