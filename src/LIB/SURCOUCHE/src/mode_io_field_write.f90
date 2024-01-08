@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2024 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -20,6 +20,7 @@
 !  P. Wautelet 07/12/2020: add support for partial write of fields (optional argument: koffset, not all subroutines, no LFI spport)
 !  P. Wautelet 14/01/2021: add IO_Field_write_byname_N4 and IO_Field_write_byfield_N4 subroutines
 !  P. Wautelet 07/04/2023: correct IO_Field_user_write examples
+!  P. Wautelet 08/01/2024: add zero-size check for monoprocess runs
 !-----------------------------------------------------------------
 
 #define MNH_SCALARS_IN_SPLITFILES 0
@@ -672,6 +673,12 @@ end subroutine IO_Ndimlist_reduce
     !
     IF (IRESP==0) THEN
        IF (GSMONOPROC) THEN ! sequential execution
+          IF ( SIZE(PFIELD) == 0 ) THEN
+            CALL PRINT_MSG(NVERB_INFO,'IO','IO_Field_write_byfield_X1','ignoring variable with a zero size ('//TRIM(YRECFM)//')')
+            IF (PRESENT(KRESP)) KRESP=0
+            RETURN
+          END IF
+
           if ( Present( koffset ) ) then
             !if ( glfi ) call IO_Field_partial_write_lfi( tpfile, tpfield, pfield, koffset, iresp_lfi )
             if ( gnc4 ) call IO_Field_partial_write_nc4( tpfile, tpfield, pfield, koffset, iresp_nc4 )
@@ -820,6 +827,12 @@ end subroutine IO_Ndimlist_reduce
 
     IF (IRESP==0) THEN
       IF (GSMONOPROC) THEN ! sequential execution
+        IF ( SIZE(PFIELD) == 0 ) THEN
+          CALL PRINT_MSG(NVERB_INFO,'IO','IO_Field_write_byfield_X2','ignoring variable with a zero size ('//TRIM(YRECFM)//')')
+          IF (PRESENT(KRESP)) KRESP=0
+          RETURN
+        END IF
+
          !    IF (LPACK .AND. L1D .AND. YDIR=='XY') THEN
         IF (LPACK .AND. L1D .AND. SIZE(PFIELD,1)==IHEXTOT .AND. SIZE(PFIELD,2)==IHEXTOT) THEN
           Allocate( tzfield, source = tpfield )
@@ -1101,6 +1114,12 @@ end subroutine IO_Ndimlist_reduce
 
     IF (IRESP==0) THEN
       IF (GSMONOPROC .AND. TPFILE%NSUBFILES_IOZ==0 ) THEN ! sequential execution
+        IF ( SIZE(PFIELD) == 0 ) THEN
+          CALL PRINT_MSG(NVERB_INFO,'IO','IO_Field_write_byfield_X3','ignoring variable with a zero size ('//TRIM(YRECFM)//')')
+          IF (PRESENT(KRESP)) KRESP=0
+          RETURN
+        END IF
+
           !    IF (LPACK .AND. L1D .AND. YDIR=='XY') THEN
         IF (LPACK .AND. L1D .AND. SIZE(PFIELD,1)==IHEXTOT .AND. SIZE(PFIELD,2)==IHEXTOT) THEN
           Allocate( tzfield, source = tpfield )
@@ -1536,6 +1555,12 @@ end subroutine IO_Ndimlist_reduce
 
     IF (IRESP==0) THEN
       IF (GSMONOPROC) THEN ! sequential execution
+        IF ( SIZE(PFIELD) == 0 ) THEN
+          CALL PRINT_MSG(NVERB_INFO,'IO','IO_Field_write_byfield_X4','ignoring variable with a zero size ('//TRIM(YRECFM)//')')
+          IF (PRESENT(KRESP)) KRESP=0
+          RETURN
+         END IF
+
         !    IF (LPACK .AND. L1D .AND. YDIR=='XY') THEN
         IF (LPACK .AND. L1D .AND. SIZE(PFIELD,1)==IHEXTOT .AND. SIZE(PFIELD,2)==IHEXTOT) THEN
           Allocate( tzfield, source = tpfield )
@@ -1741,6 +1766,12 @@ end subroutine IO_Ndimlist_reduce
     !
     IF (IRESP==0) THEN
       IF (GSMONOPROC) THEN ! sequential execution
+        IF ( SIZE(PFIELD) == 0 ) THEN
+          CALL PRINT_MSG(NVERB_INFO,'IO','IO_Field_write_byfield_X5','ignoring variable with a zero size ('//TRIM(YRECFM)//')')
+          IF (PRESENT(KRESP)) KRESP=0
+          RETURN
+        END IF
+
         !    IF (LPACK .AND. L1D .AND. YDIR=='XY') THEN
         IF (LPACK .AND. L1D .AND. SIZE(PFIELD,1)==IHEXTOT .AND. SIZE(PFIELD,2)==IHEXTOT) THEN
           Allocate( tzfield, source = tpfield )
@@ -1909,6 +1940,12 @@ end subroutine IO_Ndimlist_reduce
     !
     IF (IRESP==0) THEN
        IF (GSMONOPROC) THEN ! sequential execution
+          IF ( SIZE(PFIELD) == 0 ) THEN
+            CALL PRINT_MSG(NVERB_INFO,'IO','IO_Field_write_byfield_X6','ignoring variable with a zero size ('//TRIM(YRECFM)//')')
+            IF (PRESENT(KRESP)) KRESP=0
+            RETURN
+          END IF
+
           IF (GLFI) CALL IO_Field_write_lfi(TPFILE,TPFIELD,PFIELD,iresp_lfi)
           IF (GNC4) CALL IO_Field_write_nc4(TPFILE,TPFIELD,PFIELD,iresp_nc4)
        ELSE
@@ -2109,6 +2146,12 @@ end subroutine IO_Ndimlist_reduce
     !
     IF (IRESP==0) THEN
        IF (GSMONOPROC) THEN ! sequential execution
+          IF ( SIZE(KFIELD) == 0 ) THEN
+            CALL PRINT_MSG(NVERB_INFO,'IO','IO_Field_write_byfield_N1','ignoring variable with a zero size ('//TRIM(YRECFM)//')')
+            IF (PRESENT(KRESP)) KRESP=0
+            RETURN
+          END IF
+
           IF (GLFI) CALL IO_Field_write_lfi(TPFILE,TPFIELD,KFIELD,iresp_lfi)
           IF (GNC4) CALL IO_Field_write_nc4(TPFILE,TPFIELD,KFIELD,iresp_nc4)
        ELSE ! multiprocesses execution
@@ -2232,6 +2275,12 @@ end subroutine IO_Ndimlist_reduce
     !
     IF (IRESP==0) THEN
       IF (GSMONOPROC) THEN ! sequential execution
+        IF ( SIZE(KFIELD) == 0 ) THEN
+          CALL PRINT_MSG(NVERB_INFO,'IO','IO_Field_write_byfield_N2','ignoring variable with a zero size ('//TRIM(YRECFM)//')')
+          IF (PRESENT(KRESP)) KRESP=0
+          RETURN
+        END IF
+
         IF (LPACK .AND. L1D .AND. SIZE(KFIELD,1)==IHEXTOT .AND. SIZE(KFIELD,2)==IHEXTOT) THEN
           Allocate( tzfield, source = tpfield )
           if ( tpfile%ldimreduced ) then
@@ -2410,6 +2459,12 @@ end subroutine IO_Ndimlist_reduce
     !
     IF (IRESP==0) THEN
       IF (GSMONOPROC) THEN ! sequential execution
+        IF ( SIZE(KFIELD) == 0 ) THEN
+          CALL PRINT_MSG(NVERB_INFO,'IO','IO_Field_write_byfield_N3','ignoring variable with a zero size ('//TRIM(YRECFM)//')')
+          IF (PRESENT(KRESP)) KRESP=0
+          RETURN
+        END IF
+
         IF (LPACK .AND. L1D .AND. SIZE(KFIELD,1)==IHEXTOT .AND. SIZE(KFIELD,2)==IHEXTOT) THEN
           Allocate( tzfield, source = tpfield )
           if ( tpfile%ldimreduced ) then
@@ -2590,6 +2645,12 @@ end subroutine IO_Ndimlist_reduce
 
     IF (IRESP==0) THEN
       IF (GSMONOPROC) THEN ! sequential execution
+        IF ( SIZE(KFIELD) == 0 ) THEN
+          CALL PRINT_MSG(NVERB_INFO,'IO','IO_Field_write_byfield_N4','ignoring variable with a zero size ('//TRIM(YRECFM)//')')
+          IF (PRESENT(KRESP)) KRESP=0
+          RETURN
+        END IF
+
         !    IF (LPACK .AND. L1D .AND. YDIR=='XY') THEN
         IF (LPACK .AND. L1D .AND. SIZE(KFIELD,1)==IHEXTOT .AND. SIZE(KFIELD,2)==IHEXTOT) THEN
           Allocate( tzfield, source = tpfield )
@@ -2875,6 +2936,12 @@ end subroutine IO_Ndimlist_reduce
     !
     IF (IRESP==0) THEN
        IF (GSMONOPROC) THEN ! sequential execution
+          IF ( SIZE(OFIELD) == 0 ) THEN
+            CALL PRINT_MSG(NVERB_INFO,'IO','IO_Field_write_byfield_L1','ignoring variable with a zero size ('//TRIM(YRECFM)//')')
+            IF (PRESENT(KRESP)) KRESP=0
+            RETURN
+          END IF
+
           IF (GLFI) CALL IO_Field_write_lfi(TPFILE,TPFIELD,OFIELD,iresp_lfi)
           IF (GNC4) CALL IO_Field_write_nc4(TPFILE,TPFIELD,OFIELD,iresp_nc4)
        ELSE ! multiprocesses execution
