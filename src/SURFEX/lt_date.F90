@@ -2,6 +2,19 @@
 !SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
+MODULE MODI_LT_DATE
+INTERFACE
+FUNCTION LT_DATE(DATE1, DATE2)
+USE MODD_TYPE_DATE_SURF
+!
+IMPLICIT NONE
+!
+TYPE(DATE_TIME), INTENT(IN) :: DATE1, DATE2
+LOGICAL   :: LT_DATE !Boolean flush to true if date1 is lower than date2
+END FUNCTION LT_DATE
+END INTERFACE
+END MODULE MODI_LT_DATE
+!
 FUNCTION LT_DATE(DATE1, DATE2)
 !!
 !!***  *LT_DATE* - 
@@ -30,6 +43,8 @@ FUNCTION LT_DATE(DATE1, DATE2)
 !!    ------------------
 !
 USE MODD_TYPE_DATE_SURF
+!
+IMPLICIT NONE
 !
   TYPE(DATE_TIME), INTENT(IN) :: DATE1, DATE2
   LOGICAL   :: LT_DATE !Boolean flush to true if date1 is lower than date2
