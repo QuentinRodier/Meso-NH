@@ -220,8 +220,8 @@ export MPI_DSM_CPULIST=0-7:allhosts
                 export MNHENV=${MNHENV:-"
 module purge
 module load cmake/3.26.4
-module load inteloneapi/23.1.0
-module load mpi/openmpi/4.1.4
+module load inteloneapi/24.0.0
+module load mpi/openmpi/4.1.5.3
 export SLURM_CPU_BIND=none
 
 export DIR_ECCODES_INSTALL=\${CCCWORKDIR}/ECCODES-2.25.0\${XYZM}
@@ -239,8 +239,8 @@ export DIR_ECCODES_INSTALL=\${CCCWORKDIR}/ECCODES-2.25.0\${XYZM}
                 export MNHENV=${MNHENV:-"
 module purge
 module load cmake/3.26.4
-module load inteloneapi/23.1.0
-module load mpi/openmpi/4.1.4
+module load inteloneapi/24.0.0
+module load mpi/openmpi/4.1.5.3
 export SLURM_CPU_BIND=none
 
 export DIR_ECCODES_INSTALL=\${CCCWORKDIR}/ECCODES-2.25.0\${XYZM}
