@@ -55,7 +55,7 @@ ifeq "$(OPTLEVEL)" "DEBUG"
 OPT       = $(OPT_BASE) $(OPT_PERF0) $(OPT_CHECK)
 OPT0      = $(OPT_BASE) $(OPT_PERF0) $(OPT_CHECK)
 OPT_NOCB  = $(OPT_BASE) $(OPT_PERF0)
-CFLAGS   += -g -gdwarf-4
+CFLAGS   += "-g -gdwarf-4"
 endif
 #
 ifeq "$(OPTLEVEL)" "OPENACC"
@@ -249,9 +249,9 @@ MNH_COMPRESS=yes
 MNH_GRIBAPI=no
 #
 NETCDF_SUPPFLAGS='-emf'
-ECCODES_FFLAGS= -hcpu=x86-64 -emf 
+ECCODES_FFLAGS="-hcpu=x86-64 -emf"
 # -hsystem_alloc
-ECCODES_CFLAGS= -hcpu=x86-64 -gdwarf-4 
+ECCODES_CFLAGS="-hcpu=x86-64 -gdwarf-4"
 EC_CONF= -DCMAKE_BUILD_TYPE="RELEASE" -DIEEE_LE=1 
 CDF_CONF= CPP=cpp 
 HDF_CONF= CPP=cpp 

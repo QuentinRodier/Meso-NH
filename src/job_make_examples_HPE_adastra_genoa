@@ -1,7 +1,8 @@
 #!/bin/bash
 #SBATCH -J Examples
-#SBATCH -N 1            # nodes number
-#SBATCH -n 4            # CPUs number (on all nodes) 
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=4 --cpus-per-task=1
+#SBATCH --threads-per-core=1 # --hint=nomultithread
 #SBATCH -C GENOA
 ##SBATCH --exclusive           
 #SBATCH -o Examples.eo%j   #
