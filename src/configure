@@ -8,10 +8,10 @@
 if [ "x$XYZ" = "x" ]
 then
 # 
-export VERSION_MASTER=${VERSION_MASTER:-MNH-V5-6}
-export VERSION_BUG=${VERSION_BUG:-2}
+export VERSION_MASTER=${VERSION_MASTER:-MNH-V5-7}
+export VERSION_BUG=${VERSION_BUG:-0}
 export VERSION_XYZ=${VERSION_XYZ:-${VERSION_MASTER}-${VERSION_BUG}${VER_OASIS:+-${VER_OASIS}}}
-export VERSION_DATE=${VERSION_DATE:-"28/11/2023"}
+export VERSION_DATE=${VERSION_DATE:-"08/01/2024"}
 export VERSION_LIBAEC=${VERSION_LIBAEC:-"1.1.2"}
 export VERSION_HDF=${VERSION_HDF:-"1.14.2"}
 export VERSION_CDFC=${VERSION_CDFC:-"4.9.2"}
@@ -66,10 +66,10 @@ module purge
 #module load craype-x86-trento
 module load craype-x86-genoa
 module load craype-network-ofi
-module load PrgEnv-cray/8.3.3
-module load cce/15.0.1
-module load craype/2.7.19
-module load cray-mpich/8.1.24
+module load PrgEnv-cray/8.4.0
+module load cce/16.0.0
+module load craype/2.7.21
+module load cray-mpich/8.1.26
 module load libfabric/1.15.2.0
 #module load craype-accel-amd-gfx90a
 module load rocm/5.3.0
@@ -140,8 +140,8 @@ ulimit -s unlimited
                 export MNHENV=${MNHENV:-"
 module purge
 module load cmake/3.18.0
-module load intel-compilers/19.1.3
-module load intel-mpi/2019.9
+module load intel-oneapi-compilers/2023.1.0
+module load intel-mpi/2021.9
 ulimit -s unlimited
 export SLURM_CPU_BIND=none
 export I_MPI_PIN_PROCESSOR_LIST=all:map=spread
@@ -220,8 +220,8 @@ export MPI_DSM_CPULIST=0-7:allhosts
                 export MNHENV=${MNHENV:-"
 module purge
 module load cmake/3.26.4
-module load inteloneapi/23.1.0
-module load mpi/openmpi/4.1.4
+module load inteloneapi/24.0.0
+module load mpi/openmpi/4.1.5.3
 export SLURM_CPU_BIND=none
 
 export DIR_ECCODES_INSTALL=\${CCCWORKDIR}/ECCODES-2.25.0\${XYZM}
@@ -239,8 +239,8 @@ export DIR_ECCODES_INSTALL=\${CCCWORKDIR}/ECCODES-2.25.0\${XYZM}
                 export MNHENV=${MNHENV:-"
 module purge
 module load cmake/3.26.4
-module load inteloneapi/23.1.0
-module load mpi/openmpi/4.1.4
+module load inteloneapi/24.0.0
+module load mpi/openmpi/4.1.5.3
 export SLURM_CPU_BIND=none
 
 export DIR_ECCODES_INSTALL=\${CCCWORKDIR}/ECCODES-2.25.0\${XYZM}
@@ -484,11 +484,23 @@ export SPLL=spll_new
                 export  VER_MPI=${VER_MPI:-MPIAUTO}
                 export OPTLEVEL=${OPTLEVEL:-DEBUG}
                 export MVWORK=${MVWORK:-NO}
-                export VER_CDF=${VER_CDF:-CDFCTI}
 		export NEED_TOOLS=NO
+		# Ubuntu version
+		case "$(lsb_release -sr)" in
+                      20.04)
+                export VER_CDF=${VER_CDF:-CDFCTI}
                 export MNHENV=${MNHENV:-"
 export SPLL=spll_new
 "}
+                  ;;
+	          22.04)
+                export VER_CDF=${VER_CDF:-CDFAUTO}
+                export MNHENV=${MNHENV:-"
+export PATH=/opt/gcc-9.4.0/bin:\$PATH
+export SPLL=spll_new
+"}
+                 ;;
+		 esac
               ;;
 'Linux nuwa'*)
                 export     ARCH=${ARCH:-LXifort}

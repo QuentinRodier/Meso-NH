@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2024 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -226,6 +226,7 @@ END MODULE MODI_DEFAULT_DESFM_n
 !  Delbeke/Vie    03/2022: KHKO option in LIMA
 !  P. Wautelet 27/04/2022: add namelist for profilers
 !  PA. Joulin     04/2023: add EOL/ADR
+!  V. Masson      01/2024: aggregation of columns for radiation
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS

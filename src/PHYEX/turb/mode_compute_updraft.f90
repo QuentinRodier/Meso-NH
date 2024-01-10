@@ -190,7 +190,7 @@ REAL  :: ZTMAX,ZRMAX  ! control value
 REAL, DIMENSION(D%NIJT) :: ZSURF
 REAL, DIMENSION(D%NIJT,D%NKT) :: ZSHEAR,ZDUDZ,ZDVDZ ! vertical wind shear
 !
-REAL, DIMENSION(D%NIJT,D%NKT) :: ZWK
+REAL, DIMENSION(D%NIJT,D%NKT) :: ZWK, KDEPTH
 REAL, DIMENSION(D%NIJT,16) :: ZBUF
 !
 REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
@@ -446,7 +446,10 @@ GTESTETL(:)=.FALSE.
 DO JK=IKB,IKE-IKL,IKL
 
   ! IF the updraft top is reached for all column, stop the loop on levels
-  ITEST=COUNT(GTEST(:))
+  ITEST=0
+  DO JIJ=IIJB,IIJE
+    IF(GTEST(JIJ)) ITEST = ITEST + 1
+  END DO
   IF (ITEST==0) CYCLE
 
   !       Computation of entrainment and detrainment with KF90
@@ -588,33 +591,38 @@ DO JK=IKB,IKE-IKL,IKL
       PRSAT_UP(:,JK+IKL) = ZRSATW(:)*(1-PFRAC_ICE_UP(:,JK+IKL)) + &
                                      & ZRSATI(:)*PFRAC_ICE_UP(:,JK+IKL)
     ENDWHERE
-
+    !$mnh_end_expand_where(JIJ=IIJB:IIJE)
     ! Compute the updraft theta_v, buoyancy and w**2 for level JK+KKL
-    WHERE(GTEST(:))
-      PTHV_UP(:,JK+IKL) = ZTH_UP(:,JK+IKL)* &
-                                    & ((1+ZRVORD*PRV_UP(:,JK+IKL))/(1+PRT_UP(:,JK+IKL)))
-      WHERE (ZBUO_INTEG_DRY(:,JK)>0.)
-        ZW_UP2(:,JK+IKL)  = ZW_UP2(:,JK) + 2.*(PARAMMF%XABUO-PARAMMF%XBENTR*PARAMMF%XENTR_DRY)* &
-                                                                &ZBUO_INTEG_DRY(:,JK)
-      ELSEWHERE
-        ZW_UP2(:,JK+IKL)  = ZW_UP2(:,JK) + 2.*PARAMMF%XABUO* ZBUO_INTEG_DRY(:,JK)
-      ENDWHERE
-      ZW_UP2(:,JK+IKL)  = ZW_UP2(:,JK+IKL)*(1.-(PARAMMF%XBDETR*ZMIX3_CLD(:)+ &
-                                                                       &PARAMMF%XBENTR*ZMIX2_CLD(:)))&
-              /(1.+(PARAMMF%XBDETR*ZMIX3_CLD(:)+PARAMMF%XBENTR*ZMIX2_CLD(:))) &
-              +2.*(PARAMMF%XABUO)*ZBUO_INTEG_CLD(:,JK)/ &
-              &(1.+(PARAMMF%XBDETR*ZMIX3_CLD(:)+PARAMMF%XBENTR*ZMIX2_CLD(:)))
-    ENDWHERE
+  DO JIJ=IIJB,IIJE
+    IF(GTEST(JIJ)) THEN
+      PTHV_UP(JIJ,JK+IKL) = ZTH_UP(JIJ,JK+IKL)* &
+                                    & ((1+ZRVORD*PRV_UP(JIJ,JK+IKL))/(1+PRT_UP(JIJ,JK+IKL)))
+      IF (ZBUO_INTEG_DRY(JIJ,JK)>0.) THEN
+        ZW_UP2(JIJ,JK+IKL)  = ZW_UP2(JIJ,JK) + 2.*(PARAMMF%XABUO-PARAMMF%XBENTR*PARAMMF%XENTR_DRY)* &
+                                                                &ZBUO_INTEG_DRY(JIJ,JK)
+      ELSE
+        ZW_UP2(JIJ,JK+IKL)  = ZW_UP2(JIJ,JK) + 2.*PARAMMF%XABUO* ZBUO_INTEG_DRY(JIJ,JK)
+      END IF
+      ZW_UP2(JIJ,JK+IKL)  = ZW_UP2(JIJ,JK+IKL)*(1.-(PARAMMF%XBDETR*ZMIX3_CLD(JIJ)+ &
+                                                                       &PARAMMF%XBENTR*ZMIX2_CLD(JIJ)))&
+              /(1.+(PARAMMF%XBDETR*ZMIX3_CLD(JIJ)+PARAMMF%XBENTR*ZMIX2_CLD(JIJ))) &
+              +2.*(PARAMMF%XABUO)*ZBUO_INTEG_CLD(JIJ,JK)/ &
+              &(1.+(PARAMMF%XBDETR*ZMIX3_CLD(JIJ)+PARAMMF%XBENTR*ZMIX2_CLD(JIJ)))
+    END IF
+  END DO
 
     ! Test if the updraft has reach the ETL
+    !$mnh_expand_where(JIJ=IIJB:IIJE)
     WHERE (GTEST(:).AND.(PBUO_INTEG(:,JK)<=0.))
       KKETL(:) = JK+IKL
       GTESTETL(:)=.TRUE.
     ELSEWHERE
       GTESTETL(:)=.FALSE.
     ENDWHERE
+    !$mnh_end_expand_where(JIJ=IIJB:IIJE)
 
     ! Test is we have reached the top of the updraft
+    !$mnh_expand_where(JIJ=IIJB:IIJE)
     WHERE (GTEST(:).AND.((ZW_UP2(:,JK+IKL)<=0.).OR.(PEMF(:,JK+IKL)<=0.)))
         ZW_UP2(:,JK+IKL)=0.
         PEMF(:,JK+IKL)=0.
@@ -628,28 +636,36 @@ DO JK=IKB,IKE-IKL,IKL
         PFRAC_UP(:,JK+IKL)=0.
         KKCTL(:)=JK+IKL
     ENDWHERE
+    !$mnh_end_expand_where(JIJ=IIJB:IIJE)
  
     ! compute frac_up at JK+KKL
+    !$mnh_expand_where(JIJ=IIJB:IIJE)
     WHERE (GTEST(:))
       PFRAC_UP(:,JK+IKL)=PEMF(:,JK+IKL)/&
                                       &(SQRT(ZW_UP2(:,JK+IKL))*ZRHO_F(:,JK+IKL))
     ENDWHERE
+    !$mnh_end_expand_where(JIJ=IIJB:IIJE)
 
     ! Updraft fraction must be smaller than XFRAC_UP_MAX
+    !$mnh_expand_where(JIJ=IIJB:IIJE)
     WHERE (GTEST(:))
       PFRAC_UP(:,JK+IKL)=MIN(PARAMMF%XFRAC_UP_MAX,PFRAC_UP(:,JK+IKL))
     ENDWHERE
+    !$mnh_end_expand_where(JIJ=IIJB:IIJE)
 
     ! When cloudy and non-buoyant, updraft fraction must decrease
+    !$mnh_expand_where(JIJ=IIJB:IIJE)
     WHERE ((GTEST(:).AND.GTESTETL(:)).AND.GTESTLCL(:))
       PFRAC_UP(:,JK+IKL)=MIN(PFRAC_UP(:,JK+IKL),PFRAC_UP(:,JK))
     ENDWHERE
-
-    ! Mass flux is updated with the new updraft fraction
-    IF (OENTR_DETR) PEMF(:,JK+IKL)=PFRAC_UP(:,JK+IKL)*SQRT(ZW_UP2(:,JK+IKL))* &
-                                              &ZRHO_F(:,JK+IKL)
     !$mnh_end_expand_where(JIJ=IIJB:IIJE)
 
+    ! Mass flux is updated with the new updraft fraction
+
+    !$mnh_expand_array(JIJ=IIJB:IIJE)
+    IF (OENTR_DETR) PEMF(:,JK+IKL)=PFRAC_UP(:,JK+IKL)*SQRT(ZW_UP2(:,JK+IKL))* &
+                                              &ZRHO_F(:,JK+IKL)
+    !$mnh_end_expand_array(JIJ=IIJB:IIJE)
   END IF !OENTR_DETR
 ENDDO
 
@@ -672,14 +688,24 @@ IF(OENTR_DETR) THEN
   DO JIJ=IIJB,IIJE
      PDEPTH(JIJ) = MAX(0., PZZ(JIJ,KKCTL(JIJ)) -  PZZ(JIJ,KKLCL(JIJ)) )
   END DO
-
+  IF(PARAMMF%LVERLIMUP) THEN
+    DO JK=1,IKT
+      DO JIJ=IIJB,IIJE
+        KDEPTH(JIJ,JK) = MIN(MAX(0., PZZ(JIJ,JK) -  PZZ(JIJ,KKLCL(JIJ)) ), PDEPTH(JIJ))
+      END DO
+    END DO
+  END IF
   !$mnh_expand_array(JIJ=IIJB:IIJE)
   GWORK1(:)= (GTESTLCL(:) .AND. (PDEPTH(:) > ZDEPTH_MAX1) )
   !$mnh_end_expand_array(JIJ=IIJB:IIJE)
   DO JK=1,IKT
     !$mnh_expand_array(JIJ=IIJB:IIJE)
     GWORK2(:,JK) = GWORK1(:)
-    ZCOEF(:,JK) = (1.-(PDEPTH(:)-ZDEPTH_MAX1)/(ZDEPTH_MAX2-ZDEPTH_MAX1))
+    IF(PARAMMF%LVERLIMUP) THEN
+      ZCOEF(:,JK) = (1.-(KDEPTH(:,JK)-ZDEPTH_MAX1)/(ZDEPTH_MAX2-ZDEPTH_MAX1))
+    ELSE
+      ZCOEF(:,JK) = (1.-(PDEPTH(:)-ZDEPTH_MAX1)/(ZDEPTH_MAX2-ZDEPTH_MAX1))
+    END IF
     ZCOEF(:,JK)=MIN(MAX(ZCOEF(:,JK),0.),1.)
     !$mnh_end_expand_array(JIJ=IIJB:IIJE)
   ENDDO
@@ -693,8 +719,6 @@ ENDIF
 
 IF (LHOOK) CALL DR_HOOK('COMPUTE_UPDRAFT',1,ZHOOK_HANDLE)
 CONTAINS
-INCLUDE "th_r_from_thl_rt.func.h"
-INCLUDE "compute_frac_ice.func.h"
           SUBROUTINE COMPUTE_ENTR_DETR(D, CST, NEBN, PARAMMF,&
                             KK,KKB,KKE,KKL,OTEST,OTESTLCL,&
                             PFRAC_ICE,PRHODREF,&
@@ -1104,6 +1128,8 @@ DO JIJ=IIJB,IIJE
 ENDDO
 
 END SUBROUTINE COMPUTE_ENTR_DETR
+INCLUDE "th_r_from_thl_rt.func.h"
+INCLUDE "compute_frac_ice.func.h"
 END SUBROUTINE COMPUTE_UPDRAFT
 END MODULE MODE_COMPUTE_UPDRAFT
 

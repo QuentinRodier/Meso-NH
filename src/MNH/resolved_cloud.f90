@@ -314,6 +314,7 @@ USE MODD_PARAM_ICE_n,      ONLY: CSEDIM, LADJ_BEFORE, LADJ_AFTER, LRED, PARAM_IC
 USE MODD_PARAM_LIMA,       ONLY: LADJ, LPTSPLIT, LSPRO, NMOD_CCN, NMOD_IFN, NMOD_IMM, NMOM_I
 USE MODD_RAIN_ICE_DESCR_n, ONLY: XRTMIN, RAIN_ICE_DESCRN
 USE MODD_RAIN_ICE_PARAM_n, ONLY: RAIN_ICE_PARAMN
+USE MODD_REF,              ONLY: XTHVREFZ
 USE MODD_SALT,             ONLY: LSALT
 USE MODD_TURB_n,           ONLY: TURBN
 !
@@ -964,8 +965,8 @@ SELECT CASE ( HCLOUD )
       ALLOCATE(ZQHS(0,0,0))
       !
       CALL RAIN_ICE (YLDIMPHYEX,CST, PARAM_ICEN, RAIN_ICE_PARAMN, RAIN_ICE_DESCRN, &
-                    ELEC_PARAM, ELEC_DESCR, TBUCONF, 0, .FALSE.,                &
-                    GELEC, LSEDIM_BEARD,                                        &
+                    ELEC_PARAM, ELEC_DESCR, TBUCONF, GELEC, LSEDIM_BEARD,       &
+                    XTHVREFZ(IKB), HCLOUD,                                      &
                     PTSTEP, KRR, ZEXN,                                          &
                     ZDZZ, PRHODJ, PRHODREF, PEXNREF, PPABST, PCIT, PCLDFR,      &
                     PHLC_HRC, PHLC_HCF, PHLI_HRI, PHLI_HCF,                     &
@@ -1245,9 +1246,9 @@ SELECT CASE ( HCLOUD )
         ALLOCATE(ZEFIELDW(0,0,0))
       END IF
       !
-      CALL RAIN_ICE (YLDIMPHYEX,CST, PARAM_ICEN, RAIN_ICE_PARAMN, RAIN_ICE_DESCRN,  &
-                     ELEC_PARAM, ELEC_DESCR, TBUCONF, 0, .FALSE.,                &
-                     GELEC, LSEDIM_BEARD,                                        &
+      CALL RAIN_ICE (YLDIMPHYEX,CST, PARAM_ICEN, RAIN_ICE_PARAMN, RAIN_ICE_DESCRN, &
+                     ELEC_PARAM, ELEC_DESCR, TBUCONF, GELEC, LSEDIM_BEARD,        &
+                     XTHVREFZ(IKB), HCLOUD,                                      &
                      PTSTEP, KRR, ZEXN,                                          &
                      ZDZZ, PRHODJ, PRHODREF, PEXNREF, PPABST, PCIT, PCLDFR,      &
                      PHLC_HRC, PHLC_HCF, PHLI_HRI, PHLI_HCF,                     &
@@ -1386,9 +1387,11 @@ SELECT CASE ( HCLOUD )
     ZZZ = MZF( PZZ )
     IF (LPTSPLIT) THEN 
       IF (GELEC) THEN
-        CALL LIMA (YLDIMPHYEX,CST,TBUCONF,TBUDGETS,SIZE(TBUDGETS),         &
-                   PTSTEP, GELEC,                                          &
-                   PRHODREF, PEXNREF, ZDZZ,                                &
+        CALL LIMA (YLDIMPHYEX,CST, RAIN_ICE_DESCRN, RAIN_ICE_PARAMN,       &
+                   ELEC_DESCR, ELEC_PARAM,                                 &
+                   TBUCONF,TBUDGETS,SIZE(TBUDGETS),                        &
+                   PTSTEP, GELEC, HCLOUD,                                  &
+                   PRHODREF, PEXNREF, ZDZZ, XTHVREFZ(IKB),                 &
                    PRHODJ, PPABST,                                         &
                    NMOD_CCN, NMOD_IFN, NMOD_IMM,                           &
                    PDTHRAD, PTHT, PRT,                                     &
@@ -1400,9 +1403,11 @@ SELECT CASE ( HCLOUD )
                    PSVT(:,:,:,NSV_ELECBEG:NSV_ELECEND),                    &
                    PSVS(:,:,:,NSV_ELECBEG:NSV_ELECEND)                     )
       ELSE
-        CALL LIMA (YLDIMPHYEX,CST,TBUCONF,TBUDGETS,SIZE(TBUDGETS),         &
-                   PTSTEP, GELEC,                                          &
-                   PRHODREF, PEXNREF, ZDZZ,                                &
+        CALL LIMA (YLDIMPHYEX,CST, RAIN_ICE_DESCRN, RAIN_ICE_PARAMN,       &
+                   ELEC_DESCR, ELEC_PARAM,                                 &
+                   TBUCONF,TBUDGETS,SIZE(TBUDGETS),                        &
+                   PTSTEP, GELEC, HCLOUD,                                  &
+                   PRHODREF, PEXNREF, ZDZZ, XTHVREFZ(IKB),                 &
                    PRHODJ, PPABST,                                         &
                    NMOD_CCN, NMOD_IFN, NMOD_IMM,                           &
                    PDTHRAD, PTHT, PRT,                                     &

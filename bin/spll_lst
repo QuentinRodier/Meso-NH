@@ -4,6 +4,7 @@
 #MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 #MNH_LIC for details. version 1.
 #set -x
+export LC_ALL=C
 if [ $# -ne 2 ]
 then
 echo ERROR USAGE :: spll NSOURCE file
@@ -33,7 +34,8 @@ turb.f90|shallow_mf.f90|rain_ice.f90|lima.f90|\
 lima_adjust_split.f90|lima_precip_scavenging.f90|ini_tiwmx.f90|\
 ini_snow.f90|ini_rain_ice.f90|ini_neb.f90|ini_cst.f90|\
 ice_adjust.f90|gradient_u.f90|gradient_v.f90|gradient_w.f90|\
-gamma.f90|gamma_inc.f90|general_gamma.f90|condensation.f90"
+gamma.f90|gamma_inc.f90|general_gamma.f90|condensation.f90|\
+minpack.f90"
 #
 
 if [ "$SUF" = "f" ]

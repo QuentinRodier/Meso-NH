@@ -36,14 +36,15 @@ SUBROUTINE ICE4_STEPPING(D, CST, PARAMI, ICEP, ICED, BUCONF, &
 !!    MODIFICATIONS
 !!    -------------
 !!     R. El Khatib 03-May-2023 Replace OMP SIMD loops by explicit loops : more portable and even slightly faster
+!!     S. Riette Sept 23: 3D arrays suppressed from ice4_tendencies
 !  -----------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
 USE YOMHOOK , ONLY : LHOOK, DR_HOOK, JPHOOK
+USE MODD_DIMPHYEX,   ONLY: DIMPHYEX_t
 
-USE MODD_DIMPHYEX,       ONLY: DIMPHYEX_t
 USE MODD_BUDGET,         ONLY: TBUDGETCONF_t
 USE MODD_CST,            ONLY: CST_t
 USE MODD_PARAM_ICE_n,      ONLY: PARAM_ICE_t
@@ -98,10 +99,10 @@ REAL,    DIMENSION(KPROMA),                     INTENT(INOUT) :: PHLC_HRC
 REAL,    DIMENSION(KPROMA),                     INTENT(INOUT) :: PHLC_HCF
 REAL,    DIMENSION(KPROMA),                     INTENT(INOUT) :: PHLI_HRI
 REAL,    DIMENSION(KPROMA),                     INTENT(INOUT) :: PHLI_HCF
-REAL,    DIMENSION(KPROMA),                     INTENT(OUT)   :: PRAINFR
+REAL,    DIMENSION(D%NIJT,D%NKT),               INTENT(INOUT) :: PRAINFR
 REAL,    DIMENSION(KPROMA,0:7),                 INTENT(INOUT) :: PEXTPK !To take into acount external tendencies inside the splitting
 REAL,    DIMENSION(KPROMA, IBUNUM-IBUNUM_EXTRA),INTENT(OUT)   :: PBU_SUM
-REAL,    DIMENSION(KPROMA),                     INTENT(INOUT) :: PRREVAV
+REAL,    DIMENSION(KPROMA),                     INTENT(OUT)   :: PRREVAV
 REAL,    DIMENSION(MERGE(KPROMA,0,OELEC)),      INTENT(IN)    :: PLATHAM_IAGGS ! E Function to simulate
                                                                                ! enhancement of IAGGS
 !
@@ -257,7 +258,7 @@ DO WHILE(ANY(ZTIME(1:KMICRO)<PTSTEP)) ! Loop to *really* compute tendencies
     !
     !
     ! Tendencies are *really* computed when LSOFT==.FALSE. and only adjusted otherwise
-    CALL ICE4_TENDENCIES(D, CST, PARAMI, ICEP, ICED, BUCONF, &
+    CALL ICE4_TENDENCIES(CST, PARAMI, ICEP, ICED, BUCONF, &
                         &KPROMA, KMICRO, &
                         &KRR, LSOFT, LLCOMPUTE, &
                         &OSAVE_MICRO, OELEC, &
@@ -318,6 +319,7 @@ DO WHILE(ANY(ZTIME(1:KMICRO)<PTSTEP)) ! Loop to *really* compute tendencies
       DO JL=1, KMICRO
         IF (ZA(JL, JV) < -1.E-20 .AND. PVART(JL, JV) > ICED%XRTMIN(JV)) THEN
           ZMAXTIME(JL)=MIN(ZMAXTIME(JL), -(ZB(JL, JV)+PVART(JL, JV))/ZA(JL, JV))
+          ZMAXTIME(JL)=MAX(ZMAXTIME(JL), CST%XMNH_TINY) !to prevent rounding errors
         ENDIF
       ENDDO
     ENDDO

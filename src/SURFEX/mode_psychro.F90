@@ -262,6 +262,7 @@ function TWB_FROM_TPQ_1D(PT, PP, PQ) RESULT(PTWB)
 !
 USE MODE_THERMOS
 USE MODD_CSTS, ONLY : XTT
+USE MODI_ABOR1_SFX
 !
 ! Robert:
 ! The original version of this calculation based on an iteration

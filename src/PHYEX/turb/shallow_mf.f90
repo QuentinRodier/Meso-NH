@@ -199,10 +199,10 @@ IKT=D%NKT
 !
 ! updraft governing variables
 IF (PARAMMF%CMF_UPDRAFT == 'EDKF'  .OR. PARAMMF%CMF_UPDRAFT == 'RHCJ') THEN
-  PENTR      = 1.E20
-  PDETR      = 1.E20
-  PEMF       = 1.E20
-  ZBUO_INTEG = 1.E20
+  PENTR(:,:)     = 1.E20
+  PDETR(:,:)      = 1.E20
+  PEMF(:,:)       = 1.E20
+  ZBUO_INTEG(:,:) = 1.E20
 ENDIF
 
 ! Thermodynamics functions
@@ -217,7 +217,7 @@ ENDIF
 !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
 ZWK(:,:)=PTHM(:,:)*PEXNM(:,:)
 !$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
-CALL COMPUTE_FRAC_ICE(NEBN%CFRAC_ICE_SHALLOW_MF,NEBN,ZFRAC_ICE(:,:),ZWK(:,:), IERR(:,:))
+CALL COMPUTE_FRAC_ICE(CST, NEBN%CFRAC_ICE_SHALLOW_MF,NEBN,ZFRAC_ICE(:,:),ZWK(:,:), IERR(:,:))
 
 ! Conservative variables at t-dt
 CALL THL_RT_FROM_TH_R_MF(D, CST, KRR,KRRL,KRRI,    &
@@ -327,7 +327,7 @@ ENDIF
 ! to be modified if 'DUAL' is evolving (momentum mixing for example)
 IF( PARAMMF%CMF_UPDRAFT == 'DUAL') THEN
   ! Now thetav_up from vdfhghtnn is used!
-  PFLXZTHVMF=0.
+  PFLXZTHVMF(:,:)=0.
   ! Yes/No UV mixing!
 !  PDUDT_MF=0.
 !  PDVDT_MF=0.

@@ -5,8 +5,8 @@ INTERFACE
 
 SUBROUTINE ICE_EFFECTIVE_RADIUS &
      & (KIDIA, KFDIA, KLON, KLEV, &
-     &  PPRESSURE, PTEMPERATURE, PCLOUD_FRAC, PQ_ICE, PQ_SNOW, PGEMU, &
-     &  PRE_UM)
+     &  PPRESSURE, PTEMPERATURE, PCLOUD_FRAC, PQ_ICE, PQ_SNOW, PCIT_LIMA, &
+     &  PGEMU, PRE_UM)
 
 USE PARKIND1 , ONLY : JPIM, JPRB
 ! INPUT ARGUMENTS
@@ -24,6 +24,7 @@ REAL(KIND=JPRB),   INTENT(IN) :: PCLOUD_FRAC(KLON,KLEV)  ! (kg/kg)
 REAL(KIND=JPRB),   INTENT(IN) :: PQ_ICE(KLON,KLEV)       ! (kg/kg)
 REAL(KIND=JPRB),   INTENT(IN) :: PQ_SNOW(KLON,KLEV)      ! (kg/kg)
 
+REAL(KIND=JPRB),   INTENT(IN) :: PCIT_LIMA(KLON,KLEV)      ! (/kg)
 ! *** Single level variable
 REAL(KIND=JPRB),   INTENT(IN) :: PGEMU(KLON) ! Sine of latitude
 
@@ -37,8 +38,8 @@ END MODULE MODI_ICE_EFFECTIVE_RADIUS
 
 SUBROUTINE ICE_EFFECTIVE_RADIUS &
      & (KIDIA, KFDIA, KLON, KLEV, &
-     &  PPRESSURE, PTEMPERATURE, PCLOUD_FRAC, PQ_ICE, PQ_SNOW, PGEMU, &
-     &  PRE_UM)
+     &  PPRESSURE, PTEMPERATURE, PCLOUD_FRAC, PQ_ICE, PQ_SNOW, PCIT_LIMA, &
+     &  PGEMU, PRE_UM)
 
 ! ICE_EFFECTIVE_RADIUS
 !
@@ -76,7 +77,8 @@ USE YOERDU   , ONLY : REPLOG, REPSCW
 USE YOMLUN   , ONLY : NULERR
 USE YOMCST   , ONLY : RD, RPI, RTT
 USE MODD_PARAM_ECRAD_n , ONLY : NRADIP, NMINICE, XRE2DE, XRMINICE ! ice optical properties model
-
+USE MODD_PARAM_LIMA , ONLY    : XALPHAI,XNUI ! Ice crystals distribution parameters
+USE MODD_PARAM_LIMA_COLD , ONLY    : XDELTAI,XBI,XREFFI,XLBI,XLBEXI ! Ice crystals distribution parameters
 ! -------------------------------------------------------------------
 
 IMPLICIT NONE
@@ -95,6 +97,8 @@ REAL(KIND=JPRB),   INTENT(IN) :: PTEMPERATURE(KLON,KLEV) ! (K)
 REAL(KIND=JPRB),   INTENT(IN) :: PCLOUD_FRAC(KLON,KLEV)  ! (kg/kg)
 REAL(KIND=JPRB),   INTENT(IN) :: PQ_ICE(KLON,KLEV)       ! (kg/kg)
 REAL(KIND=JPRB),   INTENT(IN) :: PQ_SNOW(KLON,KLEV)      ! (kg/kg)
+
+REAL(KIND=JPRB),   INTENT(IN) :: PCIT_LIMA(KLON,KLEV)      ! (/kg)
 
 ! *** Single level variable
 REAL(KIND=JPRB),   INTENT(IN) :: PGEMU(KLON) ! Sine of latitude
@@ -116,6 +120,8 @@ REAL(KIND=JPRB) :: ZDIAMETER_UM     ! Effective diameter in microns
 
 ! Min effective diameter in microns; may vary with latitude
 REAL(KIND=JPRB) :: ZMIN_DIAMETER_UM(KLON)
+REAL(KIND=JPRB) :: ZLBDAI(KLON,KLEV)      ! (/kg)
+
 
 INTEGER :: JL, JK
 
@@ -199,7 +205,18 @@ CASE(3)
       ENDIF
     ENDDO
   ENDDO
-  
+
+CASE(4)
+        !!!! Ice effective radius from Yang et al (2013) reff = V/A
+  ! Distribution parameters for ice and snow      
+  DO JK = 1,KLEV
+    DO JL = KIDIA,KFDIA
+      IF (PCLOUD_FRAC(JL,JK) > 0.001_JPRB &
+           &  .AND. (PQ_ICE(JL,JK)+PQ_SNOW(JL,JK)) > 0.0_JPRB) THEN      
+        PRE_UM(JL,JK) = XREFFI*( XLBI*PCIT_LIMA(JL,JK) / PQ_ICE(JL,JK) )**(XLBEXI*(XDELTAI-XBI))
+      ENDIF
+    ENDDO
+  ENDDO
 CASE DEFAULT
   WRITE(NULERR,'(A,I0,A)') 'ICE EFFECTIVE RADIUS OPTION NRADLP=',NRADIP,' NOT AVAILABLE'
   CALL ABOR1('ERROR IN ICE_EFFECTIVE_RADIUS')

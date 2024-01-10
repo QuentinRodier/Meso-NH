@@ -1,8 +1,8 @@
 #
 # Version of PACKAGE MESONH "Open distribution"
-#              PACK-MNH-V5-6-2
-#              DATE : 28/11/2023
-#              VERSION : MESONH MASDEV5_6 + BUG-2
+#              PACK-MNH-V5-7-0
+#              DATE : 08/01/2024
+#              VERSION : MESONH MASDEV5_7 + BUG-0
 #
 #  MAP
 #
@@ -1022,12 +1022,8 @@ git clone -b 2014.01 https://github.com/forefireAPI/firefront.git
 # b) MNH_RTTOV for optional radiative computation
 # --------------------------------------
 #
-# The RTTOV package was not included into the open source version of Meso-NH
+# The RTTOV 13.2 package was not included into the open source version of Meso-NH
 # because it needs a licence agrement.
-#
-# ----------------------------------
-# OPTION 1: Use version 13.2 of RTTOV 
-# -----------------------------------
 #
 # Run the 'configure' script preceded with the setting of the MNH_RTTOV variable:
 #
@@ -1057,63 +1053,6 @@ make ARCH=ifort        # Use Intel "ifort" compiler; other options: gfortran, NA
 #
 cd MNH.../src/
 make
-
-# ----------------------------------
-# OPTION 2: Use version 11.3 of RTTOV 
-# -----------------------------------
-# Download the RTTOV package rttov113.tar.gz by following the instructions given on https://nwpsaf.eu/site/software/rttov/
-#
-# Install the RTTOV package rttov113.tar.gz
-cd MNH.../src/LIB
-mkdir RTTOV-11.3
-cd RTTOV-11.3
-tar xvfz rttov113.tar.gz
-cd src
-make ARCH=ifort        # Use Intel "ifort" compiler; other options: gfortran, NAG, pgf90, IBM
-#
-# And then for the compilation, run the 'configure' script preceded with the setting of the MNH_RTTOV variable:
-#
-
-cd MNH.../src/
-export MNH_RTTOV=1
-export VER_RTTOV=11.3
-./configure
-
-etc ...
-
-# ----------------------------------
-# OPTION 3: Use version 8.7 of RTTOV 
-# ----------------------------------
-# For already(old) licencied MesoNH users (MNH-4-X version with research licence see here: http://mesonh.aero.obs-mip.fr/mesonh410/UserInformation)
-#
-# the package could be reloaded in this way  
-#
-# - With cvs access
-#
-
-cd MNH.../src/LIB
-cvs up -rPACK-MNH-V4-10-3 -d -P RTTOV
-
-#
-# - With WEB access (with WEB login/pass as usually) the RTTOV package could also be retrieve in tarball with wget like this:
-#
-
-cd MNH.../src/LIB
-wget --http-user=USER  --http-password=PASS 'http://mesonh.aero.obs-mip.fr/cgi-bin/mesonh_interne/viewcvs.cgi/MNH-VX-Y-Z/src/LIB/RTTOV/?view=tar&pathrev=PACK-MNH-V4-10-3' -O RTTOV.tar.gz
-tar xvfz RTTOV.tar.gz
-
-# /!\ don't forget the ''.  Otherwise, this will not work!
-
-#
-# And then for the compilation, run the 'configure' script preceded with the setting of the MNH_RTTOV variable:
-#
-
-cd MNH.../src/
-export MNH_RTTOV=1
-export VER_RTTOV=8.7
-./configure
-
-etc ...
 
 # c) MNH_ECRAD for optional compilation of new ECRAD radiative library from ECMWF 
 # --------------------------------------

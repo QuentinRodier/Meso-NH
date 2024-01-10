@@ -10,7 +10,7 @@ IMPLICIT NONE
 CONTAINS
 !
 ! ###################################################################
-  SUBROUTINE ELEC_BEARD_EFFECT(D, KID, OSEDIM, PT, PRHODREF, &
+  SUBROUTINE ELEC_BEARD_EFFECT(D, CST, ICED, HCLOUD, KID, OSEDIM, PT, PRHODREF, PTHVREFZIKB, &
                                PRX, PQX, PEFIELDW, PLBDA, PBEARDCOEF)
 ! ####################################################################
 !
@@ -42,10 +42,11 @@ CONTAINS
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_CST,             ONLY: XG, XRD, XP00, XTT
+USE MODD_CST,             ONLY: CST_t
 USE MODD_DIMPHYEX,        ONLY: DIMPHYEX_t
+USE MODD_RAIN_ICE_DESCR_n, ONLY: RAIN_ICE_DESCR_t
+
 USE MODD_ELEC_DESCR,      ONLY: XRTMIN_ELEC
-USE MODD_PARAMETERS,      ONLY: JPVEXT
 USE MODD_PARAM_LIMA,      ONLY: XALPHAC_L=>XALPHAC, XNUC_L=>XNUC, XALPHAR_L=>XALPHAR, XNUR_L=>XNUR, &
                                 XALPHAI_L=>XALPHAI, XNUI_L=>XNUI, XALPHAS_L=>XALPHAS, XNUS_L=>XNUS, &
                                 XALPHAG_L=>XALPHAG, XNUG_L=>XNUG,                                   &
@@ -57,28 +58,16 @@ USE MODD_PARAM_LIMA_MIXED,ONLY: XBG_L=>XBG, XCG_L=>XCG, XDG_L=>XDG, &
                                 XALPHAH_L=>XALPHAH, XNUH_L=>XNUH
 USE MODD_PARAM_LIMA_WARM, ONLY: XBR_L=>XBR, XCR_L=>XCR, XDR_L=>XDR, &
                                 XBC_L=>XBC, XCC_L=>XCC, XDC_L=>XDC
-USE MODD_PARAM_n,         ONLY: CCLOUD
-USE MODD_RAIN_ICE_DESCR_n,ONLY: XALPHAC_I=>XALPHAC, XNUC_I=>XNUC, XALPHAR_I=>XALPHAR, XNUR_I=>XNUR, &
-                                XALPHAI_I=>XALPHAI, XNUI_I=>XNUI, XALPHAS_I=>XALPHAS, XNUS_I=>XNUS, &
-                                XALPHAG_I=>XALPHAG, XNUG_I=>XNUG, XALPHAH_I=>XALPHAH, XNUH_I=>XNUH, &
-                                XBC_I=>XBC, XCC_I=>XCC, XDC_I=>XDC,                                 &
-                                XBR_I=>XBR, XCR_I=>XCR, XDR_I=>XDR,                                 &
-                                XBI_I=>XBI, XC_I_I=>XC_I, XDI_I=>XDI,                               &
-                                XBS_I=>XBS, XCS_I=>XCS, XDS_I=>XDS,                                 &
-                                XBG_I=>XBG, XCG_I=>XCG, XDG_I=>XDG,                                 &
-                                XBH_I=>XBH, XCH_I=>XCH, XDH_I=>XDH,                                 &
-                                XCEXVT_I=>XCEXVT
-USE MODD_REF,             ONLY: XTHVREFZ
 !
 USE MODI_MOMG
-!
-USE MODE_TOOLS_ll, ONLY: GET_INDICE_ll
 !
 IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments
 !
 TYPE(DIMPHYEX_t),                 INTENT(IN)    :: D
+TYPE(CST_t),              INTENT(IN)    :: CST
+TYPE(RAIN_ICE_DESCR_t),   INTENT(IN)    :: ICED
 INTEGER,                          INTENT(IN)    :: KID         ! Hydrometeor ID
 LOGICAL, DIMENSION(D%NIJT,D%NKT), INTENT(IN)    :: OSEDIM      ! if T, compute the sedim. proc.
 REAL,    DIMENSION(D%NIJT,D%NKT), INTENT(IN)    :: PRHODREF    ! Reference density
@@ -88,7 +77,9 @@ REAL,    DIMENSION(D%NIJT,D%NKT), INTENT(IN)    :: PQX         ! Elec. charge de
 REAL,    DIMENSION(D%NIJT,D%NKT), INTENT(IN)    :: PEFIELDW    ! Vertical component of the electric field
 REAL,    DIMENSION(D%NIJT,D%NKT), INTENT(IN)    :: PLBDA       ! Slope param. of the distribution
 REAL,    DIMENSION(D%NIJT,D%NKT), INTENT(INOUT) :: PBEARDCOEF  ! Beard coefficient
+CHARACTER (LEN=4),      INTENT(IN)   ::  HCLOUD       ! Kind of microphysical scheme
 !
+REAL, INTENT(IN)                :: PTHVREFZIKB ! Reference thv at IKB for electricity
 !*       0.2   Declarations of local variables
 !
 INTEGER :: JIJ, JK ! loop indexes
@@ -106,6 +97,19 @@ real, dimension(D%NIJT,D%NKT) :: zreynolds
 !
 !-------------------------------------------------------------------------------
 !
+
+ASSOCIATE(XALPHAC_I=>ICED%XALPHAC, XNUC_I=>ICED%XNUC, XALPHAR_I=>ICED%XALPHAR, XNUR_I=>ICED%XNUR, &
+                                XALPHAI_I=>ICED%XALPHAI, XNUI_I=>ICED%XNUI, XALPHAS_I=>ICED%XALPHAS, XNUS_I=>ICED%XNUS, &
+                                XALPHAG_I=>ICED%XALPHAG, XNUG_I=>ICED%XNUG, XALPHAH_I=>ICED%XALPHAH, XNUH_I=>ICED%XNUH, &
+                                XBC_I=>ICED%XBC, XCC_I=>ICED%XCC, XDC_I=>ICED%XDC,                                 &
+                                XBR_I=>ICED%XBR, XCR_I=>ICED%XCR, XDR_I=>ICED%XDR,                                 &
+                                XBI_I=>ICED%XBI, XC_I_I=>ICED%XC_I, XDI_I=>ICED%XDI,                               &
+                                XBS_I=>ICED%XBS, XCS_I=>ICED%XCS, XDS_I=>ICED%XDS,                                 &
+                                XBG_I=>ICED%XBG, XCG_I=>ICED%XCG, XDG_I=>ICED%XDG,                                 &
+                                XBH_I=>ICED%XBH, XCH_I=>ICED%XCH, XDH_I=>ICED%XDH,                                 &
+                                XCEXVT_I=>ICED%XCEXVT)
+
+
 !*       1.    COMPUTE USEFULL PARAMETERS
 !              --------------------------
 !
@@ -117,7 +121,7 @@ IIJE = D%NIJE
 !*       1.1   Select the right parameters
 !              --> depend on the microphysics scheme and the hydrometeor species
 !
-IF (CCLOUD(1:3) == 'ICE') THEN
+IF (HCLOUD(1:3) == 'ICE') THEN
   ZCEXVT = XCEXVT_I
   !
   IF (KID == 2) THEN
@@ -158,7 +162,7 @@ IF (CCLOUD(1:3) == 'ICE') THEN
     ZALPHAX = XALPHAH_I
     ZNUX    = XNUH_I
   END IF
-ELSE IF (CCLOUD == 'LIMA') THEN
+ELSE IF (HCLOUD == 'LIMA') THEN
   ZCEXVT = XCEXVT_L
   !
   IF (KID == 2) THEN
@@ -204,9 +208,9 @@ END IF
 !*       1.2   Parameters from Table 1 in Beard (1980)
 !
 ! Reference value of the dynamic viscosity of air
-ZETA0 = (1.718E-5 + 0.0049E-5 * (XTHVREFZ(IKTB) - XTT))
+ZETA0 = (1.718E-5 + 0.0049E-5 * (PTHVREFZIKB - CST%XTT))
 !
-ZRHO00 = XP00 / (XRD * XTHVREFZ(IKTB))
+ZRHO00 = CST%XP00 / (CST%XRD * PTHVREFZIKB)
 ZCOR00 = ZRHO00**ZCEXVT
 !
 ! (rho_0 / eta_0) * (v * lambda^d)
@@ -228,7 +232,7 @@ DO JK = IKTB, IKTE
     IF (OSEDIM(JIJ,JK) .AND. PRX(JIJ,JK) .GT. XRTMIN_ELEC(KID) .AND. PLBDA(JIJ,JK) .GT. 0.) THEN
 !--cb--
       ! Temperature K --> C
-      ZT = PT(JIJ,JK) - XTT
+      ZT = PT(JIJ,JK) - CST%XTT
       !
       ! Pre-factor of f_0
       IF (ZT >= 0.0) THEN
@@ -241,7 +245,7 @@ DO JK = IKTB, IKTE
       ZF1 = SQRT(ZRHO00/PRHODREF(JIJ,JK))
       !
       ! compute (1 - K) = 1 - qE/mg
-      ZK = 1. - PQX(JIJ,JK) * PEFIELDW(JIJ,JK) / (PRX(JIJ,JK) * XG)
+      ZK = 1. - PQX(JIJ,JK) * PEFIELDW(JIJ,JK) / (PRX(JIJ,JK) * CST%XG)
       !
       ! Hyp : K_0 ~ 0
       ! Hyp : si qE > mg, K > 1
@@ -270,6 +274,7 @@ DO JK = IKTB, IKTE
   END DO
 END DO
 !
+END ASSOCIATE
 !-------------------------------------------------------------------------------
 !
 END SUBROUTINE ELEC_BEARD_EFFECT

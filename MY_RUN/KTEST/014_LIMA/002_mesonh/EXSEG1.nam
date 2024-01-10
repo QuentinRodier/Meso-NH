@@ -38,6 +38,7 @@
                 CTURBDIM = "3DIM",
                 LTURB_DIAG = F,
                 LTURB_FLX = F
+		LTURB_PRECIP = F/
                 /
 
 &NAM_CH_MNHCn   LUSECHEM = F /
@@ -103,24 +104,28 @@
                 XIFN_CONC(1)=1000./         ! Concentration du mode 1 d'IFN (/L)
 
 
-&NAM_BU_RU      LBU_RU  = T /
+&NAM_BU_RU      LBU_RU  = F /
 
-&NAM_BU_RW      LBU_RW  = T /
+&NAM_BU_RW      LBU_RW  = F /
 
 &NAM_BU_RTH     LBU_RTH = T /
 
-&NAM_BU_RRV     LBU_RRV = T /
+&NAM_BU_RRV     LBU_RRV = F /
 
-&NAM_BU_RRC     LBU_RRC = T /
+&NAM_BU_RRC     LBU_RRC = F /
 
-&NAM_BU_RRR     LBU_RRR = T /
+&NAM_BU_RRR     LBU_RRR = T,
+		CBULIST_RRR(1) = "ALL"/
 
 &NAM_BU_RRI     LBU_RRI = T /
 
-&NAM_BU_RRS     LBU_RRS = T /
+&NAM_BU_RRS     LBU_RRS = T,
+		CBULIST_RRS(1) = "ALL"/
 
-&NAM_BU_RRG     LBU_RRG = T /
+&NAM_BU_RRG     LBU_RRG = T,
+		CBULIST_RRG(1) = "ALL"/
 
 &NAM_BU_RSV     LBU_RSV = T /
+		CBULIST_RSV(1) = "ALL"/
 &NAM_NEBn LSUBG_COND = F  /
 &NAM_PARAM_ICEn CSUBG_AUCV_RC = 'NONE'/

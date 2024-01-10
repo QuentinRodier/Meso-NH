@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2024 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -38,7 +38,7 @@
 !!                                         multiple wavelengths for surface SW
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 08/02/2019: add missing NULL association for pointers
-!!
+!       V. Masson 03/01/2024: aggregation of columns for radiation
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -132,6 +132,7 @@ TYPE RADIATIONS_t
   INTEGER :: NJ_RAD_AGG    ! reformatted Y array size
   INTEGER :: NIOR_RAD_AGG  ! index of first point of packed array according to current domain
   INTEGER :: NJOR_RAD_AGG  ! index of first point of packed array according to current domain
+  INTEGER, DIMENSION(:,:),     POINTER :: NRAD_AGG_FLAG=>NULL() ! status on which processor is calculated the aggregated column
 !
 END TYPE RADIATIONS_t
 
@@ -196,6 +197,7 @@ INTEGER, POINTER :: NI_RAD_AGG=>NULL()    ! reformatted X array size
 INTEGER, POINTER :: NJ_RAD_AGG=>NULL()    ! reformatted Y array size
 INTEGER, POINTER :: NIOR_RAD_AGG=>NULL()  ! index of first point of packed array according to current domain
 INTEGER, POINTER :: NJOR_RAD_AGG=>NULL()  ! index of first point of packed array according to current domain
+INTEGER, DIMENSION(:,:),POINTER :: NRAD_AGG_FLAG=>NULL()
 
 CONTAINS
 
@@ -236,6 +238,7 @@ RADIATIONS_MODEL(KFROM)%XLWD=>XLWD
 RADIATIONS_MODEL(KFROM)%XDTHRADSW=>XDTHRADSW
 RADIATIONS_MODEL(KFROM)%XDTHRADLW=>XDTHRADLW
 RADIATIONS_MODEL(KFROM)%XRADEFF=>XRADEFF
+RADIATIONS_MODEL(KFROM)%NRAD_AGG_FLAG=>NRAD_AGG_FLAG
 !
 ! Current model is set to model KTO
 NDLON=>RADIATIONS_MODEL(KTO)%NDLON
@@ -297,6 +300,7 @@ NI_RAD_AGG=>RADIATIONS_MODEL(KTO)%NI_RAD_AGG
 NJ_RAD_AGG=>RADIATIONS_MODEL(KTO)%NJ_RAD_AGG
 NIOR_RAD_AGG=>RADIATIONS_MODEL(KTO)%NIOR_RAD_AGG
 NJOR_RAD_AGG=>RADIATIONS_MODEL(KTO)%NJOR_RAD_AGG
+NRAD_AGG_FLAG=>RADIATIONS_MODEL(KTO)%NRAD_AGG_FLAG
 
 END SUBROUTINE RADIATIONS_GOTO_MODEL
 

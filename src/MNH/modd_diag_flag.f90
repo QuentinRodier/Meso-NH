@@ -56,7 +56,6 @@ LOGICAL     :: LVAR_RS              ! UM,VM,WM,RVM
 LOGICAL     :: LVAR_LS              ! LSUM,LSVM,LSWM,LSRVM
 INTEGER     :: NCONV_KF             ! Convective scheme
 INTEGER     :: NRAD_3D              ! Radiative scheme
-CHARACTER(LEN=44)  :: CRAD_SAT      ! GOES-E,GOES-W,GMS,INDSAT,METEOSAT
 LOGICAL     :: LRAD_SUBG_COND       ! to activate subgrid condensation
                                     !scheme in the radiatif transfer code
 !rttov and satellites variables

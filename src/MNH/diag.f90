@@ -199,7 +199,7 @@ REAL, DIMENSION(:,:,:,:),ALLOCATABLE          :: ZWETDEPAER
 TYPE(TFILEDATA),POINTER :: TZNMLFILE  => NULL() !Namelist file
 !
 NAMELIST/NAM_DIAG/ CISO, LVAR_RS, LVAR_LS,   &
-                   NCONV_KF, NRAD_3D, CRAD_SAT, NRTTOVINFO, LRAD_SUBG_COND,  &
+                   NCONV_KF, NRAD_3D, NRTTOVINFO, LRAD_SUBG_COND,  &
                    LVAR_TURB,LTURBFLX,LTURBDIAG,LMFFLX,XDTSTEP,  &
                    LVAR_MRW, LVAR_MRSV, LVAR_FRC, &
                    LTPZH, LMOIST_V, LMOIST_E,LMOIST_ES, & 
@@ -248,7 +248,6 @@ LVAR_RS=.TRUE.
 LVAR_LS=.FALSE.
 NCONV_KF=-1
 NRAD_3D=-1
-CRAD_SAT='                                            '
 LRAD_SUBG_COND=.TRUE.
 NRTTOVINFO(:,:)=NUNDEF
 LVAR_TURB=.FALSE.
@@ -565,10 +564,6 @@ IF (NRAD_3D >= 0) THEN
     NRAD_DIAG = NRAD_3D
     CRAD = 'ECMW'    ! radiation scheme is called to compute extra diags
   END IF
-END IF
-!
-IF (LEN_TRIM(CRAD_SAT) /= 0 .AND. YRAD/='ECMW') THEN
-  CRAD = 'ECMW'
 END IF
 !
 !

@@ -581,27 +581,25 @@ PEMF(:,IKB+IKL) = ZRHO_F(:,IKB+IKL)*PFRAC_UP(:,IKB+IKL)* &
 !$mnh_end_expand_where(JIJ=IIJB:IIJE)
 
 DO JK=IKB+IKL,IKE-IKL,IKL !  Vertical loop
-  !$mnh_expand_where(JIJ=IIJB:IIJE)
-     
-  GTEST(:) = (ZW_UP2(:,JK) > ZEPS)  
+  DO JIJ=IIJB,IIJE
+    GTEST(JIJ) = (ZW_UP2(JIJ,JK) > ZEPS)  
+    IF(GTEST(JIJ)) THEN
+      IF(JK<IALIM(JIJ)) THEN
+      PEMF(JIJ,JK+IKL) = MAX(0.,PEMF(JIJ,JK) + ZPHI(JIJ)*ZZDZ(JIJ,JK)* &
+                                                                & (PENTR(JIJ,JK) - PDETR(JIJ,JK)))
+    ELSE
+      ZMIX1(JIJ)=ZZDZ(JIJ,JK)*(PENTR(JIJ,JK)-PDETR(JIJ,JK))
+      PEMF(JIJ,JK+IKL)=PEMF(JIJ,JK)*EXP(ZMIX1(JIJ))
+    END IF
 
-  WHERE (GTEST(:))
-    WHERE(JK<IALIM(:))
-      PEMF(:,JK+IKL) = MAX(0.,PEMF(:,JK) + ZPHI(:)*ZZDZ(:,JK)* &
-                                                                & (PENTR(:,JK) - PDETR(:,JK)))
-    ELSEWHERE
-      ZMIX1(:)=ZZDZ(:,JK)*(PENTR(:,JK)-PDETR(:,JK))
-      PEMF(:,JK+IKL)=PEMF(:,JK)*EXP(ZMIX1(:))
-    ENDWHERE
-
-! Updraft fraction must be smaller than XFRAC_UP_MAX
-    PFRAC_UP(:,JK+IKL)=PEMF(:,JK+IKL)/&
-                                    &(SQRT(ZW_UP2(:,JK+IKL))*ZRHO_F(:,JK+IKL))
-    PFRAC_UP(:,JK+IKL)=MIN(PARAMMF%XFRAC_UP_MAX,PFRAC_UP(:,JK+IKL))
-    PEMF(:,JK+IKL) = ZRHO_F(:,JK+IKL)*PFRAC_UP(:,JK+IKL)*&
-                                 & SQRT(ZW_UP2(:,JK+IKL))
-  ENDWHERE
-  !$mnh_end_expand_where(JIJ=IIJB:IIJE)
+    ! Updraft fraction must be smaller than XFRAC_UP_MAX
+    PFRAC_UP(JIJ,JK+IKL)=PEMF(JIJ,JK+IKL)/&
+                                    &(SQRT(ZW_UP2(JIJ,JK+IKL))*ZRHO_F(JIJ,JK+IKL))
+    PFRAC_UP(JIJ,JK+IKL)=MIN(PARAMMF%XFRAC_UP_MAX,PFRAC_UP(JIJ,JK+IKL))
+    PEMF(JIJ,JK+IKL) = ZRHO_F(JIJ,JK+IKL)*PFRAC_UP(JIJ,JK+IKL)*&
+                                 & SQRT(ZW_UP2(JIJ,JK+IKL))
+  END IF
+ END DO
 ENDDO
 
 !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)

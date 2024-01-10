@@ -40,7 +40,7 @@ MODULE RADIATION_SETUP
   USE radiation_config, ONLY : config_type, &
        &                       ISolverMcICA, ISolverSpartacus, &
        &                       ILiquidModelSlingo, ILiquidModelSOCRATES, &
-       &                       IIceModelFu, IIceModelBaran, &
+       &                       IIceModelFu, IIceModelBaran, IIceModelShapes, &
        &                       IOverlapExponential
   USE MODD_PARAM_ECRAD_n , ONLY : rad_config
   
@@ -161,6 +161,8 @@ CONTAINS
       rad_config%i_ice_model = IIceModelFu
     ELSEIF (NICEOPT == 4) THEN
       rad_config%i_ice_model = IIceModelBaran
+    ELSEIF (NICEOPT == 7) THEN
+      rad_config%i_ice_model = IIceModelShapes
     ELSE
       WRITE(NULERR,'(a,i0)') 'Unavailable ice optics model in modular radiation scheme: NICEOPT=', &
            &  NICEOPT

@@ -5,29 +5,13 @@
 !-----------------------------------------------------------------
 !
 !     ##########################
-      MODULE MODI_COMPUTE_LAMBDA
+      MODULE MODE_COMPUTE_LAMBDA
 !     ##########################
-!
-INTERFACE
-      SUBROUTINE COMPUTE_LAMBDA (KID, KMOMENT, KSIZE, &
-                                 PRHO, PRTMIN, PRX, PCX, PLBDX)
-!
-INTEGER,                INTENT(IN)    :: KID      ! nb of the hydrometeor category
-INTEGER,                INTENT(IN)    :: KMOMENT  ! nb of moments of the microphysics scheme
-INTEGER,                INTENT(IN)    :: KSIZE
-REAL,                   INTENT(IN)    :: PRTMIN
-REAL, DIMENSION(KSIZE), INTENT(IN)    :: PRHO     ! reference density
-REAL, DIMENSION(KSIZE), INTENT(IN)    :: PRX      ! Mixing ratio
-REAL, DIMENSION(KSIZE), INTENT(INOUT) :: PCX      ! Nb concentration
-REAL, DIMENSION(KSIZE), INTENT(INOUT) :: PLBDX    ! Slope parameter of the distribution
-!
-END SUBROUTINE COMPUTE_LAMBDA
-END INTERFACE
-END MODULE MODI_COMPUTE_LAMBDA
-!
+IMPLICIT NONE
+CONTAINS
 !
 ! #########################################################
-  SUBROUTINE COMPUTE_LAMBDA (KID, KMOMENT, KSIZE, &
+  SUBROUTINE COMPUTE_LAMBDA (KID, KMOMENT, KSIZE, HCLOUD, &
                              PRHO, PRTMIN, PRX, PCX, PLBDX)
 ! #########################################################
 !
@@ -49,7 +33,6 @@ END MODULE MODI_COMPUTE_LAMBDA
 !*      0.      DECLARATIONS
 !               ------------
 !
-USE MODD_PARAM_n, ONLY: CCLOUD
 USE MODD_RAIN_ICE_DESCR_n, ONLY: XLBC_I=>XLBC, XLBR_I=>XLBR, XLBI_I=>XLBI, XLBS_I=>XLBS, XLBG_I=>XLBG, XLBH_I=>XLBH, &
                                  XLBEXC_I=>XLBEXC, XLBEXR_I=>XLBEXR, XLBEXI_I=>XLBEXI, XLBEXS_I=>XLBEXS,             &
                                  XLBEXG_I=>XLBEXG, XLBEXH_I=>XLBEXH,                                                 &
@@ -72,6 +55,7 @@ IMPLICIT NONE
 !*      0.1   Declaration of dummy arguments
 !
 INTEGER,                INTENT(IN)    :: KID      ! nb of the hydrometeor category
+CHARACTER (LEN=4),      INTENT(IN)   ::  HCLOUD       ! Kind of microphysical scheme
 INTEGER,                INTENT(IN)    :: KMOMENT  ! nb of moments of the microphysics scheme
 INTEGER,                INTENT(IN)    :: KSIZE
 REAL,                   INTENT(IN)    :: PRTMIN
@@ -92,21 +76,21 @@ REAL :: ZRTMIN, ZLBX, ZLBEX, ZLBDAX_MAX, ZCCX, ZCXX
 ZRTMIN = PRTMIN
 !
 IF (KID == 2) THEN
-  IF (CCLOUD == 'LIMA' .AND. KMOMENT == 2) THEN
+  IF (HCLOUD == 'LIMA' .AND. KMOMENT == 2) THEN
     ZLBX  = XLBC_L
     ZLBEX = XLBEXC_L
 !  ELSE
 !    print*, 'ERROR: the computation of lambda_c is not available if c is 1-moment species'
   END IF
 ELSE IF (KID == 3) THEN
-  IF (CCLOUD == 'LIMA') THEN
+  IF (HCLOUD == 'LIMA') THEN
     ZLBX  = XLBR_L
     ZLBEX = XLBEXR_L
     IF (KMOMENT == 1) THEN
       ZCCX = XCCR_L
       ZCXX = XCXR_L
     END IF  
-  ELSE IF (CCLOUD(1:3) == 'ICE') THEN
+  ELSE IF (HCLOUD(1:3) == 'ICE') THEN
     ZLBX  = XLBR_I
     ZLBEX = XLBEXR_I
     ZCCX  = XCCR_I
@@ -115,17 +99,17 @@ ELSE IF (KID == 3) THEN
     PRINT*, 'ERROR: something wrong with the computation of lambda_r'
   END IF
 ELSE IF (KID == 4) THEN
-  IF (CCLOUD == 'LIMA') THEN
+  IF (HCLOUD == 'LIMA') THEN
     ZLBX  = XLBI_L
     ZLBEX = XLBEXI_L
-  ELSE IF (CCLOUD(1:3) == 'ICE') THEN
+  ELSE IF (HCLOUD(1:3) == 'ICE') THEN
     ZLBX  = XLBI_I
     ZLBEX = XLBEXI_I
   ELSE
     PRINT*, 'ERROR: something wrong with the computation of lambda_i'
   END IF
 ELSE IF (KID == 5) THEN
-  IF (CCLOUD == 'LIMA') THEN
+  IF (HCLOUD == 'LIMA') THEN
     ZLBX  = XLBS_L
     ZLBEX = XLBEXS_L
     ZLBDAX_MAX = XLBDAS_MAX_L
@@ -133,7 +117,7 @@ ELSE IF (KID == 5) THEN
       ZCCX = XCCS_L
       ZCXX = XCXS_L
     END IF
-  ELSE IF (CCLOUD(1:3) == 'ICE') THEN
+  ELSE IF (HCLOUD(1:3) == 'ICE') THEN
     ZLBX  = XLBS_I
     ZLBEX = XLBEXS_I
     ZLBDAX_MAX = XLBDAS_MAX_I
@@ -143,14 +127,14 @@ ELSE IF (KID == 5) THEN
     PRINT*, 'ERROR: something wrong with the computation of lambda_s'
   END IF
 ELSE IF (KID == 6) THEN
-  IF (CCLOUD == 'LIMA') THEN ! .AND. KMOMENT == 1) THEN
+  IF (HCLOUD == 'LIMA') THEN ! .AND. KMOMENT == 1) THEN
     ZLBX  = XLBG_L
     ZLBEX = XLBEXG_L
     IF (KMOMENT == 1) THEN
       ZCCX = XCCG_L
       ZCXX = XCXG_L
     END IF
-  ELSE IF (CCLOUD(1:3) == 'ICE') THEN
+  ELSE IF (HCLOUD(1:3) == 'ICE') THEN
     ZLBX  = XLBG_I
     ZLBEX = XLBEXG_I
     ZCCX  = XCCG_I
@@ -159,14 +143,14 @@ ELSE IF (KID == 6) THEN
     PRINT*, 'ERROR: something wrong with the computation of lambda_g'
   END IF        
 ELSE IF (KID == 7) THEN
-  IF (CCLOUD == 'LIMA') THEN ! .AND. KMOMENT == 1) THEN
+  IF (HCLOUD == 'LIMA') THEN ! .AND. KMOMENT == 1) THEN
     ZLBX  = XLBH_L
     ZLBEX = XLBEXH_L
     IF (KMOMENT == 1) THEN
       ZCCX = XCCH_L
       ZCXX = XCXH_L
     END IF
-  ELSE IF (CCLOUD(1:3) == 'ICE') THEN
+  ELSE IF (HCLOUD(1:3) == 'ICE') THEN
     ZLBX  = XLBH_I
     ZLBEX = XLBEXH_I
     ZCCX  = XCCH_I
@@ -227,3 +211,4 @@ ELSE IF (KMOMENT == 1) THEN
 END IF
 !
 END  SUBROUTINE COMPUTE_LAMBDA
+END MODULE MODE_COMPUTE_LAMBDA

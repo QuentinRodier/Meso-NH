@@ -1,12 +1,8 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2024 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 modd 2006/11/23 17:28:26
 !-----------------------------------------------------------------
 !     ######################## 
       MODULE MODD_PARAM_RAD_n
@@ -43,6 +39,7 @@
 !!      F.Solmon      15/03/02  add the control parameter for aerosol and cloud radiative 
 !!                              properties. Remove the NSPOT option.
 !!      B.Aouizerats  07/11     add aerosol optical properties CAOP
+!       V. Masson 03/01/2024: aggregation of columns for radiation
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS

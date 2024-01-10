@@ -5,6 +5,7 @@ INTERFACE
 SUBROUTINE LIQUID_EFFECTIVE_RADIUS &
      & (KIDIA, KFDIA, KLON, KLEV, &
      &  PPRESSURE, PTEMPERATURE, PCLOUD_FRAC, PQ_LIQ, PQ_RAIN, &
+     &  PCCT_LIMA, PCRT_LIMA,  &                    
      &  PLAND_FRAC, PCCN_LAND, PCCN_SEA, &
      &  PRE_UM)
 
@@ -27,6 +28,9 @@ REAL(KIND=JPRB),   INTENT(IN) :: PCLOUD_FRAC(KLON,KLEV)
 REAL(KIND=JPRB),   INTENT(IN) :: PQ_LIQ(KLON,KLEV)       ! (kg/kg)
 REAL(KIND=JPRB),   INTENT(IN) :: PQ_RAIN(KLON,KLEV)      ! (kg/kg)
 
+REAL(KIND=JPRB),  INTENT (IN)   :: PCCT_LIMA(KLON,KLEV) ! cloud water concentration (LIMA)
+REAL(KIND=JPRB),  INTENT (IN)   :: PCRT_LIMA(KLON,KLEV) ! rain water concentration (LIMA)
+
 ! *** Single-level variables 
 REAL(KIND=JPRB),   INTENT(IN) :: PLAND_FRAC(KLON)        ! 1=land, 0=sea
 REAL(KIND=JPRB),   INTENT(IN) :: PCCN_LAND(KLON)
@@ -44,6 +48,7 @@ END MODULE MODI_LIQUID_EFFECTIVE_RADIUS
 SUBROUTINE LIQUID_EFFECTIVE_RADIUS &
      & (KIDIA, KFDIA, KLON, KLEV, &
      &  PPRESSURE, PTEMPERATURE, PCLOUD_FRAC, PQ_LIQ, PQ_RAIN, &
+     &  PCCT_LIMA, PCRT_LIMA,  &                    
      &  PLAND_FRAC, PCCN_LAND, PCCN_SEA, &
      &  PRE_UM)
 
@@ -84,6 +89,8 @@ USE YOM_YGFL , ONLY : YGFL
 USE YOERDU   , ONLY : REPLOG, REPSCW
 USE YOMLUN   , ONLY : NULERR
 USE YOMCST   , ONLY : RD, RPI
+USE MODD_PARAM_LIMA , ONLY    : XALPHAR,XNUR,       & ! Raindrop      distribution parameters
+                            &   XALPHAC,XNUC          ! Cloud droplet distribution parameters
 
 ! -------------------------------------------------------------------
 
@@ -103,6 +110,9 @@ REAL(KIND=JPRB),   INTENT(IN) :: PTEMPERATURE(KLON,KLEV) ! (K)
 REAL(KIND=JPRB),   INTENT(IN) :: PCLOUD_FRAC(KLON,KLEV)
 REAL(KIND=JPRB),   INTENT(IN) :: PQ_LIQ(KLON,KLEV)       ! (kg/kg)
 REAL(KIND=JPRB),   INTENT(IN) :: PQ_RAIN(KLON,KLEV)      ! (kg/kg)
+
+REAL(KIND=JPRB),  INTENT (IN)   :: PCCT_LIMA(KLON,KLEV) ! cloud water concentration (LIMA)
+REAL(KIND=JPRB),  INTENT (IN)   :: PCRT_LIMA(KLON,KLEV) ! rain water concentration (LIMA)
 
 ! *** Single-level variables 
 REAL(KIND=JPRB),   INTENT(IN) :: PLAND_FRAC(KLON)        ! 1=land, 0=sea
@@ -129,6 +139,7 @@ REAL(KIND=JPRB) :: ZSPECTRAL_DISPERSION
 REAL(KIND=JPRB) :: ZNTOT_CM3 ! Number conc in cm-3
 REAL(KIND=JPRB) :: ZRE_CUBED
 REAL(KIND=JPRB) :: ZLWC_GM3, ZRWC_GM3 ! In-cloud liquid, rain content in g m-3
+REAL(KIND=JPRB) :: PCCT_CM3 ! Droplet concentration(from lima) in  cm-3
 REAL(KIND=JPRB) :: ZAIR_DENSITY_GM3   ! Air density in g m-3
 REAL(KIND=JPRB) :: ZRAIN_RATIO        ! Ratio of rain to liquid water content
 REAL(KIND=JPRB) :: ZWOOD_FACTOR, ZRATIO
@@ -242,12 +253,53 @@ CASE(2)
         ! Cloud fraction or liquid+rain water content too low to
         ! consider this a cloud
         PRE_UM(JL,JK) = PP_MIN_RE_UM
+        
 
       ENDIF
 
     ENDDO
     
   ENDDO
+
+CASE(4)
+
+ ! Calculates effective radius from LIMA
+  DO JL = KIDIA,KFDIA
+    ! First compute the cloud droplet concentration
+    
+    DO JK = 1,KLEV
+
+      ! Only consider cloudy regions
+      IF (PCLOUD_FRAC(JL,JK) >= 0.001_JPRB &
+           &  .AND. (PQ_LIQ(JL,JK)+PQ_RAIN(JL,JK)) > 0.0_JPRB) THEN
+
+        ! Compute liquid and rain water contents
+        ZAIR_DENSITY_GM3 = 1000.0_JPRB * PPRESSURE(JL,JK) &
+             &           / (RD*PTEMPERATURE(JL,JK))
+        ! In-cloud mean water contents found by dividing by cloud
+        ! fraction
+        PCCT_CM3 = PCCT_LIMA (JL, JK) * ZAIR_DENSITY_GM3 * 1.E-9_JPRB
+        ZLWC_GM3 = ZAIR_DENSITY_GM3 * PQ_LIQ(JL,JK)  / PCLOUD_FRAC(JL,JK)
+        PRE_UM(JL,JK)=100*(4.*ZLWC_GM3*(XNUC+2)**2/(PCCT_CM3*3.*RPI*(XNUC**2+XNUC)))**(1./3.)     
+!        print*,"r_eff=",PRE_UM(JL,JK)
+        if (PRE_UM(JL,JK)>50) then
+                PRE_UM(JL,JK)=50.
+        else if (PRE_UM(JL,JK)<1.) then
+                PRE_UM(JL,JK)=1.
+        end if
+
+
+      ELSE
+        ! Cloud fraction or liquid+rain water content too low to
+        ! consider this a cloud
+        PRE_UM(JL,JK) = 1.
+
+      ENDIF
+
+    ENDDO
+    
+  ENDDO
+  
   
 CASE DEFAULT
   WRITE(NULERR,'(A,I0,A)') 'LIQUID EFFECTIVE RADIUS OPTION IRADLP=',IRADLP,' NOT AVAILABLE'

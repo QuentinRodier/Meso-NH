@@ -325,8 +325,7 @@ REAL, DIMENSION(D%NIJT,D%NKT), INTENT(IN)   ::  PFTH2        ! d(w'th'2 )/dz (at
 REAL, DIMENSION(D%NIJT,D%NKT), INTENT(IN)   ::  PFR2         ! d(w'r'2  )/dz (at mass point)
 REAL, DIMENSION(D%NIJT,D%NKT), INTENT(IN)   ::  PFTHR        ! d(w'th'r')/dz (at mass point)
 REAL, DIMENSION(D%NIJT,D%NKT), INTENT(IN)   ::  MFMOIST      ! moist mass flux dual scheme
-REAL, DIMENSION(MERGE(D%NIT,0,TURBN%CTOM=='TM06'),&
-                MERGE(D%NJT,0,TURBN%CTOM=='TM06')),   INTENT(INOUT)::  PBL_DEPTH    ! BL depth
+REAL, DIMENSION(D%NIT,D%NJT),  INTENT(INOUT)::  PBL_DEPTH    ! BL depth
 REAL, DIMENSION(D%NIJT,D%NKT), INTENT(OUT)  :: PWTHV         ! buoyancy flux
 !
 REAL, DIMENSION(D%NIJT,D%NKT),   INTENT(INOUT) :: PRTHLS     ! cumulated source for theta
@@ -496,7 +495,7 @@ IF (GFWTH) THEN
   CALL M3_WTH_W2TH(D,CSTURB,TURBN,PREDTH1,PREDR1,PD,ZKEFF,PTKEM,Z3RDMOMENT)
   CALL D_M3_WTH_W2TH_O_DDTDZ(D,CSTURB,TURBN,PREDTH1,PREDR1,&
    & PD,PBLL_O_E,PETHETA,ZKEFF,PTKEM,ZWORK1)
-!
+  !
   !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
   ZF(:,:)= ZF(:,:) + Z3RDMOMENT(:,:) * PFWTH(:,:)
   ZDFDDTDZ(:,:) = ZDFDDTDZ(:,:) + ZWORK1(:,:) &
@@ -510,7 +509,7 @@ IF (GFTH2) THEN
   CALL D_M3_WTH_WTH2_O_DDTDZ(D,CSTURB,TURBN,Z3RDMOMENT,PREDTH1,PREDR1,&
     & PD,PBLL_O_E,PETHETA,ZWORK1)
   CALL MZM_PHY(D,PFTH2,ZWORK2)
-!
+  !
   !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
   ZF(:,:) = ZF(:,:) + Z3RDMOMENT(:,:) &
                                 * ZWORK2(:,:)
@@ -523,7 +522,7 @@ END IF
 IF (GFWR) THEN
   CALL M3_WTH_W2R(D,CSTURB,TURBN,PD,ZKEFF,PTKEM,PBLL_O_E,PEMOIST,PDTH_DZ,ZWORK1)
   CALL D_M3_WTH_W2R_O_DDTDZ(D,CSTURB,TURBN,PREDTH1,PREDR1,PD,ZKEFF,PTKEM,PBLL_O_E,PEMOIST,ZWORK2)
-!
+  !
   !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
   ZF(:,:) = ZF(:,:) + ZWORK1(:,:) * PFWR(:,:)
   ZDFDDTDZ(:,:) = ZDFDDTDZ(:,:) + ZWORK2(:,:) &
@@ -537,7 +536,7 @@ IF (GFR2) THEN
   CALL MZM_PHY(D,PFR2,ZWORK2)
   CALL D_M3_WTH_WR2_O_DDTDZ(D,CSTURB,TURBN,PREDTH1,PREDR1,PD,&
     & ZKEFF,PTKEM,PSQRT_TKE,PBLL_O_E,PBETA,PLEPS,PEMOIST,ZWORK3)
-!
+  !
   !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)    
   ZF(:,:) = ZF(:,:) + ZWORK1(:,:) * ZWORK2(:,:)
   ZDFDDTDZ(:,:) = ZDFDDTDZ(:,:) + ZWORK3(:,:) &
@@ -551,7 +550,7 @@ IF (GFTHR) THEN
     & PLEPS,PEMOIST,Z3RDMOMENT)
   CALL D_M3_WTH_WTHR_O_DDTDZ(D,CSTURB,TURBN,Z3RDMOMENT,PREDTH1,PREDR1,PD,PBLL_O_E,PETHETA,ZWORK1)
   CALL MZM_PHY(D,PFTHR, ZWORK2)
-!
+  !
   !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
   ZF(:,:) = ZF(:,:) + Z3RDMOMENT(:,:) &
                                 * ZWORK2(:,:)
@@ -582,9 +581,9 @@ ELSE ! atmosp bottom
                        * 0.5 * (1. + PRHODJ(:,IKA) / PRHODJ(:,IKB))
     !$mnh_end_expand_array(JIJ=IIJB:IIJE) 
   END IF
-!
-    ! atmos top
-      ZF(:,IKE+1)=0.
+  !
+  ! atmos top
+  ZF(:,IKE+1)=0.
 END IF
 !
 ! Compute the split conservative potential temperature at t+deltat
@@ -602,7 +601,7 @@ IF (TURBN%LLEONARD) THEN
  DO JK=1,IKT
    !$mnh_expand_array(JIJ=IIJB:IIJE)
    ZALT(:,JK) = PZZ(:,JK)-PZS(:) 
-   !$mnh_end_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
+   !$mnh_end_expand_array(JIJ=IIJB:IIJE)
  END DO
  CALL MZM_PHY(D,PRHODJ,ZWORK1)
  !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
@@ -891,7 +890,7 @@ IF (KRR /= 0) THEN
     CALL M3_WR_W2R(D,CSTURB,TURBN,PREDR1,PREDTH1,PD,ZKEFF,PTKEM,Z3RDMOMENT)
     CALL D_M3_WR_W2R_O_DDRDZ(D,CSTURB,TURBN,PREDR1,PREDTH1,PD,&
      & PBLL_O_E,PEMOIST,ZKEFF,PTKEM,ZWORK1)
-  !
+    !
     !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
     ZF(:,:)= ZF(:,:) + Z3RDMOMENT(:,:) * PFWR(:,:)
     ZDFDDRDZ(:,:) = ZDFDDRDZ(:,:) + ZWORK1(:,:) &
@@ -905,7 +904,7 @@ IF (KRR /= 0) THEN
     CALL MZM_PHY(D,PFR2,ZWORK1)
     CALL D_M3_WR_WR2_O_DDRDZ(D,CSTURB,TURBN,Z3RDMOMENT,PREDR1,&
      & PREDTH1,PD,PBLL_O_E,PEMOIST,ZWORK2)
-  !
+    !
     !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
     ZF(:,:) = ZF(:,:) + Z3RDMOMENT(:,:) &
                                   * ZWORK1(:,:)
@@ -920,7 +919,7 @@ IF (KRR /= 0) THEN
      & PTKEM,PBLL_O_E,PETHETA,PDR_DZ,ZWORK1)
     CALL D_M3_WR_W2TH_O_DDRDZ(D,CSTURB,TURBN,PREDR1,PREDTH1,&
      & PD,ZKEFF,PTKEM,PBLL_O_E,PETHETA,ZWORK2)
-  !
+    !
     !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
     ZF(:,:) = ZF(:,:) + ZWORK1(:,:) * PFWTH(:,:)
     ZDFDDRDZ(:,:) = ZDFDDRDZ(:,:) + ZWORK2(:,:) &
@@ -950,7 +949,7 @@ IF (KRR /= 0) THEN
     CALL MZM_PHY(D,PFTHR,ZWORK1)
     CALL D_M3_WR_WTHR_O_DDRDZ(D,CSTURB,TURBN,Z3RDMOMENT,PREDR1, &
      & PREDTH1,PD,PBLL_O_E,PEMOIST,ZWORK2)
-  !
+    !
     !$mnh_expand_array(JIJ=IIJB:IIJE,JK=1:IKT)
     ZF(:,:) = ZF(:,:) + Z3RDMOMENT(:,:) &
                                   * ZWORK1(:,:)
