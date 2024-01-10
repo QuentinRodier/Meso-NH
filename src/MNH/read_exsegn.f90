@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2024 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -998,6 +998,31 @@ IF (.NOT. LHARAT .AND. LSTATNW) THEN
   CALL PRINT_MSG(NVERB_FATAL, 'GEN', 'READ_EXSEGN', &
                 &'LSTATNW only tested in combination with HARATU and EDMFm!')
 ENDIF
+
+! Check that CSEG and CEXP does not contain unauthorized characters ('.' and ' ')
+IF ( KMI == 1 ) THEN
+  DO JI = 1, LEN_TRIM(CSEG)
+    IF ( CSEG(JI:JI) == '.' ) THEN
+      CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'READ_EXSEGN', 'CSEG may not contain . character (replaced by _)' )
+      CSEG(JI:JI) = '_'
+    END IF
+    IF ( CSEG(JI:JI) == ' ' ) THEN
+      CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'READ_EXSEGN', 'CSEG may not contain space character (replaced by _)' )
+      CSEG(JI:JI) = '_'
+    END IF
+  END DO
+
+  DO JI = 1, LEN_TRIM(CEXP)
+    IF ( CEXP(JI:JI) == '.' ) THEN
+      CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'READ_EXSEGN', 'CEXP may not contain . character (replaced by _)' )
+      CEXP(JI:JI) = '_'
+    END IF
+    IF ( CEXP(JI:JI) == ' ' ) THEN
+      CALL PRINT_MSG( NVERB_WARNING, 'GEN', 'READ_EXSEGN', 'CEXP may not contain space character (replaced by _)' )
+      CEXP(JI:JI) = '_'
+    END IF
+  END DO
+END IF
 !
 !-------------------------------------------------------------------------------!
 !*       2.    FIRST INITIALIZATIONS
