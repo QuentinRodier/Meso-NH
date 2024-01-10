@@ -1,19 +1,13 @@
+!MNH_LIC Copyright 2023-2024 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
+!MNH_LIC for details. version 1.
 ! radiation_ice_optics_shapes.F90 - 
-!
-! (C) Copyright 2017- ECMWF.
-!
-! This software is licensed under the terms of the Apache Licence Version 2.0
-! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
-!
-! In applying this licence, ECMWF does not waive the privileges and immunities
-! granted to it by virtue of its status as an intergovernmental organisation
-! nor does it submit to any jurisdiction.
 !
 ! Authors: Marie Taufour
 ! Email:   marie.taufour@aero.obs-mip.fr
 !
-! The reference for this ice optics parameterization is ....
-
+!
 module radiation_ice_optics_shapes
 
   implicit none
