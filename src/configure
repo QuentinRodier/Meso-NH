@@ -408,7 +408,7 @@ export LIB_GRIBAPI='${GRIB_API_LIB}'
 module purge
 module load prgenv/intel 
 module switch intel/2023.2.0
-module load openmpi/4.1.4.1
+module load openmpi/4.1.1.1
 unset CC CXX 
 "}
 ;;
