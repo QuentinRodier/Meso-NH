@@ -408,7 +408,7 @@ export LIB_GRIBAPI='${GRIB_API_LIB}'
 module purge
 module load prgenv/intel 
 module switch intel/2023.2.0
-module load openmpi/4.1.4.1
+module load openmpi/4.1.1.1
 unset CC CXX 
 "}
 ;;
@@ -531,15 +531,16 @@ export SLURM_CPU_BIND=none
 export I_MPI_PIN_PROCESSOR_LIST=all:map=spread
 "}
               ;;
-'Linux olympe'*)
+'Linux olympe'*) # CALMIP
                 export     ARCH=${ARCH:-LXifort}
                 export  VER_MPI=${VER_MPI:-MPIINTEL}
                 export OPTLEVEL=${OPTLEVEL:-O2}
                 export VER_CDF=${VER_CDF:-CDFAUTO}
                 export   MNHENV=${MNHENV:-"
 module purge
-module load cmake/3.13.0
-module load intel/20.0.015 intelmpi/20.0.015
+module load cmake/3.22.2
+module load intel/oneapi/2022.1.2 compiler/2022.0.2 mpi/2021.5.1
+
 export SLURM_CPU_BIND=none
 export I_MPI_PIN_PROCESSOR_LIST=all:map=spread
 "}
