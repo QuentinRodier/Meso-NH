@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2024 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -59,7 +59,6 @@ INTEGER,SAVE      :: JPHEXT = 1     ! Horizontal External points number
 INTEGER, PARAMETER :: JPVEXT = 1      ! Vertical External points number
 INTEGER, PARAMETER :: JPVEXT_TURB = 1      ! Vertical External points number
 INTEGER, PARAMETER :: JPMODELMAX = 8  ! Maximum allowed number of nested models 
-INTEGER, PARAMETER :: JPCPLFILEMAX = 24 ! Maximum allowed number of CouPLing FILEs
 INTEGER, PARAMETER :: JPRIMMAX = 6    ! Maximum number of points for the
                        ! horizontal relaxation for the outermost verticals
 INTEGER, PARAMETER :: JPSVMAX  = 200  ! Maximum number of scalar variables

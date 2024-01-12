@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2024 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -146,7 +146,6 @@ END MODULE MODI_INI_CPL
 !!      IO_File_close : to close a FM-file
 !!      INI_LS      : to initialize larger scale fields
 !!      INI_LB      : to initialize "2D" surfacic LB fields 
-!!      DATETIME_DISTANCE : compute the temporal distance in seconds between 2 dates
 !!
 !!      Module MODE_TIME : contains SM_PRINT_TIME routine
 !!                         and uses module MODD_TIME (for definition
@@ -157,7 +156,6 @@ END MODULE MODI_INI_CPL
 !!      Module MODD_PARAMETERS 
 !!         JPHEXT : Horizontal external points number
 !!         JPVEXT : Vertical external points number
-!!         JPCPLFILEMAX : Maximum allowed number of coupling files
 !!
 !!      Module MODD_CONF   
 !!         NVERB      : Level of informations on output-listing
@@ -313,12 +311,9 @@ INTEGER                :: IRESP
 CHARACTER (LEN=40)     :: YTITLE                     !  Title for date print 
 INTEGER                :: JCI                        !  Loop index on number of
                                                      ! coupling files
-CHARACTER (LEN=2)      :: YCI                        !  String for coupling files
+CHARACTER (LEN=6)      :: YCI                        !  String for coupling files
                                                      ! index
 REAL                   :: ZLENG                      ! Interpolation length
-LOGICAL                :: GEND                    !  Logical to see if coupling
-                                                  ! times respect the chronolo.
-                                                  ! order or the segment length
 INTEGER                :: IIMAX,IJMAX,IKMAX       !  Dimensions  of the physical 
                                                   ! part of the arrays stored in
                                                   ! coupling file
@@ -326,11 +321,11 @@ INTEGER                :: IKU             !  Dimensions of arrays in
                                                   ! initial file
 
 INTEGER                :: ICPLEND                 ! number of the last cpl file
-LOGICAL, DIMENSION(JPCPLFILEMAX)    :: GSKIP      ! array to skip or not after
-                                                  ! a cpl file
+LOGICAL, DIMENSION(NCPL_NBR) :: GSKIP             ! array to skip or not after a cpl file
 REAL                   :: ZDIST                   ! temporal distance in secunds
                                                   ! between 2 dates
 LOGICAL :: GLSOURCE ! switch for the source term (for ini_ls and ini_lb)
+TYPE (DATE_TIME), DIMENSION(NCPL_NBR) :: TZDTCPL ! Time and Date of the CouPLing files
 !CHARACTER(LEN=4), DIMENSION(KSV)    :: YGETSVM
 !
 !-------------------------------------------------------------------------------
@@ -339,7 +334,7 @@ LOGICAL :: GLSOURCE ! switch for the source term (for ini_ls and ini_lb)
 !              --------------------
 !
 GSKIP(:)=.FALSE.
-GEND=.FALSE.
+ALLOCATE( NCPL_TIMES(NCPL_NBR, NMODEL) )
 NCPL_TIMES(:,:) = NUNDEF
 ILUOUT = TLUOUT%NLU
 !
@@ -349,58 +344,57 @@ ILUOUT = TLUOUT%NLU
 !              --------------------------
 !
 DO JCI=1,NCPL_NBR
-  WRITE(YCI,'(I2.0)') JCI
+  WRITE(YCI,'(I0)') JCI
   CALL IO_File_add2list(TCPLFILE(JCI)%TZFILE,CCPLFILE(JCI),'MNH','READ',KLFITYPE=2,KLFIVERB=NVERB)
   CALL IO_File_open(TCPLFILE(JCI)%TZFILE,KRESP=IRESP)
   IF (IRESP /= 0) THEN
-    CALL PRINT_MSG(NVERB_FATAL,'IO','INI_CPL','problem when opening coupling file '//TRIM(YCI))
+    WRITE( CMNHMSG(1), '( "problem when opening coupling file ", I0 )' ) JCI
+    CALL PRINT_MSG( NVERB_ERROR, 'IO', 'INI_CPL' )
+    GSKIP(JCI) = .TRUE.
+    CYCLE
   END IF
 !
 !*       2.1   Read current time in coupling files
 !
-  CALL IO_Field_read(TCPLFILE(JCI)%TZFILE,'DTCUR',TDTCPL(JCI))
+  CALL IO_Field_read(TCPLFILE(JCI)%TZFILE,'DTCUR',TZDTCPL(JCI))
 !
 !*       2.2   Check chronological order
 !
-  CALL DATETIME_DISTANCE(TDTCUR,TDTCPL(JCI),ZDIST)
+  ZDIST = TZDTCPL(JCI) - TDTCUR
   !
-  IF ( ZDIST <=0. ) THEN
+  IF ( ZDIST <= 0. ) THEN
     WRITE(ILUOUT,FMT=9002) 1
     WRITE(ILUOUT,*) 'YOUR COUPLING FILE ',JCI,' IS PREVIOUS TO THE DATE &
                & CORRESPONDING TO THE BEGINNING OF THE SEGMENT. IT WILL &
                & NOT BE TAKEN INTO ACCOUNT.'
     YTITLE='CURRENT DATE AND TIME IN THE INITIAL FILE'
     CALL SM_PRINT_TIME(TDTCUR,TLUOUT,YTITLE)
-    YTITLE='CURRENT DATE AND TIME OF THE FILE'//YCI
-    CALL SM_PRINT_TIME(TDTCPL(JCI),TLUOUT,YTITLE)
+    YTITLE='CURRENT DATE AND TIME OF THE FILE '//YCI
+    CALL SM_PRINT_TIME(TZDTCPL(JCI),TLUOUT,YTITLE)
+    CALL PRINT_MSG( NVERB_ERROR, 'GEN', 'INI_CPL', '' )
     GSKIP(JCI)=.TRUE.      ! flag to skip after this coupling file
-    CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_CPL','')      
   ELSE
     NCPL_TIMES(JCI,1) = NINT( ZDIST / PTSTEP ) + 2
   END IF
   !
+  ! Check that the coupling files are in chronological order
   IF (JCI > 1) THEN
-    CALL DATETIME_DISTANCE(TDTCPL(JCI-1),TDTCPL(JCI),ZDIST)
+    ZDIST = TZDTCPL(JCI) - TZDTCPL(JCI)
     !
     IF ( ZDIST < 0. ) THEN
       WRITE(ILUOUT,FMT=9003) 1
       WRITE(ILUOUT,*) 'YOU MUST SPECIFY THE COUPLING FILES IN A CHRONOLOGICAL &
                        & ORDER'
-      YTITLE='CURRENT DATE AND TIME OF THE FILE'//YCI
-      CALL SM_PRINT_TIME(TDTCPL(JCI),TLUOUT,YTITLE)
-      WRITE(YCI,'(I2.0)') JCI-1        
-      YTITLE='CURRENT DATE AND TIME OF THE FILE'//YCI
-      CALL SM_PRINT_TIME(TDTCPL(JCI-1),TLUOUT,YTITLE)
-      GEND=.TRUE.           ! error flag set to true
+      YTITLE='CURRENT DATE AND TIME OF THE FILE '//YCI
+      CALL SM_PRINT_TIME(TZDTCPL(JCI),TLUOUT,YTITLE)
+      WRITE(YCI,'(I0)') JCI-1
+      YTITLE='CURRENT DATE AND TIME OF THE FILE '//YCI
+      CALL SM_PRINT_TIME(TZDTCPL(JCI-1),TLUOUT,YTITLE)
       CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_CPL','')      
     END IF
   !   
   END IF
 END DO
-!  exit when a fatal error has been encountered
-IF ( GEND ) THEN
-  RETURN
-END IF
 !
 !*       2.3   Find the current coupling file and the last one
 !
@@ -427,7 +421,7 @@ IF (ICPLEND==NCPL_NBR .AND. NCPL_TIMES(NCPL_NBR,1) < KSTOP) THEN
   WRITE(ILUOUT,*) 'PLEASE, REFER TO THE USER GUIDE TO OBTAIN MORE INFORMATIONS'
   WRITE(ILUOUT,*) 'ON THE TEMPORAL GRID.'
   YTITLE='CURRENT DATE AND TIME OF THE LAST FILE'
-  CALL SM_PRINT_TIME(TDTCPL(NCPL_NBR),TLUOUT,YTITLE)
+  CALL SM_PRINT_TIME(TZDTCPL(NCPL_NBR),TLUOUT,YTITLE)
   YTITLE='DATE AND TIME OF THE BEGINNING OF THE SEGMENT YOU WANT TO BE PERFORMED'
   CALL SM_PRINT_TIME(TDTCUR,TLUOUT,YTITLE)
   WRITE(ILUOUT,*) 'XSEGLEN = ', XSEGLEN 
@@ -525,11 +519,7 @@ CALL IO_File_close(TCPLFILE(NCPL_CUR)%TZFILE)
 !*      6.    FORMATS
 !             -------
 !
-9000  FORMAT(/,'NOTE  IN INI_CPL FOR MODEL ', I2, ' : ',/, &
-             '--------------------------------')
-9001  FORMAT(/,'CAUTION ERROR IN INI_CPL FOR MODEL ', I2,' : ',/, &
-             '----------------------------------------' )
-9002  FORMAT(/,'WARNING IN INI_CPL FOR MODEL ', I2,' : ',/, &
+9002  FORMAT(/,'ERROR IN INI_CPL FOR MODEL ', I2,' : ',/, &
              '----------------------------------' )
 9003  FORMAT(/,'FATAL ERROR IN INI_CPL FOR MODEL ', I2,' : ',/, &
              '--------------------------------------' )

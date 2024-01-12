@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2024 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -360,8 +360,8 @@ CALL POSNAM( TZDESFILE, 'NAM_LUNITN', GFOUND )
 CALL INIT_NAM_LUNITN
 IF (GFOUND) THEN 
   READ(UNIT=ILUDES,NML=NAM_LUNITn)
-  CALL UPDATE_NAM_LUNITN
 END IF
+CALL UPDATE_NAM_LUNITN(KMI)
 CALL POSNAM( TZDESFILE, 'NAM_CONFN', GFOUND )
 CALL INIT_NAM_CONFN
 IF (GFOUND) THEN 

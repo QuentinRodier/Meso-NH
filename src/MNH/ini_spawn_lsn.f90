@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1997-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1997-2024 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -114,7 +114,7 @@ END MODULE MODI_INI_SPAWN_LS_n
 !!       Function   MZF,MXM,MYM   : averages operators
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
-!!      Module MODD_PARAMETERS: JPHEXT,JPVEXT,JPCPLFILEMAX
+!!      Module MODD_PARAMETERS: JPHEXT,JPVEXT
 !!
 !!      Module MODD_DYN: XTSTEP_MODEL1,NCPL_TIMES
 !!
@@ -347,7 +347,7 @@ IF ( GVERT_INTERP ) THEN
 END IF
 !
 IF ( SIZE(PLSTHS,1) /= 0 ) THEN
-  DO JI=1,JPCPLFILEMAX
+  DO JI = 1, SIZE( NCPL_TIMES, DIM=1 )
     IF ( NCPL_TIMES(JI,1) /= NUNDEF ) THEN
       NCPL_TIMES(JI,KMI) =  NINT( ((NCPL_TIMES(JI,1)-2)*XTSTEP_MODEL1)   &
                  / PTSTEP ) + 2

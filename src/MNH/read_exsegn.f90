@@ -480,7 +480,7 @@ CHARACTER (LEN=NFILENAMELGTMAX), INTENT(IN) :: HINIFILEPGD ! name of PGD file
 !
 CHARACTER(LEN=3) :: YMODEL
 INTEGER :: ILUSEG,ILUOUT ! logical unit numbers of EXSEG file and outputlisting
-INTEGER :: JS,JCI,JI,JSV       ! Loop indexes 
+INTEGER :: JS,JI,JSV       ! Loop indexes
 LOGICAL :: GRELAX              
 LOGICAL :: GFOUND              ! Return code when searching namelist
 !
@@ -2476,33 +2476,7 @@ END IF
 !
 !*       4.    CHECK COHERENCE BETWEEN EXSEG VARIABLES
 !              ---------------------------------------
-!        
-!*       4.1  coherence between coupling variables in EXSEG file  
-!                      
-IF (KMI == 1) THEN
-  NCPL_NBR = 0
-  DO JCI = 1,JPCPLFILEMAX
-    IF (LEN_TRIM(CCPLFILE(JCI)) /= 0) THEN        ! Finds the number 
-      NCPL_NBR = NCPL_NBR + 1                     ! of coupling files
-    ENDIF
-    IF (JCI/=JPCPLFILEMAX) THEN                   ! Deplaces the coupling files
-      IF ((LEN_TRIM(CCPLFILE(JCI)) == 0) .AND.   &! names if one missing
-          (LEN_TRIM(CCPLFILE(JCI+1)) /= 0)) THEN
-        DO JI=JCI,JPCPLFILEMAX-1
-          CCPLFILE(JI)=CCPLFILE(JI+1)
-        END DO
-        CCPLFILE(JPCPLFILEMAX)=''
-      END IF
-    END IF
-  END DO
 !
-  IF (NCPL_NBR /= 0) THEN         
-    LSTEADYLS = .FALSE.
-  ELSE
-    LSTEADYLS = .TRUE.
-  ENDIF 
-END IF
-!        
 !*       4.3   check consistency in forcing switches
 !
 IF ( LFORCING ) THEN
@@ -3109,7 +3083,14 @@ END IF
 !*       5.    WE DO NOT FORGET TO UPDATE ALL DOLLARN NAMELIST VARIABLES
 !              ---------------------------------------------------------
 !
-CALL UPDATE_NAM_LUNITN
+CALL UPDATE_NAM_LUNITN(KMI)
+IF ( KMI == 1 ) THEN
+  IF (NCPL_NBR /= 0) THEN !To be done after UPDATE_NAM_LUNITN
+    LSTEADYLS = .FALSE.
+  ELSE
+    LSTEADYLS = .TRUE.
+  END IF
+END IF
 CALL UPDATE_NAM_CONFN
 CALL UPDATE_NAM_DRAGTREEN
 CALL UPDATE_NAM_DRAGBLDGN

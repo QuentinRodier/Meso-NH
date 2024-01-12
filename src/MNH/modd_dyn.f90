@@ -1,13 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2024 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$ $Date$
-!-----------------------------------------------------------------
-!-----------------------------------------------------------------
 !-----------------------------------------------------------------
 !     ################
       MODULE MODD_DYN
@@ -79,8 +73,8 @@ LOGICAL, SAVE, DIMENSION(JPMODELMAX) :: LUSERV_G, LUSERC_G, LUSERR_G, LUSERI_G
 LOGICAL, SAVE, DIMENSION(JPMODELMAX) :: LUSERS_G, LUSERH_G, LUSERG_G
 LOGICAL, SAVE, DIMENSION(JPMODELMAX) :: LUSETKE
 LOGICAL, SAVE, DIMENSION(JPSVMAX,JPMODELMAX) :: LUSESV
-REAL,    SAVE, DIMENSION(JPCPLFILEMAX,JPMODELMAX)          :: NCPL_TIMES   ! array of
-                ! the number for the coupling instants of every nested model
+REAL,    SAVE, DIMENSION(:,:), ALLOCATABLE :: NCPL_TIMES ! array of the timestep numbers for the coupling instants
+                                                         ! for each nested model
 REAL,    SAVE                       :: XTSTEP_MODEL1  ! time step of the
                                                       ! outermost model
 END MODULE MODD_DYN

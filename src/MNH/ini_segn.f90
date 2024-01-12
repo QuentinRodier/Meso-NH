@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2024 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -327,7 +327,7 @@ CALL POSNAM( TZFILE_DES, 'NAM_LUNITN', GFOUND )
 IF (GFOUND) THEN
   CALL INIT_NAM_LUNITn
   READ(UNIT=ILUSEG,NML=NAM_LUNITn)
-  CALL UPDATE_NAM_LUNITn
+  CALL UPDATE_NAM_LUNITn(KMI)
   IF (LEN_TRIM(CINIFILEPGD)==0 .AND. CSURF=='EXTE') THEN
     !callabortstop
     CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_SEG_n','error in namelist NAM_LUNITn: you need to specify CINIFILEPGD')

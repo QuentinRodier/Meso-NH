@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2024 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
@@ -258,7 +258,7 @@ IF (.NOT.ASSOCIATED(TPDATAFILE%TDESFILE)) &
 !
 ILUSEG = TPDATAFILE%TDESFILE%NLU
 !
-CALL INIT_NAM_LUNITn
+CALL INIT_NAM_LUNITn( OWRITE=.TRUE. )
 WRITE(UNIT=ILUSEG,NML=NAM_LUNITn)
 IF (CPROGRAM/='MESONH') THEN
   LUSECI=.FALSE.
