@@ -1,0 +1,73 @@
+&NAM_LUNITn  CINIFILE = "KW78_V56U",
+             CINIFILEPGD='KW78_PGD' /
+
+&NAM_CONFIO LCDF4 = .TRUE.,
+            LLFIOUT = .FALSE.,
+            LLFIREAD = .FALSE. /
+
+&NAM_DYNn  XTSTEP = 2.5,
+           CPRESOPT = "ZRESI",
+           NITR = 4,
+           XRELAX = 1.,
+           LHORELAX_UVWTH = F,
+           LHORELAX_RV = F,
+           LHORELAX_SV = F,
+           LVE_RELAX = T,
+           XRIMKMAX = 0.005,
+           XT4DIFU = 500. /
+
+&NAM_ADVn  CMET_ADV_SCHEME = "PPM_01",
+           CUVW_ADV_SCHEME = "WENO_K",
+           NWENO_ORDER=5,
+           CTEMP_SCHEME='RK53' /
+
+&NAM_PARAMn  CRAD = "NONE",
+             CCLOUD = "ICE3",
+             CELEC  = "ELE3"/
+
+&NAM_PARAM_ICEn  LRED = F,
+                LSNOW_T = F /
+
+&NAM_ELEC  CNI_CHARGING = 'TAKAH',
+           LINDUCTIVE = T /
+
+&NAM_LBCn  CLBCX = 2*"OPEN",
+           CLBCY = 2*"OPEN" /
+
+&NAM_CONF  CCONF = "START",
+           NMODEL = 1,
+           LFLAT = T,
+           NVERB = 5,
+           CEXP = "KW78U",
+           CSEG = "IC3E3"
+           NHALO = 3 /
+
+&NAM_DYN  XSEGLEN = 3600.,
+          XASSELIN = 0.2,
+          LCORIO = F,
+          LNUMDIFU = F,
+          XALKTOP = 0.5,
+          XALZBOT = 12500. /
+
+&NAM_BACKUP  XBAK_TIME_FREQ(1) = 600.,
+             XBAK_TIME_FREQ_FIRST(1) = 600. /
+
+&NAM_BUDGET  CBUTYPE = 'NONE',
+             NBUMOD = 1,
+             NBUMASK = 2,
+             XBULEN = 300.,
+             XBUWRI = 3600.,
+             NBUKL = 2,
+             NBUKH = 30,
+             LBU_ICP = F,
+             LBU_JCP = F,
+             LBU_KCP = F /
+
+&NAM_BU_RTH  LBU_RTH = F, CBULIST_RTH = 'ALL' /
+&NAM_BU_RRV  LBU_RRV = F, CBULIST_RRV = 'ALL' /
+&NAM_BU_RRC  LBU_RRC = F, CBULIST_RRC = 'ALL' /
+&NAM_BU_RRR  LBU_RRR = F, CBULIST_RRR = 'ALL' /
+&NAM_BU_RRI  LBU_RRI = F, CBULIST_RRI = 'ALL' /
+&NAM_BU_RRS  LBU_RRS = F, CBULIST_RRS = 'ALL' /
+&NAM_BU_RRG  LBU_RRG = F, CBULIST_RRG = 'ALL' /
+&NAM_BU_RSV  LBU_RSV = F, CBULIST_RSV = 'ALL' /

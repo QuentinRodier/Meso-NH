@@ -1,0 +1,47 @@
+Ce KTEST est technique et permet de verifier l enchainement de simulations a 2 domaines force par une premiere simulation MNH a 2 domaines independante de la seconde
+avec dom1>dom2>dom3>dom4
+- 1ere simulation : deux domaine (attention pas de fichier de couplage). Domaines PGD1 et PGD2
+- 2e simulation : deux domaines forces par la 1ere. Domaines PGD3 et PGD4
+
+Remarque : Dans la 2e simulation : le 1er PGD (PGD3) doit etre defini par rapport au PGD 2 de la premiere simulation (PGD2)
+Il n'y a pas de graphique associe
+
+Etapes :
+---------------------------------------------
+SIMU1 = 2 domaines classiques
+PGD1
+PGD2
+NEST_PGD (correction orographie)
+PREP_REAL DOMAINE 1 a partir fichier grande echelle quelconque (ici CEP : ecmwf.OD.20030810.00, canicule de 2003) : FICHIER INITIAL DOMAINE 1
+SPAWNING domaine 1 vers domaine 2
+PREP_REAL DOMAINE 2 : FICHIER INITIAL DOMAINE 2
+RUN a 2 domaines
+
+---------------------------------------------
+
+SIMU2 = 2 domaines grid-nesting couple avec la SIMU1 tel que dom1>dom2>dom3>dom4
+PGD3 defini a partir du domaine 2
+PGD4
+NEST_PGD
+
+preparation de l etat initial du domaine 3 a partir d une sortie de la SIMU1 domaine 2 :
+SPAWNING + PREP_REAL DOMAINE 3 a une date = init de la simu
+
+preparation d un fichier de couplage du domaine 3 a partir d une sortie de la SIMU1 domaine 2 :
+SPAWNING + PREP_REAL a une date = cpl1 de la simu
+Cette etape doit etre faite XX fois par fichier de couplage voulu
+
+preparation de l etat initial du domaine 4 a partir de l etat initial du domaine 3
+SPAWNING domaine 3 vers domaine 4
+PREP_REAL DOMAINE 4 : FICHIER INITIAL DOMAINE 4
+RUN a 2 domaines
+
+
+Pour un domaine d2=d3 du type : dom1>dom2=dom3>dom4
+Les differences dans la SIMU2 sont : 
+- creation du PGD3 avec la meme namelist du PGD2 SIMU1
+- pas de spawning avant le prep_real domaine 3 pour creer l etat initial. 
+Avec PRE_REAL1.nam :
+&NAM_FILE_NAMES HATMFILE = 'CLUS0.2.SPRIN.001', HPGDFILE ='PGD3.neste1'
+&NAM_PREP_SURF_ATM CFILE = 'CLUS0.2.SPRIN.001', CFILEPGD = "PGD2_sim1.neste1",
+Les fichiers pour interpoler l atmosphere (HATMFILE) et la surface (CFILE) sont les memes.

@@ -1,0 +1,12 @@
+#!/bin/bash
+#MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+#MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
+#MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+#MNH_LIC for details. version 1.
+set -x
+set -e
+#export GRIB_DEFINITION_PATH=$SRC_MESONH/src/LIB/${VERSION_GRIBAPI}/definitions
+rm -f 16JAN* OUTPUT_LISTING* pipe* *.tex
+ln -sf ${SRC_MESONH}/MY_RUN/KTEST/007_16janvier/004_arp2lfi/arpifs.AN.19980116.06 .
+ln -sf ../005_nest/16JAN98_36km.neste1.{des,lfi,nc} .
+time ${MONORUN} PREP_REAL_CASE${XYZ}

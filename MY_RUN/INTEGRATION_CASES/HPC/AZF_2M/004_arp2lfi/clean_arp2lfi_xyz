@@ -1,0 +1,4 @@
+set -x
+
+rm -f OUTPUT_LISTING* OUTPUT_TRANSFER pipe* *.tex *.dat *.bin PGD* CPL*
+

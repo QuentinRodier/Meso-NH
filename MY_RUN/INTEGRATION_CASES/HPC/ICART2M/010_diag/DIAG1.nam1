@@ -1,0 +1,10 @@
+&NAM_CONFIO  LCDF4=T /
+&NAM_CONFZ
+ ! NZ_VERB=5 , NZ_PROC=0 , NB_PROCIO_R=8 , NB_PROCIO_W=1
+/
+&NAM_DIAG    
+ LVAR_MRW=T         
+ LCHEMDIAG=T /
+&NAM_DIAG_FILE      YINIFILE(1) = "ICART.1.SEG02.003" ,
+                    YINIFILEPGD(1) = "ICARTT1008_PGD_15km.neste1",
+                    YSUFFIX='dg' /

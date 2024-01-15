@@ -1,0 +1,4 @@
+set -x
+rm -f ICART* CPLCH* OUTPUT_LISTING* pipe* file* REMAP_* PRESUURE DATA*
+rm -f EXSEG?.nam 
+

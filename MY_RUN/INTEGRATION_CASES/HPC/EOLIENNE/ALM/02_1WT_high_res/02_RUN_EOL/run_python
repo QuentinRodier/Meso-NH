@@ -1,0 +1,15 @@
+#!/bin/bash
+#SBATCH -J post
+#SBATCH -N 1            # nodes number (=NBP)
+#SBATCH -n 1            # CPUs number (on all nodes) (=NBP*TPN)
+#SBATCH -o ideal_fire.eo%j   #
+#SBATCH -e ideal_fire.eo%j   #
+#SBATCH -t 03:00:00    # time limit
+
+module load python/2.7.17
+rm -f *.png
+python eol_2D_fields.py DTU10.1.SEG4.002.nc UT
+python eol_2D_fields.py DTU10.1.SEG4.002.nc UMME
+python eol_aerodyn_var.py DTU10.1.SEG4.002.nc
+
+convert *.png ALM_1WT_HighRes.pdf

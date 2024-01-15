@@ -1,0 +1,5 @@
+set -x
+set -e
+ln -fs ../001_prep_ideal/TEST_BUBBLE_50m.* .
+rm -f BUBBL* OUT*
+time ${MONORUN} MESONH${XYZ}

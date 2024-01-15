@@ -1,0 +1,2 @@
+#!/bin/bash
+rm -f DAD* SON* RUN_P* file* OUTPUT_LISTING* REMAP* PRESSURE

@@ -1,0 +1,31 @@
+&NAM_PGDFILE CPGDFILE='PGD_FRANCE',
+              NHALO=0
+/
+&NAM_CONF_PROJ         XLAT0 = 44.4   , 
+                       XLON0 = 6.6   , 
+                       XRPK  = 0.5 ,
+                       XBETA =  0. 
+/
+&NAM_CONF_PROJ_GRID    NIMAX   = 100  , 
+                       NJMAX   = 100  , 
+                       XLATCEN = 44.4 , 
+                       XLONCEN = 6.6  ,  
+                       XDX     = 2500. , 
+                       XDY     = 2500. 
+/
+&NAM_PGD_SCHEMES CNATURE='ISBA',
+                 CSEA='SEAFLX',
+                 CTOWN='TEB',
+                 CWATER='WATFLX' /
+
+&NAM_COVER      YCOVER='ECOCLIMAP_v2.0',
+                YCOVERFILETYPE='DIRECT' 
+/
+&NAM_ZS         YZS='gtopo30',
+                YZSFILETYPE='DIRECT' 
+/
+&NAM_ISBA       YCLAY='CLAY_HWSD_MOY', YCLAYFILETYPE='DIRECT' ,
+                YSAND='SAND_HWSD_MOY', YSANDFILETYPE='DIRECT' 
+/
+&NAM_CONFIO     LCDF4=T, LLFIOUT=F 
+/

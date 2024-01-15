@@ -1,0 +1,40 @@
+#!/bin/sh
+#SBATCH -J run_kmap
+#SBATCH -N 4            # nodes number (=NBP)
+#SBATCH -n 64            # CPUs number (on all nodes) (=NBP*TPN)
+#SBATCH -o run_kmap.eo%j   #
+#SBATCH -e run_kmap.eo%j   #
+#SBATCH -t 15:00:00    # time limit
+
+# Echo des commandes
+ulimit -c 0
+ulimit -s unlimited
+# Arrete du job des la premiere erreur
+set -e
+# Nom de la machine
+hostname 
+
+
+. ~rodierq/DEV_57/MNH-PHYEX070-b95d84d7/conf/profile_mesonh-LXifort-R8I4-MNH-V5-6-2-ECRAD140-MPIAUTO-O2
+#module load arm/forge/20.0.2
+#salloc -N 4 -n 64 --exclusive  -t 04:35:00
+export MPIRUN="Mpirun -np 64"
+#export MPIRUN="Exec ddt -start -n 64"
+
+set -x
+set -e
+ls -lrt
+
+
+rm -f K_MAP.?.WENO5.*
+time ${MPIRUN} MESONH${XYZ}
+mv OUTPUT_LISTING0  OUTPUT_LISTING0_run
+mv OUTPUT_LISTING1  OUTPUT_LISTING1_run
+mv OUTPUT_LISTING2  OUTPUT_LISTING2_run
+mv OUTPUT_LISTING3  OUTPUT_LISTING3_run
+
+
+rm -f file_for_xtransfer pipe_name PRESSURE REMAP*
+
+sbatch run_diag
+ja

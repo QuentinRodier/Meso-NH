@@ -1,0 +1,2 @@
+rm -f TEST_MNT_2D* OUTPUT_LISTING* pipe* *.tex
+

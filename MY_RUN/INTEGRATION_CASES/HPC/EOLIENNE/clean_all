@@ -1,0 +1,10 @@
+#!/bin/bash
+cd ADNR
+echo 'Cleanning ADNR:'
+./clean_all
+cd ../ALM
+echo 'Cleanning ALM:'
+./clean_all
+cd ../ADR
+echo 'Cleanning ADR:'
+./clean_all

@@ -1,0 +1,35 @@
+#!/bin/bash
+#SBATCH -J ADNR3_03
+#SBATCH -N 1            # nodes number (=NBP)
+#SBATCH -n 1            # CPUs number (on all nodes) (=NBP*TPN)
+#SBATCH -o ideal_fire.eo%j   #
+#SBATCH -e ideal_fire.eo%j   #
+#SBATCH -t 00:10:00    # time limit
+
+# Echo des commandes
+ulimit -c 0
+ulimit -s unlimited
+# Arrete du job des la premiere erreur
+set -e
+# Nom de la machine
+hostname
+
+. ~rodierq/DEV_57/MNH-PHYEX070-b95d84d7/conf/profile_mesonh-LXifort-R8I4-MNH-V5-6-2-ECRAD140-MPIAUTO-O2
+
+set -x
+set -e
+
+export MPIRUN="mpirun -np 1"
+
+ln -sf ../01_PREP/DAD* .
+ln -sf ../02_RUN_PERE/DADDY.1.SEG1.003.* .
+
+time ${MPIRUN} SPAWNING${XYZ}
+
+sed -i 's/DADDY.1.SEG1.003/SON_INInPGD/g' SON_INInPGD.des
+sed -i 's/CINIFILEPGD     = "/CINIFILEPGD="SON_INInPGD/g' SON_INInPGD.des
+
+
+rm -f file_for_xtransfer pipe_name
+cd ../04_RUN_PRE/
+sbatch run_mesonh

@@ -1,0 +1,5 @@
+set -x
+set -e
+ln -fs ../001_prep_ideal/TEST_MNT_2D.* .
+rm -f HYDRO.* OUT*
+time ${MONORUN} MESONH${XYZ}

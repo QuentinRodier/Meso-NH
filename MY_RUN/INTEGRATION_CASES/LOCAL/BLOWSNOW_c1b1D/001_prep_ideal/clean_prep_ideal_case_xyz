@@ -1,0 +1,2 @@
+rm -f *.des *.lfi *.nc
+rm -f file_for_xtransfer  OUTPUT_LISTING1 pipe_name

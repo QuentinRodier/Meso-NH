@@ -1,0 +1,128 @@
+
+R version 4.1.2 (2021-11-01) -- "Bird Hippie"
+Copyright (C) 2021 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R est un logiciel libre livré sans AUCUNE GARANTIE.
+Vous pouvez le redistribuer sous certaines conditions.
+Tapez 'license()' ou 'licence()' pour plus de détails.
+
+R est un projet collaboratif avec de nombreux contributeurs.
+Tapez 'contributors()' pour plus d'information et
+'citation()' pour la façon de le citer dans les publications.
+
+Tapez 'demo()' pour des démonstrations, 'help()' pour l'aide
+en ligne ou 'help.start()' pour obtenir l'aide au format HTML.
+Tapez 'q()' pour quitter R.
+
+[Sauvegarde de la session précédente restaurée]
+
+> # Load Model Results
+> snw_data <-read.table('SNOW_DATA',colClasses=c("character","character"))
+> 
+> data_names= c('UT','SNWNOA','SNWMASS','SNWRGA','SNWSUBL3D')
+> data_names_1D= c('WSN_T_ISBA','COL_SNWSUBL','THDS','DSN_T_ISBA','SNW_SUBL_INS')
+> data_names_1D= c('COL_SNWSUBL','THDS','SNW_SUBL_INS')
+> data_names_canopy= c('ISBA_CAN_Z','CANSNW_NUM','CANSNW_MAS','CANSNW_RGL','ISBA_CAN_U')
+> 
+> numtot = as.numeric(snw_data[2,1])
+> nlevel_cano=5  #Number of vertical levels in canopy
+> 
+> data_fin_cano=rep(sprintf('%02d',1),length(data_names_canopy))
+> for(i in 2:nlevel_cano){
++     data_fin_cano=c(data_fin_cano,rep(sprintf('%02d',i),length(data_names_canopy)))
++ }
+> data_names_canopy=paste(data_names_canopy,data_fin_cano,sep="")
+> 
+> 
+> lit_data = list(matrix(0,nrow=numtot+1,ncol=1))
+> 
+> for(i in 1:(length(data_names)+length(data_names_1D)+length(data_names_canopy))){
++     lit_data[i]<- list(matrix(0,nrow=numtot+1,ncol=1))
++ }
+> names(lit_data) <- c(data_names,data_names_1D,data_names_canopy)
+> 
+> for(i in 1:(length(data_names)+length(data_names_1D)+length(data_names_canopy))){
++ for(j in 1:numtot){
++ lit_data[[i]][j+1,1] = as.numeric(snw_data[j+2,1])
++ }
++ lit_data[[i]]=as.data.frame(lit_data[[i]])
++ names(lit_data[[i]])<-c("ZZ")
++ }
+Il y a eu 33 avis (utilisez warnings() pour les visionner)
+> 
+> 
+> for(idata in 1:length(data_names)) {
++ 
++ mask_data=which(snw_data$V1==data_names[idata])
++ 
++ data_sta <- matrix(0,nrow=numtot+1,ncol=length(mask_data))
++ 
++ for(j in 1:length(mask_data)){
++         ind_beg=mask_data[j]+2
++         ind_end=ind_beg+numtot-1
++         data_sta[1,j] = as.numeric(snw_data[ind_beg-1,2])
++         data_sta[2:(numtot+1),j] = as.numeric(snw_data[ind_beg:ind_end,2])
++ }
++ 
++ data_sta=as.data.frame(data_sta)
++ 
++ 
++ lit_data[[idata]] = cbind(lit_data[[idata]],data_sta)
++ }
+Messages d'avis :
+1: Dans as.numeric(snw_data[ind_beg:ind_end, 2]) :
+  NAs introduits lors de la conversion automatique
+2: Dans as.numeric(snw_data[ind_beg:ind_end, 2]) :
+  NAs introduits lors de la conversion automatique
+3: Dans as.numeric(snw_data[ind_beg:ind_end, 2]) :
+  NAs introduits lors de la conversion automatique
+4: Dans as.numeric(snw_data[ind_beg:ind_end, 2]) :
+  NAs introduits lors de la conversion automatique
+5: Dans as.numeric(snw_data[ind_beg:ind_end, 2]) :
+  NAs introduits lors de la conversion automatique
+6: Dans as.numeric(snw_data[ind_beg:ind_end, 2]) :
+  NAs introduits lors de la conversion automatique
+7: Dans as.numeric(snw_data[ind_beg:ind_end, 2]) :
+  NAs introduits lors de la conversion automatique
+8: Dans as.numeric(snw_data[ind_beg:ind_end, 2]) :
+  NAs introduits lors de la conversion automatique
+> 
+> for(idata in 1:length(data_names_1D)) {
++ 
++ mask_data=which(snw_data$V1==data_names_1D[idata])
++ 
++ data_sta <- matrix(0,nrow=numtot+1,ncol=length(mask_data))
++ 
++ for(j in 1:length(mask_data)){
++         ind=mask_data[j]
++         data_sta[1,j] = as.numeric(snw_data[ind+1,1])
++         data_sta[2,j] = as.numeric(snw_data[ind+1,2])
++ }
++ 
++ data_sta=as.data.frame(data_sta)
++ 
++ 
++ lit_data[[idata+length(data_names)]] = cbind(lit_data[[idata+length(data_names)]],data_sta)
++ }
+> 
+> for(idata in 1:length(data_names_canopy)) {
++ 
++ mask_data=which(snw_data$V1==data_names_canopy[idata])
++ 
++ data_sta <- matrix(0,nrow=numtot+1,ncol=length(mask_data))
++ 
++ for(j in 1:length(mask_data)){
++         ind=mask_data[j]
++         data_sta[1,j] = as.numeric(snw_data[ind+1,1])
++         data_sta[2,j] = as.numeric(snw_data[ind+1,2])
++ }
++ 
++ data_sta=as.data.frame(data_sta)
++ 
++ 
++ lit_data[[idata+length(data_names)+length(data_names_1D)]] = cbind(lit_data[[idata+length(data_names)+length(data_names_1D)]],data_sta)
++ }
+Erreur dans `[<-`(`*tmp*`, 1, j, value = as.numeric(snw_data[ind + 1, 1])) : 
+  indice hors limites
+Exécution arrêtée

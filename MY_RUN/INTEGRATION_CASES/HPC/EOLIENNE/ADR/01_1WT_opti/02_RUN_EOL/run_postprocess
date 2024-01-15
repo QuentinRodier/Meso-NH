@@ -1,0 +1,28 @@
+#!/bin/bash
+#MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+#MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
+#MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+#MNH_LIC for details. version 1.
+
+
+#SBATCH --wckey MPX13003    # Numero du projet
+#SBATCH -J "Divers-ALM-02-0/pp"
+#SBATCH --exclusive
+#SBATCH -p standard
+#SBATCH --qos=normal
+
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH -e file_pp.e%j   
+#SBATCH -o file_pp.o%j   #
+#SBATCH -t 00:10:00
+
+pwd
+
+set -x
+
+source ../../../env_py.sh
+
+python eol_2D_fields.py DTU10.1.SEG1.003.nc UT
+python eol_2D_fields.py DTU10.1.SEG1.003.nc UMME
+python eol_aerodyn_var.py DTU10.1.SEG1.003.nc

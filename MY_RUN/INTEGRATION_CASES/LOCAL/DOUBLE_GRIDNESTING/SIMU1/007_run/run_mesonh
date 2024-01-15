@@ -1,0 +1,9 @@
+#!/bin/sh
+
+
+ln -sf ../003_prep_nest_pgd/PGD*neste* .
+ln -sf ../004_prep_real_d1/FICHIER_INIT.* .
+ln -sf ../006_prep_real_case_d2/FICHIER_INIT_FILS.* .
+ln -sf ../006_prep_real_d2/FICHIER_INIT_FILS.* .
+
+time ${MONORUN} MESONH${XYZ}

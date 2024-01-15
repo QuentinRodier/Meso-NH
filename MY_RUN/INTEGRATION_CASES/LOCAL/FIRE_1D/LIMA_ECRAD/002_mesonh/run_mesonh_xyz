@@ -1,0 +1,9 @@
+#!/bin/sh
+set -x
+set -e
+ln -fs ../001_prep_ideal/FIRE_1D.* .
+ln -fs ../001_prep_ideal/FIRE_PGD.* .
+
+ln -sf ${SRC_MESONH}/src/LIB/RAD/ecrad-${VERSION_ECRAD}/data/* .
+
+time ${MONORUN} MESONH${XYZ}

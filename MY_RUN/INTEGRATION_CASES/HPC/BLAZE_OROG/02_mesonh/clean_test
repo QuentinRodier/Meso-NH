@@ -1,0 +1,67 @@
+#!/bin/sh
+# Cleaning basic
+basic_clean () {
+	echo -e ">> Clean MNH files outputs \n"
+	rm -rvf PRESSURE
+	rm -rvf file_for_xtransfer pipe_name
+	rm -rvf OUTPUT_LISTING*
+	rm -rvf *~
+	rm -rvf *.eo*
+	echo -e ">> Clean Fire outputs \n"
+	rm -rvf MODEL1/*
+	rm -rvf ForeFire/Outputs/*
+	rm -rvf REMAP_*
+}
+
+usage(){
+    echo "Usage: ./clean_mesonh_xyz [options]"
+	echo "-h : help"
+	echo "-a : all "
+	echo "     Remove every backup file in run directory"
+	echo "     -> *.nc and *.des"
+	echo "-d : data "
+	echo "     No link deletion"
+	echo "-s : sync"
+	echo "     Only sync files"
+	echo "-l : log"
+}
+
+while getopts "adshl" option
+do
+	case $option in
+    	a)
+    		echo -e ">> Remove link option \n"
+    		rm -rfv *.nc *.nc
+				rm -rfv *.des
+    		;;
+    	d)
+    		echo -e ">> Remove data files \n"
+			for file in $(find *.nc *.des *.nc); do
+				if [ ! -L $file ]; then
+					rm -fv $file
+				fi
+			done
+			rm -rfv OUTDIR/*
+			;;
+    	s)
+    		echo -e ">> Remove Sync data \n"
+    		rm -rfv ../03_rslt/*.nc
+    		;;
+    	l)
+    		echo -e ">> Remove logs \n"
+    		rm -rfv *.log
+    		;;
+    	h)
+			usage
+			echo -e "\n"
+    		exit 1
+    		;;
+    esac
+done
+
+basic_clean
+
+
+
+echo -e "---------------- Done ----------------\n"
+exit 0

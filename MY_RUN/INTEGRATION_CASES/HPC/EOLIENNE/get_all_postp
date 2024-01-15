@@ -1,0 +1,7 @@
+#!/bin/bash
+cd ADNR
+echo 'Copying from ADNR...'
+./get_postp
+cd ../ALM
+echo 'Copying from ALM...'
+./get_postp

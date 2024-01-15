@@ -1,0 +1,16 @@
+#!/bin/sh
+#PREPARATION DU FICHIER DE COUPLAGE DU DOMAINE 3 A PARTIR DU RESULTAT DE LA SIMU1 2E SORTIE
+
+#PGD SIMU2 domaine 3, premier de la SIMU2 surlequel on interpole
+ln -sf ../003_prep_nest_pgd/PGD3*neste* .
+
+#PGD SIMU1 domaine 2 (du fichier qu'on interpole)
+ln -sf ../../SIMU1/003_prep_nest_pgd/PGD2*neste* .
+
+#Fichier atmospheric de la SIMU1 domaine 2 dont les champs atmospheriques sont interpoles sur le PGD3
+ln -sf ../006_spawning_d2tod3_CPL1/CLUS0.2.SPRIN.002.spa00.* .
+
+#Fichier SIMU1 domaine 2 qu'on interpole pour les champs de surface
+ln -sf ../../SIMU1/007_run/CLUS0.2.SPRIN.002.* .
+
+time ${MONORUN} PREP_REAL_CASE${XYZ}

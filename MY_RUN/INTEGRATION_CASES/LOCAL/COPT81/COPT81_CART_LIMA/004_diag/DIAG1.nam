@@ -1,0 +1,7 @@
+&NAM_CONFIO  LCDF4 = T,
+             LLFIOUT = F,
+             LLFIREAD = F /
+&NAM_DIAG
+  LTPZH = T/
+&NAM_DIAG_FILE  YINIFILE(1) = "COPT8.1.CEN4T.001",
+                YSUFFIX='dg'   /

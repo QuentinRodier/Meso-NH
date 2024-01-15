@@ -1,0 +1,8 @@
+Le cas test original recu par T. Nagel est un restart depuis une sortie a 260s pendant 150s, donc total a 410s.
+La raison est que pour 150s cela prend 18h sur 15 noeuds, donc assez long.
+
+Probleme : depuis la 550 dev commits de debut juillet le e format a du changer un peu et le restart ne fonctionne pas.
+==> Relancement de deux segments de 130s pour reproduire la sortie C  260s
+
+KTEST a lancer a chaque fois : run sur 130s (les graphiques de la 2e page des courbes vs les observations ne sont donc pas comparables)
+A lancer de temps en temps : en entier sur les 410s pour comparer aux obs (les 3 segments)

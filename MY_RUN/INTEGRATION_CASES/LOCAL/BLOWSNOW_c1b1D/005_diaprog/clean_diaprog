@@ -1,0 +1,6 @@
+rm -f a.out dir.* gmeta direc_cano*
+rm -f res_R_* FICVAL File_Run* SNOW_DATA
+rm -f OUT_DIA output_R
+rm -f Res_Diag*
+rm -f Res_Run*
+rm -f prep_data_canopy.Rout

@@ -1,0 +1,96 @@
+&NAM_BLANKn LDUMMY2=F, LDUMMY3=T/
+
+&NAM_LUNITn CINIFILE = "MNHOU.2.SEG2.001",
+            CINIFILEPGD = "MUSTD1.spa00" /
+
+&NAM_DYNn CPRESOPT = 'ZRESI',
+          NITR = 50,
+          LRES = T,
+          XRES = 1.E-9
+          XT4DIFU = 20000. /
+
+&NAM_ADVn CUVW_ADV_SCHEME = 'WENO_K',
+          CMET_ADV_SCHEME = 'PPM_01',
+          CSV_ADV_SCHEME  = 'PPM_01',
+          CTEMP_SCHEME    = 'RK53',
+          NWENO_ORDER     = 5,
+          LSPLIT_CFL      = .TRUE.,
+          LSPLIT_WENO     = .TRUE.,
+          XSPLIT_CFL      = 0.8,
+          LCFL_WRIT       = .FALSE. /
+
+
+&NAM_CONFn LUSERV = T/
+
+&NAM_PARAMn CTURB  = "TKEL",
+            CRAD   = "NONE",
+            CCLOUD = "NONE",
+            CDCONV = "NONE",
+            CSCONV = "NONE" /
+
+&NAM_TURBn XIMPL=1.,
+           CTURBLEN="DEAR",
+           CTURBDIM="3DIM",
+           LTURB_DIAG=.TRUE.,
+           XTKEMIN = 1.E-10 /
+
+
+&NAM_LBCn CLBCX = 2*"OPEN",
+          CLBCY = 2*"OPEN",
+          XCPHASE=0/
+
+&NAM_FRC LGEOST_UV_FRC = .F. /
+
+&NAM_IDEAL_FLUX CUSTARTYPE='Z0',
+                XZ0=0.045,
+                XALB=0.25,
+                XEMIS=1.,
+                NFORCT = 2,
+                XTIMET(1) = 0.,
+                XTIMET(2) = 1000000.,
+                XTSRAD(1) = 317.5,
+                XTSRAD(2) = 317.5,
+                NFORCF = 2,
+                XTIMEF(1) = 0.,
+                XTIMEF(2) = 1000000.,
+                XSFTH(1) = 0.,
+                XSFTH(2) = 0.,
+                CSFTQ='kg/m2/s',
+                XSFTQ(1)=0.,
+                XSFTQ(2)=0.,
+                XSFCO2(1) = 0.,
+                XSFCO2(2) = 0./
+
+&NAM_IBM_PARAMn LIBM = .TRUE.,
+                LIBM_TROUBLE = .FALSE.,
+                NIBM_ITR = 100,
+                CIBM_ADV='LOWORD',
+                XIBM_RUG= 0.045,
+                CIBM_TYPE_BOUND_E = 'DIR'
+                CIBM_MODE_BOUND_E = 'CST'
+                CIBM_FORC_BOUND_E = 'CN3'
+                CIBM_FORC_BOUNT_V = 'WN3'/
+
+
+&NAM_RECYCL_PARAMn LRECYCL = .TRUE.,
+                   LRECYCLW = .TRUE.,
+                   XDRECYCLW = 30.,
+                   XARECYCLW = 0.,
+                   LRECYCLN = .TRUE.,
+                   XDRECYCLN = 330.,
+                   XARECYCLN = 1.5707963267948966,
+                   LRECYCLS = .FALSE.,
+                   XDRECYCLS = 5.,
+                   XARECYCLS = 1.5707963267948966,
+                   LRECYCLE = .FALSE.,
+                   XDRECYCLE = -5.,
+                   XARECYCLE = 0.,
+                   XTMOY = 56.,
+                   XTMOYCOUNT = 2.,
+                   XNUMBELT = 28.,
+                   XRCOEFF = 0.25/
+
+&NAM_STATIONn CFILE_STAT='probes_ALGND.csv',
+              XSTEP_STAT=0.02/
+
+&NAM_NEBn LSIGMAS=F  /

@@ -1,0 +1,82 @@
+&NAM_BLANKn LDUMMY2=F, LDUMMY3=F/
+
+&NAM_CONF CCONF = "START",
+          NMODEL = 1,
+          CSPLIT='BSPLITTING',
+          LFORCING=F,
+          NVERB = 2,
+          CEXP = "MNHOU",
+          CSEG = "SEGM",
+          NHALO=4,
+          JPHEXT=1 /
+
+&NAM_CONFIO LCDF4=T /
+
+&NAM_CONFZ MPI_BUFFER_SIZE = 1000,
+           NZ_VERB = 2,
+           NZ_PROC = 0,
+           NB_PROCIO_R = 1,
+           NB_PROCIO_W = 1 /
+
+&NAM_LUNITn CINIFILE = "INIFILE",
+            CINIFILEPGD="INIFILE_PGD" /
+
+&NAM_CONFn LUSERV = F,
+           NSV_USER = 0 /
+
+&NAM_DYN XSEGLEN = 100000.E+0,
+         LCORIO = F,
+         LNUMDIFU = F,
+         XALKTOP = 0.001,
+         XALZBOT = 4000.0 /
+
+&NAM_DYNn XTSTEP = 2.5,
+          LITRADJ = T,
+          CPRESOPT = "ZRESI",
+          NITR=50,
+          XT4DIFU = 5.0,
+          LRES = T,
+          XRES = 1.E-7 /
+
+&NAM_PARAMn CTURB  = "NONE",
+            CRAD   = "NONE",
+            CCLOUD = "NONE",
+            CDCONV = "NONE",
+            CSCONV = "NONE" /
+
+&NAM_VISC LVISC = .TRUE.,
+	  LVISC_UVW= .TRUE.,
+	  XMU_V = 8. /
+
+&NAM_TURBn XIMPL=1.,
+           CTURBLEN="DELT",
+           CTURBDIM="3DIM",
+	   LTURB_DIAG=.TRUE.,
+           XTKEMIN = 1.E-10 /
+
+&NAM_ADVn CUVW_ADV_SCHEME = 'WENO_K',
+          CMET_ADV_SCHEME = 'PPM_01',
+          CSV_ADV_SCHEME  = 'PPM_01',
+          CTEMP_SCHEME    = 'RK53',
+          NWENO_ORDER     = 5,
+          LSPLIT_CFL      = .TRUE.,
+          LSPLIT_WENO     = .TRUE.,
+          XSPLIT_CFL      = 0.8,
+          LCFL_WRIT       = .FALSE. /
+
+&NAM_LBCn CLBCX = 2*"OPEN",
+          CLBCY = 2*"WALL" /
+
+&NAM_FRC LGEOST_UV_FRC = F /
+
+&NAM_BACKUP XBAK_TIME_FREQ_FIRST(1) = 10000.0,
+            XBAK_TIME_FREQ(1)       = 10000.0 /
+
+&NAM_MEAN LMEAN_FIELD=.TRUE./
+
+&NAM_IBM_PARAMn LIBM = .TRUE.,
+                LIBM_TROUBLE = .FALSE.,
+                NIBM_ITR = 100,
+                CIBM_ADV='LOWORD'/
+
+&NAM_NEBn LSIGMAS=F  /

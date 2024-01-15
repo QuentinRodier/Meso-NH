@@ -1,0 +1,6 @@
+EXSEG1.nam : toutes les options sont activées i.e. ORILAM et transport convectif des scalaires
+EXSEG1.ssAP : seul la chimie gazeuse est activée
+WARNING : LDEPOS_AER ne dépend pas du domaine, il faudrait la passer dans un modd_trucn
+En attendant pour que cela fonctionne à l'étape SPAWN il faut préciser sa valeurs sur les 2 domaines :
+LDEPOS_AER(1) = T
+LDEPOS_AER(2) = T

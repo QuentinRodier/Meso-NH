@@ -1,0 +1,4 @@
+#!/bin/bash
+rm -f DAD* SON* DTU10* file_* OUTPUT_LISTING*
+rm -f RUN_P* REMAP_* PRESSURE
+rm -f *png

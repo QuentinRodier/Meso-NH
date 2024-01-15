@@ -1,0 +1,1 @@
+rm -f COPT* OUTPUT_LISTING* pipe* *.tex

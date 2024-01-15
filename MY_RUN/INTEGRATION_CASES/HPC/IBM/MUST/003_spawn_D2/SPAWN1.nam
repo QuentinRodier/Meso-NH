@@ -1,0 +1,13 @@
+
+&NAM_GRID2_SPA   IXOR = 10,
+		 IYOR = 590,
+                 IXSIZE = 600,
+                 IYSIZE = 600,
+                 IDXRATIO = 2,
+                 IDYRATIO = 2/
+
+&NAM_LUNIT2_SPA  CINIFILE = "MUSTD1",
+                 CINIFILEPGD="MUSTFATHER_PGD",
+   		 YSPANBR     = '00'/
+
+&NAM_CONFIO LCDF4=T , NIO_ABORT_LEVEL=1, NGEN_ABORT_LEVEL=1/

@@ -1,0 +1,53 @@
+#!/bin/sh
+#SBATCH -J prep_kclb
+#SBATCH -N 1            # nodes number (=NBP)
+#SBATCH -n 4            # CPUs number (on all nodes) (=NBP*TPN)
+#SBATCH -o prep_kclb.eo%j   #
+#SBATCH -e prep_kclb.eo%j   #
+#SBATCH -t 01:00:00    # time limit
+
+# Echo des commandes
+ulimit -c 0
+ulimit -s unlimited
+# Arrete du job des la premiere erreur
+set -e
+# Nom de la machine
+hostname 
+
+. ~rodierq/DEV_57/MNH-PHYEX070-b95d84d7/conf/profile_mesonh-LXifort-R8I4-MNH-V5-6-2-ECRAD140-MPIAUTO-O2
+
+export MPIRUN="Mpirun -np 4"
+set -x
+set -e
+
+
+rm -f CLB50_180311* OUTPUT_LISTING* pipe* *.tex
+
+
+ln -sf PRE_IDEA1_0100_UnifSnw.nam PRE_IDEA1.nam 
+time ${MPIRUN} PREP_IDEAL_CASE${XYZ}
+mv OUTPUT_LISTING1  OUTPUT_LISTING1_prep01
+ 
+ls -lrt
+
+ln -sf PRE_IDEA1_0200.nam PRE_IDEA1.nam 
+time ${MPIRUN} PREP_IDEAL_CASE${XYZ}
+mv OUTPUT_LISTING1  OUTPUT_LISTING1_prep02
+ 
+ls -lrt
+
+ln -sf PRE_IDEA1_0300.nam PRE_IDEA1.nam 
+time ${MPIRUN} PREP_IDEAL_CASE${XYZ}
+mv OUTPUT_LISTING1  OUTPUT_LISTING1_prep03
+ 
+ls -lrt
+
+ln -sf PRE_IDEA1_0400.nam PRE_IDEA1.nam 
+time ${MPIRUN} PREP_IDEAL_CASE${XYZ}
+mv OUTPUT_LISTING1  OUTPUT_LISTING1_prep04
+ 
+ls -lrt
+
+rm -f file_for_xtransfer pipe_name
+sbatch run_mesonh
+ja

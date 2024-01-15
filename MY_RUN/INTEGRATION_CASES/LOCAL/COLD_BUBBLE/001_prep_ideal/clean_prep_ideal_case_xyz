@@ -1,0 +1,1 @@
+rm -f TEST_BUBBLE* OUTPUT_LISTING* pipe* *.tex

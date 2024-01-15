@@ -1,0 +1,140 @@
+&NAM_CONFIO    LCDF4=T /
+
+&NAM_CONF      NMODEL = 1,
+               CSPLIT='BSPLITTING' /
+
+&NAM_CONFZ     NZ_VERB = 2,
+               NZ_PROC = 0,
+               NB_PROCIO_W = 1,
+               MPI_BUFFER_SIZE = 1000 /
+
+&NAM_DIMn_PRE  NIMAX=200,
+               NJMAX=200 /
+
+&NAM_LUNITn    CINIFILE='MUSTFATHER',
+               CINIFILEPGD='MUSTFATHER_PGD' /
+
+&NAM_DYNn_PRE  CPRESOPT ='ZRESI',
+               NITR=16,
+               LRES =.TRUE.,
+               XRES = 1.E-05 /
+
+&NAM_LBCn_PRE  CLBCX =2*'CYCL',
+               CLBCY =2*'CYCL' /
+
+&NAM_GRIDH_PRE XDELTAX=96.E+0,
+               XDELTAY=96.E+0,
+               XHMAX = 0.,
+               XAX = 0. /
+
+&NAM_VER_GRID  NKMAX=125,
+               YZGRID_TYPE='FUNCTN',
+               ZZMAX_STRGRD=6.E+0,
+               ZSTRGRD=0.E+0,
+               ZDZTOP=50.E+0,
+               ZSTRTOP=9.5E+0,
+               ZDZGRD=0.3E+0/
+
+&NAM_GRID_PRE  XLAT0=40.13,
+               XLON0=-113.11,
+               XBETA=0.,
+               XRPK=0.,
+               XLATORI=40.13,
+               XLONORI=-113.11  /
+
+&NAM_CONF_PRE  CIDEAL = 'RSOU',
+               CEQNSYS='DUR',
+               NVERB=10,
+               LCARTESIAN=.TRUE.,
+               CZS='FLAT',
+               LPERTURB = .TRUE.,
+               LFORCING = .TRUE.,  
+               NHALO=4,
+               JPHEXT = 1 /
+
+&NAM_VPROF_PRE LGEOSBAL=.FALSE.,	
+               CFUNU='ZZZ',             
+               CFUNV='ZZZ',             
+               CTYPELOC='IJGRID',       
+               NILOC=2,			
+               NJLOC=2 /
+
+&NAM_PERT_PRE CPERT_KIND="WW",
+              XAMPLITH = 0.,
+              XAMPLIRV = 0.,
+              XAMPLIUV = 0.0,
+              XAMPLIWH = 0.5,
+              NKWH = 95,
+              LSET_RHU=FALSE / 
+
+&NAM_CONFn LUSERV = .TRUE. /
+
+&NAM_GRn_PRE CSURF='EXTE' /
+
+&NAM_PGD_SCHEMES    CNATURE = 'FLUX'    , 
+                    CSEA    = 'NONE'    , 
+                    CTOWN   = 'NONE'    , 
+                    CWATER  = 'NONE' /
+
+&NAM_FRAC           LECOCLIMAP = F,
+                    XUNIF_SEA    = 0.,
+                    XUNIF_WATER  = 0.,
+                    XUNIF_TOWN   = 0.,
+                    XUNIF_NATURE = 1. /
+
+&NAM_IDEAL_FLUX CUSTARTYPE='Z0',
+                XZ0=0.045,
+                XALB=0.25,
+                XEMIS=1.,
+                NFORCT = 2,
+                XTIMET(1) = 0.,
+                XTIMET(2) = 87000.,
+                XTSRAD(1) = 317.5,
+                XTSRAD(2) = 317.5,
+                NFORCF = 2,
+                XTIMEF(1) = 0.,
+                XTIMEF(2) = 87000.,
+                XSFTH(1) = 0.,
+                XSFTH(2) = 0.,
+                CSFTQ='kg/m2/s',
+                XSFTQ(1)=0.,
+                XSFTQ(2)=0.,
+                XSFCO2(1) = 0.,
+                XSFCO2(2) = 0. /
+
+RSOU
+2000 01 01 0.
+'ZUVTHVMR'
+0.
+85000.
+317.5
+0.
+7
+0.0 0.0 0.0
+10.0 8.2 -13.2
+100. 8.2 -13.2
+1000. 8.2 -13.2
+2000. 8.2 -13.2
+3000. 8.2 -13.2
+4000. 8.2 -13.2
+8
+10. 317.5 0.
+100. 317.5 0.
+1000. 317.5 0.
+1500. 319.0 0.
+2000. 320.5 0.
+3000. 323.5 0.
+4000. 326.5 0.
+ZFRC
+1
+2000 01 01 0.
+0
+85000.
+317.5
+0.
+5
+0.000 8.2 -13.2 0. 0. 0. 0. 0. 0. 0.
+1000. 8.2 -13.2 0. 0. 0. 0. 0. 0. 0.
+2000. 8.2 -13.2 0. 0. 0. 0. 0. 0. 0.
+3000. 8.2 -13.2 0. 0. 0. 0. 0. 0. 0.
+4000. 8.2 -13.2 0. 0. 0. 0. 0. 0. 0.

@@ -1,0 +1,9 @@
+#!/bin/bash
+
+ln -sf ../001_prep_ideal/FIRE_* .
+
+export MPIRUN="mpirun -np 1"
+
+time ${MPIRUN} MESONH${XYZ}
+
+rm -f file_for_xtransfer pipe_name

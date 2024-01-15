@@ -1,0 +1,12 @@
+set -x
+set -e
+ln -sf ../001_prep_ideal_case/GABLS1* .
+rm -f RBL89* RRM17* OUTPUT_LISTING* pipe_name*
+
+cp -f EXSEG1.nam_BL89 EXSEG1.nam
+time mpirun -np 1 MESONH${XYZ}
+
+cp -f EXSEG1.nam_RM17 EXSEG1.nam
+time mpirun -np 1 MESONH${XYZ}
+
+rm -f GABLS1*

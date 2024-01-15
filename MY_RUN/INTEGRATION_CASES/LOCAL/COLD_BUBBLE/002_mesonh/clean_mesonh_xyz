@@ -1,0 +1,2 @@
+rm -f BUBBL* pipe_name 
+rm -f TEST_BUBBLE_50m_* OUT*

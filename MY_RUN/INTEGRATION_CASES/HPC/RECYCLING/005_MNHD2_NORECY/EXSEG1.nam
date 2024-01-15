@@ -1,0 +1,115 @@
+&NAM_BLANKn LDUMMY2=F, LDUMMY3=T/
+
+&NAM_CONF CCONF = "START",
+          NMODEL = 2,
+          CSPLIT='BSPLITTING',
+          LFORCING=T,
+          NVERB = 2,
+          CEXP = "MNHOU",
+          CSEG = "SEGM",
+	  CEQNSYS  = 'DUR',
+          NHALO=1,
+          JPHEXT=1 /
+
+&NAM_CONFIO LCDF4=T/
+
+&NAM_CONFZ MPI_BUFFER_SIZE = 2000,
+           NZ_VERB = 10,
+           NZ_PROC = 0,
+           NB_PROCIO_R = 1,
+           NB_PROCIO_W = 1 /
+
+&NAM_LUNITn CINIFILE = "RE1",
+            CINIFILEPGD="MUSTFATHER_PGD" /
+
+&NAM_CONFn LUSERV = T/
+
+&NAM_DYN XSEGLEN = 10000.,
+         LCORIO = .T.,
+         LNUMDIFU = .T.,
+         XALKTOP = 0.01,
+         XALZBOT = 2000.0 /
+
+&NAM_DYNn XTSTEP = 1.5,
+          LITRADJ = T,
+          CPRESOPT = "ZRESI",
+          NITR=50,
+          XT4DIFU = 1800.,
+          LRES = T,
+          XRES = 1.E-9 /
+
+&NAM_PARAMn CTURB  = "TKEL",
+            CRAD   = "NONE",
+            CCLOUD = "NONE",
+            CDCONV = "NONE",
+            CSCONV = "NONE" /
+
+&NAM_TURBn XIMPL=1.,
+           CTURBLEN="HM21",
+           CTURBDIM="3DIM",
+	   LTURB_DIAG=.TRUE.,
+	   LRMC01=.T.,
+	   XCADAP=0.5,
+           XTKEMIN = 1.E-10 /
+
+&NAM_ADVn CUVW_ADV_SCHEME = 'CEN4TH',
+          CMET_ADV_SCHEME = 'PPM_01',
+          CSV_ADV_SCHEME  = 'PPM_01',
+          CTEMP_SCHEME    = 'RKC4',
+          NWENO_ORDER     = 5,
+          LSPLIT_CFL      = .TRUE.,
+          LSPLIT_WENO     = .TRUE.,
+          XSPLIT_CFL      = 0.8,
+          LCFL_WRIT       = .FALSE. /
+
+&NAM_IDEAL_FLUX CUSTARTYPE='Z0',
+                XZ0=0.045,
+                XALB=0.25,
+                XEMIS=1.,
+                NFORCT = 2,
+                XTIMET(1) = 0.,
+                XTIMET(2) = 100000.,
+                XTSRAD(1) = 317.5,
+                XTSRAD(2) = 317.5,
+                NFORCF = 2,
+                XTIMEF(1) = 0.,
+                XTIMEF(2) = 100000.,
+                XSFTH(1) = 0.,
+                XSFTH(2) = 0.,
+                CSFTQ='kg/m2/s',
+                XSFTQ(1)=0.,
+                XSFTQ(2)=0.,
+                XSFCO2(1) = 0.,
+                XSFCO2(2) = 0./
+
+
+&NAM_LBCn CLBCX = 2*"CYCL",
+          CLBCY = 2*"CYCL" /
+
+&NAM_FRC LGEOST_UV_FRC = .T. /
+
+&NAM_NESTING NDAD(1) = 0,
+             NDAD(2) = 1,
+             NDAD(3) = 2,
+             NDAD(4) = 3,
+             NDAD(5) = 4,
+             NDTRATIO(1) = 1,
+             NDTRATIO(2) = 5,
+             NDTRATIO(3) = 4,
+             NDTRATIO(4) = 10,
+             NDTRATIO(5) = 3,
+             XWAY(1) = 0.,
+             XWAY(2) = 1.,
+             XWAY(3) = 1.,
+             XWAY(4) = 1.,
+             XWAY(5) = 1. /
+
+&NAM_BACKUP XBAK_TIME_FREQ_FIRST(1) = 5000.0,
+            XBAK_TIME_FREQ(1)       = 5000.0,
+            XBAK_TIME_FREQ_FIRST(2) = 5000.0,
+            XBAK_TIME_FREQ(2)       = 5000.0 /
+&NAM_MEAN LMEAN_FIELD=.TRUE./
+
+&NAM_IBM_PARAMn LIBM = .FALSE./
+
+&NAM_RECYCL_PARAMn LRECYCL = .FALSE./

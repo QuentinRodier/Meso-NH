@@ -1,0 +1,50 @@
+
+&NAM_CONFIO     LCDF4=.TRUE., LLFIOUT=.FALSE., LLFIREAD=.FALSE.,
+                NIO_ABORT_LEVEL=0, NGEN_ABORT_LEVEL=0 /
+
+&NAM_REAL_CONF  NVERB=10, CEQNSYS='DUR', CPRESOPT='CRESI', LRES=.FALSE., XRES=1.E-07 /
+
+&NAM_FILE_NAMES HATMFILE='ecmwf.OD.20190328.12.00',
+                HATMFILETYPE='GRIBEX',
+                HPGDFILE='BIOMAIDO_CH_8km.nestne',
+                HCHEMFILE = 'CAMS_20190328_12.nc',
+                HCHEMFILETYPE='CAMSEU',
+                CINIFILE='ECMWF_D1_20190328_12'/
+
+&NAM_PREP_TEB  LTEB_CANOPY=T /
+
+&NAM_PREP_ISBA LISBA_CANOPY=T /
+
+&NAM_VER_GRID   NKMAX=45,
+                LTHINSHELL=.TRUE.,
+                YZGRID_TYPE='FUNCTN',
+                ZDZGRD=60.,
+                ZDZTOP=1000.,
+                ZZMAX_STRGRD=500.,
+                ZSTRGRD=7.,
+                ZSTRTOP=10. /
+
+&NAM_PREP_SURF_ATM  NHALO_PREP=0 /
+
+&NAM_CONF NHALO=0 /
+
+&NAM_CH_CONF LUSECHEM=T /
+
+&NAM_AERO_CONF LORILAM      = .TRUE.,
+               LSALT        = .TRUE.,
+               LDUST        = .TRUE.,
+               LINITPM      = .FALSE.,
+               CCLOUD = "LIMA",
+               NMOD_CCN  = 3,
+               NMOD_IFN  = 2,
+               LSLTCAMS = T,
+               LDSTCAMS = T,
+               XINIRADIUSI  = 0.015,
+               XINIRADIUSJ  = 0.055,
+               CRGUNIT      = "NUMB",
+               XINISIGI     = 1.4,
+               XINISIGJ     = 1.6,
+               XN0IMIN      = 1E2,
+               XN0JMIN      = 1E-2 /
+
+

@@ -1,0 +1,16 @@
+4 simulations d'un orage idealise (KW78) sont realisees pour tester le schema electrique :
+- CSEG = 'IC3E3' : ICE3+LRED=F avec ELE3, repertoire sur nuwa = old
+- CSEG = 'IC3E4' : ICE3+LRED=T avec ELE4: repertoire sur nuwa = ice3
+- CSEG = 'LI1E4' : LIMA 2-moment partiel avec ELE4: repertoire sur nuwa = lima
+- CSEG = 'LI2E4' : LIMA 2-moment total avec ELE4: repertoire sur nuwa = lima2
+
+Structure des zones de lancement de job sur nuwa
+001_prep_ideal_case : PRE_IDEA1.NAM => KW78_V56U.des et KW78_V56U.nc
+
+002_mesonh/old : EXSEG1.nam => KW78U.1.IC3E3.00[0-6].nc et KW78U.1.IC3E3.00[0-6].des
+002_mesonh/ice3 : EXSEG1.nam => KW78U.1.IC3E4.00[0-6].nc et KW78U.1.IC3E4.00[0-6].des
+002_mesonh/lima : EXSEG1.nam => KW78U.1.LI1E4.00[0-6].nc et KW78U.1.LI1E4.00[0-6].des
+002_mesonh/lima2 : EXSEG1.nam => KW78U.1.LI2E4.00[0-6].nc et KW78U.1.LI2E4.00[0-6].des
+
+003_python : job_python.sh, plot_flash.py, plot_CV_elec_MNH.py => Fig_kw78_elec_flash_${CSEG}.png, Fig_kw78_elec_CH_${CSEG}_00[1-6].png, Fig_kw78_elec_CVq_${CSEG}_00[1-6].png, Fig_kw78_elec_CVe_${CSEG}_00[1-6].png
+

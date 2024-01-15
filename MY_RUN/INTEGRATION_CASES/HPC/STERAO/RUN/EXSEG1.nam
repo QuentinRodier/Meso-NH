@@ -1,0 +1,69 @@
+&NAM_CONFIO LCDF4=T LLFIOUT=T LLFIREAD=T /
+&NAM_LUNITn  CINIFILE = "STERAO_LARGE" /
+&NAM_DYNn    XTSTEP = 2.5,
+             CPRESOPT = "ZRESI",
+             NITR = 4,
+             XRELAX = 1.,
+             LHORELAX_UVWTH = F,
+             LHORELAX_RV = T,
+             LHORELAX_SV = F,
+             LVE_RELAX = T,
+             XRIMKMAX = 0.005,
+             XT4DIFU = 500. /
+&NAM_ADVn  CMET_ADV_SCHEME = "PPM_01",
+           CUVW_ADV_SCHEME = "CEN4TH",CTEMP_SCHEME='LEFR'
+           /
+&NAM_PARAMn  CCLOUD = "ICE3",
+             CELEC  = "ELE4",
+             CTURB  = "TKEL" /
+&NAM_TURBn CTURBDIM="3DIM", CTURBLEN="DELT", XIMPL=1.,
+           LTURB_DIAG=.FALSE.,  LTURB_FLX=.FALSE.,
+           LSIG_CONV = .F. /
+&NAM_PARAM_ICEn LRED=T, CSUBG_AUCV_RC='NONE' ,   LWARM = T,
+                CPRISTINE_ICE = 'PLAT',
+                LSEDIC = F,
+                CSEDIM = 'SPLI' /
+&NAM_LBCn  CLBCX = 2*"OPEN",
+           CLBCY = 2*"OPEN" /
+&NAM_CONF  CCONF = "START",
+           NMODEL = 1,
+           LFLAT = T,
+           NVERB = 5,
+           CEXP = "STERA",
+           CSEG = "CEN4T",
+           NHALO=1 /
+&NAM_DYN  XSEGLEN = 10800.,
+          XASSELIN = 0.2,
+          LCORIO = F,
+          LNUMDIFU = T,
+          XALKTOP = 0.5,
+          XALZBOT = 18500. /
+&NAM_ELEC  LOCG = F,
+           LFW_HELFA = F,
+           LCOSMIC_APPROX = F,
+           CDRIFT = "PPM",
+           LRELAX2FW_ION = T,
+           LINDUCTIVE = F,
+           LELEC_FIELD = T,
+           LFLASH_GEOM = T,
+           LLNOX_EXPLICIT = F,
+           LSAVE_COORD = F,
+           LSERIES_ELEC = F,
+           NFLASH_WRITE = 200,
+           CNI_CHARGING = "TAKAH",
+           XLIM_NI_IS = 10.E-15,
+           XLIM_NI_IG = 30.E-15,
+           XLIM_NI_SG = 100.E-15,
+           CLSOL = "RICHA",
+           NLAPITR_ELEC = 4,
+           XRELAX_ELEC = 1.,
+           XETRIG = 200.E3,
+           XEBALANCE = 0.1,
+           XEPROP = 15.E3,
+           XQEXCES = 2.E-10,
+           XQNEUT = 1.E-10,
+           XDFRAC_ECLAIR = 2.3,
+           XDFRAC_L = 1500. /
+&NAM_BACKUP XBAK_TIME_FREQ=600 /
+
+&NAM_NEBn LSIGMAS=.T., LSUBG_COND=.F.  /

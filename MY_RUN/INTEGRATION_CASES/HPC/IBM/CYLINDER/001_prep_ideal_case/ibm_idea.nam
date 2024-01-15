@@ -1,0 +1,12 @@
+1   1
+2   1
++2000. +160. +2000. +160. 0. -1.
+#
+# M / N = number of surfaces / number of surface type
+# O / P = surface type / number of surface for each type
+# X1 / X2 / Y1 / Y2 / Z1 /Z2 
+#                             type 1 : (parallelepiped)
+#                                      I1/I2 = min/max in direction (X,Y,Z)
+#                             type 2 : (ellipsoide)
+#                                      X1/Y1/Z1 locations of object center 
+#                                      X2/Y2/Z2 axe lenght in each direction

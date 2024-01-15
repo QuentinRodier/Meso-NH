@@ -1,0 +1,19 @@
+&NAM_CONFIO LCDF4=T/
+&NAM_FILE_NAMES HATMFILE ='CHARM.1.SEG01.003.spa04' , HATMFILETYPE='MESONH',
+                HPGDFILE ='CHARMEX0714_PGD_12km5.neste1' , CINIFILE='CPLCH2_3006_09' /
+&NAM_PREP_SURF_ATM  CFILE='CHARM.1.SEG01.003', CFILETYPE='MESONH',
+                    CFILEPGD='CHARMEX0714_PGD_50km.neste1', CFILEPGDTYPE='MESONH' /
+&NAM_REAL_CONF NVERB=5 /
+&NAM_VER_GRID  NKMAX=61, YZGRID_TYPE='FUNCTN',
+               ZDZGRD=10., ZDZTOP=1000.,
+               ZZMAX_STRGRD=600., ZSTRGRD=6.5, ZSTRTOP=13. /
+&NAM_CH_CONF   LUSECHEM=T /
+&NAM_AERO_CONF LORILAM=T,
+               LINITPM=F,
+               XINIRADIUSI  = 0.036,
+               XINIRADIUSJ  = 0.385,
+               CRGUNIT      = "NUMB",
+               XINISIGI     = 1.86,
+               XINISIGJ     = 1.29,
+               XN0IMIN      = 5.,
+               XN0JMIN      = 1./

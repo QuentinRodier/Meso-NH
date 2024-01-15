@@ -1,0 +1,9 @@
+#!/bin/bash
+\rm file_for_xtransfer
+\rm MNHOU*
+\rm OUT*
+\rm LSF_P_P.asc
+\rm OUT*
+\rm ol*
+\rm PRESSURE*
+\rm REMA*

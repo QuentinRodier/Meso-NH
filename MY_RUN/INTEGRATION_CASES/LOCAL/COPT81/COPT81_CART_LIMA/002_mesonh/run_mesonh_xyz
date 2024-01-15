@@ -1,0 +1,6 @@
+set -x
+set -e
+ln -fs ../001_prep_ideal/COPT_2D.* .
+ln -fs ../001_prep_ideal/COPT_PGD.* .
+rm -f COPT8* OUT*
+time ${MONORUN} MESONH${XYZ}

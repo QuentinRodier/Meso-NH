@@ -1,0 +1,60 @@
+Description of namelist variables used to run mesonh simulation
+###############################################################
+
+&NAM_BLOWSNOW 
+LBLOWSNOW=T,               ! switch to active pronostic blowing snow
+CSNOWSEDIM='TABC',         ! type of formulation to compute blowing snow settling velocity:
+                           !MITC : Mitchell (1996)
+                           !CARR : Carrier's drag coefficient (cf PIEKTUK)
+	                   !TABC : Tabulated values from Carrier's drag coefficient
+		           !NONE : no sedimentation
+XALPHA_SNOW=3.,            ! Gamma distribution shape factor
+XRSNOW=2.5 /               ! Ratio between diffusion coefficient for scalar
+                           ! variables and blowing snow variables
+                           ! RSNOW = KSCA/KSNOW = 4. (if Redelsperger-Sommeria (1981) used in ini_cturb)
+                           ! RSNOW = KSCA/KSNOW = 2.5 ( if Cheng-Canuto-Howard (2002) used in ini_cturb)
+                           ! Cheng-Canuto-Howard (2002) is the default in MNH V5.3
+                           ! See Vionnet (PhD, 2012, In French) and Vionnet et al (TC, 2014)
+                           ! for a complete dicsussion
+
+&NAM_BLOWSNOWn 
+LSNOWSUBL=F /              ! switch to activate blowing snow sublimation
+
+&NAM_SURF_BLOWSNW 
+LSNOW_SALT=F,                ! Flag to fix snow concentration in the saltation layer   
+XCONC_SALT = 0.              ! Snow concentration in the saltation layer (kg_{snow}/m3_{air}) if LSNOW_SALT = T
+LSNOW_PRECIP = F ,           ! Flag to impose uniform and constant precipitation rate (depreciated)
+
+LSNOW_WIND = F,              ! Flag to activate effects of snow particle on wind profile with the two following options: 
+XSNOW_ROUGHNESS=0,           ! Increase in surface rougnhess due to saltation following Dover (1993) z0_s = z0_ns*(u*/uth*)²  
+                             ! = 0 not activated; =1 activated  
+XSNOW_BUOYANCY =0,           ! Buoyancy effect in presence of suspended particles of blowing snow.
+                             ! = 0 not activated; =1 activated  
+XEMIRADIUS_SNW = 110e-6, 
+XEMIALPHA_SNW=3.,              
+CSNOW_SALT='TSOR',            ! Paramaterization to compute particle concentration in the saltation layer
+                              !             'POME': Pomeroy and Gray, 1990
+                              !             'SORE': Sorensen (1991) : used at SLF before Doorshot's model
+                              !             'MANN': Concentration in the saltation layer is computed according to Mann (2000)
+                              !                     parameterization for particle number density just above the ground (10 cm) 
+                              !             'TPOM' and 'TSOR': idem POME and SORE but assumes an exponential profile for the 
+                              !              vertical profile of flux in the saltation layer.            
+CSNOW_SEDIM='TABC',           ! Paramaterization to compute settling velocity
+!              'CARR': follow Carrier's drag coefficient
+!              'TABC': based on tabuleted values of Carrier's formulation for alpha=3
+!              'MITC': based on Mitchell's formulation for settling velocity of ice spheres
+!              'NONE': sedimentation is desactivated (for test only!)  
+LBLOWSNW_CANOSUBL=F,          ! Flag to activate sublimation of blowing snow in Canopy       
+LBLOWSNW_CANODIAG = T         ! Flag to get additional diagnostic at Canopy levels : mean radius 
+                              ! and number and mass variables in _/m3 
+LBLOWSNW_ADV  = T             ! Flag to account for advection effects on 
+                              ! total mass and number in Canopy variables and 
+                              ! to compute divergence of
+                              ! saltation flux  
+XRSNOW_SBL=2.5 /              ! Ratio between diffusion coefficient for scalar
+                              ! variables and blowing snow variables in SBL
+                              ! RSNOW = KSCA/KSNOW = 4. (if Redelsperger-Sommeria (1981) used in ini_cturb)
+                              ! RSNOW = KSCA/KSNOW = 2.5 ( if Cheng-Canuto-Howard (2002) used in ini_cturb)
+                              ! Cheng-Canuto-Howard (2002) is the default in MNH V5.3
+                              ! See Vionnet (PhD, 2012, In French) and Vionnet et al (TC, 2014)
+                              ! for a complete dicsussion

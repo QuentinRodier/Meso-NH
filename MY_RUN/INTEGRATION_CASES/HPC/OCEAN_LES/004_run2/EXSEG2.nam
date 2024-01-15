@@ -1,0 +1,14 @@
+&NAM_LUNITn  CINIFILE = "GN_01.1.OC_01.002.spa00"/
+&NAM_DYNn  LOCEAN=T XTSTEP =5.  NRIMX=0 NRIMY=0 XT4DIFU=480./
+&NAM_ADVn CUVW_ADV_SCHEME="CEN4TH", CTEMP_SCHEME="RKC4" /
+&NAM_PARAMn CTURB="TKEL",
+             CRAD = "NONE",
+             CDCONV = "NONE",
+             CCLOUD= "NONE" /
+&NAM_LBCn CLBCX=2*"OPEN",
+           CLBCY=2*"OPEN" /
+&NAM_TURBn XIMPL=0.,
+            CTURBLEN="DELT",
+            CTURBDIM="3DIM",
+            LRMC01=.FALSE.,
+            XTKEMIN=0.000001/

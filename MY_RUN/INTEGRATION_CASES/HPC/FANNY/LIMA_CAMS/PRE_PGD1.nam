@@ -1,0 +1,43 @@
+&NAM_CONFIO LCDF4=F LLFIREAD=F LLFIOUT=F /
+&NAM_PGDFILE CPGDFILE='PGD_2.5km_AR'
+/
+&NAM_PGD_GRID CGRID='CONF PROJ'
+/
+&NAM_INIFILE_CONF_PROJ  
+/
+&NAM_FRAC              LECOCLIMAP = T 
+/
+&NAM_CONF_PROJ         XLAT0 = 43.60000000   , 
+                       XLON0 = 5.500000000   , 
+                       XRPK  = 0.68961954374 ,
+                       XBETA =  0. 
+/
+&NAM_CONF_PROJ_GRID    NIMAX   = 250      , 
+                       NJMAX   = 225      , 
+                       XLATCEN = 43.60000   , 
+                       XLONCEN = 5.3000    ,  
+                       XDX     = 2500.      , 
+                       XDY     = 2500. 
+/
+&NAM_PGD_SCHEMES CNATURE='ISBA',
+                 CSEA='SEAFLX',
+                 CTOWN='TEB',
+                 CWATER='WATFLX' 
+/
+&NAM_COVER     YCOVER='ECOCLIMAP_v2.0',
+               YCOVERFILETYPE='DIRECT' 
+/
+&NAM_ZS        YZS='gtopo30',
+               YZSFILETYPE='DIRECT' 
+/
+&NAM_ISBA      YCLAY='CLAY_HWSD_MOY',
+               YCLAYFILETYPE='DIRECT' ,
+               YSAND='SAND_HWSD_MOY',
+               YSANDFILETYPE='DIRECT' ,
+               CISBA         = '3-L'         ,
+               CPHOTO        = 'NON'         ,
+               NPATCH        = 1             ,
+               NGROUND_LAYER = 3        
+/
+&NAM_CH_EMIS_PGD NEMIS_PGD_NBR=0
+/

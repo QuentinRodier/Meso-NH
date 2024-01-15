@@ -1,0 +1,7 @@
+&NAM_CONFIO  LCDF4=T, LLFIOUT=T, LLFIREAD=F /
+&NAM_GRID2_SPA  /
+&NAM_LUNIT2_SPA  CINIFILE = 'CPL_19990917.12',
+                 CINIFILEPGD='KMAP_PGD_32km.neste1',
+                 YDOMAIN  = 'KMAP_PGD_8km.neste1',
+                 YSPAFILE = 'CPL_19990917.12.spa04' /
+&NAM_BLANK /

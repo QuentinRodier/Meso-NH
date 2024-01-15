@@ -1,0 +1,28 @@
+#!/bin/sh
+#SBATCH -J prep_fanny
+#SBATCH -N 1            # nodes number (=NBP)
+#SBATCH -n 1            # CPUs number (on all nodes) (=NBP*TPN)
+#SBATCH -o prep_fanny.eo%j   #
+#SBATCH -e prep_fanny.eo%j   #
+#SBATCH -t 00:05:00    # time limit
+
+
+# Echo des commandes
+ulimit -c 0
+ulimit -s unlimited
+# Arrete du job des la premiere erreur
+set -e
+# Nom de la machine
+hostname
+
+module purge
+module load ncl/6.6.2
+#ln -sf ../010_diag/ICART.1.SEG02.001dg.nc .
+#ln -sf ../010_diag/ICART.1.SEG02.002dg.nc .
+ln -sf ../010_diag/ICART.1.SEG02.003dg.nc .
+#ln -sf ../010_diag/ICART.2.SEG02.001dg.nc .
+#ln -sf ../010_diag/ICART.2.SEG02.002dg.nc .
+ln -sf ../010_diag/ICART.2.SEG02.003dg.nc .
+
+ncl plot_ICARTT.ncl
+

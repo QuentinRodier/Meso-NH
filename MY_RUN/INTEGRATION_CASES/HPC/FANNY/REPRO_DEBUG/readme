@@ -1,0 +1,6 @@
+KTEST de reproductibilite du run sur la config ICE3
+
+Comparaison des residual divergence dans l OUTPUT_LISTING
+
+A faire en dernier
+A lancer 1 par 1 (sinon le OUTPUT_LISTING s'ecrase !)

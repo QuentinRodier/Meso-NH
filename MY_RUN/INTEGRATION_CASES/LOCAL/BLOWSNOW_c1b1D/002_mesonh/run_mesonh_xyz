@@ -1,0 +1,30 @@
+#!/bin/sh
+#MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+#MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
+#MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+#MNH_LIC for details. version 1.
+set -x
+set -e
+
+
+rm -f CLB_PGD.*
+ln -fs ../001_prep_ideal/CLB_PGD.* .
+
+file_pref=CLB_2302_USPC_
+
+for wind in 11 16
+do
+filename=$file_pref"$wind"
+
+sed -e s/File_Ini/$filename/g EXSEG1_CLB_1D.nam > EXSEG1_inter.nam
+sed -e s/Seg_Out/CAN${wind}/g EXSEG1_inter.nam > EXSEG1.nam
+
+ln -fs ../001_prep_ideal/CLB_2302_USPC_${wind}.* . 
+
+rm -f CLB23.1.CAN${wind}* OUT*
+time ${MONORUN} MESONH${XYZ}
+mv OUTPUT_LISTING1 OUTPUT_LISTING1_${wind}
+rm -f EXSEG1_inter.nam EXSEG1.nam
+rm -f CLB_2302_USPC_${wind}.*
+
+done

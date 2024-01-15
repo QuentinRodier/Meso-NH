@@ -1,0 +1,58 @@
+#!/bin/bash
+#MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+#MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
+#MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+#MNH_LIC for details. version 1.
+set -x
+set -e
+
+DIRCLONE=dir_clone
+
+
+rm -f 16JAN* OUT*  EXSEG?.nam 
+
+ln -sf  ../006_preal1/16JAN_06_MNH*.{des,lfi,nc} .
+ln -sf  ../008_preal2/16JAN_06_MNH2*.{des,lfi,nc} .
+ln -sf  ../010_preal3/16JAN_06_MNH3*.{des,lfi,nc} .
+ln -sf  ../012_preal4/16JAN_06_MNH4*.{des,lfi,nc} .
+ln -sf  ../005_nest/16JAN98_36km.neste1.{des,lfi,nc} .
+ln -sf  ../005_nest/16JAN98_9km.neste1.{des,lfi,nc} .
+ln -sf  ../005_nest/16JAN98_4500.neste1.{des,lfi,nc} .
+ln -sf  ../005_nest/16JAN98_2250.neste1.{des,lfi,nc} .
+
+if [ "x${MNH_ECRAD}" != "x" ]  ; then
+ln -sf ${SRC_MESONH}/src/LIB/RAD/ecrad-${VERSION_ECRAD}/data/RAD* .
+ln -sf ${SRC_MESONH}/src/LIB/RAD/ecrad-${VERSION_ECRAD}/data/*.nc .
+sed -e's/ECMW/ECRA/g' EXSEG1.nam.src > EXSEG1.nam
+sed -e's/ECMW/ECRA/g' EXSEG2.nam.src > EXSEG2.nam
+sed -e's/ECMW/ECRA/g' EXSEG3.nam.src > EXSEG3.nam
+sed -e's/ECMW/ECRA/g' EXSEG4.nam.src > EXSEG4.nam
+else
+cp EXSEG1.nam.src EXSEG1.nam
+cp EXSEG2.nam.src EXSEG2.nam
+cp EXSEG3.nam.src EXSEG3.nam
+cp EXSEG4.nam.src EXSEG4.nam
+fi
+
+(
+cd  ${DIRCLONE}
+
+rm -f 16JAN* OUT*  EXSEG?.nam
+
+ln -sf  ../../006_preal1/16JAN_06_MNH*.{des,lfi,nc} .
+ln -sf  ../../008_preal2/16JAN_06_MNH2*.{des,lfi,nc} .
+ln -sf  ../../010_preal3/16JAN_06_MNH3*.{des,lfi,nc} .
+ln -sf  ../../012_preal4/16JAN_06_MNH4*.{des,lfi,nc} .
+ln -sf  ../../005_nest/16JAN98_36km.neste1.{des,lfi,nc} .
+ln -sf  ../../005_nest/16JAN98_9km.neste1.{des,lfi,nc} .
+ln -sf  ../../005_nest/16JAN98_4500.neste1.{des,lfi,nc} .
+ln -sf  ../../005_nest/16JAN98_2250.neste1.{des,lfi,nc} .
+
+cp ../EXSEG1.nam .
+cp ../EXSEG2.nam .
+cp ../EXSEG3.nam .
+cp ../EXSEG4.nam .
+)
+
+
+time ${MPIRUN} MESONH${XYZ}

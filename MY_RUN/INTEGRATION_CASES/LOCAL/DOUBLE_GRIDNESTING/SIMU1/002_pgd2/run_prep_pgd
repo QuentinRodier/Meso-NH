@@ -1,0 +1,13 @@
+#set -x
+#
+PREP_PGD_FILES=$HOME/PREP_PGD_FILES_WWW
+export PREP_PGD_FILES
+
+ln -sf $PREP_PGD_FILES/*.hdr .
+ln -sf $PREP_PGD_FILES/*.dir .
+
+ln -sf ../001_pgd1/PGD1.* .
+ln -sf ../../Inputs/* . 
+
+time ${MONORUN} PREP_PGD${XYZ}
+

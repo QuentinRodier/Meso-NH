@@ -1,0 +1,13 @@
+
+&NAM_GRID2_SPA   IXOR = 100,
+		 IYOR = 75,
+                 IXSIZE = 80,
+                 IYSIZE = 80,
+                 IDXRATIO = 4,
+                 IDYRATIO = 4/
+
+&NAM_LUNIT2_SPA  CINIFILE = "RE1",
+                 CINIFILEPGD="RE1_PGD",
+   		 YSPANBR     = '00'/
+
+&NAM_CONFIO LCDF4=T , NIO_ABORT_LEVEL=1, NGEN_ABORT_LEVEL=1/

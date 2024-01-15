@@ -1,0 +1,3 @@
+#!/bin/bash
+rm -f FIRE_* DTU10* file_* OUTPUT_LISTING*
+rm -f DTU10.1.SEG1.01* REMAP_* PRESSURE *png

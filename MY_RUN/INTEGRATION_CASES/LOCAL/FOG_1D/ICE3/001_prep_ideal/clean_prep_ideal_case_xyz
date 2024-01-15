@@ -1,0 +1,1 @@
+rm -f PGD_FOG* FOG3* OUTPUT_LISTING* pipe* *.tex *.dat *.bin

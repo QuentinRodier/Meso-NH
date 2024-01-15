@@ -1,0 +1,116 @@
+&NAM_LUNITn  CINIFILE = "KW78_V56U",
+             CINIFILEPGD='KW78_PGD' /
+
+&NAM_CONFIO  LCDF4 = .TRUE.,
+             LLFIOUT = .FALSE.,
+             LLFIREAD = .FALSE. /
+
+&NAM_DYNn  XTSTEP = 2.5,
+           CPRESOPT = "ZRESI",
+           NITR = 4,
+           XRELAX = 1.,
+           LHORELAX_UVWTH = F,
+           LHORELAX_RV = F,
+           LHORELAX_SV = F,
+           LVE_RELAX = T,
+           XRIMKMAX = 0.005,
+           XT4DIFU = 500. /
+
+&NAM_ADVn  CMET_ADV_SCHEME = "PPM_01",
+           CUVW_ADV_SCHEME = "WENO_K",
+           NWENO_ORDER=5,
+           CTEMP_SCHEME='RK53' /
+
+&NAM_PARAMn  CRAD = "NONE",
+             CCLOUD = "LIMA",
+             CELEC  = "ELE4"/
+
+&NAM_ELEC  CNI_CHARGING = 'TAKAH',
+           LINDUCTIVE = T,
+           XLIM_NI_IS = 10.E-15,
+           XLIM_NI_SG = 50.E-15,
+           XLIM_NI_IG = 20.E-15,
+           LIAGGS_LATHAM = F,
+           LSEDIM_BEARD = F /
+
+&NAM_PARAM_LIMA  LPTSPLIT = T,
+                 LACTI = T,
+                 NMOM_C = 2,
+                 NMOM_R = 2,
+                 NMOM_I = 2,
+                 NMOM_S = 1,
+                 NMOM_G = 1,
+                 NMOM_H = 0,
+                 LSNOW_T = F,
+                 XALPHAR = 1.,        ! Alpha PSD pluie
+                 XNUR = 2.,           ! Nu PSD pluie
+                 LACTIT=T,
+                 LSEDC=T,
+                 LSCAV=T,           ! Scavenging
+                 LAERO_MASS=F,
+                 LCCN_HOM=F,         ! Concentration en CCN homogÃ¨ne selon z
+!                 CCCN_MODES='',  ! Choix des modes de CCN
+                 NMOD_CCN = 1,      ! Nombre de modes de CCN
+                 XCCN_CONC(1) = 300.,          ! Concentration du mode 1 de CCN (/cm3)
+                 XCCN_CONC(2) = 140.,          ! Concentration du mode 2 de CCN (/cm3)
+                 XCCN_CONC(3) = 50.,           ! Concentration du mode 3 de CCN (/cm3)
+                 XCCN_CONC(4) = 0.01,          ! Concentration du mode 4 de CCN (/cm3)
+                 HINI_CCN='AER',
+                 HTYPE_CCN(1) = 'C',
+                 HTYPE_CCN(2) = 'C',
+                 HTYPE_CCN(3) = 'C',
+                 LNUCL = T,
+                 LSEDI = T,
+                 LHHONI = F,
+                 CPRISTINE_ICE_LIMA = 'PLAT',
+                 CHEVRIMED_ICE_LIMA = 'GRAU',
+                 NIND_SPECIE = 1,
+                 LMEYERS = F,
+                 NMOD_IFN = 1,          ! Nombre de modes d'IFN
+                 NMOD_IMM = 0,          ! Nombre de modes de CCN agissant par IMM
+                 LIFN_HOM = T,           ! Concentration en IFN homogÃ¨ne selon z
+                 CIFN_SPECIES = '',    !
+                 CINT_MIXING = '',      ! DM1, DM2, BC, O, MACC, default (Phillips 2008)
+                 XIFN_CONC(1) = 10.,                ! Concentration du mode 1 d'IFN (/L)
+                 XIFN_CONC(2) = 10. /               ! Concentration du mode 2 d'IFN (/L)
+
+&NAM_LBCn  CLBCX = 2*"OPEN",
+           CLBCY = 2*"OPEN" /
+
+&NAM_CONF  CCONF = "START",
+           NMODEL = 1,
+           LFLAT = T,
+           NVERB = 5,
+           CEXP = "KW78U",
+           CSEG = "LI1E4"
+           NHALO = 3 /
+
+&NAM_DYN  XSEGLEN = 3600.,
+          XASSELIN = 0.2,
+          LCORIO = F,
+          LNUMDIFU = F,
+          XALKTOP = 0.5,
+          XALZBOT = 12500. /
+
+&NAM_BACKUP XBAK_TIME_FREQ(1) = 600.,
+            XBAK_TIME_FREQ_FIRST(1) = 600. /
+
+&NAM_BUDGET  CBUTYPE = 'NONE',
+             NBUMOD = 1,
+             NBUMASK = 2,
+             XBULEN = 300.,
+             XBUWRI = 3600.,
+             NBUKL = 2,
+             NBUKH = 30,
+             LBU_ICP = F,
+             LBU_JCP = F,
+             LBU_KCP = F /
+
+&NAM_BU_RTH  LBU_RTH = F, CBULIST_RTH = 'ALL' /
+&NAM_BU_RRV  LBU_RRV = F, CBULIST_RRV = 'ALL' /
+&NAM_BU_RRC  LBU_RRC = F, CBULIST_RRC = 'ALL' /
+&NAM_BU_RRR  LBU_RRR = F, CBULIST_RRR = 'ALL' /
+&NAM_BU_RRI  LBU_RRI = F, CBULIST_RRI = 'ALL' /
+&NAM_BU_RRS  LBU_RRS = F, CBULIST_RRS = 'ALL' /
+&NAM_BU_RRG  LBU_RRG = F, CBULIST_RRG = 'ALL' /
+&NAM_BU_RSV  LBU_RSV = F, CBULIST_RSV = 'ALL' /

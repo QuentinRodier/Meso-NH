@@ -1,0 +1,339 @@
+===================================================================
+*** the following section will be read by ch_field_valuen.f90 ***
+===================================================================
+
+FORMPROF
+PROFILES      LEVELS
+12              9
+(F7.1,12F7.4)
+    0.0  0.000  0.660  1.000  1.000  1.000  1.000  1.000  1.000  1.000  1.000  1.000  1.000  
+  500.0  0.000  0.660  1.000  1.000  1.000  1.000  1.000  1.000  1.000  1.000  1.000  1.000
+ 1000.0  0.000  0.770  0.400  0.660  0.160  1.000  1.000  1.000  0.500  0.200  1.000  1.000
+ 1500.0  0.000  0.880  0.020  0.330  0.016  1.000  1.000  1.000  0.200  0.200  1.000  1.000
+ 3000.0  0.000  0.660  0.010  0.130  0.003  0.500  1.000  1.000  0.100  0.002  1.000  1.000
+ 4500.0  0.000  0.770  0.003  0.130  0.003  0.500  1.000  1.000  0.050  0.000  1.000  0.010
+ 6000.0  0.000  1.000  0.003  0.130  0.003  1.000  1.000  0.500  0.050  0.000  1.000  0.010
+10000.0  0.000  1.000  0.003  0.000  0.003  1.000  1.000  1.000  0.050  0.000  1.000  0.010
+30000.0  1.000  1.000  0.003  0.000  0.003  1.000  1.000  1.000  0.050  0.000  1.000  0.010
+
+===================================================================
+*** the following section will be read by ch_field_valuen.f90 ***
+===================================================================
+
+NORMINIT
+!!PUT YOUR OWN VALUES HERE!! initial values (units are par per part = MIX)
+MIX
+3
+(1X,a12,1X,E25.8)
+'SO2         '           1.00000000E-12
+'NO          '           1.00000000E-12
+
+===================================================================
+*** the following section will be read by ch_field_valuen.f90 ***
+===================================================================
+
+PROFASSO
+norm-profiles to be associated
+2
+(1X,A12,1X,I3)
+'SO2         '  2
+'NO          '  7
+
+=====================================================================
+*** the following section will be read by ch_init_dep_isban.F90 ***
+=====================================================================
+
+SURF_RES
+surface resistances (s/m), refer to Seinfeld and Pandis, 1998, p. 975, Tab.19.2
+1
+(1X,A12,1X,F5.0)
+'NONE        '  0.0
+
+=====================================================================
+*** the following section will be read by ch_init_depconst.F90 ***
+=====================================================================
+
+MASS_MOL
+molecular mass (in g/mol) for molecular diffusion
+118
+(A12,1X,F7.3)
+O3           48.
+NO           30.
+NO2          46.
+HONO         47.
+HNO3         63.
+HNO4         79.
+N2O5         108.
+NO3          62.
+NH3          17.
+H2O2         34.
+HO2          33.
+OH           17.
+SO2          64.
+H2SO4        98.
+CO           28.
+ETHE         28.
+OLEL         70.
+OLEH         126.
+ALKL         72.
+ALKM         128.
+ALKH         226.
+AROH         134.
+AROL         120.
+AROO         122.
+ARAL         120.
+ARAC         136.
+PAH          156.
+ISOP         68.
+BIOL         154.
+BIOH         88.
+MTBE         88.
+RO21         47.
+RO25         75.
+HCHO         30.
+ALD2         86.
+KETL         86.
+KETH         114.
+MEOH         32.
+ETOH         46.
+ALCH         102.
+GLY          58.
+MGLY         72.
+MCR          70.
+MVK          70.
+ORA1         46.
+ORA2         60.
+ACID         74.
+UR21         88.
+UR28         90.
+PAN1         163.
+PAN2         121.
+PAN3         133.
+PAN4         149.
+PAN6         135.
+PAN7         205.
+PAN8         263.
+PN10         151.
+APAN         178.575
+RPR1         128.
+RPR3         185.
+RPR4         167.
+RPR5         165.
+RPR7         150.
+RPR8         126.
+RP10         130.
+RP11         152.
+RP16         74.
+RP18         184.
+AP7          233.
+UR7          168.
+UR8          184.
+UR17         172.
+UR19         170.
+UR22         212.
+RPRL         139.252
+URG2         184.33
+RPG2         184.33
+RPG3         153.
+URG4         173.
+URG6         181.
+URG7         165.75
+RPG7         196.2
+URG8         196.7
+URG9         271.5
+URG10        185.
+RO2T         100.
+SOA1I        88.
+SOA1J        88.
+SOA2I        180.
+SOA2J        180.
+SOA3I        153.74
+SOA3J        153.74
+SOA4I        195.87
+SOA4J        195.87
+SOA5I        195.
+SOA5J        195.
+SOA6I        195.
+SOA6J        195.
+SOA7I        165.
+SOA7J        165.
+SOA8I        195.
+SOA8J        195.
+SOA9I        270.
+SOA9J        270.
+SOA10I       210.
+SOA10J       210.
+BCI          12.
+BCJ          12.
+OCI          12.
+OCJ          12.
+NH3I         17.
+NH3J         17.
+NO3I         62.
+NO3J         62.
+SO4I         98.
+SO4J         98.
+H2OI         18.
+H2OJ         18.
+
+=====================================================================
+*** the following section will be read by ch_init_depconst.F90 ***
+=====================================================================
+
+REA_FACT
+reactivity factor with biology, Seinfeld and Pandis, 1998, p. 975, Tab. 19.3
+15
+(1X,A12,1X,F4.1)
+'O3          ' 1.0
+'HONO        ' 0.1
+'H2O2        ' 1.0
+'NO2         ' 0.1
+'NO3         ' 0.1
+'N2O5        ' 0.1
+'APAN        ' 0.1
+'PAN1        ' 0.1
+'PAN2        ' 0.1
+'PAN3        ' 0.1
+'PAN4        ' 0.1
+'PAN6        ' 0.1
+'PAN7        ' 0.1
+'PAN8        ' 0.1
+'PN10        ' 0.1
+
+=====================================================================
+*** the following section will be read by ch_init_depconst.F90 ***
+=====================================================================
+
+HENRY_SP
+Henry specific constant
+83
+(A12,1X,E8.2,5X,F7.0)
+O3           1.03E-02      -2830.
+NO           1.92E-03      -1790.
+NO2          1.20E-02      -2516.
+NO3          3.80E-02      -8707.
+N2O5         2.10E+00      -3400.
+HONO         8.38E+04      -3120.
+HNO3         1.46E+13     -10500.
+HNO4         4.78E+04      -6900.
+NH3          3.24E+03        190.
+H2O2         8.44E+04      -7600.
+HO2          3.49E+04      -6643.
+OH           3.90E+01          0.
+SO2          5.59E+04      -4895.
+H2SO4        6.64E+14      -8700.
+CO           9.81E-04      -1720.
+ETHE         5.96E-03      -2170.
+OLEL         2.50E-03          0.
+OLEH         1.00E-03          0.
+ALKL         7.20E-04          0.
+ALKM         2.00E-04          0.
+ALKH         4.30E-03          0.
+AROH         1.60E-01      -4000.
+AROL         2.70E-01          0.
+AROO         2.50E+02      -6450.
+ARAL         5.70E+01          0.
+ARAC         1.12E+06          0.
+PAH          1.40E+00          0.
+ISOP         3.60E-02      -4050.
+MTBE         1.60E+00      -7700.
+RO21         2.45E+00      -2320.
+RO25         2.75E+00      -1605.
+HCHO         3.23E+03      -7100.
+ALD2         6.40E+00      -6300.
+KETL         1.20E+01          0.
+KETH         6.00E+00          0.
+MEOH         2.03E+02      -5640.
+ETOH         1.90E+02      -6660.
+ALCH         4.20E+01      -7500.
+GLY          4.19E+05      -7480.
+MGLY         3.70E+03          0.
+MCR          6.50E+00          0.
+MVK          4.10E+01          0.
+ORA1         5.07E+06      -5950.
+ORA2         2.26E+05      -6200.
+ACID         2.43E+04          0.
+UR21         3.49E+09      -5090.
+UR28         5.00E+08          0.
+PAN1         2.80E+00      -5730.
+PAN2         2.80E+00      -5730.
+PAN3         2.80E+00      -5730.
+PAN4         2.80E+00      -5730.
+PAN6         2.80E+00      -5730.
+PAN7         2.80E+00      -5730.
+PAN8         2.80E+00      -5730.
+PN10         2.80E+00      -5730.
+APAN         2.80E+00      -5730.
+RPR1         3.30E+00      -7500.
+RPR3         3.30E+00      -7500.
+RPR4         3.70E+05          0.
+RPR5         1.90E+04          0.
+RPR7         1.98E+09          0.
+RPR8         5.00E+01          0.
+RP10         3.00E+13          0.
+RP11         1.00E+01          0.
+RP16         1.37E+07      -4810.
+RP18         5.85E+08          0.
+AP7          6.60E+01          0.
+UR7          6.40E+01          0.
+UR8          5.00E+02          0.
+UR17         4.40E+04          0.
+UR19         7.63E+03          0.
+UR22         2.00E+04          0.
+RPRL         1.43E+05          0.
+URG2         3.90E+08          0.
+RPG2         8.00E+07          0.
+RPG3         3.80E+04          0.
+URG4         1.14E+05          0.
+URG6         1.60E+06          0.
+URG7         6.60E+11          0.
+RPG7         7.30E+06          0.
+URG8         6.40E+03          0.
+URG9         1.77E-01          0.
+URG10        5.34E+01          0.
+
+================================================================
+*** the following section will be read by build_emisstabn.F90 ***
+*** <called by ch_init_emissionn.F90>  ***
+*** CON: flux is given in molecules/cm2/s ***
+================================================================
+
+EMISUNIT
+Emission
+CON
+
+================================================================
+*** the following section will be read by build_pronoslistn.F90 ***
+*** <called by ch_init_emissionn.F90>  ***
+* Format: Nom espece pronostic Meso-NH - Facteur Aggregation - NOM ESPECE EMISE 
+* expl: NO (espece Meso-NH)  0.70 (facteur aggregation) ANOX (espece emise PGD)  
+================================================================
+
+AGREGATION
+EMISSIONS MACCity + GFED - schema ReLACS3
+NO     0.70 NOXAN  0.70 NOXBB  0.70 NOXANSEA  0.70 NOXBBSEA
+NO2    0.30 NOXAN  0.30 NOXBB  0.30 NOXANSEA  0.30 NOXBBSEA
+CO     1.00 COAN  1.00 COBB  1.00 COANSEA  1.00 COBBSEA
+NH3    1.00 NH3AN  1.00 NH3BB  1.00 NH3ANSEA  1.00 NH3BBSEA
+SO2    1.00 SO2AN  1.00 SO2BB  1.00 SO2ANSEA  1.00 SO2BBSEA
+BCI    0.05 BCAN  0.05 BCBB  0.05 BCANSEA  0.05 BCBBSEA
+BCJ    0.95 BCAN  0.95 BCBB  0.95 BCANSEA  0.95 BCBBSEA
+OCI    0.05 OCAN  0.05 OCBB  0.05 OCANSEA  0.50 OCBBSEA
+OCJ    0.95 OCAN  0.95 OCBB  0.95 OCANSEA  0.95 OCBBSEA
+ETHE   1.00 C2H4AN   1.00 C2H4BB   1.00 C2H4ANSEA   1.00 C2H4BBSEA
+OLEL   0.99 C3H6AN  0.96 BENEAN  0.99 C3H6BB  0.96 BENEBB  0.99 C3H6ANSEA  0.96 BENEANSEA  0.99 C3H6BBSEA  0.96 BENEBBSEA
+OLEH   0.04 BENEAN  0.04 BENEBB  0.04 BENEANSEA  0.04 BENEBBSEA
+ALKL   0.09 C2H6AN  0.38 C3H8AN  0.61 BALKAN  0.09 C2H6BB  0.38 C3H8BB  0.61 BALKBB 0.09 C2H6ANSEA  0.38 C3H8ANSEA  0.61 BALKANSEA  0.09 C2H6BBSEA  0.38 C3H8BBSEA  0.61 BALKBBSEA
+ALKM   0.28 BALKAN  0.28 BALKBB  0.28 BALKANSEA  0.28 BALKBBSEA
+ALKH   0.04 BALKAN  0.04 BALKBB  0.04 BALKANSEA  0.04 BALKBBSEA
+AROH   0.31 AROAN  0.31 AROBB  0.31 AROANSEA  0.31 AROBBSEA
+AROL   0.40 AROAN  0.40 AROBB  0.40 AROANSEA  0.40 AROBBSEA
+AROO   0.02 AROAN  0.02 AROBB  0.02 AROANSEA  0.02 AROBBSEA
+HCHO   1.00 CH2OAN   1.00 CH2OBB  1.00 CH2OANSEA   1.00 CH2OBBSEA
+ALD2   1.00 BALDAN  0.99 ACALBB  1.00 BALDANSEA  0.99 ACALBBSEA
+KETL   0.07 ACETAN  0.36 BONEAN  0.07 ACETBB  0.07 ACETANSEA  0.36 BONEANSEA  0.07 ACETBBSEA
+KETH   0.10 BONEAN  0.10 BONEANSEA
+MEOH   1.00 MTOLAN  1.00 MTOLBB  1.00 MTOLANSEA  1.00 MTOLBBSEA
+ETOH   0.51 BOLAN  0.51 BOLBB  0.51 BOLANSEA  0.51 BOLBBSEA
+ALCH   0.37 BOLAN  0.37 BOLBB  0.37 BOLANSEA  0.37 BOLBBSEA
+END_AGREGATION

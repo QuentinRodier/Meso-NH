@@ -1,0 +1,6 @@
+#!/bin/bash
+#
+mkdir -p ../PNGs
+rm -rf ../PNGs/ALM
+mkdir ../PNGs/ALM
+find * -name "*.png" -exec cp {} --parents ../PNGs/ALM/. \;

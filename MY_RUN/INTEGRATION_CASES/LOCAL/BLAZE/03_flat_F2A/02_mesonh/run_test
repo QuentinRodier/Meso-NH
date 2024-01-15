@@ -1,0 +1,15 @@
+#!/bin/sh
+
+# generate FuelMap.nc and FuelMap.des files
+python3 fuelmap.py
+
+time MESONH${XYZ}
+
+# ------------------------------------------------
+# post processing of output files with pyrolib CLI
+# ------------------------------------------------
+## delete unprocessed files
+#pyrolib-post rearrange-netcdf -r BLAZE.1.TEST3.OUT.*.nc
+
+## keep unprocessed files
+# pyrolib-post rearrange-netcdf BLAZE.*.OUT.*.nc

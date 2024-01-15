@@ -1,0 +1,80 @@
+&NAM_CONFIO  LCDF4=T,
+             LLFIOUT=F,
+             LLFIREAD=F /
+
+&NAM_CONFZ
+ NZ_VERB = 5 , NZ_PROC = 0 , NB_PROCIO_R = 1 , NB_PROCIO_W = 1, MPI_BUFFER_SIZE=100
+ /
+
+&NAM_LUNITn  CINIFILE = 'BlazeTest',
+             CINIFILEPGD='PGDBlazeTest' /
+
+&NAM_CONFn   LUSERV=T /
+
+&NAM_DYNn XTSTEP = 2.,
+          LITRADJ=T,
+          ! CPRESOPT = "ZRESI" ,
+          LHORELAX_RV = F,
+          LVE_RELAX = F,
+          NRIMX = 6,
+          NRIMY = 3,
+          XRIMKMAX = .001666,
+          XT4DIFU = 1. /
+
+&NAM_ADVn    CUVW_ADV_SCHEME = "WENO_K",
+             NWENO_ORDER = 3,
+             CTEMP_SCHEME="RK53",
+             CMET_ADV_SCHEME = 'PPM_01',
+             CSV_ADV_SCHEME  = 'PPM_01' /
+
+&NAM_LBCn  CLBCX = 2*"OPEN",
+           CLBCY = 2*"OPEN" /
+
+&NAM_CONF  CCONF = "START",
+           LFLAT = T,
+           JPHEXT = 1,
+           NHALO = 2,
+           NMODEL = 1,
+           CSPLIT='BSPLITTING',
+           CEQNSYS  = 'DUR',
+           NVERB = 10,
+           CEXP = 'BLAZE',
+           CSEG = 'TEST2' /
+
+&NAM_DYN  XSEGLEN = 600.,
+          XASSELIN = 0.2,
+          LCORIO = F,
+          XALKTOP = 0.005,
+          XALZBOT = 1000.,
+          LNUMDIFU = .F. /
+
+&NAM_BACKUP LBAK_BEG = .T.,
+            LBAK_END = .T. /
+
+&NAM_OUTPUT XOUT_TIME_FREQ = 150.,
+            COUT_VAR(1,1) = 'UT',
+            COUT_VAR(1,2) = 'VT',
+            COUT_VAR(1,3) = 'WT',
+            COUT_VAR(1,4) = 'THT',
+            COUT_VAR(1,5) = 'PABST',
+            COUT_VAR(1,6) = 'FMPHI',
+            COUT_VAR(1,7) = 'FMBMAP',
+            COUT_VAR(1,8)= 'FMFLUXHDH',
+            COUT_VAR(1,9)= 'FMFLUXHDW',
+            COUT_VAR(1,10)='FMWINDU',
+            COUT_VAR(1,11)='FMWINDV',
+            COUT_VAR(1,12)='FMROS' /
+
+&NAM_PARAMn     CTURB = "NONE",
+                CRAD="NONE",
+                CCLOUD = "NONE",
+                CDCONV = "NONE" /
+
+&NAM_PGD_SCHEMES CNATURE='ISBA' /
+
+&NAM_FIREn LBLAZE = .T.,
+          CFIRE_CPL_MODE = 'ATM2FIR',
+          NREFINX = 5,
+          NREFINY = 5,
+          XFLXCOEFTMP = 0.1 /
+

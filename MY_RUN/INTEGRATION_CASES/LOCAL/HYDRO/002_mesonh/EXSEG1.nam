@@ -1,0 +1,253 @@
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! EXSEG1.nam to test 3D PPM scheme
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! input file names
+!
+&NAM_LUNITn  CINIFILE = "TEST_MNT_2D" /
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! configuration of model n
+!
+&NAM_CONFn   LUSERV =.FALSE.,		! use rv as prognostic var
+             LUSERC =.FALSE.,		! use rc, cloud (REVE)
+             LUSERR =.FALSE.,		! use rr, rain  (KESS)
+             LUSERI =.FALSE.,		! use ri, ice   (ICE3)
+             LUSERS =.FALSE.,		! use rg, graupel
+             LUSERG =.FALSE.,		! use rh, hail
+             LUSECI =.FALSE.,		! use ri, ice
+             NSV_USER = 0 /		! number of passive tracer vars.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! dynamical parameters of the model n
+!
+&NAM_CONFIO  LCDF4=T, LLFIOUT=T, LLFIREAD=F /
+&NAM_DYNn    XTSTEP         = 10.,	! time step in seconds
+	     CPRESOPT       ='CGRAD',	! type of pressure solver, using
+					! Richardson method
+	     NITR           = 4,	! number of iterations
+             LITRADJ        = T ,
+	     XRELAX         = 1.0,	! relaxation factor in RICHA
+             LHORELAX_UVWTH =.FALSE.,	! horiz. relaxation on the top
+					! of the model for U, V, W, TH
+             LHORELAX_RV    =.FALSE.,	
+             LHORELAX_RC    =.FALSE.,
+             LHORELAX_RR    =.FALSE.,
+             LHORELAX_RI    =.FALSE.,
+             LHORELAX_RS    =.FALSE.,
+             LHORELAX_RG    =.FALSE.,
+             LHORELAX_RH    =.FALSE.,
+             LHORELAX_TKE   =.FALSE.,
+             LHORELAX_SV    =.FALSE.,
+             LVE_RELAX      =.TRUE.,	! vertical relaxation on the top
+					! of the model
+	     NRIMX	    = 0,	! num of points in horiz. relax.
+	     NRIMY	    = 0,	! num of points in horiz. relax.
+             XRIMKMAX       = 0.0004,	! max value of relax. coef. (1/s)
+					! for lateral relax., but also used
+					! in open BC !! (0.0004)
+             XT4DIFU        = 500. /	! e-folding time for numerical 
+					! diffusion of 4th order (s)
+                                        ! 1000 for squall line test
+					! 1500 before
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! scalar advection schemes of model n
+! 
+&NAM_ADVn    CUVW_ADV_SCHEME= 'CEN4TH', ! for momentum (u,v,w)
+             CTEMP_SCHEME='RKC4',
+	     CMET_ADV_SCHEME= 'PPM_00',	! for meteorological vars (wind)
+	     CSV_ADV_SCHEME= 'PPM_00' /
+
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! parametrizations used in the model n
+!
+&NAM_PARAMn  CTURB   = "NONE",		! turbulence (TKEL)
+             CRAD    = "NONE",		! radiation
+             CCLOUD  = "NONE",		! cloud (REVE,KESS,ICE3)
+             CDCONV  = "NONE" /		! deep convection
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! options for the radiation in the model n
+!
+&NAM_PARAM_RADn /					! not used
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! options for the convective scheme
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! ground ?? - not in the standard version any more
+!
+!&NAM_PARAM_GROUNDn /
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! boundary conditions for the model n
+!
+&NAM_LBCn    CLBCX = 2*"CYCL",		! boundary condition in x
+             CLBCY = 2*"CYCL",		! boundary condition in y
+	     XCPHASE = 20.0 /		! phase speed of outgoing 
+					! gravity waves
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! options for turbulence
+!
+&NAM_TURBn   XIMPL = 0.,		! 1 default (not implicit)
+					! 0.5 Crank Nicholson scheme 
+					! 0 puerly explicit scheme
+	     CTURBLEN = "DELT",		! type of turb. mixing lenght
+	     CTURBDIM = "3DIM",		! cubic root of the grid volume
+	     LTURB_DIAG = .FALSE.,	! store diagnostic quantities
+	     LTURB_FLX = .FALSE., 	! store all turbulent fluxes
+             /	! not sure
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! options for chemistry
+!
+&NAM_CH_MNHCn /				! not used
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! temporal series in diagnostic file of model n
+!
+NAM_SERIESn /				! not used ?
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! options for stiff solver in model n
+!
+&NAM_CH_SOLVERn /			! use defaults
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! global configuration parameters
+!
+&NAM_CONF    
+!            CCONF    = "START",	! start new run, restart or post
+             LFLAT    = .FALSE.,	! topography or not
+	     CEQNSYS  = 'DUR',		! what type of anelastic approx.
+             LFORCING = .FALSE.,	! use external forcing
+             NMODEL   = 1,		! number of nested models
+             NVERB    = 0,		! verbosity level
+	     NHALO    = 1,		! size of the halo for parallel.
+	     CSPLIT   = 'YSPLITTING',	! type of domain splitting for 
+					! parallel distribution
+	     LLG      = .FALSE.,	! switch to LaGrangian variables
+	     LINIT_LG = .FALSE.,	!
+	     LNOMIXLG = .FALSE.,	!
+             CEXP     = "HYDRO",	! experiment name (5 char.)
+             CSEG     = "CEN4T",	! segment name, future run, 5 ch
+             JPHEXT=1,NHALO=1/
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! global parameters for dynamics
+! 
+&NAM_DYN
+            XSEGLEN   = 15000.,
+!             XSEGLEN   = 400.,            ! length of the simulation in s 
+             XASSELIN  = 0.0,		! amplitude of Asselin temporal
+					! filter
+             LCORIO    = .FALSE.,       ! set Coriolis parameter
+             LNUMDIFU  = .TRUE.,   	! use numerical diffusion
+	     LZDIFFU   = .FALSE.,       ! Zangl diffusion with topography
+	     XALKTOP   = 0.01,		! Rayleigh damping (1/s) at the
+					! top of the upper sponge layer 5*U/a
+             XALZBOT   = 13000. /	! height (in m) of the bottom of
+					! the sponge layer
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! 
+! grid nesting configuration
+!
+&NAM_NESTING /				! not used
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! output times
+!
+!
+&NAM_BACKUP   XBAK_TIME(1,1)=0.,
+             XBAK_TIME(1,2)=10.,
+            XBAK_TIME(1,3)=1500.,
+             XBAK_TIME(1,4)=3000.,
+             XBAK_TIME(1,5)=4500.,
+             XBAK_TIME(1,6)=6000.,
+            XBAK_TIME(1,7)=7500.,
+             XBAK_TIME(1,8)=9000.,
+             XBAK_TIME(1,9)=10500.,
+             XBAK_TIME(1,10)=12000.,
+            XBAK_TIME(1,11)=13500.,
+             XBAK_TIME(1,12)=15000./
+!&NAM_FMOUT   XBAK_TIME(1,1)=0.,
+!            XBAK_TIME(1,2)=5.,
+!           XBAK_TIME(1,3)=10.,
+!            XBAK_TIME(1,4)=15.,
+!            XBAK_TIME(1,5)=20.,
+!            XBAK_TIME(1,6)=25.,
+!            XBAK_TIME(1,7)=30.,
+!            XBAK_TIME(1,8)=35.,
+!            XBAK_TIME(1,9)=40.,
+!            XBAK_TIME(1,10)=45.,
+!            XBAK_TIME(1,11)=50.,
+!            XBAK_TIME(1,12)=55./
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! different budgets - not used
+!
+&NAM_BUDGET / 
+&NAM_BU_RU /
+&NAM_BU_RV /
+&NAM_BU_RW /
+&NAM_BU_RTH /
+&NAM_BU_RTKE /
+&NAM_BU_RRV /
+&NAM_BU_RRC /
+&NAM_BU_RRR /
+&NAM_BU_RRI /
+&NAM_BU_RRS /
+&NAM_BU_RRG /
+&NAM_BU_RRH /
+&NAM_BU_RSV /
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! averages used in LES mode
+&NAM_LES    /				! not used
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! aditional user defined variables
+!
+&NAM_BLANK 
+!          CDUMMY1='MOMENTUM_FLUX', 	! caclulate momentum flux
+           CDUMMY2='test'               ! file name for mom. flux
+           NDUMMY1=28,			! height of the useful domain
+                                        ! including level 1
+           XDUMMY1=20., 		! background wind speed
+           XDUMMY2=1.,  		! mountain height in m
+           XDUMMY3=1000.,               ! scaling factor
+           XDUMMY8=0.8 , 
+           LDUMMY8 = .F./
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! forcing parameters
+&NAM_FRC /				! not used
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! ice parametrization
+!
+&NAM_PARAM_ICEn /
+
+&NAM_NEBn LSUBG_COND = .FALSE.  /

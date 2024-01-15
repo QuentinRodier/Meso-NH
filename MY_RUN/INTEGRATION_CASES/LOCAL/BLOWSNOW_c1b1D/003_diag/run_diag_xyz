@@ -1,0 +1,38 @@
+#!/bin/sh
+#MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+#MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
+#MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+#MNH_LIC for details. version 1.
+set -x
+set -e
+
+
+ln -fs ../001_prep_ideal/CLB_PGD.* .
+ln -fs ../002_mesonh/CLB23.1.CAN* .
+
+for wind in 11 16
+do
+
+for ech in $(seq 1 1 8)
+do
+#ecriture namelist
+#&NAM_CONFIO  LCDF4=T, LLFIOUT=T, LLFIREAD=F /
+cat > DIAG1.nam << EOF
+&NAM_CONFIO LLFIOUT=T LCDF4=T/
+&NAM_DIAG LTPZH=T, LVAR_PR=T, LVAR_TURB=T, LTURBFLX=T, LTURBDIAG=T /
+&NAM_DIAG_SURFn  N2M=2  LSURF_BUDGET=T /
+&NAM_DIAG_FILE YINIFILE = "CLB23.1.CAN${wind}.00${ech}",
+  YINIFILEPGD = 'CLB_PGD'
+  YSUFFIX = "dg" /
+EOF
+#lien vers le fichier d'entree
+
+rm -f CLB23.1.CAN${wind}.00${ech}dg.*
+time ${MONORUN} DIAG${XYZ}
+rm -f CLB23.1.CAN${wind}.00${ech}.*
+rm -f DIAG1.nam
+done
+done
+
+rm -f CLB_PGD.???
+

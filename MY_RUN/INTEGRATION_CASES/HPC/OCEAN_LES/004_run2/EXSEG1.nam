@@ -1,0 +1,35 @@
+&NAM_CONFIO  LCDF4=T, LLFIOUT=F, LLFIREAD=F /
+&NAM_LUNITn  CINIFILE = "GN_01.1.OC_01.002"/
+&NAM_CONFn  LUSERV=F LUSERC=F LUSERR=F /
+&NAM_DYNn  LOCEAN=T XTSTEP =10. NRIMX=0 NRIMY=0 XT4DIFU= 480./
+&NAM_ADVn  CUVW_ADV_SCHEME="CEN4TH", CTEMP_SCHEME="RKC4" /
+&NAM_PARAMn  CTURB="TKEL",
+             CRAD = "NONE",
+             CDCONV = "NONE",
+             CCLOUD= "NONE" /
+&NAM_LBCn  CLBCX=2*"CYCL",
+           CLBCY=2*"CYCL" /
+&NAM_TURBn  XIMPL=0.,
+            CTURBLEN="DELT",
+            CTURBDIM="1DIM",
+            LRMC01=.FALSE.,
+            XTKEMIN=0.000001/
+&NAM_CONF  CCONF="START",
+           LFLAT=T,
+           NMODEL=2,
+           NVERB=10, 
+           CEQNSYS='LHE',
+           CEXP="SPWAN0",
+           CSEG="25m00",
+           LFORCING=F,
+           NHALO=1 /
+&NAM_DYN  XSEGLEN= 21600.
+          LCORIO=T,
+          LNUMDIFU=T /
+&NAM_NESTING NDAD(2) = 1,
+             NDTRATIO(2) = 2,
+             XWAY(2)= 2. /
+&NAM_BACKUP XBAK_TIME_FREQ(1) =7200.,
+            XBAK_TIME_FREQ_FIRST(1) =7200./
+&NAM_FRC  LDEEPOC= T,
+   XCENTX_OC=8000., XCENTY_OC=8000., XRADX_OC= 4000., XRADY_OC=4000. /

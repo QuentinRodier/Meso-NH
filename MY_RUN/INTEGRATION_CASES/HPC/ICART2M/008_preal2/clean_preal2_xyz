@@ -1,0 +1,2 @@
+set -x
+rm -f ICART* OUTPUT_LISTING* pipe* file*

@@ -1,0 +1,101 @@
+&NAM_CONFIO    LCDF4=T /
+
+&NAM_CONF      NMODEL = 1,
+               CSPLIT='BSPLITTING' /
+
+&NAM_CONFZ     NZ_VERB = 10,
+               NZ_PROC = 0,
+               NB_PROCIO_W = 1,
+               MPI_BUFFER_SIZE = 1000 /
+
+&NAM_DIMn_PRE  NIMAX=520,
+               NJMAX=420 /
+
+&NAM_LUNITn    CINIFILE='INIFILE',
+               CINIFILEPGD='INIFILE_PGD' /
+
+&NAM_DYNn_PRE  CPRESOPT ='ZRESI',
+               NITR=16,
+               LRES =.TRUE.,
+               XRES = 1.E-05 /
+
+&NAM_LBCn_PRE  CLBCX =2*'OPEN',
+               CLBCY =2*'OPEN' /
+
+&NAM_GRIDH_PRE XDELTAX=5.E-02,
+               XDELTAY=5.E-02,
+               XHMAX = 0.,
+               XAX = 0. /
+
+&NAM_VER_GRID  NKMAX=41,
+               YZGRID_TYPE='FUNCTN',
+               ZZMAX_STRGRD=5.E-02,
+               ZSTRGRD=0.E+0,
+               ZSTRTOP=0.00E+0,
+               ZDZGRD=5.E-02,
+               ZDZTOP=5.E-02 /
+
+&NAM_GRID_PRE  XLAT0=43.554,
+               XLON0=1.389,
+               XBETA=0.,
+               XRPK=1.,
+               XLATORI=43.554,
+               XLONORI=1.389  /
+
+&NAM_CONF_PRE  CIDEAL = 'CSTN',
+               LFORCING=.FALSE.,
+               CEQNSYS='DUR',
+               NVERB=2,
+               LCARTESIAN=.TRUE.,
+               CZS='FLAT',
+               LPERTURB = .TRUE.,
+               NHALO=1,
+               JPHEXT = 1 /
+
+&NAM_CONFn LUSERV = .FALSE. /
+
+&NAM_GRn_PRE CSURF='NONE' /
+
+&NAM_PGD_SCHEMES CTOWN='FLUX' /
+
+&NAM_FRAC XUNIF_TOWN = 1.,
+          XUNIF_SEA = 0.,
+          XUNIF_WATER=0.,
+          XUNIF_NATURE = 0.,
+          LECOCLIMAP=.FALSE. /
+
+&NAM_IDEAL_FLUX CUSTARTYPE='Z0',
+                XZ0=6.24E-7,
+                XALB=0.2,
+                XEMIS=1.,
+                NFORCT = 2,
+                XTIMET(1) = 0.,
+                XTIMET(2) = 10800.,
+                XTSRAD(1) = 300.,
+                XTSRAD(2) = 300.,
+                NFORCF = 2,
+                XTIMEF(1) = 0.,
+                XTIMEF(2) = 10800.,
+                XSFTH(1) = 0.,
+                XSFTH(2) = 0.,
+                CSFTQ='kg/m2/s',
+                XSFTQ(1)=0.,
+                XSFTQ(2)=0.,
+                XSFCO2(1) = 0.,
+                XSFCO2(2) = 0. /
+
+&NAM_IBM_LSF LIBM_LSF=.FALSE.,
+             CIBM_TYPE='IDEA',
+             NIBM_SMOOTH=0,
+             XIBM_SMOOTH=0.00000001 /
+
+CSTN
+2000 01 01 0.
+14
+300.
+1.00E+05
++0.0001 +0.1 +0.2 +0.3 +0.5 +0.8 +1.0 +1.5 +2.0 +3.0 +10.0 +30.0 +50.0 +100.0
++6.24E-04 +6.24E-04 +6.24E-04 +6.24E-04 +6.24E-04 +6.24E-04 +6.24E-04 +6.24E-04 +6.24E-04 +6.24E-04 +6.24E-04 +6.24E-04 +6.24E-04 +6.24E-04
++0.0 +0.0 +0.0 +0.0 +0.0 +0.0 +0.0 +0.0  +0.0  +0.0   +0.0   +0.0   +0.0   +0.0
++0.0 +0.0 +0.0 +0.0 +0.0 +0.0 +0.0 +0.0  +0.0  +0.0   +0.0   +0.0   +0.0   +0.0
+0.  0.  0.   0. 0.  0.   0.   0.   0.  0.   0.   0.     0.     0.

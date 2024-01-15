@@ -1,0 +1,16 @@
+&NAM_FILE_NAMES HATMFILE ='RE1.spa00',
+                HATMFILETYPE='MESONH',
+                HPGDFILE ='RE1.spa00',
+                CINIFILE='RE2' /
+
+&NAM_CONFIO    LCDF4=T, NIO_ABORT_LEVEL=1, NGEN_ABORT_LEVEL=1/
+
+&NAM_REAL_CONF NVERB = 10/
+
+&NAM_VER_GRID YZGRID_TYPE='SAMEGR' /
+
+&NAM_PREP_SURF_ATM CFILE = 'RE1.spa00',
+                   CFILETYPE = 'MESONH',
+                   CFILEPGD = 'RE1.spa00',
+                   CFILEPGDTYPE = 'MESONH' /
+

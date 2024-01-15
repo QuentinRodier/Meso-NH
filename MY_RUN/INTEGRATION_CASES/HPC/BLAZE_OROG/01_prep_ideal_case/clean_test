@@ -1,0 +1,7 @@
+#!/bin/sh
+echo "----- Cleaning Prep Ideal Case Directory -----"
+rm -rfv OUTPUT_LISTING* pipe* *.tex
+rm -rfv file_for_xtransfer
+rm -rfv *.nc *.des *~
+rm -rfv *.eo*
+echo "-------------------- Done --------------------"

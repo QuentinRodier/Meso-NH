@@ -1,0 +1,167 @@
+&NAM_CONFIO  LCDF4=T, LLFIOUT=T, LLFIREAD=T /
+&NAM_LUNITn  CINIFILE='COPT_2D',CINIFILEPGD='COPT_PGD' /
+&NAM_DYNn            XTSTEP = 10., XRIMKMAX = .0, LHORELAX_UVWTH=F, LHORELAX_RV=F
+                     LVE_RELAX = T, 
+                     XT4DIFU =1000.,XT4DIFTH=1000. /  
+&NAM_ADVn   CUVW_ADV_SCHEME = "CEN4TH",CMET_ADV_SCHEME = "PPM_01",CTEMP_SCHEME='RKC4'/
+&NAM_PARAMn  CTURB = "TKEL", 
+             CCLOUD = "LIMA" /
+&NAM_LBCn            CLBCX = 2*"OPEN" CLBCY = 2*"CYCL",XCPHASE_PBL=20., XCARPKMAX=0.  /
+&NAM_TURBn           XIMPL = 0., CTURBLEN = "DELT", CTURBDIM = "3DIM"
+                     /
+&NAM_CONF            CCONF = "START", LLG=F, LINIT_LG=F,
+                     LFLAT = T, NVERB = 2,
+                     CEXP = "COPT8", CSEG = "CEN4T"
+                     NHALO=1,JPHEXT=1 /
+&NAM_DYN             XSEGLEN = 28800.,
+                     LCORIO = F, LNUMDIFU = F,LNUMDIFTH=F,
+                     XALKTOP = 0.005, XALZBOT = 17000. /
+&NAM_PARAM_RADn  XDTRAD = 3600., XDTRAD_CLONLY = 3600., NRAD_COLNBR = 400
+                CLW="RRTM",
+                COPWLW="MALA",
+                COPWSW="MALA",
+		CEFRADL='C2R2',
+		CEFRADI='C3R5',
+                CAER = 'TEGE', 
+ 		CAOP = 'EXPL' /
+&NAM_BACKUP XBAK_TIME(1,1)=28800 /
+&NAM_BUDGET  CBUTYPE = 'CART', NBUMOD = 1, XBULEN=3600., XBUWRI=3600.,
+ NBUKL = 1, NBUKH = 46, LBU_KCP = .FALSE., NBUIL = 1, NBUIH = 320,
+ NBUJL = 1, NBUJH = 1, LBU_ICP = .FALSE., LBU_JCP = .FALSE. /
+&NAM_BU_RU   LBU_RU = T/
+&NAM_BU_RW   LBU_RW = T/
+&NAM_BU_RTH  LBU_RTH = T /
+&NAM_BU_RRV  LBU_RRV = .T. /
+&NAM_BU_RRC  LBU_RRC = .T. /
+&NAM_BU_RRR  LBU_RRR = .T. /
+&NAM_BU_RRI  LBU_RRI = .T. /
+&NAM_BU_RRS  LBU_RRS = .T. /
+&NAM_BU_RRG  LBU_RRG = .T. /
+&NAM_BLANKn     XDUMMY1 = 0.01, XDUMMY2 = 4000., XDUMMY3 = 12000. , XDUMMY4 = 0.3 XDUMMY5 = 600. /
+&NAM_FRC       LTRANS=T /
+
+&NAM_PGD_SCHEMES CNATURE='NONE', CSEA='FLUX', CWATER='NONE', CTOWN='NONE' /
+&NAM_COVER XUNIF_COVER(1)=1. /
+&NAM_ISBAn /                                                      
+&NAM_SEAFLUXn /
+&NAM_DIAG_SURFn /
+&NAM_DIAG_ISBAn /
+&NAM_DIAG_SURF_ATMn /
+
+&NAM_PARAM_LIMA LACTI = T,
+                LACTIT=T,
+                LSEDC=F, 
+                LSCAV=T,             ! Scavenging
+                LAERO_MASS=F,
+                LCCN_HOM=F,           ! Concentration en CCN homogène selon z
+                CCCN_MODES='CAMS',    ! Choix des modes de CCN
+                HINI_CCN='AER',
+                NMOD_CCN = 1,        ! Nombre de modes de CCN
+                HTYPE_CCN(1)='M',
+                XCCN_CONC(1)=350.,          ! Concentration du mode 1 de CCN (/cm3)
+		LNUCL = T,
+                LSEDI=F,
+                LHHONI=T,
+		NPHILLIPS=8,         ! 8 ou 13
+                CPRISTINE_ICE_LIMA = 'PLAT', 
+                CHEVRIMED_ICE_LIMA = 'GRAU',
+                LMEYERS = F,
+                LIFN_HOM=F,           ! Concentration en IFN homogène selon z
+                CIFN_SPECIES='',      ! 
+                CINT_MIXING='',   ! DM1, DM2, BC, O, MACC, default (Phillips 2008)
+                NMOD_IFN=1,          ! Nombre de modes d'IFN
+                NIND_SPECIE = 1,
+                NMOD_IMM=1,          ! Nombre de modes de CCN agissant par IMM
+                XIFN_CONC(1)=10000.,      ! Concentration du mode 1 d'IFN (/L)
+                XIFN_CONC(2)=0. /     ! Concentration du mode 2 d'IFN (/L)
+
+
+
+&NAM_IDEAL_FLUX 
+NFORCT = 2,
+NFORCF = 17,
+XTIMET(1) = 0.,
+XTIMET(2) = 28800.,
+XTIMEF(1) = 0.,
+XTIMEF(2) = 1800.,
+XTIMEF(3) = 3600.,
+XTIMEF(4) = 5400.,
+XTIMEF(5) = 7200.,
+XTIMEF(6) = 9000.,
+XTIMEF(7) = 10800.,
+XTIMEF(8) = 12600.,
+XTIMEF(9) = 14400.,
+XTIMEF(10) = 16200.,
+XTIMEF(11) = 18000.,
+XTIMEF(12) = 19800.,
+XTIMEF(13) = 21600.,
+XTIMEF(14) = 23400.,
+XTIMEF(15) = 25200.,
+XTIMEF(16) = 27000.,
+XTIMEF(17) = 28800.,
+XSFTH(1) = 0.,
+XSFTH(2) = 0.,
+XSFTH(3) = 0.,
+XSFTH(4) = 0.,
+XSFTH(5) = 0.,
+XSFTH(6) = 0.,
+XSFTH(7) = 0.,
+XSFTH(8) = 0.,
+XSFTH(9) = 0.,
+XSFTH(10) =0.,
+XSFTH(11) =0.,
+XSFTH(12) =0.,
+XSFTH(13) =0.,
+XSFTH(14) =0.,
+XSFTH(15) =0.,
+XSFTH(16) =0.,
+XSFTH(17) =0.,
+
+CSFTQ='kg/m2/s'  
+XSFTQ(1)=0.,  
+XSFTQ(2)=0.,  
+XSFTQ(3)=0.,  
+XSFTQ(4)=0.,  
+XSFTQ(5)=0.,  
+XSFTQ(6)=0.,  
+XSFTQ(7)=0., 
+XSFTQ(8)=0.,  
+XSFTQ(9)=0.,  
+XSFTQ(10)=0.,  
+XSFTQ(11)=0.,  
+XSFTQ(12)=0.,  
+XSFTQ(13)=0.,  
+XSFTQ(14)=0.,  
+XSFTQ(15)=0.,  
+XSFTQ(16)=0.,  
+XSFTQ(17)=0.,  
+
+XSFCO2(1) = 0.,
+XSFCO2(2) = 0.,
+XSFCO2(3) = 0.,
+XSFCO2(4) = 0.,
+XSFCO2(5) = 0.,
+XSFCO2(6) = 0.,
+XSFCO2(7) = 0.,
+XSFCO2(8) = 0.,
+XSFCO2(9) = 0.,
+XSFCO2(10) = 0.,
+XSFCO2(11) = 0.,
+XSFCO2(12) = 0.,
+XSFCO2(13) = 0.,
+XSFCO2(14) = 0.,
+XSFCO2(15) = 0.,
+XSFCO2(16) = 0.,
+XSFCO2(17) = 0.,
+
+CUSTARTYPE = 'Z0   ',
+
+XZ0=0.035,
+
+XALB   = 0.,
+XEMIS  = 1.,
+XTSRAD(1) = 273.16,
+XTSRAD(2) = 273.16
+/
+
+&NAM_NEBn LSUBG_COND=F   /

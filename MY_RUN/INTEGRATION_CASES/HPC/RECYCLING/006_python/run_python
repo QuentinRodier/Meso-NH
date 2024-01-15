@@ -1,0 +1,18 @@
+#!/bin/sh
+#SBATCH -J ibmCYL_3
+#SBATCH -N 1            # nodes number
+#SBATCH -n 1            # CPUs number (on all nodes) 
+#SBATCH -o plot.eo%j   #
+#SBATCH -e plot.eo%j   #
+#SBATCH -t 01:00:00    # time limit
+
+ulimit -s unlimited
+ulimit -c 0
+
+module load python
+
+set -x
+set -e
+rm -f *.png
+python plot_RECYCLING.py
+convert *.png RECYCLING.pdf

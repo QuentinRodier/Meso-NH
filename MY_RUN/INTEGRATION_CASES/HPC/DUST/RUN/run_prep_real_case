@@ -1,0 +1,130 @@
+#!/bin/sh
+#SBATCH -J prep_dust
+#SBATCH -N 1            # nodes number (=NBP)
+#SBATCH -n 16            # CPUs number (on all nodes) (=NBP*TPN)
+#SBATCH -o prep_dust.eo%j   #
+#SBATCH -e prep_dust.eo%j   #
+#SBATCH -t 04:00:00    # time limit
+
+# Echo des commandes
+ulimit -c 0
+ulimit -s unlimited
+# Arrete du job des la premiere erreur
+set -e
+# Nom de la machine
+hostname 
+
+
+. ~rodierq/DEV_57/MNH-PHYEX070-b95d84d7/conf/profile_mesonh-LXifort-R8I4-MNH-V5-6-2-ECRAD140-MPIAUTO-O2
+
+export MPIRUN="Mpirun -np 16"
+
+set -x
+set -e
+
+ln -sf $HOME/SAVE/GRIB_KTEST/ecmwf.OD.200009* .
+
+ls -lrt
+
+rm -f S7020000924.00.???
+cp PRE_REAL1.nam.20000924.00 PRE_REAL1.nam
+time ${MPIRUN} PREP_REAL_CASE${XYZ}
+mv OUTPUT_LISTING0  OUTPUT_LISTING0_prep.24.00
+ 
+ls -lrt
+
+rm -f S7020000924.06.???
+cp PRE_REAL1.nam.20000924.06 PRE_REAL1.nam
+time ${MPIRUN} PREP_REAL_CASE${XYZ}
+mv OUTPUT_LISTING0  OUTPUT_LISTING0_prep.24.06
+ 
+ls -lrt
+
+rm -f S7020000924.12.???
+cp PRE_REAL1.nam.20000924.12 PRE_REAL1.nam
+time ${MPIRUN} PREP_REAL_CASE${XYZ}
+mv OUTPUT_LISTING0  OUTPUT_LISTING0_prep.24.12
+ 
+ls -lrt
+
+rm -f S7020000924.18.???
+cp PRE_REAL1.nam.20000924.18 PRE_REAL1.nam
+time ${MPIRUN} PREP_REAL_CASE${XYZ}
+mv OUTPUT_LISTING0  OUTPUT_LISTING0_prep.24.18
+ 
+ls -lrt
+
+
+rm -f S7020000925.00.???
+cp PRE_REAL1.nam.20000925.00 PRE_REAL1.nam
+time ${MPIRUN} PREP_REAL_CASE${XYZ}
+mv OUTPUT_LISTING0  OUTPUT_LISTING0_prep.25.00
+ 
+ls -lrt
+
+rm -f S7020000925.06.???
+cp PRE_REAL1.nam.20000925.06 PRE_REAL1.nam
+time ${MPIRUN} PREP_REAL_CASE${XYZ}
+mv OUTPUT_LISTING0  OUTPUT_LISTING0_prep.25.06
+ 
+ls -lrt
+
+rm -f S7020000925.12.???
+cp PRE_REAL1.nam.20000925.12 PRE_REAL1.nam
+time ${MPIRUN} PREP_REAL_CASE${XYZ}
+mv OUTPUT_LISTING0  OUTPUT_LISTING0_prep.25.12
+ 
+ls -lrt
+
+rm -f S7020000925.18.???
+cp PRE_REAL1.nam.20000925.18 PRE_REAL1.nam
+time ${MPIRUN} PREP_REAL_CASE${XYZ}
+mv OUTPUT_LISTING0  OUTPUT_LISTING0_prep.25.18
+ 
+ls -lrt
+
+rm -f S7020000926.00.???
+cp PRE_REAL1.nam.20000926.00 PRE_REAL1.nam
+time ${MPIRUN} PREP_REAL_CASE${XYZ}
+mv OUTPUT_LISTING0  OUTPUT_LISTING0_prep.26.00
+ 
+ls -lrt
+
+rm -f S7020000926.06.???
+cp PRE_REAL1.nam.20000926.06 PRE_REAL1.nam
+time ${MPIRUN} PREP_REAL_CASE${XYZ}
+mv OUTPUT_LISTING0  OUTPUT_LISTING0_prep.26.06
+ 
+ls -lrt
+
+rm -f S7020000926.12.???
+cp PRE_REAL1.nam.20000926.12 PRE_REAL1.nam
+time ${MPIRUN} PREP_REAL_CASE${XYZ}
+mv OUTPUT_LISTING0  OUTPUT_LISTING0_prep.26.12
+ 
+ls -lrt
+
+rm -f S7020000926.18.???
+cp PRE_REAL1.nam.20000926.18 PRE_REAL1.nam
+time ${MPIRUN} PREP_REAL_CASE${XYZ}
+mv OUTPUT_LISTING0  OUTPUT_LISTING0_prep.26.18
+ 
+ls -lrt
+
+
+rm -f S7020000927.00.???
+cp PRE_REAL1.nam.20000927.00 PRE_REAL1.nam
+time ${MPIRUN} PREP_REAL_CASE${XYZ}
+mv OUTPUT_LISTING0  OUTPUT_LISTING0_prep.27.00
+ 
+ls -lrt
+
+rm -f PRE_REAL1.nam
+rm -f ecmwf*
+rm -f file_for_xtransfer pipe_name
+
+
+ls -lrt
+
+sbatch run_mesonh1
+ja

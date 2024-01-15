@@ -1,0 +1,2 @@
+rm -f BOMEX* pipe_name 
+rm -f PGD_BOMEX* bomex_1D*  OUT*

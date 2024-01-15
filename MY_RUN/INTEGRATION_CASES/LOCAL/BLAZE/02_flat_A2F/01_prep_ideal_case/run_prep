@@ -1,0 +1,14 @@
+#!/bin/sh
+
+# run prep
+export MPIRUN="mpirun -np 1"
+#time ${MPIRUN} PREP_IDEAL_CASE${XYZ}
+PREP_IDEAL_CASE${XYZ}
+
+# Create links for next stage
+CINIFILE=$(cat PRE_IDEA1.nam | grep 'CINIFILE=' | cut -d "'" -f 2)
+CINIFILEPGD=$(cat PRE_IDEA1.nam | grep 'CINIFILEPGD=' | cut -d "'" -f 2)
+
+ln -sf ../01_prep_ideal_case/$CINIFILE.* ../02_mesonh/
+ln -sf ../01_prep_ideal_case/$CINIFILEPGD.* ../02_mesonh/
+

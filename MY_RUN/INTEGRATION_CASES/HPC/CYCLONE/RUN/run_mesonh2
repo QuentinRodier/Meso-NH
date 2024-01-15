@@ -1,0 +1,41 @@
+#!/bin/sh
+#SBATCH -J runB_cyc
+#SBATCH -N 24            # nodes number (=NBP)
+#SBATCH -n 768            # CPUs number (on all nodes) (=NBP*TPN)
+#SBATCH -o runB_cyc.eo%j   #
+#SBATCH -e runB_cyc.eo%j   #
+#SBATCH -t 04:00:00    # time limit
+
+# Echo des commandes
+ulimit -c 0
+ulimit -s unlimited
+# Arrete du job des la premiere erreur
+set -e
+# Nom de la machine
+hostname 
+
+. ~rodierq/DEV_57/MNH-PHYEX070-b95d84d7/conf/profile_mesonh-LXifort-R8I4-MNH-V5-6-2-ECRAD140-MPIAUTO-O2
+
+
+export MPIRUN="Mpirun -np 768"
+
+set -x
+set -e
+ls -lrt
+
+rm -f REFid.1.D70Cb.*
+cp EXSEG1.nam_RestartB EXSEG1.nam
+time ${MPIRUN} MESONH${XYZ}
+mv OUTPUT_LISTING0  OUTPUT_LISTING0_runB
+mv OUTPUT_LISTING1  OUTPUT_LISTING1_runB
+
+
+ls -lrt
+
+rm -f EXSEG1.nam
+rm -f file_for_xtransfer pipe_name PRESSURE REMAP*
+ls -lrt
+
+sbatch run_diag
+
+ja

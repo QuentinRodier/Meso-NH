@@ -1,0 +1,10 @@
+set -x
+set -e
+ln -sf ../004_diag/REUNI.1.CEN4T.004dia.nc .
+ln -sf ../003_mesonh/REUNI.1.CEN4T.004.nc .
+ln -sf ../003_mesonh/REUNI.1.CEN4T.000.nc .
+
+ln -sf ${SRC_MESONH}/src/LIB/Python/* .
+
+python3 plot_Reunion.py
+convert *.png Reunion.pdf

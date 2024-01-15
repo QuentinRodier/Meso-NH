@@ -1,0 +1,5 @@
+set -x
+set -e
+ln -fs ../001_prep_ideal/HYD2D.* .
+rm -f HYD2D.1.CEN* OUT*
+time ${MONORUN} MESONH${XYZ}

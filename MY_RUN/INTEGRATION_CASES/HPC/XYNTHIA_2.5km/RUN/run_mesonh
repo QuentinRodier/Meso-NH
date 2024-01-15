@@ -1,0 +1,27 @@
+#!/bin/sh
+#SBATCH -J run_xynthia
+#SBATCH -N 10            # nodes number (=NBP)
+#SBATCH -n 320            # CPUs number (on all nodes) (=NBP*TPN)
+#SBATCH -o run_xynthia.eo%j   #
+#SBATCH -e run_xynthia.eo%j   #
+#SBATCH -t 03:00:00    # time limit
+
+# Echo des commandes
+ulimit -c 0
+ulimit -s unlimited
+# Arrete du job des la premiere erreur
+set -e
+# Nom de la machine
+hostname
+
+
+. ~rodierq/DEV_57/MNH-PHYEX070-b95d84d7/conf/profile_mesonh-LXifort-R8I4-MNH-V5-6-2-ECRAD140-MPIAUTO-O2
+export MPIRUN="Mpirun -np 320"
+
+set -x
+set -e
+ls -lrt
+
+
+rm -f XYNTH.1.CEN4T.*
+time ${MPIRUN} MESONH${XYZ}

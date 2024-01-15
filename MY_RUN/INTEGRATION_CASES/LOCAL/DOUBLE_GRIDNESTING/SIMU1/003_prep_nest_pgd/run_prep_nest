@@ -1,0 +1,6 @@
+#set -x
+#
+ln -sf ../001_pgd1/PGD1* .
+ln -sf ../002_pgd2/PGD2* .
+
+time ${MONORUN} PREP_NEST_PGD${XYZ}

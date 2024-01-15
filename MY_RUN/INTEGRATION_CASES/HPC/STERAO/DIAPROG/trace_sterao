@@ -1,0 +1,44 @@
+#!/bin/sh
+#SBATCH -J tools
+#SBATCH -N 1            # nodes number
+#SBATCH -n 1            # CPUs number (on all nodes) 
+#SBATCH -o tools.eo%j   #
+#SBATCH -e tools.eo%j   #
+#SBATCH -t 01:00:00    # time limit
+# Echo des commandes
+ulimit -c 0
+ulimit -s unlimited
+# Arrete du job des la premiere erreur
+set -e
+
+
+
+FILE1=STERA.1.CEN4T.007
+FILE2=STERA.1.CEN4T.013
+FILE3=STERA.1.CEN4T.019
+FILE1LFI=${FILE1}.lfi
+FILE2LFI=${FILE2}.lfi
+FILE3LFI=${FILE3}.lfi
+FILEDIA=STERAO_dia
+ln -sf ../RUN/LFI/$FILE1LFI .
+ln -sf ../RUN/LFI/$FILE2LFI .
+ln -sf ../RUN/LFI/$FILE3LFI .
+
+
+cat >> dirconv2dia << EOF
+3
+$FILE1
+$FILE2
+$FILE3
+$FILEDIA
+n
+n
+0
+EOF
+conv2dia < dirconv2dia
+rm -f  $FILE1LFI $FILE2LFI $FILE3LFI
+rm -f dirconv2dia
+
+diaprog < dir_sterao
+rm -f *.lfi *.des
+rm -f dir.* dirconv FICJD LISTING_DIA OUT_DIA

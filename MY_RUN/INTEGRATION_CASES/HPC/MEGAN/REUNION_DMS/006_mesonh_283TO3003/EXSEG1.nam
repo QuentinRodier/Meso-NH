@@ -1,0 +1,190 @@
+&NAM_CONF  CCONF = "START", NVERB=1, NMODEL = 2,
+            CEXP = "A2830", CSEG = "MEGAD" , NHALO=3,
+            CSPLIT="BSPLITTING" /
+
+&NAM_CONFIO LCDF4 = .TRUE., LLFIOUT = .FALSE., NIO_ABORT_LEVEL=1, NGEN_ABORT_LEVEL=1 /
+
+&NAM_DYN XSEGLEN = 21600.,
+         LCORIO = T,
+         LNUMDIFU = F,
+         XALKTOP = 0.005,
+         XALZBOT = 15000. /
+
+&NAM_SERIESn NFREQSERIES = 30 /
+
+&NAM_LUNITn CINIFILE = "ECMWF_D1_20190328_06",
+            CINIFILEPGD="BIOMAIDO_CH_8km.nestne",
+            CCPLFILE(1) = "ECMWF_D1_20190328_12" /
+
+&NAM_NESTING NDAD(2) = 1, NDTRATIO(2) = 5, XWAY(2) = 2. /
+
+
+&NAM_DYNn  XTSTEP = 30.,
+           CPRESOPT = "ZRESI",
+           NITR = 12,
+           LHORELAX_UVWTH = F, LHORELAX_RV = F, LVE_RELAX = T,
+           NRIMX = 5, NRIMY = 5, XRIMKMAX = 0.01 /
+
+&NAM_ADVn  CUVW_ADV_SCHEME="WENO_K",NWENO_ORDER=5,CTEMP_SCHEME="RK53",
+           CMET_ADV_SCHEME = "PPM_01", CSV_ADV_SCHEME = "PPM_01" /
+
+&NAM_PARAMn  CCLOUD = "LIMA", CTURB = "TKEL", CRAD = "ECMW",
+             CDCONV = "NONE", CSCONV="EDKF" /
+
+&NAM_PARAM_RADn  XDTRAD = 600., XDTRAD_CLONLY = 600., NRAD_COLNBR = 400 /
+
+&NAM_PARAM_KAFRn XDTCONV = 360., NICE = 1, LCHTRANS = F,
+                 LREFRESH_ALL = T, LDOWN = T /
+
+&NAM_PARAM_MFSHALLn CMF_UPDRAFT = "EDKF", CMF_CLOUD = "DIRE" /
+
+&NAM_LBCn  CLBCX = 2*"OPEN", CLBCY = 2*"OPEN" /
+
+&NAM_TURBn   CTURBLEN = "BL89", CTURBDIM = "1DIM", LSIG_CONV = F, LTURB_FLX=F /
+
+
+&NAM_CH_MNHCn LUSECHEM = .TRUE.,
+              LCH_CONV_LINOX = .FALSE.,
+              LCH_INIT_FIELD = .FALSE.,
+              LCH_CONV_SCAV = .TRUE.,
+              CCHEM_INPUT_FILE  = "ReLACS_MACCity_aero.nam",
+              NCH_SUBSTEPS = 2,
+              LCH_TUV_ONLINE = .FALSE.,
+              CCH_TUV_LOOKUP = "PHOTO.TUV5",
+              CCH_TUV_CLOUDS = "CHAN",
+              XCH_TUV_TUPDATE = 300.,
+              XCH_TUV_DOBNEW = 250.,
+              CCH_VEC_METHOD = 'MAX'
+              NCH_VEC_LENGTH  = 50 /
+
+&NAM_CH_SOLVERn CSOLVER = "EXQSSA",
+                XSLOW    = 90.,
+                XFAST    = 0.1,
+                XDTMIN   = 0.1,
+                XDTMAX   = 45.,
+                XDTFIRST = 10. /
+
+&NAM_BACKUP XBAK_TIME(1,1)=120. ,
+            XBAK_TIME(1,2)=7200. ,
+            XBAK_TIME(1,3)=10800. ,
+            XBAK_TIME(1,4)=14400. ,
+            XBAK_TIME(1,5)=18000. ,
+            XBAK_TIME(1,6)=21600. ,
+            XBAK_TIME(1,7)=25200. ,
+            XBAK_TIME(1,8)=28800. ,
+            XBAK_TIME(1,9)=32400. ,
+            XBAK_TIME(1,10)=36000. ,
+            XBAK_TIME(1,11)=39600. ,
+            XBAK_TIME(1,12)=43200.  /
+
+&NAM_PARAM_LIMA LACTI = T,
+                HINI_CCN='AER',
+                HTYPE_CCN(1) = 'C',
+                HTYPE_CCN(2) = 'C',
+                HTYPE_CCN(3) = 'C',
+                NMOD_CCN = 3,      ! Nombre de modes de CCN
+                LACTIT=T,
+                LSEDC=T,
+                LSCAV=T,           ! Scavenging
+                LAERO_MASS=F,
+                LCCN_HOM=F,         ! Concentration en CCN homogène selon z
+                CCCN_MODES='CAMS_JPP',  ! Choix des modes de CCN
+                XCCN_CONC(1) = 300.,          ! Concentration du mode 1 de CCN (/cm3)
+                XCCN_CONC(2) = 140.,          ! Concentration du mode 2 de CCN (/cm3)
+                XCCN_CONC(3) = 50.,           ! Concentration du mode 3 de CCN (/cm3)
+                XCCN_CONC(4) = 0.01,          ! Concentration du mode 4 de CCN (/cm3)
+                LNUCL = T,
+                LSEDI = T,
+                LHHONI = F,
+                NMOD_IFN = 2,          ! Nombre de modes d'IFN
+                CPRISTINE_ICE_LIMA = 'PLAT',
+                CHEVRIMED_ICE_LIMA = 'GRAU',
+                NIND_SPECIE = 1,
+                LMEYERS = F,
+                NMOD_IMM = 1,          ! Nombre de modes de CCN agissant par IMM
+                LIFN_HOM = T,           ! Concentration en IFN homogène selon z
+                CIFN_SPECIES = '',    !
+                CINT_MIXING = 'MACC_JPP',      ! DM1, DM2, BC, O, MACC, default (Phillips 2008)
+                XIFN_CONC(1) = 10.,                ! Concentration du mode 1 d'IFN (/L)
+                XIFN_CONC(2) = 10. /               ! Concentration du mode 2 d'IFN (/L)
+
+&NAM_CH_ORILAM  LORILAM    = .TRUE.,
+                LVARSIGI   = .FALSE.,
+                LVARSIGJ   = .FALSE.,
+                LRGFIX     = .FALSE.,
+                LSEDIMAERO = .TRUE.,
+                LDEPOS_AER(1) = .TRUE.,
+                LDEPOS_AER(2) = .TRUE.,
+                XN0IMIN    = 5.,
+                XN0JMIN    = 0.001,
+                XINIRADIUSI= 0.015,
+                XINIRADIUSJ= 0.055,
+                XINISIGI   = 1.400,
+                XINISIGJ   = 1.600,
+                CNUCLEATION = "MAATTANEN_NEUTRAL",
+                LCONDENSATION = .TRUE.,
+                LCOAGULATION  = .TRUE.,
+                LMODE_MERGING = .TRUE.,
+                XRADIUS_NUCL  = 15E-3,
+                XSIGMA_NUCL   = 1.2 /
+
+&NAM_DIAG_SURFn N2M = 0, LSURF_BUDGET = F /
+
+&NAM_ISBAn CSCOND="NP89", CC1DRY="DEF",
+           CSOILFRZ="DEF", CDIFSFCOND="DEF",
+           CSNOWRES="DEF" /
+
+&NAM_SSOn CROUGH="Z01D" /
+
+&NAM_DIAG_ISBAn /
+
+&NAM_DUST LDUST = .FALSE.,
+          LRGFIX_DST = .FALSE.,
+          LVARSIG = .FALSE.,
+          LSEDIMDUST = .TRUE.,
+          LDEPOS_DST(1) = .TRUE.,
+          LDEPOS_DST(2) = .TRUE.,
+          LDEPOS_DST(3) = .TRUE.,
+          NMODE_DST = 3 /
+
+&NAM_SALT LSALT = .TRUE.,
+          LRGFIX_SLT = .FALSE.,
+          LVARSIG_SLT = .FALSE.,
+          LSEDIMSALT = .TRUE.,
+          LDEPOS_SLT(1) = .TRUE.,
+          LDEPOS_SLT(2) = .TRUE.,
+          CRGUNITS   = 'NUMB',
+          NMODE_SLT = 8 /
+
+&NAM_SURF_SLT CEMISPARAM_SLT='OvB21b' /
+
+&NAM_SURF_DST CEMISPARAM_DST='AMMA', CVERMOD='CMDVER' /
+
+&NAM_SEAFLUXn CSEA_ALB="TA96", LPRECIP = T /
+
+&NAM_CH_SURFn    LCH_SURF_EMIS=T /
+
+&NAM_CH_CONTROLn CCHEM_SURF_FILE= "ReLACS_MACCity_aero.nam" /
+
+&NAM_CH_ISBAn    LCH_BIO_FLUX=T, CCH_DRY_DEP="WES89", CPARAMBVOC="MEGAN",
+                 XDAILYPAR=300., XDAILYTEMP=290. /
+
+&NAM_CH_SEAFLUXn CCH_DRY_DEP="WES89" /
+
+&NAM_CH_WATFLUXn CCH_DRY_DEP="WES89" /
+
+&NAM_CH_TEBn     CCH_DRY_DEP="WES89" /
+
+&NAM_CHS_ORILAM     LCH_AERO_FLUX = .TRUE.,
+                    LCO2PM=.FALSE.,
+                    XEMISRADIUSI  = 0.015,
+                    XEMISRADIUSJ  = 0.055,
+                    XEMISSIGI     = 1.40,
+                    XEMISSIGJ     = 1.60,
+                    CRGUNIT = "NUMB" /
+
+
+&NAM_BLANK /
+
+&NAM_NEBn LSIGMAS=T, LSUBG_COND=F  /
+&NAM_PARAM_ICEn CSUBG_AUCV_RC='NONE'/

@@ -1,0 +1,2 @@
+#!/bin/bash
+rm -f FIRE_* file* OUTPUT_LISTING* REMAP* PRESSURE

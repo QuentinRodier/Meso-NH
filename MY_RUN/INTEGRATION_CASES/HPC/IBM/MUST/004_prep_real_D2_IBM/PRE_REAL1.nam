@@ -1,0 +1,23 @@
+&NAM_FILE_NAMES HATMFILE ='MUSTD1.spa00',
+                HATMFILETYPE='MESONH',
+                HPGDFILE ='MUSTD1.spa00',
+                CINIFILE='MUSTD2' /
+
+&NAM_CONFIO    LCDF4=T, NIO_ABORT_LEVEL=1, NGEN_ABORT_LEVEL=1/
+
+&NAM_REAL_CONF NVERB = 10/
+
+&NAM_VER_GRID YZGRID_TYPE='SAMEGR' /
+
+&NAM_PREP_SURF_ATM CFILE = 'MUSTD1.spa00',
+                   CFILETYPE = 'MESONH',
+                   CFILEPGD = 'MUSTD1.spa00',
+                   CFILEPGDTYPE = 'MESONH' /
+
+&NAM_CONFZ MPI_BUFFER_SIZE = 2000/
+
+&NAM_IBM_LSF  LIBM_LSF=.TRUE.,
+              CIBM_TYPE='IDEA',
+              NIBM_SMOOTH=0,
+              XIBM_SMOOTH=0.00000001 /
+

@@ -1,0 +1,108 @@
+&NAM_CONFIO  LCDF4=T, LLFIOUT=F, LLFIREAD=F /
+&NAM_LUNITn  CINIFILE = "SCELWK500m"/
+&NAM_CONFn LUSERV = .TRUE., 
+           LUSERC = .TRUE., 
+           LUSERR = .TRUE.,
+           LUSERS=.TRUE., 
+           LUSERI= .TRUE.,
+           LUSERG= .TRUE.  ,
+           LUSERH= .TRUE.  ,
+           LUSECI=.TRUE. /
+&NAM_DYNn XTSTEP = 2., LITRADJ=T, 
+          ! CPRESOPT = "ZRESI" ,
+          LHORELAX_UVWTH = F, LHORELAX_RV = F, LVE_RELAX = T, XT4DIFU = 1800.,
+          NRIMX = 0, NRIMY = 0, XRIMKMAX = .005 /
+&NAM_ADVn CUVW_ADV_SCHEME="CEN4TH",
+          CMET_ADV_SCHEME="PPM_01", 
+          CSV_ADV_SCHEME="PPM_01", 
+          CTEMP_SCHEME="RKC4" /
+&NAM_PARAMn  CTURB = "TKEL", 
+             CRAD = "NONE",
+             CCLOUD = "LIMA", 
+             CDCONV="NONE", 
+             CSCONV="NONE" /
+
+&NAM_PARAM_LIMA NMOM_C=2,
+		NMOM_R=2,
+		NMOM_I=2,
+		NMOM_S=2,
+		NMOM_G=2,
+		NMOM_H=2,
+                LADJ=T,
+		LSPRO=F,
+		LPTSPLIT = T,        ! Activer le time-splitting
+		NMAXITER_MICRO = 5,        ! time-splitting : nb max d'iterations
+		LFEEDBACKT = T,      ! time-splitting : fin sous pas de temps si T change de signe
+		XMRSTEP = 5.E-5,     ! time-splitting : évolution maxi des r pdt sous pas de temps
+		XTSTEP_TS = 0.,      ! time-splitting : duree maxi du sous pas de temps
+		LWARM = T,           ! Microphysique en phase chaude
+		LACTI = T,           ! Activation des CCN -> gouttelettes
+                HINI_CCN='AER',      ! Specification CCN : aerosols ou spectre d'activation
+                HTYPE_CCN='M',       ! Type de CCN (C=Continental, M=Marin)
+                NMOD_CCN = 1,        ! Nombre de modes de CCN
+		XALPHAR = 1.,        ! Alpha PSD pluie
+		XNUR = 2.,           ! Nu PSD pluie
+                LACTIT=F,            ! Activation des CCN par refroidissement radiatif
+                LRAIN=T,             ! Formation de pluie
+                LSEDC=T,             ! Sedimentation des gouttelettes
+                ,            ! Conditions aux limites
+                LSCAV=F,             ! Lessivage des aerosols par la pluie
+		LKHKO=F,
+                LAERO_MASS=F,        ! Suivi de la masse d'aerosols lessives par la pluie
+                LCCN_HOM=F,          ! Concentration en CCN homogene selon z
+                CCCN_MODES='COPT',   ! Choix des modes de CCN
+                XCCN_CONC(1)=500.,   ! Concentration du mode 1 de CCN (/cm3) 
+		LCOLD = T,           ! Microphysique en phase froide
+		LNUCL = T,           ! Nucleation des IFN -> glace
+		LCIBU=T,
+		LRDSF=T,
+                LSEDI=T,             ! Sedimentation des petts cristaux
+                LHHONI=T,            ! Congelation homogene des CCN
+                LSNOW=T,             ! Formation de neige
+		LSNOW_T=T,
+                LHAIL=T,             ! Formation de grele
+                NMOD_IFN=1,          ! Nombre de modes d'IFN
+		NPHILLIPS=8,         ! 8 ou 13
+                CPRISTINE_ICE_LIMA = 'PLAT', ! Forme des petits cristaux
+                CHEVRIMED_ICE_LIMA = 'GRAU', ! Type particules givrees
+                NIND_SPECIE = 1,     ! Type des CCN actifs par immersion
+                LMEYERS = F,         ! Nucleation suivant Meyers 1992
+                NMOD_IMM=0,          ! Nombre de modes de CCN agissant par IMM
+                LIFN_HOM=T,          ! Concentration en IFN homogène selon z
+                CIFN_SPECIES='',     ! Pas encore utilise
+                CINT_MIXING='DM1',   ! DM1, DM2, BC, O, MACC, default (Phillips 2008)
+                XIFN_CONC(1)=1000. / ! Concentration du mode 2 d'IFN (/L)
+&NAM_PARAM_RADn /
+&NAM_TURBn XIMPL = 1., 
+           CTURBLEN = "DEAR", 
+           CTURBDIM = "3DIM", 
+           LTURB_DIAG = .FALSE.,
+           LRMC01=.TRUE.,
+           LTURB_FLX = .FALSE., 
+           LSIG_CONV=.FALSE. 
+           /
+
+&NAM_PARAM_MFSHALLn /
+&NAM_LBCn  CLBCX = 2*"OPEN", CLBCY = 2*"OPEN" /
+&NAM_CONF  CCONF = "START",
+           NMODEL = 1,
+           CSPLIT='BSPLITTING' ,
+           NVERB = 5, 
+           CEXP = "LIMAA",
+           CSEG = "EXP01" /
+&NAM_DYN  XSEGLEN = 10800., 
+          XASSELIN = 0.0, 
+          LCORIO = F,
+          XALKTOP = 0.01, 
+          XALZBOT = 20000.,
+          LNUMDIFU =.T. /
+&NAM_BACKUP  XBAK_TIME_FREQ(1) = 300., 
+             XBAK_TIME_FREQ_FIRST(1) = 300. /
+&NAM_LES  /  
+&NAM_NUDGINGn  LNUDGING=.FALSE. /
+&NAM_SERIES LSERIES=.TRUE. LMASKLANDSEA=.FALSE. LWMINMAX=.TRUE. /
+&NAM_SERIESn NIBOXL=1 NIBOXH=600 NJBOXL=1 NJBOXH=600
+             NKCLS=3 NKLOW=12 NKUP=18 NKMID=14
+             NBJSLICE=1 NJSLICEL(1)=30 NJSLICEH(1)=35, NFREQSERIES=30/
+&NAM_NEBn LSIGMAS=.TRUE., LSUBG_COND =.FALSE.  /
+&NAM_PARAM_ICEn CSUBG_AUCV_RC='CLFR' /

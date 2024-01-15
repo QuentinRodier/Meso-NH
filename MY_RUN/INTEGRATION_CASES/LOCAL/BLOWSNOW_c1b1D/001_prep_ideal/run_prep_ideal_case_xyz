@@ -1,0 +1,16 @@
+#!/bin/sh
+#MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+#MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
+#MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+#MNH_LIC for details. version 1.
+set -x
+set -e
+rm -f CLB_2302_USPC* OUTPUT_LISTING* pipe* *.tex
+for wind in 11 16
+do
+  rm -f CLB_PGD.*
+  ln -sf PRE_IDEA1.nam_CLBSPC_U${wind} PRE_IDEA1.nam
+  time ${MONORUN} PREP_IDEAL_CASE${XYZ}
+  mv OUTPUT_LISTING1 OUTPUT_LISTING1_${wind}
+done
+#ddd --directory=~/DEV/MNH.V4.6.2/src/dir_obj_bug2 PREP_PGD${XYZ}

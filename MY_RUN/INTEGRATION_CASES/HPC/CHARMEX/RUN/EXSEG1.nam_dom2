@@ -1,0 +1,90 @@
+&NAM_CONFIO LCDF4=T/
+&NAM_CONFZ  NZ_VERB=5 , NZ_PROC=0 , MPI_BUFFER_SIZE=50, 
+            NB_PROCIO_R=1 , NB_PROCIO_W=1,
+            LMNH_MPI_BSEND = F, LMNH_MPI_ALLTOALLV_REMAP = T /
+&NAM_CONF  CCONF = "START", NVERB=5, NMODEL = 1,
+            CEXP = "CHARM", CSEG = "SEG02" ,
+            CSPLIT="BSPLITTING",NHALO=3 /
+&NAM_DYN  XSEGLEN = 32400., LCORIO = T, LNUMDIFU = F,
+           XALKTOP = 0.005, XALZBOT = 14000. /
+&NAM_LUNITn  CINIFILE = "CPLCH2_3006_03",CINIFILEPGD="CHARMEX0714_PGD_12km5.neste1",
+             CCPLFILE(1)="CPLCH2_3006_06"
+             CCPLFILE(2)="CPLCH2_3006_09" 
+             CCPLFILE(3)="CPLCH2_3006_12"/
+&NAM_DYNn  XTSTEP = 30.,
+           CPRESOPT = "ZRESI",
+           NITR = 8,
+           LHORELAX_UVWTH = T, LHORELAX_RV = T, LVE_RELAX = T,
+           NRIMX = 5, NRIMY = 5, XRIMKMAX = 0.0083 /
+&NAM_ADVn  CUVW_ADV_SCHEME="WENO_K",NWENO_ORDER=5,CTEMP_SCHEME="RK53",
+           CMET_ADV_SCHEME = "PPM_01", CSV_ADV_SCHEME = "PPM_01" /
+&NAM_PARAMn  CCLOUD = "ICE3", CTURB = "TKEL", CRAD = "ECMW",
+             CDCONV = "KAFR",CSCONV="EDKF" /
+&NAM_PARAM_RADn  XDTRAD = 600., XDTRAD_CLONLY = 600., NRAD_COLNBR = 400 /
+&NAM_PARAM_KAFRn XDTCONV = 300., NICE = 1, LREFRESH_ALL = T, LDOWN = T /
+&NAM_PARAM_ICEn CSUBG_AUCV_RC = "CLFR" ,  LRED=F/
+&NAM_PARAM_MFSHALLn CMF_UPDRAFT = "EDKF", CMF_CLOUD = "DIRE" /
+&NAM_LBCn  CLBCX = 2*"OPEN", CLBCY = 2*"OPEN" /
+&NAM_TURBn  CTURBLEN = "BL89", CTURBDIM = "1DIM" /
+&NAM_NUDGINGn LNUDGING = T, XTNUDGING = 10800. /
+&NAM_CH_MNHCn       LUSECHEM = .TRUE.,
+                    LCH_CONV_LINOX = .FALSE.,
+                    LCH_INIT_FIELD = .FALSE.,
+                    LCH_CONV_SCAV = .TRUE.,
+                    CCHEM_INPUT_FILE  = "ReLACS3_MEGAN-MACCity.nam",
+                    NCH_SUBSTEPS = 4,
+                    LCH_TUV_ONLINE = .FALSE.,
+                    CCH_TUV_LOOKUP = "PHOTO.TUV5",
+                    CCH_TUV_CLOUDS = "CHAN",
+                    XCH_TUV_TUPDATE = 300.,
+                    CCH_VEC_METHOD = 'MAX',
+                    NCH_VEC_LENGTH = 50 /
+&NAM_CH_SOLVERn CSOLVER = "EXQSSA",
+                XSLOW    = 90.,
+                XFAST    = 0.1,
+                XDTMIN   = 0.1,
+                XDTMAX   = 30.,
+                XDTFIRST = 10. /
+&NAM_CH_ORILAM  LORILAM    = .TRUE.,
+                LVARSIGI   = .FALSE.,
+                LVARSIGJ   = .FALSE.,
+                LSEDIMAERO = .FALSE.,
+                LDEPOS_AER(1) = .TRUE.,
+                LDEPOS_AER(2) = .TRUE.,
+                XN0IMIN    = 5.,
+                XN0JMIN    = .1,
+                XINIRADIUSI= 0.036,
+                XINIRADIUSJ= 0.385,
+                XINISIGI   = 1.86,
+                XINISIGJ   = 1.29,
+                XSIGIMIN   = 1.10,
+                XSIGJMIN   = 1.10,
+                XSIGIMAX   = 2.00,
+                XSIGJMAX   = 2.00,
+                CRGUNIT = "NUMB",
+                CMINERAL = "EQSAM",
+                CORGANIC    = "MPMPO",
+                CNUCLEATION = "KULMALA"  /
+&NAM_BACKUP XBAK_TIME_FREQ = 3600./
+&NAM_DIAG_SURFn N2M = 2, LSURF_BUDGET = F /
+&NAM_ISBA  CALBEDO="DRY" /
+&NAM_ISBAn CSCOND="NP89", CC1DRY="DEF", CSOILFRZ="DEF", CDIFSFCOND="DEF", CSNOWRES="DEF" /
+&NAM_SSOn CROUGH="Z01D" /
+&NAM_DIAG_ISBAn /
+&NAM_SEAFLUXn CSEA_ALB="TA96", LPRECIP = T /
+&NAM_CH_SURFn    LCH_SURF_EMIS=T /
+&NAM_CH_CONTROLn CCHEM_SURF_FILE= "ReLACS3_MEGAN-MACCity.nam" /
+&NAM_CH_ISBAn    LCH_BIO_FLUX=F, CCH_DRY_DEP="WES89" /
+&NAM_CH_SEAFLUXn CCH_DRY_DEP="WES89" /
+&NAM_CH_WATFLUXn CCH_DRY_DEP="WES89" /
+&NAM_CH_TEBn     CCH_DRY_DEP="WES89" /
+&NAM_CHS_ORILAM     LCH_AERO_FLUX = .TRUE.,
+                    LCO2PM=.FALSE.,
+                    XEMISRADIUSI  = 0.036,
+                    XEMISRADIUSJ  = 0.385,
+                    XEMISSIGI     = 1.86,
+                    XEMISSIGJ     = 1.29,
+                    CRGUNIT = "NUMB" /
+&NAM_BLANK /
+
+&NAM_NEBn LSUBG_COND = F  /

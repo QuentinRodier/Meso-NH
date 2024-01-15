@@ -1,0 +1,5 @@
+#!/bin/bash
+pwd
+set -x
+cd 01_PREP
+sbatch run_prep
