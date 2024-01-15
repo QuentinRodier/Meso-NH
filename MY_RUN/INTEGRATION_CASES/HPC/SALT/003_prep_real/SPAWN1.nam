@@ -1,4 +1,4 @@
-&NAM_CONFIO  LCDF4=T, LLFIOUT=T, LLFIREAD=F /
+&NAM_CONFIO  LCDF4=T, LLFIOUT=F, LLFIREAD=F /
 &NAM_LUNIT2_SPA  CINIFILE = "18JAN00_LR",
                  CINIFILEPGD="Arome_LR.neste1",
                  YDOMAIN  = "Arome_HR.neste1",

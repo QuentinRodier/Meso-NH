@@ -1,0 +1,5 @@
+set -x
+set -e
+ln -fs ../001_prep_ideal/RELIEF3D.* .
+rm -f REL3D.1* OUT*
+time ${MPIRUN} MESONH${XYZ}

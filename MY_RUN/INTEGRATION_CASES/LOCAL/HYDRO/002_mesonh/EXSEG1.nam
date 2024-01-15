@@ -22,7 +22,7 @@
 !
 ! dynamical parameters of the model n
 !
-&NAM_CONFIO  LCDF4=T, LLFIOUT=T, LLFIREAD=F /
+&NAM_CONFIO  LCDF4=T, LLFIOUT=F, LLFIREAD=F /
 &NAM_DYNn    XTSTEP         = 10.,	! time step in seconds
 	     CPRESOPT       ='CGRAD',	! type of pressure solver, using
 					! Richardson method

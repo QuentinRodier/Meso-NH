@@ -1,4 +1,4 @@
-&NAM_CONFIO  LCDF4=T, LLFIOUT=T, LLFIREAD=F /
+&NAM_CONFIO  LCDF4=T, LLFIOUT=F, LLFIREAD=F /
 &NAM_LUNITn  CINIFILE = "TEST_BUBBLE_50m" /                     
              NSV_USER = 0 /		
 &NAM_DYNn    XTSTEP         = 0.5,	

@@ -1,0 +1,3 @@
+#!/bin/sh
+set -x
+rm -f RELIEF3D* OUTPUT_LISTING* pipe* *.tex
