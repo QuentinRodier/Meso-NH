@@ -26,7 +26,7 @@ path="../RUN_AGG4/"
 
 LnameFiles = ['XYNTH.1.CEN4T.010.nc']
 
-Dvar_input = {'f1':['ZS', 'ZTOP', 'TKET', 'THT', 'LSUM', 'LSVM', 'LSWM', 'UT', 'VT', 'WT', 'ni', 'nj', 'ni_u', 'nj_u', 'level', 'level_w', 'latitude', 'longitude', 'time']}
+Dvar_input = {'f1':['ZS', 'ZTOP', 'TKET', 'THT', 'LSUM', 'LSVM', 'LSWM', 'UT', 'VT', 'WT', 'ni', 'nj', 'ni_u', 'nj_u', 'level', 'level_w', 'latitude', 'longitude', 'time', 'FLALWD']}
 
 #  Read the variables in the files
 Dvar = {}
@@ -208,3 +208,26 @@ fig6 = Panel3.psectionV(Lxx=LaxeX, Lzz=LaxeZ, Lvar=Lplot, Lxlab=Lxlab, Lylab=Lyl
                         Lcbarlabel=Lcbarlabel, Lfacconv=Lfacconv, Ltime=Ltime, Lpltype=Lpltype, LaddWhite_cm=LaddWhite, orog=orog, ax=fig5.axes)
 
 Panel3.save_graph(3,fig6)
+################################################################
+#########          PANEL 2
+###############################################################
+Panel4 = PanelPlot(1,1, [25,25],'Horizontal section FLALWD, with NRAD_AGG=1', minmaxpad=1.05, titlepad=80, xlabelSize=25, ylabelSize=25, legendSize=25, timeSize=25, cbTicksLabelSize=25, cbTitleSize=20, xyTicksLabelSize=25, minmaxTextSize=25, titleSize=30, bigtitleSize=30)
+
+Lplot = [Dvar['f1']['FLALWD']]
+lon = [Dvar['f1']['ni']]
+lat = [Dvar['f1']['nj']]
+Ltitle = ['']
+Lcbarlabel = ['W/m2']
+Lxlab = ['x']
+Lylab = ['y']
+Lminval = [0]
+Lmaxval = [400]
+Lstep = [5]
+Lstepticks = [50]
+Lcolormap = ['gist_rainbow_r']
+Ltime = [Dvar['f1']['time']]
+LaddWhite_cm = [True]
+fig7 = Panel4.psectionH(lon=lon, lat=lat, Lvar=Lplot, Lcarte=[], Lxlab=Lxlab, Lylab=Lylab, Ltitle=Ltitle, Lminval=Lminval, Lmaxval=Lmaxval,
+                                Lstep=Lstep, Lstepticks=Lstepticks, Lcolormap=Lcolormap, Lcbarlabel=Lcbarlabel, Ltime=Ltime, Lproj=[], LaddWhite_cm = LaddWhite_cm)
+
+Panel4.save_graph(4,fig7)

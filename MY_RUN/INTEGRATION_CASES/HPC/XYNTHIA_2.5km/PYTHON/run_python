@@ -22,5 +22,5 @@ ln -sf ~rodierq/SAVE/OUTILS/PYTHON/departements-20180101.* .
 python3 plot_XYNTHIA.py
 convert *.png XYNTHIA.pdf
 
-#python3 plot_XYNTHIA_AGG4.py
-#convert *.png XYNTHIA_AGG4.pdf
+python3 plot_XYNTHIA_AGG4.py
+convert *.png XYNTHIA_AGG4.pdf
