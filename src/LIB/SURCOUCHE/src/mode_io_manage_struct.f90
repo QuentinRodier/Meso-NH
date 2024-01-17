@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2016-2023 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2016-2024 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -23,6 +23,7 @@
 !                          (change verbosity level and remove some unnecessary warnings)
 !  P. Wautelet 13/01/2023: set NMODEL field for backup and output files
 !  P. Wautelet 14/12/2023: add lossy compression for output files
+!  P. Wautelet 17/01/2024: add IO_File_remove_from_list subroutine
 !-----------------------------------------------------------------
 MODULE MODE_IO_MANAGE_STRUCT
 !
@@ -35,7 +36,8 @@ IMPLICIT NONE
 !
 private
 !
-public :: IO_Bakout_struct_prepare, IO_File_add2list, IO_File_find_byname, IO_Filelist_print
+public :: IO_Bakout_struct_prepare, IO_File_find_byname, IO_Filelist_print
+public :: IO_File_add2list, IO_File_remove_from_list
 !
 CONTAINS
 !
@@ -1110,7 +1112,77 @@ TPFILE%NOPEN   = 0
 TPFILE%NCLOSE  = 0
 !
 END SUBROUTINE IO_File_add2list
-!
+
+
+RECURSIVE SUBROUTINE IO_File_remove_from_list( TPFILE )
+  ! Remove a file from the file list and free its ressources
+
+#ifdef MNH_IOCDF4
+  USE MODE_IO_TOOLS_NC4, ONLY: IO_Iocdf_dealloc_nc4
+#endif
+
+  TYPE(TFILEDATA), POINTER, INTENT(INOUT) :: TPFILE    !File structure to return
+
+  INTEGER :: JF
+
+  IF ( .NOT.ASSOCIATED(TPFILE) ) THEN
+    CALL PRINT_MSG( NVERB_ERROR, 'IO', 'IO_File_remove_from_list', 'trying to remove a non existing file' )
+    RETURN
+  END IF
+
+  CALL PRINT_MSG( NVERB_DEBUG, 'IO', 'IO_File_remove_from_list', 'called for ' // TRIM(TPFILE%CNAME) )
+
+  ! Check if the file is opened. If it is, print an error
+  ! Do not do the close here, because there will be a circular dependency with the MODE_IO_FILE module
+  IF ( TPFILE%LOPENED ) THEN
+    CALL PRINT_MSG( NVERB_ERROR, 'IO', 'IO_File_remove_from_list', TRIM(TPFILE%CNAME) // &
+                    ': removing an opened file is not allowed' )
+    RETURN
+  END IF
+
+  ! Print a warning if a file has never been opened
+  IF ( TPFILE%NOPEN == 0 ) CALL PRINT_MSG( NVERB_WARNING, 'IO', 'IO_File_remove_from_list', TRIM(TPFILE%CNAME) // &
+                                          ': never been opened' )
+
+  ! Are there sub-files? If yes, remove them first
+  IF ( TPFILE%NSUBFILES_IOZ > 0 ) THEN
+    DO JF = 1, TPFILE%NSUBFILES_IOZ
+      CALL IO_File_remove_from_list( TPFILE%TFILES_IOZ(JF)%TFILE )
+    END DO
+  END IF
+
+  ! Remove corresponding .des file
+  IF ( ASSOCIATED( TPFILE%TDESFILE) ) CALL IO_File_remove_from_list( TPFILE%TDESFILE )
+
+  ! Remove file from list
+  IF ( ASSOCIATED(TPFILE%TFILE_PREV) ) THEN
+    TPFILE%TFILE_PREV%TFILE_NEXT => TPFILE%TFILE_NEXT
+  ELSE
+    ! File was first in the list
+    TFILE_FIRST => TPFILE%TFILE_NEXT
+  END IF
+  IF ( ASSOCIATED(TPFILE%TFILE_NEXT) ) THEN
+    TPFILE%TFILE_NEXT%TFILE_PREV => TPFILE%TFILE_PREV
+  ELSE
+    ! File was last in the list
+    TFILE_LAST => TPFILE%TFILE_PREV
+  END IF
+
+#ifdef MNH_IOCDF4
+  IF ( ASSOCIATED( TPFILE%TNCDIMS ) ) THEN
+    CALL PRINT_MSG( NVERB_WARNING, 'IO', 'IO_File_remove_from_list', TRIM(TPFILE%CNAME) // &
+                    ': TNCDIMS should not be associated at this point' )
+    CALL IO_Iocdf_dealloc_nc4( TPFILE%TNCDIMS )
+  END IF
+#endif
+
+  ! Free file ressources
+  DEALLOCATE( TPFILE )
+  TPFILE => NULL()
+
+END SUBROUTINE IO_File_remove_from_list
+
+
 SUBROUTINE IO_File_find_byname(HNAME,TPFILE,KRESP,OOLD)
 !
 USE MODD_PARAMETERS, ONLY: NFILENAMELGTMAX
