@@ -17,7 +17,7 @@ done
 #
 #export GRIB_DEFINITION_PATH=$SRC_MESONH/src/LIB/grib_api-1.13.1/definitions
 
-ln -sf ../001_pgd1/pgd_dust_30km.{des,lfi,nc} .
+ln -sf ../001_pgd1/pgd_dust_30km.{des,nc} .
 rm -f S702000092* OUTPUT_LISTING* pipe* *.tex
 
 cp PRE_REAL1.nam.20000924.00 PRE_REAL1.nam

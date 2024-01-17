@@ -8,10 +8,10 @@ set -e
 
 rm -f 16JAN* OUT*  EXSEG?.nam 
 
-ln -sf  ../004_arp2lfi/16JAN_06_MNH*.{des,lfi,nc} .
-ln -sf  ../006_preal/16JAN_06_MNH2*.{des,lfi,nc} .
-ln -sf  ../003_nest/16JAN98_36km.neste1.{des,lfi,nc} .
-ln -sf  ../003_nest/16JAN98_9km.neste1.{des,lfi,nc} .
+ln -sf  ../004_arp2lfi/16JAN_06_MNH*.{des,nc} .
+ln -sf  ../006_preal/16JAN_06_MNH2*.{des,nc} .
+ln -sf  ../003_nest/16JAN98_36km.neste1.{des,nc} .
+ln -sf  ../003_nest/16JAN98_9km.neste1.{des,nc} .
 
 if [ "x${MNH_ECRAD}" != "x" ]  ; then
 ln -sf ${SRC_MESONH}/src/LIB/RAD/ecrad-${VERSION_ECRAD}/data/RAD* .

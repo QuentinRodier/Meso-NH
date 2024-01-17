@@ -5,6 +5,6 @@
 #MNH_LIC for details. version 1.
 set -x
 set -e
-ln -fs ../001_prep_ideal_case/KWRAIN*.{des,lfi,nc} .
+ln -fs ../001_prep_ideal_case/KWRAIN*.{des,nc} .
 rm -f KWRAI.1.* OUT*
 time ${MPIRUN} MESONH${XYZ}

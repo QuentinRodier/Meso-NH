@@ -9,7 +9,7 @@ rm -f 16JAN* OUT*
 #
 # First modele
 #
-ln -sf  ../008_run2/16JAN.1.12B18.001.*{des,lfi,nc} .
+ln -sf  ../008_run2/16JAN.1.12B18.001.*{des,nc} .
 ln -sf ../003_nest/16JAN98_9km.neste1.* .
 ln -sf ../003_nest/16JAN98_36km.neste1.* .
 
@@ -24,6 +24,6 @@ time ${MPIRUN} DIAG${XYZ}
 #
 # 2nd modele
 #
-ln -sf  ../008_run2/16JAN.2.12B18.001.*{des,lfi,nc} .
+ln -sf  ../008_run2/16JAN.2.12B18.001.*{des,nc} .
 cp  DIAG1.nam2 DIAG1.nam
 time ${MPIRUN} DIAG${XYZ}

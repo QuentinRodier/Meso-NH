@@ -5,7 +5,7 @@
 #MNH_LIC for details. version 1.
 set -x
 set -e
-ln -sf ../001_prep_pgd/REUNION_PGD_1km5.{des,lfi,nc} .
+ln -sf ../001_prep_pgd/REUNION_PGD_1km5.{des,nc} .
 rm -f REUNION_IDEA* OUTPUT_LISTING* pipe* *.tex
 
 time ${MPIRUN} PREP_IDEAL_CASE${XYZ}          

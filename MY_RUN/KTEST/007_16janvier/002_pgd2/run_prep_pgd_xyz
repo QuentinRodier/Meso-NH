@@ -14,6 +14,6 @@ ln -sf $PREP_PGD_FILES/CLAY_HWSD_MOY.??? .
 ln -sf $PREP_PGD_FILES/SAND_HWSD_MOY.??? .
 ln -sf $PREP_PGD_FILES/gtopo30.??? .
 ln -sf $PREP_PGD_FILES/ECOCLIMAP_v2.0.??? .
-ln -sf ../001_pgd1/16JAN98_36km.{des,lfi,nc} .
+ln -sf ../001_pgd1/16JAN98_36km.{des,nc} .
 time ${MPIRUN} PREP_PGD${XYZ}
 #ddd --directory=~/DEV/MNH.V4.6.2/src/dir_obj_bug2 PREP_PGD

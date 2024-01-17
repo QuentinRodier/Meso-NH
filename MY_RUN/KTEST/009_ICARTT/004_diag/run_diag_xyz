@@ -12,9 +12,9 @@ export CHIMIE_FILES=${CHIMIE_FILES:-"$HOME/CHIMIE_FILES"}
 ln -sf ${CHIMIE_FILES}/tuv531/DATAE1 .
 ln -sf ${CHIMIE_FILES}/tuv531/DATAJ1 .
 
-ln -sf  ../003_mesonh/ICART.1.SEG01.002.{des,lfi,nc} .
-ln -sf  ../003_mesonh/ICART.1.SEG01.001.{des,lfi,nc} .
-ln -sf ../001_pgd1/ICARTT1008_PGD_15km.{des,lfi,nc} .
+ln -sf  ../003_mesonh/ICART.1.SEG01.002.{des,nc} .
+ln -sf  ../003_mesonh/ICART.1.SEG01.001.{des,nc} .
+ln -sf ../001_pgd1/ICARTT1008_PGD_15km.{des,nc} .
 
 cp  DIAG1.nam1 DIAG1.nam
 time ${MPIRUN} DIAG${XYZ}

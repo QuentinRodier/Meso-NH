@@ -6,10 +6,10 @@
 set -x
 set -e
 rm -f 16JAN* OUTPUT_LISTING* pipe* *.tex
-ln -sf ../003_nest/16JAN98_9km.neste1.{des,lfi,nc} .
-ln -sf ../003_nest/16JAN98_36km.neste1.{des,lfi,nc} .
-ln -sf ../004_arp2lfi/16JAN_06_MNH*.{des,lfi,nc} .
-ln -sf ../005_spa_mod1_mod2/16JAN_06_MNH.spa04*.{des,lfi,nc} .
+ln -sf ../003_nest/16JAN98_9km.neste1.{des,nc} .
+ln -sf ../003_nest/16JAN98_36km.neste1.{des,nc} .
+ln -sf ../004_arp2lfi/16JAN_06_MNH*.{des,nc} .
+ln -sf ../005_spa_mod1_mod2/16JAN_06_MNH.spa04*.{des,nc} .
 #exit
 time ${MPIRUN} PREP_REAL_CASE${XYZ}
 #ddd --directory=~/DEV/MNH.V4.6.2/src/dir_obj_bug2 PREP_REAL_CASE
