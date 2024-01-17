@@ -39,6 +39,12 @@ private
 public :: IO_Bakout_struct_prepare, IO_File_find_byname, IO_Filelist_print
 public :: IO_File_add2list, IO_File_remove_from_list
 !
+! Integers for file stats
+INTEGER, SAVE :: NFILE_STAT_NADD    = 0 ! Number of files added to file list
+INTEGER, SAVE :: NFILE_STAT_NREM    = 0 ! Number of files removed from file list
+INTEGER, SAVE :: NFILE_STAT_CURSIZE = 0 ! Current number of files in file list
+INTEGER, SAVE :: NFILE_STAT_MAXSIZE = 0 ! Maximum number of files in file list
+!
 CONTAINS
 !
 !#########################################################################
@@ -560,6 +566,8 @@ SUBROUTINE POPULATE_STRUCT(TPFILE_FIRST,TPFILE_LAST,KSTEPS,HFILETYPE,TPBAKOUTN,K
   IPOS = 0
   DO JOUT = 1,SIZE(KSTEPS)
     IF (KSTEPS(JOUT) >= 0) THEN
+        NFILE_STAT_NADD    = NFILE_STAT_NADD    + 1
+        NFILE_STAT_CURSIZE = NFILE_STAT_CURSIZE + 1
         IPOS = IPOS + 1
         TPBAKOUTN(IPOS)%NID = IPOS
         TPBAKOUTN(IPOS)%NSTEP = KSTEPS(JOUT)
@@ -728,6 +736,8 @@ SUBROUTINE POPULATE_STRUCT(TPFILE_FIRST,TPFILE_LAST,KSTEPS,HFILETYPE,TPBAKOUTN,K
         !
         !Create file structures if Z-split files
         IF (NB_PROCIO_W>1) THEN
+          NFILE_STAT_NADD    = NFILE_STAT_NADD    + NB_PROCIO_W
+          NFILE_STAT_CURSIZE = NFILE_STAT_CURSIZE + NB_PROCIO_W
           TPBAKOUTN(IPOS)%TFILE%NSUBFILES_IOZ = NB_PROCIO_W
           ALLOCATE(TPBAKOUTN(IPOS)%TFILE%TFILES_IOZ(NB_PROCIO_W))
           IF (NB_PROCIO_W>999) THEN
@@ -775,6 +785,7 @@ SUBROUTINE POPULATE_STRUCT(TPFILE_FIRST,TPFILE_LAST,KSTEPS,HFILETYPE,TPBAKOUTN,K
         !
     END IF
   END DO
+  NFILE_STAT_MAXSIZE = MAX( NFILE_STAT_MAXSIZE, NFILE_STAT_CURSIZE )
 END SUBROUTINE POPULATE_STRUCT
 !
 END SUBROUTINE IO_Bakout_struct_prepare
@@ -1111,6 +1122,9 @@ TPFILE%LOPENED = .FALSE.
 TPFILE%NOPEN   = 0
 TPFILE%NCLOSE  = 0
 !
+NFILE_STAT_NADD    = NFILE_STAT_NADD    + 1
+NFILE_STAT_CURSIZE = NFILE_STAT_CURSIZE + 1
+NFILE_STAT_MAXSIZE = MAX( NFILE_STAT_MAXSIZE, NFILE_STAT_CURSIZE )
 END SUBROUTINE IO_File_add2list
 
 
@@ -1180,6 +1194,8 @@ RECURSIVE SUBROUTINE IO_File_remove_from_list( TPFILE )
   DEALLOCATE( TPFILE )
   TPFILE => NULL()
 
+  NFILE_STAT_NREM    = NFILE_STAT_NREM    + 1
+  NFILE_STAT_CURSIZE = NFILE_STAT_CURSIZE - 1
 END SUBROUTINE IO_File_remove_from_list
 
 
@@ -1259,7 +1275,13 @@ ELSE
   TZFILE => TFILE_FIRST
 END IF
 !
-WRITE (*,'( /,A28," ",A13," ",A7," ",A7," ",A7," ",A7," ",A6," ",A6," ",A5," ",A6," ",A13," ",A13)' ) &
+WRITE( *, '( /, "Filelist statistics:" )' )
+WRITE( *, '( "  Number of files added:   ", I0 )' ) NFILE_STAT_NADD
+WRITE( *, '( "  Number of files removed: ", I0 )' ) NFILE_STAT_NREM
+WRITE( *, '( "  Current list size:       ", I0 )' ) NFILE_STAT_CURSIZE
+WRITE( *, '( "  Maximum list size:       ", I0 )' ) NFILE_STAT_MAXSIZE
+WRITE( *, '( /, "Current filelist" )' )
+WRITE( *, '( A28," ",A13," ",A7," ",A7," ",A7," ",A7," ",A6," ",A6," ",A5," ",A6," ",A13," ",A13)' ) &
       'CNAME                       ', &
       'CTYPE        ','CFORMAT','CMODE  ','LOPENED','NLFIFLU','NNCID','NLU','NOPEN','NCLOSE','NOPEN_CURRENT','NSUBFILES_IOZ'
 WRITE (*,'( A,A )') '--------------------------------------------------------------------------------------------------------', &
