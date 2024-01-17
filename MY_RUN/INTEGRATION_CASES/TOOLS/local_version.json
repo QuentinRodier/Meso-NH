@@ -1,0 +1,15 @@
+{
+"refversion":"MNH-V5-7-0",
+"testing": {
+            "001_2Drelief":"cc1eb13",
+            "002_3Drelief":"cc1eb13",
+            "003_KW78":"cc1eb13",
+            "004_Reunion":"cc1eb13",
+            "005_ARM":"cc1eb13",
+            "007_16janvier":"cc1eb13",
+            "009_ICARTT":"cc1eb13",
+            "011_KW78CHEM":"cc1eb13",
+            "012_dust":"cc1eb13",
+            "014_LIMA":"cc1eb13"
+           }
+}
