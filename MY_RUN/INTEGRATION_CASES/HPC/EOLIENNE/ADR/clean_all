@@ -1,0 +1,7 @@
+#!/bin/bash
+#
+ls -1 | while read folder
+do 
+  test -d "$folder" || continue
+  (cd $folder ; echo "  - cleanning $folder" ; ./clean_case) 
+done

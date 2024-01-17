@@ -1,0 +1,2 @@
+rm -f CLB23* file_for_xtransfer OUT* pipe_name fort.*
+rm -f CLB_PGD*

@@ -1,0 +1,7 @@
+#!/bin/bash
+#
+ls -1 | while read folder
+do 
+  test -d "$folder" || continue
+  (cp eol_2D_fields.py $folder/*RUN_EOL/. ; echo "  - copied in $folder") 
+done

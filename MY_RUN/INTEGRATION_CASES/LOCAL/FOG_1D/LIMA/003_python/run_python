@@ -1,0 +1,10 @@
+set -x
+set -e
+ln -sf ../002_mesonh/FOG00.1.CEN4T.000.nc .
+
+rm -f dir.0*
+
+ln -sf ${SRC_MESONH}/src/LIB/Python/* .
+
+python3 plot_FOG_1D.py
+${POSTRUN} convert *.png FOG_1D_LIMA.pdf

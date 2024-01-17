@@ -1,0 +1,15 @@
+#set -x
+#
+PREP_PGD_FILES=$HOME/PREP_PGD_FILES_WWW
+export PREP_PGD_FILES
+
+ln -sf $PREP_PGD_FILES/*.hdr .
+ln -sf $PREP_PGD_FILES/*.dir .
+
+ln -sf ../../SIMU1/003_prep_nest_pgd/PGD2* .
+
+ln -sf ../../Inputs/* .
+
+rm -f  REUNION_PGD_1km5* OUTPUT_* pipe* *.tex
+time ${MONORUN} PREP_PGD${XYZ}
+

@@ -1,0 +1,84 @@
+&NAM_CONFIO  LCDF4=T, LLFIOUT=F, LLFIREAD=F /
+&NAM_DIMn_PRE  NIMAX=1,
+               NJMAX=1/
+&NAM_CONF_PRE  LCARTESIAN=T,
+               LPACK=T,
+               CEQNSYS='DUR',
+               NVERB=10,
+               CIDEAL='RSOU',
+               CZS='FLAT',
+	       LPERTURB=F,
+   	       LFORCING=T,
+               LBOUSS=F,
+               JPHEXT=1,
+               NHALO=1/
+&NAM_PERT_PRE  /
+&NAM_CONFn    LUSERV =T,
+              LUSERC =T,
+	      NSV_USER=0 /
+&NAM_GRID_PRE  XLAT0=33.3,
+               XLON0=-119.5 /
+&NAM_GRIDH_PRE XDELTAX=2500.,
+               XDELTAY=2500.  /
+&NAM_LUNITn    CINIFILE='FIRE_1D',CINIFILEPGD='FIRE_PGD' /
+&NAM_LBCn_PRE  CLBCX=2*'CYCL',
+       CLBCY=2*'CYCL' /
+&NAM_VPROF_PRE LGEOSBAL=F,
+               CFUNU='ZZZ',
+               CFUNV='ZZZ',
+               CTYPELOC='IJGRID'/
+&NAM_GRn_PRE CSURF='EXTE'/
+&NAM_PGD_SCHEMES  CSEA='SEAFLX' /
+&NAM_COVER        XUNIF_COVER(1)=1. /
+&NAM_PREP_SEAFLUX XSST_UNIF = 289./
+&NAM_BLANK /
+&NAM_VER_GRID            LTHINSHELL = .TRUE.,
+                         NKMAX = 120,
+              YZGRID_TYPE='FUNCTN',
+              ZDZGRD=10.,
+              ZDZTOP=10. /
+RSOU
+1987 07 14 25200.
+'ZUVTHLMR'
+0.
+101250.
+287.7
+9.6E-3
+7
+10   5.43 -2.53                    
+300  5.43 -2.53                    
+590  5.43 -2.53 
+600  3.45 -4.91
+900  3.45 -4.91
+1200 3.45 -4.91
+2000 3.45 -4.91                     
+11
+ 10    287.5   9.6E-3
+100    287.5   9.6E-3
+300    287.5   9.6E-3
+595    287.5   9.6E-3
+600    299.5   6.6E-3
+650    299.91  6.43E-3
+800    301.03  5.99E-3
+1000   302.54  5.39E-3
+1200   304.04  4.79E-3
+2000   310.04  2.38E-3
+ZFRC
+1   
+1987  07      14      25200.
+0.0     
+101250.  
+287.5 
+9.6E-3 
+11
+  10.     5.43 -2.53  0   0   -0.000    -3.75E-5     1.50000e-08 0. 0. 
+ 100.     5.43 -2.53  0   0   -0.001    -3.75E-5     1.50000e-08  0. 0.
+ 300.     5.43 -2.53  0   0   -0.003    -3.75E-5     1.50000e-08  0. 0.
+ 500.     5.43 -2.53  0   0   -0.005    -3.75E-5     1.50000e-08  0. 0.
+ 595.     5.43 -2.53  0   0   -0.00595  -4.462E-5    1.785000e-08 0. 0.
+ 605.     3.45 -4.91  0   0   -0.00605  -4.537E-5    1.815000e-08  0. 0.
+ 650.     3.45 -4.91  0   0   -0.0065   -4.875E-5    1.950000e-08  0. 0.
+ 800.     3.45 -4.91  0   0   -0.008    -6.E-5       2.4000e-08 0. 0.
+ 900.     3.45 -4.91  0   0   -0.009    -6.75E-5     2.7000e-08  0. 0.
+1050.     3.45 -4.91  0   0   -0.0020   -1.5E-5      0.60000e-08 0. 0.
+1100.     3.45 -4.91  0   0   -0.0000   -0.0         0.00000e-08 0. 0.

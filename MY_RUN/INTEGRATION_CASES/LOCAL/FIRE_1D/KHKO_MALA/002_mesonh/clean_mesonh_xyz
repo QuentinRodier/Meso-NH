@@ -1,0 +1,2 @@
+rm -f FIRE* pipe_name 
+rm -f PRESSURE OUT*

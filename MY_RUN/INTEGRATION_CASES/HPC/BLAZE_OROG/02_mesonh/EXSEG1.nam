@@ -1,0 +1,84 @@
+&NAM_CONFIO  LCDF4=T,
+             LLFIOUT=F,
+             LLFIREAD=F /
+
+&NAM_CONFZ
+ NZ_VERB = 5 , NZ_PROC = 0 , NB_PROCIO_R = 1 , NB_PROCIO_W = 1, MPI_BUFFER_SIZE=100
+ /
+
+&NAM_LUNITn  CINIFILE = 'MNHFireTest',
+             CINIFILEPGD='PGDFireTest' /
+
+&NAM_CONFn   LUSERV=T /
+
+&NAM_DYNn XTSTEP = 1.,
+          LITRADJ=T,
+          ! CPRESOPT = "ZRESI" ,
+          LHORELAX_RV = F,
+          LVE_RELAX = .T.,
+          NRIMX = 6,
+          NRIMY = 3,
+          XRIMKMAX = .001666,
+          XT4DIFU = 1600. /
+
+&NAM_ADVn    CUVW_ADV_SCHEME = "CEN4TH",
+             NWENO_ORDER = 5,
+             CTEMP_SCHEME="RKC4",
+             CMET_ADV_SCHEME = 'PPM_01',
+             CSV_ADV_SCHEME  = 'PPM_01' /
+
+&NAM_LBCn  CLBCX = 2*"OPEN",
+           CLBCY = 2*"OPEN" /
+
+&NAM_CONF  CCONF = "START",
+           LFLAT = .F.,
+           JPHEXT = 1,
+           NHALO = 2,
+           NMODEL = 1,
+           CSPLIT='BSPLITTING',
+           CEQNSYS  = 'DUR',
+           NVERB = 5,
+           CEXP = 'BLAZE',
+           CSEG = 'TEST4' /
+
+&NAM_DYN  XSEGLEN = 9000.,
+          XASSELIN = 0.2,
+          LCORIO = F,
+          XALKTOP = 0.005,
+          XALZBOT = 1000.,
+          LNUMDIFU = .T. /
+
+&NAM_BACKUP LBAK_BEG = .T.,
+            LBAK_END = .T. /
+
+&NAM_OUTPUT XOUT_TIME_FREQ = 900.,
+            COUT_VAR(1,1) = 'UT',
+            COUT_VAR(1,2) = 'VT',
+            COUT_VAR(1,3) = 'WT',
+            COUT_VAR(1,4) = 'THT',
+            COUT_VAR(1,5) = 'PABST',
+            COUT_VAR(1,6) = 'ZS',
+            COUT_VAR(1,7) = 'FMPHI',
+            COUT_VAR(1,8) = 'FMBMAP',
+            COUT_VAR(1,9) = 'FMROS',
+            COUT_VAR(1,10)= 'FMWINDU',
+            COUT_VAR(1,11)= 'FMWINDV',
+            COUT_VAR(1,12)= 'FMWINDW',
+            COUT_VAR(1,13)= 'FMGRADOROX',
+            COUT_VAR(1,14)= 'FMGRADOROY',
+            COUT_VAR(1,15)= 'FMROS0'/
+
+&NAM_PARAMn     CTURB = "NONE",
+                CRAD="NONE",
+                CCLOUD = "NONE",
+                CDCONV = "NONE" /
+
+&NAM_PGD_SCHEMES CNATURE='ISBA' /
+
+&NAM_FIREn LBLAZE = .T.,
+          NREFINX = 10,
+          NREFINY = 10,
+          CFIRE_CPL_MODE = 'ATM2FIR',
+          NWINDSLOPECPLMODE = 2,
+          XROSDIFFUSION = 0. /
+

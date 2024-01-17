@@ -1,0 +1,2 @@
+#!/bin/bash
+rm -f DAD* file* OUTPUT_LISTING* REMAP* PRESSURE

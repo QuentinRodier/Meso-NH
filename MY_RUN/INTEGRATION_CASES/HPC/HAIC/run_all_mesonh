@@ -1,0 +1,14 @@
+#!/bin/sh
+cd 03_ICE3
+sbatch run_mesonh 
+cd ../03_ICE3_SNOWT/
+sbatch run_mesonh 
+cd ../03_LIMA
+sbatch run_mesonh 
+cd ../03_LIMA_222222/
+sbatch run_mesonh 
+cd ../03_LIMA_Ice1m/
+sbatch run_mesonh 
+cd ../03_LIMA_ICE1M_SNOWT
+sbatch run_mesonh 
+

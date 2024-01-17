@@ -1,0 +1,4 @@
+#!/bin/bash
+\rm OUT*
+\rm ol*
+\rm MUSTD1.spa00*

@@ -1,0 +1,79 @@
+ hello MNH world from IP=           1  nproc=           1
+ INIT L1D,L2D,LPACK =  F F F
+  INI_PARAZ_ll : MPI_BUFFER_SIZE in MB =          50
+  INI_PARAZ_ll : USING MPI_ALLTOALLV FOR REMAPPING 
+  INI_PARAZ_ll:: NZ_PROC   =           1
+  INI_PARAZ_ll:: JX_DOMAINS=           1
+  INI_PARAZ_ll:: JY_DOMAINS=           1
+ 
+  INI_PARAZ_ll:: P1=MIN(NZ_PROC,DIMZ) > 0 .OR. MIN(DIMZ,MAX(JX_DOMAINS,JY_DOMAIN
+ S))=           1
+  INI_PARAZ_ll:: P2=NPROC/P1/                                            =
+           1
+ ********************************************************************
+ ******************** HSPLITTING=P1P2SPLITT *************************
+ ********************************************************************
+ NB_PROC=           1  KZ_PROC=           1
+ X_DIM=          20 , X_DOMAINS=           1
+ Y_DIM=          20 , Y_DOMAINS=           1
+ Z_DIM=          63 , Z_DOMAINS=           1
+  ============== NPROC=           1 ========================
+ NXOR=           1  NXEND=          20  TAILLE=          20
+ NYOR=           1  NYEND=          20  TAILLE=          20
+ NZOR=           1  NZEND=          63  TAILLE=          63
+ ********************************************************************
+ ******************** HSPLITTING=YSPLITTING *************************
+ ********************************************************************
+ NB_PROC=           1  KZ_PROC=           1
+ X_DIM=          20 , X_DOMAINS=           1
+ Y_DIM=          20 , Y_DOMAINS=           1
+ Z_DIM=          63 , Z_DOMAINS=           1
+  ============== NPROC=           1 ========================
+ NXOR=           1  NXEND=          20  TAILLE=          20
+ NYOR=           1  NYEND=          20  TAILLE=          20
+ NZOR=           1  NZEND=          63  TAILLE=          63
+ ********************************************************************
+ ******************** HSPLITTING=XSPLITTING *************************
+ ********************************************************************
+ NB_PROC=           1  KZ_PROC=           1
+ X_DIM=          20 , X_DOMAINS=           1
+ Y_DIM=          20 , Y_DOMAINS=           1
+ Z_DIM=          63 , Z_DOMAINS=           1
+  ============== NPROC=           1 ========================
+ NXOR=           1  NXEND=          20  TAILLE=          20
+ NYOR=           1  NYEND=          20  TAILLE=          20
+ NZOR=           1  NZEND=          63  TAILLE=          63
+ ********************************************************************
+ ******************** HSPLITTING=P2P1SPLITT *************************
+ ********************************************************************
+ NB_PROC=           1  KZ_PROC=           1
+ X_DIM=          20 , X_DOMAINS=           1
+ Y_DIM=          20 , Y_DOMAINS=           1
+ Z_DIM=          63 , Z_DOMAINS=           1
+  ============== NPROC=           1 ========================
+ NXOR=           1  NXEND=          20  TAILLE=          20
+ NYOR=           1  NYEND=          20  TAILLE=          20
+ NZOR=           1  NZEND=          63  TAILLE=          63
+ mode_toolsz_ll.f90:: SEND IP=           1 :           1
+ mode_toolsz_ll.f90:: RECV IP=           1 :           1
+ mode_toolsz_ll.f90:: SEND IP=           1 :           1
+ mode_toolsz_ll.f90:: RECV IP=           1 :           1
+ mode_toolsz_ll.f90:: SEND IP=           1 :           1
+ mode_toolsz_ll.f90:: RECV IP=           1 :           1
+ INI_PARAZ_ll::COMPUTE_TRANS_MAX(NBUFFERSIZE_3D, TCRRT_COMDATA)=       30492
+ -------------------------------
+ Model number:                 1
+ Number of backups:            2
+ Timestep     Time
+        1       0.000
+       61    3600.000
+ -------------------------------
+ Model number:                 1
+ Number of outputs:            0
+ -------------------------------
+ In CH_CONVECT_SCAVENGING: special treatment forHONO                            
+ In CH_CONVECT_SCAVENGING: special treatment forHNO3                            
+ In CH_CONVECT_SCAVENGING: special treatment forN2O5                            
+ In CH_CONVECT_SCAVENGING: special treatment forHO2                             
+ In CH_CONVECT_SCAVENGING: special treatment forSO2                             
+ In CH_CONVECT_SCAVENGING: special treatment forORA2                            

@@ -1,0 +1,10 @@
+&NAM_CONFIO  LCDF4=T, LLFIOUT=F, LLFIREAD=F /
+&NAM_CONFZ
+   !NZ_VERB=5 , NZ_PROC=0 , NB_PROCIO_R=8 , NB_PROCIO_W=8
+/
+
+&NAM_LUNIT2_SPA  CINIFILE = "16JAN_06_MNH2",
+                 CINIFILEPGD="16JAN98_9km.neste1",
+                 YDOMAIN  = "16JAN98_4500.neste1",
+                 YSPANBR = '08' /
+

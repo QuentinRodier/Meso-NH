@@ -1,0 +1,5 @@
+&NAM_CONFIO LCDF4=T/
+&NAM_LUNIT2_SPA  CINIFILE = "CHARM.1.SEG01.001",
+                 CINIFILEPGD = "CHARMEX0714_PGD_50km.neste1",
+                 YDOMAIN  = "CHARMEX0714_PGD_12km5.neste1",
+                 YSPANBR = '04' /

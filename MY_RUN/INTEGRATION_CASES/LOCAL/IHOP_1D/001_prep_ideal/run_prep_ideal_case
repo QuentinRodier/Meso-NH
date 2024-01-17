@@ -1,0 +1,6 @@
+set -x
+set -e
+
+rm -f FR006.1.ECH00* OUTPUT_LISTING* pipe_name*
+time mpirun -np 1 PREP_IDEAL_CASE${XYZ}
+

@@ -1,0 +1,4 @@
+rm -f CLB_PGD.* pipe_name PRESSURE file_for_xtransfer
+rm -f CLB23* OUT*
+rm -f CLB_2302*
+rm -f EXSEG1_inter.nam

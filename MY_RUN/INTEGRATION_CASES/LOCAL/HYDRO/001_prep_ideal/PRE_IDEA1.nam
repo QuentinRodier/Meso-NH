@@ -1,0 +1,184 @@
+&NAM_CONFIO  LCDF4=T, LLFIOUT=F, LLFIREAD=F /
+!
+! surface cover options
+!
+&NAM_REAL_PGD /
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! dimension of the domain
+!
+&NAM_DIMn_PRE NIMAX=90, 
+	      NJMAX=1 /
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! vertical grid
+!
+&NAM_VER_GRID NKMAX=121, 
+              YZGRID_TYPE='FUNCTN',	! type of vertical grid (FUNCTN, MANUAL)
+              ZDZGRD = 250.0,		! grid spacing in z near ground
+              ZDZTOP = 250.0,		! grid spacing in z near top
+              ZZMAX_STRGRD = 8000.0,	!  
+              ZSTRGRD = 0.0,		! streching value in % from z=0
+                                        ! to ZZMAX_STRGRD
+              ZSTRTOP = 0.0
+              LTHINSHELL=.TRUE. /       ! thinshell (?) approximation                            
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! configuration (coordinate system, Boussinesq, 1D-2D-3D, type of 
+! idealized terrain, initial profile...
+!
+&NAM_CONF_PRE 
+              LCARTESIAN=.TRUE.,        ! cartesian or conformal 
+                                        ! projection
+              LPACK = .TRUE.,           ! compress FM file for 1D or 2D 
+                                        ! versions
+              CEQNSYS='DUR',            ! Durran version of the anelastic 
+                                        ! approximation
+              NVERB=10,			! verbosity level
+              CIDEAL='CSTN',            ! type of idealized initial field
+                                        ! (RSOU, CSTN) set in free format
+              CZS='BELL',               ! topography selection
+              LBOUSS = .FALSE.,		! use Boussinesq approx
+              LPERTURB = .FALSE.,	! perturbation of initial field 
+              LSHIFT = .FALSE. , 
+                                        ! (set in NAM_PERT_PRE)
+              LFORCING = .FALSE., 	! use external forcing 
+                                        ! (set in free format)
+              NHALO=1,JPHEXT=1/
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! set analytical perturbations - only if LPERTURB=.TRUE.
+!
+&NAM_PERT_PRE CPERT_KIND='TH',
+              XAMPLITH=0.0,
+              XAMPLIRV=0.0,
+              XAMPLIUV=0.0,
+              XAMPLIWH=0.0,
+              LSET_RHU=.TRUE.,
+              XCENTERZ=1250.0,
+              XRADX=1000.0,
+              XRADY=1000.0,
+              XRADZ=500.0 /
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! configuration for model - water treatment
+!
+&NAM_CONFn LUSERV=.TRUE.,		! write rv to initial file
+           LUSERC=.FALSE.,              ! write rc to initial file
+           LUSERI=.FALSE.,              ! write ri to initial file
+           NSV_USER=0 /                 ! number of passive tracer vars. 
+!
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! global grid definition
+!
+&NAM_GRID_PRE	XLON0 = 0.,		! ref. long. (if LCARTESIAN=.T.
+					! used to compute solar time)
+		XLAT0 = 43.29.,		! ref. lat. for conformal, cartesian
+		XBETA = 0.,		! rot angle for conf. and cartesian 
+		XRPK = 1.,		! projection param. only if 
+					! LCARTESIAN=.T.
+					! 0 - Merkator, 1 - stereographic,
+					! 0 < XRPK < 1 - Lambert
+		XLONORI = 350.,		! lon (in deg) of origin
+		XLATORI = 37., /	! lat (in deg) of origin
+					! both are used only if LCARTESIAN=.F.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! definition of grid for model n - dx, dy, dz, streching, 
+! terrain height and position
+!
+&NAM_GRIDH_PRE 
+               XDELTAX = 2000.0,	! grid spacing in x
+               XDELTAY = 2000.0,	! grid spacing in y
+               XHMAX = 1.0,		! max height of the topo in m, 500
+               NEXPX = 0.0,		! exponent for SINE topo
+               NEXPY = 0.0,		! exponent for SINE topo
+               XAX = 10000.0,		! width of BELL topo in x (m)
+               XAY = 10000.0,		! width of BELL topo in y (m)
+               NIZS=43, 	 	! x loc of BELL mount. center, 
+                       			! corresponds to w points
+               NJZS=1 / 		! y loc of BELL mount center
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! name of the output file with the initial conditions, used later by the model
+!
+&NAM_LUNITn CINIFILE='TEST_MNT_2D' /
+! 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! options for pressure solver
+!
+&NAM_DYNn_PRE CPRESOPT='RICHA',         ! type of pressure solver using
+                                        ! Richardson method
+              NITR  =  4,               ! number of iterations
+              XRELAX = 1.0 /            ! relaxation factor in RICHA
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! boundary conditions
+!
+&NAM_LBCn_PRE CLBCX= 2*"CYCL",          ! boundary condition in x
+              CLBCY= 2*"CYCL" /         ! boundary condition in y
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! variables for the initial profile, sounding (RSOU) 
+! or constant moist N case (CSTN)
+!
+&NAM_VPROF_PRE LGEOSBAL=.FALSE.,	! put initial fields in 
+                                        ! geostrophic balance (.T.)
+               CFUNU='ZZZ',             ! how u wind is specified (ZZZ)
+               CFUNV='ZZZ',             ! how v wind is specified (ZZZ)
+               CTYPELOC='IJGRID',       ! how the location of vertical 
+                                        ! is specified (IJGRID)
+               XLATLOC =  0.0,          ! lat of vertical profile loc
+               XLONLOC =  0.0,          ! lon of vertical profile loc
+               XXHATLOC = 0.0,          ! position in meters 
+               XYHATLOC = 0.0,          ! position in meters
+               NILOC=9,  		! position on the grid
+               NJLOC=1 /		! position on the grid
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! soil scheme choice
+!
+&NAM_GRn_PRE CSURF='NONE' /
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! initial scalar variables - not using?
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! aditional variables
+!
+&NAM_BLANK /
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! free format part
+! define vertical grid (ZHAT)
+! define radiosounding (RSOU)
+! constant moist Brunt-Vaisala profile (CSTN)
+! forcing (ZFRC or PFRC)
+! discretized orography (ZS)
+!
+CSTN
+2007 03 28 0.
+2
+250.0
+100000.0
+250.0 31000.0
+20.0 20.0
+0.0 0.0
+0.0 0.0
+0.0195711331744318 0.0195711331744318

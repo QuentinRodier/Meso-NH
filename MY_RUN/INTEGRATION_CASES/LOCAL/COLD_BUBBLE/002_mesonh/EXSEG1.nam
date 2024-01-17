@@ -1,0 +1,89 @@
+&NAM_CONFIO  LCDF4=T, LLFIOUT=F, LLFIREAD=F /
+&NAM_LUNITn  CINIFILE = "TEST_BUBBLE_50m" /                     
+             NSV_USER = 0 /		
+&NAM_DYNn    XTSTEP         = 0.5,	
+	     CPRESOPT       ='CRESI',	
+	     NITR           = 4,	
+	     XRELAX         = 1.0,	
+             LHORELAX_UVWTH =.FALSE.,	
+             LHORELAX_RV    =.FALSE.,	
+             LHORELAX_RC    =.FALSE.,
+             LHORELAX_RR    =.FALSE.,
+             LHORELAX_RI    =.FALSE.,
+             LHORELAX_RS    =.FALSE.,
+             LHORELAX_RG    =.FALSE.,
+             LHORELAX_RH    =.FALSE.,
+             LHORELAX_TKE   =.FALSE.,
+             LHORELAX_SV    =.FALSE.,
+             LVE_RELAX      =.FALSE.,	
+	     NRIMX	    = 0,	
+	     NRIMY	    = 0,	
+             XRIMKMAX       = 0.0,	
+             XT4DIFU        = 50. /	
+&NAM_ADVn    CUVW_ADV_SCHEME = "CEN4TH",CTEMP_SCHEME='LEFR',
+             CMET_ADV_SCHEME= 'PPM_01',	
+             CSV_ADV_SCHEME= 'PPM_01'/	
+&NAM_PARAMn  CTURB   = "NONE",		
+             CRAD    = "NONE",		
+             CCLOUD  = "NONE",		
+             CDCONV  = "NONE" /		
+&NAM_PARAM_RADn /			
+&NAM_LBCn    CLBCX = 2*"CYCL",		
+             CLBCY = 2*"CYCL",		
+	     XCPHASE = 20.0 /		
+&NAM_TURBn  XIMPL = 0.,			
+	   CTURBLEN = "DELT",  		
+	   CTURBDIM = "3DIM",		
+	   LTURB_DIAG = .FALSE.,	
+	   LTURB_FLX = .FALSE., 	
+           /            
+&NAM_CH_MNHCn /				
+NAM_SERIESn /				
+&NAM_CH_SOLVERn /			
+&NAM_CONF    
+             LFLAT    = .FALSE.,	
+	     CEQNSYS  = 'DUR',		
+             LFORCING = .FALSE.,	
+             NMODEL   = 1,		
+             NVERB    = 0,		
+	     NHALO    = 1,
+             JPHEXT   = 1,		
+	     CSPLIT   = 'YSPLITTING',	
+	     LLG      = .FALSE.,	
+	     LINIT_LG = .FALSE.,	
+	     LNOMIXLG = .FALSE.,	
+             CEXP     = "BUBBL",	
+             CSEG     = "CEN4T"/	
+&NAM_DYN     XSEGLEN   = 900., 	
+             XASSELIN  = 0.2,		
+             LCORIO    = .F.,	 	
+             LNUMDIFU  = .T.,   	
+             LZDIFFU   = .F.,
+	     XALKTOP   = 0.05,		
+             XALZBOT   = 14500. /	
+&NAM_BACKUP   XBAK_TIME(1,1)=90.,
+             XBAK_TIME(1,2)=180.,
+             XBAK_TIME(1,3)=270.,
+             XBAK_TIME(1,4)=360.,
+             XBAK_TIME(1,5)=450.,
+             XBAK_TIME(1,6)=540.,
+             XBAK_TIME(1,7)=630.,
+             XBAK_TIME(1,8)=720.,
+             XBAK_TIME(1,9)=810.,
+             XBAK_TIME(1,10)=900. /
+&NAM_BUDGET CBUTYPE='NONE' / 
+&NAM_BU_RU /
+&NAM_BU_RV /
+&NAM_BU_RW /
+&NAM_BU_RTH /
+&NAM_BU_RTKE /
+&NAM_BU_RRV /
+&NAM_BU_RRC /
+&NAM_BU_RRR /
+&NAM_BU_RRI /
+&NAM_BU_RRS /
+&NAM_BU_RRG /
+&NAM_BU_RRH /
+&NAM_BU_RSV /
+&NAM_VISC LVISC=.T., LVISC_TH=T, LVISC_UVW=T, XMU_V=20., XPRANDTL=1. /     
+&NAM_NEBn LSUBG_COND = .F.  /

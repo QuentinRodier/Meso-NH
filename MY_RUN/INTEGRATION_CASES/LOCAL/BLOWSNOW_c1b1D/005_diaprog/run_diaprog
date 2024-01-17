@@ -1,0 +1,40 @@
+#!/bin/sh
+#MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+#MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
+#MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+#MNH_LIC for details. version 1.
+
+
+set -x
+set -e
+
+rm -f a.out
+gfortran readficval.f90
+
+#for wind in  {11..16}
+#do
+wind=16
+rm -f SNOW_DATA
+ln -sf ../004_convdia/Res_Run_${wind}.* .
+ln -sf ../004_convdia/Res_Diag_${wind}.* .
+
+fileres=Res_Run_"$wind"
+filediag=Res_Diag_"$wind"
+
+sed -e s/File_Run/$fileres/g directives_canopy > directives_canopy_inter
+sed -e s/File_Diag/$filediag/g directives_canopy_inter > direc_cano${wind}
+
+rm -f dir.*
+${POSTRUN} diaprog < direc_cano${wind}
+
+
+rm -f SNOW_DATA
+a.out
+R CMD BATCH prep_data_canopy.R
+final_res="res_R_"${wind}
+cp output_R  $final_res
+#rm -f Res_Run_${wind}.*
+#rm -f Res_Diag_${wind}.*
+
+#rm -f direc_cano${wind} directives_canopy_inter
+#done

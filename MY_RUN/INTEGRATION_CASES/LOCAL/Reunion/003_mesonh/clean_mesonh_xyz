@@ -1,0 +1,5 @@
+set -x
+rm -f REUNION_PGD_1km5_*     
+rm -f REUNION_IDEA* 
+rm -f REUNI.1.* OUT* pipe_name
+

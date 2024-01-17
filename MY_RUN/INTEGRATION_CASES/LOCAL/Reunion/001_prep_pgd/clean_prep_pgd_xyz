@@ -1,0 +1,2 @@
+set -x
+rm -f  *.dir *.hdr REU* OUTPUT_* pipe* *.tex

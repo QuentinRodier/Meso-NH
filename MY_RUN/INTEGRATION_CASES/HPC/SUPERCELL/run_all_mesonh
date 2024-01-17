@@ -1,0 +1,9 @@
+#!/bin/sh
+cd 02_run_ICE4
+sbatch run_mesonh 
+cd ../02_run_LIMA111111/
+sbatch run_mesonh 
+cd ../02_run_LIMA222110
+sbatch run_mesonh 
+cd ../02_run_LIMA222222_JW_CIBU
+sbatch run_mesonh 

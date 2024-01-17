@@ -1,0 +1,13 @@
+#!/bin/bash
+#
+folder_list="\
+ADNR \
+ALM \
+ADR \
+"
+#
+for folder in $folder_list
+do 
+  test -d "$folder" || continue
+  (cd $folder ; ./run_all) 
+done

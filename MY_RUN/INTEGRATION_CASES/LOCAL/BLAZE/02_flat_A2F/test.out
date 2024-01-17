@@ -1,0 +1,125 @@
+nohup: les entrées sont ignorées
+ hello MNH world from IP=           1  nproc=           1
+ INIT L1D,L2D,LPACK =  F F T
+>> Remove data files 
+
+>> Clean MNH files outputs 
+
+>> Clean Fire outputs 
+
+---------------- Done ----------------
+
+INFO : pyrolib fuel database <FireFluxI.yml> loaded
+---------- fuel index table ----------
+ Index |             Fuel             
+    1  | FireFluxI_tall_grass
+--------------------------------------
+---------- fuel index table ----------
+ Index |             Fuel             
+    1  | FireFluxI_tall_grass
+--------------------------------------
+ hello MNH world from IP=           1  nproc=           1
+ INIT L1D,L2D,LPACK =  F F T
+  INI_PARAZ_ll : MPI_BUFFER_SIZE in MB =         100
+  INI_PARAZ_ll:: NZ_PROC   =           1
+  INI_PARAZ_ll:: JX_DOMAINS=           1
+  INI_PARAZ_ll:: JY_DOMAINS=           1
+ 
+  INI_PARAZ_ll:: P1=MIN(NZ_PROC,DIMZ) > 0 .OR. MIN(DIMZ,MAX(JX_DOMAINS,JY_DOMAIN
+ S))=           1
+  INI_PARAZ_ll:: P2=NPROC/P1/                                            =
+           1
+ ********************************************************************
+ ******************** HSPLITTING=P1P2SPLITT *************************
+ ********************************************************************
+ NB_PROC=           1  KZ_PROC=           1
+ X_DIM=         100 , X_DOMAINS=           1
+ Y_DIM=          50 , Y_DOMAINS=           1
+ Z_DIM=          32 , Z_DOMAINS=           1
+  ============== NPROC=           1 ========================
+ NXOR=           1  NXEND=         100  TAILLE=         100
+ NYOR=           1  NYEND=          50  TAILLE=          50
+ NZOR=           1  NZEND=          32  TAILLE=          32
+ ********************************************************************
+ ******************** HSPLITTING=YSPLITTING *************************
+ ********************************************************************
+ NB_PROC=           1  KZ_PROC=           1
+ X_DIM=         100 , X_DOMAINS=           1
+ Y_DIM=          50 , Y_DOMAINS=           1
+ Z_DIM=          32 , Z_DOMAINS=           1
+  ============== NPROC=           1 ========================
+ NXOR=           1  NXEND=         100  TAILLE=         100
+ NYOR=           1  NYEND=          50  TAILLE=          50
+ NZOR=           1  NZEND=          32  TAILLE=          32
+ ********************************************************************
+ ******************** HSPLITTING=XSPLITTING *************************
+ ********************************************************************
+ NB_PROC=           1  KZ_PROC=           1
+ X_DIM=         100 , X_DOMAINS=           1
+ Y_DIM=          50 , Y_DOMAINS=           1
+ Z_DIM=          32 , Z_DOMAINS=           1
+  ============== NPROC=           1 ========================
+ NXOR=           1  NXEND=         100  TAILLE=         100
+ NYOR=           1  NYEND=          50  TAILLE=          50
+ NZOR=           1  NZEND=          32  TAILLE=          32
+ ********************************************************************
+ ******************** HSPLITTING=P2P1SPLITT *************************
+ ********************************************************************
+ NB_PROC=           1  KZ_PROC=           1
+ X_DIM=         100 , X_DOMAINS=           1
+ Y_DIM=          50 , Y_DOMAINS=           1
+ Z_DIM=          32 , Z_DOMAINS=           1
+  ============== NPROC=           1 ========================
+ NXOR=           1  NXEND=         100  TAILLE=         100
+ NYOR=           1  NYEND=          50  TAILLE=          50
+ NZOR=           1  NZEND=          32  TAILLE=          32
+ mode_toolsz_ll.f90:: SEND IP=           1 :           1
+ mode_toolsz_ll.f90:: RECV IP=           1 :           1
+ mode_toolsz_ll.f90:: SEND IP=           1 :           1
+ mode_toolsz_ll.f90:: RECV IP=           1 :           1
+ mode_toolsz_ll.f90:: SEND IP=           1 :           1
+ mode_toolsz_ll.f90:: RECV IP=           1 :           1
+ INI_PARAZ_ll::COMPUTE_TRANS_MAX(NBUFFERSIZE_3D, TCRRT_COMDATA)=      169728
+ -------------------------------
+ Model number:                 1
+ Number of backups:            2
+ Timestep     Time
+        1       0.000
+      301     600.000
+ -------------------------------
+ Model number:                 1
+ Number of outputs:            5
+ Timestep     Time
+        1       0.000
+       76     150.000
+      151     300.000
+      226     450.000
+      301     600.000
+ Field list:
+   UT
+   VT
+   WT
+   THT
+   PABST
+   LSPHI
+   BMAP
+   FMFLUXHDH
+   FMFLUXHDW
+   FMWINDU
+   FMWINDV
+   FIRERW
+ -------------------------------
+
+real	36m17.156s
+user	35m59.802s
+sys	0m9.405s
+> rearrange BLAZE.1.TEST2.OUT.001.nc
+>> BLAZE.1.TEST2.OUT.001.nc removed
+> rearrange BLAZE.1.TEST2.OUT.002.nc
+>> BLAZE.1.TEST2.OUT.002.nc removed
+> rearrange BLAZE.1.TEST2.OUT.003.nc
+>> BLAZE.1.TEST2.OUT.003.nc removed
+> rearrange BLAZE.1.TEST2.OUT.004.nc
+>> BLAZE.1.TEST2.OUT.004.nc removed
+> rearrange BLAZE.1.TEST2.OUT.005.nc
+>> BLAZE.1.TEST2.OUT.005.nc removed

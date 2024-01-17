@@ -1,0 +1,43 @@
+&NAM_LUNITn  CINIFILE    = "RUN_P.2.SEG1.003",
+             CINIFILEPGD = "SON_INInPGD"/  
+
+&NAM_DYNn    XTSTEP      = 1,
+             CPRESOPT    = "ZRESI",
+             NITR        = 4,
+             XRELAX      = 1.,
+             XT4DIFU     = 200.,
+             NRIMX       = 0,
+             NRIMY       = 0, 
+             LVE_RELAX   = .TRUE./
+
+&NAM_ADVn    CUVW_ADV_SCHEME = 'CEN4TH',
+             CTEMP_SCHEME    = 'RKC4',
+             CMET_ADV_SCHEME = "PPM_01", 
+             CSV_ADV_SCHEME  = "PPM_01"/
+
+&NAM_PARAMn  CTURB  = "TKEL",
+             CRAD   = "NONE",
+             CCLOUD = "NONE",
+             CDCONV = "NONE" /
+
+&NAM_LBCn    CLBCX = 2*"OPEN",
+             CLBCY = 2*"OPEN" /
+
+&NAM_EOL     LMAIN_EOL   = .TRUE.,
+             CMETH_EOL   = 'ADNR',
+             CSMEAR      = '3LIN',
+             NMODEL_EOL  = 2/
+
+&NAM_EOL_ADNR  CFARM_CSVDATA    = 'data_farm.csv',
+               CTURBINE_CSVDATA = 'data_turbine.csv',
+               CINTERP          = '8NB'/
+
+&NAM_TURBn   XIMPL=1.,
+             CTURBLEN="HM21",
+             CTURBDIM="3DIM",
+             LTURB_FLX  = F,
+             LTURB_DIAG = F,
+             LRMC01=.T.,
+             XCADAP=0.5,
+             XTKEMIN = 1.E-10 /
+&NAM_NEBn LSUBG_COND = F   /

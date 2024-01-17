@@ -1,0 +1,50 @@
+#!/bin/sh
+#SBATCH -J diag_16jan
+#SBATCH -N 1            # nodes number (=NBP)
+#SBATCH -n 16            # CPUs number (on all nodes) (=NBP*TPN)
+#SBATCH -o diag_16jan.eo%j   #
+#SBATCH -e diag_16jan.eo%j   #
+#SBATCH -t 00:40:00    # time limit
+
+# Echo des commandes
+ulimit -c 0
+ulimit -s unlimited
+# Arrete du job des la premiere erreur
+set -e
+# Nom de la machine
+hostname 
+
+
+. ~rodierq/DEV_57/MNH-PHYEX070-b95d84d7/conf/profile_mesonh-LXifort-R8I4-MNH-V5-6-2-ECRAD140-MPIAUTO-O2
+
+
+export MPIRUN="Mpirun -np 16"
+
+set -x
+set -e
+ls -lrt
+
+rm -f *dg.???
+cp DIAG1.nam_1 DIAG1.nam
+time ${MPIRUN} DIAG${XYZ}
+mv OUTPUT_LISTING0  OUTPUT_LISTING0_diag1
+mv OUTPUT_LISTING1  OUTPUT_LISTING1_diag1
+
+ls -lrt
+
+cp DIAG1.nam_2 DIAG1.nam
+time ${MPIRUN} DIAG${XYZ}
+mv OUTPUT_LISTING0  OUTPUT_LISTING0_diag2
+mv OUTPUT_LISTING1  OUTPUT_LISTING1_diag2
+
+rm -f DIAG1.nam
+rm -f file_for_xtransfer pipe_name
+ls -lrt
+mkdir OUTPUT
+mv OUTPUT_L* OUTPUT
+mkdir LFI
+mv *.lfi LFI/.
+mv *.des LFI/.
+mkdir NETCDF
+mv *.nc NETCDF
+ja

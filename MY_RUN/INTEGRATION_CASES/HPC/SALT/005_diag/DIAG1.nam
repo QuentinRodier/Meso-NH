@@ -1,0 +1,10 @@
+M_CONFIO  LCDF4=T, LLFIOUT=F, LLFIREAD=F /
+&NAM_CONFZ
+ ! NZ_VERB=5 , NZ_PROC=0 , NB_PROCIO_R=8 , NB_PROCIO_W=1
+/
+&NAM_DIAG
+ LVAR_MRW=T ,
+ NRAD_3D=2 /
+&NAM_DIAG_FILE      YINIFILE(1) = "SALHS.2.18D03.006" ,
+                    YINIFILEPGD(1) = "Arome_HR.neste1",
+                    YSUFFIX='dg' /

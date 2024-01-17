@@ -1,0 +1,6 @@
+&NAM_CONFIO  LCDF4=T, LLFIOUT=F, LLFIREAD=F /
+&NAM_LUNIT2_SPA  CINIFILE = "FICHIER_INIT",
+                 CINIFILEPGD="PGD1.neste1",
+                 YDOMAIN  = "PGD2.neste1",
+                 YSPANBR = '00' /
+

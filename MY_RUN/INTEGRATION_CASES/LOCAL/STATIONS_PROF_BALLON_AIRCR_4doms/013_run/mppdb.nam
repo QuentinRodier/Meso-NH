@@ -1,0 +1,7 @@
+&NAM_MPPDB
+MPPDB_DEBUG = .f. ,
+MPPDB_NBSON = 1 ,
+MPPDB_EXEC = "/home/waup/MNH/MNH-55X-dev-IO/MY_RUN/KTEST/007_4domains/013_run/dir_clone/MESONH" ,
+MPPDB_WDIR = "/home/waup/MNH/MNH-55X-dev-IO/MY_RUN/KTEST/007_4domains/013_run/dir_clone" ,
+MPPDB_CHECK_LB = .f. 
+/ 

@@ -1,0 +1,204 @@
+&NAM_CONFIO  LCDF4=T, LLFIOUT=F, LLFIREAD=F
+             ! , NIO_VERB=5, NGEN_VERB=5 
+             /
+&NAM_CONFZ
+  !NZ_VERB=5 , NZ_PROC=0 , NB_PROCIO_R=8 , NB_PROCIO_W=8 
+/
+&NAM_LUNITn  CINIFILE = "16JAN_06_MNH",CINIFILEPGD="16JAN98_36km.neste1"  /
+&NAM_DYNn  XTSTEP = 10.,  
+           ! CPRESOPT = "ZRESI", 
+           NITR = 8,
+           LHORELAX_UVWTH = T, LHORELAX_RV = T, LVE_RELAX = T,
+           NRIMX = 5, NRIMY = 5, XRIMKMAX = 0.0083, XT4DIFU = 5000. /
+&NAM_ADVn  CUVW_ADV_SCHEME="CEN4TH",CMET_ADV_SCHEME = "PPM_01", CSV_ADV_SCHEME = "PPM_01" CTEMP_SCHEME="LEFR"/
+&NAM_PARAMn  CCLOUD = "KESS", CTURB = "TKEL", 
+             CRAD = "ECRA",
+             !CRAD = "ECRA",
+             CDCONV = "KAFR",CSCONV="KAFR" /
+&NAM_PARAM_RADn  XDTRAD = 3600., XDTRAD_CLONLY = 3600., NRAD_COLNBR = 400 /
+&NAM_PARAM_KAFRn XDTCONV = 300., NICE = 1 LREFRESH_ALL = T,LDOWN = T /
+&NAM_LBCn  CLBCX = 2*"OPEN", CLBCY = 2*"OPEN" /
+&NAM_TURBn  CTURBLEN = "BL89", CTURBDIM = "1DIM" /
+&NAM_CH_MNHCn LUSECHEM = F /
+&NAM_CONF  CCONF = "START", NVERB=5, NMODEL = 4, 
+            CEXP = "16JAN", CSEG = "12B18" ,
+            CSPLIT='BSPLITTING' 
+            !NHALO=3 JPHEXT=3 
+            /
+&NAM_DYN  XSEGLEN = 600., LCORIO = T, LNUMDIFU = T,
+           XALKTOP = 0.001, XALZBOT = 14500. /
+&NAM_NESTING NDAD(1) = 0,
+             NDAD(2) = 1,
+             NDAD(3) = 2,
+             NDAD(4) = 3,
+             NDTRATIO(1) = 1,
+             NDTRATIO(2) = 2,
+             NDTRATIO(3) = 2,
+             NDTRATIO(4) = 2,
+             XWAY(1) = 0.,
+             XWAY(2) = 1.,
+             XWAY(3) = 1.,
+             XWAY(4) = 1.
+/
+&NAM_BACKUP XBAK_TIME_FREQ(1) = 300. /
+&NAM_DIAG_SURFn  /
+&NAM_ISBA CALBEDO="DRY" /
+&NAM_ISBAn CSCOND="NP89", 
+       CC1DRY='DEF', CSOILFRZ='DEF', CDIFSFCOND='DEF', CSNOWRES='DEF' /
+&NAM_SSOn CROUGH='Z01D' /
+&NAM_DIAG_ISBAn /
+&NAM_SEAFLUXn CSEA_ALB="UNIF" /
+&NAM_BLANKn /
+
+&NAM_BUDGET     CBUTYPE = 'CART',
+!&NAM_BUDGET     CBUTYPE = 'NONE',
+                NBUMOD = 1,
+                XBULEN=150.,
+                XBUWRI=150.,
+                NBUKL = 4,
+                NBUKH = 10,
+                LBU_KCP = .FALSE.,
+!                LBU_KCP = .true.,
+                NBUIL = 2,
+                NBUIH = 20,
+                NBUJL = 2,
+                NBUJH = 20,
+!                LBU_ICP = .FALSE.,
+                LBU_ICP = .true.,
+!                LBU_JCP = .FALSE. /
+                LBU_JCP = .true. /
+&NAM_BU_RU    LBU_RU = .true. /
+&NAM_BU_RV    LBU_RV = .true. /
+&NAM_BU_RW    LBU_RW = .true. /
+&NAM_BU_RTH   LBU_RTH = .true. /
+&NAM_BU_RTKE  LBU_RTKE = .true. / !mettre a false si CTURB=NONE sinon crash dans 55X, OK pour 55X-dev-IO
+&NAM_BU_RRV   LBU_RRV = .true. /
+&NAM_BU_RRC   LBU_RRC = .true. /
+&NAM_BU_RRR   LBU_RRR = .true. /
+&NAM_BU_RRI   LBU_RRI = .false. /
+&NAM_BU_RRS   LBU_RRS = .false. /
+&NAM_BU_RRG   LBU_RRG = .false. /
+&NAM_BU_RRH   LBU_RRH = .false. / !Le garder a false car hydrometeore inexistant en LIMA et ICE3
+&NAM_BU_RSV   LBU_RSV = .true. /
+
+&NAM_DIAG_SURFn
+N2M=2
+LSURF_BUDGET=T
+/
+
+&NAM_PROFILERn
+NNUMB_PROF=1
+XSTEP_PROF=30.
+XLAT_PROF(1)=47.1
+XLON_PROF(1)=-1.9
+XZ_PROF(1)=2.
+CNAME_PROF(1)='PROFPW'
+CFILE_PROF='NO_INPUT_CSV'
+!LDIAG_SURFRAD=T
+/
+
+&NAM_STATIONn
+NNUMB_STAT=1
+XSTEP_STAT=30.
+XLAT_STAT(1)=47.1
+XLON_STAT(1)=-1.9
+XZ_STAT(1)=2.
+CNAME_STAT(1)='STATPW'
+CFILE_STAT='NO_INPUT_CSV'
+LDIAG_SURFRAD=T
+/
+
+&NAM_FLYERS
+  NAIRCRAFTS = 2
+  NBALLOONS = 2
+/
+
+&NAM_BALLOONS
+  NMODEL(1) = 1
+  CMODEL(1) = 'MOB'
+  CTYPE(1)  = 'CVBALL'
+  CTITLE(1) = 'CVB1MOBI'
+  TLAUNCH(1)%nyear  =  1998
+  TLAUNCH(1)%nmonth =     1
+  TLAUNCH(1)%nday   =    16
+  TLAUNCH(1)%xtime  = 21600.
+!Position si depart model 1
+!  XLATLAUNCH(1) = 48.
+!  XLATLAUNCH(1) = 47.29 !pour essayer de changer de processus en cours exec: 47.29 OK sur modele 1. 1->2 (8prc)
+!  XLONLAUNCH(1) = -2.
+!XLATLAUNCH(1)=48.
+!XLONLAUNCH(1)=-1.9
+!Position si depart model 2
+!XLATLAUNCH(1)=48.3
+!XLONLAUNCH(1)=-0.5
+!Position si depart model 3
+  XLATLAUNCH(1) = 48.1
+  XLONLAUNCH(1) = -1.
+  XALTLAUNCH(1) = 2000.
+  XTSTEP(1)     = 30.
+  XWASCENT(1)   = 0.
+  XAERODRAG(1)  = 0.44
+  XINDDRAG(1)   = 0.014
+  XVOLUME(1)    = 3.040
+  XMASS(1)      = 2.4516
+
+  NMODEL(2) = 1
+  CMODEL(2) = 'MOB'
+  CTYPE(2)  = 'CVBALL'
+  CTITLE(2) = 'CVB2MOBI'
+  TLAUNCH(2)%nyear  =  1998
+  TLAUNCH(2)%nmonth =     1
+  TLAUNCH(2)%nday   =    16
+  TLAUNCH(2)%xtime  = 21660.
+!Position si depart model 1 ou 2
+!  XLATLAUNCH(2) = 48.1
+!  XLATLAUNCH(2) = 47.99 !pour essayer de changer de processus en cours exec: 47.99 OK sur modele 1. 3->7 (8prc)
+!XLATLAUNCH(2) = 47. !pour launch sur le modele 1
+!  XLONLAUNCH(2) = -.7
+!XLATLAUNCH(2) = 47.8
+!XLONLAUNCH(2) = -1.9
+!Position si depart model 2
+!XLATLAUNCH(2)=48.25
+!XLONLAUNCH(2)=-0.5
+!Position si depart model 4
+  XLATLAUNCH(2) = 48.2
+  XLONLAUNCH(2) = -.6
+  XALTLAUNCH(2) = 4000.
+  XTSTEP(2)     = 5.
+  XWASCENT(2)   = 4.
+  XAERODRAG(2)  = 0.44
+  XINDDRAG(2)   = 0.014
+  XVOLUME(2)    = 3.040
+  XMASS(2)      = 2.58087
+/
+
+&NAM_AIRCRAFTS
+  NMODEL(1) = 1
+  CMODEL(1) = 'MOB'
+!  CMODEL(1) = 'FIX'
+  CTITLE(1) = 'DIMO19A'
+  TLAUNCH(1)%nyear  =  1998
+  TLAUNCH(1)%nmonth =     1
+  TLAUNCH(1)%nday   =    16
+  TLAUNCH(1)%xtime  = 21600.
+  XTSTEP(1)     = 30.
+!  XTSTEP(1)     = 10.
+  NPOS(1) = 4
+  LALTDEF(1) = .FALSE.
+  CFILE(1) = 'dimo19a.csv'
+
+  NMODEL(2) = 1
+  CMODEL(2) = 'MOB'
+!  CMODEL(2) = 'FIX'
+  CTITLE(2) = 'DIMO19B'
+  TLAUNCH(2)%nyear  =  1998
+  TLAUNCH(2)%nmonth =     1
+  TLAUNCH(2)%nday   =    16
+  TLAUNCH(2)%xtime  = 21664.
+  XTSTEP(2)     = 30.
+!  XTSTEP(2)     = 10.
+  NPOS(2) = 3
+  LALTDEF(2) = .TRUE.
+  CFILE(2) = 'dimo19b.csv'
+/
+&NAM_NEBn LSUBG_COND = F   /

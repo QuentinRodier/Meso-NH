@@ -1,0 +1,4 @@
+#!/bin/sh
+
+python3 plot_blaze_A2F.py
+convert temp*.png BLAZE_A2F.pdf

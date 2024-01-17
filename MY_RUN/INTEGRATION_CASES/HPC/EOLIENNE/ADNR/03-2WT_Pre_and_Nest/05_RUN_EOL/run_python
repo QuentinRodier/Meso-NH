@@ -1,0 +1,16 @@
+#!/bin/sh
+#SBATCH -J post
+#SBATCH -N 1            # nodes number (=NBP)
+#SBATCH -n 1            # CPUs number (on all nodes) (=NBP*TPN)
+#SBATCH -o ideal_fire.eo%j   #
+#SBATCH -e ideal_fire.eo%j   #
+#SBATCH -t 01:00:00    # time limit
+
+module purge
+module load python/2.7.17
+
+rm *.png 
+python eol_2D_fields.py DTU10.2.SEG1.003.nc UT
+python eol_2D_fields.py DTU10.2.SEG1.003.nc UMME
+
+convert *.png ADNR_2WT_PreNest.pdf

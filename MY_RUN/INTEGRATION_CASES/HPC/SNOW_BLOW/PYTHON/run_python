@@ -1,0 +1,7 @@
+#!/bin/sh
+module load python/2.7.17
+
+ln -sf ../RUN/CLB50.1.03_04.008.nc .
+ln -sf ../RUN/CLB50.1.03_04.002.nc .
+python trace_snow.py
+convert *.png SNOW_57.pdf 

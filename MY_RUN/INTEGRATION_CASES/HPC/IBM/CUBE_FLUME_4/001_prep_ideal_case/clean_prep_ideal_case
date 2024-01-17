@@ -1,0 +1,6 @@
+#!/bin/bash
+\rm file_for_xtransfer
+\rm INI*
+\rm OUT*
+\rm LSF_P_P.asc
+\rm ol*

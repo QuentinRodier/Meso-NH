@@ -1,0 +1,7 @@
+&NAM_CONFIO  LCDF4=T, LLFIOUT=F, LLFIREAD=F /
+&NAM_LUNIT2_SPA  CINIFILE = "CLUS0.2.SPRIN.001",
+                 CINIFILEPGD="PGD2.neste1",
+                 YDOMAIN  = "PGD3.neste1",
+                 YSPANBR = '00' /
+&NAM_SPAWN_SURF LSPAWN_SURF = F/
+

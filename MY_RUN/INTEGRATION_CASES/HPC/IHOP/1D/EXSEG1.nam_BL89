@@ -1,0 +1,137 @@
+&NAM_CONFIO  LCDF4=T,
+             LLFIOUT=F,
+             LLFIREAD=F/
+
+&NAM_LUNITn  CINIFILE="IHOP01" ,
+             CINIFILEPGD='IHOP01PGD'/
+
+&NAM_CONFZ MPI_BUFFER_SIZE=600 /
+
+&NAM_CONFn LUSERV = .TRUE.,
+           LUSERC = .TRUE./
+
+&NAM_FRC LGEOST_UV_FRC=.FALSE.,
+         LTEND_THRV_FRC=.TRUE.,
+         LVERT_MOTION_FRC=.TRUE./
+
+&NAM_DYNn    XTSTEP         = 10.0,
+	     CPRESOPT='ZRESI',	
+             LITRADJ=.FALSE.,	
+             XT4DIFU=900.,
+             XT4DIFTH=900.,
+             XT4DIFSV=900.,
+             LVE_RELAX = .FALSE./	
+
+&NAM_ADVn    CUVW_ADV_SCHEME = "CEN4TH",
+             CMET_ADV_SCHEME= 'PPM_01',	
+             CSV_ADV_SCHEME= 'PPM_01' /
+
+&NAM_PARAMn  CTURB   = "TKEL",		
+             CRAD    = "NONE",		
+             CCLOUD  = "REVE",		
+             CSCONV  = "EDKF" /
+
+&NAM_LBCn  CLBCX = 2*"CYCL",
+           CLBCY = 2*"CYCL",
+           XCPHASE = 10.0 /		
+
+&NAM_TURBn  XIMPL = 1.,
+            CTURBLEN = "BL89",
+            CTURBDIM = "1DIM",
+            LTURB_DIAG=.TRUE.,
+            LTURB_FLX=.TRUE.,
+            LSIG_CONV=.FALSE.,             
+            XTKEMIN=1E-10,
+            LRMC01=.TRUE./
+
+&NAM_BLANKn  LDUMMY1 = .FALSE./
+
+&NAM_CONF    LFLAT    = .TRUE.,	
+             CCONF    = "START" ,
+	     CEQNSYS  = 'DUR',		
+             LFORCING = .TRUE.,	
+             NMODEL   = 1,		
+             NVERB    = 5,		
+	     NHALO    = 1,
+             JPHEXT   = 1,		
+	     CSPLIT   = 'BSPLITTING',	
+             CEXP     = "IHOP1",
+             CSEG     = "1DBL9"/
+
+&NAM_DYN     XSEGLEN   = 25200.0,
+             XASSELIN = 0.1, 	
+             LCORIO    = .FALSE.,	 	
+             LNUMDIFU  = .F.,   	
+             LNUMDIFTH = .F.,
+             LNUMDIFSV = .F.,
+             XALZBOT = 3500.0,
+   	     XALKTOP = 0.01/
+
+&NAM_BACKUP XBAK_TIME(1,1) = 25200.0/
+
+&NAM_LES  LLES_MEAN=.TRUE., 
+          LLES_RESOLVED=.TRUE., 
+          LLES_SUBGRID=.TRUE.,
+          XLES_TEMP_SAMPLING=100./
+
+&NAM_IDEAL_FLUX
+NFORCT = 2,
+NFORCF = 15,
+XTIMET(1) = 0.,
+XTIMET(2) = 25200.,
+
+XTIMEF(1) = 0.,
+XTIMEF(2) = 1800.,
+XTIMEF(3) = 3600.,
+XTIMEF(4) = 5400.,
+XTIMEF(5) = 7200.,
+XTIMEF(6) = 9000.,
+XTIMEF(7) = 10800.,
+XTIMEF(8) = 12600.,
+XTIMEF(9) = 14400.,
+XTIMEF(10) = 16200.,
+XTIMEF(11) = 18000.,
+XTIMEF(12) = 19800.,
+XTIMEF(13) = 21600.,
+XTIMEF(14) = 23400.,
+XTIMEF(15) = 25200.,
+
+XSFTH(1) = 5.0,
+XSFTH(2) = 15.,
+XSFTH(3) = 35.0,
+XSFTH(4) = 60.0,
+XSFTH(5) = 80.0,
+XSFTH(6) = 100.0,
+XSFTH(7) = 126.0,
+XSFTH(8) = 137.0,
+XSFTH(9) = 149.0,
+XSFTH(10) = 161.0,
+XSFTH(11) = 172.0,
+XSFTH(12) = 186.0,
+XSFTH(13) = 197.0,
+XSFTH(14) = 209.0,
+XSFTH(15) = 214.0,
+
+CSFTQ='W/m2',
+XSFTQ(1) = 22.000,
+XSFTQ(2) = 44.000,
+XSFTQ(3) = 64.000,
+XSFTQ(4) = 75.000,
+XSFTQ(5) = 87.5,
+XSFTQ(6) = 100.000,
+XSFTQ(7) = 113.0,
+XSFTQ(8) = 126.000,
+XSFTQ(9) = 135.000,
+XSFTQ(10) = 144.000,
+XSFTQ(11) = 153.000,
+XSFTQ(12) = 161.000,
+XSFTQ(13) = 168.000,
+XSFTQ(14) = 174.000,
+XSFTQ(15) = 179.000,
+
+CUSTARTYPE='Z0',
+XZ0 = 0.035,
+XALB = 0.
+/
+
+&NAM_NEBn LSIGMAS=.TRUE., LSUBG_COND=.FALSE.  /

@@ -1,0 +1,4 @@
+#!/bin/bash
+set -x
+rm -f 16JAN* OUTPUT_LISTING* OUTPUT_TRANSFER pipe* *.tex file_for_xtransfer
+

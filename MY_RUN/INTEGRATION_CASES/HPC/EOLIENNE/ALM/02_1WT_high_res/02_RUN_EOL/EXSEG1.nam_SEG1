@@ -1,0 +1,97 @@
+&NAM_LUNITn  CINIFILE    = "FIRE_INI",
+             CINIFILEPGD = "FIRE_PGD"/  
+
+&NAM_CONFIO  LCDF4            = T,
+             LLFIOUT          = F,
+             LLFIREAD         = F/
+
+&NAM_DYNn    XTSTEP      = 0.01,
+             CPRESOPT    = "ZRESI",
+             NITR        = 4,
+             XRELAX      = 1.,
+             XT4DIFU     = 200.,
+             NRIMX       = 0,
+             NRIMY       = 0, 
+             LVE_RELAX   = .TRUE./
+
+&NAM_ADVn    CUVW_ADV_SCHEME = 'CEN4TH',
+             CTEMP_SCHEME    = 'RKC4',
+             CMET_ADV_SCHEME = "PPM_01", 
+             CSV_ADV_SCHEME  = "PPM_01"/
+
+&NAM_PARAMn  CTURB  = "TKEL",
+             CRAD   = "NONE",
+             CCLOUD = "NONE",
+             CDCONV = "NONE" /
+
+&NAM_SEAFLUXn CSEA_FLUX = "DIRECT",
+              CSEA_ALB  = "TA96"/
+
+&NAM_DIAG_SURFn LSURF_BUDGET = F,
+                N2M          = 0 / 
+
+&NAM_LBCn    CLBCX = 2*"CYCL",
+             CLBCY = 2*"CYCL" /
+
+&NAM_TURBn   XIMPL=1.,
+             CTURBLEN="HM21",
+             CTURBDIM="3DIM",
+             LTURB_FLX  = F,
+             LTURB_DIAG = F,
+             LRMC01=.T.,
+             XCADAP=0.5,
+             XTKEMIN = 1.E-10 /
+
+&NAM_CONF    LFLAT    = T,
+             CEQNSYS  = "DUR",
+             LFORCING = T,
+             NVERB    = 5,
+             CEXP     = "DTU10",
+             CSEG     = "SEG1",
+             CSPLIT   = "BSPLITTING",
+             CCONF    = "START",
+             !NHALO    = 3,
+             !JPHEXT   = 3
+             /
+
+&NAM_CONFZ   MPI_BUFFER_SIZE = 2048/
+ 
+&NAM_DYN     XSEGLEN  = 100.,
+             XASSELIN = 0.2,
+             LCORIO   = T,
+             XALKTOP  = 0.005,
+             XALZBOT  = 550.,
+             LNUMDIFU = T/
+
+&NAM_LES  LLES_MEAN= F,
+          LLES_RESOLVED= F,
+          LLES_SUBGRID= F,
+          LLES_UPDRAFT= F,
+          LLES_DOWNDRAFT= F,
+          CLES_NORM_TYPE="NONE",
+          XLES_TEMP_SAMPLING=600./
+
+&NAM_FRC  LTEND_THRV_FRC   = T,
+          LVERT_MOTION_FRC = T,
+          LGEOST_UV_FRC    = T/
+
+&NAM_MEAN    LMEAN_FIELD = .TRUE. /
+
+&NAM_EOL       LMAIN_EOL   = .TRUE.,
+               CMETH_EOL   = 'ALM',
+               CSMEAR      = '3LIN',
+               NMODEL_EOL  = 1/
+
+&NAM_EOL_ALM   CFARM_CSVDATA    = 'data_farm.csv',
+               CTURBINE_CSVDATA = 'data_turbine.csv',
+               CBLADE_CSVDATA   = 'data_blade_hr.csv',
+               CAIRFOIL_CSVDATA = 'data_airfoil_hr.csv',
+               NNB_BLAELT       =  90,
+               CINTERP          = '8NB',
+               LTIMESPLIT       = .FALSE., 
+               LTIPLOSSG        = .FALSE.,
+               LTECOUTPTS       = .FALSE./
+
+
+&NAM_BACKUP  XBAK_TIME(1,1) = 0.0,
+             XBAK_TIME(1,2) = 100.0/

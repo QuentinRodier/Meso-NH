@@ -1,0 +1,114 @@
+&NAM_CONFIO  LCDF4=T, LLFIOUT=F, LLFIREAD=F /
+&NAM_LUNITn  CINIFILE = "FOG3_18N_40niv_s4",CINIFILEPGD = "PGD_FOG" /
+&NAM_DYNn             XTSTEP=3., 
+                      NITR = 8, 
+                      CPRESOPT="RICHA", 
+                      XRELAX=1.0, 
+                      LVE_RELAX = .FALSE., 
+                      LHORELAX_UVWTH=.FALSE., 
+                      LHORELAX_TKE=.FALSE., 
+                      LHORELAX_RV=.FALSE., 
+                      LHORELAX_RC=.FALSE., 
+                      LHORELAX_RR=.FALSE., 
+                      LHORELAX_RS=.FALSE., 
+                      LHORELAX_RI=.FALSE., 
+                      LHORELAX_RG=.FALSE., 
+                      NRIMX = 0, 
+                      NRIMY = 0, 
+                      XRIMKMAX = .0025 / 
+&NAM_ADVn             CMET_ADV_SCHEME="PPM_01", 
+                      CUVW_ADV_SCHEME ="CEN4TH" ,CTEMP_SCHEME='RKC4'/ 
+&NAM_PARAMn           CTURB   = "TKEL", 
+                      CRAD    = "ECMW",   
+                      CCLOUD  = "LIMA" ,  
+                      CDCONV  = "NONE" /
+&NAM_PARAM_ICEn      LSEDIC=T, CSEDIM='SPLI' /
+&NAM_PARAM_C2R2     HPARAM_CCN="CPB",
+                    HINI_CCN="CCN",
+                    XCHEN=1.865+09,
+                    XKHEN=0.86,
+                    XMUHEN=1.5,		    
+                    XBETAHEN=6.8,
+		    XNUC=3,
+		    XALPHAC=1.,
+                    LRAIN= T,
+                    LSEDC= T,
+                    LACTIT = T /
+&NAM_PARAM_RADn       XDTRAD = 3., 
+                      XDTRAD_CLONLY = 3., 
+                      CLW="RRTM",
+                      COPWLW="MALA",
+                      COPWSW="MALA",
+		      CEFRADL='C2R2',
+                      LCLEAR_SKY=.FALSE.,
+                      CAER = 'TEGE', 
+                      CAOP = 'EXPL'
+                      NRAD_COLNBR = 500 / 
+&NAM_PARAM_GROUNDN / 
+&NAM_LBCn    CLBCX = 2*"CYCL", CLBCY = 2*"CYCL", NLBLX = 2*1, NLBLY = 2*1,
+ XCPHASE = 20.  /
+&NAM_TURBn            XIMPL=1.,
+                      CTURBDIM="1DIM", 
+                      CTURBLEN="BL89",
+                      LTURB_DIAG=.TRUE.,  
+                      LTURB_FLX=.TRUE.  / 
+&NAM_CONF             CCONF = "START", 
+                      LFLAT = .TRUE., 
+                      NMODEL = 1,
+                      NVERB  = 5, 
+                      CEXP = "FOG00", 
+                      CSEG = "CEN4T", 
+                      CEQNSYS="DUR",
+                      NHALO=1,
+                      JPHEXT=1
+/ 
+&NAM_DYN              XSEGLEN =64800.,    
+                      LCORIO = .TRUE., 
+                      XALKTOP = 0.01, 
+                      XALZBOT = 500.,
+                      LNUMDIFU=.T. / 
+&NAM_BACKUP 
+ XBAK_TIME(1,1)  = 64800. / 
+&NAM_BUDGET   CBUTYPE = 'NONE', NBUMOD = 1, XBULEN=100., XBUWRI=100.,
+ NBUKL = 1, NBUKH = 38, LBU_KCP = .TRUE., NBUIL = 2, NBUIH = 2,
+ NBUJL = 2, NBUJH = 2, LBU_ICP = .FALSE., LBU_JCP = .FALSE., NBUMASK = 2  / 
+&NAM_BU_RSV  LBU_RSV= .TRUE. /
+&NAM_LES LLES_MEAN=.TRUE., LLES_RESOLVED=.TRUE., LLES_SUBGRID=.TRUE.,
+         LLES_UPDRAFT=.FALSE., LLES_DOWNDRAFT=.FALSE.,
+         CBL_HEIGHT_DEF='TKE',
+         CLES_NORM_TYPE='NONE',
+         XLES_TEMP_SAMPLING=1000. /
+&NAM_FRC LGEOST_UV_FRC=.TRUE.  / 
+&NAM_SGH_ISBAn
+  CRUNOFF='WSAT' /
+&NAM_ISBA CALBEDO='DRY' /
+&NAM_ISBAn CSCOND='NP89'/
+&NAM_SSOn   CROUGH='Z01D'/
+
+&NAM_PARAM_LIMA LACTI = T,
+                LACTIT=T,
+                LSEDC=T, 
+                LSCAV=F,             ! Scavenging
+                LAERO_MASS=F,
+                LCCN_HOM=F,           ! Concentration en CCN homogène selon z
+                CCCN_MODES='CAMS',    ! Choix des modes de CCN
+                HINI_CCN='AER',
+                NMOD_CCN = 1 ,        ! Nombre de modes de CCN
+                HTYPE_CCN(1)='M',
+                XCCN_CONC(1)=350.,          ! Concentration du mode 1 de CCN (/cm3)
+		LNUCL = T,
+                LSEDI=F,
+                LHHONI=T,
+		NPHILLIPS=8,         ! 8 ou 13
+                CPRISTINE_ICE_LIMA = 'PLAT', 
+                CHEVRIMED_ICE_LIMA = 'GRAU',
+                LMEYERS = F,
+                LIFN_HOM=F,           ! Concentration en IFN homogène selon z
+                CIFN_SPECIES='',      ! 
+                CINT_MIXING='',   ! DM1, DM2, BC, O, MACC, default (Phillips 2008)
+                NMOD_IFN=1,          ! Nombre de modes d'IFN
+                NIND_SPECIE = 1,
+                NMOD_IMM=1,          ! Nombre de modes de CCN agissant par IMM
+                XIFN_CONC(1)=10000.,      ! Concentration du mode 1 d'IFN (/L) (1000 ?) 
+/     
+&NAM_NEBn LSUBG_COND=.FALSE.  /

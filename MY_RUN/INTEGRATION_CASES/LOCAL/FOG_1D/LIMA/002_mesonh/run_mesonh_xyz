@@ -1,0 +1,5 @@
+set -x
+set -e
+ln -fs ../001_prep_ideal/FOG3_18N_40niv_s4.* .
+ln -fs ../001_prep_ideal/PGD_FOG* .
+time ${MONORUN} MESONH${XYZ}

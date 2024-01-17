@@ -1,0 +1,7 @@
+#!/bin/bash
+\rm file_for_xtransfer
+\rm MNHOU*
+\rm OUT*
+\rm ol*
+\rm PRESSURE
+\rm REMAP* 

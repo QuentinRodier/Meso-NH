@@ -1,0 +1,81 @@
+&NAM_REAL_PGD /
+&NAM_DIMn_PRE NIMAX=1024, 
+	      NJMAX=1 /
+&NAM_VER_GRID NKMAX=128, 
+              YZGRID_TYPE='FUNCTN',	
+              ZDZGRD = 50.0,		
+              ZDZTOP = 50.0,		
+              ZZMAX_STRGRD = 5000.0,	  
+              ZSTRGRD = 2.5,		                                       
+              ZSTRTOP = 2.5
+              LTHINSHELL=.TRUE. /                                   
+&NAM_CONF_PRE 
+              LCARTESIAN=.TRUE.,                                                  
+              LPACK = .TRUE.,                                                     
+              CEQNSYS='DUR',                                                     
+              NVERB=10,			
+              CIDEAL='CSTN',                                                    
+              CZS='FLAT',               
+              LBOUSS = .F.,		
+              LPERTURB = .T.,		                                         
+              LFORCING = .F. ,
+              JPHEXT=1,NHALO=1/		 
+&NAM_CONFIO  LCDF4=T, LLFIOUT=F, LLFIREAD=F /
+&NAM_PERT_PRE CPERT_KIND='TH',
+              XAMPLITH=-16.2,
+              XAMPLIRV=0.0,
+              XAMPLIUV=0.0,
+              XAMPLIWH=0.0,
+              LSET_RHU=.F.,
+              XCENTERZ=3000.0,
+              XRADX=4000.0,
+              XRADY=4000.0,
+              XRADZ=2000.0 /
+&NAM_CONFn LUSERV=.T.,			
+           LUSERC=.F.,	                
+           LUSERI=.F.,                  
+           NSV_USER=0 /                  
+&NAM_GRID_PRE	XLON0 = 0.,						
+		XLAT0 = 43.29.,		
+		XBETA = 0.,		 
+		XRPK = 1.,		 		
+		XLONORI = 350.,	
+		XLATORI = 37., /
+&NAM_GRIDH_PRE 
+               XDELTAX = 50.0,		
+               XDELTAY = 50.0,		
+               XHMAX = 0.0,		
+               NEXPX = 0.0,          	
+               NEXPY = 0.0,         	
+               XAX = 1000.0,		
+               XAY = 1000.0,		
+               NIZS=29,	 		 
+               NJZS=1 / 	
+&NAM_LUNITn CINIFILE='TEST_BUBBLE_50m' /
+&NAM_DYNn_PRE CPRESOPT='CRESI',         
+              NITR  =  4,               
+              XRELAX = 1.0 /            
+&NAM_LBCn_PRE CLBCX= 2*"OPEN",          
+              CLBCY= 2*"CYCL" /         
+&NAM_VPROF_PRE LGEOSBAL=.FALSE.,	 
+               CFUNU='ZZZ',          
+               CFUNV='ZZZ',         
+               CTYPELOC='IJGRID',     
+               XLATLOC =  0.0,        
+               XLONLOC =  0.0,        
+               XXHATLOC = 0.0,         
+               XYHATLOC = 0.0,        
+               NILOC=1,			
+               NJLOC=1 /		
+&NAM_GRn_PRE CSURF='NONE' /
+&NAM_BLANK /
+CSTN
+2006 10 10 0.
+2
+300.0
+100000.0
+0.0 10000.0
+0.0 0.0
+0.0 0.0
+0.0 0.0
+0.0

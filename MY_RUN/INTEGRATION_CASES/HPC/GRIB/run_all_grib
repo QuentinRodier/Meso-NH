@@ -1,0 +1,19 @@
+#!/bin/sh
+cd ERA5
+sbatch run_prep_real_case.
+cd ../ARO_41t1
+sbatch run_prep_real_case
+cd ../ARO_43t2
+sbatch run_prep_real_case
+cd ../ARO_46t1
+sbatch run_prep_real_case
+cd ../ARP
+sbatch run_prep_real_case
+cd ../ERA5
+sbatch run_prep_real_case
+cd ../ERA5_hPa
+sbatch run_prep_real_case
+cd ../GFS
+sbatch run_prep_real_case
+cd ../IFS
+sbatch run_prep_real_case

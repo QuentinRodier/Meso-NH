@@ -1,0 +1,30 @@
+&NAM_CONFIO    LCDF4=T, 
+               LLFIOUT=F,
+               LLFIREAD=F/
+
+&NAM_GRID2_SPA 
+   IXOR      = 21,
+   IYOR      = 11,
+   IXSIZE    = 50,
+   IYSIZE    = 20,
+   IDXRATIO  = 5,
+   IDYRATIO  = 5,
+   GBAL_ONLY = .FALSE.
+/
+
+&NAM_LUNIT2_SPA 
+   CINIFILE    = 'FIRE_INI',
+   CINIFILEPGD = 'FIRE_PGD',
+   YSPANBR     = '00',
+   YDADINIFILE = '',
+   YDADSPAFILE = '',
+   YSONFILE    = ''
+/
+
+&NAM_BLANK/
+
+&NAM_CONZ    MPI_BUFFER_SIZE = 1024/
+
+&NAM_SPAWN_SURF 
+   LSPAWN_SURF = .TRUE.
+/

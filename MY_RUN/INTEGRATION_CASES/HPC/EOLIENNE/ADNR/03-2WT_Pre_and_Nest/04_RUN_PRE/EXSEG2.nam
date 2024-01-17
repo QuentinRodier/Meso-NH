@@ -1,0 +1,36 @@
+&NAM_LUNITn  CINIFILE    = "SON_INInPGD",
+             CINIFILEPGD = "SON_INInPGD"/  
+
+&NAM_DYNn    XTSTEP      = 1,
+             CPRESOPT    = "ZRESI",
+             NITR        = 4,
+             XRELAX      = 1.,
+             XT4DIFU     = 200.,
+             NRIMX       = 0,
+             NRIMY       = 0, 
+             LVE_RELAX   = .TRUE./
+
+&NAM_ADVn    CUVW_ADV_SCHEME = 'CEN4TH',
+             CTEMP_SCHEME    = 'RKC4',
+             CMET_ADV_SCHEME = "PPM_01", 
+             CSV_ADV_SCHEME  = "PPM_01"/
+
+&NAM_PARAMn  CTURB  = "TKEL",
+             CRAD   = "NONE",
+             CCLOUD = "NONE",
+             CDCONV = "NONE" /
+
+&NAM_LBCn    CLBCX = 2*"OPEN",
+             CLBCY = 2*"OPEN" /
+
+&NAM_TURBn   XIMPL=1.,
+             CTURBLEN="HM21",
+             CTURBDIM="3DIM",
+             LTURB_FLX  = F,
+             LTURB_DIAG = F,
+             LRMC01=.T.,
+             XCADAP=0.5,
+             XTKEMIN = 1.E-10 /
+
+
+&NAM_NEBn LSUBG_COND = F   /

@@ -1,0 +1,6 @@
+#!/bin/bash
+\rm OUT*
+\rm ol*
+\rm MNHOU*
+\rm REMAP_*
+\rm PRESSURE

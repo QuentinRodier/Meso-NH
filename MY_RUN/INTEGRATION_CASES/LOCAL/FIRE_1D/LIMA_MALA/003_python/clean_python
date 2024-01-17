@@ -1,0 +1,3 @@
+rm -f tempgra*
+find . -type l -delete
+

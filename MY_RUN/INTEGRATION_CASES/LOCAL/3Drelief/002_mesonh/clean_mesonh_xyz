@@ -1,0 +1,4 @@
+set -x
+rm -f RELIEF3D.* 
+rm -f REL3D.1* OUT* pipe_name
+

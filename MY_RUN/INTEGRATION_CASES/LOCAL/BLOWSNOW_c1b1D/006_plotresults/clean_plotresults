@@ -1,0 +1,4 @@
+rm -f build_pics_spc.Rout build_pics_tcd.Rout
+rm -f res_R*
+rm -f process_flux_spc.Rout
+rm -f *.pdf

@@ -1,0 +1,24 @@
+#!/bin/sh
+#SBATCH -J HAIC_LIce1m
+#SBATCH -N 8            # nodes number =NBP dans tosupcrc
+#SBATCH -n 1024         # CPUs number (on all nodes) =NBP*TPN dans tosupcrc
+#SBATCH -o POI16.eo%j   #
+#SBATCH -e POI16.eo%j   #
+#SBATCH -t 08:00:00     # time limit
+#SBATCH -p normal256
+
+# Echo des commandes
+ulimit -c 0
+ulimit -s unlimited
+# Nom de la machine
+hostname 
+
+. ~rodierq/DEV_57/MNH-PHYEX070-b95d84d7/conf/profile_mesonh-LXifort-R8I4-MNH-V5-6-2-ECRAD140-MPIAUTO-O2-HAIC
+
+export MPIRUN='Mpirun -np 1024'
+
+ln -sf ../01_prep_pgd/PGD* .
+ln -sf ../02_prep_real/2015* .
+time ${MPIRUN} MESONH${XYZ}
+
+

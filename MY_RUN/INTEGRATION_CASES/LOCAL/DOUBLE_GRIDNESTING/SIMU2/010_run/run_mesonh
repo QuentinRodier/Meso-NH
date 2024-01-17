@@ -1,0 +1,13 @@
+#!/bin/sh
+
+#Etat initiaux domaines 3 et 4
+ln -sf ../009_prep_real_d4/INITIAL_D3.* .
+ln -sf ../009_prep_real_d4/INITIAL_D4.* .
+
+#Fichiers PGD nestes domaine 3 et 4
+ln -sf ../003_prep_nest_pgd/PGD*neste* .
+
+#Fichier de couplage domaine 3 (par la SIMU1 domaine2)
+ln -sf ../007_prep_real_d3_CPL1/CPL1_D3.* .
+
+time ${MONORUN} MESONH${XYZ}

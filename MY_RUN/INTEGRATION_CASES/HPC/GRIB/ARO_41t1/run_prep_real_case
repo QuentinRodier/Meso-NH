@@ -1,0 +1,34 @@
+#!/bin/sh
+#SBATCH -J prep_fanny
+#SBATCH -N 10            # nodes number (=NBP)
+#SBATCH -n 20            # CPUs number (on all nodes) (=NBP*TPN)
+#SBATCH -o prep_fanny.eo%j   #
+#SBATCH -e prep_fanny.eo%j   #
+#SBATCH -t 00:45:00    # time limit
+
+# Echo des commandes
+ulimit -c 0
+ulimit -s unlimited
+# Arrete du job des la premiere erreur
+set -e
+# Nom de la machine
+hostname 
+
+ln -sf /home/cnrm_other/ge/mrmh/rodierq/SAVE/GRIB_KTEST/PGD_oper_41t1.01km30.lfi .
+touch PGD_oper_41t1.01km30.des
+ln -sf ../PGD/PGD_* .
+ln -sf /home/cnrm_other/ge/mrmh/rodierq/SAVE/GRIB_KTEST/arome.AN.20180513.00_grib2 .
+ln -sf /home/cnrm_other/ge/mrmh/rodierq/SAVE/GRIB_KTEST/INIT_SURF.20180513.00.lfi .
+touch INIT_SURF.20180513.00.des
+
+
+. ~rodierq/DEV_57/MNH-PHYEX070-b95d84d7/conf/profile_mesonh-LXifort-R8I4-MNH-V5-6-2-ECRAD140-MPIAUTO-O2
+
+export MPIRUN="Mpirun -np 20"
+
+set -x
+set -e
+time ${MPIRUN} PREP_REAL_CASE${XYZ}
+
+sbatch run_python
+ja

@@ -1,0 +1,10 @@
+set -x
+set -e
+ln -sf ../002_mesonh/FIRE_.1.CEN4T.000.nc .
+rm -f dir.0*
+
+ln -sf ${SRC_MESONH}/src/LIB/Python/* .
+
+python3 plot_FIRE_1D.py
+convert *.png FIRE_1D_KHKO_MALA.pdf
+

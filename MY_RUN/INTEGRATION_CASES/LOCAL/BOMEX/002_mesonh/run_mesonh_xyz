@@ -1,0 +1,6 @@
+set -x
+set -e
+ln -fs ../001_prep_ideal/bomex_1D.* .
+ln -fs ../001_prep_ideal/PGD_* .
+rm -f BOMEX* OUT*
+time ${MONORUN} MESONH${XYZ}

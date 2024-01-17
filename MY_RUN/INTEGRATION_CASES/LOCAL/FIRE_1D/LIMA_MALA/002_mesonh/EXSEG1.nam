@@ -1,0 +1,74 @@
+&NAM_CONFIO  LCDF4=T, LLFIOUT=F, LLFIREAD=F /
+&NAM_LUNITn  CINIFILE = "FIRE_1D",CINIFILEPGD = "FIRE_PGD"  /    
+&NAM_CONFn   LUSERV = .TRUE.  /  
+&NAM_BACKUP XBAK_TIME(1,1) = 90000 /
+&NAM_DYNn    XTSTEP=120. / 
+&NAM_ADVn   CUVW_ADV_SCHEME = "CEN4TH", CTEMP_SCHEME='RKC4'  / 
+&NAM_PARAMn  CTURB   = "TKEL", 
+             CRAD    = "ECMWF",   
+             CCLOUD  = "LIMA",
+             CDCONV  = "NONE",
+             CSCONV  = "EDKF"  / 
+&NAM_PARAM_RADn       XDTRAD = 150., 
+                      XDTRAD_CLONLY = 150.,
+                      CLW="MORC",
+                CAER="SURF",
+                CEFRADL="C2R2",
+                COPWLW="MALA",
+                COPWSW="MALA",
+                LCLEAR_SKY = F,
+                NRAD_COLNBR=1000,
+                XFUDG=1. /
+
+&NAM_PARAM_LIMA LPTSPLIT=F,
+                HINI_CCN="AER",
+                LSEDC= F,
+                NMOD_CCN=1,
+                CCCN_MODES="CPS00",
+                HTYPE_CCN(1)='C',
+                XCCN_CONC(1)=200.,
+                LCCN_HOM=T/
+
+&NAM_SEAFLUXn CSEA_FLUX= 'DIRECT',
+              CSEA_ALB='TA96' /
+&NAM_DIAG_SURFn LSURF_BUDGET=T, N2M=0 / 
+&NAM_LBCn    CLBCX = 2*"CYCL", CLBCY = 2*"CYCL", NLBLX = 2*1, NLBLY = 2*1,
+ XCPHASE = 20.  /
+&NAM_TURBn            XIMPL=1.,
+                      CTURBDIM="1DIM", 
+                      CTURBLEN="BL89", 
+                      LTURB_FLX=.TRUE.,
+                      LTURB_DIAG=.TRUE.,  
+             	      LSIG_CONV = .FALSE.,
+                      LRMC01=T/
+&NAM_PARAM_MFSHALLn CMF_UPDRAFT='EDKF',CMF_CLOUD='DIRE',LMIXUV=.TRUE.,XIMPL_MF=1., LMF_FLX=T /
+&NAM_CONF             CCONF = "START", 
+                      LFLAT = .TRUE., 
+                      CEQNSYS="DUR",
+                      LFORCING = T,
+                      NMODEL = 1,
+                      NVERB  = 10, 
+                      CEXP = "FIRE_", 
+                      CSEG = "CEN4T",
+                      NHALO=1,JPHEXT=1/ 
+&NAM_DYN              XSEGLEN = 90000.,    
+                      XASSELIN = 0.2,
+                      LCORIO = .TRUE., 
+                      XALKTOP = 0.005, 
+                      XALZBOT = 1140.,
+                      LNUMDIFU = T/ 
+&NAM_LES  LLES_MEAN= T,
+          LLES_RESOLVED= T,
+          LLES_SUBGRID= T,
+          LLES_UPDRAFT= T,
+          LLES_DOWNDRAFT= T,
+          CLES_NORM_TYPE="NONE",
+          XLES_TEMP_SAMPLING=60. /
+&NAM_BLANK  / 
+&NAM_FRC  LTEND_THRV_FRC= T,
+          LVERT_MOTION_FRC= T,
+          LGEOST_UV_FRC=T /
+&NAM_BUDGET CBUTYPE="NONE"/
+
+&NAM_NEBn LSIGMAS=.TRUE., LSUBG_COND=.FALSE.
+ 		        /

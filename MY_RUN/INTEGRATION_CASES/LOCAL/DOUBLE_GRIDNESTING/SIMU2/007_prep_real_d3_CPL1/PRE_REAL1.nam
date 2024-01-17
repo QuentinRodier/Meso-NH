@@ -1,0 +1,21 @@
+&NAM_CONFIO  LCDF4=T, LLFIOUT=F, LLFIREAD=F, 
+             NIO_ABORT_LEVEL=1, NGEN_ABORT_LEVEL=1 /
+&NAM_CONFZ
+  ! NZ_VERB=5 , NZ_PROC=0 , NB_PROCIO_R=1 , NB_PROCIO_W=1
+/
+&NAM_FILE_NAMES HATMFILE ='CLUS0.2.SPRIN.002.spa00' , HATMFILETYPE='MESONH',
+                HPGDFILE ='PGD3.neste1' , CINIFILE='CPL1_D3' /
+&NAM_VER_GRID NKMAX=50, YZGRID_TYPE='FUNCTN',
+       ZDZGRD=20., ZDZTOP=700.,
+       ZZMAX_STRGRD=2500., ZSTRGRD=9., ZSTRTOP=7. /
+&NAM_REAL_CONF      NHALO=1, JPHEXT=1,
+                    LCOUPLING=FALSE,
+/
+&NAM_PREP_SURF_ATM CFILE = "CLUS0.2.SPRIN.002",
+                   CFILEPGD = "PGD2.neste1",
+                   CFILETYPE = "MESONH",
+                   CFILEPGDTYPE = "MESONH",
+                   NYEAR = 2003,
+                   NMONTH = 08,
+                   NDAY = 03,
+                   XTIME = 00/

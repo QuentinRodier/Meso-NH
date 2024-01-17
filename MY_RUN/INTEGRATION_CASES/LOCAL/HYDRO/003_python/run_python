@@ -1,0 +1,11 @@
+set -x
+set -e
+ln -sf ../002_mesonh/*.0*.nc .
+
+rm -f dir.0*
+
+ln -sf ${SRC_MESONH}/src/LIB/Python/* .
+
+python3 plot_HYDRO.py
+${POSTRUN} convert *.png HYDRO.pdf
+

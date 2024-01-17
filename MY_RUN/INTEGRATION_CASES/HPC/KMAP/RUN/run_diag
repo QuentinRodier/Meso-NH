@@ -1,0 +1,62 @@
+#!/bin/sh
+#SBATCH -J diag_kmap
+#SBATCH -N 4            # nodes number (=NBP)
+#SBATCH -n 256            # CPUs number (on all nodes) (=NBP*TPN)
+#SBATCH -o diag_kmap.eo%j   #
+#SBATCH -e diag_kmap.eo%j   #
+#SBATCH -t 01:00:00    # time limit
+
+# Echo des commandes
+ulimit -c 0
+ulimit -s unlimited
+# Arrete du job des la premiere erreur
+set -e
+# Nom de la machine
+hostname 
+
+
+. ~rodierq//DEV_57/MNH-PHYEX070-b95d84d7/conf/profile_mesonh-LXifort-R8I4-MNH-V5-6-2-ECRAD140-MPIAUTO-O2
+
+export MPIRUN="Mpirun -np 256"
+
+set -x
+set -e
+
+
+ls -lrt
+
+for ECH in '009' '010' '011' '012' '013' 
+do
+
+cat > DIAG1.nam << EOF
+&NAM_CONFIO  LCDF4=T, LLFIOUT=T, LLFIREAD=T /
+&NAM_DIAG LTOTAL_PR=T, LRADAR=T , LVAR_PR=T /
+&NAM_DIAG_FILE  YSUFFIX = "diag" 
+YINIFILE(1) = "K_MAP.3.WENO5.${ECH}", 
+YINIFILEPGD(1)='KMAP_PGD_2km.neste1'/
+EOF
+rm -f K_MAP.3.WENO5.${ECH}diag.???
+time ${MPIRUN} DIAG${XYZ}
+mv OUTPUT_LISTING0  OUTPUT_LISTING0_diag.${ECH}
+mv OUTPUT_LISTING1  OUTPUT_LISTING1_diag.${ECH}
+ls -lrt
+
+done
+
+mkdir NETCDF
+mv *.nc NETCDF/.
+mkdir OUTPUT
+mv OUTPUT_LISTING* OUTPUT/.
+mkdir LFI
+mv *.lfi LFI/.
+mv *.des LFI/.
+
+rm -f file_for_xtransfer pipe_name
+
+
+ls -lrt
+
+ja
+cd ../PYTHON
+sbatch run_python
+

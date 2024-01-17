@@ -1,0 +1,43 @@
+
+CAM2MESONH
+transfer CAMS/ReLACS variables (default values) included aerosols
+37 # NUMBER OF OPTIONAL GRIB VARIABLES
+(A6,1X,I1,1X,F4.2,1X,A8,1X,F6.2,1X,F4.2,1X,A8,1X,F6.2,1X,F4.2,1X,A8,1X,F6.2,1X,F4.2,1X,A8,1X,F6.2)
+O3     1 1.00 go3       48.00                                                         
+CO     1 1.00 co        28.00
+H2O2   1 1.00 h2o2      34.00
+NO     1 1.00 no        30.00
+NO2    1 1.00 no2       46.00
+HNO3   1 1.00 hno3      63.00
+HNO4   1 1.00 ho2no2    79.00
+N2O5   1 1.00 n2o5     108.00
+NO3    1 1.00 no3       62.00
+HO2    1 1.00 ho2       33.00
+SO2    1 1.00 so2       64.10
+DMS    1.1.00 dms       62.10
+NH3    1 1.00 nh3       17.00
+MO2    1 1.00 ch3o2     47.00
+ETH    1 1.00 c2h6      30.02
+ALKA   4 0.39 c3h8      44.03 0.33 ch3oh     31.01 0.96 c2h5oh    46.02 1.03 par      12.00         
+ALKE   3 0.88 c2h4      28.00 1.19 c3h6      42.03 1.20 ole       24.00      
+BIO    2 1.00 c5h8      68.10 0.99 c10h16   136.00   
+KET    1 0.28 ch3coch3  58.00 
+CARBO  2 0.96 ch3cocho  72.10 1.07 ispd      70.00     
+PAN    1 1.00 pan      121.00        
+ONIT   1 1.00 onit      77.00
+HCHO   1 1.00 hcho      30.00
+ALD    1 1.00 ald2      24.00
+ORA1   1 1.00 hcooh     46.01
+OP1    1 1.00 ch3ooh    48.00
+OP2    1 1.00 rooh      47.00
+SO4I   1 0.20 aermr11    1.00
+SO4J   1 0.80 aermr11    1.00
+NH3I   1 0.20 nh4        1.00
+NH3J   1 0.80 nh4        1.00
+NO3I   1 0.20 no3_a      1.00
+NO3J   1 0.80 no3_a      1.00
+BCI    2 0.20 aermr10    1.00 0.20 aermr09    1.00
+OCI    2 0.20 aermr08    1.00 0.20 aermr07    1.00
+BCJ    2 0.80 aermr10    1.00 0.80 aermr09    1.00
+OCJ    2 0.80 aermr08    1.00 0.80 aermr07    1.00
+

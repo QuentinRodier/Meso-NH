@@ -1,0 +1,2 @@
+rm -f PGD_FOG* FOG* pipe_name *.dat *.bin
+rm -f PRESSURE OUT*

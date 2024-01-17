@@ -1,0 +1,8 @@
+#!/bin/sh
+
+ln -sf ../../SIMU1/007_run/CLUS0.2.SPRIN.002.* .
+
+ln -sf ../003_prep_nest_pgd/PGD3*neste* .
+ln -sf ../../SIMU1/003_prep_nest_pgd/PGD2*neste* .
+
+time ${MONORUN} SPAWNING${XYZ}

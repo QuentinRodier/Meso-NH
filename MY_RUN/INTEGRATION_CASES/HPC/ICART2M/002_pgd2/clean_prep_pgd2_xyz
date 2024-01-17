@@ -1,0 +1,5 @@
+set -x
+
+rm -f *.dir *.hdr *.asc
+rm -f ICARTT1008_PGD_2km5.* ICARTT1008_PGD_15km.* OUTPUT_LISTING* file* pipe* *.tex
+

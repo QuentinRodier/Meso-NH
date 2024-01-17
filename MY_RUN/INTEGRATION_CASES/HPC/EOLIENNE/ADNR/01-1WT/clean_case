@@ -1,0 +1,5 @@
+#!/bin/bash
+cd 01_PREP
+./clean
+cd ../02_RUN_EOL
+./clean

@@ -1,0 +1,105 @@
+&NAM_LUNITn  CINIFILE    = "DADDY.1.SEG1.003",
+             CINIFILEPGD = "DAD_PGD"/  
+
+&NAM_CONFIO  LCDF4            = T,
+             LLFIOUT          = F,
+             LLFIREAD         = F,
+             NIO_ABORT_LEVEL  = 1,
+             NGEN_ABORT_LEVEL = 1/
+
+&NAM_DYNn    XTSTEP      = 5,
+             CPRESOPT    = "ZRESI",
+             NITR        = 4,
+             XRELAX      = 1.,
+             XT4DIFU     = 500.,
+             NRIMX       = 0,
+             NRIMY       = 0, 
+             LVE_RELAX   = .TRUE./
+
+&NAM_ADVn    CUVW_ADV_SCHEME = 'CEN4TH',
+             CTEMP_SCHEME    = 'RKC4',
+             CMET_ADV_SCHEME = "PPM_01", 
+             CSV_ADV_SCHEME  = "PPM_01"/
+
+&NAM_PARAMn  CTURB  = "TKEL",
+             CRAD   = "NONE",
+             CCLOUD = "NONE",
+             CDCONV = "NONE" /
+
+&NAM_IDEAL_FLUX CUSTARTYPE='Z0',
+                XZ0=0.0002,             ! <-- METS ICI TA RUGOSITE PREFEREE
+                XALB=0.25,             ! <-- Albedo et emissivité ne serviraient que si on utlise un schéma de rayonnement.
+                XEMIS=1.,
+                NFORCT = 2,            ! <-- les 5 lignes sur la temperature ne serviront que si on a un schema de rayonnement, que l'on n'utilisera pas en fait.
+                XTIMET(1) = 0.,
+                XTIMET(2) = 100000.,
+                XTSRAD(1) = 300.,
+                XTSRAD(2) = 300.,
+                NFORCF = 2,            ! <-- Ci-dessous la prescription des flux de chaleur. Mis à zéro ici (donc cas neutre)
+                XTIMEF(1) = 0.,
+                XTIMEF(2) = 100000.,
+                XSFTH(1) = 0.,
+                XSFTH(2) = 0.,
+                CSFTQ='kg/m2/s',
+                XSFTQ(1)=0.,
+                XSFTQ(2)=0.,
+                XSFCO2(1) = 0.,
+                XSFCO2(2) = 0.
+                 /
+
+&NAM_LBCn    CLBCX = 2*"CYCL",
+             CLBCY = 2*"CYCL" /
+
+&NAM_TURBn   XIMPL=1.,
+             CTURBLEN="HM21",
+             CTURBDIM="3DIM",
+             LTURB_FLX  = F,
+             LTURB_DIAG = F,
+             LRMC01=.T.,
+             XCADAP=0.5,
+             XTKEMIN = 1.E-10 /
+
+&NAM_CONF    LFLAT    = T,
+             CEQNSYS  = "DUR",
+             LFORCING = T,
+             NMODEL   = 2,
+             NVERB    = 2,
+             CEXP     = "RUN_PRE",
+             CSEG     = "SEG1",
+             CSPLIT   = "BSPLITTING",
+             !NHALO    = 3,
+             !JPHEXT   = 3
+             /
+
+&NAM_NESTING NDAD(2) = 1, 
+             NDTRATIO(2) = 5, 
+             XWAY(2) = 2/
+
+&NAM_CONFZ   NZ_VERB   = 10,
+             MPI_BUFFER_SIZE = 400/
+ 
+&NAM_DYN     XSEGLEN  = 1200.,
+             XASSELIN = 0.2,
+             LCORIO   = T,
+             XALKTOP  = 0.005,
+             XALZBOT  = 700.,
+             LNUMDIFU = F/
+
+&NAM_LES  LLES_MEAN= F,
+          LLES_RESOLVED= F,
+          LLES_SUBGRID= F,
+          LLES_UPDRAFT= F,
+          LLES_DOWNDRAFT= F,
+          CLES_NORM_TYPE="NONE",
+          XLES_TEMP_SAMPLING=600./
+
+&NAM_FRC  LGEOST_UV_FRC    = T/
+
+&NAM_MEAN    LMEAN_FIELD = .TRUE. /
+
+&NAM_NESTING NDAD(2)     = 1,
+             NDTRATIO(2) = 5,
+             XWAY(2)     = 2/
+ 
+&NAM_BACKUP XBAK_TIME_FREQ(1) = 600.0/
+&NAM_NEBn LSUBG_COND = F  /

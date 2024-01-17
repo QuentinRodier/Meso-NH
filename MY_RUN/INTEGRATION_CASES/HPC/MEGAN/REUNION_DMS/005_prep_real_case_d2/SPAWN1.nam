@@ -1,0 +1,9 @@
+&NAM_LUNIT2_SPA  CINIFILE = "ECMWF_D1_20190328_06",
+                 CINIFILEPGD = "BIOMAIDO_CH_8km.nestne",
+                 YDOMAIN  = "BIOMAIDO_CH_2km.nestne",
+                 YSPANBR = '' /
+
+&NAM_CONFIO      LCDF4 = T, NIO_ABORT_LEVEL=1, NGEN_ABORT_LEVEL=1 /
+
+&NAM_PREP_SURF_ATM NHALO_PREP=0 /
+

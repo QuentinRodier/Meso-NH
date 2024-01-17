@@ -1,0 +1,7 @@
+#!/bin/bash
+
+export MPIRUN="mpirun -np 1"
+
+time ${MPIRUN} PREP_IDEAL_CASE${XYZ}
+
+rm -f file_for_xtransfer pipe_name

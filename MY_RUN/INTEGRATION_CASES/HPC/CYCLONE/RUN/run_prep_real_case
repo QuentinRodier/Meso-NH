@@ -1,0 +1,44 @@
+#!/bin/sh
+#SBATCH -J prep_cyc
+#SBATCH -N 1            # nodes number (=NBP)
+#SBATCH -n 1            # CPUs number (on all nodes) (=NBP*TPN)
+#SBATCH -o prep_cyc.eo%j   #
+#SBATCH -e prep_cyc.eo%j   #
+#SBATCH -t 02:00:00    # time limit
+
+# Echo des commandes
+ulimit -c 0
+ulimit -s unlimited
+# Arrete du job des la premiere erreur
+set -e
+# Nom de la machine
+hostname 
+
+. ~rodierq/DEV_57/MNH-PHYEX070-b95d84d7/conf/profile_mesonh-LXifort-R8I4-MNH-V5-6-2-ECRAD140-MPIAUTO-O2
+
+
+export MPIRUN="Mpirun -np 1"
+set -x
+set -e
+
+ln -sf $HOME/SAVE/GRIB_KTEST/ocunifWOA2005DJF_20080212_NEW.nc ocunifWOA2005DJF_20080212.nc
+ls -lrt
+
+rm -f CB.RUC04.D70.E_00.???
+cp PRE_REAL1.nam_04km_CB_START_ocunifWOA2005DJF PRE_REAL1.nam
+time ${MPIRUN} PREP_REAL_CASE${XYZ}
+mv OUTPUT_LISTING0  OUTPUT_LISTING0_prep_CB_START_ocunifWOA2005DJF
+ 
+ls -lrt
+
+
+rm -f CL.RUC04.D70.E_48.???
+cp PRE_REAL1.nam_04km_CL48_START_ocunifWOA2005DJF PRE_REAL1.nam
+time ${MPIRUN} PREP_REAL_CASE${XYZ}
+mv OUTPUT_LISTING0  OUTPUT_LISTING0_prep_CL48_START_ocunifWOA2005DJF
+
+
+rm -f PRE_REAL1.nam
+rm -f file_for_xtransfer pipe_name
+sbatch run_mesonh
+ja

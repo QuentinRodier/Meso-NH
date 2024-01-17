@@ -1,0 +1,16 @@
+#!/bin/sh
+#MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+#MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
+#MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+#MNH_LIC for details. version 1.
+set -x
+set -e
+
+# Prepare SPC data
+R CMD BATCH process_flux_spc.R
+
+ln -sf ../005_diaprog/res* .
+
+# Plot figures
+R CMD BATCH build_pics_spc.R
+R CMD BATCH build_pics_tcd.R

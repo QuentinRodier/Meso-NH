@@ -1,0 +1,2 @@
+#!/bin/bash
+grep -RiIl 'EOLv1-0' | xargs sed -i 's/EOLv1-0/EOLv1-0/g'

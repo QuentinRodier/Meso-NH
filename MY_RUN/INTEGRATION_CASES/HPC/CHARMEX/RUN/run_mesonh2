@@ -1,0 +1,49 @@
+#!/bin/sh
+#SBATCH -J run2_charmex
+#SBATCH -N 1               # nodes number (=NBP)
+#SBATCH -n 4              # CPUs number (on all nodes) (=NBP*TPN)
+#SBATCH -o run2_charmex.eo%j   #
+#SBATCH -e run2_charmex.eo%j   #
+#SBATCH -t 10:00:00    # time limit
+
+# Echo des commandes
+ulimit -c 0
+ulimit -s unlimited
+# Arrete du job des la premiere erreur
+set -e
+# Nom de la machine
+hostname 
+
+. ~/DEV_57/MNH-PHYEX070-b95d84d7/conf/profile_mesonh-LXifort-R8I4-MNH-V5-6-2-ECRAD140-MPIAUTO-O2-RELACS
+
+export MPIRUN="Mpirun -np 4"
+
+set -x
+set -e
+ 
+ls -lrt
+ln -sf  $HOME/SAVE/GRIB_KTEST/CHARMEX/CHIMIE_FILES/tuv531/DATAE1 .
+ln -sf  $HOME/SAVE/GRIB_KTEST/CHARMEX/CHIMIE_FILES/tuv531/DATAJ1 .
+ls -lrt
+
+rm -f CHARM.1.SEG02.*
+cp EXSEG1.nam_dom2  EXSEG1.nam
+time ${MPIRUN} MESONH${XYZ}
+mv OUTPUT_LISTING0  OUTPUT_LISTING0_run2
+mv OUTPUT_LISTING1  OUTPUT_LISTING1_run2
+
+
+ls -lrt
+ls -lrt
+
+rm -f file_for_xtransfer pipe_name EXSEG1.nam REMAP*
+rm -Rf DATAE1 DATAJ1
+
+mkdir OUTPUT
+mv OUTPUT_L* OUTPUT
+mkdir OUTFILES
+mv *.nc OUTFILES/.
+mv *.des OUTFILES/.
+
+
+ja

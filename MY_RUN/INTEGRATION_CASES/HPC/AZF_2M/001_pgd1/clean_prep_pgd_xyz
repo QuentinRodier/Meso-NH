@@ -1,0 +1,5 @@
+set -x
+
+rm -f *.dir *.hdr *.dat *.bin
+rm -f PGD* OUTPUT_LISTING* OUTPUT_TRANSFER pipe* *.tex
+

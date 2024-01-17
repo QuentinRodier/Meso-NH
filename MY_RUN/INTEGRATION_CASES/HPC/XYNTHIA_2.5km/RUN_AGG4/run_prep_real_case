@@ -1,0 +1,50 @@
+#!/bin/sh
+#SBATCH -J prep_xynthia
+#SBATCH -N 5            # nodes number (=NBP)
+#SBATCH -n 200            # CPUs number (on all nodes) (=NBP*TPN)
+#SBATCH -o prep_xynthia.eo%j   #
+#SBATCH -e prep_xynthia.eo%j   #
+#SBATCH -t 04:00:00    # time limit
+
+# Echo des commandes
+ulimit -c 0
+ulimit -s unlimited
+# Arrete du job des la premiere erreur
+set -e
+# Nom de la machine
+hostname
+
+
+. ~rodierq/DEV_57/MNH-PHYEX070-b95d84d7/conf/profile_mesonh-LXifort-R8I4-MNH-V5-6-2-ECRAD140-MPIAUTO-O2
+
+export MPIRUN="Mpirun -np 200"
+
+set -x
+set -e
+
+ln -sf $HOME/SAVE/GRIB_KTEST/aladin.FC.20100227* .
+
+ls -lrt
+
+for DATE in '20100227.12.00' '20100227.12.03' '20100227.12.06' '20100227.12.09'
+do
+rm -f ALA_${DATE}.???
+cp PRE_REAL1.nam_${DATE} PRE_REAL1.nam
+time ${MPIRUN} PREP_REAL_CASE${XYZ}
+mv OUTPUT_LISTING0  OUTPUT_LISTING0_prep.${DATE}
+
+ls -lrt
+
+done
+
+
+rm -f  PRE_REAL1.nam
+rm -f aladin*
+rm -f file_for_xtransfer pipe_name
+
+
+ls -lrt
+
+sbatch run_mesonh
+ja
+

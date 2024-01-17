@@ -1,0 +1,57 @@
+#!/bin/sh
+#MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+#MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
+#MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+#MNH_LIC for details. version 1.
+set -x
+set -e
+
+ln -fs ../002_mesonh/CLB23.1.CAN*.00* .
+ln -sf ../003_diag/*dg* .
+
+for wind in 11 16
+do
+
+
+#ecriture namelist
+cat > dir_conv2dia_run << EOF
+8
+CLB23.1.CAN${wind}.001
+CLB23.1.CAN${wind}.002
+CLB23.1.CAN${wind}.003
+CLB23.1.CAN${wind}.004
+CLB23.1.CAN${wind}.005
+CLB23.1.CAN${wind}.006
+CLB23.1.CAN${wind}.007
+CLB23.1.CAN${wind}.008
+Res_Run_${wind}
+0
+EOF
+
+rm -f Res_Run_${wind}.???
+
+conv2dia < dir_conv2dia_run
+
+#ecriture namelist
+cat > dir_conv2dia_diag << EOF
+8
+CLB23.1.CAN${wind}.001dg
+CLB23.1.CAN${wind}.002dg
+CLB23.1.CAN${wind}.003dg
+CLB23.1.CAN${wind}.004dg
+CLB23.1.CAN${wind}.005dg
+CLB23.1.CAN${wind}.006dg
+CLB23.1.CAN${wind}.007dg
+CLB23.1.CAN${wind}.008dg
+Res_Diag_${wind}
+0
+EOF
+
+rm -f Res_Diag_${wind}.???
+
+ conv2dia < dir_conv2dia_diag
+
+done
+
+
+

@@ -1,0 +1,4 @@
+#!/bin/sh
+set -x
+set -e
+time ${MONORUN} PREP_IDEAL_CASE${XYZ}

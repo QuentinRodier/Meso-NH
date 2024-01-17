@@ -1,0 +1,12 @@
+ hello MNH world from IP=           1  nproc=           1
+
+CNAME                        CTYPE         CFORMAT CMODE   LOPENED NLFIFLU  NNCID    NLU NOPEN NCLOSE NOPEN_CURRENT NSUBFILES_IOZ
+--------------------------------------------------------------------------------------------------------------------------------
+OUTPUT_LISTING0              OUTPUTLISTING TEXT    WRITE         T      -1     -1   -132     1      0             1             0
+PRE_REAL1.nam                NML           TEXT    READ          F      -1     -1     -1    33     33             0             0
+CHARMEX0714_PGD_50km         PGD           NETCDF4 READ          F      -1     -1     -1     1      1             0             0
+CHARMEX0714_PGD_50km.des     DES           TEXT    READ          F      -1     -1     -1     1      1             0             0
+CPLCHE20140630.00            MNH           NETCDF4 WRITE         F      -1     -1     -1     1      1             0             0
+CPLCHE20140630.00.des        DES           TEXT    WRITE         F      -1     -1     -1     1      1             0             0
+
+

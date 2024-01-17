@@ -1,0 +1,27 @@
+&NAM_CONF NVERB=10/ 
+&NAM_DYNn NRIMX=1 NRIMY=1 LOCEAN =T/
+&NAM_GRID2_SPA
+! Premier point du model 2 as referenced in model 1
+ IXOR=37     IYOR=28 ,
+!number of model 2 grid points as referenced in model1 grid (i.e LX_model2/DX_1)
+! => nb of model2 grid points = IXSIZE*IDXRATIO
+! Lx_domain2= IXSIZE*IDXRATIO*DX_model1
+               IXSIZE= 32,IYSIZE= 24, 
+! Ratio DX(1)/DX(2) =2n 3p 5q
+               IDXRATIO=10, IDYRATIO=10,
+               GBAL_ONLY=.FALSE./
+&NAM_LUNIT2_SPA
+! File name run model 1 to be spawned in model 2
+ CINIFILE='GN_01.1.OC_01.002',
+                CINIFILEPGD="",
+! number added to CINIFILE to generate spawned file (CINIFILE.spaYSPANBR)
+                YSPANBR='00',
+                YDADINIFILE='',
+                YDADSPAFILE='',
+                YSONFILE=''/
+&NAM_BLANK/
+&NAM_SPAWN_SURF LSPAWN_SURF=.FALSE./
+&NAM_CONFIO  LCDF4=T, LLFIOUT=F, LLFIREAD=F /
+&NAM_CONFZ   NZ_VERB=10, NZ_PROC=0 /
+&NAM_LBCn XCPHASE=0., CLBCX=2*"CYCL", CLBCY=2*"CYCL" /
+
