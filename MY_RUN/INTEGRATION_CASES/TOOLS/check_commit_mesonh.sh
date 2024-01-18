@@ -9,7 +9,7 @@ set -o pipefail #abort if left command on a pipe fails
 # TARGZDIR: directory where tar.gz files are searched for
 # MNHPACK: directory where tests are build
 
-availTests="001_2Drelief, 002_3Drelief, 003_KW78, 004_Reunion, 005_ARM, 007_16janvier, 009_ICARTT, 011_KW78CHEM, 012_dust, 014_LIMA"
+availTests="001_2Drelief, 002_3Drelief, 003_KW78, 004_Reunion, 005_ARM, 007_16janvier, 009_ICARTT, 011_KW78CHEM, 012_dust, 014_LIMA, 2DRelief, 3DRelief, ARMCU_1D_CONDSAMP, BLOWSNOW_c1b1D, BOMEX, COLD_BUBBLE, DOUBLE_GRIDNESTING, EOLIENNE_FAST, FIRE1D/KHKO, FIRE1D/KHKO_MALA, FOG_1D/ICE3, FOG_1D/LIMA, HYDRO, IHOP_1D, LIMA_2D, Reunion, STATIONS_PROF_BALLON_AIRCR_4doms "
 defaultTest="007_16janvier"
 separator='_' #- be carrefull, gmkpack (at least on belenos) has multiple allergies (':', '.', '@')
               #- seprator must be in sync with prep_code.sh separator
@@ -173,7 +173,18 @@ if [ $run -ge 1 ]; then
     case=$(echo $t | cut -d / -f 1)
     exedir=$(echo $t | cut -d / -f 2)
     rep=$MNHPACK/$name/MY_RUN/KTEST/$case
-    cd $rep
+    repLOCAL=$MNHPACK/$name/MY_RUN/INTEGRATION_CASES/LOCAL/$case
+    repHPC=$MNHPACK/$name/MY_RUN/INTEGRATION_CASES/HPC/$case
+    if [ -d $rep ]; then
+      cd $rep
+    elif [ -d $repLOCAL ]; then
+      cd $repLOCAL
+    elif [ -d $repHPC ]; then
+      cd $repHPC
+    else
+      echo "The KTEST $case has not been found"
+      exit 7
+    fi
     set +e #file ends with a test that can return false
     [ $compilation -eq 0 ] && . $MNHPACK/$name/conf/profile_mesonh-*
     set -e

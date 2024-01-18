@@ -1,7 +1,9 @@
 #!/bin/sh
 
 ln -sf ../003_prep_nest_pgd/PGD1*neste* .
-
-cp -f PRE_REAL1.nam_INIFILE PRE_REAL1.nam
+ln -sf /cnrm/phynh/data1/rodierq/GRIB_KTEST/ecmwf.OD.20030810.00 .
+if [ ! -f ecmwf.OD.20030810.00 ]; then
+	wget -c -nd http://mesonh.aero.obs-mip.fr/mesonh/dir_doc/dir_namelist_examples/GRIB_KTEST/ecmwf.OD.20030810.00
+fi
 
 time ${MONORUN} PREP_REAL_CASE${XYZ}
