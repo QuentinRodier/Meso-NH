@@ -734,53 +734,12 @@ SUBROUTINE POPULATE_STRUCT(TPFILE_FIRST,TPFILE_LAST,KSTEPS,HFILETYPE,TPBAKOUTN,K
         !
         TPBAKOUTN(IPOS)%TFILE%NMODEL = KMI
         !
-        !Create file structures if Z-split files
         IF (NB_PROCIO_W>1) THEN
-          NFILE_STAT_NADD    = NFILE_STAT_NADD    + NB_PROCIO_W
-          NFILE_STAT_CURSIZE = NFILE_STAT_CURSIZE + NB_PROCIO_W
           TPBAKOUTN(IPOS)%TFILE%NSUBFILES_IOZ = NB_PROCIO_W
-          ALLOCATE(TPBAKOUTN(IPOS)%TFILE%TFILES_IOZ(NB_PROCIO_W))
-          IF (NB_PROCIO_W>999) THEN
-            CALL PRINT_MSG(NVERB_FATAL,'IO','POPULATE_STRUCT','more than 999 z-levels')
-          END IF
-          DO JI = 1,NB_PROCIO_W
-            ALLOCATE(TPFILE_LAST%TFILE_NEXT)
-            TPFILE_LAST%TFILE_NEXT%TFILE_PREV => TPFILE_LAST
-            TPFILE_LAST => TPFILE_LAST%TFILE_NEXT
-            TPBAKOUTN(IPOS)%TFILE%TFILES_IOZ(JI)%TFILE => TPFILE_LAST
-            TPBAKOUTN(IPOS)%TFILE%TFILES_IOZ(JI)%TFILE%CTYPE=HFILETYPE
-            TPBAKOUTN(IPOS)%TFILE%TFILES_IOZ(JI)%TFILE%CMODE="WRITE"
-            WRITE (YNUMBER,FMT="(I3.3)") JI
-            TPBAKOUTN(IPOS)%TFILE%TFILES_IOZ(JI)%TFILE%CNAME = TRIM(TPBAKOUTN(IPOS)%TFILE%CNAME)//'.Z'//YNUMBER
-            IF(ALLOCATED(TPBAKOUTN(IPOS)%TFILE%CDIRNAME)) &
-              TPBAKOUTN(IPOS)%TFILE%TFILES_IOZ(JI)%TFILE%CDIRNAME = TRIM(TPBAKOUTN(IPOS)%TFILE%CDIRNAME)
-            IF (TRIM(HFILETYPE)=='MNHOUTPUT') THEN
-              !Reduce the float precision if asked
-              TPBAKOUTN(IPOS)%TFILE%TFILES_IOZ(JI)%TFILE%LNCREDUCE_FLOAT_PRECISION = LOUT_REDUCE_FLOAT_PRECISION(IMI)
-              !Set compression if asked
-              TPBAKOUTN(IPOS)%TFILE%TFILES_IOZ(JI)%TFILE%LNCCOMPRESS = LOUT_COMPRESS(IMI)
-              IF ( NOUT_COMPRESS_LEVEL(IMI)<0 .OR. NOUT_COMPRESS_LEVEL(IMI)>9 ) THEN
-                PRINT *,'ERROR: NOUT_COMPRESS_LEVEL must be in the [0..9] range. Value forced to 4'
-                NOUT_COMPRESS_LEVEL(IMI) = 4
-              END IF
-              TPBAKOUTN(IPOS)%TFILE%TFILES_IOZ(JI)%TFILE%NNCCOMPRESS_LEVEL = NOUT_COMPRESS_LEVEL(IMI)
-            END IF
-            TPBAKOUTN(IPOS)%TFILE%TFILES_IOZ(JI)%TFILE%NLFITYPE=1 !1: to be transferred
-            TPBAKOUTN(IPOS)%TFILE%TFILES_IOZ(JI)%TFILE%NLFIVERB=NVERB
-            IF (LIOCDF4) THEN
-              IF (.NOT.LLFIOUT) THEN
-                TPBAKOUTN(IPOS)%TFILE%TFILES_IOZ(JI)%TFILE%CFORMAT='NETCDF4'
-              ELSE
-                TPBAKOUTN(IPOS)%TFILE%TFILES_IOZ(JI)%TFILE%CFORMAT='LFICDF4'
-              END IF
-            ELSE IF (LLFIOUT) THEN
-              TPBAKOUTN(IPOS)%TFILE%TFILES_IOZ(JI)%TFILE%CFORMAT='LFI'
-              !TPBAKOUTN(IPOS)%TFILE%TFILES_IOZ(JI)%TFILE%NLFINPRAR= 0
-            ELSE
-              CALL PRINT_MSG(NVERB_FATAL,'IO','POPULATE_STRUCT','unknown backup/output fileformat')
-            ENDIF
-            TPBAKOUTN(IPOS)%TFILE%TFILES_IOZ(JI)%TFILE%TMAINFILE => TPBAKOUTN(IPOS)%TFILE
-          END DO
+          !Remark: sub-files are automatically added/removed when the backup/output file is opened/closed
+          !Therefore, no need to do this here
+        ELSE
+          TPBAKOUTN(IPOS)%TFILE%NSUBFILES_IOZ = 0
         END IF
         !
     END IF
@@ -1159,7 +1118,8 @@ RECURSIVE SUBROUTINE IO_File_remove_from_list( TPFILE )
                                           ': never been opened' )
 
   ! Are there sub-files? If yes, remove them first
-  IF ( TPFILE%NSUBFILES_IOZ > 0 ) THEN
+  ! Do it only if not already removed (ie in IO_File_close)
+  IF ( TPFILE%NSUBFILES_IOZ > 0 .AND. ALLOCATED( TPFILE%TFILES_IOZ ) ) THEN
     DO JF = 1, TPFILE%NSUBFILES_IOZ
       CALL IO_File_remove_from_list( TPFILE%TFILES_IOZ(JF)%TFILE )
     END DO

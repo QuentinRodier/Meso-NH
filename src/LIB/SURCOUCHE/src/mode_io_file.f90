@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2024 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -172,6 +172,9 @@ SELECT CASE(TPFILE%CTYPE)
     IF (TPFILE%NSUBFILES_IOZ > 0) THEN
       IF (.NOT.ALLOCATED(TPFILE%TFILES_IOZ)) THEN
         ALLOCATE(TPFILE%TFILES_IOZ(TPFILE%NSUBFILES_IOZ))
+        IF ( TPFILE%NSUBFILES_IOZ > 999 ) THEN
+          CALL PRINT_MSG( NVERB_FATAL, 'IO', 'IO_File_open', 'more than 999 z-levels' )
+        END IF
       ELSE IF ( SIZE(TPFILE%TFILES_IOZ) /= TPFILE%NSUBFILES_IOZ ) THEN
         CALL PRINT_MSG(NVERB_FATAL,'IO','IO_File_open','SIZE(TPFILE%TFILES_IOZ) /= TPFILE%NSUBFILES_IOZ for '//TRIM(TPFILE%CNAME))
       END IF
@@ -504,7 +507,7 @@ use mode_io_file_lfi,      only: IO_File_close_lfi
 use mode_io_file_nc4,      only: IO_File_close_nc4
 use mode_io_write_nc4,     only: IO_Coordvar_write_nc4
 #endif
-use mode_io_manage_struct, only: IO_File_find_byname
+use mode_io_manage_struct, only: IO_File_find_byname, IO_File_remove_from_list
 !
 TYPE(TFILEDATA),            INTENT(INOUT) :: TPFILE ! File structure
 INTEGER,          OPTIONAL, INTENT(OUT)   :: KRESP  ! Return code
@@ -512,7 +515,6 @@ CHARACTER(LEN=*), OPTIONAL, INTENT(IN)    :: HPROGRAM_ORIG !To emulate a file co
 TYPE(DATE_TIME),  OPTIONAL, INTENT(IN)    :: TPDTMODELN    !Time of model (to force model date written in file)
 character(len=256)      :: yioerrmsg
 INTEGER                 :: IRESP, JI
-TYPE(TFILEDATA),POINTER :: TZFILE_DES
 TYPE(TFILEDATA),POINTER :: TZFILE_IOZ
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_File_close','closing '//TRIM(TPFILE%CNAME))
@@ -559,9 +561,12 @@ SELECT CASE(TPFILE%CTYPE)
   CASE ('MNH', 'MNHBACKUP', 'MNHDIACHRONIC', 'MNHDIAG', 'MNHOUTPUT', 'PGD')
     !Do not close (non-existing) '.des' file if OUTPUT
     IF(TPFILE%CTYPE/='MNHOUTPUT' .AND. CPROGRAM/='LFICDF') THEN
-      CALL IO_File_find_byname(TRIM(TPFILE%CNAME)//'.des',TZFILE_DES,IRESP)
-      IF (IRESP/=0) CALL PRINT_MSG(NVERB_ERROR,'IO','IO_File_close','file '//TRIM(TPFILE%CNAME)//'.des not in filelist')
-      CALL IO_File_close(TZFILE_DES,KRESP=IRESP,HPROGRAM_ORIG=HPROGRAM_ORIG)
+      IF ( .NOT.ASSOCIATED(TPFILE%TDESFILE) ) THEN
+        CALL PRINT_MSG( NVERB_ERROR, 'IO', 'IO_File_close','DES file for '//TRIM(TPFILE%CNAME)//' not associated' )
+      ELSE
+        CALL IO_File_close( TPFILE%TDESFILE, KRESP=IRESP, HPROGRAM_ORIG=HPROGRAM_ORIG )
+        CALL IO_File_remove_from_list( TPFILE%TDESFILE )
+      END IF
     ENDIF
     !
 #ifdef MNH_IOCDF4
@@ -580,6 +585,7 @@ SELECT CASE(TPFILE%CTYPE)
     !
     CALL IO_Transfer_list_addto(TPFILE)
     !
+    ! Close all Zsplit subfiles
     SUBFILES: DO JI = 1,TPFILE%NSUBFILES_IOZ
       TZFILE_IOZ => TPFILE%TFILES_IOZ(JI)%TFILE
       IF (.NOT.TZFILE_IOZ%LOPENED) &
@@ -605,7 +611,12 @@ SELECT CASE(TPFILE%CTYPE)
         if (tzfile_ioz%cformat == 'NETCDF4' .or. tzfile_ioz%cformat == 'LFICDF4') call IO_File_close_nc4(tzfile_ioz,iresp)
 #endif
       END IF
+
+      CALL IO_File_remove_from_list( TPFILE%TFILES_IOZ(JI)%TFILE )
     END DO SUBFILES
+
+    ! Deallocate Zsplit file list
+    IF ( ALLOCATED( TPFILE%TFILES_IOZ ) ) DEALLOCATE( TPFILE%TFILES_IOZ )
 
 
   CASE DEFAULT

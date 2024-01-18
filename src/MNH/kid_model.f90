@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1999-2023 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1999-2024 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -79,11 +79,12 @@ RECURSIVE SUBROUTINE KID_MODEL(KMODEL,KTEMP_MODEL,OEXIT)
 !               ------------
 !
 USE MODD_CONF
-USE MODD_IO,             ONLY: TFILEDATA
+USE MODD_IO,               ONLY: TFILEDATA
 USE MODD_NESTING
-USE MODD_TYPE_DATE,      ONLY: DATE_TIME
+USE MODD_TYPE_DATE,        ONLY: DATE_TIME
 !
-USE MODE_IO_FILE,        ONLY: IO_FILE_CLOSE
+USE MODE_IO_FILE,          ONLY: IO_FILE_CLOSE
+USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_REMOVE_FROM_LIST
 USE MODE_MODELN_HANDLER
 USE MODE_ll
 !
@@ -134,7 +135,7 @@ DO JKID=KMODEL+1,NMODEL
       !
       IF ( TZBAKFILE%LOPENED ) THEN
         CALL IO_FILE_CLOSE( TZBAKFILE, TPDTMODELN = TZDTMODELN )
-        NULLIFY( TZBAKFILE )
+        CALL IO_FILE_REMOVE_FROM_LIST( TZBAKFILE )
       END IF
     END DO
     !
@@ -145,5 +146,5 @@ END DO
 !
 !-------------------------------------------------------------------------------
 !
-END SUBROUTINE KID_MODEL  
-  
+END SUBROUTINE KID_MODEL
+

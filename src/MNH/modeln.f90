@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2024 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -388,7 +388,7 @@ USE MODE_GRIDCART
 USE MODE_GRIDPROJ
 USE MODE_IO_FIELD_WRITE,   only: IO_Field_user_write, IO_Fieldlist_write, IO_Header_write
 USE MODE_IO_FILE,          only: IO_File_close, IO_File_open
-USE MODE_IO_MANAGE_STRUCT, only: IO_File_add2list
+USE MODE_IO_MANAGE_STRUCT, only: IO_File_add2list, IO_File_remove_from_list
 USE MODE_ll
 #ifdef MNH_IOLFI
 use mode_menu_diachro,     only: MENU_DIACHRO
@@ -1083,6 +1083,7 @@ IF ( nfile_output_current < NOUT_NUMB ) THEN
     CALL IO_Field_user_write( TOUTPUTN(nfile_output_current) )
     !
     CALL IO_File_close(TZOUTFILE)
+    CALL IO_File_remove_from_list( TZOUTFILE )
     !
   END IF
 END IF
