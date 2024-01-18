@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2024 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -45,7 +45,7 @@ LOGICAL :: L1D   = .FALSE. ! TRUE if 1D model version
 LOGICAL :: L2D   = .FALSE. ! TRUE if 2D model version
 LOGICAL :: LPACK = .FALSE. ! TRUE if FM compression occurs in 1D or 2D model version
 
-LOGICAL :: LIOCDF4    = .FALSE. ! TRUE will enable full NetCDF4 (HDF5) I/O support
+LOGICAL :: LIOCDF4    = .TRUE. ! TRUE will enable full NetCDF4 (HDF5) I/O support
 LOGICAL :: LLFIOUT    = .FALSE. ! TRUE will also force LFI output when LIOCDF4 is on (debug only)
 LOGICAL :: LLFIREAD   = .FALSE. ! TRUE will force LFI read (instead of NetCDF) when LIOCDF4 is on (debug only)
 
