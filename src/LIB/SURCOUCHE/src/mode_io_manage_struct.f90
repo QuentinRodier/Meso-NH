@@ -82,6 +82,7 @@ INTEGER           :: IRESP
 INTEGER, DIMENSION(:), ALLOCATABLE :: IBAK_STEP, IOUT_STEP
 ! Arrays to store list of backup/output steps (intermediate array)
 CHARACTER (LEN=4) :: YDADNUMBER       ! Character string for the DAD model file number
+REAL              :: ZTSTEP_RND
 !
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Bakout_struct_prepare','called')
@@ -100,11 +101,110 @@ DO IMI = 1, NMODEL
   IOUT_NUMB = 0
   !Reduce XSEGLEN by time added to XSEGLEN for 1st domain (see set_grid subroutine)
   ISTEP_MAX = NINT( ( XSEGLEN - KSUP * DYN_MODEL(1)%XTSTEP ) / DYN_MODEL(IMI)%XTSTEP ) + 1
+
+  ! Check that provided times are multiples of model timestep and not after end of segment
+  DO JOUT = 1, NFILE_NUM_MAX
+    IF ( XBAK_TIME(IMI,JOUT) >= 0.) THEN
+      ZTSTEP_RND = NINT( XBAK_TIME(IMI,JOUT) / PTSTEP ) * PTSTEP
+      IF ( ABS( ZTSTEP_RND - XBAK_TIME(IMI,JOUT) ) > 1.E-6 ) THEN
+        CALL PRINT_MSG( NVERB_ERROR, 'IO', 'IO_Bakout_struct_prepare', 'XBAK_TIME is not a multiple of the model timestep' )
+        XBAK_TIME(IMI,JOUT) = ZTSTEP_RND
+      END IF
+      IF ( XBAK_TIME(IMI,JOUT) > XSEGLEN + 1.E-6 ) THEN
+        CALL PRINT_MSG( NVERB_WARNING, 'IO', 'IO_Bakout_struct_prepare', &
+                        'XBAK_TIME after end of simulation time segment => ignored' )
+        XBAK_TIME(IMI,JOUT) = XNEGUNDEF
+      END IF
+    END IF
+    IF ( XOUT_TIME(IMI,JOUT) >= 0.) THEN
+      ZTSTEP_RND = NINT( XOUT_TIME(IMI,JOUT) / PTSTEP ) * PTSTEP
+      IF ( ABS( ZTSTEP_RND - XOUT_TIME(IMI,JOUT) ) > 1.E-6 ) THEN
+        CALL PRINT_MSG( NVERB_ERROR, 'IO', 'IO_Bakout_struct_prepare', 'XOUT_TIME is not a multiple of the model timestep' )
+        XOUT_TIME(IMI,JOUT) = ZTSTEP_RND
+      END IF
+      IF ( XOUT_TIME(IMI,JOUT) > XSEGLEN + 1.E-6 ) THEN
+        CALL PRINT_MSG( NVERB_WARNING, 'IO', 'IO_Bakout_struct_prepare', &
+                        'XOUT_TIME after end of simulation time segment => ignored' )
+        XOUT_TIME(IMI,JOUT) = XNEGUNDEF
+      END IF
+    END IF
+  END DO
   !
   !* Insert regular backups/outputs into XBAK_TIME/XOUT_TIME arrays
   !
-  IF (XBAK_TIME_FREQ(IMI)>0.) CALL IO_INSERT_REGULAR_FLOAT(XBAK_TIME_FREQ_FIRST(IMI),XBAK_TIME_FREQ(IMI),XBAK_TIME(IMI,:))
-  IF (XOUT_TIME_FREQ(IMI)>0.) CALL IO_INSERT_REGULAR_FLOAT(XOUT_TIME_FREQ_FIRST(IMI),XOUT_TIME_FREQ(IMI),XOUT_TIME(IMI,:))
+  IF ( XBAK_TIME_FREQ(IMI) > 0. ) THEN
+    IF ( NBAK_STEP_FREQ(IMI) > 0 )                                   &
+      CALL PRINT_MSG( NVERB_ERROR, 'IO', 'IO_Bakout_struct_prepare', &
+                      'XBAK_TIME_FREQ and NBAK_STEP_FREQ can not be provided simultaneously' )
+
+    ! Check that frequency is at least equals to the model time step
+    IF ( XBAK_TIME_FREQ(IMI) < PTSTEP - 1.E-6 ) THEN
+      CALL PRINT_MSG( NVERB_ERROR, 'IO', 'IO_Bakout_struct_prepare', 'XBAK_TIME_FREQ smaller than model timestep' )
+      XBAK_TIME_FREQ(IMI) = PTSTEP
+    END IF
+
+    ! Check that the frequency is a multiple of the model time step
+    ZTSTEP_RND = NINT( XBAK_TIME_FREQ(IMI) / PTSTEP ) * PTSTEP
+    IF ( ABS( ZTSTEP_RND - XBAK_TIME_FREQ(IMI) ) > 1.E-6 ) THEN
+      CALL PRINT_MSG( NVERB_ERROR, 'IO', 'IO_Bakout_struct_prepare', 'XBAK_TIME_FREQ is not a multiple of the model timestep' )
+      XBAK_TIME_FREQ(IMI) = ZTSTEP_RND
+    END IF
+
+    IF ( XBAK_TIME_FREQ_FIRST(IMI) > 0. ) THEN
+      ! Check that the first write time of the series is a multiple of the model time step
+      ZTSTEP_RND = NINT( XBAK_TIME_FREQ_FIRST(IMI) / PTSTEP ) * PTSTEP
+      IF ( ABS( ZTSTEP_RND - XBAK_TIME_FREQ_FIRST(IMI) ) > 1.E-6 ) THEN
+        CALL PRINT_MSG( NVERB_ERROR, 'IO', 'IO_Bakout_struct_prepare', &
+                        'XBAK_TIME_FREQ_FIRST is not a multiple of the model timestep' )
+        XBAK_TIME_FREQ_FIRST(IMI) = ZTSTEP_RND
+      END IF
+    END IF
+
+    ! Check that the first write time of the series is not after the end of the segment
+    IF ( XBAK_TIME_FREQ_FIRST(IMI) > XSEGLEN + 1.E-6 ) THEN
+      CALL PRINT_MSG( NVERB_ERROR, 'IO', 'IO_Bakout_struct_prepare', &
+                      'XBAK_TIME_FREQ_FIRST is after the end of the simulation segment' )
+    END IF
+
+    CALL IO_INSERT_REGULAR_FLOAT(XBAK_TIME_FREQ_FIRST(IMI),XBAK_TIME_FREQ(IMI),XBAK_TIME(IMI,:))
+  END IF
+
+  IF ( XOUT_TIME_FREQ(IMI) > 0. ) THEN
+    IF ( NOUT_STEP_FREQ(IMI) > 0 )                                   &
+      CALL PRINT_MSG( NVERB_ERROR, 'IO', 'IO_Bakout_struct_prepare', &
+                      'XOUT_TIME_FREQ and NOUT_STEP_FREQ can not be provided simultaneously' )
+
+    ! Check that frequency is at least equals to the model time step
+    IF ( XOUT_TIME_FREQ(IMI) < PTSTEP - 1.E-6 ) THEN
+      CALL PRINT_MSG( NVERB_ERROR, 'IO', 'IO_Bakout_struct_prepare', 'XOUT_TIME_FREQ smaller than model timestep' )
+      XOUT_TIME_FREQ(IMI) = PTSTEP
+    END IF
+
+    ! Check that the frequency is a multiple of the model time step
+    ZTSTEP_RND = NINT( XOUT_TIME_FREQ(IMI) / PTSTEP ) * PTSTEP
+    IF ( ABS( ZTSTEP_RND - XOUT_TIME_FREQ(IMI) ) > 1.E-6 ) THEN
+      CALL PRINT_MSG( NVERB_ERROR, 'IO', 'IO_Bakout_struct_prepare', 'XOUT_TIME_FREQ is not a multiple of the model timestep' )
+      XOUT_TIME_FREQ(IMI) = ZTSTEP_RND
+    END IF
+
+    IF ( XOUT_TIME_FREQ_FIRST(IMI) > 0. ) THEN
+      ! Check that the first write time of the series is a multiple of the model time step
+      ZTSTEP_RND = NINT( XOUT_TIME_FREQ_FIRST(IMI) / PTSTEP ) * PTSTEP
+      IF ( ABS( ZTSTEP_RND - XOUT_TIME_FREQ_FIRST(IMI) ) > 1.E-6 ) THEN
+        CALL PRINT_MSG( NVERB_ERROR, 'IO', 'IO_Bakout_struct_prepare', &
+                        'XOUT_TIME_FREQ_FIRST is not a multiple of the model timestep' )
+        XOUT_TIME_FREQ_FIRST(IMI) = ZTSTEP_RND
+      END IF
+    END IF
+
+    ! Check that the first write time of the series is not after the end of the segment
+    IF ( XOUT_TIME_FREQ_FIRST(IMI) > XSEGLEN + 1.E-6 ) THEN
+      CALL PRINT_MSG( NVERB_ERROR, 'IO', 'IO_Bakout_struct_prepare', &
+                      'XOUT_TIME_FREQ_FIRST is after the end of the simulation segment' )
+    END IF
+
+    CALL IO_INSERT_REGULAR_FLOAT(XOUT_TIME_FREQ_FIRST(IMI),XOUT_TIME_FREQ(IMI),XOUT_TIME(IMI,:))
+  END IF
   !
   !* Synchronization between nested models through XBAK_TIME/XOUT_TIME arrays
   !
