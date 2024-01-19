@@ -534,7 +534,7 @@ SUBROUTINE IO_SYNC_MODELS_INT(KNUMB,KSTEPS)
         CALL FIND_NEXT_AVAIL_SLOT_INT(KSTEPS(JKLOOP,:),IDX)
         ! Use of NINT and real to prevent rounding errors
         ! (STEP-1)* ... +1 because step numbers begin at 1
-        KSTEPS(JKLOOP,IDX) = (KSTEPS(IMI,JOUT)-1) * NINT( DYN_MODEL(JKLOOP)%XTSTEP/DYN_MODEL(IMI)%XTSTEP ) + 1
+        KSTEPS(JKLOOP,IDX) = (KSTEPS(IMI,JOUT)-1) * NINT( DYN_MODEL(IMI)%XTSTEP/DYN_MODEL(JKLOOP)%XTSTEP ) + 1
       END DO
     END IF
   END DO
