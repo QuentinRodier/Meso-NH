@@ -541,7 +541,7 @@ SUBROUTINE IO_SYNC_MODELS_INT(KNUMB,KSTEPS)
 END SUBROUTINE IO_SYNC_MODELS_INT
 !
 !#########################################################################
-SUBROUTINE FIND_NEXT_AVAIL_SLOT_FLOAT(PTIMES,kIDX)
+SUBROUTINE FIND_NEXT_AVAIL_SLOT_FLOAT(PTIMES,KIDX)
 !#########################################################################
   !
   REAL,DIMENSION(:), INTENT(IN)    :: PTIMES
@@ -562,7 +562,7 @@ SUBROUTINE FIND_NEXT_AVAIL_SLOT_INT(KSTEPS,KIDX)
   INTEGER,              INTENT(INOUT) :: KIDX
   !
   !Find next (starting from KIDX) non 'allocated' element
-  DO WHILE ( KSTEPS(IDX) >= 0 )
+  DO WHILE ( KSTEPS(KIDX) >= 0 )
     KIDX = KIDX + 1
     IF (KIDX > NFILE_NUM_MAX) CALL PRINT_MSG(NVERB_FATAL,'IO','FIND_NEXT_AVAIL_SLOT_INT','NFILE_NUM_MAX too small')
   END DO
