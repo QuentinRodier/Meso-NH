@@ -9,7 +9,7 @@ set -o pipefail #abort if left command on a pipe fails
 # TARGZDIR: directory where tar.gz files are searched for
 # MNHPACK: directory where tests are build
 
-availTests="001_2Drelief, 002_3Drelief, 003_KW78, 004_Reunion, 005_ARM, 007_16janvier, 009_ICARTT, 011_KW78CHEM, 012_dust, 014_LIMA, 2DRelief, 3DRelief, ARMCU_1D_CONDSAMP, BLOWSNOW_c1b1D, BOMEX, COLD_BUBBLE, DOUBLE_GRIDNESTING, EOLIENNE_FAST, FIRE_1D/KHKO, FIRE_1D/KHKO_MALA, FIRE_1D/LIMA_MALA, FOG_1D/ICE3, FOG_1D/LIMA, HYDRO, IHOP_1D, LIMA_2D, Reunion, STATIONS_PROF_BALLON_AIRCR_4doms "
+availTests="001_2Drelief, 002_3Drelief, 003_KW78, 004_Reunion, 005_ARM, 007_16janvier, 009_ICARTT, 011_KW78CHEM, 012_dust, 014_LIMA, 2Drelief, 3Drelief, ARMCU_1D_CONDSAMP, BLOWSNOW_c1b1D, BOMEX, COLD_BUBBLE, DOUBLE_GRIDNESTING, EOLIENNE_FAST, FIRE_1D/KHKO, FIRE_1D/KHKO_MALA, FIRE_1D/LIMA_MALA, FIRE_1D/LIMA_ECRAD, FOG_1D/ICE3, FOG_1D/LIMA, HYDRO, IHOP_1D, LIMA_2D, Reunion, STATIONS_PROF_BALLON_AIRCR_4doms "
 defaultTest="007_16janvier"
 separator='_' #- be carrefull, gmkpack (at least on belenos) has multiple allergies (':', '.', '@')
               #- seprator must be in sync with prep_code.sh separator
