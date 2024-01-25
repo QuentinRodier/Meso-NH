@@ -78,7 +78,6 @@ TYPE TOUTBAK
   INTEGER           :: NID = -1     !Backup number
   INTEGER           :: NSTEP        !Timestep number
   REAL              :: XTIME        !Time from start of the segment (in seconds and rounded to a timestep)
-  INTEGER           :: NOUTDAD = -1 !Index of the corresponding dad file (file with same time)
   TYPE(TFILEDATA), POINTER :: TFILE => NULL() !Corresponding file
   TYPE(TFILE_ELT), DIMENSION(:) ,ALLOCATABLE :: TFILE_IOZ !Corresponding Z-split files
   INTEGER,DIMENSION(:), POINTER :: NFIELDLIST => NULL() !List of the fields to read or write
