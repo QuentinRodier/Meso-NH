@@ -192,15 +192,13 @@ SELECT CASE(TPFILE%CTYPE)
                                    hdirname = tpfile%cdirname,                                                           &
                                    klfinprar = tpfile%nlfinprar, klfitype = tpfile%nlfitype, klfiverb = tpfile%nlfiverb, &
                                    hformat = tpfile%cformat,                                                             &
-                                   osplit_ioz=.false. )
+                                   tpmainfile = tpfile, osplit_ioz=.false. )
           ELSE
             call IO_File_add2list( tzfile_split, trim(tpfile%cname)//trim(yfile), tpfile%ctype, tpfile%cmode,            &
                                    klfinprar = tpfile%nlfinprar, klfitype = tpfile%nlfitype, klfiverb = tpfile%nlfiverb, &
                                    hformat = tpfile%cformat,                                                             &
-                                   osplit_ioz=.false. )
+                                   tpmainfile = tpfile, osplit_ioz=.false. )
            END IF
-
-          TZFILE_SPLIT%TMAINFILE => TPFILE
         END IF
 
         TPFILE%TFILES_IOZ(IFILE)%TFILE => TZFILE_SPLIT

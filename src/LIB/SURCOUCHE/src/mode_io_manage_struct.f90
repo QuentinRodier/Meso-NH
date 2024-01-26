@@ -839,11 +839,12 @@ SUBROUTINE POPULATE_STRUCT(TPFILE_FIRST,TPFILE_LAST,KSTEPS,HFILETYPE,TPBAKOUTN,K
 END SUBROUTINE POPULATE_STRUCT
 !
 END SUBROUTINE IO_Bakout_struct_prepare
-!
-SUBROUTINE IO_File_add2list(TPFILE,HNAME,HTYPE,HMODE,                 &
-                            HFORM,HACCESS,HFORMAT,HDIRNAME,           &
-                            KLFINPRAR,KLFITYPE,KLFIVERB,KRECL,KMODEL, &
-                            TPDADFILE,TPDATAFILE,OOLD,OSPLIT_IOZ)
+
+
+SUBROUTINE IO_File_add2list( TPFILE, HNAME, HTYPE, HMODE,                        &
+                             HFORM, HACCESS, HFORMAT, HDIRNAME,                  &
+                             KLFINPRAR, KLFITYPE, KLFIVERB, KRECL, KMODEL,       &
+                             TPDADFILE, TPDATAFILE, TPMAINFILE, OOLD, OSPLIT_IOZ )
 !
 USE MODD_BAKOUT,         ONLY: LOUT_COMPRESS,LOUT_REDUCE_FLOAT_PRECISION,NOUT_COMPRESS_LEVEL
 USE MODD_CONF,           ONLY: CPROGRAM
@@ -866,6 +867,7 @@ INTEGER,                OPTIONAL,INTENT(IN)    :: KRECL     !Record length
 INTEGER,                OPTIONAL,INTENT(IN)    :: KMODEL    !Model number
 TYPE(TFILEDATA),POINTER,OPTIONAL,INTENT(IN)    :: TPDADFILE !Corresponding dad file
 TYPE(TFILEDATA),POINTER,OPTIONAL,INTENT(IN)    :: TPDATAFILE!Corresponding data file (used only for DES files)
+TYPE(TFILEDATA),POINTER,OPTIONAL,INTENT(IN)    :: TPMAINFILE!Corresponding main file (for subfiles)
 LOGICAL,                OPTIONAL,INTENT(IN)    :: OOLD      !FALSE if new file (should not be found)
                                                             !TRUE if the file could already be in the list
                                                             !     (add it only if not yet present)
@@ -972,6 +974,9 @@ END IF
 IF (PRESENT(TPDATAFILE) .AND. TRIM(HTYPE)/='DES') &
     CALL PRINT_MSG(NVERB_WARNING,'IO','IO_File_add2list','optional argument TPDATAFILE is not used by '//TRIM(HTYPE)//' files')
 !
+IF ( PRESENT( TPMAINFILE) .AND. TRIM(HTYPE) /= 'MNHBACKUP' .AND. TRIM(HTYPE) /= 'MNHOUTPUT' ) &
+    CALL PRINT_MSG(NVERB_WARNING,'IO','IO_File_add2list','optional argument TMAINFILE is not used by '//TRIM(HTYPE)//' files')
+!
 IF (.NOT.ASSOCIATED(TFILE_LAST)) THEN
   ALLOCATE(TFILE_LAST)
   TFILE_FIRST => TFILE_LAST
@@ -1020,6 +1025,14 @@ if ( gsplit_ioz ) then
 else
   tpfile%nsubfiles_ioz = 0
 end if
+
+IF ( PRESENT(TPMAINFILE) ) THEN
+  IF ( .NOT. ASSOCIATED( TPMAINFILE ) ) &
+    CALL PRINT_MSG( NVERB_ERROR, 'IO', 'IO_File_add2list', 'TPMAINFILE is not associated for file ' // TRIM(HNAME) )
+  TPFILE%TMAINFILE => TPMAINFILE
+ELSE
+  TPFILE%TMAINFILE => NULL()
+END IF
 
 SELECT CASE(TPFILE%CTYPE)
   !Chemistry input files
