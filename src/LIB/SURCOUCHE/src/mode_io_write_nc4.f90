@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2024 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -2471,6 +2471,8 @@ END SUBROUTINE IO_History_append_nc4
 
 
 subroutine IO_Select_split_file( tpfile, tpfield, tpfileout, tpfieldout, kvertlevel, kzfile )
+use modd_field,          only: NMNHDIM_LEVEL, NMNHDIM_LEVEL_W, NMNHDIM_UNKNOWN
+
 type(tfiledata),  target,         intent(in)  :: tpfile
 class(tfieldmetadata), target,    intent(in)  :: tpfield
 class(tfieldmetadata), pointer,   intent(out) :: tpfieldout
@@ -2479,6 +2481,7 @@ integer,                optional, intent(in)  :: kvertlevel ! Number of the vert
 integer,                optional, intent(in)  :: kzfile     ! Number of the Z-level split file
 
 character(len=4) :: ysuffix
+integer          :: jdim
 
 if ( Present( kvertlevel ) ) then
   if ( kvertlevel > 9999 ) call Print_msg( NVERB_FATAL, 'IO', 'IO_Select_split_file','too many vertical levels' )
@@ -2493,6 +2496,16 @@ if ( Present( kvertlevel ) ) then
   if ( Len_trim( tpfieldout%cstdname  ) > 0 )  tpfieldout%cstdname  = Trim( tpfieldout%cstdname  ) // '_at_level_' // ysuffix
   if ( Len_trim( tpfieldout%clongname ) > 0 )  tpfieldout%clongname = Trim( tpfieldout%clongname ) // ' at level ' // ysuffix
   tpfieldout%ndims = 2
+
+  !Remove the vertical dimension
+  do jdim = 1, size(tpfieldout%ndimlist)
+    if ( tpfieldout%ndimlist(jdim) == NMNHDIM_LEVEL .or. tpfieldout%ndimlist(jdim) == NMNHDIM_LEVEL_W ) then
+      if ( jdim < size(tpfieldout%ndimlist) ) &
+        tpfieldout%ndimlist(jdim:size(tpfieldout%ndimlist)-1) = tpfieldout%ndimlist(jdim+1:)
+      tpfieldout%ndimlist(size(tpfieldout%ndimlist)) = NMNHDIM_UNKNOWN
+      exit !max 1 vertical dimension
+    end if
+  end do
 else
   tpfileout  => tpfile
   tpfieldout => tpfield
