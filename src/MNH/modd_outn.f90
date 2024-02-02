@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2024 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -31,30 +31,46 @@
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    20/10/94                      
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 02/02/2024: restructure backups/outputs lists
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
 !             ------------
 !
 !
-USE MODD_PARAMETERS, ONLY: JPMODELMAX
+USE MODD_PARAMETERS, ONLY: JPMODELMAX, NNEGUNDEF
 USE MODD_IO,         ONLY: TOUTBAK
+
 IMPLICIT NONE
 
+SAVE
+
 TYPE OUT_t
-!
-  INTEGER             :: NBAK_NUMB=0, NOUT_NUMB=0 ! Number of outputs and backups performed by model n
-  TYPE(TOUTBAK),DIMENSION(:),POINTER :: TBACKUPN=>NULL(),TOUTPUTN=>NULL()
-! Lists of the outputs and backups
-!
-!
+  INTEGER                            :: NBAK_NUMB = 0 ! Number of backups performed by model n
+  INTEGER                            :: NOUT_NUMB = 0 ! Number of outputs performed by model n
+  INTEGER                            :: NBAK_PREV_STEP = 1 ! Timestep number of the previous backup
+  INTEGER                            :: NBAK_STEPFREQ      = NNEGUNDEF ! Time steps between 2 backups
+  INTEGER                            :: NOUT_STEPFREQ      = NNEGUNDEF ! Time steps between 2 outputs
+  INTEGER                            :: NBAK_STEPFREQFIRST = NNEGUNDEF ! First backup (if regular)
+  INTEGER                            :: NOUT_STEPFREQFIRST = NNEGUNDEF ! First output (if regular)
+  INTEGER, DIMENSION(:), ALLOCATABLE :: NBAK_STEPLIST                  ! List of time steps to do backups (except regular series)
+  INTEGER, DIMENSION(:), ALLOCATABLE :: NOUT_STEPLIST                  ! List of time steps to do outputs (except regular series)
+  INTEGER, DIMENSION(:), ALLOCATABLE :: NOUT_FIELDLIST                 ! List of fields to write in outputs
 END TYPE OUT_t
 
-TYPE(OUT_t), DIMENSION(JPMODELMAX), TARGET, SAVE :: OUT_MODEL
+TYPE(OUT_t), DIMENSION(JPMODELMAX), TARGET :: OUT_MODEL
 
-INTEGER, POINTER :: NBAK_NUMB=>NULL(), NOUT_NUMB=>NULL()
-TYPE(TOUTBAK),DIMENSION(:),POINTER :: TBACKUPN=>NULL(), TOUTPUTN=>NULL()
+INTEGER,               POINTER :: NBAK_NUMB          => NULL()
+INTEGER,               POINTER :: NOUT_NUMB          => NULL()
+INTEGER,               POINTER :: NBAK_PREV_STEP     => NULL()
+INTEGER,               POINTER :: NBAK_STEPFREQ      => NULL()
+INTEGER,               POINTER :: NOUT_STEPFREQ      => NULL()
+INTEGER,               POINTER :: NBAK_STEPFREQFIRST => NULL()
+INTEGER,               POINTER :: NOUT_STEPFREQFIRST => NULL()
+INTEGER, DIMENSION(:), POINTER :: NBAK_STEPLIST      => NULL()
+INTEGER, DIMENSION(:), POINTER :: NOUT_STEPLIST      => NULL()
+INTEGER, DIMENSION(:), POINTER :: NOUT_FIELDLIST     => NULL()
 
 CONTAINS
 
@@ -62,10 +78,16 @@ SUBROUTINE OUT_GOTO_MODEL(KFROM, KTO)
 INTEGER, INTENT(IN) :: KFROM, KTO
 !
 ! Current model is set to model KTO
-NBAK_NUMB=>OUT_MODEL(KTO)%NBAK_NUMB
-NOUT_NUMB=>OUT_MODEL(KTO)%NOUT_NUMB
-TBACKUPN=>OUT_MODEL(KTO)%TBACKUPN
-TOUTPUTN=>OUT_MODEL(KTO)%TOUTPUTN
+NBAK_NUMB          => OUT_MODEL(KTO)%NBAK_NUMB
+NOUT_NUMB          => OUT_MODEL(KTO)%NOUT_NUMB
+NBAK_PREV_STEP     => OUT_MODEL(KTO)%NBAK_PREV_STEP
+NBAK_STEPFREQ      => OUT_MODEL(KTO)%NBAK_STEPFREQ
+NOUT_STEPFREQ      => OUT_MODEL(KTO)%NOUT_STEPFREQ
+NBAK_STEPFREQFIRST => OUT_MODEL(KTO)%NBAK_STEPFREQFIRST
+NOUT_STEPFREQFIRST => OUT_MODEL(KTO)%NOUT_STEPFREQFIRST
+NBAK_STEPLIST      => OUT_MODEL(KTO)%NBAK_STEPLIST
+NOUT_STEPLIST      => OUT_MODEL(KTO)%NOUT_STEPLIST
+NOUT_FIELDLIST     => OUT_MODEL(KTO)%NOUT_FIELDLIST
 
 END SUBROUTINE OUT_GOTO_MODEL
 

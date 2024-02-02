@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1996-2023 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1996-2024 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -75,11 +75,11 @@ INTEGER, ALLOCATABLE, DIMENSION(:,:)  ::   NBAK_STEP, NOUT_STEP
 ! step where the i-th fields output on FM-files is realized by model "m"
 INTEGER, DIMENSION(JPMODELMAX) :: NBAK_STEP_FREQ = NNEGUNDEF, NOUT_STEP_FREQ = NNEGUNDEF
 ! Number of timesteps between 2 backups/outputs for each model
-INTEGER, DIMENSION(JPMODELMAX) :: NBAK_STEP_FREQ_FIRST = 1, NOUT_STEP_FREQ_FIRST = 1
+INTEGER, DIMENSION(JPMODELMAX) :: NBAK_STEP_FREQ_FIRST = NNEGUNDEF, NOUT_STEP_FREQ_FIRST = NNEGUNDEF
 ! First timestep numbers between 2 backups/outputs for each model (if NBAK/OUT_STEP_FREQ is set)
 REAL, DIMENSION(JPMODELMAX) :: XBAK_TIME_FREQ = XNEGUNDEF, XOUT_TIME_FREQ = XNEGUNDEF
 ! Time between 2 backups/outputs for each model
-REAL, DIMENSION(JPMODELMAX) :: XBAK_TIME_FREQ_FIRST = 0., XOUT_TIME_FREQ_FIRST = 0.
+REAL, DIMENSION(JPMODELMAX) :: XBAK_TIME_FREQ_FIRST = XNEGUNDEF, XOUT_TIME_FREQ_FIRST = XNEGUNDEF
 ! Time for first backup/output for each model (if XBAK/OUT_TIME_FREQ is set)
 CHARACTER(LEN=NMNHNAMELGTMAX), ALLOCATABLE, DIMENSION(:,:) :: COUT_VAR ! Name of the fields to output
 !

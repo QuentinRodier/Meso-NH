@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2015-2023 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2015-2024 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -79,7 +79,7 @@ USE MODD_MEAN_FIELD_n
 USE MODD_METRICS_n
 USE MODD_NESTING,       only: NDAD, NDT_2_WAY, NDXRATIO_ALL, NDYRATIO_ALL
 USE MODD_NSV
-USE MODD_OUT_n
+USE MODD_OUT_n,         ONLY: NBAK_NUMB, NOUT_NUMB
 USE MODD_PARAMETERS
 USE MODD_PARAM_KAFR_n
 USE MODD_PARAM_MFSHALL_n
@@ -685,15 +685,15 @@ CALL INI_BIKHARDT_n (NDXRATIO_ALL(KMI),NDYRATIO_ALL(KMI),KMI)
 !*       6.    INITIALIZE GRIDS AND METRIC COEFFICIENTS
 !              ----------------------------------------
 !
-CALL SET_GRID( KMI, TPINIFILE, IKU, NIMAX_ll, NJMAX_ll,                        &
-               XTSTEP, XSEGLEN,                                                &
-               XLONORI, XLATORI, XLON, XLAT,                                   &
-               XXHAT, XYHAT, XDXHAT, XDYHAT, XXHATM, XYHATM,                   &
-               XXHAT_ll, XYHAT_ll, XXHATM_ll, XYHATM_ll,                       &
-               XHAT_BOUND, XHATM_BOUND,                                        &
-               XMAP, XZS, XZZ, XZHAT, XZHATM, XZTOP, LSLEVE,                   &
-               XLEN1, XLEN2, XZSMT, ZJ,                                        &
-               TDTMOD, TDTCUR, NSTOP, NBAK_NUMB, NOUT_NUMB, TBACKUPN, TOUTPUTN )
+CALL SET_GRID( KMI, TPINIFILE, IKU, NIMAX_ll, NJMAX_ll,      &
+               XTSTEP, XSEGLEN,                              &
+               XLONORI, XLATORI, XLON, XLAT,                 &
+               XXHAT, XYHAT, XDXHAT, XDYHAT, XXHATM, XYHATM, &
+               XXHAT_ll, XYHAT_ll, XXHATM_ll, XYHATM_ll,     &
+               XHAT_BOUND, XHATM_BOUND,                      &
+               XMAP, XZS, XZZ, XZHAT, XZHATM, XZTOP, LSLEVE, &
+               XLEN1, XLEN2, XZSMT, ZJ,                      &
+               TDTMOD, TDTCUR, NSTOP, NBAK_NUMB, NOUT_NUMB   )
 !
 CALL METRICS(XMAP,XDXHAT,XDYHAT,XZZ,XDXX,XDYY,XDZX,XDZY,XDZZ)
 !

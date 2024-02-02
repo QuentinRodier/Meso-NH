@@ -111,6 +111,7 @@ TYPE TFILEDATA
   TYPE(TFILE_ELT),DIMENSION(:),ALLOCATABLE :: TFILES_IOZ !Corresponding Z-split files
   !
   INTEGER               :: NMODEL = 0              !Model number corresponding to the file (field not always set)
+  INTEGER               :: NSTEP = 0               !Timestep number (field not always set)
   INTEGER, DIMENSION(3) :: NMNHVERSION = (/0,0,0/) !MesoNH version used to create the file
   !
 #ifdef MNH_IOLFI

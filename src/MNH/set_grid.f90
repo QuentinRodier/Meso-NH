@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2024 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -35,7 +35,7 @@ CONTAINS
                            PMAP, PZS, PZZ, PZHAT, PZHATM, PZTOP, OSLEVE,  &
                            PLEN1, PLEN2, PZSMT, PJ,                       &
                            TPDTMOD, TPDTCUR, KSTOP,                       &
-                           KBAK_NUMB, KOUT_NUMB, TPBACKUPN, TPOUTPUTN     )
+                           KBAK_NUMB, KOUT_NUMB                           )
 !     #####################################################################
 !
 !!****  *SET_GRID* - routine to set grid variables
@@ -163,7 +163,7 @@ USE MODD_CONF_n
 USE MODD_DYN
 use modd_field,            only: tfieldmetadata, tfieldlist
 USE MODD_GRID
-USE MODD_IO,      ONLY: TFILEDATA,TOUTBAK
+USE MODD_IO,      ONLY: TFILEDATA
 USE MODD_LUNIT_n, ONLY: TLUOUT
 USE MODD_OUT_n,   ONLY: OUT_MODEL
 USE MODD_PARAMETERS
@@ -234,8 +234,6 @@ INTEGER,                INTENT(OUT) :: KSTOP     ! number of time steps for
                                                  ! current segment
 INTEGER,POINTER,        INTENT(OUT) :: KBAK_NUMB ! number of backups
 INTEGER,POINTER,        INTENT(OUT) :: KOUT_NUMB ! number of outputs
-TYPE(TOUTBAK),DIMENSION(:),POINTER,INTENT(OUT) :: TPBACKUPN ! List of backups
-TYPE(TOUTBAK),DIMENSION(:),POINTER,INTENT(OUT) :: TPOUTPUTN ! List of outputs
 !
 REAL, DIMENSION(:,:,:), INTENT(OUT) :: PJ        ! Jacobian
 !
@@ -384,12 +382,10 @@ KSTOP = NINT(PSEGLEN/PTSTEP)
 !*       2.3    Temporal grid - outputs managment
 !
 ! The output/backups times have been read only by model 1
-IF (CPROGRAM == 'MESONH' .AND. KMI == 1) CALL IO_Bakout_struct_prepare(ISUP,PTSTEP,PSEGLEN)
+IF ( CPROGRAM == 'MESONH' .AND. KMI == 1 ) CALL IO_Bakout_struct_prepare( ISUP, PSEGLEN )
 !
 KBAK_NUMB => OUT_MODEL(KMI)%NBAK_NUMB
 KOUT_NUMB => OUT_MODEL(KMI)%NOUT_NUMB
-TPBACKUPN => OUT_MODEL(KMI)%TBACKUPN
-TPOUTPUTN => OUT_MODEL(KMI)%TOUTPUTN
 !
 !-------------------------------------------------------------------------------
 !

@@ -24,6 +24,7 @@
 !  P. Wautelet 13/01/2023: set NMODEL field for backup and output files
 !  P. Wautelet 14/12/2023: add lossy compression for output files
 !  P. Wautelet 17/01/2024: add IO_File_remove_from_list subroutine
+!  P. Wautelet 02/02/2024: restructure backups/outputs lists
 !-----------------------------------------------------------------
 MODULE MODE_IO_MANAGE_STRUCT
 !
@@ -38,6 +39,7 @@ private
 !
 public :: IO_Bakout_struct_prepare, IO_File_find_byname, IO_Filelist_print
 public :: IO_File_add2list, IO_File_remove_from_list
+public :: IO_Is_backup_time, IO_Is_output_time, IO_BakOut_file_create
 !
 ! Integers for file stats
 INTEGER, SAVE :: NFILE_STAT_NADD    = 0 ! Number of files added to file list
@@ -47,39 +49,39 @@ INTEGER, SAVE :: NFILE_STAT_MAXSIZE = 0 ! Maximum number of files in file list
 !
 CONTAINS
 !
-!#########################################################################
-SUBROUTINE IO_Bakout_struct_prepare(KSUP,PTSTEP,PSEGLEN)
-!#########################################################################
+!###################################################
+SUBROUTINE IO_Bakout_struct_prepare( KSUP, PSEGLEN )
+!###################################################
 !
 USE MODD_BAKOUT
-USE MODD_CONF
-USE MODD_CONF_n
-USE MODD_DYN,        ONLY : XSEGLEN
-USE MODD_DYN_n,      ONLY : DYN_MODEL
-use modd_field,      only: tfieldlist
-USE MODD_IO_SURF_MNH,ONLY : IO_SURF_MNH_MODEL
-USE MODD_NESTING,    ONLY : NDAD
-USE MODD_NSV,        ONLY: NSV
-USE MODD_OUT_n,      ONLY : OUT_MODEL
-USE MODD_VAR_ll,     ONLY : IP
+USE MODD_CONF,       ONLY: NMODEL
+USE MODD_DYN,        ONLY: XSEGLEN
+USE MODD_DYN_n,      ONLY: DYN_MODEL
+USE MODD_FIELD,      ONLY: TFIELDLIST
+USE MODD_NESTING,    ONLY: NDAD
+USE MODD_OUT_n,      ONLY: OUT_MODEL
+USE MODD_VAR_ll,     ONLY: IP
 
 use mode_field, only: Find_field_id_from_mnhname
 
 IMPLICIT NONE
 !
 INTEGER, INTENT(IN) :: KSUP    ! supp. time steps
-REAL,    INTENT(IN) :: PTSTEP  ! time step of model KMI
 REAL,    INTENT(IN) :: PSEGLEN ! segment duration (in seconds)
 !
+INTEGER           :: IBAK_NUM
+INTEGER           :: IOUT_NUM
 INTEGER           :: IMI              ! Model number for loop
-INTEGER           :: IBAK_NUMB, IOUT_NUMB ! Number of backups/outputs
 INTEGER           :: IERR_LVL         ! Level of error message
 INTEGER           :: IVAR             ! Number of variables
+INTEGER           :: ISTEP
 INTEGER           :: ISTEP_MAX        ! Number of timesteps
 INTEGER           :: IPOS,IFIELD      ! Indices
 INTEGER           :: JOUT,IDX         ! Loop indices
 INTEGER           :: IRESP
-INTEGER, DIMENSION(:), ALLOCATABLE :: IBAK_STEP, IOUT_STEP
+INTEGER           :: ISTEPDADFIRST
+INTEGER, DIMENSION(:,:), ALLOCATABLE :: IBAK_STEPLIST
+INTEGER, DIMENSION(:,:), ALLOCATABLE :: IOUT_STEPLIST
 ! Arrays to store list of backup/output steps (intermediate array)
 REAL              :: ZTSTEP_RND
 !
@@ -88,62 +90,35 @@ CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Bakout_struct_prepare','called')
 !
 ! Special case if writes are forced to NO
 IF (LIO_NO_WRITE) THEN
+
   DO IMI = 1, NMODEL
     OUT_MODEL(IMI)%NBAK_NUMB = 0
     OUT_MODEL(IMI)%NOUT_NUMB = 0
   END DO
   RETURN
 END IF
-!
-DO IMI = 1, NMODEL
-  IBAK_NUMB = 0
-  IOUT_NUMB = 0
-  !Reduce XSEGLEN by time added to XSEGLEN for 1st domain (see set_grid subroutine)
-  ISTEP_MAX = NINT( ( XSEGLEN - KSUP * DYN_MODEL(1)%XTSTEP ) / DYN_MODEL(IMI)%XTSTEP ) + 1
 
-  ! Check that provided times are multiples of model timestep and not after end of segment
-  DO JOUT = 1, NFILE_NUM_MAX
-    IF ( XBAK_TIME(IMI,JOUT) >= 0.) THEN
-      ZTSTEP_RND = NINT( XBAK_TIME(IMI,JOUT) / PTSTEP ) * PTSTEP
-      IF ( ABS( ZTSTEP_RND - XBAK_TIME(IMI,JOUT) ) > 1.E-6 ) THEN
-        CALL PRINT_MSG( NVERB_ERROR, 'IO', 'IO_Bakout_struct_prepare', 'XBAK_TIME is not a multiple of the model timestep' )
-        XBAK_TIME(IMI,JOUT) = ZTSTEP_RND
-      END IF
-      IF ( XBAK_TIME(IMI,JOUT) > XSEGLEN + 1.E-6 ) THEN
-        CALL PRINT_MSG( NVERB_WARNING, 'IO', 'IO_Bakout_struct_prepare', &
-                        'XBAK_TIME after end of simulation time segment => ignored' )
-        XBAK_TIME(IMI,JOUT) = XNEGUNDEF
-      END IF
-    END IF
-    IF ( XOUT_TIME(IMI,JOUT) >= 0.) THEN
-      ZTSTEP_RND = NINT( XOUT_TIME(IMI,JOUT) / PTSTEP ) * PTSTEP
-      IF ( ABS( ZTSTEP_RND - XOUT_TIME(IMI,JOUT) ) > 1.E-6 ) THEN
-        CALL PRINT_MSG( NVERB_ERROR, 'IO', 'IO_Bakout_struct_prepare', 'XOUT_TIME is not a multiple of the model timestep' )
-        XOUT_TIME(IMI,JOUT) = ZTSTEP_RND
-      END IF
-      IF ( XOUT_TIME(IMI,JOUT) > XSEGLEN + 1.E-6 ) THEN
-        CALL PRINT_MSG( NVERB_WARNING, 'IO', 'IO_Bakout_struct_prepare', &
-                        'XOUT_TIME after end of simulation time segment => ignored' )
-        XOUT_TIME(IMI,JOUT) = XNEGUNDEF
-      END IF
-    END IF
-  END DO
-  !
-  !* Insert regular backups/outputs into XBAK_TIME/XOUT_TIME arrays
-  !
+! Copy NBAK_STEP into IBAK_STEPLIST. All backup steps will be stored in it (except regular series)
+ALLOCATE( IBAK_STEPLIST, SOURCE=NBAK_STEP )
+ALLOCATE( IOUT_STEPLIST, SOURCE=NOUT_STEP )
+
+! Treat regular series for all models before next loop on models
+! This is necessary to have a first version of them before synchronizing them to the nested submodels
+DO IMI = 1, NMODEL
+  ! Backup regular series is provided with intervals in seconds
   IF ( XBAK_TIME_FREQ(IMI) > 0. ) THEN
     IF ( NBAK_STEP_FREQ(IMI) > 0 )                                   &
       CALL PRINT_MSG( NVERB_ERROR, 'IO', 'IO_Bakout_struct_prepare', &
                       'XBAK_TIME_FREQ and NBAK_STEP_FREQ can not be provided simultaneously' )
 
     ! Check that frequency is at least equals to the model time step
-    IF ( XBAK_TIME_FREQ(IMI) < PTSTEP - 1.E-6 ) THEN
+    IF ( XBAK_TIME_FREQ(IMI) < DYN_MODEL(IMI)%XTSTEP - 1.E-6 ) THEN
       CALL PRINT_MSG( NVERB_ERROR, 'IO', 'IO_Bakout_struct_prepare', 'XBAK_TIME_FREQ smaller than model timestep' )
-      XBAK_TIME_FREQ(IMI) = PTSTEP
+      XBAK_TIME_FREQ(IMI) = DYN_MODEL(IMI)%XTSTEP
     END IF
 
     ! Check that the frequency is a multiple of the model time step
-    ZTSTEP_RND = NINT( XBAK_TIME_FREQ(IMI) / PTSTEP ) * PTSTEP
+    ZTSTEP_RND = NINT( XBAK_TIME_FREQ(IMI) / DYN_MODEL(IMI)%XTSTEP ) * DYN_MODEL(IMI)%XTSTEP
     IF ( ABS( ZTSTEP_RND - XBAK_TIME_FREQ(IMI) ) > 1.E-6 ) THEN
       CALL PRINT_MSG( NVERB_ERROR, 'IO', 'IO_Bakout_struct_prepare', 'XBAK_TIME_FREQ is not a multiple of the model timestep' )
       XBAK_TIME_FREQ(IMI) = ZTSTEP_RND
@@ -151,7 +126,7 @@ DO IMI = 1, NMODEL
 
     IF ( XBAK_TIME_FREQ_FIRST(IMI) > 0. ) THEN
       ! Check that the first write time of the series is a multiple of the model time step
-      ZTSTEP_RND = NINT( XBAK_TIME_FREQ_FIRST(IMI) / PTSTEP ) * PTSTEP
+      ZTSTEP_RND = NINT( XBAK_TIME_FREQ_FIRST(IMI) / DYN_MODEL(IMI)%XTSTEP ) * DYN_MODEL(IMI)%XTSTEP
       IF ( ABS( ZTSTEP_RND - XBAK_TIME_FREQ_FIRST(IMI) ) > 1.E-6 ) THEN
         CALL PRINT_MSG( NVERB_ERROR, 'IO', 'IO_Bakout_struct_prepare', &
                         'XBAK_TIME_FREQ_FIRST is not a multiple of the model timestep' )
@@ -165,22 +140,57 @@ DO IMI = 1, NMODEL
                       'XBAK_TIME_FREQ_FIRST is after the end of the simulation segment' )
     END IF
 
-    CALL IO_INSERT_REGULAR_FLOAT(XBAK_TIME_FREQ_FIRST(IMI),XBAK_TIME_FREQ(IMI),XBAK_TIME(IMI,:))
+    ! Do not mix NBAK_STEP_FREQ_FIRST with XBAK_TIME_FREQ
+    IF ( NBAK_STEP_FREQ_FIRST(IMI) > 0 ) THEN
+      CMNHMSG(1) = 'NBAK_STEP_FREQ_FIRST is not allowed with XBAK_TIME_FREQ'
+      CMNHMSG(2) = 'use XBAK_TIME_FREQ_FIRST instead'
+      CALL PRINT_MSG( NVERB_ERROR, 'IO', 'IO_Bakout_struct_prepare' )
+    END IF
+
+    ! Set the backup frequency in timesteps
+    OUT_MODEL(IMI)%NBAK_STEPFREQ         = NINT( XBAK_TIME_FREQ(IMI)       / DYN_MODEL(IMI)%XTSTEP )
+
+    IF ( XBAK_TIME_FREQ_FIRST(IMI) > 0. ) THEN
+      OUT_MODEL(IMI)%NBAK_STEPFREQFIRST = NINT( XBAK_TIME_FREQ_FIRST(IMI) / DYN_MODEL(IMI)%XTSTEP ) + 1
+    ELSE
+      ! Set first backup to frequency
+      OUT_MODEL(IMI)%NBAK_STEPFREQFIRST = OUT_MODEL(IMI)%NBAK_STEPFREQ + 1
+    END IF
   END IF
 
+  ! Backup regular series is provided with intervals in timesteps
+  IF ( NBAK_STEP_FREQ(IMI) > 0 ) THEN
+    OUT_MODEL(IMI)%NBAK_STEPFREQ = NBAK_STEP_FREQ(IMI)
+
+    ! Do not mix XBAK_TIME_FREQ_FIRST with NBAK_STEP_FREQ
+    IF ( XBAK_TIME_FREQ_FIRST(IMI) > 0 ) THEN
+      CMNHMSG(1) = 'XBAK_TIME_FREQ_FIRST is not allowed with NBAK_STEP_FREQ'
+      CMNHMSG(2) = 'use NBAK_STEP_FREQ_FIRST instead'
+      CALL PRINT_MSG( NVERB_ERROR, 'IO', 'IO_Bakout_struct_prepare' )
+    END IF
+
+    IF ( NBAK_STEP_FREQ_FIRST(IMI) > 0 ) THEN
+      OUT_MODEL(IMI)%NBAK_STEPFREQFIRST = NBAK_STEP_FREQ_FIRST(IMI)
+    ELSE
+      ! Set first backup to frequency
+      OUT_MODEL(IMI)%NBAK_STEPFREQFIRST = OUT_MODEL(IMI)%NBAK_STEPFREQ + 1
+    END IF
+  END IF
+
+  ! Output regular series is provided with intervals in seconds
   IF ( XOUT_TIME_FREQ(IMI) > 0. ) THEN
     IF ( NOUT_STEP_FREQ(IMI) > 0 )                                   &
       CALL PRINT_MSG( NVERB_ERROR, 'IO', 'IO_Bakout_struct_prepare', &
                       'XOUT_TIME_FREQ and NOUT_STEP_FREQ can not be provided simultaneously' )
 
     ! Check that frequency is at least equals to the model time step
-    IF ( XOUT_TIME_FREQ(IMI) < PTSTEP - 1.E-6 ) THEN
+    IF ( XOUT_TIME_FREQ(IMI) < DYN_MODEL(IMI)%XTSTEP - 1.E-6 ) THEN
       CALL PRINT_MSG( NVERB_ERROR, 'IO', 'IO_Bakout_struct_prepare', 'XOUT_TIME_FREQ smaller than model timestep' )
-      XOUT_TIME_FREQ(IMI) = PTSTEP
+      XOUT_TIME_FREQ(IMI) = DYN_MODEL(IMI)%XTSTEP
     END IF
 
     ! Check that the frequency is a multiple of the model time step
-    ZTSTEP_RND = NINT( XOUT_TIME_FREQ(IMI) / PTSTEP ) * PTSTEP
+    ZTSTEP_RND = NINT( XOUT_TIME_FREQ(IMI) / DYN_MODEL(IMI)%XTSTEP ) * DYN_MODEL(IMI)%XTSTEP
     IF ( ABS( ZTSTEP_RND - XOUT_TIME_FREQ(IMI) ) > 1.E-6 ) THEN
       CALL PRINT_MSG( NVERB_ERROR, 'IO', 'IO_Bakout_struct_prepare', 'XOUT_TIME_FREQ is not a multiple of the model timestep' )
       XOUT_TIME_FREQ(IMI) = ZTSTEP_RND
@@ -188,7 +198,7 @@ DO IMI = 1, NMODEL
 
     IF ( XOUT_TIME_FREQ_FIRST(IMI) > 0. ) THEN
       ! Check that the first write time of the series is a multiple of the model time step
-      ZTSTEP_RND = NINT( XOUT_TIME_FREQ_FIRST(IMI) / PTSTEP ) * PTSTEP
+      ZTSTEP_RND = NINT( XOUT_TIME_FREQ_FIRST(IMI) / DYN_MODEL(IMI)%XTSTEP ) * DYN_MODEL(IMI)%XTSTEP
       IF ( ABS( ZTSTEP_RND - XOUT_TIME_FREQ_FIRST(IMI) ) > 1.E-6 ) THEN
         CALL PRINT_MSG( NVERB_ERROR, 'IO', 'IO_Bakout_struct_prepare', &
                         'XOUT_TIME_FREQ_FIRST is not a multiple of the model timestep' )
@@ -202,244 +212,372 @@ DO IMI = 1, NMODEL
                       'XOUT_TIME_FREQ_FIRST is after the end of the simulation segment' )
     END IF
 
-    CALL IO_INSERT_REGULAR_FLOAT(XOUT_TIME_FREQ_FIRST(IMI),XOUT_TIME_FREQ(IMI),XOUT_TIME(IMI,:))
-  END IF
-  !
-  !* Synchronization between nested models through XBAK_TIME/XOUT_TIME arrays
-  !
-  CALL IO_SYNC_MODELS_FLOAT(IBAK_NUMB,XBAK_TIME)
-  CALL IO_SYNC_MODELS_FLOAT(IOUT_NUMB,XOUT_TIME)
-  !
-  !* Insert regular backups/outputs into NBAK_STEP/NOUT_STEP arrays
-  !
-  IF (NBAK_STEP_FREQ(IMI)>0) CALL IO_INSERT_REGULAR_INT(NBAK_STEP_FREQ_FIRST(IMI),NBAK_STEP_FREQ(IMI),NBAK_STEP(IMI,:))
-  IF (NOUT_STEP_FREQ(IMI)>0) CALL IO_INSERT_REGULAR_INT(NOUT_STEP_FREQ_FIRST(IMI),NOUT_STEP_FREQ(IMI),NOUT_STEP(IMI,:))
-  !
-  !* Synchronization between nested models through NBAK_STEP/NOUT_STEP arrays
-  !
-  CALL IO_SYNC_MODELS_INT(IBAK_NUMB,NBAK_STEP)
-  CALL IO_SYNC_MODELS_INT(IOUT_NUMB,NOUT_STEP)
-  !
-  !* Group all backups/outputs in a common form and add backups/outputs at beginning and end if requested
-  !
-  IF (LBAK_BEG) IBAK_NUMB = IBAK_NUMB + 1
-  IF (LBAK_END) IBAK_NUMB = IBAK_NUMB + 1
-  IF (LOUT_BEG) IOUT_NUMB = IOUT_NUMB + 1
-  IF (LOUT_END) IOUT_NUMB = IOUT_NUMB + 1
-  !
-  ALLOCATE(IBAK_STEP(IBAK_NUMB))
-  IBAK_STEP(:) = NNEGUNDEF
-  ALLOCATE(IOUT_STEP(IOUT_NUMB))
-  IOUT_STEP(:) = NNEGUNDEF
-  !
-  IBAK_NUMB = 0
-  IOUT_NUMB = 0
-  !
-  IF (LBAK_BEG) THEN
-    IBAK_NUMB = IBAK_NUMB + 1
-    IBAK_STEP(IBAK_NUMB) = 1 ! 1 is the 1st step number
-  END IF
-  IF (LOUT_BEG) THEN
-    IOUT_NUMB = IOUT_NUMB + 1
-    IOUT_STEP(IOUT_NUMB) = 1 ! 1 is the 1st step number
-  END IF
-  !
-  DO JOUT = 1, NFILE_NUM_MAX
-    IF (XBAK_TIME(IMI,JOUT) >= 0.) THEN
-      IBAK_NUMB = IBAK_NUMB + 1
-      IBAK_STEP(IBAK_NUMB) = NINT(XBAK_TIME(IMI,JOUT)/DYN_MODEL(IMI)%XTSTEP) + 1
+    ! Do not mix NOUT_STEP_FREQ_FIRST with XOUT_TIME_FREQ
+    IF ( NOUT_STEP_FREQ_FIRST(IMI) > 0 ) THEN
+      CMNHMSG(1) = 'NOUT_STEP_FREQ_FIRST is not allowed with XOUT_TIME_FREQ'
+      CMNHMSG(2) = 'use XOUT_TIME_FREQ_FIRST instead'
+      CALL PRINT_MSG( NVERB_ERROR, 'IO', 'IO_Bakout_struct_prepare' )
     END IF
-    IF (XOUT_TIME(IMI,JOUT) >= 0.) THEN
-      IOUT_NUMB = IOUT_NUMB + 1
-      IOUT_STEP(IOUT_NUMB) = NINT(XOUT_TIME(IMI,JOUT)/DYN_MODEL(IMI)%XTSTEP) + 1
+
+    ! Set the output frequency in timesteps
+    OUT_MODEL(IMI)%NOUT_STEPFREQ         = NINT( XOUT_TIME_FREQ(IMI)       / DYN_MODEL(IMI)%XTSTEP )
+
+    IF ( XOUT_TIME_FREQ_FIRST(IMI) > 0. ) THEN
+      OUT_MODEL(IMI)%NOUT_STEPFREQFIRST = NINT( XOUT_TIME_FREQ_FIRST(IMI) / DYN_MODEL(IMI)%XTSTEP ) + 1
+    ELSE
+      ! Set first output to frequency
+      OUT_MODEL(IMI)%NOUT_STEPFREQFIRST = OUT_MODEL(IMI)%NOUT_STEPFREQ + 1
+    END IF
+  END IF
+
+  ! Backup regular series is provided with intervals in timesteps
+  IF ( NOUT_STEP_FREQ(IMI) > 0 ) THEN
+    OUT_MODEL(IMI)%NOUT_STEPFREQ = NOUT_STEP_FREQ(IMI)
+
+    ! Do not mix XOUT_TIME_FREQ_FIRST with NOUT_STEP_FREQ
+    IF ( XOUT_TIME_FREQ_FIRST(IMI) > 0 ) THEN
+      CMNHMSG(1) = 'XOUT_TIME_FREQ_FIRST is not allowed with NOUT_STEP_FREQ'
+      CMNHMSG(2) = 'use NOUT_STEP_FREQ_FIRST instead'
+      CALL PRINT_MSG( NVERB_ERROR, 'IO', 'IO_Bakout_struct_prepare' )
+    END IF
+
+    IF ( NOUT_STEP_FREQ_FIRST(IMI) > 0 ) THEN
+      OUT_MODEL(IMI)%NOUT_STEPFREQFIRST = NOUT_STEP_FREQ_FIRST(IMI)
+    ELSE
+      ! Set first output to frequency
+      OUT_MODEL(IMI)%NOUT_STEPFREQFIRST = OUT_MODEL(IMI)%NOUT_STEPFREQ + 1
+    END IF
+  END IF
+END DO
+
+! Synchronize regular series to nested models
+DO IMI = 1, NMODEL
+  ! Synchronize regular backup series to nested models
+  IF ( OUT_MODEL(IMI)%NBAK_STEPFREQ > 0 ) THEN
+    DO IDX = IMI+1, NMODEL
+      ISTEP = OUT_MODEL(IDX-1)%NBAK_STEPFREQ * NINT( DYN_MODEL(IDX-1)%XTSTEP / DYN_MODEL(IDX)%XTSTEP )
+      IF ( OUT_MODEL(IDX)%NBAK_STEPFREQ > 0 ) THEN
+        IF ( MOD(ISTEP,OUT_MODEL(IDX)%NBAK_STEPFREQ) /= 0 ) THEN
+          CALL PRINT_MSG( NVERB_ERROR, 'IO', 'IO_Bakout_struct_prepare', &
+                          'backup frequency for parent model must be a multiple of child' )
+          OUT_MODEL(IDX)%NBAK_STEPFREQ = ISTEP
+        ELSE
+          ! Nothing to do. We keep the model frequency
+        END IF
+      ELSE
+        ! Propagate to child
+        OUT_MODEL(IDX)%NBAK_STEPFREQ = ISTEP
+      END IF
+
+      IF ( OUT_MODEL(IDX)%NBAK_STEPFREQFIRST > 0 ) THEN
+        IF ( OUT_MODEL(IDX-1)%NBAK_STEPFREQFIRST > 0 ) THEN
+          ! Compute first step of dad in number of timesteps for THIS model
+          ISTEPDADFIRST = ( OUT_MODEL(IDX-1)%NBAK_STEPFREQFIRST - 1 ) * NINT( DYN_MODEL(IDX-1)%XTSTEP / DYN_MODEL(IDX)%XTSTEP ) + 1
+          ! The first backup of a child model must be before or at the same time than its parent
+          IF ( OUT_MODEL(IDX)%NBAK_STEPFREQFIRST > ISTEPDADFIRST ) THEN
+            CALL PRINT_MSG( NVERB_ERROR, 'IO', 'IO_Bakout_struct_prepare', &
+                            'the first backup of a child model must be before or at the same time than its parent' )
+            OUT_MODEL(IDX)%NBAK_STEPFREQFIRST = ISTEPDADFIRST
+          END IF
+          ! The backup times must be aligned with the one of the parent model (if it does also regular series)
+          IF ( MOD( ISTEPDADFIRST - OUT_MODEL(IDX)%NBAK_STEPFREQFIRST, OUT_MODEL(IDX)%NBAK_STEPFREQ ) /= 0 ) THEN
+            CMNHMSG(1) = 'times of series of backups must be aligned with the time of its parent'
+            CMNHMSG(2) = 'check that XBAK_TIME_FREQ_FIRST or NBAK_STEP_FREQ_FIRST are set correctly for all submodels'
+            CALL PRINT_MSG( NVERB_ERROR, 'IO', 'IO_Bakout_struct_prepare' )
+            OUT_MODEL(IDX)%NBAK_STEPFREQFIRST = ( OUT_MODEL(IDX-1)%NBAK_STEPFREQFIRST - 1 ) &
+                                                * NINT( DYN_MODEL(IDX-1)%XTSTEP / DYN_MODEL(IDX)%XTSTEP ) + 1
+          END IF
+        ELSE
+          ! Nothing to do (the parent does not do regular series)
+        END IF
+      ELSE
+        ! Propagate first time (in timesteps)
+        OUT_MODEL(IDX)%NBAK_STEPFREQFIRST = ( OUT_MODEL(IDX-1)%NBAK_STEPFREQFIRST - 1 ) &
+                                            * NINT( DYN_MODEL(IDX-1)%XTSTEP / DYN_MODEL(IDX)%XTSTEP ) + 1
+      END IF
+    END DO
+  END IF
+
+  ! Synchronize regular output series to nested models
+  IF ( OUT_MODEL(IMI)%NOUT_STEPFREQ > 0 ) THEN
+    DO IDX = IMI+1, NMODEL
+      ISTEP = OUT_MODEL(IDX-1)%NOUT_STEPFREQ * NINT( DYN_MODEL(IDX-1)%XTSTEP / DYN_MODEL(IDX)%XTSTEP )
+      IF ( OUT_MODEL(IDX)%NOUT_STEPFREQ > 0 ) THEN
+        IF ( MOD(ISTEP,OUT_MODEL(IDX)%NOUT_STEPFREQ) /= 0 ) THEN
+          CALL PRINT_MSG( NVERB_ERROR, 'IO', 'IO_Bakout_struct_prepare', &
+                          'output frequency for parent model must be a multiple of child' )
+          OUT_MODEL(IDX)%NOUT_STEPFREQ = ISTEP
+        ELSE
+          ! Nothing to do. We keep the model frequency
+        END IF
+      ELSE
+        ! Propagate to child
+        OUT_MODEL(IDX)%NOUT_STEPFREQ = ISTEP
+      END IF
+
+      IF ( OUT_MODEL(IDX)%NOUT_STEPFREQFIRST > 0 ) THEN
+        IF ( OUT_MODEL(IDX-1)%NOUT_STEPFREQFIRST > 0 ) THEN
+          ! Compute first step of dad in number of timesteps for THIS model
+          ISTEPDADFIRST = ( OUT_MODEL(IDX-1)%NOUT_STEPFREQFIRST - 1 ) * NINT( DYN_MODEL(IDX-1)%XTSTEP / DYN_MODEL(IDX)%XTSTEP ) + 1
+          ! The first output of a child model must be before or at the same time than its parent
+          IF ( OUT_MODEL(IDX)%NOUT_STEPFREQFIRST > ISTEPDADFIRST ) THEN
+            CALL PRINT_MSG( NVERB_ERROR, 'IO', 'IO_Bakout_struct_prepare', &
+                            'the first output of a child model must be before or at the same time than its parent' )
+            OUT_MODEL(IDX)%NOUT_STEPFREQFIRST = ISTEPDADFIRST
+          END IF
+          ! The output times must be aligned with the one of the parent model (if it does also regular series)
+          IF ( MOD( ISTEPDADFIRST - OUT_MODEL(IDX)%NOUT_STEPFREQFIRST, OUT_MODEL(IDX)%NOUT_STEPFREQ ) /= 0 ) THEN
+            CMNHMSG(1) = 'times of series of outputs must be aligned with the time of its parent'
+            CMNHMSG(2) = 'check that XOUT_TIME_FREQ_FIRST or NOUT_STEP_FREQ_FIRST are set correctly for all submodels'
+            CALL PRINT_MSG( NVERB_ERROR, 'IO', 'IO_Bakout_struct_prepare' )
+            OUT_MODEL(IDX)%NOUT_STEPFREQFIRST = ( OUT_MODEL(IDX-1)%NOUT_STEPFREQFIRST - 1 ) &
+                                                * NINT( DYN_MODEL(IDX-1)%XTSTEP / DYN_MODEL(IDX)%XTSTEP ) + 1
+          END IF
+        ELSE
+          ! Nothing to do (the parent does not do regular series)
+        END IF
+      ELSE
+        ! Propagate first time (in timesteps)
+        OUT_MODEL(IDX)%NOUT_STEPFREQFIRST = ( OUT_MODEL(IDX-1)%NOUT_STEPFREQFIRST - 1 ) &
+                                            * NINT( DYN_MODEL(IDX-1)%XTSTEP / DYN_MODEL(IDX)%XTSTEP ) + 1
+      END IF
+    END DO
+  END IF
+END DO
+
+! Treat irregular backups/outputs
+DO IMI = 1, NMODEL
+  IBAK_NUM = 0
+  IOUT_NUM = 0
+
+  !Reduce XSEGLEN by time added to XSEGLEN for 1st domain (see set_grid subroutine)
+  ISTEP_MAX = NINT( ( XSEGLEN - KSUP * DYN_MODEL(1)%XTSTEP ) / DYN_MODEL(IMI)%XTSTEP ) + 1
+
+  ! Check that provided times are multiples of model timestep and not after end of segment
+  ! After that, insert them in the lists (in timesteps instead of seconds)
+  DO JOUT = 1, NFILE_NUM_MAX
+    IF ( XBAK_TIME(IMI,JOUT) >= 0.) THEN
+      ZTSTEP_RND = NINT( XBAK_TIME(IMI,JOUT) / DYN_MODEL(IMI)%XTSTEP ) * DYN_MODEL(IMI)%XTSTEP
+      IF ( ABS( ZTSTEP_RND - XBAK_TIME(IMI,JOUT) ) > 1.E-6 ) THEN
+        CALL PRINT_MSG( NVERB_ERROR, 'IO', 'IO_Bakout_struct_prepare', 'XBAK_TIME is not a multiple of the model timestep' )
+        XBAK_TIME(IMI,JOUT) = ZTSTEP_RND
+      END IF
+      IF ( XBAK_TIME(IMI,JOUT) > XSEGLEN + 1.E-6 ) THEN
+        WRITE( CMNHMSG(1), '( "XBAK_TIME ", EN12.3 , " after end of simulation time segment => ignored" )' ) XBAK_TIME(IMI,JOUT)
+        CALL PRINT_MSG( NVERB_WARNING, 'IO', 'IO_Bakout_struct_prepare' )
+        XBAK_TIME(IMI,JOUT) = XNEGUNDEF
+      END IF
+
+      IF ( XBAK_TIME(IMI,JOUT) > 0.) THEN ! Check again because its value could have been modified just before if ignored
+        ! Insert XBAK_TIME into IBAK_STEPLIST after conversion in timestep number (use insert because the list may be non-empty)
+        IBAK_NUM = IBAK_NUM + 1
+        CALL IO_INSERT_INT( IBAK_NUM, IBAK_STEPLIST(IMI,:), NINT( XBAK_TIME(IMI,JOUT) / DYN_MODEL(IMI)%XTSTEP ) + 1 )
+      END IF
+    END IF
+
+    IF ( XOUT_TIME(IMI,JOUT) >= 0.) THEN
+      ZTSTEP_RND = NINT( XOUT_TIME(IMI,JOUT) / DYN_MODEL(IMI)%XTSTEP ) * DYN_MODEL(IMI)%XTSTEP
+      IF ( ABS( ZTSTEP_RND - XOUT_TIME(IMI,JOUT) ) > 1.E-6 ) THEN
+        CALL PRINT_MSG( NVERB_ERROR, 'IO', 'IO_Bakout_struct_prepare', 'XOUT_TIME is not a multiple of the model timestep' )
+        XOUT_TIME(IMI,JOUT) = ZTSTEP_RND
+      END IF
+      IF ( XOUT_TIME(IMI,JOUT) > XSEGLEN + 1.E-6 ) THEN
+        WRITE( CMNHMSG(1), '( "XOUT_TIME ", EN12.3 , " after end of simulation time segment => ignored" )' ) XOUT_TIME(IMI,JOUT)
+        CALL PRINT_MSG( NVERB_WARNING, 'IO', 'IO_Bakout_struct_prepare' )
+        XOUT_TIME(IMI,JOUT) = XNEGUNDEF
+      END IF
+
+      IF ( XOUT_TIME(IMI,JOUT) > 0.) THEN ! Check again because its value could have been modified just before if ignored
+        ! Insert XOUT_TIME into IOUT_STEPLIST after conversion in timestep number (use insert because the list may be non-empty)
+        IOUT_NUM = IOUT_NUM + 1
+        CALL IO_INSERT_INT( IOUT_NUM, IOUT_STEPLIST(IMI,:), NINT( XOUT_TIME(IMI,JOUT) / DYN_MODEL(IMI)%XTSTEP ) + 1 )
+      END IF
     END IF
   END DO
   !
-  DO JOUT = 1, NFILE_NUM_MAX
-    IF (NBAK_STEP(IMI,JOUT) > 0) THEN
-      IBAK_NUMB = IBAK_NUMB + 1
-      IBAK_STEP(IBAK_NUMB) = NBAK_STEP(IMI,JOUT)
-    END IF
-    IF (NOUT_STEP(IMI,JOUT) > 0) THEN
-      IOUT_NUMB = IOUT_NUMB + 1
-      IOUT_STEP(IOUT_NUMB) = NOUT_STEP(IMI,JOUT)
-    END IF
-  END DO
+  !* Synchronization between nested models through IBAK_STEPLIST/IOUT_STEPLIST arrays
   !
-  IF (LBAK_END) THEN
-    IBAK_NUMB = IBAK_NUMB + 1
-    IBAK_STEP(IBAK_NUMB) = ISTEP_MAX
+  CALL IO_SYNC_MODELS_INT(IBAK_NUM,IBAK_STEPLIST(:,:))
+  CALL IO_SYNC_MODELS_INT(IOUT_NUM,IOUT_STEPLIST(:,:))
+
+  IF ( LBAK_BEG ) THEN
+    IBAK_NUM = IBAK_NUM + 1
+    CALL IO_INSERT_INT( IBAK_NUM, IBAK_STEPLIST(IMI,:), 1 ) ! 1 is the 1st step number
   END IF
-  IF (LOUT_END) THEN
-    IOUT_NUMB = IOUT_NUMB + 1
-    IOUT_STEP(IOUT_NUMB) = ISTEP_MAX
+  IF ( LOUT_BEG ) THEN
+    IOUT_NUM = IOUT_NUM + 1
+    CALL IO_INSERT_INT( IOUT_NUM, IOUT_STEPLIST(IMI,:), 1 ) ! 1 is the 1st step number
+  END IF
+
+  IF ( LBAK_END ) THEN
+    IBAK_NUM = IBAK_NUM + 1
+    CALL IO_INSERT_INT( IBAK_NUM, IBAK_STEPLIST(IMI,:), ISTEP_MAX )
+  END IF
+  IF ( LOUT_END ) THEN
+    IOUT_NUM = IOUT_NUM + 1
+    CALL IO_INSERT_INT( IOUT_NUM, IOUT_STEPLIST(IMI,:), ISTEP_MAX )
   END IF
   !
   !* Find and remove duplicated entries
   !
-  CALL FIND_REMOVE_DUPLICATES(IBAK_NUMB,IBAK_STEP)
-  CALL FIND_REMOVE_DUPLICATES(IOUT_NUMB,IOUT_STEP)
+  CALL FIND_REMOVE_DUPLICATES( IBAK_NUM, IBAK_STEPLIST(IMI,:) )
+  CALL FIND_REMOVE_DUPLICATES( IOUT_NUM, IOUT_STEPLIST(IMI,:) )
   !
   !* Find and remove out of time range entries
   !
-  CALL FIND_REMOVE_OUTOFTIMERANGE(IBAK_NUMB,IBAK_STEP)
-  CALL FIND_REMOVE_OUTOFTIMERANGE(IOUT_NUMB,IOUT_STEP)
+  CALL FIND_REMOVE_OUTOFTIMERANGE( IBAK_NUM, IBAK_STEPLIST(IMI,:) )
+  CALL FIND_REMOVE_OUTOFTIMERANGE( IOUT_NUM, IOUT_STEPLIST(IMI,:) )
+
+  ! Remove entries in list if they are at the same time than regular entries
+  DO JOUT = OUT_MODEL(IMI)%NBAK_STEPFREQFIRST, ISTEP_MAX, OUT_MODEL(IMI)%NBAK_STEPFREQ
+    DO IDX = 1, IBAK_NUM
+      IF ( IBAK_STEPLIST(IMI,IDX) == JOUT ) THEN
+        CALL PRINT_MSG(NVERB_DEBUG,'IO','FIND_REMOVE_REGULAR','found duplicated backup step (removed extra one)')
+        IBAK_STEPLIST(IMI,IDX) = NNEGUNDEF
+      END IF
+    END DO
+  END DO
+  DO JOUT = OUT_MODEL(IMI)%NOUT_STEPFREQFIRST, ISTEP_MAX, OUT_MODEL(IMI)%NOUT_STEPFREQ
+    DO IDX = 1, IOUT_NUM
+      IF ( IOUT_STEPLIST(IMI,IDX) == JOUT ) THEN
+        CALL PRINT_MSG(NVERB_DEBUG,'IO','FIND_REMOVE_REGULAR','found duplicated output step (removed extra one)')
+        IOUT_STEPLIST(IMI,IDX) = NNEGUNDEF
+      END IF
+    END DO
+  END DO
   !
   !* Sort entries
   !
-  CALL SORT_ENTRIES(IBAK_NUMB,IBAK_STEP)
-  CALL SORT_ENTRIES(IOUT_NUMB,IOUT_STEP)
+  CALL SORT_ENTRIES( IBAK_NUM, IBAK_STEPLIST(IMI,:) )
+  CALL SORT_ENTRIES( IOUT_NUM, IOUT_STEPLIST(IMI,:) )
   !
-  !* Count the number of backups/outputs of model IMI
+  !* Count the number of backups/outputs of model IMI and compact the list
   !
-  IBAK_NUMB = 0
-  DO JOUT = 1,SIZE(IBAK_STEP)
-    IF (IBAK_STEP(JOUT) >= 0) THEN
-      IBAK_NUMB = IBAK_NUMB + 1
+  IBAK_NUM = 0
+  DO JOUT = 1, SIZE( IBAK_STEPLIST(IMI,:) )
+    IF ( IBAK_STEPLIST(IMI,JOUT) >= 0 ) THEN
+      IBAK_NUM = IBAK_NUM + 1
     END IF
   END DO
-  IF (IBAK_NUMB==0) THEN
-    IF(LIO_ALLOW_NO_BACKUP) THEN
+  ALLOCATE( OUT_MODEL(IMI)%NBAK_STEPLIST(IBAK_NUM) )
+  OUT_MODEL(IMI)%NBAK_STEPLIST(:) = IBAK_STEPLIST(IMI,1:IBAK_NUM)
+  OUT_MODEL(IMI)%NBAK_NUMB = IBAK_NUM
+
+  IOUT_NUM = 0
+  DO JOUT = 1, SIZE( IOUT_STEPLIST(IMI,:) )
+    IF ( IOUT_STEPLIST(IMI,JOUT) >= 0 ) THEN
+      IOUT_NUM = IOUT_NUM + 1
+    END IF
+  END DO
+  ALLOCATE( OUT_MODEL(IMI)%NOUT_STEPLIST(IOUT_NUM) )
+  OUT_MODEL(IMI)%NOUT_STEPLIST(:) = IOUT_STEPLIST(IMI,1:IOUT_NUM)
+  OUT_MODEL(IMI)%NOUT_NUMB = IOUT_NUM
+
+  ! Count the number of regular backups/outputs
+  IBAK_NUM = MAX( ( ISTEP_MAX - OUT_MODEL(IMI)%NBAK_STEPFREQFIRST ) / OUT_MODEL(IMI)%NBAK_STEPFREQ + 1, 0 )
+  OUT_MODEL(IMI)%NBAK_NUMB = OUT_MODEL(IMI)%NBAK_NUMB + IBAK_NUM
+
+  IOUT_NUM = MAX( ( ISTEP_MAX - OUT_MODEL(IMI)%NOUT_STEPFREQFIRST ) / OUT_MODEL(IMI)%NOUT_STEPFREQ + 1, 0 )
+  OUT_MODEL(IMI)%NOUT_NUMB = OUT_MODEL(IMI)%NOUT_NUMB + IOUT_NUM
+
+  ! Print message if there are no backups
+  IF ( OUT_MODEL(IMI)%NBAK_NUMB == 0 ) THEN
+    IF( LIO_ALLOW_NO_BACKUP ) THEN
       IERR_LVL = NVERB_WARNING
     ELSE
       IERR_LVL = NVERB_ERROR
     END IF
-    CALL PRINT_MSG(IERR_LVL,'IO','IO_Bakout_struct_prepare','no (valid) backup time')
+    CALL PRINT_MSG( IERR_LVL, 'IO', 'IO_Bakout_struct_prepare', 'no (valid) backup time' )
   END IF
-  !
-  IOUT_NUMB = 0
-  DO JOUT = 1,SIZE(IOUT_STEP)
-    IF (IOUT_STEP(JOUT) >= 0) THEN
-      IOUT_NUMB = IOUT_NUMB + 1
-    END IF
-  END DO
-  !
-  OUT_MODEL(IMI)%NBAK_NUMB = IBAK_NUMB
-  OUT_MODEL(IMI)%NOUT_NUMB = IOUT_NUMB
-  !
-  !* Populate the backup/output data structures
-  !
-  ALLOCATE(OUT_MODEL(IMI)%TBACKUPN(IBAK_NUMB))
-  ALLOCATE(OUT_MODEL(IMI)%TOUTPUTN(IOUT_NUMB))
-  !
-  CALL POPULATE_STRUCT(TFILE_FIRST,TFILE_LAST,IBAK_STEP,"MNHBACKUP",OUT_MODEL(IMI)%TBACKUPN,IMI)
-  CALL POPULATE_STRUCT(TFILE_FIRST,TFILE_LAST,IOUT_STEP,"MNHOUTPUT",OUT_MODEL(IMI)%TOUTPUTN,IMI)
-  !
-  !* Find dad output number
-  !
-  !Security check (if it happens, this part of the code should be exported outside of the IMI loop)
-  IF (NDAD(IMI)>IMI) CALL PRINT_MSG(NVERB_FATAL,'IO','IO_Bakout_struct_prepare','NDAD(IMI)>IMI')
-  IF (NDAD(IMI) == IMI .OR.  IMI == 1) THEN
-    DO IPOS = 1,OUT_MODEL(IMI)%NBAK_NUMB
-      OUT_MODEL(IMI)%TBACKUPN(IPOS)%TFILE%TDADFILE => OUT_MODEL(IMI)%TBACKUPN(IPOS)%TFILE !Points to itself
-    END DO
-    DO IPOS = 1,OUT_MODEL(IMI)%NOUT_NUMB
-      OUT_MODEL(IMI)%TOUTPUTN(IPOS)%TFILE%TDADFILE => OUT_MODEL(IMI)%TOUTPUTN(IPOS)%TFILE !Points to itself
-    END DO
-  ELSE
-    DO IPOS = 1,OUT_MODEL(IMI)%NBAK_NUMB
-      IDX = 0
-      DO JOUT = 1,OUT_MODEL(NDAD(IMI))%NBAK_NUMB
-        IF ( OUT_MODEL(NDAD(IMI))%TBACKUPN(JOUT)%XTIME <= OUT_MODEL(IMI)%TBACKUPN(IPOS)%XTIME+1.E-6 ) THEN
-          IDX = JOUT
-        ELSE
-          EXIT
-        END IF
-      END DO
-      IF (IDX>0) THEN
-        OUT_MODEL(IMI)%TBACKUPN(IPOS)%TFILE%TDADFILE => OUT_MODEL(NDAD(IMI))%TBACKUPN(IDX)%TFILE
-      ELSE
-        NULLIFY(OUT_MODEL(IMI)%TBACKUPN(IPOS)%TFILE%TDADFILE) !No dad file
-      END IF
-    END DO
-    DO IPOS = 1,OUT_MODEL(IMI)%NOUT_NUMB
-      IDX = 0
-      DO JOUT = 1,OUT_MODEL(NDAD(IMI))%NOUT_NUMB
-        IF ( OUT_MODEL(NDAD(IMI))%TOUTPUTN(JOUT)%XTIME <= OUT_MODEL(IMI)%TOUTPUTN(IPOS)%XTIME+1.E-6 ) THEN
-          IDX = JOUT
-        ELSE
-          EXIT
-        END IF
-      END DO
-      IF (IDX>0) THEN
-        OUT_MODEL(IMI)%TOUTPUTN(IPOS)%TFILE%TDADFILE => OUT_MODEL(NDAD(IMI))%TOUTPUTN(IDX)%TFILE
-      ELSE
-        NULLIFY(OUT_MODEL(IMI)%TOUTPUTN(IPOS)%TFILE%TDADFILE) !No dad file
-      END IF
-    END DO
-  END IF
-  !
+
   !Determine the list of the fields to write in each output
-  IF (IOUT_NUMB>0) THEN
+  IF ( OUT_MODEL(IMI)%NOUT_NUMB > 0 ) THEN
     !Count the number of fields to output
     IVAR = 0
     DO IPOS = 1,JPOUTVARMAX
       IF (COUT_VAR(IMI,IPOS)/='') IVAR = IVAR + 1
     END DO
     IF (IVAR==0) CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Bakout_struct_prepare','no fields chosen for output')
-    ALLOCATE(OUT_MODEL(IMI)%TOUTPUTN(1)%NFIELDLIST(IVAR))
+    ALLOCATE( OUT_MODEL(IMI)%NOUT_FIELDLIST(IVAR) )
 
-    if ( ivar > 0 ) then
+    IF ( IVAR > 0 ) THEN
       !Determine the list of the outputs to do (by field number)
-      !Set the NFIELDLIST for the 1st output
-      !All the others will use the same list (for the moment)
       IVAR = 0
       DO IPOS = 1,JPOUTVARMAX
         IF (COUT_VAR(IMI,IPOS)/='') THEN
           IVAR=IVAR+1
           CALL FIND_FIELD_ID_FROM_MNHNAME(COUT_VAR(IMI,IPOS),IFIELD,IRESP)
-          OUT_MODEL(IMI)%TOUTPUTN(1)%NFIELDLIST(IVAR) = IFIELD
+          OUT_MODEL(IMI)%NOUT_FIELDLIST(IVAR) = IFIELD
           IF (IRESP/=0) THEN
             CALL PRINT_MSG(NVERB_FATAL,'IO','IO_Bakout_struct_prepare','unknown field for output: '//TRIM(COUT_VAR(IMI,IPOS)))
-            !MNH is killed to prevent problems with wrong values in NFIELDLIST
+            !MNH is killed to prevent problems with wrong values in NOUT_FIELDLIST
           END IF
           !
         END IF
       END DO
-    end if
-
-    !All the outputs use the same field list (for the moment)
-    DO IPOS = 2,IOUT_NUMB
-      OUT_MODEL(IMI)%TOUTPUTN(IPOS)%NFIELDLIST => OUT_MODEL(IMI)%TOUTPUTN(1)%NFIELDLIST
-    END DO
-  END IF  
-  !
-  DEALLOCATE(IBAK_STEP)
-  DEALLOCATE(IOUT_STEP)
-  !
-  IF (IP==1) THEN
-  PRINT *,'-------------------------------'
-  PRINT *,'Model number:      ',IMI
-  PRINT *,'Number of backups: ',IBAK_NUMB
-  if ( ibak_numb > 0 ) then
-    PRINT *,'Timestep     Time'
-    DO JOUT = 1,IBAK_NUMB
-      WRITE(*,'( I9,F12.3 )'  ) OUT_MODEL(IMI)%TBACKUPN(JOUT)%NSTEP,OUT_MODEL(IMI)%TBACKUPN(JOUT)%XTIME
-    END DO
-  end if
-  PRINT *,'-------------------------------'
-  PRINT *,'Model number:      ',IMI
-  PRINT *,'Number of outputs: ',IOUT_NUMB
-  if ( iout_numb > 0 ) then
-    PRINT *,'Timestep     Time'
-    DO JOUT = 1,IOUT_NUMB
-      WRITE(*,'( I9,F12.3 )'  ) OUT_MODEL(IMI)%TOUTPUTN(JOUT)%NSTEP,OUT_MODEL(IMI)%TOUTPUTN(JOUT)%XTIME
-    END DO
-  end if
-  !
-  IF ( IOUT_NUMB>0 ) THEN
-    IF ( SIZE(OUT_MODEL(IMI)%TOUTPUTN(1)%NFIELDLIST)>0 ) THEN
-      PRINT *,'List of fields:'
-      DO JOUT = 1,SIZE(OUT_MODEL(IMI)%TOUTPUTN(1)%NFIELDLIST)
-        IDX = OUT_MODEL(IMI)%TOUTPUTN(1)%NFIELDLIST(JOUT)
-        PRINT *,'  ',TRIM(TFIELDLIST(IDX)%CMNHNAME)
-      END DO
     END IF
   END IF
   !
-  PRINT *,'-------------------------------'
+  IF ( IP == 1 ) THEN
+    ! Backup information
+    WRITE( *, '( "-------------------------------------------------" )' )
+    WRITE( *, '( "Model number:      ", I9 )' ) IMI
+    WRITE( *, '( "Number of backups: ", I9 )' ) OUT_MODEL(IMI)%NBAK_NUMB
+    IF (OUT_MODEL(IMI)%NBAK_STEPFREQ > 0 ) THEN
+      WRITE( *, '( "  Regular:         ", I9 )' ) &
+             ( ISTEP_MAX - OUT_MODEL(IMI)%NBAK_STEPFREQFIRST ) / OUT_MODEL(IMI)%NBAK_STEPFREQ + 1
+      WRITE( *, '( "   Frequency: ", I9, " timesteps (", F12.3, "s)" )' ) &
+             OUT_MODEL(IMI)%NBAK_STEPFREQ, OUT_MODEL(IMI)%NBAK_STEPFREQ * DYN_MODEL(IMI)%XTSTEP
+      WRITE( *, '( "   First:     ", I9, " timesteps (", F12.3, "s)" )' ) &
+             OUT_MODEL(IMI)%NBAK_STEPFREQFIRST, ( OUT_MODEL(IMI)%NBAK_STEPFREQFIRST - 1 ) * DYN_MODEL(IMI)%XTSTEP
+    ELSE
+      WRITE( *, '( "  Regular:         ", I9 )' ) 0
+    END IF
+    WRITE( *, '( "  Iregular:        ", I9 )' ) SIZE( OUT_MODEL(IMI)%NBAK_STEPLIST )
+    IF ( SIZE( OUT_MODEL(IMI)%NBAK_STEPLIST ) > 0 ) THEN
+      WRITE( *, '( "   Timestep        Time" )' )
+      DO JOUT = 1, SIZE( OUT_MODEL(IMI)%NBAK_STEPLIST )
+        WRITE(*,'( "  ", I9,F12.3 )'  ) OUT_MODEL(IMI)%NBAK_STEPLIST(JOUT), &
+                                        ( OUT_MODEL(IMI)%NBAK_STEPLIST(JOUT) - 1 ) * DYN_MODEL(IMI)%XTSTEP
+      END DO
+    END IF
+
+    ! Output information
+    WRITE( *, '( "-------------------------------------------------" )' )
+    WRITE( *, '( "Model number:      ", I9 )' ) IMI
+    WRITE( *, '( "Number of outputs: ", I9 )' ) OUT_MODEL(IMI)%NOUT_NUMB
+    IF (OUT_MODEL(IMI)%NOUT_STEPFREQ > 0 ) THEN
+      WRITE( *, '( "  Regular:         ", I9 )' ) &
+             ( ISTEP_MAX - OUT_MODEL(IMI)%NOUT_STEPFREQFIRST ) / OUT_MODEL(IMI)%NOUT_STEPFREQ + 1
+      WRITE( *, '( "   Frequency: ", I9, " timesteps (", F12.3, "s)" )' ) &
+             OUT_MODEL(IMI)%NOUT_STEPFREQ, OUT_MODEL(IMI)%NOUT_STEPFREQ * DYN_MODEL(IMI)%XTSTEP
+      WRITE( *, '( "   First:     ", I9, " timesteps (", F12.3, "s)" )' ) &
+             OUT_MODEL(IMI)%NOUT_STEPFREQFIRST, ( OUT_MODEL(IMI)%NOUT_STEPFREQFIRST - 1 ) * DYN_MODEL(IMI)%XTSTEP
+    ELSE
+      WRITE( *, '( "  Regular:         ", I9 )' ) 0
+    END IF
+    WRITE( *, '( "  Iregular:        ", I9 )' ) SIZE( OUT_MODEL(IMI)%NOUT_STEPLIST )
+    IF ( SIZE( OUT_MODEL(IMI)%NOUT_STEPLIST ) > 0 ) THEN
+      WRITE( *, '( "   Timestep        Time" )' )
+      DO JOUT = 1, SIZE( OUT_MODEL(IMI)%NOUT_STEPLIST )
+        WRITE(*,'( "  ", I9,F12.3 )'  ) OUT_MODEL(IMI)%NOUT_STEPLIST(JOUT), &
+                                        ( OUT_MODEL(IMI)%NOUT_STEPLIST(JOUT) - 1 ) * DYN_MODEL(IMI)%XTSTEP
+      END DO
+    END IF
+
+    IF ( OUT_MODEL(IMI)%NOUT_NUMB > 0 ) THEN
+      IF ( SIZE( OUT_MODEL(IMI)%NOUT_FIELDLIST ) > 0 ) THEN
+        WRITE( *, '( "List of fields:" )' )
+        DO JOUT = 1, SIZE( OUT_MODEL(IMI)%NOUT_FIELDLIST )
+          IDX = OUT_MODEL(IMI)%NOUT_FIELDLIST(JOUT)
+          WRITE(*, '( "  ", A )' ) TRIM(TFIELDLIST(IDX)%CMNHNAME)
+        END DO
+      END IF
+    END IF
+
+    WRITE( *, '( "-------------------------------------------------" )' )
   END IF
-  !
+    !
 END DO ! IMI=1,NMODEL
 !
 DEALLOCATE(NBAK_STEP)
@@ -451,23 +589,17 @@ DEALLOCATE(COUT_VAR)
 CONTAINS
 !
 !#########################################################################
-SUBROUTINE IO_INSERT_REGULAR_FLOAT(PFIRST,PFREQ,PTIMES)
+SUBROUTINE IO_INSERT_INT( KPOS, KSTEPS, KVAL )
 !#########################################################################
   !
-  REAL,              INTENT(IN)    :: PFIRST,PFREQ
-  REAL,DIMENSION(:), INTENT(INOUT) :: PTIMES
+  INTEGER,              INTENT(INOUT) :: KPOS   ! First position to try to insert KVAL
+  INTEGER,DIMENSION(:), INTENT(INOUT) :: KSTEPS ! Array in which to store KVAL
+  INTEGER,              INTENT(IN)    :: KVAL   ! Value to store
   !
-  REAL              :: ZOUT, ZOUTMAX    ! Time of output/backup
+  CALL FIND_NEXT_AVAIL_SLOT_INT( KSTEPS, KPOS )
+  KSTEPS(KPOS) = KVAL
   !
-  IDX = 1
-  ZOUT = PFIRST
-  ZOUTMAX = PSEGLEN - PTSTEP*KSUP
-  DO WHILE ( ZOUT <= ZOUTMAX )
-    CALL FIND_NEXT_AVAIL_SLOT_FLOAT(PTIMES,IDX)
-    PTIMES(IDX) = ZOUT
-    ZOUT = ZOUT + PFREQ
-  END DO
-END SUBROUTINE IO_INSERT_REGULAR_FLOAT
+END SUBROUTINE IO_INSERT_INT
 !
 !#########################################################################
 SUBROUTINE IO_INSERT_REGULAR_INT(KFIRST,KFREQ,KSTEPS)
@@ -484,30 +616,6 @@ SUBROUTINE IO_INSERT_REGULAR_INT(KFIRST,KFREQ,KSTEPS)
 END SUBROUTINE IO_INSERT_REGULAR_INT
 !
 !#########################################################################
-SUBROUTINE IO_SYNC_MODELS_FLOAT(KNUMB,PTIMES)
-!#########################################################################
-  !
-  INTEGER,             INTENT(INOUT) :: KNUMB
-  REAL,DIMENSION(:,:), INTENT(INOUT) :: PTIMES
-  !
-  INTEGER :: JKLOOP ! Loop index
-  !
-  DO JOUT = 1, NFILE_NUM_MAX
-    IF (PTIMES(IMI,JOUT) >= 0.) THEN
-      KNUMB = KNUMB + 1
-      !Value is rounded to nearest timestep
-      PTIMES(IMI,JOUT) = NINT(PTIMES(IMI,JOUT)/DYN_MODEL(IMI)%XTSTEP) * DYN_MODEL(IMI)%XTSTEP
-      !Output/backup time is propagated to nested models (with higher numbers)
-      DO JKLOOP = IMI+1,NMODEL
-        IDX = 1
-        CALL FIND_NEXT_AVAIL_SLOT_FLOAT(PTIMES(JKLOOP,:),IDX)
-        PTIMES(JKLOOP,IDX) = PTIMES(IMI,JOUT)
-      END DO
-    END IF
-  END DO
-END SUBROUTINE IO_SYNC_MODELS_FLOAT
-!
-!#########################################################################
 SUBROUTINE IO_SYNC_MODELS_INT(KNUMB,KSTEPS)
 !#########################################################################
   !
@@ -520,6 +628,7 @@ SUBROUTINE IO_SYNC_MODELS_INT(KNUMB,KSTEPS)
     IF (KSTEPS(IMI,JOUT) > 0) THEN
       KNUMB = KNUMB + 1
       !Output/backup time is propagated to nested models (with higher numbers)
+!PW: TODO:BUG?: what happens if 2 dissociated models? Use NSON(:) array?
       DO JKLOOP = IMI+1,NMODEL
         IDX = 1
         CALL FIND_NEXT_AVAIL_SLOT_INT(KSTEPS(JKLOOP,:),IDX)
@@ -530,20 +639,6 @@ SUBROUTINE IO_SYNC_MODELS_INT(KNUMB,KSTEPS)
     END IF
   END DO
 END SUBROUTINE IO_SYNC_MODELS_INT
-!
-!#########################################################################
-SUBROUTINE FIND_NEXT_AVAIL_SLOT_FLOAT(PTIMES,KIDX)
-!#########################################################################
-  !
-  REAL,DIMENSION(:), INTENT(IN)    :: PTIMES
-  INTEGER,           INTENT(INOUT) :: KIDX
-  !
-  !Find next (starting from KIDX) non 'allocated' element
-  DO WHILE ( PTIMES(KIDX) >= 0. )
-    KIDX = KIDX + 1
-    IF (KIDX > NFILE_NUM_MAX) CALL PRINT_MSG(NVERB_FATAL,'IO','FIND_NEXT_AVAIL_SLOT_FLOAT','NFILE_NUM_MAX too small')
-  END DO
-END SUBROUTINE FIND_NEXT_AVAIL_SLOT_FLOAT
 !
 !#########################################################################
 SUBROUTINE FIND_NEXT_AVAIL_SLOT_INT(KSTEPS,KIDX)
@@ -621,236 +716,212 @@ SUBROUTINE SORT_ENTRIES(KNUMB,KSTEPS)
   END DO
 END SUBROUTINE SORT_ENTRIES
 !
-!#########################################################################
-SUBROUTINE POPULATE_STRUCT(TPFILE_FIRST,TPFILE_LAST,KSTEPS,HFILETYPE,TPBAKOUTN,KMI)
-!#########################################################################
-  !
-#ifdef MNH_IOCDF4
-  USE NETCDF, ONLY: NF90_QUANTIZE_BITGROOM, NF90_QUANTIZE_BITROUND, NF90_QUANTIZE_GRANULARBR
-#endif
-  !
-  USE MODD_CONFZ,      ONLY: NB_PROCIO_W
-  !
-  USE MODE_TOOLS,      ONLY: UPCASE
-  !
-  TYPE(TFILEDATA),           POINTER,INTENT(INOUT) :: TPFILE_FIRST,TPFILE_LAST
-  INTEGER,DIMENSION(:),              INTENT(IN)    :: KSTEPS
-  CHARACTER(LEN=*),                  INTENT(IN)    :: HFILETYPE
-  TYPE(TOUTBAK),DIMENSION(:),POINTER,INTENT(IN)    :: TPBAKOUTN
-  INTEGER,                           INTENT(IN)    :: KMI ! Model number
-  !
-  CHARACTER (LEN=:), ALLOCATABLE :: YNUMBER ! Character string for the file number
-  INTEGER :: JI
-
-  IF ( NFILE_NUM_MAX < 1000 ) THEN
-    ALLOCATE( CHARACTER(LEN=3) :: YNUMBER )
-  ELSE IF ( NFILE_NUM_MAX < 10000 ) THEN
-    ALLOCATE( CHARACTER(LEN=4) :: YNUMBER )
-  ELSE IF ( NFILE_NUM_MAX < 100000 ) THEN
-    ALLOCATE( CHARACTER(LEN=5) :: YNUMBER )
-  ELSE IF ( NFILE_NUM_MAX < 1000000 ) THEN
-    ALLOCATE( CHARACTER(LEN=6) :: YNUMBER )
-  ELSE
-    CALL PRINT_MSG( NVERB_FATAL, 'IO', 'POPULATE_STRUCT', 'NFILE_NUM_MAX is too large' )
-  END IF
-
-  IPOS = 0
-  DO JOUT = 1,SIZE(KSTEPS)
-    IF (KSTEPS(JOUT) >= 0) THEN
-        NFILE_STAT_NADD    = NFILE_STAT_NADD    + 1
-        NFILE_STAT_CURSIZE = NFILE_STAT_CURSIZE + 1
-        IPOS = IPOS + 1
-        TPBAKOUTN(IPOS)%NID = IPOS
-        TPBAKOUTN(IPOS)%NSTEP = KSTEPS(JOUT)
-        TPBAKOUTN(IPOS)%XTIME = (KSTEPS(JOUT)-1)*DYN_MODEL(IMI)%XTSTEP
-        IF (.NOT.ASSOCIATED(TPFILE_FIRST)) THEN
-          ALLOCATE(TPFILE_FIRST)
-          TPFILE_LAST => TPFILE_FIRST
-        ELSE
-          ALLOCATE(TPFILE_LAST%TFILE_NEXT)
-          TPFILE_LAST%TFILE_NEXT%TFILE_PREV => TPFILE_LAST
-          TPFILE_LAST => TPFILE_LAST%TFILE_NEXT
-        ENDIF
-        TPBAKOUTN(IPOS)%TFILE => TPFILE_LAST
-        TPBAKOUTN(IPOS)%TFILE%CTYPE=HFILETYPE
-        TPBAKOUTN(IPOS)%TFILE%CMODE="WRITE"
-        IF ( NFILE_NUM_MAX  < 1000 ) THEN
-          WRITE ( YNUMBER, FMT = "(I3.3)" ) IPOS
-        ELSE IF ( NFILE_NUM_MAX  < 10000 ) THEN
-          WRITE ( YNUMBER, FMT = "(I4.4)" ) IPOS
-        ELSE IF ( NFILE_NUM_MAX  < 100000 ) THEN
-          WRITE ( YNUMBER, FMT = "(I5.5)" ) IPOS
-        ELSE IF ( NFILE_NUM_MAX  < 1000000 ) THEN
-          WRITE ( YNUMBER, FMT = "(I6.6)" ) IPOS
-        ELSE
-          CALL PRINT_MSG( NVERB_FATAL, 'IO', 'POPULATE_STRUCT', 'NFILE_NUM_MAX is too large' )
-        END IF
-
-        IF (TRIM(HFILETYPE)=='MNHOUTPUT') THEN
-          ! Add a "OUT" suffix for output files
-          TPBAKOUTN(IPOS)%TFILE%CNAME=ADJUSTL(ADJUSTR(IO_SURF_MNH_MODEL(IMI)%COUTFILE)//'.OUT.'//YNUMBER)
-
-#ifdef MNH_IOCDF4
-          !Reduce the float precision if asked
-          TPBAKOUTN(IPOS)%TFILE%LNCREDUCE_FLOAT_PRECISION = LOUT_REDUCE_FLOAT_PRECISION(IMI)
-
-          !Set compression if asked
-          TPBAKOUTN(IPOS)%TFILE%LNCCOMPRESS = LOUT_COMPRESS(IMI)
-          IF ( NOUT_COMPRESS_LEVEL(IMI)<0 .OR. NOUT_COMPRESS_LEVEL(IMI)>9 ) THEN
-            CALL PRINT_MSG( NVERB_ERROR, 'IO', 'POPULATE_STRUCT', &
-                            'NOUT_COMPRESS_LEVEL must be in the [0..9] range' )
-            NOUT_COMPRESS_LEVEL(IMI) = 4
-          END IF
-          TPBAKOUTN(IPOS)%TFILE%NNCCOMPRESS_LEVEL = NOUT_COMPRESS_LEVEL(IMI)
-
-          !Set lossy compression
-          TPBAKOUTN(IPOS)%TFILE%LNCCOMPRESS_LOSSY = LOUT_COMPRESS_LOSSY(IMI)
-          IF ( LOUT_COMPRESS_LOSSY(IMI) ) THEN
-            !Force compression if lossy compression is enabled
-            TPBAKOUTN(IPOS)%TFILE%LNCCOMPRESS = .TRUE.
-
-            !Set lossy compression algorithm
-            SELECT CASE ( UPCASE( COUT_COMPRESS_LOSSY_ALGO(IMI) ) )
-              CASE ( 'BITGROOM' )
-                TPBAKOUTN(IPOS)%TFILE%NNCCOMPRESS_LOSSY_ALGO = NF90_QUANTIZE_BITGROOM
-              CASE ( 'GRANULARBR' )
-                TPBAKOUTN(IPOS)%TFILE%NNCCOMPRESS_LOSSY_ALGO = NF90_QUANTIZE_GRANULARBR
-              CASE ( 'BITROUND' )
-                TPBAKOUTN(IPOS)%TFILE%NNCCOMPRESS_LOSSY_ALGO = NF90_QUANTIZE_BITROUND
-              CASE DEFAULT
-                CMNHMSG(1) = 'invalid COUT_COMPRESS_LOSSY_ALGO'
-                CMNHMSG(2) = 'Accepted algorithms: BITGROOM, GRANULARBR (default choice), BITROUND'
-                CALL PRINT_MSG( NVERB_ERROR, 'IO', 'POPULATE_STRUCT' )
-                TPBAKOUTN(IPOS)%TFILE%NNCCOMPRESS_LOSSY_ALGO = NF90_QUANTIZE_GRANULARBR
-            END SELECT
-
-            !Set number of significant digits/bits for lossy compression algorithm
-#if (MNH_REAL == 4)
-            SELECT CASE ( TPBAKOUTN(IPOS)%TFILE%NNCCOMPRESS_LOSSY_ALGO )
-              CASE ( NF90_QUANTIZE_BITROUND )
-                ! For 32 bit reals, number of significant bits must be in the 1 to 23 range
-                IF ( NOUT_COMPRESS_LOSSY_NSD(IMI) < 1 .OR. NOUT_COMPRESS_LOSSY_NSD(IMI) > 23 ) THEN
-                  CALL PRINT_MSG( NVERB_ERROR, 'IO', 'POPULATE_STRUCT', &
-                                  'NOUT_COMPRESS_LOSSY_NSD must be in the [1..23] range' )
-                  NOUT_COMPRESS_LOSSY_NSD(IMI) = 7
-                END IF
-              CASE ( NF90_QUANTIZE_BITGROOM, NF90_QUANTIZE_GRANULARBR )
-                ! For 32 bit reals, number of significant digits must be in the 1 to 7 range
-                IF ( NOUT_COMPRESS_LOSSY_NSD(IMI) < 1 .OR. NOUT_COMPRESS_LOSSY_NSD(IMI) > 7 ) THEN
-                  CALL PRINT_MSG( NVERB_ERROR, 'IO', 'POPULATE_STRUCT', &
-                                  'NOUT_COMPRESS_LOSSY_NSD must be in the [1..7] range' )
-                  NOUT_COMPRESS_LOSSY_NSD(IMI) = 3
-                END IF
-              CASE DEFAULT
-                CALL PRINT_MSG( NVERB_FATAL, 'IO', 'POPULATE_STRUCT', 'invalid NNCCOMPRESS_LOSSY_ALGO (internal fatal error)' )
-            END SELECT
-#elif (MNH_REAL == 8)
-            IF ( TPBAKOUTN(IPOS)%TFILE%LNCREDUCE_FLOAT_PRECISION ) THEN
-              SELECT CASE ( TPBAKOUTN(IPOS)%TFILE%NNCCOMPRESS_LOSSY_ALGO )
-                CASE ( NF90_QUANTIZE_BITROUND )
-                  ! For 32 bit reals, number of significant bits must be in the 1 to 23 range
-                  IF ( NOUT_COMPRESS_LOSSY_NSD(IMI) < 1 .OR. NOUT_COMPRESS_LOSSY_NSD(IMI) > 23 ) THEN
-                    CALL PRINT_MSG( NVERB_ERROR, 'IO', 'POPULATE_STRUCT', &
-                                    'NOUT_COMPRESS_LOSSY_NSD must be in the [1..23] range' )
-                    NOUT_COMPRESS_LOSSY_NSD(IMI) = 7
-                  END IF
-                CASE ( NF90_QUANTIZE_BITGROOM, NF90_QUANTIZE_GRANULARBR )
-                  ! For 32 bit reals, number of significant digits must be in the 1 to 7 range
-                  IF ( NOUT_COMPRESS_LOSSY_NSD(IMI) < 1 .OR. NOUT_COMPRESS_LOSSY_NSD(IMI) > 7 ) THEN
-                    CALL PRINT_MSG( NVERB_ERROR, 'IO', 'POPULATE_STRUCT', &
-                                    'NOUT_COMPRESS_LOSSY_NSD must be in the [1..7] range' )
-                    NOUT_COMPRESS_LOSSY_NSD(IMI) = 3
-                  END IF
-                CASE DEFAULT
-                  CALL PRINT_MSG( NVERB_FATAL, 'IO', 'POPULATE_STRUCT', 'invalid NNCCOMPRESS_LOSSY_ALGO (internal fatal error)' )
-              END SELECT
-            ELSE
-              SELECT CASE ( TPBAKOUTN(IPOS)%TFILE%NNCCOMPRESS_LOSSY_ALGO )
-                CASE ( NF90_QUANTIZE_BITROUND )
-                  ! For 64 bit reals, number of significant bits must be in the 1 to 52 range
-                  IF ( NOUT_COMPRESS_LOSSY_NSD(IMI) < 1 .OR. NOUT_COMPRESS_LOSSY_NSD(IMI) > 52 ) THEN
-                    CALL PRINT_MSG( NVERB_ERROR, 'IO', 'POPULATE_STRUCT', &
-                                    'NOUT_COMPRESS_LOSSY_NSD must be in the [1..52] range' )
-                    NOUT_COMPRESS_LOSSY_NSD(IMI) = 7
-                  END IF
-                CASE ( NF90_QUANTIZE_BITGROOM, NF90_QUANTIZE_GRANULARBR )
-                  ! For 64 bit reals, number of significant digits must be in the 1 to 15 range
-                  IF ( NOUT_COMPRESS_LOSSY_NSD(IMI) < 1 .OR. NOUT_COMPRESS_LOSSY_NSD(IMI) > 15 ) THEN
-                    CALL PRINT_MSG( NVERB_ERROR, 'IO', 'POPULATE_STRUCT', &
-                                    'NOUT_COMPRESS_LOSSY_NSD must be in the [1..15] range')
-                    NOUT_COMPRESS_LOSSY_NSD(IMI) = 3
-                  END IF
-                CASE DEFAULT
-                  CALL PRINT_MSG( NVERB_FATAL, 'IO', 'POPULATE_STRUCT', 'invalid NNCCOMPRESS_LOSSY_ALGO (internal fatal error)' )
-              END SELECT
-            END IF
-#else
-#error "Invalid MNH_REAL"
-#endif
-            TPBAKOUTN(IPOS)%TFILE%NNCCOMPRESS_LOSSY_NSD = NOUT_COMPRESS_LOSSY_NSD(IMI)
-          END IF
-#endif
-
-          !Set output directory
-          IF (LEN_TRIM(COUT_DIR)>0) THEN
-            TPBAKOUTN(IPOS)%TFILE%CDIRNAME=TRIM(COUT_DIR)
-          ELSE IF (LEN_TRIM(CIO_DIR)>0) THEN
-            TPBAKOUTN(IPOS)%TFILE%CDIRNAME=TRIM(CIO_DIR)
-          END IF
-        ELSE IF (TRIM(HFILETYPE)=='MNHBACKUP') THEN
-          TPBAKOUTN(IPOS)%TFILE%CNAME=ADJUSTL(ADJUSTR(IO_SURF_MNH_MODEL(IMI)%COUTFILE)//'.'//YNUMBER)
-          IF (LEN_TRIM(CBAK_DIR)>0) THEN
-            TPBAKOUTN(IPOS)%TFILE%CDIRNAME=TRIM(CBAK_DIR)
-          ELSE IF (LEN_TRIM(CIO_DIR)>0) THEN
-            TPBAKOUTN(IPOS)%TFILE%CDIRNAME=TRIM(CIO_DIR)
-          END IF
-        ELSE
-          CALL PRINT_MSG(NVERB_FATAL,'IO','POPULATE_STRUCT','unknown filetype ('//TRIM(HFILETYPE)//')')
-        ENDIF
-        TPBAKOUTN(IPOS)%TFILE%NLFITYPE=1 !1: to be transferred
-        TPBAKOUTN(IPOS)%TFILE%NLFIVERB=NVERB
-        IF (LIOCDF4) THEN
-          IF (.NOT.LLFIOUT) THEN
-            TPBAKOUTN(IPOS)%TFILE%CFORMAT='NETCDF4'
-          ELSE
-            TPBAKOUTN(IPOS)%TFILE%CFORMAT='LFICDF4'
-            IF (TRIM(HFILETYPE)=='MNHBACKUP') TPBAKOUTN(IPOS)%TFILE%NLFINPRAR= 22+2*(4+NRR+NSV)
-          END IF
-        ELSE IF (LLFIOUT) THEN
-          TPBAKOUTN(IPOS)%TFILE%CFORMAT='LFI'
-          IF (TRIM(HFILETYPE)=='MNHBACKUP') TPBAKOUTN(IPOS)%TFILE%NLFINPRAR= 22+2*(4+NRR+NSV)
-        ELSE
-          CALL PRINT_MSG(NVERB_FATAL,'IO','POPULATE_STRUCT','unknown backup/output fileformat')
-        ENDIF
-        !
-        TPBAKOUTN(IPOS)%TFILE%NMODEL = KMI
-        !
-        IF (NB_PROCIO_W>1) THEN
-          TPBAKOUTN(IPOS)%TFILE%NSUBFILES_IOZ = NB_PROCIO_W
-          !Remark: sub-files are automatically added/removed when the backup/output file is opened/closed
-          !Therefore, no need to do this here
-        ELSE
-          TPBAKOUTN(IPOS)%TFILE%NSUBFILES_IOZ = 0
-        END IF
-        !
-    END IF
-  END DO
-  NFILE_STAT_MAXSIZE = MAX( NFILE_STAT_MAXSIZE, NFILE_STAT_CURSIZE )
-END SUBROUTINE POPULATE_STRUCT
-!
 END SUBROUTINE IO_Bakout_struct_prepare
 
 
-SUBROUTINE IO_File_add2list( TPFILE, HNAME, HTYPE, HMODE,                        &
-                             HFORM, HACCESS, HFORMAT, HDIRNAME,                  &
-                             KLFINPRAR, KLFITYPE, KLFIVERB, KRECL, KMODEL,       &
-                             TPDADFILE, TPDATAFILE, TPMAINFILE, OOLD, OSPLIT_IOZ )
+FUNCTION IO_Is_backup_time( KMI, KTCOUNT, KNUMBAK ) RESULT( OBAK )
+  USE MODD_OUT_n
+  USE MODD_SUB_MODEL_N, ONLY: NFILE_BACKUP_CURRENT
+
+  ! Determine if it is a step when a backup is needed
+  INTEGER, INTENT(IN)    :: KMI     ! Model number
+  INTEGER, INTENT(IN)    :: KTCOUNT ! Timestep
+  INTEGER, INTENT(INOUT) :: KNUMBAK ! Number of the backup
+  LOGICAL :: OBAK    ! Result
+
+  INTEGER :: JI
+
+  WRITE( CMNHMSG(1), '( "called for timestep ", I0, " on model ", I0 )' ) KTCOUNT, KMI
+  CALL PRINT_MSG( NVERB_DEBUG, 'IO', 'IO_Is_backup_time' )
+
+  OBAK = .FALSE.
+  KNUMBAK = NNEGUNDEF
+
+  ! No more backups to do
+  IF ( NFILE_BACKUP_CURRENT >= OUT_MODEL(KMI)%NBAK_NUMB ) RETURN
+
+  ! Check if it is time for a regular backup
+  IF ( NBAK_STEPFREQ > 0 .AND. KTCOUNT >= NBAK_STEPFREQFIRST ) THEN
+    IF ( MOD( KTCOUNT - NBAK_STEPFREQFIRST, NBAK_STEPFREQ ) == 0 ) OBAK = .TRUE.
+  END IF
+
+  ! Check if it is time for an irregular backup
+  IF ( .NOT. OBAK ) THEN
+    DO JI = 1, SIZE( NBAK_STEPLIST )
+      IF ( NBAK_STEPLIST(JI) == KTCOUNT ) THEN
+        OBAK = .TRUE.
+        EXIT
+      END IF
+    END DO
+  END IF
+
+  IF ( OBAK ) THEN
+    NFILE_BACKUP_CURRENT = NFILE_BACKUP_CURRENT + 1
+    KNUMBAK = NFILE_BACKUP_CURRENT
+  END IF
+
+END FUNCTION IO_Is_backup_time
+
+
+FUNCTION IO_Is_output_time( KMI, KTCOUNT, KNUMOUT ) RESULT( OOUT )
+  USE MODD_OUT_n
+  USE MODD_SUB_MODEL_N, ONLY: NFILE_OUTPUT_CURRENT
+
+  ! Determine if it is a step when a output is needed
+  INTEGER, INTENT(IN)    :: KMI     ! Model number
+  INTEGER, INTENT(IN)    :: KTCOUNT ! Timestep
+  INTEGER, INTENT(INOUT) :: KNUMOUT ! Number of the output
+  LOGICAL :: OOUT    ! Result
+
+  INTEGER :: JI
+
+  WRITE( CMNHMSG(1), '( "called for timestep ", I0, " on model ", I0 )' ) KTCOUNT, KMI
+  CALL PRINT_MSG( NVERB_DEBUG, 'IO', 'IO_Is_output_time' )
+
+  OOUT = .FALSE.
+  KNUMOUT = NNEGUNDEF
+
+  ! No more outputs to do
+  IF ( NFILE_OUTPUT_CURRENT >= OUT_MODEL(KMI)%NOUT_NUMB ) RETURN
+
+  ! Check if it is time for a regular output
+  IF ( NOUT_STEPFREQ > 0 .AND. KTCOUNT >= NOUT_STEPFREQFIRST ) THEN
+    IF ( MOD( KTCOUNT - NOUT_STEPFREQFIRST, NOUT_STEPFREQ ) == 0 ) OOUT = .TRUE.
+  END IF
+
+  ! Check if it is time for an irregular output
+  IF ( .NOT. OOUT ) THEN
+    DO JI = 1, SIZE( NOUT_STEPLIST )
+      IF ( NOUT_STEPLIST(JI) == KTCOUNT ) THEN
+        OOUT = .TRUE.
+        EXIT
+      END IF
+    END DO
+  END IF
+
+  IF ( OOUT ) THEN
+    NFILE_OUTPUT_CURRENT = NFILE_OUTPUT_CURRENT + 1
+    KNUMOUT = NFILE_OUTPUT_CURRENT
+  END IF
+
+END FUNCTION IO_Is_output_time
+
+
+SUBROUTINE IO_BakOut_file_create( TPFILE, HTYPE, KMI, KSTEP, KNUMBAK )
+  USE MODD_BAKOUT,      ONLY: CBAK_DIR, COUT_DIR
+  USE MODD_CONF,        ONLY: CEXP, CSEG, NMODEL, NVERB
+  USE MODD_CONF_n,      ONLY: NRR
+  USE MODD_NSV,         ONLY: NSV
+  USE MODD_PARAMETERS,  ONLY: NMODELNUMLGTMAX
+
+  TYPE(TFILEDATA), POINTER, INTENT(INOUT) :: TPFILE  ! File structure to return
+  CHARACTER(LEN=*),         INTENT(IN)    :: HTYPE   ! File type
+  INTEGER,                  INTENT(IN)    :: KMI     ! Model number
+  INTEGER,                  INTENT(IN)    :: KSTEP   ! Timestep number
+  INTEGER,                  INTENT(IN)    :: KNUMBAK ! Number of the backup
+
+  CHARACTER(LEN=:), ALLOCATABLE :: YDIRNAME
+  CHARACTER(LEN=:), ALLOCATABLE :: YFORMAT
+  CHARACTER(LEN=:), ALLOCATABLE :: YNAME, YNAMEPRE
+  CHARACTER(LEN=:), ALLOCATABLE :: YNUMBER ! Character string for the file number
+  INTEGER                       :: ILEN
+  INTEGER(KIND=LFIINT)          :: ILFINPRAR
+
+  CALL PRINT_MSG( NVERB_DEBUG, 'IO', 'IO_BakOut_file_create', 'called' )
+
+  IF ( HTYPE /= 'MNHBACKUP' .AND. HTYPE /= 'MNHOUTPUT' ) &
+    CALL PRINT_MSG( NVERB_FATAL, 'IO', 'IO_BakOut_file_create', 'invalid HTYPE' )
+
+  IF ( NFILE_NUM_MAX < 1000 ) THEN
+    ALLOCATE( CHARACTER(LEN=3) :: YNUMBER )
+    WRITE ( YNUMBER, FMT = "(I3.3)" ) KNUMBAK
+  ELSE IF ( NFILE_NUM_MAX < 10000 ) THEN
+    ALLOCATE( CHARACTER(LEN=4) :: YNUMBER )
+    WRITE ( YNUMBER, FMT = "(I4.4)" ) KNUMBAK
+  ELSE IF ( NFILE_NUM_MAX < 100000 ) THEN
+    ALLOCATE( CHARACTER(LEN=5) :: YNUMBER )
+    WRITE ( YNUMBER, FMT = "(I5.5)" ) KNUMBAK
+  ELSE IF ( NFILE_NUM_MAX < 1000000 ) THEN
+    ALLOCATE( CHARACTER(LEN=6) :: YNUMBER )
+    WRITE ( YNUMBER, FMT = "(I6.6)" ) KNUMBAK
+  ELSE
+    CALL PRINT_MSG( NVERB_FATAL, 'IO', 'IO_BakOut_file_create', 'NFILE_NUM_MAX is too large' )
+  END IF
+
+  ILEN = LEN_TRIM(CEXP) + 1 + NMODELNUMLGTMAX + 1 + LEN_TRIM(CSEG)
+  ALLOCATE( CHARACTER(LEN=ILEN) :: YNAMEPRE )
+  IF ( NMODELNUMLGTMAX == 1 ) THEN
+    IF ( NMODEL > 9 ) CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'IO_BakOut_file_create', 'NMODEL>9 and NMODELNUMLGTMAX=1' )
+    WRITE( YNAMEPRE, '( A, ".", I1, ".", A) ' ) TRIM(CEXP), KMI, TRIM(CSEG)
+  ELSE IF ( NMODELNUMLGTMAX == 2 ) THEN
+    IF ( NMODEL > 99 ) CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'IO_BakOut_file_create', 'NMODEL>99 and NMODELNUMLGTMAX=2' )
+    WRITE( YNAMEPRE, '( A, ".", I2.2, ".", A) ' ) TRIM(CEXP), KMI, TRIM(CSEG)
+  ELSE
+    CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'IO_BakOut_file_create', 'NMODELNUMLGTMAX>2 not implemented' )
+  END IF
+
+  IF ( HTYPE == 'MNHOUTPUT' ) THEN
+    ! Add a "OUT" suffix for output files
+    YNAME = YNAMEPRE // '.OUT.' // YNUMBER
+
+     !Set output directory
+    IF (LEN_TRIM(COUT_DIR)>0) THEN
+      YDIRNAME = TRIM(COUT_DIR)
+    ELSE IF (LEN_TRIM(CIO_DIR)>0) THEN
+      YDIRNAME = TRIM(CIO_DIR)
+    ELSE
+      YDIRNAME = ''
+    END IF
+  ELSE IF ( HTYPE == 'MNHBACKUP' ) THEN
+    YNAME = YNAMEPRE // '.' // YNUMBER
+
+    IF (LEN_TRIM(CBAK_DIR)>0) THEN
+      YDIRNAME = TRIM(CBAK_DIR)
+    ELSE IF (LEN_TRIM(CIO_DIR)>0) THEN
+      YDIRNAME = TRIM(CIO_DIR)
+    ELSE
+      YDIRNAME = ''
+    END IF
+  END IF
+
+  IF ( LIOCDF4 ) THEN
+    IF ( .NOT.LLFIOUT ) THEN
+      YFORMAT = 'NETCDF4'
+    ELSE
+      YFORMAT = 'LFICDF4'
+      IF ( HTYPE == 'MNHBACKUP' ) ILFINPRAR = 22+2*(4+NRR+NSV)
+    END IF
+  ELSE IF ( LLFIOUT ) THEN
+    YFORMAT = 'LFI'
+    IF ( HTYPE == 'MNHBACKUP') ILFINPRAR = 22+2*(4+NRR+NSV)
+  ELSE
+    CALL PRINT_MSG( NVERB_FATAL, 'IO', 'IO_BakOut_file_create', 'unknown backup/output fileformat' )
+  ENDIF
+
+  CALL IO_File_add2list( TPFILE, HNAME=YNAME, HTYPE=HTYPE, HMODE='WRITE', HFORMAT=YFORMAT, HDIRNAME=YDIRNAME, &
+                         KLFINPRAR=ILFINPRAR, KLFITYPE=1, KLFIVERB=NVERB, KMODEL=KMI, KSTEP=KSTEP )
+
+END SUBROUTINE IO_BakOut_file_create
+
+
+SUBROUTINE IO_File_add2list( TPFILE, HNAME, HTYPE, HMODE,                         &
+                             HFORM, HACCESS, HFORMAT, HDIRNAME,                   &
+                             KLFINPRAR, KLFITYPE, KLFIVERB, KRECL, KMODEL, KSTEP, &
+                             TPDADFILE, TPDATAFILE, TPMAINFILE, OOLD, OSPLIT_IOZ  )
 !
-USE MODD_BAKOUT,         ONLY: LOUT_COMPRESS,LOUT_REDUCE_FLOAT_PRECISION,NOUT_COMPRESS_LEVEL
+#ifdef MNH_IOCDF4
+  USE NETCDF, ONLY: NF90_QUANTIZE_BITGROOM, NF90_QUANTIZE_BITROUND, NF90_QUANTIZE_GRANULARBR
+!
+#endif
+USE MODD_BAKOUT,         ONLY: LOUT_COMPRESS, LOUT_REDUCE_FLOAT_PRECISION, NOUT_COMPRESS_LEVEL, &
+                               COUT_COMPRESS_LOSSY_ALGO, LOUT_COMPRESS_LOSSY, NOUT_COMPRESS_LOSSY_NSD
 USE MODD_CONF,           ONLY: CPROGRAM
-use modd_confz,          only: nb_procio_r,nb_procio_w
+USE MODD_CONFZ,          ONLY: NB_PROCIO_R, NB_PROCIO_W
+USE MODD_DYN_n,          ONLY: DYN_MODEL
+USE MODD_NESTING,        ONLY: NDAD
 !
 USE MODE_MODELN_HANDLER, ONLY: GET_CURRENT_MODEL_INDEX
+USE MODE_TOOLS,          ONLY: UPCASE
 !
 TYPE(TFILEDATA),POINTER,         INTENT(INOUT) :: TPFILE    !File structure to return
 CHARACTER(LEN=*),                INTENT(IN)    :: HNAME     !Filename
@@ -865,6 +936,7 @@ INTEGER,                OPTIONAL,INTENT(IN)    :: KLFITYPE  !Type of the file (u
 INTEGER,                OPTIONAL,INTENT(IN)    :: KLFIVERB  !LFI verbosity level
 INTEGER,                OPTIONAL,INTENT(IN)    :: KRECL     !Record length
 INTEGER,                OPTIONAL,INTENT(IN)    :: KMODEL    !Model number
+INTEGER,                OPTIONAL,INTENT(IN)    :: KSTEP     !Timestep number
 TYPE(TFILEDATA),POINTER,OPTIONAL,INTENT(IN)    :: TPDADFILE !Corresponding dad file
 TYPE(TFILEDATA),POINTER,OPTIONAL,INTENT(IN)    :: TPDATAFILE!Corresponding data file (used only for DES files)
 TYPE(TFILEDATA),POINTER,OPTIONAL,INTENT(IN)    :: TPMAINFILE!Corresponding main file (for subfiles)
@@ -873,12 +945,15 @@ LOGICAL,                OPTIONAL,INTENT(IN)    :: OOLD      !FALSE if new file (
                                                             !     (add it only if not yet present)
 logical,                optional,intent(in)    :: osplit_ioz !Is the file split vertically
 !
-INTEGER :: IMI,IRESP
-INTEGER(KIND=LFIINT) :: ILFINPRAR
+INTEGER :: IMI
+INTEGER :: IRESP
 INTEGER :: ILFITYPE
 INTEGER :: ILFIVERB
+INTEGER :: IMULT
+INTEGER(KIND=LFIINT) :: ILFINPRAR
 LOGICAL :: GOLD
 logical :: gsplit_ioz
+TYPE(TFILEDATA), POINTER :: TZFILE
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_File_add2list','called for '//TRIM(HNAME))
 !
@@ -1000,6 +1075,10 @@ IF (TRIM(HMODE)/='READ' .AND. TRIM(HMODE)/='WRITE') THEN
 END IF
 !
 TPFILE%CMODE = HMODE
+!
+IF( PRESENT( KMODEL ) ) TPFILE%NMODEL = KMODEL
+!
+IF( PRESENT( KSTEP )  ) TPFILE%NSTEP  = KSTEP
 !
 if ( present(osplit_ioz) ) then
   gsplit_ioz = osplit_ioz
@@ -1161,17 +1240,145 @@ SELECT CASE(TPFILE%CTYPE)
     TPFILE%NLFIVERB = ILFIVERB
     !
     IF (TRIM(HTYPE)=='MNHOUTPUT') THEN
+#ifdef MNH_IOCDF4
       TPFILE%LNCREDUCE_FLOAT_PRECISION = LOUT_REDUCE_FLOAT_PRECISION(IMI)
       TPFILE%LNCCOMPRESS               = LOUT_COMPRESS(IMI)
+      IF ( NOUT_COMPRESS_LEVEL(IMI)<0 .OR. NOUT_COMPRESS_LEVEL(IMI)>9 ) THEN
+        CALL PRINT_MSG( NVERB_ERROR, 'IO', 'IO_File_add2list', &
+                        'NOUT_COMPRESS_LEVEL must be in the [0..9] range' )
+        NOUT_COMPRESS_LEVEL(IMI) = 4
+      END IF
       TPFILE%NNCCOMPRESS_LEVEL         = NOUT_COMPRESS_LEVEL(IMI)
+
+      !Set lossy compression
+      TPFILE%LNCCOMPRESS_LOSSY = LOUT_COMPRESS_LOSSY(IMI)
+      IF ( LOUT_COMPRESS_LOSSY(IMI) ) THEN
+        !Force compression if lossy compression is enabled
+        TPFILE%LNCCOMPRESS = .TRUE.
+
+        !Set lossy compression algorithm
+        SELECT CASE ( UPCASE( COUT_COMPRESS_LOSSY_ALGO(IMI) ) )
+          CASE ( 'BITGROOM' )
+            TPFILE%NNCCOMPRESS_LOSSY_ALGO = NF90_QUANTIZE_BITGROOM
+          CASE ( 'GRANULARBR' )
+            TPFILE%NNCCOMPRESS_LOSSY_ALGO = NF90_QUANTIZE_GRANULARBR
+          CASE ( 'BITROUND' )
+            TPFILE%NNCCOMPRESS_LOSSY_ALGO = NF90_QUANTIZE_BITROUND
+          CASE DEFAULT
+            CMNHMSG(1) = 'invalid COUT_COMPRESS_LOSSY_ALGO'
+            CMNHMSG(2) = 'Accepted algorithms: BITGROOM, GRANULARBR (default choice), BITROUND'
+            CALL PRINT_MSG( NVERB_ERROR, 'IO', 'IO_File_add2list' )
+            TPFILE%NNCCOMPRESS_LOSSY_ALGO = NF90_QUANTIZE_GRANULARBR
+        END SELECT
+
+        !Set number of significant digits/bits for lossy compression algorithm
+#if (MNH_REAL == 4)
+        SELECT CASE ( TPFILE%NNCCOMPRESS_LOSSY_ALGO )
+          CASE ( NF90_QUANTIZE_BITROUND )
+            ! For 32 bit reals, number of significant bits must be in the 1 to 23 range
+            IF ( NOUT_COMPRESS_LOSSY_NSD(IMI) < 1 .OR. NOUT_COMPRESS_LOSSY_NSD(IMI) > 23 ) THEN
+              CALL PRINT_MSG( NVERB_ERROR, 'IO', 'IO_File_add2list', &
+                              'NOUT_COMPRESS_LOSSY_NSD must be in the [1..23] range' )
+              NOUT_COMPRESS_LOSSY_NSD(IMI) = 7
+            END IF
+          CASE ( NF90_QUANTIZE_BITGROOM, NF90_QUANTIZE_GRANULARBR )
+            ! For 32 bit reals, number of significant digits must be in the 1 to 7 range
+            IF ( NOUT_COMPRESS_LOSSY_NSD(IMI) < 1 .OR. NOUT_COMPRESS_LOSSY_NSD(IMI) > 7 ) THEN
+              CALL PRINT_MSG( NVERB_ERROR, 'IO', 'IO_File_add2list', &
+                              'NOUT_COMPRESS_LOSSY_NSD must be in the [1..7] range' )
+              NOUT_COMPRESS_LOSSY_NSD(IMI) = 3
+            END IF
+          CASE DEFAULT
+            CALL PRINT_MSG( NVERB_FATAL, 'IO', 'IO_File_add2list', 'invalid NNCCOMPRESS_LOSSY_ALGO (internal fatal error)' )
+        END SELECT
+#elif (MNH_REAL == 8)
+        IF ( TPFILE%LNCREDUCE_FLOAT_PRECISION ) THEN
+          SELECT CASE ( TPFILE%NNCCOMPRESS_LOSSY_ALGO )
+            CASE ( NF90_QUANTIZE_BITROUND )
+              ! For 32 bit reals, number of significant bits must be in the 1 to 23 range
+              IF ( NOUT_COMPRESS_LOSSY_NSD(IMI) < 1 .OR. NOUT_COMPRESS_LOSSY_NSD(IMI) > 23 ) THEN
+                CALL PRINT_MSG( NVERB_ERROR, 'IO', 'IO_File_add2list', &
+                                'NOUT_COMPRESS_LOSSY_NSD must be in the [1..23] range' )
+                NOUT_COMPRESS_LOSSY_NSD(IMI) = 7
+              END IF
+            CASE ( NF90_QUANTIZE_BITGROOM, NF90_QUANTIZE_GRANULARBR )
+              ! For 32 bit reals, number of significant digits must be in the 1 to 7 range
+              IF ( NOUT_COMPRESS_LOSSY_NSD(IMI) < 1 .OR. NOUT_COMPRESS_LOSSY_NSD(IMI) > 7 ) THEN
+                CALL PRINT_MSG( NVERB_ERROR, 'IO', 'IO_File_add2list', &
+                                'NOUT_COMPRESS_LOSSY_NSD must be in the [1..7] range' )
+                NOUT_COMPRESS_LOSSY_NSD(IMI) = 3
+              END IF
+            CASE DEFAULT
+              CALL PRINT_MSG( NVERB_FATAL, 'IO', 'IO_File_add2list', 'invalid NNCCOMPRESS_LOSSY_ALGO (internal fatal error)' )
+          END SELECT
+        ELSE
+          SELECT CASE ( TPFILE%NNCCOMPRESS_LOSSY_ALGO )
+            CASE ( NF90_QUANTIZE_BITROUND )
+              ! For 64 bit reals, number of significant bits must be in the 1 to 52 range
+              IF ( NOUT_COMPRESS_LOSSY_NSD(IMI) < 1 .OR. NOUT_COMPRESS_LOSSY_NSD(IMI) > 52 ) THEN
+                CALL PRINT_MSG( NVERB_ERROR, 'IO', 'IO_File_add2list', &
+                                'NOUT_COMPRESS_LOSSY_NSD must be in the [1..52] range' )
+                NOUT_COMPRESS_LOSSY_NSD(IMI) = 7
+              END IF
+            CASE ( NF90_QUANTIZE_BITGROOM, NF90_QUANTIZE_GRANULARBR )
+              ! For 64 bit reals, number of significant digits must be in the 1 to 15 range
+              IF ( NOUT_COMPRESS_LOSSY_NSD(IMI) < 1 .OR. NOUT_COMPRESS_LOSSY_NSD(IMI) > 15 ) THEN
+                CALL PRINT_MSG( NVERB_ERROR, 'IO', 'IO_File_add2list', &
+                                'NOUT_COMPRESS_LOSSY_NSD must be in the [1..15] range')
+                NOUT_COMPRESS_LOSSY_NSD(IMI) = 3
+              END IF
+            CASE DEFAULT
+              CALL PRINT_MSG( NVERB_FATAL, 'IO', 'IO_File_add2list', 'invalid NNCCOMPRESS_LOSSY_ALGO (internal fatal error)' )
+          END SELECT
+        END IF
+#else
+#error "Invalid MNH_REAL"
+#endif
+        TPFILE%NNCCOMPRESS_LOSSY_NSD = NOUT_COMPRESS_LOSSY_NSD(IMI)
+      END IF
+#endif
     END IF
     !
-    IF(PRESENT(TPDADFILE)) THEN
-      IF (.NOT.ASSOCIATED(TPDADFILE)) CALL PRINT_MSG(NVERB_WARNING,'IO','IO_File_add2list', &
-                                                     'TPDADFILE provided but not associated for file '//TRIM(HNAME))
-      TPFILE%TDADFILE => TPDADFILE
+    IF ( TRIM(HTYPE) == 'MNHBACKUP' .OR. TRIM(HTYPE) == 'MNHOUTPUT' ) THEN
+      IF( PRESENT(TPDADFILE) ) THEN
+        CALL PRINT_MSG( NVERB_FATAL, 'IO', 'IO_File_add2list', &
+                         'TPDADFILE should not be provided for backup or output file ' // TRIM(HNAME) )
+      END IF
+
+      ! Find dad file (not for the subfiles)
+      IF ( .NOT. ASSOCIATED(TPFILE%TMAINFILE) ) THEN
+        TPFILE%TDADFILE => NULL()
+        ! Security check (if it happens, this part of the code should be exported outside of the IMI loop)
+        IF ( NDAD(IMI) > IMI ) CALL PRINT_MSG( NVERB_FATAL, 'IO', 'IO_File_add2list', 'NDAD(IMI)>IMI' )
+        IF ( NDAD(IMI) == IMI .OR.  IMI == 1 ) THEN
+          TPFILE%TDADFILE => TPFILE !Points to itself
+        ELSE
+          ! Try to find the dad file: it must be of the same type (MNHBACKUP/MNHOUTPUT), to the dad and at the same time
+          IMULT = NINT( DYN_MODEL(NDAD(IMI))%XTSTEP / DYN_MODEL(IMI)%XTSTEP )
+          TZFILE => TFILE_FIRST
+          DO WHILE ( ASSOCIATED(TZFILE) )
+            IF ( TZFILE%CTYPE == TPFILE%CTYPE .AND. TZFILE%NMODEL == NDAD(IMI) ) THEN
+              ! Check if at same time
+              IF ( TPFILE%NSTEP == ( TZFILE%NSTEP - 1 ) * IMULT + 1 ) THEN
+                TPFILE%TDADFILE => TZFILE
+                EXIT
+              END IF
+            END IF
+            TZFILE => TZFILE%TFILE_NEXT
+          END DO
+        END IF
+      ELSE
+        ! Subfile
+        TPFILE%TDADFILE => NULL()
+      END IF
     ELSE
-      TPFILE%TDADFILE => NULL()
+      IF(PRESENT(TPDADFILE)) THEN
+        IF (.NOT.ASSOCIATED(TPDADFILE)) CALL PRINT_MSG(NVERB_WARNING,'IO','IO_File_add2list', &
+                                                       'TPDADFILE provided but not associated for file '//TRIM(HNAME))
+        TPFILE%TDADFILE => TPDADFILE
+      ELSE
+        TPFILE%TDADFILE => NULL()
+      END IF
     END IF
 
 
@@ -1179,15 +1386,14 @@ SELECT CASE(TPFILE%CTYPE)
     call print_msg(NVERB_FATAL,'IO','IO_File_add2list','invalid type '//trim(tpfile%ctype)//' for file '//trim(hname))
 END SELECT
 !
-IF(PRESENT(KMODEL)) TPFILE%NMODEL = KMODEL
-!
 TPFILE%LOPENED = .FALSE.
 TPFILE%NOPEN   = 0
 TPFILE%NCLOSE  = 0
-!
+
 NFILE_STAT_NADD    = NFILE_STAT_NADD    + 1
 NFILE_STAT_CURSIZE = NFILE_STAT_CURSIZE + 1
 NFILE_STAT_MAXSIZE = MAX( NFILE_STAT_MAXSIZE, NFILE_STAT_CURSIZE )
+
 END SUBROUTINE IO_File_add2list
 
 
@@ -1260,6 +1466,7 @@ RECURSIVE SUBROUTINE IO_File_remove_from_list( TPFILE )
 
   NFILE_STAT_NREM    = NFILE_STAT_NREM    + 1
   NFILE_STAT_CURSIZE = NFILE_STAT_CURSIZE - 1
+
 END SUBROUTINE IO_File_remove_from_list
 
 

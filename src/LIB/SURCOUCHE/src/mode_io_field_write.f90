@@ -3865,11 +3865,13 @@ end subroutine IO_Ndimlist_reduce
 
 SUBROUTINE IO_Fieldlist_write(TPOUTPUT)
 !
+USE MODD_OUT_n,          ONLY: NOUT_FIELDLIST
+!
 USE MODE_MODELN_HANDLER, ONLY: GET_CURRENT_MODEL_INDEX
 !
 IMPLICIT NONE
 !
-TYPE(TOUTBAK),    INTENT(IN)  :: TPOUTPUT !Output structure
+TYPE(TFILEDATA), INTENT(IN) :: TPOUTPUT !Output file
 !
 INTEGER :: IDX
 INTEGER :: IMI
@@ -3877,8 +3879,8 @@ INTEGER :: JI
 !
 IMI = GET_CURRENT_MODEL_INDEX()
 !
-DO JI = 1,SIZE(TPOUTPUT%NFIELDLIST)
-  IDX = TPOUTPUT%NFIELDLIST(JI)
+DO JI = 1, SIZE( NOUT_FIELDLIST )
+  IDX = NOUT_FIELDLIST(JI)
   NDIMS: SELECT CASE (TFIELDLIST(IDX)%NDIMS)
     !
     !0D output
@@ -3898,7 +3900,7 @@ DO JI = 1,SIZE(TPOUTPUT%NFIELDLIST)
                             ': TFIELD_X0D%DATA is NOT associated' )
           END IF
           IF ( TFIELDLIST(IDX)%CLBTYPE == 'NONE' ) THEN
-            CALL IO_Field_write(TPOUTPUT%TFILE,TFIELDLIST(IDX),TFIELDLIST(IDX)%TFIELD_X0D(IMI)%DATA)
+            CALL IO_Field_write(TPOUTPUT,TFIELDLIST(IDX),TFIELDLIST(IDX)%TFIELD_X0D(IMI)%DATA)
           ELSE
             call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
                             ': CLBTYPE/=NONE not allowed for 0D real fields' )
@@ -3916,7 +3918,7 @@ DO JI = 1,SIZE(TPOUTPUT%NFIELDLIST)
                             ': TFIELD_N0D%DATA is NOT associated' )
           END IF
           IF ( TFIELDLIST(IDX)%CLBTYPE == 'NONE' ) THEN
-            CALL IO_Field_write(TPOUTPUT%TFILE,TFIELDLIST(IDX),TFIELDLIST(IDX)%TFIELD_N0D(IMI)%DATA)
+            CALL IO_Field_write(TPOUTPUT,TFIELDLIST(IDX),TFIELDLIST(IDX)%TFIELD_N0D(IMI)%DATA)
           ELSE
             call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
                             ': CLBTYPE/=NONE not allowed for 0D integer fields' )
@@ -3934,7 +3936,7 @@ DO JI = 1,SIZE(TPOUTPUT%NFIELDLIST)
                             ': TFIELD_L0D%DATA is NOT associated' )
           END IF
           IF ( TFIELDLIST(IDX)%CLBTYPE == 'NONE' ) THEN
-            CALL IO_Field_write(TPOUTPUT%TFILE,TFIELDLIST(IDX),TFIELDLIST(IDX)%TFIELD_L0D(IMI)%DATA)
+            CALL IO_Field_write(TPOUTPUT,TFIELDLIST(IDX),TFIELDLIST(IDX)%TFIELD_L0D(IMI)%DATA)
           ELSE
             call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
                             ': CLBTYPE/=NONE not allowed for 0D logical fields' )
@@ -3952,7 +3954,7 @@ DO JI = 1,SIZE(TPOUTPUT%NFIELDLIST)
                             ': TFIELD_C0D%DATA is NOT associated' )
           END IF
           IF ( TFIELDLIST(IDX)%CLBTYPE == 'NONE' ) THEN
-            CALL IO_Field_write(TPOUTPUT%TFILE,TFIELDLIST(IDX),TFIELDLIST(IDX)%TFIELD_C0D(IMI)%DATA)
+            CALL IO_Field_write(TPOUTPUT,TFIELDLIST(IDX),TFIELDLIST(IDX)%TFIELD_C0D(IMI)%DATA)
           ELSE
             call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
                             ': CLBTYPE/=NONE not allowed for 0D character fields' )
@@ -3970,7 +3972,7 @@ DO JI = 1,SIZE(TPOUTPUT%NFIELDLIST)
                             ': TFIELD_T0D%DATA is NOT associated' )
           END IF
           IF ( TFIELDLIST(IDX)%CLBTYPE == 'NONE' ) THEN
-            CALL IO_Field_write(TPOUTPUT%TFILE,TFIELDLIST(IDX),TFIELDLIST(IDX)%TFIELD_T0D(IMI)%DATA)
+            CALL IO_Field_write(TPOUTPUT,TFIELDLIST(IDX),TFIELDLIST(IDX)%TFIELD_T0D(IMI)%DATA)
           ELSE
             call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
                             ': CLBTYPE/=NONE not allowed for 0D date/time fields' )
@@ -4000,7 +4002,7 @@ DO JI = 1,SIZE(TPOUTPUT%NFIELDLIST)
                             ': TFIELD_X1D%DATA is NOT associated' )
           END IF
           IF ( TFIELDLIST(IDX)%CLBTYPE == 'NONE' ) THEN
-            CALL IO_Field_write(TPOUTPUT%TFILE,TFIELDLIST(IDX),TFIELDLIST(IDX)%TFIELD_X1D(IMI)%DATA)
+            CALL IO_Field_write(TPOUTPUT,TFIELDLIST(IDX),TFIELDLIST(IDX)%TFIELD_X1D(IMI)%DATA)
           ELSE
             call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
                             ': CLBTYPE/=NONE not allowed for 1D real fields' )
@@ -4018,7 +4020,7 @@ DO JI = 1,SIZE(TPOUTPUT%NFIELDLIST)
                             ': TFIELD_N1D%DATA is NOT associated' )
           END IF
           IF ( TFIELDLIST(IDX)%CLBTYPE == 'NONE' ) THEN
-            CALL IO_Field_write(TPOUTPUT%TFILE,TFIELDLIST(IDX),TFIELDLIST(IDX)%TFIELD_N1D(IMI)%DATA)
+            CALL IO_Field_write(TPOUTPUT,TFIELDLIST(IDX),TFIELDLIST(IDX)%TFIELD_N1D(IMI)%DATA)
           ELSE
             call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
                             ': CLBTYPE/=NONE not allowed for 1D integer fields' )
@@ -4036,7 +4038,7 @@ DO JI = 1,SIZE(TPOUTPUT%NFIELDLIST)
                             ': TFIELD_L1D%DATA is NOT associated' )
           END IF
           IF ( TFIELDLIST(IDX)%CLBTYPE == 'NONE' ) THEN
-            CALL IO_Field_write(TPOUTPUT%TFILE,TFIELDLIST(IDX),TFIELDLIST(IDX)%TFIELD_L1D(IMI)%DATA)
+            CALL IO_Field_write(TPOUTPUT,TFIELDLIST(IDX),TFIELDLIST(IDX)%TFIELD_L1D(IMI)%DATA)
           ELSE
             call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
                             ': CLBTYPE/=NONE not allowed for 1D logical fields' )
@@ -4054,7 +4056,7 @@ DO JI = 1,SIZE(TPOUTPUT%NFIELDLIST)
                             ': TFIELD_C1D%DATA is NOT associated' )
           END IF
           IF ( TFIELDLIST(IDX)%CLBTYPE == 'NONE' ) THEN
-            CALL IO_Field_write(TPOUTPUT%TFILE,TFIELDLIST(IDX),TFIELDLIST(IDX)%TFIELD_C1D(IMI)%DATA)
+            CALL IO_Field_write(TPOUTPUT,TFIELDLIST(IDX),TFIELDLIST(IDX)%TFIELD_C1D(IMI)%DATA)
           ELSE
             call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
                             ': CLBTYPE/=NONE not allowed for 1D character fields' )
@@ -4072,7 +4074,7 @@ DO JI = 1,SIZE(TPOUTPUT%NFIELDLIST)
                             ': TFIELD_T1D%DATA is NOT associated' )
           END IF
           IF ( TFIELDLIST(IDX)%CLBTYPE == 'NONE' ) THEN
-            CALL IO_Field_write(TPOUTPUT%TFILE,TFIELDLIST(IDX),TFIELDLIST(IDX)%TFIELD_T1D(IMI)%DATA)
+            CALL IO_Field_write(TPOUTPUT,TFIELDLIST(IDX),TFIELDLIST(IDX)%TFIELD_T1D(IMI)%DATA)
           ELSE
             call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
                             ': CLBTYPE/=NONE not allowed for 1D date/time fields' )
@@ -4102,7 +4104,7 @@ DO JI = 1,SIZE(TPOUTPUT%NFIELDLIST)
                             ': TFIELD_X2D%DATA is NOT associated' )
           END IF
           IF ( TFIELDLIST(IDX)%CLBTYPE == 'NONE' ) THEN
-            CALL IO_Field_write(TPOUTPUT%TFILE,TFIELDLIST(IDX),TFIELDLIST(IDX)%TFIELD_X2D(IMI)%DATA)
+            CALL IO_Field_write(TPOUTPUT,TFIELDLIST(IDX),TFIELDLIST(IDX)%TFIELD_X2D(IMI)%DATA)
           ELSE
             call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
                             ': CLBTYPE/=NONE not allowed for 2D real fields' )
@@ -4120,7 +4122,7 @@ DO JI = 1,SIZE(TPOUTPUT%NFIELDLIST)
                             ': TFIELD_N2D%DATA is NOT associated' )
           END IF
           IF ( TFIELDLIST(IDX)%CLBTYPE == 'NONE' ) THEN
-            CALL IO_Field_write(TPOUTPUT%TFILE,TFIELDLIST(IDX),TFIELDLIST(IDX)%TFIELD_N2D(IMI)%DATA)
+            CALL IO_Field_write(TPOUTPUT,TFIELDLIST(IDX),TFIELDLIST(IDX)%TFIELD_N2D(IMI)%DATA)
           ELSE
             call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
                             ': CLBTYPE/=NONE not allowed for 2D integer fields' )
@@ -4150,11 +4152,11 @@ DO JI = 1,SIZE(TPOUTPUT%NFIELDLIST)
                             ': TFIELD_X3D%DATA is NOT associated' )
           END IF
           IF ( TFIELDLIST(IDX)%CLBTYPE == 'NONE' ) THEN
-            CALL IO_Field_write(TPOUTPUT%TFILE,TFIELDLIST(IDX),TFIELDLIST(IDX)%TFIELD_X3D(IMI)%DATA)
+            CALL IO_Field_write(TPOUTPUT,TFIELDLIST(IDX),TFIELDLIST(IDX)%TFIELD_X3D(IMI)%DATA)
           ELSE
             call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
                             ': CLBTYPE/=NONE not (yet) allowed for 3D real fields' )
-            !CALL IO_Field_write_lb(TPOUTPUT%TFILE,TFIELDLIST(IDX),***,TFIELDLIST(IDX)%TFIELD_X3D(IMI)%DATA)
+            !CALL IO_Field_write_lb(TPOUTPUT,TFIELDLIST(IDX),***,TFIELDLIST(IDX)%TFIELD_X3D(IMI)%DATA)
           END IF
         !
         !3D integer
@@ -4169,11 +4171,11 @@ DO JI = 1,SIZE(TPOUTPUT%NFIELDLIST)
                             ': TFIELD_N3D%DATA is NOT associated' )
           END IF
           IF ( TFIELDLIST(IDX)%CLBTYPE == 'NONE' ) THEN
-            CALL IO_Field_write(TPOUTPUT%TFILE,TFIELDLIST(IDX),TFIELDLIST(IDX)%TFIELD_N3D(IMI)%DATA)
+            CALL IO_Field_write(TPOUTPUT,TFIELDLIST(IDX),TFIELDLIST(IDX)%TFIELD_N3D(IMI)%DATA)
           ELSE
             call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
                             ': CLBTYPE/=NONE not (yet) allowed for 3D integer fields' )
-            !CALL IO_Field_write_lb(TPOUTPUT%TFILE,TFIELDLIST(IDX),***,TFIELDLIST(IDX)%TFIELD_N3D(IMI)%DATA)
+            !CALL IO_Field_write_lb(TPOUTPUT,TFIELDLIST(IDX),***,TFIELDLIST(IDX)%TFIELD_N3D(IMI)%DATA)
           END IF
         !
         !3D other types
@@ -4200,11 +4202,11 @@ DO JI = 1,SIZE(TPOUTPUT%NFIELDLIST)
                             ': TFIELD_X4D%DATA is NOT associated' )
           END IF
           IF ( TFIELDLIST(IDX)%CLBTYPE == 'NONE' ) THEN
-            CALL IO_Field_write(TPOUTPUT%TFILE,TFIELDLIST(IDX),TFIELDLIST(IDX)%TFIELD_X4D(IMI)%DATA)
+            CALL IO_Field_write(TPOUTPUT,TFIELDLIST(IDX),TFIELDLIST(IDX)%TFIELD_X4D(IMI)%DATA)
           ELSE
             call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
                             ': CLBTYPE/=NONE not (yet) allowed for 4D real fields' )
-            !CALL IO_Field_write_lb(TPOUTPUT%TFILE,TFIELDLIST(IDX),***,TFIELDLIST(IDX)%TFIELD_X4D(IMI)%DATA)
+            !CALL IO_Field_write_lb(TPOUTPUT,TFIELDLIST(IDX),***,TFIELDLIST(IDX)%TFIELD_X4D(IMI)%DATA)
           END IF
         !
         !4D other types
@@ -4231,11 +4233,11 @@ DO JI = 1,SIZE(TPOUTPUT%NFIELDLIST)
                             ': TFIELD_X5D%DATA is NOT associated' )
           END IF
           IF ( TFIELDLIST(IDX)%CLBTYPE == 'NONE' ) THEN
-            CALL IO_Field_write(TPOUTPUT%TFILE,TFIELDLIST(IDX),TFIELDLIST(IDX)%TFIELD_X5D(IMI)%DATA)
+            CALL IO_Field_write(TPOUTPUT,TFIELDLIST(IDX),TFIELDLIST(IDX)%TFIELD_X5D(IMI)%DATA)
           ELSE
             call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
                             ': CLBTYPE/=NONE not (yet) allowed for 5D real fields' )
-            !CALL IO_Field_write_lb(TPOUTPUT%TFILE,TFIELDLIST(IDX),***,TFIELDLIST(IDX)%TFIELD_X5D(IMI)%DATA)
+            !CALL IO_Field_write_lb(TPOUTPUT,TFIELDLIST(IDX),***,TFIELDLIST(IDX)%TFIELD_X5D(IMI)%DATA)
           END IF
         !
         !5D other types
@@ -4262,11 +4264,11 @@ DO JI = 1,SIZE(TPOUTPUT%NFIELDLIST)
                             ': TFIELD_X6D%DATA is NOT associated' )
           END IF
           IF ( TFIELDLIST(IDX)%CLBTYPE == 'NONE' ) THEN
-            CALL IO_Field_write(TPOUTPUT%TFILE,TFIELDLIST(IDX),TFIELDLIST(IDX)%TFIELD_X6D(IMI)%DATA)
+            CALL IO_Field_write(TPOUTPUT,TFIELDLIST(IDX),TFIELDLIST(IDX)%TFIELD_X6D(IMI)%DATA)
           ELSE
             call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
                             ': CLBTYPE/=NONE not (yet) allowed for 6D real fields' )
-            !CALL IO_Field_write_lb(TPOUTPUT%TFILE,TFIELDLIST(IDX),***,TFIELDLIST(IDX)%TFIELD_X6D(IMI)%DATA)
+            !CALL IO_Field_write_lb(TPOUTPUT,TFIELDLIST(IDX),***,TFIELDLIST(IDX)%TFIELD_X6D(IMI)%DATA)
           END IF
         !
         !6D other types
@@ -4299,7 +4301,7 @@ USE MODD_PRECIP_n,   ONLY: XINPRR
 !
 IMPLICIT NONE
 !
-TYPE(TOUTBAK),    INTENT(IN)  :: TPOUTPUT !Output structure
+TYPE(TFILEDATA), INTENT(IN) :: TPOUTPUT !Output structure
 !
 TYPE(TFIELDMETADATA) :: TZFIELD
 !
@@ -4321,7 +4323,7 @@ TZFIELD = TFIELDMETADATA( &
   NTYPE      = TYPEREAL,  &
   NDIMS      = 2,         &
   LTIMEDEP   = .TRUE.     )
-CALL IO_Field_write( TPOUTPUT%TFILE, TZFIELD, XUT(:,:,IKB) )
+CALL IO_Field_write( TPOUTPUT, TZFIELD, XUT(:,:,IKB) )
 
 TZFIELD = TFIELDMETADATA( &
   CMNHNAME   = 'VTLOW',   &
@@ -4334,7 +4336,7 @@ TZFIELD = TFIELDMETADATA( &
   NTYPE      = TYPEREAL,  &
   NDIMS      = 2,         &
   LTIMEDEP   = .TRUE.     )
-CALL IO_Field_write( TPOUTPUT%TFILE, TZFIELD, XVT(:,:,IKB) )
+CALL IO_Field_write( TPOUTPUT, TZFIELD, XVT(:,:,IKB) )
 
 TZFIELD = TFIELDMETADATA( &
   CMNHNAME   = 'THTLOW',  &
@@ -4347,7 +4349,7 @@ TZFIELD = TFIELDMETADATA( &
   NTYPE      = TYPEREAL,  &
   NDIMS      = 2,         &
   LTIMEDEP   = .TRUE.     )
-CALL IO_Field_write( TPOUTPUT%TFILE, TZFIELD, XTHT(:,:,IKB) )
+CALL IO_Field_write( TPOUTPUT, TZFIELD, XTHT(:,:,IKB) )
 
 TZFIELD = TFIELDMETADATA(           &
   CMNHNAME   = 'RVTLOW',            &
@@ -4361,7 +4363,7 @@ TZFIELD = TFIELDMETADATA(           &
   NTYPE      = TYPEREAL,            &
   NDIMS      = 2,                   &
   LTIMEDEP   = .TRUE.               )
-CALL IO_Field_write( TPOUTPUT%TFILE, TZFIELD, XRT(:,:,IKB,1) )
+CALL IO_Field_write( TPOUTPUT, TZFIELD, XRT(:,:,IKB,1) )
 
 TZFIELD = TFIELDMETADATA(         &
   CMNHNAME   = 'ACPRRSTEP',       &
@@ -4375,7 +4377,7 @@ TZFIELD = TFIELDMETADATA(         &
   NDIMS      = 2,                 &
   LTIMEDEP   = .TRUE.             )
 !XACPRR is multiplied by 1000. to convert from m to kg m-2 (water density is assumed to be 1000 kg m-3)
-CALL IO_Field_write( TPOUTPUT%TFILE, TZFIELD, XINPRR*XTSTEP*1.0E3 )
+CALL IO_Field_write( TPOUTPUT, TZFIELD, XINPRR*XTSTEP*1.0E3 )
 
 TZFIELD = TFIELDMETADATA( &
   CMNHNAME   = 'SVT001',  &
@@ -4388,7 +4390,7 @@ TZFIELD = TFIELDMETADATA( &
   NTYPE      = TYPEREAL,  &
   NDIMS      = 3,         &
   LTIMEDEP   = .TRUE.     )
-CALL IO_Field_write( TPOUTPUT%TFILE, TZFIELD, XSVT(:,:,:,1) )
+CALL IO_Field_write( TPOUTPUT, TZFIELD, XSVT(:,:,:,1) )
 #endif
 
 END SUBROUTINE IO_Field_user_write

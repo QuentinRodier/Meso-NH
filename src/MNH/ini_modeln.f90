@@ -380,7 +380,7 @@ USE MODD_NSV
 USE MODD_NSV
 USE MODD_NUDGING_n,         only: LNUDGING
 USE MODD_OCEANH
-USE MODD_OUT_n
+USE MODD_OUT_n,             ONLY: NBAK_NUMB, NOUT_NUMB
 USE MODD_PARAMETERS
 USE MODD_PARAM_KAFR_n
 USE MODD_PARAM_MFSHALL_n
@@ -1900,8 +1900,8 @@ IF (KMI == 1) THEN
       WRITE( YNAME,                           '( A, ".", I1, ".", A )' ) TRIM(CEXP), IMI, TRIM(ADJUSTL(CSEG)) // '.' // TRIM(YNUM)
     ELSE IF ( NMODELNUMLGTMAX == 2 ) THEN
       IF ( NMODEL > 99 ) CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'INI_MODEL_n', 'NMODEL>99 and NMODELNUMLGTMAX=2' )
-      WRITE( IO_SURF_MNH_MODEL(IMI)%COUTFILE, '( A, ".", I2, ".", A) ' ) TRIM(CEXP), IMI, TRIM(ADJUSTL(CSEG))
-      WRITE( YNAME,                           '( A, ".", I2, ".", A )' ) TRIM(CEXP), IMI, TRIM(ADJUSTL(CSEG)) // '.' // TRIM(YNUM)
+      WRITE( IO_SURF_MNH_MODEL(IMI)%COUTFILE, '( A, ".", I2.2, ".", A) ' ) TRIM(CEXP), IMI, TRIM(ADJUSTL(CSEG))
+      WRITE( YNAME,                           '( A, ".", I2.2, ".", A )' ) TRIM(CEXP), IMI, TRIM(ADJUSTL(CSEG)) // '.' // TRIM(YNUM)
     ELSE
       CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'INI_MODEL_n', 'NMODELNUMLGTMAX>2 not implemented' )
     END IF
@@ -1931,15 +1931,15 @@ END IF
 !*       7.    INITIALIZE GRIDS AND METRIC COEFFICIENTS
 !              ----------------------------------------
 !
-CALL SET_GRID( KMI, TPINIFILE, IKU, NIMAX_ll, NJMAX_ll,                        &
-               XTSTEP, XSEGLEN,                                                &
-               XLONORI, XLATORI, XLON, XLAT,                                   &
-               XXHAT, XYHAT, XDXHAT, XDYHAT, XXHATM, XYHATM,                   &
-               XXHAT_ll, XYHAT_ll, XXHATM_ll, XYHATM_ll,                       &
-               XHAT_BOUND, XHATM_BOUND,                                        &
-               XMAP, XZS, XZZ, XZHAT, XZHATM, XZTOP, LSLEVE,                   &
-               XLEN1, XLEN2, XZSMT, ZJ,                                        &
-               TDTMOD, TDTCUR, NSTOP, NBAK_NUMB, NOUT_NUMB, TBACKUPN, TOUTPUTN )
+CALL SET_GRID( KMI, TPINIFILE, IKU, NIMAX_ll, NJMAX_ll,      &
+               XTSTEP, XSEGLEN,                              &
+               XLONORI, XLATORI, XLON, XLAT,                 &
+               XXHAT, XYHAT, XDXHAT, XDYHAT, XXHATM, XYHATM, &
+               XXHAT_ll, XYHAT_ll, XXHATM_ll, XYHATM_ll,     &
+               XHAT_BOUND, XHATM_BOUND,                      &
+               XMAP, XZS, XZZ, XZHAT, XZHATM, XZTOP, LSLEVE, &
+               XLEN1, XLEN2, XZSMT, ZJ,                      &
+               TDTMOD, TDTCUR, NSTOP, NBAK_NUMB, NOUT_NUMB   )
 !
 CALL METRICS(XMAP,XDXHAT,XDYHAT,XZZ,XDXX,XDYY,XDZX,XDZY,XDZZ)
 !
