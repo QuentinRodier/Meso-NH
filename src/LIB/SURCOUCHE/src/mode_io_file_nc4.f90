@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2018-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2018-2024 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -125,7 +125,11 @@ subroutine IO_File_open_nc4(tpfile)
 
   if (trim(tpfile%cmode) == 'READ') then
     call IO_Mnhversion_get(tpfile)
-    if (tpfile%lmaster) call IO_Cleanly_closed_check_nc4(tpfile)
+    if (tpfile%lmaster) then
+      call IO_Cleanly_closed_check_nc4( tpfile )
+      ! Do not check precision loss on subfiles (parent has all the information needed)
+      if ( .not. associated( tpfile%tmainfile ) ) call IO_Check_precision_loss_nc4( tpfile )
+    end if
     call IO_Are_dimension_reduced(tpfile)
   end if
 
@@ -169,6 +173,169 @@ subroutine IO_Are_dimension_reduced(tpfile)
   end if
 
 end subroutine IO_Are_dimension_reduced
+
+
+subroutine IO_Check_precision_loss_nc4( tpfile )
+  use modd_io, only: lio_allow_reduced_precision_backup
+
+  type(tfiledata), intent(in) :: tpfile
+
+  character(len=:), allocatable :: yatt
+  integer                       :: ierrlvl
+  integer(kind=CDFINT)          :: ilen, istatus
+  integer, dimension(3)         :: imnhversion
+
+  call Print_msg( NVERB_DEBUG, 'IO', 'IO_Check_precision_loss_nc4', 'called for ' // trim(tpfile%cname) )
+
+  imnhversion = tpfile%nmnhversion
+  if ( imnhversion(1)<5                           .OR. &
+      (imnhversion(1)==5 .AND. imnhversion(2)<4)       ) then
+    call Print_msg( NVERB_DEBUG, 'IO', 'IO_Check_precision_loss_nc4', &
+                    'file ' // trim(tpfile%cname) // ' is too old (before MNH 5.4.0) to check if precision loss', olocal = .true. )
+    return
+  end if
+
+  if ( lio_allow_reduced_precision_backup ) then
+    ierrlvl = NVERB_WARNING
+  else
+    ierrlvl = NVERB_ERROR
+  end if
+
+  ! Check MNH_INT attribute
+  istatus = NF90_INQUIRE_ATTRIBUTE( tpfile%nncid, NF90_GLOBAL, 'MNH_INT', len = ilen )
+  if ( istatus /= NF90_NOERR ) then
+    call Print_msg( NVERB_ERROR, 'IO', 'IO_Check_precision_loss_nc4', &
+                    'MNH_INT attribute not found in file ' // trim(tpfile%cname), olocal = .true. )
+  else
+    allocate( character(len=ilen) :: yatt )
+    istatus = NF90_GET_ATT( tpfile%nncid, NF90_GLOBAL, 'MNH_INT', yatt )
+    if ( istatus /= NF90_NOERR ) then
+      call Print_msg( NVERB_WARNING, 'IO', 'IO_Check_precision_loss_nc4', &
+                     'MNH_INT attribute not found in file ' // trim(tpfile%cname), olocal = .true. )
+    else
+#if ( MNH_INT == 4 )
+      if ( yatt == '4' ) then
+        !Nothing to do
+      else if ( yatt == '8' ) then
+        call Print_msg( NVERB_WARNING, 'IO', 'IO_Check_precision_loss_nc4', &
+                        'integer precision is higher in file ' // trim(tpfile%cname) // ' than in Meso-NH', olocal = .true. )
+#elif ( MNH_INT == 8 )
+      if ( yatt == '4' ) then
+        call Print_msg( ierrlvl, 'IO', 'IO_Check_precision_loss_nc4', &
+                        'integer precision is lower in file ' // trim(tpfile%cname) // ' than in Meso-NH', olocal = .true. )
+      else if ( yatt == '8' ) then
+        !Nothing to do
+#else
+#error "Invalid MNH_INT"
+#endif
+      else
+        call Print_msg( NVERB_ERROR, 'IO', 'IO_Check_precision_loss_nc4', &
+                        'unknown value for MNH_INT (' // trim(yatt) // ') in file ' // trim(tpfile%cname), olocal = .true. )
+      end if
+    end if
+    deallocate( yatt )
+  end if
+
+  ! Check MNH_REAL attribute
+  istatus = NF90_INQUIRE_ATTRIBUTE( tpfile%nncid, NF90_GLOBAL, 'MNH_REAL', len = ilen )
+  if ( istatus /= NF90_NOERR ) then
+    call Print_msg( NVERB_ERROR, 'IO', 'IO_Check_precision_loss_nc4', &
+                    'MNH_REAL attribute not found in file ' // trim(tpfile%cname), olocal = .true. )
+  else
+    allocate( character(len=ilen) :: yatt )
+    istatus = NF90_GET_ATT( tpfile%nncid, NF90_GLOBAL, 'MNH_REAL', yatt )
+    if ( istatus /= NF90_NOERR ) then
+      call Print_msg( NVERB_WARNING, 'IO', 'IO_Check_precision_loss_nc4', &
+                     'MNH_REAL attribute not found in file ' // trim(tpfile%cname), olocal = .true. )
+    else
+#if ( MNH_REAL == 4 )
+      if ( yatt == '4' ) then
+        !Nothing to do
+      else if ( yatt == '8' ) then
+        call Print_msg( NVERB_WARNING, 'IO', 'IO_Check_precision_loss_nc4', &
+                        'float precision is higher in file ' // trim(tpfile%cname) // ' than in Meso-NH', olocal = .true. )
+#elif ( MNH_REAL == 8 )
+      if ( yatt == '4' ) then
+        call Print_msg( ierrlvl, 'IO', 'IO_Check_precision_loss_nc4', &
+                        'float precision is lower in file ' // trim(tpfile%cname) // ' than in Meso-NH', olocal = .true. )
+      else if ( yatt == '8' ) then
+        !Nothing to do
+#else
+#error "Invalid MNH_REAL"
+#endif
+      else
+        call Print_msg( NVERB_ERROR, 'IO', 'IO_Check_precision_loss_nc4', &
+                        'unknown value for MNH_REAL (' // trim(yatt) // ') in file ' // trim(tpfile%cname), olocal = .true. )
+      end if
+    end if
+    deallocate( yatt )
+  end if
+
+  imnhversion = tpfile%nmnhversion
+  if ( imnhversion(1)<5                                                 .OR. &
+      (imnhversion(1)==5 .AND. imnhversion(2)<7)                        .OR. &
+      (imnhversion(1)==5 .AND. imnhversion(2)==7 .AND. imnhversion(3)<1)     ) then
+    call Print_msg( NVERB_DEBUG, 'IO', 'IO_Check_precision_loss_nc4', &
+                    'file ' // trim(tpfile%cname) // ' is too old (before MNH 5.7.1) to check fully loss of precision' )
+    return
+  end if
+
+  ! Check MNH_REDUCE_FLOAT_PRECISION attribute
+  istatus = NF90_INQUIRE_ATTRIBUTE( tpfile%nncid, NF90_GLOBAL, 'MNH_REDUCE_FLOAT_PRECISION', len = ilen )
+  if ( istatus /= NF90_NOERR ) then
+    call Print_msg( NVERB_ERROR, 'IO', 'IO_Check_precision_loss_nc4', &
+                    'MNH_REDUCE_FLOAT_PRECISION attribute not found in file ' // trim(tpfile%cname), olocal = .true. )
+  else
+    allocate( character(len=ilen) :: yatt )
+    istatus = NF90_GET_ATT( tpfile%nncid, NF90_GLOBAL, 'MNH_REDUCE_FLOAT_PRECISION', yatt )
+    if ( istatus /= NF90_NOERR ) then
+      call Print_msg( NVERB_WARNING, 'IO', 'IO_Check_precision_loss_nc4', &
+                     'MNH_REDUCE_FLOAT_PRECISION attribute not found in file ' // trim(tpfile%cname), olocal = .true. )
+    else
+      if ( yatt == '0' ) then
+        !Nothing to do
+      else if ( yatt == '1' ) then
+        write( cmnhmsg(1), '( "reduced float precision in file ", A )' )  trim(tpfile%cname)
+        if ( .not. lio_allow_reduced_precision_backup ) &
+          cmnhmsg(2) = 'read can be forced by setting LIO_ALLOW_REDUCED_PRECISION_BACKUP=T in NAM_CONFIO'
+        call Print_msg( ierrlvl, 'IO', 'IO_Check_precision_loss_nc4', olocal = .true. )
+      else
+        call Print_msg( NVERB_ERROR, 'IO', 'IO_Check_precision_loss_nc4',                                                     &
+                        'unknown value for MNH_REDUCE_FLOAT_PRECISION (' // trim(yatt) // ') in file ' // trim(tpfile%cname), &
+                         olocal = .true. )
+      end if
+    end if
+    deallocate( yatt )
+  end if
+
+  ! Check MNH_COMPRESS_LOSSY attribute
+  istatus = NF90_INQUIRE_ATTRIBUTE( tpfile%nncid, NF90_GLOBAL, 'MNH_COMPRESS_LOSSY', len = ilen )
+  if ( istatus /= NF90_NOERR ) then
+    call Print_msg( NVERB_ERROR, 'IO', 'IO_Check_precision_loss_nc4', &
+                    'MNH_COMPRESS_LOSSY attribute not found in file ' // trim(tpfile%cname), olocal = .true. )
+  else
+    allocate( character(len=ilen) :: yatt )
+    istatus = NF90_GET_ATT( tpfile%nncid, NF90_GLOBAL, 'MNH_COMPRESS_LOSSY', yatt )
+    if ( istatus /= NF90_NOERR ) then
+      call Print_msg( NVERB_WARNING, 'IO', 'IO_Check_precision_loss_nc4', &
+                     'MNH_COMPRESS_LOSSY attribute not found in file ' // trim(tpfile%cname), olocal = .true. )
+    else
+      if ( yatt == '0' ) then
+        !Nothing to do
+      else if ( yatt == '1' ) then
+        write( cmnhmsg(1), '( "lossy compression in file ", A )' )  trim(tpfile%cname)
+        if ( .not. lio_allow_reduced_precision_backup ) &
+          cmnhmsg(2) = 'read can be forced by setting LIO_ALLOW_REDUCED_PRECISION_BACKUP=T in NAM_CONFIO'
+        call Print_msg( ierrlvl, 'IO', 'IO_Check_precision_loss_nc4', olocal = .true. )
+      else
+        call Print_msg( NVERB_ERROR, 'IO', 'IO_Check_precision_loss_nc4',                                                     &
+                        'unknown value for MNH_COMPRESS_LOSSY (' // trim(yatt) // ') in file ' // trim(tpfile%cname), &
+                         olocal = .true. )
+      end if
+    end if
+    deallocate( yatt )
+  end if
+end subroutine IO_Check_precision_loss_nc4
 
 
 subroutine IO_Cleanly_closed_check_nc4(tpfile)
