@@ -47,7 +47,8 @@ NAMELIST/NAM_BACKUP/LBAK_BEG,LBAK_END,&
                    XBAK_TIME,NBAK_STEP,&
                    NBAK_STEP_FREQ,NBAK_STEP_FREQ_FIRST,&
                    XBAK_TIME_FREQ,XBAK_TIME_FREQ_FIRST,&
-                   LBAK_COMPRESS, NBAK_COMPRESS_LEVEL,&
+                   LBAK_REDUCE_FLOAT_PRECISION,        &
+                   LBAK_COMPRESS, NBAK_COMPRESS_LEVEL, &
                    CBAK_DIR
 !
 END MODULE MODN_BACKUP

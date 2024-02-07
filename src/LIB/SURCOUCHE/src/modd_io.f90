@@ -65,6 +65,8 @@ CHARACTER(LEN=NDIRNAMELGTMAX) :: CIO_DIR = '' ! Directory for IO
 LOGICAL :: LIO_ALLOW_NO_BACKUP = .FALSE. ! Allow to have no valid backup time (useful for some tests)
 LOGICAL :: LIO_NO_WRITE        = .FALSE. ! Disable file writes (useful for benchs)
 
+LOGICAL :: LIO_ALLOW_REDUCED_PRECISION_BACKUP = .FALSE. ! Allow read/write of backup files with a reduced precision
+
 LOGICAL :: LIO_COMPRESS       = .FALSE. ! Compress (float) arrays (for netCDF)
 INTEGER :: NIO_COMPRESS_LEVEL = 4       ! Compression level (for netCDF)
 

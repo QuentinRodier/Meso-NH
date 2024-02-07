@@ -56,8 +56,9 @@ LOGICAL :: LBAK_END = .FALSE. ! Force a backup/output at the last timestep
 LOGICAL :: LOUT_END = .FALSE. ! of the segment for all models
 
 ! Compression
-LOGICAL, DIMENSION(JPMODELMAX) :: LOUT_REDUCE_FLOAT_PRECISION = .FALSE.
-! Reduce the precision of floats to single precision instead of double precision (for netCDF)
+
+LOGICAL, DIMENSION(JPMODELMAX) :: LBAK_REDUCE_FLOAT_PRECISION = .FALSE. ! Reduce the precision of floats to single precision
+LOGICAL, DIMENSION(JPMODELMAX) :: LOUT_REDUCE_FLOAT_PRECISION = .FALSE. !  instead of double precision (for netCDF)
 LOGICAL, DIMENSION(JPMODELMAX) :: LBAK_COMPRESS = .FALSE. ! Compress (float) arrays (for netCDF)
 LOGICAL, DIMENSION(JPMODELMAX) :: LOUT_COMPRESS = .FALSE. ! Compress (float) arrays (for netCDF)
 INTEGER, DIMENSION(JPMODELMAX) :: NBAK_COMPRESS_LEVEL = 4 ! Compression level (for netCDF)
