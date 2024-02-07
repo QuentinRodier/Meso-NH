@@ -36,6 +36,7 @@
 !!      Original    26/07/96
 !  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 14/12/2023: add lossy compression for output files
+!  P. Wautelet 07/02/2024: add compression for backup files
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -57,7 +58,9 @@ LOGICAL :: LOUT_END = .FALSE. ! of the segment for all models
 ! Compression
 LOGICAL, DIMENSION(JPMODELMAX) :: LOUT_REDUCE_FLOAT_PRECISION = .FALSE.
 ! Reduce the precision of floats to single precision instead of double precision (for netCDF)
+LOGICAL, DIMENSION(JPMODELMAX) :: LBAK_COMPRESS = .FALSE. ! Compress (float) arrays (for netCDF)
 LOGICAL, DIMENSION(JPMODELMAX) :: LOUT_COMPRESS = .FALSE. ! Compress (float) arrays (for netCDF)
+INTEGER, DIMENSION(JPMODELMAX) :: NBAK_COMPRESS_LEVEL = 4 ! Compression level (for netCDF)
 INTEGER, DIMENSION(JPMODELMAX) :: NOUT_COMPRESS_LEVEL = 4 ! Compression level (for netCDF)
 
 ! Lossy compression

@@ -65,6 +65,9 @@ CHARACTER(LEN=NDIRNAMELGTMAX) :: CIO_DIR = '' ! Directory for IO
 LOGICAL :: LIO_ALLOW_NO_BACKUP = .FALSE. ! Allow to have no valid backup time (useful for some tests)
 LOGICAL :: LIO_NO_WRITE        = .FALSE. ! Disable file writes (useful for benchs)
 
+LOGICAL :: LIO_COMPRESS       = .FALSE. ! Compress (float) arrays (for netCDF)
+INTEGER :: NIO_COMPRESS_LEVEL = 4       ! Compression level (for netCDF)
+
 INTEGER :: NFILE_NUM_MAX = 999 ! Maximum number for numbered files (ie backups and outputs)
 
 !Structure containing one pointer to a file

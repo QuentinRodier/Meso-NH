@@ -25,6 +25,7 @@
 !  P. Wautelet 14/12/2023: add lossy compression for output files
 !  P. Wautelet 17/01/2024: add IO_File_remove_from_list subroutine
 !  P. Wautelet 02/02/2024: restructure backups/outputs lists
+!  P. Wautelet 07/02/2024: add compression for all netCDF files
 !-----------------------------------------------------------------
 MODULE MODE_IO_MANAGE_STRUCT
 !
@@ -628,7 +629,6 @@ SUBROUTINE IO_SYNC_MODELS_INT(KNUMB,KSTEPS)
     IF (KSTEPS(IMI,JOUT) > 0) THEN
       KNUMB = KNUMB + 1
       !Output/backup time is propagated to nested models (with higher numbers)
-!PW: TODO:BUG?: what happens if 2 dissociated models? Use NSON(:) array?
       DO JKLOOP = IMI+1,NMODEL
         IDX = 1
         CALL FIND_NEXT_AVAIL_SLOT_INT(KSTEPS(JKLOOP,:),IDX)
@@ -913,11 +913,13 @@ SUBROUTINE IO_File_add2list( TPFILE, HNAME, HTYPE, HMODE,                       
   USE NETCDF, ONLY: NF90_QUANTIZE_BITGROOM, NF90_QUANTIZE_BITROUND, NF90_QUANTIZE_GRANULARBR
 !
 #endif
-USE MODD_BAKOUT,         ONLY: LOUT_COMPRESS, LOUT_REDUCE_FLOAT_PRECISION, NOUT_COMPRESS_LEVEL, &
+USE MODD_BAKOUT,         ONLY: LBAK_COMPRESS, LOUT_COMPRESS, LOUT_REDUCE_FLOAT_PRECISION, &
+                               NBAK_COMPRESS_LEVEL, NOUT_COMPRESS_LEVEL,                  &
                                COUT_COMPRESS_LOSSY_ALGO, LOUT_COMPRESS_LOSSY, NOUT_COMPRESS_LOSSY_NSD
 USE MODD_CONF,           ONLY: CPROGRAM
 USE MODD_CONFZ,          ONLY: NB_PROCIO_R, NB_PROCIO_W
 USE MODD_DYN_n,          ONLY: DYN_MODEL
+USE MODD_IO,             ONLY: LIO_COMPRESS, NIO_COMPRESS_LEVEL
 USE MODD_NESTING,        ONLY: NDAD
 !
 USE MODE_MODELN_HANDLER, ONLY: GET_CURRENT_MODEL_INDEX
@@ -1239,16 +1241,30 @@ SELECT CASE(TPFILE%CTYPE)
     TPFILE%NLFITYPE = ILFITYPE
     TPFILE%NLFIVERB = ILFIVERB
     !
+    ! Apply compression to all HTYPE='MNH*' files (if asked)
+    IF ( LIO_COMPRESS ) THEN
+      TPFILE%LNCCOMPRESS       = LIO_COMPRESS
+      IF ( NIO_COMPRESS_LEVEL < 0 .OR. NIO_COMPRESS_LEVEL > 9 ) THEN
+        CALL PRINT_MSG( NVERB_ERROR, 'IO', 'IO_File_add2list', &
+                        'NIO_COMPRESS_LEVEL must be in the [0..9] range' )
+        NIO_COMPRESS_LEVEL = 4
+      END IF
+      TPFILE%NNCCOMPRESS_LEVEL = NIO_COMPRESS_LEVEL
+    END IF
+    !
     IF (TRIM(HTYPE)=='MNHOUTPUT') THEN
 #ifdef MNH_IOCDF4
       TPFILE%LNCREDUCE_FLOAT_PRECISION = LOUT_REDUCE_FLOAT_PRECISION(IMI)
-      TPFILE%LNCCOMPRESS               = LOUT_COMPRESS(IMI)
-      IF ( NOUT_COMPRESS_LEVEL(IMI)<0 .OR. NOUT_COMPRESS_LEVEL(IMI)>9 ) THEN
-        CALL PRINT_MSG( NVERB_ERROR, 'IO', 'IO_File_add2list', &
-                        'NOUT_COMPRESS_LEVEL must be in the [0..9] range' )
-        NOUT_COMPRESS_LEVEL(IMI) = 4
+      ! Apply compression to output files if not already forced for all
+      IF ( .NOT. LIO_COMPRESS ) THEN
+        TPFILE%LNCCOMPRESS             = LOUT_COMPRESS(IMI)
+        IF ( NOUT_COMPRESS_LEVEL(IMI) < 0 .OR. NOUT_COMPRESS_LEVEL(IMI) > 9 ) THEN
+          CALL PRINT_MSG( NVERB_ERROR, 'IO', 'IO_File_add2list', &
+                          'NOUT_COMPRESS_LEVEL must be in the [0..9] range' )
+          NOUT_COMPRESS_LEVEL(IMI) = 4
+        END IF
+        TPFILE%NNCCOMPRESS_LEVEL       = NOUT_COMPRESS_LEVEL(IMI)
       END IF
-      TPFILE%NNCCOMPRESS_LEVEL         = NOUT_COMPRESS_LEVEL(IMI)
 
       !Set lossy compression
       TPFILE%LNCCOMPRESS_LOSSY = LOUT_COMPRESS_LOSSY(IMI)
@@ -1337,6 +1353,17 @@ SELECT CASE(TPFILE%CTYPE)
         TPFILE%NNCCOMPRESS_LOSSY_NSD = NOUT_COMPRESS_LOSSY_NSD(IMI)
       END IF
 #endif
+    ELSE IF (TRIM(HTYPE)=='MNHBACKUP' .OR. TRIM(HTYPE)=='MNHDIACHRONIC') THEN
+      ! Apply compression to backup files if not already forced for all
+      IF ( .NOT. LIO_COMPRESS ) THEN
+        TPFILE%LNCCOMPRESS       = LBAK_COMPRESS(IMI)
+        IF ( NBAK_COMPRESS_LEVEL(IMI) < 0 .OR. NBAK_COMPRESS_LEVEL(IMI) > 9 ) THEN
+          CALL PRINT_MSG( NVERB_ERROR, 'IO', 'IO_File_add2list', &
+                          'NBAK_COMPRESS_LEVEL must be in the [0..9] range' )
+          NBAK_COMPRESS_LEVEL(IMI) = 4
+        END IF
+        TPFILE%NNCCOMPRESS_LEVEL = NBAK_COMPRESS_LEVEL(IMI)
+      END IF
     END IF
     !
     IF ( TRIM(HTYPE) == 'MNHBACKUP' .OR. TRIM(HTYPE) == 'MNHOUTPUT' ) THEN

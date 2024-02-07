@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1996-2017 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1996-2024 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
@@ -31,8 +31,9 @@
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    26/07/96
-!!      Ph. Wautelet 2016       new structures for outputs/backups
-!!      Ph. Wautelet 02/10/2017 split NAM_OUTPUT in NAM_BACKUP and NAM_OUTPUT
+!  P. Wautelet       2016: new structures for outputs/backups
+!  P. Wautelet 02/10/2017: split NAM_OUTPUT in NAM_BACKUP and NAM_OUTPUT
+!  P. Wautelet 07/02/2024: add compression for backup files
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -46,6 +47,7 @@ NAMELIST/NAM_BACKUP/LBAK_BEG,LBAK_END,&
                    XBAK_TIME,NBAK_STEP,&
                    NBAK_STEP_FREQ,NBAK_STEP_FREQ_FIRST,&
                    XBAK_TIME_FREQ,XBAK_TIME_FREQ_FIRST,&
+                   LBAK_COMPRESS, NBAK_COMPRESS_LEVEL,&
                    CBAK_DIR
 !
 END MODULE MODN_BACKUP
