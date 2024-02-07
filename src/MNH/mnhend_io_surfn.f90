@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2003-2023 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2003-2024 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -52,7 +52,7 @@ END MODULE MODI_MNHEND_IO_SURF_n
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_IO_SURF_MNH, ONLY : CACTION, TPINFILE, COUTFILE, NMASK, NMASK_ALL
+USE MODD_IO_SURF_MNH, ONLY : CACTION, TPINFILE, NMASK, NMASK_ALL
 !
 USE MODE_ll
 !
@@ -72,7 +72,6 @@ INTEGER           :: IRESP          ! return-code if a problem appears
 !
 CACTION='     '
 !
-COUTFILE = ''
 TPINFILE => NULL()
 !
 DEALLOCATE(NMASK)

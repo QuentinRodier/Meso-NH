@@ -364,7 +364,6 @@ USE MODD_GRID_n
 USE MODD_GRID,              only: XLONORI,XLATORI
 USE MODD_IBM_PARAM_n,       only: LIBM, XIBM_IEPS, XIBM_LS, XIBM_XMUT
 USE MODD_IO,                only: CIO_DIR, NFILE_NUM_MAX, TFILEDATA, TFILE_DUMMY
-USE MODD_IO_SURF_MNH,       only: IO_SURF_MNH_MODEL
 USE MODD_LATZ_EDFLX
 USE MODD_LBC_n,             only: CLBCX, CLBCY
 use modd_les
@@ -1896,12 +1895,10 @@ IF (KMI == 1) THEN
   DO IMI = 1, NMODEL
     IF ( NMODELNUMLGTMAX == 1 ) THEN
       IF ( NMODEL > 9 ) CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'INI_MODEL_n', 'NMODEL>9 and NMODELNUMLGTMAX=1' )
-      WRITE( IO_SURF_MNH_MODEL(IMI)%COUTFILE, '( A, ".", I1, ".", A) ' ) TRIM(CEXP), IMI, TRIM(ADJUSTL(CSEG))
-      WRITE( YNAME,                           '( A, ".", I1, ".", A )' ) TRIM(CEXP), IMI, TRIM(ADJUSTL(CSEG)) // '.' // TRIM(YNUM)
+      WRITE( YNAME, '( A, ".", I1, ".", A )' ) TRIM(CEXP), IMI, TRIM(ADJUSTL(CSEG)) // '.' // TRIM(YNUM)
     ELSE IF ( NMODELNUMLGTMAX == 2 ) THEN
       IF ( NMODEL > 99 ) CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'INI_MODEL_n', 'NMODEL>99 and NMODELNUMLGTMAX=2' )
-      WRITE( IO_SURF_MNH_MODEL(IMI)%COUTFILE, '( A, ".", I2.2, ".", A) ' ) TRIM(CEXP), IMI, TRIM(ADJUSTL(CSEG))
-      WRITE( YNAME,                           '( A, ".", I2.2, ".", A )' ) TRIM(CEXP), IMI, TRIM(ADJUSTL(CSEG)) // '.' // TRIM(YNUM)
+      WRITE( YNAME, '( A, ".", I2.2, ".", A )' ) TRIM(CEXP), IMI, TRIM(ADJUSTL(CSEG)) // '.' // TRIM(YNUM)
     ELSE
       CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'INI_MODEL_n', 'NMODELNUMLGTMAX>2 not implemented' )
     END IF

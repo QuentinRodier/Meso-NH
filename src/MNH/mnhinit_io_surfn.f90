@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2003-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2003-2024 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -57,7 +57,7 @@ END MODULE MODI_MNHINIT_IO_SURF_n
 !
 USE MODD_CONF,             ONLY: CPROGRAM
 USE MODD_DIM_n,            ONLY: NIMAX_ll, NJMAX_ll
-USE MODD_IO_SURF_MNH,      ONLY: TOUT, TPINFILE, COUTFILE,                             &
+USE MODD_IO_SURF_MNH,      ONLY: TOUT, TPINFILE,                                       &
                                  NMASK, CMASK, NIU, NJU, NIB, NJB, NIE, NJE, CACTION,  &
                                  NMASK_ALL, NIU_ALL, NJU_ALL, NIB_ALL, NJB_ALL,        &
                                  NIE_ALL, NJE_ALL, NHALO
@@ -116,12 +116,6 @@ IF (HACTION=='READ ') THEN
     CASE('REAL  ','IDEAL ','NESPGD','SPAWN ','ZOOMPG')
       TPINFILE => TPGDFILE
   END SELECT
-ELSE IF (HACTION=='WRITE') THEN
-  IF (ASSOCIATED(TOUTDATAFILE)) THEN
-    COUTFILE = TOUTDATAFILE%CNAME
-  ELSE
-    COUTFILE = ''
-  END IF
 END IF
 !
 !*       3.    initialisation of 2D arrays

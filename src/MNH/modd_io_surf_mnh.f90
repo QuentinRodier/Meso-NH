@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2024 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -41,7 +41,6 @@ INTEGER                              :: NHALO = 0
 
 TYPE IO_SURF_MNH_t
   TYPE(TFILEDATA),POINTER        :: TPINFILE => NULL() ! Input FM-file
-  CHARACTER(LEN=NFILENAMELGTMAX) :: COUTFILE    ! Name of the output FM-file
   TYPE(TFILEDATA),POINTER        :: TOUT => NULL() ! Output_listing file
   CHARACTER(LEN=6)               :: CMASK
   INTEGER, DIMENSION(:), POINTER :: NMASK=>NULL()     ! 1D mask to read only interesting surface
@@ -65,7 +64,6 @@ TYPE(IO_SURF_MNH_t), DIMENSION(JPMODELMAX), TARGET, SAVE :: IO_SURF_MNH_MODEL
 !!!!!!!!!!!!!!!!!!!! LOCAL VARIABLE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 TYPE(TFILEDATA)       ,POINTER :: TPINFILE => NULL()  ! Input FM-file
-CHARACTER(LEN=NFILENAMELGTMAX), POINTER :: COUTFILE =>NULL()   ! Name of the output FM-file
 TYPE(TFILEDATA)       ,POINTER :: TOUT => NULL()      ! Output_listing file
 CHARACTER(LEN=6)      ,POINTER :: CMASK =>NULL()
 INTEGER, DIMENSION(:), POINTER :: NMASK=>NULL()     ! 1D mask to read only interesting surface
@@ -93,7 +91,6 @@ IO_SURF_MNH_MODEL(KFROM)%NMASK_ALL=>NMASK_ALL
 
 ! current model is set for model KTO 
 TPINFILE=>IO_SURF_MNH_MODEL(KTO)%TPINFILE
-COUTFILE=>IO_SURF_MNH_MODEL(KTO)%COUTFILE
 TOUT=>IO_SURF_MNH_MODEL(KTO)%TOUT
 CMASK=>IO_SURF_MNH_MODEL(KTO)%CMASK
 NMASK=>IO_SURF_MNH_MODEL(KTO)%NMASK

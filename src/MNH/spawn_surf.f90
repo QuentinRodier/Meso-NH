@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2004-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2004-2024 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -76,10 +76,8 @@ END MODULE MODI_SPAWN_SURF
 USE MODD_CONF,         ONLY : NVERB
 USE MODD_GRID_n,       ONLY : XZS
 USE MODD_IO,           ONLY : TFILEDATA
-USE MODD_IO_SURF_MNH,  ONLY : COUTFILE
 USE MODD_LUNIT,        ONLY : TPGDFILE, TOUTDATAFILE
 USE MODD_MNH_SURFEX_n
-USE MODD_NESTING,      ONLY : CMY_NAME
 USE MODD_PARAMETERS,   ONLY : NFILENAMELGTMAX
 USE MODD_PARAM_n,      ONLY : CSURF
 USE MODD_TIME_n,       ONLY : TDTCUR
@@ -121,7 +119,6 @@ IF (CSURF=='EXTE') THEN
   IF (OSPAWN_SURF) THEN
     TPGDFILE     => TPOUTDATAFILE !Corresponding to file with CNAME = CMY_NAME(2)
     TOUTDATAFILE => TPOUTDATAFILE !Corresponding to file with CNAME = CMY_NAME(2)
-    COUTFILE   = CMY_NAME(2)
     !* spawn PGD fields
     CALL GOTO_SURFEX(1)
     !JUAN REALZ
