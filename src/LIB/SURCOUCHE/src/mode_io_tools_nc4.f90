@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2023 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2024 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -20,6 +20,7 @@
 !  P. Wautelet 04/05/2021: improve IO_Vdims_fill_nc4 if l2d and lpack
 !  P. Wautelet 27/05/2021: improve IO_Mnhname_clean to autocorrect names to be CF compliant
 !  P. Wautelet 08/10/2021: add 2 new dimensions: LW_bands and SW_bands
+!  P. Wautelet 15/02/2024: add time dimension for Lagrangian trajectories
 !-----------------------------------------------------------------
 #ifdef MNH_IOCDF4
 module mode_io_tools_nc4
@@ -250,12 +251,13 @@ use modd_budget,        only: cbutype, lbu_icp, lbu_jcp, lbu_kcp, nbuimax_ll, nb
 use modd_lbc_n,         only: clbcx, clbcy
 USE MODD_CONF,          ONLY: CPROGRAM, l2d, lpack
 USE MODD_CONF_n,        ONLY: CSTORAGE_TYPE
+USE MODD_DIAG_FLAG,     ONLY: LTRAJ
 USE MODD_DIM_n,         ONLY: NIMAX_ll, NJMAX_ll, NKMAX
 use modd_dyn,           only: xseglen
 use modd_dyn_n,         only: dyn_model
 use modd_field,         only: NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NI_U, NMNHDIM_NJ_U, NMNHDIM_NI_V, NMNHDIM_NJ_V,   &
                               NMNHDIM_LEVEL, NMNHDIM_LEVEL_W, NMNHDIM_TIME,                                     &
-                              NMNHDIM_ONE,  NMNHDIM_NSWB, NMNHDIM_NLWB, NMNHDIM_COMPLEX,                        &
+                              NMNHDIM_ONE,  NMNHDIM_NSWB, NMNHDIM_NLWB, NMNHDIM_TRAJ_TIME, NMNHDIM_COMPLEX,     &
                               NMNHDIM_BUDGET_CART_NI, NMNHDIM_BUDGET_CART_NJ, NMNHDIM_BUDGET_CART_NI_U,         &
                               NMNHDIM_BUDGET_CART_NJ_U, NMNHDIM_BUDGET_CART_NI_V, NMNHDIM_BUDGET_CART_NJ_V,     &
                               NMNHDIM_BUDGET_CART_LEVEL, NMNHDIM_BUDGET_CART_LEVEL_W,                           &
@@ -281,6 +283,7 @@ use modd_radiations_n,  only: nlwb_mnh, nswb_mnh
 use modd_series,        only: lseries
 use modd_series_n,      only: nsnbstept
 use modd_station_n,     only: lstation, tstations_time
+use modd_sto_file,      only: ntrajstlg
 
 TYPE(TFILEDATA),INTENT(INOUT)        :: TPFILE
 CHARACTER(LEN=*),OPTIONAL,INTENT(IN) :: HPROGRAM_ORIG !To emulate a file coming from this program
@@ -342,6 +345,11 @@ end if
 if ( tpfile%ctype /= 'MNHDIACHRONIC' .and. crad /= 'NONE' ) then
   call IO_Add_dim_nc4( tpfile, NMNHDIM_NSWB, 'SW_bands', nswb_mnh ) !number of SW bands practically used
   call IO_Add_dim_nc4( tpfile, NMNHDIM_NLWB, 'LW_bands', nlwb_mnh ) !number of LW bands practically used
+end if
+
+if ( tpfile%ctype == 'MNHDIAG' .and. Trim( yprogram ) == 'DIAG' ) then
+   !Number of times for Lagrangian trajectories
+  if ( ltraj .and. ntrajstlg > 0 ) call IO_Add_dim_nc4( tpfile, NMNHDIM_TRAJ_TIME, 'time_lagrangian', ntrajstlg )
 end if
 
 !Write dimensions used in diachronic files

@@ -33,6 +33,7 @@
 !  P. Wautelet 21/06/2022: bugfix: time_budget was not computed correctly (tdtexp -> tdtseg)
 !  P. Wautelet 13/01/2023: IO_Coordvar_write_nc4: add optional dummy argument TPDTMODELN to force written model time
 !  P. Wautelet 14/12/2023: add lossy compression for output files
+!  P. Wautelet 15/02/2024: IO_Coordvar_write_nc4: add time dimension for Lagrangian trajectories
 !-----------------------------------------------------------------
 #ifdef MNH_IOCDF4
 module mode_io_write_nc4
@@ -1441,10 +1442,11 @@ use modd_budget,     only: cbutype, lbu_icp, lbu_jcp, lbu_kcp, nbuih, nbuil, nbu
                            nbustep, nbutotwrite
 use modd_conf,       only: cprogram, l2d, lcartesian
 use modd_conf_n,     only: cstorage_type
+use modd_diag_flag,  only: ltraj
 use modd_dim_n,      only: nkmax
 use modd_dyn_n,      only: xtstep
 use modd_field,      only: NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NI_U, NMNHDIM_NJ_U, NMNHDIM_NI_V, NMNHDIM_NJ_V, &
-                           NMNHDIM_LEVEL, NMNHDIM_LEVEL_W, NMNHDIM_TIME,                                   &
+                           NMNHDIM_LEVEL, NMNHDIM_LEVEL_W, NMNHDIM_TIME, NMNHDIM_TRAJ_TIME,                &
                            NMNHDIM_BUDGET_CART_NI,   NMNHDIM_BUDGET_CART_NJ,   NMNHDIM_BUDGET_CART_NI_U,   &
                            NMNHDIM_BUDGET_CART_NJ_U, NMNHDIM_BUDGET_CART_NI_V, NMNHDIM_BUDGET_CART_NJ_V,   &
                            NMNHDIM_BUDGET_CART_LEVEL, NMNHDIM_BUDGET_CART_LEVEL_W,                         &
@@ -1685,6 +1687,14 @@ if ( tzfile%lmaster ) then !time scale is the same on all processes
         call Write_time_coord( tzfile%tncdims%tdims(nmnhdim_time), 'time axis', [ tdtcur ] )
       end if
     end if
+  end if
+end if
+
+! Write time scale for lagrangian variables
+if ( tzfile%lmaster ) then
+  if ( Trim( yprogram ) == 'DIAG' ) then
+    if ( ltraj .and. ntrajstlg > 0 ) &
+      call Write_time_coord( tzfile%tncdims%tdims(NMNHDIM_TRAJ_TIME), 'time axis for Lagrangian trajectories', tlagr_dates )
   end if
 end if
 

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2016-2023 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2016-2024 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -16,6 +16,7 @@
 !  P. Wautelet 08/10/2021: add 2 new dimensions: LW_bands (NMNHDIM_NLWB) and SW_bands (NMNHDIM_NSWB)
 !  P. Wautelet 14/10/2021: dynamically allocate tfieldlist (+ reallocate if necessary)
 !  P. Wautelet 04/11/2021: add TFIELDMETADATA type
+!  P. Wautelet 15/02/2024: add time dimension for Lagrangian trajectories
 !-----------------------------------------------------------------
 module modd_field
 
@@ -51,49 +52,51 @@ integer, parameter :: NMNHDIM_ONE                 = 10
 integer, parameter :: NMNHDIM_NSWB                = 11
 integer, parameter :: NMNHDIM_NLWB                = 12
 
-integer, parameter :: NMNHDIM_LASTDIM_NODIACHRO   = 12 ! Index of the last defined dimension for non-diachronic files
+integer, PARAMETER :: NMNHDIM_TRAJ_TIME           = 13
 
-integer, parameter :: NMNHDIM_COMPLEX             = 13
+integer, parameter :: NMNHDIM_LASTDIM_NODIACHRO   = 13 ! Index of the last defined dimension for non-diachronic files
 
-integer, parameter :: NMNHDIM_BUDGET_CART_NI      = 14
-integer, parameter :: NMNHDIM_BUDGET_CART_NJ      = 15
-integer, parameter :: NMNHDIM_BUDGET_CART_NI_U    = 16
-integer, parameter :: NMNHDIM_BUDGET_CART_NJ_U    = 17
-integer, parameter :: NMNHDIM_BUDGET_CART_NI_V    = 18
-integer, parameter :: NMNHDIM_BUDGET_CART_NJ_V    = 19
-integer, parameter :: NMNHDIM_BUDGET_CART_LEVEL   = 20
-integer, parameter :: NMNHDIM_BUDGET_CART_LEVEL_W = 21
+integer, parameter :: NMNHDIM_COMPLEX             = 14
 
-integer, parameter :: NMNHDIM_BUDGET_MASK_LEVEL   = 22
-integer, parameter :: NMNHDIM_BUDGET_MASK_LEVEL_W = 23
-integer, parameter :: NMNHDIM_BUDGET_MASK_NBUMASK = 24
+integer, parameter :: NMNHDIM_BUDGET_CART_NI      = 15
+integer, parameter :: NMNHDIM_BUDGET_CART_NJ      = 16
+integer, parameter :: NMNHDIM_BUDGET_CART_NI_U    = 17
+integer, parameter :: NMNHDIM_BUDGET_CART_NJ_U    = 18
+integer, parameter :: NMNHDIM_BUDGET_CART_NI_V    = 19
+integer, parameter :: NMNHDIM_BUDGET_CART_NJ_V    = 20
+integer, parameter :: NMNHDIM_BUDGET_CART_LEVEL   = 21
+integer, parameter :: NMNHDIM_BUDGET_CART_LEVEL_W = 22
 
-integer, parameter :: NMNHDIM_BUDGET_TIME         = 25
+integer, parameter :: NMNHDIM_BUDGET_MASK_LEVEL   = 23
+integer, parameter :: NMNHDIM_BUDGET_MASK_LEVEL_W = 24
+integer, parameter :: NMNHDIM_BUDGET_MASK_NBUMASK = 25
 
-integer, parameter :: NMNHDIM_BUDGET_LES_TIME     = 26
-integer, parameter :: NMNHDIM_BUDGET_LES_AVG_TIME = 27
-integer, parameter :: NMNHDIM_BUDGET_LES_LEVEL    = 28
-integer, parameter :: NMNHDIM_BUDGET_LES_SV       = 29
-integer, parameter :: NMNHDIM_BUDGET_LES_PDF      = 30
+integer, parameter :: NMNHDIM_BUDGET_TIME         = 26
+
+integer, parameter :: NMNHDIM_BUDGET_LES_TIME     = 27
+integer, parameter :: NMNHDIM_BUDGET_LES_AVG_TIME = 28
+integer, parameter :: NMNHDIM_BUDGET_LES_LEVEL    = 29
+integer, parameter :: NMNHDIM_BUDGET_LES_SV       = 30
+integer, parameter :: NMNHDIM_BUDGET_LES_PDF      = 31
 integer, parameter :: NMNHDIM_BUDGET_LES_MASK     = 100 ! This is not a true dimension
 
-integer, parameter :: NMNHDIM_SPECTRA_2PTS_NI     = 31
-integer, parameter :: NMNHDIM_SPECTRA_2PTS_NJ     = 32
-integer, parameter :: NMNHDIM_SPECTRA_SPEC_NI     = 33
-integer, parameter :: NMNHDIM_SPECTRA_SPEC_NJ     = 34
-integer, parameter :: NMNHDIM_SPECTRA_LEVEL       = 35
+integer, parameter :: NMNHDIM_SPECTRA_2PTS_NI     = 32
+integer, parameter :: NMNHDIM_SPECTRA_2PTS_NJ     = 33
+integer, parameter :: NMNHDIM_SPECTRA_SPEC_NI     = 34
+integer, parameter :: NMNHDIM_SPECTRA_SPEC_NJ     = 35
+integer, parameter :: NMNHDIM_SPECTRA_LEVEL       = 36
 
-integer, parameter :: NMNHDIM_SERIES_LEVEL        = 36
-integer, parameter :: NMNHDIM_SERIES_LEVEL_W      = 37
-integer, parameter :: NMNHDIM_SERIES_TIME         = 38  ! Time dimension for time series
+integer, parameter :: NMNHDIM_SERIES_LEVEL        = 37
+integer, parameter :: NMNHDIM_SERIES_LEVEL_W      = 38
+integer, parameter :: NMNHDIM_SERIES_TIME         = 39  ! Time dimension for time series
 
-integer, parameter :: NMNHDIM_FLYER_TIME          = 39  ! Time dimension for aircraft/balloon (dimension local to each flyer)
-integer, parameter :: NMNHDIM_PROFILER_TIME       = 40  ! Time dimension for profilers
-integer, parameter :: NMNHDIM_STATION_TIME        = 41  ! Time dimension for stations
+integer, parameter :: NMNHDIM_FLYER_TIME          = 40  ! Time dimension for aircraft/balloon (dimension local to each flyer)
+integer, parameter :: NMNHDIM_PROFILER_TIME       = 41  ! Time dimension for profilers
+integer, parameter :: NMNHDIM_STATION_TIME        = 42  ! Time dimension for stations
 
-integer, parameter :: NMNHDIM_PAIR                = 42  ! For values coming by pair (ie boundaries)
+integer, parameter :: NMNHDIM_PAIR                = 43  ! For values coming by pair (ie boundaries)
 
-integer, parameter :: NMNHDIM_LASTDIM_DIACHRO     = 42  ! Index of the last defined dimension for diachronic files
+integer, parameter :: NMNHDIM_LASTDIM_DIACHRO     = 43  ! Index of the last defined dimension for diachronic files
 
 integer, parameter :: NMNHDIM_BUDGET_NGROUPS      = 101 ! This is not a true dimension
 integer, parameter :: NMNHDIM_FLYER_PROC          = 102 ! This is not a true dimension

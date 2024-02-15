@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1999-2023 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1999-2024 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -138,6 +138,7 @@ USE MODD_TIME_n
 USE MODD_TURB_n
 USE MODD_VAR_ll
 !
+USE MODE_COMPUTE_R00
 USE MODE_DATETIME
 USE MODE_FINALIZE_MNH,     only: FINALIZE_MNH
 USE MODE_IO_FILE,          only: IO_File_close, IO_File_open
@@ -154,7 +155,6 @@ USE MODE_POS
 USE MODE_TIME
 !
 USE MODI_CH_MONITOR_n
-USE MODI_COMPUTE_R00
 USE MODI_DIAG_SURF_ATM_N
 USE MODI_INIT_MNH
 USE MODI_PHYS_PARAM_n
@@ -187,7 +187,6 @@ REAL(kind=MNHTIME), DIMENSION(2) :: ZSTART, ZINIT, ZWRIT, ZPHYS, ZSURF, ZWRITS, 
 INTEGER(KIND=LFIINT) :: INPRAR ! number of articles predicted  in the LFIFM file
 INTEGER :: ILUNAM      ! Logical unit numbers for the namelist file
                        ! and for output_listing file
-INTEGER        :: JF =0   !  loop index
 LOGICAL :: GFOUND         ! Return code when searching namelist
 LOGICAL, DIMENSION(:,:),ALLOCATABLE     :: GMASKkids ! kids domains mask
 LOGICAL:: GCLOUD_ONLY          ! conditionnal radiation computations for
@@ -406,21 +405,7 @@ CALL IO_File_close(TZNMLFILE)
 CINIFILE = YINIFILE(1)
 CINIFILEPGD = YINIFILEPGD(1)
 !!
-IF (LTRAJ) THEN
-  JF=1
-  DO WHILE (LEN_TRIM(CFILES(JF))/=0)
-    JF=JF+1
-  END DO
-  !
-  IF (JF/=1) THEN
-    IF (CINIFILE==CFILES(JF-1)) THEN
-!callabortstop
-      CALL PRINT_MSG(NVERB_FATAL,'GEN','DIAG','initial file not treated')
-    END IF
-  END IF
-!
-END IF
-!
+IF ( LTRAJ ) CALL INI_COMPUTE_R00()
 !
 !-------------------------------------------------------------------------------
 !
@@ -655,7 +640,7 @@ ZTIME1=ZTIME2
 !
 !*       8.0    Initial positions computation (back into simulation segments)
 !
-IF (LTRAJ .AND. JF/=1) CALL COMPUTE_R00(TOUTDATAFILE)
+IF ( LTRAJ ) CALL COMPUTE_R00( TOUTDATAFILE )
 !
 CALL SECOND_MNH2(ZTIME2)
 ZTRAJ =ZTIME2-ZTIME1
