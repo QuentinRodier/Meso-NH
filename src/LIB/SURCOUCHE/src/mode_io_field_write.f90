@@ -48,6 +48,7 @@ MODULE MODE_IO_FIELD_WRITE
   public :: IO_Field_write, IO_Field_write_box, IO_Field_write_lb
   public :: IO_Fieldlist_write, IO_Field_user_write
   public :: IO_Header_write, IO_Field_create
+  public :: IO_Format_write_select
 
   INTERFACE IO_Field_write
      MODULE PROCEDURE IO_Field_write_byname_X0, IO_Field_write_byname_X1,  &

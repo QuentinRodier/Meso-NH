@@ -149,7 +149,7 @@ USE MODD_TYPE_DATE
 USE MODD_VAR_ll
 !
 USE MODE_IO_FIELD_READ,    only: IO_Field_read
-USE MODE_IO_FIELD_WRITE,   only: IO_Field_create, IO_Field_write
+USE MODE_IO_FIELD_WRITE,   only: IO_Field_create, IO_Field_write, IO_Format_write_select
 USE MODE_IO_FILE,          only: IO_File_close, IO_File_open
 USE MODE_IO_MANAGE_STRUCT, ONLY: IO_File_add2list
 USE MODE_ll
@@ -179,6 +179,7 @@ REAL, ALLOCATABLE, DIMENSION(:,:,:):: ZRV0          ! same fields
        ! for Rv as for the coordinates of the origin
 REAL, ALLOCATABLE, DIMENSION(:,:,:):: ZWORK1,ZWORK2,ZWORK3       
 TYPE(DATE_TIME)                    :: TDTCUR_START
+LOGICAL                            :: GLFI, GNC4
 LOGICAL                            :: GSTART
 REAL                               :: ZXMAX,ZYMAX,ZZMAX  ! domain extrema
 TYPE(TFIELDMETADATA)               :: TZFIELD
@@ -187,6 +188,9 @@ TYPE(TFIELDMETADATA)               :: TZFIELD_TH0, TZFIELD_RV0
 TYPE(TFILEDATA),POINTER            :: TZTRACFILE
 !
 !-------------------------------------------------------------------------------
+
+CALL IO_FORMAT_WRITE_SELECT( TPFILE, GLFI, GNC4 )
+if ( GLFI ) CALL PRINT_MSG( NVERB_ERROR, 'COMPUTE_R00', 'LFI fileformat not supported for Lagrangian trajectories' )
 !
 !*       1.0    INITIALIZATION
 !               --------------
