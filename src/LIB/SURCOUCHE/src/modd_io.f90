@@ -70,6 +70,9 @@ LOGICAL :: LIO_ALLOW_REDUCED_PRECISION_BACKUP = .FALSE. ! Allow read/write of ba
 LOGICAL :: LIO_COMPRESS       = .FALSE. ! Compress (float) arrays (for netCDF)
 INTEGER :: NIO_COMPRESS_LEVEL = 4       ! Compression level (for netCDF)
 
+LOGICAL :: LDIAG_REDUCE_FLOAT_PRECISION = .FALSE. ! For files written by DIAG, reduce the precision of floats to single precision
+                                                  ! instead of double precision (for netCDF)
+
 INTEGER :: NFILE_NUM_MAX = 999 ! Maximum number for numbered files (ie backups and outputs)
 
 !Structure containing one pointer to a file

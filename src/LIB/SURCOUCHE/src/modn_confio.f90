@@ -40,7 +40,7 @@
 !
 USE MODD_IO, ONLY : LVERB_OUTLST, LVERB_STDOUT, LVERB_ALLPRC,                                            &
                     NBUD_VERB, NBUD_ABORT_LEVEL, NIO_VERB, NIO_ABORT_LEVEL, NGEN_VERB, NGEN_ABORT_LEVEL, &
-                    LIO_COMPRESS, NIO_COMPRESS_LEVEL,                                                    &
+                    LIO_COMPRESS, NIO_COMPRESS_LEVEL, LDIAG_REDUCE_FLOAT_PRECISION,                      &
                     CIO_DIR, LIO_ALLOW_NO_BACKUP, LIO_NO_WRITE, LIO_ALLOW_REDUCED_PRECISION_BACKUP,      &
                     NFILE_NUM_MAX
 !
@@ -58,6 +58,7 @@ NAMELIST/NAM_CONFIO/LCDF4, LLFIOUT, LLFIREAD,                 &
                     NGEN_VERB, NGEN_ABORT_LEVEL, CIO_DIR,     &
                     LIO_COMPRESS, NIO_COMPRESS_LEVEL,         &
                     LIO_ALLOW_NO_BACKUP, LIO_NO_WRITE,        &
+                    LDIAG_REDUCE_FLOAT_PRECISION,             &
                     LIO_ALLOW_REDUCED_PRECISION_BACKUP,       &
                     NFILE_NUM_MAX
 !
