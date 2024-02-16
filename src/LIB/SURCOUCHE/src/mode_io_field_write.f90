@@ -29,7 +29,7 @@ MODULE MODE_IO_FIELD_WRITE
 
   use modd_field,        only: tfieldlist, tfieldmetadata, tfieldmetadata_base, &
                                TYPECHAR, TYPEDATE, TYPEINT, TYPELOG, TYPEREAL
-  USE MODD_IO,         ONLY: TFILEDATA, TOUTBAK
+  USE MODD_IO,         ONLY: TFILEDATA
   USE MODD_MPIF
   use modd_parameters, only: NFILENAMELGTMAX, NMNHNAMELGTMAX
   use modd_precision,  only: MNHINT_MPI, MNHREAL_MPI, MNHTIME

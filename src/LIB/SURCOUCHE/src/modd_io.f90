@@ -81,16 +81,6 @@ TYPE TFILE_ELT
   TYPE(TFILEDATA), POINTER :: TFILE => NULL()
 END TYPE TFILE_ELT
 
-!Structure describing the characteristics of an output or a backup
-TYPE TOUTBAK
-  INTEGER           :: NID = -1     !Backup number
-  INTEGER           :: NSTEP        !Timestep number
-  REAL              :: XTIME        !Time from start of the segment (in seconds and rounded to a timestep)
-  TYPE(TFILEDATA), POINTER :: TFILE => NULL() !Corresponding file
-  TYPE(TFILE_ELT), DIMENSION(:) ,ALLOCATABLE :: TFILE_IOZ !Corresponding Z-split files
-  INTEGER,DIMENSION(:), POINTER :: NFIELDLIST => NULL() !List of the fields to read or write
-END TYPE TOUTBAK
-
 !Structure describing the characteristics of a file
 TYPE TFILEDATA
   CHARACTER(LEN=NFILENAMELGTMAX)  :: CNAME = '' !Filename
