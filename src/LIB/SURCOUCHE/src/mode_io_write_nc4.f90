@@ -1470,6 +1470,7 @@ use modd_profiler_n, only: lprofiler, tprofilers_time
 use modd_series,     only: lseries
 use modd_series_n,   only: nsnbstept, tpsdates
 use modd_station_n,  only: lstation, tstations_time
+use modd_sto_file,   only: ntrajstlg, tlagr_dates
 use modd_time,       only: tdtseg
 use modd_time_n,     only: tdtcur
 use modd_type_date,  only: date_time
