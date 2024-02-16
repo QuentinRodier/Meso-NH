@@ -30,9 +30,9 @@ CONTAINS
 SUBROUTINE INI_COMPUTE_R00()
 !#################################
 
+  USE MODD_LAGR_TRAJ,  ONLY: CFILES, NSTART_SUPP, NTRAJSTLG
   USE MODD_LUNIT_n,    ONLY: CINIFILE
   USE MODD_PARAMETERS, ONLY: NUNDEF
-  USE MODD_STO_FILE,   ONLY: CFILES, NSTART_SUPP, NTRAJSTLG
 
   USE MODE_MSG
 
@@ -141,10 +141,10 @@ USE MODD_GRID_n
 use modd_field,            only: NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_LEVEL, NMNHDIM_TRAJ_TIME, tfieldmetadata, TYPEREAL
 USE MODD_FIELD_n
 USE MODD_IO,               ONLY: TFILEDATA
+USE MODD_LAGR_TRAJ
 USE MODD_LUNIT_n
 USE MODD_NSV,              ONLY: NSV_LGBEG, NSV_LGEND
 USE MODD_PARAMETERS
-USE MODD_STO_FILE
 USE MODD_TYPE_DATE
 USE MODD_VAR_ll
 !
@@ -263,68 +263,68 @@ ELSE
 END IF
 !
 ! Create the metadata of the fields (has to be done only once)
-TZFIELD_X0 = TFIELDMETADATA( &
-  CMNHNAME   = 'X0',         &
-  CSTDNAME   = '',           &
-  CLONGNAME  = 'X0',         &
-  CUNITS     = 'km',         &
-  CDIR       = 'XY',         &
-  CCOMMENT   = 'X_Y_Z_X0',   &
-  NGRID      = 1,            &
-  NTYPE      = TYPEREAL,     &
-  NDIMS      = 4,            &
+TZFIELD_X0 = TFIELDMETADATA(   &
+  CMNHNAME   = 'X_TRAJ',       &
+  CSTDNAME   = '',             &
+  CLONGNAME  = 'X_TRAJ',       &
+  CUNITS     = 'km',           &
+  CDIR       = 'XY',           &
+  CCOMMENT   = 'X_Y_Z_X_TRAJ', &
+  NGRID      = 1,              &
+  NTYPE      = TYPEREAL,       &
+  NDIMS      = 4,              &
   NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_LEVEL, NMNHDIM_TRAJ_TIME ] )
 CALL IO_FIELD_CREATE( TPFILE, TZFIELD_X0 )
 
-TZFIELD_Y0 = TFIELDMETADATA( &
-  CMNHNAME   = 'Y0',         &
-  CSTDNAME   = '',           &
-  CLONGNAME  = 'Y0',         &
-  CUNITS     = 'km',         &
-  CDIR       = 'XY',         &
-  CCOMMENT   = 'X_Y_Z_Y0',   &
-  NGRID      = 1,            &
-  NTYPE      = TYPEREAL,     &
-  NDIMS      = 4,            &
+TZFIELD_Y0 = TFIELDMETADATA(   &
+  CMNHNAME   = 'Y_TRAJ',       &
+  CSTDNAME   = '',             &
+  CLONGNAME  = 'Y_TRAJ',       &
+  CUNITS     = 'km',           &
+  CDIR       = 'XY',           &
+  CCOMMENT   = 'X_Y_Z_Y_TRAJ', &
+  NGRID      = 1,              &
+  NTYPE      = TYPEREAL,       &
+  NDIMS      = 4,              &
   NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_LEVEL, NMNHDIM_TRAJ_TIME ] )
 CALL IO_FIELD_CREATE( TPFILE, TZFIELD_Y0 )
 
-TZFIELD_Z0 = TFIELDMETADATA( &
-  CMNHNAME   = 'Z0',         &
-  CSTDNAME   = '',           &
-  CLONGNAME  = 'Z0',         &
-  CUNITS     = 'km',         &
-  CDIR       = 'XY',         &
-  CCOMMENT   = 'X_Y_Z_Z0',   &
-  NGRID      = 1,            &
-  NTYPE      = TYPEREAL,     &
-  NDIMS      = 4,            &
+TZFIELD_Z0 = TFIELDMETADATA(   &
+  CMNHNAME   = 'Z_TRAJ',       &
+  CSTDNAME   = '',             &
+  CLONGNAME  = 'Z0',           &
+  CUNITS     = 'km',           &
+  CDIR       = 'XY',           &
+  CCOMMENT   = 'X_Y_Z_Z_TRAJ', &
+  NGRID      = 1,              &
+  NTYPE      = TYPEREAL,       &
+  NDIMS      = 4,              &
   NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_LEVEL, NMNHDIM_TRAJ_TIME ] )
 CALL IO_FIELD_CREATE( TPFILE, TZFIELD_Z0 )
 
-TZFIELD_TH0 = TFIELDMETADATA(   &
-  CMNHNAME   = 'TH0',           &
-  CSTDNAME   = '',              &
-  CLONGNAME  = 'TH0',           &
-  CUNITS     = 'K',             &
-  CDIR       = 'XY',            &
-  CCOMMENT   = 'X_Y_Z_'//'TH0', &
-  NGRID      = 1,               &
-  NTYPE      = TYPEREAL,        &
-  NDIMS      = 4,               &
+TZFIELD_TH0 = TFIELDMETADATA(        &
+  CMNHNAME   = 'THT_TRAJ',           &
+  CSTDNAME   = '',                   &
+  CLONGNAME  = 'THT_TRAJ',           &
+  CUNITS     = 'K',                  &
+  CDIR       = 'XY',                 &
+  CCOMMENT   = 'X_Y_Z_'//'THT_TRAJ', &
+  NGRID      = 1,                    &
+  NTYPE      = TYPEREAL,             &
+  NDIMS      = 4,                    &
   NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_LEVEL, NMNHDIM_TRAJ_TIME ] )
 CALL IO_FIELD_CREATE( TPFILE, TZFIELD_TH0 )
 
-TZFIELD_RV0 = TFIELDMETADATA(   &
-  CMNHNAME   = 'RV0',           &
-  CSTDNAME   = '',              &
-  CLONGNAME  = 'RV0',           &
-  CUNITS     = 'g kg-1',        &
-  CDIR       = 'XY',            &
-  CCOMMENT   = 'X_Y_Z_'//'RV0', &
-  NGRID      = 1,               &
-  NTYPE      = TYPEREAL,        &
-  NDIMS      = 4,               &
+TZFIELD_RV0 = TFIELDMETADATA(        &
+  CMNHNAME   = 'MRV_TRAJ',           &
+  CSTDNAME   = '',                   &
+  CLONGNAME  = 'MRV_TRAJ',           &
+  CUNITS     = 'g kg-1',             &
+  CDIR       = 'XY',                 &
+  CCOMMENT   = 'X_Y_Z_'//'MRV_TRAJ', &
+  NGRID      = 1,                    &
+  NTYPE      = TYPEREAL,             &
+  NDIMS      = 4,                    &
   NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_LEVEL, NMNHDIM_TRAJ_TIME ] )
 CALL IO_FIELD_CREATE( TPFILE, TZFIELD_RV0 )
 

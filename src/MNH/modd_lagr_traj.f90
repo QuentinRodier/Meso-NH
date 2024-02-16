@@ -8,7 +8,7 @@
 !  P. Wautelet 15/02/2024: add time dimension for Lagrangian trajectories
 !-----------------------------------------------------------------
 !###################
-MODULE MODD_STO_FILE
+MODULE MODD_LAGR_TRAJ
 !###################
 
 USE MODD_PARAMETERS, ONLY: NFILENAMELGTMAX
@@ -22,4 +22,4 @@ INTEGER                        :: NSTART_SUPP(100) ! supplementary starts for th
 INTEGER                                    :: NTRAJSTLG = 0 ! Number of time starts for Lagrangian trajectories
 TYPE(DATE_TIME), DIMENSION(:), ALLOCATABLE :: TLAGR_DATES   ! Times for Lagrangian trajectories
 
-END MODULE MODD_STO_FILE
+END MODULE MODD_LAGR_TRAJ

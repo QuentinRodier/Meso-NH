@@ -349,7 +349,7 @@ end if
 
 if ( tpfile%ctype == 'MNHDIAG' .and. Trim( yprogram ) == 'DIAG' ) then
    !Number of times for Lagrangian trajectories
-  if ( ltraj .and. ntrajstlg > 0 ) call IO_Add_dim_nc4( tpfile, NMNHDIM_TRAJ_TIME, 'time_lagrangian', ntrajstlg )
+  if ( ltraj .and. ntrajstlg > 0 ) call IO_Add_dim_nc4( tpfile, NMNHDIM_TRAJ_TIME, 'time_traj', ntrajstlg )
 end if
 
 !Write dimensions used in diachronic files
