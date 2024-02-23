@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2000-2023 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2000-2024 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -79,7 +79,6 @@ IF(.NOT. ALLOCATED(XSVW_FLUX)) ALLOCATE(XSVW_FLUX(SIZE(PSV,1),SIZE(PSV,2),SIZE(P
 
 IF ( NBALLOONS > 0 ) THEN
   IF ( GFIRSTCALL ) CALL BALLOONS_INIT_POSITIONS()
-  NRANKCUR_BALLOON(:) = NRANKNXT_BALLOON(:)
   NRANKNXT_BALLOON(:) = 0
 
   DO JI = 1, NBALLOONS
@@ -97,7 +96,6 @@ END IF
 !
 IF ( NAIRCRAFTS > 0 ) THEN
   IF ( GFIRSTCALL ) CALL AIRCRAFTS_INIT_POSITIONS()
-  NRANKCUR_AIRCRAFT(:) = NRANKNXT_AIRCRAFT(:)
   NRANKNXT_AIRCRAFT(:) = 0
 
   DO JI = 1, NAIRCRAFTS
@@ -209,6 +207,8 @@ DO JI = 1, NAIRCRAFTS
   END IF
 END DO
 
+NRANKCUR_AIRCRAFT(:) = NRANKNXT_AIRCRAFT(:)
+
 END SUBROUTINE AIRCRAFTS_MOVE_TO_NEW_RANKS
 !----------------------------------------------------------------------------
 !----------------------------------------------------------------------------
@@ -276,7 +276,7 @@ CALL MPI_ALLREDUCE( MPI_IN_PLACE, NRANKNXT_BALLOON, NBALLOONS, MNHINT_MPI, MPI_M
 !Do this to not use MPI_IN_PLACE (not yet implemented in MPIVIDE)
 ALLOCATE( IRANKNXT_BALLOON_TMP, MOLD = NRANKNXT_BALLOON )
 CALL MPI_ALLREDUCE( NRANKNXT_BALLOON, IRANKNXT_BALLOON_TMP, NBALLOONS, MNHINT_MPI, MPI_MAX, NMNH_COMM_WORLD, IERR )
-NRANKNXT_BALLOON = IRANKNXT_BALLOON_TMP
+NRANKNXT_BALLOON(:) = IRANKNXT_BALLOON_TMP(:)
 DEALLOCATE( IRANKNXT_BALLOON_TMP )
 #endif
 
@@ -291,6 +291,8 @@ DO JI = 1, NBALLOONS
     END IF
   END IF
 END DO
+
+NRANKCUR_BALLOON(:) = NRANKNXT_BALLOON(:)
 
 END SUBROUTINE BALLOONS_MOVE_TO_NEW_RANKS
 !----------------------------------------------------------------------------
