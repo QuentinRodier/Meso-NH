@@ -56,22 +56,32 @@ END MODULE MODI_COMPUTE_R00
 !!                              change of YCOMMENT
 !!     Mai 2016 (G.Delautier) replace LG?M by LG?T
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!  P. Wautelet 07/02/2019: force TYPE to a known value for IO_File_add2list
-!  P. Wautelet 11/04/2019: bugfix: nullify TZTRACFILE when appropriate
+!!  P. Wautelet 07/02/2019: force TYPE to a known value for IO_File_add2list
+!!  P. Wautelet 11/04/2019: bugfix: nullify TZTRACFILE when appropriate
+!!  J.-P. Chaboureau 26/02/2024: replace LG?T by LG?, add wind and cloud variables,
+!!                               and replace negative values by XFILLVALUE
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
 !               ------------
 !
 USE MODD_CONF
+USE MODD_CONF_n,           ONLY: LUSERV, LUSERC, LUSERI
+USE MODD_CST,              ONLY: XALPI, XBETAI, XCPD, XGAMI, XMD, XMV, XP00, XRD, XTT
 USE MODD_GRID_n
 use modd_field,            only: tfieldmetadata, TYPEREAL
 USE MODD_FIELD_n
 USE MODD_IO,               ONLY: TFILEDATA
 USE MODD_LUNIT_n
-USE MODD_NSV,              ONLY: NSV_LGBEG, NSV_LGEND
+USE MODD_NSV
+USE MODD_PARAM_n,          ONLY: CCLOUD
+USE MODD_PARAM_LIMA,       ONLY : NMOD_CCN, NMOD_IFN
+USE MODD_PARAM_LIMA_COLD,  ONLY: CLIMA_COLD_NAMES, CLIMA_COLD_CONC
+USE MODD_PARAM_LIMA_WARM,  ONLY: CLIMA_WARM_NAMES, CLIMA_WARM_CONC
 USE MODD_PARAMETERS
+USE MODD_REF_n,            ONLY: XRHODREF
 USE MODD_STO_FILE
+USE MODE_THERMO,           ONLY: SM_FOES
 USE MODD_TYPE_DATE
 USE MODD_VAR_ll
 !
@@ -96,23 +106,31 @@ INTEGER                            :: IFILECUR,JFILECUR,NIU,NJU,NKU
 INTEGER                            :: NFILES,JLOOP
 REAL                               :: ZXOR,ZYOR,ZDX,ZDY
 REAL                               :: ZSPVAL
+REAL, ALLOCATABLE, DIMENSION(:,:,:):: ZXI, ZYI, ZZI
 REAL, ALLOCATABLE, DIMENSION(:,:,:):: ZX0, ZY0, ZZ0        ! origin of the 
        ! particules colocated with the mesh-grid points read in the file
 REAL, ALLOCATABLE, DIMENSION(:,:,:):: ZX00, ZY00, ZZ00, ZZL ! cumulative
        ! origin for more than one restart of the tracers 
 REAL, ALLOCATABLE, DIMENSION(:,:,:):: ZTH0          ! same fields 
        ! for Theta as for the coordinates of the origin
-REAL, ALLOCATABLE, DIMENSION(:,:,:):: ZRV0          ! same fields 
-       ! for Rv as for the coordinates of the origin
+REAL, ALLOCATABLE, DIMENSION(:,:,:):: ZRV0, ZRH0, ZTHE0  ! same fields 
+       ! for Rv and RH as for the coordinates of the origin
+REAL, ALLOCATABLE, DIMENSION(:,:,:):: ZRC0, ZRI0    ! same fields 
+REAL, ALLOCATABLE, DIMENSION(:,:,:):: ZU0, ZV0, ZW0 ! same fields 
+REAL, ALLOCATABLE, DIMENSION(:,:,:,:):: ZCCN_FREE0, ZIFN_FREE0 
 REAL, ALLOCATABLE, DIMENSION(:,:,:):: ZWORK1,ZWORK2,ZWORK3       
 TYPE(DATE_TIME)                    :: TDTCUR_START
 CHARACTER(LEN=NMNHNAMELGTMAX)      :: YMNHNAME
 CHARACTER(LEN=24)                  :: YDATE 
+CHARACTER(LEN=3)                   :: INDIC3
+CHARACTER(LEN=2)                   :: INDICE
 INTEGER                            :: IHOUR, IMINUTE
 REAL                               :: ZSECOND, ZREMAIN
 LOGICAL                            :: GSTART
-INTEGER                            :: INBR_START
+INTEGER                            :: INBR_START, IRESP
+INTEGER                            :: JI,JJ,JK,JSV,ISV ! loop index
 REAL                               :: ZXMAX,ZYMAX,ZZMAX  ! domain extrema
+REAL                               :: XFILLVALUE =  9.9692099683868690e+36
 INTEGER, DIMENSION(100)            :: NBRFILES 
 TYPE(TFIELDMETADATA)               :: TZFIELD
 TYPE(TFILEDATA),POINTER            :: TZTRACFILE
@@ -149,7 +167,7 @@ ENDIF
 ! Search the number of the files(NFILES), where the Lagrangian tracers 
 !have been reinitialized 
 NFILES=0
-DO JFILECUR=IFILECUR+1,100
+DO JFILECUR=IFILECUR,100
   IF (LEN_TRIM(CFILES(JFILECUR)) /= 0) THEN
     NFILES= NFILES +1 
     NBRFILES(NFILES)=JFILECUR       ! contains the number of the files where
@@ -175,6 +193,9 @@ NIU=SIZE(XZZ,1)
 NJU=SIZE(XZZ,2)
 NKU=SIZE(XZZ,3)
 !
+ALLOCATE(ZXI(NIU,NJU,NKU))
+ALLOCATE(ZYI(NIU,NJU,NKU))
+ALLOCATE(ZZI(NIU,NJU,NKU))
 ALLOCATE(ZX0(NIU,NJU,NKU))
 ALLOCATE(ZY0(NIU,NJU,NKU))
 ALLOCATE(ZZ0(NIU,NJU,NKU))
@@ -186,7 +207,20 @@ ALLOCATE(ZY00(NIU,NJU,NKU))
 ALLOCATE(ZZ00(NIU,NJU,NKU))
 ALLOCATE(ZZL(NIU,NJU,NKU))
 ALLOCATE(ZTH0(NIU,NJU,NKU))
-ALLOCATE(ZRV0(NIU,NJU,NKU))
+ALLOCATE(ZU0(NIU,NJU,NKU))
+ALLOCATE(ZV0(NIU,NJU,NKU))
+ALLOCATE(ZW0(NIU,NJU,NKU))
+IF (LUSERV) THEN
+  ALLOCATE(ZRV0(NIU,NJU,NKU))
+  ALLOCATE(ZRH0(NIU,NJU,NKU))
+  ALLOCATE(ZTHE0(NIU,NJU,NKU))
+END IF
+IF (LUSERC) ALLOCATE(ZRC0(NIU,NJU,NKU))
+IF (LUSERI) ALLOCATE(ZRI0(NIU,NJU,NKU))
+IF (CCLOUD == 'LIMA') THEN
+  ALLOCATE(ZCCN_FREE0(NIU,NJU,NKU,NMOD_CCN))
+  ALLOCATE(ZIFN_FREE0(NIU,NJU,NKU,NMOD_IFN))
+END IF
 ! initial values
 ZXOR=0.5 * (XXHAT(2)+XXHAT(3)) 
 ZYOR=0.5 * (XYHAT(2)+XYHAT(3))
@@ -211,6 +245,36 @@ ZX00(:,:,:)=XSVT(:,:,:,NSV_LGBEG)*1.E-3   ! ZX0 in km
 ZY00(:,:,:)=XSVT(:,:,:,NSV_LGBEG+1)*1.E-3 ! ZY0 in km
 ZZ00(:,:,:)=XSVT(:,:,:,NSV_LGEND)*1.E-3   ! ZZ0 in km
 !
+DO JK=1,NKU
+  DO JJ=1,NJU
+    DO JI=1,NIU-1
+      ZXI(JI,JJ,JK)=0.5*(XXHAT(JI)+XXHAT(JI+1))
+    END DO
+    ZXI(NIU,JJ,JK)=2.*ZXI(NIU-1,JJ,JK)-ZXI(NIU-2,JJ,JK)
+  END DO
+END DO
+ZXI=ZXI*1.E-3
+!
+DO JK=1,NKU
+  DO JI=1,NIU
+    DO JJ=1,NJU-1
+      ZYI(JI,JJ,JK)=0.5*(XYHAT(JJ)+XYHAT(JJ+1))
+    END DO
+    ZYI(JI,NJU,JK)=2.*ZYI(JI,NJU-1,JK)-ZYI(JI,NJU-2,JK)
+  END DO
+END DO
+ZYI=ZYI*1.E-3
+!
+DO JI=1,NIU
+  DO JJ=1,NJU
+    DO JK=1,NKU-1
+      ZZI(JI,JJ,JK)=0.5*(XZZ(JI,JJ,JK)+XZZ(JI,JJ,JK+1))
+    END DO
+    ZZI(JI,JJ,NKU)=2.*ZZI(JI,JJ,NKU-1)-ZZI(JI,JJ,NKU-2)
+  END DO
+END DO
+ZZI=ZZI*1.E-3
+!
 IF (L2D) THEN
   WHERE ( ZX00<ZXOR .OR. ZX00>ZXMAX .OR. &
           ZZ00>ZZMAX)
@@ -220,7 +284,7 @@ IF (L2D) THEN
 ELSE
   WHERE ( ZX00<ZXOR .OR. ZX00>ZXMAX .OR. &
           ZY00<ZYOR .OR. ZY00>ZYMAX .OR. &
-	      ZZ00>ZZMAX)
+          ZZ00>ZZMAX)
     ZX00=ZSPVAL
     ZY00=ZSPVAL
     ZZ00=ZSPVAL
@@ -237,9 +301,13 @@ END IF
 ! is performed
 DO JFILECUR=1,NFILES
   !
-  TZTRACFILE => NULL()
-  CALL IO_File_add2list(TZTRACFILE,CFILES(NBRFILES(JFILECUR)),'MNH','READ',KLFITYPE=2,KLFIVERB=NVERB)
-  CALL IO_File_open(TZTRACFILE)
+  IF (JFILECUR==1) THEN
+    TZTRACFILE => LUNIT_MODEL(1)%TINIFILE
+  ELSE
+    TZTRACFILE => NULL()
+    CALL IO_File_add2list(TZTRACFILE,CFILES(NBRFILES(JFILECUR)),'MNH','READ',KLFITYPE=2,KLFIVERB=NVERB)
+    CALL IO_File_open(TZTRACFILE)
+  END IF
 !
 !*       4.1  check if this file is a start instant
 !
@@ -266,8 +334,64 @@ DO JFILECUR=1,NFILES
     !
     CALL IO_Field_read(TZTRACFILE,'THT',ZTH0(:,:,:))
     !
-    CALL IO_Field_read(TZTRACFILE,'RVT',ZRV0(:,:,:))
-    ZRV0(:,:,:)=ZRV0(:,:,:)*1.E+3  ! ZRV0 in g/kg
+    CALL IO_Field_read(TZTRACFILE,'UT',ZU0(:,:,:))
+    CALL IO_Field_read(TZTRACFILE,'VT',ZV0(:,:,:))
+    CALL IO_Field_read(TZTRACFILE,'WT',ZW0(:,:,:))
+    !
+    IF (LUSERV) THEN
+      CALL IO_Field_read(TZTRACFILE,'RVT',ZRV0(:,:,:))
+      ZRV0(:,:,:)=ZRV0(:,:,:)*1.E+3  ! ZRV0 in g/kg
+      !
+      CALL IO_Field_read(TZTRACFILE,'PABST',ZWORK1(:,:,:))
+      ZWORK2(:,:,:)=ZTH0(:,:,:)*(ZWORK1(:,:,:)/ XP00) **(XRD/XCPD)
+      ZWORK3(:,:,:)=SM_FOES(ZWORK2(:,:,:))
+      ZWORK3(:,:,:)=(XMV/XMD)*ZWORK3(:,:,:)/(ZWORK1(:,:,:)-ZWORK3(:,:,:))
+      ZRH0(:,:,:)=0.1*ZRV0(:,:,:)/ZWORK3(:,:,:)
+      IF (LUSERI) THEN
+        WHERE ( ZWORK2(:,:,:)< XTT)
+          ZWORK3(:,:,:) = EXP( XALPI - XBETAI/ZWORK2(:,:,:) &
+                         - XGAMI*ALOG(ZWORK2(:,:,:)) ) !saturation over ice
+          ZWORK3(:,:,:)=(XMV/XMD)*ZWORK3(:,:,:)/(ZWORK1(:,:,:)-ZWORK3(:,:,:))
+          ZRH0(:,:,:)=0.1*ZRV0(:,:,:)/ZWORK3(:,:,:)
+        END WHERE
+      END IF
+      !
+      ZWORK3(:,:,:) = MAX(ZRV0(:,:,:)*1.E-3,1.E-10)
+      ZTHE0(:,:,:)= (    2840./                                                   &
+             (3.5*ALOG(ZTH0(:,:,:)*( ZWORK1(:,:,:)/XP00 )**(XRD/XCPD)  )          &
+             - ALOG( ZWORK1(:,:,:)*0.01*ZWORK3(:,:,:) / ( 0.622+ZWORK3(:,:,:) ) ) &
+             -4.805   )    ) + 55.
+      ZTHE0(:,:,:)= ZTH0(:,:,:) * EXP( (3376. / ZTHE0(:,:,:) - 2.54)  &
+                 *ZWORK3(:,:,:) *(1. +0.81 *ZWORK3(:,:,:)) )
+    END IF
+    !
+    IF (LUSERC) THEN
+      CALL IO_Field_read(TZTRACFILE,'RCT',ZRC0(:,:,:))
+      ZRC0(:,:,:)=ZRC0(:,:,:)*1.E+3  ! ZRC0 in g/kg
+    END IF
+    !
+    IF (LUSERI) THEN
+      CALL IO_Field_read(TZTRACFILE,'RIT',ZRI0(:,:,:))
+      ZRI0(:,:,:)=ZRI0(:,:,:)*1.E+3  ! ZRI0 in g/kg
+    END IF
+    !
+    IF (CCLOUD == 'LIMA') THEN
+      DO JSV = 1, NSV
+        TZFIELD = TSVLIST(JSV)
+        IF (JSV .GE. NSV_LIMA_CCN_FREE .AND. JSV .LT. NSV_LIMA_CCN_ACTI) THEN
+          ISV=JSV - NSV_LIMA_CCN_FREE + 1
+          WRITE(INDICE,'(I2.2)')(ISV)
+          CALL IO_Field_read(TZTRACFILE,TZFIELD,ZCCN_FREE0(:,:,:,ISV),IRESP)
+          ZCCN_FREE0(:,:,:,ISV)=ZCCN_FREE0(:,:,:,ISV)*1.E-6*XRHODREF(:,:,:) ! in cm-3
+        END IF
+        IF (JSV .GE. NSV_LIMA_IFN_FREE .AND. JSV .LT. NSV_LIMA_IFN_NUCL) THEN
+          ISV=JSV - NSV_LIMA_IFN_FREE + 1
+          WRITE(INDICE,'(I2.2)')(ISV)
+          CALL IO_Field_read(TZTRACFILE,TZFIELD,ZIFN_FREE0(:,:,:,ISV),IRESP)
+          ZIFN_FREE0(:,:,:,ISV)=ZIFN_FREE0(:,:,:,ISV)*1.E-6*XRHODREF(:,:,:) ! in cm-3
+        END IF
+      END DO
+    END IF
     !
   END IF
 !
@@ -277,6 +401,12 @@ DO JFILECUR=1,NFILES
   IF (GSTART) THEN
     PRINT *,'INBR_START',INBR_START,' NBRFILES(JFILECUR)',NBRFILES(JFILECUR)
     WRITE(YMNHNAME,'(A2,I2.2)')'X0',INBR_START
+    IF (JFILECUR==1) THEN
+      ZWORK1=ZXI
+    ELSE
+      ZWORK1=ZX00
+    END IF
+    WHERE(ZWORK1==ZSPVAL) ZWORK1=XFILLVALUE
     TZFIELD = TFIELDMETADATA(                       &
       CMNHNAME   = TRIM( YMNHNAME ),                &
       CSTDNAME   = '',                              &
@@ -289,8 +419,14 @@ DO JFILECUR=1,NFILES
       NDIMS      = 3,                               &
       LTIMEDEP   = .TRUE.                           )
     PRINT *,'YCOMMENT = ',TRIM(TZFIELD%CCOMMENT)
-    CALL IO_Field_write(TPFILE,TZFIELD,ZX00(:,:,:))
+    CALL IO_Field_write(TPFILE,TZFIELD,ZWORK1(:,:,:))
     !
+    IF (JFILECUR==1) THEN
+      ZWORK1=ZYI
+    ELSE
+      ZWORK1=ZY00
+    END IF
+    WHERE(ZWORK1==ZSPVAL) ZWORK1=XFILLVALUE
     WRITE(YMNHNAME,'(A2,I2.2)')'Y0',INBR_START
     TZFIELD = TFIELDMETADATA(                       &
       CMNHNAME   = TRIM( YMNHNAME ),                &
@@ -304,8 +440,14 @@ DO JFILECUR=1,NFILES
       NDIMS      = 3,                               &
       LTIMEDEP   = .TRUE.                           )
     PRINT *,'YCOMMENT = ',TRIM(TZFIELD%CCOMMENT)
-    CALL IO_Field_write(TPFILE,TZFIELD,ZY00(:,:,:))
+    CALL IO_Field_write(TPFILE,TZFIELD,ZWORK1(:,:,:))
     !
+    IF (JFILECUR==1) THEN
+      ZWORK1=ZZI
+    ELSE
+      ZWORK1=ZZ00
+    END IF
+    WHERE(ZWORK1==ZSPVAL) ZWORK1=XFILLVALUE
     WRITE(YMNHNAME,'(A2,I2.2)')'Z0',INBR_START
     TZFIELD = TFIELDMETADATA(                       &
       CMNHNAME   = TRIM( YMNHNAME ),                &
@@ -319,7 +461,7 @@ DO JFILECUR=1,NFILES
       NDIMS      = 3,                               &
       LTIMEDEP   = .TRUE.                           )
     PRINT *,'YCOMMENT = ',TRIM(TZFIELD%CCOMMENT)
-    CALL IO_Field_write(TPFILE,TZFIELD,ZZ00(:,:,:))
+    CALL IO_Field_write(TPFILE,TZFIELD,ZWORK1(:,:,:))
   END IF
 !
 !
@@ -327,16 +469,12 @@ DO JFILECUR=1,NFILES
 !
   IF (GSTART) THEN
     !
-    CALL INTERPXYZ(ZX00,ZY00,ZZ00,     &
-                   ZTH0,ZWORK1         )
-    !
-    CALL INTERPXYZ(ZX00,ZY00,ZZ00,     &
-                   ZRV0,ZWORK2         )
-    !
-  END IF
-!
-  IF (GSTART) THEN
-    !
+    IF (JFILECUR==1) THEN
+      ZWORK1=ZTH0
+    ELSE
+      CALL INTERPXYZ(ZX00,ZY00,ZZ00,ZTH0,ZWORK1)
+    END IF
+    WHERE(ZWORK1<0.) ZWORK1=XFILLVALUE
     WRITE(YMNHNAME,'(A3,I2.2)')'TH0',INBR_START
     TZFIELD = TFIELDMETADATA(                       &
       CMNHNAME   = TRIM( YMNHNAME ),                &
@@ -349,31 +487,226 @@ DO JFILECUR=1,NFILES
       NTYPE      = TYPEREAL,                        &
       NDIMS      = 3,                               &
       LTIMEDEP   = .TRUE.                           )
-    PRINT *,'YCOMMENT = ',TRIM(TZFIELD%CCOMMENT)
     CALL IO_Field_write(TPFILE,TZFIELD,ZWORK1(:,:,:))
     !
-    WRITE(YMNHNAME,'(A3,I2.2)')'RV0',INBR_START
+    IF (JFILECUR==1) THEN
+      ZWORK1=ZU0
+    ELSE
+      CALL INTERPXYZ(ZX00,ZY00,ZZ00,ZU0,ZWORK1)
+    END IF
+    WHERE(ZWORK1==ZSPVAL) ZWORK1=XFILLVALUE
+    WRITE(YMNHNAME,'(A2,I2.2)')'U0',INBR_START
     TZFIELD = TFIELDMETADATA(                       &
       CMNHNAME   = TRIM( YMNHNAME ),                &
       CSTDNAME   = '',                              &
       CLONGNAME  = TRIM( YMNHNAME ),                &
-      CUNITS     = 'g kg-1',                        &
+      CUNITS     = 'm s-1',                         &
       CDIR       = 'XY',                            &
       CCOMMENT   = 'X_Y_Z_'//TRIM(YMNHNAME)//YDATE, &
       NGRID      = 1,                               &
       NTYPE      = TYPEREAL,                        &
       NDIMS      = 3,                               &
       LTIMEDEP   = .TRUE.                           )
-    PRINT *,'YCOMMENT = ',TRIM(TZFIELD%CCOMMENT)
-    CALL IO_Field_write(TPFILE,TZFIELD,ZWORK2(:,:,:))
+    CALL IO_Field_write(TPFILE,TZFIELD,ZWORK1(:,:,:))
+    !
+    IF (JFILECUR==1) THEN
+      ZWORK1=ZV0
+    ELSE
+      CALL INTERPXYZ(ZX00,ZY00,ZZ00,ZV0,ZWORK1)
+    END IF
+    WHERE(ZWORK1==ZSPVAL) ZWORK1=XFILLVALUE
+    WRITE(YMNHNAME,'(A2,I2.2)')'V0',INBR_START
+    TZFIELD = TFIELDMETADATA(                       &
+      CMNHNAME   = TRIM( YMNHNAME ),                &
+      CSTDNAME   = '',                              &
+      CLONGNAME  = TRIM( YMNHNAME ),                &
+      CUNITS     = 'm s-1',                         &
+      CDIR       = 'XY',                            &
+      CCOMMENT   = 'X_Y_Z_'//TRIM(YMNHNAME)//YDATE, &
+      NGRID      = 1,                               &
+      NTYPE      = TYPEREAL,                        &
+      NDIMS      = 3,                               &
+      LTIMEDEP   = .TRUE.                           )
+    CALL IO_Field_write(TPFILE,TZFIELD,ZWORK1(:,:,:))
+    !
+    IF (JFILECUR==1) THEN
+      ZWORK1=ZW0
+    ELSE
+      CALL INTERPXYZ(ZX00,ZY00,ZZ00,ZW0,ZWORK1)
+    END IF
+    WHERE(ZWORK1==ZSPVAL) ZWORK1=XFILLVALUE
+    WRITE(YMNHNAME,'(A2,I2.2)')'W0',INBR_START
+    TZFIELD = TFIELDMETADATA(                       &
+      CMNHNAME   = TRIM( YMNHNAME ),                &
+      CSTDNAME   = '',                              &
+      CLONGNAME  = TRIM( YMNHNAME ),                &
+      CUNITS     = 'm s-1',                         &
+      CDIR       = 'XY',                            &
+      CCOMMENT   = 'X_Y_Z_'//TRIM(YMNHNAME)//YDATE, &
+      NGRID      = 1,                               &
+      NTYPE      = TYPEREAL,                        &
+      NDIMS      = 3,                               &
+      LTIMEDEP   = .TRUE.                           )
+    CALL IO_Field_write(TPFILE,TZFIELD,ZWORK1(:,:,:))
+    !
+    IF (LUSERV) THEN
+      IF (JFILECUR==1) THEN
+        ZWORK1=ZRV0
+      ELSE
+        CALL INTERPXYZ(ZX00,ZY00,ZZ00,ZRV0,ZWORK1)
+      END IF
+      WHERE(ZWORK1<0.) ZWORK1=XFILLVALUE
+      WRITE(YMNHNAME,'(A3,I2.2)')'RV0',INBR_START
+      TZFIELD = TFIELDMETADATA(                       &
+        CMNHNAME   = TRIM( YMNHNAME ),                &
+        CSTDNAME   = '',                              &
+        CLONGNAME  = TRIM( YMNHNAME ),                &
+        CUNITS     = 'g kg-1',                        &
+        CDIR       = 'XY',                            &
+        CCOMMENT   = 'X_Y_Z_'//TRIM(YMNHNAME)//YDATE, &
+        NGRID      = 1,                               &
+        NTYPE      = TYPEREAL,                        &
+        NDIMS      = 3,                               &
+        LTIMEDEP   = .TRUE.                           )
+      CALL IO_Field_write(TPFILE,TZFIELD,ZWORK1(:,:,:))
+      IF (JFILECUR==1) THEN
+        ZWORK1=ZRH0
+      ELSE
+        CALL INTERPXYZ(ZX00,ZY00,ZZ00,ZRH0,ZWORK1)
+      END IF
+      WHERE(ZWORK1<0.) ZWORK1=XFILLVALUE
+      WRITE(YMNHNAME,'(A3,I2.2)')'RH0',INBR_START
+      TZFIELD = TFIELDMETADATA(                       &
+        CMNHNAME   = TRIM( YMNHNAME ),                &
+        CSTDNAME   = 'relative_humidity',             &
+        CLONGNAME  = TRIM( YMNHNAME ),                &
+        CUNITS     = 'percent',                       &
+        CDIR       = 'XY',                            &
+        CCOMMENT   = 'X_Y_Z_'//TRIM(YMNHNAME)//YDATE, &
+        NGRID      = 1,                               &
+        NTYPE      = TYPEREAL,                        &
+        NDIMS      = 3,                               &
+        LTIMEDEP   = .TRUE.                           )
+      CALL IO_Field_write(TPFILE,TZFIELD,ZWORK1(:,:,:))
+      IF (JFILECUR==1) THEN
+        ZWORK1=ZTHE0
+      ELSE
+        CALL INTERPXYZ(ZX00,ZY00,ZZ00,ZTHE0,ZWORK1)
+      END IF
+      WHERE(ZWORK1<0.) ZWORK1=XFILLVALUE
+      WRITE(YMNHNAME,'(A3,I3.3)')'THE0',INBR_START
+      TZFIELD = TFIELDMETADATA(                       &
+        CMNHNAME   = TRIM( YMNHNAME ),                &
+        CSTDNAME   = 'eq_pot_temperature',            &
+        CLONGNAME  = TRIM( YMNHNAME ),                &
+        CUNITS     = 'K',                             &
+        CDIR       = 'XY',                            &
+        CCOMMENT   = 'X_Y_Z_'//TRIM(YMNHNAME)//YDATE, &
+        NGRID      = 1,                               &
+        NTYPE      = TYPEREAL,                        &
+        NDIMS      = 3,                               &
+        LTIMEDEP   = .TRUE.                           )
+      CALL IO_Field_write(TPFILE,TZFIELD,ZWORK1(:,:,:))
+    END IF
+    IF (LUSERC) THEN
+      IF (JFILECUR==1) THEN
+        ZWORK1=ZRC0
+      ELSE
+        CALL INTERPXYZ(ZX00,ZY00,ZZ00,ZRC0,ZWORK1)
+      END IF
+      WHERE(ZWORK1<0.) ZWORK1=XFILLVALUE
+      WRITE(YMNHNAME,'(A3,I2.2)')'RC0',INBR_START
+      TZFIELD = TFIELDMETADATA(                       &
+        CMNHNAME   = TRIM( YMNHNAME ),                &
+        CSTDNAME   = '',                              &
+        CLONGNAME  = TRIM( YMNHNAME ),                &
+        CUNITS     = 'g kg-1',                        &
+        CDIR       = 'XY',                            &
+        CCOMMENT   = 'X_Y_Z_'//TRIM(YMNHNAME)//YDATE, &
+        NGRID      = 1,                               &
+        NTYPE      = TYPEREAL,                        &
+        NDIMS      = 3,                               &
+        LTIMEDEP   = .TRUE.                           )
+      CALL IO_Field_write(TPFILE,TZFIELD,ZWORK1(:,:,:))
+    END IF
+    IF (LUSERI) THEN
+      IF (JFILECUR==1) THEN
+        ZWORK1=ZRI0
+      ELSE
+        CALL INTERPXYZ(ZX00,ZY00,ZZ00,ZRI0,ZWORK1)
+      END IF
+      WHERE(ZWORK1<0.) ZWORK1=XFILLVALUE
+      WRITE(YMNHNAME,'(A3,I2.2)')'RI0',INBR_START
+      TZFIELD = TFIELDMETADATA(                       &
+        CMNHNAME   = TRIM( YMNHNAME ),                &
+        CSTDNAME   = '',                              &
+        CLONGNAME  = TRIM( YMNHNAME ),                &
+        CUNITS     = 'g kg-1',                        &
+        CDIR       = 'XY',                            &
+        CCOMMENT   = 'X_Y_Z_'//TRIM(YMNHNAME)//YDATE, &
+        NGRID      = 1,                               &
+        NTYPE      = TYPEREAL,                        &
+        NDIMS      = 3,                               &
+        LTIMEDEP   = .TRUE.                           )
+      CALL IO_Field_write(TPFILE,TZFIELD,ZWORK1(:,:,:))
+    END IF
+    !
+    IF (CCLOUD == 'LIMA') THEN
+      DO JSV = 1,NMOD_CCN
+        IF (JFILECUR==1) THEN
+          ZWORK1=ZCCN_FREE0(:,:,:,JSV)
+        ELSE
+          CALL INTERPXYZ(ZX00,ZY00,ZZ00,ZCCN_FREE0(:,:,:,JSV),ZWORK1)
+        END IF
+        WHERE(ZWORK1<0.) ZWORK1=XFILLVALUE
+        WRITE(INDICE,'(I2.2)')(JSV)
+        WRITE(INDIC3,'(I3.3)')(INBR_START)
+        YMNHNAME = TRIM(CLIMA_WARM_CONC(3))//INDICE//INDIC3
+        TZFIELD = TFIELDMETADATA(                       &
+          CMNHNAME   = TRIM( YMNHNAME ),                &
+          CSTDNAME   = '',                              &
+          CLONGNAME  = TRIM( YMNHNAME ),                &
+          CUNITS     = 'cm-3',                          &
+          CDIR       = 'XY',                            &
+          CCOMMENT   = 'X_Y_Z_'//TRIM(YMNHNAME)//YDATE, &
+          NGRID      = 1,                               &
+          NTYPE      = TYPEREAL,                        &
+          NDIMS      = 3,                               &
+          LTIMEDEP   = .TRUE.                           )
+        CALL IO_Field_write(TPFILE,TZFIELD,ZWORK1(:,:,:))
+      END DO
+      DO JSV = 1,NMOD_IFN
+        IF (JFILECUR==1) THEN
+          ZWORK1=ZIFN_FREE0(:,:,:,JSV)
+        ELSE
+          CALL INTERPXYZ(ZX00,ZY00,ZZ00,ZIFN_FREE0(:,:,:,JSV),ZWORK1)
+        END IF
+        WHERE(ZWORK1<0.) ZWORK1=XFILLVALUE
+        WRITE(INDICE,'(I2.2)')(JSV)
+        WRITE(INDIC3,'(I3.3)')(INBR_START)
+        YMNHNAME = TRIM(CLIMA_COLD_CONC(5))//INDICE//INDIC3
+        TZFIELD = TFIELDMETADATA(                       &
+          CMNHNAME   = TRIM( YMNHNAME ),                &
+          CSTDNAME   = '',                              &
+          CLONGNAME  = TRIM( YMNHNAME ),                &
+          CUNITS     = 'cm-3',                          &
+          CDIR       = 'XY',                            &
+          CCOMMENT   = 'X_Y_Z_'//TRIM(YMNHNAME)//YDATE, &
+          NGRID      = 1,                               &
+          NTYPE      = TYPEREAL,                        &
+          NDIMS      = 3,                               &
+          LTIMEDEP   = .TRUE.                           )
+        CALL IO_Field_write(TPFILE,TZFIELD,ZWORK1(:,:,:))
+      END DO
+    END IF
   ENDIF
 !*       4.4   compute the origin of the particules using one more segment
 !
-  IF (JFILECUR /= NFILES) THEN
+  IF (JFILECUR /= NFILES .AND. JFILECUR/=1) THEN
     TZFIELD = TFIELDMETADATA(&
-      CMNHNAME   = 'LGXT',   &
+      CMNHNAME   = 'LGX',    &
       CSTDNAME   = '',       &
-      CLONGNAME  = 'LGXT',   &
+      CLONGNAME  = 'LGX',    &
       CUNITS     = 'm',      &
       CDIR       = 'XY',     &
       CCOMMENT   = '',       &
@@ -384,13 +717,13 @@ DO JFILECUR=1,NFILES
     CALL IO_Field_read(TZTRACFILE,TZFIELD,ZX0)
     ZX0(:,:,:)=ZX0(:,:,:)*1.E-3   ! ZX0 in km
     !
-    TZFIELD%CMNHNAME   = 'LGYT'
-    TZFIELD%CLONGNAME  = 'LGYT'
+    TZFIELD%CMNHNAME   = 'LGY'
+    TZFIELD%CLONGNAME  = 'LGY'
     CALL IO_Field_read(TZTRACFILE,TZFIELD,ZY0)
     ZY0(:,:,:)=ZY0(:,:,:)*1.E-3   ! ZY0 in km
     !
-    TZFIELD%CMNHNAME   = 'LGZT'
-    TZFIELD%CLONGNAME  = 'LGZT'
+    TZFIELD%CMNHNAME   = 'LGZ'
+    TZFIELD%CLONGNAME  = 'LGZ'
     CALL IO_Field_read(TZTRACFILE,TZFIELD,ZZ0)
     ZZ0(:,:,:)=ZZ0(:,:,:)*1.E-3   ! ZZ0 in km
     !
@@ -427,7 +760,7 @@ DO JFILECUR=1,NFILES
 !
 !*       4.5   close the input file
 !
-  CALL IO_File_close(TZTRACFILE)
+  IF (JFILECUR/=1) CALL IO_File_close(TZTRACFILE)
 !
 END DO
 !
