@@ -109,6 +109,17 @@ integer, parameter :: NMNHDIM_NOTLISTED           = 200 ! Special case for valid
 
 integer, parameter :: NMNHDIM_UNUSED              = 300
 
+#ifdef MNH_IOCDF4
+INTEGER, PARAMETER :: NDEFFILLVALUE =  NF90_FILL_INT  ! Default fill value for integer fields
+REAL,    PARAMETER :: XDEFFILLVALUE =  NF90_FILL_REAL ! Default fill value for real fields
+                                                   ! NF90_FILL_REAL is the default fill value
+                                                   ! used by netCDF to pre-fill real and also double
+                                                   ! variables
+#else
+INTEGER, PARAMETER :: NDEFFILLVALUE =  -2147483647            ! Default fill value for integer fields
+REAL,    PARAMETER :: XDEFFILLVALUE =  9.9692099683868690e+36 ! Default fill value for real fields
+#endif
+
 !Array to allow easy identification of dimensions for Arakawa grid points
 integer, dimension(0:8,3), parameter :: NMNHDIM_ARAKAWA = reshape( [ &
   NMNHDIM_UNKNOWN, NMNHDIM_UNKNOWN, NMNHDIM_UNKNOWN, & ! dummy point (to treat ngrid=0 without crash)
@@ -203,16 +214,8 @@ type :: tfieldmetadata_base
   INTEGER            :: NDIMS     = 0  !Number of dimensions
   INTEGER, DIMENSION(NMNHMAXDIMS) :: NDIMLIST = NMNHDIM_UNKNOWN ! List of dimensions of the data field
   !
-#ifdef MNH_IOCDF4
-  INTEGER            :: NFILLVALUE =  NF90_FILL_INT  !Fill value for integer fields
-  REAL               :: XFILLVALUE =  NF90_FILL_REAL !Fill value for real fields
-                                                     !NF90_FILL_REAL is the default fill value
-                                                     !used by netCDF to pre-fill real and also double
-                                                     !variables
-#else
-  INTEGER            :: NFILLVALUE =  -2147483647            !Fill value for integer fields
-  REAL               :: XFILLVALUE =  9.9692099683868690e+36 !Fill value for real fields
-#endif
+  INTEGER            :: NFILLVALUE = NDEFFILLVALUE !Fill value for integer fields
+  REAL               :: XFILLVALUE = XDEFFILLVALUE !Fill value for real fields
   INTEGER            :: NVALIDMIN  = -2147483646 !Minimum valid value for integer fields
   INTEGER            :: NVALIDMAX  =  2147483647 !Maximum valid value for integer fields
   REAL               :: XVALIDMIN  = -1.E36 !Minimum valid value for real fields

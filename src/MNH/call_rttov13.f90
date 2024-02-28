@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2003-2023 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2003-2024 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -91,7 +91,7 @@ USE MODD_CST
 USE MODD_PARAMETERS
 USE MODD_GRID_n
 USE MODD_IO, ONLY: TFILEDATA
-USE MODD_FIELD, ONLY: TFIELDMETADATA, TYPEREAL
+USE MODD_FIELD, ONLY: TFIELDMETADATA, TYPEREAL, XDEFFILLVALUE
 USE MODD_LUNIT_n
 USE MODD_LBC_n
 USE MODD_DEEP_CONVECTION_n
@@ -202,7 +202,6 @@ REAL, DIMENSION(:,:,:,:), ALLOCATABLE   ::  ZREF
 REAL, DIMENSION(:,:,:), ALLOCATABLE   ::  ZOUT
 REAL, DIMENSION(:,:), ALLOCATABLE :: ZANTMP, ZUTH
 REAL :: ZZH, zdeg_to_rad, zrad_to_deg, zbeta, zalpha
-REAL :: XFILLVALUE =  9.9692099683868690e+36 
 
 ! Other arrays for zenithal solar angle 
 LOGICAL                             :: LCOSZENOUT
@@ -398,7 +397,7 @@ DO JSAT=1,IJSAT ! loop over sensors
 
   IF (.NOT.radar) THEN
     ALLOCATE(ZOUT(IIU,IJU,nchanprof))
-    ZOUT(:,:,:)=XFILLVALUE
+    ZOUT(:,:,:)=XDEFFILLVALUE
   ELSE
     ALLOCATE(ZREF(IIU,IJU,IKU,nchanprof))
     ZREF(:,:,:,:)=min_reflectivity
@@ -818,7 +817,7 @@ DO JSAT=1,IJSAT ! loop over sensors
       NTYPE      = TYPEREAL,                       &
       NDIMS      = 3,                              &
       LTIMEDEP   = .TRUE.                          )
-      WHERE(ZREF(:,:,:,JCH)==min_reflectivity) ZREF(:,:,:,JCH)=XFILLVALUE
+      WHERE(ZREF(:,:,:,JCH)==min_reflectivity) ZREF(:,:,:,JCH)=XDEFFILLVALUE
       CALL IO_Field_write(TPFILE,TZFIELD,ZREF(:,:,:,JCH))
     END IF
   END DO
