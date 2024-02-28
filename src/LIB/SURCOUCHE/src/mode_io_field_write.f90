@@ -1194,6 +1194,25 @@ end subroutine IO_Ndimlist_reduce
           end if
         END IF
       ELSEIF ( TPFILE%NSUBFILES_IOZ==0 .OR. YDIR=='--' ) THEN  ! multiprocesses execution & 1 proc IO
+          ! Caveat: if NSUBFILES_IOZ>0, the field will not be distributed over the different subfiles
+        IF ( GSMONOPROC ) THEN
+          ! Special case where GSMONOPROC is set (and TPFILE%NSUBFILES_IOZ>0)
+          ! This can sometimes be forced if we want only one process to do the write call even if there are several processes
+          ! It is therefore necessary to not have MPI calls
+          IF ( SIZE(PFIELD) == 0 ) THEN
+            CALL PRINT_MSG(NVERB_INFO,'IO','IO_Field_write_byfield_X3','ignoring variable with a zero size ('//TRIM(YRECFM)//')')
+            IF (PRESENT(KRESP)) KRESP=0
+            RETURN
+          END IF
+
+          if ( Present ( koffset ) ) then
+            !if ( glfi ) call IO_Field_partial_write_lfi( tpfile, tpfield, pfield, koffset, iresp_lfi )
+            if ( gnc4 ) call IO_Field_partial_write_nc4( tpfile, tpfield, pfield, koffset, iresp_nc4 )
+          else
+            if ( glfi ) call IO_Field_write_lfi( tpfile, tpfield, pfield, iresp_lfi )
+            if ( gnc4 ) call IO_Field_write_nc4( tpfile, tpfield, pfield, iresp_nc4 )
+          end if
+        ELSE
           CALL MPI_ALLREDUCE(SIZE(PFIELD),ISIZEMAX,1,MNHINT_MPI,MPI_MAX,TPFILE%NMPICOMM,IERR)
           IF (ISIZEMAX==0) THEN
              CALL PRINT_MSG(NVERB_INFO,'IO','IO_Field_write_byfield_X3','ignoring variable with a zero size ('//TRIM(YRECFM)//')')
@@ -1229,7 +1248,7 @@ end subroutine IO_Ndimlist_reduce
               if (gnc4) call IO_Field_write_nc4( tpfile, tpfield, zfieldp, iresp_nc4 )
             end if
           END IF
-          !
+        END IF
       ELSE ! multiprocesses execution & // IO
           CALL MPI_ALLREDUCE(SIZE(PFIELD),ISIZEMAX,1,MNHINT_MPI,MPI_MAX,TPFILE%NMPICOMM,IERR)
           IF (ISIZEMAX==0) THEN
