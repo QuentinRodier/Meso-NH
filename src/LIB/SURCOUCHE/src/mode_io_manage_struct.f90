@@ -1057,8 +1057,14 @@ END IF
 IF (PRESENT(TPDATAFILE) .AND. TRIM(HTYPE)/='DES') &
     CALL PRINT_MSG(NVERB_WARNING,'IO','IO_File_add2list','optional argument TPDATAFILE is not used by '//TRIM(HTYPE)//' files')
 !
-IF ( PRESENT( TPMAINFILE) .AND. TRIM(HTYPE) /= 'MNHBACKUP' .AND. TRIM(HTYPE) /= 'MNHOUTPUT' ) &
-    CALL PRINT_MSG(NVERB_WARNING,'IO','IO_File_add2list','optional argument TMAINFILE is not used by '//TRIM(HTYPE)//' files')
+IF ( PRESENT( TPMAINFILE) ) THEN
+  IF ( LEN(HTYPE) >= 3 ) THEN
+    IF ( HTYPE(1:3) /= 'MNH' ) &
+      CALL PRINT_MSG(NVERB_WARNING,'IO','IO_File_add2list','optional argument TPMAINFILE is not used by '//TRIM(HTYPE)//' files')
+  ELSE
+    CALL PRINT_MSG(NVERB_WARNING,'IO','IO_File_add2list','optional argument TPMAINFILE is not used by '//TRIM(HTYPE)//' files')
+  END IF
+END IF
 !
 IF (.NOT.ASSOCIATED(TFILE_LAST)) THEN
   ALLOCATE(TFILE_LAST)
