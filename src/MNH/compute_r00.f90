@@ -6,6 +6,7 @@
 !###############################
 MODULE MODE_COMPUTE_R00
 ! ###############################
+  USE MODD_LAGR_TRAJ, ONLY: NLAGRFILEMAX
 
   IMPLICIT NONE
 
@@ -16,13 +17,9 @@ MODULE MODE_COMPUTE_R00
 
   REAL, PARAMETER :: NSPVAL = -1.E+11
 
-  INTEGER                 :: NFILES
-  INTEGER                 :: NNBR_START
-  INTEGER, DIMENSION(100) :: NBRFILES
-
-!PW:TODO: DOCTOR
-!PW: si JF=1: reprendre comportement orig DIAG
-
+  INTEGER                          :: NFILES
+  INTEGER                          :: NNBR_START
+  INTEGER, DIMENSION(NLAGRFILEMAX) :: NBRFILES
 
 CONTAINS
 
@@ -40,12 +37,6 @@ SUBROUTINE INI_COMPUTE_R00()
 
   INTEGER :: IFILECUR, JFILECUR
   INTEGER :: JLOOP
-  INTEGER :: JF
-
-  JF=1
-  DO WHILE (LEN_TRIM(CFILES(JF))/=0)
-    JF=JF+1
-  END DO
 !
 !
 !*       2.0    FIND THE FILE TO BE TREATED AND THE INIT-SV FILES
@@ -53,7 +44,7 @@ SUBROUTINE INI_COMPUTE_R00()
 !
 ! Search the number of the file to be treated
   IFILECUR=0
-  DO JFILECUR=1,100
+  DO JFILECUR = 1, NLAGRFILEMAX
     IF (CINIFILE==CFILES(JFILECUR)) THEN
       IFILECUR=JFILECUR
       EXIT
@@ -64,7 +55,7 @@ SUBROUTINE INI_COMPUTE_R00()
   ! Search the number of the files(NFILES), where the Lagrangian tracers
   !have been reinitialized
   NFILES=0
-  DO JFILECUR=IFILECUR,100
+  DO JFILECUR = IFILECUR, NLAGRFILEMAX
     IF (LEN_TRIM(CFILES(JFILECUR)) /= 0) THEN
       NFILES= NFILES +1
       NBRFILES(NFILES)=JFILECUR       ! contains the number of the files where
@@ -169,38 +160,33 @@ TYPE(TFILEDATA),   INTENT(IN) :: TPFILE ! Output file
 !
 !*       0.2   declarations of local variables
 !
-INTEGER                            :: NIU,NJU,NKU
-INTEGER                            :: JFILECUR
-INTEGER                            :: JLOOP
-REAL                               :: ZXOR,ZYOR,ZDX,ZDY
-REAL, ALLOCATABLE, DIMENSION(:,:,:):: ZXI, ZYI, ZZI
-REAL, ALLOCATABLE, DIMENSION(:,:,:):: ZX0, ZY0, ZZ0        ! origin of the 
-       ! particules colocated with the mesh-grid points read in the file
-REAL, ALLOCATABLE, DIMENSION(:,:,:):: ZX00, ZY00, ZZ00, ZZL ! cumulative
-       ! origin for more than one restart of the tracers 
-REAL, ALLOCATABLE, DIMENSION(:,:,:):: ZTH0, ZTHE0   ! same fields 
-       ! for Theta and ThetaE as for the coordinates of the origin
-REAL, ALLOCATABLE, DIMENSION(:,:,:):: ZRV0, ZRH0    ! same fields
-       ! for Rv and RH as for the coordinates of the origin
-REAL, ALLOCATABLE, DIMENSION(:,:,:):: ZRC0, ZRI0    ! same fields
-REAL, ALLOCATABLE, DIMENSION(:,:,:):: ZU0, ZV0, ZW0 ! same fields
-REAL, ALLOCATABLE, DIMENSION(:,:,:,:):: ZCCN_FREE0, ZIFN_FREE0
-       ! for Rv as for the coordinates of the origin
-REAL, ALLOCATABLE, DIMENSION(:,:,:):: ZWORK1,ZWORK2,ZWORK3       
-TYPE(DATE_TIME)                    :: TDTCUR_START
-CHARACTER(LEN=NMNHNAMELGTMAX)      :: YMNHNAME
-CHARACTER(LEN=2)                   :: INDICE
-LOGICAL                            :: GLFI, GNC4
-LOGICAL                            :: GSTART
-INTEGER                            :: JI,JJ,JK,JSV,ISV ! loop index
-REAL                               :: ZXMAX,ZYMAX,ZZMAX  ! domain extrema
-REAL                               :: XFILLVALUE =  9.9692099683868690e+36
-TYPE(TFIELDMETADATA)               :: TZFIELD
-TYPE(TFIELDMETADATA)               :: TZFIELD_X0, TZFIELD_Y0, TZFIELD_Z0
-TYPE(TFIELDMETADATA)               :: TZFIELD_U0, TZFIELD_V0, TZFIELD_W0
-TYPE(TFIELDMETADATA)               :: TZFIELD_TH0, TZFIELD_RV0, TZFIELD_RH0, TZFIELD_THE0
-TYPE(TFIELDMETADATA)               :: TZFIELD_RC0, TZFIELD_RI0
-TYPE(TFILEDATA),POINTER            :: TZTRACFILE
+INTEGER                               :: IIU, IJU, IKU
+INTEGER                               :: JFILECUR
+INTEGER                               :: JLOOP
+REAL                                  :: ZXOR,ZYOR,ZDX,ZDY
+REAL, ALLOCATABLE, DIMENSION(:,:,:)   :: ZXI, ZYI, ZZI
+REAL, ALLOCATABLE, DIMENSION(:,:,:)   :: ZX0, ZY0, ZZ0         ! origin of the particles colocated with the mesh-grid points
+REAL, ALLOCATABLE, DIMENSION(:,:,:)   :: ZX00, ZY00, ZZ00, ZZL ! cumulative origin for more than one restart of the tracers
+REAL, ALLOCATABLE, DIMENSION(:,:,:)   :: ZTH0, ZTHE0           ! same fields for Theta and ThetaE as for the coords of the origin
+REAL, ALLOCATABLE, DIMENSION(:,:,:)   :: ZRV0, ZRH0            ! same fields for Rv and RH as for the coordinates of the origin
+REAL, ALLOCATABLE, DIMENSION(:,:,:)   :: ZRC0, ZRI0
+REAL, ALLOCATABLE, DIMENSION(:,:,:)   :: ZU0, ZV0, ZW0
+REAL, ALLOCATABLE, DIMENSION(:,:,:,:) :: ZCCN_FREE0, ZIFN_FREE0
+REAL, ALLOCATABLE, DIMENSION(:,:,:)   :: ZWORK1,ZWORK2,ZWORK3
+TYPE(DATE_TIME)                       :: TDTCUR_START
+CHARACTER(LEN=NMNHNAMELGTMAX)         :: YMNHNAME
+CHARACTER(LEN=2)                      :: YIDX
+LOGICAL                               :: GLFI, GNC4
+LOGICAL                               :: GSTART
+INTEGER                               :: JI, JJ, JSV, ISV ! loop index
+REAL                                  :: ZXMAX,ZYMAX,ZZMAX  ! domain extrema
+REAL                                  :: XFILLVALUE =  9.9692099683868690e+36
+TYPE(TFIELDMETADATA)                  :: TZFIELD
+TYPE(TFIELDMETADATA)                  :: TZFIELD_X0, TZFIELD_Y0, TZFIELD_Z0
+TYPE(TFIELDMETADATA)                  :: TZFIELD_U0, TZFIELD_V0, TZFIELD_W0
+TYPE(TFIELDMETADATA)                  :: TZFIELD_TH0, TZFIELD_RV0, TZFIELD_RH0, TZFIELD_THE0
+TYPE(TFIELDMETADATA)                  :: TZFIELD_RC0, TZFIELD_RI0
+TYPE(TFILEDATA),POINTER               :: TZTRACFILE
 !
 !-------------------------------------------------------------------------------
 
@@ -218,52 +204,53 @@ TZTRACFILE => NULL()
 !               -----------------------------------------
 !
 !
-NIU=SIZE(XZZ,1)
-NJU=SIZE(XZZ,2)
-NKU=SIZE(XZZ,3)
+IIU=SIZE(XZZ,1)
+IJU=SIZE(XZZ,2)
+IKU=SIZE(XZZ,3)
 !
-ALLOCATE(ZXI(NIU,NJU,NKU))
-ALLOCATE(ZYI(NIU,NJU,NKU))
-ALLOCATE(ZZI(NIU,NJU,NKU))
-ALLOCATE(ZX0(NIU,NJU,NKU))
-ALLOCATE(ZY0(NIU,NJU,NKU))
-ALLOCATE(ZZ0(NIU,NJU,NKU))
-ALLOCATE(ZWORK1(NIU,NJU,NKU))
-ALLOCATE(ZWORK2(NIU,NJU,NKU))
-ALLOCATE(ZWORK3(NIU,NJU,NKU))
-ALLOCATE(ZX00(NIU,NJU,NKU))
-ALLOCATE(ZY00(NIU,NJU,NKU))
-ALLOCATE(ZZ00(NIU,NJU,NKU))
-ALLOCATE(ZZL(NIU,NJU,NKU))
-ALLOCATE(ZTH0(NIU,NJU,NKU))
-ALLOCATE(ZU0(NIU,NJU,NKU))
-ALLOCATE(ZV0(NIU,NJU,NKU))
-ALLOCATE(ZW0(NIU,NJU,NKU))
+ALLOCATE(ZXI(IIU,IJU,IKU))
+ALLOCATE(ZYI(IIU,IJU,IKU))
+ALLOCATE(ZZI(IIU,IJU,IKU))
+ALLOCATE(ZX0(IIU,IJU,IKU))
+ALLOCATE(ZY0(IIU,IJU,IKU))
+ALLOCATE(ZZ0(IIU,IJU,IKU))
+ALLOCATE(ZWORK1(IIU,IJU,IKU))
+ALLOCATE(ZWORK2(IIU,IJU,IKU))
+ALLOCATE(ZWORK3(IIU,IJU,IKU))
+ALLOCATE(ZX00(IIU,IJU,IKU))
+ALLOCATE(ZY00(IIU,IJU,IKU))
+ALLOCATE(ZZ00(IIU,IJU,IKU))
+ALLOCATE(ZZL(IIU,IJU,IKU))
+ALLOCATE(ZTH0(IIU,IJU,IKU))
+ALLOCATE(ZU0(IIU,IJU,IKU))
+ALLOCATE(ZV0(IIU,IJU,IKU))
+ALLOCATE(ZW0(IIU,IJU,IKU))
 IF (LUSERV) THEN
-  ALLOCATE(ZRV0(NIU,NJU,NKU))
-  ALLOCATE(ZRH0(NIU,NJU,NKU))
-  ALLOCATE(ZTHE0(NIU,NJU,NKU))
+  ALLOCATE(ZRV0(IIU,IJU,IKU))
+  ALLOCATE(ZRH0(IIU,IJU,IKU))
+  ALLOCATE(ZTHE0(IIU,IJU,IKU))
 END IF
-IF (LUSERC) ALLOCATE(ZRC0(NIU,NJU,NKU))
-IF (LUSERI) ALLOCATE(ZRI0(NIU,NJU,NKU))
+IF (LUSERC) ALLOCATE(ZRC0(IIU,IJU,IKU))
+IF (LUSERI) ALLOCATE(ZRI0(IIU,IJU,IKU))
 IF (CCLOUD == 'LIMA') THEN
-  ALLOCATE(ZCCN_FREE0(NIU,NJU,NKU,NMOD_CCN))
-  ALLOCATE(ZIFN_FREE0(NIU,NJU,NKU,NMOD_IFN))
+  ALLOCATE(ZCCN_FREE0(IIU,IJU,IKU,NMOD_CCN))
+  ALLOCATE(ZIFN_FREE0(IIU,IJU,IKU,NMOD_IFN))
 END IF
 
 ALLOCATE( TLAGR_DATES(NTRAJSTLG) )
 
 ! initial values
 !PW:BUG+TODO?: ne tient pas compte de JPHEXT! + utiliser XXHATM ET XDXHAT plutot que XXHAT?
+!PW:BUG+TODO?:  ne tient pas compte de JPHEXT! + utiliser XXHATM ET XDXHAT plutot que XXHAT?
 ZXOR=0.5 * (XXHAT(2)+XXHAT(3)) 
 ZYOR=0.5 * (XYHAT(2)+XYHAT(3))
 ZDX= XXHAT(3)-XXHAT(2)
 ZDY= XYHAT(3)-XYHAT(2)
 ZZL=MZF(XZZ)
-ZZL(:,:,NKU)=2*XZZ(:,:,NKU)-ZZL(:,:,NKU-1)
-ZXMAX=ZXOR+(NIU-3)*ZDX
-ZYMAX=ZYOR+(NJU-3)*ZDY
-ZZMAX=ZZL(2,2,NKU-1)
+ZZL(:,:,IKU)=2*XZZ(:,:,IKU)-ZZL(:,:,IKU-1)
+ZXMAX=ZXOR+(IIU-3)*ZDX
+ZYMAX=ZYOR+(IJU-3)*ZDY
+ZZMAX=ZZL(2,2,IKU-1)
 !  conversion from km to meters
 ZXOR=ZXOR*1.E-3
 ZYOR=ZYOR*1.E-3
@@ -278,25 +265,21 @@ ZX00(:,:,:)=XSVT(:,:,:,NSV_LGBEG)*1.E-3   ! ZX0 in km
 ZY00(:,:,:)=XSVT(:,:,:,NSV_LGBEG+1)*1.E-3 ! ZY0 in km
 ZZ00(:,:,:)=XSVT(:,:,:,NSV_LGEND)*1.E-3   ! ZZ0 in km
 !
-DO JK=1,NKU
-  DO JJ=1,NJU
-    DO JI=1,NIU-1
-      ZXI(JI,JJ,JK)=0.5*(XXHAT(JI)+XXHAT(JI+1))
-    END DO
-    ZXI(NIU,JJ,JK)=2.*ZXI(NIU-1,JJ,JK)-ZXI(NIU-2,JJ,JK)
+DO JJ = 1, IJU
+  DO JI = 1, IIU-1
+    ZXI(JI,JJ,:) = 0.5 * ( XXHAT(JI) + XXHAT(JI+1) )
   END DO
+  ZXI(IIU,JJ,:) = 2. * ZXI(IIU-1,JJ,:) - ZXI(IIU-2,JJ,:)
 END DO
-ZXI=ZXI*1.E-3
+ZXI(:,:,:) = ZXI(:,:,:) * 1.E-3
 !
-DO JK=1,NKU
-  DO JI=1,NIU
-    DO JJ=1,NJU-1
-      ZYI(JI,JJ,JK)=0.5*(XYHAT(JJ)+XYHAT(JJ+1))
-    END DO
-    ZYI(JI,NJU,JK)=2.*ZYI(JI,NJU-1,JK)-ZYI(JI,NJU-2,JK)
+DO JI=1,IIU
+  DO JJ=1,IJU-1
+    ZYI(JI,JJ,:)= 0.5 * ( XYHAT(JJ) + XYHAT(JJ+1) )
   END DO
+  ZYI(JI,IJU,:) = 2. * ZYI(JI,IJU-1,:) - ZYI(JI,IJU-2,:)
 END DO
-ZYI=ZYI*1.E-3
+ZYI(:,:,:) = ZYI(:,:,:) * 1.E-3
 !
 IF (L2D) THEN
   WHERE ( ZX00<ZXOR .OR. ZX00>ZXMAX .OR. &
@@ -563,13 +546,11 @@ DO JFILECUR=1,NFILES
         TZFIELD = TSVLIST(JSV)
         IF (JSV .GE. NSV_LIMA_CCN_FREE .AND. JSV .LT. NSV_LIMA_CCN_ACTI) THEN
           ISV=JSV - NSV_LIMA_CCN_FREE + 1
-          WRITE(INDICE,'(I2.2)')(ISV)
           CALL IO_Field_read(TZTRACFILE,TZFIELD,ZCCN_FREE0(:,:,:,ISV))
           ZCCN_FREE0(:,:,:,ISV)=ZCCN_FREE0(:,:,:,ISV)*1.E-6*XRHODREF(:,:,:) ! in cm-3
         END IF
         IF (JSV .GE. NSV_LIMA_IFN_FREE .AND. JSV .LT. NSV_LIMA_IFN_NUCL) THEN
           ISV=JSV - NSV_LIMA_IFN_FREE + 1
-          WRITE(INDICE,'(I2.2)')(ISV)
           CALL IO_Field_read(TZTRACFILE,TZFIELD,ZIFN_FREE0(:,:,:,ISV))
           ZIFN_FREE0(:,:,:,ISV)=ZIFN_FREE0(:,:,:,ISV)*1.E-6*XRHODREF(:,:,:) ! in cm-3
         END IF
@@ -697,8 +678,8 @@ DO JFILECUR=1,NFILES
           CALL INTERPXYZ(ZX00,ZY00,ZZ00,ZCCN_FREE0(:,:,:,JSV),ZWORK1)
         END IF
         WHERE(ZWORK1<0.) ZWORK1=XFILLVALUE
-        WRITE(INDICE,'(I2.2)')(JSV)
-        YMNHNAME = TRIM(CLIMA_WARM_CONC(3))//INDICE
+        WRITE(YIDX,'(I2.2)')(JSV)
+        YMNHNAME = TRIM(CLIMA_WARM_CONC(3))//YIDX
         TZFIELD = TFIELDMETADATA(                       &
           CMNHNAME   = TRIM(YMNHNAME)//'_TRAJ',         &
           CSTDNAME   = '',                              &
@@ -720,8 +701,8 @@ DO JFILECUR=1,NFILES
           CALL INTERPXYZ(ZX00,ZY00,ZZ00,ZIFN_FREE0(:,:,:,JSV),ZWORK1)
         END IF
         WHERE(ZWORK1<0.) ZWORK1=XFILLVALUE
-        WRITE(INDICE,'(I2.2)')(JSV)
-        YMNHNAME = TRIM(CLIMA_COLD_CONC(5))//INDICE
+        WRITE(YIDX,'(I2.2)')(JSV)
+        YMNHNAME = TRIM(CLIMA_COLD_CONC(5))//YIDX
         TZFIELD = TFIELDMETADATA(                       &
           CMNHNAME   = TRIM(YMNHNAME)//'_TRAJ',         &
           CSTDNAME   = '',                              &
@@ -845,9 +826,9 @@ LOGICAL  :: GEXT
 !
 !-------------------------------------------------------------------------------
 !
-DO JK=1,NKU
-  DO JJ=1,NJU
-    DO JI=1,NIU
+DO JK=1,IKU
+  DO JJ=1,IJU
+    DO JI=1,IIU
       !
       ZX=PX(JI,JJ,JK) 
       ZY=PY(JI,JJ,JK)
@@ -882,13 +863,13 @@ DO JK=1,NKU
       ZEPS2=ZYREL-REAL(IJ)
       IF (L2D) ZEPS2=0.
       !
-      DO JKK=1,NKU
+      DO JKK=1,IKU
         ZZLXY(JKK)=ZEPS2*(ZEPS1*(ZZL(II+1,IJ+1,JKK))+(1-ZEPS1)*(ZZL(II,IJ+1,JKK)))     &
              + (1-ZEPS2)*(ZEPS1*(ZZL(II+1,IJ,JKK))+(1-ZEPS1)*(ZZL(II,IJ,JKK)))
       ENDDO
       !
       IK=999
-      DO JKK=2,NKU
+      DO JKK=2,IKU
         IF (ZZLXY(JKK).GE.ZZ) THEN
           IK=JKK-1
           EXIT 
@@ -898,7 +879,7 @@ DO JK=1,NKU
       IF (IK==999) THEN
         PRINT*,'PROBLEM AT POINT',II,IJ
         PRINT*,'XREL, YREL, Z =',ZXREL,ZYREL,ZZ
-        PRINT*,'ZZLXY(NKU)',ZZLXY(NKU)
+        PRINT*,'ZZLXY(NKU)',ZZLXY(IKU)
 !callabortstop
         CALL PRINT_MSG(NVERB_FATAL,'GEN','COMPUTE_R00','')
       END IF 

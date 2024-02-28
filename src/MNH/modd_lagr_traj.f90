@@ -16,8 +16,10 @@ USE MODD_TYPE_DATE,  ONLY: DATE_TIME
 
 SAVE
 
-CHARACTER(LEN=NFILENAMELGTMAX) :: CFILES(100)      ! names of the files to be treated
-INTEGER                        :: NSTART_SUPP(100) ! supplementary starts for the lagrangian trajectories
+INTEGER, PARAMETER :: NLAGRFILEMAX = 100 ! Maximum number of files to be treated for Lagrangian trajectories
+
+CHARACTER(LEN=NFILENAMELGTMAX) :: CFILES(NLAGRFILEMAX)      ! names of the files to be treated
+INTEGER                        :: NSTART_SUPP(NLAGRFILEMAX) ! supplementary starts for the Lagrangian trajectories
 
 INTEGER                                    :: NTRAJSTLG = 0 ! Number of time starts for Lagrangian trajectories
 TYPE(DATE_TIME), DIMENSION(:), ALLOCATABLE :: TLAGR_DATES   ! Times for Lagrangian trajectories
