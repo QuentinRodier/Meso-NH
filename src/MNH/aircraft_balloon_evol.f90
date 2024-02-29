@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2000-2023 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2000-2024 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -998,7 +998,6 @@ USE MODD_AIRCRAFT_BALLOON, ONLY: TAIRCRAFTDATA
 USE MODD_TYPE_DATE,        ONLY: DATE_TIME
 
 USE MODE_DATETIME
-USE MODE_POSITION_TOOLS,   ONLY: FIND_PROCESS_AND_MODEL_FROM_XY_POS
 
 IMPLICIT NONE
 

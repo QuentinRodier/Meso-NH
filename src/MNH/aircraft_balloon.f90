@@ -154,6 +154,8 @@ IF ( ISP == NFLYER_DEFAULT_RANK ) THEN
     ELSE IF ( TDTCUR > TZAIRCRAFT%TLAND ) THEN
       ! Nothing to do
       ! Aircraft will never be in flight in this run. Data will remain on the initial process.
+      NRANKNXT_AIRCRAFT(JI) = NFLYER_DEFAULT_RANK
+      CYCLE
     ELSE
       ! Aircraft is already in flight at the beginning of the run
       TZDATE = TDTCUR
