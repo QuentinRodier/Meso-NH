@@ -589,6 +589,7 @@ IF ( TPBALLOON%NMODEL /= IMODEL_OLD .AND. .NOT. TPBALLOON%LCRASH ) THEN
 
         !Remark: by construction here, ISTORE is always > 1 => no risk with ISTORE-1 value
         TPBALLOON%TFLYER_TIME%TPDATES(ISTORE) = TPBALLOON%TFLYER_TIME%TPDATES(ISTORE-1) + TPBALLOON%TFLYER_TIME%XTSTEP
+        TPBALLOON%NSTORE_CUR = ISTORE
 
         WRITE( CMNHMSG(1), "( 'balloon ', A, ': store skipped on ', I2, '/', I2, '/', I4, ' at ', F18.12, 's' )" ) &
                TRIM( TPBALLOON%CNAME ),                                                                            &
