@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2022 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2024 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -143,35 +143,40 @@ subroutine Write_budget( tpdiafile, tpdtcur, ptstep, ksv )
   call Print_msg( NVERB_DEBUG, 'BUD', 'Write_budget', 'called' )
 
   gnocompress = .true.
-  !
-  !* Write TSTEP and BULEN
-  !  ---------------------
-  !
-  TZFIELD = TFIELDMETADATA(   &
-    CMNHNAME   = 'TSTEP',     &
-    CSTDNAME   = '',          &
-    CLONGNAME  = 'TSTEP',     &
-    CUNITS     = 's',         &
-    CDIR       = '--',        &
-    CCOMMENT   = 'Time step', &
-    NGRID      = 0,           &
-    NTYPE      = TYPEREAL,    &
-    NDIMS      = 0,           &
-    LTIMEDEP   = .FALSE.      )
-  CALL IO_Field_write(TPDIAFILE,TZFIELD,PTSTEP)
-  !
-  TZFIELD = TFIELDMETADATA(   &
-    CMNHNAME   = 'BULEN',     &
-    CSTDNAME   = '',          &
-    CLONGNAME  = 'BULEN',     &
-    CUNITS     = 's',         &
-    CDIR       = '--',        &
-    CCOMMENT   = 'Length of the budget temporal average', &
-    NGRID      = 0,           &
-    NTYPE      = TYPEREAL,    &
-    NDIMS      = 0,           &
-    LTIMEDEP   = .FALSE.      )
-  CALL IO_Field_write(TPDIAFILE,TZFIELD,XBULEN)
+
+  if ( gfirstcall ) then
+    !
+    !* Write TSTEP and BULEN
+    !  ---------------------
+    !
+    TZFIELD = TFIELDMETADATA(   &
+      CMNHNAME   = 'TSTEP',     &
+      CSTDNAME   = '',          &
+      CLONGNAME  = 'TSTEP',     &
+      CUNITS     = 's',         &
+      CDIR       = '--',        &
+      CCOMMENT   = 'Time step', &
+      NGRID      = 0,           &
+      NTYPE      = TYPEREAL,    &
+      NDIMS      = 0,           &
+      LTIMEDEP   = .FALSE.      )
+    CALL IO_Field_write(TPDIAFILE,TZFIELD,PTSTEP)
+    !
+    TZFIELD = TFIELDMETADATA(   &
+      CMNHNAME   = 'BULEN',     &
+      CSTDNAME   = '',          &
+      CLONGNAME  = 'BULEN',     &
+      CUNITS     = 's',         &
+      CDIR       = '--',        &
+      CCOMMENT   = 'Length of the budget temporal average', &
+      NGRID      = 0,           &
+      NTYPE      = TYPEREAL,    &
+      NDIMS      = 0,           &
+      LTIMEDEP   = .FALSE.      )
+    CALL IO_Field_write(TPDIAFILE,TZFIELD,XBULEN)
+
+    gfirstcall = .false.
+  end if
   !
   ! Initialize NBUTSHIFT
   NBUTSHIFT = NBUTSHIFT+1
