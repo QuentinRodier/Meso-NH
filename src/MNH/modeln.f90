@@ -385,6 +385,7 @@ USE MODE_AIRCRAFT_BALLOON
 use mode_budget,           only: Budget_store_init, Budget_store_end
 USE MODE_DATETIME
 USE MODE_ELEC_ll
+USE MODE_FILL_DIMPHYEX,    ONLY: FILL_DIMPHYEX
 USE MODE_GRIDCART
 USE MODE_GRIDPROJ
 USE MODE_IO_FIELD_WRITE,   only: IO_Field_user_write, IO_Fieldlist_write, IO_Header_write
@@ -2008,6 +2009,7 @@ IF (CCLOUD /= 'NONE') THEN
 ! Lessivage des CCN et IFN nucléables par Slinn
 !
     IF (LSCAV .AND. (CCLOUD == 'LIMA')) THEN
+       CALL FILL_DIMPHYEX( YLDIMPHYEX, SIZE(XTHT,1), SIZE(XTHT,2), SIZE(XTHT,3) )
        CALL LIMA_PRECIP_SCAVENGING( YLDIMPHYEX,CST,TBUCONF,TBUDGETS,SIZE(TBUDGETS), &
                                     CCLOUD, CCONF, ILUOUT, KTCOUNT,XTSTEP,XRT(:,:,:,3),    &
                                     XRHODREF, XRHODJ, XZZ, XPABST, XTHT,            &

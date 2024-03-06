@@ -642,7 +642,7 @@ id -ng
 echo $CCCHOME
 --> /ccc/.../home/genXXXX/{your_login}
 
-#  If all is OK , you could install the code in interactive as usally 
+#  If all is OK, you can install the code interactively as usual
 #
 #   - install the PACKAGE in your ${CCCHOME} ( default 20Go  of quota )
 #  for example on Intel frontal
@@ -1027,14 +1027,18 @@ git clone -b 2014.01 https://github.com/forefireAPI/firefront.git
 #
 # Run the 'configure' script preceded with the setting of the MNH_RTTOV variable:
 #
-cd MNH.../src/
+cd $SRC_MESONH/src/
 export MNH_RTTOV=1
 export VER_RTTOV=13.2
+#
+# Compile the HDF5 library
+#
+make cdf
 #
 # Download the RTTOV package rttov132.tar.xz by following the instructions given on https://nwpsaf.eu/site/software/rttov/
 #
 # Install the RTTOV package rttov132.tar.xz
-cd MNH.../src/LIB
+cd $SRC_MESONH/src/LIB
 mkdir RTTOV-13.2
 cd RTTOV-13.2
 tar xJf rttov132.tar.xz
@@ -1045,13 +1049,13 @@ HDF5_PREFIX  = $(SRC_MESONH)/src/dir_obj${XYZ}/MASTER/NETCDF-${VERSION_CDFF}
 FFLAGS_HDF5  = -D_RTTOV_HDF $(FFLAG_MOD)$(HDF5_PREFIX)/include
 LDFLAGS_HDF5 = -L$(HDF5_PREFIX)/lib64 -lhdf5hl_fortran -lhdf5_hl -lhdf5_fortran -lhdf5 -lsz -laec -lz -ldl
 "
-cd src
+cd ../src
 ../build/Makefile.PL RTTOV_HDF=1
 make ARCH=ifort        # Use Intel "ifort" compiler; other options: gfortran, NAG, pgf90, IBM
 #
 # And then for the Meso-NH compilation, do
 #
-cd MNH.../src/
+cd $SRC_MESONH/src/
 make
 
 # c) MNH_ECRAD for optional compilation of new ECRAD radiative library from ECMWF 

@@ -17,10 +17,7 @@ ln -sf ${SRC_MESONH}/src/LIB/Python/* .
 
 module purge
 module load python/3.7.6
-ln -sf ~rodierq/SAVE/OUTILS/PYTHON/departements-20180101.* .
 
-python3 plot_XYNTHIA.py
-convert *.png XYNTHIA.pdf
-
-python3 plot_XYNTHIA_AGG4.py
-convert *.png XYNTHIA_AGG4.pdf
+python3 plot_STERAO.py
+convert *.png STERAO.pdf
+rm -f *.png

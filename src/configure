@@ -484,17 +484,16 @@ export SPLL=spll_new
                 export  VER_MPI=${VER_MPI:-MPIAUTO}
                 export OPTLEVEL=${OPTLEVEL:-DEBUG}
                 export MVWORK=${MVWORK:-NO}
+                export VER_CDF=${VER_CDF:-CDFAUTO}
 		export NEED_TOOLS=NO
 		# Ubuntu version
 		case "$(lsb_release -sr)" in
                       20.04)
-                export VER_CDF=${VER_CDF:-CDFCTI}
                 export MNHENV=${MNHENV:-"
 export SPLL=spll_new
 "}
                   ;;
 	          22.04)
-                export VER_CDF=${VER_CDF:-CDFAUTO}
                 export MNHENV=${MNHENV:-"
 export PATH=/opt/gcc-9.4.0/bin:\$PATH
 export SPLL=spll_new

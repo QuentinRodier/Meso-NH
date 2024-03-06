@@ -115,7 +115,7 @@ SUBROUTINE COMPUTE_R00(TPFILE)
 !  P. Wautelet 07/02/2019: force TYPE to a known value for IO_File_add2list
 !  P. Wautelet 11/04/2019: bugfix: nullify TZTRACFILE when appropriate
 !  P. Wautelet 15/02/2024: add time dimension for Lagrangian trajectories
-!  J.-P. Chaboureau 26/02/2024: add thetae, wind and cloud variables, and replace negative values by XDEFFILLVALUE
+!  J.-P. Chaboureau 26/02/2024: replace LG?T by LG?, add thetae, wind and cloud variables, and replace negative values by XDEFFILLVALUE
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
