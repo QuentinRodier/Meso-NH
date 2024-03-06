@@ -283,7 +283,7 @@ use modd_radiations_n,  only: nlwb_mnh, nswb_mnh
 use modd_series,        only: lseries
 use modd_series_n,      only: nsnbstept
 use modd_station_n,     only: lstation, tstations_time
-use modd_sto_file,      only: ntrajstlg
+use modd_lagr_traj,     only: ntrajstlg
 
 TYPE(TFILEDATA),INTENT(INOUT)        :: TPFILE
 CHARACTER(LEN=*),OPTIONAL,INTENT(IN) :: HPROGRAM_ORIG !To emulate a file coming from this program
