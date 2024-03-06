@@ -2509,7 +2509,7 @@ END SUBROUTINE IO_History_append_nc4
 
 
 subroutine IO_Select_split_file( tpfile, tpfield, tpfileout, tpfieldout, kvertlevel, kzfile )
-use modd_field,          only: NMNHDIM_LEVEL, NMNHDIM_LEVEL_W, NMNHDIM_UNKNOWN
+use modd_field,          only: NMNHDIM_LEVEL, NMNHDIM_LEVEL_W, NMNHDIM_NOTLISTED, NMNHDIM_UNKNOWN
 
 type(tfiledata),  target,         intent(in)  :: tpfile
 class(tfieldmetadata), target,    intent(in)  :: tpfield
@@ -2519,6 +2519,7 @@ integer,                optional, intent(in)  :: kvertlevel ! Number of the vert
 integer,                optional, intent(in)  :: kzfile     ! Number of the Z-level split file
 
 character(len=4) :: ysuffix
+integer          :: ivertdim
 integer          :: jdim
 
 if ( Present( kvertlevel ) ) then
@@ -2536,14 +2537,26 @@ if ( Present( kvertlevel ) ) then
   tpfieldout%ndims = 2
 
   !Remove the vertical dimension
+  ivertdim = 0
   do jdim = 1, size(tpfieldout%ndimlist)
-    if ( tpfieldout%ndimlist(jdim) == NMNHDIM_LEVEL .or. tpfieldout%ndimlist(jdim) == NMNHDIM_LEVEL_W ) then
+    if (      tpfieldout%ndimlist(jdim) == NMNHDIM_LEVEL     &
+         .or. tpfieldout%ndimlist(jdim) == NMNHDIM_LEVEL_W   &
+         .or. tpfieldout%ndimlist(jdim) == NMNHDIM_NOTLISTED ) then
       if ( jdim < size(tpfieldout%ndimlist) ) &
         tpfieldout%ndimlist(jdim:size(tpfieldout%ndimlist)-1) = tpfieldout%ndimlist(jdim+1:)
       tpfieldout%ndimlist(size(tpfieldout%ndimlist)) = NMNHDIM_UNKNOWN
+      ivertdim = jdim
       exit !max 1 vertical dimension
     end if
   end do
+
+  if ( ivertdim == 0 ) then
+    call Print_msg( NVERB_FATAL, 'IO', 'IO_Select_split_file', 'vertical dimension not found for field ' // trim(tpfield%cmnhname) )
+  else if ( ivertdim /= 3 ) then
+    !Note: this situation is unexpected for the moment. If it is OK, please remove this warning
+    call Print_msg( NVERB_WARNING, 'IO', 'IO_Select_split_file', 'removed vertical dimension was not at 3rd position for field ' &
+                    // trim(tpfield%cmnhname) )
+  end if
 else
   tpfileout  => tpfile
   tpfieldout => tpfield
