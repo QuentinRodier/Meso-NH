@@ -1,17 +1,17 @@
 !MNH_LIC Copyright 1996-2024 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ##################
       MODULE MODN_BACKUP
 !     ##################
 !
-!!****  *MODN_BACKUP* - declaration of namelist NAM_OUTPUT
+!!****  *MODN_BACKUP* - declaration of namelist NAM_BACKUP
 !!
 !!    PURPOSE
 !!    -------
-!       The purpose of this  module is to specify the namelist  NAM_OUTPUT
+!       The purpose of this  module is to specify the namelist NAM_BACKUP
 !       which concerns the instants and some parameters (compression and precision reduction)
 !       of the backups realized by all models.
 !
@@ -51,4 +51,31 @@ NAMELIST/NAM_BACKUP/LBAK_BEG,LBAK_END,&
                    LBAK_COMPRESS, NBAK_COMPRESS_LEVEL, &
                    CBAK_DIR
 !
+CONTAINS
+
+SUBROUTINE BACKUP_NML_ALLOCATE( )
+  USE MODD_CONF,       ONLY: NMODEL
+  USE MODD_IO,         ONLY: NFILE_NUM_MAX
+  USE MODD_PARAMETERS, ONLY: NNEGUNDEF, XNEGUNDEF
+
+  IF ( .NOT.ALLOCATED(XBAK_TIME) ) THEN
+    ALLOCATE( XBAK_TIME(NMODEL, NFILE_NUM_MAX) )
+    XBAK_TIME(:,:) = XNEGUNDEF
+  END IF
+
+  IF ( .NOT.ALLOCATED(NBAK_STEP) ) THEN
+    ALLOCATE( NBAK_STEP(NMODEL, NFILE_NUM_MAX) )
+    NBAK_STEP(:,:) = NNEGUNDEF
+  END IF
+
+END SUBROUTINE BACKUP_NML_ALLOCATE
+
+
+SUBROUTINE BACKUP_NML_DEALLOCATE( )
+
+  DEALLOCATE( XBAK_TIME )
+  DEALLOCATE( NBAK_STEP )
+
+END SUBROUTINE BACKUP_NML_DEALLOCATE
+
 END MODULE MODN_BACKUP
