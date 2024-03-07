@@ -4090,7 +4090,7 @@ C
         NULOFM=0
         NUIMEX=0
         NERFAG=1
-        NISTAG=1
+        NISTAG=0
         NIMESG=1
         NPISAF=0
         LTAMLG=.FALSE.
