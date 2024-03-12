@@ -131,6 +131,7 @@ subroutine Write_budget( tpdiafile, tpdtcur, ptstep, ksv )
   character(len=NMNHNAMELGTMAX)                        :: yrecfm        ! name of the article to be written
   integer                                              :: jt, jmask
   integer                                              :: jsv           ! loop index over the ksv svx
+  logical, save                                        :: gfirstcall = .true.
   logical                                              :: gnocompress   ! true: no compression along x and y direction (cart option)
   real,            dimension(:),           allocatable :: zworktemp
   real,            dimension(:,:,:,:,:,:), allocatable :: zrhodjn, zworkmask
