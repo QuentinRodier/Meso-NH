@@ -17,6 +17,7 @@
 !  P. Wautelet 14/10/2021: dynamically allocate tfieldlist (+ reallocate if necessary)
 !  P. Wautelet 04/11/2021: add TFIELDMETADATA type
 !  P. Wautelet 15/02/2024: add time dimension for Lagrangian trajectories
+!  P. Wautelet 20/03/2024: add boxes for output files
 !-----------------------------------------------------------------
 module modd_field
 
@@ -97,6 +98,21 @@ integer, parameter :: NMNHDIM_STATION_TIME        = 42  ! Time dimension for sta
 integer, parameter :: NMNHDIM_PAIR                = 43  ! For values coming by pair (ie boundaries)
 
 integer, parameter :: NMNHDIM_LASTDIM_DIACHRO     = 43  ! Index of the last defined dimension for diachronic files
+
+! Box dimensions are after the NMNHDIM_LASTDIM_NODIACHRO/NMNHDIM_LASTDIM_DIACHRO indices
+! because they are allocated in separated structures (1 for each box instead of being in the global dimension list)
+integer, parameter :: NMNHDIM_BOX_FIRST_ENTRY     = 44
+
+integer, parameter :: NMNHDIM_BOX_NI              = NMNHDIM_BOX_FIRST_ENTRY
+integer, parameter :: NMNHDIM_BOX_NJ              = 45
+integer, parameter :: NMNHDIM_BOX_NI_U            = 46
+integer, parameter :: NMNHDIM_BOX_NJ_U            = 47
+integer, parameter :: NMNHDIM_BOX_NI_V            = 48
+integer, parameter :: NMNHDIM_BOX_NJ_V            = 49
+integer, parameter :: NMNHDIM_BOX_LEVEL           = 50
+integer, parameter :: NMNHDIM_BOX_LEVEL_W         = 51
+
+integer, parameter :: NMNHDIM_BOX_LAST_ENTRY      = NMNHDIM_BOX_LEVEL_W
 
 integer, parameter :: NMNHDIM_BUDGET_NGROUPS      = 101 ! This is not a true dimension
 integer, parameter :: NMNHDIM_FLYER_PROC          = 102 ! This is not a true dimension

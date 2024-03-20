@@ -26,6 +26,7 @@
 !  P. Wautelet 17/01/2024: add IO_File_remove_from_list subroutine
 !  P. Wautelet 02/02/2024: restructure backups/outputs lists
 !  P. Wautelet 07/02/2024: add compression for all netCDF files
+!  P. Wautelet 20/03/2024: add boxes for output files
 !-----------------------------------------------------------------
 MODULE MODE_IO_MANAGE_STRUCT
 !
@@ -61,7 +62,7 @@ USE MODD_DYN_n,       ONLY: DYN_MODEL
 USE MODD_FIELD,       ONLY: TFIELDLIST
 USE MODD_NESTING,     ONLY: NDAD
 USE MODD_SUB_MODEL_N, ONLY: NFILE_BACKUP_CURRENT, NFILE_OUTPUT_CURRENT, SUB_MODEL_MODEL
-USE MODD_OUT_n,       ONLY: OUT_GOTO_MODEL, OUT_MODEL
+USE MODD_OUT_n,       ONLY: OUT_GOTO_MODEL, OUT_MODEL, TOUT_BOXES
 USE MODD_VAR_ll,      ONLY: IP
 
 use mode_field, only: Find_field_id_from_mnhname
@@ -83,6 +84,7 @@ INTEGER           :: ISTEP
 INTEGER           :: ISTEP_MAX        ! Number of timesteps
 INTEGER           :: IPOS,IFIELD      ! Indices
 INTEGER           :: JOUT,IDX         ! Loop indices
+INTEGER           :: JI
 INTEGER           :: IRESP
 INTEGER           :: ISTEPDADFIRST
 INTEGER, DIMENSION(:,:), ALLOCATABLE :: IBAK_STEPLIST
@@ -523,6 +525,9 @@ DO IMI = 1, NMODEL
     END IF
   END IF
   !
+  ! Treat the boxes (sub-domains) for output files
+  IF ( OUT_MODEL(IMI)%NOUT_NUMB > 0 ) CALL IO_BOX_PREPARE( IMI )
+  !
   IF ( IP == 1 ) THEN
     ! Backup information
     WRITE( *, '( "-------------------------------------------------" )' )
@@ -576,6 +581,13 @@ DO IMI = 1, NMODEL
         DO JOUT = 1, SIZE( OUT_MODEL(IMI)%NOUT_FIELDLIST )
           IDX = OUT_MODEL(IMI)%NOUT_FIELDLIST(JOUT)
           WRITE(*, '( "  ", A )' ) TRIM(TFIELDLIST(IDX)%CMNHNAME)
+        END DO
+      END IF
+      WRITE( *, '( "Number of boxes:", I9 )' ) OUT_MODEL(IMI)%NOUT_NBOXES
+      IF ( OUT_MODEL(IMI)%NOUT_NBOXES > 0 ) THEN
+        WRITE( *, '( "  List of boxes:" )' )
+        DO JI = 1, OUT_MODEL(IMI)%NOUT_NBOXES
+          WRITE(*, '( "    ", A )' ) TRIM(OUT_MODEL(IMI)%TOUT_BOXES(JI)%CNAME)
         END DO
       END IF
     END IF
@@ -722,6 +734,62 @@ SUBROUTINE SORT_ENTRIES(KNUMB,KSTEPS)
   END DO
 END SUBROUTINE SORT_ENTRIES
 !
+!#########################################################################
+SUBROUTINE IO_BOX_PREPARE( KMI )
+!#########################################################################
+
+  USE MODD_DIM_n, ONLY: NIMAX_ll, NJMAX_ll, NKMAX
+
+  INTEGER, INTENT(IN) :: KMI
+
+  OUT_MODEL(IMI)%NOUT_NBOXES = NOUT_BOXES(IMI)
+  ALLOCATE( OUT_MODEL(IMI)%TOUT_BOXES(NOUT_BOXES(IMI)) )
+  TOUT_BOXES => OUT_MODEL(IMI)%TOUT_BOXES
+  DO JI = 1, OUT_MODEL(IMI)%NOUT_NBOXES
+    IF ( LEN_TRIM(COUT_BOX_NAME(IMI,JI)) > 0 ) THEN
+      TOUT_BOXES(JI)%CNAME = COUT_BOX_NAME(IMI,JI)
+    ELSE
+      WRITE( TOUT_BOXES(JI)%CNAME, '( "Box_", I4.4 )' ) JI
+    END IF
+    TOUT_BOXES(JI)%NIINF = NOUT_BOX_IINF(IMI,JI)
+    TOUT_BOXES(JI)%NISUP = NOUT_BOX_ISUP(IMI,JI)
+    TOUT_BOXES(JI)%NJINF = NOUT_BOX_JINF(IMI,JI)
+    TOUT_BOXES(JI)%NJSUP = NOUT_BOX_JSUP(IMI,JI)
+    TOUT_BOXES(JI)%NKINF = NOUT_BOX_KINF(IMI,JI)
+    TOUT_BOXES(JI)%NKSUP = NOUT_BOX_KSUP(IMI,JI)
+
+    !Set default values to physical domain boundaries
+    IF ( TOUT_BOXES(JI)%NIINF == NNEGUNDEF ) TOUT_BOXES(JI)%NIINF = 1
+    IF ( TOUT_BOXES(JI)%NISUP == NNEGUNDEF ) TOUT_BOXES(JI)%NIINF = NIMAX_ll
+    IF ( TOUT_BOXES(JI)%NJINF == NNEGUNDEF ) TOUT_BOXES(JI)%NJINF = 1
+    IF ( TOUT_BOXES(JI)%NJSUP == NNEGUNDEF ) TOUT_BOXES(JI)%NJINF = NJMAX_ll
+    IF ( TOUT_BOXES(JI)%NKINF == NNEGUNDEF ) TOUT_BOXES(JI)%NKINF = 1
+    IF ( TOUT_BOXES(JI)%NKSUP == NNEGUNDEF ) TOUT_BOXES(JI)%NKINF = NKMAX
+
+    !Check that selected indices are in physical domain
+    IF ( TOUT_BOXES(JI)%NIINF < 1 )        CALL Print_msg( NVERB_ERROR, 'GEN', 'IO_BOX_PREPARE', 'NOUT_BOX_IINF too small (<1)' )
+    IF ( TOUT_BOXES(JI)%NIINF > NIMAX_ll ) CALL Print_msg( NVERB_ERROR, 'GEN', 'IO_BOX_PREPARE', 'NOUT_BOX_IINF too large (>NIMAX)')
+    IF ( TOUT_BOXES(JI)%NISUP < 1 )        CALL Print_msg( NVERB_ERROR, 'GEN', 'IO_BOX_PREPARE', 'NOUT_BOX_ISUP too small (<1)' )
+    IF ( TOUT_BOXES(JI)%NISUP > NIMAX_ll ) CALL Print_msg( NVERB_ERROR, 'GEN', 'IO_BOX_PREPARE', 'NOUT_BOX_ISUP too large (>NIMAX)')
+    IF ( TOUT_BOXES(JI)%NISUP < TOUT_BOXES(JI)%NIINF ) &
+                                           CALL Print_msg( NVERB_ERROR, 'GEN', 'INI_LES_n', 'NOUT_BOX_ISUP < NOUT_BOX_IINF' )
+
+    IF ( TOUT_BOXES(JI)%NJINF < 1 )        CALL Print_msg( NVERB_ERROR, 'GEN', 'IO_BOX_PREPARE', 'NOUT_BOX_JINF too small (<1)' )
+    IF ( TOUT_BOXES(JI)%NJINF > NJMAX_ll ) CALL Print_msg( NVERB_ERROR, 'GEN', 'IO_BOX_PREPARE', 'NOUT_BOX_JINF too large (>NJMAX)')
+    IF ( TOUT_BOXES(JI)%NJSUP < 1 )        CALL Print_msg( NVERB_ERROR, 'GEN', 'IO_BOX_PREPARE', 'NOUT_BOX_JSUP too small (<1)' )
+    IF ( TOUT_BOXES(JI)%NJSUP > NJMAX_ll ) CALL Print_msg( NVERB_ERROR, 'GEN', 'IO_BOX_PREPARE', 'NOUT_BOX_JSUP too large (>NJMAX)')
+    IF ( TOUT_BOXES(JI)%NJSUP < TOUT_BOXES(JI)%NJINF ) &
+                                           CALL Print_msg( NVERB_ERROR, 'GEN', 'INI_LES_n', 'NOUT_BOX_JSUP < NOUT_BOX_JINF' )
+
+    IF ( TOUT_BOXES(JI)%NKINF < 1 )     CALL Print_msg( NVERB_ERROR, 'GEN', 'IO_BOX_PREPARE', 'NOUT_BOX_KINF too small (<1)' )
+    IF ( TOUT_BOXES(JI)%NKINF > NKMAX ) CALL Print_msg( NVERB_ERROR, 'GEN', 'IO_BOX_PREPARE', 'NOUT_BOX_KINF too large (>NKMAX)' )
+    IF ( TOUT_BOXES(JI)%NKSUP < 1 )     CALL Print_msg( NVERB_ERROR, 'GEN', 'IO_BOX_PREPARE', 'NOUT_BOX_KSUP too small (<1)' )
+    IF ( TOUT_BOXES(JI)%NKSUP > NKMAX ) CALL Print_msg( NVERB_ERROR, 'GEN', 'IO_BOX_PREPARE', 'NOUT_BOX_KSUP too large (>NKMAX)' )
+    IF ( TOUT_BOXES(JI)%NKSUP < TOUT_BOXES(JI)%NKINF ) &
+                                           CALL Print_msg( NVERB_ERROR, 'GEN', 'INI_LES_n', 'NOUT_BOX_KSUP < NOUT_BOX_KINF' )
+  END DO
+END SUBROUTINE IO_BOX_PREPARE
+
 END SUBROUTINE IO_Bakout_struct_prepare
 
 

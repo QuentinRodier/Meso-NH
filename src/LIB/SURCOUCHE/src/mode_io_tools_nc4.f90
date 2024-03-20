@@ -21,6 +21,7 @@
 !  P. Wautelet 27/05/2021: improve IO_Mnhname_clean to autocorrect names to be CF compliant
 !  P. Wautelet 08/10/2021: add 2 new dimensions: LW_bands and SW_bands
 !  P. Wautelet 15/02/2024: add time dimension for Lagrangian trajectories
+!  P. Wautelet 20/03/2024: add boxes for output files
 !-----------------------------------------------------------------
 #ifdef MNH_IOCDF4
 module mode_io_tools_nc4
@@ -270,12 +271,16 @@ use modd_field,         only: NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NI_U, NMNHDIM_NJ_U
                               NMNHDIM_SERIES_LEVEL, NMNHDIM_SERIES_LEVEL_W,                                     &
                               NMNHDIM_SERIES_TIME, NMNHDIM_PROFILER_TIME, NMNHDIM_STATION_TIME,                 &
                               NMNHDIM_PAIR,                                                                     &
+                              NMNHDIM_BOX_FIRST_ENTRY, NMNHDIM_BOX_LAST_ENTRY,                                  &
+                              NMNHDIM_BOX_NI, NMNHDIM_BOX_NJ, NMNHDIM_BOX_NI_U, NMNHDIM_BOX_NJ_U,               &
+                              NMNHDIM_BOX_NI_V, NMNHDIM_BOX_NJ_V, NMNHDIM_BOX_LEVEL, NMNHDIM_BOX_LEVEL_W,       &
                               NMNHDIM_ARAKAWA,                                                                  &
                               NMNHDIM_LASTDIM_NODIACHRO, NMNHDIM_LASTDIM_DIACHRO
 
 use modd_les,           only: lles_pdf, nles_k, npdf, nspectra_k, xles_temp_mean_start, xles_temp_mean_step, xles_temp_mean_end
 use modd_les_n,         only: nles_times, nspectra_ni, nspectra_nj
 use modd_nsv,           only: nsv
+use modd_out_n,         only: nout_nboxes, tout_boxes
 USE MODD_PARAMETERS_ll, ONLY: JPHEXT, JPVEXT
 use modd_param_n,       only: crad
 use modd_profiler_n,    only: lprofiler, tprofilers_time
@@ -292,6 +297,7 @@ CHARACTER(LEN=:),ALLOCATABLE :: YPROGRAM
 integer                      :: iavg, iprof, istation
 integer                      :: ispectra_ni, ispectra_nj
 INTEGER                      :: IIU_ll, IJU_ll, IKU
+integer                      :: jbox
 
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Knowndims_set_nc4','called for '//TRIM(TPFILE%CNAME))
 
@@ -350,6 +356,41 @@ end if
 if ( tpfile%ctype == 'MNHDIAG' .and. Trim( yprogram ) == 'DIAG' ) then
    !Number of times for Lagrangian trajectories
   if ( ltraj .and. ntrajstlg > 0 ) call IO_Add_dim_nc4( tpfile, NMNHDIM_TRAJ_TIME, 'time_traj', ntrajstlg )
+end if
+
+!Write dimensions used in boxes (subdomains) for MNHOUTPUT files
+if ( tpfile%ctype == 'MNHOUTPUT' ) then
+  !Allocate arrays
+  Allocate( tpfile%nboxncid  (nout_nboxes) )
+  Allocate( tpfile%tboxncdims(nout_nboxes) )
+
+  !Loop on the boxes
+  do jbox = 1, nout_nboxes
+    !Create the HDF group for each box
+    tpfile%nboxncid(jbox) = IO_Box_group_create_nc4( tpfile, tout_boxes(jbox) )
+
+    !Allocate dimension list
+    tpfile%tboxncdims(jbox)%nmaxdims = NMNHDIM_BOX_LAST_ENTRY - NMNHDIM_BOX_FIRST_ENTRY + 1
+    Allocate( tpfile%tboxncdims(jbox)%tdims(NMNHDIM_BOX_FIRST_ENTRY:NMNHDIM_BOX_LAST_ENTRY) )
+
+    !Write the box dimensions
+    call IO_Add_dim_box_nc4( tpfile, jbox, NMNHDIM_BOX_NI,      'box_ni',      tout_boxes(jbox)%nisup-tout_boxes(jbox)%niinf+1 )
+    call IO_Add_dim_box_nc4( tpfile, jbox, NMNHDIM_BOX_NI_U,    'box_ni_u',    tout_boxes(jbox)%nisup-tout_boxes(jbox)%niinf+1 )
+    call IO_Add_dim_box_nc4( tpfile, jbox, NMNHDIM_BOX_NI_V,    'box_ni_v',    tout_boxes(jbox)%nisup-tout_boxes(jbox)%niinf+1 )
+    call IO_Add_dim_box_nc4( tpfile, jbox, NMNHDIM_BOX_NJ,      'box_nj',      tout_boxes(jbox)%njsup-tout_boxes(jbox)%njinf+1 )
+    call IO_Add_dim_box_nc4( tpfile, jbox, NMNHDIM_BOX_NJ_U,    'box_nj_u',    tout_boxes(jbox)%njsup-tout_boxes(jbox)%njinf+1 )
+    call IO_Add_dim_box_nc4( tpfile, jbox, NMNHDIM_BOX_NJ_V,    'box_nj_v',    tout_boxes(jbox)%njsup-tout_boxes(jbox)%njinf+1 )
+    call IO_Add_dim_box_nc4( tpfile, jbox, NMNHDIM_BOX_LEVEL,   'box_level',   tout_boxes(jbox)%nksup-tout_boxes(jbox)%nkinf+1 )
+    call IO_Add_dim_box_nc4( tpfile, jbox, NMNHDIM_BOX_LEVEL_W, 'box_level_w', tout_boxes(jbox)%nksup-tout_boxes(jbox)%nkinf+1 )
+
+    !Write the box attributes
+    call IO_box_attribute_write_nc4( tpfile, jbox, 'min_I_index_in_physical_domain', tout_boxes(jbox)%niinf )
+    call IO_box_attribute_write_nc4( tpfile, jbox, 'max_I_index_in_physical_domain', tout_boxes(jbox)%nisup )
+    call IO_box_attribute_write_nc4( tpfile, jbox, 'min_J_index_in_physical_domain', tout_boxes(jbox)%njinf )
+    call IO_box_attribute_write_nc4( tpfile, jbox, 'max_J_index_in_physical_domain', tout_boxes(jbox)%njsup )
+    call IO_box_attribute_write_nc4( tpfile, jbox, 'min_K_index_in_physical_domain', tout_boxes(jbox)%nkinf )
+    call IO_box_attribute_write_nc4( tpfile, jbox, 'max_K_index_in_physical_domain', tout_boxes(jbox)%nksup )
+  end do
 end if
 
 !Write dimensions used in diachronic files
@@ -485,6 +526,96 @@ if ( istatus /= NF90_NOERR ) &
 end subroutine IO_Add_dim_nc4
 
 
+function IO_Box_group_create_nc4( tpfile, tpbox ) result( kgroupid )
+
+  use modd_parameters, only: NMNHNAMELGTMAX
+  use modd_precision,  only: CDFINT
+  use modd_out_n,      only: toutboxmetadata
+
+  use NETCDF,          only: NF90_DEF_GRP, NF90_INQ_NCID, NF90_NOERR
+
+  type(tfiledata),       intent(in) :: tpfile
+  type(toutboxmetadata), intent(in) :: tpbox
+  integer(kind=CDFINT)              :: kgroupid
+
+  character(len=nmnhnamelgtmax) :: ygroupname
+  integer(kind=CDFINT)          :: istatus
+
+  CALL IO_Mnhname_clean( tpbox%cname, ygroupname )
+  istatus = NF90_INQ_NCID( tpfile%nncid, ygroupname, kgroupid )
+  if ( istatus == NF90_NOERR ) then
+    call Print_msg( NVERB_ERROR, 'IO', 'IO_Box_group_create_nc4', Trim(tpfile%cname) // &
+                    ': group ' // Trim(ygroupname) // ' already exists', olocal=.true. )
+  else
+    istatus = NF90_DEF_GRP( tpfile%nncid, ygroupname, kgroupid )
+    if ( istatus /= NF90_NOERR ) &
+      call IO_Err_handle_nc4( istatus, 'IO_Box_group_create_nc4', 'NF90_DEF_GRP', 'for ' // trim( ygroupname ) )
+  end if
+
+end function IO_Box_group_create_nc4
+
+
+subroutine IO_Add_dim_box_nc4( tpfile, kbox, kidx, hdimname, klen )
+  use modd_field, only: NMNHDIM_BOX_FIRST_ENTRY, NMNHDIM_BOX_LAST_ENTRY
+
+  use NETCDF, only: NF90_DEF_DIM, NF90_NOERR
+
+  type(tfiledata),  intent(inout) :: tpfile
+  integer,          intent(in)    :: kbox     !Index of the box
+  integer,          intent(in)    :: kidx     !Position of the dimension in the list
+  character(len=*), intent(in)    :: hdimname !Name of the dimension
+  integer,          intent(in)    :: klen     !Length of the dimension
+
+  character(len=Len(hdimname))  :: ydimname_clean
+  integer(kind=CDFINT)          :: istatus
+
+  call IO_Mnhname_clean( hdimname, ydimname_clean )
+
+  if ( kidx < NMNHDIM_BOX_FIRST_ENTRY .or. kidx > NMNHDIM_BOX_LAST_ENTRY)                                                 &
+    call Print_msg( NVERB_FATAL, 'IO', 'IO_Add_dim_box_nc4', 'index out of range for dimension ' // Trim( ydimname_clean ) // &
+                    ' of file ' //Trim( tpfile%cname ) )
+
+  if ( tpfile%tboxncdims(kbox)%tdims(kidx)%nlen /= -1 .or. tpfile%tboxncdims(kbox)%tdims(kidx)%nid /= -1 ) &
+    call Print_msg( NVERB_WARNING, 'IO', 'IO_Add_dim_box_nc4', 'dimension ' // Trim( ydimname_clean ) //   &
+                    ' already defined for file ' //Trim( tpfile%cname ) )
+
+  tpfile%tboxncdims(kbox)%tdims(kidx)%cname = ydimname_clean
+  tpfile%tboxncdims(kbox)%tdims(kidx)%nlen  = Int( klen, kind = CDFINT )
+
+  istatus = NF90_DEF_DIM( tpfile%nboxncid(kbox), Trim( ydimname_clean ), Int( klen, kind = CDFINT ), &
+                          tpfile%tboxncdims(kbox)%tdims(kidx)%nid )
+  if ( istatus /= NF90_NOERR ) &
+    call IO_Err_handle_nc4( istatus, 'IO_Add_dim_nc4', 'NF90_DEF_DIM', Trim( ydimname_clean ) )
+
+end subroutine IO_Add_dim_box_nc4
+
+
+subroutine IO_box_attribute_write_nc4( tpfile, kbox, hattname, kdata )
+  use NETCDF,            only: NF90_INQUIRE_ATTRIBUTE, NF90_PUT_ATT, NF90_GLOBAL, NF90_NOERR
+
+  use modd_precision,    only: CDFINT
+
+  type(tfiledata),  intent(in) :: tpfile
+  integer,          intent(in) :: kbox     !Index of the box
+  character(len=*), intent(in) :: hattname
+  integer,          intent(in) :: kdata
+
+  character(len=Len(hattname)) :: yattname
+  integer(kind=CDFINT)         :: istatus
+
+  call IO_Mnhname_clean( hattname, yattname )
+
+  istatus = NF90_INQUIRE_ATTRIBUTE( tpfile%nboxncid(kbox), NF90_GLOBAL, yattname )
+  if (istatus == NF90_NOERR ) &
+    call Print_msg( NVERB_ERROR, 'IO', 'IO_box_attribute_write_nc4', 'attribute ' // yattname // ' already exists' )
+
+  istatus = NF90_PUT_ATT( tpfile%nboxncid(kbox), NF90_GLOBAL, yattname, kdata )
+  if (istatus /= NF90_NOERR ) &
+   call IO_Err_handle_nc4( istatus, 'IO_box_attribute_write_nc4', 'NF90_PUT_ATT', Trim( yattname ) )
+
+end subroutine IO_box_attribute_write_nc4
+
+
 SUBROUTINE IO_Iocdf_dealloc_nc4(tpdimsnc)
 TYPE(tdimsnc),  POINTER :: tpdimsnc
 
@@ -501,12 +632,12 @@ END SUBROUTINE IO_Iocdf_dealloc_nc4
 
 SUBROUTINE IO_Vdims_fill_nc4(TPFILE, TPFIELD, KSHAPE, KVDIMS)
 
-use NETCDF, only: NF90_INQ_DIMID, NF90_INQUIRE_DIMENSION
-
 use modd_conf,   only: l2d, lpack
 use modd_field,  only: NMNHDIM_UNKNOWN, NMNHDIM_ONE, NMNHDIM_COMPLEX,                                   &
                        NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NI_U, NMNHDIM_NJ_U, NMNHDIM_NI_V, NMNHDIM_NJ_V,  &
                        NMNHDIM_LEVEL, NMNHDIM_LEVEL_W, NMNHDIM_TIME,                                    &
+                       NMNHDIM_BOX_NI, NMNHDIM_BOX_NJ, NMNHDIM_BOX_NI_U, NMNHDIM_BOX_NJ_U,              &
+                       NMNHDIM_BOX_NI_V, NMNHDIM_BOX_NJ_V, NMNHDIM_BOX_LEVEL, NMNHDIM_BOX_LEVEL_W,      &
                        NMNHDIM_BUDGET_CART_NI,      NMNHDIM_BUDGET_CART_NJ,  NMNHDIM_BUDGET_CART_NI_U,  &
                        NMNHDIM_BUDGET_CART_NJ_U,    NMNHDIM_BUDGET_CART_NI_V, NMNHDIM_BUDGET_CART_NJ_V, &
                        NMNHDIM_BUDGET_CART_LEVEL,   NMNHDIM_BUDGET_CART_LEVEL_W,                        &
@@ -535,8 +666,6 @@ INTEGER                       :: IGRID
 integer                       :: iidx
 integer                       :: iresp
 INTEGER                       :: JI
-integer(kind=CDFINT)          :: ilen
-integer(kind=CDFINT)          :: istatus
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Vdims_fill_nc4','called for '//TRIM(TPFIELD%CMNHNAME))
 !
@@ -589,18 +718,31 @@ if ( Any( tpfield%ndimlist(:) /= NMNHDIM_UNKNOWN ) ) then
     end if
 
     if ( tpfield%ndimlist(ji) == NMNHDIM_FLYER_TIME ) then
-      istatus = NF90_INQ_DIMID( tpfile%nncid, 'time_flyer', kvdims(ji) )
-      if ( istatus /= NF90_NOERR ) &
-        call IO_Err_handle_nc4( istatus, 'IO_Vdims_fill_nc4','NF90_INQ_DIMID', Trim( tpfield%cmnhname ) )
+      call IO_Dim_localgroup_check( tpfile%nncid, tpfield%ndimlist(ji), 'time_flyer', tpfield%cmnhname, kshape(ji), kvdims(ji) )
+      cycle
+    end if
 
-      istatus = NF90_INQUIRE_DIMENSION( tpfile%nncid, kvdims(ji), len = ilen)
-      if ( istatus /= NF90_NOERR ) &
-        call IO_Err_handle_nc4( istatus, 'IO_Vdims_fill_nc4','NF90_INQUIRE_DIMENSION', Trim( tpfield%cmnhname ) )
-
-      if ( kshape(ji) /= ilen ) then
-        call Print_msg( NVERB_FATAL, 'IO', 'IO_Vdims_fill_nc4', &
-                                     'wrong size for dimension '// 'time_flyer' // ' of field ' // Trim( tpfield%cmnhname ) )
-      end if
+    if ( tpfield%ndimlist(ji) >= NMNHDIM_BOX_NI  .AND. tpfield%ndimlist(ji) <= NMNHDIM_BOX_LEVEL_W) then
+      select case ( tpfield%ndimlist(ji) )
+        case ( NMNHDIM_BOX_NI )
+          call IO_Dim_localgroup_check( tpfile%nncid, tpfield%ndimlist(ji), 'box_ni',      tpfield%cmnhname, kshape(ji), kvdims(ji))
+        case ( NMNHDIM_BOX_NJ )
+          call IO_Dim_localgroup_check( tpfile%nncid, tpfield%ndimlist(ji), 'box_nj',      tpfield%cmnhname, kshape(ji), kvdims(ji))
+        case ( NMNHDIM_BOX_NI_U )
+          call IO_Dim_localgroup_check( tpfile%nncid, tpfield%ndimlist(ji), 'box_ni_u',    tpfield%cmnhname, kshape(ji), kvdims(ji))
+        case ( NMNHDIM_BOX_NJ_U )
+          call IO_Dim_localgroup_check( tpfile%nncid, tpfield%ndimlist(ji), 'box_nj_u',    tpfield%cmnhname, kshape(ji), kvdims(ji))
+        case ( NMNHDIM_BOX_NI_V )
+          call IO_Dim_localgroup_check( tpfile%nncid, tpfield%ndimlist(ji), 'box_ni_v',    tpfield%cmnhname, kshape(ji), kvdims(ji))
+        case ( NMNHDIM_BOX_NJ_V )
+          call IO_Dim_localgroup_check( tpfile%nncid, tpfield%ndimlist(ji), 'box_nj_v',    tpfield%cmnhname, kshape(ji), kvdims(ji))
+        case ( NMNHDIM_BOX_LEVEL )
+          call IO_Dim_localgroup_check( tpfile%nncid, tpfield%ndimlist(ji), 'box_level',   tpfield%cmnhname, kshape(ji), kvdims(ji))
+        case ( NMNHDIM_BOX_LEVEL_W )
+          call IO_Dim_localgroup_check( tpfile%nncid, tpfield%ndimlist(ji), 'box_level_w', tpfield%cmnhname, kshape(ji), kvdims(ji))
+        case default
+          call Print_msg( NVERB_FATAL, 'IO', 'IO_Vdims_fill_nc4', 'invalid box dimension' )
+      end select
       cycle
     end if
 
@@ -756,6 +898,63 @@ if ( kidx == - 1 ) then
 end if
 
 end subroutine IO_Dim_find_create_nc4
+
+
+subroutine IO_Dim_localgroup_check( kgroupid, kmnhdim, hdimname, hvarname, kdimlen, kdimid )
+!Subroutine to check dimension inside a local HDF group (dimension is not global)
+use NETCDF, only: NF90_INQ_DIMID, NF90_INQUIRE_DIMENSION, NF90_NOERR
+
+integer(kind=CDFINT), intent(in)  :: kgroupid
+integer,              intent(in)  :: kmnhdim
+character(len=*),     intent(in)  :: hdimname
+character(len=*),     intent(in)  :: hvarname
+integer,              intent(in)  :: kdimlen
+integer(kind=CDFINT), intent(out) :: kdimid
+
+character(len=:),    allocatable :: ygroupname
+integer(kind=CDFINT)             :: ilen
+integer(kind=CDFINT)             :: istatus
+
+istatus = NF90_INQ_DIMID( kgroupid, hdimname, kdimid )
+if ( istatus /= NF90_NOERR ) then
+  ygroupname = Get_groupname()
+  call IO_Err_handle_nc4( istatus, 'IO_Dim_localgroup_check','NF90_INQ_DIMID', &
+                          Trim(ygroupname) // ':' // Trim(hvarname) // ':' // Trim(hdimname) )
+end if
+
+istatus = NF90_INQUIRE_DIMENSION( kgroupid, kdimid, len = ilen)
+if ( istatus /= NF90_NOERR ) then
+  ygroupname = Get_groupname()
+  call IO_Err_handle_nc4( istatus, 'IO_Dim_localgroup_check', 'NF90_INQUIRE_DIMENSION', &
+                          Trim(ygroupname) // ':' // Trim(hvarname) // ':' // Trim(hdimname) )
+end if
+
+if ( kdimlen /= ilen ) then
+  ygroupname = Get_groupname()
+  call Print_msg( NVERB_FATAL, 'IO', 'IO_Dim_localgroup_check', &
+                  'wrong size for dimension '// Trim(hdimname) // ' of field ' // Trim(ygroupname) // ':' // Trim(hvarname) )
+end if
+
+contains
+function Get_groupname()
+  use NETCDF, only: NF90_INQ_GRPNAME_LEN, NF90_INQ_GRPNAME_FULL, NF90_NOERR
+
+  character(len=:), allocatable :: Get_groupname
+
+  integer(kind=CDFINT) :: igrplen
+
+  istatus = NF90_INQ_GRPNAME_LEN( kgroupid, igrplen )
+  if ( istatus /= NF90_NOERR ) then
+    Get_groupname = 'unknown_group'
+    return
+  end if
+
+  allocate( character(len=igrplen) :: Get_groupname )
+  istatus = NF90_INQ_GRPNAME_FULL( kgroupid, igrplen, Get_groupname )
+end function Get_groupname
+
+
+end subroutine IO_Dim_localgroup_check
 
 
 FUNCTION IO_Strdimid_get_nc4(TPFILE,KLEN)

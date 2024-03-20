@@ -13,6 +13,8 @@
 !  P. Wautelet 22/09/2020: add ldimreduced in tfiledata
 !  P. Wautelet 10/11/2020: new data structures for netCDF dimensions
 !  P. Wautelet 14/12/2023: add lossy compression for output files
+!  P. Wautelet 07/02/2024: add compression for all netCDF files
+!  P. Wautelet 20/03/2024: add boxes for output files
 !-----------------------------------------------------------------
 
 #define MNH_REDUCE_DIMENSIONS_IN_FILES 1
@@ -133,6 +135,8 @@ TYPE TFILEDATA
   INTEGER(KIND=CDFINT)   :: NNCCOMPRESS_LOSSY_ALGO = NF90_QUANTIZE_GRANULARBR ! Lossy compression algorithm
   INTEGER(KIND=CDFINT)   :: NNCCOMPRESS_LOSSY_NSD  = 3                  ! Number of Significant Digits (or Bits)
   TYPE(TDIMSNC), POINTER :: TNCDIMS => NULL()     ! Dimensions of netCDF file
+  INTEGER(KIND=CDFINT), DIMENSION(:), ALLOCATABLE :: NBOXNCID   ! Box HDF group identifiers     (used for MNHOUTPUT files)
+  TYPE(TDIMSNC),        DIMENSION(:), ALLOCATABLE :: TBOXNCDIMS ! Box dimensions of netCDF file (used for MNHOUTPUT files)
 #endif
   !
   !Fields for other files

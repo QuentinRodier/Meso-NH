@@ -21,6 +21,7 @@
 !  P. Wautelet 14/01/2021: add IO_Field_write_byname_N4 and IO_Field_write_byfield_N4 subroutines
 !  P. Wautelet 07/04/2023: correct IO_Field_user_write examples
 !  P. Wautelet 08/01/2024: add zero-size check for monoprocess runs
+!  P. Wautelet 20/03/2024: add boxes for output files
 !-----------------------------------------------------------------
 
 #define MNH_SCALARS_IN_SPLITFILES 0
@@ -3559,7 +3560,7 @@ end subroutine IO_Ndimlist_reduce
     CALL IO_Format_write_select(TPFILE,GLFI,GNC4)
     !
     if ( Present( koffset ) .and. glfi ) then
-      call Print_msg( NVERB_ERROR, 'IO', 'IO_Field_write_box_byfield_X3', Trim( tpfile%cname ) &
+      call Print_msg( NVERB_ERROR, 'IO', 'IO_Field_write_box_byfield_X2', Trim( tpfile%cname ) &
                       // ': LFI format not supported' )
       glfi = .false.
     end if
@@ -3612,7 +3613,8 @@ end subroutine IO_Ndimlist_reduce
   END SUBROUTINE IO_Field_write_box_byfield_X2
 
 
-  SUBROUTINE IO_Field_write_box_byfield_X3( TPFILE, TPFIELD, HBUDGET, PFIELD, KXOBOX, KXEBOX, KYOBOX, KYEBOX, KRESP, koffset )
+  SUBROUTINE IO_Field_write_box_byfield_X3( TPFILE, TPFIELD, HBUDGET, PFIELD, KXOBOX, KXEBOX, KYOBOX, KYEBOX, &
+                                            KZOBOX, KZEBOX, KRESP, koffset )
     !
     USE MODD_IO, ONLY: GSMONOPROC, ISP
     !
@@ -3629,12 +3631,15 @@ end subroutine IO_Ndimlist_reduce
     INTEGER,                         INTENT(IN)  :: KXEBOX   ! Global coordinates of the box
     INTEGER,                         INTENT(IN)  :: KYOBOX   !
     INTEGER,                         INTENT(IN)  :: KYEBOX   !
+    INTEGER,               OPTIONAL, INTENT(IN)  :: KZOBOX   !
+    INTEGER,               OPTIONAL, INTENT(IN)  :: KZEBOX   !
     INTEGER,               OPTIONAL, INTENT(OUT) :: KRESP    ! return-code
     integer, dimension(3), optional, intent(in)  :: koffset
     !
     !*      0.2   Declarations of local variables
     !
     integer                             :: iresp, iresp_lfi, iresp_nc4, iresp_glob
+    INTEGER                             :: IZOBOX, IZEBOX
     REAL, DIMENSION(:,:,:), POINTER     :: ZFIELDP
     LOGICAL                             :: GALLOC
     LOGICAL                             :: GLFI, GNC4
@@ -3659,10 +3664,22 @@ end subroutine IO_Ndimlist_reduce
     end if
 
     IF (IRESP==0) THEN
-       IF (GSMONOPROC) THEN ! sequential execution
+      IF ( PRESENT( KZOBOX ) ) THEN
+        IZOBOX = KZOBOX
+      ELSE
+        IZOBOX = LBOUND( PFIELD, 3 )
+      END IF
+
+      IF ( PRESENT( KZEBOX ) ) THEN
+        IZEBOX = KZEBOX
+      ELSE
+        IZEBOX = UBOUND( PFIELD, 3 )
+      END IF
+
+      IF (GSMONOPROC) THEN ! sequential execution
           IF (HBUDGET /= 'BUDGET') THEN
              ! take the sub-section of PFIELD defined by the box
-             ZFIELDP=>PFIELD(KXOBOX:KXEBOX,KYOBOX:KYEBOX,:)
+             ZFIELDP=>PFIELD(KXOBOX:KXEBOX,KYOBOX:KYEBOX,IZOBOX:IZEBOX)
           ELSE
              ! take the field as a budget
              ZFIELDP=>PFIELD
@@ -3677,14 +3694,14 @@ end subroutine IO_Ndimlist_reduce
        ELSE ! multiprocesses execution
           IF (ISP == TPFILE%NMASTER_RANK)  THEN
              ! Allocate the box
-             ALLOCATE(ZFIELDP(KXEBOX-KXOBOX+1,KYEBOX-KYOBOX+1,SIZE(PFIELD,3)))
+             ALLOCATE( ZFIELDP(KXEBOX-KXOBOX+1, KYEBOX-KYOBOX+1, IZEBOX-IZOBOX+1) )
              GALLOC = .TRUE.
           ELSE
              ALLOCATE(ZFIELDP(0,0,0))
              GALLOC = .TRUE.
           END IF
           !
-          CALL GATHER_XYFIELD(PFIELD,ZFIELDP,TPFILE%NMASTER_RANK,TPFILE%NMPICOMM,&
+          CALL GATHER_XYFIELD(PFIELD(:,:,IZOBOX:IZEBOX),ZFIELDP,TPFILE%NMASTER_RANK,TPFILE%NMPICOMM,&
                & KXOBOX,KXEBOX,KYOBOX,KYEBOX,HBUDGET)
           !
           IF (ISP == TPFILE%NMASTER_RANK)  THEN
@@ -3879,429 +3896,522 @@ end subroutine IO_Ndimlist_reduce
 
 
 SUBROUTINE IO_Fieldlist_write(TPOUTPUT)
-!
-USE MODD_OUT_n,          ONLY: NOUT_FIELDLIST
-!
+
+USE MODD_IO,             ONLY: ISP
+USE MODD_OUT_n,          ONLY: NOUT_FIELDLIST, NOUT_NBOXES, TOUT_BOXES
+USE MODD_PRECISION,      ONLY: CDFINT
+
 USE MODE_MODELN_HANDLER, ONLY: GET_CURRENT_MODEL_INDEX
-!
+
 IMPLICIT NONE
-!
+
 TYPE(TFILEDATA), INTENT(IN) :: TPOUTPUT !Output file
-!
-INTEGER :: IDX
-INTEGER :: IMI
-INTEGER :: JI
+
+INTEGER              :: IMI
+INTEGER              :: JBOX
+INTEGER              :: JI
+INTEGER(KIND=CDFINT) :: IGROUPID_ROOT
+TYPE(TFILEDATA)      :: TZOUTPUT
 !
 IMI = GET_CURRENT_MODEL_INDEX()
 !
 DO JI = 1, SIZE( NOUT_FIELDLIST )
-  IDX = NOUT_FIELDLIST(JI)
-  NDIMS: SELECT CASE (TFIELDLIST(IDX)%NDIMS)
-    !
-    !0D output
-    !
-    CASE (0)
-      NTYPE0D: SELECT CASE (TFIELDLIST(IDX)%NTYPE)
-        !
-        !0D real
-        !
-        CASE (TYPEREAL)
-          IF ( .NOT.ALLOCATED(TFIELDLIST(IDX)%TFIELD_X0D) ) THEN
-            call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
-                            ': TFIELD_X0D is NOT allocated ' )
-          END IF
-          IF ( .NOT.ASSOCIATED(TFIELDLIST(IDX)%TFIELD_X0D(IMI)%DATA) ) THEN
-            call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
-                            ': TFIELD_X0D%DATA is NOT associated' )
-          END IF
-          IF ( TFIELDLIST(IDX)%CLBTYPE == 'NONE' ) THEN
-            CALL IO_Field_write(TPOUTPUT,TFIELDLIST(IDX),TFIELDLIST(IDX)%TFIELD_X0D(IMI)%DATA)
-          ELSE
-            call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
-                            ': CLBTYPE/=NONE not allowed for 0D real fields' )
-          END IF
-        !
-        !0D integer
-        !
-        CASE (TYPEINT)
-          IF ( .NOT.ALLOCATED(TFIELDLIST(IDX)%TFIELD_N0D) ) THEN
-            call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
-                            ': TFIELD_N0D is NOT allocated ' )
-          END IF
-          IF ( .NOT.ASSOCIATED(TFIELDLIST(IDX)%TFIELD_N0D(IMI)%DATA) ) THEN
-            call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
-                            ': TFIELD_N0D%DATA is NOT associated' )
-          END IF
-          IF ( TFIELDLIST(IDX)%CLBTYPE == 'NONE' ) THEN
-            CALL IO_Field_write(TPOUTPUT,TFIELDLIST(IDX),TFIELDLIST(IDX)%TFIELD_N0D(IMI)%DATA)
-          ELSE
-            call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
-                            ': CLBTYPE/=NONE not allowed for 0D integer fields' )
-          END IF
-        !
-        !0D logical
-        !
-        CASE (TYPELOG)
-          IF ( .NOT.ALLOCATED(TFIELDLIST(IDX)%TFIELD_L0D) ) THEN
-            call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
-                            ': TFIELD_L0D is NOT allocated ' )
-          END IF
-          IF ( .NOT.ASSOCIATED(TFIELDLIST(IDX)%TFIELD_L0D(IMI)%DATA) ) THEN
-            call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
-                            ': TFIELD_L0D%DATA is NOT associated' )
-          END IF
-          IF ( TFIELDLIST(IDX)%CLBTYPE == 'NONE' ) THEN
-            CALL IO_Field_write(TPOUTPUT,TFIELDLIST(IDX),TFIELDLIST(IDX)%TFIELD_L0D(IMI)%DATA)
-          ELSE
-            call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
-                            ': CLBTYPE/=NONE not allowed for 0D logical fields' )
-          END IF
-        !
-        !0D string
-        !
-        CASE (TYPECHAR)
-          IF ( .NOT.ALLOCATED(TFIELDLIST(IDX)%TFIELD_C0D) ) THEN
-            call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
-                            ': TFIELD_C0D is NOT allocated ' )
-          END IF
-          IF ( .NOT.ASSOCIATED(TFIELDLIST(IDX)%TFIELD_C0D(IMI)%DATA) ) THEN
-            call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
-                            ': TFIELD_C0D%DATA is NOT associated' )
-          END IF
-          IF ( TFIELDLIST(IDX)%CLBTYPE == 'NONE' ) THEN
-            CALL IO_Field_write(TPOUTPUT,TFIELDLIST(IDX),TFIELDLIST(IDX)%TFIELD_C0D(IMI)%DATA)
-          ELSE
-            call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
-                            ': CLBTYPE/=NONE not allowed for 0D character fields' )
-          END IF
-        !
-        !0D date/time
-        !
-        CASE (TYPEDATE)
-          IF ( .NOT.ALLOCATED(TFIELDLIST(IDX)%TFIELD_T0D) ) THEN
-            call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
-                            ': TFIELD_T0D is NOT allocated ' )
-          END IF
-          IF ( .NOT.ASSOCIATED(TFIELDLIST(IDX)%TFIELD_T0D(IMI)%DATA) ) THEN
-            call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
-                            ': TFIELD_T0D%DATA is NOT associated' )
-          END IF
-          IF ( TFIELDLIST(IDX)%CLBTYPE == 'NONE' ) THEN
-            CALL IO_Field_write(TPOUTPUT,TFIELDLIST(IDX),TFIELDLIST(IDX)%TFIELD_T0D(IMI)%DATA)
-          ELSE
-            call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
-                            ': CLBTYPE/=NONE not allowed for 0D date/time fields' )
-          END IF
-        !
-        !0D other types
-        !
-        CASE DEFAULT
-          call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
-                          ': type not yet supported for 0D output' )
-      END SELECT NTYPE0D
-    !
-    !1D output
-    !
-    CASE (1)
-      NTYPE1D: SELECT CASE (TFIELDLIST(IDX)%NTYPE)
-        !
-        !1D real
-        !
-        CASE (TYPEREAL)
-          IF ( .NOT.ALLOCATED(TFIELDLIST(IDX)%TFIELD_X1D) ) THEN
-            call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
-                            ': TFIELD_X1D is NOT allocated ' )
-          END IF
-          IF ( .NOT.ASSOCIATED(TFIELDLIST(IDX)%TFIELD_X1D(IMI)%DATA) ) THEN
-            call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
-                            ': TFIELD_X1D%DATA is NOT associated' )
-          END IF
-          IF ( TFIELDLIST(IDX)%CLBTYPE == 'NONE' ) THEN
-            CALL IO_Field_write(TPOUTPUT,TFIELDLIST(IDX),TFIELDLIST(IDX)%TFIELD_X1D(IMI)%DATA)
-          ELSE
-            call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
-                            ': CLBTYPE/=NONE not allowed for 1D real fields' )
-          END IF
-        !
-        !1D integer
-        !
-        CASE (TYPEINT)
-          IF ( .NOT.ALLOCATED(TFIELDLIST(IDX)%TFIELD_N1D) ) THEN
-            call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
-                            ': TFIELD_N1D is NOT allocated ' )
-          END IF
-          IF ( .NOT.ASSOCIATED(TFIELDLIST(IDX)%TFIELD_N1D(IMI)%DATA) ) THEN
-            call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
-                            ': TFIELD_N1D%DATA is NOT associated' )
-          END IF
-          IF ( TFIELDLIST(IDX)%CLBTYPE == 'NONE' ) THEN
-            CALL IO_Field_write(TPOUTPUT,TFIELDLIST(IDX),TFIELDLIST(IDX)%TFIELD_N1D(IMI)%DATA)
-          ELSE
-            call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
-                            ': CLBTYPE/=NONE not allowed for 1D integer fields' )
-          END IF
-        !
-        !1D logical
-        !
-        CASE (TYPELOG)
-          IF ( .NOT.ALLOCATED(TFIELDLIST(IDX)%TFIELD_L1D) ) THEN
-            call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
-                            ': TFIELD_L1D is NOT allocated ' )
-          END IF
-          IF ( .NOT.ASSOCIATED(TFIELDLIST(IDX)%TFIELD_L1D(IMI)%DATA) ) THEN
-            call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
-                            ': TFIELD_L1D%DATA is NOT associated' )
-          END IF
-          IF ( TFIELDLIST(IDX)%CLBTYPE == 'NONE' ) THEN
-            CALL IO_Field_write(TPOUTPUT,TFIELDLIST(IDX),TFIELDLIST(IDX)%TFIELD_L1D(IMI)%DATA)
-          ELSE
-            call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
-                            ': CLBTYPE/=NONE not allowed for 1D logical fields' )
-          END IF
-        !
-        !1D string
-        !
-        CASE (TYPECHAR)
-          IF ( .NOT.ALLOCATED(TFIELDLIST(IDX)%TFIELD_C1D) ) THEN
-            call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
-                            ': TFIELD_C1D is NOT allocated ' )
-          END IF
-          IF ( .NOT.ASSOCIATED(TFIELDLIST(IDX)%TFIELD_C1D(IMI)%DATA) ) THEN
-            call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
-                            ': TFIELD_C1D%DATA is NOT associated' )
-          END IF
-          IF ( TFIELDLIST(IDX)%CLBTYPE == 'NONE' ) THEN
-            CALL IO_Field_write(TPOUTPUT,TFIELDLIST(IDX),TFIELDLIST(IDX)%TFIELD_C1D(IMI)%DATA)
-          ELSE
-            call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
-                            ': CLBTYPE/=NONE not allowed for 1D character fields' )
-          END IF
-        !
-        !1D date/time
-        !
-        CASE (TYPEDATE)
-          IF ( .NOT.ALLOCATED(TFIELDLIST(IDX)%TFIELD_T1D) ) THEN
-            call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
-                            ': TFIELD_T1D is NOT allocated ' )
-          END IF
-          IF ( .NOT.ASSOCIATED(TFIELDLIST(IDX)%TFIELD_T1D(IMI)%DATA) ) THEN
-            call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
-                            ': TFIELD_T1D%DATA is NOT associated' )
-          END IF
-          IF ( TFIELDLIST(IDX)%CLBTYPE == 'NONE' ) THEN
-            CALL IO_Field_write(TPOUTPUT,TFIELDLIST(IDX),TFIELDLIST(IDX)%TFIELD_T1D(IMI)%DATA)
-          ELSE
-            call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
-                            ': CLBTYPE/=NONE not allowed for 1D date/time fields' )
-          END IF
-        !
-        !1D other types
-        !
-        CASE DEFAULT
-          call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
-                          ': type not yet supported for 1D output' )
-      END SELECT NTYPE1D
-    !
-    !2D output
-    !
-    CASE (2)
-      NTYPE2D: SELECT CASE (TFIELDLIST(IDX)%NTYPE)
-        !
-        !2D real
-        !
-        CASE (TYPEREAL)
-          IF ( .NOT.ALLOCATED(TFIELDLIST(IDX)%TFIELD_X2D) ) THEN
-            call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
-                            ': TFIELD_X2D is NOT allocated ' )
-          END IF
-          IF ( .NOT.ASSOCIATED(TFIELDLIST(IDX)%TFIELD_X2D(IMI)%DATA) ) THEN
-            call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
-                            ': TFIELD_X2D%DATA is NOT associated' )
-          END IF
-          IF ( TFIELDLIST(IDX)%CLBTYPE == 'NONE' ) THEN
-            CALL IO_Field_write(TPOUTPUT,TFIELDLIST(IDX),TFIELDLIST(IDX)%TFIELD_X2D(IMI)%DATA)
-          ELSE
-            call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
-                            ': CLBTYPE/=NONE not allowed for 2D real fields' )
-          END IF
-        !
-        !2D integer
-        !
-        CASE (TYPEINT)
-          IF ( .NOT.ALLOCATED(TFIELDLIST(IDX)%TFIELD_N2D) ) THEN
-            call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
-                            ': TFIELD_N2D is NOT allocated ' )
-          END IF
-          IF ( .NOT.ASSOCIATED(TFIELDLIST(IDX)%TFIELD_N2D(IMI)%DATA) ) THEN
-            call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
-                            ': TFIELD_N2D%DATA is NOT associated' )
-          END IF
-          IF ( TFIELDLIST(IDX)%CLBTYPE == 'NONE' ) THEN
-            CALL IO_Field_write(TPOUTPUT,TFIELDLIST(IDX),TFIELDLIST(IDX)%TFIELD_N2D(IMI)%DATA)
-          ELSE
-            call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
-                            ': CLBTYPE/=NONE not allowed for 2D integer fields' )
-          END IF
-        !
-        !2D other types
-        !
-        CASE DEFAULT
-          call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
-                          ': type not yet supported for 2D output' )
-      END SELECT NTYPE2D
-    !
-    !3D output
-    !
-    CASE (3)
-      NTYPE3D: SELECT CASE (TFIELDLIST(IDX)%NTYPE)
-        !
-        !3D real
-        !
-        CASE (TYPEREAL)
-          IF ( .NOT.ALLOCATED(TFIELDLIST(IDX)%TFIELD_X3D) ) THEN
-            call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
-                            ': TFIELD_X3D is NOT allocated ' )
-          END IF
-          IF ( .NOT.ASSOCIATED(TFIELDLIST(IDX)%TFIELD_X3D(IMI)%DATA) ) THEN
-            call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
-                            ': TFIELD_X3D%DATA is NOT associated' )
-          END IF
-          IF ( TFIELDLIST(IDX)%CLBTYPE == 'NONE' ) THEN
-            CALL IO_Field_write(TPOUTPUT,TFIELDLIST(IDX),TFIELDLIST(IDX)%TFIELD_X3D(IMI)%DATA)
-          ELSE
-            call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
-                            ': CLBTYPE/=NONE not (yet) allowed for 3D real fields' )
-            !CALL IO_Field_write_lb(TPOUTPUT,TFIELDLIST(IDX),***,TFIELDLIST(IDX)%TFIELD_X3D(IMI)%DATA)
-          END IF
-        !
-        !3D integer
-        !
-        CASE (TYPEINT)
-          IF ( .NOT.ALLOCATED(TFIELDLIST(IDX)%TFIELD_N3D) ) THEN
-            call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
-                            ': TFIELD_N3D is NOT allocated ' )
-          END IF
-          IF ( .NOT.ASSOCIATED(TFIELDLIST(IDX)%TFIELD_N3D(IMI)%DATA) ) THEN
-            call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
-                            ': TFIELD_N3D%DATA is NOT associated' )
-          END IF
-          IF ( TFIELDLIST(IDX)%CLBTYPE == 'NONE' ) THEN
-            CALL IO_Field_write(TPOUTPUT,TFIELDLIST(IDX),TFIELDLIST(IDX)%TFIELD_N3D(IMI)%DATA)
-          ELSE
-            call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
-                            ': CLBTYPE/=NONE not (yet) allowed for 3D integer fields' )
-            !CALL IO_Field_write_lb(TPOUTPUT,TFIELDLIST(IDX),***,TFIELDLIST(IDX)%TFIELD_N3D(IMI)%DATA)
-          END IF
-        !
-        !3D other types
-        !
-        CASE DEFAULT
-          call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
-                          ': type not yet supported for 3D output' )
-      END SELECT NTYPE3D
-    !
-    !4D output
-    !
-    CASE (4)
-      NTYPE4D: SELECT CASE (TFIELDLIST(IDX)%NTYPE)
-        !
-        !4D real
-        !
-        CASE (TYPEREAL)
-          IF ( .NOT.ALLOCATED(TFIELDLIST(IDX)%TFIELD_X4D) ) THEN
-            call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
-                            ': TFIELD_X4D is NOT allocated ' )
-          END IF
-          IF ( .NOT.ASSOCIATED(TFIELDLIST(IDX)%TFIELD_X4D(IMI)%DATA) ) THEN
-            call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
-                            ': TFIELD_X4D%DATA is NOT associated' )
-          END IF
-          IF ( TFIELDLIST(IDX)%CLBTYPE == 'NONE' ) THEN
-            CALL IO_Field_write(TPOUTPUT,TFIELDLIST(IDX),TFIELDLIST(IDX)%TFIELD_X4D(IMI)%DATA)
-          ELSE
-            call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
-                            ': CLBTYPE/=NONE not (yet) allowed for 4D real fields' )
-            !CALL IO_Field_write_lb(TPOUTPUT,TFIELDLIST(IDX),***,TFIELDLIST(IDX)%TFIELD_X4D(IMI)%DATA)
-          END IF
-        !
-        !4D other types
-        !
-        CASE DEFAULT
-          call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
-                          ': type not yet supported for 4D output' )
-      END SELECT NTYPE4D
-    !
-    !5D output
-    !
-    CASE (5)
-      NTYPE5D: SELECT CASE (TFIELDLIST(IDX)%NTYPE)
-        !
-        !5D real
-        !
-        CASE (TYPEREAL)
-          IF ( .NOT.ALLOCATED(TFIELDLIST(IDX)%TFIELD_X5D) ) THEN
-            call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
-                            ': TFIELD_X5D is NOT allocated ' )
-          END IF
-          IF ( .NOT.ASSOCIATED(TFIELDLIST(IDX)%TFIELD_X5D(IMI)%DATA) ) THEN
-            call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
-                            ': TFIELD_X5D%DATA is NOT associated' )
-          END IF
-          IF ( TFIELDLIST(IDX)%CLBTYPE == 'NONE' ) THEN
-            CALL IO_Field_write(TPOUTPUT,TFIELDLIST(IDX),TFIELDLIST(IDX)%TFIELD_X5D(IMI)%DATA)
-          ELSE
-            call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
-                            ': CLBTYPE/=NONE not (yet) allowed for 5D real fields' )
-            !CALL IO_Field_write_lb(TPOUTPUT,TFIELDLIST(IDX),***,TFIELDLIST(IDX)%TFIELD_X5D(IMI)%DATA)
-          END IF
-        !
-        !5D other types
-        !
-        CASE DEFAULT
-          call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
-                          ': type not yet supported for 5D output' )
-      END SELECT NTYPE5D
-    !
-    !6D output
-    !
-    CASE (6)
-      NTYPE6D: SELECT CASE (TFIELDLIST(IDX)%NTYPE)
-        !
-        !6D real
-        !
-        CASE (TYPEREAL)
-          IF ( .NOT.ALLOCATED(TFIELDLIST(IDX)%TFIELD_X6D) ) THEN
-            call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
-                            ': TFIELD_X6D is NOT allocated ' )
-          END IF
-          IF ( .NOT.ASSOCIATED(TFIELDLIST(IDX)%TFIELD_X6D(IMI)%DATA) ) THEN
-            call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
-                            ': TFIELD_X6D%DATA is NOT associated' )
-          END IF
-          IF ( TFIELDLIST(IDX)%CLBTYPE == 'NONE' ) THEN
-            CALL IO_Field_write(TPOUTPUT,TFIELDLIST(IDX),TFIELDLIST(IDX)%TFIELD_X6D(IMI)%DATA)
-          ELSE
-            call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
-                            ': CLBTYPE/=NONE not (yet) allowed for 6D real fields' )
-            !CALL IO_Field_write_lb(TPOUTPUT,TFIELDLIST(IDX),***,TFIELDLIST(IDX)%TFIELD_X6D(IMI)%DATA)
-          END IF
-        !
-        !6D other types
-        !
-        CASE DEFAULT
-          call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
-                          ': type not yet supported for 6D output' )
-      END SELECT NTYPE6D
-    !
-    !Other number of dimensions
-    !
-    CASE DEFAULT
-      call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
-                          ': number of dimensions not yet supported' )
-  END SELECT NDIMS
+  CALL IO_Fieldlist_1field_write( TPOUTPUT, IMI, TFIELDLIST(NOUT_FIELDLIST(JI)) )
 END DO
-!
+
+! Treat boxes (subdomains)
+IF ( NOUT_NBOXES > 0 ) THEN
+  ! Only available for netCDF files
+  TZOUTPUT = TPOUTPUT
+  IF ( TZOUTPUT%CFORMAT == 'LFI') THEN
+    RETURN
+  ELSE IF ( TZOUTPUT%CFORMAT == 'LFICDF4') THEN
+    TZOUTPUT%CFORMAT = 'NETCDF4'
+  ELSE IF ( TZOUTPUT%CFORMAT /= 'NETCDF4' ) THEN
+    CALL PRINT_MSG( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', &
+                    TRIM(TZOUTPUT%CNAME) // ': unknown fileformat: ' // TRIM(TZOUTPUT%CFORMAT) )
+    RETURN
+  END IF
+
+  IGROUPID_ROOT = TZOUTPUT%NNCID
+
+  DO JBOX = 1, NOUT_NBOXES
+    ! Go to the group
+    IF ( ISP == TZOUTPUT%NMASTER_RANK ) TZOUTPUT%NNCID = TZOUTPUT%NBOXNCID(JBOX)
+
+    ! Write fields common to all boxes
+    DO JI = 1, SIZE( NOUT_FIELDLIST )
+      CALL IO_Fieldlist_1field_write( TZOUTPUT, IMI, TFIELDLIST(NOUT_FIELDLIST(JI)), TOUT_BOXES(JBOX) )
+    END DO
+
+      ! Restore the root group (not really necessary but cleaner)
+    IF ( ISP == TZOUTPUT%NMASTER_RANK ) TZOUTPUT%NNCID = IGROUPID_ROOT
+  END DO
+END IF
+
 END SUBROUTINE IO_Fieldlist_write
+
+
+SUBROUTINE IO_Fieldlist_1field_write( TPOUTPUT, KMI, TPFIELD, TPBOX )
+
+USE MODD_FIELD,      ONLY: NMNHDIM_BOX_NI, NMNHDIM_BOX_NJ, NMNHDIM_BOX_NI_U, NMNHDIM_BOX_NJ_U, NMNHDIM_BOX_NI_V, &
+                           NMNHDIM_BOX_NJ_V, NMNHDIM_BOX_LEVEL, NMNHDIM_BOX_LEVEL_W, NMNHDIM_NOTLISTED,          &
+                           TFIELDDATA, TFIELDMETADATA
+USE MODD_OUT_n,      ONLY: TOUTBOXMETADATA
+USE MODD_PARAMETERS, ONLY: JPHEXT, JPVEXT
+
+TYPE(TFILEDATA),                 INTENT(IN) :: TPOUTPUT !Output file
+INTEGER,                         INTENT(IN) :: KMI
+TYPE(TFIELDDATA),                INTENT(IN) :: TPFIELD
+TYPE(TOUTBOXMETADATA), OPTIONAL, INTENT(IN) :: TPBOX
+
+TYPE(TFIELDMETADATA) :: TZFIELDMD
+
+IF ( PRESENT(TPBOX) ) THEN
+  IF ( TPFIELD%NDIMS /= 3 .AND. TPFIELD%NTYPE /= TYPEREAL ) THEN
+    CALL Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_1field_write', 'TPBOX optional dummy argument not allowed for field ' &
+                    // TRIM(TPFIELD%CMNHNAME) )
+    RETURN
+  END IF
+END IF
+
+NDIMS: SELECT CASE (TPFIELD%NDIMS)
+  !
+  !0D output
+  !
+  CASE (0)
+    NTYPE0D: SELECT CASE (TPFIELD%NTYPE)
+      !
+      !0D real
+      !
+      CASE (TYPEREAL)
+        IF ( .NOT.ALLOCATED(TPFIELD%TFIELD_X0D) ) THEN
+          call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_1field_write', trim(tpfield%cmnhname)// &
+                          ': TFIELD_X0D is NOT allocated ' )
+        END IF
+        IF ( .NOT.ASSOCIATED(TPFIELD%TFIELD_X0D(KMI)%DATA) ) THEN
+          call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_1field_write', trim(tpfield%cmnhname)// &
+                          ': TFIELD_X0D%DATA is NOT associated' )
+        END IF
+        IF ( TPFIELD%CLBTYPE == 'NONE' ) THEN
+          CALL IO_Field_write(TPOUTPUT,TPFIELD,TPFIELD%TFIELD_X0D(KMI)%DATA)
+        ELSE
+          call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_1field_write', trim(tpfield%cmnhname)// &
+                          ': CLBTYPE/=NONE not allowed for 0D real fields' )
+        END IF
+      !
+      !0D integer
+      !
+      CASE (TYPEINT)
+        IF ( .NOT.ALLOCATED(TPFIELD%TFIELD_N0D) ) THEN
+          call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_1field_write', trim(tpfield%cmnhname)// &
+                          ': TFIELD_N0D is NOT allocated ' )
+        END IF
+        IF ( .NOT.ASSOCIATED(TPFIELD%TFIELD_N0D(KMI)%DATA) ) THEN
+          call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_1field_write', trim(tpfield%cmnhname)// &
+                          ': TFIELD_N0D%DATA is NOT associated' )
+        END IF
+        IF ( TPFIELD%CLBTYPE == 'NONE' ) THEN
+          CALL IO_Field_write(TPOUTPUT,TPFIELD,TPFIELD%TFIELD_N0D(KMI)%DATA)
+        ELSE
+          call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_1field_write', trim(tpfield%cmnhname)// &
+                          ': CLBTYPE/=NONE not allowed for 0D integer fields' )
+        END IF
+      !
+      !0D logical
+      !
+      CASE (TYPELOG)
+        IF ( .NOT.ALLOCATED(TPFIELD%TFIELD_L0D) ) THEN
+          call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_1field_write', trim(tpfield%cmnhname)// &
+                          ': TFIELD_L0D is NOT allocated ' )
+        END IF
+        IF ( .NOT.ASSOCIATED(TPFIELD%TFIELD_L0D(KMI)%DATA) ) THEN
+          call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_1field_write', trim(tpfield%cmnhname)// &
+                          ': TFIELD_L0D%DATA is NOT associated' )
+        END IF
+        IF ( TPFIELD%CLBTYPE == 'NONE' ) THEN
+          CALL IO_Field_write(TPOUTPUT,TPFIELD,TPFIELD%TFIELD_L0D(KMI)%DATA)
+        ELSE
+          call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_1field_write', trim(tpfield%cmnhname)// &
+                          ': CLBTYPE/=NONE not allowed for 0D logical fields' )
+        END IF
+      !
+      !0D string
+      !
+      CASE (TYPECHAR)
+        IF ( .NOT.ALLOCATED(TPFIELD%TFIELD_C0D) ) THEN
+          call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_1field_write', trim(tpfield%cmnhname)// &
+                          ': TFIELD_C0D is NOT allocated ' )
+        END IF
+        IF ( .NOT.ASSOCIATED(TPFIELD%TFIELD_C0D(KMI)%DATA) ) THEN
+          call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_1field_write', trim(tpfield%cmnhname)// &
+                          ': TFIELD_C0D%DATA is NOT associated' )
+        END IF
+        IF ( TPFIELD%CLBTYPE == 'NONE' ) THEN
+          CALL IO_Field_write(TPOUTPUT,TPFIELD,TPFIELD%TFIELD_C0D(KMI)%DATA)
+        ELSE
+          call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_1field_write', trim(tpfield%cmnhname)// &
+                          ': CLBTYPE/=NONE not allowed for 0D character fields' )
+        END IF
+      !
+      !0D date/time
+      !
+      CASE (TYPEDATE)
+        IF ( .NOT.ALLOCATED(TPFIELD%TFIELD_T0D) ) THEN
+          call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_1field_write', trim(tpfield%cmnhname)// &
+                          ': TFIELD_T0D is NOT allocated ' )
+        END IF
+        IF ( .NOT.ASSOCIATED(TPFIELD%TFIELD_T0D(KMI)%DATA) ) THEN
+          call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_1field_write', trim(tpfield%cmnhname)// &
+                          ': TFIELD_T0D%DATA is NOT associated' )
+        END IF
+        IF ( TPFIELD%CLBTYPE == 'NONE' ) THEN
+          CALL IO_Field_write(TPOUTPUT,TPFIELD,TPFIELD%TFIELD_T0D(KMI)%DATA)
+        ELSE
+          call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_1field_write', trim(tpfield%cmnhname)// &
+                          ': CLBTYPE/=NONE not allowed for 0D date/time fields' )
+        END IF
+      !
+      !0D other types
+      !
+      CASE DEFAULT
+        call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_1field_write', trim(tpfield%cmnhname)// &
+                        ': type not yet supported for 0D output' )
+    END SELECT NTYPE0D
+  !
+  !1D output
+  !
+  CASE (1)
+    NTYPE1D: SELECT CASE (TPFIELD%NTYPE)
+      !
+      !1D real
+      !
+      CASE (TYPEREAL)
+        IF ( .NOT.ALLOCATED(TPFIELD%TFIELD_X1D) ) THEN
+          call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_1field_write', trim(tpfield%cmnhname)// &
+                          ': TFIELD_X1D is NOT allocated ' )
+        END IF
+        IF ( .NOT.ASSOCIATED(TPFIELD%TFIELD_X1D(KMI)%DATA) ) THEN
+          call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_1field_write', trim(tpfield%cmnhname)// &
+                          ': TFIELD_X1D%DATA is NOT associated' )
+        END IF
+        IF ( TPFIELD%CLBTYPE == 'NONE' ) THEN
+          CALL IO_Field_write(TPOUTPUT,TPFIELD,TPFIELD%TFIELD_X1D(KMI)%DATA)
+        ELSE
+          call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_1field_write', trim(tpfield%cmnhname)// &
+                          ': CLBTYPE/=NONE not allowed for 1D real fields' )
+        END IF
+      !
+      !1D integer
+      !
+      CASE (TYPEINT)
+        IF ( .NOT.ALLOCATED(TPFIELD%TFIELD_N1D) ) THEN
+          call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_1field_write', trim(tpfield%cmnhname)// &
+                          ': TFIELD_N1D is NOT allocated ' )
+        END IF
+        IF ( .NOT.ASSOCIATED(TPFIELD%TFIELD_N1D(KMI)%DATA) ) THEN
+          call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_1field_write', trim(tpfield%cmnhname)// &
+                          ': TFIELD_N1D%DATA is NOT associated' )
+        END IF
+        IF ( TPFIELD%CLBTYPE == 'NONE' ) THEN
+          CALL IO_Field_write(TPOUTPUT,TPFIELD,TPFIELD%TFIELD_N1D(KMI)%DATA)
+        ELSE
+          call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_1field_write', trim(tpfield%cmnhname)// &
+                          ': CLBTYPE/=NONE not allowed for 1D integer fields' )
+        END IF
+      !
+      !1D logical
+      !
+      CASE (TYPELOG)
+        IF ( .NOT.ALLOCATED(TPFIELD%TFIELD_L1D) ) THEN
+          call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_1field_write', trim(tpfield%cmnhname)// &
+                          ': TFIELD_L1D is NOT allocated ' )
+        END IF
+        IF ( .NOT.ASSOCIATED(TPFIELD%TFIELD_L1D(KMI)%DATA) ) THEN
+          call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_1field_write', trim(tpfield%cmnhname)// &
+                          ': TFIELD_L1D%DATA is NOT associated' )
+        END IF
+        IF ( TPFIELD%CLBTYPE == 'NONE' ) THEN
+          CALL IO_Field_write(TPOUTPUT,TPFIELD,TPFIELD%TFIELD_L1D(KMI)%DATA)
+        ELSE
+          call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_1field_write', trim(tpfield%cmnhname)// &
+                          ': CLBTYPE/=NONE not allowed for 1D logical fields' )
+        END IF
+      !
+      !1D string
+      !
+      CASE (TYPECHAR)
+        IF ( .NOT.ALLOCATED(TPFIELD%TFIELD_C1D) ) THEN
+          call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_1field_write', trim(tpfield%cmnhname)// &
+                          ': TFIELD_C1D is NOT allocated ' )
+        END IF
+        IF ( .NOT.ASSOCIATED(TPFIELD%TFIELD_C1D(KMI)%DATA) ) THEN
+          call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_1field_write', trim(tpfield%cmnhname)// &
+                          ': TFIELD_C1D%DATA is NOT associated' )
+        END IF
+        IF ( TPFIELD%CLBTYPE == 'NONE' ) THEN
+          CALL IO_Field_write(TPOUTPUT,TPFIELD,TPFIELD%TFIELD_C1D(KMI)%DATA)
+        ELSE
+          call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_1field_write', trim(tpfield%cmnhname)// &
+                          ': CLBTYPE/=NONE not allowed for 1D character fields' )
+        END IF
+      !
+      !1D date/time
+      !
+      CASE (TYPEDATE)
+        IF ( .NOT.ALLOCATED(TPFIELD%TFIELD_T1D) ) THEN
+          call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_1field_write', trim(tpfield%cmnhname)// &
+                          ': TFIELD_T1D is NOT allocated ' )
+        END IF
+        IF ( .NOT.ASSOCIATED(TPFIELD%TFIELD_T1D(KMI)%DATA) ) THEN
+          call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_1field_write', trim(tpfield%cmnhname)// &
+                          ': TFIELD_T1D%DATA is NOT associated' )
+        END IF
+        IF ( TPFIELD%CLBTYPE == 'NONE' ) THEN
+          CALL IO_Field_write(TPOUTPUT,TPFIELD,TPFIELD%TFIELD_T1D(KMI)%DATA)
+        ELSE
+          call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_1field_write', trim(tpfield%cmnhname)// &
+                          ': CLBTYPE/=NONE not allowed for 1D date/time fields' )
+        END IF
+      !
+      !1D other types
+      !
+      CASE DEFAULT
+        call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_1field_write', trim(tpfield%cmnhname)// &
+                        ': type not yet supported for 1D output' )
+    END SELECT NTYPE1D
+  !
+  !2D output
+  !
+  CASE (2)
+    NTYPE2D: SELECT CASE (TPFIELD%NTYPE)
+      !
+      !2D real
+      !
+      CASE (TYPEREAL)
+        IF ( .NOT.ALLOCATED(TPFIELD%TFIELD_X2D) ) THEN
+          call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_1field_write', trim(tpfield%cmnhname)// &
+                          ': TFIELD_X2D is NOT allocated ' )
+        END IF
+        IF ( .NOT.ASSOCIATED(TPFIELD%TFIELD_X2D(KMI)%DATA) ) THEN
+          call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_1field_write', trim(tpfield%cmnhname)// &
+                          ': TFIELD_X2D%DATA is NOT associated' )
+        END IF
+        IF ( TPFIELD%CLBTYPE == 'NONE' ) THEN
+          CALL IO_Field_write(TPOUTPUT,TPFIELD,TPFIELD%TFIELD_X2D(KMI)%DATA)
+        ELSE
+          call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_1field_write', trim(tpfield%cmnhname)// &
+                          ': CLBTYPE/=NONE not allowed for 2D real fields' )
+        END IF
+      !
+      !2D integer
+      !
+      CASE (TYPEINT)
+        IF ( .NOT.ALLOCATED(TPFIELD%TFIELD_N2D) ) THEN
+          call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_1field_write', trim(tpfield%cmnhname)// &
+                          ': TFIELD_N2D is NOT allocated ' )
+        END IF
+        IF ( .NOT.ASSOCIATED(TPFIELD%TFIELD_N2D(KMI)%DATA) ) THEN
+          call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_1field_write', trim(tpfield%cmnhname)// &
+                          ': TFIELD_N2D%DATA is NOT associated' )
+        END IF
+        IF ( TPFIELD%CLBTYPE == 'NONE' ) THEN
+          CALL IO_Field_write(TPOUTPUT,TPFIELD,TPFIELD%TFIELD_N2D(KMI)%DATA)
+        ELSE
+          call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_1field_write', trim(tpfield%cmnhname)// &
+                          ': CLBTYPE/=NONE not allowed for 2D integer fields' )
+        END IF
+      !
+      !2D other types
+      !
+      CASE DEFAULT
+        call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_1field_write', trim(tpfield%cmnhname)// &
+                        ': type not yet supported for 2D output' )
+    END SELECT NTYPE2D
+  !
+  !3D output
+  !
+  CASE (3)
+    NTYPE3D: SELECT CASE (TPFIELD%NTYPE)
+      !
+      !3D real
+      !
+      CASE (TYPEREAL)
+        IF ( .NOT.ALLOCATED(TPFIELD%TFIELD_X3D) ) THEN
+          call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_1field_write', trim(tpfield%cmnhname)// &
+                          ': TFIELD_X3D is NOT allocated ' )
+        END IF
+        IF ( .NOT.ASSOCIATED(TPFIELD%TFIELD_X3D(KMI)%DATA) ) THEN
+          call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_1field_write', trim(tpfield%cmnhname)// &
+                          ': TFIELD_X3D%DATA is NOT associated' )
+        END IF
+        IF ( TPFIELD%CLBTYPE == 'NONE' ) THEN
+          IF ( .NOT.PRESENT( TPBOX ) ) THEN
+            CALL IO_Field_write(TPOUTPUT,TPFIELD,TPFIELD%TFIELD_X3D(KMI)%DATA)
+          ELSE
+            TZFIELDMD = TFIELDMETADATA( TPFIELD ) !Copy only metadata (TZFIELD is of TYPE(TFIELDMETADATA))
+            IF ( TZFIELDMD%CDIR /= 'XY' ) &
+              CALL Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_1field_write', trim(tpfield%cmnhname)//': must have CDIR="XY"' )
+            SELECT CASE ( TZFIELDMD%NGRID )
+              CASE( 1, 4 )
+                TZFIELDMD%NDIMLIST(1) = NMNHDIM_BOX_NI
+              CASE( 2 )
+                TZFIELDMD%NDIMLIST(1) = NMNHDIM_BOX_NI_U
+              CASE( 3 )
+                TZFIELDMD%NDIMLIST(1) = NMNHDIM_BOX_NI_V
+            END SELECT
+            SELECT CASE ( TZFIELDMD%NGRID )
+              CASE( 1, 4 )
+                TZFIELDMD%NDIMLIST(2) = NMNHDIM_BOX_NJ
+              CASE( 2 )
+                TZFIELDMD%NDIMLIST(2) = NMNHDIM_BOX_NJ_U
+              CASE( 3 )
+                TZFIELDMD%NDIMLIST(2) = NMNHDIM_BOX_NJ_V
+            END SELECT
+            SELECT CASE ( TZFIELDMD%NGRID )
+              CASE( 1, 2, 3 )
+                TZFIELDMD%NDIMLIST(3) = NMNHDIM_BOX_LEVEL
+              CASE( 4 )
+                TZFIELDMD%NDIMLIST(3) = NMNHDIM_BOX_LEVEL_W
+            END SELECT
+            CALL IO_Field_write_BOX( TPOUTPUT, TZFIELDMD, 'OTHER', TPFIELD%TFIELD_X3D(KMI)%DATA,   &
+                                     KXOBOX = JPHEXT + TPBOX%NIINF, KXEBOX = JPHEXT + TPBOX%NISUP, &
+                                     KYOBOX = JPHEXT + TPBOX%NJINF, KYEBOX = JPHEXT + TPBOX%NJSUP, &
+                                     KZOBOX = JPVEXT + TPBOX%NKINF, KZEBOX = JPVEXT + TPBOX%NKSUP  )
+          END IF
+        ELSE
+          call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_1field_write', trim(tpfield%cmnhname)// &
+                          ': CLBTYPE/=NONE not (yet) allowed for 3D real fields' )
+          !CALL IO_Field_write_lb(TPOUTPUT,TPFIELD,***,TPFIELD%TFIELD_X3D(KMI)%DATA)
+        END IF
+      !
+      !3D integer
+      !
+      CASE (TYPEINT)
+        IF ( .NOT.ALLOCATED(TPFIELD%TFIELD_N3D) ) THEN
+          call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_1field_write', trim(tpfield%cmnhname)// &
+                          ': TFIELD_N3D is NOT allocated ' )
+        END IF
+        IF ( .NOT.ASSOCIATED(TPFIELD%TFIELD_N3D(KMI)%DATA) ) THEN
+          call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_1field_write', trim(tpfield%cmnhname)// &
+                          ': TFIELD_N3D%DATA is NOT associated' )
+        END IF
+        IF ( TPFIELD%CLBTYPE == 'NONE' ) THEN
+          CALL IO_Field_write(TPOUTPUT,TPFIELD,TPFIELD%TFIELD_N3D(KMI)%DATA)
+        ELSE
+          call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_1field_write', trim(tpfield%cmnhname)// &
+                          ': CLBTYPE/=NONE not (yet) allowed for 3D integer fields' )
+          !CALL IO_Field_write_lb(TPOUTPUT,TPFIELD,***,TPFIELD%TFIELD_N3D(KMI)%DATA)
+        END IF
+      !
+      !3D other types
+      !
+      CASE DEFAULT
+        call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_1field_write', trim(tpfield%cmnhname)// &
+                        ': type not yet supported for 3D output' )
+    END SELECT NTYPE3D
+  !
+  !4D output
+  !
+  CASE (4)
+    NTYPE4D: SELECT CASE (TPFIELD%NTYPE)
+      !
+      !4D real
+      !
+      CASE (TYPEREAL)
+        IF ( .NOT.ALLOCATED(TPFIELD%TFIELD_X4D) ) THEN
+          call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_1field_write', trim(tpfield%cmnhname)// &
+                          ': TFIELD_X4D is NOT allocated ' )
+        END IF
+        IF ( .NOT.ASSOCIATED(TPFIELD%TFIELD_X4D(KMI)%DATA) ) THEN
+          call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_1field_write', trim(tpfield%cmnhname)// &
+                          ': TFIELD_X4D%DATA is NOT associated' )
+        END IF
+        IF ( TPFIELD%CLBTYPE == 'NONE' ) THEN
+          CALL IO_Field_write(TPOUTPUT,TPFIELD,TPFIELD%TFIELD_X4D(KMI)%DATA)
+        ELSE
+          call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_1field_write', trim(tpfield%cmnhname)// &
+                          ': CLBTYPE/=NONE not (yet) allowed for 4D real fields' )
+          !CALL IO_Field_write_lb(TPOUTPUT,TPFIELD,***,TPFIELD%TFIELD_X4D(KMI)%DATA)
+        END IF
+      !
+      !4D other types
+      !
+      CASE DEFAULT
+        call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_1field_write', trim(tpfield%cmnhname)// &
+                        ': type not yet supported for 4D output' )
+    END SELECT NTYPE4D
+  !
+  !5D output
+  !
+  CASE (5)
+    NTYPE5D: SELECT CASE (TPFIELD%NTYPE)
+      !
+      !5D real
+      !
+      CASE (TYPEREAL)
+        IF ( .NOT.ALLOCATED(TPFIELD%TFIELD_X5D) ) THEN
+          call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_1field_write', trim(tpfield%cmnhname)// &
+                          ': TFIELD_X5D is NOT allocated ' )
+        END IF
+        IF ( .NOT.ASSOCIATED(TPFIELD%TFIELD_X5D(KMI)%DATA) ) THEN
+          call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_1field_write', trim(tpfield%cmnhname)// &
+                          ': TFIELD_X5D%DATA is NOT associated' )
+        END IF
+        IF ( TPFIELD%CLBTYPE == 'NONE' ) THEN
+          CALL IO_Field_write(TPOUTPUT,TPFIELD,TPFIELD%TFIELD_X5D(KMI)%DATA)
+        ELSE
+          call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_1field_write', trim(tpfield%cmnhname)// &
+                          ': CLBTYPE/=NONE not (yet) allowed for 5D real fields' )
+          !CALL IO_Field_write_lb(TPOUTPUT,TPFIELD,***,TPFIELD%TFIELD_X5D(KMI)%DATA)
+        END IF
+      !
+      !5D other types
+      !
+      CASE DEFAULT
+        call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_1field_write', trim(tpfield%cmnhname)// &
+                        ': type not yet supported for 5D output' )
+    END SELECT NTYPE5D
+  !
+  !6D output
+  !
+  CASE (6)
+    NTYPE6D: SELECT CASE (TPFIELD%NTYPE)
+      !
+      !6D real
+      !
+      CASE (TYPEREAL)
+        IF ( .NOT.ALLOCATED(TPFIELD%TFIELD_X6D) ) THEN
+          call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_1field_write', trim(tpfield%cmnhname)// &
+                          ': TFIELD_X6D is NOT allocated ' )
+        END IF
+        IF ( .NOT.ASSOCIATED(TPFIELD%TFIELD_X6D(KMI)%DATA) ) THEN
+          call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_1field_write', trim(tpfield%cmnhname)// &
+                          ': TFIELD_X6D%DATA is NOT associated' )
+        END IF
+        IF ( TPFIELD%CLBTYPE == 'NONE' ) THEN
+          CALL IO_Field_write(TPOUTPUT,TPFIELD,TPFIELD%TFIELD_X6D(KMI)%DATA)
+        ELSE
+          call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_1field_write', trim(tpfield%cmnhname)// &
+                          ': CLBTYPE/=NONE not (yet) allowed for 6D real fields' )
+          !CALL IO_Field_write_lb(TPOUTPUT,TPFIELD,***,TPFIELD%TFIELD_X6D(KMI)%DATA)
+        END IF
+      !
+      !6D other types
+      !
+      CASE DEFAULT
+        call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_1field_write', trim(tpfield%cmnhname)// &
+                        ': type not yet supported for 6D output' )
+    END SELECT NTYPE6D
+  !
+  !Other number of dimensions
+  !
+  CASE DEFAULT
+    call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_1field_write', trim(tpfield%cmnhname)// &
+                        ': number of dimensions not yet supported' )
+END SELECT NDIMS
+
+END SUBROUTINE IO_Fieldlist_1field_write
 
 
 SUBROUTINE IO_Field_user_write( TPOUTPUT )

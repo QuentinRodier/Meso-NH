@@ -37,6 +37,7 @@
 !  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 14/12/2023: add lossy compression for output files
 !  P. Wautelet 07/02/2024: add compression for backup files
+!  P. Wautelet 20/03/2024: add boxes for output files
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -49,6 +50,7 @@ IMPLICIT NONE
 SAVE
 !
 INTEGER, PARAMETER :: NCOMPRNAMELGTMAX  = 10 ! Maximum length of compression algorithm name
+INTEGER, PARAMETER :: NOUT_BOXMAX       = 20 ! Maximum number of boxes (subdomains) for each model output
 !
 LOGICAL :: LBAK_BEG = .FALSE. ! Force a backup/output at the first timestep
 LOGICAL :: LOUT_BEG = .FALSE. ! of the segment for all models
@@ -89,5 +91,16 @@ CHARACTER(LEN=NMNHNAMELGTMAX), ALLOCATABLE, DIMENSION(:,:) :: COUT_VAR ! Name of
 !
 !Directory names for backups/outputs
 CHARACTER(LEN=NDIRNAMELGTMAX) :: CBAK_DIR='', COUT_DIR=''
-!
+
+! Boxes (subdomains) for outputs
+INTEGER, DIMENSION(JPMODELMAX) :: NOUT_BOXES = 0 ! Number of sub-boxes inside each modelgrid
+CHARACTER(LEN=NMNHNAMELGTMAX), DIMENSION(:,:), ALLOCATABLE :: COUT_BOX_NAME ! Names of the boxes
+
+INTEGER, DIMENSION(:,:), ALLOCATABLE :: NOUT_BOX_IINF ! Box coordinates in physical domain (for each model and for each box)
+INTEGER, DIMENSION(:,:), ALLOCATABLE :: NOUT_BOX_ISUP
+INTEGER, DIMENSION(:,:), ALLOCATABLE :: NOUT_BOX_JINF
+INTEGER, DIMENSION(:,:), ALLOCATABLE :: NOUT_BOX_JSUP
+INTEGER, DIMENSION(:,:), ALLOCATABLE :: NOUT_BOX_KINF
+INTEGER, DIMENSION(:,:), ALLOCATABLE :: NOUT_BOX_KSUP
+
 END MODULE MODD_BAKOUT

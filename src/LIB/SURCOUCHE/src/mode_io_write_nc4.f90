@@ -34,6 +34,7 @@
 !  P. Wautelet 13/01/2023: IO_Coordvar_write_nc4: add optional dummy argument TPDTMODELN to force written model time
 !  P. Wautelet 14/12/2023: add lossy compression for output files
 !  P. Wautelet 15/02/2024: IO_Coordvar_write_nc4: add time dimension for Lagrangian trajectories
+!  P. Wautelet 20/03/2024: add boxes for output files
 !-----------------------------------------------------------------
 #ifdef MNH_IOCDF4
 module mode_io_write_nc4
@@ -1465,6 +1466,7 @@ use modd_les,        only: cles_level_type, cspectra_level_type, nlesn_iinf, nle
 use modd_les_n,      only: nles_dtcount, nles_mean_end, nles_mean_start, nles_mean_step, nles_mean_times, &
                            nles_times, nspectra_ni, nspectra_nj, tles_dates, xles_times
 use modd_netcdf,     only: tdimnc
+use modd_out_n,      only: nout_nboxes, tout_boxes
 use modd_parameters, only: jphext, JPVEXT
 use modd_profiler_n, only: lprofiler, tprofilers_time
 use modd_series,     only: lseries
@@ -1696,6 +1698,15 @@ if ( tzfile%lmaster ) then
   if ( Trim( yprogram ) == 'DIAG' ) then
     if ( ltraj .and. ntrajstlg > 0 ) &
       call Write_time_coord( tzfile%tncdims%tdims(NMNHDIM_TRAJ_TIME), 'time axis for Lagrangian trajectories', tlagr_dates )
+  end if
+end if
+
+! Write coordinates for boxes (subdomains) in OUTPUT files
+if ( tzfile%lmaster ) then
+  if ( tzfile%ctype == 'MNHOUTPUT' .and. nout_nboxes > 0 ) then
+    do ji = 1, nout_nboxes
+      call Write_box_coords( ji, tout_boxes(ji) )
+    end do
   end if
 end if
 
@@ -2368,6 +2379,61 @@ subroutine Write_flyer_time_coord( tpflyer )
   end if
 
 end subroutine Write_flyer_time_coord
+
+
+subroutine Write_box_coords( kbox, tpbox )
+  use modd_field, only: NMNHDIM_BOX_NI,   NMNHDIM_BOX_NJ,   NMNHDIM_BOX_NI_U,  NMNHDIM_BOX_NJ_U,  &
+                        NMNHDIM_BOX_NI_V, NMNHDIM_BOX_NJ_V, NMNHDIM_BOX_LEVEL, NMNHDIM_BOX_LEVEL_W
+
+  use modd_out_n, only: toutboxmetadata
+
+  integer,               intent(in) :: kbox
+  type(toutboxmetadata), intent(in) :: tpbox
+
+  integer(kind=CDFINT) :: incid_root
+
+  ! Go to the box HDF group
+  incid_root = tzfile%nncid
+  tzfile%nncid = tzfile%nboxncid(kbox)
+
+  incid = tzfile%nboxncid(kbox)
+
+  call Write_hor_coord1d( tzfile%tboxncdims(kbox)%tdims(NMNHDIM_BOX_NI),   'x-dimension of the box', &
+                          trim(ystdnameprefix)//'_x_coordinate',               'X', 0.,   0, 0,      &
+                          zxhatm_glob(tpbox%niinf + jphext : tpbox%nisup + jphext)                   )
+
+  call Write_hor_coord1d( tzfile%tboxncdims(kbox)%tdims(NMNHDIM_BOX_NI_U), 'x-dimension of the box at u location', &
+                          trim(ystdnameprefix)//'_x_coordinate_at_u_location', 'X', -0.5, 0, 0,                    &
+                          zxhat_glob (tpbox%niinf + jphext : tpbox%nisup + jphext)                                 )
+
+  call Write_hor_coord1d( tzfile%tboxncdims(kbox)%tdims(NMNHDIM_BOX_NI_V), 'x-dimension of the box at v location', &
+                          trim(ystdnameprefix)//'_x_coordinate_at_v_location', 'X', 0.,   0, 0,                    &
+                          zxhatm_glob(tpbox%niinf + jphext : tpbox%nisup + jphext)                                 )
+
+  call Write_hor_coord1d( tzfile%tboxncdims(kbox)%tdims(NMNHDIM_BOX_NJ),   'y-dimension of the box', &
+                          trim(ystdnameprefix)//'_y_coordinate',               'Y', 0.,   0, 0,      &
+                          zyhatm_glob(tpbox%njinf + jphext : tpbox%njsup + jphext)                   )
+
+  call Write_hor_coord1d( tzfile%tboxncdims(kbox)%tdims(NMNHDIM_BOX_NJ_U), 'y-dimension of the box at u location', &
+                          trim(ystdnameprefix)//'_y_coordinate_at_u_location', 'Y', 0.,   0, 0,                    &
+                          zyhatm_glob(tpbox%njinf + jphext : tpbox%njsup + jphext)                                 )
+
+  call Write_hor_coord1d( tzfile%tboxncdims(kbox)%tdims(NMNHDIM_BOX_NJ_V), 'y-dimension of the box at v location', &
+                          trim(ystdnameprefix)//'_y_coordinate_at_v_location', 'Y', -0.5, 0, 0,                    &
+                          zyhat_glob (tpbox%njinf + jphext : tpbox%njsup + jphext)                                )
+
+  call Write_ver_coord( tzfile%tboxncdims(kbox)%tdims(NMNHDIM_BOX_LEVEL),                                             &
+                        'position z in the transformed space of the box',                                             &
+                        '', 'altitude',               0.,   0, 0, zzhatm(tpbox%nkinf + JPVEXT : tpbox%nksup + JPVEXT) )
+
+  call Write_ver_coord( tzfile%tboxncdims(kbox)%tdims(NMNHDIM_BOX_LEVEL_W),                                           &
+                        'position z in the transformed space at w location of the box',                               &
+                        '', 'altitude_at_w_location', -0.5, 0, 0, zzhat (tpbox%nkinf + JPVEXT : tpbox%nksup + JPVEXT) )
+
+  ! Restore the root HDF group
+  tzfile%nncid = incid_root
+
+end subroutine Write_box_coords
 
 END SUBROUTINE IO_Coordvar_write_nc4
 
