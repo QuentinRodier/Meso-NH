@@ -20,7 +20,7 @@
 &NAM_CONF  CCONF = "START", LFLAT = .TRUE., NMODEL = 1,
                    NVERB = 4, CEQNSYS='DUR', lforcing=.true.,
                    CEXP = "ARM__", CSEG = "CEN4T" /
-&NAM_DYN  XSEGLEN = 54000. , XASSELIN = 0.1, LCORIO = .true., 
+&NAM_DYN  XSEGLEN = 36000. , XASSELIN = 0.1, LCORIO = .true., 
                     LNUMDIFU = .FALSE.,
                     XALKTOP = 0.01, XALZBOT = 3500. /
 &NAM_NESTING  NDAD(1) = 1 , NDAD(2) = 1 , NDTRATIO(1) = 1, NDTRATIO(2) = 2 ,

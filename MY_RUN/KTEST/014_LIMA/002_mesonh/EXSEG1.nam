@@ -61,7 +61,7 @@
                 LNUMDIFTH = .F.,
                 LNUMDIFSV = .F. /
 
-&NAM_BACKUP     XBAK_TIME(1,1) = 1800., XBAK_TIME(1,2) = 3600. /
+&NAM_BACKUP     XBAK_TIME_FREQ(1) = 1800. /
 
 &NAM_BUDGET     CBUTYPE = 'CART',
                 NBUMOD = 1,
