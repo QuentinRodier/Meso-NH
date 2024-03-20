@@ -1,4 +1,4 @@
-!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC Copyright 1994-2024 CNRS, Meteo-France and Universite Paul Sabatier
 !SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
@@ -6,9 +6,11 @@
         MODULE MODD_DATA_LAKE
 !     #####################
 !
- CHARACTER(LEN=80), PARAMETER :: CLAKELTA = 'LAKE_LTA_NEW.nc'            ! The dataset file name
- CHARACTER(LEN=80), PARAMETER :: CLAKELDB = 'GlobalLakeDepth'    ! The file name of the map for global lake depth
- CHARACTER(LEN=80), PARAMETER :: CSTATUSLDB = 'GlobalLakeStatus' ! The file name of the map for global lake depth
+USE MODD_SURF_PAR,        ONLY : NFILENAMELGTMAX, XUNDEF
+!
+ CHARACTER(LEN=NFILENAMELGTMAX), PARAMETER :: CLAKELTA = 'LAKE_LTA_NEW.nc'    ! The dataset file name
+ CHARACTER(LEN=NFILENAMELGTMAX), PARAMETER :: CLAKELDB = 'GlobalLakeDepth'    ! The file name of the map for global lake depth
+ CHARACTER(LEN=NFILENAMELGTMAX), PARAMETER :: CSTATUSLDB = 'GlobalLakeStatus' ! The file name of the map for global lake depth
 !
 INTEGER, PARAMETER :: NLONG=360, & ! Number of grid boxes of the "lake grid" in longitude
                       NLATG=150    ! Number of grid boxes of the "lake grid" in latitude
