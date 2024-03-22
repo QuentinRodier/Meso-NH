@@ -65,8 +65,6 @@ USE MODD_SUB_MODEL_N, ONLY: NFILE_BACKUP_CURRENT, NFILE_OUTPUT_CURRENT, SUB_MODE
 USE MODD_OUT_n,       ONLY: OUT_GOTO_MODEL, OUT_MODEL, TOUT_BOXES
 USE MODD_VAR_ll,      ONLY: IP
 
-use mode_field, only: Find_field_id_from_mnhname
-
 USE MODN_BACKUP, ONLY: BACKUP_NML_DEALLOCATE
 USE MODN_OUTPUT, ONLY: OUTPUT_NML_DEALLOCATE
 
@@ -79,10 +77,9 @@ INTEGER           :: IBAK_NUM
 INTEGER           :: IOUT_NUM
 INTEGER           :: IMI              ! Model number for loop
 INTEGER           :: IERR_LVL         ! Level of error message
-INTEGER           :: IVAR             ! Number of variables
 INTEGER           :: ISTEP
 INTEGER           :: ISTEP_MAX        ! Number of timesteps
-INTEGER           :: IPOS,IFIELD      ! Indices
+INTEGER           :: IPOS             ! Index
 INTEGER           :: JOUT,IDX         ! Loop indices
 INTEGER           :: JI
 INTEGER           :: IRESP
@@ -497,36 +494,13 @@ DO IMI = 1, NMODEL
     CALL PRINT_MSG( IERR_LVL, 'IO', 'IO_Bakout_struct_prepare', 'no (valid) backup time' )
   END IF
 
-  !Determine the list of the fields to write in each output
   IF ( OUT_MODEL(IMI)%NOUT_NUMB > 0 ) THEN
-    !Count the number of fields to output
-    IVAR = 0
-    DO IPOS = 1,JPOUTVARMAX
-      IF (COUT_VAR(IMI,IPOS)/='') IVAR = IVAR + 1
-    END DO
-    IF (IVAR==0) CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Bakout_struct_prepare','no fields chosen for output')
-    ALLOCATE( OUT_MODEL(IMI)%NOUT_FIELDLIST(IVAR) )
+    !Determine the list of the fields to write in each output
+    CALL IO_OUT_FIELDLIST_FILL( COUT_VAR(IMI,:), .TRUE., OUT_MODEL(IMI)%NOUT_FIELDLIST )
 
-    IF ( IVAR > 0 ) THEN
-      !Determine the list of the outputs to do (by field number)
-      IVAR = 0
-      DO IPOS = 1,JPOUTVARMAX
-        IF (COUT_VAR(IMI,IPOS)/='') THEN
-          IVAR=IVAR+1
-          CALL FIND_FIELD_ID_FROM_MNHNAME(COUT_VAR(IMI,IPOS),IFIELD,IRESP)
-          OUT_MODEL(IMI)%NOUT_FIELDLIST(IVAR) = IFIELD
-          IF (IRESP/=0) THEN
-            CALL PRINT_MSG(NVERB_FATAL,'IO','IO_Bakout_struct_prepare','unknown field for output: '//TRIM(COUT_VAR(IMI,IPOS)))
-            !MNH is killed to prevent problems with wrong values in NOUT_FIELDLIST
-          END IF
-          !
-        END IF
-      END DO
-    END IF
+    ! Treat the boxes (sub-domains) for output files
+    CALL IO_BOX_PREPARE( IMI )
   END IF
-  !
-  ! Treat the boxes (sub-domains) for output files
-  IF ( OUT_MODEL(IMI)%NOUT_NUMB > 0 ) CALL IO_BOX_PREPARE( IMI )
   !
   IF ( IP == 1 ) THEN
     ! Backup information
@@ -559,9 +533,9 @@ DO IMI = 1, NMODEL
     IF (OUT_MODEL(IMI)%NOUT_STEPFREQ > 0 ) THEN
       WRITE( *, '( "  Regular:         ", I9 )' ) &
              ( ISTEP_MAX - OUT_MODEL(IMI)%NOUT_STEPFREQFIRST ) / OUT_MODEL(IMI)%NOUT_STEPFREQ + 1
-      WRITE( *, '( "   Frequency: ", I9, " timesteps (", F12.3, "s)" )' ) &
+      WRITE( *, '( "   Frequency:  every ", I9, " timesteps (", F12.3, "s)" )' ) &
              OUT_MODEL(IMI)%NOUT_STEPFREQ, OUT_MODEL(IMI)%NOUT_STEPFREQ * DYN_MODEL(IMI)%XTSTEP
-      WRITE( *, '( "   First:     ", I9, " timesteps (", F12.3, "s)" )' ) &
+      WRITE( *, '( "   First at timestep ", I9, "           (", F12.3, "s)" )' ) &
              OUT_MODEL(IMI)%NOUT_STEPFREQFIRST, ( OUT_MODEL(IMI)%NOUT_STEPFREQFIRST - 1 ) * DYN_MODEL(IMI)%XTSTEP
     ELSE
       WRITE( *, '( "  Regular:         ", I9 )' ) 0
@@ -588,6 +562,13 @@ DO IMI = 1, NMODEL
         WRITE( *, '( "  List of boxes:" )' )
         DO JI = 1, OUT_MODEL(IMI)%NOUT_NBOXES
           WRITE(*, '( "    ", A )' ) TRIM(OUT_MODEL(IMI)%TOUT_BOXES(JI)%CNAME)
+          IF ( SIZE( OUT_MODEL(IMI)%TOUT_BOXES(JI)%NFIELDLIST_SUPP ) > 0 ) THEN
+            WRITE( *, '( "      Specific fields:" )' )
+            DO JOUT = 1, SIZE( OUT_MODEL(IMI)%TOUT_BOXES(JI)%NFIELDLIST_SUPP )
+              IDX = OUT_MODEL(IMI)%TOUT_BOXES(JI)%NFIELDLIST_SUPP(JOUT)
+              WRITE(*, '( "        ", A )' ) TRIM(TFIELDLIST(IDX)%CMNHNAME)
+            END DO
+          END IF
         END DO
       END IF
     END IF
@@ -735,12 +716,89 @@ SUBROUTINE SORT_ENTRIES(KNUMB,KSTEPS)
 END SUBROUTINE SORT_ENTRIES
 !
 !#########################################################################
+SUBROUTINE IO_OUT_FIELDLIST_FILL( HVARLIST, OMAINBOX, KFIELDLIST )
+!#########################################################################
+  use mode_field, only: Find_field_id_from_mnhname
+
+  CHARACTER(LEN=NMNHNAMELGTMAX), DIMENSION(:), INTENT(IN)  :: HVARLIST
+  LOGICAL,                                     INTENT(IN)  :: OMAINBOX
+  INTEGER, DIMENSION(:), ALLOCATABLE,          INTENT(OUT) :: KFIELDLIST
+
+  INTEGER                            :: IFIELD
+  INTEGER                            :: IVAR   ! Number of variables
+  INTEGER                            :: JIDX
+  INTEGER, DIMENSION(:), ALLOCATABLE :: ICOMPACTFIELDLIST
+
+  !Count the number of fields to output
+  IVAR = 0
+  DO IPOS = 1, SIZE(HVARLIST)
+    IF ( HVARLIST(IPOS) /= '' ) IVAR = IVAR + 1
+  END DO
+
+  ! Print warning message only if the main box has to be written
+  IF ( IVAR == 0 .AND. OMAINBOX .AND. ( NOUT_BOXES(IMI) == 0 .OR. LOUT_MAINDOMAIN_WRITE(IMI) ) ) &
+    CALL PRINT_MSG( NVERB_WARNING, 'IO', 'IO_OUT_FIELDLIST_FILL', 'no fields chosen for output' )
+
+  ALLOCATE( KFIELDLIST(IVAR) )
+
+  IF ( IVAR > 0 ) THEN
+    !Determine the list of the outputs to do (by field number)
+    IVAR = 0
+    DO IPOS = 1, SIZE(HVARLIST)
+      IF ( HVARLIST(IPOS) /= '' ) THEN
+        IVAR = IVAR + 1
+        CALL FIND_FIELD_ID_FROM_MNHNAME( HVARLIST(IPOS), IFIELD, IRESP )
+        KFIELDLIST(IVAR) = IFIELD
+        IF ( IRESP /= 0 ) THEN
+          CALL PRINT_MSG( NVERB_FATAL, 'IO', 'IO_OUT_FIELDLIST_FILL', 'unknown field for output: ' // TRIM(HVARLIST(IPOS)) )
+          !MNH is killed to prevent problems with wrong values in fieldlist
+        END IF
+        !
+      END IF
+    END DO
+  END IF
+
+  !Find and remove duplicated entries
+  DO IPOS = 1, SIZE( KFIELDLIST )
+    IFIELD = KFIELDLIST(IPOS)
+    IF ( IFIELD == -1 ) CYCLE
+    DO JIDX = IPOS + 1, SIZE( KFIELDLIST )
+      IF ( KFIELDLIST(JIDX) == IFIELD ) THEN
+        KFIELDLIST(JIDX) = -1
+        IVAR = IVAR - 1
+      END IF
+    END DO
+  END DO
+
+  ! Compact the fieldlist (if some entries were duplicated and removed)
+  IF ( IVAR < SIZE( KFIELDLIST ) ) THEN
+    CALL PRINT_MSG( NVERB_WARNING, 'IO', 'IO_OUT_FIELDLIST_FILL', 'some output variable entries were duplicated => removed' )
+
+    ALLOCATE( ICOMPACTFIELDLIST(IVAR) )
+    JIDX = 1
+    DO IPOS = 1, SIZE( KFIELDLIST )
+      IF ( KFIELDLIST(IPOS) /= -1 ) THEN
+        ICOMPACTFIELDLIST(JIDX) = KFIELDLIST(IPOS)
+        JIDX = JIDX + 1
+      END IF
+    END DO
+    CALL MOVE_ALLOC( FROM = ICOMPACTFIELDLIST, TO = KFIELDLIST )
+  END IF
+
+END SUBROUTINE IO_OUT_FIELDLIST_FILL
+
+!#########################################################################
 SUBROUTINE IO_BOX_PREPARE( KMI )
 !#########################################################################
 
   USE MODD_DIM_n, ONLY: NIMAX_ll, NJMAX_ll, NKMAX
 
   INTEGER, INTENT(IN) :: KMI
+
+  INTEGER                            :: IFIELD
+  INTEGER                            :: IVAR
+  INTEGER                            :: JIDX1, JIDX2
+  INTEGER, DIMENSION(:), ALLOCATABLE :: ICOMPACTFIELDLIST
 
   ! Force the writing of the main domain if there are no boxes
   ! Remark: default value of LOUT_MAINDOMAIN_WRITE is .FALSE.
@@ -792,6 +850,28 @@ SUBROUTINE IO_BOX_PREPARE( KMI )
     IF ( TOUT_BOXES(JI)%NKSUP > NKMAX ) CALL Print_msg( NVERB_ERROR, 'GEN', 'IO_BOX_PREPARE', 'NOUT_BOX_KSUP too large (>NKMAX)' )
     IF ( TOUT_BOXES(JI)%NKSUP < TOUT_BOXES(JI)%NKINF ) &
                                            CALL Print_msg( NVERB_ERROR, 'GEN', 'INI_LES_n', 'NOUT_BOX_KSUP < NOUT_BOX_KINF' )
+
+    ! Field the list of variables to write for each box (in addition to the NOUTFIELDLIST which is common to all the boxes)
+    CALL IO_OUT_FIELDLIST_FILL( COUT_BOX_VAR_SUPP(IMI,JI,:), .FALSE., TOUT_BOXES(JI)%NFIELDLIST_SUPP )
+
+    ! Check for duplicated entries between the general list and the box-specific one
+    IVAR = SIZE( TOUT_BOXES(JI)%NFIELDLIST_SUPP )
+    DO JIDX1 = 1, SIZE( OUT_MODEL(IMI)%NOUT_FIELDLIST )
+      IFIELD = OUT_MODEL(IMI)%NOUT_FIELDLIST(JIDX1)
+      DO JIDX2 = 1, SIZE( TOUT_BOXES(JI)%NFIELDLIST_SUPP )
+        IF ( TOUT_BOXES(JI)%NFIELDLIST_SUPP(JIDX2) == IFIELD ) THEN
+          TOUT_BOXES(JI)%NFIELDLIST_SUPP(JIDX2) = TOUT_BOXES(JI)%NFIELDLIST_SUPP(SIZE(TOUT_BOXES(JI)%NFIELDLIST_SUPP))
+          IVAR = IVAR - 1
+        END IF
+      END DO
+    END DO
+
+    ! Compact the fieldlist (if some entries were duplicated and removed)
+    IF ( IVAR < SIZE( TOUT_BOXES(JI)%NFIELDLIST_SUPP ) ) THEN
+      CALL Print_msg( NVERB_WARNING, 'IO', 'IO_BOX_PREPARE', 'some box-specific output variables already in main list => removed' )
+      ICOMPACTFIELDLIST = TOUT_BOXES(JI)%NFIELDLIST_SUPP(1:IVAR)
+      CALL MOVE_ALLOC( FROM = ICOMPACTFIELDLIST, TO = TOUT_BOXES(JI)%NFIELDLIST_SUPP )
+    END IF
   END DO
 END SUBROUTINE IO_BOX_PREPARE
 

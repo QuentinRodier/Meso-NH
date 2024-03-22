@@ -95,6 +95,8 @@ CHARACTER(LEN=NDIRNAMELGTMAX) :: CBAK_DIR='', COUT_DIR=''
 ! Boxes (subdomains) for outputs
 INTEGER, DIMENSION(JPMODELMAX) :: NOUT_BOXES = 0 ! Number of sub-boxes inside each modelgrid
 CHARACTER(LEN=NMNHNAMELGTMAX), DIMENSION(:,:), ALLOCATABLE :: COUT_BOX_NAME ! Names of the boxes
+CHARACTER(LEN=NMNHNAMELGTMAX), DIMENSION(:,:,:), ALLOCATABLE :: COUT_BOX_VAR_SUPP ! Name of the fields to output separately
+                                                                                  ! in the different boxes (added to the COUT_VAR)
 LOGICAL, DIMENSION(JPMODELMAX) :: LOUT_MAINDOMAIN_WRITE = .FALSE. ! True to write the main domain
                                                                   ! (automatically forced to .TRUE. if NOUT_BOXES=0)
 

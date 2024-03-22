@@ -3946,6 +3946,11 @@ IF ( NOUT_NBOXES > 0 ) THEN
       CALL IO_Fieldlist_1field_write( TZOUTPUT, IMI, TFIELDLIST(NOUT_FIELDLIST(JI)), TOUT_BOXES(JBOX) )
     END DO
 
+    ! Write box-specific fields
+    DO JI = 1, SIZE( TOUT_BOXES(JBOX)%NFIELDLIST_SUPP )
+      CALL IO_Fieldlist_1field_write( TZOUTPUT, IMI, TFIELDLIST(TOUT_BOXES(JBOX)%NFIELDLIST_SUPP(JI)), TOUT_BOXES(JBOX) )
+    END DO
+
       ! Restore the root group (not really necessary but cleaner)
     IF ( ISP == TZOUTPUT%NMASTER_RANK ) TZOUTPUT%NNCID = IGROUPID_ROOT
   END DO
