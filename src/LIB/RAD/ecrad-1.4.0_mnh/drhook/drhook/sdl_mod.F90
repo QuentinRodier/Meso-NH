@@ -60,7 +60,7 @@ ENDIF
 IF (LHOOK) THEN
   IPRINT_OPTION = 2
   ILEVEL = 0
-  CALL C_DRHOOK_PRINT(0, ITID, IPRINT_OPTION, ILEVEL) ! from drhook.c
+  !CALL C_DRHOOK_PRINT(0, ITID, IPRINT_OPTION, ILEVEL) ! from drhook.c
 ENDIF
 #if defined(VPP)
   CALL ERRTRA
@@ -74,7 +74,7 @@ ENDIF
   CALL GET_ENVIRONMENT_VARIABLE("EC_LINUX_TRBK",CLTRBK)
   IF (CLTRBK=='1') THEN
     WRITE(0,*)'SDL_TRACEBACK: Calling LINUX_TRBK, THRD = ',ITID
-    CALL LINUX_TRBK() ! See ifsaux/utilities/linuxtrbk.c
+    !CALL LINUX_TRBK() ! See ifsaux/utilities/linuxtrbk.c
     WRITE(0,*)'SDL_TRACEBACK: Done LINUX_TRBK, THRD = ',ITID
   ELSE
     WRITE(0,*)'SDL_TRACEBACK: Calling INTEL_TRBK, THRD = ',ITID
@@ -89,7 +89,7 @@ ENDIF
   WRITE(0,*)'SDL_TRACEBACK: Done GDB_TRBK, THRD = ',ITID
 #elif defined(LINUX) || defined(SUN4)
   WRITE(0,*)'SDL_TRACEBACK: Calling LINUX_TRBK, THRD = ',ITID
-  CALL LINUX_TRBK() ! See ifsaux/utilities/linuxtrbk.c
+  !CALL LINUX_TRBK() ! See ifsaux/utilities/linuxtrbk.c
   WRITE(0,*)'SDL_TRACEBACK: Done LINUX_TRBK, THRD = ',ITID
 #elif defined(NECSX)
 ! MESPUT writes out onto unit 6
@@ -119,7 +119,7 @@ SUBROUTINE SDL_SRLABORT
 ! -------
 !   To abort in serial environment
 
-CALL EC_RAISE(SIGABRT)
+!CALL EC_RAISE(SIGABRT)
 STOP 'SDL_SRLABORT'
 
 END SUBROUTINE SDL_SRLABORT
@@ -163,7 +163,7 @@ CALL MPI_ABORT(MPI_COMM_WORLD,IRETURN_CODE,IERROR) ! Tracked by the supervisor/p
 
 #endif
 
-CALL EC_RAISE(SIGABRT) ! In case ever ends up here
+!CALL EC_RAISE(SIGABRT) ! In case ever ends up here
 STOP 'SDL_DISABORT'
 
 END SUBROUTINE SDL_DISABORT

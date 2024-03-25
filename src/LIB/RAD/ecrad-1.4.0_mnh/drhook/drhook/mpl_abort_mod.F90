@@ -55,9 +55,9 @@ IF (MAB_CNT == 0) THEN
   CLTRBK='1'
 #endif
   IF (LHOOK .AND. CLTRBK=='1') THEN
-     CALL TABORT() ! should not hang and calls DrHook's error traceback processing (more robust nowadays)
+     !CALL TABORT() ! should not hang and calls DrHook's error traceback processing (more robust nowadays)
   ELSE
-     CALL SDL_TRACEBACK(ITID) ! this will no longer hang with Intel compiler because intel tracebackqq is called, not linux traceback
+     !CALL SDL_TRACEBACK(ITID) ! this will no longer hang with Intel compiler because intel tracebackqq is called, not linux traceback
   ENDIF
 ENDIF
 !$OMP END CRITICAL (CRIT_MPL_ABORT)
