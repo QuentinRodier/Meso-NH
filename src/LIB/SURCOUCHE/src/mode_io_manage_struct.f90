@@ -823,11 +823,11 @@ SUBROUTINE IO_BOX_PREPARE( KMI )
 
     !Set default values to physical domain boundaries
     IF ( TOUT_BOXES(JI)%NIINF == NNEGUNDEF ) TOUT_BOXES(JI)%NIINF = 1
-    IF ( TOUT_BOXES(JI)%NISUP == NNEGUNDEF ) TOUT_BOXES(JI)%NIINF = NIMAX_ll
+    IF ( TOUT_BOXES(JI)%NISUP == NNEGUNDEF ) TOUT_BOXES(JI)%NISUP = NIMAX_ll
     IF ( TOUT_BOXES(JI)%NJINF == NNEGUNDEF ) TOUT_BOXES(JI)%NJINF = 1
-    IF ( TOUT_BOXES(JI)%NJSUP == NNEGUNDEF ) TOUT_BOXES(JI)%NJINF = NJMAX_ll
+    IF ( TOUT_BOXES(JI)%NJSUP == NNEGUNDEF ) TOUT_BOXES(JI)%NJSUP = NJMAX_ll
     IF ( TOUT_BOXES(JI)%NKINF == NNEGUNDEF ) TOUT_BOXES(JI)%NKINF = 1
-    IF ( TOUT_BOXES(JI)%NKSUP == NNEGUNDEF ) TOUT_BOXES(JI)%NKINF = NKMAX
+    IF ( TOUT_BOXES(JI)%NKSUP == NNEGUNDEF ) TOUT_BOXES(JI)%NKSUP = NKMAX
 
     !Check that selected indices are in physical domain
     IF ( TOUT_BOXES(JI)%NIINF < 1 )        CALL Print_msg( NVERB_ERROR, 'GEN', 'IO_BOX_PREPARE', 'NOUT_BOX_IINF too small (<1)' )
@@ -835,21 +835,21 @@ SUBROUTINE IO_BOX_PREPARE( KMI )
     IF ( TOUT_BOXES(JI)%NISUP < 1 )        CALL Print_msg( NVERB_ERROR, 'GEN', 'IO_BOX_PREPARE', 'NOUT_BOX_ISUP too small (<1)' )
     IF ( TOUT_BOXES(JI)%NISUP > NIMAX_ll ) CALL Print_msg( NVERB_ERROR, 'GEN', 'IO_BOX_PREPARE', 'NOUT_BOX_ISUP too large (>NIMAX)')
     IF ( TOUT_BOXES(JI)%NISUP < TOUT_BOXES(JI)%NIINF ) &
-                                           CALL Print_msg( NVERB_ERROR, 'GEN', 'INI_LES_n', 'NOUT_BOX_ISUP < NOUT_BOX_IINF' )
+                                           CALL Print_msg( NVERB_ERROR, 'GEN', 'IO_BOX_PREPARE', 'NOUT_BOX_ISUP < NOUT_BOX_IINF' )
 
     IF ( TOUT_BOXES(JI)%NJINF < 1 )        CALL Print_msg( NVERB_ERROR, 'GEN', 'IO_BOX_PREPARE', 'NOUT_BOX_JINF too small (<1)' )
     IF ( TOUT_BOXES(JI)%NJINF > NJMAX_ll ) CALL Print_msg( NVERB_ERROR, 'GEN', 'IO_BOX_PREPARE', 'NOUT_BOX_JINF too large (>NJMAX)')
     IF ( TOUT_BOXES(JI)%NJSUP < 1 )        CALL Print_msg( NVERB_ERROR, 'GEN', 'IO_BOX_PREPARE', 'NOUT_BOX_JSUP too small (<1)' )
     IF ( TOUT_BOXES(JI)%NJSUP > NJMAX_ll ) CALL Print_msg( NVERB_ERROR, 'GEN', 'IO_BOX_PREPARE', 'NOUT_BOX_JSUP too large (>NJMAX)')
     IF ( TOUT_BOXES(JI)%NJSUP < TOUT_BOXES(JI)%NJINF ) &
-                                           CALL Print_msg( NVERB_ERROR, 'GEN', 'INI_LES_n', 'NOUT_BOX_JSUP < NOUT_BOX_JINF' )
+                                           CALL Print_msg( NVERB_ERROR, 'GEN', 'IO_BOX_PREPARE', 'NOUT_BOX_JSUP < NOUT_BOX_JINF' )
 
     IF ( TOUT_BOXES(JI)%NKINF < 1 )     CALL Print_msg( NVERB_ERROR, 'GEN', 'IO_BOX_PREPARE', 'NOUT_BOX_KINF too small (<1)' )
     IF ( TOUT_BOXES(JI)%NKINF > NKMAX ) CALL Print_msg( NVERB_ERROR, 'GEN', 'IO_BOX_PREPARE', 'NOUT_BOX_KINF too large (>NKMAX)' )
     IF ( TOUT_BOXES(JI)%NKSUP < 1 )     CALL Print_msg( NVERB_ERROR, 'GEN', 'IO_BOX_PREPARE', 'NOUT_BOX_KSUP too small (<1)' )
     IF ( TOUT_BOXES(JI)%NKSUP > NKMAX ) CALL Print_msg( NVERB_ERROR, 'GEN', 'IO_BOX_PREPARE', 'NOUT_BOX_KSUP too large (>NKMAX)' )
     IF ( TOUT_BOXES(JI)%NKSUP < TOUT_BOXES(JI)%NKINF ) &
-                                           CALL Print_msg( NVERB_ERROR, 'GEN', 'INI_LES_n', 'NOUT_BOX_KSUP < NOUT_BOX_KINF' )
+                                           CALL Print_msg( NVERB_ERROR, 'GEN', 'IO_BOX_PREPARE', 'NOUT_BOX_KSUP < NOUT_BOX_KINF' )
 
     ! Field the list of variables to write for each box (in addition to the NOUTFIELDLIST which is common to all the boxes)
     CALL IO_OUT_FIELDLIST_FILL( COUT_BOX_VAR_SUPP(IMI,JI,:), .FALSE., TOUT_BOXES(JI)%NFIELDLIST_SUPP )
