@@ -851,6 +851,15 @@ SUBROUTINE IO_BOX_PREPARE( KMI )
     IF ( TOUT_BOXES(JI)%NKSUP < TOUT_BOXES(JI)%NKINF ) &
                                            CALL Print_msg( NVERB_ERROR, 'GEN', 'IO_BOX_PREPARE', 'NOUT_BOX_KSUP < NOUT_BOX_KINF' )
 
+    IF ( DYN_MODEL(IMI)%LVE_RELAX .AND. LOUT_TOP_ABSORBING_LAYER_REMOVE(IMI) ) THEN
+      ! Remark: NKSUP can not be modified here to remove the Top Absorbing Layer levels because NALBOT is not yet computed
+      ! NKSUP will be modified just before writing dimensions to the file
+      OUT_MODEL(IMI)%LOUT_TAL_REMOVE = LOUT_TOP_ABSORBING_LAYER_REMOVE(IMI)
+    ELSE
+      ! There is no Top Absorbing Layer (enabled only if LVE_RELAX=.TRUE.)
+      OUT_MODEL(IMI)%LOUT_TAL_REMOVE = .FALSE.
+    END IF
+
     ! Field the list of variables to write for each box (in addition to the NOUTFIELDLIST which is common to all the boxes)
     CALL IO_OUT_FIELDLIST_FILL( COUT_BOX_VAR_SUPP(IMI,JI,:), .FALSE., TOUT_BOXES(JI)%NFIELDLIST_SUPP )
 

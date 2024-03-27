@@ -99,6 +99,7 @@ CHARACTER(LEN=NMNHNAMELGTMAX), DIMENSION(:,:,:), ALLOCATABLE :: COUT_BOX_VAR_SUP
                                                                                   ! in the different boxes (added to the COUT_VAR)
 LOGICAL, DIMENSION(JPMODELMAX) :: LOUT_MAINDOMAIN_WRITE = .FALSE. ! True to write the main domain
                                                                   ! (automatically forced to .TRUE. if NOUT_BOXES=0)
+LOGICAL, DIMENSION(JPMODELMAX) :: LOUT_TOP_ABSORBING_LAYER_REMOVE = .TRUE. ! Remove the top absorbing layer
 
 INTEGER, DIMENSION(:,:), ALLOCATABLE :: NOUT_BOX_IINF ! Box coordinates in physical domain (for each model and for each box)
 INTEGER, DIMENSION(:,:), ALLOCATABLE :: NOUT_BOX_ISUP

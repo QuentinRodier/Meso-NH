@@ -69,7 +69,9 @@ TYPE OUT_t
   INTEGER, DIMENSION(:), ALLOCATABLE :: NBAK_STEPLIST                  ! List of time steps to do backups (except regular series)
   INTEGER, DIMENSION(:), ALLOCATABLE :: NOUT_STEPLIST                  ! List of time steps to do outputs (except regular series)
   INTEGER, DIMENSION(:), ALLOCATABLE :: NOUT_FIELDLIST                 ! List of fields to write in outputs
-  LOGICAL                            :: LOUT_BIGBOX_WRITE = .TRUE.     ! Write the maix box/domain (if there are boxes)
+  LOGICAL                            :: LOUT_BIGBOX_WRITE = .TRUE.     ! Write the main box/domain (if there are boxes)
+  LOGICAL                            :: LOUT_TAL_REMOVE   = .TRUE.     ! Remove the top absorbing layer
+
   TYPE(TOUTBOXMETADATA), DIMENSION(:), ALLOCATABLE :: TOUT_BOXES
 END TYPE OUT_t
 
@@ -87,6 +89,7 @@ INTEGER, DIMENSION(:), POINTER :: NBAK_STEPLIST      => NULL()
 INTEGER, DIMENSION(:), POINTER :: NOUT_STEPLIST      => NULL()
 INTEGER, DIMENSION(:), POINTER :: NOUT_FIELDLIST     => NULL()
 LOGICAL,               POINTER :: LOUT_BIGBOX_WRITE  => NULL()
+LOGICAL,               POINTER :: LOUT_TAL_REMOVE    => NULL()
 TYPE(TOUTBOXMETADATA), DIMENSION(:), POINTER :: TOUT_BOXES  => NULL()
 
 CONTAINS
@@ -107,6 +110,7 @@ NBAK_STEPLIST      => OUT_MODEL(KTO)%NBAK_STEPLIST
 NOUT_STEPLIST      => OUT_MODEL(KTO)%NOUT_STEPLIST
 NOUT_FIELDLIST     => OUT_MODEL(KTO)%NOUT_FIELDLIST
 LOUT_BIGBOX_WRITE  => OUT_MODEL(KTO)%LOUT_BIGBOX_WRITE
+LOUT_TAL_REMOVE    => OUT_MODEL(KTO)%LOUT_TAL_REMOVE
 TOUT_BOXES         => OUT_MODEL(KTO)%TOUT_BOXES
 
 END SUBROUTINE OUT_GOTO_MODEL

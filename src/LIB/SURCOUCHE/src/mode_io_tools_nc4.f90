@@ -255,7 +255,7 @@ USE MODD_CONF_n,        ONLY: CSTORAGE_TYPE
 USE MODD_DIAG_FLAG,     ONLY: LTRAJ
 USE MODD_DIM_n,         ONLY: NIMAX_ll, NJMAX_ll, NKMAX
 use modd_dyn,           only: xseglen
-use modd_dyn_n,         only: dyn_model
+use modd_dyn_n,         only: dyn_model, nalbot
 use modd_field,         only: NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NI_U, NMNHDIM_NJ_U, NMNHDIM_NI_V, NMNHDIM_NJ_V,   &
                               NMNHDIM_LEVEL, NMNHDIM_LEVEL_W, NMNHDIM_TIME,                                     &
                               NMNHDIM_ONE,  NMNHDIM_NSWB, NMNHDIM_NLWB, NMNHDIM_TRAJ_TIME, NMNHDIM_COMPLEX,     &
@@ -280,7 +280,7 @@ use modd_field,         only: NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NI_U, NMNHDIM_NJ_U
 use modd_les,           only: lles_pdf, nles_k, npdf, nspectra_k, xles_temp_mean_start, xles_temp_mean_step, xles_temp_mean_end
 use modd_les_n,         only: nles_times, nspectra_ni, nspectra_nj
 use modd_nsv,           only: nsv
-use modd_out_n,         only: nout_nboxes, tout_boxes
+use modd_out_n,         only: lout_tal_remove, nout_nboxes, tout_boxes
 USE MODD_PARAMETERS_ll, ONLY: JPHEXT, JPVEXT
 use modd_param_n,       only: crad
 use modd_profiler_n,    only: lprofiler, tprofilers_time
@@ -372,6 +372,17 @@ if ( tpfile%ctype == 'MNHOUTPUT' ) then
     !Allocate dimension list
     tpfile%tboxncdims(jbox)%nmaxdims = NMNHDIM_BOX_LAST_ENTRY - NMNHDIM_BOX_FIRST_ENTRY + 1
     Allocate( tpfile%tboxncdims(jbox)%tdims(NMNHDIM_BOX_FIRST_ENTRY:NMNHDIM_BOX_LAST_ENTRY) )
+
+    !Remove the Top Absorbing Layer if necessary (done here because it was too early
+    !in IO_Bakout_struct_prepare because nalbot was not yet available)
+    if ( lout_tal_remove ) then
+      tout_boxes(jbox)%nksup = min( tout_boxes(jbox)%nksup, nalbot - JPVEXT )
+      if ( tout_boxes(jbox)%nksup < tout_boxes(jbox)%nkinf ) then
+        call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_1field_write', trim(tout_boxes(jbox)%cname) &
+                        // ': NKSUP < NKINF after removing the Top Absorbing Layer' )
+        tout_boxes(jbox)%nksup = tout_boxes(jbox)%nkinf
+      end if
+    end if
 
     !Write the box dimensions
     call IO_Add_dim_box_nc4( tpfile, jbox, NMNHDIM_BOX_NI,      'box_ni',      tout_boxes(jbox)%nisup-tout_boxes(jbox)%niinf+1 )
