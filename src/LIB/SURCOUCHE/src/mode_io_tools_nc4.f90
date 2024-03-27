@@ -636,6 +636,7 @@ use modd_conf,   only: l2d, lpack
 use modd_field,  only: NMNHDIM_UNKNOWN, NMNHDIM_ONE, NMNHDIM_COMPLEX,                                   &
                        NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NI_U, NMNHDIM_NJ_U, NMNHDIM_NI_V, NMNHDIM_NJ_V,  &
                        NMNHDIM_LEVEL, NMNHDIM_LEVEL_W, NMNHDIM_TIME,                                    &
+                       NMNHDIM_BOX_FIRST_ENTRY, NMNHDIM_BOX_LAST_ENTRY,                                 &
                        NMNHDIM_BOX_NI, NMNHDIM_BOX_NJ, NMNHDIM_BOX_NI_U, NMNHDIM_BOX_NJ_U,              &
                        NMNHDIM_BOX_NI_V, NMNHDIM_BOX_NJ_V, NMNHDIM_BOX_LEVEL, NMNHDIM_BOX_LEVEL_W,      &
                        NMNHDIM_BUDGET_CART_NI,      NMNHDIM_BUDGET_CART_NJ,  NMNHDIM_BUDGET_CART_NI_U,  &
@@ -722,7 +723,7 @@ if ( Any( tpfield%ndimlist(:) /= NMNHDIM_UNKNOWN ) ) then
       cycle
     end if
 
-    if ( tpfield%ndimlist(ji) >= NMNHDIM_BOX_NI  .AND. tpfield%ndimlist(ji) <= NMNHDIM_BOX_LEVEL_W) then
+    if ( tpfield%ndimlist(ji) >= NMNHDIM_BOX_FIRST_ENTRY .AND. tpfield%ndimlist(ji) <= NMNHDIM_BOX_LAST_ENTRY ) then
       select case ( tpfield%ndimlist(ji) )
         case ( NMNHDIM_BOX_NI )
           call IO_Dim_localgroup_check( tpfile%nncid, tpfield%ndimlist(ji), 'box_ni',      tpfield%cmnhname, kshape(ji), kvdims(ji))
